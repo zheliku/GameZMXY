@@ -14,21 +14,17 @@ namespace GameConfig
     public enum UIFormId
     {
         /// <summary>
-        /// 主菜单
+        /// 选人界面
         /// </summary>
-        MenuForm = 0,
+        HeroSelectForm = 0,
         /// <summary>
-        /// 游戏界面
+        /// 战斗界面
         /// </summary>
-        MainForm = 1,
+        HudForm = 1,
         /// <summary>
-        /// 设置界面
+        /// 结算界面
         /// </summary>
-        SettingForm = 2,
-        /// <summary>
-        /// 结束界面
-        /// </summary>
-        GameOver = 3,
+        GameOverForm = 2,
     }
 
 } 

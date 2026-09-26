@@ -15,11 +15,31 @@ public partial class Tables
 {
     public UI.TbUIFormConfig TbUIFormConfig {get; }
     public Entity.TbEntityConfig TbEntityConfig {get; }
+    public Hero.TbHeroConfig TbHeroConfig {get; }
+    public Hero.TbHeroAttackConfig TbHeroAttackConfig {get; }
+    public Hero.TbHeroLevelConfig TbHeroLevelConfig {get; }
+    public Monster.TbMonsterConfig TbMonsterConfig {get; }
+    public Monster.TbMonsterAttackConfig TbMonsterAttackConfig {get; }
+    public Battle.TbAttackConfig TbAttackConfig {get; }
+    public Battle.TbBattleConfig TbBattleConfig {get; }
+    public Level.TbLevelConfig TbLevelConfig {get; }
+    public Level.TbLevelWaveConfig TbLevelWaveConfig {get; }
+    public Level.TbLevelSpawnConfig TbLevelSpawnConfig {get; }
 
     public Tables(System.Func<string, ByteBuf> loader)
     {
         TbUIFormConfig = new UI.TbUIFormConfig(loader("ui_tbuiformconfig"));
         TbEntityConfig = new Entity.TbEntityConfig(loader("entity_tbentityconfig"));
+        TbHeroConfig = new Hero.TbHeroConfig(loader("hero_tbheroconfig"));
+        TbHeroAttackConfig = new Hero.TbHeroAttackConfig(loader("hero_tbheroattackconfig"));
+        TbHeroLevelConfig = new Hero.TbHeroLevelConfig(loader("hero_tbherolevelconfig"));
+        TbMonsterConfig = new Monster.TbMonsterConfig(loader("monster_tbmonsterconfig"));
+        TbMonsterAttackConfig = new Monster.TbMonsterAttackConfig(loader("monster_tbmonsterattackconfig"));
+        TbAttackConfig = new Battle.TbAttackConfig(loader("battle_tbattackconfig"));
+        TbBattleConfig = new Battle.TbBattleConfig(loader("battle_tbbattleconfig"));
+        TbLevelConfig = new Level.TbLevelConfig(loader("level_tblevelconfig"));
+        TbLevelWaveConfig = new Level.TbLevelWaveConfig(loader("level_tblevelwaveconfig"));
+        TbLevelSpawnConfig = new Level.TbLevelSpawnConfig(loader("level_tblevelspawnconfig"));
         ResolveRef();
     }
     
@@ -27,6 +47,16 @@ public partial class Tables
     {
         TbUIFormConfig.ResolveRef(this);
         TbEntityConfig.ResolveRef(this);
+        TbHeroConfig.ResolveRef(this);
+        TbHeroAttackConfig.ResolveRef(this);
+        TbHeroLevelConfig.ResolveRef(this);
+        TbMonsterConfig.ResolveRef(this);
+        TbMonsterAttackConfig.ResolveRef(this);
+        TbAttackConfig.ResolveRef(this);
+        TbBattleConfig.ResolveRef(this);
+        TbLevelConfig.ResolveRef(this);
+        TbLevelWaveConfig.ResolveRef(this);
+        TbLevelSpawnConfig.ResolveRef(this);
     }
 }
 

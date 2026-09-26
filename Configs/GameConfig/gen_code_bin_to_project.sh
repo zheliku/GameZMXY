@@ -11,8 +11,6 @@ export CODE_OUTPATH="${WORKSPACE}/Godot/GodotProject/TheGame/GameScripts/GamePro
 
 cp -R "${CONF_ROOT}/CustomTemplate/ConfigSystem.cs" \
    "${WORKSPACE}/Godot/GodotProject/TheGame/GameScripts/GameProto/ConfigSystem.cs"
-cp -R "${CONF_ROOT}/CustomTemplate/ExternalTypeUtil.cs" \
-    "${WORKSPACE}/Godot/GodotProject/TheGame/GameScripts/GameProto/ExternalTypeUtil.cs"
 
 dotnet "${LUBAN_DLL}" \
     -t client \

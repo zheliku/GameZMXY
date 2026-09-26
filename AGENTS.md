@@ -207,7 +207,9 @@ DropItemEntity / MagicWeaponEntity ...
 
 - 流程：`Configs/GameConfig/Datas/*.xlsx` → 跑导表 → 生成 `TheGame/GameScripts/GameProto/GameConfig/*.cs` + `TheGame/DataTables/GameConfigs/*.bytes` → 运行时 `ConfigSystem.Instance.Tables.TbXxx` 访问。
 - 加新枚举/表的标准动作：改 `__enums__.xlsx`（EntityId / UIFormId 等）或新增业务表并在 `__tables__.xlsx` 登记 → 导表 → 在《实体.xlsx》《界面UI.xlsx》里配 `AssetPath` → 代码里用编译期安全的枚举引用。
-- 每张业务表必须含列：`Id`、`LegacyId`（旧项目 ID，用于溯源对照，可空）、`NameCn`、`Desc`。
+- 每张业务表必须含 `NameCn`、`Desc`；多行表（`mode=map`，默认）还必须含 `Id` 作为索引主键，单行全局表（`mode=one`，如战斗常数）不设 `Id`。
+- **有旧项目对应物**的表还必须含 `LegacyId`（旧项目 ID 或键名，用于溯源对照，类型随对应物）。没有对应物的表（如等级曲线、战斗常数、波次/刷怪点）不设该列，避免空列噪音。
+- 每个字段必须写中文注释（进生成的 C# XML 文档，IDE 悬停可见）。
 - 配表 = 数据，代码 = 逻辑。加怪/加装备/加技能先加表再写代码。
 - 遗留资产的文件名不参与语义：图标等资源在表里用**显式路径列**（如 `IconPath`）指向，不用字符串拼接派生（旧项目 `load(".../" + name + ".png")` 的做法禁止复刻）。
 

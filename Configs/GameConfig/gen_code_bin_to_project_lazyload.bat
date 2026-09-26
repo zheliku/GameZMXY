@@ -7,7 +7,6 @@ set CONF_ROOT=.
 set DATA_OUTPATH=%WORKSPACE%/Godot/GodotProject/TheGame/DataTables/GameConfigs
 set CODE_OUTPATH=%WORKSPACE%/Godot/GodotProject/TheGame/GameScripts/GameProto/GameConfig/
 
-copy /y "%CONF_ROOT%\CustomTemplate\ExternalTypeUtil.cs" "%WORKSPACE%\Godot\GodotProject\TheGame\GameScripts\GameProto\ExternalTypeUtil.cs"
 copy /y "%CONF_ROOT%\CustomTemplate\ConfigSystem.cs" "%WORKSPACE%\Godot\GodotProject\TheGame\GameScripts\GameProto\ConfigSystem.cs"
 
 dotnet %LUBAN_DLL% ^
