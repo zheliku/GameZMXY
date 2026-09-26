@@ -1,0 +1,168 @@
+[gd_resource type="SpriteFrames" load_steps=25 format=3]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_idle.png" id="tex0"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_run.png" id="tex1"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_attack.png" id="tex2"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_hurt.png" id="tex3"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_death.png" id="tex4"]
+
+[sub_resource type="AtlasTexture" id="Atlas_0"]
+atlas = ExtResource("tex0")
+region = Rect2(0, 0, 43, 63)
+
+[sub_resource type="AtlasTexture" id="Atlas_1"]
+atlas = ExtResource("tex1")
+region = Rect2(0, 0, 64, 88)
+
+[sub_resource type="AtlasTexture" id="Atlas_2"]
+atlas = ExtResource("tex1")
+region = Rect2(64, 0, 64, 88)
+
+[sub_resource type="AtlasTexture" id="Atlas_3"]
+atlas = ExtResource("tex1")
+region = Rect2(128, 0, 64, 88)
+
+[sub_resource type="AtlasTexture" id="Atlas_4"]
+atlas = ExtResource("tex1")
+region = Rect2(192, 0, 64, 88)
+
+[sub_resource type="AtlasTexture" id="Atlas_5"]
+atlas = ExtResource("tex2")
+region = Rect2(0, 0, 91, 83)
+
+[sub_resource type="AtlasTexture" id="Atlas_6"]
+atlas = ExtResource("tex2")
+region = Rect2(91, 0, 91, 83)
+
+[sub_resource type="AtlasTexture" id="Atlas_7"]
+atlas = ExtResource("tex2")
+region = Rect2(182, 0, 91, 83)
+
+[sub_resource type="AtlasTexture" id="Atlas_8"]
+atlas = ExtResource("tex2")
+region = Rect2(273, 0, 91, 83)
+
+[sub_resource type="AtlasTexture" id="Atlas_9"]
+atlas = ExtResource("tex2")
+region = Rect2(364, 0, 91, 83)
+
+[sub_resource type="AtlasTexture" id="Atlas_10"]
+atlas = ExtResource("tex2")
+region = Rect2(455, 0, 91, 83)
+
+[sub_resource type="AtlasTexture" id="Atlas_11"]
+atlas = ExtResource("tex3")
+region = Rect2(0, 0, 68, 86)
+
+[sub_resource type="AtlasTexture" id="Atlas_12"]
+atlas = ExtResource("tex3")
+region = Rect2(68, 0, 68, 86)
+
+[sub_resource type="AtlasTexture" id="Atlas_13"]
+atlas = ExtResource("tex4")
+region = Rect2(0, 0, 91, 88)
+
+[sub_resource type="AtlasTexture" id="Atlas_14"]
+atlas = ExtResource("tex4")
+region = Rect2(91, 0, 91, 88)
+
+[sub_resource type="AtlasTexture" id="Atlas_15"]
+atlas = ExtResource("tex4")
+region = Rect2(182, 0, 91, 88)
+
+[sub_resource type="AtlasTexture" id="Atlas_16"]
+atlas = ExtResource("tex4")
+region = Rect2(273, 0, 91, 88)
+
+[sub_resource type="AtlasTexture" id="Atlas_17"]
+atlas = ExtResource("tex4")
+region = Rect2(364, 0, 91, 88)
+
+[sub_resource type="AtlasTexture" id="Atlas_18"]
+atlas = ExtResource("tex4")
+region = Rect2(455, 0, 91, 88)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 0.100000,
+"texture": SubResource("Atlas_0")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 0.100000,
+"texture": SubResource("Atlas_1")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_2")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_3")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_4")
+}],
+"loop": true,
+"name": &"run",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 0.100000,
+"texture": SubResource("Atlas_5")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_6")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_7")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_8")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_9")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_10")
+}],
+"loop": false,
+"name": &"attack_1",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 0.100000,
+"texture": SubResource("Atlas_11")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_12")
+}],
+"loop": false,
+"name": &"hurt",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 0.100000,
+"texture": SubResource("Atlas_13")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_14")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_15")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_16")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_17")
+}, {
+"duration": 0.100000,
+"texture": SubResource("Atlas_18")
+}],
+"loop": false,
+"name": &"death",
+"speed": 1.0
+}]
