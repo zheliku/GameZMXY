@@ -10,9 +10,9 @@ config_version=5
 
 [application]
 
-config/name="GodotProject"
+config/name="GameZMXY"
 run/main_scene="uid://bggentry001"
-config/features=PackedStringArray("4.7", "C#", "Forward Plus")
+config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [audio]
@@ -25,6 +25,8 @@ UpdateDriver="*uid://d1724h61rw1bg"
 
 [display]
 
+window/size/viewport_width=940
+window/size/viewport_height=590
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
@@ -82,9 +84,19 @@ ui_down={
 
 [layer_names]
 
-2d_physics/layer_1="Player"
-2d_physics/layer_2="Enemy"
-2d_physics/layer_3="Bullet"
+2d_physics/layer_1="World"
+2d_physics/layer_2="PlayerBody"
+2d_physics/layer_3="EnemyBody"
+2d_physics/layer_4="Platform"
+2d_physics/layer_5="PlayerHitBox"
+2d_physics/layer_6="EnemyHurtBox"
+2d_physics/layer_7="EnemyHitBox"
+2d_physics/layer_8="PlayerHurtBox"
+2d_physics/layer_9="MagicWeapon"
+2d_physics/layer_10="Trap"
+2d_physics/layer_11="Item"
+2d_physics/layer_12="Exit"
+2d_physics/layer_13="Detector"
 2d_physics/layer_32="Ignore"
 
 [physics]
@@ -93,4 +105,4 @@ ui_down={
 
 [rendering]
 
-rendering_device/driver.windows="d3d12"
+renderer/rendering_method="gl_compatibility"
