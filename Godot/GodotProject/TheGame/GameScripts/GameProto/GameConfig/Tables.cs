@@ -13,51 +13,244 @@ namespace GameConfig
 {
 public partial class Tables
 {
-    public UI.TbUIFormConfig TbUIFormConfig {get; }
-    public Entity.TbEntityConfig TbEntityConfig {get; }
-    public Hero.TbHeroConfig TbHeroConfig {get; }
-    public Hero.TbHeroAttackConfig TbHeroAttackConfig {get; }
-    public Hero.TbHeroLevelConfig TbHeroLevelConfig {get; }
-    public Monster.TbMonsterConfig TbMonsterConfig {get; }
-    public Monster.TbMonsterAttackConfig TbMonsterAttackConfig {get; }
-    public Battle.TbAttackConfig TbAttackConfig {get; }
-    public Battle.TbBattleConfig TbBattleConfig {get; }
-    public Level.TbLevelConfig TbLevelConfig {get; }
-    public Level.TbLevelWaveConfig TbLevelWaveConfig {get; }
-    public Level.TbLevelSpawnConfig TbLevelSpawnConfig {get; }
+    #region The Tables
+
+    private UI.TbUIFormConfig m_TbUIFormConfig;
+    public UI.TbUIFormConfig TbUIFormConfig 
+    {
+        get
+        {
+            if (m_TbUIFormConfig == null)
+            {
+                m_TbUIFormConfig = new UI.TbUIFormConfig(defaultLoader("ui_tbuiformconfig"));
+                m_TbUIFormConfig.ResolveRef(this);
+            }
+            return m_TbUIFormConfig;
+        }
+        set
+        {
+            m_TbUIFormConfig = value;
+            m_TbUIFormConfig.ResolveRef(this);
+        }
+    }
+    private Entity.TbEntityConfig m_TbEntityConfig;
+    public Entity.TbEntityConfig TbEntityConfig 
+    {
+        get
+        {
+            if (m_TbEntityConfig == null)
+            {
+                m_TbEntityConfig = new Entity.TbEntityConfig(defaultLoader("entity_tbentityconfig"));
+                m_TbEntityConfig.ResolveRef(this);
+            }
+            return m_TbEntityConfig;
+        }
+        set
+        {
+            m_TbEntityConfig = value;
+            m_TbEntityConfig.ResolveRef(this);
+        }
+    }
+    private Hero.TbHeroConfig m_TbHeroConfig;
+    public Hero.TbHeroConfig TbHeroConfig 
+    {
+        get
+        {
+            if (m_TbHeroConfig == null)
+            {
+                m_TbHeroConfig = new Hero.TbHeroConfig(defaultLoader("hero_tbheroconfig"));
+                m_TbHeroConfig.ResolveRef(this);
+            }
+            return m_TbHeroConfig;
+        }
+        set
+        {
+            m_TbHeroConfig = value;
+            m_TbHeroConfig.ResolveRef(this);
+        }
+    }
+    private Hero.TbHeroAttackConfig m_TbHeroAttackConfig;
+    public Hero.TbHeroAttackConfig TbHeroAttackConfig 
+    {
+        get
+        {
+            if (m_TbHeroAttackConfig == null)
+            {
+                m_TbHeroAttackConfig = new Hero.TbHeroAttackConfig(defaultLoader("hero_tbheroattackconfig"));
+                m_TbHeroAttackConfig.ResolveRef(this);
+            }
+            return m_TbHeroAttackConfig;
+        }
+        set
+        {
+            m_TbHeroAttackConfig = value;
+            m_TbHeroAttackConfig.ResolveRef(this);
+        }
+    }
+    private Hero.TbHeroLevelConfig m_TbHeroLevelConfig;
+    public Hero.TbHeroLevelConfig TbHeroLevelConfig 
+    {
+        get
+        {
+            if (m_TbHeroLevelConfig == null)
+            {
+                m_TbHeroLevelConfig = new Hero.TbHeroLevelConfig(defaultLoader("hero_tbherolevelconfig"));
+                m_TbHeroLevelConfig.ResolveRef(this);
+            }
+            return m_TbHeroLevelConfig;
+        }
+        set
+        {
+            m_TbHeroLevelConfig = value;
+            m_TbHeroLevelConfig.ResolveRef(this);
+        }
+    }
+    private Monster.TbMonsterConfig m_TbMonsterConfig;
+    public Monster.TbMonsterConfig TbMonsterConfig 
+    {
+        get
+        {
+            if (m_TbMonsterConfig == null)
+            {
+                m_TbMonsterConfig = new Monster.TbMonsterConfig(defaultLoader("monster_tbmonsterconfig"));
+                m_TbMonsterConfig.ResolveRef(this);
+            }
+            return m_TbMonsterConfig;
+        }
+        set
+        {
+            m_TbMonsterConfig = value;
+            m_TbMonsterConfig.ResolveRef(this);
+        }
+    }
+    private Monster.TbMonsterAttackConfig m_TbMonsterAttackConfig;
+    public Monster.TbMonsterAttackConfig TbMonsterAttackConfig 
+    {
+        get
+        {
+            if (m_TbMonsterAttackConfig == null)
+            {
+                m_TbMonsterAttackConfig = new Monster.TbMonsterAttackConfig(defaultLoader("monster_tbmonsterattackconfig"));
+                m_TbMonsterAttackConfig.ResolveRef(this);
+            }
+            return m_TbMonsterAttackConfig;
+        }
+        set
+        {
+            m_TbMonsterAttackConfig = value;
+            m_TbMonsterAttackConfig.ResolveRef(this);
+        }
+    }
+    private Battle.TbAttackConfig m_TbAttackConfig;
+    public Battle.TbAttackConfig TbAttackConfig 
+    {
+        get
+        {
+            if (m_TbAttackConfig == null)
+            {
+                m_TbAttackConfig = new Battle.TbAttackConfig(defaultLoader("battle_tbattackconfig"));
+                m_TbAttackConfig.ResolveRef(this);
+            }
+            return m_TbAttackConfig;
+        }
+        set
+        {
+            m_TbAttackConfig = value;
+            m_TbAttackConfig.ResolveRef(this);
+        }
+    }
+    private Battle.TbBattleConfig m_TbBattleConfig;
+    public Battle.TbBattleConfig TbBattleConfig 
+    {
+        get
+        {
+            if (m_TbBattleConfig == null)
+            {
+                m_TbBattleConfig = new Battle.TbBattleConfig(defaultLoader("battle_tbbattleconfig"));
+                m_TbBattleConfig.ResolveRef(this);
+            }
+            return m_TbBattleConfig;
+        }
+        set
+        {
+            m_TbBattleConfig = value;
+            m_TbBattleConfig.ResolveRef(this);
+        }
+    }
+    private Level.TbLevelConfig m_TbLevelConfig;
+    public Level.TbLevelConfig TbLevelConfig 
+    {
+        get
+        {
+            if (m_TbLevelConfig == null)
+            {
+                m_TbLevelConfig = new Level.TbLevelConfig(defaultLoader("level_tblevelconfig"));
+                m_TbLevelConfig.ResolveRef(this);
+            }
+            return m_TbLevelConfig;
+        }
+        set
+        {
+            m_TbLevelConfig = value;
+            m_TbLevelConfig.ResolveRef(this);
+        }
+    }
+    private Level.TbLevelWaveConfig m_TbLevelWaveConfig;
+    public Level.TbLevelWaveConfig TbLevelWaveConfig 
+    {
+        get
+        {
+            if (m_TbLevelWaveConfig == null)
+            {
+                m_TbLevelWaveConfig = new Level.TbLevelWaveConfig(defaultLoader("level_tblevelwaveconfig"));
+                m_TbLevelWaveConfig.ResolveRef(this);
+            }
+            return m_TbLevelWaveConfig;
+        }
+        set
+        {
+            m_TbLevelWaveConfig = value;
+            m_TbLevelWaveConfig.ResolveRef(this);
+        }
+    }
+    private Level.TbLevelSpawnConfig m_TbLevelSpawnConfig;
+    public Level.TbLevelSpawnConfig TbLevelSpawnConfig 
+    {
+        get
+        {
+            if (m_TbLevelSpawnConfig == null)
+            {
+                m_TbLevelSpawnConfig = new Level.TbLevelSpawnConfig(defaultLoader("level_tblevelspawnconfig"));
+                m_TbLevelSpawnConfig.ResolveRef(this);
+            }
+            return m_TbLevelSpawnConfig;
+        }
+        set
+        {
+            m_TbLevelSpawnConfig = value;
+            m_TbLevelSpawnConfig.ResolveRef(this);
+        }
+    }
+
+    #endregion
+
+    System.Func<string, ByteBuf> defaultLoader;
 
     public Tables(System.Func<string, ByteBuf> loader)
     {
-        TbUIFormConfig = new UI.TbUIFormConfig(loader("ui_tbuiformconfig"));
-        TbEntityConfig = new Entity.TbEntityConfig(loader("entity_tbentityconfig"));
-        TbHeroConfig = new Hero.TbHeroConfig(loader("hero_tbheroconfig"));
-        TbHeroAttackConfig = new Hero.TbHeroAttackConfig(loader("hero_tbheroattackconfig"));
-        TbHeroLevelConfig = new Hero.TbHeroLevelConfig(loader("hero_tbherolevelconfig"));
-        TbMonsterConfig = new Monster.TbMonsterConfig(loader("monster_tbmonsterconfig"));
-        TbMonsterAttackConfig = new Monster.TbMonsterAttackConfig(loader("monster_tbmonsterattackconfig"));
-        TbAttackConfig = new Battle.TbAttackConfig(loader("battle_tbattackconfig"));
-        TbBattleConfig = new Battle.TbBattleConfig(loader("battle_tbbattleconfig"));
-        TbLevelConfig = new Level.TbLevelConfig(loader("level_tblevelconfig"));
-        TbLevelWaveConfig = new Level.TbLevelWaveConfig(loader("level_tblevelwaveconfig"));
-        TbLevelSpawnConfig = new Level.TbLevelSpawnConfig(loader("level_tblevelspawnconfig"));
-        ResolveRef();
+        SetDefaultLoader(loader);
+        Init();
     }
     
-    private void ResolveRef()
+    public void SetDefaultLoader(System.Func<string, ByteBuf> loader)
     {
-        TbUIFormConfig.ResolveRef(this);
-        TbEntityConfig.ResolveRef(this);
-        TbHeroConfig.ResolveRef(this);
-        TbHeroAttackConfig.ResolveRef(this);
-        TbHeroLevelConfig.ResolveRef(this);
-        TbMonsterConfig.ResolveRef(this);
-        TbMonsterAttackConfig.ResolveRef(this);
-        TbAttackConfig.ResolveRef(this);
-        TbBattleConfig.ResolveRef(this);
-        TbLevelConfig.ResolveRef(this);
-        TbLevelWaveConfig.ResolveRef(this);
-        TbLevelSpawnConfig.ResolveRef(this);
+        defaultLoader = null;
+        defaultLoader = loader;
     }
+
+    //public partial void Init();
+
+    public void Init(){}
 }
 
 }

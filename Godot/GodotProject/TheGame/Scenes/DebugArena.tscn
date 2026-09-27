@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://be3gmywqv2m58"]
+
+[ext_resource type="Texture2D" uid="uid://bo4uw8k2ajk8o" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_floor.png" id="1_floor"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
+size = Vector2(2400, 60)
+
+[node name="DebugArena" type="Node2D" unique_id=306045275]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1351119355]
+position = Vector2(300, 240)
+
+[node name="GroundSprite" type="Sprite2D" parent="." unique_id=613606939]
+position = Vector2(0, 341)
+texture = ExtResource("1_floor")
+centered = false
+
+[node name="Ground" type="StaticBody2D" parent="." unique_id=1977369376]
+position = Vector2(1000, 371)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground" unique_id=2042469663]
+position = Vector2(118, 74)
+shape = SubResource("RectangleShape2D_ground")

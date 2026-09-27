@@ -1,0 +1,20 @@
+<module name="">
+	<!-- 二维向量/范围：配置侧定义占位 bean，生成代码映射为 Godot 类型（TypeMapper，Luban 4.x）。
+	     作范围用时 x=下限/最小值，y=上限/最大值（见各表字段的中文注释）。 -->
+	<bean name="vector2" valueType="1" sep=",">
+		<var name="x" type="float"/>
+		<var name="y" type="float"/>
+		<mapper target="client" codeTarget="cs-bin">
+			<option name="type" value="Godot.Vector2"/>
+			<option name="constructor" value="GameLogic.Config.ExternalTypeUtil.NewVector2"/>
+		</mapper>
+	</bean>
+	<bean name="vector2i" valueType="1" sep=",">
+		<var name="x" type="int"/>
+		<var name="y" type="int"/>
+		<mapper target="client" codeTarget="cs-bin">
+			<option name="type" value="Godot.Vector2I"/>
+			<option name="constructor" value="GameLogic.Config.ExternalTypeUtil.NewVector2I"/>
+		</mapper>
+	</bean>
+</module>

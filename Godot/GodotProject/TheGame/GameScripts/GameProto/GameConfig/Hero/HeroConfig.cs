@@ -42,9 +42,13 @@ public sealed partial class HeroConfig : Luban.BeanBase
         Vampirism = _buf.ReadFloat();
         RHp = _buf.ReadFloat();
         RMp = _buf.ReadFloat();
-        MoveSpeed = _buf.ReadFloat();
+        WalkSpeed = _buf.ReadFloat();
+        RunSpeed = _buf.ReadFloat();
+        RunDoubleTapWindow = _buf.ReadFloat();
+        IdleEmoteDelay = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         JumpSpeed = _buf.ReadFloat();
         Gravity = _buf.ReadFloat();
+        JumpCountMax = _buf.ReadInt();
     }
 
     public static HeroConfig DeserializeHeroConfig(ByteBuf _buf)
@@ -157,9 +161,21 @@ public sealed partial class HeroConfig : Luban.BeanBase
     /// </summary>
     public readonly float RMp;
     /// <summary>
-    /// 移动速度 px/s(旧 walk_speed=240)
+    /// 慢走速度 px/s
     /// </summary>
-    public readonly float MoveSpeed;
+    public readonly float WalkSpeed;
+    /// <summary>
+    /// 跑步(快走)速度 px/s
+    /// </summary>
+    public readonly float RunSpeed;
+    /// <summary>
+    /// 双击方向键进入跑步的判定窗口(秒)
+    /// </summary>
+    public readonly float RunDoubleTapWindow;
+    /// <summary>
+    /// 待机后隔多久随机播一次憨笑(秒,x=最短,y=最长)
+    /// </summary>
+    public readonly Godot.Vector2 IdleEmoteDelay;
     /// <summary>
     /// 起跳速度(向上为正,旧 jump_power=-540)
     /// </summary>
@@ -168,6 +184,10 @@ public sealed partial class HeroConfig : Luban.BeanBase
     /// 重力(旧 gravity=980 向下)
     /// </summary>
     public readonly float Gravity;
+    /// <summary>
+    /// 最多跳跃次数(含地面一段与空中段,旧 jump_count&lt;2 判据)
+    /// </summary>
+    public readonly int JumpCountMax;
    
     public const int __ID__ = -1911300528;
     public override int GetTypeId() => __ID__;
@@ -205,9 +225,13 @@ public sealed partial class HeroConfig : Luban.BeanBase
         + "Vampirism:" + Vampirism + ","
         + "RHp:" + RHp + ","
         + "RMp:" + RMp + ","
-        + "MoveSpeed:" + MoveSpeed + ","
+        + "WalkSpeed:" + WalkSpeed + ","
+        + "RunSpeed:" + RunSpeed + ","
+        + "RunDoubleTapWindow:" + RunDoubleTapWindow + ","
+        + "IdleEmoteDelay:" + IdleEmoteDelay + ","
         + "JumpSpeed:" + JumpSpeed + ","
         + "Gravity:" + Gravity + ","
+        + "JumpCountMax:" + JumpCountMax + ","
         + "}";
     }
 }

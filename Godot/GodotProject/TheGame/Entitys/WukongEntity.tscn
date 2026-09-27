@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://b4ysr6hgrk40s"]
+
+[ext_resource type="Script" uid="uid://bvsl2fblhl02l" path="res://TheGame/GameScripts/Entity/Heroes/WukongEntity.cs" id="1_script"]
+[ext_resource type="SpriteFrames" uid="uid://bolr5xpqio7mn" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_animations.tres" id="2_body"]
+[ext_resource type="SpriteFrames" uid="uid://c4cik0xdo4g38" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_golden_cudgel_animations.tres" id="3_weapon"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
+radius = 20.0
+height = 96.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_hurt"]
+radius = 20.0
+height = 98.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
+size = Vector2(90, 90)
+
+[node name="WukongEntity" type="CharacterBody2D" unique_id=67671961 node_paths=PackedStringArray("m_Body", "m_Weapon", "m_HurtBox", "m_HitBox")]
+collision_layer = 2
+collision_mask = 9
+script = ExtResource("1_script")
+m_Body = NodePath("m_Body")
+m_Weapon = NodePath("m_Weapon")
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBox")
+
+[node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=2140667986]
+sprite_frames = ExtResource("2_body")
+animation = &"idle2"
+frame = 7
+frame_progress = 1.0
+
+[node name="m_Weapon" type="AnimatedSprite2D" parent="." unique_id=803517449]
+sprite_frames = ExtResource("3_weapon")
+animation = &"idle1"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=401289958]
+position = Vector2(0, 25)
+shape = SubResource("CapsuleShape2D_body")
+debug_color = Color(1, 0, 0, 0.41960785)
+
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=1733103584]
+collision_layer = 128
+collision_mask = 0
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=933712341]
+position = Vector2(0, 25)
+shape = SubResource("CapsuleShape2D_hurt")
+debug_color = Color(0, 1, 0, 0.41960785)
+
+[node name="m_HitBox" type="Area2D" parent="." unique_id=1126633646]
+position = Vector2(55, 0)
+collision_layer = 16
+collision_mask = 32
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBox" unique_id=704973461]
+shape = SubResource("RectangleShape2D_hit")
+disabled = true

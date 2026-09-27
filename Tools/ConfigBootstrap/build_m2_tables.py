@@ -10,6 +10,10 @@ Design notes (see AGENTS.md 6):
   * values are taken from the legacy project (ZMXY_BHYH); see file:line in the
     comments below wherever a number is not self-evident
 
+就地改表，绝不再重建工作簿：
+  * 列宽 / 样式 / 手工改过的数据都必须保住 —— 数值的权威是 xlsx 本身；
+  * 脚本里的 rows 只是"首次建表时的种子值"，表里已有数据就一律不动。
+
 Run:  python Tools/ConfigBootstrap/build_m2_tables.py
 Then: Configs/GameConfig/gen_code_bin_to_project_lazyload.bat
 """
@@ -27,32 +31,84 @@ DATAS = os.path.join(ROOT, "Configs", "GameConfig", "Datas")
 # helpers
 # ---------------------------------------------------------------------------
 def new_table(file_name, fields, rows):
-    """fields: [(name, type, comment)]; rows: [[value, ...]]"""
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Sheet1"
-    ws.append(["##var"] + [f[0] for f in fields])
-    ws.append(["##var"] + [None] * len(fields))
-    ws.append(["##type"] + [f[1] for f in fields])
-    ws.append(["##group"] + [None] * len(fields))
-    ws.append(["##"] + [f[2] for f in fields])
-    for r in rows:
-        ws.append([None] + list(r))
-    wb.save(os.path.join(DATAS, file_name))
-    print(f"  wrote {file_name}  ({len(rows)} rows, {len(fields)} cols)")
+    """
+    就地写表头，数据只在空表时播种。
+
+    关键：已存在的工作簿一律 load_workbook 后改单元格，不用 Workbook() 重建
+    —— 重建会丢掉列宽与手工样式（用户会手工调列宽）。
+    数据行同理：表里已有数据就保留，避免把手工改过的数值盖回种子值。
+    """
+    path = os.path.join(DATAS, file_name)
+    if os.path.exists(path):
+        wb = openpyxl.load_workbook(path)
+        ws = wb.active
+    else:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Sheet1"
+
+    header = [
+        ["##var"] + [f[0] for f in fields],
+        ["##var"] + [None] * len(fields),
+        ["##type"] + [f[1] for f in fields],
+        ["##group"] + [None] * len(fields),
+        ["##"] + [f[2] for f in fields],
+    ]
+    for r, cells in enumerate(header, start=1):
+        for c, val in enumerate(cells, start=1):
+            ws.cell(row=r, column=c, value=val)
+
+    has_data = ws.max_row > 5 and any(
+        ws.cell(row=r, column=2).value not in (None, "")
+        for r in range(6, ws.max_row + 1)
+    )
+
+    if has_data:
+        # 已有数据：只补"空单元格"（用于表尾新增列时的回填），已经有值的一律不动
+        patched = 0
+        for r, seed in enumerate(rows, start=6):
+            for i, val in enumerate(seed):
+                if val is None:
+                    continue
+                cell = ws.cell(row=r, column=i + 2)
+                if cell.value in (None, ""):
+                    cell.value = val
+                    patched += 1
+        note = f"，回填空单元格 {patched} 个" if patched else ""
+        print(f"  {file_name}: 表头已更新，数据保留（{ws.max_row - 5} 行）{note}")
+    else:
+        if ws.max_row > 5:
+            ws.delete_rows(6, ws.max_row - 5)
+        for r in rows:
+            ws.append([None] + list(r))
+        print(f"  {file_name}: 空表，播种 {len(rows)} 行，{len(fields)} 列")
+
+    wb.save(path)
 
 
-def refresh_table(file_name, header_rows, rows):
-    """Keep rows 1..header_rows, replace all data rows."""
+def seed_table(file_name, header_rows, rows):
+    """
+    框架自带的表（实体 / 界面UI）：只在没有数据行时播种。
+    已经有我们配好的行（或用户改过的行）就跳过，绝不覆盖。
+    """
     path = os.path.join(DATAS, file_name)
     wb = openpyxl.load_workbook(path)
     ws = wb.active
+
+    has_data = ws.max_row > header_rows and any(
+        ws.cell(row=r, column=2).value not in (None, "")
+        for r in range(header_rows + 1, ws.max_row + 1)
+    )
+    if has_data:
+        print(f"  {file_name}: 已有数据，跳过（{ws.max_row - header_rows} 行）")
+        return
+
     if ws.max_row > header_rows:
         ws.delete_rows(header_rows + 1, ws.max_row - header_rows)
     for r in rows:
-        ws.append(r)
+        ws.append(list(r))
     wb.save(path)
-    print(f"  updated {file_name}  ({len(rows)} rows)")
+    print(f"  {file_name}: 空表，播种 {len(rows)} 行")
 
 
 # ---------------------------------------------------------------------------
@@ -140,11 +196,11 @@ def build_table_registry():
 # 3. entity / UI tables (demo rows are dangling, replace them)
 # ---------------------------------------------------------------------------
 def build_entity_ui():
-    refresh_table("实体.xlsx", 5, [
+    seed_table("实体.xlsx", 5, [
         (None, 1, "Wukong", "res://TheGame/Entitys/WukongEntity.tscn", "Actor", 0),
         (None, 2, "HuaguoshanMonkey", "res://TheGame/Entitys/HuaguoshanMonkeyEntity.tscn", "Actor", 0),
     ])
-    refresh_table("界面UI.xlsx", 5, [
+    seed_table("界面UI.xlsx", 5, [
         (None, 1, "HeroSelectForm", "res://TheGame/UIs/HeroSelectForm.tscn", False, "Normal"),
         (None, 2, "HudForm", "res://TheGame/UIs/HudForm.tscn", False, "Normal"),
         (None, 3, "GameOverForm", "res://TheGame/UIs/GameOverForm.tscn", False, "Normal"),
@@ -184,7 +240,11 @@ def build_hero():
         ("Vampirism", "float", "吸血系数(物理伤害转化回血)"),
         ("RHp", "float", "每秒回血"),
         ("RMp", "float", "每秒回魔"),
-        ("MoveSpeed", "float", "移动速度 px/s(旧 walk_speed=240)"),
+        ("WalkSpeed", "float", "慢走速度 px/s"),
+        ("RunSpeed", "float", "跑步(快走)速度 px/s"),
+        ("RunDoubleTapWindow", "float", "双击方向键进入跑步的判定窗口(秒)"),
+        ("IdleEmoteDelayMin", "float", "待机后最短多久随机播一次憨笑(秒)"),
+        ("IdleEmoteDelayMax", "float", "待机后最长多久随机播一次憨笑(秒)"),
         ("JumpSpeed", "float", "起跳速度(向上为正,旧 jump_power=-540)"),
         ("Gravity", "float", "重力(旧 gravity=980 向下)"),
     ]
@@ -194,7 +254,7 @@ def build_hero():
          50, 15, 4, 1, 1,
          0, 0, 0, 0, 0, 0, 0, 0,
          0, 0, 0,
-         240, 540, 980),
+         180, 240, 0.3, 6, 12, 540, 980),
     ]
     new_table("HeroConfig.xlsx", fields, rows)
 
@@ -294,14 +354,14 @@ def build_battle():
         ("WsGainMin", "int", "命中获得无双值下限(旧 WSValue)"),
         ("WsGainMax", "int", "命中获得无双值上限(旧 WSValue)"),
         ("HitProtect", "int", "受击保护累计值(旧 HitProtect)"),
-        ("HitInterval", "float", "同招连击间隔秒(旧 HitInterv)"),
+        ("Interval", "float", "本段最短停留秒(动画不足时补足,即普攻之间的间隔)"),
     ]
     rows = [
-        (1001, "hit1", "悟空普攻1", "普攻第一段", "attack_1", 1.0, 1.2, 0, "Physics", 2, 0, 3, 5, 0, 1),
-        (1002, "hit2", "悟空普攻2", "普攻第二段", "attack_2", 0.9, 1.1, 0, "Physics", 2, 0, 3, 5, 0, 1),
-        (1003, "hit3", "悟空普攻3", "普攻第三段", "attack_3", 1.0, 1.2, 0, "Physics", 2, 0, 3, 5, 0, 1),
-        (1004, "hit4", "悟空普攻4", "普攻第四段(击退收招)", "attack_4", 1.2, 1.4, 0, "Physics", 6, -5, 3, 5, 0, 2),
-        (2001, "hit1", "猴子普攻", "猴子唯一攻击", "attack_1", 0.0, 0.0, 10, "Physics", -3, -6, 0, 0, 10, 0),
+        (1001, "hit1", "悟空普攻1", "普攻第一段", "attack_1", 1.0, 1.2, 0, "Physics", 2, 0, 3, 5, 0, 0.35),
+        (1002, "hit2", "悟空普攻2", "普攻第二段", "attack_2", 0.9, 1.1, 0, "Physics", 2, 0, 3, 5, 0, 0.35),
+        (1003, "hit3", "悟空普攻3", "普攻第三段", "attack_3", 1.0, 1.2, 0, "Physics", 2, 0, 3, 5, 0, 0.35),
+        (1004, "hit4", "悟空普攻4", "普攻第四段(击退收招)", "attack_4", 1.2, 1.4, 0, "Physics", 6, -5, 3, 5, 0, 0.35),
+        (2001, "hit1", "猴子普攻", "猴子唯一攻击", "attack_1", 0.0, 0.0, 10, "Physics", -3, -6, 0, 0, 10, 0.6),
     ]
     new_table("AttackConfig.xlsx", fields, rows)
 

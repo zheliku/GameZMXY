@@ -21,16 +21,13 @@ public sealed partial class AttackConfig : Luban.BeanBase
         NameCn = _buf.ReadString();
         Desc = _buf.ReadString();
         Animation = _buf.ReadString();
-        PowerScaleMin = _buf.ReadFloat();
-        PowerScaleMax = _buf.ReadFloat();
+        PowerScale = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         FlatPower = _buf.ReadInt();
         DamageKind = (Battle.DamageKind)_buf.ReadInt();
-        KnockbackX = _buf.ReadFloat();
-        KnockbackY = _buf.ReadFloat();
-        WsGainMin = _buf.ReadInt();
-        WsGainMax = _buf.ReadInt();
+        Knockback = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
+        WsGain = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
         HitProtect = _buf.ReadInt();
-        HitInterval = _buf.ReadFloat();
+        Interval = _buf.ReadFloat();
     }
 
     public static AttackConfig DeserializeAttackConfig(ByteBuf _buf)
@@ -59,13 +56,9 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly string Animation;
     /// <summary>
-    /// 攻击力倍率下限(乘英雄攻击)
+    /// 攻击力倍率范围(乘英雄攻击,X=下限,Y=上限)
     /// </summary>
-    public readonly float PowerScaleMin;
-    /// <summary>
-    /// 攻击力倍率上限(乘英雄攻击)
-    /// </summary>
-    public readonly float PowerScaleMax;
+    public readonly Godot.Vector2 PowerScale;
     /// <summary>
     /// 固定攻击力(不与属性挂钩)
     /// </summary>
@@ -75,29 +68,21 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly Battle.DamageKind DamageKind;
     /// <summary>
-    /// 击退横向分量(旧 hurtBack[0])
+    /// 击退(旧 hurtBack[0]/[1],X=横向,Y=纵向)
     /// </summary>
-    public readonly float KnockbackX;
+    public readonly Godot.Vector2 Knockback;
     /// <summary>
-    /// 击退纵向分量(旧 hurtBack[1])
+    /// 命中获得无双值范围(旧 WSValue,X=下限,Y=上限)
     /// </summary>
-    public readonly float KnockbackY;
-    /// <summary>
-    /// 命中获得无双值下限(旧 WSValue)
-    /// </summary>
-    public readonly int WsGainMin;
-    /// <summary>
-    /// 命中获得无双值上限(旧 WSValue)
-    /// </summary>
-    public readonly int WsGainMax;
+    public readonly Godot.Vector2I WsGain;
     /// <summary>
     /// 受击保护累计值(旧 HitProtect)
     /// </summary>
     public readonly int HitProtect;
     /// <summary>
-    /// 同招连击间隔秒(旧 HitInterv)
+    /// 本段最短停留秒(动画不足时补足,即普攻之间的间隔)
     /// </summary>
-    public readonly float HitInterval;
+    public readonly float Interval;
    
     public const int __ID__ = 818309408;
     public override int GetTypeId() => __ID__;
@@ -114,16 +99,13 @@ public sealed partial class AttackConfig : Luban.BeanBase
         + "NameCn:" + NameCn + ","
         + "Desc:" + Desc + ","
         + "Animation:" + Animation + ","
-        + "PowerScaleMin:" + PowerScaleMin + ","
-        + "PowerScaleMax:" + PowerScaleMax + ","
+        + "PowerScale:" + PowerScale + ","
         + "FlatPower:" + FlatPower + ","
         + "DamageKind:" + DamageKind + ","
-        + "KnockbackX:" + KnockbackX + ","
-        + "KnockbackY:" + KnockbackY + ","
-        + "WsGainMin:" + WsGainMin + ","
-        + "WsGainMax:" + WsGainMax + ","
+        + "Knockback:" + Knockback + ","
+        + "WsGain:" + WsGain + ","
         + "HitProtect:" + HitProtect + ","
-        + "HitInterval:" + HitInterval + ","
+        + "Interval:" + Interval + ","
         + "}";
     }
 }
