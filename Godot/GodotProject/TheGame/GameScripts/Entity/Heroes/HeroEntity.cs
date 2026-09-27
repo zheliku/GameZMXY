@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using GameConfig.Battle;
 using GameConfig.Hero;
+using GameConfig.Sound;
 using GameFramework.Entity;
+using GodotGameFramework.Sound;
 using GameFramework.Fsm;
 using Godot;
 using GodotGameFramework;
@@ -88,7 +90,7 @@ namespace GameLogic.Entity
 		/// <summary>输入动作名：右移（D）</summary>
 		private static readonly StringName ActionMoveRight = "move_right";
 
-		/// <summary>本英雄的普攻连段，已按 ComboIndex 排序；由 HeroAttackConfig + AttackConfig 装配</summary>
+		/// <summary>本英雄的普攻连段：AttackConfig 里 OwnerId==自己 的行，按 ComboIndex 排序</summary>
 		private AttackConfig[] m_Combo = System.Array.Empty<AttackConfig>();
 
 		/// <summary>上一次点击的方向（-1/1），与 m_LastTapTime 一起用于双击判定</summary>
@@ -302,33 +304,23 @@ namespace GameLogic.Entity
 			m_LastTapTime = now;
 		}
 
-		/// <summary>按 HeroAttackConfig 的 ComboIndex 顺序装配连段（数据驱动，无硬编码分支）</summary>
+		/// <summary>
+		/// 装配本英雄的普攻连段：取 AttackConfig 里 `OwnerId == 自己` 的行，按 `ComboIndex` 排序。
+		/// 归属与连段顺序写在攻击行上（OwnerId/ComboIndex）；
+		/// 怪物 AI（M5）用同一份数据：过滤 OwnerId + 按 AiWeight 抽招。
+		/// </summary>
 		private void LoadCombo()
 		{
-			List<HeroAttackConfig> links = new List<HeroAttackConfig>();
-			foreach (HeroAttackConfig link in ConfigSystem.Instance.Tables.TbHeroAttackConfig.DataList)
-			{
-				if (link.HeroId == HeroId)
-				{
-					links.Add(link);
-				}
-			}
-
-			links.Sort((a, b) => a.ComboIndex.CompareTo(b.ComboIndex));
-
 			List<AttackConfig> combo = new List<AttackConfig>();
-			foreach (HeroAttackConfig link in links)
+			foreach (AttackConfig attack in ConfigSystem.Instance.Tables.TbAttackConfig.DataList)
 			{
-				AttackConfig attack = ConfigSystem.Instance.Tables.TbAttackConfig.Get(link.AttackId);
-				if (attack == null)
+				if (attack.OwnerId == Config.EntityId)
 				{
-					Log.Error("[HeroEntity] HeroAttackConfig 引用了不存在的攻击：AttackId={0}", link.AttackId);
-					continue;
+					combo.Add(attack);
 				}
-
-				combo.Add(attack);
 			}
 
+			combo.Sort((a, b) => a.ComboIndex.CompareTo(b.ComboIndex));
 			m_Combo = combo.ToArray();
 		}
 	}

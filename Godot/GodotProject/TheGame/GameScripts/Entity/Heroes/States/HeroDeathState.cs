@@ -1,3 +1,4 @@
+using GameConfig.Sound;
 using GameFramework.Fsm;
 using Godot;
 
@@ -17,6 +18,7 @@ namespace GameLogic.Entity
 			hero.HorizontalControl = false;
 			hero.Velocity = new Vector2(0, hero.Velocity.Y);
 			hero.PlayAnim(ActorAnim.Death);
+			hero.PlaySound(hero.Config.DeathSoundId);   // 死亡语音（旧 death 动画的 add_music(7) → 59_Role1_dead）
 		}
 	}
 }

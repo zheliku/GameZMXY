@@ -30,13 +30,16 @@ DATAS = os.path.join(ROOT, "Configs", "GameConfig", "Datas")
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
-def new_table(file_name, fields, rows):
+def new_table(file_name, fields, rows, force_rows=False):
     """
     就地写表头，数据只在空表时播种。
 
     关键：已存在的工作簿一律 load_workbook 后改单元格，不用 Workbook() 重建
     —— 重建会丢掉列宽与手工样式（用户会手工调列宽）。
     数据行同理：表里已有数据就保留，避免把手工改过的数值盖回种子值。
+
+    force_rows=True 仅用于一次性修复错位数据（保留列宽，重写数据行），
+    例如 2026-09-27 表头 schema 与手工合并列对齐前写坏的 HeroConfig / AttackConfig。
     """
     path = os.path.join(DATAS, file_name)
     if os.path.exists(path):
@@ -46,6 +49,30 @@ def new_table(file_name, fields, rows):
         wb = Workbook()
         ws = wb.active
         ws.title = "Sheet1"
+
+    has_data = ws.max_row > 5 and any(
+        ws.cell(row=r, column=2).value not in (None, "")
+        for r in range(6, ws.max_row + 1)
+    )
+
+    # 结构变更防护：只有"在表尾追加列"才能靠回填空格安全迁移；
+    # 中间插入/删除/改名/换序会让旧单元格整体错位（纯字符串表 Luban 不会报错，会静默改错数据）。
+    # 因此这类变更必须显式 force_rows=True（重写数据行），否则直接拒绝执行。
+    if has_data and not force_rows:
+        old_names = []
+        for c in range(2, ws.max_column + 1):
+            old_names.append(ws.cell(row=1, column=c).value)
+        while old_names and old_names[-1] in (None, ""):
+            old_names.pop()
+        new_names = [f[0] for f in fields]
+        if old_names != new_names[: len(old_names)]:
+            raise SystemExit(
+                f"  [拒绝] {file_name}: 表头结构发生变化（不是纯表尾追加），"
+                f"回填空格会造成数据错位。\n"
+                f"    旧表头: {old_names}\n"
+                f"    新表头: {new_names}\n"
+                f"    请核对数据后对该表显式传 force_rows=True。"
+            )
 
     header = [
         ["##var"] + [f[0] for f in fields],
@@ -57,13 +84,17 @@ def new_table(file_name, fields, rows):
     for r, cells in enumerate(header, start=1):
         for c, val in enumerate(cells, start=1):
             ws.cell(row=r, column=c, value=val)
+        # 列数收缩时清掉旧表头的残留单元格，否则 Luban 报"列重复"。
+        # 注意 openpyxl 的 cell(..., value=None) 不写入（None 被视为"未提供值"），必须用属性赋值。
+        for c in range(len(fields) + 2, ws.max_column + 1):
+            ws.cell(row=r, column=c).value = None
 
     has_data = ws.max_row > 5 and any(
         ws.cell(row=r, column=2).value not in (None, "")
         for r in range(6, ws.max_row + 1)
     )
 
-    if has_data:
+    if has_data and not force_rows:
         # 已有数据：只补"空单元格"（用于表尾新增列时的回填），已经有值的一律不动
         patched = 0
         for r, seed in enumerate(rows, start=6):
@@ -81,7 +112,8 @@ def new_table(file_name, fields, rows):
             ws.delete_rows(6, ws.max_row - 5)
         for r in rows:
             ws.append([None] + list(r))
-        print(f"  {file_name}: 空表，播种 {len(rows)} 行，{len(fields)} 列")
+        tag = "修复重写" if has_data else "空表，播种"
+        print(f"  {file_name}: {tag} {len(rows)} 行，{len(fields)} 列")
 
     wb.save(path)
 
@@ -131,6 +163,19 @@ ENUMS = [
         ("Magic", "魔法", None, None),
         ("Real", "真实", None, None),
     ]),
+    # 音效引用：None=该动作无音效
+    # 值显式写死：自动递增会让"中间插一条音效"导致后续 Id 全部漂移（表与代码一起错）
+    # 命名规则：按"声音本身是什么"命名，不按"谁在什么时机用"命名（用途写在各触发者的表里）。
+    # WukongImpact = 悟空的棍打中东西的命中音（旧 6_BeattackByRole1，旧名 monster_hurt 是错的）
+    ("Sound.SoundId", False, True, [
+        ("None", "无", 0, None),
+        ("WukongAttack2", "悟空挥棍2", 1, None),
+        ("WukongAttack1And3", "悟空挥棍1/3", 2, None),
+        ("WukongAttack4", "悟空挥棍4", 3, None),
+        ("WukongHurt", "悟空受击语音", 4, None),
+        ("WukongDeath", "悟空死亡语音", 5, None),
+        ("WukongImpact", "悟空命中音(棍打中东西)", 6, None),
+    ]),
 ]
 
 
@@ -164,15 +209,14 @@ NEW_TABLES = [
     # (full_name, value_type, input_file, mode)
     # mode="one" 单行全局表(无索引)；None 走默认 map，按 Id 索引
     ("Hero.TbHeroConfig", "HeroConfig", "HeroConfig.xlsx", None),
-    ("Hero.TbHeroAttackConfig", "HeroAttackConfig", "HeroAttackConfig.xlsx", None),
     ("Hero.TbHeroLevelConfig", "HeroLevelConfig", "HeroLevelConfig.xlsx", None),
     ("Monster.TbMonsterConfig", "MonsterConfig", "MonsterConfig.xlsx", None),
-    ("Monster.TbMonsterAttackConfig", "MonsterAttackConfig", "MonsterAttackConfig.xlsx", None),
     ("Battle.TbAttackConfig", "AttackConfig", "AttackConfig.xlsx", None),
     ("Battle.TbBattleConfig", "BattleConfig", "BattleConfig.xlsx", "one"),
     ("Level.TbLevelConfig", "LevelConfig", "LevelConfig.xlsx", None),
     ("Level.TbLevelWaveConfig", "LevelWaveConfig", "LevelWaveConfig.xlsx", None),
     ("Level.TbLevelSpawnConfig", "LevelSpawnConfig", "LevelSpawnConfig.xlsx", None),
+    ("Sound.TbSoundConfig", "SoundConfig", "SoundConfig.xlsx", None),
 ]
 
 
@@ -243,10 +287,12 @@ def build_hero():
         ("WalkSpeed", "float", "慢走速度 px/s"),
         ("RunSpeed", "float", "跑步(快走)速度 px/s"),
         ("RunDoubleTapWindow", "float", "双击方向键进入跑步的判定窗口(秒)"),
-        ("IdleEmoteDelayMin", "float", "待机后最短多久随机播一次憨笑(秒)"),
-        ("IdleEmoteDelayMax", "float", "待机后最长多久随机播一次憨笑(秒)"),
+        ("IdleEmoteDelay", "vector2", "待机后隔多久随机播一次憨笑(秒,x=最短,y=最长,写法 6,12)"),
         ("JumpSpeed", "float", "起跳速度(向上为正,旧 jump_power=-540)"),
         ("Gravity", "float", "重力(旧 gravity=980 向下)"),
+        ("JumpCountMax", "int", "最多跳跃次数(含地面一段与空中段,旧 jump_count<2 判据)"),
+        ("HurtSoundId", "Sound.SoundId", "受击语音(自己挨打时的声音,None=无;按受害者选音,BaseHero.gd:592)"),
+        ("DeathSoundId", "Sound.SoundId", "死亡语音(None=无)"),
     ]
     rows = [
         (1, 1, "悟空", "齐天大圣", "Wukong",
@@ -254,25 +300,11 @@ def build_hero():
          50, 15, 4, 1, 1,
          0, 0, 0, 0, 0, 0, 0, 0,
          0, 0, 0,
-         180, 240, 0.3, 6, 12, 540, 980),
+         120, 240, 0.3, "6,12", 540, 980, 2,
+         "WukongHurt", "WukongDeath"),
     ]
-    new_table("HeroConfig.xlsx", fields, rows)
-
-    fields = [
-        ("Id", "int", "连段记录ID"),
-        ("NameCn", "string", "中文名"),
-        ("Desc", "string", "描述"),
-        ("HeroId", "int", "英雄ID"),
-        ("ComboIndex", "int", "连段序号(0起)"),
-        ("AttackId", "int", "攻击ID(AttackConfig.Id)"),
-    ]
-    rows = [
-        (1, "悟空普攻1", "普攻第一段", 1, 0, 1001),
-        (2, "悟空普攻2", "普攻第二段", 1, 1, 1002),
-        (3, "悟空普攻3", "普攻第三段", 1, 2, 1003),
-        (4, "悟空普攻4", "普攻第四段(击退收招)", 1, 3, 1004),
-    ]
-    new_table("HeroAttackConfig.xlsx", fields, rows)
+    # force_rows：修复 2026-09-27 表头与手工合并列错位时写坏的数据行（数值以 git HEAD 版本为准）
+    new_table("HeroConfig.xlsx", fields, rows, force_rows=True)
 
     # legacy BaseRoleProperies: max_exp_list + 5000+5000*(lv-19) beyond 19
     exp_list = [140, 160, 180, 200, 220, 300, 400, 500, 600, 700,
@@ -316,54 +348,58 @@ def build_monster():
         ("AttackDesire", "int", "攻击欲望 0-100(旧 attackDesire)"),
         ("BehitCalmTime", "float", "受击后僵直秒数(旧 behit_calmtime)"),
         ("AddExp", "int", "击杀给英雄的经验(旧 add_exp)"),
+        ("HurtSoundId", "Sound.SoundId", "受击语音(旧项目怪物无语音素材,填 None;M5 用)"),
+        ("DeathSoundId", "Sound.SoundId", "死亡语音(同上)"),
     ]
     rows = [
         (1, 1, "花果山猴子", "花果山小怪", "HuaguoshanMonkey", 5,
          60, 50, 80,
          0, 0, 0, 0, 0, 0, 0, 0,
-         0, 80, 300, 45, 70, 0, 1),
+         0, 80, 300, 45, 70, 0, 1,
+         "None", "None"),
     ]
-    new_table("MonsterConfig.xlsx", fields, rows)
-
-    fields = [
-        ("Id", "int", "关联记录ID"),
-        ("NameCn", "string", "中文名"),
-        ("Desc", "string", "描述"),
-        ("MonsterId", "int", "怪物ID"),
-        ("AttackId", "int", "攻击ID(AttackConfig.Id)"),
-        ("Weight", "int", "AI 选择该攻击的权重"),
-    ]
-    rows = [(1, "猴子普攻", "猴子唯一攻击", 1, 2001, 100)]
-    new_table("MonsterAttackConfig.xlsx", fields, rows)
+    # force_rows：移除表尾的音效列后必须重写数据行，否则旧单元格残留会造成列错位
+    new_table("MonsterConfig.xlsx", fields, rows, force_rows=True)
 
 
 def build_battle():
     # legacy keys: Role1.gd objattackDic / Monster_1.gd objattackDic
+    # 成对数值采用合并单列（用户整理后的形态）：一格写 "min,max"，由 bean sep 解析
     fields = [
         ("Id", "int", "攻击ID"),
         ("LegacyId", "string", "旧 objattackDic 键名"),
         ("NameCn", "string", "中文名"),
         ("Desc", "string", "描述"),
         ("Animation", "string", "播放的动画名"),
-        ("PowerScaleMin", "float", "攻击力倍率下限(乘英雄攻击)"),
-        ("PowerScaleMax", "float", "攻击力倍率上限(乘英雄攻击)"),
+        ("PowerScale", "vector2", "攻击力倍率范围(乘英雄攻击,X=下限,Y=上限,写法 1,1.2)"),
         ("FlatPower", "int", "固定攻击力(不与属性挂钩)"),
         ("DamageKind", "Battle.DamageKind", "伤害类型"),
-        ("KnockbackX", "float", "击退横向分量(旧 hurtBack[0])"),
-        ("KnockbackY", "float", "击退纵向分量(旧 hurtBack[1])"),
-        ("WsGainMin", "int", "命中获得无双值下限(旧 WSValue)"),
-        ("WsGainMax", "int", "命中获得无双值上限(旧 WSValue)"),
+        ("Knockback", "vector2", "击退(旧 hurtBack[0]/[1],X=横向,Y=纵向,写法 2,0)"),
+        ("WsGain", "vector2i", "命中获得无双值范围(旧 WSValue,X=下限,Y=上限,写法 3,5)"),
         ("HitProtect", "int", "受击保护累计值(旧 HitProtect)"),
         ("Interval", "float", "本段最短停留秒(动画不足时补足,即普攻之间的间隔)"),
+        ("SoundId", "Sound.SoundId", "起手音效(SoundConfig;None=无)"),
+        ("HitSoundId", "Sound.SoundId", "命中音效(打中目标时播,None=无;旧项目按攻击者选音)"),
+        ("OwnerId", "Entity.EntityId", "这招属于谁(None=通用招,将来多主体共享用)"),
+        ("ComboIndex", "int", "连段第几段(0起;同一 OwnerId 内连续,越大越靠后)"),
+        ("AiWeight", "int", "AI 选招权重(怪物 AI 用;英雄普攻填 0)"),
     ]
+    # 为什么"归属/连段顺序/AI 权重"写在攻击行上，而不是 HeroAttackConfig/MonsterAttackConfig 关联表：
+    #   关联表里每行唯一独有的信息只有"顺序"或"权重"，NameCn/Desc 与攻击行完全重复；
+    #   而归属、序号、权重本来描述的就是"这招被谁、怎么用"——属于攻击行的用法数据。
+    #   序号（而非 NextAttackId 指针）的好处：顺序在表里一眼可见、无入口歧义、无断链/成环风险。
+    #   出现"每链接独立数据"（如前置条件/取消窗口）或"多主体共享同一招且参数不同"时，才需要关联表。
+    # 音效接线以旧代码为准（add_music 的 method 轨道），不是文件名的字面意思：
+    # hit1→39、hit2→40、hit3→39、hit4→38（Role1.tscn method 轨道实测）
     rows = [
-        (1001, "hit1", "悟空普攻1", "普攻第一段", "attack_1", 1.0, 1.2, 0, "Physics", 2, 0, 3, 5, 0, 0.35),
-        (1002, "hit2", "悟空普攻2", "普攻第二段", "attack_2", 0.9, 1.1, 0, "Physics", 2, 0, 3, 5, 0, 0.35),
-        (1003, "hit3", "悟空普攻3", "普攻第三段", "attack_3", 1.0, 1.2, 0, "Physics", 2, 0, 3, 5, 0, 0.35),
-        (1004, "hit4", "悟空普攻4", "普攻第四段(击退收招)", "attack_4", 1.2, 1.4, 0, "Physics", 6, -5, 3, 5, 0, 0.35),
-        (2001, "hit1", "猴子普攻", "猴子唯一攻击", "attack_1", 0.0, 0.0, 10, "Physics", -3, -6, 0, 0, 10, 0.6),
+        (1001, "role1.hit1", "悟空普攻1", "普攻第一段", "attack_1", "1,1.2", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack1And3", "WukongImpact", "Wukong", 0, 0),
+        (1002, "role1.hit2", "悟空普攻2", "普攻第二段", "attack_2", "0.9,1.1", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack2", "WukongImpact", "Wukong", 1, 0),
+        (1003, "role1.hit3", "悟空普攻3", "普攻第三段", "attack_3", "1,1.2", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack1And3", "WukongImpact", "Wukong", 2, 0),
+        (1004, "role1.hit4", "悟空普攻4", "普攻第四段(击退收招)", "attack_4", "1.2,1.4", 0, "Physics", "6,-5", "3,5", 0, 0.35, "WukongAttack4", "WukongImpact", "Wukong", 3, 0),
+        (2001, "monster1.hit1", "猴子普攻", "猴子唯一攻击", "attack_1", "0,0", 10, "Physics", "-3,-6", "0,0", 10, 0.6, "None", "None", "HuaguoshanMonkey", 0, 100),
     ]
-    new_table("AttackConfig.xlsx", fields, rows)
+    # force_rows：修复 2026-09-27 表头与手工合并列错位时写坏的数据行
+    new_table("AttackConfig.xlsx", fields, rows, force_rows=True)
 
     # legacy constants: hero-as-defender K=250 (BaseHero.gd:703/707),
     # monster-as-defender K=100 (BaseMonster.gd:790/793),
@@ -457,6 +493,44 @@ def build_level():
     new_table("LevelSpawnConfig.xlsx", fields, rows)
 
 
+def build_sound():
+    """
+    音效资产表：SoundId 枚举 → 音频资源 + 播放组。**这是唯一的音频表**。
+
+    为什么有 Key 列：表内 Id 是枚举值（int），单看 `Id=4` 不知道是哪个音效；
+    Key 直接写枚举名（`WukongHurt`），读表/搜代码的人不用去翻 __enums__.xlsx。
+    Key 与枚举的一致性由建表脚本保证（同一份列表生成），不会被手改漂移。
+
+    为什么有 Group 列：**框架的统一入口就是 `GF.Sound.PlaySound(资源, 组名)`**
+    （GodotGameFrameworkCore/Sound/SoundComponent.cs:153），组名 = 启动时从
+    SoundGroupRes.tres 注册的 `Music` / `SFX` / `UI`（各自映射到 Godot 总线，
+    带独立的音量/静音/代理数）。所以这里直接存框架的组名，代码一句
+    `GF.Sound.PlaySound(cfg.Path, cfg.Group)` 就能播任意组的一次性声音，
+    不需要我们自己再搞枚举或路由 switch。合法值就是那三个（由校验工具把关）。
+
+    LegacyId 是旧项目文件名；注意旧文件名与实际用途不一致（如 40_Role1_hit1AndHit2
+    实际只被 hit2 使用），接线以 Role1.tscn method 轨道的 add_music 实测为准。
+    """
+    fields = [
+        ("Id", "int", "音效ID(与 SoundId 枚举值一致)"),
+        ("Key", "string", "枚举名(与 SoundId 一致,便于读表/搜索)"),
+        ("NameCn", "string", "中文名"),
+        ("Desc", "string", "描述"),
+        ("LegacyId", "string", "旧音频文件名"),
+        ("Group", "string", "框架声音组名(Music/SFX/UI,对应 SoundGroupRes)"),
+        ("Path", "string", "音频资源路径"),
+    ]
+    rows = [
+        (1, "WukongAttack2", "悟空挥棍2", "普攻第2段起手；旧 40_Role1_hit1AndHit2 实际只被 hit2 用", "40_Role1_hit1AndHit2.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_attack_2.mp3"),
+        (2, "WukongAttack1And3", "悟空挥棍1/3", "普攻1、3段共用起手", "39_Role1_hit3AndHit4.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_attack_1_3.mp3"),
+        (3, "WukongAttack4", "悟空挥棍4", "普攻第4段起手", "38_Role1_hit5.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_attack_4.mp3"),
+        (4, "WukongHurt", "悟空受击语音", "悟空自己挨打时的语音(按受害者选音,BaseHero.gd:592)", "49_Role1_beAttack.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_hurt.mp3"),
+        (5, "WukongDeath", "悟空死亡语音", "悟空死亡", "59_Role1_dead.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_death.mp3"),
+        (6, "WukongImpact", "悟空命中音", "悟空的棍打中东西的命中音(按攻击者选音,BaseMonster.gd:652)", "6_BeattackByRole1.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_hit_impact.mp3"),
+    ]
+    new_table("SoundConfig.xlsx", fields, rows, force_rows=True)
+
+
 if __name__ == "__main__":
     print("enums:")
     build_enums()
@@ -472,4 +546,7 @@ if __name__ == "__main__":
     build_battle()
     print("level:")
     build_level()
+    print("sound:")
+    build_sound()
     print("done.")
+

@@ -1,0 +1,161 @@
+[gd_resource type="SpriteFrames" load_steps=18 format=3]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_1.png" id="tex0"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_2.png" id="tex1"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_3.png" id="tex2"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_4.png" id="tex3"]
+
+[sub_resource type="AtlasTexture" id="Atlas_0"]
+atlas = ExtResource("tex0")
+region = Rect2(0, 0, 210, 206)
+
+[sub_resource type="AtlasTexture" id="Atlas_1"]
+atlas = ExtResource("tex0")
+region = Rect2(210, 0, 210, 206)
+
+[sub_resource type="AtlasTexture" id="Atlas_2"]
+atlas = ExtResource("tex0")
+region = Rect2(420, 0, 210, 206)
+
+[sub_resource type="AtlasTexture" id="Atlas_3"]
+atlas = ExtResource("tex0")
+region = Rect2(630, 0, 210, 206)
+
+[sub_resource type="AtlasTexture" id="Atlas_4"]
+atlas = ExtResource("tex0")
+region = Rect2(840, 0, 210, 206)
+
+[sub_resource type="AtlasTexture" id="Atlas_5"]
+atlas = ExtResource("tex1")
+region = Rect2(0, 0, 159, 54)
+
+[sub_resource type="AtlasTexture" id="Atlas_6"]
+atlas = ExtResource("tex1")
+region = Rect2(159, 0, 159, 54)
+
+[sub_resource type="AtlasTexture" id="Atlas_7"]
+atlas = ExtResource("tex2")
+region = Rect2(0, 0, 326, 66)
+
+[sub_resource type="AtlasTexture" id="Atlas_8"]
+atlas = ExtResource("tex2")
+region = Rect2(326, 0, 326, 66)
+
+[sub_resource type="AtlasTexture" id="Atlas_9"]
+atlas = ExtResource("tex2")
+region = Rect2(652, 0, 326, 66)
+
+[sub_resource type="AtlasTexture" id="Atlas_10"]
+atlas = ExtResource("tex2")
+region = Rect2(978, 0, 326, 66)
+
+[sub_resource type="AtlasTexture" id="Atlas_11"]
+atlas = ExtResource("tex3")
+region = Rect2(0, 0, 315, 82)
+
+[sub_resource type="AtlasTexture" id="Atlas_12"]
+atlas = ExtResource("tex3")
+region = Rect2(315, 0, 315, 82)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_4")
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": false,
+"name": &"attack_1",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_6")
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": false,
+"name": &"attack_2",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_7")
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": false,
+"name": &"attack_3",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_11")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_12")
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": false,
+"name": &"attack_4",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": false,
+"name": &"empty",
+"speed": 1.0
+}]

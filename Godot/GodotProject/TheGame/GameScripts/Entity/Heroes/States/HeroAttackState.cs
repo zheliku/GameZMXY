@@ -1,3 +1,4 @@
+using GameConfig.Sound;
 using GameFramework.Fsm;
 using Godot;
 using GodotGameFramework;
@@ -25,6 +26,7 @@ namespace GameLogic.Entity
 			HeroEntity hero = fsm.Owner;
 			hero.HorizontalControl = false;   // 出招期间不被输入改写横向速度，空中动量得以保留
 			hero.PlayAnim(hero.CurrentAttack?.Animation ?? ActorAnim.Idle);
+			hero.PlaySound(hero.CurrentAttack?.SoundId ?? SoundId.None);   // 旧项目在动画 t=0 的 method 轨道调 add_music
 			StopIfOnFloor(hero);
 
 			m_EnterTime = Time.GetTicksMsec() / 1000.0;

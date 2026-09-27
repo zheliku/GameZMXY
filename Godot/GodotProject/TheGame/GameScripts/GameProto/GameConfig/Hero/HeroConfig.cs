@@ -49,6 +49,8 @@ public sealed partial class HeroConfig : Luban.BeanBase
         JumpSpeed = _buf.ReadFloat();
         Gravity = _buf.ReadFloat();
         JumpCountMax = _buf.ReadInt();
+        HurtSoundId = (Sound.SoundId)_buf.ReadInt();
+        DeathSoundId = (Sound.SoundId)_buf.ReadInt();
     }
 
     public static HeroConfig DeserializeHeroConfig(ByteBuf _buf)
@@ -173,7 +175,7 @@ public sealed partial class HeroConfig : Luban.BeanBase
     /// </summary>
     public readonly float RunDoubleTapWindow;
     /// <summary>
-    /// 待机后隔多久随机播一次憨笑(秒,x=最短,y=最长)
+    /// 待机后隔多久随机播一次憨笑(秒,x=最短,y=最长,写法 6,12)
     /// </summary>
     public readonly Godot.Vector2 IdleEmoteDelay;
     /// <summary>
@@ -188,6 +190,14 @@ public sealed partial class HeroConfig : Luban.BeanBase
     /// 最多跳跃次数(含地面一段与空中段,旧 jump_count&lt;2 判据)
     /// </summary>
     public readonly int JumpCountMax;
+    /// <summary>
+    /// 受击语音(自己挨打时的声音,None=无;按受害者选音,BaseHero.gd:592)
+    /// </summary>
+    public readonly Sound.SoundId HurtSoundId;
+    /// <summary>
+    /// 死亡语音(None=无)
+    /// </summary>
+    public readonly Sound.SoundId DeathSoundId;
    
     public const int __ID__ = -1911300528;
     public override int GetTypeId() => __ID__;
@@ -232,6 +242,8 @@ public sealed partial class HeroConfig : Luban.BeanBase
         + "JumpSpeed:" + JumpSpeed + ","
         + "Gravity:" + Gravity + ","
         + "JumpCountMax:" + JumpCountMax + ","
+        + "HurtSoundId:" + HurtSoundId + ","
+        + "DeathSoundId:" + DeathSoundId + ","
         + "}";
     }
 }

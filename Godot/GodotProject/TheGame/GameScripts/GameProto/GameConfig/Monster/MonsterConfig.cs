@@ -40,6 +40,8 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         AttackDesire = _buf.ReadInt();
         BehitCalmTime = _buf.ReadFloat();
         AddExp = _buf.ReadInt();
+        HurtSoundId = (Sound.SoundId)_buf.ReadInt();
+        DeathSoundId = (Sound.SoundId)_buf.ReadInt();
     }
 
     public static MonsterConfig DeserializeMonsterConfig(ByteBuf _buf)
@@ -143,6 +145,14 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// 击杀给英雄的经验(旧 add_exp)
     /// </summary>
     public readonly int AddExp;
+    /// <summary>
+    /// 受击语音(旧项目怪物无语音素材,填 None;M5 用)
+    /// </summary>
+    public readonly Sound.SoundId HurtSoundId;
+    /// <summary>
+    /// 死亡语音(同上)
+    /// </summary>
+    public readonly Sound.SoundId DeathSoundId;
    
     public const int __ID__ = 129443944;
     public override int GetTypeId() => __ID__;
@@ -178,6 +188,8 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "AttackDesire:" + AttackDesire + ","
         + "BehitCalmTime:" + BehitCalmTime + ","
         + "AddExp:" + AddExp + ","
+        + "HurtSoundId:" + HurtSoundId + ","
+        + "DeathSoundId:" + DeathSoundId + ","
         + "}";
     }
 }

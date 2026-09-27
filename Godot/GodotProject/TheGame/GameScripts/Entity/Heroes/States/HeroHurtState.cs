@@ -1,3 +1,4 @@
+using GameConfig.Sound;
 using GameFramework.Fsm;
 using Godot;
 
@@ -14,6 +15,7 @@ namespace GameLogic.Entity
 			hero.HorizontalControl = false;
 			hero.Velocity = new Vector2(0, hero.Velocity.Y);
 			hero.PlayAnim(ActorAnim.Hurt);
+			hero.PlaySound(hero.Config.HurtSoundId);   // 受害者自己的受击语音（旧 BaseHero.gd:592 按 self 选音）
 		}
 
 		protected internal override void OnUpdate(IFsm<HeroEntity> fsm, float elapseSeconds, float realElapseSeconds)

@@ -10,29 +10,34 @@
 using Luban;
 
 
-namespace GameConfig.Monster
+namespace GameConfig.Sound
 {
-public sealed partial class MonsterAttackConfig : Luban.BeanBase
+public sealed partial class SoundConfig : Luban.BeanBase
 {
-    public MonsterAttackConfig(ByteBuf _buf) 
+    public SoundConfig(ByteBuf _buf) 
     {
         Id = _buf.ReadInt();
+        Key = _buf.ReadString();
         NameCn = _buf.ReadString();
         Desc = _buf.ReadString();
-        MonsterId = _buf.ReadInt();
-        AttackId = _buf.ReadInt();
-        Weight = _buf.ReadInt();
+        LegacyId = _buf.ReadString();
+        Group = _buf.ReadString();
+        Path = _buf.ReadString();
     }
 
-    public static MonsterAttackConfig DeserializeMonsterAttackConfig(ByteBuf _buf)
+    public static SoundConfig DeserializeSoundConfig(ByteBuf _buf)
     {
-        return new Monster.MonsterAttackConfig(_buf);
+        return new Sound.SoundConfig(_buf);
     }
 
     /// <summary>
-    /// 关联记录ID
+    /// 音效ID(与 SoundId 枚举值一致)
     /// </summary>
     public readonly int Id;
+    /// <summary>
+    /// 枚举名(与 SoundId 一致,便于读表/搜索)
+    /// </summary>
+    public readonly string Key;
     /// <summary>
     /// 中文名
     /// </summary>
@@ -42,19 +47,19 @@ public sealed partial class MonsterAttackConfig : Luban.BeanBase
     /// </summary>
     public readonly string Desc;
     /// <summary>
-    /// 怪物ID
+    /// 旧音频文件名
     /// </summary>
-    public readonly int MonsterId;
+    public readonly string LegacyId;
     /// <summary>
-    /// 攻击ID(AttackConfig.Id)
+    /// 框架声音组名(Music/SFX/UI,对应 SoundGroupRes)
     /// </summary>
-    public readonly int AttackId;
+    public readonly string Group;
     /// <summary>
-    /// AI 选择该攻击的权重
+    /// 音频资源路径
     /// </summary>
-    public readonly int Weight;
+    public readonly string Path;
    
-    public const int __ID__ = 598620240;
+    public const int __ID__ = 1536834194;
     public override int GetTypeId() => __ID__;
 
     public  void ResolveRef(Tables tables)
@@ -65,11 +70,12 @@ public sealed partial class MonsterAttackConfig : Luban.BeanBase
     {
         return "{ "
         + "Id:" + Id + ","
+        + "Key:" + Key + ","
         + "NameCn:" + NameCn + ","
         + "Desc:" + Desc + ","
-        + "MonsterId:" + MonsterId + ","
-        + "AttackId:" + AttackId + ","
-        + "Weight:" + Weight + ","
+        + "LegacyId:" + LegacyId + ","
+        + "Group:" + Group + ","
+        + "Path:" + Path + ","
         + "}";
     }
 }

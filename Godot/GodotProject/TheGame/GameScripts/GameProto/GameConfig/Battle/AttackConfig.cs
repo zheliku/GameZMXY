@@ -28,6 +28,11 @@ public sealed partial class AttackConfig : Luban.BeanBase
         WsGain = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
         HitProtect = _buf.ReadInt();
         Interval = _buf.ReadFloat();
+        SoundId = (Sound.SoundId)_buf.ReadInt();
+        HitSoundId = (Sound.SoundId)_buf.ReadInt();
+        OwnerId = (Entity.EntityId)_buf.ReadInt();
+        ComboIndex = _buf.ReadInt();
+        AiWeight = _buf.ReadInt();
     }
 
     public static AttackConfig DeserializeAttackConfig(ByteBuf _buf)
@@ -56,7 +61,7 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly string Animation;
     /// <summary>
-    /// 攻击力倍率范围(乘英雄攻击,X=下限,Y=上限)
+    /// 攻击力倍率范围(乘英雄攻击,X=下限,Y=上限,写法 1,1.2)
     /// </summary>
     public readonly Godot.Vector2 PowerScale;
     /// <summary>
@@ -68,11 +73,11 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly Battle.DamageKind DamageKind;
     /// <summary>
-    /// 击退(旧 hurtBack[0]/[1],X=横向,Y=纵向)
+    /// 击退(旧 hurtBack[0]/[1],X=横向,Y=纵向,写法 2,0)
     /// </summary>
     public readonly Godot.Vector2 Knockback;
     /// <summary>
-    /// 命中获得无双值范围(旧 WSValue,X=下限,Y=上限)
+    /// 命中获得无双值范围(旧 WSValue,X=下限,Y=上限,写法 3,5)
     /// </summary>
     public readonly Godot.Vector2I WsGain;
     /// <summary>
@@ -83,6 +88,26 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// 本段最短停留秒(动画不足时补足,即普攻之间的间隔)
     /// </summary>
     public readonly float Interval;
+    /// <summary>
+    /// 起手音效(SoundConfig;None=无)
+    /// </summary>
+    public readonly Sound.SoundId SoundId;
+    /// <summary>
+    /// 命中音效(打中目标时播,None=无;旧项目按攻击者选音)
+    /// </summary>
+    public readonly Sound.SoundId HitSoundId;
+    /// <summary>
+    /// 这招属于谁(None=通用招,将来多主体共享用)
+    /// </summary>
+    public readonly Entity.EntityId OwnerId;
+    /// <summary>
+    /// 连段第几段(0起;同一 OwnerId 内连续,越大越靠后)
+    /// </summary>
+    public readonly int ComboIndex;
+    /// <summary>
+    /// AI 选招权重(怪物 AI 用;英雄普攻填 0)
+    /// </summary>
+    public readonly int AiWeight;
    
     public const int __ID__ = 818309408;
     public override int GetTypeId() => __ID__;
@@ -106,6 +131,11 @@ public sealed partial class AttackConfig : Luban.BeanBase
         + "WsGain:" + WsGain + ","
         + "HitProtect:" + HitProtect + ","
         + "Interval:" + Interval + ","
+        + "SoundId:" + SoundId + ","
+        + "HitSoundId:" + HitSoundId + ","
+        + "OwnerId:" + OwnerId + ","
+        + "ComboIndex:" + ComboIndex + ","
+        + "AiWeight:" + AiWeight + ","
         + "}";
     }
 }

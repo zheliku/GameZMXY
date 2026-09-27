@@ -69,24 +69,6 @@ public partial class Tables
             m_TbHeroConfig.ResolveRef(this);
         }
     }
-    private Hero.TbHeroAttackConfig m_TbHeroAttackConfig;
-    public Hero.TbHeroAttackConfig TbHeroAttackConfig 
-    {
-        get
-        {
-            if (m_TbHeroAttackConfig == null)
-            {
-                m_TbHeroAttackConfig = new Hero.TbHeroAttackConfig(defaultLoader("hero_tbheroattackconfig"));
-                m_TbHeroAttackConfig.ResolveRef(this);
-            }
-            return m_TbHeroAttackConfig;
-        }
-        set
-        {
-            m_TbHeroAttackConfig = value;
-            m_TbHeroAttackConfig.ResolveRef(this);
-        }
-    }
     private Hero.TbHeroLevelConfig m_TbHeroLevelConfig;
     public Hero.TbHeroLevelConfig TbHeroLevelConfig 
     {
@@ -121,24 +103,6 @@ public partial class Tables
         {
             m_TbMonsterConfig = value;
             m_TbMonsterConfig.ResolveRef(this);
-        }
-    }
-    private Monster.TbMonsterAttackConfig m_TbMonsterAttackConfig;
-    public Monster.TbMonsterAttackConfig TbMonsterAttackConfig 
-    {
-        get
-        {
-            if (m_TbMonsterAttackConfig == null)
-            {
-                m_TbMonsterAttackConfig = new Monster.TbMonsterAttackConfig(defaultLoader("monster_tbmonsterattackconfig"));
-                m_TbMonsterAttackConfig.ResolveRef(this);
-            }
-            return m_TbMonsterAttackConfig;
-        }
-        set
-        {
-            m_TbMonsterAttackConfig = value;
-            m_TbMonsterAttackConfig.ResolveRef(this);
         }
     }
     private Battle.TbAttackConfig m_TbAttackConfig;
@@ -229,6 +193,24 @@ public partial class Tables
         {
             m_TbLevelSpawnConfig = value;
             m_TbLevelSpawnConfig.ResolveRef(this);
+        }
+    }
+    private Sound.TbSoundConfig m_TbSoundConfig;
+    public Sound.TbSoundConfig TbSoundConfig 
+    {
+        get
+        {
+            if (m_TbSoundConfig == null)
+            {
+                m_TbSoundConfig = new Sound.TbSoundConfig(defaultLoader("sound_tbsoundconfig"));
+                m_TbSoundConfig.ResolveRef(this);
+            }
+            return m_TbSoundConfig;
+        }
+        set
+        {
+            m_TbSoundConfig = value;
+            m_TbSoundConfig.ResolveRef(this);
         }
     }
 

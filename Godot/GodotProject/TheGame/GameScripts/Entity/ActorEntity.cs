@@ -1,6 +1,10 @@
+using GameConfig.Entity;
+using GameConfig.Sound;
 using GameFramework.Entity;
+using GameLogic.Config;
 using Godot;
 using GodotGameFramework;
+using GodotGameFramework.Sound;
 
 namespace GameLogic.Entity
 {
@@ -42,6 +46,23 @@ namespace GameLogic.Entity
 		/// <summary>武器动画层（场景子节点 m_Weapon，可为空）</summary>
 		[Export] private AnimatedSprite2D m_Weapon;
 
+		/// <summary>
+		/// 特效层容器（场景子节点 m_EffectRoot，可为空）：其子节点 m_Effect 是棍气等特效的
+		/// AnimatedSprite2D。
+		/// 为什么多一层容器：旧项目把特效的位移写在节点 offset 上、朝向镜像写在父节点
+		/// `Action.scale.x = ±1`（镜像会连带翻转 offset）。这里用同构做法——
+		/// m_EffectRoot 负责朝向（scale.x = ±1），m_Effect 的属性交给 AnimationPlayer 轨道驱动，
+		/// 两者互不覆盖。
+		/// </summary>
+		[Export] private Node2D m_EffectRoot;
+
+		/// <summary>
+		/// 特效层动画播放器（场景子节点 m_EffectPlayer，可为空）。
+		/// 旧项目用 AnimationPlayer 的四类属性轨道驱动特效层（animation/frame/offset/scale），
+		/// 迁移后轨道路径为 m_EffectRoot/m_Effect:*，数据见 wukong_effect_library.tres。
+		/// </summary>
+		[Export] private AnimationPlayer m_EffectPlayer;
+
 		/// <summary>受击判定区（场景子节点 m_HurtBox，可为空）</summary>
 		[Export] private Area2D m_HurtBox;
 
@@ -53,6 +74,35 @@ namespace GameLogic.Entity
 
 		/// <summary>武器动画层</summary>
 		public AnimatedSprite2D Weapon => m_Weapon;
+
+		/// <summary>特效层容器（负责朝向镜像）</summary>
+		public Node2D EffectRoot => m_EffectRoot;
+
+		/// <summary>特效层动画播放器</summary>
+		public AnimationPlayer EffectPlayer => m_EffectPlayer;
+
+		/// <summary>
+		/// 按 SoundId 播放一次性音效：查 SoundConfig 拿路径与组，直接走框架的统一入口
+		/// `GF.Sound.PlaySound(资源, 组名)`（SoundComponent.cs:153；组 = SoundGroupRes 注册的
+		/// Music/SFX/UI，各自映射到 Godot 总线，带音量/静音/代理池/优先级抢占）。
+		/// 代码里不出现资源路径（红线 5），路径与组都在表里。
+		/// </summary>
+		public void PlaySound(SoundId id)
+		{
+			if (id == SoundId.None)
+			{
+				return;
+			}
+
+			SoundConfig cfg = SoundConfigQuery.Get(id);
+			if (cfg == null)
+			{
+				Log.Error("[ActorEntity] SoundConfig 缺失行：SoundId={0}", id);
+				return;
+			}
+
+			GF.Sound.PlaySound(cfg.Path, cfg.Group);
+		}
 
 		/// <summary>受击判定区</summary>
 		public Area2D HurtBox => m_HurtBox;
@@ -144,14 +194,39 @@ namespace GameLogic.Entity
 		}
 
 		/// <summary>
-		/// 播放身体与武器两层动画（两层同名同步）。
+		/// 播放身体、武器、特效三层动画（三层同名同步）。
 		/// 动画名来自 SpriteFrames（M1 迁移产物），标准命名见 AGENTS 8.2。
 		/// </summary>
 		public void PlayAnim(string animName)
 		{
 			PlayAnimOn(m_Body, animName, Name);
 			PlayAnimOn(m_Weapon, animName, Name);
+			PlayEffectAnim(animName);
 		}
+
+		/// <summary>
+		/// 特效层播放（棍气等）：特效层只有攻击类动画（attack_1..4），
+		/// 其余动画名没有特效，落到空白动画 empty——与旧项目一致（旧项目把非攻击动画的
+		/// SpecialEffect 切到空白 "wait"）。
+		/// 用 AnimationPlayer 而非直接播 SpriteFrames：特效的 frame/offset/scale 是原项目
+		/// 用轨道手调的演出数据（含"末尾空白帧收招"），必须原样由轨道驱动。
+		/// </summary>
+		private void PlayEffectAnim(string animName)
+		{
+			if (m_EffectPlayer == null)
+			{
+				return;
+			}
+
+			StringName name = m_EffectPlayer.HasAnimation(animName) ? animName : EffectEmptyAnim;
+			if (!m_EffectPlayer.IsPlaying() || m_EffectPlayer.CurrentAnimation != name)
+			{
+				m_EffectPlayer.Play(name);
+			}
+		}
+
+		/// <summary>特效层的空白动画名（wukong_effect_library.tres 内置）</summary>
+		private const string EffectEmptyAnim = "empty";
 
 		private static void PlayAnimOn(AnimatedSprite2D layer, string animName, string entityName)
 		{
@@ -174,9 +249,11 @@ namespace GameLogic.Entity
 		}
 
 		/// <summary>
-		/// 当前动画是否已播完（身体与武器两层都算）。
+		/// 当前动画是否已播完（只看身体与武器两层）。
 		/// 用 IsPlaying() 而非信号回调：状态机每帧轮询本方法，状态切换与动画结束在同一帧内判定，
 		/// 避免 await 恢复时状态已被切走而产生的竞态。
+		/// 特效层不参与判定：它由独立的 AnimationPlayer 驱动（不是 IsPlaying 语义），
+		/// 且攻击特效与身体动画等长，不影响状态时长。
 		/// </summary>
 		public bool IsAnimFinished()
 		{
@@ -205,6 +282,14 @@ namespace GameLogic.Entity
 			if (m_Weapon != null)
 			{
 				m_Weapon.FlipH = mirror;
+			}
+
+			// 特效层用父容器负 scale 镜像（同旧项目 Action.scale.x = ±1）：
+			// 这样特效节点上由轨道写入的 offset 会一起镜像，特效不会跑到身体另一侧。
+			// 负 scale 只用在 Node2D 容器上（非物理节点），不影响碰撞。
+			if (m_EffectRoot != null)
+			{
+				m_EffectRoot.Scale = new Vector2(mirror ? -1 : 1, 1);
 			}
 
 			// 攻击判定盒随朝向镜像。
