@@ -30,7 +30,7 @@
 - 命中回调里不写公式：把双方属性快照 + `AttackData` 交给 `Battle/DamageCalculator` 结算，再 `GF.Event.Fire(DamageDealtEventArgs)`，飘字 UI 订阅该事件。
 - 攻击者识别：HitBox 上挂对宿主的显式引用（生成时注入）或 `IAttacker` 接口，禁止从碰撞对象爬父节点。
 - 伤害类型三种：`Physics / Magic / Real`（Real 不吃防御）。减伤曲线沿用旧项目 `x/(x+K)`，但 **K 值、命中/暴击基数进配置表**（`BattleConfig`），不写死；人怪两侧常数不一致的地方在 `DamageCalculator` 注释里显式说明。
-- 所有随机取值（暴击/闪避/掉落）用可注入的 `IRandom`，便于单测与复现。
+- 随机取值直接用 Godot 的 `GD.RandRange` / `RandomNumberGenerator`（不再要求可注入的 `IRandom`）。注意 `Battle/` 是纯 C# 层（红线 1）：那里的函数不自己取随机，暴击/闪避/掉落的随机数由 Godot 层调用方算好当参数传入。
 
 ## 通用编码要求
 

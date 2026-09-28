@@ -611,7 +611,7 @@ def build_wukong_effect():
         "name": "empty",
         "length": 0.1,
         "tracks": [
-            ("animation", "string", [(0.0, "empty")]),
+            (FX_NODE + ":animation", "string", [(0.0, "empty")]),
             ("frame", "int", [(0.0, 0)]),
             ("scale", "vector2", [(0.0, (1.0, 1.0))]),
         ],
@@ -719,7 +719,284 @@ def gen_wukong_effect():
     emit_fx_library(os.path.join(out_dir, "wukong_effect_library.tres"), ap_anims)
 
 
+
+
+# --------------------------------------------------------------------------
+# wukong 合并版 AnimationLibrary（AnimationPlayer 直驱身体/武器/特效三层 + 方法轨道）
+#
+# 目标形态（迁移决策 2026-09-28：角色动画迁 AnimationPlayer + AnimationTree）：
+#   - 身体/武器层由 AnimatedSprite2D 换成 Sprite2D(hframes=6,vframes=14)，
+#     帧号就是 6x14 网格的全局序号（与旧项目 Action/RoleBody:frame 完全同构）。
+#   - 每个动画包含：
+#       m_Body:frame / m_Weapon:frame   帧轨道（离散键，真实秒时序）
+#       m_EffectRoot/m_Effect:*         特效属性轨道（attack_N 有棍气；非攻击动画切空白 empty）
+#       "." 方法轨道                     旧 add_music 的等价物（时序取旧轨道，音源查 AttackConfig）
+#   - 消费方：Entitys/WukongEntity.tscn 的 m_AnimPlayer（libraries/=本文件），
+#     AnimationTree（wukong_animation_tree.tres）做嵌套状态机。
+# --------------------------------------------------------------------------
+
+WUKONG_LIB_OUT = "res://TheGame/Sprites/Characters/Heroes/wukong/wukong_anim_library.tres"
+
+BODY_NODE = "m_Body"
+WEAPON_NODE = "m_Weapon"
+
+# 旧 `.`（RolePlayer）方法轨道的处理表：hit1..4/death 的 add_music 迁为对应方法调用；
+# add_music 的 idx 参数不迁（红线 5：音源在 SoundConfig/AttackConfig，代码按当前动画名查表）。
+METHOD_TRACK_MAP = {
+    "attack_1": "OnAttackSwingSound",
+    "attack_2": "OnAttackSwingSound",
+    "attack_3": "OnAttackSwingSound",
+    "attack_4": "OnAttackSwingSound",
+    "death": "OnDeathVoice",
+}
+
+# 旧特效动画名 → 新特效动画名（wukong_effect_animations.tres 内的名字）
+FX_NAME_MAP = {"wait": "empty"}
+
+
+def _fx_tracks_generic(chunk, segs):
+    """取任意旧动画的 Action/SpecialEffect:* 属性轨道（不含 SpecialEffect2）。
+
+    animation 切换轨道的值按 WUKONG_FX_MAP / FX_NAME_MAP 改名；
+    目标特效动画不存在（技能类未迁）时返回 None 表示整组跳过。
+    """
+    tracks = []
+    for prop, kind, conv in (
+        ("animation", "string", "name"),
+        ("frame", "int", "int"),
+        ("offset", "vector2", "vec"),
+        ("scale", "vector2", "vec"),
+    ):
+        t, v = _track_kv(chunk, "Action/SpecialEffect:" + prop)
+        if t is None:
+            continue
+        if conv == "name":
+            names = re.findall(r'&"([^"]+)"', v)
+            if not names:
+                return None
+            old_fx = names[0]
+            new_fx = WUKONG_FX_MAP.get(old_fx, FX_NAME_MAP.get(old_fx))
+            if new_fx is None:
+                print(f"  [skip] {old_fx}: 特效动画未迁移，跳过该动画的特效轨道")
+                return None
+            tracks.append((FX_NODE + ":" + prop, kind, [(0.0, new_fx)]))
+        elif conv == "int":
+            frames = [int(x) for x in re.findall(r"-?\d+", v)]
+            tracks.append((FX_NODE + ":" + prop, kind, _real_keys(t, frames, segs, lead_value=0)))
+        else:
+            vals = [tuple(float(x) for x in m.group(1).split(","))
+                    for m in re.finditer(r"Vector2\(([^)]+)\)", v)]
+            tracks.append((FX_NODE + ":" + prop, kind, _real_keys(t, vals, segs)))
+    return tracks
+
+
+def _method_track(chunk, segs, new_name):
+    """旧 `.` 的 add_music 方法轨道 → 新方法轨道；无映射返回 None。
+
+    TRACK_SPLIT 按 keys 段切分，type/path 行不在片段内，所以先按 path 定位轨道号，
+    再截取该轨道的完整段（到下一条轨道为止）判断类型。
+    """
+    for m in re.finditer(r'tracks/(\d+)/path = NodePath\("\."\)', chunk):
+        n = m.group(1)
+        start = chunk.rfind(f"tracks/{n}/type", 0, m.start())
+        if start < 0:
+            continue
+        nxt = re.search(r"\ntracks/\d+/(?:type|path)", chunk[m.end():])
+        seg = chunk[start: m.end() + nxt.start()] if nxt else chunk[start:]
+        if 'type = "method"' not in seg:
+            continue
+        km = KEYS_RE.search(seg)
+        if not km:
+            continue
+        methods = re.findall(r'"method": &"([^"]+)"', km.group(1))
+        if not methods:
+            continue
+        if methods[0] != "add_music":
+            print(f"  [skip] {new_name}: 旧方法轨道 {methods[0]}() 不迁移")
+            return None
+        target = METHOD_TRACK_MAP.get(new_name)
+        if target is None:
+            print(f"  [skip] {new_name}: add_music 未建立映射（音效随技能系统迁移）")
+            return None
+        tm = TIMES_RE.search(km.group(1))
+        times = [float(t) for t in tm.group(1).split(",") if t.strip()] if tm else [0.0]
+        return ("", "method", [(_real_time(segs, t), target) for t in times[:1]])
+    return None
+
+
+def _frame_track_keys(frames):
+    """[(帧号, 时长)] → 帧轨道键位表（键=每帧起点，离散值=网格帧号）。"""
+    times, values = [], []
+    acc = 0.0
+    for idx, dur in frames:
+        times.append(acc)
+        values.append(idx)
+        acc += dur
+    return list(zip(times, values)), acc
+
+
+# 起跳动画的收尾姿势：旧项目 jump1/jump2 一播完就 play("drop")（BaseHero.gd:522/529），
+# 而上升时间（jump_power=-540 / gravity=-980 ≈ 0.55s）比动画长（jump1 0.458s、jump2 0.225s），
+# 所以旧游戏在上升后半段显示的是落姿。我们的状态机按物理切（not Rising），
+# 动画若不带落姿，jump/jump_2 播完会保持末帧到最高点（二段跳翻转末帧尤其明显）。
+# 这里给起跳动画补一个 drop 姿势的尾帧，让可见姿势与旧项目一致。
+JUMP_TAIL_ANIMS = ("jump", "jump_2")
+JUMP_TAIL_FRAME = 25      # Role1.tscn 里 drop 动画的身体帧
+JUMP_TAIL_HOLD = 0.05
+
+
+def build_wukong_library():
+    """合并版 AnimationLibrary：身体帧 + 武器帧 + 特效轨道 + 方法轨道。"""
+    src = os.path.join(LEGACY, "Scene", "Hero", "Role_1", "Role1.tscn")
+    with open(src, encoding="utf-8") as fh:
+        text = fh.read()
+    legacy = parse_animations(text, "Action/RoleBody:frame")
+
+    anims = []
+    for old, (new, loop) in WUKONG_MAP.items():
+        info = legacy.get(old)
+        if info is None:
+            continue
+        frames = _apply_override(new, info["frames"])
+        if new in JUMP_TAIL_ANIMS:
+            frames = frames + [(JUMP_TAIL_FRAME, JUMP_TAIL_HOLD)]
+        keys, length = _frame_track_keys(frames)
+
+        chunk = _anim_chunk(text, old)
+        segs = [(0.0, length, SPEED_SCALE)]
+        if chunk is not None:
+            len_m = LENGTH_RE.search(chunk)
+            segs = _scale_segments(chunk, float(len_m.group(1)) if len_m else 1.0)
+
+        tracks = [
+            (BODY_NODE + ":frame", "int", keys),
+            (WEAPON_NODE + ":frame", "int", keys),
+        ]
+
+        # 非攻击/特效未迁移的动画：统一"切空白 + 帧归零 + 位置归零 + scale=1"四件套。
+        # 轨道完备性：AnimationTree 切到不含某属性轨道的动画时会把该属性重置成垃圾值
+        # （实测 scale 被写成 1e-05，棍气不可见），所以每个动画都必须带全部特效属性轨道。
+        tracks.extend([
+            (FX_NODE + ":animation", "string", [(0.0, "empty")]),
+            (FX_NODE + ":frame", "int", [(0.0, 0)]),
+            (FX_NODE + ":offset", "vector2", [(0.0, (0.0, 0.0))]),
+            (FX_NODE + ":scale", "vector2", [(0.0, (1.0, 1.0))]),
+        ])
+
+        if chunk is not None:
+            fx = _fx_tracks_generic(chunk, segs)
+            if fx:
+                # 有真实特效数据的动画（attack_1..4）：以旧轨道覆盖默认空白值。
+                # 只替换"同一条特效轨"（完整路径精确匹配）。不得按属性后缀过滤：
+                # 曾写成 endswith(":" + prop)，替换 frame 轨时会把 m_Body:frame /
+                # m_Weapon:frame 一并删掉——idle1/run/jump/fall/hurt/attack_* 的
+                # 身体层因此冻结（walk/idle2/death/skill_* 走无特效分支才幸存）。
+                fx_paths = {t[0] for t in fx}
+                tracks = [t for t in tracks if t[0] not in fx_paths]
+                tracks.extend(fx)
+            mt = _method_track(chunk, segs, new)
+            if mt:
+                tracks.append(mt)
+
+
+        # 特效轨道时间可能超出身体帧跨度（旧 length 尾部收招段），取 max 作总长
+        for prop, _kind, tks in tracks:
+            if prop.endswith(":frame") and prop.startswith(FX_NODE):
+                if tks:
+                    length = max(length, max(t for t, _ in tks))
+
+        anims.append({"name": new, "loop": loop, "length": length, "tracks": tracks})
+
+    # 补充动画（walk/idle2，旧项目无轨道）：身体/武器帧 + 切空白特效
+    for name, idxs, loop in WUKONG_BODY_ONLY:
+        frames = _apply_override(name, [(i, DEFAULT_FRAME_DURATION) for i in idxs])
+        keys, length = _frame_track_keys(frames)
+        tracks = [
+            (BODY_NODE + ":frame", "int", keys),
+            (WEAPON_NODE + ":frame", "int", keys),
+            (FX_NODE + ":animation", "string", [(0.0, "empty")]),
+            (FX_NODE + ":frame", "int", [(0.0, 0)]),
+            (FX_NODE + ":offset", "vector2", [(0.0, (0.0, 0.0))]),
+            (FX_NODE + ":scale", "vector2", [(0.0, (1.0, 1.0))]),
+        ]
+        anims.append({"name": name, "loop": loop, "length": length, "tracks": tracks})
+
+    return anims
+
+
+def _existing_uid(path):
+    """读旧文件头里的 uid=。生成器覆盖 .tres 时必须保留：否则 Godot 打开编辑器时
+    会补写 uid（git 出现"凭空多出来"的改动），引用它的场景也只能按路径重新解析。"""
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as fh:
+        first = fh.readline()
+    m = re.search(r'uid="(uid://[^"]+)"', first)
+    return m.group(1) if m else None
+
+
+def emit_anim_library(out_path, anims):
+    """AnimationLibrary .tres：value/method 轨道混排，离散键（update=1）。"""
+    sub_lines = []
+    for a in anims:
+        sub_lines.append(f'[sub_resource type="Animation" id="{a["name"]}"]')
+        sub_lines.append(f'resource_name = "{a["name"]}"')
+        sub_lines.append(f'length = {a["length"]:.6f}')
+        sub_lines.append(f'loop_mode = {1 if a["loop"] else 0}')
+        for i, (prop, kind, keys) in enumerate(a["tracks"]):
+            is_method = kind == "method"
+            if is_method:
+                node_path = "."
+            else:
+                node_path = prop
+            sub_lines.append('tracks/%d/type = "%s"' % (i, "method" if is_method else "value"))
+            sub_lines.append("tracks/%d/imported = false" % i)
+            sub_lines.append("tracks/%d/enabled = true" % i)
+            sub_lines.append(f'tracks/{i}/path = NodePath("{node_path}")')
+            sub_lines.append("tracks/%d/interp = 1" % i)
+            sub_lines.append("tracks/%d/loop_wrap = true" % i)
+            sub_lines.append("tracks/%d/keys = {" % i)
+            sub_lines.append('"times": PackedFloat32Array(%s),' %
+                             ", ".join("%.6f" % t for t, _ in keys))
+            sub_lines.append('"transitions": PackedFloat32Array(%s),' %
+                             ", ".join(["1"] * len(keys)))
+            if is_method:
+                sub_lines.append('"values": [%s]' % ", ".join(
+                    '{\n"args": [],\n"method": &"%s"\n}' % m for _, m in keys))
+            else:
+                sub_lines.append('"update": 1,')
+                sub_lines.append('"values": [%s]' % ", ".join(_fmt_value(kind, v) for _, v in keys))
+            sub_lines.append("}")
+        sub_lines.append("")
+
+    data = ",\n".join(f'&"{a["name"]}": SubResource("{a["name"]}")' for a in anims)
+    uid = _existing_uid(out_path)
+    header = f'[gd_resource type="AnimationLibrary" load_steps={len(anims) + 1} format=3'
+    if uid:
+        header += f' uid="{uid}"'
+    header += "]"
+    lines = [header, ""]
+    lines += sub_lines
+    lines.append("[resource]")
+    lines.append("_data = {")
+    lines.append(data)
+    lines.append("}")
+    lines.append("")
+
+    with open(out_path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n".join(lines))
+    n_tracks = sum(len(a["tracks"]) for a in anims)
+    print(f"  wrote {os.path.basename(out_path)}  ({len(anims)} anims, {n_tracks} tracks)")
+
+
+def gen_wukong_library():
+    out = os.path.join(SPRITES, "Characters", "Heroes", "wukong", "wukong_anim_library.tres")
+    emit_anim_library(out, build_wukong_library())
+
+
 if __name__ == "__main__":
+    print("wukong merged library (AnimationPlayer direct-drive):")
+    gen_wukong_library()
     print("wukong body:")
     gen_wukong()
     print("wukong weapons:")

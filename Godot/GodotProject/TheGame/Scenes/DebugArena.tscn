@@ -5,6 +5,9 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
 size = Vector2(2400, 60)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ucit4"]
+size = Vector2(210, 84)
+
 [node name="DebugArena" type="Node2D" unique_id=306045275]
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1351119355]
@@ -22,3 +25,17 @@ collision_mask = 0
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Ground" unique_id=2042469663]
 position = Vector2(118, 74)
 shape = SubResource("RectangleShape2D_ground")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1261010653]
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1658921655]
+offset_left = 359.0
+offset_top = 260.0
+offset_right = 567.0
+offset_bottom = 341.0
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=877784564]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1628734844]
+position = Vector2(462, 300)
+shape = SubResource("RectangleShape2D_ucit4")

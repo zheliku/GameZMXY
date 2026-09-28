@@ -1,4 +1,4 @@
-[gd_resource type="SpriteFrames" format=3 uid="uid://boxumpj2pyv2s"]
+[gd_resource type="SpriteFrames" format=3 uid="uid://dpyaaem26n420"]
 
 [ext_resource type="Texture2D" uid="uid://cmku0nxku3j2w" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_1.png" id="tex0"]
 [ext_resource type="Texture2D" uid="uid://bt3qhx2oxmxnh" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_2.png" id="tex1"]

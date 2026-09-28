@@ -157,13 +157,35 @@ m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tre
 
 音效命名遗留：当前枚举/文件按**用途**命名（`WukongAttack2` 等），是旧项目"文件名与实际用途不一致"教训的延续——将来被其他角色复用时名字会失真。后续应改为按"声音本身"命名（如 `WukongSwingLight`），用途只留在绑定表。
 
+## 动画架构迁移（2026-09-28：AnimationPlayer + AnimationTree，角色属性驱动）
+
+角色动画从"AnimatedSprite2D + C# 状态机（GF.Fsm）"迁到"AnimationPlayer 属性轨道 + AnimationTree 表达式状态机"，时序/帧数据与旧项目 Role1.tscn 逐帧一致：
+
+- **身体/武器层**：AnimatedSprite2D + SpriteFrames → `Sprite2D(hframes=6, vframes=14)`，帧号即 6×14 网格全局序号——与旧 `Action/RoleBody:frame` / `Action/RoleEquipment:frame` 轨道完全同构，换装改为换 Texture。
+- **合并动画库** `Sprites/Characters/Heroes/wukong/wukong_anim_library.tres`（`gen_animations.py` 的 `gen_wukong_library()` 生成）：每个动画含身体帧轨道、武器帧轨道、特效四件套轨道、方法轨道。**轨道完备性**：每个被动画的属性（m_Body:frame / m_Weapon:frame / m_Effect 的 animation/frame/offset/scale）在库内**每个**动画都必须有轨道——AnimationTree 切到不含某属性轨道的动画时会把该属性重置成垃圾值（实测 scale 被写成 1e-05，棍气不可见）。攻击段特效轨道取旧数据（含末尾 null 收招帧、offset），非攻击段统一"切空白 empty + 帧归零 + scale=1"。方法轨道：旧 `add_music` → `OnAttackSwingSound`（hit1..4）/ `OnDeathVoice`（death），触发时机取旧轨道，音源按当前段查 `AttackConfig.SoundId` / `HeroConfig.DeathSoundId`。技能类特效未迁，随技能系统处理。
+- **状态机** `Entitys/wukong_animation_tree.tres`（`EditorScripts/build_wukong_anim_tree.gd` 生成）：**单层完全图**，13 个动画节点（idle1 / idle2 / walk / run / jump / jump_2 / fall / attack_1..4 / hurt / death）两两相连；**每条边 = 目标动画的完整成立条件**（`advance_expression`，只读角色属性），条件互斥——谁成立就停在谁那。图里没有布尔参数、没有脉冲、没有"状态序号"；"出招期间受击不打断"这类规则直接写在条件里（见生成器 `STATES` 表）。**为什么不用嵌套子机**：4.7.2 实测嵌套子机内部的转移比父级转移**晚一帧**生效（子机条件要等下一帧它自己被 process），攻击连段推进、走跑切换、跳→落会各慢 1 帧；单层图没有这个延迟（实测属性变化当帧动画即切换）。代价是图在编辑器里是一张密网——它是生成物，逻辑看生成器，不要手连。
+- **属性驱动分工**：
+  - C#（`HeroEntity`）只维护**角色属性**并暴露为 `[Export]` 字段（表达式事实面）：`MoveInput / Running / Airborne / Rising / JumpCount / AttackSegment / Hurt / Emoting / Dead`，每物理帧由 `SyncAnimFacts()` 刷新一次（其中 Airborne/Rising/Hurt/Emoting/Dead 由物理与计时器派生）；
+  - **基类 `ActorEntity` 不含任何角色事实**，只把 AnimationTree 的表达式基对象指向实体节点；角色属性、状态机资源都归角色自己；
+  - 各角色的状态机资源自行把属性映射到自己的动画名（wukong 专属动画名只出现在它的 .tres 与 `WukongEntity.IdleFlavorAnim` 覆写里）；新英雄 = 新动画库 + 新状态机资源 + 新 HeroConfig 行，基类零改动。
+- **本引擎版本（4.7.2）状态机实测语义**（探针 + 源码验证，写状态机必须遵守）：
+  1. 表达式边必须 `advance_mode=AUTO`；表达式在状态内**持续**评估，命中即转移；
+  2. 转移在触发它的那次 process 里**同帧**生效（单层图）；嵌套子机内部转移晚一帧（见上）；
+  3. 多条边同时为真时取 `priority` 最小者、同值取**后**加入者——本项目用互斥条件规避，不依赖它；
+  4. `advance_expression` 读 C# 成员必须走 `[Export]` 字段（普通属性引擎侧不可见），基对象由 `AnimationTree.AdvanceExpressionBaseNode` 指向实体；`and`/`or`/`not` 可用；表达式在 setter 里解析后缓存，逐帧评估不重复解析；
+  5. 表达式里引用**引擎自带**数据必须用引擎名：`is_on_floor()` / `velocity.y` 可用；写成 C# 风格的 `IsOnFloor()` / `Velocity` 会静默求值为 null（条件恒假）——迁移后"跑/跳动画失效"的根因就是它（`Ground → Air` 的 `not IsOnFloor()` 恒假，树永远出不了地面组）；本项目改用 C# 属性表达，图上不再出现引擎名；
+  6. 嵌套子机重入**不回到 Start**（沿用上次的内部状态）——组式写法必须自带"完全图自愈"，本项目直接不用嵌套。
+- **冒烟测试**（自动化验证动画链路，替代"看日志猜"）：`Godot4CSharp_console.exe --headless --path Godot/GodotProject --quit-after 1500 -- --smoketest`；`TheGame/MainPack/Scripts/Debug/SmokeTestDriver.cs`（autoload，仅 `--smoketest` 时启用）自动注入连打/双击跑/一段跳/二段跳输入，断言 AnimationTree **真正在播**的动画节点序列（attack_1..4 → run → jump → fall → jump_2 → idle1）、顺序，以及待机时特效层回到空白（动画 empty / 帧 0 / scale 1）；退出码 0=通过 1=失败（失败时打印完整观察序列）。已验证：连段、双击跑、一段跳、二段跳、落地回待机、憨笑、特效归位全部通过。
+- 旧 SpriteFrames 三件套（`wukong_animations.tres` / `wukong_weapon_*_animations.tres` / `wukong_effect_library.tres`）场景不再引用（effect 的 SpriteFrames 仍被 m_Effect 使用），保留作为帧序列数据参照。
+
 ## 复现方式
 
 ```
 python Tools/LegacyMigration/gen_animations.py
+S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --script res://EditorScripts/build_wukong_anim_tree.gd
 ```
 
-脚本读取旧项目 `.tscn`，输出到 `TheGame/Sprites/...`；旧项目保持只读，不写入任何文件。
+脚本读取旧项目 `.tscn`，输出到 `TheGame/Sprites/...` 与 `TheGame/Entitys/`；旧项目保持只读，不写入任何文件。
 
 ## 待办
 

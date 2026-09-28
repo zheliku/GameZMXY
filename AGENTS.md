@@ -115,7 +115,7 @@ TheGame/
 4. **禁止移植旧 GDScript**：旧项目禁止拷贝任何 `.gd`、`.uid`、`.tscn` 里的脚本逻辑到本仓库；禁止逐行翻译。理解设计后**用 C# 按新架构重写**。
 5. **禁止硬编码数值**：装备属性、怪物数值（HP/防御/AI 参数）、技能系数、掉落、刷怪波次、商品价格一律进 Luban 表。代码里出现数值字面量（除 0/1、向量方向等明显常量）即打回。
 6. **高频生灭对象必须池化**：子弹、伤害飘字、掉落物、打击特效走 `NodePool` / `GF.ObjectPool`；禁止裸 `Instantiate + QueueFree`。
-7. **状态必须是状态机**：实体行为用 `GF.Fsm`（`Fsm<T>` + 每状态一个类）。禁止用多个 bool 标志位拼状态（旧项目最大教训）、禁止巨型 `if/match` 分支链。
+7. **状态必须是状态机**：角色的行为/动画状态由**该角色自己的 AnimationTree 状态机**表达（状态按组收进子状态机：Ground / Air / Attack…，主图只留组间流转）——C# 只维护角色属性（输入/跑档/在空中/普攻段/受击…），状态机每条边用 `advance_expression` 判断属性（见 `GameScripts/Entity/AGENTS.md`）。禁止用多个 bool 标志位拼状态（旧项目最大教训）、禁止巨型 `if/match` 分支链。`GF.Fsm`（`Fsm<T>`）仍可用于纯逻辑状态机（如怪物 AI 决策），但不再用于动画选择。
 8. **禁止跨场景树穿透**：不写 `GetParent().GetParent()` 找对象、不跨模块 `GetNode` 长链。需要互相引用时按 §9 用事件，或由生成方显式注入。
 
 ## 5. C# 编码规范
@@ -153,7 +153,7 @@ TheGame/
 | `GF.Entity`     | 实体生灭与分组     | `docs/EntitySystem.md`                                  | `ShowEntity(EntityId.Xxx)` / `ShowEntityAsync<T>(EntityId.Xxx)` / `HideEntitySafe(...)`（`EntityExtension.cs`）     |
 | `GF.UI`         | 界面打开/关闭/层级 | `docs/UISystem.md`                                      | `OpenUIForm(UIFormId.Xxx)` / `OpenUIFormAsync<T>(UIFormId.Xxx)` / `CloseUIForm` / `HasUIForm`（`UIExtension.cs`） |
 | `GF.Event`      | 全局事件总线       | `docs/EventSystem.md`                                   | `Fire(...)` / 订阅取消订阅；参数走 `ReferencePool`，见 §9                                                              |
-| `GF.Fsm`        | 有限状态机         | `docs/FsmSystem.md`                                     | `CreateFsm(owner, states...)` / `DestroyFsm`；每状态一个类                                                              |
+| `GF.Fsm`        | 有限状态机（纯逻辑） | `docs/FsmSystem.md`                                     | `CreateFsm(owner, states...)` / `DestroyFsm`；每状态一个类；用于 AI 决策等纯逻辑，**动画状态机走角色自己的 AnimationTree**（红线 7） |
 | `GF.Sound`      | BGM/SFX/UI 音      | `docs/SoundSystem.md`                                   | `PlayBGM / PlaySFX / PlayUISound / StopBGM / SetVolume`（`SoundExtension.cs`）                                          |
 | `GF.Resource`   | 资源加载           | `docs/ResourceSystem.md`                                | 开发期`ResourceMode.Package` + `EnableEditorResLoad`                                                                    |
 | `GF.Scene`      | 场景切换           | `docs/SceneSystem.md`                                   | 关卡切换走这里，不裸调 Godot`ChangeScene`                                                                                 |
@@ -172,7 +172,7 @@ TheGame/
 
 - 实体直接继承 Godot 原生类型 + `IEntity`，无中间框架基类：`ActorEntity : CharacterBody2D, IEntity` → `HeroEntity → WukongEntity...` / `MonsterEntity`；`BulletEntity : Node2D, IEntity` 等。
 - 生命周期只实现框架接口：`OnInit / OnShow / OnUpdate / OnHide / OnRecycle`；生成/回收走 `GF.Entity.ShowEntity(EntityId.Xxx)` / `HideEntity`，`EntityId` 来自 Luban 枚举。
-- 状态机用 `GF.Fsm`，每状态一个类；判定与伤害结算规则见 `GameScripts/AGENTS.md`。
+- 状态与动画：C# 维护角色属性，动画状态机是角色自己的 `AnimationTree` 资源（主图分组：Ground/Air/Attack…，动画收在子机里；每条边 = 属性表达式）；纯逻辑状态机用 `GF.Fsm`。判定与伤害结算规则见 `GameScripts/AGENTS.md`。
 - 物理层 13 层名称固定（World / PlayerBody / EnemyBody / Platform / PlayerHitBox / EnemyHurtBox / EnemyHitBox / PlayerHurtBox / MagicWeapon / Trap / Item / Exit / Detector），代码统一 `LayerMask.LayerToMask2D("层名")`，禁止魔法数字。层表详见 `Entity/AGENTS.md`。
 
 ## 8. 数据与配置（概览）

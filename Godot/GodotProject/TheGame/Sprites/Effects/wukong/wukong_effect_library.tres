@@ -1,4 +1,4 @@
-[gd_resource type="AnimationLibrary" format=3 uid="uid://ugteapvcttyd"]
+[gd_resource type="AnimationLibrary" format=3 uid="uid://caniufo70ko3n"]
 
 [sub_resource type="Animation" id="attack_1"]
 resource_name = "attack_1"
@@ -166,7 +166,7 @@ length = 0.1
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("m_EffectRoot/m_Effect:animation")
+tracks/0/path = NodePath("m_EffectRoot/m_Effect:m_EffectRoot/m_Effect:animation")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {

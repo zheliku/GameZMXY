@@ -22,6 +22,7 @@ buses/default_bus_layout="uid://yynf8xejw6q4"
 [autoload]
 
 UpdateDriver="*uid://d1724h61rw1bg"
+SmokeTestDriver="*res://TheGame/MainPack/Scripts/Debug/SmokeTestDriver.cs"
 
 [display]
 

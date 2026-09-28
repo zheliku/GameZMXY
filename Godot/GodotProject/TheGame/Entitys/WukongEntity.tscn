@@ -1,10 +1,11 @@
-[gd_scene load_steps=9 format=3 uid="uid://b4ysr6hgrk40s"]
+[gd_scene format=3 uid="uid://b4ysr6hgrk40s"]
 
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Heroes/WukongEntity.cs" id="1_script"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_animations.tres" id="2_body"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_golden_cudgel_animations.tres" id="3_weapon"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/wukong/wukong_effect_animations.tres" id="4_effect"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Sprites/Effects/wukong/wukong_effect_library.tres" id="5_effectlib"]
+[ext_resource type="Script" uid="uid://bvsl2fblhl02l" path="res://TheGame/GameScripts/Entity/Heroes/WukongEntity.cs" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dqvt3y3m7q8nk" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body.png" id="2_body"]
+[ext_resource type="Texture2D" uid="uid://ckm8we4o3lv84" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_golden_cudgel.png" id="3_weapon"]
+[ext_resource type="SpriteFrames" uid="uid://dpyaaem26n420" path="res://TheGame/Sprites/Effects/wukong/wukong_effect_animations.tres" id="4_effect"]
+[ext_resource type="AnimationLibrary" uid="uid://dpdyqe7blxbqj" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_anim_library.tres" id="5_lib"]
+[ext_resource type="AnimationNodeStateMachine" uid="uid://d0mcjylp207r7" path="res://TheGame/Entitys/wukong_animation_tree.tres" id="6_tree"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
 radius = 20.0
@@ -17,60 +18,65 @@ height = 98.0
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
 size = Vector2(90, 90)
 
-[node name="WukongEntity" type="CharacterBody2D" node_paths=PackedStringArray("m_Body", "m_Weapon", "m_EffectRoot", "m_EffectPlayer", "m_HurtBox", "m_HitBox")]
+[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_Weapon", "m_Body", "m_EffectRoot", "m_AnimPlayer", "m_AnimTree", "m_HurtBox", "m_HitBox")]
 collision_layer = 2
 collision_mask = 9
 script = ExtResource("1_script")
-m_Body = NodePath("m_Body")
 m_Weapon = NodePath("m_Weapon")
+HeroId = 1
+m_Body = NodePath("m_Body")
 m_EffectRoot = NodePath("m_EffectRoot")
-m_EffectPlayer = NodePath("m_EffectPlayer")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AnimTree = NodePath("m_AnimTree")
 m_HurtBox = NodePath("m_HurtBox")
 m_HitBox = NodePath("m_HitBox")
 
-[node name="m_Body" type="AnimatedSprite2D" parent="."]
-sprite_frames = ExtResource("2_body")
-animation = &"idle1"
+[node name="m_Body" type="Sprite2D" parent="." unique_id=803944199]
+texture = ExtResource("2_body")
+hframes = 6
+vframes = 14
+frame = 30
 
-[node name="m_Weapon" type="AnimatedSprite2D" parent="."]
-sprite_frames = ExtResource("3_weapon")
-animation = &"idle1"
+[node name="m_Weapon" type="Sprite2D" parent="." unique_id=791742149]
+texture = ExtResource("3_weapon")
+hframes = 6
+vframes = 14
+frame = 30
 
-[node name="m_EffectRoot" type="Node2D" parent="."]
+[node name="m_EffectRoot" type="Node2D" parent="." unique_id=605119054]
 
-[node name="m_Effect" type="AnimatedSprite2D" parent="m_EffectRoot"]
-scale = Vector2(0.4, 0.4)
-offset = Vector2(10, -180)
+[node name="m_Effect" type="AnimatedSprite2D" parent="m_EffectRoot" unique_id=1116269950]
 sprite_frames = ExtResource("4_effect")
 animation = &"empty"
 
-[node name="m_EffectPlayer" type="AnimationPlayer" parent="."]
-root_node = NodePath("..")
-libraries = {
-"": ExtResource("5_effectlib")
-}
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=1514772424]
+libraries/ = ExtResource("5_lib")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="m_AnimTree" type="AnimationTree" parent="." unique_id=-1663920919]
+tree_root = ExtResource("6_tree")
+anim_player = NodePath("../m_AnimPlayer")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=889744088]
 position = Vector2(0, 25)
 shape = SubResource("CapsuleShape2D_body")
 debug_color = Color(1, 0, 0, 0.41960785)
 
-[node name="m_HurtBox" type="Area2D" parent="."]
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=648785980]
 collision_layer = 128
 collision_mask = 0
 monitoring = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1046093583]
 position = Vector2(0, 25)
 shape = SubResource("CapsuleShape2D_hurt")
 debug_color = Color(0, 1, 0, 0.41960785)
 
-[node name="m_HitBox" type="Area2D" parent="."]
+[node name="m_HitBox" type="Area2D" parent="." unique_id=1171906735]
 position = Vector2(55, 0)
 collision_layer = 16
 collision_mask = 32
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBox" unique_id=1293463805]
 shape = SubResource("RectangleShape2D_hit")
 disabled = true
