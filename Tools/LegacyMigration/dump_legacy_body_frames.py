@@ -18,7 +18,7 @@ import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-LEGACY = r"P:\Godot_Project\ZMXY_BHYH"
+LEGACY = r"P:\Godot-Project\ZMXY_BHYH"
 
 
 def main():

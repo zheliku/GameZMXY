@@ -1,8 +1,8 @@
 # LegacyAssetMap —— 旧项目素材迁移映射
 
-> 来源：`P:\Godot_Project\ZMXY_BHYH`（只读素材库，见 AGENTS.md §9）
+> 来源：`P:\Godot-Project\ZMXY_BHYH`（只读素材库，见 AGENTS.md §11.1）
 > 目标：`Godot/GodotProject/TheGame/`
-> 迁移原则见 AGENTS.md §8.2 / §9.3：仅搬当前阶段所需；战斗图集必须重命名为 `<entity>_<state>`（Collection Res 全树 basename 唯一，§8.4）。
+> 迁移原则见 AGENTS.md §11.2 / §11.3：仅搬当前阶段所需；战斗图集必须重命名为 `<entity>_<state>`（Collection Res 全树 basename 唯一，见 Sprites/AGENTS.md）。
 
 ## 当前阶段范围（M1）
 
@@ -27,7 +27,7 @@
 | `Art/HeroPicture/Role1SpecialEffect/Role1Hit3.png` | `Sprites/Effects/wukong/wukong_hit_3.png` | 326×66 × 4 帧；普攻 3 段棍气 |
 | `Art/HeroPicture/Role1SpecialEffect/Role1Hit4.png` | `Sprites/Effects/wukong/wukong_hit_4.png` | 315×82 × 2 帧；普攻 4 段棍气 |
 
-不拷贝旧 `.import`，由新工程重新导入（AGENTS.md §9.3.1）。
+不拷贝旧 `.import`，由新工程重新导入（AGENTS.md §11.3.1）。
 
 ## 武器层（换装测试用）
 
@@ -45,7 +45,7 @@
 
 ## 动画映射
 
-源数据为旧 `.tscn` 内嵌 `Animation`/`AtlasTexture`，由 `Tools/LegacyMigration/gen_animations.py` 一次性解析生成，禁止手工重切片（AGENTS.md §9.3.4）。
+源数据为旧 `.tscn` 内嵌 `Animation`/`AtlasTexture`，由 `Tools/LegacyMigration/gen_animations.py` 一次性解析生成，禁止手工重切片（AGENTS.md §11.3.4）。
 
 ### wukong —— `Sprites/Characters/Heroes/wukong/wukong_animations.tres`
 

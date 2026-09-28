@@ -1,9 +1,8 @@
-[gd_resource type="AnimationLibrary" load_steps=6 format=3]
+[gd_resource type="AnimationLibrary" format=3 uid="uid://ugteapvcttyd"]
 
 [sub_resource type="Animation" id="attack_1"]
 resource_name = "attack_1"
 length = 0.35
-loop_mode = 0
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -44,7 +43,6 @@ tracks/2/keys = {
 [sub_resource type="Animation" id="attack_2"]
 resource_name = "attack_2"
 length = 0.316667
-loop_mode = 0
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -85,7 +83,6 @@ tracks/2/keys = {
 [sub_resource type="Animation" id="attack_3"]
 resource_name = "attack_3"
 length = 0.316667
-loop_mode = 0
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -126,7 +123,6 @@ tracks/2/keys = {
 [sub_resource type="Animation" id="attack_4"]
 resource_name = "attack_4"
 length = 0.316667
-loop_mode = 0
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -167,7 +163,6 @@ tracks/2/keys = {
 [sub_resource type="Animation" id="empty"]
 resource_name = "empty"
 length = 0.1
-loop_mode = 0
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true

@@ -9,7 +9,7 @@ import sys
 
 import openpyxl
 
-DATAS = r"P:\Godot_Project\GameZMXY\Configs\GameConfig\Datas"
+DATAS = r"P:\Godot-Project\GameZMXY\Configs\GameConfig\Datas"
 
 
 def main():

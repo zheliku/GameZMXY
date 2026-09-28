@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One-time migration tool: legacy .tscn animation data -> standard SpriteFrames .tres.
 
-Source : P:/Godot_Project/ZMXY_BHYH (read-only legacy project)
+Source : P:/Godot-Project/ZMXY_BHYH (read-only legacy project)
 Target : TheGame/Sprites/.../<entity>_animations.tres
 
 Rationale: AGENTS.md 9.3 item 4 -- do not re-slice sheets by hand; derive frame
@@ -21,8 +21,8 @@ Run:  python Tools/LegacyMigration/gen_animations.py
 import os
 import re
 
-LEGACY = r"P:\Godot_Project\ZMXY_BHYH"
-SPRITES = r"P:\Godot_Project\GameZMXY\Godot\GodotProject\TheGame\Sprites"
+LEGACY = r"P:\Godot-Project\ZMXY_BHYH"
+SPRITES = r"P:\Godot-Project\GameZMXY\Godot\GodotProject\TheGame\Sprites"
 
 
 # --------------------------------------------------------------------------

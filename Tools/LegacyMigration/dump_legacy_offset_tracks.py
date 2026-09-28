@@ -12,7 +12,7 @@ import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-SRC = r"P:\Godot_Project\ZMXY_BHYH\Scene\Hero\Role_1\Role1.tscn"
+SRC = r"P:\Godot-Project\ZMXY_BHYH\Scene\Hero\Role_1\Role1.tscn"
 
 TRACK_SPLIT = re.compile(r'(?=tracks/\d+/type)')
 KEYS_RE = re.compile(r'tracks/\d+/keys = \{(.*?)\n\}', re.S)

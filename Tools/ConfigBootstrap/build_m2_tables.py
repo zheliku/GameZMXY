@@ -23,7 +23,7 @@ import os
 import openpyxl
 from openpyxl import Workbook
 
-ROOT = r"P:\Godot_Project\GameZMXY"
+ROOT = r"P:\Godot-Project\GameZMXY"
 DATAS = os.path.join(ROOT, "Configs", "GameConfig", "Datas")
 
 

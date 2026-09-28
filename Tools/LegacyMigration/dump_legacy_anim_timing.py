@@ -15,7 +15,7 @@ Usage: python Tools/LegacyMigration/dump_legacy_anim_timing.py
 import re
 import sys
 
-SRC = r"P:\Godot_Project\ZMXY_BHYH\Scene\Hero\Role_1\Role1.tscn"
+SRC = r"P:\Godot-Project\ZMXY_BHYH\Scene\Hero\Role_1\Role1.tscn"
 
 ANIM_SPLIT = re.compile(r'(?=\[sub_resource type="Animation")')
 TRACK_SPLIT = re.compile(r'(?=tracks/\d+/\w+)')
