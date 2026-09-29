@@ -27,14 +27,11 @@ public sealed partial class AttackConfig : Luban.BeanBase
         Knockback = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         WsGain = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
         HitProtect = _buf.ReadInt();
-        Interval = _buf.ReadFloat();
         SoundId = (Sound.SoundId)_buf.ReadInt();
         HitSoundId = (Sound.SoundId)_buf.ReadInt();
         OwnerId = (Entity.EntityId)_buf.ReadInt();
         ComboIndex = _buf.ReadInt();
         AiWeight = _buf.ReadInt();
-        HitBoxOffset = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
-        HitBoxSize = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
     }
 
     public static AttackConfig DeserializeAttackConfig(ByteBuf _buf)
@@ -87,10 +84,6 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly int HitProtect;
     /// <summary>
-    /// 本段最短停留秒(动画不足时补足,即普攻之间的间隔)
-    /// </summary>
-    public readonly float Interval;
-    /// <summary>
     /// 起手音效(SoundConfig;None=无)
     /// </summary>
     public readonly Sound.SoundId SoundId;
@@ -110,14 +103,6 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// AI 选招权重(怪物 AI 用;英雄普攻填 0)
     /// </summary>
     public readonly int AiWeight;
-    /// <summary>
-    /// 判定盒中心相对角色原点(X&gt;0=前方,Y 向下为正,写法 45,-17)
-    /// </summary>
-    public readonly Godot.Vector2 HitBoxOffset;
-    /// <summary>
-    /// 判定盒矩形尺寸 px(写法 152,186)
-    /// </summary>
-    public readonly Godot.Vector2 HitBoxSize;
    
     public const int __ID__ = 818309408;
     public override int GetTypeId() => __ID__;
@@ -140,14 +125,11 @@ public sealed partial class AttackConfig : Luban.BeanBase
         + "Knockback:" + Knockback + ","
         + "WsGain:" + WsGain + ","
         + "HitProtect:" + HitProtect + ","
-        + "Interval:" + Interval + ","
         + "SoundId:" + SoundId + ","
         + "HitSoundId:" + HitSoundId + ","
         + "OwnerId:" + OwnerId + ","
         + "ComboIndex:" + ComboIndex + ","
         + "AiWeight:" + AiWeight + ","
-        + "HitBoxOffset:" + HitBoxOffset + ","
-        + "HitBoxSize:" + HitBoxSize + ","
         + "}";
     }
 }

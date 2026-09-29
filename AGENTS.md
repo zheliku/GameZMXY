@@ -93,7 +93,7 @@ TheGame/
 │  ├─ Resources/*.tres              # 实例：EntityGroup/UIGroup/SoundGroup/UpdateSetting 由 GameFramework.tscn 注入；其余经 Collection Res 常量加载
 │  └─ Fonts/  Themes/  UI/          # 字体 / 主题 / 共享 UI 场景
 ├─ GameScripts/                     # 游戏代码（规范：GameScripts/AGENTS.md）
-│  ├─ Battle/                       # 【纯 C#，禁引 Godot】伤害公式、属性快照、Buff 结算（按需创建，M4）
+│  ├─ Battle/                       # 伤害公式、属性快照、Buff 结算（可单测；值类型可引 Godot，禁运行时引擎状态）
 │  ├─ Entity/                       # 实体 Logic：Heroes/ Monsters/ Bullets/ Items/（规范：Entity/AGENTS.md）
 │  ├─ UI/                           # 界面 Logic（按需创建）
 │  ├─ Event/                        # 自定义 GameEventArgs（按需创建）
@@ -120,7 +120,7 @@ TheGame/
 
 > 1–4、6、7 为**红线**，违反一律返工；〔强约定〕两条默认遵守，确需偏离时注释理由并在交付时报告。
 
-1. **双层分离**：`GameScripts/Battle/` 与 `Framework/GameFramework/` 禁止引用 `Godot.*`；伤害公式、属性计算、概率判定、Buff 结算全部放 `Battle/`（可单测、可跨引擎复用）。
+1. **双层分离**（2026-09-30 人类裁决：Battle/ 解除 Godot 禁引）：`Framework/GameFramework/` 仍禁止引用 `Godot.*`（纯 C# 框架层）；伤害公式、属性计算、概率判定、Buff 结算全部放 `Battle/`，**可单测**。`Battle/` 允许引用 Godot 的**纯值类型**（`Vector2`/`Mathf` 等，GodotSharp 内为纯 C# 实现），但禁止依赖运行时引擎状态（节点、场景树、`GD.*` 随机/单例）——保持确定性、脱离引擎可测。
 2. **门面调用**：框架能力只通过 `GF.组件`（§6）访问；禁止自造 Autoload、可变静态全局状态、上帝类，具名常量（`static readonly`）不受限。
 3. **生成代码禁止手改**：`GameProto/`（Ge 半类、Luban 产物、`ResourcesCollectionConstant.cs`）、`GameScripts/Config/ExternalTypeUtil.cs`、生成器 `.tres` 重新生成即覆盖。业务逻辑只写手写代码：UI 为 `*.Logic.cs`，实体为 `GameScripts/Entity/` 下的类。
 4. **禁止移植旧 GDScript**：不拷贝旧 `.gd`/`.uid`/`.tscn` 脚本逻辑、不逐行翻译，理解设计后用 C# 按新架构重写。

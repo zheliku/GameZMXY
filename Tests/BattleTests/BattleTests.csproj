@@ -1,10 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Battle/ 纯公式层单测（根规范 §4 红线 1 的收益：公式可脱离引擎回归）。
-    不引用 Godot 工程程序集，而是直接链编源文件：
+    Battle/ 公式层单测。
+    2026-09-30 裁决后 Battle/ 允许引用 Godot 纯值类型（Vector2/Mathf，GodotSharp 内为纯 C# 实现，
+    不需要引擎进程），所以这里直接引用引擎自带的 GodotSharp.dll（Release 版，与游戏工程同一份 4.7.2）
+    就能在纯控制台跑：链编源文件：
       * TheGame/GameScripts/Battle/*.cs           —— 被测代码
-      * GameProto/GameConfig/Battle/BattleConfig.cs 等 —— Luban 生成的战斗常数类（纯 C#，无 Godot 依赖）
+      * GameProto/GameConfig/Battle/BattleConfig.cs 等 —— Luban 生成的战斗常数类
       * Framework/.../Lib/LubanLib/*.cs           —— Luban 运行时（ByteBuf，反序列化 .bytes）
       * Framework/GameFramework/Base/ReferencePool —— AttackData 的池（GF 纯 C# 层）
     常数不手抄：测试运行时读取 DataTables/GameConfigs/battle_tbbattleconfig.bytes（与游戏同一份产物），
@@ -38,6 +40,13 @@
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.cs" Link="Linked\Framework\Utility.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.Text.cs" Link="Linked\Framework\Utility.Text.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.Text.ITextHelper.cs" Link="Linked\Framework\Utility.Text.ITextHelper.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="GodotSharp">
+      <HintPath>S:\Godot4\GodotSharp\Api\Release\GodotSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

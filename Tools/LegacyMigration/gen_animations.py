@@ -424,22 +424,37 @@ MONKEY_ANIMS = [
 ]
 
 
+# 猴子判定盒（同 WUKONG_HITBOX 的推导注释；猴子无武器层，直接沿用旧形状：
+# 旧 Hit.png 判定窗 f3..f5 视觉范围 x[-43.5,18.5]，旧圆 r25@(-24,-10) 相对根原点在其内）
+# 旧 hitbox 相对 BaseDamageBox(0,0) 在 (-24,-10)，旧贴图中心在根原点；新工程身体层在 (0,-13)，
+# 所以 Y = -10 - 13 = -23（修复 2026-09-30：此前表值 -10 少减了身体层偏移，判定盒偏低 13px）。
+MONKEY_HITBOX = {
+    "attack_1": (50.0, 50.0, 24.0, -23.0),
+}
+
+
 def build_monkey_library():
     anims = []
+    shape_res = {}
     for name, frames, loop, offset, hit_keys in MONKEY_ANIMS:
         keys, length = _frame_track_keys(frames)
+        hit_track = (HITBOX_TRACK, "bool", hit_keys)
         tracks = [
             (MONKEY_SPRITE_FRAMES, "string", [(0.0, name)]),
             (MONKEY_BODY + ":frame", "int", keys),
             (MONKEY_BODY + ":offset", "vector2", [(0.0, (float(offset[0]), float(offset[1])))]),
-            (HITBOX_TRACK, "bool", hit_keys),
+            hit_track,
         ]
+        # 判定盒几何（原生朝左坐标，容器 m_HitBoxRoot 负责镜像；猴子无武器层，沿用旧圆外接矩形）
+        tracks.extend(_hitbox_geo_tracks(name, hit_track, MONKEY_HITBOX, MONKEY_HITBOX_REST, shape_res))
+        # 出招生命周期（装填/收招）
+        tracks.extend(_attack_lifecycle_tracks(name, length, MONKEY_HITBOX))
         anims.append({"name": name, "loop": loop, "length": length, "tracks": tracks})
-    return anims
+    return anims, shape_res
 
 
 def gen_monkey_library():
-    emit_anim_library(MONKEY_LIB_OUT, build_monkey_library())
+    emit_anim_library(MONKEY_LIB_OUT, *build_monkey_library())
 
 
 # --------------------------------------------------------------------------
@@ -582,20 +597,129 @@ def _fmt_value(kind, value):
         return "Vector2(%g, %g)" % value
     if kind == "bool":
         return "true" if value else "false"
+    if kind == "shape":
+        return 'SubResource("%s")' % value
     return str(value)
 
 
 # --------------------------------------------------------------------------
-# 判定帧（M4）：旧 base_damagebox/HitBox/HitBox:disabled 轨道 → 新 m_HitBox/CollisionShape2D:disabled
+# 判定盒（M4，2026-09-30 审查定稿：几何与开关全部是动画值轨道关键帧，同旧项目）
 #
-# 旧项目靠"判定形状开关 + Area2D.area_entered 只在进入重叠时触发"实现一招一次命中，
-# 判定窗口就是 disabled=false 的那段时间。这里只迁移开关时序（内部时间按 speed_scale 换算真实秒）；
-# 形状尺寸/位置不走轨道——它们是可调数值，进了 AttackConfig.HitBoxOffset/HitBoxSize，出招时由 C# 写入。
-# 轨道完备性：库内**每个**动画都带这条轨道（非攻击动画恒 true），否则 AnimationTree 切到
-# 不含该轨道的动画时会把属性重置成未定义值。
+# 旧项目在每个攻击动画里 keyframe HitBox 的 shape/position/disabled（Role1.tscn 实测：
+# hit1 胶囊 r76/h186、hit2/3/4 矩形，全部是动画轨道数据），朝向由 base_damagebox.scale.x 翻转。
+# 新工程同构——**代码零几何**：
+#   * 场景结构 m_HitBoxRoot(朝向镜像容器，C# 只翻 scale.x) → m_HitBox(Area2D，**恒在原点**) →
+#     CollisionShape2D——与旧 base_damagebox/HitBox/HitBox 逐级对应；三条轨道全部写在
+#     形状节点上（同旧项目），容器负缩放会把形状节点的偏移一并镜像（冒烟实测命中正常；
+#     2026-09-30 曾疑其不镜像，实为调试碰撞体垫高沙袋的误诊）。
+#   * 库内每个动画带三条值轨道（轨道完备性：缺轨的属性在动画切换时会被写成垃圾值，
+#     等效于"reset 轨道"——状态机切到任何动画，首帧就写回安全值）：
+#       …CollisionShape2D:shape     换判定盒矩形（库内 RectangleShape2D 子资源；
+#                                  攻击动画在判定窗前一帧换本招矩形，其余动画第 0 帧写静止矩形）
+#       …CollisionShape2D:position  判定盒中心偏移（相对角色原点），原生朝左坐标（前方 = -X，容器负责镜像）
+#       …CollisionShape2D:disabled  判定窗开关（沿用旧 disabled 轨道时序，恒关的动画写 true）
+#   * 攻击动画另有 OnAttackBegin/OnAttackEnd **方法轨道**——只负责数值包（属性快照/连段推进），
+#     与几何无关。离开攻击动画时 AnimationMixer 自动还原值轨道捕获的初值，
+#     受击/死亡打断出招时判定盒随之复位（方法轨道没有这种自愈——几何必须走值轨道）。
+#
+# 几何推导（2026-09-30，对判定窗内各帧的**武器层**贴图做 alpha 像素包围盒）：
+#   * 纵向与后缘贴武器像素（各向外扩 10px）；
+#   * **前缘统一放长到 -130（追击线）**：连段期间每次命中受击方被击退 ~17px（60px/s × 0.28s
+#     硬直，旧 hurtBack × 30 同值），不放长的话第三段起就够不着——旧项目靠超大方形盒
+#     （前缘 121~175）吸收这个漂移让整套连段打满，这里用显式的"追击线"表达同一件事；
+#     末段 (6,-5) 击退 ~50px 是有意的收招间距（打完走步接近再开下一套，同原版循环）；
+#   * attack_3/4 是旋斩，并集含身后来向帧；attack_4 的正向帧 f55 在判定窗开启**之前**
+#     （旧窗 0.067-0.2 只覆盖身后段），几何并把它计入——否则正面打不到人；
+#   * 坐标 = 原生朝左（前方 = -X）；Y 相对身体层原点（悟空 m_Body 在根原点）。
+# 武器层像素实测（native 朝左）：
+#   attack_1  f43 x[-80,12]y[-24,70] + f44 x[-86,38]y[34,48]  → 前缘-130 后缘48 → 178x114 @ (-41,23)
+#   attack_2  f38..40 x[-94,32]y[36,45]                       → 前缘-130 后缘42 → 172x43 @ (-44,40.5)
+#   attack_3  f49/f51/f52 x[-94,93]y[-4,51]                   → 前缘-130 后缘103 → 233x75 @ (-13.5,23.5)
+#   attack_4  f55..f59 x[-93,93]y[-26,50]                     → 前缘-130 后缘103 → 233x96 @ (-13.5,12)
+# 猴子沿用旧圆 r25@(-24,-10)（相对旧贴图中心在根原点；新身体层在 (0,-13) → Y=-23，
+# 修复：此前表值 -10 漏减身体层偏移，判定盒偏低 13px）。静止值 = 场景 .tscn 默认（原生坐标）。
 # --------------------------------------------------------------------------
 LEGACY_HITBOX_TRACK = "base_damagebox/HitBox/HitBox:disabled"
-HITBOX_TRACK = "m_HitBox/CollisionShape2D:disabled"
+HITBOX_TRACK = "m_HitBoxRoot/m_HitBox/CollisionShape2D:disabled"
+HITBOX_SHAPE_TRACK = "m_HitBoxRoot/m_HitBox/CollisionShape2D:shape"
+HITBOX_POS_TRACK = "m_HitBoxRoot/m_HitBox/CollisionShape2D:position"
+
+# 方法回调比"动画末帧"早一帧：末帧前必收招（工程常数，非玩法数值，根规范 §4.5）。
+METHOD_PRE_BEAT = 1.0 / 60.0
+
+# 追击线：判定盒前缘（原生 X，负 = 前方）。
+HITBOX_CHASE_X = -130.0
+
+WUKONG_HITBOX = {
+    "attack_1": {"size": (178.0, 114.0), "pos": (-41.0, 23.0)},
+    "attack_2": {"size": (172.0, 43.0), "pos": (-44.0, 40.5)},
+    "attack_3": {"size": (233.0, 75.0), "pos": (-13.5, 23.5)},
+    "attack_4": {"size": (233.0, 96.0), "pos": (-13.5, 12.0)},
+}
+WUKONG_HITBOX_REST = {"size": (90.0, 90.0), "pos": (-55.0, 0.0)}     # 场景静止值（原生坐标）
+
+MONKEY_HITBOX = {
+    "attack_1": {"size": (50.0, 50.0), "pos": (-24.0, -23.0)},
+}
+MONKEY_HITBOX_REST = {"size": (50.0, 50.0), "pos": (-24.0, -23.0)}    # 场景静止值
+
+
+def _hitbox_geo_tracks(name, hit_track, geometry, rest, shape_res):
+    """shape/position 两条值轨道；shape_res[id]=size 由 emit 阶段声明为库内子资源。
+
+    攻击动画在判定窗前一帧换几何（保证先有几何后开判定）；其余动画第 0 帧写静止值。
+    """
+    geo = geometry.get(name, rest)
+    if name in geometry and hit_track is not None:
+        window_start = next((t for t, v in hit_track[2] if not v), None)
+        at = max(0.0, (window_start if window_start is not None else 0.0) - METHOD_PRE_BEAT)
+    else:
+        at = 0.0
+    sid = "hitbox_%s" % (name if name in geometry else "rest")
+    shape_res[sid] = geo["size"]
+    return [
+        (HITBOX_SHAPE_TRACK, "shape", [(at, sid)]),
+        (HITBOX_POS_TRACK, "vector2", [(at, geo["pos"])]),
+    ]
+
+
+def _attack_lifecycle_tracks(name, length, geometry):
+    """出招生命周期方法轨道：装填/收招（只管数值包，几何在值轨道上）。非攻击动画返回 []。"""
+    if name not in geometry:
+        return []
+    return [
+        ("", "method", [(0.0, "OnAttackBegin", [])]),
+        ("", "method", [(max(0.0, length - METHOD_PRE_BEAT), "OnAttackEnd", [])]),
+    ]
+
+
+def _append_reset_animation(anims, shape_res, hero):
+    """追加 RESET（默认值动画，运行时不播；编辑器重置/停止预览时恢复默认姿势用，
+    同旧项目 Role1.tscn 的 RESET 子资源 278：length=0.001、写各属性默认值）。
+    写与常规动画同集合的安全默认值；猴子的 shape 恒不写（见 _hitbox_geo_tracks 注释）。
+    """
+    if hero:
+        tracks = [
+            (BODY_NODE + ":frame", "int", [(0.0, 0)]),
+            (WEAPON_NODE + ":frame", "int", [(0.0, 0)]),
+            (FX_NODE + ":animation", "string", [(0.0, "empty")]),
+            (FX_NODE + ":frame", "int", [(0.0, 0)]),
+            (FX_NODE + ":offset", "vector2", [(0.0, (0.0, 0.0))]),
+            (FX_NODE + ":scale", "vector2", [(0.0, (1.0, 1.0))]),
+            (HITBOX_TRACK, "bool", [(0.0, True)]),
+            (HITBOX_SHAPE_TRACK, "shape", [(0.0, "hitbox_rest")]),
+            (HITBOX_POS_TRACK, "vector2", [(0.0, WUKONG_HITBOX_REST["pos"])]),
+        ]
+        shape_res["hitbox_rest"] = WUKONG_HITBOX_REST["size"]
+    else:
+        tracks = [
+            (MONKEY_SPRITE_FRAMES, "string", [(0.0, "idle")]),
+            (MONKEY_BODY + ":frame", "int", [(0.0, 0)]),
+            (MONKEY_BODY + ":offset", "vector2", [(0.0, (4.0, 0.0))]),
+            (HITBOX_TRACK, "bool", [(0.0, True)]),
+            (HITBOX_POS_TRACK, "vector2", [(0.0, MONKEY_HITBOX_REST["pos"])]),
+        ]
+    anims.append({"name": "RESET", "loop": False, "length": 0.001, "tracks": tracks})
 
 
 def _hitbox_track(chunk, segs):
@@ -792,10 +916,11 @@ def emit_fx_library(out_path, anims):
 
 
 def gen_wukong_effect():
-    sf_anims, ap_anims = build_wukong_effect()
+    # 只产出被 m_Effect 引用的 SpriteFrames；effect_library（AnimationPlayer 直驱版）零引用，
+    # 2026-09-30 随帧序列参照文件一并删除、停止产出。
+    sf_anims, _ = build_wukong_effect()
     out_dir = os.path.join(SPRITES, "Effects", "wukong")
     emit_fx_spriteframes(os.path.join(out_dir, "wukong_effect_animations.tres"), sf_anims)
-    emit_fx_library(os.path.join(out_dir, "wukong_effect_library.tres"), ap_anims)
 
 
 
@@ -923,15 +1048,25 @@ JUMP_TAIL_ANIMS = ("jump", "jump_2")
 JUMP_TAIL_FRAME = 25      # Role1.tscn 里 drop 动画的身体帧
 JUMP_TAIL_HOLD = 0.05
 
+# 收招延长（秒，动画侧节奏修正，同 JUMP_TAIL 一类）：attack_4 补 5 帧（0.0833s）。
+# 旧 do_normalhit_4 起手时 Interv=2（0.2s 计时器两拍 → 从起手算 0.4s 内不允许下一招），
+# 而动画只有 0.3167s：旧的 83ms 锁在动画结束后仍生效。这里直接把动画补长 83ms（末帧保持），
+# 让"动画时长 = 出招节奏"的原则继续成立（不进表、不加代码门，2026-09-30 裁决）。
+WUKONG_RECOVERY_EXTRA = {"attack_4": 5.0 / 60.0}
+
 
 def build_wukong_library():
-    """合并版 AnimationLibrary：身体帧 + 武器帧 + 特效轨道 + 方法轨道。"""
+    """合并版 AnimationLibrary：身体帧 + 武器帧 + 特效轨道 + 判定盒值轨道 + 方法轨道。
+
+    返回 (anims, shape_res)：shape_res 是判定盒子资源 id → 尺寸（emit 时声明进库文件）。
+    """
     src = os.path.join(LEGACY, "Scene", "Hero", "Role_1", "Role1.tscn")
     with open(src, encoding="utf-8") as fh:
         text = fh.read()
     legacy = parse_animations(text, "Action/RoleBody:frame")
 
     anims = []
+    shape_res = {}
     for old, (new, loop) in WUKONG_MAP.items():
         info = legacy.get(old)
         if info is None:
@@ -977,8 +1112,11 @@ def build_wukong_library():
             if mt:
                 tracks.append(mt)
 
-        # 判定帧：只有普攻段迁移旧开关时序；其余动画恒关（技能判定随技能系统迁移）
-        tracks.append(_hitbox_track(chunk if new.startswith("attack_") else None, segs))
+        # 判定盒三条值轨道（开关/形状/位置）：只有普攻段迁移旧开关时序；
+        # 其余动画恒关 + 静止几何（技能判定随技能系统迁移）
+        hit_track = _hitbox_track(chunk if new.startswith("attack_") else None, segs)
+        tracks.append(hit_track)
+        tracks.extend(_hitbox_geo_tracks(new, hit_track, WUKONG_HITBOX, WUKONG_HITBOX_REST, shape_res))
 
         # 特效轨道时间可能超出身体帧跨度（旧 length 尾部收招段），取 max 作总长
         for prop, _kind, tks in tracks:
@@ -986,12 +1124,19 @@ def build_wukong_library():
                 if tks:
                     length = max(length, max(t for t, _ in tks))
 
+        # 动画侧收招延长（见 WUKONG_RECOVERY_EXTRA 注释）：只加总长，帧键不动，末帧保持自动覆盖
+        length += WUKONG_RECOVERY_EXTRA.get(new, 0.0)
+
+        # 出招生命周期（装填/收招，只管数值包）
+        tracks.extend(_attack_lifecycle_tracks(new, length, WUKONG_HITBOX))
+
         anims.append({"name": new, "loop": loop, "length": length, "tracks": tracks})
 
-    # 补充动画（walk/idle2，旧项目无轨道）：身体/武器帧 + 切空白特效
+    # 补充动画（walk/idle2，旧项目无轨道）：身体/武器帧 + 切空白特效 + 判定盒静止值
     for name, idxs, loop in WUKONG_BODY_ONLY:
         frames = _apply_override(name, [(i, DEFAULT_FRAME_DURATION) for i in idxs])
         keys, length = _frame_track_keys(frames)
+        hit_track = _hitbox_track(None, None)
         tracks = [
             (BODY_NODE + ":frame", "int", keys),
             (WEAPON_NODE + ":frame", "int", keys),
@@ -999,11 +1144,13 @@ def build_wukong_library():
             (FX_NODE + ":frame", "int", [(0.0, 0)]),
             (FX_NODE + ":offset", "vector2", [(0.0, (0.0, 0.0))]),
             (FX_NODE + ":scale", "vector2", [(0.0, (1.0, 1.0))]),
-            _hitbox_track(None, None),
+            hit_track,
         ]
+        tracks.extend(_hitbox_geo_tracks(name, hit_track, WUKONG_HITBOX, WUKONG_HITBOX_REST, shape_res))
         anims.append({"name": name, "loop": loop, "length": length, "tracks": tracks})
 
-    return anims
+    _append_reset_animation(anims, shape_res, hero=True)
+    return anims, shape_res
 
 
 def _existing_uid(path):
@@ -1017,9 +1164,17 @@ def _existing_uid(path):
     return m.group(1) if m else None
 
 
-def emit_anim_library(out_path, anims):
-    """AnimationLibrary .tres：value/method 轨道混排，离散键（update=1）。"""
+def emit_anim_library(out_path, anims, shape_res=None):
+    """AnimationLibrary .tres：value/method 轨道混排，离散键（update=1）。
+
+    shape_res: 判定盒 RectangleShape2D 子资源 id → 尺寸（shape 轨道引用它们）。
+    """
+    shape_res = shape_res or {}
     sub_lines = []
+    for sid, size in shape_res.items():
+        sub_lines.append(f'[sub_resource type="RectangleShape2D" id="{sid}"]')
+        sub_lines.append("size = Vector2(%g, %g)" % size)
+        sub_lines.append("")
     for a in anims:
         sub_lines.append(f'[sub_resource type="Animation" id="{a["name"]}"]')
         sub_lines.append(f'resource_name = "{a["name"]}"')
@@ -1039,12 +1194,15 @@ def emit_anim_library(out_path, anims):
             sub_lines.append("tracks/%d/loop_wrap = true" % i)
             sub_lines.append("tracks/%d/keys = {" % i)
             sub_lines.append('"times": PackedFloat32Array(%s),' %
-                             ", ".join("%.6f" % t for t, _ in keys))
+                             ", ".join("%.6f" % key[0] for key in keys))
             sub_lines.append('"transitions": PackedFloat32Array(%s),' %
                              ", ".join(["1"] * len(keys)))
             if is_method:
-                sub_lines.append('"values": [%s]' % ", ".join(
-                    '{\n"args": [],\n"method": &"%s"\n}' % m for _, m in keys))
+                def _method_value(key):
+                    args = key[2] if len(key) > 2 else []
+                    args_s = ", ".join(repr(a) for a in args)
+                    return '{\n"args": [%s],\n"method": &"%s"\n}' % (args_s, key[1])
+                sub_lines.append('"values": [%s]' % ", ".join(_method_value(k) for k in keys))
             else:
                 sub_lines.append('"update": 1,')
                 sub_lines.append('"values": [%s]' % ", ".join(_fmt_value(kind, v) for _, v in keys))
@@ -1053,7 +1211,7 @@ def emit_anim_library(out_path, anims):
 
     data = ",\n".join(f'&"{a["name"]}": SubResource("{a["name"]}")' for a in anims)
     uid = _existing_uid(out_path)
-    header = f'[gd_resource type="AnimationLibrary" load_steps={len(anims) + 1} format=3'
+    header = f'[gd_resource type="AnimationLibrary" load_steps={len(anims) + len(shape_res) + 1} format=3'
     if uid:
         header += f' uid="{uid}"'
     header += "]"
@@ -1073,16 +1231,16 @@ def emit_anim_library(out_path, anims):
 
 def gen_wukong_library():
     out = os.path.join(SPRITES, "Characters", "Heroes", "wukong", "wukong_anim_library.tres")
-    emit_anim_library(out, build_wukong_library())
+    anims, shape_res = build_wukong_library()
+    emit_anim_library(out, anims, shape_res)
 
 
 if __name__ == "__main__":
     print("wukong merged library (AnimationPlayer direct-drive):")
     gen_wukong_library()
-    print("wukong body:")
-    gen_wukong()
-    print("wukong weapons:")
-    gen_wukong_weapons()
+    # 2026-09-30：零引用的帧序列参照文件（wukong_animations.tres / wukong_weapon_*_animations.tres /
+    # wukong_effect_library.tres）已删除，对应 gen_wukong / gen_wukong_weapons 步骤停用；
+    # 帧数据现由 wukong_anim_library.tres 的帧轨道承载（gen_wukong_library）。
     print("wukong effect (棍气):")
     gen_wukong_effect()
     print("huaguoshan_monkey:")

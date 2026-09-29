@@ -229,7 +229,7 @@ public partial class SmokeTestDriver : Node
 	/// </summary>
 	private void HurtHeroOnce()
 	{
-		AttackData attack = AttackData.Create(0, default, 1f, DamageKind.Real, System.Numerics.Vector2.Zero, -1, 0, 0,
+		AttackData attack = AttackData.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0, 0,
 			SoundId.None);
 		m_Hero.ReceiveHit(attack, 0);
 		ReferencePool.Release(attack);
@@ -303,11 +303,12 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
-	/// <summary>角色属性快照（HeroEntity 的表达式事实面），用于日志与调试。</summary>
+	/// <summary>角色属性快照（HeroEntity 的事实面），用于日志与调试。</summary>
 	private string Facts()
 	{
-		return $"move={m_Hero.MoveInput} run={m_Hero.Running} air={m_Hero.Airborne} rise={m_Hero.Rising} "
-			+ $"jump={m_Hero.JumpCount} seg={m_Hero.AttackSegment} hurt={m_Hero.Hurt} emote={m_Hero.Emoting} dead={m_Hero.Dead}";
+		return $"move={m_Hero.MoveInput} run={m_Hero.Running} jump={m_Hero.JumpCount} seg={m_Hero.AttackSegment} "
+			+ $"hurt={m_Hero.Hurt} emote={m_Hero.Emoting} dead={m_Hero.Dead} "
+			+ $"air={m_Hero.Airborne} rise={m_Hero.Rising}";
 	}
 
 	private void Finish()
@@ -472,7 +473,7 @@ public partial class SmokeTestDriver : Node
 		}
 
 		int expectedHp = Mathf.Max(0, m_Monster.MaxHp - total);
-		if (m_Monster.Hp != expectedHp && !m_Monster.IsDead)
+		if (m_Monster.Hp != expectedHp && !m_Monster.Dead)
 		{
 			failures.Add($"猴子 HP {m_Monster.Hp} 与事件累计 {expectedHp} 不一致");
 		}

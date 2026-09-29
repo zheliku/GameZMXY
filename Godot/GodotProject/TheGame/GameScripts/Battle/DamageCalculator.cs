@@ -1,11 +1,12 @@
 using System;
-using System.Numerics;
 using GameConfig.Battle;
+using Godot;
 
 namespace GameLogic.Battle
 {
 	/// <summary>
-	/// 伤害结算（纯函数，无状态、无随机、不引 Godot）。常数全部来自 BattleConfig 单行表
+	/// 伤害结算（纯函数，无状态、无随机；只触 Godot 纯值类型，无运行时引擎依赖）。
+	/// 常数全部来自 BattleConfig 单行表
 	/// （调用方传 <c>ConfigSystem.Instance.Tables.TbBattleConfig.Data</c>，单测直接反序列化同一份 .bytes）。
 	///
 	/// 公式结构参考旧项目（英雄防守 BaseHero.gd get_Monster_last_hurt / 怪物防守 BaseMonster.gd get_Role_last_hurt），
@@ -134,19 +135,14 @@ namespace GameLogic.Battle
 			return new Vector2(attack.Direction * attack.Knockback.X * scaleX, attack.Knockback.Y * config.KnockbackScaleY);
 		}
 
-		/// <summary>在 [min, max] 内按 t∈[0,1) 线性取值（攻击倍率区间掷值用；t 由调用方随机）。</summary>
-		public static float Lerp(float min, float max, float t)
-		{
-			return min + (max - min) * t;
-		}
-
 		/// <summary>向零取整（旧 int()），带 float 系数容差（见 <see cref="TruncateEpsilon"/>）。</summary>
 		private static double Truncate(double value)
 		{
 			return value >= 0 ? Math.Floor(value + TruncateEpsilon) : Math.Ceiling(value - TruncateEpsilon);
 		}
 
-		/// <summary>x/(x+K)，保留三位小数；x、K 均为 0 时视为 0。</summary>
+		/// <summary>x/(x+K)，保留三位小数（旧项目 snapped(x, 0.001)）；x、K 均为 0 时视为 0。
+		/// Godot 4 的 Mathf.Snapped 同为 floor(x/step+0.5)*step；x≥0 域内二者一致。</summary>
 		private static double Ratio(double x, double k)
 		{
 			double denominator = x + k;
@@ -155,7 +151,7 @@ namespace GameLogic.Battle
 				return 0;
 			}
 
-			return Math.Floor(x / denominator / RatioStep + 0.5) * RatioStep;
+			return Mathf.Snapped(x / denominator, RatioStep);
 		}
 	}
 }

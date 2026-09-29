@@ -4,7 +4,7 @@
 
 | 目录 | 职责 | 依赖约束 |
 | --- | --- | --- |
-| `Battle/` | 伤害公式、属性快照、Buff 结算（按需创建，M4） | 纯 C#，禁引 `Godot.*`，可单测 |
+| `Battle/` | 伤害公式、属性快照、Buff 结算（按需创建，M4） | 值类型可引 Godot（2026-09-30 裁决），禁运行时引擎状态；可单测 |
 | `Entity/` | 实体 Logic（Heroes/ Monsters/ Bullets/ Items/） | 见 `Entity/AGENTS.md` |
 | `UI/` | 界面 Logic（`UIs/*.tscn` 对应的 `*.Logic.cs`，按需） | 跨模块只走事件（根规范 §9） |
 | `Event/` | 自定义 `GameEventArgs`（`Create()` + `Clear()`，按需） | 参数走 `ReferencePool`，用完即回收 |
@@ -22,7 +22,7 @@
 - 命中回调不写公式：双方属性快照 + `AttackData` 交 `Battle/DamageCalculator` 结算，再 `GF.Event.Fire(DamageDealtEventArgs)`，飘字 UI 订阅。
 - 攻击者识别：HitBox 挂宿主显式引用（生成时注入）或 `IAttacker` 接口，禁止爬父。
 - 伤害类型 `Physics / Magic / Real`（Real 不吃防御）；减伤曲线 `x/(x+K)`，K 与命中/暴击基数进 `BattleConfig`，人怪不一致处在 `DamageCalculator` 注释说明。
-- 随机数在 Godot 层取好当参数传入；`Battle/` 不自己取随机（红线 1）。
+- 随机数在 Godot 层取好当参数传入；`Battle/` 不自己取随机（保持结算确定、可精确单测）。
 
 ## 通用
 

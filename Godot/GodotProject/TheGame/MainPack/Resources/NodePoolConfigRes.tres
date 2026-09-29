@@ -11,7 +11,7 @@ metadata/_custom_type_script = "uid://cyfjle46grtw4"
 
 [resource]
 script = ExtResource("1_8jdg")
-Entries = Array[Object]([SubResource("Resource_damage_pop")])
+Entries = Array[ExtResource("1_j1vs4")]([SubResource("Resource_damage_pop")])
 DefaultExpireTime = 300.0
 DefaultAutoReleaseInterval = 300.0
 metadata/_custom_type_script = "uid://yiewfnn1gx67"

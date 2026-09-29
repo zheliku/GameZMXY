@@ -379,18 +379,14 @@ def build_battle():
         ("Knockback", "vector2", "击退(X>0=远离攻击者,Y<0=向上;单位同旧 hurtBack,乘 BattleConfig.KnockbackScale* 换算 px/s,写法 2,0)"),
         ("WsGain", "vector2i", "命中获得无双值范围(旧 WSValue,X=下限,Y=上限,写法 3,5)"),
         ("HitProtect", "int", "受击保护累计值(旧 HitProtect)"),
-        ("Interval", "float", "本段最短停留秒(动画不足时补足,即普攻之间的间隔)"),
         ("SoundId", "Sound.SoundId", "起手音效(SoundConfig;None=无)"),
         ("HitSoundId", "Sound.SoundId", "命中音效(打中目标时播,None=无;旧项目按攻击者选音)"),
         ("OwnerId", "Entity.EntityId", "这招属于谁(None=通用招,将来多主体共享用)"),
         ("ComboIndex", "int", "连段第几段(0起;同一 OwnerId 内连续,越大越靠后)"),
         ("AiWeight", "int", "AI 选招权重(怪物 AI 用;英雄普攻填 0)"),
-        # M4 表尾追加（2026-09-29）：判定盒几何（出招时写入 HitBox；判定帧开关仍由动画轨道驱动）。
-        # 数值换算自旧场景 base_damagebox/HitBox 形状：X 取反（旧素材朝左、负 X 为前方），
-        # Y 与新工程同一原点（旧 base_damagebox 与 Action 同在 (0,-30)，新工程身体层在原点）。
-        # 旧 hit1 是胶囊（r76,h186）→ 取外接矩形；旧猴子是圆（r25）→ 取外接正方形。
-        ("HitBoxOffset", "vector2", "判定盒中心相对角色原点(X>0=前方,Y 向下为正,写法 45,-17)"),
-        ("HitBoxSize", "vector2", "判定盒矩形尺寸 px(写法 152,186)"),
+        # 2026-09-30 审查裁决：删 Interval / HitBoxOffset / HitBoxSize 三列——
+        # 出招时序与判定盒几何全部归动画（gen_animations.py 的方法轨道，同旧项目动画内 keyframe），
+        # 表只存数值（威力/击退/无双/保护/音效/归属）。此前表值 -10 还漏减了猴子身体层 (0,-13) 的 Y 偏移。
     ]
     # 为什么"归属/连段顺序/AI 权重"写在攻击行上，而不是 HeroAttackConfig/MonsterAttackConfig 关联表：
     #   关联表里每行唯一独有的信息只有"顺序"或"权重"，NameCn/Desc 与攻击行完全重复；
@@ -400,12 +396,12 @@ def build_battle():
     # 音效接线以旧代码为准（add_music 的 method 轨道），不是文件名的字面意思：
     # hit1→39、hit2→40、hit3→39、hit4→38（Role1.tscn method 轨道实测）
     rows = [
-        (1001, "role1.hit1", "悟空普攻1", "普攻第一段", "attack_1", "1,1.2", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack1And3", "WukongImpact", "Wukong", 0, 0, "45,-17", "152,186"),
-        (1002, "role1.hit2", "悟空普攻2", "普攻第二段", "attack_2", "0.9,1.1", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack2", "WukongImpact", "Wukong", 1, 0, "42.25,41.5", "133.5,43"),
-        (1003, "role1.hit3", "悟空普攻3", "普攻第三段", "attack_3", "1,1.2", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack1And3", "WukongImpact", "Wukong", 2, 0, "0,31.5", "323,57"),
-        (1004, "role1.hit4", "悟空普攻4", "普攻第四段(击退收招)", "attack_4", "1.2,1.4", 0, "Physics", "6,-5", "3,5", 0, 0.35, "WukongAttack4", "WukongImpact", "Wukong", 3, 0, "38.5,38", "273,74"),
+        (1001, "role1.hit1", "悟空普攻1", "普攻第一段", "attack_1", "1,1.2", 0, "Physics", "2,0", "3,5", 0, "WukongAttack1And3", "WukongImpact", "Wukong", 0, 0),
+        (1002, "role1.hit2", "悟空普攻2", "普攻第二段", "attack_2", "0.9,1.1", 0, "Physics", "2,0", "3,5", 0, "WukongAttack2", "WukongImpact", "Wukong", 1, 0),
+        (1003, "role1.hit3", "悟空普攻3", "普攻第三段", "attack_3", "1,1.2", 0, "Physics", "2,0", "3,5", 0, "WukongAttack1And3", "WukongImpact", "Wukong", 2, 0),
+        (1004, "role1.hit4", "悟空普攻4", "普攻第四段(击退收招)", "attack_4", "1.2,1.4", 0, "Physics", "6,-5", "3,5", 0, "WukongAttack4", "WukongImpact", "Wukong", 3, 0),
         # 猴子击退 X：旧值 -3 是为抵消旧项目朝向符号写的负数；新语义"X>0=远离攻击者"统一为正（2026-09-29 M4）
-        (2001, "monster1.hit1", "猴子普攻", "猴子唯一攻击", "attack_1", "0,0", 10, "Physics", "3,-6", "0,0", 10, 0.6, "None", "None", "HuaguoshanMonkey", 0, 100, "24,-10", "50,50"),
+        (2001, "monster1.hit1", "猴子普攻", "猴子唯一攻击", "attack_1", "0,0", 10, "Physics", "3,-6", "0,0", 10, "None", "None", "HuaguoshanMonkey", 0, 100),
     ]
     # force_rows：修复 2026-09-27 表头与手工合并列错位时写坏的数据行
     new_table("AttackConfig.xlsx", fields, rows, force_rows=True)

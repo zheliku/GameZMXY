@@ -10,10 +10,13 @@ extends SceneTree
 ##     ├─ Hurt
 ##     └─ Death
 ##
-##   * C#（HeroEntity）只维护**角色属性**——MoveInput / Running / Airborne / Rising /
-##     JumpCount / AttackSegment / Hurt / Emoting / Dead，每物理帧刷新一次；
+##   * C#（HeroEntity）只维护**角色事实**，全部单一事实源：MoveInput / Running / JumpCount /
+##     AttackSegment / Hurt / Emoting（[Export] 字段）；Dead（ActorEntity，唯一置位点在
+##     ReceiveHit 扣血扣到 0）；Rising / Airborne（[Export] 计算属性：getter 实时算、
+##     setter 为空——只读属性不可导出（GD0103），不导出对引擎又不可见）；
 ##   * **主图只决定"在哪个组"**：Ground ⇄ Air、Ground/Air → Attack →（收招）Ground/Air、
 ##     → Hurt → Ground、→ Death；组内动画流转全部收在子机（走跑切换、跳→落、连段推进）；
+##     出招时序（起手装填/收招推进）由攻击动画的方法轨道回调 C#，判定盒几何在动画值轨道上。
 ##   * **进组 = 从 Start 选一个状态**：子机用 ROOT 类型——每次进组 seek 到第 0 帧时
 ##     **重启到 Start**（NESTED 类型会恢复上次内部状态，那样组内边必须两两相连才能自纠）；
 ##     每个状态一条 `Start → 状态` 边，条件 = 该状态的组内区分项（互斥且完备）；
@@ -38,8 +41,9 @@ extends SceneTree
 ## 引擎语义（4.7.2 源码 + 实测）：
 ##   1. 表达式边必须 advance_mode=AUTO；表达式在状态内**持续**评估，命中即转移；
 ##   2. 同帧多条边为真时取 priority 最小者、同值取后加入者——本文件条件互斥，不依赖它；
-##   3. 表达式读 C# 成员必须走 [Export] 字段（普通属性引擎侧不可见），基对象由
-##      ActorEntity.OnInit 指向实体节点；引擎自带数据用引擎名（如 is_on_floor()、velocity.y）。
+##   3. 表达式读 C# 成员只有一条路：[Export] 成员——字段（直接事实/事件事实）或
+##      计算属性（派生事实，如 Airborne/Rising，空 setter 见 HeroEntity）；
+##      基对象由 ActorEntity.OnInit 指向实体节点；引擎自带数据用引擎名（如 is_on_floor()）。
 ##
 ## 运行：S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --script res://EditorScripts/build_wukong_anim_tree.gd
 
@@ -64,14 +68,17 @@ const A_DEATH := "death"
 const A_ATTACK_FMT := "attack_%d"   # 普攻第 i 段（1 起）；段序号 i-1 ↔ AttackSegment
 
 # ---- 组谓词：主图边的守卫（优先级链：死亡 > 普攻 > 受击 > 空中 > 地面）----
-# 每个谓词显式排除前面的条件——例如 Dead 时 AttackSegment 可能还 >= 0、Hurt 也可能还在计时，
-# 互斥必须写全，不能靠 priority/边顺序（本文件不依赖二者）。组内边不重复这些谓词，见下。
+# 互斥必须写全，不依赖 priority/边顺序（本文件不依赖二者）；公共前缀抽成 P_ALIVE 一次。
+# 派生事实 Rising/Airborne 是 HeroEntity 上的 [Export] 计算属性（getter 实时算，setter 为空）：
+#   Rising   = velocity.y < 0
+#   Airborne = not is_on_floor() or (JumpCount > 0 and Rising)   # 含"起跳那一帧还没离地"
 
+const P_ALIVE := "not Dead and AttackSegment < 0"
 const P_DEATH := "Dead"
 const P_ATTACK := "not Dead and AttackSegment >= 0"
-const P_HURT := "not Dead and AttackSegment < 0 and Hurt"
-const P_AIR := "not Dead and AttackSegment < 0 and not Hurt and Airborne"
-const P_GROUND := "not Dead and AttackSegment < 0 and not Hurt and not Airborne"
+const P_HURT := P_ALIVE + " and Hurt"
+const P_AIR := P_ALIVE + " and not Hurt and Airborne"
+const P_GROUND := P_ALIVE + " and not Hurt and not Airborne"
 
 # ---- Idle 子机（Ground 内的两级嵌套）：待机与憨笑是一对同族姿势，收进子机后
 # Ground 图只剩 Idle/走/跑 三个节点。进 Idle 同样按 Start 选路（Emoting 区分）。----
@@ -106,7 +113,7 @@ const AIR_STATES := [
 #   Idle  ：idle1 ⇄ idle2（憨笑开始/结束）。
 #   Air   ：JumpCount 只增不减，所以 jump_2→jump 不存在；落→跳有两条
 #           （走空摔下再起跳 = fall→jump，下落中二段跳 = fall→jump_2）。
-#   Attack：段只 +1 推进（UpdateAttack 的 AttackSegment++）；收招即离组，
+#   Attack：段只 +1 推进（OnAttackEnd 的 AttackSegment++）；收招即离组，
 #           重新进组的选段由 Start 边完成，所以组内只有 1→2→3→…链。
 
 const GROUND_EDGES := [
@@ -203,6 +210,41 @@ func _validate(lib: AnimationLibrary) -> bool:
 		if not anims.has(A_ATTACK_FMT % i):
 			push_error("普攻段动画不连续：缺少 %s" % (A_ATTACK_FMT % i))
 			ok = false
+		else:
+			# 出招链路完整性：攻击动画缺生命周期方法轨道，C# 侧就会"装填不了包 / 永远停在攻击态"
+			var attack := lib.get_animation(A_ATTACK_FMT % i)
+			var methods := {}
+			for t in attack.get_track_count():
+				if attack.track_get_type(t) == Animation.TYPE_METHOD:
+					for k in attack.track_get_key_count(t):
+						methods[attack.method_track_get_name(t, k)] = true
+			for required in ["OnAttackBegin", "OnAttackEnd"]:
+				if not methods.has(required):
+					push_error("%s 缺少 %s() 方法轨道（出招链路断裂）" % [A_ATTACK_FMT % i, required])
+					ok = false
+
+	# 判定盒轨道完备性（"reset 轨道"的等价保证）：先收集库里被任一动画写过的判定盒值轨道，
+	# 再要求每个动画都带齐——切到任何动画首帧都写回安全值，不残留上一个动画的状态。
+	# 未被任何动画写过的属性不在此列（恒为场景值、无切换残留）；
+	# 攻击动画的几何键比判定窗早一帧（生成器保证），判定永远先见到本招几何。
+	var hitbox_paths := {}
+	for anim_name in anims:
+		var anim := lib.get_animation(anim_name)
+		for t in anim.get_track_count():
+			if anim.track_get_type(t) == Animation.TYPE_VALUE:
+				var value_path := anim.track_get_path(t)
+				if String(value_path).contains("m_HitBox"):
+					hitbox_paths[value_path] = true
+	for anim_name in anims:
+		var anim := lib.get_animation(anim_name)
+		var value_paths := {}
+		for t in anim.get_track_count():
+			if anim.track_get_type(t) == Animation.TYPE_VALUE:
+				value_paths[anim.track_get_path(t)] = true
+		for geometry_path in hitbox_paths:
+			if not value_paths.has(geometry_path):
+				push_error("%s 缺少判定盒值轨道 %s（轨道完备性）" % [anim_name, geometry_path])
+				ok = false
 
 	return ok
 

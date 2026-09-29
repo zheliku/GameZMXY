@@ -114,6 +114,39 @@ func _validate(lib: AnimationLibrary) -> bool:
 		if not anims.has(A_ATTACK_FMT % i):
 			push_error("攻击段动画不连续：缺少 %s" % (A_ATTACK_FMT % i))
 			ok = false
+		else:
+			# 出招链路完整性：同 build_wukong_anim_tree.gd 注释
+			var attack := lib.get_animation(A_ATTACK_FMT % i)
+			var methods := {}
+			for t in attack.get_track_count():
+				if attack.track_get_type(t) == Animation.TYPE_METHOD:
+					for k in attack.track_get_key_count(t):
+						methods[attack.method_track_get_name(t, k)] = true
+			for required in ["OnAttackBegin", "OnAttackEnd"]:
+				if not methods.has(required):
+					push_error("%s 缺少 %s() 方法轨道（出招链路断裂）" % [A_ATTACK_FMT % i, required])
+					ok = false
+
+	# 判定盒轨道完备性（"reset 轨道"的等价保证）：同 build_wukong_anim_tree.gd 注释
+	# （并集规则：被任一动画写过的轨道，全体带齐）
+	var hitbox_paths := {}
+	for anim_name in anims:
+		var anim := lib.get_animation(anim_name)
+		for t in anim.get_track_count():
+			if anim.track_get_type(t) == Animation.TYPE_VALUE:
+				var value_path := anim.track_get_path(t)
+				if String(value_path).contains("m_HitBox"):
+					hitbox_paths[value_path] = true
+	for anim_name in anims:
+		var anim := lib.get_animation(anim_name)
+		var value_paths := {}
+		for t in anim.get_track_count():
+			if anim.track_get_type(t) == Animation.TYPE_VALUE:
+				value_paths[anim.track_get_path(t)] = true
+		for geometry_path in hitbox_paths:
+			if not value_paths.has(geometry_path):
+				push_error("%s 缺少判定盒值轨道 %s（轨道完备性）" % [anim_name, geometry_path])
+				ok = false
 	return ok
 
 

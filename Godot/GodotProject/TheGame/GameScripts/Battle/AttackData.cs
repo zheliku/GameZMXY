@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using System.Numerics;
 using GameConfig.Battle;
 using GameConfig.Sound;
+using Godot;
 using GameFramework;
 
 namespace GameLogic.Battle
@@ -20,7 +20,8 @@ namespace GameLogic.Battle
 	///  * **一招一目标只结算一次**：<see cref="TryRegisterHit"/> 按目标实例号去重。引擎的 area_entered
 	///    本身只在"进入重叠"时触发一次（旧项目完全靠它），这里再兜一层：判定窗口内受击盒若因硬直/无敌
 	///    开关过而重新进入，不会被同一招打两次。多段技能要多次命中时，每段各开一个包。
-	///  * 不引用 Godot（向量用 System.Numerics），可在纯控制台单测。
+	///  * 向量统一用 Godot.Vector2（2026-09-30 裁决：Battle/ 解除禁引，只触纯值类型，
+	///    无引擎运行时依赖），单测引 GodotSharp 即可在纯控制台跑。
 	/// </summary>
 	public sealed class AttackData : IReference
 	{

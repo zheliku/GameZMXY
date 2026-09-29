@@ -1,23 +1,23 @@
 [gd_scene format=3 uid="uid://cc7r187g26xr8"]
 
 [ext_resource type="Script" uid="uid://bhpujkcrdsfwg" path="res://TheGame/GameScripts/Entity/Monsters/HuaguoshanMonkeyEntity.cs" id="1_script"]
-[ext_resource type="SpriteFrames" uid="uid://di0jrkwb1ad8p" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_animations.tres" id="2_frames"]
+[ext_resource type="SpriteFrames" uid="uid://qu5gutbgunnj" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_animations.tres" id="2_frames"]
 [ext_resource type="AnimationLibrary" uid="uid://o8gq56k2o2gr" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_anim_library.tres" id="3_lib"]
 [ext_resource type="AnimationNodeStateMachine" uid="uid://c4seyh1vbcds4" path="res://TheGame/Entitys/huaguoshan_monkey_animation_tree.tres" id="4_tree"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/HurtBox.cs" id="5_hurtbox"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
-radius = 16.0
-height = 32.0
+radius = 19.0
+height = 52.0
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_hurt"]
-radius = 23.0
+radius = 19.0
 height = 62.0
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
+[sub_resource type="RectangleShape2D" id="hitbox_rest"]
 size = Vector2(50, 50)
 
-[node name="HuaguoshanMonkeyEntity" type="CharacterBody2D" node_paths=PackedStringArray("m_Body", "m_AnimPlayer", "m_AnimTree", "m_HurtBox", "m_HitBox", "m_HitShape")]
+[node name="HuaguoshanMonkeyEntity" type="CharacterBody2D" unique_id=1348517012 node_paths=PackedStringArray("m_Body", "m_AnimPlayer", "m_AnimTree", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 script = ExtResource("1_script")
@@ -26,18 +26,21 @@ m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
 m_AnimTree = NodePath("m_AnimTree")
 m_HurtBox = NodePath("m_HurtBox")
-m_HitBox = NodePath("m_HitBox")
-m_HitShape = NodePath("m_HitBox/CollisionShape2D")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
 
-[node name="m_Body" type="AnimatedSprite2D" parent="."]
+[node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1937697229]
 position = Vector2(0, -13)
 sprite_frames = ExtResource("2_frames")
-animation = &"idle"
+animation = &"attack_1"
+offset = Vector2(-13, 0)
 
-[node name="m_BodyShape" type="CollisionShape2D" parent="."]
+[node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1842145312]
+position = Vector2(2, -8)
 shape = SubResource("CapsuleShape2D_body")
+debug_color = Color(0, 1, 0, 0.41960785)
 
-[node name="m_HurtBox" type="Area2D" parent="." node_paths=PackedStringArray("m_Owner")]
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=1266355803 node_paths=PackedStringArray("m_Owner")]
 position = Vector2(-2, -13)
 collision_layer = 32
 collision_mask = 0
@@ -45,22 +48,26 @@ monitoring = false
 script = ExtResource("5_hurtbox")
 m_Owner = NodePath("..")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=59413662]
+position = Vector2(4, 0)
 shape = SubResource("CapsuleShape2D_hurt")
+debug_color = Color(1, 0, 0, 0.41960785)
 
-[node name="m_HitBox" type="Area2D" parent="."]
-position = Vector2(24, -23)
+[node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=378598904]
+
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=2118372191]
 collision_layer = 64
 collision_mask = 128
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBox"]
-shape = SubResource("RectangleShape2D_hit")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1324609239]
+position = Vector2(-24, -23)
+shape = SubResource("hitbox_rest")
 disabled = true
 
-[node name="m_AnimPlayer" type="AnimationPlayer" parent="."]
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=733591014]
 libraries/ = ExtResource("3_lib")
 
-[node name="m_AnimTree" type="AnimationTree" parent="."]
+[node name="m_AnimTree" type="AnimationTree" parent="." unique_id=279072695]
 tree_root = ExtResource("4_tree")
 anim_player = NodePath("../m_AnimPlayer")

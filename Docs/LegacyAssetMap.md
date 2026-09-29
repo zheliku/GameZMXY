@@ -41,13 +41,13 @@
 | `Role_1_Eq_qld.png` | `wukong_weapon_dragon_blade.png` | `qld` 青龙刀 |
 | `Role_1_Eq_zjbtg.png` | `wukong_weapon_purple_gold_cudgel.png` | `zjbtg` 紫金镔铁棍 |
 
-每张武器图集对应一个 `wukong_weapon_<name>_animations.tres`（9 个动画，帧序列取自 `Action/RoleEquipment:frame`，与身体层同帧对齐）。
+每张武器图集对应一个 `wukong_weapon_<name>_animations.tres`（9 个动画，帧序列取自 `Action/RoleEquipment:frame`，与身体层同帧对齐）——这些武器 SpriteFrames 已于 2026-09-30 删除（零引用，见文末说明），帧数据由合并动画库承载。
 
 ## 动画映射
 
 源数据为旧 `.tscn` 内嵌 `Animation`/`AtlasTexture`，由 `Tools/LegacyMigration/gen_animations.py` 一次性解析生成，禁止手工重切片（AGENTS.md §11.3.3）。
 
-### wukong —— `Sprites/Characters/Heroes/wukong/wukong_animations.tres`
+### wukong —— `Sprites/Characters/Heroes/wukong/wukong_animations.tres`（2026-09-30 已删除，内容并入 `wukong_anim_library.tres`）
 
 源：`Scene/Hero/Role_1/Role1.tscn`，轨道 `Action/RoleBody:frame`，`RolePlayer.speed_scale = 2.0`。
 
@@ -98,7 +98,7 @@
 ```
 m_EffectRoot (Node2D)          ← 朝向镜像：scale.x = ±1（同旧 Action 节点）
 └── m_Effect (AnimatedSprite2D) ← SpriteFrames: wukong_effect_animations.tres
-m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tres
+m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tres   ← M3 中期结构；2026-09-30 该库已删，棍气轨道现由 wukong_anim_library.tres 承载
 ```
 
 生成物（由 `gen_animations.py` 输出）：
@@ -106,7 +106,7 @@ m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tre
 | 文件 | 内容 |
 | --- | --- |
 | `Sprites/Effects/wukong/wukong_effect_animations.tres` | SpriteFrames：`attack_1..4`（条目序列含 null，逐条对应旧数据）+ `empty`（对应旧空白 `wait`） |
-| `Sprites/Effects/wukong/wukong_effect_library.tres` | AnimationLibrary：同名动画，轨道路径 `m_EffectRoot/m_Effect:<属性>`，键时间已换算为真实秒 |
+| `Sprites/Effects/wukong/wukong_effect_library.tres` | AnimationLibrary：同名动画，轨道路径 `m_EffectRoot/m_Effect:<属性>`，键时间已换算为真实秒（2026-09-30 已删除） |
 
 棍气轨道数据（旧 → 新，真实秒）：
 
@@ -182,7 +182,7 @@ m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tre
   5. 表达式里引用**引擎自带**数据必须用引擎名：`is_on_floor()` / `velocity.y` 可用；写成 C# 风格的 `IsOnFloor()` / `Velocity` 会静默求值为 null（条件恒假）——迁移后"跑/跳动画失效"的根因就是它（`Ground → Air` 的 `not IsOnFloor()` 恒假，树永远出不了地面组）；本项目改用 C# 属性表达，图上不再出现引擎名；
   6. 子机 ROOT 类型进组重启到 Start；NESTED 类型会恢复上次内部状态（组式写法必须用 ROOT，否则组内边要两两直连才能自纠）。
 - **冒烟测试**（自动化验证动画链路，替代"看日志猜"）：`"S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --quit-after 1500 -- --smoketest`；`TheGame/MainPack/Scripts/Debug/SmokeTestDriver.cs`（autoload，仅 `--smoketest` 时启用）自动注入连打/双击跑/受击/一段跳/二段跳输入，断言 AnimationTree **真正在播**的状态路径（`Attack/attack_1..4` → `Ground/run` → `Hurt` → `Air/jump` → `Air/fall` → `Air/jump_2` → `Ground/Idle/idle1`）、顺序，以及待机时特效层回到空白（动画 empty / 帧 0 / scale 1）；判定看 stdout `SMOKE PASS` / `SMOKE FAIL`（框架关闭流程有既有 bug，偶发段错误冲掉退出码，别只看退出码）。
-- 旧 SpriteFrames 三件套（`wukong_animations.tres` / `wukong_weapon_*_animations.tres` / `wukong_effect_library.tres`）场景不再引用（effect 的 SpriteFrames 仍被 m_Effect 使用），保留作为帧序列数据参照。
+- 旧 SpriteFrames 三件套（`wukong_animations.tres` / `wukong_weapon_*_animations.tres` / `wukong_effect_library.tres`）场景不再引用，已于 **2026-09-30 删除**（全项目审计零引用；`gen_animations.py` 对应产出步骤同步停用，重跑不会重建）——帧数据由 `wukong_anim_library.tres` 的帧轨道承载（身体姿势映射见表）；`wukong_effect_animations.tres` 仍被 m_Effect 引用、保留。
 
 ## 复现方式
 
@@ -196,17 +196,21 @@ python Tools/LegacyMigration/gen_animations.py
 
 ## M4 判定帧与战斗资产（2026-09-29）
 
-### 判定帧轨道
+### 判定盒（2026-09-30 审查修订：几何与开关全部是动画值轨道，同旧项目）
 
-旧项目"一招一次命中"= 判定形状 `disabled` 开关 + `Area2D.area_entered` 只在进入重叠时触发。新工程迁移开关时序为轨道 `m_HitBox/CollisionShape2D:disabled`（库内每个动画都带，非攻击恒 true）；形状尺寸/位置是可调数值，进 `AttackConfig.HitBoxOffset/HitBoxSize`，出招时 C# 写入。C# 另按目标去重（`AttackData.TryRegisterHit`）。
+旧项目"一招一次命中"= 攻击动画里 keyframe HitBox 的 **shape / position / disabled**（Role1.tscn 实测）+ `Area2D.area_entered` 只在进入重叠时触发；朝向由 `base_damagebox.scale.x` 翻转。新工程同构：`m_HitBoxRoot`（朝向镜像容器，C# 只翻 scale.x）→ `m_HitBox`（Area2D，**恒在原点**）→ `CollisionShape2D`——三条值轨道全部落在形状节点上（`…/CollisionShape2D` 的 `:disabled` / `:shape` / `:position`，与旧 `base_damagebox/HitBox/HitBox` 逐级对应；容器负缩放会把形状节点偏移一并镜像，冒烟实测命中正常）。库里每个动画带齐三条（非攻击动画写静止值——轨道完备性，等效"reset 轨道"：切到任何动画首帧写回安全值），动画里写**原生朝左**坐标（前方 = 负 X）。出招装填 `OnAttackBegin` / 收招推进 `OnAttackEnd` 是方法轨道（只管数值包，几何无关）。离开攻击动画时 AnimationMixer 自动还原值轨道捕获初值——受击/死亡打断出招时判定盒自愈复位。C# 另按目标去重（`AttackData.TryRegisterHit`）。
 
-| 新动画 | 旧来源 | 判定窗口（真实秒） | 旧形状 → 表值（X 取反为"前方"） |
-| --- | --- | --- | --- |
-| wukong `attack_1` | Role1 `hit1`（speed_scale 3） | 0.0333–0.1667 | 胶囊 r76 h186 @(−45,−17) → 外接矩形 152×186 @(45,−17) |
-| wukong `attack_2` | `hit2` | 0.0667–0.2333 | 矩形 133.5×43 @(−42.25,41.5) |
-| wukong `attack_3` | `hit3` | 0.0333–0.1667 | 矩形 323×57 @(0,31.5) |
-| wukong `attack_4` | `hit4` | 0.0667–0.2000 | 矩形 273×74 @(−38.5,38) |
-| monkey `attack_1` | Monster_1 `hit1`（speed_scale 1） | 0.30–0.40 | 圆 r25 @(−24,−10) → 50×50 |
+判定窗口沿用旧 disabled 轨道；**几何不再照搬旧形状**（旧胶囊 r76/323 宽矩形远大于视觉棒击范围，"没碰到就受击"的主因），纵向与后缘按判定窗内**武器层像素包围盒**推导（各外扩 10px）；**前缘统一放长到 -130"追击线"**——连段期间每次命中受击方被击退 ~17px（旧 hurtBack × 30 同值），不放长第三段起就够不着；旧项目靠超大方形盒（前缘 121~175）吸收同一漂移，这里用显式常量表达。attack_3/4 旋斩含身后来向帧，attack_4 的正向帧 f55 在旧窗开启之前、几何将其并入。推导与实测数值登记在 `gen_animations.py` 的 `WUKONG_HITBOX` / `MONKEY_HITBOX` 注释：
+
+| 新动画 | 旧来源 | 判定窗口（真实秒） | 旧形状 | 新几何（尺寸 @ 原生坐标） |
+| --- | --- | --- | --- | --- |
+| wukong `attack_1` | Role1 `hit1`（speed_scale 3） | 0.0333–0.1667 | 胶囊 r76 h186 @(−45,−17) | 178×114 @(−41, 23) |
+| wukong `attack_2` | `hit2` | 0.0667–0.2333 | 矩形 133.5×43 @(−42.25,41.5) | 172×43 @(−44, 40.5) |
+| wukong `attack_3` | `hit3` | 0.0333–0.1667 | 矩形 323×57 @(0,31.5) | 233×75 @(−13.5, 23.5) |
+| wukong `attack_4` | `hit4` | 0.0667–0.2000 | 矩形 273×74 @(−38.5,38) | 233×96 @(−13.5, 12) |
+| monkey `attack_1` | Monster_1 `hit1`（speed_scale 1） | 0.30–0.40 | 圆 r25 @(−24,−10) | 50×50 @(−24, −23)（Y 修正身体层 (0,−13) 偏移） |
+
+数值不再进 `AttackConfig`（表只存玩法数值；2026-09-30 删除 HitBoxOffset/HitBoxSize/Interval 三列）。
 
 ### huaguoshan_monkey 动画库
 

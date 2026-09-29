@@ -8,7 +8,6 @@ using GameLogic.Config;
 using GameLogic.Event;
 using Godot;
 using GodotGameFramework;
-using GodotGameFramework.Sound;
 
 namespace GameLogic.Entity
 {
@@ -74,13 +73,18 @@ namespace GameLogic.Entity
 		[Export] private HurtBox m_HurtBox;
 
 		/// <summary>
-		/// 攻击判定区（场景子节点 m_HitBox，可为空）。判定帧开关由动画轨道驱动其子节点
-		/// CollisionShape2D:disabled；形状尺寸/位置在出招时按 AttackConfig.HitBox* 写入。
+		/// 攻击判定区（场景子节点 m_HitBox，可为空）。**几何与开关完全由动画值轨道驱动**
+		/// （同旧项目：旧动画 keyframe HitBox 的 shape/position/disabled）——代码不碰判定盒几何。
+		/// 朝向镜像由容器 <see cref="m_HitBoxRoot"/> 承担（同旧 base_damagebox 的 scale.x 翻转），
+		/// 动画里写的位置是"素材原生朝向"坐标（前方 = 负 X）。
 		/// </summary>
 		[Export] private Area2D m_HitBox;
 
-		/// <summary>攻击判定形状（m_HitBox 的子节点 CollisionShape2D，场景绑定）</summary>
-		[Export] private CollisionShape2D m_HitShape;
+		/// <summary>
+		/// 攻击判定区容器（场景子节点 m_HitBoxRoot，可为空）：scale.x = ±1 随朝向翻转，
+		/// 镜像 m_HitBox 连同动画轨道写入的位置——与 m_EffectRoot 同构（同旧 base_damagebox）。
+		/// </summary>
+		[Export] private Node2D m_HitBoxRoot;
 
 		/// <summary>身体层（Sprite2D 或 AnimatedSprite2D）</summary>
 		public Node2D Body => m_Body;
@@ -106,8 +110,11 @@ namespace GameLogic.Entity
 		/// <summary>当前生命</summary>
 		public int Hp { get; protected set; }
 
-		/// <summary>是否已死亡</summary>
-		public bool IsDead => Hp <= 0;
+		/// <summary>
+		/// 死亡事实（[Export]：表达式读它，如 P_DEATH = "Dead"）。**单一事实源**：
+		/// 只在 ReceiveHit 扣血扣到 0 的那一刻置位、OnShow 复位，C# 与表达式统一用它，别名叫法不保留。
+		/// </summary>
+		[Export] public bool Dead;
 
 		/// <summary>朝向：1 右 / -1 左。素材原始朝左，见 SetFacing 注释。</summary>
 		public int Facing { get; private set; } = 1;
@@ -120,17 +127,8 @@ namespace GameLogic.Entity
 		/// </summary>
 		protected virtual Vector2 PopAnchor => new Vector2(0, -60);
 
-		/// <summary>判定盒前方偏移（出招时按 AttackConfig.HitBoxOffset 写入；X 为"朝前"的绝对值）</summary>
-		private Vector2 m_HitOffset;
-
-		/// <summary>判定盒矩形（每实例独立一份，避免场景共享子资源导致多个实体互相改尺寸）</summary>
-		private RectangleShape2D m_HitRect;
-
 		/// <summary>当前招式的攻击包（出招装填、收招归还；null = 不在出招中）</summary>
 		private AttackData m_ActiveAttack;
-
-		/// <summary>当前招式的攻击包（只读；命中逻辑用）</summary>
-		protected AttackData ActiveAttack => m_ActiveAttack;
 
 		/// <summary>实体初始化。isNewInstance 为 true 时做一次性初始化（见 Entity/AGENTS.md 生命周期）。</summary>
 		public virtual void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance,
@@ -141,9 +139,10 @@ namespace GameLogic.Entity
 			Name = entityAssetName == null ? "ActorEntity" : $"Entity_{entityId}";
 			EntityGroup = entityGroup;
 
-			if (isNewInstance)
+			if (isNewInstance && m_HitBox != null)
 			{
-				InitHitBox(entityAssetName);
+				// 命中回调只连一次（判定盒几何/开关全在动画轨道上，代码不再初始化形状）
+				m_HitBox.AreaEntered += OnHitBoxAreaEntered;
 			}
 
 			if (m_Body == null)
@@ -190,7 +189,7 @@ namespace GameLogic.Entity
 				return;
 			}
 
-			EndAttack();
+			ReleaseAttack();
 			Visible = false;
 		}
 
@@ -250,7 +249,7 @@ namespace GameLogic.Entity
 			GF.Sound.PlaySound(cfg.Path, cfg.Group);
 		}
 
-		/// <summary>设置朝向（0 表示不变）。翻转通用表现层（身体/特效）与判定盒，最后调钩子。</summary>
+		/// <summary>设置朝向（0 表示不变）。翻转通用表现层（身体/特效/判定盒容器），最后调钩子。</summary>
 		public void SetFacing(int dir)
 		{
 			if (dir == 0)
@@ -282,95 +281,75 @@ namespace GameLogic.Entity
 				m_EffectRoot.Scale = new Vector2(mirror ? -1 : 1, 1);
 			}
 
-			ApplyHitBoxFacing();
+			// 判定盒同理（同旧 base_damagebox.scale.x = ±1）：动画轨道写的是原生朝左坐标，
+			// 容器一翻，判定盒位置跟着镜像——代码不碰几何。
+			if (m_HitBoxRoot != null)
+			{
+				m_HitBoxRoot.Scale = new Vector2(mirror ? -1 : 1, 1);
+			}
+
 			OnFacingChanged(dir);
 		}
 
 		// ---- 攻击判定（M4）----
 
 		/// <summary>
-		/// 判定盒一次性初始化：形状复制为本实例独有（场景子资源被同场景所有实例共享）、
-		/// 默认关闭、连接命中回调。判定盒的层/掩码由场景按物理层语义设置。
-		/// </summary>
-		private void InitHitBox(string entityAssetName)
-		{
-			if (m_HitBox == null)
-			{
-				return;
-			}
-
-			if (m_HitShape == null)
-			{
-				Log.Error("[ActorEntity] 有 m_HitBox 但未绑定 m_HitShape：{0}", entityAssetName);
-				return;
-			}
-
-			m_HitRect = new RectangleShape2D();
-			if (m_HitShape.Shape is RectangleShape2D sceneRect)
-			{
-				m_HitRect.Size = sceneRect.Size;
-			}
-
-			m_HitShape.Shape = m_HitRect;
-			m_HitShape.Disabled = true;
-			m_HitOffset = new Vector2(Mathf.Abs(m_HitBox.Position.X), m_HitBox.Position.Y);
-			m_HitBox.AreaEntered += OnHitBoxAreaEntered;
-		}
-
-		/// <summary>
-		/// 出招：装填本招攻击包（快照攻击方属性、掷威力倍率与无双值），并把判定盒几何设为本招尺寸。
-		/// 判定帧开关**不在这里**——由动画轨道在判定窗口内打开 m_HitShape。
+		/// 【动画方法轨道回调】出招起手（attack_N 动画第 0 帧调用）：按 <see cref="GetAttackConfig"/>
+		/// 拿到本段配置，快照攻击方属性、掷威力倍率与无双值，装填攻击包。
+		/// **时序与几何都归动画**：判定窗口与判定盒尺寸/位置全部是动画值轨道的关键帧
+		/// （同旧项目 keyframe shape/position/disabled）——C# 只负责"这一招的数值事实"。
 		/// 上一招未收（连段直接推进）时先归还上一招的包。
 		/// </summary>
-		protected void BeginAttack(AttackConfig attack)
+		public virtual void OnAttackBegin()
 		{
-			EndAttack();
+			ReleaseAttack();
+			AttackConfig attack = GetAttackConfig();
 			if (attack == null)
 			{
 				return;
 			}
 
 			CombatantStats stats = GetCombatStats();
-			float scale = DamageCalculator.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf());
+			float scale = Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf());
 			float power = stats.Power * scale + attack.FlatPower;
 			int wsGain = attack.WsGain.X >= attack.WsGain.Y
 				? attack.WsGain.X
 				: GD.RandRange(attack.WsGain.X, attack.WsGain.Y);
 
 			m_ActiveAttack = AttackData.Create(attack.Id, stats, power, attack.DamageKind,
-				new System.Numerics.Vector2(attack.Knockback.X, attack.Knockback.Y), Facing, wsGain,
-				attack.HitProtect, attack.HitSoundId);
-
-			if (m_HitRect != null && attack.HitBoxSize.X > 0 && attack.HitBoxSize.Y > 0)
-			{
-				m_HitRect.Size = attack.HitBoxSize;
-				m_HitOffset = new Vector2(Mathf.Abs(attack.HitBoxOffset.X), attack.HitBoxOffset.Y);
-				ApplyHitBoxFacing();
-			}
+				attack.Knockback, Facing, wsGain, attack.HitProtect, attack.HitSoundId);
 		}
 
-		/// <summary>收招：关判定、归还攻击包（重复调用安全）。</summary>
-		protected void EndAttack()
+		/// <summary>
+		/// 【动画方法轨道回调】收招（attack_N 动画末帧调用）：归还攻击包、关判定（兜底——
+		/// 正常收招时 disabled 轨道已经先关了）。子类在此推进自己的连段事实（HeroEntity 连段推进、
+		/// MonsterEntity 归位 AttackSegment）后调 base。
+		/// </summary>
+		public virtual void OnAttackEnd()
 		{
-			if (m_HitShape != null && IsInstanceValid(m_HitShape))
-			{
-				// 物理回调内不能直接改碰撞形状状态，走 deferred
-				m_HitShape.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
-			}
+			ReleaseAttack();
+		}
 
+		/// <summary>
+		/// 当前段的攻击配置（动画调 OnAttackBegin 时由子类按"正在播的段"解析）。
+		/// </summary>
+		protected virtual AttackConfig GetAttackConfig()
+		{
+			return null;
+		}
+
+		/// <summary>
+		/// 强制收招（安全释放）：归还攻击包。**不是动画回调**——供受击打断、死亡、
+		/// OnHide 等打断路径使用；这些路径不会再走到 OnAttackEnd（动画被切走），必须显式释放。
+		/// 判定盒不需要代码去关：离开攻击动画时 AnimationMixer 会把 disabled/shape/position
+		/// 轨道捕获的初始值还原（值轨道自带的自愈，方法轨道没有——这也是几何走值轨道的原因之一）。
+		/// </summary>
+		protected void ReleaseAttack()
+		{
 			if (m_ActiveAttack != null)
 			{
 				ReferencePool.Release(m_ActiveAttack);
 				m_ActiveAttack = null;
-			}
-		}
-
-		/// <summary>判定盒随朝向镜像（只改本地 X：物理节点负缩放碰撞行为不确定）。</summary>
-		private void ApplyHitBoxFacing()
-		{
-			if (m_HitBox != null)
-			{
-				m_HitBox.Position = new Vector2(m_HitOffset.X * Facing, m_HitOffset.Y);
 			}
 		}
 
@@ -386,7 +365,7 @@ namespace GameLogic.Entity
 			}
 
 			ActorEntity target = hurtBox.OwnerEntity;
-			if (target == null || target == this || target.IsDead)
+			if (target == null || target == this || target.Dead)
 			{
 				return;
 			}
@@ -410,7 +389,7 @@ namespace GameLogic.Entity
 		/// </summary>
 		public DamageResult ReceiveHit(AttackData attack, int attackerEntityId)
 		{
-			if (IsDead)
+			if (Dead)
 			{
 				return DamageResult.Missed(attack.Kind);
 			}
@@ -423,8 +402,12 @@ namespace GameLogic.Entity
 			if (!result.IsMiss)
 			{
 				Hp = Mathf.Max(0, Hp - result.Damage);
-				System.Numerics.Vector2 kb = DamageCalculator.KnockbackVelocity(config, attack, Side);
-				OnHurt(attack, result, new Vector2(kb.X, kb.Y));
+				if (Hp <= 0)
+				{
+					Dead = true;   // 死亡事实唯一置位点
+				}
+
+				OnHurt(attack, result, DamageCalculator.KnockbackVelocity(config, attack, Side));
 			}
 
 			GF.Event.Fire(this, DamageDealtEventArgs.Create(attackerEntityId, Id, Side == CombatSide.Hero,
@@ -464,7 +447,7 @@ namespace GameLogic.Entity
 		/// <summary>恢复生命。</summary>
 		public virtual void Heal(int value)
 		{
-			if (IsDead || value <= 0)
+			if (Dead || value <= 0)
 			{
 				return;
 			}

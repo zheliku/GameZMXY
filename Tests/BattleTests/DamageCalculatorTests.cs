@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using System.Numerics;
 using GameConfig.Battle;
 using GameConfig.Sound;
 using GameFramework;
+using Godot;
 using Luban;
 using Xunit;
 
@@ -284,13 +284,5 @@ namespace GameLogic.Battle.Tests
 			ReferencePool.Release(reused);
 		}
 
-		[Theory]
-		[InlineData(1f, 1.2f, 0f, 1f)]
-		[InlineData(1f, 1.2f, 0.5f, 1.1f)]
-		[InlineData(0.9f, 1.1f, 1f, 1.1f)]
-		public void Lerp_PowerScaleRange(float min, float max, float t, float expected)
-		{
-			Assert.Equal(expected, DamageCalculator.Lerp(min, max, t), 4);
-		}
 	}
 }

@@ -24,7 +24,8 @@ BulletEntity : Node2D, IEntity   DropItemEntity / MagicWeaponEntity ...
 
 **分工**：C# 只维护**角色属性**（`[Export]` 事实面），动画状态机（该角色自己的 `AnimationTree` 资源）用 `advance_expression` 只读属性决定播放。图上没有布尔参数、没有脉冲，C# 里没有"当前状态"枚举。**基类不放角色事实**。
 
-- **属性事实面**：写在角色自己的类里，如 `HeroEntity` 的 `MoveInput / Running / Airborne / Rising / JumpCount / AttackSegment / Hurt / Emoting / Dead`；派生事实在 `SyncAnimFacts()` 里每物理帧算一次。
+- **属性事实面**：写在角色自己的类里，如 `HeroEntity` 的 `MoveInput / Running / JumpCount / AttackSegment / Hurt / Emoting`（`Dead` 在 `ActorEntity`，唯一置位点在 `ReceiveHit` 扣血扣到 0）——全部**单一事实源**：直接事实是输入/物理写入的 `[Export]` 字段，事件事实在状态进入/离开处翻转（无"每帧同步"步骤）；派生事实（如 `Rising` / `Airborne`）是 **`[Export]` 计算属性**：getter 实时计算、setter 为空实现（只读属性不可 `[Export]`（GD0103），不导出对引擎又不可见——空 setter 是让表达式能读到属性的唯一途径）。
+- **出招时序与判定盒**（2026-09-30 审查定稿）：攻击动画的方法轨道回调 C# `OnAttackBegin`/`OnAttackEnd`（只管数值包：属性快照/连段推进）；判定盒形状/位置/开关是动画**值轨道关键帧**（同旧项目 keyframe shape/position/disabled，原生朝左坐标，朝向由 `m_HitBoxRoot` 容器 scale.x 镜像）——代码零几何，打断出招时 AnimationMixer 自动还原。
 - **状态机资源**：`Entitys/<角色>_animation_tree.tres`，由 `EditorScripts/build_<角色>_anim_tree.gd` 生成；节点名 = 动画名，**禁手改 `.tres`**——改图 = 改生成器状态表/边表 + 重跑。
 - **图结构**：主图只留状态组 + 单状态（`Ground` / `Air` / `Attack` 子机可嵌套 ＋ `Hurt` / `Death`）：
   - 组间边 = 目标组**组谓词**（`P_*` 常量，互斥完备、只写一次）；组内边只写**组内区分项**（走/跑、跳/二段/落、段序号）。

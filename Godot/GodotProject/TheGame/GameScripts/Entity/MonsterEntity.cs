@@ -10,12 +10,14 @@ namespace GameLogic.Entity
 {
 	/// <summary>
 	/// 怪物基类：属性（MonsterConfig）、受击硬直/击退、死亡回收。
-	/// 与英雄同一套动画架构：C# 只维护事实面（下方 [Export] 字段），该怪物自己的 AnimationTree
-	/// 用 advance_expression 读事实选动画（Entity/AGENTS.md）。
+	/// 与英雄同一套动画架构：C# 只维护事实面（下方 [Export] 字段，事件事实在状态
+	/// 进入/离开处翻转），该怪物自己的 AnimationTree 用 advance_expression 读事实选动画
+	/// （Entity/AGENTS.md）。
 	///
 	/// M4 范围：可被打的"沙包"——站立、受击、击退、死亡；攻击/巡逻/追击的**决策**属于 M5 的
 	/// GF.Fsm AI（每状态一个类），届时 AI 只写 <see cref="MoveInput"/> / <see cref="AttackSegment"/> 等事实，
-	/// 动画与判定帧沿用本类与动画库，不需要改动画侧。
+	/// 出招装填/收招由攻击动画的 OnAttackBegin/OnAttackEnd 方法轨道回调，判定盒几何在动画值轨道上，
+	/// 不需要改动画侧。
 	/// </summary>
 	public partial class MonsterEntity : ActorEntity
 	{
@@ -25,7 +27,7 @@ namespace GameLogic.Entity
 		/// <summary>死亡动画名（全项目标准名）：死亡到回收的时长 = 该动画长度</summary>
 		private const string DeathAnimName = "death";
 
-		// ---- 表达式事实面（AnimationTree 边只读这些字段，命名规则同 HeroEntity）----
+		// ---- 表达式事实面（AnimationTree 边只读这些成员，命名规则同 HeroEntity）----
 
 		/// <summary>水平移动意图：-1 左 / 0 无 / 1 右（M5 AI 写入）</summary>
 		[Export] public int MoveInput;
@@ -33,11 +35,10 @@ namespace GameLogic.Entity
 		/// <summary>当前攻击段（0 起；-1 = 不在攻击中；M5 AI 写入）</summary>
 		[Export] public int AttackSegment = -1;
 
-		/// <summary>受击硬直中</summary>
+		/// <summary>受击硬直中（进入硬直/硬直结束/死亡三处翻转）</summary>
 		[Export] public bool Hurt;
 
-		/// <summary>已死亡</summary>
-		[Export] public bool Dead;
+		// 死亡事实 Dead 在 ActorEntity（唯一置位点在 ReceiveHit 扣血扣到 0）。
 
 		// ---- 配置 ----
 
@@ -65,6 +66,9 @@ namespace GameLogic.Entity
 		/// <summary>死亡动画长度（OnInit 缓存）</summary>
 		private float m_DeathLen;
 
+		/// <summary>本怪物的攻击配置（OwnerId==自己 的首行；M5 多段时按段解析）</summary>
+		private AttackConfig m_AttackConfig;
+
 		/// <summary>已请求隐藏（防止死亡计时结束后重复 HideEntity）</summary>
 		private bool m_HideRequested;
 
@@ -87,6 +91,14 @@ namespace GameLogic.Entity
 			MaxHp = Config.Hp;
 			m_HurtLen = GetAnimLength(HurtAnimName);
 			m_DeathLen = GetAnimLength(DeathAnimName);
+			foreach (AttackConfig attack in ConfigSystem.Instance.Tables.TbAttackConfig.DataList)
+			{
+				if (attack.OwnerId == Config.EntityId)
+				{
+					m_AttackConfig = attack;
+					break;
+				}
+			}
 		}
 
 		public override void OnShow(object userData)
@@ -141,7 +153,6 @@ namespace GameLogic.Entity
 			UpdateHurt(dt);
 			UpdateDeath(dt);
 			UpdateLocomotion(dt);
-			SyncAnimFacts();
 		}
 
 		/// <summary>结算快照：全部取 MonsterConfig（怪物无成长，等级即表内等级）。</summary>
@@ -158,12 +169,13 @@ namespace GameLogic.Entity
 
 		/// <summary>
 		/// 受击：进入硬直并施加击退（旧 BaseMonster state_hurt：击退 [0,0] 的招式不硬直不击退）；
-		/// 攻击中被打断（旧项目怪物受击会打断出招，与英雄"出招不打断"相反）。
+		/// 攻击中被打断（旧项目怪物受击会打断出招，与英雄"出招不打断"相反）——
+		/// 动画被切走不会再走到 OnAttackEnd，必须在这里显式 ReleaseAttack。
 		/// </summary>
 		protected override void OnHurt(AttackData attack, DamageResult result, Vector2 knockback)
 		{
 			base.OnHurt(attack, result, knockback);
-			if (IsDead)
+			if (Dead)
 			{
 				EnterDeath();
 				return;
@@ -176,8 +188,9 @@ namespace GameLogic.Entity
 
 			// 硬直中再次受击：重置计时（状态机停在 Hurt 不重播，见 build_huaguoshan_monkey_anim_tree.gd）
 			AttackSegment = -1;
-			EndAttack();
+			ReleaseAttack();
 			m_HurtTime = m_HurtLen;
+			Hurt = true;
 			Velocity = knockback;
 		}
 
@@ -186,7 +199,26 @@ namespace GameLogic.Entity
 			if (m_HurtTime > 0f)
 			{
 				m_HurtTime = Mathf.Max(0f, m_HurtTime - dt);
+				if (m_HurtTime <= 0f)
+				{
+					Hurt = false;
+				}
 			}
+		}
+
+		/// <summary>
+		/// 【动画方法轨道回调】收招（attack_N 末帧）：归位攻击事实（M5 多段怪的连段推进届时覆写）。
+		/// </summary>
+		public override void OnAttackEnd()
+		{
+			AttackSegment = -1;
+			base.OnAttackEnd();
+		}
+
+		/// <summary>动画调 OnAttackBegin 时解析攻击配置（本怪唯一攻击行）。</summary>
+		protected override AttackConfig GetAttackConfig()
+		{
+			return m_AttackConfig;
 		}
 
 		/// <summary>死亡：关受击盒（尸体不再挨打）、计时播完死亡动画后回收实体。</summary>
@@ -199,7 +231,8 @@ namespace GameLogic.Entity
 
 			AttackSegment = -1;
 			m_HurtTime = 0f;
-			EndAttack();
+			Hurt = false;
+			ReleaseAttack();
 			SetHurtBoxEnabled(false);
 			m_DeathTime = m_DeathLen;
 		}
@@ -219,16 +252,16 @@ namespace GameLogic.Entity
 			}
 		}
 
-		/// <summary>移动：重力常驻；硬直中保持击退速度并在地面衰减到 0，死亡定身。</summary>
+		/// <summary>移动：重力常驻；硬直中保持击退速度，死亡定身，其余按移动意图。</summary>
 		private void UpdateLocomotion(float dt)
 		{
 			Velocity += new Vector2(0, Config.Gravity * dt);
 
-			if (IsDead)
+			if (Dead)
 			{
 				Velocity = new Vector2(0, Velocity.Y);
 			}
-			else if (m_HurtTime <= 0f)
+			else if (!Hurt)
 			{
 				Velocity = new Vector2(MoveInput * Config.MoveSpeed, Velocity.Y);
 				if (MoveInput != 0)
@@ -238,12 +271,6 @@ namespace GameLogic.Entity
 			}
 
 			MoveAndSlide();
-		}
-
-		private void SyncAnimFacts()
-		{
-			Hurt = m_HurtTime > 0f;
-			Dead = IsDead;
 		}
 
 		/// <summary>受击盒开关（deferred：可能在物理回调内调用）。</summary>
