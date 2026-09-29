@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://dqmpdpnnduin"]
+
+[ext_resource type="Script" uid="uid://f44cnwj7i81c" path="res://TheGame/GameScripts/UI/DamagePop.cs" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dutecoh772684" path="res://TheGame/Sprites/Number/damage_number_monster_physics.png" id="2_mp"]
+[ext_resource type="Texture2D" uid="uid://2ckurw34noqu" path="res://TheGame/Sprites/Number/damage_number_monster_physics_crit.png" id="3_mpc"]
+[ext_resource type="Texture2D" uid="uid://dr2n66ku45jcx" path="res://TheGame/Sprites/Number/damage_number_monster_magic.png" id="4_mm"]
+[ext_resource type="Texture2D" uid="uid://riehofckte8x" path="res://TheGame/Sprites/Number/damage_number_monster_magic_crit.png" id="5_mmc"]
+[ext_resource type="Texture2D" uid="uid://24yvehul56ku" path="res://TheGame/Sprites/Number/damage_number_hero_physics.png" id="6_hp"]
+[ext_resource type="Texture2D" uid="uid://j3ptsyipmna0" path="res://TheGame/Sprites/Number/damage_number_hero_magic.png" id="7_hm"]
+[ext_resource type="Texture2D" uid="uid://ccig6rxsotcq2" path="res://TheGame/Sprites/Number/damage_number_real.png" id="8_real"]
+[ext_resource type="Texture2D" uid="uid://cyll8jkeeq238" path="res://TheGame/Sprites/Number/damage_number_miss.png" id="9_miss"]
+
+[node name="DamagePop" type="Node2D" node_paths=PackedStringArray("m_Miss", "m_Content")]
+z_index = 100
+script = ExtResource("1_script")
+m_MonsterPhysics = ExtResource("2_mp")
+m_MonsterPhysicsCrit = ExtResource("3_mpc")
+m_MonsterMagic = ExtResource("4_mm")
+m_MonsterMagicCrit = ExtResource("5_mmc")
+m_HeroPhysics = ExtResource("6_hp")
+m_HeroMagic = ExtResource("7_hm")
+m_Real = ExtResource("8_real")
+m_Miss = NodePath("m_Content/m_Miss")
+m_Content = NodePath("m_Content")
+
+[node name="m_Content" type="Node2D" parent="."]
+
+[node name="m_Miss" type="Sprite2D" parent="m_Content"]
+visible = false
+texture = ExtResource("9_miss")

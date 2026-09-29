@@ -99,6 +99,42 @@ public partial class TbBattleConfig
     /// 等级压制-每级伤害系数
     /// </summary>
      public float LvDamageCoef => _data.LvDamageCoef;
+    /// <summary>
+    /// 等级压制-英雄防守闪避系数封顶
+    /// </summary>
+     public float LvMissCapHeroDef => _data.LvMissCapHeroDef;
+    /// <summary>
+    /// 等级压制-怪物防守闪避系数封顶
+    /// </summary>
+     public float LvMissCapMonsterDef => _data.LvMissCapMonsterDef;
+    /// <summary>
+    /// 等级压制-暴击系数封顶(人怪两侧一致)
+    /// </summary>
+     public float LvCritCap => _data.LvCritCap;
+    /// <summary>
+    /// 等级压制-幸运系数封顶(人怪两侧一致)
+    /// </summary>
+     public float LvLuckyCap => _data.LvLuckyCap;
+    /// <summary>
+    /// 等级压制-英雄防守时伤害最多按几级算
+    /// </summary>
+     public int LvDamageCapLvHeroDef => _data.LvDamageCapLvHeroDef;
+    /// <summary>
+    /// 等级压制-怪物防守时伤害最多按几级算
+    /// </summary>
+     public int LvDamageCapLvMonsterDef => _data.LvDamageCapLvMonsterDef;
+    /// <summary>
+    /// 英雄被击退横向换算: px/s = Knockback.X &#215; 本值
+    /// </summary>
+     public float KnockbackScaleXHeroDef => _data.KnockbackScaleXHeroDef;
+    /// <summary>
+    /// 怪物被击退横向换算: px/s = Knockback.X &#215; 本值
+    /// </summary>
+     public float KnockbackScaleXMonsterDef => _data.KnockbackScaleXMonsterDef;
+    /// <summary>
+    /// 击退纵向换算: px/s = Knockback.Y &#215; 本值(人怪一致)
+    /// </summary>
+     public float KnockbackScaleY => _data.KnockbackScaleY;
     
     public void ResolveRef(Tables tables)
     {

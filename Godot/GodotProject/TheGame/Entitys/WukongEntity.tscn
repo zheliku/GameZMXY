@@ -6,6 +6,7 @@
 [ext_resource type="SpriteFrames" uid="uid://dpyaaem26n420" path="res://TheGame/Sprites/Effects/wukong/wukong_effect_animations.tres" id="4_effect"]
 [ext_resource type="AnimationLibrary" uid="uid://dpdyqe7blxbqj" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_anim_library.tres" id="5_lib"]
 [ext_resource type="AnimationNodeStateMachine" uid="uid://d0mcjylp207r7" path="res://TheGame/Entitys/wukong_animation_tree.tres" id="6_tree"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/HurtBox.cs" id="7_hurtbox"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
 radius = 20.0
@@ -18,7 +19,7 @@ height = 98.0
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
 size = Vector2(90, 90)
 
-[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_Weapon", "m_Body", "m_EffectRoot", "m_AnimPlayer", "m_AnimTree", "m_HurtBox", "m_HitBox")]
+[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_Weapon", "m_Body", "m_EffectRoot", "m_AnimPlayer", "m_AnimTree", "m_HurtBox", "m_HitBox", "m_HitShape")]
 collision_layer = 2
 collision_mask = 9
 script = ExtResource("1_script")
@@ -30,24 +31,24 @@ m_AnimPlayer = NodePath("m_AnimPlayer")
 m_AnimTree = NodePath("m_AnimTree")
 m_HurtBox = NodePath("m_HurtBox")
 m_HitBox = NodePath("m_HitBox")
+m_HitShape = NodePath("m_HitBox/CollisionShape2D")
 
 [node name="m_Body" type="Sprite2D" parent="." unique_id=803944199]
 texture = ExtResource("2_body")
 hframes = 6
 vframes = 14
-frame = 30
 
 [node name="m_Weapon" type="Sprite2D" parent="." unique_id=791742149]
 texture = ExtResource("3_weapon")
 hframes = 6
 vframes = 14
-frame = 30
 
 [node name="m_EffectRoot" type="Node2D" parent="." unique_id=605119054]
 
 [node name="m_Effect" type="AnimatedSprite2D" parent="m_EffectRoot" unique_id=1116269950]
+scale = Vector2(1e-05, 1e-05)
 sprite_frames = ExtResource("4_effect")
-animation = &"empty"
+animation = &""
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=1514772424]
 libraries/ = ExtResource("5_lib")
@@ -61,10 +62,12 @@ position = Vector2(0, 25)
 shape = SubResource("CapsuleShape2D_body")
 debug_color = Color(1, 0, 0, 0.41960785)
 
-[node name="m_HurtBox" type="Area2D" parent="." unique_id=648785980]
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=648785980 node_paths=PackedStringArray("m_Owner")]
 collision_layer = 128
 collision_mask = 0
 monitoring = false
+script = ExtResource("7_hurtbox")
+m_Owner = NodePath("..")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1046093583]
 position = Vector2(0, 25)

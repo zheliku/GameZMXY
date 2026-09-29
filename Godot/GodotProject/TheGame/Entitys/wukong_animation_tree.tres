@@ -209,7 +209,7 @@ states/run/position = Vector2(440, 0)
 states/walk/node = SubResource("AnimationNodeAnimation_332v3")
 states/walk/position = Vector2(201.11111, -110)
 transitions = ["Start", "Idle", SubResource("AnimationNodeStateMachineTransition_v6iby"), "Start", "walk", SubResource("AnimationNodeStateMachineTransition_wv25t"), "Start", "run", SubResource("AnimationNodeStateMachineTransition_76ein"), "Idle", "walk", SubResource("AnimationNodeStateMachineTransition_1c24y"), "Idle", "run", SubResource("AnimationNodeStateMachineTransition_qsbej"), "walk", "Idle", SubResource("AnimationNodeStateMachineTransition_458ll"), "walk", "run", SubResource("AnimationNodeStateMachineTransition_cergs"), "run", "Idle", SubResource("AnimationNodeStateMachineTransition_k8a1r")]
-graph_offset = Vector2(-589, -257)
+graph_offset = Vector2(-284, -206)
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_1d8c4"]
 animation = &"hurt"
@@ -301,7 +301,7 @@ advance_expression = "not Dead and AttackSegment < 0 and not Hurt and not Airbor
 
 [resource]
 states/Air/node = SubResource("AnimationNodeStateMachine_nnkr7")
-states/Air/position = Vector2(280, 0)
+states/Air/position = Vector2(280, 0.6666667)
 states/Attack/node = SubResource("AnimationNodeStateMachine_61an3")
 states/Attack/position = Vector2(560, 160)
 states/Death/node = SubResource("AnimationNodeAnimation_o8igw")
@@ -312,4 +312,4 @@ states/Hurt/node = SubResource("AnimationNodeAnimation_1d8c4")
 states/Hurt/position = Vector2(0, 340)
 states/Start/position = Vector2(-0.66666794, 8.666665)
 transitions = ["Start", "Ground", SubResource("AnimationNodeStateMachineTransition_gi7mx"), "Start", "Air", SubResource("AnimationNodeStateMachineTransition_8ej2u"), "Ground", "Air", SubResource("AnimationNodeStateMachineTransition_ijtng"), "Air", "Ground", SubResource("AnimationNodeStateMachineTransition_jh830"), "Ground", "Attack", SubResource("AnimationNodeStateMachineTransition_j03gk"), "Air", "Attack", SubResource("AnimationNodeStateMachineTransition_xdfca"), "Attack", "Ground", SubResource("AnimationNodeStateMachineTransition_dd6px"), "Attack", "Air", SubResource("AnimationNodeStateMachineTransition_kcoav"), "Ground", "Hurt", SubResource("AnimationNodeStateMachineTransition_6m1yd"), "Air", "Hurt", SubResource("AnimationNodeStateMachineTransition_2jrsv"), "Hurt", "Ground", SubResource("AnimationNodeStateMachineTransition_jdcdh"), "Hurt", "Air", SubResource("AnimationNodeStateMachineTransition_td2pa"), "Ground", "Death", SubResource("AnimationNodeStateMachineTransition_xqg4w"), "Air", "Death", SubResource("AnimationNodeStateMachineTransition_83err"), "Attack", "Death", SubResource("AnimationNodeStateMachineTransition_4xsid"), "Hurt", "Death", SubResource("AnimationNodeStateMachineTransition_d7wfl"), "Death", "Ground", SubResource("AnimationNodeStateMachineTransition_pnrae")]
-graph_offset = Vector2(-505, -48)
+graph_offset = Vector2(-159, -19)

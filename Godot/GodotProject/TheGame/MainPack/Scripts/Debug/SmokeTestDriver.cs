@@ -1,7 +1,15 @@
 using System;
 using System.Collections.Generic;
+using GameConfig.Battle;
+using GameConfig.Sound;
+using GameFramework;
+using GameFramework.Event;
+using GameLogic.Battle;
 using GameLogic.Entity;
+using GameLogic.Event;
+using GameLogic.UI;
 using Godot;
+using GodotGameFramework;
 
 /// <summary>
 /// 冒烟测试驱动器（开发工具）：仅当以 `-- --smoketest` 启动时生效，平时零开销惰性。
@@ -64,6 +72,17 @@ public partial class SmokeTestDriver : Node
 
 	private AnimationTree m_Tree;
 	private HeroEntity m_Hero;
+
+	// ---- M4 命中链路观测（悟空连打面前的猴子）----
+
+	/// <summary>沙包猴子（场上第一只怪物）</summary>
+	private MonsterEntity m_Monster;
+
+	/// <summary>猴子受到的每次命中（按事件记录：伤害、暴击、闪避）</summary>
+	private readonly List<(int Damage, bool Crit, bool Miss)> m_MonsterHits = new();
+
+	/// <summary>场上出现过的飘字实例数（NodePool 取出即挂到场景）</summary>
+	private int m_MaxPopCount;
 	private bool m_Active;
 	private double m_WaitTime;
 	private double m_Time;
@@ -124,15 +143,31 @@ public partial class SmokeTestDriver : Node
 				return;
 			}
 
-			m_Tree = found[0] as AnimationTree;
-			m_Hero = m_Tree?.GetParent() as HeroEntity;
+			// 场上有多个角色（M4 起有沙包猴子），按宿主类型找英雄的树
+			foreach (Node node in found)
+			{
+				if (node is AnimationTree tree && tree.GetParent() is HeroEntity hero)
+				{
+					m_Tree = tree;
+					m_Hero = hero;
+				}
+			}
+
+			if (m_Tree == null)
+			{
+				return;
+			}
+
+			GF.Event.Subscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
 			GD.Print("SMOKE: 找到 hero，开始时间轴");
 		}
 
 		m_Time += delta;
+		FindMonster();
 		DriveInput();
 		Sample();
 		TrackBodyFrames();
+		TrackPops();
 		if (m_Time >= EndTime)
 		{
 			Finish();
@@ -180,12 +215,24 @@ public partial class SmokeTestDriver : Node
 					m_MashFrame = 0;
 					break;
 				case "damage":
-					m_Hero.TakeDamage(1, -1);   // 验证受击：硬直 + hurt 动画
+					HurtHeroOnce();   // 验证受击：硬直 + hurt 动画（走真实结算链路）
 					break;
 			}
 
 			m_NextStep++;
 		}
+	}
+
+	/// <summary>
+	/// 用一个 1 点真实伤害、无击退的攻击包打英雄一次（经 ReceiveHit → DamageCalculator 完整链路），
+	/// 用完立即归还引用池。
+	/// </summary>
+	private void HurtHeroOnce()
+	{
+		AttackData attack = AttackData.Create(0, default, 1f, DamageKind.Real, System.Numerics.Vector2.Zero, -1, 0, 0,
+			SoundId.None);
+		m_Hero.ReceiveHit(attack, 0);
+		ReferencePool.Release(attack);
 	}
 
 	private void Sample()
@@ -241,18 +288,18 @@ public partial class SmokeTestDriver : Node
 	/// </summary>
 	private void TrackBodyFrames()
 	{
-		if (m_Hero?.Body == null)
+		if (m_Hero?.Body is not Sprite2D body)
 		{
 			return;
 		}
 
 		if (m_LastPath == "Ground/walk")
 		{
-			m_WalkFrames.Add(m_Hero.Body.Frame);
+			m_WalkFrames.Add(body.Frame);
 		}
 		else if (m_LastPath == "Ground/run")
 		{
-			m_RunFrames.Add(m_Hero.Body.Frame);
+			m_RunFrames.Add(body.Frame);
 		}
 	}
 
@@ -286,6 +333,7 @@ public partial class SmokeTestDriver : Node
 
 		CheckEffectLayer(failures);
 		CheckLocomotionFrames(failures);
+		CheckCombat(failures);
 
 		if (failures.Count == 0)
 		{
@@ -343,6 +391,100 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
+	/// <summary>沙包猴子在英雄之后异步生成：找到英雄后再逐帧找，直到出现为止。</summary>
+	private void FindMonster()
+	{
+		if (m_Monster != null)
+		{
+			return;
+		}
+
+		foreach (Node node in GetTree().Root.FindChildren("*", "AnimationTree", true, false))
+		{
+			if (node.GetParent() is MonsterEntity monster)
+			{
+				m_Monster = monster;
+				GD.Print($"SMOKE[{m_Time:F2}] 找到沙包猴子 HP {monster.Hp}/{monster.MaxHp} 位置 {monster.GlobalPosition}");
+				return;
+			}
+		}
+	}
+
+	/// <summary>命中事件观测：只记猴子受击（事件参数用完即止，不持有）。</summary>
+	private void OnDamageDealt(object sender, GameEventArgs args)
+	{
+		if (args is DamageDealtEventArgs e && m_Monster != null && e.TargetEntityId == m_Monster.Id)
+		{
+			m_MonsterHits.Add((e.Damage, e.IsCrit, e.IsMiss));
+			GD.Print($"SMOKE[{m_Time:F2}] 猴子受击 伤害={e.Damage} 暴击={e.IsCrit} 闪避={e.IsMiss} 剩余HP={e.TargetHp} "
+				+ $"猴子x={m_Monster.GlobalPosition.X:F0} 英雄x={m_Hero.GlobalPosition.X:F0}");
+		}
+	}
+
+	/// <summary>飘字实例计数：场上可见的 DamagePop 数（验证走了池并且挂进了场景）。</summary>
+	private void TrackPops()
+	{
+		int count = 0;
+		// FindChildren 的类型过滤只认引擎原生类名（C# 脚本类名不匹配），按 Node2D 取再判脚本类型
+		foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
+		{
+			if (node is DamagePop pop && pop.Visible && pop.IsInsideTree())
+			{
+				count++;
+			}
+		}
+
+		m_MaxPopCount = Mathf.Max(m_MaxPopCount, count);
+	}
+
+	/// <summary>
+	/// M4 完成标准：打猴子掉血飘字，伤害与手算一致。
+	/// 手算（Tests/BattleTests M4Case_Wukong1_HitsMonkey5_PhysicsNoCrit 同源）：悟空 1 级攻 8、猴子 5 级物防 50、
+	/// 双方暴击/闪避为 0 → 每段威力 8×倍率 → ×0.9（等级压制封顶 2 级）取整 → ×0.667 取整。
+	/// 倍率区间 [0.9,1.4] 覆盖四段：威力 7.2~11.2 → 6~10 → 4~6。所以每次命中必须落在 [4,6]、不暴击不闪避。
+	/// </summary>
+	private void CheckCombat(List<string> failures)
+	{
+		if (m_Monster == null)
+		{
+			failures.Add("场上没有找到沙包猴子");
+			return;
+		}
+
+		if (m_MonsterHits.Count == 0)
+		{
+			failures.Add("连打期间猴子没有受到任何命中");
+			return;
+		}
+
+		int total = 0;
+		foreach ((int damage, bool crit, bool miss) in m_MonsterHits)
+		{
+			total += damage;
+			if (miss || crit)
+			{
+				failures.Add($"双方闪避/暴击为 0 时不应出现闪避/暴击（伤害 {damage} 暴击 {crit} 闪避 {miss}）");
+			}
+			else if (damage < 4 || damage > 6)
+			{
+				failures.Add($"命中伤害 {damage} 不在手算区间 [4,6]");
+			}
+		}
+
+		int expectedHp = Mathf.Max(0, m_Monster.MaxHp - total);
+		if (m_Monster.Hp != expectedHp && !m_Monster.IsDead)
+		{
+			failures.Add($"猴子 HP {m_Monster.Hp} 与事件累计 {expectedHp} 不一致");
+		}
+
+		if (m_MaxPopCount == 0)
+		{
+			failures.Add("命中后场上没有出现过飘字（NodePool 未取出 DamagePop）");
+		}
+
+		GD.Print($"SMOKE: 猴子共受击 {m_MonsterHits.Count} 次，累计伤害 {total}，HP {m_Monster.Hp}/{m_Monster.MaxHp}，同屏飘字峰值 {m_MaxPopCount}");
+	}
+
 	private void Fail(string reason)
 	{
 		GD.PrintErr($"SMOKE FAIL：{reason}");
@@ -363,6 +505,11 @@ public partial class SmokeTestDriver : Node
 	private void StopDriving(bool failed)
 	{
 		SetPhysicsProcess(false);
+		if (m_Tree != null)
+		{
+			GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
+		}
+
 		if (!failed && m_HasQuitAfter)
 		{
 			return;

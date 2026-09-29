@@ -194,11 +194,59 @@ python Tools/LegacyMigration/gen_animations.py
 
 脚本读取旧项目 `.tscn`，输出到 `TheGame/Sprites/...` 与 `TheGame/Entitys/`；旧项目保持只读，不写入任何文件。
 
+## M4 判定帧与战斗资产（2026-09-29）
+
+### 判定帧轨道
+
+旧项目"一招一次命中"= 判定形状 `disabled` 开关 + `Area2D.area_entered` 只在进入重叠时触发。新工程迁移开关时序为轨道 `m_HitBox/CollisionShape2D:disabled`（库内每个动画都带，非攻击恒 true）；形状尺寸/位置是可调数值，进 `AttackConfig.HitBoxOffset/HitBoxSize`，出招时 C# 写入。C# 另按目标去重（`AttackData.TryRegisterHit`）。
+
+| 新动画 | 旧来源 | 判定窗口（真实秒） | 旧形状 → 表值（X 取反为"前方"） |
+| --- | --- | --- | --- |
+| wukong `attack_1` | Role1 `hit1`（speed_scale 3） | 0.0333–0.1667 | 胶囊 r76 h186 @(−45,−17) → 外接矩形 152×186 @(45,−17) |
+| wukong `attack_2` | `hit2` | 0.0667–0.2333 | 矩形 133.5×43 @(−42.25,41.5) |
+| wukong `attack_3` | `hit3` | 0.0333–0.1667 | 矩形 323×57 @(0,31.5) |
+| wukong `attack_4` | `hit4` | 0.0667–0.2000 | 矩形 273×74 @(−38.5,38) |
+| monkey `attack_1` | Monster_1 `hit1`（speed_scale 1） | 0.30–0.40 | 圆 r25 @(−24,−10) → 50×50 |
+
+### huaguoshan_monkey 动画库
+
+`Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_anim_library.tres`（`gen_animations.py` 的 `gen_monkey_library()`；状态机 `EditorScripts/build_huaguoshan_monkey_anim_tree.gd` → `Entitys/huaguoshan_monkey_animation_tree.tres`）。轨道驱动 `m_Body`（AnimatedSprite2D，复用 `huaguoshan_monkey_animations.tres`）的 animation/frame/offset；旧 SpriteFrames 用"重复条目撑时长"，这里合并为同一帧的停留时长：
+
+| 新动画 | 旧 | 帧:秒 | offset（朝左原值，镜像由父缩放处理） |
+| --- | --- | --- | --- |
+| idle | wait | 0:0.8（新工程只迁了 1 帧待机图） | (4,0) |
+| run | walk | 0..3 各 0.2 | (0,0) |
+| attack_1 | hit1 | 0:0.12 1:0.12 2..5 各 0.04 | (−13,0) |
+| hurt | hurt | 0:0.16 1:0.12 | (1.5,−0.5) |
+| death | death | 0..4 各 0.0667，5 停到 0.8 | (4,0) |
+
+### 伤害数字
+
+`Tools/LegacyMigration/gen_damage_numbers.gd` 把旧 `Art/AllNumber/<样式>/<名>_0..9.png`（每位一张）拼成每样式一张 10 格横条，输出 `Sprites/Number/`：
+
+| 新文件 | 旧来源 | 格尺寸 | 用途 |
+| --- | --- | --- | --- |
+| `damage_number_monster_physics.png` | `magic/physics_N`（旧放在 magic 目录） | 30×30 | 怪物受物理伤害 |
+| `damage_number_monster_physics_crit.png` | `physicscrit/physics_N` | 42×42 | 怪物受物理暴击 |
+| `damage_number_monster_magic.png` | `magic/magic_N` | 30×30 | 怪物受魔法伤害 |
+| `damage_number_monster_magic_crit.png` | `magiccrit/magic_N` | 32×32 | 怪物受魔法暴击 |
+| `damage_number_hero_physics.png` | `monster/physics/physics_N`（旧放在 monster 目录） | 30×30 | 英雄受物理伤害 |
+| `damage_number_hero_magic.png` | `monster/magic/magic_N` | 30×30 | 英雄受魔法伤害 |
+| `damage_number_real.png` | `real/real_N` | 30×30 | 真实伤害（人怪共用） |
+| `damage_number_miss.png` | `miss.png` | 55×24 | 闪避 |
+
+旧 `Physics/`（大写 P）目录旧代码未引用，未迁。飘字时序（旧 `DamageText` "physics"/"Crit" 与 `miss_effect` 动画）作为表现常数写在 `GameScripts/UI/DamagePop.cs`。
+
+```bat
+"S:\Godot4\Godot4CSharp_console.exe" --headless --script Tools/LegacyMigration/gen_damage_numbers.gd
+"S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --script res://EditorScripts/build_huaguoshan_monkey_anim_tree.gd
+```
+
 ## 待办
 
 - `wukong` 的 `hurt` / `death` 在旧动画中仅单帧（旧工程另有 `RoleDeath.png` 等独立节点），后续接入死亡表现时再评估。
-- `huaguoshan_monkey` 帧时长当前统一取 0.1s（旧 `AnimatedSprite2D.speed` 语义），M5 调 AI 时按手感回填。
+- `huaguoshan_monkey` 时序已由动画库按旧 `mr_player` 轨道复刻（见上节）；`huaguoshan_monkey_animations.tres` 里的 0.1s 帧时长不再参与播放。待机图只迁了 1 帧（旧 `Wait.png` 4 帧），M5 补齐。
 - 武器层已迁 5 张（含空手）用于换装测试；其余 15 把武器与 25 套防具图集待装备系统阶段按 Luban 表按需迁入。
 - 身体层 `wukong_body.png` 的部分动作帧自带默认棍（旧美术遗留）；接武器层后需确认是否与 `wukong_weapon_*` 叠加导致重复，必要时清理身体层里的武器像素。
 - 技能特效与技能音效（见上两节"未迁移"）随技能系统一起迁；`Action/SpecialEffect2` 第二特效层同理。
-- 旧项目角色/怪物另有 `MonsterBeHurt_*`、`MissEffect`、`RoleBeHit` 等打击/未命中特效（`Art/StrikeSpecialEffects/`、`Scene/hittest/`），M4 做命中判定时迁。
+- 打击特效（`MonsterBeHurt_*`、`RoleBeHit`，`Art/StrikeSpecialEffects/`）M4 未迁：命中链路已留 `ActorEntity.OnHurt` 钩子，迁入时同样走 NodePool。`MissEffect` 已由 `damage_number_miss.png` 覆盖。

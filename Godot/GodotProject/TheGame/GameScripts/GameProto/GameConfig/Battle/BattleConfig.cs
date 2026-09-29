@@ -34,6 +34,15 @@ public sealed partial class BattleConfig : Luban.BeanBase
         LvCritCoefMonsterDef = _buf.ReadFloat();
         LvLuckyCoef = _buf.ReadFloat();
         LvDamageCoef = _buf.ReadFloat();
+        LvMissCapHeroDef = _buf.ReadFloat();
+        LvMissCapMonsterDef = _buf.ReadFloat();
+        LvCritCap = _buf.ReadFloat();
+        LvLuckyCap = _buf.ReadFloat();
+        LvDamageCapLvHeroDef = _buf.ReadInt();
+        LvDamageCapLvMonsterDef = _buf.ReadInt();
+        KnockbackScaleXHeroDef = _buf.ReadFloat();
+        KnockbackScaleXMonsterDef = _buf.ReadFloat();
+        KnockbackScaleY = _buf.ReadFloat();
     }
 
     public static BattleConfig DeserializeBattleConfig(ByteBuf _buf)
@@ -113,6 +122,42 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// 等级压制-每级伤害系数
     /// </summary>
     public readonly float LvDamageCoef;
+    /// <summary>
+    /// 等级压制-英雄防守闪避系数封顶
+    /// </summary>
+    public readonly float LvMissCapHeroDef;
+    /// <summary>
+    /// 等级压制-怪物防守闪避系数封顶
+    /// </summary>
+    public readonly float LvMissCapMonsterDef;
+    /// <summary>
+    /// 等级压制-暴击系数封顶(人怪两侧一致)
+    /// </summary>
+    public readonly float LvCritCap;
+    /// <summary>
+    /// 等级压制-幸运系数封顶(人怪两侧一致)
+    /// </summary>
+    public readonly float LvLuckyCap;
+    /// <summary>
+    /// 等级压制-英雄防守时伤害最多按几级算
+    /// </summary>
+    public readonly int LvDamageCapLvHeroDef;
+    /// <summary>
+    /// 等级压制-怪物防守时伤害最多按几级算
+    /// </summary>
+    public readonly int LvDamageCapLvMonsterDef;
+    /// <summary>
+    /// 英雄被击退横向换算: px/s = Knockback.X &#215; 本值
+    /// </summary>
+    public readonly float KnockbackScaleXHeroDef;
+    /// <summary>
+    /// 怪物被击退横向换算: px/s = Knockback.X &#215; 本值
+    /// </summary>
+    public readonly float KnockbackScaleXMonsterDef;
+    /// <summary>
+    /// 击退纵向换算: px/s = Knockback.Y &#215; 本值(人怪一致)
+    /// </summary>
+    public readonly float KnockbackScaleY;
    
     public const int __ID__ = -1776797808;
     public override int GetTypeId() => __ID__;
@@ -142,6 +187,15 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "LvCritCoefMonsterDef:" + LvCritCoefMonsterDef + ","
         + "LvLuckyCoef:" + LvLuckyCoef + ","
         + "LvDamageCoef:" + LvDamageCoef + ","
+        + "LvMissCapHeroDef:" + LvMissCapHeroDef + ","
+        + "LvMissCapMonsterDef:" + LvMissCapMonsterDef + ","
+        + "LvCritCap:" + LvCritCap + ","
+        + "LvLuckyCap:" + LvLuckyCap + ","
+        + "LvDamageCapLvHeroDef:" + LvDamageCapLvHeroDef + ","
+        + "LvDamageCapLvMonsterDef:" + LvDamageCapLvMonsterDef + ","
+        + "KnockbackScaleXHeroDef:" + KnockbackScaleXHeroDef + ","
+        + "KnockbackScaleXMonsterDef:" + KnockbackScaleXMonsterDef + ","
+        + "KnockbackScaleY:" + KnockbackScaleY + ","
         + "}";
     }
 }

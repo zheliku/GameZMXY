@@ -42,6 +42,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         AddExp = _buf.ReadInt();
         HurtSoundId = (Sound.SoundId)_buf.ReadInt();
         DeathSoundId = (Sound.SoundId)_buf.ReadInt();
+        Gravity = _buf.ReadFloat();
     }
 
     public static MonsterConfig DeserializeMonsterConfig(ByteBuf _buf)
@@ -153,6 +154,10 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// 死亡语音(同上)
     /// </summary>
     public readonly Sound.SoundId DeathSoundId;
+    /// <summary>
+    /// 重力 px/s&#178;(旧 gravity=980 向下)
+    /// </summary>
+    public readonly float Gravity;
    
     public const int __ID__ = 129443944;
     public override int GetTypeId() => __ID__;
@@ -190,6 +195,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "AddExp:" + AddExp + ","
         + "HurtSoundId:" + HurtSoundId + ","
         + "DeathSoundId:" + DeathSoundId + ","
+        + "Gravity:" + Gravity + ","
         + "}";
     }
 }

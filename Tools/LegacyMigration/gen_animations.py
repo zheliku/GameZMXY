@@ -389,6 +389,60 @@ def gen_monkey():
 
 
 # --------------------------------------------------------------------------
+# huaguoshan_monkey AnimationLibrary（M4）：与悟空同构——AnimationPlayer 轨道驱动一切，AnimationTree 表达式选动画
+#
+# 旧 Monster_1.tscn 的 mr_player（speed_scale=1，内部时间 = 真实秒）用轨道驱动 AnimatedSprite2D mr_ani：
+# animation / frame / offset + 判定开关 HitBox:disabled。SpriteFrames 条目是"重复图片撑时长"
+# （hit1：f0×3, f1×3, f2..f5），frame 轨道逐条目推进（0.04s/条目）。
+# 新工程 m_Body 是 AnimatedSprite2D（每个动作一张图集、帧尺寸各异，Sprite2D 网格表达不了），
+# 复用 huaguoshan_monkey_animations.tres（每动画一图一帧），轨道显式设 animation/frame——与旧 mr_ani 同构。
+# 旧条目"重复图片撑时长"在这里合并为同一帧的更长停留，时序与旧项目逐帧一致。
+#   * offset：旧 mr_ani 默认面朝左，offset 随父节点 MonsterDir.scale.x 一起镜像；新工程由
+#     ActorEntity 对非 Sprite2D 身体层用负 scale 镜像（offset 随之镜像），这里写"朝左"原值。
+#   * 判定开关：旧 hit1 0.3~0.4s；其余动画恒关（轨道完备性，同悟空库）。
+#   * idle：旧 wait 用 Wait.png 4 帧 0.2s，但新工程只迁移了 1 帧 idle 图（43×63）——保持 1 帧，
+#     补全 idle 图集随 M5 素材补齐（LegacyAssetMap 已登记）。
+# --------------------------------------------------------------------------
+MONKEY_LIB_OUT = os.path.join(SPRITES, "Characters", "Monsters", "huaguoshan_monkey",
+                              "huaguoshan_monkey_anim_library.tres")
+MONKEY_BODY = "m_Body"
+MONKEY_SPRITE_FRAMES = "m_Body:animation"
+
+# 新动画名 → (旧 mr_player 动画 id 对应名, 图片帧序列[(帧, 秒)], 循环, 旧 offset, 判定开关键)
+# 帧序列 = 旧 frame 轨道条目按 SpriteFrames 条目→图片帧展开并合并相邻重复（数据见 LegacyAssetMap.md）
+MONKEY_ANIMS = [
+    ("idle", [(0, 0.8)], True, (4, 0), [(0.0, True)]),
+    ("run", [(0, 0.2), (1, 0.2), (2, 0.2), (3, 0.2)], True, (0, 0), [(0.0, True)]),
+    # hit1：条目 f0×3(0.12s) f1×3(0.12s) f2..f5 各 0.04s，总长 0.4s；判定 0.30~0.40s
+    ("attack_1", [(0, 0.12), (1, 0.12), (2, 0.04), (3, 0.04), (4, 0.04), (5, 0.04)], False, (-13, 0),
+     [(0.0, True), (0.3, False), (0.4, True)]),
+    # hurt：条目 f0×4(0.16s) f1×3(0.12s)，总长 0.28s
+    ("hurt", [(0, 0.16), (1, 0.12)], False, (1.5, -0.5), [(0.0, True)]),
+    # death：条目 0..5 各 0.0667s，之后停在末帧到 0.8s（旧 0.3~0.5s 渐隐，由 C# 回收时序替代）
+    ("death", [(0, 0.0667), (1, 0.0667), (2, 0.0667), (3, 0.0667), (4, 0.0667), (5, 0.4665)], False, (4, 0),
+     [(0.0, True)]),
+]
+
+
+def build_monkey_library():
+    anims = []
+    for name, frames, loop, offset, hit_keys in MONKEY_ANIMS:
+        keys, length = _frame_track_keys(frames)
+        tracks = [
+            (MONKEY_SPRITE_FRAMES, "string", [(0.0, name)]),
+            (MONKEY_BODY + ":frame", "int", keys),
+            (MONKEY_BODY + ":offset", "vector2", [(0.0, (float(offset[0]), float(offset[1])))]),
+            (HITBOX_TRACK, "bool", hit_keys),
+        ]
+        anims.append({"name": name, "loop": loop, "length": length, "tracks": tracks})
+    return anims
+
+
+def gen_monkey_library():
+    emit_anim_library(MONKEY_LIB_OUT, build_monkey_library())
+
+
+# --------------------------------------------------------------------------
 # wukong 棍气特效层（旧 Action/SpecialEffect 节点）—— 按旧机制 1:1 迁移
 #
 # 旧项目机制（Role1.tscn 实测，核对工具见 dump_legacy_effect_raw.py）：
@@ -526,7 +580,32 @@ def _fmt_value(kind, value):
         return f'&"{value}"'
     if kind == "vector2":
         return "Vector2(%g, %g)" % value
+    if kind == "bool":
+        return "true" if value else "false"
     return str(value)
+
+
+# --------------------------------------------------------------------------
+# 判定帧（M4）：旧 base_damagebox/HitBox/HitBox:disabled 轨道 → 新 m_HitBox/CollisionShape2D:disabled
+#
+# 旧项目靠"判定形状开关 + Area2D.area_entered 只在进入重叠时触发"实现一招一次命中，
+# 判定窗口就是 disabled=false 的那段时间。这里只迁移开关时序（内部时间按 speed_scale 换算真实秒）；
+# 形状尺寸/位置不走轨道——它们是可调数值，进了 AttackConfig.HitBoxOffset/HitBoxSize，出招时由 C# 写入。
+# 轨道完备性：库内**每个**动画都带这条轨道（非攻击动画恒 true），否则 AnimationTree 切到
+# 不含该轨道的动画时会把属性重置成未定义值。
+# --------------------------------------------------------------------------
+LEGACY_HITBOX_TRACK = "base_damagebox/HitBox/HitBox:disabled"
+HITBOX_TRACK = "m_HitBox/CollisionShape2D:disabled"
+
+
+def _hitbox_track(chunk, segs):
+    """旧判定开关轨道 → [(真实秒, bool)]；旧动画没有该轨道时返回恒关。"""
+    if chunk is not None:
+        times, values = _track_kv(chunk, LEGACY_HITBOX_TRACK)
+        if times:
+            flags = [v == "true" for v in re.findall(r"true|false", values)]
+            return (HITBOX_TRACK, "bool", _real_keys(times, flags, segs, lead_value=True))
+    return (HITBOX_TRACK, "bool", [(0.0, True)])
 
 
 def _fx_tracks(chunk, segs, new_name):
@@ -898,6 +977,8 @@ def build_wukong_library():
             if mt:
                 tracks.append(mt)
 
+        # 判定帧：只有普攻段迁移旧开关时序；其余动画恒关（技能判定随技能系统迁移）
+        tracks.append(_hitbox_track(chunk if new.startswith("attack_") else None, segs))
 
         # 特效轨道时间可能超出身体帧跨度（旧 length 尾部收招段），取 max 作总长
         for prop, _kind, tks in tracks:
@@ -918,6 +999,7 @@ def build_wukong_library():
             (FX_NODE + ":frame", "int", [(0.0, 0)]),
             (FX_NODE + ":offset", "vector2", [(0.0, (0.0, 0.0))]),
             (FX_NODE + ":scale", "vector2", [(0.0, (1.0, 1.0))]),
+            _hitbox_track(None, None),
         ]
         anims.append({"name": name, "loop": loop, "length": length, "tracks": tracks})
 
@@ -1005,4 +1087,6 @@ if __name__ == "__main__":
     gen_wukong_effect()
     print("huaguoshan_monkey:")
     gen_monkey()
+    print("huaguoshan_monkey library (AnimationPlayer direct-drive):")
+    gen_monkey_library()
 

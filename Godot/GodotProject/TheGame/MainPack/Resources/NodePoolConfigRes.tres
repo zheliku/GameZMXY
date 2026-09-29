@@ -3,8 +3,15 @@
 [ext_resource type="Script" uid="uid://yiewfnn1gx67" path="res://TheGame/MainPack/Scripts/Resources/NodePoolConfig.cs" id="1_8jdg"]
 [ext_resource type="Script" uid="uid://cyfjle46grtw4" path="res://TheGame/MainPack/Scripts/Resources/PoolEntry.cs" id="1_j1vs4"]
 
+[sub_resource type="Resource" id="Resource_damage_pop"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/UIs/DamagePop.tscn"
+Capacity = 64
+metadata/_custom_type_script = "uid://cyfjle46grtw4"
+
 [resource]
 script = ExtResource("1_8jdg")
+Entries = Array[Object]([SubResource("Resource_damage_pop")])
 DefaultExpireTime = 300.0
 DefaultAutoReleaseInterval = 300.0
 metadata/_custom_type_script = "uid://yiewfnn1gx67"

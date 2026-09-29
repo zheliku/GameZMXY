@@ -3,6 +3,7 @@ using GameConfig.Battle;
 using GameConfig.Hero;
 using GameConfig.Sound;
 using GameFramework.Entity;
+using GameLogic.Battle;
 using Godot;
 using GodotGameFramework;
 
@@ -151,6 +152,9 @@ namespace GameLogic.Entity
 		/// <summary>受击硬直剩余时间（秒）</summary>
 		private float m_HurtTime;
 
+		/// <summary>待生效的击退速度（受击登记时写入，硬直开始时施加）</summary>
+		private Vector2 m_PendingKnockback;
+
 		/// <summary>受击硬直时长（受击动画长度，OnInit 缓存）</summary>
 		private float m_HurtLen;
 
@@ -225,6 +229,7 @@ namespace GameLogic.Entity
 			m_Chainable = false;
 			m_HurtTime = 0f;
 			m_EmoteTime = 0f;
+			m_PendingKnockback = Vector2.Zero;
 			Velocity = Vector2.Zero;
 
 			if (Config != null)
@@ -280,19 +285,46 @@ namespace GameLogic.Entity
 			SyncAnimFacts();
 		}
 
+		/// <inheritdoc />
+		public override CombatSide Side => CombatSide.Hero;
+
 		/// <summary>
-		/// 受击入口：M4 命中逻辑调用。扣血 + 转向由基类完成；这里只登记命中请求，
-		/// 由 <see cref="UpdateHurt"/> 决定生效时机（出招期间不打断，收招后进硬直——旧项目规则）。
+		/// 英雄等级。M4 固定 1 级（HeroLevelConfig 第一行）；M6 接存档后由 GF.Archive 写入。
+		/// 攻防成长 = HeroConfig.Base* + (Level-1) × Grow*。
 		/// </summary>
-		public override void TakeDamage(int damage, int attackerFacing)
+		public int Level { get; private set; } = 1;
+
+		/// <summary>结算快照：按等级算成长后的攻防，其余战斗属性直接取 HeroConfig。</summary>
+		protected override CombatantStats GetCombatStats()
 		{
-			base.TakeDamage(damage, attackerFacing);
+			if (Config == null)
+			{
+				return default;
+			}
+
+			int grow = Level - 1;
+			return new CombatantStats(CombatSide.Hero, Level,
+				Config.BasePower + grow * Config.GrowPower,
+				Config.BaseDef + grow * Config.GrowDef,
+				Config.BaseMdef + grow * Config.GrowMdef,
+				Config.Crit, Config.Miss, Config.Lucky, Config.Toughness, Config.Htarget, Config.CritReduce,
+				Config.Ar, Config.Sp);
+		}
+
+		/// <summary>
+		/// 受击表现：登记硬直请求（出招期间不打断，收招后进硬直——旧项目规则，见 UpdateHurt），
+		/// 击退速度在硬直生效时施加。
+		/// </summary>
+		protected override void OnHurt(AttackData attack, DamageResult result, Vector2 knockback)
+		{
+			base.OnHurt(attack, result, knockback);
 			if (IsDead)
 			{
 				return;
 			}
 
 			HurtRequested = true;
+			m_PendingKnockback = knockback;
 		}
 
 		/// <summary>
@@ -347,6 +379,8 @@ namespace GameLogic.Entity
 			{
 				HurtRequested = false;
 				m_HurtTime = m_HurtLen;
+				Velocity = m_PendingKnockback;
+				m_PendingKnockback = Vector2.Zero;
 				PlaySound(Config.HurtSoundId);   // 受害者自己的受击语音（旧 BaseHero.gd:592 按 self 选音）
 			}
 		}
@@ -370,6 +404,7 @@ namespace GameLogic.Entity
 				{
 					AttackSegment++;
 					m_SegTime = 0f;
+					BeginAttack(m_Combo[AttackSegment]);
 					Log.Debug("[Hero] 连击 → 段{0}", AttackSegment + 1);
 				}
 				else
@@ -377,6 +412,7 @@ namespace GameLogic.Entity
 					ComboIndex = m_Chainable ? (ComboIndex + 1) % m_Combo.Length : 0;
 					Log.Debug("[Hero] 收招 连段序号={0}", ComboIndex);
 					AttackSegment = -1;
+					EndAttack();
 				}
 			}
 			else
@@ -393,6 +429,7 @@ namespace GameLogic.Entity
 					AttackSegment = Mathf.Clamp(ComboIndex, 0, m_Combo.Length - 1);
 					m_SegTime = 0f;
 					m_Chainable = IsOnFloor();
+					BeginAttack(m_Combo[AttackSegment]);
 					Log.Debug("[Hero] 攻击段{0} 起手", AttackSegment + 1);
 				}
 			}
@@ -446,9 +483,14 @@ namespace GameLogic.Entity
 		{
 			Velocity += new Vector2(0, Config.Gravity * dt);
 
-			if (IsDead || m_HurtTime > 0)
+			if (IsDead)
 			{
 				Velocity = new Vector2(0, Velocity.Y);
+			}
+			else if (m_HurtTime > 0)
+			{
+				// 硬直期间保持击退速度（受击生效时写入），硬直结束回到输入控制——
+				// 与旧项目一致：击退只在 hurt 动画期间生效，之后由移动逻辑接管。
 			}
 			else if (AttackSegment >= 0)
 			{

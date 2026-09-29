@@ -350,13 +350,15 @@ def build_monster():
         ("AddExp", "int", "击杀给英雄的经验(旧 add_exp)"),
         ("HurtSoundId", "Sound.SoundId", "受击语音(旧项目怪物无语音素材,填 None;M5 用)"),
         ("DeathSoundId", "Sound.SoundId", "死亡语音(同上)"),
+        # M4 表尾追加：怪物受击击退/落地需要重力（旧 BaseMonster.gd:131 gravity=980，与英雄同语义）
+        ("Gravity", "float", "重力 px/s²(旧 gravity=980 向下)"),
     ]
     rows = [
         (1, 1, "花果山猴子", "花果山小怪", "HuaguoshanMonkey", 5,
          60, 50, 80,
          0, 0, 0, 0, 0, 0, 0, 0,
          0, 80, 300, 45, 70, 0, 1,
-         "None", "None"),
+         "None", "None", 980),
     ]
     # force_rows：移除表尾的音效列后必须重写数据行，否则旧单元格残留会造成列错位
     new_table("MonsterConfig.xlsx", fields, rows, force_rows=True)
@@ -374,7 +376,7 @@ def build_battle():
         ("PowerScale", "vector2", "攻击力倍率范围(乘英雄攻击,X=下限,Y=上限,写法 1,1.2)"),
         ("FlatPower", "int", "固定攻击力(不与属性挂钩)"),
         ("DamageKind", "Battle.DamageKind", "伤害类型"),
-        ("Knockback", "vector2", "击退(旧 hurtBack[0]/[1],X=横向,Y=纵向,写法 2,0)"),
+        ("Knockback", "vector2", "击退(X>0=远离攻击者,Y<0=向上;单位同旧 hurtBack,乘 BattleConfig.KnockbackScale* 换算 px/s,写法 2,0)"),
         ("WsGain", "vector2i", "命中获得无双值范围(旧 WSValue,X=下限,Y=上限,写法 3,5)"),
         ("HitProtect", "int", "受击保护累计值(旧 HitProtect)"),
         ("Interval", "float", "本段最短停留秒(动画不足时补足,即普攻之间的间隔)"),
@@ -383,6 +385,12 @@ def build_battle():
         ("OwnerId", "Entity.EntityId", "这招属于谁(None=通用招,将来多主体共享用)"),
         ("ComboIndex", "int", "连段第几段(0起;同一 OwnerId 内连续,越大越靠后)"),
         ("AiWeight", "int", "AI 选招权重(怪物 AI 用;英雄普攻填 0)"),
+        # M4 表尾追加（2026-09-29）：判定盒几何（出招时写入 HitBox；判定帧开关仍由动画轨道驱动）。
+        # 数值换算自旧场景 base_damagebox/HitBox 形状：X 取反（旧素材朝左、负 X 为前方），
+        # Y 与新工程同一原点（旧 base_damagebox 与 Action 同在 (0,-30)，新工程身体层在原点）。
+        # 旧 hit1 是胶囊（r76,h186）→ 取外接矩形；旧猴子是圆（r25）→ 取外接正方形。
+        ("HitBoxOffset", "vector2", "判定盒中心相对角色原点(X>0=前方,Y 向下为正,写法 45,-17)"),
+        ("HitBoxSize", "vector2", "判定盒矩形尺寸 px(写法 152,186)"),
     ]
     # 为什么"归属/连段顺序/AI 权重"写在攻击行上，而不是 HeroAttackConfig/MonsterAttackConfig 关联表：
     #   关联表里每行唯一独有的信息只有"顺序"或"权重"，NameCn/Desc 与攻击行完全重复；
@@ -392,11 +400,12 @@ def build_battle():
     # 音效接线以旧代码为准（add_music 的 method 轨道），不是文件名的字面意思：
     # hit1→39、hit2→40、hit3→39、hit4→38（Role1.tscn method 轨道实测）
     rows = [
-        (1001, "role1.hit1", "悟空普攻1", "普攻第一段", "attack_1", "1,1.2", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack1And3", "WukongImpact", "Wukong", 0, 0),
-        (1002, "role1.hit2", "悟空普攻2", "普攻第二段", "attack_2", "0.9,1.1", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack2", "WukongImpact", "Wukong", 1, 0),
-        (1003, "role1.hit3", "悟空普攻3", "普攻第三段", "attack_3", "1,1.2", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack1And3", "WukongImpact", "Wukong", 2, 0),
-        (1004, "role1.hit4", "悟空普攻4", "普攻第四段(击退收招)", "attack_4", "1.2,1.4", 0, "Physics", "6,-5", "3,5", 0, 0.35, "WukongAttack4", "WukongImpact", "Wukong", 3, 0),
-        (2001, "monster1.hit1", "猴子普攻", "猴子唯一攻击", "attack_1", "0,0", 10, "Physics", "-3,-6", "0,0", 10, 0.6, "None", "None", "HuaguoshanMonkey", 0, 100),
+        (1001, "role1.hit1", "悟空普攻1", "普攻第一段", "attack_1", "1,1.2", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack1And3", "WukongImpact", "Wukong", 0, 0, "45,-17", "152,186"),
+        (1002, "role1.hit2", "悟空普攻2", "普攻第二段", "attack_2", "0.9,1.1", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack2", "WukongImpact", "Wukong", 1, 0, "42.25,41.5", "133.5,43"),
+        (1003, "role1.hit3", "悟空普攻3", "普攻第三段", "attack_3", "1,1.2", 0, "Physics", "2,0", "3,5", 0, 0.35, "WukongAttack1And3", "WukongImpact", "Wukong", 2, 0, "0,31.5", "323,57"),
+        (1004, "role1.hit4", "悟空普攻4", "普攻第四段(击退收招)", "attack_4", "1.2,1.4", 0, "Physics", "6,-5", "3,5", 0, 0.35, "WukongAttack4", "WukongImpact", "Wukong", 3, 0, "38.5,38", "273,74"),
+        # 猴子击退 X：旧值 -3 是为抵消旧项目朝向符号写的负数；新语义"X>0=远离攻击者"统一为正（2026-09-29 M4）
+        (2001, "monster1.hit1", "猴子普攻", "猴子唯一攻击", "attack_1", "0,0", 10, "Physics", "3,-6", "0,0", 10, 0.6, "None", "None", "HuaguoshanMonkey", 0, 100, "24,-10", "50,50"),
     ]
     # force_rows：修复 2026-09-27 表头与手工合并列错位时写坏的数据行
     new_table("AttackConfig.xlsx", fields, rows, force_rows=True)
@@ -425,11 +434,23 @@ def build_battle():
         ("LvCritCoef_MonsterDef", "float", "等级压制-怪物防守暴击系数"),
         ("LvLuckyCoef", "float", "等级压制-幸运系数"),
         ("LvDamageCoef", "float", "等级压制-每级伤害系数"),
+        # M4 表尾追加（2026-09-29）：旧公式里写死的封顶与击退换算系数
+        # (BaseHero.gd:757-759/806-810, BaseMonster.gd:736-770/902-915, 击退 BaseHero.gd:818 / BaseMonster.gd:475)
+        ("LvMissCap_HeroDef", "float", "等级压制-英雄防守闪避系数封顶"),
+        ("LvMissCap_MonsterDef", "float", "等级压制-怪物防守闪避系数封顶"),
+        ("LvCritCap", "float", "等级压制-暴击系数封顶(人怪两侧一致)"),
+        ("LvLuckyCap", "float", "等级压制-幸运系数封顶(人怪两侧一致)"),
+        ("LvDamageCapLv_HeroDef", "int", "等级压制-英雄防守时伤害最多按几级算"),
+        ("LvDamageCapLv_MonsterDef", "int", "等级压制-怪物防守时伤害最多按几级算"),
+        ("KnockbackScaleX_HeroDef", "float", "英雄被击退横向换算: px/s = Knockback.X × 本值"),
+        ("KnockbackScaleX_MonsterDef", "float", "怪物被击退横向换算: px/s = Knockback.X × 本值"),
+        ("KnockbackScaleY", "float", "击退纵向换算: px/s = Knockback.Y × 本值(人怪一致)"),
     ]
     rows = [
         ("战斗常数", "沿用旧项目人怪两侧不一致的基数,集中在此处",
          250, 250, 100, 100, 100, 70, 100, 100, 50, 2,
-         0.03, 0.07, 0.04, 0.11, 0.07, 0.05),
+         0.03, 0.07, 0.04, 0.11, 0.07, 0.05,
+         1, 0.9, 1, 0.7, 5, 2, 25, 30, 15),
     ]
     new_table("BattleConfig.xlsx", fields, rows)
 

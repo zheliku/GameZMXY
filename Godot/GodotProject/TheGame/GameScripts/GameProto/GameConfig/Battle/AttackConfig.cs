@@ -33,6 +33,8 @@ public sealed partial class AttackConfig : Luban.BeanBase
         OwnerId = (Entity.EntityId)_buf.ReadInt();
         ComboIndex = _buf.ReadInt();
         AiWeight = _buf.ReadInt();
+        HitBoxOffset = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
+        HitBoxSize = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
     }
 
     public static AttackConfig DeserializeAttackConfig(ByteBuf _buf)
@@ -73,7 +75,7 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly Battle.DamageKind DamageKind;
     /// <summary>
-    /// 击退(旧 hurtBack[0]/[1],X=横向,Y=纵向,写法 2,0)
+    /// 击退(X&gt;0=远离攻击者,Y&lt;0=向上;单位同旧 hurtBack,乘 BattleConfig.KnockbackScale* 换算 px/s,写法 2,0)
     /// </summary>
     public readonly Godot.Vector2 Knockback;
     /// <summary>
@@ -108,6 +110,14 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// AI 选招权重(怪物 AI 用;英雄普攻填 0)
     /// </summary>
     public readonly int AiWeight;
+    /// <summary>
+    /// 判定盒中心相对角色原点(X&gt;0=前方,Y 向下为正,写法 45,-17)
+    /// </summary>
+    public readonly Godot.Vector2 HitBoxOffset;
+    /// <summary>
+    /// 判定盒矩形尺寸 px(写法 152,186)
+    /// </summary>
+    public readonly Godot.Vector2 HitBoxSize;
    
     public const int __ID__ = 818309408;
     public override int GetTypeId() => __ID__;
@@ -136,6 +146,8 @@ public sealed partial class AttackConfig : Luban.BeanBase
         + "OwnerId:" + OwnerId + ","
         + "ComboIndex:" + ComboIndex + ","
         + "AiWeight:" + AiWeight + ","
+        + "HitBoxOffset:" + HitBoxOffset + ","
+        + "HitBoxSize:" + HitBoxSize + ","
         + "}";
     }
 }

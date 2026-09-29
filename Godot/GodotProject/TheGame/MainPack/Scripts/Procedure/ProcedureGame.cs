@@ -9,6 +9,8 @@ using GodotGameFramework.Scene;
 using GodotGameFramework.UI;
 using GameLogic;
 using GameLogic.Entity;
+using GameLogic.Entity.Monsters;
+using GameLogic.Manager;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -25,6 +27,9 @@ public class ProcedureGame : ProcedureBase
 
     /// <summary>悟空出生点（沿用旧项目 Level_1 第 1 波的刷怪坐标量级）</summary>
     private static readonly Vector2 HeroSpawnPosition = new Vector2(300, 300);
+
+    /// <summary>M4 沙包猴子出生点（悟空右侧、普攻 1 判定范围内；M6 起由 LevelSpawnConfig 驱动）</summary>
+    private static readonly Vector2 MonkeySpawnPosition = new Vector2(400, 300);
 
     /// <summary>
     /// 状态初始化（只调用一次）。
@@ -50,11 +55,17 @@ public class ProcedureGame : ProcedureBase
         // M3 调试入口：加载调试场地 → 经配置驱动生成悟空（EntityId → 实体.xlsx → 场景路径）
         await GF.Scene.LoadSceneAsync(DebugArenaScenePath, LoadSceneMode.Additive);
 
+        // 飘字挂在实体组节点同一棵世界树下（与角色同坐标系）
+        DamagePopManager.Instance.Activate(GF.Entity);
+
         WukongEntity hero = await GF.Entity.ShowEntityAsync<WukongEntity>(EntityId.Wukong, null);
         if (hero != null)
         {
             hero.Position = HeroSpawnPosition;
         }
+
+        // M4 沙包：悟空面前一只猴子（出生点经 userData 传入，MonsterEntity.OnShow 读取）
+        await GF.Entity.ShowEntityAsync<HuaguoshanMonkeyEntity>(EntityId.HuaguoshanMonkey, MonkeySpawnPosition);
 
         // 主菜单已打开，收掉加载遮罩（遮罩由 ProcedurePrelode 打开并保持到此）
         LoadingForm.Current?.CloseLoading();
@@ -76,6 +87,9 @@ public class ProcedureGame : ProcedureBase
     {
         base.OnLeave(procedureOwner, isShutdown);
 
-
+        if (!isShutdown)
+        {
+            DamagePopManager.Instance.Deactivate();
+        }
     }
 }

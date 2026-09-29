@@ -1,0 +1,66 @@
+[gd_scene format=3 uid="uid://cc7r187g26xr8"]
+
+[ext_resource type="Script" uid="uid://bhpujkcrdsfwg" path="res://TheGame/GameScripts/Entity/Monsters/HuaguoshanMonkeyEntity.cs" id="1_script"]
+[ext_resource type="SpriteFrames" uid="uid://di0jrkwb1ad8p" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_animations.tres" id="2_frames"]
+[ext_resource type="AnimationLibrary" uid="uid://o8gq56k2o2gr" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_anim_library.tres" id="3_lib"]
+[ext_resource type="AnimationNodeStateMachine" uid="uid://c4seyh1vbcds4" path="res://TheGame/Entitys/huaguoshan_monkey_animation_tree.tres" id="4_tree"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/HurtBox.cs" id="5_hurtbox"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
+radius = 16.0
+height = 32.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_hurt"]
+radius = 23.0
+height = 62.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
+size = Vector2(50, 50)
+
+[node name="HuaguoshanMonkeyEntity" type="CharacterBody2D" node_paths=PackedStringArray("m_Body", "m_AnimPlayer", "m_AnimTree", "m_HurtBox", "m_HitBox", "m_HitShape")]
+collision_layer = 4
+collision_mask = 9
+script = ExtResource("1_script")
+MonsterId = 1
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AnimTree = NodePath("m_AnimTree")
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBox")
+m_HitShape = NodePath("m_HitBox/CollisionShape2D")
+
+[node name="m_Body" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -13)
+sprite_frames = ExtResource("2_frames")
+animation = &"idle"
+
+[node name="m_BodyShape" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_body")
+
+[node name="m_HurtBox" type="Area2D" parent="." node_paths=PackedStringArray("m_Owner")]
+position = Vector2(-2, -13)
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("5_hurtbox")
+m_Owner = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox"]
+shape = SubResource("CapsuleShape2D_hurt")
+
+[node name="m_HitBox" type="Area2D" parent="."]
+position = Vector2(24, -23)
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBox"]
+shape = SubResource("RectangleShape2D_hit")
+disabled = true
+
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="."]
+libraries/ = ExtResource("3_lib")
+
+[node name="m_AnimTree" type="AnimationTree" parent="."]
+tree_root = ExtResource("4_tree")
+anim_player = NodePath("../m_AnimPlayer")
