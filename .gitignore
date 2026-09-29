@@ -2,3 +2,14 @@
 .godot/
 /android/
 Godot/GodotProject/.vscode
+
+# 构建产物 / 本地环境
+bin/
+obj/
+*.tmp
+.vs/
+*.user
+Godot/exported_bundles/
+*.stackdump
+# FileServer/bin 是框架自带的源码目录，例外保留
+!Tools/FileServer/bin/

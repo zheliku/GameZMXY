@@ -69,7 +69,7 @@ namespace GameLogic.Entity
 
 		// ---- 表达式事实面：AnimationTree 的每条边只读这里的字段 ----
 		// 命名不带 State/m_ 前缀：它们是 .tres 里的标识符，必须保持可读
-		// （AGENTS 5.1 的 m_ 约定针对场景绑定的节点引用字段）。
+		// （根规范 §5.1 的 m_ 约定针对场景绑定的节点引用字段）。
 		// 只加"角色自己的属性"，禁止把动画名、状态序号塞进来。
 
 		/// <summary>水平输入：-1 左 / 0 无 / 1 右</summary>
@@ -203,7 +203,7 @@ namespace GameLogic.Entity
 		{
 			base.OnShow(userData);
 
-			// 池复用的实例带着上次的脏事实回来，一律在 OnShow 复位（AGENTS 4.2）。
+			// 池复用的实例带着上次的脏事实回来，一律在 OnShow 复位（见 Entity/AGENTS.md 生命周期）。
 			// 状态机不需要手动归位：事实复位后（Dead=false、Hurt=false…），
 			// 表达式边会自行把树从任意状态（含死亡）拉回地面——"death → 地面"边就是为此存在的。
 			Hp = MaxHp;
@@ -514,7 +514,7 @@ namespace GameLogic.Entity
 
 		/// <summary>
 		/// 方向键点击登记：同一方向在 Config.RunDoubleTapWindow 秒内二次按下 → 进入跑步档。
-		/// 窗口时长来自配置表（AGENTS 3.5：代码里不得出现数值字面量）。
+		/// 窗口时长来自配置表（根规范 §4.5：调参数值进表，不写裸字面量）。
 		/// </summary>
 		private void RegisterDirectionTap(int dir)
 		{

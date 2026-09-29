@@ -19,7 +19,7 @@ public class ProcedureGame : ProcedureBase
     /// <summary>
     /// 调试场地场景路径。
     /// M3~M5 阶段用它代替关卡：提供地面与相机，让控制器手感可以直接验证；
-    /// M6 起改由 LevelConfig.ScenePath 驱动（AGENTS 12）。
+    /// M6 起改由 LevelConfig.ScenePath 驱动（根规范 §14 M6）。
     /// </summary>
     private const string DebugArenaScenePath = "res://TheGame/Scenes/DebugArena.tscn";
 

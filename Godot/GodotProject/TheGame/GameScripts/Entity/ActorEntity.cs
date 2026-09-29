@@ -9,7 +9,7 @@ using GodotGameFramework.Sound;
 namespace GameLogic.Entity
 {
 	/// <summary>
-	/// 战斗角色基类（AGENTS 5.1）。英雄与怪物都从这里派生。
+	/// 战斗角色基类（根规范 §5.1）。英雄与怪物都从这里派生。
 	/// 职责：IEntity 生命周期样板、血量、动画宿主（AnimationPlayer + AnimationTree）、
 	/// **通用**表现层（身体/特效）与判定区、朝向、受击与死亡入口。**本类不含任何角色事实**
 	/// （移动输入、跑档、攻击段、跳跃次数……都在子类），也不含英雄专属层（武器层在 HeroEntity）。
@@ -22,7 +22,7 @@ namespace GameLogic.Entity
 	///    每物理帧同步一次，该角色状态机的每条边用 advance_expression 判断这些属性决定转移；
 	///  * 基类只把 AnimationTree 的表达式基对象指向本节点（见 <see cref="OnInit"/>），
 	///    不解释任何事实，也不出现任何角色专属动画名。
-	/// 本类<b>不设"阵营"字段</b>：敌我关系由物理层表达（AGENTS 5.4）。
+	/// 本类<b>不设"阵营"字段</b>：敌我关系由物理层表达（根规范 §7）。
 	/// 子节点引用走 <c>[Export]</c> + <c>m_</c> 前缀，由场景绑定
 	/// （.tscn 的节点头必须声明 node_paths=PackedStringArray(...)，否则 NodePath 赋值会被忽略）。
 	/// </summary>
@@ -101,7 +101,7 @@ namespace GameLogic.Entity
 		/// <summary>攻击判定盒相对宿主的横向偏移绝对值（从场景读取，镜像朝向时用）</summary>
 		private float m_HitBoxOffsetX;
 
-		/// <summary>实体初始化。isNewInstance 为 true 时做一次性初始化（AGENTS 4.2）。</summary>
+		/// <summary>实体初始化。isNewInstance 为 true 时做一次性初始化（见 Entity/AGENTS.md 生命周期）。</summary>
 		public virtual void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance,
 			object userData)
 		{
@@ -193,7 +193,7 @@ namespace GameLogic.Entity
 
 		/// <summary>
 		/// 按 SoundId 播放一次性音效：查 SoundConfig 拿路径与组，直接走框架的统一入口
-		/// `GF.Sound.PlaySound(资源, 组名)`。代码里不出现资源路径（红线 5），路径与组都在表里。
+		/// `GF.Sound.PlaySound(资源, 组名)`。代码里不出现资源路径（根规范 §4.5），路径与组都在表里。
 		/// </summary>
 		public void PlaySound(SoundId id)
 		{
