@@ -8,19 +8,23 @@
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
 radius = 19.0
-height = 52.0
+height = 61.85
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_hurt"]
 radius = 19.0
 height = 62.0
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_1"]
+[sub_resource type="RectangleShape2D" id="hitbox_rest"]
 size = Vector2(50, 50)
 
-[node name="HuaguoshanMonkeyEntity" type="CharacterBody2D" unique_id=1348517012 node_paths=PackedStringArray("m_Body", "m_AnimPlayer", "m_AnimTree", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[sub_resource type="RectangleShape2D" id="detector_sight"]
+size = Vector2(600, 200)
+
+[node name="HuaguoshanMonkeyEntity" type="CharacterBody2D" unique_id=1348517012 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_AnimTree", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 script = ExtResource("1_script")
+m_Detector = NodePath("m_Detector")
 MonsterId = 1
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
@@ -32,12 +36,12 @@ m_HitBoxRoot = NodePath("m_HitBoxRoot")
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1937697229]
 position = Vector2(0, -13)
 sprite_frames = ExtResource("2_frames")
-animation = &"attack_1"
-frame = 1
-offset = Vector2(-13, 0)
+animation = &"death"
+frame = 5
+offset = Vector2(1.5, -0.5)
 
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1842145312]
-position = Vector2(2, -8)
+position = Vector2(-1, -12)
 shape = SubResource("CapsuleShape2D_body")
 debug_color = Color(0, 1, 0, 0.41960785)
 
@@ -50,7 +54,7 @@ script = ExtResource("5_hurtbox")
 m_Owner = NodePath("..")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=59413662]
-position = Vector2(4, 0)
+position = Vector2(1, 1)
 shape = SubResource("CapsuleShape2D_hurt")
 debug_color = Color(1, 0, 0, 0.41960785)
 
@@ -63,7 +67,18 @@ monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1324609239]
 position = Vector2(-24, -23)
-shape = SubResource("hitbox_attack_1")
+shape = SubResource("hitbox_rest")
+disabled = true
+
+[node name="m_Detector" type="Area2D" parent="." unique_id=1502863447]
+collision_layer = 4096
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=1502863448]
+position = Vector2(0, -20)
+shape = SubResource("detector_sight")
+debug_color = Color(1, 1, 0, 0.1)
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=733591014]
 libraries/ = ExtResource("3_lib")

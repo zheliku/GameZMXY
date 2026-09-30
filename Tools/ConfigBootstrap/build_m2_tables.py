@@ -158,6 +158,12 @@ ENUMS = [
         ("Wukong", "悟空", None, None),
         ("HuaguoshanMonkey", "花果山猴子", None, None),
     ]),
+    # M5：怪物阶级（精英/首领的差异主要走数据：霸体列、技能行；阶级供 HUD 血条/掉落/结算区分）
+    ("Monster.MonsterRank", False, True, [
+        ("Normal", "普通", 0, None),
+        ("Elite", "精英", 1, None),
+        ("Boss", "首领", 2, None),
+    ]),
     ("Battle.DamageKind", False, True, [
         ("Physics", "物理", None, None),
         ("Magic", "魔法", None, None),
@@ -352,16 +358,26 @@ def build_monster():
         ("DeathSoundId", "Sound.SoundId", "死亡语音(同上)"),
         # M4 表尾追加：怪物受击击退/落地需要重力（旧 BaseMonster.gd:131 gravity=980，与英雄同语义）
         ("Gravity", "float", "重力 px/s²(旧 gravity=980 向下)"),
+        # M5 表尾追加：怪物 AI 决策节奏（旧 BaseMonster.gd Monster_Intelligence / normal_state）
+        ("PatrolInterval", "float", "巡逻重新决策间隔秒(旧 change_state 计时器 2s)"),
+        ("PatrolIdleChance", "int", "巡逻决策时原地停留概率 0-100(旧 ran_num<10),其余左右各半"),
+        ("PatrolRadius", "int", "巡逻半径 px:离出生点超出即折返(新增,旧项目无,防走出场地)"),
+        ("AttackInterval", "float", "近身后普攻判定间隔秒(旧 count%60≈1s,每次按 AttackDesire 掷骰)"),
+        ("Rank", "Monster.MonsterRank", "阶级 Normal/Elite/Boss(旧 is_boss;供 HUD/掉落/结算区分)"),
+        ("SuperArmor", "bool", "霸体:受击不硬直不击退、不打断出招(旧 IsSuperArmor/Monster_18 类保护)"),
+        ("AttackRangeSlack", "int", "站定滞回 px:距离超过 AttackRange+本值才重新追击(新增,防目标被击退几像素就来回切换)"),
     ]
     rows = [
         (1, 1, "花果山猴子", "花果山小怪", "HuaguoshanMonkey", 5,
          60, 50, 80,
          0, 0, 0, 0, 0, 0, 0, 0,
          0, 80, 300, 45, 70, 0, 1,
-         "None", "None", 980),
+         "None", "None", 980,
+         2.0, 10, 200, 1.0,
+         "Normal", False, 25),
     ]
-    # force_rows：移除表尾的音效列后必须重写数据行，否则旧单元格残留会造成列错位
-    new_table("MonsterConfig.xlsx", fields, rows, force_rows=True)
+    # 表尾追加列：不带 force_rows（只回填空单元格，保留手工数值；2026-09-27 的错位修复已完成）
+    new_table("MonsterConfig.xlsx", fields, rows)
 
 
 def build_battle():
@@ -384,6 +400,11 @@ def build_battle():
         ("OwnerId", "Entity.EntityId", "这招属于谁(None=通用招,将来多主体共享用)"),
         ("ComboIndex", "int", "连段第几段(0起;同一 OwnerId 内连续,越大越靠后)"),
         ("AiWeight", "int", "AI 选招权重(怪物 AI 用;英雄普攻填 0)"),
+        # M5 表尾追加：怪物 AI 的"技能用法"（旧 Monster_103 Skill_N_CD + 距离门槛 abs(dx)<=270/360）
+        ("AiPriority", "int", "AI 优先级:0=普攻池(按攻击欲望掷骰+权重抽);>0=技能(冷却就绪且距离满足即放,大者优先,追击途中也会放)"),
+        ("AiRange", "vector2", "AI 释放距离 px(X=最小,Y=最大;只比水平距离,写法 0,45)"),
+        ("AiCooldown", "vector2", "AI 释放后冷却秒(X=下限,Y=上限随机;普攻池填 0,0)"),
+        ("AiInitCooldown", "vector2", "AI 出生时初始冷却秒(X=下限,Y=上限;旧 _ready 里 Skill_N_CD=randi_range)"),
         # 2026-09-30 审查裁决：删 Interval / HitBoxOffset / HitBoxSize 三列——
         # 出招时序与判定盒几何全部归动画（gen_animations.py 的方法轨道，同旧项目动画内 keyframe），
         # 表只存数值（威力/击退/无双/保护/音效/归属）。此前表值 -10 还漏减了猴子身体层 (0,-13) 的 Y 偏移。
@@ -396,15 +417,16 @@ def build_battle():
     # 音效接线以旧代码为准（add_music 的 method 轨道），不是文件名的字面意思：
     # hit1→39、hit2→40、hit3→39、hit4→38（Role1.tscn method 轨道实测）
     rows = [
-        (1001, "role1.hit1", "悟空普攻1", "普攻第一段", "attack_1", "1,1.2", 0, "Physics", "2,0", "3,5", 0, "WukongAttack1And3", "WukongImpact", "Wukong", 0, 0),
-        (1002, "role1.hit2", "悟空普攻2", "普攻第二段", "attack_2", "0.9,1.1", 0, "Physics", "2,0", "3,5", 0, "WukongAttack2", "WukongImpact", "Wukong", 1, 0),
-        (1003, "role1.hit3", "悟空普攻3", "普攻第三段", "attack_3", "1,1.2", 0, "Physics", "2,0", "3,5", 0, "WukongAttack1And3", "WukongImpact", "Wukong", 2, 0),
-        (1004, "role1.hit4", "悟空普攻4", "普攻第四段(击退收招)", "attack_4", "1.2,1.4", 0, "Physics", "6,-5", "3,5", 0, "WukongAttack4", "WukongImpact", "Wukong", 3, 0),
+        (1001, "role1.hit1", "悟空普攻1", "普攻第一段", "attack_1", "1,1.2", 0, "Physics", "2,0", "3,5", 0, "WukongAttack1And3", "WukongImpact", "Wukong", 0, 0, 0, "0,0", "0,0", "0,0"),
+        (1002, "role1.hit2", "悟空普攻2", "普攻第二段", "attack_2", "0.9,1.1", 0, "Physics", "2,0", "3,5", 0, "WukongAttack2", "WukongImpact", "Wukong", 1, 0, 0, "0,0", "0,0", "0,0"),
+        (1003, "role1.hit3", "悟空普攻3", "普攻第三段", "attack_3", "1,1.2", 0, "Physics", "2,0", "3,5", 0, "WukongAttack1And3", "WukongImpact", "Wukong", 2, 0, 0, "0,0", "0,0", "0,0"),
+        (1004, "role1.hit4", "悟空普攻4", "普攻第四段(击退收招)", "attack_4", "1.2,1.4", 0, "Physics", "6,-5", "3,5", 0, "WukongAttack4", "WukongImpact", "Wukong", 3, 0, 0, "0,0", "0,0", "0,0"),
         # 猴子击退 X：旧值 -3 是为抵消旧项目朝向符号写的负数；新语义"X>0=远离攻击者"统一为正（2026-09-29 M4）
-        (2001, "monster1.hit1", "猴子普攻", "猴子唯一攻击", "attack_1", "0,0", 10, "Physics", "3,-6", "0,0", 10, "None", "None", "HuaguoshanMonkey", 0, 100),
+        # 猴子 AI：普攻池（优先级 0），距离 0~70 = AttackRange 45 + 站定滞回 25（旧普攻无距离门槛），无冷却（节奏由 AttackInterval+AttackDesire 控制）
+        (2001, "monster1.hit1", "猴子普攻", "猴子唯一攻击", "attack_1", "0,0", 10, "Physics", "3,-6", "0,0", 10, "None", "None", "HuaguoshanMonkey", 0, 100, 0, "0,70", "0,0", "0,0"),
     ]
-    # force_rows：修复 2026-09-27 表头与手工合并列错位时写坏的数据行
-    new_table("AttackConfig.xlsx", fields, rows, force_rows=True)
+    # 2026-09-30 M5：错位修复早已完成，改为表尾追加模式（只回填空单元格，保留手工数值）
+    new_table("AttackConfig.xlsx", fields, rows)
 
     # legacy constants: hero-as-defender K=250 (BaseHero.gd:703/707),
     # monster-as-defender K=100 (BaseMonster.gd:790/793),

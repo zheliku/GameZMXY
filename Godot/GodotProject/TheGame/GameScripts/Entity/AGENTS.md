@@ -40,6 +40,28 @@ BulletEntity : Node2D, IEntity   DropItemEntity / MagicWeaponEntity ...
 - **命名标准**：英雄 `idle1/idle2 / walk / run / jump / jump_2 / fall / attack_1..n / hurt / death`，技能 `skill_<SkillId>` 随技能系统；怪物状态 `Idle / Patrol / Chase / Attack / CcLocked / Death`。角色专属动画名只出现在该角色的动画库/状态机资源与类覆写（如 `WukongEntity.IdleFlavorAnim`）。Boss 阶段转换也是**状态**，不写巨型 if 链。
 - 纯逻辑状态机（怪物 AI 决策）用 `GF.Fsm`（每状态一个类），动画选择不用它。禁止 bool 拼状态（红线 7，旧项目最大教训）。
 
+## 怪物 AI（M5，`Entity/AI/`）
+
+**三层分工**：AI 状态机（`GF.Fsm<IMonsterAiAgent>`）只写**意图**（`Move / Face / RequestAttack`）→ `MonsterEntity` 把意图提交为**事实**（`MoveInput / AttackSegment`，出招请求在安全帧提交并计冷却）并负责物理/受击/死亡 → `AnimationTree` 只读事实选动画。AI 状态名与动画状态互不耦合，改 AI 不动动画图。
+
+- **`AI/` 目录是纯 C#**：状态只经 `IMonsterAiAgent` 读感知、写意图，随机数由宿主提供；禁止在状态里碰节点、`GD.*`、`GF.*`。单测用框架真实 `FsmManager` + 假宿主驱动（`Tests/BattleTests/MonsterAiTests.cs`）。
+- **状态按角色跳转**：`MonsterAiRole`（Idle/Patrol/Chase/Attack/CcLocked/Death）是槽位，状态用 `ChangeRole` 跳转，由 `MonsterAiStateSet` 解析到具体实现。打断优先级（死亡 > 受控 > 自身决策）集中在 `MonsterAiState.OnUpdate`，状态可用 `CanBeCcLocked=false` 声明不可打断（Boss 演出）。
+- **招式用法是数据**：`MonsterSkillBook` 按 `AttackConfig.AiPriority/AiWeight/AiRange/AiCooldown/AiInitCooldown` 选招与冷却。`AiPriority=0` 普攻池（站定后按 `AttackDesire` 每 `AttackInterval` 掷一次再按权重抽）；`>0` 技能（冷却就绪且距离满足即放，优先级高者胜，追击途中也会放）。
+- **感知**：`m_Detector`（Area2D，Detector 层 → mask PlayerBody，宽 = 2×SightRange）无目标时锁敌；被打直接锁定攻击方；目标只在死亡/回收时失效（同旧 has_target）。
+- **生命周期**：状态机在 `OnShow` 创建、`OnHide` 销毁（池复用即全新 AI）；`SetAiEnabled(false)` 退化为沙包（调试用）。死亡时广播 `MonsterDiedEventArgs`（M6 关卡计数/掉落/经验订阅它）。
+
+**新怪物扩展分层**（能停在上层就不往下走）：
+
+| 层 | 做法 | 适用 |
+| -- | --- | --- |
+| 1 数据 | MonsterConfig 行 + AttackConfig 行（普攻池/技能）+ 场景 + 动画库；类只继承 `MonsterEntity` 不覆写 | 绝大多数小怪；精英怪（多技能 + `SuperArmor` + `Rank=Elite`） |
+| 2 替换角色 | 覆写 `ConfigureAi`，`states.Bind(new XxxChaseState())`（继承默认状态复用逻辑） | 飞行怪、远程风筝怪、冲锋怪 |
+| 3 额外状态 | `ConfigureAi` 里 `AddExtra(...)`，由自定义状态按类型进入、按角色回落；配合覆写 `IsSuperArmor` 等钩子 | Boss 阶段转换、狂暴、召唤演出 |
+| 4 招式效果 | 攻击动画加方法轨道回调（子类方法），发射池化子弹实体/上 Buff | 弹幕、召唤物、附加控制 |
+
+- 状态实例不可跨状态机共享（GF.Fsm），`ConfigureAi` 每次都拿到全新状态集，直接 new 即可。
+- 需要新感知（Y 距离、平台边缘、血量阈值）时加到 `IMonsterAiAgent`，由 `MonsterEntity` 实现，状态里不查场景树。
+
 ## 物理层（13 层，写进 `project.godot`）
 
 代码只按层名引用：`LayerMask.LayerToMask2D("层名")`，禁止魔法数字。

@@ -193,12 +193,6 @@ namespace GameLogic.Entity
 		private bool m_JumpPressed;
 		private bool m_AttackPressed;
 
-		/// <summary>
-		/// 是否处于"已显示、可驱动"状态：OnShow 置真、OnHide 置假。
-		/// _PhysicsProcess 提前返回靠它——实体隐藏/回收后节点仍在树上，不挡会继续跑物理。
-		/// </summary>
-		private bool m_Active;
-
 		public override void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance,
 			object userData)
 		{
@@ -257,14 +251,11 @@ namespace GameLogic.Entity
 				AnimTree.Active = true;
 			}
 
-			m_Active = true;
 			SetFacing(1);
 		}
 
 		public override void OnHide(bool isShutdown, object userData)
 		{
-			m_Active = false;
-
 			// 关停阶段（isShutdown=true）子节点可能已被引擎释放——框架的 Shutdown 在
 			// 场景树析构之后才补调 OnHide，此时读 AnimTree 会抛 ObjectDisposedException。
 			// 关停时也没什么可停的（树随场景一起销毁），直接跳过。
@@ -282,7 +273,7 @@ namespace GameLogic.Entity
 		/// </summary>
 		public override void _PhysicsProcess(double delta)
 		{
-			if (!m_Active || Config == null)
+			if (!IsShown || Config == null)
 			{
 				return;
 			}
@@ -329,9 +320,9 @@ namespace GameLogic.Entity
 		/// 与旧项目的**有意差异**：旧英雄受击会立刻顶掉出招动画（BaseHero.gd state_behit 同帧播放），
 		/// 本项目选择"出招不打断、收招后进硬直"——连段不被单次受击清空，手感取舍，见 UpdateHurt。
 		/// </summary>
-		protected override void OnHurt(AttackData attack, DamageResult result, Vector2 knockback)
+		protected override void OnHurt(AttackData attack, DamageResult result, Vector2 knockback, int attackerEntityId)
 		{
-			base.OnHurt(attack, result, knockback);
+			base.OnHurt(attack, result, knockback, attackerEntityId);
 			if (Dead)
 			{
 				return;   // Dead 已由 ReceiveHit 置位

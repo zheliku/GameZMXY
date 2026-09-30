@@ -32,6 +32,10 @@ public sealed partial class AttackConfig : Luban.BeanBase
         OwnerId = (Entity.EntityId)_buf.ReadInt();
         ComboIndex = _buf.ReadInt();
         AiWeight = _buf.ReadInt();
+        AiPriority = _buf.ReadInt();
+        AiRange = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
+        AiCooldown = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
+        AiInitCooldown = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
     }
 
     public static AttackConfig DeserializeAttackConfig(ByteBuf _buf)
@@ -103,6 +107,22 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// AI 选招权重(怪物 AI 用;英雄普攻填 0)
     /// </summary>
     public readonly int AiWeight;
+    /// <summary>
+    /// AI 优先级:0=普攻池(按攻击欲望掷骰+权重抽);&gt;0=技能(冷却就绪且距离满足即放,大者优先,追击途中也会放)
+    /// </summary>
+    public readonly int AiPriority;
+    /// <summary>
+    /// AI 释放距离 px(X=最小,Y=最大;只比水平距离,写法 0,45)
+    /// </summary>
+    public readonly Godot.Vector2 AiRange;
+    /// <summary>
+    /// AI 释放后冷却秒(X=下限,Y=上限随机;普攻池填 0,0)
+    /// </summary>
+    public readonly Godot.Vector2 AiCooldown;
+    /// <summary>
+    /// AI 出生时初始冷却秒(X=下限,Y=上限;旧 _ready 里 Skill_N_CD=randi_range)
+    /// </summary>
+    public readonly Godot.Vector2 AiInitCooldown;
    
     public const int __ID__ = 818309408;
     public override int GetTypeId() => __ID__;
@@ -130,6 +150,10 @@ public sealed partial class AttackConfig : Luban.BeanBase
         + "OwnerId:" + OwnerId + ","
         + "ComboIndex:" + ComboIndex + ","
         + "AiWeight:" + AiWeight + ","
+        + "AiPriority:" + AiPriority + ","
+        + "AiRange:" + AiRange + ","
+        + "AiCooldown:" + AiCooldown + ","
+        + "AiInitCooldown:" + AiInitCooldown + ","
         + "}";
     }
 }

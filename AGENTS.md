@@ -38,7 +38,7 @@ Godot 4.7 .NET + C# + GGF 框架，游戏代码**全新编写**；旧项目 `P:\
 | `Godot/GodotProject/EditorScripts/AGENTS.md` | 生成器脚本：运行方式、产物禁改、UID |
 | `Godot/GodotProject/TheGame/AGENTS.md` | bundle 目录总规则、提交前检查 |
 | `TheGame/GameScripts/AGENTS.md` | 代码分层与战斗结算 |
-| `TheGame/GameScripts/Entity/AGENTS.md` | 实体继承树、生命周期、状态机、物理层表 |
+| `TheGame/GameScripts/Entity/AGENTS.md` | 实体继承树、生命周期、状态机、怪物 AI 与扩展分层、物理层表 |
 | `TheGame/GameScripts/GameProto/AGENTS.md` | 生成代码禁改与再生成 |
 | `TheGame/MainPack/AGENTS.md` | 主包使用边界 |
 | `TheGame/Sprites/AGENTS.md` | 贴图目录/命名/Collection Res |
@@ -240,7 +240,7 @@ TheGame/
 | M2 配表落地 | `HeroConfig / HeroLevelConfig / MonsterConfig / AttackConfig / BattleConfig / LevelConfig / LevelWaveConfig / LevelSpawnConfig / SoundConfig`；`EntityId`、`UIFormId` 枚举 | 导表成功，`Tables` 可读 |
 | M3 英雄控制器 | `HeroEntity` + AnimationTree 表达式状态机（属性驱动，禁 bool 拼状态） | 能跑能跳能连击，动画与状态一致 |
 | M4 判定与伤害 | HitBox/HurtBox 动画轨道驱动判定帧；`Battle/DamageCalculator`（三种伤害 + `x/(x+K)`）+ 单测；飘字走 NodePool | 打猴子掉血飘字，伤害与手算一致 |
-| M5 怪物 AI | `MonsterEntity` + FSM（Patrol/Chase/Attack/CcLocked/Death），参数读 `MonsterConfig` | 猴子巡逻、追击、攻击 |
+| M5 怪物 AI | `MonsterEntity` + FSM（Idle/Patrol/Chase/Attack/CcLocked/Death，按角色可替换）+ 技能书（冷却/选招进 `AttackConfig`），参数读 `MonsterConfig`；死亡广播 `MonsterDiedEventArgs` | 猴子巡逻、追击、攻击（`--smoketest=ai`） |
 | M6 关卡与流程 | `LevelDirector`（波次/场上上限/清场开闸）+ 出口 + `GF.Scene` + HUD | 一关可通关并写入 `GF.Archive` |
 | M7 收口 | 清理调试代码；补 `LegacyAssetMap.md` / `Architecture.md`；评估第二阶段 | 自查 §4 架构约束无违反 |
 

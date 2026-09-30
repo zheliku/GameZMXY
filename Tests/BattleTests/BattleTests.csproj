@@ -40,6 +40,12 @@
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.cs" Link="Linked\Framework\Utility.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.Text.cs" Link="Linked\Framework\Utility.Text.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.Text.ITextHelper.cs" Link="Linked\Framework\Utility.Text.ITextHelper.cs" />
+    <!-- M5 怪物 AI：AI 目录是纯 C#（只依赖 GF.Fsm 纯 C# 层），状态机用框架真实实现驱动 -->
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\AI\*.cs" Link="Linked\AI\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)Framework\GameFramework\Fsm\*.cs" Link="Linked\Fsm\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)Framework\GameFramework\Base\Variable\*.cs" Link="Linked\Framework\Variable\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)Framework\GameFramework\Base\DataStruct\TypeNamePair.cs" Link="Linked\Framework\TypeNamePair.cs" />
+    <Compile Include="$(GodotProjectDir)Framework\GameFramework\Base\GameFrameworkModule.cs" Link="Linked\Framework\GameFrameworkModule.cs" />
   </ItemGroup>
 
   <ItemGroup>

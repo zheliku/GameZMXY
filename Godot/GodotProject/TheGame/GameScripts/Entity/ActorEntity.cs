@@ -123,6 +123,13 @@ namespace GameLogic.Entity
 		public virtual CombatSide Side => CombatSide.Hero;
 
 		/// <summary>
+		/// 已显示、可驱动：OnShow 置真、OnHide 置假。子类 _PhysicsProcess 靠它提前返回（实体隐藏/回收后
+		/// 节点仍在树上，不挡会继续跑物理）；AI 等外部持有者靠它判断引用是否还有效（配合 IsInstanceValid）。
+		/// （2026-09-30 自 HeroEntity/MonsterEntity 各自的 m_Active 下沉合并。）
+		/// </summary>
+		public bool IsShown { get; private set; }
+
+		/// <summary>
 		/// 飘字锚点相对实体原点的偏移（头顶）。子类按素材高度覆写；属于表现层布局常数，不参与玩法计算。
 		/// </summary>
 		protected virtual Vector2 PopAnchor => new Vector2(0, -60);
@@ -172,11 +179,14 @@ namespace GameLogic.Entity
 		public virtual void OnShow(object userData)
 		{
 			Visible = true;
+			IsShown = true;
 		}
 
 		/// <summary>实体隐藏。关停阶段（isShutdown=true）场景树可能已析构，不再碰节点。</summary>
 		public virtual void OnHide(bool isShutdown, object userData)
 		{
+			IsShown = false;
+
 			// 攻击包是纯 C# 池对象，关停时也要归还（不碰节点）
 			if (m_ActiveAttack != null)
 			{
@@ -408,7 +418,7 @@ namespace GameLogic.Entity
 					Dead = true;   // 死亡事实唯一置位点
 				}
 
-				OnHurt(attack, result, DamageCalculator.KnockbackVelocity(config, attack, Side));
+				OnHurt(attack, result, DamageCalculator.KnockbackVelocity(config, attack, Side), attackerEntityId);
 			}
 
 			GF.Event.Fire(this, DamageDealtEventArgs.Create(attackerEntityId, Id, Side == CombatSide.Hero,
@@ -427,7 +437,8 @@ namespace GameLogic.Entity
 		/// 基类只做"面向攻击者"：击退方向与攻击方出招方向相同，受击方转身面对攻击方。
 		/// </summary>
 		/// <param name="knockback">击退速度 px/s（已按侧别换算，方向已含攻击方朝向）</param>
-		protected virtual void OnHurt(AttackData attack, DamageResult result, Vector2 knockback)
+		/// <param name="attackerEntityId">攻击方实体编号（0 = 无实体来源，如 Buff/调试伤害）；怪物用它锁定仇恨</param>
+		protected virtual void OnHurt(AttackData attack, DamageResult result, Vector2 knockback, int attackerEntityId)
 		{
 			SetFacing(-attack.Direction);
 		}

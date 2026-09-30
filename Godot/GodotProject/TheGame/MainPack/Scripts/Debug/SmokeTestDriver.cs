@@ -20,6 +20,8 @@ using GodotGameFramework;
 /// 不是 C# 自己的日志——所以能抓住"属性变了但动画没切"这一类问题。
 ///
 /// 用法：S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --quit-after 1500 -- --smoketest
+///   `--smoketest`     英雄控制器 + M4 命中（猴子 AI 冻结为沙包，断言确定）
+///   `--smoketest=ai`  怪物 AI（M5：巡逻 → 追击 → 攻击 → 受控 → 死亡，见 MonsterAiSmokeScenario）
 ///
 /// 注意：**判定看 stdout 的 SMOKE PASS/FAIL，别只看退出码**——框架关闭流程有一个既有 bug
 /// （WebRequestAgentHelper.Reset 访问已释放的 HttpRequest，见 Framework/…/DefaultWebRequestAgentHelper.cs:90），
@@ -98,6 +100,14 @@ public partial class SmokeTestDriver : Node
 	private readonly HashSet<int> m_WalkFrames = new();
 	private readonly HashSet<int> m_RunFrames = new();
 
+	/// <summary>场景：hero = 英雄控制器 + M4 命中（默认，猴子 AI 冻结为沙包）；ai = 怪物 AI（M5）</summary>
+	private bool m_AiMode;
+
+	/// <summary>AI 场景（ai 模式下找到英雄与猴子后创建）</summary>
+	private MonsterAiSmokeScenario m_AiScenario;
+
+	private double m_AiStartTime;
+
 	public override void _Ready()
 	{
 		foreach (string arg in OS.GetCmdlineUserArgs())
@@ -105,6 +115,7 @@ public partial class SmokeTestDriver : Node
 			if (arg.Contains("smoketest"))
 			{
 				m_Active = true;
+				m_AiMode = arg.EndsWith("=ai");
 			}
 		}
 
@@ -164,6 +175,12 @@ public partial class SmokeTestDriver : Node
 
 		m_Time += delta;
 		FindMonster();
+		if (m_AiMode)
+		{
+			DriveAiScenario();
+			return;
+		}
+
 		DriveInput();
 		Sample();
 		TrackBodyFrames();
@@ -235,9 +252,49 @@ public partial class SmokeTestDriver : Node
 		ReferencePool.Release(attack);
 	}
 
+	/// <summary>ai 模式：等猴子出现后交给 MonsterAiSmokeScenario 驱动与断言。</summary>
+	private void DriveAiScenario()
+	{
+		if (m_AiScenario == null)
+		{
+			if (m_Monster == null)
+			{
+				if (m_Time > FindTimeout)
+				{
+					Fail("5 秒内没有找到猴子");
+				}
+
+				return;
+			}
+
+			m_AiScenario = new MonsterAiSmokeScenario(m_Hero, m_Monster, m_Monster.AnimTree);
+			m_AiStartTime = m_Time;
+			GD.Print("SMOKE-AI: 开始怪物 AI 场景");
+		}
+
+		double t = m_Time - m_AiStartTime;
+		m_AiScenario.Update(t);
+		if (t < MonsterAiSmokeScenario.EndTime)
+		{
+			return;
+		}
+
+		List<string> failures = m_AiScenario.Finish();
+		m_AiScenario = null;
+		if (failures.Count == 0)
+		{
+			GD.Print("SMOKE PASS：怪物 AI 场景断言全部通过");
+			StopDriving(false);
+		}
+		else
+		{
+			Fail(string.Join("；", failures));
+		}
+	}
+
 	private void Sample()
 	{
-		string path = CurrentStatePath();
+		string path = CurrentStatePath(m_Tree);
 		if (path.Length == 0 || path == m_LastPath)
 		{
 			return;
@@ -252,9 +309,14 @@ public partial class SmokeTestDriver : Node
 	/// 树当前的状态路径：从主图逐层下钻（主图 → 组子机 → 组内子机如 Idle），
 	/// 直到当前节点不是状态机为止。例：Ground/Idle/idle1、Attack/attack_2、Hurt。
 	/// </summary>
-	private string CurrentStatePath()
+	public static string CurrentStatePath(AnimationTree tree)
 	{
-		if (m_Tree.Get("parameters/playback").As<AnimationNodeStateMachinePlayback>() is not { } playback)
+		if (tree == null || !IsInstanceValid(tree))
+		{
+			return "";
+		}
+
+		if (tree.Get("parameters/playback").As<AnimationNodeStateMachinePlayback>() is not { } playback)
 		{
 			return "";
 		}
@@ -271,7 +333,7 @@ public partial class SmokeTestDriver : Node
 
 			names.Add(node);
 			prefix += node + "/";
-			if (m_Tree.Get($"parameters/{prefix}playback").As<AnimationNodeStateMachinePlayback>() is not { } child)
+			if (tree.Get($"parameters/{prefix}playback").As<AnimationNodeStateMachinePlayback>() is not { } child)
 			{
 				break;
 			}
@@ -402,9 +464,15 @@ public partial class SmokeTestDriver : Node
 
 		foreach (Node node in GetTree().Root.FindChildren("*", "AnimationTree", true, false))
 		{
-			if (node.GetParent() is MonsterEntity monster)
+			if (node.GetParent() is MonsterEntity { IsShown: true } monster)
 			{
 				m_Monster = monster;
+				if (!m_AiMode)
+				{
+					// hero 场景把猴子当 M4 沙包：冻结 AI，保证命中/伤害断言确定（AI 由 ai 场景单独覆盖）
+					monster.SetAiEnabled(false);
+				}
+
 				GD.Print($"SMOKE[{m_Time:F2}] 找到沙包猴子 HP {monster.Hp}/{monster.MaxHp} 位置 {monster.GlobalPosition}");
 				return;
 			}

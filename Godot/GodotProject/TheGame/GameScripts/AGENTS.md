@@ -5,7 +5,7 @@
 | 目录 | 职责 | 依赖约束 |
 | --- | --- | --- |
 | `Battle/` | 伤害公式、属性快照、Buff 结算（按需创建，M4） | 值类型可引 Godot（2026-09-30 裁决），禁运行时引擎状态；可单测 |
-| `Entity/` | 实体 Logic（Heroes/ Monsters/ Bullets/ Items/） | 见 `Entity/AGENTS.md` |
+| `Entity/` | 实体 Logic（Heroes/ Monsters/ Bullets/ Items/）；`Entity/AI/` 怪物 AI 状态机与技能书 | 见 `Entity/AGENTS.md`；`AI/` 纯 C#、可单测 |
 | `UI/` | 界面 Logic（`UIs/*.tscn` 对应的 `*.Logic.cs`，按需） | 跨模块只走事件（根规范 §9） |
 | `Event/` | 自定义 `GameEventArgs`（`Create()` + `Clear()`，按需） | 参数走 `ReferencePool`，用完即回收 |
 | `Archive/` | `GameCatalogue` / `GameData` 存档数据类 | 只放可序列化字段；已发布字段禁改 |

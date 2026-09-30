@@ -43,6 +43,13 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         HurtSoundId = (Sound.SoundId)_buf.ReadInt();
         DeathSoundId = (Sound.SoundId)_buf.ReadInt();
         Gravity = _buf.ReadFloat();
+        PatrolInterval = _buf.ReadFloat();
+        PatrolIdleChance = _buf.ReadInt();
+        PatrolRadius = _buf.ReadInt();
+        AttackInterval = _buf.ReadFloat();
+        Rank = (Monster.MonsterRank)_buf.ReadInt();
+        SuperArmor = _buf.ReadBool();
+        AttackRangeSlack = _buf.ReadInt();
     }
 
     public static MonsterConfig DeserializeMonsterConfig(ByteBuf _buf)
@@ -158,6 +165,34 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// 重力 px/s&#178;(旧 gravity=980 向下)
     /// </summary>
     public readonly float Gravity;
+    /// <summary>
+    /// 巡逻重新决策间隔秒(旧 change_state 计时器 2s)
+    /// </summary>
+    public readonly float PatrolInterval;
+    /// <summary>
+    /// 巡逻决策时原地停留概率 0-100(旧 ran_num&lt;10),其余左右各半
+    /// </summary>
+    public readonly int PatrolIdleChance;
+    /// <summary>
+    /// 巡逻半径 px:离出生点超出即折返(新增,旧项目无,防走出场地)
+    /// </summary>
+    public readonly int PatrolRadius;
+    /// <summary>
+    /// 近身后普攻判定间隔秒(旧 count%60≈1s,每次按 AttackDesire 掷骰)
+    /// </summary>
+    public readonly float AttackInterval;
+    /// <summary>
+    /// 阶级 Normal/Elite/Boss(旧 is_boss;供 HUD/掉落/结算区分)
+    /// </summary>
+    public readonly Monster.MonsterRank Rank;
+    /// <summary>
+    /// 霸体:受击不硬直不击退、不打断出招(旧 IsSuperArmor/Monster_18 类保护)
+    /// </summary>
+    public readonly bool SuperArmor;
+    /// <summary>
+    /// 站定滞回 px:距离超过 AttackRange+本值才重新追击(新增,防目标被击退几像素就来回切换)
+    /// </summary>
+    public readonly int AttackRangeSlack;
    
     public const int __ID__ = 129443944;
     public override int GetTypeId() => __ID__;
@@ -196,6 +231,13 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "HurtSoundId:" + HurtSoundId + ","
         + "DeathSoundId:" + DeathSoundId + ","
         + "Gravity:" + Gravity + ","
+        + "PatrolInterval:" + PatrolInterval + ","
+        + "PatrolIdleChance:" + PatrolIdleChance + ","
+        + "PatrolRadius:" + PatrolRadius + ","
+        + "AttackInterval:" + AttackInterval + ","
+        + "Rank:" + Rank + ","
+        + "SuperArmor:" + SuperArmor + ","
+        + "AttackRangeSlack:" + AttackRangeSlack + ","
         + "}";
     }
 }
