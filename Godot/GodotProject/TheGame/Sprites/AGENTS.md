@@ -26,4 +26,4 @@ TopMenu「Generate File → Collection Res」扫描 `res://TheGame/` 全部非 `
 1. **全树同名 → 生成中止**：这是图集必须带实体前缀的原因，不只是审美。
 2. 数字开头文件名生成 `_数字` 常量；旧项目大量 `1.png` 会冲突——搬入后发现冲突就在编辑器重命名（生成器输出冲突名单）。
 3. 生成失败不影响运行（配置走 Luban `AssetPath`、场景走 UID），但本项目把 Collection Res 当 CI，提交前必须通过。
-4. 动画 `.tres` 放 `Characters/.../<entity>_animations.tres`，源图与帧规格登记 `LegacyAssetMap.md`。
+4. 本目录只放贴图与 SpriteFrames（`Characters/.../<entity>_animations.tres`，源图与帧规格登记 `LegacyAssetMap.md`）；AnimationPlayer 用的动画库与状态机是实体行为资源，放 `Entitys/Animations/`（见 `Entitys/AGENTS.md`）。

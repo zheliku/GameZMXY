@@ -162,8 +162,8 @@ m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tre
 角色动画从"AnimatedSprite2D + C# 状态机（GF.Fsm）"迁到"AnimationPlayer 属性轨道 + AnimationTree 表达式状态机"，时序/帧数据与旧项目 Role1.tscn 逐帧一致：
 
 - **身体/武器层**：AnimatedSprite2D + SpriteFrames → `Sprite2D(hframes=6, vframes=14)`，帧号即 6×14 网格全局序号——与旧 `Action/RoleBody:frame` / `Action/RoleEquipment:frame` 轨道完全同构，换装改为换 Texture。
-- **合并动画库** `Sprites/Characters/Heroes/wukong/wukong_anim_library.tres`（`gen_animations.py` 的 `gen_wukong_library()` 生成）：每个动画含身体帧轨道、武器帧轨道、特效四件套轨道、方法轨道。**轨道完备性**：每个被动画的属性（m_Body:frame / m_Weapon:frame / m_Effect 的 animation/frame/offset/scale）在库内**每个**动画都必须有轨道——AnimationTree 切到不含某属性轨道的动画时会把该属性重置成垃圾值（实测 scale 被写成 1e-05，棍气不可见）。攻击段特效轨道取旧数据（含末尾 null 收招帧、offset），非攻击段统一"切空白 empty + 帧归零 + scale=1"。方法轨道：旧 `add_music` → `OnAttackSwingSound`（hit1..4）/ `OnDeathVoice`（death），触发时机取旧轨道，音源按当前段查 `AttackConfig.SoundId` / `HeroConfig.DeathSoundId`。技能类特效未迁，随技能系统处理。
-- **状态机** `Entitys/wukong_animation_tree.tres`（`EditorScripts/build_wukong_anim_tree.gd` 生成）：**主图分组 + 子状态机收纳动画**（2026-09-28 定稿，取代单层完全图）：
+- **合并动画库** `Entitys/Animations/wukong_anim_library.tres`（`gen_animations.py` 的 `gen_wukong_library()` 生成）：每个动画含身体帧轨道、武器帧轨道、特效四件套轨道、方法轨道。**轨道完备性**：每个被动画的属性（m_Body:frame / m_Weapon:frame / m_Effect 的 animation/frame/offset/scale）在库内**每个**动画都必须有轨道——AnimationTree 切到不含某属性轨道的动画时会把该属性重置成垃圾值（实测 scale 被写成 1e-05，棍气不可见）。攻击段特效轨道取旧数据（含末尾 null 收招帧、offset），非攻击段统一"切空白 empty + 帧归零 + scale=1"。方法轨道：旧 `add_music` → `OnAttackSwingSound`（hit1..4）/ `OnDeathVoice`（death），触发时机取旧轨道，音源按当前段查 `AttackConfig.SoundId` / `HeroConfig.DeathSoundId`。技能类特效未迁，随技能系统处理。
+- **状态机** `Entitys/Animations/wukong_animation_tree.tres`（`EditorScripts/build_wukong_anim_tree.gd` 生成）：**主图分组 + 子状态机收纳动画**（2026-09-28 定稿，取代单层完全图）：
   - 主图只有组与单状态：`Ground`（子机：`Idle`（子机：idle1 / idle2）、walk、run）、`Air`（子机：jump / jump_2 / fall）、`Attack`（子机：attack_1..4）、`Hurt`、`Death`；
   - **进组 = 从 Start 选一个状态**：子机用 ROOT 类型（进组 seek 到第 0 帧重启到 Start），每个状态一条 `Start → 状态` 边；子机可再嵌套（Ground → Idle），层级不改变时序语义；
   - **组内只连真实转移**（不是完全图）：连段只 +1 推进就只有 1→2→3→4 链；各组的边表与"为什么没有某条边"见生成器 `GROUND_EDGES` / `AIR_EDGES` / `IDLE_EDGES` / `_attack_edges()` 注释；
@@ -192,7 +192,9 @@ python Tools/LegacyMigration/gen_animations.py
 "S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --quit-after 1500 -- --smoketest
 ```
 
-脚本读取旧项目 `.tscn`，输出到 `TheGame/Sprites/...` 与 `TheGame/Entitys/`；旧项目保持只读，不写入任何文件。
+脚本读取旧项目 `.tscn`，输出到 `TheGame/Sprites/...`（SpriteFrames）与 `TheGame/Entitys/Animations/`（动画库 + 状态机；2026-09-30 从 `Sprites/` 与 `Entitys/` 根移入）；旧项目保持只读，不写入任何文件。
+
+**真相源（2026-09-30 人类裁决）**：`gen_animations.py` 与两个 `build_*_anim_tree.gd` 的产物（两个 `*_anim_library.tres`、两个 `*_animation_tree.tres`、`wukong_effect_animations.tres`、`huaguoshan_monkey_animations.tres`）落地后**以 Godot 编辑器保存的版本为准**——判定盒、特效偏移、帧时长直接在 Animation 面板调。生成器默认跳过已存在的产物，只在文件缺失或显式 `--force [文件名]` 时重写（`--force` 会冲掉编辑器调整，用前先提交）。下表"新几何"列是迁移时的初值，当前值以 `.tres` 为准。在编辑器里调判定盒要改**关键帧**（改完点轨道钥匙覆盖），只改节点属性会被 RESET/动画播放洗掉。
 
 ## M4 判定帧与战斗资产（2026-09-29）
 
@@ -202,7 +204,7 @@ python Tools/LegacyMigration/gen_animations.py
 
 判定窗口沿用旧 disabled 轨道；**几何不再照搬旧形状**（旧胶囊 r76/323 宽矩形远大于视觉棒击范围，"没碰到就受击"的主因），纵向与后缘按判定窗内**武器层像素包围盒**推导（各外扩 10px）；**前缘统一放长到 -130"追击线"**——连段期间每次命中受击方被击退 ~17px（旧 hurtBack × 30 同值），不放长第三段起就够不着；旧项目靠超大方形盒（前缘 121~175）吸收同一漂移，这里用显式常量表达。attack_3/4 旋斩含身后来向帧，attack_4 的正向帧 f55 在旧窗开启之前、几何将其并入。推导与实测数值登记在 `gen_animations.py` 的 `WUKONG_HITBOX` / `MONKEY_HITBOX` 注释：
 
-| 新动画 | 旧来源 | 判定窗口（真实秒） | 旧形状 | 新几何（尺寸 @ 原生坐标） |
+| 新动画 | 旧来源 | 判定窗口（真实秒） | 旧形状 | 新几何初值（尺寸 @ 原生坐标；现值以编辑器 .tres 为准） |
 | --- | --- | --- | --- | --- |
 | wukong `attack_1` | Role1 `hit1`（speed_scale 3） | 0.0333–0.1667 | 胶囊 r76 h186 @(−45,−17) | 178×114 @(−41, 23) |
 | wukong `attack_2` | `hit2` | 0.0667–0.2333 | 矩形 133.5×43 @(−42.25,41.5) | 172×43 @(−44, 40.5) |
@@ -214,7 +216,7 @@ python Tools/LegacyMigration/gen_animations.py
 
 ### huaguoshan_monkey 动画库
 
-`Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_anim_library.tres`（`gen_animations.py` 的 `gen_monkey_library()`；状态机 `EditorScripts/build_huaguoshan_monkey_anim_tree.gd` → `Entitys/huaguoshan_monkey_animation_tree.tres`）。轨道驱动 `m_Body`（AnimatedSprite2D，复用 `huaguoshan_monkey_animations.tres`）的 animation/frame/offset；旧 SpriteFrames 用"重复条目撑时长"，这里合并为同一帧的停留时长：
+`Entitys/Animations/huaguoshan_monkey_anim_library.tres`（`gen_animations.py` 的 `gen_monkey_library()`；状态机 `EditorScripts/build_huaguoshan_monkey_anim_tree.gd` → `Entitys/Animations/huaguoshan_monkey_animation_tree.tres`）。轨道驱动 `m_Body`（AnimatedSprite2D，复用 `huaguoshan_monkey_animations.tres`）的 animation/frame/offset；旧 SpriteFrames 用"重复条目撑时长"，这里合并为同一帧的停留时长：
 
 | 新动画 | 旧 | 帧:秒 | offset（朝左原值，镜像由父缩放处理） |
 | --- | --- | --- | --- |

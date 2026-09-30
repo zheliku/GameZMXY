@@ -1,5 +1,6 @@
 extends SceneTree
-## 生成花果山猴子的动画状态机资源 Entitys/huaguoshan_monkey_animation_tree.tres。
+## 生成花果山猴子的动画状态机资源 Entitys/Animations/huaguoshan_monkey_animation_tree.tres。
+## 真相源同悟空生成器：产物已存在时以编辑器版本为准，默认只校验不覆盖，`-- --force` 才重建。
 ## 机制与 build_wukong_anim_tree.gd 完全一致（表达式边 / ROOT 子机 / 组谓词互斥完备 / reset 进组），
 ## 此处只写怪物的差异表；引擎语义与"为什么这样搭"见悟空生成器头注释。
 ##
@@ -17,9 +18,10 @@ extends SceneTree
 ##   * 怪物没有空中组：M4/M5 怪物都贴地（空中怪随飞行怪一起加组）。
 ##
 ## 运行：S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --script res://EditorScripts/build_huaguoshan_monkey_anim_tree.gd
+## 强制重建：同上命令末尾加 `-- --force`
 
-const ANIM_LIB := "res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_anim_library.tres"
-const OUT := "res://TheGame/Entitys/huaguoshan_monkey_animation_tree.tres"
+const ANIM_LIB := "res://TheGame/Entitys/Animations/huaguoshan_monkey_anim_library.tres"
+const OUT := "res://TheGame/Entitys/Animations/huaguoshan_monkey_animation_tree.tres"
 
 ## 资源 uid：HuaguoshanMonkeyEntity.tscn 按 uid 引用本资源，必须稳定（headless 保存不写 uid，保存后补回）。
 const OUT_UID := "uid://c4seyh1vbcds4"
@@ -81,6 +83,12 @@ func _init() -> void:
 
 	if not _validate(lib):
 		quit(1)
+		return
+
+	# 编辑器为真相源：产物已存在且未 --force 时只校验不覆盖
+	if FileAccess.file_exists(OUT) and not OS.get_cmdline_user_args().has("--force"):
+		print("skip %s（已存在，以编辑器版本为准；动画库校验通过。重建用 -- --force）" % OUT)
+		quit(0)
 		return
 
 	var err := ResourceSaver.save(_build_root(), OUT)

@@ -1,9 +1,9 @@
-[gd_resource type="SpriteFrames" load_steps=18 format=3]
+[gd_resource type="SpriteFrames" format=3 uid="uid://boxumpj2pyv2s"]
 
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_1.png" id="tex0"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_2.png" id="tex1"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_3.png" id="tex2"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_4.png" id="tex3"]
+[ext_resource type="Texture2D" uid="uid://cmku0nxku3j2w" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_1.png" id="tex0"]
+[ext_resource type="Texture2D" uid="uid://bt3qhx2oxmxnh" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_2.png" id="tex1"]
+[ext_resource type="Texture2D" uid="uid://b20jp4pgxvf7d" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_3.png" id="tex2"]
+[ext_resource type="Texture2D" uid="uid://bo3wa6pwjqvu0" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_4.png" id="tex3"]
 
 [sub_resource type="AtlasTexture" id="Atlas_0"]
 atlas = ExtResource("tex0")
@@ -78,7 +78,7 @@ animations = [{
 "duration": 1.0,
 "texture": null
 }],
-"loop": false,
+"loop": 0,
 "name": &"attack_1",
 "speed": 1.0
 }, {
@@ -104,7 +104,7 @@ animations = [{
 "duration": 1.0,
 "texture": null
 }],
-"loop": false,
+"loop": 0,
 "name": &"attack_2",
 "speed": 1.0
 }, {
@@ -127,7 +127,7 @@ animations = [{
 "duration": 1.0,
 "texture": null
 }],
-"loop": false,
+"loop": 0,
 "name": &"attack_3",
 "speed": 1.0
 }, {
@@ -141,7 +141,7 @@ animations = [{
 "duration": 1.0,
 "texture": null
 }],
-"loop": false,
+"loop": 0,
 "name": &"attack_4",
 "speed": 1.0
 }, {
@@ -155,7 +155,7 @@ animations = [{
 "duration": 1.0,
 "texture": null
 }],
-"loop": false,
+"loop": 0,
 "name": &"empty",
 "speed": 1.0
 }]

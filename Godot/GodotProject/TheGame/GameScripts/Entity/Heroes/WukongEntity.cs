@@ -7,7 +7,7 @@ namespace GameLogic.Entity
 	/// 场景绑定（Entitys/WukongEntity.tscn）：
 	///  * HeroId —— 对应的 HeroConfig 行；
 	///  * m_Body / m_Weapon —— 身体层 + 武器层 Sprite2D（6x14 网格），帧由 m_AnimPlayer 驱动；
-	///  * m_AnimTree —— 悟空自己的动画状态机（Entitys/wukong_animation_tree.tres，
+	///  * m_AnimTree —— 悟空自己的动画状态机（Entitys/Animations/wukong_animation_tree.tres，
 	///    由 EditorScripts/build_wukong_anim_tree.gd 生成）；
 	///  * m_HurtBox / m_HitBox —— 判定区（层见 Entity/AGENTS.md）。
 	///

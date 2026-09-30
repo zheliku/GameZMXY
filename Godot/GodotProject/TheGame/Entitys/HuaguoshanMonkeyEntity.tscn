@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://cc7r187g26xr8"]
 
 [ext_resource type="Script" uid="uid://bhpujkcrdsfwg" path="res://TheGame/GameScripts/Entity/Monsters/HuaguoshanMonkeyEntity.cs" id="1_script"]
-[ext_resource type="SpriteFrames" uid="uid://qu5gutbgunnj" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_animations.tres" id="2_frames"]
-[ext_resource type="AnimationLibrary" uid="uid://o8gq56k2o2gr" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_anim_library.tres" id="3_lib"]
-[ext_resource type="AnimationNodeStateMachine" uid="uid://c4seyh1vbcds4" path="res://TheGame/Entitys/huaguoshan_monkey_animation_tree.tres" id="4_tree"]
+[ext_resource type="SpriteFrames" uid="uid://di0jrkwb1ad8p" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_animations.tres" id="2_frames"]
+[ext_resource type="AnimationLibrary" uid="uid://o8gq56k2o2gr" path="res://TheGame/Entitys/Animations/huaguoshan_monkey_anim_library.tres" id="3_lib"]
+[ext_resource type="AnimationNodeStateMachine" uid="uid://c4seyh1vbcds4" path="res://TheGame/Entitys/Animations/huaguoshan_monkey_animation_tree.tres" id="4_tree"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/HurtBox.cs" id="5_hurtbox"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]

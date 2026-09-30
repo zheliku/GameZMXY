@@ -1,5 +1,9 @@
 extends SceneTree
-## 生成悟空的动画状态机资源 Entitys/wukong_animation_tree.tres。
+## 生成悟空的动画状态机资源 Entitys/Animations/wukong_animation_tree.tres。
+##
+## 真相源（2026-09-30 人类裁决）：产物已存在时**以编辑器保存的版本为准**，本脚本默认只做
+## 动画库校验、不覆盖；首次生成 / 文件被删 / 显式 `-- --force` 时才重建（--force 会冲掉编辑器里
+## 对状态机的修改，用前先提交）。下方边表/谓词是初版设计记录，编辑器改图后以 .tres 为准。
 ##
 ## 结构（2026-09-28 定稿：主图分组 + 子机收纳动画 + 属性表达式）：
 ##
@@ -45,10 +49,11 @@ extends SceneTree
 ##      计算属性（派生事实，如 Airborne/Rising，空 setter 见 HeroEntity）；
 ##      基对象由 ActorEntity.OnInit 指向实体节点；引擎自带数据用引擎名（如 is_on_floor()）。
 ##
-## 运行：S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --script res://EditorScripts/build_wukong_anim_tree.gd
+## 运行（校验 / 缺失时生成）：S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --script res://EditorScripts/build_wukong_anim_tree.gd
+## 强制重建：同上命令末尾加 `-- --force`
 
-const ANIM_LIB := "res://TheGame/Sprites/Characters/Heroes/wukong/wukong_anim_library.tres"
-const OUT := "res://TheGame/Entitys/wukong_animation_tree.tres"
+const ANIM_LIB := "res://TheGame/Entitys/Animations/wukong_anim_library.tres"
+const OUT := "res://TheGame/Entitys/Animations/wukong_animation_tree.tres"
 
 ## 资源 uid：WukongEntity.tscn 的 ext_resource 按 uid 引用本资源，必须稳定。
 ## headless 下 ResourceSaver 不会给新保存的资源写 uid，所以保存后由生成器补回文件头。
@@ -176,6 +181,12 @@ func _init() -> void:
 
 	if not _validate(lib):
 		quit(1)
+		return
+
+	# 编辑器为真相源：产物已存在且未 --force 时只校验不覆盖
+	if FileAccess.file_exists(OUT) and not OS.get_cmdline_user_args().has("--force"):
+		print("skip %s（已存在，以编辑器版本为准；动画库校验通过。重建用 -- --force）" % OUT)
+		quit(0)
 		return
 
 	var err := ResourceSaver.save(_build_root(), OUT)

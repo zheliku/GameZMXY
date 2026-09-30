@@ -104,7 +104,7 @@ TheGame/
 ├─ DataTables/                      # 【bundle】Luban .bytes + 本地化 .txt（生成物，禁手改）
 ├─ Sprites/                         # 【bundle】全部贴图/图集（规范：Sprites/AGENTS.md）
 ├─ Audios/                          # 【bundle】全部音频（规范：Audios/AGENTS.md）
-├─ Entitys/                         # 【bundle】实体 .tscn（规范：Entitys/AGENTS.md）
+├─ Entitys/                         # 【bundle】实体 .tscn + Animations/（动画库/状态机）（规范：Entitys/AGENTS.md）
 ├─ UIs/                             # 【bundle】游戏界面 .tscn
 └─ Scenes/                          # 【bundle】关卡等场景 .tscn
 ```

@@ -15,14 +15,40 @@ sequences from the legacy scene data once, then commit the generated .tres.
 武器层（RoleEquipment 图集）与身体层共用同一张 6x14 网格，所以武器动画
 **直接复用身体层的帧序列**：名称与帧一一对应，不存在两套映射走偏的可能。
 
-Run:  python Tools/LegacyMigration/gen_animations.py
+Run:  python Tools/LegacyMigration/gen_animations.py            # 只补缺失的产物
+      python Tools/LegacyMigration/gen_animations.py --force    # 强制全部重建（覆盖编辑器里的调整！）
+      python Tools/LegacyMigration/gen_animations.py --force wukong_anim_library.tres   # 只重建指定产物
+
+真相源（2026-09-30 人类裁决）：产物一旦存在，**以 Godot 编辑器里保存的 .tres 为准**
+（判定盒、特效偏移等在 Animation 面板里调）。本脚本默认跳过已存在的产物，
+只在首次迁移 / 文件被删 / 显式 --force 时写出，避免重跑冲掉编辑器里的手调数据。
 """
 
 import os
 import re
+import sys
 
 LEGACY = r"P:\Godot-Project\ZMXY_BHYH"
 SPRITES = r"P:\Godot-Project\GameZMXY\Godot\GodotProject\TheGame\Sprites"
+# 动画库（AnimationLibrary）是实体行为资源，不是贴图：2026-09-30 从 Sprites/ 移到 Entitys/Animations/
+ENTITY_ANIMS = r"P:\Godot-Project\GameZMXY\Godot\GodotProject\TheGame\Entitys\Animations"
+
+# --force [文件名...]：不带文件名 = 全部重建；带文件名 = 只重建这些（按 basename 匹配）
+_FORCE_ALL = False
+_FORCE_NAMES = set()
+if "--force" in sys.argv:
+    _names = sys.argv[sys.argv.index("--force") + 1:]
+    _FORCE_NAMES = {os.path.basename(n) for n in _names}
+    _FORCE_ALL = not _FORCE_NAMES
+
+
+def _should_write(out_path):
+    """产物已存在且未被 --force 点名时跳过（编辑器为真相源，见文件头）。"""
+    name = os.path.basename(out_path)
+    if not os.path.exists(out_path) or _FORCE_ALL or name in _FORCE_NAMES:
+        return True
+    print(f"  skip {name}  (已存在，以编辑器版本为准；重建用 --force {name})")
+    return False
 
 
 # --------------------------------------------------------------------------
@@ -30,6 +56,8 @@ SPRITES = r"P:\Godot-Project\GameZMXY\Godot\GodotProject\TheGame\Sprites"
 # --------------------------------------------------------------------------
 def emit_spriteframes(out_path, anims):
     """anims: list of dict(name, loop, tex, fw, fh, cols, frames=[(idx,dur)], speed)"""
+    if not _should_write(out_path):
+        return
     tex_ids = {}
     ext_lines = []
     for a in anims:
@@ -70,7 +98,9 @@ def emit_spriteframes(out_path, anims):
         )
 
     steps = len(ext_lines) + len(atlas_ids) + 1
-    lines = [f'[gd_resource type="SpriteFrames" load_steps={steps} format=3]', ""]
+    uid = _existing_uid(out_path)
+    uid_attr = f' uid="{uid}"' if uid else ""
+    lines = [f'[gd_resource type="SpriteFrames" load_steps={steps} format=3{uid_attr}]', ""]
     lines += ext_lines
     lines.append("")
     lines += sub_lines
@@ -403,8 +433,7 @@ def gen_monkey():
 #   * idle：旧 wait 用 Wait.png 4 帧 0.2s，但新工程只迁移了 1 帧 idle 图（43×63）——保持 1 帧，
 #     补全 idle 图集随 M5 素材补齐（LegacyAssetMap 已登记）。
 # --------------------------------------------------------------------------
-MONKEY_LIB_OUT = os.path.join(SPRITES, "Characters", "Monsters", "huaguoshan_monkey",
-                              "huaguoshan_monkey_anim_library.tres")
+MONKEY_LIB_OUT = os.path.join(ENTITY_ANIMS, "huaguoshan_monkey_anim_library.tres")
 MONKEY_BODY = "m_Body"
 MONKEY_SPRITE_FRAMES = "m_Body:animation"
 
@@ -824,6 +853,8 @@ def build_wukong_effect():
 
 def emit_fx_spriteframes(out_path, anims):
     """特效 SpriteFrames：条目序列原样写出（含 null），逐帧 duration 统一 1.0。"""
+    if not _should_write(out_path):
+        return
     tex_ids = {}
     ext_lines = []
     for a in anims:
@@ -861,7 +892,9 @@ def emit_fx_spriteframes(out_path, anims):
         )
 
     steps = len(ext_lines) + len(atlas_ids) + 1
-    lines = [f'[gd_resource type="SpriteFrames" load_steps={steps} format=3]', ""]
+    uid = _existing_uid(out_path)
+    uid_attr = f' uid="{uid}"' if uid else ""
+    lines = [f'[gd_resource type="SpriteFrames" load_steps={steps} format=3{uid_attr}]', ""]
     lines += ext_lines
     lines.append("")
     lines += sub_lines
@@ -877,6 +910,8 @@ def emit_fx_spriteframes(out_path, anims):
 
 def emit_fx_library(out_path, anims):
     """AnimationLibrary：轨道原样搬到 FX_NODE 的属性上（离散键，与旧 update=1 一致）。"""
+    if not _should_write(out_path):
+        return
     sub_lines = []
     for a in anims:
         sub_lines.append(f'[sub_resource type="Animation" id="{a["name"]}"]')
@@ -939,7 +974,7 @@ def gen_wukong_effect():
 #     AnimationTree（wukong_animation_tree.tres）做嵌套状态机。
 # --------------------------------------------------------------------------
 
-WUKONG_LIB_OUT = "res://TheGame/Sprites/Characters/Heroes/wukong/wukong_anim_library.tres"
+WUKONG_LIB_OUT = "res://TheGame/Entitys/Animations/wukong_anim_library.tres"
 
 BODY_NODE = "m_Body"
 WEAPON_NODE = "m_Weapon"
@@ -1169,6 +1204,8 @@ def emit_anim_library(out_path, anims, shape_res=None):
 
     shape_res: 判定盒 RectangleShape2D 子资源 id → 尺寸（shape 轨道引用它们）。
     """
+    if not _should_write(out_path):
+        return
     shape_res = shape_res or {}
     sub_lines = []
     for sid, size in shape_res.items():
@@ -1230,7 +1267,7 @@ def emit_anim_library(out_path, anims, shape_res=None):
 
 
 def gen_wukong_library():
-    out = os.path.join(SPRITES, "Characters", "Heroes", "wukong", "wukong_anim_library.tres")
+    out = os.path.join(ENTITY_ANIMS, "wukong_anim_library.tres")
     anims, shape_res = build_wukong_library()
     emit_anim_library(out, anims, shape_res)
 

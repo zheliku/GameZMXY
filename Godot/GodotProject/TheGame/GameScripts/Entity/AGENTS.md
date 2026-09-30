@@ -26,7 +26,7 @@ BulletEntity : Node2D, IEntity   DropItemEntity / MagicWeaponEntity ...
 
 - **属性事实面**：写在角色自己的类里，如 `HeroEntity` 的 `MoveInput / Running / JumpCount / AttackSegment / Hurt / Emoting`（`Dead` 在 `ActorEntity`，唯一置位点在 `ReceiveHit` 扣血扣到 0）——全部**单一事实源**：直接事实是输入/物理写入的 `[Export]` 字段，事件事实在状态进入/离开处翻转（无"每帧同步"步骤）；派生事实（如 `Rising` / `Airborne`）是 **`[Export]` 计算属性**：getter 实时计算、setter 为空实现（只读属性不可 `[Export]`（GD0103），不导出对引擎又不可见——空 setter 是让表达式能读到属性的唯一途径）。
 - **出招时序与判定盒**（2026-09-30 审查定稿）：攻击动画的方法轨道回调 C# `OnAttackBegin`/`OnAttackEnd`（只管数值包：属性快照/连段推进）；判定盒形状/位置/开关是动画**值轨道关键帧**（同旧项目 keyframe shape/position/disabled，原生朝左坐标，朝向由 `m_HitBoxRoot` 容器 scale.x 镜像）——代码零几何，打断出招时 AnimationMixer 自动还原。
-- **状态机资源**：`Entitys/<角色>_animation_tree.tres`，由 `EditorScripts/build_<角色>_anim_tree.gd` 生成；节点名 = 动画名，**禁手改 `.tres`**——改图 = 改生成器状态表/边表 + 重跑。
+- **动画资源**：动画库 `Entitys/Animations/<角色>_anim_library.tres` + 状态机 `Entitys/Animations/<角色>_animation_tree.tres`；节点名 = 动画名。首版由 `Tools/LegacyMigration/gen_animations.py` / `EditorScripts/build_<角色>_anim_tree.gd` 生成，**落地后以编辑器保存的版本为准**（2026-09-30 人类裁决），生成器默认只校验不覆盖（见 `EditorScripts/AGENTS.md`）。改完跑一次树生成器做校验 + 冒烟测试。
 - **图结构**：主图只留状态组 + 单状态（`Ground` / `Air` / `Attack` 子机可嵌套 ＋ `Hurt` / `Death`）：
   - 组间边 = 目标组**组谓词**（`P_*` 常量，互斥完备、只写一次）；组内边只写**组内区分项**（走/跑、跳/二段/落、段序号）。
   - 子状态机用 **ROOT 类型** + 进组边 `reset=true`（缺 reset 子机不播放）；每个状态一条 `Start → 状态` 边。
