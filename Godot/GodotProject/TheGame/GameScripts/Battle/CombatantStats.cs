@@ -1,6 +1,21 @@
 namespace GameLogic.Battle
 {
 	/// <summary>
+	/// 结算侧别：决定 <see cref="DamageCalculator"/> 取 BattleConfig 的哪一组常数
+	/// （旧项目人怪两侧的 K 值、等级压制系数与封顶都不一致）。
+	/// 它只描述"按哪套公式算"，不是阵营——敌我关系仍由物理层表达（根规范 §7）。
+	/// （2026-09-30 人类裁决：自独立文件 CombatSide.cs 并入本文件。）
+	/// </summary>
+	public enum CombatSide
+	{
+		/// <summary>英雄</summary>
+		Hero = 0,
+
+		/// <summary>怪物</summary>
+		Monster = 1,
+	}
+
+	/// <summary>
 	/// 战斗属性快照：结算一次命中所需的一方全部属性（攻击方与防守方用同一结构）。
 	///
 	/// 用值类型而不是池化类：它只有十来个 int，按值拷贝即零分配、无归还义务，

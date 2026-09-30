@@ -14,7 +14,7 @@ height = 52.0
 radius = 19.0
 height = 62.0
 
-[sub_resource type="RectangleShape2D" id="hitbox_rest"]
+[sub_resource type="RectangleShape2D" id="hitbox_attack_1"]
 size = Vector2(50, 50)
 
 [node name="HuaguoshanMonkeyEntity" type="CharacterBody2D" unique_id=1348517012 node_paths=PackedStringArray("m_Body", "m_AnimPlayer", "m_AnimTree", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
@@ -33,6 +33,7 @@ m_HitBoxRoot = NodePath("m_HitBoxRoot")
 position = Vector2(0, -13)
 sprite_frames = ExtResource("2_frames")
 animation = &"attack_1"
+frame = 1
 offset = Vector2(-13, 0)
 
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1842145312]
@@ -62,8 +63,7 @@ monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1324609239]
 position = Vector2(-24, -23)
-shape = SubResource("hitbox_rest")
-disabled = true
+shape = SubResource("hitbox_attack_1")
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=733591014]
 libraries/ = ExtResource("3_lib")

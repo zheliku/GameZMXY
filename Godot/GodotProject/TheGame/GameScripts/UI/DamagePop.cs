@@ -161,9 +161,16 @@ namespace GameLogic.UI
 		/// <summary>把数字按位排开（整体水平居中），多余的数字节点隐藏。</summary>
 		private void LayoutDigits(int value, Texture2D sheet, float overlap)
 		{
-			value = Mathf.Max(0, value);
-			int count = value == 0 ? 1 : (int)Mathf.Floor(Mathf.Log(value) / Mathf.Log(10)) + 1;
-			count = Mathf.Min(count, MaxDigits);
+		value = Mathf.Max(0, value);
+		// 整数除法数位数：Mathf.Log(100000)/Mathf.Log(10) 因 float 精度算成 4.9999998，
+		// floor 后少一位（整 10^5 伤害会渲染成 "00000"），禁用对数计数。
+		int count = 1;
+		int probe = value;
+		while (probe >= 10 && count < MaxDigits)
+		{
+			probe /= 10;
+			count++;
+		}
 
 			float cellW = sheet.GetWidth() / 10f;
 			float cellH = sheet.GetHeight();

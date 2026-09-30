@@ -51,9 +51,10 @@ namespace GameLogic.Battle
 		/// <param name="config">战斗常数（BattleConfig 单行表）</param>
 		/// <param name="attack">攻击包（含攻击方快照与本招威力）</param>
 		/// <param name="defender">防守方属性快照</param>
-		/// <param name="rolls">随机数（由 Godot 层取好传入）</param>
+		/// <param name="missRoll">闪避判定随机数 [0,1)（由 Godot 层取好传入，Battle/ 不自取随机）</param>
+		/// <param name="critRoll">暴击判定随机数 [0,1)（由 Godot 层取好传入）</param>
 		public static DamageResult Calculate(BattleConfig config, AttackData attack, in CombatantStats defender,
-			in DamageRolls rolls)
+			float missRoll, float critRoll)
 		{
 			if (config == null)
 			{
@@ -97,13 +98,13 @@ namespace GameLogic.Battle
 
 			// 3. 闪避
 			double missK = heroDefends ? config.MissKHero : config.MissKMonster;
-			if (rolls.Miss < Ratio(miss, missK))
+			if (missRoll < Ratio(miss, missK))
 			{
 				return DamageResult.Missed(attack.Kind);
 			}
 
 			// 4. 暴击
-			bool isCrit = rolls.Crit < Ratio(crit, config.CritK);
+			bool isCrit = critRoll < Ratio(crit, config.CritK);
 			if (isCrit)
 			{
 				double luckyK = heroDefends ? config.LuckyKMonsterAtk : config.LuckyKHeroAtk;

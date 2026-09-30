@@ -396,8 +396,9 @@ namespace GameLogic.Entity
 
 			BattleConfig config = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
 			CombatantStats defender = GetCombatStats();
-			DamageRolls rolls = new DamageRolls(GD.Randf(), GD.Randf());
-			DamageResult result = DamageCalculator.Calculate(config, attack, defender, rolls);
+			float missRoll = GD.Randf();
+			float critRoll = GD.Randf();
+			DamageResult result = DamageCalculator.Calculate(config, attack, defender, missRoll, critRoll);
 
 			if (!result.IsMiss)
 			{

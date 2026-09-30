@@ -20,7 +20,7 @@ namespace GameLogic.Battle.Tests
 		private static readonly BattleConfig Config = LoadConfig();
 
 		/// <summary>必不闪避、必不暴击的随机数（roll 取上界附近）</summary>
-		private static readonly DamageRolls NoProc = new DamageRolls(0.9999f, 0.9999f);
+		private const float NoProc = 0.9999f;
 
 		private static BattleConfig LoadConfig()
 		{
@@ -44,12 +44,12 @@ namespace GameLogic.Battle.Tests
 
 		/// <summary>结算并立即归还攻击包（与游戏内"一招一包"用法一致）</summary>
 		private static DamageResult Hit(in CombatantStats attacker, float power, DamageKind kind,
-			in CombatantStats defender, in DamageRolls rolls)
+			in CombatantStats defender, float missRoll, float critRoll)
 		{
 			AttackData attack = AttackData.Create(0, attacker, power, kind, Vector2.Zero, 1, 0, 0, SoundId.None);
 			try
 			{
-				return DamageCalculator.Calculate(Config, attack, defender, rolls);
+				return DamageCalculator.Calculate(Config, attack, defender, missRoll, critRoll);
 			}
 			finally
 			{
@@ -73,7 +73,7 @@ namespace GameLogic.Battle.Tests
 			// 悟空 1 级(攻 8) 普攻1 倍率 1.0 → 威力 8；猴子 5 级 物防 50。
 			// 等级压制（怪物防守，封顶 2 级）：8 × (1 − 2×0.05) = 7.2 → 7
 			// 物防减伤：50/(50+100) = 0.333 → 7 × 0.667 = 4.669 → 4
-			DamageResult r = Hit(Hero(), 8f, DamageKind.Physics, Monster(), NoProc);
+			DamageResult r = Hit(Hero(), 8f, DamageKind.Physics, Monster(), NoProc, NoProc);
 			Assert.False(r.IsMiss);
 			Assert.False(r.IsCrit);
 			Assert.Equal(4, r.Damage);
@@ -84,14 +84,14 @@ namespace GameLogic.Battle.Tests
 		{
 			// 猴子固定威力 10；英雄防守压制封顶 5 级：d=4 → 10 × (1 + 4×0.05) = 12
 			// 英雄物防 10：10/(10+250) = 0.038 → 12 × 0.962 = 11.544 → 11
-			DamageResult r = Hit(Monster(), 10f, DamageKind.Physics, Hero(), NoProc);
+			DamageResult r = Hit(Monster(), 10f, DamageKind.Physics, Hero(), NoProc, NoProc);
 			Assert.Equal(11, r.Damage);
 		}
 
 		[Fact]
 		public void SameLevel_RealDamage_IgnoresDefense()
 		{
-			DamageResult r = Hit(Hero(level: 5), 37.9f, DamageKind.Real, Monster(def: 999, mdef: 999), NoProc);
+			DamageResult r = Hit(Hero(level: 5), 37.9f, DamageKind.Real, Monster(def: 999, mdef: 999), NoProc, NoProc);
 			Assert.Equal(37, r.Damage);
 		}
 
@@ -99,7 +99,7 @@ namespace GameLogic.Battle.Tests
 		public void Magic_UsesMdef()
 		{
 			// 同级 威力 100，魔防 80：80/180 = 0.444 → 100 × 0.556 = 55.6 → 55
-			DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Magic, Monster(), NoProc);
+			DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Magic, Monster(), NoProc, NoProc);
 			Assert.Equal(55, r.Damage);
 		}
 
@@ -107,7 +107,7 @@ namespace GameLogic.Battle.Tests
 		public void Penetration_ReducesDefense_ClampedAtZero()
 		{
 			// 破甲 60 > 物防 50 → 净物防 0，不减伤
-			DamageResult r = Hit(Hero(level: 5, ar: 60), 100f, DamageKind.Physics, Monster(), NoProc);
+			DamageResult r = Hit(Hero(level: 5, ar: 60), 100f, DamageKind.Physics, Monster(), NoProc, NoProc);
 			Assert.Equal(100, r.Damage);
 		}
 
@@ -116,7 +116,7 @@ namespace GameLogic.Battle.Tests
 		{
 			// 同级，怪物闪避 70：70/(70+70) = 0.5；roll 0.49 < 0.5 → 闪避
 			DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Physics, Monster(miss: 70),
-				new DamageRolls(0.49f, 0f));
+				0.49f, 0f);
 			Assert.True(r.IsMiss);
 			Assert.Equal(0, r.Damage);
 		}
@@ -124,7 +124,7 @@ namespace GameLogic.Battle.Tests
 		[Fact]
 		public void Miss_RollAtRate_DoesNotMiss()
 		{
-			DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Real, Monster(miss: 70), new DamageRolls(0.5f, 0.9999f));
+			DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Real, Monster(miss: 70), 0.5f, 0.9999f);
 			Assert.False(r.IsMiss);
 		}
 
@@ -132,7 +132,7 @@ namespace GameLogic.Battle.Tests
 		public void ZeroRates_NeverProc_EvenWithZeroRolls()
 		{
 			// 旧项目 <= 判定在率为 0、roll 恰为 0 时仍会触发；新实现率为 0 必不触发
-			DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Real, Monster(), new DamageRolls(0f, 0f));
+			DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Real, Monster(), 0f, 0f);
 			Assert.False(r.IsMiss);
 			Assert.False(r.IsCrit);
 			Assert.Equal(100, r.Damage);
@@ -143,7 +143,7 @@ namespace GameLogic.Battle.Tests
 		{
 			// 闪避 70 − 命中 70 = 0 → 闪避率 0
 			DamageResult r = Hit(Hero(level: 5, htarget: 70), 100f, DamageKind.Real, Monster(miss: 70),
-				new DamageRolls(0f, 0.9999f));
+				0f, 0.9999f);
 			Assert.False(r.IsMiss);
 		}
 
@@ -153,7 +153,7 @@ namespace GameLogic.Battle.Tests
 			// 同级，暴击 100 → 率 0.5；幸运 100、英雄攻击幸运K 100 → 倍率 2 + 0.5 = 2.5
 			// 真实伤害：100 × 2.5 = 250
 			DamageResult r = Hit(Hero(level: 5, crit: 100, lucky: 100), 100f, DamageKind.Real, Monster(),
-				new DamageRolls(0.9999f, 0.49f));
+				0.9999f, 0.49f);
 			Assert.True(r.IsCrit);
 			Assert.Equal(250, r.Damage);
 		}
@@ -163,7 +163,7 @@ namespace GameLogic.Battle.Tests
 		{
 			// 同级，幸运 50、怪物攻击幸运K 50 → 倍率 2.5；真实 100 → 250
 			DamageResult r = Hit(Monster(level: 1, crit: 100, lucky: 50), 100f, DamageKind.Real, Hero(level: 1),
-				new DamageRolls(0.9999f, 0.49f));
+				0.9999f, 0.49f);
 			Assert.True(r.IsCrit);
 			Assert.Equal(250, r.Damage);
 		}
@@ -173,12 +173,12 @@ namespace GameLogic.Battle.Tests
 		{
 			// 暴击 100 − 暴抗 100 = 0 → 不暴击
 			DamageResult none = Hit(Hero(level: 5, crit: 100), 100f, DamageKind.Real, Monster(critReduce: 100),
-				new DamageRolls(0.9999f, 0f));
+				0.9999f, 0f);
 			Assert.False(none.IsCrit);
 
 			// 幸运 100 − 韧性 100 = 0 → 倍率仅基数 2
 			DamageResult plain = Hit(Hero(level: 5, crit: 100, lucky: 100), 100f, DamageKind.Real,
-				Monster(toughness: 100), new DamageRolls(0.9999f, 0f));
+				Monster(toughness: 100), 0.9999f, 0f);
 			Assert.True(plain.IsCrit);
 			Assert.Equal(200, plain.Damage);
 		}
@@ -188,7 +188,7 @@ namespace GameLogic.Battle.Tests
 		{
 			// 同级 威力 100，暴击倍率 2（幸运 0），物防 50 → 200 × 0.667 = 133.4 → 133
 			DamageResult r = Hit(Hero(level: 5, crit: 100), 100f, DamageKind.Physics, Monster(),
-				new DamageRolls(0.9999f, 0f));
+				0.9999f, 0f);
 			Assert.Equal(133, r.Damage);
 		}
 
@@ -196,7 +196,7 @@ namespace GameLogic.Battle.Tests
 		public void LevelSuppression_MonsterDefends_CapsAtTwoLevels()
 		{
 			// 英雄 10 级打 1 级怪：d=9 但封顶 2 级 → 100 × 1.1 = 110（真实伤害，隔离减伤）
-			DamageResult r = Hit(Hero(level: 10), 100f, DamageKind.Real, Monster(level: 1), NoProc);
+			DamageResult r = Hit(Hero(level: 10), 100f, DamageKind.Real, Monster(level: 1), NoProc, NoProc);
 			Assert.Equal(110, r.Damage);
 		}
 
@@ -205,11 +205,11 @@ namespace GameLogic.Battle.Tests
 		{
 			// 1 级英雄被 10 级怪打：封顶 5 级，攻击方(怪)等级高 → ×1.25
 			// （回归：表系数是 float，×0.75 一侧曾因 74.9999996 被截成 74，见 DamageCalculator.TruncateEpsilon）
-			DamageResult up = Hit(Monster(level: 10), 100f, DamageKind.Real, Hero(level: 1), NoProc);
+			DamageResult up = Hit(Monster(level: 10), 100f, DamageKind.Real, Hero(level: 1), NoProc, NoProc);
 			Assert.Equal(125, up.Damage);
 
 			// 10 级英雄被 1 级怪打 → ×0.75
-			DamageResult down = Hit(Monster(level: 1), 100f, DamageKind.Real, Hero(level: 10), NoProc);
+			DamageResult down = Hit(Monster(level: 1), 100f, DamageKind.Real, Hero(level: 10), NoProc, NoProc);
 			Assert.Equal(75, down.Damage);
 		}
 
@@ -220,14 +220,14 @@ namespace GameLogic.Battle.Tests
 			// 率 98/(98+70) = 0.583；roll 0.58 → 闪避，0.59 → 不闪避
 			CombatantStats hero = Hero(level: 1);
 			CombatantStats monkey = Monster(level: 11, miss: 70);
-			Assert.True(Hit(hero, 100f, DamageKind.Real, monkey, new DamageRolls(0.58f, 0.9999f)).IsMiss);
-			Assert.False(Hit(hero, 100f, DamageKind.Real, monkey, new DamageRolls(0.59f, 0.9999f)).IsMiss);
+			Assert.True(Hit(hero, 100f, DamageKind.Real, monkey, 0.58f, 0.9999f).IsMiss);
+			Assert.False(Hit(hero, 100f, DamageKind.Real, monkey, 0.59f, 0.9999f).IsMiss);
 
 			// 攻击方(英雄)等级高 30 级：闪避系数封顶 0.9 → 70 × 0.1 = 7 → 7/77 = 0.091
 			CombatantStats strongHero = Hero(level: 31);
 			CombatantStats weakMonkey = Monster(level: 1, miss: 70);
-			Assert.True(Hit(strongHero, 100f, DamageKind.Real, weakMonkey, new DamageRolls(0.09f, 0.9999f)).IsMiss);
-			Assert.False(Hit(strongHero, 100f, DamageKind.Real, weakMonkey, new DamageRolls(0.092f, 0.9999f)).IsMiss);
+			Assert.True(Hit(strongHero, 100f, DamageKind.Real, weakMonkey, 0.09f, 0.9999f).IsMiss);
+			Assert.False(Hit(strongHero, 100f, DamageKind.Real, weakMonkey, 0.092f, 0.9999f).IsMiss);
 		}
 
 		[Fact]
@@ -236,14 +236,14 @@ namespace GameLogic.Battle.Tests
 			// 英雄高 5 级打怪：暴击系数 min(5×0.11, 1) = 0.55 → 暴击 50 × 1.55 = 77.5 → 率 77.5/177.5 = 0.437
 			CombatantStats hero = Hero(level: 10, crit: 50);
 			CombatantStats monkey = Monster(level: 5);
-			Assert.True(Hit(hero, 100f, DamageKind.Real, monkey, new DamageRolls(0.9999f, 0.436f)).IsCrit);
-			Assert.False(Hit(hero, 100f, DamageKind.Real, monkey, new DamageRolls(0.9999f, 0.438f)).IsCrit);
+			Assert.True(Hit(hero, 100f, DamageKind.Real, monkey, 0.9999f, 0.436f).IsCrit);
+			Assert.False(Hit(hero, 100f, DamageKind.Real, monkey, 0.9999f, 0.438f).IsCrit);
 		}
 
 		[Fact]
 		public void Damage_NeverNegative()
 		{
-			DamageResult r = Hit(Hero(level: 5), 0f, DamageKind.Physics, Monster(), NoProc);
+			DamageResult r = Hit(Hero(level: 5), 0f, DamageKind.Physics, Monster(), NoProc, NoProc);
 			Assert.Equal(0, r.Damage);
 		}
 
