@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using GameConfig.Battle;
 using GameConfig.Hero;
 using GameConfig.Sound;
@@ -7,7 +6,7 @@ using GameLogic.Battle;
 using Godot;
 using GodotGameFramework;
 
-namespace GameLogic.Entity
+namespace GameLogic.Entity.Heroes
 {
 	/// <summary>
 	/// 英雄基类：标准英雄机制（输入、走/跑、跳、普攻连段、受击、死亡、待机小动作），
@@ -53,20 +52,39 @@ namespace GameLogic.Entity
 		/// </summary>
 		private const string HurtAnimName = "hurt";
 
-		// ---- 场景节点引用（英雄专属层）----
+		// ---- 场景节点引用（英雄专属层；怪物没有这些层，所以不放 ActorEntity）----
 
-		/// <summary>武器层（场景子节点 m_Weapon，可为空）：与身体层同网格，帧由动画轨道驱动</summary>
+		/// <summary>武器层（场景子节点 m_Weapon，可为空）：与身体层同网格，帧由动画轨道驱动（装备外观）</summary>
 		[Export] private Sprite2D m_Weapon;
 
-		/// <summary>武器层。属于英雄（装备外观），怪物没有这一层，所以不放 ActorEntity</summary>
+		/// <summary>
+		/// 攻击特效层容器（场景子节点 m_EffectRoot，可为空）：其子节点 m_Effect 是特效的 AnimatedSprite2D，
+		/// 属性由动画轨道驱动；容器负责朝向镜像（scale.x = ±1，连带镜像轨道写入的 offset）——
+		/// 同旧项目英雄 Action/SpecialEffect。旧项目怪物没有自带特效层（受击/保护特效是 Global.add_* 另生成的节点），
+		/// 将来怪物需要打击特效走池化特效实体（红线 6），不在身上挂层。
+		/// </summary>
+		[Export] private Node2D m_EffectRoot;
+
+		/// <summary>武器层</summary>
 		public Sprite2D Weapon => m_Weapon;
 
-		/// <summary>朝向变化：镜像英雄专属的武器层（身体/特效层与判定盒由基类处理）。</summary>
+		/// <summary>攻击特效层容器</summary>
+		public Node2D EffectRoot => m_EffectRoot;
+
+		/// <summary>朝向变化：镜像英雄专属的武器层与特效层（身体与判定盒由基类处理）。</summary>
 		protected override void OnFacingChanged(int dir)
 		{
+			bool mirror = dir > 0;
 			if (m_Weapon != null)
 			{
-				m_Weapon.FlipH = dir > 0;
+				m_Weapon.FlipH = mirror;
+			}
+
+			// 特效层用父容器负 scale 镜像（同旧项目 Action.scale.x = ±1）：
+			// 这样特效节点上由轨道写入的 offset 会一起镜像，特效不会跑到身体另一侧。
+			if (m_EffectRoot != null)
+			{
+				m_EffectRoot.Scale = new Vector2(mirror ? -1 : 1, 1);
 			}
 		}
 
@@ -208,7 +226,8 @@ namespace GameLogic.Entity
 
 			MaxHp = Config.BaseHp;
 			Hp = MaxHp;
-			LoadCombo();
+			// 普攻连段：段序号 i（0 起）对应动画 attack_<i+1>（各角色状态机按同一约定生成攻击节点）
+			m_Combo = LoadOwnAttacks(Config.EntityId);
 			CacheAnimLens();
 		}
 
@@ -246,25 +265,7 @@ namespace GameLogic.Entity
 				m_NextEmoteDelay = NextEmoteDelay();
 			}
 
-			if (AnimTree != null)
-			{
-				AnimTree.Active = true;
-			}
-
 			SetFacing(1);
-		}
-
-		public override void OnHide(bool isShutdown, object userData)
-		{
-			// 关停阶段（isShutdown=true）子节点可能已被引擎释放——框架的 Shutdown 在
-			// 场景树析构之后才补调 OnHide，此时读 AnimTree 会抛 ObjectDisposedException。
-			// 关停时也没什么可停的（树随场景一起销毁），直接跳过。
-			if (!isShutdown && AnimTree != null && GodotObject.IsInstanceValid(AnimTree))
-			{
-				AnimTree.Active = false;
-			}
-
-			base.OnHide(isShutdown, userData);
 		}
 
 		/// <summary>
@@ -611,26 +612,6 @@ namespace GameLogic.Entity
 		}
 
 		/// <summary>
-		/// 装配本英雄的普攻连段：取 AttackConfig 里 `OwnerId == 自己` 的行，按 ComboIndex 排序；
-		/// 段序号 i（0 起）对应动画 `attack_<i+1>`（各角色状态机按同一约定生成攻击节点）。
-		/// 怪物 AI（M5）用同一份数据：过滤 OwnerId + 按 AiWeight 抽招。
-		/// </summary>
-		private void LoadCombo()
-		{
-			List<AttackConfig> combo = new List<AttackConfig>();
-			foreach (AttackConfig attack in ConfigSystem.Instance.Tables.TbAttackConfig.DataList)
-			{
-				if (attack.OwnerId == Config.EntityId)
-				{
-					combo.Add(attack);
-				}
-			}
-
-			combo.Sort((a, b) => a.ComboIndex.CompareTo(b.ComboIndex));
-			m_Combo = [.. combo];
-		}
-
-		/// <summary>
 		/// 缓存动画时长类事实：受击硬直时长、待机小动作时长。
 		/// 动画名来自全项目标准名（hurt）或角色覆写（IdleFlavorAnim）；基类不出现角色专属动画名。
 		/// （攻击段时长不再缓存——出招时序由动画自身的方法轨道回调，见 UpdateAttack。）
@@ -639,17 +620,6 @@ namespace GameLogic.Entity
 		{
 			m_HurtLen = GetAnimLength(HurtAnimName);
 			m_EmoteLen = IdleFlavorAnim == "" ? 0f : GetAnimLength(IdleFlavorAnim);
-		}
-
-		private float GetAnimLength(string animName)
-		{
-			if (AnimPlayer == null || animName == null || AnimPlayer.HasAnimation(animName) == false)
-			{
-				Log.Warning("[HeroEntity] 动画库缺少 {0}，相关时长按 0 处理", animName);
-				return 0f;
-			}
-
-			return (float)AnimPlayer.GetAnimation(animName).Length;
 		}
 
 		/// <summary>待机小动作的随机排期间隔（HeroConfig.IdleEmoteDelay 区间内取随机）。</summary>

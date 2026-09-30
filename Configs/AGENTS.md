@@ -22,7 +22,7 @@
 - 资源引用用显式路径列（如 `IconPath`），禁止字符串拼接派生路径。
 - 音效（定稿）：唯一资产表 `SoundConfig`（`Id`=显式枚举值 / `Key` / `NameCn` / `Desc` / `LegacyId` / `Group`=Music|SFX|UI / `Path`）；**谁在何时播什么写在触发者行上**——攻击音 `AttackConfig.SoundId/HitSoundId`，受击/死亡语音 `HeroConfig`/`MonsterConfig`，BGM `LevelConfig.BgmSoundId`；不建绑定表，统一入口 `GF.Sound.PlaySound(资源, 组名)`。语义归属：命中音属攻击方、受击/死亡语音属受害方；命名按声音本身（如 `WukongImpact`），不按用途。
 - 攻击"用法"写在攻击行（`OwnerId` + `ComboIndex` + `AiWeight`），连段用序号不用 `NextAttackId` 指针；**关联表只在每链接有独立数据或多主体参数不同时才建**。
-- 怪物 AI（M5）：决策节奏在 `MonsterConfig`（`SightRange / AttackRange / AttackRangeSlack / AttackDesire / AttackInterval / PatrolInterval / PatrolIdleChance / PatrolRadius / BehitCalmTime`，阶级 `Rank`、霸体 `SuperArmor`）；招式用法在 `AttackConfig`（`AiPriority` 0=普攻池 / >0=技能，`AiRange / AiCooldown / AiInitCooldown`）。普攻池的 `AiRange` 上限须 ≥ `AttackRange + AttackRangeSlack`（否则站定后无招可出，运行时会告警）。精英/Boss 的差异优先用数据表达，语义见 `GameScripts/Entity/AGENTS.md`「怪物 AI」。
+- 怪物 AI（M5）：决策节奏在 `MonsterConfig`（`SightRange / AttackRangeSlack / AttackDesire / AttackInterval / PatrolInterval / PatrolIdleChance / PatrolRadius / BehitCalmTime`，阶级 `Rank`、霸体 `SuperArmor`）；招式用法在 `AttackConfig`（`AiPriority` 0=普攻池 / >0=技能，`AiRange / AiCooldown / AiInitCooldown / AiRecovery`）。**近身招的攻击距离/高度不进表**：由攻击动画判定盒推导（2026-09-30 裁决，唯一真相源在动画）；`AiRange` 只给无身体判定盒的远程招，近身招填 `0,0`（两者都缺时运行时告警）。`AiRecovery` = 收招硬直秒。精英/Boss 的差异优先用数据表达，语义见 `GameScripts/Entity/AGENTS.md`「怪物 AI」。
 - 枚举值显式写死，不靠自动递增。
 
 ## 工作约定

@@ -1,6 +1,6 @@
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.AI
+namespace GameLogic.Entity.Monsters.AI
 {
 	/// <summary>
 	/// 怪物 AI 状态基类（GF.Fsm，每状态一个类；持有者 = <see cref="IMonsterAiAgent"/>）。
@@ -15,8 +15,8 @@ namespace GameLogic.Entity.AI
 	/// <code>
 	///   Patrol ⇄ Idle            巡逻决策（PatrolInterval 一次；PatrolIdleChance 概率停留）
 	///   Patrol/Idle → Chase      有目标
-	///   Chase → Attack           进入站定距离（AttackRange）；追击途中技能就绪即放
-	///   Attack → Chase           离开站定距离（出招中不离开）
+	///   Chase → Attack           普攻判定盒水平上够得着目标；追击途中技能就绪即放
+	///   Attack → Chase           水平间隙超过 AttackRangeSlack（出招/收招硬直中不离开）
 	///   Chase/Attack → Patrol    目标失效（出招中不离开）
 	///   任意 → CcLocked           受控；解除后再僵直 CalmTime → Chase / Patrol
 	///   任意 → Death              死亡（终态，实体回收时状态机随之销毁）

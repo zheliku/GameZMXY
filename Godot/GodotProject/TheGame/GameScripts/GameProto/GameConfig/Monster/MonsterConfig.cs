@@ -36,7 +36,6 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         RHp = _buf.ReadFloat();
         MoveSpeed = _buf.ReadFloat();
         SightRange = _buf.ReadInt();
-        AttackRange = _buf.ReadInt();
         AttackDesire = _buf.ReadInt();
         BehitCalmTime = _buf.ReadFloat();
         AddExp = _buf.ReadInt();
@@ -138,10 +137,6 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// </summary>
     public readonly int SightRange;
     /// <summary>
-    /// 进入攻击的距离(旧 attackRange)
-    /// </summary>
-    public readonly int AttackRange;
-    /// <summary>
     /// 攻击欲望 0-100(旧 attackDesire)
     /// </summary>
     public readonly int AttackDesire;
@@ -190,7 +185,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// </summary>
     public readonly bool SuperArmor;
     /// <summary>
-    /// 站定滞回 px:距离超过 AttackRange+本值才重新追击(新增,防目标被击退几像素就来回切换)
+    /// 站定滞回 px:目标离开普攻判定盒水平范围超过本值才重新追击(防目标被击退几像素就来回切换)
     /// </summary>
     public readonly int AttackRangeSlack;
    
@@ -224,7 +219,6 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "RHp:" + RHp + ","
         + "MoveSpeed:" + MoveSpeed + ","
         + "SightRange:" + SightRange + ","
-        + "AttackRange:" + AttackRange + ","
         + "AttackDesire:" + AttackDesire + ","
         + "BehitCalmTime:" + BehitCalmTime + ","
         + "AddExp:" + AddExp + ","

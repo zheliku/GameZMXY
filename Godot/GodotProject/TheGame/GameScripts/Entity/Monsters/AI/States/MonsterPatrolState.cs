@@ -1,6 +1,7 @@
 using GameFramework.Fsm;
+using GameLogic.Entity.Monsters.AI;
 
-namespace GameLogic.Entity.AI
+namespace GameLogic.Entity.Monsters.AI.States
 {
 	/// <summary>
 	/// 巡逻：左右随机走动（旧 normal_state）。每 PatrolInterval 重新决策一次：

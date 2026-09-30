@@ -1,17 +1,18 @@
 using System;
 using System.Collections.Generic;
 
-namespace GameLogic.Entity.AI
+namespace GameLogic.Entity.Monsters.AI
 {
 	/// <summary>
 	/// 一台怪物 AI 状态机的状态集合：**角色 → 状态实例**的绑定表 + 额外状态。
+	/// 标准状态集由 <see cref="MonsterBrains"/> 的原型工厂给出。
 	///
-	/// 扩展方式（由 MonsterEntity.ConfigureAi 钩子在创建状态机前调用）：
+	/// 扩展方式（在怪物类覆写的 MonsterEntity.CreateBrain 里、拿到原型之后调用）：
 	///  * <see cref="Bind"/>：用自定义状态替换某个角色的默认实现（如飞行怪的 Chase、远程怪的 Attack）；
 	///    其余状态按角色跳转，自动跳到替换后的实现；
 	///  * <see cref="AddExtra"/>：加入不占用角色槽的额外状态（如 Boss 的阶段转换/狂暴演出），
 	///    由自定义状态按类型 ChangeState 进入，离开时再按角色回到标准图。
-	/// 状态实例不可跨状态机共享（GF.Fsm 约束），所以每台状态机各建一套（<see cref="CreateDefault"/>）。
+	/// 状态实例不可跨状态机共享（GF.Fsm 约束），所以每台状态机各建一套（原型工厂每次都 new）。
 	/// </summary>
 	public sealed class MonsterAiStateSet
 	{
@@ -20,19 +21,6 @@ namespace GameLogic.Entity.AI
 
 		/// <summary>初始角色（出生即巡逻，同旧项目：出生时 ran_num∈[10,100]，首个决策必然走动）</summary>
 		public MonsterAiRole InitialRole { get; set; } = MonsterAiRole.Patrol;
-
-		/// <summary>标准小怪状态集：六个角色各一个默认实现。</summary>
-		public static MonsterAiStateSet CreateDefault()
-		{
-			MonsterAiStateSet set = new MonsterAiStateSet();
-			set.Bind(new MonsterIdleState());
-			set.Bind(new MonsterPatrolState());
-			set.Bind(new MonsterChaseState());
-			set.Bind(new MonsterAttackState());
-			set.Bind(new MonsterCcLockedState());
-			set.Bind(new MonsterDeathState());
-			return set;
-		}
 
 		/// <summary>把状态绑定到它声明的角色（替换原绑定）。</summary>
 		public void Bind(MonsterAiState state)

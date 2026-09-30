@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using GameConfig.Battle;
 using GameConfig.Entity;
 using GameConfig.Sound;
@@ -12,10 +13,11 @@ using GodotGameFramework;
 namespace GameLogic.Entity
 {
 	/// <summary>
-	/// 战斗角色基类（根规范 §5.1）。英雄与怪物都从这里派生。
-	/// 职责：IEntity 生命周期样板、血量、动画宿主（AnimationPlayer + AnimationTree）、
-	/// **通用**表现层（身体/特效）与判定区、朝向、受击与死亡入口。**本类不含任何角色事实**
-	/// （移动输入、跑档、攻击段、跳跃次数……都在子类），也不含英雄专属层（武器层在 HeroEntity）。
+	/// 战斗角色基类（根规范 §5.1，抽象）。英雄与怪物都从这里派生。
+	/// 职责：IEntity 生命周期样板、血量、动画宿主（AnimationPlayer + AnimationTree，显示/隐藏时启停）、
+	/// **所有角色都有的**表现层（身体）与判定区、朝向、受击与死亡入口、招式装配。**本类不含任何角色事实**
+	/// （移动输入、跑档、攻击段、跳跃次数……都在子类），也不含英雄专属层（武器层、特效层在 HeroEntity）。
+	/// 子类必须给出结算侧别 <see cref="Side"/> 与属性快照 <see cref="GetCombatStats"/>（不给默认值，免得静默算错）。
 	/// 朝向翻转的扩展点见 <see cref="OnFacingChanged"/>。
 	///
 	/// 动画架构（迁移决策 2026-09-28）：
@@ -29,7 +31,7 @@ namespace GameLogic.Entity
 	/// 子节点引用走 <c>[Export]</c> + <c>m_</c> 前缀，由场景绑定
 	/// （.tscn 的节点头必须声明 node_paths=PackedStringArray(...)，否则 NodePath 赋值会被忽略）。
 	/// </summary>
-	public partial class ActorEntity : CharacterBody2D, IEntity
+	public abstract partial class ActorEntity : CharacterBody2D, IEntity
 	{
 		#region 框架属性（IEntity）
 
@@ -56,13 +58,6 @@ namespace GameLogic.Entity
 		/// </summary>
 		[Export] private Node2D m_Body;
 
-		/// <summary>
-		/// 特效层容器（场景子节点 m_EffectRoot，可为空）：其子节点 m_Effect 是特效的
-		/// AnimatedSprite2D。容器负责朝向镜像（scale.x = ±1，连带镜像轨道写入的 offset），
-		/// m_Effect 的属性由动画轨道驱动——与旧项目 Action/SpecialEffect 同构。
-		/// </summary>
-		[Export] private Node2D m_EffectRoot;
-
 		/// <summary>动画播放器（场景子节点 m_AnimPlayer）：承载该角色自己的动画库，由 m_AnimTree 驱动</summary>
 		[Export] private AnimationPlayer m_AnimPlayer;
 
@@ -82,15 +77,12 @@ namespace GameLogic.Entity
 
 		/// <summary>
 		/// 攻击判定区容器（场景子节点 m_HitBoxRoot，可为空）：scale.x = ±1 随朝向翻转，
-		/// 镜像 m_HitBox 连同动画轨道写入的位置——与 m_EffectRoot 同构（同旧 base_damagebox）。
+		/// 镜像 m_HitBox 连同动画轨道写入的位置（同旧 base_damagebox）。
 		/// </summary>
 		[Export] private Node2D m_HitBoxRoot;
 
 		/// <summary>身体层（Sprite2D 或 AnimatedSprite2D）</summary>
 		public Node2D Body => m_Body;
-
-		/// <summary>特效层容器（负责朝向镜像）</summary>
-		public Node2D EffectRoot => m_EffectRoot;
 
 		/// <summary>动画播放器</summary>
 		public AnimationPlayer AnimPlayer => m_AnimPlayer;
@@ -103,6 +95,9 @@ namespace GameLogic.Entity
 
 		/// <summary>攻击判定区</summary>
 		public Area2D HitBox => m_HitBox;
+
+		/// <summary>攻击判定区容器（朝向镜像；怪物 AI 推导判定盒范围时要加上它的本地位置）</summary>
+		public Node2D HitBoxRoot => m_HitBoxRoot;
 
 		/// <summary>最大生命</summary>
 		public int MaxHp { get; protected set; }
@@ -119,8 +114,8 @@ namespace GameLogic.Entity
 		/// <summary>朝向：1 右 / -1 左。素材原始朝左，见 SetFacing 注释。</summary>
 		public int Facing { get; private set; } = 1;
 
-		/// <summary>结算侧别（选 BattleConfig 常数组；子类固定返回）</summary>
-		public virtual CombatSide Side => CombatSide.Hero;
+		/// <summary>结算侧别（选 BattleConfig 常数组；子类必须固定返回）</summary>
+		public abstract CombatSide Side { get; }
 
 		/// <summary>
 		/// 已显示、可驱动：OnShow 置真、OnHide 置假。子类 _PhysicsProcess 靠它提前返回（实体隐藏/回收后
@@ -154,7 +149,7 @@ namespace GameLogic.Entity
 
 			if (m_Body == null)
 			{
-				Log.Error("[ActorEntity] 场景未绑定 m_Body（Sprite2D）：{0}", entityAssetName);
+				Log.Error("[ActorEntity] 场景未绑定 m_Body（Sprite2D / AnimatedSprite2D）：{0}", entityAssetName);
 			}
 
 			if (m_AnimTree != null)
@@ -175,14 +170,24 @@ namespace GameLogic.Entity
 			}
 		}
 
-		/// <summary>实体显示。可变状态每次显示都要重置（池复用会带回上次的脏状态）。</summary>
+		/// <summary>
+		/// 实体显示：启用动画状态机。可变状态每次显示都要重置（池复用会带回上次的脏状态）——子类在 base 之后复位
+		/// 自己的事实；树不需要手动归位，事实复位后表达式边会自行把树拉回地面。
+		/// </summary>
 		public virtual void OnShow(object userData)
 		{
 			Visible = true;
 			IsShown = true;
+			if (m_AnimTree != null)
+			{
+				m_AnimTree.Active = true;
+			}
 		}
 
-		/// <summary>实体隐藏。关停阶段（isShutdown=true）场景树可能已析构，不再碰节点。</summary>
+		/// <summary>
+		/// 实体隐藏：停动画状态机、归还攻击包。关停阶段（isShutdown=true）子节点可能已被引擎释放——
+		/// 框架的 Shutdown 在场景树析构之后才补调 OnHide，此时读节点会抛 ObjectDisposedException，所以不碰节点。
+		/// </summary>
 		public virtual void OnHide(bool isShutdown, object userData)
 		{
 			IsShown = false;
@@ -197,6 +202,11 @@ namespace GameLogic.Entity
 			if (isShutdown || !IsInstanceValid(this))
 			{
 				return;
+			}
+
+			if (m_AnimTree != null && IsInstanceValid(m_AnimTree))
+			{
+				m_AnimTree.Active = false;
 			}
 
 			ReleaseAttack();
@@ -259,7 +269,7 @@ namespace GameLogic.Entity
 			GF.Sound.PlaySound(cfg.Path, cfg.Group);
 		}
 
-		/// <summary>设置朝向（0 表示不变）。翻转通用表现层（身体/特效/判定盒容器），最后调钩子。</summary>
+		/// <summary>设置朝向（0 表示不变）。翻转通用表现层（身体/判定盒容器），最后调钩子（子类镜像自己的附加层）。</summary>
 		public void SetFacing(int dir)
 		{
 			if (dir == 0)
@@ -284,14 +294,7 @@ namespace GameLogic.Entity
 				m_Body.Scale = new Vector2(mirror ? -1 : 1, 1);
 			}
 
-			// 特效层用父容器负 scale 镜像（同旧项目 Action.scale.x = ±1）：
-			// 这样特效节点上由轨道写入的 offset 会一起镜像，特效不会跑到身体另一侧。
-			if (m_EffectRoot != null)
-			{
-				m_EffectRoot.Scale = new Vector2(mirror ? -1 : 1, 1);
-			}
-
-			// 判定盒同理（同旧 base_damagebox.scale.x = ±1）：动画轨道写的是原生朝左坐标，
+			// 判定盒用父容器负 scale 镜像（同旧 base_damagebox.scale.x = ±1）：动画轨道写的是原生朝左坐标，
 			// 容器一翻，判定盒位置跟着镜像——代码不碰几何。
 			if (m_HitBoxRoot != null)
 			{
@@ -426,11 +429,8 @@ namespace GameLogic.Entity
 			return result;
 		}
 
-		/// <summary>结算用属性快照（子类按自己的配置/等级填）。</summary>
-		protected virtual CombatantStats GetCombatStats()
-		{
-			return default;
-		}
+		/// <summary>结算用属性快照（子类必须按自己的配置/等级填）。</summary>
+		protected abstract CombatantStats GetCombatStats();
 
 		/// <summary>
 		/// 受击表现钩子（已扣血、未闪避时调用）：子类决定硬直/击退如何生效。
@@ -449,11 +449,42 @@ namespace GameLogic.Entity
 		}
 
 		/// <summary>
-		/// 朝向变化钩子：基类翻转通用表现层（身体/特效）与判定盒之后调用。
-		/// 子类用它镜像自己额外的附加层（如英雄专属的武器层），不要重写翻转规则本身。
+		/// 朝向变化钩子：基类翻转通用表现层（身体）与判定盒之后调用。
+		/// 子类用它镜像自己额外的附加层（如英雄专属的武器层/特效层），不要重写翻转规则本身。
 		/// </summary>
 		protected virtual void OnFacingChanged(int dir)
 		{
+		}
+
+		/// <summary>动画长度（秒）：动画库缺少该动画时告警并按 0 处理（调用方据此关闭相关时长类事实）。</summary>
+		protected float GetAnimLength(string animName)
+		{
+			if (m_AnimPlayer == null || string.IsNullOrEmpty(animName) || !m_AnimPlayer.HasAnimation(animName))
+			{
+				Log.Warning("[ActorEntity] {0} 的动画库缺少 {1}，相关时长按 0 处理", Name, animName);
+				return 0f;
+			}
+
+			return (float)m_AnimPlayer.GetAnimation(animName).Length;
+		}
+
+		/// <summary>
+		/// 装配某角色的招式：AttackConfig 里 OwnerId == owner 的行，按 ComboIndex 排序
+		/// （下标 = 攻击段序号；英雄连段与怪物招式同一份数据、同一约定）。
+		/// </summary>
+		protected static AttackConfig[] LoadOwnAttacks(EntityId owner)
+		{
+			List<AttackConfig> attacks = new List<AttackConfig>();
+			foreach (AttackConfig attack in ConfigSystem.Instance.Tables.TbAttackConfig.DataList)
+			{
+				if (attack.OwnerId == owner)
+				{
+					attacks.Add(attack);
+				}
+			}
+
+			attacks.Sort((a, b) => a.ComboIndex.CompareTo(b.ComboIndex));
+			return [.. attacks];
 		}
 
 		/// <summary>恢复生命。</summary>

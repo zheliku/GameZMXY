@@ -8,7 +8,7 @@ using GodotGameFramework.HotUpdate;
 using GodotGameFramework.Scene;
 using GodotGameFramework.UI;
 using GameLogic;
-using GameLogic.Entity;
+using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
 using GameLogic.Manager;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;

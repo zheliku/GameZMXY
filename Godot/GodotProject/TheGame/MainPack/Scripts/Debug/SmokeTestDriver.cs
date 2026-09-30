@@ -5,7 +5,8 @@ using GameConfig.Sound;
 using GameFramework;
 using GameFramework.Event;
 using GameLogic.Battle;
-using GameLogic.Entity;
+using GameLogic.Entity.Heroes;
+using GameLogic.Entity.Monsters;
 using GameLogic.Event;
 using GameLogic.UI;
 using Godot;
@@ -71,6 +72,9 @@ public partial class SmokeTestDriver : Node
 
 	private const double EndTime = 10.0;
 	private const double FindTimeout = 5.0;
+
+	/// <summary>hero 场景沙包猴子相对悟空的水平站位（M4 原出生点 400 − 悟空 300）</summary>
+	private const float SandbagOffset = 100f;
 
 	private AnimationTree m_Tree;
 	private HeroEntity m_Hero;
@@ -274,7 +278,7 @@ public partial class SmokeTestDriver : Node
 
 		double t = m_Time - m_AiStartTime;
 		m_AiScenario.Update(t);
-		if (t < MonsterAiSmokeScenario.EndTime)
+		if (!m_AiScenario.IsDone)
 		{
 			return;
 		}
@@ -469,8 +473,12 @@ public partial class SmokeTestDriver : Node
 				m_Monster = monster;
 				if (!m_AiMode)
 				{
-					// hero 场景把猴子当 M4 沙包：冻结 AI，保证命中/伤害断言确定（AI 由 ai 场景单独覆盖）
+					// hero 场景把猴子当 M4 沙包：冻结 AI，保证命中/伤害断言确定（AI 由 ai 场景单独覆盖）。
+					// M5 起调试出生点挪到了索敌范围外（ProcedureGame.MonkeySpawnPosition），这里放回 M4 的站位：
+					// 悟空右侧、普攻判定范围内
 					monster.SetAiEnabled(false);
+					monster.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X + SandbagOffset, monster.GlobalPosition.Y);
+					monster.Velocity = Vector2.Zero;
 				}
 
 				GD.Print($"SMOKE[{m_Time:F2}] 找到沙包猴子 HP {monster.Hp}/{monster.MaxHp} 位置 {monster.GlobalPosition}");

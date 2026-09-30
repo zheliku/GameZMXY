@@ -1,6 +1,7 @@
 using GameFramework.Fsm;
+using GameLogic.Entity.Monsters.AI;
 
-namespace GameLogic.Entity.AI
+namespace GameLogic.Entity.Monsters.AI.States
 {
 	/// <summary>
 	/// 受控：受控期间不做决策（击退速度由实体物理保持）。解除后再僵直 CalmTime 秒

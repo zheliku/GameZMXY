@@ -1,44 +1,46 @@
-using System.Collections.Generic;
 using GameConfig.Battle;
 using GameConfig.Monster;
 using GameFramework.Entity;
 using GameFramework.Fsm;
 using GameLogic.Battle;
-using GameLogic.Entity.AI;
+using GameLogic.Entity.Monsters.AI;
 using GameLogic.Event;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
 
-namespace GameLogic.Entity
+namespace GameLogic.Entity.Monsters
 {
 	/// <summary>
-	/// 怪物基类：属性（MonsterConfig）、受击硬直/击退、死亡回收、AI 宿主。
-	/// 与英雄同一套动画架构：C# 只维护事实面（下方 [Export] 字段，事件事实在状态
-	/// 进入/离开处翻转），该怪物自己的 AnimationTree 用 advance_expression 读事实选动画
-	/// （Entity/AGENTS.md）。
+	/// 怪物基类 = **身体层**（抽象）：属性（MonsterConfig）、受击硬直/击退、死亡回收、感知、AI 宿主。
+	/// 与英雄同一套动画架构：C# 只维护事实面（下方 [Export] 字段，事件事实在状态进入/离开处翻转），
+	/// 该怪物自己的 AnimationTree 用 advance_expression 读事实选动画（Entity/AGENTS.md）。
 	///
-	/// **M5：AI 决策 = GF.Fsm**（<see cref="MonsterAiState"/> 每状态一个类，持有者为本类实现的
+	/// **大脑由每种怪显式选择**：子类必须覆写 <see cref="CreateBrain"/>，从 <see cref="MonsterBrains"/> 取一套原型，
+	/// 需要时再 Bind 替换角色 / AddExtra 追加状态（参考 tModLoader aiStyle、Unity Game Kit 每怪一个 Behaviour：
+	/// 身体共用、大脑按原型复用、差异写在自己的类里）。
+	///
+	/// **AI 决策 = GF.Fsm**（<see cref="MonsterAiState"/> 每状态一个类，持有者为本类实现的
 	/// <see cref="IMonsterAiAgent"/>）。三层分工：
 	///  * AI 状态机只写**意图**：<see cref="IMonsterAiAgent.Move"/> → MoveInput、
 	///    <see cref="IMonsterAiAgent.Face"/> → 朝向、<see cref="IMonsterAiAgent.RequestAttack"/> → 出招请求；
 	///  * 本类把意图提交为**事实**（出招请求在安全时机才写 AttackSegment，见 <see cref="CommitPendingAttack"/>），
-	///    并负责物理、受击、死亡；
+	///    并负责物理、受击、死亡、收招硬直；
 	///  * AnimationTree 只读事实选动画——AI 状态名与动画状态互不耦合，改 AI 不动动画图。
 	/// 状态机随实体显示创建、隐藏销毁（池复用时每次都是全新的 AI）。
 	///
-	/// **扩展分层**（新怪物按需往下走，能停在上层就不往下）：
-	///  1. 纯数据：新行 MonsterConfig + AttackConfig（普攻池/技能：AiPriority/AiRange/AiCooldown）
-	///     + 场景 + 动画库。绝大多数小怪、精英怪（多技能 + 霸体 SuperArmor + Rank=Elite）到此为止；
-	///  2. 替换角色：子类覆写 <see cref="ConfigureAi"/>，Bind 自己的 Chase/Attack/Patrol……（飞行怪、远程风筝怪）；
-	///  3. 额外状态：ConfigureAi 里 AddExtra（Boss 阶段转换/狂暴），配合覆写 <see cref="IsSuperArmor"/> 等钩子；
-	///  4. 特殊招式效果（子弹、召唤、Buff）：子类加动画方法轨道回调，发射池化子弹实体。
+	/// **出招节奏**：请求 → 下一安全帧提交（转向目标、锁定整招朝向）→ 动画播完 OnAttackEnd →
+	/// **收招硬直** AttackConfig.AiRecovery 秒（原地不动、不转身、不出招）→ AI 恢复决策。
+	/// 受击仍会打断出招与硬直（旧项目手感）；霸体（SuperArmor）不打断。
+	///
+	/// **够不够得着**：每招的范围由攻击动画判定盒推导（<see cref="AttackReachReader"/>，唯一真相源在动画），
+	/// 与目标受击盒求交（含高度）——目标跳到头顶时不会在下面空挥。远程招（无判定盒）按 AttackConfig.AiRange。
 	///
 	/// 感知：场景子节点 m_Detector（Area2D，Detector 层，扫 PlayerBody）宽度按 SightRange 设置，
 	/// 无目标时查询重叠体锁定目标；被打时直接锁定攻击方（旧 _on_hurt_box_area_entered: has_target = true）。
 	/// 目标一经锁定不因离开视野而丢失（同旧项目 has_target 只置不清），目标死亡/回收才失效。
 	/// </summary>
-	public partial class MonsterEntity : ActorEntity, IMonsterAiAgent
+	public abstract partial class MonsterEntity : ActorEntity, IMonsterAiAgent
 	{
 		/// <summary>受击动画名（全项目标准名）：硬直时长 = 该动画长度</summary>
 		private const string HurtAnimName = "hurt";
@@ -82,9 +84,6 @@ namespace GameLogic.Entity
 		/// <inheritdoc />
 		public override CombatSide Side => CombatSide.Monster;
 
-		/// <inheritdoc />
-		protected override Vector2 PopAnchor => new Vector2(0, -50);
-
 		/// <summary>
 		/// AI 开关（默认开）。关闭时销毁状态机、清空意图，怪物退化为 M4 的沙包——
 		/// 供冒烟测试等调试工具使用；每次 OnShow 复位为开。
@@ -97,6 +96,9 @@ namespace GameLogic.Entity
 		/// <summary>当前锁定的目标（无效时为 null）</summary>
 		public ActorEntity Target => IsTargetValid(m_Target) ? m_Target : null;
 
+		/// <summary>收招硬直中（调试/冒烟观测用）</summary>
+		public bool InRecovery => m_RecoveryTime > 0f;
+
 		/// <summary>受击硬直剩余（秒）</summary>
 		private float m_HurtTime;
 
@@ -108,6 +110,9 @@ namespace GameLogic.Entity
 
 		/// <summary>死亡动画长度（OnInit 缓存）</summary>
 		private float m_DeathLen;
+
+		/// <summary>收招硬直剩余（秒；OnAttackEnd 按本招 AttackConfig.AiRecovery 写入）</summary>
+		private float m_RecoveryTime;
 
 		/// <summary>本怪物的招式：AttackConfig 里 OwnerId==自己 的行，按 ComboIndex 排序（下标 = AttackSegment）</summary>
 		private AttackConfig[] m_Attacks = [];
@@ -158,9 +163,8 @@ namespace GameLogic.Entity
 			MaxHp = Config.Hp;
 			m_HurtLen = GetAnimLength(HurtAnimName);
 			m_DeathLen = GetAnimLength(DeathAnimName);
-			m_AiParams = new MonsterAiParams(Config.AttackRange, Config.AttackDesire, Config.AttackInterval,
-				Config.PatrolInterval, Config.PatrolIdleChance, Config.PatrolRadius, Config.BehitCalmTime,
-				Config.AttackRangeSlack);
+			m_AiParams = new MonsterAiParams(Config.AttackDesire, Config.AttackInterval, Config.PatrolInterval,
+				Config.PatrolIdleChance, Config.PatrolRadius, Config.BehitCalmTime, Config.AttackRangeSlack);
 			LoadAttacks();
 			if (isNewInstance)
 			{
@@ -179,6 +183,7 @@ namespace GameLogic.Entity
 			Dead = false;
 			m_HurtTime = 0f;
 			m_DeathTime = -1f;
+			m_RecoveryTime = 0f;
 			m_HideRequested = false;
 			m_Target = null;
 			m_LastAttackerId = 0;
@@ -196,11 +201,6 @@ namespace GameLogic.Entity
 			m_Home = GlobalPosition;
 
 			SetHurtBoxEnabled(true);
-			if (AnimTree != null)
-			{
-				AnimTree.Active = true;
-			}
-
 			SetFacing(-1);
 
 			AiEnabled = true;
@@ -211,11 +211,6 @@ namespace GameLogic.Entity
 		{
 			DestroyAi(isShutdown);
 			m_Target = null;
-			if (!isShutdown && AnimTree != null && GodotObject.IsInstanceValid(AnimTree))
-			{
-				AnimTree.Active = false;
-			}
-
 			base.OnHide(isShutdown, userData);
 		}
 
@@ -229,6 +224,7 @@ namespace GameLogic.Entity
 			float dt = (float)delta;
 			UpdateHurt(dt);
 			UpdateDeath(dt);
+			UpdateRecovery(dt);
 			UpdateTarget();
 			m_Skills.Tick(dt);
 			CommitPendingAttack();
@@ -245,11 +241,16 @@ namespace GameLogic.Entity
 		protected virtual bool IsSuperArmor => Config != null && Config.SuperArmor;
 
 		/// <summary>
-		/// 【扩展点】创建 AI 状态机前调用：子类在这里替换角色实现或加入额外状态
-		/// （飞行怪换 Chase/Patrol、远程怪换 Attack、Boss 加阶段转换状态……）。默认不改动标准图。
+		/// 【每种怪必须实现】选这只怪的"大脑"：返回一套**全新**状态集（每次显示都会调用；GF.Fsm 约束状态实例不共享）。
+		/// 标准写法：<c>return MonsterBrains.GroundMelee();</c>；特殊怪在返回前 Bind 替换角色 / AddExtra 追加状态。
+		/// 返回 null = 不建 AI（记错误日志，怪物退化为沙包）。
 		/// </summary>
-		protected virtual void ConfigureAi(MonsterAiStateSet states)
+		protected abstract MonsterAiStateSet CreateBrain();
+
+		/// <summary>第 index 招由动画判定盒推导出的范围（原生朝左；调试/冒烟观测用）。越界返回空盒。</summary>
+		public AiBox GetAttackReach(int index)
 		{
+			return index >= 0 && index < m_Skills.Count ? m_Skills[index].Reach : default;
 		}
 
 		/// <summary>
@@ -290,7 +291,7 @@ namespace GameLogic.Entity
 
 		/// <summary>
 		/// 受击：锁定攻击方为目标；进入硬直并施加击退（旧 BaseMonster state_hurt：击退 [0,0] 的招式不硬直不击退）；
-		/// 攻击中被打断（旧项目怪物受击会打断出招，与英雄"出招不打断"相反）——
+		/// 攻击中/收招硬直中被打断（旧项目怪物受击会打断出招，与英雄"出招不打断"相反）——
 		/// 动画被切走不会再走到 OnAttackEnd，必须在这里显式 ReleaseAttack。
 		/// </summary>
 		protected override void OnHurt(AttackData attack, DamageResult result, Vector2 knockback, int attackerEntityId)
@@ -339,12 +340,26 @@ namespace GameLogic.Entity
 			}
 		}
 
+		private void UpdateRecovery(float dt)
+		{
+			if (m_RecoveryTime > 0f)
+			{
+				m_RecoveryTime = Mathf.Max(0f, m_RecoveryTime - dt);
+			}
+		}
+
 		/// <summary>
-		/// 【动画方法轨道回调】收招（attack_N 末帧）：归位攻击事实，开始"归位帧"计数。
+		/// 【动画方法轨道回调】收招（attack_N 末帧）：按本招 AiRecovery 进入收招硬直，归位攻击事实，开始"归位帧"计数。
 		/// </summary>
 		public override void OnAttackEnd()
 		{
+			if (AttackSegment >= 0 && AttackSegment < m_Attacks.Length)
+			{
+				m_RecoveryTime = Mathf.Max(0f, m_Attacks[AttackSegment].AiRecovery);
+			}
+
 			AttackSegment = -1;
+			MoveInput = 0;
 			m_FramesSinceAttack = 0;
 			base.OnAttackEnd();
 		}
@@ -378,10 +393,11 @@ namespace GameLogic.Entity
 			GF.Event.Fire(this, MonsterDiedEventArgs.Create(Id, Config.Id, Config.Rank, m_LastAttackerId, GlobalPosition));
 		}
 
-		/// <summary>打断出招：清请求、归位攻击段、归还攻击包（受击/死亡路径，动画不会再走到 OnAttackEnd）。</summary>
+		/// <summary>打断出招：清请求与收招硬直、归位攻击段、归还攻击包（受击/死亡路径，动画不会再走到 OnAttackEnd）。</summary>
 		private void InterruptAttack()
 		{
 			m_PendingAttack = -1;
+			m_RecoveryTime = 0f;
 			if (AttackSegment >= 0)
 			{
 				AttackSegment = -1;
@@ -407,7 +423,7 @@ namespace GameLogic.Entity
 		}
 
 		/// <summary>
-		/// 出招请求 → AttackSegment 事实。只在空闲（未出招、未受控、未死亡）且攻击段已归位满
+		/// 出招请求 → AttackSegment 事实。只在空闲（未出招、未硬直、未受控、未死亡）且攻击段已归位满
 		/// <see cref="AttackRecommitFrames"/> 帧时提交；受击/死亡会把请求清掉。
 		/// </summary>
 		private void CommitPendingAttack()
@@ -419,12 +435,12 @@ namespace GameLogic.Entity
 
 			bool ready = m_FramesSinceAttack >= AttackRecommitFrames;
 			m_FramesSinceAttack++;
-			if (m_PendingAttack < 0 || !ready || Hurt || Dead)
+			if (m_PendingAttack < 0 || !ready || Hurt || Dead || m_RecoveryTime > 0f)
 			{
 				return;
 			}
 
-			// 出招瞬间转向目标（旧 attack_target / to_hero），之后整招朝向锁定
+			// 出招瞬间转向目标（旧 attack_target / to_hero），之后整招 + 收招硬直朝向锁定
 			if (Target is { } target)
 			{
 				SetFacing(MonsterAiRules.Sign(target.GlobalPosition.X - GlobalPosition.X));
@@ -437,12 +453,12 @@ namespace GameLogic.Entity
 			Log.Debug("[Monster] {0} 出招 段{1}", Id, AttackSegment + 1);
 		}
 
-		/// <summary>移动：重力常驻；硬直中保持击退速度，死亡/出招定身，其余按移动意图。</summary>
+		/// <summary>移动：重力常驻；硬直中保持击退速度，死亡/出招/收招硬直定身，其余按移动意图。</summary>
 		private void UpdateLocomotion(float dt)
 		{
 			Velocity += new Vector2(0, Config.Gravity * dt);
 
-			if (Dead || (!Hurt && AttackSegment >= 0))
+			if (Dead || (!Hurt && (AttackSegment >= 0 || m_RecoveryTime > 0f)))
 			{
 				Velocity = new Vector2(0, Velocity.Y);
 			}
@@ -503,6 +519,26 @@ namespace GameLogic.Entity
 			return actor != null && GodotObject.IsInstanceValid(actor) && actor.IsShown && !actor.Dead;
 		}
 
+		/// <summary>目标受击盒相对自己原点的矩形（无受击盒退化为原点点盒；无目标为空盒）。</summary>
+		private AiBox GetTargetBox()
+		{
+			if (Target is not { } target)
+			{
+				return default;
+			}
+
+			if (target.HurtBox == null)
+			{
+				Vector2 delta = target.GlobalPosition - GlobalPosition;
+				return AiBox.Point(delta.X, delta.Y);
+			}
+
+			Rect2 bounds = target.HurtBox.GetGlobalBounds();
+			Vector2 min = bounds.Position - GlobalPosition;
+			Vector2 max = bounds.End - GlobalPosition;
+			return new AiBox(min.X, max.X, min.Y, max.Y);
+		}
+
 		/// <summary>
 		/// 索敌区宽度 = 2 × SightRange（只看水平距离，同旧 abs(dx) &lt; mysee；高度由场景形状决定）。
 		/// 形状资源复制一份再改，避免同场景的不同配置实例互相改写共享子资源。
@@ -538,8 +574,14 @@ namespace GameLogic.Entity
 			}
 
 			// 每次显示都新建一套状态实例（GF.Fsm 约束：状态实例不跨状态机共享；池复用也从初始状态重新开始）
-			m_StateSet = MonsterAiStateSet.CreateDefault();
-			ConfigureAi(m_StateSet);
+			MonsterAiStateSet states = CreateBrain();
+			if (states == null)
+			{
+				Log.Error("[MonsterEntity] {0} 的 CreateBrain() 返回 null，本只怪不建 AI", Config.NameCn);
+				return;
+			}
+
+			m_StateSet = states;
 			m_Fsm = GF.Fsm.CreateFsm<IMonsterAiAgent>($"MonsterAI_{Id}", this, m_StateSet.ToArray());
 			m_Fsm.Start(m_StateSet.Resolve(m_StateSet.InitialRole));
 		}
@@ -567,11 +609,13 @@ namespace GameLogic.Entity
 
 		bool IMonsterAiAgent.IsCcLocked => Hurt;
 
-		bool IMonsterAiAgent.IsAttacking => AttackSegment >= 0 || m_PendingAttack >= 0;
+		bool IMonsterAiAgent.IsAttacking => AttackSegment >= 0 || m_PendingAttack >= 0 || m_RecoveryTime > 0f;
 
 		bool IMonsterAiAgent.HasTarget => Target != null;
 
-		float IMonsterAiAgent.TargetDeltaX => Target is { } target ? target.GlobalPosition.X - GlobalPosition.X : 0f;
+		AiBox IMonsterAiAgent.TargetBox => GetTargetBox();
+
+		float IMonsterAiAgent.TargetDeltaX => Target != null ? GetTargetBox().CenterX : 0f;
 
 		float IMonsterAiAgent.HomeDeltaX => GlobalPosition.X - m_Home.X;
 
@@ -593,7 +637,7 @@ namespace GameLogic.Entity
 
 		void IMonsterAiAgent.Face(int dir)
 		{
-			if (!Hurt && !Dead && AttackSegment < 0)
+			if (!Hurt && !Dead && AttackSegment < 0 && m_RecoveryTime <= 0f)
 			{
 				SetFacing(dir);
 			}
@@ -601,7 +645,8 @@ namespace GameLogic.Entity
 
 		bool IMonsterAiAgent.RequestAttack(int index)
 		{
-			if (index < 0 || index >= m_Attacks.Length || AttackSegment >= 0 || m_PendingAttack >= 0 || Hurt || Dead)
+			if (index < 0 || index >= m_Attacks.Length || AttackSegment >= 0 || m_PendingAttack >= 0 ||
+			    m_RecoveryTime > 0f || Hurt || Dead)
 			{
 				return false;
 			}
@@ -613,32 +658,30 @@ namespace GameLogic.Entity
 
 		// ---- 配置装配 ----
 
-		/// <summary>装配招式：AttackConfig 里 OwnerId==自己 的行，按 ComboIndex 排序（同 HeroEntity.LoadCombo）。</summary>
+		/// <summary>
+		/// 装配招式：AttackConfig 里 OwnerId==自己 的行，按 ComboIndex 排序（同 HeroEntity.LoadCombo）；
+		/// 每招的够得着范围从它的攻击动画（AttackConfig.Animation）判定盒推导。
+		/// </summary>
 		private void LoadAttacks()
 		{
-			List<AttackConfig> attacks = new List<AttackConfig>();
-			foreach (AttackConfig attack in ConfigSystem.Instance.Tables.TbAttackConfig.DataList)
-			{
-				if (attack.OwnerId == Config.EntityId)
-				{
-					attacks.Add(attack);
-				}
-			}
-
-			attacks.Sort((a, b) => a.ComboIndex.CompareTo(b.ComboIndex));
-			m_Attacks = [.. attacks];
+			m_Attacks = LoadOwnAttacks(Config.EntityId);
 
 			MonsterSkillSpec[] specs = new MonsterSkillSpec[m_Attacks.Length];
 			for (int i = 0; i < m_Attacks.Length; i++)
 			{
 				AttackConfig a = m_Attacks[i];
+				AiBox reach = AttackReachReader.Read(this, a.Animation);
 				specs[i] = new MonsterSkillSpec(i, a.AiPriority, a.AiWeight, a.AiRange.X, a.AiRange.Y,
-					a.AiCooldown.X, a.AiCooldown.Y, a.AiInitCooldown.X, a.AiInitCooldown.Y);
-				if (a.AiPriority == 0 && a.AiWeight > 0 && a.AiRange.Y < Config.AttackRange + Config.AttackRangeSlack)
+					a.AiCooldown.X, a.AiCooldown.Y, a.AiInitCooldown.X, a.AiInitCooldown.Y, reach);
+				if (a.AiWeight > 0 && reach.IsEmpty && a.AiRange.Y <= 0f)
 				{
-					// 站定距离比普攻够得着的距离还远：怪会站在打不到的地方干等
-					Log.Warning("[MonsterEntity] {0} 普攻 {1} 的 AiRange 上限 {2} 小于 AttackRange {3}，站定后可能无招可出",
-						Config.NameCn, a.Id, a.AiRange.Y, Config.AttackRange);
+					// 既没有判定盒（动画里从未启用判定），也没填远程距离：AI 永远判定"够不着"
+					Log.Warning("[MonsterEntity] {0} 的招式 {1}（动画 {2}）推导不出判定盒范围，且 AiRange 为 0,0：AI 不会使用这招",
+						Config.NameCn, a.Id, a.Animation);
+				}
+				else
+				{
+					Log.Debug("[MonsterEntity] {0} 招式 {1} 范围 {2}", Config.NameCn, a.Id, reach);
 				}
 			}
 
@@ -658,17 +701,6 @@ namespace GameLogic.Entity
 			{
 				HurtBox.SetDeferred(Area2D.PropertyName.Monitorable, enabled);
 			}
-		}
-
-		private float GetAnimLength(string animName)
-		{
-			if (AnimPlayer == null || !AnimPlayer.HasAnimation(animName))
-			{
-				Log.Warning("[MonsterEntity] 动画库缺少 {0}，相关时长按 0 处理", animName);
-				return 0f;
-			}
-
-			return (float)AnimPlayer.GetAnimation(animName).Length;
 		}
 	}
 }

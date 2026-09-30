@@ -1,4 +1,4 @@
-namespace GameLogic.Entity
+namespace GameLogic.Entity.Heroes
 {
 	/// <summary>
 	/// 悟空：**角色专属**部分都在这里。通用机制（输入、走跑、跳、普攻连段、受击、死亡、

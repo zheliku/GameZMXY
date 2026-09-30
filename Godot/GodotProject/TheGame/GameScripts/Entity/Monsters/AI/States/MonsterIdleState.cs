@@ -1,6 +1,7 @@
 using GameFramework.Fsm;
+using GameLogic.Entity.Monsters.AI;
 
-namespace GameLogic.Entity.AI
+namespace GameLogic.Entity.Monsters.AI.States
 {
 	/// <summary>
 	/// 待机：巡逻途中原地停留一个 PatrolInterval（旧 normal_state 的 stop_move 分支），到点回巡逻；有目标立刻追击。

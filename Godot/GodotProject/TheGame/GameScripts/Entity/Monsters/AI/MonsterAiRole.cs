@@ -1,4 +1,4 @@
-namespace GameLogic.Entity.AI
+namespace GameLogic.Entity.Monsters.AI
 {
 	/// <summary>
 	/// AI 状态的**角色**（逻辑槽位）：状态之间按角色跳转，不按具体类型跳转——

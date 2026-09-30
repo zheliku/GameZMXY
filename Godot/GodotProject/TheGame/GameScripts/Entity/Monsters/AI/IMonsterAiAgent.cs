@@ -1,4 +1,4 @@
-namespace GameLogic.Entity.AI
+namespace GameLogic.Entity.Monsters.AI
 {
 	/// <summary>
 	/// 怪物 AI 的宿主接口（GF.Fsm 的持有者类型）：AI 状态只通过它**读感知、写意图**，
@@ -16,13 +16,22 @@ namespace GameLogic.Entity.AI
 		/// <summary>受控中：受击硬直（后续冰冻/眩晕/定身等控制 Buff 也并入这里）</summary>
 		bool IsCcLocked { get; }
 
-		/// <summary>出招中（含已请求、待提交的出招）</summary>
+		/// <summary>
+		/// 出招中：已请求待提交 / 攻击段在播 / 收招硬直（AttackConfig.AiRecovery）三者之一。
+		/// 期间 AI 不做任何决策（不移动、不转身、不出下一招），宿主也拒绝 Face 与 RequestAttack。
+		/// </summary>
 		bool IsAttacking { get; }
 
 		/// <summary>有有效目标（索敌命中或被打后锁定；目标死亡/回收即失效）</summary>
 		bool HasTarget { get; }
 
-		/// <summary>目标相对自己的水平距离：target.x − self.x（无目标为 0）</summary>
+		/// <summary>
+		/// 目标受击盒相对自己原点的矩形（世界轴向，Y 向下；目标无受击盒时退化为其原点的点盒；无目标为空盒）。
+		/// 与招式判定盒（<see cref="MonsterSkillSpec.Reach"/>）求交决定"够不够得着"——含高度。
+		/// </summary>
+		AiBox TargetBox { get; }
+
+		/// <summary>目标相对自己的水平距离（= TargetBox 中心 X；无目标为 0）。朝向/远程招距离用它。</summary>
 		float TargetDeltaX { get; }
 
 		/// <summary>自己相对出生点的水平偏移：self.x − home.x</summary>

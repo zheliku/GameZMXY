@@ -36,6 +36,7 @@ public sealed partial class AttackConfig : Luban.BeanBase
         AiRange = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         AiCooldown = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         AiInitCooldown = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
+        AiRecovery = _buf.ReadFloat();
     }
 
     public static AttackConfig DeserializeAttackConfig(ByteBuf _buf)
@@ -112,7 +113,7 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly int AiPriority;
     /// <summary>
-    /// AI 释放距离 px(X=最小,Y=最大;只比水平距离,写法 0,45)
+    /// AI 释放距离 px(仅远程/无身体判定盒的招式;X=最小,Y=最大,只比水平距离;0,0=按攻击动画判定盒推导)
     /// </summary>
     public readonly Godot.Vector2 AiRange;
     /// <summary>
@@ -123,6 +124,10 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// AI 出生时初始冷却秒(X=下限,Y=上限;旧 _ready 里 Skill_N_CD=randi_range)
     /// </summary>
     public readonly Godot.Vector2 AiInitCooldown;
+    /// <summary>
+    /// AI 收招硬直秒:收招后原地不动、不转身、不出招(英雄填 0)
+    /// </summary>
+    public readonly float AiRecovery;
    
     public const int __ID__ = 818309408;
     public override int GetTypeId() => __ID__;
@@ -154,6 +159,7 @@ public sealed partial class AttackConfig : Luban.BeanBase
         + "AiRange:" + AiRange + ","
         + "AiCooldown:" + AiCooldown + ","
         + "AiInitCooldown:" + AiInitCooldown + ","
+        + "AiRecovery:" + AiRecovery + ","
         + "}";
     }
 }
