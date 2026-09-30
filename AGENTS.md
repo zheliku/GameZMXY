@@ -240,7 +240,7 @@ TheGame/
 | M2 配表落地 | `HeroConfig / HeroLevelConfig / MonsterConfig / AttackConfig / BattleConfig / LevelConfig / LevelWaveConfig / LevelSpawnConfig / SoundConfig`；`EntityId`、`UIFormId` 枚举 | 导表成功，`Tables` 可读 |
 | M3 英雄控制器 | `HeroEntity` + AnimationTree 表达式状态机（属性驱动，禁 bool 拼状态） | 能跑能跳能连击，动画与状态一致 |
 | M4 判定与伤害 | HitBox/HurtBox 动画轨道驱动判定帧；`Battle/DamageCalculator`（三种伤害 + `x/(x+K)`）+ 单测；飘字走 NodePool | 打猴子掉血飘字，伤害与手算一致 |
-| M5 怪物 AI | 抽象 `MonsterEntity` 身体层 + 每怪 `CreateBrain()` 选 `MonsterBrains` 原型；FSM（Idle/Patrol/Chase/Attack/CcLocked/Death，按角色可替换）+ 技能书（冷却/选招进 `AttackConfig`，近身范围由动画判定盒推导、含高度，收招硬直 `AiRecovery`），参数读 `MonsterConfig`；死亡广播 `MonsterDiedEventArgs` | 猴子巡逻、追击、攻击；头顶不出招、出招与收招硬直中不转身（`--smoketest=ai`） |
+| M5 怪物 AI | 抽象 `MonsterEntity` 身体层 + 每怪 `CreateBrain()` 选 `MonsterBrains` 原型（`Brawler` / `Sentry`）；FSM 角色槽（Idle/Patrol/Chase/Attack/Hold/CcLocked/Death）装可复用行为 + 技能书（冷却/选招进 `AttackConfig`，近身范围由动画判定盒推导、含高度，收招硬直 `AiRecovery`），参数读 `MonsterConfig`（含丢失目标、守候踱步）；死亡广播 `MonsterDiedEventArgs` | 猴子巡逻、追击、攻击；头顶不出招而在下方踱步、出招与收招硬直中不转身、丢失目标回巡逻（`--smoketest=ai`，`--quit-after 2400`） |
 | M6 关卡与流程 | `LevelDirector`（波次/场上上限/清场开闸）+ 出口 + `GF.Scene` + HUD | 一关可通关并写入 `GF.Archive` |
 | M7 收口 | 清理调试代码；补 `LegacyAssetMap.md` / `Architecture.md`；评估第二阶段 | 自查 §4 架构约束无违反 |
 

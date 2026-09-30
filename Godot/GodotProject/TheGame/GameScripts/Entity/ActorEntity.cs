@@ -124,10 +124,26 @@ namespace GameLogic.Entity
 		/// </summary>
 		public bool IsShown { get; private set; }
 
+		/// <summary>可作为目标/可交互：节点有效、已显示、未死亡（外部持有引用时用它判断是否还能用）。</summary>
+		public bool IsAlive => IsInstanceValid(this) && IsShown && !Dead;
+
 		/// <summary>
-		/// 飘字锚点相对实体原点的偏移（头顶）。子类按素材高度覆写；属于表现层布局常数，不参与玩法计算。
+		/// 飘字锚点（世界坐标）：受击盒顶边中点——受击盒本来就按素材身形摆放，头顶位置随之而来，
+		/// 不需要每个角色再写一个偏移常数。没有受击盒时退到实体原点。
 		/// </summary>
-		protected virtual Vector2 PopAnchor => new Vector2(0, -60);
+		public Vector2 HeadPosition
+		{
+			get
+			{
+				if (m_HurtBox == null)
+				{
+					return GlobalPosition;
+				}
+
+				Rect2 bounds = m_HurtBox.GetGlobalBounds();
+				return new Vector2(bounds.GetCenter().X, bounds.Position.Y);
+			}
+		}
 
 		/// <summary>当前招式的攻击包（出招装填、收招归还；null = 不在出招中）</summary>
 		private AttackData m_ActiveAttack;
@@ -308,7 +324,7 @@ namespace GameLogic.Entity
 
 		/// <summary>
 		/// 【动画方法轨道回调】出招起手（attack_N 动画第 0 帧调用）：按 <see cref="GetAttackConfig"/>
-		/// 拿到本段配置，快照攻击方属性、掷威力倍率与无双值，装填攻击包。
+		/// 拿到本段配置，快照攻击方属性、掷威力倍率，装填攻击包（只装受击方结算要用的数据）。
 		/// **时序与几何都归动画**：判定窗口与判定盒尺寸/位置全部是动画值轨道的关键帧
 		/// （同旧项目 keyframe shape/position/disabled）——C# 只负责"这一招的数值事实"。
 		/// 上一招未收（连段直接推进）时先归还上一招的包。
@@ -323,14 +339,9 @@ namespace GameLogic.Entity
 			}
 
 			CombatantStats stats = GetCombatStats();
-			float scale = Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf());
-			float power = stats.Power * scale + attack.FlatPower;
-			int wsGain = attack.WsGain.X >= attack.WsGain.Y
-				? attack.WsGain.X
-				: GD.RandRange(attack.WsGain.X, attack.WsGain.Y);
-
-			m_ActiveAttack = AttackData.Create(attack.Id, stats, power, attack.DamageKind,
-				attack.Knockback, Facing, wsGain, attack.HitProtect, attack.HitSoundId);
+			float power = stats.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf()) + attack.FlatPower;
+			m_ActiveAttack = AttackData.Create(attack.Id, stats, power, attack.DamageKind, attack.Knockback, Facing,
+				attack.HitProtect, attack.HitSoundId);
 		}
 
 		/// <summary>
@@ -425,7 +436,7 @@ namespace GameLogic.Entity
 			}
 
 			GF.Event.Fire(this, DamageDealtEventArgs.Create(attackerEntityId, Id, Side == CombatSide.Hero,
-				result.Damage, result.IsMiss, result.IsCrit, result.Kind, GlobalPosition + PopAnchor, Hp));
+				result.Damage, result.IsMiss, result.IsCrit, result.Kind, HeadPosition, Hp));
 			return result;
 		}
 
@@ -443,7 +454,10 @@ namespace GameLogic.Entity
 			SetFacing(-attack.Direction);
 		}
 
-		/// <summary>命中他人钩子（未闪避时）：子类用于无双值累计等攻击方收益。</summary>
+		/// <summary>
+		/// 命中他人钩子（未闪避时）：攻击方收益的扩展点——英雄累计无双值（AttackConfig.WsGain）、怪物将来的吸血/叠层等。
+		/// 基类不实现任何收益：收益规则属于具体角色，不进攻击包、不进基类。
+		/// </summary>
 		protected virtual void OnHitLanded(AttackData attack, DamageResult result)
 		{
 		}
@@ -454,6 +468,18 @@ namespace GameLogic.Entity
 		/// </summary>
 		protected virtual void OnFacingChanged(int dir)
 		{
+		}
+
+		/// <summary>倒计时：递减到 0 为止；本次从 &gt;0 变成 0 时返回 true（计时器事实翻转用）。</summary>
+		protected static bool TickDown(ref float time, float dt)
+		{
+			if (time <= 0f)
+			{
+				return false;
+			}
+
+			time = Mathf.Max(0f, time - dt);
+			return time <= 0f;
 		}
 
 		/// <summary>动画长度（秒）：动画库缺少该动画时告警并按 0 处理（调用方据此关闭相关时长类事实）。</summary>

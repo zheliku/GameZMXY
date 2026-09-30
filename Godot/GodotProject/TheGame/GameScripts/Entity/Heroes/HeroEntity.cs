@@ -155,11 +155,6 @@ namespace GameLogic.Entity.Heroes
 		public bool CanJump => JumpCount < MaxJumpCount;
 
 		/// <summary>
-		/// 受击请求：命中逻辑（M4）置 true；事实更新时消费（出招期间不打断，收招后进入硬直）。
-		/// </summary>
-		public bool HurtRequested { get; set; }
-
-		/// <summary>
 		/// 当前连段序号（0 起，语义等同旧项目 hit_count）：段末未连击时 +1（末段回 0），
 		/// 空中归零。AttackSegment 是"正在播的段"，本值决定"下一段起手用哪段"。
 		/// </summary>
@@ -182,8 +177,8 @@ namespace GameLogic.Entity.Heroes
 		/// <summary>受击硬直剩余时间（秒）</summary>
 		private float m_HurtTime;
 
-		/// <summary>待生效的击退速度（受击登记时写入，硬直开始时施加）</summary>
-		private Vector2 m_PendingKnockback;
+		/// <summary>待生效的受击（值 = 击退速度；null = 无）：OnHurt 登记，出招期间不打断，收招后 UpdateHurt 消费进入硬直。</summary>
+		private Vector2? m_PendingHurt;
 
 		/// <summary>受击硬直时长（受击动画长度，OnInit 缓存）</summary>
 		private float m_HurtLen;
@@ -239,11 +234,12 @@ namespace GameLogic.Entity.Heroes
 			// 状态机不需要手动归位：事实复位后（血量回满、计时器归零……），表达式边会自行把树
 			// 从任意状态（含死亡）拉回地面——"death → 地面"边就是为此存在的。
 			Hp = MaxHp;
+			WsValue = 0;
 			ComboIndex = 0;
 			JumpCount = 0;
 			MoveInput = 0;
 			Running = false;
-			HurtRequested = false;
+			m_PendingHurt = null;
 			AttackSegment = -1;
 			m_AttackBuffered = false;
 			m_PendingAttack = false;
@@ -257,7 +253,6 @@ namespace GameLogic.Entity.Heroes
 			m_HurtTime = 0f;
 			m_EmoteTime = 0f;
 			m_IdleTime = 0f;
-			m_PendingKnockback = Vector2.Zero;
 			Velocity = Vector2.Zero;
 
 			if (Config != null)
@@ -316,6 +311,21 @@ namespace GameLogic.Entity.Heroes
 				Config.Ar, Config.Sp);
 		}
 
+		/// <summary>无双值（旧 WSValue）：普攻命中按 AttackConfig.WsGain 区间累计。上限与消耗随无双技能系统加入。</summary>
+		public int WsValue { get; private set; }
+
+		/// <summary>
+		/// 命中收益（英雄专属）：按本招 AttackConfig.WsGain 掷定无双值并累计。
+		/// 收益规则属于英雄，不进攻击包、不进 ActorEntity（怪物没有无双值）。
+		/// </summary>
+		protected override void OnHitLanded(AttackData attack, DamageResult result)
+		{
+			if (ConfigSystem.Instance.Tables.TbAttackConfig.GetOrDefault(attack.AttackId) is { } config)
+			{
+				WsValue += GD.RandRange(config.WsGain.X, Mathf.Max(config.WsGain.X, config.WsGain.Y));
+			}
+		}
+
 		/// <summary>
 		/// 受击表现：登记硬直请求，击退速度在硬直生效时施加。
 		/// 与旧项目的**有意差异**：旧英雄受击会立刻顶掉出招动画（BaseHero.gd state_behit 同帧播放），
@@ -329,8 +339,7 @@ namespace GameLogic.Entity.Heroes
 				return;   // Dead 已由 ReceiveHit 置位
 			}
 
-			HurtRequested = true;
-			m_PendingKnockback = knockback;
+			m_PendingHurt = knockback;
 		}
 
 		/// <summary>
@@ -357,30 +366,22 @@ namespace GameLogic.Entity.Heroes
 		/// <summary>受击事实：消费命中请求（出招期间不打断，收招后再进入硬直）并计时。</summary>
 		private void UpdateHurt(float dt)
 		{
-			if (m_HurtTime > 0)
+			if (TickDown(ref m_HurtTime, dt))
 			{
-				m_HurtTime = Mathf.Max(0f, m_HurtTime - dt);
-				if (m_HurtTime <= 0f)
-				{
-					Hurt = false;
-				}
+				Hurt = false;
 			}
 
-			if (AttackSegment >= 0)
+			if (AttackSegment >= 0 || m_PendingHurt is not { } knockback || Dead || m_HurtLen <= 0f)
 			{
 				return;
 			}
 
-			if (HurtRequested && !Dead && m_HurtLen > 0)
-			{
-				HurtRequested = false;
-				m_PendingAttack = false;   // 受击硬直开始：起手请求随按键语义一并丢弃
-				m_HurtTime = m_HurtLen;
-				Hurt = true;
-				Velocity = m_PendingKnockback;
-				m_PendingKnockback = Vector2.Zero;
-				PlaySound(Config.HurtSoundId);   // 受害者自己的受击语音（旧 BaseHero.gd:592 按 self 选音）
-			}
+			m_PendingHurt = null;
+			m_PendingAttack = false;   // 受击硬直开始：起手请求随按键语义一并丢弃
+			m_HurtTime = m_HurtLen;
+			Hurt = true;
+			Velocity = knockback;
+			PlaySound(Config.HurtSoundId);   // 受害者自己的受击语音（旧 BaseHero.gd:592 按 self 选音）
 		}
 
 		/// <summary>
@@ -499,14 +500,9 @@ namespace GameLogic.Entity.Heroes
 				return;
 			}
 
-			if (m_EmoteTime > 0)
+			if (m_EmoteTime > 0f)
 			{
-				m_EmoteTime = Mathf.Max(0f, m_EmoteTime - dt);
-				if (m_EmoteTime <= 0f)
-				{
-					Emoting = false;
-				}
-
+				Emoting = !TickDown(ref m_EmoteTime, dt);
 				return;
 			}
 

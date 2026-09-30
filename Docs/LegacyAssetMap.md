@@ -190,6 +190,8 @@ m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tre
 python Tools/LegacyMigration/gen_animations.py
 "S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --script res://EditorScripts/build_wukong_anim_tree.gd
 "S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --quit-after 1500 -- --smoketest
+# 怪物 AI 场景（巡逻/追击/出招/转身/平台守候踱步/丢失目标/受控/死亡，约 20s）：
+"S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --quit-after 2400 -- --smoketest=ai
 ```
 
 脚本读取旧项目 `.tscn`，输出到 `TheGame/Sprites/...`（SpriteFrames）与 `TheGame/Entitys/Animations/`（动画库 + 状态机；2026-09-30 从 `Sprites/` 与 `Entitys/` 根移入）；旧项目保持只读，不写入任何文件。

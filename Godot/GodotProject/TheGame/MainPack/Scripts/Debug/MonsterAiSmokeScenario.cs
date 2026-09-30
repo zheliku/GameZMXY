@@ -21,30 +21,40 @@ using GodotGameFramework;
 ///  1 进视野   3s 时挪到右侧 150px → Chase → Attack，出招 attack_1 并打中英雄；
 ///  2 转身     打中英雄后，下一次出招的当帧把英雄瞬移到猴子身后 → 出招与收招硬直期间朝向不变、动画一直是
 ///             Attack/attack_1；硬直结束后 1s 内转向英雄；
-///  3 空中     英雄钉在猴子正上方 120px 两秒 → 期间不出招，AI 停在 Attack（站在下面等）；
-///  4 受控     以英雄身份打猴子一下（带击退）→ AI 进 CcLocked、动画进 Hurt；
-///  5 击杀     致命伤 → AI 进 Death、广播 MonsterDiedEventArgs（击杀者 = 英雄）、死亡动画后回收。
+///  3 平台     英雄钉在猴子前方高 120px 的固定点 AirDuration 秒 → 不出招、AI 进 Hold、在英雄 x 两侧来回踱步；
+///  4 落地     放英雄落地 → 猴子回 Attack 并出招；
+///  5 丢失     英雄始终保持在猴子视野外（模拟跑得比它快）→ LoseTargetTime 后 AI 回 Patrol/Idle；随后以英雄身份打一下（带击退）→ 重新锁定、CcLocked/Hurt；
+///  6 击杀     致命伤 → AI 进 Death、广播 MonsterDiedEventArgs（击杀者 = 英雄）、死亡动画后回收。
 /// 另断言：攻击范围由 attack_1 判定盒推导 = 50×50 @(-24,-23) → X[-49,1] Y[-48,2]。
 /// </summary>
 public sealed class MonsterAiSmokeScenario
 {
 	private const double InSightAt = 3.0;
 
-	/// <summary>整体超时（引擎 --quit-after 1500 帧 ≈ 25s，必须在此之前给出结论）</summary>
-	private const double TimeoutAt = 21.0;
+	/// <summary>整体超时（引擎需带 --quit-after 2400 帧 ≈ 40s，必须在此之前给出结论）</summary>
+	private const double TimeoutAt = 36.0;
 
 	/// <summary>转身阶段：硬直结束后允许的转向时限</summary>
 	private const double TurnAroundWindow = 1.0;
 
 	/// <summary>空中阶段时长与高度</summary>
-	private const double AirDuration = 2.0;
+	private const double AirDuration = 4.0;
 	private const float AirHeight = 120f;
 
 	/// <summary>空中阶段英雄相对猴子的水平偏移（在判定盒水平范围内，只差高度）</summary>
 	private const float AirOffsetX = 30f;
 
+	/// <summary>踱步证据：猴子在英雄 x 两侧都走出至少这么远，才算"来回踱步"</summary>
+	private const float PaceEvidence = 20f;
+
+	/// <summary>英雄落地后等猴子出招的时限</summary>
+	private const double LandedTimeout = 2.5;
+
+	/// <summary>丢失目标：英雄保持在猴子右侧这么远（SightRange 300 之外），等待时限（LoseTargetTime 3s + 余量）</summary>
+	private const float LoseOffset = 420f;
+	private const double LoseTimeout = 4.5;
+
 	/// <summary>受控 → 击杀 → 结束的间隔</summary>
-	private const double StaggerDelay = 1.0;
 	private const double KillDelay = 1.5;
 	private const double EndDelay = 2.5;
 
@@ -64,7 +74,8 @@ public sealed class MonsterAiSmokeScenario
 		WaitSecondAttack,
 		TurnAround,
 		Air,
-		WaitStagger,
+		WaitLanded,
+		Lose,
 		WaitKill,
 		WaitEnd,
 		Done,
@@ -95,9 +106,17 @@ public sealed class MonsterAiSmokeScenario
 	private double m_RecoveredAt = -1;
 	private bool m_TurnedAfterRecovery;
 
-	// 空中阶段
+	// 空中（平台）阶段
 	private float m_HeroFloorY;
+	private float m_AirX;
+	private float m_AirMinX;
+	private float m_AirMaxX;
+	private bool m_SawHold;
 	private int m_AirAttacks;
+	private bool m_StruckAfterLanding;
+
+	// 丢失目标阶段
+	private bool m_LostTarget;
 
 	public MonsterAiSmokeScenario(HeroEntity hero, MonsterEntity monster, AnimationTree monsterTree)
 	{
@@ -175,13 +194,24 @@ public sealed class MonsterAiSmokeScenario
 				UpdateAir(t, attackStarted);
 				break;
 
-			case Phase.WaitStagger:
-				if (t - m_PhaseStart >= StaggerDelay)
+			case Phase.WaitLanded:
+				// 看"正在出招"而不是起手沿：落地当帧就可能已提交出招（起手沿落在 Air 阶段的最后一帧）
+				if (!m_StruckAfterLanding && segment >= 0)
 				{
-					HitMonster(1f, new Vector2(3, 0));
-					Enter(Phase.WaitKill, t);
+					GD.Print($"SMOKE-AI[{t:F2}] 英雄落地后 {t - m_PhaseStart:F2}s 猴子出招");
+					m_StruckAfterLanding = true;
 				}
 
+				if (m_StruckAfterLanding || t - m_PhaseStart > LandedTimeout)
+				{
+					m_Hero.Heal(m_Hero.MaxHp);
+					Enter(Phase.Lose, t);
+				}
+
+				break;
+
+			case Phase.Lose:
+				UpdateLose(t);
 				break;
 
 			case Phase.WaitKill:
@@ -222,7 +252,8 @@ public sealed class MonsterAiSmokeScenario
 			failures.Add("视野外期间不应追击/攻击（索敌范围或目标锁定有误）");
 		}
 
-		RequireInOrder(failures, m_AiObserved.ConvertAll(o => o.Ai), "AI", "Chase", "Attack", "CcLocked", "Death");
+		RequireInOrder(failures, m_AiObserved.ConvertAll(o => o.Ai), "AI", "Chase", "Attack", "Hold", "Attack", "Patrol",
+			"CcLocked", "Death");
 		RequireInOrder(failures, m_AnimObserved.ConvertAll(o => o.Anim), "猴子动画", "Ground/run", "Attack/attack_1",
 			"Hurt", "Death");
 
@@ -239,6 +270,16 @@ public sealed class MonsterAiSmokeScenario
 		if (m_AirAttacks > 0)
 		{
 			failures.Add($"英雄在头顶 {AirHeight}px 期间猴子出招了 {m_AirAttacks} 次（高度判定失效）");
+		}
+
+		if (!m_StruckAfterLanding)
+		{
+			failures.Add($"英雄落地 {LandedTimeout}s 内猴子没有出招（Hold → Attack 未恢复）");
+		}
+
+		if (!m_LostTarget)
+		{
+			failures.Add("英雄离开视野后猴子没有丢失目标回到巡逻");
 		}
 
 		if (m_DiedEvents != 1)
@@ -310,21 +351,30 @@ public sealed class MonsterAiSmokeScenario
 		}
 	}
 
-	/// <summary>空中阶段开始：等猴子空闲再钉住英雄（避免把上一招的收尾算进来）。</summary>
+	/// <summary>空中阶段开始：把英雄钉在猴子前方 AirOffsetX、高 AirHeight 的固定点（模拟站在平台上）。</summary>
 	private void StartAir(double t)
 	{
 		m_HeroFloorY = m_Hero.GlobalPosition.Y;
+		m_AirX = m_Monster.GlobalPosition.X - m_Monster.Facing * AirOffsetX;
+		m_AirMinX = m_AirMaxX = m_Monster.GlobalPosition.X;
 		m_Hero.Heal(m_Hero.MaxHp);
 		Enter(Phase.Air, t);
 	}
 
+	/// <summary>
+	/// 空中（平台）：期间不出招、AI 进 Hold；猴子以英雄 x 为中心来回踱步——左右两侧都到过、且没走出 PaceRange + 滞回。
+	/// 结束后放英雄落地：猴子应回到 Attack 并出招。
+	/// </summary>
 	private void UpdateAir(double t, bool attackStarted)
 	{
-		// 每帧把英雄钉在猴子正上方（本驱动器在实体物理之后处理：猴子下一帧读到的就是这个位置）
-		float x = m_Monster.GlobalPosition.X - m_Monster.Facing * AirOffsetX;
-		m_Hero.GlobalPosition = new Vector2(x, m_HeroFloorY - AirHeight);
+		// 每帧重设位置（本驱动器在实体物理之后处理：猴子下一帧读到的就是这个位置）
+		m_Hero.GlobalPosition = new Vector2(m_AirX, m_HeroFloorY - AirHeight);
 		m_Hero.Velocity = Vector2.Zero;
 
+		float mx = m_Monster.GlobalPosition.X;
+		m_AirMinX = Mathf.Min(m_AirMinX, mx);
+		m_AirMaxX = Mathf.Max(m_AirMaxX, mx);
+		m_SawHold |= m_Monster.AiStateName == "Hold";
 		if (attackStarted && t - m_PhaseStart > 0.1)
 		{
 			m_AirAttacks++;
@@ -336,20 +386,48 @@ public sealed class MonsterAiSmokeScenario
 			return;
 		}
 
-		if (m_Monster.AiStateName != "Attack")
+		GD.Print($"SMOKE-AI[{t:F2}] 守候踱步范围 x∈[{m_AirMinX:F0},{m_AirMaxX:F0}]（英雄 x={m_AirX:F0}）");
+		if (!m_SawHold)
 		{
-			m_Failures.Add($"英雄在头顶时猴子应站在下面等（Attack），实际 {m_Monster.AiStateName}");
+			m_Failures.Add($"英雄在头顶时猴子应进入 Hold，实际 {m_Monster.AiStateName}");
 		}
 
-		// 放英雄落回地面，进入受控阶段
-		m_Hero.GlobalPosition = new Vector2(x, m_HeroFloorY);
-		Enter(Phase.WaitStagger, t);
+		if (!(m_AirMinX < m_AirX - PaceEvidence && m_AirMaxX > m_AirX + PaceEvidence))
+		{
+			m_Failures.Add($"守候时没有在英雄两侧来回踱步：x∈[{m_AirMinX:F0},{m_AirMaxX:F0}]，英雄 x={m_AirX:F0}");
+		}
+
+		m_Hero.GlobalPosition = new Vector2(m_AirX, m_HeroFloorY);
+		Enter(Phase.WaitLanded, t);
+	}
+
+	/// <summary>
+	/// 丢失目标：英雄每帧保持在猴子右侧 LoseOffset（SightRange 外，模拟英雄跑得比猴子快；场地右侧够长），
+	/// LoseTargetTime 后猴子应放弃目标回到 Patrol/Idle。
+	/// </summary>
+	private void UpdateLose(double t)
+	{
+		m_Hero.GlobalPosition = new Vector2(m_Monster.GlobalPosition.X + LoseOffset, m_HeroFloorY);
+		m_Hero.Velocity = Vector2.Zero;
+		if (m_Monster.AiStateName is "Patrol" or "Idle")
+		{
+			GD.Print($"SMOKE-AI[{t:F2}] 丢失目标，{t - m_PhaseStart:F2}s 后回到 {m_Monster.AiStateName}");
+			m_LostTarget = true;
+			m_Hero.GlobalPosition = new Vector2(m_Monster.GlobalPosition.X + InSightOffset, m_HeroFloorY);
+			HitMonster(1f, new Vector2(3, 0));   // 以英雄身份打一下：重新锁定 + 受控
+			Enter(Phase.WaitKill, t);
+		}
+		else if (t - m_PhaseStart > LoseTimeout)
+		{
+			m_Failures.Add($"英雄离开视野 {LoseTimeout}s 后猴子仍在 {m_Monster.AiStateName}（没有丢失目标）");
+			Enter(Phase.WaitKill, t);
+		}
 	}
 
 	/// <summary>判定盒推导结果（OnInit 时算好）：猴子 attack_1 的 50×50 @(-24,-23)。</summary>
 	private void CheckReach()
 	{
-		AiBox reach = m_Monster.GetAttackReach(0);
+		AiBox reach = m_Monster.Attacks.ReachOf(0);
 		GD.Print($"SMOKE-AI: attack_1 判定盒推导范围 {reach}");
 		if (reach.IsEmpty ||
 		    Math.Abs(reach.Left - ExpectedReach.Left) > ReachTolerance ||
@@ -413,7 +491,7 @@ public sealed class MonsterAiSmokeScenario
 	/// <summary>以英雄为攻击方走真实结算链路（ReceiveHit → OnHurt 锁定仇恨/硬直/死亡）。</summary>
 	private void HitMonster(float power, Vector2 knockback)
 	{
-		AttackData attack = AttackData.Create(0, default, power, DamageKind.Real, knockback, 1, 0, 0, SoundId.None);
+		AttackData attack = AttackData.Create(0, default, power, DamageKind.Real, knockback, 1, 0, SoundId.None);
 		m_Monster.ReceiveHit(attack, m_Hero.Id);
 		ReferencePool.Release(attack);
 	}

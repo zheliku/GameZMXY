@@ -20,9 +20,9 @@ using GodotGameFramework;
 /// 它验证的是"C# 属性 → 动画状态机"这条链路：断言的是 AnimationTree 里真正在播的动画节点，
 /// 不是 C# 自己的日志——所以能抓住"属性变了但动画没切"这一类问题。
 ///
-/// 用法：S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --quit-after 1500 -- --smoketest
-///   `--smoketest`     英雄控制器 + M4 命中（猴子 AI 冻结为沙包，断言确定）
-///   `--smoketest=ai`  怪物 AI（M5：巡逻 → 追击 → 攻击 → 受控 → 死亡，见 MonsterAiSmokeScenario）
+/// 用法：S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --quit-after N -- --smoketest[=ai]
+///   `--smoketest`     英雄控制器 + M4 命中（猴子 AI 冻结为沙包，断言确定；N = 1500）
+///   `--smoketest=ai`  怪物 AI（巡逻/追击/出招/转身/平台守候/丢失目标/受控/死亡，见 MonsterAiSmokeScenario；N = 2400）
 ///
 /// 注意：**判定看 stdout 的 SMOKE PASS/FAIL，别只看退出码**——框架关闭流程有一个既有 bug
 /// （WebRequestAgentHelper.Reset 访问已释放的 HttpRequest，见 Framework/…/DefaultWebRequestAgentHelper.cs:90），
@@ -250,8 +250,7 @@ public partial class SmokeTestDriver : Node
 	/// </summary>
 	private void HurtHeroOnce()
 	{
-		AttackData attack = AttackData.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0, 0,
-			SoundId.None);
+		AttackData attack = AttackData.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0, SoundId.None);
 		m_Hero.ReceiveHit(attack, 0);
 		ReferencePool.Release(attack);
 	}

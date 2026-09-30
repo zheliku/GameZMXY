@@ -22,17 +22,12 @@ namespace GameLogic.Entity.Monsters.AI
 		/// </summary>
 		bool IsAttacking { get; }
 
-		/// <summary>有有效目标（索敌命中或被打后锁定；目标死亡/回收即失效）</summary>
-		bool HasTarget { get; }
-
 		/// <summary>
-		/// 目标受击盒相对自己原点的矩形（世界轴向，Y 向下；目标无受击盒时退化为其原点的点盒；无目标为空盒）。
-		/// 与招式判定盒（<see cref="MonsterSkillSpec.Reach"/>）求交决定"够不够得着"——含高度。
+		/// 目标受击盒相对自己原点的矩形（世界轴向，Y 向下；目标无受击盒时退化为其原点的点盒）。
+		/// **空盒 = 没有目标**（未发现 / 已死亡回收 / 已丢失）。与招式判定盒（<see cref="MonsterAttackSpec.Reach"/>）
+		/// 求交决定"够不够得着"——含高度；中心 X 即目标的水平方位。
 		/// </summary>
 		AiBox TargetBox { get; }
-
-		/// <summary>目标相对自己的水平距离（= TargetBox 中心 X；无目标为 0）。朝向/远程招距离用它。</summary>
-		float TargetDeltaX { get; }
 
 		/// <summary>自己相对出生点的水平偏移：self.x − home.x</summary>
 		float HomeDeltaX { get; }
@@ -40,8 +35,8 @@ namespace GameLogic.Entity.Monsters.AI
 		/// <summary>决策参数</summary>
 		MonsterAiParams Params { get; }
 
-		/// <summary>技能书（冷却与选招；冷却由宿主推进与计入）</summary>
-		MonsterSkillBook Skills { get; }
+		/// <summary>招式书（冷却与选招；冷却由宿主推进与计入）</summary>
+		MonsterAttackBook Attacks { get; }
 
 		/// <summary>本状态机的状态集（角色 → 状态类型）</summary>
 		MonsterAiStateSet States { get; }

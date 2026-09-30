@@ -17,7 +17,7 @@
 
 ## 战斗结算（Battle/ + Entity/ 协作，M4 目标形态）
 
-- 攻击数据包为纯 C# 强类型（放 `Battle/`）：`AttackData { int Power; DamageKind Kind; Vector2 Knockback; int WsGain; BuffSpec[] OnHitBuffs; RollRange Crit; }`。
+- 攻击数据包为纯 C# 强类型（放 `Battle/`）：`AttackData` 只装**受击方结算**要用的数据（攻击方属性快照、威力、伤害类型、击退、方向、受击保护、命中音效；将来 `OnHitBuffs`）。**攻击方收益不进包**：英雄无双值等由攻击方覆写 `OnHitLanded`、按 `AttackId` 回查自己的表结算（2026-09-30：`WsGain` 自攻击包/`ActorEntity` 移到 `HeroEntity`）。
 - HitBox/HurtBox 是 `Area2D`，命中走引擎 `area_entered`；**判定帧开关由 AnimationPlayer 轨道驱动**，不每帧轮询。
 - 命中回调不写公式：双方属性快照 + `AttackData` 交 `Battle/DamageCalculator` 结算，再 `GF.Event.Fire(DamageDealtEventArgs)`，飘字 UI 订阅。
 - 攻击者识别：HitBox 挂宿主显式引用（生成时注入）或 `IAttacker` 接口，禁止爬父。

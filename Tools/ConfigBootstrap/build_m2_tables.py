@@ -366,6 +366,9 @@ def build_monster():
         ("Rank", "Monster.MonsterRank", "阶级 Normal/Elite/Boss(旧 is_boss;供 HUD/掉落/结算区分)"),
         ("SuperArmor", "bool", "霸体:受击不硬直不击退、不打断出招(旧 IsSuperArmor/Monster_18 类保护)"),
         ("AttackRangeSlack", "int", "站定滞回 px:目标离开普攻判定盒水平范围超过本值才重新追击(防目标被击退几像素就来回切换)"),
+        # 2026-09-30 表尾追加：丢失目标（旧项目 has_target 只置不清）与"够不着时踱步等待"
+        ("LoseTargetTime", "float", "丢失目标秒:目标水平距离持续超出 SightRange 这么久即放弃、回去巡逻(0=永不丢失)"),
+        ("PaceRange", "int", "踱步半幅 px:目标在头顶/平台上够不着时,以目标 x 为中心左右来回走的距离(0=原地等)"),
     ]
     rows = [
         (1, 1, "花果山猴子", "花果山小怪", "HuaguoshanMonkey", 5,
@@ -374,10 +377,11 @@ def build_monster():
          0, 80, 300, 70, 0, 1,
          "None", "None", 980,
          2.0, 10, 200, 1.0,
-         "Normal", False, 25),
+         "Normal", False, 25,
+         3.0, 60),
     ]
-    # 2026-09-30 结构变更（删中间列 AttackRange）：force_rows 重写数据行；种子行已对齐改前 xlsx 实际值
-    new_table("MonsterConfig.xlsx", fields, rows, force_rows=True)
+    # 2026-09-30 删中间列 AttackRange 的 force_rows 重写已完成；此后回到表尾追加模式（只回填空单元格，保留手工数值）
+    new_table("MonsterConfig.xlsx", fields, rows)
 
 
 def build_battle():
@@ -401,7 +405,7 @@ def build_battle():
         ("ComboIndex", "int", "连段第几段(0起;同一 OwnerId 内连续,越大越靠后)"),
         ("AiWeight", "int", "AI 选招权重(怪物 AI 用;英雄普攻填 0)"),
         # M5 表尾追加：怪物 AI 的"技能用法"（旧 Monster_103 Skill_N_CD + 距离门槛 abs(dx)<=270/360）
-        ("AiPriority", "int", "AI 优先级:0=普攻池(按攻击欲望掷骰+权重抽);>0=技能(冷却就绪且距离满足即放,大者优先,追击途中也会放)"),
+        ("AiPriority", "int", "AI 优先级:0=普攻(按攻击欲望掷骰+权重抽);>0=优先招(冷却就绪且够得着即先放,大者优先,接近途中也会放)"),
         ("AiRange", "vector2", "AI 释放距离 px(仅远程/无身体判定盒的招式;X=最小,Y=最大,只比水平距离;0,0=按攻击动画判定盒推导)"),
         ("AiCooldown", "vector2", "AI 释放后冷却秒(X=下限,Y=上限随机;普攻池填 0,0)"),
         ("AiInitCooldown", "vector2", "AI 出生时初始冷却秒(X=下限,Y=上限;旧 _ready 里 Skill_N_CD=randi_range)"),

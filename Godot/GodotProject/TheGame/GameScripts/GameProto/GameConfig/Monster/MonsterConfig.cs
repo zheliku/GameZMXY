@@ -49,6 +49,8 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         Rank = (Monster.MonsterRank)_buf.ReadInt();
         SuperArmor = _buf.ReadBool();
         AttackRangeSlack = _buf.ReadInt();
+        LoseTargetTime = _buf.ReadFloat();
+        PaceRange = _buf.ReadInt();
     }
 
     public static MonsterConfig DeserializeMonsterConfig(ByteBuf _buf)
@@ -188,6 +190,14 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// 站定滞回 px:目标离开普攻判定盒水平范围超过本值才重新追击(防目标被击退几像素就来回切换)
     /// </summary>
     public readonly int AttackRangeSlack;
+    /// <summary>
+    /// 丢失目标秒:目标水平距离持续超出 SightRange 这么久即放弃、回去巡逻(0=永不丢失)
+    /// </summary>
+    public readonly float LoseTargetTime;
+    /// <summary>
+    /// 踱步半幅 px:目标在头顶/平台上够不着时,以目标 x 为中心左右来回走的距离(0=原地等)
+    /// </summary>
+    public readonly int PaceRange;
    
     public const int __ID__ = 129443944;
     public override int GetTypeId() => __ID__;
@@ -232,6 +242,8 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "Rank:" + Rank + ","
         + "SuperArmor:" + SuperArmor + ","
         + "AttackRangeSlack:" + AttackRangeSlack + ","
+        + "LoseTargetTime:" + LoseTargetTime + ","
+        + "PaceRange:" + PaceRange + ","
         + "}";
     }
 }

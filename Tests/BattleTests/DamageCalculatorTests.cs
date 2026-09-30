@@ -46,7 +46,7 @@ namespace GameLogic.Battle.Tests
 		private static DamageResult Hit(in CombatantStats attacker, float power, DamageKind kind,
 			in CombatantStats defender, float missRoll, float critRoll)
 		{
-			AttackData attack = AttackData.Create(0, attacker, power, kind, Vector2.Zero, 1, 0, 0, SoundId.None);
+			AttackData attack = AttackData.Create(0, attacker, power, kind, Vector2.Zero, 1, 0, SoundId.None);
 			try
 			{
 				return DamageCalculator.Calculate(Config, attack, defender, missRoll, critRoll);
@@ -250,7 +250,7 @@ namespace GameLogic.Battle.Tests
 		[Fact]
 		public void Knockback_DirectionAndPerSideScale()
 		{
-			AttackData attack = AttackData.Create(1004, Hero(), 10f, DamageKind.Physics, new Vector2(6, -5), -1, 0, 0,
+			AttackData attack = AttackData.Create(1004, Hero(), 10f, DamageKind.Physics, new Vector2(6, -5), -1, 0,
 				SoundId.None);
 			try
 			{
@@ -268,7 +268,7 @@ namespace GameLogic.Battle.Tests
 		[Fact]
 		public void AttackData_OneHitPerTarget_AndClearedOnRelease()
 		{
-			AttackData attack = AttackData.Create(1001, Hero(), 8f, DamageKind.Physics, Vector2.Zero, 1, 4, 0,
+			AttackData attack = AttackData.Create(1001, Hero(), 8f, DamageKind.Physics, Vector2.Zero, 1, 0,
 				SoundId.None);
 			Assert.True(attack.TryRegisterHit(42));
 			Assert.False(attack.TryRegisterHit(42));
@@ -276,7 +276,7 @@ namespace GameLogic.Battle.Tests
 			ReferencePool.Release(attack);
 
 			// 同类型复用池内对象：必须是干净的
-			AttackData reused = AttackData.Create(1002, Hero(), 9f, DamageKind.Magic, Vector2.Zero, 1, 0, 0,
+			AttackData reused = AttackData.Create(1002, Hero(), 9f, DamageKind.Magic, Vector2.Zero, 1, 0,
 				SoundId.None);
 			Assert.True(reused.TryRegisterHit(42));
 			Assert.Equal(1002, reused.AttackId);

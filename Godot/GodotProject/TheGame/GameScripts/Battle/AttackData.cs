@@ -7,10 +7,11 @@ using GameFramework;
 namespace GameLogic.Battle
 {
 	/// <summary>
-	/// 攻击数据包：一次出招（一段普攻 / 一发子弹 / 一次 Buff 跳伤）结算所需的**全部**数据，自包含。
+	/// 攻击数据包：一次出招（一段普攻 / 一发子弹 / 一次 Buff 跳伤）**受击方结算**所需的全部数据，自包含。
+	/// 攻击方自己的命中收益（英雄无双值等）不进包——由攻击方在 OnHitLanded 按 <see cref="AttackId"/> 自行结算。
 	///
 	/// 设计要点：
-	///  * **快照而不是配表引用**：出招那一刻把攻击方属性、掷好的威力、伤害类型、击退、无双值、
+	///  * **快照而不是配表引用**：出招那一刻把攻击方属性、掷好的威力、伤害类型、击退、
 	///    命中音效全部拷进来。下游（命中结算、击退、飘字、音效）只认这个包，不回查 AttackConfig——
 	///    所以子弹、反伤、Buff 跳伤这类没有配表行（或参数被运行时修改）的攻击也走同一条链路。
 	///    快照时机与旧项目一致：旧 get_hit_data 在起手时锁定 HitDic，同一招打中多个目标威力相同。
@@ -25,7 +26,7 @@ namespace GameLogic.Battle
 	/// </summary>
 	public sealed class AttackData : IReference
 	{
-		/// <summary>来源攻击 Id（AttackConfig.Id；运行时动态攻击为 0）。只作日志/统计，结算不回查表</summary>
+		/// <summary>来源攻击 Id（AttackConfig.Id；运行时动态攻击为 0）。受击结算不回查表；攻击方用它结算自己的命中收益</summary>
 		public int AttackId { get; private set; }
 
 		/// <summary>攻击方属性快照（出招时刻）</summary>
@@ -43,9 +44,6 @@ namespace GameLogic.Battle
 		/// <summary>出招方向：1 右 / -1 左（击退方向 = 本值 × Knockback.X）</summary>
 		public int Direction { get; private set; }
 
-		/// <summary>命中后攻击方获得的无双值（已在区间内掷定）</summary>
-		public int WsGain { get; private set; }
-
 		/// <summary>命中给受击方累计的受击保护值（旧 HitProtect；0 = 按表默认）</summary>
 		public int HitProtect { get; private set; }
 
@@ -57,7 +55,7 @@ namespace GameLogic.Battle
 
 		/// <summary>从引用池取一个攻击包并装填（各参数语义见同名属性）。</summary>
 		public static AttackData Create(int attackId, in CombatantStats attacker, float power, DamageKind kind,
-			Vector2 knockback, int direction, int wsGain, int hitProtect, SoundId hitSoundId)
+			Vector2 knockback, int direction, int hitProtect, SoundId hitSoundId)
 		{
 			AttackData data = ReferencePool.Acquire<AttackData>();
 			data.AttackId = attackId;
@@ -66,7 +64,6 @@ namespace GameLogic.Battle
 			data.Kind = kind;
 			data.Knockback = knockback;
 			data.Direction = direction >= 0 ? 1 : -1;
-			data.WsGain = wsGain;
 			data.HitProtect = hitProtect;
 			data.HitSoundId = hitSoundId;
 			return data;
@@ -87,7 +84,6 @@ namespace GameLogic.Battle
 			Kind = DamageKind.Physics;
 			Knockback = Vector2.Zero;
 			Direction = 1;
-			WsGain = 0;
 			HitProtect = 0;
 			HitSoundId = SoundId.None;
 			m_HitTargets.Clear();
