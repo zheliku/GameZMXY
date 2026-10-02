@@ -14,19 +14,21 @@ namespace GameLogic.Entity
 {
 	/// <summary>
 	/// 战斗角色基类（根规范 §5.1，抽象）。英雄与怪物都从这里派生。
-	/// 职责：IEntity 生命周期样板、血量、动画宿主（AnimationPlayer + AnimationTree，显示/隐藏时启停）、
-	/// **所有角色都有的**表现层（身体）与判定区、朝向、受击与死亡入口、招式装配。**本类不含任何角色事实**
-	/// （移动输入、跑档、攻击段、跳跃次数……都在子类），也不含英雄专属层（武器层、特效层在 HeroEntity）。
+	/// 职责：IEntity 生命周期样板、血量、动画宿主（AnimationPlayer，显示/隐藏时启停）、
+	/// **所有角色都有的**表现层（身体）与判定区、朝向、受击与死亡入口、招式装配、公共事实存储
+	/// （攻击段、待生效受击、<see cref="OwnAttacks"/>）。**角色行为事实**（移动输入、跑档、跳跃次数……）
+	/// 在子类，英雄专属层（武器层、特效层）在 HeroEntity。
 	/// 子类必须给出结算侧别 <see cref="Side"/> 与属性快照 <see cref="GetCombatStats"/>（不给默认值，免得静默算错）。
 	/// 朝向翻转的扩展点见 <see cref="OnFacingChanged"/>。
 	///
-	/// 动画架构（迁移决策 2026-09-28）：
-	///  * 子类场景挂 AnimationPlayer（承载该角色自己的动画库：帧/特效/音效轨道）+
-	///    AnimationTree（该角色自己的状态机资源）；
-	///  * **状态机不设参数、不设脉冲**：子类把"角色属性"（见 HeroEntity 的表达式事实面字段）
-	///    每物理帧同步一次，该角色状态机的每条边用 advance_expression 判断这些属性决定转移；
-	///  * 基类只把 AnimationTree 的表达式基对象指向本节点（见 <see cref="OnInit"/>），
-	///    不解释任何事实，也不出现任何角色专属动画名。
+	/// 动画架构（2026-10-01 定稿，A 方案：动画纯数据、代码唯一时钟）：
+	///  * 子类场景挂 AnimationPlayer，其动画库**只含表现数据**：帧/特效/判定盒值轨道——**无方法轨道**，
+	///    动画从不调用代码；
+	///  * "现在在做什么"由子类的**身体状态机**（GF.Fsm，物理帧驱动，见 Entity/Body/）决定，
+	///    状态进入/切换时经 <see cref="PlayAnim"/> / <see cref="RestartAnim"/> 请求播放；
+	///  * 动作时长 = OnInit 时从动画资源**读长度**（<see cref="GetAnimLength"/>，数据），状态自己计时；
+	///    音效由状态钩子（BeginAttack/PlayHurtSound/OnDied）触发，音源 ID 查表；
+	///  * 判定盒窗口是动画值轨道（几何 = 数据）；将来动画中途的玩法时点用 Godot 动画标记。
 	/// 本类<b>不设"阵营"字段</b>：敌我关系由物理层表达（根规范 §7）。
 	/// 子节点引用走 <c>[Export]</c> + <c>m_</c> 前缀，由场景绑定
 	/// （.tscn 的节点头必须声明 node_paths=PackedStringArray(...)，否则 NodePath 赋值会被忽略）。
@@ -58,11 +60,8 @@ namespace GameLogic.Entity
 		/// </summary>
 		[Export] private Node2D m_Body;
 
-		/// <summary>动画播放器（场景子节点 m_AnimPlayer）：承载该角色自己的动画库，由 m_AnimTree 驱动</summary>
+		/// <summary>动画播放器（场景子节点 m_AnimPlayer）：承载该角色自己的动画库，由本类直接驱动</summary>
 		[Export] private AnimationPlayer m_AnimPlayer;
-
-		/// <summary>动画状态机（场景子节点 m_AnimTree）：该角色自己的嵌套状态机资源</summary>
-		[Export] private AnimationTree m_AnimTree;
 
 		/// <summary>受击判定区（场景子节点 m_HurtBox，可为空；脚本 HurtBox 持有本实体引用）</summary>
 		[Export] private HurtBox m_HurtBox;
@@ -87,9 +86,6 @@ namespace GameLogic.Entity
 		/// <summary>动画播放器</summary>
 		public AnimationPlayer AnimPlayer => m_AnimPlayer;
 
-		/// <summary>动画状态机</summary>
-		public AnimationTree AnimTree => m_AnimTree;
-
 		/// <summary>受击判定区</summary>
 		public HurtBox HurtBox => m_HurtBox;
 
@@ -106,10 +102,10 @@ namespace GameLogic.Entity
 		public int Hp { get; protected set; }
 
 		/// <summary>
-		/// 死亡事实（[Export]：表达式读它，如 P_DEATH = "Dead"）。**单一事实源**：
-		/// 只在 ReceiveHit 扣血扣到 0 的那一刻置位、OnShow 复位，C# 与表达式统一用它，别名叫法不保留。
+		/// 死亡事实。**单一事实源**：只在 ReceiveHit 扣血扣到 0 的那一刻置位、OnShow 复位；
+		/// 身体状态机在下一个物理帧据此进入死亡状态（死亡优先级最高）。
 		/// </summary>
-		[Export] public bool Dead;
+		public bool Dead { get; protected set; }
 
 		/// <summary>朝向：1 右 / -1 左。素材原始朝左，见 SetFacing 注释。</summary>
 		public int Facing { get; private set; } = 1;
@@ -148,6 +144,34 @@ namespace GameLogic.Entity
 		/// <summary>当前招式的攻击包（出招装填、收招归还；null = 不在出招中）</summary>
 		private AttackData m_ActiveAttack;
 
+		/// <summary>最近一次请求播放的动画名（同名重复请求不重播；OnShow 清空）</summary>
+		private string m_RequestedAnim;
+
+		/// <summary>动画名缓存（见 <see cref="AnimName"/>）</summary>
+		private readonly Dictionary<string, StringName> m_AnimNames = new();
+
+		// ---- 公共身体事实（英雄与怪物共用，宿主钩子与状态经 IActorBody 读写）----
+
+		/// <summary>本角色的招式（AttackConfig 里 OwnerId==自己，按 ComboIndex 排序；子类 OnInit 装填）</summary>
+		protected AttackConfig[] OwnAttacks = [];
+
+		/// <summary>正在播的攻击段（0 起；-1 = 不在出招）：BeginAttack/EndAttack 维护，AI/冒烟只读</summary>
+		public int AttackSegment { get; protected set; } = -1;
+
+		/// <summary>待生效的受击（值 = 击退速度；null = 无）：OnHurt 登记（子类按门槛），身体状态生效</summary>
+		protected Vector2? m_PendingHurt;
+
+		/// <summary>有待生效的受击</summary>
+		public bool HasPendingHurt => m_PendingHurt.HasValue;
+
+		/// <summary>取出待生效受击的击退速度（取出即清除）。</summary>
+		public Vector2 TakePendingHurt()
+		{
+			Vector2 knockback = m_PendingHurt ?? Vector2.Zero;
+			m_PendingHurt = null;
+			return knockback;
+		}
+
 		/// <summary>实体初始化。isNewInstance 为 true 时做一次性初始化（见 Entity/AGENTS.md 生命周期）。</summary>
 		public virtual void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance,
 			object userData)
@@ -168,40 +192,91 @@ namespace GameLogic.Entity
 				Log.Error("[ActorEntity] 场景未绑定 m_Body（Sprite2D / AnimatedSprite2D）：{0}", entityAssetName);
 			}
 
-			if (m_AnimTree != null)
-			{
-				// 表达式以本节点为基对象（子类的事实字段从此刻起可被表达式读取）；
-				// 与实体物理同频推进：实体先刷新事实、AnimationTree（子节点）同帧消费。
-				m_AnimTree.AdvanceExpressionBaseNode = m_AnimTree.GetPathTo(this);
-				m_AnimTree.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Physics;
-			}
-			else
-			{
-				Log.Error("[ActorEntity] 场景未绑定 m_AnimTree（AnimationTree）：{0}", entityAssetName);
-			}
-
-			if (m_AnimPlayer == null)
-			{
-				Log.Error("[ActorEntity] 场景未绑定 m_AnimPlayer（AnimationPlayer）：{0}", entityAssetName);
-			}
+		if (m_AnimPlayer != null)
+		{
+			// 与实体物理同频推进：实体（父节点）先跑身体状态机并提出播放请求，AnimationPlayer（子节点）同帧消费。
+			m_AnimPlayer.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Physics;
+		}
+		else
+		{
+			Log.Error("[ActorEntity] 场景未绑定 m_AnimPlayer（AnimationPlayer）：{0}", entityAssetName);
+		}
 		}
 
 		/// <summary>
-		/// 实体显示：启用动画状态机。可变状态每次显示都要重置（池复用会带回上次的脏状态）——子类在 base 之后复位
-		/// 自己的事实；树不需要手动归位，事实复位后表达式边会自行把树拉回地面。
+		/// 实体显示：启用动画播放器。可变状态每次显示都要重置（池复用会带回上次的脏状态）——子类在 base 之后复位
+		/// 自己的事实并重建身体状态机，初始状态进入时请求的动画会把播放器从上次的任意动画（含死亡）拉回来。
 		/// </summary>
 		public virtual void OnShow(object userData)
 		{
 			Visible = true;
 			IsShown = true;
-			if (m_AnimTree != null)
+			m_RequestedAnim = null;
+			if (m_AnimPlayer != null)
 			{
-				m_AnimTree.Active = true;
+				m_AnimPlayer.Active = true;
 			}
 		}
 
+		// ---- 动画播放与动画事件（身体状态机经宿主接口调用）----
+
 		/// <summary>
-		/// 实体隐藏：停动画状态机、归还攻击包。关停阶段（isShutdown=true）子节点可能已被引擎释放——
+		/// 请求播放动画：本帧已请求（或正在播）同名动画时不打断；否则 Play（从头播）。
+		/// 同名不重播的判定看"最近请求"，不看播放器状态——非循环动画播完停在末帧时也算"在播"，
+		/// 逐帧请求 idle/jump 这类动画不会因此重播。参数是 string：身体状态是纯 C#，不构造 Godot 的 StringName。
+		/// </summary>
+		public void PlayAnim(string anim)
+		{
+			if (m_AnimPlayer == null || string.IsNullOrEmpty(anim))
+			{
+				return;
+			}
+
+			if (anim == m_RequestedAnim)
+			{
+				return;
+			}
+
+			m_RequestedAnim = anim;
+			m_AnimPlayer.Play(AnimName(anim));
+		}
+
+		/// <summary>从第 0 帧重播动画（攻击段、受击、死亡等必须从头播、即使同名也要重来的动作）。</summary>
+		public void RestartAnim(string anim)
+		{
+			if (m_AnimPlayer == null || string.IsNullOrEmpty(anim))
+			{
+				return;
+			}
+
+			m_RequestedAnim = anim;
+			m_AnimPlayer.Stop();
+			m_AnimPlayer.Play(AnimName(anim));
+		}
+
+		/// <summary>string → StringName 缓存（每个动画名只转换一次，播放请求不产生每帧分配）。</summary>
+		private StringName AnimName(string anim)
+		{
+			if (!m_AnimNames.TryGetValue(anim, out StringName name))
+			{
+				name = new StringName(anim);
+				m_AnimNames.Add(anim, name);
+			}
+
+			return name;
+		}
+
+		/// <summary>当前（或最近一次）播放的动画名（调试/冒烟观测；从未播过为空串）。</summary>
+		public string CurrentAnim => m_AnimPlayer == null ? "" : m_AnimPlayer.AssignedAnimation.ToString();
+
+		/// <summary>动画库是否有该动画。</summary>
+		protected bool HasAnim(string anim)
+		{
+			return m_AnimPlayer != null && m_AnimPlayer.HasAnimation(anim);
+		}
+
+		/// <summary>
+		/// 实体隐藏：停动画播放器、归还攻击包。关停阶段（isShutdown=true）子节点可能已被引擎释放——
 		/// 框架的 Shutdown 在场景树析构之后才补调 OnHide，此时读节点会抛 ObjectDisposedException，所以不碰节点。
 		/// </summary>
 		public virtual void OnHide(bool isShutdown, object userData)
@@ -220,9 +295,9 @@ namespace GameLogic.Entity
 				return;
 			}
 
-			if (m_AnimTree != null && IsInstanceValid(m_AnimTree))
+			if (m_AnimPlayer != null && IsInstanceValid(m_AnimPlayer))
 			{
-				m_AnimTree.Active = false;
+				m_AnimPlayer.Active = false;
 			}
 
 			ReleaseAttack();
@@ -239,7 +314,7 @@ namespace GameLogic.Entity
 			Velocity = Vector2.Zero;
 		}
 
-		/// <summary>实体轮询。角色行为不走这里——由子类的 _PhysicsProcess 驱动。</summary>
+		/// <summary>实体轮询。角色行为不走这里——由子类 _PhysicsProcess 里的身体状态机驱动。</summary>
 		public virtual void OnUpdate(float elapseSeconds, float realElapseSeconds)
 		{
 		}
@@ -323,16 +398,14 @@ namespace GameLogic.Entity
 		// ---- 攻击判定（M4）----
 
 		/// <summary>
-		/// 【动画方法轨道回调】出招起手（attack_N 动画第 0 帧调用）：按 <see cref="GetAttackConfig"/>
-		/// 拿到本段配置，快照攻击方属性、掷威力倍率，装填攻击包（只装受击方结算要用的数据）。
-		/// **时序与几何都归动画**：判定窗口与判定盒尺寸/位置全部是动画值轨道的关键帧
-		/// （同旧项目 keyframe shape/position/disabled）——C# 只负责"这一招的数值事实"。
-		/// 上一招未收（连段直接推进）时先归还上一招的包。
+		/// 出招装填：快照攻击方属性、掷威力倍率，装填攻击包（只装受击方结算要用的数据）。
+		/// 由子类宿主钩子 BeginAttack（攻击状态进入时）调用，上一招未收（连段直接推进）时先归还上一招的包。
+		/// **时序与几何**：判定窗口与判定盒尺寸/位置全部是动画值轨道的关键帧（同旧项目 keyframe
+		/// shape/position/disabled）——C# 只负责"这一招的数值事实"。
 		/// </summary>
-		public virtual void OnAttackBegin()
+		protected void ArmAttack(AttackConfig attack)
 		{
 			ReleaseAttack();
-			AttackConfig attack = GetAttackConfig();
 			if (attack == null)
 			{
 				return;
@@ -345,30 +418,12 @@ namespace GameLogic.Entity
 		}
 
 		/// <summary>
-		/// 【动画方法轨道回调】收招（attack_N 动画末帧调用）：归还攻击包、关判定（兜底——
-		/// 正常收招时 disabled 轨道已经先关了）。子类在此推进自己的连段事实（HeroEntity 连段推进、
-		/// MonsterEntity 归位 AttackSegment）后调 base。
+		/// 收招（安全释放）：归还攻击包（纯 C#，状态机销毁期间也可调用）。由子类宿主钩子 EndAttack
+		/// （攻击状态离开时：收招、受击打断、死亡、实体隐藏）调用。
+		/// 判定盒不需要代码去关：库内每个动画都带齐判定盒值轨道（轨道完备性规则），
+		/// 切到任何动画首帧就写回安全值。
 		/// </summary>
-		public virtual void OnAttackEnd()
-		{
-			ReleaseAttack();
-		}
-
-		/// <summary>
-		/// 当前段的攻击配置（动画调 OnAttackBegin 时由子类按"正在播的段"解析）。
-		/// </summary>
-		protected virtual AttackConfig GetAttackConfig()
-		{
-			return null;
-		}
-
-		/// <summary>
-		/// 强制收招（安全释放）：归还攻击包。**不是动画回调**——供受击打断、死亡、
-		/// OnHide 等打断路径使用；这些路径不会再走到 OnAttackEnd（动画被切走），必须显式释放。
-		/// 判定盒不需要代码去关：离开攻击动画时 AnimationMixer 会把 disabled/shape/position
-		/// 轨道捕获的初始值还原（值轨道自带的自愈，方法轨道没有——这也是几何走值轨道的原因之一）。
-		/// </summary>
-		protected void ReleaseAttack()
+		public void ReleaseAttack()
 		{
 			if (m_ActiveAttack != null)
 			{
@@ -470,19 +525,8 @@ namespace GameLogic.Entity
 		{
 		}
 
-		/// <summary>倒计时：递减到 0 为止；本次从 &gt;0 变成 0 时返回 true（计时器事实翻转用）。</summary>
-		protected static bool TickDown(ref float time, float dt)
-		{
-			if (time <= 0f)
-			{
-				return false;
-			}
-
-			time = Mathf.Max(0f, time - dt);
-			return time <= 0f;
-		}
-
-		/// <summary>动画长度（秒）：动画库缺少该动画时告警并按 0 处理（调用方据此关闭相关时长类事实）。</summary>
+		/// <summary>动画长度（秒）：动作时长的数据源（OnInit 读进参数快照，状态计时）；
+		/// 动画库缺少该动画时告警并按 0 处理（状态会立即结束，问题可见）。</summary>
 		protected float GetAnimLength(string animName)
 		{
 			if (m_AnimPlayer == null || string.IsNullOrEmpty(animName) || !m_AnimPlayer.HasAnimation(animName))

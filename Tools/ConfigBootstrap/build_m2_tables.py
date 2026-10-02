@@ -299,6 +299,8 @@ def build_hero():
         ("JumpCountMax", "int", "最多跳跃次数(含地面一段与空中段,旧 jump_count<2 判据)"),
         ("HurtSoundId", "Sound.SoundId", "受击语音(自己挨打时的声音,None=无;按受害者选音,BaseHero.gd:592)"),
         ("DeathSoundId", "Sound.SoundId", "死亡语音(None=无)"),
+        # 2026-10-01 表尾追加：身体状态机重构的输入缓冲（跳/攻按下后多久内仍有效）
+        ("InputBufferTime", "float", "输入缓冲秒:跳跃/普攻按键在这段时间内等到可执行时机仍生效(0=只在按下那一帧有效)"),
     ]
     rows = [
         (1, 1, "悟空", "齐天大圣", "Wukong",
@@ -307,10 +309,10 @@ def build_hero():
          0, 0, 0, 0, 0, 0, 0, 0,
          0, 0, 0,
          120, 240, 0.3, "6,12", 540, 980, 2,
-         "WukongHurt", "WukongDeath"),
+         "WukongHurt", "WukongDeath", 0.1),
     ]
-    # force_rows：修复 2026-09-27 表头与手工合并列错位时写坏的数据行（数值以 git HEAD 版本为准）
-    new_table("HeroConfig.xlsx", fields, rows, force_rows=True)
+    # 2026-09-27 的 force_rows 修复已完成；此后回到表尾追加模式（只回填空单元格，保留手工数值）
+    new_table("HeroConfig.xlsx", fields, rows)
 
     # legacy BaseRoleProperies: max_exp_list + 5000+5000*(lv-19) beyond 19
     exp_list = [140, 160, 180, 200, 220, 300, 400, 500, 600, 700,

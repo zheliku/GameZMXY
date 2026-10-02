@@ -114,7 +114,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="RectangleShape2D" id="hitbox_attack_1"]
 size = Vector2(128.075, 104.485)
 
@@ -193,85 +192,42 @@ tracks/5/keys = {
 "update": 1,
 "values": [Vector2(-15, -10), Vector2(0, 0)]
 }
-tracks/6/type = "method"
+tracks/6/type = "value"
 tracks/6/imported = false
 tracks/6/enabled = true
-tracks/6/path = NodePath(".")
+tracks/6/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:disabled")
 tracks/6/interp = 1
 tracks/6/loop_wrap = true
 tracks/6/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackSwingSound"
-}]
-}
-tracks/7/type = "value"
-tracks/7/imported = false
-tracks/7/enabled = true
-tracks/7/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:disabled")
-tracks/7/interp = 1
-tracks/7/loop_wrap = true
-tracks/7/keys = {
 "times": PackedFloat32Array(0, 0.033333, 0.166667),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
 "values": [true, false, true]
 }
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:shape")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [SubResource("hitbox_attack_1")]
+}
 tracks/8/type = "value"
 tracks/8/imported = false
 tracks/8/enabled = true
-tracks/8/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:shape")
+tracks/8/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:position")
 tracks/8/interp = 1
 tracks/8/loop_wrap = true
 tracks/8/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [SubResource("hitbox_attack_1")]
-}
-tracks/9/type = "value"
-tracks/9/imported = false
-tracks/9/enabled = true
-tracks/9/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:position")
-tracks/9/interp = 1
-tracks/9/loop_wrap = true
-tracks/9/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
 "values": [Vector2(-41, 20)]
 }
-tracks/10/type = "method"
-tracks/10/imported = false
-tracks/10/enabled = true
-tracks/10/path = NodePath(".")
-tracks/10/interp = 1
-tracks/10/loop_wrap = true
-tracks/10/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackBegin"
-}]
-}
-tracks/11/type = "method"
-tracks/11/imported = false
-tracks/11/enabled = true
-tracks/11/path = NodePath(".")
-tracks/11/interp = 1
-tracks/11/loop_wrap = true
-tracks/11/keys = {
-"times": PackedFloat32Array(0.333333),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackEnd"
-}]
-}
-
 [sub_resource type="RectangleShape2D" id="hitbox_attack_2"]
 size = Vector2(133, 43)
 
@@ -350,85 +306,42 @@ tracks/5/keys = {
 "update": 1,
 "values": [Vector2(-50, 40), Vector2(0, 0)]
 }
-tracks/6/type = "method"
+tracks/6/type = "value"
 tracks/6/imported = false
 tracks/6/enabled = true
-tracks/6/path = NodePath(".")
+tracks/6/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:disabled")
 tracks/6/interp = 1
 tracks/6/loop_wrap = true
 tracks/6/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackSwingSound"
-}]
-}
-tracks/7/type = "value"
-tracks/7/imported = false
-tracks/7/enabled = true
-tracks/7/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:disabled")
-tracks/7/interp = 1
-tracks/7/loop_wrap = true
-tracks/7/keys = {
 "times": PackedFloat32Array(0, 0.066667, 0.233333),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
 "values": [true, false, true]
 }
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:shape")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [SubResource("hitbox_attack_2")]
+}
 tracks/8/type = "value"
 tracks/8/imported = false
 tracks/8/enabled = true
-tracks/8/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:shape")
+tracks/8/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:position")
 tracks/8/interp = 1
 tracks/8/loop_wrap = true
 tracks/8/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [SubResource("hitbox_attack_2")]
-}
-tracks/9/type = "value"
-tracks/9/imported = false
-tracks/9/enabled = true
-tracks/9/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:position")
-tracks/9/interp = 1
-tracks/9/loop_wrap = true
-tracks/9/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
 "values": [Vector2(-42.25, 41.5)]
 }
-tracks/10/type = "method"
-tracks/10/imported = false
-tracks/10/enabled = true
-tracks/10/path = NodePath(".")
-tracks/10/interp = 1
-tracks/10/loop_wrap = true
-tracks/10/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackBegin"
-}]
-}
-tracks/11/type = "method"
-tracks/11/imported = false
-tracks/11/enabled = true
-tracks/11/path = NodePath(".")
-tracks/11/interp = 1
-tracks/11/loop_wrap = true
-tracks/11/keys = {
-"times": PackedFloat32Array(0.3),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackEnd"
-}]
-}
-
 [sub_resource type="RectangleShape2D" id="hitbox_attack_3"]
 size = Vector2(305, 57)
 
@@ -507,85 +420,42 @@ tracks/5/keys = {
 "update": 1,
 "values": [Vector2(-10, 40), Vector2(0, 0)]
 }
-tracks/6/type = "method"
+tracks/6/type = "value"
 tracks/6/imported = false
 tracks/6/enabled = true
-tracks/6/path = NodePath(".")
+tracks/6/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:disabled")
 tracks/6/interp = 1
 tracks/6/loop_wrap = true
 tracks/6/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackSwingSound"
-}]
-}
-tracks/7/type = "value"
-tracks/7/imported = false
-tracks/7/enabled = true
-tracks/7/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:disabled")
-tracks/7/interp = 1
-tracks/7/loop_wrap = true
-tracks/7/keys = {
 "times": PackedFloat32Array(0, 0.033333, 0.166667),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
 "values": [true, false, true]
 }
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:shape")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [SubResource("hitbox_attack_3")]
+}
 tracks/8/type = "value"
 tracks/8/imported = false
 tracks/8/enabled = true
-tracks/8/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:shape")
+tracks/8/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:position")
 tracks/8/interp = 1
 tracks/8/loop_wrap = true
 tracks/8/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [SubResource("hitbox_attack_3")]
-}
-tracks/9/type = "value"
-tracks/9/imported = false
-tracks/9/enabled = true
-tracks/9/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:position")
-tracks/9/interp = 1
-tracks/9/loop_wrap = true
-tracks/9/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
 "values": [Vector2(-10, 41.71)]
 }
-tracks/10/type = "method"
-tracks/10/imported = false
-tracks/10/enabled = true
-tracks/10/path = NodePath(".")
-tracks/10/interp = 1
-tracks/10/loop_wrap = true
-tracks/10/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackBegin"
-}]
-}
-tracks/11/type = "method"
-tracks/11/imported = false
-tracks/11/enabled = true
-tracks/11/path = NodePath(".")
-tracks/11/interp = 1
-tracks/11/loop_wrap = true
-tracks/11/keys = {
-"times": PackedFloat32Array(0.3),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackEnd"
-}]
-}
-
 [sub_resource type="RectangleShape2D" id="hitbox_attack_4"]
 size = Vector2(280, 74)
 
@@ -664,85 +534,42 @@ tracks/5/keys = {
 "update": 1,
 "values": [Vector2(-45, 40), Vector2(0, 0)]
 }
-tracks/6/type = "method"
+tracks/6/type = "value"
 tracks/6/imported = false
 tracks/6/enabled = true
-tracks/6/path = NodePath(".")
+tracks/6/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:disabled")
 tracks/6/interp = 1
 tracks/6/loop_wrap = true
 tracks/6/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackSwingSound"
-}]
-}
-tracks/7/type = "value"
-tracks/7/imported = false
-tracks/7/enabled = true
-tracks/7/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:disabled")
-tracks/7/interp = 1
-tracks/7/loop_wrap = true
-tracks/7/keys = {
 "times": PackedFloat32Array(0, 0.066667, 0.2),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
 "values": [true, false, true]
 }
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:shape")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [SubResource("hitbox_attack_4")]
+}
 tracks/8/type = "value"
 tracks/8/imported = false
 tracks/8/enabled = true
-tracks/8/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:shape")
+tracks/8/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:position")
 tracks/8/interp = 1
 tracks/8/loop_wrap = true
 tracks/8/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [SubResource("hitbox_attack_4")]
-}
-tracks/9/type = "value"
-tracks/9/imported = false
-tracks/9/enabled = true
-tracks/9/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:position")
-tracks/9/interp = 1
-tracks/9/loop_wrap = true
-tracks/9/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
 "values": [Vector2(-55, 38)]
 }
-tracks/10/type = "method"
-tracks/10/imported = false
-tracks/10/enabled = true
-tracks/10/path = NodePath(".")
-tracks/10/interp = 1
-tracks/10/loop_wrap = true
-tracks/10/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackBegin"
-}]
-}
-tracks/11/type = "method"
-tracks/11/imported = false
-tracks/11/enabled = true
-tracks/11/path = NodePath(".")
-tracks/11/interp = 1
-tracks/11/loop_wrap = true
-tracks/11/keys = {
-"times": PackedFloat32Array(0.383333),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnAttackEnd"
-}]
-}
-
 [sub_resource type="Animation" id="death"]
 resource_name = "death"
 length = 1.1
@@ -818,57 +645,42 @@ tracks/5/keys = {
 "update": 1,
 "values": [Vector2(0, -90)]
 }
-tracks/6/type = "method"
+tracks/6/type = "value"
 tracks/6/imported = false
 tracks/6/enabled = true
-tracks/6/path = NodePath(".")
+tracks/6/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:disabled")
 tracks/6/interp = 1
 tracks/6/loop_wrap = true
 tracks/6/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"OnDeathVoice"
-}]
+"update": 1,
+"values": [true]
 }
 tracks/7/type = "value"
 tracks/7/imported = false
 tracks/7/enabled = true
-tracks/7/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:disabled")
+tracks/7/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:shape")
 tracks/7/interp = 1
 tracks/7/loop_wrap = true
 tracks/7/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [true]
+"values": [SubResource("hitbox_rest")]
 }
 tracks/8/type = "value"
 tracks/8/imported = false
 tracks/8/enabled = true
-tracks/8/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:shape")
+tracks/8/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:position")
 tracks/8/interp = 1
 tracks/8/loop_wrap = true
 tracks/8/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [SubResource("hitbox_rest")]
-}
-tracks/9/type = "value"
-tracks/9/imported = false
-tracks/9/enabled = true
-tracks/9/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:position")
-tracks/9/interp = 1
-tracks/9/loop_wrap = true
-tracks/9/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="fall"]
 resource_name = "fall"
 length = 0.45
@@ -980,7 +792,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="hurt"]
 resource_name = "hurt"
 length = 0.225
@@ -1092,7 +903,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="idle1"]
 resource_name = "idle1"
 length = 0.7
@@ -1205,7 +1015,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="idle2"]
 resource_name = "idle2"
 length = 0.8
@@ -1317,7 +1126,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="jump"]
 resource_name = "jump"
 length = 0.508333
@@ -1429,7 +1237,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="jump_2"]
 resource_name = "jump_2"
 length = 0.275
@@ -1541,7 +1348,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="run"]
 resource_name = "run"
 length = 0.291667
@@ -1654,7 +1460,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="skill_hmz"]
 resource_name = "skill_hmz"
 length = 1.5
@@ -1766,7 +1571,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="skill_hyjj"]
 resource_name = "skill_hyjj"
 length = 0.775
@@ -1878,7 +1682,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="skill_hytj"]
 resource_name = "skill_hytj"
 length = 0.5
@@ -1990,7 +1793,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="skill_jdy"]
 resource_name = "skill_jdy"
 length = 0.55
@@ -2102,7 +1904,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="skill_jdy_2"]
 resource_name = "skill_jdy_2"
 length = 0.55
@@ -2214,7 +2015,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="skill_lyfb"]
 resource_name = "skill_lyfb"
 length = 0.35
@@ -2326,7 +2126,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="skill_lys"]
 resource_name = "skill_lys"
 length = 0.333333
@@ -2438,7 +2237,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="skill_qsez"]
 resource_name = "skill_qsez"
 length = 0.6
@@ -2550,7 +2348,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="skill_slz"]
 resource_name = "skill_slz"
 length = 0.342105
@@ -2662,7 +2459,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="skill_zz"]
 resource_name = "skill_zz"
 length = 1.016667
@@ -2774,7 +2570,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [sub_resource type="Animation" id="walk"]
 resource_name = "walk"
 length = 0.8
@@ -2887,7 +2682,6 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
-
 [resource]
 _data = {
 &"RESET": SubResource("RESET"),

@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://bhpujkcrdsfwg" path="res://TheGame/GameScripts/Entity/Monsters/HuaguoshanMonkey/HuaguoshanMonkeyEntity.cs" id="1_script"]
 [ext_resource type="SpriteFrames" uid="uid://di0jrkwb1ad8p" path="res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_animations.tres" id="2_frames"]
 [ext_resource type="AnimationLibrary" uid="uid://o8gq56k2o2gr" path="res://TheGame/Entitys/Animations/huaguoshan_monkey_anim_library.tres" id="3_lib"]
-[ext_resource type="AnimationNodeStateMachine" uid="uid://c4seyh1vbcds4" path="res://TheGame/Entitys/Animations/huaguoshan_monkey_animation_tree.tres" id="4_tree"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/HurtBox.cs" id="5_hurtbox"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
@@ -17,7 +16,7 @@ height = 62.0
 [sub_resource type="RectangleShape2D" id="detector_sight"]
 size = Vector2(600, 200)
 
-[node name="HuaguoshanMonkeyEntity" type="CharacterBody2D" unique_id=1348517012 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_AnimTree", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[node name="HuaguoshanMonkeyEntity" type="CharacterBody2D" unique_id=1348517012 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 script = ExtResource("1_script")
@@ -25,7 +24,6 @@ m_Detector = NodePath("m_Detector")
 MonsterId = 1
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
-m_AnimTree = NodePath("m_AnimTree")
 m_HurtBox = NodePath("m_HurtBox")
 m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
 m_HitBoxRoot = NodePath("m_HitBoxRoot")
@@ -33,7 +31,7 @@ m_HitBoxRoot = NodePath("m_HitBoxRoot")
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1937697229]
 position = Vector2(0, -13)
 sprite_frames = ExtResource("2_frames")
-animation = &"attack_1"
+animation = &""
 offset = Vector2(1.5, -0.5)
 
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1842145312]
@@ -75,7 +73,3 @@ debug_color = Color(1, 1, 0, 0.1)
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=733591014]
 libraries/ = ExtResource("3_lib")
-
-[node name="m_AnimTree" type="AnimationTree" parent="." unique_id=279072695]
-tree_root = ExtResource("4_tree")
-anim_player = NodePath("../m_AnimPlayer")

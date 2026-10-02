@@ -159,6 +159,8 @@ m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tre
 
 ## 动画架构迁移（2026-09-28：AnimationPlayer + AnimationTree，角色属性驱动）
 
+> **2026-10-01 已被取代**：AnimationTree 与表达式事实面已移除，改为"代码身体状态机（GF.Fsm 物理帧驱动）+ AnimationPlayer 直驱"——最终形态为**动画纯数据**（帧/特效/判定盒值轨道，无方法轨道、从不调用代码）：动作时长 OnInit 读动画长度由状态计时，音效由状态钩子触发（音源查表），两份 `*_animation_tree.tres` 已删除。现行契约见 `GameScripts/Entity/AGENTS.md`「状态与动画」；本节保留作迁移记录。
+
 角色动画从"AnimatedSprite2D + C# 状态机（GF.Fsm）"迁到"AnimationPlayer 属性轨道 + AnimationTree 表达式状态机"，时序/帧数据与旧项目 Role1.tscn 逐帧一致：
 
 - **身体/武器层**：AnimatedSprite2D + SpriteFrames → `Sprite2D(hframes=6, vframes=14)`，帧号即 6×14 网格全局序号——与旧 `Action/RoleBody:frame` / `Action/RoleEquipment:frame` 轨道完全同构，换装改为换 Texture。
@@ -202,7 +204,7 @@ python Tools/LegacyMigration/gen_animations.py
 
 ### 判定盒（2026-09-30 审查修订：几何与开关全部是动画值轨道，同旧项目）
 
-旧项目"一招一次命中"= 攻击动画里 keyframe HitBox 的 **shape / position / disabled**（Role1.tscn 实测）+ `Area2D.area_entered` 只在进入重叠时触发；朝向由 `base_damagebox.scale.x` 翻转。新工程同构：`m_HitBoxRoot`（朝向镜像容器，C# 只翻 scale.x）→ `m_HitBox`（Area2D，**恒在原点**）→ `CollisionShape2D`——三条值轨道全部落在形状节点上（`…/CollisionShape2D` 的 `:disabled` / `:shape` / `:position`，与旧 `base_damagebox/HitBox/HitBox` 逐级对应；容器负缩放会把形状节点偏移一并镜像，冒烟实测命中正常）。库里每个动画带齐三条（非攻击动画写静止值——轨道完备性，等效"reset 轨道"：切到任何动画首帧写回安全值），动画里写**原生朝左**坐标（前方 = 负 X）。出招装填 `OnAttackBegin` / 收招推进 `OnAttackEnd` 是方法轨道（只管数值包，几何无关）。离开攻击动画时 AnimationMixer 自动还原值轨道捕获初值——受击/死亡打断出招时判定盒自愈复位。C# 另按目标去重（`AttackData.TryRegisterHit`）。
+旧项目"一招一次命中"= 攻击动画里 keyframe HitBox 的 **shape / position / disabled**（Role1.tscn 实测）+ `Area2D.area_entered` 只在进入重叠时触发；朝向由 `base_damagebox.scale.x` 翻转。新工程同构：`m_HitBoxRoot`（朝向镜像容器，C# 只翻 scale.x）→ `m_HitBox`（Area2D，**恒在原点**）→ `CollisionShape2D`——三条值轨道全部落在形状节点上（`…/CollisionShape2D` 的 `:disabled` / `:shape` / `:position`，与旧 `base_damagebox/HitBox/HitBox` 逐级对应；容器负缩放会把形状节点偏移一并镜像，冒烟实测命中正常）。库里每个动画带齐三条（非攻击动画写静止值——轨道完备性：AnimationPlayer 直驱不回卷轨道，切到任何动画首帧写回安全值，受击/死亡打断出招时判定盒随之复位），动画里写**原生朝左**坐标（前方 = 负 X）。出招装填/收招的数值包归 C# 身体状态机（2026-10-01 起不再走 `OnAttackBegin`/`OnAttackEnd` 方法轨道）。C# 另按目标去重（`AttackData.TryRegisterHit`）。
 
 判定窗口沿用旧 disabled 轨道；**几何不再照搬旧形状**（旧胶囊 r76/323 宽矩形远大于视觉棒击范围，"没碰到就受击"的主因），纵向与后缘按判定窗内**武器层像素包围盒**推导（各外扩 10px）；**前缘统一放长到 -130"追击线"**——连段期间每次命中受击方被击退 ~17px（旧 hurtBack × 30 同值），不放长第三段起就够不着；旧项目靠超大方形盒（前缘 121~175）吸收同一漂移，这里用显式常量表达。attack_3/4 旋斩含身后来向帧，attack_4 的正向帧 f55 在旧窗开启之前、几何将其并入。推导与实测数值登记在 `gen_animations.py` 的 `WUKONG_HITBOX` / `MONKEY_HITBOX` 注释：
 

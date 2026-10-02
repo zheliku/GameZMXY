@@ -19,7 +19,7 @@ namespace GameLogic.Entity.Monsters.AI
 	///   Chase/Attack/Hold → Patrol 目标失效或丢失（实体按 LoseTargetTime 判定）
 	///   任意 → CcLocked → Chase/Patrol ；任意 → Death（终态）
 	/// </code>
-	/// 本状态机只写意图（Move / Face / RequestAttack），动画由 AnimationTree 读实体事实决定。
+	/// 本状态机只写意图（Move / Face / RequestAttack）；动作、受击与动画由身体状态机（Monsters/Body/）决定。
 	/// </summary>
 	public abstract class MonsterAiState : FsmState<IMonsterAiAgent>
 	{

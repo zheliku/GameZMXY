@@ -19,7 +19,7 @@ using GodotGameFramework;
 /// 阶段（事件驱动，时间只作超时兜底）：
 ///  0 视野外   猴子挪到英雄右侧 600px → 应当巡逻（Patrol/Idle），不追击；
 ///  1 进视野   3s 时挪到右侧 150px → Chase → Attack，出招 attack_1 并打中英雄；
-///  2 转身     打中英雄后，下一次出招的当帧把英雄瞬移到猴子身后 → 出招与收招硬直期间朝向不变、动画一直是
+///  2 转身     打中英雄后，下一次出招的当帧把英雄瞬移到猴子身后 → 出招与收招硬直期间朝向不变、出招中身体/动画一直是
 ///             Attack/attack_1；硬直结束后 1s 内转向英雄；
 ///  3 平台     英雄钉在猴子前方高 120px 的固定点 AirDuration 秒 → 不出招、AI 进 Hold、在英雄 x 两侧来回踱步；
 ///  4 落地     放英雄落地 → 猴子回 Attack 并出招；
@@ -83,7 +83,6 @@ public sealed class MonsterAiSmokeScenario
 
 	private readonly HeroEntity m_Hero;
 	private readonly MonsterEntity m_Monster;
-	private readonly AnimationTree m_MonsterTree;
 	private readonly int m_MonsterId;
 
 	private Phase m_Phase = Phase.OutOfSight;
@@ -118,11 +117,10 @@ public sealed class MonsterAiSmokeScenario
 	// 丢失目标阶段
 	private bool m_LostTarget;
 
-	public MonsterAiSmokeScenario(HeroEntity hero, MonsterEntity monster, AnimationTree monsterTree)
+	public MonsterAiSmokeScenario(HeroEntity hero, MonsterEntity monster)
 	{
 		m_Hero = hero;
 		m_Monster = monster;
-		m_MonsterTree = monsterTree;
 		m_MonsterId = monster.Id;
 		GF.Event.Subscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
 		GF.Event.Subscribe(MonsterDiedEventArgs.EventId, OnMonsterDied);
@@ -254,8 +252,8 @@ public sealed class MonsterAiSmokeScenario
 
 		RequireInOrder(failures, m_AiObserved.ConvertAll(o => o.Ai), "AI", "Chase", "Attack", "Hold", "Attack", "Patrol",
 			"CcLocked", "Death");
-		RequireInOrder(failures, m_AnimObserved.ConvertAll(o => o.Anim), "猴子动画", "Ground/run", "Attack/attack_1",
-			"Hurt", "Death");
+		RequireInOrder(failures, m_AnimObserved.ConvertAll(o => o.Anim), "猴子身体/动画", "Move/run", "Attack/attack_1",
+			"Recovery/idle", "Hurt/hurt", "Death/death");
 
 		if (m_HeroHitsByMonster == 0)
 		{
@@ -324,7 +322,7 @@ public sealed class MonsterAiSmokeScenario
 				return;
 			}
 
-			if (m_Monster.AttackSegment >= 0 && !CurrentMonsterAnim().StartsWith("Attack"))
+			if (m_Monster.AttackSegment >= 0 && !CurrentMonsterAnim().StartsWith("Attack/attack_"))
 			{
 				m_Failures.Add($"出招期间动画被切走：{CurrentMonsterAnim()}（t={t:F2}）");
 			}
@@ -439,9 +437,10 @@ public sealed class MonsterAiSmokeScenario
 		}
 	}
 
+	/// <summary>猴子观测点 `身体状态/树当前节点`（如 Attack/attack_1、Recovery/idle）。</summary>
 	private string CurrentMonsterAnim()
 	{
-		return SmokeTestDriver.CurrentStatePath(m_MonsterTree);
+		return SmokeTestDriver.ObservePath(m_Monster.BodyStateName, m_Monster.CurrentAnim);
 	}
 
 	private void Sample(double t)
@@ -468,7 +467,7 @@ public sealed class MonsterAiSmokeScenario
 			}
 
 			GD.Print($"SMOKE-AI[{t:F2}] AI {ai}  (dx={m_Hero.GlobalPosition.X - m_Monster.GlobalPosition.X:F0} "
-				+ $"move={m_Monster.MoveInput} seg={m_Monster.AttackSegment} hurt={m_Monster.Hurt} dead={m_Monster.Dead})");
+				+ $"move={m_Monster.MoveIntent} body={m_Monster.BodyStateName} seg={m_Monster.AttackSegment} dead={m_Monster.Dead})");
 		}
 
 		string anim = CurrentMonsterAnim();

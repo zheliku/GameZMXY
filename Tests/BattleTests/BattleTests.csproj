@@ -42,6 +42,10 @@
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.Text.ITextHelper.cs" Link="Linked\Framework\Utility.Text.ITextHelper.cs" />
     <!-- M5 怪物 AI：Monsters/AI 目录是纯 C#（只依赖 GF.Fsm 纯 C# 层），状态机用框架真实实现驱动 -->
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Monsters\AI\**\*.cs" Link="Linked\AI\%(Filename)%(Extension)" />
+    <!-- 2026-10-01 身体状态机：Entity/Body + Heroes/Body + Monsters/Body 是纯 C#（GF.Fsm 纯 C# 层 + Godot 值类型），物理帧由测试按 BodyFsm.Tick 驱动 -->
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Body\*.cs" Link="Linked\Body\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Body\*.cs" Link="Linked\HeroBody\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Monsters\Body\*.cs" Link="Linked\MonsterBody\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Fsm\*.cs" Link="Linked\Fsm\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Base\Variable\*.cs" Link="Linked\Framework\Variable\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Base\DataStruct\TypeNamePair.cs" Link="Linked\Framework\TypeNamePair.cs" />

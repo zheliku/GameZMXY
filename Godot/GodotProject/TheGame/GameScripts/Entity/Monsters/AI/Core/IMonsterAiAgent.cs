@@ -5,8 +5,8 @@ namespace GameLogic.Entity.Monsters.AI
 	/// 不接触节点、场景树与随机单例——AI 目录是纯 C#，可脱离引擎单测（Tests/BattleTests）。
 	///
 	/// 分工（红线 7）：AI 只决定"想干什么"（移动意图 / 朝向 / 出招请求）；
-	/// 动画选择仍由该怪物自己的 AnimationTree 读事实面（MoveInput / AttackSegment / Hurt / Dead）完成，
-	/// AI 状态名与动画状态名互不耦合。
+	/// 受击、死亡、出招、收招硬直与动画播放由怪物的**身体状态机**（Monsters/Body/）决定——
+	/// AI 只读它的结果（IsCcLocked / IsAttacking / IsDead），AI 状态名与身体状态、动画互不耦合。
 	/// </summary>
 	public interface IMonsterAiAgent
 	{
@@ -51,7 +51,7 @@ namespace GameLogic.Entity.Monsters.AI
 		void Face(int dir);
 
 		/// <summary>
-		/// 请求出招（招式下标）。宿主在安全时机提交为 AttackSegment 事实，提交时转向目标并计入冷却；
+		/// 请求出招（招式下标）。身体状态机在下一物理帧提交（进入出招状态，转向目标并计入冷却）；
 		/// 当前不可出招（受控/死亡/已在出招）时返回 false。
 		/// </summary>
 		bool RequestAttack(int index);

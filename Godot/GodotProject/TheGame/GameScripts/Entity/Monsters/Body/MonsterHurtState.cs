@@ -1,0 +1,51 @@
+using GameFramework.Fsm;
+
+namespace GameLogic.Entity.Monsters.Body
+{
+	/// <summary>
+	/// 受击硬直：生效时施加击退速度、从头播 hurt 动画、播受击语音；**硬直时长 = hurt 动画长度**
+	///（OnInit 读进 Params，状态计时）。期间保持击退速度、作废 AI 出招请求。
+	/// 硬直中再受击：重新生效（重置击退、计时，从头重播动画）。结束回 Move。
+	/// </summary>
+	public sealed class MonsterHurtState : MonsterBodyState
+	{
+		/// <summary>硬直剩余秒</summary>
+		private float m_Left;
+
+		/// <summary>连续受击由本状态自己处理（见 Tick），不走基类打断</summary>
+		protected override bool HurtInterrupts => false;
+
+		protected override void Enter(IFsm<IMonsterBody> fsm, IMonsterBody body)
+		{
+			body.MoveIntent = 0;
+			ApplyHurt(body);
+		}
+
+		protected override void Tick(IFsm<IMonsterBody> fsm, IMonsterBody body, float dt)
+		{
+			body.TakeAttackRequest();
+			if (body.HasPendingHurt)
+			{
+				ApplyHurt(body);
+			}
+
+			if (Elapsed(m_Left))
+			{
+				ChangeState<MonsterMoveState>(fsm);
+				return;
+			}
+
+			m_Left -= dt;
+			ApplyGravity(body, dt);
+		}
+
+		/// <summary>受击生效：击退速度 + 计时重置 + 从头播 hurt 动画 + 受击音（取击退即消费）。</summary>
+		private void ApplyHurt(IMonsterBody body)
+		{
+			body.Velocity = body.TakePendingHurt();
+			m_Left = body.Params.HurtTime;
+			body.RestartAnim(MonsterAnims.Hurt);
+			body.PlayHurtSound();
+		}
+	}
+}

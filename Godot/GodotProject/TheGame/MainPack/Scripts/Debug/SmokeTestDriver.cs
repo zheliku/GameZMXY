@@ -14,11 +14,11 @@ using GodotGameFramework;
 
 /// <summary>
 /// 冒烟测试驱动器（开发工具）：仅当以 `-- --smoketest` 启动时生效，平时零开销惰性。
-/// 自动注入输入（普攻连打 / 双击跑 / 受击 / 一段跳 / 二段跳），并断言悟空 AnimationTree
-/// 的状态流转，打印 `SMOKE PASS` / `SMOKE FAIL`（失败附完整观察序列）。
+/// 自动注入输入（普攻连打 / 双击跑 / 受击 / 一段跳 / 二段跳），并断言悟空身体状态机与
+/// AnimationPlayer 的流转，打印 `SMOKE PASS` / `SMOKE FAIL`（失败附完整观察序列）。
 ///
-/// 它验证的是"C# 属性 → 动画状态机"这条链路：断言的是 AnimationTree 里真正在播的动画节点，
-/// 不是 C# 自己的日志——所以能抓住"属性变了但动画没切"这一类问题。
+/// 它验证的是"身体状态机 → 动画播放"这条链路：观测点同时包含身体状态名与 AnimationPlayer 里真正在播的
+/// 动画，不是 C# 自己的日志——所以能抓住"状态切了但动画没切"这一类问题。
 ///
 /// 用法：S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --quit-after N -- --smoketest[=ai]
 ///   `--smoketest`     英雄控制器 + M4 命中（猴子 AI 冻结为沙包，断言确定；N = 1500）
@@ -47,13 +47,14 @@ public partial class SmokeTestDriver : Node
 	};
 
 	/// <summary>
-	/// 断言必须观察到（顺序也必须一致）的状态，格式 `组/动画`（主图单状态如 Hurt 没有斜杠）。
+	/// 断言必须观察到（顺序也必须一致）的观测点，格式 `身体状态/动画节点`（扁平树：节点 = 动画名）。
+	/// 同时断言"身体状态机在做什么"与"树里真正在播什么"一致——两者任一错位都会缺项。
 	/// 覆盖：连段 1→4、双击跑、受击、一段跳、下落、二段跳、落地回待机。
 	/// </summary>
 	private static readonly string[] Required =
 	{
 		"Attack/attack_1", "Attack/attack_2", "Attack/attack_3", "Attack/attack_4",
-		"Ground/run", "Hurt", "Air/jump", "Air/fall", "Air/jump_2", "Ground/Idle/idle1",
+		"Ground/run", "Hurt/hurt", "Air/jump", "Air/fall", "Air/jump_2", "Ground/idle1",
 	};
 
 	/// <summary>顺序约束：[A, B] 表示 A 必须先于 B 出现；*Last 表示取该状态的**最后**一次出现</summary>
@@ -63,11 +64,11 @@ public partial class SmokeTestDriver : Node
 		("Attack/attack_2", "Attack/attack_3", false, false),
 		("Attack/attack_3", "Attack/attack_4", false, false),
 		("Attack/attack_4", "Ground/run", false, false),
-		("Ground/run", "Hurt", false, false),
-		("Hurt", "Air/jump", false, false),
+		("Ground/run", "Hurt/hurt", false, false),
+		("Hurt/hurt", "Air/jump", false, false),
 		("Air/jump", "Air/jump_2", false, false),
 		("Air/jump", "Air/fall", false, true),      // 出生时也会下落，取最后一次 fall（起跳后的下落）
-		("Air/jump_2", "Ground/Idle/idle1", false, true), // 落地后回待机，取最后一次 idle1
+		("Air/jump_2", "Ground/idle1", false, true), // 落地后回待机，取最后一次 idle1
 	};
 
 	private const double EndTime = 10.0;
@@ -76,7 +77,6 @@ public partial class SmokeTestDriver : Node
 	/// <summary>hero 场景沙包猴子相对悟空的水平站位（M4 原出生点 400 − 悟空 300）</summary>
 	private const float SandbagOffset = 100f;
 
-	private AnimationTree m_Tree;
 	private HeroEntity m_Hero;
 
 	// ---- M4 命中链路观测（悟空连打面前的猴子）----
@@ -137,38 +137,32 @@ public partial class SmokeTestDriver : Node
 			SetPhysicsProcess(false);
 		}
 
-		// 排在实体与 AnimationTree 之后处理：采样到的才是"本帧更新完"的状态，
-		// 否则读到的永远是上一帧的树状态（会误判成"动画晚一帧"）。
+		// 排在实体与 AnimationPlayer 之后处理：采样到的才是"本帧更新完"的状态，
+		// 否则读到的永远是上一帧的播放状态（会误判成"动画晚一帧"）。
 		ProcessPriority = 1000;
 	}
 
 	public override void _PhysicsProcess(double delta)
 	{
-		if (m_Tree == null)
+		if (m_Hero == null)
 		{
 			m_WaitTime += delta;
-			Godot.Collections.Array<Node> found = GetTree().Root.FindChildren("*", "AnimationTree", true, false);
-			if (found.Count == 0)
+			if (m_WaitTime > FindTimeout)
 			{
-				if (m_WaitTime > FindTimeout)
-				{
-					Fail("5 秒内没有找到 AnimationTree（游戏没起来？）");
-				}
-
-				return;
+				Fail("5 秒内没有找到英雄（游戏没起来？）");
 			}
 
-			// 场上有多个角色（M4 起有沙包猴子），按宿主类型找英雄的树
-			foreach (Node node in found)
+			// FindChildren 的类型过滤只认引擎原生类名（C# 脚本类名不匹配），按 CharacterBody2D 取再判脚本类型
+			foreach (Node node in GetTree().Root.FindChildren("*", "CharacterBody2D", true, false))
 			{
-				if (node is AnimationTree tree && tree.GetParent() is HeroEntity hero)
+				if (node is HeroEntity hero)
 				{
-					m_Tree = tree;
 					m_Hero = hero;
+					break;
 				}
 			}
 
-			if (m_Tree == null)
+			if (m_Hero == null)
 			{
 				return;
 			}
@@ -270,7 +264,7 @@ public partial class SmokeTestDriver : Node
 				return;
 			}
 
-			m_AiScenario = new MonsterAiSmokeScenario(m_Hero, m_Monster, m_Monster.AnimTree);
+			m_AiScenario = new MonsterAiSmokeScenario(m_Hero, m_Monster);
 			m_AiStartTime = m_Time;
 			GD.Print("SMOKE-AI: 开始怪物 AI 场景");
 		}
@@ -297,7 +291,7 @@ public partial class SmokeTestDriver : Node
 
 	private void Sample()
 	{
-		string path = CurrentStatePath(m_Tree);
+		string path = ObservePath(m_Hero.BodyStateName, m_Hero.CurrentAnim);
 		if (path.Length == 0 || path == m_LastPath)
 		{
 			return;
@@ -305,46 +299,16 @@ public partial class SmokeTestDriver : Node
 
 		m_LastPath = path;
 		m_Observed.Add((m_Time, path));
-		GD.Print($"SMOKE[{m_Time:F2}] 动画状态 {path}  (属性 {Facts()})");
+		GD.Print($"SMOKE[{m_Time:F2}] 身体/动画 {path}  ({Facts()})");
 	}
 
 	/// <summary>
-	/// 树当前的状态路径：从主图逐层下钻（主图 → 组子机 → 组内子机如 Idle），
-	/// 直到当前节点不是状态机为止。例：Ground/Idle/idle1、Attack/attack_2、Hurt。
+	/// 观测点 = `身体状态/播放器当前动画`（如 Attack/attack_2、Ground/idle1）。
+	/// 动画为空（播放器还没播过）时返回空串，不计入观测。
 	/// </summary>
-	public static string CurrentStatePath(AnimationTree tree)
+	public static string ObservePath(string bodyState, string anim)
 	{
-		if (tree == null || !IsInstanceValid(tree))
-		{
-			return "";
-		}
-
-		if (tree.Get("parameters/playback").As<AnimationNodeStateMachinePlayback>() is not { } playback)
-		{
-			return "";
-		}
-
-		List<string> names = new();
-		string prefix = "";
-		for (int depth = 0; depth < 4; depth++)
-		{
-			string node = playback.GetCurrentNode().ToString();
-			if (node.Length == 0)
-			{
-				break;
-			}
-
-			names.Add(node);
-			prefix += node + "/";
-			if (tree.Get($"parameters/{prefix}playback").As<AnimationNodeStateMachinePlayback>() is not { } child)
-			{
-				break;
-			}
-
-			playback = child;
-		}
-
-		return string.Join("/", names);
+		return anim.Length == 0 ? "" : $"{bodyState}/{anim}";
 	}
 
 	/// <summary>
@@ -368,12 +332,12 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
-	/// <summary>角色属性快照（HeroEntity 的事实面），用于日志与调试。</summary>
+	/// <summary>英雄身体事实快照，用于日志与调试。</summary>
 	private string Facts()
 	{
-		return $"move={m_Hero.MoveInput} run={m_Hero.Running} jump={m_Hero.JumpCount} seg={m_Hero.AttackSegment} "
-			+ $"hurt={m_Hero.Hurt} emote={m_Hero.Emoting} dead={m_Hero.Dead} "
-			+ $"air={m_Hero.Airborne} rise={m_Hero.Rising}";
+		return $"move={m_Hero.Input.MoveAxis} run={m_Hero.Input.Running} jump={m_Hero.JumpCount} "
+			+ $"seg={m_Hero.AttackSegment} combo={m_Hero.ComboIndex} dead={m_Hero.Dead} "
+			+ $"floor={m_Hero.IsOnFloor()} vy={m_Hero.Velocity.Y:F0}";
 	}
 
 	private void Finish()
@@ -399,6 +363,7 @@ public partial class SmokeTestDriver : Node
 
 		CheckEffectLayer(failures);
 		CheckLocomotionFrames(failures);
+		CheckAttackFinishTiming(failures);
 		CheckCombat(failures);
 
 		if (failures.Count == 0)
@@ -413,8 +378,8 @@ public partial class SmokeTestDriver : Node
 
 	/// <summary>
 	/// 特效层检查：待机时必须是"空白"状态（动画 empty、帧 0、scale 1）。
-	/// 抓的是"AnimationTree 切到不含某属性轨道的动画时该属性被写成垃圾值"这一类问题
-	/// （旧库漏轨道时实测 scale 被写成 1e-05，棍气不可见）。
+	/// 抓的是"动画缺某属性轨道、切换后残留上一个动画写入的值"这一类问题
+	/// （旧库漏轨道时实测 scale 被写成 1e-05，棍气不可见；现在靠轨道完备性校验 + 此处兜底）。
 	/// </summary>
 	private void CheckEffectLayer(List<string> failures)
 	{
@@ -457,6 +422,29 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
+	/// <summary>
+	/// 连段切换时机检查：段与段之间必须间隔约一个攻击动画长度（悟空 attack_*.tres 长 0.35s，
+	/// 留 0.05s 容差）。抓"没等动画播完就提前切段"这一类回归（收招统一走 animation_finished）。
+	/// </summary>
+	private void CheckAttackFinishTiming(List<string> failures)
+	{
+		for (int seg = 1; seg < 4; seg++)
+		{
+			int indexA = FirstIndex($"Attack/attack_{seg}");
+			int indexB = FirstIndex($"Attack/attack_{seg + 1}");
+			if (indexA < 0 || indexB < 0)
+			{
+				continue;
+			}
+
+			double gap = m_Observed[indexB].Time - m_Observed[indexA].Time;
+			if (gap < 0.30)
+			{
+				failures.Add($"连段 {seg}→{seg + 1} 间隔 {gap:F2}s < 动画长度 0.35s（没等播完就切段？）");
+			}
+		}
+	}
+
 	/// <summary>沙包猴子在英雄之后异步生成：找到英雄后再逐帧找，直到出现为止。</summary>
 	private void FindMonster()
 	{
@@ -465,9 +453,9 @@ public partial class SmokeTestDriver : Node
 			return;
 		}
 
-		foreach (Node node in GetTree().Root.FindChildren("*", "AnimationTree", true, false))
+		foreach (Node node in GetTree().Root.FindChildren("*", "CharacterBody2D", true, false))
 		{
-			if (node.GetParent() is MonsterEntity { IsShown: true } monster)
+			if (node is MonsterEntity { IsShown: true } monster)
 			{
 				m_Monster = monster;
 				if (!m_AiMode)
@@ -581,7 +569,7 @@ public partial class SmokeTestDriver : Node
 	private void StopDriving(bool failed)
 	{
 		SetPhysicsProcess(false);
-		if (m_Tree != null)
+		if (m_Hero != null)
 		{
 			GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
 		}

@@ -419,7 +419,7 @@ def gen_monkey():
 
 
 # --------------------------------------------------------------------------
-# huaguoshan_monkey AnimationLibrary（M4）：与悟空同构——AnimationPlayer 轨道驱动一切，AnimationTree 表达式选动画
+# huaguoshan_monkey AnimationLibrary（M4）：与悟空同构——AnimationPlayer 轨道驱动一切，身体状态机直驱播放
 #
 # 旧 Monster_1.tscn 的 mr_player（speed_scale=1，内部时间 = 真实秒）用轨道驱动 AnimatedSprite2D mr_ani：
 # animation / frame / offset + 判定开关 HitBox:disabled。SpriteFrames 条目是"重复图片撑时长"
@@ -476,8 +476,6 @@ def build_monkey_library():
         ]
         # 判定盒几何（原生朝左坐标，容器 m_HitBoxRoot 负责镜像；猴子无武器层，沿用旧圆外接矩形）
         tracks.extend(_hitbox_geo_tracks(name, hit_track, MONKEY_HITBOX, MONKEY_HITBOX_REST, shape_res))
-        # 出招生命周期（装填/收招）
-        tracks.extend(_attack_lifecycle_tracks(name, length, MONKEY_HITBOX))
         anims.append({"name": name, "loop": loop, "length": length, "tracks": tracks})
     return anims, shape_res
 
@@ -641,15 +639,15 @@ def _fmt_value(kind, value):
 #     CollisionShape2D——与旧 base_damagebox/HitBox/HitBox 逐级对应；三条轨道全部写在
 #     形状节点上（同旧项目），容器负缩放会把形状节点的偏移一并镜像（冒烟实测命中正常；
 #     2026-09-30 曾疑其不镜像，实为调试碰撞体垫高沙袋的误诊）。
-#   * 库内每个动画带三条值轨道（轨道完备性：缺轨的属性在动画切换时会被写成垃圾值，
-#     等效于"reset 轨道"——状态机切到任何动画，首帧就写回安全值）：
+#   * 库内每个动画带三条值轨道（轨道完备性：AnimationPlayer 直驱不回卷轨道，缺轨的属性会
+#     **残留**上一个动画写入的值——每个动画首帧写回安全值，等效于"reset 轨道"）：
 #       …CollisionShape2D:shape     换判定盒矩形（库内 RectangleShape2D 子资源；
 #                                  攻击动画在判定窗前一帧换本招矩形，其余动画第 0 帧写静止矩形）
 #       …CollisionShape2D:position  判定盒中心偏移（相对角色原点），原生朝左坐标（前方 = -X，容器负责镜像）
 #       …CollisionShape2D:disabled  判定窗开关（沿用旧 disabled 轨道时序，恒关的动画写 true）
-#   * 攻击动画另有 OnAttackBegin/OnAttackEnd **方法轨道**——只负责数值包（属性快照/连段推进），
-#     与几何无关。离开攻击动画时 AnimationMixer 自动还原值轨道捕获的初值，
-#     受击/死亡打断出招时判定盒随之复位（方法轨道没有这种自愈——几何必须走值轨道）。
+#   * **无方法轨道**：动画从不调用代码。出招装填/收招的数值包归 C# 身体状态机
+#     （状态进入装填、离开归还；动作时长 = 动画长度，OnInit 读入），音效由状态钩子触发（音源查表）；
+#     判定盒的复位靠上面的轨道完备性（离开攻击动画切到任何动画，首帧写回安全值）。
 #
 # 几何推导（2026-09-30，对判定窗内各帧的**武器层**贴图做 alpha 像素包围盒）：
 #   * 纵向与后缘贴武器像素（各向外扩 10px）；
@@ -712,20 +710,10 @@ def _hitbox_geo_tracks(name, hit_track, geometry, rest, shape_res):
     ]
 
 
-def _attack_lifecycle_tracks(name, length, geometry):
-    """出招生命周期方法轨道：装填/收招（只管数值包，几何在值轨道上）。非攻击动画返回 []。"""
-    if name not in geometry:
-        return []
-    return [
-        ("", "method", [(0.0, "OnAttackBegin", [])]),
-        ("", "method", [(max(0.0, length - METHOD_PRE_BEAT), "OnAttackEnd", [])]),
-    ]
-
-
 def _append_reset_animation(anims, shape_res, hero):
     """追加 RESET（默认值动画，运行时不播；编辑器重置/停止预览时恢复默认姿势用，
     同旧项目 Role1.tscn 的 RESET 子资源 278：length=0.001、写各属性默认值）。
-    写与常规动画同集合的安全默认值；猴子的 shape 恒不写（见 _hitbox_geo_tracks 注释）。
+    写与常规动画同集合的安全默认值（轨道完备性含 RESET）。
     """
     if hero:
         tracks = [
@@ -746,8 +734,10 @@ def _append_reset_animation(anims, shape_res, hero):
             (MONKEY_BODY + ":frame", "int", [(0.0, 0)]),
             (MONKEY_BODY + ":offset", "vector2", [(0.0, (4.0, 0.0))]),
             (HITBOX_TRACK, "bool", [(0.0, True)]),
+            (HITBOX_SHAPE_TRACK, "shape", [(0.0, "hitbox_rest")]),
             (HITBOX_POS_TRACK, "vector2", [(0.0, MONKEY_HITBOX_REST["pos"])]),
         ]
+        shape_res["hitbox_rest"] = MONKEY_HITBOX_REST["size"]
     anims.append({"name": "RESET", "loop": False, "length": 0.001, "tracks": tracks})
 
 
@@ -961,17 +951,20 @@ def gen_wukong_effect():
 
 
 # --------------------------------------------------------------------------
-# wukong 合并版 AnimationLibrary（AnimationPlayer 直驱身体/武器/特效三层 + 方法轨道）
+# wukong 合并版 AnimationLibrary（AnimationPlayer 直驱身体/武器/特效三层，纯表现数据）
 #
-# 目标形态（迁移决策 2026-09-28：角色动画迁 AnimationPlayer + AnimationTree）：
+# 目标形态（2026-10-01 定稿，A 方案：动画纯数据、代码唯一时钟）：
 #   - 身体/武器层由 AnimatedSprite2D 换成 Sprite2D(hframes=6,vframes=14)，
 #     帧号就是 6x14 网格的全局序号（与旧项目 Action/RoleBody:frame 完全同构）。
 #   - 每个动画包含：
 #       m_Body:frame / m_Weapon:frame   帧轨道（离散键，真实秒时序）
 #       m_EffectRoot/m_Effect:*         特效属性轨道（attack_N 有棍气；非攻击动画切空白 empty）
-#       "." 方法轨道                     旧 add_music 的等价物（时序取旧轨道，音源查 AttackConfig）
-#   - 消费方：Entitys/WukongEntity.tscn 的 m_AnimPlayer（libraries/=本文件），
-#     AnimationTree（wukong_animation_tree.tres）做嵌套状态机。
+#       判定盒三条值轨道                shape / position / disabled
+#   - **无方法轨道**：动画从不调用代码。动作时长由 C# OnInit 读动画长度（ActorEntity.GetAnimLength）、
+#     状态自己计时；音效由状态钩子触发（音源查表）；将来中途时点用 Godot 4.3+ 动画标记。
+#     旧 `.`（RolePlayer）的 add_music 方法轨道不再迁移（音源在 SoundConfig/AttackConfig，
+#     C# 按当前动画名查表）；旧项目其他方法轨道（出招生命周期）也不迁移。
+#   - 消费方：Entitys/WukongEntity.tscn 的 m_AnimPlayer（libraries/=本文件）。
 # --------------------------------------------------------------------------
 
 WUKONG_LIB_OUT = "res://TheGame/Entitys/Animations/wukong_anim_library.tres"
@@ -979,15 +972,8 @@ WUKONG_LIB_OUT = "res://TheGame/Entitys/Animations/wukong_anim_library.tres"
 BODY_NODE = "m_Body"
 WEAPON_NODE = "m_Weapon"
 
-# 旧 `.`（RolePlayer）方法轨道的处理表：hit1..4/death 的 add_music 迁为对应方法调用；
-# add_music 的 idx 参数不迁（红线 5：音源在 SoundConfig/AttackConfig，代码按当前动画名查表）。
-METHOD_TRACK_MAP = {
-    "attack_1": "OnAttackSwingSound",
-    "attack_2": "OnAttackSwingSound",
-    "attack_3": "OnAttackSwingSound",
-    "attack_4": "OnAttackSwingSound",
-    "death": "OnDeathVoice",
-}
+# 旧特效动画名 → 新特效动画名（wukong_effect_animations.tres 内的名字）
+FX_NAME_MAP = {"wait": "empty"}
 
 # 旧特效动画名 → 新特效动画名（wukong_effect_animations.tres 内的名字）
 FX_NAME_MAP = {"wait": "empty"}
@@ -1030,11 +1016,8 @@ def _fx_tracks_generic(chunk, segs):
 
 
 def _method_track(chunk, segs, new_name):
-    """旧 `.` 的 add_music 方法轨道 → 新方法轨道；无映射返回 None。
-
-    TRACK_SPLIT 按 keys 段切分，type/path 行不在片段内，所以先按 path 定位轨道号，
-    再截取该轨道的完整段（到下一条轨道为止）判断类型。
-    """
+    """旧 `.`（RolePlayer）方法轨道 → 已不迁移（2026-10-01，A 方案：动画纯数据，无方法轨道）。
+    保留函数只为了在遇到旧方法轨道时打印说明。"""
     for m in re.finditer(r'tracks/(\d+)/path = NodePath\("\."\)', chunk):
         n = m.group(1)
         start = chunk.rfind(f"tracks/{n}/type", 0, m.start())
@@ -1048,19 +1031,10 @@ def _method_track(chunk, segs, new_name):
         if not km:
             continue
         methods = re.findall(r'"method": &"([^"]+)"', km.group(1))
-        if not methods:
-            continue
-        if methods[0] != "add_music":
-            print(f"  [skip] {new_name}: 旧方法轨道 {methods[0]}() 不迁移")
-            return None
-        target = METHOD_TRACK_MAP.get(new_name)
-        if target is None:
-            print(f"  [skip] {new_name}: add_music 未建立映射（音效随技能系统迁移）")
-            return None
-        tm = TIMES_RE.search(km.group(1))
-        times = [float(t) for t in tm.group(1).split(",") if t.strip()] if tm else [0.0]
-        return ("", "method", [(_real_time(segs, t), target) for t in times[:1]])
-    return None
+        if methods:
+            print(f"  [skip] {new_name}: 旧方法轨道 {methods[0]}() 不迁移（A 方案：动画纯数据）")
+            return True
+    return False
 
 
 def _frame_track_keys(frames):
@@ -1091,7 +1065,7 @@ WUKONG_RECOVERY_EXTRA = {"attack_4": 5.0 / 60.0}
 
 
 def build_wukong_library():
-    """合并版 AnimationLibrary：身体帧 + 武器帧 + 特效轨道 + 判定盒值轨道 + 方法轨道。
+    """合并版 AnimationLibrary：身体帧 + 武器帧 + 特效轨道 + 判定盒值轨道（纯表现数据，无方法轨道）。
 
     返回 (anims, shape_res)：shape_res 是判定盒子资源 id → 尺寸（emit 时声明进库文件）。
     """
@@ -1123,8 +1097,8 @@ def build_wukong_library():
         ]
 
         # 非攻击/特效未迁移的动画：统一"切空白 + 帧归零 + 位置归零 + scale=1"四件套。
-        # 轨道完备性：AnimationTree 切到不含某属性轨道的动画时会把该属性重置成垃圾值
-        # （实测 scale 被写成 1e-05，棍气不可见），所以每个动画都必须带全部特效属性轨道。
+        # 轨道完备性：AnimationPlayer 直驱不回卷轨道，缺轨的属性会**残留**上一个动画写入的值
+        # （实测曾把 scale 残留成 1e-05，棍气不可见），所以每个动画都必须带全部特效属性轨道。
         tracks.extend([
             (FX_NODE + ":animation", "string", [(0.0, "empty")]),
             (FX_NODE + ":frame", "int", [(0.0, 0)]),
@@ -1143,9 +1117,7 @@ def build_wukong_library():
                 fx_paths = {t[0] for t in fx}
                 tracks = [t for t in tracks if t[0] not in fx_paths]
                 tracks.extend(fx)
-            mt = _method_track(chunk, segs, new)
-            if mt:
-                tracks.append(mt)
+            _method_track(chunk, segs, new)
 
         # 判定盒三条值轨道（开关/形状/位置）：只有普攻段迁移旧开关时序；
         # 其余动画恒关 + 静止几何（技能判定随技能系统迁移）
@@ -1161,9 +1133,6 @@ def build_wukong_library():
 
         # 动画侧收招延长（见 WUKONG_RECOVERY_EXTRA 注释）：只加总长，帧键不动，末帧保持自动覆盖
         length += WUKONG_RECOVERY_EXTRA.get(new, 0.0)
-
-        # 出招生命周期（装填/收招，只管数值包）
-        tracks.extend(_attack_lifecycle_tracks(new, length, WUKONG_HITBOX))
 
         anims.append({"name": new, "loop": loop, "length": length, "tracks": tracks})
 

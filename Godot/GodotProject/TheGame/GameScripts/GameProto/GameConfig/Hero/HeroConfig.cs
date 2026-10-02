@@ -51,6 +51,7 @@ public sealed partial class HeroConfig : Luban.BeanBase
         JumpCountMax = _buf.ReadInt();
         HurtSoundId = (Sound.SoundId)_buf.ReadInt();
         DeathSoundId = (Sound.SoundId)_buf.ReadInt();
+        InputBufferTime = _buf.ReadFloat();
     }
 
     public static HeroConfig DeserializeHeroConfig(ByteBuf _buf)
@@ -198,6 +199,10 @@ public sealed partial class HeroConfig : Luban.BeanBase
     /// 死亡语音(None=无)
     /// </summary>
     public readonly Sound.SoundId DeathSoundId;
+    /// <summary>
+    /// 输入缓冲秒:跳跃/普攻按键在这段时间内等到可执行时机仍生效(0=只在按下那一帧有效)
+    /// </summary>
+    public readonly float InputBufferTime;
    
     public const int __ID__ = -1911300528;
     public override int GetTypeId() => __ID__;
@@ -244,6 +249,7 @@ public sealed partial class HeroConfig : Luban.BeanBase
         + "JumpCountMax:" + JumpCountMax + ","
         + "HurtSoundId:" + HurtSoundId + ","
         + "DeathSoundId:" + DeathSoundId + ","
+        + "InputBufferTime:" + InputBufferTime + ","
         + "}";
     }
 }

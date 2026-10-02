@@ -126,7 +126,7 @@ TheGame/
 4. **禁止移植旧 GDScript**：不拷贝旧 `.gd`/`.uid`/`.tscn` 脚本逻辑、不逐行翻译，理解设计后用 C# 按新架构重写。
 5. **〔强约定〕数值进表**：可平衡调参的数值（装备属性、怪物数值、技能系数、掉落、波次、价格）一律进 Luban 表；工程常数（超时、缓存上限、物理手感）允许具名常量（`static readonly` + 注释来源）；**裸字面量参与玩法计算即打回**。
 6. **高频生灭对象必须池化**：子弹、伤害飘字、掉落物、打击特效走 `NodePool` / `GF.ObjectPool`，禁止裸 `Instantiate + QueueFree`。
-7. **状态必须是状态机**：角色行为/动画由该角色自己的 AnimationTree 状态机表达，C# 只维护角色属性、不持有"当前状态"；禁止 bool 标志位拼状态（旧项目最大教训）、禁止巨型 `if/match` 链。`GF.Fsm` 仅用于纯逻辑状态机（怪物 AI）。细节见 `Entity/AGENTS.md`。
+7. **状态必须是状态机**（2026-10-01 人类裁决改写）：角色行为由代码状态机表达——**身体状态机**（`GF.Fsm`，实体 `_PhysicsProcess` 里经 `BodyFsm.Tick` 按物理帧驱动，每状态一个类）决定"在做什么"并请求播放动画；怪物 **AI 状态机**（`GF.Fsm`，框架帧）只写意图。动画由 `AnimationPlayer` 直接播放，动画资源**只含表现数据**（帧/特效/判定盒值轨道，无方法轨道）、从不调用代码；动作时长在 OnInit 时从动画资源**读长度**、由身体状态计时（代码是唯一的逻辑执行者与时钟），音效由状态钩子触发（音源查表）。将来动画中途的玩法时点用 Godot 4.3+ 动画标记。禁止 bool 标志位拼状态（旧项目最大教训）、禁止巨型 `if/match` 链。细节见 `Entity/AGENTS.md`。
 8. **〔强约定〕引用不穿透**：禁止跨模块 `GetNode` 长链与连续爬父（`GetParent().GetParent()`）；跨模块走事件（§9）或生成方显式注入；实体自身子树内允许直引用（优先 `[Export]`）。
 
 ## 5. C# 编码规范
@@ -163,8 +163,7 @@ TheGame/
 | `GF.Entity` | 实体生灭分组 | `ShowEntity(EntityId.Xxx)` / `ShowEntityAsync<T>` / `HideEntitySafe`（`EntityExtension.cs`） |
 | `GF.UI` | 界面开关层级 | `OpenUIForm(UIFormId.Xxx)` / `OpenUIFormAsync<T>` / `CloseUIForm` / `HasUIForm`（`UIExtension.cs`） |
 | `GF.Event` | 事件总线 | `Fire(...)` / 订阅取消；参数走 `ReferencePool`（§9） |
-| `GF.Fsm` | 纯逻辑状态机 | `CreateFsm / DestroyFsm`（每状态一个类）；动画选择走 AnimationTree（红线 7） |
-| `GF.Sound` | BGM/SFX/UI 音 | `PlayBGM / PlaySFX / PlayUISound / StopBGM / SetVolume`（`SoundExtension.cs`） |
+| `GF.Fsm` | 状态机 | `CreateFsm / DestroyFsm`（每状态一个类）；AI 走框架帧，身体状态机走物理帧（`Entity/Body/BodyFsm`，红线 7） || `GF.Sound` | BGM/SFX/UI 音 | `PlayBGM / PlaySFX / PlayUISound / StopBGM / SetVolume`（`SoundExtension.cs`） |
 | `GF.Resource` | 资源加载 | 开发期 `ResourceMode.Package` + `EnableEditorResLoad` |
 | `GF.Scene` | 场景切换 | 关卡切换走这里，不裸调 `ChangeScene` |
 | `GF.ObjectPool` | 对象池 | 高频生灭节点走池（红线 6） |
@@ -180,7 +179,7 @@ TheGame/
 
 - 实体直接继承 Godot 原生类型 + `IEntity`，无中间框架基类：`ActorEntity : CharacterBody2D, IEntity` → `HeroEntity → WukongEntity...` / `MonsterEntity`。
 - 生命周期只实现 `OnInit / OnShow / OnUpdate / OnHide / OnRecycle`；生成/回收走 `GF.Entity.ShowEntity(EntityId.Xxx)` / `HideEntity`。
-- C# 维护角色属性，动画选择交给角色自己的 AnimationTree（红线 7）；物理层 13 个语义层名固定，统一 `LayerMask.LayerToMask2D("层名")`，禁止魔法数字（层表见 `Entity/AGENTS.md`）。
+- 身体状态机决定动作并请求动画；动画是纯表现数据（无方法轨道），动作时长 OnInit 读动画长度、状态计时，音效由状态钩子触发（红线 7）；物理层 13 个语义层名固定，统一 `LayerMask.LayerToMask2D("层名")`，禁止魔法数字（层表见 `Entity/AGENTS.md`）。
 
 ## 8. 数据与配置
 
@@ -238,7 +237,7 @@ TheGame/
 | M0 工程设置 | `project.godot`（渲染/视口/13 物理层名）；`dotnet build` 通过 | 主场景 `GameFramework.tscn` 能跑 |
 | M1 素材进场 | wukong / Monster1 / Level_1 素材 + `SpriteFrames .tres` + `LegacyAssetMap.md` | 可播放 wukong idle/run/attack 与猴子 walk/attack |
 | M2 配表落地 | `HeroConfig / HeroLevelConfig / MonsterConfig / AttackConfig / BattleConfig / LevelConfig / LevelWaveConfig / LevelSpawnConfig / SoundConfig`；`EntityId`、`UIFormId` 枚举 | 导表成功，`Tables` 可读 |
-| M3 英雄控制器 | `HeroEntity` + AnimationTree 表达式状态机（属性驱动，禁 bool 拼状态） | 能跑能跳能连击，动画与状态一致 |
+| M3 英雄控制器 | `HeroEntity` + 身体状态机（GF.Fsm 物理帧驱动）+ AnimationPlayer 直驱纯数据（2026-10-01 由表达式状态机重构，AnimationTree 与方法轨道均移除） | 能跑能跳能连击，动画与状态一致 |
 | M4 判定与伤害 | HitBox/HurtBox 动画轨道驱动判定帧；`Battle/DamageCalculator`（三种伤害 + `x/(x+K)`）+ 单测；飘字走 NodePool | 打猴子掉血飘字，伤害与手算一致 |
 | M5 怪物 AI | 抽象 `MonsterEntity` 身体层 + 每怪 `CreateBrain()` 选 `MonsterBrains` 原型（`Brawler` / `Sentry`）；FSM 角色槽（Idle/Patrol/Chase/Attack/Hold/CcLocked/Death）装可复用行为 + 技能书（冷却/选招进 `AttackConfig`，近身范围由动画判定盒推导、含高度，收招硬直 `AiRecovery`），参数读 `MonsterConfig`（含丢失目标、守候踱步）；死亡广播 `MonsterDiedEventArgs` | 猴子巡逻、追击、攻击；头顶不出招而在下方踱步、出招与收招硬直中不转身、丢失目标回巡逻（`--smoketest=ai`，`--quit-after 2400`） |
 | M6 关卡与流程 | `LevelDirector`（波次/场上上限/清场开闸）+ 出口 + `GF.Scene` + HUD | 一关可通关并写入 `GF.Archive` |
