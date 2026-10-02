@@ -13,3 +13,5 @@ Godot/exported_bundles/
 *.stackdump
 # FileServer/bin 是框架自带的源码目录，例外保留
 !Tools/FileServer/bin/
+
+__pycache__/
