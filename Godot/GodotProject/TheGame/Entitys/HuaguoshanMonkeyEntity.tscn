@@ -13,6 +13,9 @@ height = 61.85
 radius = 19.0
 height = 62.0
 
+[sub_resource type="RectangleShape2D" id="hitbox_rest"]
+size = Vector2(50, 50)
+
 [sub_resource type="RectangleShape2D" id="detector_sight"]
 size = Vector2(600, 200)
 
@@ -31,7 +34,7 @@ m_HitBoxRoot = NodePath("m_HitBoxRoot")
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1937697229]
 position = Vector2(0, -13)
 sprite_frames = ExtResource("2_frames")
-animation = &""
+animation = &"idle"
 offset = Vector2(1.5, -0.5)
 
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1842145312]
@@ -60,6 +63,9 @@ collision_mask = 128
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1324609239]
+position = Vector2(-24, -23)
+shape = SubResource("hitbox_rest")
+disabled = true
 
 [node name="m_Detector" type="Area2D" parent="." unique_id=1502863447]
 collision_layer = 4096

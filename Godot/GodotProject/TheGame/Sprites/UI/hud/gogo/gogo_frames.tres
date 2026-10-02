@@ -1,0 +1,546 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_1.png" id="tex0"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_2.png" id="tex1"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_3.png" id="tex2"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_4.png" id="tex3"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_5.png" id="tex4"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_6.png" id="tex5"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_7.png" id="tex6"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_8.png" id="tex7"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_9.png" id="tex8"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_10.png" id="tex9"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_11.png" id="tex10"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_12.png" id="tex11"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_13.png" id="tex12"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_14.png" id="tex13"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_15.png" id="tex14"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_16.png" id="tex15"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_17.png" id="tex16"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_18.png" id="tex17"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_19.png" id="tex18"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_20.png" id="tex19"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_21.png" id="tex20"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_22.png" id="tex21"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_23.png" id="tex22"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_24.png" id="tex23"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_25.png" id="tex24"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_26.png" id="tex25"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_27.png" id="tex26"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_28.png" id="tex27"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_29.png" id="tex28"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_30.png" id="tex29"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_31.png" id="tex30"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_32.png" id="tex31"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_33.png" id="tex32"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_34.png" id="tex33"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_35.png" id="tex34"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_36.png" id="tex35"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_37.png" id="tex36"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_38.png" id="tex37"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_39.png" id="tex38"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_40.png" id="tex39"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_41.png" id="tex40"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_42.png" id="tex41"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_43.png" id="tex42"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_44.png" id="tex43"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_45.png" id="tex44"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_46.png" id="tex45"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_47.png" id="tex46"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_48.png" id="tex47"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_49.png" id="tex48"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_50.png" id="tex49"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_51.png" id="tex50"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_52.png" id="tex51"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_53.png" id="tex52"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_54.png" id="tex53"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_55.png" id="tex54"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_56.png" id="tex55"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_57.png" id="tex56"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_58.png" id="tex57"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_59.png" id="tex58"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_60.png" id="tex59"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_61.png" id="tex60"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_62.png" id="tex61"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_63.png" id="tex62"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_64.png" id="tex63"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_65.png" id="tex64"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_66.png" id="tex65"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/gogo/gogo_67.png" id="tex66"]
+
+[sub_resource type="AtlasTexture" id="Atlas_0"]
+atlas = ExtResource("tex0")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_1"]
+atlas = ExtResource("tex1")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_2"]
+atlas = ExtResource("tex2")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_3"]
+atlas = ExtResource("tex3")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_4"]
+atlas = ExtResource("tex4")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_5"]
+atlas = ExtResource("tex5")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_6"]
+atlas = ExtResource("tex6")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_7"]
+atlas = ExtResource("tex7")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_8"]
+atlas = ExtResource("tex8")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_9"]
+atlas = ExtResource("tex9")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_10"]
+atlas = ExtResource("tex10")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_11"]
+atlas = ExtResource("tex11")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_12"]
+atlas = ExtResource("tex12")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_13"]
+atlas = ExtResource("tex13")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_14"]
+atlas = ExtResource("tex14")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_15"]
+atlas = ExtResource("tex15")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_16"]
+atlas = ExtResource("tex16")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_17"]
+atlas = ExtResource("tex17")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_18"]
+atlas = ExtResource("tex18")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_19"]
+atlas = ExtResource("tex19")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_20"]
+atlas = ExtResource("tex20")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_21"]
+atlas = ExtResource("tex21")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_22"]
+atlas = ExtResource("tex22")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_23"]
+atlas = ExtResource("tex23")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_24"]
+atlas = ExtResource("tex24")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_25"]
+atlas = ExtResource("tex25")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_26"]
+atlas = ExtResource("tex26")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_27"]
+atlas = ExtResource("tex27")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_28"]
+atlas = ExtResource("tex28")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_29"]
+atlas = ExtResource("tex29")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_30"]
+atlas = ExtResource("tex30")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_31"]
+atlas = ExtResource("tex31")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_32"]
+atlas = ExtResource("tex32")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_33"]
+atlas = ExtResource("tex33")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_34"]
+atlas = ExtResource("tex34")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_35"]
+atlas = ExtResource("tex35")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_36"]
+atlas = ExtResource("tex36")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_37"]
+atlas = ExtResource("tex37")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_38"]
+atlas = ExtResource("tex38")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_39"]
+atlas = ExtResource("tex39")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_40"]
+atlas = ExtResource("tex40")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_41"]
+atlas = ExtResource("tex41")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_42"]
+atlas = ExtResource("tex42")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_43"]
+atlas = ExtResource("tex43")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_44"]
+atlas = ExtResource("tex44")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_45"]
+atlas = ExtResource("tex45")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_46"]
+atlas = ExtResource("tex46")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_47"]
+atlas = ExtResource("tex47")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_48"]
+atlas = ExtResource("tex48")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_49"]
+atlas = ExtResource("tex49")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_50"]
+atlas = ExtResource("tex50")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_51"]
+atlas = ExtResource("tex51")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_52"]
+atlas = ExtResource("tex52")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_53"]
+atlas = ExtResource("tex53")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_54"]
+atlas = ExtResource("tex54")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_55"]
+atlas = ExtResource("tex55")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_56"]
+atlas = ExtResource("tex56")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_57"]
+atlas = ExtResource("tex57")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_58"]
+atlas = ExtResource("tex58")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_59"]
+atlas = ExtResource("tex59")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_60"]
+atlas = ExtResource("tex60")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_61"]
+atlas = ExtResource("tex61")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_62"]
+atlas = ExtResource("tex62")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_63"]
+atlas = ExtResource("tex63")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_64"]
+atlas = ExtResource("tex64")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_65"]
+atlas = ExtResource("tex65")
+region = Rect2(0, 0, 213, 92)
+
+[sub_resource type="AtlasTexture" id="Atlas_66"]
+atlas = ExtResource("tex66")
+region = Rect2(0, 0, 213, 92)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 0.1,
+"texture": SubResource("Atlas_0")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_1")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_2")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_3")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_4")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_5")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_6")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_7")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_8")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_9")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_10")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_11")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_12")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_13")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_14")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_15")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_16")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_17")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_18")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_19")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_20")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_21")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_22")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_23")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_24")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_25")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_26")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_27")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_28")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_29")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_30")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_31")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_32")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_33")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_34")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_35")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_36")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_37")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_38")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_39")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_40")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_41")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_42")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_43")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_44")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_45")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_46")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_47")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_48")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_49")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_50")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_51")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_52")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_53")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_54")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_55")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_56")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_57")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_58")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_59")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_60")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_61")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_62")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_63")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_64")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_65")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_66")
+}],
+"loop": 1,
+"name": &"go",
+"speed": 25.0
+}]

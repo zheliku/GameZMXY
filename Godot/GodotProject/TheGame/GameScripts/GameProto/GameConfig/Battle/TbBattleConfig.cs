@@ -135,6 +135,10 @@ public partial class TbBattleConfig
     /// 击退纵向换算: px/s = Knockback.Y &#215; 本值(人怪一致)
     /// </summary>
      public float KnockbackScaleY => _data.KnockbackScaleY;
+    /// <summary>
+    /// 无双值上限(旧项目满值 100;M6 供 HUD 无双条满值)
+    /// </summary>
+     public int WsMax => _data.WsMax;
     
     public void ResolveRef(Tables tables)
     {

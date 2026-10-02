@@ -114,6 +114,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="RectangleShape2D" id="hitbox_attack_1"]
 size = Vector2(128.075, 104.485)
 
@@ -228,6 +229,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-41, 20)]
 }
+
 [sub_resource type="RectangleShape2D" id="hitbox_attack_2"]
 size = Vector2(133, 43)
 
@@ -342,6 +344,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-42.25, 41.5)]
 }
+
 [sub_resource type="RectangleShape2D" id="hitbox_attack_3"]
 size = Vector2(305, 57)
 
@@ -456,6 +459,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-10, 41.71)]
 }
+
 [sub_resource type="RectangleShape2D" id="hitbox_attack_4"]
 size = Vector2(280, 74)
 
@@ -570,6 +574,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 38)]
 }
+
 [sub_resource type="Animation" id="death"]
 resource_name = "death"
 length = 1.1
@@ -681,6 +686,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="fall"]
 resource_name = "fall"
 length = 0.45
@@ -792,6 +798,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="hurt"]
 resource_name = "hurt"
 length = 0.225
@@ -903,6 +910,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="idle1"]
 resource_name = "idle1"
 length = 0.7
@@ -1015,6 +1023,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="idle2"]
 resource_name = "idle2"
 length = 0.8
@@ -1126,6 +1135,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="jump"]
 resource_name = "jump"
 length = 0.508333
@@ -1237,6 +1247,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="jump_2"]
 resource_name = "jump_2"
 length = 0.275
@@ -1348,6 +1359,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="run"]
 resource_name = "run"
 length = 0.291667
@@ -1460,6 +1472,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="skill_hmz"]
 resource_name = "skill_hmz"
 length = 1.5
@@ -1571,6 +1584,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="skill_hyjj"]
 resource_name = "skill_hyjj"
 length = 0.775
@@ -1682,6 +1696,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="skill_hytj"]
 resource_name = "skill_hytj"
 length = 0.5
@@ -1793,6 +1808,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="skill_jdy"]
 resource_name = "skill_jdy"
 length = 0.55
@@ -1904,6 +1920,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="skill_jdy_2"]
 resource_name = "skill_jdy_2"
 length = 0.55
@@ -2015,6 +2032,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="skill_lyfb"]
 resource_name = "skill_lyfb"
 length = 0.35
@@ -2126,6 +2144,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="skill_lys"]
 resource_name = "skill_lys"
 length = 0.333333
@@ -2237,6 +2256,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="skill_qsez"]
 resource_name = "skill_qsez"
 length = 0.6
@@ -2348,6 +2368,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="skill_slz"]
 resource_name = "skill_slz"
 length = 0.342105
@@ -2459,6 +2480,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="skill_zz"]
 resource_name = "skill_zz"
 length = 1.016667
@@ -2570,6 +2592,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [sub_resource type="Animation" id="walk"]
 resource_name = "walk"
 length = 0.8
@@ -2682,6 +2705,7 @@ tracks/8/keys = {
 "update": 1,
 "values": [Vector2(-55, 0)]
 }
+
 [resource]
 _data = {
 &"RESET": SubResource("RESET"),

@@ -1,0 +1,123 @@
+[gd_scene format=3]
+
+[ext_resource type="Texture2D" uid="uid://cpk7ttkaom0hn" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_bg_end.png" id="1_bgend"]
+[ext_resource type="Texture2D" uid="uid://dsa76w2xxiq0b" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_front.png" id="2_front"]
+[ext_resource type="Texture2D" uid="uid://bo4uw8k2ajk8o" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_floor.png" id="3_floor"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_exit_frames.tres" id="4_exit"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
+size = Vector2(5300, 60)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_leftwall"]
+size = Vector2(100, 900)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gate"]
+size = Vector2(60, 400)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_exit"]
+radius = 85.0
+
+[node name="Level_1" type="Node2D"]
+
+[node name="BackGround" type="ParallaxBackground" parent="."]
+
+[node name="EndLayer" type="ParallaxLayer" parent="BackGround"]
+motion_scale = Vector2(0, 0)
+
+[node name="BgEnd" type="Sprite2D" parent="BackGround/EndLayer"]
+position = Vector2(0, -50)
+texture = ExtResource("1_bgend")
+centered = false
+
+[node name="FloorLayer" type="ParallaxLayer" parent="BackGround"]
+
+[node name="Floor" type="Sprite2D" parent="BackGround/FloorLayer"]
+position = Vector2(0, 341)
+texture = ExtResource("3_floor")
+centered = false
+
+[node name="FrontLayer" type="ParallaxLayer" parent="BackGround"]
+motion_scale = Vector2(0.9, 1)
+
+[node name="Front" type="Sprite2D" parent="BackGround/FrontLayer"]
+position = Vector2(0, -100)
+texture = ExtResource("2_front")
+centered = false
+
+[node name="Ground" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+position = Vector2(2650, 371)
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="LeftWall" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall"]
+position = Vector2(-50, -60)
+shape = SubResource("RectangleShape2D_leftwall")
+
+[node name="RightWall" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall"]
+position = Vector2(5350, -60)
+shape = SubResource("RectangleShape2D_leftwall")
+
+[node name="Gate1" type="StaticBody2D" parent="."]
+position = Vector2(1500, 141)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Gate1"]
+shape = SubResource("RectangleShape2D_gate")
+
+[node name="Gate2" type="StaticBody2D" parent="."]
+position = Vector2(2600, 141)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Gate2"]
+shape = SubResource("RectangleShape2D_gate")
+
+[node name="Gate3" type="StaticBody2D" parent="."]
+position = Vector2(3900, 141)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Gate3"]
+shape = SubResource("RectangleShape2D_gate")
+
+[node name="HeroSpawn" type="Node2D" parent="."]
+position = Vector2(300, 300)
+
+[node name="Exit" type="Node2D" parent="."]
+position = Vector2(5050, 341)
+
+[node name="Portal" type="AnimatedSprite2D" parent="Exit"]
+visible = false
+position = Vector2(0, -95)
+sprite_frames = ExtResource("4_exit")
+animation = &"exit"
+
+[node name="ExitArea" type="Area2D" parent="Exit"]
+position = Vector2(0, -110)
+collision_layer = 4096
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Exit/ExitArea"]
+shape = SubResource("CircleShape2D_exit")
+disabled = true
+
+[node name="BattleCamera" type="Camera2D" parent="."]
+position = Vector2(470, 295)
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+limit_left = 0
+limit_top = -350
+limit_right = 5300
+limit_bottom = 590

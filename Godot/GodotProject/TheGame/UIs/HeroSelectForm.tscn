@@ -1,0 +1,109 @@
+[gd_scene format=3]
+
+[ext_resource type="Theme" uid="uid://2gwbh6otun6r" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="1_theme"]
+[ext_resource type="Script" path="res://TheGame/GameScripts/GameProto/UIGe/HeroSelectForm.cs" id="2_script"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/main_menu/main_menu_bg.png" id="3_bg"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hero_select/wukong_portrait.png" id="4_portrait"]
+
+[node name="HeroSelectForm" type="Control" node_paths=PackedStringArray("m_HeroName", "m_HeroDesc", "m_Btn_Start")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+m_HeroName = NodePath("HeroCard/m_HeroName")
+m_HeroDesc = NodePath("HeroCard/m_HeroDesc")
+m_Btn_Start = NodePath("HeroCard/m_Btn_Start")
+
+[node name="BG" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_bg")
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 0
+offset_left = 500.0
+offset_top = 24.0
+offset_right = 910.0
+offset_bottom = 74.0
+theme_override_font_sizes/font_size = 40
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.4, 0.1, 0, 1)
+theme_override_constants/outline_size = 6
+text = "造梦西游之"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="SubTitle" type="Label" parent="."]
+layout_mode = 0
+offset_left = 500.0
+offset_top = 78.0
+offset_right = 910.0
+offset_bottom = 106.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.945098, 0.556863, 0, 1)
+theme_override_colors/font_outline_color = Color(0.15, 0.05, 0, 1)
+theme_override_constants/outline_size = 3
+text = "《八荒湮隳篇 · 力战七大魔王》"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="HeroCard" type="Control" parent="."]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 140.0
+offset_right = 880.0
+offset_bottom = 520.0
+mouse_filter = 2
+
+[node name="Portrait" type="TextureRect" parent="HeroCard"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 384.0
+offset_bottom = 256.0
+mouse_filter = 2
+texture = ExtResource("4_portrait")
+stretch_mode = 5
+
+[node name="m_HeroName" type="Label" parent="HeroCard"]
+layout_mode = 0
+offset_left = 430.0
+offset_top = 30.0
+offset_right = 750.0
+offset_bottom = 72.0
+theme_override_font_sizes/font_size = 30
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+text = "孙悟空"
+vertical_alignment = 1
+
+[node name="m_HeroDesc" type="Label" parent="HeroCard"]
+layout_mode = 0
+offset_left = 430.0
+offset_top = 84.0
+offset_right = 810.0
+offset_bottom = 224.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "齐天大圣孙悟空，机敏聪慧，胆识过人。善用棍法，灵活多变，上手简单。"
+autowrap_mode = 2
+vertical_alignment = 0
+
+[node name="m_Btn_Start" type="Button" parent="HeroCard"]
+layout_mode = 0
+offset_left = 430.0
+offset_top = 300.0
+offset_right = 670.0
+offset_bottom = 360.0
+theme_override_font_sizes/font_size = 26
+text = "开始战斗"

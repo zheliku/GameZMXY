@@ -1,8 +1,5 @@
 [gd_resource type="AnimationLibrary" format=3 uid="uid://o8gq56k2o2gr"]
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_1"]
-size = Vector2(50, 50)
-
 [sub_resource type="RectangleShape2D" id="hitbox_rest"]
 size = Vector2(50, 50)
 
@@ -80,6 +77,10 @@ tracks/5/keys = {
 "update": 1,
 "values": [Vector2(-24, -23)]
 }
+
+[sub_resource type="RectangleShape2D" id="hitbox_attack_1"]
+size = Vector2(50, 50)
+
 [sub_resource type="Animation" id="attack_1"]
 resource_name = "attack_1"
 length = 0.4
@@ -155,6 +156,7 @@ tracks/5/keys = {
 "update": 1,
 "values": [Vector2(-24, -23)]
 }
+
 [sub_resource type="Animation" id="death"]
 resource_name = "death"
 length = 0.8
@@ -230,6 +232,7 @@ tracks/5/keys = {
 "update": 1,
 "values": [Vector2(-24, -23)]
 }
+
 [sub_resource type="Animation" id="hurt"]
 resource_name = "hurt"
 length = 0.28
@@ -305,6 +308,7 @@ tracks/5/keys = {
 "update": 1,
 "values": [Vector2(-24, -23)]
 }
+
 [sub_resource type="Animation" id="idle"]
 resource_name = "idle"
 length = 0.8
@@ -381,6 +385,7 @@ tracks/5/keys = {
 "update": 1,
 "values": [Vector2(-24, -23)]
 }
+
 [sub_resource type="Animation" id="run"]
 resource_name = "run"
 length = 0.8
@@ -457,6 +462,7 @@ tracks/5/keys = {
 "update": 1,
 "values": [Vector2(-24, -23)]
 }
+
 [resource]
 _data = {
 &"RESET": SubResource("Animation_r2bp6"),

@@ -47,7 +47,7 @@ public sealed partial class LevelSpawnConfig : Luban.BeanBase
     /// </summary>
     public readonly int WaveId;
     /// <summary>
-    /// 怪物ID(MonsterConfig.Id;2/3待迁)
+    /// 怪物ID(MonsterConfig.Id;M6 垂直切片全用花果山猴子,旧 Monster_2/3 迁入后改回)
     /// </summary>
     public readonly int MonsterId;
     /// <summary>

@@ -118,6 +118,13 @@ public partial class SmokeTestDriver : Node
 		{
 			if (arg.Contains("smoketest"))
 			{
+				// --smoketest=level 是关卡对局启动检查（ProcedureGame 直进 Level_1），
+				// 不属于本驱动器的场景：不注入输入、不断言，只让游戏自己跑。
+				if (arg.EndsWith("=level"))
+				{
+					continue;
+				}
+
 				m_Active = true;
 				m_AiMode = arg.EndsWith("=ai");
 			}

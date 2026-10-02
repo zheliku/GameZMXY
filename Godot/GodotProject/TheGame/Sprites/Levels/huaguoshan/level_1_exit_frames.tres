@@ -1,0 +1,88 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_exit.png" id="tex0"]
+
+[sub_resource type="AtlasTexture" id="Atlas_0"]
+atlas = ExtResource("tex0")
+region = Rect2(0, 0, 206, 186)
+
+[sub_resource type="AtlasTexture" id="Atlas_1"]
+atlas = ExtResource("tex0")
+region = Rect2(206, 0, 206, 186)
+
+[sub_resource type="AtlasTexture" id="Atlas_2"]
+atlas = ExtResource("tex0")
+region = Rect2(412, 0, 206, 186)
+
+[sub_resource type="AtlasTexture" id="Atlas_3"]
+atlas = ExtResource("tex0")
+region = Rect2(618, 0, 206, 186)
+
+[sub_resource type="AtlasTexture" id="Atlas_4"]
+atlas = ExtResource("tex0")
+region = Rect2(824, 0, 206, 186)
+
+[sub_resource type="AtlasTexture" id="Atlas_5"]
+atlas = ExtResource("tex0")
+region = Rect2(1030, 0, 206, 186)
+
+[sub_resource type="AtlasTexture" id="Atlas_6"]
+atlas = ExtResource("tex0")
+region = Rect2(1236, 0, 206, 186)
+
+[sub_resource type="AtlasTexture" id="Atlas_7"]
+atlas = ExtResource("tex0")
+region = Rect2(1442, 0, 206, 186)
+
+[sub_resource type="AtlasTexture" id="Atlas_8"]
+atlas = ExtResource("tex0")
+region = Rect2(1648, 0, 206, 186)
+
+[sub_resource type="AtlasTexture" id="Atlas_9"]
+atlas = ExtResource("tex0")
+region = Rect2(0, 186, 206, 186)
+
+[sub_resource type="AtlasTexture" id="Atlas_10"]
+atlas = ExtResource("tex0")
+region = Rect2(206, 186, 206, 186)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 0.1,
+"texture": SubResource("Atlas_0")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_1")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_2")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_3")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_4")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_5")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_6")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_7")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_8")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_9")
+}, {
+"duration": 0.1,
+"texture": SubResource("Atlas_10")
+}],
+"loop": 1,
+"name": &"exit",
+"speed": 25.0
+}]

@@ -43,6 +43,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
         KnockbackScaleXHeroDef = _buf.ReadFloat();
         KnockbackScaleXMonsterDef = _buf.ReadFloat();
         KnockbackScaleY = _buf.ReadFloat();
+        WsMax = _buf.ReadInt();
     }
 
     public static BattleConfig DeserializeBattleConfig(ByteBuf _buf)
@@ -158,6 +159,10 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// 击退纵向换算: px/s = Knockback.Y &#215; 本值(人怪一致)
     /// </summary>
     public readonly float KnockbackScaleY;
+    /// <summary>
+    /// 无双值上限(旧项目满值 100;M6 供 HUD 无双条满值)
+    /// </summary>
+    public readonly int WsMax;
    
     public const int __ID__ = -1776797808;
     public override int GetTypeId() => __ID__;
@@ -196,6 +201,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "KnockbackScaleXHeroDef:" + KnockbackScaleXHeroDef + ","
         + "KnockbackScaleXMonsterDef:" + KnockbackScaleXMonsterDef + ","
         + "KnockbackScaleY:" + KnockbackScaleY + ","
+        + "WsMax:" + WsMax + ","
         + "}";
     }
 }

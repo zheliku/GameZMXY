@@ -21,7 +21,7 @@ public sealed partial class LevelConfig : Luban.BeanBase
         NameCn = _buf.ReadString();
         Desc = _buf.ReadString();
         ScenePath = _buf.ReadString();
-        BgmPath = _buf.ReadString();
+        BgmSoundId = (Sound.SoundId)_buf.ReadInt();
         MaxAlive = _buf.ReadInt();
         SpawnInterval = _buf.ReadFloat();
     }
@@ -52,9 +52,9 @@ public sealed partial class LevelConfig : Luban.BeanBase
     /// </summary>
     public readonly string ScenePath;
     /// <summary>
-    /// 背景音乐路径(待迁)
+    /// 关卡背景音乐(SoundConfig;None=无;触发者在此,按 Configs/AGENTS.md 音效定稿)
     /// </summary>
-    public readonly string BgmPath;
+    public readonly Sound.SoundId BgmSoundId;
     /// <summary>
     /// 场上怪物上限(旧项目全局硬编码6)
     /// </summary>
@@ -79,7 +79,7 @@ public sealed partial class LevelConfig : Luban.BeanBase
         + "NameCn:" + NameCn + ","
         + "Desc:" + Desc + ","
         + "ScenePath:" + ScenePath + ","
-        + "BgmPath:" + BgmPath + ","
+        + "BgmSoundId:" + BgmSoundId + ","
         + "MaxAlive:" + MaxAlive + ","
         + "SpawnInterval:" + SpawnInterval + ","
         + "}";

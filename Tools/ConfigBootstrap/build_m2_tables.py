@@ -181,6 +181,8 @@ ENUMS = [
         ("WukongHurt", "悟空受击语音", 4, None),
         ("WukongDeath", "悟空死亡语音", 5, None),
         ("WukongImpact", "悟空命中音(棍打中东西)", 6, None),
+        # M6 追加：关卡 BGM（build_m6_tables.py 引入，此处同步防止重跑回归）
+        ("Level1Bgm", "花果山BGM", 7, None),
     ]),
 ]
 
@@ -472,12 +474,14 @@ def build_battle():
         ("KnockbackScaleX_HeroDef", "float", "英雄被击退横向换算: px/s = Knockback.X × 本值"),
         ("KnockbackScaleX_MonsterDef", "float", "怪物被击退横向换算: px/s = Knockback.X × 本值"),
         ("KnockbackScaleY", "float", "击退纵向换算: px/s = Knockback.Y × 本值(人怪一致)"),
+        # M6 表尾追加（build_m6_tables.py 引入，此处同步）：无双值上限
+        ("WsMax", "int", "无双值上限(旧项目满值 100;M6 供 HUD 无双条满值)"),
     ]
     rows = [
         ("战斗常数", "沿用旧项目人怪两侧不一致的基数,集中在此处",
          250, 250, 100, 100, 100, 70, 100, 100, 50, 2,
          0.03, 0.07, 0.04, 0.11, 0.07, 0.05,
-         1, 0.9, 1, 0.7, 5, 2, 25, 30, 15),
+         1, 0.9, 1, 0.7, 5, 2, 25, 30, 15, 100),
     ]
     new_table("BattleConfig.xlsx", fields, rows)
 
@@ -489,12 +493,13 @@ def build_level():
         ("NameCn", "string", "中文名"),
         ("Desc", "string", "描述"),
         ("ScenePath", "string", "关卡场景路径"),
-        ("BgmPath", "string", "背景音乐路径(待迁)"),
+        # M6：BgmPath(string) → BgmSoundId(Sound.SoundId)（build_m6_tables.py 的结构变更，此处同步）
+        ("BgmSoundId", "Sound.SoundId", "关卡背景音乐(SoundConfig;None=无)"),
         ("MaxAlive", "int", "场上怪物上限(旧项目全局硬编码6)"),
         ("SpawnInterval", "float", "补怪间隔秒(旧设置默认1.2)"),
     ]
     rows = [
-        (1, 1, "花果山", "第一关", "res://TheGame/Scenes/Level_1.tscn", "", 6, 1.2),
+        (1, 1, "花果山", "第一关", "res://TheGame/Scenes/Level_1.tscn", "Level1Bgm", 6, 1.2),
     ]
     new_table("LevelConfig.xlsx", fields, rows)
 
@@ -515,12 +520,14 @@ def build_level():
     new_table("LevelWaveConfig.xlsx", fields, rows)
 
     # legacy Level_1.gd Monster_group / Monster_position_x / _y
+    # M6（build_m6_tables.py）：MonsterId 2/3 → 1 —— 垂直切片全用已迁的花果山猴子，
+    # 旧 Monster_2/3 迁入后改回（此处种子同步，防止重跑回归）
     waves = [
         (1, [1] * 9, [500, 400, 700, 700, 700, 700, 700, 700, 700],
          [350, 320, 300, 300, 300, 300, 300, 300, 300]),
-        (2, [2] * 14, [2000] * 14, [300] * 14),
-        (3, [2] * 15, [3000] * 15, [300] * 15),
-        (4, [2, 2, 2, 2, 2, 3], [4500] * 6, [300] * 6),
+        (2, [1] * 14, [2000] * 14, [300] * 14),
+        (3, [1] * 15, [3000] * 15, [300] * 15),
+        (4, [1, 1, 1, 1, 1, 1], [4500] * 6, [300] * 6),
     ]
     rows = []
     sid = 1
@@ -534,7 +541,7 @@ def build_level():
         ("NameCn", "string", "中文名"),
         ("Desc", "string", "描述"),
         ("WaveId", "int", "波次ID(LevelWaveConfig.Id)"),
-        ("MonsterId", "int", "怪物ID(MonsterConfig.Id;2/3待迁)"),
+        ("MonsterId", "int", "怪物ID(MonsterConfig.Id;M6 垂直切片全用花果山猴子,旧 Monster_2/3 迁入后改回)"),
         ("X", "float", "出生坐标 x(旧 Monster_position_x)"),
         ("Y", "float", "出生坐标 y(旧 Monster_position_y)"),
     ]
@@ -575,6 +582,8 @@ def build_sound():
         (4, "WukongHurt", "悟空受击语音", "悟空自己挨打时的语音(按受害者选音,BaseHero.gd:592)", "49_Role1_beAttack.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_hurt.mp3"),
         (5, "WukongDeath", "悟空死亡语音", "悟空死亡", "59_Role1_dead.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_death.mp3"),
         (6, "WukongImpact", "悟空命中音", "悟空的棍打中东西的命中音(按攻击者选音,BaseMonster.gd:652)", "6_BeattackByRole1.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_hit_impact.mp3"),
+        # M6 追加（build_m6_tables.py 引入，此处同步防止重跑回归）
+        (7, "Level1Bgm", "花果山BGM", "花果山关卡背景音乐(关卡进场播放)", "1_music.mp3", "Music", "res://TheGame/Audios/BGM/level_1.mp3"),
     ]
     new_table("SoundConfig.xlsx", fields, rows, force_rows=True)
 
