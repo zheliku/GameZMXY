@@ -46,7 +46,7 @@ namespace GameLogic.Manager
 				m_Subscribed = false;
 			}
 
-			NodePool.ReleaseAll(DamagePopScene);
+			NodePool.Instance.ReleaseAll(DamagePopScene);
 			m_Layer = null;
 		}
 
@@ -81,7 +81,7 @@ namespace GameLogic.Manager
 				return;
 			}
 
-			UI.DamagePop pop = NodePool.Get<UI.DamagePop>(DamagePopScene, m_Layer);
+			UI.DamagePop pop = NodePool.Instance.Get<UI.DamagePop>(DamagePopScene, m_Layer);
 			if (pop == null)
 			{
 				return;

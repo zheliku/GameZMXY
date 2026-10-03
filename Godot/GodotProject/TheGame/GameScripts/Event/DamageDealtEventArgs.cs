@@ -64,13 +64,6 @@ namespace GameLogic.Event
 			return e;
 		}
 
-		/// <summary>转发复制（根规范 §5.2：转发必须新建实例，禁止直接转发原对象）</summary>
-		public static DamageDealtEventArgs Create(DamageDealtEventArgs source)
-		{
-			return Create(source.AttackerEntityId, source.TargetEntityId, source.TargetIsHero, source.Damage,
-				source.IsMiss, source.IsCrit, source.Kind, source.PopPosition, source.TargetHp);
-		}
-
 		public override void Clear()
 		{
 			AttackerEntityId = 0;

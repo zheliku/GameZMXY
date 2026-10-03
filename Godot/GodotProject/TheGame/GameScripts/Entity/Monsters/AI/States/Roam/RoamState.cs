@@ -4,8 +4,7 @@ using GameLogic.Entity.Monsters.AI;
 namespace GameLogic.Entity.Monsters.AI.States
 {
 	/// <summary>
-	/// 无目标类行为的基类（适合放进 Idle / Patrol 槽）：一旦有目标立刻转 Chase；否则交给 <see cref="Roam"/>。
-	/// 新的游荡行为（原地转圈、沿平台来回、悬浮漂移……）从这里派生，只写"怎么游荡"。
+	/// 无目标游荡状态的共同规则：一旦有目标立刻转追击；否则交给 <see cref="Roam"/>。
 	/// </summary>
 	public abstract class RoamState : MonsterAiState
 	{
@@ -13,7 +12,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 		{
 			if (!agent.TargetBox.IsEmpty)
 			{
-				ChangeRole(fsm, MonsterAiRole.Chase);
+				ChangeState<WalkToTargetState>(fsm);
 				return;
 			}
 

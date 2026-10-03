@@ -3,7 +3,7 @@
   <!--
     Battle/ 公式层单测。
     2026-09-30 裁决后 Battle/ 允许引用 Godot 纯值类型（Vector2/Mathf，GodotSharp 内为纯 C# 实现，
-    不需要引擎进程），所以这里直接引用引擎自带的 GodotSharp.dll（Release 版，与游戏工程同一份 4.7.2）
+    不需要引擎进程），所以这里引用 GodotSharp NuGet 包（版本与 Godot.NET.Sdk 4.7.2 一致）
     就能在纯控制台跑：链编源文件：
       * TheGame/GameScripts/Battle/*.cs           —— 被测代码
       * GameProto/GameConfig/Battle/BattleConfig.cs 等 —— Luban 生成的战斗常数类
@@ -53,18 +53,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="GodotSharp">
-      <HintPath>S:\Godot4\GodotSharp\Api\Release\GodotSharp.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="$(GodotProjectDir)TheGame\DataTables\GameConfigs\battle_tbbattleconfig.bytes" Link="Data\battle_tbbattleconfig.bytes" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="GodotSharp" Version="4.7.2" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>

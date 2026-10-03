@@ -6,7 +6,6 @@ using GameFramework.Fsm;
 using GameLogic.Battle;
 using GameLogic.Entity.Body;
 using GameLogic.Entity.Heroes.Body;
-using GameLogic.Event;
 using Godot;
 using GodotGameFramework;
 
@@ -139,14 +138,10 @@ namespace GameLogic.Entity.Heroes
 			ComboIndex = 0;
 			JumpCount = 0;
 			m_PendingHurt = null;
-			m_LastAttackerId = 0;
 			Velocity = Vector2.Zero;
 			Input?.Reset();
 			SetFacing(1);
 			CreateBody();
-
-			// 进场广播初始状态（HUD 先开、英雄后生成，订阅顺序由流程保证）
-			FireVitals();
 		}
 
 		public override void OnHide(bool isShutdown, object userData)
@@ -184,7 +179,7 @@ namespace GameLogic.Entity.Heroes
 		public override CombatSide Side => CombatSide.Hero;
 
 		/// <summary>
-		/// 英雄等级。M4 固定 1 级（HeroLevelConfig 第一行）；M6 接存档后由 GF.Archive 写入。
+		/// 英雄等级。当前战斗固定 1 级；成长与存档尚未接入。
 		/// 攻防成长 = HeroConfig.Base* + (Level-1) × Grow*。
 		/// </summary>
 		public int Level { get; private set; } = 1;
@@ -206,26 +201,22 @@ namespace GameLogic.Entity.Heroes
 				Config.Ar, Config.Sp);
 		}
 
-		/// <summary>无双值（旧 WSValue）：普攻命中按 AttackConfig.WsGain 区间累计，上限 <see cref="WsMax"/>。消耗随无双技能系统加入。</summary>
+		/// <summary>无双值（旧 WSValue）：普攻命中按 AttackConfig.WsGain 区间累计。</summary>
 		public int WsValue { get; private set; }
 
-		/// <summary>无双值上限（BattleConfig.WsMax；HUD 无双条满值）。</summary>
+		/// <summary>无双值上限（旧项目默认 100）。</summary>
 		public int WsMax { get; private set; }
 
-		/// <summary>最近伤害来源实体编号（死亡事件的击杀者；0 = 无实体来源）</summary>
-		private int m_LastAttackerId;
-
 		/// <summary>
-		/// 命中收益（英雄专属）：按本招 AttackConfig.WsGain 掷定无双值并累计（上限 <see cref="WsMax"/>）。
+		/// 命中收益（英雄专属）：按本招 AttackConfig.WsGain 掷定无双值并累计。
 		/// 收益规则属于英雄，不进攻击包、不进 ActorEntity（怪物没有无双值）。
 		/// </summary>
 		protected override void OnHitLanded(AttackData attack, DamageResult result)
 		{
 			if (ConfigSystem.Instance.Tables.TbAttackConfig.GetOrDefault(attack.AttackId) is { } config)
 			{
-				WsValue = Mathf.Min(WsValue + GD.RandRange(config.WsGain.X, Mathf.Max(config.WsGain.X, config.WsGain.Y)),
-					WsMax);
-				FireVitals();
+				int gain = GD.RandRange(config.WsGain.X, Mathf.Max(config.WsGain.X, config.WsGain.Y));
+				WsValue = Mathf.Clamp(WsValue + gain, 0, WsMax);
 			}
 		}
 
@@ -238,13 +229,10 @@ namespace GameLogic.Entity.Heroes
 		protected override void OnHurt(AttackData attack, DamageResult result, Vector2 knockback, int attackerEntityId)
 		{
 			base.OnHurt(attack, result, knockback, attackerEntityId);
-			m_LastAttackerId = attackerEntityId;
 			if (!Dead && m_BodyParams.HurtTime > 0f)
 			{
 				m_PendingHurt = knockback;
 			}
-
-			FireVitals();
 		}
 
 		// ---- 身体状态机 ----
@@ -348,27 +336,6 @@ namespace GameLogic.Entity.Heroes
 
 		void IActorBody.PlayHurtSound() => PlaySound(Config.HurtSoundId);
 
-		/// <summary>死亡副作用：播死亡音、广播死亡事件（同 MonsterEntity 的 MonsterDiedEventArgs 模式）。</summary>
-		void IActorBody.OnDied()
-		{
-			PlaySound(Config.DeathSoundId);
-			GF.Event.Fire(this, HeroDiedEventArgs.Create(Id, m_LastAttackerId));
-		}
-
-		/// <summary>恢复生命后广播状态（HUD 血条）。</summary>
-		public override void Heal(int value)
-		{
-			base.Heal(value);
-			if (!Dead && value > 0)
-			{
-				FireVitals();
-			}
-		}
-
-		/// <summary>广播生命/无双/等级快照（HUD 订阅 HeroVitalsChangedEventArgs；只携带值）。</summary>
-		private void FireVitals()
-		{
-			GF.Event.Fire(this, HeroVitalsChangedEventArgs.Create(Id, Hp, MaxHp, Level, WsValue, WsMax));
-		}
+		void IActorBody.OnDied() => PlaySound(Config.DeathSoundId);
 	}
 }

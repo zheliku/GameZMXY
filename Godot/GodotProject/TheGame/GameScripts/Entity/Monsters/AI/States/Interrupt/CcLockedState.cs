@@ -5,8 +5,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 {
 	/// <summary>
 	/// 受控期间不做决策（击退速度由实体物理保持）；解除后再僵直 CalmTime 秒（旧 behit_calmtime），
-	/// 然后有目标 → Chase，否则 → Patrol。被打会锁定攻击者（MonsterEntity.OnHurt），所以挨打后通常直接反击。
-	/// 标准用法：CcLocked 槽（所有原型共用）。
+	/// 然后有目标 → WalkToTarget，否则 → Wander。被打会锁定攻击者（MonsterEntity.OnHurt），所以挨打后通常直接反击。
 	/// </summary>
 	public class CcLockedState : MonsterAiState
 	{
@@ -30,7 +29,14 @@ namespace GameLogic.Entity.Monsters.AI.States
 			m_CalmElapsed += elapseSeconds;
 			if (m_CalmElapsed >= agent.Params.CalmTime)
 			{
-				ChangeRole(fsm, agent.TargetBox.IsEmpty ? MonsterAiRole.Patrol : MonsterAiRole.Chase);
+				if (agent.TargetBox.IsEmpty)
+				{
+					ChangeState<WanderState>(fsm);
+				}
+				else
+				{
+					ChangeState<WalkToTargetState>(fsm);
+				}
 			}
 		}
 	}

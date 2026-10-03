@@ -7,7 +7,7 @@ namespace GameLogic.Event
 {
 	/// <summary>
 	/// 怪物死亡事件（扣血到 0 的那一刻发一次，早于死亡动画与实体回收）。
-	/// 发布方：MonsterEntity；订阅方（M6 起）：LevelDirector（场上计数/清场开闸）、经验/掉落、击杀统计、Boss 血条。
+	/// 发布方：MonsterEntity；关卡计数、经验/掉落、击杀统计等外部玩法系统可按需订阅。
 	///
 	/// 只携带值（实体随后会被回收复用，订阅者不得持有实体引用），按根规范 §9 走 ReferencePool。
 	/// </summary>
@@ -44,12 +44,6 @@ namespace GameLogic.Event
 			e.KillerEntityId = killerEntityId;
 			e.Position = position;
 			return e;
-		}
-
-		/// <summary>转发复制（根规范 §5.2）</summary>
-		public static MonsterDiedEventArgs Create(MonsterDiedEventArgs source)
-		{
-			return Create(source.EntityId, source.MonsterId, source.Rank, source.KillerEntityId, source.Position);
 		}
 
 		public override void Clear()

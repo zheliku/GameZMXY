@@ -4,11 +4,7 @@
 //------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
-using System.Linq;
-using GameConfig.Constant;
 using GameFramework;
-using GameFramework.Event;
 using GameFramework.Localization;
 using GameFramework.Procedure;
 using GodotGameFramework;
@@ -23,16 +19,6 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public class ProcedurePrelode : ProcedureBase
 {
-    private static readonly ConcurrentDictionary<string, bool> m_LoadFlagDic = new ConcurrentDictionary<string, bool>();
-    private static readonly string[] m_LoadFlagKeys = { "Localization", "UIGroup", "EntityGroup", "SoundGroup" };
-    /// <summary>
-    /// 状态初始化。
-    /// </summary>
-    protected internal override void OnInit(ProcedureOwner procedureOwner)
-    {
-        base.OnInit(procedureOwner);
-    }
-
     /// <summary>
     /// 进入流程。
     /// 执行所有初始化工作后立即切换到菜单流程。
@@ -40,69 +26,71 @@ public class ProcedurePrelode : ProcedureBase
     protected internal async override void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
+        bool groupsLoaded = true;
 
         try
         {
-            LoadEntityGroup();
+            groupsLoaded &= LoadEntityGroup();
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             Log.Fatal("[ProcedurePrelode] 加载实体组失败（.pck 可能缺失依赖资源）: {0}", ex);
+            groupsLoaded = false;
         }
 
         try
         {
             LoadLocalization();
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             Log.Fatal("[ProcedurePrelode] 加载本地化失败: {0}", ex);
+            groupsLoaded = false;
         }
 
         try
         {
-            LoadUIGroup();
+            groupsLoaded &= LoadUIGroup();
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             Log.Fatal("[ProcedurePrelode] 加载 UI 组失败（.pck 可能缺失依赖资源）: {0}", ex);
+            groupsLoaded = false;
         }
 
         try
         {
-            LoadSoundGroup();
+            groupsLoaded &= LoadSoundGroup();
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             Log.Fatal("[ProcedurePrelode] 加载声音组失败（.pck 可能缺失依赖资源）: {0}", ex);
+            groupsLoaded = false;
         }
         NodePool.Instance.Active(); // 启动节点池
         LayerMask.Instance.Active(); // 启动层级工具\
-        await GF.UI.OpenLoadingUIFormAsync();
+        LoadingForm loadingForm;
         try
         {
-            await GF.Archive.LoadAsync();
-
-            if (IsLoadAll())
-            {
-                ChangeState<ProcedureGame>(procedureOwner);
-            }
-            else
-            {
-                Log.Warning("[ProcedurePrelode] 部分模块加载失败，继续进入游戏。");
-                ChangeState<ProcedureGame>(procedureOwner);
-            }
+            loadingForm = await GF.UI.OpenLoadingUIFormAsync();
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
-            // 存档加载异常时收掉加载遮罩，避免永久挂住；正常路径由 ProcedureGame 在 MenuForm 打开后关闭
-            Log.Fatal("[ProcedurePrelode] 存档加载失败: {0}", ex);
-            LoadingForm.Current?.CloseLoading();
+            Log.Fatal("[ProcedurePrelode] 打开加载界面失败: {0}", ex);
+            return;
         }
+
+        if (!groupsLoaded)
+        {
+            Log.Fatal("[ProcedurePrelode] 必要资源组加载失败，停止进入游戏。");
+            loadingForm?.SetLogState("资源加载失败", 0);
+            return;
+        }
+
+        ChangeState<ProcedureGame>(procedureOwner);
     }
     private void LoadLocalization()
     {
-        m_LoadFlagDic.TryAdd(m_LoadFlagKeys[0], false);
         if (!GF.Base.EnableEditorResLoad)
         {
             GF.Localization.Language = (Language)GF.Setting.GetInt("Language", (int)Language.English);
@@ -112,62 +100,46 @@ public class ProcedurePrelode : ProcedureBase
             GF.Localization.Language = GF.Base.EditorLanguage != Language.Unspecified ? GF.Base.EditorLanguage : GF.Localization.SystemLanguage;
             Log.Info("[ProcedurePrelode] Editor res load enabled, set language to SystemLanguage: {0}.", GF.Localization.Language);
         }
-        m_LoadFlagDic.TryUpdate(m_LoadFlagKeys[0], true, false);
     }
-    private void LoadUIGroup()
+    private bool LoadUIGroup()
     {
-        m_LoadFlagDic.TryAdd(m_LoadFlagKeys[1], false);
         for (int i = 0; i < GF.UI.UIGroupRes.Groups.Length; i++)
         {
             if (!GF.UI.AddUIGroup(GF.UI.UIGroupRes.Groups[i].Name, GF.UI.UIGroupRes.Groups[i].Depth))
             {
                 Log.Warning("Add UI group '{0}' failure.", GF.UI.UIGroupRes.Groups[i].Name);
-                return;
+                return false;
             }
         }
-        m_LoadFlagDic.TryUpdate(m_LoadFlagKeys[1], true, false);
+        return true;
     }
-    private void LoadEntityGroup()
+    private bool LoadEntityGroup()
     {
-        m_LoadFlagDic.TryAdd(m_LoadFlagKeys[2], false);
         var groups = GF.Entity.EntityGroupRes.EntityGroups;
         for (int i = 0; i < groups.Length; i++)
         {
             if (!GF.Entity.AddEntityGroup(groups[i].Name, groups[i].ReleaseInterval, groups[i].Capacity, groups[i].ExpireTime, groups[i].Priority))
             {
                 Log.Warning("Add Entity group '{0}' failure.", groups[i].Name);
-                return;
+                return false;
             }
         }
-        m_LoadFlagDic.TryUpdate(m_LoadFlagKeys[2], true, false);
+        return true;
     }
-    private void LoadSoundGroup()
+    private bool LoadSoundGroup()
     {
-        m_LoadFlagDic.TryAdd(m_LoadFlagKeys[3], false);
         var groups = GF.Sound.SoundGroupRes.SoundGroups;
         for (int i = 0; i < groups.Length; i++)
         {
             if (!GF.Sound.AddSoundGroup(groups[i].Name, groups[i].AgentCounts, groups[i].AvoidBeingReplacedBySamePriority))
             {
                 Log.Warning("Add UI group '{0}' failure.", groups[i].Name);
-                return;
+                return false;
             }
         }
         GF.Sound.SetVolume(SoundComponent.DefaultMusicGroup, GF.Setting.GetFloat(SoundComponent.DefaultMusicGroup, 1));
         GF.Sound.SetVolume(SoundComponent.DefaultSfxGroup, GF.Setting.GetFloat(SoundComponent.DefaultSfxGroup, 1));
         GF.Sound.SetVolume(SoundComponent.DefaultUiGroup, GF.Setting.GetFloat(SoundComponent.DefaultUiGroup, 1));
-        m_LoadFlagDic.TryUpdate(m_LoadFlagKeys[3], true, false);
-    }
-
-    private bool IsLoadAll()
-    {
-        return m_LoadFlagDic.All(x => x.Value);
-    }
-    /// <summary>
-    /// 离开流程。
-    /// </summary>
-    protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
-    {
-        base.OnLeave(procedureOwner, isShutdown);
+        return true;
     }
 }

@@ -4,7 +4,7 @@
 Design notes (see AGENTS.md 6):
   * every business table carries Id / NameCn / Desc, and every field has a
     Chinese comment; LegacyId only on tables with a real legacy counterpart
-  * no derived columns (e.g. wave count is derived from LevelWaveConfig)
+  * avoid storing values that can be derived from the owning config
   * combat constants that differ per camp live in one BattleConfig row, not
     duplicated into HeroConfig / MonsterConfig
   * values are taken from the legacy project (ZMXY_BHYH); see file:line in the
@@ -23,7 +23,7 @@ import os
 import openpyxl
 from openpyxl import Workbook
 
-ROOT = r"P:\Godot-Project\GameZMXY"
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATAS = os.path.join(ROOT, "Configs", "GameConfig", "Datas")
 
 
@@ -150,9 +150,7 @@ ENUM_HEADER = 3
 ENUMS = [
     # (full_name, flags, unique, [(name, alias, value, comment)])
     ("UIFormId", False, True, [
-        ("HeroSelectForm", "选人界面", None, None),
-        ("HudForm", "战斗界面", None, None),
-        ("GameOverForm", "结算界面", None, None),
+        ("None", "无", 0, None),
     ]),
     ("Entity.EntityId", False, True, [
         ("Wukong", "悟空", None, None),
@@ -181,8 +179,6 @@ ENUMS = [
         ("WukongHurt", "悟空受击语音", 4, None),
         ("WukongDeath", "悟空死亡语音", 5, None),
         ("WukongImpact", "悟空命中音(棍打中东西)", 6, None),
-        # M6 追加：关卡 BGM（build_m6_tables.py 引入，此处同步防止重跑回归）
-        ("Level1Bgm", "花果山BGM", 7, None),
     ]),
 ]
 
@@ -221,9 +217,6 @@ NEW_TABLES = [
     ("Monster.TbMonsterConfig", "MonsterConfig", "MonsterConfig.xlsx", None),
     ("Battle.TbAttackConfig", "AttackConfig", "AttackConfig.xlsx", None),
     ("Battle.TbBattleConfig", "BattleConfig", "BattleConfig.xlsx", "one"),
-    ("Level.TbLevelConfig", "LevelConfig", "LevelConfig.xlsx", None),
-    ("Level.TbLevelWaveConfig", "LevelWaveConfig", "LevelWaveConfig.xlsx", None),
-    ("Level.TbLevelSpawnConfig", "LevelSpawnConfig", "LevelSpawnConfig.xlsx", None),
     ("Sound.TbSoundConfig", "SoundConfig", "SoundConfig.xlsx", None),
 ]
 
@@ -252,11 +245,7 @@ def build_entity_ui():
         (None, 1, "Wukong", "res://TheGame/Entitys/WukongEntity.tscn", "Actor", 0),
         (None, 2, "HuaguoshanMonkey", "res://TheGame/Entitys/HuaguoshanMonkeyEntity.tscn", "Actor", 0),
     ])
-    seed_table("界面UI.xlsx", 5, [
-        (None, 1, "HeroSelectForm", "res://TheGame/UIs/HeroSelectForm.tscn", False, "Normal"),
-        (None, 2, "HudForm", "res://TheGame/UIs/HudForm.tscn", False, "Normal"),
-        (None, 3, "GameOverForm", "res://TheGame/UIs/GameOverForm.tscn", False, "Normal"),
-    ])
+    seed_table("界面UI.xlsx", 5, [])
 
 
 # ---------------------------------------------------------------------------
@@ -437,7 +426,7 @@ def build_battle():
         (2001, "monster1.hit1", "猴子普攻", "猴子唯一攻击", "attack_1", "0,0", 10, "Physics", "3,-6", "0,0", 10, "None", "None", "HuaguoshanMonkey", 0, 100, 0, "0,0", "0,0", "0,0", 0.3),
     ]
     # 2026-09-30：猴子 AiRange 改值 + 表尾追加 AiRecovery —— force_rows 重写数据行；种子行已对齐改前 xlsx 实际值
-    new_table("AttackConfig.xlsx", fields, rows, force_rows=True)
+    new_table("AttackConfig.xlsx", fields, rows)
 
     # legacy constants: hero-as-defender K=250 (BaseHero.gd:703/707),
     # monster-as-defender K=100 (BaseMonster.gd:790/793),
@@ -474,8 +463,7 @@ def build_battle():
         ("KnockbackScaleX_HeroDef", "float", "英雄被击退横向换算: px/s = Knockback.X × 本值"),
         ("KnockbackScaleX_MonsterDef", "float", "怪物被击退横向换算: px/s = Knockback.X × 本值"),
         ("KnockbackScaleY", "float", "击退纵向换算: px/s = Knockback.Y × 本值(人怪一致)"),
-        # M6 表尾追加（build_m6_tables.py 引入，此处同步）：无双值上限
-        ("WsMax", "int", "无双值上限(旧项目满值 100;M6 供 HUD 无双条满值)"),
+        ("WsMax", "int", "无双值上限(旧项目 BaseRoleProperies.gd:20)"),
     ]
     rows = [
         ("战斗常数", "沿用旧项目人怪两侧不一致的基数,集中在此处",
@@ -484,68 +472,6 @@ def build_battle():
          1, 0.9, 1, 0.7, 5, 2, 25, 30, 15, 100),
     ]
     new_table("BattleConfig.xlsx", fields, rows)
-
-
-def build_level():
-    fields = [
-        ("Id", "int", "关卡ID"),
-        ("LegacyId", "int", "旧关卡编号"),
-        ("NameCn", "string", "中文名"),
-        ("Desc", "string", "描述"),
-        ("ScenePath", "string", "关卡场景路径"),
-        # M6：BgmPath(string) → BgmSoundId(Sound.SoundId)（build_m6_tables.py 的结构变更，此处同步）
-        ("BgmSoundId", "Sound.SoundId", "关卡背景音乐(SoundConfig;None=无)"),
-        ("MaxAlive", "int", "场上怪物上限(旧项目全局硬编码6)"),
-        ("SpawnInterval", "float", "补怪间隔秒(旧设置默认1.2)"),
-    ]
-    rows = [
-        (1, 1, "花果山", "第一关", "res://TheGame/Scenes/Level_1.tscn", "Level1Bgm", 6, 1.2),
-    ]
-    new_table("LevelConfig.xlsx", fields, rows)
-
-    fields = [
-        ("Id", "int", "波次ID"),
-        ("NameCn", "string", "中文名"),
-        ("Desc", "string", "描述"),
-        ("LevelId", "int", "关卡ID"),
-        ("WaveIndex", "int", "波次序号(1起)"),
-        ("TriggerX", "float", "玩家 x 达到该值时触发本波"),
-    ]
-    rows = [
-        (1, "第1波", "进入关卡即触发", 1, 1, 0),
-        (2, "第2波", "玩家 x>=1600 触发", 1, 2, 1600),
-        (3, "第3波", "玩家 x>=2700 触发", 1, 3, 2700),
-        (4, "第4波", "玩家 x>=4000 触发", 1, 4, 4000),
-    ]
-    new_table("LevelWaveConfig.xlsx", fields, rows)
-
-    # legacy Level_1.gd Monster_group / Monster_position_x / _y
-    # M6（build_m6_tables.py）：MonsterId 2/3 → 1 —— 垂直切片全用已迁的花果山猴子，
-    # 旧 Monster_2/3 迁入后改回（此处种子同步，防止重跑回归）
-    waves = [
-        (1, [1] * 9, [500, 400, 700, 700, 700, 700, 700, 700, 700],
-         [350, 320, 300, 300, 300, 300, 300, 300, 300]),
-        (2, [1] * 14, [2000] * 14, [300] * 14),
-        (3, [1] * 15, [3000] * 15, [300] * 15),
-        (4, [1, 1, 1, 1, 1, 1], [4500] * 6, [300] * 6),
-    ]
-    rows = []
-    sid = 1
-    for wave_id, monsters, xs, ys in waves:
-        for i, mid in enumerate(monsters):
-            rows.append((sid, f"波{wave_id}-{i + 1}", f"第{wave_id}波第{i + 1}只",
-                         wave_id, mid, xs[i], ys[i]))
-            sid += 1
-    fields = [
-        ("Id", "int", "刷怪点ID"),
-        ("NameCn", "string", "中文名"),
-        ("Desc", "string", "描述"),
-        ("WaveId", "int", "波次ID(LevelWaveConfig.Id)"),
-        ("MonsterId", "int", "怪物ID(MonsterConfig.Id;M6 垂直切片全用花果山猴子,旧 Monster_2/3 迁入后改回)"),
-        ("X", "float", "出生坐标 x(旧 Monster_position_x)"),
-        ("Y", "float", "出生坐标 y(旧 Monster_position_y)"),
-    ]
-    new_table("LevelSpawnConfig.xlsx", fields, rows)
 
 
 def build_sound():
@@ -582,10 +508,8 @@ def build_sound():
         (4, "WukongHurt", "悟空受击语音", "悟空自己挨打时的语音(按受害者选音,BaseHero.gd:592)", "49_Role1_beAttack.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_hurt.mp3"),
         (5, "WukongDeath", "悟空死亡语音", "悟空死亡", "59_Role1_dead.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_death.mp3"),
         (6, "WukongImpact", "悟空命中音", "悟空的棍打中东西的命中音(按攻击者选音,BaseMonster.gd:652)", "6_BeattackByRole1.mp3", "SFX", "res://TheGame/Audios/SFX/wukong/wukong_hit_impact.mp3"),
-        # M6 追加（build_m6_tables.py 引入，此处同步防止重跑回归）
-        (7, "Level1Bgm", "花果山BGM", "花果山关卡背景音乐(关卡进场播放)", "1_music.mp3", "Music", "res://TheGame/Audios/BGM/level_1.mp3"),
     ]
-    new_table("SoundConfig.xlsx", fields, rows, force_rows=True)
+    new_table("SoundConfig.xlsx", fields, rows)
 
 
 if __name__ == "__main__":
@@ -601,9 +525,6 @@ if __name__ == "__main__":
     build_monster()
     print("battle:")
     build_battle()
-    print("level:")
-    build_level()
     print("sound:")
     build_sound()
     print("done.")
-

@@ -5,9 +5,9 @@ using GameLogic.Entity.Monsters.AI;
 namespace GameLogic.Entity.Monsters.AI.States
 {
 	/// <summary>
-	/// 在目标下方守候：普攻重新够得着（目标落回判定高度）→ Attack，水平走远 → Chase；
+	/// 在目标下方守候：攻击重新够得着（目标落回判定高度）→ 站定出招，水平走远 → 继续追击；
 	/// 否则以目标 x 为中心、<see cref="PaceRange"/> 为半幅左右往返（到一端掉头；半幅 0 = 原地面向目标等）。
-	/// 标准用法：Hold 槽。默认半幅取 MonsterConfig.PaceRange；守卫类用 <see cref="WaitBelowTargetState"/>（固定 0）。
+	/// 半幅取 MonsterConfig.PaceRange。
 	/// </summary>
 	public class PaceBelowTargetState : EngageState
 	{
@@ -15,8 +15,6 @@ namespace GameLogic.Entity.Monsters.AI.States
 		private int m_Dir;
 
 		/// <summary>踱步半幅 px</summary>
-		protected virtual float PaceRange(IMonsterAiAgent agent) => agent.Params.PaceRange;
-
 		protected override void Enter(IMonsterAiAgent agent)
 		{
 			base.Enter(agent);
@@ -27,15 +25,15 @@ namespace GameLogic.Entity.Monsters.AI.States
 		{
 			if (agent.Attacks.BasicInReach(agent.TargetBox, dir))
 			{
-				ChangeRole(fsm, MonsterAiRole.Attack);
+				ChangeState<StandAndStrikeState>(fsm);
 				return;
 			}
 
 			// 目标在平台上走远（普攻水平间隙超出踱步半幅 + 滞回）：交给接近
-			float range = PaceRange(agent);
+			float range = agent.Params.PaceRange;
 			if (agent.Attacks.BasicGapX(agent.TargetBox, dir) > range + agent.Params.AttackRangeSlack)
 			{
-				ChangeRole(fsm, MonsterAiRole.Chase);
+				ChangeState<WalkToTargetState>(fsm);
 				return;
 			}
 

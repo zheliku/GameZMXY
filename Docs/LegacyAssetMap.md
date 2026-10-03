@@ -146,14 +146,13 @@ m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tre
 | `AttackConfig.SoundId` / `HitSoundId` | 攻击的起手音 / 命中音 | 攻击自己的属性（与 `Animation` 同类） |
 | `HeroConfig.HurtSoundId` / `DeathSoundId` | 角色受击/死亡语音 | 受害方向 |
 | `MonsterConfig.HurtSoundId` / `DeathSoundId` | 同上（今天填 `None`：旧项目无怪物语音素材，M5 用） | |
-| `LevelConfig.BgmSoundId` | 关卡 BGM（替换旧的裸路径列 `BgmPath`，M6 接） | |
 
 - 规则一句话：**触发者在哪一行，SoundId 就配在哪一列**（与框架实体/界面表配 `AssetPath` 的先例一致）。
 - **框架的统一入口**是 `GF.Sound.PlaySound(资源, 组名)`（`SoundComponent.cs:153`）：组名就是 `SoundGroupRes.tres` 注册的 `Music`/`SFX`/`UI`，各自映射到 Godot 总线（独立音量/静音/代理数）。所以表里直接存框架组名，代码一句 `GF.Sound.PlaySound(cfg.Path, cfg.Group)`（`ActorEntity.PlaySound`）就能播任意组的一次性声音，**不需要自定义组枚举或路由 switch**。
 - `SoundId` 的值**显式写死**（0..6）：自动递增会让"中间插一条音效"导致后续 Id 全部漂移。
-- 只读查询：`GameScripts/Config/SoundConfigQuery.cs`（单个 `Get(SoundId)`，`Config/` 只读不写）。BGM 在关卡代码里用框架的 `PlayBGM`（带"停上一首"语义）。
+- 只读查询通过 `ActorEntity.PlaySound` 直接读取 `SoundConfig`；BGM 与关卡流程暂不接入。
 
-未迁移：其余技能音效（`1_/8_/11_/17_/18_/26_/27_/35_/36_/37_/42_/45_/44_` 等）、BGM（`Music/level`、`Music/MainSceneMusic`）随技能系统与 M6 关卡接入。
+未迁移：其余技能音效（`1_/8_/11_/17_/18_/26_/27_/35_/36_/37_/42_/45_/44_` 等）随技能系统接入；BGM（`Music/level`、`Music/MainSceneMusic`）待后续流程设计。
 
 音效命名遗留：当前枚举/文件按**用途**命名（`WukongAttack2` 等），是旧项目"文件名与实际用途不一致"教训的延续——将来被其他角色复用时名字会失真。后续应改为按"声音本身"命名（如 `WukongSwingLight`），用途只留在绑定表。
 
@@ -185,48 +184,6 @@ m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tre
   6. 子机 ROOT 类型进组重启到 Start；NESTED 类型会恢复上次内部状态（组式写法必须用 ROOT，否则组内边要两两直连才能自纠）。
 - **冒烟测试**（自动化验证动画链路，替代"看日志猜"）：`"S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --quit-after 1500 -- --smoketest`；`TheGame/MainPack/Scripts/Debug/SmokeTestDriver.cs`（autoload，仅 `--smoketest` 时启用）自动注入连打/双击跑/受击/一段跳/二段跳输入，断言 AnimationTree **真正在播**的状态路径（`Attack/attack_1..4` → `Ground/run` → `Hurt` → `Air/jump` → `Air/fall` → `Air/jump_2` → `Ground/Idle/idle1`）、顺序，以及待机时特效层回到空白（动画 empty / 帧 0 / scale 1）；判定看 stdout `SMOKE PASS` / `SMOKE FAIL`（框架关闭流程有既有 bug，偶发段错误冲掉退出码，别只看退出码）。
 - 旧 SpriteFrames 三件套（`wukong_animations.tres` / `wukong_weapon_*_animations.tres` / `wukong_effect_library.tres`）场景不再引用，已于 **2026-09-30 删除**（全项目审计零引用；`gen_animations.py` 对应产出步骤同步停用，重跑不会重建）——帧数据由 `wukong_anim_library.tres` 的帧轨道承载（身体姿势映射见表）；`wukong_effect_animations.tres` 仍被 m_Effect 引用、保留。
-
-## M6 关卡流程与 UI（2026-10-02）
-
-> 迁移脚本：`Tools/LegacyMigration/migrate_m6_ui_assets.py`（可重跑；含两份 SpriteFrames 生成）。
-
-### 贴图与音频
-
-| 旧路径 | 新路径 | 规格 / 说明 |
-| --- | --- | --- |
-| `Art/MainGame/Bg1.png` | `Sprites/UI/main_menu/main_menu_bg.png` | 开始界面（HeroSelectForm 兼作）背景 |
-| `Art/MainGame/ChoosePlayer/ui_juese_wukong01.png` | `Sprites/UI/hero_select/wukong_portrait.png` | 悟空选人立绘 |
-| `Art/HeroPicture/RoleProperiesBox/408.png` | `Sprites/UI/hud/hp_box.png` | 血条框（旧 role_hp_mp_exp 底图） |
-| `Art/HeroPicture/RoleProperiesBox/345.png` | `Sprites/UI/hud/hp_fill.png` | 血条红条（旧 hp_bar.texture_progress） |
-| `Art/HeroPicture/RoleProperiesBox/742.png` | `Sprites/UI/hud/hp_under.png` | 血条底层白条（旧 hp_bar2 / exp_bar） |
-| `Art/HeroPicture/RoleProperiesBox/748.png` | `Sprites/UI/hud/head_frame.png` | HUD 头像框（旧 h_m_e_t） |
-| `Art/HeroPicture/RoleProperiesBox/swk.png` | `Sprites/UI/hud/wukong_head.png` | 悟空头像（旧 role_head，代码按英雄换图） |
-| `Art/HeroPicture/RoleProperiesBox/718.png` | `Sprites/UI/hud/ws_frame.png` | 无双条框（旧 ws_wk） |
-| `Art/HeroPicture/RoleProperiesBox/720.png` | `Sprites/UI/hud/ws_under.png` | 无双条底（旧 ws_effect.texture_under） |
-| `Art/HeroPicture/RoleProperiesBox/724.png` | `Sprites/UI/hud/ws_fill.png` | 无双条填充（旧 ws_effect.texture_progress） |
-| `Art/Level/Gogo/1..67.png` | `Sprites/UI/hud/gogo/gogo_1..67.png` | 前进箭头 67 帧（清场开闸指示） |
-| `Art/Level/Settlement/623.png` | `Sprites/UI/game_over/game_over_bg.png` | 结算背景 |
-| `Art/Level/Settlement/630/632.png` | `Sprites/UI/game_over/btn_return_normal/hover.png` | 返回按钮两态 |
-| `Art/Level/Settlement/457/459.png` | `Sprites/UI/game_over/btn_retry_normal/hover.png` | 重试按钮两态 |
-| `Art/Level/Settlement/637.png` | `Sprites/UI/game_over/victory_title.png` | 胜利标题图 |
-| `Art/Level/Export.png` | `Sprites/Levels/huaguoshan/level_1_exit.png` | 出口传送门图集（206×186 × 11 帧，两行） |
-| `Music/level/1_music.mp3` | `Audios/BGM/level_1.mp3` | 花果山关卡 BGM（`SoundId.Level1Bgm=7`，Music 组） |
-
-未迁移（M6 裁剪，见计划）：旧 HUD 技能栏/背包/法宝/宠物入口（`RoleProperiesBox/750..777` 等）、无双满值特效（`WSGrey/WSBar` + max_ws 动画）、MP/经验条（`739.png`）、评级标题（`436.png`）；主菜单 BGM（`MainSceneMusic/2_SD_xz.mp3`）与结算音乐随 M7 评估。
-
-### SpriteFrames（脚本生成）
-
-| 文件 | 内容 |
-| --- | --- |
-| `Sprites/UI/hud/gogo/gogo_frames.tres` | 动画 `go`：67 帧全图，loop，25fps（旧 Role_information.tscn SubResource("1") 同参） |
-| `Sprites/Levels/huaguoshan/level_1_exit_frames.tres` | 动画 `exit`：Export.png 切 11 帧（206×186），loop，25fps（旧 BaseThroughLevel.tscn 同参） |
-
-### 表结构变更（配套，见 `Tools/ConfigBootstrap/build_m6_tables.py`）
-
-- `LevelConfig.BgmPath`(string) → `BgmSoundId`(Sound.SoundId)，花果山行 = `Level1Bgm`（音效定稿设计的落地）。
-- `SoundId` 枚举 `+Level1Bgm=7`；`SoundConfig` 加对应行（Music 组）。
-- `LevelSpawnConfig` 第 2~4 波 MonsterId 2/3 → 1（垂直切片全用已迁猴子；旧 Monster_2/3 迁入后改回）。
-- `BattleConfig` 表尾追加 `WsMax=100`（旧项目无双满值；HUD 无双条满值）。
 
 ## 复现方式
 

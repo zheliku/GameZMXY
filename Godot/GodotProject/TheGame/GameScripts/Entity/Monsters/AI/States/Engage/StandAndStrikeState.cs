@@ -4,10 +4,10 @@ using GameLogic.Entity.Monsters.AI;
 namespace GameLogic.Entity.Monsters.AI.States
 {
 	/// <summary>
-	/// 站定出招：面向目标，每 AttackInterval 按 AttackDesire 掷一次，命中则从普攻里抽招（旧 Monster_Intelligence 近身分支）。
-	/// 进入后立即掷第一次。标准用法：Attack 槽。
-	///  * 水平间隙 &gt; AttackRangeSlack → Chase；滞回区 (−ReachMargin, Slack] 内小步贴近（被击退几像素不来回切状态）；
-	///  * 水平到位但高度够不着（目标在平台/头顶）→ Hold。
+	/// 站定出招：面向目标，每 AttackInterval 按 AttackDesire 掷一次，命中则按权重选择攻击（旧 Monster_Intelligence 近身分支）。
+	/// 进入后立即掷第一次。
+	///  * 水平间隙 &gt; AttackRangeSlack → WalkToTarget；滞回区内小步贴近（被击退几像素不来回切状态）；
+	///  * 水平到位但高度够不着（目标在平台/头顶）→ PaceBelowTarget。
 	/// </summary>
 	public class StandAndStrikeState : EngageState
 	{
@@ -25,7 +25,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 			float gap = agent.Attacks.BasicGapX(agent.TargetBox, dir);
 			if (gap > agent.Params.AttackRangeSlack)
 			{
-				ChangeRole(fsm, MonsterAiRole.Chase);
+				ChangeState<WalkToTargetState>(fsm);
 				return;
 			}
 
@@ -38,7 +38,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 
 			if (!agent.Attacks.BasicInReach(agent.TargetBox, dir))
 			{
-				ChangeRole(fsm, MonsterAiRole.Hold);
+				ChangeState<PaceBelowTargetState>(fsm);
 				return;
 			}
 
@@ -52,7 +52,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 			m_RollTimer = agent.Params.AttackInterval;
 			if (Chance(agent, agent.Params.AttackDesire))
 			{
-				agent.RequestAttack(agent.Attacks.SelectBasic(agent.TargetBox, dir, agent.NextRandom()));
+				agent.RequestAttack(agent.Attacks.SelectBasic(agent.TargetBox, dir, agent.NextRandom));
 			}
 		}
 	}

@@ -1,42 +1,29 @@
 using GameFramework.Fsm;
+using GameLogic.Entity.Monsters.AI.States;
+using System;
 
 namespace GameLogic.Entity.Monsters.AI
 {
 	/// <summary>
 	/// 怪物 AI 状态基类（GF.Fsm，每状态一个类；持有者 = <see cref="IMonsterAiAgent"/>）。
 	///
-	/// **状态 = 行为，角色 = 组装时指定**：状态类只描述"做什么"（WanderState 游荡、StandAndStrikeState 站定出招……），
-	/// 不写死自己占哪个角色；由大脑原型 <c>set.Bind(MonsterAiRole.Patrol, new WanderState())</c> 放进槽位。
-	/// 行为按角色跳转（<see cref="ChangeRole"/>），所以同一个行为可以被任何怪、任何原型复用，换掉某个角色的行为
-	/// 其余状态不用改。额外状态（<see cref="MonsterAiStateSet.AddExtra"/>）不占槽位，<see cref="Role"/> 为 null。
-	///
-	/// 打断优先级集中在这里：死亡 &gt; 受控 &gt; 本状态决策。
+	/// 猴子 AI 状态的共同入口：死亡与受控优先于当前状态决策。
 	/// <code>
-	///   Idle ⇄ Patrol              游荡（PatrolInterval 一次决策）
-	///   Idle/Patrol → Chase        有目标
-	///   Chase ⇄ Attack             水平够得着 / 离开超过 AttackRangeSlack（出招与收招硬直中不离开）
-	///   Attack ⇄ Hold              水平到位但高度够不着 / 目标落回判定高度
-	///   Chase/Attack/Hold → Patrol 目标失效或丢失（实体按 LoseTargetTime 判定）
-	///   任意 → CcLocked → Chase/Patrol ；任意 → Death（终态）
+	///   Pause ⇄ Wander                    无目标游荡
+	///   Pause/Wander → WalkToTarget       发现目标
+	///   WalkToTarget ⇄ StandAndStrike     普攻水平范围
+	///   StandAndStrike ⇄ PaceBelowTarget  平台高度与水平范围
+	///   交战状态 → Wander                 目标失效或丢失
+	///   任意 → CcLocked → Wander/WalkToTarget；任意 → Death（终态）
 	/// </code>
 	/// 本状态机只写意图（Move / Face / RequestAttack）；动作、受击与动画由身体状态机（Monsters/Body/）决定。
 	/// </summary>
 	public abstract class MonsterAiState : FsmState<IMonsterAiAgent>
 	{
-		/// <summary>组装时放入的角色槽（额外状态为 null）</summary>
-		public MonsterAiRole? Role { get; private set; }
-
-		/// <summary>状态名（调试/冒烟观测）：占槽的状态报角色名，额外状态报类名。</summary>
-		public virtual string StateName => Role?.ToString() ?? GetType().Name;
-
-		/// <summary>本状态能否被受控打断（默认可以；Boss 演出等覆写为 false）。死亡打断不受此控制。</summary>
-		protected virtual bool CanBeCcLocked => true;
-
-		/// <summary>由状态集在 Bind / AddExtra 时写入。</summary>
-		internal void AssignRole(MonsterAiRole? role)
-		{
-			Role = role;
-		}
+		/// <summary>调试与冒烟观测使用的状态名。</summary>
+		public string StateName => GetType().Name.EndsWith("State", StringComparison.Ordinal)
+			? GetType().Name[..^"State".Length]
+			: GetType().Name;
 
 		protected internal sealed override void OnEnter(IFsm<IMonsterAiAgent> fsm)
 		{
@@ -48,19 +35,20 @@ namespace GameLogic.Entity.Monsters.AI
 			float realElapseSeconds)
 		{
 			IMonsterAiAgent agent = fsm.Owner;
+			MonsterAiState current = fsm.CurrentState as MonsterAiState;
 			if (agent.IsDead)
 			{
-				if (Role != MonsterAiRole.Death)
+				if (current is not DeathState)
 				{
-					ChangeRole(fsm, MonsterAiRole.Death);
+					ChangeState<DeathState>(fsm);
 				}
 
 				return;
 			}
 
-			if (agent.IsCcLocked && Role != MonsterAiRole.CcLocked && CanBeCcLocked)
+			if (agent.IsCcLocked && current is not CcLockedState)
 			{
-				ChangeRole(fsm, MonsterAiRole.CcLocked);
+				ChangeState<CcLockedState>(fsm);
 				return;
 			}
 
@@ -82,10 +70,5 @@ namespace GameLogic.Entity.Monsters.AI
 		/// <summary>未被打断时的本状态决策（elapseSeconds 为逻辑时间）。</summary>
 		protected abstract void Tick(IFsm<IMonsterAiAgent> fsm, IMonsterAiAgent agent, float elapseSeconds);
 
-		/// <summary>按角色跳转（目标行为由状态集解析）。</summary>
-		protected void ChangeRole(IFsm<IMonsterAiAgent> fsm, MonsterAiRole role)
-		{
-			ChangeState(fsm, fsm.Owner.States.Resolve(role));
-		}
 	}
 }

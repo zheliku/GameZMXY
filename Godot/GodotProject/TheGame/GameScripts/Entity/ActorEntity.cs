@@ -211,6 +211,7 @@ namespace GameLogic.Entity
 		{
 			Visible = true;
 			IsShown = true;
+			Dead = false;
 			m_RequestedAnim = null;
 			if (m_AnimPlayer != null)
 			{
@@ -282,13 +283,7 @@ namespace GameLogic.Entity
 		public virtual void OnHide(bool isShutdown, object userData)
 		{
 			IsShown = false;
-
-			// 攻击包是纯 C# 池对象，关停时也要归还（不碰节点）
-			if (m_ActiveAttack != null)
-			{
-				ReferencePool.Release(m_ActiveAttack);
-				m_ActiveAttack = null;
-			}
+			ReleaseAttack();
 
 			if (isShutdown || !IsInstanceValid(this))
 			{
@@ -300,7 +295,6 @@ namespace GameLogic.Entity
 				m_AnimPlayer.Active = false;
 			}
 
-			ReleaseAttack();
 			Visible = false;
 		}
 
@@ -350,7 +344,7 @@ namespace GameLogic.Entity
 				return;
 			}
 
-			SoundConfig cfg = SoundConfigQuery.Get(id);
+			SoundConfig cfg = ConfigSystem.Instance.Tables.TbSoundConfig.GetOrDefault((int)id);
 			if (cfg == null)
 			{
 				Log.Error("[ActorEntity] SoundConfig 缺失行：SoundId={0}", id);

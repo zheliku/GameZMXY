@@ -41,10 +41,6 @@ namespace GameConfig.Sound
         /// 悟空命中音(棍打中东西)
         /// </summary>
         WukongImpact = 6,
-        /// <summary>
-        /// 花果山关卡背景音乐
-        /// </summary>
-        Level1Bgm = 7,
     }
 
 } 

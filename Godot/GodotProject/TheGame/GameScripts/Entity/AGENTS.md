@@ -7,13 +7,13 @@
 ```
 ActorEntity : CharacterBody2D, IEntity        # 抽象，共用：血量/受击/朝向翻转/身体层/判定盒/动画宿主启停/招式装配
   ├── HeroEntity → WukongEntity ...           # 英雄机制 + 专属层（武器层、特效层 m_EffectRoot 在 HeroEntity）
-  └── MonsterEntity（抽象）→ <各怪>           # 身体层；每怪覆写 CreateBrain
+  └── MonsterEntity（抽象）→ <各怪>           # 身体与默认怪物 AI 宿主
 BulletEntity : Node2D, IEntity   DropItemEntity / MagicWeaponEntity ...
 ```
 
 - 直接继承 Godot 原生类型 + `IEntity`；新实体先看现有类（`ActorEntity` / `HeroEntity`）再动手，公共能力下沉父类。
 - 角色事实（输入/连段…）放最具体的类，基类不预埋用不上的字段；**场景节点引用同理**——只有所有子类都有的节点才进 `ActorEntity`（2026-09-30：特效层下沉到 HeroEntity，怪物检查器不再出现空的 `m_EffectRoot`）。
-- 基类不给"静默默认值"掩盖漏实现：结算侧别 `Side`、属性快照 `GetCombatStats`、怪物大脑 `CreateBrain` 都是 abstract。
+- 基类不给"静默默认值"掩盖漏实现：结算侧别 `Side`、属性快照 `GetCombatStats` 都是 abstract。
 
 ## 生命周期与生成回收
 
@@ -59,7 +59,7 @@ BulletEntity : Node2D, IEntity   DropItemEntity / MagicWeaponEntity ...
   - 英雄动画 `idle1/idle2 / walk / run / jump / jump_2 / fall / attack_1..n / hurt / death`（代码常量 `HeroAnims`），技能动画 `skill_<SkillId>` 随技能系统；
   - 怪物动画 `idle / run / attack_<i> / hurt / death`（`MonsterAnims`）；
   - 攻击动画名来自 `AttackConfig.Animation`；角色专属动画名只出现在该角色的动画库资源与类覆写里（如 `WukongEntity.IdleFlavorAnim`）；
-  - 怪物 AI 角色槽 `Idle / Patrol / Chase / Attack / Hold / CcLocked / Death`；Boss 阶段转换也是**状态**，不写巨型 if 链。
+  - 怪物 AI 状态按具体行为命名：`Pause / Wander / WalkToTarget / StandAndStrike / PaceBelowTarget / CcLocked / Death`；Boss 阶段转换也是**状态**，不写巨型 if 链。
 - **扩展**：新动作（冲刺、技能、落地硬直）= 新增一个身体状态类，登记进 `CreateBody` 的状态列表，在需要的状态里 `ChangeState`，时长加进 `*BodyParams`；新的可打断规则写进基类 `Interrupt`。禁止 bool 拼状态（红线 7，旧项目最大教训）。
 
 ## 目录（2026-10-01 整理）
@@ -81,57 +81,36 @@ Entity/
    ├─ Body/                                GameLogic.Entity.Monsters.Body（纯 C#）
    │  ├─ IMonsterBody.cs  MonsterBodyParams.cs  MonsterAnims.cs  MonsterBodyState.cs（打断规则）
    │  └─ MonsterMoveState / MonsterAttackState / MonsterRecoveryState / MonsterHurtState / MonsterDeathState
-   ├─ AI/                                  GameLogic.Entity.Monsters.AI（纯 C#）
-   │  ├─ MonsterBrains.cs                  大脑原型（看 AI 先看这里）
-   │  ├─ Core/     状态基类、角色槽、组装表、宿主接口、参数、AiBox
-   │  ├─ Attacks/  招式用法 MonsterAttackSpec 与招式书 MonsterAttackBook（冷却/选招/够不够得着）
-   │  └─ States/                           GameLogic.Entity.Monsters.AI.States：可复用的行为
-   │     ├─ Roam/       无目标类：RoamState 基类 + PauseState / WanderState / ReturnHomeState
-   │     ├─ Engage/     交战类：EngageState 基类 + WalkToTargetState / StandAndStrikeState / PaceBelowTargetState / WaitBelowTargetState
-   │     └─ Interrupt/  打断类（所有原型共用）：CcLockedState / DeathState
+   ├─ AI/                                  GameLogic.Entity.Monsters.AI（纯 C#；当前只实现猴子状态图）
+   │  ├─ Core/     状态基类、宿主接口、参数、AiBox
+   │  ├─ Attacks/  招式用法 MonsterAttackSpec 与招式书 MonsterAttackBook（选招/够不够得着）
+   │  └─ States/                           GameLogic.Entity.Monsters.AI.States
+   │     ├─ Roam/       无目标规则：RoamState / PauseState / WanderState
+   │     ├─ Engage/     交战规则：EngageState / WalkToTargetState / StandAndStrikeState / PaceBelowTargetState
+   │     └─ Interrupt/  打断状态：CcLockedState / DeathState
    └─ <种类>/<种类>Entity.cs                如 HuaguoshanMonkey/；该怪独有的行为也放这里（<种类><行为>State）
 ```
 
-按**种类**分文件夹，不按小怪/精英/Boss 分——阶级是数据（`MonsterConfig.Rank`），同一种怪换数值即可成精英；Boss 天然有自己的文件夹和一批专属状态。
+按**种类**分文件夹，不按小怪/精英/Boss 分。当前怪物 AI 由 `MonsterEntity` 直接创建一套固定状态，不预建原型、角色槽或额外状态装配；新怪物出现后再根据真实行为决定是否增加差异。
 
 ## 怪物 AI（M5，`Monsters/AI/`）
 
-**三层分工**（两台状态机，2026-10-01）：AI 状态机（`GF.Fsm<IMonsterAiAgent>`，框架帧）只写**意图**（`Move / Face / RequestAttack`）→ 身体状态机（`GF.Fsm<IMonsterBody>`，物理帧，`Monsters/Body/`）是受击、死亡、出招、收招硬直的**唯一权威**，把意图变成动作与物理并请求动画 → `AnimationPlayer` 播放纯数据（时长 OnInit 读动画长度、状态计时）。边界规则：**单向依赖**（身体不知道 AI 存在，AI 经 `IMonsterAiAgent` 只读身体结果：`IsCcLocked` = 身体处在 Hurt，`IsAttacking` = 已请求/出招/收招硬直）；AI 的 CcLocked/Death 槽只是被动等待身体状态；冒烟测试同时观测两台状态机的状态名。改 AI 不动身体与动画图。
+AI 状态机使用框架帧，只写移动、朝向和出招意图；身体状态机按物理帧执行移动、受击、攻击、硬直和死亡；动画只提供表现数据。身体不依赖 AI，AI 通过 `IMonsterAiAgent` 读取目标与身体结果。
 
 - **`Monsters/AI/` 是纯 C#**：状态只经 `IMonsterAiAgent` 读感知、写意图，随机数由宿主提供；禁止在状态里碰节点、`GD.*`、`GF.*`、Godot 类型（几何用 `AiBox`）。单测用框架真实 `FsmManager` + 假宿主驱动（`Tests/BattleTests/MonsterAiTests.cs`）。
-- **三层结构**（参考 tModLoader `aiStyle`、Unity Game Kit、Hollow Knight）：身体 `MonsterEntity`（抽象，所有怪共用）→ 大脑原型 `MonsterBrains.Xxx()`（一类怪共用）→ 种类 `Monsters/<种类>/<种类>Entity`（覆写 `CreateBrain()` 选原型 + 表里数值 + 真正独有的行为）。
-- **角色槽 ≠ 行为**（2026-09-30 定稿，避免"又一个 AttackState"重名）：
-  - `MonsterAiRole`（Idle/Patrol/Chase/Attack/Hold/CcLocked/Death）是状态机骨架，只说"处在哪个阶段"；
-  - 状态类是**可复用的行为**，按"做什么"命名（`WanderState`、`WalkToTargetState`、`StandAndStrikeState`），**不写死角色**；
-  - 原型用 `set.Bind(MonsterAiRole.X, new 行为())` 组装；同一行为可放进任意原型/任意槽；行为之间 `ChangeRole` 按槽跳转，换掉一个槽其余不用改；
-  - 新公共行为放 `States/Roam|Engage|Interrupt`，名字写清差异（`ChargeStrikeState`、`KiteAndShootState`）；某怪独有行为放它自己的文件夹，名字加种类前缀；
-  - 原型按整套打法命名（现有 `Brawler` 肉搏、`Sentry` 守卫；以后 `Archer`、`Charger`…）；额外状态 `AddExtra` 不占槽（`Role` 为 null）。
-- **拆分粒度**：一个行为一个类（GF.Fsm 每状态一类、一类一实例的硬约束）；规则函数不单独成类，放进用它的地方（概率在 `MonsterAiState.Chance`、够得着判定在 `MonsterAttackBook`、折返在 `WanderState`）。**不写一行转发的包装**：状态直接调 `agent.Attacks.BasicGapX(...)` / `BasicInReach(...)`，只有含真实逻辑且多处复用的才进基类。新增行为前先看现有行为能否换参数/换槽/覆写一个虚成员满足（如 `WaitBelowTargetState` = `PaceBelowTargetState` 半幅固定 0）。
 - **宿主接口最小化**：`TargetBox` 空盒即"没有目标"、中心 X 即方位——不另设 `HasTarget` / `TargetDeltaX` 两个同源属性。
-- **基类分工**：`MonsterAiState` 集中打断优先级（死亡 > 受控 > 自身决策，`CanBeCcLocked=false` 可声明不可打断）；`RoamState` 统一"发现目标 → Chase"；`EngageState` 统一"出招/收招硬直中不决策、目标失效 → Patrol、优先招就绪即放"。派生行为只写差异。
-- **够不够得着 = 动画判定盒**（2026-09-30 人类裁决）：`AttackReachReader` 在 OnInit 从每招攻击动画（`AttackConfig.Animation`）的判定盒值轨道推导范围（判定窗口内形状并集，原生朝左），与目标受击盒（`HurtBox.GetGlobalBounds`）求交——**含高度**。表里不再写近身距离；`AttackConfig.AiRange` 只给无身体判定盒的远程招（`0,0` = 按判定盒推导）。
-  - `WalkToTargetState`（Chase 槽）：普攻判定盒**水平**吃进目标 ≥ `MonsterAttackBook.ReachMargin` 转 Attack（不看高度，目标在头顶也走到下面）；
-  - `StandAndStrikeState`（Attack 槽）：水平间隙 > `AttackRangeSlack` 回 Chase；滞回区内小步贴近；水平够但高度够不着 → Hold 槽；
-  - Hold 槽（目标在平台/头顶）：`PaceBelowTargetState` 以目标 x 为中心、`PaceRange` 半幅来回踱步，`WaitBelowTargetState` 原地面向等；目标落回判定高度 → Attack，水平走远 → Chase。
-- **丢失目标**：目标水平距离持续超出 `SightRange` 达 `LoseTargetTime` 秒，实体清掉目标（0 = 旧项目"只置不清"）；交战类行为随之回 Patrol 槽——`WanderState` 离家超出 `PatrolRadius` 会先走回巡逻范围，`ReturnHomeState` 走回出生点站岗。
+- **基类分工**：`MonsterAiState` 集中打断优先级（死亡 > 受控 > 自身决策）；`RoamState` 统一发现目标后进入 `WalkToTarget`；`EngageState` 统一忙碌时不决策、目标失效后进入 `Wander`。派生状态只写自身行为。
+- **攻击范围**：`AttackReachReader` 在 OnInit 从攻击动画的判定盒值轨道读取范围，并与目标受击盒求交（含高度）。
+  - `WalkToTargetState` 只根据水平距离决定追击或接近攻击范围；
+  - `StandAndStrikeState` 处理滞回与出招；目标水平范围内但高度不符时转入 `PaceBelowTargetState`；
+  - `PaceBelowTargetState` 按 `PaceRange` 在高处目标下方往返。
+- **丢失目标**：目标水平距离持续超出 `SightRange` 达 `LoseTargetTime` 秒，实体清掉目标；无目标时进入 `Wander`，离出生点超出 `PatrolRadius` 会先折返。
 - **出招节奏**：AI 请求 → 身体 `Move` 状态在下一物理帧提交（进入 `Attack`：转向目标、锁定朝向、计冷却）→ 招式时长（= 动画长度）走完 → `Recovery` 收招硬直 `AttackConfig.AiRecovery` 秒（不动、不转身、不出招；`IsAttacking` 覆盖整段）→ `Move`。受击打断出招与硬直（旧项目手感）；霸体由宿主不登记受击来表达。
-- **招式用法是数据**：`MonsterAttackBook` 按 `AttackConfig.AiPriority/AiWeight/AiRange/AiCooldown/AiInitCooldown` 选招与冷却。招式只按"怎么被选中"分两种——不叫"技能"，避免与将来英雄/怪物的技能系统混淆：
-  - **普攻**（`AiPriority=0`）：站定后按 `AttackDesire` 每 `AttackInterval` 掷一次，再按权重抽；小怪通常只有这种；
-  - **优先招**（`AiPriority>0`，旧项目的"技能"）：冷却就绪且够得着就先放、不掷骰，优先级高者胜，接近/守候途中也会放。
+- **招式用法**：`MonsterAttackBook` 在站定时按 `AiPriority=0` 的 `AiWeight` 加权抽选普攻；`AiPriority>0` 的优先招在追击和守候时，只要冷却就绪且可命中便先释放。`AiRange` 仅用于没有实体判定盒的远程/突进招，逐招冷却由 `AiCooldown / AiInitCooldown` 控制；站定普攻节奏用 `MonsterConfig.AttackInterval / AttackDesire`，收招硬直用 `AttackConfig.AiRecovery`。
 - **感知**：`m_Detector`（Area2D，Detector 层 → mask PlayerBody，宽 = 2×SightRange）无目标时锁敌；被打直接锁定攻击方；目标只在死亡/回收时失效（同旧 has_target）。
-- **生命周期**：状态机在 `OnShow` 创建、`OnHide` 销毁（池复用即全新 AI）；`SetAiEnabled(false)` 退化为沙包（调试用）。死亡时广播 `MonsterDiedEventArgs`（M6 关卡计数/掉落/经验订阅它）。
+- **生命周期**：状态机在 `OnShow` 创建、`OnHide` 销毁；`SetAiEnabled(false)` 退化为沙包（调试用）。死亡时广播 `MonsterDiedEventArgs`。
 
-**新怪物扩展分层**（能停在上层就不往下走）：
-
-| 层 | 做法 | 适用 |
-| -- | --- | --- |
-| 1 选原型 + 数据 | 新建 `Monsters/<种类>/<种类>Entity.cs`，覆写 `CreateBrain() => MonsterBrains.Xxx()`；MonsterConfig 行 + AttackConfig 行 + 场景 + 动画库（判定盒决定攻击范围） | 绝大多数小怪；精英怪（多技能 + `SuperArmor` + `Rank=Elite`） |
-| 2 换槽 | `CreateBrain` 里 `.Bind(MonsterAiRole.Chase, new 现有或新写的行为())`；新行为继承 `RoamState`/`EngageState`；几种怪都用的组合沉淀为 `MonsterBrains` 新原型 | 飞行怪、远程风筝怪、冲锋怪 |
-| 3 额外状态 | `CreateBrain` 里 `.AddExtra(...)`，由自定义行为按类型进入、按角色回落；配合覆写 `IsSuperArmor` 等钩子 | Boss 阶段转换、狂暴、召唤演出 |
-| 4 招式效果 | 攻击动画加动画标记（状态计时读标记触发），发射池化子弹实体/上 Buff（动画库无方法轨道） | 弹幕、召唤物、附加控制 |
-
-- 状态实例不可跨状态机共享（GF.Fsm），`CreateBrain` 每次调用都必须返回全新状态集（原型工厂每次 new）。
-- 需要新感知（平台边缘、血量阈值）时加到 `IMonsterAiAgent`，由 `MonsterEntity` 实现，状态里不查场景树。
+新怪物出现后，先实现最小可验证行为；第二种怪物真实复用已有规则时再抽共享状态或策略。Boss 阶段、飞行、远程攻击等行为不提前在猴子状态图中预留入口。
 
 ## 物理层（13 层，写进 `project.godot`）
 

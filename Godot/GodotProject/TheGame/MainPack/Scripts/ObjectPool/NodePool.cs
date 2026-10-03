@@ -26,17 +26,17 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <summary>
     /// 每种场景对应的容器节点（挂在 NodePool 下），归还时对象放回此处。
     /// </summary>
-    private static readonly List<PoolContainer> s_Containers = new();
+    private readonly List<PoolContainer> m_Containers = new();
 
     /// <summary>
     /// Node.GetInstanceId() → 所属池容器。Get 时记录，Release 时查询并清理。
     /// </summary>
-    private static readonly Dictionary<ulong, PoolContainer> s_NodeToContainer = new();
+    private readonly Dictionary<ulong, PoolContainer> m_NodeToContainer = new();
 
     /// <summary>
     /// 池名 → PackedScene，Get 时懒加载实例化用。
     /// </summary>
-    private static readonly Dictionary<string, PackedScene> s_PoolScenes = new();
+    private readonly Dictionary<string, PackedScene> m_PoolScenes = new();
 
     protected override void OnLoad()
     {
@@ -92,7 +92,7 @@ public partial class NodePool : SingletonNode<NodePool>
             // 创建容器节点
             var container = new PoolContainer(poolName);
             AddChild(container);
-            s_Containers.Add(container);
+            m_Containers.Add(container);
 
             int capacity = entry.Capacity > 0 ? entry.Capacity : Config.DefaultCapacity;
             float expireTime = entry.ExpireTime > 0 ? entry.ExpireTime : Config.DefaultExpireTime;
@@ -105,7 +105,7 @@ public partial class NodePool : SingletonNode<NodePool>
                     poolName, autoRelease, capacity, expireTime, 0);
 
                 // 保存 PackedScene 引用，Get 时按需 Instantiate
-                s_PoolScenes[poolName] = packedScene;
+                m_PoolScenes[poolName] = packedScene;
 
                 Log.Info("[NodePool] 已注册: {0} (容量={1}, 过期={2}s, 懒加载)", scenePath, capacity, expireTime);
             }
@@ -123,7 +123,7 @@ public partial class NodePool : SingletonNode<NodePool>
     /// </summary>
     /// <param name="scenePath">场景资源路径。</param>
     /// <param name="parent">可选父节点，获取后自动 AddChild。</param>
-    public static T Get<T>(string scenePath, Node parent = null) where T : class, IPoolable
+    public T Get<T>(string scenePath, Node parent = null) where T : class, IPoolable
     {
         var obj = GetInternal(scenePath, parent);
         if (obj == null) return null;
@@ -139,12 +139,12 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <summary>
     /// 从池中获取节点（非泛型版本，返回 NodeObject 包装）。
     /// </summary>
-    public static NodeObject Get(string scenePath, Node parent = null)
+    public NodeObject Get(string scenePath, Node parent = null)
     {
         return GetInternal(scenePath, parent);
     }
 
-    private static NodeObject GetInternal(string scenePath, Node parent)
+    private NodeObject GetInternal(string scenePath, Node parent)
     {
         var pool = GF.ObjectPool.GetObjectPool<NodeObject>(scenePath);
         if (pool == null)
@@ -157,7 +157,7 @@ public partial class NodePool : SingletonNode<NodePool>
         // 池中无闲置对象 → 懒加载实例化新的
         if (obj == null)
         {
-            if (!s_PoolScenes.TryGetValue(scenePath, out var packedScene) || packedScene == null)
+            if (!m_PoolScenes.TryGetValue(scenePath, out var packedScene) || packedScene == null)
             {
                 Log.Error("[NodePool] 无法实例化：未找到 PackedScene: {0}", scenePath);
                 return null;
@@ -211,7 +211,7 @@ public partial class NodePool : SingletonNode<NodePool>
 
         // 记录归属容器（Release 时用）
         if (TryGetContainer(scenePath, out var retContainer))
-            s_NodeToContainer[node.GetInstanceId()] = retContainer;
+            m_NodeToContainer[node.GetInstanceId()] = retContainer;
 
         return obj;
     }
@@ -221,7 +221,7 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <summary>
     /// 归还 NodeObject 到池中。
     /// </summary>
-    public static void Release(NodeObject nodeObj)
+    public void Release(NodeObject nodeObj)
     {
         if (nodeObj == null) return;
 
@@ -231,7 +231,7 @@ public partial class NodePool : SingletonNode<NodePool>
         ulong id = target.GetInstanceId();
 
         // 从追踪字典取容器并清理
-        if (!s_NodeToContainer.Remove(id, out var container))
+        if (!m_NodeToContainer.Remove(id, out var container))
         {
             Log.Warning("[NodePool] 无法归还：未找到节点 {0} 的归属池", target.Name);
             return;
@@ -267,14 +267,14 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <summary>
     /// 归还 IPoolable 节点到池中
     /// </summary>
-    public static void Release(IPoolable poolItem)
+    public void Release(IPoolable poolItem)
     {
         if (poolItem == null) return;
         if (poolItem is not Node node) return;
 
         ulong id = node.GetInstanceId();
 
-        if (!s_NodeToContainer.TryGetValue(id, out var container))
+        if (!m_NodeToContainer.TryGetValue(id, out var container))
         {
             Log.Warning("[NodePool] 无法归还 IPoolable：未找到节点 {0} 的归属池", node.Name);
             return;
@@ -301,19 +301,19 @@ public partial class NodePool : SingletonNode<NodePool>
 
         if (node.GetParent() != container)
             container.AddChild(node);
-        s_NodeToContainer.Remove(id);
+        m_NodeToContainer.Remove(id);
     }
     /// <summary>
     /// 回收所有已获取的节点到池中。
     /// </summary>
-    public static void ReleaseAll()
+    public void ReleaseAll()
     {
         // 先收集所有 ID，避免迭代时修改字典
-        var ids = new List<ulong>(s_NodeToContainer.Keys);
+        var ids = new List<ulong>(m_NodeToContainer.Keys);
         foreach (var id in ids)
         {
             // 可能已被前一轮 Release 清理
-            if (!s_NodeToContainer.ContainsKey(id))
+            if (!m_NodeToContainer.ContainsKey(id))
                 continue;
 
             var node = GodotObject.InstanceFromId(id) as Node;
@@ -324,7 +324,7 @@ public partial class NodePool : SingletonNode<NodePool>
             else if (node == null)
             {
                 // 节点已被外部释放，清理残留的追踪记录
-                s_NodeToContainer.Remove(id);
+                m_NodeToContainer.Remove(id);
             }
         }
     }
@@ -332,15 +332,15 @@ public partial class NodePool : SingletonNode<NodePool>
     /// 回收指定场景的所有已获取节点到池中。
     /// </summary>
     /// <param name="scenePath">场景资源路径（同时也是池名称）。</param>
-    public static void ReleaseAll(string scenePath)
+    public void ReleaseAll(string scenePath)
     {
         if (string.IsNullOrEmpty(scenePath))
             return;
 
-        var ids = new List<ulong>(s_NodeToContainer.Keys);
+        var ids = new List<ulong>(m_NodeToContainer.Keys);
         foreach (var id in ids)
         {
-            if (!s_NodeToContainer.TryGetValue(id, out var container) || container.PoolName != scenePath)
+            if (!m_NodeToContainer.TryGetValue(id, out var container) || container.PoolName != scenePath)
                 continue;
 
             var node = GodotObject.InstanceFromId(id) as Node;
@@ -350,16 +350,16 @@ public partial class NodePool : SingletonNode<NodePool>
             }
             else if (node == null)
             {
-                s_NodeToContainer.Remove(id);
+                m_NodeToContainer.Remove(id);
             }
         }
     }
 
     // ── 容器查找 ──
 
-    private static bool TryGetContainer(string scenePath, out PoolContainer container)
+    private bool TryGetContainer(string scenePath, out PoolContainer container)
     {
-        foreach (var c in s_Containers)
+        foreach (var c in m_Containers)
         {
             if (c.PoolName == scenePath)
             {

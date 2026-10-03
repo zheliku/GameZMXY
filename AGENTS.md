@@ -236,11 +236,11 @@ TheGame/
 | --- | --- | --- |
 | M0 工程设置 | `project.godot`（渲染/视口/13 物理层名）；`dotnet build` 通过 | 主场景 `GameFramework.tscn` 能跑 |
 | M1 素材进场 | wukong / Monster1 / Level_1 素材 + `SpriteFrames .tres` + `LegacyAssetMap.md` | 可播放 wukong idle/run/attack 与猴子 walk/attack |
-| M2 配表落地 | `HeroConfig / HeroLevelConfig / MonsterConfig / AttackConfig / BattleConfig / LevelConfig / LevelWaveConfig / LevelSpawnConfig / SoundConfig`；`EntityId`、`UIFormId` 枚举 | 导表成功，`Tables` 可读 |
+| M2 配表落地 | `HeroConfig / HeroLevelConfig / MonsterConfig / AttackConfig / BattleConfig / SoundConfig`；`EntityId`、`UIFormId` 枚举 | 导表成功，`Tables` 可读 |
 | M3 英雄控制器 | `HeroEntity` + 身体状态机（GF.Fsm 物理帧驱动）+ AnimationPlayer 直驱纯数据（2026-10-01 由表达式状态机重构，AnimationTree 与方法轨道均移除） | 能跑能跳能连击，动画与状态一致 |
 | M4 判定与伤害 | HitBox/HurtBox 动画轨道驱动判定帧；`Battle/DamageCalculator`（三种伤害 + `x/(x+K)`）+ 单测；飘字走 NodePool | 打猴子掉血飘字，伤害与手算一致 |
-| M5 怪物 AI | 抽象 `MonsterEntity` 身体层 + 每怪 `CreateBrain()` 选 `MonsterBrains` 原型（`Brawler` / `Sentry`）；FSM 角色槽（Idle/Patrol/Chase/Attack/Hold/CcLocked/Death）装可复用行为 + 技能书（冷却/选招进 `AttackConfig`，近身范围由动画判定盒推导、含高度，收招硬直 `AiRecovery`），参数读 `MonsterConfig`（含丢失目标、守候踱步）；死亡广播 `MonsterDiedEventArgs` | 猴子巡逻、追击、攻击；头顶不出招而在下方踱步、出招与收招硬直中不转身、丢失目标回巡逻（`--smoketest=ai`，`--quit-after 2400`） |
-| M6 关卡与流程 | `LevelDirector`（波次/场上上限/清场开闸）+ 出口 + `GF.Scene` + HUD | 一关可通关并写入 `GF.Archive` |
+| M5 怪物 AI | 抽象 `MonsterEntity` 身体层 + 固定 GF.Fsm 状态图（Pause/Wander/WalkToTarget/StandAndStrike/PaceBelowTarget/CcLocked/Death）；`MonsterConfig` 决策参数与 `AttackConfig` 招式用法/优先级/冷却/硬直；近战范围由动画判定盒与目标受击盒推导 | 猴子巡逻、追击、普攻与冷却优先招；高处目标下方往返；受控、收招和丢失目标行为通过 `--smoketest=ai` 验证 |
+| M6 关卡与流程 | 待 M5 架构审查完成后重新设计；不预设旧 `LevelConfig` / `LevelSpawnConfig` 或新增框架流程 | 由人类裁决新关卡与流程方案后定义 |
 | M7 收口 | 清理调试代码；补 `LegacyAssetMap.md` / `Architecture.md`；评估第二阶段 | 自查 §4 架构约束无违反 |
 
 排序原则：先打通一条最窄链路，再横向铺内容。

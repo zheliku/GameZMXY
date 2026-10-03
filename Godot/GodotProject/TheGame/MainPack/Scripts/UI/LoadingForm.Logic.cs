@@ -15,10 +15,6 @@ namespace GameLogic
 		private Tween m_CloseTween;
 
 		/// <summary>
-		/// 当前打开的 LoadingForm 实例（全局仅一个），供跨流程/调用方在加载完成后显式关闭。
-		/// </summary>
-		public static LoadingForm Current { get; private set; }
-		/// <summary>
 		/// 关闭防重入标记
 		/// 场景加载成功与后续界面打开成功可能先后触发多次，避免重复关闭已回收的表单。
 		/// </summary>
@@ -73,7 +69,10 @@ namespace GameLogic
 			#region 框架逻辑
 			Visible = true;
 			#endregion
-			Current = this;
+			if (m_HSlider != null)
+			{
+				m_HSlider.Value = 0;
+			}
 			GF.Event.Subscribe(OpenUIFormUpdateEventArgs.EventId, OnLoadingUpdate);
 			GF.Event.Subscribe(LoadSceneUpdateEventArgs.EventId, OnLoadingUpdate);
 		}
@@ -83,11 +82,6 @@ namespace GameLogic
 		/// </summary>
 		public void OnClose(bool isShutdown, object userData)
 		{
-			if (Current == this)
-			{
-				Current = null;
-			}
-
 			#region 框架逻辑
 			Visible = false;
 			#endregion
@@ -168,7 +162,6 @@ namespace GameLogic
 			{
 				return;
 			}
-			m_HSlider.Value = 0;
 			float clamped = Mathf.Clamp(progress, 0f, 100f);
 
 			// 平滑过渡，避免进度条跳跃显得生硬
@@ -206,7 +199,7 @@ namespace GameLogic
 			m_CloseTween.TweenInterval(0.1f);
 			m_CloseTween.TweenCallback(Callable.From(() =>
 			{
-				if (m_SerialId != closeSerialId || Current != this)
+				if (m_SerialId != closeSerialId)
 				{
 					return;
 				}

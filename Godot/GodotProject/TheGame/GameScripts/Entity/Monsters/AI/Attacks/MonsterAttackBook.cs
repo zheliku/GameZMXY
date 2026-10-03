@@ -4,15 +4,8 @@ using System.Collections.Generic;
 namespace GameLogic.Entity.Monsters.AI
 {
 	/// <summary>
-	/// 怪物招式书：一只怪全部招式的**冷却与选招**（纯 C#，随机数由调用方传入，可精确单测）。
-	/// 普攻与优先招的区别见 <see cref="MonsterAttackSpec"/>。
-	///
-	/// 够不够得着：
-	///  * 近身招：判定盒（按朝向）与目标受击盒**水平、垂直都重叠**，且水平吃进 ≥ <see cref="ReachMargin"/>；
-	///  * 远程招：只比水平距离 |dx| ∈ Range。
-	/// AI 用两个问题驱动站位：<see cref="BasicGapX"/>（普攻水平上还差多远，决定接近/站定）与
-	/// <see cref="BasicInReach"/>（算上高度够不够得着，决定出手/守候）。
-	/// 冷却只在真正出招时（宿主提交请求那一刻）<see cref="MarkUsed"/> 计入。
+	/// 怪物攻击范围与加权选招（纯 C#，随机数由调用方传入，可精确单测）。
+	/// 普攻站位由判定盒决定；优先招可使用远程区间与逐招冷却。
 	/// </summary>
 	public sealed class MonsterAttackBook
 	{
@@ -21,7 +14,7 @@ namespace GameLogic.Entity.Monsters.AI
 		/// </summary>
 		public static readonly float ReachMargin = 4f;
 
-		/// <summary>空招式书（只会走动、不会出招）</summary>
+		/// <summary>空攻击集（只会走动、不会出招）</summary>
 		public static readonly MonsterAttackBook Empty = new([]);
 
 		private readonly MonsterAttackSpec[] m_Specs;
@@ -40,16 +33,14 @@ namespace GameLogic.Entity.Monsters.AI
 			return i < 0 ? default : m_Specs[i].Reach;
 		}
 
-		/// <summary>出生/复用时重置：每招按初始冷却区间掷一次。</summary>
 		public void Reset(Func<float> random)
 		{
 			for (int i = 0; i < m_Specs.Length; i++)
 			{
-				m_Cooldowns[i] = MonsterAttackSpec.Roll(m_Specs[i].InitCooldown, random());
+				m_Cooldowns[i] = Roll(m_Specs[i].InitCooldown, random);
 			}
 		}
 
-		/// <summary>冷却推进（秒）。</summary>
 		public void Tick(float elapseSeconds)
 		{
 			for (int i = 0; i < m_Cooldowns.Length; i++)
@@ -58,26 +49,25 @@ namespace GameLogic.Entity.Monsters.AI
 			}
 		}
 
-		/// <summary>出招计入冷却（roll ∈ [0,1) 在冷却区间内插值）。</summary>
-		public void MarkUsed(int index, float roll)
+		public void MarkUsed(int index, Func<float> random)
 		{
 			int i = Find(index);
 			if (i >= 0)
 			{
-				m_Cooldowns[i] = MonsterAttackSpec.Roll(m_Specs[i].Cooldown, roll);
+				m_Cooldowns[i] = Roll(m_Specs[i].Cooldown, random);
 			}
 		}
 
 		/// <summary>
-		/// 普攻里**水平上**最近一招与目标的间隙（带符号：&gt;0 = 还差多少 px，≤ -ReachMargin = 水平够得着）。
-		/// 不看冷却与高度；无普攻/无目标返回正无穷。dir = 出招朝向（出招时会转向目标，传"面向目标"）。
+		/// 所有可用攻击中最近一招的水平间隙（&gt;0 = 还差多少 px，≤ -ReachMargin = 水平够得着）。
+		/// 不看高度；无有效攻击/无目标返回正无穷。dir 为面向目标的方向。
 		/// </summary>
 		public float BasicGapX(AiBox target, int dir)
 		{
 			float best = float.PositiveInfinity;
 			for (int i = 0; i < m_Specs.Length && !target.IsEmpty; i++)
 			{
-				if (m_Specs[i].IsBasic && m_Specs[i].Weight > 0)
+				if (m_Specs[i].IsBasic && m_Specs[i].Weight > 0 && HasReachOrRange(m_Specs[i]))
 				{
 					best = Math.Min(best, GapX(m_Specs[i], target, dir));
 				}
@@ -86,12 +76,12 @@ namespace GameLogic.Entity.Monsters.AI
 			return best;
 		}
 
-		/// <summary>普攻里有没有一招此刻够得着目标（含高度，不看冷却）。</summary>
+		/// <summary>有没有一招此刻够得着目标（含高度）。</summary>
 		public bool BasicInReach(AiBox target, int dir)
 		{
 			foreach (MonsterAttackSpec spec in m_Specs)
 			{
-				if (spec.IsBasic && spec.Weight > 0 && InReach(spec, target, dir))
+				if (spec.IsBasic && spec.Weight > 0 && HasReachOrRange(spec) && InReach(spec, target, dir))
 				{
 					return true;
 				}
@@ -100,8 +90,7 @@ namespace GameLogic.Entity.Monsters.AI
 			return false;
 		}
 
-		/// <summary>优先招选招：可用优先招中优先级最高者，同级按权重抽；无可用返回 -1。</summary>
-		public int SelectPriority(AiBox target, int dir, float roll)
+		public int HighestPriority(AiBox target, int dir)
 		{
 			int best = 0;
 			for (int i = 0; i < m_Specs.Length; i++)
@@ -112,22 +101,33 @@ namespace GameLogic.Entity.Monsters.AI
 				}
 			}
 
-			return best == 0 ? -1 : PickWeighted(target, dir, roll, best);
+			return best == 0 ? -1 : best;
 		}
 
-		/// <summary>普攻选招：可用普攻按权重抽；无可用（含高度够不着）返回 -1。</summary>
-		public int SelectBasic(AiBox target, int dir, float roll)
+		public int SelectPriority(AiBox target, int dir, int priority, float roll)
 		{
-			return PickWeighted(target, dir, roll, 0);
+			return priority <= 0 ? -1 : PickWeighted(target, dir, roll, priority);
 		}
 
-		/// <summary>在"可用且优先级 == priority"的招式中按权重抽取，返回招式下标（无候选 -1）。</summary>
+		/// <summary>从可用普攻按权重抽取；无候选不取随机值。</summary>
+		public int SelectBasic(AiBox target, int dir, Func<float> random)
+		{
+			return PickWeighted(target, dir, random, 0);
+		}
+
 		private int PickWeighted(AiBox target, int dir, float roll, int priority)
 		{
 			int total = 0;
 			for (int i = 0; i < m_Specs.Length; i++)
 			{
-				total += m_Specs[i].Priority == priority && IsUsable(i, target, dir) ? m_Specs[i].Weight : 0;
+				total += m_Specs[i].Priority == priority && IsUsable(i, target, dir)
+					? m_Specs[i].Weight
+					: 0;
+			}
+
+			if (total == 0)
+			{
+				return -1;
 			}
 
 			float pick = roll * total;
@@ -150,9 +150,28 @@ namespace GameLogic.Entity.Monsters.AI
 			return last;   // roll 恰为 1 的浮点边界落到最后一个候选
 		}
 
+		private int PickWeighted(AiBox target, int dir, Func<float> random, int priority)
+		{
+			for (int i = 0; i < m_Specs.Length; i++)
+			{
+				if (m_Specs[i].Priority == priority && IsUsable(i, target, dir))
+				{
+					return PickWeighted(target, dir, random(), priority);
+				}
+			}
+
+			return -1;
+		}
+
 		private bool IsUsable(int i, AiBox target, int dir)
 		{
-			return m_Specs[i].Weight > 0 && m_Cooldowns[i] <= 0f && InReach(m_Specs[i], target, dir);
+			return m_Specs[i].Weight > 0 && m_Cooldowns[i] <= 0f && HasReachOrRange(m_Specs[i]) &&
+			       InReach(m_Specs[i], target, dir);
+		}
+
+		private static bool HasReachOrRange(MonsterAttackSpec spec)
+		{
+			return !spec.Reach.IsEmpty || spec.Range.Max > 0f;
 		}
 
 		private static bool InReach(MonsterAttackSpec spec, AiBox target, int dir)
@@ -161,7 +180,7 @@ namespace GameLogic.Entity.Monsters.AI
 			       (spec.Reach.IsEmpty || spec.Reach.Facing(dir).GapY(target) < 0f);
 		}
 
-		/// <summary>近身招：判定盒与受击盒的水平间隙；远程招：到距离区间的距离（区间内为负无穷）。</summary>
+		/// <summary>近战盒间隙；远程招测量到水平距离区间的距离。</summary>
 		private static float GapX(MonsterAttackSpec spec, AiBox target, int dir)
 		{
 			if (!spec.Reach.IsEmpty)
@@ -169,13 +188,19 @@ namespace GameLogic.Entity.Monsters.AI
 				return spec.Reach.Facing(dir).GapX(target);
 			}
 
-			float d = Math.Abs(target.CenterX);
-			return d < spec.Range.Min ? spec.Range.Min - d : d > spec.Range.Max ? d - spec.Range.Max : float.NegativeInfinity;
+			float distance = Math.Abs(target.CenterX);
+			return distance < spec.Range.Min ? spec.Range.Min - distance :
+				distance > spec.Range.Max ? distance - spec.Range.Max : float.NegativeInfinity;
 		}
 
 		private int Find(int index)
 		{
-			return Array.FindIndex(m_Specs, s => s.Index == index);
+			return Array.FindIndex(m_Specs, spec => spec.Index == index);
+		}
+
+		private static float Roll((float Min, float Max) range, Func<float> random)
+		{
+			return MonsterAttackSpec.Roll(range, range.Max > range.Min ? random() : 0f);
 		}
 	}
 }

@@ -240,18 +240,18 @@ public sealed class MonsterAiSmokeScenario
 		GF.Event.Unsubscribe(MonsterDiedEventArgs.EventId, OnMonsterDied);
 
 		List<string> failures = new(m_Failures);
-		if (!m_AiBeforeSight.Exists(o => o.Ai == "Patrol"))
+		if (!m_AiBeforeSight.Exists(o => o.Ai is "Wander" or "Pause"))
 		{
-			failures.Add("视野外期间没有观察到 Patrol");
+			failures.Add("视野外期间没有观察到 Wander/Pause");
 		}
 
-		if (m_AiBeforeSight.Exists(o => o.Ai is "Chase" or "Attack"))
+		if (m_AiBeforeSight.Exists(o => o.Ai is "WalkToTarget" or "StandAndStrike"))
 		{
 			failures.Add("视野外期间不应追击/攻击（索敌范围或目标锁定有误）");
 		}
 
-		RequireInOrder(failures, m_AiObserved.ConvertAll(o => o.Ai), "AI", "Chase", "Attack", "Hold", "Attack", "Patrol",
-			"CcLocked", "Death");
+		RequireInOrder(failures, m_AiObserved.ConvertAll(o => o.Ai), "AI", "WalkToTarget", "StandAndStrike",
+			"PaceBelowTarget", "StandAndStrike", "Wander", "CcLocked", "Death");
 		RequireInOrder(failures, m_AnimObserved.ConvertAll(o => o.Anim), "猴子身体/动画", "Move/run", "Attack/attack_1",
 			"Recovery/idle", "Hurt/hurt", "Death/death");
 
@@ -372,7 +372,7 @@ public sealed class MonsterAiSmokeScenario
 		float mx = m_Monster.GlobalPosition.X;
 		m_AirMinX = Mathf.Min(m_AirMinX, mx);
 		m_AirMaxX = Mathf.Max(m_AirMaxX, mx);
-		m_SawHold |= m_Monster.AiStateName == "Hold";
+		m_SawHold |= m_Monster.AiStateName == "PaceBelowTarget";
 		if (attackStarted && t - m_PhaseStart > 0.1)
 		{
 			m_AirAttacks++;
@@ -387,7 +387,7 @@ public sealed class MonsterAiSmokeScenario
 		GD.Print($"SMOKE-AI[{t:F2}] 守候踱步范围 x∈[{m_AirMinX:F0},{m_AirMaxX:F0}]（英雄 x={m_AirX:F0}）");
 		if (!m_SawHold)
 		{
-			m_Failures.Add($"英雄在头顶时猴子应进入 Hold，实际 {m_Monster.AiStateName}");
+			m_Failures.Add($"英雄在头顶时猴子应进入 PaceBelowTarget，实际 {m_Monster.AiStateName}");
 		}
 
 		if (!(m_AirMinX < m_AirX - PaceEvidence && m_AirMaxX > m_AirX + PaceEvidence))
@@ -401,13 +401,13 @@ public sealed class MonsterAiSmokeScenario
 
 	/// <summary>
 	/// 丢失目标：英雄每帧保持在猴子右侧 LoseOffset（SightRange 外，模拟英雄跑得比猴子快；场地右侧够长），
-	/// LoseTargetTime 后猴子应放弃目标回到 Patrol/Idle。
+	/// LoseTargetTime 后猴子应放弃目标回到 Wander/Pause。
 	/// </summary>
 	private void UpdateLose(double t)
 	{
 		m_Hero.GlobalPosition = new Vector2(m_Monster.GlobalPosition.X + LoseOffset, m_HeroFloorY);
 		m_Hero.Velocity = Vector2.Zero;
-		if (m_Monster.AiStateName is "Patrol" or "Idle")
+		if (m_Monster.AiStateName is "Wander" or "Pause")
 		{
 			GD.Print($"SMOKE-AI[{t:F2}] 丢失目标，{t - m_PhaseStart:F2}s 后回到 {m_Monster.AiStateName}");
 			m_LostTarget = true;

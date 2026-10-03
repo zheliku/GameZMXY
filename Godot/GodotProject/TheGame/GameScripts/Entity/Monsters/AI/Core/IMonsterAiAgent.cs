@@ -35,11 +35,8 @@ namespace GameLogic.Entity.Monsters.AI
 		/// <summary>决策参数</summary>
 		MonsterAiParams Params { get; }
 
-		/// <summary>招式书（冷却与选招；冷却由宿主推进与计入）</summary>
+		/// <summary>怪物可用攻击的范围和权重</summary>
 		MonsterAttackBook Attacks { get; }
-
-		/// <summary>本状态机的状态集（角色 → 状态类型）</summary>
-		MonsterAiStateSet States { get; }
 
 		/// <summary>均匀随机数 [0,1)。随机源由宿主提供，单测可注入确定序列。</summary>
 		float NextRandom();
@@ -51,7 +48,7 @@ namespace GameLogic.Entity.Monsters.AI
 		void Face(int dir);
 
 		/// <summary>
-		/// 请求出招（招式下标）。身体状态机在下一物理帧提交（进入出招状态，转向目标并计入冷却）；
+		/// 请求出招（招式下标）。身体状态机在下一物理帧提交（进入出招状态并转向目标）；
 		/// 当前不可出招（受控/死亡/已在出招）时返回 false。
 		/// </summary>
 		bool RequestAttack(int index);

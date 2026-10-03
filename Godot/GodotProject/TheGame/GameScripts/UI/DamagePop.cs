@@ -134,7 +134,7 @@ namespace GameLogic.UI
 		private void ReturnToPool()
 		{
 			m_Tween = null;
-			NodePool.Release(this);
+			NodePool.Instance.Release(this);
 		}
 
 		/// <summary>选数字样式（对应旧 DamageNumber.gd 的贴图选择；真实伤害人怪共用一套）。</summary>

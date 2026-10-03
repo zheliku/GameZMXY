@@ -1,163 +1,152 @@
+using System;
 using GameConfig;
-using GameConfig.Level;
-using GameConfig.UI;
-using GameFramework;
-using GameFramework.Event;
-using GameFramework.Fsm;
+using GameConfig.Constant;
+using GameConfig.Entity;
 using GameFramework.Procedure;
-using GameLogic;
-using GameLogic.Event;
 using Godot;
 using GodotGameFramework;
+using GodotGameFramework.Entity;
 using GodotGameFramework.HotUpdate;
+using GodotGameFramework.Scene;
 using GodotGameFramework.UI;
-using System;
+using GameLogic;
+using GameLogic.Entity.Heroes;
+using GameLogic.Entity.Monsters;
+using GameLogic.Manager;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
-/// 菜单流程（M6 起）：打开选人界面（兼作开始界面）并等待"开始战斗"请求，收到后写入对局参数
-/// （关卡/英雄）切到 <see cref="ProcedureBattle"/>。M3~M5 的"直接进调试场地"入口移入对局流程的
-/// 沙盒分支（--smoketest 专用）。
-///
-/// 职责单一（MainPack/AGENTS.md）：流程是入口链路，不写玩法——选人信息在表与 UI，对局内容在
-/// LevelDirector，这里只做"转发请求 + 切流程"。
+/// 游戏流程。
 /// </summary>
 public class ProcedureGame : ProcedureBase
 {
-	private HeroSelectForm m_SelectForm;
-	private bool m_Subscribed;
-	private ProcedureOwner m_ProcedureOwner;
+    /// <summary>
+    /// 调试场地场景路径。
+    /// M3~M5 调试场地：提供地面与相机，让控制器手感可以直接验证。
+    /// </summary>
+    private const string DebugArenaScenePath = "res://TheGame/Scenes/DebugArena.tscn";
 
-	/// <summary>
-	/// 状态初始化（只调用一次）。
-	/// </summary>
-	protected internal override void OnInit(ProcedureOwner procedureOwner)
-	{
-		base.OnInit(procedureOwner);
-	}
+    /// <summary>悟空出生点（沿用旧项目 Level_1 第 1 波的刷怪坐标量级）</summary>
+    private static readonly Vector2 HeroSpawnPosition = new Vector2(300, 300);
 
-	/// <summary>
-	/// 进入流程：冒烟测试跳过菜单直进沙盒对局（SmokeTestDriver 靠场景树找英雄，5 秒内必须在场）；
-	/// 正常路径打开选人界面后收掉加载遮罩（遮罩由 ProcedurePrelode 打开并保持到此）。
-	/// </summary>
-	protected internal override async void OnEnter(ProcedureOwner procedureOwner)
-	{
-		base.OnEnter(procedureOwner);
-		m_ProcedureOwner = procedureOwner;
+    /// <summary>
+    /// 调试猴子出生点（M5：悟空右侧 400px，在猴子索敌范围 300 之外——先巡逻，靠近后追击攻击；
+    /// 用于观察索敌前巡逻、进入范围后追击攻击。
+    /// </summary>
+    private static readonly Vector2 MonkeySpawnPosition = new Vector2(700, 300);
 
-		// 标记启动成功：游戏已进入可玩状态，后续崩溃不再归因于热更
-		HotUpdateSafetyGuard.MarkStartupSuccess();
+    private WukongEntity m_Hero;
+    private HuaguoshanMonkeyEntity m_Monkey;
+    private int m_EntrySerial;
+    private int m_DebugArenaOwnerEntry;
 
-		if (IsSmokeTestRequested())
-		{
-			// --smoketest / =ai → 沙盒（DebugArena，SmokeTestDriver 驱动断言）；
-			// --smoketest=level → 正常关卡对局的启动检查（跳过菜单直进 Level_1，不驱动输入，看日志）
-			bool sandbox = !IsLevelBootSmokeTest();
-			procedureOwner.SetData<VarInt32>(ProcedureBattle.DataBattleLevelId, 1);
-			procedureOwner.SetData<VarInt32>(ProcedureBattle.DataBattleHeroId, 1);
-			procedureOwner.SetData<VarBoolean>(ProcedureBattle.DataBattleSandbox, sandbox);
-			ChangeState<ProcedureBattle>(procedureOwner);
-			return;
-		}
+    /// <summary>
+    /// 进入流程。
+    /// 加载配置、重置游戏状态、创建并启动游戏状态 FSM。
+    /// </summary>
+    protected internal override async void OnEnter(ProcedureOwner procedureOwner)
+    {
+        base.OnEnter(procedureOwner);
+        int entrySerial = ++m_EntrySerial;
 
-		GF.Event.Subscribe(StartBattleRequestedEventArgs.EventId, OnStartBattleRequested);
-		m_Subscribed = true;
+        // 标记启动成功：游戏已进入可玩状态，后续崩溃不再归因于热更
+        HotUpdateSafetyGuard.MarkStartupSuccess();
 
-		try
-		{
-			m_SelectForm = await GF.UI.OpenUIFormAsync<HeroSelectForm>(UIFormId.HeroSelectForm);
-		}
-		catch (Exception ex)
-		{
-			Log.Fatal("[ProcedureGame] 选人界面打开失败：{0}", ex);
-		}
-		finally
-		{
-			LoadingForm.Current?.CloseLoading();
-		}
-	}
+        try
+        {
+            // M3 调试入口：加载调试场地 → 经配置驱动生成悟空（EntityId → 实体.xlsx → 场景路径）
+            await GF.Scene.LoadSceneAsync(DebugArenaScenePath, LoadSceneMode.Additive);
+            if (entrySerial != m_EntrySerial)
+            {
+                if (m_DebugArenaOwnerEntry == 0 && GF.Scene.IsSceneLoaded(DebugArenaScenePath))
+                {
+                    GF.Scene.UnloadScene(DebugArenaScenePath);
+                }
+                return;
+            }
 
-	/// <summary>
-	/// 每帧更新。
-	/// </summary>
-	protected internal override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)
-	{
-		base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
-	}
+            m_DebugArenaOwnerEntry = entrySerial;
 
-	/// <summary>
-	/// 离开流程：退订请求事件、关掉选人界面（进入对局时它不该留在 HUD 之下）。
-	/// </summary>
-	protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
-	{
-		if (m_Subscribed)
-		{
-			GF.Event.Unsubscribe(StartBattleRequestedEventArgs.EventId, OnStartBattleRequested);
-			m_Subscribed = false;
-		}
+            // 飘字挂在实体组节点同一棵世界树下（与角色同坐标系）
+            DamagePopManager.Instance.Activate(GF.Entity);
 
-		if (!isShutdown && m_SelectForm != null)
-		{
-			GF.UI.CloseUIForm(m_SelectForm);
-		}
+            WukongEntity hero = await GF.Entity.ShowEntityAsync<WukongEntity>(EntityId.Wukong, null);
+            if (entrySerial != m_EntrySerial)
+            {
+                GF.Entity.HideEntitySafe(hero);
+                return;
+            }
 
-		m_SelectForm = null;
-		m_ProcedureOwner = null;
-		base.OnLeave(procedureOwner, isShutdown);
-	}
+            if (hero == null)
+            {
+                throw new InvalidOperationException("Failed to create Wukong entity.");
+            }
 
-	/// <summary>"开始战斗"：取第一个关卡（垂直切片单关卡），写入对局参数后切对局流程。</summary>
-	private void OnStartBattleRequested(object sender, GameEventArgs args)
-	{
-		if (args is not StartBattleRequestedEventArgs e || m_ProcedureOwner == null)
-		{
-			return;
-		}
+            m_Hero = hero;
+            m_Hero.Position = HeroSpawnPosition;
 
-		LevelConfig level = null;
-		foreach (LevelConfig row in ConfigSystem.Instance.Tables.TbLevelConfig.DataList)
-		{
-			level = row;
-			break;
-		}
+            // M5 调试怪：出生点由 MonsterEntity.OnShow 记录为巡逻圆心。
+            HuaguoshanMonkeyEntity monkey = await GF.Entity.ShowEntityAsync<HuaguoshanMonkeyEntity>(EntityId.HuaguoshanMonkey, MonkeySpawnPosition);
+            if (entrySerial != m_EntrySerial)
+            {
+                GF.Entity.HideEntitySafe(monkey);
+                return;
+            }
 
-		if (level == null)
-		{
-			Log.Error("[ProcedureGame] LevelConfig 没有任何行，无法开始对局");
-			return;
-		}
+            if (monkey == null)
+            {
+                throw new InvalidOperationException("Failed to create Huaguoshan monkey entity.");
+            }
 
-		m_ProcedureOwner.SetData<VarInt32>(ProcedureBattle.DataBattleLevelId, level.Id);
-		m_ProcedureOwner.SetData<VarInt32>(ProcedureBattle.DataBattleHeroId, e.HeroId);
-		m_ProcedureOwner.SetData<VarBoolean>(ProcedureBattle.DataBattleSandbox, false);
-		ChangeState<ProcedureBattle>(m_ProcedureOwner);
-	}
+            m_Monkey = monkey;
 
-	/// <summary>是否以 --smoketest 启动（与 SmokeTestDriver 同一判定：命令行用户参数含 "smoketest"）。</summary>
-	private static bool IsSmokeTestRequested()
-	{
-		foreach (string arg in OS.GetCmdlineUserArgs())
-		{
-			if (arg.Contains("smoketest"))
-			{
-				return true;
-			}
-		}
+            (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
+        }
+        catch (Exception ex)
+        {
+            Log.Error("[ProcedureGame] 调试场地启动失败：{0}", ex);
+            if (entrySerial == m_EntrySerial)
+            {
+                CleanupSession(entrySerial);
+                (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
+            }
+        }
+    }
 
-		return false;
-	}
+    /// <summary>
+    /// 离开流程。
+    /// </summary>
+    protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
+    {
+        base.OnLeave(procedureOwner, isShutdown);
+        int entrySerial = m_EntrySerial;
+        m_EntrySerial++;
 
-	/// <summary>是否为关卡对局启动检查（--smoketest=level：进真实关卡但不驱动输入，供 headless 验证链路）。</summary>
-	private static bool IsLevelBootSmokeTest()
-	{
-		foreach (string arg in OS.GetCmdlineUserArgs())
-		{
-			if (arg.EndsWith("=level"))
-			{
-				return true;
-			}
-		}
+        if (!isShutdown)
+        {
+            CleanupSession(entrySerial);
+        }
 
-		return false;
-	}
+        m_Monkey = null;
+        m_Hero = null;
+    }
+
+    private void CleanupSession(int entrySerial)
+    {
+        DamagePopManager.Instance.Deactivate();
+        GF.Entity.HideEntitySafe(m_Monkey);
+        GF.Entity.HideEntitySafe(m_Hero);
+        if (m_DebugArenaOwnerEntry == entrySerial)
+        {
+            if (GF.Scene.IsSceneLoaded(DebugArenaScenePath))
+            {
+                GF.Scene.UnloadScene(DebugArenaScenePath);
+            }
+
+            m_DebugArenaOwnerEntry = 0;
+        }
+
+        m_Monkey = null;
+        m_Hero = null;
+    }
 }

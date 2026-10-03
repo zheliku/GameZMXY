@@ -5,8 +5,8 @@ using GameLogic.Entity.Monsters.AI;
 namespace GameLogic.Entity.Monsters.AI.States
 {
 	/// <summary>
-	/// 左右随机游荡（旧 normal_state）。每 PatrolInterval 决策一次：PatrolIdleChance 概率停下（转 Idle），否则左右各半；
-	/// 离出生点超出 PatrolRadius 时立刻往回走、期间不停留——丢失目标回到本槽时也就自然走回巡逻范围。标准用法：Patrol 槽。
+	/// 左右随机游荡（旧 normal_state）。每 PatrolInterval 决策一次：PatrolIdleChance 概率停下，否则左右各半；
+	/// 离出生点超出 PatrolRadius 时立刻往回走、期间不停留。
 	/// </summary>
 	public class WanderState : RoamState
 	{
@@ -37,7 +37,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 				m_DecideTimer = agent.Params.PatrolInterval;
 				if (Chance(agent, agent.Params.PatrolIdleChance))
 				{
-					ChangeRole(fsm, MonsterAiRole.Idle);
+					ChangeState<PauseState>(fsm);
 					return;
 				}
 

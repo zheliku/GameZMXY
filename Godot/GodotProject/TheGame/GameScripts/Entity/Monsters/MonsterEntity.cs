@@ -6,6 +6,7 @@ using GameFramework.Fsm;
 using GameLogic.Battle;
 using GameLogic.Entity.Body;
 using GameLogic.Entity.Monsters.AI;
+using GameLogic.Entity.Monsters.AI.States;
 using GameLogic.Entity.Monsters.Body;
 using GameLogic.Event;
 using Godot;
@@ -15,8 +16,7 @@ using GodotGameFramework.Entity;
 namespace GameLogic.Entity.Monsters
 {
 	/// <summary>
-	/// 怪物基类（抽象）= 两台状态机的**宿主**：属性（MonsterConfig）、结算、感知、物理。
-	/// 每种怪必须覆写 <see cref="CreateBrain"/> 从 <see cref="MonsterBrains"/> 选一套大脑原型。
+	/// 怪物基类（抽象）= 两台状态机的宿主：属性（MonsterConfig）、结算、感知与物理。
 	///
 	/// 三层分工（2026-10-01 定稿；同 Unreal 的 AIController / Character / AnimBP）：
 	///  * **AI 状态机**（GF.Fsm&lt;<see cref="IMonsterAiAgent"/>&gt;，框架帧）只写**意图**：Move / Face / RequestAttack；
@@ -26,7 +26,7 @@ namespace GameLogic.Entity.Monsters
 	///    从不调用代码——动作时长 = OnInit 读动画长度，状态自己计时（A 方案：代码唯一时钟）。
 	/// AI 经本类只读身体事实（<see cref="IMonsterAiAgent.IsCcLocked"/> = 身体在 Hurt、IsAttacking = 已请求/出招/收招硬直）。
 	///
-	/// 出招节奏：AI 请求 → 身体 Move 状态在下一物理帧提交（进入出招状态：转向目标、计冷却、装填攻击包、起手音）→
+	/// 出招节奏：AI 请求 → 身体 Move 状态在下一物理帧提交（进入出招状态：转向目标、装填攻击包、起手音）→
 	/// 招式时长（= 动画长度）走完 → 收招硬直 AttackConfig.AiRecovery → Move。受击打断出招与硬直（旧项目手感），霸体不登记受击。
 	/// 够不够得着：每招范围由攻击动画判定盒推导（<see cref="AttackReachReader"/>），与目标受击盒求交（含高度）。
 	/// 感知：m_Detector（Detector 层扫 PlayerBody，宽 2×SightRange）无目标时锁敌；被打直接锁定攻击方；
@@ -54,16 +54,10 @@ namespace GameLogic.Entity.Monsters
 		/// </summary>
 		protected virtual bool IsSuperArmor => Config != null && Config.SuperArmor;
 
-		/// <summary>
-		/// 【每种怪必须实现】选大脑：返回一套**全新**状态集（每次显示调用；GF.Fsm 状态实例不共享）。
-		/// 标准写法 <c>return MonsterBrains.Brawler();</c>，要改某个环节就 <c>.Bind(角色, 行为)</c> 换槽。返回 null = 不建 AI。
-		/// </summary>
-		protected abstract MonsterAiStateSet CreateBrain();
-
 		private MonsterAiParams m_AiParams;
 		private MonsterBodyParams m_BodyParams;
 
-		/// <summary>招式书（AI 选招与冷却；调试观测可读 <see cref="MonsterAttackBook.ReachOf"/>）</summary>
+		/// <summary>攻击集（AI 范围判断与加权选招；调试观测可读 <see cref="MonsterAttackBook.ReachOf"/>）</summary>
 		public MonsterAttackBook Attacks { get; private set; } = MonsterAttackBook.Empty;
 
 		#endregion
@@ -96,7 +90,6 @@ namespace GameLogic.Entity.Monsters
 
 		private IFsm<IMonsterAiAgent> m_AiFsm;
 		private IFsm<IMonsterBody> m_BodyFsm;
-		private MonsterAiStateSet m_StateSet;
 		private ActorEntity m_Target;
 		private Vector2 m_Home;
 		private int m_LastAttackerId;
@@ -149,7 +142,6 @@ namespace GameLogic.Entity.Monsters
 
 			// 池复用带回脏状态：全部复位
 			Hp = MaxHp;
-			Dead = false;
 			MoveIntent = 0;
 			AttackSegment = m_AttackRequest = -1;
 			m_PendingHurt = null;
@@ -182,7 +174,20 @@ namespace GameLogic.Entity.Monsters
 			base.OnHide(isShutdown, userData);
 		}
 
-		/// <summary>物理步长：感知 → 身体状态机 → 物理 →（死亡时长走完）回收。AI 在框架帧写意图，这里只消费。</summary>
+		/// <summary>AI 计时与感知跟随框架帧；身体状态机和物理按固定物理帧推进。</summary>
+		public override void OnUpdate(float elapseSeconds, float realElapseSeconds)
+		{
+			base.OnUpdate(elapseSeconds, realElapseSeconds);
+			if (!IsShown || Config == null)
+			{
+				return;
+			}
+
+			Attacks.Tick(elapseSeconds);
+			UpdateTarget(elapseSeconds);
+		}
+
+		/// <summary>物理步长：身体状态机 → 物理 →（死亡时长走完）回收；本帧消费 AI 意图。</summary>
 		public override void _PhysicsProcess(double delta)
 		{
 			if (!IsShown || Config == null)
@@ -191,8 +196,6 @@ namespace GameLogic.Entity.Monsters
 			}
 
 			float dt = (float)delta;
-			Attacks.Tick(dt);
-			UpdateTarget(dt);
 			BodyFsm.Tick(m_BodyFsm, dt);
 			MoveAndSlide();
 
@@ -302,8 +305,8 @@ namespace GameLogic.Entity.Monsters
 				specs[i] = new MonsterAttackSpec
 				{
 					Index = i,
-					Priority = a.AiPriority,
 					Weight = a.AiWeight,
+					Priority = a.AiPriority,
 					Reach = AttackReachReader.Read(this, a.Animation),
 					Range = (a.AiRange.X, a.AiRange.Y),
 					Cooldown = (a.AiCooldown.X, a.AiCooldown.Y),
@@ -344,11 +347,11 @@ namespace GameLogic.Entity.Monsters
 			};
 		}
 
-		/// <summary>出招提交的副作用：转向目标、计入冷却、装填攻击包、播起手音（音源查 AttackConfig.SoundId）。</summary>
+		/// <summary>出招提交的副作用：转向目标、装填攻击包、播起手音（音源查 AttackConfig.SoundId）。</summary>
 		private void BeginAttackIndex(int index)
 		{
 			SetFacing(System.Math.Sign(TargetBox.CenterX));
-			Attacks.MarkUsed(index, GD.Randf());
+			Attacks.MarkUsed(index, GD.Randf);
 			AttackSegment = index;
 			ArmAttack(OwnAttacks[index]);
 			PlaySound(OwnAttacks[index].SoundId);
@@ -367,7 +370,7 @@ namespace GameLogic.Entity.Monsters
 		#region 感知
 
 		/// <summary>
-		/// 目标维护：失效（死亡/回收）即清；水平距离持续超出 SightRange 达 LoseTargetTime 秒即放弃（AI 随之回 Patrol 槽）；
+		/// 目标维护：失效（死亡/回收）即清；水平距离持续超出 SightRange 达 LoseTargetTime 秒即放弃，AI 回到游荡；
 		/// 无目标时查询索敌区重叠体（mask 只含 PlayerBody，层即敌我关系）。
 		/// </summary>
 		private void UpdateTarget(float dt)
@@ -523,15 +526,10 @@ namespace GameLogic.Entity.Monsters
 				return;
 			}
 
-			m_StateSet = CreateBrain();
-			if (m_StateSet == null)
-			{
-				Log.Error("[MonsterEntity] {0} 的 CreateBrain() 返回 null，本只怪不建 AI", Config.NameCn);
-				return;
-			}
-
-			m_AiFsm = GF.Fsm.CreateFsm<IMonsterAiAgent>($"MonsterAI_{Id}", this, m_StateSet.ToArray());
-			m_AiFsm.Start(m_StateSet.Resolve(m_StateSet.InitialRole));
+			m_AiFsm = GF.Fsm.CreateFsm<IMonsterAiAgent>($"MonsterAI_{Id}", this,
+				new PauseState(), new WanderState(), new WalkToTargetState(), new StandAndStrikeState(),
+				new PaceBelowTargetState(), new CcLockedState(), new DeathState());
+			m_AiFsm.Start<WanderState>();
 		}
 
 		/// <summary>销毁 AI 状态机（关停阶段框架统一销毁，这里只丢引用）。</summary>
@@ -543,7 +541,6 @@ namespace GameLogic.Entity.Monsters
 			}
 
 			m_AiFsm = null;
-			m_StateSet = null;
 		}
 
 		bool IMonsterAiAgent.IsDead => Dead;
@@ -552,7 +549,6 @@ namespace GameLogic.Entity.Monsters
 		AiBox IMonsterAiAgent.TargetBox => TargetBox;
 		float IMonsterAiAgent.HomeDeltaX => GlobalPosition.X - m_Home.X;
 		MonsterAiParams IMonsterAiAgent.Params => m_AiParams;
-		MonsterAiStateSet IMonsterAiAgent.States => m_StateSet;
 
 		float IMonsterAiAgent.NextRandom() => GD.Randf();
 

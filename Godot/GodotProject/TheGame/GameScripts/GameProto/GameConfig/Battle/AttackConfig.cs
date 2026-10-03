@@ -109,7 +109,7 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly int AiWeight;
     /// <summary>
-    /// AI 优先级:0=普攻池(按攻击欲望掷骰+权重抽);&gt;0=技能(冷却就绪且距离满足即放,大者优先,追击途中也会放)
+    /// AI 优先级:0=普攻(按攻击欲望掷骰+权重抽);&gt;0=优先招(冷却就绪且够得着即先放,大者优先,接近途中也会放)
     /// </summary>
     public readonly int AiPriority;
     /// <summary>

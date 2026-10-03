@@ -136,7 +136,7 @@ public partial class TbBattleConfig
     /// </summary>
      public float KnockbackScaleY => _data.KnockbackScaleY;
     /// <summary>
-    /// 无双值上限(旧项目满值 100;M6 供 HUD 无双条满值)
+    /// 无双值上限(旧项目 BaseRoleProperies.gd:20)
     /// </summary>
      public int WsMax => _data.WsMax;
     

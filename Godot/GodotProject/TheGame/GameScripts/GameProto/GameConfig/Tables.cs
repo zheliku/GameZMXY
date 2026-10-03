@@ -141,60 +141,6 @@ public partial class Tables
             m_TbBattleConfig.ResolveRef(this);
         }
     }
-    private Level.TbLevelConfig m_TbLevelConfig;
-    public Level.TbLevelConfig TbLevelConfig 
-    {
-        get
-        {
-            if (m_TbLevelConfig == null)
-            {
-                m_TbLevelConfig = new Level.TbLevelConfig(defaultLoader("level_tblevelconfig"));
-                m_TbLevelConfig.ResolveRef(this);
-            }
-            return m_TbLevelConfig;
-        }
-        set
-        {
-            m_TbLevelConfig = value;
-            m_TbLevelConfig.ResolveRef(this);
-        }
-    }
-    private Level.TbLevelWaveConfig m_TbLevelWaveConfig;
-    public Level.TbLevelWaveConfig TbLevelWaveConfig 
-    {
-        get
-        {
-            if (m_TbLevelWaveConfig == null)
-            {
-                m_TbLevelWaveConfig = new Level.TbLevelWaveConfig(defaultLoader("level_tblevelwaveconfig"));
-                m_TbLevelWaveConfig.ResolveRef(this);
-            }
-            return m_TbLevelWaveConfig;
-        }
-        set
-        {
-            m_TbLevelWaveConfig = value;
-            m_TbLevelWaveConfig.ResolveRef(this);
-        }
-    }
-    private Level.TbLevelSpawnConfig m_TbLevelSpawnConfig;
-    public Level.TbLevelSpawnConfig TbLevelSpawnConfig 
-    {
-        get
-        {
-            if (m_TbLevelSpawnConfig == null)
-            {
-                m_TbLevelSpawnConfig = new Level.TbLevelSpawnConfig(defaultLoader("level_tblevelspawnconfig"));
-                m_TbLevelSpawnConfig.ResolveRef(this);
-            }
-            return m_TbLevelSpawnConfig;
-        }
-        set
-        {
-            m_TbLevelSpawnConfig = value;
-            m_TbLevelSpawnConfig.ResolveRef(this);
-        }
-    }
     private Sound.TbSoundConfig m_TbSoundConfig;
     public Sound.TbSoundConfig TbSoundConfig 
     {
