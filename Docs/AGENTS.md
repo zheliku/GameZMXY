@@ -1,12 +1,3 @@
-# Docs/ 目录规范
+# Docs 导航
 
-> 裁决顺序见根规范 §2。
-
-| 文件 | 内容 | 维护规则 |
-| --- | --- | --- |
-| `LegacyAssetMap.md` | 旧资产 `旧路径 → 新路径` 映射 | 搬资源/生成 SpriteFrames 后必须登记（根规范 §11）；格式 `旧路径 \| 新路径 \| 帧规格/备注`，登记前先查重 |
-| `Architecture.md` | 本项目架构说明（M7 收口时补齐） | 架构级决策落地后同步更新 |
-| `EngineeringStandards.md` | 通用工程规范模板（可复用到后续项目） | 不参与 AGENTS.md 裁决链；禁把本项目专属规则写成通用要求 |
-
-- 文档记录事实与决策，不写未实施的设想；与规范冲突时以 AGENTS.md 链为准。
-- 框架系统文档在 `Godot/docs/`，不在此复制；发现与代码不符时报告，不改框架文档。
+文档维护与验证规则见 [`ProjectGuidelines/AGENTS.md`](ProjectGuidelines/AGENTS.md)；项目现状文档记录经代码核实的事实，不替代规范模块。

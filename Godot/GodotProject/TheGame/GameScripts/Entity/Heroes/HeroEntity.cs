@@ -60,6 +60,7 @@ namespace GameLogic.Entity.Heroes
 		public Node2D EffectRoot => m_EffectRoot;
 
 		/// <summary>朝向变化：镜像英雄专属的武器层与特效层（身体与判定盒由基类处理）。</summary>
+		/// <summary>镜像英雄专属武器层与特效层。</summary>
 		protected override void OnFacingChanged(int dir)
 		{
 			bool mirror = dir > 0;
@@ -104,9 +105,12 @@ namespace GameLogic.Entity.Heroes
 		/// <summary>当前身体状态名（调试/冒烟观测：Ground / Air / Attack / Hurt / Death）</summary>
 		public string BodyStateName => BodyFsm.CurrentName(m_BodyFsm);
 
+		/// <summary>从英雄配置和动画库构建的身体参数快照。</summary>
 		private HeroBodyParams m_BodyParams;
+		/// <summary>按物理帧推进的英雄身体状态机。</summary>
 		private IFsm<IHeroBody> m_BodyFsm;
 
+		/// <summary>读取英雄配置、招式和输入参数，并初始化实体状态。</summary>
 		public override void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance,
 			object userData)
 		{
@@ -128,6 +132,7 @@ namespace GameLogic.Entity.Heroes
 			Input = new HeroInput(Config.RunDoubleTapWindow, Config.InputBufferTime);
 		}
 
+		/// <summary>显示时复位英雄战斗事实、输入，并创建身体状态机。</summary>
 		public override void OnShow(object userData)
 		{
 			base.OnShow(userData);
@@ -144,6 +149,7 @@ namespace GameLogic.Entity.Heroes
 			CreateBody();
 		}
 
+		/// <summary>隐藏时销毁身体状态机并执行基类清理。</summary>
 		public override void OnHide(bool isShutdown, object userData)
 		{
 			DestroyBody(isShutdown);
@@ -151,6 +157,7 @@ namespace GameLogic.Entity.Heroes
 		}
 
 		/// <summary>物理步长：采样输入 → 身体状态机 → 物理。AnimationPlayer（子节点）同帧稍后消费播放请求。</summary>
+		/// <summary>采样输入、推进身体状态机并执行角色物理。</summary>
 		public override void _PhysicsProcess(double delta)
 		{
 			if (!IsShown || Config == null)
@@ -185,6 +192,7 @@ namespace GameLogic.Entity.Heroes
 		public int Level { get; private set; } = 1;
 
 		/// <summary>结算快照：按等级算成长后的攻防，其余战斗属性直接取 HeroConfig。</summary>
+		/// <summary>按英雄等级和配置生成战斗属性快照。</summary>
 		protected override CombatantStats GetCombatStats()
 		{
 			if (Config == null)
@@ -211,6 +219,7 @@ namespace GameLogic.Entity.Heroes
 		/// 命中收益（英雄专属）：按本招 AttackConfig.WsGain 掷定无双值并累计。
 		/// 收益规则属于英雄，不进攻击包、不进 ActorEntity（怪物没有无双值）。
 		/// </summary>
+		/// <summary>按命中招式配置增加英雄无双值。</summary>
 		protected override void OnHitLanded(AttackData attack, DamageResult result)
 		{
 			if (ConfigSystem.Instance.Tables.TbAttackConfig.GetOrDefault(attack.AttackId) is { } config)
@@ -226,6 +235,7 @@ namespace GameLogic.Entity.Heroes
 		/// （连段不被单次受击清空，见 HeroAttackState）。死亡由 ReceiveHit 置位 Dead，身体状态机下一帧进入死亡。
 		/// 没有 hurt 动画（时长无从谈起）时不登记。
 		/// </summary>
+		/// <summary>登记待由身体状态机生效的受击击退。</summary>
 		protected override void OnHurt(AttackData attack, DamageResult result, Vector2 knockback, int attackerEntityId)
 		{
 			base.OnHurt(attack, result, knockback, attackerEntityId);
@@ -302,25 +312,32 @@ namespace GameLogic.Entity.Heroes
 
 		// ---- IHeroBody（英雄专属成员；公共成员由 ActorEntity 提供/钩子在此实现）----
 
+		/// <summary>提供身体状态机使用的参数快照。</summary>
 		HeroBodyParams IHeroBody.Params => m_BodyParams;
+		/// <summary>提供当前物理接地状态。</summary>
 		bool IHeroBody.OnFloor => IsOnFloor();
 
+		/// <summary>转发身体状态机对跳跃次数的读写。</summary>
 		int IHeroBody.JumpCount
 		{
 			get => JumpCount;
 			set => JumpCount = value;
 		}
 
+		/// <summary>转发身体状态机对连段序号的读写。</summary>
 		int IHeroBody.ComboIndex
 		{
 			get => ComboIndex;
 			set => ComboIndex = value;
 		}
 
+		/// <summary>向身体状态机提供 Godot 随机值。</summary>
 		float IHeroBody.NextRandom() => GD.Randf();
 
+		/// <summary>提供英雄重力参数。</summary>
 		float IActorBody.Gravity => m_BodyParams.Gravity;
 
+		/// <summary>提交攻击段并装填攻击数据和起手音效。</summary>
 		void IActorBody.BeginAttack(int segment)
 		{
 			AttackSegment = segment;
@@ -328,14 +345,17 @@ namespace GameLogic.Entity.Heroes
 			PlaySound(OwnAttacks[segment].SoundId);   // 起手音：音源查表，与旧 add_music 同点（第 0 帧）
 		}
 
+		/// <summary>结束攻击段并归还攻击数据。</summary>
 		void IActorBody.EndAttack()
 		{
 			AttackSegment = -1;
 			ReleaseAttack();
 		}
 
+		/// <summary>播放英雄配置的受击音效。</summary>
 		void IActorBody.PlayHurtSound() => PlaySound(Config.HurtSoundId);
 
+		/// <summary>播放英雄配置的死亡音效。</summary>
 		void IActorBody.OnDied() => PlaySound(Config.DeathSoundId);
 	}
 }

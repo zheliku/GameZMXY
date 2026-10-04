@@ -26,20 +26,24 @@ namespace GameLogic.Entity.Heroes.Body
 		/// <summary>本段剩余秒</summary>
 		private float m_Left;
 
+		/// <summary>攻击段期间挂起受击，待收招后再处理。</summary>
 		protected override bool HurtInterrupts => false;
 
+		/// <summary>记录起手是否在地面，并开始当前连段。</summary>
 		protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
 		{
 			m_Chainable = body.OnFloor;
 			StartSegment(body, Mathf.Clamp(body.ComboIndex, 0, body.Params.ComboLength - 1));
 		}
 
+		/// <summary>离开攻击状态时归还攻击包。</summary>
 		protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
 		{
 			// 收招、死亡打断、实体隐藏都走这里：动画被切走，攻击包在此归还
 			body.EndAttack();
 		}
 
+		/// <summary>推进攻击段计时并消费连段输入。</summary>
 		protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
 		{
 			if (body.Input.ConsumeAttack())
@@ -77,6 +81,7 @@ namespace GameLogic.Entity.Heroes.Body
 			ChangeToLocomotion(fsm, body);
 		}
 
+		/// <summary>装填指定攻击段并从头播放其动画。</summary>
 		private void StartSegment(IHeroBody body, int segment)
 		{
 			m_Segment = segment;

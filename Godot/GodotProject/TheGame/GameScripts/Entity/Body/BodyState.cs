@@ -22,6 +22,7 @@ namespace GameLogic.Entity.Body
 	/// </summary>
 	public abstract class BodyState<TBody> : FsmState<TBody> where TBody : class, IActorBody
 	{
+		/// <summary>缓存去前缀后的状态名。</summary>
 		private string m_StateName;
 
 		/// <summary>状态名（调试/冒烟观测）：类名去掉 <see cref="NamePrefix"/> 与 "State" 后缀，如 HeroGroundState → Ground。</summary>
@@ -50,6 +51,7 @@ namespace GameLogic.Entity.Body
 		{
 		}
 
+		/// <summary>进入时递增进入序号并调用身体状态钩子。</summary>
 		protected internal sealed override void OnEnter(IFsm<TBody> fsm)
 		{
 			base.OnEnter(fsm);
@@ -57,6 +59,7 @@ namespace GameLogic.Entity.Body
 			Enter(fsm, fsm.Owner);
 		}
 
+		/// <summary>调用身体状态离开钩子并完成框架离开流程。</summary>
 		protected internal sealed override void OnLeave(IFsm<TBody> fsm, bool isShutdown)
 		{
 			Leave(fsm, fsm.Owner, isShutdown);
@@ -109,6 +112,7 @@ namespace GameLogic.Entity.Body
 			body.Velocity = new Vector2(0f, body.Velocity.Y);
 		}
 
+		/// <summary>移除状态类名前缀和 State 后缀，生成调试名称。</summary>
 		private static string TrimName(string name, string prefix)
 		{
 			if (prefix.Length > 0 && name.StartsWith(prefix))

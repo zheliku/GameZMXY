@@ -17,9 +17,13 @@ namespace GameLogic.Entity.Monsters.AI
 		/// <summary>空攻击集（只会走动、不会出招）</summary>
 		public static readonly MonsterAttackBook Empty = new([]);
 
+		/// <summary>按攻击下标保存的招式规格。</summary>
 		private readonly MonsterAttackSpec[] m_Specs;
+		/// <summary>每个招式剩余的冷却秒数。</summary>
 		private readonly float[] m_Cooldowns;
 
+		/// <summary>创建攻击集并复制招式规格。</summary>
+		/// <param name="specs">招式规格列表。</param>
 		public MonsterAttackBook(IReadOnlyList<MonsterAttackSpec> specs)
 		{
 			m_Specs = [.. specs];
@@ -33,6 +37,7 @@ namespace GameLogic.Entity.Monsters.AI
 			return i < 0 ? default : m_Specs[i].Reach;
 		}
 
+		/// <summary>重置所有招式，并按初始冷却区间采样冷却。</summary>
 		public void Reset(Func<float> random)
 		{
 			for (int i = 0; i < m_Specs.Length; i++)
@@ -41,6 +46,7 @@ namespace GameLogic.Entity.Monsters.AI
 			}
 		}
 
+		/// <summary>推进招式冷却并截断到零。</summary>
 		public void Tick(float elapseSeconds)
 		{
 			for (int i = 0; i < m_Cooldowns.Length; i++)
@@ -49,6 +55,7 @@ namespace GameLogic.Entity.Monsters.AI
 			}
 		}
 
+		/// <summary>标记招式已使用，并按其冷却区间重新计时。</summary>
 		public void MarkUsed(int index, Func<float> random)
 		{
 			int i = Find(index);
@@ -90,6 +97,7 @@ namespace GameLogic.Entity.Monsters.AI
 			return false;
 		}
 
+		/// <summary>返回当前目标可用的最高优先级，没招可用时返回 -1。</summary>
 		public int HighestPriority(AiBox target, int dir)
 		{
 			int best = 0;
@@ -104,6 +112,7 @@ namespace GameLogic.Entity.Monsters.AI
 			return best == 0 ? -1 : best;
 		}
 
+		/// <summary>按给定优先级和随机值加权选择招式。</summary>
 		public int SelectPriority(AiBox target, int dir, int priority, float roll)
 		{
 			return priority <= 0 ? -1 : PickWeighted(target, dir, roll, priority);
@@ -115,6 +124,7 @@ namespace GameLogic.Entity.Monsters.AI
 			return PickWeighted(target, dir, random, 0);
 		}
 
+		/// <summary>从指定优先级的可用招式中按权重选择。</summary>
 		private int PickWeighted(AiBox target, int dir, float roll, int priority)
 		{
 			int total = 0;
@@ -150,6 +160,7 @@ namespace GameLogic.Entity.Monsters.AI
 			return last;   // roll 恰为 1 的浮点边界落到最后一个候选
 		}
 
+		/// <summary>确认存在候选后取一次随机值并执行加权选择。</summary>
 		private int PickWeighted(AiBox target, int dir, Func<float> random, int priority)
 		{
 			for (int i = 0; i < m_Specs.Length; i++)
@@ -163,17 +174,20 @@ namespace GameLogic.Entity.Monsters.AI
 			return -1;
 		}
 
+		/// <summary>判断招式是否有权重、冷却结束且当前可命中。</summary>
 		private bool IsUsable(int i, AiBox target, int dir)
 		{
 			return m_Specs[i].Weight > 0 && m_Cooldowns[i] <= 0f && HasReachOrRange(m_Specs[i]) &&
 			       InReach(m_Specs[i], target, dir);
 		}
 
+		/// <summary>判断招式是否配置了判定盒或远程范围。</summary>
 		private static bool HasReachOrRange(MonsterAttackSpec spec)
 		{
 			return !spec.Reach.IsEmpty || spec.Range.Max > 0f;
 		}
 
+		/// <summary>判断目标是否同时满足水平重叠和近战高度条件。</summary>
 		private static bool InReach(MonsterAttackSpec spec, AiBox target, int dir)
 		{
 			return !target.IsEmpty && GapX(spec, target, dir) <= -ReachMargin &&
@@ -193,11 +207,13 @@ namespace GameLogic.Entity.Monsters.AI
 				distance > spec.Range.Max ? distance - spec.Range.Max : float.NegativeInfinity;
 		}
 
+		/// <summary>按外部攻击下标查找规格数组位置。</summary>
 		private int Find(int index)
 		{
 			return Array.FindIndex(m_Specs, spec => spec.Index == index);
 		}
 
+		/// <summary>按区间配置采样冷却；定值区间不消费随机源。</summary>
 		private static float Roll((float Min, float Max) range, Func<float> random)
 		{
 			return MonsterAttackSpec.Roll(range, range.Max > range.Min ? random() : 0f);

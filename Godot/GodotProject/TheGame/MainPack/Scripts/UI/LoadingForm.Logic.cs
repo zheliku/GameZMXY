@@ -11,7 +11,9 @@ namespace GameLogic
 	/// </summary>
 	public partial class LoadingForm
 	{
+		/// <summary>驱动进度条平滑变化的补间。</summary>
 		private Tween m_ProgressTween;
+		/// <summary>延迟关闭界面的补间。</summary>
 		private Tween m_CloseTween;
 
 		/// <summary>
@@ -156,6 +158,9 @@ namespace GameLogic
 
 
 
+		/// <summary>更新加载状态文本和进度值。</summary>
+		/// <param name="logState">要显示的状态文本。</param>
+		/// <param name="progress">进度百分比，范围会限制为 0 到 100。</param>
 		public void SetLogState(string logState, float progress)
 		{
 			if (m_HSlider == null)
@@ -208,6 +213,9 @@ namespace GameLogic
 		}
 
 
+		/// <summary>接收界面或场景加载事件并更新进度。</summary>
+		/// <param name="sender">事件发送者。</param>
+		/// <param name="e">加载进度事件参数。</param>
 		private void OnLoadingUpdate(object sender, GameEventArgs e)
 		{
 			float progress = 0;

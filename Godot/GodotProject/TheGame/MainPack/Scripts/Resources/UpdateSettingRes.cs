@@ -1,11 +1,15 @@
 using Godot;
 
+/// <summary>远程热更新地址与补丁存储目录设置。</summary>
 [GlobalClass]
 public partial class UpdateSettingRes : Resource
 {
+    /// <summary>资源文件中更新设置字段的键名。</summary>
     public static class Parameters
     {
+        /// <summary>远程服务器地址字段键名。</summary>
         public static string RemoteUrl = "RemoteUrl";
+        /// <summary>补丁存储目录字段键名。</summary>
         public static string HotUpdatePath = "HotUpdatePath";
     }
 

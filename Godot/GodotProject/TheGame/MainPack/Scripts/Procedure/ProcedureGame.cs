@@ -35,15 +35,23 @@ public class ProcedureGame : ProcedureBase
     /// </summary>
     private static readonly Vector2 MonkeySpawnPosition = new Vector2(700, 300);
 
+    /// <summary>本次游戏流程创建的悟空实体。</summary>
     private WukongEntity m_Hero;
+
+    /// <summary>本次游戏流程创建的猴子实体。</summary>
     private HuaguoshanMonkeyEntity m_Monkey;
+
+    /// <summary>用于使异步加载结果失效的流程进入序号。</summary>
     private int m_EntrySerial;
+
+    /// <summary>当前流程进入时加载的调试场景所有权序号。</summary>
     private int m_DebugArenaOwnerEntry;
 
     /// <summary>
     /// 进入流程。
     /// 加载配置、重置游戏状态、创建并启动游戏状态 FSM。
     /// </summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal override async void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
@@ -116,6 +124,8 @@ public class ProcedureGame : ProcedureBase
     /// <summary>
     /// 离开流程。
     /// </summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
+    /// <param name="isShutdown">是否因框架关闭而离开。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
         base.OnLeave(procedureOwner, isShutdown);
@@ -131,6 +141,8 @@ public class ProcedureGame : ProcedureBase
         m_Hero = null;
     }
 
+    /// <summary>释放指定进入序号所拥有的实体与调试场景。</summary>
+    /// <param name="entrySerial">要清理的流程进入序号。</param>
     private void CleanupSession(int entrySerial)
     {
         DamagePopManager.Instance.Deactivate();

@@ -50,6 +50,7 @@ namespace GameLogic.Entity.Body
 			return Current(fsm) is TState;
 		}
 
+		/// <summary>在状态机有效且运行时取得当前身体状态。</summary>
 		private static BodyState<T> Current<T>(IFsm<T> fsm) where T : class, IActorBody
 		{
 			if (fsm == null || fsm.IsDestroyed || !fsm.IsRunning)

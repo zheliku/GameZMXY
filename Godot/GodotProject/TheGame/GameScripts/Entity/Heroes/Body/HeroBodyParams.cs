@@ -33,6 +33,7 @@ namespace GameLogic.Entity.Heroes.Body
 		/// <summary>连续静止多久后播一次小动作：区间下限 / 上限秒（HeroConfig.IdleEmoteDelay）</summary>
 		public float EmoteDelayMin { get; init; }
 
+		/// <summary>待机小动作触发间隔的最大秒数。</summary>
 		public float EmoteDelayMax { get; init; }
 
 		/// <summary>普攻连段每段的动画名（下标 = 段序号，AttackConfig.Animation 按 ComboIndex 排序）</summary>

@@ -34,6 +34,13 @@ namespace GameLogic.Event
 		/// <summary>死亡位置（世界坐标，掉落物出生点）</summary>
 		public Vector2 Position { get; private set; }
 
+		/// <summary>从引用池创建并填充一次怪物死亡事件。</summary>
+		/// <param name="entityId">怪物实体编号。</param>
+		/// <param name="monsterId">怪物配置编号。</param>
+		/// <param name="rank">怪物阶级。</param>
+		/// <param name="killerEntityId">击杀者实体编号；无实体来源时为 0。</param>
+		/// <param name="position">死亡世界坐标。</param>
+		/// <returns>由引用池持有、仅在本次事件分发期间有效的参数。</returns>
 		public static MonsterDiedEventArgs Create(int entityId, int monsterId, MonsterRank rank, int killerEntityId,
 			Vector2 position)
 		{
@@ -46,6 +53,7 @@ namespace GameLogic.Event
 			return e;
 		}
 
+		/// <summary>清除本次事件数据，供引用池复用。</summary>
 		public override void Clear()
 		{
 			EntityId = 0;

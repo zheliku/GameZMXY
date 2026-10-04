@@ -63,6 +63,20 @@ namespace GameLogic.Battle
 		/// <summary>破魔（减对方魔防）</summary>
 		public readonly int Sp;
 
+		/// <summary>初始化战斗属性快照。</summary>
+		/// <param name="side">参与结算的一方。</param>
+		/// <param name="level">等级。</param>
+		/// <param name="power">攻击力。</param>
+		/// <param name="def">物理防御。</param>
+		/// <param name="mdef">魔法防御。</param>
+		/// <param name="crit">暴击。</param>
+		/// <param name="miss">闪避。</param>
+		/// <param name="lucky">幸运。</param>
+		/// <param name="toughness">韧性。</param>
+		/// <param name="htarget">命中。</param>
+		/// <param name="critReduce">暴击抵抗。</param>
+		/// <param name="ar">破甲。</param>
+		/// <param name="sp">破魔。</param>
 		public CombatantStats(CombatSide side, int level, int power, int def, int mdef, int crit, int miss,
 			int lucky, int toughness, int htarget, int critReduce, int ar, int sp)
 		{

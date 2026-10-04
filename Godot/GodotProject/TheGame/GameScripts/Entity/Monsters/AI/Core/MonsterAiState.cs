@@ -25,12 +25,14 @@ namespace GameLogic.Entity.Monsters.AI
 			? GetType().Name[..^"State".Length]
 			: GetType().Name;
 
+		/// <summary>进入时执行框架流程并调用 AI 状态进入钩子。</summary>
 		protected internal sealed override void OnEnter(IFsm<IMonsterAiAgent> fsm)
 		{
 			base.OnEnter(fsm);
 			Enter(fsm.Owner);
 		}
 
+		/// <summary>按死亡、受控优先级处理打断，再推进 AI 状态决策。</summary>
 		protected internal sealed override void OnUpdate(IFsm<IMonsterAiAgent> fsm, float elapseSeconds,
 			float realElapseSeconds)
 		{

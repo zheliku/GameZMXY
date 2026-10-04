@@ -71,12 +71,15 @@ public partial class SmokeTestDriver : Node
 		("Air/jump_2", "Ground/idle1", false, true), // 落地后回待机，取最后一次 idle1
 	};
 
+	/// <summary>英雄烟测最长运行时间（秒）。</summary>
 	private const double EndTime = 10.0;
+	/// <summary>等待实体出现的超时时间（秒）。</summary>
 	private const double FindTimeout = 5.0;
 
 	/// <summary>hero 场景沙包猴子相对悟空的水平站位（M4 原出生点 400 − 悟空 300）</summary>
 	private const float SandbagOffset = 100f;
 
+	/// <summary>烟测中的英雄实体。</summary>
 	private HeroEntity m_Hero;
 
 	// ---- M4 命中链路观测（悟空连打面前的猴子）----
@@ -87,21 +90,32 @@ public partial class SmokeTestDriver : Node
 	/// <summary>猴子受到的每次命中（按事件记录：伤害、暴击、闪避）</summary>
 	private readonly List<(int Damage, bool Crit, bool Miss)> m_MonsterHits = new();
 
-	/// <summary>场上出现过的飘字实例数（NodePool 取出即挂到场景）</summary>
+	/// <summary>场上飘字节点的可见峰值数量。</summary>
 	private int m_MaxPopCount;
+	/// <summary>是否由命令行启用烟测。</summary>
 	private bool m_Active;
+	/// <summary>等待英雄出现的累计时间（秒）。</summary>
 	private double m_WaitTime;
+	/// <summary>烟测当前时间（秒）。</summary>
 	private double m_Time;
+	/// <summary>下一条输入计划索引。</summary>
 	private int m_NextStep;
+	/// <summary>是否正在交替注入攻击输入。</summary>
 	private bool m_Mashing;
+	/// <summary>攻击连打结束时间（秒）。</summary>
 	private double m_MashUntil;
+	/// <summary>攻击连打帧计数。</summary>
 	private int m_MashFrame;
+	/// <summary>上一次记录的身体状态与动画路径。</summary>
 	private string m_LastPath = "";
+	/// <summary>命令行是否包含引擎自动退出参数。</summary>
 	private bool m_HasQuitAfter;
+	/// <summary>按时间记录的身体状态与动画路径。</summary>
 	private readonly List<(double Time, string Path)> m_Observed = new();
 
 	/// <summary>walk/run 期间身体层出现过的帧号（回归：动画库漏 m_Body:frame 轨道时身体冻结）</summary>
 	private readonly HashSet<int> m_WalkFrames = new();
+	/// <summary>run 期间采样到的身体帧号。</summary>
 	private readonly HashSet<int> m_RunFrames = new();
 
 	/// <summary>场景：hero = 英雄控制器 + M4 命中（默认，猴子 AI 冻结为沙包）；ai = 怪物 AI（M5）</summary>
@@ -110,8 +124,10 @@ public partial class SmokeTestDriver : Node
 	/// <summary>AI 场景（ai 模式下找到英雄与猴子后创建）</summary>
 	private MonsterAiSmokeScenario m_AiScenario;
 
+	/// <summary>AI 烟测场景的开始时间。</summary>
 	private double m_AiStartTime;
 
+	/// <summary>读取烟测参数并设置物理处理优先级。</summary>
 	public override void _Ready()
 	{
 		foreach (string arg in OS.GetCmdlineUserArgs())
@@ -142,6 +158,8 @@ public partial class SmokeTestDriver : Node
 		ProcessPriority = 1000;
 	}
 
+	/// <summary>每物理帧驱动输入、实体采样及烟测断言。</summary>
+	/// <param name="delta">上一帧到当前帧的秒数。</param>
 	public override void _PhysicsProcess(double delta)
 	{
 		if (m_Hero == null)
@@ -189,6 +207,7 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
+	/// <summary>按时间计划注入测试输入。</summary>
 	private void DriveInput()
 	{
 		if (m_Mashing)
@@ -289,6 +308,7 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
+	/// <summary>记录当前英雄身体状态和动画路径的变化。</summary>
 	private void Sample()
 	{
 		string path = ObservePath(m_Hero.BodyStateName, m_Hero.CurrentAnim);
@@ -306,6 +326,9 @@ public partial class SmokeTestDriver : Node
 	/// 观测点 = `身体状态/播放器当前动画`（如 Attack/attack_2、Ground/idle1）。
 	/// 动画为空（播放器还没播过）时返回空串，不计入观测。
 	/// </summary>
+	/// <param name="bodyState">当前身体状态名。</param>
+	/// <param name="anim">当前动画名。</param>
+	/// <returns>组合路径；动画为空时返回空串。</returns>
 	public static string ObservePath(string bodyState, string anim)
 	{
 		return anim.Length == 0 ? "" : $"{bodyState}/{anim}";
@@ -340,6 +363,7 @@ public partial class SmokeTestDriver : Node
 			+ $"floor={m_Hero.IsOnFloor()} vy={m_Hero.Velocity.Y:F0}";
 	}
 
+	/// <summary>执行英雄烟测的完整断言并结束驱动。</summary>
 	private void Finish()
 	{
 		List<string> failures = new();
@@ -549,6 +573,8 @@ public partial class SmokeTestDriver : Node
 		GD.Print($"SMOKE: 猴子共受击 {m_MonsterHits.Count} 次，累计伤害 {total}，HP {m_Monster.Hp}/{m_Monster.MaxHp}，同屏飘字峰值 {m_MaxPopCount}");
 	}
 
+	/// <summary>记录烟测失败原因并停止驱动。</summary>
+	/// <param name="reason">失败原因。</param>
 	private void Fail(string reason)
 	{
 		GD.PrintErr($"SMOKE FAIL：{reason}");
@@ -583,11 +609,17 @@ public partial class SmokeTestDriver : Node
 		timer.Timeout += () => GetTree().Quit(failed ? 1 : 0);
 	}
 
+	/// <summary>查找观测序列中路径首次出现的位置。</summary>
+	/// <param name="path">身体状态与动画路径。</param>
+	/// <returns>首次位置；不存在时返回 -1。</returns>
 	private int FirstIndex(string path)
 	{
 		return m_Observed.FindIndex(o => o.Path == path);
 	}
 
+	/// <summary>查找观测序列中路径最后出现的位置。</summary>
+	/// <param name="path">身体状态与动画路径。</param>
+	/// <returns>最后位置；不存在时返回 -1。</returns>
 	private int LastIndex(string path)
 	{
 		return m_Observed.FindLastIndex(o => o.Path == path);

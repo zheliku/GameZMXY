@@ -22,9 +22,12 @@ namespace GameLogic.Manager
 		/// <summary>飘字父节点（世界坐标系的场景节点）</summary>
 		private Node m_Layer;
 
+		/// <summary>是否已订阅伤害事件。</summary>
 		private bool m_Subscribed;
 
 		/// <summary>开始监听命中事件。</summary>
+		/// <summary>设置飘字挂载层并订阅伤害事件。</summary>
+		/// <param name="layer">飘字的父节点。</param>
 		public void Activate(Node layer)
 		{
 			SetLayer(layer);
@@ -56,6 +59,7 @@ namespace GameLogic.Manager
 			m_Layer = layer;
 		}
 
+		/// <summary>释放管理器时解除事件订阅。</summary>
 		protected override void OnRelease()
 		{
 			if (m_Subscribed)

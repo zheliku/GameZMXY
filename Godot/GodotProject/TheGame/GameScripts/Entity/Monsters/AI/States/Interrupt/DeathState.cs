@@ -8,6 +8,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 	/// </summary>
 	public class DeathState : MonsterAiState
 	{
+		/// <summary>死亡 AI 状态不再产生意图。</summary>
 		protected override void Tick(IFsm<IMonsterAiAgent> fsm, IMonsterAiAgent agent, float elapseSeconds)
 		{
 		}

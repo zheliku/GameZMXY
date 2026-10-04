@@ -16,12 +16,14 @@ namespace GameLogic.Entity.Heroes.Body
 		/// <summary>连续受击由本状态自己处理（见 Tick）</summary>
 		protected override bool HurtInterrupts => false;
 
+		/// <summary>进入受击状态时清空输入缓冲并立即应用待生效击退。</summary>
 		protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
 		{
 			body.Input.ClearBuffers();
 			ApplyHurt(body);
 		}
 
+		/// <summary>处理连续受击、硬直计时和受击动画。</summary>
 		protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
 		{
 			if (body.HasPendingHurt)

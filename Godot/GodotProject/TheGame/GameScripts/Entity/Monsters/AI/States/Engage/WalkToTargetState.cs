@@ -9,6 +9,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 	/// </summary>
 	public class WalkToTargetState : EngageState
 	{
+		/// <summary>未进入普通攻击水平范围时追向目标。</summary>
 		protected override void Engage(IFsm<IMonsterAiAgent> fsm, IMonsterAiAgent agent, int dir, float elapseSeconds)
 		{
 			if (agent.Attacks.BasicGapX(agent.TargetBox, dir) <= -MonsterAttackBook.ReachMargin)

@@ -10,11 +10,20 @@ namespace GameLogic.Entity.Monsters.AI
 	/// </summary>
 	public readonly struct AiBox
 	{
+		/// <summary>矩形左边界。</summary>
 		public readonly float Left;
+		/// <summary>矩形右边界。</summary>
 		public readonly float Right;
+		/// <summary>矩形上边界。</summary>
 		public readonly float Top;
+		/// <summary>矩形下边界。</summary>
 		public readonly float Bottom;
 
+		/// <summary>创建矩形并规范化边界顺序。</summary>
+		/// <param name="left">左侧输入坐标。</param>
+		/// <param name="right">右侧输入坐标。</param>
+		/// <param name="top">上侧输入坐标。</param>
+		/// <param name="bottom">下侧输入坐标。</param>
 		public AiBox(float left, float right, float top, float bottom)
 		{
 			Left = Math.Min(left, right);
@@ -67,6 +76,7 @@ namespace GameLogic.Entity.Monsters.AI
 			return new AiBox(x - 0.5f, x + 0.5f, y - 0.5f, y + 0.5f);
 		}
 
+		/// <summary>返回空盒标记或矩形边界的调试文本。</summary>
 		public override string ToString()
 		{
 			return IsEmpty ? "AiBox(empty)" : $"AiBox(X {Left:F1}..{Right:F1}, Y {Top:F1}..{Bottom:F1})";

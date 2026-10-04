@@ -10,6 +10,7 @@ namespace GameLogic.Entity.Monsters.Body
 	/// </summary>
 	public sealed class MonsterAttackState : MonsterBodyState
 	{
+		/// <summary>当前出招下标。</summary>
 		private int m_Index;
 
 		/// <summary>本招剩余秒</summary>
@@ -21,6 +22,7 @@ namespace GameLogic.Entity.Monsters.Body
 			m_Index = index;
 		}
 
+		/// <summary>提交招式、锁定移动并播放对应攻击动画。</summary>
 		protected override void Enter(IFsm<IMonsterBody> fsm, IMonsterBody body)
 		{
 			body.MoveIntent = 0;
@@ -29,6 +31,7 @@ namespace GameLogic.Entity.Monsters.Body
 			body.RestartAnim(body.Params.AttackAnims[m_Index]);
 		}
 
+		/// <summary>离开攻击状态时清除移动意图并归还攻击包。</summary>
 		protected override void Leave(IFsm<IMonsterBody> fsm, IMonsterBody body, bool isShutdown)
 		{
 			// 收招、受击打断、死亡、实体隐藏都走这里：动画被切走，攻击包在此归还
@@ -36,6 +39,7 @@ namespace GameLogic.Entity.Monsters.Body
 			body.EndAttack();
 		}
 
+		/// <summary>推进招式计时，到点后进入收招或移动状态。</summary>
 		protected override void Tick(IFsm<IMonsterBody> fsm, IMonsterBody body, float dt)
 		{
 			ApplyGravity(body, dt);

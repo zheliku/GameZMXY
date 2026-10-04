@@ -23,6 +23,8 @@ public class ProcedurePrelode : ProcedureBase
     /// 进入流程。
     /// 执行所有初始化工作后立即切换到菜单流程。
     /// </summary>
+    /// <summary>加载语言及 UI、实体和声音分组，再进入游戏流程。</summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal async override void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
@@ -89,6 +91,7 @@ public class ProcedurePrelode : ProcedureBase
 
         ChangeState<ProcedureGame>(procedureOwner);
     }
+    /// <summary>根据设置或编辑器资源加载模式选择界面语言。</summary>
     private void LoadLocalization()
     {
         if (!GF.Base.EnableEditorResLoad)
@@ -101,6 +104,8 @@ public class ProcedurePrelode : ProcedureBase
             Log.Info("[ProcedurePrelode] Editor res load enabled, set language to SystemLanguage: {0}.", GF.Localization.Language);
         }
     }
+    /// <summary>从资源配置注册所有 UI 分组。</summary>
+    /// <returns>全部 UI 分组均注册成功时为 true。</returns>
     private bool LoadUIGroup()
     {
         for (int i = 0; i < GF.UI.UIGroupRes.Groups.Length; i++)
@@ -113,6 +118,8 @@ public class ProcedurePrelode : ProcedureBase
         }
         return true;
     }
+    /// <summary>从资源配置注册所有实体分组。</summary>
+    /// <returns>全部实体分组均注册成功时为 true。</returns>
     private bool LoadEntityGroup()
     {
         var groups = GF.Entity.EntityGroupRes.EntityGroups;
@@ -126,6 +133,8 @@ public class ProcedurePrelode : ProcedureBase
         }
         return true;
     }
+    /// <summary>注册声音分组并恢复各默认声音组音量。</summary>
+    /// <returns>全部声音分组均注册成功时为 true。</returns>
     private bool LoadSoundGroup()
     {
         var groups = GF.Sound.SoundGroupRes.SoundGroups;

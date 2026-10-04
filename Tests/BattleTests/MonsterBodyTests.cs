@@ -15,8 +15,10 @@ namespace GameLogic.Battle.Tests
 	/// </summary>
 	public class MonsterBodyTests
 	{
+		/// <summary>单个物理帧的时长。</summary>
 		private const float Dt = 1f / 60f;
 
+		/// <summary>创建用于状态机测试的怪物参数。</summary>
 		private static MonsterBodyParams Params(float attackTime = 0.1f, float recovery = 0.3f,
 			float hurtTime = 0.2f, float deathTime = 0.5f)
 		{
@@ -32,6 +34,7 @@ namespace GameLogic.Battle.Tests
 			};
 		}
 
+		/// <summary>验证移动意图控制怪物速度、动画和朝向。</summary>
 		[Fact]
 		public void Move_FollowsIntent_AndPicksAnim()
 		{
@@ -47,6 +50,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(1, h.Body.Facing);
 		}
 
+		/// <summary>验证怪物攻击、收招硬直及其后的移动状态。</summary>
 		[Fact]
 		public void Attack_Request_Recovery_ThenMove()
 		{
@@ -72,6 +76,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("Attack", h.State);
 		}
 
+		/// <summary>验证零收招时长的攻击直接返回移动状态。</summary>
 		[Fact]
 		public void Attack_ZeroRecovery_ReturnsToMove()
 		{
@@ -82,6 +87,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("Move", h.State);
 		}
 
+		/// <summary>验证受击会中断攻击并清除未处理的攻击请求。</summary>
 		[Fact]
 		public void Hurt_InterruptsAttack_AndDropsRequest()
 		{
@@ -106,6 +112,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(-1, h.Body.AttackRequest);        // 硬直中的请求已作废
 		}
 
+		/// <summary>验证受击会中断收招硬直。</summary>
 		[Fact]
 		public void Hurt_InterruptsRecovery()
 		{
@@ -120,6 +127,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("Hurt", h.State);
 		}
 
+		/// <summary>验证宿主不登记受击时霸体攻击不会被中断。</summary>
 		[Fact]
 		public void SuperArmor_HostNotRegisteringHurt_KeepsAttack()
 		{
@@ -131,6 +139,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("Recovery", h.State);   // 没被打断，正常收招
 		}
 
+		/// <summary>验证死亡优先处理、一次性副作用及延时回收。</summary>
 		[Fact]
 		public void Death_Priority_SideEffectsOnce_RecycleAfterDeathTime()
 		{
@@ -155,6 +164,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(1, h.Body.DiedCount);
 		}
 
+		/// <summary>验证状态机关闭时会结束进行中的攻击。</summary>
 		[Fact]
 		public void Shutdown_DuringAttack_ReleasesAttack()
 		{
@@ -167,18 +177,25 @@ namespace GameLogic.Battle.Tests
 
 		// ---------------------------------------------------------------- 假宿主与驱动
 
+		/// <summary>为怪物身体状态机提供可控的测试宿主。</summary>
 		private sealed class FakeMonster : FakeActorBody, IMonsterBody
 		{
+			/// <summary>初始化怪物身体状态参数。</summary>
 			public FakeMonster(MonsterBodyParams p)
 			{
 				Params = p;
 			}
 
+			/// <summary>怪物身体状态参数。</summary>
 			public MonsterBodyParams Params { get; }
+			/// <summary>AI 写入的移动方向意图。</summary>
 			public int MoveIntent { get; set; }
+			/// <summary>待身体状态机消费的攻击段索引。</summary>
 			public int AttackRequest = -1;
+			/// <summary>请求回收的次数。</summary>
 			public int RecycleCount;
 
+			/// <summary>取出并清除待处理的攻击请求。</summary>
 			public int TakeAttackRequest()
 			{
 				int r = AttackRequest;
@@ -186,15 +203,21 @@ namespace GameLogic.Battle.Tests
 				return r;
 			}
 
+			/// <summary>记录一次实体回收请求。</summary>
 			public void RequestRecycle() => RecycleCount++;
 		}
 
+		/// <summary>用真实框架状态机驱动怪物身体测试。</summary>
 		private sealed class MonsterHarness : IDisposable
 		{
+			/// <summary>驱动测试状态机的管理器。</summary>
 			private readonly FsmManager m_Manager = new FsmManager();
+			/// <summary>当前测试使用的怪物身体状态机。</summary>
 			private readonly IFsm<IMonsterBody> m_Fsm;
+			/// <summary>记录驱动器是否已关闭。</summary>
 			private bool m_Disposed;
 
+			/// <summary>创建假宿主并启动怪物身体状态机。</summary>
 			public MonsterHarness(MonsterBodyParams p)
 			{
 				Body = new FakeMonster(p);
@@ -204,9 +227,13 @@ namespace GameLogic.Battle.Tests
 				m_Fsm.Start<MonsterMoveState>();
 			}
 
+			/// <summary>状态机绑定的假怪物宿主。</summary>
 			public FakeMonster Body { get; }
+			/// <summary>当前身体状态名称。</summary>
 			public string State => BodyFsm.CurrentName(m_Fsm);
 
+			/// <summary>推进指定数量的物理帧，并固定宿主在地面上。</summary>
+			/// <param name="frames">推进的物理帧数。</param>
 			public void Step(int frames)
 			{
 				for (int i = 0; i < frames; i++)
@@ -217,6 +244,9 @@ namespace GameLogic.Battle.Tests
 			}
 
 			/// <summary>推进直到条件满足（每帧检查状态），返回消耗的帧数；超过 600 帧返回 -1。</summary>
+			/// <summary>逐帧推进至条件成立，最多检查 600 帧。</summary>
+			/// <param name="until">返回是否停止推进的状态条件。</param>
+			/// <returns>满足条件前推进的帧数；超时返回 -1。</returns>
 			public int StepUntil(Func<string, bool> until)
 			{
 				for (int i = 0; i < 600; i++)
@@ -232,6 +262,7 @@ namespace GameLogic.Battle.Tests
 				return -1;
 			}
 
+			/// <summary>关闭状态机管理器；重复调用不会重复关闭。</summary>
 			public void Dispose()
 			{
 				if (m_Disposed)

@@ -15,8 +15,10 @@ namespace GameLogic.Entity.Monsters.Body
 		/// <summary>已请求回收（只请求一次）</summary>
 		private bool m_Recycled;
 
+		/// <summary>死亡状态不再响应受击中断。</summary>
 		protected override bool HurtInterrupts => false;
 
+		/// <summary>清除待处理请求，执行死亡副作用并播放死亡动画。</summary>
 		protected override void Enter(IFsm<IMonsterBody> fsm, IMonsterBody body)
 		{
 			body.MoveIntent = 0;
@@ -28,6 +30,7 @@ namespace GameLogic.Entity.Monsters.Body
 			body.RestartAnim(MonsterAnims.Death);
 		}
 
+		/// <summary>保持尸体定身，死亡计时结束后请求回收一次。</summary>
 		protected override void Tick(IFsm<IMonsterBody> fsm, IMonsterBody body, float dt)
 		{
 			ApplyGravity(body, dt);

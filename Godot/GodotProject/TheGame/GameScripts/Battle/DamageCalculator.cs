@@ -53,6 +53,8 @@ namespace GameLogic.Battle
 		/// <param name="defender">防守方属性快照</param>
 		/// <param name="missRoll">闪避判定随机数 [0,1)（由 Godot 层取好传入，Battle/ 不自取随机）</param>
 		/// <param name="critRoll">暴击判定随机数 [0,1)（由 Godot 层取好传入）</param>
+		/// <returns>本次命中的伤害、闪避、暴击和伤害类型结果。</returns>
+		/// <exception cref="ArgumentNullException"><paramref name="config"/> 或 <paramref name="attack"/> 为 <see langword="null"/>。</exception>
 		public static DamageResult Calculate(BattleConfig config, AttackData attack, in CombatantStats defender,
 			float missRoll, float critRoll)
 		{
@@ -130,6 +132,10 @@ namespace GameLogic.Battle
 		/// 击退速度（px/s）：表单位 × BattleConfig 换算系数，横向按出招方向，纵向向上为负。
 		/// 横向换算按防守方分侧（旧项目英雄被击退 ×25、怪物 ×30），纵向两侧一致。
 		/// </summary>
+		/// <param name="config">提供击退换算系数的战斗配置。</param>
+		/// <param name="attack">包含出招方向和击退参数的攻击包。</param>
+		/// <param name="defenderSide">用于选择横向换算系数的防守方侧别。</param>
+		/// <returns>世界坐标系下的击退速度（px/s）。</returns>
 		public static Vector2 KnockbackVelocity(BattleConfig config, AttackData attack, CombatSide defenderSide)
 		{
 			float scaleX = defenderSide == CombatSide.Hero ? config.KnockbackScaleXHeroDef : config.KnockbackScaleXMonsterDef;
@@ -137,6 +143,8 @@ namespace GameLogic.Battle
 		}
 
 		/// <summary>向零取整（旧 int()），带 float 系数容差（见 <see cref="TruncateEpsilon"/>）。</summary>
+		/// <param name="value">待取整数值。</param>
+		/// <returns>向零截断后的值。</returns>
 		private static double Truncate(double value)
 		{
 			return value >= 0 ? Math.Floor(value + TruncateEpsilon) : Math.Ceiling(value - TruncateEpsilon);
@@ -144,6 +152,9 @@ namespace GameLogic.Battle
 
 		/// <summary>x/(x+K)，保留三位小数（旧项目 snapped(x, 0.001)）；x、K 均为 0 时视为 0。
 		/// Godot 4 的 Mathf.Snapped 同为 floor(x/step+0.5)*step；x≥0 域内二者一致。</summary>
+		/// <param name="x">非负净属性值。</param>
+		/// <param name="k">非负曲线常数。</param>
+		/// <returns>按 <see cref="RatioStep"/> 取整的比率。</returns>
 		private static double Ratio(double x, double k)
 		{
 			double denominator = x + k;

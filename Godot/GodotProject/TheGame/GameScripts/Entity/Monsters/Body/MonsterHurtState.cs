@@ -15,12 +15,14 @@ namespace GameLogic.Entity.Monsters.Body
 		/// <summary>连续受击由本状态自己处理（见 Tick），不走基类打断</summary>
 		protected override bool HurtInterrupts => false;
 
+		/// <summary>进入受击状态时清除移动意图并应用击退。</summary>
 		protected override void Enter(IFsm<IMonsterBody> fsm, IMonsterBody body)
 		{
 			body.MoveIntent = 0;
 			ApplyHurt(body);
 		}
 
+		/// <summary>处理连续受击、受击时长和重力。</summary>
 		protected override void Tick(IFsm<IMonsterBody> fsm, IMonsterBody body, float dt)
 		{
 			body.TakeAttackRequest();

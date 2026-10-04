@@ -54,6 +54,15 @@ namespace GameLogic.Battle
 		private readonly HashSet<ulong> m_HitTargets = new HashSet<ulong>();
 
 		/// <summary>从引用池取一个攻击包并装填（各参数语义见同名属性）。</summary>
+		/// <param name="attackId">来源攻击编号；动态攻击传 0。</param>
+		/// <param name="attacker">出招时的攻击方属性快照。</param>
+		/// <param name="power">本招威力。</param>
+		/// <param name="kind">伤害类型。</param>
+		/// <param name="knockback">击退参数。</param>
+		/// <param name="direction">出招方向；非负视为向右，负数视为向左。</param>
+		/// <param name="hitProtect">本次命中增加的受击保护值。</param>
+		/// <param name="hitSoundId">命中音效编号。</param>
+		/// <returns>已装填并由引用池管理的攻击数据包。</returns>
 		public static AttackData Create(int attackId, in CombatantStats attacker, float power, DamageKind kind,
 			Vector2 knockback, int direction, int hitProtect, SoundId hitSoundId)
 		{
@@ -70,6 +79,8 @@ namespace GameLogic.Battle
 		}
 
 		/// <summary>登记命中：目标本招首次命中返回 true（应结算），重复命中返回 false（应忽略）。</summary>
+		/// <param name="targetInstanceId">目标节点实例编号。</param>
+		/// <returns>目标首次命中时为 <see langword="true"/>；否则为 <see langword="false"/>。</returns>
 		public bool TryRegisterHit(ulong targetInstanceId)
 		{
 			return m_HitTargets.Add(targetInstanceId);

@@ -9,6 +9,7 @@ namespace GameLogic.Entity.Heroes.Body
 	/// </summary>
 	public sealed class HeroAirState : HeroBodyState
 	{
+		/// <summary>处理空中攻击、二段跳、转向与跳跃/下落动画。</summary>
 		protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
 		{
 			if (!body.OnFloor)

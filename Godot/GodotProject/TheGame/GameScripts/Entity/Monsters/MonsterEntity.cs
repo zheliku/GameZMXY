@@ -54,7 +54,9 @@ namespace GameLogic.Entity.Monsters
 		/// </summary>
 		protected virtual bool IsSuperArmor => Config != null && Config.SuperArmor;
 
+		/// <summary>从 MonsterConfig 复制的 AI 参数快照。</summary>
 		private MonsterAiParams m_AiParams;
+		/// <summary>从怪物配置和攻击动画构建的身体状态参数快照。</summary>
 		private MonsterBodyParams m_BodyParams;
 
 		/// <summary>攻击集（AI 范围判断与加权选招；调试观测可读 <see cref="MonsterAttackBook.ReachOf"/>）</summary>
@@ -88,12 +90,19 @@ namespace GameLogic.Entity.Monsters
 		/// <summary>能自主行动（未受控、未死亡）</summary>
 		private bool CanAct => !Dead && !InHurt;
 
+		/// <summary>按框架帧驱动的怪物 AI 状态机。</summary>
 		private IFsm<IMonsterAiAgent> m_AiFsm;
+		/// <summary>按物理帧推进的怪物身体状态机。</summary>
 		private IFsm<IMonsterBody> m_BodyFsm;
+		/// <summary>当前索敌目标；目标失效或超时后清除。</summary>
 		private ActorEntity m_Target;
+		/// <summary>本次显示时记录的巡逻起点。</summary>
 		private Vector2 m_Home;
+		/// <summary>最近一次造成有效受击的实体编号。</summary>
 		private int m_LastAttackerId;
+		/// <summary>待身体状态机提交的攻击下标，-1 表示无请求。</summary>
 		private int m_AttackRequest = -1;
+		/// <summary>死亡动画结束后等待物理帧回收的标记。</summary>
 		private bool m_RecycleRequested;
 
 		/// <summary>目标持续在视野外的秒数（超过 LoseTargetTime 即放弃）</summary>
@@ -103,6 +112,7 @@ namespace GameLogic.Entity.Monsters
 
 		#region 生命周期
 
+		/// <summary>读取基础实体信息与怪物配置，并初始化攻击和身体参数。</summary>
 		public override void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance,
 			object userData)
 		{
@@ -136,6 +146,7 @@ namespace GameLogic.Entity.Monsters
 			}
 		}
 
+		/// <summary>显示时复位池化状态并重建身体与 AI 状态机。</summary>
 		public override void OnShow(object userData)
 		{
 			base.OnShow(userData);
@@ -166,6 +177,7 @@ namespace GameLogic.Entity.Monsters
 			CreateAi();
 		}
 
+		/// <summary>隐藏时销毁状态机、清空目标并执行基类清理。</summary>
 		public override void OnHide(bool isShutdown, object userData)
 		{
 			DestroyAi(isShutdown);
@@ -278,6 +290,7 @@ namespace GameLogic.Entity.Monsters
 			m_PendingHurt = knockback;
 		}
 
+		/// <summary>延迟切换受击盒可监测性，允许在物理回调中安全调用。</summary>
 		private void SetHurtBoxEnabled(bool enabled)
 		{
 			// deferred：可能在物理回调内调用
@@ -404,6 +417,7 @@ namespace GameLogic.Entity.Monsters
 			}
 		}
 
+		/// <summary>设置当前目标并清零视野外计时。</summary>
 		private void SetTarget(ActorEntity target)
 		{
 			m_Target = target;
@@ -457,6 +471,7 @@ namespace GameLogic.Entity.Monsters
 
 		#region 身体状态机宿主（IMonsterBody：身体状态只经这里读写；公共成员由 ActorEntity 提供）
 
+		/// <summary>创建并启动怪物身体状态机；已有配置或状态机缺失时不创建。</summary>
 		private void CreateBody()
 		{
 			if (Config == null || m_BodyFsm != null)
@@ -481,14 +496,17 @@ namespace GameLogic.Entity.Monsters
 			m_BodyFsm = null;
 		}
 
+		/// <summary>向身体状态机提供怪物身体参数快照。</summary>
 		MonsterBodyParams IMonsterBody.Params => m_BodyParams;
 
+		/// <summary>转发 AI 写入的移动意图读写。</summary>
 		int IMonsterBody.MoveIntent
 		{
 			get => MoveIntent;
 			set => MoveIntent = value;
 		}
 
+		/// <summary>取出并清除待提交的攻击请求。</summary>
 		int IMonsterBody.TakeAttackRequest()
 		{
 			int request = m_AttackRequest;
@@ -496,12 +514,16 @@ namespace GameLogic.Entity.Monsters
 			return request;
 		}
 
+		/// <summary>提供怪物身体状态使用的重力参数。</summary>
 		float IActorBody.Gravity => m_BodyParams.Gravity;
 
+		/// <summary>提交怪物招式并装填攻击包。</summary>
 		void IActorBody.BeginAttack(int index) => BeginAttackIndex(index);
 
+		/// <summary>结束怪物招式并归还攻击包。</summary>
 		void IActorBody.EndAttack() => EndAttackIndex();
 
+		/// <summary>播放配置指定的怪物受击音效。</summary>
 		void IActorBody.PlayHurtSound() => PlaySound(Config.HurtSoundId);
 
 		/// <summary>死亡副作用：关受击盒（尸体不再挨打）、播死亡音、广播死亡事件。</summary>
@@ -513,12 +535,14 @@ namespace GameLogic.Entity.Monsters
 				MonsterDiedEventArgs.Create(Id, Config.Id, Config.Rank, m_LastAttackerId, GlobalPosition));
 		}
 
+		/// <summary>请求在当前物理帧完成后安全回收实体。</summary>
 		void IMonsterBody.RequestRecycle() => m_RecycleRequested = true;
 
 		#endregion
 
 		#region AI 宿主（IMonsterAiAgent：AI 只经这里读感知与身体事实、写意图）
 
+		/// <summary>创建并启动怪物 AI 状态机；仅在实体显示且 AI 启用时执行。</summary>
 		private void CreateAi()
 		{
 			if (!AiEnabled || m_AiFsm != null || Config == null || !IsShown)
@@ -543,17 +567,26 @@ namespace GameLogic.Entity.Monsters
 			m_AiFsm = null;
 		}
 
+		/// <summary>向 AI 提供实体死亡事实。</summary>
 		bool IMonsterAiAgent.IsDead => Dead;
+		/// <summary>向 AI 提供当前受击受控事实。</summary>
 		bool IMonsterAiAgent.IsCcLocked => InHurt;
+		/// <summary>向 AI 提供攻击或收招忙碌事实。</summary>
 		bool IMonsterAiAgent.IsAttacking => IsBusy;
+		/// <summary>提供目标受击盒相对怪物原点的范围。</summary>
 		AiBox IMonsterAiAgent.TargetBox => TargetBox;
+		/// <summary>提供怪物相对出生点的水平偏移。</summary>
 		float IMonsterAiAgent.HomeDeltaX => GlobalPosition.X - m_Home.X;
+		/// <summary>向 AI 提供怪物参数快照。</summary>
 		MonsterAiParams IMonsterAiAgent.Params => m_AiParams;
 
+		/// <summary>由 Godot 随机源提供 AI 随机值。</summary>
 		float IMonsterAiAgent.NextRandom() => GD.Randf();
 
+		/// <summary>设置并限制怪物的水平移动意图。</summary>
 		void IMonsterAiAgent.Move(int dir) => MoveIntent = Mathf.Clamp(dir, -1, 1);
 
+		/// <summary>仅在可行动且未忙碌时按目标方向调整朝向。</summary>
 		void IMonsterAiAgent.Face(int dir)
 		{
 			if (CanAct && !IsBusy)
@@ -562,6 +595,7 @@ namespace GameLogic.Entity.Monsters
 			}
 		}
 
+		/// <summary>校验攻击请求并登记供身体状态机下一物理帧消费。</summary>
 		bool IMonsterAiAgent.RequestAttack(int index)
 		{
 			if (index < 0 || index >= OwnAttacks.Length || IsBusy || !CanAct)

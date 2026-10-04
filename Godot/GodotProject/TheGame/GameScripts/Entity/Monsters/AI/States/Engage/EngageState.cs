@@ -12,6 +12,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 	/// </summary>
 	public abstract class EngageState : MonsterAiState
 	{
+		/// <summary>处理忙碌与目标失效，再处理优先招和当前交战行为。</summary>
 		protected sealed override void Tick(IFsm<IMonsterAiAgent> fsm, IMonsterAiAgent agent, float elapseSeconds)
 		{
 			if (agent.IsAttacking)

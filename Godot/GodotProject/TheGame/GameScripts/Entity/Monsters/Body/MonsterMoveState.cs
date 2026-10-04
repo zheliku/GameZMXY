@@ -9,6 +9,7 @@ namespace GameLogic.Entity.Monsters.Body
 	/// </summary>
 	public sealed class MonsterMoveState : MonsterBodyState
 	{
+		/// <summary>优先提交待攻击请求，否则按 AI 意图移动或待机。</summary>
 		protected override void Tick(IFsm<IMonsterBody> fsm, IMonsterBody body, float dt)
 		{
 			int request = body.TakeAttackRequest();

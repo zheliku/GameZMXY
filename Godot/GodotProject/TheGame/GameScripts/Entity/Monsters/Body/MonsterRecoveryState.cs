@@ -9,7 +9,9 @@ namespace GameLogic.Entity.Monsters.Body
 	/// </summary>
 	public sealed class MonsterRecoveryState : MonsterBodyState
 	{
+		/// <summary>进入时使用的收招硬直时长。</summary>
 		private float m_Duration;
+		/// <summary>当前硬直剩余秒数。</summary>
 		private float m_Left;
 
 		/// <summary>进入前指定硬直时长（由发起切换的状态调用）。</summary>
@@ -18,12 +20,14 @@ namespace GameLogic.Entity.Monsters.Body
 			m_Duration = seconds;
 		}
 
+		/// <summary>装载本次收招硬直计时并播放待机动画。</summary>
 		protected override void Enter(IFsm<IMonsterBody> fsm, IMonsterBody body)
 		{
 			m_Left = m_Duration;
 			body.PlayAnim(MonsterAnims.Idle);
 		}
 
+		/// <summary>计时结束后返回移动状态，否则原地站立并施加重力。</summary>
 		protected override void Tick(IFsm<IMonsterBody> fsm, IMonsterBody body, float dt)
 		{
 			if (Elapsed(m_Left))

@@ -6,7 +6,11 @@ namespace GodotGameFramework.NodePool;
 /// </summary>
 public partial class PoolContainer : Node
 {
+    /// <summary>此容器所属的对象池名称。</summary>
     public string PoolName { get; set; }
+
+    /// <summary>创建以池名称命名的对象容器节点。</summary>
+    /// <param name="poolName">容器所属的池名称。</param>
     public PoolContainer(string poolName)
     {
         PoolName = poolName;

@@ -48,6 +48,17 @@ namespace GameLogic.Event
 		/// <summary>受击方剩余生命</summary>
 		public int TargetHp { get; private set; }
 
+		/// <summary>从引用池创建并填充一次命中事件。</summary>
+		/// <param name="attackerEntityId">攻击方实体编号；无实体来源时为 0。</param>
+		/// <param name="targetEntityId">受击方实体编号。</param>
+		/// <param name="targetIsHero">受击方是否为英雄。</param>
+		/// <param name="damage">最终伤害。</param>
+		/// <param name="isMiss">是否闪避。</param>
+		/// <param name="isCrit">是否暴击。</param>
+		/// <param name="kind">伤害类型。</param>
+		/// <param name="popPosition">飘字世界坐标。</param>
+		/// <param name="targetHp">结算后的剩余生命。</param>
+		/// <returns>由引用池持有、仅在本次事件分发期间有效的参数。</returns>
 		public static DamageDealtEventArgs Create(int attackerEntityId, int targetEntityId, bool targetIsHero,
 			int damage, bool isMiss, bool isCrit, DamageKind kind, Vector2 popPosition, int targetHp)
 		{
@@ -64,6 +75,7 @@ namespace GameLogic.Event
 			return e;
 		}
 
+		/// <summary>清除本次事件数据，供引用池复用。</summary>
 		public override void Clear()
 		{
 			AttackerEntityId = 0;

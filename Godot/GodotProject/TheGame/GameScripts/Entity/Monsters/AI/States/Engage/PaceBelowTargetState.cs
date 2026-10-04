@@ -21,6 +21,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 			m_Dir = 0;
 		}
 
+		/// <summary>目标高度暂不可达时在其下方踱步或转入追击。</summary>
 		protected override void Engage(IFsm<IMonsterAiAgent> fsm, IMonsterAiAgent agent, int dir, float elapseSeconds)
 		{
 			if (agent.Attacks.BasicInReach(agent.TargetBox, dir))

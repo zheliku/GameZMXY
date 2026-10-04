@@ -28,8 +28,13 @@ namespace GameLogic.Entity.Monsters.AI
 		/// <summary>出生时初始冷却区间</summary>
 		public (float Min, float Max) InitCooldown { get; init; }
 
+		/// <summary>该招式是否为普通攻击（优先级为 0）。</summary>
 		public bool IsBasic => Priority == 0;
 
+		/// <summary>在闭区间内按归一化随机值插值。</summary>
+		/// <param name="range">最小值与最大值。</param>
+		/// <param name="t">归一化随机值。</param>
+		/// <returns>区间内的插值结果。</returns>
 		public static float Roll((float Min, float Max) range, float t)
 		{
 			return range.Min + (Math.Max(range.Min, range.Max) - range.Min) * t;

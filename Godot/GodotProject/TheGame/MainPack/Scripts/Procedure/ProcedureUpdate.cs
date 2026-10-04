@@ -31,9 +31,13 @@ using GodotGameFramework.UI;
 /// </summary>
 public class ProcedureUpdate : ProcedureBase
 {
+    /// <summary>每个网络操作的最大尝试次数。</summary>
     private const int MaxRetries = 3;
+    /// <summary>重试之间的基础等待时间（秒）。</summary>
     private const float RetryBaseDelaySeconds = 1.5f;
+    /// <summary>单次版本清单请求超时时间（秒）。</summary>
     private const float VersionFetchTimeoutSeconds = 10f;    // 单次版本清单请求超时（秒），不依赖全局 30s
+    /// <summary>当前热更子包存储目录。</summary>
     LoadingForm m_loadingForm;
 
     /// <summary>
@@ -42,6 +46,8 @@ public class ProcedureUpdate : ProcedureBase
     /// </summary>
     private string SubpackDir => GetOrCreateHotUpdateDir();
 
+    /// <summary>按配置、安装目录可写性和用户目录顺序选择热更目录。</summary>
+    /// <returns>已确保存在的热更目录路径。</returns>
     private string GetOrCreateHotUpdateDir()
     {
         // 1. 开发者显式配置的路径
@@ -71,6 +77,9 @@ public class ProcedureUpdate : ProcedureBase
         return userSubpackDir;
     }
 
+    /// <summary>通过创建临时文件检查目录是否可写。</summary>
+    /// <param name="path">待检查目录。</param>
+    /// <returns>目录可创建和写入时为 true。</returns>
     private bool IsDirectoryWritable(string path)
     {
         try
@@ -87,11 +96,15 @@ public class ProcedureUpdate : ProcedureBase
         }
     }
 
+    /// <summary>初始化更新流程并执行基类初始化。</summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal override void OnInit(ProcedureOwner procedureOwner)
     {
         base.OnInit(procedureOwner);
     }
 
+    /// <summary>执行版本检查、完整性校验、下载和子包加载。</summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal override async void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
@@ -125,6 +138,8 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 主流程 ──
 
+    /// <summary>运行一次完整的热更新流程，失败时根据强制更新策略决定回退或退出。</summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
     private async Task RunUpdateFlowAsync(ProcedureOwner procedureOwner)
     {
         // Package 模式不检测更新，但尝试加载本地子包（安装目录 subpackages/）
@@ -361,6 +376,9 @@ public class ProcedureUpdate : ProcedureBase
     /// 显示提示信息，提供"退出游戏"和"重试"按钮。
     /// </summary>
     /// <returns>true = 用户选择重试</returns>
+    /// <summary>显示强制更新对话框并等待用户选择。</summary>
+    /// <param name="message">对话框提示信息。</param>
+    /// <returns>用户选择重试时为 true。</returns>
     private async Task<bool> ShowForceUpdateDialogAsync(string message)
     {
         var tcs = new TaskCompletionSource<bool>();
@@ -387,6 +405,9 @@ public class ProcedureUpdate : ProcedureBase
     /// 损坏或丢失的包从 localVersion 中移除，后续会自动与服务器对齐重新下载。
     /// </summary>
     /// <returns>损坏/丢失的包数量</returns>
+    /// <summary>校验本地子包文件并移除损坏或缺失的清单项。</summary>
+    /// <param name="localVersion">待校验的本地版本清单。</param>
+    /// <returns>损坏或缺失的包数量。</returns>
     private async Task<int> VerifyLocalPackIntegrityAsync(PackVersionList localVersion)
     {
         Log.Info("[ProcedureUpdate] 开始校验本地文件完整性...");
@@ -463,6 +484,9 @@ public class ProcedureUpdate : ProcedureBase
     /// <summary>
     /// 比对本机与服务器版本，返回需要下载的包列表（含下载 URL）。
     /// </summary>
+    /// <param name="server">服务器版本清单。</param>
+    /// <param name="local">本地版本清单。</param>
+    /// <returns>需要下载的包及其 URL。</returns>
     private List<(Pack Pack, string Url)> FindPacksToUpdate(
         PackVersionList server, PackVersionList local)
     {
@@ -514,6 +538,8 @@ public class ProcedureUpdate : ProcedureBase
     /// <summary>
     /// 批量并发下载（并发数由 DownloadComponent 的 agent 数调度），带聚合进度报告和 SHA256 校验。
     /// </summary>
+    /// <param name="packs">待下载的包及其 URL。</param>
+    /// <returns>下载并校验成功的包数量。</returns>
     private async Task<int> DownloadPacksWithProgressAsync(
         List<(Pack Pack, string Url)> packs)
     {
@@ -602,6 +628,11 @@ public class ProcedureUpdate : ProcedureBase
     /// 下载单个包（含重试 + 断点续传 + SHA256 校验），经由 GF.Download 统一下载通道。
     /// 失败时保留 .download 断点文件，下次重试自动续传。
     /// </summary>
+    /// <param name="pack">待下载的包。</param>
+    /// <param name="url">包下载地址。</param>
+    /// <param name="savePath">目标文件路径。</param>
+    /// <param name="onPackBytes">下载进度回调，参数为已下载字节数。</param>
+    /// <returns>下载并校验成功时为 true。</returns>
     private async Task<bool> DownloadSinglePackWithRetryAsync(
         Pack pack, string url, string savePath, Action<long> onPackBytes)
     {
@@ -646,6 +677,9 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 版本文件请求 ──
 
+    /// <summary>请求服务器版本清单并按策略重试。</summary>
+    /// <param name="versionUrl">版本清单地址。</param>
+    /// <returns>有效版本清单；所有尝试失败时返回 null。</returns>
     private async Task<PackVersionList> FetchVersionWithRetryAsync(string versionUrl)
     {
         for (int attempt = 0; attempt < MaxRetries; attempt++)
@@ -700,6 +734,7 @@ public class ProcedureUpdate : ProcedureBase
     /// 先加载 Config 类型（Luban/本地化），再加载 Resource 类型（场景/贴图）。
     /// 加载前大小校验，对大文件做 SHA256 重校验。
     /// </summary>
+    /// <param name="version">要加载的版本清单。</param>
     private async Task LoadDownloadedPacksAsync(PackVersionList version)
     {
         if (version?.Packs == null || version.Packs.Length == 0)
@@ -787,7 +822,8 @@ public class ProcedureUpdate : ProcedureBase
             loaded, version.Packs.Length, failed);
     }
 
-    /// <summary>清理磁盘上不在版本清单中的废弃 .pck 文件。</summary>
+    /// <summary>删除热更目录中不属于当前清单的旧子包。</summary>
+    /// <param name="version">当前有效版本清单。</param>
     private void CleanStalePacks(PackVersionList version)
     {
         if (!Directory.Exists(SubpackDir)) return;
@@ -814,7 +850,7 @@ public class ProcedureUpdate : ProcedureBase
         }
     }
 
-    /// <summary>回退版本文件到备份。</summary>
+    /// <summary>使用版本备份文件回退当前版本清单。</summary>
     private void RollbackVersionFile()
     {
         try
@@ -879,6 +915,9 @@ public class ProcedureUpdate : ProcedureBase
         }
     }
 
+    /// <summary>判断版本请求是否返回可解析的成功响应。</summary>
+    /// <param name="result">网络请求完成事件。</param>
+    /// <returns>响应状态、结果码和正文均有效时为 true。</returns>
     private bool IsHttpSuccess(WebRequestCompleteEventArgs result)
     {
         if (result == null) return false;
@@ -888,12 +927,16 @@ public class ProcedureUpdate : ProcedureBase
         return true;
     }
 
+    /// <summary>确保目录存在。</summary>
+    /// <param name="path">目标目录路径。</param>
     private void EnsureDirectory(string path)
     {
         if (!Directory.Exists(path))
             Directory.CreateDirectory(path);
     }
 
+    /// <summary>跳过远程更新，加载可用本地子包后进入预加载流程。</summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
     private async Task SkipToNextAsync(ProcedureOwner procedureOwner)
     {
         // 尝试加载已存在的本地版本（优先使用缓存的统一版本，带完整性校验）
@@ -908,6 +951,9 @@ public class ProcedureUpdate : ProcedureBase
         ChangeState<ProcedurePrelode>(procedureOwner);
     }
 
+    /// <summary>离开更新流程并执行基类清理。</summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
+    /// <param name="isShutdown">是否因框架关闭而离开。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
         base.OnLeave(procedureOwner, isShutdown);

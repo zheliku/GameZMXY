@@ -14,12 +14,14 @@ namespace GameLogic.Entity.Monsters.AI.States
 		/// <summary>距下一次普攻判定的剩余秒数</summary>
 		private float m_RollTimer;
 
+		/// <summary>进入站定攻击状态时立即准备进行攻击判定。</summary>
 		protected override void Enter(IMonsterAiAgent agent)
 		{
 			base.Enter(agent);
 			m_RollTimer = 0f;
 		}
 
+		/// <summary>处理范围滞回、高度踱步和普攻请求。</summary>
 		protected override void Engage(IFsm<IMonsterAiAgent> fsm, IMonsterAiAgent agent, int dir, float elapseSeconds)
 		{
 			float gap = agent.Attacks.BasicGapX(agent.TargetBox, dir);

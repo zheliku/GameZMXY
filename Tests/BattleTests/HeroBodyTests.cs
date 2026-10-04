@@ -15,8 +15,10 @@ namespace GameLogic.Battle.Tests
 	/// </summary>
 	public class HeroBodyTests
 	{
+		/// <summary>单个物理帧的时长。</summary>
 		private const float Dt = 1f / 60f;
 
+		/// <summary>创建用于状态机测试的英雄参数。</summary>
 		private static HeroBodyParams Params(float attackTime = 0.1f, float hurtTime = 0.2f, float emoteTime = 0.5f)
 		{
 			return new HeroBodyParams
@@ -38,6 +40,7 @@ namespace GameLogic.Battle.Tests
 
 		// ---------------------------------------------------------------- 输入层
 
+		/// <summary>验证双击方向进入奔跑且松开后退出。</summary>
 		[Fact]
 		public void Input_DoubleTap_EntersRun_ReleaseExits()
 		{
@@ -51,6 +54,7 @@ namespace GameLogic.Battle.Tests
 			Assert.False(input.Running);
 		}
 
+		/// <summary>验证跳跃输入缓冲在窗口内保留、到期后清除。</summary>
 		[Fact]
 		public void Input_Buffer_HoldsWithinWindow_ExpiresAfter()
 		{
@@ -67,6 +71,7 @@ namespace GameLogic.Battle.Tests
 			Assert.False(input.JumpBuffered);  // 第 6 帧：age = 0.1s > 0.09s
 		}
 
+		/// <summary>验证零时长缓冲只在按下帧有效。</summary>
 		[Fact]
 		public void Input_ZeroBuffer_OnlyPressFrame()
 		{
@@ -79,6 +84,7 @@ namespace GameLogic.Battle.Tests
 
 		// ---------------------------------------------------------------- 状态流转
 
+		/// <summary>验证状态机启动后进入地面待机。</summary>
 		[Fact]
 		public void Start_OnGround_IdlesInGround()
 		{
@@ -88,6 +94,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("idle1", h.Body.LastAnim);
 		}
 
+		/// <summary>验证四段攻击连段推进并在末段后重新循环。</summary>
 		[Fact]
 		public void Combo_ChainsOneToFour_ThenLoops()
 		{
@@ -117,6 +124,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("attack_1", h.Body.LastAnim);
 		}
 
+		/// <summary>验证攻击段在配置时长结束前不会切换。</summary>
 		[Fact]
 		public void Combo_SegmentLastsAttackTime()
 		{
@@ -130,6 +138,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("attack_1", h.Body.LastAnim);
 		}
 
+		/// <summary>验证无连段输入時结束当前攻击并保留下次段号。</summary>
 		[Fact]
 		public void Combo_WithoutChainInput_EndsAndNextPressContinuesSequence()
 		{
@@ -145,6 +154,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("attack_2", h.Body.LastAnim);   // 同旧 hit_count：跨按键保持
 		}
 
+		/// <summary>验证每段攻击开始一次且退出攻击时统一结束。</summary>
 		[Fact]
 		public void Attack_BeginEndAttack_PairedOnEverySegment()
 		{
@@ -165,6 +175,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(-1, h.Body.AttackSegment);
 		}
 
+		/// <summary>验证英雄在攻击段完成前延迟处理受击。</summary>
 		[Fact]
 		public void Hurt_DuringAttack_IsDeferredUntilAttackTime()
 		{
@@ -182,6 +193,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(1, h.Body.HurtSounds);
 		}
 
+		/// <summary>验证受击按配置时长结束并丢弃受击前的缓冲输入。</summary>
 		[Fact]
 		public void Hurt_LastsHurtTime_AndDropsBufferedInput()
 		{
@@ -198,6 +210,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(-1, h.Body.AttackSegment);   // 硬直前的按键没带出来
 		}
 
+		/// <summary>验证受击硬直中再次受击会重播动画、音效并更新击退。</summary>
 		[Fact]
 		public void Hurt_Rehit_ReplaysHurtAnimAndKnockback()
 		{
@@ -218,6 +231,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("hurt", h.Body.LastAnim);
 		}
 
+		/// <summary>验证受击硬直期间移动输入不会覆盖击退速度。</summary>
 		[Fact]
 		public void Hurt_KnockbackHeldDuringHurt()
 		{
@@ -228,6 +242,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(-100f, h.Body.Velocity.X, 3);
 		}
 
+		/// <summary>验证英雄最多起跳两次。</summary>
 		[Fact]
 		public void Jump_Twice_ThenRefused()
 		{
@@ -248,6 +263,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(2, h.Body.JumpCount);
 		}
 
+		/// <summary>验证落地时触发仍有效的跳跃缓冲。</summary>
 		[Fact]
 		public void Jump_Buffered_FiresOnLanding()
 		{
@@ -269,6 +285,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(1, h.Body.JumpCount);
 		}
 
+		/// <summary>验证空中攻击结束后不会推进连段。</summary>
 		[Fact]
 		public void AirAttack_DoesNotChain()
 		{
@@ -283,6 +300,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("Air", h.State);                  // 空中起手：不推进连段
 		}
 
+		/// <summary>验证死亡可中断攻击并保持终止状态。</summary>
 		[Fact]
 		public void Death_TakesPriority_EvenDuringAttack()
 		{
@@ -303,6 +321,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("Death", h.State);
 		}
 
+		/// <summary>验证持续待机后播放表情动画并按时返回待机。</summary>
 		[Fact]
 		public void Emote_PlaysAfterContinuousIdle_EndsAfterEmoteTime()
 		{
@@ -321,6 +340,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("idle1", h.Body.LastAnim);
 		}
 
+		/// <summary>验证移动速度、动画选择与朝向跟随输入。</summary>
 		[Fact]
 		public void Locomotion_WalkRunAndFacing()
 		{
@@ -337,28 +357,39 @@ namespace GameLogic.Battle.Tests
 
 		// ---------------------------------------------------------------- 假宿主与驱动
 
+		/// <summary>为英雄身体状态机提供可控的测试宿主。</summary>
 		private sealed class FakeHero : FakeActorBody, IHeroBody
 		{
+			/// <summary>初始化测试参数与输入对象。</summary>
 			public FakeHero(HeroBodyParams p, HeroInput input)
 			{
 				Params = p;
 				Input = input;
 			}
 
+			/// <summary>英雄身体状态参数。</summary>
 			public HeroBodyParams Params { get; }
+			/// <summary>由测试驱动的输入状态。</summary>
 			public HeroInput Input { get; }
+			/// <summary>宿主报告的落地状态。</summary>
 			public bool OnFloor { get; set; } = true;
+			/// <summary>当前已使用的跳跃次数。</summary>
 			public int JumpCount { get; set; }
+			/// <summary>下一次普攻使用的连段索引。</summary>
 			public int ComboIndex { get; set; }
+			/// <summary>返回固定随机值以保持测试可重复。</summary>
 			public float NextRandom() => 0f;
 		}
 
 		/// <summary>真实 FsmManager 建身体状态机；每帧：喂输入 → BodyFsm.Tick → 模拟落地物理。</summary>
 		private sealed class HeroHarness : IDisposable
 		{
+			/// <summary>驱动真实框架有限状态机的管理器。</summary>
 			private readonly FsmManager m_Manager = new FsmManager();
+			/// <summary>当前测试使用的英雄身体状态机。</summary>
 			private readonly IFsm<IHeroBody> m_Fsm;
 
+			/// <summary>创建英雄输入、假宿主和身体状态机。</summary>
 			public HeroHarness(HeroBodyParams p, float bufferTime = 0f)
 			{
 				Input = new HeroInput(0.3f, bufferTime);
@@ -369,8 +400,11 @@ namespace GameLogic.Battle.Tests
 				m_Fsm.Start<HeroGroundState>();
 			}
 
+			/// <summary>状态机绑定的假英雄宿主。</summary>
 			public FakeHero Body { get; }
+			/// <summary>测试驱动的英雄输入。</summary>
 			public HeroInput Input { get; }
+			/// <summary>当前身体状态名称。</summary>
 			public string State => BodyFsm.CurrentName(m_Fsm);
 
 			/// <summary>一帧：本帧按下 attack/jump（单帧边沿）。</summary>
@@ -380,6 +414,9 @@ namespace GameLogic.Battle.Tests
 				TickOnly(1);
 			}
 
+			/// <summary>逐帧采样方向输入并推进状态机。</summary>
+			/// <param name="frames">推进的物理帧数。</param>
+			/// <param name="move">方向输入，-1 为左、1 为右、0 为无输入。</param>
 			public void Step(int frames, int move = 0)
 			{
 				for (int i = 0; i < frames; i++)
@@ -389,12 +426,16 @@ namespace GameLogic.Battle.Tests
 				}
 			}
 
+			/// <summary>按秒数换算物理帧并推进状态机。</summary>
+			/// <param name="seconds">推进时长（秒）。</param>
 			public void Run(float seconds)
 			{
 				Step((int)Math.Round(seconds / Dt));
 			}
 
-			/// <summary>推进直到条件满足（每帧检查状态），返回消耗的帧数；超过 600 帧返回 -1。</summary>
+			/// <summary>逐帧推进至条件成立，最多检查 600 帧。</summary>
+			/// <param name="until">返回是否停止推进的状态条件。</param>
+			/// <returns>满足条件前推进的帧数；超时返回 -1。</returns>
 			public int StepUntil(Func<string, bool> until)
 			{
 				for (int i = 0; i < 600; i++)
@@ -410,7 +451,8 @@ namespace GameLogic.Battle.Tests
 				return -1;
 			}
 
-			/// <summary>只推进状态机与模拟物理（不重采样输入）。</summary>
+			/// <summary>推进状态机与落地模拟，不重新采样输入。</summary>
+			/// <param name="frames">推进的物理帧数。</param>
 			public void TickOnly(int frames)
 			{
 				for (int i = 0; i < frames; i++)
@@ -423,6 +465,7 @@ namespace GameLogic.Battle.Tests
 				}
 			}
 
+			/// <summary>关闭状态机管理器并释放测试状态机。</summary>
 			public void Dispose() => m_Manager.Shutdown();
 		}
 	}

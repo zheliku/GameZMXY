@@ -19,11 +19,13 @@ namespace GameLogic.Entity.Heroes.Body
 		/// <summary>第二段跳的跳跃次数（≥ 它播 jump_2 动画）</summary>
 		private const int SecondJumpCount = 2;
 
+		/// <summary>英雄身体状态类名使用的统一前缀。</summary>
 		protected override string NamePrefix => "Hero";
 
 		/// <summary>受击是否立即打断本状态（Attack 挂起到收招；Hurt 自己处理连续受击；Death 不再受击）。</summary>
 		protected virtual bool HurtInterrupts => true;
 
+		/// <summary>集中处理死亡与可打断受击的状态转换。</summary>
 		protected sealed override bool Interrupt(IFsm<IHeroBody> fsm, IHeroBody body)
 		{
 			if (body.Dead)

@@ -25,33 +25,51 @@ namespace GameLogic.UI
 
 		/// <summary>数字位间距（相对格宽的重叠像素；旧 HBoxContainer separation：普通 −10、暴击 −20）</summary>
 		private static readonly float DigitOverlap = 10f;
+		/// <summary>暴击数字位间距重叠量（像素）。</summary>
 		private static readonly float CritDigitOverlap = 20f;
 
 		/// <summary>普通飘字时序（旧 DamageText "physics" 动画）</summary>
 		private static readonly float PopScale = 2f;
+		/// <summary>普通飘字放大时长（秒）。</summary>
 		private static readonly float PopScaleUpTime = 0.1f;
+		/// <summary>普通飘字缩回时长（秒）。</summary>
 		private static readonly float PopScaleDownTime = 0.1f;
+		/// <summary>普通飘字上升距离（像素）。</summary>
 		private static readonly float RiseDistance = 50f;
+		/// <summary>普通飘字上升时长（秒）。</summary>
 		private static readonly float RiseTime = 0.6f;
+		/// <summary>普通飘字淡出时长（秒）。</summary>
 		private static readonly float FadeTime = 0.4f;
 
 		/// <summary>暴击时序（旧 "Crit" 动画：放大 3 倍 0.2s、0.4s 回原）</summary>
 		private static readonly float CritPopScale = 3f;
+		/// <summary>暴击飘字放大时长（秒）。</summary>
 		private static readonly float CritScaleUpTime = 0.2f;
+		/// <summary>暴击飘字缩回时长（秒）。</summary>
 		private static readonly float CritScaleDownTime = 0.2f;
 
 		/// <summary>闪避时序（旧 miss_effect：0.4s 上升 30px，0.4~0.9s 淡出）</summary>
+		/// <summary>闪避提示上升距离（像素）。</summary>
 		private static readonly float MissRiseDistance = 30f;
+		/// <summary>闪避提示上升时长（秒）。</summary>
 		private static readonly float MissRiseTime = 0.4f;
+		/// <summary>闪避提示淡出时长（秒）。</summary>
 		private static readonly float MissFadeTime = 0.5f;
 
 		/// <summary>数字样式图集（场景 [Export] 绑定，按伤害类型/暴击/受击方选）</summary>
+		/// <summary>怪物受物理伤害的数字图集。</summary>
 		[Export] private Texture2D m_MonsterPhysics;
+		/// <summary>怪物受物理暴击的数字图集。</summary>
 		[Export] private Texture2D m_MonsterPhysicsCrit;
+		/// <summary>怪物受魔法伤害的数字图集。</summary>
 		[Export] private Texture2D m_MonsterMagic;
+		/// <summary>怪物受魔法暴击的数字图集。</summary>
 		[Export] private Texture2D m_MonsterMagicCrit;
+		/// <summary>英雄受物理伤害的数字图集。</summary>
 		[Export] private Texture2D m_HeroPhysics;
+		/// <summary>英雄受魔法伤害的数字图集。</summary>
 		[Export] private Texture2D m_HeroMagic;
+		/// <summary>真实伤害数字图集。</summary>
 		[Export] private Texture2D m_Real;
 
 		/// <summary>闪避贴图</summary>
@@ -60,7 +78,9 @@ namespace GameLogic.UI
 		/// <summary>缩放/透明度作用节点（数字与 miss 的父节点）</summary>
 		[Export] private Node2D m_Content;
 
+		/// <summary>首次取出时创建并重复复用的数字节点。</summary>
 		private Sprite2D[] m_Digits;
+		/// <summary>当前飘字动画。</summary>
 		private Tween m_Tween;
 
 		/// <summary>从池取出（NodePool 调用）：此刻尚未设置内容，这里只复位公共状态。</summary>
@@ -117,6 +137,8 @@ namespace GameLogic.UI
 		}
 
 		/// <summary>显示一次闪避（取出后调用）。</summary>
+		/// <summary>显示一次闪避提示。</summary>
+		/// <param name="worldPosition">提示锚点的世界坐标。</param>
 		public void ShowMiss(Vector2 worldPosition)
 		{
 			GlobalPosition = worldPosition;
@@ -131,6 +153,7 @@ namespace GameLogic.UI
 			m_Tween.TweenCallback(Callable.From(ReturnToPool));
 		}
 
+		/// <summary>动画完成后将飘字归还对象池。</summary>
 		private void ReturnToPool()
 		{
 			m_Tween = null;
@@ -202,6 +225,7 @@ namespace GameLogic.UI
 			}
 		}
 
+		/// <summary>隐藏全部数字节点。</summary>
 		private void HideDigits()
 		{
 			foreach (Sprite2D digit in m_Digits)
@@ -232,6 +256,7 @@ namespace GameLogic.UI
 			}
 		}
 
+		/// <summary>停止当前有效动画并清除引用。</summary>
 		private void KillTween()
 		{
 			if (m_Tween != null && m_Tween.IsValid())

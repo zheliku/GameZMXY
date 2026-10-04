@@ -11,20 +11,26 @@ namespace GameLogic.Entity.Heroes.Body
 	/// </summary>
 	public sealed class HeroInput
 	{
+		/// <summary>同方向双击跑判定窗口秒数。</summary>
 		private readonly float m_DoubleTapWindow;
+		/// <summary>跳跃和攻击请求的缓冲时长秒数。</summary>
 		private readonly float m_BufferTime;
 
 		/// <summary>输入时钟（物理 dt 累计，双击判定用）</summary>
 		private double m_Clock;
 
+		/// <summary>上一次方向键点击方向。</summary>
 		private int m_LastTapDir;
+		/// <summary>上一次方向键点击时的输入时钟。</summary>
 		private double m_LastTapTime;
 
 		/// <summary>距离上次按下的秒数（+∞ = 没有待消费的按键）</summary>
 		private float m_JumpAge = float.PositiveInfinity;
 
+		/// <summary>攻击请求距按下经过的秒数。</summary>
 		private float m_AttackAge = float.PositiveInfinity;
 
+		/// <summary>创建使用指定双击与输入缓冲窗口的英雄输入层。</summary>
 		/// <param name="doubleTapWindow">双击跑判定窗口秒（HeroConfig.RunDoubleTapWindow）</param>
 		/// <param name="bufferTime">一次性请求的缓冲窗口秒（HeroConfig.InputBufferTime）</param>
 		public HeroInput(float doubleTapWindow, float bufferTime)

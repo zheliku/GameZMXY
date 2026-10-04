@@ -12,7 +12,10 @@ namespace GodotGameFramework.NodePool;
 /// </summary>
 public interface IPoolable
 {
+    /// <summary>对象从池中取出时重置其运行状态。</summary>
     void OnGet();
+
+    /// <summary>对象归还到池中前清理其运行状态。</summary>
     void OnRelease();
 }
 
@@ -21,6 +24,7 @@ public interface IPoolable
 /// </summary>
 public partial class NodePool : SingletonNode<NodePool>
 {
+    /// <summary>当前节点池配置；加载失败时为空。</summary>
     public NodePoolConfig Config { get; private set; }
 
     /// <summary>
@@ -38,6 +42,7 @@ public partial class NodePool : SingletonNode<NodePool>
     /// </summary>
     private readonly Dictionary<string, PackedScene> m_PoolScenes = new();
 
+    /// <summary>加载池配置并注册场景池。</summary>
     protected override void OnLoad()
     {
         base.OnLoad();
@@ -123,6 +128,8 @@ public partial class NodePool : SingletonNode<NodePool>
     /// </summary>
     /// <param name="scenePath">场景资源路径。</param>
     /// <param name="parent">可选父节点，获取后自动 AddChild。</param>
+    /// <typeparam name="T">期望实现 <see cref="IPoolable"/> 的节点类型。</typeparam>
+    /// <returns>池化节点；池或类型不匹配时返回 null。</returns>
     public T Get<T>(string scenePath, Node parent = null) where T : class, IPoolable
     {
         var obj = GetInternal(scenePath, parent);
@@ -139,11 +146,18 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <summary>
     /// 从池中获取节点（非泛型版本，返回 NodeObject 包装）。
     /// </summary>
+    /// <param name="scenePath">场景资源路径。</param>
+    /// <param name="parent">可选父节点，获取后自动 AddChild。</param>
+    /// <returns>节点包装对象；场景池不可用时返回 null。</returns>
     public NodeObject Get(string scenePath, Node parent = null)
     {
         return GetInternal(scenePath, parent);
     }
 
+    /// <summary>取出池对象，必要时实例化节点并绑定请求的父节点。</summary>
+    /// <param name="scenePath">场景资源路径及池名称。</param>
+    /// <param name="parent">可选的新父节点。</param>
+    /// <returns>节点包装对象；无法取得对象时返回 null。</returns>
     private NodeObject GetInternal(string scenePath, Node parent)
     {
         var pool = GF.ObjectPool.GetObjectPool<NodeObject>(scenePath);
@@ -221,6 +235,7 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <summary>
     /// 归还 NodeObject 到池中。
     /// </summary>
+    /// <param name="nodeObj">由此节点池取出的包装对象。</param>
     public void Release(NodeObject nodeObj)
     {
         if (nodeObj == null) return;
@@ -267,6 +282,7 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <summary>
     /// 归还 IPoolable 节点到池中
     /// </summary>
+    /// <param name="poolItem">由此节点池取出的节点。</param>
     public void Release(IPoolable poolItem)
     {
         if (poolItem == null) return;
@@ -357,6 +373,10 @@ public partial class NodePool : SingletonNode<NodePool>
 
     // ── 容器查找 ──
 
+    /// <summary>按场景路径查找对应的场景树容器。</summary>
+    /// <param name="scenePath">池名称。</param>
+    /// <param name="container">找到时返回对应容器。</param>
+    /// <returns>找到容器时为 true。</returns>
     private bool TryGetContainer(string scenePath, out PoolContainer container)
     {
         foreach (var c in m_Containers)

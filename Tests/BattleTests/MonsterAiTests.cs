@@ -16,6 +16,7 @@ namespace GameLogic.Battle.Tests
 	/// </summary>
 	public class MonsterAiTests
 	{
+		/// <summary>单个物理帧的时长。</summary>
 		private const float Dt = 1f / 60f;
 
 		/// <summary>猴子 attack_1 判定盒范围（原生朝左）</summary>
@@ -43,11 +44,13 @@ namespace GameLogic.Battle.Tests
 			return new MonsterAttackSpec { Index = index, Weight = weight, Reach = MonkeyReach };
 		}
 
+		/// <summary>创建按水平距离选取的远程普攻。</summary>
 		private static MonsterAttackSpec RangedBasic(int index, float max, int weight = 100)
 		{
 			return new MonsterAttackSpec { Index = index, Weight = weight, Range = (0f, max) };
 		}
 
+		/// <summary>创建带优先级、距离范围及固定冷却的招式。</summary>
 		private static MonsterAttackSpec Priority(int index, int priority, float min, float max, float cooldown, int weight = 100)
 		{
 			return new MonsterAttackSpec
@@ -68,6 +71,7 @@ namespace GameLogic.Battle.Tests
 
 		// ---------------------------------------------------------------- 规则（几何）
 
+		/// <summary>验证攻击判定盒仅在朝右时镜像。</summary>
 		[Fact]
 		public void Box_Facing_MirrorsOnlyWhenFacingRight()
 		{
@@ -81,15 +85,19 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(1f, left.Right, 3);
 		}
 
+		/// <summary>验证朝左攻击判定盒与英雄受击盒的水平间距。</summary>
 		[Theory]
 		[InlineData(-40f, -29f)]   // 吃进 29px
 		[InlineData(-69f, 0f)]     // 恰好擦边
 		[InlineData(-80f, 11f)]    // 差 11px
+		/// <param name="dx">英雄受击盒相对攻击者的水平偏移。</param>
+		/// <param name="expected">预期的水平间距。</param>
 		public void Box_GapX_FacingLeft(float dx, float expected)
 		{
 			Assert.Equal(expected, MonkeyReach.GapX(Hero(dx)), 3);
 		}
 
+		/// <summary>验证目标在同一高度时范围重叠、位于头顶时超出攻击范围。</summary>
 		[Fact]
 		public void Box_GapY_HeroAboveHeadIsOutOfReach()
 		{
@@ -99,6 +107,7 @@ namespace GameLogic.Battle.Tests
 
 		// ---------------------------------------------------------------- 招式书
 
+		/// <summary>验证近战招式选取同时检查水平与垂直范围及朝向。</summary>
 		[Fact]
 		public void AttackBook_MeleeReach_UsesBothAxes()
 		{
@@ -110,6 +119,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(0, book.SelectBasic(Hero(40f), 1, () => 0f));            // 转过去就够得着
 		}
 
+		/// <summary>验证最近水平间距不受高度影响，而有效范围会检查高度。</summary>
 		[Fact]
 		public void AttackBook_ClosestGapX_IgnoresHeight_HasAttackInReachDoesNot()
 		{
@@ -120,6 +130,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(float.PositiveInfinity, book.BasicGapX(default, -1));   // 无目标
 		}
 
+		/// <summary>验证缺少范围定义的普攻不会被 AI 选中。</summary>
 		[Fact]
 		public void AttackBook_MissingReach_IsNotAnAiAttack()
 		{
@@ -129,6 +140,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(-1, book.SelectBasic(Hero(-40f), -1, () => 0f));
 		}
 
+		/// <summary>验证远程普攻按水平距离选取且忽略目标高度。</summary>
 		[Fact]
 		public void AttackBook_RangedAttack_UsesHorizontalRange()
 		{
@@ -138,6 +150,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(50f, book.BasicGapX(Hero(-350f), -1), 3);
 		}
 
+		/// <summary>验证可用优先招式中选择优先级最高者。</summary>
 		[Fact]
 		public void AttackBook_HighestReadyPriorityWins()
 		{
@@ -151,6 +164,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(2, book.SelectPriority(Hero(-150f), -1, 2, 0f));
 		}
 
+		/// <summary>验证招式冷却期间不可选，冷却结束后恢复可用。</summary>
 		[Fact]
 		public void AttackBook_Cooldown_BlocksUntilTickedDown()
 		{
@@ -164,6 +178,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(0, book.SelectPriority(Hero(-100f), -1, 1, 0f));
 		}
 
+		/// <summary>验证重置时按随机值设置初始冷却。</summary>
 		[Fact]
 		public void AttackBook_Reset_RollsInitialCooldown()
 		{
@@ -177,6 +192,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(1, book.HighestPriority(Hero(-100f), -1));
 		}
 
+		/// <summary>验证普攻按权重区间选择。</summary>
 		[Fact]
 		public void AttackBook_SelectBasic_Weighted()
 		{
@@ -186,6 +202,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(1, book.SelectBasic(Hero(-40f), -1, () => 0.9999f));
 		}
 
+		/// <summary>验证权重为零的普攻不可选。</summary>
 		[Fact]
 		public void AttackBook_ZeroWeight_NeverSelected()
 		{
@@ -194,6 +211,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(float.PositiveInfinity, book.BasicGapX(Hero(-40f), -1));
 		}
 
+		/// <summary>验证没有可选招式时不会消耗随机值。</summary>
 		[Fact]
 		public void AttackBook_DoesNotConsumeRandomnessWithoutAChoice()
 		{
@@ -210,6 +228,7 @@ namespace GameLogic.Battle.Tests
 
 		// ---------------------------------------------------------------- 状态流转（真实 GF.Fsm）
 
+		/// <summary>验证无目标时怪物游荡并可进入暂停状态。</summary>
 		[Fact]
 		public void Fsm_NoTarget_WandersAndPauses()
 		{
@@ -224,6 +243,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(0, h.Agent.MoveDir);
 		}
 
+		/// <summary>验证游荡超出巡逻半径后转向出生点。</summary>
 		[Fact]
 		public void Fsm_Wander_LeashTurnsBackTowardHome()
 		{
@@ -235,6 +255,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(-1, h.Agent.MoveDir);
 		}
 
+		/// <summary>验证发现目标后追击并在攻击范围内发起攻击。</summary>
 		[Fact]
 		public void Fsm_TargetSeen_ChasesThenAttacks()
 		{
@@ -257,6 +278,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(-1, h.Agent.FaceDir);
 		}
 
+		/// <summary>验证站定攻击状态在滞回距离内贴近，超出后转为追击。</summary>
 		[Fact]
 		public void Fsm_StandAndStrike_HysteresisCreepsWithinSlack_ThenChasesBeyond()
 		{
@@ -276,6 +298,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("WalkToTarget", h.State);
 		}
 
+		/// <summary>验证目标位于头顶时先踱步，落地后再进入攻击决策。</summary>
 		[Fact]
 		public void Fsm_TargetAboveHead_PacesBelowWithoutAttacking_ThenStrikesWhenLanded()
 		{
@@ -294,6 +317,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(0, h.Agent.RequestedAttack);
 		}
 
+		/// <summary>验证怪物围绕高处目标往返踱步并在目标远离时追击。</summary>
 		[Fact]
 		public void Fsm_PaceBelowTarget_PacesBackAndForthAroundTargetX()
 		{
@@ -317,6 +341,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("WalkToTarget", h.State);
 		}
 
+		/// <summary>验证目标丢失后怪物返回巡逻范围。</summary>
 		[Fact]
 		public void Fsm_TargetLost_WandersBackIntoPatrolRadius()
 		{
@@ -333,6 +358,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(1, h.Agent.MoveDir);    // 游荡先折返回巡逻范围
 		}
 
+		/// <summary>验证追击途中会优先发动已就绪的优先招式。</summary>
 		[Fact]
 		public void Fsm_Chase_FiresReadyPriorityAttackOnTheWay()
 		{
@@ -344,6 +370,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(1, h.Agent.RequestedAttack);
 		}
 
+		/// <summary>验证攻击及收招硬直期间不重新决策，恢复后才转向。</summary>
 		[Fact]
 		public void Fsm_Attacking_DoesNotDecideUntilRecovered()
 		{
@@ -365,6 +392,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(1, h.Agent.FaceDir);   // 这时才转身
 		}
 
+		/// <summary>验证僵直状态可打断其他状态并在计时结束后返回。</summary>
 		[Fact]
 		public void Fsm_CcLocked_InterruptsAnyState_ThenReturnsAfterCalmTime()
 		{
@@ -386,6 +414,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("WalkToTarget", h.State);
 		}
 
+		/// <summary>验证死亡状态为终止状态。</summary>
 		[Fact]
 		public void Fsm_Death_IsTerminal()
 		{
@@ -409,9 +438,12 @@ namespace GameLogic.Battle.Tests
 		/// </summary>
 		private sealed class FakeAgent : IMonsterAiAgent
 		{
+			/// <summary>测试提供的确定性随机序列。</summary>
 			private readonly float[] m_Randoms;
+			/// <summary>下一随机值的读取索引。</summary>
 			private int m_RandomIndex;
 
+			/// <summary>初始化可控感知、招式簿和随机序列。</summary>
 			public FakeAgent(MonsterAiParams p, MonsterAttackBook attacks, float[] randoms)
 			{
 				Params = p;
@@ -419,22 +451,36 @@ namespace GameLogic.Battle.Tests
 				m_Randoms = randoms.Length == 0 ? new[] { 0.5f } : randoms;
 			}
 
+			/// <summary>宿主是否已死亡。</summary>
 			public bool IsDead { get; set; }
+			/// <summary>宿主是否处于受控僵直。</summary>
 			public bool IsCcLocked { get; set; }
+			/// <summary>宿主是否正在攻击或收招硬直。</summary>
 			public bool IsAttacking { get; set; }
+			/// <summary>测试直接设置的目标判定盒；默认值表示无目标。</summary>
 			public AiBox TargetBox { get; set; }
+			/// <summary>宿主相对出生点的水平偏移。</summary>
 			public float HomeDeltaX { get; set; }
+			/// <summary>怪物 AI 参数。</summary>
 			public MonsterAiParams Params { get; }
+			/// <summary>怪物可用招式及冷却状态。</summary>
 			public MonsterAttackBook Attacks { get; }
 
+			/// <summary>最近一次移动意图，右为 1、左为 -1、停止为 0。</summary>
 			public int MoveDir { get; private set; }
+			/// <summary>最近一次朝向意图，右为 1、左为 -1。</summary>
 			public int FaceDir { get; private set; }
+			/// <summary>最近一次攻击请求索引；尚无请求时为 -1。</summary>
 			public int RequestedAttack { get; private set; } = -1;
 
+			/// <summary>设置测试目标判定盒。</summary>
 			public void Target(AiBox box) => TargetBox = box;
 
+			/// <summary>清除当前测试目标。</summary>
 			public void LoseTarget() => TargetBox = default;
 
+			/// <summary>读取随机序列中的下一值，用尽后重复末值。</summary>
+			/// <returns>范围为 0 到 1 的确定性随机值。</returns>
 			public float NextRandom()
 			{
 				float v = m_Randoms[Math.Min(m_RandomIndex, m_Randoms.Length - 1)];
@@ -442,8 +488,10 @@ namespace GameLogic.Battle.Tests
 				return v;
 			}
 
+			/// <summary>记录 AI 的移动方向意图。</summary>
 			public void Move(int dir) => MoveDir = dir;
 
+			/// <summary>未处于攻击期间时记录 AI 的朝向意图。</summary>
 			public void Face(int dir)
 			{
 				if (!IsAttacking)
@@ -452,6 +500,9 @@ namespace GameLogic.Battle.Tests
 				}
 			}
 
+			/// <summary>宿主可攻击时记录请求并标记招式已使用。</summary>
+			/// <param name="index">请求的攻击段索引。</param>
+			/// <returns>请求被接受时返回 <see langword="true"/>。</returns>
 			public bool RequestAttack(int index)
 			{
 				if (IsAttacking || IsCcLocked || IsDead)
@@ -469,11 +520,15 @@ namespace GameLogic.Battle.Tests
 		/// <summary>用框架真实 FsmManager 驱动一台 AI 状态机（与游戏内 GF.Fsm 同一实现）。</summary>
 		private sealed class AiHarness : IDisposable
 		{
+			/// <summary>驱动测试 AI 状态机的框架管理器。</summary>
 			private readonly FsmManager m_Manager = new FsmManager();
+			/// <summary>当前测试使用的 AI 状态机。</summary>
 			private readonly IFsm<IMonsterAiAgent> m_Fsm;
 
+			/// <summary>状态机绑定的可控测试宿主。</summary>
 			public FakeAgent Agent { get; }
 
+			/// <summary>创建 AI 状态机并以游荡状态启动。</summary>
 			public AiHarness(MonsterAiParams p, MonsterAttackSpec[] specs, params float[] randoms)
 			{
 				Agent = new FakeAgent(p, new MonsterAttackBook(specs), randoms);
@@ -483,10 +538,14 @@ namespace GameLogic.Battle.Tests
 				m_Fsm.Start<WanderState>();
 			}
 
+			/// <summary>当前 AI 状态实例。</summary>
 			public MonsterAiState CurrentState => (MonsterAiState)m_Fsm.CurrentState;
 
+			/// <summary>当前 AI 状态名称。</summary>
 			public string State => CurrentState.StateName;
 
+			/// <summary>按物理帧推进招式冷却和 AI 状态机。</summary>
+			/// <param name="frames">推进的物理帧数。</param>
 			public void Step(int frames)
 			{
 				for (int i = 0; i < frames; i++)
@@ -496,11 +555,14 @@ namespace GameLogic.Battle.Tests
 				}
 			}
 
+			/// <summary>按秒数换算帧数并推进 AI 状态机。</summary>
+			/// <param name="seconds">推进时长（秒）。</param>
 			public void Run(float seconds)
 			{
 				Step((int)Math.Ceiling(seconds / Dt));
 			}
 
+			/// <summary>关闭框架状态机管理器。</summary>
 			public void Dispose()
 			{
 				m_Manager.Shutdown();

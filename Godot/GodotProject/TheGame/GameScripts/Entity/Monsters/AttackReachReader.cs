@@ -92,6 +92,7 @@ namespace GameLogic.Entity.Monsters
 			return value;
 		}
 
+		/// <summary>查找攻击区直接子节点中的首个碰撞形状。</summary>
 		private static CollisionShape2D FindShape(Area2D area)
 		{
 			foreach (Node child in area.GetChildren())

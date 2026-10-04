@@ -17,6 +17,11 @@ namespace GameLogic.Battle
 		/// <summary>伤害类型（飘字按它选数字样式）</summary>
 		public readonly DamageKind Kind;
 
+		/// <summary>创建一次命中的结算结果。</summary>
+		/// <param name="damage">最终伤害值。</param>
+		/// <param name="isMiss">是否被闪避。</param>
+		/// <param name="isCrit">是否暴击。</param>
+		/// <param name="kind">伤害类型。</param>
 		public DamageResult(int damage, bool isMiss, bool isCrit, DamageKind kind)
 		{
 			Damage = damage;
@@ -25,7 +30,9 @@ namespace GameLogic.Battle
 			Kind = kind;
 		}
 
-		/// <summary>闪避结果</summary>
+		/// <summary>创建指定伤害类型的闪避结果。</summary>
+		/// <param name="kind">本次攻击的伤害类型。</param>
+		/// <returns>伤害为 0、标记闪避且不暴击的结果。</returns>
 		public static DamageResult Missed(DamageKind kind) => new(0, true, false, kind);
 	}
 }

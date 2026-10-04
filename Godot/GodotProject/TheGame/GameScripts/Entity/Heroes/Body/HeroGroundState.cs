@@ -23,16 +23,19 @@ namespace GameLogic.Entity.Heroes.Body
 		/// <summary>下一次小动作需要的连续静止秒（&lt;0 = 还没掷）</summary>
 		private float m_NextEmoteDelay = -1f;
 
+		/// <summary>进入地面状态时重置待机计时。</summary>
 		protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
 		{
 			ResetIdle();
 		}
 
+		/// <summary>离开地面状态时清除待机小动作状态。</summary>
 		protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
 		{
 			ResetIdle();
 		}
 
+		/// <summary>处理地面攻击、跳跃、移动和待机动画。</summary>
 		protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
 		{
 			if (TryAttack(fsm, body))
@@ -105,12 +108,14 @@ namespace GameLogic.Entity.Heroes.Body
 			return true;
 		}
 
+		/// <summary>清零静止计时并结束待机小动作。</summary>
 		private void ResetIdle()
 		{
 			m_IdleTime = 0f;
 			m_Emoting = false;
 		}
 
+		/// <summary>按待机小动作延迟区间采样下一次触发时间。</summary>
 		private static float RollDelay(IHeroBody body)
 		{
 			HeroBodyParams p = body.Params;

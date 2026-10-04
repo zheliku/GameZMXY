@@ -16,6 +16,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 		/// <summary>当前行走方向（-1/1）</summary>
 		private int m_Dir;
 
+		/// <summary>初始化巡逻决策计时，并选择初始方向。</summary>
 		protected override void Enter(IMonsterAiAgent agent)
 		{
 			// 进入时只选方向，不掷停留（避免进入即切走）
@@ -24,6 +25,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 			agent.Move(m_Dir);
 		}
 
+		/// <summary>按巡逻范围与停留概率更新方向或切换暂停状态。</summary>
 		protected override void Roam(IFsm<IMonsterAiAgent> fsm, IMonsterAiAgent agent, float elapseSeconds)
 		{
 			m_DecideTimer -= elapseSeconds;
@@ -55,6 +57,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 			return radius > 0f && Math.Abs(home) > radius ? -Math.Sign(home) : 0;
 		}
 
+		/// <summary>抽取左右等概率的游荡方向。</summary>
 		private static int RandomDir(IMonsterAiAgent agent)
 		{
 			return agent.NextRandom() < 0.5f ? -1 : 1;
