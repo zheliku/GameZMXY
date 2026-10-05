@@ -53,32 +53,15 @@ namespace GameLogic.Entity
 
 		// ---- 场景节点引用 ----
 
-		/// <summary>
-		/// 身体层（场景子节点 m_Body），帧由动画轨道驱动。两种形态：
-		/// Sprite2D 均匀网格（英雄：身体/武器同网格）或 AnimatedSprite2D（怪物：每动作一张图集，
-		/// 轨道设 animation/frame/offset，同旧 mr_ani）。朝向镜像规则见 <see cref="SetFacing"/>。
-		/// </summary>
-		[Export] private Node2D m_Body;
+		[Export] private Node2D m_Body; // 身体表现层，帧由动画轨道驱动。
 
-		/// <summary>动画播放器（场景子节点 m_AnimPlayer）：承载该角色自己的动画库，由本类直接驱动</summary>
-		[Export] private AnimationPlayer m_AnimPlayer;
+		[Export] private AnimationPlayer m_AnimPlayer; // 角色专属动画库，由本类直接驱动。
 
-		/// <summary>受击判定区（场景子节点 m_HurtBox，可为空；脚本 HurtBox 持有本实体引用）</summary>
-		[Export] private HurtBox m_HurtBox;
+		[Export] private HurtBox m_HurtBox; // 受击判定区，可为空；HurtBox 持有本实体引用。
 
-		/// <summary>
-		/// 攻击判定区（场景子节点 m_HitBox，可为空）。**几何与开关完全由动画值轨道驱动**
-		/// （同旧项目：旧动画 keyframe HitBox 的 shape/position/disabled）——代码不碰判定盒几何。
-		/// 朝向镜像由容器 <see cref="m_HitBoxRoot"/> 承担（同旧 base_damagebox 的 scale.x 翻转），
-		/// 动画里写的位置是"素材原生朝向"坐标（前方 = 负 X）。
-		/// </summary>
-		[Export] private Area2D m_HitBox;
+		[Export] private Area2D m_HitBox; // 攻击判定区，几何和开关完全由动画值轨道驱动。
 
-		/// <summary>
-		/// 攻击判定区容器（场景子节点 m_HitBoxRoot，可为空）：scale.x = ±1 随朝向翻转，
-		/// 镜像 m_HitBox 连同动画轨道写入的位置（同旧 base_damagebox）。
-		/// </summary>
-		[Export] private Node2D m_HitBoxRoot;
+		[Export] private Node2D m_HitBoxRoot; // 攻击判定区镜像容器，随朝向翻转动画写入的位置。
 
 		/// <summary>身体层（Sprite2D 或 AnimatedSprite2D）</summary>
 		public Node2D Body => m_Body;
@@ -141,14 +124,11 @@ namespace GameLogic.Entity
 			}
 		}
 
-		/// <summary>当前招式的攻击包（出招装填、收招归还；null = 不在出招中）</summary>
-		private AttackData m_ActiveAttack;
+		private AttackData m_ActiveAttack; // 当前招式的攻击包；出招装填、收招归还，null 表示未出招。
 
-		/// <summary>最近一次请求播放的动画名（同名重复请求不重播；OnShow 清空）</summary>
-		private string m_RequestedAnim;
+		private string m_RequestedAnim; // 最近一次请求播放的动画名；同名请求不重播，OnShow 时清空。
 
-		/// <summary>动画名缓存（见 <see cref="AnimName"/>）</summary>
-		private readonly Dictionary<string, StringName> m_AnimNames = new();
+		private readonly Dictionary<string, StringName> m_AnimNames = new(); // 动画名到 StringName 的缓存，避免重复转换。
 
 		// ---- 公共身体事实（英雄与怪物共用，宿主钩子与状态经 IActorBody 读写）----
 
@@ -255,9 +235,9 @@ namespace GameLogic.Entity
 			m_AnimPlayer.Play(AnimName(anim));
 		}
 
-		/// <summary>string → StringName 缓存（每个动画名只转换一次，播放请求不产生每帧分配）。</summary>
-		private StringName AnimName(string anim)
+		private StringName AnimName(string anim) // 将动画名转换为缓存的 StringName，避免播放请求分配。
 		{
+			// 首次遇到动画名时建立缓存，之后直接复用。
 			if (!m_AnimNames.TryGetValue(anim, out StringName name))
 			{
 				name = new StringName(anim);
@@ -426,28 +406,28 @@ namespace GameLogic.Entity
 			}
 		}
 
-		/// <summary>
-		/// 判定盒扫到受击盒：交给受击方结算。一招一目标只结算一次（AttackData 去重）；
-		/// 判定帧外（无攻击包）或自己打到自己一律忽略。
-		/// </summary>
-		private void OnHitBoxAreaEntered(Area2D area)
+		private void OnHitBoxAreaEntered(Area2D area) // 将攻击判定交给受击方，并保证同一招不重复命中目标。
 		{
+			// 只处理有效攻击包和受击盒，过滤判定窗口外或无关区域。
 			if (m_ActiveAttack == null || area is not HurtBox hurtBox)
 			{
 				return;
 			}
 
+			// 过滤自身、死亡目标和无效实体，避免产生无意义结算。
 			ActorEntity target = hurtBox.OwnerEntity;
 			if (target == null || target == this || target.Dead)
 			{
 				return;
 			}
 
+			// AttackData 负责一招一目标去重。
 			if (!m_ActiveAttack.TryRegisterHit(target.GetInstanceId()))
 			{
 				return;
 			}
 
+			// 命中后播放音效，并将有效命中收益交给具体角色。
 			DamageResult result = target.ReceiveHit(m_ActiveAttack, Id);
 			if (!result.IsMiss)
 			{

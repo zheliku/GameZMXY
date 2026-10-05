@@ -11,8 +11,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 	/// </summary>
 	public class StandAndStrikeState : EngageState
 	{
-		/// <summary>距下一次普攻判定的剩余秒数</summary>
-		private float m_RollTimer;
+		private float m_RollTimer; // 距下一次普攻意愿判定的剩余时间（秒）。
 
 		/// <summary>进入站定攻击状态时立即准备进行攻击判定。</summary>
 		protected override void Enter(IMonsterAiAgent agent)

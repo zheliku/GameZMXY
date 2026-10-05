@@ -11,17 +11,13 @@ namespace GameLogic.Entity.Heroes.Body
 	/// </summary>
 	public sealed class HeroGroundState : HeroBodyState
 	{
-		/// <summary>本次静止已累计秒</summary>
-		private float m_IdleTime;
+		private float m_IdleTime; // 本次连续静止累计时长（秒）。
 
-		/// <summary>正在播待机小动作</summary>
-		private bool m_Emoting;
+		private bool m_Emoting; // 当前是否正在播放待机小动作。
 
-		/// <summary>小动作剩余秒</summary>
-		private float m_EmoteLeft;
+		private float m_EmoteLeft; // 当前待机小动作剩余时长（秒）。
 
-		/// <summary>下一次小动作需要的连续静止秒（&lt;0 = 还没掷）</summary>
-		private float m_NextEmoteDelay = -1f;
+		private float m_NextEmoteDelay = -1f; // 下一次待机小动作所需静止时长；负数表示尚未抽取。
 
 		/// <summary>进入地面状态时重置待机计时。</summary>
 		protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
@@ -84,9 +80,9 @@ namespace GameLogic.Entity.Heroes.Body
 			body.PlayAnim(HeroAnims.Idle);
 		}
 
-		/// <summary>推进待机静止计时，返回本帧是否该起播小动作。</summary>
-		private bool UpdateIdle(IHeroBody body, float dt)
+		private bool UpdateIdle(IHeroBody body, float dt) // 更新连续静止计时，到点时抽取下一次间隔并返回 true。
 		{
+			// 没有角色专属待机动画时不启动计时。
 			if (string.IsNullOrEmpty(body.Params.EmoteAnim))
 			{
 				return false;
@@ -108,15 +104,13 @@ namespace GameLogic.Entity.Heroes.Body
 			return true;
 		}
 
-		/// <summary>清零静止计时并结束待机小动作。</summary>
-		private void ResetIdle()
+		private void ResetIdle() // 移动、离地或退出状态时清空待机计时和播放标记。
 		{
 			m_IdleTime = 0f;
 			m_Emoting = false;
 		}
 
-		/// <summary>按待机小动作延迟区间采样下一次触发时间。</summary>
-		private static float RollDelay(IHeroBody body)
+		private static float RollDelay(IHeroBody body) // 按配置的待机延迟范围取下一次触发时间。
 		{
 			HeroBodyParams p = body.Params;
 			return p.EmoteDelayMin + (p.EmoteDelayMax - p.EmoteDelayMin) * body.NextRandom();

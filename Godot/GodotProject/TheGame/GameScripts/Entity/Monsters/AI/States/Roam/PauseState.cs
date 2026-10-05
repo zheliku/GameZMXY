@@ -6,8 +6,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 	/// <summary>按巡逻停留概率原地暂停，到点恢复游荡。</summary>
 	public class PauseState : RoamState
 	{
-		/// <summary>剩余停留秒数</summary>
-		private float m_Timer;
+		private float m_Timer; // 当前巡逻停留剩余时间（秒）。
 
 		/// <summary>重置暂停时长为巡逻间隔。</summary>
 		protected override void Enter(IMonsterAiAgent agent)

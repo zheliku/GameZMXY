@@ -22,8 +22,7 @@ namespace GameLogic.Entity.Body
 	/// </summary>
 	public abstract class BodyState<TBody> : FsmState<TBody> where TBody : class, IActorBody
 	{
-		/// <summary>缓存去前缀后的状态名。</summary>
-		private string m_StateName;
+		private string m_StateName; // 延迟缓存去前缀后的状态名。
 
 		/// <summary>状态名（调试/冒烟观测）：类名去掉 <see cref="NamePrefix"/> 与 "State" 后缀，如 HeroGroundState → Ground。</summary>
 		public string StateName => m_StateName ??= TrimName(GetType().Name, NamePrefix);
@@ -112,8 +111,7 @@ namespace GameLogic.Entity.Body
 			body.Velocity = new Vector2(0f, body.Velocity.Y);
 		}
 
-		/// <summary>移除状态类名前缀和 State 后缀，生成调试名称。</summary>
-		private static string TrimName(string name, string prefix)
+		private static string TrimName(string name, string prefix) // 移除状态类型名中的宿主前缀和 State 后缀。
 		{
 			if (prefix.Length > 0 && name.StartsWith(prefix))
 			{

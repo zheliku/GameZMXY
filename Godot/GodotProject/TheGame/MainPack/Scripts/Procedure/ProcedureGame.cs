@@ -1,7 +1,11 @@
 using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using GameConfig;
 using GameConfig.Constant;
 using GameConfig.Entity;
+using GameFramework.Event;
 using GameFramework.Procedure;
 using Godot;
 using GodotGameFramework;
@@ -11,7 +15,7 @@ using GodotGameFramework.Scene;
 using GodotGameFramework.UI;
 using GameLogic;
 using GameLogic.Entity.Heroes;
-using GameLogic.Entity.Monsters;
+using GameLogic.Level;
 using GameLogic.Manager;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
@@ -20,32 +24,19 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public class ProcedureGame : ProcedureBase
 {
-    /// <summary>
-    /// 调试场地场景路径。
-    /// M3~M5 调试场地：提供地面与相机，让控制器手感可以直接验证。
-    /// </summary>
-    private const string DebugArenaScenePath = "res://TheGame/Scenes/DebugArena.tscn";
+    private const int InitialLevelId = 1; // 进入游戏流程时用于筛选关卡多行配置的分组键。
 
-    /// <summary>悟空出生点（沿用旧项目 Level_1 第 1 波的刷怪坐标量级）</summary>
-    private static readonly Vector2 HeroSpawnPosition = new Vector2(300, 300);
+    private WukongEntity m_Hero; // 当前流程创建并拥有的玩家实体。
 
-    /// <summary>
-    /// 调试猴子出生点（M5：悟空右侧 400px，在猴子索敌范围 300 之外——先巡逻，靠近后追击攻击；
-    /// 用于观察索敌前巡逻、进入范围后追击攻击。
-    /// </summary>
-    private static readonly Vector2 MonkeySpawnPosition = new Vector2(700, 300);
+    private LevelController m_Level; // 当前流程加载并拥有的关卡根控制器。
 
-    /// <summary>本次游戏流程创建的悟空实体。</summary>
-    private WukongEntity m_Hero;
+    private CancellationTokenSource m_SessionCancellation; // 离开流程时取消正在执行的实体生成。
 
-    /// <summary>本次游戏流程创建的猴子实体。</summary>
-    private HuaguoshanMonkeyEntity m_Monkey;
+    private int m_EntrySerial; // 让异步完成结果与当前流程进入周期绑定。
 
-    /// <summary>用于使异步加载结果失效的流程进入序号。</summary>
-    private int m_EntrySerial;
+    private int m_LevelOwnerEntry; // 记录当前加载场景由哪个流程周期负责卸载。
 
-    /// <summary>当前流程进入时加载的调试场景所有权序号。</summary>
-    private int m_DebugArenaOwnerEntry;
+    private string m_LevelScenePath; // 从 Luban LevelConfig 读取的场景路径。
 
     /// <summary>
     /// 进入流程。
@@ -62,22 +53,44 @@ public class ProcedureGame : ProcedureBase
 
         try
         {
-            // M3 调试入口：加载调试场地 → 经配置驱动生成悟空（EntityId → 实体.xlsx → 场景路径）
-            await GF.Scene.LoadSceneAsync(DebugArenaScenePath, LoadSceneMode.Additive);
+            m_SessionCancellation = new CancellationTokenSource();
+
+            // LevelConfig 是每阶段一行的 list 表；读取 StageOrder=1 行取得关卡级元数据。
+            GameConfig.Level.LevelConfig levelConfig = ConfigSystem.Instance.Tables.TbLevelConfig.DataList
+                .FirstOrDefault(x => x.LevelId == InitialLevelId && x.StageOrder == 1);
+            if (levelConfig == null)
+            {
+                throw new InvalidOperationException($"关卡配置不存在或缺少首阶段：LevelId={InitialLevelId}");
+            }
+            m_LevelScenePath = levelConfig.ScenePath;
+            Log.Info("[ProcedureGame] 加载关卡场景：{0}", m_LevelScenePath);
+
+            // 关卡场景只提供空间与稳定锚点；实体和生成配方由 GF.Entity + Luban 表驱动。
+            // 场景加载本身不取消：若流程在加载中离开，继续等待成功事件后由 entrySerial 分支卸载，避免 additive 场景泄漏。
+            Node2D levelNode = await LoadLevelSceneAsync(m_LevelScenePath, CancellationToken.None);
             if (entrySerial != m_EntrySerial)
             {
-                if (m_DebugArenaOwnerEntry == 0 && GF.Scene.IsSceneLoaded(DebugArenaScenePath))
+                if (m_LevelOwnerEntry == 0 && GF.Scene.IsSceneLoaded(m_LevelScenePath))
                 {
-                    GF.Scene.UnloadScene(DebugArenaScenePath);
+                    GF.Scene.UnloadScene(m_LevelScenePath);
                 }
                 return;
             }
 
-            m_DebugArenaOwnerEntry = entrySerial;
+            // 先登记场景所有权，再校验根节点；失败路径也能卸载已加载场景。
+            m_LevelOwnerEntry = entrySerial;
+            m_Level = levelNode as LevelController;
+            if (m_Level == null)
+            {
+                throw new InvalidOperationException("Level_1 场景根节点未绑定 LevelController。");
+            }
 
-            // 飘字挂在实体组节点同一棵世界树下（与角色同坐标系）
+            m_Level.Initialize();
+
+            // 共享飘字服务挂在实体系统所在世界坐标系。
             DamagePopManager.Instance.Activate(GF.Entity);
 
+            // 玩家出生位置由场景 SpawnPoint 提供。
             WukongEntity hero = await GF.Entity.ShowEntityAsync<WukongEntity>(EntityId.Wukong, null);
             if (entrySerial != m_EntrySerial)
             {
@@ -91,33 +104,81 @@ public class ProcedureGame : ProcedureBase
             }
 
             m_Hero = hero;
-            m_Hero.Position = HeroSpawnPosition;
+            m_Hero.GlobalPosition = m_Level.PlayerSpawnPosition;
 
-            // M5 调试怪：出生点由 MonsterEntity.OnShow 记录为巡逻圆心。
-            HuaguoshanMonkeyEntity monkey = await GF.Entity.ShowEntityAsync<HuaguoshanMonkeyEntity>(EntityId.HuaguoshanMonkey, MonkeySpawnPosition);
+            // 首阶段配方由关卡表读取；MonsterEntity.OnShow 将 marker 世界坐标作为巡逻圆心。
+            // 阶段配方从合并后的 LevelStageConfig 行读取。
+            await m_Level.StartFirstStageAsync(GF.Entity, m_SessionCancellation.Token);
             if (entrySerial != m_EntrySerial)
             {
-                GF.Entity.HideEntitySafe(monkey);
                 return;
             }
-
-            if (monkey == null)
-            {
-                throw new InvalidOperationException("Failed to create Huaguoshan monkey entity.");
-            }
-
-            m_Monkey = monkey;
 
             (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
         }
         catch (Exception ex)
         {
-            Log.Error("[ProcedureGame] 调试场地启动失败：{0}", ex);
+            if (ex is OperationCanceledException)
+            {
+                return;
+            }
+
+            Log.Error("[ProcedureGame] 关卡启动失败：{0}", ex);
             if (entrySerial == m_EntrySerial)
             {
                 CleanupSession(entrySerial);
                 (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
             }
+        }
+    }
+
+    private static async Task<Node2D> LoadLevelSceneAsync(string scenePath, CancellationToken cancellationToken) // 订阅场景结果事件并安全等待加载完成。
+    {
+        // 重入时复用已经挂树的场景实例。
+        if (GF.Scene.IsSceneLoaded(scenePath))
+        {
+            return GF.Scene.GetLoadedScene<Node2D>(scenePath);
+        }
+
+        // 先订阅后提交请求，处理资源命中缓存时的同步成功回调。
+        TaskCompletionSource<Node2D> tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        EventHandler<GameEventArgs> onSuccess = (_, args) =>
+        {
+            if (args is GodotGameFramework.Scene.LoadSceneSuccessEventArgs success &&
+                success.SceneAssetName == scenePath)
+            {
+                tcs.TrySetResult(success.SceneInstance as Node2D);
+                Log.Info("[ProcedureGame] 关卡场景加载成功：{0}", scenePath);
+            }
+        };
+        EventHandler<GameEventArgs> onFailure = (_, args) =>
+        {
+            if (args is GodotGameFramework.Scene.LoadSceneFailureEventArgs failure &&
+                failure.SceneAssetName == scenePath)
+            {
+                tcs.TrySetException(new InvalidOperationException(failure.ErrorMessage));
+                Log.Error("[ProcedureGame] 关卡场景加载失败：{0}", failure.ErrorMessage);
+            }
+        };
+
+        // 事件参数由框架池化，只在回调中复制场景节点引用。
+        GF.Event.Subscribe(GodotGameFramework.Scene.LoadSceneSuccessEventArgs.EventId, onSuccess);
+        GF.Event.Subscribe(GodotGameFramework.Scene.LoadSceneFailureEventArgs.EventId, onFailure);
+        try
+        {
+            // 使用 Additive 保留常驻框架根场景。
+            GF.Scene.LoadScene(scenePath, LoadSceneMode.Additive);
+            Log.Info("[ProcedureGame] 已提交关卡加载请求：{0}", scenePath);
+            using (cancellationToken.Register(() => tcs.TrySetCanceled(cancellationToken)))
+            {
+                return await tcs.Task;
+            }
+        }
+        finally
+        {
+            // 无论加载成功、失败或取消都解除全局事件订阅。
+            GF.Event.Unsubscribe(GodotGameFramework.Scene.LoadSceneSuccessEventArgs.EventId, onSuccess);
+            GF.Event.Unsubscribe(GodotGameFramework.Scene.LoadSceneFailureEventArgs.EventId, onFailure);
         }
     }
 
@@ -131,34 +192,41 @@ public class ProcedureGame : ProcedureBase
         base.OnLeave(procedureOwner, isShutdown);
         int entrySerial = m_EntrySerial;
         m_EntrySerial++;
+        m_SessionCancellation?.Cancel();
+        m_SessionCancellation?.Dispose();
+        m_SessionCancellation = null;
 
         if (!isShutdown)
         {
             CleanupSession(entrySerial);
         }
 
-        m_Monkey = null;
+        m_Level = null;
         m_Hero = null;
     }
 
-    /// <summary>释放指定进入序号所拥有的实体与调试场景。</summary>
-    /// <param name="entrySerial">要清理的流程进入序号。</param>
-    private void CleanupSession(int entrySerial)
+    private void CleanupSession(int entrySerial) // 释放此流程周期拥有的实体、订阅和关卡场景。
     {
+        // 先停共享服务和关卡事件，再隐藏实体，最后卸载场景。
         DamagePopManager.Instance.Deactivate();
-        GF.Entity.HideEntitySafe(m_Monkey);
+        m_Level?.Cleanup(GF.Entity);
         GF.Entity.HideEntitySafe(m_Hero);
-        if (m_DebugArenaOwnerEntry == entrySerial)
+        bool ownsScene = m_LevelOwnerEntry == entrySerial;
+        if (ownsScene)
         {
-            if (GF.Scene.IsSceneLoaded(DebugArenaScenePath))
+            if (m_LevelScenePath != null && GF.Scene.IsSceneLoaded(m_LevelScenePath))
             {
-                GF.Scene.UnloadScene(DebugArenaScenePath);
+                GF.Scene.UnloadScene(m_LevelScenePath);
             }
 
-            m_DebugArenaOwnerEntry = 0;
+            m_LevelOwnerEntry = 0;
         }
 
-        m_Monkey = null;
+        m_Level = null;
         m_Hero = null;
+        if (ownsScene)
+        {
+            m_LevelScenePath = null;
+        }
     }
 }

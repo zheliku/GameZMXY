@@ -9,8 +9,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 	/// </summary>
 	public class CcLockedState : MonsterAiState
 	{
-		/// <summary>受控解除后已僵直的秒数</summary>
-		private float m_CalmElapsed;
+		private float m_CalmElapsed; // 解除控制后已累计的平静时间（秒）。
 
 		/// <summary>进入受控状态时清零解除后的恢复计时。</summary>
 		protected override void Enter(IMonsterAiAgent agent)

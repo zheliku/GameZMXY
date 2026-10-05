@@ -11,24 +11,17 @@ namespace GameLogic.Entity.Heroes.Body
 	/// </summary>
 	public sealed class HeroInput
 	{
-		/// <summary>同方向双击跑判定窗口秒数。</summary>
-		private readonly float m_DoubleTapWindow;
-		/// <summary>跳跃和攻击请求的缓冲时长秒数。</summary>
-		private readonly float m_BufferTime;
+		private readonly float m_DoubleTapWindow; // 同方向双击跑判定窗口秒数。
+		private readonly float m_BufferTime; // 跳跃和攻击请求的缓冲时长秒数。
 
-		/// <summary>输入时钟（物理 dt 累计，双击判定用）</summary>
-		private double m_Clock;
+		private double m_Clock; // 输入时钟，按物理 dt 累计并用于双击判定。
 
-		/// <summary>上一次方向键点击方向。</summary>
-		private int m_LastTapDir;
-		/// <summary>上一次方向键点击时的输入时钟。</summary>
-		private double m_LastTapTime;
+		private int m_LastTapDir; // 上一次方向键点击方向。
+		private double m_LastTapTime; // 上一次方向键点击时的输入时钟。
 
-		/// <summary>距离上次按下的秒数（+∞ = 没有待消费的按键）</summary>
-		private float m_JumpAge = float.PositiveInfinity;
+		private float m_JumpAge = float.PositiveInfinity; // 距离跳跃按下的秒数，正无穷表示没有待消费请求。
 
-		/// <summary>攻击请求距按下经过的秒数。</summary>
-		private float m_AttackAge = float.PositiveInfinity;
+		private float m_AttackAge = float.PositiveInfinity; // 距离攻击按下的秒数，正无穷表示没有待消费请求。
 
 		/// <summary>创建使用指定双击与输入缓冲窗口的英雄输入层。</summary>
 		/// <param name="doubleTapWindow">双击跑判定窗口秒（HeroConfig.RunDoubleTapWindow）</param>
@@ -121,9 +114,9 @@ namespace GameLogic.Entity.Heroes.Body
 			ClearBuffers();
 		}
 
-		/// <summary>方向键点击：同一方向在窗口内二次按下 → 跑步档。</summary>
-		private void Tap(int dir)
+		private void Tap(int dir) // 记录方向点击，并在双击窗口内切换跑步档。
 		{
+			// 同方向且间隔足够短时进入跑步档，否则只更新最近一次点击。
 			Running = dir == m_LastTapDir && m_Clock - m_LastTapTime <= m_DoubleTapWindow;
 			m_LastTapDir = dir;
 			m_LastTapTime = m_Clock;

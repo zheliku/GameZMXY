@@ -17,39 +17,34 @@ namespace GameLogic.Battle.Tests
 	/// </summary>
 	public class DamageCalculatorTests
 	{
-		/// <summary>从真实战斗表加载的测试配置。</summary>
-		private static readonly BattleConfig Config = LoadConfig();
+		private static readonly BattleConfig Config = LoadConfig(); // 从真实战斗表加载的测试配置。
 
-		/// <summary>必不闪避、必不暴击的随机数（roll 取上界附近）</summary>
-		private const float NoProc = 0.9999f;
+		private const float NoProc = 0.9999f; // 必不闪避、必不暴击的随机数（取上界附近）。
 
-		/// <summary>读取测试输出目录中的战斗配置表。</summary>
-		private static BattleConfig LoadConfig()
+		private static BattleConfig LoadConfig() // 读取测试输出目录中的战斗配置表。
 		{
 			string path = Path.Combine(AppContext.BaseDirectory, "Data", "battle_tbbattleconfig.bytes");
 			return new TbBattleConfig(new ByteBuf(File.ReadAllBytes(path))).Data;
 		}
 
-		/// <summary>创建指定属性的英雄战斗数据。</summary>
 		private static CombatantStats Hero(int level = 1, int power = 8, int def = 10, int mdef = 10, int crit = 0,
-			int miss = 0, int lucky = 0, int toughness = 0, int htarget = 0, int critReduce = 0, int ar = 0, int sp = 0)
+			int miss = 0, int lucky = 0, int toughness = 0, int htarget = 0, int critReduce = 0, int ar = 0, int sp = 0) // 创建指定属性的英雄战斗数据。
 		{
 			return new CombatantStats(CombatSide.Hero, level, power, def, mdef, crit, miss, lucky, toughness, htarget,
 				critReduce, ar, sp);
 		}
 
-		/// <summary>创建指定属性的怪物战斗数据。</summary>
 		private static CombatantStats Monster(int level = 5, int power = 0, int def = 50, int mdef = 80, int crit = 0,
-			int miss = 0, int lucky = 0, int toughness = 0, int htarget = 0, int critReduce = 0, int ar = 0, int sp = 0)
+			int miss = 0, int lucky = 0, int toughness = 0, int htarget = 0, int critReduce = 0, int ar = 0, int sp = 0) // 创建指定属性的怪物战斗数据。
 		{
 			return new CombatantStats(CombatSide.Monster, level, power, def, mdef, crit, miss, lucky, toughness,
 				htarget, critReduce, ar, sp);
 		}
 
-		/// <summary>结算并立即归还攻击包（与游戏内"一招一包"用法一致）</summary>
 		private static DamageResult Hit(in CombatantStats attacker, float power, DamageKind kind,
-			in CombatantStats defender, float missRoll, float critRoll)
+			in CombatantStats defender, float missRoll, float critRoll) // 结算并立即归还攻击包。
 		{
+			// 从对象池创建一次性攻击包，确保测试覆盖与游戏内相同的生命周期。
 			AttackData attack = AttackData.Create(0, attacker, power, kind, Vector2.Zero, 1, 0, SoundId.None);
 			try
 			{
@@ -57,6 +52,7 @@ namespace GameLogic.Battle.Tests
 			}
 			finally
 			{
+				// 无论结算成功或抛错都归还攻击包，避免污染后续测试。
 				ReferencePool.Release(attack);
 			}
 		}

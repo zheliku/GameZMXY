@@ -27,5 +27,5 @@
 ## 当前实现边界
 
 - 已落地：悟空、花果山猴子、身体与怪物 AI 状态机、基础伤害结算、伤害飘字池和调试战斗场地。
-- `ProcedureGame` 当前加载 `Scenes/DebugArena.tscn`，不代表正式关卡流程。
-- 经验成长、法宝、装备、技能、Buff、关卡、背包、商店和完整存档接入仍待设计；见 [60-GameplayModules.md](60-GameplayModules.md)。
+- `ProcedureGame` 当前加载 `Scenes/Level_1.tscn`；`DebugArena.tscn` 保留为战斗回归场地。关卡实体由 `GF.Entity` 管理，空间锚点由场景、阶段配方由 Luban 表提供。
+- 经验成长、法宝、装备、技能、Buff、关卡门/出口/奖励结算、背包、商店和完整存档接入仍待设计；见 [60-GameplayModules.md](60-GameplayModules.md)。

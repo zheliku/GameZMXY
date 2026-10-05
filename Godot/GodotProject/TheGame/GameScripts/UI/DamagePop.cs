@@ -20,68 +20,40 @@ namespace GameLogic.UI
 	/// </summary>
 	public partial class DamagePop : Node2D, IPoolable
 	{
-		/// <summary>最多显示的位数（int 伤害上限 10 位）</summary>
-		private static readonly int MaxDigits = 10;
+		private static readonly int MaxDigits = 10; // 最多显示的位数，覆盖 int 伤害值上限。
 
-		/// <summary>数字位间距（相对格宽的重叠像素；旧 HBoxContainer separation：普通 −10、暴击 −20）</summary>
-		private static readonly float DigitOverlap = 10f;
-		/// <summary>暴击数字位间距重叠量（像素）。</summary>
-		private static readonly float CritDigitOverlap = 20f;
+		private static readonly float DigitOverlap = 10f; // 普通数字位重叠像素。
+		private static readonly float CritDigitOverlap = 20f; // 暴击数字位重叠像素。
 
-		/// <summary>普通飘字时序（旧 DamageText "physics" 动画）</summary>
-		private static readonly float PopScale = 2f;
-		/// <summary>普通飘字放大时长（秒）。</summary>
-		private static readonly float PopScaleUpTime = 0.1f;
-		/// <summary>普通飘字缩回时长（秒）。</summary>
-		private static readonly float PopScaleDownTime = 0.1f;
-		/// <summary>普通飘字上升距离（像素）。</summary>
-		private static readonly float RiseDistance = 50f;
-		/// <summary>普通飘字上升时长（秒）。</summary>
-		private static readonly float RiseTime = 0.6f;
-		/// <summary>普通飘字淡出时长（秒）。</summary>
-		private static readonly float FadeTime = 0.4f;
+		private static readonly float PopScale = 2f; // 普通飘字放大倍率。
+		private static readonly float PopScaleUpTime = 0.1f; // 普通飘字放大时长（秒）。
+		private static readonly float PopScaleDownTime = 0.1f; // 普通飘字缩回时长（秒）。
+		private static readonly float RiseDistance = 50f; // 普通飘字上升距离（像素）。
+		private static readonly float RiseTime = 0.6f; // 普通飘字上升时长（秒）。
+		private static readonly float FadeTime = 0.4f; // 普通飘字淡出时长（秒）。
 
-		/// <summary>暴击时序（旧 "Crit" 动画：放大 3 倍 0.2s、0.4s 回原）</summary>
-		private static readonly float CritPopScale = 3f;
-		/// <summary>暴击飘字放大时长（秒）。</summary>
-		private static readonly float CritScaleUpTime = 0.2f;
-		/// <summary>暴击飘字缩回时长（秒）。</summary>
-		private static readonly float CritScaleDownTime = 0.2f;
+		private static readonly float CritPopScale = 3f; // 暴击飘字放大倍率。
+		private static readonly float CritScaleUpTime = 0.2f; // 暴击飘字放大时长（秒）。
+		private static readonly float CritScaleDownTime = 0.2f; // 暴击飘字缩回时长（秒）。
 
-		/// <summary>闪避时序（旧 miss_effect：0.4s 上升 30px，0.4~0.9s 淡出）</summary>
-		/// <summary>闪避提示上升距离（像素）。</summary>
-		private static readonly float MissRiseDistance = 30f;
-		/// <summary>闪避提示上升时长（秒）。</summary>
-		private static readonly float MissRiseTime = 0.4f;
-		/// <summary>闪避提示淡出时长（秒）。</summary>
-		private static readonly float MissFadeTime = 0.5f;
+		private static readonly float MissRiseDistance = 30f; // 闪避提示上升距离（像素）。
+		private static readonly float MissRiseTime = 0.4f; // 闪避提示上升时长（秒）。
+		private static readonly float MissFadeTime = 0.5f; // 闪避提示淡出时长（秒）。
 
-		/// <summary>数字样式图集（场景 [Export] 绑定，按伤害类型/暴击/受击方选）</summary>
-		/// <summary>怪物受物理伤害的数字图集。</summary>
-		[Export] private Texture2D m_MonsterPhysics;
-		/// <summary>怪物受物理暴击的数字图集。</summary>
-		[Export] private Texture2D m_MonsterPhysicsCrit;
-		/// <summary>怪物受魔法伤害的数字图集。</summary>
-		[Export] private Texture2D m_MonsterMagic;
-		/// <summary>怪物受魔法暴击的数字图集。</summary>
-		[Export] private Texture2D m_MonsterMagicCrit;
-		/// <summary>英雄受物理伤害的数字图集。</summary>
-		[Export] private Texture2D m_HeroPhysics;
-		/// <summary>英雄受魔法伤害的数字图集。</summary>
-		[Export] private Texture2D m_HeroMagic;
-		/// <summary>真实伤害数字图集。</summary>
-		[Export] private Texture2D m_Real;
+		[Export] private Texture2D m_MonsterPhysics; // 怪物受物理伤害的数字图集。
+		[Export] private Texture2D m_MonsterPhysicsCrit; // 怪物受物理暴击的数字图集。
+		[Export] private Texture2D m_MonsterMagic; // 怪物受魔法伤害的数字图集。
+		[Export] private Texture2D m_MonsterMagicCrit; // 怪物受魔法暴击的数字图集。
+		[Export] private Texture2D m_HeroPhysics; // 英雄受物理伤害的数字图集。
+		[Export] private Texture2D m_HeroMagic; // 英雄受魔法伤害的数字图集。
+		[Export] private Texture2D m_Real; // 真实伤害数字图集。
 
-		/// <summary>闪避贴图</summary>
-		[Export] private Sprite2D m_Miss;
+		[Export] private Sprite2D m_Miss; // 闪避提示贴图。
 
-		/// <summary>缩放/透明度作用节点（数字与 miss 的父节点）</summary>
-		[Export] private Node2D m_Content;
+		[Export] private Node2D m_Content; // 缩放和透明度动画作用的内容节点。
 
-		/// <summary>首次取出时创建并重复复用的数字节点。</summary>
-		private Sprite2D[] m_Digits;
-		/// <summary>当前飘字动画。</summary>
-		private Tween m_Tween;
+		private Sprite2D[] m_Digits; // 首次取出时创建并重复复用的数字节点。
+		private Tween m_Tween; // 当前飘字动画。
 
 		/// <summary>从池取出（NodePool 调用）：此刻尚未设置内容，这里只复位公共状态。</summary>
 		public void OnGet()
@@ -153,15 +125,13 @@ namespace GameLogic.UI
 			m_Tween.TweenCallback(Callable.From(ReturnToPool));
 		}
 
-		/// <summary>动画完成后将飘字归还对象池。</summary>
-		private void ReturnToPool()
+		private void ReturnToPool() // 动画完成后将飘字归还对象池。
 		{
 			m_Tween = null;
 			NodePool.Instance.Release(this);
 		}
 
-		/// <summary>选数字样式（对应旧 DamageNumber.gd 的贴图选择；真实伤害人怪共用一套）。</summary>
-		private Texture2D PickSheet(DamageKind kind, bool isCrit, bool targetIsHero)
+		private Texture2D PickSheet(DamageKind kind, bool isCrit, bool targetIsHero) // 按伤害类型、暴击和受击方选择数字图集。
 		{
 			if (kind == DamageKind.Real)
 			{
@@ -181,26 +151,25 @@ namespace GameLogic.UI
 			return isCrit ? m_MonsterPhysicsCrit : m_MonsterPhysics;
 		}
 
-		/// <summary>把数字按位排开（整体水平居中），多余的数字节点隐藏。</summary>
-		private void LayoutDigits(int value, Texture2D sheet, float overlap)
+		private void LayoutDigits(int value, Texture2D sheet, float overlap) // 将数字按位居中排布并隐藏多余节点。
 		{
-		value = Mathf.Max(0, value);
-		// 整数除法数位数：Mathf.Log(100000)/Mathf.Log(10) 因 float 精度算成 4.9999998，
-		// floor 后少一位（整 10^5 伤害会渲染成 "00000"），禁用对数计数。
-		int count = 1;
-		int probe = value;
-		while (probe >= 10 && count < MaxDigits)
-		{
-			probe /= 10;
-			count++;
-		}
+			// 用整数除法确定数位，避免浮点对数在 10 的幂次附近少算一位。
+			value = Mathf.Max(0, value);
+			int count = 1;
+			int probe = value;
+			while (probe >= 10 && count < MaxDigits)
+			{
+				probe /= 10;
+				count++;
+			}
 
+			// 根据图集单格宽度和重叠量计算整组数字的居中起点。
 			float cellW = sheet.GetWidth() / 10f;
 			float cellH = sheet.GetHeight();
 			float step = cellW - overlap;
 			float startX = -(step * (count - 1)) * 0.5f;
 
-			// 从最高位写起：divisor = 10^(count-1)
+			// 从最高位开始分解数值，并逐格设置贴图区域与位置。
 			int divisor = 1;
 			for (int i = 1; i < count; i++)
 			{
@@ -225,8 +194,7 @@ namespace GameLogic.UI
 			}
 		}
 
-		/// <summary>隐藏全部数字节点。</summary>
-		private void HideDigits()
+		private void HideDigits() // 隐藏全部数字节点。
 		{
 			foreach (Sprite2D digit in m_Digits)
 			{
@@ -234,14 +202,14 @@ namespace GameLogic.UI
 			}
 		}
 
-		/// <summary>数字节点一次性建好（首次取出时），之后复用。</summary>
-		private void EnsureDigits()
+		private void EnsureDigits() // 首次取出时创建数字节点，后续直接复用。
 		{
 			if (m_Digits != null)
 			{
 				return;
 			}
 
+			// 固定创建最大位数的节点，之后只更新贴图、区域和可见性。
 			m_Digits = new Sprite2D[MaxDigits];
 			for (int i = 0; i < MaxDigits; i++)
 			{
@@ -256,8 +224,7 @@ namespace GameLogic.UI
 			}
 		}
 
-		/// <summary>停止当前有效动画并清除引用。</summary>
-		private void KillTween()
+		private void KillTween() // 停止当前有效动画并清除引用。
 		{
 			if (m_Tween != null && m_Tween.IsValid())
 			{

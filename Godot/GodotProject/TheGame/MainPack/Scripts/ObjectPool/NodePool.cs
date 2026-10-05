@@ -27,20 +27,11 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <summary>当前节点池配置；加载失败时为空。</summary>
     public NodePoolConfig Config { get; private set; }
 
-    /// <summary>
-    /// 每种场景对应的容器节点（挂在 NodePool 下），归还时对象放回此处。
-    /// </summary>
-    private readonly List<PoolContainer> m_Containers = new();
+    private readonly List<PoolContainer> m_Containers = new(); // 每种场景对应的容器节点，归还时对象放回此处。
 
-    /// <summary>
-    /// Node.GetInstanceId() → 所属池容器。Get 时记录，Release 时查询并清理。
-    /// </summary>
-    private readonly Dictionary<ulong, PoolContainer> m_NodeToContainer = new();
+    private readonly Dictionary<ulong, PoolContainer> m_NodeToContainer = new(); // 节点实例号到所属容器的映射，归还时查询并清理。
 
-    /// <summary>
-    /// 池名 → PackedScene，Get 时懒加载实例化用。
-    /// </summary>
-    private readonly Dictionary<string, PackedScene> m_PoolScenes = new();
+    private readonly Dictionary<string, PackedScene> m_PoolScenes = new(); // 池名到场景资源的映射，取用时用于懒实例化。
 
     /// <summary>加载池配置并注册场景池。</summary>
     protected override void OnLoad()
@@ -158,7 +149,7 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <param name="scenePath">场景资源路径及池名称。</param>
     /// <param name="parent">可选的新父节点。</param>
     /// <returns>节点包装对象；无法取得对象时返回 null。</returns>
-    private NodeObject GetInternal(string scenePath, Node parent)
+    private NodeObject GetInternal(string scenePath, Node parent) // 取出对象，必要时实例化节点并绑定请求的父节点。
     {
         var pool = GF.ObjectPool.GetObjectPool<NodeObject>(scenePath);
         if (pool == null)
@@ -377,7 +368,7 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <param name="scenePath">池名称。</param>
     /// <param name="container">找到时返回对应容器。</param>
     /// <returns>找到容器时为 true。</returns>
-    private bool TryGetContainer(string scenePath, out PoolContainer container)
+    private bool TryGetContainer(string scenePath, out PoolContainer container) // 在线性容器表中按池名查找归还目标。
     {
         foreach (var c in m_Containers)
         {

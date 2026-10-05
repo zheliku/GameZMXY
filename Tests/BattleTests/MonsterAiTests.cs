@@ -16,14 +16,11 @@ namespace GameLogic.Battle.Tests
 	/// </summary>
 	public class MonsterAiTests
 	{
-		/// <summary>单个物理帧的时长。</summary>
-		private const float Dt = 1f / 60f;
+		private const float Dt = 1f / 60f; // 单个物理帧的时长。
 
-		/// <summary>猴子 attack_1 判定盒范围（原生朝左）</summary>
-		private static readonly AiBox MonkeyReach = new AiBox(-49f, 1f, -48f, 2f);
+		private static readonly AiBox MonkeyReach = new AiBox(-49f, 1f, -48f, 2f); // 猴子 attack_1 判定盒范围（原生朝左）。
 
-		/// <summary>猴子同款参数：欲望 70、判定 1s、巡逻 2s/10%/半径 200、僵直 0、滞回 25、踱步半幅 60</summary>
-		private static MonsterAiParams MonkeyParams(int desire = 70, float calm = 0f, float pace = 60f)
+		private static MonsterAiParams MonkeyParams(int desire = 70, float calm = 0f, float pace = 60f) // 猴子同款参数：欲望 70、判定 1s、巡逻 2s/10%/半径 200、僵直 0、滞回 25、踱步半幅 60。
 		{
 			return new MonsterAiParams
 			{
@@ -38,20 +35,17 @@ namespace GameLogic.Battle.Tests
 			};
 		}
 
-		/// <summary>近身普攻（带判定盒范围）</summary>
-		private static MonsterAttackSpec Basic(int index, int weight = 100)
+		private static MonsterAttackSpec Basic(int index, int weight = 100) // 创建带判定盒范围的近身普攻。
 		{
 			return new MonsterAttackSpec { Index = index, Weight = weight, Reach = MonkeyReach };
 		}
 
-		/// <summary>创建按水平距离选取的远程普攻。</summary>
-		private static MonsterAttackSpec RangedBasic(int index, float max, int weight = 100)
+		private static MonsterAttackSpec RangedBasic(int index, float max, int weight = 100) // 创建按水平距离选取的远程普攻。
 		{
 			return new MonsterAttackSpec { Index = index, Weight = weight, Range = (0f, max) };
 		}
 
-		/// <summary>创建带优先级、距离范围及固定冷却的招式。</summary>
-		private static MonsterAttackSpec Priority(int index, int priority, float min, float max, float cooldown, int weight = 100)
+		private static MonsterAttackSpec Priority(int index, int priority, float min, float max, float cooldown, int weight = 100) // 创建带优先级、距离范围及固定冷却的招式。
 		{
 			return new MonsterAttackSpec
 			{
@@ -63,8 +57,7 @@ namespace GameLogic.Battle.Tests
 			};
 		}
 
-		/// <summary>站在同一地面、水平距离 dx 的英雄受击盒</summary>
-		private static AiBox Hero(float dx, float dy = 0f)
+		private static AiBox Hero(float dx, float dy = 0f) // 创建同一地面上指定偏移的英雄受击盒。
 		{
 			return new AiBox(dx - 20f, dx + 20f, -79f + dy, 19f + dy);
 		}
@@ -432,16 +425,10 @@ namespace GameLogic.Battle.Tests
 
 		// ---------------------------------------------------------------- 测试替身
 
-		/// <summary>
-		/// 可控宿主：感知由测试直接写，随机数取固定序列（用尽后重复最后一个）。
-		/// 与真实宿主一致：出招中（IsAttacking，含收招硬直）拒绝 Face / RequestAttack。
-		/// </summary>
-		private sealed class FakeAgent : IMonsterAiAgent
+		private sealed class FakeAgent : IMonsterAiAgent // 可控感知和确定性随机序列的 AI 测试宿主。
 		{
-			/// <summary>测试提供的确定性随机序列。</summary>
-			private readonly float[] m_Randoms;
-			/// <summary>下一随机值的读取索引。</summary>
-			private int m_RandomIndex;
+			private readonly float[] m_Randoms; // 测试提供的确定性随机序列。
+			private int m_RandomIndex; // 下一随机值的读取索引。
 
 			/// <summary>初始化可控感知、招式簿和随机序列。</summary>
 			public FakeAgent(MonsterAiParams p, MonsterAttackBook attacks, float[] randoms)
@@ -517,13 +504,10 @@ namespace GameLogic.Battle.Tests
 			}
 		}
 
-		/// <summary>用框架真实 FsmManager 驱动一台 AI 状态机（与游戏内 GF.Fsm 同一实现）。</summary>
-		private sealed class AiHarness : IDisposable
+		private sealed class AiHarness : IDisposable // 用真实 FsmManager 驱动一台 AI 状态机。
 		{
-			/// <summary>驱动测试 AI 状态机的框架管理器。</summary>
-			private readonly FsmManager m_Manager = new FsmManager();
-			/// <summary>当前测试使用的 AI 状态机。</summary>
-			private readonly IFsm<IMonsterAiAgent> m_Fsm;
+			private readonly FsmManager m_Manager = new FsmManager(); // 驱动测试 AI 状态机的框架管理器。
+			private readonly IFsm<IMonsterAiAgent> m_Fsm; // 当前测试使用的 AI 状态机。
 
 			/// <summary>状态机绑定的可控测试宿主。</summary>
 			public FakeAgent Agent { get; }

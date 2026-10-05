@@ -11,8 +11,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 	/// </summary>
 	public class PaceBelowTargetState : EngageState
 	{
-		/// <summary>当前往返方向（-1/1；0 = 未开始）</summary>
-		private int m_Dir;
+		private int m_Dir; // 当前平台下踱步方向；0 表示尚未选向。
 
 		/// <summary>踱步半幅 px</summary>
 		protected override void Enter(IMonsterAiAgent agent)

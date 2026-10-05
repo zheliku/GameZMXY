@@ -10,11 +10,9 @@ namespace GameLogic.Entity.Monsters.Body
 	/// </summary>
 	public sealed class MonsterAttackState : MonsterBodyState
 	{
-		/// <summary>当前出招下标。</summary>
-		private int m_Index;
+		private int m_Index; // 当前攻击配置在身体参数快照中的下标。
 
-		/// <summary>本招剩余秒</summary>
-		private float m_Left;
+		private float m_Left; // 当前招式剩余时长（秒）。
 
 		/// <summary>进入前指定要出的招（由发起切换的状态调用）。</summary>
 		public void Arm(int index)
@@ -47,6 +45,7 @@ namespace GameLogic.Entity.Monsters.Body
 
 			if (Elapsed(m_Left))
 			{
+				// 招式结束后先进入配置的收招硬直；没有硬直则立即恢复移动。
 				float recovery = body.Params.AttackRecovery[m_Index];
 				if (recovery > 0f)
 				{

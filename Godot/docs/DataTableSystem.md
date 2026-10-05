@@ -60,6 +60,7 @@ Tables 构造函数（Luban 生成）
     ├── TbCharacterConfig = new(loader("character_tbcharacterconfig"))
     ├── TbEntityConfig    = new(loader("entity_tbentityconfig"))
     ├── TbLevelConfig     = new(loader("level_tblevelconfig"))
+    ├── TbLevelStageConfig = new(loader("level_tblevelstageconfig"))
     └── ResolveRef()      ← 解析表间引用
 ```
 
@@ -75,6 +76,7 @@ Tables 构造函数（Luban 生成）
 | `TheGame/GameScripts/GameProto/GameConfig/TbCharacterConfig.cs` | 角色配置表（生成） |
 | `TheGame/GameScripts/GameProto/GameConfig/TbUIFormConfig.cs` | UI 配置表（生成） |
 | `TheGame/GameScripts/GameProto/GameConfig/TbLevelConfig.cs` | 关卡配置表（生成） |
+| `TheGame/GameScripts/GameProto/GameConfig/Level/TbLevelStageConfig.cs` | 阶段怪物生成配方表（生成） |
 | `TheGame/GameScripts/GameProto/GameConfig/EntityConfig.cs` | 实体行数据（生成） |
 | `TheGame/GameScripts/GameProto/GameConfig/EntityId.cs` | 实体 ID 枚举（生成） |
 | `TheGame/GameScripts/GameProto/GameConfig/vector2.cs` 等 | Luban 内建数学类型 |
@@ -159,12 +161,13 @@ if not defined AI_MODE pause      ← CI/脚本环境设置 AI_MODE 可跳过暂
 ### 4.2 生成代码结构（以 EntityConfig 为例）
 
 ```csharp
-// Tables.cs — 总入口（当前 4 张表）
+// Tables.cs — 总入口（由 Luban 聚合所有业务表）
 public partial class Tables {
     public UI.TbUIFormConfig TbUIFormConfig { get; }
     public Character.TbCharacterConfig TbCharacterConfig { get; }
     public Entity.TbEntityConfig TbEntityConfig { get; }
-    public Level.TbLevelConfig TbLevelConfig { get; }
+    public Level.TbLevelConfig TbLevelConfig { get; }             // list：每个阶段一行
+    public Level.TbLevelStageConfig TbLevelStageConfig { get; }   // map + list：每条怪物配方一行
     public Tables(System.Func<string, ByteBuf> loader) { ...; ResolveRef(); }
 }
 
@@ -219,7 +222,7 @@ m_Config = ConfigSystem.Instance.Tables.TbCharacterConfig.DataList
    - C# 代码落至 `TheGame/GameScripts/GameProto/GameConfig/`
    - `.bytes` 数据落至 `TheGame/DataTables/GameConfigs/`
 5. **编译**：`cd GodotProject && dotnet build`（新文件首次生成后建议再执行 `--build-solutions` 刷新解决方案）。
-6. **使用**：`ConfigSystem.Instance.Tables.TbItemConfig.Get(id)`。`Tables.cs` 中的新表属性和加载调用由 Luban 自动补齐，无需手写注册代码。
+6. **使用**：Map 表使用 `Get(id)`，list 表使用 `DataList` 过滤或分组。当前 `TbLevelConfig` 按 `LevelId` 从 `DataList` 分组，`TbLevelStageConfig` 按 `LevelId + StageId` 过滤配方。`Tables.cs` 中的新表属性和加载调用由 Luban 自动补齐，无需手写注册代码。
 
 热更说明：`.bytes` 属于 `PackType.Config` 类型资源，可打入 Config 子包；`ProcedureUpdate.LoadDownloadedPacks` 会**先加载 Config 包再加载 Resource 包**，保证场景实例化时新配置已生效。注意：由于 `Tables` 是懒加载 + 一次性加载，子包必须在**首次访问 `GetTables()` 之前**完成 `LoadResourcePack`（当前流程顺序 ProcedureUpdate → ProcedurePrelode → 业务访问，天然满足）。
 
@@ -248,4 +251,4 @@ Luban 内建 `vector2/vector3` 等数学类型与 Godot `Vector2/Vector3` 之间
 
 - [x] `ConfigSystem` 已替代原版 DataTable 框架模块（2026-07）
 - [ ] 表规模增长后切换 lazyload 生成模式
-- [ ] 当前仅 4 张表（UIForm / Character / Entity / Level），新增表按 §5 步骤添加
+- [ ] 表规模增长后切换 lazyload 生成模式；当前业务表已覆盖 UI、Entity、Hero、Monster、Battle、Sound、Level 和 LevelStage 等模块。

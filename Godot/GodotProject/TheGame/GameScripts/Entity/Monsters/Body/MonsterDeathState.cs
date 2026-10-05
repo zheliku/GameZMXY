@@ -9,11 +9,9 @@ namespace GameLogic.Entity.Monsters.Body
 	/// </summary>
 	public sealed class MonsterDeathState : MonsterBodyState
 	{
-		/// <summary>回收倒计时剩余秒</summary>
-		private float m_Left;
+		private float m_Left; // 死亡动画结束前的剩余时间（秒）。
 
-		/// <summary>已请求回收（只请求一次）</summary>
-		private bool m_Recycled;
+		private bool m_Recycled; // 是否已经向宿主发送回收请求。
 
 		/// <summary>死亡状态不再响应受击中断。</summary>
 		protected override bool HurtInterrupts => false;

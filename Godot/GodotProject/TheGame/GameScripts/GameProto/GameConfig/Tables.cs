@@ -159,6 +159,42 @@ public partial class Tables
             m_TbSoundConfig.ResolveRef(this);
         }
     }
+    private Level.TbLevelConfig m_TbLevelConfig;
+    public Level.TbLevelConfig TbLevelConfig 
+    {
+        get
+        {
+            if (m_TbLevelConfig == null)
+            {
+                m_TbLevelConfig = new Level.TbLevelConfig(defaultLoader("level_tblevelconfig"));
+                m_TbLevelConfig.ResolveRef(this);
+            }
+            return m_TbLevelConfig;
+        }
+        set
+        {
+            m_TbLevelConfig = value;
+            m_TbLevelConfig.ResolveRef(this);
+        }
+    }
+    private Level.TbLevelStageConfig m_TbLevelStageConfig;
+    public Level.TbLevelStageConfig TbLevelStageConfig 
+    {
+        get
+        {
+            if (m_TbLevelStageConfig == null)
+            {
+                m_TbLevelStageConfig = new Level.TbLevelStageConfig(defaultLoader("level_tblevelstageconfig"));
+                m_TbLevelStageConfig.ResolveRef(this);
+            }
+            return m_TbLevelStageConfig;
+        }
+        set
+        {
+            m_TbLevelStageConfig = value;
+            m_TbLevelStageConfig.ResolveRef(this);
+        }
+    }
 
     #endregion
 

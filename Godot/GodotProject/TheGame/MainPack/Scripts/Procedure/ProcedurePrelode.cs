@@ -91,9 +91,9 @@ public class ProcedurePrelode : ProcedureBase
 
         ChangeState<ProcedureGame>(procedureOwner);
     }
-    /// <summary>根据设置或编辑器资源加载模式选择界面语言。</summary>
-    private void LoadLocalization()
+    private void LoadLocalization() // 根据用户设置或编辑器资源模式选择界面语言。
     {
+        // 运行时恢复保存语言，编辑器资源模式跟随编辑器或系统语言。
         if (!GF.Base.EnableEditorResLoad)
         {
             GF.Localization.Language = (Language)GF.Setting.GetInt("Language", (int)Language.English);
@@ -104,10 +104,9 @@ public class ProcedurePrelode : ProcedureBase
             Log.Info("[ProcedurePrelode] Editor res load enabled, set language to SystemLanguage: {0}.", GF.Localization.Language);
         }
     }
-    /// <summary>从资源配置注册所有 UI 分组。</summary>
-    /// <returns>全部 UI 分组均注册成功时为 true。</returns>
-    private bool LoadUIGroup()
+    private bool LoadUIGroup() // 注册资源配置中的全部 UI 分组。
     {
+        // 任一分组注册失败即中止，避免后续界面使用不完整的分组配置。
         for (int i = 0; i < GF.UI.UIGroupRes.Groups.Length; i++)
         {
             if (!GF.UI.AddUIGroup(GF.UI.UIGroupRes.Groups[i].Name, GF.UI.UIGroupRes.Groups[i].Depth))
@@ -118,10 +117,9 @@ public class ProcedurePrelode : ProcedureBase
         }
         return true;
     }
-    /// <summary>从资源配置注册所有实体分组。</summary>
-    /// <returns>全部实体分组均注册成功时为 true。</returns>
-    private bool LoadEntityGroup()
+    private bool LoadEntityGroup() // 注册资源配置中的全部实体分组。
     {
+        // 实体组是实体创建的前置依赖，首个注册失败时停止本组初始化。
         var groups = GF.Entity.EntityGroupRes.EntityGroups;
         for (int i = 0; i < groups.Length; i++)
         {
@@ -133,10 +131,9 @@ public class ProcedurePrelode : ProcedureBase
         }
         return true;
     }
-    /// <summary>注册声音分组并恢复各默认声音组音量。</summary>
-    /// <returns>全部声音分组均注册成功时为 true。</returns>
-    private bool LoadSoundGroup()
+    private bool LoadSoundGroup() // 注册声音分组并恢复各默认声音组音量。
     {
+        // 先注册所有分组，再从设置中恢复各默认组音量。
         var groups = GF.Sound.SoundGroupRes.SoundGroups;
         for (int i = 0; i < groups.Length; i++)
         {

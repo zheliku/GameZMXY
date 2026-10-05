@@ -80,10 +80,10 @@ namespace GameLogic.Entity.Monsters
 			return reach;
 		}
 
-		/// <summary>离散值轨道在 t 时刻的值（≤ t 的最后一个关键帧）；无轨道/无关键帧返回 null（用场景默认值）。</summary>
-		private static Variant? ValueAt(Animation anim, int track, float t)
+		private static Variant? ValueAt(Animation anim, int track, float t) // 读取不晚于采样时刻的最后一个轨道关键帧值。
 		{
 			Variant? value = null;
+			// 关键帧有序；走到首个晚于 t 的帧即可停止。
 			for (int k = 0; track >= 0 && k < anim.TrackGetKeyCount(track) && anim.TrackGetKeyTime(track, k) <= t + 1e-4; k++)
 			{
 				value = anim.TrackGetKeyValue(track, k);
@@ -92,8 +92,7 @@ namespace GameLogic.Entity.Monsters
 			return value;
 		}
 
-		/// <summary>查找攻击区直接子节点中的首个碰撞形状。</summary>
-		private static CollisionShape2D FindShape(Area2D area)
+		private static CollisionShape2D FindShape(Area2D area) // 返回攻击区域的首个直接碰撞形状子节点。
 		{
 			foreach (Node child in area.GetChildren())
 			{

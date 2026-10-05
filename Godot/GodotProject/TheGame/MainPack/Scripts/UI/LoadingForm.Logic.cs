@@ -11,16 +11,10 @@ namespace GameLogic
 	/// </summary>
 	public partial class LoadingForm
 	{
-		/// <summary>驱动进度条平滑变化的补间。</summary>
-		private Tween m_ProgressTween;
-		/// <summary>延迟关闭界面的补间。</summary>
-		private Tween m_CloseTween;
+		private Tween m_ProgressTween; // 驱动进度条平滑变化的补间。
+		private Tween m_CloseTween; // 加载完成后延迟关闭界面的补间。
 
-		/// <summary>
-		/// 关闭防重入标记
-		/// 场景加载成功与后续界面打开成功可能先后触发多次，避免重复关闭已回收的表单。
-		/// </summary>
-		private bool m_IsCloseRequested;
+		private bool m_IsCloseRequested; // 场景和界面加载事件可能重复触发关闭请求，用于防止重入。
 		/// <summary>
 		/// 初始化界面。
 		/// </summary>
@@ -216,7 +210,7 @@ namespace GameLogic
 		/// <summary>接收界面或场景加载事件并更新进度。</summary>
 		/// <param name="sender">事件发送者。</param>
 		/// <param name="e">加载进度事件参数。</param>
-		private void OnLoadingUpdate(object sender, GameEventArgs e)
+		private void OnLoadingUpdate(object sender, GameEventArgs e) // 将界面或场景加载进度统一更新到加载界面。
 		{
 			float progress = 0;
 			if (e is OpenUIFormUpdateEventArgs ui)

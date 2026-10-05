@@ -9,8 +9,7 @@ namespace GameLogic.Entity.Monsters.Body
 	/// </summary>
 	public sealed class MonsterHurtState : MonsterBodyState
 	{
-		/// <summary>硬直剩余秒</summary>
-		private float m_Left;
+		private float m_Left; // 受击硬直剩余时间（秒）。
 
 		/// <summary>连续受击由本状态自己处理（见 Tick），不走基类打断</summary>
 		protected override bool HurtInterrupts => false;
@@ -41,9 +40,9 @@ namespace GameLogic.Entity.Monsters.Body
 			ApplyGravity(body, dt);
 		}
 
-		/// <summary>受击生效：击退速度 + 计时重置 + 从头播 hurt 动画 + 受击音（取击退即消费）。</summary>
-		private void ApplyHurt(IMonsterBody body)
+		private void ApplyHurt(IMonsterBody body) // 消费击退请求并重新开始受击硬直。
 		{
+			// 连续受击覆盖当前击退和时钟，保持同一受击状态。
 			body.Velocity = body.TakePendingHurt();
 			m_Left = body.Params.HurtTime;
 			body.RestartAnim(MonsterAnims.Hurt);

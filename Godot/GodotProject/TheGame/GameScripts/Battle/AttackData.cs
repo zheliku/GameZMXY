@@ -50,8 +50,7 @@ namespace GameLogic.Battle
 		/// <summary>命中音效（None = 无）</summary>
 		public SoundId HitSoundId { get; private set; }
 
-		/// <summary>本招已命中的目标（实例号），一招一目标只结算一次</summary>
-		private readonly HashSet<ulong> m_HitTargets = new HashSet<ulong>();
+		private readonly HashSet<ulong> m_HitTargets = new HashSet<ulong>(); // 本招已命中的目标实例号，防止重复结算。
 
 		/// <summary>从引用池取一个攻击包并装填（各参数语义见同名属性）。</summary>
 		/// <param name="attackId">来源攻击编号；动态攻击传 0。</param>

@@ -30,10 +30,6 @@ using GodotGameFramework;
 /// </summary>
 public partial class SmokeTestDriver : Node
 {
-	/// <summary>
-	/// 时间轴：[时刻(秒), 动作, 模式]。
-	/// mash=逐帧连打 / tap=单帧 / hold=按住 / release=松开 / damage=对英雄造成 1 点伤害（验证受击硬直）
-	/// </summary>
 	private static readonly (double At, string Action, string Mode)[] Plan =
 	{
 		(2.00, "attack", "mash"),
@@ -44,20 +40,14 @@ public partial class SmokeTestDriver : Node
 		(6.35, "hurt", "damage"),
 		(6.70, "jump", "tap"),
 		(7.40, "jump", "tap"),
-	};
+	}; // 按时间安排英雄烟测的输入动作。
 
-	/// <summary>
-	/// 断言必须观察到（顺序也必须一致）的观测点，格式 `身体状态/动画节点`（扁平树：节点 = 动画名）。
-	/// 同时断言"身体状态机在做什么"与"树里真正在播什么"一致——两者任一错位都会缺项。
-	/// 覆盖：连段 1→4、双击跑、受击、一段跳、下落、二段跳、落地回待机。
-	/// </summary>
 	private static readonly string[] Required =
 	{
 		"Attack/attack_1", "Attack/attack_2", "Attack/attack_3", "Attack/attack_4",
 		"Ground/run", "Hurt/hurt", "Air/jump", "Air/fall", "Air/jump_2", "Ground/idle1",
-	};
+	}; // 必须观测到的身体状态与实际动画组合。
 
-	/// <summary>顺序约束：[A, B] 表示 A 必须先于 B 出现；*Last 表示取该状态的**最后**一次出现</summary>
 	private static readonly (string A, string B, bool LastA, bool LastB)[] Order =
 	{
 		("Attack/attack_1", "Attack/attack_2", false, false),
@@ -69,63 +59,41 @@ public partial class SmokeTestDriver : Node
 		("Air/jump", "Air/jump_2", false, false),
 		("Air/jump", "Air/fall", false, true),      // 出生时也会下落，取最后一次 fall（起跳后的下落）
 		("Air/jump_2", "Ground/idle1", false, true), // 落地后回待机，取最后一次 idle1
-	};
+	}; // 必须按顺序出现的状态与动画组合。
 
-	/// <summary>英雄烟测最长运行时间（秒）。</summary>
-	private const double EndTime = 10.0;
-	/// <summary>等待实体出现的超时时间（秒）。</summary>
-	private const double FindTimeout = 5.0;
+	private const double EndTime = 10.0; // 英雄烟测最长运行时间（秒）。
+	private const double FindTimeout = 5.0; // 等待实体出现的超时时间（秒）。
 
-	/// <summary>hero 场景沙包猴子相对悟空的水平站位（M4 原出生点 400 − 悟空 300）</summary>
-	private const float SandbagOffset = 100f;
+	private const float SandbagOffset = 100f; // 沙包猴子相对英雄的水平站位（像素）。
 
-	/// <summary>烟测中的英雄实体。</summary>
-	private HeroEntity m_Hero;
+	private HeroEntity m_Hero; // 烟测中的英雄实体。
 
 	// ---- M4 命中链路观测（悟空连打面前的猴子）----
 
-	/// <summary>沙包猴子（场上第一只怪物）</summary>
-	private MonsterEntity m_Monster;
+	private MonsterEntity m_Monster; // 沙包猴子（场上第一只怪物）。
 
-	/// <summary>猴子受到的每次命中（按事件记录：伤害、暴击、闪避）</summary>
-	private readonly List<(int Damage, bool Crit, bool Miss)> m_MonsterHits = new();
+	private readonly List<(int Damage, bool Crit, bool Miss)> m_MonsterHits = new(); // 按事件记录猴子每次受击结果。
 
-	/// <summary>场上飘字节点的可见峰值数量。</summary>
-	private int m_MaxPopCount;
-	/// <summary>是否由命令行启用烟测。</summary>
-	private bool m_Active;
-	/// <summary>等待英雄出现的累计时间（秒）。</summary>
-	private double m_WaitTime;
-	/// <summary>烟测当前时间（秒）。</summary>
-	private double m_Time;
-	/// <summary>下一条输入计划索引。</summary>
-	private int m_NextStep;
-	/// <summary>是否正在交替注入攻击输入。</summary>
-	private bool m_Mashing;
-	/// <summary>攻击连打结束时间（秒）。</summary>
-	private double m_MashUntil;
-	/// <summary>攻击连打帧计数。</summary>
-	private int m_MashFrame;
-	/// <summary>上一次记录的身体状态与动画路径。</summary>
-	private string m_LastPath = "";
-	/// <summary>命令行是否包含引擎自动退出参数。</summary>
-	private bool m_HasQuitAfter;
-	/// <summary>按时间记录的身体状态与动画路径。</summary>
-	private readonly List<(double Time, string Path)> m_Observed = new();
+	private int m_MaxPopCount; // 场上飘字节点的可见峰值数量。
+	private bool m_Active; // 是否由命令行启用烟测。
+	private double m_WaitTime; // 等待英雄出现的累计时间（秒）。
+	private double m_Time; // 烟测当前时间（秒）。
+	private int m_NextStep; // 下一条输入计划索引。
+	private bool m_Mashing; // 是否正在交替注入攻击输入。
+	private double m_MashUntil; // 攻击连打结束时间（秒）。
+	private int m_MashFrame; // 攻击连打帧计数。
+	private string m_LastPath = ""; // 上一次记录的身体状态与动画路径。
+	private bool m_HasQuitAfter; // 命令行是否包含引擎自动退出参数。
+	private readonly List<(double Time, string Path)> m_Observed = new(); // 按时间记录身体状态与动画路径。
 
-	/// <summary>walk/run 期间身体层出现过的帧号（回归：动画库漏 m_Body:frame 轨道时身体冻结）</summary>
-	private readonly HashSet<int> m_WalkFrames = new();
-	/// <summary>run 期间采样到的身体帧号。</summary>
-	private readonly HashSet<int> m_RunFrames = new();
+	private readonly HashSet<int> m_WalkFrames = new(); // walk 期间采样到的身体帧号。
+	private readonly HashSet<int> m_RunFrames = new(); // run 期间采样到的身体帧号。
 
-	/// <summary>场景：hero = 英雄控制器 + M4 命中（默认，猴子 AI 冻结为沙包）；ai = 怪物 AI（M5）</summary>
-	private bool m_AiMode;
+	private bool m_AiMode; // 是否运行怪物 AI 烟测场景。
 
-	/// <summary>AI 场景（ai 模式下找到英雄与猴子后创建）</summary>
-	private MonsterAiSmokeScenario m_AiScenario;
+	private MonsterAiSmokeScenario m_AiScenario; // ai 模式下驱动英雄与猴子的场景。
 
-	/// <summary>AI 烟测场景的开始时间。</summary>
-	private double m_AiStartTime;
+	private double m_AiStartTime; // AI 烟测场景的开始时间。
 
 	/// <summary>读取烟测参数并设置物理处理优先级。</summary>
 	public override void _Ready()
@@ -207,9 +175,9 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
-	/// <summary>按时间计划注入测试输入。</summary>
-	private void DriveInput()
+	private void DriveInput() // 按时间计划注入测试输入。
 	{
+		// 先维持连打期间的交替按键，再执行所有已到时刻的计划动作。
 		if (m_Mashing)
 		{
 			m_MashFrame++;
@@ -257,20 +225,17 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
-	/// <summary>
-	/// 用一个 1 点真实伤害、无击退的攻击包打英雄一次（经 ReceiveHit → DamageCalculator 完整链路），
-	/// 用完立即归还引用池。
-	/// </summary>
-	private void HurtHeroOnce()
+	private void HurtHeroOnce() // 经真实战斗结算链路对英雄造成一次 1 点伤害。
 	{
+		// 临时攻击数据只在结算期间持有，并在调用后归还对象池。
 		AttackData attack = AttackData.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0, SoundId.None);
 		m_Hero.ReceiveHit(attack, 0);
 		ReferencePool.Release(attack);
 	}
 
-	/// <summary>ai 模式：等猴子出现后交给 MonsterAiSmokeScenario 驱动与断言。</summary>
-	private void DriveAiScenario()
+	private void DriveAiScenario() // 等待测试实体并推进 AI 场景断言。
 	{
+		// 场景只在英雄与猴子都准备好后创建，避免测试时钟先行。
 		if (m_AiScenario == null)
 		{
 			if (m_Monster == null)
@@ -289,6 +254,7 @@ public partial class SmokeTestDriver : Node
 		}
 
 		double t = m_Time - m_AiStartTime;
+		// 每帧驱动场景一次；未结束时等待下一帧，结束时统一采集断言并关闭。
 		m_AiScenario.Update(t);
 		if (!m_AiScenario.IsDone)
 		{
@@ -308,8 +274,7 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
-	/// <summary>记录当前英雄身体状态和动画路径的变化。</summary>
-	private void Sample()
+	private void Sample() // 记录身体状态和动画路径变化。
 	{
 		string path = ObservePath(m_Hero.BodyStateName, m_Hero.CurrentAnim);
 		if (path.Length == 0 || path == m_LastPath)
@@ -338,7 +303,7 @@ public partial class SmokeTestDriver : Node
 	/// 身体帧采样：walk/run 状态下记录 m_Body 的帧号。动画库若漏了 m_Body:frame 轨道，
 	/// 帧会停在进入前的一个值上不动——这里用"出现过的不同帧数"抓这类回归。
 	/// </summary>
-	private void TrackBodyFrames()
+	private void TrackBodyFrames() // 收集 walk/run 期间身体动画的帧变化证据。
 	{
 		if (m_Hero?.Body is not Sprite2D body)
 		{
@@ -355,17 +320,16 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
-	/// <summary>英雄身体事实快照，用于日志与调试。</summary>
-	private string Facts()
+	private string Facts() // 生成英雄身体状态快照供烟测日志定位问题。
 	{
 		return $"move={m_Hero.Input.MoveAxis} run={m_Hero.Input.Running} jump={m_Hero.JumpCount} "
 			+ $"seg={m_Hero.AttackSegment} combo={m_Hero.ComboIndex} dead={m_Hero.Dead} "
 			+ $"floor={m_Hero.IsOnFloor()} vy={m_Hero.Velocity.Y:F0}";
 	}
 
-	/// <summary>执行英雄烟测的完整断言并结束驱动。</summary>
-	private void Finish()
+	private void Finish() // 汇总状态顺序、动画、移动帧和战斗断言并结束驱动。
 	{
+		// 汇总必须出现的观测点与先后约束。
 		List<string> failures = new();
 		foreach (string required in Required)
 		{
@@ -385,6 +349,7 @@ public partial class SmokeTestDriver : Node
 			}
 		}
 
+		// 补充检查动画层、移动帧和实际命中链路的回归条件。
 		CheckEffectLayer(failures);
 		CheckLocomotionFrames(failures);
 		CheckAttackFinishTiming(failures);
@@ -400,12 +365,7 @@ public partial class SmokeTestDriver : Node
 		Fail(string.Join("；", failures));
 	}
 
-	/// <summary>
-	/// 特效层检查：待机时必须是"空白"状态（动画 empty、帧 0、scale 1）。
-	/// 抓的是"动画缺某属性轨道、切换后残留上一个动画写入的值"这一类问题
-	/// （旧库漏轨道时实测 scale 被写成 1e-05，棍气不可见；现在靠轨道完备性校验 + 此处兜底）。
-	/// </summary>
-	private void CheckEffectLayer(List<string> failures)
+	private void CheckEffectLayer(List<string> failures) // 校验待机特效层已回到空白基准状态。
 	{
 		if (m_Hero.GetNodeOrNull<Node2D>("m_EffectRoot/m_Effect") is not AnimatedSprite2D effect)
 		{
@@ -429,11 +389,7 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
-	/// <summary>
-	/// 走/跑身体帧检查：run 期间至少出现 3 个不同帧（4 帧循环），walk 至少出现 1 个有效帧。
-	/// 直接针对"行走、奔跑动画身体冻结"这一类动画库缺轨道的回归。
-	/// </summary>
-	private void CheckLocomotionFrames(List<string> failures)
+	private void CheckLocomotionFrames(List<string> failures) // 校验走跑动画持续改变身体帧。
 	{
 		if (m_RunFrames.Count < 3)
 		{
@@ -446,11 +402,7 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
-	/// <summary>
-	/// 连段切换时机检查：段与段之间必须间隔约一个攻击动画长度（悟空 attack_*.tres 长 0.35s，
-	/// 留 0.05s 容差）。抓"没等动画播完就提前切段"这一类回归（收招统一走 animation_finished）。
-	/// </summary>
-	private void CheckAttackFinishTiming(List<string> failures)
+	private void CheckAttackFinishTiming(List<string> failures) // 校验连段切换等待当前攻击动画结束。
 	{
 		for (int seg = 1; seg < 4; seg++)
 		{
@@ -469,8 +421,7 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
-	/// <summary>沙包猴子在英雄之后异步生成：找到英雄后再逐帧找，直到出现为止。</summary>
-	private void FindMonster()
+	private void FindMonster() // 找到场景猴子并按烟测模式调整其行为。
 	{
 		if (m_Monster != null)
 		{
@@ -498,8 +449,7 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
-	/// <summary>命中事件观测：只记猴子受击（事件参数用完即止，不持有）。</summary>
-	private void OnDamageDealt(object sender, GameEventArgs args)
+	private void OnDamageDealt(object sender, GameEventArgs args) // 只记录烟测目标猴子的命中事件。
 	{
 		if (args is DamageDealtEventArgs e && m_Monster != null && e.TargetEntityId == m_Monster.Id)
 		{
@@ -509,8 +459,7 @@ public partial class SmokeTestDriver : Node
 		}
 	}
 
-	/// <summary>飘字实例计数：场上可见的 DamagePop 数（验证走了池并且挂进了场景）。</summary>
-	private void TrackPops()
+	private void TrackPops() // 统计当前场景可见飘字数量峰值。
 	{
 		int count = 0;
 		// FindChildren 的类型过滤只认引擎原生类名（C# 脚本类名不匹配），按 Node2D 取再判脚本类型
@@ -525,13 +474,7 @@ public partial class SmokeTestDriver : Node
 		m_MaxPopCount = Mathf.Max(m_MaxPopCount, count);
 	}
 
-	/// <summary>
-	/// M4 完成标准：打猴子掉血飘字，伤害与手算一致。
-	/// 手算（Tests/BattleTests M4Case_Wukong1_HitsMonkey5_PhysicsNoCrit 同源）：悟空 1 级攻 8、猴子 5 级物防 50、
-	/// 双方暴击/闪避为 0 → 每段威力 8×倍率 → ×0.9（等级压制封顶 2 级）取整 → ×0.667 取整。
-	/// 倍率区间 [0.9,1.4] 覆盖四段：威力 7.2~11.2 → 6~10 → 4~6。所以每次命中必须落在 [4,6]、不暴击不闪避。
-	/// </summary>
-	private void CheckCombat(List<string> failures)
+	private void CheckCombat(List<string> failures) // 校验猴子受击、伤害结果与飘字创建。
 	{
 		if (m_Monster == null)
 		{
@@ -546,6 +489,7 @@ public partial class SmokeTestDriver : Node
 		}
 
 		int total = 0;
+		// 按真实伤害事件累计并检查每次命中结果。
 		foreach ((int damage, bool crit, bool miss) in m_MonsterHits)
 		{
 			total += damage;
@@ -559,6 +503,7 @@ public partial class SmokeTestDriver : Node
 			}
 		}
 
+		// 事件累计伤害应与实体血量一致，再检查命中后是否确实创建池化飘字。
 		int expectedHp = Mathf.Max(0, m_Monster.MaxHp - total);
 		if (m_Monster.Hp != expectedHp && !m_Monster.Dead)
 		{
@@ -573,9 +518,7 @@ public partial class SmokeTestDriver : Node
 		GD.Print($"SMOKE: 猴子共受击 {m_MonsterHits.Count} 次，累计伤害 {total}，HP {m_Monster.Hp}/{m_Monster.MaxHp}，同屏飘字峰值 {m_MaxPopCount}");
 	}
 
-	/// <summary>记录烟测失败原因并停止驱动。</summary>
-	/// <param name="reason">失败原因。</param>
-	private void Fail(string reason)
+	private void Fail(string reason) // 输出失败原因及已观察序列，然后停止驱动。
 	{
 		GD.PrintErr($"SMOKE FAIL：{reason}");
 		foreach ((double time, string path) in m_Observed)
@@ -586,14 +529,9 @@ public partial class SmokeTestDriver : Node
 		StopDriving(true);
 	}
 
-	/// <summary>
-	/// 结束驱动。失败必须自己退出（带非零码，供自动化判断）；通过则优先交给引擎退出：
-	/// 引擎自己的退出路径（`--quit-after`）干净，而从节点回调里 Quit 会踩到框架关闭期的
-	/// 既有 bug（见类注释），偶发 0xC0000005 把退出码冲掉。没带 `--quit-after` 时才自己退，
-	/// 免得进程悬着。
-	/// </summary>
-	private void StopDriving(bool failed)
+	private void StopDriving(bool failed) // 退订事件并按退出参数安排引擎关闭。
 	{
+		// 先停止帧驱动并释放事件订阅，避免退出等待期间继续触发烟测逻辑。
 		SetPhysicsProcess(false);
 		if (m_Hero != null)
 		{
@@ -609,18 +547,12 @@ public partial class SmokeTestDriver : Node
 		timer.Timeout += () => GetTree().Quit(failed ? 1 : 0);
 	}
 
-	/// <summary>查找观测序列中路径首次出现的位置。</summary>
-	/// <param name="path">身体状态与动画路径。</param>
-	/// <returns>首次位置；不存在时返回 -1。</returns>
-	private int FirstIndex(string path)
+	private int FirstIndex(string path) // 返回观测序列中路径首次出现的位置，不存在时为 -1。
 	{
 		return m_Observed.FindIndex(o => o.Path == path);
 	}
 
-	/// <summary>查找观测序列中路径最后出现的位置。</summary>
-	/// <param name="path">身体状态与动画路径。</param>
-	/// <returns>最后位置；不存在时返回 -1。</returns>
-	private int LastIndex(string path)
+	private int LastIndex(string path) // 返回观测序列中路径最后出现的位置，不存在时为 -1。
 	{
 		return m_Observed.FindLastIndex(o => o.Path == path);
 	}

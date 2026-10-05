@@ -36,14 +36,13 @@ namespace GameLogic.Battle
 	/// </summary>
 	public static class DamageCalculator
 	{
-		/// <summary>比率保留精度（旧项目 snapped(x, 0.001)）</summary>
-		private const double RatioStep = 0.001;
+		private const double RatioStep = 0.001; // 比率按旧项目规则保留三位小数。
 
 		/// <summary>
 		/// 取整容差：表里的系数是 float（0.05f 转 double 为 0.0500000007…），100×(1−5×0.05) 会算成
 		/// 74.9999996 被截成 74；旧项目用 double 字面量不存在该误差。取整前加一个远小于 1 点伤害的容差对齐。
 		/// </summary>
-		private const double TruncateEpsilon = 1e-6;
+		private const double TruncateEpsilon = 1e-6; // 抵消 float 配置转 double 后在取整边界产生的微小误差。
 
 		/// <summary>
 		/// 结算一次命中。
@@ -145,7 +144,7 @@ namespace GameLogic.Battle
 		/// <summary>向零取整（旧 int()），带 float 系数容差（见 <see cref="TruncateEpsilon"/>）。</summary>
 		/// <param name="value">待取整数值。</param>
 		/// <returns>向零截断后的值。</returns>
-		private static double Truncate(double value)
+		private static double Truncate(double value) // 带浮点容差地向零取整，保持旧伤害公式顺序。
 		{
 			return value >= 0 ? Math.Floor(value + TruncateEpsilon) : Math.Ceiling(value - TruncateEpsilon);
 		}
@@ -155,7 +154,7 @@ namespace GameLogic.Battle
 		/// <param name="x">非负净属性值。</param>
 		/// <param name="k">非负曲线常数。</param>
 		/// <returns>按 <see cref="RatioStep"/> 取整的比率。</returns>
-		private static double Ratio(double x, double k)
+		private static double Ratio(double x, double k) // 计算 x/(x+k) 并按统一步长取整。
 		{
 			double denominator = x + k;
 			if (denominator <= 0)
@@ -163,6 +162,7 @@ namespace GameLogic.Battle
 				return 0;
 			}
 
+			// 属性与曲线常数均非负，按旧项目精度对最终比率取整。
 			return Mathf.Snapped(x / denominator, RatioStep);
 		}
 	}

@@ -16,8 +16,7 @@ namespace GameLogic.Entity.Heroes.Body
 	/// </summary>
 	public abstract class HeroBodyState : BodyState<IHeroBody>
 	{
-		/// <summary>第二段跳的跳跃次数（≥ 它播 jump_2 动画）</summary>
-		private const int SecondJumpCount = 2;
+		private const int SecondJumpCount = 2; // 双跳触发所需的跳跃计数。
 
 		/// <summary>英雄身体状态类名使用的统一前缀。</summary>
 		protected override string NamePrefix => "Hero";

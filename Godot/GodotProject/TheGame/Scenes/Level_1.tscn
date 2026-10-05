@@ -1,0 +1,156 @@
+[gd_scene format=3 uid="uid://bvkf8qofj10yc"]
+
+[ext_resource type="Script" uid="uid://d2x72rm6l5oeq" path="res://TheGame/GameScripts/Level/LevelController.cs" id="1_controller"]
+[ext_resource type="Script" uid="uid://b3qiwmv5fe6lj" path="res://TheGame/GameScripts/Level/LevelSpawnPoint.cs" id="2_spawn_point"]
+[ext_resource type="Texture2D" uid="uid://cpk7ttkaom0hn" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_bg_end.png" id="3_bg_end"]
+[ext_resource type="Texture2D" uid="uid://dsa76w2xxiq0b" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_front.png" id="4_front"]
+[ext_resource type="Texture2D" uid="uid://bo4uw8k2ajk8o" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_floor.png" id="5_floor"]
+[ext_resource type="Script" uid="uid://bae8h5wgsixek" path="res://TheGame/GameScripts/Level/LevelStageTrigger.cs" id="6_stage_trigger"]
+
+[sub_resource type="RectangleShape2D" id="GroundShape"]
+size = Vector2(4812, 60)
+
+[sub_resource type="RectangleShape2D" id="WorldWallShape"]
+size = Vector2(80, 700)
+
+[sub_resource type="RectangleShape2D" id="StageTriggerShape"]
+size = Vector2(80, 240)
+
+[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPointsRoot", "m_StageTriggersRoot", "m_RuntimeActors")]
+script = ExtResource("1_controller")
+m_SpawnPointsRoot = NodePath("World/SpawnPoints")
+m_StageTriggersRoot = NodePath("World/StageTriggers")
+m_RuntimeActors = NodePath("RuntimeActors")
+
+[node name="World" type="Node2D" parent="." unique_id=219105317]
+
+[node name="Background" type="Node2D" parent="World" unique_id=415239467]
+z_index = -20
+
+[node name="End" type="Sprite2D" parent="World/Background" unique_id=1691568439]
+position = Vector2(0, -100)
+texture = ExtResource("3_bg_end")
+centered = false
+
+[node name="Front" type="Sprite2D" parent="World/Background" unique_id=902719802]
+modulate = Color(1, 1, 1, 0.92)
+position = Vector2(0, -43)
+texture = ExtResource("4_front")
+centered = false
+
+[node name="Geometry" type="Node2D" parent="World" unique_id=930087367]
+
+[node name="FloorSprite" type="Sprite2D" parent="World/Geometry" unique_id=1650988525]
+z_index = -5
+position = Vector2(0, 340)
+texture = ExtResource("5_floor")
+centered = false
+
+[node name="Ground" type="StaticBody2D" parent="World/Geometry" unique_id=899089981]
+position = Vector2(2406, 370)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Geometry/Ground" unique_id=1832535366]
+position = Vector2(0, 79)
+shape = SubResource("GroundShape")
+
+[node name="LeftWall" type="StaticBody2D" parent="World/Geometry" unique_id=789314823]
+position = Vector2(-40, 295)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Geometry/LeftWall" unique_id=226406659]
+shape = SubResource("WorldWallShape")
+
+[node name="RightWall" type="StaticBody2D" parent="World/Geometry" unique_id=1053025676]
+position = Vector2(4852, 295)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Geometry/RightWall" unique_id=1611260396]
+shape = SubResource("WorldWallShape")
+
+[node name="SpawnPoints" type="Node2D" parent="World" unique_id=1593038850]
+
+[node name="PlayerStart" type="Marker2D" parent="World/SpawnPoints" unique_id=808562606]
+position = Vector2(300, 300)
+script = ExtResource("2_spawn_point")
+SpawnPointId = "player_start"
+
+[node name="Stage1A" type="Marker2D" parent="World/SpawnPoints" unique_id=1236502135]
+position = Vector2(500, 300)
+gizmo_extents = 0.0
+script = ExtResource("2_spawn_point")
+SpawnPointId = "stage_1_a"
+StageOrder = 1
+
+[node name="Stage1B" type="Marker2D" parent="World/SpawnPoints" unique_id=1797577870]
+position = Vector2(700, 300)
+gizmo_extents = 0.0
+script = ExtResource("2_spawn_point")
+SpawnPointId = "stage_1_b"
+StageOrder = 1
+
+[node name="Stage2A" type="Marker2D" parent="World/SpawnPoints" unique_id=573857023]
+position = Vector2(2000, 300)
+script = ExtResource("2_spawn_point")
+SpawnPointId = "stage_2_a"
+StageOrder = 2
+
+[node name="Stage3A" type="Marker2D" parent="World/SpawnPoints" unique_id=1466123123]
+position = Vector2(3000, 300)
+script = ExtResource("2_spawn_point")
+SpawnPointId = "stage_3_a"
+StageOrder = 3
+
+[node name="Stage4A" type="Marker2D" parent="World/SpawnPoints" unique_id=9347245]
+position = Vector2(4500, 300)
+script = ExtResource("2_spawn_point")
+SpawnPointId = "stage_4_a"
+StageOrder = 4
+
+[node name="StageTriggers" type="Node2D" parent="World" unique_id=655583775]
+
+[node name="Stage2Trigger" type="Area2D" parent="World/StageTriggers" unique_id=89786776]
+position = Vector2(1600, 300)
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("6_stage_trigger")
+TriggerId = "stage_2_trigger"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageTriggers/Stage2Trigger" unique_id=748628290]
+shape = SubResource("StageTriggerShape")
+
+[node name="Stage3Trigger" type="Area2D" parent="World/StageTriggers" unique_id=904506486]
+position = Vector2(2700, 300)
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("6_stage_trigger")
+TriggerId = "stage_3_trigger"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageTriggers/Stage3Trigger" unique_id=1286202207]
+shape = SubResource("StageTriggerShape")
+
+[node name="Stage4Trigger" type="Area2D" parent="World/StageTriggers" unique_id=1739625937]
+position = Vector2(4000, 300)
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("6_stage_trigger")
+TriggerId = "stage_4_trigger"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageTriggers/Stage4Trigger" unique_id=1642260287]
+shape = SubResource("StageTriggerShape")
+
+[node name="Exit" type="Node2D" parent="World" unique_id=260385459]
+position = Vector2(4200, 300)
+
+[node name="RuntimeActors" type="Node2D" parent="." unique_id=32167670]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=958629535]
+position = Vector2(470, 295)
+limit_left = 0
+limit_top = 0
+limit_right = 4812
+limit_bottom = 590
+position_smoothing_enabled = true

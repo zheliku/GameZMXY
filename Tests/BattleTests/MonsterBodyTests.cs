@@ -15,12 +15,10 @@ namespace GameLogic.Battle.Tests
 	/// </summary>
 	public class MonsterBodyTests
 	{
-		/// <summary>单个物理帧的时长。</summary>
-		private const float Dt = 1f / 60f;
+		private const float Dt = 1f / 60f; // 单个物理帧的时长。
 
-		/// <summary>创建用于状态机测试的怪物参数。</summary>
 		private static MonsterBodyParams Params(float attackTime = 0.1f, float recovery = 0.3f,
-			float hurtTime = 0.2f, float deathTime = 0.5f)
+			float hurtTime = 0.2f, float deathTime = 0.5f) // 创建用于状态机测试的怪物参数。
 		{
 			return new MonsterBodyParams
 			{
@@ -177,8 +175,7 @@ namespace GameLogic.Battle.Tests
 
 		// ---------------------------------------------------------------- 假宿主与驱动
 
-		/// <summary>为怪物身体状态机提供可控的测试宿主。</summary>
-		private sealed class FakeMonster : FakeActorBody, IMonsterBody
+		private sealed class FakeMonster : FakeActorBody, IMonsterBody // 为怪物身体状态机提供可控的测试宿主。
 		{
 			/// <summary>初始化怪物身体状态参数。</summary>
 			public FakeMonster(MonsterBodyParams p)
@@ -207,15 +204,11 @@ namespace GameLogic.Battle.Tests
 			public void RequestRecycle() => RecycleCount++;
 		}
 
-		/// <summary>用真实框架状态机驱动怪物身体测试。</summary>
-		private sealed class MonsterHarness : IDisposable
+		private sealed class MonsterHarness : IDisposable // 用真实框架状态机驱动怪物身体测试。
 		{
-			/// <summary>驱动测试状态机的管理器。</summary>
-			private readonly FsmManager m_Manager = new FsmManager();
-			/// <summary>当前测试使用的怪物身体状态机。</summary>
-			private readonly IFsm<IMonsterBody> m_Fsm;
-			/// <summary>记录驱动器是否已关闭。</summary>
-			private bool m_Disposed;
+			private readonly FsmManager m_Manager = new FsmManager(); // 驱动测试状态机的管理器。
+			private readonly IFsm<IMonsterBody> m_Fsm; // 当前测试使用的怪物身体状态机。
+			private bool m_Disposed; // 记录驱动器是否已关闭。
 
 			/// <summary>创建假宿主并启动怪物身体状态机。</summary>
 			public MonsterHarness(MonsterBodyParams p)
@@ -243,12 +236,12 @@ namespace GameLogic.Battle.Tests
 				}
 			}
 
-			/// <summary>推进直到条件满足（每帧检查状态），返回消耗的帧数；超过 600 帧返回 -1。</summary>
 			/// <summary>逐帧推进至条件成立，最多检查 600 帧。</summary>
 			/// <param name="until">返回是否停止推进的状态条件。</param>
 			/// <returns>满足条件前推进的帧数；超时返回 -1。</returns>
 			public int StepUntil(Func<string, bool> until)
 			{
+				// 每帧先检查状态，再推进一帧，避免把满足条件的帧多算一次。
 				for (int i = 0; i < 600; i++)
 				{
 					if (until(State))

@@ -17,10 +17,8 @@ namespace GameLogic.Entity.Monsters.AI
 		/// <summary>空攻击集（只会走动、不会出招）</summary>
 		public static readonly MonsterAttackBook Empty = new([]);
 
-		/// <summary>按攻击下标保存的招式规格。</summary>
-		private readonly MonsterAttackSpec[] m_Specs;
-		/// <summary>每个招式剩余的冷却秒数。</summary>
-		private readonly float[] m_Cooldowns;
+		private readonly MonsterAttackSpec[] m_Specs; // 按攻击下标保存的招式规格。
+		private readonly float[] m_Cooldowns; // 每个招式剩余的冷却秒数。
 
 		/// <summary>创建攻击集并复制招式规格。</summary>
 		/// <param name="specs">招式规格列表。</param>
@@ -124,9 +122,9 @@ namespace GameLogic.Entity.Monsters.AI
 			return PickWeighted(target, dir, random, 0);
 		}
 
-		/// <summary>从指定优先级的可用招式中按权重选择。</summary>
-		private int PickWeighted(AiBox target, int dir, float roll, int priority)
+		private int PickWeighted(AiBox target, int dir, float roll, int priority) // 从指定优先级的可用招式中按权重选择。
 		{
+			// 先计算候选总权重，避免没有候选时消费随机值。
 			int total = 0;
 			for (int i = 0; i < m_Specs.Length; i++)
 			{
@@ -140,6 +138,7 @@ namespace GameLogic.Entity.Monsters.AI
 				return -1;
 			}
 
+			// 按随机落点扣减权重，落入的最后一个候选即为选择结果。
 			float pick = roll * total;
 			int last = -1;
 			for (int i = 0; i < m_Specs.Length; i++)
@@ -160,9 +159,9 @@ namespace GameLogic.Entity.Monsters.AI
 			return last;   // roll 恰为 1 的浮点边界落到最后一个候选
 		}
 
-		/// <summary>确认存在候选后取一次随机值并执行加权选择。</summary>
-		private int PickWeighted(AiBox target, int dir, Func<float> random, int priority)
+		private int PickWeighted(AiBox target, int dir, Func<float> random, int priority) // 确认有候选后取一次随机值并执行加权选择。
 		{
+			// 先确认候选存在，保证空候选不调用随机源。
 			for (int i = 0; i < m_Specs.Length; i++)
 			{
 				if (m_Specs[i].Priority == priority && IsUsable(i, target, dir))
@@ -174,28 +173,24 @@ namespace GameLogic.Entity.Monsters.AI
 			return -1;
 		}
 
-		/// <summary>判断招式是否有权重、冷却结束且当前可命中。</summary>
-		private bool IsUsable(int i, AiBox target, int dir)
+		private bool IsUsable(int i, AiBox target, int dir) // 判断招式是否有权重、冷却结束且当前可命中。
 		{
 			return m_Specs[i].Weight > 0 && m_Cooldowns[i] <= 0f && HasReachOrRange(m_Specs[i]) &&
 			       InReach(m_Specs[i], target, dir);
 		}
 
-		/// <summary>判断招式是否配置了判定盒或远程范围。</summary>
-		private static bool HasReachOrRange(MonsterAttackSpec spec)
+		private static bool HasReachOrRange(MonsterAttackSpec spec) // 判断招式是否配置了判定盒或远程范围。
 		{
 			return !spec.Reach.IsEmpty || spec.Range.Max > 0f;
 		}
 
-		/// <summary>判断目标是否同时满足水平重叠和近战高度条件。</summary>
-		private static bool InReach(MonsterAttackSpec spec, AiBox target, int dir)
+		private static bool InReach(MonsterAttackSpec spec, AiBox target, int dir) // 判断目标是否同时满足水平重叠和近战高度条件。
 		{
 			return !target.IsEmpty && GapX(spec, target, dir) <= -ReachMargin &&
 			       (spec.Reach.IsEmpty || spec.Reach.Facing(dir).GapY(target) < 0f);
 		}
 
-		/// <summary>近战盒间隙；远程招测量到水平距离区间的距离。</summary>
-		private static float GapX(MonsterAttackSpec spec, AiBox target, int dir)
+		private static float GapX(MonsterAttackSpec spec, AiBox target, int dir) // 计算近战盒间隙或远程范围距离。
 		{
 			if (!spec.Reach.IsEmpty)
 			{
@@ -207,14 +202,12 @@ namespace GameLogic.Entity.Monsters.AI
 				distance > spec.Range.Max ? distance - spec.Range.Max : float.NegativeInfinity;
 		}
 
-		/// <summary>按外部攻击下标查找规格数组位置。</summary>
-		private int Find(int index)
+		private int Find(int index) // 按外部攻击下标查找规格数组位置。
 		{
 			return Array.FindIndex(m_Specs, spec => spec.Index == index);
 		}
 
-		/// <summary>按区间配置采样冷却；定值区间不消费随机源。</summary>
-		private static float Roll((float Min, float Max) range, Func<float> random)
+		private static float Roll((float Min, float Max) range, Func<float> random) // 按区间配置采样冷却，定值区间不消费随机源。
 		{
 			return MonsterAttackSpec.Roll(range, range.Max > range.Min ? random() : 0f);
 		}

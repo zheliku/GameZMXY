@@ -35,23 +35,15 @@ namespace GameLogic.Entity.Heroes
 		/// <summary>输入动作名：普攻（J）</summary>
 		public static readonly StringName ActionAttack = "attack";
 
-		/// <summary>输入动作名：左移（A）</summary>
-		private static readonly StringName ActionMoveLeft = "move_left";
+		private static readonly StringName ActionMoveLeft = "move_left"; // 输入动作名：左移。
 
-		/// <summary>输入动作名：右移（D）</summary>
-		private static readonly StringName ActionMoveRight = "move_right";
+		private static readonly StringName ActionMoveRight = "move_right"; // 输入动作名：右移。
 
 		// ---- 场景节点引用（英雄专属层；怪物没有这些层，所以不放 ActorEntity）----
 
-		/// <summary>武器层（场景子节点 m_Weapon，可为空）：与身体层同网格，帧由动画轨道驱动（装备外观）</summary>
-		[Export] private Sprite2D m_Weapon;
+		[Export] private Sprite2D m_Weapon; // 武器表现层，与身体层同网格并由动画轨道驱动。
 
-		/// <summary>
-		/// 攻击特效层容器（场景子节点 m_EffectRoot，可为空）：其子节点 m_Effect 是特效的 AnimatedSprite2D，
-		/// 属性由动画轨道驱动；容器负责朝向镜像（scale.x = ±1，连带镜像轨道写入的 offset）——
-		/// 同旧项目英雄 Action/SpecialEffect。将来怪物需要打击特效走池化特效实体（红线 6），不在身上挂层。
-		/// </summary>
-		[Export] private Node2D m_EffectRoot;
+		[Export] private Node2D m_EffectRoot; // 攻击特效层容器，由动画轨道驱动并随朝向镜像。
 
 		/// <summary>武器层</summary>
 		public Sprite2D Weapon => m_Weapon;
@@ -105,10 +97,8 @@ namespace GameLogic.Entity.Heroes
 		/// <summary>当前身体状态名（调试/冒烟观测：Ground / Air / Attack / Hurt / Death）</summary>
 		public string BodyStateName => BodyFsm.CurrentName(m_BodyFsm);
 
-		/// <summary>从英雄配置和动画库构建的身体参数快照。</summary>
-		private HeroBodyParams m_BodyParams;
-		/// <summary>按物理帧推进的英雄身体状态机。</summary>
-		private IFsm<IHeroBody> m_BodyFsm;
+		private HeroBodyParams m_BodyParams; // 从英雄配置和动画库构建的身体参数快照。
+		private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
 
 		/// <summary>读取英雄配置、招式和输入参数，并初始化实体状态。</summary>
 		public override void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance,
@@ -247,9 +237,9 @@ namespace GameLogic.Entity.Heroes
 
 		// ---- 身体状态机 ----
 
-		/// <summary>每次显示重建身体状态机（池复用 = 全新状态，从 Ground 起步）。</summary>
-		private void CreateBody()
+		private void CreateBody() // 每次显示重建身体状态机，从 Ground 状态起步。
 		{
+			// 已有配置或状态机时不重复创建。
 			if (Config == null || m_BodyFsm != null)
 			{
 				return;
@@ -261,8 +251,7 @@ namespace GameLogic.Entity.Heroes
 			m_BodyFsm.Start<HeroGroundState>();
 		}
 
-		/// <summary>销毁身体状态机（关停阶段框架统一销毁，这里只丢引用）。</summary>
-		private void DestroyBody(bool isShutdown)
+		private void DestroyBody(bool isShutdown) // 销毁身体状态机，关停阶段仅清除本地引用。
 		{
 			if (m_BodyFsm != null && !isShutdown && !m_BodyFsm.IsDestroyed)
 			{
@@ -272,13 +261,9 @@ namespace GameLogic.Entity.Heroes
 			m_BodyFsm = null;
 		}
 
-		/// <summary>
-		/// 配置快照：表数值 + 动作时长（= 动画长度，OnInit 读动画资源——动画纯数据、代码唯一时钟）
-		/// + 普攻段动画名（AttackConfig.Animation）。动画名只来自全项目标准名（HeroAnims）、
-		/// 角色覆写（IdleFlavorAnim）与表——基类不出现角色专属动画名。
-		/// </summary>
-		private HeroBodyParams BuildBodyParams()
+		private HeroBodyParams BuildBodyParams() // 构建身体状态机所需的配置、动画名和时长快照。
 		{
+			// 先读取每段普攻动画及其时长，缺失动画直接记录配置错误。
 			string[] attackAnims = new string[OwnAttacks.Length];
 			float[] attackTimes = new float[OwnAttacks.Length];
 			for (int i = 0; i < OwnAttacks.Length; i++)
@@ -292,6 +277,7 @@ namespace GameLogic.Entity.Heroes
 				}
 			}
 
+			// 汇总移动、跳跃、受击和待机动作参数，形成不可变快照。
 			string emote = IdleFlavorAnim;
 			return new HeroBodyParams
 			{

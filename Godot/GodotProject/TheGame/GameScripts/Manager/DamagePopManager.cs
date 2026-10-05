@@ -19,11 +19,9 @@ namespace GameLogic.Manager
 		/// <summary>飘字场景（池名 = 场景路径，与 NodePoolConfigRes 条目一致）</summary>
 		public static readonly string DamagePopScene = "res://TheGame/UIs/DamagePop.tscn";
 
-		/// <summary>飘字父节点（世界坐标系的场景节点）</summary>
-		private Node m_Layer;
+		private Node m_Layer; // 飘字父节点，必须位于世界坐标系。
 
-		/// <summary>是否已订阅伤害事件。</summary>
-		private bool m_Subscribed;
+		private bool m_Subscribed; // 是否已订阅伤害事件。
 
 		/// <summary>开始监听命中事件。</summary>
 		/// <summary>设置飘字挂载层并订阅伤害事件。</summary>
@@ -71,20 +69,21 @@ namespace GameLogic.Manager
 			base.OnRelease();
 		}
 
-		/// <summary>事件回调：参数用完即止，不持有（根规范 §5.2）。</summary>
-		private void OnDamageDealt(object sender, GameEventArgs args)
+		private void OnDamageDealt(object sender, GameEventArgs args) // 校验伤害事件并显示对应的池化飘字。
 		{
+			// 忽略类型不符或挂载层失效的事件。
 			if (args is not DamageDealtEventArgs e || m_Layer == null || !IsInstanceValid(m_Layer))
 			{
 				return;
 			}
 
-			// 未闪避但伤害为 0（被减伤截断）不飘字，同旧项目 reduce_hp 的 value > 0 判断
+			// 未闪避但伤害为 0（被减伤截断）不飘字，同旧项目 reduce_hp 的 value > 0 判断。
 			if (!e.IsMiss && e.Damage <= 0)
 			{
 				return;
 			}
 
+			// 取得池化实例后按闪避或伤害结果选择显示内容。
 			UI.DamagePop pop = NodePool.Instance.Get<UI.DamagePop>(DamagePopScene, m_Layer);
 			if (pop == null)
 			{

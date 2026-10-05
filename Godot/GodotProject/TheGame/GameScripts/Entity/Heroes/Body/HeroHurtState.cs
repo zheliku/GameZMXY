@@ -10,8 +10,7 @@ namespace GameLogic.Entity.Heroes.Body
 	/// </summary>
 	public sealed class HeroHurtState : HeroBodyState
 	{
-		/// <summary>硬直剩余秒</summary>
-		private float m_Left;
+		private float m_Left; // 受击硬直剩余时长（秒）。
 
 		/// <summary>连续受击由本状态自己处理（见 Tick）</summary>
 		protected override bool HurtInterrupts => false;
@@ -41,9 +40,9 @@ namespace GameLogic.Entity.Heroes.Body
 			ApplyGravity(body, dt);
 		}
 
-		/// <summary>受击生效：击退速度 + 计时重置 + 从头播 hurt 动画 + 受击音（取击退即消费）。</summary>
-		private void ApplyHurt(IHeroBody body)
+		private void ApplyHurt(IHeroBody body) // 消费待生效击退并重置 hurt 动画计时。
 		{
+			// 连续受击重置同一状态，不排队保存旧击退请求。
 			body.Velocity = body.TakePendingHurt();
 			m_Left = body.Params.HurtTime;
 			body.RestartAnim(HeroAnims.Hurt);

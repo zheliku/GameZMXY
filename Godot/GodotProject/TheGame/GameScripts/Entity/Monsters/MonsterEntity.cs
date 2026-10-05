@@ -36,8 +36,7 @@ namespace GameLogic.Entity.Monsters
 	{
 		#region 场景与配置
 
-		/// <summary>索敌区（场景子节点 m_Detector；可为空 = 只会被打后反击）</summary>
-		[Export] private Area2D m_Detector;
+		[Export] private Area2D m_Detector; // 索敌区；为空时只会在受击后反击。
 
 		/// <summary>怪物配置 Id（MonsterConfig.Id），场景必填</summary>
 		[Export] public int MonsterId;
@@ -54,10 +53,8 @@ namespace GameLogic.Entity.Monsters
 		/// </summary>
 		protected virtual bool IsSuperArmor => Config != null && Config.SuperArmor;
 
-		/// <summary>从 MonsterConfig 复制的 AI 参数快照。</summary>
-		private MonsterAiParams m_AiParams;
-		/// <summary>从怪物配置和攻击动画构建的身体状态参数快照。</summary>
-		private MonsterBodyParams m_BodyParams;
+		private MonsterAiParams m_AiParams; // 从 MonsterConfig 复制的 AI 参数快照。
+		private MonsterBodyParams m_BodyParams; // 从配置和攻击动画构建的身体状态参数快照。
 
 		/// <summary>攻击集（AI 范围判断与加权选招；调试观测可读 <see cref="MonsterAttackBook.ReachOf"/>）</summary>
 		public MonsterAttackBook Attacks { get; private set; } = MonsterAttackBook.Empty;
@@ -84,29 +81,18 @@ namespace GameLogic.Entity.Monsters
 		/// <summary>受击硬直中（调试/冒烟观测；AI 的受控判定同源）</summary>
 		public bool InHurt => BodyFsm.IsIn<IMonsterBody, MonsterHurtState>(m_BodyFsm);
 
-		/// <summary>出招中：已请求待提交 / 攻击段在播 / 收招硬直</summary>
-		private bool IsBusy => AttackSegment >= 0 || m_AttackRequest >= 0 || InRecovery;
+		private bool IsBusy => AttackSegment >= 0 || m_AttackRequest >= 0 || InRecovery; // 已请求、出招或收招硬直中。
 
-		/// <summary>能自主行动（未受控、未死亡）</summary>
-		private bool CanAct => !Dead && !InHurt;
+		private bool CanAct => !Dead && !InHurt; // 未受击硬直且未死亡时可自主行动。
 
-		/// <summary>按框架帧驱动的怪物 AI 状态机。</summary>
-		private IFsm<IMonsterAiAgent> m_AiFsm;
-		/// <summary>按物理帧推进的怪物身体状态机。</summary>
-		private IFsm<IMonsterBody> m_BodyFsm;
-		/// <summary>当前索敌目标；目标失效或超时后清除。</summary>
-		private ActorEntity m_Target;
-		/// <summary>本次显示时记录的巡逻起点。</summary>
-		private Vector2 m_Home;
-		/// <summary>最近一次造成有效受击的实体编号。</summary>
-		private int m_LastAttackerId;
-		/// <summary>待身体状态机提交的攻击下标，-1 表示无请求。</summary>
-		private int m_AttackRequest = -1;
-		/// <summary>死亡动画结束后等待物理帧回收的标记。</summary>
-		private bool m_RecycleRequested;
-
-		/// <summary>目标持续在视野外的秒数（超过 LoseTargetTime 即放弃）</summary>
-		private float m_OutOfSightTime;
+		private IFsm<IMonsterAiAgent> m_AiFsm; // 按框架帧驱动的怪物 AI 状态机。
+		private IFsm<IMonsterBody> m_BodyFsm; // 按物理帧推进的怪物身体状态机。
+		private ActorEntity m_Target; // 当前索敌目标；失效或超时后清除。
+		private Vector2 m_Home; // 本次显示时记录的巡逻起点。
+		private int m_LastAttackerId; // 最近一次造成有效受击的实体编号。
+		private int m_AttackRequest = -1; // 待身体状态机提交的攻击下标，-1 表示无请求。
+		private bool m_RecycleRequested; // 死亡动画结束后等待物理帧回收的标记。
+		private float m_OutOfSightTime; // 目标持续在视野外的秒数。
 
 		#endregion
 
@@ -290,8 +276,7 @@ namespace GameLogic.Entity.Monsters
 			m_PendingHurt = knockback;
 		}
 
-		/// <summary>延迟切换受击盒可监测性，允许在物理回调中安全调用。</summary>
-		private void SetHurtBoxEnabled(bool enabled)
+		private void SetHurtBoxEnabled(bool enabled) // 延迟切换受击盒可监测性，允许在物理回调中安全调用。
 		{
 			// deferred：可能在物理回调内调用
 			HurtBox?.SetDeferred(Area2D.PropertyName.Monitorable, enabled);
@@ -301,9 +286,9 @@ namespace GameLogic.Entity.Monsters
 
 		#region 出招
 
-		/// <summary>装配招式（AttackConfig 里 OwnerId==自己，按 ComboIndex），每招范围从它的攻击动画判定盒推导。</summary>
-		private void LoadAttacks()
+		private void LoadAttacks() // 装配招式并从攻击动画判定盒推导每招范围。
 		{
+			// 先按配置装载本怪物的招式，再为 AI 建立可查询的规格。
 			OwnAttacks = LoadOwnAttacks(Config.EntityId);
 			if (OwnAttacks.Length == 0)
 			{
@@ -311,6 +296,7 @@ namespace GameLogic.Entity.Monsters
 					Config.EntityId);
 			}
 
+			// 将攻击配置转换为 AI 使用的范围、权重和冷却快照。
 			MonsterAttackSpec[] specs = new MonsterAttackSpec[OwnAttacks.Length];
 			for (int i = 0; i < specs.Length; i++)
 			{
@@ -335,9 +321,9 @@ namespace GameLogic.Entity.Monsters
 			Attacks = new MonsterAttackBook(specs);
 		}
 
-		/// <summary>配置快照：表数值 + 每招动画名、时长（= 动画长度）与收招硬直。</summary>
-		private MonsterBodyParams BuildBodyParams()
+		private MonsterBodyParams BuildBodyParams() // 构建身体状态机所需的配置与动画时长快照。
 		{
+			// 读取每段攻击动画和收招硬直，供状态机按物理时间推进。
 			string[] anims = new string[OwnAttacks.Length];
 			float[] times = new float[OwnAttacks.Length];
 			float[] recovery = new float[OwnAttacks.Length];
@@ -360,9 +346,9 @@ namespace GameLogic.Entity.Monsters
 			};
 		}
 
-		/// <summary>出招提交的副作用：转向目标、装填攻击包、播起手音（音源查 AttackConfig.SoundId）。</summary>
-		private void BeginAttackIndex(int index)
+		private void BeginAttackIndex(int index) // 提交出招：转向目标、装填攻击包并播放起手音。
 		{
+			// 出招开始时固定朝向并记录冷却，随后装填本段结算数据。
 			SetFacing(System.Math.Sign(TargetBox.CenterX));
 			Attacks.MarkUsed(index, GD.Randf);
 			AttackSegment = index;
@@ -371,8 +357,7 @@ namespace GameLogic.Entity.Monsters
 			Log.Debug("[Monster] {0} 出招 段{1}", Id, index + 1);
 		}
 
-		/// <summary>收招/打断：归还攻击包、攻击段归 -1。</summary>
-		private void EndAttackIndex()
+		private void EndAttackIndex() // 结束或打断出招并归还攻击包。
 		{
 			AttackSegment = -1;
 			ReleaseAttack();
@@ -382,12 +367,9 @@ namespace GameLogic.Entity.Monsters
 
 		#region 感知
 
-		/// <summary>
-		/// 目标维护：失效（死亡/回收）即清；水平距离持续超出 SightRange 达 LoseTargetTime 秒即放弃，AI 回到游荡；
-		/// 无目标时查询索敌区重叠体（mask 只含 PlayerBody，层即敌我关系）。
-		/// </summary>
-		private void UpdateTarget(float dt)
+		private void UpdateTarget(float dt) // 维护目标有效性、视野超时和索敌区发现。
 		{
+			// 已有目标先检查存活与视野超时，保留仍在范围内的目标。
 			if (m_Target is { IsAlive: true })
 			{
 				bool outOfSight = Mathf.Abs(m_Target.GlobalPosition.X - GlobalPosition.X) > Config.SightRange;
@@ -400,6 +382,7 @@ namespace GameLogic.Entity.Monsters
 				Log.Debug("[Monster] {0} 丢失目标 {1}", Id, m_Target.Id);
 			}
 
+			// 当前目标失效后清除，再从索敌区选择第一个有效角色。
 			SetTarget(null);
 			if (Dead || m_Detector == null)
 			{
@@ -417,15 +400,13 @@ namespace GameLogic.Entity.Monsters
 			}
 		}
 
-		/// <summary>设置当前目标并清零视野外计时。</summary>
-		private void SetTarget(ActorEntity target)
+		private void SetTarget(ActorEntity target) // 设置当前目标并清零视野外计时。
 		{
 			m_Target = target;
 			m_OutOfSightTime = 0f;
 		}
 
-		/// <summary>目标受击盒相对自己原点（无受击盒退化为点盒；无目标/目标失效为空盒）。</summary>
-		private AiBox TargetBox
+		private AiBox TargetBox // 返回目标受击盒相对自身原点的范围。
 		{
 			get
 			{
@@ -445,14 +426,14 @@ namespace GameLogic.Entity.Monsters
 			}
 		}
 
-		/// <summary>索敌区宽度 = 2 × SightRange（高度由场景形状决定）；形状复制一份再改，避免实例间互改共享子资源。</summary>
-		private void ConfigureDetector()
+		private void ConfigureDetector() // 按视野范围复制并调整索敌区矩形，避免共享资源互改。
 		{
 			if (m_Detector == null)
 			{
 				return;
 			}
 
+			// 只调整本实体私有的 Shape 副本，避免改动 PackedScene 共享资源影响其他实例。
 			foreach (Node child in m_Detector.GetChildren())
 			{
 				if (child is CollisionShape2D { Shape: RectangleShape2D rect } shapeNode)
@@ -471,8 +452,7 @@ namespace GameLogic.Entity.Monsters
 
 		#region 身体状态机宿主（IMonsterBody：身体状态只经这里读写；公共成员由 ActorEntity 提供）
 
-		/// <summary>创建并启动怪物身体状态机；已有配置或状态机缺失时不创建。</summary>
-		private void CreateBody()
+		private void CreateBody() // 创建并启动怪物身体状态机；已有状态机时保持复用。
 		{
 			if (Config == null || m_BodyFsm != null)
 			{
@@ -485,8 +465,7 @@ namespace GameLogic.Entity.Monsters
 			m_BodyFsm.Start<MonsterMoveState>();
 		}
 
-		/// <summary>销毁身体状态机（关停阶段框架统一销毁，这里只丢引用）。</summary>
-		private void DestroyBody(bool isShutdown)
+		private void DestroyBody(bool isShutdown) // 销毁身体状态机，关停阶段仅清除本地引用。
 		{
 			if (m_BodyFsm != null && !isShutdown && !m_BodyFsm.IsDestroyed)
 			{
@@ -542,8 +521,7 @@ namespace GameLogic.Entity.Monsters
 
 		#region AI 宿主（IMonsterAiAgent：AI 只经这里读感知与身体事实、写意图）
 
-		/// <summary>创建并启动怪物 AI 状态机；仅在实体显示且 AI 启用时执行。</summary>
-		private void CreateAi()
+		private void CreateAi() // 创建并启动怪物 AI 状态机。
 		{
 			if (!AiEnabled || m_AiFsm != null || Config == null || !IsShown)
 			{
@@ -556,8 +534,7 @@ namespace GameLogic.Entity.Monsters
 			m_AiFsm.Start<WanderState>();
 		}
 
-		/// <summary>销毁 AI 状态机（关停阶段框架统一销毁，这里只丢引用）。</summary>
-		private void DestroyAi(bool isShutdown)
+		private void DestroyAi(bool isShutdown) // 销毁 AI 状态机，关停阶段仅清除本地引用。
 		{
 			if (m_AiFsm != null && !isShutdown && !m_AiFsm.IsDestroyed)
 			{
@@ -569,14 +546,19 @@ namespace GameLogic.Entity.Monsters
 
 		/// <summary>向 AI 提供实体死亡事实。</summary>
 		bool IMonsterAiAgent.IsDead => Dead;
+
 		/// <summary>向 AI 提供当前受击受控事实。</summary>
 		bool IMonsterAiAgent.IsCcLocked => InHurt;
+
 		/// <summary>向 AI 提供攻击或收招忙碌事实。</summary>
 		bool IMonsterAiAgent.IsAttacking => IsBusy;
+
 		/// <summary>提供目标受击盒相对怪物原点的范围。</summary>
 		AiBox IMonsterAiAgent.TargetBox => TargetBox;
+
 		/// <summary>提供怪物相对出生点的水平偏移。</summary>
 		float IMonsterAiAgent.HomeDeltaX => GlobalPosition.X - m_Home.X;
+
 		/// <summary>向 AI 提供怪物参数快照。</summary>
 		MonsterAiParams IMonsterAiAgent.Params => m_AiParams;
 

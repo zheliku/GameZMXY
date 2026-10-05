@@ -9,10 +9,8 @@ namespace GameLogic.Entity.Monsters.Body
 	/// </summary>
 	public sealed class MonsterRecoveryState : MonsterBodyState
 	{
-		/// <summary>进入时使用的收招硬直时长。</summary>
-		private float m_Duration;
-		/// <summary>当前硬直剩余秒数。</summary>
-		private float m_Left;
+		private float m_Duration; // 切入收招状态前由攻击状态装填的硬直时长。
+		private float m_Left; // 当前收招硬直剩余时间（秒）。
 
 		/// <summary>进入前指定硬直时长（由发起切换的状态调用）。</summary>
 		public void Arm(float seconds)

@@ -15,11 +15,9 @@ namespace GameLogic.Battle.Tests
 	/// </summary>
 	public class HeroBodyTests
 	{
-		/// <summary>单个物理帧的时长。</summary>
-		private const float Dt = 1f / 60f;
+		private const float Dt = 1f / 60f; // 单个物理帧的时长。
 
-		/// <summary>创建用于状态机测试的英雄参数。</summary>
-		private static HeroBodyParams Params(float attackTime = 0.1f, float hurtTime = 0.2f, float emoteTime = 0.5f)
+		private static HeroBodyParams Params(float attackTime = 0.1f, float hurtTime = 0.2f, float emoteTime = 0.5f) // 创建用于状态机测试的英雄参数。
 		{
 			return new HeroBodyParams
 			{
@@ -357,8 +355,7 @@ namespace GameLogic.Battle.Tests
 
 		// ---------------------------------------------------------------- 假宿主与驱动
 
-		/// <summary>为英雄身体状态机提供可控的测试宿主。</summary>
-		private sealed class FakeHero : FakeActorBody, IHeroBody
+		private sealed class FakeHero : FakeActorBody, IHeroBody // 为英雄身体状态机提供可控的测试宿主。
 		{
 			/// <summary>初始化测试参数与输入对象。</summary>
 			public FakeHero(HeroBodyParams p, HeroInput input)
@@ -381,13 +378,10 @@ namespace GameLogic.Battle.Tests
 			public float NextRandom() => 0f;
 		}
 
-		/// <summary>真实 FsmManager 建身体状态机；每帧：喂输入 → BodyFsm.Tick → 模拟落地物理。</summary>
-		private sealed class HeroHarness : IDisposable
+		private sealed class HeroHarness : IDisposable // 用真实 FsmManager 驱动身体状态机并模拟落地物理。
 		{
-			/// <summary>驱动真实框架有限状态机的管理器。</summary>
-			private readonly FsmManager m_Manager = new FsmManager();
-			/// <summary>当前测试使用的英雄身体状态机。</summary>
-			private readonly IFsm<IHeroBody> m_Fsm;
+			private readonly FsmManager m_Manager = new FsmManager(); // 驱动真实框架有限状态机的管理器。
+			private readonly IFsm<IHeroBody> m_Fsm; // 当前测试使用的英雄身体状态机。
 
 			/// <summary>创建英雄输入、假宿主和身体状态机。</summary>
 			public HeroHarness(HeroBodyParams p, float bufferTime = 0f)
@@ -419,6 +413,7 @@ namespace GameLogic.Battle.Tests
 			/// <param name="move">方向输入，-1 为左、1 为右、0 为无输入。</param>
 			public void Step(int frames, int move = 0)
 			{
+				// 每帧采样输入后推进状态机，保持测试与游戏物理帧顺序一致。
 				for (int i = 0; i < frames; i++)
 				{
 					Input.Sample(Dt, move < 0, move > 0, false, false, false, false);
@@ -438,6 +433,7 @@ namespace GameLogic.Battle.Tests
 			/// <returns>满足条件前推进的帧数；超时返回 -1。</returns>
 			public int StepUntil(Func<string, bool> until)
 			{
+				// 在推进前检查停止条件，返回实际消耗的帧数。
 				for (int i = 0; i < 600; i++)
 				{
 					if (until(State))
@@ -455,6 +451,7 @@ namespace GameLogic.Battle.Tests
 			/// <param name="frames">推进的物理帧数。</param>
 			public void TickOnly(int frames)
 			{
+				// 只推进状态机；落地时清除向下速度以模拟平台碰撞。
 				for (int i = 0; i < frames; i++)
 				{
 					BodyFsm.Tick(m_Fsm, Dt);

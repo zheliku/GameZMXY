@@ -10,11 +10,9 @@ namespace GameLogic.Entity.Monsters.AI.States
 	/// </summary>
 	public class WanderState : RoamState
 	{
-		/// <summary>距下一次决策的剩余秒数</summary>
-		private float m_DecideTimer;
+		private float m_DecideTimer; // 距下一次巡逻停留/转向决策的剩余时间（秒）。
 
-		/// <summary>当前行走方向（-1/1）</summary>
-		private int m_Dir;
+		private int m_Dir; // 当前游荡方向；-1 向左，1 向右。
 
 		/// <summary>初始化巡逻决策计时，并选择初始方向。</summary>
 		protected override void Enter(IMonsterAiAgent agent)
@@ -49,16 +47,14 @@ namespace GameLogic.Entity.Monsters.AI.States
 			agent.Move(m_Dir);
 		}
 
-		/// <summary>折返方向：离出生点超出巡逻半径时指向出生点，否则 0（半径 ≤0 = 不限）。</summary>
-		private static int Leash(IMonsterAiAgent agent)
+		private static int Leash(IMonsterAiAgent agent) // 超出出生点巡逻半径时返回朝家的折返方向。
 		{
 			float home = agent.HomeDeltaX;
 			float radius = agent.Params.PatrolRadius;
 			return radius > 0f && Math.Abs(home) > radius ? -Math.Sign(home) : 0;
 		}
 
-		/// <summary>抽取左右等概率的游荡方向。</summary>
-		private static int RandomDir(IMonsterAiAgent agent)
+		private static int RandomDir(IMonsterAiAgent agent) // 使用怪物随机源等概率选取左右方向。
 		{
 			return agent.NextRandom() < 0.5f ? -1 : 1;
 		}

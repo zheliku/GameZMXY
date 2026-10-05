@@ -21,10 +21,8 @@ namespace GameLogic
 	/// </summary>
 	public partial class QuestionTips : ITips
 	{
-		/// <summary>当前提示的取消回调。</summary>
-		private Action m_Cancel;
-		/// <summary>当前提示的确认回调。</summary>
-		private Action m_Confirm;
+		private Action m_Cancel; // 当前提示取消时调用的回调。
+		private Action m_Confirm; // 当前提示确认时调用的回调。
 		/// <summary>
 		/// 初始化界面。
 		/// </summary>

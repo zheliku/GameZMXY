@@ -13,7 +13,14 @@
 - 实体场景与实体表 `AssetPath` 一致；节点引用由实体脚本 `[Export]` 字段绑定。
 - `.tscn` 的外部节点路径在场景头部 `node_paths` 声明，否则 Godot 可能忽略 `NodePath` 导出赋值。
 - 动画库位于 `Entitys/Animations/`，资源边界与判定约定见 [30-EntitiesAndCombat.md](30-EntitiesAndCombat.md)。
-- 当前 `Scenes/DebugArena.tscn` 是战斗验证场景；正式关卡节点、阶段和出口规范待设计，见 [60-GameplayModules.md](60-GameplayModules.md)。
+- `Scenes/DebugArena.tscn` 仍是战斗验证场景；正式关卡使用 `LevelRoot`（当前实现为 `LevelController`）和组合式子节点，契约见 [60-GameplayModules.md](60-GameplayModules.md)。
+
+## 关卡场景
+
+- 关卡场景的固定入口是一个带 `LevelController` 的 `Node2D` 根节点。根节点必须绑定 `SpawnPoints`，并保留 `RuntimeActors` 插槽；实体实际仍由 `GF.Entity` 挂到实体组，不以关卡子节点数量统计活跃实体。
+- `World/Background`、`World/Geometry`、`World/SpawnPoints`、`World/StageTriggers` 和 `World/Exit` 是推荐的语义插槽。地形、碰撞、相机边界、玩家出生点、生成点和触发器位置属于场景空间事实；背景、平台、出口、机关和拾取物可以按关卡需要增删。
+- 生成点使用 `LevelSpawnPoint`，以场景内唯一的 `SpawnPointId` 作为配置外键；阶段触发点使用 `LevelStageTrigger` 和唯一 `TriggerId`。不得用节点名、NodePath 或子节点顺序作为稳定 ID。
+- 可复用内容做成小型 PackedScene/组件（生成点、触发点、出口、地形块），不建立承载所有关卡逻辑的巨型 `BaseLevel` 场景。新增导出 NodePath 必须在 `.tscn` 根节点 `node_paths` 中声明。
 
 ## Bundle
 
