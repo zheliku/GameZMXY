@@ -1,6 +1,7 @@
 # 20 配置与 Luban
 
 - 源数据位于 `Configs/GameConfig/Datas/`，生成 C# 与二进制位于 `TheGame/GameScripts/GameProto/GameConfig/`、`TheGame/DataTables/GameConfigs/`。
+- 配置侧外部类型（`Defines/external_types.xml`）：`vector2`/`vector2i` 映射为 `Godot.Vector2`/`Godot.Vector2I`。Luban 的 TypeMapper **必须**提供 `constructor` 工厂（`GameLogic.Config.ExternalTypeUtil.NewVector2/NewVector2I`）——去掉该选项会报 `option 'constructor' not found`，因此这层占位 bean → Godot 类型的转换是框架要求，不能省；字段本身已是 `Godot.Vector2`，调用方无需再转换。
 - 改表后运行 `Configs/GameConfig/gen_code_bin_to_project_lazyload.bat`，提交时将源表和对应生成物保持同步。不得手改生成代码或 `.bytes`。
 - 业务表包含中文名称与说明；多行表有显式主键，枚举值显式赋值。字段中文注释会进入生成代码文档。
 - `LevelId` 是关卡唯一主键；阶段归属由嵌套列表表达（不再用 `LevelId`/`StageOrder` 平铺外键），怪物使用 `MonsterEntityId` 枚举名。

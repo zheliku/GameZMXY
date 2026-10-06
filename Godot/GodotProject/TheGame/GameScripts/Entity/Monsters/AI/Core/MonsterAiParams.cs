@@ -14,6 +14,12 @@ namespace GameLogic.Entity.Monsters.AI
 		/// <summary>站定后攻击判定间隔秒（AttackInterval，旧 count%60）</summary>
 		public float AttackInterval { get; init; }
 
+		/// <summary>
+		/// 进入攻击范围后首次出手判定的随机延迟秒（AttackFirstDelay 的 x=最短、y=最长）。
+		/// 只是"反应时间"，与出手概率无关；持续交战的期望出手间隔 ≈ AttackInterval ÷ (AttackDesire/100)。
+		/// </summary>
+		public (float Min, float Max) AttackFirstDelay { get; init; }
+
 		/// <summary>游荡/待机重新决策间隔秒（PatrolInterval，旧 change_state 计时器）</summary>
 		public float PatrolInterval { get; init; }
 

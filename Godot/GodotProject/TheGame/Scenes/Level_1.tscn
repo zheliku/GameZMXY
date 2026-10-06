@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://b7abdk6hcrmws" path="res://TheGame/GameScripts/Level/Stage/LevelStageTriggerSet.cs" id="10_trigger_manager"]
 [ext_resource type="Script" uid="uid://b6ai16cs6v6de" path="res://TheGame/GameScripts/Level/Stage/LevelStageGateSet.cs" id="11_gate_manager"]
 [ext_resource type="Script" uid="uid://ccjmic0fgxfrv" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawner.cs" id="12_monster_manager"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/gogo/gogo_animations.tres" id="13_gohint"]
 
 [sub_resource type="RectangleShape2D" id="GroundShape"]
 size = Vector2(4812, 93)
@@ -18,7 +19,11 @@ size = Vector2(4812, 93)
 height = 120.0
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qtbsk"]
-height = 222.0
+height = 218.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_hpuv0"]
+radius = 76.06
+height = 319.09
 
 [sub_resource type="RectangleShape2D" id="WorldWallShape"]
 size = Vector2(80, 700)
@@ -75,20 +80,24 @@ m_DrawColor = Color(0.6, 1, 0.2, 0.9)
 [sub_resource type="RectangleShape2D" id="GateShape"]
 size = Vector2(20, 700)
 
-[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera")]
+[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_GoHint")]
 script = ExtResource("1_controller")
 m_SpawnPoints = NodePath("World/SpawnPoints")
 m_Triggers = NodePath("World/StageTriggers")
 m_Gates = NodePath("World/StageGates")
 m_Spawner = NodePath("Spawner")
 m_Camera = NodePath("Camera2D")
+m_GoHint = NodePath("GoHintLayer/GoHint")
 
 [node name="World" type="Node2D" parent="." unique_id=219105317]
 
 [node name="Background" type="Node2D" parent="World" unique_id=415239467]
 z_index = -20
 
-[node name="End" type="Sprite2D" parent="World/Background" unique_id=1691568439]
+[node name="Sky" type="Parallax2D" parent="World/Background" unique_id=1864955233]
+scroll_scale = Vector2(0.13, 1)
+
+[node name="End" type="Sprite2D" parent="World/Background/Sky" unique_id=1691568439]
 position = Vector2(0, -100)
 texture = ExtResource("3_bg_end")
 centered = false
@@ -120,7 +129,7 @@ shape = SubResource("GroundShape")
 position = Vector2(1174, 471)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="World/Geometry/Ground/Slope1" unique_id=1957303159]
-position = Vector2(-133, -3)
+position = Vector2(-133, -4)
 rotation = -2.3212879
 shape = SubResource("CapsuleShape2D_6ynqx")
 
@@ -130,9 +139,60 @@ rotation = 2.3038347
 shape = SubResource("CapsuleShape2D_6ynqx")
 
 [node name="CollisionShape2D3" type="CollisionShape2D" parent="World/Geometry/Ground/Slope1" unique_id=951850664]
-position = Vector2(2, -38)
+position = Vector2(4, -38)
 rotation = 1.5707964
 shape = SubResource("CapsuleShape2D_qtbsk")
+
+[node name="CollisionShape2D4" type="CollisionShape2D" parent="World/Geometry/Ground/Slope1" unique_id=1567730651]
+position = Vector2(4, 41)
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_hpuv0")
+
+[node name="Slope2" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=443119745]
+position = Vector2(1657, 475)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Geometry/Ground/Slope2" unique_id=1710477202]
+position = Vector2(-133, -4)
+rotation = -2.3212879
+shape = SubResource("CapsuleShape2D_6ynqx")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="World/Geometry/Ground/Slope2" unique_id=1028715443]
+position = Vector2(143, -2)
+rotation = 2.3038347
+shape = SubResource("CapsuleShape2D_6ynqx")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="World/Geometry/Ground/Slope2" unique_id=1075605200]
+position = Vector2(4, -38)
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_qtbsk")
+
+[node name="CollisionShape2D4" type="CollisionShape2D" parent="World/Geometry/Ground/Slope2" unique_id=1198316012]
+position = Vector2(4, 41)
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_hpuv0")
+
+[node name="Slope3" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=91902830]
+position = Vector2(4605, 475)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Geometry/Ground/Slope3" unique_id=449919923]
+position = Vector2(-133, -4)
+rotation = -2.3212879
+shape = SubResource("CapsuleShape2D_6ynqx")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="World/Geometry/Ground/Slope3" unique_id=558680587]
+position = Vector2(143, -2)
+rotation = 2.3038347
+shape = SubResource("CapsuleShape2D_6ynqx")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="World/Geometry/Ground/Slope3" unique_id=475096218]
+position = Vector2(4, -38)
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_qtbsk")
+
+[node name="CollisionShape2D4" type="CollisionShape2D" parent="World/Geometry/Ground/Slope3" unique_id=1732315954]
+position = Vector2(4, 41)
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_hpuv0")
 
 [node name="LeftWall" type="StaticBody2D" parent="World/Geometry" unique_id=789314823]
 position = Vector2(-40, 295)
@@ -142,7 +202,7 @@ collision_mask = 0
 shape = SubResource("WorldWallShape")
 
 [node name="RightWall" type="StaticBody2D" parent="World/Geometry" unique_id=1053025676]
-position = Vector2(4852, 295)
+position = Vector2(4740, 295)
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="World/Geometry/RightWall" unique_id=1611260396]
@@ -174,7 +234,7 @@ position = Vector2(3000, 300)
 gizmo_extents = 0.0
 
 [node name="Stage4A" type="Marker2D" parent="World/SpawnPoints" unique_id=9347245]
-position = Vector2(4500, 300)
+position = Vector2(4400, 300)
 gizmo_extents = 0.0
 
 [node name="StageTriggers" type="Node2D" parent="World" unique_id=655583775]
@@ -204,7 +264,7 @@ shape = SubResource("GateShape")
 disabled = true
 
 [node name="Stage3Gate" type="StaticBody2D" parent="World/StageGates" unique_id=2059330607]
-position = Vector2(3800, 295)
+position = Vector2(3740, 295)
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage3Gate" unique_id=1047161584]
@@ -222,6 +282,17 @@ z_index = 200
 position = Vector2(470, 295)
 limit_left = 0
 limit_top = 0
-limit_right = 4812
+limit_right = 4700
 limit_bottom = 590
 script = ExtResource("2_camera")
+
+[node name="GoHintLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="GoHint" type="AnimatedSprite2D" parent="GoHintLayer"]
+visible = false
+position = Vector2(860, 295)
+scale = Vector2(0.6, 0.6)
+sprite_frames = ExtResource("13_gohint")
+animation = &"go"
+autoplay = "go"

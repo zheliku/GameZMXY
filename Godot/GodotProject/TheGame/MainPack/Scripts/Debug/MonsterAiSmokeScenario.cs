@@ -36,7 +36,7 @@ public sealed class MonsterAiSmokeScenario
 	private const float AirHeight = 120f; // 空中阶段英雄离地高度（像素）。
 	private const float AirOffsetX = 30f; // 空中阶段英雄相对猴子的水平偏移（像素）。
 	private const float PaceEvidence = 20f; // 认定猴子在英雄两侧踱步所需的最小距离（像素）。
-	private const double LandedTimeout = 2.5; // 英雄落地后等待猴子出招的时限（秒）。
+	private const double LandedTimeout = 6.0; // 英雄落地后等待猴子出招的时限（秒）；出手是概率判定，窗口要够覆盖多次掷骰。
 	private const float LoseOffset = 420f; // 将英雄放到视野外的水平偏移（像素）。
 	private const double LoseTimeout = 4.5; // 等待怪物放弃目标的超时时间（秒）。
 	private const double KillDelay = 1.5; // 受控阶段到致命攻击的间隔（秒）。

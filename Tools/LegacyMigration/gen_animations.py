@@ -477,11 +477,107 @@ def build_monkey_library():
         # 判定盒几何（原生朝左坐标，容器 m_HitBoxRoot 负责镜像；猴子无武器层，沿用旧圆外接矩形）
         tracks.extend(_hitbox_geo_tracks(name, hit_track, MONKEY_HITBOX, MONKEY_HITBOX_REST, shape_res))
         anims.append({"name": name, "loop": loop, "length": length, "tracks": tracks})
+    _append_reset_animation(anims, shape_res, hero=False)
     return anims, shape_res
 
 
 def gen_monkey_library():
     emit_anim_library(MONKEY_LIB_OUT, *build_monkey_library())
+
+
+# --------------------------------------------------------------------------
+# demon_monkey（旧 Monster_2，妖猴）—— 与 huaguoshan_monkey 同构
+#
+# 旧 Scene/Monster/Monster_2.tscn：mr_player(speed_scale=1，内部时间=真实秒) 轨道驱动 mr_ani，
+# SpriteFrames 条目"重复图片撑时长"。逐动画旧数据（raw dump 见 LegacyAssetMap 登记）：
+#   wait  : frame 0..4  @0.1s   ，offset (-2.5, 0)
+#   walk  : frame 0..3  @0.2s   ，offset (13.5, 4)
+#   hit1  : frame 0..6  @0.0667s（条目 4..6 为图片 3），offset (-26.5, -9.5)，判定窗 0.10~0.40s
+#   hurt  : frame 0..6  @0.04s  （条目全为图片 0），offset (10, 5)
+#   death : frame 0..11 @0.1s   （条目 5..11 为图片 4），offset (0, 0)
+# 旧 hit1 判定盒：圆 r=46.0109 @(-31,-4)（相对 BaseDamageBox 原点）；新工程沿用外接矩形，
+# 身体层与判定盒同原点（本怪不额外下移身体层），故 Y 直接取旧值。
+# 判定盒尺寸经编辑器调校定为 80×80（旧外接矩形 92.0218 略大），攻击与静止同值。
+# --------------------------------------------------------------------------
+DEMON_MONKEY_DIR = "res://TheGame/Sprites/Characters/Monsters/demon_monkey/"
+DEMON_MONKEY_SHEETS = [
+    # (animation, file, frame_w, frame_h, count, loop)
+    ("idle", "demon_monkey_idle.png", 74, 114, 5, True),
+    ("run", "demon_monkey_run.png", 116, 105, 4, True),
+    ("attack_1", "demon_monkey_attack.png", 130, 134, 4, False),
+    ("hurt", "demon_monkey_hurt.png", 89, 87, 1, False),
+    ("death", "demon_monkey_death.png", 124, 108, 5, False),
+]
+
+
+def gen_demon_monkey():
+    anims = [
+        _mk_anim(name, loop, DEMON_MONKEY_DIR + fname, fw, fh, count, [(i, 0.1) for i in range(count)])
+        for name, fname, fw, fh, count, loop in DEMON_MONKEY_SHEETS
+    ]
+    out = os.path.join(SPRITES, "Characters", "Monsters", "demon_monkey", "demon_monkey_animations.tres")
+    emit_spriteframes(out, anims)
+
+
+DEMON_MONKEY_LIB_OUT = os.path.join(ENTITY_ANIMS, "demon_monkey_anim_library.tres")
+
+# 新动画名 → (图片帧序列[(帧, 秒)], 循环, 旧 offset, 判定开关键)
+DEMON_MONKEY_ANIMS = [
+    ("idle", [(0, 0.1), (1, 0.1), (2, 0.1), (3, 0.1), (4, 0.1)], True, (-2.5, 0), [(0.0, True)]),
+    ("run", [(0, 0.2), (1, 0.2), (2, 0.2), (3, 0.2)], True, (13.5, 4), [(0.0, True)]),
+    # hit1：7 条目 = 图片 [0,1,2,3,3,3,3]，合并末四帧 → 0.2668s；判定 0.10~0.40s
+    ("attack_1", [(0, 0.0667), (1, 0.0667), (2, 0.0667), (3, 0.2668)], False, (-26.5, -9.5),
+     [(0.0, True), (0.1, False), (0.4, True)]),
+    # hurt：7 条目全为图片 0 @0.04s，合并为单帧 0.28s
+    ("hurt", [(0, 0.28)], False, (10, 5), [(0.0, True)]),
+    # death：12 条目 = 图片 [0,1,2,3,4,4,...] @0.1s，合并尾部 → 0.8s，总长 1.2s
+    ("death", [(0, 0.1), (1, 0.1), (2, 0.1), (3, 0.1), (4, 0.8)], False, (0, 0), [(0.0, True)]),
+]
+
+# 判定盒几何（原生朝左坐标，容器 m_HitBoxRoot 负责镜像）
+DEMON_MONKEY_HITBOX = {
+    "attack_1": {"size": (80.0, 80.0), "pos": (-31.0, -4.0)},
+}
+DEMON_MONKEY_HITBOX_REST = {"size": (80.0, 80.0), "pos": (-31.0, -4.0)}
+
+
+def _append_demon_monkey_reset(anims, shape_res):
+    """追加 RESET（默认值动画，运行时不播；编辑器重置/停止预览时恢复默认姿势用）。
+
+    写与常规动画同集合的安全默认值（轨道完备性含 RESET）。
+    """
+    tracks = [
+        (MONKEY_SPRITE_FRAMES, "string", [(0.0, "idle")]),
+        (MONKEY_BODY + ":frame", "int", [(0.0, 0)]),
+        (MONKEY_BODY + ":offset", "vector2", [(0.0, (-2.5, 0.0))]),
+        (HITBOX_TRACK, "bool", [(0.0, True)]),
+        (HITBOX_SHAPE_TRACK, "shape", [(0.0, "hitbox_rest")]),
+        (HITBOX_POS_TRACK, "vector2", [(0.0, DEMON_MONKEY_HITBOX_REST["pos"])]),
+    ]
+    shape_res["hitbox_rest"] = DEMON_MONKEY_HITBOX_REST["size"]
+    anims.append({"name": "RESET", "loop": False, "length": 0.001, "tracks": tracks})
+
+
+def build_demon_monkey_library():
+    anims = []
+    shape_res = {}
+    for name, frames, loop, offset, hit_keys in DEMON_MONKEY_ANIMS:
+        keys, length = _frame_track_keys(frames)
+        hit_track = (HITBOX_TRACK, "bool", hit_keys)
+        tracks = [
+            (MONKEY_SPRITE_FRAMES, "string", [(0.0, name)]),
+            (MONKEY_BODY + ":frame", "int", keys),
+            (MONKEY_BODY + ":offset", "vector2", [(0.0, (float(offset[0]), float(offset[1])))]),
+            hit_track,
+        ]
+        tracks.extend(_hitbox_geo_tracks(name, hit_track, DEMON_MONKEY_HITBOX, DEMON_MONKEY_HITBOX_REST, shape_res))
+        anims.append({"name": name, "loop": loop, "length": length, "tracks": tracks})
+    _append_demon_monkey_reset(anims, shape_res)
+    return anims, shape_res
+
+
+def gen_demon_monkey_library():
+    emit_anim_library(DEMON_MONKEY_LIB_OUT, *build_demon_monkey_library())
 
 
 # --------------------------------------------------------------------------
@@ -1253,4 +1349,8 @@ if __name__ == "__main__":
     gen_monkey()
     print("huaguoshan_monkey library (AnimationPlayer direct-drive):")
     gen_monkey_library()
+    print("demon_monkey:")
+    gen_demon_monkey()
+    print("demon_monkey library (AnimationPlayer direct-drive):")
+    gen_demon_monkey_library()
 

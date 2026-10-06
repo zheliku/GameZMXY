@@ -1,3 +1,4 @@
+using System;
 using GameConfig.Battle;
 using GameConfig.Hero;
 using GameConfig.Sound;
@@ -12,20 +13,23 @@ using GodotGameFramework;
 namespace GameLogic.Entity.Heroes
 {
 	/// <summary>
-	/// 英雄基类 = 身体状态机的**宿主**（<see cref="IHeroBody"/>）：所有英雄共用；角色专属行为由具体英雄类覆写钩子
-	/// （见 <see cref="WukongEntity"/>）。
+	/// 英雄最通用基类（抽象）= 身体状态机的**宿主**：不预设任何具体英雄行为。
+	///
+	/// **职责边界**：本类只做"所有英雄都一样"的事——配置与属性、输入采样、物理（MoveAndSlide、落地归零跳跃次数）、
+	/// 结算事实登记（受击挂起、死亡置位）、出招提交/收招，以及按物理帧推进身体状态机。
+	/// **具体行为由行为类别子类给出**：地面近战连段角色见 <see cref="GroundMeleeHeroEntity"/>；
+	/// 唐僧（远程）、八戒、沙僧（双武器）各自新建行为类别类，用 <see cref="CreateBodyStates"/> /
+	/// <see cref="InitialBodyStateType"/> / <see cref="BuildBodyParams"/> 声明自己的状态集与参数；
+	/// 数值一律走配置表。具体英雄（如悟空）继承对应行为类别，通常只做数据绑定与角色专属覆写。
 	///
 	/// **分工（2026-10-01 定稿，A 方案：动画纯数据、代码唯一时钟）**：
-	///  * "现在在做什么"由身体状态机决定（GF.Fsm&lt;IHeroBody&gt;，物理帧驱动，状态见 Heroes/Body/：
-	///    Ground / Air / Attack / Hurt / Death），状态进入/切换时经 PlayAnim/RestartAnim 请求播放；
+	///  * "现在在做什么"由身体状态机决定（GF.Fsm&lt;IHeroBody&gt;，物理帧驱动，状态见 Heroes/Body/）；
 	///  * 动画资源只含表现数据（帧/特效/判定盒值轨道，无方法轨道），从不调用代码；
 	///    动作时长 = OnInit 从动画资源读长度（<see cref="HeroBodyParams"/>），状态自己计时；
-	///  * 本类只做宿主该做的事：采样 Godot 输入喂给 <see cref="HeroInput"/>、物理（MoveAndSlide、
-	///    落地归零跳跃次数）、结算事实登记（受击挂起、死亡置位）、出招提交/收招（BeginAttack/EndAttack）；
 	///  * 每个物理帧：采样输入 → <see cref="BodyFsm.Tick{T}"/> → MoveAndSlide（状态机单入口）。
 	/// 与旧项目的已知差异：旧项目按住方向即跑，本项目慢走/双击跑——有意的操作手感取舍。
 	/// </summary>
-	public partial class HeroEntity : ActorEntity, IHeroBody
+	public abstract partial class HeroEntity : ActorEntity, IHeroBody
 	{
 		// ---- 输入动作名（与 project.godot 的 InputMap 一一对应，改键只改那里）----
 
@@ -233,7 +237,14 @@ namespace GameLogic.Entity.Heroes
 
 		// ---- 身体状态机 ----
 
-		private void CreateBody() // 每次显示重建身体状态机，从 Ground 状态起步。
+		/// <summary>身体状态集合（**行为类别必须给出**：地面近战连段用走跑/空中/连段/受击/死亡，远程、双武器各不相同）。</summary>
+		/// <returns>本英雄使用的全部身体状态。</returns>
+		protected abstract FsmState<IHeroBody>[] CreateBodyStates();
+
+		/// <summary>身体初始状态类型（**行为类别必须给出**）。</summary>
+		protected abstract Type InitialBodyStateType { get; }
+
+		private void CreateBody() // 每次显示重建身体状态机，从初始状态起步。
 		{
 			// 已有配置或状态机时不重复创建。
 			if (Config == null || m_BodyFsm != null)
@@ -241,10 +252,8 @@ namespace GameLogic.Entity.Heroes
 				return;
 			}
 
-			m_BodyFsm = GF.Fsm.CreateFsm<IHeroBody>($"HeroBody_{Id}", this,
-				new HeroGroundState(), new HeroAirState(), new HeroAttackState(), new HeroHurtState(),
-				new HeroDeathState());
-			m_BodyFsm.Start<HeroGroundState>();
+			m_BodyFsm = GF.Fsm.CreateFsm($"HeroBody_{Id}", this, CreateBodyStates());
+			m_BodyFsm.Start(InitialBodyStateType);
 		}
 
 		private void DestroyBody(bool isShutdown) // 销毁身体状态机，关停阶段仅清除本地引用。
@@ -257,7 +266,9 @@ namespace GameLogic.Entity.Heroes
 			m_BodyFsm = null;
 		}
 
-		private HeroBodyParams BuildBodyParams() // 构建身体状态机所需的配置、动画名和时长快照。
+		/// <summary>构建身体状态机所需的配置、动画名和时长快照（扩展点：远程角色可改写移动/攻击参数）。</summary>
+		/// <returns>身体状态机使用的参数快照。</returns>
+		protected virtual HeroBodyParams BuildBodyParams()
 		{
 			// 先读取每段普攻动画及其时长，缺失动画直接记录配置错误。
 			string[] attackAnims = new string[OwnAttacks.Length];

@@ -82,7 +82,7 @@ public class ProcedureGame : ProcedureBase
             m_Level = levelNode as LevelController;
             if (m_Level == null)
             {
-                throw new InvalidOperationException("Level_1 场景根节点未绑定 LevelController。");
+                throw new InvalidOperationException($"{m_LevelScenePath} 场景根节点未绑定 LevelController。");
             }
 
             m_Level.Initialize();

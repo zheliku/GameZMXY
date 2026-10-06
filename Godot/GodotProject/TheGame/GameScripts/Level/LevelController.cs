@@ -15,6 +15,7 @@ public partial class LevelController : Node2D
     [Export] private LevelStageGateSet m_Gates; // 阶段物理门与区域，必需。
     [Export] private LevelSpawner m_Spawner; // 配方调度和关卡实体所有权，必需。
     [Export] private LevelCamera m_Camera; // 实际取景和阶段抵达事件，必需。
+    [Export] private AnimatedSprite2D m_GoHint; // 清波后指引前进的 Go 提示；可选，未绑定时不显示。
 
     private LevelConfig m_Config; // 本场景对应的只读配置。
     private LevelStageSequence m_Sequence; // 会话当前阶段的唯一权威。
@@ -34,6 +35,9 @@ public partial class LevelController : Node2D
 
     /// <summary>当前会话阶段状态。</summary>
     public LevelStagePhase Phase => m_Sequence.Phase;
+
+    /// <summary>前进提示当前是否可见（供 HUD 与调试观测）。</summary>
+    public bool GoHintVisible => m_GoHint != null && m_GoHint.Visible;
 
     /// <summary>校验场景身份和必需绑定，再由各职责所有者验证配置。</summary>
     /// <exception cref="InvalidOperationException">绑定缺失、配置不存在、场景不匹配或管理器校验失败时抛出。</exception>
@@ -106,6 +110,27 @@ public partial class LevelController : Node2D
         m_Spawner.StopSession();
         m_Sequence.Stop();
         m_Player = null;
+        ShowGoHint(false);
+    }
+
+    /// <summary>切换"前进"提示：显示时从头播放循环动画，隐藏时停播（同旧项目 role_information.gogo）。</summary>
+    /// <param name="show">true 显示并播放；false 隐藏并停止。</param>
+    private void ShowGoHint(bool show)
+    {
+        if (m_GoHint == null)
+        {
+            return;
+        }
+
+        m_GoHint.Visible = show;
+        if (show)
+        {
+            m_GoHint.Play();
+        }
+        else
+        {
+            m_GoHint.Stop();
+        }
     }
 
     /// <summary>清波后开放当前阶段通路并设置相机右界，特殊阶段同时启用触发区监听。</summary>
@@ -137,9 +162,10 @@ public partial class LevelController : Node2D
         m_Gates.LockRegion(stage.StageOrder);
         m_Camera.LockLeft(m_Gates.BoundsOf(stage.StageOrder).Left);
         m_Spawner.StartStage(stage);
+        ShowGoHint(false);
     }
 
-    /// <summary>当前阶段清除后开放出口并推进一次；最终清波交给出口和结算。</summary>
+    /// <summary>当前阶段清除后开放出口并推进一次；非最终阶段亮起前进提示，最终清波交给出口和结算。</summary>
     private void OnStageCleared()
     {
         m_Gates.ReleaseRegion(m_Sequence.Current.StageOrder);
@@ -147,6 +173,7 @@ public partial class LevelController : Node2D
         if (m_Sequence.Phase == LevelStagePhase.Travelling)
         {
             BeginTravel();
+            ShowGoHint(true);
         }
         else
         {

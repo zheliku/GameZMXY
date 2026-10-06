@@ -5,7 +5,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 {
 	/// <summary>
 	/// 站定出招：面向目标，每 AttackInterval 按 AttackDesire 掷一次，命中则按权重选择攻击（旧 Monster_Intelligence 近身分支）。
-	/// 进入后立即掷第一次。
+	/// 进入后先按 AttackFirstDelay 随机停一拍再掷第一次（避免一靠近就出手，同旧项目按全局帧相位的随机延迟）。
 	///  * 水平间隙 &gt; AttackRangeSlack → WalkToTarget；滞回区内小步贴近（被击退几像素不来回切状态）；
 	///  * 水平到位但高度够不着（目标在平台/头顶）→ PaceBelowTarget。
 	/// </summary>
@@ -13,11 +13,12 @@ namespace GameLogic.Entity.Monsters.AI.States
 	{
 		private float m_RollTimer; // 距下一次普攻意愿判定的剩余时间（秒）。
 
-		/// <summary>进入站定攻击状态时立即准备进行攻击判定。</summary>
+		/// <summary>进入站定攻击状态时按配置随机安排首次判定延迟。</summary>
 		protected override void Enter(IMonsterAiAgent agent)
 		{
 			base.Enter(agent);
-			m_RollTimer = 0f;
+			// 首次反应时间由配置给出（AttackFirstDelay），不硬编码；之后按 AttackInterval 固定节奏掷骰。
+			m_RollTimer = MonsterAttackSpec.Roll(agent.Params.AttackFirstDelay, agent.NextRandom());
 		}
 
 		/// <summary>处理范围滞回、高度踱步和普攻请求。</summary>

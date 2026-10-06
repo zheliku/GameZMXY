@@ -46,6 +46,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         PatrolIdleChance = _buf.ReadInt();
         PatrolRadius = _buf.ReadInt();
         AttackInterval = _buf.ReadFloat();
+        AttackFirstDelay = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         Rank = (Monster.MonsterRank)_buf.ReadInt();
         SuperArmor = _buf.ReadBool();
         AttackRangeSlack = _buf.ReadInt();
@@ -163,7 +164,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// </summary>
     public readonly float Gravity;
     /// <summary>
-    /// 巡逻重新决策间隔秒(旧 change_state 计时器 2s)
+    /// 巡逻重新决策间隔秒(旧 change_state 计时器 3s)
     /// </summary>
     public readonly float PatrolInterval;
     /// <summary>
@@ -178,6 +179,10 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// 近身后普攻判定间隔秒(旧 count%60≈1s,每次按 AttackDesire 掷骰)
     /// </summary>
     public readonly float AttackInterval;
+    /// <summary>
+    /// 进入攻击范围后首次出手判定的随机延迟秒(x=最短,y=最长);出手是概率判定,这里只是反应时间
+    /// </summary>
+    public readonly Godot.Vector2 AttackFirstDelay;
     /// <summary>
     /// 阶级 Normal/Elite/Boss(旧 is_boss;供 HUD/掉落/结算区分)
     /// </summary>
@@ -239,6 +244,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "PatrolIdleChance:" + PatrolIdleChance + ","
         + "PatrolRadius:" + PatrolRadius + ","
         + "AttackInterval:" + AttackInterval + ","
+        + "AttackFirstDelay:" + AttackFirstDelay + ","
         + "Rank:" + Rank + ","
         + "SuperArmor:" + SuperArmor + ","
         + "AttackRangeSlack:" + AttackRangeSlack + ","

@@ -21,6 +21,10 @@ namespace GameConfig.Entity
         /// 花果山猴子
         /// </summary>
         HuaguoshanMonkey = 1,
+        /// <summary>
+        /// 妖猴
+        /// </summary>
+        DemonMonkey = 2,
     }
 
 } 

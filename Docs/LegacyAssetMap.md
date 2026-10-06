@@ -6,7 +6,7 @@
 
 ## 当前阶段范围（M1）
 
-`wukong` + `huaguoshan_monkey`（旧 Monster1）+ `Level_1`（花果山）。
+`wukong` + `huaguoshan_monkey`（旧 Monster1）+ `demon_monkey`（旧 Monster2，妖猴）+ `Level_1`（花果山）+ `TestArena`（怪物与角色测试关卡）+ `gogo`（旧 `Art/Level/Gogo` 前进提示）。
 
 ## 贴图映射
 
@@ -19,9 +19,15 @@
 | `Art/Monster/Monster1/Hit.png` | `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_attack.png` | 91×83 × 6 帧 |
 | `Art/Monster/Monster1/Hurt.png` | `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_hurt.png` | 68×86 × 2 帧 |
 | `Art/Monster/Monster1/Death.png` | `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_death.png` | 91×88 × 6 帧 |
+| `Art/Monster/Monster2/Wait.png` | `Sprites/Characters/Monsters/demon_monkey/demon_monkey_idle.png` | 74×114 × 5 帧 |
+| `Art/Monster/Monster2/Walk.png` | `Sprites/Characters/Monsters/demon_monkey/demon_monkey_run.png` | 116×105 × 4 帧 |
+| `Art/Monster/Monster2/Hit.png` | `Sprites/Characters/Monsters/demon_monkey/demon_monkey_attack.png` | 130×134 × 4 帧 |
+| `Art/Monster/Monster2/Hurt.png` | `Sprites/Characters/Monsters/demon_monkey/demon_monkey_hurt.png` | 89×87 × 1 帧 |
+| `Art/Monster/Monster2/Death.png` | `Sprites/Characters/Monsters/demon_monkey/demon_monkey_death.png` | 124×108 × 5 帧 |
 | `Art/Level/Level_1/19_1.png` | `Sprites/Levels/huaguoshan/level_1_bg_end.png` | 1440×690；旧 `BackGround/End/end2` 背景端块 |
 | `Art/Level/Level_1/48.png` | `Sprites/Levels/huaguoshan/level_1_front.png` | 4957×633；旧 `BackGround/front` 前景视差层 |
-| `Art/Level/Level_1/183.png` | `Sprites/Levels/huaguoshan/level_1_floor.png` | 4812×170；旧 `BackGround/floor3/floor2` 地板视差层 |
+| `Art/Level/Level_1/183.png` | `Sprites/Levels/huaguoshan/level_1_floor.png` | 原 4812×170；旧 `BackGround/floor3/floor2` 地板视差层。**已裁至 4700×170**：右侧 112px 圆角收尾（x≥4716 顶面下坠、右下透明）会露出背景，相机右界随之定在 4700 |
+| `Art/Level/Gogo/1..67.png` | `Sprites/UI/gogo/gogo_sheet.png` + `gogo_animations.tres` | 67 帧 213×92 打包为 8×9 图集；旧 `Role_information` 的 `Gogo`（`AnimatedSprite2D`，speed 25、循环） |
 | `Art/HeroPicture/Role1SpecialEffect/Role1Hit1.png` | `Sprites/Effects/wukong/wukong_hit_1.png` | 210×206 × 5 帧；普攻 1 段棍气 |
 | `Art/HeroPicture/Role1SpecialEffect/Role1Hit2.png` | `Sprites/Effects/wukong/wukong_hit_2.png` | 159×54 × 2 帧；普攻 2 段棍气 |
 | `Art/HeroPicture/Role1SpecialEffect/Role1Hit3.png` | `Sprites/Effects/wukong/wukong_hit_3.png` | 326×66 × 4 帧；普攻 3 段棍气 |
@@ -76,6 +82,20 @@
 | `Hit` | `attack_1` | 6 | 否 |
 | `Hurt` | `hurt` | 2 | 否 |
 | `Death` | `death` | 6 | 否 |
+
+### demon_monkey（妖猴，旧 Monster_2）—— `Sprites/Characters/Monsters/demon_monkey/demon_monkey_animations.tres`
+
+源：`Scene/Monster/Monster_2.tscn` 的 `AtlasTexture` 切分规格，按固定网格重新生成；身体层与判定盒同原点（不额外下移），动画库见 `Entitys/Animations/demon_monkey_anim_library.tres`。
+
+| 旧动画名 | 新动画名 | 帧数 | 循环 |
+| --- | --- | --- | --- |
+| `wait` | `idle` | 5 | 是 |
+| `walk` | `run` | 4 | 是 |
+| `hit1` | `attack_1` | 4 | 否 |
+| `hurt` | `hurt` | 1 | 否 |
+| `death` | `death` | 5 | 否 |
+
+旧 `hit1` 判定窗 0.10~0.40s；旧 `hit1` 判定盒圆 r=46.0109 @(−31,−4) → 新 80×80 @(−31,−4)（编辑器调校；攻击与静止同值，库含 RESET 默认动画）。
 
 ## 棍气特效层（旧 `Action/SpecialEffect`）—— 1:1 迁移
 
@@ -214,6 +234,7 @@ python Tools/LegacyMigration/gen_animations.py
 | wukong `attack_3` | `hit3` | 0.0333–0.1667 | 矩形 323×57 @(0,31.5) | 233×75 @(−13.5, 23.5) |
 | wukong `attack_4` | `hit4` | 0.0667–0.2000 | 矩形 273×74 @(−38.5,38) | 233×96 @(−13.5, 12) |
 | monkey `attack_1` | Monster_1 `hit1`（speed_scale 1） | 0.30–0.40 | 圆 r25 @(−24,−10) | 50×50 @(−24, −23)（Y 修正身体层 (0,−13) 偏移） |
+| demon_monkey `attack_1` | Monster_2 `hit1`（speed_scale 1） | 0.10–0.40 | 圆 r46.0109 @(−31,−4) | 80×80 @(−31, −4)（编辑器调校；身体层与判定盒同原点） |
 
 数值不再进 `AttackConfig`（表只存玩法数值；2026-09-30 删除 HitBoxOffset/HitBoxSize/Interval 三列）。
 
@@ -228,6 +249,18 @@ python Tools/LegacyMigration/gen_animations.py
 | attack_1 | hit1 | 0:0.12 1:0.12 2..5 各 0.04 | (−13,0) |
 | hurt | hurt | 0:0.16 1:0.12 | (1.5,−0.5) |
 | death | death | 0..4 各 0.0667，5 停到 0.8 | (4,0) |
+
+### demon_monkey 动画库
+
+`Entitys/Animations/demon_monkey_anim_library.tres`（`gen_animations.py` 的 `gen_demon_monkey_library()`）。轨道驱动 `m_Body`（AnimatedSprite2D，复用 `demon_monkey_animations.tres`）的 animation/frame/offset，规则同 huaguoshan_monkey：
+
+| 新动画 | 旧 | 帧:秒 | offset（朝左原值，镜像由父缩放处理） |
+| --- | --- | --- | --- |
+| idle | wait | 0..4 各 0.1 | (−2.5,0) |
+| run | walk | 0..3 各 0.2 | (13.5,4) |
+| attack_1 | hit1 | 0:0.0667 1:0.0667 2:0.0667 3:0.2668 | (−26.5,−9.5) |
+| hurt | hurt | 0:0.28 | (10,5) |
+| death | death | 0..3 各 0.1，4 停到 1.2 | (0,0) |
 
 ### 伤害数字
 

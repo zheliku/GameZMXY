@@ -20,12 +20,13 @@ namespace GameLogic.Battle.Tests
 
 		private static readonly AiBox MonkeyReach = new AiBox(-49f, 1f, -48f, 2f); // 猴子 attack_1 判定盒范围（原生朝左）。
 
-		private static MonsterAiParams MonkeyParams(int desire = 70, float calm = 0f, float pace = 60f) // 猴子同款参数：欲望 70、判定 1s、巡逻 2s/10%/半径 200、僵直 0、滞回 25、踱步半幅 60。
+		private static MonsterAiParams MonkeyParams(int desire = 70, float calm = 0f, float pace = 60f) // 猴子同款参数：欲望 70、判定 1s、首次延迟 0.35~1.0s、巡逻 2s/10%/半径 200、僵直 0、滞回 25、踱步半幅 60。
 		{
 			return new MonsterAiParams
 			{
 				AttackDesire = desire,
 				AttackInterval = 1f,
+				AttackFirstDelay = (0.35f, 1f),
 				PatrolInterval = 2f,
 				PatrolIdleChance = 10,
 				PatrolRadius = 200f,
@@ -266,7 +267,7 @@ namespace GameLogic.Battle.Tests
 			h.Agent.Target(Hero(-40f));
 			h.Step(1);
 			Assert.Equal("StandAndStrike", h.State);
-			h.Step(1);   // 进入 StandAndStrike 后首个决策帧即掷（欲望 100 必中）
+			h.Run(1f);   // 进入站定后先随机停一拍（首掷延迟 ≤ AttackInterval），随后按欲望 100 出招
 			Assert.Equal(0, h.Agent.RequestedAttack);
 			Assert.Equal(-1, h.Agent.FaceDir);
 		}
@@ -291,6 +292,24 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("WalkToTarget", h.State);
 		}
 
+		/// <summary>验证刚进入攻击范围不会立刻出手，而是先随机停一拍再判定。</summary>
+		[Fact]
+		public void Fsm_StandAndStrike_DoesNotStrikeImmediatelyOnEntry()
+		{
+			using AiHarness h = new AiHarness(MonkeyParams(desire: 100), new[] { Basic(0) }, 0.9f);
+			h.Step(1);
+			h.Agent.Target(Hero(-40f));
+			h.Step(2);   // Wander→WalkToTarget→StandAndStrike（进入即安排随机首掷延迟）
+			Assert.Equal("StandAndStrike", h.State);
+			Assert.Equal(-1, h.Agent.RequestedAttack);   // 进入当帧不出手
+
+			h.Run(0.5f);   // 随机值 0.9 → 首掷延迟约 0.935s，此时未到
+			Assert.Equal(-1, h.Agent.RequestedAttack);
+
+			h.Run(0.5f);   // 越过首掷延迟后按欲望 100 出招
+			Assert.Equal(0, h.Agent.RequestedAttack);
+		}
+
 		/// <summary>验证目标位于头顶时先踱步，落地后再进入攻击决策。</summary>
 		[Fact]
 		public void Fsm_TargetAboveHead_PacesBelowWithoutAttacking_ThenStrikesWhenLanded()
@@ -306,7 +325,8 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(-1, h.Agent.RequestedAttack);
 
 			h.Agent.Target(Hero(-30f));          // 落地
-			h.Step(3);                           // PaceBelowTarget→StandAndStrike→首帧即掷（欲望 100）
+			h.Step(1);                           // PaceBelowTarget→StandAndStrike
+			h.Run(1f);                           // 随机首掷延迟结束后按欲望 100 出招
 			Assert.Equal(0, h.Agent.RequestedAttack);
 		}
 
@@ -370,7 +390,8 @@ namespace GameLogic.Battle.Tests
 			using AiHarness h = new AiHarness(MonkeyParams(desire: 100), new[] { Basic(0) }, 0.9f);
 			h.Step(1);
 			h.Agent.Target(Hero(-40f));
-			h.Step(3);   // Wander→WalkToTarget→StandAndStrike→出招
+			h.Step(2);   // Wander→WalkToTarget→StandAndStrike
+			h.Run(1f);   // 随机首掷延迟结束后出招
 			Assert.True(h.Agent.IsAttacking);
 
 			// 出招/收招硬直期间目标绕到身后又跑远：不转身、不移动、不离开站定

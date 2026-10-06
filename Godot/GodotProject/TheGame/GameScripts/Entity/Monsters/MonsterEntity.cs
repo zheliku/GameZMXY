@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using GameConfig.Battle;
 using GameConfig.Monster;
@@ -7,7 +8,6 @@ using GameFramework.Fsm;
 using GameLogic.Battle;
 using GameLogic.Entity.Body;
 using GameLogic.Entity.Monsters.AI;
-using GameLogic.Entity.Monsters.AI.States;
 using GameLogic.Entity.Monsters.Body;
 using GameLogic.Event;
 using Godot;
@@ -17,19 +17,26 @@ using GodotGameFramework.Entity;
 namespace GameLogic.Entity.Monsters
 {
 	/// <summary>
-	/// 怪物基类（抽象）= 两台状态机的宿主：属性（MonsterConfig）、结算、感知与物理。
+	/// 怪物最通用基类（抽象）= 两台状态机的**宿主** + 怪物通用事实，不预设任何具体行为。
+	///
+	/// **职责边界**：本类只做"所有怪物都一样"的事——配置与属性、受击/死亡结算、索敌感知、招式装配、
+	/// 以及按物理帧/框架帧推进两台状态机并回收实体。**具体行为由行为类别子类给出**：
+	/// 地面近战怪见 <see cref="GroundMeleeMonsterEntity"/>（地面行走 + 近战招式 + 巡逻追击 AI）；
+	/// 飞行、远程、精英、Boss 各自新建行为类别类，用 <see cref="CreateBodyStates"/> /
+	/// <see cref="CreateAiStates"/> / <see cref="InitialBodyStateType"/> / <see cref="InitialAiStateType"/> /
+	/// <see cref="BuildAiParams"/> / <see cref="BuildAttackSpec"/> / <see cref="InHurt"/> / <see cref="InRecovery"/>
+	/// 声明自己的状态集与参数；数值一律走配置表。具体怪物（如花果山猴子）只做数据绑定，通常为空类。
 	///
 	/// 三层分工（2026-10-01 定稿；同 Unreal 的 AIController / Character / AnimBP）：
 	///  * **AI 状态机**（GF.Fsm&lt;<see cref="IMonsterAiAgent"/>&gt;，框架帧）只写**意图**：Move / Face / RequestAttack；
-	///  * **身体状态机**（GF.Fsm&lt;<see cref="IMonsterBody"/>&gt;，物理帧，见 Monsters/Body/）是受击、死亡、出招、
-	///    收招硬直的唯一权威，把意图变成动作与物理，并请求播放动画；它不知道 AI 的存在；
+	///  * **身体状态机**（GF.Fsm&lt;<see cref="IMonsterBody"/>&gt;，物理帧）是受击、死亡、出招、收招硬直的
+	///    唯一权威，把意图变成动作与物理，并请求播放动画；它不知道 AI 的存在；
 	///  * **AnimationPlayer 只播放**：动画资源是纯表现数据（帧/特效/判定盒值轨道，无方法轨道），
 	///    从不调用代码——动作时长 = OnInit 读动画长度，状态自己计时（A 方案：代码唯一时钟）。
-	/// AI 经本类只读身体事实（<see cref="IMonsterAiAgent.IsCcLocked"/> = 身体在 Hurt、IsAttacking = 已请求/出招/收招硬直）。
+	/// AI 经本类只读身体事实（<see cref="IMonsterAiAgent.IsCcLocked"/>、IsAttacking、IsDead）。
 	///
 	/// 出招节奏：AI 请求 → 身体 Move 状态在下一物理帧提交（进入出招状态：转向目标、装填攻击包、起手音）→
-	/// 招式时长（= 动画长度）走完 → 收招硬直 AttackConfig.AiRecovery → Move。受击打断出招与硬直（旧项目手感），霸体不登记受击。
-	/// 够不够得着：每招范围由攻击动画判定盒推导（<see cref="AttackReachReader"/>），与目标受击盒求交（含高度）。
+	/// 招式时长（= 动画长度）走完 → 收招硬直 AttackConfig.AiRecovery → Move。受击打断出招与硬直，霸体不登记受击。
 	/// 感知：m_Detector（Detector 层扫 PlayerBody，宽 2×SightRange）无目标时锁敌；被打直接锁定攻击方；
 	/// 目标死亡/回收即失效，水平距离持续超出 SightRange 达 LoseTargetTime 秒即丢失（0 = 保留旧项目"只置不清"）。
 	/// </summary>
@@ -41,6 +48,9 @@ namespace GameLogic.Entity.Monsters
 
 		[Export] private GameConfig.Entity.EntityId m_MonsterEntityId; // 场景用可读枚举绑定唯一怪物配置行。
 
+		/// <summary>场景绑定的怪物配置枚举（编辑器与测试工具读取；运行期数值见 <see cref="Config"/>）。</summary>
+		public GameConfig.Entity.EntityId MonsterEntityId => m_MonsterEntityId;
+
 		/// <summary>怪物配置</summary>
 		public MonsterConfig Config { get; private set; }
 
@@ -51,7 +61,7 @@ namespace GameLogic.Entity.Monsters
 		/// 霸体：受击照常扣血飘字，但不硬直、不击退、不打断出招（MonsterConfig.SuperArmor）。
 		/// 子类可覆写做条件霸体（Boss 出招期间、低血量……）。
 		/// </summary>
-		protected virtual bool IsSuperArmor => Config != null && Config.SuperArmor;
+		protected virtual bool IsSuperArmor => Config is { SuperArmor: true };
 
 		private MonsterAiParams m_AiParams; // 从 MonsterConfig 复制的 AI 参数快照。
 		private MonsterBodyParams m_BodyParams; // 从配置和攻击动画构建的身体状态参数快照。
@@ -69,24 +79,27 @@ namespace GameLogic.Entity.Monsters
 		/// <summary>当前 AI 状态名（调试/冒烟观测；无 AI 为空串）</summary>
 		public string AiStateName => (m_AiFsm?.CurrentState as MonsterAiState)?.StateName ?? "";
 
-		/// <summary>当前身体状态名（调试/冒烟观测：Move / Attack / Recovery / Hurt / Death）</summary>
+		/// <summary>当前身体状态名（调试/冒烟观测；名称由行为类别的身体状态集决定）</summary>
 		public string BodyStateName => BodyFsm.CurrentName(m_BodyFsm);
 
 		/// <summary>移动意图（AI 写入，身体执行；调试观测）</summary>
 		public int MoveIntent { get; private set; }
 
-		/// <summary>收招硬直中（调试/冒烟观测）</summary>
-		public bool InRecovery => BodyFsm.IsIn<IMonsterBody, MonsterRecoveryState>(m_BodyFsm);
+		/// <summary>收招硬直中（由行为类别按自己的身体状态机提供；调试/冒烟观测）</summary>
+		public abstract bool InRecovery { get; }
 
-		/// <summary>受击硬直中（调试/冒烟观测；AI 的受控判定同源）</summary>
-		public bool InHurt => BodyFsm.IsIn<IMonsterBody, MonsterHurtState>(m_BodyFsm);
+		/// <summary>受击硬直中（由行为类别提供；AI 的受控判定同源）</summary>
+		public abstract bool InHurt { get; }
 
 		private bool IsBusy => AttackSegment >= 0 || m_AttackRequest >= 0 || InRecovery; // 已请求、出招或收招硬直中。
 
 		private bool CanAct => !Dead && !InHurt; // 未受击硬直且未死亡时可自主行动。
 
-		private IFsm<IMonsterAiAgent> m_AiFsm; // 按框架帧驱动的怪物 AI 状态机。
-		private IFsm<IMonsterBody> m_BodyFsm; // 按物理帧推进的怪物身体状态机。
+		/// <summary>按框架帧驱动的怪物 AI 状态机（行为类别按自己的状态类型查询）。</summary>
+		protected IFsm<IMonsterAiAgent> m_AiFsm;
+
+		/// <summary>按物理帧推进的怪物身体状态机（行为类别按自己的状态类型查询受击/收招硬直）。</summary>
+		protected IFsm<IMonsterBody> m_BodyFsm;
 		private ActorEntity m_Target; // 当前索敌目标；失效或超时后清除。
 		private Vector2 m_Home; // 本次显示时记录的巡逻起点。
 		private int m_LastAttackerId; // 最近一次造成有效受击的实体编号。
@@ -117,17 +130,7 @@ namespace GameLogic.Entity.Monsters
 			Config = matches[0];
 
 			MaxHp = Config.Hp;
-			m_AiParams = new MonsterAiParams
-			{
-				AttackDesire = Config.AttackDesire,
-				AttackInterval = Config.AttackInterval,
-				PatrolInterval = Config.PatrolInterval,
-				PatrolIdleChance = Config.PatrolIdleChance,
-				PatrolRadius = Config.PatrolRadius,
-				CalmTime = Config.BehitCalmTime,
-				AttackRangeSlack = Config.AttackRangeSlack,
-				PaceRange = Config.PaceRange,
-			};
+			m_AiParams = BuildAiParams();
 			LoadAttacks();
 			m_BodyParams = BuildBodyParams();
 			if (isNewInstance)
@@ -300,32 +303,40 @@ namespace GameLogic.Entity.Monsters
 					Config.EntityId);
 			}
 
-			// 将攻击配置转换为 AI 使用的范围、权重和冷却快照。
+			// 将攻击配置转换为 AI 使用的范围、权重和冷却快照；判定盒/射程由行为类别补充。
 			MonsterAttackSpec[] specs = new MonsterAttackSpec[OwnAttacks.Length];
 			for (int i = 0; i < specs.Length; i++)
 			{
-				AttackConfig a = OwnAttacks[i];
-				specs[i] = new MonsterAttackSpec
-				{
-					Index = i,
-					Weight = a.AiWeight,
-					Priority = a.AiPriority,
-					Reach = AttackReachReader.Read(this, a.Animation),
-					Range = (a.AiRange.X, a.AiRange.Y),
-					Cooldown = (a.AiCooldown.X, a.AiCooldown.Y),
-					InitCooldown = (a.AiInitCooldown.X, a.AiInitCooldown.Y),
-				};
-				if (a.AiWeight > 0 && specs[i].Reach.IsEmpty && a.AiRange.Y <= 0f)
-				{
-					Log.Warning("[MonsterEntity] {0} 的招式 {1}（动画 {2}）推导不出判定盒、且 AiRange 为 0,0：AI 不会使用这招",
-						Config.NameCn, a.Id, a.Animation);
-				}
+				specs[i] = BuildAttackSpec(i, OwnAttacks[i]);
 			}
 
 			Attacks = new MonsterAttackBook(specs);
 		}
 
-		private MonsterBodyParams BuildBodyParams() // 构建身体状态机所需的配置与动画时长快照。
+		/// <summary>把一条 AttackConfig 转成 AI 用法快照（扩展点：近战类别补判定盒范围，远程类别补射程）。</summary>
+		/// <param name="index">招式下标（= AttackSegment）。</param>
+		/// <param name="attack">该招的配置行。</param>
+		/// <returns>AI 抽选与释放判定使用的规格。</returns>
+		protected virtual MonsterAttackSpec BuildAttackSpec(int index, AttackConfig attack)
+		{
+			return new MonsterAttackSpec
+			{
+				Index = index,
+				Weight = attack.AiWeight,
+				Priority = attack.AiPriority,
+				Range = (attack.AiRange.X, attack.AiRange.Y),
+				Cooldown = (attack.AiCooldown.X, attack.AiCooldown.Y),
+				InitCooldown = (attack.AiInitCooldown.X, attack.AiInitCooldown.Y),
+			};
+		}
+
+		/// <summary>构建 AI 参数快照（**行为类别必须给出**：索敌、巡逻与出手欲望等数值来源）。</summary>
+		/// <returns>AI 状态机使用的参数快照。</returns>
+		protected abstract MonsterAiParams BuildAiParams();
+
+		/// <summary>构建身体状态机所需的配置与动画时长快照（扩展点：飞行/远程怪在子类替换参数）。</summary>
+		/// <returns>身体状态机使用的参数快照。</returns>
+		protected virtual MonsterBodyParams BuildBodyParams()
 		{
 			// 读取每段攻击动画和收招硬直，供状态机按物理时间推进。
 			string[] anims = new string[OwnAttacks.Length];
@@ -456,6 +467,13 @@ namespace GameLogic.Entity.Monsters
 
 		#region 身体状态机宿主（IMonsterBody：身体状态只经这里读写；公共成员由 ActorEntity 提供）
 
+		/// <summary>身体状态集合（**行为类别必须给出**：地面近战是移动/攻击/收招/受击/死亡，飞行、远程各不相同）。</summary>
+		/// <returns>本怪物使用的全部身体状态。</returns>
+		protected abstract FsmState<IMonsterBody>[] CreateBodyStates();
+
+		/// <summary>身体初始状态类型（**行为类别必须给出**）。</summary>
+		protected abstract Type InitialBodyStateType { get; }
+
 		private void CreateBody() // 创建并启动怪物身体状态机；已有状态机时保持复用。
 		{
 			if (Config == null || m_BodyFsm != null)
@@ -463,10 +481,8 @@ namespace GameLogic.Entity.Monsters
 				return;
 			}
 
-			m_BodyFsm = GF.Fsm.CreateFsm<IMonsterBody>($"MonsterBody_{Id}", this,
-				new MonsterMoveState(), new MonsterAttackState(), new MonsterRecoveryState(), new MonsterHurtState(),
-				new MonsterDeathState());
-			m_BodyFsm.Start<MonsterMoveState>();
+			m_BodyFsm = GF.Fsm.CreateFsm<IMonsterBody>($"MonsterBody_{Id}", this, CreateBodyStates());
+			m_BodyFsm.Start(InitialBodyStateType);
 		}
 
 		private void DestroyBody(bool isShutdown) // 销毁身体状态机，关停阶段仅清除本地引用。
@@ -525,6 +541,13 @@ namespace GameLogic.Entity.Monsters
 
 		#region AI 宿主（IMonsterAiAgent：AI 只经这里读感知与身体事实、写意图）
 
+		/// <summary>AI 状态集合（**行为类别必须给出**：地面近战是巡逻/追击/站定出招，远程、飞行各不相同）。</summary>
+		/// <returns>本怪物使用的全部 AI 状态。</returns>
+		protected abstract FsmState<IMonsterAiAgent>[] CreateAiStates();
+
+		/// <summary>AI 初始状态类型（**行为类别必须给出**）。</summary>
+		protected abstract Type InitialAiStateType { get; }
+
 		private void CreateAi() // 创建并启动怪物 AI 状态机。
 		{
 			if (!AiEnabled || m_AiFsm != null || Config == null || !IsShown)
@@ -532,10 +555,8 @@ namespace GameLogic.Entity.Monsters
 				return;
 			}
 
-			m_AiFsm = GF.Fsm.CreateFsm<IMonsterAiAgent>($"MonsterAI_{Id}", this,
-				new PauseState(), new WanderState(), new WalkToTargetState(), new StandAndStrikeState(),
-				new PaceBelowTargetState(), new CcLockedState(), new DeathState());
-			m_AiFsm.Start<WanderState>();
+			m_AiFsm = GF.Fsm.CreateFsm($"MonsterAI_{Id}", this, CreateAiStates());
+			m_AiFsm.Start(InitialAiStateType);
 		}
 
 		private void DestroyAi(bool isShutdown) // 销毁 AI 状态机，关停阶段仅清除本地引用。

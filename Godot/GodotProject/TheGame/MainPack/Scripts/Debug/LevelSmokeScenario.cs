@@ -33,6 +33,7 @@ public sealed class LevelSmokeScenario
     private Step m_Step; // 当前战斗物理验证步骤。
     private double m_Time; // 整体游戏时间，超时用于报告卡住的位置。
     private double m_BattleTime; // 当前阶段开战后的游戏时间。
+    private bool m_GoHintSeen; // 是否在行进阶段观察到前进提示。
 
     /// <summary>创建正式关卡的物理回归场景。</summary>
     public LevelSmokeScenario(HeroEntity hero, LevelController level)
@@ -82,6 +83,12 @@ public sealed class LevelSmokeScenario
                 Fail("相机抵达之前生成了下一阶段敌人");
             }
 
+            // 清波后到下一场开战之间，右侧应亮起前进提示（旧项目 role_information.gogo）。
+            if (m_Level.GoHintVisible)
+            {
+                m_GoHintSeen = true;
+            }
+
             Move("move_right");
             // 用户保留的斜坡含竖直端面，烟测用真实跳跃跨越，不修改场景地形。
             if (m_Hero.IsOnWall() && m_Hero.IsOnFloor())
@@ -95,6 +102,11 @@ public sealed class LevelSmokeScenario
         }
         else if (m_Level.Phase == LevelStagePhase.Fighting)
         {
+            if (m_Level.GoHintVisible)
+            {
+                Fail("开战后前进提示仍然可见");
+            }
+
             DriveBattle(delta, monsters);
         }
         else if (m_Level.Phase == LevelStagePhase.Completed)
@@ -103,6 +115,11 @@ public sealed class LevelSmokeScenario
             if (m_Seen.Count != expected)
             {
                 Fail($"怪物总数错误：实际 {m_Seen.Count}，配置 {expected}");
+            }
+
+            if (!m_GoHintSeen)
+            {
+                Fail("清波后未出现前进提示（Go）");
             }
 
             IsDone = true;
@@ -137,6 +154,7 @@ public sealed class LevelSmokeScenario
             }
 
             GD.Print($"SMOKE-LEVEL: stage {stage.StageOrder} arrived, camera={m_Camera.GlobalPosition.X:0.0}, player={m_Hero.GlobalPosition.X:0.0}");
+            PlaceForWallTest(region.Right - 40f);
         }
 
         m_BattleTime += delta;
@@ -171,9 +189,25 @@ public sealed class LevelSmokeScenario
         if (m_BlockedFrames >= 20)
         {
             // 第二阶段额外验证左门；其余阶段在右墙前清波，覆盖最容易发生相机跳变的站位。
-            m_Step = right && stage.StageOrder == 2 ? Step.LeftWall : Step.Kill;
+            if (right && stage.StageOrder == 2)
+            {
+                m_Step = Step.LeftWall;
+                PlaceForWallTest(region.Left + 40f);
+            }
+            else
+            {
+                m_Step = Step.Kill;
+            }
+
             m_BlockedFrames = 0;
         }
+    }
+
+    private void PlaceForWallTest(float x) // 把玩家放到待测墙边，避免中途被地形或怪物的身体卡住。
+    {
+        m_Hero.GlobalPosition = new Vector2(x, m_Hero.GlobalPosition.Y);
+        m_Hero.Velocity = Vector2.Zero;
+        m_LastPlayerX = x;
     }
 
     private static void Move(string action) // 每帧只保持一个移动方向，结束时释放全部测试输入。

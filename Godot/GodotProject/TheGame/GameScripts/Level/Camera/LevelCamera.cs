@@ -9,7 +9,7 @@ public partial class LevelCamera : Camera2D
 {
     [Export(PropertyHint.Range, "0,200,1")] private float m_DeadZoneHalfWidth = 40f; // 中央死区半宽，单位为屏幕像素。
     [Export(PropertyHint.Range, "1,2000,1")] private float m_MaxPanSpeed = 600f; // 追近取景目标的速度上限，单位为世界像素每秒。
-    [Export] private Color m_GuideColor = new(0.2f, 0.85f, 1f, 0.8f); // 视野框与中央死区颜色。
+    [Export] private Color m_GuideColor = new(1f, 0.35f, 1f, 0.75f); // 视野框与中央死区颜色。
     [Export] private bool m_DrawInGame; // 调试时显示相机取景引导。
 
     private Node2D m_Target; // 由关卡会话注入的跟随目标。

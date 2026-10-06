@@ -1,0 +1,80 @@
+[gd_scene format=3 uid="uid://y6q3h5fly83h"]
+
+[ext_resource type="Script" uid="uid://c73owhur3v0p4" path="res://TheGame/GameScripts/Entity/Monsters/DemonMonkeyEntity.cs" id="1_script"]
+[ext_resource type="SpriteFrames" uid="uid://b0oxbkaxv8w0m" path="res://TheGame/Sprites/Characters/Monsters/demon_monkey/demon_monkey_animations.tres" id="2_frames"]
+[ext_resource type="AnimationLibrary" uid="uid://denuc0ot4c0gs" path="res://TheGame/Entitys/Animations/demon_monkey_anim_library.tres" id="3_lib"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBox.cs" id="5_hurtbox"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
+radius = 21.0
+height = 82.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_hurt"]
+radius = 21.0
+height = 82.0
+
+[sub_resource type="RectangleShape2D" id="hitbox_attack_1"]
+size = Vector2(80, 80)
+
+[sub_resource type="RectangleShape2D" id="detector_sight"]
+size = Vector2(600, 200)
+
+[node name="DemonMonkeyEntity" type="CharacterBody2D" unique_id=646643873 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+collision_layer = 4
+collision_mask = 9
+script = ExtResource("1_script")
+m_Detector = NodePath("m_Detector")
+m_MonsterEntityId = 2
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
+
+[node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=997035204]
+sprite_frames = ExtResource("2_frames")
+animation = &"attack_1"
+offset = Vector2(-26.5, -9.5)
+
+[node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=857422875]
+position = Vector2(1, 2)
+shape = SubResource("CapsuleShape2D_body")
+debug_color = Color(0, 1, 0, 0.41960785)
+
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=1285550310 node_paths=PackedStringArray("m_Owner")]
+position = Vector2(4, 6)
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("5_hurtbox")
+m_Owner = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=913189411]
+position = Vector2(-3, -4)
+shape = SubResource("CapsuleShape2D_hurt")
+debug_color = Color(1, 0, 0, 0.41960785)
+
+[node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=915495872]
+
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=1290343208]
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1977422246]
+position = Vector2(-31, -4)
+shape = SubResource("hitbox_attack_1")
+disabled = true
+
+[node name="m_Detector" type="Area2D" parent="." unique_id=979705160]
+collision_layer = 4096
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=1887612703]
+position = Vector2(0, -21)
+shape = SubResource("detector_sight")
+debug_color = Color(1, 1, 0, 0.1)
+
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=767246798]
+libraries/ = ExtResource("3_lib")
