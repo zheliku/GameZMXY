@@ -5,7 +5,7 @@ using GodotGameFramework;
 using GodotGameFramework.NodePool;
 using GodotGameFrameworkCore.SingletonSystem;
 
-namespace GameLogic.Manager
+namespace GameLogic.UI
 {
 	/// <summary>
 	/// 伤害飘字管理：订阅 <see cref="DamageDealtEventArgs"/>，从 NodePool 取 <see cref="UI.DamagePop"/> 显示。

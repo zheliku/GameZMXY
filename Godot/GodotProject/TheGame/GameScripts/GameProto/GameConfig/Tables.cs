@@ -177,24 +177,6 @@ public partial class Tables
             m_TbLevelConfig.ResolveRef(this);
         }
     }
-    private Level.TbLevelStageConfig m_TbLevelStageConfig;
-    public Level.TbLevelStageConfig TbLevelStageConfig 
-    {
-        get
-        {
-            if (m_TbLevelStageConfig == null)
-            {
-                m_TbLevelStageConfig = new Level.TbLevelStageConfig(defaultLoader("level_tblevelstageconfig"));
-                m_TbLevelStageConfig.ResolveRef(this);
-            }
-            return m_TbLevelStageConfig;
-        }
-        set
-        {
-            m_TbLevelStageConfig = value;
-            m_TbLevelStageConfig.ResolveRef(this);
-        }
-    }
 
     #endregion
 

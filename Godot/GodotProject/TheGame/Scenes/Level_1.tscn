@@ -1,26 +1,87 @@
 [gd_scene format=3 uid="uid://bvkf8qofj10yc"]
 
 [ext_resource type="Script" uid="uid://d2x72rm6l5oeq" path="res://TheGame/GameScripts/Level/LevelController.cs" id="1_controller"]
-[ext_resource type="Script" uid="uid://b3qiwmv5fe6lj" path="res://TheGame/GameScripts/Level/LevelSpawnPoint.cs" id="2_spawn_point"]
+[ext_resource type="Script" uid="uid://dkuuiel88m4ep" path="res://TheGame/GameScripts/Level/Camera/LevelCamera.cs" id="2_camera"]
 [ext_resource type="Texture2D" uid="uid://cpk7ttkaom0hn" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_bg_end.png" id="3_bg_end"]
 [ext_resource type="Texture2D" uid="uid://dsa76w2xxiq0b" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_front.png" id="4_front"]
 [ext_resource type="Texture2D" uid="uid://bo4uw8k2ajk8o" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_floor.png" id="5_floor"]
-[ext_resource type="Script" uid="uid://bae8h5wgsixek" path="res://TheGame/GameScripts/Level/LevelStageTrigger.cs" id="6_stage_trigger"]
+[ext_resource type="Script" uid="uid://dd28ay4bkp1fl" path="res://TheGame/GameScripts/Level/Markers/LevelMarkerEntry.cs" id="6_marker_entry"]
+[ext_resource type="Script" uid="uid://bkq4g0l6t4k15" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnPointSet.cs" id="9_spawn_manager"]
+[ext_resource type="Script" uid="uid://b7abdk6hcrmws" path="res://TheGame/GameScripts/Level/Stage/LevelStageTriggerSet.cs" id="10_trigger_manager"]
+[ext_resource type="Script" uid="uid://b6ai16cs6v6de" path="res://TheGame/GameScripts/Level/Stage/LevelStageGateSet.cs" id="11_gate_manager"]
+[ext_resource type="Script" uid="uid://ccjmic0fgxfrv" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawner.cs" id="12_monster_manager"]
 
 [sub_resource type="RectangleShape2D" id="GroundShape"]
-size = Vector2(4812, 60)
+size = Vector2(4812, 93)
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_6ynqx"]
+height = 120.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qtbsk"]
+height = 222.0
 
 [sub_resource type="RectangleShape2D" id="WorldWallShape"]
 size = Vector2(80, 700)
 
-[sub_resource type="RectangleShape2D" id="StageTriggerShape"]
-size = Vector2(80, 240)
+[sub_resource type="Resource" id="Entry_spawn_player"]
+script = ExtResource("6_marker_entry")
+m_Id = "player_start"
+m_Node = NodePath("PlayerStart")
+m_DrawColor = Color(0.2, 0.85, 1, 0.9)
 
-[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPointsRoot", "m_StageTriggersRoot", "m_RuntimeActors")]
+[sub_resource type="Resource" id="Entry_spawn_s1a"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_1_a"
+m_Node = NodePath("Stage1A")
+
+[sub_resource type="Resource" id="Entry_spawn_s1b"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_1_b"
+m_Node = NodePath("Stage1B")
+
+[sub_resource type="Resource" id="Entry_spawn_s2a"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_2_a"
+m_Node = NodePath("Stage2A")
+
+[sub_resource type="Resource" id="Entry_spawn_s3a"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_a"
+m_Node = NodePath("Stage3A")
+
+[sub_resource type="Resource" id="Entry_spawn_s4a"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_4_a"
+m_Node = NodePath("Stage4A")
+
+[sub_resource type="Resource" id="Entry_gate_1"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_1_gate"
+m_Node = NodePath("Stage1Gate")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_2"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_2_gate"
+m_Node = NodePath("Stage2Gate")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_3"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_gate"
+m_Node = NodePath("Stage3Gate")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="RectangleShape2D" id="GateShape"]
+size = Vector2(20, 700)
+
+[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera")]
 script = ExtResource("1_controller")
-m_SpawnPointsRoot = NodePath("World/SpawnPoints")
-m_StageTriggersRoot = NodePath("World/StageTriggers")
-m_RuntimeActors = NodePath("RuntimeActors")
+m_SpawnPoints = NodePath("World/SpawnPoints")
+m_Triggers = NodePath("World/StageTriggers")
+m_Gates = NodePath("World/StageGates")
+m_Spawner = NodePath("Spawner")
+m_Camera = NodePath("Camera2D")
 
 [node name="World" type="Node2D" parent="." unique_id=219105317]
 
@@ -34,7 +95,7 @@ centered = false
 
 [node name="Front" type="Sprite2D" parent="World/Background" unique_id=902719802]
 modulate = Color(1, 1, 1, 0.92)
-position = Vector2(0, -43)
+position = Vector2(0, 58)
 texture = ExtResource("4_front")
 centered = false
 
@@ -42,17 +103,36 @@ centered = false
 
 [node name="FloorSprite" type="Sprite2D" parent="World/Geometry" unique_id=1650988525]
 z_index = -5
-position = Vector2(0, 340)
+position = Vector2(0, 420)
 texture = ExtResource("5_floor")
 centered = false
 
-[node name="Ground" type="StaticBody2D" parent="World/Geometry" unique_id=899089981]
-position = Vector2(2406, 370)
+[node name="Ground" type="Node2D" parent="World/Geometry" unique_id=2102254689]
+
+[node name="FloorGround" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=899089981]
+position = Vector2(2406, 545)
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Geometry/Ground" unique_id=1832535366]
-position = Vector2(0, 79)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Geometry/Ground/FloorGround" unique_id=1832535366]
 shape = SubResource("GroundShape")
+
+[node name="Slope1" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=346751364]
+position = Vector2(1174, 471)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Geometry/Ground/Slope1" unique_id=1957303159]
+position = Vector2(-133, -3)
+rotation = -2.3212879
+shape = SubResource("CapsuleShape2D_6ynqx")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="World/Geometry/Ground/Slope1" unique_id=1783351996]
+position = Vector2(143, -2)
+rotation = 2.3038347
+shape = SubResource("CapsuleShape2D_6ynqx")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="World/Geometry/Ground/Slope1" unique_id=951850664]
+position = Vector2(2, -38)
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_qtbsk")
 
 [node name="LeftWall" type="StaticBody2D" parent="World/Geometry" unique_id=789314823]
 position = Vector2(-40, 295)
@@ -69,88 +149,79 @@ collision_mask = 0
 shape = SubResource("WorldWallShape")
 
 [node name="SpawnPoints" type="Node2D" parent="World" unique_id=1593038850]
+z_index = 200
+script = ExtResource("9_spawn_manager")
+m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_spawn_player"), SubResource("Entry_spawn_s1a"), SubResource("Entry_spawn_s1b"), SubResource("Entry_spawn_s2a"), SubResource("Entry_spawn_s3a"), SubResource("Entry_spawn_s4a")])
 
 [node name="PlayerStart" type="Marker2D" parent="World/SpawnPoints" unique_id=808562606]
 position = Vector2(300, 300)
-script = ExtResource("2_spawn_point")
-SpawnPointId = "player_start"
+gizmo_extents = 0.0
 
 [node name="Stage1A" type="Marker2D" parent="World/SpawnPoints" unique_id=1236502135]
-position = Vector2(500, 300)
+position = Vector2(1000, 300)
 gizmo_extents = 0.0
-script = ExtResource("2_spawn_point")
-SpawnPointId = "stage_1_a"
-StageOrder = 1
 
 [node name="Stage1B" type="Marker2D" parent="World/SpawnPoints" unique_id=1797577870]
-position = Vector2(700, 300)
+position = Vector2(1500, 300)
 gizmo_extents = 0.0
-script = ExtResource("2_spawn_point")
-SpawnPointId = "stage_1_b"
-StageOrder = 1
 
 [node name="Stage2A" type="Marker2D" parent="World/SpawnPoints" unique_id=573857023]
 position = Vector2(2000, 300)
-script = ExtResource("2_spawn_point")
-SpawnPointId = "stage_2_a"
-StageOrder = 2
+gizmo_extents = 0.0
 
 [node name="Stage3A" type="Marker2D" parent="World/SpawnPoints" unique_id=1466123123]
 position = Vector2(3000, 300)
-script = ExtResource("2_spawn_point")
-SpawnPointId = "stage_3_a"
-StageOrder = 3
+gizmo_extents = 0.0
 
 [node name="Stage4A" type="Marker2D" parent="World/SpawnPoints" unique_id=9347245]
 position = Vector2(4500, 300)
-script = ExtResource("2_spawn_point")
-SpawnPointId = "stage_4_a"
-StageOrder = 4
+gizmo_extents = 0.0
 
 [node name="StageTriggers" type="Node2D" parent="World" unique_id=655583775]
+z_index = 200
+script = ExtResource("10_trigger_manager")
 
-[node name="Stage2Trigger" type="Area2D" parent="World/StageTriggers" unique_id=89786776]
-position = Vector2(1600, 300)
-collision_layer = 0
-collision_mask = 2
-monitorable = false
-script = ExtResource("6_stage_trigger")
-TriggerId = "stage_2_trigger"
+[node name="StageGates" type="Node2D" parent="World" unique_id=176011691]
+z_index = 200
+script = ExtResource("11_gate_manager")
+m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_gate_1"), SubResource("Entry_gate_2"), SubResource("Entry_gate_3")])
+m_MarkerSize = 350.0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageTriggers/Stage2Trigger" unique_id=748628290]
-shape = SubResource("StageTriggerShape")
+[node name="Stage1Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1250288273]
+position = Vector2(1680, 295)
+collision_mask = 0
 
-[node name="Stage3Trigger" type="Area2D" parent="World/StageTriggers" unique_id=904506486]
-position = Vector2(2700, 300)
-collision_layer = 0
-collision_mask = 2
-monitorable = false
-script = ExtResource("6_stage_trigger")
-TriggerId = "stage_3_trigger"
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage1Gate" unique_id=387258502]
+shape = SubResource("GateShape")
+disabled = true
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageTriggers/Stage3Trigger" unique_id=1286202207]
-shape = SubResource("StageTriggerShape")
+[node name="Stage2Gate" type="StaticBody2D" parent="World/StageGates" unique_id=929779718]
+position = Vector2(2780, 295)
+collision_mask = 0
 
-[node name="Stage4Trigger" type="Area2D" parent="World/StageTriggers" unique_id=1739625937]
-position = Vector2(4000, 300)
-collision_layer = 0
-collision_mask = 2
-monitorable = false
-script = ExtResource("6_stage_trigger")
-TriggerId = "stage_4_trigger"
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage2Gate" unique_id=1402131308]
+shape = SubResource("GateShape")
+disabled = true
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageTriggers/Stage4Trigger" unique_id=1642260287]
-shape = SubResource("StageTriggerShape")
+[node name="Stage3Gate" type="StaticBody2D" parent="World/StageGates" unique_id=2059330607]
+position = Vector2(3800, 295)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage3Gate" unique_id=1047161584]
+shape = SubResource("GateShape")
+disabled = true
 
 [node name="Exit" type="Node2D" parent="World" unique_id=260385459]
-position = Vector2(4200, 300)
+position = Vector2(4600, 300)
 
-[node name="RuntimeActors" type="Node2D" parent="." unique_id=32167670]
+[node name="Spawner" type="Node" parent="." unique_id=605185327]
+script = ExtResource("12_monster_manager")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=958629535]
+z_index = 200
 position = Vector2(470, 295)
 limit_left = 0
 limit_top = 0
 limit_right = 4812
 limit_bottom = 590
-position_smoothing_enabled = true
+script = ExtResource("2_camera")

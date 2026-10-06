@@ -27,5 +27,13 @@
 ## 当前实现边界
 
 - 已落地：悟空、花果山猴子、身体与怪物 AI 状态机、基础伤害结算、伤害飘字池和调试战斗场地。
-- `ProcedureGame` 当前加载 `Scenes/Level_1.tscn`；`DebugArena.tscn` 保留为战斗回归场地。关卡实体由 `GF.Entity` 管理，空间锚点由场景、阶段配方由 Luban 表提供。
+- `ProcedureGame` 当前加载 `Scenes/Level_1.tscn`；`DebugArena.tscn` 保留为战斗回归场地。关卡实体由 `GF.Entity` 管理，空间锚点由场景（标注集合脚本 + 纯子节点 + 导出条目列表）、阶段与配方由 Luban `LevelConfig`（`LevelId` 主键 + 嵌套多行列表）提供；普通阶段含首波在实际相机右缘抵达阶段右界后激活，特殊阶段可选择区域触发。
 - 经验成长、法宝、装备、技能、Buff、关卡门/出口/奖励结算、背包、商店和完整存档接入仍待设计；见 [60-GameplayModules.md](60-GameplayModules.md)。
+
+## 业务目录职责
+
+- `GameScripts/Level/` 只在入口放 `LevelController`；`Stage/` 放阶段编排、互斥状态与阶段门/触发区集合，`Camera/` 放相机节点与取景算法，`Spawning/` 放刷怪服务、纯调度与生成点目录，`Markers/` 只放子节点条目与带编辑器标注的抽象集合基类。不要按“所有 Manager”聚合无关领域。
+- `Entity/Heroes/Body/` 与 `Entity/Monsters/Body/` 分为 `Core/`（接口、参数、基状态、动画名）、`States/`（具体状态）；英雄输入在 `Body/Input/`。怪物 AI 保持现有 `AI/Core`、`AI/States`、`AI/Attacks`；攻击几何读取在 `Monsters/Attacks/`。
+- `Entity/Combat/` 放实体判定组件；`UI/Damage/` 归拢飘字节点与其管理服务。命名空间按领域保持稳定，纯目录移动不迫使调用方改命名空间。
+- `MainPack/Scripts/Resources/Groups`、`Pooling`、`Settings`、`Generation` 分别放服务组、池配置、启动设置和生成器设置资源；框架、插件、生成目录及 bundle 根目录保持既有边界。
+- 验证代码位于 `Tests/`（纯算法）和 `MainPack/Scripts/Debug/`（实际引擎回归）；`EditorScripts/` 放编辑器/资源验证，不放玩法逻辑。

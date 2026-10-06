@@ -12,14 +12,10 @@ using Luban;
 
 namespace GameConfig.Level
 {
-public sealed partial class LevelStageConfig : Luban.BeanBase
+public sealed partial class LevelSpawnRecipe : Luban.BeanBase
 {
-    public LevelStageConfig(ByteBuf _buf) 
+    public LevelSpawnRecipe(ByteBuf _buf) 
     {
-        RowId = _buf.ReadInt();
-        LevelId = _buf.ReadInt();
-        StageOrder = _buf.ReadInt();
-        Sequence = _buf.ReadInt();
         MonsterEntityId = (Entity.EntityId)_buf.ReadInt();
         SpawnPointId = _buf.ReadString();
         Count = _buf.ReadInt();
@@ -27,33 +23,17 @@ public sealed partial class LevelStageConfig : Luban.BeanBase
         Interval = _buf.ReadFloat();
     }
 
-    public static LevelStageConfig DeserializeLevelStageConfig(ByteBuf _buf)
+    public static LevelSpawnRecipe DeserializeLevelSpawnRecipe(ByteBuf _buf)
     {
-        return new Level.LevelStageConfig(_buf);
+        return new Level.LevelSpawnRecipe(_buf);
     }
 
     /// <summary>
-    /// 稳定生成配方行ID
-    /// </summary>
-    public readonly int RowId;
-    /// <summary>
-    /// 关卡ID
-    /// </summary>
-    public readonly int LevelId;
-    /// <summary>
-    /// 阶段顺序（与 LevelConfig 对应）
-    /// </summary>
-    public readonly int StageOrder;
-    /// <summary>
-    /// 阶段内生成顺序
-    /// </summary>
-    public readonly int Sequence;
-    /// <summary>
-    /// 怪物实体枚举（便于查阅）
+    /// 可读怪物实体枚举；唯一关联怪物配置与实体资源
     /// </summary>
     public readonly Entity.EntityId MonsterEntityId;
     /// <summary>
-    /// 场景生成点ID
+    /// 场景生成点的稳定 ID
     /// </summary>
     public readonly string SpawnPointId;
     /// <summary>
@@ -69,7 +49,7 @@ public sealed partial class LevelStageConfig : Luban.BeanBase
     /// </summary>
     public readonly float Interval;
    
-    public const int __ID__ = 1696210726;
+    public const int __ID__ = 119935023;
     public override int GetTypeId() => __ID__;
 
     public  void ResolveRef(Tables tables)
@@ -79,10 +59,6 @@ public sealed partial class LevelStageConfig : Luban.BeanBase
     public override string ToString()
     {
         return "{ "
-        + "RowId:" + RowId + ","
-        + "LevelId:" + LevelId + ","
-        + "StageOrder:" + StageOrder + ","
-        + "Sequence:" + Sequence + ","
         + "MonsterEntityId:" + MonsterEntityId + ","
         + "SpawnPointId:" + SpawnPointId + ","
         + "Count:" + Count + ","

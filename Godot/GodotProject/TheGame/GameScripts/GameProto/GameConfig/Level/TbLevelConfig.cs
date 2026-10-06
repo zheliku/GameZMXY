@@ -14,24 +14,30 @@ namespace GameConfig.Level
 {
 public partial class TbLevelConfig
 {
+    private readonly System.Collections.Generic.Dictionary<int, Level.LevelConfig> _dataMap;
     private readonly System.Collections.Generic.List<Level.LevelConfig> _dataList;
-
-
+    
     public TbLevelConfig(ByteBuf _buf)
     {
         int n = _buf.ReadSize();
+        _dataMap = new System.Collections.Generic.Dictionary<int, Level.LevelConfig>(n);
         _dataList = new System.Collections.Generic.List<Level.LevelConfig>(n);
         for(int i = n ; i > 0 ; --i)
         {
             Level.LevelConfig _v;
             _v = global::GameConfig.Level.LevelConfig.DeserializeLevelConfig(_buf);
             _dataList.Add(_v);
+            _dataMap.Add(_v.LevelId, _v);
         }
     }
 
+    public System.Collections.Generic.IReadOnlyDictionary<int, Level.LevelConfig> DataMap => _dataMap;
     public System.Collections.Generic.IReadOnlyList<Level.LevelConfig> DataList => _dataList;
 
-    
+    public Level.LevelConfig GetOrDefault(int key) => _dataMap.TryGetValue(key, out var v) ? v : default;
+    public Level.LevelConfig Get(int key) => _dataMap[key];
+    public Level.LevelConfig this[int key] => _dataMap[key];
+
     public void ResolveRef(Tables tables)
     {
         foreach(var _v in _dataList)
@@ -39,6 +45,7 @@ public partial class TbLevelConfig
             _v.ResolveRef(tables);
         }
     }
+
 }
 
 }

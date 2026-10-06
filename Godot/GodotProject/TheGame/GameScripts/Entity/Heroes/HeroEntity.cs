@@ -147,7 +147,6 @@ namespace GameLogic.Entity.Heroes
 		}
 
 		/// <summary>物理步长：采样输入 → 身体状态机 → 物理。AnimationPlayer（子节点）同帧稍后消费播放请求。</summary>
-		/// <summary>采样输入、推进身体状态机并执行角色物理。</summary>
 		public override void _PhysicsProcess(double delta)
 		{
 			if (!IsShown || Config == null)
@@ -182,7 +181,6 @@ namespace GameLogic.Entity.Heroes
 		public int Level { get; private set; } = 1;
 
 		/// <summary>结算快照：按等级算成长后的攻防，其余战斗属性直接取 HeroConfig。</summary>
-		/// <summary>按英雄等级和配置生成战斗属性快照。</summary>
 		protected override CombatantStats GetCombatStats()
 		{
 			if (Config == null)
@@ -209,7 +207,6 @@ namespace GameLogic.Entity.Heroes
 		/// 命中收益（英雄专属）：按本招 AttackConfig.WsGain 掷定无双值并累计。
 		/// 收益规则属于英雄，不进攻击包、不进 ActorEntity（怪物没有无双值）。
 		/// </summary>
-		/// <summary>按命中招式配置增加英雄无双值。</summary>
 		protected override void OnHitLanded(AttackData attack, DamageResult result)
 		{
 			if (ConfigSystem.Instance.Tables.TbAttackConfig.GetOrDefault(attack.AttackId) is { } config)
@@ -225,7 +222,6 @@ namespace GameLogic.Entity.Heroes
 		/// （连段不被单次受击清空，见 HeroAttackState）。死亡由 ReceiveHit 置位 Dead，身体状态机下一帧进入死亡。
 		/// 没有 hurt 动画（时长无从谈起）时不登记。
 		/// </summary>
-		/// <summary>登记待由身体状态机生效的受击击退。</summary>
 		protected override void OnHurt(AttackData attack, DamageResult result, Vector2 knockback, int attackerEntityId)
 		{
 			base.OnHurt(attack, result, knockback, attackerEntityId);

@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://blsi5r84vgt5y" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_empty.png" id="3_cbka1"]
 [ext_resource type="SpriteFrames" uid="uid://boxumpj2pyv2s" path="res://TheGame/Sprites/Effects/wukong/wukong_effect_animations.tres" id="4_effect"]
 [ext_resource type="AnimationLibrary" uid="uid://dpdyqe7blxbqj" path="res://TheGame/Entitys/Animations/wukong_anim_library.tres" id="5_lib"]
-[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/HurtBox.cs" id="7_hurtbox"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBox.cs" id="7_hurtbox"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
 radius = 20.0
@@ -52,7 +52,7 @@ animation = &"empty"
 libraries/ = ExtResource("5_lib")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=889744088]
-position = Vector2(0, 23)
+position = Vector2(0, 21)
 shape = SubResource("CapsuleShape2D_body")
 debug_color = Color(0, 1, 0, 0.41960785)
 metadata/_edit_lock_ = true
@@ -65,7 +65,7 @@ script = ExtResource("7_hurtbox")
 m_Owner = NodePath("..")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1046093583]
-position = Vector2(0, 22)
+position = Vector2(0, 20)
 shape = SubResource("CapsuleShape2D_hurt")
 debug_color = Color(1, 0, 0, 0.41960785)
 metadata/_edit_lock_ = true

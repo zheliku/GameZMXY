@@ -1,3 +1,4 @@
+using System.Linq;
 using GameConfig.Battle;
 using GameConfig.Monster;
 using GameConfig.Sound;
@@ -38,8 +39,7 @@ namespace GameLogic.Entity.Monsters
 
 		[Export] private Area2D m_Detector; // 索敌区；为空时只会在受击后反击。
 
-		/// <summary>怪物配置 Id（MonsterConfig.Id），场景必填</summary>
-		[Export] public int MonsterId;
+		[Export] private GameConfig.Entity.EntityId m_MonsterEntityId; // 场景用可读枚举绑定唯一怪物配置行。
 
 		/// <summary>怪物配置</summary>
 		public MonsterConfig Config { get; private set; }
@@ -104,13 +104,17 @@ namespace GameLogic.Entity.Monsters
 		{
 			base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
 
-			Config = ConfigSystem.Instance.Tables.TbMonsterConfig.GetOrDefault(MonsterId);
-			if (Config == null)
+			// 场景用可读枚举名绑定数值行；MonsterConfig.EntityId 必须与之一一对应。
+			MonsterConfig[] matches = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList
+				.Where(x => x.EntityId == m_MonsterEntityId)
+				.ToArray();
+			if (matches.Length != 1)
 			{
-				Log.Error("[MonsterEntity] MonsterConfig 缺失：MonsterId={0}，本实体停用", MonsterId);
-				SetPhysicsProcess(false);
-				return;
+				throw new System.InvalidOperationException(
+					$"MonsterConfig 必须唯一：{m_MonsterEntityId}，命中行数={matches.Length}");
 			}
+
+			Config = matches[0];
 
 			MaxHp = Config.Hp;
 			m_AiParams = new MonsterAiParams

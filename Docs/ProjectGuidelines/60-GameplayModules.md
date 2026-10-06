@@ -14,10 +14,13 @@
 - **怪物行为**：花果山猴子实体；巡逻、追击、攻击、目标丢失、受控和死亡 AI；身体层执行移动、攻击、收招、受击与死亡。
 - **战斗表现**：命中结算、伤害事件和池化伤害飘字。当前验证场地供角色与猴子战斗测试使用。
 - **数据**：现有 Luban 表覆盖实体、UI 表单、英雄与等级配置、怪物、攻击、战斗和音效。英雄等级表已生成，但没有运行时消费者。
-- **运行入口**：`ProcedureGame` 加载 `Scenes/Level_1.tscn`，从 `LevelController` 读取玩家出生点，并按关卡表首阶段配方生成实体；实体由 `GF.Entity` 管理。
-- **关卡首版**：`Level_1.tscn` 固定包含 `LevelController`、`World/Geometry`、`World/SpawnPoints`、`World/StageTriggers`、`World/Exit` 和 `RuntimeActors` 插槽。`LevelSpawnPoint` 保存场景唯一 `SpawnPointId`，`LevelStageTrigger` 保存唯一 `TriggerId`。
-- **场景与数据边界**：场景是地形、碰撞、相机、出生点和触发位置的唯一来源。`LevelConfig` 采用 Luban `list` 模式，一个关卡按阶段占多行，首阶段行保存关卡级元数据，其余行保存阶段元数据；`LevelStageConfig` 每行保存一条怪物配方，使用可读的 `MonsterEntityId` 枚举名，通过 `LevelId + StageOrder` 和 `Sequence` 支持同阶段多种怪物和多批次生成。坐标只在场景，表通过 `SpawnPointId` 外键关联。
-- **阶段生命周期**：首阶段在进入关卡后启动；后续阶段由 `TriggerId` 触发，并在前一阶段完成生成且注册实体清零后启动。活跃怪物以 `IEntity.Id` 注册，`MonsterDiedEventArgs` 只按值移除计数；`MaxActive` 限制并存数量。清除判定不读取实体组或场景树子节点数量。
+- **运行入口**：`ProcedureGame` 读取关卡配置、加载场景、显式初始化、显示玩家、等待加载界面实际关闭，然后 `StartSession` 注入玩家和取消令牌。初始化期不订阅相机抵达或触发器玩法事件，不生成敌人。
+- **阶段编排**：唯一当前阶段使用 `Ready → Travelling → Fighting → Travelling/Completed`，停止后为 `Stopped`。普通关卡每段都由实际相机抵达启动；清波不会直接生成下一波。特殊阶段可选 `Trigger`，只启用当前触发区并过滤本会话玩家。
+- **空间与相机**：门集合预计算 `[前门, 当前右门]` 区域。行进时前门开放、右门关闭；相机到达右界后封前门、锁定战斗。清波后开右门，相机以连续移动进入下一段；节点中心与显示中心一致，不在限位之外累计位置。取景细节见 [40-ScenesAndAssets.md](40-ScenesAndAssets.md)。
+- **配方与实体**：`LevelConfig` 以 `LevelId` 为主键，`*Stages / *Recipes` 是嵌套多行列表；同段各配方并行。`LevelSpawnSchedule` 按游戏时间调度、轮转分配并存名额；`LevelSpawner` 只执行当前计划，按死亡事件归还名额，配方全部发完且存活/在途清空才报告清波。没有轮询定时器，也不靠场景树数量判定清波。
+- **所有权与退出**：本关所有运行实体 ID（含死亡动画中的实体）由刷怪服务持有；停止时取消会话、退订、按 ID 隐藏。异步显示返回后使用捕获的令牌和服务清理旧结果；失败回到流程统一结束，不能只记日志留下锁死关卡。
+- **场景首版**：`Level_1.tscn` 保留用户暂存的地面、背景位置与三形状斜坡；保留六个生成点、三个阶段门和出口。移除四个普通刷怪触发区，保留空的可选触发区集合插槽；首段 a/b 出生点移到相机锁屏时的可见区域。
+- **编辑器与验证**：统一 Tool Resource 列表及父集合标注；`validate_level_scene.gd` 检查编辑器绑定，可用 `--snapshot` 输出实际圆圈/死区绘制图。`--smoketest=level` 驱动真实移动、跨坡跳跃、右墙停步、第二段左墙和四段清波，验证相机连续性与生成总数。
 - **存档**：`GameCatalogue` 与 `GameData` 只有占位字段；当前流程没有存档消费者。
 
 ## 旧项目玩法参考
@@ -33,7 +36,14 @@
 
 - 角色经验、等级成长与升级结算。
 - 装备、法宝、技能和 Buff。
-- 关卡门/阻挡、出口交互、奖励与通关结算；它们必须复用上述 `TriggerId`、阶段清除和实体注册契约。
+- 关卡门/阻挡、出口交互、奖励与通关结算；它们必须复用当前阶段完成事件与实体所有权契约；区域交互按实际需要添加。
 - 背包、物品掉落、商店、锻造与分解。
 - 存档字段、版本迁移及其接入流程。
 - 主菜单、选人、战斗 HUD 和其他玩法界面。
+
+## 相机与特殊触发器依据
+
+- 设计参考：[Itay Keren《Scroll Back》](https://www.gamedeveloper.com/design/scroll-back-the-theory-and-practice-of-cameras-in-side-scrollers) 的相机窗口分类、[Cinemachine Position Composer](https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/CinemachinePositionComposer.html) 的中央 Dead Zone、[Godot Camera2D](https://docs.godotengine.org/en/stable/classes/class_camera2d.html) 的中心/限位语义。借鉴空间约束与窗口模型，不引入第三方插件。
+- 本地旧项目 `Script/Level/camera.gd` 每帧更新 `limit_*`，`BaseThroughLevel.gd` 以角色位置阈值和清怪数量推进；它不以实际相机抵达启动，不能称为该新需求的实现证据。新方案以用户当前相机抵达要求为准。
+- 保留区域触发能力有具体依据：旧 `Level_17.gd` 的 `_on_hddy_body_entered` 是带道具条件的隐藏入口，`Level_23.gd` 的 `_on_tp_body_entered/_exited` 是停留计时传送，另有陷阱和机关。当前不移植这些玩法，只保留可选监听接口；Level_1 的普通波次不需要 Area2D。
+- 已实际读取 4399 官方第三代游戏入口及公开 SWF，只读核对 940×590 画布和 `ViewControllor` 的普通滚动阈值（前进约 626.67px、后退 188px）。本项目采用原版的卷屏/边界分离行为，中央 ±40px 则依用户后续构图要求选择；不把原版非对称窗口、Cinemachine 屏幕 Hard Limits 与阶段物理门混为同一概念。版本哈希和证据见 [原版相机核查](../Reviews/zmxy3_camera_reference_2026-10-06.md)。

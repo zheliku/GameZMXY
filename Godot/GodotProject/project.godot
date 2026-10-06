@@ -29,7 +29,7 @@ SmokeTestDriver="*res://TheGame/MainPack/Scripts/Debug/SmokeTestDriver.cs"
 window/size/viewport_width=940
 window/size/viewport_height=590
 window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
+window/stretch/aspect="keep"
 
 [dotnet]
 

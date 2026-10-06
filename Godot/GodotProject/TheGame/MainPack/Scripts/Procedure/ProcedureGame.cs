@@ -16,7 +16,7 @@ using GodotGameFramework.UI;
 using GameLogic;
 using GameLogic.Entity.Heroes;
 using GameLogic.Level;
-using GameLogic.Manager;
+using GameLogic.UI;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -24,7 +24,7 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public class ProcedureGame : ProcedureBase
 {
-    private const int InitialLevelId = 1; // 进入游戏流程时用于筛选关卡多行配置的分组键。
+    private const int InitialLevelId = 1; // 当前游戏入口使用的关卡配置主键。
 
     private WukongEntity m_Hero; // 当前流程创建并拥有的玩家实体。
 
@@ -55,24 +55,24 @@ public class ProcedureGame : ProcedureBase
         {
             m_SessionCancellation = new CancellationTokenSource();
 
-            // LevelConfig 是每阶段一行的 list 表；读取 StageOrder=1 行取得关卡级元数据。
-            GameConfig.Level.LevelConfig levelConfig = ConfigSystem.Instance.Tables.TbLevelConfig.DataList
-                .FirstOrDefault(x => x.LevelId == InitialLevelId && x.StageOrder == 1);
+            // LevelConfig 是以 LevelId 为主键的 map 表：一条记录包含关卡元数据和嵌套的阶段/配方列表。
+            GameConfig.Level.LevelConfig levelConfig = ConfigSystem.Instance.Tables.TbLevelConfig.GetOrDefault(InitialLevelId);
             if (levelConfig == null)
             {
-                throw new InvalidOperationException($"关卡配置不存在或缺少首阶段：LevelId={InitialLevelId}");
+                throw new InvalidOperationException($"关卡配置不存在：LevelId={InitialLevelId}");
             }
             m_LevelScenePath = levelConfig.ScenePath;
+            string scenePath = m_LevelScenePath;
             Log.Info("[ProcedureGame] 加载关卡场景：{0}", m_LevelScenePath);
 
             // 关卡场景只提供空间与稳定锚点；实体和生成配方由 GF.Entity + Luban 表驱动。
             // 场景加载本身不取消：若流程在加载中离开，继续等待成功事件后由 entrySerial 分支卸载，避免 additive 场景泄漏。
-            Node2D levelNode = await LoadLevelSceneAsync(m_LevelScenePath, CancellationToken.None);
+            Node2D levelNode = await LoadLevelSceneAsync(scenePath, CancellationToken.None);
             if (entrySerial != m_EntrySerial)
             {
-                if (m_LevelOwnerEntry == 0 && GF.Scene.IsSceneLoaded(m_LevelScenePath))
+                if (m_LevelOwnerEntry == 0 && GF.Scene.IsSceneLoaded(scenePath))
                 {
-                    GF.Scene.UnloadScene(m_LevelScenePath);
+                    GF.Scene.UnloadScene(scenePath);
                 }
                 return;
             }
@@ -86,6 +86,7 @@ public class ProcedureGame : ProcedureBase
             }
 
             m_Level.Initialize();
+            m_Level.Failed += OnLevelFailed;
 
             // 共享飘字服务挂在实体系统所在世界坐标系。
             DamagePopManager.Instance.Activate(GF.Entity);
@@ -106,15 +107,18 @@ public class ProcedureGame : ProcedureBase
             m_Hero = hero;
             m_Hero.GlobalPosition = m_Level.PlayerSpawnPosition;
 
-            // 首阶段配方由关卡表读取；MonsterEntity.OnShow 将 marker 世界坐标作为巡逻圆心。
-            // 阶段配方从合并后的 LevelStageConfig 行读取。
-            await m_Level.StartFirstStageAsync(GF.Entity, m_SessionCancellation.Token);
+            // 先关闭加载界面，再开放相机与阶段事件，首波等待相机抵达首阶段右界。
+            if (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) is LoadingForm loading)
+            {
+                await loading.CloseLoadingAsync(m_SessionCancellation.Token);
+            }
+
             if (entrySerial != m_EntrySerial)
             {
                 return;
             }
 
-            (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
+            m_Level.StartSession(GF.Entity, m_Hero, m_SessionCancellation.Token);
         }
         catch (Exception ex)
         {
@@ -209,7 +213,11 @@ public class ProcedureGame : ProcedureBase
     {
         // 先停共享服务和关卡事件，再隐藏实体，最后卸载场景。
         DamagePopManager.Instance.Deactivate();
-        m_Level?.Cleanup(GF.Entity);
+        if (m_Level != null)
+        {
+            m_Level.Failed -= OnLevelFailed;
+            m_Level.Cleanup();
+        }
         GF.Entity.HideEntitySafe(m_Hero);
         bool ownsScene = m_LevelOwnerEntry == entrySerial;
         if (ownsScene)
@@ -228,5 +236,11 @@ public class ProcedureGame : ProcedureBase
         {
             m_LevelScenePath = null;
         }
+    }
+
+    private void OnLevelFailed(Exception error) // 当前会话异步显示失败时统一回收，避免关卡静默卡在锁屏状态。
+    {
+        Log.Error("[ProcedureGame] 关卡运行失败：{0}", error);
+        CleanupSession(m_EntrySerial);
     }
 }

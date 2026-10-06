@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="SoundGroupRes" format=3 uid="uid://deyi8ww2xxbrd"]
 
-[ext_resource type="Script" uid="uid://djgtg32s116s" path="res://TheGame/MainPack/Scripts/Resources/SoundGroupRes.cs" id="1_emqwy"]
-[ext_resource type="Script" uid="uid://curqwu3pgg38k" path="res://TheGame/MainPack/Scripts/Resources/SoundGroup.cs" id="1_v6xv8"]
+[ext_resource type="Script" uid="uid://djgtg32s116s" path="res://TheGame/MainPack/Scripts/Resources/Groups/SoundGroupRes.cs" id="1_emqwy"]
+[ext_resource type="Script" uid="uid://curqwu3pgg38k" path="res://TheGame/MainPack/Scripts/Resources/Groups/SoundGroup.cs" id="1_v6xv8"]
 
 [sub_resource type="Resource" id="Resource_v6xv8"]
 script = ExtResource("1_v6xv8")

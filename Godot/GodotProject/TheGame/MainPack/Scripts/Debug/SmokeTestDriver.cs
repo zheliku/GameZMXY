@@ -8,6 +8,7 @@ using GameLogic.Battle;
 using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
 using GameLogic.Event;
+using GameLogic.Level;
 using GameLogic.UI;
 using Godot;
 using GodotGameFramework;
@@ -21,8 +22,13 @@ using GodotGameFramework;
 /// 动画，不是 C# 自己的日志——所以能抓住"状态切了但动画没切"这一类问题。
 ///
 /// 用法：S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --quit-after N -- --smoketest[=ai]
-///   `--smoketest`     英雄控制器 + M4 命中（猴子 AI 冻结为沙包，断言确定；N = 1500）
-///   `--smoketest=ai`  怪物 AI（巡逻/追击/出招/转身/平台守候/丢失目标/受控/死亡，见 MonsterAiSmokeScenario；N = 2400）
+///   `--smoketest`     英雄控制器 + M4 命中（猴子 AI 冻结为沙包，断言确定；N = 1800）
+///   `--smoketest=ai`  怪物 AI（巡逻/追击/出招/转身/平台守候/丢失目标/受控/死亡）。
+///   `--smoketest=level` 正式关卡四段移动、锁屏、刷怪与清波。
+///   `--smoketest=level-cancel` 在途显示取消与晚到结果回收。
+///
+/// 关卡首波怪物由相机抵达首阶段右界激活（Level_1 的相机右缘），因此两种模式都先注入移动输入
+/// 推动相机抵达后才启动既有战斗时间轴；M4 连打验证沙包，AI 模式验证怪物行为。
 ///
 /// 注意：**判定看 stdout 的 SMOKE PASS/FAIL，别只看退出码**——框架关闭流程有一个既有 bug
 /// （WebRequestAgentHelper.Reset 访问已释放的 HttpRequest，见 Framework/…/DefaultWebRequestAgentHelper.cs:90），
@@ -30,16 +36,30 @@ using GodotGameFramework;
 /// </summary>
 public partial class SmokeTestDriver : Node
 {
+	/// <summary>互斥的自动回归模式。</summary>
+	private enum SmokeMode
+	{
+		Disabled,
+		Hero,
+		MonsterAi,
+		Level,
+		Cancellation,
+	}
+
 	private static readonly (double At, string Action, string Mode)[] Plan =
 	{
 		(2.00, "attack", "mash"),
 		(4.00, "attack", "release"),
-		(5.00, "move_right", "tap"),
-		(5.15, "move_right", "hold"),
+		(5.00, "move_right", "hold"),
+		(5.10, "move_right", "release"),
+		(5.20, "move_right", "hold"),
 		(6.30, "move_right", "release"),
 		(6.35, "hurt", "damage"),
 		(6.70, "jump", "tap"),
 		(7.40, "jump", "tap"),
+		// 首阶段已在准备阶段激活；第二轮连打覆盖跳跃后落地的真实命中链路。
+		(8.30, "attack", "mash"),
+		(10.30, "attack", "release"),
 	}; // 按时间安排英雄烟测的输入动作。
 
 	private static readonly string[] Required =
@@ -61,7 +81,7 @@ public partial class SmokeTestDriver : Node
 		("Air/jump_2", "Ground/idle1", false, true), // 落地后回待机，取最后一次 idle1
 	}; // 必须按顺序出现的状态与动画组合。
 
-	private const double EndTime = 10.0; // 英雄烟测最长运行时间（秒）。
+	private const double EndTime = 11.5; // 英雄烟测最长运行时间（秒）。
 	private const double FindTimeout = 5.0; // 等待实体出现的超时时间（秒）。
 
 	private const float SandbagOffset = 100f; // 沙包猴子相对英雄的水平站位（像素）。
@@ -75,7 +95,7 @@ public partial class SmokeTestDriver : Node
 	private readonly List<(int Damage, bool Crit, bool Miss)> m_MonsterHits = new(); // 按事件记录猴子每次受击结果。
 
 	private int m_MaxPopCount; // 场上飘字节点的可见峰值数量。
-	private bool m_Active; // 是否由命令行启用烟测。
+	private SmokeMode m_Mode; // 命令行选择的唯一冒烟模式。
 	private double m_WaitTime; // 等待英雄出现的累计时间（秒）。
 	private double m_Time; // 烟测当前时间（秒）。
 	private int m_NextStep; // 下一条输入计划索引。
@@ -89,22 +109,34 @@ public partial class SmokeTestDriver : Node
 	private readonly HashSet<int> m_WalkFrames = new(); // walk 期间采样到的身体帧号。
 	private readonly HashSet<int> m_RunFrames = new(); // run 期间采样到的身体帧号。
 
-	private bool m_AiMode; // 是否运行怪物 AI 烟测场景。
+	private LevelSmokeScenario m_LevelScenario; // 正式关卡四段流程的观测与输入计划。
+	private LevelCancellationSmokeScenario m_CancelScenario; // 真实在途显示的取消回归。
 
 	private MonsterAiSmokeScenario m_AiScenario; // ai 模式下驱动英雄与猴子的场景。
 
 	private double m_AiStartTime; // AI 烟测场景的开始时间。
+
+	private double m_TravelTime; // 战斗烟测进入首阶段的准备时间。
+	private bool m_StageEntered; // 相机已到达首阶段右界，战斗时间轴可开始。
+	private LevelController m_Level; // 烟测观测的关卡会话。
+
+	private double m_MonsterFoundAt = -1.0; // 找到受测猴子的时间（秒）；-1 表示尚未找到。
+
+	private readonly HashSet<int> m_FrozenMonsters = new(); // 已冻结为沙包的怪物 runtime ID。
 
 	/// <summary>读取烟测参数并设置物理处理优先级。</summary>
 	public override void _Ready()
 	{
 		foreach (string arg in OS.GetCmdlineUserArgs())
 		{
-			if (arg.Contains("smoketest"))
+			m_Mode = arg switch
 			{
-				m_Active = true;
-				m_AiMode = arg.EndsWith("=ai");
-			}
+				"--smoketest" => SmokeMode.Hero,
+				"--smoketest=ai" => SmokeMode.MonsterAi,
+				"--smoketest=level" => SmokeMode.Level,
+				"--smoketest=level-cancel" => SmokeMode.Cancellation,
+				_ => m_Mode,
+			};
 		}
 
 		// 引擎参数里带了 --quit-after 时，通过流程交给引擎自己退出（见 StopDriving 注释）
@@ -116,7 +148,7 @@ public partial class SmokeTestDriver : Node
 			}
 		}
 
-		if (!m_Active)
+		if (m_Mode == SmokeMode.Disabled)
 		{
 			SetPhysicsProcess(false);
 		}
@@ -124,6 +156,7 @@ public partial class SmokeTestDriver : Node
 		// 排在实体与 AnimationPlayer 之后处理：采样到的才是"本帧更新完"的状态，
 		// 否则读到的永远是上一帧的播放状态（会误判成"动画晚一帧"）。
 		ProcessPriority = 1000;
+		ProcessPhysicsPriority = 1000;
 	}
 
 	/// <summary>每物理帧驱动输入、实体采样及烟测断言。</summary>
@@ -157,9 +190,27 @@ public partial class SmokeTestDriver : Node
 			GD.Print("SMOKE: 找到 hero，开始时间轴");
 		}
 
-		m_Time += delta;
+		if (m_Mode == SmokeMode.Cancellation)
+		{
+			DriveCancellationScenario(delta);
+			return;
+		}
+
+		if (m_Mode == SmokeMode.Level)
+		{
+			DriveLevelScenario(delta);
+			return;
+		}
+
 		FindMonster();
-		if (m_AiMode)
+		if (!m_StageEntered)
+		{
+			DriveStageEntry(delta);
+			return;
+		}
+
+		m_Time += delta;
+		if (m_Mode == SmokeMode.MonsterAi)
 		{
 			DriveAiScenario();
 			return;
@@ -240,9 +291,25 @@ public partial class SmokeTestDriver : Node
 		{
 			if (m_Monster == null)
 			{
-				if (m_Time > FindTimeout)
+				if (m_Time > FindTimeout + 2.0)
 				{
-					Fail("5 秒内没有找到猴子");
+					Fail("相机抵达首阶段后 7 秒内没有找到猴子");
+				}
+
+				return;
+			}
+
+			// 等受测猴子在视野外丢失生成时锁定的目标（LoseTargetTime），AI 场景的阶段 0 才是干净巡逻。
+			if (m_Monster.AiStateName is not ("Wander" or "Pause"))
+			{
+				if (m_MonsterFoundAt < 0.0)
+				{
+					m_MonsterFoundAt = m_Time;
+				}
+
+				if (m_Time > m_MonsterFoundAt + 7.0)
+				{
+					Fail($"受测猴子未在视野外丢失目标（当前 AI：{m_Monster.AiStateName}）");
 				}
 
 				return;
@@ -271,6 +338,109 @@ public partial class SmokeTestDriver : Node
 		else
 		{
 			Fail(string.Join("；", failures));
+		}
+	}
+
+	private void DriveStageEntry(double delta) // 通过真实移动推动相机到首阶段右界，再启动既有战斗回归时间轴。
+	{
+		m_TravelTime += delta;
+		foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
+		{
+			if (node is LevelController level)
+			{
+				m_Level = level;
+				break;
+			}
+		}
+
+		if (m_Level?.Phase == LevelStagePhase.Fighting)
+		{
+			Input.ActionRelease("move_right");
+			Input.ActionRelease("jump");
+			// 战斗回归需要平地，使用场景中已配置的平坦玩家出生点，避免斜坡改变高度断言。
+			m_Hero.GlobalPosition = m_Level.PlayerSpawnPosition;
+			m_Hero.Velocity = Vector2.Zero;
+			m_Hero.Input.Reset();
+			m_StageEntered = true;
+			GD.Print("SMOKE: 相机抵达首阶段，开始战斗时间轴");
+			return;
+		}
+
+		Input.ActionPress("move_right");
+		if (m_Hero.IsOnWall() && m_Hero.IsOnFloor())
+		{
+			Input.ActionPress("jump");
+		}
+		else
+		{
+			Input.ActionRelease("jump");
+		}
+		if (m_TravelTime > 20.0)
+		{
+			Fail("20 秒内相机未抵达首阶段右界");
+		}
+	}
+
+	private void DriveLevelScenario(double delta) // 正式关卡烟测独立于战斗回归时间轴，按阶段事件推进。
+	{
+		if (m_LevelScenario == null)
+		{
+			foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
+			{
+				if (node is LevelController level && level.Phase != LevelStagePhase.Ready)
+				{
+					m_LevelScenario = new LevelSmokeScenario(m_Hero, level);
+					break;
+				}
+			}
+		}
+
+		if (m_LevelScenario == null)
+		{
+			return;
+		}
+
+		m_LevelScenario.Update(delta);
+		if (m_LevelScenario.IsDone)
+		{
+			if (m_LevelScenario.Failures.Count == 0)
+			{
+				GD.Print("SMOKE PASS：四段关卡、相机连续移动、左右物理门、抵达延迟和怪物总数全部通过");
+				StopDriving(false);
+			}
+			else
+			{
+				Fail(string.Join("；", m_LevelScenario.Failures));
+			}
+		}
+	}
+
+	private void DriveCancellationScenario(double delta) // 单独验证停止时仍在加载的实体不会泄漏到场景。
+	{
+		if (m_CancelScenario == null)
+		{
+			foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
+			{
+				if (node is LevelController level && level.Phase != LevelStagePhase.Ready)
+				{
+					m_CancelScenario = new LevelCancellationSmokeScenario(m_Hero, level);
+					break;
+				}
+			}
+		}
+
+		m_CancelScenario?.Update(delta);
+		if (m_CancelScenario?.IsDone == true)
+		{
+			if (m_CancelScenario.Failures.Count == 0)
+			{
+				GD.Print("SMOKE PASS：在途显示取消，晚到怪物已回收且关卡不再推进");
+				StopDriving(false);
+			}
+			else
+			{
+				Fail(string.Join("；", m_CancelScenario.Failures));
+			}
 		}
 	}
 
@@ -423,29 +593,43 @@ public partial class SmokeTestDriver : Node
 
 	private void FindMonster() // 找到场景猴子并按烟测模式调整其行为。
 	{
-		if (m_Monster != null)
-		{
-			return;
-		}
-
+		// 首波猴子在英雄走进首阶段右界后成批出现；除受测/沙包目标外的所有猴子都冻结成沙包，
+		// 避免活怪攻击英雄带来不确定的受击/击退时序（AI 行为由 ai 场景单独覆盖）。
 		foreach (Node node in GetTree().Root.FindChildren("*", "CharacterBody2D", true, false))
 		{
-			if (node is MonsterEntity { IsShown: true } monster)
+			if (node is not MonsterEntity { IsShown: true } monster)
+			{
+				continue;
+			}
+
+			if (m_Monster == null)
 			{
 				m_Monster = monster;
-				if (!m_AiMode)
+				if (m_Mode == SmokeMode.MonsterAi)
 				{
-					// hero 场景把猴子当 M4 沙包：冻结 AI，保证命中/伤害断言确定（AI 由 ai 场景单独覆盖）。
-					// M5 起调试出生点挪到了索敌范围外（ProcedureGame.MonkeySpawnPosition），这里放回 M4 的站位：
-					// 悟空右侧、普攻判定范围内
-					monster.SetAiEnabled(false);
-					monster.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X + SandbagOffset, monster.GlobalPosition.Y);
+					// 受测猴子在相机抵达后生成时会索敌到英雄；
+					// 先挪到视野外让目标按 LoseTargetTime 自然丢失，AI 场景才能从干净的巡逻开始。
+					monster.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X + 900f, monster.GlobalPosition.Y);
 					monster.Velocity = Vector2.Zero;
+					m_MonsterFoundAt = m_Time;
+					GD.Print($"SMOKE[{m_Time:F2}] 找到受测猴子 HP {monster.Hp}/{monster.MaxHp}，已挪出视野等待丢失目标");
 				}
-
-				GD.Print($"SMOKE[{m_Time:F2}] 找到沙包猴子 HP {monster.Hp}/{monster.MaxHp} 位置 {monster.GlobalPosition}");
-				return;
+				else
+				{
+					// M4 站位：悟空右侧、普攻判定范围内，供第二轮连打命中。
+					monster.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X + SandbagOffset, monster.GlobalPosition.Y);
+					GD.Print($"SMOKE[{m_Time:F2}] 找到沙包猴子 HP {monster.Hp}/{monster.MaxHp} 位置 {monster.GlobalPosition}");
+				}
 			}
+
+			// ai 模式保留受测怪物的 AI；M4 模式连同沙包一起全部冻结。
+			if (!m_FrozenMonsters.Add(monster.Id) || (m_Mode == SmokeMode.MonsterAi && m_Monster == monster))
+			{
+				continue;
+			}
+
+			monster.SetAiEnabled(false);
+			monster.Velocity = Vector2.Zero;
 		}
 	}
 
@@ -533,6 +717,9 @@ public partial class SmokeTestDriver : Node
 	{
 		// 先停止帧驱动并释放事件订阅，避免退出等待期间继续触发烟测逻辑。
 		SetPhysicsProcess(false);
+		Input.ActionRelease("move_left");
+		Input.ActionRelease("move_right");
+		Input.ActionRelease("jump");
 		if (m_Hero != null)
 		{
 			GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnDamageDealt);

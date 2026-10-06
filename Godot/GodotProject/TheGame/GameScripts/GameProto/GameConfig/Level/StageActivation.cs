@@ -14,17 +14,13 @@ namespace GameConfig.Level
     public enum StageActivation
     {
         /// <summary>
-        /// 进入关卡
+        /// 相机抵达阶段右界
         /// </summary>
-        OnEnter = 0,
+        CameraArrived = 0,
         /// <summary>
-        /// 触发器
+        /// 特殊区域激活
         /// </summary>
         Trigger = 1,
-        /// <summary>
-        /// 前阶段清除
-        /// </summary>
-        OnClear = 2,
     }
 
 } 

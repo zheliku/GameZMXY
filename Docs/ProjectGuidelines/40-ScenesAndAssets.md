@@ -11,16 +11,24 @@
 ## 场景绑定
 
 - 实体场景与实体表 `AssetPath` 一致；节点引用由实体脚本 `[Export]` 字段绑定。
+- 怪物实体场景用 `[Export] Entity.EntityId` 枚举字段（如 `MonsterEntityId`）绑定 `MonsterConfig`，编辑器显示为可读枚举下拉框；禁止导出需要反查的裸数字 ID。运行时按 `MonsterConfig.EntityId` 一对一查找，零条或多条命中在实体初始化时失败并交由会话拥有者报告。
 - `.tscn` 的外部节点路径在场景头部 `node_paths` 声明，否则 Godot 可能忽略 `NodePath` 导出赋值。
 - 动画库位于 `Entitys/Animations/`，资源边界与判定约定见 [30-EntitiesAndCombat.md](30-EntitiesAndCombat.md)。
 - `Scenes/DebugArena.tscn` 仍是战斗验证场景；正式关卡使用 `LevelRoot`（当前实现为 `LevelController`）和组合式子节点，契约见 [60-GameplayModules.md](60-GameplayModules.md)。
 
 ## 关卡场景
 
-- 关卡场景的固定入口是一个带 `LevelController` 的 `Node2D` 根节点。根节点必须绑定 `SpawnPoints`，并保留 `RuntimeActors` 插槽；实体实际仍由 `GF.Entity` 挂到实体组，不以关卡子节点数量统计活跃实体。
-- `World/Background`、`World/Geometry`、`World/SpawnPoints`、`World/StageTriggers` 和 `World/Exit` 是推荐的语义插槽。地形、碰撞、相机边界、玩家出生点、生成点和触发器位置属于场景空间事实；背景、平台、出口、机关和拾取物可以按关卡需要增删。
-- 生成点使用 `LevelSpawnPoint`，以场景内唯一的 `SpawnPointId` 作为配置外键；阶段触发点使用 `LevelStageTrigger` 和唯一 `TriggerId`。不得用节点名、NodePath 或子节点顺序作为稳定 ID。
-- 可复用内容做成小型 PackedScene/组件（生成点、触发点、出口、地形块），不建立承载所有关卡逻辑的巨型 `BaseLevel` 场景。新增导出 NodePath 必须在 `.tscn` 根节点 `node_paths` 中声明。
+- `LevelController` 根节点绑定生成点、门、刷怪和相机四个必需职责节点；触发区集合按特殊玩法选配。控制器只协调初始化、开始、清波和结束；门集合拥有区域，刷怪服务拥有本关实体，阶段序列拥有唯一当前阶段。
+- 集合挂父节点，直接子节点保持纯节点：生成点使用 `Marker2D`，门使用 `StaticBody2D + CollisionShape2D`（World 层），特殊触发区使用 `Area2D + CollisionShape2D`（mask 选择 PlayerBody，初始 monitoring 关闭）。触发区放在对应物理区域内，入口侧形状不得跨前门；会话只启用当前区。不得建立单锚点脚本、块场景或集合场景。
+- `Markers/LevelMarkerEntry` 是带 `[Tool]` 的可序列化 Resource，统一导出节点相对路径、稳定 ID 和颜色；所属集合的检查器显示条目列表。为父节点挂脚本并添加子节点后，点击“同步子节点配置”，再填写业务 ID。同步保留已有配置，移除已删除子节点的条目；加载和导入时不自动改写场景。
+- 集合绘制所有支持的子节点：生成点/触发区为圆圈，门为竖线，标注可读 ID；未登记节点用洋红色显示并给出配置警告。颜色、尺寸和调试可见性可编辑；标注层使用 `z_index = 200`，避免被地形和实体遮挡。
+- 集合与被它读取的 C# Resource 都必须带 `[Tool]`；仅给父集合加 Tool 会导致编辑器里的 Resource 未绑定 C# 实例，不能用“跳过未绑定条目”隐藏这个装配问题。编辑器提示“脚本正在编辑器中运行”正常；编辑器绘制与运行时初始化、事件订阅分开。
+- `World/Background`、`Geometry`、`SpawnPoints`、`StageGates`、可选 `StageTriggers` 和 `Exit` 是语义插槽；相机和刷怪服务在根下。稳定业务 ID 用于表外键，节点名和 NodePath 只用于编辑器绑定，不作为运行时业务键。
+- `LevelCamera` 使用中央小死区：设计视口 940×590，死区半宽 40px（总宽 80px）；越界才跟随，Y 固定。已核对造3官方公开资源：画布同为 940×590，普通前进/后退阈值分别约为 626.67px 与 188px，采用非对称窗口。本项目按用户后续的“抵达时人物仍在中央”要求使用更窄的中央窗口；40px 是项目取景参数，不称为原版数值。来源与适用边界见 [原版相机核查](../Reviews/zmxy3_camera_reference_2026-10-06.md)。死区、标注颜色和追近速度上限在场景检查器编辑，玩法生成延迟仍进表。
+- 相机中心始终是实际受限中心，禁用引擎位置平滑和拖动，避免脚本位置在墙后累计。清波只放开到紧邻下一阶段右界，保留当前位置与左界；每帧追近位移受 `MaxPanSpeed × delta` 限制，角色在墙前清波也不会立即重居中。
+- 相机实际右缘抵达阶段右界时才开战，玩家正常行进时仍在中央死区附近；门集合此时封住前门。相机停止在右界后，角色继续走到物理墙前才停止。收紧左界保留当前视野左缘，避免特殊触发阶段切换时跳变；物理门独立约束玩家。
+- 阶段区域至少容纳当前视野，门沿 X 递增；末段可以没有右门，由关卡原始右墙约束。关卡级 `limit_*` 是场景空间事实；实际视野包含 Zoom。窗口使用 `canvas_items + keep` 保持 940×590 构图；`expand` 会在 1920×1080 下扩到 1048px，超出最窄阶段 1020px 的空间契约。新增关卡需运行场景与物理回归，不能仅凭构建通过判断取景正确。
+- Node 导出绑定必须保留 `.tscn` 的 `node_paths` 声明；移动 C# 脚本时携带原 `.uid` 并修复场景/资源引用，之后让 Godot 重扫文件系统。资源 bundle 根目录保持稳定。
 
 ## Bundle
 

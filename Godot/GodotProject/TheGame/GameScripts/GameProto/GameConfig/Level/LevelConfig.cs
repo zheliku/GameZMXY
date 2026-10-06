@@ -16,21 +16,13 @@ public sealed partial class LevelConfig : Luban.BeanBase
 {
     public LevelConfig(ByteBuf _buf) 
     {
-        RowId = _buf.ReadInt();
         LevelId = _buf.ReadInt();
         LegacyId = _buf.ReadInt();
         NameCn = _buf.ReadString();
         Desc = _buf.ReadString();
         ScenePath = _buf.ReadString();
         PlayerSpawnPointId = _buf.ReadString();
-        StageCount = _buf.ReadInt();
-        StageOrder = _buf.ReadInt();
-        StageName = _buf.ReadString();
-        Activation = (Level.StageActivation)_buf.ReadInt();
-        TriggerId = _buf.ReadString();
-        ClearPolicy = (Level.StageClearPolicy)_buf.ReadInt();
-        MaxActive = _buf.ReadInt();
-        IsFinal = _buf.ReadBool();
+        {int n0 = _buf.ReadSize(); Stages = new System.Collections.Generic.List<Level.LevelStage>(n0);for(var i0 = 0 ; i0 < n0 ; i0++) { Level.LevelStage _e0;  _e0 = global::GameConfig.Level.LevelStage.DeserializeLevelStage(_buf); Stages.Add(_e0);}}
     }
 
     public static LevelConfig DeserializeLevelConfig(ByteBuf _buf)
@@ -39,91 +31,52 @@ public sealed partial class LevelConfig : Luban.BeanBase
     }
 
     /// <summary>
-    /// 稳定行ID（不是关卡查询键）
-    /// </summary>
-    public readonly int RowId;
-    /// <summary>
-    /// 关卡ID（分组键，每个阶段行重复）
+    /// 关卡ID（主键）
     /// </summary>
     public readonly int LevelId;
     /// <summary>
-    /// 旧项目关卡编号（仅首行填写）
+    /// 旧项目关卡编号
     /// </summary>
     public readonly int LegacyId;
     /// <summary>
-    /// 关卡名（仅首行填写）
+    /// 关卡名
     /// </summary>
     public readonly string NameCn;
     /// <summary>
-    /// 关卡说明（仅首行填写）
+    /// 关卡说明
     /// </summary>
     public readonly string Desc;
     /// <summary>
-    /// 场景资源路径（仅首行填写）
+    /// 场景资源路径
     /// </summary>
     public readonly string ScenePath;
     /// <summary>
-    /// 玩家出生点ID（仅首行填写）
+    /// 玩家出生点ID
     /// </summary>
     public readonly string PlayerSpawnPointId;
     /// <summary>
-    /// 阶段数量（仅首行填写）
+    /// 阶段列表（多行：每行一个阶段；配方续行阶段列留空）
     /// </summary>
-    public readonly int StageCount;
-    /// <summary>
-    /// 阶段顺序
-    /// </summary>
-    public readonly int StageOrder;
-    /// <summary>
-    /// 阶段名
-    /// </summary>
-    public readonly string StageName;
-    /// <summary>
-    /// 激活方式
-    /// </summary>
-    public readonly Level.StageActivation Activation;
-    /// <summary>
-    /// 触发器ID
-    /// </summary>
-    public readonly string TriggerId;
-    /// <summary>
-    /// 清除规则
-    /// </summary>
-    public readonly Level.StageClearPolicy ClearPolicy;
-    /// <summary>
-    /// 最大并存数
-    /// </summary>
-    public readonly int MaxActive;
-    /// <summary>
-    /// 是否最终阶段
-    /// </summary>
-    public readonly bool IsFinal;
+    public readonly System.Collections.Generic.List<Level.LevelStage> Stages;
    
     public const int __ID__ = 735472700;
     public override int GetTypeId() => __ID__;
 
     public  void ResolveRef(Tables tables)
     {
+        foreach (var _e in Stages) { _e?.ResolveRef(tables); }
     }
 
     public override string ToString()
     {
         return "{ "
-        + "RowId:" + RowId + ","
         + "LevelId:" + LevelId + ","
         + "LegacyId:" + LegacyId + ","
         + "NameCn:" + NameCn + ","
         + "Desc:" + Desc + ","
         + "ScenePath:" + ScenePath + ","
         + "PlayerSpawnPointId:" + PlayerSpawnPointId + ","
-        + "StageCount:" + StageCount + ","
-        + "StageOrder:" + StageOrder + ","
-        + "StageName:" + StageName + ","
-        + "Activation:" + Activation + ","
-        + "TriggerId:" + TriggerId + ","
-        + "ClearPolicy:" + ClearPolicy + ","
-        + "MaxActive:" + MaxActive + ","
-        + "IsFinal:" + IsFinal + ","
+        + "Stages:" + Luban.StringUtil.CollectionToString(Stages) + ","
         + "}";
     }
 }

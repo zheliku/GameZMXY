@@ -4,6 +4,8 @@ using GodotGameFramework;
 using GodotGameFramework.Scene;
 using GodotGameFramework.UI;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 namespace GameLogic
 {
 	/// <summary>
@@ -11,10 +13,13 @@ namespace GameLogic
 	/// </summary>
 	public partial class LoadingForm
 	{
+		private const double ProgressTransitionSeconds = 0.25; // 加载进度的界面补间时长。
+		private const double CompletionHoldSeconds = 0.1; // 达到 100% 后保留完成状态的显示时间。
 		private Tween m_ProgressTween; // 驱动进度条平滑变化的补间。
 		private Tween m_CloseTween; // 加载完成后延迟关闭界面的补间。
 
 		private bool m_IsCloseRequested; // 场景和界面加载事件可能重复触发关闭请求，用于防止重入。
+		private TaskCompletionSource m_CloseCompletion; // 当前打开周期的实际关闭通知，先于关闭请求创建。
 		/// <summary>
 		/// 初始化界面。
 		/// </summary>
@@ -55,6 +60,8 @@ namespace GameLogic
 			m_ProgressTween = null;
 			m_CloseTween?.Kill();
 			m_CloseTween = null;
+			m_CloseCompletion?.TrySetCanceled();
+			m_CloseCompletion = null;
 		}
 
 		/// <summary>
@@ -62,6 +69,7 @@ namespace GameLogic
 		/// </summary>
 		public void OnOpen(object userData)
 		{
+			m_CloseCompletion = new TaskCompletionSource();
 			#region 框架逻辑
 			Visible = true;
 			#endregion
@@ -90,6 +98,7 @@ namespace GameLogic
 			m_ProgressTween = null;
 			m_CloseTween?.Kill();
 			m_CloseTween = null;
+			m_CloseCompletion?.TrySetResult();
 		}
 
 		/// <summary>
@@ -166,7 +175,8 @@ namespace GameLogic
 			// 平滑过渡，避免进度条跳跃显得生硬
 			m_ProgressTween?.Kill();
 			m_ProgressTween = CreateTween();
-			m_ProgressTween.TweenProperty(m_HSlider, "value", clamped, 0.25f)
+			m_ProgressTween.SetIgnoreTimeScale(true);
+			m_ProgressTween.TweenProperty(m_HSlider, "value", clamped, ProgressTransitionSeconds)
 				.SetTrans(Tween.TransitionType.Quad)
 				.SetEase(Tween.EaseType.Out);
 			if (m_State != null)
@@ -178,7 +188,7 @@ namespace GameLogic
 
 		/// <summary>
 		/// 显式关闭加载界面（由加载发起方在 finally 中调用）。
-		/// 先展示"加载完成"再延迟约 0.1s 关闭，避免关闭瞬间闪烁。
+		/// 先让进度达到 100%，再短暂展示完成状态后关闭。
 		/// </summary>
 		public void CloseLoading()
 		{
@@ -195,7 +205,7 @@ namespace GameLogic
 			m_CloseTween?.Kill();
 			m_CloseTween = CreateTween();
 			m_CloseTween.SetIgnoreTimeScale(true); // 延迟不受游戏暂停/TimeScale 影响
-			m_CloseTween.TweenInterval(0.1f);
+			m_CloseTween.TweenInterval(ProgressTransitionSeconds + CompletionHoldSeconds);
 			m_CloseTween.TweenCallback(Callable.From(() =>
 			{
 				if (m_SerialId != closeSerialId)
@@ -204,6 +214,14 @@ namespace GameLogic
 				}
 				GF.UI.CloseUIForm(this);
 			}));
+		}
+
+		/// <summary>请求关闭加载界面，并等待实际关闭；取消只终止等待，不保存跨周期回调。</summary>
+		public Task CloseLoadingAsync(CancellationToken cancellationToken)
+		{
+			Task closed = m_CloseCompletion.Task;
+			CloseLoading();
+			return closed.WaitAsync(cancellationToken);
 		}
 
 

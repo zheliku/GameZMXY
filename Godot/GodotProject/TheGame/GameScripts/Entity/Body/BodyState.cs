@@ -22,10 +22,8 @@ namespace GameLogic.Entity.Body
 	/// </summary>
 	public abstract class BodyState<TBody> : FsmState<TBody> where TBody : class, IActorBody
 	{
-		private string m_StateName; // 延迟缓存去前缀后的状态名。
-
 		/// <summary>状态名（调试/冒烟观测）：类名去掉 <see cref="NamePrefix"/> 与 "State" 后缀，如 HeroGroundState → Ground。</summary>
-		public string StateName => m_StateName ??= TrimName(GetType().Name, NamePrefix);
+		public string StateName => field ??= TrimName(GetType().Name, NamePrefix);
 
 		/// <summary>状态类名前缀（英雄 "Hero"、怪物 "Monster"，避免与 AI 行为类重名）。</summary>
 		protected virtual string NamePrefix => "";

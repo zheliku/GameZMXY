@@ -337,6 +337,7 @@ public partial class GameFrameworkTopMenu
             .Where(f => !f.StartsWith("res://TheGame/GameScripts/"))
             .Where(f => !f.EndsWith(".import"))
             .Where(f => !f.EndsWith(".uid"))
+            .Where(f => !f.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
             .OrderBy(f => f)
             .ToList();
 
