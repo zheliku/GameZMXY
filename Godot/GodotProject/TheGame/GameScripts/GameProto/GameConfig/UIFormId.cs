@@ -17,6 +17,10 @@ namespace GameConfig
         /// 无
         /// </summary>
         None = 0,
+        /// <summary>
+        /// 战斗HUD
+        /// </summary>
+        BattleHud = 1,
     }
 
 } 

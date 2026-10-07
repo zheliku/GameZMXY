@@ -157,7 +157,7 @@ public sealed class MonsterAiSmokeScenario
 			case Phase.WaitFirstHit:
 				if (m_HeroHitsByMonster > 0)
 				{
-					m_Hero.Heal(m_Hero.MaxHp);   // 防止后续阶段英雄被打死导致目标失效
+					m_Hero.Heal(m_Hero.MaxHp.Value);   // 防止后续阶段英雄被打死导致目标失效
 					Enter(Phase.WaitSecondAttack, t);
 				}
 
@@ -195,7 +195,7 @@ public sealed class MonsterAiSmokeScenario
 
 				if (m_StruckAfterLanding || t - m_PhaseStart > LandedTimeout)
 				{
-					m_Hero.Heal(m_Hero.MaxHp);
+					m_Hero.Heal(m_Hero.MaxHp.Value);
 					Enter(Phase.Lose, t);
 				}
 
@@ -208,7 +208,7 @@ public sealed class MonsterAiSmokeScenario
 			case Phase.WaitKill:
 				if (t - m_PhaseStart >= KillDelay)
 				{
-					HitMonster(m_Monster.MaxHp * 10f, Vector2.Zero);
+					HitMonster(m_Monster.MaxHp.Value * 10f, Vector2.Zero);
 					Enter(Phase.WaitEnd, t);
 				}
 
@@ -290,7 +290,7 @@ public sealed class MonsterAiSmokeScenario
 
 		GD.Print($"SMOKE-AI: AI 序列 {string.Join(" → ", m_AiObserved.ConvertAll(o => $"{o.Ai}@{o.Time:F2}"))}");
 		GD.Print($"SMOKE-AI: 动画序列 {string.Join(" → ", m_AnimObserved.ConvertAll(o => $"{o.Anim}@{o.Time:F2}"))}");
-		GD.Print($"SMOKE-AI: 猴子命中英雄 {m_HeroHitsByMonster} 次，英雄 HP {m_Hero.Hp}/{m_Hero.MaxHp}");
+		GD.Print($"SMOKE-AI: 猴子命中英雄 {m_HeroHitsByMonster} 次，英雄 HP {m_Hero.Hp.Value}/{m_Hero.MaxHp.Value}");
 		return failures;
 	}
 
@@ -346,7 +346,7 @@ public sealed class MonsterAiSmokeScenario
 		m_HeroFloorY = m_Hero.GlobalPosition.Y;
 		m_AirX = m_Monster.GlobalPosition.X - m_Monster.Facing * AirOffsetX;
 		m_AirMinX = m_AirMaxX = m_Monster.GlobalPosition.X;
-		m_Hero.Heal(m_Hero.MaxHp);
+		m_Hero.Heal(m_Hero.MaxHp.Value);
 		Enter(Phase.Air, t);
 	}
 

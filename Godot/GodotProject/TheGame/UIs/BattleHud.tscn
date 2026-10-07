@@ -1,0 +1,179 @@
+[gd_scene format=3 uid="uid://c1ch3tik4i3gw"]
+
+[ext_resource type="Script" uid="uid://mkarg5ndugr2" path="res://TheGame/GameScripts/UI/BattleHud.cs" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://burfbdx7y7epd" path="res://TheGame/Sprites/UI/hud/hud_status_panel.png" id="2_status"]
+[ext_resource type="Texture2D" uid="uid://ckvn7vbcoutdx" path="res://TheGame/Sprites/UI/hud/hud_status_label.png" id="3_label"]
+[ext_resource type="Texture2D" uid="uid://dpwrtfexmdivo" path="res://TheGame/Sprites/UI/hud/hud_hp_fill.png" id="4_hp"]
+[ext_resource type="Texture2D" uid="uid://cqdd6j1ngowuj" path="res://TheGame/Sprites/UI/hud/hud_head_wukong.png" id="6_head"]
+[ext_resource type="Texture2D" uid="uid://bk5owbpaligfn" path="res://TheGame/Sprites/UI/hud/hud_menu_panel.png" id="7_menu"]
+[ext_resource type="Texture2D" uid="uid://6hpg33m2d84" path="res://TheGame/Sprites/UI/hud/hud_ws_frame.png" id="8_ws_frame"]
+[ext_resource type="Texture2D" uid="uid://dwdf2rg5ijvhl" path="res://TheGame/Sprites/UI/hud/hud_ws_under.png" id="9_ws_under"]
+[ext_resource type="Texture2D" uid="uid://dd8oyoni1sg5" path="res://TheGame/Sprites/UI/hud/hud_ws_fill.png" id="10_ws_fill"]
+[ext_resource type="Texture2D" uid="uid://diqfyhu6sufse" path="res://TheGame/Sprites/UI/hud/hud_ws_grey.png" id="11_ws_grey"]
+[ext_resource type="Texture2D" uid="uid://uuk02m5yyo5p" path="res://TheGame/Sprites/UI/hud/hud_ws_max_sheet.png" id="12_ws_max"]
+[ext_resource type="SpriteFrames" uid="uid://cxs2dh6k62665" path="res://TheGame/Sprites/UI/gogo/gogo_animations.tres" id="13_gogo"]
+[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/Widgets/ResourceBar.cs" id="14_resourcebar"]
+[ext_resource type="Texture2D" uid="uid://cgqqx20qcko1c" path="res://TheGame/Sprites/UI/hud/hud_mp_fill.png" id="15_mp"]
+[ext_resource type="Texture2D" uid="uid://2578tc6hjyl0" path="res://TheGame/Sprites/UI/hud/hud_exp_fill.png" id="16_exp"]
+
+[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_Go")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+m_HpBar = NodePath("StatusPanel/m_HpBar")
+m_MpBar = NodePath("StatusPanel/m_MpBar")
+m_ExpBar = NodePath("StatusPanel/m_ExpBar")
+m_LevelLabel = NodePath("StatusPanel/m_LevelLabel")
+m_WsBar = NodePath("MenuPanel/WsFrame/m_WsBar")
+m_Go = NodePath("m_Go")
+
+[node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247]
+position = Vector2(116, 44)
+texture = ExtResource("2_status")
+
+[node name="m_HpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=172288184 node_paths=PackedStringArray("m_Delay", "m_Text")]
+offset_left = -33.0
+offset_top = -30.0
+offset_right = 115.0
+offset_bottom = -18.0
+max_value = 1.0
+step = 0.0
+nine_patch_stretch = true
+texture_progress = ExtResource("4_hp")
+texture_progress_offset = Vector2(-3, 0)
+script = ExtResource("14_resourcebar")
+m_Delay = NodePath("m_HpBarDelay")
+m_Text = NodePath("m_HpText")
+
+[node name="m_HpBarDelay" type="TextureProgressBar" parent="StatusPanel/m_HpBar" unique_id=1090903066]
+show_behind_parent = true
+layout_mode = 0
+offset_right = 149.0
+offset_bottom = 12.0
+max_value = 1.0
+step = 0.0
+value = 1.0
+nine_patch_stretch = true
+texture_progress = ExtResource("4_hp")
+texture_progress_offset = Vector2(-3, 0)
+
+[node name="m_HpText" type="Label" parent="StatusPanel/m_HpBar" unique_id=1939437063]
+layout_mode = 0
+offset_left = 4.0
+offset_top = -2.0
+offset_right = 149.0
+offset_bottom = 17.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/shadow_outline_size = -6
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_LevelLabel" type="Label" parent="StatusPanel" unique_id=994903837]
+offset_left = -108.0
+offset_top = 16.0
+offset_right = -83.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 14
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_MpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=118777741 node_paths=PackedStringArray("m_Text")]
+offset_left = -28.0
+offset_top = -11.0
+offset_right = 117.0
+offset_bottom = 2.0
+max_value = 1.0
+step = 0.0
+nine_patch_stretch = true
+texture_progress = ExtResource("15_mp")
+texture_progress_offset = Vector2(-2, 0)
+script = ExtResource("14_resourcebar")
+m_Text = NodePath("MpText")
+
+[node name="MpText" type="Label" parent="StatusPanel/m_MpBar" unique_id=651970840]
+layout_mode = 0
+offset_top = -2.0
+offset_right = 143.0
+offset_bottom = 17.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_ExpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=86960589 node_paths=PackedStringArray("m_Text")]
+offset_left = -32.0
+offset_top = 8.0
+offset_right = 119.0
+offset_bottom = 23.0
+max_value = 1.0
+step = 0.0
+nine_patch_stretch = true
+texture_progress = ExtResource("16_exp")
+texture_progress_offset = Vector2(-3, 0)
+script = ExtResource("14_resourcebar")
+m_Text = NodePath("ExpText")
+m_FullAtZeroMaximum = true
+
+[node name="ExpText" type="Label" parent="StatusPanel/m_ExpBar" unique_id=1604997483]
+layout_mode = 0
+offset_left = 2.0
+offset_top = -2.0
+offset_right = 148.0
+offset_bottom = 17.0
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Head" type="Sprite2D" parent="." unique_id=2077905002]
+position = Vector2(53, 36)
+texture = ExtResource("6_head")
+
+[node name="StatusLabel" type="Sprite2D" parent="." unique_id=1928995609]
+position = Vector2(97, 39)
+texture = ExtResource("3_label")
+
+[node name="MenuPanel" type="Sprite2D" parent="." unique_id=1301947710]
+position = Vector2(90, 531)
+texture = ExtResource("7_menu")
+
+[node name="WsFrame" type="Sprite2D" parent="MenuPanel" unique_id=129619926]
+position = Vector2(113, 25)
+texture = ExtResource("8_ws_frame")
+
+[node name="m_WsBar" type="TextureProgressBar" parent="MenuPanel/WsFrame" unique_id=607998488 node_paths=PackedStringArray("m_Steps")]
+offset_left = -125.0
+offset_top = -16.0
+offset_right = 96.0
+offset_bottom = 12.0
+scale = Vector2(1.17, 1.03)
+max_value = 1.0
+step = 0.0
+fill_mode = 1
+texture_under = ExtResource("9_ws_under")
+texture_progress = ExtResource("10_ws_fill")
+texture_progress_offset = Vector2(-1, 9)
+script = ExtResource("14_resourcebar")
+m_Steps = NodePath("../../m_WsMax")
+
+[node name="WsGrey" type="Sprite2D" parent="MenuPanel" unique_id=553033620]
+position = Vector2(-24, -4)
+texture = ExtResource("11_ws_grey")
+
+[node name="m_WsMax" type="Sprite2D" parent="MenuPanel" unique_id=1981663794]
+position = Vector2(-27, -5)
+texture = ExtResource("12_ws_max")
+hframes = 10
+
+[node name="m_Go" type="AnimatedSprite2D" parent="." unique_id=1100398904]
+visible = false
+position = Vector2(870, 259)
+scale = Vector2(0.6, 0.6)
+sprite_frames = ExtResource("13_gogo")
+animation = &"go"

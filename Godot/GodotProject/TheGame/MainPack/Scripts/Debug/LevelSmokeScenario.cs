@@ -7,8 +7,10 @@ using GameFramework;
 using GameLogic.Battle;
 using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
+using GameLogic.Event;
 using GameLogic.Level;
 using Godot;
+using GodotGameFramework;
 
 /// <summary>通过真实移动、碰撞和死亡结算验证 Level_1 的四段相机抵达与清波流程。</summary>
 public sealed class LevelSmokeScenario
@@ -83,8 +85,8 @@ public sealed class LevelSmokeScenario
                 Fail("相机抵达之前生成了下一阶段敌人");
             }
 
-            // 清波后到下一场开战之间，右侧应亮起前进提示（旧项目 role_information.gogo）。
-            if (m_Level.GoHintVisible)
+            // 清波后到下一场开战之间，关卡应处于可前进窗口（HUD 据此显示 Go）。
+            if (m_Level.TravelAvailable.Value)
             {
                 m_GoHintSeen = true;
             }
@@ -102,9 +104,9 @@ public sealed class LevelSmokeScenario
         }
         else if (m_Level.Phase == LevelStagePhase.Fighting)
         {
-            if (m_Level.GoHintVisible)
+            if (m_Level.TravelAvailable.Value)
             {
-                Fail("开战后前进提示仍然可见");
+                Fail("开战后仍处于可前进窗口");
             }
 
             DriveBattle(delta, monsters);
@@ -116,6 +118,15 @@ public sealed class LevelSmokeScenario
             {
                 Fail($"怪物总数错误：实际 {m_Seen.Count}，配置 {expected}");
             }
+
+            int expectedExperience = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages
+                .Sum(x => x.Recipes.Sum(r => r.Count * ConfigSystem.Instance.Tables.TbMonsterConfig.DataList
+                    .Single(m => m.EntityId == r.MonsterEntityId).AddExp));
+            if (m_Hero.TotalExperience.Value != expectedExperience)
+            {
+                Fail($"本关经验错误或重复死亡奖励：实际 {m_Hero.TotalExperience.Value}，配置 {expectedExperience}");
+            }
+            GD.Print($"SMOKE-LEVEL: experience={m_Hero.TotalExperience.Value}, expected={expectedExperience}");
 
             if (!m_GoHintSeen)
             {
@@ -177,6 +188,9 @@ public sealed class LevelSmokeScenario
                     m_Hero.Id, 0, SoundId.None);
                 monster.ReceiveHit(attack, m_Hero.Id);
                 ReferencePool.Release(attack);
+                // 同一死亡再发一次普通事件，刷怪服务必须只发一次奖励和清波名额。
+                GF.Event.Fire(this, MonsterDiedEventArgs.Create(monster.Id, monster.Config.Id,
+                    monster.Config.Rank, m_Hero.Id, monster.GlobalPosition));
             }
 
             return;

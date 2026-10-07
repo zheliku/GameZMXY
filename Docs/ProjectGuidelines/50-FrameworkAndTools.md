@@ -29,6 +29,7 @@
 - 改表时先导表再构建；涉及实体/动画资源时运行 `EditorScripts/validate_anim_libraries.gd` 与 Collection Res 生成器。
 - 按改动风险运行相关单测或冒烟场景；验证完成后检查 `git diff` 与 `git diff --check`。
 - 关卡纯回归：`dotnet test Tests/LevelTests`；真实流程：`-- --smoketest=level`，在途取消：`-- --smoketest=level-cancel`。编辑器装配与绘制：`EditorScripts/validate_level_scene.gd`（`--editor` 检查 Tool，`-- --snapshot --resize` 检查实际像素与宽屏取景）；路径与 UID：`python Tools/ProjectMaintenance/validate_game_references.py`。
+- UI 属性和生命周期回归：`-- --smoketest=ui`，使用真实 GGF 窗口/实体池及流程验证显示、退订、换角色、加载取消、失败恢复和存档重入；全部烟测在 `SmokeTestDriver._Ready` 选择唯一 `user://Validation/<模式>/<随机 ID>` 存档目录，不触碰玩家进度。以 `SMOKE PASS/FAIL` 判定断言，框架退出异常单独登记，不能用通过断言掩盖异常退出。
 - 保留的可选区域触发器通过 `--script res://EditorScripts/validate_level_triggers.gd` 验证真实物理重叠、当前区监听、玩家过滤、单次激活及停止/重启；独立验证不改正式场景和源表。
 
 ### 本轮边界登记（2026-10-06）

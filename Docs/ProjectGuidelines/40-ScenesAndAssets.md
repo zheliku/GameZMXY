@@ -27,7 +27,9 @@
 - `World/Background`、`Geometry`、`SpawnPoints`、`StageGates`、可选 `StageTriggers` 和 `Exit` 是语义插槽；相机和刷怪服务在根下。稳定业务 ID 用于表外键，节点名和 NodePath 只用于编辑器绑定，不作为运行时业务键。
 - 远景天空用 `Parallax2D`（`World/Background/Sky`，`scroll_scale = (0.13, 1)`）：世界位置 = `(1 − 0.13) × 视图左缘`，即比相机慢 13%，全程覆盖视口。取值 = `(天图宽 − 视口宽) ÷ 相机行程 = (1440 − 940) ÷ 3760 ≈ 0.133`，使起点左缘对齐、终点右缘贴合视图右缘；相机行程或关卡右界变化时要按此式重算。近景装饰（`World/Background/Front`）保持世界锁定（`scroll_scale = 1`）。
 - 关卡可玩右界裁到地形完整处：`Level_1` 右界为 4700（`Camera2D.limit_right`、右墙、地形贴图宽度一致），地形贴图 `level_1_floor.png` 已裁掉右侧 112px 的圆角收尾（该段右下透明、会露出背景）；最后一阶段的右界门随之左移，保证末段区域仍不小于一屏。
-- 清波后到下一场开战之间，`LevelController` 点亮右侧前进提示 `GoHintLayer/GoHint`（`AnimatedSprite2D`，67 帧 / 25fps 循环，对应旧项目 `role_information.gogo`）；开战、结束或清理时隐藏。提示是屏幕空间的 `CanvasLayer` 子节点，不随相机滚动。
+- 战斗 HUD 是 GGF 界面：场景 `UIs/BattleHud.tscn`（根 `Control`，全屏锚点），脚本 `GameScripts/UI/BattleHud.cs`（Ge 样板）与 `BattleHud.Logic.cs`（业务）。根节点必须绑定血条、等级、无双条/段位、Go 导出字段并保留 `node_paths`。在 `界面UI.xlsx` 配置为 `UIFormId.BattleHud`（组 `Normal`），`ProcedureGame` 在 `StartSession` 后通过 `BattleHudContext(HeroEntity, LevelController)` 打开，先订阅失败事件，退出时关闭已打开及加载中的请求。HUD 打开先解绑旧对象、验证装配、订阅后统一初始化，关闭时退订并停止表现；`HealthBar` 子控件只接收生命与上限两个属性实例。
+- 清波后到下一场开战之间，`LevelController.TravelAvailable.Value` 为 true；HUD 直接订阅显示右侧前进提示（`m_Go`，67 帧循环，旧 `role_information.gogo`）。初始、开战、完成和清理时为 false。Go 属于屏幕空间 HUD，不放在关卡场景里。
+- HUD 贴图在 `Sprites/UI/hud/`（旧 `Art/HeroPicture`）：状态面板/血条/无双/头像/菜单面板等，按旧项目 940×590 坐标 1:1 摆放。MP/经验条节点继续隐藏；累计经验已可观察，但经验条还需要升级规则和经验上限，不能仅凭累计经验启用。
 - `LevelCamera` 使用中央小死区：设计视口 940×590，死区半宽 40px（总宽 80px）；越界才跟随，Y 固定。已核对造3官方公开资源：画布同为 940×590，普通前进/后退阈值分别约为 626.67px 与 188px，采用非对称窗口。本项目按用户后续的“抵达时人物仍在中央”要求使用更窄的中央窗口；40px 是项目取景参数，不称为原版数值。来源与适用边界见 [原版相机核查](../Reviews/zmxy3_camera_reference_2026-10-06.md)。死区、标注颜色和追近速度上限在场景检查器编辑，玩法生成延迟仍进表。
 - 相机中心始终是实际受限中心，禁用引擎位置平滑和拖动，避免脚本位置在墙后累计。清波只放开到紧邻下一阶段右界，保留当前位置与左界；每帧追近位移受 `MaxPanSpeed × delta` 限制，角色在墙前清波也不会立即重居中。
 - 相机实际右缘抵达阶段右界时才开战，玩家正常行进时仍在中央死区附近；门集合此时封住前门。相机停止在右界后，角色继续走到物理墙前才停止。收紧左界保留当前视野左缘，避免特殊触发阶段切换时跳变；物理门独立约束玩家。

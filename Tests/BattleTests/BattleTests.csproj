@@ -29,6 +29,10 @@
 
   <ItemGroup>
     <Compile Include="*.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Bindable\*.cs" Link="Linked\Bindable\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Progression\*.cs" Link="Linked\Progression\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Hero\HeroLevelConfig.cs" Link="Linked\GameConfig\HeroLevelConfig.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Hero\TbHeroLevelConfig.cs" Link="Linked\GameConfig\TbHeroLevelConfig.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Battle\*.cs" Link="Linked\Battle\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Battle\BattleConfig.cs" Link="Linked\GameConfig\BattleConfig.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Battle\TbBattleConfig.cs" Link="Linked\GameConfig\TbBattleConfig.cs" />
@@ -54,6 +58,7 @@
 
   <ItemGroup>
     <None Include="$(GodotProjectDir)TheGame\DataTables\GameConfigs\battle_tbbattleconfig.bytes" Link="Data\battle_tbbattleconfig.bytes" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(GodotProjectDir)TheGame\DataTables\GameConfigs\hero_tbherolevelconfig.bytes" Link="Data\hero_tbherolevelconfig.bytes" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,6 +1,8 @@
 using System;
 using System.Threading;
 using GameConfig.Level;
+using GameLogic.Bindable;
+using GameLogic.Entity.Heroes;
 using Godot;
 using GodotGameFramework.Entity;
 
@@ -15,17 +17,19 @@ public partial class LevelController : Node2D
     [Export] private LevelStageGateSet m_Gates; // 阶段物理门与区域，必需。
     [Export] private LevelSpawner m_Spawner; // 配方调度和关卡实体所有权，必需。
     [Export] private LevelCamera m_Camera; // 实际取景和阶段抵达事件，必需。
-    [Export] private AnimatedSprite2D m_GoHint; // 清波后指引前进的 Go 提示；可选，未绑定时不显示。
 
     private LevelConfig m_Config; // 本场景对应的只读配置。
     private LevelStageSequence m_Sequence; // 会话当前阶段的唯一权威。
-    private Node2D m_Player; // 拥有者注入的玩家，仅供特殊触发器监听。
+    private HeroEntity m_Player; // 拥有者注入的玩家，接收经验并供特殊触发器监听。
 
     /// <summary>关卡已全部清波；出口和结算可订阅此事件。</summary>
     public event Action Completed;
 
     /// <summary>实体显示失败，交给会话拥有者结束关卡并报告错误。</summary>
     public event Action<Exception> Failed;
+
+    /// <summary>非最终阶段清波后到下一场开战前的可前进窗口，HUD 直接订阅。</summary>
+    public BindableProperty<bool> TravelAvailable { get; } = new();
 
     /// <summary>玩家出生点的世界坐标，Initialize 后可读。</summary>
     public Vector2 PlayerSpawnPosition => m_SpawnPoints.PositionOf(m_Config.PlayerSpawnPointId);
@@ -35,9 +39,6 @@ public partial class LevelController : Node2D
 
     /// <summary>当前会话阶段状态。</summary>
     public LevelStagePhase Phase => m_Sequence.Phase;
-
-    /// <summary>前进提示当前是否可见（供 HUD 与调试观测）。</summary>
-    public bool GoHintVisible => m_GoHint != null && m_GoHint.Visible;
 
     /// <summary>校验场景身份和必需绑定，再由各职责所有者验证配置。</summary>
     /// <exception cref="InvalidOperationException">绑定缺失、配置不存在、场景不匹配或管理器校验失败时抛出。</exception>
@@ -72,11 +73,13 @@ public partial class LevelController : Node2D
     /// <param name="entities">关卡流程注入的实体服务。</param>
     /// <param name="player">本会话的玩家节点。</param>
     /// <param name="cancellationToken">流程离开时取消在途实体显示。</param>
-    public void StartSession(EntityComponent entities, Node2D player, CancellationToken cancellationToken)
+    public void StartSession(EntityComponent entities, HeroEntity player, CancellationToken cancellationToken)
     {
+        TravelAvailable.Value = false;
         m_Player = player;
         m_Spawner.StartSession(entities, cancellationToken);
         m_Spawner.StageCleared += OnStageCleared;
+        m_Spawner.ExperienceDropped += OnExperienceDropped;
         m_Spawner.SpawnFailed += OnSpawnFailed;
         m_Camera.RightBoundaryReached += OnCameraArrived;
         if (m_Triggers != null)
@@ -106,31 +109,12 @@ public partial class LevelController : Node2D
         m_Camera.RightBoundaryReached -= OnCameraArrived;
         m_Camera.StopFollowing();
         m_Spawner.StageCleared -= OnStageCleared;
+        m_Spawner.ExperienceDropped -= OnExperienceDropped;
         m_Spawner.SpawnFailed -= OnSpawnFailed;
         m_Spawner.StopSession();
         m_Sequence.Stop();
         m_Player = null;
-        ShowGoHint(false);
-    }
-
-    /// <summary>切换"前进"提示：显示时从头播放循环动画，隐藏时停播（同旧项目 role_information.gogo）。</summary>
-    /// <param name="show">true 显示并播放；false 隐藏并停止。</param>
-    private void ShowGoHint(bool show)
-    {
-        if (m_GoHint == null)
-        {
-            return;
-        }
-
-        m_GoHint.Visible = show;
-        if (show)
-        {
-            m_GoHint.Play();
-        }
-        else
-        {
-            m_GoHint.Stop();
-        }
+        TravelAvailable.Value = false;
     }
 
     /// <summary>清波后开放当前阶段通路并设置相机右界，特殊阶段同时启用触发区监听。</summary>
@@ -162,10 +146,10 @@ public partial class LevelController : Node2D
         m_Gates.LockRegion(stage.StageOrder);
         m_Camera.LockLeft(m_Gates.BoundsOf(stage.StageOrder).Left);
         m_Spawner.StartStage(stage);
-        ShowGoHint(false);
+        TravelAvailable.Value = false;
     }
 
-    /// <summary>当前阶段清除后开放出口并推进一次；非最终阶段亮起前进提示，最终清波交给出口和结算。</summary>
+    /// <summary>当前阶段清除后开放出口并推进一次；非最终阶段进入可前进窗口，最终清波交给出口和结算。</summary>
     private void OnStageCleared()
     {
         m_Gates.ReleaseRegion(m_Sequence.Current.StageOrder);
@@ -173,13 +157,18 @@ public partial class LevelController : Node2D
         if (m_Sequence.Phase == LevelStagePhase.Travelling)
         {
             BeginTravel();
-            ShowGoHint(true);
+            TravelAvailable.Value = true;
         }
         else
         {
+            TravelAvailable.Value = false;
             Completed?.Invoke();
         }
     }
+
+    /// <summary>将本关死亡收益交给注入的英雄，由英雄统一结算成长。</summary>
+    /// <param name="experience">初始化边界已验证的非负经验奖励。</param>
+    private void OnExperienceDropped(int experience) => m_Player.GainExperience(experience);
 
     /// <summary>显示失败属于会话所有者，先清理再上报，不留下锁死的战斗区域。</summary>
     /// <param name="error">实体显示抛出的异常。</param>

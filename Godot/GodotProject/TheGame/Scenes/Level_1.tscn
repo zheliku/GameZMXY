@@ -10,7 +10,6 @@
 [ext_resource type="Script" uid="uid://b7abdk6hcrmws" path="res://TheGame/GameScripts/Level/Stage/LevelStageTriggerSet.cs" id="10_trigger_manager"]
 [ext_resource type="Script" uid="uid://b6ai16cs6v6de" path="res://TheGame/GameScripts/Level/Stage/LevelStageGateSet.cs" id="11_gate_manager"]
 [ext_resource type="Script" uid="uid://ccjmic0fgxfrv" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawner.cs" id="12_monster_manager"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/gogo/gogo_animations.tres" id="13_gohint"]
 
 [sub_resource type="RectangleShape2D" id="GroundShape"]
 size = Vector2(4812, 93)
@@ -80,14 +79,13 @@ m_DrawColor = Color(0.6, 1, 0.2, 0.9)
 [sub_resource type="RectangleShape2D" id="GateShape"]
 size = Vector2(20, 700)
 
-[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_GoHint")]
+[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera")]
 script = ExtResource("1_controller")
 m_SpawnPoints = NodePath("World/SpawnPoints")
 m_Triggers = NodePath("World/StageTriggers")
 m_Gates = NodePath("World/StageGates")
 m_Spawner = NodePath("Spawner")
 m_Camera = NodePath("Camera2D")
-m_GoHint = NodePath("GoHintLayer/GoHint")
 
 [node name="World" type="Node2D" parent="." unique_id=219105317]
 
@@ -285,14 +283,3 @@ limit_top = 0
 limit_right = 4700
 limit_bottom = 590
 script = ExtResource("2_camera")
-
-[node name="GoHintLayer" type="CanvasLayer" parent="."]
-layer = 10
-
-[node name="GoHint" type="AnimatedSprite2D" parent="GoHintLayer"]
-visible = false
-position = Vector2(860, 295)
-scale = Vector2(0.6, 0.6)
-sprite_frames = ExtResource("13_gohint")
-animation = &"go"
-autoplay = "go"

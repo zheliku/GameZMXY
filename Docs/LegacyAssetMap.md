@@ -6,7 +6,7 @@
 
 ## 当前阶段范围（M1）
 
-`wukong` + `huaguoshan_monkey`（旧 Monster1）+ `demon_monkey`（旧 Monster2，妖猴）+ `Level_1`（花果山）+ `TestArena`（怪物与角色测试关卡）+ `gogo`（旧 `Art/Level/Gogo` 前进提示）。
+`wukong` + `huaguoshan_monkey`（旧 Monster1）+ `demon_monkey`（旧 Monster2，妖猴）+ `Level_1`（花果山）+ `TestArena`（怪物与角色测试关卡）+ `gogo`（旧 `Art/Level/Gogo` 前进提示）+ `hud`（旧 `Role_information` 战斗 HUD 贴图）。
 
 ## 贴图映射
 
@@ -28,6 +28,17 @@
 | `Art/Level/Level_1/48.png` | `Sprites/Levels/huaguoshan/level_1_front.png` | 4957×633；旧 `BackGround/front` 前景视差层 |
 | `Art/Level/Level_1/183.png` | `Sprites/Levels/huaguoshan/level_1_floor.png` | 原 4812×170；旧 `BackGround/floor3/floor2` 地板视差层。**已裁至 4700×170**：右侧 112px 圆角收尾（x≥4716 顶面下坠、右下透明）会露出背景，相机右界随之定在 4700 |
 | `Art/Level/Gogo/1..67.png` | `Sprites/UI/gogo/gogo_sheet.png` + `gogo_animations.tres` | 67 帧 213×92 打包为 8×9 图集；旧 `Role_information` 的 `Gogo`（`AnimatedSprite2D`，speed 25、循环） |
+| `Art/HeroPicture/RoleProperiesBox/408.png` | `Sprites/UI/hud/hud_status_panel.png` | 227×87，状态面板底图 |
+| `Art/HeroPicture/RoleProperiesBox/345.png` | `Sprites/UI/hud/hud_hp_fill.png` | 144×12，血条填充 |
+| `Art/HeroPicture/RoleProperiesBox/742.png` | `Sprites/UI/hud/hud_hp_delay.png` | 144×12，血条残影/经验填充 |
+| `Art/HeroPicture/RoleProperiesBox/712.png` | `Sprites/UI/hud/hud_menu_panel.png` | 169×133，右下菜单面板 |
+| `Art/HeroPicture/RoleProperiesBox/718.png` | `Sprites/UI/hud/hud_ws_frame.png` | 260×22，无双条框 |
+| `Art/HeroPicture/RoleProperiesBox/720.png` | `Sprites/UI/hud/hud_ws_under.png` | 221×28，无双条底 |
+| `Art/HeroPicture/RoleProperiesBox/724.png` | `Sprites/UI/hud/hud_ws_fill.png` | 221×13，无双条填充 |
+| `Art/HeroPicture/WSGrey.png` | `Sprites/UI/hud/hud_ws_grey.png` | 72×71，无双灰底 |
+| `Art/HeroPicture/WSBar.png` | `Sprites/UI/hud/hud_ws_max_sheet.png` | 890×89，10 帧×89，无双满值段位（`Sprite2D.hframes=10`） |
+| `Art/HeroPicture/RoleProperiesBox/swk.png` | `Sprites/UI/hud/hud_head_wukong.png` | 83×76，悟空头像 |
+| `Art/HeroPicture/RoleProperiesBox/748.png` | `Sprites/UI/hud/hud_status_label.png` | 17×46，状态标签装饰 |
 | `Art/HeroPicture/Role1SpecialEffect/Role1Hit1.png` | `Sprites/Effects/wukong/wukong_hit_1.png` | 210×206 × 5 帧；普攻 1 段棍气 |
 | `Art/HeroPicture/Role1SpecialEffect/Role1Hit2.png` | `Sprites/Effects/wukong/wukong_hit_2.png` | 159×54 × 2 帧；普攻 2 段棍气 |
 | `Art/HeroPicture/Role1SpecialEffect/Role1Hit3.png` | `Sprites/Effects/wukong/wukong_hit_3.png` | 326×66 × 4 帧；普攻 3 段棍气 |
@@ -283,6 +294,15 @@ python Tools/LegacyMigration/gen_animations.py
 "S:\Godot4\Godot4CSharp_console.exe" --headless --script Tools/LegacyMigration/gen_damage_numbers.gd
 "S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --script res://EditorScripts/build_huaguoshan_monkey_anim_tree.gd
 ```
+
+## 2026-10-07 HUD 经验与魔法条
+
+| 新资源（`TheGame/Sprites/UI/hud/`） | 旧资源（`ZMXY_BHYH/`） | 用途 |
+| --- | --- | --- |
+| `hud_mp_fill.png` | `Art/HeroPicture/RoleProperiesBox/739.png` | 角色魔法填充 |
+| `hud_exp_fill.png` | `Art/HeroPicture/RoleProperiesBox/742.png` | 本级经验填充 |
+
+仅复制 PNG，导入元数据由新工程 Godot 生成；坐标与旧 `Scene/Level/Role_information.tscn` 对齐。
 
 ## 待办
 

@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GameConfig.Battle;
 using GameConfig.Sound;
 using GameFramework;
 using GameFramework.Event;
+using GameLogic;
 using GameLogic.Battle;
 using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
@@ -26,6 +28,7 @@ using GodotGameFramework;
 ///   `--smoketest=ai`  怪物 AI（巡逻/追击/出招/转身/平台守候/丢失目标/受控/死亡）。
 ///   `--smoketest=level` 正式关卡四段移动、锁屏、刷怪与清波。
 ///   `--smoketest=level-cancel` 在途显示取消与晚到结果回收。
+///   `--smoketest=ui` HUD 属性更新、退订复用、实体复用、失败清理与隔离存档重入。
 ///
 /// 关卡首波怪物由相机抵达首阶段右界激活（Level_1 的相机右缘），因此两种模式都先注入移动输入
 /// 推动相机抵达后才启动既有战斗时间轴；M4 连打验证沙包，AI 模式验证怪物行为。
@@ -44,6 +47,7 @@ public partial class SmokeTestDriver : Node
 		MonsterAi,
 		Level,
 		Cancellation,
+		Ui,
 	}
 
 	private static readonly (double At, string Action, string Mode)[] Plan =
@@ -111,6 +115,7 @@ public partial class SmokeTestDriver : Node
 
 	private LevelSmokeScenario m_LevelScenario; // 正式关卡四段流程的观测与输入计划。
 	private LevelCancellationSmokeScenario m_CancelScenario; // 真实在途显示的取消回归。
+	private UiSmokeScenario m_UiScenario; // HUD 与存档的真实引擎回归。
 
 	private MonsterAiSmokeScenario m_AiScenario; // ai 模式下驱动英雄与猴子的场景。
 
@@ -135,6 +140,7 @@ public partial class SmokeTestDriver : Node
 				"--smoketest=ai" => SmokeMode.MonsterAi,
 				"--smoketest=level" => SmokeMode.Level,
 				"--smoketest=level-cancel" => SmokeMode.Cancellation,
+				"--smoketest=ui" => SmokeMode.Ui,
 				_ => m_Mode,
 			};
 		}
@@ -152,6 +158,12 @@ public partial class SmokeTestDriver : Node
 		{
 			SetPhysicsProcess(false);
 		}
+		else
+		{
+			// 每次烟测使用独立存档目录，自动保存和失败测试不触碰玩家实际进度。
+			GF.Archive.Setting.Folder = $"Validation/{m_Mode}/{Guid.NewGuid():N}";
+			GD.Print($"SMOKE ARCHIVE: user://{GF.Archive.Setting.Folder}");
+		}
 
 		// 排在实体与 AnimationPlayer 之后处理：采样到的才是"本帧更新完"的状态，
 		// 否则读到的永远是上一帧的播放状态（会误判成"动画晚一帧"）。
@@ -163,6 +175,11 @@ public partial class SmokeTestDriver : Node
 	/// <param name="delta">上一帧到当前帧的秒数。</param>
 	public override void _PhysicsProcess(double delta)
 	{
+		if (m_Mode == SmokeMode.Ui)
+		{
+			DriveUiScenario(delta);
+			return;
+		}
 		if (m_Hero == null)
 		{
 			m_WaitTime += delta;
@@ -223,6 +240,43 @@ public partial class SmokeTestDriver : Node
 		if (m_Time >= EndTime)
 		{
 			Finish();
+		}
+	}
+
+	/// <summary>等待正式 HUD 就绪，再驱动真实 UI 生命周期与存档回归。</summary>
+	/// <param name="delta">物理帧间隔秒数。</param>
+	private void DriveUiScenario(double delta)
+	{
+		if (m_UiScenario == null)
+		{
+			m_WaitTime += delta;
+			var hud = GF.UI?.GetUIForm(GameConfig.Constant.ResourcesCollectionConstant.UIs_BattleHud) as BattleHud;
+			var hero = GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+				.OfType<HeroEntity>().FirstOrDefault(x => x.IsShown);
+			var level = GetTree().Root.FindChildren("*", "Node2D", true, false)
+				.OfType<LevelController>().FirstOrDefault();
+			if (hud != null && hero != null && level != null)
+			{
+				m_UiScenario = new UiSmokeScenario(this, hero, level, hud);
+			}
+			else if (m_WaitTime > 15.0)
+			{
+				Fail("15 秒内正式 HUD 未就绪");
+			}
+			return;
+		}
+
+		if (m_UiScenario.IsDone)
+		{
+			if (m_UiScenario.Failure == null)
+			{
+				GD.Print("SMOKE PASS：UI 数值、解绑复用、实体复用、加载取消、失败清理与存档重入全部通过");
+				StopDriving(false);
+			}
+			else
+			{
+				Fail(m_UiScenario.Failure);
+			}
 		}
 	}
 
@@ -612,13 +666,13 @@ public partial class SmokeTestDriver : Node
 					monster.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X + 900f, monster.GlobalPosition.Y);
 					monster.Velocity = Vector2.Zero;
 					m_MonsterFoundAt = m_Time;
-					GD.Print($"SMOKE[{m_Time:F2}] 找到受测猴子 HP {monster.Hp}/{monster.MaxHp}，已挪出视野等待丢失目标");
+					GD.Print($"SMOKE[{m_Time:F2}] 找到受测猴子 HP {monster.Hp.Value}/{monster.MaxHp.Value}，已挪出视野等待丢失目标");
 				}
 				else
 				{
 					// M4 站位：悟空右侧、普攻判定范围内，供第二轮连打命中。
 					monster.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X + SandbagOffset, monster.GlobalPosition.Y);
-					GD.Print($"SMOKE[{m_Time:F2}] 找到沙包猴子 HP {monster.Hp}/{monster.MaxHp} 位置 {monster.GlobalPosition}");
+					GD.Print($"SMOKE[{m_Time:F2}] 找到沙包猴子 HP {monster.Hp.Value}/{monster.MaxHp.Value} 位置 {monster.GlobalPosition}");
 				}
 			}
 
@@ -688,10 +742,10 @@ public partial class SmokeTestDriver : Node
 		}
 
 		// 事件累计伤害应与实体血量一致，再检查命中后是否确实创建池化飘字。
-		int expectedHp = Mathf.Max(0, m_Monster.MaxHp - total);
-		if (m_Monster.Hp != expectedHp && !m_Monster.Dead)
+		int expectedHp = Mathf.Max(0, m_Monster.MaxHp.Value - total);
+		if (m_Monster.Hp.Value != expectedHp && !m_Monster.Dead)
 		{
-			failures.Add($"猴子 HP {m_Monster.Hp} 与事件累计 {expectedHp} 不一致");
+			failures.Add($"猴子 HP {m_Monster.Hp.Value} 与事件累计 {expectedHp} 不一致");
 		}
 
 		if (m_MaxPopCount == 0)
@@ -699,7 +753,7 @@ public partial class SmokeTestDriver : Node
 			failures.Add("命中后场上没有出现过飘字（NodePool 未取出 DamagePop）");
 		}
 
-		GD.Print($"SMOKE: 猴子共受击 {m_MonsterHits.Count} 次，累计伤害 {total}，HP {m_Monster.Hp}/{m_Monster.MaxHp}，同屏飘字峰值 {m_MaxPopCount}");
+		GD.Print($"SMOKE: 猴子共受击 {m_MonsterHits.Count} 次，累计伤害 {total}，HP {m_Monster.Hp.Value}/{m_Monster.MaxHp.Value}，同屏飘字峰值 {m_MaxPopCount}");
 	}
 
 	private void Fail(string reason) // 输出失败原因及已观察序列，然后停止驱动。
