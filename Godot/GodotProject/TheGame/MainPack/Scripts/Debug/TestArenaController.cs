@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using GameConfig;
 using GameConfig.Entity;
 using GameFramework;
 using GameFramework.Entity;
+using GameLogic.Config;
 using GameLogic.Entity.Monsters;
+using GameLogic.Profile;
 using GameLogic.UI;
 using Godot;
 using GodotGameFramework;
@@ -16,7 +20,7 @@ using GodotGameFramework.NodePool;
 ///
 /// 用法：在 Godot 里对 <c>TestArena.tscn</c> 按 F6“运行当前场景”即可，不需要改流程或配置表。
 /// 场景内自带一份**真实的** <c>Framework/GameFramework.tscn</c>（去掉 Procedure 流程），脚本只补上正式流程里
-/// <c>ProcedurePrelode</c> 的三组注册与节点池启动；之后把怪物实体场景拖进 <c>Monsters</c> 容器、摆好位置即可测试。
+/// <c>ProcedurePreload</c> 的三组注册与节点池启动；之后把怪物实体场景拖进 <c>Monsters</c> 容器、摆好位置即可测试。
 ///
 /// 占位节点只提供“哪只怪、放在哪”，真正的实体仍由 <see cref="GF.Entity"/> 池化创建，生命周期与正式关卡一致。
 /// </summary>
@@ -34,6 +38,14 @@ public partial class TestArenaController : Node2D
 
 	private Node2D m_Hero; // 已显示的玩家节点，供相机跟随。
 	private float m_CameraY; // 相机固定的纵向位置。
+	private DamagePopPresenter m_DamagePops; // 场地的伤害飘字表现，离开场景树时释放。
+
+	/// <summary>离开场景树时释放飘字订阅。</summary>
+	public override void _ExitTree()
+	{
+		m_DamagePops?.Dispose();
+		m_DamagePops = null;
+	}
 
 	/// <summary>准备框架、取走怪物占位节点，然后异步启动测试场地。</summary>
 	public override void _Ready()
@@ -76,7 +88,7 @@ public partial class TestArenaController : Node2D
 		AddChild(framework);
 	}
 
-	/// <summary>补上正式流程 <c>ProcedurePrelode</c> 的注册步骤：实体/UI/声音分组与节点池、层级工具。</summary>
+	/// <summary>补上正式流程 <c>ProcedurePreload</c> 的注册步骤：实体/UI/声音分组与节点池、层级工具。</summary>
 	private void ActivateTestServices()
 	{
 		var entityGroups = GF.Entity.EntityGroupRes.EntityGroups;
@@ -112,7 +124,7 @@ public partial class TestArenaController : Node2D
 		{
 			// 等一帧，确保框架组件的 OnEnter 已完成。
 			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-			DamagePopManager.Instance.Activate(GF.Entity);
+			m_DamagePops = new DamagePopPresenter(GF.Entity);
 			await SpawnHeroAsync();
 			foreach ((EntityId id, Vector2 position) in monsters)
 			{
@@ -129,11 +141,19 @@ public partial class TestArenaController : Node2D
 		}
 	}
 
-	/// <summary>显示测试玩家并放到出生点。</summary>
+	/// <summary>
+	/// 显示测试玩家并放到出生点。属性只来自出战装配：用建档规则创建一份仅内存的临时档案，不读写存档。
+	/// </summary>
 	/// <returns>显示完成的异步任务。</returns>
 	private async Task SpawnHeroAsync()
 	{
-		IEntity entity = await GF.Entity.ShowEntityAsync(m_HeroEntityId, null);
+		Tables tables = ConfigSystem.Instance.Tables;
+		ExperienceCurve curve = ConfigValidator.ValidateAll(tables);
+		int heroId = tables.TbHeroConfig.DataList.FirstOrDefault(x => x.EntityId == m_HeroEntityId)?.Id
+			?? throw new InvalidOperationException($"HeroConfig 中没有实体 {m_HeroEntityId}");
+		HeroRecord record = new(heroId, new HeroProgression(curve, 0));
+		HeroLoadout loadout = new HeroStatBuilder(tables.TbHeroGrowthConfig).Build(record);
+		IEntity entity = await GF.Entity.ShowEntityAsync(m_HeroEntityId, loadout);
 		if (entity?.Handle is not Node2D hero)
 		{
 			GD.PushError($"[TestArena] 玩家实体显示失败：{m_HeroEntityId}");

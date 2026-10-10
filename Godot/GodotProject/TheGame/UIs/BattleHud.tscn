@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c1ch3tik4i3gw"]
 
-[ext_resource type="Script" uid="uid://mkarg5ndugr2" path="res://TheGame/GameScripts/UI/BattleHud.cs" id="1_script"]
+[ext_resource type="Script" uid="uid://mkarg5ndugr2" path="res://TheGame/GameScripts/UI/BattleHud/BattleHud.cs" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://burfbdx7y7epd" path="res://TheGame/Sprites/UI/hud/hud_status_panel.png" id="2_status"]
 [ext_resource type="Texture2D" uid="uid://ckvn7vbcoutdx" path="res://TheGame/Sprites/UI/hud/hud_status_label.png" id="3_label"]
 [ext_resource type="Texture2D" uid="uid://dpwrtfexmdivo" path="res://TheGame/Sprites/UI/hud/hud_hp_fill.png" id="4_hp"]

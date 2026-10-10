@@ -177,6 +177,42 @@ public partial class Tables
             m_TbLevelConfig.ResolveRef(this);
         }
     }
+    private Hero.TbHeroGrowthConfig m_TbHeroGrowthConfig;
+    public Hero.TbHeroGrowthConfig TbHeroGrowthConfig 
+    {
+        get
+        {
+            if (m_TbHeroGrowthConfig == null)
+            {
+                m_TbHeroGrowthConfig = new Hero.TbHeroGrowthConfig(defaultLoader("hero_tbherogrowthconfig"));
+                m_TbHeroGrowthConfig.ResolveRef(this);
+            }
+            return m_TbHeroGrowthConfig;
+        }
+        set
+        {
+            m_TbHeroGrowthConfig = value;
+            m_TbHeroGrowthConfig.ResolveRef(this);
+        }
+    }
+    private Profile.TbProfileConfig m_TbProfileConfig;
+    public Profile.TbProfileConfig TbProfileConfig 
+    {
+        get
+        {
+            if (m_TbProfileConfig == null)
+            {
+                m_TbProfileConfig = new Profile.TbProfileConfig(defaultLoader("profile_tbprofileconfig"));
+                m_TbProfileConfig.ResolveRef(this);
+            }
+            return m_TbProfileConfig;
+        }
+        set
+        {
+            m_TbProfileConfig = value;
+            m_TbProfileConfig.ResolveRef(this);
+        }
+    }
 
     #endregion
 

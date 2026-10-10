@@ -142,8 +142,6 @@ namespace GameLogic.Entity.Monsters
 			}
 
 			Config = matches[0];
-
-			MaxHp.Value = Config.Hp;
 			m_AiParams = BuildAiParams();
 			LoadAttacks();
 			m_BodyParams = BuildBodyParams();
@@ -159,9 +157,11 @@ namespace GameLogic.Entity.Monsters
 		{
 			base.OnShow(userData);
 
-			// 池复用带回脏状态：全部复位
-			MaxHp.Value = Config.Hp;
-			Hp.Value = MaxHp.Value;
+			// 池复用带回脏状态：属性按配置重建（怪物无成长，基础值即配置值），生命补满。
+			Stats.Clear();
+			Stats.SetBase(Config.Stats);
+			Level = Config.Level;
+			SyncVitalsToStats(refill: true);
 			MoveIntent = 0;
 			AttackSegment = m_AttackRequest = -1;
 			m_PendingHurt = null;
@@ -256,17 +256,6 @@ namespace GameLogic.Entity.Monsters
 		}
 
 		// ---- 内部方法与扩展点 ----
-
-		/// <summary>结算快照：全部取 MonsterConfig（怪物无成长）。</summary>
-		/// <returns>当前配置与等级对应的结算快照。</returns>
-		protected override CombatantStats GetCombatStats()
-		{
-			return Config == null
-				? default
-				: new CombatantStats(CombatSide.Monster, Config.Level, 0, Config.Def, Config.Mdef, Config.Crit,
-					Config.Miss, Config.Lucky, Config.Toughness, Config.Htarget, Config.CritReduce, Config.Ar,
-					Config.Sp);
-		}
 
 		/// <summary>
 		/// 受击：记击杀者、锁定攻击方；非霸体、招式有击退且动画库有 hurt 动画（硬直时长无从谈起就不登记）时

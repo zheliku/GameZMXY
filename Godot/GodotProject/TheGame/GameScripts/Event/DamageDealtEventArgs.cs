@@ -7,7 +7,7 @@ namespace GameLogic.Event
 {
 	/// <summary>
 	/// 命中结算完成事件（每次命中一条，含闪避）。发布方：受击实体（ActorEntity.ReceiveHit）；
-	/// 订阅方：飘字（DamagePopManager）、后续 HUD/连击数/统计。
+	/// 订阅方：飘字（DamagePopPresenter）、后续 HUD/连击数/统计。
 	///
 	/// 只携带**值**：不引用 AttackData（攻击包随招式归还，事件分发时可能已被复用）、
 	/// 不引用实体节点（实体可能在同帧死亡回收）——订阅者需要的全部信息在这里拷一份。

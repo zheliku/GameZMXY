@@ -12,6 +12,9 @@ using Luban;
 
 namespace GameConfig.Monster
 {
+/// <summary>
+/// 怪物配置（怪物无成长，Level 只用于等级压制）
+/// </summary>
 public sealed partial class MonsterConfig : Luban.BeanBase
 {
     public MonsterConfig(ByteBuf _buf) 
@@ -22,18 +25,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         Desc = _buf.ReadString();
         EntityId = (Entity.EntityId)_buf.ReadInt();
         Level = _buf.ReadInt();
-        Hp = _buf.ReadInt();
-        Def = _buf.ReadInt();
-        Mdef = _buf.ReadInt();
-        Crit = _buf.ReadInt();
-        Miss = _buf.ReadInt();
-        Lucky = _buf.ReadInt();
-        Toughness = _buf.ReadInt();
-        Htarget = _buf.ReadInt();
-        CritReduce = _buf.ReadInt();
-        Ar = _buf.ReadInt();
-        Sp = _buf.ReadInt();
-        RHp = _buf.ReadFloat();
+        Stats = global::GameConfig.Stat.StatBlock.DeserializeStatBlock(_buf);
         MoveSpeed = _buf.ReadFloat();
         SightRange = _buf.ReadInt();
         AttackDesire = _buf.ReadInt();
@@ -84,53 +76,9 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// </summary>
     public readonly int Level;
     /// <summary>
-    /// 生命(旧 SHp)
+    /// 战斗属性(攻击 Power 填 0：怪物伤害由招式 FlatPower 决定)
     /// </summary>
-    public readonly int Hp;
-    /// <summary>
-    /// 物防
-    /// </summary>
-    public readonly int Def;
-    /// <summary>
-    /// 魔防
-    /// </summary>
-    public readonly int Mdef;
-    /// <summary>
-    /// 暴击
-    /// </summary>
-    public readonly int Crit;
-    /// <summary>
-    /// 闪避
-    /// </summary>
-    public readonly int Miss;
-    /// <summary>
-    /// 幸运
-    /// </summary>
-    public readonly int Lucky;
-    /// <summary>
-    /// 韧性(减对方幸运)
-    /// </summary>
-    public readonly int Toughness;
-    /// <summary>
-    /// 命中(破闪)
-    /// </summary>
-    public readonly int Htarget;
-    /// <summary>
-    /// 暴击抵抗
-    /// </summary>
-    public readonly int CritReduce;
-    /// <summary>
-    /// 破甲(减对方物防)
-    /// </summary>
-    public readonly int Ar;
-    /// <summary>
-    /// 破魔(减对方魔防)
-    /// </summary>
-    public readonly int Sp;
-    /// <summary>
-    /// 每秒回血(旧 self_rhp)
-    /// </summary>
-    public readonly float RHp;
+    public readonly Stat.StatBlock Stats;
     /// <summary>
     /// 移动速度 px/s(旧 speed=8,代码里&#215;10)
     /// </summary>
@@ -209,6 +157,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
 
     public  void ResolveRef(Tables tables)
     {
+        Stats?.ResolveRef(tables);
     }
 
     public override string ToString()
@@ -220,18 +169,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "Desc:" + Desc + ","
         + "EntityId:" + EntityId + ","
         + "Level:" + Level + ","
-        + "Hp:" + Hp + ","
-        + "Def:" + Def + ","
-        + "Mdef:" + Mdef + ","
-        + "Crit:" + Crit + ","
-        + "Miss:" + Miss + ","
-        + "Lucky:" + Lucky + ","
-        + "Toughness:" + Toughness + ","
-        + "Htarget:" + Htarget + ","
-        + "CritReduce:" + CritReduce + ","
-        + "Ar:" + Ar + ","
-        + "Sp:" + Sp + ","
-        + "RHp:" + RHp + ","
+        + "Stats:" + Stats + ","
         + "MoveSpeed:" + MoveSpeed + ","
         + "SightRange:" + SightRange + ","
         + "AttackDesire:" + AttackDesire + ","

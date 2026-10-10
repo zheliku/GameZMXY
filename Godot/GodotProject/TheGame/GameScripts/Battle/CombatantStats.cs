@@ -1,3 +1,7 @@
+using System;
+using GameConfig.Stat;
+using GameLogic.Battle.Stats;
+
 namespace GameLogic.Battle
 {
 	/// <summary>
@@ -62,6 +66,21 @@ namespace GameLogic.Battle
 
 		/// <summary>破魔（减对方魔防）</summary>
 		public readonly int Sp;
+
+		/// <summary>从属性汇总取当前最终值生成快照（出招与受击时各取一次，之后不随属性变化）。</summary>
+		/// <param name="side">参与结算的一方。</param>
+		/// <param name="level">等级。</param>
+		/// <param name="stats">角色的属性汇总。</param>
+		/// <returns>当前最终值的结算快照。</returns>
+		/// <exception cref="ArgumentNullException">属性汇总为空。</exception>
+		public static CombatantStats From(CombatSide side, int level, StatSheet stats)
+		{
+			ArgumentNullException.ThrowIfNull(stats);
+			return new CombatantStats(side, level, stats.GetInt(StatType.Power), stats.GetInt(StatType.Def),
+				stats.GetInt(StatType.Mdef), stats.GetInt(StatType.Crit), stats.GetInt(StatType.Miss),
+				stats.GetInt(StatType.Lucky), stats.GetInt(StatType.Toughness), stats.GetInt(StatType.Htarget),
+				stats.GetInt(StatType.CritReduce), stats.GetInt(StatType.Ar), stats.GetInt(StatType.Sp));
+		}
 
 		/// <summary>初始化战斗属性快照。</summary>
 		/// <param name="side">参与结算的一方。</param>

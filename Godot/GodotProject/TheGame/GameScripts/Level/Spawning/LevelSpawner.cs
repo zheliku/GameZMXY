@@ -4,8 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GameConfig.Level;
-using GameConfig.Entity;
-using GameConfig.Monster;
 using GameFramework.Entity;
 using GameFramework.Event;
 using GameLogic.Event;
@@ -15,12 +13,14 @@ using GodotGameFramework.Entity;
 
 namespace GameLogic.Level;
 
-/// <summary>执行当前阶段的生成调度，持有关卡实体所有权并依据死亡事件判定清波。</summary>
+/// <summary>
+/// 执行当前阶段的生成调度，持有关卡实体所有权并依据死亡事件判定清波。
+/// 只报告"本关怪物被击败"这一事实；经验、掉落等收益由关卡运行结算，不在这里查表。
+/// </summary>
 public partial class LevelSpawner : Node
 {
     private readonly HashSet<int> m_OwnedIds = new(); // 本关创建的全部运行实体 ID，含死亡动画中的实体。
-    private readonly Dictionary<int, int> m_ActiveMonsters = new(); // 本会话存活 ID 到经验奖励，移除成功才发放一次。
-    private readonly Dictionary<EntityId, int> m_ExperienceByMonster = new(); // 初始化时验证的怪物经验索引。
+    private readonly HashSet<int> m_ActiveMonsters = new(); // 本会话存活实体 ID；移除成功才报告一次击败。
     private LevelSpawnPointSet m_SpawnPoints; // 初始化阶段校验过的生成点目录。
     private EntityComponent m_Entities; // 会话注入的实体服务。
     private CancellationTokenSource m_Cancellation; // 停止会话时立即作废在途显示结果。
@@ -30,8 +30,8 @@ public partial class LevelSpawner : Node
     /// <summary>当前阶段配方发完且存活与在途名额归零，只报告一次。</summary>
     public event Action StageCleared;
 
-    /// <summary>本会话怪物死亡且首次归还名额后发放经验，只携带普通值。</summary>
-    public event Action<int> ExperienceDropped;
+    /// <summary>本会话怪物死亡且首次归还名额时报告一次，只携带普通值。</summary>
+    public event Action<MonsterDefeat> MonsterDefeated;
 
     /// <summary>当前会话显示实体失败；控制器负责结束会话。</summary>
     public event Action<Exception> SpawnFailed;
@@ -39,14 +39,13 @@ public partial class LevelSpawner : Node
     /// <summary>初始禁用游戏帧调度，加载期不生成实体。</summary>
     public override void _Ready() => SetProcess(false);
 
-    /// <summary>在初始化边界验证配方和怪物实体配置，运行时不重复查询怪物数值表。</summary>
+    /// <summary>在初始化边界验证配方和怪物实体配置，运行时不重复查表。</summary>
     /// <param name="config">本场景对应的关卡配置。</param>
     /// <param name="spawnPoints">初始化阶段已校验的生成点目录。</param>
     /// <exception cref="InvalidOperationException">配方缺失、数值非法或怪物外键不唯一时抛出。</exception>
     public void Initialize(LevelConfig config, LevelSpawnPointSet spawnPoints)
     {
         m_SpawnPoints = spawnPoints;
-        m_ExperienceByMonster.Clear();
         foreach (LevelStage stage in config.Stages)
         {
             if (stage.Recipes.Count == 0)
@@ -62,18 +61,11 @@ public partial class LevelSpawner : Node
                     throw new InvalidOperationException($"阶段 {stage.StageOrder} 配方 {recipe.SpawnPointId} 数值非法。");
                 }
 
-                MonsterConfig[] monsters = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList
-                    .Where(x => x.EntityId == recipe.MonsterEntityId).ToArray();
-                if (monsters.Length != 1 ||
+                if (ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Count(x => x.EntityId == recipe.MonsterEntityId) != 1 ||
                     ConfigSystem.Instance.Tables.TbEntityConfig.DataList.Count(x => x.EntityId == recipe.MonsterEntityId) != 1)
                 {
                     throw new InvalidOperationException($"怪物配方必须唯一关联 MonsterConfig 和 EntityConfig：{recipe.MonsterEntityId}");
                 }
-                if (monsters[0].AddExp < 0)
-                {
-                    throw new InvalidOperationException($"怪物经验奖励不能为负：{recipe.MonsterEntityId}");
-                }
-                m_ExperienceByMonster[recipe.MonsterEntityId] = monsters[0].AddExp;
             }
         }
     }
@@ -150,8 +142,7 @@ public partial class LevelSpawner : Node
     {
         try
         {
-            // 等待前捕获配置数值与空间位置，旧会话结果不再读取可替换的索引。
-            int experience = m_ExperienceByMonster[recipe.MonsterEntityId];
+            // 等待前捕获空间位置，旧会话结果不再读取可替换的索引。
             Vector2 spawnPosition = m_SpawnPoints.PositionOf(recipe.SpawnPointId);
             // 显示 API 可能从池中同步返回，名额已由调度器提前预约。
             IEntity entity = await entities.ShowEntityAsync(recipe.MonsterEntityId, spawnPosition);
@@ -167,7 +158,7 @@ public partial class LevelSpawner : Node
             }
 
             m_OwnedIds.Add(entity.Id);
-            m_ActiveMonsters.Add(entity.Id, experience);
+            m_ActiveMonsters.Add(entity.Id);
         }
         catch (Exception error)
         {
@@ -184,10 +175,10 @@ public partial class LevelSpawner : Node
     /// <param name="args">死亡事件参数，只在回调生命周期内读取运行 ID。</param>
     private void OnMonsterDied(object sender, GameEventArgs args)
     {
-        if (args is MonsterDiedEventArgs died && m_ActiveMonsters.Remove(died.EntityId, out int experience))
+        if (args is MonsterDiedEventArgs died && m_ActiveMonsters.Remove(died.EntityId))
         {
             m_Schedule.Release();
-            ExperienceDropped?.Invoke(experience);
+            MonsterDefeated?.Invoke(new MonsterDefeat(died.MonsterId, died.KillerEntityId, died.Position));
             if (m_Schedule.IsCleared)
             {
                 // 先停调度再分发，控制器可以同步开放下一段通路。

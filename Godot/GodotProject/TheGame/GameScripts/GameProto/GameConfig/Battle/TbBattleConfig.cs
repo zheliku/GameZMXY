@@ -139,6 +139,14 @@ public partial class TbBattleConfig
     /// 无双值上限(旧项目 BaseRoleProperies.gd:20)
     /// </summary>
      public int WsMax => _data.WsMax;
+    /// <summary>
+    /// 英雄死亡后自动重开本关的等待秒数(含死亡动画 1.1 秒)
+    /// </summary>
+     public float DeathRestartDelay => _data.DeathRestartDelay;
+    /// <summary>
+    /// 通关后自动重开本关的等待秒数(暂无结算界面时使用)
+    /// </summary>
+     public float ClearRestartDelay => _data.ClearRestartDelay;
     
     public void ResolveRef(Tables tables)
     {

@@ -1,6 +1,7 @@
 # 存档系统 (Archive System)
 
-> 适用版本：Godot 4.7 + .NET 8 ｜ 对应代码：`Framework/GodotGameFrameworkCore/Archive/ArchiveSystem.cs`、`Framework/GodotGameFrameworkCore/Archive/Rijindael.cs`、`Framework/GodotGameFrameworkCore/Json/EasySave.cs`、`TheGame/MainPack/Scripts/Resources/ArchiveSetting.cs`、`TheGame/GameScripts/Archive/GameData.cs`（含 `GameCatalogue` 和 `GameData` 两个类）
+> 适用版本：Godot 4.7 + .NET 10 ｜ 对应代码：`Framework/GodotGameFrameworkCore/Archive/ArchiveSystem.cs`、`Framework/GodotGameFrameworkCore/Archive/Rijindael.cs`、`Framework/GodotGameFrameworkCore/Json/EasySave.cs`、`TheGame/MainPack/Scripts/Resources/ArchiveSetting.cs`、`TheGame/GameScripts/Save/GameData.cs`、`TheGame/GameScripts/Save/GameCatalogue.cs`
+> 2026-10 加固（项目登记的框架例外）：原子写 + `.bak`、读写串行、调用时刻序列化、读取回退 `.bak`、覆盖时同步目录、API 返回 `Task<bool>`。项目侧存档规则（版本迁移、检查点）见 `Docs/ProjectGuidelines/70-ProfileAndSave.md`。
 > 本文档描述 GGF 的通用存档系统：ArchiveSystem 泛型设计、Catalogue/Data 分离模式、CRUD API、AES 存档加密（Rijindael + ArchiveSetting）、EasySave 持久化底层与游戏侧定制示例。
 
 ---
@@ -15,7 +16,7 @@ GGF 的存档系统是一个**泛型通用存档框架**，提供"存档目录 +
 | 加密工具 | `GodotGameFrameworkCore/Archive/Rijindael.cs` | AES-256-CBC + PBKDF2 密钥派生、随机 IV，纯 .NET 实现 |
 | 配置资源 | `TheGame/MainPack/Scripts/Resources/ArchiveSetting.cs` | `ArchiveSetting : Resource`：存档目录名、是否加密、KEY、Salt（`.tres` 配置） |
 | 通用存档框架 | `GodotGameFrameworkCore/Archive/ArchiveSystem.cs` | `ArchiveSystem<T, U>` 泛型类：Catalogue 列表管理、Create/Load/Overwrite/Delete，驱动加密 |
-| 游戏侧实现 | `TheGame/GameScripts/Archive/GameData.cs` | `GameData : ArchiveData` / `GameCatalogue : ArchiveCatalogue`：项目自定义数据字段 |
+| 游戏侧实现 | `TheGame/GameScripts/Save/` | `GameData : ArchiveData` / `GameCatalogue : ArchiveCatalogue`：项目自定义数据字段（全局命名空间，类名由 `GF.cs` 写死） |
 
 > 命名空间为 `GodotGameFramework.Archive`（Rijindael、ArchiveSystem、ArchiveCatalogue、ArchiveData、CryptoException 均在 `GodotGameFramework.Archive` 下，不再使用旧命名空间 `GodotGameFrameworkCore.Archive`）。
 
@@ -67,11 +68,14 @@ public partial class ArchiveSetting : Resource
 user://
   └── GameData/                        ← ${Setting.Folder}
         ├── Catalogue.sav              ← 存档目录列表（List<T>，明文或 AES 密文 Base64）
+        ├── Catalogue.sav.bak          ← 上一份完整目录（原子替换时保留）
         └── Data/
               ├── 1711600000.sav       ← 每个存档的独立数据文件（明文或 AES 密文 Base64）
-              ├── 1711700000.sav
+              ├── 1711600000.sav.bak   ← 上一份完整数据
               └── ...
 ```
+
+写入时先写 `<文件>.tmp`，完整落盘后用 `File.Replace` 替换目标并把旧内容留作 `.bak`（目标不存在时直接移动）；任一步失败删除临时文件，目标保持原样。
 
 > 旧版存档目录硬编码为 `user://GameData/`；现在目录名、加密开关、密钥/盐全部由 `ArchiveSetting` 配置。
 
@@ -101,14 +105,18 @@ ArchiveSystem<T, U>
 
 ### 3.1 ArchiveSystem<T, U>
 
+全部方法返回 `Task<bool>`（是否成功；失败原因写错误日志），原有 `await archive.XxxAsync()` 写法不变。
+
 | 方法 | 说明 |
 |------|------|
-| `SaveAsync()` | 创建新存档：生成新 `UnitId`（当前 Unix 时间戳），按 `Setting`（目录/加密/密钥）写入 Catalogue + Data 文件 |
-| `SaveAsync(long unitId)` | 将 `CurrentData` 保存到已有存档条目（覆盖该存档的 Data 文件） |
+| `SaveAsync()` | 创建新存档：生成新 `UnitId`（当前 Unix 时间戳，同秒重复时顺延），`CurrentData` 置为空数据，写入 Data 与 Catalogue |
+| `SaveAsync(long unitId)` | 将 `CurrentData` 保存到已有存档条目，**并同步重写 Catalogue**（槽位显示信息随数据更新） |
 | `OverWriteAsync()` | 覆盖当前活跃存档（= `SaveAsync(CurrentCatalogue.UnitId)`） |
-| `LoadAsync()` | 初始化/加载：**文件不存在 → 首次存档自动创建；文件存在但读取失败 → 拒绝覆盖**，仅打 Error 日志返回。成功则加载最新（`Catalogues[^1]`） |
-| `LoadAsync(long unitId)` | 按 `unitId` 加载指定存档数据到 `CurrentData` |
-| `Delete(long unitId)` | 删除指定存档：从 Catalogue 列表移除条目，删除 Data 文件，重写 Catalogue 列表（若删除的是当前活跃存档则重置 `CurrentCatalogue`/`CurrentData`） |
+| `LoadAsync()` | 初始化/加载：**目录与其 `.bak` 都不存在 → 首次存档自动创建；存在但两者都读取失败 → 拒绝覆盖**并返回 false。主文件不可用而 `.bak` 可用时从备份恢复并记 Warning。成功则加载最新（`Catalogues[^1]`） |
+| `LoadAsync(long unitId)` | 按 `unitId` 加载指定存档数据到 `CurrentData`（同样回退 `.bak`） |
+| `Delete(long unitId)` | 删除指定存档：从 Catalogue 列表移除条目，删除 Data 文件及其 `.bak`/`.tmp`，重写 Catalogue（若删除的是当前活跃存档则重置 `CurrentCatalogue`/`CurrentData`） |
+
+**顺序与快照**：所有读写按调用顺序串行执行；写入在**调用时刻**（主线程）完成序列化，之后再修改 `CurrentData` 不影响已排队的写入；`LoadAsync` 排在已提交的写入之后，读到最近一次写入的结果。
 
 **属性：**
 
@@ -134,6 +142,11 @@ ArchiveSystem<T, U>
 | `SaveInUserAsync<T>(data, fileName, encrypt, key, salt)` | 异步保存；`encrypt=true` 时经 `Rijindael.Encrypt` 加密 |
 | `LoadFromUserAsync<T>(fileName, encrypt, key, salt)` | 异步加载；`encrypt=true` 时经 `Rijindael.Decrypt` 解密 |
 | `DeleteInUserAsync(fileName)` | 异步删除 |
+| `Serialize<T>(data, encrypt, key, salt)` | 在调用线程序列化（可选加密），存档系统用它在主线程固定快照 |
+| `WriteUserTextAtomicAsync(fileName, text)` | 原子写入：`.tmp` → `File.Replace`（保留 `.bak`）/ `File.Move`；返回是否成功 |
+| `LoadFromUserWithBackupAsync<T>(fileName, encrypt, key, salt)` | 读取；主文件不存在或解析失败时读 `.bak`；返回 `(Data, FromBackup)` |
+| `ExistsInUserOrBackup(fileName)` | 主文件或 `.bak` 存在其一 |
+| `DeleteInUserWithBackupAsync(fileName)` | 删除主文件、`.bak` 与 `.tmp` |
 | `SaveInProject<T>` / `LoadFromProject<T>` / `DeleteInProject` / `ExistsInProject` | `res://` 路径同步方法（仅编辑器/开发期使用） |
 
 > `EasySave` 使用纯 .NET `StreamWriter/StreamReader` + `Task.Run` 实现异步 I/O（避免阻塞 Godot 主线程）。`user://` 路径经 `ProjectSettings.GlobalizePath` 解析为绝对路径。
@@ -169,29 +182,24 @@ string newSalt = Rijindael.GenerateIV();              // 随机 16 字节 Base64
 
 ### 5.1 继承 ArchiveData / ArchiveCatalogue
 
-游戏项目在 `TheGame/GameScripts/Archive/GameData.cs` 中扩展基类：
+游戏项目在 `TheGame/GameScripts/Save/GameData.cs`、`GameCatalogue.cs` 中扩展基类：
 
 ```csharp
 [Serializable]
 public class GameData : ArchiveData
 {
-    public int Score;
-    public List<ActorData> Actors;
-
-    public GameData()
-    {
-        Actors = new List<ActorData>();
-    }
+    public int SaveVersion;               // 格式版本；不设初始值，缺字段的旧档读作 0
+    public ProfileSaveData Profile;       // 版本 1 起的档案快照
+    public PlayerSaveDataV0 Player;       // 版本 0 旧格式，只读，迁移后置空
 }
 
 [Serializable]
 public class GameCatalogue : ArchiveCatalogue
 {
-    public string Name;   // 存档显示名（如 "冒险存档 1"）
 }
 ```
 
-`[Serializable]` 特性用于 Newtonsoft.Json 序列化。`ArchiveCatalogue` 和 `ArchiveData` 基类只提供 `UnitId` 关联，游戏侧按需追加字段。
+`[Serializable]` 特性用于 Newtonsoft.Json 序列化。`ArchiveCatalogue` 和 `ArchiveData` 基类只提供 `UnitId` 关联，游戏侧按需追加字段。**字段不设初始值**：Newtonsoft 先调用默认构造再填 JSON，带初始值会让缺字段的旧档被误判为新版本。项目业务代码不直接调用 `GF.Archive`，而是经 `GameLogic.Save.SaveService`（读档迁移、检查点）。
 
 ### 5.2 使用示例
 
@@ -239,13 +247,13 @@ await archive.Delete(someUnitId);
 ## 7. 注意事项 / FAQ
 
 **Q: 存档数据能升级吗（加字段/重构）？**
-能。因为基于 JSON 序列化，加字段直接加 `public` 属性即可（旧档自动 `null` / `default`）。复杂迁移需在 `LoadAsync` 后手动检查并填充默认值。
+能。框架不做版本迁移；本项目在 `GameData.SaveVersion` 上由 `GameLogic.Save.SaveMigrator` 逐级迁移（规则见 `Docs/ProjectGuidelines/70-ProfileAndSave.md`）。加字段时旧档读作 `null` / `default`，因此字段不要设初始值。
 
 **Q: 开启加密后改 KEY/Salt 会怎样？**
 旧档会解密失败：`Rijindael.Decrypt` 抛 `CryptoException` → `EasySave` 捕获返回 `null` → `ArchiveSystem.LoadAsync` 检测到读取失败 → **拒绝覆盖并打 Error 日志**。如需改密钥，应视为"旧档作废"，让玩家新建存档，或先解密迁移再改配置。
 
 **Q: 存档文件损坏怎么处理？**
-`EasySave.LoadFromUserAsync` 反序列化/解密失败返回 `null`。`ArchiveSystem.LoadAsync` 现在区分两种情形：`Catalogue.sav` **不存在** → 自动新建（首次）；**存在但读失败** → 拒绝覆盖、打 Error 日志返回，避免吞掉玩家数据。业务代码应在访问 `CurrentData` 前判空。
+主文件不可用时自动读取 `.bak`（上一次覆盖前的完整内容）并记 Warning。目录与备份都**不存在** → 自动新建（首次）；**存在但都读失败** → 拒绝覆盖、`LoadAsync` 返回 false，避免吞掉玩家数据。业务代码检查返回值。原子写保证写入中途崩溃不会留下半截文件。
 
 **Q: 支持多存档槽位吗？**
 支持。`Catalogues` 列表可存任意数量条目，`LoadAsync(long unitId)` 切换活跃存档。游戏侧通常基于 `GameCatalogue.Name` 展示给玩家。

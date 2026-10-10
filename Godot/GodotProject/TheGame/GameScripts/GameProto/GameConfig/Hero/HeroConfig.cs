@@ -21,27 +21,6 @@ public sealed partial class HeroConfig : Luban.BeanBase
         NameCn = _buf.ReadString();
         Desc = _buf.ReadString();
         EntityId = (Entity.EntityId)_buf.ReadInt();
-        BaseHp = _buf.ReadInt();
-        BaseMp = _buf.ReadInt();
-        BasePower = _buf.ReadInt();
-        BaseDef = _buf.ReadInt();
-        BaseMdef = _buf.ReadInt();
-        GrowHp = _buf.ReadInt();
-        GrowMp = _buf.ReadInt();
-        GrowPower = _buf.ReadInt();
-        GrowDef = _buf.ReadInt();
-        GrowMdef = _buf.ReadInt();
-        Crit = _buf.ReadInt();
-        Miss = _buf.ReadInt();
-        Lucky = _buf.ReadInt();
-        Toughness = _buf.ReadInt();
-        Htarget = _buf.ReadInt();
-        CritReduce = _buf.ReadInt();
-        Ar = _buf.ReadInt();
-        Sp = _buf.ReadInt();
-        Vampirism = _buf.ReadFloat();
-        RHp = _buf.ReadFloat();
-        RMp = _buf.ReadFloat();
         WalkSpeed = _buf.ReadFloat();
         RunSpeed = _buf.ReadFloat();
         RunDoubleTapWindow = _buf.ReadFloat();
@@ -79,90 +58,6 @@ public sealed partial class HeroConfig : Luban.BeanBase
     /// 实体枚举
     /// </summary>
     public readonly Entity.EntityId EntityId;
-    /// <summary>
-    /// 1级生命(旧 SHp)
-    /// </summary>
-    public readonly int BaseHp;
-    /// <summary>
-    /// 1级魔法(旧 SMp)
-    /// </summary>
-    public readonly int BaseMp;
-    /// <summary>
-    /// 1级攻击
-    /// </summary>
-    public readonly int BasePower;
-    /// <summary>
-    /// 1级物防
-    /// </summary>
-    public readonly int BaseDef;
-    /// <summary>
-    /// 1级魔防
-    /// </summary>
-    public readonly int BaseMdef;
-    /// <summary>
-    /// 每级生命成长
-    /// </summary>
-    public readonly int GrowHp;
-    /// <summary>
-    /// 每级魔法成长
-    /// </summary>
-    public readonly int GrowMp;
-    /// <summary>
-    /// 每级攻击成长
-    /// </summary>
-    public readonly int GrowPower;
-    /// <summary>
-    /// 每级物防成长
-    /// </summary>
-    public readonly int GrowDef;
-    /// <summary>
-    /// 每级魔防成长
-    /// </summary>
-    public readonly int GrowMdef;
-    /// <summary>
-    /// 暴击
-    /// </summary>
-    public readonly int Crit;
-    /// <summary>
-    /// 闪避
-    /// </summary>
-    public readonly int Miss;
-    /// <summary>
-    /// 幸运
-    /// </summary>
-    public readonly int Lucky;
-    /// <summary>
-    /// 韧性(减对方幸运)
-    /// </summary>
-    public readonly int Toughness;
-    /// <summary>
-    /// 命中(破闪)
-    /// </summary>
-    public readonly int Htarget;
-    /// <summary>
-    /// 暴击抵抗
-    /// </summary>
-    public readonly int CritReduce;
-    /// <summary>
-    /// 破甲(减对方物防)
-    /// </summary>
-    public readonly int Ar;
-    /// <summary>
-    /// 破魔(减对方魔防)
-    /// </summary>
-    public readonly int Sp;
-    /// <summary>
-    /// 吸血系数(物理伤害转化回血)
-    /// </summary>
-    public readonly float Vampirism;
-    /// <summary>
-    /// 每秒回血
-    /// </summary>
-    public readonly float RHp;
-    /// <summary>
-    /// 每秒回魔
-    /// </summary>
-    public readonly float RMp;
     /// <summary>
     /// 慢走速度 px/s
     /// </summary>
@@ -219,27 +114,6 @@ public sealed partial class HeroConfig : Luban.BeanBase
         + "NameCn:" + NameCn + ","
         + "Desc:" + Desc + ","
         + "EntityId:" + EntityId + ","
-        + "BaseHp:" + BaseHp + ","
-        + "BaseMp:" + BaseMp + ","
-        + "BasePower:" + BasePower + ","
-        + "BaseDef:" + BaseDef + ","
-        + "BaseMdef:" + BaseMdef + ","
-        + "GrowHp:" + GrowHp + ","
-        + "GrowMp:" + GrowMp + ","
-        + "GrowPower:" + GrowPower + ","
-        + "GrowDef:" + GrowDef + ","
-        + "GrowMdef:" + GrowMdef + ","
-        + "Crit:" + Crit + ","
-        + "Miss:" + Miss + ","
-        + "Lucky:" + Lucky + ","
-        + "Toughness:" + Toughness + ","
-        + "Htarget:" + Htarget + ","
-        + "CritReduce:" + CritReduce + ","
-        + "Ar:" + Ar + ","
-        + "Sp:" + Sp + ","
-        + "Vampirism:" + Vampirism + ","
-        + "RHp:" + RHp + ","
-        + "RMp:" + RMp + ","
         + "WalkSpeed:" + WalkSpeed + ","
         + "RunSpeed:" + RunSpeed + ","
         + "RunDoubleTapWindow:" + RunDoubleTapWindow + ","

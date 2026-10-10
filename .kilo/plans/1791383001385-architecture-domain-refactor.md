@@ -1,6 +1,8 @@
 # 架构重构计划：会话领域核心 + 逐级成长表
 
-> 状态：已与用户确认全部主要决策，待实施。
+> **已被取代（2026-10-10）**：未实施。用户要求摒弃 QFramework 式 Model/System，改用 `1791468983983-architecture-redesign.md`（GGF 分层 + 作用域所有权）。保留本文件仅作历史参考。
+>
+> 原状态：已与用户确认全部主要决策，待实施。
 > 依据：本次会话诊断、`Docs/ProjectGuidelines/00-Architecture.md`（尤其第 40 行现状需修订）、`Docs/ProjectGuidelines/20-Configs.md`、`Docs/Reviews/experience_resource_bars_2026-10-07.md`、`Docs/Reviews/ui_binding_refactor_2026-10-07.md`、`Docs/gpt-1.md`。
 
 ## 1. 目标

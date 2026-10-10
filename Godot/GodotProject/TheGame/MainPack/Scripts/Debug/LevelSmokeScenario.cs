@@ -9,6 +9,7 @@ using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
 using GameLogic.Event;
 using GameLogic.Level;
+using GameLogic.Session;
 using Godot;
 using GodotGameFramework;
 
@@ -36,12 +37,17 @@ public sealed class LevelSmokeScenario
     private double m_Time; // 整体游戏时间，超时用于报告卡住的位置。
     private double m_BattleTime; // 当前阶段开战后的游戏时间。
     private bool m_GoHintSeen; // 是否在行进阶段观察到前进提示。
+    private readonly int m_StartExperience; // 进关时档案中的累计经验。
 
     /// <summary>创建正式关卡的物理回归场景。</summary>
+    /// <param name="hero">正式流程显示的英雄。</param>
+    /// <param name="level">受测关卡。</param>
     public LevelSmokeScenario(HeroEntity hero, LevelController level)
     {
         m_Hero = hero;
         m_Level = level;
+        m_StartExperience = (GF.Procedure.CurrentProcedure as ProcedureLevel)?.Context.Profile.ActiveHero.Progression
+            .TotalExperience ?? 0;
         m_Camera = level.GetNode<LevelCamera>("Camera2D");
         m_Gates = level.GetNode<LevelStageGateSet>("World/StageGates");
         m_LastCenter = m_Camera.GlobalPosition.X;
@@ -54,9 +60,15 @@ public sealed class LevelSmokeScenario
     /// <summary>完成时的失败原因列表。</summary>
     public IReadOnlyList<string> Failures => m_Failures;
 
-    /// <summary>在相机和实体物理更新之后观测，驱动真实输入和测试攻击。</summary>
+    /// <summary>在相机和实体物理更新之后观测，驱动真实输入和测试攻击；完成后不再访问已可能被重开流程卸载的关卡。</summary>
+    /// <param name="delta">物理帧间隔秒数。</param>
     public void Update(double delta)
     {
+        if (IsDone)
+        {
+            return;
+        }
+
         m_Time += delta;
         float center = m_Camera.GlobalPosition.X;
         if (Math.Abs(center - m_LastCenter) > 600f * delta + 0.1f)
@@ -86,7 +98,7 @@ public sealed class LevelSmokeScenario
             }
 
             // 清波后到下一场开战之间，关卡应处于可前进窗口（HUD 据此显示 Go）。
-            if (m_Level.TravelAvailable.Value)
+            if (m_Level.TravelAvailable)
             {
                 m_GoHintSeen = true;
             }
@@ -104,7 +116,7 @@ public sealed class LevelSmokeScenario
         }
         else if (m_Level.Phase == LevelStagePhase.Fighting)
         {
-            if (m_Level.TravelAvailable.Value)
+            if (m_Level.TravelAvailable)
             {
                 Fail("开战后仍处于可前进窗口");
             }
@@ -119,14 +131,24 @@ public sealed class LevelSmokeScenario
                 Fail($"怪物总数错误：实际 {m_Seen.Count}，配置 {expected}");
             }
 
+            // 收益进档案：本关获得经验 = 档案累计经验 - 进关时的累计经验（新档进关为 0）。
             int expectedExperience = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages
                 .Sum(x => x.Recipes.Sum(r => r.Count * ConfigSystem.Instance.Tables.TbMonsterConfig.DataList
                     .Single(m => m.EntityId == r.MonsterEntityId).AddExp));
-            if (m_Hero.TotalExperience.Value != expectedExperience)
+            LevelRun run = (GF.Procedure.CurrentProcedure as ProcedureLevel)?.CurrentRun;
+            int gained = (GF.Procedure.CurrentProcedure as ProcedureLevel)?.Context.Profile.ActiveHero.Progression
+                .TotalExperience - m_StartExperience ?? -1;
+            if (gained != expectedExperience || run?.Stats.Experience != expectedExperience)
             {
-                Fail($"本关经验错误或重复死亡奖励：实际 {m_Hero.TotalExperience.Value}，配置 {expectedExperience}");
+                Fail($"本关经验错误或重复死亡奖励：档案 {gained}，统计 {run?.Stats.Experience}，配置 {expectedExperience}");
             }
-            GD.Print($"SMOKE-LEVEL: experience={m_Hero.TotalExperience.Value}, expected={expectedExperience}");
+            GD.Print($"SMOKE-LEVEL: experience={gained}, expected={expectedExperience}");
+
+            // 通关是检查点：关卡运行已提交并结束。
+            if (run?.Outcome != LevelRunOutcome.Cleared || run.Commit == null)
+            {
+                Fail($"通关没有提交检查点：结局 {run?.Outcome}");
+            }
 
             if (!m_GoHintSeen)
             {
@@ -136,7 +158,7 @@ public sealed class LevelSmokeScenario
             IsDone = true;
         }
 
-        if (m_Time > 180)
+        if (m_Time > 180 && !IsDone)
         {
             Fail($"超时：阶段 {m_Level.StageOrder}/{m_Level.Phase}，玩家 {m_Hero.GlobalPosition}，相机 {center}");
         }

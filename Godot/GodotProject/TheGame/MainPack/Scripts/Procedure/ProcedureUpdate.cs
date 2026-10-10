@@ -135,7 +135,7 @@ public class ProcedureUpdate : ProcedureBase
             {
                 await TryLoadLocalSubpackagesAsync();
             }
-            ChangeState<ProcedurePrelode>(procedureOwner);
+            ChangeState<ProcedurePreload>(procedureOwner);
             return;
         }
 
@@ -144,7 +144,7 @@ public class ProcedureUpdate : ProcedureBase
         {
             HotUpdateSafetyGuard.EnterSafeMode();
             Log.Warning("[ProcedureUpdate] 上次启动崩溃，本次跳过所有热更补丁。");
-            ChangeState<ProcedurePrelode>(procedureOwner);
+            ChangeState<ProcedurePreload>(procedureOwner);
             return;
         }
 
@@ -163,7 +163,7 @@ public class ProcedureUpdate : ProcedureBase
                     Log.Warning("[ProcedureUpdate] 本地 {0} 个文件损坏，但无法连接服务器修复。", damaged);
                 await LoadDownloadedPacksAsync(localVersion);
             }
-            ChangeState<ProcedurePrelode>(procedureOwner);
+            ChangeState<ProcedurePreload>(procedureOwner);
             return;
         }
 
@@ -344,7 +344,7 @@ public class ProcedureUpdate : ProcedureBase
             else
             {
                 await LoadDownloadedPacksAsync(localVersion);
-                ChangeState<ProcedurePrelode>(procedureOwner);
+                ChangeState<ProcedurePreload>(procedureOwner);
                 Log.Info("[ProcedureUpdate] 所有包已是最新，无需下载。");
             }
         }
@@ -887,7 +887,7 @@ public class ProcedureUpdate : ProcedureBase
             await LoadDownloadedPacksAsync(local);
         }
 
-        ChangeState<ProcedurePrelode>(procedureOwner);
+        ChangeState<ProcedurePreload>(procedureOwner);
     }
 
     /// <summary>离开更新流程并执行基类清理。</summary>

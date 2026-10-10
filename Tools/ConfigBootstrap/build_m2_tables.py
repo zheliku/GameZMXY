@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """One-time M2 bootstrap: create/refresh Luban xlsx for the vertical slice.
 
+!!! HISTORICAL — DO NOT RUN AGAIN !!!
+  This script rewrites whole workbooks (including __tables__.xlsx, whose list here
+  lacks TbLevelConfig / TbHeroGrowthConfig / TbProfileConfig) and predates the 2026-10
+  StatBlock migration (Tools/ConfigBootstrap/migrate_stat_tables.py). Running it would
+  drop tables and revert schema. Edit the xlsx files directly instead.
+
 Design notes (see AGENTS.md 6):
   * every business table carries Id / NameCn / Desc, and every field has a
     Chinese comment; LegacyId only on tables with a real legacy counterpart

@@ -3,10 +3,11 @@ using System;
 using GameConfig.Battle;
 using GameConfig.Entity;
 using GameConfig.Sound;
+using GameConfig.Stat;
 using GameFramework.Entity;
 using GameFramework;
 using GameLogic.Battle;
-using GameLogic.Bindable;
+using GameLogic.Battle.Stats;
 using GameLogic.Config;
 using GameLogic.Event;
 using Godot;
@@ -70,17 +71,23 @@ namespace GameLogic.Entity
 		/// <summary>攻击判定区容器（朝向镜像；怪物 AI 推导判定盒范围时要加上它的本地位置）</summary>
 		public Node2D HitBoxRoot => m_HitBoxRoot;
 
-		/// <summary>最大生命；容器随实体存续，修改 Value 会通知订阅者。</summary>
-		public BindableProperty<int> MaxHp { get; } = new();
+		/// <summary>属性汇总（基础值 + 按来源修正）；容器随实体存续，子类在 OnShow 写入基础值与修正。</summary>
+		public StatSheet Stats { get; } = new();
 
-		/// <summary>当前生命；直接赋值只更新数值，伤害与死亡规则由 ReceiveHit 负责。</summary>
-		public BindableProperty<int> Hp { get; } = new();
+		/// <summary>生命与魔法资源；容器随实体存续，上限随 <see cref="Stats"/> 同步，扣血与死亡规则由 ReceiveHit 负责。</summary>
+		public Vitals Vitals { get; } = new();
+
+		/// <summary>等级（参与等级压制）；子类在 OnShow 写入。</summary>
+		public int Level { get; protected set; } = 1;
 
 		/// <summary>
 		/// 死亡事实。**单一事实源**：只在 ReceiveHit 扣血扣到 0 的那一刻置位、OnShow 复位；
 		/// 身体状态机在下一个物理帧据此进入死亡状态（死亡优先级最高）。
 		/// </summary>
-		public bool Dead { get; protected set; }
+		public bool Dead { get; private set; }
+
+		/// <summary>死亡事实置位的那一刻触发一次（作用域内订阅：关卡运行据此结算英雄死亡）。</summary>
+		public event Action<ActorEntity> Died;
 
 		/// <summary>朝向：1 右 / -1 左。素材原始朝左，见 SetFacing 注释。</summary>
 		public int Facing { get; private set; } = 1;
@@ -381,31 +388,40 @@ namespace GameLogic.Entity
 			float critRoll = GD.Randf();
 			DamageResult result = DamageCalculator.Calculate(config, attack, defender, missRoll, critRoll);
 
+			bool died = false;
 			if (!result.IsMiss)
 			{
-				Hp.Value = Mathf.Max(0, Hp.Value - result.Damage);
-				if (Hp.Value <= 0)
-				{
-					Dead = true;   // 死亡事实唯一置位点
-				}
-
+				// 死亡事实唯一置位点：只在生命归零的那一次为真，之后保持到下次显示复位。
+				died = Vitals.Damage(result.Damage);
+				Dead |= died;
 				OnHurt(attack, result, DamageCalculator.KnockbackVelocity(config, attack, Side), attackerEntityId);
 			}
 
 			GF.Event.Fire(this, DamageDealtEventArgs.Create(attackerEntityId, Id, Side == CombatSide.Hero,
-				result.Damage, result.IsMiss, result.IsCrit, result.Kind, HeadPosition, Hp.Value));
+				result.Damage, result.IsMiss, result.IsCrit, result.Kind, HeadPosition, Vitals.Hp));
+			if (died)
+			{
+				Died?.Invoke(this);
+			}
+
 			return result;
 		}
 
-		/// <summary>恢复生命。</summary>
-		public virtual void Heal(int value)
+		/// <summary>恢复生命；已死亡时不复活。</summary>
+		/// <param name="value">恢复量；非正数不处理。</param>
+		public void Heal(int value)
 		{
-			if (Dead || value <= 0)
+			if (!Dead)
 			{
-				return;
+				Vitals.Heal(value);
 			}
+		}
 
-			Hp.Value = Mathf.Min(MaxHp.Value, Hp.Value + value);
+		/// <summary>按属性汇总的最终值同步生命与魔法上限。</summary>
+		/// <param name="refill">是否补满（显示、升级）；否则把当前值钳到新上限。</param>
+		protected void SyncVitalsToStats(bool refill)
+		{
+			Vitals.SetMaximums(Stats.GetInt(StatType.MaxHp), Stats.GetInt(StatType.MaxMp), refill);
 		}
 
 		// ---- 内部方法与扩展点 ----
@@ -486,9 +502,9 @@ namespace GameLogic.Entity
 			}
 		}
 
-		/// <summary>结算用属性快照（子类必须按自己的配置/等级填）。</summary>
-		/// <returns>当前配置与等级对应的结算快照。</returns>
-		protected abstract CombatantStats GetCombatStats();
+		/// <summary>结算用属性快照：取属性汇总当前最终值（出招与受击各取一次）。</summary>
+		/// <returns>当前属性与等级对应的结算快照。</returns>
+		protected CombatantStats GetCombatStats() => CombatantStats.From(Side, Level, Stats);
 
 		/// <summary>
 		/// 受击表现钩子（已扣血、未闪避时调用）：子类决定硬直/击退如何生效。

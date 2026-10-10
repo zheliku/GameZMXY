@@ -1,14 +1,16 @@
 using System;
 using System.Threading;
 using GameConfig.Level;
-using GameLogic.Bindable;
 using GameLogic.Entity.Heroes;
 using Godot;
 using GodotGameFramework.Entity;
 
 namespace GameLogic.Level;
 
-/// <summary>协调关卡会话和唯一当前阶段，空间、刷怪和相机行为由各职责所有者执行。</summary>
+/// <summary>
+/// 协调关卡会话和唯一当前阶段，空间、刷怪和相机行为由各职责所有者执行。
+/// 只报告关卡事实（怪物被击败、通关、失败、可前进窗口）；收益与结算属于关卡运行（Session.LevelRun）。
+/// </summary>
 public partial class LevelController : Node2D
 {
     [Export] private int m_LevelId = 1; // 关卡配置主键。
@@ -20,16 +22,25 @@ public partial class LevelController : Node2D
 
     private LevelConfig m_Config; // 本场景对应的只读配置。
     private LevelStageSequence m_Sequence; // 会话当前阶段的唯一权威。
-    private HeroEntity m_Player; // 拥有者注入的玩家，接收经验并供特殊触发器监听。
+    private HeroEntity m_Player; // 拥有者注入的玩家，供特殊触发器监听与相机跟随。
 
-    /// <summary>关卡已全部清波；出口和结算可订阅此事件。</summary>
+    /// <summary>关卡已全部清波；关卡运行据此结算。</summary>
     public event Action Completed;
 
     /// <summary>实体显示失败，交给会话拥有者结束关卡并报告错误。</summary>
     public event Action<Exception> Failed;
 
-    /// <summary>非最终阶段清波后到下一场开战前的可前进窗口，HUD 直接订阅。</summary>
-    public BindableProperty<bool> TravelAvailable { get; } = new();
+    /// <summary>本关怪物被击败（每只只报告一次）；关卡运行据此结算经验与掉落。</summary>
+    public event Action<MonsterDefeat> MonsterDefeated;
+
+    /// <summary>可前进窗口开关变化；HUD 订阅后读取 <see cref="TravelAvailable"/>。</summary>
+    public event Action TravelAvailableChanged;
+
+    /// <summary>非最终阶段清波后到下一场开战前的可前进窗口。</summary>
+    public bool TravelAvailable { get; private set; }
+
+    /// <summary>本场景对应的关卡配置主键。</summary>
+    public int LevelId => m_LevelId;
 
     /// <summary>玩家出生点的世界坐标，Initialize 后可读。</summary>
     public Vector2 PlayerSpawnPosition => m_SpawnPoints.PositionOf(m_Config.PlayerSpawnPointId);
@@ -75,11 +86,11 @@ public partial class LevelController : Node2D
     /// <param name="cancellationToken">流程离开时取消在途实体显示。</param>
     public void StartSession(EntityComponent entities, HeroEntity player, CancellationToken cancellationToken)
     {
-        TravelAvailable.Value = false;
+        SetTravelAvailable(false);
         m_Player = player;
         m_Spawner.StartSession(entities, cancellationToken);
         m_Spawner.StageCleared += OnStageCleared;
-        m_Spawner.ExperienceDropped += OnExperienceDropped;
+        m_Spawner.MonsterDefeated += OnMonsterDefeated;
         m_Spawner.SpawnFailed += OnSpawnFailed;
         m_Camera.RightBoundaryReached += OnCameraArrived;
         if (m_Triggers != null)
@@ -109,12 +120,12 @@ public partial class LevelController : Node2D
         m_Camera.RightBoundaryReached -= OnCameraArrived;
         m_Camera.StopFollowing();
         m_Spawner.StageCleared -= OnStageCleared;
-        m_Spawner.ExperienceDropped -= OnExperienceDropped;
+        m_Spawner.MonsterDefeated -= OnMonsterDefeated;
         m_Spawner.SpawnFailed -= OnSpawnFailed;
         m_Spawner.StopSession();
         m_Sequence.Stop();
         m_Player = null;
-        TravelAvailable.Value = false;
+        SetTravelAvailable(false);
     }
 
     /// <summary>清波后开放当前阶段通路并设置相机右界，特殊阶段同时启用触发区监听。</summary>
@@ -146,10 +157,10 @@ public partial class LevelController : Node2D
         m_Gates.LockRegion(stage.StageOrder);
         m_Camera.LockLeft(m_Gates.BoundsOf(stage.StageOrder).Left);
         m_Spawner.StartStage(stage);
-        TravelAvailable.Value = false;
+        SetTravelAvailable(false);
     }
 
-    /// <summary>当前阶段清除后开放出口并推进一次；非最终阶段进入可前进窗口，最终清波交给出口和结算。</summary>
+    /// <summary>当前阶段清除后开放出口并推进一次；非最终阶段进入可前进窗口，最终清波交给关卡运行结算。</summary>
     private void OnStageCleared()
     {
         m_Gates.ReleaseRegion(m_Sequence.Current.StageOrder);
@@ -157,18 +168,31 @@ public partial class LevelController : Node2D
         if (m_Sequence.Phase == LevelStagePhase.Travelling)
         {
             BeginTravel();
-            TravelAvailable.Value = true;
+            SetTravelAvailable(true);
         }
         else
         {
-            TravelAvailable.Value = false;
+            SetTravelAvailable(false);
             Completed?.Invoke();
         }
     }
 
-    /// <summary>将本关死亡收益交给注入的英雄，由英雄统一结算成长。</summary>
-    /// <param name="experience">初始化边界已验证的非负经验奖励。</param>
-    private void OnExperienceDropped(int experience) => m_Player.GainExperience(experience);
+    /// <summary>转发刷怪服务报告的击败事实。</summary>
+    /// <param name="defeat">本关怪物的一次击败。</param>
+    private void OnMonsterDefeated(MonsterDefeat defeat) => MonsterDefeated?.Invoke(defeat);
+
+    /// <summary>更新可前进窗口并在变化时通知。</summary>
+    /// <param name="available">是否处于可前进窗口。</param>
+    private void SetTravelAvailable(bool available)
+    {
+        if (TravelAvailable == available)
+        {
+            return;
+        }
+
+        TravelAvailable = available;
+        TravelAvailableChanged?.Invoke();
+    }
 
     /// <summary>显示失败属于会话所有者，先清理再上报，不留下锁死的战斗区域。</summary>
     /// <param name="error">实体显示抛出的异常。</param>

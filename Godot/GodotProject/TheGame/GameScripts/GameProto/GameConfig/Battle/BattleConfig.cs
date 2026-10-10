@@ -44,6 +44,8 @@ public sealed partial class BattleConfig : Luban.BeanBase
         KnockbackScaleXMonsterDef = _buf.ReadFloat();
         KnockbackScaleY = _buf.ReadFloat();
         WsMax = _buf.ReadInt();
+        DeathRestartDelay = _buf.ReadFloat();
+        ClearRestartDelay = _buf.ReadFloat();
     }
 
     public static BattleConfig DeserializeBattleConfig(ByteBuf _buf)
@@ -163,6 +165,14 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// 无双值上限(旧项目 BaseRoleProperies.gd:20)
     /// </summary>
     public readonly int WsMax;
+    /// <summary>
+    /// 英雄死亡后自动重开本关的等待秒数(含死亡动画 1.1 秒)
+    /// </summary>
+    public readonly float DeathRestartDelay;
+    /// <summary>
+    /// 通关后自动重开本关的等待秒数(暂无结算界面时使用)
+    /// </summary>
+    public readonly float ClearRestartDelay;
    
     public const int __ID__ = -1776797808;
     public override int GetTypeId() => __ID__;
@@ -202,6 +212,8 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "KnockbackScaleXMonsterDef:" + KnockbackScaleXMonsterDef + ","
         + "KnockbackScaleY:" + KnockbackScaleY + ","
         + "WsMax:" + WsMax + ","
+        + "DeathRestartDelay:" + DeathRestartDelay + ","
+        + "ClearRestartDelay:" + ClearRestartDelay + ","
         + "}";
     }
 }

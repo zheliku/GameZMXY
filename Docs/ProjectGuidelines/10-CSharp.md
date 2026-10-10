@@ -8,9 +8,25 @@
 | 字段（含`[Export]`）       | `m_` + `PascalCase`，如 `m_Hp`       |
 | 参数、局部变量               | `camelCase`                              |
 | 常量                         | `PascalCase`；优先用有名常量表达工程规则 |
-| 命名空间                     | `GameLogic.<领域>` 或 `GameConfig`     |
+| 命名空间                     | `GameLogic.<目录路径>`（与 `GameScripts/` 下目录一致）或 `GameConfig`；例外见 [00-Architecture.md](00-Architecture.md) |
 
 一文件一个主要类型，文件名与类型名一致。标识符使用英文；中文只用于配置文本和用户可见内容。
+
+### 类型命名后缀
+
+按职责命名，不用含义模糊的 `Manager`、`System`、`Model`、`Helper` 后缀（GGF 自身类型除外）：
+
+| 职责 | 命名 | 示例 |
+| --- | --- | --- |
+| Luban 生成配置 | `XxxConfig`（生成） | `HeroConfig`、`MonsterConfig` |
+| 存档 DTO | `XxxSaveData` | `ProfileSaveData`、`HeroSaveData` |
+| 运行时状态（有唯一所有者） | 领域名词 | `PlayerProfile`、`Wallet`、`HeroProgression`、`StatSheet`、`Vitals` |
+| 纯规则 / 无状态服务 | 职责名 | `DamageCalculator`、`ExperienceCurve`、`HeroStatBuilder`、`SaveMigrator` |
+| 作用域所有者 | 作用域名 | `GameContext`、`LevelRun` |
+| 不可变输入快照 | 名词 | `HeroLoadout`、`CombatantStats`、`MonsterDefeat` |
+| 节点 | `XxxEntity`、`XxxController`、窗口/控件名 | `WukongEntity`、`LevelController`、`ResourceBar` |
+| 界面打开参数 | `<界面>Data` | `BattleHudData` |
+| 表现服务（普通对象） | `XxxPresenter` | `DamagePopPresenter` |
 
 ## XML 文档与实现注释
 
@@ -62,5 +78,6 @@ private async Task StartStageAsync(LevelStageConfig stage)
 - 用互斥状态表达会话和阶段迁移；禁止把 `dependency != null` 包装成 `IsPrepared` 等隐式状态。加载期不订阅玩法事件；需要区域监听时显式启用，在停止时显式解绑。
 - 控制器只协调生命周期和领域事件；空间索引归生成点目录，区域与门归阶段门集合，配方时间与名额归调度，实体所有权归刷怪服务，实际视野归相机。
 - 只有实际消费者需要的数据才保留字段。一个当前阶段不需要按阶段堆叠 Started/Finished/Cleared 集合；能从同一权威状态推导的事实不再维护副本。
+- 状态对象只暴露 getter 与修改方法；不公开可写字段或可写的可观察容器。修改方法维护不变量（钳制、死亡、升级）并在全部字段更新后发一次 `Changed`。
 - 异步操作在等待前捕获所属会话的服务、取消令牌和所有权；等待后不读取可能已被清理或换成新会话的字段。无法取消的框架显示结果在旧令牌取消后到达，仍须由原服务隐藏。
 - 可由游戏帧推进的玩法计时不创建轮询计时器或后台任务；暂停时计时停止。异步资源显示保留真实异步边界，并让失败回到会话拥有者。

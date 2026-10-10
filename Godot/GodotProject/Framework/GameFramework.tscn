@@ -45,7 +45,7 @@ _ActiveWindowType = 0
 [node name="Procedure" type="Node" parent="." unique_id=1553213140]
 script = ExtResource("5_qii40")
 EnterProcedure = "ProcedureLaunch"
-Procedures = PackedStringArray("ProcedureGame", "ProcedureLaunch", "ProcedurePrelode", "ProcedureUpdate")
+Procedures = PackedStringArray("ProcedureLaunch", "ProcedureLevel", "ProcedureLoadProfile", "ProcedurePreload", "ProcedureUpdate")
 
 [node name="Scene" type="Node" parent="." unique_id=883403288]
 script = ExtResource("15_pcfq2")

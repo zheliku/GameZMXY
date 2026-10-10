@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    档案与存档领域层单测（纯 C#，不需要引擎进程）：
+      * TheGame/GameScripts/Profile/*.cs  —— 档案、成长、钱包、出战装配
+      * TheGame/GameScripts/Save/*.cs     —— 存档 DTO、版本迁移、档案映射（SaveService 依赖 GF，排除）
+      * TheGame/GameScripts/Battle/Stats/*.cs —— 出战装配写入的属性汇总
+      * TheGame/GameScripts/Config/ConfigValidator.cs —— 启动校验（读取真实表产物）
+    常数与数值不手抄：测试运行时读取 DataTables/GameConfigs/*.bytes（与游戏同一份产物）。
+
+    运行：dotnet test Tests/ProfileTests
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>GameLogic.Profile.Tests</RootNamespace>
+    <GodotProjectDir>$(MSBuildThisFileDirectory)..\..\Godot\GodotProject\</GodotProjectDir>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Profile\*.cs" Link="Linked\Profile\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Save\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Save\SaveService.cs" Link="Linked\Save\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Battle\Stats\*.cs" Link="Linked\Stats\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ConfigValidator.cs" Link="Linked\Config\ConfigValidator.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ExternalTypeUtil.cs" Link="Linked\Config\ExternalTypeUtil.cs" />
+    <!-- 全量配置类型：Tables 聚合全部表，启动校验需要真实 Tables -->
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\**\*.cs" Link="Linked\GameConfig\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)Framework\GodotGameFrameworkCore\Lib\LubanLib\*.cs" Link="Linked\Luban\%(Filename)%(Extension)" />
+    <!-- GameData/GameCatalogue 继承的框架基类由本目录 ArchiveDataStub.cs 提供（框架原文件依赖 Godot 资源加载） -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(GodotProjectDir)TheGame\DataTables\GameConfigs\*.bytes" Link="Data\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="GodotSharp" Version="4.7.2" />
+    <!-- 与游戏工程同版本，验证存档 JSON 往返与旧档兼容 -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+</Project>

@@ -3,18 +3,20 @@ using GameConfig.Battle;
 using GameConfig.Hero;
 using GameFramework.Entity;
 using GameFramework.Fsm;
-using GameLogic.Archive;
 using GameLogic.Battle;
-using GameLogic.Bindable;
+using GameLogic.Battle.Stats;
 using GameLogic.Entity.Body;
 using GameLogic.Entity.Heroes.Body;
-using GameLogic.Progression;
+using GameLogic.Profile;
 using Godot;
 using GodotGameFramework;
 
 namespace GameLogic.Entity.Heroes
 {
-	/// <summary>持有英雄配置、成长数值、输入与身体状态机，具体动作由直接派生的英雄声明。</summary>
+	/// <summary>
+	/// 英雄的表现与战斗运行时：输入、身体状态机、动画/武器层、出招，以及本次显示期间的属性汇总、生命魔法与无双。
+	/// 不持有持久进度（等级、经验、金币属于档案）；显示时由 <see cref="HeroLoadout"/> 注入属性，升级后由关卡运行重新注入。
+	/// </summary>
 	public abstract partial class HeroEntity : ActorEntity, IHeroBody
 	{
 		// ---- 字段 ----
@@ -39,7 +41,7 @@ namespace GameLogic.Entity.Heroes
 
 		private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
 
-		private ExperienceCurve m_ExperienceCurve; // 初始化时验证的只读等级门槛。
+		private HeroLoadout m_Loadout; // 最近一次应用的出战装配；用于升级时移除旧的持久修正来源。
 
 		// ---- 属性 ----
 
@@ -76,32 +78,8 @@ namespace GameLogic.Entity.Heroes
 		/// <inheritdoc />
 		public override CombatSide Side => CombatSide.Hero;
 
-		/// <summary>英雄等级；直接赋值不自动执行升级或重算生命上限。</summary>
-		public BindableProperty<int> Level { get; } = new(1);
-
-		/// <summary>累计经验；业务通过 GainExperience 结算，直接赋值只通知。</summary>
-		public BindableProperty<int> TotalExperience { get; } = new();
-
-		/// <summary>由累计经验派生的本级进度，供通用资源条订阅，不写入存档。</summary>
-		public BindableProperty<int> Experience { get; } = new();
-
-		/// <summary>升下一级所需经验；满级为零。</summary>
-		public BindableProperty<int> MaxExperience { get; } = new();
-
-		/// <summary>当前魔法，进入关卡和升级时恢复到配置上限。</summary>
-		public BindableProperty<int> Mp { get; } = new();
-
-		/// <summary>按英雄配置和等级计算的魔法上限。</summary>
-		public BindableProperty<int> MaxMp { get; } = new();
-
-		/// <summary>金币；业务可直接修改 Value，HUD 可订阅同一实例。</summary>
-		public BindableProperty<int> Gold { get; } = new();
-
-		/// <summary>无双值：普攻命中按 AttackConfig.WsGain 区间累计。</summary>
-		public BindableProperty<int> WsValue { get; } = new();
-
-		/// <summary>无双上限，显示时从 BattleConfig 读取。</summary>
-		public BindableProperty<int> WsMax { get; } = new();
+		/// <summary>无双进度（本次显示期间有效，不写入存档）：普攻命中按 AttackConfig.WsGain 区间累计。</summary>
+		public MusouGauge Musou { get; } = new();
 
 		/// <summary>由具体英雄给出身体初始状态类型。</summary>
 		protected abstract Type InitialBodyStateType { get; }
@@ -128,14 +106,13 @@ namespace GameLogic.Entity.Heroes
 			}
 
 			m_OwnAttacks = LoadOwnAttacks(Config.EntityId);
-			m_ExperienceCurve = new ExperienceCurve(ConfigSystem.Instance.Tables.TbHeroLevelConfig.DataList);
 			m_BodyParams = BuildBodyParams();
 			Input = new HeroInput(Config.RunDoubleTapWindow, Config.InputBufferTime);
 		}
 
-		/// <summary>显示时复制普通存档数值、复位战斗事实与输入，并创建身体状态机。</summary>
-		/// <param name="userData">玩家普通存档数据；null 用于测试场地的默认初始值。</param>
-		/// <exception cref="ArgumentException">非空参数不是玩家存档数据。</exception>
+		/// <summary>显示时按出战装配重建属性、补满生命魔法、清零无双，复位战斗事实与输入并创建身体状态机。</summary>
+		/// <param name="userData">出战装配 <see cref="HeroLoadout"/>（由档案构建），不能为空。</param>
+		/// <exception cref="ArgumentException">参数不是本英雄的出战装配。</exception>
 		public override void OnShow(object userData)
 		{
 			base.OnShow(userData);
@@ -145,16 +122,17 @@ namespace GameLogic.Entity.Heroes
 				return;
 			}
 
-			// 每次显示都从本次输入复制普通值，不持有存档对象或上次显示的数据。
-			if (userData != null && userData is not PlayerSaveData)
+			// 显示参数只接受出战装配：属性来源唯一，测试场地也必须经档案构建。
+			if (userData is not HeroLoadout loadout || loadout.HeroId != HeroId)
 			{
-				throw new ArgumentException("英雄显示参数必须是 PlayerSaveData 或 null。", nameof(userData));
+				throw new ArgumentException($"英雄 {HeroId} 的显示参数必须是同一英雄的 HeroLoadout。", nameof(userData));
 			}
-			PlayerSaveData save = userData as PlayerSaveData ?? new PlayerSaveData();
-			Gold.Value = Math.Max(0, save.Gold);
-			ApplyExperience(m_ExperienceCurve.Restore(save.TotalExperience, save.Level), restoreResources: true);
-			WsMax.Value = ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMax;
-			WsValue.Value = 0;
+
+			// 池实例可能带着上次的修正来源，先清空再按装配重建。
+			Stats.Clear();
+			m_Loadout = null;
+			ApplyLoadout(loadout, refill: true);
+			Musou.Reset(ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMax);
 
 			// 池复用的实例带着上次的脏事实回来，一律在 OnShow 复位（见 Entity/AGENTS.md 生命周期）
 			ComboIndex = 0;
@@ -203,19 +181,27 @@ namespace GameLogic.Entity.Heroes
 
 		// ---- 业务入口 ----
 
-		/// <summary>结算经验奖励，保留跨级余量，升级后按配置成长并补满生命和魔法。</summary>
-		/// <param name="amount">非负奖励经验；隐藏、死亡和满级英雄不获得经验。</param>
-		/// <exception cref="ArgumentOutOfRangeException">奖励为负。</exception>
-		public void GainExperience(int amount)
+		/// <summary>
+		/// 应用出战装配：替换成长基础值与持久修正（不触碰 Buff 等局内来源），再同步生命魔法上限。
+		/// 显示时由 OnShow 调用；升级、换装后由关卡运行调用。
+		/// </summary>
+		/// <param name="loadout">由档案构建的出战装配。</param>
+		/// <param name="refill">是否补满生命与魔法（显示、升级）；否则把当前值钳到新上限。</param>
+		/// <exception cref="ArgumentNullException">装配为空。</exception>
+		/// <exception cref="ArgumentException">装配属于其他英雄。</exception>
+		public void ApplyLoadout(HeroLoadout loadout, bool refill)
 		{
-			ArgumentOutOfRangeException.ThrowIfNegative(amount);
-			if (!IsAlive || amount == 0)
+			ArgumentNullException.ThrowIfNull(loadout);
+			if (loadout.HeroId != HeroId)
 			{
-				return;
+				throw new ArgumentException($"装配属于英雄 {loadout.HeroId}，不能应用到英雄 {HeroId}。", nameof(loadout));
 			}
 
-			// 总量最后通知，流程捕获存档快照时等级和派生显示已全部更新。
-			ApplyExperience(m_ExperienceCurve.Add(TotalExperience.Value, amount), restoreResources: false);
+			// 先移除上一次装配的持久来源再登记新来源，最后同步资源上限。
+			loadout.ApplyTo(Stats, m_Loadout);
+			m_Loadout = loadout;
+			Level = loadout.Level;
+			SyncVitalsToStats(refill);
 		}
 
 		// ---- 内部方法与扩展点 ----
@@ -238,24 +224,6 @@ namespace GameLogic.Entity.Heroes
 			}
 		}
 
-		/// <summary>结算快照：按等级算成长后的攻防，其余战斗属性直接取 HeroConfig。</summary>
-		/// <returns>当前配置与等级对应的结算快照。</returns>
-		protected override CombatantStats GetCombatStats()
-		{
-			if (Config == null)
-			{
-				return default;
-			}
-
-			int grow = Level.Value - 1;
-			return new CombatantStats(CombatSide.Hero, Level.Value,
-				Config.BasePower + grow * Config.GrowPower,
-				Config.BaseDef + grow * Config.GrowDef,
-				Config.BaseMdef + grow * Config.GrowMdef,
-				Config.Crit, Config.Miss, Config.Lucky, Config.Toughness, Config.Htarget, Config.CritReduce,
-				Config.Ar, Config.Sp);
-		}
-
 		/// <summary>
 		/// 命中收益（英雄专属）：按本招 AttackConfig.WsGain 掷定无双值并累计。
 		/// 收益规则属于英雄，不进攻击包、不进 ActorEntity（怪物没有无双值）。
@@ -266,8 +234,7 @@ namespace GameLogic.Entity.Heroes
 		{
 			if (ConfigSystem.Instance.Tables.TbAttackConfig.GetOrDefault(attack.AttackId) is { } config)
 			{
-				int gain = GD.RandRange(config.WsGain.X, Mathf.Max(config.WsGain.X, config.WsGain.Y));
-				WsValue.Value = Mathf.Clamp(WsValue.Value + gain, 0, WsMax.Value);
+				Musou.Add(GD.RandRange(config.WsGain.X, Mathf.Max(config.WsGain.X, config.WsGain.Y)));
 			}
 		}
 
@@ -288,28 +255,6 @@ namespace GameLogic.Entity.Heroes
 			{
 				m_PendingHurt = knockback;
 			}
-		}
-
-		/// <summary>应用累计经验和派生进度，初次显示或升级时重新计算资源上限。</summary>
-		/// <param name="totalExperience">已经过曲线范围校验的累计经验。</param>
-		/// <param name="restoreResources">是否初次显示，必须恢复满资源。</param>
-		private void ApplyExperience(int totalExperience, bool restoreResources)
-		{
-			var progress = m_ExperienceCurve.Evaluate(totalExperience);
-			bool levelChanged = Level.Value != progress.Level;
-			Level.Value = progress.Level;
-			if (restoreResources || levelChanged)
-			{
-				// 成长来源仍是英雄表；升级补满与旧项目一致。
-				int growth = progress.Level - 1;
-				MaxHp.Value = Config.BaseHp + growth * Config.GrowHp;
-				MaxMp.Value = Config.BaseMp + growth * Config.GrowMp;
-				Hp.Value = MaxHp.Value;
-				Mp.Value = MaxMp.Value;
-			}
-			MaxExperience.Value = progress.MaxExperience;
-			Experience.Value = progress.Experience;
-			TotalExperience.Value = totalExperience;
 		}
 
 		/// <summary>由具体英雄给出自己的身体状态集合。</summary>
