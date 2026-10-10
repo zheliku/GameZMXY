@@ -53,16 +53,7 @@ public class ProcedureLevel : ProcedureBase
 
     private SceneTreeTimer m_RestartTimer; // 结局后等待重开的计时器。
 
-    private static bool s_StartupMarked; // 首次成功开局后标记热更启动成功（进程内只标记一次）。
-
-    /// <summary>本次关卡运行（调试与烟测只读观测）。</summary>
-    internal LevelRun CurrentRun => m_Run;
-
-    /// <summary>本会话 HUD 请求编号（调试与烟测只读观测）。</summary>
-    internal int HudSerialId => m_HudSerialId;
-
-    /// <summary>档案作用域（调试与烟测只读观测）。</summary>
-    internal GameContext Context => m_Context;
+    private bool m_StartupMarked; // 流程状态实例随 App 存续，仅首次成功开局标记热更启动。
 
     /// <summary>
     /// 进入流程：读取档案作用域 → 加载关卡场景 → 显示英雄 → 关闭加载界面 → 开始关卡会话与运行 → 打开 HUD。
@@ -160,9 +151,9 @@ public class ProcedureLevel : ProcedureBase
             Log.Info("[ProcedureLevel] 已提交战斗 HUD 请求：{0}", m_HudSerialId);
 
             // 首次进入可玩状态：后续崩溃不再归因于热更。
-            if (!s_StartupMarked)
+            if (!m_StartupMarked)
             {
-                s_StartupMarked = true;
+                m_StartupMarked = true;
                 HotUpdateSafetyGuard.MarkStartupSuccess();
             }
         }

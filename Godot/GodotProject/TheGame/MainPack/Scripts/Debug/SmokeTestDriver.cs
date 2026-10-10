@@ -342,7 +342,7 @@ public partial class SmokeTestDriver : Node
 			}
 
 			// 等受测猴子在视野外丢失生成时锁定的目标（LoseTargetTime），AI 场景的阶段 0 才是干净巡逻。
-			if (m_Monster.AiStateName is not ("Wander" or "Pause"))
+			if (SmokeInspection.AiStateName(m_Monster) is not ("Wander" or "Pause"))
 			{
 				if (m_MonsterFoundAt < 0.0)
 				{
@@ -351,7 +351,7 @@ public partial class SmokeTestDriver : Node
 
 				if (m_Time > m_MonsterFoundAt + 7.0)
 				{
-					Fail($"受测猴子未在视野外丢失目标（当前 AI：{m_Monster.AiStateName}）");
+					Fail($"受测猴子未在视野外丢失目标（当前 AI：{SmokeInspection.AiStateName(m_Monster)}）");
 				}
 
 				return;
@@ -395,7 +395,7 @@ public partial class SmokeTestDriver : Node
 			}
 		}
 
-		if (m_Level?.Phase == LevelStagePhase.Fighting)
+		if (SmokeInspection.Sequence(m_Level)?.Phase == LevelStagePhase.Fighting)
 		{
 			Input.ActionRelease("move_right");
 			Input.ActionRelease("jump");
@@ -429,7 +429,7 @@ public partial class SmokeTestDriver : Node
 		{
 			foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
 			{
-				if (node is LevelController level && level.Phase != LevelStagePhase.Ready)
+				if (node is LevelController level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
 				{
 					m_LevelScenario = new LevelSmokeScenario(m_Hero, level);
 					break;
@@ -463,7 +463,7 @@ public partial class SmokeTestDriver : Node
 		{
 			foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
 			{
-				if (node is LevelController level && level.Phase != LevelStagePhase.Ready)
+				if (node is LevelController level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
 				{
 					m_CancelScenario = new LevelCancellationSmokeScenario(m_Hero, level);
 					break;
@@ -488,7 +488,7 @@ public partial class SmokeTestDriver : Node
 
 	private void Sample() // 记录身体状态和动画路径变化。
 	{
-		string path = ObservePath(m_Hero.BodyStateName, m_Hero.CurrentAnim);
+		string path = ObservePath(SmokeInspection.BodyStateName(m_Hero), m_Hero.AnimPlayer.AssignedAnimation.ToString());
 		if (path.Length == 0 || path == m_LastPath)
 		{
 			return;
@@ -517,7 +517,7 @@ public partial class SmokeTestDriver : Node
 	/// </summary>
 	private void TrackBodyFrames() // 收集 walk/run 期间身体动画的帧变化证据。
 	{
-		if (m_Hero?.Body is not Sprite2D body)
+		if (m_Hero == null || SmokeInspection.ReadField<Node2D>(m_Hero, "m_Body") is not Sprite2D body)
 		{
 			return;
 		}
@@ -670,7 +670,7 @@ public partial class SmokeTestDriver : Node
 				continue;
 			}
 
-			monster.SetAiEnabled(false);
+			SmokeInspection.FreezeAi(monster);
 			monster.Velocity = Vector2.Zero;
 		}
 	}

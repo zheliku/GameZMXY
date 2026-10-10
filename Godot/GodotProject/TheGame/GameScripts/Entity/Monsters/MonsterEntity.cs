@@ -43,14 +43,13 @@ namespace GameLogic.Entity.Monsters
 
 		private int m_AttackRequest = -1; // 待身体状态机提交的攻击下标，-1 表示无请求。
 
+		private int m_MoveIntent; // AI 写入、身体状态机消费的水平移动意图。
+
 		private bool m_RecycleRequested; // 死亡动画结束后等待物理帧回收的标记。
 
 		private float m_OutOfSightTime; // 目标持续在视野外的秒数。
 
 		// ---- 属性 ----
-
-		/// <summary>场景绑定的怪物配置枚举（编辑器与测试工具读取；运行期数值见 <see cref="Config"/>）。</summary>
-		public EntityId MonsterEntityId => m_MonsterEntityId;
 
 		/// <summary>怪物配置</summary>
 		public MonsterConfig Config { get; private set; }
@@ -64,26 +63,14 @@ namespace GameLogic.Entity.Monsters
 		/// </summary>
 		protected virtual bool IsSuperArmor => Config is { SuperArmor: true };
 
-		/// <summary>攻击集（AI 范围判断与加权选招；调试观测可读 <see cref="MonsterAttackBook.ReachOf"/>）</summary>
+		/// <summary>攻击集，供 AI 判断范围与加权选招。</summary>
 		public MonsterAttackBook Attacks { get; private set; } = MonsterAttackBook.Empty;
 
-		/// <summary>AI 开关（默认开；关闭 = 沙包，调试用；每次 OnShow 复位为开）</summary>
-		public bool AiEnabled { get; private set; } = true;
-
-		/// <summary>当前 AI 状态名（调试/冒烟观测；无 AI 为空串）</summary>
-		public string AiStateName => (m_AiFsm?.CurrentState as MonsterAiState)?.StateName ?? "";
-
-		/// <summary>当前身体状态名（调试/冒烟观测；名称由行为类别的身体状态集决定）</summary>
-		public string BodyStateName => BodyFsm.CurrentName(m_BodyFsm);
-
-		/// <summary>移动意图（AI 写入，身体执行；调试观测）</summary>
-		public int MoveIntent { get; private set; }
-
-		/// <summary>收招硬直中（由行为类别按自己的身体状态机提供；调试/冒烟观测）</summary>
-		public abstract bool InRecovery { get; }
+		/// <summary>收招硬直中，由具体怪物提供，AI 据此拒绝新攻击请求。</summary>
+		protected abstract bool InRecovery { get; }
 
 		/// <summary>受击硬直中（由行为类别提供；AI 的受控判定同源）</summary>
-		public abstract bool InHurt { get; }
+		protected abstract bool InHurt { get; }
 
 		/// <summary>已请求攻击、出招或处于收招硬直。</summary>
 		private bool IsBusy => AttackSegment >= 0 || m_AttackRequest >= 0 || InRecovery;
@@ -162,7 +149,7 @@ namespace GameLogic.Entity.Monsters
 			Stats.SetBase(Config.Stats);
 			Level = Config.Level;
 			SyncVitalsToStats(refill: true);
-			MoveIntent = 0;
+			m_MoveIntent = 0;
 			AttackSegment = m_AttackRequest = -1;
 			m_PendingHurt = null;
 			m_RecycleRequested = false;
@@ -182,7 +169,6 @@ namespace GameLogic.Entity.Monsters
 			SetFacing(-1);
 
 			CreateBody();
-			AiEnabled = true;
 			CreateAi();
 		}
 
@@ -222,7 +208,7 @@ namespace GameLogic.Entity.Monsters
 			}
 
 			float dt = (float)delta;
-			BodyFsm.Tick(m_BodyFsm, dt);
+			m_BodyFsm.Tick(dt);
 			MoveAndSlide();
 
 			if (m_RecycleRequested)
@@ -230,29 +216,6 @@ namespace GameLogic.Entity.Monsters
 				m_RecycleRequested = false;
 				GF.Entity.HideEntitySafe(this);
 			}
-		}
-
-		// ---- 业务入口 ----
-
-		/// <summary>开关 AI（调试用）。关闭：销毁 AI 状态机、清意图与请求（在播的招照常收招）；开启：从初始状态重建。</summary>
-		/// <param name="enabled">是否启用怪物 AI。</param>
-		public void SetAiEnabled(bool enabled)
-		{
-			if (AiEnabled == enabled)
-			{
-				return;
-			}
-
-			AiEnabled = enabled;
-			if (enabled)
-			{
-				CreateAi();
-				return;
-			}
-
-			DestroyAi(false);
-			MoveIntent = 0;
-			m_AttackRequest = -1;
 		}
 
 		// ---- 内部方法与扩展点 ----
@@ -497,7 +460,7 @@ namespace GameLogic.Entity.Monsters
 		/// <summary>创建并启动怪物 AI 状态机。</summary>
 		private void CreateAi()
 		{
-			if (!AiEnabled || m_AiFsm != null || Config == null || !IsShown)
+			if (m_AiFsm != null || Config == null || !IsShown)
 			{
 				return;
 			}
@@ -526,8 +489,8 @@ namespace GameLogic.Entity.Monsters
 		/// <summary>转发 AI 写入的移动意图读写。</summary>
 		int IMonsterBody.MoveIntent
 		{
-			get => MoveIntent;
-			set => MoveIntent = value;
+			get => m_MoveIntent;
+			set => m_MoveIntent = value;
 		}
 
 		/// <summary>取出并清除待提交的攻击请求。</summary>
@@ -588,7 +551,7 @@ namespace GameLogic.Entity.Monsters
 
 		/// <summary>设置并限制怪物的水平移动意图。</summary>
 		/// <param name="dir">水平意图：负值左，正值右，零停。</param>
-		void IMonsterAiAgent.Move(int dir) => MoveIntent = Mathf.Clamp(dir, -1, 1);
+		void IMonsterAiAgent.Move(int dir) => m_MoveIntent = Mathf.Clamp(dir, -1, 1);
 
 		/// <summary>仅在可行动且未忙碌时按目标方向调整朝向。</summary>
 		/// <param name="dir">期望朝向：正值右，负值左。</param>
@@ -611,7 +574,7 @@ namespace GameLogic.Entity.Monsters
 			}
 
 			m_AttackRequest = index;
-			MoveIntent = 0;
+			m_MoveIntent = 0;
 			return true;
 		}
 

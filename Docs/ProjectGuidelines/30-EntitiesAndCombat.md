@@ -12,7 +12,7 @@
 - **属性汇总**：最终值 = (基础 + Σ固定值) × (1 + Σ同类百分比) × Π(1 + 独立百分比)，下限 0，整数属性四舍五入。基础值来自成长表或怪物配置（`SetBase`）；装备、法宝、被动、丹药、Buff 各自作为一个 `StatSource` 整体登记（`SetSource`）和移除（`RemoveSource`），不直接改基础值。持久来源经 `HeroLoadout` 注入，局内来源（Buff）由实体运行时登记；装配替换只移除上一次装配的持久来源。
 - **结算快照**：出招与受击时各取一次 `CombatantStats.From(Side, Level, Stats)`；快照放进攻击包，出招后属性变化不影响已发出的攻击。
 - **生命与死亡**：`Vitals` 是生命魔法的唯一所有者，上限随属性汇总同步（`SyncVitalsToStats`）。`ReceiveHit` 是扣血与死亡的唯一入口：结算 → `Vitals.Damage` → 生命归零的那一次置 `Dead` 并触发一次 C# 事件 `Died`（作用域所有者订阅，如关卡运行结算英雄死亡）。治疗经 `Heal`，已死亡不复活；无双由命中收益累计。
-- **身体状态机**：使用 `GF.Fsm`，由实体 `_PhysicsProcess` 调用 `BodyFsm.Tick`；每帧顺序为输入采样、状态推进、`MoveAndSlide`。状态类表达动作与打断，不以多个布尔量拼状态。
+- **身体状态机**：使用 `GF.Fsm`，由实体 `_PhysicsProcess` 调用 `BodyFsm` 的 C# 14 扩展成员 `fsm.Tick(dt)`；每帧顺序为输入采样、状态推进、`MoveAndSlide`。状态类表达动作与打断，不以多个布尔量拼状态。状态查询直接使用 `IFsm.CurrentState`，测试观测放在验证代码内。
 - **怪物 AI**：AI 状态机按框架帧运行，只写意图；身体状态机按物理帧执行移动和动作。当前状态图为 `Pause / Wander / WalkToTarget / StandAndStrike / PaceBelowTarget / CcLocked / Death`。AI 通过接口访问目标和身体事实，不持有节点引用。
 - **出手节奏**：`StandAndStrikeState` 进入攻击范围后先按 `MonsterConfig.AttackFirstDelay`（x=最短、y=最长秒）随机停一拍，之后每 `AttackInterval` 按 `AttackDesire`（0-100 出手概率）掷一次。持续交战的期望出手间隔 ≈ `AttackInterval ÷ (AttackDesire/100)`：欲望越高间隔越短，所以间隔不随欲望二次缩放——两个旋钮正交，便于单独调参；首次延迟只是反应时间，与概率无关。
 - **动画与判定**：`AnimationPlayer` 只承载帧、特效和判定盒值轨道，不放方法轨道、不调用玩法代码。身体状态读取动画长度并自行计时；音效由状态钩子触发并按配置 ID 播放。HitBox 几何及启闭由动画值轨道提供，朝向由判定盒根节点镜像。

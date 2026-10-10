@@ -9,7 +9,7 @@ namespace GameLogic.Entity.Body
 	/// 为什么不走框架帧：GF.Fsm 由 GameEntry 在 _Process（渲染帧）里轮询，而身体状态要和
 	/// MoveAndSlide 同步。框架开放了 <c>IFsm.CurrentState</c>（public）与 <c>FsmState.ChangeState</c>（protected），
 	/// 所以这里把框架帧的 OnUpdate 封成空实现，由实体在 _PhysicsProcess 里调用
-	/// <see cref="BodyFsm.Tick{T}"/>——状态登记、进入/离开生命周期、切换全用框架自带的，框架零改动。
+	/// <c>fsm.Tick(dt)</c>——状态登记、进入/离开生命周期、切换全用框架自带的，框架零改动。
 	///
 	/// 约定（A 方案：动画纯数据、代码唯一时钟）：
 	///  * 状态只经宿主接口 <typeparamref name="TBody"/> 读写事实、请求播放动画，不碰节点 / GD.* / GF.*（纯 C#，可单测）；
@@ -22,12 +22,6 @@ namespace GameLogic.Entity.Body
 	/// </summary>
 	public abstract class BodyState<TBody> : FsmState<TBody> where TBody : class, IActorBody
 	{
-		/// <summary>状态名（调试/冒烟观测）：类名去掉 <see cref="NamePrefix"/> 与 "State" 后缀，如 HeroGroundState → Ground。</summary>
-		public string StateName => field ??= TrimName(GetType().Name, NamePrefix);
-
-		/// <summary>状态类名前缀（英雄 "Hero"、怪物 "Monster"，避免与 AI 行为类重名）。</summary>
-		protected virtual string NamePrefix => "";
-
 		/// <summary>进入次数（BodyFsm 据此识别"切回自己"的重新进入）。</summary>
 		internal int EnterSerial { get; private set; }
 
@@ -63,7 +57,7 @@ namespace GameLogic.Entity.Body
 			base.OnLeave(fsm, isShutdown);
 		}
 
-		/// <summary>物理帧推进（由 <see cref="BodyFsm.Tick{T}"/> 调用）：先过打断规则，未被打断才跑本状态决策。</summary>
+		/// <summary>物理帧推进（由状态机扩展 Tick 调用）：先过打断规则，未被打断才跑本状态决策。</summary>
 		internal void PhysicsTick(IFsm<TBody> fsm, float dt)
 		{
 			TBody body = fsm.Owner;
@@ -109,14 +103,5 @@ namespace GameLogic.Entity.Body
 			body.Velocity = new Vector2(0f, body.Velocity.Y);
 		}
 
-		private static string TrimName(string name, string prefix) // 移除状态类型名中的宿主前缀和 State 后缀。
-		{
-			if (prefix.Length > 0 && name.StartsWith(prefix))
-			{
-				name = name.Substring(prefix.Length);
-			}
-
-			return name.EndsWith("State") ? name.Substring(0, name.Length - "State".Length) : name;
-		}
 	}
 }

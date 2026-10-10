@@ -16,6 +16,7 @@ using GameLogic.Profile;
 using GameLogic.Save;
 using GameLogic.Session;
 using GameLogic.UI;
+using GameLogic.UI.Widgets;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
@@ -56,7 +57,8 @@ public sealed class UiSmokeScenario
         try
         {
             ProcedureLevel procedure = await WaitForLevelAsync();
-            GameContext context = procedure.Context;
+            Check(!GF.Debugger.ActiveWindow, "框架调试入口仍然遮挡游戏 HUD");
+            GameContext context = SmokeInspection.Context(procedure);
             HeroEntity hero = FindHero();
             LevelController level = FindLevel();
             BattleHud hud = CurrentHud();
@@ -80,19 +82,19 @@ public sealed class UiSmokeScenario
             Check((await ReadDiskAsync()).Profile.Heroes[0].TotalExperience == before, "关内收益在结算前就写盘了");
             ReenterLevel();
             procedure = await WaitForLevelAsync();
-            Check(ReferenceEquals(procedure.Context, context), "重入关卡没有沿用同一档案作用域");
+            Check(ReferenceEquals(SmokeInspection.Context(procedure), context), "重入关卡没有沿用同一档案作用域");
             Check(progression.TotalExperience == before, "中途离开没有回滚关内收益");
 
             // 死亡：提交本关收益（写盘），延迟后自动重开。关卡运行在击杀前捕获，重开后流程会换成新运行。
             await DefeatMonsterAsync(FindLevel(), procedure);
             int afterKill = progression.TotalExperience;
-            LevelRun deathRun = procedure.CurrentRun;
+            LevelRun deathRun = SmokeInspection.Run(procedure);
             KillHero(FindHero());
             Check(deathRun.Outcome == LevelRunOutcome.Defeated, $"英雄死亡没有结束关卡运行：{deathRun.Outcome}");
             Check(await deathRun.Commit, "死亡检查点写入失败");
             Check((await ReadDiskAsync()).Profile.Heroes[0].TotalExperience == afterKill, "死亡没有保存本关收益");
-            await WaitUntilAsync(() => procedure.CurrentRun != null && !ReferenceEquals(procedure.CurrentRun, deathRun) &&
-                procedure.CurrentRun.Outcome == LevelRunOutcome.Running && CurrentHud() != null,
+            await WaitUntilAsync(() => SmokeInspection.Run(procedure) != null && !ReferenceEquals(SmokeInspection.Run(procedure), deathRun) &&
+                SmokeInspection.Run(procedure).Outcome == LevelRunOutcome.Running && CurrentHud() != null,
                 "死亡后没有自动重开关卡", 15000);
             Check(progression.TotalExperience == afterKill, "死亡重开后档案收益丢失");
 
@@ -141,9 +143,13 @@ public sealed class UiSmokeScenario
         CheckDisplay(m_TestHud, hero, progression, level);
         Check(delay.Value > bar.Value, "受伤后残影没有保留旧比例");
         await WaitUntilAsync(() => Near(delay.Value, bar.Value), "生命残影未追平");
+        await CheckMusouAnimationAsync(m_TestHud, hero, progression);
 
         // 关闭后修改状态源，控件保持关闭时的显示。
         CloseHud(m_TestHud);
+        AnimatedSprite2D fullAnimation = hud.GetNode<AnimatedSprite2D>("MenuPanel/m_WsMax");
+        Check(!fullAnimation.Visible && !fullAnimation.IsPlaying() && fullAnimation.Frame == 0,
+            "HUD 关闭后无双动画没有停止并复位");
         double closedHp = bar.Value;
         string closedLevel = hud.GetNode<Label>("StatusPanel/m_LevelLabel").Text;
         hero.Vitals.Damage(5);
@@ -155,10 +161,12 @@ public sealed class UiSmokeScenario
 
         // 改绑到另一英雄：旧英雄的变化不再影响显示。
         m_TestHud = await OpenHudAsync(new BattleHudData(hero, progression, level));
+        Check(fullAnimation.Visible && fullAnimation.IsPlaying(), "HUD 复用后没有恢复已蓄满的无双动画");
         m_ExtraHero = await ShowHeroAsync(context, new HeroRecord(1, new HeroProgression(context.Curve, 517)));
         HeroProgression extraProgression = new(context.Curve, 517);
         GF.UI.RefocusUIForm(m_TestHud, new BattleHudData(m_ExtraHero, extraProgression, level));
         CheckDisplay(m_TestHud, m_ExtraHero, extraProgression, level);
+        Check(!fullAnimation.Visible && !fullAnimation.IsPlaying(), "改绑未蓄满的英雄后残留旧无双动画");
         hero.Vitals.Damage(1);
         CheckDisplay(m_TestHud, m_ExtraHero, extraProgression, level);
         CloseHud(m_TestHud);
@@ -169,6 +177,55 @@ public sealed class UiSmokeScenario
         hero.Heal(hero.Vitals.MaxHp);
         m_TestHud = await OpenHudAsync(new BattleHudData(hero, progression, level));
         await WaitFramesAsync(2);
+    }
+
+    /// <summary>验证无双只有蓄满才连续循环，消耗和零上限会停止，经验变化不触发播放。</summary>
+    /// <param name="hud">当前打开的真实 HUD。</param>
+    /// <param name="hero">HUD 绑定的英雄，验证后保持蓄满以继续检查关闭与复用。</param>
+    /// <param name="progression">HUD 绑定的成长，经验验证后恢复原值。</param>
+    /// <returns>真实动画至少循环两次后的验证任务。</returns>
+    private async Task CheckMusouAnimationAsync(BattleHud hud, HeroEntity hero, HeroProgression progression)
+    {
+        AnimatedSprite2D animation = hud.GetNode<AnimatedSprite2D>("MenuPanel/m_WsMax");
+        ResourceBar bar = hud.GetNode<ResourceBar>("MenuPanel/WsFrame/m_WsBar");
+        Check(!animation.Visible && !animation.IsPlaying(), "无双未蓄满就显示或播放了闪烁动画");
+        int originalExperience = progression.TotalExperience;
+        progression.AddExperience(1);
+        await WaitFramesAsync(3);
+        Check(!animation.Visible && !animation.IsPlaying(), "获得经验错误地触发了无双闪烁动画");
+        progression.Restore(originalExperience);
+
+        // 保持数值不变，直接观察引擎循环信号，避免只检查 Play 标志而漏掉停帧。
+        int loops = 0;
+        Action onLooped = () => loops++;
+        animation.AnimationLooped += onLooped;
+        try
+        {
+            hero.Musou.Add(hero.Musou.Max);
+            Check(animation.Visible && animation.IsPlaying(), "无双蓄满后没有开始闪烁");
+            await WaitUntilAsync(() => loops >= 2, "无双蓄满后没有在数值不变时连续循环");
+            int frame = animation.Frame;
+            float frameProgress = animation.FrameProgress;
+            bar.SetValue(hero.Musou.Value, hero.Musou.Max);
+            Check(animation.Frame == frame && animation.FrameProgress == frameProgress,
+                "重复刷新满条错误地重置了动画进度");
+        }
+        finally
+        {
+            animation.AnimationLooped -= onLooped;
+        }
+
+        // 消耗与零上限都应隐藏并复位；重新蓄满留给调用方验证窗口池复用。
+        Check(hero.Musou.TryConsume(), "烟测未能消耗已蓄满的无双");
+        await WaitFramesAsync(3);
+        Check(!animation.Visible && !animation.IsPlaying() && animation.Frame == 0 && Near(bar.Value, 0),
+            "无双消耗后动画没有停止并复位");
+        int originalMaximum = hero.Musou.Max;
+        hero.Musou.Reset(0);
+        Check(!animation.Visible && !animation.IsPlaying(), "零上限错误地触发了满值动画");
+        hero.Musou.Reset(originalMaximum);
+        hero.Musou.Add(originalMaximum);
+        GD.Print("SMOKE-UI: 无双未满/经验变化不闪烁、满值连续循环、消耗与零上限复位验证完成");
     }
 
     /// <summary>池化实体复用时按装配/配置重建属性，不残留上次的数值或修正来源。</summary>
@@ -215,14 +272,14 @@ public sealed class UiSmokeScenario
 
         var config = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList[0];
         m_Monster = (MonsterEntity)await GF.Entity.ShowEntityAsync(config.EntityId, Vector2.Zero);
-        m_Monster.SetAiEnabled(false);
+        SmokeInspection.FreezeAi(m_Monster);
         m_Monster.SetPhysicsProcess(false);
         MonsterEntity previousMonster = m_Monster;
         m_Monster.Vitals.Damage(m_Monster.Vitals.MaxHp);
         ReleaseTestEntity(m_Monster);
         await WaitFramesAsync(2);
         m_Monster = (MonsterEntity)await GF.Entity.ShowEntityAsync(config.EntityId, Vector2.Zero);
-        m_Monster.SetAiEnabled(false);
+        SmokeInspection.FreezeAi(m_Monster);
         m_Monster.SetPhysicsProcess(false);
         Check(ReferenceEquals(previousMonster, m_Monster), "怪物未从实体池复用");
         Check(m_Monster.Vitals.Hp == config.Stats.MaxHp && m_Monster.Vitals.MaxHp == config.Stats.MaxHp && !m_Monster.Dead,
@@ -298,7 +355,7 @@ public sealed class UiSmokeScenario
         File.WriteAllText(DataFilePath(), EasySave.Serialize(legacy, GF.Archive.Setting.EnableAesEncryption,
             GF.Archive.Setting.KEY, GF.Archive.Setting.Salt));
 
-        SaveService save = new(FindLevelProcedure().Context.Curve, ConfigSystem.Instance.Tables);
+        SaveService save = new(SmokeInspection.Context(FindLevelProcedure()).Curve, ConfigSystem.Instance.Tables);
         LoadedProfile loaded = await save.LoadOrCreateAsync();
         Check(loaded.Origin == SaveOrigin.Migrated && loaded.Profile.ActiveHero.Progression.Level == 3 &&
             loaded.Profile.ActiveHero.Progression.TotalExperience == 300 && loaded.Profile.Wallet.Gold == 7,
@@ -313,6 +370,8 @@ public sealed class UiSmokeScenario
     private async Task CheckLoadingCancellationAsync()
     {
         ProcedureLevel procedure = await WaitForLevelAsync();
+        // 新工作区的引擎缓存尚无 validation 目录，夹具保存前先建立它。
+        Check(DirAccess.MakeDirRecursiveAbsolute("res://.godot/validation") == Error.Ok, "创建冷加载 UI 夹具目录失败");
         string path = $"res://.godot/validation/hud_cancel_{Guid.NewGuid():N}.tscn";
         Node fixture = GD.Load<PackedScene>(ResourcesCollectionConstant.UIs_BattleHud).Instantiate();
         PackedScene packed = new();
@@ -331,7 +390,7 @@ public sealed class UiSmokeScenario
         try
         {
             serial = GF.UI.OpenUIForm(path, "Normal",
-                new BattleHudData(FindHero(), procedure.Context.Profile.ActiveHero.Progression, FindLevel()));
+                new BattleHudData(FindHero(), SmokeInspection.Context(procedure).Profile.ActiveHero.Progression, FindLevel()));
             Check(GF.UI.IsLoadingUIForm(serial), "取消用例没有覆盖实际加载中的窗口请求");
             ReenterLevel();
             GF.UI.CloseUIForm(serial);
@@ -382,7 +441,7 @@ public sealed class UiSmokeScenario
 
         ReenterLevel();
         ProcedureLevel procedure = await WaitForLevelAsync();
-        CheckDisplay(CurrentHud(), FindHero(), procedure.Context.Profile.ActiveHero.Progression, FindLevel());
+        CheckDisplay(CurrentHud(), FindHero(), SmokeInspection.Context(procedure).Profile.ActiveHero.Progression, FindLevel());
     }
 
     /// <summary>经真实结算链路击败一只本关怪物，等待关卡运行结算经验。</summary>
@@ -392,14 +451,14 @@ public sealed class UiSmokeScenario
     private async Task DefeatMonsterAsync(LevelController level, ProcedureLevel procedure)
     {
         HeroEntity hero = FindHero();
-        LevelRun run = procedure.CurrentRun;
+        LevelRun run = SmokeInspection.Run(procedure);
         hero.SetPhysicsProcess(true);
         int kills = run.Stats.Kills;
 
         // 推动相机抵达首阶段右界触发首波刷怪；刷出的怪物立即停用 AI，避免它先打死测试英雄。
         await WaitUntilAsync(() =>
         {
-            if (level.Phase != LevelStagePhase.Fighting)
+            if (SmokeInspection.Sequence(level).Phase != LevelStagePhase.Fighting)
             {
                 Input.ActionPress("move_right");
                 Input.ActionPress("jump");
@@ -409,7 +468,7 @@ public sealed class UiSmokeScenario
 
             Input.ActionRelease("move_right");
             MonsterEntity spawned = FindMonster();
-            spawned?.SetAiEnabled(false);
+            SmokeInspection.FreezeAi(spawned);
             return spawned != null;
         }, "首阶段没有刷出怪物", 20000);
 
@@ -442,7 +501,7 @@ public sealed class UiSmokeScenario
     /// <returns>可读的状态描述。</returns>
     private static string Describe(MonsterEntity monster, LevelRun run, LevelController level) =>
         $"monster shown={monster.IsShown} dead={monster.Dead} hp={monster.Vitals.Hp}/{monster.Vitals.MaxHp} " +
-        $"id={monster.Id}; run={run.Outcome} kills={run.Stats.Kills}; level={level.Phase}/{level.StageOrder}; " +
+        $"id={monster.Id}; run={run.Outcome} kills={run.Stats.Kills}; level={SmokeInspection.Sequence(level).Phase}/{SmokeInspection.Sequence(level).Current.StageOrder}; " +
         $"procedure={GF.Procedure.CurrentProcedure?.GetType().Name}";
 
     /// <summary>经真实结算链路击杀英雄（闪避按真实概率结算，重复攻击直到死亡）。</summary>
@@ -502,7 +561,7 @@ public sealed class UiSmokeScenario
     /// <returns>当前关卡流程。</returns>
     private async Task<ProcedureLevel> WaitForLevelAsync()
     {
-        await WaitUntilAsync(() => FindLevelProcedure()?.CurrentRun?.Outcome == LevelRunOutcome.Running &&
+        await WaitUntilAsync(() => SmokeInspection.Run(FindLevelProcedure())?.Outcome == LevelRunOutcome.Running &&
             CurrentHud() != null && FindHero() != null, "关卡流程未就绪", 15000);
         return FindLevelProcedure();
     }

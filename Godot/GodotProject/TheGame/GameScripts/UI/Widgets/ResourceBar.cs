@@ -1,10 +1,10 @@
 using System;
 using Godot;
 
-namespace GameLogic.UI;
+namespace GameLogic.UI.Widgets;
 
 /// <summary>
-/// 被动资源条：只接收当前值与上限并显示，可选文字、损失残影和段位；不订阅任何状态源、不执行玩法结算。
+/// 被动资源条：只接收当前值与上限并显示，可选文字、损失残影和满值动画；不订阅任何状态源、不执行玩法结算。
 /// 窗口在状态变化时调用 <see cref="SetValue"/>；残影由本控件比较前后两次的比例自行决定。
 /// </summary>
 public partial class ResourceBar : TextureProgressBar
@@ -13,7 +13,7 @@ public partial class ResourceBar : TextureProgressBar
 
     [Export] private TextureProgressBar m_Delay; // 可选损失残影节点。
     [Export] private Label m_Text; // 可选当前值与上限文本。
-    [Export] private Sprite2D m_Steps; // 可选段位帧图，例如无双。
+    [Export] private AnimatedSprite2D m_FullAnimation; // 可选满值循环动画，例如无双蓄满提示。
     [Export] private bool m_FullAtZeroMaximum; // 零上限时是否显示满条，用于经验满级。
     [Export] private string m_ZeroMaximumText = "MAX"; // 零上限的特殊文字，仅满条模式使用。
 
@@ -32,7 +32,7 @@ public partial class ResourceBar : TextureProgressBar
         bool realign = immediate || max != m_LastMaximum;
         m_LastMaximum = max;
 
-        // 主填充、文字与段位立即反映新值。
+        // 主填充与文字立即反映新值；满值动画独立按引擎时间推进。
         MinValue = 0.0;
         MaxValue = 1.0;
         Step = 0.0;
@@ -42,9 +42,20 @@ public partial class ResourceBar : TextureProgressBar
             m_Text.Text = max <= 0 && m_FullAtZeroMaximum ? m_ZeroMaximumText : $"{value}/{max}";
         }
 
-        if (m_Steps != null)
+        if (m_FullAnimation != null)
         {
-            m_Steps.Frame = Math.Clamp((int)Math.Round(ratio * (m_Steps.Hframes - 1)), 0, m_Steps.Hframes - 1);
+            if (max > 0 && value == max)
+            {
+                m_FullAnimation.Visible = true;
+                if (!m_FullAnimation.IsPlaying())
+                {
+                    m_FullAnimation.Play();
+                }
+            }
+            else
+            {
+                StopFullAnimation();
+            }
         }
 
         // 只对同一上限下的下降播放残影；增益、上限变化和强制对齐立即显示。
@@ -69,11 +80,22 @@ public partial class ResourceBar : TextureProgressBar
         }
     }
 
-    /// <summary>停止残影并忘记上一次的上限（窗口关闭时调用），下次显示必然立即对齐。</summary>
+    /// <summary>停止残影和满值动画并忘记上一次的上限（窗口关闭时调用），下次显示必然立即对齐。</summary>
     public void ResetPresentation()
     {
         m_LastMaximum = -1;
         StopTween();
+        StopFullAnimation();
+    }
+
+    /// <summary>隐藏并复位满值提示，关闭或池复用时不留下播放状态。</summary>
+    private void StopFullAnimation()
+    {
+        if (IsInstanceValid(m_FullAnimation))
+        {
+            m_FullAnimation.Stop();
+            m_FullAnimation.Visible = false;
+        }
     }
 
     /// <summary>仅在补间仍有效时停止它，避免关停时访问已释放的引擎对象。</summary>

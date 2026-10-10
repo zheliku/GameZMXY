@@ -9,6 +9,7 @@ using GameFramework.Entity;
 using GameLogic.Config;
 using GameLogic.Entity.Monsters;
 using GameLogic.Profile;
+using GameLogic.Startup;
 using GameLogic.UI;
 using Godot;
 using GodotGameFramework;
@@ -91,26 +92,12 @@ public partial class TestArenaController : Node2D
 	/// <summary>补上正式流程 <c>ProcedurePreload</c> 的注册步骤：实体/UI/声音分组与节点池、层级工具。</summary>
 	private void ActivateTestServices()
 	{
-		var entityGroups = GF.Entity.EntityGroupRes.EntityGroups;
-		for (int i = 0; i < entityGroups.Length; i++)
+		if (!GameResourceGroups.Register())
 		{
-			GF.Entity.AddEntityGroup(entityGroups[i].Name, entityGroups[i].ReleaseInterval, entityGroups[i].Capacity,
-				entityGroups[i].ExpireTime, entityGroups[i].Priority);
+			throw new InvalidOperationException("测试场地的必要资源组注册失败。");
 		}
 
-		var uiGroups = GF.UI.UIGroupRes.Groups;
-		for (int i = 0; i < uiGroups.Length; i++)
-		{
-			GF.UI.AddUIGroup(uiGroups[i].Name, uiGroups[i].Depth);
-		}
-
-		var soundGroups = GF.Sound.SoundGroupRes.SoundGroups;
-		for (int i = 0; i < soundGroups.Length; i++)
-		{
-			GF.Sound.AddSoundGroup(soundGroups[i].Name, soundGroups[i].AgentCounts,
-				soundGroups[i].AvoidBeingReplacedBySamePriority);
-		}
-
+		GF.Debugger.ActiveWindow = false;
 		NodePool.Instance.Active();
 		LayerMask.Instance.Active();
 	}
@@ -177,7 +164,7 @@ public partial class TestArenaController : Node2D
 				continue;
 			}
 
-			monsters.Add((placeholder.MonsterEntityId, placeholder.GlobalPosition));
+			monsters.Add((SmokeInspection.ReadField<EntityId>(placeholder, "m_MonsterEntityId"), placeholder.GlobalPosition));
 			m_Monsters.RemoveChild(placeholder);
 			placeholder.QueueFree();
 		}

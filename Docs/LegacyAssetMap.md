@@ -36,7 +36,7 @@
 | `Art/HeroPicture/RoleProperiesBox/720.png` | `Sprites/UI/hud/hud_ws_under.png` | 221×28，无双条底 |
 | `Art/HeroPicture/RoleProperiesBox/724.png` | `Sprites/UI/hud/hud_ws_fill.png` | 221×13，无双条填充 |
 | `Art/HeroPicture/WSGrey.png` | `Sprites/UI/hud/hud_ws_grey.png` | 72×71，无双灰底 |
-| `Art/HeroPicture/WSBar.png` | `Sprites/UI/hud/hud_ws_max_sheet.png` | 890×89，10 帧×89，无双满值段位（`Sprite2D.hframes=10`） |
+| `Art/HeroPicture/WSBar.png` | `Sprites/UI/hud/hud_ws_max_sheet.png` | 890×89，10 张 89×89 帧；满值时 `AnimatedSprite2D` 以 25 FPS 往返循环。`hud_ws_flash.gdshader` 用首帧轮廓和可调圆形范围限制透明度；默认半径 32px、圆心 (0.5, 0.5)、向内羽化 1px，源图保留不变 |
 | `Art/HeroPicture/RoleProperiesBox/swk.png` | `Sprites/UI/hud/hud_head_wukong.png` | 83×76，悟空头像 |
 | `Art/HeroPicture/RoleProperiesBox/748.png` | `Sprites/UI/hud/hud_status_label.png` | 17×46，状态标签装饰 |
 | `Art/HeroPicture/Role1SpecialEffect/Role1Hit1.png` | `Sprites/Effects/wukong/wukong_hit_1.png` | 210×206 × 5 帧；普攻 1 段棍气 |

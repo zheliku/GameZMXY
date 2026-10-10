@@ -15,6 +15,121 @@
 [ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/Widgets/ResourceBar.cs" id="14_resourcebar"]
 [ext_resource type="Texture2D" uid="uid://cgqqx20qcko1c" path="res://TheGame/Sprites/UI/hud/hud_mp_fill.png" id="15_mp"]
 [ext_resource type="Texture2D" uid="uid://2578tc6hjyl0" path="res://TheGame/Sprites/UI/hud/hud_exp_fill.png" id="16_exp"]
+[ext_resource type="Shader" uid="uid://cehdk4w6d0vqr" path="res://TheGame/Sprites/UI/hud/hud_ws_flash.gdshader" id="17_ws_flash"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ws_flash"]
+shader = ExtResource("17_ws_flash")
+shader_parameter/clip_center = Vector2(0.5, 0.5)
+shader_parameter/clip_radius = 32.0
+shader_parameter/clip_feather = 0.0
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ws_0"]
+atlas = ExtResource("12_ws_max")
+region = Rect2(0, 0, 89, 89)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ws_9"]
+atlas = ExtResource("12_ws_max")
+region = Rect2(801, 0, 89, 89)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ws_8"]
+atlas = ExtResource("12_ws_max")
+region = Rect2(712, 0, 89, 89)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ws_7"]
+atlas = ExtResource("12_ws_max")
+region = Rect2(623, 0, 89, 89)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ws_6"]
+atlas = ExtResource("12_ws_max")
+region = Rect2(534, 0, 89, 89)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ws_5"]
+atlas = ExtResource("12_ws_max")
+region = Rect2(445, 0, 89, 89)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ws_4"]
+atlas = ExtResource("12_ws_max")
+region = Rect2(356, 0, 89, 89)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ws_3"]
+atlas = ExtResource("12_ws_max")
+region = Rect2(267, 0, 89, 89)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ws_2"]
+atlas = ExtResource("12_ws_max")
+region = Rect2(178, 0, 89, 89)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ws_1"]
+atlas = ExtResource("12_ws_max")
+region = Rect2(89, 0, 89, 89)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ws_full"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ws_0")
+}],
+"loop": 1,
+"name": &"full",
+"speed": 25.0
+}]
 
 [node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_Go")]
 layout_mode = 3
@@ -147,7 +262,7 @@ texture = ExtResource("7_menu")
 position = Vector2(113, 25)
 texture = ExtResource("8_ws_frame")
 
-[node name="m_WsBar" type="TextureProgressBar" parent="MenuPanel/WsFrame" unique_id=607998488 node_paths=PackedStringArray("m_Steps")]
+[node name="m_WsBar" type="TextureProgressBar" parent="MenuPanel/WsFrame" unique_id=607998488 node_paths=PackedStringArray("m_FullAnimation")]
 offset_left = -125.0
 offset_top = -16.0
 offset_right = 96.0
@@ -160,16 +275,18 @@ texture_under = ExtResource("9_ws_under")
 texture_progress = ExtResource("10_ws_fill")
 texture_progress_offset = Vector2(-1, 9)
 script = ExtResource("14_resourcebar")
-m_Steps = NodePath("../../m_WsMax")
+m_FullAnimation = NodePath("../../m_WsMax")
 
 [node name="WsGrey" type="Sprite2D" parent="MenuPanel" unique_id=553033620]
 position = Vector2(-24, -4)
 texture = ExtResource("11_ws_grey")
 
-[node name="m_WsMax" type="Sprite2D" parent="MenuPanel" unique_id=1981663794]
-position = Vector2(-27, -5)
-texture = ExtResource("12_ws_max")
-hframes = 10
+[node name="m_WsMax" type="AnimatedSprite2D" parent="MenuPanel" unique_id=1981663794]
+visible = false
+material = SubResource("ShaderMaterial_ws_flash")
+position = Vector2(-24, -4)
+sprite_frames = SubResource("SpriteFrames_ws_full")
+animation = &"full"
 
 [node name="m_Go" type="AnimatedSprite2D" parent="." unique_id=1100398904]
 visible = false

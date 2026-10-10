@@ -94,11 +94,37 @@ namespace GameLogic.Profile.Tests
 			StatSheet stats = new();
 			StatSource buff = new("Buff", 1);
 			stats.SetSource(buff, new[] { StatModifier.Flat(GameConfig.Stat.StatType.Power, 3) });
-			level1.ApplyTo(stats, null);
+			StatSource[] sources = level1.ApplyTo(stats, null);
 			Assert.Equal(11, stats.GetInt(GameConfig.Stat.StatType.Power));
-			level2.ApplyTo(stats, level1);
+			level2.ApplyTo(stats, sources);
 			Assert.Equal(15, stats.GetInt(GameConfig.Stat.StatType.Power));
 			Assert.Equal(130, stats.GetInt(GameConfig.Stat.StatType.MaxHp));
+		}
+
+		/// <summary>装配隔离输入集合；卸下装备只移除旧的持久来源，保留 Buff。</summary>
+		[Fact]
+		public void Loadout_SnapshotsModifiersAndReplacesOnlyPersistentSources()
+		{
+			var growth = TestTables.Tables.TbHeroGrowthConfig.Get(1, 1).Stats;
+			StatSource equipment = new("Equipment", 1);
+			StatSource buff = new("Buff", 1);
+			var modifiers = new List<StatModifier> { StatModifier.Flat(GameConfig.Stat.StatType.Power, 5) };
+			var entries = new List<KeyValuePair<StatSource, IReadOnlyList<StatModifier>>> { new(equipment, modifiers) };
+			HeroLoadout equipped = new(1, 1, growth, entries);
+
+			// 同时修改外层与内层输入，已构建装配仍按原快照生效。
+			modifiers[0] = StatModifier.Flat(GameConfig.Stat.StatType.Power, 500);
+			entries.Clear();
+			StatSheet stats = new();
+			stats.SetSource(buff, [StatModifier.Flat(GameConfig.Stat.StatType.Power, 3)]);
+			StatSource[] sources = equipped.ApplyTo(stats, null);
+			Assert.Equal(new[] { equipment }, sources);
+			Assert.Equal(growth.Power + 8, stats.GetInt(GameConfig.Stat.StatType.Power));
+
+			// 空装配等价于卸下全部持久来源，不改变本局 Buff。
+			HeroLoadout unequipped = new(1, 1, growth, []);
+			Assert.Empty(unequipped.ApplyTo(stats, sources));
+			Assert.Equal(growth.Power + 3, stats.GetInt(GameConfig.Stat.StatType.Power));
 		}
 
 		/// <summary>成长表与重构前公式逐级一致（防止迁移脚本或手工改表引入偏差）。</summary>

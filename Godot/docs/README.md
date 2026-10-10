@@ -1,7 +1,7 @@
 # GGF 文档索引
 
-> GGF (Godot Game Framework) — Godot 4.7 + C# (.NET 8)，[Game Framework](https://gameframework.cn/) 的 Godot 移植。
-> 本目录为各系统的深度介绍文档。项目总览与开发命令见仓库根 `CLAUDE.md`。
+> GGF (Godot Game Framework) — [Game Framework](https://gameframework.cn/) 的 Godot 移植；当前工程使用 Godot .NET SDK 4.7.2 与 C# net10.0。
+> 本目录用于查询框架 API，部分代码示例保留旧游戏和旧流程名称。当前游戏先读 [项目导览](../../Docs/ProjectTour.md)，开发约束见 [唯一项目规范](../../Docs/ProjectGuidelines/AGENTS.md)；Claude 工具配置不是规范来源。
 
 ## 框架核心
 
@@ -10,7 +10,7 @@
 | [FrameworkCore.md](FrameworkCore.md) | 双层架构、启动/关闭序列、GodotComponent 生命周期、GF 门面、ReferencePool、日志系统、SingletonNode、PhysicsCheck2D、GTween、LayerMask、NodeExtension |
 | [EventSystem.md](EventSystem.md) | EventPool 机制、EventId 约定、Fire vs FireNow、订阅退订、池化回收禁忌 |
 | [FsmSystem.md](FsmSystem.md) | IFsm/FsmState 泛型设计、状态生命周期、SetData/GetData、销毁与池化 |
-| [ProcedureSystem.md](ProcedureSystem.md) | 流程 = 顶层 FSM、启动链路、TheGame 流程链 Launch→Update→Prelode→Game、新增流程教程 |
+| [ProcedureSystem.md](ProcedureSystem.md) | 顶层 FSM、流程生命周期与新增流程教程；旧示例为 Prelode/Game，当前游戏为 Launch→Update→Preload→LoadProfile→Level |
 | [DebuggerSystem.md](DebuggerSystem.md) | 运行时调试器：FPS 图标 + Console/Information/Profiler/Other 多级页签、BBCode-IMGUI 绘制模型、框架日志+Godot 原生日志双源捕获、Profiler 含 Resource/WebRequest/Download 代理计数、自定义调试窗口 |
 
 ## 资源与内容
@@ -18,7 +18,7 @@
 | 文档 | 内容 |
 |------|------|
 | [ResourceSystem.md](ResourceSystem.md) | ResourceMode 现状、异步加载队列（Asset+Binary）、IResourceLoadHelper 可配置加载辅助器、子包加载（热更+Package本地）、ExportInspector 导出工作流、ResourcesCollectionConstant |
-| [DataTableSystem.md](DataTableSystem.md) | Luban 管线（Excel→C#+二进制）、ConfigSystem 懒加载、新增表步骤、4 张配置表、Config 子包热更时序 |
+| [DataTableSystem.md](DataTableSystem.md) | Luban 管线（Excel→C#+二进制）、ConfigSystem 懒加载、新增表步骤与 Config 子包热更时序；配置表以当前源表为准 |
 | [DataNodeSystem.md](DataNodeSystem.md) | 树形数据结构、路径访问语义、Variable 池化类型 |
 | [SettingSystem.md](SettingSystem.md) | ConfigFile → user://Settings.cfg、Save/Load 语义、与 EasySave 的区别 |
 | [LocalizationSystem.md](LocalizationSystem.md) | TSV 字典格式、语言决定链、IStringKey 刷新机制、翻译工作流（TopMenu → Generate File → Localization File） |
@@ -27,7 +27,7 @@
 
 | 文档 | 内容 |
 |------|------|
-| [EntitySystem.md](EntitySystem.md) | 实体生命周期、实体组+实例池、EntityId 配置驱动、TheGame 继承树（ActorEntity/Cat/Anger/GanTan/LightningBall/DropItem）、新增实体步骤 |
+| [EntitySystem.md](EntitySystem.md) | 实体生命周期、实体组与实例池、EntityId 配置驱动；旧实体示例仅用于 API 说明，当前 HeroEntity/MonsterEntity 关系见项目导览 |
 | [UISystem.md](UISystem.md) | UIForm 生命周期与触发条件（OnCover/Reveal/Pause/Resume/Refocus）、UI 组 Refresh 遮挡/暂停算法、OpenUIFormAsync、脚本生成器（Ge/Logic 双文件）工作流 |
 | [SoundSystem.md](SoundSystem.md) | 声音组与 Audio Bus 映射、代理抢占算法、PlaySoundParams、AudioStreamPlayer 桥接 |
 | [SceneSystem.md](SceneSystem.md) | 场景加载流程、实例挂载位置、LoadSceneMode（Single/Additive 双模式）、LoadSceneAsync、LoadSceneUpdate 进度事件、与 ResourceComponent 的关系 |

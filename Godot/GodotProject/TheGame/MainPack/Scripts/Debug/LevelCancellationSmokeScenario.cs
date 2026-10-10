@@ -33,7 +33,7 @@ public sealed class LevelCancellationSmokeScenario
     public void Update(double delta)
     {
         m_Time += delta;
-        if (!m_Stopped && m_Level.Phase == LevelStagePhase.Fighting)
+        if (!m_Stopped && SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Fighting)
         {
             // 首次怪物场景尚未进池，强制到期提交两个配方的首只实体。
             var stage = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages[0];
@@ -58,7 +58,7 @@ public sealed class LevelCancellationSmokeScenario
             {
                 bool shown = m_Hero.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
                     .OfType<MonsterEntity>().Any(x => x.IsShown);
-                if (shown || m_Level.Phase != LevelStagePhase.Stopped)
+                if (shown || SmokeInspection.Sequence(m_Level).Phase != LevelStagePhase.Stopped)
                 {
                     m_Failures.Add("停止之后仍有怪物显示或关卡继续推进");
                 }

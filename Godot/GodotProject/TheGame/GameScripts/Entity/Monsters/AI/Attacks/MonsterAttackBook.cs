@@ -28,13 +28,6 @@ namespace GameLogic.Entity.Monsters.AI
 			m_Cooldowns = new float[m_Specs.Length];
 		}
 
-		/// <summary>按招式下标取判定盒范围（调试观测；不存在返回空盒）。</summary>
-		public AiBox ReachOf(int index)
-		{
-			int i = Find(index);
-			return i < 0 ? default : m_Specs[i].Reach;
-		}
-
 		/// <summary>重置所有招式，并按初始冷却区间采样冷却。</summary>
 		public void Reset(Func<float> random)
 		{

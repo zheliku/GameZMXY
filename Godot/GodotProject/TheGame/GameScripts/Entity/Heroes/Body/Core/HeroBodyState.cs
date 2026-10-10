@@ -18,9 +18,6 @@ namespace GameLogic.Entity.Heroes.Body
 	{
 		private const int SecondJumpCount = 2; // 双跳触发所需的跳跃计数。
 
-		/// <summary>英雄身体状态类名使用的统一前缀。</summary>
-		protected override string NamePrefix => "Hero";
-
 		/// <summary>受击是否立即打断本状态（Attack 挂起到收招；Hurt 自己处理连续受击；Death 不再受击）。</summary>
 		protected virtual bool HurtInterrupts => true;
 

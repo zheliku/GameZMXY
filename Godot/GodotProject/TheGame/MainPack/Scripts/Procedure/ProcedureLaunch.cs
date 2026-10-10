@@ -15,10 +15,6 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public class ProcedureLaunch : ProcedureBase
 {
-    /// <summary>
-    /// 进入流程。
-    /// 执行所有初始化工作后立即切换到菜单流程。
-    /// </summary>
     /// <summary>验证框架门面组件，并在全部可用时进入更新流程。</summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal override void OnEnter(ProcedureOwner procedureOwner)
@@ -29,6 +25,7 @@ public class ProcedureLaunch : ProcedureBase
         Log.Info("[ProcedureLaunch] 验证框架组件...");
         List<string> missing = new();
         Check("Base", GF.Base != null);
+        Check("Debugger", GF.Debugger != null);
         Check("Event", GF.Event != null);
         Check("Fsm", GF.Fsm != null);
         Check("Setting", GF.Setting != null);
@@ -45,6 +42,8 @@ public class ProcedureLaunch : ProcedureBase
 
         if (missing.Count == 0)
         {
+            // 游戏 HUD 占用左上角，关闭框架悬浮调试入口。
+            GF.Debugger.ActiveWindow = false;
             Log.Info("[LaunchProcedure] 框架组件验证通过");
             ChangeState<ProcedureUpdate>(procedureOwner);
         }
@@ -63,9 +62,6 @@ public class ProcedureLaunch : ProcedureBase
     }
 
 
-    /// <summary>
-    /// 离开流程。
-    /// </summary>
     /// <summary>离开启动流程并执行基类清理。</summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     /// <param name="isShutdown">是否因框架关闭而离开。</param>

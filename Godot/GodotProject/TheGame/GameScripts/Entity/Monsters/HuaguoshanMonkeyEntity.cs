@@ -32,16 +32,7 @@ namespace GameLogic.Entity.Monsters
 					attack.Id, attack.Animation);
 			}
 
-			return new MonsterAttackSpec
-			{
-				Index = spec.Index,
-				Weight = spec.Weight,
-				Priority = spec.Priority,
-				Reach = reach,
-				Range = spec.Range,
-				Cooldown = spec.Cooldown,
-				InitCooldown = spec.InitCooldown,
-			};
+			return spec with { Reach = reach };
 		}
 
 		/// <summary>巡逻、出手欲望与站定滞回等参数取自 MonsterConfig。</summary>
@@ -91,9 +82,9 @@ namespace GameLogic.Entity.Monsters
 		protected override Type InitialAiStateType => typeof(WanderState);
 
 		/// <summary>受击硬直中：身体状态机处于受击状态。</summary>
-		public override bool InHurt => BodyFsm.IsIn<IMonsterBody, MonsterHurtState>(m_BodyFsm);
+		protected override bool InHurt => m_BodyFsm?.CurrentState is MonsterHurtState;
 
 		/// <summary>收招硬直中：身体状态机处于收招状态。</summary>
-		public override bool InRecovery => BodyFsm.IsIn<IMonsterBody, MonsterRecoveryState>(m_BodyFsm);
+		protected override bool InRecovery => m_BodyFsm?.CurrentState is MonsterRecoveryState;
 	}
 }

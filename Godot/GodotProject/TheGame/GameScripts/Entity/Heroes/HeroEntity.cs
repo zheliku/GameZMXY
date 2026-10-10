@@ -41,15 +41,9 @@ namespace GameLogic.Entity.Heroes
 
 		private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
 
-		private HeroLoadout m_Loadout; // 最近一次应用的出战装配；用于升级时移除旧的持久修正来源。
+		private StatSource[] m_PersistentSources = []; // 上次装配登记的来源标识；不保留显示参数引用。
 
 		// ---- 属性 ----
-
-		/// <summary>武器层</summary>
-		public Sprite2D Weapon => m_Weapon;
-
-		/// <summary>攻击特效层容器</summary>
-		public Node2D EffectRoot => m_EffectRoot;
 
 		/// <summary>英雄配置 Id（对应 HeroConfig.Id）。每个英雄场景必须显式填写，缺失时本实体停用。</summary>
 		public int HeroId => m_HeroId;
@@ -71,9 +65,6 @@ namespace GameLogic.Entity.Heroes
 
 		/// <summary>连段序号（下一次起手用哪段，语义同旧 hit_count）</summary>
 		public int ComboIndex { get; private set; }
-
-		/// <summary>当前身体状态名（调试/冒烟观测：Ground / Air / Attack / Hurt / Death）</summary>
-		public string BodyStateName => BodyFsm.CurrentName(m_BodyFsm);
 
 		/// <inheritdoc />
 		public override CombatSide Side => CombatSide.Hero;
@@ -130,7 +121,7 @@ namespace GameLogic.Entity.Heroes
 
 			// 池实例可能带着上次的修正来源，先清空再按装配重建。
 			Stats.Clear();
-			m_Loadout = null;
+			m_PersistentSources = [];
 			ApplyLoadout(loadout, refill: true);
 			Musou.Reset(ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMax);
 
@@ -150,6 +141,7 @@ namespace GameLogic.Entity.Heroes
 		public override void OnHide(bool isShutdown, object userData)
 		{
 			DestroyBody(isShutdown);
+			m_PersistentSources = [];
 			base.OnHide(isShutdown, userData);
 		}
 
@@ -168,7 +160,7 @@ namespace GameLogic.Entity.Heroes
 				Godot.Input.IsActionJustPressed(ActionMoveLeft), Godot.Input.IsActionJustPressed(ActionMoveRight),
 				Godot.Input.IsActionJustPressed(ActionJump), Godot.Input.IsActionJustPressed(ActionAttack));
 
-			BodyFsm.Tick(m_BodyFsm, dt);
+			m_BodyFsm.Tick(dt);
 			MoveAndSlide();
 
 			// 落地归零跳跃次数。必须带 "Velocity.Y >= 0"：起跳那一帧角色可能还没离开地面，
@@ -198,8 +190,7 @@ namespace GameLogic.Entity.Heroes
 			}
 
 			// 先移除上一次装配的持久来源再登记新来源，最后同步资源上限。
-			loadout.ApplyTo(Stats, m_Loadout);
-			m_Loadout = loadout;
+			m_PersistentSources = loadout.ApplyTo(Stats, m_PersistentSources);
 			Level = loadout.Level;
 			SyncVitalsToStats(refill);
 		}
@@ -347,7 +338,6 @@ namespace GameLogic.Entity.Heroes
 
 		/// <summary>向身体状态机提供 Godot 随机值。</summary>
 		/// <returns>范围为零到一的随机值。</returns>
-		/// <returns>零到一之间的随机值。</returns>
 		float IHeroBody.NextRandom() => GD.Randf();
 
 		/// <summary>提供英雄重力参数。</summary>

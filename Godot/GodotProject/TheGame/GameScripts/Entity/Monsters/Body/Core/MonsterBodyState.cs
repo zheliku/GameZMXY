@@ -14,9 +14,6 @@ namespace GameLogic.Entity.Monsters.Body
 	/// </summary>
 	public abstract class MonsterBodyState : BodyState<IMonsterBody>
 	{
-		/// <summary>怪物身体状态名去除此类名前缀。</summary>
-		protected override string NamePrefix => "Monster";
-
 		/// <summary>受击是否立即打断本状态（Hurt 自己处理连续受击；Death 不再受击）。</summary>
 		protected virtual bool HurtInterrupts => true;
 

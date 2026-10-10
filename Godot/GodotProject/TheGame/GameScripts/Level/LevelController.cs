@@ -45,12 +45,6 @@ public partial class LevelController : Node2D
     /// <summary>玩家出生点的世界坐标，Initialize 后可读。</summary>
     public Vector2 PlayerSpawnPosition => m_SpawnPoints.PositionOf(m_Config.PlayerSpawnPointId);
 
-    /// <summary>当前阶段顺序，供 HUD 和调试观测。</summary>
-    public int StageOrder => m_Sequence.Current.StageOrder;
-
-    /// <summary>当前会话阶段状态。</summary>
-    public LevelStagePhase Phase => m_Sequence.Phase;
-
     /// <summary>校验场景身份和必需绑定，再由各职责所有者验证配置。</summary>
     /// <exception cref="InvalidOperationException">绑定缺失、配置不存在、场景不匹配或管理器校验失败时抛出。</exception>
     public void Initialize()

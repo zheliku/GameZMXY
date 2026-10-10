@@ -46,7 +46,7 @@ public sealed class LevelSmokeScenario
     {
         m_Hero = hero;
         m_Level = level;
-        m_StartExperience = (GF.Procedure.CurrentProcedure as ProcedureLevel)?.Context.Profile.ActiveHero.Progression
+        m_StartExperience = SmokeInspection.Context(GF.Procedure.CurrentProcedure as ProcedureLevel)?.Profile.ActiveHero.Progression
             .TotalExperience ?? 0;
         m_Camera = level.GetNode<LevelCamera>("Camera2D");
         m_Gates = level.GetNode<LevelStageGateSet>("World/StageGates");
@@ -73,7 +73,7 @@ public sealed class LevelSmokeScenario
         float center = m_Camera.GlobalPosition.X;
         if (Math.Abs(center - m_LastCenter) > 600f * delta + 0.1f)
         {
-            Fail($"相机帧位移超限：{m_LastCenter} → {center}，阶段 {m_Level.StageOrder}");
+            Fail($"相机帧位移超限：{m_LastCenter} → {center}，阶段 {SmokeInspection.Sequence(m_Level).Current.StageOrder}");
         }
 
         if (Math.Abs(center - m_Camera.GetScreenCenterPosition().X) > 0.1f)
@@ -86,11 +86,11 @@ public sealed class LevelSmokeScenario
             .OfType<MonsterEntity>().Where(x => x.IsShown && !x.Dead).ToArray();
         foreach (MonsterEntity monster in monsters)
         {
-            monster.SetAiEnabled(false);
+            SmokeInspection.FreezeAi(monster);
             m_Seen.Add(monster.Id);
         }
 
-        if (m_Level.Phase == LevelStagePhase.Travelling)
+        if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Travelling)
         {
             if (monsters.Length > 0)
             {
@@ -114,7 +114,7 @@ public sealed class LevelSmokeScenario
                 Input.ActionRelease("jump");
             }
         }
-        else if (m_Level.Phase == LevelStagePhase.Fighting)
+        else if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Fighting)
         {
             if (m_Level.TravelAvailable)
             {
@@ -123,7 +123,7 @@ public sealed class LevelSmokeScenario
 
             DriveBattle(delta, monsters);
         }
-        else if (m_Level.Phase == LevelStagePhase.Completed)
+        else if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Completed)
         {
             int expected = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages.Sum(x => x.Recipes.Sum(r => r.Count));
             if (m_Seen.Count != expected)
@@ -135,8 +135,8 @@ public sealed class LevelSmokeScenario
             int expectedExperience = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages
                 .Sum(x => x.Recipes.Sum(r => r.Count * ConfigSystem.Instance.Tables.TbMonsterConfig.DataList
                     .Single(m => m.EntityId == r.MonsterEntityId).AddExp));
-            LevelRun run = (GF.Procedure.CurrentProcedure as ProcedureLevel)?.CurrentRun;
-            int gained = (GF.Procedure.CurrentProcedure as ProcedureLevel)?.Context.Profile.ActiveHero.Progression
+            LevelRun run = SmokeInspection.Run(GF.Procedure.CurrentProcedure as ProcedureLevel);
+            int gained = SmokeInspection.Context(GF.Procedure.CurrentProcedure as ProcedureLevel)?.Profile.ActiveHero.Progression
                 .TotalExperience - m_StartExperience ?? -1;
             if (gained != expectedExperience || run?.Stats.Experience != expectedExperience)
             {
@@ -160,7 +160,7 @@ public sealed class LevelSmokeScenario
 
         if (m_Time > 180 && !IsDone)
         {
-            Fail($"超时：阶段 {m_Level.StageOrder}/{m_Level.Phase}，玩家 {m_Hero.GlobalPosition}，相机 {center}");
+            Fail($"超时：阶段 {SmokeInspection.Sequence(m_Level).Current.StageOrder}/{SmokeInspection.Sequence(m_Level).Phase}，玩家 {m_Hero.GlobalPosition}，相机 {center}");
         }
 
         m_LastPlayerX = m_Hero.GlobalPosition.X;
@@ -172,7 +172,7 @@ public sealed class LevelSmokeScenario
 
     private void DriveBattle(double delta, MonsterEntity[] monsters) // 先验证抵达时取景和配置延迟，再验证墙体与真实清波。
     {
-        var stage = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages[m_Level.StageOrder - 1];
+        var stage = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages[SmokeInspection.Sequence(m_Level).Current.StageOrder - 1];
         var region = m_Gates.BoundsOf(stage.StageOrder);
         if (m_StageOrder != stage.StageOrder)
         {

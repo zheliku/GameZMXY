@@ -60,4 +60,4 @@
 - 设计参考：[Itay Keren《Scroll Back》](https://www.gamedeveloper.com/design/scroll-back-the-theory-and-practice-of-cameras-in-side-scrollers) 的相机窗口分类、[Cinemachine Position Composer](https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/CinemachinePositionComposer.html) 的中央 Dead Zone、[Godot Camera2D](https://docs.godotengine.org/en/stable/classes/class_camera2d.html) 的中心/限位语义。借鉴空间约束与窗口模型，不引入第三方插件。
 - 本地旧项目 `Script/Level/camera.gd` 每帧更新 `limit_*`，`BaseThroughLevel.gd` 以角色位置阈值和清怪数量推进；它不以实际相机抵达启动，不能称为该新需求的实现证据。新方案以用户当前相机抵达要求为准。
 - 保留区域触发能力有具体依据：旧 `Level_17.gd` 的 `_on_hddy_body_entered` 是带道具条件的隐藏入口，`Level_23.gd` 的 `_on_tp_body_entered/_exited` 是停留计时传送，另有陷阱和机关。当前不移植这些玩法，只保留可选监听接口；Level_1 的普通波次不需要 Area2D。
-- 已实际读取 4399 官方第三代游戏入口及公开 SWF，只读核对 940×590 画布和 `ViewControllor` 的普通滚动阈值（前进约 626.67px、后退 188px）。本项目采用原版的卷屏/边界分离行为，中央 ±40px 则依用户后续构图要求选择。版本哈希和证据见 [原版相机核查](../Reviews/zmxy3_camera_reference_2026-10-06.md)。
+- 已实际读取 4399 官方第三代游戏入口及公开 SWF，只读核对 940×590 画布和 `ViewControllor` 的普通滚动阈值（前进约 626.67px、后退 188px）。本项目采用原版的卷屏/边界分离行为，中央 ±40px 则依用户后续构图要求选择；参考版本的窗口阈值不作为本项目中央死区的数值来源。

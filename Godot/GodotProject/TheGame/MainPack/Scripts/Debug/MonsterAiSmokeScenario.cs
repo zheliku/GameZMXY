@@ -8,6 +8,7 @@ using GameLogic.Battle;
 using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
 using GameLogic.Entity.Monsters.AI;
+using GameLogic.Entity.Monsters.Body;
 using GameLogic.Event;
 using Godot;
 using GodotGameFramework;
@@ -304,12 +305,12 @@ public sealed class MonsterAiSmokeScenario
 	private void UpdateTurnAround(double t) // 校验出招和收招硬直期间锁定朝向，结束后恢复追踪。
 	{
 		// 忙碌期间只允许攻击动画和原朝向；恢复后等待 AI 转向英雄。
-		bool busy = m_Monster.AttackSegment >= 0 || m_Monster.InRecovery;
+		bool busy = m_Monster.AttackSegment >= 0 || SmokeInspection.InRecovery(m_Monster);
 		if (busy)
 		{
 			if (m_Monster.Facing != m_LockedFacing)
 			{
-				m_Failures.Add($"出招/收招硬直期间转身了（t={t:F2} seg={m_Monster.AttackSegment} 硬直={m_Monster.InRecovery}）");
+				m_Failures.Add($"出招/收招硬直期间转身了（t={t:F2} seg={m_Monster.AttackSegment} 硬直={SmokeInspection.InRecovery(m_Monster)}）");
 				Enter(Phase.Air, t);
 				return;
 			}
@@ -360,7 +361,7 @@ public sealed class MonsterAiSmokeScenario
 		float mx = m_Monster.GlobalPosition.X;
 		m_AirMinX = Mathf.Min(m_AirMinX, mx);
 		m_AirMaxX = Mathf.Max(m_AirMaxX, mx);
-		m_SawHold |= m_Monster.AiStateName == "PaceBelowTarget";
+		m_SawHold |= SmokeInspection.AiStateName(m_Monster) == "PaceBelowTarget";
 		if (attackStarted && t - m_PhaseStart > 0.1)
 		{
 			m_AirAttacks++;
@@ -375,7 +376,7 @@ public sealed class MonsterAiSmokeScenario
 		GD.Print($"SMOKE-AI[{t:F2}] 守候踱步范围 x∈[{m_AirMinX:F0},{m_AirMaxX:F0}]（英雄 x={m_AirX:F0}）");
 		if (!m_SawHold)
 		{
-			m_Failures.Add($"英雄在头顶时猴子应进入 PaceBelowTarget，实际 {m_Monster.AiStateName}");
+			m_Failures.Add($"英雄在头顶时猴子应进入 PaceBelowTarget，实际 {SmokeInspection.AiStateName(m_Monster)}");
 		}
 
 		if (!(m_AirMinX < m_AirX - PaceEvidence && m_AirMaxX > m_AirX + PaceEvidence))
@@ -392,10 +393,10 @@ public sealed class MonsterAiSmokeScenario
 		// 持续保持目标超出视野，直到 AI 恢复巡逻或超过配置的等待上限。
 		m_Hero.GlobalPosition = new Vector2(m_Monster.GlobalPosition.X + LoseOffset, m_HeroFloorY);
 		m_Hero.Velocity = Vector2.Zero;
-		if (m_Monster.AiStateName is "Wander" or "Pause")
+		if (SmokeInspection.AiStateName(m_Monster) is "Wander" or "Pause")
 		{
 			// 确认丢失目标后重新把英雄放回视野并施加受击，推进到击杀阶段。
-			GD.Print($"SMOKE-AI[{t:F2}] 丢失目标，{t - m_PhaseStart:F2}s 后回到 {m_Monster.AiStateName}");
+			GD.Print($"SMOKE-AI[{t:F2}] 丢失目标，{t - m_PhaseStart:F2}s 后回到 {SmokeInspection.AiStateName(m_Monster)}");
 			m_LostTarget = true;
 			m_Hero.GlobalPosition = new Vector2(m_Monster.GlobalPosition.X + InSightOffset, m_HeroFloorY);
 			HitMonster(1f, new Vector2(3, 0));   // 以英雄身份打一下：重新锁定 + 受控
@@ -404,14 +405,15 @@ public sealed class MonsterAiSmokeScenario
 		else if (t - m_PhaseStart > LoseTimeout)
 		{
 			// 超时仍未恢复巡逻时记为失败，但继续推进到收尾阶段。
-			m_Failures.Add($"英雄离开视野 {LoseTimeout}s 后猴子仍在 {m_Monster.AiStateName}（没有丢失目标）");
+			m_Failures.Add($"英雄离开视野 {LoseTimeout}s 后猴子仍在 {SmokeInspection.AiStateName(m_Monster)}（没有丢失目标）");
 			Enter(Phase.WaitKill, t);
 		}
 	}
 
 	private void CheckReach() // 校验 attack_1 判定盒推导出的范围。
 	{
-		AiBox reach = m_Monster.Attacks.ReachOf(0);
+		AiBox reach = Array.Find(SmokeInspection.ReadField<MonsterAttackSpec[]>(m_Monster.Attacks, "m_Specs"),
+			spec => spec.Index == 0).Reach;
 		GD.Print($"SMOKE-AI: attack_1 判定盒推导范围 {reach}");
 		if (reach.IsEmpty ||
 		    Math.Abs(reach.Left - ExpectedReach.Left) > ReachTolerance ||
@@ -425,7 +427,7 @@ public sealed class MonsterAiSmokeScenario
 
 	private string CurrentMonsterAnim() // 返回猴子身体状态与当前动画树节点的组合路径。
 	{
-		return SmokeTestDriver.ObservePath(m_Monster.BodyStateName, m_Monster.CurrentAnim);
+		return SmokeTestDriver.ObservePath(SmokeInspection.BodyStateName(m_Monster), m_Monster.AnimPlayer.AssignedAnimation.ToString());
 	}
 
 	private void Sample(double t) // 记录 AI、动画变化及死亡后的实体回收。
@@ -442,7 +444,7 @@ public sealed class MonsterAiSmokeScenario
 			return;
 		}
 
-		string ai = m_Monster.AiStateName;
+		string ai = SmokeInspection.AiStateName(m_Monster);
 		if (ai.Length > 0 && ai != m_LastAi)
 		{
 			m_LastAi = ai;
@@ -453,7 +455,7 @@ public sealed class MonsterAiSmokeScenario
 			}
 
 			GD.Print($"SMOKE-AI[{t:F2}] AI {ai}  (dx={m_Hero.GlobalPosition.X - m_Monster.GlobalPosition.X:F0} "
-				+ $"move={m_Monster.MoveIntent} body={m_Monster.BodyStateName} seg={m_Monster.AttackSegment} dead={m_Monster.Dead})");
+				+ $"move={((IMonsterBody)m_Monster).MoveIntent} body={SmokeInspection.BodyStateName(m_Monster)} seg={m_Monster.AttackSegment} dead={m_Monster.Dead})");
 		}
 
 		string anim = CurrentMonsterAnim();
@@ -461,7 +463,7 @@ public sealed class MonsterAiSmokeScenario
 		{
 			m_LastAnim = anim;
 			m_AnimObserved.Add((t, anim));
-			GD.Print($"SMOKE-AI[{t:F2}] 猴子动画 {anim}  (facing={m_Monster.Facing} 硬直={m_Monster.InRecovery})");
+			GD.Print($"SMOKE-AI[{t:F2}] 猴子动画 {anim}  (facing={m_Monster.Facing} 硬直={SmokeInspection.InRecovery(m_Monster)})");
 		}
 	}
 

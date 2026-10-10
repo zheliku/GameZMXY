@@ -547,7 +547,7 @@ namespace GameLogic.Battle.Tests
 			public MonsterAiState CurrentState => (MonsterAiState)m_Fsm.CurrentState;
 
 			/// <summary>当前 AI 状态名称。</summary>
-			public string State => CurrentState.StateName;
+			public string State => CurrentState.GetType().Name[..^"State".Length];
 
 			/// <summary>按物理帧推进招式冷却和 AI 状态机。</summary>
 			/// <param name="frames">推进的物理帧数。</param>

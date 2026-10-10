@@ -3,61 +3,42 @@ using GameFramework.Fsm;
 namespace GameLogic.Entity.Body
 {
 	/// <summary>
-	/// 身体状态机的驱动入口（无状态静态辅助）。状态机本身就是 GF.Fsm 的 <see cref="IFsm{T}"/>，
-	/// 这里只补上"按物理帧推进"这一件框架没有的事（见 <see cref="BodyState{TBody}"/> 注释）。
-	/// **状态机单入口**：A 方案下动画不回调代码，Tick 是进状态机的唯一通道。
+	/// 身体状态机的扩展成员：为 GF.Fsm 的 <see cref="IFsm{T}"/> 补充物理帧推进。
+	/// 调度属于状态机，单个状态的决策属于 <see cref="BodyState{TBody}"/>；动画不回调代码。
 	/// 状态机未运行 / 已销毁 / 当前状态不是身体状态时一律无操作（实体隐藏期间安全调用）。
 	/// </summary>
 	public static class BodyFsm
 	{
-		/// <summary>
-		/// 一个物理帧内最多连续切换几次状态。切换当帧由新状态立即执行本帧决策（受击当帧就击退、
-		/// 起跳当帧就受重力、硬直结束当帧就能走），不留"晚一帧"；上限只防状态之间互相踢皮球的死循环。
-		/// </summary>
-		public const int MaxHopsPerFrame = 4;
+		private const int MaxHopsPerFrame = 4; // 同一物理帧的连续状态切换上限，防止状态互相切换形成死循环。
 
-		/// <summary>物理帧推进当前状态（实体 _PhysicsProcess 里、MoveAndSlide 之前调用）。</summary>
-		public static void Tick<T>(IFsm<T> fsm, float dt) where T : class, IActorBody
+		/// <summary>为身体宿主的状态机补充物理帧驱动。</summary>
+		/// <typeparam name="TBody">英雄或怪物的身体宿主接口。</typeparam>
+		/// <param name="fsm">身体状态机；允许为空、尚未运行或已销毁。</param>
+		extension<TBody>(IFsm<TBody> fsm) where TBody : class, IActorBody
 		{
-			for (int hop = 0; hop < MaxHopsPerFrame; hop++)
+			/// <summary>物理帧推进；切换后的状态在同帧执行决策，最多连续切换四次。</summary>
+			/// <param name="dt">物理帧间隔，单位秒；在实体 MoveAndSlide 前调用。</param>
+			public void Tick(float dt)
 			{
-				BodyState<T> state = Current(fsm);
-				if (state == null)
+				// 新状态同帧接管移动与动作，避免受击、起跳或硬直结束后晚一帧生效。
+				for (int hop = 0; hop < MaxHopsPerFrame; hop++)
 				{
-					return;
-				}
+					if (fsm is not { IsDestroyed: false, IsRunning: true } ||
+					    fsm.CurrentState is not BodyState<TBody> state)
+					{
+						return;
+					}
 
-				int serial = state.EnterSerial;
-				state.PhysicsTick(fsm, dt);
+					int serial = state.EnterSerial;
+					state.PhysicsTick(fsm, dt);
 
-				// 没切换（含切回自己 = 重新进入）就结束本帧
-				if (Current(fsm) == state && state.EnterSerial == serial)
-				{
-					return;
+					// 没切换也没重新进入才结束；切回同一实例仍让新一轮立即决策。
+					if (fsm.CurrentState == state && state.EnterSerial == serial)
+					{
+						return;
+					}
 				}
 			}
-		}
-
-		/// <summary>当前状态名（调试/冒烟观测；无状态机为空串）。</summary>
-		public static string CurrentName<T>(IFsm<T> fsm) where T : class, IActorBody
-		{
-			return Current(fsm)?.StateName ?? "";
-		}
-
-		/// <summary>当前状态是否为 TState（无状态机为 false）。</summary>
-		public static bool IsIn<T, TState>(IFsm<T> fsm) where T : class, IActorBody where TState : BodyState<T>
-		{
-			return Current(fsm) is TState;
-		}
-
-		private static BodyState<T> Current<T>(IFsm<T> fsm) where T : class, IActorBody // 仅返回有效运行中的身体状态。
-		{
-			if (fsm == null || fsm.IsDestroyed || !fsm.IsRunning)
-			{
-				return null;
-			}
-
-			return fsm.CurrentState as BodyState<T>;
 		}
 	}
 }

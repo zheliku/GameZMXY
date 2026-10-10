@@ -9,7 +9,7 @@ using Xunit;
 namespace GameLogic.Battle.Tests
 {
 	/// <summary>
-	/// 英雄身体状态机回归：用框架真实 FsmManager + 假宿主，按 <see cref="BodyFsm.Tick{T}"/> 逐物理帧驱动
+	/// 英雄身体状态机回归：用框架真实 FsmManager + 假宿主，按 <c>fsm.Tick(dt)</c> 逐物理帧驱动
 	/// （同时验证"GF.Fsm 按物理帧驱动"这一做法本身）。动作时长 = 参数里的动画长度快照，状态自己计时——
 	/// 测试里没有动画，时长由 <see cref="HeroBodyParams.AttackTimes"/> 等参数直接给出（A 方案：动画纯数据）。
 	/// </summary>
@@ -399,7 +399,7 @@ namespace GameLogic.Battle.Tests
 			/// <summary>测试驱动的英雄输入。</summary>
 			public HeroInput Input { get; }
 			/// <summary>当前身体状态名称。</summary>
-			public string State => BodyFsm.CurrentName(m_Fsm);
+			public string State => m_Fsm.CurrentState.GetType().Name["Hero".Length..^"State".Length];
 
 			/// <summary>一帧：本帧按下 attack/jump（单帧边沿）。</summary>
 			public void Press(bool attack = false, bool jump = false)
@@ -454,7 +454,7 @@ namespace GameLogic.Battle.Tests
 				// 只推进状态机；落地时清除向下速度以模拟平台碰撞。
 				for (int i = 0; i < frames; i++)
 				{
-					BodyFsm.Tick(m_Fsm, Dt);
+					m_Fsm.Tick(Dt);
 					if (Body.OnFloor && Body.Velocity.Y > 0f)
 					{
 						Body.Velocity = new Vector2(Body.Velocity.X, 0f);

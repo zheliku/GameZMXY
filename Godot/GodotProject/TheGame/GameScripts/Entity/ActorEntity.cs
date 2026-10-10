@@ -56,9 +56,6 @@ namespace GameLogic.Entity
 		/// <summary>实体所属的实体组</summary>
 		public IEntityGroup EntityGroup { get; private set; }
 
-		/// <summary>身体层（Sprite2D 或 AnimatedSprite2D）</summary>
-		public Node2D Body => m_Body;
-
 		/// <summary>动画播放器</summary>
 		public AnimationPlayer AnimPlayer => m_AnimPlayer;
 
@@ -123,14 +120,11 @@ namespace GameLogic.Entity
 			}
 		}
 
-		/// <summary>正在播的攻击段（0 起；-1 = 不在出招）：BeginAttack/EndAttack 维护，AI/冒烟只读</summary>
+		/// <summary>正在播的攻击段（0 起；-1 = 不在出招）：BeginAttack/EndAttack 维护，身体状态机与 AI 读取。</summary>
 		public int AttackSegment { get; protected set; } = -1;
 
 		/// <summary>有待生效的受击</summary>
 		public bool HasPendingHurt => m_PendingHurt.HasValue;
-
-		/// <summary>当前（或最近一次）播放的动画名（调试/冒烟观测；从未播过为空串）。</summary>
-		public string CurrentAnim => m_AnimPlayer == null ? "" : m_AnimPlayer.AssignedAnimation.ToString();
 
 		// ---- 生命周期 ----
 

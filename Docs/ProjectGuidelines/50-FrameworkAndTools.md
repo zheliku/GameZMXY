@@ -37,7 +37,7 @@
 ### 本轮边界登记（2026-10-06）
 
 - 用户要求改关卡源表并整理业务脚本目录；本轮生成代码/二进制仅由既有 Luban 流程更新，删除已移除 schema 类型遗留的 UID 元数据。未手改生成 C# 或二进制。
-- 本轮只迁移手写 C# 及其 UID，并修复业务场景/资源引用，再运行 Godot 重扫与装配验证；保留素材和 bundle 根目录。详细结果见 [关卡重构记录](../Reviews/level_engineering_2026-10-06.md)，不以该记录替代规范。
+- 本轮只迁移手写 C# 及其 UID，并修复业务场景/资源引用，再运行 Godot 重扫与装配验证；保留素材和 bundle 根目录。历史独立评审文档已在文档整理中移除，边界登记保留于本节。
 - 用户已明确授权本轮插件例外：仅在 `addons/TopMenu/GameFrameworkTopMenu.Generate.cs` 的 Collection Res 过滤链增加一行排除 Markdown，防止导航文档 `AGENTS.md` 被误当作同名资源；资源常量由原生成器重生成。`Framework/` 和 `Tools/Luban/` 未修改；其他插件仍遵守只读边界。编辑器构建日志权限和依赖退出异常按验证限制记录，不在业务目录绕过。
 
 ### 本轮边界登记（2026-10 架构重构）
@@ -47,7 +47,13 @@
 - `Framework/GameFramework.tscn`：只改 `Procedure` 节点的 `Procedures` 清单为 Launch、Level、LoadProfile、Preload、Update（`ProcedurePrelode` 改名 `ProcedurePreload`、`ProcedureGame` 改名 `ProcedureLevel`、新增 `ProcedureLoadProfile`）；`EnterProcedure` 不变。以后新增菜单/地图流程须再次授权。
 - `Framework/GodotGameFrameworkCore/Json/EasySave.cs`：新增原子写与备份 API（`Serialize`、`WriteUserTextAtomicAsync`、`LoadFromUserWithBackupAsync`、`ExistsInUserOrBackup`、`DeleteInUserWithBackupAsync`、`BackupSuffix`）；原有方法未改，`ProcedureUpdate`/`DownloadComponent` 继续使用原方法。
 - `Framework/GodotGameFrameworkCore/Archive/ArchiveSystem.cs`：所有写入原子化并保留 `.bak`、读写按调用顺序串行、调用时刻序列化、读取回退 `.bak`、首次建档改为"目录与备份都不存在"、覆盖时同步重写目录、`SaveAsync/OverWriteAsync/LoadAsync/Delete` 返回 `Task<bool>`；`ArchiveCatalogue`/`ArchiveData`、文件布局、加密与 `GF.cs` 泛型参数未改。`Godot/docs/ArchiveSystem.md` 已同步。
-- 一次性配置迁移脚本 `Tools/ConfigBootstrap/migrate_stat_tables.py` 已执行；生成代码与 `.bytes` 只由导表流程更新。详细记录见 [架构重构记录](../Reviews/architecture_redesign_2026-10-10.md)。
+- 一次性配置迁移脚本 `Tools/ConfigBootstrap/migrate_stat_tables.py` 已执行；生成代码与 `.bytes` 只由导表流程更新，框架修改范围保留在本节。
+
+### 本轮业务整理（2026-10-10）
+
+- 用户要求同步文档、整理目录并消除冗余。共享资源组注册集中到 `MainPack/Scripts/Startup/GameResourceGroups.cs`；流程数据包装 `ExperienceCurveVariable` 按独立类型移到 `GameScripts/Session/`，UID 由 Godot 扫描生成。
+- `ResourceBar` 命名空间对齐为 `GameLogic.UI.Widgets`，`BattleHud.cs` 仅通过 `python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/BattleHud.tscn --namespace GameLogic.UI` 重生成；未手改生成文件。
+- 无双裁剪范围的 GPU 验证使用 `--script res://EditorScripts/validate_musou_flash.gd`，不加 `--headless`；对比图写入忽略的 `.godot/validation/`。其余框架、插件、源表和生成配置保持既有边界。
 
 ## Git
 

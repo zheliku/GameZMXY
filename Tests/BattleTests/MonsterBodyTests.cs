@@ -9,7 +9,7 @@ using Xunit;
 namespace GameLogic.Battle.Tests
 {
 	/// <summary>
-	/// 怪物身体状态机回归：框架真实 FsmManager + 假宿主，按 <see cref="BodyFsm.Tick{T}"/> 逐物理帧驱动。
+	/// 怪物身体状态机回归：框架真实 FsmManager + 假宿主，按 <c>fsm.Tick(dt)</c> 逐物理帧驱动。
 	/// AI 的意图（移动、出招请求）由测试直接写进假宿主，验证"AI 只写意图、身体是唯一权威"的边界；
 	/// 动作时长 = 参数里的动画长度快照，状态自己计时（A 方案：动画纯数据）。
 	/// </summary>
@@ -223,7 +223,7 @@ namespace GameLogic.Battle.Tests
 			/// <summary>状态机绑定的假怪物宿主。</summary>
 			public FakeMonster Body { get; }
 			/// <summary>当前身体状态名称。</summary>
-			public string State => BodyFsm.CurrentName(m_Fsm);
+			public string State => m_Fsm.CurrentState.GetType().Name["Monster".Length..^"State".Length];
 
 			/// <summary>推进指定数量的物理帧，并固定宿主在地面上。</summary>
 			/// <param name="frames">推进的物理帧数。</param>
@@ -231,7 +231,7 @@ namespace GameLogic.Battle.Tests
 			{
 				for (int i = 0; i < frames; i++)
 				{
-					BodyFsm.Tick(m_Fsm, Dt);
+					m_Fsm.Tick(Dt);
 					Body.Velocity = new Vector2(Body.Velocity.X, 0f);   // 始终站在地面
 				}
 			}

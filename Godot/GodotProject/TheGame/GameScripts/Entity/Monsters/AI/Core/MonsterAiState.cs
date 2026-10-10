@@ -1,6 +1,5 @@
 using GameFramework.Fsm;
 using GameLogic.Entity.Monsters.AI.States;
-using System;
 
 namespace GameLogic.Entity.Monsters.AI
 {
@@ -20,11 +19,6 @@ namespace GameLogic.Entity.Monsters.AI
 	/// </summary>
 	public abstract class MonsterAiState : FsmState<IMonsterAiAgent>
 	{
-		/// <summary>调试与冒烟观测使用的状态名。</summary>
-		public string StateName => GetType().Name.EndsWith("State", StringComparison.Ordinal)
-			? GetType().Name[..^"State".Length]
-			: GetType().Name;
-
 		/// <summary>进入时执行框架流程并调用 AI 状态进入钩子。</summary>
 		protected internal sealed override void OnEnter(IFsm<IMonsterAiAgent> fsm)
 		{
