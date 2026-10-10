@@ -24,7 +24,8 @@ public sealed class Vitals
 	/// <summary>生命已归零。</summary>
 	public bool IsDepleted => Hp <= 0;
 
-	/// <summary>任一数值发生变化；订阅方一次读取全部数值，不会看到中间态。</summary>
+	/// <summary>资源更新或上限同步完成后通知外部观察者，订阅方一次读取全部需要的数值。</summary>
+	/// <remarks>同步通知时 Hp、MaxHp、Mp 与 MaxMp 已一致；订阅与退订须配对，受击与死亡结果由实体处理。</remarks>
 	public event Action Changed;
 
 	/// <summary>同步上限；补满或把当前值钳到新上限。</summary>

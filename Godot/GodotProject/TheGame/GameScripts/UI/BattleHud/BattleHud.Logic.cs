@@ -63,9 +63,9 @@ public partial class BattleHud
         }
 
         if (m_HpBar == null || m_MpBar == null || m_ExpBar == null || m_LevelLabel == null ||
-            m_WsBar == null || m_Go == null)
+            m_WsBar == null || m_WsMax == null || m_Go == null)
         {
-            throw new InvalidOperationException("BattleHud 必须绑定生命、魔法、经验、无双资源条、等级和 Go 节点。");
+            throw new InvalidOperationException("BattleHud 必须绑定生命、魔法、经验、无双资源条、无双满值提示、等级和 Go 节点。");
         }
 
         // 先登记本次引用再订阅，部分订阅失败时也能完整退订。
@@ -76,7 +76,7 @@ public partial class BattleHud
             data.Hero.Musou.Changed += RefreshMusou;
             data.Progression.Changed += RefreshProgression;
             data.Level.TravelAvailableChanged += RefreshTravel;
-            RefreshAll(immediate: true);
+            RefreshAll();
             Visible = true;
         }
         catch
@@ -143,10 +143,7 @@ public partial class BattleHud
             m_Data = null;
         }
 
-        m_HpBar?.ResetPresentation();
-        m_MpBar?.ResetPresentation();
-        m_ExpBar?.ResetPresentation();
-        m_WsBar?.ResetPresentation();
+        ResetMusouAnimation();
         if (IsInstanceValid(m_Go))
         {
             m_Go.Stop();
@@ -154,30 +151,50 @@ public partial class BattleHud
         }
     }
 
-    /// <summary>按当前状态刷新全部显示（打开时立即对齐残影）。</summary>
-    /// <param name="immediate">是否立即对齐残影。</param>
-    private void RefreshAll(bool immediate)
+    /// <summary>按当前状态立即刷新全部显示。</summary>
+    private void RefreshAll()
     {
-        RefreshVitals(immediate);
+        RefreshVitals();
         RefreshMusou();
         RefreshProgression();
         RefreshTravel();
     }
 
     /// <summary>生命与魔法变化：一次读取当前值与上限，不会看到中间态。</summary>
-    private void RefreshVitals() => RefreshVitals(immediate: false);
-
-    /// <summary>刷新生命与魔法条。</summary>
-    /// <param name="immediate">是否立即对齐残影。</param>
-    private void RefreshVitals(bool immediate)
+    private void RefreshVitals()
     {
         var vitals = m_Data.Hero.Vitals;
-        m_HpBar.SetValue(vitals.Hp, vitals.MaxHp, immediate);
-        m_MpBar.SetValue(vitals.Mp, vitals.MaxMp, immediate);
+        m_HpBar.SetValue(vitals.Hp, vitals.MaxHp);
+        m_MpBar.SetValue(vitals.Mp, vitals.MaxMp);
     }
 
-    /// <summary>刷新无双条。</summary>
-    private void RefreshMusou() => m_WsBar.SetValue(m_Data.Hero.Musou.Value, m_Data.Hero.Musou.Max);
+    /// <summary>刷新无双条，并按蓄满状态控制 HUD 专属提示；重复满值通知保持动画进度。</summary>
+    private void RefreshMusou()
+    {
+        var musou = m_Data.Hero.Musou;
+        m_WsBar.SetValue(musou.Value, musou.Max);
+        if (!musou.IsFull)
+        {
+            ResetMusouAnimation();
+            return;
+        }
+
+        m_WsMax.Visible = true;
+        if (!m_WsMax.IsPlaying())
+        {
+            m_WsMax.Play();
+        }
+    }
+
+    /// <summary>停止并复位无双满值提示，关闭、改绑或消耗无双后不残留播放状态。</summary>
+    private void ResetMusouAnimation()
+    {
+        if (IsInstanceValid(m_WsMax))
+        {
+            m_WsMax.Stop();
+            m_WsMax.Visible = false;
+        }
+    }
 
     /// <summary>刷新等级与经验条（等级、本级经验、上限来自同一次派生）。</summary>
     private void RefreshProgression()

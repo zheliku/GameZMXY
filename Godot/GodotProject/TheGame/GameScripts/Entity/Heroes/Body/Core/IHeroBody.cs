@@ -14,6 +14,12 @@ namespace GameLogic.Entity.Heroes.Body
 		/// <summary>身体参数（配置快照，含各动作时长 = 动画长度）</summary>
 		HeroBodyParams Params { get; }
 
+		/// <summary>局内效果对横向移动的倍率，默认不加成。</summary>
+		float MoveSpeedMultiplier => 1f;
+
+		/// <summary>是否免受击硬直与击退；不代表免伤。</summary>
+		bool SuperArmor => false;
+
 		/// <summary>输入层（移动轴 / 跑步档 / 缓冲请求）</summary>
 		HeroInput Input { get; }
 

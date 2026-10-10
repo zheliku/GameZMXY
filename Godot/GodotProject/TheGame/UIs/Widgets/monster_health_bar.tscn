@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://caauui8brtx47"]
+
+[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/Widgets/ResourceBar.cs" id="1_resource_bar"]
+
+[sub_resource type="Gradient" id="Gradient_fill"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fill"]
+gradient = SubResource("Gradient_fill")
+width = 50
+height = 5
+
+[node name="MonsterHealthBar" type="TextureProgressBar" unique_id=1080627049]
+z_index = 10
+offset_right = 50.0
+offset_bottom = 5.0
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+value = 1.0
+texture_progress = SubResource("GradientTexture2D_fill")
+tint_progress = Color(1, 0, 0, 1)
+script = ExtResource("1_resource_bar")
+
+[node name="Background" type="ColorRect" parent="." unique_id=727772201]
+show_behind_parent = true
+layout_mode = 0
+offset_left = -1.0
+offset_top = -1.0
+offset_right = 51.0
+offset_bottom = 6.0
+mouse_filter = 2
+color = Color(0, 0, 0, 1)

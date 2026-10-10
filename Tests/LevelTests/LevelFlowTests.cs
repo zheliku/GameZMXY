@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using GameConfig.Entity;
 using GameConfig.Level;
 using GameLogic.Level;
 using Luban;
@@ -17,15 +18,17 @@ public sealed class LevelFlowTests
         return new TbLevelConfig(new ByteBuf(File.ReadAllBytes(path))).Get(1);
     }
 
-    /// <summary>首阶段包含两条独立配方，所有普通阶段都由相机抵达激活。</summary>
+    /// <summary>官方花果山前四波保留两种小怪和并行配方，由相机抵达激活，暂不包含 Boss 波。</summary>
     [Fact]
     public void NestedConfigKeepsParallelRecipesAndCameraActivation()
     {
         LevelConfig level = LoadLevel();
         Assert.Equal(4, level.Stages.Count);
-        Assert.Equal(new[] { "stage_1_a", "stage_1_b" }, level.Stages[0].Recipes.Select(x => x.SpawnPointId));
+        Assert.Equal(new[] { 3, 7, 6, 7 }, level.Stages.Select(x => x.Recipes.Sum(r => r.Count)));
+        Assert.Equal(new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey },
+            level.Stages[1].Recipes.Select(x => x.MonsterEntityId));
         Assert.All(level.Stages, x => Assert.Equal(StageActivation.CameraArrived, x.Activation));
-        Assert.All(level.Stages, x => Assert.True(x.SpawnDelay > 0));
+        Assert.All(level.Stages, x => Assert.True(x.SpawnDelay >= 0));
     }
 
     /// <summary>加载期不开始战斗，清除只能推进紧邻下一阶段，末段清除完成会话。</summary>
@@ -87,15 +90,15 @@ public sealed class LevelFlowTests
     [Fact]
     public void StageDelayThenBothRecipesBecomeReadyTogether()
     {
-        LevelStage stage = LoadLevel().Stages[0];
+        LevelStage stage = CreateCapacityStage(maxActive: 2, spawnDelay: 0.3f);
         LevelSpawnSchedule schedule = new(stage);
         schedule.Advance(stage.SpawnDelay * 0.5);
         Assert.False(schedule.TryTake(out _));
         schedule.Advance(stage.SpawnDelay * 0.5);
         Assert.True(schedule.TryTake(out LevelSpawnRecipe a));
         Assert.True(schedule.TryTake(out LevelSpawnRecipe b));
-        Assert.Equal("stage_1_a", a.SpawnPointId);
-        Assert.Equal("stage_1_b", b.SpawnPointId);
+        Assert.Equal("a", a.SpawnPointId);
+        Assert.Equal("b", b.SpawnPointId);
         Assert.False(schedule.TryTake(out _));
     }
 
@@ -196,7 +199,7 @@ public sealed class LevelFlowTests
     }
 
     private static LevelStage CreateCapacityStage(StageActivation activation = StageActivation.CameraArrived,
-        string triggerId = "") // 使用生成 bean 的真实序列化协议建立容量与激活契约的边界用例。
+        string triggerId = "", int maxActive = 1, float spawnDelay = 0f) // 使用真实序列化协议建立容量与激活契约边界。
     {
         ByteBuf bytes = new();
         bytes.WriteInt(1);
@@ -204,8 +207,8 @@ public sealed class LevelFlowTests
         bytes.WriteInt((int)activation);
         bytes.WriteString(triggerId);
         bytes.WriteString("");
-        bytes.WriteInt(1);
-        bytes.WriteFloat(0f);
+        bytes.WriteInt(maxActive);
+        bytes.WriteFloat(spawnDelay);
         bytes.WriteSize(2);
         foreach (string point in new[] { "a", "b" })
         {

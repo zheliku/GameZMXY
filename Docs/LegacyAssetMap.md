@@ -304,6 +304,18 @@ python Tools/LegacyMigration/gen_animations.py
 
 仅复制 PNG，导入元数据由新工程 Godot 生成；坐标与旧 `Scene/Level/Role_information.tscn` 对齐。
 
+## 2026-10-11 HUD 字体与无双残影
+
+| 新资源（`TheGame/MainPack/Fonts/`） | 旧资源（`ZMXY_BHYH/Font/`） | 用途 |
+| --- | --- | --- |
+| `fz_cu_yuan_hud.ttf` | `8_FZCuYuan-M03S.ttf` | 旧 `Role_information.tscn` 的生命、魔法、经验数字字体 |
+| `fz_cu_yuan.ttf` | `1_fonts.FZCY_FZCuYuan-M03.ttf` | 粗圆中文完整字形回退 |
+| `dfp_hai_bao_w12.ttc` | `华康海报体W12 &amp; 华康海报体W12(P).ttc` | 旧 HUD 等级数字字体 |
+
+只复制字体原文件，不带旧 `.import`；导入元数据由新工程生成。`game_font.tres` 组合 HUD 字体与中文回退，经 `MainThemes.tres` 应用于共享主题；BattleHud 三个数字标签另显式绑定该字体，避免 `Sprite2D` 隔断主题继承，等级单独绑定海报体。迁入文件与旧文件的 SHA-256 全部一致，实际字体解析结果见 [OfficialBattlePolish.md](OfficialBattlePolish.md) 复查记录。没有复制旧工程的全部字体或场景。
+
+角色无双残影参考 `Script/Base/BaseHero.gd:add_WSEffect/_on_ws_timer_timeout`、`Scene/Hero/Role_1/WS_Effect.tscn` 与 `Script/Hero/WS_Effect.gd`：0.1 秒采样、0.27 秒寿命、暖色及初始透明度 0.8。新工程在 `MusouAfterimage.cs` 重写，只缓存身体/武器精灵的显示帧和世界变换，固定槽位复用，不复制旧动作树或判定节点。玩法与官方关卡依据见 [OfficialBattlePolish.md](OfficialBattlePolish.md)。
+
 ## 待办
 
 - `wukong` 的 `hurt` / `death` 在旧动画中仅单帧（旧工程另有 `RoleDeath.png` 等独立节点），后续接入死亡表现时再评估。

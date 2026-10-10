@@ -10,6 +10,7 @@ using GameLogic.Entity.Body;
 using GameLogic.Entity.Monsters.AI;
 using GameLogic.Entity.Monsters.Body;
 using GameLogic.Event;
+using GameLogic.UI.Widgets;
 using Godot;
 using GodotGameFramework.Entity;
 using GodotGameFramework;
@@ -24,6 +25,10 @@ namespace GameLogic.Entity.Monsters
 		[Export] private Area2D m_Detector; // 索敌区；为空时只会在受击后反击。
 
 		[Export] private EntityId m_MonsterEntityId; // 场景用可读枚举绑定唯一怪物配置行。
+
+		[Export] private ResourceBar m_HealthBar; // 可选头顶小血条，作为实体子场景随 GGF 实体池复用。
+
+		[Export] private Vector2 m_HealthBarOffset = new(0f, -8f); // 血条底边中心相对受击盒顶边中心的像素偏移。
 
 		private MonsterAiParams m_AiParams; // 从 MonsterConfig 复制的 AI 参数快照。
 
@@ -170,6 +175,13 @@ namespace GameLogic.Entity.Monsters
 
 			CreateBody();
 			CreateAi();
+
+			// 战斗状态全部复位后再订阅，避免池复用时展示装配的中间值。
+			if (m_HealthBar != null)
+			{
+				Vitals.Changed += RefreshHealthBar;
+				RefreshHealthBar();
+			}
 		}
 
 		/// <summary>隐藏时销毁状态机、清空目标并执行基类清理。</summary>
@@ -177,6 +189,13 @@ namespace GameLogic.Entity.Monsters
 		/// <param name="userData">本次隐藏参数。</param>
 		public override void OnHide(bool isShutdown, object userData)
 		{
+			// 先解除纯 C# 订阅；关停时子节点可能已释放，不再访问表现对象。
+			Vitals.Changed -= RefreshHealthBar;
+			if (!isShutdown && IsInstanceValid(m_HealthBar))
+			{
+				m_HealthBar.Visible = false;
+			}
+
 			DestroyAi(isShutdown);
 			DestroyBody(isShutdown);
 			SetTarget(null);
@@ -210,6 +229,10 @@ namespace GameLogic.Entity.Monsters
 			float dt = (float)delta;
 			m_BodyFsm.Tick(dt);
 			MoveAndSlide();
+			if (m_HealthBar is { Visible: true })
+			{
+				UpdateHealthBarPosition();
+			}
 
 			if (m_RecycleRequested)
 			{
@@ -219,6 +242,22 @@ namespace GameLogic.Entity.Monsters
 		}
 
 		// ---- 内部方法与扩展点 ----
+
+		/// <summary>生命变化时重新读取当前值与上限，刷新被动血条。</summary>
+		private void RefreshHealthBar()
+		{
+			// 用生命值判定归零；Vitals 通知发生在 ReceiveHit 置位 Dead 之前。
+			m_HealthBar.SetValue(Vitals.Hp, Vitals.MaxHp);
+			m_HealthBar.Visible = !Vitals.IsDepleted && Vitals.Hp < Vitals.MaxHp;
+			UpdateHealthBarPosition();
+		}
+
+		/// <summary>按受击盒头顶定位血条，独立于身体和攻击盒的朝向镜像。</summary>
+		private void UpdateHealthBarPosition()
+		{
+			m_HealthBar.GlobalPosition = HeadPosition + m_HealthBarOffset -
+				new Vector2(m_HealthBar.Size.X * 0.5f, m_HealthBar.Size.Y);
+		}
 
 		/// <summary>
 		/// 受击：记击杀者、锁定攻击方；非霸体、招式有击退且动画库有 hurt 动画（硬直时长无从谈起就不登记）时

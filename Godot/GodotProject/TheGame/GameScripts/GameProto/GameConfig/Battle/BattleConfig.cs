@@ -46,6 +46,9 @@ public sealed partial class BattleConfig : Luban.BeanBase
         WsMax = _buf.ReadInt();
         DeathRestartDelay = _buf.ReadFloat();
         ClearRestartDelay = _buf.ReadFloat();
+        WsDuration = _buf.ReadFloat();
+        WsPowerMultiplier = _buf.ReadFloat();
+        WsMoveSpeedMultiplier = _buf.ReadFloat();
     }
 
     public static BattleConfig DeserializeBattleConfig(ByteBuf _buf)
@@ -173,6 +176,18 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// 通关后自动重开本关的等待秒数(暂无结算界面时使用)
     /// </summary>
     public readonly float ClearRestartDelay;
+    /// <summary>
+    /// 无双持续秒数（旧项目每0.5秒扣4/100，共12.5秒）
+    /// </summary>
+    public readonly float WsDuration;
+    /// <summary>
+    /// 无双攻击力独立倍率（旧项目1.5）
+    /// </summary>
+    public readonly float WsPowerMultiplier;
+    /// <summary>
+    /// 无双横向移速倍率（旧项目1.5）
+    /// </summary>
+    public readonly float WsMoveSpeedMultiplier;
    
     public const int __ID__ = -1776797808;
     public override int GetTypeId() => __ID__;
@@ -214,6 +229,9 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "WsMax:" + WsMax + ","
         + "DeathRestartDelay:" + DeathRestartDelay + ","
         + "ClearRestartDelay:" + ClearRestartDelay + ","
+        + "WsDuration:" + WsDuration + ","
+        + "WsPowerMultiplier:" + WsPowerMultiplier + ","
+        + "WsMoveSpeedMultiplier:" + WsMoveSpeedMultiplier + ","
         + "}";
     }
 }

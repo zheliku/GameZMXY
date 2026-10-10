@@ -66,6 +66,14 @@ namespace GameLogic.Config
 				errors.Add("战斗常数：DeathRestartDelay 与 ClearRestartDelay 不能为负。");
 			}
 
+			var battle = tables.TbBattleConfig.Data;
+			if (battle.WsMax <= 0 || !float.IsFinite(battle.WsDuration) || battle.WsDuration <= 0f
+				|| !float.IsFinite(battle.WsPowerMultiplier) || battle.WsPowerMultiplier < 1f
+				|| !float.IsFinite(battle.WsMoveSpeedMultiplier) || battle.WsMoveSpeedMultiplier < 1f)
+			{
+				errors.Add("战斗常数：无双上限与持续时间必须为正，攻击和移速倍率必须为有限数且至少为 1。");
+			}
+
 			if (errors.Count > 0)
 			{
 				throw new InvalidOperationException("配置校验失败：\n" + string.Join("\n", errors));

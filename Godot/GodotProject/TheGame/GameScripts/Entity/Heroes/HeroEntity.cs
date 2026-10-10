@@ -1,12 +1,14 @@
 using System;
 using GameConfig.Battle;
 using GameConfig.Hero;
+using GameConfig.Stat;
 using GameFramework.Entity;
 using GameFramework.Fsm;
 using GameLogic.Battle;
 using GameLogic.Battle.Stats;
 using GameLogic.Entity.Body;
 using GameLogic.Entity.Heroes.Body;
+using GameLogic.Entity.Heroes.Effects;
 using GameLogic.Profile;
 using Godot;
 using GodotGameFramework;
@@ -27,6 +29,11 @@ namespace GameLogic.Entity.Heroes
 		/// <summary>输入动作名：普攻（J）</summary>
 		public static readonly StringName ActionAttack = "attack";
 
+		/// <summary>输入动作名：满值开启无双（空格）。</summary>
+		public static readonly StringName ActionMusou = "musou";
+
+		private static readonly StatSource MusouSource = new("Musou", 0); // 当前英雄独有的局内属性来源。
+
 		private static readonly StringName ActionMoveLeft = "move_left"; // 输入动作名：左移。
 
 		private static readonly StringName ActionMoveRight = "move_right"; // 输入动作名：右移。
@@ -36,6 +43,8 @@ namespace GameLogic.Entity.Heroes
 		[Export] private Node2D m_EffectRoot; // 攻击特效层容器，由动画轨道驱动并随朝向镜像。
 
 		[Export] private int m_HeroId; // 场景绑定的 HeroConfig 主键。
+
+		[Export] private MusouAfterimage m_MusouAfterimage; // 英雄自有的残影表现，可按角色场景选配。
 
 		private HeroBodyParams m_BodyParams; // 从英雄配置和动画库构建的身体参数快照。
 
@@ -124,6 +133,7 @@ namespace GameLogic.Entity.Heroes
 			m_PersistentSources = [];
 			ApplyLoadout(loadout, refill: true);
 			Musou.Reset(ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMax);
+			m_MusouAfterimage?.Reset();
 
 			// 池复用的实例带着上次的脏事实回来，一律在 OnShow 复位（见 Entity/AGENTS.md 生命周期）
 			ComboIndex = 0;
@@ -140,6 +150,9 @@ namespace GameLogic.Entity.Heroes
 		/// <param name="userData">本次隐藏参数。</param>
 		public override void OnHide(bool isShutdown, object userData)
 		{
+			Musou.Clear();
+			Stats.RemoveSource(MusouSource);
+			if (!isShutdown && IsInstanceValid(m_MusouAfterimage)) m_MusouAfterimage.Reset();
 			DestroyBody(isShutdown);
 			m_PersistentSources = [];
 			base.OnHide(isShutdown, userData);
@@ -155,6 +168,10 @@ namespace GameLogic.Entity.Heroes
 			}
 
 			float dt = (float)delta;
+			bool wasActive = Musou.IsActive;
+			Musou.Advance(dt);
+			if (wasActive && !Musou.IsActive) EndMusou();
+			if (Godot.Input.IsActionJustPressed(ActionMusou)) TryActivateMusou();
 			Input.Sample(dt,
 				Godot.Input.IsActionPressed(ActionMoveLeft), Godot.Input.IsActionPressed(ActionMoveRight),
 				Godot.Input.IsActionJustPressed(ActionMoveLeft), Godot.Input.IsActionJustPressed(ActionMoveRight),
@@ -172,6 +189,26 @@ namespace GameLogic.Entity.Heroes
 		}
 
 		// ---- 业务入口 ----
+
+		/// <summary>存活且蓄满时开启无双，登记独立攻击加成并开始角色残影。</summary>
+		/// <returns>本次是否成功开启；按住按键、未满值、已开启或已死亡均不重复开启。</returns>
+		public bool TryActivateMusou()
+		{
+			BattleConfig battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
+			if (!IsShown || Dead || !Musou.TryActivate(battle.WsDuration)) return false;
+			Stats.SetSource(MusouSource, [StatModifier.PercentMult(StatType.Power, battle.WsPowerMultiplier - 1f)]);
+			m_PendingHurt = null;
+			m_MusouAfterimage?.SetEmitting(true);
+			return true;
+		}
+
+		/// <summary>移除局内加成并结束残影采样，不影响成长或装备来源。</summary>
+		private void EndMusou()
+		{
+			Musou.Clear();
+			Stats.RemoveSource(MusouSource);
+			m_MusouAfterimage?.SetEmitting(false);
+		}
 
 		/// <summary>
 		/// 应用出战装配：替换成长基础值与持久修正（不触碰 Buff 等局内来源），再同步生命魔法上限。
@@ -242,7 +279,8 @@ namespace GameLogic.Entity.Heroes
 		protected override void OnHurt(AttackData attack, DamageResult result, Vector2 knockback, int attackerEntityId)
 		{
 			base.OnHurt(attack, result, knockback, attackerEntityId);
-			if (!Dead && m_BodyParams.HurtTime > 0f)
+			if (Dead) EndMusou();
+			if (!Dead && !Musou.IsActive && m_BodyParams.HurtTime > 0f)
 			{
 				m_PendingHurt = knockback;
 			}
@@ -318,6 +356,13 @@ namespace GameLogic.Entity.Heroes
 
 		/// <summary>提供身体状态机使用的参数快照。</summary>
 		HeroBodyParams IHeroBody.Params => m_BodyParams;
+
+		/// <summary>无双仅提高横向走跑速度，不改变跳跃和动画时序。</summary>
+		float IHeroBody.MoveSpeedMultiplier => Musou.IsActive
+			? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMoveSpeedMultiplier : 1f;
+
+		/// <summary>无双期间免受击硬直与击退，仍正常结算伤害。</summary>
+		bool IHeroBody.SuperArmor => Musou.IsActive;
 
 		/// <summary>提供当前物理接地状态。</summary>
 		bool IHeroBody.OnFloor => IsOnFloor();

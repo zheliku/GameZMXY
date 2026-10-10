@@ -35,7 +35,7 @@ namespace GameLogic.Entity.Heroes.Body
 				return true;
 			}
 
-			if (HurtInterrupts && body.HasPendingHurt)
+			if (HurtInterrupts && !body.SuperArmor && body.HasPendingHurt)
 			{
 				ChangeState<HeroHurtState>(fsm);
 				return true;
@@ -94,7 +94,7 @@ namespace GameLogic.Entity.Heroes.Body
 		{
 			int axis = body.Input.MoveAxis;
 			float speed = body.Input.Running ? body.Params.RunSpeed : body.Params.WalkSpeed;
-			body.Velocity = new Godot.Vector2(axis * speed, body.Velocity.Y);
+			body.Velocity = new Godot.Vector2(axis * speed * body.MoveSpeedMultiplier, body.Velocity.Y);
 			body.SetFacing(axis);
 		}
 

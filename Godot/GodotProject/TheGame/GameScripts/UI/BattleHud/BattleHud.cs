@@ -92,6 +92,8 @@ namespace GameLogic.UI
 		[Export]
 		private ResourceBar m_WsBar;
 		[Export]
+		private AnimatedSprite2D m_WsMax;
+		[Export]
 		private AnimatedSprite2D m_Go;
 
 	}

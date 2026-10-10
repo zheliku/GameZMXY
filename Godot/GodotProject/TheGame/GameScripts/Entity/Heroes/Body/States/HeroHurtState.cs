@@ -25,6 +25,13 @@ namespace GameLogic.Entity.Heroes.Body
 		/// <summary>处理连续受击、硬直计时和受击动画。</summary>
 		protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
 		{
+			if (body.SuperArmor)
+			{
+				body.Velocity = new Godot.Vector2(0f, body.Velocity.Y);
+				ChangeToLocomotion(fsm, body);
+				return;
+			}
+
 			if (body.HasPendingHurt)
 			{
 				ApplyHurt(body);

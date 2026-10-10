@@ -16,6 +16,9 @@
 [ext_resource type="Texture2D" uid="uid://cgqqx20qcko1c" path="res://TheGame/Sprites/UI/hud/hud_mp_fill.png" id="15_mp"]
 [ext_resource type="Texture2D" uid="uid://2578tc6hjyl0" path="res://TheGame/Sprites/UI/hud/hud_exp_fill.png" id="16_exp"]
 [ext_resource type="Shader" uid="uid://cehdk4w6d0vqr" path="res://TheGame/Sprites/UI/hud/hud_ws_flash.gdshader" id="17_ws_flash"]
+[ext_resource type="Theme" uid="uid://2gwbh6otun6r" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="18_theme"]
+[ext_resource type="FontFile" uid="uid://dy01vypttvr" path="res://TheGame/MainPack/Fonts/dfp_hai_bao_w12.ttc" id="19_level_font"]
+[ext_resource type="FontVariation" path="res://TheGame/MainPack/Fonts/game_font.tres" id="20_hud_font"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ws_flash"]
 shader = ExtResource("17_ws_flash")
@@ -131,7 +134,7 @@ animations = [{
 "speed": 25.0
 }]
 
-[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_Go")]
+[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_WsMax", "m_Go")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -139,19 +142,21 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = ExtResource("18_theme")
 script = ExtResource("1_script")
 m_HpBar = NodePath("StatusPanel/m_HpBar")
 m_MpBar = NodePath("StatusPanel/m_MpBar")
 m_ExpBar = NodePath("StatusPanel/m_ExpBar")
 m_LevelLabel = NodePath("StatusPanel/m_LevelLabel")
 m_WsBar = NodePath("MenuPanel/WsFrame/m_WsBar")
+m_WsMax = NodePath("MenuPanel/m_WsMax")
 m_Go = NodePath("m_Go")
 
 [node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247]
 position = Vector2(116, 44)
 texture = ExtResource("2_status")
 
-[node name="m_HpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=172288184 node_paths=PackedStringArray("m_Delay", "m_Text")]
+[node name="m_HpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=172288184 node_paths=PackedStringArray("m_Text")]
 offset_left = -33.0
 offset_top = -30.0
 offset_right = 115.0
@@ -162,20 +167,7 @@ nine_patch_stretch = true
 texture_progress = ExtResource("4_hp")
 texture_progress_offset = Vector2(-3, 0)
 script = ExtResource("14_resourcebar")
-m_Delay = NodePath("m_HpBarDelay")
 m_Text = NodePath("m_HpText")
-
-[node name="m_HpBarDelay" type="TextureProgressBar" parent="StatusPanel/m_HpBar" unique_id=1090903066]
-show_behind_parent = true
-layout_mode = 0
-offset_right = 149.0
-offset_bottom = 12.0
-max_value = 1.0
-step = 0.0
-value = 1.0
-nine_patch_stretch = true
-texture_progress = ExtResource("4_hp")
-texture_progress_offset = Vector2(-3, 0)
 
 [node name="m_HpText" type="Label" parent="StatusPanel/m_HpBar" unique_id=1939437063]
 layout_mode = 0
@@ -185,6 +177,7 @@ offset_right = 149.0
 offset_bottom = 17.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_constants/shadow_outline_size = -6
+theme_override_fonts/font = ExtResource("20_hud_font")
 theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -194,7 +187,8 @@ offset_left = -108.0
 offset_top = 16.0
 offset_right = -83.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 14
+theme_override_fonts/font = ExtResource("19_level_font")
+theme_override_font_sizes/font_size = 16
 text = "1"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -218,6 +212,7 @@ offset_top = -2.0
 offset_right = 143.0
 offset_bottom = 17.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("20_hud_font")
 theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -242,6 +237,7 @@ offset_left = 2.0
 offset_top = -2.0
 offset_right = 148.0
 offset_bottom = 17.0
+theme_override_fonts/font = ExtResource("20_hud_font")
 theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -262,10 +258,10 @@ texture = ExtResource("7_menu")
 position = Vector2(113, 25)
 texture = ExtResource("8_ws_frame")
 
-[node name="m_WsBar" type="TextureProgressBar" parent="MenuPanel/WsFrame" unique_id=607998488 node_paths=PackedStringArray("m_FullAnimation")]
-offset_left = -125.0
+[node name="m_WsBar" type="TextureProgressBar" parent="MenuPanel/WsFrame" unique_id=607998488]
+offset_left = -131.0
 offset_top = -16.0
-offset_right = 96.0
+offset_right = 90.0
 offset_bottom = 12.0
 scale = Vector2(1.17, 1.03)
 max_value = 1.0
@@ -275,7 +271,6 @@ texture_under = ExtResource("9_ws_under")
 texture_progress = ExtResource("10_ws_fill")
 texture_progress_offset = Vector2(-1, 9)
 script = ExtResource("14_resourcebar")
-m_FullAnimation = NodePath("../../m_WsMax")
 
 [node name="WsGrey" type="Sprite2D" parent="MenuPanel" unique_id=553033620]
 position = Vector2(-24, -4)

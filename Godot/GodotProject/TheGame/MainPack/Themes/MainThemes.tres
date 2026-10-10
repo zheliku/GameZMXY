@@ -1,6 +1,6 @@
 [gd_resource type="Theme" format=3 uid="uid://2gwbh6otun6r"]
 
-[ext_resource type="FontFile" uid="uid://b7jmi5cjng5l" path="res://TheGame/MainPack/Fonts/simhei.ttf" id="1_qqd2a"]
+[ext_resource type="FontVariation" path="res://TheGame/MainPack/Fonts/game_font.tres" id="1_qqd2a"]
 
 [sub_resource type="DPITexture" id="DPITexture_qqd2a"]
 _source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"#fefefe\" fill-opacity=\".75\"/></svg>

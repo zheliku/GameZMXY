@@ -23,6 +23,7 @@ public sealed class StatSheet
 	private bool m_Dirty = true; // 基础值或修正变化后需要重算。
 
 	/// <summary>基础值或修正发生变化；订阅方重新读取需要的最终值。</summary>
+	/// <remarks>同步通知前已标记缓存失效，读取时按完整来源重算；订阅与退订须配对，本事件不携带逐项属性差值。</remarks>
 	public event Action Changed;
 
 	/// <summary>用一组完整属性替换基础值；不影响已登记的修正。</summary>

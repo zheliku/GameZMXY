@@ -353,6 +353,27 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(-1, h.Body.Facing);
 		}
 
+		/// <summary>无双移速作用于横向控制；霸体解除已生效硬直，跳跃速度保持配置值。</summary>
+		[Fact]
+		public void Musou_SpeedsHorizontalMotionAndReleasesHurt()
+		{
+			using HeroHarness h = new(Params());
+			h.Body.MoveSpeedMultiplier = 1.5f;
+			h.Step(1, move: 1);
+			Assert.Equal(180f, h.Body.Velocity.X);
+			h.Body.PendingHurt = new Vector2(-400f, 0f);
+			h.Step(1);
+			Assert.Equal("Hurt", h.State);
+			h.Body.SuperArmor = true;
+			h.Step(1);
+			Assert.Equal("Ground", h.State);
+			Assert.Equal(0f, h.Body.Velocity.X);
+			h.Press(jump: true);
+			using HeroHarness normal = new(Params());
+			normal.Press(jump: true);
+			Assert.Equal(normal.Body.Velocity.Y, h.Body.Velocity.Y);
+		}
+
 		// ---------------------------------------------------------------- 假宿主与驱动
 
 		private sealed class FakeHero : FakeActorBody, IHeroBody // 为英雄身体状态机提供可控的测试宿主。
@@ -366,6 +387,10 @@ namespace GameLogic.Battle.Tests
 
 			/// <summary>英雄身体状态参数。</summary>
 			public HeroBodyParams Params { get; }
+			/// <summary>测试注入的横向移动倍率。</summary>
+			public float MoveSpeedMultiplier { get; set; } = 1f;
+			/// <summary>测试注入的霸体能力。</summary>
+			public bool SuperArmor { get; set; }
 			/// <summary>由测试驱动的输入状态。</summary>
 			public HeroInput Input { get; }
 			/// <summary>宿主报告的落地状态。</summary>

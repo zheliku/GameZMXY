@@ -8,7 +8,8 @@ public sealed class Wallet
 	/// <summary>金币余额。</summary>
 	public int Gold { get; private set; }
 
-	/// <summary>余额发生变化。</summary>
+	/// <summary>余额更新完成后同步通知外部观察者；无实际变化时不通知。</summary>
+	/// <remarks>订阅方重新读取 Gold；订阅与退订须配对，不将本事件当作获得金币或交易成功的业务结果。</remarks>
 	public event Action Changed;
 
 	/// <summary>按存档余额创建钱包。</summary>
@@ -29,7 +30,13 @@ public sealed class Wallet
 			return;
 		}
 
-		Gold = (int)Math.Min((long)Gold + amount, int.MaxValue);
+		int gold = (int)Math.Min((long)Gold + amount, int.MaxValue);
+		if (gold == Gold)
+		{
+			return;
+		}
+
+		Gold = gold;
 		Changed?.Invoke();
 	}
 

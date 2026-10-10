@@ -6,6 +6,7 @@
 [ext_resource type="SpriteFrames" uid="uid://boxumpj2pyv2s" path="res://TheGame/Sprites/Effects/wukong/wukong_effect_animations.tres" id="4_effect"]
 [ext_resource type="AnimationLibrary" uid="uid://dpdyqe7blxbqj" path="res://TheGame/Entitys/Animations/wukong_anim_library.tres" id="5_lib"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBox.cs" id="7_hurtbox"]
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Heroes/Effects/MusouAfterimage.cs" id="8_afterimage"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
 radius = 20.0
@@ -18,13 +19,14 @@ height = 98.0
 [sub_resource type="RectangleShape2D" id="hitbox_rest"]
 size = Vector2(90, 90)
 
-[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_Weapon", "m_EffectRoot", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_Weapon", "m_EffectRoot", "m_MusouAfterimage", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 2
 collision_mask = 9
 script = ExtResource("1_script")
 m_Weapon = NodePath("m_Weapon")
 m_EffectRoot = NodePath("m_EffectRoot")
 m_HeroId = 1
+m_MusouAfterimage = NodePath("m_MusouAfterimage")
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
 m_HurtBox = NodePath("m_HurtBox")
@@ -50,6 +52,10 @@ animation = &"empty"
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=1514772424]
 libraries/ = ExtResource("5_lib")
+
+[node name="m_MusouAfterimage" type="Node2D" parent="." node_paths=PackedStringArray("m_Layers")]
+script = ExtResource("8_afterimage")
+m_Layers = Array[NodePath]([NodePath("../m_Body"), NodePath("../m_Weapon")])
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=889744088]
 position = Vector2(0, 21)

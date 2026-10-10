@@ -136,13 +136,9 @@ public sealed class UiSmokeScenario
         CheckDisplay(m_TestHud, hero, progression, level);
 
         ResourceBar bar = m_TestHud.GetNode<ResourceBar>("StatusPanel/m_HpBar");
-        TextureProgressBar delay = bar.GetNode<TextureProgressBar>("m_HpBarDelay");
-        Check(Near(delay.Value, bar.Value), "首次打开残影未直接对齐");
         hero.Vitals.Damage(20);
         hero.Musou.Add(20);
         CheckDisplay(m_TestHud, hero, progression, level);
-        Check(delay.Value > bar.Value, "受伤后残影没有保留旧比例");
-        await WaitUntilAsync(() => Near(delay.Value, bar.Value), "生命残影未追平");
         await CheckMusouAnimationAsync(m_TestHud, hero, progression);
 
         // 关闭后修改状态源，控件保持关闭时的显示。
@@ -238,9 +234,12 @@ public sealed class UiSmokeScenario
         m_TestHud = null;
         m_ExtraHero = await ShowHeroAsync(context, new HeroRecord(1, new HeroProgression(context.Curve, 0)));
         HeroEntity previous = m_ExtraHero;
+        await CheckMusouActivationAsync(previous);
         var vitals = previous.Vitals;
         previous.Vitals.Damage(70);
         previous.Musou.Add(70);
+        previous.Musou.Add(previous.Musou.Max);
+        Check(previous.TryActivateMusou(), "复用测试前未开启无双");
         previous.Stats.SetSource(new GameLogic.Battle.Stats.StatSource("Buff", 1),
             new[] { GameLogic.Battle.Stats.StatModifier.Flat(GameConfig.Stat.StatType.MaxHp, 999) });
         ReleaseTestEntity(previous);
@@ -267,26 +266,161 @@ public sealed class UiSmokeScenario
         }
 
         Check(rejected, "英雄接受了其他英雄的装配");
+        float power = m_ExtraHero.Stats.Get(GameConfig.Stat.StatType.Power);
+        m_ExtraHero.Musou.Add(m_ExtraHero.Musou.Max);
+        Check(m_ExtraHero.TryActivateMusou(), "死亡测试前未开启无双");
+        KillHero(m_ExtraHero);
+        Check(!m_ExtraHero.Musou.IsActive && m_ExtraHero.Musou.Value == 0 &&
+            Near(m_ExtraHero.Stats.Get(GameConfig.Stat.StatType.Power), power), "死亡没有结束无双或移除局内加成");
         ReleaseTestEntity(m_ExtraHero);
         m_ExtraHero = null;
 
-        var config = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList[0];
-        m_Monster = (MonsterEntity)await GF.Entity.ShowEntityAsync(config.EntityId, Vector2.Zero);
-        SmokeInspection.FreezeAi(m_Monster);
-        m_Monster.SetPhysicsProcess(false);
-        MonsterEntity previousMonster = m_Monster;
-        m_Monster.Vitals.Damage(m_Monster.Vitals.MaxHp);
-        ReleaseTestEntity(m_Monster);
+        await CheckMonsterHealthBarsAsync();
         await WaitFramesAsync(2);
-        m_Monster = (MonsterEntity)await GF.Entity.ShowEntityAsync(config.EntityId, Vector2.Zero);
-        SmokeInspection.FreezeAi(m_Monster);
-        m_Monster.SetPhysicsProcess(false);
-        Check(ReferenceEquals(previousMonster, m_Monster), "怪物未从实体池复用");
-        Check(m_Monster.Vitals.Hp == config.Stats.MaxHp && m_Monster.Vitals.MaxHp == config.Stats.MaxHp && !m_Monster.Dead,
-            "怪物复用未按配置恢复生命与死亡事实");
-        ReleaseTestEntity(m_Monster);
-        m_Monster = null;
-        await WaitFramesAsync(2);
+    }
+
+    /// <summary>验证空格真实输入、无双战斗效果、残影世界位置与耗尽还原。</summary>
+    /// <param name="hero">由实体池显示的额外英雄，不影响正式关卡档案。</param>
+    /// <returns>引擎输入和残影淡出验证完成的任务。</returns>
+    private async Task CheckMusouActivationAsync(HeroEntity hero)
+    {
+        var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
+        float power = hero.Stats.Get(GameConfig.Stat.StatType.Power);
+        Check(!hero.TryActivateMusou(), "无双未满也能开启");
+        hero.Musou.Add(hero.Musou.Max);
+        try
+        {
+            hero.SetPhysicsProcess(true);
+            Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.Space, Keycode = Key.Space, Pressed = true });
+            await WaitFramesAsync(10);
+            Check(hero.Musou.IsActive && !hero.Musou.IsFull, "空格没有经项目输入映射开启无双");
+            Check(Near(hero.Stats.Get(GameConfig.Stat.StatType.Power), power * battle.WsPowerMultiplier),
+                "无双没有通过属性来源提高攻击力");
+            Check(Near(((GameLogic.Entity.Heroes.Body.IHeroBody)hero).MoveSpeedMultiplier, battle.WsMoveSpeedMultiplier),
+                "无双横向移速倍率不正确");
+            Check(!hero.TryActivateMusou(), "无双期间可以重复开启");
+        }
+        finally
+        {
+            Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.Space, Keycode = Key.Space, Pressed = false });
+            hero.SetPhysicsProcess(false);
+        }
+
+        Node2D effect = hero.GetNode<Node2D>("m_MusouAfterimage");
+        Sprite2D[] snapshots = effect.GetChildren().OfType<Sprite2D>().ToArray();
+        Sprite2D snapshot = snapshots.FirstOrDefault(x => x.Visible);
+        Check(snapshot != null, "无双没有采样角色残影（检查导出层绑定）");
+        Vector2 capturedPosition = snapshot.GlobalPosition;
+        hero.GlobalPosition += new Vector2(40f, 0f);
+        Check(snapshot.GlobalPosition.IsEqualApprox(capturedPosition), "角色移动时已有残影也跟着移动");
+        int hp = hero.Vitals.Hp;
+        for (int i = 0; i < 100 && hero.Vitals.Hp == hp; i++)
+        {
+            var attack = GameLogic.Battle.AttackData.Create(0, default, 10f,
+                GameConfig.Battle.DamageKind.Real, new Vector2(30, 0), 1, 0, GameConfig.Sound.SoundId.None);
+            hero.ReceiveHit(attack, 0);
+            GameFramework.ReferencePool.Release(attack);
+        }
+        Check(hero.Vitals.Hp < hp && !((GameLogic.Entity.Heroes.Body.IHeroBody)hero).HasPendingHurt,
+            "无双霸体没有保留正常伤害或仍登记了受击击退");
+        hero._PhysicsProcess(battle.WsDuration + 1f);
+        Check(!hero.Musou.IsActive && hero.Musou.Value == 0 && Near(hero.Stats.Get(GameConfig.Stat.StatType.Power), power)
+            && Near(((GameLogic.Entity.Heroes.Body.IHeroBody)hero).MoveSpeedMultiplier, 1f), "无双耗尽没有完整还原战斗效果");
+        await WaitUntilAsync(() => snapshots.All(x => !x.Visible), "结束无双后残影没有自然淡出");
+        Check(effect.GetChildCount() == snapshots.Length, "无双残影反复分配节点而未复用缓存");
+        GD.Print("SMOKE-UI: 空格开启无双、攻击/移速/霸体、残影定位与耗尽还原验证完成");
+    }
+
+    /// <summary>验证两种小怪的共享血条、生命通知、定位、死亡隐藏与真实实体池复用。</summary>
+    /// <returns>血条生命周期回归完成的任务。</returns>
+    private async Task CheckMonsterHealthBarsAsync()
+    {
+        foreach (EntityId entityId in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey })
+        {
+            var config = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Single(x => x.EntityId == entityId);
+            m_Monster = (MonsterEntity)await GF.Entity.ShowEntityAsync(entityId, new Vector2(200, 200));
+            SmokeInspection.FreezeAi(m_Monster);
+            m_Monster.SetPhysicsProcess(false);
+            MonsterEntity previous = m_Monster;
+            ResourceBar bar = m_Monster.GetNode<ResourceBar>("m_HealthBar");
+            Check(bar.Size.IsEqualApprox(bar.TextureProgress.GetSize()) && bar.Size.IsEqualApprox(new Vector2(50, 5)),
+                $"{entityId} 实例尺寸覆盖了官方 50×5 填充，导致可见血条偏心");
+            Check(!bar.Visible && Near(bar.Value, 1), $"{entityId} 出生血条未隐藏或未补满");
+
+            // 初次与连续受伤都立即读取最新生命，治疗不改变领域规则。
+            m_Monster.Vitals.Damage(1);
+            Check(bar.Visible && Near(bar.Value, (double)m_Monster.Vitals.Hp / m_Monster.Vitals.MaxHp),
+                $"{entityId} 初次受伤未立即显示正确比例");
+            m_Monster.Vitals.Damage(1);
+            Check(Near(bar.Value, (double)m_Monster.Vitals.Hp / m_Monster.Vitals.MaxHp),
+                $"{entityId} 连续受伤未立即更新血条");
+            m_Monster.Heal(1);
+            Check(bar.Visible && Near(bar.Value, (double)m_Monster.Vitals.Hp / m_Monster.Vitals.MaxHp),
+                $"{entityId} 部分治疗未刷新血条");
+
+            // 位移由父节点继承；转向只镜像身体，血条始终从左到右且位于受击盒头顶。
+            Vector2 before = bar.GlobalPosition;
+            Vector2 movement = new(70, -30);
+            m_Monster.GlobalPosition += movement;
+            m_Monster.SetFacing(1);
+            Check(bar.GlobalPosition.IsEqualApprox(before + movement) && bar.GetGlobalTransform().X.X > 0 &&
+                Near(bar.GlobalPosition.X + bar.TextureProgress.GetWidth() * 0.5, m_Monster.HeadPosition.X) &&
+                bar.GlobalPosition.Y + bar.Size.Y < m_Monster.HeadPosition.Y,
+                $"{entityId} 血条没有跟随头顶或被转向镜像");
+            m_Monster.SetFacing(-1);
+            Check(bar.GetGlobalTransform().X.X > 0 &&
+                Near(bar.GlobalPosition.X + bar.TextureProgress.GetWidth() * 0.5, m_Monster.HeadPosition.X),
+                $"{entityId} 向左转身后可见血条未保持头顶居中");
+            m_Monster.Heal(m_Monster.Vitals.MaxHp);
+            Check(!bar.Visible && Near(bar.Value, 1), $"{entityId} 满血后血条未隐藏或未补满");
+
+            // 通过真实受击入口归零；Changed 先于 Dead 置位也必须立即隐藏。
+            m_Monster.Vitals.Damage(1);
+            Check(bar.Visible, $"{entityId} 再次受伤未恢复血条显示");
+            var attack = GameLogic.Battle.AttackData.Create(0, default, m_Monster.Vitals.MaxHp * 10f,
+                GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0, GameConfig.Sound.SoundId.None);
+            try
+            {
+                await WaitUntilAsync(() =>
+                {
+                    if (!m_Monster.Dead)
+                    {
+                        m_Monster.ReceiveHit(attack, 0);
+                    }
+
+                    return m_Monster.Dead;
+                }, $"{entityId} 致命受击未归零");
+            }
+            finally
+            {
+                GameFramework.ReferencePool.Release(attack);
+            }
+
+            Check(!bar.Visible && Near(bar.Value, 0), $"{entityId} 死亡血条未立即隐藏与复位");
+            ReleaseTestEntity(m_Monster);
+
+            // 隐藏后仍存活的纯 C# 状态源不再驱动控件；池复用使用同一血条并重新订阅一次。
+            previous.Vitals.SetMaximums(config.Stats.MaxHp, config.Stats.MaxMp, refill: true);
+            previous.Vitals.Damage(1);
+            Check(!bar.Visible && Near(bar.Value, 0), $"{entityId} 隐藏后血条仍订阅旧状态");
+            await WaitFramesAsync(2);
+            m_Monster = (MonsterEntity)await GF.Entity.ShowEntityAsync(entityId, Vector2.Zero);
+            SmokeInspection.FreezeAi(m_Monster);
+            m_Monster.SetPhysicsProcess(false);
+            Check(ReferenceEquals(previous, m_Monster) && ReferenceEquals(bar, m_Monster.GetNode<ResourceBar>("m_HealthBar")),
+                $"{entityId} 怪物和血条未从同一实体池实例复用");
+            Check(m_Monster.Vitals.Hp == config.Stats.MaxHp && m_Monster.Vitals.MaxHp == config.Stats.MaxHp &&
+                !m_Monster.Dead && !bar.Visible && Near(bar.Value, 1),
+                $"{entityId} 复用残留上次生命、死亡事实或血条表现");
+            m_Monster.Vitals.Damage(1);
+            Check(bar.Visible && Near(bar.Value, (double)m_Monster.Vitals.Hp / m_Monster.Vitals.MaxHp),
+                $"{entityId} 复用后血条未恢复订阅");
+            ReleaseTestEntity(m_Monster);
+            m_Monster = null;
+            await WaitFramesAsync(2);
+        }
+
+        GD.Print("SMOKE-UI: 两种小怪血条即时受伤/治疗/转向/死亡隐藏/退订与实体池复用验证完成");
     }
 
     /// <summary>升级：档案成长变化后由装配重建注入实体并补满；HUD 跟随刷新；满级显示 MAX。</summary>
@@ -634,6 +768,16 @@ public sealed class UiSmokeScenario
         }
 
         var vitals = hero.Vitals;
+        foreach (string path in new[] { "StatusPanel/m_HpBar/m_HpText", "StatusPanel/m_MpBar/MpText", "StatusPanel/m_ExpBar/ExpText" })
+        {
+            Label label = hud.GetNode<Label>(path);
+            Font font = label.GetThemeFont("font");
+            Check(font is FontVariation variation && variation.BaseFont.ResourcePath == ResourcesCollectionConstant.Fonts_fz_cu_yuan_hud &&
+                label.GetThemeFontSize("font_size") == 14,
+                $"{path} 实际解析的字体/字号不是旧 HUD 粗圆 14px，检查 Sprite2D 对主题继承的隔断");
+        }
+        Check(hud.GetNode<Label>("StatusPanel/m_LevelLabel").GetThemeFont("font").ResourcePath ==
+            ResourcesCollectionConstant.Fonts_dfp_hai_bao_w12, "等级标签未使用旧 HUD 海报体");
         Check(Near(hud.GetNode<ResourceBar>("StatusPanel/m_HpBar").Value, (double)vitals.Hp / vitals.MaxHp), "血条填充与当前英雄不一致");
         Check(hud.GetNode<Label>("StatusPanel/m_HpBar/m_HpText").Text == $"{vitals.Hp}/{vitals.MaxHp}", "生命文本不一致");
         Check(hud.GetNode<Label>("StatusPanel/m_LevelLabel").Text == progression.Level.ToString(), "等级文本不一致");

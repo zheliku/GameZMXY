@@ -65,6 +65,29 @@ namespace GameLogic.Profile.Tests
 			Assert.Throws<ArgumentOutOfRangeException>(() => wallet.TrySpendGold(-1));
 		}
 
+		/// <summary>钱包通知后的余额已完成更新，未改变余额的操作不发通知。</summary>
+		[Fact]
+		public void Wallet_NotifiesCommittedBalanceOnlyWhenItChanges()
+		{
+			Wallet wallet = new(0);
+			List<int> balances = new();
+			wallet.Changed += () => balances.Add(wallet.Gold);
+
+			// 零额操作、扣款失败、同值回滚和封顶后增加均不改变余额。
+			wallet.AddGold(0);
+			Assert.True(wallet.TrySpendGold(0));
+			wallet.AddGold(30);
+			Assert.False(wallet.TrySpendGold(31));
+			Assert.True(wallet.TrySpendGold(10));
+			wallet.Restore(20);
+			wallet.AddGold(int.MaxValue);
+			wallet.AddGold(1);
+			wallet.Restore(-1);
+			wallet.Restore(0);
+
+			Assert.Equal(new[] { 30, 20, int.MaxValue, 0 }, balances);
+		}
+
 		/// <summary>档案拒绝重复英雄与未拥有的出战英雄。</summary>
 		[Fact]
 		public void Profile_RejectsInvalidHeroSets()
