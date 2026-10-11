@@ -31,10 +31,19 @@ func validate() -> void:
 			check(not str(entry.get("m_Id")).is_empty(), "条目必须有可读 ID")
 			check(manager.get_node_or_null(entry.get("m_Node")) != null, "条目的直接子节点引用必须有效")
 		manager.queue_redraw()
-	check(level.get_node("World/SpawnPoints").get("m_Entries").size() == 6, "六个生成点必须保留")
-	check(level.get_node("World/StageGates").get("m_Entries").size() == 3, "三个阶段门必须保留")
+	check(level.get_node("World/SpawnPoints").get("m_Entries").size() == 12, "官方前四波十一处生成点与玩家出生点必须登记")
+	check(level.get_node("World/StageGates").get("m_Entries").size() == 7, "四个出口与三个独立左界必须登记")
+	var points := {"Stage1A": Vector2(1256.4, 377.3), "Stage2A": Vector2(1863, 428.65),
+		"Stage2B": Vector2(806.35, 359.4), "Stage2C": Vector2(1863, 377.25),
+		"Stage3A": Vector2(2059.65, 284.45), "Stage3B": Vector2(2349.75, 116.75),
+		"Stage3C": Vector2(2633.45, 291.55), "Stage3D": Vector2(1705.35, 369.35),
+		"Stage4A": Vector2(3485.2, 383.3), "Stage4B": Vector2(3570.8, 383.3), "Stage4C": Vector2(3520.15, 383.3)}
+	for point: String in points:
+		check(level.get_node("World/SpawnPoints/" + point).position.is_equal_approx(points[point]), "官方生成点坐标不符：" + point)
+	for gate in level.get_node("World/StageGates").get_children():
+		check(gate.collision_layer == 1 << 13 and gate.collision_mask == 0, "战斗边界只在 PlayerBarrier 层，怪物可从场外进入")
 	check(level.get_node("World/StageTriggers").get_child_count() == 0, "普通关卡不需要刷怪触发区")
-	check(level.get_node("World/Geometry/Ground/Slope1").get_child_count() == 3, "用户添加的斜坡碰撞必须保留")
+	check(level.get_node("World/Geometry/Ground/Slope1").get_child_count() == 4, "用户添加的四个斜坡碰撞必须保留")
 	check(level.get_node("World/Geometry/Ground/FloorGround").position == Vector2(2406, 545), "用户调整的地面位置必须保留")
 	check(level.get_node("Camera2D").get_script().is_tool(), "相机必须支持编辑器引导绘制")
 	await process_frame
@@ -45,8 +54,11 @@ func validate() -> void:
 		check(image.save_png("res://.godot/validation/level_guides.png") == OK, "绘制快照保存失败")
 		var marker_color := image.get_pixel(316, 300)
 		var camera_color := image.get_pixel(430, 100)
-		check(marker_color.b > 0.7 and marker_color.g > 0.6, "生成点圆圈未出现在实际绘制中")
-		check(camera_color.b > 0.7 and camera_color.g > 0.6, "相机死区未出现在实际绘制中")
+		var marker_tint: Color = level.get_node("World/SpawnPoints").get("m_Entries")[0].get("m_DrawColor")
+		var camera_tint: Color = level.get_node("Camera2D").get("m_GuideColor")
+		# 颜色是检查器参数；验证当前配置的实际像素，而非假定所有引导都使用青色。
+		check(rgb(marker_color).distance_to(rgb(marker_tint)) < 0.3, "生成点圆圈未出现在实际绘制中")
+		check(rgb(camera_color).distance_to(rgb(camera_tint)) < 0.3, "相机死区未出现在实际绘制中")
 		print("LEVEL GUIDES SNAPSHOT: res://.godot/validation/level_guides.png")
 	if OS.get_cmdline_user_args().has("--resize"):
 		root.size = Vector2i(1920, 1080)
@@ -73,3 +85,7 @@ func validate() -> void:
 func check(condition: bool, message: String) -> void:
 	if not condition:
 		failures.append(message)
+
+## 用 RGB 距离比较经过透明混合的标注颜色。
+func rgb(color: Color) -> Vector3:
+	return Vector3(color.r, color.g, color.b)

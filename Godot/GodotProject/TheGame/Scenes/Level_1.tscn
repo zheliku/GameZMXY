@@ -27,53 +27,107 @@ height = 319.09
 [sub_resource type="RectangleShape2D" id="WorldWallShape"]
 size = Vector2(80, 700)
 
-[sub_resource type="Resource" id="Entry_spawn_player"]
+[sub_resource type="Resource" id="Entry_spawn_player_start"]
 script = ExtResource("6_marker_entry")
 m_Id = "player_start"
 m_Node = NodePath("PlayerStart")
 m_DrawColor = Color(0.2, 0.85, 1, 0.9)
 
-[sub_resource type="Resource" id="Entry_spawn_s1a"]
+[sub_resource type="Resource" id="Entry_spawn_stage_1_a"]
 script = ExtResource("6_marker_entry")
 m_Id = "stage_1_a"
 m_Node = NodePath("Stage1A")
 
-[sub_resource type="Resource" id="Entry_spawn_s1b"]
-script = ExtResource("6_marker_entry")
-m_Id = "stage_1_b"
-m_Node = NodePath("Stage1B")
-
-[sub_resource type="Resource" id="Entry_spawn_s2a"]
+[sub_resource type="Resource" id="Entry_spawn_stage_2_a"]
 script = ExtResource("6_marker_entry")
 m_Id = "stage_2_a"
 m_Node = NodePath("Stage2A")
 
-[sub_resource type="Resource" id="Entry_spawn_s3a"]
+[sub_resource type="Resource" id="Entry_spawn_stage_2_b"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_2_b"
+m_Node = NodePath("Stage2B")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_2_c"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_2_c"
+m_Node = NodePath("Stage2C")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_3_a"]
 script = ExtResource("6_marker_entry")
 m_Id = "stage_3_a"
 m_Node = NodePath("Stage3A")
 
-[sub_resource type="Resource" id="Entry_spawn_s4a"]
+[sub_resource type="Resource" id="Entry_spawn_stage_3_b"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_b"
+m_Node = NodePath("Stage3B")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_3_c"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_c"
+m_Node = NodePath("Stage3C")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_3_d"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_d"
+m_Node = NodePath("Stage3D")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_4_a"]
 script = ExtResource("6_marker_entry")
 m_Id = "stage_4_a"
 m_Node = NodePath("Stage4A")
 
-[sub_resource type="Resource" id="Entry_gate_1"]
+[sub_resource type="Resource" id="Entry_spawn_stage_4_b"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_4_b"
+m_Node = NodePath("Stage4B")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_4_c"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_4_c"
+m_Node = NodePath("Stage4C")
+
+[sub_resource type="Resource" id="Entry_gate_stage_1_gate"]
 script = ExtResource("6_marker_entry")
 m_Id = "stage_1_gate"
 m_Node = NodePath("Stage1Gate")
 m_DrawColor = Color(0.6, 1, 0.2, 0.9)
 
-[sub_resource type="Resource" id="Entry_gate_2"]
+[sub_resource type="Resource" id="Entry_gate_stage_2_left"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_2_left"
+m_Node = NodePath("Stage2Left")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_stage_2_gate"]
 script = ExtResource("6_marker_entry")
 m_Id = "stage_2_gate"
 m_Node = NodePath("Stage2Gate")
 m_DrawColor = Color(0.6, 1, 0.2, 0.9)
 
-[sub_resource type="Resource" id="Entry_gate_3"]
+[sub_resource type="Resource" id="Entry_gate_stage_3_left"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_left"
+m_Node = NodePath("Stage3Left")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_stage_3_gate"]
 script = ExtResource("6_marker_entry")
 m_Id = "stage_3_gate"
 m_Node = NodePath("Stage3Gate")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_stage_4_left"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_4_left"
+m_Node = NodePath("Stage4Left")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_stage_4_gate"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_4_gate"
+m_Node = NodePath("Stage4Gate")
 m_DrawColor = Color(0.6, 1, 0.2, 0.9)
 
 [sub_resource type="RectangleShape2D" id="GateShape"]
@@ -206,66 +260,129 @@ collision_mask = 0
 [node name="CollisionShape2D" type="CollisionShape2D" parent="World/Geometry/RightWall" unique_id=1611260396]
 shape = SubResource("WorldWallShape")
 
-[node name="SpawnPoints" type="Node2D" parent="World" unique_id=1593038850]
+[node name="SpawnPoints" type="Node2D" parent="World"]
 z_index = 200
 script = ExtResource("9_spawn_manager")
-m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_spawn_player"), SubResource("Entry_spawn_s1a"), SubResource("Entry_spawn_s1b"), SubResource("Entry_spawn_s2a"), SubResource("Entry_spawn_s3a"), SubResource("Entry_spawn_s4a")])
+m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_spawn_player_start"), SubResource("Entry_spawn_stage_1_a"), SubResource("Entry_spawn_stage_2_a"), SubResource("Entry_spawn_stage_2_b"), SubResource("Entry_spawn_stage_2_c"), SubResource("Entry_spawn_stage_3_a"), SubResource("Entry_spawn_stage_3_b"), SubResource("Entry_spawn_stage_3_c"), SubResource("Entry_spawn_stage_3_d"), SubResource("Entry_spawn_stage_4_a"), SubResource("Entry_spawn_stage_4_b"), SubResource("Entry_spawn_stage_4_c")])
 
-[node name="PlayerStart" type="Marker2D" parent="World/SpawnPoints" unique_id=808562606]
+[node name="PlayerStart" type="Marker2D" parent="World/SpawnPoints"]
 position = Vector2(300, 300)
 gizmo_extents = 0.0
 
-[node name="Stage1A" type="Marker2D" parent="World/SpawnPoints" unique_id=1236502135]
-position = Vector2(1000, 300)
+[node name="Stage1A" type="Marker2D" parent="World/SpawnPoints"]
+position = Vector2(1256.4, 377.3)
 gizmo_extents = 0.0
 
-[node name="Stage1B" type="Marker2D" parent="World/SpawnPoints" unique_id=1797577870]
-position = Vector2(1500, 300)
+[node name="Stage2A" type="Marker2D" parent="World/SpawnPoints"]
+position = Vector2(1863, 428.65)
 gizmo_extents = 0.0
 
-[node name="Stage2A" type="Marker2D" parent="World/SpawnPoints" unique_id=573857023]
-position = Vector2(2000, 300)
+[node name="Stage2B" type="Marker2D" parent="World/SpawnPoints"]
+position = Vector2(806.35, 359.4)
 gizmo_extents = 0.0
 
-[node name="Stage3A" type="Marker2D" parent="World/SpawnPoints" unique_id=1466123123]
-position = Vector2(3000, 300)
+[node name="Stage2C" type="Marker2D" parent="World/SpawnPoints"]
+position = Vector2(1863, 377.25)
 gizmo_extents = 0.0
 
-[node name="Stage4A" type="Marker2D" parent="World/SpawnPoints" unique_id=9347245]
-position = Vector2(4400, 300)
+[node name="Stage3A" type="Marker2D" parent="World/SpawnPoints"]
+position = Vector2(2059.65, 284.45)
 gizmo_extents = 0.0
 
-[node name="StageTriggers" type="Node2D" parent="World" unique_id=655583775]
+[node name="Stage3B" type="Marker2D" parent="World/SpawnPoints"]
+position = Vector2(2349.75, 116.75)
+gizmo_extents = 0.0
+
+[node name="Stage3C" type="Marker2D" parent="World/SpawnPoints"]
+position = Vector2(2633.45, 291.55)
+gizmo_extents = 0.0
+
+[node name="Stage3D" type="Marker2D" parent="World/SpawnPoints"]
+position = Vector2(1705.35, 369.35)
+gizmo_extents = 0.0
+
+[node name="Stage4A" type="Marker2D" parent="World/SpawnPoints"]
+position = Vector2(3485.2, 383.3)
+gizmo_extents = 0.0
+
+[node name="Stage4B" type="Marker2D" parent="World/SpawnPoints"]
+position = Vector2(3570.8, 383.3)
+gizmo_extents = 0.0
+
+[node name="Stage4C" type="Marker2D" parent="World/SpawnPoints"]
+position = Vector2(3520.15, 383.3)
+gizmo_extents = 0.0
+
+[node name="StageTriggers" type="Node2D" parent="World"]
 z_index = 200
 script = ExtResource("10_trigger_manager")
 
-[node name="StageGates" type="Node2D" parent="World" unique_id=176011691]
+[node name="StageGates" type="Node2D" parent="World"]
 z_index = 200
 script = ExtResource("11_gate_manager")
-m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_gate_1"), SubResource("Entry_gate_2"), SubResource("Entry_gate_3")])
+m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_gate_stage_1_gate"), SubResource("Entry_gate_stage_2_left"), SubResource("Entry_gate_stage_2_gate"), SubResource("Entry_gate_stage_3_left"), SubResource("Entry_gate_stage_3_gate"), SubResource("Entry_gate_stage_4_left"), SubResource("Entry_gate_stage_4_gate")])
 m_MarkerSize = 350.0
 
-[node name="Stage1Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1250288273]
-position = Vector2(1680, 295)
+[node name="Stage1Gate" type="StaticBody2D" parent="World/StageGates"]
+position = Vector2(1139.9, 295)
+collision_layer = 8192
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage1Gate" unique_id=387258502]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage1Gate"]
 shape = SubResource("GateShape")
 disabled = true
 
-[node name="Stage2Gate" type="StaticBody2D" parent="World/StageGates" unique_id=929779718]
-position = Vector2(2780, 295)
+[node name="Stage2Left" type="StaticBody2D" parent="World/StageGates"]
+position = Vector2(359.95, 295)
+collision_layer = 8192
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage2Gate" unique_id=1402131308]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage2Left"]
 shape = SubResource("GateShape")
 disabled = true
 
-[node name="Stage3Gate" type="StaticBody2D" parent="World/StageGates" unique_id=2059330607]
-position = Vector2(3740, 295)
+[node name="Stage2Gate" type="StaticBody2D" parent="World/StageGates"]
+position = Vector2(1809.95, 295)
+collision_layer = 8192
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage3Gate" unique_id=1047161584]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage2Gate"]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage3Left" type="StaticBody2D" parent="World/StageGates"]
+position = Vector2(1520.15, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage3Left"]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage3Gate" type="StaticBody2D" parent="World/StageGates"]
+position = Vector2(2970.15, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage3Gate"]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage4Left" type="StaticBody2D" parent="World/StageGates"]
+position = Vector2(1963.5, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage4Left"]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage4Gate" type="StaticBody2D" parent="World/StageGates"]
+position = Vector2(3413.5, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage4Gate"]
 shape = SubResource("GateShape")
 disabled = true
 

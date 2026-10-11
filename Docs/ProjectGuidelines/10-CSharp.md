@@ -12,6 +12,10 @@
 
 一文件一个主要类型，文件名与类型名一致。标识符使用英文；中文只用于配置文本和用户可见内容。
 
+附属于同一功能的小枚举、结果与统计类型可以和主要类型放在同一文件，保留清晰的 XML 文档与命名空间。例如 `SaveSlotState` 随 `SaveSlotInfo`，`LevelRunOutcome` / `RunStats` 随 `LevelRun`；按用户要求，`HeroSaveData` 随 `GameData`，同一文件能看清完整存档结构。多处独立使用、有独立职责的类型仍单独存放；不建立全局 `Enums.cs`，不按行数机械拆分或合并。大型节点可按职责使用 `类型.职责.cs` partial，字段和生命周期仍由同一对象拥有。
+
+流程状态机的数据键统一放在 `MainPack/Scripts/Startup/FlowData/FlowKeys.cs`，池化包装放在同目录。领域对象不携带流程键；其他模块的常量仍归所属功能，禁止建立所有常量混杂的全局桶。
+
 ### 类型命名后缀
 
 按职责命名，不用含义模糊的 `Manager`、`System`、`Model`、`Helper` 后缀（GGF 自身类型除外）：
@@ -19,9 +23,9 @@
 | 职责 | 命名 | 示例 |
 | --- | --- | --- |
 | Luban 生成配置 | `XxxConfig`（生成） | `HeroConfig`、`MonsterConfig` |
-| 存档 DTO | `XxxSaveData` | `ProfileSaveData`、`HeroSaveData` |
+| 存档 DTO | `XxxSaveData` | `GameData`、`HeroSaveData` |
 | 运行时状态（有唯一所有者） | 领域名词 | `PlayerProfile`、`Wallet`、`HeroProgression`、`StatSheet`、`Vitals` |
-| 纯规则 / 无状态服务 | 职责名 | `DamageCalculator`、`ExperienceCurve`、`HeroStatBuilder`、`SaveMigrator` |
+| 纯规则 / 无状态服务 | 职责名 | `DamageCalculator`、`ExperienceCurve`、`HeroStatBuilder`、`ProfileMapper` |
 | 作用域所有者 | 作用域名 | `GameContext`、`LevelRun` |
 | 不可变输入快照 | 名词 | `HeroLoadout`、`CombatantStats`、`MonsterDefeat` |
 | 节点 | `XxxEntity`、`XxxController`、窗口/控件名 | `WukongEntity`、`LevelController`、`ResourceBar` |
@@ -81,3 +85,15 @@ private async Task StartStageAsync(LevelStageConfig stage)
 - 状态对象只暴露 getter 与修改方法；不公开可写字段或可写的可观察容器。修改方法维护不变量（钳制、死亡、升级）并在全部字段更新后发一次 `Changed`。
 - 异步操作在等待前捕获所属会话的服务、取消令牌和所有权；等待后不读取可能已被清理或换成新会话的字段。无法取消的框架显示结果在旧令牌取消后到达，仍须由原服务隐藏。
 - 可由游戏帧推进的玩法计时不创建轮询计时器或后台任务；暂停时计时停止。异步资源显示保留真实异步边界，并让失败回到会话拥有者。
+
+## 已采用的业务代码风格（2026-10-11）
+
+用户确认入口界面与事件整理版本作为后续标准，新增与修改业务代码按以下规则执行：
+
+- 先明确状态源、作用域所有者、纯规则与表现的职责；窗口只观察状态并提交具名请求，流程拥有导航和异步任务，不为相邻层增加纯转发对象。
+- UI 按 Ge 生成绑定、`.Logic.cs` 业务、必要时的 `Data` 参数分工。Data 只持有所需状态源引用；无状态源的开始页、静态地图不建空 Data。状态源在 `OnOpen` 订阅并立即刷新，`OnClose` 释放订阅和回调，`OnRecycle` 再清理编号。
+- 按钮使用具名处理方法，只在新建实例时订阅一次。跨模块点击使用带窗口编号的池化 GGF 事件；流程在分发期间复制所需值，拒绝旧周期事件。可取消等待在进入时捕获本周期令牌和服务。
+- 共用代码须有实际共用职责：`MenuProcedure` 统一窗口、音乐、取消和返回标题的保存等待；不要用泛型菜单命令和轮询代替具名事件。只调用基类的空重写删除；GGF 接口要求的生命周期入口保留。
+- 无状态、附属于现有类型的操作可使用 C# 14 `extension` 块，例如 `BodyFsm.Tick`。状态机的物理帧调度仍独立于单个状态的决策，不为合并文件把调度塞进 `BodyState`。
+- 不为测试新增生产 getter、状态名字符串、观测事件或测试路径。测试使用现有状态对象、`IFsm.CurrentState`、节点和必要的反射。只有测试使用且可从权威状态直接读取的冗余 API 删除。
+- 独立的主要类型各占一文件，配套小类型按本章开头的归属规则组织；公开契约写 XML，字段用简短行尾说明；不用生成模板的空区域和重复注释掩盖业务职责。修改旧文件时对齐本规则，不机械改动生成代码和框架。

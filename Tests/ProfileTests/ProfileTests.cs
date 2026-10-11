@@ -1,3 +1,4 @@
+using GameLogic.Save.Data;
 using System;
 using System.Collections.Generic;
 using GameConfig.Hero;
@@ -8,7 +9,7 @@ using Xunit;
 
 namespace GameLogic.Profile.Tests
 {
-	/// <summary>档案领域规则：成长派生、钱包、出战装配、存档迁移与映射。</summary>
+	/// <summary>档案领域规则：成长派生、钱包、出战装配、存档格式与映射。</summary>
 	public sealed class ProfileTests
 	{
 		/// <summary>累计经验是唯一事实，升级与跨级都从曲线派生，并只通知一次。</summary>
@@ -42,7 +43,7 @@ namespace GameLogic.Profile.Tests
 			HeroProgression progression = new(TestTables.Curve, int.MaxValue);
 			int notifications = 0;
 			progression.Changed += () => notifications++;
-			Assert.True(progression.IsMaxLevel);
+			Assert.Equal(TestTables.Curve.MaxLevel, progression.Level);
 			Assert.Equal(0, progression.AddExperience(1000));
 			Assert.Equal(0, notifications);
 			Assert.Equal((55, 0, 0), (progression.Level, progression.Experience, progression.MaxExperience));
@@ -172,59 +173,53 @@ namespace GameLogic.Profile.Tests
 			Assert.Equal(55, curve.MaxLevel);
 		}
 
-		/// <summary>旧格式存档（无 SaveVersion 字段）按"等级不倒退、累计经验不丢失"迁移为版本 1。</summary>
-		[Fact]
-		public void Migrator_UpgradesVersion0PlayerData()
-		{
-			// 重构前存档的真实 JSON 形状：Score + Player{Level, TotalExperience, Gold}，没有 SaveVersion。
-			const string legacyJson = "{\"Score\":0,\"Player\":{\"Level\":3,\"TotalExperience\":90,\"Gold\":12},\"UnitId\":7}";
-			GameData data = JsonConvert.DeserializeObject<GameData>(legacyJson);
-			Assert.Equal(0, data.SaveVersion);
+        /// <summary>缺少版本或进度字段的 JSON 不得被初始值误判为当前格式。</summary>
+        [Fact]
+        public void Archive_RejectsMissingRequiredFields()
+        {
+            Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<GameData>("{\"UnitId\":7}"));
+            Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<GameData>("{\"SaveVersion\":2,\"UnitId\":7}"));
+        }
 
-			(ProfileSaveData profile, SaveOrigin origin) = SaveMigrator.Migrate(data, TestTables.Curve, 1, 999);
-			Assert.Equal(SaveOrigin.Migrated, origin);
-			Assert.Equal(1, profile.ActiveHeroId);
-			Assert.Equal(12, profile.Gold);
-			Assert.Single(profile.Heroes);
-			Assert.Equal(300, profile.Heroes[0].TotalExperience); // 3 级门槛 140+160=300，旧经验 90 低于门槛被抬到门槛。
-		}
+        /// <summary>框架创建的当前格式空槽可以序列化回读，仍未建立角色。</summary>
+        [Fact]
+        public void Archive_RoundTripsUnclaimedCurrentSlot()
+        {
+            GameData data = JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(new GameData { UnitId = 7 }));
+            Assert.Equal(GameData.CurrentVersion, data.SaveVersion);
+            Assert.Equal(0, data.ActiveHeroId);
+            Assert.Empty(data.Heroes);
+            Assert.Equal(0, data.Gold);
+            Assert.Equal(7, data.UnitId);
+        }
 
-		/// <summary>框架首次启动创建的空档按建档规则新建。</summary>
-		[Fact]
-		public void Migrator_CreatesProfileForEmptyArchive()
-		{
-			GameData data = JsonConvert.DeserializeObject<GameData>("{\"UnitId\":7}");
-			(ProfileSaveData profile, SaveOrigin origin) = SaveMigrator.Migrate(data, TestTables.Curve, 1, 25);
-			Assert.Equal(SaveOrigin.Created, origin);
-			Assert.Equal(25, profile.Gold);
-			Assert.Equal(0, profile.Heroes[0].TotalExperience);
-		}
+        /// <summary>仅接受当前格式的完整档案；不转换其他版本。</summary>
+        [Fact]
+        public void Mapper_RejectsOtherVersionsAndEmptyHeroes()
+        {
 
-		/// <summary>当前版本原样读取；版本更高或数据缺失时拒绝，避免降级覆盖。</summary>
-		[Fact]
-		public void Migrator_RejectsUnknownOrBrokenVersions()
-		{
-			GameData current = new() { SaveVersion = 1, Profile = new ProfileSaveData { ActiveHeroId = 1 } };
-			Assert.Equal(SaveOrigin.Current, SaveMigrator.Migrate(current, TestTables.Curve, 1, 0).Origin);
-			Assert.Throws<NotSupportedException>(() => SaveMigrator.Migrate(new GameData { SaveVersion = 1 }, TestTables.Curve, 1, 0));
-			Assert.Throws<NotSupportedException>(() => SaveMigrator.Migrate(new GameData { SaveVersion = 2 }, TestTables.Curve, 1, 0));
-		}
+            foreach (int version in new[] { 0, 1, 2, GameData.CurrentVersion + 1 })
+                Assert.Throws<NotSupportedException>(() => ProfileMapper.RestoreProfile(new GameData { SaveVersion = version, ActiveHeroId = 1, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve));
+            Assert.Throws<ArgumentException>(() => ProfileMapper.RestoreProfile(new GameData(), TestTables.Curve));
+        }
 
 		/// <summary>档案 → 快照 → JSON → 快照 → 档案往返不丢状态，快照与运行时不共享引用。</summary>
 		[Fact]
 		public void Mapper_RoundTripsThroughJson()
 		{
 			PlayerProfile profile = new(1, new[] { new HeroRecord(1, new HeroProgression(TestTables.Curve, 517)) }, new Wallet(42));
-			ProfileSaveData snapshot = ProfileMapper.Capture(profile);
+			GameData snapshot = ProfileMapper.CaptureSaveData(profile);
 			profile.Wallet.AddGold(100);
 			Assert.Equal(42, snapshot.Gold);
 
-			string json = JsonConvert.SerializeObject(new GameData { SaveVersion = SaveMigrator.CurrentVersion, Profile = snapshot });
+			string json = JsonConvert.SerializeObject(snapshot);
 			GameData loaded = JsonConvert.DeserializeObject<GameData>(json);
-			PlayerProfile restored = ProfileMapper.Restore(SaveMigrator.Migrate(loaded, TestTables.Curve, 1, 0).Profile, TestTables.Curve);
+			PlayerProfile restored = ProfileMapper.RestoreProfile(loaded, TestTables.Curve);
 			Assert.Equal(42, restored.Wallet.Gold);
 			Assert.Equal((4, 37), (restored.ActiveHero.Progression.Level, restored.ActiveHero.Progression.Experience));
-			Assert.Null(loaded.Player);
+			Assert.DoesNotContain("\"Player\"", json);
+            Assert.DoesNotContain("\"Profile\"", json);
+            Assert.Contains("\"TotalExperience\"", json);
 		}
 
 		/// <summary>回滚把档案恢复到进关快照，保留原对象并通知订阅者。</summary>
@@ -232,14 +227,14 @@ namespace GameLogic.Profile.Tests
 		public void Mapper_RollsBackToSnapshot()
 		{
 			PlayerProfile profile = new(1, new[] { new HeroRecord(1, new HeroProgression(TestTables.Curve, 0)) }, new Wallet(5));
-			ProfileSaveData snapshot = ProfileMapper.Capture(profile);
+			GameData snapshot = ProfileMapper.CaptureSaveData(profile);
 			HeroProgression progression = profile.ActiveHero.Progression;
 			List<int> levels = new();
 			progression.Changed += () => levels.Add(progression.Level);
 
 			progression.AddExperience(400);
 			profile.Wallet.AddGold(50);
-			ProfileMapper.RollBack(profile, snapshot);
+			ProfileMapper.RestoreCheckpoint(profile, snapshot);
 
 			Assert.Same(progression, profile.ActiveHero.Progression);
 			Assert.Equal((1, 5), (progression.Level, profile.Wallet.Gold));

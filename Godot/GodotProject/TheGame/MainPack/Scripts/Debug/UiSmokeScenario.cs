@@ -1,3 +1,5 @@
+using GameLogic.Save.Data;
+using GameLogic.Input;
 using System;
 using System.IO;
 using System.Linq;
@@ -66,8 +68,7 @@ public sealed class UiSmokeScenario
 
             // 首次启动按建档规则新建并立即写回为当前版本。
             GameData onDisk = await ReadDiskAsync();
-            Check(onDisk?.SaveVersion == SaveMigrator.CurrentVersion && onDisk.Profile?.Heroes.Count == 1 &&
-                onDisk.Player == null, "首次启动未按当前版本写回新档");
+            Check(onDisk?.SaveVersion == GameData.CurrentVersion && onDisk.Heroes.Count == 1, "首次启动未按当前版本写回新档");
             CheckDisplay(hud, hero, context.Profile.ActiveHero.Progression, level);
 
             await CheckHudLifecycleAsync(hud, hero, context, level);
@@ -79,7 +80,7 @@ public sealed class UiSmokeScenario
             int before = progression.TotalExperience;
             await DefeatMonsterAsync(level, procedure);
             Check(progression.TotalExperience > before, "击败怪物没有把经验写入档案");
-            Check((await ReadDiskAsync()).Profile.Heroes[0].TotalExperience == before, "关内收益在结算前就写盘了");
+            Check((await ReadDiskAsync()).Heroes[0].TotalExperience == before, "关内收益在结算前就写盘了");
             ReenterLevel();
             procedure = await WaitForLevelAsync();
             Check(ReferenceEquals(SmokeInspection.Context(procedure), context), "重入关卡没有沿用同一档案作用域");
@@ -92,17 +93,17 @@ public sealed class UiSmokeScenario
             KillHero(FindHero());
             Check(deathRun.Outcome == LevelRunOutcome.Defeated, $"英雄死亡没有结束关卡运行：{deathRun.Outcome}");
             Check(await deathRun.Commit, "死亡检查点写入失败");
-            Check((await ReadDiskAsync()).Profile.Heroes[0].TotalExperience == afterKill, "死亡没有保存本关收益");
+            Check((await ReadDiskAsync()).Heroes[0].TotalExperience == afterKill, "死亡没有保存本关收益");
             await WaitUntilAsync(() => SmokeInspection.Run(procedure) != null && !ReferenceEquals(SmokeInspection.Run(procedure), deathRun) &&
                 SmokeInspection.Run(procedure).Outcome == LevelRunOutcome.Running && CurrentHud() != null,
                 "死亡后没有自动重开关卡", 15000);
             Check(progression.TotalExperience == afterKill, "死亡重开后档案收益丢失");
 
             await CheckBackupRecoveryAsync(context);
-            await CheckLegacyMigrationAsync();
+            await CheckUnsupportedFormatAsync();
             await CheckLoadingCancellationAsync();
             await CheckHudOpenFailureAsync();
-            GD.Print("SMOKE-UI: HUD 聚合刷新/退订、实体与窗口复用、升级注入、关卡事务、存档迁移与备份回退、重入验证完成");
+            GD.Print("SMOKE-UI: HUD 聚合刷新/退订、实体与窗口复用、升级注入、关卡事务、当前格式读写与备份回退、重入验证完成");
         }
         catch (Exception error)
         {
@@ -451,7 +452,7 @@ public sealed class UiSmokeScenario
         CheckDisplay(m_TestHud, m_ExtraHero, record.Progression, level);
 
         record.Progression.AddExperience(int.MaxValue);
-        Check(record.Progression.IsMaxLevel && record.Progression.MaxExperience == 0, "满级没有封顶");
+        Check(record.Progression.Level == context.Curve.MaxLevel && record.Progression.MaxExperience == 0, "满级没有封顶");
         CheckDisplay(m_TestHud, m_ExtraHero, record.Progression, level);
         CloseHud(m_TestHud);
         ReleaseTestEntity(m_ExtraHero);
@@ -466,37 +467,45 @@ public sealed class UiSmokeScenario
     {
         // 再写一个检查点，确保 .bak 是上一份完整数据、主文件是最新数据。
         int expected = context.Profile.ActiveHero.Progression.TotalExperience;
-        Check(await context.Save.CheckpointAsync(context.Profile), "检查点写入失败");
+        Check(await context.Save.SaveCheckpointAsync(context.Profile), "检查点写入失败");
         string dataPath = DataFilePath();
         Check(File.Exists(dataPath + EasySave.BackupSuffix), "覆盖写入没有保留 .bak");
         File.WriteAllText(dataPath, "{ broken json");
 
         Check(await GF.Archive.LoadAsync(), "主文件损坏时没有回退备份");
-        Check(GF.Archive.CurrentData.Profile.Heroes[0].TotalExperience == expected, "备份回退读到的不是最近一次检查点");
+        Check(GF.Archive.CurrentData.Heroes[0].TotalExperience == expected, "备份回退读到的不是最近一次检查点");
 
         // 用恢复后的数据重写主文件，后续用例从完好的存档开始。
-        Check(await context.Save.CheckpointAsync(context.Profile), "备份回退后重写失败");
+        Check(await context.Save.SaveCheckpointAsync(context.Profile), "备份回退后重写失败");
     }
 
-    /// <summary>重构前格式（v0，无 SaveVersion）经读档流程迁移为 v1 并写回。</summary>
-    /// <returns>验证完成的任务。</returns>
-    private async Task CheckLegacyMigrationAsync()
+    /// <summary>非当前格式被拒绝且不被自动改写，随后恢复测试检查点。</summary>
+    /// <returns>格式拒绝与恢复任务。</returns>
+    private async Task CheckUnsupportedFormatAsync()
     {
-        // 直接写出旧格式数据文件，模拟老玩家存档。
-        GameData legacy = JsonConvert.DeserializeObject<GameData>(
-            $"{{\"UnitId\":{GF.Archive.CurrentCatalogue.UnitId},\"Score\":6,\"Player\":{{\"Level\":3,\"TotalExperience\":90,\"Gold\":7}}}}");
-        Check(legacy.SaveVersion == 0 && legacy.Player.Level == 3, "旧格式 JSON 无法读取");
-        File.WriteAllText(DataFilePath(), EasySave.Serialize(legacy, GF.Archive.Setting.EnableAesEncryption,
-            GF.Archive.Setting.KEY, GF.Archive.Setting.Salt));
-
-        SaveService save = new(SmokeInspection.Context(FindLevelProcedure()).Curve, ConfigSystem.Instance.Tables);
-        LoadedProfile loaded = await save.LoadOrCreateAsync();
-        Check(loaded.Origin == SaveOrigin.Migrated && loaded.Profile.ActiveHero.Progression.Level == 3 &&
-            loaded.Profile.ActiveHero.Progression.TotalExperience == 300 && loaded.Profile.Wallet.Gold == 7,
-            "旧格式没有按等级不倒退规则迁移");
-        GameData disk = await ReadDiskAsync();
-        Check(disk.SaveVersion == SaveMigrator.CurrentVersion && disk.Player == null && disk.Profile.Gold == 7,
-            "迁移后没有写回当前版本");
+        GameData data = await ReadDiskAsync();
+        string path = DataFilePath();
+        string original = File.ReadAllText(path);
+        data.SaveVersion = GameData.CurrentVersion - 1;
+        string unsupported = EasySave.Serialize(data, GF.Archive.Setting.EnableAesEncryption,
+            GF.Archive.Setting.KEY, GF.Archive.Setting.Salt);
+        File.WriteAllText(path, unsupported);
+        try
+        {
+            SaveService save = new(SmokeInspection.Context(FindLevelProcedure()).Curve, ConfigSystem.Instance.Tables);
+            bool rejected = false;
+            try
+            {
+                await save.LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentCatalogue.UnitId);
+            }
+            catch (NotSupportedException) { rejected = true; }
+            Check(rejected && File.ReadAllText(path) == unsupported, "非当前格式被转换或覆盖");
+        }
+        finally
+        {
+            File.WriteAllText(path, original);
+            Check(await GF.Archive.LoadAsync(), "格式拒绝后未恢复当前测试档案");
+        }
     }
 
     /// <summary>冷加载中的 HUD 请求由正式流程离开时取消，晚到结果不会打开。</summary>
@@ -594,13 +603,13 @@ public sealed class UiSmokeScenario
         {
             if (SmokeInspection.Sequence(level).Phase != LevelStagePhase.Fighting)
             {
-                Input.ActionPress("move_right");
-                Input.ActionPress("jump");
-                Input.ActionRelease("jump");
+                Input.ActionPress(InputActions.MoveRight);
+                Input.ActionPress(InputActions.Jump);
+                Input.ActionRelease(InputActions.Jump);
                 return false;
             }
 
-            Input.ActionRelease("move_right");
+            Input.ActionRelease(InputActions.MoveRight);
             MonsterEntity spawned = FindMonster();
             SmokeInspection.FreezeAi(spawned);
             return spawned != null;
@@ -710,7 +719,7 @@ public sealed class UiSmokeScenario
         ((Fsm<IProcedureManager>)GF.Fsm.GetFsm<IProcedureManager>()).ChangeState<ProcedureLevel>();
     }
 
-    /// <summary>当前存档槽数据文件的绝对路径（与 ArchiveSystem 布局一致，只用于测试注入损坏与旧格式）。</summary>
+    /// <summary>当前存档槽数据文件的绝对路径（与 ArchiveSystem 布局一致，只用于测试注入损坏与不支持的格式）。</summary>
     /// <returns>数据文件路径。</returns>
     private static string DataFilePath() => ProjectSettings.GlobalizePath(
         $"user://{GF.Archive.Setting.Folder}/Data/{GF.Archive.CurrentCatalogue.UnitId}.sav");

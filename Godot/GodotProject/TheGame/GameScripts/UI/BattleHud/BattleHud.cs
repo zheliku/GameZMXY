@@ -95,6 +95,8 @@ namespace GameLogic.UI
 		private AnimatedSprite2D m_WsMax;
 		[Export]
 		private AnimatedSprite2D m_Go;
+		[Export]
+		private TextureButton m_SettingsButton;
 
 	}
 }

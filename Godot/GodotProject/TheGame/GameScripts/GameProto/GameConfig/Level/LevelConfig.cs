@@ -21,6 +21,7 @@ public sealed partial class LevelConfig : Luban.BeanBase
         NameCn = _buf.ReadString();
         Desc = _buf.ReadString();
         ScenePath = _buf.ReadString();
+        MusicId = (Sound.SoundId)_buf.ReadInt();
         PlayerSpawnPointId = _buf.ReadString();
         {int n0 = _buf.ReadSize(); Stages = new System.Collections.Generic.List<Level.LevelStage>(n0);for(var i0 = 0 ; i0 < n0 ; i0++) { Level.LevelStage _e0;  _e0 = global::GameConfig.Level.LevelStage.DeserializeLevelStage(_buf); Stages.Add(_e0);}}
     }
@@ -51,6 +52,10 @@ public sealed partial class LevelConfig : Luban.BeanBase
     /// </summary>
     public readonly string ScenePath;
     /// <summary>
+    /// 本关背景音乐；由关卡流程通过 GGF 声音配置播放
+    /// </summary>
+    public readonly Sound.SoundId MusicId;
+    /// <summary>
     /// 玩家出生点ID
     /// </summary>
     public readonly string PlayerSpawnPointId;
@@ -75,6 +80,7 @@ public sealed partial class LevelConfig : Luban.BeanBase
         + "NameCn:" + NameCn + ","
         + "Desc:" + Desc + ","
         + "ScenePath:" + ScenePath + ","
+        + "MusicId:" + MusicId + ","
         + "PlayerSpawnPointId:" + PlayerSpawnPointId + ","
         + "Stages:" + Luban.StringUtil.CollectionToString(Stages) + ","
         + "}";

@@ -54,16 +54,6 @@ public sealed class ExperienceCurve
         }
     }
 
-    /// <summary>兼容历史独立等级字段，将累计经验限制到可用范围并保留已取得的等级。</summary>
-    /// <param name="totalExperience">存档中的累计经验。</param>
-    /// <param name="savedLevel">存档中的等级；超出表范围时限制到首末等级。</param>
-    /// <returns>归一化后的累计经验。</returns>
-    public int Restore(int totalExperience, int savedLevel)
-    {
-        int level = Math.Clamp(savedLevel, 1, MaxLevel);
-        return Math.Clamp(totalExperience, m_Thresholds[level - 1], MaxTotalExperience);
-    }
-
     /// <summary>累计奖励并限制满级上限，使用宽整数避免奖励加法溢出。</summary>
     /// <param name="totalExperience">当前累计经验。</param>
     /// <param name="amount">非负奖励经验。</param>

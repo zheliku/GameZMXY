@@ -1,3 +1,4 @@
+using GameLogic.Entity.Heroes.Input;
 using System;
 using System.Collections.Generic;
 using GameFramework.Fsm;

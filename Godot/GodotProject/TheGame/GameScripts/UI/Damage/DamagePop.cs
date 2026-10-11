@@ -20,25 +20,25 @@ namespace GameLogic.UI
 	/// </summary>
 	public partial class DamagePop : Node2D, IPoolable
 	{
-		private static readonly int MaxDigits = 10; // 最多显示的位数，覆盖 int 伤害值上限。
+		private const int MaxDigits = 10; // 最多显示的位数，覆盖 int 伤害值上限。
 
-		private static readonly float DigitOverlap = 10f; // 普通数字位重叠像素。
-		private static readonly float CritDigitOverlap = 20f; // 暴击数字位重叠像素。
+		private const float DigitOverlap = 10f; // 普通数字位重叠像素。
+		private const float CritDigitOverlap = 20f; // 暴击数字位重叠像素。
 
-		private static readonly float PopScale = 2f; // 普通飘字放大倍率。
-		private static readonly float PopScaleUpTime = 0.1f; // 普通飘字放大时长（秒）。
-		private static readonly float PopScaleDownTime = 0.1f; // 普通飘字缩回时长（秒）。
-		private static readonly float RiseDistance = 50f; // 普通飘字上升距离（像素）。
-		private static readonly float RiseTime = 0.6f; // 普通飘字上升时长（秒）。
-		private static readonly float FadeTime = 0.4f; // 普通飘字淡出时长（秒）。
+		private const float PopScale = 2f; // 普通飘字放大倍率。
+		private const float PopScaleUpTime = 0.1f; // 普通飘字放大时长（秒）。
+		private const float PopScaleDownTime = 0.1f; // 普通飘字缩回时长（秒）。
+		private const float RiseDistance = 50f; // 普通飘字上升距离（像素）。
+		private const float RiseTime = 0.6f; // 普通飘字上升时长（秒）。
+		private const float FadeTime = 0.4f; // 普通飘字淡出时长（秒）。
 
-		private static readonly float CritPopScale = 3f; // 暴击飘字放大倍率。
-		private static readonly float CritScaleUpTime = 0.2f; // 暴击飘字放大时长（秒）。
-		private static readonly float CritScaleDownTime = 0.2f; // 暴击飘字缩回时长（秒）。
+		private const float CritPopScale = 3f; // 暴击飘字放大倍率。
+		private const float CritScaleUpTime = 0.2f; // 暴击飘字放大时长（秒）。
+		private const float CritScaleDownTime = 0.2f; // 暴击飘字缩回时长（秒）。
 
-		private static readonly float MissRiseDistance = 30f; // 闪避提示上升距离（像素）。
-		private static readonly float MissRiseTime = 0.4f; // 闪避提示上升时长（秒）。
-		private static readonly float MissFadeTime = 0.5f; // 闪避提示淡出时长（秒）。
+		private const float MissRiseDistance = 30f; // 闪避提示上升距离（像素）。
+		private const float MissRiseTime = 0.4f; // 闪避提示上升时长（秒）。
+		private const float MissFadeTime = 0.5f; // 闪避提示淡出时长（秒）。
 
 		[Export] private Texture2D m_MonsterPhysics; // 怪物受物理伤害的数字图集。
 		[Export] private Texture2D m_MonsterPhysicsCrit; // 怪物受物理暴击的数字图集。

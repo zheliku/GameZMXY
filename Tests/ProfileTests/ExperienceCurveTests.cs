@@ -5,7 +5,7 @@ using Xunit;
 
 namespace GameLogic.Profile.Tests;
 
-/// <summary>使用正式 Luban 产物验证经验门槛、连升、满级及历史存档兼容。</summary>
+/// <summary>使用正式 Luban 产物验证经验门槛、连升、满级边界。</summary>
 public sealed class ExperienceCurveTests
 {
     /// <summary>读取与游戏相同的等级表。</summary>
@@ -38,17 +38,6 @@ public sealed class ExperienceCurveTests
         Assert.Equal(curve.MaxTotalExperience, curve.Add(curve.MaxTotalExperience, int.MaxValue));
         Assert.Equal((54, 179999, 180000), curve.Evaluate(curve.MaxTotalExperience - 1));
         Assert.Throws<ArgumentOutOfRangeException>(() => curve.Add(0, -1));
-    }
-
-    /// <summary>历史等级不能因小于门槛的累计经验被降级，也不能把合法累计量重复累计。</summary>
-    [Fact]
-    public void RestoresHistoricalProgress()
-    {
-        ExperienceCurve curve = LoadCurve();
-        Assert.Equal(300, curve.Restore(90, 3));
-        Assert.Equal(517, curve.Restore(517, 4));
-        Assert.Equal(0, curve.Restore(-1, -1));
-        Assert.Equal(curve.MaxTotalExperience, curve.Restore(int.MaxValue, int.MaxValue));
     }
 
     /// <summary>初始化拒绝等级缺失、重复、错误末级标记和整数溢出。</summary>

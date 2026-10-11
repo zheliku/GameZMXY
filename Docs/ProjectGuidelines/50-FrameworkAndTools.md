@@ -30,7 +30,8 @@
 - 按改动风险运行相关单测或冒烟场景；验证完成后检查 `git diff` 与 `git diff --check`。
 - 纯 C# 单测：`dotnet test Tests/BattleTests`（伤害公式、属性汇总、生命魔法、无双）、`dotnet test Tests/LevelTests`（阶段与调度）、`dotnet test Tests/ProfileTests`（档案、成长、出战装配、存档迁移与映射、启动校验；读取正式 `.bytes` 产物）。
 - 关卡真实流程：`-- --smoketest=level`（四段清波、档案经验、通关检查点），在途取消：`-- --smoketest=level-cancel`。编辑器装配与绘制：`EditorScripts/validate_level_scene.gd`（`--editor` 检查 Tool，`-- --snapshot --resize` 检查实际像素与宽屏取景）；路径与 UID：`python Tools/ProjectMaintenance/validate_game_references.py`。
-- UI 与存档回归：`-- --smoketest=ui`，使用真实 GGF 窗口/实体池及流程验证 HUD 聚合刷新与退订、实体与窗口复用、升级注入、关卡事务（中途离开回滚、死亡写盘与自动重开）、主文件损坏回退 `.bak`、v0 旧档迁移、加载取消和失败恢复；全部烟测在 `SmokeTestDriver._Ready` 选择唯一 `user://Validation/<模式>/<随机 ID>` 存档目录，不触碰玩家进度。以 `SMOKE PASS/FAIL` 判定断言，框架退出异常单独登记，不能用通过断言掩盖异常退出。
+- 菜单与声音回归：`-- --smoketest=frontend`，通过真实鼠标覆盖标题→六格存档选择→读档→选角→地图→关卡、地点悬停与动画复位、声音开关持久化、设置暂停/继续/返回地图、放弃回滚、窗口池复用层级、过期点击事件、调试入口隐藏及 Music 组独占循环。非 headless 模式保存界面和光晕两次采样截图至 `.godot/validation/frontend/`。
+- UI 与存档回归：`-- --smoketest=ui`，使用真实 GGF 窗口/实体池及流程验证 HUD 聚合刷新与退订、实体与窗口复用、升级注入、关卡事务（中途离开回滚、死亡写盘与自动重开）、主文件损坏回退 `.bak`、当前格式校验与不支持格式拒绝、加载取消和失败恢复；全部烟测在 `SmokeTestDriver._Ready` 选择唯一 `user://Validation/<模式>/<随机 ID>` 存档目录，不触碰玩家进度。以 `SMOKE PASS/FAIL` 判定断言，框架退出异常单独登记，不能用通过断言掩盖异常退出。
 - 已知框架退出异常（与业务无关，单独登记）：关停时 `DefaultWebRequestAgentHelper.Reset` 访问已释放节点（`ObjectDisposedException`）；`level-cancel`/`ui` 退出时 GC 终结器 `0xC0000005`；`--build-solutions` 退出时 `ComponentInsoector._ExitTree` 释放 RefCounted 报错。
 - 保留的可选区域触发器通过 `--script res://EditorScripts/validate_level_triggers.gd` 验证真实物理重叠、当前区监听、玩家过滤、单次激活及停止/重启；独立验证不改正式场景和源表。
 
@@ -55,6 +56,12 @@
 - `ResourceBar` 命名空间对齐为 `GameLogic.UI.Widgets`，`BattleHud.cs` 仅通过 `python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/BattleHud.tscn --namespace GameLogic.UI` 重生成；未手改生成文件。
 - 无双裁剪范围的 GPU 验证使用 `--script res://EditorScripts/validate_musou_flash.gd`，不加 `--headless`；对比图写入忽略的 `.godot/validation/`。其余框架、插件、源表和生成配置保持既有边界。
 
+### 本轮入口界面（2026-10-11）
+
+- 用户明确要求新增开始、选角、地图流程与 GGF 声音管理；框架例外仅修改 `Framework/GameFramework.tscn` 的 `Procedure.Procedures` 清单，加入 `ProcedureTitle`、`ProcedureCharacter`、`ProcedureMap`，入口仍为 Launch。其余框架代码、插件及 Luban 工具保持只读。
+- 新界面与声音登记修改源表 `界面UI.xlsx`、`SoundConfig.xlsx`、`__enums__.xlsx`，生成配置和二进制仅经既有 Luban 命令更新。用户随后明确选择恢复官方出生点与战斗区域：同步修改 `LevelConfig.xlsx`、`__beans__.xlsx`，为阶段增加独立左界、为关卡增加音乐引用，修订第 20/30/40/60 章相关规则和事实。界面 `.cs` 样板仅由 `regenerate_ui_form.py` 从正式场景绑定生成。
+- 旧项目仅复制本轮菜单素材和音乐，来源见 `Docs/LegacyAssetMap.md`；无双动画从场景内嵌资源提取为独立 SpriteFrames，保留当前材质参数。纯输入规则 HeroInput 与 Godot 输入适配共同归入 Entity/Heroes/Input，迁移携带原 UID，身体接口按依赖引用输入规则；未加入正式测试专用 API。
+
 ## Git
 
 - `main` 受保护；工作分支使用 `feature/xxx`、`fix/xxx` 或 `art/xxx`。提交前缀用 `feat:`、`fix:`、`refactor:`、`art:`、`config:`、`docs:`、`chore:`。
@@ -63,3 +70,30 @@
 ## AI 与编辑器配置
 
 `Godot/CLAUDE.md`、`.claude/`、`.kilo/` 中的配置用于其对应工具，不构成本项目规范来源。与 `Docs/ProjectGuidelines/` 冲突时，以根入口裁决规则为准。
+
+### 本轮视觉与事件整理（2026-10-11）
+
+- 按用户要求用旧项目图片/字体恢复主菜单、地图地点和左下角图标；删除右上角返回按钮及 UI 按键导航，修订第 40/60/70 章的导航规则和返回路径。删除 `MenuPage/MenuCommand` 轮询、无状态的 StartFormData 和仅转发采样的 GodotHeroInput；保留档案/关卡 Data 引用，动作名称集中到 `GameScripts/Input/InputActions.cs`。
+- 设置登记只修改源表 `界面UI.xlsx` 和 `__enums__.xlsx`；生成配置、二进制、UI 绑定和资源常量均经原生成流程更新。新增 `SettingsForm` 使用现有流程清单，本轮未新增框架、插件或旧工程修改。
+
+### 本轮存档页与代码风格（2026-10-11）
+
+- 用户确认入口整理代码作为后续标准，规则补入第 10 章；共享提示/加载窗口、预加载生命周期、存档所有权和类型落位按同一职责约定整理。独立类型拆分保留原命名空间；生成 UI 绑定仍从场景重生成。
+- 六格窗口由标题流程持有，不改 Framework 的流程清单；本轮没有新增框架、插件、旧工程写入。只在源表追加 `SaveForm`，经 Luban 更新配置和二进制，经 Collection Res 更新资源常量；复制素材登记在 LegacyAssetMap。
+- 前端回归新增六槽隔离、手动保存、旧空目录映射、损坏槽禁用、旧档案跨槽拒写、统一声音开关、确认音停止、音乐长度、关闭悬停、帮助和共享提示回调释放检查。异常注入在验证目录内，不增加生产测试 API。
+
+### 本轮职责归类与当前存档（2026-10-11，后续裁决）
+
+- 按用户要求将流程键与包装集中到 `Startup/FlowData/`，存档按 `Data/`、`Slots/`，事件按 `Combat/`、`Navigation/` 分类；手写脚本迁移携带原 UID，Godot 重扫。配套小枚举随所属类型，怪物攻击归同一实体的 partial；第 00/10/30 章同步维护。
+- 四栏选角使用旧角色长图与笔刷框，普通地图图像的 alpha 决定鼠标命中，悬停图独立显示；菜单与地图复用造梦一配乐。资源/绑定/配置分别通过原迁入脚本、UI 生成器、Luban 与 Collection Res 更新，无新增框架或插件修改。
+- 用户明确取消旧存档兼容：移除 v0 DTO、迁移器、历史等级补偿与旧目录映射，只支持 v2；档案映射归 `Save/Data/`。格式校验、空槽新建和备份恢复都有验证，测试通过反射与现有状态机检查实际状态。
+- 按用户要求，核对并清理本机 `Godot/app_userdata/GameZMXY/GameData/` 的两个 v1 档及目录、备份，共六个文件；只删除已验证编号与格式的文件，未清理 Validation 或其他设置。此处取代早先保留历史格式的规则和验证范围。
+
+### 本轮选角悬停与扁平存档（2026-10-11，后续裁决）
+
+- 用户要求复原参考图：完整选角卡片经 `export_official_character_cards.py` 从官方界面包渲染为 PNG，来源、散列与矢量编号登记在 LegacyAssetMap。场景使用 AtlasTexture 去掉遮罩外透明边，删除重复笔刷/姓名组件及返回按钮；UI 绑定与资源常量仍通过既有生成器更新，没有手改生成文件。
+- 可点击控件使用 Godot 手形光标；动态禁用的存档格和保存按钮同步恢复箭头。花果山只扩大 LocationGlow 的场景 Scale，不改变普通图命中区域。
+- 用户明确要求删除 ProfileSaveData 并扁平化：GameData 直接持有 ActiveHeroId、Heroes、Gold，配套 HeroSaveData 同文件；格式为 v3，不兼容 v2。存档方法明确写入/快照/读取/回滚含义，阅读顺序见 Save/README.md。本轮没有新增 Framework、addons 或旧工程修改。
+- 前端回归用 Viewport.PushInput 的局部坐标分发真实 GUI 事件，在布局等待后提交鼠标事件，按下/松开在同一轮分发；验证四栏切换、关闭/复用、不可选角色拒绝导航与手形光标，不增加生产观测 API，也不以重试跳过失败。
+
+- 本次格式平铺后，按用户此前清理旧开发存档的授权，核对并删除本机两个 v2（经验/金币均为 0）及对应目录、备份，共六文件；GameData 目录剩余文件数为 0，未清理 Validation 或应用设置。

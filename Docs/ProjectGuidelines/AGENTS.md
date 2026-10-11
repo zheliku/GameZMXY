@@ -11,7 +11,7 @@
 - [40 场景与资源](40-ScenesAndAssets.md)：场景、bundle、资产目录与导入约定。
 - [50 框架与工具](50-FrameworkAndTools.md)：GGF API 路由、工具边界、构建和验证。
 - [60 玩法模块](60-GameplayModules.md)：当前实现、长期系统的落位与数据形状、旧项目参考。
-- [70 档案与存档](70-ProfileAndSave.md)：档案所有权、存档格式、版本迁移、检查点与关卡事务。
+- [70 档案与存档](70-ProfileAndSave.md)：档案所有权、当前存档格式、检查点与关卡事务。
 
 ## 适用与裁决
 

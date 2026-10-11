@@ -1,3 +1,4 @@
+using GameLogic.Event.Combat;
 using System.Linq;
 using System;
 using GameConfig.Battle;
@@ -9,7 +10,6 @@ using GameLogic.Battle;
 using GameLogic.Entity.Body;
 using GameLogic.Entity.Monsters.AI;
 using GameLogic.Entity.Monsters.Body;
-using GameLogic.Event;
 using GameLogic.UI.Widgets;
 using Godot;
 using GodotGameFramework.Entity;
@@ -221,7 +221,7 @@ namespace GameLogic.Entity.Monsters
 		/// <param name="delta">本次物理帧秒数。</param>
 		public override void _PhysicsProcess(double delta)
 		{
-			if (!IsShown || Config == null)
+			if (!IsShown || Config == null || delta <= 0)
 			{
 				return;
 			}
@@ -309,44 +309,6 @@ namespace GameLogic.Entity.Monsters
 			HurtBox?.SetDeferred(Area2D.PropertyName.Monitorable, enabled);
 		}
 
-		/// <summary>装配招式并从攻击动画判定盒推导每招范围。</summary>
-		private void LoadAttacks()
-		{
-			// 先按配置装载本怪物的招式，再为 AI 建立可查询的规格。
-			m_OwnAttacks = LoadOwnAttacks(Config.EntityId);
-			if (m_OwnAttacks.Length == 0)
-			{
-				Log.Warning("[MonsterEntity] {0} 没有任何招式（AttackConfig.OwnerId={1}），AI 不会出招", Config.NameCn,
-					Config.EntityId);
-			}
-
-			// 将攻击配置转换为 AI 使用的范围、权重和冷却快照；判定盒/射程由行为类别补充。
-			MonsterAttackSpec[] specs = new MonsterAttackSpec[m_OwnAttacks.Length];
-			for (int i = 0; i < specs.Length; i++)
-			{
-				specs[i] = BuildAttackSpec(i, m_OwnAttacks[i]);
-			}
-
-			Attacks = new MonsterAttackBook(specs);
-		}
-
-		/// <summary>把一条 AttackConfig 转成 AI 用法快照（扩展点：近战类别补判定盒范围，远程类别补射程）。</summary>
-		/// <param name="index">招式下标（= AttackSegment）。</param>
-		/// <param name="attack">该招的配置行。</param>
-		/// <returns>AI 抽选与释放判定使用的规格。</returns>
-		protected virtual MonsterAttackSpec BuildAttackSpec(int index, AttackConfig attack)
-		{
-			return new MonsterAttackSpec
-			{
-				Index = index,
-				Weight = attack.AiWeight,
-				Priority = attack.AiPriority,
-				Range = (attack.AiRange.X, attack.AiRange.Y),
-				Cooldown = (attack.AiCooldown.X, attack.AiCooldown.Y),
-				InitCooldown = (attack.AiInitCooldown.X, attack.AiInitCooldown.Y),
-			};
-		}
-
 		/// <summary>构建 AI 参数快照（**行为类别必须给出**：索敌、巡逻与出手欲望等数值来源）。</summary>
 		/// <returns>AI 状态机使用的参数快照。</returns>
 		protected abstract MonsterAiParams BuildAiParams();
@@ -376,26 +338,6 @@ namespace GameLogic.Entity.Monsters
 				AttackTimes = times,
 				AttackRecovery = recovery,
 			};
-		}
-
-		/// <summary>提交出招：转向目标、装填攻击包并播放起手音。</summary>
-		/// <param name="index">本怪物攻击配置数组中的下标。</param>
-		private void BeginAttackIndex(int index)
-		{
-			// 出招开始时固定朝向并记录冷却，随后装填本段结算数据。
-			SetFacing(Math.Sign(TargetBox.CenterX));
-			Attacks.MarkUsed(index, GD.Randf);
-			AttackSegment = index;
-			ArmAttack(m_OwnAttacks[index]);
-			PlaySound(m_OwnAttacks[index].SoundId);
-			Log.Debug("[Monster] {0} 出招 段{1}", Id, index + 1);
-		}
-
-		/// <summary>结束或打断出招并归还攻击包。</summary>
-		private void EndAttackIndex()
-		{
-			AttackSegment = -1;
-			ReleaseAttack();
 		}
 
 		/// <summary>维护目标有效性、视野超时和索敌区发现。</summary>

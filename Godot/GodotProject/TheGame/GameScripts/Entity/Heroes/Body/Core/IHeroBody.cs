@@ -1,3 +1,4 @@
+using GameLogic.Entity.Heroes.Input;
 using Godot;
 using GameLogic.Entity.Body;
 

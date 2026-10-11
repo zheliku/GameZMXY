@@ -1,3 +1,4 @@
+using GameLogic.Save.Data;
 using System;
 using System.Threading.Tasks;
 using GameConfig;
@@ -11,21 +12,6 @@ using GodotGameFramework;
 
 namespace GameLogic.Session
 {
-	/// <summary>一次关卡运行的结局。</summary>
-	public enum LevelRunOutcome
-	{
-		/// <summary>仍在进行。</summary>
-		Running,
-
-		/// <summary>全部清波（通关）。</summary>
-		Cleared,
-
-		/// <summary>英雄死亡。</summary>
-		Defeated,
-
-		/// <summary>中途放弃或运行错误，收益已回滚。</summary>
-		Abandoned,
-	}
 
 	/// <summary>
 	/// 一次关卡运行（关卡作用域）的所有者：结算关内收益并管理"关卡事务"。
@@ -43,7 +29,7 @@ namespace GameLogic.Session
 		private readonly HeroEntity m_Hero; // 本关出战英雄。
 		private readonly HeroRecord m_Record; // 出战英雄在档案中的记录。
 		private readonly TbMonsterConfig m_Monsters; // 怪物配置（经验奖励查表）。
-		private readonly ProfileSaveData m_Snapshot; // 进关时的档案快照，回滚用。
+		private readonly GameData m_Snapshot; // 进关时的独立存档快照，只在内存用于回滚。
 
 		/// <summary>结局；Running 表示仍在进行。</summary>
 		public LevelRunOutcome Outcome { get; private set; } = LevelRunOutcome.Running;
@@ -76,7 +62,7 @@ namespace GameLogic.Session
 			}
 
 			m_Monsters = tables.TbMonsterConfig;
-			m_Snapshot = ProfileMapper.Capture(context.Profile);
+			m_Snapshot = ProfileMapper.CaptureSaveData(context.Profile);
 			m_Level.MonsterDefeated += OnMonsterDefeated;
 			m_Level.Completed += OnCompleted;
 			m_Hero.Died += OnHeroDied;
@@ -90,7 +76,7 @@ namespace GameLogic.Session
 				return;
 			}
 
-			ProfileMapper.RollBack(m_Context.Profile, m_Snapshot);
+			ProfileMapper.RestoreCheckpoint(m_Context.Profile, m_Snapshot);
 			Finish(LevelRunOutcome.Abandoned);
 		}
 
@@ -137,7 +123,7 @@ namespace GameLogic.Session
 				return;
 			}
 
-			Commit = m_Context.Save.CheckpointAsync(m_Context.Profile);
+			Commit = m_Context.Save.SaveCheckpointAsync(m_Context.Profile);
 			Log.Info("[LevelRun] 关卡 {0} 结束：{1}，击败 {2}，经验 {3}", m_Level.LevelId, outcome, Stats.Kills, Stats.Experience);
 			Finish(outcome);
 		}
@@ -158,6 +144,22 @@ namespace GameLogic.Session
 			m_Level.Completed -= OnCompleted;
 			m_Hero.Died -= OnHeroDied;
 		}
+	}
+
+	/// <summary>一次关卡运行的结局。</summary>
+	public enum LevelRunOutcome
+	{
+		/// <summary>仍在进行。</summary>
+		Running,
+
+		/// <summary>全部清波（通关）。</summary>
+		Cleared,
+
+		/// <summary>英雄死亡。</summary>
+		Defeated,
+
+		/// <summary>中途放弃或运行错误，收益已回滚。</summary>
+		Abandoned,
 	}
 
 	/// <summary>一次关卡运行的统计（只读展示，不写入存档）。</summary>

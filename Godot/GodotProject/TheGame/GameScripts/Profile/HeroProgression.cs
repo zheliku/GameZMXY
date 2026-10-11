@@ -22,9 +22,6 @@ public sealed class HeroProgression
 	/// <summary>升下一级所需经验；满级为 0。</summary>
 	public int MaxExperience { get; private set; }
 
-	/// <summary>已达到经验表最高等级。</summary>
-	public bool IsMaxLevel => Level >= m_Curve.MaxLevel;
-
 	/// <summary>累计经验或等级发生变化；订阅方一次读取全部派生值。</summary>
 	public event Action Changed;
 

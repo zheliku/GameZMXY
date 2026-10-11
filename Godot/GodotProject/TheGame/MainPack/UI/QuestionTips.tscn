@@ -66,6 +66,7 @@ size_flags_vertical = 3
 layout_mode = 2
 
 [node name="m_Btn_Cancle" type="Button" parent="Content/VBoxContainer/HBoxContainer" unique_id=802482086]
+mouse_default_cursor_shape = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "取消"
@@ -75,6 +76,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="m_Btn_Confirm" type="Button" parent="Content/VBoxContainer/HBoxContainer" unique_id=1044413534]
+mouse_default_cursor_shape = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "确认"

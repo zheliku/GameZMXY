@@ -1,7 +1,10 @@
+using GameLogic.Event.Navigation;
 using System;
 using GameFramework.UI;
 using Godot;
 using GodotGameFramework;
+using GameLogic.Audio;
+using GameConfig.Sound;
 
 namespace GameLogic.UI;
 
@@ -29,6 +32,7 @@ public partial class BattleHud
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = pauseCoveredUIForm;
         UIStringKeys.ForEach(key => key.SetLocalizationValue());
+        if (isNewInstance) m_SettingsButton.Pressed += OnSettingsClicked;
     }
 
     /// <summary>回池时重复执行本地解绑，清空框架字段。</summary>
@@ -129,7 +133,19 @@ public partial class BattleHud
     /// <summary>记录框架分配的界面深度。</summary>
     /// <param name="uiGroupDepth">界面组深度。</param>
     /// <param name="depthInGroup">界面在组内的深度。</param>
-    public void OnDepthChanged(int uiGroupDepth, int depthInGroup) => m_DepthInUIGroup = depthInGroup;
+    public void OnDepthChanged(int uiGroupDepth, int depthInGroup)
+    {
+        m_DepthInUIGroup = depthInGroup;
+        ZIndex = depthInGroup;
+    }
+
+    /// <summary>请关卡流程打开左下角设置菜单。</summary>
+    private void OnSettingsClicked()
+    {
+        if (m_Data == null) return;
+        GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        GF.Event.Fire(this, SettingsRequestedEventArgs.Create(SerialId));
+    }
 
     /// <summary>释放本次订阅与表现任务，重复调用安全。</summary>
     private void Unbind()

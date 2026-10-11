@@ -1,6 +1,6 @@
+using GameLogic.Event.Combat;
 using System;
 using GameFramework.Event;
-using GameLogic.Event;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.NodePool;

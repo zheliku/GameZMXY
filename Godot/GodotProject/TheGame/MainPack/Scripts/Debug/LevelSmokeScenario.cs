@@ -1,3 +1,5 @@
+using GameLogic.Event.Combat;
+using GameLogic.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +9,6 @@ using GameFramework;
 using GameLogic.Battle;
 using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
-using GameLogic.Event;
 using GameLogic.Level;
 using GameLogic.Session;
 using Godot;
@@ -37,6 +38,8 @@ public sealed class LevelSmokeScenario
     private double m_Time; // 整体游戏时间，超时用于报告卡住的位置。
     private double m_BattleTime; // 当前阶段开战后的游戏时间。
     private bool m_GoHintSeen; // 是否在行进阶段观察到前进提示。
+    private int m_TravelStageOrder; // 当前观测过行进起点的阶段。
+    private bool m_ExpectCenteredArrival; // 从新取景中心后方正常走入时，抵达应保持中央死区。
     private readonly int m_StartExperience; // 进关时档案中的累计经验。
 
     /// <summary>创建正式关卡的物理回归场景。</summary>
@@ -87,11 +90,26 @@ public sealed class LevelSmokeScenario
         foreach (MonsterEntity monster in monsters)
         {
             SmokeInspection.FreezeAi(monster);
-            m_Seen.Add(monster.Id);
+            if (m_Seen.Add(monster.Id))
+            {
+                // 在地形上方横穿当前右门，验证怪物可进入，玩家仍被同一道边界阻挡。
+                float right = m_Gates.BoundsOf(SmokeInspection.Sequence(m_Level).Current.StageOrder).Right;
+                Transform2D from = new(0f, new Vector2(right + 60f, 100f));
+                if (monster.TestMove(from, new Vector2(-120f, 0f)) || !m_Hero.TestMove(from, new Vector2(-120f, 0f)))
+                    Fail("阶段门未正确区分玩家阻挡与怪物场外入场");
+            }
         }
 
         if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Travelling)
         {
+            int order = SmokeInspection.Sequence(m_Level).Current.StageOrder;
+            if (m_TravelStageOrder != order)
+            {
+                m_TravelStageOrder = order;
+                float arrivalCenter = m_Gates.BoundsOf(order).Right - m_Camera.ViewSize.X * 0.5f;
+                // 重叠短过渡可能从新中心前方出发；此时只检查连续追近与边界，不要求瞬间倒退居中。
+                m_ExpectCenteredArrival = m_Hero.GlobalPosition.X <= arrivalCenter - 40f;
+            }
             if (monsters.Length > 0)
             {
                 Fail("相机抵达之前生成了下一阶段敌人");
@@ -107,11 +125,11 @@ public sealed class LevelSmokeScenario
             // 用户保留的斜坡含竖直端面，烟测用真实跳跃跨越，不修改场景地形。
             if (m_Hero.IsOnWall() && m_Hero.IsOnFloor())
             {
-                Input.ActionPress("jump");
+                Input.ActionPress(InputActions.Jump);
             }
             else
             {
-                Input.ActionRelease("jump");
+                Input.ActionRelease(InputActions.Jump);
             }
         }
         else if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Fighting)
@@ -181,7 +199,7 @@ public sealed class LevelSmokeScenario
             m_Step = Step.RightWall;
             m_BlockedFrames = 0;
             if (Math.Abs(m_Camera.ViewRight - region.Right) > 0.1f ||
-                Math.Abs(m_Hero.GlobalPosition.X - m_Camera.GlobalPosition.X) > 60f)
+                (m_ExpectCenteredArrival && Math.Abs(m_Hero.GlobalPosition.X - m_Camera.GlobalPosition.X) > 60f))
             {
                 Fail("开战时相机未抵达右界，或玩家不在中央死区附近");
             }

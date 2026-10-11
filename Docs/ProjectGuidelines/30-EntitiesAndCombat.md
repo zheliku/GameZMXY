@@ -6,7 +6,7 @@
 ## 已实现
 
 - **实体层级**：`ActorEntity : CharacterBody2D, IEntity` 提供人怪共用能力；`HeroEntity` 与 `MonsterEntity` 分别承载角色和怪物行为；具体角色按类型派生。实体脚本手写，不生成 Ge 半类。
-- **基类与具体类**：`MonsterEntity` / `HeroEntity` 是最通用基类，只做"所有怪物/英雄都一样"的事（配置、结算、感知、状态机推进），**不预设任何具体行为**；状态集与参数用抽象成员强制由具体类给出。每个具体怪物/英雄直接继承基类并声明自己的行为：`HuaguoshanMonkeyEntity`、`DemonMonkeyEntity`、`WukongEntity` 各自给出 `CreateBodyStates` / `CreateAiStates` / `InitialBodyStateType` / `InitialAiStateType` / `BuildAiParams` / `BuildAttackSpec` 与 `InHurt` / `InRecovery`；数值与招式一律来自配置表。新增行为（远程、飞行、精英、Boss、双武器）在对应具体类里改这些成员，不新增中间层、不修改基类。测试场地见 `TestArena.tscn`（不进入游戏流程）。
+- **基类与具体类**：`MonsterEntity` / `HeroEntity` 是最通用基类，只做"所有怪物/英雄都一样"的事（配置、结算、感知、状态机推进），**不预设任何具体行为**；状态集与参数用抽象成员强制由具体类给出。每个具体怪物/英雄直接继承基类并声明自己的行为：`HuaguoshanMonkeyEntity`、`DemonMonkeyEntity`、`WukongEntity` 各自给出 `CreateBodyStates` / `CreateAiStates` / `InitialBodyStateType` / `InitialAiStateType` / `BuildAiParams` 与 `InHurt` / `InRecovery`；数值与招式一律来自配置表。特殊招式可重写 `BuildAttackSpec`；新增行为（远程、飞行、精英、Boss、双武器）在对应具体类里改这些成员，不新增中间层、不修改基类。测试场地见 `TestArena.tscn`（不进入游戏流程）。
 - **生命周期**：实现 `OnInit / OnShow / OnUpdate / OnHide / OnRecycle`，显示和隐藏经 `GF.Entity`；`OnInit` 只做一次性装配。英雄 `OnShow` 只接受同一英雄的 `HeroLoadout`（由档案构建，测试场地用临时档案构建），清空属性来源后应用装配、补满生命魔法、清零无双；怪物接收出生点 `Vector2`，按 `MonsterConfig.Stats` 重建属性并补满。池复用时保持运行时容器实例稳定，重建/销毁状态机并清理攻击数据；不持有显示参数引用。
 - **实体只持有战斗运行时**：`ActorEntity` 持有 `StatSheet Stats`（属性汇总）、`Vitals Vitals`（生命魔法）与 `Level`；`HeroEntity` 另持有 `MusouGauge Musou`。等级、经验、金币等持久进度属于档案（见 [70-ProfileAndSave.md](70-ProfileAndSave.md)），实体不持有、不写入。
 - **属性汇总**：最终值 = (基础 + Σ固定值) × (1 + Σ同类百分比) × Π(1 + 独立百分比)，下限 0，整数属性四舍五入。基础值来自成长表或怪物配置（`SetBase`）；装备、法宝、被动、丹药、Buff 各自作为一个 `StatSource` 整体登记（`SetSource`）和移除（`RemoveSource`），不直接改基础值。持久来源经 `HeroLoadout` 注入，局内来源（Buff）由实体运行时登记；装配替换只移除上一次装配的持久来源。
@@ -16,10 +16,10 @@
 - **怪物 AI**：AI 状态机按框架帧运行，只写意图；身体状态机按物理帧执行移动和动作。当前状态图为 `Pause / Wander / WalkToTarget / StandAndStrike / PaceBelowTarget / CcLocked / Death`。AI 通过接口访问目标和身体事实，不持有节点引用。
 - **出手节奏**：`StandAndStrikeState` 进入攻击范围后先按 `MonsterConfig.AttackFirstDelay`（x=最短、y=最长秒）随机停一拍，之后每 `AttackInterval` 按 `AttackDesire`（0-100 出手概率）掷一次。持续交战的期望出手间隔 ≈ `AttackInterval ÷ (AttackDesire/100)`：欲望越高间隔越短，所以间隔不随欲望二次缩放——两个旋钮正交，便于单独调参；首次延迟只是反应时间，与概率无关。
 - **动画与判定**：`AnimationPlayer` 只承载帧、特效和判定盒值轨道，不放方法轨道、不调用玩法代码。身体状态读取动画长度并自行计时；音效由状态钩子触发并按配置 ID 播放。HitBox 几何及启闭由动画值轨道提供，朝向由判定盒根节点镜像。
-- **攻击范围**：当前怪物近战范围从攻击动画判定盒轨道读取。`AttackReachReader` 目前只读取直接子节点中的一个 `CollisionShape2D`，并以形状边界矩形估算；多形状、复杂变换和非矩形精确范围尚未验证。
+- **攻击范围**：`MonsterEntity.Attacks.cs` 集中怪物攻击装配、范围推导、开始与结束。默认 `BuildAttackSpec` 从动画有效判定窗口读取范围，特殊招式在具体怪物重写；共享 `ActorEntity` 不依赖怪物 AI 几何类型。当前只读取直接子节点中的一个 `CollisionShape2D`，以形状边界矩形估算；多形状、复杂变换和非矩形精确范围尚未验证。
 - **战斗结算**：`Battle/` 保存属性快照、攻击包、伤害结果和结算公式；不读取场景树或引擎全局状态。随机值由调用方提供。攻击包用 `ReferencePool` 管理，一招对同一目标只结算一次；物理、魔法、真实伤害及击退系数取现有战斗配置。
 - **事件边界**：跨模块结果通过 `GF.Event` 发布池化事件参数。事件只携带值，不持有攻击包或实体；订阅者在分发期间读取，不保存事件对象。转发时创建新参数实例。
-- **物理层**：代码使用层名，不写位掩码数字：`World`、`PlayerBody`、`EnemyBody`、`Platform`、`PlayerHitBox`、`EnemyHurtBox`、`EnemyHitBox`、`PlayerHurtBox`、`MagicWeapon`、`Trap`、`Item`、`Exit`、`Detector`。层序由 `project.godot` 定义。
+- **物理层**：代码使用层名，不写位掩码数字：`World`、`PlayerBody`、`EnemyBody`、`Platform`、`PlayerHitBox`、`EnemyHurtBox`、`EnemyHitBox`、`PlayerHurtBox`、`MagicWeapon`、`Trap`、`Item`、`Exit`、`Detector`、`PlayerBarrier`。层序由 `project.godot` 定义。
 
 ## 旧项目参考
 

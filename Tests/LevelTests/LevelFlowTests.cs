@@ -26,9 +26,25 @@ public sealed class LevelFlowTests
         Assert.Equal(4, level.Stages.Count);
         Assert.Equal(new[] { 3, 7, 6, 7 }, level.Stages.Select(x => x.Recipes.Sum(r => r.Count)));
         Assert.Equal(new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey },
-            level.Stages[1].Recipes.Select(x => x.MonsterEntityId));
+            level.Stages[1].Recipes.Select(x => x.MonsterEntityId).Distinct());
         Assert.All(level.Stages, x => Assert.Equal(StageActivation.CameraArrived, x.Activation));
         Assert.All(level.Stages, x => Assert.True(x.SpawnDelay >= 0));
+    }
+
+    /// <summary>官方第二波左右出怪，第三波三个高低分散点与一条延迟生成流不能再合并。</summary>
+    [Fact]
+    public void OfficialSpawnStreamsKeepSeparateLocationsAndFirstSpawnTimes()
+    {
+        LevelConfig level = LoadLevel();
+        Assert.Equal(new[] { "stage_2_a", "stage_2_b", "stage_2_c" },
+            level.Stages[1].Recipes.Select(x => x.SpawnPointId));
+        Assert.Equal(new[] { 5, 1, 1 }, level.Stages[1].Recipes.Select(x => x.Count));
+        Assert.Equal(new[] { 3f, 6f, 6f }, level.Stages[1].Recipes.Select(x => x.Delay));
+        Assert.Equal(new[] { 1, 1, 1, 3 }, level.Stages[2].Recipes.Select(x => x.Count));
+        Assert.Equal(new[] { 4f, 4f, 4f, 6f }, level.Stages[2].Recipes.Select(x => x.Delay));
+        Assert.Equal(new[] { "", "stage_2_left", "stage_3_left", "stage_4_left" },
+            level.Stages.Select(x => x.LeftGateId));
+        Assert.Equal("stage_4_gate", level.Stages[3].GateId);
     }
 
     /// <summary>加载期不开始战斗，清除只能推进紧邻下一阶段，末段清除完成会话。</summary>
@@ -206,6 +222,7 @@ public sealed class LevelFlowTests
         bytes.WriteString("Capacity");
         bytes.WriteInt((int)activation);
         bytes.WriteString(triggerId);
+        bytes.WriteString("");
         bytes.WriteString("");
         bytes.WriteInt(maxActive);
         bytes.WriteFloat(spawnDelay);

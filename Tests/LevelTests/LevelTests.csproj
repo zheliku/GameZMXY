@@ -12,11 +12,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Camera\LevelCamera.cs" Link="Linked\LevelCamera.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Stage\LevelStagePhase.cs" Link="Linked\LevelStagePhase.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Stage\LevelStageSequence.cs" Link="Linked\LevelStageSequence.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Spawning\LevelSpawnSchedule.cs" Link="Linked\LevelSpawnSchedule.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Level\*.cs" Link="Linked\Config\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Entity\EntityId.cs" Link="Linked\Config\EntityId.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Sound\SoundId.cs" Link="Linked\Config\SoundId.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GodotGameFrameworkCore\Lib\LubanLib\*.cs" Link="Linked\Luban\%(Filename)%(Extension)" />
     <None Include="$(GodotProjectDir)TheGame\DataTables\GameConfigs\level_tblevelconfig.bytes" Link="Data\level_tblevelconfig.bytes" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

@@ -1,11 +1,9 @@
 using System;
-using GameConfig.Battle;
 using GameFramework.Fsm;
 using GameLogic.Entity.Body;
 using GameLogic.Entity.Monsters.AI;
 using GameLogic.Entity.Monsters.AI.States;
 using GameLogic.Entity.Monsters.Body;
-using GodotGameFramework;
 
 namespace GameLogic.Entity.Monsters
 {
@@ -18,23 +16,6 @@ namespace GameLogic.Entity.Monsters
 	/// </summary>
 	public partial class DemonMonkeyEntity : MonsterEntity
 	{
-		/// <summary>近战范围由攻击动画判定盒推导（AiRange 留作普攻之外的补充距离）。</summary>
-		/// <param name="index">招式下标（= AttackSegment）。</param>
-		/// <param name="attack">该招的配置行。</param>
-		/// <returns>带判定盒范围的 AI 规格。</returns>
-		protected override MonsterAttackSpec BuildAttackSpec(int index, AttackConfig attack)
-		{
-			MonsterAttackSpec spec = base.BuildAttackSpec(index, attack);
-			AiBox reach = AttackReachReader.Read(this, attack.Animation);
-			if (attack.AiWeight > 0 && reach.IsEmpty && attack.AiRange.Y <= 0f)
-			{
-				Log.Warning("[DemonMonkeyEntity] 招式 {0}（动画 {1}）推导不出判定盒、且 AiRange 为 0,0：AI 不会使用这招",
-					attack.Id, attack.Animation);
-			}
-
-			return spec with { Reach = reach };
-		}
-
 		/// <summary>巡逻、出手欲望与站定滞回等参数取自 MonsterConfig。</summary>
 		/// <returns>本怪 AI 的参数快照。</returns>
 		protected override MonsterAiParams BuildAiParams()

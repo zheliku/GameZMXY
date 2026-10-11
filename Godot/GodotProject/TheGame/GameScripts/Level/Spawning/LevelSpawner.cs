@@ -1,3 +1,4 @@
+using GameLogic.Event.Combat;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +7,6 @@ using System.Threading.Tasks;
 using GameConfig.Level;
 using GameFramework.Entity;
 using GameFramework.Event;
-using GameLogic.Event;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;

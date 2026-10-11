@@ -1,6 +1,6 @@
 # GameZMXY：重构后项目导览
 
-核对日期：2026-10-10。本文按当前业务代码整理，是阅读地图；唯一规范仍是 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md)。根 README 提供运行入口，`Godot/docs/` 用于查询 GGF API，其历史示例不代表当前游戏实现。
+核对日期：2026-10-11。本文按当前业务代码整理，是阅读地图；唯一规范仍是 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md)。根 README 提供运行入口，`Godot/docs/` 用于查询 GGF API，其历史示例不代表当前游戏实现。
 
 建议用 **作用域图 → 启动流程 → 一次击杀时序 → 局部类图** 熟悉项目，再沿着链接看代码。先回答“状态归谁、谁创建它、谁修改它、谁观察它”，就能判断新功能应放在哪里。图使用 Mermaid；支持 Mermaid 的 Markdown 预览可直接显示，下方表格和文字也可独立阅读。
 
@@ -48,13 +48,23 @@ flowchart TB
 flowchart LR
     Launch[ProcedureLaunch] --> Update[ProcedureUpdate]
     Update --> Preload["ProcedurePreload<br/>资源组、配置校验、共享曲线"]
-    Preload --> Load["ProcedureLoadProfile<br/>读档 / 迁移 / 建档<br/>创建 GameContext"]
-    Load --> Level["ProcedureLevel<br/>加载场景与显示英雄<br/>启动关卡、创建 LevelRun、打开 HUD"]
-    Level --> End["通关 / 英雄死亡<br/>提交检查点"]
-    End -->|按配置延迟，等待写盘后重开| Level
+    Preload --> Title["ProcedureTitle · 开始界面"]
+    Title -->|开始游戏| Slots["SaveForm · 六格存档选择<br/>标题流程拥有目录"]
+    Slots -->|选定存档格| Load["ProcedureLoadProfile<br/>读档 / 建档<br/>创建 GameContext"]
+    Load -->|新档| Character["ProcedureCharacter · 选角"]
+    Load -->|已有档| Map
+    Character --> Map["ProcedureMap · 地图"]
+    Map -->|点击花果山| Level["ProcedureLevel<br/>装配英雄、关卡、LevelRun 与 HUD"]
+    Level -->|通关：提交检查点| Map
+    Level -->|左下角设置 → 返回地图：回滚| Map
+    Level -->|死亡：提交后延迟重开| Level
+    Map -->|保存图标| Checkpoint[SaveService.SaveCheckpointAsync]
+    Map -->|等待写盘后返回| Title
+    Level -->|设置 → 主菜单：回滚| Title
+    Character -->|等待写盘后返回| Title
 ```
 
-当前入口直接进入第 1 关；地图、选人、结算界面仍待实现。中途离开或运行错误回滚到进关快照；通关和死亡保留本关收益。经验先进入内存档案，因此可以即时升级；不会每击杀一次就写盘。
+当前入口先显示开始界面，经六格存档选择、选角与地图点击花果山才创建关卡。只有悟空可出战，其他角色与地点显示未开放；结算界面仍待实现。中途离开或运行错误回滚到进关快照；通关和死亡保留本关收益。经验先进入内存档案，因此可以即时升级；不会每击杀一次就写盘。
 
 按此顺序看，先读方法的 XML 摘要和装配顺序即可：
 
@@ -62,6 +72,10 @@ flowchart LR
 2. [ProcedureLevel.OnEnter / CleanupSession](../Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLevel.cs)：谁创建英雄、关卡、运行和 HUD；失败与退出如何清理。
 3. [GameContext](../Godot/GodotProject/TheGame/GameScripts/Session/GameContext.cs)：哪些对象跨关卡保留。
 4. [LevelRun](../Godot/GodotProject/TheGame/GameScripts/Session/LevelRun.cs)：结算与存档时机。
+
+菜单分工：窗口的 `OnStartClicked`、`OnHuaguoshanClicked` 等具名处理方法发出 GGF 事件；当前流程订阅对应事件，核对窗口编号后直接进入下一站。`MenuProcedure` 只统一窗口、音乐和取消的生命周期，不轮询导航命令。Character Data 只引用档案，Save Data 只引用标题目录，Settings Data 只引用需要暂停的关卡运行；开始页和静态地图无需空 Data。左下角设置 → 返回地图时，流程先关闭设置恢复时间，再回滚并清理战斗。`Audio/ConfiguredSound.cs` 将配置声音交给 GGF，关卡音乐来自 `LevelConfig.MusicId`，播放请求随所属流程结束。参见 [本轮交付与验证](FrontendDelivery.md)。
+
+输入分工：`Input/InputActions.cs` 集中声明业务与内置 UI 动作名称；`HeroEntity` 在物理帧用这些常量读取 Godot Input，并调用纯 C# `HeroInput.Sample`。缓冲、双击与消费规则留在 `Entity/Heroes/Input/`，暂停时不采样。菜单只处理点击事件，无 `_UnhandledKeyInput`。
 
 ## 3. 跟一次命中与击杀（约 8 分钟）
 
@@ -157,7 +171,7 @@ classDiagram
 | `LevelSpawner`       | 创建并持有本关怪物，报告击败和清波 | [入口](../Godot/GodotProject/TheGame/GameScripts/Level/Spawning/LevelSpawner.cs)       |
 | `LevelSpawnPointSet` | 稳定生成点 ID → 场景位置          | [入口](../Godot/GodotProject/TheGame/GameScripts/Level/Spawning/LevelSpawnPointSet.cs) |
 
-普通阶段是 `Ready → Travelling → Fighting → Travelling / Completed`，清波后先放行，**实际相机抵达下一段右界**才刷下一波。怪物 AI 写移动和攻击意图，身体状态机在物理帧执行动作，动画值轨道提供画面与判定盒。
+花果山前四波的官方坐标、分散生成流与重叠区域见 [核对记录](OfficialHuaguoshan.md)；第五波 Boss 尚未实现。普通阶段是 `Ready → Travelling → Fighting → Travelling / Completed`，清波后先放行，**实际相机抵达下一段右界**才刷下一波。怪物 AI 写移动和攻击意图，身体状态机在物理帧执行动作，动画值轨道提供画面与判定盒。
 
 ## 5. 开始改功能时查这张表
 
@@ -171,8 +185,8 @@ classDiagram
 | 波次、门、相机                     | `Level/` 对应职责 + `Scenes/Level_1.tscn` + `LevelConfig.xlsx`                       | 编排进表，空间在场景，状态各有一个所有者            |
 | 血条、无双闪烁、前进提示           | `UI/BattleHud/BattleHud.Logic.cs`、`UI/Widgets/ResourceBar.cs`、`UIs/BattleHud.tscn` | 窗口观察状态，控件按输入显示；动画配置放场景        |
 | 关内收益、通关或死亡处理           | `Session/LevelRun.cs`                                                                    | 关卡事务与检查点                                    |
-| 背包、装备等持久状态               | `Profile/` + `Save/` + [长期系统落位](ProjectGuidelines/60-GameplayModules.md)          | 新玩法尚未实现，按既定落位增加档案、DTO、映射和迁移 |
-| 读档、版本兼容                     | `Save/SaveService.cs`、`SaveMigrator.cs`、`ProfileMapper.cs`                         | 业务只经 SaveService 写盘                           |
+| 背包、装备等持久状态               | `Profile/` + `Save/` + [长期系统落位](ProjectGuidelines/60-GameplayModules.md)          | 新玩法尚未实现，按既定落位增加档案、DTO 和映射 |
+| 读档、当前格式校验                     | `Save/SaveService.cs`、`Save/Data/ProfileMapper.cs`                         | 业务只经 SaveService 写盘                           |
 | 实体/UI 池化与 GGF API 行为        | [Godot/docs](../Godot/docs/README.md) 和框架实现                                            | 依赖只读；先定位和报告框架问题                      |
 
 新增功能前写下三件事：**配置输入、可变状态所有者、生命周期边界**。然后在最近的现有模块扩展；UI 打开参数传状态源引用，跨关卡数据归档案，临时战斗数据归实体。
@@ -196,9 +210,9 @@ classDiagram
 - `BodyFsm` 保留为 C# 14 扩展块，只提供 `fsm.Tick(dt)`。它负责物理帧调度、同帧状态切换与重新进入，`BodyState` 负责单个动作；查询直接使用 `IFsm.CurrentState`。
 - 状态名、动画名、招式范围、沙包开关等测试专用接口从正式类型删除；测试观测与反射集中在 `MainPack/Scripts/Debug/SmokeInspection.cs`，纯 C# 单测直接读取自己创建的状态机。
 - 具体怪物用 `spec with { Reach = reach }` 补充近战范围，避免手抄整个规格；继续由具体实体决定行为，不新增近战中间基类。
-- `AttackReachReader`、`HeroStatBuilder`、存档映射与迁移类分别承担几何、成长、格式边界，继续独立；短 DTO 与状态类也不因行数少而合并。
+- `MonsterEntity.Attacks.cs` 集中怪物范围推导、攻击装配与生命周期；`HeroStatBuilder`、存档格式与映射继续按独立职责组织。小枚举与所属类型同文件，独立领域状态保持各自边界。
 - 正式预加载与独立场地共用 `MainPack/Scripts/Startup/GameResourceGroups.cs` 注册三类资源组，重复调用跳过已有组；不再各维护一套注册逻辑。
-- `ResourceBar` 使用 `GameLogic.UI.Widgets` 命名空间；HUD 样板由场景绑定重新生成。流程包装 `ExperienceCurveVariable` 与 `GameContextVariable` 都放在 `Session/`，按类型命名独立文件。
+- `ResourceBar` 使用 `GameLogic.UI.Widgets` 命名空间；HUD 样板由场景绑定重新生成。流程键 `FlowKeys` 和 `ExperienceCurveVariable`、`GameContextVariable`、`SaveSelectionVariable` 集中在 `MainPack/Scripts/Startup/FlowData/`，不再散落于领域和流程类型。
 - `HeroLoadout` 复制外层来源与各组修正，外部列表变化不会污染装配快照；实体只保存返回的来源标识，卸装不会误删 Buff。
 
 框架左上角调试按钮由 `ProcedureLaunch` 通过 `GF.Debugger.ActiveWindow = false` 关闭，不修改框架实现。
@@ -230,3 +244,22 @@ UI 烟测使用唯一的 `user://Validation/Ui/<随机 ID>` 存档目录；用 `
 - 框架既有退出异常仍登记在第 50 章。业务断言通过与进程正常退出是两项独立结果。
 
 后续维护以功能为单位更新对应图、代码链接和已实现状态；类图只保留主干关系，细节通过代码和局部图阅读。
+
+
+存档页的阅读顺序：`ProcedureTitle.OnStartGameRequested` 创建窗口并刷新目录 → `SaveSlotDirectory` 汇总加载阶段 → `SaveService.ReadSlotsAsync` 读取六格摘要 → `SaveForm` 订阅刷新并提交格号 → `ProcedureLoadProfile` 明确读取该编号。`MenuProcedure.ReturnToTitleAsync` 复用等待保存的边界。代码风格依据和本轮审查发现见 [代码整理记录](CodeStyleReview.md)。
+
+## 8. 按职责找代码
+
+| 要修改的内容 | 入口 |
+| --- | --- |
+| 流程共享键、GGF 池化包装 | `MainPack/Scripts/Startup/FlowData/` |
+| 当前存档格式与档案映射 | `GameScripts/Save/Data/` |
+| 六格目录、格子信息及配套状态枚举 | `GameScripts/Save/Slots/` |
+| 界面导航 / 战斗结果事件 | `GameScripts/Event/Navigation/` / `Combat/` |
+| 怪物招式装配、动画范围、出招生命周期 | `GameScripts/Entity/Monsters/MonsterEntity.Attacks.cs` |
+
+`SaveOrigin` 随 `LoadedProfile`，`LevelRunOutcome` 与 `RunStats` 随 `LevelRun`，`LevelStagePhase` 随 `LevelStageSequence`。按所属职责查找，比为每个小枚举建立独立入口更直接。静态四栏选角页不持有档案 Data，测试通过流程状态机和反射检查实际档案。
+
+当前只支持 `GameData.CurrentVersion = 3`，历史 DTO、迁移器、等级补偿和旧目录映射已经删除；格式变化时清理开发旧档，不增加兼容分支。详见第 70 章。
+
+想确认保存哪些字段，直接看 `Save/Data/GameData.cs`：ActiveHeroId、Heroes（HeroId 与 TotalExperience）、Gold 平铺在根对象，不再有 ProfileSaveData。类型与流程的最短阅读入口见 [Save/README](../Godot/GodotProject/TheGame/GameScripts/Save/README.md)。

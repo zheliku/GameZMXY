@@ -1,0 +1,319 @@
+[gd_scene format=3 uid="uid://bit3xlive37sg"]
+
+[ext_resource type="Texture2D" uid="uid://cnv7if405wliu" path="res://TheGame/Sprites/UI/frontend/journey_map.png" id="bg"]
+[ext_resource type="Texture2D" uid="uid://c2nkhug1jwjro" path="res://TheGame/Sprites/UI/frontend/map_bianfuku_hover.png" id="bianfuku_hover"]
+[ext_resource type="Texture2D" uid="uid://drn4ba5li0m2q" path="res://TheGame/Sprites/UI/frontend/map_bianfuku_normal.png" id="bianfuku_normal"]
+[ext_resource type="FontFile" uid="uid://dy01vypttvr" path="res://TheGame/MainPack/Fonts/dfp_hai_bao_w12.ttc" id="caption_font"]
+[ext_resource type="Texture2D" uid="uid://boxa0te5ta80" path="res://TheGame/Sprites/UI/frontend/map_donghai_hover.png" id="donghai_hover"]
+[ext_resource type="Texture2D" uid="uid://bwtvb221hiifv" path="res://TheGame/Sprites/UI/frontend/map_donghai_normal.png" id="donghai_normal"]
+[ext_resource type="AnimationLibrary" uid="uid://caugqk1qip0lv" path="res://TheGame/Sprites/UI/frontend/map_location_hover.tres" id="hover"]
+[ext_resource type="Texture2D" uid="uid://tubaxdeoft65" path="res://TheGame/Sprites/UI/frontend/map_huaguoshan_hover.png" id="huaguoshan_hover"]
+[ext_resource type="Texture2D" uid="uid://bj73pt6rq6bcr" path="res://TheGame/Sprites/UI/frontend/map_huaguoshan_normal.png" id="huaguoshan_normal"]
+[ext_resource type="Texture2D" uid="uid://456snmlisv53" path="res://TheGame/Sprites/UI/frontend/map_jialuoluo_hover.png" id="jialuoluo_hover"]
+[ext_resource type="Texture2D" uid="uid://l6vfnm668mrf" path="res://TheGame/Sprites/UI/frontend/map_jialuoluo_normal.png" id="jialuoluo_normal"]
+[ext_resource type="Script" uid="uid://bgiaah227v81a" path="res://TheGame/GameScripts/UI/Widgets/MapLocationButton.cs" id="location_button"]
+[ext_resource type="Texture2D" uid="uid://dgolqegcy6inw" path="res://TheGame/Sprites/UI/frontend/map_niumogu_hover.png" id="niumogu_hover"]
+[ext_resource type="Texture2D" uid="uid://dda6pmgrebrk7" path="res://TheGame/Sprites/UI/frontend/map_niumogu_normal.png" id="niumogu_normal"]
+[ext_resource type="Shader" uid="uid://dwpg72nk34cge" path="res://TheGame/Sprites/UI/frontend/map_location_outline.gdshader" id="outline"]
+[ext_resource type="Texture2D" uid="uid://btslpl1u6djhv" path="res://TheGame/Sprites/UI/frontend/map_qianan_hover.png" id="qianan_hover"]
+[ext_resource type="Texture2D" uid="uid://cmmcnv7rns3by" path="res://TheGame/Sprites/UI/frontend/map_qianan_normal.png" id="qianan_normal"]
+[ext_resource type="Texture2D" uid="uid://bl72fs78k3jy5" path="res://TheGame/Sprites/UI/frontend/map_qixingdong_hover.png" id="qixingdong_hover"]
+[ext_resource type="Texture2D" uid="uid://btl5ybg8xbfrw" path="res://TheGame/Sprites/UI/frontend/map_qixingdong_normal.png" id="qixingdong_normal"]
+[ext_resource type="Texture2D" uid="uid://cduboi0hhjwwh" path="res://TheGame/Sprites/UI/frontend/map_return_title.png" id="return_title"]
+[ext_resource type="Texture2D" uid="uid://ccn3ilctrv7lh" path="res://TheGame/Sprites/UI/frontend/map_save_game.png" id="save"]
+[ext_resource type="AnimationLibrary" uid="uid://i61lkwwdqgpu" path="res://TheGame/Sprites/UI/frontend/map_save_feedback.tres" id="save_feedback"]
+[ext_resource type="Script" uid="uid://j3l6184hm0yt" path="res://TheGame/GameScripts/UI/MapForm/MapForm.cs" id="script"]
+[ext_resource type="Texture2D" uid="uid://b6lb8t8q0g7jx" path="res://TheGame/Sprites/UI/frontend/map_shazhiwoliu_hover.png" id="shazhiwoliu_hover"]
+[ext_resource type="Texture2D" uid="uid://cf0lrs4cxjgqm" path="res://TheGame/Sprites/UI/frontend/map_shazhiwoliu_normal.png" id="shazhiwoliu_normal"]
+[ext_resource type="Texture2D" uid="uid://boepbieat5x6w" path="res://TheGame/Sprites/UI/frontend/map_shuiliandong_hover.png" id="shuiliandong_hover"]
+[ext_resource type="Texture2D" uid="uid://dmwnjwwopl5ek" path="res://TheGame/Sprites/UI/frontend/map_shuiliandong_normal.png" id="shuiliandong_normal"]
+[ext_resource type="Texture2D" uid="uid://buhw44su2vnxo" path="res://TheGame/Sprites/UI/frontend/map_taohuayuan_hover.png" id="taohuayuan_hover"]
+[ext_resource type="Texture2D" uid="uid://batx133n5ba8m" path="res://TheGame/Sprites/UI/frontend/map_taohuayuan_normal.png" id="taohuayuan_normal"]
+[ext_resource type="Theme" path="res://TheGame/MainPack/Themes/legacy_menu_theme.tres" id="theme"]
+
+[sub_resource type="ShaderMaterial" id="glow"]
+resource_local_to_scene = true
+shader = ExtResource("outline")
+shader_parameter/image_scale = 0.9
+shader_parameter/line_thickness = 1.0
+
+[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Back", "m_Huaguoshan", "m_Save", "m_LocationAnimation", "m_SaveFeedback", "m_SaveFeedbackAnimation")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("theme")
+script = ExtResource("script")
+m_Back = NodePath("m_Back")
+m_Huaguoshan = NodePath("m_Huaguoshan")
+m_Save = NodePath("m_Save")
+m_LocationAnimation = NodePath("m_LocationAnimation")
+m_SaveFeedback = NodePath("SaveFeedback/m_SaveFeedback")
+m_SaveFeedbackAnimation = NodePath("m_SaveFeedbackAnimation")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1431881532]
+layout_mode = 0
+offset_right = 940.0
+offset_bottom = 590.0
+mouse_filter = 2
+texture = ExtResource("bg")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="m_Huaguoshan" type="TextureButton" parent="." unique_id=1050552217 node_paths=PackedStringArray("m_HoverImage")]
+self_modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+offset_left = 128.0
+offset_top = 85.0
+offset_right = 288.0
+offset_bottom = 259.0
+pivot_offset = Vector2(80, 87)
+tooltip_text = "花果山"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("huaguoshan_normal")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("location_button")
+m_HoverImage = NodePath("LocationGlow")
+
+[node name="LocationGlow" type="TextureRect" parent="m_Huaguoshan" unique_id=619886601]
+material = SubResource("glow")
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 174.0
+pivot_offset = Vector2(80, 87)
+mouse_filter = 2
+texture = ExtResource("huaguoshan_hover")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="Location2" type="TextureButton" parent="." unique_id=1715632211]
+layout_mode = 0
+offset_left = 279.0
+offset_top = 79.0
+offset_right = 439.0
+offset_bottom = 253.0
+pivot_offset = Vector2(80, 87)
+tooltip_text = "水帘洞 · 尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("shuiliandong_normal")
+texture_pressed = ExtResource("shuiliandong_hover")
+texture_hover = ExtResource("shuiliandong_hover")
+texture_disabled = ExtResource("shuiliandong_normal")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="Location3" type="TextureButton" parent="." unique_id=558010661]
+layout_mode = 0
+offset_left = 481.0
+offset_top = 7.0
+offset_right = 641.0
+offset_bottom = 181.0
+pivot_offset = Vector2(80, 87)
+tooltip_text = "桃花源 · 尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("taohuayuan_normal")
+texture_pressed = ExtResource("taohuayuan_hover")
+texture_hover = ExtResource("taohuayuan_hover")
+texture_disabled = ExtResource("taohuayuan_normal")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="Location4" type="TextureButton" parent="." unique_id=433813825]
+visible = false
+layout_mode = 0
+offset_left = 611.0
+offset_top = -11.0
+offset_right = 771.0
+offset_bottom = 163.0
+pivot_offset = Vector2(80, 87)
+tooltip_text = "蝙蝠窟 · 尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("bianfuku_normal")
+texture_pressed = ExtResource("bianfuku_hover")
+texture_hover = ExtResource("bianfuku_hover")
+texture_disabled = ExtResource("bianfuku_normal")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="Location5" type="TextureButton" parent="." unique_id=1287385966]
+layout_mode = 0
+offset_left = 547.0
+offset_top = 169.0
+offset_right = 707.0
+offset_bottom = 343.0
+pivot_offset = Vector2(80, 87)
+tooltip_text = "七星洞 · 尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("qixingdong_normal")
+texture_pressed = ExtResource("qixingdong_hover")
+texture_hover = ExtResource("qixingdong_hover")
+texture_disabled = ExtResource("qixingdong_normal")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="Location6" type="TextureButton" parent="." unique_id=932026306]
+layout_mode = 0
+offset_left = 715.0
+offset_top = 69.0
+offset_right = 875.0
+offset_bottom = 243.0
+pivot_offset = Vector2(80, 87)
+tooltip_text = "迦楼罗之穴 · 尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("jialuoluo_normal")
+texture_pressed = ExtResource("jialuoluo_hover")
+texture_hover = ExtResource("jialuoluo_hover")
+texture_disabled = ExtResource("jialuoluo_normal")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="Location7" type="TextureButton" parent="." unique_id=1061604071]
+layout_mode = 0
+offset_left = 345.0
+offset_top = 238.0
+offset_right = 569.0
+offset_bottom = 396.0
+pivot_offset = Vector2(112, 79)
+tooltip_text = "浅岸 · 尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("qianan_normal")
+texture_pressed = ExtResource("qianan_hover")
+texture_hover = ExtResource("qianan_hover")
+texture_disabled = ExtResource("qianan_normal")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="Location8" type="TextureButton" parent="." unique_id=638111445]
+layout_mode = 0
+offset_left = 270.0
+offset_top = 318.0
+offset_right = 920.0
+offset_bottom = 452.0
+pivot_offset = Vector2(325, 67)
+tooltip_text = "东海 · 尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("donghai_normal")
+texture_pressed = ExtResource("donghai_hover")
+texture_hover = ExtResource("donghai_hover")
+texture_disabled = ExtResource("donghai_normal")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="Location9" type="TextureButton" parent="." unique_id=246093014]
+layout_mode = 0
+offset_left = 710.0
+offset_top = 466.0
+offset_right = 850.0
+offset_bottom = 570.0
+pivot_offset = Vector2(70, 52)
+tooltip_text = "鲨之涡流 · 尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("shazhiwoliu_normal")
+texture_pressed = ExtResource("shazhiwoliu_hover")
+texture_hover = ExtResource("shazhiwoliu_hover")
+texture_disabled = ExtResource("shazhiwoliu_normal")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Location10" type="TextureButton" parent="." unique_id=1508662741]
+layout_mode = 0
+offset_left = 185.0
+offset_top = 306.0
+offset_right = 345.0
+offset_bottom = 480.0
+pivot_offset = Vector2(80, 87)
+tooltip_text = "牛魔谷 · 尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("niumogu_normal")
+texture_pressed = ExtResource("niumogu_hover")
+texture_hover = ExtResource("niumogu_hover")
+texture_disabled = ExtResource("niumogu_normal")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="m_Save" type="TextureButton" parent="." unique_id=1994352566]
+layout_mode = 0
+offset_top = 179.0
+offset_right = 138.0
+offset_bottom = 272.0
+tooltip_text = "保存游戏"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("save")
+texture_hover = ExtResource("save")
+
+[node name="m_Back" type="TextureButton" parent="." unique_id=2059881241]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 289.0
+offset_right = 124.0
+offset_bottom = 403.0
+tooltip_text = "返回主菜单"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("return_title")
+texture_hover = ExtResource("return_title")
+
+[node name="Caption" type="Label" parent="m_Back" unique_id=1598122156]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 86.0
+offset_right = 97.0
+offset_bottom = 111.0
+theme_override_colors/font_color = Color(0.93, 0.65, 0.1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("caption_font")
+theme_override_font_sizes/font_size = 15
+text = "返回主菜单"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_LocationAnimation" type="AnimationPlayer" parent="." unique_id=328441174]
+libraries/location = ExtResource("hover")
+speed_scale = 0.4
+
+[node name="SaveFeedback" type="Control" parent="." unique_id=386898293]
+anchors_preset = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_top = 5.0
+offset_bottom = 5.0
+mouse_filter = 2
+
+[node name="m_SaveFeedback" type="Label" parent="SaveFeedback" unique_id=482460937]
+visible = false
+layout_mode = 0
+offset_left = -250.0
+offset_top = -61.0
+offset_right = 250.0
+offset_bottom = 64.0
+theme_override_colors/font_color = Color(0.08, 0.05, 0.02, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/outline_size = 2
+theme_override_constants/shadow_outline_size = 10
+theme_override_fonts/font = ExtResource("caption_font")
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_SaveFeedbackAnimation" type="AnimationPlayer" parent="." unique_id=1249960999]
+libraries/feedback = ExtResource("save_feedback")

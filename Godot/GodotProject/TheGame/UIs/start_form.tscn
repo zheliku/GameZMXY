@@ -1,0 +1,145 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/UI/StartForm/StartForm.cs" id="script"]
+[ext_resource type="Theme" path="res://TheGame/MainPack/Themes/legacy_menu_theme.tres" id="theme"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/title_backdrop.png" id="bg"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/menu_separator.png" id="separator"]
+[ext_resource type="FontFile" path="res://TheGame/MainPack/Fonts/aa_wen_zheng_ming.ttf" id="smallfont"]
+
+[node name="StartForm" type="Control" node_paths=PackedStringArray("m_Start", "m_Settings", "m_Help", "m_Notice", "m_Status")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("theme")
+script = ExtResource("script")
+m_Start = NodePath("m_Start")
+m_Settings = NodePath("m_Settings")
+m_Help = NodePath("m_Help")
+m_Notice = NodePath("m_Notice")
+m_Status = NodePath("m_Status")
+
+[node name="Background" type="TextureRect" parent="."]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 940.0
+offset_bottom = 590.0
+mouse_filter = 2
+texture = ExtResource("bg")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Series" type="Label" parent="."]
+offset_left = 686.0
+offset_top = 56.0
+offset_right = 940.0
+offset_bottom = 99.0
+mouse_filter = 2
+text = "造梦西游之"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 30
+
+
+[node name="Chapter" type="Label" parent="."]
+offset_left = 686.0
+offset_top = 100.0
+offset_right = 940.0
+offset_bottom = 132.0
+mouse_filter = 2
+text = "七大魔王篇"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = ExtResource("smallfont")
+
+
+[node name="m_Start" type="Button" parent="."]
+mouse_default_cursor_shape = 2
+offset_left = 692.0
+offset_top = 160.0
+offset_right = 933.0
+offset_bottom = 205.0
+focus_mode = 0
+text = "开始游戏"
+
+[node name="Divider0" type="TextureRect" parent="."]
+offset_left = 692.0
+offset_top = 203.0
+offset_right = 933.0
+offset_bottom = 224.0
+mouse_filter = 2
+texture = ExtResource("separator")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="m_Settings" type="Button" parent="."]
+mouse_default_cursor_shape = 2
+offset_left = 692.0
+offset_top = 222.0
+offset_right = 933.0
+offset_bottom = 267.0
+focus_mode = 0
+text = "游戏设置"
+
+[node name="Divider1" type="TextureRect" parent="."]
+offset_left = 692.0
+offset_top = 265.0
+offset_right = 933.0
+offset_bottom = 286.0
+mouse_filter = 2
+texture = ExtResource("separator")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="m_Help" type="Button" parent="."]
+mouse_default_cursor_shape = 2
+offset_left = 692.0
+offset_top = 284.0
+offset_right = 933.0
+offset_bottom = 329.0
+focus_mode = 0
+text = "游戏帮助"
+
+[node name="Divider2" type="TextureRect" parent="."]
+offset_left = 692.0
+offset_top = 327.0
+offset_right = 933.0
+offset_bottom = 348.0
+mouse_filter = 2
+texture = ExtResource("separator")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="m_Notice" type="Button" parent="."]
+mouse_default_cursor_shape = 2
+offset_left = 692.0
+offset_top = 346.0
+offset_right = 933.0
+offset_bottom = 391.0
+focus_mode = 0
+text = "游戏须知"
+
+[node name="Divider3" type="TextureRect" parent="."]
+offset_left = 692.0
+offset_top = 389.0
+offset_right = 933.0
+offset_bottom = 410.0
+mouse_filter = 2
+texture = ExtResource("separator")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="m_Status" type="Label" parent="."]
+offset_left = 678.0
+offset_top = 425.0
+offset_right = 932.0
+offset_bottom = 540.0
+mouse_filter = 2
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 19
+theme_override_fonts/font = ExtResource("smallfont")

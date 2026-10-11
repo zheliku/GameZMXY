@@ -1,3 +1,4 @@
+using GameLogic.Input;
 using System.Collections.Generic;
 using System.Linq;
 using GameLogic.Entity.Heroes;
@@ -35,9 +36,9 @@ public sealed class LevelCancellationSmokeScenario
         m_Time += delta;
         if (!m_Stopped && SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Fighting)
         {
-            // 首次怪物场景尚未进池，强制到期提交两个配方的首只实体。
+            // 首次怪物场景尚未进池，按正式配方首只等待时间强制到期，覆盖真实在途边界。
             var stage = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages[0];
-            m_Level.GetNode<LevelSpawner>("Spawner")._Process(stage.SpawnDelay + 1.0);
+            m_Level.GetNode<LevelSpawner>("Spawner")._Process(stage.SpawnDelay + stage.Recipes.Min(x => x.Delay) + 0.01);
             int pending = GF.Entity.GetAllLoadingEntityIds().Length;
             if (pending == 0)
             {
@@ -46,8 +47,8 @@ public sealed class LevelCancellationSmokeScenario
 
             m_Level.Cleanup();
             m_Stopped = true;
-            Input.ActionRelease("move_right");
-            Input.ActionRelease("jump");
+            Input.ActionRelease(InputActions.MoveRight);
+            Input.ActionRelease(InputActions.Jump);
             GD.Print($"SMOKE-CANCEL: stopped with {pending} pending shows");
         }
 
@@ -68,14 +69,14 @@ public sealed class LevelCancellationSmokeScenario
         }
         else
         {
-            Input.ActionPress("move_right");
+            Input.ActionPress(InputActions.MoveRight);
             if (m_Hero.IsOnWall() && m_Hero.IsOnFloor())
             {
-                Input.ActionPress("jump");
+                Input.ActionPress(InputActions.Jump);
             }
             else
             {
-                Input.ActionRelease("jump");
+                Input.ActionRelease(InputActions.Jump);
             }
         }
 

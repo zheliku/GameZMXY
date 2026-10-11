@@ -1,3 +1,4 @@
+using GameLogic.Startup.FlowData;
 //------------------------------------------------------------
 // 预加载流程：注册实体/UI/声音分组与本地化、启动节点池，并集中校验配置
 //------------------------------------------------------------
@@ -16,19 +17,19 @@ using GameLogic;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
-/// 预加载流程：资源组与本地化注册、节点池启动、配置集中校验；全部成功后进入读档流程。
+/// 预加载流程：资源组与本地化注册、节点池启动、配置集中校验；全部成功后进入标题流程。
 /// 任一步失败即停在加载界面并记录致命错误，不进入游戏。
 /// </summary>
 public class ProcedurePreload : ProcedureBase
 {
-    /// <summary>流程数据中保存已校验经验曲线的键（读档流程取用）。</summary>
-    public const string CurveDataKey = "ExperienceCurve";
+    private int m_EntrySerial; // 离开后忽略旧加载结果及取消异常。
 
-    /// <summary>加载语言及 UI、实体和声音分组，校验配置，再进入读档流程。</summary>
+    /// <summary>加载语言及 UI、实体和声音分组，校验配置，再进入标题流程。</summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal async override void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
+        int entrySerial = ++m_EntrySerial;
         bool groupsLoaded = GameResourceGroups.Register();
 
         try
@@ -50,10 +51,12 @@ public class ProcedurePreload : ProcedureBase
         }
         catch (Exception ex)
         {
+            if (entrySerial != m_EntrySerial) return;
             Log.Fatal("[ProcedurePreload] 打开加载界面失败: {0}", ex);
             return;
         }
 
+        if (entrySerial != m_EntrySerial) return;
         if (!groupsLoaded)
         {
             Log.Fatal("[ProcedurePreload] 必要资源组加载失败，停止进入游戏。");
@@ -74,9 +77,18 @@ public class ProcedurePreload : ProcedureBase
             return;
         }
 
-        procedureOwner.SetData(CurveDataKey, ExperienceCurveVariable.Create(curve));
-        ChangeState<ProcedureLoadProfile>(procedureOwner);
+        procedureOwner.SetData(FlowKeys.ExperienceCurve, ExperienceCurveVariable.Create(curve));
+        ChangeState<ProcedureTitle>(procedureOwner);
     }
+    /// <summary>使在途加载结果失效，不让旧周期继续启动游戏。</summary>
+    /// <param name="procedureOwner">流程状态机。</param>
+    /// <param name="isShutdown">是否框架关停。</param>
+    protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
+    {
+        ++m_EntrySerial;
+        base.OnLeave(procedureOwner, isShutdown);
+    }
+
     /// <summary>根据用户设置或编辑器资源模式选择界面语言。</summary>
     private void LoadLocalization()
     {

@@ -316,6 +316,36 @@ python Tools/LegacyMigration/gen_animations.py
 
 角色无双残影参考 `Script/Base/BaseHero.gd:add_WSEffect/_on_ws_timer_timeout`、`Scene/Hero/Role_1/WS_Effect.tscn` 与 `Script/Hero/WS_Effect.gd`：0.1 秒采样、0.27 秒寿命、暖色及初始透明度 0.8。新工程在 `MusouAfterimage.cs` 重写，只缓存身体/武器精灵的显示帧和世界变换，固定槽位复用，不复制旧动作树或判定节点。玩法与官方关卡依据见 [OfficialBattlePolish.md](OfficialBattlePolish.md)。
 
+## 2026-10-11 入口菜单、音乐与外置无双帧
+
+一次性迁入入口为 `Tools/LegacyMigration/import_frontend_assets.py`。以下原文件逐字节复制，未复制旧脚本、场景或 `.import`；导入元数据由新工程生成。目标路径相对 `TheGame/`，旧来源相对 `ZMXY_BHYH/`。
+
+| 新资源 | 旧来源 | 用途 |
+| --- | --- | --- |
+| `Sprites/UI/frontend/title_backdrop.png` | `Art/MainGame/Bg1.png` | 开始页插画（旧作品标题画面） |
+| `Sprites/UI/frontend/journey_map.png` | `Art/game_pic/183.png` | 地图底图 |
+| `Audios/Music/map_theme.mp3` | `Music/MainSceneMusic/zmxy_1BGM.mp3` | 标题、选角与地图共用造梦一音乐，145.76 秒 |
+| `Audios/Music/huaguoshan_theme.mp3` | `Music/level/1_music.mp3` | 花果山音乐 |
+
+两首音乐的 `.import` 开启循环，由 GGF Music 组加载和播放。`Audios/UI/menu_confirm.wav` 为迁入脚本生成的原创 0.12 秒衰减双正弦确认音（44100 Hz、单声道 PCM16），没有旧文件来源。
+
+### 官方选角完整卡片（后续按用户参考图复原）
+
+来源链为 [4399 系列入口](https://www.4399.com/flash/zmhj.htm) → [第一代游戏页面](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/v25928.htm) → [OtherMat_v9.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/OtherMat_v9.swf)。这些是官方包内矢量卡片的静态渲染，不是截图，也不是旧工程新找到的素材；替代此前的 swk/tsz/zbj/shs 长图。
+
+| 目标 PNG（Sprites/UI/frontend） | 官方矢量编号 | AtlasTexture 区域 |
+| --- | --- | --- |
+| `character_wukong_card.png` | DefineSprite 511 | (9, 0, 237, 610) |
+| `character_sanzang_card.png` | DefineSprite 521 | (21, 0, 237, 610) |
+| `character_bajie_card.png` | DefineSprite 515 | (15, 0, 237, 610) |
+| `character_wujing_card.png` | DefineSprite 518 | (22, 0, 237, 610) |
+
+重现入口为 `Tools/LegacyMigration/export_official_character_cards.py --java <java.exe> --ffdec <ffdec.jar> --swf <OtherMat_v9.swf>`，FFDec 26.3.0。脚本按官方 Aloader 的规则恢复排列：bytes[100:110] + bytes[0:100] + bytes[110:]；读取已恢复的文件也可。原始包 SHA-256 为 `ef03008e68d64f613a2f7b3abfeec4cba3d4bd579c67e0f4703d8f15d3e115c9`，恢复后为 `fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e`，脚本核对后者。
+
+PNG 保留导出内容，场景通过 AtlasTexture 排除遮罩外的透明侧边，不用 shader 缩放或移动角色。每栏 235×590，姓名描边、笔刷、剪影与问号已经包含在卡片内；shader 只用原版灰度系数 (0.3086, 0.6094, 0.082) 切换饱和度。官方 SWF 和脚本留在临时目录，不进入正式工程。
+
+`Sprites/UI/hud/hud_ws_full_frames.tres` 从现有 `BattleHud.tscn` 原样提取 10 个 AtlasTexture 与 20 帧往返循环时间线（25 fps）；HUD 只引用该资源。图集与 shader 不变，保留材质当前圆形裁剪参数。
+
 ## 待办
 
 - `wukong` 的 `hurt` / `death` 在旧动画中仅单帧（旧工程另有 `RoleDeath.png` 等独立节点），后续接入死亡表现时再评估。
@@ -324,3 +354,72 @@ python Tools/LegacyMigration/gen_animations.py
 - 身体层 `wukong_body.png` 的部分动作帧自带默认棍（旧美术遗留）；接武器层后需确认是否与 `wukong_weapon_*` 叠加导致重复，必要时清理身体层里的武器像素。
 - 技能特效与技能音效（见上两节"未迁移"）随技能系统一起迁；`Action/SpecialEffect2` 第二特效层同理。
 - 打击特效（`MonsterBeHurt_*`、`RoleBeHit`，`Art/StrikeSpecialEffects/`）M4 未迁：命中链路已留 `ActorEntity.OnHurt` 钩子，迁入时同样走 NodePool。`MissEffect` 已由 `damage_number_miss.png` 覆盖。
+
+
+## 原项目菜单视觉与鼠标交互恢复（2026-10-11）
+
+以下文件由 `Tools/LegacyMigration/import_frontend_assets.py` 原样复制，旧工程只读。主菜单依据 `Scene/Main_menu/Main_Menu.tscn`，保留透明按钮、Aa 山月字体和原分隔图片，提供开始、设置、帮助与须知。地图依据 `Map_1.tscn` 的地点图像、坐标与配对悬停图；第一关为花果山，水帘洞为第二关。当前只有花果山开放，其他地点显示原图且禁用。
+
+| 旧项目相对路径 | 新项目 TheGame 相对路径 |
+| --- | --- |
+| `Music/MainSceneMusic/zmxy_1BGM.mp3` | `Audios/Music/map_theme.mp3` |
+| `Art/game_pic/679.PNG` | `Sprites/UI/frontend/menu_separator.png` |
+| `Art/set_menu/653.png` | `Sprites/UI/frontend/settings_scroll.png` |
+| `Art/BackPack/49.png` | `Sprites/UI/frontend/menu_close.png` |
+| `Font/Aa我读山月山月独我_mianfeiziti.com.ttf` | `MainPack/Fonts/aa_shan_yue.ttf` |
+| `Font/Aa文徵明琴赋小楷_mianfeiziti.com.ttf` | `MainPack/Fonts/aa_wen_zheng_ming.ttf` |
+| `Art/game_pic/level_choose/185.png` | `Sprites/UI/frontend/map_huaguoshan_normal.png` |
+| `Art/game_pic/level_choose/188.png` | `Sprites/UI/frontend/map_huaguoshan_hover.png` |
+| `Art/game_pic/level_choose/192.png` | `Sprites/UI/frontend/map_shuiliandong_normal.png` |
+| `Art/game_pic/level_choose/195.png` | `Sprites/UI/frontend/map_shuiliandong_hover.png` |
+| `Art/game_pic/level_choose/199.png` | `Sprites/UI/frontend/map_taohuayuan_normal.png` |
+| `Art/game_pic/level_choose/202.png` | `Sprites/UI/frontend/map_taohuayuan_hover.png` |
+| `Art/game_pic/level_choose/206.png` | `Sprites/UI/frontend/map_bianfuku_normal.png` |
+| `Art/game_pic/level_choose/209.png` | `Sprites/UI/frontend/map_bianfuku_hover.png` |
+| `Art/game_pic/level_choose/220.png` | `Sprites/UI/frontend/map_qixingdong_normal.png` |
+| `Art/game_pic/level_choose/223.png` | `Sprites/UI/frontend/map_qixingdong_hover.png` |
+| `Art/game_pic/level_choose/213.png` | `Sprites/UI/frontend/map_jialuoluo_normal.png` |
+| `Art/game_pic/level_choose/216.png` | `Sprites/UI/frontend/map_jialuoluo_hover.png` |
+| `Art/game_pic/qa.png` | `Sprites/UI/frontend/map_qianan_normal.png` |
+| `Art/game_pic/level_choose/ShallowShore.png` | `Sprites/UI/frontend/map_qianan_hover.png` |
+| `Art/game_pic/dh.png` | `Sprites/UI/frontend/map_donghai_normal.png` |
+| `Art/game_pic/level_choose/EastSea.png` | `Sprites/UI/frontend/map_donghai_hover.png` |
+| `Art/game_pic/level_choose/267.png` | `Sprites/UI/frontend/map_shazhiwoliu_normal.png` |
+| `Art/game_pic/level_choose/SharkVortex.png` | `Sprites/UI/frontend/map_shazhiwoliu_hover.png` |
+| `Art/game_pic/level_choose/234.png` | `Sprites/UI/frontend/map_niumogu_normal.png` |
+| `Art/game_pic/level_choose/237.png` | `Sprites/UI/frontend/map_niumogu_hover.png` |
+| `Art/HeroPicture/RoleProperiesBox/757.png` | `Sprites/UI/hud/menu_inventory_normal.png` |
+| `Art/HeroPicture/RoleProperiesBox/759.png` | `Sprites/UI/hud/menu_inventory_hover.png` |
+| `Art/HeroPicture/RoleProperiesBox/756.png` | `Sprites/UI/hud/menu_inventory_caption.png` |
+| `Art/HeroPicture/RoleProperiesBox/751.png` | `Sprites/UI/hud/menu_settings_normal.png` |
+| `Art/HeroPicture/RoleProperiesBox/753.png` | `Sprites/UI/hud/menu_settings_hover.png` |
+| `Art/HeroPicture/RoleProperiesBox/750.png` | `Sprites/UI/hud/menu_settings_caption.png` |
+| `Art/HeroPicture/RoleProperiesBox/763.png` | `Sprites/UI/hud/menu_skills_normal.png` |
+| `Art/HeroPicture/RoleProperiesBox/765.png` | `Sprites/UI/hud/menu_skills_hover.png` |
+| `Art/HeroPicture/RoleProperiesBox/762.png` | `Sprites/UI/hud/menu_skills_caption.png` |
+| `Art/HeroPicture/RoleProperiesBox/769.png` | `Sprites/UI/hud/menu_weapon_normal.png` |
+| `Art/HeroPicture/RoleProperiesBox/771.png` | `Sprites/UI/hud/menu_weapon_hover.png` |
+| `Art/HeroPicture/RoleProperiesBox/768.png` | `Sprites/UI/hud/menu_weapon_caption.png` |
+| `Art/HeroPicture/RoleProperiesBox/775.png` | `Sprites/UI/hud/menu_pet_normal.png` |
+| `Art/HeroPicture/RoleProperiesBox/777.png` | `Sprites/UI/hud/menu_pet_hover.png` |
+| `Art/HeroPicture/RoleProperiesBox/774.png` | `Sprites/UI/hud/menu_pet_caption.png` |
+
+地图黄色轮廓参考 `Shader/LevelButton.gdshader` 的 8 向 alpha 邻域，业务侧重写为 `map_location_outline.gdshader`；保留透明边界并修正颜色重复相乘，悬停画面使用原来的带名称与黄光贴图。`map_location_hover.tres` 外置 AnimationLibrary 在 1 秒内循环改变缩放和轮廓厚度；移开、关闭和复用时执行 RESET。
+
+左下角图标按 `Scene/Level/Role_information.tscn/role_menu` 的位置和 caption 图片排列；设置 caption 上移 4px，避免 590px 画布底部裁掉文字。只有设置接入现有功能，背包、技能、法宝与宠物明确禁用，等待对应系统。`settings_form.tscn` 采用 `Scene/set_menu.tscn` 的黑色笔刷框与红色关闭图片（本轮按官方截图使用方正粗圆字体重排）；声音开关使用 GGF Music/SFX/UI 组和持久设置，返回路径为设置 → 返回地图。未复制旧脚本、联网校时、到期检查或存档逻辑。
+
+
+### 六格存档与菜单修正（2026-10-11）
+
+| 旧项目相对路径 | 新项目 TheGame 相对路径 | 用途 |
+| --- | --- | --- |
+| `Art/MagicWeapon/222.png` | `Sprites/UI/frontend/menu_close_hover.png` | 41×41 关闭叉白光悬停 |
+| `Art/Game_2/Button/ButtonReturnMainMenu.png` | `Sprites/UI/frontend/map_return_title.png` | 地图返回主菜单，题签沿用旧场景的叠字 |
+| `Art/game_pic/level_choose/294.png` | `Sprites/UI/frontend/map_save_game.png` | 地图手动保存图片 |
+| `Art/game_pic/ArchivePicture/87.png` | `Sprites/UI/frontend/save_slots_backdrop.png` | 造梦二风格存档记录框 |
+| `Art/MainGame/BasicPicCd_1.png` | `Sprites/UI/frontend/save_slot_normal.png` | 存档格普通图 |
+| `Art/MainGame/BasicPicCd_2.png` | `Sprites/UI/frontend/save_slot_hover.png` | 存档格白框悬停图 |
+
+以上为原样复制，迁移脚本已同步；未迁入旧项目的存档、联网或时间校验代码。设置布局以用户提供的官方造梦一截图为准；六格布局以用户提供的造梦二截图与旧 `read_archive_interface.tscn` 为参照，直接接入当前 GGF 存档入口。
+
+地图原 shader 只绘制轮廓，没有改变 GUI 命中范围。当前直接使用 Godot TextureButton 的 alpha 点击遮罩；普通树图决定几何，独立 LocationGlow 显示悬停配对图与外置动画，悬停不会扩大点击区域。

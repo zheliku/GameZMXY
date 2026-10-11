@@ -41,6 +41,22 @@ namespace GameConfig.Sound
         /// 悟空命中音(棍打中东西)
         /// </summary>
         WukongImpact = 6,
+        /// <summary>
+        /// 开始与选角音乐
+        /// </summary>
+        MenuTheme = 100,
+        /// <summary>
+        /// 地图音乐
+        /// </summary>
+        MapTheme = 101,
+        /// <summary>
+        /// 花果山音乐
+        /// </summary>
+        HuaguoshanTheme = 102,
+        /// <summary>
+        /// 菜单确认音
+        /// </summary>
+        MenuConfirm = 103,
     }
 
 } 

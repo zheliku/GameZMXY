@@ -1,3 +1,4 @@
+using GameLogic.Event.Combat;
 using System;
 using System.Collections.Generic;
 using GameConfig.Battle;
@@ -9,7 +10,6 @@ using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
 using GameLogic.Entity.Monsters.AI;
 using GameLogic.Entity.Monsters.Body;
-using GameLogic.Event;
 using Godot;
 using GodotGameFramework;
 

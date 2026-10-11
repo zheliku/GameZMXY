@@ -20,6 +20,7 @@ public sealed partial class LevelStage : Luban.BeanBase
         StageName = _buf.ReadString();
         Activation = (Level.StageActivation)_buf.ReadInt();
         TriggerId = _buf.ReadString();
+        LeftGateId = _buf.ReadString();
         GateId = _buf.ReadString();
         MaxActive = _buf.ReadInt();
         SpawnDelay = _buf.ReadFloat();
@@ -48,7 +49,11 @@ public sealed partial class LevelStage : Luban.BeanBase
     /// </summary>
     public readonly string TriggerId;
     /// <summary>
-    /// 阶段右界门 ID；最后阶段可留空，使用关卡右墙
+    /// 阶段左界门 ID；空使用关卡左墙；允许与上一阶段区域重叠
+    /// </summary>
+    public readonly string LeftGateId;
+    /// <summary>
+    /// 阶段右界门 ID；空使用关卡右墙；不再推导下一阶段左界
     /// </summary>
     public readonly string GateId;
     /// <summary>
@@ -79,6 +84,7 @@ public sealed partial class LevelStage : Luban.BeanBase
         + "StageName:" + StageName + ","
         + "Activation:" + Activation + ","
         + "TriggerId:" + TriggerId + ","
+        + "LeftGateId:" + LeftGateId + ","
         + "GateId:" + GateId + ","
         + "MaxActive:" + MaxActive + ","
         + "SpawnDelay:" + SpawnDelay + ","

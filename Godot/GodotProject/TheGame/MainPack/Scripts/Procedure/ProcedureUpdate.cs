@@ -34,11 +34,14 @@ public class ProcedureUpdate : ProcedureBase
     private const int MaxRetries = 3; // 每个网络操作的最大尝试次数。
     private const float RetryBaseDelaySeconds = 1.5f; // 重试之间的基础等待时间（秒）。
     private const float VersionFetchTimeoutSeconds = 10f; // 单次版本清单请求超时（秒）。
-    LoadingForm m_loadingForm; // 当前热更流程使用的加载界面。
+    private LoadingForm m_LoadingForm; // 当前热更流程使用的加载界面。
 
-    private string SubpackDir => GetOrCreateHotUpdateDir(); // 按配置、安装目录可写性和用户目录选择热更目录。
+    /// <summary>按配置与安装目录可写性选择并创建热更目录。</summary>
+    private string SubpackDir => GetOrCreateHotUpdateDir();
 
-    private string GetOrCreateHotUpdateDir() // 选择并确保存在热更子包目录。
+    /// <summary>选择并确保存在热更子包目录。</summary>
+    /// <returns>已创建且可写的子包目录。</returns>
+    private string GetOrCreateHotUpdateDir()
     {
         // 1. 开发者显式配置的路径
         string customPath = GF.Resource?.UpdateSettingRes?.HotUpdatePath;
@@ -67,7 +70,10 @@ public class ProcedureUpdate : ProcedureBase
         return userSubpackDir;
     }
 
-    private bool IsDirectoryWritable(string path) // 通过临时文件检查目录是否可写。
+    /// <summary>通过临时文件检查目录是否可写。</summary>
+    /// <param name="path">要检测的目录。</param>
+    /// <returns>临时文件创建和删除均成功时返回 true。</returns>
+    private bool IsDirectoryWritable(string path)
     {
         try
         {
@@ -83,12 +89,6 @@ public class ProcedureUpdate : ProcedureBase
         }
     }
 
-    /// <summary>初始化更新流程并执行基类初始化。</summary>
-    /// <param name="procedureOwner">当前流程状态机。</param>
-    protected internal override void OnInit(ProcedureOwner procedureOwner)
-    {
-        base.OnInit(procedureOwner);
-    }
 
     /// <summary>执行版本检查、完整性校验、下载和子包加载。</summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
@@ -125,7 +125,10 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 主流程 ──
 
-    private async Task RunUpdateFlowAsync(ProcedureOwner procedureOwner) // 执行版本检查、完整性校验、下载和子包加载。
+    /// <summary>执行版本检查、完整性校验、下载和子包加载。</summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
+    /// <returns>更新或转入预加载的任务。</returns>
+    private async Task RunUpdateFlowAsync(ProcedureOwner procedureOwner)
     {
         // Package 模式不检测更新，但尝试加载本地子包（安装目录 subpackages/）
         if (GF.Resource.ResourceMode == ResourceMode.Package)
@@ -167,7 +170,7 @@ public class ProcedureUpdate : ProcedureBase
             return;
         }
 
-        m_loadingForm = await GF.UI.OpenLoadingUIFormAsync();
+        m_LoadingForm = await GF.UI.OpenLoadingUIFormAsync();
 
         try
         {
@@ -177,7 +180,7 @@ public class ProcedureUpdate : ProcedureBase
             // ── 1. 请求服务器版本文件 ──
             string versionUrl = $"{remoteUrl.TrimEnd('/')}/{ResourceManager.GameFrameworkVersionData}";
             Log.Info("[ProcedureUpdate] 请求版本文件: {0}", versionUrl);
-            m_loadingForm?.SetLogState("检测更新...", 0);
+            m_LoadingForm?.SetLogState("检测更新...", 0);
 
             // 先加载本地版本，用于 ForceUpdate 回退判断（带完整性校验）
             var localVersionPre = ResourceManager.LocalPackVersionList
@@ -199,7 +202,7 @@ public class ProcedureUpdate : ProcedureBase
                     if (retry)
                     {
                         // 重试整个更新流程
-                        GF.UI.CloseUIForm(m_loadingForm);
+                        GF.UI.CloseUIForm(m_LoadingForm);
                         await RunUpdateFlowAsync(procedureOwner);
                         return;
                     }
@@ -207,7 +210,7 @@ public class ProcedureUpdate : ProcedureBase
                     return;
                 }
 
-                m_loadingForm?.SetLogState("版本检测失败", 100);
+                m_LoadingForm?.SetLogState("版本检测失败", 100);
                 await Task.Delay(1500);
                 await SkipToNextAsync(procedureOwner);
                 return;
@@ -223,7 +226,7 @@ public class ProcedureUpdate : ProcedureBase
             {
                 Log.Warning("[ProcedureUpdate] App 版本过低 ({0} < {1})，需要去商店更新。",
                     appVersion, serverVersion.MinAppVersion);
-                m_loadingForm?.SetLogState("请更新App版本", 100);
+                m_LoadingForm?.SetLogState("请更新App版本", 100);
                 await Task.Delay(3000);
                 await ShowForceUpdateDialogAsync("客户端版本过低，请升级客户端后再试。");
                 HotUpdateSafetyGuard.MarkStartupSuccess();
@@ -234,13 +237,13 @@ public class ProcedureUpdate : ProcedureBase
             // ── 3. 加载本地版本并校验完整性 ──
             var localVersion = ResourceManager.LocalPackVersionList
                 ?? NodeUtility.LoadAndValidateVersionList(ResourceManager.GameFrameworkVersionData);
-            m_loadingForm?.SetLogState("校验本地数据...", 5);
+            m_LoadingForm?.SetLogState("校验本地数据...", 5);
 
             int damagedCount = await VerifyLocalPackIntegrityAsync(localVersion);
             if (damagedCount > 0)
             {
                 Log.Warning("[ProcedureUpdate] 本地客户端不完整！{0} 个包已损坏或丢失，将重新下载。", damagedCount);
-                m_loadingForm?.SetLogState($"检测到 {damagedCount} 个文件损坏,即将修复", 8);
+                m_LoadingForm?.SetLogState($"检测到 {damagedCount} 个文件损坏,即将修复", 8);
             }
 
             // ── 4. 与服务器版本比对 ──
@@ -261,7 +264,7 @@ public class ProcedureUpdate : ProcedureBase
                 {
                     Log.Warning("[ProcedureUpdate] 磁盘空间不足: 需要 {0}, 可用 {1}",
                         StringExtension.FormatBytes(totalSize * 2), StringExtension.FormatBytes(freeSpace));
-                    m_loadingForm?.SetLogState("磁盘空间不足", 100);
+                    m_LoadingForm?.SetLogState("磁盘空间不足", 100);
 
                     if (isForceUpdate)
                     {
@@ -270,7 +273,7 @@ public class ProcedureUpdate : ProcedureBase
                             $"磁盘空间不足（需要 {StringExtension.FormatBytes(totalSize * 2)}），请清理后重试。");
                         if (retry)
                         {
-                            GF.UI.CloseUIForm(m_loadingForm);
+                            GF.UI.CloseUIForm(m_LoadingForm);
                             await RunUpdateFlowAsync(procedureOwner);
                             return;
                         }
@@ -296,7 +299,7 @@ public class ProcedureUpdate : ProcedureBase
                             "更新下载失败，请检查网络后重试。");
                         if (retry)
                         {
-                            GF.UI.CloseUIForm(m_loadingForm);
+                            GF.UI.CloseUIForm(m_LoadingForm);
                             await RunUpdateFlowAsync(procedureOwner);
                             return;
                         }
@@ -304,14 +307,14 @@ public class ProcedureUpdate : ProcedureBase
                         return;
                     }
 
-                    m_loadingForm?.SetLogState("下载失败，请检查网络", 100);
+                    m_LoadingForm?.SetLogState("下载失败，请检查网络", 100);
                     await Task.Delay(2000);
                     await SkipToNextAsync(procedureOwner);
                     return;
                 }
 
                 // ── 4. 先加载子包（验证可用） ──
-                m_loadingForm?.SetLogState("加载资源...", 95);
+                m_LoadingForm?.SetLogState("加载资源...", 95);
                 HotUpdateSafetyGuard.MarkStartupBegin();
 
                 await LoadDownloadedPacksAsync(serverVersion);
@@ -330,7 +333,7 @@ public class ProcedureUpdate : ProcedureBase
                 ResourceManager.LocalPackVersionList = serverVersion;
                 Log.Info("[ProcedureUpdate] 版本文件已保存。");
 
-                m_loadingForm?.SetLogState("更新完成", 100);
+                m_LoadingForm?.SetLogState("更新完成", 100);
                 await Task.Delay(500);
 
                 GF.UI.OpenQuestionTipsAsync("更新完成，是否重启？", "退出", "确认", () =>
@@ -351,17 +354,20 @@ public class ProcedureUpdate : ProcedureBase
         finally
         {
             HotUpdateSafetyGuard.MarkStartupSuccess();
-            GF.UI.CloseUIForm(m_loadingForm);
+            GF.UI.CloseUIForm(m_LoadingForm);
         }
 
     }
 
-    private async Task<bool> ShowForceUpdateDialogAsync(string message) // 显示强制更新对话框并等待用户选择。
+    /// <summary>显示强制更新对话框并等待用户选择。</summary>
+    /// <param name="message">必须更新的原因。</param>
+    /// <returns>选择重试时为 true，选择退出时为 false。</returns>
+    private async Task<bool> ShowForceUpdateDialogAsync(string message)
     {
         // 用一次性任务桥接 UI 回调，保证调用方只能在用户选择后继续。
         var tcs = new TaskCompletionSource<bool>();
 
-        m_loadingForm?.SetLogState(message, 100);
+        m_LoadingForm?.SetLogState(message, 100);
 
         GF.UI.OpenQuestionTipsAsync(message, "退出", "重试", () =>
         {
@@ -377,7 +383,10 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 版本比对 ──
 
-    private async Task<int> VerifyLocalPackIntegrityAsync(PackVersionList localVersion) // 校验本地子包并移除损坏或缺失的清单项。
+    /// <summary>校验本地子包并移除损坏或缺失的清单项。</summary>
+    /// <param name="localVersion">待校验并更新的本地包清单。</param>
+    /// <returns>损坏或缺失的包数量。</returns>
+    private async Task<int> VerifyLocalPackIntegrityAsync(PackVersionList localVersion)
     {
         // 按存在性、大小和大文件哈希逐级校验，只有完整文件才进入有效列表。
         Log.Info("[ProcedureUpdate] 开始校验本地文件完整性...");
@@ -451,8 +460,12 @@ public class ProcedureUpdate : ProcedureBase
         return damaged;
     }
 
+    /// <summary>比对本机与服务器版本并生成待下载包列表。</summary>
+    /// <param name="server">服务器包清单。</param>
+    /// <param name="local">本地包清单。</param>
+    /// <returns>需要下载的包与 URL 列表。</returns>
     private List<(Pack Pack, string Url)> FindPacksToUpdate(
-        PackVersionList server, PackVersionList local) // 比对本机与服务器版本并生成待下载包列表。
+        PackVersionList server, PackVersionList local)
     {
         var toDownload = new List<(Pack, string)>();
 
@@ -501,8 +514,11 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 下载逻辑 ──
 
+    /// <summary>并发下载并校验所有待更新包，汇总进度。</summary>
+    /// <param name="packs">待下载的包与 URL。</param>
+    /// <returns>成功下载的包数量。</returns>
     private async Task<int> DownloadPacksWithProgressAsync(
-        List<(Pack Pack, string Url)> packs) // 并发下载并校验所有待更新包，汇总进度。
+        List<(Pack Pack, string Url)> packs)
     {
         // 先计算总字节数，再为每个包建立独立进度槽位供主线程聚合。
         long totalBytes = 0;
@@ -537,7 +553,7 @@ public class ProcedureUpdate : ProcedureBase
             int pct = totalBytes > 0
                 ? 10 + (int)(80.0 * sum / totalBytes)
                 : 10 + (int)(80.0 * completedCount / packs.Count);
-            m_loadingForm?.SetLogState(
+            m_LoadingForm?.SetLogState(
                 $"下载中 {completedCount}/{packs.Count} ({StringExtension.FormatBytes(sum)}/{StringExtension.FormatBytes(totalBytes)})",
                 Math.Min(pct, 90));
         }
@@ -556,7 +572,7 @@ public class ProcedureUpdate : ProcedureBase
             return ok;
         }
 
-        m_loadingForm?.SetLogState($"下载中 0/{packs.Count}", 10);
+        m_LoadingForm?.SetLogState($"下载中 0/{packs.Count}", 10);
 
         var tasks = new List<Task<bool>>(packs.Count);
         for (int i = 0; i < packs.Count; i++)
@@ -586,8 +602,14 @@ public class ProcedureUpdate : ProcedureBase
         return downloaded;
     }
 
+    /// <summary>下载单个包并在失败时按策略重试。</summary>
+    /// <param name="pack">下载配置与预期哈希。</param>
+    /// <param name="url">下载地址。</param>
+    /// <param name="savePath">本地输出路径。</param>
+    /// <param name="onPackBytes">当前包累计下载字节数的回调。</param>
+    /// <returns>下载及校验均成功时为 true。</returns>
     private async Task<bool> DownloadSinglePackWithRetryAsync(
-        Pack pack, string url, string savePath, Action<long> onPackBytes) // 下载单个包并在失败时按策略重试。
+        Pack pack, string url, string savePath, Action<long> onPackBytes)
     {
         // 每次重试都复用下载组件的断点续传和哈希校验。
         for (int attempt = 0; attempt < MaxRetries; attempt++)
@@ -633,7 +655,10 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 版本文件请求 ──
 
-    private async Task<PackVersionList> FetchVersionWithRetryAsync(string versionUrl) // 请求并校验服务器版本清单，失败时退避重试。
+    /// <summary>请求并校验服务器版本清单，失败时退避重试。</summary>
+    /// <param name="versionUrl">版本清单地址。</param>
+    /// <returns>已通过基础校验的清单；重试耗尽时为空。</returns>
+    private async Task<PackVersionList> FetchVersionWithRetryAsync(string versionUrl)
     {
         for (int attempt = 0; attempt < MaxRetries; attempt++)
         {
@@ -650,7 +675,7 @@ public class ProcedureUpdate : ProcedureBase
                 var result = await GF.WebRequest.SendRequestAsync(versionUrl, VersionFetchTimeoutSeconds);
                 if (!IsHttpSuccess(result))
                 {
-                    m_loadingForm.SetLogState($"版本文件请求失败(再次尝试:{attempt + 1}/{MaxRetries})", 0);
+                    m_LoadingForm.SetLogState($"版本文件请求失败(再次尝试:{attempt + 1}/{MaxRetries})", 0);
                     Log.Warning("[ProcedureUpdate] 版本文件请求失败 (attempt {0}/{1}, HTTP {2})",
                         attempt + 1, MaxRetries, result?.ResponseCode);
                     continue;
@@ -685,7 +710,10 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 子包加载 ──
 
-    private async Task LoadDownloadedPacksAsync(PackVersionList version) // 校验并按 Config 到 Resource 顺序加载已下载子包。
+    /// <summary>校验并按 Config 到 Resource 顺序加载已下载子包。</summary>
+    /// <param name="version">确定加载顺序的版本清单。</param>
+    /// <returns>子包加载任务。</returns>
+    private async Task LoadDownloadedPacksAsync(PackVersionList version)
     {
         // 先按资源类型排序，保证配置和本地化数据在场景资源之前可用。
         if (version?.Packs == null || version.Packs.Length == 0)
@@ -773,7 +801,9 @@ public class ProcedureUpdate : ProcedureBase
             loaded, version.Packs.Length, failed);
     }
 
-    private void CleanStalePacks(PackVersionList version) // 删除热更目录中不属于当前清单的旧子包。
+    /// <summary>删除热更目录中不属于当前清单的旧子包。</summary>
+    /// <param name="version">仍需保留的包清单。</param>
+    private void CleanStalePacks(PackVersionList version)
     {
         // 以当前清单建立白名单，只清理目录中的过期 .pck 文件。
         if (!Directory.Exists(SubpackDir)) return;
@@ -800,7 +830,8 @@ public class ProcedureUpdate : ProcedureBase
         }
     }
 
-    private void RollbackVersionFile() // 使用版本备份文件回退当前版本清单。
+    /// <summary>使用版本备份文件回退当前版本清单。</summary>
+    private void RollbackVersionFile()
     {
         try
         {
@@ -823,7 +854,9 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 工具方法 ──
 
-    private async Task TryLoadLocalSubpackagesAsync() // 在 Package 模式加载安装目录中的本地子包清单。
+    /// <summary>在 Package 模式加载安装目录中的本地子包清单。</summary>
+    /// <returns>安装目录中本地子包加载任务。</returns>
+    private async Task TryLoadLocalSubpackagesAsync()
     {
         // 缺少本地清单是正常首次启动路径，直接跳过本地子包加载。
         string manifestPath = Path.Combine(SubpackDir, ResourceManager.GameFrameworkVersionData);
@@ -861,7 +894,10 @@ public class ProcedureUpdate : ProcedureBase
         }
     }
 
-    private bool IsHttpSuccess(WebRequestCompleteEventArgs result) // 判断版本请求是否返回可解析的成功响应。
+    /// <summary>判断版本请求是否返回可解析的成功响应。</summary>
+    /// <param name="result">框架 HTTP 请求结果。</param>
+    /// <returns>请求成功且响应内容非空时为 true。</returns>
+    private bool IsHttpSuccess(WebRequestCompleteEventArgs result)
     {
         if (result == null) return false;
         if (result.Result == -1 && result.ResponseCode == 0) return false; // timeout
@@ -870,13 +906,18 @@ public class ProcedureUpdate : ProcedureBase
         return true;
     }
 
-    private void EnsureDirectory(string path) // 确保目标目录存在。
+    /// <summary>确保目标目录存在。</summary>
+    /// <param name="path">需要存在的目录。</param>
+    private void EnsureDirectory(string path)
     {
         if (!Directory.Exists(path))
             Directory.CreateDirectory(path);
     }
 
-    private async Task SkipToNextAsync(ProcedureOwner procedureOwner) // 加载可用本地子包后进入预加载流程。
+    /// <summary>加载可用本地子包后进入预加载流程。</summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
+    /// <returns>加载本地子包并切入预加载的任务。</returns>
+    private async Task SkipToNextAsync(ProcedureOwner procedureOwner)
     {
         // 尝试加载已存在的本地版本（优先使用缓存的统一版本，带完整性校验）
         var local = ResourceManager.LocalPackVersionList
@@ -890,11 +931,4 @@ public class ProcedureUpdate : ProcedureBase
         ChangeState<ProcedurePreload>(procedureOwner);
     }
 
-    /// <summary>离开更新流程并执行基类清理。</summary>
-    /// <param name="procedureOwner">当前流程状态机。</param>
-    /// <param name="isShutdown">是否因框架关闭而离开。</param>
-    protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
-    {
-        base.OnLeave(procedureOwner, isShutdown);
-    }
 }

@@ -18,7 +18,7 @@
    表现层   实体节点（英雄/怪物/子弹/掉落）· UI 窗口与控件 · 关卡场景 · 特效
    应用层   流程（MainPack/Procedure）+ 作用域所有者（GameContext、LevelRun）：创建、装配、检查点
    领域层   档案状态（PlayerProfile…）+ 战斗运行时（StatSheet、Vitals、MusouGauge…）
-   规则     伤害公式 · 属性汇总 · 经验曲线 · 存档迁移（纯 C#，确定性，可单测）
+   规则     伤害公式 · 属性汇总 · 经验曲线 · 存档映射（纯 C#，确定性，可单测）
    配置     Luban 只读表（启动期集中校验）
    框架     GGF（GF.*）
    ```
@@ -34,7 +34,7 @@
    | Run | `LevelRun` | `ProcedureLevel` | 进关 → 结局 | 关内结算、关卡事务、本关统计 |
    | Entity | `ActorEntity` 及其战斗运行时 | `GF.Entity` | Show → Hide | 属性汇总、生命魔法、无双；以后的 Buff、冷却 |
 
-3. **显式依赖**：依赖经构造参数、`Initialize`、`userData` 或流程状态机数据传入。流程间共享的作用域对象放进流程数据（键 `GameContext.DataKey`，GGF 只接受 `Variable`，用 `GameContextVariable` 包装）。
+3. **显式依赖**：依赖经构造参数、`Initialize`、`userData` 或流程状态机数据传入。流程数据键与池化包装集中在 `MainPack/Scripts/Startup/FlowData/`（`FlowKeys.GameContext` + `GameContextVariable`）；GGF 只接受 `Variable`，领域对象不承担流程传递契约。
 
 ## 允许的全局
 
@@ -52,7 +52,7 @@
 | --- | --- | --- |
 | 状态源 → 观察者（UI、同作用域对象） | 所有者的 C# 聚合事件 `event Action Changed`，订阅方收到后**一次读取全部需要的值** | `Vitals.Changed`、`HeroProgression.Changed`、`LevelController.TravelAvailableChanged` |
 | 作用域内协作 | 直接调用，或子对象的 C# 事件由拥有者订阅 | `LevelSpawner.MonsterDefeated` → `LevelController` → `LevelRun` |
-| 跨模块的一次性业务结果 | `GF.Event` 池化事件参数 | `DamageDealtEventArgs`（飘字）、`MonsterDiedEventArgs`（刷怪名额） |
+| 跨模块的一次性业务结果 | `GF.Event` 池化事件参数 | `DamageDealtEventArgs`（飘字）、`MonsterDiedEventArgs`（刷怪名额）、具名菜单点击事件（窗口 → 当前流程） |
 
 - 一次修改只通知一次；状态源内部先更新全部字段再通知，观察者看不到中间态（如等级已变而上限未变）。
 - `GF.Event.Fire` 在下一轮轮询分发；`GameEventArgs` 用 `ReferencePool`，分发结束即失效，不保存到字段、闭包或跨 `await` 使用。有实际消费者才新增事件类型。
@@ -76,19 +76,20 @@
 | `Battle/` | 规则 | 伤害公式、攻击包、结算快照（确定性，随机值由调用方传入） |
 | `Battle/Stats/` | 领域 | 属性汇总 `StatSheet`、修正 `StatModifier`/`StatSource`、生命魔法 `Vitals`、无双 `MusouGauge` |
 | `Profile/` | 领域 | 档案 `PlayerProfile`、英雄记录与成长、钱包、经验曲线、出战装配 `HeroLoadout`/`HeroStatBuilder` |
-| `Save/` | 规则 | 存档 DTO、版本迁移 `SaveMigrator`、映射 `ProfileMapper`、存档入口 `SaveService`；全局 `GameData`/`GameCatalogue` |
+| `Save/` | 规则 / 应用 | 根目录保留 `SaveService` 与加载结果；`Data/` 为存档 DTO 与映射（`GameData`/`GameCatalogue` 保持全局命名空间），`Slots/` 为标题目录与格子摘要 |
 | `Session/` | 应用 | 作用域所有者 `GameContext`、`LevelRun` |
 | `Entity/` | 表现 | 实体节点、身体/AI 状态机、判定组件；规则见 [30-EntitiesAndCombat.md](30-EntitiesAndCombat.md) |
 | `Level/` | 表现 | 关卡控制器；`Stage/` 阶段编排与门，`Camera/` 相机，`Spawning/` 刷怪与调度，`Markers/` 空间条目 |
 | `UI/` | 表现 | 每个界面一个子目录（`BattleHud/`）；`Widgets/` 被动控件；`Damage/` 伤害飘字 |
-| `Event/` | — | 跨模块 `GF.Event` 参数 |
+| `Input/` | 表现 | 全局输入映射名称 `InputActions`；引擎采样在节点，输入缓冲规则在 `Entity/Heroes/Input/` |
+| `Event/Combat/`、`Event/Navigation/` | — | 战斗结果与窗口导航的池化 `GF.Event` 参数 |
 
 新玩法按 [60-GameplayModules.md](60-GameplayModules.md) 的落位表放入对应目录；不新建按"所有 Manager"聚合的目录。
 
 ## UI 数据流
 
 - 玩法界面用 GGF `UIForm`：场景放 `UIs/`，脚本放 `GameScripts/UI/<界面>/`（`Xxx.cs` Ge 样板 + `Xxx.Logic.cs` 业务 + `XxxData.cs` 打开参数）；在 `界面UI.xlsx` 登记 `UIFormId` 后用 `GF.UI.OpenUIForm(UIFormId.Xxx, data)` 打开。
-- 打开参数只携带状态源引用（实体、档案对象、关卡），不复制数值、不管理生命周期。
+- 打开参数只携带状态源引用（实体、档案对象、关卡、标题存档目录），不复制数值、不管理生命周期。
 - 窗口 `OnOpen` 订阅状态源的聚合事件后**立即拉取一次**刷新全部显示，`OnClose` 对称退订；收到事件时重新读取一组一致的值。
 - 控件是被动的：只接收数值（如 `ResourceBar.SetValue(current, max)`），不订阅状态源、不执行玩法结算。残影等表现由控件比较前后两次输入自行决定。
 - 计时类显示（冷却、Buff 剩余时间）在窗口 `OnUpdate` 读取；一次性反馈（飘字、升级特效、获得物品）走 `GF.Event`。

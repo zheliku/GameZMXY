@@ -5,8 +5,8 @@
 
 ## 当前实现
 
-- **启动流程**：`Launch → Update → Preload（资源组、本地化、节点池、配置校验）→ LoadProfile（读档/迁移/建档，创建 GameContext）→ Level`。调试直达关卡由烟测驱动使用隔离存档目录。
-- **关卡运行**：`ProcedureLevel` 只负责装配与拆除：加载关卡场景 → 按档案构建出战装配并显示英雄 → 关闭加载界面 → 开始关卡会话 → 创建 `LevelRun` → 打开 HUD；离开时按创建逆序清理。结局后按 `BattleConfig.DeathRestartDelay` / `ClearRestartDelay` 重开本关（以后由结算界面与地图流程接管）。
+- **启动流程**：`Launch → Update → Preload（资源组、本地化、节点池、配置校验）→ Title（开始 → 六格存档选择）→ LoadProfile（读档/建档，创建 GameContext）→ 新档 Character（选角）→ Map（地图）→ Level；已有档从 LoadProfile 直接进入 Map`。菜单按钮通过具名 GGF 事件直接切换流程；只有点击花果山才进入关卡；烟测通过实际菜单按钮推进并使用隔离存档目录。
+- **关卡运行**：`ProcedureLevel` 只负责装配与拆除：加载关卡场景 → 按档案构建出战装配并显示英雄 → 关闭加载界面 → 开始关卡会话 → 创建 `LevelRun` → 打开 HUD；离开时按创建逆序清理。死亡后按 `BattleConfig.DeathRestartDelay` 重开本关，通关后按 `ClearRestartDelay` 返回地图；HUD 左下角设置 →“返回地图”或“返回主菜单”中途放弃并回滚。
 - **收益与关卡事务**：`LevelSpawner` 只报告本关怪物被击败（`MonsterDefeat` 值）；`LevelRun` 查 `MonsterConfig.AddExp` 写入档案，升级时重建装配注入英雄并补满。通关与死亡提交检查点，中途离开回滚；规则见 [70-ProfileAndSave.md](70-ProfileAndSave.md)。
 - **角色控制**：悟空实体、输入缓冲、地面/空中/普攻/受击/死亡身体状态，配置驱动移动参数和攻击招式。
 - **怪物行为**：花果山猴子与妖猴（旧 Monster_2）实体；巡逻、追击、攻击、目标丢失、受控和死亡 AI；身体层执行移动、攻击、收招、受击与死亡。妖猴的旧 `RunHit`（追击途中也能出手）由"优先招 + 普攻"两条 AttackConfig 表达，不新增 AI 状态。
@@ -14,10 +14,11 @@
 - **战斗表现**：命中结算、伤害事件和池化伤害飘字（`DamagePopPresenter`，由关卡流程/测试场地持有）。`TestArena.tscn` 测试场地供角色与新怪物战斗测试。
 - **战斗 HUD**：`UIs/BattleHud.tscn`（`UIFormId.BattleHud`），打开参数 `BattleHudData`（英雄、档案成长、关卡）；订阅 `Vitals/Musou/HeroProgression.Changed` 与 `TravelAvailableChanged`，变化时拉取一致快照刷新被动 `ResourceBar`；关闭时对称退订。技能槽、增益和护体待对应玩法接入。
 - **阶段编排**：唯一当前阶段使用 `Ready → Travelling → Fighting → Travelling/Completed`，停止后为 `Stopped`。普通关卡每段都由实际相机抵达启动；清波不会直接生成下一波。特殊阶段可选 `Trigger`，只启用当前触发区并过滤本会话玩家。
-- **空间与相机**：门集合预计算 `[前门, 当前右门]` 区域。行进时前门开放、右门关闭；相机到达右界后封前门、锁定战斗。清波后开右门，相机以连续移动进入下一段。清波后到下一场开战之间，关卡置 `TravelAvailable`，HUD 显示前进提示（Go）。取景细节见 [40-ScenesAndAssets.md](40-ScenesAndAssets.md)。
+- **空间与相机**：门集合从阶段独立左右门预计算区域，允许重叠；行进保留旧左界、启用新右界，抵达后只保留本场左右门。门仅约束玩家，怪物可从场外进入。花果山前四波恢复官方出生点、延迟及边界，依据与第五波缺口见 [OfficialHuaguoshan.md](../OfficialHuaguoshan.md)。清波后到下一场开战之间显示 Go，取景仍保留用户指定中央 ±40px 死区。
 - **配方与实体**：`LevelConfig` 以 `LevelId` 为主键，`*Stages / *Recipes` 是嵌套多行列表；同段各配方并行。`LevelSpawnSchedule` 按游戏时间调度、轮转分配并存名额；`LevelSpawner` 按死亡事件归还名额，配方全部发完且存活/在途清空才报告清波。
 - **所有权与退出**：本关所有运行实体 ID（含死亡动画中的实体）由刷怪服务持有；停止时取消会话、退订、按 ID 隐藏。异步显示返回后使用捕获的令牌和服务清理旧结果；失败回到流程统一结束（运行回滚）。
-- **场景首版**：`Level_1.tscn` 保留六个生成点、三个阶段门和出口；`TestArena.tscn` 不进入游戏流程，F6 运行（详见 [40-ScenesAndAssets.md](40-ScenesAndAssets.md)）。
+- **场景首版**：`Level_1.tscn` 登记十二个生成点（玩家 + 官方前四波十一处）、七个独立阶段边界和出口；`TestArena.tscn` 不进入游戏流程，F6 运行（详见 [40-ScenesAndAssets.md](40-ScenesAndAssets.md)）。
+- **声音**：标题、选角与地图复用造梦一 `zmxy_1BGM.mp3` 的唯一资源 `map_theme.mp3`；`Audio/ConfiguredSound.cs` 提供配置播放扩展，演员、菜单和关卡复用；菜单/关卡流程各自持有音乐请求，退出时停止在途和播放中的请求，音量经 `GF.Sound` / `GF.Setting` 管理。关卡音乐来自 `LevelConfig.MusicId`，不硬编码在通用关卡流程。
 - **编辑器与验证**：`validate_level_scene.gd` 检查编辑器绑定；`--smoketest=level` 驱动真实移动与四段清波并核对档案经验与通关检查点；`--smoketest=ui` 覆盖 HUD、升级注入、关卡事务与存档。
 
 ## 长期系统落位
@@ -43,7 +44,7 @@
 
 - 所有属性加成都表达为 `StatModifier`（`StatType` + `StatModifierKind` + 数值），按来源整体登记和移除；不在结算公式里写特例。
 - 持久加成（装备、法宝、被动、丹药、阵法）只经 `HeroStatBuilder` 进入实体；局内加成（Buff）只经实体运行时进入。
-- 档案新增成员时同步：`PlayerProfile` 成员、`ProfileSaveData` 字段、`ProfileMapper` 映射与回滚、存档版本号与迁移、单测。
+- 档案新增成员时同步：`PlayerProfile` 成员、`GameData` 字段、`ProfileMapper` 映射与回滚、存档版本号（不做旧格式兼容）、单测。
 - 新流程（菜单、选档、地图）按需加入 `Framework/GameFramework.tscn` 的流程清单，每次单独授权并登记。
 
 ## 旧项目玩法参考

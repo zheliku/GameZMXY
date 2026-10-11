@@ -1,0 +1,132 @@
+[gd_scene format=3 uid="uid://clwo8jvrdb06h"]
+
+[ext_resource type="Texture2D" uid="uid://djvoe6wtgskpw" path="res://TheGame/Sprites/UI/frontend/character_bajie_card.png" id="bajie"]
+[ext_resource type="FontFile" uid="uid://d3bh5a3jtbsib" path="res://TheGame/MainPack/Fonts/fz_cu_yuan.ttf" id="player_font"]
+[ext_resource type="Texture2D" uid="uid://c5l6clioichum" path="res://TheGame/Sprites/UI/frontend/character_sanzang_card.png" id="sanzang"]
+[ext_resource type="Script" uid="uid://dyfaeohgy0ctc" path="res://TheGame/GameScripts/UI/CharacterForm/CharacterForm.cs" id="script"]
+[ext_resource type="Shader" uid="uid://b02b44nix1lpe" path="res://TheGame/Sprites/UI/frontend/character_card.gdshader" id="shader"]
+[ext_resource type="Theme" path="res://TheGame/MainPack/Themes/legacy_menu_theme.tres" id="theme"]
+[ext_resource type="Texture2D" uid="uid://ddf6vf1wyuqob" path="res://TheGame/Sprites/UI/frontend/character_wujing_card.png" id="wujing"]
+[ext_resource type="Texture2D" uid="uid://hsg4jufhit5s" path="res://TheGame/Sprites/UI/frontend/character_wukong_card.png" id="wukong"]
+
+[sub_resource type="ShaderMaterial" id="wukong_material"]
+resource_local_to_scene = true
+shader = ExtResource("shader")
+shader_parameter/grayscale = 1.0
+
+[sub_resource type="AtlasTexture" id="wukong_card"]
+atlas = ExtResource("wukong")
+region = Rect2(9, 0, 237, 610)
+filter_clip = true
+
+[sub_resource type="ShaderMaterial" id="sanzang_material"]
+resource_local_to_scene = true
+shader = ExtResource("shader")
+shader_parameter/grayscale = 1.0
+
+[sub_resource type="AtlasTexture" id="sanzang_card"]
+atlas = ExtResource("sanzang")
+region = Rect2(21, 0, 237, 610)
+filter_clip = true
+
+[sub_resource type="ShaderMaterial" id="bajie_material"]
+resource_local_to_scene = true
+shader = ExtResource("shader")
+shader_parameter/grayscale = 1.0
+
+[sub_resource type="AtlasTexture" id="bajie_card"]
+atlas = ExtResource("bajie")
+region = Rect2(15, 0, 237, 610)
+filter_clip = true
+
+[sub_resource type="ShaderMaterial" id="wujing_material"]
+resource_local_to_scene = true
+shader = ExtResource("shader")
+shader_parameter/grayscale = 1.0
+
+[sub_resource type="AtlasTexture" id="wujing_card"]
+atlas = ExtResource("wujing")
+region = Rect2(22, 0, 237, 610)
+filter_clip = true
+
+[node name="CharacterForm" type="Control" unique_id=1389231940 node_paths=PackedStringArray("m_Wukong", "m_PlayerOne")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("theme")
+script = ExtResource("script")
+m_Wukong = NodePath("Roles/m_Wukong")
+m_PlayerOne = NodePath("m_PlayerOne")
+
+[node name="Background" type="ColorRect" parent="." unique_id=381968765]
+layout_mode = 0
+offset_right = 940.0
+offset_bottom = 590.0
+mouse_filter = 2
+color = Color(0.024, 0.004, 0.004, 1)
+
+[node name="Roles" type="Control" parent="." unique_id=1070469315]
+anchors_preset = 0
+offset_right = 940.0
+offset_bottom = 590.0
+mouse_filter = 2
+
+[node name="m_Wukong" type="TextureButton" parent="Roles" unique_id=2124743283]
+material = SubResource("wukong_material")
+layout_mode = 0
+offset_right = 235.0
+offset_bottom = 590.0
+tooltip_text = "点击孙悟空，进入花果山地图"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = SubResource("wukong_card")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="m_Sanzang" type="TextureRect" parent="Roles" unique_id=176568400]
+material = SubResource("sanzang_material")
+layout_mode = 0
+offset_left = 235.0
+offset_right = 470.0
+offset_bottom = 590.0
+mouse_filter = 2
+texture = SubResource("sanzang_card")
+expand_mode = 1
+
+[node name="m_Bajie" type="TextureRect" parent="Roles" unique_id=1504500255]
+material = SubResource("bajie_material")
+layout_mode = 0
+offset_left = 470.0
+offset_right = 705.0
+offset_bottom = 590.0
+mouse_filter = 2
+texture = SubResource("bajie_card")
+expand_mode = 1
+
+[node name="m_Wujing" type="TextureRect" parent="Roles" unique_id=59011332]
+material = SubResource("wujing_material")
+layout_mode = 0
+offset_left = 705.0
+offset_right = 940.0
+offset_bottom = 590.0
+mouse_filter = 2
+texture = SubResource("wujing_card")
+expand_mode = 1
+
+[node name="m_PlayerOne" type="Label" parent="." unique_id=717879826]
+visible = false
+layout_mode = 0
+offset_left = 61.0
+offset_top = 36.0
+offset_right = 184.0
+offset_bottom = 101.0
+theme_override_colors/font_color = Color(1, 0.76, 0.12, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("player_font")
+theme_override_font_sizes/font_size = 52
+text = "1P"
+horizontal_alignment = 1

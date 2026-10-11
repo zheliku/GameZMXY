@@ -15,7 +15,7 @@ dotnet build Godot/GodotProject/GodotProject.csproj
 & 'S:/Godot4/Godot4CSharp.exe' --path Godot/GodotProject --editor
 ```
 
-编辑器中按 F5 运行正式游戏；打开 `TheGame/Scenes/TestArena.tscn` 后按 F6 运行独立战斗场地。场地不读写玩家存档。
+编辑器中按 F5 从开始界面运行：开始游戏 → 六格存档选择 → 新档选角 / 已有档直接地图 → 点击花果山（当前为前四波原型，官方第五波 Boss 待实现）；打开 `TheGame/Scenes/TestArena.tscn` 后按 F6 运行独立战斗场地。场地不读写玩家存档。
 
 新增 C# 后执行一次引擎构建，生成脚本 UID 并完成编辑器扫描：
 
@@ -27,13 +27,13 @@ dotnet build Godot/GodotProject/GodotProject.csproj
 
 ## 架构与目录
 
-正式流程为 `Launch → Update → Preload → LoadProfile → Level`。预加载与独立场地共用 `MainPack/Scripts/Startup/GameResourceGroups.cs` 注册资源组。
+正式流程为 `Launch → Update → Preload → Title（开始与六格存档选择）→ LoadProfile → Character → Map → Level`。预加载与独立场地共用 `MainPack/Scripts/Startup/GameResourceGroups.cs` 注册资源组。
 
 | 目录 | 内容 |
 | --- | --- |
 | `TheGame/MainPack/` | 启动流程、共享 UI、资源组与通用节点池 |
 | `TheGame/GameScripts/Battle/` | 确定性战斗规则与战斗运行时 |
-| `TheGame/GameScripts/Profile/`、`Save/` | 玩家档案、成长、装配快照、存档映射与迁移 |
+| `TheGame/GameScripts/Profile/`、`Save/` | 玩家档案、成长、装配快照、存档格式与映射 |
 | `TheGame/GameScripts/Session/` | 档案作用域 GameContext、关卡事务 LevelRun 与流程传递包装 |
 | `TheGame/GameScripts/Entity/` | 英雄、怪物、身体/AI 状态机、判定与动画适配 |
 | `TheGame/GameScripts/Level/`、`UI/` | 关卡协调、门、相机、刷怪、HUD 与被动控件 |
@@ -54,9 +54,11 @@ python Tools/ProjectMaintenance/validate_game_references.py
 & 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject --quit-after 2400 -- --smoketest=ui
 ```
 
+菜单与 GGF 声音回归使用 `--smoketest=frontend`；非 headless 模式同时在 `.godot/validation/frontend/` 保存实际截图。[本轮交付记录](Docs/FrontendDelivery.md) 列出验证与限制。
+
 引擎回归还支持 `--smoketest`（英雄与命中）、`--smoketest=ai`、`--smoketest=level`、`--smoketest=level-cancel`。各模式使用随机的 `user://Validation/<模式>/<ID>` 目录，隔离玩家进度。以 `SMOKE PASS/FAIL` 判断断言，同时检查退出码；框架既有退出异常单独记录在 [验证规范](Docs/ProjectGuidelines/50-FrameworkAndTools.md)。
 
-无双裁剪在 `BattleHud.tscn → MenuPanel/m_WsMax → Material → Shader Parameters` 调整：`clip_radius` 默认 32 原图像素，`clip_center` 默认 (0.5, 0.5)，`clip_feather` 默认 1 像素且只向内羽化。运行下述命令可生成实际 GPU 渲染对比图：
+无双裁剪在 `BattleHud.tscn → MenuPanel/m_WsMax → Material → Shader Parameters` 调整：`clip_radius` 默认 32 原图像素，`clip_center` 默认 (0.5, 0.5)，`clip_feather` shader 默认 1 像素且只向内羽化（当前场景保留用户调整值 0）。运行下述命令可生成实际 GPU 渲染对比图：
 
 ```powershell
 & 'S:/Godot4/Godot4CSharp_console.exe' --path Godot/GodotProject --script res://EditorScripts/validate_musou_flash.gd

@@ -62,11 +62,4 @@ public class ProcedureLaunch : ProcedureBase
     }
 
 
-    /// <summary>离开启动流程并执行基类清理。</summary>
-    /// <param name="procedureOwner">当前流程状态机。</param>
-    /// <param name="isShutdown">是否因框架关闭而离开。</param>
-    protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
-    {
-        base.OnLeave(procedureOwner, isShutdown);
-    }
 }

@@ -1,3 +1,5 @@
+using GameLogic.Startup.FlowData;
+using GameLogic.Event.Navigation;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +11,6 @@ using GameFramework.Procedure;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
-using GodotGameFramework.HotUpdate;
 using GodotGameFramework.Scene;
 using GodotGameFramework.UI;
 using GameLogic;
@@ -18,17 +19,16 @@ using GameLogic.Level;
 using GameLogic.Profile;
 using GameLogic.Session;
 using GameLogic.UI;
+using GameLogic.Audio;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
 /// 关卡流程：负责一次关卡运行的装配与拆除——加载关卡场景、按档案显示英雄、创建 <see cref="LevelRun"/>、打开 HUD；
-/// 运行结束（通关/死亡已提交检查点）后重新进入本流程开下一局。
+/// 通关后返回地图，死亡提交检查点后重开本关。
 /// 收益结算与关卡事务归 <see cref="LevelRun"/>，持久状态归 <see cref="GameContext"/>，本流程只管作用域的创建顺序与逆序清理。
 /// </summary>
 public class ProcedureLevel : ProcedureBase
 {
-    private const int InitialLevelId = 1; // 当前游戏入口使用的关卡配置主键（以后由地图流程传入）。
-
     private ProcedureOwner m_Owner; // 当前流程状态机，重开关卡时使用。
 
     private GameContext m_Context; // 档案作用域（来自流程数据）。
@@ -53,7 +53,8 @@ public class ProcedureLevel : ProcedureBase
 
     private SceneTreeTimer m_RestartTimer; // 结局后等待重开的计时器。
 
-    private bool m_StartupMarked; // 流程状态实例随 App 存续，仅首次成功开局标记热更启动。
+    private int m_MusicSerial; // 本关 GGF 音乐请求，清理时连在途加载一起取消。
+    private int m_SettingsSerialId; // 本周期的设置窗口，含正在加载的请求。
 
     /// <summary>
     /// 进入流程：读取档案作用域 → 加载关卡场景 → 显示英雄 → 关闭加载界面 → 开始关卡会话与运行 → 打开 HUD。
@@ -64,6 +65,9 @@ public class ProcedureLevel : ProcedureBase
         base.OnEnter(procedureOwner);
         int entrySerial = ++m_EntrySerial;
         m_Owner = procedureOwner;
+        GF.Event.Subscribe(SettingsRequestedEventArgs.EventId, OnSettingsRequested);
+        GF.Event.Subscribe(MapRequestedEventArgs.EventId, OnMapRequested);
+        GF.Event.Subscribe(TitleRequestedEventArgs.EventId, OnTitleRequested);
 
         try
         {
@@ -71,11 +75,11 @@ public class ProcedureLevel : ProcedureBase
             CancellationToken cancellationToken = m_SessionCancellation.Token;
             var entities = GF.Entity;
             Tables tables = ConfigSystem.Instance.Tables;
-            m_Context = procedureOwner.GetData<GameContextVariable>(GameContext.DataKey)?.Value
+            m_Context = procedureOwner.GetData<GameContextVariable>(FlowKeys.GameContext)?.Value
                 ?? throw new InvalidOperationException("流程数据缺少 GameContext（读档流程未完成）。");
 
             // 上一局的检查点必须先落盘：重开前等待，失败只记录（档案仍在内存，下一检查点会再写）。
-            if (!await m_Context.Save.Pending)
+            if (!await m_Context.Save.PendingWrite)
             {
                 Log.Error("[ProcedureLevel] 上一个检查点写入失败，进度仍保留在内存中。");
             }
@@ -86,8 +90,11 @@ public class ProcedureLevel : ProcedureBase
             }
 
             // LevelConfig 是以 LevelId 为主键的 map 表：一条记录包含关卡元数据和嵌套的阶段/配方列表。
-            LevelConfig levelConfig = tables.TbLevelConfig.GetOrDefault(InitialLevelId)
-                ?? throw new InvalidOperationException($"关卡配置不存在：LevelId={InitialLevelId}");
+            int selectedLevelId = procedureOwner.GetData<VarInt32>(FlowKeys.SelectedLevelId)?.Value
+                ?? throw new InvalidOperationException("关卡流程缺少地图选择结果。");
+            LevelConfig levelConfig = tables.TbLevelConfig.GetOrDefault(selectedLevelId)
+                ?? throw new InvalidOperationException($"关卡配置不存在：LevelId={selectedLevelId}");
+            m_MusicSerial = GF.Sound.PlayConfigured(levelConfig.MusicId, 0.4f);
             m_LevelScenePath = levelConfig.ScenePath;
             string scenePath = m_LevelScenePath;
             Log.Info("[ProcedureLevel] 加载关卡场景：{0}", m_LevelScenePath);
@@ -149,13 +156,6 @@ public class ProcedureLevel : ProcedureBase
             GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnHudOpenFailed);
             m_HudSerialId = GF.UI.OpenUIForm(UIFormId.BattleHud, new BattleHudData(m_Hero, record.Progression, m_Level));
             Log.Info("[ProcedureLevel] 已提交战斗 HUD 请求：{0}", m_HudSerialId);
-
-            // 首次进入可玩状态：后续崩溃不再归因于热更。
-            if (!m_StartupMarked)
-            {
-                m_StartupMarked = true;
-                HotUpdateSafetyGuard.MarkStartupSuccess();
-            }
         }
         catch (Exception ex)
         {
@@ -173,6 +173,34 @@ public class ProcedureLevel : ProcedureBase
         }
     }
 
+    /// <summary>收到左下角设置点击后打开暂停菜单。</summary>
+    /// <param name="sender">战斗 HUD。</param>
+    /// <param name="args">本次设置请求。</param>
+    private void OnSettingsRequested(object sender, GameEventArgs args)
+    {
+        if (((SettingsRequestedEventArgs)args).FormSerialId != m_HudSerialId || m_Run?.Outcome != LevelRunOutcome.Running) return;
+        if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId))) return;
+        m_SettingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm, new SettingsFormData(m_Run));
+    }
+
+    /// <summary>设置中的返回地图按钮触发统一离开边界，回滚并清理关卡。</summary>
+    /// <param name="sender">当前设置窗口。</param>
+    /// <param name="args">本次返回地图请求。</param>
+    private void OnMapRequested(object sender, GameEventArgs args)
+    {
+        if (((MapRequestedEventArgs)args).FormSerialId == m_SettingsSerialId && m_Run != null)
+            ChangeState<ProcedureMap>(m_Owner);
+    }
+
+    /// <summary>从设置返回标题，离开边界负责回滚未完成的关卡。</summary>
+    /// <param name="sender">当前设置窗口。</param>
+    /// <param name="args">返回标题请求。</param>
+    private void OnTitleRequested(object sender, GameEventArgs args)
+    {
+        if (((TitleRequestedEventArgs)args).FormSerialId == m_SettingsSerialId && m_Run?.Outcome == LevelRunOutcome.Running)
+            ChangeState<ProcedureTitle>(m_Owner);
+    }
+
     /// <summary>
     /// 离开流程：未结束的关卡运行按"中途放弃"回滚（不写盘）；框架关停时只退订、不写盘。
     /// </summary>
@@ -180,6 +208,9 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="isShutdown">是否因框架关闭而离开。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
+        GF.Event.Unsubscribe(SettingsRequestedEventArgs.EventId, OnSettingsRequested);
+        GF.Event.Unsubscribe(MapRequestedEventArgs.EventId, OnMapRequested);
+        GF.Event.Unsubscribe(TitleRequestedEventArgs.EventId, OnTitleRequested);
         base.OnLeave(procedureOwner, isShutdown);
         int entrySerial = m_EntrySerial;
         m_EntrySerial++;
@@ -274,6 +305,12 @@ public class ProcedureLevel : ProcedureBase
         m_SessionCancellation?.Dispose();
         m_SessionCancellation = null;
         m_RestartTimer = null;
+        // 设置窗口先解除暂停和运行订阅，再清理 HUD、实体及关卡事务。
+        if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
+            GF.UI.CloseUIForm(m_SettingsSerialId);
+        m_SettingsSerialId = 0;
+        if (m_MusicSerial != 0) GF.Sound.StopSound(m_MusicSerial, 0.2f);
+        m_MusicSerial = 0;
 
         // 先关 HUD（退订英雄/成长/关卡）再拆会话，避免界面在已清理的引用上刷新。
         if (m_HudSerialId != 0)
@@ -328,7 +365,7 @@ public class ProcedureLevel : ProcedureBase
     }
 
     /// <summary>
-    /// 关卡运行结束：按配置等待后重开本关（死亡含死亡动画、通关留出完成表现；以后由结算界面与地图流程接管）；放弃不重开。
+    /// 关卡运行结束：按配置等待后执行死亡重开或通关回地图；放弃不重开。
     /// </summary>
     /// <param name="outcome">运行结局。</param>
     private void OnRunEnded(LevelRunOutcome outcome)
@@ -345,20 +382,22 @@ public class ProcedureLevel : ProcedureBase
 
         // 事件回调内不直接切换状态（离开会拆除发出事件的对象）：至少延到下一帧，按游戏时间计时（暂停时一起停）。
         m_RestartTimer = ((SceneTree)Engine.GetMainLoop()).CreateTimer(Mathf.Max(delay, 0.01f), processAlways: false);
-        m_RestartTimer.Timeout += () => Restart(owner, entrySerial);
+        m_RestartTimer.Timeout += () => FinishTransition(owner, entrySerial, outcome);
     }
 
-    /// <summary>若仍处于同一进入周期，重新进入本流程开下一局（GGF 允许切换到当前状态：先 OnLeave 再 OnEnter）。</summary>
+    /// <summary>同周期内按结局返回地图或重开，旧周期计时器不再触发导航。</summary>
     /// <param name="owner">流程状态机。</param>
     /// <param name="entrySerial">发起重开时的进入周期。</param>
-    private void Restart(ProcedureOwner owner, int entrySerial)
+    /// <param name="outcome">已确定的关卡结局。</param>
+    private void FinishTransition(ProcedureOwner owner, int entrySerial, LevelRunOutcome outcome)
     {
         if (entrySerial != m_EntrySerial || owner.IsDestroyed)
         {
             return;
         }
 
-        ChangeState<ProcedureLevel>(owner);
+        if (outcome == LevelRunOutcome.Cleared) ChangeState<ProcedureMap>(owner);
+        else ChangeState<ProcedureLevel>(owner);
     }
 
     /// <summary>HUD 打开失败时只处理本流程拥有的请求，统一结束关卡。</summary>

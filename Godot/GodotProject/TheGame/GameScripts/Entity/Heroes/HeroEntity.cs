@@ -1,3 +1,4 @@
+using GameLogic.Input;
 using System;
 using GameConfig.Battle;
 using GameConfig.Hero;
@@ -9,6 +10,7 @@ using GameLogic.Battle.Stats;
 using GameLogic.Entity.Body;
 using GameLogic.Entity.Heroes.Body;
 using GameLogic.Entity.Heroes.Effects;
+using GameLogic.Entity.Heroes.Input;
 using GameLogic.Profile;
 using Godot;
 using GodotGameFramework;
@@ -23,20 +25,7 @@ namespace GameLogic.Entity.Heroes
 	{
 		// ---- 字段 ----
 
-		/// <summary>输入动作名：跳跃（K）</summary>
-		public static readonly StringName ActionJump = "jump";
-
-		/// <summary>输入动作名：普攻（J）</summary>
-		public static readonly StringName ActionAttack = "attack";
-
-		/// <summary>输入动作名：满值开启无双（空格）。</summary>
-		public static readonly StringName ActionMusou = "musou";
-
-		private static readonly StatSource MusouSource = new("Musou", 0); // 当前英雄独有的局内属性来源。
-
-		private static readonly StringName ActionMoveLeft = "move_left"; // 输入动作名：左移。
-
-		private static readonly StringName ActionMoveRight = "move_right"; // 输入动作名：右移。
+		private static readonly StatSource m_MusouSource = new("Musou", 0); // 当前英雄独有的局内属性来源。
 
 		[Export] private Sprite2D m_Weapon; // 武器表现层，与身体层同网格并由动画轨道驱动。
 
@@ -151,7 +140,7 @@ namespace GameLogic.Entity.Heroes
 		public override void OnHide(bool isShutdown, object userData)
 		{
 			Musou.Clear();
-			Stats.RemoveSource(MusouSource);
+			Stats.RemoveSource(m_MusouSource);
 			if (!isShutdown && IsInstanceValid(m_MusouAfterimage)) m_MusouAfterimage.Reset();
 			DestroyBody(isShutdown);
 			m_PersistentSources = [];
@@ -162,7 +151,7 @@ namespace GameLogic.Entity.Heroes
 		/// <param name="delta">本次物理帧秒数。</param>
 		public override void _PhysicsProcess(double delta)
 		{
-			if (!IsShown || Config == null)
+			if (!IsShown || Config == null || delta <= 0)
 			{
 				return;
 			}
@@ -171,11 +160,16 @@ namespace GameLogic.Entity.Heroes
 			bool wasActive = Musou.IsActive;
 			Musou.Advance(dt);
 			if (wasActive && !Musou.IsActive) EndMusou();
-			if (Godot.Input.IsActionJustPressed(ActionMusou)) TryActivateMusou();
+			// 节点负责引擎采样；缓冲、双击和连击输入规则留在纯 C# HeroInput。
 			Input.Sample(dt,
-				Godot.Input.IsActionPressed(ActionMoveLeft), Godot.Input.IsActionPressed(ActionMoveRight),
-				Godot.Input.IsActionJustPressed(ActionMoveLeft), Godot.Input.IsActionJustPressed(ActionMoveRight),
-				Godot.Input.IsActionJustPressed(ActionJump), Godot.Input.IsActionJustPressed(ActionAttack));
+				Godot.Input.IsActionPressed(InputActions.MoveLeft),
+				Godot.Input.IsActionPressed(InputActions.MoveRight),
+				Godot.Input.IsActionJustPressed(InputActions.MoveLeft),
+				Godot.Input.IsActionJustPressed(InputActions.MoveRight),
+				Godot.Input.IsActionJustPressed(InputActions.Jump),
+				Godot.Input.IsActionJustPressed(InputActions.Attack),
+				Godot.Input.IsActionJustPressed(InputActions.Musou));
+			if (Input.MusouRequested) TryActivateMusou();
 
 			m_BodyFsm.Tick(dt);
 			MoveAndSlide();
@@ -196,7 +190,7 @@ namespace GameLogic.Entity.Heroes
 		{
 			BattleConfig battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
 			if (!IsShown || Dead || !Musou.TryActivate(battle.WsDuration)) return false;
-			Stats.SetSource(MusouSource, [StatModifier.PercentMult(StatType.Power, battle.WsPowerMultiplier - 1f)]);
+			Stats.SetSource(m_MusouSource, [StatModifier.PercentMult(StatType.Power, battle.WsPowerMultiplier - 1f)]);
 			m_PendingHurt = null;
 			m_MusouAfterimage?.SetEmitting(true);
 			return true;
@@ -206,7 +200,7 @@ namespace GameLogic.Entity.Heroes
 		private void EndMusou()
 		{
 			Musou.Clear();
-			Stats.RemoveSource(MusouSource);
+			Stats.RemoveSource(m_MusouSource);
 			m_MusouAfterimage?.SetEmitting(false);
 		}
 

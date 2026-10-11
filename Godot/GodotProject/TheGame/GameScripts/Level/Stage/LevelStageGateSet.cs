@@ -10,9 +10,11 @@ namespace GameLogic.Level;
 [Tool]
 public partial class LevelStageGateSet : LevelMarkerSet
 {
-    private readonly record struct StageRegion(float Left, float Right, string EntryGateId, string ExitGateId); // 阶段空间区域与左右门稳定 ID。
+    /// <summary>一场战斗的独立世界边界及左右门稳定 ID。</summary>
+    private readonly record struct StageRegion(float Left, float Right, string EntryGateId, string ExitGateId);
     private readonly List<StageRegion> m_Regions = new(); // 按阶段顺序预计算的空间区域。
     private Dictionary<string, StaticBody2D> m_Gates; // 初始化校验后的稳定 ID 到物理门索引。
+    private string m_TravelLeftGateId = string.Empty; // 行进期间保留上一场战斗左界，抵达后替换。
 
     /// <summary>只支持 StaticBody2D 作为物理门节点。</summary>
     /// <param name="node">待检查的直接子节点。</param>
@@ -22,7 +24,7 @@ public partial class LevelStageGateSet : LevelMarkerSet
     /// <summary>阶段门使用绿色标注，与生成点、触发区区分。</summary>
     protected override Color DefaultColor => new(0.6f, 1f, 0.2f, 0.9f);
 
-    /// <summary>校验门、递增区域与视野宽度，并预计算每阶段的左右边界。</summary>
+    /// <summary>校验独立左右门和视野宽度，允许相邻战斗区域重叠。</summary>
     /// <param name="config">本场景对应的关卡配置。</param>
     /// <param name="sceneLeft">场景配置的关卡左界，单位为世界像素。</param>
     /// <param name="sceneRight">场景配置的关卡右界，单位为世界像素。</param>
@@ -33,24 +35,29 @@ public partial class LevelStageGateSet : LevelMarkerSet
         m_Gates = BuildIndex<StaticBody2D>();
         m_Regions.Clear();
         HashSet<string> used = new(StringComparer.Ordinal);
-        float left = sceneLeft;
-        string entryGateId = string.Empty;
+        float previousRight = sceneLeft;
         foreach (LevelStage stage in config.Stages)
         {
-            // 门位置是场景空间事实，区域只在初始化时计算一次。
+            // 每场战斗拥有独立左界；不能用上一场出口推导，原版区域存在重叠。
+            string entryGateId = stage.LeftGateId;
             string exitGateId = stage.GateId;
+            float left = string.IsNullOrEmpty(entryGateId)
+                ? sceneLeft
+                : RequireGate(entryGateId, used).GlobalPosition.X;
             float right = string.IsNullOrEmpty(exitGateId)
                 ? sceneRight
                 : RequireGate(exitGateId, used).GlobalPosition.X;
-            if (right > sceneRight || right - left < viewWidth)
+            if (!float.IsFinite(left) || !float.IsFinite(right) || left < sceneLeft ||
+                right > sceneRight || right <= previousRight || right - left < viewWidth)
             {
                 throw new InvalidOperationException($"阶段 {stage.StageOrder} 区域 [{left}, {right}] 必须位于关卡内且至少容纳一屏。");
             }
 
             m_Regions.Add(new StageRegion(left, right, entryGateId, exitGateId));
-            left = right;
-            entryGateId = exitGateId;
+            previousRight = right;
         }
+        m_TravelLeftGateId = string.Empty;
+        CloseOnly(string.Empty, string.Empty);
     }
 
     /// <summary>返回指定阶段区域的世界边界。</summary>
@@ -62,22 +69,37 @@ public partial class LevelStageGateSet : LevelMarkerSet
         return (region.Left, region.Right);
     }
 
-    /// <summary>开放当前阶段入口并封住出口，让玩家与相机进入该区域。</summary>
+    /// <summary>保留上一场左界并封住新出口；停用经过的旧出口，避免重叠区域留下墙。</summary>
     /// <param name="stageOrder">阶段的 1 起顺序号。</param>
     public void BeginTravel(int stageOrder)
     {
         StageRegion region = m_Regions[stageOrder - 1];
-        SetClosed(region.EntryGateId, false);
-        SetClosed(region.ExitGateId, true);
+        CloseOnly(m_TravelLeftGateId, region.ExitGateId);
     }
 
     /// <summary>开战时关闭入口；出口保持关闭，角色只能在当前区域内移动。</summary>
     /// <param name="stageOrder">阶段的 1 起顺序号。</param>
-    public void LockRegion(int stageOrder) => SetClosed(m_Regions[stageOrder - 1].EntryGateId, true);
+    public void LockRegion(int stageOrder)
+    {
+        StageRegion region = m_Regions[stageOrder - 1];
+        m_TravelLeftGateId = region.EntryGateId;
+        CloseOnly(region.EntryGateId, region.ExitGateId);
+    }
 
     /// <summary>当前阶段清除后开放出口，允许进入下一段通路。</summary>
     /// <param name="stageOrder">阶段的 1 起顺序号。</param>
     public void ReleaseRegion(int stageOrder) => SetClosed(m_Regions[stageOrder - 1].ExitGateId, false);
+
+    /// <summary>只启用当前需要的左右门，保证重叠区域中不残留其他阶段的阻挡。</summary>
+    /// <param name="leftId">本次保留的左门；空表示场景原始左墙。</param>
+    /// <param name="rightId">本次保留的右门；空表示场景原始右墙。</param>
+    private void CloseOnly(string leftId, string rightId)
+    {
+        foreach (string id in m_Gates.Keys)
+        {
+            SetClosed(id, id == leftId || id == rightId);
+        }
+    }
 
     /// <summary>绘制门位置：竖直标记线，两端带圆点。</summary>
     /// <param name="position">门中心，相对本节点的局部坐标。</param>
@@ -95,7 +117,7 @@ public partial class LevelStageGateSet : LevelMarkerSet
 
     /// <summary>确认阶段引用的门已经登记且未被其他阶段复用。</summary>
     /// <param name="id">阶段配置引用的门稳定 ID。</param>
-    /// <param name="used">已分配给其他阶段的出口门 ID 集合。</param>
+    /// <param name="used">已分配给其他阶段或边界的门 ID 集合。</param>
     /// <returns>已校验的物理门节点。</returns>
     /// <exception cref="InvalidOperationException">门缺失、重复或没有碰撞形状时抛出。</exception>
     private StaticBody2D RequireGate(string id, HashSet<string> used)

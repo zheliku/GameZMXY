@@ -21,6 +21,26 @@ namespace GameConfig
         /// 战斗HUD
         /// </summary>
         BattleHud = 1,
+        /// <summary>
+        /// 开始界面
+        /// </summary>
+        StartForm = 2,
+        /// <summary>
+        /// 选角界面
+        /// </summary>
+        CharacterForm = 3,
+        /// <summary>
+        /// 地图界面
+        /// </summary>
+        MapForm = 4,
+        /// <summary>
+        /// 设置界面
+        /// </summary>
+        SettingsForm = 5,
+        /// <summary>
+        /// 存档选择
+        /// </summary>
+        SaveForm = 6,
     }
 
 } 

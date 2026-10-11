@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using GameConfig;
 using GameConfig.Hero;
 using GameConfig.Monster;
+using GameConfig.Sound;
 using GameLogic.Profile;
 
 namespace GameLogic.Config
@@ -60,6 +61,15 @@ namespace GameLogic.Config
 					errors.Add($"怪物 {monster.Id}：MaxHp 必须为正、AddExp 非负、Level 至少为 1。");
 				}
 			}
+
+            // 关卡音乐由关卡表声明，避免新关卡仍播放花果山硬编码音乐。
+            foreach (var level in tables.TbLevelConfig.DataList)
+            {
+                if (level.MusicId == SoundId.None) continue;
+                var music = tables.TbSoundConfig.GetOrDefault((int)level.MusicId);
+                if (music == null || music.Group != "Music")
+                    errors.Add($"关卡 {level.LevelId}：MusicId={level.MusicId} 必须引用 Music 组音效配置。");
+            }
 
 			if (tables.TbBattleConfig.DeathRestartDelay < 0f || tables.TbBattleConfig.ClearRestartDelay < 0f)
 			{

@@ -10,7 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://dwdf2rg5ijvhl" path="res://TheGame/Sprites/UI/hud/hud_ws_under.png" id="9_ws_under"]
 [ext_resource type="Texture2D" uid="uid://dd8oyoni1sg5" path="res://TheGame/Sprites/UI/hud/hud_ws_fill.png" id="10_ws_fill"]
 [ext_resource type="Texture2D" uid="uid://diqfyhu6sufse" path="res://TheGame/Sprites/UI/hud/hud_ws_grey.png" id="11_ws_grey"]
-[ext_resource type="Texture2D" uid="uid://uuk02m5yyo5p" path="res://TheGame/Sprites/UI/hud/hud_ws_max_sheet.png" id="12_ws_max"]
+[ext_resource type="SpriteFrames" uid="uid://dxqm2awjmwes2" path="res://TheGame/Sprites/UI/hud/hud_ws_full_frames.tres" id="12_ws_frames"]
 [ext_resource type="SpriteFrames" uid="uid://cxs2dh6k62665" path="res://TheGame/Sprites/UI/gogo/gogo_animations.tres" id="13_gogo"]
 [ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/Widgets/ResourceBar.cs" id="14_resourcebar"]
 [ext_resource type="Texture2D" uid="uid://cgqqx20qcko1c" path="res://TheGame/Sprites/UI/hud/hud_mp_fill.png" id="15_mp"]
@@ -19,6 +19,21 @@
 [ext_resource type="Theme" uid="uid://2gwbh6otun6r" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="18_theme"]
 [ext_resource type="FontFile" uid="uid://dy01vypttvr" path="res://TheGame/MainPack/Fonts/dfp_hai_bao_w12.ttc" id="19_level_font"]
 [ext_resource type="FontVariation" path="res://TheGame/MainPack/Fonts/game_font.tres" id="20_hud_font"]
+[ext_resource type="Texture2D" uid="uid://dnusvvhljgk87" path="res://TheGame/Sprites/UI/hud/menu_inventory_caption.png" id="inventory_caption"]
+[ext_resource type="Texture2D" uid="uid://bp04w8lqa5lgf" path="res://TheGame/Sprites/UI/hud/menu_inventory_hover.png" id="inventory_hover"]
+[ext_resource type="Texture2D" uid="uid://dupeqk5y4l6qd" path="res://TheGame/Sprites/UI/hud/menu_inventory_normal.png" id="inventory_normal"]
+[ext_resource type="Texture2D" uid="uid://pyq4cimfpyqw" path="res://TheGame/Sprites/UI/hud/menu_pet_caption.png" id="pet_caption"]
+[ext_resource type="Texture2D" uid="uid://b2rglh1l8flli" path="res://TheGame/Sprites/UI/hud/menu_pet_hover.png" id="pet_hover"]
+[ext_resource type="Texture2D" uid="uid://bfcfmu6amyvk1" path="res://TheGame/Sprites/UI/hud/menu_pet_normal.png" id="pet_normal"]
+[ext_resource type="Texture2D" uid="uid://di0bjjin8j4tn" path="res://TheGame/Sprites/UI/hud/menu_settings_caption.png" id="settings_caption"]
+[ext_resource type="Texture2D" uid="uid://b4cgnbrglxwux" path="res://TheGame/Sprites/UI/hud/menu_settings_hover.png" id="settings_hover"]
+[ext_resource type="Texture2D" uid="uid://d1o2p4odmrr65" path="res://TheGame/Sprites/UI/hud/menu_settings_normal.png" id="settings_normal"]
+[ext_resource type="Texture2D" uid="uid://2sst8lec4swu" path="res://TheGame/Sprites/UI/hud/menu_skills_caption.png" id="skills_caption"]
+[ext_resource type="Texture2D" uid="uid://rxicl8a8ghbt" path="res://TheGame/Sprites/UI/hud/menu_skills_hover.png" id="skills_hover"]
+[ext_resource type="Texture2D" uid="uid://chawhgtn222qb" path="res://TheGame/Sprites/UI/hud/menu_skills_normal.png" id="skills_normal"]
+[ext_resource type="Texture2D" uid="uid://cq76tj2cjr0n7" path="res://TheGame/Sprites/UI/hud/menu_weapon_caption.png" id="weapon_caption"]
+[ext_resource type="Texture2D" uid="uid://dp25pruwcy6xk" path="res://TheGame/Sprites/UI/hud/menu_weapon_hover.png" id="weapon_hover"]
+[ext_resource type="Texture2D" uid="uid://c80du00fmxodl" path="res://TheGame/Sprites/UI/hud/menu_weapon_normal.png" id="weapon_normal"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ws_flash"]
 shader = ExtResource("17_ws_flash")
@@ -26,115 +41,7 @@ shader_parameter/clip_center = Vector2(0.5, 0.5)
 shader_parameter/clip_radius = 32.0
 shader_parameter/clip_feather = 0.0
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_ws_0"]
-atlas = ExtResource("12_ws_max")
-region = Rect2(0, 0, 89, 89)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ws_9"]
-atlas = ExtResource("12_ws_max")
-region = Rect2(801, 0, 89, 89)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ws_8"]
-atlas = ExtResource("12_ws_max")
-region = Rect2(712, 0, 89, 89)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ws_7"]
-atlas = ExtResource("12_ws_max")
-region = Rect2(623, 0, 89, 89)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ws_6"]
-atlas = ExtResource("12_ws_max")
-region = Rect2(534, 0, 89, 89)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ws_5"]
-atlas = ExtResource("12_ws_max")
-region = Rect2(445, 0, 89, 89)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ws_4"]
-atlas = ExtResource("12_ws_max")
-region = Rect2(356, 0, 89, 89)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ws_3"]
-atlas = ExtResource("12_ws_max")
-region = Rect2(267, 0, 89, 89)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ws_2"]
-atlas = ExtResource("12_ws_max")
-region = Rect2(178, 0, 89, 89)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ws_1"]
-atlas = ExtResource("12_ws_max")
-region = Rect2(89, 0, 89, 89)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_ws_full"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_0")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_9")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_8")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_7")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_6")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_5")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_4")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_3")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_2")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_1")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_1")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_2")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_3")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_4")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_5")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_6")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_7")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_8")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_9")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ws_0")
-}],
-"loop": 1,
-"name": &"full",
-"speed": 25.0
-}]
-
-[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_WsMax", "m_Go")]
+[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_WsMax", "m_Go", "m_SettingsButton")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -151,6 +58,7 @@ m_LevelLabel = NodePath("StatusPanel/m_LevelLabel")
 m_WsBar = NodePath("MenuPanel/WsFrame/m_WsBar")
 m_WsMax = NodePath("MenuPanel/m_WsMax")
 m_Go = NodePath("m_Go")
+m_SettingsButton = NodePath("MenuPanel/m_SettingsButton")
 
 [node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247]
 position = Vector2(116, 44)
@@ -242,12 +150,12 @@ theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Head" type="Sprite2D" parent="." unique_id=2077905002]
-position = Vector2(53, 36)
+[node name="Head" type="Sprite2D" parent="StatusPanel" unique_id=2077905002]
+position = Vector2(-63, -8)
 texture = ExtResource("6_head")
 
-[node name="StatusLabel" type="Sprite2D" parent="." unique_id=1928995609]
-position = Vector2(97, 39)
+[node name="StatusLabel" type="Sprite2D" parent="StatusPanel" unique_id=1928995609]
+position = Vector2(-19, -5)
 texture = ExtResource("3_label")
 
 [node name="MenuPanel" type="Sprite2D" parent="." unique_id=1301947710]
@@ -280,8 +188,92 @@ texture = ExtResource("11_ws_grey")
 visible = false
 material = SubResource("ShaderMaterial_ws_flash")
 position = Vector2(-24, -4)
-sprite_frames = SubResource("SpriteFrames_ws_full")
+sprite_frames = ExtResource("12_ws_frames")
 animation = &"full"
+
+[node name="InventoryButton" type="TextureButton" parent="MenuPanel" unique_id=1185699338]
+offset_left = -87.0
+offset_top = -2.0
+offset_right = -40.0
+offset_bottom = 38.0
+tooltip_text = "尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("inventory_normal")
+texture_pressed = ExtResource("inventory_normal")
+texture_hover = ExtResource("inventory_hover")
+texture_disabled = ExtResource("inventory_normal")
+
+[node name="Caption" type="Sprite2D" parent="MenuPanel/InventoryButton" unique_id=1212129767]
+position = Vector2(21, 37)
+texture = ExtResource("inventory_caption")
+
+[node name="m_SettingsButton" type="TextureButton" parent="MenuPanel" unique_id=2146763591]
+mouse_default_cursor_shape = 2
+offset_left = -55.0
+offset_top = 20.0
+offset_right = -8.0
+offset_bottom = 60.0
+focus_mode = 0
+texture_normal = ExtResource("settings_normal")
+texture_pressed = ExtResource("settings_normal")
+texture_hover = ExtResource("settings_hover")
+texture_disabled = ExtResource("settings_normal")
+
+[node name="Caption" type="Sprite2D" parent="MenuPanel/m_SettingsButton" unique_id=1390892457]
+position = Vector2(24, 30)
+texture = ExtResource("settings_caption")
+
+[node name="SkillsButton" type="TextureButton" parent="MenuPanel" unique_id=1008367831]
+offset_left = -93.0
+offset_top = -39.0
+offset_right = -46.0
+offset_bottom = 1.0
+tooltip_text = "尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("skills_normal")
+texture_pressed = ExtResource("skills_normal")
+texture_hover = ExtResource("skills_hover")
+texture_disabled = ExtResource("skills_normal")
+
+[node name="Caption" type="Sprite2D" parent="MenuPanel/SkillsButton" unique_id=1611086862]
+position = Vector2(22, 31)
+texture = ExtResource("skills_caption")
+
+[node name="WeaponButton" type="TextureButton" parent="MenuPanel" unique_id=1024875993]
+offset_left = -65.0
+offset_top = -67.0
+offset_right = -18.0
+offset_bottom = -27.0
+tooltip_text = "尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("weapon_normal")
+texture_pressed = ExtResource("weapon_normal")
+texture_hover = ExtResource("weapon_hover")
+texture_disabled = ExtResource("weapon_normal")
+
+[node name="Caption" type="Sprite2D" parent="MenuPanel/WeaponButton" unique_id=29927435]
+position = Vector2(19, 28)
+texture = ExtResource("weapon_caption")
+
+[node name="PetButton" type="TextureButton" parent="MenuPanel" unique_id=2126390473]
+offset_left = -27.0
+offset_top = -71.0
+offset_right = 20.0
+offset_bottom = -31.0
+tooltip_text = "尚未开放"
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("pet_normal")
+texture_pressed = ExtResource("pet_normal")
+texture_hover = ExtResource("pet_hover")
+texture_disabled = ExtResource("pet_normal")
+
+[node name="Caption" type="Sprite2D" parent="MenuPanel/PetButton" unique_id=2105120597]
+position = Vector2(22, 33)
+texture = ExtResource("pet_caption")
 
 [node name="m_Go" type="AnimatedSprite2D" parent="." unique_id=1100398904]
 visible = false

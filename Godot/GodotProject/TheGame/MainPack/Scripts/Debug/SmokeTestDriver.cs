@@ -1,3 +1,5 @@
+using GameLogic.Event.Combat;
+using GameLogic.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +11,6 @@ using GameLogic;
 using GameLogic.Battle;
 using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
-using GameLogic.Event;
 using GameLogic.Level;
 using GameLogic.UI;
 using Godot;
@@ -48,6 +49,7 @@ public partial class SmokeTestDriver : Node
 		Level,
 		Cancellation,
 		Ui,
+		Frontend,
 	}
 
 	private static readonly (double At, string Action, string Mode)[] Plan =
@@ -116,6 +118,7 @@ public partial class SmokeTestDriver : Node
 	private LevelSmokeScenario m_LevelScenario; // 正式关卡四段流程的观测与输入计划。
 	private LevelCancellationSmokeScenario m_CancelScenario; // 真实在途显示的取消回归。
 	private UiSmokeScenario m_UiScenario; // HUD 与存档的真实引擎回归。
+	private FrontendSmokeScenario m_FrontendScenario; // 菜单、音乐与进出关卡回归。
 
 	private MonsterAiSmokeScenario m_AiScenario; // ai 模式下驱动英雄与猴子的场景。
 
@@ -141,6 +144,7 @@ public partial class SmokeTestDriver : Node
 				"--smoketest=level" => SmokeMode.Level,
 				"--smoketest=level-cancel" => SmokeMode.Cancellation,
 				"--smoketest=ui" => SmokeMode.Ui,
+				"--smoketest=frontend" => SmokeMode.Frontend,
 				_ => m_Mode,
 			};
 		}
@@ -175,6 +179,22 @@ public partial class SmokeTestDriver : Node
 	/// <param name="delta">上一帧到当前帧的秒数。</param>
 	public override void _PhysicsProcess(double delta)
 	{
+		if (m_Mode == SmokeMode.Frontend)
+		{
+			m_FrontendScenario ??= new FrontendSmokeScenario(this);
+			if (m_FrontendScenario.IsDone)
+			{
+				if (m_FrontendScenario.Failure != null) Fail(m_FrontendScenario.Failure);
+				else
+				{
+					GD.Print("SMOKE PASS：开始、六格存档、选角、地图、花果山、返回回滚、提示复用与 GGF 声音全部通过");
+					StopDriving(false);
+				}
+			}
+			return;
+		}
+		// 既有战斗回归也从真实菜单进入，不给生产流程增加测试专用跳转。
+		if (!FrontendSmokeScenario.AdvanceToLevel()) return;
 		if (m_Mode == SmokeMode.Ui)
 		{
 			DriveUiScenario(delta);
@@ -276,16 +296,16 @@ public partial class SmokeTestDriver : Node
 			m_MashFrame++;
 			if (m_Time >= m_MashUntil)
 			{
-				Input.ActionRelease("attack");
+				Input.ActionRelease(InputActions.Attack);
 				m_Mashing = false;
 			}
 			else if (m_MashFrame % 2 == 0)
 			{
-				Input.ActionPress("attack");
+				Input.ActionPress(InputActions.Attack);
 			}
 			else
 			{
-				Input.ActionRelease("attack");
+				Input.ActionRelease(InputActions.Attack);
 			}
 		}
 
@@ -397,8 +417,8 @@ public partial class SmokeTestDriver : Node
 
 		if (SmokeInspection.Sequence(m_Level)?.Phase == LevelStagePhase.Fighting)
 		{
-			Input.ActionRelease("move_right");
-			Input.ActionRelease("jump");
+			Input.ActionRelease(InputActions.MoveRight);
+			Input.ActionRelease(InputActions.Jump);
 			// 战斗回归需要平地，使用场景中已配置的平坦玩家出生点，避免斜坡改变高度断言。
 			m_Hero.GlobalPosition = m_Level.PlayerSpawnPosition;
 			m_Hero.Velocity = Vector2.Zero;
@@ -408,14 +428,14 @@ public partial class SmokeTestDriver : Node
 			return;
 		}
 
-		Input.ActionPress("move_right");
+		Input.ActionPress(InputActions.MoveRight);
 		if (m_Hero.IsOnWall() && m_Hero.IsOnFloor())
 		{
-			Input.ActionPress("jump");
+			Input.ActionPress(InputActions.Jump);
 		}
 		else
 		{
-			Input.ActionRelease("jump");
+			Input.ActionRelease(InputActions.Jump);
 		}
 		if (m_TravelTime > 20.0)
 		{
@@ -759,9 +779,9 @@ public partial class SmokeTestDriver : Node
 	{
 		// 先停止帧驱动并释放事件订阅，避免退出等待期间继续触发烟测逻辑。
 		SetPhysicsProcess(false);
-		Input.ActionRelease("move_left");
-		Input.ActionRelease("move_right");
-		Input.ActionRelease("jump");
+		Input.ActionRelease(InputActions.MoveLeft);
+		Input.ActionRelease(InputActions.MoveRight);
+		Input.ActionRelease(InputActions.Jump);
 		if (m_Hero != null)
 		{
 			GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnDamageDealt);

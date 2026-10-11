@@ -1,3 +1,4 @@
+using GameLogic.Event.Combat;
 using System.Collections.Generic;
 using System;
 using GameConfig.Battle;
@@ -9,7 +10,7 @@ using GameFramework;
 using GameLogic.Battle;
 using GameLogic.Battle.Stats;
 using GameLogic.Config;
-using GameLogic.Event;
+using GameLogic.Audio;
 using Godot;
 using GodotGameFramework;
 
@@ -301,14 +302,7 @@ namespace GameLogic.Entity
 				return;
 			}
 
-			SoundConfig cfg = ConfigSystem.Instance.Tables.TbSoundConfig.GetOrDefault((int)id);
-			if (cfg == null)
-			{
-				Log.Error("[ActorEntity] SoundConfig 缺失行：SoundId={0}", id);
-				return;
-			}
-
-			GF.Sound.PlaySound(cfg.Path, cfg.Group);
+			GF.Sound.PlayConfigured(id);
 		}
 
 		/// <summary>设置朝向（0 表示不变）。翻转通用表现层（身体/判定盒容器），最后调钩子（子类镜像自己的附加层）。</summary>

@@ -1,0 +1,129 @@
+[gd_scene format=3 uid="uid://d3tjh0pusi8i6"]
+
+[ext_resource type="Texture2D" uid="uid://dv0rk1ml8bq71" path="res://TheGame/Sprites/UI/frontend/settings_scroll.png" id="bg"]
+[ext_resource type="Texture2D" uid="uid://cp42ocwlfjgvb" path="res://TheGame/Sprites/UI/frontend/menu_close.png" id="close"]
+[ext_resource type="Texture2D" uid="uid://dyutmtu7t78n4" path="res://TheGame/Sprites/UI/frontend/menu_close_hover.png" id="close_hover"]
+[ext_resource type="FontFile" uid="uid://d3bh5a3jtbsib" path="res://TheGame/MainPack/Fonts/fz_cu_yuan.ttf" id="font"]
+[ext_resource type="Script" uid="uid://1dvl0jxt5y1n" path="res://TheGame/GameScripts/UI/SettingsForm/SettingsForm.cs" id="script"]
+[ext_resource type="Theme" path="res://TheGame/MainPack/Themes/legacy_menu_theme.tres" id="theme"]
+
+[node name="SettingsForm" type="Control" unique_id=915106426 node_paths=PackedStringArray("m_Continue", "m_Sound", "m_ReturnMap", "m_Help", "m_ReturnTitle", "m_Close", "m_HelpText")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("theme")
+script = ExtResource("script")
+m_Continue = NodePath("Scroll/m_Continue")
+m_Sound = NodePath("Scroll/m_Sound")
+m_ReturnMap = NodePath("Scroll/m_ReturnMap")
+m_Help = NodePath("Scroll/m_Help")
+m_ReturnTitle = NodePath("Scroll/m_ReturnTitle")
+m_Close = NodePath("Scroll/m_Close")
+m_HelpText = NodePath("Scroll/m_HelpText")
+
+[node name="Shade" type="ColorRect" parent="." unique_id=1428607542]
+layout_mode = 0
+offset_right = 940.0
+offset_bottom = 590.0
+color = Color(0, 0, 0, 0.42)
+
+[node name="Scroll" type="TextureRect" parent="." unique_id=1139039827]
+layout_mode = 0
+offset_left = 307.0
+offset_top = 75.0
+offset_right = 633.0
+offset_bottom = 416.0
+mouse_filter = 2
+texture = ExtResource("bg")
+expand_mode = 1
+
+[node name="m_Continue" type="Button" parent="Scroll" unique_id=1180235255]
+layout_mode = 0
+mouse_default_cursor_shape = 2
+offset_left = 19.0
+offset_top = 62.0
+offset_right = 292.0
+offset_bottom = 100.0
+focus_mode = 0
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 24
+text = "继续游戏"
+
+[node name="m_Sound" type="Button" parent="Scroll" unique_id=974956146]
+layout_mode = 0
+mouse_default_cursor_shape = 2
+offset_left = 19.0
+offset_top = 114.0
+offset_right = 292.0
+offset_bottom = 152.0
+focus_mode = 0
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 24
+text = "关闭声音"
+
+[node name="m_ReturnMap" type="Button" parent="Scroll" unique_id=597106212]
+layout_mode = 0
+mouse_default_cursor_shape = 2
+offset_left = 19.0
+offset_top = 166.0
+offset_right = 292.0
+offset_bottom = 204.0
+focus_mode = 0
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 24
+text = "返回地图"
+
+[node name="m_Help" type="Button" parent="Scroll" unique_id=1851831803]
+layout_mode = 0
+mouse_default_cursor_shape = 2
+offset_left = 19.0
+offset_top = 218.0
+offset_right = 292.0
+offset_bottom = 256.0
+focus_mode = 0
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 24
+text = "游戏帮助"
+
+[node name="m_ReturnTitle" type="Button" parent="Scroll" unique_id=1484751417]
+layout_mode = 0
+mouse_default_cursor_shape = 2
+offset_left = 19.0
+offset_top = 270.0
+offset_right = 292.0
+offset_bottom = 308.0
+focus_mode = 0
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 24
+text = "返回主菜单"
+
+[node name="m_Close" type="TextureButton" parent="Scroll" unique_id=1059835465]
+layout_mode = 0
+mouse_default_cursor_shape = 2
+offset_left = 270.0
+offset_top = 11.0
+offset_right = 311.0
+offset_bottom = 52.0
+focus_mode = 0
+texture_normal = ExtResource("close")
+texture_pressed = ExtResource("close_hover")
+texture_hover = ExtResource("close_hover")
+
+[node name="m_HelpText" type="Label" parent="Scroll" unique_id=230402042]
+visible = false
+layout_mode = 0
+offset_left = 27.0
+offset_top = 104.0
+offset_right = 297.0
+offset_bottom = 317.0
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 18
+text = "A / D　移动
+J　攻击　K　跳跃
+空格　无双
+
+离开未完成关卡会回滚本关收益。"
+horizontal_alignment = 1
