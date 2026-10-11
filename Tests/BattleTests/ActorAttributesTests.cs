@@ -1,27 +1,28 @@
+using GameLogic.Battle.Resources;
+using GameLogic.Battle.Attributes;
 using System;
 using GameConfig.Stat;
-using GameLogic.Battle.Stats;
 using Xunit;
 
 namespace GameLogic.Battle.Tests
 {
 	/// <summary>属性汇总、生命魔法资源与无双进度的领域规则。</summary>
-	public sealed class StatSheetTests
+	public sealed class ActorAttributesTests
 	{
 		/// <summary>最终值 = (基础 + Σ固定) × (1 + Σ同类百分比) × Π(1 + 独立百分比)。</summary>
 		[Fact]
-		public void Sheet_AppliesModifierOrder()
+		public void Attributes_AppliesModifierOrder()
 		{
-			StatSheet sheet = new();
-			sheet.SetSource(new StatSource("Equipment", 1), new[]
+			ActorAttributes sheet = new();
+			sheet.SetSource(new AttributeSourceId("Equipment", 1), new[]
 			{
-				StatModifier.Flat(StatType.Power, 10),
-				StatModifier.PercentAdd(StatType.Power, 0.1f),
+				AttributeModifier.Flat(StatType.Power, 10),
+				AttributeModifier.PercentAdd(StatType.Power, 0.1f),
 			});
-			sheet.SetSource(new StatSource("Buff", 1), new[]
+			sheet.SetSource(new AttributeSourceId("Buff", 1), new[]
 			{
-				StatModifier.PercentAdd(StatType.Power, 0.1f),
-				StatModifier.PercentMult(StatType.Power, 0.5f),
+				AttributeModifier.PercentAdd(StatType.Power, 0.1f),
+				AttributeModifier.PercentMult(StatType.Power, 0.5f),
 			});
 
 			// 基础 0 + 固定 10 = 10；同类百分比 0.1+0.1 → ×1.2 = 12；独立 ×1.5 = 18。
@@ -31,12 +32,12 @@ namespace GameLogic.Battle.Tests
 
 		/// <summary>按来源整体移除，同一来源再次登记时整体替换。</summary>
 		[Fact]
-		public void Sheet_RemovesAndReplacesWholeSources()
+		public void Attributes_RemovesAndReplacesWholeSources()
 		{
-			StatSheet sheet = new();
-			StatSource sword = new("Equipment", 7);
-			sheet.SetSource(sword, new[] { StatModifier.Flat(StatType.Power, 5), StatModifier.Flat(StatType.Crit, 2) });
-			sheet.SetSource(sword, new[] { StatModifier.Flat(StatType.Power, 8) });
+			ActorAttributes sheet = new();
+			AttributeSourceId sword = new("Equipment", 7);
+			sheet.SetSource(sword, new[] { AttributeModifier.Flat(StatType.Power, 5), AttributeModifier.Flat(StatType.Crit, 2) });
+			sheet.SetSource(sword, new[] { AttributeModifier.Flat(StatType.Power, 8) });
 			Assert.Equal((8, 0), (sheet.GetInt(StatType.Power), sheet.GetInt(StatType.Crit)));
 
 			Assert.True(sheet.RemoveSource(sword));
@@ -46,30 +47,28 @@ namespace GameLogic.Battle.Tests
 
 		/// <summary>最终值下限为 0，整数读取四舍五入（远离零）。</summary>
 		[Fact]
-		public void Sheet_ClampsAndRounds()
+		public void Attributes_ClampsAndRounds()
 		{
-			StatSheet sheet = new();
-			sheet.SetSource(new StatSource("Debuff", 1), new[] { StatModifier.Flat(StatType.Def, -5) });
+			ActorAttributes sheet = new();
+			sheet.SetSource(new AttributeSourceId("Debuff", 1), new[] { AttributeModifier.Flat(StatType.Def, -5) });
 			Assert.Equal(0, sheet.GetInt(StatType.Def));
 
-			sheet.SetSource(new StatSource("Buff", 2), new[] { StatModifier.Flat(StatType.Mdef, 2.5f) });
+			sheet.SetSource(new AttributeSourceId("Buff", 2), new[] { AttributeModifier.Flat(StatType.Mdef, 2.5f) });
 			Assert.Equal(3, sheet.GetInt(StatType.Mdef));
 		}
 
-		/// <summary>每次登记、移除都通知；调用方的集合在登记后被修改不影响已登记修正。</summary>
+		/// <summary>调用方集合被修改不影响已登记修正，无效来源被拒绝。</summary>
 		[Fact]
-		public void Sheet_NotifiesAndCopiesModifiers()
+		public void Attributes_CopiesModifiersAndRejectsInvalidSources()
 		{
-			StatSheet sheet = new();
-			int notifications = 0;
-			sheet.Changed += () => notifications++;
-			StatModifier[] modifiers = { StatModifier.Flat(StatType.Power, 4) };
-			sheet.SetSource(new StatSource("Pellet", 1), modifiers);
-			modifiers[0] = StatModifier.Flat(StatType.Power, 100);
+			ActorAttributes sheet = new();
+			AttributeModifier[] modifiers = { AttributeModifier.Flat(StatType.Power, 4) };
+			sheet.SetSource(new AttributeSourceId("Pellet", 1), modifiers);
+			modifiers[0] = AttributeModifier.Flat(StatType.Power, 100);
 			Assert.Equal(4, sheet.GetInt(StatType.Power));
-			sheet.RemoveSource(new StatSource("Pellet", 1));
-			Assert.Equal(2, notifications);
-			Assert.Throws<ArgumentException>(() => new StatSource("", 1));
+			sheet.RemoveSource(new AttributeSourceId("Pellet", 1));
+			Assert.Equal(0, sheet.GetInt(StatType.Power));
+			Assert.Throws<ArgumentException>(() => new AttributeSourceId("", 1));
 			Assert.Throws<ArgumentException>(() => sheet.SetSource(default, modifiers));
 		}
 

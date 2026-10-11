@@ -60,11 +60,11 @@ public sealed class ProcedureMap : MenuProcedure
     private async void OnSaveRequested(object sender, GameEventArgs args)
     {
         if (((SaveRequestedEventArgs)args).FormSerialId != FormSerialId || IsReturningToTitle) return;
-        var context = GetGameContext(Owner);
+        var session = GetPlayerSession(Owner);
         var token = CancellationToken;
         int serial = FormSerialId;
         bool succeeded;
-        try { succeeded = await context.Save.SaveCheckpointAsync(context.Profile); }
+        try { succeeded = await session.Save.SaveCheckpointAsync(session.Profile); }
         catch (Exception error)
         {
             Log.Error("[ProcedureMap] 手动保存失败：{0}", error);

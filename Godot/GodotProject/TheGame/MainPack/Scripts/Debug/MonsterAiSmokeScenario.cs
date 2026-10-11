@@ -1,3 +1,8 @@
+using GameLogic.Entity.Monsters.Body.Core;
+using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Entity.Monsters.AI.Attacks;
+using GameLogic.Battle.Resources;
+using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
 using System;
 using System.Collections.Generic;
@@ -5,11 +10,8 @@ using GameConfig.Battle;
 using GameConfig.Sound;
 using GameFramework;
 using GameFramework.Event;
-using GameLogic.Battle;
 using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
-using GameLogic.Entity.Monsters.AI;
-using GameLogic.Entity.Monsters.Body;
 using Godot;
 using GodotGameFramework;
 
@@ -25,7 +27,7 @@ using GodotGameFramework;
 ///  3 平台     英雄钉在猴子前方高 120px 的固定点 AirDuration 秒 → 不出招、AI 进 Hold、在英雄 x 两侧来回踱步；
 ///  4 落地     放英雄落地 → 猴子回 Attack 并出招；
 ///  5 丢失     英雄始终保持在猴子视野外（模拟跑得比它快）→ LoseTargetTime 后 AI 回 Patrol/Idle；随后以英雄身份打一下（带击退）→ 重新锁定、CcLocked/Hurt；
-///  6 击杀     致命伤 → AI 进 Death、广播 MonsterDiedEventArgs（击杀者 = 英雄）、死亡动画后回收。
+///  6 击杀     致命伤 → AI 进 Death、广播 MonsterDiedEventArgs、死亡动画后回收。
 /// 另断言：攻击范围由 attack_1 判定盒推导 = 50×50 @(-24,-23) → X[-49,1] Y[-48,2]。
 /// </summary>
 public sealed class MonsterAiSmokeScenario
@@ -87,7 +89,6 @@ public sealed class MonsterAiSmokeScenario
 	private readonly List<string> m_Failures = new(); // 断言失败原因列表。
 	private int m_HeroHitsByMonster; // 怪物命中英雄的次数。
 	private int m_DiedEvents; // 收到怪物死亡事件的次数。
-	private int m_DiedKiller = -1; // 死亡事件报告的击杀者编号。
 	private bool m_HiddenAfterDeath; // 是否已观察到死亡后的实体回收。
 
 	// 转身阶段
@@ -278,10 +279,6 @@ public sealed class MonsterAiSmokeScenario
 		if (m_DiedEvents != 1)
 		{
 			failures.Add($"MonsterDiedEventArgs 应恰好广播 1 次，实际 {m_DiedEvents}");
-		}
-		else if (m_DiedKiller != m_Hero.Id)
-		{
-			failures.Add($"死亡事件击杀者应为英雄 {m_Hero.Id}，实际 {m_DiedKiller}");
 		}
 
 		if (!m_HiddenAfterDeath)
@@ -478,26 +475,25 @@ public sealed class MonsterAiSmokeScenario
 	private void HitMonster(float power, Vector2 knockback) // 以英雄为攻击方对怪物执行一次真实伤害结算。
 	{
 		// 攻击数据只在结算期间持有，完成后立即归还引用池。
-		AttackData attack = AttackData.Create(0, default, power, DamageKind.Real, knockback, 1, 0, SoundId.None);
+		AttackInstance attack = AttackInstance.Create(0, default, power, DamageKind.Real, knockback, 1, 0, SoundId.None);
 		m_Monster.ReceiveHit(attack, m_Hero.Id);
 		ReferencePool.Release(attack);
 	}
 
 	private void OnDamageDealt(object sender, GameEventArgs args) // 记录受测怪物命中英雄的伤害事件。
 	{
-		if (args is DamageDealtEventArgs e && e.TargetEntityId == m_Hero.Id && e.AttackerEntityId == m_MonsterId &&
-		    !e.IsMiss)
+		if (args is DamageDealtEventArgs e && ReferenceEquals(sender, m_Hero) &&
+		    !e.Result.IsMiss)
 		{
 			m_HeroHitsByMonster++;
 		}
 	}
 
-	private void OnMonsterDied(object sender, GameEventArgs args) // 记录受测怪物死亡事件及击杀者。
+	private void OnMonsterDied(object sender, GameEventArgs args) // 记录受测怪物死亡事件。
 	{
 		if (args is MonsterDiedEventArgs e && e.EntityId == m_MonsterId)
 		{
 			m_DiedEvents++;
-			m_DiedKiller = e.KillerEntityId;
 		}
 	}
 

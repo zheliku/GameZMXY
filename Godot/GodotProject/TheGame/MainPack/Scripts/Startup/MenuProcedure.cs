@@ -86,8 +86,8 @@ public abstract class MenuProcedure : ProcedureBase
     /// <param name="owner">流程状态机。</param>
     /// <returns>当前档案作用域。</returns>
     /// <exception cref="InvalidOperationException">未先完成读档流程。</exception>
-    protected static GameContext GetGameContext(ProcedureOwner owner) =>
-        owner.GetData<GameContextVariable>(FlowKeys.GameContext)?.Value
+    protected static PlayerSession GetPlayerSession(ProcedureOwner owner) =>
+        owner.GetData<PlayerSessionVariable>(FlowKeys.PlayerSession)?.Value
         ?? throw new InvalidOperationException("菜单流程缺少档案作用域。");
 
     /// <summary>等待当前档案的检查点，再释放档案作用域；失败保留当前页面。</summary>
@@ -98,7 +98,7 @@ public abstract class MenuProcedure : ProcedureBase
         IsReturningToTitle = true;
         var token = CancellationToken;
         var owner = Owner;
-        var save = GetGameContext(owner).Save;
+        var save = GetPlayerSession(owner).Save;
         try
         {
             // 捕获本周期引用，等待后不得访问已经换周期的流程字段。

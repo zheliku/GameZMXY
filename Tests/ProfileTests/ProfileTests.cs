@@ -1,8 +1,10 @@
+using GameLogic.Profile;
+using GameLogic.Config;
+using GameLogic.Battle.Attributes;
 using GameLogic.Save.Data;
 using System;
 using System.Collections.Generic;
 using GameConfig.Hero;
-using GameLogic.Battle.Stats;
 using GameLogic.Save;
 using Newtonsoft.Json;
 using Xunit;
@@ -16,7 +18,7 @@ namespace GameLogic.Profile.Tests
 		[Fact]
 		public void Progression_DerivesLevelAndNotifiesOncePerChange()
 		{
-			HeroProgression progression = new(TestTables.Curve, 0);
+			HeroProgression progression = new(1, TestTables.Curve, 0);
 			int notifications = 0;
 			progression.Changed += () => notifications++;
 
@@ -40,7 +42,7 @@ namespace GameLogic.Profile.Tests
 		[Fact]
 		public void Progression_StopsAtMaxLevel()
 		{
-			HeroProgression progression = new(TestTables.Curve, int.MaxValue);
+			HeroProgression progression = new(1, TestTables.Curve, int.MaxValue);
 			int notifications = 0;
 			progression.Changed += () => notifications++;
 			Assert.Equal(TestTables.Curve.MaxLevel, progression.Level);
@@ -66,90 +68,65 @@ namespace GameLogic.Profile.Tests
 			Assert.Throws<ArgumentOutOfRangeException>(() => wallet.TrySpendGold(-1));
 		}
 
-		/// <summary>钱包通知后的余额已完成更新，未改变余额的操作不发通知。</summary>
-		[Fact]
-		public void Wallet_NotifiesCommittedBalanceOnlyWhenItChanges()
-		{
-			Wallet wallet = new(0);
-			List<int> balances = new();
-			wallet.Changed += () => balances.Add(wallet.Gold);
-
-			// 零额操作、扣款失败、同值回滚和封顶后增加均不改变余额。
-			wallet.AddGold(0);
-			Assert.True(wallet.TrySpendGold(0));
-			wallet.AddGold(30);
-			Assert.False(wallet.TrySpendGold(31));
-			Assert.True(wallet.TrySpendGold(10));
-			wallet.Restore(20);
-			wallet.AddGold(int.MaxValue);
-			wallet.AddGold(1);
-			wallet.Restore(-1);
-			wallet.Restore(0);
-
-			Assert.Equal(new[] { 30, 20, int.MaxValue, 0 }, balances);
-		}
+        /// <summary>零额、扣款失败、封顶和回滚都保持有效余额。</summary>
+        [Fact]
+        public void Wallet_PreservesBalanceAcrossNoOpsAndRestore()
+        {
+            Wallet wallet = new(30);
+            wallet.AddGold(0);
+            Assert.True(wallet.TrySpendGold(0));
+            Assert.False(wallet.TrySpendGold(31));
+            Assert.Equal(30, wallet.Gold);
+            Assert.True(wallet.TrySpendGold(10));
+            Assert.Equal(20, wallet.Gold);
+            wallet.Restore(20);
+            Assert.Equal(20, wallet.Gold);
+            wallet.AddGold(int.MaxValue);
+            wallet.AddGold(1);
+            Assert.Equal(int.MaxValue, wallet.Gold);
+            wallet.Restore(-1);
+            Assert.Equal(0, wallet.Gold);
+        }
 
 		/// <summary>档案拒绝重复英雄与未拥有的出战英雄。</summary>
 		[Fact]
 		public void Profile_RejectsInvalidHeroSets()
 		{
-			HeroRecord hero = new(1, new HeroProgression(TestTables.Curve, 0));
+			HeroProgression hero = new(1, TestTables.Curve, 0);
 			Assert.Throws<ArgumentException>(() => new PlayerProfile(1, new[] { hero, hero }, new Wallet(0)));
 			Assert.Throws<ArgumentException>(() => new PlayerProfile(2, new[] { hero }, new Wallet(0)));
 			Assert.Equal(1, new PlayerProfile(1, new[] { hero }, new Wallet(0)).ActiveHero.HeroId);
 		}
 
-		/// <summary>出战装配取成长表当前等级的属性；数值与重构前公式 Base+(L-1)*Grow 一致。</summary>
-		[Fact]
-		public void StatBuilder_UsesGrowthRowOfCurrentLevel()
-		{
-			HeroStatBuilder builder = new(TestTables.Tables.TbHeroGrowthConfig);
-			HeroRecord hero = new(1, new HeroProgression(TestTables.Curve, 0));
-			HeroLoadout level1 = builder.Build(hero);
-			Assert.Equal((1, 80, 50, 8), (level1.Level, level1.GrowthStats.MaxHp, level1.GrowthStats.MaxMp, level1.GrowthStats.Power));
+        /// <summary>战斗快照冻结当前等级，升级时只替换基础值并保留本局修正。</summary>
+        [Fact]
+        public void BattleSnapshot_FreezesGrowthAndPreservesRuntimeModifiers()
+        {
+            HeroProgression hero = new(1, TestTables.Curve, 0);
+            HeroBattleSnapshot first = HeroBattleSnapshot.Create(hero.HeroId, hero.Level, TestTables.Tables.TbHeroGrowthConfig);
+            hero.AddExperience(140);
+            HeroBattleSnapshot second = HeroBattleSnapshot.Create(hero.HeroId, hero.Level, TestTables.Tables.TbHeroGrowthConfig);
+            Assert.Equal((1, 80, 50, 8), (first.Level, first.BaseAttributes.MaxHp, first.BaseAttributes.MaxMp, first.BaseAttributes.Power));
+            Assert.Equal((2, 130, 65, 12, 11), (second.Level, second.BaseAttributes.MaxHp, second.BaseAttributes.MaxMp,
+                second.BaseAttributes.Power, second.BaseAttributes.Def));
 
-			// 升到 2 级：生命 80+50、魔法 50+15、攻击 8+4、物防 10+1。
-			hero.Progression.AddExperience(140);
-			HeroLoadout level2 = builder.Build(hero);
-			Assert.Equal((2, 130, 65, 12, 11), (level2.Level, level2.GrowthStats.MaxHp, level2.GrowthStats.MaxMp,
-				level2.GrowthStats.Power, level2.GrowthStats.Def));
+            ActorAttributes attributes = new();
+            attributes.SetSource(new AttributeSourceId("Musou", 0),
+                [AttributeModifier.PercentMult(GameConfig.Stat.StatType.Power, 1)]);
+            attributes.SetBase(first.BaseAttributes);
+            Assert.Equal(16, attributes.GetInt(GameConfig.Stat.StatType.Power));
+            attributes.SetBase(second.BaseAttributes);
+            Assert.Equal(24, attributes.GetInt(GameConfig.Stat.StatType.Power));
+            Assert.Equal(130, attributes.GetInt(GameConfig.Stat.StatType.MaxHp));
+        }
 
-			// 装配写入属性汇总：基础值替换，Buff 等其他来源不受影响。
-			StatSheet stats = new();
-			StatSource buff = new("Buff", 1);
-			stats.SetSource(buff, new[] { StatModifier.Flat(GameConfig.Stat.StatType.Power, 3) });
-			StatSource[] sources = level1.ApplyTo(stats, null);
-			Assert.Equal(11, stats.GetInt(GameConfig.Stat.StatType.Power));
-			level2.ApplyTo(stats, sources);
-			Assert.Equal(15, stats.GetInt(GameConfig.Stat.StatType.Power));
-			Assert.Equal(130, stats.GetInt(GameConfig.Stat.StatType.MaxHp));
-		}
-
-		/// <summary>装配隔离输入集合；卸下装备只移除旧的持久来源，保留 Buff。</summary>
-		[Fact]
-		public void Loadout_SnapshotsModifiersAndReplacesOnlyPersistentSources()
-		{
-			var growth = TestTables.Tables.TbHeroGrowthConfig.Get(1, 1).Stats;
-			StatSource equipment = new("Equipment", 1);
-			StatSource buff = new("Buff", 1);
-			var modifiers = new List<StatModifier> { StatModifier.Flat(GameConfig.Stat.StatType.Power, 5) };
-			var entries = new List<KeyValuePair<StatSource, IReadOnlyList<StatModifier>>> { new(equipment, modifiers) };
-			HeroLoadout equipped = new(1, 1, growth, entries);
-
-			// 同时修改外层与内层输入，已构建装配仍按原快照生效。
-			modifiers[0] = StatModifier.Flat(GameConfig.Stat.StatType.Power, 500);
-			entries.Clear();
-			StatSheet stats = new();
-			stats.SetSource(buff, [StatModifier.Flat(GameConfig.Stat.StatType.Power, 3)]);
-			StatSource[] sources = equipped.ApplyTo(stats, null);
-			Assert.Equal(new[] { equipment }, sources);
-			Assert.Equal(growth.Power + 8, stats.GetInt(GameConfig.Stat.StatType.Power));
-
-			// 空装配等价于卸下全部持久来源，不改变本局 Buff。
-			HeroLoadout unequipped = new(1, 1, growth, []);
-			Assert.Empty(unequipped.ApplyTo(stats, sources));
-			Assert.Equal(growth.Power + 3, stats.GetInt(GameConfig.Stat.StatType.Power));
-		}
+        /// <summary>缺少成长行时明确拒绝，避免默认数值进入实体。</summary>
+        [Fact]
+        public void BattleSnapshot_RejectsMissingGrowth()
+        {
+            Assert.Throws<InvalidOperationException>(() => HeroBattleSnapshot.Create(999, 1, TestTables.Tables.TbHeroGrowthConfig));
+            Assert.Throws<ArgumentNullException>(() => new HeroBattleSnapshot(1, 1, null));
+        }
 
 		/// <summary>成长表与重构前公式逐级一致（防止迁移脚本或手工改表引入偏差）。</summary>
 		[Fact]
@@ -207,7 +184,7 @@ namespace GameLogic.Profile.Tests
 		[Fact]
 		public void Mapper_RoundTripsThroughJson()
 		{
-			PlayerProfile profile = new(1, new[] { new HeroRecord(1, new HeroProgression(TestTables.Curve, 517)) }, new Wallet(42));
+			PlayerProfile profile = new(1, new[] { new HeroProgression(1, TestTables.Curve, 517) }, new Wallet(42));
 			GameData snapshot = ProfileMapper.CaptureSaveData(profile);
 			profile.Wallet.AddGold(100);
 			Assert.Equal(42, snapshot.Gold);
@@ -216,7 +193,7 @@ namespace GameLogic.Profile.Tests
 			GameData loaded = JsonConvert.DeserializeObject<GameData>(json);
 			PlayerProfile restored = ProfileMapper.RestoreProfile(loaded, TestTables.Curve);
 			Assert.Equal(42, restored.Wallet.Gold);
-			Assert.Equal((4, 37), (restored.ActiveHero.Progression.Level, restored.ActiveHero.Progression.Experience));
+			Assert.Equal((4, 37), (restored.ActiveHero.Level, restored.ActiveHero.Experience));
 			Assert.DoesNotContain("\"Player\"", json);
             Assert.DoesNotContain("\"Profile\"", json);
             Assert.Contains("\"TotalExperience\"", json);
@@ -226,9 +203,9 @@ namespace GameLogic.Profile.Tests
 		[Fact]
 		public void Mapper_RollsBackToSnapshot()
 		{
-			PlayerProfile profile = new(1, new[] { new HeroRecord(1, new HeroProgression(TestTables.Curve, 0)) }, new Wallet(5));
+			PlayerProfile profile = new(1, new[] { new HeroProgression(1, TestTables.Curve, 0) }, new Wallet(5));
 			GameData snapshot = ProfileMapper.CaptureSaveData(profile);
-			HeroProgression progression = profile.ActiveHero.Progression;
+			HeroProgression progression = profile.ActiveHero;
 			List<int> levels = new();
 			progression.Changed += () => levels.Add(progression.Level);
 
@@ -236,7 +213,7 @@ namespace GameLogic.Profile.Tests
 			profile.Wallet.AddGold(50);
 			ProfileMapper.RestoreCheckpoint(profile, snapshot);
 
-			Assert.Same(progression, profile.ActiveHero.Progression);
+			Assert.Same(progression, profile.ActiveHero);
 			Assert.Equal((1, 5), (progression.Level, profile.Wallet.Gold));
 			Assert.Equal(new[] { 3, 1 }, levels);
 		}

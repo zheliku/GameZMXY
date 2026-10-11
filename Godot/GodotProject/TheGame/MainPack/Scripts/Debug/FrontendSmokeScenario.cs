@@ -1,3 +1,5 @@
+using GameLogic.Profile;
+using GameLogic.Input;
 using GameLogic.Startup.FlowData;
 using GameLogic.Save.Slots;
 using GameLogic.Event.Navigation;
@@ -112,7 +114,7 @@ public sealed class FrontendSmokeScenario
             await ClickAsync(saves, "m_Slot2");
             CharacterForm character = await WaitForAsync<CharacterForm>();
             var characterContext = SmokeInspection.ReadField<GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>>(GF.Procedure.CurrentProcedure, "<Owner>k__BackingField")
-                .GetData<GameContextVariable>(FlowKeys.GameContext).Value;
+                .GetData<PlayerSessionVariable>(FlowKeys.PlayerSession).Value;
             Check(characterContext.Profile.Heroes.Count == 1, "选角未使用读档作用域");
             await CheckCharacterHoverAsync(character);
             await ClickAsync(character, "Roles/m_Wukong");
@@ -203,9 +205,9 @@ public sealed class FrontendSmokeScenario
             await CheckMusicAsync("huaguoshan_theme.mp3");
             await CaptureAsync("frontend_battle");
             var data = SmokeInspection.ReadField<BattleHudData>(hud, "m_Data");
-            var profile = SmokeInspection.ReadField<GameContext>(GF.Procedure.CurrentProcedure, "m_Context").Profile;
-            int experience = profile.ActiveHero.Progression.TotalExperience;
-            profile.ActiveHero.Progression.AddExperience(1);
+            var profile = SmokeInspection.Context((ProcedureLevel)GF.Procedure.CurrentProcedure).Profile;
+            int experience = profile.ActiveHero.TotalExperience;
+            profile.ActiveHero.AddExperience(1);
             await ClickAsync(hud, "MenuPanel/m_SettingsButton");
             var settings = await WaitForAsync<SettingsForm>();
             Check(GF.Base.IsGamePaused, "战斗设置未暂停");
@@ -225,7 +227,7 @@ public sealed class FrontendSmokeScenario
             await ClickAsync(settings, "Scroll/m_ReturnMap");
             map = await WaitForAsync<MapForm>();
             Check(!hero.IsShown && !Find<LevelController>().Any(), "返回地图未清理英雄与关卡");
-            Check(profile.ActiveHero.Progression.TotalExperience == experience, "中途返回地图未回滚关内收益");
+            Check(profile.ActiveHero.TotalExperience == experience, "中途返回地图未回滚关内收益");
             Check(SmokeInspection.ReadField<BattleHudData>(hud, "m_Data") == null, "HUD 关闭后仍观察旧关卡");
             Check(!GF.Base.IsGamePaused, "返回地图后仍处于暂停");
             Check(SmokeInspection.ReadField<SettingsFormData>(settings, "m_Data") == null, "战斗设置未释放关卡引用");

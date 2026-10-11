@@ -1,8 +1,9 @@
+using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Heroes.Input;
 using Godot;
 using GameLogic.Entity.Body;
 
-namespace GameLogic.Entity.Heroes.Body
+namespace GameLogic.Entity.Heroes.Body.Core
 {
 	/// <summary>
 	/// 英雄身体状态机的宿主接口：在公共契约 <see cref="IActorBody"/> 之上只保留英雄专属成员

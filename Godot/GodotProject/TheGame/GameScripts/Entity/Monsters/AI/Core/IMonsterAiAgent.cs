@@ -1,4 +1,5 @@
-namespace GameLogic.Entity.Monsters.AI
+using GameLogic.Entity.Monsters.AI.Attacks;
+namespace GameLogic.Entity.Monsters.AI.Core
 {
 	/// <summary>
 	/// 怪物 AI 的宿主接口（GF.Fsm 的持有者类型）：AI 状态只通过它**读感知、写意图**，
@@ -29,8 +30,8 @@ namespace GameLogic.Entity.Monsters.AI
 		/// </summary>
 		AiBox TargetBox { get; }
 
-		/// <summary>自己相对出生点的水平偏移：self.x − home.x</summary>
-		float HomeDeltaX { get; }
+		/// <summary>自己相对巡逻中心的水平偏移；关卡使用当前相机中心，独立场地使用出生点</summary>
+		float PatrolOffsetX { get; }
 
 		/// <summary>决策参数</summary>
 		MonsterAiParams Params { get; }

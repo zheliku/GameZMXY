@@ -1,8 +1,9 @@
+using GameLogic.Entity.Monsters.AI.States.Roam;
+using GameLogic.Entity.Monsters.AI.Core;
 using System;
 using GameFramework.Fsm;
-using GameLogic.Entity.Monsters.AI;
 
-namespace GameLogic.Entity.Monsters.AI.States
+namespace GameLogic.Entity.Monsters.AI.States.Engage
 {
 	/// <summary>
 	/// 交战状态的共同规则：

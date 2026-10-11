@@ -1,7 +1,8 @@
+using GameLogic.Entity.Monsters.Body.States;
 using GameFramework.Fsm;
 using GameLogic.Entity.Body;
 
-namespace GameLogic.Entity.Monsters.Body
+namespace GameLogic.Entity.Monsters.Body.Core
 {
 	/// <summary>
 	/// 怪物身体状态基类：集中**打断优先级**（死亡 &gt; 受击 &gt; 本状态决策）。

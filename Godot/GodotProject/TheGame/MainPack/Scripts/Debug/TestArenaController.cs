@@ -1,3 +1,4 @@
+using GameLogic.Battle.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -138,8 +139,8 @@ public partial class TestArenaController : Node2D
 		ExperienceCurve curve = ConfigValidator.ValidateAll(tables);
 		int heroId = tables.TbHeroConfig.DataList.FirstOrDefault(x => x.EntityId == m_HeroEntityId)?.Id
 			?? throw new InvalidOperationException($"HeroConfig 中没有实体 {m_HeroEntityId}");
-		HeroRecord record = new(heroId, new HeroProgression(curve, 0));
-		HeroLoadout loadout = new HeroStatBuilder(tables.TbHeroGrowthConfig).Build(record);
+		HeroProgression record = new(heroId, curve, 0);
+		HeroBattleSnapshot loadout = HeroBattleSnapshot.Create(record.HeroId, record.Level, tables.TbHeroGrowthConfig);
 		IEntity entity = await GF.Entity.ShowEntityAsync(m_HeroEntityId, loadout);
 		if (entity?.Handle is not Node2D hero)
 		{

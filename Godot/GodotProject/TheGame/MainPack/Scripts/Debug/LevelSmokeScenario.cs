@@ -1,3 +1,6 @@
+using GameLogic.Level.Stage;
+using GameLogic.Level.Camera;
+using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
 using GameLogic.Input;
 using System;
@@ -6,7 +9,6 @@ using System.Linq;
 using GameConfig.Battle;
 using GameConfig.Sound;
 using GameFramework;
-using GameLogic.Battle;
 using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
 using GameLogic.Level;
@@ -41,6 +43,7 @@ public sealed class LevelSmokeScenario
     private int m_TravelStageOrder; // 当前观测过行进起点的阶段。
     private bool m_ExpectCenteredArrival; // 从新取景中心后方正常走入时，抵达应保持中央死区。
     private readonly int m_StartExperience; // 进关时档案中的累计经验。
+    private bool m_FirstSpawnEntered; // 首波保留真实 AI，直到观测到它从场外走入画面。
 
     /// <summary>创建正式关卡的物理回归场景。</summary>
     /// <param name="hero">正式流程显示的英雄。</param>
@@ -49,7 +52,7 @@ public sealed class LevelSmokeScenario
     {
         m_Hero = hero;
         m_Level = level;
-        m_StartExperience = SmokeInspection.Context(GF.Procedure.CurrentProcedure as ProcedureLevel)?.Profile.ActiveHero.Progression
+        m_StartExperience = SmokeInspection.Context(GF.Procedure.CurrentProcedure as ProcedureLevel)?.Profile.ActiveHero
             .TotalExperience ?? 0;
         m_Camera = level.GetNode<LevelCamera>("Camera2D");
         m_Gates = level.GetNode<LevelStageGateSet>("World/StageGates");
@@ -89,7 +92,13 @@ public sealed class LevelSmokeScenario
             .OfType<MonsterEntity>().Where(x => x.IsShown && !x.Dead).ToArray();
         foreach (MonsterEntity monster in monsters)
         {
-            SmokeInspection.FreezeAi(monster);
+            if (!m_FirstSpawnEntered && SmokeInspection.Sequence(m_Level).Current.StageOrder == 1 &&
+                monster.GlobalPosition.X < m_Camera.ViewRight - 20f)
+            {
+                m_FirstSpawnEntered = true;
+                GD.Print($"SMOKE-LEVEL: offscreen spawn entered, monster={monster.GlobalPosition.X:0.0}, viewRight={m_Camera.ViewRight:0.0}");
+            }
+            if (m_FirstSpawnEntered) SmokeInspection.FreezeAi(monster);
             if (m_Seen.Add(monster.Id))
             {
                 // 在地形上方横穿当前右门，验证怪物可进入，玩家仍被同一道边界阻挡。
@@ -153,17 +162,17 @@ public sealed class LevelSmokeScenario
             int expectedExperience = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages
                 .Sum(x => x.Recipes.Sum(r => r.Count * ConfigSystem.Instance.Tables.TbMonsterConfig.DataList
                     .Single(m => m.EntityId == r.MonsterEntityId).AddExp));
-            LevelRun run = SmokeInspection.Run(GF.Procedure.CurrentProcedure as ProcedureLevel);
-            int gained = SmokeInspection.Context(GF.Procedure.CurrentProcedure as ProcedureLevel)?.Profile.ActiveHero.Progression
+            LevelRewardTransaction run = SmokeInspection.Run(GF.Procedure.CurrentProcedure as ProcedureLevel);
+            int gained = SmokeInspection.Context(GF.Procedure.CurrentProcedure as ProcedureLevel)?.Profile.ActiveHero
                 .TotalExperience - m_StartExperience ?? -1;
-            if (gained != expectedExperience || run?.Stats.Experience != expectedExperience)
+            if (gained != expectedExperience || run?.AwardedExperience != expectedExperience)
             {
-                Fail($"本关经验错误或重复死亡奖励：档案 {gained}，统计 {run?.Stats.Experience}，配置 {expectedExperience}");
+                Fail($"本关经验错误或重复死亡奖励：档案 {gained}，统计 {run?.AwardedExperience}，配置 {expectedExperience}");
             }
             GD.Print($"SMOKE-LEVEL: experience={gained}, expected={expectedExperience}");
 
             // 通关是检查点：关卡运行已提交并结束。
-            if (run?.Outcome != LevelRunOutcome.Cleared || run.Commit == null)
+            if (run?.Outcome != LevelOutcome.Cleared || run.CheckpointWrite == null)
             {
                 Fail($"通关没有提交检查点：结局 {run?.Outcome}");
             }
@@ -222,15 +231,19 @@ public sealed class LevelSmokeScenario
         if (m_Step == Step.Kill)
         {
             Move(null);
+            if (stage.StageOrder == 1 && !m_FirstSpawnEntered)
+            {
+                if (m_BattleTime > 15) Fail("首波场外怪物未通过真实 AI 进入画面");
+                return;
+            }
             foreach (MonsterEntity monster in monsters)
             {
-                AttackData attack = AttackData.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero,
+                AttackInstance attack = AttackInstance.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero,
                     m_Hero.Id, 0, SoundId.None);
                 monster.ReceiveHit(attack, m_Hero.Id);
                 ReferencePool.Release(attack);
                 // 同一死亡再发一次普通事件，刷怪服务必须只发一次奖励和清波名额。
-                GF.Event.Fire(this, MonsterDiedEventArgs.Create(monster.Id, monster.Config.Id,
-                    monster.Config.Rank, m_Hero.Id, monster.GlobalPosition));
+                GF.Event.Fire(this, MonsterDiedEventArgs.Create(monster.Id, monster.Config.Id));
             }
 
             return;
@@ -242,11 +255,18 @@ public sealed class LevelSmokeScenario
         m_BlockedFrames = nearWall && Math.Abs(m_Hero.GlobalPosition.X - m_LastPlayerX) < 0.1f ? m_BlockedFrames + 1 : 0;
         if (m_BlockedFrames >= 20)
         {
+            // 对照官方屏幕内侧 20px 的角色碰撞边界，不把阶段锚点当作身体可达位置。
+            CollisionShape2D shape = m_Hero.GetNode<CollisionShape2D>("CollisionShape2D");
+            Rect2 body = shape.Shape.GetRect();
+            float edge = (shape.GlobalTransform * (right ? body.End : body.Position)).X;
+            float screenEdge = m_Camera.GetScreenCenterPosition().X + (right ? 0.5f : -0.5f) * m_Camera.ViewSize.X;
+            float margin = right ? screenEdge - edge : edge - screenEdge;
+            if (Math.Abs(margin - 20f) > 1f) Fail($"角色屏幕边界留白错误：{margin:0.00}px");
             // 第二阶段额外验证左门；其余阶段在右墙前清波，覆盖最容易发生相机跳变的站位。
             if (right && stage.StageOrder == 2)
             {
                 m_Step = Step.LeftWall;
-                PlaceForWallTest(region.Left + 40f);
+                // 通过真实移动让相机回退；传送到视野外无法验证随屏幕移动的边界。
             }
             else
             {

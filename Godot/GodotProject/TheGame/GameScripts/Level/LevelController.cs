@@ -1,3 +1,7 @@
+using GameLogic.Session;
+using GameLogic.Level.Stage;
+using GameLogic.Level.Spawning;
+using GameLogic.Level.Camera;
 using System;
 using System.Threading;
 using GameConfig.Level;
@@ -9,7 +13,7 @@ namespace GameLogic.Level;
 
 /// <summary>
 /// 协调关卡会话和唯一当前阶段，空间、刷怪和相机行为由各职责所有者执行。
-/// 只报告关卡事实（怪物被击败、通关、失败、可前进窗口）；收益与结算属于关卡运行（Session.LevelRun）。
+/// 只报告关卡事实（怪物被击败、通关、失败、可前进窗口）；收益与结算属于关卡运行（Session.LevelRewardTransaction）。
 /// </summary>
 public partial class LevelController : Node2D
 {
@@ -31,7 +35,7 @@ public partial class LevelController : Node2D
     public event Action<Exception> Failed;
 
     /// <summary>本关怪物被击败（每只只报告一次）；关卡运行据此结算经验与掉落。</summary>
-    public event Action<MonsterDefeat> MonsterDefeated;
+    public event Action<int> MonsterDefeated;
 
     /// <summary>可前进窗口开关变化；HUD 订阅后读取 <see cref="TravelAvailable"/>。</summary>
     public event Action TravelAvailableChanged;
@@ -82,7 +86,7 @@ public partial class LevelController : Node2D
     {
         SetTravelAvailable(false);
         m_Player = player;
-        m_Spawner.StartSession(entities, cancellationToken);
+        m_Spawner.StartSession(entities, m_Camera, cancellationToken);
         m_Spawner.StageCleared += OnStageCleared;
         m_Spawner.MonsterDefeated += OnMonsterDefeated;
         m_Spawner.SpawnFailed += OnSpawnFailed;
@@ -172,8 +176,8 @@ public partial class LevelController : Node2D
     }
 
     /// <summary>转发刷怪服务报告的击败事实。</summary>
-    /// <param name="defeat">本关怪物的一次击败。</param>
-    private void OnMonsterDefeated(MonsterDefeat defeat) => MonsterDefeated?.Invoke(defeat);
+    /// <param name="monsterId">被击败怪物的 MonsterConfig 主键。</param>
+    private void OnMonsterDefeated(int monsterId) => MonsterDefeated?.Invoke(monsterId);
 
     /// <summary>更新可前进窗口并在变化时通知。</summary>
     /// <param name="available">是否处于可前进窗口。</param>

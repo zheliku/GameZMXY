@@ -1,3 +1,6 @@
+using GameLogic.Level.Stage;
+using GameLogic.Battle.Resources;
+using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
 using GameLogic.Input;
 using System;
@@ -8,7 +11,6 @@ using GameConfig.Sound;
 using GameFramework;
 using GameFramework.Event;
 using GameLogic;
-using GameLogic.Battle;
 using GameLogic.Entity.Heroes;
 using GameLogic.Entity.Monsters;
 using GameLogic.Level;
@@ -341,7 +343,7 @@ public partial class SmokeTestDriver : Node
 	private void HurtHeroOnce() // 经真实战斗结算链路对英雄造成一次 1 点伤害。
 	{
 		// 临时攻击数据只在结算期间持有，并在调用后归还对象池。
-		AttackData attack = AttackData.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0, SoundId.None);
+		AttackInstance attack = AttackInstance.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0, SoundId.None);
 		m_Hero.ReceiveHit(attack, 0);
 		ReferencePool.Release(attack);
 	}
@@ -697,10 +699,10 @@ public partial class SmokeTestDriver : Node
 
 	private void OnDamageDealt(object sender, GameEventArgs args) // 只记录烟测目标猴子的命中事件。
 	{
-		if (args is DamageDealtEventArgs e && m_Monster != null && e.TargetEntityId == m_Monster.Id)
+		if (args is DamageDealtEventArgs e && m_Monster != null && ReferenceEquals(sender, m_Monster))
 		{
-			m_MonsterHits.Add((e.Damage, e.IsCrit, e.IsMiss));
-			GD.Print($"SMOKE[{m_Time:F2}] 猴子受击 伤害={e.Damage} 暴击={e.IsCrit} 闪避={e.IsMiss} 剩余HP={e.TargetHp} "
+			m_MonsterHits.Add((e.Result.Damage, e.Result.IsCrit, e.Result.IsMiss));
+			GD.Print($"SMOKE[{m_Time:F2}] 猴子受击 伤害={e.Result.Damage} 暴击={e.Result.IsCrit} 闪避={e.Result.IsMiss} 剩余HP={m_Monster.Vitals.Hp} "
 				+ $"猴子x={m_Monster.GlobalPosition.X:F0} 英雄x={m_Hero.GlobalPosition.X:F0}");
 		}
 	}

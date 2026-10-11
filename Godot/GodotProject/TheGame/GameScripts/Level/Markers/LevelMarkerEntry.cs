@@ -1,6 +1,6 @@
 using Godot;
 
-namespace GameLogic.Level;
+namespace GameLogic.Level.Markers;
 
 /// <summary>登记集合中纯子节点的稳定标识与编辑器显示信息。</summary>
 [Tool, GlobalClass]

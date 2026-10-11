@@ -1,6 +1,7 @@
+using GameLogic.Entity;
 using Godot;
 
-namespace GameLogic.Entity
+namespace GameLogic.Entity.Combat
 {
 	/// <summary>
 	/// 受击判定区：挂在实体的 m_HurtBox 上，持有宿主实体的显式引用。

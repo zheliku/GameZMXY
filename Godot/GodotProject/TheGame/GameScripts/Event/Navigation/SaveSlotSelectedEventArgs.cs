@@ -8,10 +8,13 @@ public sealed class SaveSlotSelectedEventArgs : GameEventArgs
 {
     /// <summary>本事件的框架编号。</summary>
     public static readonly int EventId = typeof(SaveSlotSelectedEventArgs).GetHashCode();
+
     /// <inheritdoc />
     public override int Id => EventId;
+
     /// <summary>请求所属窗口的打开编号，拒绝旧周期事件。</summary>
     public int FormSerialId { get; private set; }
+
     /// <summary>从 1 开始的存档格号。</summary>
     public int SlotNumber { get; private set; }
 

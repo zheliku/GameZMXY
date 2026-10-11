@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace GameLogic.Level;
+namespace GameLogic.Level.Camera;
 
 /// <summary>以中央小死区跟随玩家，保持实际相机中心受限，并报告右缘抵达阶段边界。</summary>
 [Tool]
@@ -11,6 +11,10 @@ public partial class LevelCamera : Camera2D
     [Export(PropertyHint.Range, "1,2000,1")] private float m_MaxPanSpeed = 600f; // 追近取景目标的速度上限，单位为世界像素每秒。
     [Export] private Color m_GuideColor = new(1f, 0.35f, 1f, 0.75f); // 视野框与中央死区颜色。
     [Export] private bool m_DrawInGame; // 调试时显示相机取景引导。
+    [Export] private CollisionShape2D m_LeftPlayerWall; // 相机子节点上的左屏幕墙，仅阻挡玩家。
+    [Export] private CollisionShape2D m_RightPlayerWall; // 相机子节点上的右屏幕墙，仅阻挡玩家。
+
+    private const float PlayerScreenMargin = 20f; // 官方 BaseObject.isCanMoveByStage 的屏幕内侧留白。
 
     private Node2D m_Target; // 由关卡会话注入的跟随目标。
     private float m_Left; // 当前可显示区域左边缘的世界坐标。
@@ -54,7 +58,8 @@ public partial class LevelCamera : Camera2D
         return current + Math.Clamp(desired - current, -maxMovement, maxMovement);
     }
 
-    /// <summary>记录关卡边界，只在游戏会话开始后启用物理跟随。</summary>
+    /// <summary>记录关卡边界并验证玩家屏幕墙，只在会话开始后启用跟随。</summary>
+    /// <exception cref="InvalidOperationException">运行场景缺少玩家屏幕墙或碰撞形状。</exception>
     public override void _Ready()
     {
         SceneLeft = m_Left = LimitLeft;
@@ -63,6 +68,8 @@ public partial class LevelCamera : Camera2D
         SetPhysicsProcess(false);
         if (!Engine.IsEditorHint())
         {
+            if (m_LeftPlayerWall?.Shape == null || m_RightPlayerWall?.Shape == null)
+                throw new InvalidOperationException("关卡相机必须绑定左右玩家屏幕墙及其形状。");
             // 窗口算法是相机中心的唯一写入方，禁用另一套拖动或平滑逻辑。
             PositionSmoothingEnabled = false;
             LimitSmoothed = false;
@@ -124,6 +131,11 @@ public partial class LevelCamera : Camera2D
             m_DeadZoneHalfWidth / Zoom.X, m_Left + halfView, m_Right - halfView, m_MaxPanSpeed * (float)delta);
         GlobalPosition = new Vector2(center, GlobalPosition.Y);
         ForceUpdateScroll();
+
+        // 屏幕移动边界跟随实际取景；阶段标记决定相机何时停止，怪物不受玩家墙阻挡。
+        float edge = halfView - PlayerScreenMargin / Zoom.X;
+        m_LeftPlayerWall.Position = new Vector2(-edge - m_LeftPlayerWall.Shape.GetRect().Size.X * 0.5f, 0f);
+        m_RightPlayerWall.Position = new Vector2(edge + m_RightPlayerWall.Shape.GetRect().Size.X * 0.5f, 0f);
 
         if (m_WaitingForArrival && Mathf.IsEqualApprox(ViewRight, m_Right))
         {

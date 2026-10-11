@@ -1,6 +1,7 @@
+using GameLogic.Entity.Monsters.Body.Core;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Monsters.Body
+namespace GameLogic.Entity.Monsters.Body.States
 {
 	/// <summary>
 	/// 收招硬直（AttackConfig.AiRecovery 秒——表数值，与动画无关）：原地待机、不转身、

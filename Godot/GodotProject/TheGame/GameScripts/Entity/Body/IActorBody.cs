@@ -1,3 +1,6 @@
+using GameLogic.Entity.Monsters.Body.Core;
+using GameLogic.Entity.Heroes.Body.Core;
+using GameLogic.Entity;
 using Godot;
 
 namespace GameLogic.Entity.Body

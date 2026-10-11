@@ -1,4 +1,5 @@
-namespace GameLogic.Entity.Heroes.Body
+using GameLogic.Entity.Heroes;
+namespace GameLogic.Entity.Heroes.Body.Core
 {
 	/// <summary>
 	/// 英雄身体参数（值快照）：HeroEntity 从 HeroConfig / AttackConfig / 动画库拷入，身体状态只读这里。

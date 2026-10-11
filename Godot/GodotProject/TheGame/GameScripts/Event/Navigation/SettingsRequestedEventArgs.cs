@@ -8,8 +8,10 @@ public sealed class SettingsRequestedEventArgs : GameEventArgs
 {
     /// <summary>本事件的框架编号。</summary>
     public static readonly int EventId = typeof(SettingsRequestedEventArgs).GetHashCode();
+
     /// <inheritdoc />
     public override int Id => EventId;
+
     /// <summary>发出请求的窗口打开编号，防止旧窗口的排队事件影响新周期。</summary>
     public int FormSerialId { get; private set; }
 

@@ -1,9 +1,10 @@
+using GameLogic.Level.Markers;
 using System;
 using System.Collections.Generic;
 using GameConfig.Level;
 using Godot;
 
-namespace GameLogic.Level;
+namespace GameLogic.Level.Spawning;
 
 /// <summary>按稳定 ID 索引生成点，并在初始化时解析玩家和配方使用的空间外键。</summary>
 [Tool]

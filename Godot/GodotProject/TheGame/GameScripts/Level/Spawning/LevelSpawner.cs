@@ -5,13 +5,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GameConfig.Level;
+using GameLogic.Entity.Monsters;
 using GameFramework.Entity;
 using GameFramework.Event;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
 
-namespace GameLogic.Level;
+namespace GameLogic.Level.Spawning;
 
 /// <summary>
 /// 执行当前阶段的生成调度，持有关卡实体所有权并依据死亡事件判定清波。
@@ -26,12 +27,13 @@ public partial class LevelSpawner : Node
     private CancellationTokenSource m_Cancellation; // 停止会话时立即作废在途显示结果。
     private LevelSpawnSchedule m_Schedule; // 唯一当前阶段的生成计划。
     private bool m_SessionActive; // 会话已注入实体服务并订阅死亡事件。
+    private Node2D m_PatrolAnchor; // 当前相机中心，供场外出生的怪物朝战斗视野巡逻。
 
     /// <summary>当前阶段配方发完且存活与在途名额归零，只报告一次。</summary>
     public event Action StageCleared;
 
     /// <summary>本会话怪物死亡且首次归还名额时报告一次，只携带普通值。</summary>
-    public event Action<MonsterDefeat> MonsterDefeated;
+    public event Action<int> MonsterDefeated;
 
     /// <summary>当前会话显示实体失败；控制器负责结束会话。</summary>
     public event Action<Exception> SpawnFailed;
@@ -72,10 +74,12 @@ public partial class LevelSpawner : Node
 
     /// <summary>创建会话所有权并连接死亡事件；不启用调度，不创建任何怪物。</summary>
     /// <param name="entities">关卡流程注入的实体服务。</param>
+    /// <param name="patrolAnchor">当前取景中心。</param>
     /// <param name="cancellationToken">流程离开时取消在途实体显示。</param>
-    public void StartSession(EntityComponent entities, CancellationToken cancellationToken)
+    public void StartSession(EntityComponent entities, Node2D patrolAnchor, CancellationToken cancellationToken)
     {
         m_Entities = entities;
+        m_PatrolAnchor = patrolAnchor;
         m_Cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         m_SessionActive = true;
         GF.Event.Subscribe(MonsterDiedEventArgs.EventId, OnMonsterDied);
@@ -129,6 +133,7 @@ public partial class LevelSpawner : Node
         m_ActiveMonsters.Clear();
         m_Schedule = null;
         m_Entities = null;
+        m_PatrolAnchor = null;
     }
 
     /// <summary>显示一只配方怪物并登记所有权；使用捕获的会话快照，避免卸载后访问已清理字段。</summary>
@@ -144,6 +149,7 @@ public partial class LevelSpawner : Node
         {
             // 等待前捕获空间位置，旧会话结果不再读取可替换的索引。
             Vector2 spawnPosition = m_SpawnPoints.PositionOf(recipe.SpawnPointId);
+            Node2D patrolAnchor = m_PatrolAnchor;
             // 显示 API 可能从池中同步返回，名额已由调度器提前预约。
             IEntity entity = await entities.ShowEntityAsync(recipe.MonsterEntityId, spawnPosition);
             if (entity == null)
@@ -159,6 +165,7 @@ public partial class LevelSpawner : Node
 
             m_OwnedIds.Add(entity.Id);
             m_ActiveMonsters.Add(entity.Id);
+            ((MonsterEntity)entity).SetPatrolAnchor(patrolAnchor);
         }
         catch (Exception error)
         {
@@ -178,7 +185,7 @@ public partial class LevelSpawner : Node
         if (args is MonsterDiedEventArgs died && m_ActiveMonsters.Remove(died.EntityId))
         {
             m_Schedule.Release();
-            MonsterDefeated?.Invoke(new MonsterDefeat(died.MonsterId, died.KillerEntityId, died.Position));
+            MonsterDefeated?.Invoke(died.MonsterId);
             if (m_Schedule.IsCleared)
             {
                 // 先停调度再分发，控制器可以同步开放下一段通路。

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using GameConfig.Level;
 
-namespace GameLogic.Level;
+namespace GameLogic.Level.Stage;
 
 /// <summary>维护唯一当前阶段和合法迁移，不承担相机、节点或实体职责。</summary>
 public sealed class LevelStageSequence

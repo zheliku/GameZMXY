@@ -1,9 +1,10 @@
+using GameLogic.Level.Markers;
 using System;
 using System.Collections.Generic;
 using GameConfig.Level;
 using Godot;
 
-namespace GameLogic.Level;
+namespace GameLogic.Level.Stage;
 
 /// <summary>为特殊阶段提供可选区域激活，只监听当前会话明确启用的一个触发区。</summary>
 [Tool]

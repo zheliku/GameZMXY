@@ -1,6 +1,7 @@
+using GameLogic.Entity.Heroes.Body.Core;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Heroes.Body
+namespace GameLogic.Entity.Heroes.Body.States
 {
 	/// <summary>
 	/// 地面：走 / 跑 / 待机（含角色专属待机小动作）。可起手普攻、起跳；离地（走出平台边缘）进 Air。

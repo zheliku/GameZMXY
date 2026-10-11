@@ -1,9 +1,12 @@
+using GameLogic.Entity.Monsters.Body.States;
+using GameLogic.Entity.Monsters.Body.Core;
+using GameLogic.Entity.Monsters.AI.States.Roam;
+using GameLogic.Entity.Monsters.AI.States.Interrupt;
+using GameLogic.Entity.Monsters.AI.States.Engage;
+using GameLogic.Entity.Monsters.AI.Core;
 using System;
 using GameFramework.Fsm;
 using GameLogic.Entity.Body;
-using GameLogic.Entity.Monsters.AI;
-using GameLogic.Entity.Monsters.AI.States;
-using GameLogic.Entity.Monsters.Body;
 
 namespace GameLogic.Entity.Monsters
 {

@@ -1,4 +1,6 @@
-namespace GameLogic.Entity.Monsters.AI
+using GameLogic.Entity.Monsters.AI.Attacks;
+using GameLogic.Entity.Monsters;
+namespace GameLogic.Entity.Monsters.AI.Core
 {
 	/// <summary>
 	/// 怪物 AI 决策参数（值快照）：MonsterEntity 从 MonsterConfig 拷入，AI 行为只读这里。
@@ -26,7 +28,7 @@ namespace GameLogic.Entity.Monsters.AI
 		/// <summary>游荡决策时原地停留概率 0-100（PatrolIdleChance）</summary>
 		public int PatrolIdleChance { get; init; }
 
-		/// <summary>巡逻半径 px：离出生点超出即往回走（PatrolRadius；0 = 不限）</summary>
+		/// <summary>巡逻半径 px：离巡逻中心超出即往回走（PatrolRadius；0 = 不限）</summary>
 		public float PatrolRadius { get; init; }
 
 		/// <summary>受控解除后的额外僵直秒（BehitCalmTime）</summary>

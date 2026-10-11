@@ -26,7 +26,7 @@ public sealed class ProcedureTitle : MenuProcedure
     protected override SoundId MusicId => SoundId.MenuTheme;
     /// <inheritdoc />
     protected override object CreateData(ProcedureOwner owner) {
-        owner.RemoveData(FlowKeys.GameContext);
+        owner.RemoveData(FlowKeys.PlayerSession);
         owner.RemoveData(FlowKeys.SelectedLevelId);
         owner.RemoveData(FlowKeys.SaveSelection);
         var curve = owner.GetData<ExperienceCurveVariable>(FlowKeys.ExperienceCurve)?.Value

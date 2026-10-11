@@ -8,10 +8,6 @@ public sealed class Wallet
 	/// <summary>金币余额。</summary>
 	public int Gold { get; private set; }
 
-	/// <summary>余额更新完成后同步通知外部观察者；无实际变化时不通知。</summary>
-	/// <remarks>订阅方重新读取 Gold；订阅与退订须配对，不将本事件当作获得金币或交易成功的业务结果。</remarks>
-	public event Action Changed;
-
 	/// <summary>按存档余额创建钱包。</summary>
 	/// <param name="gold">初始金币，负数视为 0。</param>
 	public Wallet(int gold)
@@ -25,19 +21,7 @@ public sealed class Wallet
 	public void AddGold(int amount)
 	{
 		ArgumentOutOfRangeException.ThrowIfNegative(amount);
-		if (amount == 0)
-		{
-			return;
-		}
-
-		int gold = (int)Math.Min((long)Gold + amount, int.MaxValue);
-		if (gold == Gold)
-		{
-			return;
-		}
-
-		Gold = gold;
-		Changed?.Invoke();
+		Gold = (int)Math.Min((long)Gold + amount, int.MaxValue);
 	}
 
 	/// <summary>扣除金币；余额不足时不扣除。</summary>
@@ -52,11 +36,7 @@ public sealed class Wallet
 			return false;
 		}
 
-		if (amount > 0)
-		{
-			Gold -= amount;
-			Changed?.Invoke();
-		}
+		Gold -= amount;
 
 		return true;
 	}
@@ -65,13 +45,6 @@ public sealed class Wallet
 	/// <param name="gold">要恢复的余额，负数视为 0。</param>
 	public void Restore(int gold)
 	{
-		int value = Math.Max(0, gold);
-		if (value == Gold)
-		{
-			return;
-		}
-
-		Gold = value;
-		Changed?.Invoke();
+		Gold = Math.Max(0, gold);
 	}
 }

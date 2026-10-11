@@ -1,7 +1,8 @@
+using GameLogic.Entity.Heroes.Body.Core;
 using GameFramework.Fsm;
 using Godot;
 
-namespace GameLogic.Entity.Heroes.Body
+namespace GameLogic.Entity.Heroes.Body.States
 {
 	/// <summary>
 	/// 普攻连段。**段时长 = 段动画长度**（OnInit 读动画资源进 Params，状态用物理 dt 计时）：

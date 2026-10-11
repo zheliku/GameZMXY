@@ -1,7 +1,8 @@
+using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Entity.Monsters.AI.Attacks;
 using GameFramework.Fsm;
-using GameLogic.Entity.Monsters.AI;
 
-namespace GameLogic.Entity.Monsters.AI.States
+namespace GameLogic.Entity.Monsters.AI.States.Engage
 {
 	/// <summary>
 	/// 站定出招：面向目标，每 AttackInterval 按 AttackDesire 掷一次，命中则按权重选择攻击（旧 Monster_Intelligence 近身分支）。

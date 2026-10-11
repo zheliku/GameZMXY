@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using GameConfig.Stat;
 
-namespace GameLogic.Battle.Stats;
+namespace GameLogic.Battle.Attributes;
 
 /// <summary>
 /// 一名角色的属性汇总：基础值（成长表或怪物配置）+ 按来源登记的修正（装备、法宝、被动、丹药、Buff……）。
@@ -10,7 +10,7 @@ namespace GameLogic.Battle.Stats;
 /// 修正按来源整体登记和移除，卸下装备或 Buff 结束时不会残留；读取时按脏标记惰性重算。
 /// 纯 C#，不引用节点和框架服务；由实体持有，生命周期与实体显示一致。
 /// </summary>
-public sealed class StatSheet
+public sealed class ActorAttributes
 {
 	private static readonly int StatCount = Enum.GetValues<StatType>().Length; // 属性种类数，枚举值从 0 连续。
 
@@ -18,13 +18,9 @@ public sealed class StatSheet
 
 	private readonly float[] m_Final = new float[StatCount]; // 最近一次重算的最终值缓存。
 
-	private readonly Dictionary<StatSource, StatModifier[]> m_Sources = new(); // 来源到其全部修正的登记表。
+	private readonly Dictionary<AttributeSourceId, AttributeModifier[]> m_Sources = new(); // 来源到其全部修正的登记表。
 
 	private bool m_Dirty = true; // 基础值或修正变化后需要重算。
-
-	/// <summary>基础值或修正发生变化；订阅方重新读取需要的最终值。</summary>
-	/// <remarks>同步通知前已标记缓存失效，读取时按完整来源重算；订阅与退订须配对，本事件不携带逐项属性差值。</remarks>
-	public event Action Changed;
 
 	/// <summary>用一组完整属性替换基础值；不影响已登记的修正。</summary>
 	/// <param name="block">成长表或怪物配置中的属性块。</param>
@@ -50,7 +46,7 @@ public sealed class StatSheet
 		m_Base[(int)StatType.Vampirism] = block.Vampirism;
 		m_Base[(int)StatType.HpRegen] = block.HpRegen;
 		m_Base[(int)StatType.MpRegen] = block.MpRegen;
-		MarkDirty();
+		m_Dirty = true;
 	}
 
 	/// <summary>登记一个来源的全部修正；同一来源已存在时整体替换。</summary>
@@ -58,7 +54,7 @@ public sealed class StatSheet
 	/// <param name="modifiers">该来源提供的修正，可为空集合。</param>
 	/// <exception cref="ArgumentException">来源无效。</exception>
 	/// <exception cref="ArgumentNullException">修正集合为空。</exception>
-	public void SetSource(StatSource source, IReadOnlyList<StatModifier> modifiers)
+	public void SetSource(AttributeSourceId source, IReadOnlyList<AttributeModifier> modifiers)
 	{
 		if (source.Category == null)
 		{
@@ -68,27 +64,27 @@ public sealed class StatSheet
 		ArgumentNullException.ThrowIfNull(modifiers);
 
 		// 复制调用方集合，之后外部修改不会影响已登记的修正。
-		StatModifier[] copy = new StatModifier[modifiers.Count];
+		AttributeModifier[] copy = new AttributeModifier[modifiers.Count];
 		for (int i = 0; i < copy.Length; i++)
 		{
 			copy[i] = modifiers[i];
 		}
 
 		m_Sources[source] = copy;
-		MarkDirty();
+		m_Dirty = true;
 	}
 
 	/// <summary>移除一个来源的全部修正。</summary>
 	/// <param name="source">修正来源。</param>
 	/// <returns>来源是否存在并已移除。</returns>
-	public bool RemoveSource(StatSource source)
+	public bool RemoveSource(AttributeSourceId source)
 	{
 		if (!m_Sources.Remove(source))
 		{
 			return false;
 		}
 
-		MarkDirty();
+		m_Dirty = true;
 		return true;
 	}
 
@@ -97,7 +93,7 @@ public sealed class StatSheet
 	{
 		Array.Clear(m_Base);
 		m_Sources.Clear();
-		MarkDirty();
+		m_Dirty = true;
 	}
 
 	/// <summary>读取最终值（浮点）。</summary>
@@ -118,13 +114,6 @@ public sealed class StatSheet
 	/// <returns>四舍五入（远离零）后的最终值。</returns>
 	public int GetInt(StatType stat) => (int)MathF.Round(Get(stat), MidpointRounding.AwayFromZero);
 
-	/// <summary>标记需要重算并通知订阅者。</summary>
-	private void MarkDirty()
-	{
-		m_Dirty = true;
-		Changed?.Invoke();
-	}
-
 	/// <summary>按修正方式分组汇总全部来源，刷新最终值缓存。</summary>
 	private void Recalculate()
 	{
@@ -133,9 +122,9 @@ public sealed class StatSheet
 		Span<float> percentAdd = stackalloc float[StatCount];
 		Span<float> percentMult = stackalloc float[StatCount];
 		percentMult.Fill(1f);
-		foreach (StatModifier[] modifiers in m_Sources.Values)
+		foreach (AttributeModifier[] modifiers in m_Sources.Values)
 		{
-			foreach (StatModifier modifier in modifiers)
+			foreach (AttributeModifier modifier in modifiers)
 			{
 				int index = (int)modifier.Stat;
 				switch (modifier.Kind)

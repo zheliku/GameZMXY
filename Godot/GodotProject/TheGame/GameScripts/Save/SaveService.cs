@@ -49,7 +49,7 @@ namespace GameLogic.Save
         /// <returns>运行时档案及其原始来源。</returns>
         /// <exception cref="InvalidOperationException">文件读取或写入失败，已拒绝覆盖。</exception>
         /// <exception cref="ArgumentOutOfRangeException">格号不在六格范围内。</exception>
-        public async Task<LoadedProfile> LoadOrCreateAsync(int slotNumber, long unitId)
+        public async Task<ProfileLoadResult> LoadOrCreateAsync(int slotNumber, long unitId)
         {
             if (slotNumber < 1 || slotNumber > SaveSlotDirectory.SlotCount)
                 throw new ArgumentOutOfRangeException(nameof(slotNumber));
@@ -76,17 +76,17 @@ namespace GameLogic.Save
             // 只有明确的新槽或框架新建的空槽才按建档规则创建，不转换历史文件。
             PlayerProfile profile = created
                 ? new PlayerProfile(m_StartHeroId,
-                    [new HeroRecord(m_StartHeroId, new HeroProgression(m_Curve, 0))], new Wallet(m_StartGold))
+                    [new HeroProgression(m_StartHeroId, m_Curve, 0)], new Wallet(m_StartGold))
                 : ProfileMapper.RestoreProfile(data, m_Curve);
             m_ActiveSlotUnitId = data.UnitId;
-            SaveOrigin origin = created ? SaveOrigin.Created : SaveOrigin.Loaded;
+            ProfileLoadOrigin origin = created ? ProfileLoadOrigin.Created : ProfileLoadOrigin.Loaded;
             if (created)
             {
                 catalogue.SlotNumber = slotNumber;
                 if (!await WriteSnapshotAsync(ProfileMapper.CaptureSaveData(profile)))
                     throw new InvalidOperationException("新档案写入失败。");
             }
-            return new LoadedProfile(profile, origin);
+            return new ProfileLoadResult(profile, origin);
         }
 
         /// <summary>读取六格显示信息；损坏槽明确禁用，不作为空档重新创建。</summary>
@@ -128,7 +128,7 @@ namespace GameLogic.Save
                         var profile = ProfileMapper.RestoreProfile(GF.Archive.CurrentData, m_Curve);
                         string name = m_Tables.TbHeroConfig.Get(profile.ActiveHeroId).NameCn;
                         slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Occupied,
-                            name, profile.ActiveHero.Progression.Level, DateTimeOffset.FromUnixTimeSeconds(catalogue.SavedAtUtc));
+                            name, profile.ActiveHero.Level, DateTimeOffset.FromUnixTimeSeconds(catalogue.SavedAtUtc));
                     }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }

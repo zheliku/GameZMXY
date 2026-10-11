@@ -1,10 +1,11 @@
+using GameLogic.Level.Markers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using GameConfig.Level;
 using Godot;
 
-namespace GameLogic.Level;
+namespace GameLogic.Level.Stage;
 
 /// <summary>管理阶段空间区域与物理门，区分行进时开放通路和开战时封闭左右边界。</summary>
 [Tool]

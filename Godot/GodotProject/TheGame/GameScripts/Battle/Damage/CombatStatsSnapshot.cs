@@ -1,14 +1,14 @@
+using GameLogic.Battle.Attributes;
+using GameLogic.Battle.Attacks;
 using System;
 using GameConfig.Stat;
-using GameLogic.Battle.Stats;
 
-namespace GameLogic.Battle
+namespace GameLogic.Battle.Damage
 {
 	/// <summary>
 	/// 结算侧别：决定 <see cref="DamageCalculator"/> 取 BattleConfig 的哪一组常数
 	/// （旧项目人怪两侧的 K 值、等级压制系数与封顶都不一致）。
 	/// 它只描述"按哪套公式算"，不是阵营——敌我关系仍由物理层表达（根规范 §7）。
-	/// （2026-09-30 人类裁决：自独立文件 CombatSide.cs 并入本文件。）
 	/// </summary>
 	public enum CombatSide
 	{
@@ -19,14 +19,8 @@ namespace GameLogic.Battle
 		Monster = 1,
 	}
 
-	/// <summary>
-	/// 战斗属性快照：结算一次命中所需的一方全部属性（攻击方与防守方用同一结构）。
-	///
-	/// 用值类型而不是池化类：它只有十来个 int，按值拷贝即零分配、无归还义务，
-	/// 也不会出现"快照被别人归还后还在读"的问题；池化留给有引用语义、生命周期跨帧的
-	/// <see cref="AttackData"/>。
-	/// </summary>
-	public readonly struct CombatantStats
+	/// <summary>命中结算使用的一方属性快照；攻击方在出招时冻结，防守方在受击时冻结，按值复制。</summary>
+	public readonly struct CombatStatsSnapshot
 	{
 		/// <summary>结算侧别（选常数组用）</summary>
 		public readonly CombatSide Side;
@@ -73,10 +67,10 @@ namespace GameLogic.Battle
 		/// <param name="stats">角色的属性汇总。</param>
 		/// <returns>当前最终值的结算快照。</returns>
 		/// <exception cref="ArgumentNullException">属性汇总为空。</exception>
-		public static CombatantStats From(CombatSide side, int level, StatSheet stats)
+		public static CombatStatsSnapshot From(CombatSide side, int level, ActorAttributes stats)
 		{
 			ArgumentNullException.ThrowIfNull(stats);
-			return new CombatantStats(side, level, stats.GetInt(StatType.Power), stats.GetInt(StatType.Def),
+			return new CombatStatsSnapshot(side, level, stats.GetInt(StatType.Power), stats.GetInt(StatType.Def),
 				stats.GetInt(StatType.Mdef), stats.GetInt(StatType.Crit), stats.GetInt(StatType.Miss),
 				stats.GetInt(StatType.Lucky), stats.GetInt(StatType.Toughness), stats.GetInt(StatType.Htarget),
 				stats.GetInt(StatType.CritReduce), stats.GetInt(StatType.Ar), stats.GetInt(StatType.Sp));
@@ -96,7 +90,7 @@ namespace GameLogic.Battle
 		/// <param name="critReduce">暴击抵抗。</param>
 		/// <param name="ar">破甲。</param>
 		/// <param name="sp">破魔。</param>
-		public CombatantStats(CombatSide side, int level, int power, int def, int mdef, int crit, int miss,
+		public CombatStatsSnapshot(CombatSide side, int level, int power, int def, int mdef, int crit, int miss,
 			int lucky, int toughness, int htarget, int critReduce, int ar, int sp)
 		{
 			Side = side;

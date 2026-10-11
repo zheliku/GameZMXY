@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-namespace GameLogic.Level;
+namespace GameLogic.Level.Markers;
 
 /// <summary>统一锚点条目列表、编辑器标注和初始化校验，不在编辑器加载时修改场景。</summary>
 [Tool]

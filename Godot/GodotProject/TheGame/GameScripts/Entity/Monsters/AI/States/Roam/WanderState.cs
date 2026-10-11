@@ -1,12 +1,12 @@
+using GameLogic.Entity.Monsters.AI.Core;
 using System;
 using GameFramework.Fsm;
-using GameLogic.Entity.Monsters.AI;
 
-namespace GameLogic.Entity.Monsters.AI.States
+namespace GameLogic.Entity.Monsters.AI.States.Roam
 {
 	/// <summary>
 	/// 左右随机游荡（旧 normal_state）。每 PatrolInterval 决策一次：PatrolIdleChance 概率停下，否则左右各半；
-	/// 离出生点超出 PatrolRadius 时立刻往回走、期间不停留。
+	/// 离巡逻中心超出 PatrolRadius 时立刻往回走、期间不停留。
 	/// </summary>
 	public class WanderState : RoamState
 	{
@@ -49,7 +49,7 @@ namespace GameLogic.Entity.Monsters.AI.States
 
 		private static int Leash(IMonsterAiAgent agent) // 超出出生点巡逻半径时返回朝家的折返方向。
 		{
-			float home = agent.HomeDeltaX;
+			float home = agent.PatrolOffsetX;
 			float radius = agent.Params.PatrolRadius;
 			return radius > 0f && Math.Abs(home) > radius ? -Math.Sign(home) : 0;
 		}

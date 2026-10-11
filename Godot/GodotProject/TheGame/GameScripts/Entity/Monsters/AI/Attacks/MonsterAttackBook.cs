@@ -1,7 +1,8 @@
+using GameLogic.Entity.Monsters.AI.Core;
 using System;
 using System.Collections.Generic;
 
-namespace GameLogic.Entity.Monsters.AI
+namespace GameLogic.Entity.Monsters.AI.Attacks
 {
 	/// <summary>
 	/// 怪物攻击范围与加权选招（纯 C#，随机数由调用方传入，可精确单测）。

@@ -1,8 +1,9 @@
+using GameLogic.Entity.Monsters.Body.States;
+using GameLogic.Entity.Monsters.Body.Core;
 using System;
 using System.Collections.Generic;
 using GameFramework.Fsm;
 using GameLogic.Entity.Body;
-using GameLogic.Entity.Monsters.Body;
 using Godot;
 using Xunit;
 

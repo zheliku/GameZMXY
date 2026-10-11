@@ -1,6 +1,7 @@
+using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Entity.Monsters.AI.Attacks;
 using System;
 using GameConfig.Battle;
-using GameLogic.Entity.Monsters.AI;
 using Godot;
 using GodotGameFramework;
 

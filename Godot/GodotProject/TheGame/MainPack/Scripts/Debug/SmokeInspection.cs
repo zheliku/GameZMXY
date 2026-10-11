@@ -1,12 +1,16 @@
+using GameLogic.Level.Stage;
+using GameLogic.Entity.Monsters.Body.States;
+using GameLogic.Entity.Monsters.Body.Core;
+using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Entity.Heroes.Body.Core;
 using System;
 using System.Reflection;
 using GameFramework.Fsm;
+using GameFramework.Procedure;
+using GameLogic.Startup.FlowData;
 using GameLogic.Entity;
 using GameLogic.Entity.Heroes;
-using GameLogic.Entity.Heroes.Body;
 using GameLogic.Entity.Monsters;
-using GameLogic.Entity.Monsters.AI;
-using GameLogic.Entity.Monsters.Body;
 using GameLogic.Level;
 using GameLogic.Session;
 
@@ -69,14 +73,15 @@ internal static class SmokeInspection
     /// <summary>读取正式流程拥有的本次运行，流程不在关卡时返回空。</summary>
     /// <param name="procedure">当前关卡流程；允许为空。</param>
     /// <returns>本次关卡运行。</returns>
-    public static LevelRun Run(ProcedureLevel procedure) =>
-        procedure == null ? null : ReadField<LevelRun>(procedure, "m_Run");
+    public static LevelRewardTransaction Run(ProcedureLevel procedure) =>
+        procedure == null ? null : ReadField<LevelRewardTransaction>(procedure, "m_RewardTransaction");
 
     /// <summary>读取正式流程已注入的档案作用域，流程不在关卡时返回空。</summary>
     /// <param name="procedure">当前关卡流程；允许为空。</param>
     /// <returns>当前档案作用域。</returns>
-    public static GameContext Context(ProcedureLevel procedure) =>
-        procedure == null ? null : ReadField<GameContext>(procedure, "m_Context");
+    public static PlayerSession Context(ProcedureLevel procedure) =>
+        procedure == null ? null : ReadField<IFsm<IProcedureManager>>(procedure, "m_Owner")
+            .GetData<PlayerSessionVariable>(FlowKeys.PlayerSession)?.Value;
 
     /// <summary>仅在测试中停止怪物 AI 并清除待消费意图，身体动作仍按正式逻辑执行。</summary>
     /// <param name="monster">作为沙包的怪物；允许为空。</param>

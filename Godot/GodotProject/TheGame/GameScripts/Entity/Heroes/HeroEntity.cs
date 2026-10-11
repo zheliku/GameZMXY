@@ -1,3 +1,10 @@
+using GameLogic.Entity.Heroes.Body.States;
+using GameLogic.Entity.Heroes.Body.Core;
+using GameLogic.Entity;
+using GameLogic.Battle.Resources;
+using GameLogic.Battle.Attributes;
+using GameLogic.Battle.Damage;
+using GameLogic.Battle.Attacks;
 using GameLogic.Input;
 using System;
 using GameConfig.Battle;
@@ -5,10 +12,7 @@ using GameConfig.Hero;
 using GameConfig.Stat;
 using GameFramework.Entity;
 using GameFramework.Fsm;
-using GameLogic.Battle;
-using GameLogic.Battle.Stats;
 using GameLogic.Entity.Body;
-using GameLogic.Entity.Heroes.Body;
 using GameLogic.Entity.Heroes.Effects;
 using GameLogic.Entity.Heroes.Input;
 using GameLogic.Profile;
@@ -19,13 +23,13 @@ namespace GameLogic.Entity.Heroes
 {
 	/// <summary>
 	/// 英雄的表现与战斗运行时：输入、身体状态机、动画/武器层、出招，以及本次显示期间的属性汇总、生命魔法与无双。
-	/// 不持有持久进度（等级、经验、金币属于档案）；显示时由 <see cref="HeroLoadout"/> 注入属性，升级后由关卡运行重新注入。
+	/// 不持有持久进度（等级、经验、金币属于档案）；显示时由 <see cref="HeroBattleSnapshot"/> 注入属性，升级后由关卡运行重新注入。
 	/// </summary>
 	public abstract partial class HeroEntity : ActorEntity, IHeroBody
 	{
 		// ---- 字段 ----
 
-		private static readonly StatSource m_MusouSource = new("Musou", 0); // 当前英雄独有的局内属性来源。
+		private static readonly AttributeSourceId m_MusouSource = new("Musou", 0); // 当前英雄独有的局内属性来源。
 
 		[Export] private Sprite2D m_Weapon; // 武器表现层，与身体层同网格并由动画轨道驱动。
 
@@ -38,8 +42,6 @@ namespace GameLogic.Entity.Heroes
 		private HeroBodyParams m_BodyParams; // 从英雄配置和动画库构建的身体参数快照。
 
 		private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
-
-		private StatSource[] m_PersistentSources = []; // 上次装配登记的来源标识；不保留显示参数引用。
 
 		// ---- 属性 ----
 
@@ -100,7 +102,7 @@ namespace GameLogic.Entity.Heroes
 		}
 
 		/// <summary>显示时按出战装配重建属性、补满生命魔法、清零无双，复位战斗事实与输入并创建身体状态机。</summary>
-		/// <param name="userData">出战装配 <see cref="HeroLoadout"/>（由档案构建），不能为空。</param>
+		/// <param name="userData">出战装配 <see cref="HeroBattleSnapshot"/>（由档案构建），不能为空。</param>
 		/// <exception cref="ArgumentException">参数不是本英雄的出战装配。</exception>
 		public override void OnShow(object userData)
 		{
@@ -112,15 +114,14 @@ namespace GameLogic.Entity.Heroes
 			}
 
 			// 显示参数只接受出战装配：属性来源唯一，测试场地也必须经档案构建。
-			if (userData is not HeroLoadout loadout || loadout.HeroId != HeroId)
+			if (userData is not HeroBattleSnapshot snapshot || snapshot.HeroId != HeroId)
 			{
-				throw new ArgumentException($"英雄 {HeroId} 的显示参数必须是同一英雄的 HeroLoadout。", nameof(userData));
+				throw new ArgumentException($"英雄 {HeroId} 的显示参数必须是同一英雄的 HeroBattleSnapshot。", nameof(userData));
 			}
 
 			// 池实例可能带着上次的修正来源，先清空再按装配重建。
 			Stats.Clear();
-			m_PersistentSources = [];
-			ApplyLoadout(loadout, refill: true);
+			ApplyBattleSnapshot(snapshot, refill: true);
 			Musou.Reset(ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMax);
 			m_MusouAfterimage?.Reset();
 
@@ -143,7 +144,6 @@ namespace GameLogic.Entity.Heroes
 			Stats.RemoveSource(m_MusouSource);
 			if (!isShutdown && IsInstanceValid(m_MusouAfterimage)) m_MusouAfterimage.Reset();
 			DestroyBody(isShutdown);
-			m_PersistentSources = [];
 			base.OnHide(isShutdown, userData);
 		}
 
@@ -190,7 +190,7 @@ namespace GameLogic.Entity.Heroes
 		{
 			BattleConfig battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
 			if (!IsShown || Dead || !Musou.TryActivate(battle.WsDuration)) return false;
-			Stats.SetSource(m_MusouSource, [StatModifier.PercentMult(StatType.Power, battle.WsPowerMultiplier - 1f)]);
+			Stats.SetSource(m_MusouSource, [AttributeModifier.PercentMult(StatType.Power, battle.WsPowerMultiplier - 1f)]);
 			m_PendingHurt = null;
 			m_MusouAfterimage?.SetEmitting(true);
 			return true;
@@ -205,24 +205,24 @@ namespace GameLogic.Entity.Heroes
 		}
 
 		/// <summary>
-		/// 应用出战装配：替换成长基础值与持久修正（不触碰 Buff 等局内来源），再同步生命魔法上限。
-		/// 显示时由 OnShow 调用；升级、换装后由关卡运行调用。
+		/// 应用战斗快照：替换成长基础值（保留无双等局内修正），再同步生命魔法上限。
+		/// 显示时由 OnShow 调用；升级后由关卡收益事务调用。
 		/// </summary>
-		/// <param name="loadout">由档案构建的出战装配。</param>
+		/// <param name="snapshot">由档案构建的出战装配。</param>
 		/// <param name="refill">是否补满生命与魔法（显示、升级）；否则把当前值钳到新上限。</param>
 		/// <exception cref="ArgumentNullException">装配为空。</exception>
 		/// <exception cref="ArgumentException">装配属于其他英雄。</exception>
-		public void ApplyLoadout(HeroLoadout loadout, bool refill)
+		public void ApplyBattleSnapshot(HeroBattleSnapshot snapshot, bool refill)
 		{
-			ArgumentNullException.ThrowIfNull(loadout);
-			if (loadout.HeroId != HeroId)
+			ArgumentNullException.ThrowIfNull(snapshot);
+			if (snapshot.HeroId != HeroId)
 			{
-				throw new ArgumentException($"装配属于英雄 {loadout.HeroId}，不能应用到英雄 {HeroId}。", nameof(loadout));
+				throw new ArgumentException($"装配属于英雄 {snapshot.HeroId}，不能应用到英雄 {HeroId}。", nameof(snapshot));
 			}
 
-			// 先移除上一次装配的持久来源再登记新来源，最后同步资源上限。
-			m_PersistentSources = loadout.ApplyTo(Stats, m_PersistentSources);
-			Level = loadout.Level;
+			// 替换成长基础值，保留本局无双等独立来源，再同步资源上限。
+			Stats.SetBase(snapshot.BaseAttributes);
+			Level = snapshot.Level;
 			SyncVitalsToStats(refill);
 		}
 
@@ -252,7 +252,7 @@ namespace GameLogic.Entity.Heroes
 		/// </summary>
 		/// <param name="attack">本次攻击快照，仅在回调内使用。</param>
 		/// <param name="result">目标已完成的伤害结算结果。</param>
-		protected override void OnHitLanded(AttackData attack, DamageResult result)
+		protected override void OnHitLanded(AttackInstance attack, DamageResult result)
 		{
 			if (ConfigSystem.Instance.Tables.TbAttackConfig.GetOrDefault(attack.AttackId) is { } config)
 			{
@@ -270,7 +270,7 @@ namespace GameLogic.Entity.Heroes
 		/// <param name="result">已完成的伤害结算结果。</param>
 		/// <param name="knockback">击退速度，单位像素每秒。</param>
 		/// <param name="attackerEntityId">攻击方运行编号；无来源时为零。</param>
-		protected override void OnHurt(AttackData attack, DamageResult result, Vector2 knockback, int attackerEntityId)
+		protected override void OnHurt(AttackInstance attack, DamageResult result, Vector2 knockback, int attackerEntityId)
 		{
 			base.OnHurt(attack, result, knockback, attackerEntityId);
 			if (Dead) EndMusou();

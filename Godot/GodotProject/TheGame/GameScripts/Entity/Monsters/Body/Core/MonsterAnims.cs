@@ -1,4 +1,4 @@
-namespace GameLogic.Entity.Monsters.Body
+namespace GameLogic.Entity.Monsters.Body.Core
 {
 	/// <summary>
 	/// 怪物标准动画名（Entity/AGENTS.md「命名标准」，所有怪物的动画库都用这套动画名）。

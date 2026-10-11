@@ -1,3 +1,11 @@
+using GameLogic.Entity.Monsters.Body.Core;
+using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Entity.Monsters.AI.Attacks;
+using GameLogic.Entity.Combat;
+using GameLogic.Entity;
+using GameLogic.Battle.Resources;
+using GameLogic.Battle.Damage;
+using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
 using System.Linq;
 using System;
@@ -6,10 +14,7 @@ using GameConfig.Entity;
 using GameConfig.Monster;
 using GameFramework.Entity;
 using GameFramework.Fsm;
-using GameLogic.Battle;
 using GameLogic.Entity.Body;
-using GameLogic.Entity.Monsters.AI;
-using GameLogic.Entity.Monsters.Body;
 using GameLogic.UI.Widgets;
 using Godot;
 using GodotGameFramework.Entity;
@@ -42,9 +47,9 @@ namespace GameLogic.Entity.Monsters
 
 		private ActorEntity m_Target; // 当前索敌目标；失效或超时后清除。
 
-		private Vector2 m_Home; // 本次显示时记录的巡逻起点。
+		private Vector2 m_SpawnPosition; // 未绑定关卡视野时使用的巡逻中心。
 
-		private int m_LastAttackerId; // 最近一次造成有效受击的实体编号。
+		private Node2D m_PatrolAnchor; // 关卡注入的取景中心；没有关卡时以出生点巡逻。
 
 		private int m_AttackRequest = -1; // 待身体状态机提交的攻击下标，-1 表示无请求。
 
@@ -159,7 +164,6 @@ namespace GameLogic.Entity.Monsters
 			m_PendingHurt = null;
 			m_RecycleRequested = false;
 			SetTarget(null);
-			m_LastAttackerId = 0;
 			Velocity = Vector2.Zero;
 			Attacks.Reset(GD.Randf);
 
@@ -169,7 +173,8 @@ namespace GameLogic.Entity.Monsters
 				GlobalPosition = spawn;
 			}
 
-			m_Home = GlobalPosition;
+			m_SpawnPosition = GlobalPosition;
+			m_PatrolAnchor = null;
 			SetHurtBoxEnabled(true);
 			SetFacing(-1);
 
@@ -189,6 +194,7 @@ namespace GameLogic.Entity.Monsters
 		/// <param name="userData">本次隐藏参数。</param>
 		public override void OnHide(bool isShutdown, object userData)
 		{
+			m_PatrolAnchor = null;
 			// 先解除纯 C# 订阅；关停时子节点可能已释放，不再访问表现对象。
 			Vitals.Changed -= RefreshHealthBar;
 			if (!isShutdown && IsInstanceValid(m_HealthBar))
@@ -268,13 +274,8 @@ namespace GameLogic.Entity.Monsters
 		/// <param name="result">已完成的伤害结算结果。</param>
 		/// <param name="knockback">击退速度，单位像素每秒。</param>
 		/// <param name="attackerEntityId">攻击方运行编号；无来源时为零。</param>
-		protected override void OnHurt(AttackData attack, DamageResult result, Vector2 knockback, int attackerEntityId)
+		protected override void OnHurt(AttackInstance attack, DamageResult result, Vector2 knockback, int attackerEntityId)
 		{
-			if (attackerEntityId != 0)
-			{
-				m_LastAttackerId = attackerEntityId;
-			}
-
 			// 基类"面向攻击者"：霸体出招中不转身（会打乱出招朝向）
 			if (!(IsSuperArmor && AttackSegment >= 0))
 			{
@@ -338,6 +339,14 @@ namespace GameLogic.Entity.Monsters
 				AttackTimes = times,
 				AttackRecovery = recovery,
 			};
+		}
+
+		/// <summary>让巡逻以当前取景为中心，确保场外出生的怪物会走进战斗视野。</summary>
+		/// <param name="anchor">关卡会话注入的相机中心。</param>
+		/// <exception cref="ArgumentNullException">中心节点为空。</exception>
+		public void SetPatrolAnchor(Node2D anchor)
+		{
+			m_PatrolAnchor = anchor ?? throw new ArgumentNullException(nameof(anchor));
 		}
 
 		/// <summary>维护目标有效性、视野超时和索敌区发现。</summary>
@@ -502,7 +511,7 @@ namespace GameLogic.Entity.Monsters
 			SetHurtBoxEnabled(false);
 			PlaySound(Config.DeathSoundId);
 			GF.Event.Fire(this,
-				MonsterDiedEventArgs.Create(Id, Config.Id, Config.Rank, m_LastAttackerId, GlobalPosition));
+				MonsterDiedEventArgs.Create(Id, Config.Id));
 		}
 
 		/// <summary>请求在当前物理帧完成后安全回收实体。</summary>
@@ -521,7 +530,8 @@ namespace GameLogic.Entity.Monsters
 		AiBox IMonsterAiAgent.TargetBox => TargetBox;
 
 		/// <summary>提供怪物相对出生点的水平偏移。</summary>
-		float IMonsterAiAgent.HomeDeltaX => GlobalPosition.X - m_Home.X;
+		float IMonsterAiAgent.PatrolOffsetX => GlobalPosition.X -
+			(IsInstanceValid(m_PatrolAnchor) ? m_PatrolAnchor.GlobalPosition.X : m_SpawnPosition.X);
 
 		/// <summary>向 AI 提供怪物参数快照。</summary>
 		MonsterAiParams IMonsterAiAgent.Params => m_AiParams;

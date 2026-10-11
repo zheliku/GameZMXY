@@ -1,6 +1,8 @@
+using GameLogic.Entity.Heroes.Body.States;
+using GameLogic.Entity.Heroes.Body.Core;
+using GameLogic.Entity;
 using System;
 using GameFramework.Fsm;
-using GameLogic.Entity.Heroes.Body;
 
 namespace GameLogic.Entity.Heroes
 {

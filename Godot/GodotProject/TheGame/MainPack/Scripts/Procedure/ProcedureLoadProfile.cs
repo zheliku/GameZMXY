@@ -16,7 +16,7 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 
 /// <summary>
 /// 读档流程：经 <see cref="SaveService"/> 读取当前存档（首次建档或当前格式读取），
-/// 创建 <see cref="GameContext"/> 写入流程数据，新档进入选角，已有档案直接进入地图。
+/// 创建 <see cref="PlayerSession"/> 写入流程数据，新档进入选角，已有档案直接进入地图。
 /// 读档失败时停在加载界面，绝不新建空档覆盖玩家数据。
 /// </summary>
 public class ProcedureLoadProfile : ProcedureBase
@@ -39,15 +39,15 @@ public class ProcedureLoadProfile : ProcedureBase
             SaveService save = new(curve, ConfigSystem.Instance.Tables);
             var selection = procedureOwner.GetData<SaveSelectionVariable>(FlowKeys.SaveSelection)?.Value
                 ?? throw new InvalidOperationException("缺少存档选择结果。");
-            LoadedProfile loaded = await save.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId);
+            ProfileLoadResult loaded = await save.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId);
             if (entrySerial != m_EntrySerial) return;
             Log.Info("[ProcedureLoadProfile] 档案就绪：来源 {0}，出战英雄 {1}，等级 {2}", loaded.Origin,
-                loaded.Profile.ActiveHeroId, loaded.Profile.ActiveHero.Progression.Level);
+                loaded.Profile.ActiveHeroId, loaded.Profile.ActiveHero.Level);
 
-            GameContext context = new(loaded.Profile, curve, ConfigSystem.Instance.Tables, save);
-            procedureOwner.SetData(FlowKeys.GameContext, GameContextVariable.Create(context));
+            PlayerSession session = new(loaded.Profile, save);
+            procedureOwner.SetData(FlowKeys.PlayerSession, PlayerSessionVariable.Create(session));
             // 新建档案才需要确认角色；已有档案直接恢复地图入口。
-            if (loaded.Origin == SaveOrigin.Created)
+            if (loaded.Origin == ProfileLoadOrigin.Created)
                 ChangeState<ProcedureCharacter>(procedureOwner);
             else
                 ChangeState<ProcedureMap>(procedureOwner);

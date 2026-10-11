@@ -1,8 +1,9 @@
+using GameLogic.Entity.Monsters.Body.Core;
 using System;
 using GameFramework.Fsm;
 using Godot;
 
-namespace GameLogic.Entity.Monsters.Body
+namespace GameLogic.Entity.Monsters.Body.States
 {
 	/// <summary>
 	/// 移动 / 待机：按 AI 的移动意图走动并随之转向（idle / run）；有出招请求就进 Attack。

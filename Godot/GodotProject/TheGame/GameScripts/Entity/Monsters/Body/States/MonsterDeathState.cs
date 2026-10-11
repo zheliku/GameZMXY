@@ -1,6 +1,8 @@
+using GameLogic.Entity.Monsters.Body.Core;
+using GameLogic.Entity.Body;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Monsters.Body
+namespace GameLogic.Entity.Monsters.Body.States
 {
 	/// <summary>
 	/// 死亡（终态）：进入时由宿主做副作用（<see cref="IActorBody.OnDied"/>：关受击盒、播死亡音、广播

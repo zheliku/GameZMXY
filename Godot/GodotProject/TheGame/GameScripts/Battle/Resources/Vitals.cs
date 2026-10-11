@@ -1,10 +1,11 @@
+using GameLogic.Battle.Attributes;
 using System;
 
-namespace GameLogic.Battle.Stats;
+namespace GameLogic.Battle.Resources;
 
 /// <summary>
 /// 角色的生命与魔法资源：当前值与上限一起维护，任何修改都在一次调用内完成并只通知一次。
-/// 上限来自 <see cref="StatSheet"/> 的最终值，由持有者在属性变化后调用 <see cref="SetMaximums"/> 同步。
+/// 上限来自 <see cref="ActorAttributes"/> 的最终值，由持有者在属性变化后调用 <see cref="SetMaximums"/> 同步。
 /// 纯 C#；死亡判定以 <see cref="Damage"/> 返回值为唯一入口。
 /// </summary>
 public sealed class Vitals

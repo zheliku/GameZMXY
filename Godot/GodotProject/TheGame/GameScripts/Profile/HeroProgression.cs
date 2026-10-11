@@ -10,6 +10,9 @@ public sealed class HeroProgression
 {
 	private readonly ExperienceCurve m_Curve; // 已验证的共享经验曲线。
 
+	/// <summary>本进度所属英雄的 HeroConfig 主键。</summary>
+	public int HeroId { get; }
+
 	/// <summary>累计经验。</summary>
 	public int TotalExperience { get; private set; }
 
@@ -26,11 +29,13 @@ public sealed class HeroProgression
 	public event Action Changed;
 
 	/// <summary>按累计经验创建成长状态。</summary>
+	/// <param name="heroId">本进度所属的英雄编号。</param>
 	/// <param name="curve">共享经验曲线。</param>
 	/// <param name="totalExperience">累计经验，超出范围时钳到首末门槛。</param>
 	/// <exception cref="ArgumentNullException">经验曲线为空。</exception>
-	public HeroProgression(ExperienceCurve curve, int totalExperience)
+	public HeroProgression(int heroId, ExperienceCurve curve, int totalExperience)
 	{
+		HeroId = heroId;
 		m_Curve = curve ?? throw new ArgumentNullException(nameof(curve));
 		Apply(totalExperience);
 	}

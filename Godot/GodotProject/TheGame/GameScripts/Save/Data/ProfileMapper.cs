@@ -21,8 +21,8 @@ namespace GameLogic.Save.Data
             heroIds.Sort();
             foreach (int heroId in heroIds)
             {
-                HeroRecord hero = profile.Heroes[heroId];
-                data.Heroes.Add(new HeroSaveData { HeroId = heroId, TotalExperience = hero.Progression.TotalExperience });
+                HeroProgression hero = profile.Heroes[heroId];
+                data.Heroes.Add(new HeroSaveData { HeroId = heroId, TotalExperience = hero.TotalExperience });
             }
 
             return data;
@@ -47,7 +47,7 @@ namespace GameLogic.Save.Data
             }
 
             // 逐个重建英雄记录；等级等派生值由累计经验重新计算。
-            List<HeroRecord> heroes = new(data.Heroes.Count);
+            List<HeroProgression> heroes = new(data.Heroes.Count);
             foreach (HeroSaveData hero in data.Heroes)
             {
                 if (hero == null)
@@ -55,7 +55,7 @@ namespace GameLogic.Save.Data
                     throw new ArgumentException("档案快照包含空英雄记录。", nameof(data));
                 }
 
-                heroes.Add(new HeroRecord(hero.HeroId, new HeroProgression(curve, hero.TotalExperience)));
+                heroes.Add(new HeroProgression(hero.HeroId, curve, hero.TotalExperience));
             }
 
             return new PlayerProfile(data.ActiveHeroId, heroes, new Wallet(data.Gold));
@@ -79,12 +79,12 @@ namespace GameLogic.Save.Data
 
             foreach (HeroSaveData hero in snapshot.Heroes)
             {
-                if (!profile.Heroes.TryGetValue(hero.HeroId, out HeroRecord record))
+                if (!profile.Heroes.TryGetValue(hero.HeroId, out HeroProgression record))
                 {
                     throw new InvalidOperationException($"回滚快照中的英雄 {hero.HeroId} 不在档案中。");
                 }
 
-                record.Progression.Restore(hero.TotalExperience);
+                record.Restore(hero.TotalExperience);
             }
 
             profile.Wallet.Restore(snapshot.Gold);

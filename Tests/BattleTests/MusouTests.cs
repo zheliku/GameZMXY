@@ -1,5 +1,5 @@
+using GameLogic.Battle.Resources;
 using System;
-using GameLogic.Battle.Stats;
 using Xunit;
 
 namespace GameLogic.Battle.Tests;

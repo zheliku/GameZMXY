@@ -1,6 +1,6 @@
 using System;
 
-namespace GameLogic.Battle.Stats;
+namespace GameLogic.Battle.Resources;
 
 /// <summary>英雄无双：命中蓄力，满值开启后按持续时间耗尽；只存在于关卡运行期，不写入存档。</summary>
 public sealed class MusouGauge
@@ -12,6 +12,7 @@ public sealed class MusouGauge
 
 	/// <summary>当前处于无双状态。</summary>
 	public bool IsActive => RemainingSeconds > 0f;
+
 	/// <summary>当前无双值。</summary>
 	public int Value { get; private set; }
 

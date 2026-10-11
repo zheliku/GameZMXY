@@ -1,3 +1,4 @@
+using GameLogic.Battle.Resources;
 using GameLogic.Event.Navigation;
 using System;
 using GameFramework.UI;

@@ -1,6 +1,6 @@
 using GameConfig.Level;
 
-namespace GameLogic.Level;
+namespace GameLogic.Level.Spawning;
 
 /// <summary>按游戏时间并行调度配方，统一预约并存名额，不创建实体或等待异步计时器。</summary>
 public sealed class LevelSpawnSchedule

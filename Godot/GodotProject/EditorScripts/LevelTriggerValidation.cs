@@ -1,4 +1,5 @@
 using System;
+using GameLogic.Level.Stage;
 using System.Threading.Tasks;
 using GameConfig.Level;
 using GameLogic.Level;

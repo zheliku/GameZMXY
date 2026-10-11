@@ -15,7 +15,7 @@ namespace GameLogic.UI;
 /// <summary>声音和战斗设置：使用 GGF 保存音量，战斗中暂停并提供返回地图入口。</summary>
 public partial class SettingsForm
 {
-    private SettingsFormData m_Data; // 本次所属关卡，标题中 Run 为空。
+    private SettingsFormData m_Data; // 本次所属关卡，标题中 Rewards 为空。
     private bool m_ShowingHelp; // 帮助复用当前卷轴，关闭后复位。
     private bool m_ResumeGame; // 只恢复由本窗口发起的暂停。
     /// <summary>设置框架字段；按钮事件只在新建实例时绑定一次。</summary>
@@ -49,11 +49,11 @@ public partial class SettingsForm
     /// <exception cref="ArgumentException">需要的打开参数缺失或类型错误。</exception>
     public void OnOpen(object userData)
     {
-        ReleaseRun();
+        ReleaseTransaction();
         m_Data = userData as SettingsFormData ?? throw new ArgumentException("需要 SettingsFormData。", nameof(userData));
-        if (m_Data.Run != null)
+        if (m_Data.Rewards != null)
         {
-            m_Data.Run.Ended += OnRunEnded;
+            m_Data.Rewards.Ended += OnLevelEnded;
             m_ResumeGame = !GF.Base.IsGamePaused;
             if (m_ResumeGame) GF.Base.PauseGame();
         }
@@ -68,14 +68,14 @@ public partial class SettingsForm
     /// <param name="userData">关闭参数，不保存。</param>
     public void OnClose(bool isShutdown, object userData)
     {
-        ReleaseRun();
+        ReleaseTransaction();
         if (!isShutdown && IsInstanceValid(this)) Visible = false;
     }
 
     /// <summary>回池时清除本次打开的引用和框架编号。</summary>
     public void OnRecycle()
     {
-        ReleaseRun();
+        ReleaseTransaction();
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = true;
@@ -107,16 +107,16 @@ public partial class SettingsForm
     }
 
     /// <summary>释放运行订阅并对称恢复时间缩放。</summary>
-    private void ReleaseRun()
+    private void ReleaseTransaction()
     {
-        if (m_Data?.Run != null) m_Data.Run.Ended -= OnRunEnded;
+        if (m_Data?.Rewards != null) m_Data.Rewards.Ended -= OnLevelEnded;
         m_Data = null;
         if (m_ResumeGame && IsInstanceValid(GF.Base)) GF.Base.ResumeGame();
         m_ResumeGame = false;
     }
     /// <summary>运行结束时关闭设置，避免阻塞流程结局计时。</summary>
     /// <param name="outcome">已经确定的关卡结局。</param>
-    private void OnRunEnded(LevelRunOutcome outcome) => GF.UI.CloseUIForm(SerialId);
+    private void OnLevelEnded(LevelOutcome outcome) => GF.UI.CloseUIForm(SerialId);
     /// <summary>继续游戏或从帮助回到设置选项。</summary>
     private void OnContinueClicked()
     {
@@ -136,7 +136,7 @@ public partial class SettingsForm
     /// <summary>按当前上下文排列官方五项，标题只保留三个可用选项。</summary>
     private void RefreshOptions()
     {
-        bool battle = m_Data.Run != null;
+        bool battle = m_Data.Rewards != null;
         m_HelpText.Visible = m_ShowingHelp;
         m_Sound.Visible = m_Help.Visible = !m_ShowingHelp;
         m_ReturnMap.Visible = m_ReturnTitle.Visible = battle && !m_ShowingHelp;
@@ -183,14 +183,14 @@ public partial class SettingsForm
     /// <summary>请关卡流程回滚当前关卡并返回标题。</summary>
     private void OnReturnTitleClicked()
     {
-        if (m_Data?.Run == null) return;
+        if (m_Data?.Rewards == null) return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, TitleRequestedEventArgs.Create(SerialId));
     }
     /// <summary>请关卡流程关闭设置并回滚未完成的关卡。</summary>
     private void OnReturnMapClicked()
     {
-        if (m_Data?.Run == null) return;
+        if (m_Data?.Rewards == null) return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, MapRequestedEventArgs.Create(SerialId));
     }

@@ -55,7 +55,7 @@ namespace GameLogic.UI
 			}
 
 			// 未闪避但伤害为 0（被减伤截断）不飘字，同旧项目 reduce_hp 的 value > 0 判断。
-			if (!e.IsMiss && e.Damage <= 0)
+			if (!e.Result.IsMiss && e.Result.Damage <= 0)
 			{
 				return;
 			}
@@ -67,13 +67,13 @@ namespace GameLogic.UI
 				return;
 			}
 
-			if (e.IsMiss)
+			if (e.Result.IsMiss)
 			{
 				pop.ShowMiss(e.PopPosition);
 			}
 			else
 			{
-				pop.ShowDamage(e.PopPosition, e.Damage, e.Kind, e.IsCrit, e.TargetIsHero);
+				pop.ShowDamage(e.PopPosition, e.Result.Damage, e.Result.Kind, e.Result.IsCrit, e.TargetIsHero);
 			}
 		}
 	}

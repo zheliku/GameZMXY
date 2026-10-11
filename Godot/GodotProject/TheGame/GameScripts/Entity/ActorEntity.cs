@@ -1,3 +1,10 @@
+using GameLogic.Entity.Monsters;
+using GameLogic.Entity.Heroes;
+using GameLogic.Entity.Combat;
+using GameLogic.Battle.Resources;
+using GameLogic.Battle.Attributes;
+using GameLogic.Battle.Damage;
+using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
 using System.Collections.Generic;
 using System;
@@ -7,8 +14,6 @@ using GameConfig.Sound;
 using GameConfig.Stat;
 using GameFramework.Entity;
 using GameFramework;
-using GameLogic.Battle;
-using GameLogic.Battle.Stats;
 using GameLogic.Config;
 using GameLogic.Audio;
 using Godot;
@@ -31,7 +36,7 @@ namespace GameLogic.Entity
 
 		[Export] private Node2D m_HitBoxRoot; // 攻击判定区镜像容器，随朝向翻转动画写入的位置。
 
-		private AttackData m_ActiveAttack; // 当前招式的攻击包；出招装填、收招归还，null 表示未出招。
+		private AttackInstance m_ActiveAttack; // 当前招式的攻击包；出招装填、收招归还，null 表示未出招。
 
 		private string m_RequestedAnim; // 最近一次请求播放的动画名；同名请求不重播，OnShow 时清空。
 
@@ -70,7 +75,7 @@ namespace GameLogic.Entity
 		public Node2D HitBoxRoot => m_HitBoxRoot;
 
 		/// <summary>属性汇总（基础值 + 按来源修正）；容器随实体存续，子类在 OnShow 写入基础值与修正。</summary>
-		public StatSheet Stats { get; } = new();
+		public ActorAttributes Stats { get; } = new();
 
 		/// <summary>生命与魔法资源；容器随实体存续，上限随 <see cref="Stats"/> 同步，扣血与死亡规则由 ReceiveHit 负责。</summary>
 		public Vitals Vitals { get; } = new();
@@ -363,7 +368,7 @@ namespace GameLogic.Entity
 		/// <param name="attack">调用方拥有的攻击快照，仅在结算期间读取。</param>
 		/// <param name="attackerEntityId">攻击方运行编号；无实体来源时为零。</param>
 		/// <returns>实际伤害与闪避、暴击结果。</returns>
-		public DamageResult ReceiveHit(AttackData attack, int attackerEntityId)
+		public DamageResult ReceiveHit(AttackInstance attack, int attackerEntityId)
 		{
 			if (Dead)
 			{
@@ -371,7 +376,7 @@ namespace GameLogic.Entity
 			}
 
 			BattleConfig config = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
-			CombatantStats defender = GetCombatStats();
+			CombatStatsSnapshot defender = GetCombatStats();
 			float missRoll = GD.Randf();
 			float critRoll = GD.Randf();
 			DamageResult result = DamageCalculator.Calculate(config, attack, defender, missRoll, critRoll);
@@ -385,8 +390,7 @@ namespace GameLogic.Entity
 				OnHurt(attack, result, DamageCalculator.KnockbackVelocity(config, attack, Side), attackerEntityId);
 			}
 
-			GF.Event.Fire(this, DamageDealtEventArgs.Create(attackerEntityId, Id, Side == CombatSide.Hero,
-				result.Damage, result.IsMiss, result.IsCrit, result.Kind, HeadPosition, Vitals.Hp));
+			GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Side == CombatSide.Hero, HeadPosition));
 			if (died)
 			{
 				Died?.Invoke(this);
@@ -452,9 +456,9 @@ namespace GameLogic.Entity
 				return;
 			}
 
-			CombatantStats stats = GetCombatStats();
+			CombatStatsSnapshot stats = GetCombatStats();
 			float power = stats.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf()) + attack.FlatPower;
-			m_ActiveAttack = AttackData.Create(attack.Id, stats, power, attack.DamageKind, attack.Knockback, Facing,
+			m_ActiveAttack = AttackInstance.Create(attack.Id, stats, power, attack.DamageKind, attack.Knockback, Facing,
 				attack.HitProtect, attack.HitSoundId);
 		}
 
@@ -475,7 +479,7 @@ namespace GameLogic.Entity
 				return;
 			}
 
-			// AttackData 负责一招一目标去重。
+			// AttackInstance 负责一招一目标去重。
 			if (!m_ActiveAttack.TryRegisterHit(target.GetInstanceId()))
 			{
 				return;
@@ -492,7 +496,7 @@ namespace GameLogic.Entity
 
 		/// <summary>结算用属性快照：取属性汇总当前最终值（出招与受击各取一次）。</summary>
 		/// <returns>当前属性与等级对应的结算快照。</returns>
-		protected CombatantStats GetCombatStats() => CombatantStats.From(Side, Level, Stats);
+		protected CombatStatsSnapshot GetCombatStats() => CombatStatsSnapshot.From(Side, Level, Stats);
 
 		/// <summary>
 		/// 受击表现钩子（已扣血、未闪避时调用）：子类决定硬直/击退如何生效。
@@ -502,7 +506,7 @@ namespace GameLogic.Entity
 		/// <param name="attackerEntityId">攻击方实体编号（0 = 无实体来源，如 Buff/调试伤害）；怪物用它锁定仇恨</param>
 		/// <param name="attack">本次攻击快照，不得保留池化引用。</param>
 		/// <param name="result">已完成的伤害结算结果。</param>
-		protected virtual void OnHurt(AttackData attack, DamageResult result, Vector2 knockback, int attackerEntityId)
+		protected virtual void OnHurt(AttackInstance attack, DamageResult result, Vector2 knockback, int attackerEntityId)
 		{
 			SetFacing(-attack.Direction);
 		}
@@ -513,7 +517,7 @@ namespace GameLogic.Entity
 		/// </summary>
 		/// <param name="attack">本次攻击快照，仅在回调内使用。</param>
 		/// <param name="result">目标已完成的伤害结算结果。</param>
-		protected virtual void OnHitLanded(AttackData attack, DamageResult result)
+		protected virtual void OnHitLanded(AttackInstance attack, DamageResult result)
 		{
 		}
 

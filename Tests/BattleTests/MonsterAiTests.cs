@@ -1,7 +1,10 @@
+using GameLogic.Entity.Monsters.AI.States.Roam;
+using GameLogic.Entity.Monsters.AI.States.Interrupt;
+using GameLogic.Entity.Monsters.AI.States.Engage;
+using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Entity.Monsters.AI.Attacks;
 using System;
 using GameFramework.Fsm;
-using GameLogic.Entity.Monsters.AI;
-using GameLogic.Entity.Monsters.AI.States;
 using Xunit;
 
 namespace GameLogic.Battle.Tests
@@ -244,7 +247,7 @@ namespace GameLogic.Battle.Tests
 			using AiHarness h = new AiHarness(MonkeyParams(), new[] { Basic(0) }, 0.9f);
 			h.Step(1);
 			Assert.Equal(1, h.Agent.MoveDir);
-			h.Agent.HomeDeltaX = 250f;   // 走出半径 200
+			h.Agent.PatrolOffsetX = 250f;   // 走出半径 200
 			h.Step(1);
 			Assert.Equal(-1, h.Agent.MoveDir);
 		}
@@ -364,7 +367,7 @@ namespace GameLogic.Battle.Tests
 			h.Step(2);
 			Assert.Equal("WalkToTarget", h.State);
 
-			h.Agent.HomeDeltaX = -350f;          // 追到出生点左侧 350px（半径 200 之外）时丢失目标
+			h.Agent.PatrolOffsetX = -350f;          // 追到出生点左侧 350px（半径 200 之外）时丢失目标
 			h.Agent.LoseTarget();
 			h.Step(2);
 			Assert.Equal("Wander", h.State);
@@ -468,7 +471,7 @@ namespace GameLogic.Battle.Tests
 			/// <summary>测试直接设置的目标判定盒；默认值表示无目标。</summary>
 			public AiBox TargetBox { get; set; }
 			/// <summary>宿主相对出生点的水平偏移。</summary>
-			public float HomeDeltaX { get; set; }
+			public float PatrolOffsetX { get; set; }
 			/// <summary>怪物 AI 参数。</summary>
 			public MonsterAiParams Params { get; }
 			/// <summary>怪物可用招式及冷却状态。</summary>

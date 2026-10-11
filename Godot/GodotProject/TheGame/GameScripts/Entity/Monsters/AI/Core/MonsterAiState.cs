@@ -1,7 +1,7 @@
+using GameLogic.Entity.Monsters.AI.States.Interrupt;
 using GameFramework.Fsm;
-using GameLogic.Entity.Monsters.AI.States;
 
-namespace GameLogic.Entity.Monsters.AI
+namespace GameLogic.Entity.Monsters.AI.Core
 {
 	/// <summary>
 	/// 怪物 AI 状态基类（GF.Fsm，每状态一个类；持有者 = <see cref="IMonsterAiAgent"/>）。

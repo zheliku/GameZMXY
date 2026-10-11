@@ -1,6 +1,6 @@
 using GameConfig.Battle;
 
-namespace GameLogic.Battle
+namespace GameLogic.Battle.Damage
 {
 	/// <summary>一次命中的结算结果（值类型，调用方按值持有，无归还义务）。</summary>
 	public readonly struct DamageResult

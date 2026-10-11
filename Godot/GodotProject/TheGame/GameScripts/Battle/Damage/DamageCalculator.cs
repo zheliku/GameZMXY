@@ -1,8 +1,9 @@
+using GameLogic.Battle.Attacks;
 using System;
 using GameConfig.Battle;
 using Godot;
 
-namespace GameLogic.Battle
+namespace GameLogic.Battle.Damage
 {
 	/// <summary>
 	/// 伤害结算（纯函数，无状态、无随机；只触 Godot 纯值类型，无运行时引擎依赖）。
@@ -54,7 +55,7 @@ namespace GameLogic.Battle
 		/// <param name="critRoll">暴击判定随机数 [0,1)（由 Godot 层取好传入）</param>
 		/// <returns>本次命中的伤害、闪避、暴击和伤害类型结果。</returns>
 		/// <exception cref="ArgumentNullException"><paramref name="config"/> 或 <paramref name="attack"/> 为 <see langword="null"/>。</exception>
-		public static DamageResult Calculate(BattleConfig config, AttackData attack, in CombatantStats defender,
+		public static DamageResult Calculate(BattleConfig config, AttackInstance attack, in CombatStatsSnapshot defender,
 			float missRoll, float critRoll)
 		{
 			if (config == null)
@@ -67,7 +68,7 @@ namespace GameLogic.Battle
 				throw new ArgumentNullException(nameof(attack));
 			}
 
-			CombatantStats attacker = attack.Attacker;
+			CombatStatsSnapshot attacker = attack.Attacker;
 			bool heroDefends = defender.Side == CombatSide.Hero;
 
 			// 1. 净值（下限 0）
@@ -135,7 +136,7 @@ namespace GameLogic.Battle
 		/// <param name="attack">包含出招方向和击退参数的攻击包。</param>
 		/// <param name="defenderSide">用于选择横向换算系数的防守方侧别。</param>
 		/// <returns>世界坐标系下的击退速度（px/s）。</returns>
-		public static Vector2 KnockbackVelocity(BattleConfig config, AttackData attack, CombatSide defenderSide)
+		public static Vector2 KnockbackVelocity(BattleConfig config, AttackInstance attack, CombatSide defenderSide)
 		{
 			float scaleX = defenderSide == CombatSide.Hero ? config.KnockbackScaleXHeroDef : config.KnockbackScaleXMonsterDef;
 			return new Vector2(attack.Direction * attack.Knockback.X * scaleX, attack.Knockback.Y * config.KnockbackScaleY);
