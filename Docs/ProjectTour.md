@@ -1,265 +1,155 @@
-# GameZMXY：重构后项目导览
+# GameZMXY：项目导览
 
-核对日期：2026-10-11。本文按当前业务代码整理，是阅读地图；唯一规范仍是 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md)。根 README 提供运行入口，`Godot/docs/` 用于查询 GGF API，其历史示例不代表当前游戏实现。
+核对日期：2026-10-12。这是当前实现的阅读地图，唯一规范是 [ProjectGuidelines](ProjectGuidelines/AGENTS.md)。用“作用域 → 一次击杀 → 局部类图”熟悉项目，再沿代码链接阅读。模块目录与出口时序见 [GameplayArchitecture](GameplayArchitecture.md)，本轮修改和验收见 [ModuleRefactor](ModuleRefactor.md)。
 
-建议用 **作用域图 → 启动流程 → 一次击杀时序 → 局部类图** 熟悉项目，再沿着链接看代码。先回答“状态归谁、谁创建它、谁修改它、谁观察它”，就能判断新功能应放在哪里。图使用 Mermaid；支持 Mermaid 的 Markdown 预览可直接显示，下方表格和文字也可独立阅读。
-
-项目的主干是 **GGF 分层 + 作用域所有权 + 显式依赖**：表现层是实体、UI 和关卡节点；应用层是流程、`GameContext` 与 `LevelRun`；领域层是档案和战斗状态；下面是纯规则、只读配置与 GGF。依赖向下，状态经所有者的方法修改，外部引用通过构造参数、`Initialize`、`userData` 或流程数据传入。领域状态与规则不反向访问场景树。
-
-## 1. 先记住四个作用域（约 5 分钟）
+## 1. 状态归谁
 
 ```mermaid
 flowchart TB
-    App["App · GGF 与启动流程<br/>只读配置、设置、实体和 UI 服务"]
-    Context["Profile · GameContext<br/>PlayerProfile、经验曲线、装配规则、存档入口"]
-    Procedure["ProcedureLevel<br/>装配一次关卡，退出时逆序清理"]
-    Run["Run · LevelRun<br/>收益结算、进关快照、提交或回滚"]
-    Level["LevelController<br/>阶段、门、刷怪、相机的协调"]
-    Hero["Entity · HeroEntity<br/>本次出战的 Stats、Vitals、Musou、动作状态"]
-    Hud["BattleHud<br/>观察英雄、档案成长和关卡"]
+    App["App · GGF 与启动流程<br/>配置、设置、实体与 UI 服务"]
+    Context["Profile · GameContext<br/>PlayerProfile + SaveModule"]
+    Procedure["ProcedureLevel<br/>装配与导航，逆序释放"]
+    Level["Run · LevelModule<br/>阶段、怪物、收益、结局与回滚"]
+    Hero["Entity · HeroEntity<br/>Stats、Vitals、Musou、身体状态"]
+    Hud["BattleHud<br/>观察状态，刷新被动控件"]
     App -->|读档流程创建| Context
     Context -->|流程数据传递| Procedure
-    Procedure -->|创建| Run
     Procedure -->|加载并启动| Level
-    Procedure -->|按档案装配并显示| Hero
+    Procedure -->|装配并显示| Hero
     Procedure -->|传状态源打开| Hud
-    Run -.->|奖励写入档案| Context
-    Run -.->|升级后重新装配| Hero
-    Hud -.->|只读和订阅| Context
-    Hud -.->|只读和订阅| Hero
-    Hud -.->|只读和订阅| Level
+    Level -.->|奖励与检查点| Context
+    Level -.->|升级注入装配| Hero
+    Hud -.->|只读与订阅| Context
+    Hud -.->|只读与订阅| Hero
+    Hud -.->|只读与订阅| Level
 ```
 
-实线表示创建或传递，虚线表示业务交互，不表示继承。`LevelRun` 使用流程注入的英雄和关卡；英雄由流程创建，怪物由刷怪服务创建并持有。
+| 状态 | 唯一所有者 | 生命周期 / 是否写盘 |
+| --- | --- | --- |
+| 英雄累计经验、成长、金币 | PlayerProfile 下的 HeroProgression / Wallet | 档案作用域；检查点写盘 |
+| 本关结局、获得经验、进关快照 | LevelModule | 本次关卡；统计与快照不写盘 |
+| 当前生命魔法、最终属性、无双 | ActorEntity.Stats/Vitals、HeroEntity.Musou | 实体 Show → Hide；不写盘 |
+| 当前阶段、可否前进 | LevelStageSequence、LevelModule.TravelAvailable | 关卡会话；不写盘 |
+| 血条残影、满值闪烁 | 被动控件与动画节点 | 窗口关闭或复用时复位 |
 
-| 你关心的状态                 | 权威对象                                                    | 何时结束 / 是否存档       |
-| ---------------------------- | ----------------------------------------------------------- | ------------------------- |
-| 英雄累计经验、成长、金币     | `GameContext.Profile` → `HeroProgression` / `Wallet` | 档案作用域；检查点写盘    |
-| 本关击败数、获得经验、结局   | `LevelRun.Stats` / `Outcome`                            | 一次关卡；统计不存档      |
-| 当前血蓝、最终战斗属性、无双 | `ActorEntity.Stats/Vitals`、`HeroEntity.Musou`          | 实体 Show → Hide；不存档 |
-| 当前阶段、可否前进           | `LevelStageSequence`、`LevelController.TravelAvailable` | 关卡会话；不存档          |
-| 血条残影、满值闪烁           | `ResourceBar` 和它绑定的动画节点                          | UI 表现；窗口关闭复位     |
+原 LevelRun 与 LevelController 已合并为 **一个 LevelModule**。流程只操作模块入口，模块内部各组件承担实际职责；不再逐层转发同一个结局。领域状态与纯规则不反向访问场景树。
 
-两个特别容易混淆的名字：**`LevelRun` 负责收益与事务，`LevelController` 负责关卡场景行为**；**`HeroProgression.Level` 是档案成长，实体 `Level` 是本次装配得到的战斗值**。
+## 2. 跟一次启动
 
-## 2. 跟一次启动（约 5 分钟）
+`Launch → Update → Preload → Title（开始、六格存档）→ LoadProfile → 新档 Character / 已有档 Map → 点击花果山 → Level`。
 
-```mermaid
-flowchart LR
-    Launch[ProcedureLaunch] --> Update[ProcedureUpdate]
-    Update --> Preload["ProcedurePreload<br/>资源组、配置校验、共享曲线"]
-    Preload --> Title["ProcedureTitle · 开始界面"]
-    Title -->|开始游戏| Slots["SaveForm · 六格存档选择<br/>标题流程拥有目录"]
-    Slots -->|选定存档格| Load["ProcedureLoadProfile<br/>读档 / 建档<br/>创建 GameContext"]
-    Load -->|新档| Character["ProcedureCharacter · 选角"]
-    Load -->|已有档| Map
-    Character --> Map["ProcedureMap · 地图"]
-    Map -->|点击花果山| Level["ProcedureLevel<br/>装配英雄、关卡、LevelRun 与 HUD"]
-    Level -->|通关：提交检查点| Map
-    Level -->|左下角设置 → 返回地图：回滚| Map
-    Level -->|死亡：提交后延迟重开| Level
-    Map -->|保存图标| Checkpoint[SaveService.SaveCheckpointAsync]
-    Map -->|等待写盘后返回| Title
-    Level -->|设置 → 主菜单：回滚| Title
-    Character -->|等待写盘后返回| Title
-```
+当前只有悟空和花果山可进入。未解锁角色完全无交互，悬停不恢复颜色、不显示 1P。通关清场后靠近出口按 W，检查点写盘完成即回地图；死亡提交后按配置重开；设置中途返回地图或标题会回滚到进关快照。
 
-当前入口先显示开始界面，经六格存档选择、选角与地图点击花果山才创建关卡。只有悟空可出战，其他角色与地点显示未开放；结算界面仍待实现。中途离开或运行错误回滚到进关快照；通关和死亡保留本关收益。经验先进入内存档案，因此可以即时升级；不会每击杀一次就写盘。
+建议依次阅读：
 
-按此顺序看，先读方法的 XML 摘要和装配顺序即可：
+1. [GameData](../Godot/GodotProject/TheGame/GameScripts/Save/Data/GameData.cs)：全部写盘字段集中在一个文件。
+2. [SaveModule](../Godot/GodotProject/TheGame/GameScripts/Save/SaveModule.cs) 与 [存档说明](../Godot/GodotProject/TheGame/GameScripts/Save/README.md)：目录 → 读档/建档 → 保存；不做旧格式兼容。
+3. [GameContext](../Godot/GodotProject/TheGame/GameScripts/GameContext.cs)：哪些对象跨关卡保留。
+4. [ProcedureLevel](../Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLevel.cs)：加载场景、显示英雄、启动模块、打开 HUD，失败或离开时逆序清理。
+5. [LevelModule](../Godot/GodotProject/TheGame/GameScripts/Level/LevelModule.cs) 与 [Progress partial](../Godot/GodotProject/TheGame/GameScripts/Level/LevelModule.Progress.cs)：阶段推进、奖励、结局、检查点与回滚，同一个对象。
 
-1. [ProcedureLoadProfile.OnEnter](../Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLoadProfile.cs)：档案从哪里来，`GameContext` 怎样传给后续流程。
-2. [ProcedureLevel.OnEnter / CleanupSession](../Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLevel.cs)：谁创建英雄、关卡、运行和 HUD；失败与退出如何清理。
-3. [GameContext](../Godot/GodotProject/TheGame/GameScripts/Session/GameContext.cs)：哪些对象跨关卡保留。
-4. [LevelRun](../Godot/GodotProject/TheGame/GameScripts/Session/LevelRun.cs)：结算与存档时机。
+菜单窗口只发具名 GGF 请求，流程核对窗口编号后导航。`MenuProcedure` 共享窗口、音乐、取消和返回标题的等待；窗口不创建关卡。声音经 `Audio/SoundHelper` 交给 GGF 管理。输入映射在 `Input/InputActions`，HeroEntity 采样 Godot Input，缓冲、双击与消费规则在 `Entity/Heroes/Input/`。
 
-菜单分工：窗口的 `OnStartClicked`、`OnHuaguoshanClicked` 等具名处理方法发出 GGF 事件；当前流程订阅对应事件，核对窗口编号后直接进入下一站。`MenuProcedure` 只统一窗口、音乐和取消的生命周期，不轮询导航命令。Character Data 只引用档案，Save Data 只引用标题目录，Settings Data 只引用需要暂停的关卡运行；开始页和静态地图无需空 Data。左下角设置 → 返回地图时，流程先关闭设置恢复时间，再回滚并清理战斗。`Audio/ConfiguredSound.cs` 将配置声音交给 GGF，关卡音乐来自 `LevelConfig.MusicId`，播放请求随所属流程结束。参见 [本轮交付与验证](FrontendDelivery.md)。
+## 3. 跟一次击杀
 
-输入分工：`Input/InputActions.cs` 集中声明业务与内置 UI 动作名称；`HeroEntity` 在物理帧用这些常量读取 Godot Input，并调用纯 C# `HeroInput.Sample`。缓冲、双击与消费规则留在 `Entity/Heroes/Input/`，暂停时不采样。菜单只处理点击事件，无 `_UnhandledKeyInput`。
-
-## 3. 跟一次命中与击杀（约 8 分钟）
-
-这条路径同时串起战斗、成长、UI 和关卡职责；无双来自**有效命中**，经验来自**击败奖励**。
+无双来自有效命中，经验来自击败奖励。
 
 ```mermaid
 sequenceDiagram
     participant Hero as HeroEntity / ActorEntity
     participant Monster as MonsterEntity / ActorEntity
     participant Events as GF.Event
-    participant Spawner as LevelSpawner
-    participant Level as LevelController
-    participant Run as LevelRun
-    participant Progression as HeroProgression
-    participant Builder as HeroStatBuilder
+    participant Spawner as LevelSpawnerNode
+    participant Level as LevelModule
+    participant Growth as HeroProgression
     participant Hud as BattleHud
-    Hero->>Monster: ReceiveHit(AttackData)
-    Note over Monster: DamageCalculator 结算，Vitals 扣血<br/>生命归零时置 Dead，身体状态进入死亡
+    Hero->>Monster: ReceiveHit(AttackInstance)
+    Note over Monster: DamageHelper 结算，Vitals 扣血
     Monster-->>Hero: DamageResult
     Hero->>Hero: OnHitLanded → Musou.Add
-    Hero-->>Hud: Musou.Changed → 刷新无双条
-    Note over Hud: 满值动画由动画节点随时间循环
-    Monster->>Events: 死亡状态钩子发布 MonsterDiedEventArgs
-    Events-->>Spawner: 下一轮轮询分发
-    Spawner-->>Level: MonsterDefeated(MonsterDefeat)
-    Level-->>Run: 转发击败事实
-    Run->>Progression: AddExperience(配置奖励)
-    Progression-->>Hud: Changed → 刷新等级和经验条
-    opt 本次升级
-        Run->>Builder: Build(HeroRecord)
-        Builder-->>Run: HeroLoadout
-        Run->>Hero: ApplyLoadout(loadout, refill: true)
-        Hero-->>Hud: Vitals.Changed → 刷新血蓝
+    Hero-->>Hud: Musou.Changed
+    Monster->>Events: MonsterDiedEventArgs
+    Events-->>Spawner: 下一轮分发
+    Spawner-->>Level: MonsterDefeated(实际经验)
+    Level->>Growth: AddExperience
+    Growth-->>Hud: Changed
+    opt 升级
+        Level->>Hero: ApplyLoadout(HeroLoadout.Create(...), refill: true)
+        Hero-->>Hud: Vitals.Changed
     end
-    Note over Run: 通关 / 英雄死亡才提交检查点
+    Note over Level: 通关或英雄死亡时提交检查点
 ```
 
-对应代码入口：
+| 步骤 | 代码入口 |
+| --- | --- |
+| 命中去重、受击、死亡事实 | [ActorEntity](../Godot/GodotProject/TheGame/GameScripts/Entity/ActorEntity.cs) |
+| 无双收益 | [HeroEntity.OnHitLanded](../Godot/GodotProject/TheGame/GameScripts/Entity/Heroes/HeroEntity.cs) |
+| 纯伤害规则 | [DamageHelper](../Godot/GodotProject/TheGame/GameScripts/Battle/Damage/DamageHelper.cs) |
+| 本关实体所有权、名额与击败事实 | [LevelSpawnerNode](../Godot/GodotProject/TheGame/GameScripts/Level/Spawning/LevelSpawnerNode.cs) |
+| 奖励、升级、结局 | [LevelModule.Progress](../Godot/GodotProject/TheGame/GameScripts/Level/LevelModule.Progress.cs) |
+| UI 订阅、刷新、退订与复位 | [BattleHud.Logic](../Godot/GodotProject/TheGame/GameScripts/UI/BattleHud/BattleHud.Logic.cs) |
 
-| 步骤                     | 读这里                                                                                      | 看什么                                                   |
-| ------------------------ | ------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| 命中去重、受击、死亡事实 | [ActorEntity](../Godot/GodotProject/TheGame/GameScripts/Entity/ActorEntity.cs)               | `OnHitBoxAreaEntered`、`ReceiveHit`、`ArmAttack`   |
-| 无双收益                 | [HeroEntity](../Godot/GodotProject/TheGame/GameScripts/Entity/Heroes/HeroEntity.cs)          | `OnHitLanded` → `Musou.Add`                         |
-| 伤害规则                 | [DamageCalculator](../Godot/GodotProject/TheGame/GameScripts/Battle/DamageCalculator.cs)     | 输入快照与外部随机值，输出结算结果                       |
-| 怪物死亡结果             | [MonsterEntity](../Godot/GodotProject/TheGame/GameScripts/Entity/Monsters/MonsterEntity.cs)  | 发布`MonsterDiedEventArgs` 的钩子                      |
-| 本关名额与击败事实       | [LevelSpawner](../Godot/GodotProject/TheGame/GameScripts/Level/Spawning/LevelSpawner.cs)     | `OnMonsterDied` 过滤本关实体、释放名额、报告击败与清波 |
-| 奖励与升级装配           | [LevelRun](../Godot/GodotProject/TheGame/GameScripts/Session/LevelRun.cs)                    | `OnMonsterDefeated`、`Submit`、`Abandon`           |
-| UI 观察                  | [BattleHud.Logic](../Godot/GodotProject/TheGame/GameScripts/UI/BattleHud/BattleHud.Logic.cs) | `OnOpen` 订阅并立即刷新，`Unbind` 退订和复位         |
+直接调用表达协作，Changed 表达状态已完成修改，GF.Event 表达跨模块的一次性事实。池化事件不能跨 await 保存。
 
-通信只需分清三种：方法调用用于明确协作；对象的 `Changed` 表示状态变化，观察者重新读数；`GF.Event` 表示跨模块的一次性结果，参数是池化临时对象。它们的生命周期规则见 [00 架构](ProjectGuidelines/00-Architecture.md)。
-
-## 4. 用局部 UML 记关系（约 5 分钟）
-
-只画核心类型。`*--` 是持有状态，`-->` 是使用引用，`..>` 是临时构建或调用，`<|--` 是继承。实体应用不可变 `HeroLoadout` 后只记录本次登记的持久属性来源标识，用于下次替换装配；不保留装配输入或档案引用。
+## 4. 局部类图与功能目录
 
 ```mermaid
 classDiagram
-    GameContext *-- PlayerProfile
-    GameContext *-- SaveService
-    GameContext *-- HeroStatBuilder
-    PlayerProfile *-- HeroRecord
+    GameContext o-- PlayerProfile
+    GameContext o-- SaveModule
+    PlayerProfile *-- HeroProgression
     PlayerProfile *-- Wallet
-    HeroRecord *-- HeroProgression
-    HeroStatBuilder ..> HeroLoadout : Build
-    LevelRun --> GameContext
-    LevelRun --> LevelController
-    LevelRun --> HeroEntity
-    LevelRun ..> HeroStatBuilder : 升级时构建装配
+    SaveModule *-- SaveSlotDirectory
+    LevelModule --> PlayerProfile
+    LevelModule --> SaveModule
+    LevelModule --> HeroEntity
+    LevelModule *-- LevelStageSequence
+    LevelModule *-- LevelSpawnerNode
     ActorEntity <|-- HeroEntity
     ActorEntity <|-- MonsterEntity
-    HeroEntity <|-- WukongEntity
-    MonsterEntity <|-- HuaguoshanMonkeyEntity
-    MonsterEntity <|-- DemonMonkeyEntity
-    ActorEntity *-- StatSheet
+    ActorEntity *-- ActorAttributes
     ActorEntity *-- Vitals
     HeroEntity *-- MusouGauge
-    HeroEntity ..> HeroLoadout : 应用快照，仅记录来源标识
-    BattleHud --> HeroEntity : 观察 Vitals 与 Musou
-    BattleHud --> HeroProgression : 观察等级经验
-    BattleHud --> LevelController : 观察前进状态
-    BattleHud --> ResourceBar : 传入数值
+    BattleHud --> HeroEntity
+    BattleHud --> HeroProgression
+    BattleHud --> LevelModule
+    BattleHud --> ResourceBar
+    BattleHud --> EncounterHealthBar
 ```
 
-关卡内部再记一个分工表，排查“为什么下一波没开始”时尤其有用：
+Level 根目录只保留模块入口及其 partial；内部按功能归组，各组可同时包含节点、规则与资源：
 
-| 类型                   | 唯一主要职责                       | 代码                                                                                  |
-| ---------------------- | ---------------------------------- | ------------------------------------------------------------------------------------- |
-| `LevelController`    | 协调会话与阶段事件                 | [入口](../Godot/GodotProject/TheGame/GameScripts/Level/LevelController.cs)             |
-| `LevelStageSequence` | 唯一当前阶段和合法迁移             | [入口](../Godot/GodotProject/TheGame/GameScripts/Level/Stage/LevelStageSequence.cs)    |
-| `LevelStageGateSet`  | 物理门和阶段空间区域               | [入口](../Godot/GodotProject/TheGame/GameScripts/Level/Stage/LevelStageGateSet.cs)     |
-| `LevelCamera`        | 实际视野、限位、抵达通知           | [入口](../Godot/GodotProject/TheGame/GameScripts/Level/Camera/LevelCamera.cs)          |
-| `LevelSpawnSchedule` | 游戏时间、生成配方、并存名额       | [入口](../Godot/GodotProject/TheGame/GameScripts/Level/Spawning/LevelSpawnSchedule.cs) |
-| `LevelSpawner`       | 创建并持有本关怪物，报告击败和清波 | [入口](../Godot/GodotProject/TheGame/GameScripts/Level/Spawning/LevelSpawner.cs)       |
-| `LevelSpawnPointSet` | 稳定生成点 ID → 场景位置          | [入口](../Godot/GodotProject/TheGame/GameScripts/Level/Spawning/LevelSpawnPointSet.cs) |
+| 目录 | 查什么 |
+| --- | --- |
+| Camera | 相机取景、死区与抵达；LevelCameraNode + LevelCameraHelper |
+| Spawning | 生成点、配方调度和本关实体所有权 |
+| Stages | 阶段状态、区域门与特殊触发区 |
+| Markers | 各空间集合共用的登记基类与条目资源 |
+| Exit | 清场后开放、靠近、落地、按 W 的出口交互 |
 
-花果山前四波的官方坐标、分散生成流与重叠区域见 [核对记录](OfficialHuaguoshan.md)；第五波 Boss 尚未实现。普通阶段是 `Ready → Travelling → Fighting → Travelling / Completed`，清波后先放行，**实际相机抵达下一段右界**才刷下一波。怪物 AI 写移动和攻击意图，身体状态机在物理帧执行动作，动画值轨道提供画面与判定盒。
+Module 是模块入口，Node 是内部 Godot 节点，Helper 只提供无状态方法，Resource 是 Godot 资源；Entity/Form/Hud/Bar/Button 已说明节点种类，保留后缀。BodyFsmHelper 使用 C# 14 extension 块提供 `fsm.Tick(dt)`；BodyState 表达单个动作，状态查询直接用 IFsm.CurrentState。测试反射留在 Debug/Tests，不为冒烟新增生产接口。
 
-## 5. 开始改功能时查这张表
+## 5. 修改表现与保存字段
 
-业务根目录为 `Godot/GodotProject/TheGame/GameScripts/`；流程在 `TheGame/MainPack/Scripts/Procedure/`。
+`Save/Data/GameData.cs` 直接保存 ActiveHeroId、Heroes（HeroId + TotalExperience）、Gold；等级和属性重算，生命、魔法、无双、位置和波次不写盘。增加持久字段时同时修改领域状态、GameData、ProfileSaveHelper、版本号及映射/回滚验证。
 
-| 想改什么                           | 首先打开                                                                                   | 归属判断                                            |
-| ---------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| 经验曲线、英雄成长、奖励、招式系数 | [Configs/GameConfig/Datas](../Configs/GameConfig/Datas/) 中对应 xlsx                        | 数值来自源表，按流程生成代码和二进制                |
-| 伤害、属性汇总算法                 | `Battle/DamageCalculator.cs`、`Battle/Stats/StatSheet.cs`                              | 纯规则和战斗状态；确定性单测                        |
-| 英雄/怪物动作、AI、具体招式行为    | `Entity/Heroes/WukongEntity.cs`、`Entity/Monsters/DemonMonkeyEntity.cs`                | 具体行为归具体实体及状态，先看抽象扩展点            |
-| 波次、门、相机                     | `Level/` 对应职责 + `Scenes/Level_1.tscn` + `LevelConfig.xlsx`                       | 编排进表，空间在场景，状态各有一个所有者            |
-| 血条、无双闪烁、前进提示           | `UI/BattleHud/BattleHud.Logic.cs`、`UI/Widgets/ResourceBar.cs`、`UIs/BattleHud.tscn` | 窗口观察状态，控件按输入显示；动画配置放场景        |
-| 关内收益、通关或死亡处理           | `Session/LevelRun.cs`                                                                    | 关卡事务与检查点                                    |
-| 背包、装备等持久状态               | `Profile/` + `Save/` + [长期系统落位](ProjectGuidelines/60-GameplayModules.md)          | 新玩法尚未实现，按既定落位增加档案、DTO 和映射 |
-| 读档、当前格式校验                     | `Save/SaveService.cs`、`Save/Data/ProfileMapper.cs`                         | 业务只经 SaveService 写盘                           |
-| 实体/UI 池化与 GGF API 行为        | [Godot/docs](../Godot/docs/README.md) 和框架实现                                            | 依赖只读；先定位和报告框架问题                      |
+无双满值动画外置在 `Sprites/UI/hud/hud_ws_full_frames.tres`，只在满值时循环，消费、关闭或改绑后复位。圆形闪烁参数位于 `BattleHud.tscn/MenuPanel/m_WsMax` 的 Material → Shader Parameters：clip_radius 默认 32、clip_center 默认 (0.5,0.5)、clip_feather shader 默认 1（当前场景保留用户调整值 0）；半径与羽化单位为原帧像素。GPU 检查入口为 `EditorScripts/validate_musou_flash.gd`。
 
-新增功能前写下三件事：**配置输入、可变状态所有者、生命周期边界**。然后在最近的现有模块扩展；UI 打开参数传状态源引用，跨关卡数据归档案，临时战斗数据归实体。
-
-本次无双修复就是一个小例子：`HeroEntity.OnHitLanded → MusouGauge.Changed → BattleHud.RefreshMusou → ResourceBar.SetValue → 满值时播放 AnimatedSprite2D`。循环由引擎时间推进；消费、零上限、窗口关闭或改绑到未满英雄时停止并复位。没有把 UI 计时塞进领域状态。
-
-无双方形光晕来自旧项目 PNG 帧内自带的黄色底色，旧场景也没有遮罩。正式 HUD 的 `hud_ws_flash.gdshader` 先将闪烁裁到圆内，再用首帧透明轮廓去掉底色，保留亮度变化。
-
-在 Godot 中打开 `BattleHud.tscn`，选中 `MenuPanel/m_WsMax`，展开 **Material → Shader Parameters**：
-
-| 参数             | 默认值     | 调整方式                                                                                      |
-| ---------------- | ---------- | --------------------------------------------------------------------------------------------- |
-| `clip_radius`  | 32         | 裁剪外半径，单位是 89×89 原图帧的像素；30～33 适合当前圆圈，缩小会让闪烁更集中，0 隐藏闪烁层 |
-| `clip_center`  | (0.5, 0.5) | 单帧内的相对圆心，X 向右、Y 向下；图集切帧不影响该坐标                                        |
-| `clip_feather` | 1          | 边缘向内羽化的像素宽度，0 为硬边；羽化始终不扩展到圆外                                        |
-
-`EditorScripts/validate_musou_flash.gd` 使用真实 GPU 检查十张帧与五组参数，在 `.godot/validation/musou_flash.png` 保存对比。各行依次为原图、正式默认值、24px 半径、偏移圆心、硬边、零半径。
-
-代码精简按职责判断，不按文件长短判断：
-
-- `BodyFsm` 保留为 C# 14 扩展块，只提供 `fsm.Tick(dt)`。它负责物理帧调度、同帧状态切换与重新进入，`BodyState` 负责单个动作；查询直接使用 `IFsm.CurrentState`。
-- 状态名、动画名、招式范围、沙包开关等测试专用接口从正式类型删除；测试观测与反射集中在 `MainPack/Scripts/Debug/SmokeInspection.cs`，纯 C# 单测直接读取自己创建的状态机。
-- 具体怪物用 `spec with { Reach = reach }` 补充近战范围，避免手抄整个规格；继续由具体实体决定行为，不新增近战中间基类。
-- `MonsterEntity.Attacks.cs` 集中怪物范围推导、攻击装配与生命周期；`HeroStatBuilder`、存档格式与映射继续按独立职责组织。小枚举与所属类型同文件，独立领域状态保持各自边界。
-- 正式预加载与独立场地共用 `MainPack/Scripts/Startup/GameResourceGroups.cs` 注册三类资源组，重复调用跳过已有组；不再各维护一套注册逻辑。
-- `ResourceBar` 使用 `GameLogic.UI.Widgets` 命名空间；HUD 样板由场景绑定重新生成。流程键 `FlowKeys` 和 `ExperienceCurveVariable`、`GameContextVariable`、`SaveSelectionVariable` 集中在 `MainPack/Scripts/Startup/FlowData/`，不再散落于领域和流程类型。
-- `HeroLoadout` 复制外层来源与各组修正，外部列表变化不会污染装配快照；实体只保存返回的来源标识，卸装不会误删 Buff。
-
-框架左上角调试按钮由 `ProcedureLaunch` 通过 `GF.Debugger.ActiveWindow = false` 关闭，不修改框架实现。
+守关条独立场景为 `UIs/Widgets/encounter_health_bar.tscn`，左侧白字黑边姓名、右侧笔刷条，不显示生命数字，无入场弹窗。小怪受伤后两秒淡出，继续受伤重新计时。地图悬停动画外置在 `Sprites/UI/frontend/map_location_hover.tres`；放大改 LocationGlow.Scale，速度改 AnimationPlayer.SpeedScale，命中随当前可见图片变化。
 
 ## 6. 动手熟悉与验证
 
-先运行 `TheGame/Scenes/TestArena.tscn`（Godot 中 F6），观察悟空和猴子的身体/AI 状态。该场地创建仅内存的临时档案，不读写玩家存档。再运行正式项目，结合第 3 节追一次击杀。
-
-可在以下位置下断点：`ProcedureLevel.OnEnter`、`HeroEntity.OnHitLanded`、`LevelRun.OnMonsterDefeated`、`HeroProgression.AddExperience`、`BattleHud.RefreshMusou`、`LevelRun.Submit`。看一次调用栈通常比从头逐文件阅读更快。
-
-常用命令从仓库根执行；这里只列入口，完整约束见 [50 框架与工具](ProjectGuidelines/50-FrameworkAndTools.md)：
+先在 Godot 中对 `TheGame/Scenes/TestArena.tscn` 按 F6，观察英雄和怪物；场地只创建内存档案，不读写玩家存档。再运行正式项目追一次击杀。断点可以放在 ProcedureLevel.OnEnter、HeroEntity.OnHitLanded、LevelModule.OnMonsterDefeated、HeroProgression.AddExperience、BattleHud.RefreshMusou 和 LevelModule.SubmitOutcome。
 
 ```powershell
 dotnet build Godot/GodotProject/GodotProject.csproj
 dotnet test Tests/BattleTests
-dotnet test Tests/ProfileTests
 dotnet test Tests/LevelTests
+dotnet test Tests/ProfileTests
 python Tools/ProjectMaintenance/validate_game_references.py
-& 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject --quit-after 2400 -- --smoketest=ui
+& 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject -- --smoketest=ui
 ```
 
-UI 烟测使用唯一的 `user://Validation/Ui/<随机 ID>` 存档目录；用 `SMOKE PASS/FAIL` 判断断言，同时单独检查退出错误。框架既有的退出异常登记在第 50 章，不能据此省略退出码或把失败算通过。
+烟测使用隔离 Validation 存档，以 SMOKE PASS/FAIL 判断断言，同时检查进程退出码和错误。框架关停异常与插件退出崩溃单独登记在 [验证记录](ModuleRefactor.md)，不把断言通过当成无错误退出。框架左上角调试入口由 ProcedureLaunch 通过 GF.Debugger.ActiveWindow=false 隐藏。
 
-## 7. 阅读时的边界
-
-- 当前实现和运行命令以根 README、集中规范和本导览为入口；框架文档中的猫角色、旧流程名等属于历史示例。
-- `BattleHud` 使用 `GameLogic.UI` 是第 40 章的生成约定；被动控件按实际目录使用 `GameLogic.UI.Widgets`。
-- 热更启动成功标记由 App 生命周期中的关卡流程实例保存，重新进关不重复标记；没有可变静态标记。
-- 框架既有退出异常仍登记在第 50 章。业务断言通过与进程正常退出是两项独立结果。
-
-后续维护以功能为单位更新对应图、代码链接和已实现状态；类图只保留主干关系，细节通过代码和局部图阅读。
-
-
-存档页的阅读顺序：`ProcedureTitle.OnStartGameRequested` 创建窗口并刷新目录 → `SaveSlotDirectory` 汇总加载阶段 → `SaveService.ReadSlotsAsync` 读取六格摘要 → `SaveForm` 订阅刷新并提交格号 → `ProcedureLoadProfile` 明确读取该编号。`MenuProcedure.ReturnToTitleAsync` 复用等待保存的边界。代码风格依据和本轮审查发现见 [代码整理记录](CodeStyleReview.md)。
-
-## 8. 按职责找代码
-
-| 要修改的内容 | 入口 |
-| --- | --- |
-| 流程共享键、GGF 池化包装 | `MainPack/Scripts/Startup/FlowData/` |
-| 当前存档格式与档案映射 | `GameScripts/Save/Data/` |
-| 六格目录、格子信息及配套状态枚举 | `GameScripts/Save/Slots/` |
-| 界面导航 / 战斗结果事件 | `GameScripts/Event/Navigation/` / `Combat/` |
-| 怪物招式装配、动画范围、出招生命周期 | `GameScripts/Entity/Monsters/MonsterEntity.Attacks.cs` |
-
-`SaveOrigin` 随 `LoadedProfile`，`LevelRunOutcome` 与 `RunStats` 随 `LevelRun`，`LevelStagePhase` 随 `LevelStageSequence`。按所属职责查找，比为每个小枚举建立独立入口更直接。静态四栏选角页不持有档案 Data，测试通过流程状态机和反射检查实际档案。
-
-当前只支持 `GameData.CurrentVersion = 3`，历史 DTO、迁移器、等级补偿和旧目录映射已经删除；格式变化时清理开发旧档，不增加兼容分支。详见第 70 章。
-
-想确认保存哪些字段，直接看 `Save/Data/GameData.cs`：ActiveHeroId、Heroes（HeroId 与 TotalExperience）、Gold 平铺在根对象，不再有 ProfileSaveData。类型与流程的最短阅读入口见 [Save/README](../Godot/GodotProject/TheGame/GameScripts/Save/README.md)。
+新增功能先明确配置输入、状态所有者和生命周期，在对应模块扩展。集中规范第 60 章给出背包、装备、技能、Buff 等后续系统落位；不要从旧项目复制第二套架构。

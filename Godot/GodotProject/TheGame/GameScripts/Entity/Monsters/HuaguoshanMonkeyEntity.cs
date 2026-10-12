@@ -1,14 +1,10 @@
-using GameLogic.Entity.Monsters.Body.States;
-using GameLogic.Entity.Monsters.Body.Core;
-using GameLogic.Entity.Monsters.AI.States.Roam;
-using GameLogic.Entity.Monsters.AI.States.Interrupt;
-using GameLogic.Entity.Monsters.AI.States.Engage;
-using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Monsters.Body;
+using GameLogic.Monsters.AI;
 using System;
 using GameFramework.Fsm;
-using GameLogic.Entity.Body;
+using GameLogic.Body;
 
-namespace GameLogic.Entity.Monsters
+namespace GameLogic.Monsters
 {
 	/// <summary>
 	/// 花果山猴子（旧 Monster_1，普通近战小怪）：直接继承 <see cref="MonsterEntity"/>，

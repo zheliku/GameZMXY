@@ -8,7 +8,7 @@ using GameConfig.Entity;
 using GameFramework;
 using GameFramework.Entity;
 using GameLogic.Config;
-using GameLogic.Entity.Monsters;
+using GameLogic.Monsters;
 using GameLogic.Profile;
 using GameLogic.Startup;
 using GameLogic.UI;
@@ -116,7 +116,7 @@ public partial class TestArenaController : Node2D
 			await SpawnHeroAsync();
 			foreach ((EntityId id, Vector2 position) in monsters)
 			{
-				await GF.Entity.ShowEntityAsync(id, position);
+				await GF.Entity.ShowEntityAsync(id, new MonsterSpawn(position));
 				Log.Info("[TestArena] 显示怪物 {0} @ {1}", id, position);
 			}
 
@@ -136,11 +136,11 @@ public partial class TestArenaController : Node2D
 	private async Task SpawnHeroAsync()
 	{
 		Tables tables = ConfigSystem.Instance.Tables;
-		ExperienceCurve curve = ConfigValidator.ValidateAll(tables);
+		ExperienceCurve curve = ConfigHelper.ValidateAll(tables);
 		int heroId = tables.TbHeroConfig.DataList.FirstOrDefault(x => x.EntityId == m_HeroEntityId)?.Id
 			?? throw new InvalidOperationException($"HeroConfig 中没有实体 {m_HeroEntityId}");
 		HeroProgression record = new(heroId, curve, 0);
-		HeroBattleSnapshot loadout = HeroBattleSnapshot.Create(record.HeroId, record.Level, tables.TbHeroGrowthConfig);
+		HeroLoadout loadout = HeroLoadout.Create(record.HeroId, record.Level, tables.TbHeroGrowthConfig);
 		IEntity entity = await GF.Entity.ShowEntityAsync(m_HeroEntityId, loadout);
 		if (entity?.Handle is not Node2D hero)
 		{

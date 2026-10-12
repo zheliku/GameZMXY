@@ -3,6 +3,8 @@ namespace GameLogic.Input;
 /// <summary>项目输入映射的统一名称；与 project.godot 和 Godot 内置动作保持一致。</summary>
 public static class InputActions
 {
+    /// <summary>使用关卡出口（W）。</summary>
+    public const string Interact = "interact";
     /// <summary>角色向左移动。</summary>
     public const string MoveLeft = "move_left";
     /// <summary>角色向右移动。</summary>

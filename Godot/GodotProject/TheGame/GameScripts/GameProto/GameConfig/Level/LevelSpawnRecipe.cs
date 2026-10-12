@@ -21,6 +21,10 @@ public sealed partial class LevelSpawnRecipe : Luban.BeanBase
         Count = _buf.ReadInt();
         Delay = _buf.ReadFloat();
         Interval = _buf.ReadFloat();
+        HealthMultiplier = _buf.ReadFloat();
+        DefenseMultiplier = _buf.ReadFloat();
+        AttackMultiplier = _buf.ReadFloat();
+        ExperienceOverride = _buf.ReadInt();
     }
 
     public static LevelSpawnRecipe DeserializeLevelSpawnRecipe(ByteBuf _buf)
@@ -29,7 +33,7 @@ public sealed partial class LevelSpawnRecipe : Luban.BeanBase
     }
 
     /// <summary>
-    /// 可读怪物实体枚举；唯一关联怪物配置与实体资源
+    /// 可读怪物枚举，与 MonsterConfig.EntityId 一一对应
     /// </summary>
     public readonly Entity.EntityId MonsterEntityId;
     /// <summary>
@@ -48,6 +52,22 @@ public sealed partial class LevelSpawnRecipe : Luban.BeanBase
     /// 生成间隔秒
     /// </summary>
     public readonly float Interval;
+    /// <summary>
+    /// 生命倍率；1 为基础值，必须为有限正数
+    /// </summary>
+    public readonly float HealthMultiplier;
+    /// <summary>
+    /// 物理防御倍率；1 为基础值，有限且非负；不影响魔防
+    /// </summary>
+    public readonly float DefenseMultiplier;
+    /// <summary>
+    /// 全部招式威力倍率；1 为基础值，有限且非负
+    /// </summary>
+    public readonly float AttackMultiplier;
+    /// <summary>
+    /// 击败经验覆盖；-1 使用 MonsterConfig.AddExp，0 表示不给经验
+    /// </summary>
+    public readonly int ExperienceOverride;
    
     public const int __ID__ = 119935023;
     public override int GetTypeId() => __ID__;
@@ -64,6 +84,10 @@ public sealed partial class LevelSpawnRecipe : Luban.BeanBase
         + "Count:" + Count + ","
         + "Delay:" + Delay + ","
         + "Interval:" + Interval + ","
+        + "HealthMultiplier:" + HealthMultiplier + ","
+        + "DefenseMultiplier:" + DefenseMultiplier + ","
+        + "AttackMultiplier:" + AttackMultiplier + ","
+        + "ExperienceOverride:" + ExperienceOverride + ","
         + "}";
     }
 }

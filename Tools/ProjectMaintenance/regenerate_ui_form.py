@@ -26,7 +26,23 @@ def generate(scene_path: Path, namespace: str) -> None:
             full_path = node_name if parent_path == "." else f"{parent_path}/{node_name}"
             if full_path != node_path:
                 continue
-            field_type = re.search(r'type="([^"]+)"', header)[1]
+            type_match = re.search(r'type="([^"]+)"', header)
+            if type_match is None:
+                # Child scenes keep their root script/type; generated bindings must use that concrete widget.
+                instance_id = re.search(r'instance=ExtResource\("([^"]+)"\)', header)[1]
+                instance = resources[instance_id].read_text(encoding="utf-8")
+                instance_header, instance_body = re.findall(r'\[node ([^\n]+)\]\n(.*?)(?=\n\[|\Z)', instance, re.S)[0]
+                field_type = re.search(r'type="([^"]+)"', instance_header)[1]
+                instance_script = re.search(r'^script = ExtResource\("([^"]+)"\)', instance_body, re.M)
+                if instance_script:
+                    script_path = next(path for path, resource_id in re.findall(
+                        r'\[ext_resource[^\n]*path="([^"]+)"[^\n]*id="([^"]+)"\]', instance)
+                        if resource_id == instance_script[1])
+                    script = (project / script_path.removeprefix("res://")).read_text(encoding="utf-8")
+                    field_type = re.search(r'public\s+(?:\w+\s+)*class\s+(\w+)', script)[1]
+                    imported_namespaces.add(re.search(r'namespace\s+([\w.]+)', script)[1])
+            else:
+                field_type = type_match[1]
             script_id = re.search(r'^script = ExtResource\("([^"]+)"\)', body, re.M)
             if script_id:
                 script = resources[script_id[1]].read_text(encoding="utf-8")

@@ -21,6 +21,10 @@ func validate() -> void:
 			level.get_node(path).set("m_DrawInGame", true)
 	root.add_child(level)
 	await process_frame
+	var exit := level.get_node_or_null("World/Exit")
+	check(exit is Area2D and exit.get_script() == load("res://TheGame/GameScripts/Level/Exit/LevelExitNode.cs"), "World/Exit 必须是真正的出口子场景，不能绑定旧占位节点")
+	check(level.get("m_Exit") == exit, "关卡控制器必须绑定 World/Exit")
+	check(level.get_node_or_null("World/Exit2") == null, "不应残留因重名而自动改名的 Exit2")
 	for path in ["World/SpawnPoints", "World/StageGates", "World/StageTriggers"]:
 		var manager := level.get_node(path)
 		check(manager.get_script().is_tool(), "%s 必须运行 Tool 脚本" % path)
@@ -31,15 +35,16 @@ func validate() -> void:
 			check(not str(entry.get("m_Id")).is_empty(), "条目必须有可读 ID")
 			check(manager.get_node_or_null(entry.get("m_Node")) != null, "条目的直接子节点引用必须有效")
 		manager.queue_redraw()
-	check(level.get_node("World/SpawnPoints").get("m_Entries").size() == 12, "官方前四波十一处生成点与玩家出生点必须登记")
-	check(level.get_node("World/StageGates").get("m_Entries").size() == 7, "四个出口与三个独立左界必须登记")
-	var points := {"Stage1A": Vector2(1256.4, 377.3), "Stage2A": Vector2(1863, 428.65),
-		"Stage2B": Vector2(806.35, 359.4), "Stage2C": Vector2(1863, 377.25),
+	check(level.get_node("World/SpawnPoints").get("m_Entries").size() == 15, "五波十四处生成点与玩家出生点必须登记")
+	check(level.get_node("World/StageGates").get("m_Entries").size() == 9, "五个出口与四个独立左界必须登记")
+	var points := {"Stage1A": Vector2(891, 359), "Stage2A": Vector2(1550, 325),
+		"Stage2B": Vector2(1365, 355), "Stage2C": Vector2(1705, 297),
 		"Stage3A": Vector2(2059.65, 284.45), "Stage3B": Vector2(2349.75, 116.75),
-		"Stage3C": Vector2(2633.45, 291.55), "Stage3D": Vector2(1705.35, 369.35),
-		"Stage4A": Vector2(3485.2, 383.3), "Stage4B": Vector2(3570.8, 383.3), "Stage4C": Vector2(3520.15, 383.3)}
+		"Stage3C": Vector2(2633.45, 291.55), "Stage3D": Vector2(1890, 363),
+		"Stage4A": Vector2(3305, 373), "Stage4B": Vector2(3170, 371), "Stage4C": Vector2(3029, 371),
+		"Stage5A": Vector2(4295.65, 376.4), "Stage5B": Vector2(4590.05, 354.4), "Stage5C": Vector2(3772.85, 382.2)}
 	for point: String in points:
-		check(level.get_node("World/SpawnPoints/" + point).position.is_equal_approx(points[point]), "官方生成点坐标不符：" + point)
+		check(level.get_node("World/SpawnPoints/" + point).position.is_equal_approx(points[point]), "保留的项目生成点或新增第五波坐标不符：" + point)
 	for gate in level.get_node("World/StageGates").get_children():
 		check(gate.collision_layer == 1 << 13 and gate.collision_mask == 0, "战斗边界只在 PlayerBarrier 层，怪物可从场外进入")
 	check(level.get_node("World/StageTriggers").get_child_count() == 0, "普通关卡不需要刷怪触发区")

@@ -8,10 +8,9 @@ using System.Linq;
 using System.IO;
 using GameLogic.Save;
 using System.Threading.Tasks;
-using GameLogic.Entity.Heroes;
+using GameLogic.Heroes;
 using GameLogic;
 using GameLogic.Level;
-using GameLogic.Session;
 using GameLogic.UI;
 using GameLogic.UI.Widgets;
 using GameConfig.Constant;
@@ -77,7 +76,7 @@ public sealed class FrontendSmokeScenario
             originalUi = GF.Sound.GetSoundGroup("UI").Volume;
             soundInitialized = true;
             int firstTitleSerial = start.SerialId;
-            Check(!Find<HeroEntity>().Any() && !Find<LevelController>().Any(), "标题阶段已创建关卡或英雄");
+            Check(!Find<HeroEntity>().Any() && !Find<LevelModule>().Any(), "标题阶段已创建关卡或英雄");
             await CaptureAsync("start_form");
             await CheckQuestionTipsAsync();
             await CheckMusicAsync("map_theme.mp3");
@@ -114,14 +113,14 @@ public sealed class FrontendSmokeScenario
             await ClickAsync(saves, "m_Slot2");
             CharacterForm character = await WaitForAsync<CharacterForm>();
             var characterContext = SmokeInspection.ReadField<GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>>(GF.Procedure.CurrentProcedure, "<Owner>k__BackingField")
-                .GetData<PlayerSessionVariable>(FlowKeys.PlayerSession).Value;
+                .GetData<GameContextVariable>(FlowKeys.GameContext).Value;
             Check(characterContext.Profile.Heroes.Count == 1, "选角未使用读档作用域");
             await CheckCharacterHoverAsync(character);
             await ClickAsync(character, "Roles/m_Wukong");
             Check(!character.GetNode<Label>("m_PlayerOne").Visible, "选角关闭后仍保留玩家标记");
 
             MapForm map = await WaitForAsync<MapForm>();
-            Check(!Find<HeroEntity>().Any() && !Find<LevelController>().Any(), "点击花果山之前已创建关卡");
+            Check(!Find<HeroEntity>().Any() && !Find<LevelModule>().Any(), "点击花果山之前已创建关卡");
             await CaptureAsync("map_form");
             TextureButton location = map.GetNode<TextureButton>("m_Huaguoshan");
             Check(location.TextureNormal.ResourcePath.EndsWith("map_huaguoshan_normal.png", StringComparison.Ordinal), "花果山未使用原项目地点图片");
@@ -200,7 +199,7 @@ public sealed class FrontendSmokeScenario
             await ClickAsync(map, "m_Huaguoshan", expandedClick);
             BattleHud hud = await WaitForAsync<BattleHud>();
             HeroEntity hero = Find<HeroEntity>().Single(x => x.IsShown);
-            Check(Find<LevelController>().Count() == 1, "点击花果山未创建唯一关卡");
+            Check(Find<LevelModule>().Count() == 1, "点击花果山未创建唯一关卡");
             Check(!GF.Debugger.ActiveWindow, "框架调试按钮遮挡头像");
             await CheckMusicAsync("huaguoshan_theme.mp3");
             await CaptureAsync("frontend_battle");
@@ -226,7 +225,7 @@ public sealed class FrontendSmokeScenario
             settings = await WaitForAsync<SettingsForm>();
             await ClickAsync(settings, "Scroll/m_ReturnMap");
             map = await WaitForAsync<MapForm>();
-            Check(!hero.IsShown && !Find<LevelController>().Any(), "返回地图未清理英雄与关卡");
+            Check(!hero.IsShown && !Find<LevelModule>().Any(), "返回地图未清理英雄与关卡");
             Check(profile.ActiveHero.TotalExperience == experience, "中途返回地图未回滚关内收益");
             Check(SmokeInspection.ReadField<BattleHudData>(hud, "m_Data") == null, "HUD 关闭后仍观察旧关卡");
             Check(!GF.Base.IsGamePaused, "返回地图后仍处于暂停");
@@ -242,7 +241,7 @@ public sealed class FrontendSmokeScenario
             settings = await WaitForAsync<SettingsForm>();
             await ClickAsync(settings, "Scroll/m_ReturnTitle");
             start = await WaitForAsync<StartForm>();
-            Check(profile.Wallet.Gold == savedGold && !GF.Base.IsGamePaused && !Find<LevelController>().Any(), "返回标题未回滚收益、恢复时钟或清理关卡");
+            Check(profile.Wallet.Gold == savedGold && !GF.Base.IsGamePaused && !Find<LevelModule>().Any(), "返回标题未回滚收益、恢复时钟或清理关卡");
             Check(!SmokeInspection.ReadField<bool>(character, "m_IsOpen"), "关闭后选角仍接收请求");
             // 损坏槽不能被当成空格；读取目录也不能使旧档案向其他槽写入。
             string broken = ProjectSettings.GlobalizePath($"user://{GF.Archive.Setting.Folder}/Data/{sixthId}.sav");

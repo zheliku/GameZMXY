@@ -5,7 +5,7 @@ using GodotGameFramework.Archive;
 using Newtonsoft.Json;
 
 /// <summary>一格存档的完整数据：格式版本、出战英雄、英雄经验和金币；文件编号继承自框架。</summary>
-/// <remarks>GGF 直接写盘；关卡回滚也使用本类型的独立快照。与运行时档案的转换集中在 ProfileMapper。</remarks>
+/// <remarks>GGF 直接写盘；关卡回滚也使用本类型的独立快照。与运行时档案的转换集中在 ProfileSaveHelper。</remarks>
 [Serializable]
 public class GameData : ArchiveData
 {

@@ -1,0 +1,38 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/Level/Exit/LevelExitNode.cs" id="script"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/level_exit/level_exit_frames.tres" id="frames"]
+[ext_resource type="Theme" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="theme"]
+
+[sub_resource type="CircleShape2D" id="range"]
+radius = 85.0
+
+[node name="LevelExitNode" type="Area2D" node_paths=PackedStringArray("m_Marker", "m_Prompt")]
+visible = false
+collision_layer = 2048
+collision_mask = 2
+script = ExtResource("script")
+m_Marker = NodePath("Marker")
+m_Prompt = NodePath("Prompt")
+
+[node name="Marker" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("frames")
+animation = &"exit"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("range")
+
+[node name="Prompt" type="Label" parent="."]
+visible = false
+offset_left = -100.0
+offset_top = -106.0
+offset_right = 100.0
+offset_bottom = -72.0
+mouse_filter = 2
+theme = ExtResource("theme")
+theme_override_colors/font_color = Color(1, 0.9, 0.48, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.05, 0.02, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 24
+text = "按 W 返回地图"
+horizontal_alignment = 1

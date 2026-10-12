@@ -1,20 +1,16 @@
-using GameLogic.Entity.Monsters.Body.States;
-using GameLogic.Entity.Monsters.Body.Core;
-using GameLogic.Entity.Monsters.AI.States.Roam;
-using GameLogic.Entity.Monsters.AI.States.Interrupt;
-using GameLogic.Entity.Monsters.AI.States.Engage;
-using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Monsters.Body;
+using GameLogic.Monsters.AI;
 using System;
 using GameFramework.Fsm;
-using GameLogic.Entity.Body;
+using GameLogic.Body;
 
-namespace GameLogic.Entity.Monsters
+namespace GameLogic.Monsters
 {
 	/// <summary>
 	/// 妖猴（旧 Monster_2，花果山精英近战小怪）：直接继承 <see cref="MonsterEntity"/>，
 	/// 在本类声明自己这一行为类别的状态集与参数——基类不预设任何具体怪物行为。
 	///
-	/// 数值与招式来自 MonsterConfig / AttackConfig（旧 RunHit“追击途中也能出手”建模为“优先招 + 普攻”两条攻击行），
+	/// 数值与招式来自 MonsterConfig / AttackConfig，按官方 Monster2 使用带前摇的普通拳击，
 	/// 动画与判定盒来自场景动画库。
 	/// </summary>
 	public partial class DemonMonkeyEntity : MonsterEntity

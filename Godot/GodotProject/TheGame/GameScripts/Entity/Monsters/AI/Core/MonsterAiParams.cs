@@ -1,6 +1,6 @@
-using GameLogic.Entity.Monsters.AI.Attacks;
-using GameLogic.Entity.Monsters;
-namespace GameLogic.Entity.Monsters.AI.Core
+using GameLogic.Monsters.AI;
+using GameLogic.Monsters;
+namespace GameLogic.Monsters.AI
 {
 	/// <summary>
 	/// 怪物 AI 决策参数（值快照）：MonsterEntity 从 MonsterConfig 拷入，AI 行为只读这里。

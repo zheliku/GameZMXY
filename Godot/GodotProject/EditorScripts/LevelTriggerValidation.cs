@@ -1,5 +1,4 @@
 using System;
-using GameLogic.Level.Stage;
 using System.Threading.Tasks;
 using GameConfig.Level;
 using GameLogic.Level;
@@ -30,7 +29,7 @@ public partial class LevelTriggerValidation : Node2D
     private async Task ValidateAsync() // 回归使用真实节点和物理信号，不手动调用 BodyEntered 回调。
     {
         uint playerLayer = PlayerLayer();
-        LevelStageTriggerSet manager = new();
+        LevelTriggersNode manager = new();
         Area2D first = CreateArea("special_first", new Vector2(100f, 100f), playerLayer);
         Area2D second = CreateArea("special_second", new Vector2(300f, 100f), playerLayer);
         manager.AddChild(first);

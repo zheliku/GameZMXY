@@ -1,15 +1,16 @@
 [gd_scene format=3 uid="uid://bvkf8qofj10yc"]
 
-[ext_resource type="Script" uid="uid://d2x72rm6l5oeq" path="res://TheGame/GameScripts/Level/LevelController.cs" id="1_controller"]
-[ext_resource type="Script" uid="uid://dkuuiel88m4ep" path="res://TheGame/GameScripts/Level/Camera/LevelCamera.cs" id="2_camera"]
+[ext_resource type="Script" uid="uid://d2x72rm6l5oeq" path="res://TheGame/GameScripts/Level/LevelModule.cs" id="1_controller"]
+[ext_resource type="Script" uid="uid://dkuuiel88m4ep" path="res://TheGame/GameScripts/Level/Camera/LevelCameraNode.cs" id="2_camera"]
 [ext_resource type="Texture2D" uid="uid://cpk7ttkaom0hn" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_bg_end.png" id="3_bg_end"]
 [ext_resource type="Texture2D" uid="uid://dsa76w2xxiq0b" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_front.png" id="4_front"]
 [ext_resource type="Texture2D" uid="uid://bo4uw8k2ajk8o" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_floor.png" id="5_floor"]
-[ext_resource type="Script" uid="uid://dd28ay4bkp1fl" path="res://TheGame/GameScripts/Level/Markers/LevelMarkerEntry.cs" id="6_marker_entry"]
-[ext_resource type="Script" uid="uid://bkq4g0l6t4k15" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnPointSet.cs" id="9_spawn_manager"]
-[ext_resource type="Script" uid="uid://b7abdk6hcrmws" path="res://TheGame/GameScripts/Level/Stage/LevelStageTriggerSet.cs" id="10_trigger_manager"]
-[ext_resource type="Script" uid="uid://b6ai16cs6v6de" path="res://TheGame/GameScripts/Level/Stage/LevelStageGateSet.cs" id="11_gate_manager"]
-[ext_resource type="Script" uid="uid://ccjmic0fgxfrv" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawner.cs" id="12_monster_manager"]
+[ext_resource type="Script" uid="uid://dd28ay4bkp1fl" path="res://TheGame/GameScripts/Level/Markers/LevelMarkerResource.cs" id="6_marker_entry"]
+[ext_resource type="Script" uid="uid://bkq4g0l6t4k15" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnPointsNode.cs" id="9_spawn_manager"]
+[ext_resource type="Script" uid="uid://b7abdk6hcrmws" path="res://TheGame/GameScripts/Level/Stages/LevelTriggersNode.cs" id="10_trigger_manager"]
+[ext_resource type="Script" uid="uid://b6ai16cs6v6de" path="res://TheGame/GameScripts/Level/Stages/LevelGatesNode.cs" id="11_gate_manager"]
+[ext_resource type="Script" uid="uid://ccjmic0fgxfrv" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnerNode.cs" id="12_monster_manager"]
+[ext_resource type="PackedScene" path="res://TheGame/Scenes/Widgets/level_exit.tscn" id="exit_scene"]
 
 [sub_resource type="RectangleShape2D" id="GroundShape"]
 size = Vector2(4812, 93)
@@ -88,6 +89,21 @@ script = ExtResource("6_marker_entry")
 m_Id = "stage_4_c"
 m_Node = NodePath("Stage4C")
 
+[sub_resource type="Resource" id="Entry_spawn_stage_5_a"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_5_a"
+m_Node = NodePath("Stage5A")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_5_b"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_5_b"
+m_Node = NodePath("Stage5B")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_5_c"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_5_c"
+m_Node = NodePath("Stage5C")
+
 [sub_resource type="Resource" id="Entry_gate_stage_1_gate"]
 script = ExtResource("6_marker_entry")
 m_Id = "stage_1_gate"
@@ -130,19 +146,30 @@ m_Id = "stage_4_gate"
 m_Node = NodePath("Stage4Gate")
 m_DrawColor = Color(0.6, 1, 0.2, 0.9)
 
+[sub_resource type="Resource" id="Entry_gate_stage_5_left"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_5_left"
+m_Node = NodePath("Stage5Left")
+
+[sub_resource type="Resource" id="Entry_gate_stage_5_gate"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_5_gate"
+m_Node = NodePath("Stage5Gate")
+
 [sub_resource type="RectangleShape2D" id="GateShape"]
 size = Vector2(20, 700)
 
 [sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
 size = Vector2(8, 4000)
 
-[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera")]
+[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit")]
 script = ExtResource("1_controller")
 m_SpawnPoints = NodePath("World/SpawnPoints")
 m_Triggers = NodePath("World/StageTriggers")
 m_Gates = NodePath("World/StageGates")
 m_Spawner = NodePath("Spawner")
 m_Camera = NodePath("Camera2D")
+m_Exit = NodePath("World/Exit")
 
 [node name="World" type="Node2D" parent="." unique_id=219105317]
 
@@ -266,7 +293,7 @@ shape = SubResource("WorldWallShape")
 [node name="SpawnPoints" type="Node2D" parent="World" unique_id=773829097]
 z_index = 200
 script = ExtResource("9_spawn_manager")
-m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_spawn_player_start"), SubResource("Entry_spawn_stage_1_a"), SubResource("Entry_spawn_stage_2_a"), SubResource("Entry_spawn_stage_2_b"), SubResource("Entry_spawn_stage_2_c"), SubResource("Entry_spawn_stage_3_a"), SubResource("Entry_spawn_stage_3_b"), SubResource("Entry_spawn_stage_3_c"), SubResource("Entry_spawn_stage_3_d"), SubResource("Entry_spawn_stage_4_a"), SubResource("Entry_spawn_stage_4_b"), SubResource("Entry_spawn_stage_4_c")])
+m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_spawn_player_start"), SubResource("Entry_spawn_stage_1_a"), SubResource("Entry_spawn_stage_2_a"), SubResource("Entry_spawn_stage_2_b"), SubResource("Entry_spawn_stage_2_c"), SubResource("Entry_spawn_stage_3_a"), SubResource("Entry_spawn_stage_3_b"), SubResource("Entry_spawn_stage_3_c"), SubResource("Entry_spawn_stage_3_d"), SubResource("Entry_spawn_stage_4_a"), SubResource("Entry_spawn_stage_4_b"), SubResource("Entry_spawn_stage_4_c"), SubResource("Entry_spawn_stage_5_a"), SubResource("Entry_spawn_stage_5_b"), SubResource("Entry_spawn_stage_5_c")])
 
 [node name="PlayerStart" type="Marker2D" parent="World/SpawnPoints" unique_id=360899411]
 position = Vector2(300, 300)
@@ -316,6 +343,18 @@ gizmo_extents = 0.0
 position = Vector2(3029, 371)
 gizmo_extents = 0.0
 
+[node name="Stage5A" type="Marker2D" parent="World/SpawnPoints" unique_id=544163813]
+position = Vector2(4295.65, 376.4)
+gizmo_extents = 0.0
+
+[node name="Stage5B" type="Marker2D" parent="World/SpawnPoints" unique_id=482246098]
+position = Vector2(4590.05, 354.4)
+gizmo_extents = 0.0
+
+[node name="Stage5C" type="Marker2D" parent="World/SpawnPoints" unique_id=1494873070]
+position = Vector2(3772.85, 382.2)
+gizmo_extents = 0.0
+
 [node name="StageTriggers" type="Node2D" parent="World" unique_id=1024511872]
 z_index = 200
 script = ExtResource("10_trigger_manager")
@@ -323,7 +362,7 @@ script = ExtResource("10_trigger_manager")
 [node name="StageGates" type="Node2D" parent="World" unique_id=429529906]
 z_index = 200
 script = ExtResource("11_gate_manager")
-m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_gate_stage_1_gate"), SubResource("Entry_gate_stage_2_left"), SubResource("Entry_gate_stage_2_gate"), SubResource("Entry_gate_stage_3_left"), SubResource("Entry_gate_stage_3_gate"), SubResource("Entry_gate_stage_4_left"), SubResource("Entry_gate_stage_4_gate")])
+m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_gate_stage_1_gate"), SubResource("Entry_gate_stage_2_left"), SubResource("Entry_gate_stage_2_gate"), SubResource("Entry_gate_stage_3_left"), SubResource("Entry_gate_stage_3_gate"), SubResource("Entry_gate_stage_4_left"), SubResource("Entry_gate_stage_4_gate"), SubResource("Entry_gate_stage_5_left"), SubResource("Entry_gate_stage_5_gate")])
 m_MarkerSize = 350.0
 
 [node name="Stage1Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1840719894]
@@ -389,8 +428,26 @@ collision_mask = 0
 shape = SubResource("GateShape")
 disabled = true
 
-[node name="Exit" type="Node2D" parent="World" unique_id=260385459]
-position = Vector2(4600, 300)
+[node name="Stage5Left" type="StaticBody2D" parent="World/StageGates" unique_id=72959893]
+position = Vector2(2752.85, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage5Left" unique_id=117895468]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage5Gate" type="StaticBody2D" parent="World/StageGates" unique_id=77400846]
+position = Vector2(4202.85, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage5Gate" unique_id=1697678960]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Exit" parent="World" unique_id=720884043 instance=ExtResource("exit_scene")]
+position = Vector2(4110, 417)
 
 [node name="Spawner" type="Node" parent="." unique_id=605185327]
 script = ExtResource("12_monster_manager")

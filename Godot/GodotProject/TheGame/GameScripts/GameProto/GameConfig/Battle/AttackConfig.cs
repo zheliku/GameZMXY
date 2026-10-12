@@ -22,7 +22,7 @@ public sealed partial class AttackConfig : Luban.BeanBase
         Desc = _buf.ReadString();
         Animation = _buf.ReadString();
         PowerScale = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
-        FlatPower = _buf.ReadInt();
+        FlatPower = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         DamageKind = (Battle.DamageKind)_buf.ReadInt();
         Knockback = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         WsGain = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
@@ -69,9 +69,9 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly Godot.Vector2 PowerScale;
     /// <summary>
-    /// 固定攻击力(不与属性挂钩)
+    /// 额外威力范围；英雄普攻 0,4 对应官方随机攻击，怪物填固定值范围
     /// </summary>
-    public readonly int FlatPower;
+    public readonly Godot.Vector2 FlatPower;
     /// <summary>
     /// 伤害类型
     /// </summary>

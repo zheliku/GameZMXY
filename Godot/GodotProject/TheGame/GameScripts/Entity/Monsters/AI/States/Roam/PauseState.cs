@@ -1,7 +1,7 @@
-using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Monsters.AI;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Monsters.AI.States.Roam
+namespace GameLogic.Monsters.AI
 {
 	/// <summary>按巡逻停留概率原地暂停，到点恢复游荡。</summary>
 	public class PauseState : RoamState

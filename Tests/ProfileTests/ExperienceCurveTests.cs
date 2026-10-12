@@ -18,13 +18,13 @@ public sealed class ExperienceCurveTests
     /// <param name="experience">预期本级进度。</param>
     /// <param name="maximum">预期本级上限。</param>
     [Theory]
-    [InlineData(-1, 1, 0, 140)]
-    [InlineData(0, 1, 0, 140)]
-    [InlineData(139, 1, 139, 140)]
-    [InlineData(140, 2, 0, 160)]
-    [InlineData(141, 2, 1, 160)]
-    [InlineData(300, 3, 0, 180)]
-    [InlineData(517, 4, 37, 200)]
+    [InlineData(-1, 1, 0, 135)]
+    [InlineData(0, 1, 0, 135)]
+    [InlineData(134, 1, 134, 135)]
+    [InlineData(135, 2, 0, 145)]
+    [InlineData(136, 2, 1, 145)]
+    [InlineData(280, 3, 0, 155)]
+    [InlineData(472, 4, 37, 165)]
     public void ResolvesThresholds(int total, int level, int experience, int maximum)
         => Assert.Equal((level, experience, maximum), LoadCurve().Evaluate(total));
 

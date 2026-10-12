@@ -1,9 +1,8 @@
-using GameLogic.Entity.Monsters.Body.Core;
-using GameLogic.Entity.Monsters.AI.Core;
-using GameLogic.Entity.Monsters.AI.Attacks;
-using GameLogic.Entity.Combat;
+using GameLogic.Monsters.Body;
+using GameLogic.Monsters.AI;
 using GameLogic.Entity;
 using GameLogic.Battle.Resources;
+using GameLogic.Battle.Attributes;
 using GameLogic.Battle.Damage;
 using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
@@ -12,15 +11,16 @@ using System;
 using GameConfig.Battle;
 using GameConfig.Entity;
 using GameConfig.Monster;
+using GameConfig.Stat;
 using GameFramework.Entity;
 using GameFramework.Fsm;
-using GameLogic.Entity.Body;
+using GameLogic.Body;
 using GameLogic.UI.Widgets;
 using Godot;
 using GodotGameFramework.Entity;
 using GodotGameFramework;
 
-namespace GameLogic.Entity.Monsters
+namespace GameLogic.Monsters
 {
 	/// <summary>持有怪物配置、感知及身体和 AI 状态机，具体行为由直接派生的怪物声明。</summary>
 	public abstract partial class MonsterEntity : ActorEntity, IMonsterAiAgent, IMonsterBody
@@ -29,9 +29,16 @@ namespace GameLogic.Entity.Monsters
 
 		[Export] private Area2D m_Detector; // 索敌区；为空时只会在受击后反击。
 
-		[Export] private EntityId m_MonsterEntityId; // 场景用可读枚举绑定唯一怪物配置行。
+		[Export] private EntityId m_MonsterEntityId; // 场景声明实体种类，与基础怪物配置一一对应。
+
+		private float m_AttackMultiplier = 1f; // 本次显示的招式威力倍率，每次从刷怪参数重置。
+
+		private int m_ExperienceReward; // 本次显示的击败经验；配方可覆盖基础配置奖励。
 
 		[Export] private ResourceBar m_HealthBar; // 可选头顶小血条，作为实体子场景随 GGF 实体池复用。
+
+		private float m_HealthBarTimeLeft; // 最近一次受伤后的剩余淡出秒数，按游戏帧推进。
+		private int m_LastHealthBarHp; // 上次生命值，用于区分受伤与治疗，治疗不延长显示。
 
 		[Export] private Vector2 m_HealthBarOffset = new(0f, -8f); // 血条底边中心相对受击盒顶边中心的像素偏移。
 
@@ -86,7 +93,7 @@ namespace GameLogic.Entity.Monsters
 		private bool IsBusy => AttackSegment >= 0 || m_AttackRequest >= 0 || InRecovery;
 
 		/// <summary>当前是否允许 AI 自主行动。</summary>
-		private bool CanAct => !Dead && !InHurt;
+		private bool CanAct => !Dead && !InHurt && !HasPendingHurt;
 
 		/// <summary>目标受击盒相对本实体原点的范围。</summary>
 		private AiBox TargetBox
@@ -128,24 +135,12 @@ namespace GameLogic.Entity.Monsters
 		{
 			base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
 
-			// 场景用可读枚举名绑定数值行；MonsterConfig.EntityId 必须与之一一对应。
-			MonsterConfig[] matches = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList
-				.Where(x => x.EntityId == m_MonsterEntityId)
-				.ToArray();
-			if (matches.Length != 1)
-			{
-				throw new InvalidOperationException(
-					$"MonsterConfig 必须唯一：{m_MonsterEntityId}，命中行数={matches.Length}");
-			}
-
-			Config = matches[0];
+			if (!isNewInstance) return;
+			Config = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Single(x => x.EntityId == m_MonsterEntityId);
 			m_AiParams = BuildAiParams();
 			LoadAttacks();
 			m_BodyParams = BuildBodyParams();
-			if (isNewInstance)
-			{
-				ConfigureDetector();
-			}
+			ConfigureDetector();
 		}
 
 		/// <summary>显示时复位池化状态并重建身体与 AI 状态机。</summary>
@@ -153,10 +148,19 @@ namespace GameLogic.Entity.Monsters
 		public override void OnShow(object userData)
 		{
 			base.OnShow(userData);
+			if (userData is not MonsterSpawn spawn)
+				throw new ArgumentException("怪物显示参数必须包含出生位置与基础属性倍率。", nameof(userData));
 
-			// 池复用带回脏状态：属性按配置重建（怪物无成长，基础值即配置值），生命补满。
+			// 每次从基础配置装配倍率，随后补满生命；不修改共享表，也不沿用上次显示的修正。
 			Stats.Clear();
 			Stats.SetBase(Config.Stats);
+			Stats.SetSource(new AttributeSourceId("Spawn", 0),
+			[
+				AttributeModifier.PercentMult(StatType.MaxHp, spawn.HealthMultiplier - 1f),
+				AttributeModifier.PercentMult(StatType.Def, spawn.DefenseMultiplier - 1f),
+			]);
+			m_AttackMultiplier = spawn.AttackMultiplier;
+			m_ExperienceReward = spawn.ExperienceOverride < 0 ? Config.AddExp : spawn.ExperienceOverride;
 			Level = Config.Level;
 			SyncVitalsToStats(refill: true);
 			m_MoveIntent = 0;
@@ -167,11 +171,7 @@ namespace GameLogic.Entity.Monsters
 			Velocity = Vector2.Zero;
 			Attacks.Reset(GD.Randf);
 
-			// ShowEntity 的 userData 约定为出生点 Vector2
-			if (userData is Vector2 spawn)
-			{
-				GlobalPosition = spawn;
-			}
+			GlobalPosition = spawn.Position;
 
 			m_SpawnPosition = GlobalPosition;
 			m_PatrolAnchor = null;
@@ -184,6 +184,9 @@ namespace GameLogic.Entity.Monsters
 			// 战斗状态全部复位后再订阅，避免池复用时展示装配的中间值。
 			if (m_HealthBar != null)
 			{
+				m_HealthBarTimeLeft = 0f;
+				m_LastHealthBarHp = Vitals.Hp;
+				m_HealthBar.Modulate = Colors.White;
 				Vitals.Changed += RefreshHealthBar;
 				RefreshHealthBar();
 			}
@@ -221,6 +224,7 @@ namespace GameLogic.Entity.Monsters
 
 			Attacks.Tick(elapseSeconds);
 			UpdateTarget(elapseSeconds);
+			UpdateHealthBarFade(elapseSeconds);
 		}
 
 		/// <summary>物理步长：身体状态机 → 物理 →（死亡时长走完）回收；本帧消费 AI 意图。</summary>
@@ -252,10 +256,26 @@ namespace GameLogic.Entity.Monsters
 		/// <summary>生命变化时重新读取当前值与上限，刷新被动血条。</summary>
 		private void RefreshHealthBar()
 		{
+			if (Vitals.Hp < m_LastHealthBarHp)
+				m_HealthBarTimeLeft = ConfigSystem.Instance.Tables.TbBattleConfig.MonsterHealthBarFadeDuration;
+			m_LastHealthBarHp = Vitals.Hp;
 			// 用生命值判定归零；Vitals 通知发生在 ReceiveHit 置位 Dead 之前。
 			m_HealthBar.SetValue(Vitals.Hp, Vitals.MaxHp);
-			m_HealthBar.Visible = !Vitals.IsDepleted && Vitals.Hp < Vitals.MaxHp;
+			m_HealthBar.Visible = m_HealthBarTimeLeft > 0f && !Vitals.IsDepleted && Vitals.Hp < Vitals.MaxHp;
+			UpdateHealthBarFade(0f);
 			UpdateHealthBarPosition();
+		}
+
+		/// <summary>按官方两秒淡出行为隐藏小血条；继续受伤会从不透明重新计时。</summary>
+		/// <param name="elapseSeconds">本帧游戏秒数；暂停时为零。</param>
+		private void UpdateHealthBarFade(float elapseSeconds)
+		{
+			if (m_HealthBar is not { Visible: true }) return;
+			m_HealthBarTimeLeft = Mathf.Max(0f, m_HealthBarTimeLeft - elapseSeconds);
+			float remaining = m_HealthBarTimeLeft / ConfigSystem.Instance.Tables.TbBattleConfig.MonsterHealthBarFadeDuration;
+			// TweenMax 默认 Quad.easeOut 的 alpha 从 1 到 0，等价于剩余比例的平方。
+			m_HealthBar.Modulate = new Color(1f, 1f, 1f, remaining * remaining);
+			if (m_HealthBarTimeLeft <= 0f) m_HealthBar.Visible = false;
 		}
 
 		/// <summary>按受击盒头顶定位血条，独立于身体和攻击盒的朝向镜像。</summary>
@@ -299,6 +319,9 @@ namespace GameLogic.Entity.Monsters
 				return;
 			}
 
+			// 受击事实立即撤销待出招与结算包，避免同一物理步里的碰撞回调产生反击；状态迁移仍由身体 Tick 负责。
+			m_AttackRequest = -1;
+			ReleaseAttack();
 			m_PendingHurt = knockback;
 		}
 
@@ -473,6 +496,7 @@ namespace GameLogic.Entity.Monsters
 
 		// ---- 接口实现 ----
 
+
 		/// <summary>向身体状态机提供怪物身体参数快照。</summary>
 		MonsterBodyParams IMonsterBody.Params => m_BodyParams;
 
@@ -511,7 +535,7 @@ namespace GameLogic.Entity.Monsters
 			SetHurtBoxEnabled(false);
 			PlaySound(Config.DeathSoundId);
 			GF.Event.Fire(this,
-				MonsterDiedEventArgs.Create(Id, Config.Id));
+				MonsterDiedEventArgs.Create(Id, m_ExperienceReward));
 		}
 
 		/// <summary>请求在当前物理帧完成后安全回收实体。</summary>
@@ -559,7 +583,7 @@ namespace GameLogic.Entity.Monsters
 		/// <returns>下标和当前状态是否允许该请求。</returns>
 		bool IMonsterAiAgent.RequestAttack(int index)
 		{
-			if (index < 0 || index >= m_OwnAttacks.Length || IsBusy || !CanAct)
+			if (index < 0 || index >= m_OwnAttacks.Length || IsBusy || !CanAct || !OnFloor)
 			{
 				return false;
 			}
@@ -570,4 +594,13 @@ namespace GameLogic.Entity.Monsters
 		}
 
 	}
+
+	/// <summary>一次怪物显示的出生位置与基础属性倍率；默认倍率 1，池复用时整体重置。</summary>
+	/// <param name="Position">世界出生位置。</param>
+	/// <param name="HealthMultiplier">生命倍率，必须为正。</param>
+	/// <param name="DefenseMultiplier">物理防御倍率，不能为负。</param>
+	/// <param name="AttackMultiplier">全部招式威力倍率，不能为负。</param>
+	/// <param name="ExperienceOverride">击败经验覆盖；-1 使用基础配置，0 表示不给经验。</param>
+	public readonly record struct MonsterSpawn(Vector2 Position, float HealthMultiplier = 1f,
+		float DefenseMultiplier = 1f, float AttackMultiplier = 1f, int ExperienceOverride = -1);
 }

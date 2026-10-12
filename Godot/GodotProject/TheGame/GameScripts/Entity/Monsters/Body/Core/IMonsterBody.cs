@@ -1,9 +1,9 @@
-using GameLogic.Entity.Monsters.AI.Core;
-using GameLogic.Entity.Monsters;
+using GameLogic.Monsters.AI;
+using GameLogic.Monsters;
 using Godot;
-using GameLogic.Entity.Body;
+using GameLogic.Body;
 
-namespace GameLogic.Entity.Monsters.Body.Core
+namespace GameLogic.Monsters.Body
 {
 	/// <summary>
 	/// 怪物身体状态机的宿主接口：在公共契约 <see cref="IActorBody"/> 之上只保留怪物专属成员

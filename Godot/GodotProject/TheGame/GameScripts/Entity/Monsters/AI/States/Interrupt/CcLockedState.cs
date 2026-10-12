@@ -1,10 +1,8 @@
-using GameLogic.Entity.Monsters.AI.States.Roam;
-using GameLogic.Entity.Monsters.AI.States.Engage;
-using GameLogic.Entity.Monsters.AI.Core;
-using GameLogic.Entity.Monsters;
+using GameLogic.Monsters.AI;
+using GameLogic.Monsters;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Monsters.AI.States.Interrupt
+namespace GameLogic.Monsters.AI
 {
 	/// <summary>
 	/// 受控期间不做决策（击退速度由实体物理保持）；解除后再僵直 CalmTime 秒（旧 behit_calmtime），

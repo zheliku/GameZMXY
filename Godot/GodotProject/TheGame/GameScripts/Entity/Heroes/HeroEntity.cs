@@ -1,5 +1,4 @@
-using GameLogic.Entity.Heroes.Body.States;
-using GameLogic.Entity.Heroes.Body.Core;
+using GameLogic.Heroes.Body;
 using GameLogic.Entity;
 using GameLogic.Battle.Resources;
 using GameLogic.Battle.Attributes;
@@ -12,18 +11,18 @@ using GameConfig.Hero;
 using GameConfig.Stat;
 using GameFramework.Entity;
 using GameFramework.Fsm;
-using GameLogic.Entity.Body;
-using GameLogic.Entity.Heroes.Effects;
-using GameLogic.Entity.Heroes.Input;
+using GameLogic.Body;
+using GameLogic.Heroes.Effects;
+using GameLogic.Heroes.Input;
 using GameLogic.Profile;
 using Godot;
 using GodotGameFramework;
 
-namespace GameLogic.Entity.Heroes
+namespace GameLogic.Heroes
 {
 	/// <summary>
 	/// 英雄的表现与战斗运行时：输入、身体状态机、动画/武器层、出招，以及本次显示期间的属性汇总、生命魔法与无双。
-	/// 不持有持久进度（等级、经验、金币属于档案）；显示时由 <see cref="HeroBattleSnapshot"/> 注入属性，升级后由关卡运行重新注入。
+	/// 不持有持久进度（等级、经验、金币属于档案）；显示时由 <see cref="HeroLoadout"/> 注入属性，升级后由关卡运行重新注入。
 	/// </summary>
 	public abstract partial class HeroEntity : ActorEntity, IHeroBody
 	{
@@ -37,7 +36,7 @@ namespace GameLogic.Entity.Heroes
 
 		[Export] private int m_HeroId; // 场景绑定的 HeroConfig 主键。
 
-		[Export] private MusouAfterimage m_MusouAfterimage; // 英雄自有的残影表现，可按角色场景选配。
+		[Export] private MusouAfterimageNode m_MusouAfterimage; // 英雄自有的残影表现，可按角色场景选配。
 
 		private HeroBodyParams m_BodyParams; // 从英雄配置和动画库构建的身体参数快照。
 
@@ -102,7 +101,7 @@ namespace GameLogic.Entity.Heroes
 		}
 
 		/// <summary>显示时按出战装配重建属性、补满生命魔法、清零无双，复位战斗事实与输入并创建身体状态机。</summary>
-		/// <param name="userData">出战装配 <see cref="HeroBattleSnapshot"/>（由档案构建），不能为空。</param>
+		/// <param name="userData">出战装配 <see cref="HeroLoadout"/>（由档案构建），不能为空。</param>
 		/// <exception cref="ArgumentException">参数不是本英雄的出战装配。</exception>
 		public override void OnShow(object userData)
 		{
@@ -114,14 +113,14 @@ namespace GameLogic.Entity.Heroes
 			}
 
 			// 显示参数只接受出战装配：属性来源唯一，测试场地也必须经档案构建。
-			if (userData is not HeroBattleSnapshot snapshot || snapshot.HeroId != HeroId)
+			if (userData is not HeroLoadout snapshot || snapshot.HeroId != HeroId)
 			{
-				throw new ArgumentException($"英雄 {HeroId} 的显示参数必须是同一英雄的 HeroBattleSnapshot。", nameof(userData));
+				throw new ArgumentException($"英雄 {HeroId} 的显示参数必须是同一英雄的 HeroLoadout。", nameof(userData));
 			}
 
 			// 池实例可能带着上次的修正来源，先清空再按装配重建。
 			Stats.Clear();
-			ApplyBattleSnapshot(snapshot, refill: true);
+			ApplyLoadout(snapshot, refill: true);
 			Musou.Reset(ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMax);
 			m_MusouAfterimage?.Reset();
 
@@ -212,7 +211,7 @@ namespace GameLogic.Entity.Heroes
 		/// <param name="refill">是否补满生命与魔法（显示、升级）；否则把当前值钳到新上限。</param>
 		/// <exception cref="ArgumentNullException">装配为空。</exception>
 		/// <exception cref="ArgumentException">装配属于其他英雄。</exception>
-		public void ApplyBattleSnapshot(HeroBattleSnapshot snapshot, bool refill)
+		public void ApplyLoadout(HeroLoadout snapshot, bool refill)
 		{
 			ArgumentNullException.ThrowIfNull(snapshot);
 			if (snapshot.HeroId != HeroId)
@@ -357,9 +356,6 @@ namespace GameLogic.Entity.Heroes
 
 		/// <summary>无双期间免受击硬直与击退，仍正常结算伤害。</summary>
 		bool IHeroBody.SuperArmor => Musou.IsActive;
-
-		/// <summary>提供当前物理接地状态。</summary>
-		bool IHeroBody.OnFloor => IsOnFloor();
 
 		/// <summary>转发身体状态机对跳跃次数的读写。</summary>
 		int IHeroBody.JumpCount

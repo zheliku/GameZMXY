@@ -1,9 +1,9 @@
-using GameLogic.Entity.Heroes;
-using GameLogic.Entity.Heroes.Input;
+using GameLogic.Heroes;
+using GameLogic.Heroes.Input;
 using Godot;
-using GameLogic.Entity.Body;
+using GameLogic.Body;
 
-namespace GameLogic.Entity.Heroes.Body.Core
+namespace GameLogic.Heroes.Body
 {
 	/// <summary>
 	/// 英雄身体状态机的宿主接口：在公共契约 <see cref="IActorBody"/> 之上只保留英雄专属成员
@@ -24,9 +24,6 @@ namespace GameLogic.Entity.Heroes.Body.Core
 
 		/// <summary>输入层（移动轴 / 跑步档 / 缓冲请求）</summary>
 		HeroInput Input { get; }
-
-		/// <summary>站在地面上（上一次 MoveAndSlide 的结果）</summary>
-		bool OnFloor { get; }
 
 		/// <summary>已用跳跃次数（起跳 +1；宿主在落地后归零）</summary>
 		int JumpCount { get; set; }

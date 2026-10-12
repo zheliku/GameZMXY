@@ -1,5 +1,6 @@
 using GameLogic.Battle.Resources;
 using GameLogic.Battle.Attributes;
+using GameLogic.Battle.Damage;
 using System;
 using GameConfig.Stat;
 using Xunit;
@@ -9,6 +10,20 @@ namespace GameLogic.Battle.Tests
 	/// <summary>属性汇总、生命魔法资源与无双进度的领域规则。</summary>
 	public sealed class ActorAttributesTests
 	{
+		/// <summary>结算快照冻结来源和属性；后续 Buff 变更不影响已发出的攻击。</summary>
+		[Fact]
+		public void Combatant_FreezesActorIdentityAndFinalAttributes()
+		{
+			ActorAttributes attributes = new();
+			AttributeSourceId source = new("Buff", 1);
+			attributes.SetSource(source, [AttributeModifier.Flat(StatType.Power, 15)]);
+			CombatantStats snapshot = CombatantStats.From(CombatSide.Hero, 2, attributes, -42);
+			attributes.SetSource(source, [AttributeModifier.Flat(StatType.Power, 99)]);
+			Assert.Equal((-42, CombatSide.Hero, 2, 15),
+				(snapshot.ActorId, snapshot.Side, snapshot.Level, snapshot.Power));
+			Assert.Equal(99, attributes.GetInt(StatType.Power));
+		}
+
 		/// <summary>最终值 = (基础 + Σ固定) × (1 + Σ同类百分比) × Π(1 + 独立百分比)。</summary>
 		[Fact]
 		public void Attributes_AppliesModifierOrder()

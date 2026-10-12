@@ -1,69 +1,121 @@
-# 从一次游戏流程读懂项目
+# 从模块入口读懂项目
 
-这是当前实现的阅读地图，不替代 `ProjectGuidelines/` 中的集中规范。先沿一次“读档 → 进关 → 击败 → 保存”阅读，比逐文件看完整类图更快。
+这是当前实现的阅读地图，规范只维护在 [ProjectGuidelines](ProjectGuidelines/AGENTS.md)。先看模块职责，再沿“进关 → 击败 → 出口 → 保存”阅读。
 
-## 流程和所有权
+## 流程与模块
+
+`Launch → Update → Preload → Title → LoadProfile → 新档 Character / 已有档 Map → Level`。只有点击地图花果山才进入关卡。
+
+| 入口 / 状态 | 负责什么 | 不属于它的职责 |
+| --- | --- | --- |
+| `ProcedureLevel` | 按顺序加载场景、显示英雄、打开 HUD；逆序清理；决定回地图或死亡重开 | 阶段判定、奖励和存档映射 |
+| `LevelModule` | 阶段、守关对手、奖励、升级注入、结局和关内回滚 | 文件格式和文件读写 |
+| `SaveModule` | 六格目录读取、读档/建档、检查点提交，维护槽位归属 | 战斗和关卡结局 |
+| `GameContext` | 关联当前槽的 PlayerProfile 与 SaveModule，传给流程 | 没有转发事件或第二套关卡生命周期 |
+| `PlayerProfile` | 出战英雄、英雄成长与钱包的持久状态 | 不持有实体、场景或 UI |
+| `ActorEntity` / `HeroEntity` / `MonsterEntity` | 身体、输入/AI、战斗属性、生命、攻击与死亡 | 不直接改档案或读写文件 |
+| GGF UI Form | 观察状态、刷新显示、提交具名点击请求 | 不切流程、不结算奖励 |
+
+同一个模块只有一个生命周期入口。原来的 `LevelRun` 和 `LevelController` 已合并为同一 `LevelModule`；收益代码分在 `LevelModule.Progress.cs`，没有第二个运行对象。标题流程也只持有 SaveModule，目录是它拥有的显示状态。
 
 ```mermaid
-flowchart TD
-    Title[ProcedureTitle：标题与六格选择] --> Load[ProcedureLoadProfile：读取或创建档案]
-    Load --> Session[PlayerSession：本槽档案 + 本槽存档服务]
-    Load --> Character[ProcedureCharacter：新档确认角色]
-    Character --> Map[ProcedureMap：地图、保存、进入关卡]
-    Load --> Map
-    Map --> Level[ProcedureLevel：场景、实体、HUD 的创建与清理]
-    Level --> Controller[LevelController：阶段编排]
-    Level --> Rewards[LevelRewardTransaction：奖励、提交、回滚]
-    Level --> Hero[HeroEntity：输入、身体、战斗状态]
-    Session --> Profile[PlayerProfile：英雄成长 + 钱包]
-    Session --> Save[SaveService：本槽读写]
-    Controller --> Spawner[LevelSpawner：调度与怪物所有权]
-    Controller --> Camera[LevelCamera：取景、抵达、随屏幕移动的玩家墙]
-    Spawner -->|被击败的 MonsterConfig ID| Rewards
-    Rewards -->|累计经验| Profile
-    Rewards -->|升级快照| Hero
-    Rewards -->|通关或死亡| Save
-    Save --> Mapper[ProfileMapper：运行时状态与 GameData 转换]
-    Mapper --> Data[GameData：v3 平铺进度]
+classDiagram
+    class ProcedureLevel {
+        OnEnter()
+        OnLeave()
+        OnLevelEnded()
+    }
+    class LevelModule {
+        Initialize()
+        StartSession()
+        Cleanup()
+        Outcome
+        CheckpointWrite
+        Ended
+    }
+    class SaveModule {
+        Directory
+        RefreshDirectoryAsync()
+        LoadOrCreateAsync()
+        SaveCheckpointAsync()
+        PendingWrite
+    }
+    ProcedureLevel --> LevelModule : 唯一关卡入口
+    LevelModule *-- LevelStageSequence : 阶段状态
+    LevelModule *-- LevelSpawnerNode : 怪物所有权与调度
+    LevelModule *-- LevelCameraNode : 取景与抵达
+    LevelModule *-- LevelGatesNode : 战斗边界
+    LevelModule *-- LevelExitNode : 出口交互
+    LevelModule --> PlayerProfile : 奖励与回滚
+    LevelModule --> SaveModule : 提交检查点
+    GameContext o-- PlayerProfile
+    GameContext o-- SaveModule
+    SaveModule *-- SaveSlotDirectory : 只读显示状态
+    SaveModule --> ProfileSaveHelper : 状态与文件转换
+    ProfileSaveHelper --> GameData : v3 平铺字段
 ```
 
-`ProcedureLevel` 拥有场景、实体、HUD、取消令牌和收益事务。`PlayerSession` 只在进入时从流程数据读取到局部变量；收益事务直接接收需要的档案、存档服务和两张配置表，不再持有整个会话或配置总表。
+## 目录和命名
 
-## 数据各自负责什么
+```text
+GameScripts/
+  Level/
+    LevelModule.cs             阶段与内部节点装配
+    LevelModule.Progress.cs    同一对象的收益、检查点、回滚
+    Camera/                   相机节点与相机纯算法
+    Spawning/                 刷怪节点、生成点与生成调度
+    Stages/                   阶段序列、战斗区域门与特殊触发区
+    Markers/                  共享空间集合基类与条目资源
+    Exit/                     出口节点与交互
+  Save/
+    SaveModule.cs             文件操作唯一入口
+    SaveModule.Directory.cs   同一对象的目录刷新
+    Data/                     GameData、GameCatalogue、ProfileSaveHelper
+    Slots/                    目录状态和格子摘要
+  Battle/                     Attributes、Attacks、Damage、Resources
+  Profile/                    PlayerProfile、HeroProgression、Wallet、ExperienceCurve
+  Entity/                     共用身体、英雄、怪物、判定组件
+  UI/                         每窗一个目录；Widgets 为被动控件
+```
 
-| 类型 / 目录 | 回答的问题 | 生命周期 |
-| --- | --- | --- |
-| `Profile/PlayerProfile` | 这个槽拥有谁、谁出战、多少金币？ | 读档到回标题 |
-| `Profile/HeroProgression` | 哪个英雄累计了多少经验、现在几级？ | 档案内；直接包含 HeroId，无 HeroRecord 包装 |
-| `Profile/ExperienceCurve` | 累计经验如何换算等级和进度？ | 只读规则 |
-| `Battle/Attributes/HeroBattleSnapshot` | 本次显示或升级给实体什么等级和基础属性？ | 一次注入，冻结数据 |
-| `Battle/Attributes/ActorAttributes` | 基础属性叠加各来源修正后是多少？ | 实体运行时 |
-| `AttributeModifier` / `AttributeSourceId` | 修正什么、加多少、结束时移除哪一组？ | 随属性来源登记与移除 |
-| `Battle/Attacks/AttackInstance` | 这次出招的参数是什么、已经打中过谁？ | 一次出招；引用池 |
-| `Battle/Damage/CombatStatsSnapshot` | 结算时一方的属性是什么？ | 按值冻结的公式输入 |
-| `Battle/Damage/DamageResult` | 这次命中造成多少伤害、是否闪避或暴击？ | 按值返回的公式输出 |
-| `Battle/Resources/` | 还剩多少生命、魔法、无双？ | 实体运行时；不写盘 |
-| `Session/LevelRewardTransaction` | 本关奖励是提交还是回滚？ | 进关到结局 |
-| `Save/Data/GameData` | 文件里实际保存哪些进度？ | v3 文件快照 |
+入口用 `Module`，内部 Godot 组件用 `Node`，纯方法辅助用 `Helper`，资源用 `Resource`。Entity/Form/Hud/Bar/Button 已明确表达节点种类，保持这些后缀。拥有状态的 ExperienceCurve、LevelStageSequence 等使用领域名称。细则见 [命名规范](ProjectGuidelines/10-CSharp.md)。
 
-攻击实例跨帧并维护命中去重；属性快照只作为公式输入；伤害结果是输出。它们有不同职责，不能合并成一个通用 Data。
+内部目录按功能分类，节点、辅助方法和规则与所属功能放在一起，通过类型后缀区分。命名空间按业务模块稳定：Level 内部统一 `GameLogic.Level`；身体、英雄、怪物分别使用 `GameLogic.Body`、`GameLogic.Heroes`、`GameLogic.Monsters`，Core/States 只作目录分组；GGF 窗口沿用 `GameLogic.UI`。生成器与框架固定的名称保留。
 
-未实现装备、法宝和被动，当前就不维护空的持久修正列表与来源替换链。升级直接替换基础属性，保留无双等局内来源。怪物击败通知只需要配置 ID，已删除 `MonsterDefeat`；GGF 池化事件仍负责跨模块的一次性分发。
+## 沿一次操作阅读
 
-## 建议阅读顺序
+1. [GameData](../Godot/GodotProject/TheGame/GameScripts/Save/Data/GameData.cs)：保存出战英雄、拥有英雄的 ID/累计经验、金币；等级与战斗属性重算。生命、魔法、无双、位置、波次不写盘。
+2. [SaveModule](../Godot/GodotProject/TheGame/GameScripts/Save/SaveModule.cs) 与 [存档说明](../Godot/GodotProject/TheGame/GameScripts/Save/README.md)：六格 → 读档/建档 → GameContext → 检查点。
+3. [ProcedureLevel](../Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLevel.cs)：加载场景、注入英雄与档案、开始模块、打开 HUD；失败和退出走同一清理边界。
+4. [LevelModule](../Godot/GodotProject/TheGame/GameScripts/Level/LevelModule.cs)：相机抵达 → 开战 → 调度清波 → 下一阶段或开放出口。
+5. [LevelModule.Progress](../Godot/GodotProject/TheGame/GameScripts/Level/LevelModule.Progress.cs)：实际击败经验直接进入档案；升级重建 HeroLoadout；通关/死亡提交，放弃恢复进关快照。
+6. [ActorEntity](../Godot/GodotProject/TheGame/GameScripts/Entity/ActorEntity.cs) 与 [DamageHelper](../Godot/GodotProject/TheGame/GameScripts/Battle/Damage/DamageHelper.cs)：攻击包 → 属性快照 → 伤害结果 → 生命与死亡。身体调度由 C# 14 BodyFsmHelper 扩展块执行。
+7. [BattleHud.Logic](../Godot/GodotProject/TheGame/GameScripts/UI/BattleHud/BattleHud.Logic.cs)：订阅真实状态并立即刷新；关闭时退订；守关条只接收数值。
 
-1. [GameData](../Godot/GodotProject/TheGame/GameScripts/Save/Data/GameData.cs) 和 [存档说明](../Godot/GodotProject/TheGame/GameScripts/Save/README.md)：先知道保存什么。
-2. [PlayerProfile](../Godot/GodotProject/TheGame/GameScripts/Profile/PlayerProfile.cs)、[HeroProgression](../Godot/GodotProject/TheGame/GameScripts/Profile/HeroProgression.cs)：知道状态由谁维护。
-3. [ProcedureLevel](../Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLevel.cs)：看创建顺序和逆序清理。
-4. [LevelController](../Godot/GodotProject/TheGame/GameScripts/Level/LevelController.cs)：顺着抵达、开战、刷怪、清波看阶段。
-5. [LevelRewardTransaction](../Godot/GodotProject/TheGame/GameScripts/Session/LevelRewardTransaction.cs)：顺着击败、升级、提交、回滚看收益。
-6. [ActorEntity](../Godot/GodotProject/TheGame/GameScripts/Entity/ActorEntity.cs) 的 `BeginAttack` / `ReceiveHit`，再看 `Battle/`：理解战斗数据如何流动。
-7. `UI/*/*.Logic.cs`：界面订阅状态、立即刷新，关闭时退订；按钮只提交具名请求。
+## 出口与检查点
 
-身体状态机和 AI 分别放在英雄/怪物目录的 `Core/` 与 `States/`；命名空间与实际目录一致。`BodyFsm` 是 C# 14 扩展块，负责物理帧调度，状态只负责决策。UI 继续使用既有生成器的 `GameLogic.UI` 契约。
+```mermaid
+sequenceDiagram
+    participant Exit as LevelExitNode
+    participant Level as LevelModule
+    participant Save as SaveModule
+    participant Flow as ProcedureLevel
+    Exit->>Level: Entered（清场、靠近、落地、按 W）
+    Level->>Level: 迁移结局，停止奖励
+    Level->>Save: SaveCheckpointAsync
+    Level->>Flow: Ended(Cleared)
+    Note over Flow: 下一流程帧，等待检查点写盘
+    Flow->>Flow: ChangeState(ProcedureMap)
+```
 
-## 花果山边界
+只跨两层观察边界：出口节点 → 关卡模块 → 流程；没有 Completed → OnCompleted → Ended 转发对象。原来的 ClearRestartDelay=3 秒已从源表删除，通关不附加等待；死亡仍保留配置的 2.5 秒。测试在隔离存档目录测量 W 到地图实际可见的耗时，并重新读盘验证 204 经验。
 
-首波停止点 x=1139.9，出生点 x=1256.4。官方原程序也是从右侧场外出生，不应为了让它出现在画面里改动出生坐标。原版角色的碰撞边界限制在屏幕 x=20～920，怪物巡逻会朝视野中心折返；当前实现补上了这两个分工，保留中央 ±40px 的相机死区与精确阶段抵达规则。详细证据见 [官方核对](OfficialHuaguoshan.md)。
+## 战斗数据与表现
 
-验证与规范差异登记在 [本轮审查记录](GameplayRefactorAudit.md)。
+HeroLoadout 是英雄显示/升级的冻结输入；CombatantStats 是出招/受击时的最终属性快照；AttackInstance 跨帧维护命中去重；DamageResult 是公式输出。它们的方向和生命周期不同。
+
+怪物基础配置每种一条，刷怪配方提供生命、物防、攻击倍率和经验覆盖。花果山大猩猩使用基础生命 300 × 3，经验覆盖 25；池复用回到基础值。
+
+小怪受伤后以不透明显示，按官方两秒 Quad.easeOut 淡出后隐藏；继续受伤重新计时，治疗不唤起已隐藏血条，暂停停止计时。守关 HUD 按参考图采用左侧白字黑边华康海报体和右侧原笔刷血条，无进场弹窗，也不显示当前/最大生命数字。
+
+官方关卡来源、项目取景选择和历史核对见 [OfficialHuaguoshan](OfficialHuaguoshan.md)，前一轮的实现与验证记录见 [HuaguoshanEncounter](HuaguoshanEncounter.md)。本轮交付验证见 [ModuleRefactor](ModuleRefactor.md)。

@@ -1,10 +1,9 @@
-using GameLogic.Entity.Heroes.Body.States;
-using GameLogic.Entity.Heroes.Body.Core;
+using GameLogic.Heroes.Body;
 using GameLogic.Entity;
 using System;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Heroes
+namespace GameLogic.Heroes
 {
 	/// <summary>
 	/// 悟空：**角色专属**部分都在这里。通用宿主机制（输入、物理、结算、状态机推进）在 <see cref="HeroEntity"/>；

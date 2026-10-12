@@ -1,7 +1,7 @@
-using GameLogic.Entity.Monsters.Body.Core;
+using GameLogic.Monsters.Body;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Monsters.Body.States
+namespace GameLogic.Monsters.Body
 {
 	/// <summary>
 	/// 出招：进入时提交（宿主 BeginAttack：转向目标、计冷却、装填攻击包、播起手音）、从第 0 帧播本招动画；

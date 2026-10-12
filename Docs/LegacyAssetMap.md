@@ -422,4 +422,25 @@ PNG 保留导出内容，场景通过 AtlasTexture 排除遮罩外的透明侧�
 
 以上为原样复制，迁移脚本已同步；未迁入旧项目的存档、联网或时间校验代码。设置布局以用户提供的官方造梦一截图为准；六格布局以用户提供的造梦二截图与旧 `read_archive_interface.tscn` 为参照，直接接入当前 GGF 存档入口。
 
-地图原 shader 只绘制轮廓，没有改变 GUI 命中范围。当前直接使用 Godot TextureButton 的 alpha 点击遮罩；普通树图决定几何，独立 LocationGlow 显示悬停配对图与外置动画，悬停不会扩大点击区域。
+地图原 shader 只绘制轮廓，没有改变 GUI 命中范围。后续已按用户要求让悬停命中范围跟随放大后的可见轮廓，当前行为以 `MapForm.Logic.cs` 为准。
+
+### 大猩猩守关与出口（2026-10-12）
+
+以下贴图均从只读旧项目原样复制，未使用截图重绘或 AI 生图；SpriteFrames/AnimationLibrary 通过 `Tools/LegacyMigration/import_gorilla_assets.py` 生成。
+
+| 旧项目相对路径 | 新项目 TheGame 相对路径 |
+| --- | --- |
+| `Art/Monster/Monster3/Wait.png` | `Sprites/Characters/Monsters/gorilla/gorilla_idle.png` |
+| `Art/Monster/Monster3/Walk.png` | `Sprites/Characters/Monsters/gorilla/gorilla_run.png` |
+| `Art/Monster/Monster3/Hit.png` | `Sprites/Characters/Monsters/gorilla/gorilla_attack_1.png` |
+| `Art/Monster/Monster3/Hurt.png` | `Sprites/Characters/Monsters/gorilla/gorilla_hurt.png` |
+| `Art/Monster/Monster3/Death.png` | `Sprites/Characters/Monsters/gorilla/gorilla_death.png` |
+| `Art/Level/Export.png` | `Sprites/Effects/level_exit/level_exit_sheet.png` |
+| `Art/HeroPicture/RoleProperiesBox/128.png` | `Sprites/UI/hud/boss_health_fill.png` |
+| `Art/HeroPicture/RoleProperiesBox/124.png` | `Sprites/UI/hud/boss_health_under.png` |
+
+守关角色仍是普通 `GorillaEntity`；按后续要求只保留一个基础 MonsterConfig，花果山配方提供生命倍率 3 和经验覆盖 25。五波关卡、W 出口与数值证据见 [HuaguoshanEncounter](HuaguoshanEncounter.md)。
+
+## 守关名称字体（2026-10-12）
+
+按用户官方截图把名称拼在笔刷血条左侧，取消入场弹窗。字体沿用只读旧项目 `Scene/MonsterBlood/BossBlood.tscn/MonsterName` 所引用的 `Font/华康海报体W12 &amp; 华康海报体W12(P).ttc`，原文件直接复制到 `TheGame/MainPack/Fonts/df_poster_w12.ttc`，不截屏、不重新绘制字形。SHA-256：`b47e00483c38ec74c63601c9200faadb27809374a6a0b720c2f029723342fe3d`。迁入函数为 `import_gorilla_assets.import_boss_name_font`；普通与守关的生命条图片继续复用上表原素材。

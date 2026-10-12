@@ -1,9 +1,9 @@
-using GameLogic.Entity.Heroes.Body.Core;
-using GameLogic.Entity.Body;
+using GameLogic.Heroes.Body;
+using GameLogic.Body;
 using GameFramework.Fsm;
 using Godot;
 
-namespace GameLogic.Entity.Heroes.Body.States
+namespace GameLogic.Heroes.Body
 {
 	/// <summary>
 	/// 死亡（终态）：从头播死亡动画（死亡语音在进入时经 <see cref="IActorBody.OnDied"/> 播），定身、只受重力。

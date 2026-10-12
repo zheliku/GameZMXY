@@ -15,7 +15,7 @@ dotnet build Godot/GodotProject/GodotProject.csproj
 & 'S:/Godot4/Godot4CSharp.exe' --path Godot/GodotProject --editor
 ```
 
-编辑器中按 F5 从开始界面运行：开始游戏 → 六格存档选择 → 新档选角 / 已有档直接地图 → 点击花果山（当前为前四波原型，官方第五波 Boss 待实现）；打开 `TheGame/Scenes/TestArena.tscn` 后按 F6 运行独立战斗场地。场地不读写玩家存档。
+编辑器中按 F5 从开始界面运行：开始游戏 → 六格存档选择 → 新档选角 / 已有档直接地图 → 点击花果山（当前五波，包含大猩猩守关与 W 出口）；打开 `TheGame/Scenes/TestArena.tscn` 后按 F6 运行独立战斗场地。场地不读写玩家存档。
 
 新增 C# 后执行一次引擎构建，生成脚本 UID 并完成编辑器扫描：
 
@@ -33,16 +33,17 @@ dotnet build Godot/GodotProject/GodotProject.csproj
 | --- | --- |
 | `TheGame/MainPack/` | 启动流程、共享 UI、资源组与通用节点池 |
 | `TheGame/GameScripts/Battle/` | 确定性战斗规则与战斗运行时 |
-| `TheGame/GameScripts/Profile/`、`Save/` | 玩家档案、成长、装配快照、存档格式与映射 |
-| `TheGame/GameScripts/Session/` | 档案作用域 GameContext、关卡事务 LevelRun 与流程传递包装 |
+| `TheGame/GameScripts/Profile/`、`Save/` | 玩家档案、成长、SaveModule、存档格式与映射 |
+| `TheGame/GameScripts/GameContext.cs` | 当前存档槽的 PlayerProfile 与 SaveModule |
+| `TheGame/MainPack/Scripts/Startup/FlowData/` | 流程数据键与 GGF 池化包装 |
 | `TheGame/GameScripts/Entity/` | 英雄、怪物、身体/AI 状态机、判定与动画适配 |
-| `TheGame/GameScripts/Level/`、`UI/` | 关卡协调、门、相机、刷怪、HUD 与被动控件 |
+| `TheGame/GameScripts/Level/`、`UI/` | LevelModule 及按功能分组的内部组件；HUD 与被动控件 |
 | `TheGame/Scenes/`、`Entitys/`、`UIs/` | 正式场景、实体场景与 GGF 窗口 |
 | `Configs/GameConfig/` | Luban 源表和生成入口 |
 | `Tests/`、`MainPack/Scripts/Debug/`、`EditorScripts/` | 纯 C# 单测、真实引擎回归、场景与资源验证 |
 | `Framework/`、`addons/` | 只读 GGF 依赖和编辑器插件 |
 
-档案状态由 GameContext 持有，关卡收益与检查点由 LevelRun 结算，实体持有本次显示期间的战斗运行时。HUD 订阅状态变化；动画与控件只负责表现。具体关系见导览中的图。
+档案状态由 GameContext 持有，LevelModule 统一关卡推进、收益、结局与回滚，SaveModule 统一读档与检查点写盘。实体持有本次显示期间的战斗运行时。HUD 订阅状态变化，动画与控件只负责表现。具体关系见导览中的图。
 
 ## 常用验证
 
@@ -54,7 +55,7 @@ python Tools/ProjectMaintenance/validate_game_references.py
 & 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject --quit-after 2400 -- --smoketest=ui
 ```
 
-菜单与 GGF 声音回归使用 `--smoketest=frontend`；非 headless 模式同时在 `.godot/validation/frontend/` 保存实际截图。[本轮交付记录](Docs/FrontendDelivery.md) 列出验证与限制。
+菜单与 GGF 声音回归使用 `--smoketest=frontend`；非 headless 模式同时在 `.godot/validation/frontend/` 保存实际截图。[本轮模块整理记录](Docs/ModuleRefactor.md) 列出验证与限制，菜单历史交付见 [FrontendDelivery](Docs/FrontendDelivery.md)。
 
 引擎回归还支持 `--smoketest`（英雄与命中）、`--smoketest=ai`、`--smoketest=level`、`--smoketest=level-cancel`。各模式使用随机的 `user://Validation/<模式>/<ID>` 目录，隔离玩家进度。以 `SMOKE PASS/FAIL` 判断断言，同时检查退出码；框架既有退出异常单独记录在 [验证规范](Docs/ProjectGuidelines/50-FrameworkAndTools.md)。
 

@@ -1,8 +1,8 @@
-using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Monsters.AI;
 using System;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Monsters.AI.States.Engage
+namespace GameLogic.Monsters.AI
 {
 	/// <summary>
 	/// 在目标下方守候：攻击重新够得着（目标落回判定高度）→ 站定出招，水平走远 → 继续追击；

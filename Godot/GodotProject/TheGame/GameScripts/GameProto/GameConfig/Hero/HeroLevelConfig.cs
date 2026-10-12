@@ -40,7 +40,7 @@ public sealed partial class HeroLevelConfig : Luban.BeanBase
     /// </summary>
     public readonly string Desc;
     /// <summary>
-    /// 升下一级所需经验，最高等级填0（旧 max_exp，封顶55级）
+    /// 官方 Role1 经验曲线；项目最高级仍为 55，末级填 0
     /// </summary>
     public readonly int MaxExp;
    

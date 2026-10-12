@@ -8,12 +8,12 @@ using GameFramework.Localization;
 using GameFramework.Procedure;
 using GameLogic.Config;
 using GameLogic.Profile;
-using GameLogic.Session;
+using GameLogic;
+using GameLogic.Level;
 using GameLogic.Startup;
 using GodotGameFramework;
 using GodotGameFramework.NodePool;
 using GodotGameFramework.UI;
-using GameLogic;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -68,7 +68,7 @@ public class ProcedurePreload : ProcedureBase
         ExperienceCurve curve;
         try
         {
-            curve = ConfigValidator.ValidateAll(ConfigSystem.Instance.Tables);
+            curve = ConfigHelper.ValidateAll(ConfigSystem.Instance.Tables);
         }
         catch (Exception ex)
         {

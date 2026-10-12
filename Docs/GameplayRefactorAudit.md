@@ -1,5 +1,7 @@
 # 关卡边界与玩法职责整理
 
+> 以下为 2026-10-11 的历史审查。最新模块、命名与表现整理见 [ModuleRefactor](ModuleRefactor.md)，当前阅读路径见 [GameplayArchitecture](GameplayArchitecture.md)。
+
 2026-10-11。本轮目标覆盖整个手写游戏代码，框架、插件、Luban 及生成配置保持只读；生成 UI 绑定仍走原生成器。暂存区不改动。本文记录证据、决定与尚未验证项，不以编译通过代替完整验收。
 
 ## 验收清单

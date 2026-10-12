@@ -28,6 +28,18 @@ const CHARACTERS := [
 		"required": ["idle", "run", "hurt", "death"],
 		"emote": "",
 	},
+	{
+		"lib": "res://TheGame/Entitys/Animations/demon_monkey_anim_library.tres",
+		"name": "妖猴",
+		"required": ["idle", "run", "hurt", "death"],
+		"emote": "",
+	},
+	{
+		"lib": "res://TheGame/Entitys/Animations/gorilla_anim_library.tres",
+		"name": "大猩猩",
+		"required": ["idle", "run", "hurt", "death"],
+		"emote": "",
+	},
 ]
 
 

@@ -1,4 +1,4 @@
-namespace GameLogic.Entity.Heroes.Input
+namespace GameLogic.Heroes.Input
 {
 	/// <summary>
 	/// 英雄输入层（纯 C#）：每物理帧由宿主喂入原始按键（<see cref="Sample"/>），产出

@@ -1,7 +1,7 @@
-using GameLogic.Entity.Heroes.Body.Core;
+using GameLogic.Heroes.Body;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Heroes.Body.States
+namespace GameLogic.Heroes.Body
 {
 	/// <summary>
 	/// 空中：起跳上升 / 二段跳 / 下落。空中保留横向控制、可二段跳、可起手普攻（空中连段从第一段起、不推进）；

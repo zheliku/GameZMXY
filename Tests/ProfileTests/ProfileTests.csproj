@@ -3,9 +3,9 @@
   <!--
     档案与存档领域层单测（纯 C#，不需要引擎进程）：
       * TheGame/GameScripts/Profile/*.cs  —— 档案、成长、钱包、出战装配
-      * TheGame/GameScripts/Save/*.cs     —— 存档 DTO、当前格式与档案映射（SaveService 依赖 GF，排除）
+      * TheGame/GameScripts/Save/*.cs     —— 存档 DTO、当前格式与档案映射（SaveModule 依赖 GF，排除）
       * TheGame/GameScripts/Battle/Attributes/*.cs —— 出战装配写入的属性汇总
-      * TheGame/GameScripts/Config/ConfigValidator.cs —— 启动校验（读取真实表产物）
+      * TheGame/GameScripts/Config/ConfigHelper.cs —— 启动校验（读取真实表产物）
     常数与数值不手抄：测试运行时读取 DataTables/GameConfigs/*.bytes（与游戏同一份产物）。
 
     运行：dotnet test Tests/ProfileTests
@@ -26,9 +26,9 @@
   <ItemGroup>
     <Compile Include="*.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Profile\*.cs" Link="Linked\Profile\%(Filename)%(Extension)" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Save\**\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Save\SaveService.cs;$(GodotProjectDir)TheGame\GameScripts\Save\Slots\SaveSlotDirectory.cs" Link="Linked\Save\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Save\**\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Save\SaveModule*.cs;$(GodotProjectDir)TheGame\GameScripts\Save\Slots\SaveSlotDirectory.cs" Link="Linked\Save\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Battle\Attributes\*.cs" Link="Linked\Stats\%(Filename)%(Extension)" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ConfigValidator.cs" Link="Linked\Config\ConfigValidator.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ConfigHelper.cs" Link="Linked\Config\ConfigHelper.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ExternalTypeUtil.cs" Link="Linked\Config\ExternalTypeUtil.cs" />
     <!-- 全量配置类型：Tables 聚合全部表，启动校验需要真实 Tables -->
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\**\*.cs" Link="Linked\GameConfig\%(RecursiveDir)%(Filename)%(Extension)" />

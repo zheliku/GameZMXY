@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dqmpdpnnduin"]
 
-[ext_resource type="Script" uid="uid://f44cnwj7i81c" path="res://TheGame/GameScripts/UI/Damage/DamagePop.cs" id="1_script"]
+[ext_resource type="Script" uid="uid://f44cnwj7i81c" path="res://TheGame/GameScripts/UI/Damage/DamagePopNode.cs" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://dutecoh772684" path="res://TheGame/Sprites/Number/damage_number_monster_physics.png" id="2_mp"]
 [ext_resource type="Texture2D" uid="uid://2ckurw34noqu" path="res://TheGame/Sprites/Number/damage_number_monster_physics_crit.png" id="3_mpc"]
 [ext_resource type="Texture2D" uid="uid://dr2n66ku45jcx" path="res://TheGame/Sprites/Number/damage_number_monster_magic.png" id="4_mm"]
@@ -10,7 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://ccig6rxsotcq2" path="res://TheGame/Sprites/Number/damage_number_real.png" id="8_real"]
 [ext_resource type="Texture2D" uid="uid://cyll8jkeeq238" path="res://TheGame/Sprites/Number/damage_number_miss.png" id="9_miss"]
 
-[node name="DamagePop" type="Node2D" node_paths=PackedStringArray("m_Miss", "m_Content")]
+[node name="DamagePopNode" type="Node2D" node_paths=PackedStringArray("m_Miss", "m_Content")]
 z_index = 100
 script = ExtResource("1_script")
 m_MonsterPhysics = ExtResource("2_mp")

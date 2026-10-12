@@ -6,6 +6,7 @@ using Godot;
 using GodotGameFramework;
 using GameLogic.Audio;
 using GameConfig.Sound;
+using GameLogic.Monsters;
 
 namespace GameLogic.UI;
 
@@ -16,6 +17,7 @@ namespace GameLogic.UI;
 public partial class BattleHud
 {
     private BattleHudData m_Data; // 本次打开的状态源引用，关闭后释放。
+    private MonsterEntity m_Opponent; // 本次观察的守关怪，实体所有权仍归关卡。
 
     /// <summary>初始化框架字段；业务订阅只在 OnOpen 建立。</summary>
     /// <param name="serialId">界面请求编号。</param>
@@ -68,9 +70,9 @@ public partial class BattleHud
         }
 
         if (m_HpBar == null || m_MpBar == null || m_ExpBar == null || m_LevelLabel == null ||
-            m_WsBar == null || m_WsMax == null || m_Go == null)
+            m_WsBar == null || m_WsMax == null || m_Go == null || m_EncounterHealthBar == null)
         {
-            throw new InvalidOperationException("BattleHud 必须绑定生命、魔法、经验、无双资源条、无双满值提示、等级和 Go 节点。");
+            throw new InvalidOperationException("BattleHud 必须绑定资源条、无双满值提示、等级、Go 和守关怪提示节点。");
         }
 
         // 先登记本次引用再订阅，部分订阅失败时也能完整退订。
@@ -81,6 +83,7 @@ public partial class BattleHud
             data.Hero.Musou.Changed += RefreshMusou;
             data.Progression.Changed += RefreshProgression;
             data.Level.TravelAvailableChanged += RefreshTravel;
+            data.Level.FeaturedOpponentChanged += RefreshEncounter;
             RefreshAll();
             Visible = true;
         }
@@ -157,10 +160,12 @@ public partial class BattleHud
             m_Data.Hero.Musou.Changed -= RefreshMusou;
             m_Data.Progression.Changed -= RefreshProgression;
             m_Data.Level.TravelAvailableChanged -= RefreshTravel;
+            m_Data.Level.FeaturedOpponentChanged -= RefreshEncounter;
             m_Data = null;
         }
 
         ResetMusouAnimation();
+        BindEncounter(null);
         if (IsInstanceValid(m_Go))
         {
             m_Go.Stop();
@@ -175,6 +180,31 @@ public partial class BattleHud
         RefreshMusou();
         RefreshProgression();
         RefreshTravel();
+        RefreshEncounter();
+    }
+
+    /// <summary>在 HUD 绑定关卡指定的守关对手；该怪物仍由实体系统管理。</summary>
+    private void RefreshEncounter() => BindEncounter(m_Data.Level.FeaturedOpponent);
+
+    /// <summary>只在对手改变时重绑生命事件；控件本身只接收完整数值。</summary>
+    /// <param name="opponent">关卡指定的怪物；空值解除显示。</param>
+    private void BindEncounter(MonsterEntity opponent)
+    {
+        if (m_Opponent != opponent)
+        {
+            if (m_Opponent != null) m_Opponent.Vitals.Changed -= RefreshEncounterHealth;
+            m_Opponent = opponent;
+            if (opponent != null) opponent.Vitals.Changed += RefreshEncounterHealth;
+        }
+        RefreshEncounterHealth();
+    }
+
+    /// <summary>从唯一生命状态源读取并更新左名右条；关闭或死亡后隐藏。</summary>
+    private void RefreshEncounterHealth()
+    {
+        if (!IsInstanceValid(m_EncounterHealthBar)) return;
+        if (m_Opponent == null) m_EncounterHealthBar.Visible = false;
+        else m_EncounterHealthBar.SetValue(m_Opponent.Config.NameCn, m_Opponent.Vitals.Hp, m_Opponent.Vitals.MaxHp);
     }
 
     /// <summary>生命与魔法变化：一次读取当前值与上限，不会看到中间态。</summary>

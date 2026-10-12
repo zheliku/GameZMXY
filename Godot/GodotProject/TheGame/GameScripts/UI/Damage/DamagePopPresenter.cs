@@ -8,7 +8,7 @@ using GodotGameFramework.NodePool;
 namespace GameLogic.UI
 {
 	/// <summary>
-	/// 伤害飘字表现：订阅 <see cref="DamageDealtEventArgs"/>，从 NodePool 取 <see cref="DamagePop"/> 挂到世界层显示。
+	/// 伤害飘字表现：订阅 <see cref="DamageDealtEventArgs"/>，从 NodePool 取 <see cref="DamagePopNode"/> 挂到世界层显示。
 	/// 命中方与飘字互不认识（跨模块一次性反馈走 GF.Event）；飘字节点池化。
 	/// 普通对象，不是单例：由关卡运行（或测试场地）创建并持有，<see cref="Dispose"/> 时退订并回收场上全部飘字。
 	/// </summary>
@@ -61,7 +61,7 @@ namespace GameLogic.UI
 			}
 
 			// 取得池化实例后按闪避或伤害结果选择显示内容。
-			DamagePop pop = NodePool.Instance.Get<DamagePop>(DamagePopScene, m_Layer);
+			DamagePopNode pop = NodePool.Instance.Get<DamagePopNode>(DamagePopScene, m_Layer);
 			if (pop == null)
 			{
 				return;

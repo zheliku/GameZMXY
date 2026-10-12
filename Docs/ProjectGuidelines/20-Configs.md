@@ -11,7 +11,7 @@
 
 ## 属性与成长
 
-- 属性种类只有一个定义：枚举 `Stat.StatType`（`__enums__.xlsx`，值显式、只在末尾追加）。完整的一组属性值是 bean `Stat.StatBlock`（`__beans__.xlsx`），字段与枚举一一对应；新增属性时同时追加枚举项、bean 字段并更新 `StatSheet.SetBase`。
+- 属性种类只有一个定义：枚举 `Stat.StatType`（`__enums__.xlsx`，值显式、只在末尾追加）。完整的一组属性值是 bean `Stat.StatBlock`（`__beans__.xlsx`），字段与枚举一一对应；新增属性时同时追加枚举项、bean 字段并更新 `ActorAttributes.SetBase`。
 - 修正方式是枚举 `Stat.StatModifierKind`（`Flat` / `PercentAdd` / `PercentMult`）；装备、法宝、被动、丹药、Buff 表用它描述加成，不另造字段。
 - 经验曲线：`Hero.TbHeroLevelConfig`，全英雄共用（等级 → 升级所需经验）。
 - 英雄成长：`Hero.TbHeroGrowthConfig`（list，联合索引 `HeroId + Level`，`read_schema_from_file=false`），每行内嵌 `Stats: StatBlock`；每名英雄覆盖经验表全部等级。`HeroConfig` 只保留身份、手感与表现字段。
@@ -21,9 +21,9 @@
 
 ## 启动校验
 
-- 跨表约束由 `Config/ConfigValidator.ValidateAll` 在 `ProcedurePreload` 集中校验一次，汇总全部错误后停止启动：经验曲线连续、每英雄成长行覆盖 1..MaxLevel、怪物 `MaxHp > 0` 且 `AddExp ≥ 0`、建档英雄存在、战斗常数非负。
-- 运行期消费已校验的表，不再各自兜底或静默换默认值。关卡与场景装配的约束仍由各自的初始化边界（`LevelController.Initialize` 等）校验。
-- 新增跨表约束时加到 `ConfigValidator`，并在 `Tests/ProfileTests` 用正式表产物验证通过。
+- 跨表约束由 `Config/ConfigHelper.ValidateAll` 在 `ProcedurePreload` 集中校验一次，汇总全部错误后停止启动：经验曲线连续、每英雄成长行覆盖 1..MaxLevel、怪物 `MaxHp > 0` 且 `AddExp ≥ 0`、建档英雄存在、战斗常数非负。
+- 运行期消费已校验的表，不再各自兜底或静默换默认值。关卡与场景装配的约束仍由各自的初始化边界（`LevelModule.Initialize` 等）校验。
+- 新增跨表约束时加到 `ConfigHelper`，并在 `Tests/ProfileTests` 用正式表产物验证通过。
 
 ## 历史脚本
 

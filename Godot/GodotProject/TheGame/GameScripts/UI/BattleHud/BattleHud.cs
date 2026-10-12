@@ -97,6 +97,8 @@ namespace GameLogic.UI
 		private AnimatedSprite2D m_Go;
 		[Export]
 		private TextureButton m_SettingsButton;
+		[Export]
+		private EncounterHealthBar m_EncounterHealthBar;
 
 	}
 }

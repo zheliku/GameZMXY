@@ -1,8 +1,4 @@
-using GameLogic.Entity.Monsters.AI.States.Roam;
-using GameLogic.Entity.Monsters.AI.States.Interrupt;
-using GameLogic.Entity.Monsters.AI.States.Engage;
-using GameLogic.Entity.Monsters.AI.Core;
-using GameLogic.Entity.Monsters.AI.Attacks;
+using GameLogic.Monsters.AI;
 using System;
 using GameFramework.Fsm;
 using Xunit;
@@ -383,6 +379,8 @@ namespace GameLogic.Battle.Tests
 			h.Agent.Target(Hero(-300f));
 			h.Step(2);
 			Assert.Equal("WalkToTarget", h.State);
+            Assert.Equal(-1, h.Agent.RequestedAttack);
+            h.Run(1f);
 			Assert.Equal(1, h.Agent.RequestedAttack);
 		}
 

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using GameLogic.Entity.Body;
+using GameLogic.Body;
 using Godot;
 
 namespace GameLogic.Battle.Tests
@@ -9,6 +9,8 @@ namespace GameLogic.Battle.Tests
 	{
 		/// <summary>当前水平和垂直速度。</summary>
 		public Vector2 Velocity { get; set; }
+		/// <summary>测试可控的公共落地事实。</summary>
+		public bool OnFloor { get; set; } = true;
 		/// <summary>宿主是否已死亡。</summary>
 		public bool Dead { get; set; }
 		/// <summary>测试使用的重力常量。</summary>

@@ -1,8 +1,7 @@
-using GameLogic.Entity.Monsters.AI.States.Engage;
-using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Monsters.AI;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Monsters.AI.States.Roam
+namespace GameLogic.Monsters.AI
 {
 	/// <summary>
 	/// 无目标游荡状态的共同规则：一旦有目标立刻转追击；否则交给 <see cref="Roam"/>。

@@ -1,7 +1,7 @@
-using GameLogic.Entity.Monsters.Body.Core;
+using GameLogic.Monsters.Body;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Monsters.Body.States
+namespace GameLogic.Monsters.Body
 {
 	/// <summary>
 	/// 受击硬直：生效时施加击退速度、从头播 hurt 动画、播受击语音；**硬直时长 = hurt 动画长度**

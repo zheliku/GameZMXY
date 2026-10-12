@@ -1,8 +1,8 @@
-using GameLogic.Entity.Heroes.Body.States;
+using GameLogic.Heroes.Body;
 using GameFramework.Fsm;
-using GameLogic.Entity.Body;
+using GameLogic.Body;
 
-namespace GameLogic.Entity.Heroes.Body.Core
+namespace GameLogic.Heroes.Body
 {
 	/// <summary>
 	/// 英雄身体状态基类：集中**打断优先级**（死亡 &gt; 受击 &gt; 本状态决策）与共用的移动/跳跃/起手规则。

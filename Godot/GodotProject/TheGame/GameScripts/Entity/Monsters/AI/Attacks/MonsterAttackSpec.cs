@@ -1,7 +1,7 @@
-using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Monsters.AI;
 using System;
 
-namespace GameLogic.Entity.Monsters.AI.Attacks
+namespace GameLogic.Monsters.AI
 {
 	/// <summary>
 	/// 一招的 AI 用法：优先级、权重、释放距离与攻击动画判定盒。

@@ -5,7 +5,8 @@ using System;
 using GameConfig;
 using GameConfig.Sound;
 using GameFramework.Event;
-using GameLogic.Session;
+using GameLogic;
+using GameLogic.Level;
 using GameLogic.Profile;
 using GameLogic.Save;
 using GameLogic.Startup;
@@ -18,7 +19,7 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 public sealed class ProcedureTitle : MenuProcedure
 {
     private int m_SaveSerialId; // 本流程打开的六格存档窗口。
-    private SaveSlotDirectory m_Directory; // 本标题周期的目录状态源。
+    private SaveModule m_Save; // 本标题周期唯一存档模块，拥有目录状态及读取任务。
     private int m_SettingsSerialId; // 本流程打开的设置窗口，包括在途加载。
     /// <inheritdoc />
     protected override UIFormId FormId => UIFormId.StartForm;
@@ -26,12 +27,12 @@ public sealed class ProcedureTitle : MenuProcedure
     protected override SoundId MusicId => SoundId.MenuTheme;
     /// <inheritdoc />
     protected override object CreateData(ProcedureOwner owner) {
-        owner.RemoveData(FlowKeys.PlayerSession);
+        owner.RemoveData(FlowKeys.GameContext);
         owner.RemoveData(FlowKeys.SelectedLevelId);
         owner.RemoveData(FlowKeys.SaveSelection);
         var curve = owner.GetData<ExperienceCurveVariable>(FlowKeys.ExperienceCurve)?.Value
             ?? throw new InvalidOperationException("标题流程缺少经验曲线。");
-        m_Directory = new SaveSlotDirectory(new SaveService(curve, ConfigSystem.Instance.Tables));
+        m_Save = new SaveModule(curve, ConfigSystem.Instance.Tables);
         return null;
     }
 
@@ -59,7 +60,7 @@ public sealed class ProcedureTitle : MenuProcedure
         if (!isShutdown && m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId)))
             GF.UI.CloseUIForm(m_SaveSerialId);
         m_SettingsSerialId = m_SaveSerialId = 0;
-        m_Directory = null;
+        m_Save = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
 
@@ -73,10 +74,10 @@ public sealed class ProcedureTitle : MenuProcedure
     {
         if (((StartGameRequestedEventArgs)args).FormSerialId != FormSerialId) return;
         if (m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId))) return;
-        var directory = m_Directory;
+        var save = m_Save;
         var token = CancellationToken;
-        m_SaveSerialId = GF.UI.OpenUIForm(UIFormId.SaveForm, new SaveFormData(directory));
-        await directory.LoadAsync(token);
+        m_SaveSerialId = GF.UI.OpenUIForm(UIFormId.SaveForm, new SaveFormData(save.Directory));
+        await save.RefreshDirectoryAsync(token);
     }
 
     /// <summary>只接受当前窗口中可读的格号，把稳定编号交给读档流程。</summary>
@@ -85,9 +86,9 @@ public sealed class ProcedureTitle : MenuProcedure
     private void OnSaveSlotSelected(object sender, GameEventArgs args)
     {
         var selection = (SaveSlotSelectedEventArgs)args;
-        if (selection.FormSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) || m_Directory.Phase != SaveDirectoryPhase.Ready) return;
-        if (selection.SlotNumber < 1 || selection.SlotNumber > m_Directory.Slots.Count) return;
-        var slot = m_Directory.Slots[selection.SlotNumber - 1];
+        if (selection.FormSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) || m_Save.Directory.Phase != SaveDirectoryPhase.Ready) return;
+        if (selection.SlotNumber < 1 || selection.SlotNumber > m_Save.Directory.Slots.Count) return;
+        var slot = m_Save.Directory.Slots[selection.SlotNumber - 1];
         if (slot.State == SaveSlotState.Unreadable) return;
         Owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(slot.SlotNumber, slot.UnitId));
         ChangeState<ProcedureLoadProfile>(Owner);

@@ -4,6 +4,7 @@ using GameLogic.Battle.Attributes;
 using GameLogic.Save.Data;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GameConfig.Hero;
 using GameLogic.Save;
 using Newtonsoft.Json;
@@ -22,18 +23,18 @@ namespace GameLogic.Profile.Tests
 			int notifications = 0;
 			progression.Changed += () => notifications++;
 
-			// 140 经验恰好升到 2 级；再加 160 + 1 跨到 3 级并保留 1 点余量。
-			Assert.Equal(1, progression.AddExperience(140));
-			Assert.Equal((2, 0, 160), (progression.Level, progression.Experience, progression.MaxExperience));
-			Assert.Equal(1, progression.AddExperience(161));
-			Assert.Equal((3, 1, 180), (progression.Level, progression.Experience, progression.MaxExperience));
+			// 135 经验恰好升到 2 级；再加 145 + 1 跨到 3 级并保留 1 点余量。
+			Assert.Equal(1, progression.AddExperience(135));
+			Assert.Equal((2, 0, 145), (progression.Level, progression.Experience, progression.MaxExperience));
+			Assert.Equal(1, progression.AddExperience(146));
+			Assert.Equal((3, 1, 155), (progression.Level, progression.Experience, progression.MaxExperience));
 			Assert.Equal(0, progression.AddExperience(0));
 			Assert.Equal(2, notifications);
 
 			// 回滚恢复派生值并通知；相同值不通知。
 			progression.Restore(0);
 			progression.Restore(0);
-			Assert.Equal((1, 0, 140), (progression.Level, progression.Experience, progression.MaxExperience));
+			Assert.Equal((1, 0, 135), (progression.Level, progression.Experience, progression.MaxExperience));
 			Assert.Equal(3, notifications);
 			Assert.Throws<ArgumentOutOfRangeException>(() => progression.AddExperience(-1));
 		}
@@ -103,20 +104,20 @@ namespace GameLogic.Profile.Tests
         public void BattleSnapshot_FreezesGrowthAndPreservesRuntimeModifiers()
         {
             HeroProgression hero = new(1, TestTables.Curve, 0);
-            HeroBattleSnapshot first = HeroBattleSnapshot.Create(hero.HeroId, hero.Level, TestTables.Tables.TbHeroGrowthConfig);
-            hero.AddExperience(140);
-            HeroBattleSnapshot second = HeroBattleSnapshot.Create(hero.HeroId, hero.Level, TestTables.Tables.TbHeroGrowthConfig);
-            Assert.Equal((1, 80, 50, 8), (first.Level, first.BaseAttributes.MaxHp, first.BaseAttributes.MaxMp, first.BaseAttributes.Power));
-            Assert.Equal((2, 130, 65, 12, 11), (second.Level, second.BaseAttributes.MaxHp, second.BaseAttributes.MaxMp,
+            HeroLoadout first = HeroLoadout.Create(hero.HeroId, hero.Level, TestTables.Tables.TbHeroGrowthConfig);
+            hero.AddExperience(135);
+            HeroLoadout second = HeroLoadout.Create(hero.HeroId, hero.Level, TestTables.Tables.TbHeroGrowthConfig);
+            Assert.Equal((1, 80, 50, 10), (first.Level, first.BaseAttributes.MaxHp, first.BaseAttributes.MaxMp, first.BaseAttributes.Power));
+            Assert.Equal((2, 130, 70, 15, 4), (second.Level, second.BaseAttributes.MaxHp, second.BaseAttributes.MaxMp,
                 second.BaseAttributes.Power, second.BaseAttributes.Def));
 
             ActorAttributes attributes = new();
             attributes.SetSource(new AttributeSourceId("Musou", 0),
                 [AttributeModifier.PercentMult(GameConfig.Stat.StatType.Power, 1)]);
             attributes.SetBase(first.BaseAttributes);
-            Assert.Equal(16, attributes.GetInt(GameConfig.Stat.StatType.Power));
+            Assert.Equal(20, attributes.GetInt(GameConfig.Stat.StatType.Power));
             attributes.SetBase(second.BaseAttributes);
-            Assert.Equal(24, attributes.GetInt(GameConfig.Stat.StatType.Power));
+            Assert.Equal(30, attributes.GetInt(GameConfig.Stat.StatType.Power));
             Assert.Equal(130, attributes.GetInt(GameConfig.Stat.StatType.MaxHp));
         }
 
@@ -124,29 +125,45 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void BattleSnapshot_RejectsMissingGrowth()
         {
-            Assert.Throws<InvalidOperationException>(() => HeroBattleSnapshot.Create(999, 1, TestTables.Tables.TbHeroGrowthConfig));
-            Assert.Throws<ArgumentNullException>(() => new HeroBattleSnapshot(1, 1, null));
+            Assert.Throws<InvalidOperationException>(() => HeroLoadout.Create(999, 1, TestTables.Tables.TbHeroGrowthConfig));
+            Assert.Throws<ArgumentNullException>(() => new HeroLoadout(1, 1, null));
         }
 
-		/// <summary>成长表与重构前公式逐级一致（防止迁移脚本或手工改表引入偏差）。</summary>
+		/// <summary>成长表与官方 Role1.upGrade 公式逐级一致（防止迁移脚本或手工改表引入偏差）。</summary>
 		[Fact]
-		public void GrowthTable_MatchesLegacyLinearFormulaForWukong()
+		public void GrowthTable_MatchesOfficialWukongGrowth()
 		{
 			for (int level = 1; level <= TestTables.Curve.MaxLevel; level++)
 			{
 				HeroGrowthConfig row = TestTables.Tables.TbHeroGrowthConfig.Get(1, level);
 				Assert.NotNull(row);
 				int g = level - 1;
-				Assert.Equal((80 + 50 * g, 50 + 15 * g, 8 + 4 * g, 10 + g, 10 + g),
+				int defense = level < 15 ? 2 + 2 * g : 28 + (level - 14) * 5;
+				Assert.Equal((80 + 50 * g, 50 + 20 * g, 10 + 5 * g, defense, defense),
 					(row.Stats.MaxHp, row.Stats.MaxMp, row.Stats.Power, row.Stats.Def, row.Stats.Mdef));
 			}
 		}
 
+		/// <summary>怪物基础值符合官方数据，同一种实体只配置一条基础数值。</summary>
+		[Fact]
+		public void MonsterTable_MatchesOfficialStatsAndHasOneConfigPerEntity()
+		{
+			(int Id, int Hp, int Defense, int Xp)[] values = [(1, 50, 0, 5), (2, 100, 1, 6), (3, 300, 5, 7)];
+			foreach (var expected in values)
+			{
+				var monster = TestTables.Tables.TbMonsterConfig.Get(expected.Id);
+				Assert.Equal((expected.Hp, expected.Defense, expected.Xp),
+					(monster.Stats.MaxHp, monster.Stats.Def, monster.AddExp));
+			}
+			Assert.All(TestTables.Tables.TbMonsterConfig.DataList.GroupBy(x => x.EntityId), group => Assert.Single(group));
+			Assert.Null(TestTables.Tables.TbMonsterConfig.GetOrDefault(4));
+		}
+
 		/// <summary>真实配置通过启动校验。</summary>
 		[Fact]
-		public void ConfigValidator_AcceptsShippedTables()
+		public void ConfigHelper_AcceptsShippedTables()
 		{
-			ExperienceCurve curve = GameLogic.Config.ConfigValidator.ValidateAll(TestTables.Tables);
+			ExperienceCurve curve = GameLogic.Config.ConfigHelper.ValidateAll(TestTables.Tables);
 			Assert.Equal(55, curve.MaxLevel);
 		}
 
@@ -176,22 +193,22 @@ namespace GameLogic.Profile.Tests
         {
 
             foreach (int version in new[] { 0, 1, 2, GameData.CurrentVersion + 1 })
-                Assert.Throws<NotSupportedException>(() => ProfileMapper.RestoreProfile(new GameData { SaveVersion = version, ActiveHeroId = 1, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve));
-            Assert.Throws<ArgumentException>(() => ProfileMapper.RestoreProfile(new GameData(), TestTables.Curve));
+                Assert.Throws<NotSupportedException>(() => ProfileSaveHelper.RestoreProfile(new GameData { SaveVersion = version, ActiveHeroId = 1, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve));
+            Assert.Throws<ArgumentException>(() => ProfileSaveHelper.RestoreProfile(new GameData(), TestTables.Curve));
         }
 
 		/// <summary>档案 → 快照 → JSON → 快照 → 档案往返不丢状态，快照与运行时不共享引用。</summary>
 		[Fact]
 		public void Mapper_RoundTripsThroughJson()
 		{
-			PlayerProfile profile = new(1, new[] { new HeroProgression(1, TestTables.Curve, 517) }, new Wallet(42));
-			GameData snapshot = ProfileMapper.CaptureSaveData(profile);
+			PlayerProfile profile = new(1, new[] { new HeroProgression(1, TestTables.Curve, 472) }, new Wallet(42));
+			GameData snapshot = ProfileSaveHelper.CaptureSaveData(profile);
 			profile.Wallet.AddGold(100);
 			Assert.Equal(42, snapshot.Gold);
 
 			string json = JsonConvert.SerializeObject(snapshot);
 			GameData loaded = JsonConvert.DeserializeObject<GameData>(json);
-			PlayerProfile restored = ProfileMapper.RestoreProfile(loaded, TestTables.Curve);
+			PlayerProfile restored = ProfileSaveHelper.RestoreProfile(loaded, TestTables.Curve);
 			Assert.Equal(42, restored.Wallet.Gold);
 			Assert.Equal((4, 37), (restored.ActiveHero.Level, restored.ActiveHero.Experience));
 			Assert.DoesNotContain("\"Player\"", json);
@@ -204,14 +221,14 @@ namespace GameLogic.Profile.Tests
 		public void Mapper_RollsBackToSnapshot()
 		{
 			PlayerProfile profile = new(1, new[] { new HeroProgression(1, TestTables.Curve, 0) }, new Wallet(5));
-			GameData snapshot = ProfileMapper.CaptureSaveData(profile);
+			GameData snapshot = ProfileSaveHelper.CaptureSaveData(profile);
 			HeroProgression progression = profile.ActiveHero;
 			List<int> levels = new();
 			progression.Changed += () => levels.Add(progression.Level);
 
 			progression.AddExperience(400);
 			profile.Wallet.AddGold(50);
-			ProfileMapper.RestoreCheckpoint(profile, snapshot);
+			ProfileSaveHelper.RestoreCheckpoint(profile, snapshot);
 
 			Assert.Same(progression, profile.ActiveHero);
 			Assert.Equal((1, 5), (progression.Level, profile.Wallet.Gold));

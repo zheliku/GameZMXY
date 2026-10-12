@@ -28,8 +28,8 @@
 - 导表命令：`Configs/GameConfig/gen_code_bin_to_project_lazyload.bat`；也可由编辑器 TopMenu → Generate File → GameConfig File 执行。
 - 改表时先导表再构建；涉及实体/动画资源时运行 `EditorScripts/validate_anim_libraries.gd` 与 Collection Res 生成器。
 - 按改动风险运行相关单测或冒烟场景；验证完成后检查 `git diff` 与 `git diff --check`。
-- 纯 C# 单测：`dotnet test Tests/BattleTests`（伤害公式、属性汇总、生命魔法、无双）、`dotnet test Tests/LevelTests`（阶段与调度）、`dotnet test Tests/ProfileTests`（档案、成长、出战装配、存档迁移与映射、启动校验；读取正式 `.bytes` 产物）。
-- 关卡真实流程：`-- --smoketest=level`（四段清波、档案经验、通关检查点），在途取消：`-- --smoketest=level-cancel`。编辑器装配与绘制：`EditorScripts/validate_level_scene.gd`（`--editor` 检查 Tool，`-- --snapshot --resize` 检查实际像素与宽屏取景）；路径与 UID：`python Tools/ProjectMaintenance/validate_game_references.py`。
+- 纯 C# 单测：`dotnet test Tests/BattleTests`（伤害公式、属性汇总、生命魔法、无双）、`dotnet test Tests/LevelTests`（阶段与调度）、`dotnet test Tests/ProfileTests`（档案、成长、出战装配、当前存档映射与格式拒绝、启动校验；读取正式 `.bytes` 产物）。
+- 关卡真实流程：`-- --smoketest=level`（五波清场、守关血条、档案经验、W 出口到地图耗时、通关检查点），在途取消：`-- --smoketest=level-cancel`。编辑器装配与绘制：`EditorScripts/validate_level_scene.gd`（`--editor` 检查 Tool，`-- --snapshot --resize` 检查实际像素与宽屏取景）；路径与 UID：`python Tools/ProjectMaintenance/validate_game_references.py`，可加 `--compare-staged-geometry` 确认重构未修改用户已暂存的地形。
 - 菜单与声音回归：`-- --smoketest=frontend`，通过真实鼠标覆盖标题→六格存档选择→读档→选角→地图→关卡、地点悬停与动画复位、声音开关持久化、设置暂停/继续/返回地图、放弃回滚、窗口池复用层级、过期点击事件、调试入口隐藏及 Music 组独占循环。非 headless 模式保存界面和光晕两次采样截图至 `.godot/validation/frontend/`。
 - UI 与存档回归：`-- --smoketest=ui`，使用真实 GGF 窗口/实体池及流程验证 HUD 聚合刷新与退订、实体与窗口复用、升级注入、关卡事务（中途离开回滚、死亡写盘与自动重开）、主文件损坏回退 `.bak`、当前格式校验与不支持格式拒绝、加载取消和失败恢复；全部烟测在 `SmokeTestDriver._Ready` 选择唯一 `user://Validation/<模式>/<随机 ID>` 存档目录，不触碰玩家进度。以 `SMOKE PASS/FAIL` 判定断言，框架退出异常单独登记，不能用通过断言掩盖异常退出。
 - 已知框架退出异常（与业务无关，单独登记）：关停时 `DefaultWebRequestAgentHelper.Reset` 访问已释放节点（`ObjectDisposedException`）；`level-cancel`/`ui` 退出时 GC 终结器 `0xC0000005`；`--build-solutions` 退出时 `ComponentInsoector._ExitTree` 释放 RefCounted 报错。
@@ -97,3 +97,10 @@
 - 前端回归用 Viewport.PushInput 的局部坐标分发真实 GUI 事件，在布局等待后提交鼠标事件，按下/松开在同一轮分发；验证四栏切换、关闭/复用、不可选角色拒绝导航与手形光标，不增加生产观测 API，也不以重试跳过失败。
 
 - 本次格式平铺后，按用户此前清理旧开发存档的授权，核对并删除本机两个 v2（经验/金币均为 0）及对应目录、备份，共六文件；GameData 目录剩余文件数为 0，未清理 Validation 或应用设置。
+
+### 本轮模块入口与表现整理（2026-10-12）
+
+- 用户要求统一模块入口、辅助类型命名和按功能分类，明确拒绝整个模块按 Nodes/Rules/Resources 聚集；据此修订第 00/10/40/60/70 章。LevelRun 与 LevelController 合并为同一个 LevelModule（Progress 为同对象 partial），SaveModule 拥有目录状态和读取；辅助脚本按 Camera、Spawning、Stages、Markers、Exit 归组，迁移携带原 UID，场景与验证引用同步更新。不改变用户已暂存的地形、Git 索引或已有工作。
+- 仅在源表 BattleConfig.xlsx 把已废弃的 ClearRestartDelay 替换为 MonsterHealthBarFadeDuration=2；配置 C# 与二进制经既有 Luban 脚本生成。BattleHud.cs 经既有 UI 绑定工具生成，资源常量经原 Collection Res 生成器更新。没有手改生成代码，没有新增 Framework、addons、Tools/Luban 或旧工程修改。
+- 守关条删除入场弹窗与生命数字，改为左侧白字黑边姓名与右侧原笔刷条。华康海报体 W12 仅从旧 BossBlood 所用字体复制，路径、SHA256 和可重复迁入入口登记在 LegacyAssetMap。小怪两秒淡出与重受伤复位依据造梦西游一官方 BaseMonster.showHpSlip 和 TweenLite 默认缓动；不把旧项目字体宣称为官方提取字体。
+- 通关返回地图的延迟来自旧 ClearRestartDelay=3 秒；删除通关等待，下一流程帧等待检查点即切地图，死亡等待仍由 DeathRestartDelay 决定。真实 OpenGL 关卡测得 W 到地图可见 49ms（含写盘），磁盘重读经验 204；完整验证与已知框架退出限制见 [ModuleRefactor](../ModuleRefactor.md)。

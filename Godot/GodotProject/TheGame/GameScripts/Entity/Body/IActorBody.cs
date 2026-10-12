@@ -1,9 +1,8 @@
-using GameLogic.Entity.Monsters.Body.Core;
-using GameLogic.Entity.Heroes.Body.Core;
-using GameLogic.Entity;
+using GameLogic.Monsters.Body;
+using GameLogic.Heroes.Body;
 using Godot;
 
-namespace GameLogic.Entity.Body
+namespace GameLogic.Body
 {
 	/// <summary>
 	/// 身体状态机的公共宿主契约（英雄与怪物共用）：从 <see cref="IHeroBody"/> / <see cref="IMonsterBody"/>
@@ -16,6 +15,9 @@ namespace GameLogic.Entity.Body
 	/// </summary>
 	public interface IActorBody
 	{
+		/// <summary>上一次物理移动是否站在地面，供起跳、落地与地面出招决策共用。</summary>
+		bool OnFloor { get; }
+
 		/// <summary>速度 px/s（宿主在状态机推进后 MoveAndSlide）</summary>
 		Vector2 Velocity { get; set; }
 

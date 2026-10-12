@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://c73owhur3v0p4" path="res://TheGame/GameScripts/Entity/Monsters/DemonMonkeyEntity.cs" id="1_script"]
 [ext_resource type="SpriteFrames" uid="uid://b0oxbkaxv8w0m" path="res://TheGame/Sprites/Characters/Monsters/demon_monkey/demon_monkey_animations.tres" id="2_frames"]
 [ext_resource type="AnimationLibrary" uid="uid://denuc0ot4c0gs" path="res://TheGame/Entitys/Animations/demon_monkey_anim_library.tres" id="3_lib"]
-[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBox.cs" id="5_hurtbox"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="5_hurtbox"]
 [ext_resource type="PackedScene" path="res://TheGame/UIs/Widgets/monster_health_bar.tscn" id="6_health_bar"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]

@@ -1,9 +1,8 @@
-using GameLogic.Entity.Monsters.Body.States;
-using GameLogic.Entity.Monsters.Body.Core;
+using GameLogic.Monsters.Body;
 using System;
 using System.Collections.Generic;
 using GameFramework.Fsm;
-using GameLogic.Entity.Body;
+using GameLogic.Body;
 using Godot;
 using Xunit;
 
@@ -47,6 +46,25 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("run", h.Body.LastAnim);
 			Assert.Equal(80f, h.Body.Velocity.X, 3);
 			Assert.Equal(1, h.Body.Facing);
+		}
+
+		/// <summary>空中请求作废，落地只执行新的请求。</summary>
+		[Fact]
+		public void Airborne_DropsAttackRequest_UntilGrounded()
+		{
+			using MonsterHarness h = new(Params());
+			h.Body.OnFloor = false;
+			h.Body.AttackRequest = 0;
+			h.Step(1);
+			Assert.Equal("Move", h.State);
+			Assert.Equal(0, h.Body.BeginCount);
+			Assert.True(h.Body.Velocity.Y > 0);
+			h.Body.OnFloor = true;
+			h.Step(1);
+			Assert.Equal("Move", h.State); // 空中的旧请求不会在落地时突然释放。
+			h.Body.AttackRequest = 0;
+			h.Step(1);
+			Assert.Equal("Attack", h.State);
 		}
 
 		/// <summary>验证怪物攻击、收招硬直及其后的移动状态。</summary>
@@ -233,7 +251,7 @@ namespace GameLogic.Battle.Tests
 				for (int i = 0; i < frames; i++)
 				{
 					m_Fsm.Tick(Dt);
-					Body.Velocity = new Vector2(Body.Velocity.X, 0f);   // 始终站在地面
+					if (Body.OnFloor) Body.Velocity = new Vector2(Body.Velocity.X, 0f);
 				}
 			}
 

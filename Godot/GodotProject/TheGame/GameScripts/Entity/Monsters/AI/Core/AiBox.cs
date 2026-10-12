@@ -1,8 +1,7 @@
-using GameLogic.Entity.Monsters.AI.Attacks;
-using GameLogic.Entity;
+using GameLogic.Monsters.AI;
 using System;
 
-namespace GameLogic.Entity.Monsters.AI.Core
+namespace GameLogic.Monsters.AI
 {
 	/// <summary>
 	/// AI 用的轴对齐矩形（纯 C# 值类型；AI 目录不引用 Godot 类型）。坐标相对怪物原点，Y 向下（同 Godot）。

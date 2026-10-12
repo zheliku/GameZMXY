@@ -1,4 +1,4 @@
-namespace GameLogic.Entity.Heroes.Body.Core
+namespace GameLogic.Heroes.Body
 {
 	/// <summary>
 	/// 英雄标准动画名（Entity/AGENTS.md「命名标准」，所有英雄的动画库都用这套动画名）。

@@ -1,4 +1,4 @@
-"""Read-only checks for serialized resource paths, script UIDs and optional staged geometry.
+"""Read-only checks for resource paths, duplicate scene nodes, script UIDs and optional staged geometry.
 
 Run from any directory:
     python Tools/ProjectMaintenance/validate_game_references.py
@@ -22,12 +22,26 @@ def main():
     failures = []
     path_count = 0
     for source in GAME.rglob("*"):
-        if source.suffix not in {".tscn", ".tres"}:
+        if source.suffix not in {".tscn", ".tres", ".cs"} or "GameProto" in source.parts:
             continue
-        for uri in re.findall(r'\bpath="(res://[^"\n]+)"', source.read_text(encoding="utf-8-sig")):
+        content = source.read_text(encoding="utf-8-sig")
+        # Scene properties and C# constants may contain paths without an ext_resource declaration.
+        for uri in re.findall(r'"(res://[^"\n]+\.(?:tscn|tres|cs|gd|gdshader|png|ttf|ttc|otf|mp3|wav|ogg))"', content):
+            if uri.startswith("res://.godot/") or "{" in uri:
+                continue  # Smoke captures and interpolated output names are created at runtime.
             path_count += 1
             if not (PROJECT / uri[6:]).is_file():
                 failures.append(f"{source.relative_to(ROOT)}: missing {uri}")
+        if source.suffix == ".tscn":
+            # Godot may silently rename duplicates at runtime, while the editor reports a load error.
+            nodes = set()
+            for header in re.findall(r'(?m)^\[node ([^\n]+)\]$', content):
+                name = re.search(r'\bname="([^"\n]+)"', header).group(1)
+                parent = re.search(r'\bparent="([^"\n]+)"', header)
+                node_path = parent.group(1) + "/" + name if parent else "."
+                if node_path in nodes:
+                    failures.append(f"{source.relative_to(ROOT)}: duplicate node {node_path}")
+                nodes.add(node_path)
 
     uids = {}
     for source in GAME.rglob("*.uid"):

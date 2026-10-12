@@ -1,10 +1,9 @@
-using GameLogic.Entity.Heroes.Body.States;
-using GameLogic.Entity.Heroes.Body.Core;
-using GameLogic.Entity.Heroes.Input;
+using GameLogic.Heroes.Body;
+using GameLogic.Heroes.Input;
 using System;
 using System.Collections.Generic;
 using GameFramework.Fsm;
-using GameLogic.Entity.Body;
+using GameLogic.Body;
 using Godot;
 using Xunit;
 
@@ -395,8 +394,6 @@ namespace GameLogic.Battle.Tests
 			public bool SuperArmor { get; set; }
 			/// <summary>由测试驱动的输入状态。</summary>
 			public HeroInput Input { get; }
-			/// <summary>宿主报告的落地状态。</summary>
-			public bool OnFloor { get; set; } = true;
 			/// <summary>当前已使用的跳跃次数。</summary>
 			public int JumpCount { get; set; }
 			/// <summary>下一次普攻使用的连段索引。</summary>

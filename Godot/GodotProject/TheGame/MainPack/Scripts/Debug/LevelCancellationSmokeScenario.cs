@@ -1,11 +1,9 @@
-using GameLogic.Level.Stage;
-using GameLogic.Level.Spawning;
+using GameLogic.Level;
 using GameLogic.Input;
 using System.Collections.Generic;
 using System.Linq;
-using GameLogic.Entity.Heroes;
-using GameLogic.Entity.Monsters;
-using GameLogic.Level;
+using GameLogic.Heroes;
+using GameLogic.Monsters;
 using Godot;
 using GodotGameFramework;
 
@@ -13,14 +11,14 @@ using GodotGameFramework;
 public sealed class LevelCancellationSmokeScenario
 {
     private readonly HeroEntity m_Hero; // 驱动实际移动的玩家。
-    private readonly LevelController m_Level; // 受测会话。
+    private readonly LevelModule m_Level; // 受测会话。
     private readonly List<string> m_Failures = new(); // 取消与回收的断言结果。
     private double m_Time; // 场景等待时间。
     private double m_StopTime; // 停止会话之后经过的游戏秒数。
     private bool m_Stopped; // 已主动停止会话，正在等待在途资源完成。
 
     /// <summary>创建取消回归场景。</summary>
-    public LevelCancellationSmokeScenario(HeroEntity hero, LevelController level)
+    public LevelCancellationSmokeScenario(HeroEntity hero, LevelModule level)
     {
         m_Hero = hero;
         m_Level = level;
@@ -40,7 +38,7 @@ public sealed class LevelCancellationSmokeScenario
         {
             // 首次怪物场景尚未进池，按正式配方首只等待时间强制到期，覆盖真实在途边界。
             var stage = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages[0];
-            m_Level.GetNode<LevelSpawner>("Spawner")._Process(stage.SpawnDelay + stage.Recipes.Min(x => x.Delay) + 0.01);
+            m_Level.GetNode<LevelSpawnerNode>("Spawner")._Process(stage.SpawnDelay + stage.Recipes.Min(x => x.Delay) + 0.01);
             int pending = GF.Entity.GetAllLoadingEntityIds().Length;
             if (pending == 0)
             {

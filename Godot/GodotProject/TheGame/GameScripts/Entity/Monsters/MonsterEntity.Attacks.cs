@@ -1,11 +1,10 @@
-using GameLogic.Entity.Monsters.AI.Core;
-using GameLogic.Entity.Monsters.AI.Attacks;
+using GameLogic.Monsters.AI;
 using System;
 using GameConfig.Battle;
 using Godot;
 using GodotGameFramework;
 
-namespace GameLogic.Entity.Monsters
+namespace GameLogic.Monsters
 {
 	/// <summary>怪物攻击装配、范围推导与出招生命周期；具体招式仍可重写。</summary>
 	public abstract partial class MonsterEntity
@@ -64,7 +63,7 @@ namespace GameLogic.Entity.Monsters
 			SetFacing(Math.Sign(TargetBox.CenterX));
 			Attacks.MarkUsed(index, GD.Randf);
 			AttackSegment = index;
-			ArmAttack(m_OwnAttacks[index]);
+			ArmAttack(m_OwnAttacks[index], m_AttackMultiplier);
 			PlaySound(m_OwnAttacks[index].SoundId);
 			Log.Debug("[Monster] {0} 出招 段{1}", Id, index + 1);
 		}

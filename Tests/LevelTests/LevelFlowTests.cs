@@ -1,12 +1,9 @@
-using GameLogic.Level.Stage;
-using GameLogic.Level.Spawning;
-using GameLogic.Level.Camera;
+using GameLogic.Level;
 using System;
 using System.IO;
 using System.Linq;
 using GameConfig.Entity;
 using GameConfig.Level;
-using GameLogic.Level;
 using Luban;
 using Xunit;
 
@@ -21,17 +18,29 @@ public sealed class LevelFlowTests
         return new TbLevelConfig(new ByteBuf(File.ReadAllBytes(path))).Get(1);
     }
 
-    /// <summary>官方花果山前四波保留两种小怪和并行配方，由相机抵达激活，暂不包含 Boss 波。</summary>
+    /// <summary>花果山保留官方五波并行配方，末波大猩猩作为普通怪物参与守关。</summary>
     [Fact]
     public void NestedConfigKeepsParallelRecipesAndCameraActivation()
     {
         LevelConfig level = LoadLevel();
-        Assert.Equal(4, level.Stages.Count);
-        Assert.Equal(new[] { 3, 7, 6, 7 }, level.Stages.Select(x => x.Recipes.Sum(r => r.Count)));
-        Assert.Equal(new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey },
-            level.Stages[1].Recipes.Select(x => x.MonsterEntityId).Distinct());
+        Assert.Equal(5, level.Stages.Count);
+        Assert.Equal(new[] { 3, 7, 6, 7, 10 }, level.Stages.Select(x => x.Recipes.Sum(r => r.Count)));
+        Assert.Equal(new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey }, level.Stages[1].Recipes.Select(x => x.MonsterEntityId).Distinct());
         Assert.All(level.Stages, x => Assert.Equal(StageActivation.CameraArrived, x.Activation));
         Assert.All(level.Stages, x => Assert.True(x.SpawnDelay >= 0));
+    }
+
+    /// <summary>守关差异只配置在本条生成流，其他小怪保留基础值；经验覆盖保持原有收益。</summary>
+    [Fact]
+    public void SpawnRecipeScalesOnlyTheFeaturedGorilla()
+    {
+        LevelSpawnRecipe[] recipes = LoadLevel().Stages.SelectMany(x => x.Recipes).ToArray();
+        LevelSpawnRecipe gorilla = Assert.Single(recipes, x => x.MonsterEntityId == EntityId.Gorilla);
+        Assert.Equal((3f, 1f, 1f, 25),
+            (gorilla.HealthMultiplier, gorilla.DefenseMultiplier, gorilla.AttackMultiplier, gorilla.ExperienceOverride));
+        Assert.All(recipes.Where(x => x != gorilla), recipe =>
+            Assert.Equal((1f, 1f, 1f, -1),
+                (recipe.HealthMultiplier, recipe.DefenseMultiplier, recipe.AttackMultiplier, recipe.ExperienceOverride)));
     }
 
     /// <summary>官方第二波左右出怪，第三波三个高低分散点与一条延迟生成流不能再合并。</summary>
@@ -45,12 +54,12 @@ public sealed class LevelFlowTests
         Assert.Equal(new[] { 3f, 6f, 6f }, level.Stages[1].Recipes.Select(x => x.Delay));
         Assert.Equal(new[] { 1, 1, 1, 3 }, level.Stages[2].Recipes.Select(x => x.Count));
         Assert.Equal(new[] { 4f, 4f, 4f, 6f }, level.Stages[2].Recipes.Select(x => x.Delay));
-        Assert.Equal(new[] { "", "stage_2_left", "stage_3_left", "stage_4_left" },
+        Assert.Equal(new[] { "", "stage_2_left", "stage_3_left", "stage_4_left", "stage_5_left" },
             level.Stages.Select(x => x.LeftGateId));
         Assert.Equal("stage_4_gate", level.Stages[3].GateId);
     }
 
-    /// <summary>加载期不开始战斗，清除只能推进紧邻下一阶段，末段清除完成会话。</summary>
+    /// <summary>加载期不开始战斗，清除只能推进紧邻下一阶段，末段清除等待出口交互后完成会话。</summary>
     [Fact]
     public void SequenceWaitsForArrivalAfterEveryClear()
     {
@@ -58,7 +67,7 @@ public sealed class LevelFlowTests
         Assert.Equal(LevelStagePhase.Ready, sequence.Phase);
         Assert.Throws<InvalidOperationException>(sequence.StartBattle);
         sequence.Begin();
-        for (int i = 1; i <= 4; i++)
+        for (int i = 1; i <= LoadLevel().Stages.Count; i++)
         {
             Assert.Equal(i, sequence.Current.StageOrder);
             Assert.Equal(LevelStagePhase.Travelling, sequence.Phase);
@@ -66,7 +75,10 @@ public sealed class LevelFlowTests
             sequence.ClearBattle();
         }
 
+        Assert.Equal(LevelStagePhase.AwaitingExit, sequence.Phase);
+        sequence.Complete();
         Assert.Equal(LevelStagePhase.Completed, sequence.Phase);
+        Assert.Throws<InvalidOperationException>(sequence.Complete);
         Assert.Throws<InvalidOperationException>(sequence.StartBattle);
     }
 
@@ -169,7 +181,7 @@ public sealed class LevelFlowTests
     [InlineData(440f)]
     public void CameraHoldsInsideCentralWindow(float target)
     {
-        Assert.Equal(470f, LevelCamera.StepCenter(470f, target, 40f, 470f, 1210f, 10f));
+        Assert.Equal(470f, LevelCameraHelper.StepCenter(470f, target, 40f, 470f, 1210f, 10f));
     }
 
     /// <summary>相机停止在墙前时，角色可继续移动，脚本中心仍等于实际显示中心。</summary>
@@ -179,7 +191,7 @@ public sealed class LevelFlowTests
         float center = 1210f;
         for (float player = 1250f; player <= 1660f; player += 10f)
         {
-            center = LevelCamera.StepCenter(center, player, 40f, 470f, 1210f, 10f);
+            center = LevelCameraHelper.StepCenter(center, player, 40f, 470f, 1210f, 10f);
             Assert.Equal(1210f, center);
         }
     }
@@ -188,11 +200,11 @@ public sealed class LevelFlowTests
     [Fact]
     public void OpeningGateDoesNotSnapToPlayerAtRightWall()
     {
-        float center = LevelCamera.StepCenter(1210f, 1660f, 40f, 470f, 2310f, 10f);
+        float center = LevelCameraHelper.StepCenter(1210f, 1660f, 40f, 470f, 2310f, 10f);
         Assert.Equal(1220f, center);
         for (int i = 0; i < 50; i++)
         {
-            float next = LevelCamera.StepCenter(center, 1660f, 40f, 470f, 2310f, 10f);
+            float next = LevelCameraHelper.StepCenter(center, 1660f, 40f, 470f, 2310f, 10f);
             Assert.InRange(next - center, 0f, 10f);
             center = next;
         }
@@ -209,7 +221,7 @@ public sealed class LevelFlowTests
         while (center < 1210f)
         {
             player += 3f;
-            center = LevelCamera.StepCenter(center, player, 40f, 470f, 1210f, 10f);
+            center = LevelCameraHelper.StepCenter(center, player, 40f, 470f, 1210f, 10f);
         }
 
         Assert.InRange(player - center, 40f, 43f);
@@ -229,14 +241,19 @@ public sealed class LevelFlowTests
         bytes.WriteString("");
         bytes.WriteInt(maxActive);
         bytes.WriteFloat(spawnDelay);
+        bytes.WriteInt((int)EntityId.None);
         bytes.WriteSize(2);
         foreach (string point in new[] { "a", "b" })
         {
-            bytes.WriteInt(1);
+            bytes.WriteInt((int)EntityId.HuaguoshanMonkey);
             bytes.WriteString(point);
             bytes.WriteInt(2);
             bytes.WriteFloat(0f);
             bytes.WriteFloat(0f);
+            bytes.WriteFloat(1f);
+            bytes.WriteFloat(1f);
+            bytes.WriteFloat(1f);
+            bytes.WriteInt(-1);
         }
 
         return new LevelStage(bytes);

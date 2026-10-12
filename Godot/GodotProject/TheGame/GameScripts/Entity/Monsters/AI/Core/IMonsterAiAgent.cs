@@ -1,5 +1,5 @@
-using GameLogic.Entity.Monsters.AI.Attacks;
-namespace GameLogic.Entity.Monsters.AI.Core
+using GameLogic.Monsters.AI;
+namespace GameLogic.Monsters.AI
 {
 	/// <summary>
 	/// 怪物 AI 的宿主接口（GF.Fsm 的持有者类型）：AI 状态只通过它**读感知、写意图**，

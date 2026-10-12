@@ -1,4 +1,4 @@
-using GameLogic.Level.Stage;
+using GameLogic.Level;
 using GameLogic.Battle.Resources;
 using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
@@ -11,9 +11,8 @@ using GameConfig.Sound;
 using GameFramework;
 using GameFramework.Event;
 using GameLogic;
-using GameLogic.Entity.Heroes;
-using GameLogic.Entity.Monsters;
-using GameLogic.Level;
+using GameLogic.Heroes;
+using GameLogic.Monsters;
 using GameLogic.UI;
 using Godot;
 using GodotGameFramework;
@@ -128,7 +127,7 @@ public partial class SmokeTestDriver : Node
 
 	private double m_TravelTime; // 战斗烟测进入首阶段的准备时间。
 	private bool m_StageEntered; // 相机已到达首阶段右界，战斗时间轴可开始。
-	private LevelController m_Level; // 烟测观测的关卡会话。
+	private LevelModule m_Level; // 烟测观测的关卡会话。
 
 	private double m_MonsterFoundAt = -1.0; // 找到受测猴子的时间（秒）；-1 表示尚未找到。
 
@@ -193,6 +192,11 @@ public partial class SmokeTestDriver : Node
 					StopDriving(false);
 				}
 			}
+			return;
+		}
+		if (m_Mode == SmokeMode.Level && m_LevelScenario != null)
+		{
+			DriveLevelScenario(delta);
 			return;
 		}
 		// 既有战斗回归也从真实菜单进入，不给生产流程增加测试专用跳转。
@@ -410,7 +414,7 @@ public partial class SmokeTestDriver : Node
 		m_TravelTime += delta;
 		foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
 		{
-			if (node is LevelController level)
+			if (node is LevelModule level)
 			{
 				m_Level = level;
 				break;
@@ -451,7 +455,7 @@ public partial class SmokeTestDriver : Node
 		{
 			foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
 			{
-				if (node is LevelController level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
+				if (node is LevelModule level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
 				{
 					m_LevelScenario = new LevelSmokeScenario(m_Hero, level);
 					break;
@@ -469,7 +473,7 @@ public partial class SmokeTestDriver : Node
 		{
 			if (m_LevelScenario.Failures.Count == 0)
 			{
-				GD.Print("SMOKE PASS：四段关卡、相机连续移动、左右物理门、抵达延迟和怪物总数全部通过");
+				GD.Print("SMOKE PASS：五波关卡、相机、物理门、大猩猩守关血条、W 出口、自动存档与地图重读全部通过");
 				StopDriving(false);
 			}
 			else
@@ -485,7 +489,7 @@ public partial class SmokeTestDriver : Node
 		{
 			foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
 			{
-				if (node is LevelController level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
+				if (node is LevelModule level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
 				{
 					m_CancelScenario = new LevelCancellationSmokeScenario(m_Hero, level);
 					break;
@@ -713,7 +717,7 @@ public partial class SmokeTestDriver : Node
 		// FindChildren 的类型过滤只认引擎原生类名（C# 脚本类名不匹配），按 Node2D 取再判脚本类型
 		foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
 		{
-			if (node is DamagePop pop && pop.Visible && pop.IsInsideTree())
+			if (node is DamagePopNode pop && pop.Visible && pop.IsInsideTree())
 			{
 				count++;
 			}
@@ -745,9 +749,9 @@ public partial class SmokeTestDriver : Node
 			{
 				failures.Add($"双方闪避/暴击为 0 时不应出现闪避/暴击（伤害 {damage} 暴击 {crit} 闪避 {miss}）");
 			}
-			else if (damage < 4 || damage > 6)
+			else if (damage < 10 || damage > 14)
 			{
-				failures.Add($"命中伤害 {damage} 不在手算区间 [4,6]");
+				failures.Add($"命中伤害 {damage} 不在一级悟空对零防猴子的区间 [10,14]");
 			}
 		}
 
@@ -760,7 +764,7 @@ public partial class SmokeTestDriver : Node
 
 		if (m_MaxPopCount == 0)
 		{
-			failures.Add("命中后场上没有出现过飘字（NodePool 未取出 DamagePop）");
+			failures.Add("命中后场上没有出现过飘字（NodePool 未取出 DamagePopNode）");
 		}
 
 		GD.Print($"SMOKE: 猴子共受击 {m_MonsterHits.Count} 次，累计伤害 {total}，HP {m_Monster.Vitals.Hp}/{m_Monster.Vitals.MaxHp}，同屏飘字峰值 {m_MaxPopCount}");

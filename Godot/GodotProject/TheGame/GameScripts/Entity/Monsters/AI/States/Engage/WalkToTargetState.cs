@@ -1,8 +1,7 @@
-using GameLogic.Entity.Monsters.AI.Core;
-using GameLogic.Entity.Monsters.AI.Attacks;
+using GameLogic.Monsters.AI;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Monsters.AI.States.Engage
+namespace GameLogic.Monsters.AI
 {
 	/// <summary>
 	/// 水平走向目标（旧 have_target）；攻击判定盒**水平**吃进目标即转站定出招——不看高度：目标在头顶也走到下面

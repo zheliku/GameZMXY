@@ -1,5 +1,5 @@
-using GameLogic.Entity.Monsters;
-namespace GameLogic.Entity.Monsters.Body.Core
+using GameLogic.Monsters;
+namespace GameLogic.Monsters.Body
 {
 	/// <summary>
 	/// 怪物身体参数（值快照）：MonsterEntity 从 MonsterConfig / AttackConfig 拷入，身体状态只读这里。

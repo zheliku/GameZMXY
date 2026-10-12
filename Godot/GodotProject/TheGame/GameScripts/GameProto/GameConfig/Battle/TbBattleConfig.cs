@@ -144,9 +144,9 @@ public partial class TbBattleConfig
     /// </summary>
      public float DeathRestartDelay => _data.DeathRestartDelay;
     /// <summary>
-    /// 通关后自动重开本关的等待秒数(暂无结算界面时使用)
+    /// 小怪受伤血条淡出秒数（官方 BaseMonster.showHpSlip 为 2 秒）
     /// </summary>
-     public float ClearRestartDelay => _data.ClearRestartDelay;
+     public float MonsterHealthBarFadeDuration => _data.MonsterHealthBarFadeDuration;
     /// <summary>
     /// 无双持续秒数（旧项目每0.5秒扣4/100，共12.5秒）
     /// </summary>

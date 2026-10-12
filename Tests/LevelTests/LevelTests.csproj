@@ -11,8 +11,8 @@
     <GodotProjectDir>$(MSBuildThisFileDirectory)..\..\Godot\GodotProject\</GodotProjectDir>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Camera\LevelCamera.cs" Link="Linked\LevelCamera.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Stage\LevelStageSequence.cs" Link="Linked\LevelStageSequence.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Camera\LevelCameraHelper.cs" Link="Linked\LevelCameraHelper.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Stages\LevelStageSequence.cs" Link="Linked\LevelStageSequence.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Spawning\LevelSpawnSchedule.cs" Link="Linked\LevelSpawnSchedule.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Level\*.cs" Link="Linked\Config\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Entity\EntityId.cs" Link="Linked\Config\EntityId.cs" />
@@ -22,7 +22,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
-    <!-- 相机取景是节点上的纯静态算法：引用 GodotSharp 即可在纯控制台验证，不需要引擎进程。 -->
     <PackageReference Include="GodotSharp" Version="4.7.2" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />

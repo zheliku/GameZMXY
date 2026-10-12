@@ -1,5 +1,5 @@
 using System;
-using GameLogic.Entity.Heroes;
+using GameLogic.Heroes;
 using GameLogic.Level;
 using GameLogic.Profile;
 
@@ -18,14 +18,14 @@ public sealed class BattleHudData
     public HeroProgression Progression { get; }
 
     /// <summary>本次关卡（可前进窗口）。</summary>
-    public LevelController Level { get; }
+    public LevelModule Level { get; }
 
     /// <summary>创建一次 HUD 打开的参数。</summary>
     /// <param name="hero">已显示的英雄。</param>
     /// <param name="progression">该英雄的档案成长。</param>
     /// <param name="level">本次关卡。</param>
     /// <exception cref="ArgumentNullException">任一引用为空。</exception>
-    public BattleHudData(HeroEntity hero, HeroProgression progression, LevelController level)
+    public BattleHudData(HeroEntity hero, HeroProgression progression, LevelModule level)
     {
         Hero = hero ?? throw new ArgumentNullException(nameof(hero));
         Progression = progression ?? throw new ArgumentNullException(nameof(progression));

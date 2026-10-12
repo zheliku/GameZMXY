@@ -1,8 +1,8 @@
-using GameLogic.Entity.Monsters.AI.Core;
+using GameLogic.Monsters.AI;
 using System;
 using GameFramework.Fsm;
 
-namespace GameLogic.Entity.Monsters.AI.States.Roam
+namespace GameLogic.Monsters.AI
 {
 	/// <summary>
 	/// 左右随机游荡（旧 normal_state）。每 PatrolInterval 决策一次：PatrolIdleChance 概率停下，否则左右各半；

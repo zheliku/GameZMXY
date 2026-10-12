@@ -6,20 +6,21 @@
 ## 当前实现
 
 - **启动流程**：`Launch → Update → Preload（资源组、本地化、节点池、配置校验）→ Title（开始 → 六格存档选择）→ LoadProfile（读档/建档，创建 GameContext）→ 新档 Character（选角）→ Map（地图）→ Level；已有档从 LoadProfile 直接进入 Map`。菜单按钮通过具名 GGF 事件直接切换流程；只有点击花果山才进入关卡；烟测通过实际菜单按钮推进并使用隔离存档目录。
-- **关卡运行**：`ProcedureLevel` 只负责装配与拆除：加载关卡场景 → 按档案构建出战装配并显示英雄 → 关闭加载界面 → 开始关卡会话 → 创建 `LevelRun` → 打开 HUD；离开时按创建逆序清理。死亡后按 `BattleConfig.DeathRestartDelay` 重开本关，通关后按 `ClearRestartDelay` 返回地图；HUD 左下角设置 →“返回地图”或“返回主菜单”中途放弃并回滚。
-- **收益与关卡事务**：`LevelSpawner` 只报告本关怪物被击败（`MonsterDefeat` 值）；`LevelRun` 查 `MonsterConfig.AddExp` 写入档案，升级时重建装配注入英雄并补满。通关与死亡提交检查点，中途离开回滚；规则见 [70-ProfileAndSave.md](70-ProfileAndSave.md)。
+- **关卡运行**：`ProcedureLevel` 只负责装配与拆除：加载关卡场景 → 按档案构建出战装配并显示英雄 → 关闭加载界面 → 开始 `LevelModule`（同时捕获进关快照） → 打开 HUD；离开时按创建逆序清理。死亡后按 `BattleConfig.DeathRestartDelay` 重开本关，出口 W 后下一流程帧等待检查点写盘即返回地图，不再额外等待；旧 ClearRestartDelay 已删除；HUD 左下角设置 →“返回地图”或“返回主菜单”中途放弃并回滚。
+- **收益与关卡事务**：`LevelSpawnerNode` 只报告本关怪物被击败（携带生成时确定的实际经验）；`LevelModule` 直接奖励档案，升级时重建装配注入英雄并补满。通关与死亡提交检查点，中途离开回滚；规则见 [70-ProfileAndSave.md](70-ProfileAndSave.md)。
 - **角色控制**：悟空实体、输入缓冲、地面/空中/普攻/受击/死亡身体状态，配置驱动移动参数和攻击招式。
-- **怪物行为**：花果山猴子与妖猴（旧 Monster_2）实体；巡逻、追击、攻击、目标丢失、受控和死亡 AI；身体层执行移动、攻击、收招、受击与死亡。妖猴的旧 `RunHit`（追击途中也能出手）由"优先招 + 普攻"两条 AttackConfig 表达，不新增 AI 状态。
+- **怪物行为**：花果山猴子、妖猴（旧 Monster_2）与大猩猩实体；巡逻、追击、攻击、目标丢失、受控和死亡 AI；身体层执行移动、攻击、收招、受击与死亡。妖猴的旧 `RunHit`（追击途中也能出手）由"优先招 + 普攻"两条 AttackConfig 表达，不新增 AI 状态。
 - **属性与成长**：英雄属性 = 成长表当前等级行（`TbHeroGrowthConfig`）+ 持久修正（本轮为空）；怪物属性 = `MonsterConfig.Stats`。数值与重构前公式逐级一致（单测锁定）。
 - **战斗表现**：命中结算、伤害事件和池化伤害飘字（`DamagePopPresenter`，由关卡流程/测试场地持有）。`TestArena.tscn` 测试场地供角色与新怪物战斗测试。
 - **战斗 HUD**：`UIs/BattleHud.tscn`（`UIFormId.BattleHud`），打开参数 `BattleHudData`（英雄、档案成长、关卡）；订阅 `Vitals/Musou/HeroProgression.Changed` 与 `TravelAvailableChanged`，变化时拉取一致快照刷新被动 `ResourceBar`；关闭时对称退订。技能槽、增益和护体待对应玩法接入。
-- **阶段编排**：唯一当前阶段使用 `Ready → Travelling → Fighting → Travelling/Completed`，停止后为 `Stopped`。普通关卡每段都由实际相机抵达启动；清波不会直接生成下一波。特殊阶段可选 `Trigger`，只启用当前触发区并过滤本会话玩家。
+- **血条表现**：小怪受伤后重新以不透明显示，按 BattleConfig.MonsterHealthBarFadeDuration（当前官方值 2 秒）淡出并隐藏；治疗更新比例但不延长显示，暂停时停止计时，死亡/隐藏/复用复位。守关 HUD 无入场弹窗，名称在左侧，白字黑边华康海报体，右侧原笔刷条，不显示当前/最大生命数字；HUD 订阅生命并把完整数值交给被动 EncounterHealthBar。
+- **阶段编排**：唯一当前阶段使用 `Ready → Travelling → Fighting → Travelling/AwaitingExit → Completed`，停止后为 `Stopped`。普通关卡每段都由实际相机抵达启动；清波不会直接生成下一波。特殊阶段可选 `Trigger`，只启用当前触发区并过滤本会话玩家。
 - **空间与相机**：门集合从阶段独立左右门预计算区域，允许重叠；行进保留旧左界、启用新右界，抵达后只保留本场左右门。门仅约束玩家，怪物可从场外进入。花果山前四波恢复官方出生点、延迟及边界，依据与第五波缺口见 [OfficialHuaguoshan.md](../OfficialHuaguoshan.md)。清波后到下一场开战之间显示 Go，取景仍保留用户指定中央 ±40px 死区。
-- **配方与实体**：`LevelConfig` 以 `LevelId` 为主键，`*Stages / *Recipes` 是嵌套多行列表；同段各配方并行。`LevelSpawnSchedule` 按游戏时间调度、轮转分配并存名额；`LevelSpawner` 按死亡事件归还名额，配方全部发完且存活/在途清空才报告清波。
+- **配方与实体**：`LevelConfig` 以 `LevelId` 为主键，`*Stages / *Recipes` 是嵌套多行列表；同段各配方并行。`LevelSpawnSchedule` 按游戏时间调度、轮转分配并存名额；`LevelSpawnerNode` 按死亡事件归还名额，配方全部发完且存活/在途清空才报告清波。
 - **所有权与退出**：本关所有运行实体 ID（含死亡动画中的实体）由刷怪服务持有；停止时取消会话、退订、按 ID 隐藏。异步显示返回后使用捕获的令牌和服务清理旧结果；失败回到流程统一结束（运行回滚）。
-- **场景首版**：`Level_1.tscn` 登记十二个生成点（玩家 + 官方前四波十一处）、七个独立阶段边界和出口；`TestArena.tscn` 不进入游戏流程，F6 运行（详见 [40-ScenesAndAssets.md](40-ScenesAndAssets.md)）。
-- **声音**：标题、选角与地图复用造梦一 `zmxy_1BGM.mp3` 的唯一资源 `map_theme.mp3`；`Audio/ConfiguredSound.cs` 提供配置播放扩展，演员、菜单和关卡复用；菜单/关卡流程各自持有音乐请求，退出时停止在途和播放中的请求，音量经 `GF.Sound` / `GF.Setting` 管理。关卡音乐来自 `LevelConfig.MusicId`，不硬编码在通用关卡流程。
-- **编辑器与验证**：`validate_level_scene.gd` 检查编辑器绑定；`--smoketest=level` 驱动真实移动与四段清波并核对档案经验与通关检查点；`--smoketest=ui` 覆盖 HUD、升级注入、关卡事务与存档。
+- **场景首版**：`Level_1.tscn` 登记十五个生成点（玩家 + 五波十四处）、九个独立阶段边界和一个出口实例；`TestArena.tscn` 不进入游戏流程，F6 运行（详见 [40-ScenesAndAssets.md](40-ScenesAndAssets.md)）。
+- **声音**：标题、选角与地图复用造梦一 `zmxy_1BGM.mp3` 的唯一资源 `map_theme.mp3`；`Audio/SoundHelper.cs` 提供配置播放扩展，演员、菜单和关卡复用；菜单/关卡流程各自持有音乐请求，退出时停止在途和播放中的请求，音量经 `GF.Sound` / `GF.Setting` 管理。关卡音乐来自 `LevelConfig.MusicId`，不硬编码在通用关卡流程。
+- **编辑器与验证**：`validate_level_scene.gd` 检查编辑器绑定；`--smoketest=level` 驱动真实移动与五波清场并核对档案经验与通关检查点；`--smoketest=ui` 覆盖 HUD、升级注入、关卡事务与存档。
 
 ## 长期系统落位
 
@@ -28,23 +29,23 @@
 | 系统 | 配置 | 档案（`Profile/`） | 运行时 | 规则与表现 |
 | --- | --- | --- | --- | --- |
 | 技能 | `SkillConfig`：耗蓝、冷却、学习条件、招式 ID、效果 | `SkillBook`：已学技能与等级、键位（5 槽） | `SkillSet`（实体持有）：冷却、可用判定 | 释放驱动身体状态机的技能状态；子弹为 `BulletEntity` |
-| 被动 | `PassiveConfig`：`StatModifier` 列表 | 已学被动 | — | `HeroStatBuilder` 换算为持久修正 |
-| Buff | `BuffConfig`：时长、跳频、叠加规则、修正、控制标签、跳伤 | — | `BuffSet`（实体持有）：实例、层数、剩余时间；写 `StatSheet` 局内来源 | 来源：攻击包、技能、装备；HUD 在 `OnUpdate` 读剩余时间 |
+| 被动 | `PassiveConfig`：`AttributeModifier` 列表 | 已学被动 | — | `HeroLoadout.Create` 换算为持久修正 |
+| Buff | `BuffConfig`：时长、跳频、叠加规则、修正、控制标签、跳伤 | — | `BuffSet`（实体持有）：实例、层数、剩余时间；写 `ActorAttributes` 局内来源 | 来源：攻击包、技能、装备；HUD 在 `OnUpdate` 读剩余时间 |
 | 背包 | `ItemConfig`：类别、叠加上限、价格、品质 | `Inventory`：可叠加物 `itemId + count`；唯一实例 `instanceId + 强化/宝石/五行` | — | 拾取、使用、丢弃为 `Inventory` 方法 |
-| 装备 | `EquipmentConfig`：槽位、`StatModifier`、外观资源路径 | `Equipment`：槽位 → 实例 ID | — | `HeroStatBuilder` 按实例换算持久修正（一件一个 `StatSource`）；换装后重建装配 |
+| 装备 | `EquipmentConfig`：槽位、`AttributeModifier`、外观资源路径 | `Equipment`：槽位 → 实例 ID | — | `HeroLoadout.Create` 按实例换算持久修正（一件一个 `AttributeSourceId`）；换装后重建装配 |
 | 法宝 | `MagicWeaponConfig`：耗蓝、冷却、子弹 | 法宝实例与等级（背包实例）、出战槽 | 法宝实体（独立实体，记录拥有者 ID） | 属性加成经持久修正；攻击为子弹 |
-| 丹药/阵法 | 对应表：`StatModifier` 列表 | 已服用/已激活记录 | — | `HeroStatBuilder` 换算持久修正 |
+| 丹药/阵法 | 对应表：`AttributeModifier` 列表 | 已服用/已激活记录 | — | `HeroLoadout.Create` 换算持久修正 |
 | 商店/锻造/炼丹 | 商品、配方、成功率表 | 对 `Inventory + Wallet` 的原子事务 | — | 成功后写检查点 |
-| 掉落 | `DropConfig`：掉落组、权重、数量 | 拾取后进 `Inventory`/`Wallet` | 掉落实体（`LevelRun` 生成并拥有） | `LootRoller` 纯函数（随机值由调用方传入）；收益随关卡事务提交 |
+| 掉落 | `DropConfig`：掉落组、权重、数量 | 拾取后进 `Inventory`/`Wallet` | 掉落实体（`LevelModule` 生成并拥有） | `LootHelper` 纯函数（随机值由调用方传入）；收益随关卡事务提交 |
 | 任务/成就 | `QuestConfig`：目标类型枚举、参数、奖励 | `QuestLog`：进度、领取状态 | — | 订阅领域事件推进，不轮询 |
 | 关卡进度 | `LevelConfig` 增解锁条件、评价规则 | `WorldProgress`：解锁、最佳评价 | `RunStats`：用时、剩余血量 | 结算界面读 `RunStats`；通关时更新 `WorldProgress` |
 | 多英雄 | `HeroConfig` + 成长表行 | `Heroes` 字典已支持；`ActiveHeroId` | — | 选人界面修改出战英雄后写检查点 |
 
 约定：
 
-- 所有属性加成都表达为 `StatModifier`（`StatType` + `StatModifierKind` + 数值），按来源整体登记和移除；不在结算公式里写特例。
-- 持久加成（装备、法宝、被动、丹药、阵法）只经 `HeroStatBuilder` 进入实体；局内加成（Buff）只经实体运行时进入。
-- 档案新增成员时同步：`PlayerProfile` 成员、`GameData` 字段、`ProfileMapper` 映射与回滚、存档版本号（不做旧格式兼容）、单测。
+- 所有属性加成都表达为 `AttributeModifier`（`StatType` + `StatModifierKind` + 数值），按来源整体登记和移除；不在结算公式里写特例。
+- 持久加成（装备、法宝、被动、丹药、阵法）只经 `HeroLoadout.Create` 进入实体；局内加成（Buff）只经实体运行时进入。
+- 档案新增成员时同步：`PlayerProfile` 成员、`GameData` 字段、`ProfileSaveHelper` 映射与回滚、存档版本号（不做旧格式兼容）、单测。
 - 新流程（菜单、选档、地图）按需加入 `Framework/GameFramework.tscn` 的流程清单，每次单独授权并登记。
 
 ## 旧项目玩法参考

@@ -19,6 +19,7 @@
 [ext_resource type="Theme" uid="uid://2gwbh6otun6r" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="18_theme"]
 [ext_resource type="FontFile" uid="uid://dy01vypttvr" path="res://TheGame/MainPack/Fonts/dfp_hai_bao_w12.ttc" id="19_level_font"]
 [ext_resource type="FontVariation" path="res://TheGame/MainPack/Fonts/game_font.tres" id="20_hud_font"]
+[ext_resource type="PackedScene" path="res://TheGame/UIs/Widgets/encounter_health_bar.tscn" id="encounter"]
 [ext_resource type="Texture2D" uid="uid://dnusvvhljgk87" path="res://TheGame/Sprites/UI/hud/menu_inventory_caption.png" id="inventory_caption"]
 [ext_resource type="Texture2D" uid="uid://bp04w8lqa5lgf" path="res://TheGame/Sprites/UI/hud/menu_inventory_hover.png" id="inventory_hover"]
 [ext_resource type="Texture2D" uid="uid://dupeqk5y4l6qd" path="res://TheGame/Sprites/UI/hud/menu_inventory_normal.png" id="inventory_normal"]
@@ -41,7 +42,7 @@ shader_parameter/clip_center = Vector2(0.5, 0.5)
 shader_parameter/clip_radius = 32.0
 shader_parameter/clip_feather = 0.0
 
-[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_WsMax", "m_Go", "m_SettingsButton")]
+[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_WsMax", "m_Go", "m_SettingsButton", "m_EncounterHealthBar")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -59,6 +60,7 @@ m_WsBar = NodePath("MenuPanel/WsFrame/m_WsBar")
 m_WsMax = NodePath("MenuPanel/m_WsMax")
 m_Go = NodePath("m_Go")
 m_SettingsButton = NodePath("MenuPanel/m_SettingsButton")
+m_EncounterHealthBar = NodePath("m_EncounterHealthBar")
 
 [node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247]
 position = Vector2(116, 44)
@@ -209,12 +211,12 @@ position = Vector2(21, 37)
 texture = ExtResource("inventory_caption")
 
 [node name="m_SettingsButton" type="TextureButton" parent="MenuPanel" unique_id=2146763591]
-mouse_default_cursor_shape = 2
 offset_left = -55.0
 offset_top = 20.0
 offset_right = -8.0
 offset_bottom = 60.0
 focus_mode = 0
+mouse_default_cursor_shape = 2
 texture_normal = ExtResource("settings_normal")
 texture_pressed = ExtResource("settings_normal")
 texture_hover = ExtResource("settings_hover")
@@ -281,3 +283,6 @@ position = Vector2(870, 259)
 scale = Vector2(0.6, 0.6)
 sprite_frames = ExtResource("13_gogo")
 animation = &"go"
+
+[node name="m_EncounterHealthBar" parent="." unique_id=1088788372 instance=ExtResource("encounter")]
+anchors_preset = 0

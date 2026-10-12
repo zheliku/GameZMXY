@@ -8,29 +8,33 @@
 | 字段（含`[Export]`）       | `m_` + `PascalCase`，如 `m_Hp`       |
 | 参数、局部变量               | `camelCase`                              |
 | 常量                         | `PascalCase`；优先用有名常量表达工程规则 |
-| 命名空间                     | `GameLogic.<目录路径>`（与 `GameScripts/` 下目录一致）或 `GameConfig`；例外见 [00-Architecture.md](00-Architecture.md) |
+| 命名空间                     | `GameLogic.<业务模块>` 或 `GameConfig`；模块映射见 [00-Architecture.md](00-Architecture.md) |
 
 一文件一个主要类型，文件名与类型名一致。标识符使用英文；中文只用于配置文本和用户可见内容。
 
-附属于同一功能的小枚举、结果与统计类型可以和主要类型放在同一文件，保留清晰的 XML 文档与命名空间。例如 `SaveSlotState` 随 `SaveSlotInfo`，`LevelRunOutcome` / `RunStats` 随 `LevelRun`；按用户要求，`HeroSaveData` 随 `GameData`，同一文件能看清完整存档结构。多处独立使用、有独立职责的类型仍单独存放；不建立全局 `Enums.cs`，不按行数机械拆分或合并。大型节点可按职责使用 `类型.职责.cs` partial，字段和生命周期仍由同一对象拥有。
+附属于同一功能的小枚举、结果与统计类型可以和主要类型放在同一文件，保留清晰的 XML 文档与命名空间。例如 `SaveSlotState` 随 `SaveSlotInfo`，`LevelOutcome` 随 `LevelModule.Progress`；按用户要求，`HeroSaveData` 随 `GameData`，同一文件能看清完整存档结构。多处独立使用、有独立职责的类型仍单独存放；不建立全局 `Enums.cs`，不按行数机械拆分或合并。大型节点可按职责使用 `类型.职责.cs` partial，字段和生命周期仍由同一对象拥有。
 
 流程状态机的数据键统一放在 `MainPack/Scripts/Startup/FlowData/FlowKeys.cs`，池化包装放在同目录。领域对象不携带流程键；其他模块的常量仍归所属功能，禁止建立所有常量混杂的全局桶。
 
 ### 类型命名后缀
 
-按职责命名，不用含义模糊的 `Manager`、`System`、`Model`、`Helper` 后缀（GGF 自身类型除外）：
+按入口、节点、状态和规则区分，不用泛化的 Manager/System/Model 代替实际职责；GGF 与生成器契约保留。
 
 | 职责 | 命名 | 示例 |
 | --- | --- | --- |
-| Luban 生成配置 | `XxxConfig`（生成） | `HeroConfig`、`MonsterConfig` |
-| 存档 DTO | `XxxSaveData` | `GameData`、`HeroSaveData` |
-| 运行时状态（有唯一所有者） | 领域名词 | `PlayerProfile`、`Wallet`、`HeroProgression`、`StatSheet`、`Vitals` |
-| 纯规则 / 无状态服务 | 职责名 | `DamageCalculator`、`ExperienceCurve`、`HeroStatBuilder`、`ProfileMapper` |
-| 作用域所有者 | 作用域名 | `GameContext`、`LevelRun` |
-| 不可变输入快照 | 名词 | `HeroLoadout`、`CombatantStats`、`MonsterDefeat` |
-| 节点 | `XxxEntity`、`XxxController`、窗口/控件名 | `WukongEntity`、`LevelController`、`ResourceBar` |
-| 界面打开参数 | `<界面>Data` | `BattleHudData` |
-| 表现服务（普通对象） | `XxxPresenter` | `DamagePopPresenter` |
+| 业务模块唯一入口 | `XxxModule`，可以为普通对象或场景根节点 | `SaveModule`、`LevelModule : Node2D` |
+| 模块内部 Godot 节点 | `XxxNode` | `LevelExitNode`、`LevelCameraNode`、`HurtBoxNode`、`MusouAfterimageNode` |
+| 实体与窗口/控件 | 保留能说明节点职责的 Entity/Form/Hud/Bar/Button 后缀 | `GorillaEntity`、`SettingsForm`、`EncounterHealthBar` |
+| Godot 资源 | `XxxResource` | `LevelMarkerResource` |
+| 纯方法或无状态扩展辅助 | `XxxHelper`，不保存会话、计时器、订阅或可变静态字段 | `DamageHelper`、`ProfileSaveHelper`、`BodyFsmHelper`、`LevelCameraHelper`；`SoundHelper` 只适配 GGF 调用 |
+| 运行时状态/有状态规则 | 领域名词，不滥用 Helper | `PlayerProfile`、`HeroProgression`、`Vitals`、`ExperienceCurve`、`LevelStageSequence`、`LevelSpawnSchedule` |
+| 不可变输入/输出 | 能表达方向的名词 | `HeroLoadout`、`CombatantStats`、`DamageResult`、`MonsterSpawn` |
+| 存档 DTO / 配置 | `XxxSaveData` / 生成的 `XxxConfig` | `HeroSaveData`、`MonsterConfig`；框架 GameData 保留 |
+| 界面参数 / 表现协调对象 | `<界面>Data` / `XxxPresenter` | `BattleHudData`、`DamagePopPresenter` |
+
+只有常量的 InputActions、HeroAnims、MonsterAnims 保留集合名称。Luban 外部构造契约 `ExternalTypeUtil`、生成的 ConfigSystem、GameData/GameCatalogue、全局流程名与 Ge 窗口类名不机械改名。
+
+模块目录按功能分类，所属节点、纯规则、资源和 `Helper` 放在同一功能目录，通过类型后缀辨别职责。例如 `Level/Camera/` 同时放 `LevelCameraNode` 与 `LevelCameraHelper`，`Level/Spawning/` 放刷怪节点、生成点与调度规则。跨功能共享的空间条目放 `Level/Markers/`。小模块不机械拆空目录；模块入口的 partial 留在根目录。
 
 ## XML 文档与实现注释
 
@@ -80,7 +84,7 @@ private async Task StartStageAsync(LevelStageConfig stage)
 
 - 外部数据、场景装配、稳定外键在初始化边界由对应职责所有者校验一次；运行期消费已经验证的索引，不重复查表、不静默换默认值。校验失败须让会话拥有者停止并报告。
 - 用互斥状态表达会话和阶段迁移；禁止把 `dependency != null` 包装成 `IsPrepared` 等隐式状态。加载期不订阅玩法事件；需要区域监听时显式启用，在停止时显式解绑。
-- 控制器只协调生命周期和领域事件；空间索引归生成点目录，区域与门归阶段门集合，配方时间与名额归调度，实体所有权归刷怪服务，实际视野归相机。
+- 模块入口只协调所属业务的生命周期和状态迁移；空间索引归生成点目录，区域与门归阶段门集合，配方时间与名额归调度，实体所有权归刷怪服务，实际视野归相机。
 - 只有实际消费者需要的数据才保留字段。一个当前阶段不需要按阶段堆叠 Started/Finished/Cleared 集合；能从同一权威状态推导的事实不再维护副本。
 - 状态对象只暴露 getter 与修改方法；不公开可写字段或可写的可观察容器。修改方法维护不变量（钳制、死亡、升级）并在全部字段更新后发一次 `Changed`。
 - 异步操作在等待前捕获所属会话的服务、取消令牌和所有权；等待后不读取可能已被清理或换成新会话的字段。无法取消的框架显示结果在旧令牌取消后到达，仍须由原服务隐藏。
@@ -94,6 +98,6 @@ private async Task StartStageAsync(LevelStageConfig stage)
 - UI 按 Ge 生成绑定、`.Logic.cs` 业务、必要时的 `Data` 参数分工。Data 只持有所需状态源引用；无状态源的开始页、静态地图不建空 Data。状态源在 `OnOpen` 订阅并立即刷新，`OnClose` 释放订阅和回调，`OnRecycle` 再清理编号。
 - 按钮使用具名处理方法，只在新建实例时订阅一次。跨模块点击使用带窗口编号的池化 GGF 事件；流程在分发期间复制所需值，拒绝旧周期事件。可取消等待在进入时捕获本周期令牌和服务。
 - 共用代码须有实际共用职责：`MenuProcedure` 统一窗口、音乐、取消和返回标题的保存等待；不要用泛型菜单命令和轮询代替具名事件。只调用基类的空重写删除；GGF 接口要求的生命周期入口保留。
-- 无状态、附属于现有类型的操作可使用 C# 14 `extension` 块，例如 `BodyFsm.Tick`。状态机的物理帧调度仍独立于单个状态的决策，不为合并文件把调度塞进 `BodyState`。
+- 无状态、附属于现有类型的操作可使用 C# 14 `extension` 块，例如 `BodyFsmHelper` 提供的 `fsm.Tick(dt)`。状态机的物理帧调度仍独立于单个状态的决策，不为合并文件把调度塞进 `BodyState`。
 - 不为测试新增生产 getter、状态名字符串、观测事件或测试路径。测试使用现有状态对象、`IFsm.CurrentState`、节点和必要的反射。只有测试使用且可从权威状态直接读取的冗余 API 删除。
 - 独立的主要类型各占一文件，配套小类型按本章开头的归属规则组织；公开契约写 XML，字段用简短行尾说明；不用生成模板的空区域和重复注释掩盖业务职责。修改旧文件时对齐本规则，不机械改动生成代码和框架。

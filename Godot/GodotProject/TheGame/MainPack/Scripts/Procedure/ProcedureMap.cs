@@ -4,7 +4,8 @@ using System;
 using GameConfig;
 using GameConfig.Sound;
 using GameFramework.Event;
-using GameLogic.Session;
+using GameLogic;
+using GameLogic.Level;
 using GameLogic.Startup;
 using GameLogic.UI;
 using GodotGameFramework;
@@ -60,7 +61,7 @@ public sealed class ProcedureMap : MenuProcedure
     private async void OnSaveRequested(object sender, GameEventArgs args)
     {
         if (((SaveRequestedEventArgs)args).FormSerialId != FormSerialId || IsReturningToTitle) return;
-        var session = GetPlayerSession(Owner);
+        var session = GetGameContext(Owner);
         var token = CancellationToken;
         int serial = FormSerialId;
         bool succeeded;

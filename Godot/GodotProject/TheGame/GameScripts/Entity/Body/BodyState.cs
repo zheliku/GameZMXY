@@ -1,7 +1,7 @@
 using GameFramework.Fsm;
 using Godot;
 
-namespace GameLogic.Entity.Body
+namespace GameLogic.Body
 {
 	/// <summary>
 	/// 身体动作状态基类（英雄与怪物共用）：GF.Fsm 的状态，但**按物理帧驱动**。
@@ -22,7 +22,7 @@ namespace GameLogic.Entity.Body
 	/// </summary>
 	public abstract class BodyState<TBody> : FsmState<TBody> where TBody : class, IActorBody
 	{
-		/// <summary>进入次数（BodyFsm 据此识别"切回自己"的重新进入）。</summary>
+		/// <summary>进入次数（BodyFsmHelper 据此识别"切回自己"的重新进入）。</summary>
 		internal int EnterSerial { get; private set; }
 
 		/// <summary>

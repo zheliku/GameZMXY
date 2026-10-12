@@ -45,7 +45,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
         KnockbackScaleY = _buf.ReadFloat();
         WsMax = _buf.ReadInt();
         DeathRestartDelay = _buf.ReadFloat();
-        ClearRestartDelay = _buf.ReadFloat();
+        MonsterHealthBarFadeDuration = _buf.ReadFloat();
         WsDuration = _buf.ReadFloat();
         WsPowerMultiplier = _buf.ReadFloat();
         WsMoveSpeedMultiplier = _buf.ReadFloat();
@@ -173,9 +173,9 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// </summary>
     public readonly float DeathRestartDelay;
     /// <summary>
-    /// 通关后自动重开本关的等待秒数(暂无结算界面时使用)
+    /// 小怪受伤血条淡出秒数（官方 BaseMonster.showHpSlip 为 2 秒）
     /// </summary>
-    public readonly float ClearRestartDelay;
+    public readonly float MonsterHealthBarFadeDuration;
     /// <summary>
     /// 无双持续秒数（旧项目每0.5秒扣4/100，共12.5秒）
     /// </summary>
@@ -228,7 +228,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "KnockbackScaleY:" + KnockbackScaleY + ","
         + "WsMax:" + WsMax + ","
         + "DeathRestartDelay:" + DeathRestartDelay + ","
-        + "ClearRestartDelay:" + ClearRestartDelay + ","
+        + "MonsterHealthBarFadeDuration:" + MonsterHealthBarFadeDuration + ","
         + "WsDuration:" + WsDuration + ","
         + "WsPowerMultiplier:" + WsPowerMultiplier + ","
         + "WsMoveSpeedMultiplier:" + WsMoveSpeedMultiplier + ","

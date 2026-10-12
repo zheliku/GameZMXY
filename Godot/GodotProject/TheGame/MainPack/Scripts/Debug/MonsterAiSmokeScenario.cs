@@ -1,6 +1,5 @@
-using GameLogic.Entity.Monsters.Body.Core;
-using GameLogic.Entity.Monsters.AI.Core;
-using GameLogic.Entity.Monsters.AI.Attacks;
+using GameLogic.Monsters.Body;
+using GameLogic.Monsters.AI;
 using GameLogic.Battle.Resources;
 using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
@@ -10,8 +9,8 @@ using GameConfig.Battle;
 using GameConfig.Sound;
 using GameFramework;
 using GameFramework.Event;
-using GameLogic.Entity.Heroes;
-using GameLogic.Entity.Monsters;
+using GameLogic.Heroes;
+using GameLogic.Monsters;
 using Godot;
 using GodotGameFramework;
 

@@ -24,6 +24,7 @@ public sealed partial class LevelStage : Luban.BeanBase
         GateId = _buf.ReadString();
         MaxActive = _buf.ReadInt();
         SpawnDelay = _buf.ReadFloat();
+        FeaturedOpponentId = (Entity.EntityId)_buf.ReadInt();
         {int n0 = _buf.ReadSize(); Recipes = new System.Collections.Generic.List<Level.LevelSpawnRecipe>(n0);for(var i0 = 0 ; i0 < n0 ; i0++) { Level.LevelSpawnRecipe _e0;  _e0 = global::GameConfig.Level.LevelSpawnRecipe.DeserializeLevelSpawnRecipe(_buf); Recipes.Add(_e0);}}
     }
 
@@ -65,6 +66,10 @@ public sealed partial class LevelStage : Luban.BeanBase
     /// </summary>
     public readonly float SpawnDelay;
     /// <summary>
+    /// 本阶段需显示进场提示和血条的普通怪物；None 表示不显示
+    /// </summary>
+    public readonly Entity.EntityId FeaturedOpponentId;
+    /// <summary>
     /// 同阶段配方并行；每行一条独立生成流
     /// </summary>
     public readonly System.Collections.Generic.List<Level.LevelSpawnRecipe> Recipes;
@@ -88,6 +93,7 @@ public sealed partial class LevelStage : Luban.BeanBase
         + "GateId:" + GateId + ","
         + "MaxActive:" + MaxActive + ","
         + "SpawnDelay:" + SpawnDelay + ","
+        + "FeaturedOpponentId:" + FeaturedOpponentId + ","
         + "Recipes:" + Luban.StringUtil.CollectionToString(Recipes) + ","
         + "}";
     }

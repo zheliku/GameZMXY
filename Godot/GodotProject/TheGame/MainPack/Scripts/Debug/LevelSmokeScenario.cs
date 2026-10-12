@@ -1,22 +1,26 @@
-using GameLogic.Level.Stage;
-using GameLogic.Level.Camera;
+using GameLogic.Level;
 using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
 using GameLogic.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using System.Threading.Tasks;
+using GameLogic.Save;
+using GameLogic.UI;
+using GameLogic.UI.Widgets;
 using GameConfig.Battle;
 using GameConfig.Sound;
+using GameConfig.Constant;
 using GameFramework;
-using GameLogic.Entity.Heroes;
-using GameLogic.Entity.Monsters;
-using GameLogic.Level;
-using GameLogic.Session;
+using GameLogic.Heroes;
+using GameLogic.Monsters;
+using GameLogic;
 using Godot;
 using GodotGameFramework;
 
-/// <summary>通过真实移动、碰撞和死亡结算验证 Level_1 的四段相机抵达与清波流程。</summary>
+/// <summary>通过真实移动、碰撞、守关怪和出口输入验证五波清场、自动保存与返回地图。</summary>
 public sealed class LevelSmokeScenario
 {
     private enum Step // 单段战斗内的物理约束验证顺序。
@@ -27,9 +31,9 @@ public sealed class LevelSmokeScenario
     }
 
     private readonly HeroEntity m_Hero; // 通过游戏流程实际显示的玩家。
-    private readonly LevelController m_Level; // 受测关卡会话。
-    private readonly LevelCamera m_Camera; // 受测实际取景。
-    private readonly LevelStageGateSet m_Gates; // 受测阶段区域。
+    private readonly LevelModule m_Level; // 受测关卡会话。
+    private readonly LevelCameraNode m_Camera; // 受测实际取景。
+    private readonly LevelGatesNode m_Gates; // 受测阶段区域。
     private readonly HashSet<int> m_Seen = new(); // 所有实际显示过的运行实体 ID。
     private readonly List<string> m_Failures = new(); // 累计回归失败信息。
     private float m_LastCenter; // 上一帧实际相机中心。
@@ -44,18 +48,27 @@ public sealed class LevelSmokeScenario
     private bool m_ExpectCenteredArrival; // 从新取景中心后方正常走入时，抵达应保持中央死区。
     private readonly int m_StartExperience; // 进关时档案中的累计经验。
     private bool m_FirstSpawnEntered; // 首波保留真实 AI，直到观测到它从场外走入画面。
+    private readonly GameContext m_Context; // 本次受测档案与存档入口。
+    private ulong m_ExitRequestedAt; // 近处 W 按下到地图实际可见的实际时刻。
+    private bool m_ExitLatencyRecorded; // 延迟只采样一次，不包含随后验证读盘的时间。
+    private int m_ExitStep; // 远处按 W、接近、出口交互的验证顺序。
+    private bool m_SawFeatured; // 是否实际展示过大猩猩入场和生命条。
+    private bool m_WaitingForMap; // 通关后停止访问即将卸载的场景。
+    private Task<SaveLoadResult> m_Reload; // 返回地图后重新读盘验证保存结果。
+    private Task m_ExitCapture; // 有渲染器时先保存出口提示画面再按 W。
+    private int m_ExpectedTotalExperience; // 通关保存应保留的累计经验。
 
     /// <summary>创建正式关卡的物理回归场景。</summary>
     /// <param name="hero">正式流程显示的英雄。</param>
     /// <param name="level">受测关卡。</param>
-    public LevelSmokeScenario(HeroEntity hero, LevelController level)
+    public LevelSmokeScenario(HeroEntity hero, LevelModule level)
     {
         m_Hero = hero;
         m_Level = level;
-        m_StartExperience = SmokeInspection.Context(GF.Procedure.CurrentProcedure as ProcedureLevel)?.Profile.ActiveHero
-            .TotalExperience ?? 0;
-        m_Camera = level.GetNode<LevelCamera>("Camera2D");
-        m_Gates = level.GetNode<LevelStageGateSet>("World/StageGates");
+        m_Context = SmokeInspection.Context(GF.Procedure.CurrentProcedure as ProcedureLevel);
+        m_StartExperience = m_Context.Profile.ActiveHero.TotalExperience;
+        m_Camera = level.GetNode<LevelCameraNode>("Camera2D");
+        m_Gates = level.GetNode<LevelGatesNode>("World/StageGates");
         m_LastCenter = m_Camera.GlobalPosition.X;
         m_LastPlayerX = hero.GlobalPosition.X;
     }
@@ -76,6 +89,11 @@ public sealed class LevelSmokeScenario
         }
 
         m_Time += delta;
+        if (m_WaitingForMap)
+        {
+            CheckReturnAndReload();
+            return;
+        }
         float center = m_Camera.GlobalPosition.X;
         if (Math.Abs(center - m_LastCenter) > 600f * delta + 0.1f)
         {
@@ -101,6 +119,16 @@ public sealed class LevelSmokeScenario
             if (m_FirstSpawnEntered) SmokeInspection.FreezeAi(monster);
             if (m_Seen.Add(monster.Id))
             {
+                if (monster is GorillaEntity)
+                {
+                    m_SawFeatured = true;
+                    var banner = SmokeInspection.ReadField<EncounterHealthBar>(
+                        GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_BattleHud), "m_EncounterHealthBar");
+                    if (!ReferenceEquals(m_Level.FeaturedOpponent, monster) || monster.Vitals.MaxHp != 900 ||
+                        !banner.Visible || banner.HasNode("Entrance") ||
+                        SmokeInspection.ReadField<Label>(banner, "m_Name").Text != monster.Config.NameCn)
+                        Fail("大猩猩配置或守关血条未绑定，或仍残留入场弹窗");
+                }
                 // 在地形上方横穿当前右门，验证怪物可进入，玩家仍被同一道边界阻挡。
                 float right = m_Gates.BoundsOf(SmokeInspection.Sequence(m_Level).Current.StageOrder).Right;
                 Transform2D from = new(0f, new Vector2(right + 60f, 100f));
@@ -150,8 +178,13 @@ public sealed class LevelSmokeScenario
 
             DriveBattle(delta, monsters);
         }
+        else if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.AwaitingExit)
+        {
+            DriveExit();
+        }
         else if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Completed)
         {
+            if (m_ExitStep != 5) Fail("出口尚未完成远处拒绝与靠近交互验证，就提前通关");
             int expected = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages.Sum(x => x.Recipes.Sum(r => r.Count));
             if (m_Seen.Count != expected)
             {
@@ -160,14 +193,14 @@ public sealed class LevelSmokeScenario
 
             // 收益进档案：本关获得经验 = 档案累计经验 - 进关时的累计经验（新档进关为 0）。
             int expectedExperience = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages
-                .Sum(x => x.Recipes.Sum(r => r.Count * ConfigSystem.Instance.Tables.TbMonsterConfig.DataList
-                    .Single(m => m.EntityId == r.MonsterEntityId).AddExp));
-            LevelRewardTransaction run = SmokeInspection.Run(GF.Procedure.CurrentProcedure as ProcedureLevel);
+                .Sum(x => x.Recipes.Sum(r => r.Count * (r.ExperienceOverride >= 0 ? r.ExperienceOverride :
+                    ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Single(m => m.EntityId == r.MonsterEntityId).AddExp)));
+            LevelModule run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
             int gained = SmokeInspection.Context(GF.Procedure.CurrentProcedure as ProcedureLevel)?.Profile.ActiveHero
                 .TotalExperience - m_StartExperience ?? -1;
-            if (gained != expectedExperience || run?.AwardedExperience != expectedExperience)
+            if (gained != expectedExperience || SmokeInspection.ReadField<int>(run, "m_AwardedExperience") != expectedExperience)
             {
-                Fail($"本关经验错误或重复死亡奖励：档案 {gained}，统计 {run?.AwardedExperience}，配置 {expectedExperience}");
+                Fail($"本关经验错误或重复死亡奖励：档案 {gained}，统计 {SmokeInspection.ReadField<int>(run, "m_AwardedExperience")}，配置 {expectedExperience}");
             }
             GD.Print($"SMOKE-LEVEL: experience={gained}, expected={expectedExperience}");
 
@@ -182,7 +215,10 @@ public sealed class LevelSmokeScenario
                 Fail("清波后未出现前进提示（Go）");
             }
 
-            IsDone = true;
+            if (!m_SawFeatured) Fail("第五波未展示大猩猩守关对手");
+            m_ExpectedTotalExperience = m_StartExperience + expectedExperience;
+            m_WaitingForMap = true;
+            Move(null);
         }
 
         if (m_Time > 180 && !IsDone)
@@ -194,6 +230,100 @@ public sealed class LevelSmokeScenario
         if (IsDone)
         {
             Move(null);
+        }
+    }
+
+    /// <summary>远处按键不通关；清场后靠近出口，再发送真实 W 按键。</summary>
+    private void DriveExit()
+    {
+        LevelExitNode exit = m_Level.GetNode<LevelExitNode>("World/Exit");
+        if (!exit.Visible) { Fail("清场后出口未显示"); return; }
+        if (m_ExitStep == 0)
+        {
+            LevelModule run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
+            if (run.Outcome != LevelOutcome.Running || run.CheckpointWrite != null)
+                Fail("仅清场就提前通关或写盘");
+            PlaceForWallTest(exit.GlobalPosition.X - 220f);
+            Move(null);
+            m_ExitStep = 1;
+        }
+        else if (m_ExitStep == 1)
+        {
+            // 测试瞬移后等待物理重叠缓存更新，避免把原位置的重叠当成远处输入。
+            m_ExitStep = 2;
+        }
+        else if (m_ExitStep == 2)
+        {
+            PressW();
+            m_ExitStep = 3;
+        }
+        else if (m_ExitStep == 3)
+        {
+            LevelModule run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
+            if (run.Outcome != LevelOutcome.Running || run.CheckpointWrite != null)
+            {
+                Fail("远处按 W 就提交通关或写盘");
+                return;
+            }
+            Move(InputActions.MoveRight);
+            if (exit.GetOverlappingBodies().Contains(m_Hero) && m_Hero.OnFloor)
+            {
+                Move(null);
+                m_ExitCapture = CaptureExitAsync();
+                m_ExitStep = 4;
+            }
+        }
+        else if (m_ExitStep == 4 && m_ExitCapture.IsCompleted)
+        {
+            if (m_ExitCapture.IsFaulted) { Fail(m_ExitCapture.Exception.ToString()); return; }
+            m_ExitRequestedAt = Time.GetTicksMsec();
+            PressW();
+            m_ExitStep = 5;
+        }
+    }
+
+    /// <summary>有渲染器时记录真实出口和靠近提示，截图完成后再触发关卡卸载。</summary>
+    /// <returns>本帧画面保存完成的任务。</returns>
+    private async Task CaptureExitAsync()
+    {
+        if (DisplayServer.GetName() == "headless") return;
+        await m_Hero.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        string directory = ProjectSettings.GlobalizePath("res://.godot/validation/encounter");
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "level_exit.png");
+        Error result = m_Hero.GetViewport().GetTexture().GetImage().SavePng(path);
+        if (result != Error.Ok) throw new IOException($"出口预览保存失败：{result}，{path}");
+        GD.Print($"SMOKE-LEVEL: exit preview={path}");
+    }
+
+    /// <summary>从视口发送完整按下与释放，覆盖 W 绑定和未处理输入路径。</summary>
+    private void PressW()
+    {
+        m_Hero.GetViewport().PushInput(new InputEventKey { PhysicalKeycode = Key.W, Pressed = true });
+        m_Hero.GetViewport().PushInput(new InputEventKey { PhysicalKeycode = Key.W, Pressed = false });
+    }
+
+    /// <summary>流程实际返回地图后重新读盘，避免只检查内存中的框架数据。</summary>
+    private void CheckReturnAndReload()
+    {
+        if (m_Time > 180) { Fail("出口交互后未返回地图或完成自动保存"); return; }
+        if (GF.Procedure.CurrentProcedure is not ProcedureMap) return;
+        if (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_map_form) is not MapForm { Visible: true }) return;
+        if (!m_ExitLatencyRecorded)
+        {
+            ulong latency = Time.GetTicksMsec() - m_ExitRequestedAt;
+            m_ExitLatencyRecorded = true;
+            GD.Print($"SMOKE-LEVEL: exit W → visible map = {latency} ms (checkpoint included)");
+            if (latency > 1500) { Fail($"出口返回地图过慢：{latency} ms"); return; }
+        }
+        m_Reload ??= m_Context.Save.LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentData.UnitId);
+        if (!m_Reload.IsCompleted) return;
+        if (m_Reload.IsFaulted || m_Reload.Result.Profile.ActiveHero.TotalExperience != m_ExpectedTotalExperience)
+            Fail("返回地图后重新读取存档，经验与通关收益不一致");
+        else
+        {
+            GD.Print($"SMOKE-LEVEL: exit W → map → disk reload, experience={m_ExpectedTotalExperience}");
+            IsDone = true;
         }
     }
 
@@ -243,7 +373,8 @@ public sealed class LevelSmokeScenario
                 monster.ReceiveHit(attack, m_Hero.Id);
                 ReferencePool.Release(attack);
                 // 同一死亡再发一次普通事件，刷怪服务必须只发一次奖励和清波名额。
-                GF.Event.Fire(this, MonsterDiedEventArgs.Create(monster.Id, monster.Config.Id));
+                GF.Event.Fire(this, MonsterDiedEventArgs.Create(monster.Id,
+                    SmokeInspection.ReadField<int>(monster, "m_ExperienceReward")));
             }
 
             return;

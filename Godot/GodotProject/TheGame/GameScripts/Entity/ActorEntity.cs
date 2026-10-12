@@ -1,6 +1,6 @@
-using GameLogic.Entity.Monsters;
-using GameLogic.Entity.Heroes;
-using GameLogic.Entity.Combat;
+using GameLogic.Monsters;
+using GameLogic.Heroes;
+using GameLogic.Entity;
 using GameLogic.Battle.Resources;
 using GameLogic.Battle.Attributes;
 using GameLogic.Battle.Damage;
@@ -24,13 +24,16 @@ namespace GameLogic.Entity
 	/// <summary>提供战斗实体的生命周期、生命、动画、判定与受击结算，具体行为由英雄和怪物声明。</summary>
 	public abstract partial class ActorEntity : CharacterBody2D, IEntity
 	{
+		/// <summary>上次 MoveAndSlide 得到的落地事实，英雄与怪物的身体接口共用。</summary>
+		public bool OnFloor => IsOnFloor();
+
 		// ---- 字段 ----
 
 		[Export] private Node2D m_Body; // 身体表现层，帧由动画轨道驱动。
 
 		[Export] private AnimationPlayer m_AnimPlayer; // 角色专属动画库，由本类直接驱动。
 
-		[Export] private HurtBox m_HurtBox; // 受击判定区，可为空；HurtBox 持有本实体引用。
+		[Export] private HurtBoxNode m_HurtBox; // 受击判定区，可为空；HurtBox 持有本实体引用。
 
 		[Export] private Area2D m_HitBox; // 攻击判定区，几何和开关完全由动画值轨道驱动。
 
@@ -66,7 +69,7 @@ namespace GameLogic.Entity
 		public AnimationPlayer AnimPlayer => m_AnimPlayer;
 
 		/// <summary>受击判定区</summary>
-		public HurtBox HurtBox => m_HurtBox;
+		public HurtBoxNode HurtBox => m_HurtBox;
 
 		/// <summary>攻击判定区</summary>
 		public Area2D HitBox => m_HitBox;
@@ -362,7 +365,7 @@ namespace GameLogic.Entity
 		}
 
 		/// <summary>
-		/// 受击结算：属性快照 + 攻击包交 DamageCalculator，扣血、击退、广播 DamageDealtEventArgs。
+		/// 受击结算：属性快照 + 攻击包交 DamageHelper，扣血、击退、广播 DamageDealtEventArgs。
 		/// 公式不写在这里（GameScripts/AGENTS.md：命中回调不写公式）。
 		/// </summary>
 		/// <param name="attack">调用方拥有的攻击快照，仅在结算期间读取。</param>
@@ -376,10 +379,10 @@ namespace GameLogic.Entity
 			}
 
 			BattleConfig config = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
-			CombatStatsSnapshot defender = GetCombatStats();
+			CombatantStats defender = GetCombatStats();
 			float missRoll = GD.Randf();
 			float critRoll = GD.Randf();
-			DamageResult result = DamageCalculator.Calculate(config, attack, defender, missRoll, critRoll);
+			DamageResult result = DamageHelper.Calculate(config, attack, defender, missRoll, critRoll);
 
 			bool died = false;
 			if (!result.IsMiss)
@@ -387,7 +390,7 @@ namespace GameLogic.Entity
 				// 死亡事实唯一置位点：只在生命归零的那一次为真，之后保持到下次显示复位。
 				died = Vitals.Damage(result.Damage);
 				Dead |= died;
-				OnHurt(attack, result, DamageCalculator.KnockbackVelocity(config, attack, Side), attackerEntityId);
+				OnHurt(attack, result, DamageHelper.KnockbackVelocity(config, attack, Side), attackerEntityId);
 			}
 
 			GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Side == CombatSide.Hero, HeadPosition));
@@ -448,7 +451,8 @@ namespace GameLogic.Entity
 		/// shape/position/disabled）——C# 只负责"这一招的数值事实"。
 		/// </summary>
 		/// <param name="attack">本次攻击配置；空值仅清除旧攻击。</param>
-		protected void ArmAttack(AttackConfig attack)
+		/// <param name="powerMultiplier">本次显示的招式威力倍率，作用于属性威力和固定威力之和。</param>
+		protected void ArmAttack(AttackConfig attack, float powerMultiplier = 1f)
 		{
 			ReleaseAttack();
 			if (attack == null)
@@ -456,9 +460,10 @@ namespace GameLogic.Entity
 				return;
 			}
 
-			CombatStatsSnapshot stats = GetCombatStats();
-			float power = stats.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf()) + attack.FlatPower;
-			m_ActiveAttack = AttackInstance.Create(attack.Id, stats, power, attack.DamageKind, attack.Knockback, Facing,
+			CombatantStats stats = GetCombatStats();
+			float power = stats.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf())
+				+ MathF.Round(Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf()), MidpointRounding.AwayFromZero);
+			m_ActiveAttack = AttackInstance.Create(attack.Id, stats, power * powerMultiplier, attack.DamageKind, attack.Knockback, Facing,
 				attack.HitProtect, attack.HitSoundId);
 		}
 
@@ -467,7 +472,7 @@ namespace GameLogic.Entity
 		private void OnHitBoxAreaEntered(Area2D area)
 		{
 			// 只处理有效攻击包和受击盒，过滤判定窗口外或无关区域。
-			if (m_ActiveAttack == null || area is not HurtBox hurtBox)
+			if (m_ActiveAttack == null || area is not HurtBoxNode hurtBox)
 			{
 				return;
 			}
@@ -496,7 +501,7 @@ namespace GameLogic.Entity
 
 		/// <summary>结算用属性快照：取属性汇总当前最终值（出招与受击各取一次）。</summary>
 		/// <returns>当前属性与等级对应的结算快照。</returns>
-		protected CombatStatsSnapshot GetCombatStats() => CombatStatsSnapshot.From(Side, Level, Stats);
+		protected CombatantStats GetCombatStats() => CombatantStats.From(Side, Level, Stats, Id);
 
 		/// <summary>
 		/// 受击表现钩子（已扣血、未闪避时调用）：子类决定硬直/击退如何生效。

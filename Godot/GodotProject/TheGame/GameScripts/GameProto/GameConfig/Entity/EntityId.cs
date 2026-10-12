@@ -25,6 +25,14 @@ namespace GameConfig.Entity
         /// 妖猴
         /// </summary>
         DemonMonkey = 2,
+        /// <summary>
+        /// 普通实体；由关卡指定为守关对手
+        /// </summary>
+        Gorilla = 3,
+        /// <summary>
+        /// 无
+        /// </summary>
+        None = -1,
     }
 
 } 

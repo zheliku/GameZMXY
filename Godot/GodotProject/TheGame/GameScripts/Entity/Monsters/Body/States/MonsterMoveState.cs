@@ -1,9 +1,9 @@
-using GameLogic.Entity.Monsters.Body.Core;
+using GameLogic.Monsters.Body;
 using System;
 using GameFramework.Fsm;
 using Godot;
 
-namespace GameLogic.Entity.Monsters.Body.States
+namespace GameLogic.Monsters.Body
 {
 	/// <summary>
 	/// 移动 / 待机：按 AI 的移动意图走动并随之转向（idle / run）；有出招请求就进 Attack。
@@ -14,7 +14,7 @@ namespace GameLogic.Entity.Monsters.Body.States
 		protected override void Tick(IFsm<IMonsterBody> fsm, IMonsterBody body, float dt)
 		{
 			int request = body.TakeAttackRequest();
-			if (request >= 0 && request < body.Params.AttackCount)
+			if (body.OnFloor && request >= 0 && request < body.Params.AttackCount)
 			{
 				fsm.GetState<MonsterAttackState>().Arm(request);
 				ChangeState<MonsterAttackState>(fsm);
