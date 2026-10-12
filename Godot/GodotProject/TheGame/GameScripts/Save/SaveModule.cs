@@ -8,6 +8,7 @@ using System.Linq;
 using GameConfig;
 using GameLogic.Profile;
 using GodotGameFramework;
+using GameLogic.Event.Save;
 
 namespace GameLogic.Save
 {
@@ -24,7 +25,7 @@ namespace GameLogic.Save
         private long m_ActiveSlotUnitId; // 当前档案所属文件编号；必须与 GGF 当前读写槽一致。
         private readonly ExperienceCurve m_Curve; // 重建档案用的共享经验曲线。
         private readonly int m_StartHeroId; // 建档规则：出战英雄。
-        private readonly int m_StartGold; // 建档规则：初始金币。
+        private readonly int m_StartSoul; // 建档规则：初始灵魂。
         private Task<bool> m_PendingWrite = Task.FromResult(true); // 最近一次提交的写入；流程重入前等待。
 
         /// <summary>创建存档入口。</summary>
@@ -37,7 +38,7 @@ namespace GameLogic.Save
             m_Tables = tables;
             m_Curve = curve ?? throw new ArgumentNullException(nameof(curve));
             m_StartHeroId = tables.TbProfileConfig.StartHeroId;
-            m_StartGold = tables.TbProfileConfig.StartGold;
+            m_StartSoul = tables.TbProfileConfig.StartSoul;
         }
 
         /// <summary>最近一次提交的写入（完成值为是否成功）；流程切换前等待它，避免读到旧档。</summary>
@@ -79,7 +80,7 @@ namespace GameLogic.Save
             // 只有明确的新槽或框架新建的空槽才按建档规则创建，不转换历史文件。
             PlayerProfile profile = created
                 ? new PlayerProfile(m_StartHeroId,
-                    [new HeroProgression(m_StartHeroId, m_Curve, 0)], new Wallet(m_StartGold))
+                    [new HeroProgression(m_StartHeroId, m_Curve, 0)], new Wallet(m_StartSoul))
                 : ProfileSaveHelper.RestoreProfile(data, m_Curve);
             m_ActiveSlotUnitId = data.UnitId;
             SaveOrigin origin = created ? SaveOrigin.Created : SaveOrigin.Loaded;
@@ -150,7 +151,7 @@ namespace GameLogic.Save
         /// <returns>仅当前版本、无档案且无业务目录元数据时为 true。</returns>
         private static bool IsUnclaimedSlot(GameCatalogue catalogue, GameData data) =>
             data != null && data.UnitId == catalogue.UnitId && data.SaveVersion == GameData.CurrentVersion &&
-            data.ActiveHeroId == 0 && data.Heroes is { Count: 0 } && data.Gold == 0 &&
+            data.ActiveHeroId == 0 && data.Heroes is { Count: 0 } && data.Soul == 0 &&
             catalogue.SlotNumber == 0 && catalogue.SavedAtUtc == 0 && string.IsNullOrEmpty(catalogue.Name);
 
         /// <summary>把档案当前状态写成一个检查点（调用时刻捕获快照，之后的修改不影响本次写入）。</summary>
@@ -181,9 +182,19 @@ namespace GameLogic.Save
             data.SaveVersion = GameData.CurrentVersion;
             data.ActiveHeroId = snapshot.ActiveHeroId;
             data.Heroes = snapshot.Heroes;
-            data.Gold = snapshot.Gold;
-            m_PendingWrite = GF.Archive.OverWriteAsync();
+            data.Soul = snapshot.Soul;
+            m_PendingWrite = NotifyWriteAsync(GF.Archive.OverWriteAsync());
             return m_PendingWrite;
+        }
+
+        /// <summary>统一处理实际写盘结果，新建与所有检查点成功后都通知应用级提示。</summary>
+        /// <param name="write">框架已经排队的写盘任务。</param>
+        /// <returns>原始写盘结果；失败不发成功事件。</returns>
+        private async Task<bool> NotifyWriteAsync(Task<bool> write)
+        {
+            bool succeeded = await write;
+            if (succeeded) GF.Event.Fire(this, SaveSucceededEventArgs.Create());
+            return succeeded;
         }
     }
 }

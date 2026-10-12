@@ -89,10 +89,6 @@ namespace GameLogic.UI
 		private TextureButton m_Save;
 		[Export]
 		private AnimationPlayer m_LocationAnimation;
-		[Export]
-		private Label m_SaveFeedback;
-		[Export]
-		private AnimationPlayer m_SaveFeedbackAnimation;
 
 	}
 }

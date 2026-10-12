@@ -43,6 +43,7 @@ classDiagram
     ProcedureLevel --> LevelModule : 唯一关卡入口
     LevelModule *-- LevelStageSequence : 阶段状态
     LevelModule *-- LevelSpawnerNode : 怪物所有权与调度
+    LevelModule o-- LootOrbNode : 生成、接触入账与回池
     LevelModule *-- LevelCameraNode : 取景与抵达
     LevelModule *-- LevelGatesNode : 战斗边界
     LevelModule *-- LevelExitNode : 出口交互
@@ -52,7 +53,7 @@ classDiagram
     GameContext o-- SaveModule
     SaveModule *-- SaveSlotDirectory : 只读显示状态
     SaveModule --> ProfileSaveHelper : 状态与文件转换
-    ProfileSaveHelper --> GameData : v3 平铺字段
+    ProfileSaveHelper --> GameData : v4 平铺字段
 ```
 
 ## 目录和命名
@@ -62,6 +63,7 @@ GameScripts/
   Level/
     LevelModule.cs             阶段与内部节点装配
     LevelModule.Progress.cs    同一对象的收益、检查点、回滚
+    LevelModule.Loot.cs        同一对象的飞行掉落所有权与拾取
     Camera/                   相机节点与相机纯算法
     Spawning/                 刷怪节点、生成点与生成调度
     Stages/                   阶段序列、战斗区域门与特殊触发区
@@ -84,11 +86,11 @@ GameScripts/
 
 ## 沿一次操作阅读
 
-1. [GameData](../Godot/GodotProject/TheGame/GameScripts/Save/Data/GameData.cs)：保存出战英雄、拥有英雄的 ID/累计经验、金币；等级与战斗属性重算。生命、魔法、无双、位置、波次不写盘。
+1. [GameData](../Godot/GodotProject/TheGame/GameScripts/Save/Data/GameData.cs)：保存出战英雄、拥有英雄的 ID/累计经验、灵魂；等级与战斗属性重算。生命、魔法、无双、位置、波次不写盘。
 2. [SaveModule](../Godot/GodotProject/TheGame/GameScripts/Save/SaveModule.cs) 与 [存档说明](../Godot/GodotProject/TheGame/GameScripts/Save/README.md)：六格 → 读档/建档 → GameContext → 检查点。
 3. [ProcedureLevel](../Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLevel.cs)：加载场景、注入英雄与档案、开始模块、打开 HUD；失败和退出走同一清理边界。
 4. [LevelModule](../Godot/GodotProject/TheGame/GameScripts/Level/LevelModule.cs)：相机抵达 → 开战 → 调度清波 → 下一阶段或开放出口。
-5. [LevelModule.Progress](../Godot/GodotProject/TheGame/GameScripts/Level/LevelModule.Progress.cs)：实际击败经验直接进入档案；升级重建 HeroLoadout；通关/死亡提交，放弃恢复进关快照。
+5. [LevelModule.Progress](../Godot/GodotProject/TheGame/GameScripts/Level/LevelModule.Progress.cs)：飞行经验球接触后进入档案；升级重建 HeroLoadout 并播放独立动画；通关/死亡提交，放弃恢复进关快照。
 6. [ActorEntity](../Godot/GodotProject/TheGame/GameScripts/Entity/ActorEntity.cs) 与 [DamageHelper](../Godot/GodotProject/TheGame/GameScripts/Battle/Damage/DamageHelper.cs)：攻击包 → 属性快照 → 伤害结果 → 生命与死亡。身体调度由 C# 14 BodyFsmHelper 扩展块执行。
 7. [BattleHud.Logic](../Godot/GodotProject/TheGame/GameScripts/UI/BattleHud/BattleHud.Logic.cs)：订阅真实状态并立即刷新；关闭时退订；守关条只接收数值。
 
@@ -101,6 +103,9 @@ sequenceDiagram
     participant Save as SaveModule
     participant Flow as ProcedureLevel
     Exit->>Level: Entered（清场、靠近、落地、按 W）
+    opt 仍有掉落在飞行
+        Level->>Level: 记录出口请求，等待本关球实际接触并入账
+    end
     Level->>Level: 迁移结局，停止奖励
     Level->>Save: SaveCheckpointAsync
     Level->>Flow: Ended(Cleared)
@@ -108,7 +113,7 @@ sequenceDiagram
     Flow->>Flow: ChangeState(ProcedureMap)
 ```
 
-只跨两层观察边界：出口节点 → 关卡模块 → 流程；没有 Completed → OnCompleted → Ended 转发对象。原来的 ClearRestartDelay=3 秒已从源表删除，通关不附加等待；死亡仍保留配置的 2.5 秒。测试在隔离存档目录测量 W 到地图实际可见的耗时，并重新读盘验证 204 经验。
+只跨两层观察边界：出口节点 → 关卡模块 → 流程；没有 Completed → OnCompleted → Ended 转发对象。原来的 ClearRestartDelay=3 秒已从源表删除，通关不附加固定等待；仍在飞行的球实际拾取完毕后提交，无球时直接提交。死亡仍保留配置的 2.5 秒。测试在隔离存档目录测量 W 到地图实际可见的耗时，并重新读盘验证 204 经验及拾取的灵魂。
 
 ## 战斗数据与表现
 
@@ -116,6 +121,6 @@ HeroLoadout 是英雄显示/升级的冻结输入；CombatantStats 是出招/受
 
 怪物基础配置每种一条，刷怪配方提供生命、物防、攻击倍率和经验覆盖。花果山大猩猩使用基础生命 300 × 3，经验覆盖 25；池复用回到基础值。
 
-小怪受伤后以不透明显示，按官方两秒 Quad.easeOut 淡出后隐藏；继续受伤重新计时，治疗不唤起已隐藏血条，暂停停止计时。守关 HUD 按参考图采用左侧白字黑边华康海报体和右侧原笔刷血条，无进场弹窗，也不显示当前/最大生命数字。
+小怪受伤后以不透明显示，按配置的 4 秒 Quad.easeOut 淡出后隐藏；继续受伤重新计时，治疗不唤起已隐藏血条，暂停停止计时。守关 HUD 按参考图采用左侧白字黑边华康海报体和右侧原笔刷血条，无进场弹窗，也不显示当前/最大生命数字。
 
-官方关卡来源、项目取景选择和历史核对见 [OfficialHuaguoshan](OfficialHuaguoshan.md)，前一轮的实现与验证记录见 [HuaguoshanEncounter](HuaguoshanEncounter.md)。本轮交付验证见 [ModuleRefactor](ModuleRefactor.md)。
+官方关卡来源、项目取景选择和历史核对见 [OfficialHuaguoshan](OfficialHuaguoshan.md)，前一轮的实现与验证记录见 [HuaguoshanEncounter](HuaguoshanEncounter.md)。前轮模块整理见 [ModuleRefactor](ModuleRefactor.md)，当前掉落、升级与平台交付见 [CombatFeedback](CombatFeedback.md)。

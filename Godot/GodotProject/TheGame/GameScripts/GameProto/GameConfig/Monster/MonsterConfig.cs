@@ -44,6 +44,10 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         AttackRangeSlack = _buf.ReadInt();
         LoseTargetTime = _buf.ReadFloat();
         PaceRange = _buf.ReadInt();
+        SoulPerOrb = _buf.ReadInt();
+        SoulCount = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
+        ManaDropChance = _buf.ReadFloat();
+        ManaCount = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
     }
 
     public static MonsterConfig DeserializeMonsterConfig(ByteBuf _buf)
@@ -151,6 +155,22 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// 踱步半幅 px:目标在头顶/平台上够不着时,以目标 x 为中心左右来回走的距离(0=原地等)
     /// </summary>
     public readonly int PaceRange;
+    /// <summary>
+    /// 每颗灵魂值（官方 gxp）
+    /// </summary>
+    public readonly int SoulPerOrb;
+    /// <summary>
+    /// 灵魂球数量闭区间（官方均匀2～4）
+    /// </summary>
+    public readonly Godot.Vector2I SoulCount;
+    /// <summary>
+    /// 蓝球掉落概率（官方12%）
+    /// </summary>
+    public readonly float ManaDropChance;
+    /// <summary>
+    /// 触发后蓝球数量闭区间（官方1～3均匀）
+    /// </summary>
+    public readonly Godot.Vector2I ManaCount;
    
     public const int __ID__ = 129443944;
     public override int GetTypeId() => __ID__;
@@ -188,6 +208,10 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "AttackRangeSlack:" + AttackRangeSlack + ","
         + "LoseTargetTime:" + LoseTargetTime + ","
         + "PaceRange:" + PaceRange + ","
+        + "SoulPerOrb:" + SoulPerOrb + ","
+        + "SoulCount:" + SoulCount + ","
+        + "ManaDropChance:" + ManaDropChance + ","
+        + "ManaCount:" + ManaCount + ","
         + "}";
     }
 }

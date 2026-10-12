@@ -1,0 +1,60 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_01.png" id="level_up_1"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_02.png" id="level_up_2"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_03.png" id="level_up_3"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_04.png" id="level_up_4"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_05.png" id="level_up_5"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_06.png" id="level_up_6"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_07.png" id="level_up_7"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_08.png" id="level_up_8"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_09.png" id="level_up_9"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_10.png" id="level_up_10"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_11.png" id="level_up_11"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_12.png" id="level_up_12"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_13.png" id="level_up_13"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_14.png" id="level_up_14"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_15.png" id="level_up_15"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_16.png" id="level_up_16"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_17.png" id="level_up_17"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_18.png" id="level_up_18"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_19.png" id="level_up_19"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_20.png" id="level_up_20"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_21.png" id="level_up_21"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_22.png" id="level_up_22"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_23.png" id="level_up_23"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_24.png" id="level_up_24"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_25.png" id="level_up_25"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_26.png" id="level_up_26"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_27.png" id="level_up_27"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/level_up/level_up_28.png" id="level_up_28"]
+
+[resource]
+animations = [{"frames": [{"duration": 1.0, "texture": ExtResource("level_up_1")},
+{"duration": 1.0, "texture": ExtResource("level_up_2")},
+{"duration": 1.0, "texture": ExtResource("level_up_3")},
+{"duration": 1.0, "texture": ExtResource("level_up_4")},
+{"duration": 1.0, "texture": ExtResource("level_up_5")},
+{"duration": 1.0, "texture": ExtResource("level_up_6")},
+{"duration": 1.0, "texture": ExtResource("level_up_7")},
+{"duration": 1.0, "texture": ExtResource("level_up_8")},
+{"duration": 1.0, "texture": ExtResource("level_up_9")},
+{"duration": 1.0, "texture": ExtResource("level_up_10")},
+{"duration": 1.0, "texture": ExtResource("level_up_11")},
+{"duration": 1.0, "texture": ExtResource("level_up_12")},
+{"duration": 1.0, "texture": ExtResource("level_up_13")},
+{"duration": 1.0, "texture": ExtResource("level_up_14")},
+{"duration": 1.0, "texture": ExtResource("level_up_15")},
+{"duration": 1.0, "texture": ExtResource("level_up_16")},
+{"duration": 1.0, "texture": ExtResource("level_up_17")},
+{"duration": 1.0, "texture": ExtResource("level_up_18")},
+{"duration": 1.0, "texture": ExtResource("level_up_19")},
+{"duration": 1.0, "texture": ExtResource("level_up_20")},
+{"duration": 1.0, "texture": ExtResource("level_up_21")},
+{"duration": 1.0, "texture": ExtResource("level_up_22")},
+{"duration": 1.0, "texture": ExtResource("level_up_23")},
+{"duration": 1.0, "texture": ExtResource("level_up_24")},
+{"duration": 1.0, "texture": ExtResource("level_up_25")},
+{"duration": 1.0, "texture": ExtResource("level_up_26")},
+{"duration": 1.0, "texture": ExtResource("level_up_27")},
+{"duration": 1.0, "texture": ExtResource("level_up_28")}], "loop": false, "name": &"level_up", "speed": 24.0}]

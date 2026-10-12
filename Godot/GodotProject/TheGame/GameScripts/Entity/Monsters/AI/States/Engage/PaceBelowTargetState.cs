@@ -17,7 +17,10 @@ namespace GameLogic.Monsters.AI
 		protected override void Enter(IMonsterAiAgent agent)
 		{
 			base.Enter(agent);
-			m_Dir = 0;
+			// 踱步与追击一样在进入时提交方向，站定等待只用于半幅为零的配置。
+			m_Dir = agent.Params.PaceRange > 0f ? Math.Sign(agent.TargetBox.CenterX) : 0;
+			if (m_Dir == 0 && agent.Params.PaceRange > 0f) m_Dir = 1;
+			agent.Move(m_Dir);
 		}
 
 		/// <summary>目标高度暂不可达时在其下方踱步或转入追击。</summary>

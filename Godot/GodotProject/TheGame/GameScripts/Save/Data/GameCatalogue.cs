@@ -2,7 +2,7 @@ using GodotGameFramework.Archive;
 using System;
 
 /// <summary>Catalogue.sav 中一格的索引与显示信息：文件编号、格号、角色名称和保存时间。</summary>
-/// <remarks>这是文件目录元数据；角色经验与金币保存在 GameData 中。</remarks>
+/// <remarks>这是文件目录元数据；角色经验与灵魂保存在 GameData 中。</remarks>
 [Serializable]
 public class GameCatalogue : ArchiveCatalogue
 {

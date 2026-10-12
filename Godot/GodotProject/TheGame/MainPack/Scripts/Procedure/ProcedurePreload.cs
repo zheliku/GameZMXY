@@ -4,6 +4,8 @@ using GameLogic.Startup.FlowData;
 //------------------------------------------------------------
 
 using System;
+using GameConfig;
+using GameLogic.UI;
 using GameFramework.Localization;
 using GameFramework.Procedure;
 using GameLogic.Config;
@@ -78,6 +80,22 @@ public class ProcedurePreload : ProcedureBase
         }
 
         procedureOwner.SetData(FlowKeys.ExperienceCurve, ExperienceCurveVariable.Create(curve));
+        // 先建立应用级提示监听，再允许标题流程新建档案；切页不会关闭这张非交互窗口。
+        try
+        {
+            var notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(UIFormId.SaveNoticeForm);
+            if (entrySerial != m_EntrySerial)
+            {
+                GF.UI.CloseUIForm(notice.SerialId);
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            if (entrySerial != m_EntrySerial) return;
+            Log.Fatal("[ProcedurePreload] 保存提示初始化失败：{0}", ex);
+            return;
+        }
         ChangeState<ProcedureTitle>(procedureOwner);
     }
     /// <summary>使在途加载结果失效，不让旧周期继续启动游戏。</summary>

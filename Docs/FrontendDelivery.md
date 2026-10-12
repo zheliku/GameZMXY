@@ -101,3 +101,5 @@ NuGet 的 NU1900 表示受网络限制无法取得漏洞索引，测试实际执
 | 空白 | `git diff HEAD --check` | 通过 |
 
 已查看 [放大图扩展区域仍保持悬停](../Godot/GodotProject/.godot/validation/frontend/map_hover_expanded_hit.png) 的实际 GPU 截图。最终日志为 `%TEMP%/gamezmxy-location-hit-frontend-fixed.log/.err`；首次前端失败原因是选角场景旧要求回退，修复后完整回归通过。存档、声音及返回路径仍在同一次回归中验证；既有 WebRequest 关停错误与故意跨槽拒写日志单独记录。未修改 Framework、addons、旧项目、视觉关键帧或暂存区。本次功能无未完成项。
+
+2026-10-12 后续调整：保存成功叠层已提取为应用级 `SaveNoticeForm`，外置动画为 `Sprites/UI/frontend/save_feedback.tres`。由 `SaveModule` 在真实写盘成功后统一触发，地图按钮结果事件只更新按钮状态与失败重试提示；详见 [CombatFeedback](CombatFeedback.md)。

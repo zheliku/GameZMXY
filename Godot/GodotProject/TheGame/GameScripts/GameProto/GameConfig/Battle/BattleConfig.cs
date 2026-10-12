@@ -173,7 +173,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// </summary>
     public readonly float DeathRestartDelay;
     /// <summary>
-    /// 小怪受伤血条淡出秒数（官方 BaseMonster.showHpSlip 为 2 秒）
+    /// 小怪受伤血条淡出总时长（秒）；本项目延长为4秒，官方原值2秒
     /// </summary>
     public readonly float MonsterHealthBarFadeDuration;
     /// <summary>

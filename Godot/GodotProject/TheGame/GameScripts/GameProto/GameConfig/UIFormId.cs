@@ -41,6 +41,10 @@ namespace GameConfig
         /// 存档选择
         /// </summary>
         SaveForm = 6,
+        /// <summary>
+        /// 保存成功提示
+        /// </summary>
+        SaveNoticeForm = 7,
     }
 
 } 

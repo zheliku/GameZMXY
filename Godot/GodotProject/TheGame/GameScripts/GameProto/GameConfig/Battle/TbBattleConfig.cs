@@ -144,7 +144,7 @@ public partial class TbBattleConfig
     /// </summary>
      public float DeathRestartDelay => _data.DeathRestartDelay;
     /// <summary>
-    /// 小怪受伤血条淡出秒数（官方 BaseMonster.showHpSlip 为 2 秒）
+    /// 小怪受伤血条淡出总时长（秒）；本项目延长为4秒，官方原值2秒
     /// </summary>
      public float MonsterHealthBarFadeDuration => _data.MonsterHealthBarFadeDuration;
     /// <summary>

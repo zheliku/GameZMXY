@@ -21,7 +21,6 @@
 [ext_resource type="Texture2D" uid="uid://btl5ybg8xbfrw" path="res://TheGame/Sprites/UI/frontend/map_qixingdong_normal.png" id="qixingdong_normal"]
 [ext_resource type="Texture2D" uid="uid://cduboi0hhjwwh" path="res://TheGame/Sprites/UI/frontend/map_return_title.png" id="return_title"]
 [ext_resource type="Texture2D" uid="uid://ccn3ilctrv7lh" path="res://TheGame/Sprites/UI/frontend/map_save_game.png" id="save"]
-[ext_resource type="AnimationLibrary" uid="uid://i61lkwwdqgpu" path="res://TheGame/Sprites/UI/frontend/map_save_feedback.tres" id="save_feedback"]
 [ext_resource type="Script" uid="uid://j3l6184hm0yt" path="res://TheGame/GameScripts/UI/MapForm/MapForm.cs" id="script"]
 [ext_resource type="Texture2D" uid="uid://b6lb8t8q0g7jx" path="res://TheGame/Sprites/UI/frontend/map_shazhiwoliu_hover.png" id="shazhiwoliu_hover"]
 [ext_resource type="Texture2D" uid="uid://cf0lrs4cxjgqm" path="res://TheGame/Sprites/UI/frontend/map_shazhiwoliu_normal.png" id="shazhiwoliu_normal"]
@@ -37,7 +36,7 @@ shader = ExtResource("outline")
 shader_parameter/image_scale = 0.9
 shader_parameter/line_thickness = 1.0
 
-[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Back", "m_Huaguoshan", "m_Save", "m_LocationAnimation", "m_SaveFeedback", "m_SaveFeedbackAnimation")]
+[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Back", "m_Huaguoshan", "m_Save", "m_LocationAnimation")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -50,8 +49,6 @@ m_Back = NodePath("m_Back")
 m_Huaguoshan = NodePath("m_Huaguoshan")
 m_Save = NodePath("m_Save")
 m_LocationAnimation = NodePath("m_LocationAnimation")
-m_SaveFeedback = NodePath("SaveFeedback/m_SaveFeedback")
-m_SaveFeedbackAnimation = NodePath("m_SaveFeedbackAnimation")
 
 [node name="Background" type="TextureRect" parent="." unique_id=1431881532]
 layout_mode = 0
@@ -285,35 +282,3 @@ vertical_alignment = 1
 [node name="m_LocationAnimation" type="AnimationPlayer" parent="." unique_id=328441174]
 libraries/location = ExtResource("hover")
 speed_scale = 0.4
-
-[node name="SaveFeedback" type="Control" parent="." unique_id=386898293]
-anchors_preset = 0
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_top = 5.0
-offset_bottom = 5.0
-mouse_filter = 2
-
-[node name="m_SaveFeedback" type="Label" parent="SaveFeedback" unique_id=482460937]
-visible = false
-layout_mode = 0
-offset_left = -250.0
-offset_top = -61.0
-offset_right = 250.0
-offset_bottom = 64.0
-theme_override_colors/font_color = Color(0.08, 0.05, 0.02, 1)
-theme_override_colors/font_shadow_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/shadow_offset_x = 0
-theme_override_constants/shadow_offset_y = 0
-theme_override_constants/outline_size = 2
-theme_override_constants/shadow_outline_size = 10
-theme_override_fonts/font = ExtResource("caption_font")
-theme_override_font_sizes/font_size = 28
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="m_SaveFeedbackAnimation" type="AnimationPlayer" parent="." unique_id=1249960999]
-libraries/feedback = ExtResource("save_feedback")

@@ -36,7 +36,7 @@ using Newtonsoft.Json;
 /// 用真实 GGF 窗口、对象池、流程与隔离存档验证：HUD 聚合刷新与退订、实体复用、升级注入、
 /// 关卡事务（中途离开回滚不写盘、死亡与通关写盘）、存档迁移/原子写/备份回退与流程重入。
 /// </summary>
-public sealed class UiSmokeScenario
+public sealed partial class UiSmokeScenario
 {
     private readonly Node m_Driver; // 提供真实引擎帧信号的烟测节点。
     private readonly Task m_RunTask; // 已捕获异常的测试任务。
@@ -81,13 +81,26 @@ public sealed class UiSmokeScenario
             await CheckEntityReuseAsync(context);
             m_TestHud = await OpenHudAsync(new BattleHudData(hero, context.Profile.ActiveHero, level));
             await CheckGroundCombatAsync(hero, m_TestHud);
+            await CheckDemonChaseAsync(hero);
             CloseHud(m_TestHud);
             m_TestHud = null;
             await CheckLevelUpAsync(context, level);
+            await CheckPlatformsAsync(level);
+            await CheckManaPickupAsync(context, level, hero);
+            // 从真实保存的临界经验重入，下一次经验球拾取应立即触发升级动画。
+            level.Cleanup(); // 先结束旧关卡事务，再设置下一场的测试检查点。
+            Check(!level.GetChildren().OfType<GameLogic.Drops.LootOrbNode>().Any(), "关停后仍有本关飞行奖励");
+            var active = context.Profile.ActiveHero;
+            active.AddExperience(active.MaxExperience - active.Experience - 1);
+            Check(await context.Save.SaveCheckpointAsync(context.Profile), "升级临界检查点保存失败");
+            ReenterLevel();
+            procedure = await WaitForLevelAsync();
+            level = FindLevel();
 
             // 中途离开：关内收益回滚，不写盘；重入读回进关前状态。
             HeroProgression progression = context.Profile.ActiveHero;
             int before = progression.TotalExperience;
+            int soulBefore = context.Profile.Wallet.Soul;
             await DefeatMonsterAsync(level, procedure);
             Check(progression.TotalExperience > before, "击败怪物没有把经验写入档案");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == before, "关内收益在结算前就写盘了");
@@ -95,15 +108,18 @@ public sealed class UiSmokeScenario
             procedure = await WaitForLevelAsync();
             Check(ReferenceEquals(SmokeInspection.Context(procedure), context), "重入关卡没有沿用同一档案作用域");
             Check(progression.TotalExperience == before, "中途离开没有回滚关内收益");
+            Check(context.Profile.Wallet.Soul == soulBefore, "中途离开没有回滚已拾取的灵魂");
 
             // 死亡：提交本关收益（写盘），延迟后自动重开。关卡运行在击杀前捕获，重开后流程会换成新运行。
             await DefeatMonsterAsync(FindLevel(), procedure);
             int afterKill = progression.TotalExperience;
+            int soulAfterKill = context.Profile.Wallet.Soul;
             LevelModule deathRun = SmokeInspection.Level(procedure);
             KillHero(FindHero());
             Check(deathRun.Outcome == LevelOutcome.Defeated, $"英雄死亡没有结束关卡运行：{deathRun.Outcome}");
             Check(await deathRun.CheckpointWrite, "死亡检查点写入失败");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == afterKill, "死亡没有保存本关收益");
+            Check((await ReadDiskAsync()).Soul == soulAfterKill, "死亡没有保存已拾取的灵魂");
             await WaitUntilAsync(() => SmokeInspection.Level(procedure) != null && !ReferenceEquals(SmokeInspection.Level(procedure), deathRun) &&
                 SmokeInspection.Level(procedure).Outcome == LevelOutcome.Running && CurrentHud() != null,
                 "死亡后没有自动重开关卡", 15000);
@@ -460,7 +476,7 @@ public sealed class UiSmokeScenario
                 $"{entityId} 部分治疗未刷新血条");
 
             // 真实游戏时间验证淡出、再受伤复位和暂停，不手工调用计时实现。
-            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.6), SceneTreeTimer.SignalName.Timeout);
+            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(ConfigSystem.Instance.Tables.TbBattleConfig.MonsterHealthBarFadeDuration * 0.3), SceneTreeTimer.SignalName.Timeout);
             Check(bar.Visible && bar.Modulate.A is > 0f and < 0.8f, $"{entityId} 受伤血条未逐渐淡出");
             m_Monster.Vitals.Damage(1);
             Check(bar.Visible && Near(bar.Modulate.A, 1), $"{entityId} 连续受伤未重置淡出");
@@ -469,10 +485,10 @@ public sealed class UiSmokeScenario
             await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.3, ignoreTimeScale: true), SceneTreeTimer.SignalName.Timeout);
             Check(bar.Visible && Near(bar.Modulate.A, alpha), $"{entityId} 暂停时仍在淡出");
             GF.Base.ResumeGame();
-            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(1.5), SceneTreeTimer.SignalName.Timeout);
+            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(ConfigSystem.Instance.Tables.TbBattleConfig.MonsterHealthBarFadeDuration * 0.75), SceneTreeTimer.SignalName.Timeout);
             Check(bar.Visible, $"{entityId} 连续受伤后的计时没有重新开始");
-            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.6), SceneTreeTimer.SignalName.Timeout);
-            Check(!bar.Visible, $"{entityId} 受伤两秒后血条没有隐藏");
+            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(ConfigSystem.Instance.Tables.TbBattleConfig.MonsterHealthBarFadeDuration * 0.3), SceneTreeTimer.SignalName.Timeout);
+            Check(!bar.Visible, $"{entityId} 配置淡出时长结束后血条没有隐藏");
             m_Monster.Heal(1);
             Check(!bar.Visible, $"{entityId} 治疗不应重新唤起已隐藏血条");
             m_Monster.Vitals.Damage(1);
@@ -717,6 +733,9 @@ public sealed class UiSmokeScenario
         LevelModule run = SmokeInspection.Level(procedure);
         hero.SetPhysicsProcess(true);
         int kills = SmokeInspection.ReadField<int>(run, "m_DefeatedMonsterCount");
+        int beforeXp = SmokeInspection.Context(procedure).Profile.ActiveHero.TotalExperience;
+        int beforeSoul = SmokeInspection.Context(procedure).Profile.Wallet.Soul;
+        int beforeLevel = hero.Level;
 
         // 推动相机抵达首阶段右界触发首波刷怪；刷出的怪物立即停用 AI，避免它先打死测试英雄。
         await WaitUntilAsync(() =>
@@ -754,6 +773,23 @@ public sealed class UiSmokeScenario
 
             return SmokeInspection.ReadField<int>(run, "m_DefeatedMonsterCount") > kills;
         }, "击败怪物没有经关卡运行结算", 10000, () => Describe(monster, run, level));
+        Check(SmokeInspection.Context(procedure).Profile.ActiveHero.TotalExperience == beforeXp &&
+            SmokeInspection.Context(procedure).Profile.Wallet.Soul == beforeSoul, "死亡时立即入账，未等待球接触英雄");
+        await CheckFlyingLootAsync(level, hero);
+        await WaitUntilAsync(() => SmokeInspection.ReadField<System.Collections.Generic.HashSet<GameLogic.Drops.LootOrbNode>>(level, "m_LootOrbs").Count == 0,
+            "掉落没有追踪并接触英雄", 12000);
+        int reward = SmokeInspection.ReadField<int>(monster, "m_ExperienceReward");
+        Check(SmokeInspection.Context(procedure).Profile.ActiveHero.TotalExperience == beforeXp + reward, "经验球总额与击败经验不同");
+        int souls = SmokeInspection.Context(procedure).Profile.Wallet.Soul - beforeSoul;
+        Check(souls >= monster.Config.SoulCount.X * monster.Config.SoulPerOrb &&
+            souls <= monster.Config.SoulCount.Y * monster.Config.SoulPerOrb, "灵魂球没有按配置入账");
+        if (hero.Level > beforeLevel)
+        {
+            var effect = SmokeInspection.ReadField<GameLogic.Heroes.Effects.HeroLevelUpNode>(hero, "m_LevelUp");
+            Check(effect.Visible && effect.IsPlaying(), "实际拾取升级的瞬间没有升级动画");
+            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(.25), SceneTreeTimer.SignalName.Timeout);
+            await CaptureCombatAsync("level_up");
+        }
         hero.SetPhysicsProcess(false);
     }
 

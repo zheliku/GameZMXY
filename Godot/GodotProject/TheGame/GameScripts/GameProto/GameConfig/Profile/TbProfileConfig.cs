@@ -40,9 +40,9 @@ public partial class TbProfileConfig
     /// </summary>
      public int StartHeroId => _data.StartHeroId;
     /// <summary>
-    /// 新档初始金币
+    /// 初始灵魂
     /// </summary>
-     public int StartGold => _data.StartGold;
+     public int StartSoul => _data.StartSoul;
     
     public void ResolveRef(Tables tables)
     {

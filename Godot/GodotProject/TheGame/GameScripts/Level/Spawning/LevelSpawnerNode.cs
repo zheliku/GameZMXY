@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using GameConfig.Level;
 using GameLogic.Monsters;
+using GameConfig.Monster;
 using GameFramework.Entity;
 using GameFramework.Event;
 using Godot;
@@ -32,8 +33,8 @@ public partial class LevelSpawnerNode : Node
     /// <summary>当前阶段配方发完且存活与在途名额归零，只报告一次。</summary>
     public event Action StageCleared;
 
-    /// <summary>本会话怪物死亡且首次归还名额时报告一次，携带此次击败经验。</summary>
-    public event Action<int> MonsterDefeated;
+    /// <summary>本会话怪物死亡且首次归还名额时报告一次，携带只读配置、死亡位置和配方经验。</summary>
+    public event Action<MonsterConfig, Vector2, int> MonsterDefeated;
 
     /// <summary>本会话怪物已显示并登记所有权，供关卡绑定守关展示。</summary>
     public event Action<MonsterEntity> MonsterShown;
@@ -192,7 +193,8 @@ public partial class LevelSpawnerNode : Node
         if (args is MonsterDiedEventArgs died && m_ActiveMonsters.Remove(died.EntityId))
         {
             m_Schedule.Release();
-            MonsterDefeated?.Invoke(died.ExperienceReward);
+            MonsterDefeated?.Invoke(died.Config, died.Position, died.ExperienceReward);
+            if (!m_SessionActive) return; // 掉落显示失败可能已让模块同步结束会话。
             if (m_Schedule.IsCleared)
             {
                 // 先停调度再分发，控制器可以同步开放下一段通路。

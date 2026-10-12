@@ -11,7 +11,7 @@ namespace GameLogic.Config
 {
 	/// <summary>
 	/// 启动期集中校验跨表约束（预加载流程调用一次，失败即停止启动）。
-	/// 只校验"运行期默认成立、出错会在战斗中途才暴露"的约束：经验曲线、成长表覆盖、建档规则、怪物属性。
+	/// 校验经验曲线、成长覆盖、建档规则、怪物属性与掉落数值，避免战斗中途才暴露配置错误。
 	/// 关卡与场景装配的约束仍由各自的初始化边界（LevelModule 等）校验。
 	/// </summary>
 	public static class ConfigHelper
@@ -49,9 +49,9 @@ namespace GameLogic.Config
 				errors.Add($"建档规则：StartHeroId={tables.TbProfileConfig.StartHeroId} 不在 HeroConfig 中。");
 			}
 
-			if (tables.TbProfileConfig.StartGold < 0)
+			if (tables.TbProfileConfig.StartSoul < 0)
 			{
-				errors.Add("建档规则：StartGold 不能为负。");
+				errors.Add("建档规则：StartSoul 不能为负。");
 			}
 
 			// 怪物：生命上限为正、经验奖励非负、等级为正。
@@ -69,6 +69,7 @@ namespace GameLogic.Config
 			}
 
             // 关卡音乐由关卡表声明，避免新关卡仍播放花果山硬编码音乐。
+            ValidateDrops(tables, errors);
             foreach (var level in tables.TbLevelConfig.DataList)
             {
                 foreach (var stage in level.Stages)
@@ -114,7 +115,33 @@ namespace GameLogic.Config
 			return curve;
 		}
 
-		/// <summary>校验每名英雄的成长行覆盖经验表全部等级且属性生命上限为正。</summary>
+        /// <summary>在预加载边界校验掉落数量、概率与飞行参数，运行时直接消费。</summary>
+        /// <param name="tables">只读配置总表。</param>
+        /// <param name="errors">集中错误列表。</param>
+        private static void ValidateDrops(Tables tables, List<string> errors)
+        {
+            var drop = tables.TbDropConfig.Data;
+            if (drop.ExperienceOrbCount.X < 1 || drop.ExperienceOrbCount.Y < drop.ExperienceOrbCount.X ||
+                drop.ManaMinimum < 0 || !float.IsFinite(drop.ManaMaxFraction) || drop.ManaMaxFraction < 0f ||
+                !float.IsFinite(drop.ScatterRadius) || drop.ScatterRadius < 0f ||
+                !float.IsFinite(drop.Delay) || drop.Delay < 0f ||
+                !float.IsFinite(drop.RiseDuration) || drop.RiseDuration <= 0f ||
+                !drop.RiseDistance.IsFinite() || drop.RiseDistance.X < 0f || drop.RiseDistance.Y < drop.RiseDistance.X ||
+                !float.IsFinite(drop.InitialSpeed) || drop.InitialSpeed <= 0f ||
+                !float.IsFinite(drop.Acceleration) || drop.Acceleration < 0f ||
+                !float.IsFinite(drop.MaxSpeed) || drop.MaxSpeed < drop.InitialSpeed ||
+                !float.IsFinite(drop.PickupRadius) || drop.PickupRadius <= 0f)
+                errors.Add("掉落：数量、回蓝、散布、时间、速度与接触半径配置非法。");
+            foreach (var monster in tables.TbMonsterConfig.DataList)
+            {
+                if (monster.SoulPerOrb < 0 || monster.SoulCount.X < 0 || monster.SoulCount.Y < monster.SoulCount.X ||
+                    !float.IsFinite(monster.ManaDropChance) || monster.ManaDropChance is < 0f or > 1f ||
+                    monster.ManaCount.X < 1 || monster.ManaCount.Y < monster.ManaCount.X)
+                    errors.Add($"怪物 {monster.Id}：灵魂数量和蓝球概率/数量配置非法。");
+            }
+        }
+
+        /// <summary>校验每名英雄的成长行覆盖经验表全部等级且属性生命上限为正。</summary>
 		/// <param name="tables">配置总表。</param>
 		/// <param name="maxLevel">经验表最高等级。</param>
 		/// <param name="errors">错误汇总。</param>

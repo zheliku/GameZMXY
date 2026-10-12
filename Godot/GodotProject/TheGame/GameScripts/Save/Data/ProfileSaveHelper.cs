@@ -14,7 +14,7 @@ namespace GameLogic.Save.Data
         public static GameData CaptureSaveData(PlayerProfile profile)
         {
             ArgumentNullException.ThrowIfNull(profile);
-            GameData data = new() { ActiveHeroId = profile.ActiveHeroId, Gold = profile.Wallet.Gold };
+            GameData data = new() { ActiveHeroId = profile.ActiveHeroId, Soul = profile.Wallet.Soul };
 
             // 按 HeroId 排序写出，同一状态得到同一份 JSON，便于比对。
             List<int> heroIds = new(profile.Heroes.Keys);
@@ -58,7 +58,7 @@ namespace GameLogic.Save.Data
                 heroes.Add(new HeroProgression(hero.HeroId, curve, hero.TotalExperience));
             }
 
-            return new PlayerProfile(data.ActiveHeroId, heroes, new Wallet(data.Gold));
+            return new PlayerProfile(data.ActiveHeroId, heroes, new Wallet(data.Soul));
         }
 
         /// <summary>按快照回滚已存在的档案（关卡事务回滚），保留对象引用，订阅者会收到变更通知。</summary>
@@ -87,7 +87,7 @@ namespace GameLogic.Save.Data
                 record.Restore(hero.TotalExperience);
             }
 
-            profile.Wallet.Restore(snapshot.Gold);
+            profile.Wallet.Restore(snapshot.Soul);
         }
     }
 }

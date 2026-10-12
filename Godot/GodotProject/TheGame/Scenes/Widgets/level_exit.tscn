@@ -1,13 +1,13 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://qk7b0ixfs2in"]
 
-[ext_resource type="Script" path="res://TheGame/GameScripts/Level/Exit/LevelExitNode.cs" id="script"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/level_exit/level_exit_frames.tres" id="frames"]
-[ext_resource type="Theme" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="theme"]
+[ext_resource type="SpriteFrames" uid="uid://b6uuw7l55srf" path="res://TheGame/Sprites/Effects/level_exit/level_exit_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://dc4putintok3g" path="res://TheGame/GameScripts/Level/Exit/LevelExitNode.cs" id="script"]
+[ext_resource type="Theme" uid="uid://2gwbh6otun6r" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="theme"]
 
 [sub_resource type="CircleShape2D" id="range"]
 radius = 85.0
 
-[node name="LevelExitNode" type="Area2D" node_paths=PackedStringArray("m_Marker", "m_Prompt")]
+[node name="LevelExitNode" type="Area2D" unique_id=247170705 node_paths=PackedStringArray("m_Marker", "m_Prompt")]
 visible = false
 collision_layer = 2048
 collision_mask = 2
@@ -15,20 +15,19 @@ script = ExtResource("script")
 m_Marker = NodePath("Marker")
 m_Prompt = NodePath("Prompt")
 
-[node name="Marker" type="AnimatedSprite2D" parent="."]
+[node name="Marker" type="AnimatedSprite2D" parent="." unique_id=704925547]
 sprite_frames = ExtResource("frames")
 animation = &"exit"
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=73147405]
 shape = SubResource("range")
 
-[node name="Prompt" type="Label" parent="."]
+[node name="Prompt" type="Label" parent="." unique_id=850729688]
 visible = false
 offset_left = -100.0
 offset_top = -106.0
 offset_right = 100.0
 offset_bottom = -72.0
-mouse_filter = 2
 theme = ExtResource("theme")
 theme_override_colors/font_color = Color(1, 0.9, 0.48, 1)
 theme_override_colors/font_outline_color = Color(0.12, 0.05, 0.02, 1)

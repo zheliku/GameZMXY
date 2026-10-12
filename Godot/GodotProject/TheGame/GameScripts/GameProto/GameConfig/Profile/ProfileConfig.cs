@@ -19,7 +19,7 @@ public sealed partial class ProfileConfig : Luban.BeanBase
         NameCn = _buf.ReadString();
         Desc = _buf.ReadString();
         StartHeroId = _buf.ReadInt();
-        StartGold = _buf.ReadInt();
+        StartSoul = _buf.ReadInt();
     }
 
     public static ProfileConfig DeserializeProfileConfig(ByteBuf _buf)
@@ -40,9 +40,9 @@ public sealed partial class ProfileConfig : Luban.BeanBase
     /// </summary>
     public readonly int StartHeroId;
     /// <summary>
-    /// 新档初始金币
+    /// 初始灵魂
     /// </summary>
-    public readonly int StartGold;
+    public readonly int StartSoul;
    
     public const int __ID__ = -1299972474;
     public override int GetTypeId() => __ID__;
@@ -57,7 +57,7 @@ public sealed partial class ProfileConfig : Luban.BeanBase
         + "NameCn:" + NameCn + ","
         + "Desc:" + Desc + ","
         + "StartHeroId:" + StartHeroId + ","
-        + "StartGold:" + StartGold + ","
+        + "StartSoul:" + StartSoul + ","
         + "}";
     }
 }

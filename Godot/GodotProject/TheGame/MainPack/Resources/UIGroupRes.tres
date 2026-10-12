@@ -8,7 +8,12 @@ script = ExtResource("1_l80va")
 Name = "Normal"
 metadata/_custom_type_script = "uid://3ys0l3wjn70d"
 
+[sub_resource type="Resource" id="Resource_notice"]
+script = ExtResource("1_l80va")
+Name = "Notice"
+Depth = 100
+
 [resource]
 script = ExtResource("1_8mpxc")
-Groups = Array[Object]([SubResource("Resource_8mpxc")])
+Groups = Array[Object]([SubResource("Resource_8mpxc"), SubResource("Resource_notice")])
 metadata/_custom_type_script = "uid://c2oueg0nbnp4s"

@@ -106,6 +106,7 @@ public partial class LevelModule : Node2D
     public void Cleanup()
     {
         AbandonProgress();
+        ClearLoot();
         if (m_Sequence == null || m_Sequence.Phase == LevelStagePhase.Stopped)
         {
             return; // 未完成初始化或已经停止的会话没有需要解除的订阅。
@@ -185,6 +186,9 @@ public partial class LevelModule : Node2D
     private void OnExitEntered()
     {
         if (m_Sequence.Phase != LevelStagePhase.AwaitingExit || !m_Player.IsAlive) return;
+        // 已按 W 时等最后的球实际接触再保存，避免把尚未拾取的收益丢在卸载场景中。
+        m_ExitRequested = true;
+        if (m_LootOrbs.Count != 0) return;
         m_Sequence.Complete();
         SubmitOutcome(LevelOutcome.Cleared);
     }

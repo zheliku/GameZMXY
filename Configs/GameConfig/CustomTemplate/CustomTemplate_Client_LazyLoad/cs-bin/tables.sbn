@@ -12,7 +12,7 @@ public partial class {{__name}}
     /// </summary>
 {{~end~}}
     private {{table.full_name}} m_{{table.name}};
-    public {{table.full_name}} {{format_property_name __code_style table.name}} 
+    public {{table.full_name}} {{format_property_name __code_style table.name}}
     {
         get
         {

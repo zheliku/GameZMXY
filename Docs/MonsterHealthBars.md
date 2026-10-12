@@ -4,19 +4,19 @@
 
 ## Changed 的用途
 
-`Changed` 是状态源发给外部观察者的同步聚合通知。观察者收到后读取 getter，取得更新完成后的全部所需值。它不表示一次受击、获得金币或交易成功。
+`Changed` 是状态源发给外部观察者的同步聚合通知。观察者收到后读取 getter，取得更新完成后的全部所需值。它不表示一次受击、获得灵魂或交易成功。
 
 | 状态源 | 当前业务订阅者 | 读取内容 |
 | --- | --- | --- |
 | `Vitals.Changed` | `BattleHud`、绑定了小血条的 `MonsterEntity` | 当前生命/魔法及上限 |
 | `MusouGauge.Changed` | `BattleHud` | 当前无双、上限与满值状态 |
 | `HeroProgression.Changed` | `BattleHud` | 等级、本级经验及上限 |
-| `Wallet.Changed` | 暂无 | 后续货币显示可读取 `Gold` |
-| `StatSheet.Changed` | 暂无 | 后续属性显示等可读取最终属性 |
+| `Wallet` | 暂无 UI 观察者；不保留无消费者事件 | 当前余额读取 `Soul` |
+| `ActorAttributes` | 实体主动在属性变化边界同步 Vitals | 最终战斗属性 |
 
 当前消费者不需要旧值、变化原因或差值，因此保留 `event Action Changed`，遵循第 00 章「状态变化与通信」。将来某项业务确实需要操作结果时，再按作用域选择直接返回结果、专用 C# 事件或 `GF.Event`；不把这些信息塞入通用刷新通知。
 
-本轮补充了事件 XML 契约，并修复 `Wallet.AddGold` 在余额已达 `int.MaxValue`、实际余额未变化时仍发送通知的问题。`Vitals.SetMaximums`、`MusouGauge.Reset` 保留显式同步/重置通知的现有语义。
+钱包目前只有实际增减与回滚方法，没有为测试保留 Changed 事件。血条与 HUD 继续订阅有真实消费者的生命、无双和成长通知。
 
 ## 旧项目参考与新项目落位
 
@@ -31,7 +31,7 @@
 - `MonsterEntity.OnShow` 在配置和生命重置完成后订阅 `Vitals.Changed`，并立即读取初值；`OnHide` 对称退订并隐藏。
 - 血条作为怪物子场景随 GGF 实体池整体复用，没有独立生成/销毁、独立池、全局管理器或每帧生命轮询。
 - 位置使用 `HeadPosition`（受击盒顶边中心），物理移动后更新位置；`m_HealthBarOffset` 在检查器调节。血条位于身体镜像容器外，转向不反转填充方向。
-- 采用「存活且未满血时显示」：首次掉血显示；部分治疗刷新；补满、生命归零或实体隐藏时隐藏。没有接入旧项目的显示设置与超时淡出。
+- 首次掉血以不透明显示；持续受伤重新计时；按 `BattleConfig.MonsterHealthBarFadeDuration` 淡出（当前 4 秒），计时结束隐藏。治疗只刷新比例，补满、生命归零或实体隐藏时隐藏。暂停停止计时。
 - 控件只读输入，不参与扣血、治疗、死亡或战斗结算。归零显示判断使用 `Vitals.IsDepleted`，因为其通知早于 `ReceiveHit` 更新 `Dead`。
 
 这是世界空间控件，不是独立玩法窗口，因此不新增 `UIFormId` 或 UI 配置行。场景留在现有 UIs bundle；Collection Res 通过既有生成入口更新，未手改生成代码。
@@ -59,3 +59,5 @@
 - `python Tools/ProjectMaintenance/validate_game_references.py`、`git diff --check`：通过。
 
 该阶段烟测退出仍出现第 50 章已登记的 `DefaultWebRequestAgentHelper.Reset` 访问已释放节点异常；与业务断言通过分别记录。该阶段未修改配置源表。后续官方尺寸核对、关卡配表、角色无双与字体迁移见 [OfficialBattlePolish.md](OfficialBattlePolish.md)。框架、插件与旧项目保持只读，原有暂存的 `Docs/ProjectTour.md` 修改保持原样。
+
+当前时长配置：`Configs/GameConfig/Datas/BattleConfig.xlsx` 的 `MonsterHealthBarFadeDuration`（AE6，秒）；改后运行 Luban 导表脚本。后续交付与当前验证见 [CombatFeedback](CombatFeedback.md)。

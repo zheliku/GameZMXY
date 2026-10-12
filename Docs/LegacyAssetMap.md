@@ -444,3 +444,7 @@ PNG 保留导出内容，场景通过 AtlasTexture 排除遮罩外的透明侧�
 ## 守关名称字体（2026-10-12）
 
 按用户官方截图把名称拼在笔刷血条左侧，取消入场弹窗。字体沿用只读旧项目 `Scene/MonsterBlood/BossBlood.tscn/MonsterName` 所引用的 `Font/华康海报体W12 &amp; 华康海报体W12(P).ttc`，原文件直接复制到 `TheGame/MainPack/Fonts/df_poster_w12.ttc`，不截屏、不重新绘制字形。SHA-256：`b47e00483c38ec74c63601c9200faadb27809374a6a0b720c2f029723342fe3d`。迁入函数为 `import_gorilla_assets.import_boss_name_font`；普通与守关的生命条图片继续复用上表原素材。
+
+## 飞行奖励与升级（2026-10-12）
+
+平台原样复制 `Art/Level/level_2/177.png` → `Sprites/Levels/huaguoshan/level_1_platform.png`。升级动画与三种飞行球来自造梦一官方 Role_v7 / Monster_v1 的原始矢量 clip，经 `export_official_combat_effects.py` 渲染并原样复制 PNG；具体网址、clip、哈希和外置资源见 [CombatFeedback](CombatFeedback.md)。白球仅复用视觉用于当前经验球，原版用途是无双。

@@ -156,8 +156,8 @@ public sealed class FrontendSmokeScenario
 
             // 保存图标写入第二格；第六格建档后再读第二格，不能误读最新档。
             var firstContext = characterContext;
-            firstContext.Profile.Wallet.AddGold(7);
-            int savedGold = firstContext.Profile.Wallet.Gold;
+            firstContext.Profile.Wallet.AddSoul(7);
+            int savedSoul = firstContext.Profile.Wallet.Soul;
             await ClickAsync(map, "m_Save");
             await WaitUntilAsync(() => !map.GetNode<BaseButton>("m_Save").Disabled, "手动保存反馈超时");
             Check(await firstContext.Save.PendingWrite && GF.Archive.CurrentCatalogue.SlotNumber == 2, "地图手动保存写错格");
@@ -166,7 +166,7 @@ public sealed class FrontendSmokeScenario
             int savedMapSerialId = map.SerialId;
             await ClickAsync(map, "m_Back");
             start = await WaitForAsync<StartForm>();
-            Check(!map.GetNode<Label>("SaveFeedback/m_SaveFeedback").Visible && !map.GetNode<AnimationPlayer>("m_SaveFeedbackAnimation").IsPlaying(), "关闭地图未清理保存提示");
+            Check(Find<SaveNoticeForm>().Any(x => x.SerialId != 0), "切换页面关闭了应用级保存提示");
             await ClickAsync(start, "m_Start");
             saves = await WaitForSaveAsync();
             var slots = SmokeInspection.ReadField<SaveFormData>(saves, "m_Data").Directory.Slots;
@@ -189,8 +189,8 @@ public sealed class FrontendSmokeScenario
             Check(!character.Visible && GF.Procedure.CurrentProcedure is ProcedureMap, "已有档案未直接进入地图");
             GF.Event.Fire(this, ProfileSavedEventArgs.Create(savedMapSerialId, true));
             await MoveMouseAsync(new Vector2(30, 30));
-            Check(!map.GetNode<Label>("SaveFeedback/m_SaveFeedback").Visible, "旧周期保存结果污染了复用地图");
-            Check(GF.Archive.CurrentCatalogue.UnitId == secondId && GF.Archive.CurrentData.Gold == savedGold, "选择第二格读取成最新格或进度丢失");
+            Check(map.GetNode<BaseButton>("m_Save").TooltipText == "保存游戏", "旧周期保存结果污染了复用地图");
+            Check(GF.Archive.CurrentCatalogue.UnitId == secondId && GF.Archive.CurrentData.Soul == savedSoul, "选择第二格读取成最新格或进度丢失");
             // 从普通树身进入悬停，再在仅放大图可见的位置实际点击进关。
             location = map.GetNode<TextureButton>("m_Huaguoshan");
             await MoveMouseAsync(location.GetGlobalRect().GetCenter());
@@ -236,12 +236,12 @@ public sealed class FrontendSmokeScenario
             await ClickAsync(map, "m_Huaguoshan");
             hud = await WaitForAsync<BattleHud>();
             Check(Find<HeroEntity>().Count(x => x.IsShown) == 1, "重入生成了重复英雄");
-            profile.Wallet.AddGold(9);
+            profile.Wallet.AddSoul(9);
             await ClickAsync(hud, "MenuPanel/m_SettingsButton");
             settings = await WaitForAsync<SettingsForm>();
             await ClickAsync(settings, "Scroll/m_ReturnTitle");
             start = await WaitForAsync<StartForm>();
-            Check(profile.Wallet.Gold == savedGold && !GF.Base.IsGamePaused && !Find<LevelModule>().Any(), "返回标题未回滚收益、恢复时钟或清理关卡");
+            Check(profile.Wallet.Soul == savedSoul && !GF.Base.IsGamePaused && !Find<LevelModule>().Any(), "返回标题未回滚收益、恢复时钟或清理关卡");
             Check(!SmokeInspection.ReadField<bool>(character, "m_IsOpen"), "关闭后选角仍接收请求");
             // 损坏槽不能被当成空格；读取目录也不能使旧档案向其他槽写入。
             string broken = ProjectSettings.GlobalizePath($"user://{GF.Archive.Setting.Folder}/Data/{sixthId}.sav");
@@ -434,8 +434,9 @@ public sealed class FrontendSmokeScenario
     /// <returns>保存提示交互检查任务。</returns>
     private async Task CheckSaveFeedbackAsync(MapForm map)
     {
-        Label feedback = map.GetNode<Label>("SaveFeedback/m_SaveFeedback");
-        AnimationPlayer animation = map.GetNode<AnimationPlayer>("m_SaveFeedbackAnimation");
+        var notice = Find<SaveNoticeForm>().First(x => x.SerialId != 0);
+        Label feedback = notice.GetNode<Label>("SaveFeedback/m_SaveFeedback");
+        AnimationPlayer animation = notice.GetNode<AnimationPlayer>("m_SaveFeedbackAnimation");
         Check(feedback.Visible && feedback.Text == "保存成功！" && animation.IsPlaying(), "实际写盘成功后未显示保存成功提示");
         Check(feedback.MouseFilter == Control.MouseFilterEnum.Ignore && feedback.GetParent<Control>().MouseFilter == Control.MouseFilterEnum.Ignore, "提示遮挡了地图鼠标输入");
         await CaptureAsync("map_save_success");
@@ -444,8 +445,8 @@ public sealed class FrontendSmokeScenario
 
         // 在现有结果事件边界模拟写入失败，不破坏文件，也不增加生产测试接口。
         GF.Event.Fire(this, ProfileSavedEventArgs.Create(map.SerialId, false));
-        await WaitUntilAsync(() => feedback.Visible, "失败结果未显示提示");
-        Check(feedback.Text == "保存失败，请重试" && !map.GetNode<BaseButton>("m_Save").Disabled, "写入失败误报成功或不能重试");
+        await WaitUntilAsync(() => map.GetNode<BaseButton>("m_Save").TooltipText.Contains("失败"), "失败结果未更新按钮状态");
+        Check(!feedback.Visible && !map.GetNode<BaseButton>("m_Save").Disabled, "写入失败误报成功或不能重试");
         await CaptureAsync("map_save_failure");
         await ClickAsync(map, "m_Save");
         await WaitUntilAsync(() => !map.GetNode<BaseButton>("m_Save").Disabled, "再次保存未完成");

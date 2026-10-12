@@ -9,9 +9,14 @@ Scene = "res://TheGame/UIs/DamagePop.tscn"
 Capacity = 64
 metadata/_custom_type_script = "uid://cyfjle46grtw4"
 
+[sub_resource type="Resource" id="Resource_loot_orb"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/LootOrb.tscn"
+Capacity = 128
+
 [resource]
 script = ExtResource("1_8jdg")
-Entries = Array[ExtResource("1_j1vs4")]([SubResource("Resource_damage_pop")])
+Entries = Array[ExtResource("1_j1vs4")]([SubResource("Resource_damage_pop"), SubResource("Resource_loot_orb")])
 DefaultExpireTime = 300.0
 DefaultAutoReleaseInterval = 300.0
 metadata/_custom_type_script = "uid://yiewfnn1gx67"

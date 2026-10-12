@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://ddtqtubpfo5no"]
+
+[ext_resource type="FontFile" uid="uid://dy01vypttvr" path="res://TheGame/MainPack/Fonts/dfp_hai_bao_w12.ttc" id="caption_font"]
+[ext_resource type="AnimationLibrary" uid="uid://i61lkwwdqgpu" path="res://TheGame/Sprites/UI/frontend/save_feedback.tres" id="save_feedback"]
+[ext_resource type="Script" uid="uid://bkvuegjou11rk" path="res://TheGame/GameScripts/UI/SaveNoticeForm/SaveNoticeForm.cs" id="script"]
+
+[node name="SaveNoticeForm" type="Control" unique_id=814369822 node_paths=PackedStringArray("m_SaveFeedback", "m_SaveFeedbackAnimation")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("script")
+m_SaveFeedback = NodePath("SaveFeedback/m_SaveFeedback")
+m_SaveFeedbackAnimation = NodePath("m_SaveFeedbackAnimation")
+
+[node name="SaveFeedback" type="Control" parent="." unique_id=386898293]
+anchors_preset = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_top = 5.0
+offset_bottom = 5.0
+mouse_filter = 2
+
+[node name="m_SaveFeedback" type="Label" parent="SaveFeedback" unique_id=482460937]
+visible = false
+layout_mode = 0
+offset_left = -250.0
+offset_top = -61.0
+offset_right = 250.0
+offset_bottom = 64.0
+theme_override_colors/font_color = Color(0.08, 0.05, 0.02, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/outline_size = 2
+theme_override_constants/shadow_outline_size = 10
+theme_override_fonts/font = ExtResource("caption_font")
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_SaveFeedbackAnimation" type="AnimationPlayer" parent="." unique_id=1249960999]
+libraries/feedback = ExtResource("save_feedback")

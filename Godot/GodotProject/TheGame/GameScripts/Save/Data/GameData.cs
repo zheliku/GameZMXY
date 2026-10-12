@@ -4,13 +4,13 @@ using GameLogic.Save.Data;
 using GodotGameFramework.Archive;
 using Newtonsoft.Json;
 
-/// <summary>一格存档的完整数据：格式版本、出战英雄、英雄经验和金币；文件编号继承自框架。</summary>
+/// <summary>一格存档的完整数据：格式版本、出战英雄、英雄经验和灵魂；文件编号继承自框架。</summary>
 /// <remarks>GGF 直接写盘；关卡回滚也使用本类型的独立快照。与运行时档案的转换集中在 ProfileSaveHelper。</remarks>
 [Serializable]
 public class GameData : ArchiveData
 {
     /// <summary>当前存档格式；格式改变时递增，不保留迁移分支。</summary>
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 4;
 
     /// <summary>必需的格式版本；框架创建的新空槽使用当前版本。</summary>
     [JsonProperty(Required = Required.Always)]
@@ -24,9 +24,9 @@ public class GameData : ArchiveData
     [JsonProperty(Required = Required.Always)]
     public List<HeroSaveData> Heroes = new();
 
-    /// <summary>钱包金币总数。</summary>
+    /// <summary>钱包灵魂总数。</summary>
     [JsonProperty(Required = Required.Always)]
-    public int Gold;
+    public int Soul;
 }
 
 namespace GameLogic.Save.Data

@@ -48,6 +48,13 @@ func validate() -> void:
 	for gate in level.get_node("World/StageGates").get_children():
 		check(gate.collision_layer == 1 << 13 and gate.collision_mask == 0, "战斗边界只在 PlayerBarrier 层，怪物可从场外进入")
 	check(level.get_node("World/StageTriggers").get_child_count() == 0, "普通关卡不需要刷怪触发区")
+	var platforms := {"Left": Vector2(2064.5, 369.25), "Middle": Vector2(2341.7, 212.8), "Right": Vector2(2633.55, 368.8)}
+	check(level.get_node("World/Platforms").get_child_count() == 3, "第三阶段应有三块平台")
+	for platform: String in platforms:
+		var body := level.get_node("World/Platforms/" + platform) as StaticBody2D
+		check(body.position.is_equal_approx(platforms[platform]), "平台偏离官方坐标：" + platform)
+		check(body.collision_layer == 8 and body.collision_mask == 0, "平台应只在 Platform 层")
+		check(body.get_node("Surface").one_way_collision, "平台必须能从下方跳过")
 	check(level.get_node("World/Geometry/Ground/Slope1").get_child_count() == 4, "用户添加的四个斜坡碰撞必须保留")
 	check(level.get_node("World/Geometry/Ground/FloorGround").position == Vector2(2406, 545), "用户调整的地面位置必须保留")
 	check(level.get_node("Camera2D").get_script().is_tool(), "相机必须支持编辑器引导绘制")

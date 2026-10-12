@@ -26,7 +26,7 @@ flowchart TB
 
 | 状态 | 唯一所有者 | 生命周期 / 是否写盘 |
 | --- | --- | --- |
-| 英雄累计经验、成长、金币 | PlayerProfile 下的 HeroProgression / Wallet | 档案作用域；检查点写盘 |
+| 英雄累计经验、成长、灵魂 | PlayerProfile 下的 HeroProgression / Wallet | 档案作用域；检查点写盘 |
 | 本关结局、获得经验、进关快照 | LevelModule | 本次关卡；统计与快照不写盘 |
 | 当前生命魔法、最终属性、无双 | ActorEntity.Stats/Vitals、HeroEntity.Musou | 实体 Show → Hide；不写盘 |
 | 当前阶段、可否前进 | LevelStageSequence、LevelModule.TravelAvailable | 关卡会话；不写盘 |
@@ -61,6 +61,7 @@ sequenceDiagram
     participant Events as GF.Event
     participant Spawner as LevelSpawnerNode
     participant Level as LevelModule
+    participant Orb as LootOrbNode
     participant Growth as HeroProgression
     participant Hud as BattleHud
     Hero->>Monster: ReceiveHit(AttackInstance)
@@ -70,13 +71,17 @@ sequenceDiagram
     Hero-->>Hud: Musou.Changed
     Monster->>Events: MonsterDiedEventArgs
     Events-->>Spawner: 下一轮分发
-    Spawner-->>Level: MonsterDefeated(实际经验)
-    Level->>Growth: AddExperience
+    Spawner-->>Level: MonsterDefeated(配置、位置、实际经验)
+    Level->>Orb: NodePool 生成飞行掉落
+    Orb-->>Level: 接触英雄，报告奖励并回池
+    Level->>Growth: 经验球 → AddExperience
     Growth-->>Hud: Changed
     opt 升级
         Level->>Hero: ApplyLoadout(HeroLoadout.Create(...), refill: true)
+        Level->>Hero: PlayLevelUp
         Hero-->>Hud: Vitals.Changed
     end
+    Note over Level,Orb: 灵魂球 → Wallet.AddSoul；蓝球 → Vitals.RestoreMp
     Note over Level: 通关或英雄死亡时提交检查点
 ```
 
@@ -86,6 +91,7 @@ sequenceDiagram
 | 无双收益 | [HeroEntity.OnHitLanded](../Godot/GodotProject/TheGame/GameScripts/Entity/Heroes/HeroEntity.cs) |
 | 纯伤害规则 | [DamageHelper](../Godot/GodotProject/TheGame/GameScripts/Battle/Damage/DamageHelper.cs) |
 | 本关实体所有权、名额与击败事实 | [LevelSpawnerNode](../Godot/GodotProject/TheGame/GameScripts/Level/Spawning/LevelSpawnerNode.cs) |
+| 飞行掉落、接触入账与回池 | [LevelModule.Loot](../Godot/GodotProject/TheGame/GameScripts/Level/LevelModule.Loot.cs) |
 | 奖励、升级、结局 | [LevelModule.Progress](../Godot/GodotProject/TheGame/GameScripts/Level/LevelModule.Progress.cs) |
 | UI 订阅、刷新、退订与复位 | [BattleHud.Logic](../Godot/GodotProject/TheGame/GameScripts/UI/BattleHud/BattleHud.Logic.cs) |
 
@@ -105,6 +111,7 @@ classDiagram
     LevelModule --> HeroEntity
     LevelModule *-- LevelStageSequence
     LevelModule *-- LevelSpawnerNode
+    LevelModule o-- LootOrbNode
     ActorEntity <|-- HeroEntity
     ActorEntity <|-- MonsterEntity
     ActorEntity *-- ActorAttributes
@@ -131,11 +138,11 @@ Module 是模块入口，Node 是内部 Godot 节点，Helper 只提供无状态
 
 ## 5. 修改表现与保存字段
 
-`Save/Data/GameData.cs` 直接保存 ActiveHeroId、Heroes（HeroId + TotalExperience）、Gold；等级和属性重算，生命、魔法、无双、位置和波次不写盘。增加持久字段时同时修改领域状态、GameData、ProfileSaveHelper、版本号及映射/回滚验证。
+`Save/Data/GameData.cs` 直接保存 ActiveHeroId、Heroes（HeroId + TotalExperience）、Soul；等级和属性重算，生命、魔法、无双、位置和波次不写盘。增加持久字段时同时修改领域状态、GameData、ProfileSaveHelper、版本号及映射/回滚验证。
 
 无双满值动画外置在 `Sprites/UI/hud/hud_ws_full_frames.tres`，只在满值时循环，消费、关闭或改绑后复位。圆形闪烁参数位于 `BattleHud.tscn/MenuPanel/m_WsMax` 的 Material → Shader Parameters：clip_radius 默认 32、clip_center 默认 (0.5,0.5)、clip_feather shader 默认 1（当前场景保留用户调整值 0）；半径与羽化单位为原帧像素。GPU 检查入口为 `EditorScripts/validate_musou_flash.gd`。
 
-守关条独立场景为 `UIs/Widgets/encounter_health_bar.tscn`，左侧白字黑边姓名、右侧笔刷条，不显示生命数字，无入场弹窗。小怪受伤后两秒淡出，继续受伤重新计时。地图悬停动画外置在 `Sprites/UI/frontend/map_location_hover.tres`；放大改 LocationGlow.Scale，速度改 AnimationPlayer.SpeedScale，命中随当前可见图片变化。
+守关条独立场景为 `UIs/Widgets/encounter_health_bar.tscn`，左侧白字黑边姓名、右侧笔刷条，不显示生命数字，无入场弹窗。小怪受伤后按 BattleConfig.MonsterHealthBarFadeDuration 淡出（当前 4 秒），继续受伤重新计时。地图悬停动画外置在 `Sprites/UI/frontend/map_location_hover.tres`；放大改 LocationGlow.Scale，速度改 AnimationPlayer.SpeedScale，命中随当前可见图片变化。
 
 ## 6. 动手熟悉与验证
 

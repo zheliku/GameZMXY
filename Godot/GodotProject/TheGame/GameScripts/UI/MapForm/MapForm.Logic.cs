@@ -17,7 +17,6 @@ namespace GameLogic.UI;
 /// <summary>地图界面：显示旧项目地点图片，以点击事件提交所选关卡。</summary>
 public partial class MapForm
 {
-    private const string SaveFeedbackAnimation = "feedback/show"; // 外置保存提示动画：停留后向上淡出。
     private bool m_IsOpen; // 地图只提交请求，无需持有档案。
 
     /// <summary>设置框架字段；按钮事件只在新建实例时绑定一次。</summary>
@@ -40,7 +39,6 @@ public partial class MapForm
         {
             m_Back.Pressed += OnBackClicked;
             m_Save.Pressed += OnSaveClicked;
-            m_SaveFeedbackAnimation.AnimationFinished += OnSaveFeedbackFinished;
             m_Huaguoshan.Pressed += OnHuaguoshanClicked;
             m_Huaguoshan.MouseEntered += OnLocationMouseEntered;
             m_Huaguoshan.MouseExited += OnLocationMouseExited;
@@ -58,7 +56,6 @@ public partial class MapForm
         m_Save.MouseDefaultCursorShape = CursorShape.PointingHand;
         m_Save.SelfModulate = Colors.White;
         m_Save.TooltipText = "保存游戏";
-        ResetSaveFeedback();
         ResetLocationHover();
         Visible = true;
     }
@@ -68,7 +65,7 @@ public partial class MapForm
     /// <param name="userData">关闭参数，不保存。</param>
     public void OnClose(bool isShutdown, object userData)
     {
-        ReleaseFeedback();
+        ReleaseSubscription();
         if (IsInstanceValid(m_LocationAnimation)) ResetLocationHover();
         if (!isShutdown && IsInstanceValid(this)) Visible = false;
     }
@@ -76,7 +73,7 @@ public partial class MapForm
     /// <summary>回池时清除本次打开的引用和框架编号。</summary>
     public void OnRecycle()
     {
-        ReleaseFeedback();
+        ReleaseSubscription();
         if (IsInstanceValid(m_LocationAnimation)) ResetLocationHover();
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
@@ -141,7 +138,6 @@ public partial class MapForm
         if (!m_IsOpen || m_Save.Disabled) return;
         m_Save.Disabled = true;
         m_Save.MouseDefaultCursorShape = CursorShape.Arrow;
-        ResetSaveFeedback();
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, SaveRequestedEventArgs.Create(SerialId));
     }
@@ -156,38 +152,13 @@ public partial class MapForm
         m_Save.MouseDefaultCursorShape = CursorShape.PointingHand;
         m_Save.SelfModulate = result.Succeeded ? new Color(0.65f, 1f, 0.65f) : new Color(1f, 0.55f, 0.55f);
         m_Save.TooltipText = result.Succeeded ? "游戏已保存" : "保存失败，点击重试";
-        // 只有流程返回实际写盘结果后才展示，不把点击当作保存成功。
-        m_SaveFeedback.Text = result.Succeeded ? "保存成功！" : "保存失败，请重试";
-        m_SaveFeedback.SelfModulate = result.Succeeded ? Colors.White : new Color(1f, 0.55f, 0.55f);
-        m_SaveFeedback.Visible = true;
-        m_SaveFeedbackAnimation.Stop();
-        m_SaveFeedbackAnimation.Play(SaveFeedbackAnimation);
-        m_SaveFeedbackAnimation.Advance(0);
     }
 
-    /// <summary>提示淡出后复位，下一次保存从完整文字开始。</summary>
-    /// <param name="animationName">已播放完毕的动画名。</param>
-    private void OnSaveFeedbackFinished(StringName animationName)
-    {
-        if (animationName == SaveFeedbackAnimation) ResetSaveFeedback();
-    }
-
-    /// <summary>隐藏提示并恢复位置和透明度；打开、保存开始及关闭时调用。</summary>
-    private void ResetSaveFeedback()
-    {
-        m_SaveFeedbackAnimation.Play("feedback/RESET");
-        m_SaveFeedbackAnimation.Advance(0);
-        m_SaveFeedbackAnimation.Stop();
-        m_SaveFeedback.Visible = false;
-        m_SaveFeedback.Text = string.Empty;
-    }
-
-    /// <summary>关闭即解除保存反馈订阅并清理本次提示。</summary>
-    private void ReleaseFeedback()
+    /// <summary>关闭即解除本窗口的保存按钮结果订阅。</summary>
+    private void ReleaseSubscription()
     {
         if (m_IsOpen) GF.Event.Unsubscribe(ProfileSavedEventArgs.EventId, OnProfileSaved);
         m_IsOpen = false;
-        if (IsInstanceValid(m_SaveFeedbackAnimation) && IsInstanceValid(m_SaveFeedback)) ResetSaveFeedback();
     }
     /// <summary>提交花果山的配置主键。</summary>
     private void OnHuaguoshanClicked()

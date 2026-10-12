@@ -44,20 +44,24 @@ public partial class LevelModule
         m_DefeatedMonsterCount = m_AwardedExperience = 0;
         CheckpointWrite = null;
         Outcome = LevelOutcome.Running;
+        m_ExitRequested = false;
+        m_LootRandom.Randomize();
         m_Player.Died += OnHeroDied;
     }
 
-    /// <summary>发放本次生成确定的经验；升级时刷新出战装配并补满生命魔法。</summary>
+    /// <summary>经验球接触后才入账；升级时刷新装配、补满生命魔法并播放独立升级动画。</summary>
     /// <param name="experienceReward">本次击败的经验奖励。</param>
-    private void OnMonsterDefeated(int experienceReward)
+    private void AwardExperience(int experienceReward)
     {
         if (Outcome != LevelOutcome.Running) return;
-        m_DefeatedMonsterCount++;
         if (experienceReward <= 0 || !m_Player.IsAlive) return;
         m_AwardedExperience += experienceReward;
         if (m_Progression.AddExperience(experienceReward) > 0)
+        {
             m_Player.ApplyLoadout(HeroLoadout.Create(m_Progression.HeroId, m_Progression.Level,
                 ConfigSystem.Instance.Tables.TbHeroGrowthConfig), refill: true);
+            m_Player.PlayLevelUp();
+        }
     }
 
     /// <summary>英雄死亡时保留本关收益并提交检查点。</summary>
@@ -70,6 +74,7 @@ public partial class LevelModule
     {
         if (Outcome != LevelOutcome.Running) return;
         Outcome = outcome;
+        ClearLoot();
         Detach();
         m_EntrySnapshot = null;
         CheckpointWrite = m_Save.SaveCheckpointAsync(m_Profile);

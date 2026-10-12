@@ -22,7 +22,7 @@ namespace GameLogic.Heroes
 {
 	/// <summary>
 	/// 英雄的表现与战斗运行时：输入、身体状态机、动画/武器层、出招，以及本次显示期间的属性汇总、生命魔法与无双。
-	/// 不持有持久进度（等级、经验、金币属于档案）；显示时由 <see cref="HeroLoadout"/> 注入属性，升级后由关卡运行重新注入。
+	/// 不持有持久进度（等级、经验、灵魂属于档案）；显示时由 <see cref="HeroLoadout"/> 注入属性，升级后由关卡运行重新注入。
 	/// </summary>
 	public abstract partial class HeroEntity : ActorEntity, IHeroBody
 	{
@@ -37,6 +37,7 @@ namespace GameLogic.Heroes
 		[Export] private int m_HeroId; // 场景绑定的 HeroConfig 主键。
 
 		[Export] private MusouAfterimageNode m_MusouAfterimage; // 英雄自有的残影表现，可按角色场景选配。
+        [Export] private HeroLevelUpNode m_LevelUp; // 独立升级动画层，不随身体朝向镜像。
 
 		private HeroBodyParams m_BodyParams; // 从英雄配置和动画库构建的身体参数快照。
 
@@ -123,6 +124,7 @@ namespace GameLogic.Heroes
 			ApplyLoadout(snapshot, refill: true);
 			Musou.Reset(ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMax);
 			m_MusouAfterimage?.Reset();
+            m_LevelUp?.Reset();
 
 			// 池复用的实例带着上次的脏事实回来，一律在 OnShow 复位（见 Entity/AGENTS.md 生命周期）
 			ComboIndex = 0;
@@ -142,9 +144,13 @@ namespace GameLogic.Heroes
 			Musou.Clear();
 			Stats.RemoveSource(m_MusouSource);
 			if (!isShutdown && IsInstanceValid(m_MusouAfterimage)) m_MusouAfterimage.Reset();
+            if (!isShutdown && IsInstanceValid(m_LevelUp)) m_LevelUp.Reset();
 			DestroyBody(isShutdown);
 			base.OnHide(isShutdown, userData);
 		}
+
+        /// <summary>在档案确认升级并重新注入装配后显示提示；普通进关不触发。</summary>
+        public void PlayLevelUp() => m_LevelUp?.ShowLevelUp();
 
 		/// <summary>物理步长：采样输入 → 身体状态机 → 物理。AnimationPlayer（子节点）同帧稍后消费播放请求。</summary>
 		/// <param name="delta">本次物理帧秒数。</param>

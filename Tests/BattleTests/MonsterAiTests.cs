@@ -445,6 +445,25 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("Death", h.State);
 		}
 
+		/// <summary>发现远处目标或重新追击时，当帧继续移动，不插入一帧举棒待机。</summary>
+		[Fact]
+		public void Fsm_EnteringChase_DoesNotInsertIdleFrame()
+		{
+			using AiHarness h = new AiHarness(MonkeyParams(desire: 0), new[] { Basic(0) }, 0.9f);
+			h.Agent.Target(Hero(200f));
+			h.Step(1);
+			Assert.Equal("WalkToTarget", h.State);
+			Assert.Equal(1, h.Agent.MoveDir);
+
+			h.Agent.Target(Hero(20f));
+			h.Step(1);
+			Assert.Equal("StandAndStrike", h.State);
+			h.Agent.Target(Hero(-200f));
+			h.Step(1);
+			Assert.Equal("WalkToTarget", h.State);
+			Assert.Equal(-1, h.Agent.MoveDir);
+		}
+
 		// ---------------------------------------------------------------- 测试替身
 
 		private sealed class FakeAgent : IMonsterAiAgent // 可控感知和确定性随机序列的 AI 测试宿主。

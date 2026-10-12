@@ -535,7 +535,7 @@ namespace GameLogic.Monsters
 			SetHurtBoxEnabled(false);
 			PlaySound(Config.DeathSoundId);
 			GF.Event.Fire(this,
-				MonsterDiedEventArgs.Create(Id, m_ExperienceReward));
+                MonsterDiedEventArgs.Create(Id, m_ExperienceReward, Config, HurtBox.GetGlobalBounds().GetCenter()));
 		}
 
 		/// <summary>请求在当前物理帧完成后安全回收实体。</summary>

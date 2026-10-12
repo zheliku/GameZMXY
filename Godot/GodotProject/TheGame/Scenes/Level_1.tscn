@@ -10,7 +10,8 @@
 [ext_resource type="Script" uid="uid://b7abdk6hcrmws" path="res://TheGame/GameScripts/Level/Stages/LevelTriggersNode.cs" id="10_trigger_manager"]
 [ext_resource type="Script" uid="uid://b6ai16cs6v6de" path="res://TheGame/GameScripts/Level/Stages/LevelGatesNode.cs" id="11_gate_manager"]
 [ext_resource type="Script" uid="uid://ccjmic0fgxfrv" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnerNode.cs" id="12_monster_manager"]
-[ext_resource type="PackedScene" path="res://TheGame/Scenes/Widgets/level_exit.tscn" id="exit_scene"]
+[ext_resource type="PackedScene" uid="uid://qk7b0ixfs2in" path="res://TheGame/Scenes/Widgets/level_exit.tscn" id="exit_scene"]
+[ext_resource type="Texture2D" uid="uid://b3sopo3lus4t5" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_platform.png" id="platform"]
 
 [sub_resource type="RectangleShape2D" id="GroundShape"]
 size = Vector2(4812, 93)
@@ -158,6 +159,9 @@ m_Node = NodePath("Stage5Gate")
 
 [sub_resource type="RectangleShape2D" id="GateShape"]
 size = Vector2(20, 700)
+
+[sub_resource type="RectangleShape2D" id="PlatformShape"]
+size = Vector2(253.0001, 31.843739)
 
 [sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
 size = Vector2(8, 4000)
@@ -448,6 +452,50 @@ disabled = true
 
 [node name="Exit" parent="World" unique_id=720884043 instance=ExtResource("exit_scene")]
 position = Vector2(4110, 417)
+
+[node name="Platforms" type="Node2D" parent="World" unique_id=860227771]
+
+[node name="Left" type="StaticBody2D" parent="World/Platforms" unique_id=980990556]
+position = Vector2(2064.5, 369.25)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Artwork" type="Sprite2D" parent="World/Platforms/Left" unique_id=1915886514]
+position = Vector2(0, 18)
+texture = ExtResource("platform")
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Left" unique_id=139861824]
+position = Vector2(0, -1.125)
+shape = SubResource("PlatformShape")
+one_way_collision = true
+
+[node name="Middle" type="StaticBody2D" parent="World/Platforms" unique_id=1798788168]
+position = Vector2(2341.7, 212.8)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Artwork" type="Sprite2D" parent="World/Platforms/Middle" unique_id=461445165]
+position = Vector2(0, 18)
+texture = ExtResource("platform")
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Middle" unique_id=776393908]
+position = Vector2(-1.1999512, -1.878128)
+shape = SubResource("PlatformShape")
+one_way_collision = true
+
+[node name="Right" type="StaticBody2D" parent="World/Platforms" unique_id=1041667472]
+position = Vector2(2633.55, 368.8)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Artwork" type="Sprite2D" parent="World/Platforms/Right" unique_id=313582486]
+position = Vector2(0, 18)
+texture = ExtResource("platform")
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Right" unique_id=1479419777]
+position = Vector2(0, -0.9187317)
+shape = SubResource("PlatformShape")
+one_way_collision = true
 
 [node name="Spawner" type="Node" parent="." unique_id=605185327]
 script = ExtResource("12_monster_manager")

@@ -16,7 +16,7 @@ public partial class Tables
     #region The Tables
 
     private UI.TbUIFormConfig m_TbUIFormConfig;
-    public UI.TbUIFormConfig TbUIFormConfig 
+    public UI.TbUIFormConfig TbUIFormConfig
     {
         get
         {
@@ -34,7 +34,7 @@ public partial class Tables
         }
     }
     private Entity.TbEntityConfig m_TbEntityConfig;
-    public Entity.TbEntityConfig TbEntityConfig 
+    public Entity.TbEntityConfig TbEntityConfig
     {
         get
         {
@@ -52,7 +52,7 @@ public partial class Tables
         }
     }
     private Hero.TbHeroConfig m_TbHeroConfig;
-    public Hero.TbHeroConfig TbHeroConfig 
+    public Hero.TbHeroConfig TbHeroConfig
     {
         get
         {
@@ -70,7 +70,7 @@ public partial class Tables
         }
     }
     private Hero.TbHeroLevelConfig m_TbHeroLevelConfig;
-    public Hero.TbHeroLevelConfig TbHeroLevelConfig 
+    public Hero.TbHeroLevelConfig TbHeroLevelConfig
     {
         get
         {
@@ -88,7 +88,7 @@ public partial class Tables
         }
     }
     private Monster.TbMonsterConfig m_TbMonsterConfig;
-    public Monster.TbMonsterConfig TbMonsterConfig 
+    public Monster.TbMonsterConfig TbMonsterConfig
     {
         get
         {
@@ -106,7 +106,7 @@ public partial class Tables
         }
     }
     private Battle.TbAttackConfig m_TbAttackConfig;
-    public Battle.TbAttackConfig TbAttackConfig 
+    public Battle.TbAttackConfig TbAttackConfig
     {
         get
         {
@@ -124,7 +124,7 @@ public partial class Tables
         }
     }
     private Battle.TbBattleConfig m_TbBattleConfig;
-    public Battle.TbBattleConfig TbBattleConfig 
+    public Battle.TbBattleConfig TbBattleConfig
     {
         get
         {
@@ -142,7 +142,7 @@ public partial class Tables
         }
     }
     private Sound.TbSoundConfig m_TbSoundConfig;
-    public Sound.TbSoundConfig TbSoundConfig 
+    public Sound.TbSoundConfig TbSoundConfig
     {
         get
         {
@@ -160,7 +160,7 @@ public partial class Tables
         }
     }
     private Level.TbLevelConfig m_TbLevelConfig;
-    public Level.TbLevelConfig TbLevelConfig 
+    public Level.TbLevelConfig TbLevelConfig
     {
         get
         {
@@ -178,7 +178,7 @@ public partial class Tables
         }
     }
     private Hero.TbHeroGrowthConfig m_TbHeroGrowthConfig;
-    public Hero.TbHeroGrowthConfig TbHeroGrowthConfig 
+    public Hero.TbHeroGrowthConfig TbHeroGrowthConfig
     {
         get
         {
@@ -196,7 +196,7 @@ public partial class Tables
         }
     }
     private Profile.TbProfileConfig m_TbProfileConfig;
-    public Profile.TbProfileConfig TbProfileConfig 
+    public Profile.TbProfileConfig TbProfileConfig
     {
         get
         {
@@ -211,6 +211,24 @@ public partial class Tables
         {
             m_TbProfileConfig = value;
             m_TbProfileConfig.ResolveRef(this);
+        }
+    }
+    private Loot.TbDropConfig m_TbDropConfig;
+    public Loot.TbDropConfig TbDropConfig
+    {
+        get
+        {
+            if (m_TbDropConfig == null)
+            {
+                m_TbDropConfig = new Loot.TbDropConfig(defaultLoader("loot_tbdropconfig"));
+                m_TbDropConfig.ResolveRef(this);
+            }
+            return m_TbDropConfig;
+        }
+        set
+        {
+            m_TbDropConfig = value;
+            m_TbDropConfig.ResolveRef(this);
         }
     }
 

@@ -57,16 +57,16 @@ namespace GameLogic.Profile.Tests
 		public void Wallet_RejectsOverspendAndNegativeAmounts()
 		{
 			Wallet wallet = new(-5);
-			Assert.Equal(0, wallet.Gold);
-			wallet.AddGold(30);
-			Assert.False(wallet.TrySpendGold(31));
-			Assert.True(wallet.TrySpendGold(30));
-			Assert.Equal(0, wallet.Gold);
-			wallet.AddGold(int.MaxValue);
-			wallet.AddGold(10);
-			Assert.Equal(int.MaxValue, wallet.Gold);
-			Assert.Throws<ArgumentOutOfRangeException>(() => wallet.AddGold(-1));
-			Assert.Throws<ArgumentOutOfRangeException>(() => wallet.TrySpendGold(-1));
+			Assert.Equal(0, wallet.Soul);
+			wallet.AddSoul(30);
+			Assert.False(wallet.TrySpendSoul(31));
+			Assert.True(wallet.TrySpendSoul(30));
+			Assert.Equal(0, wallet.Soul);
+			wallet.AddSoul(int.MaxValue);
+			wallet.AddSoul(10);
+			Assert.Equal(int.MaxValue, wallet.Soul);
+			Assert.Throws<ArgumentOutOfRangeException>(() => wallet.AddSoul(-1));
+			Assert.Throws<ArgumentOutOfRangeException>(() => wallet.TrySpendSoul(-1));
 		}
 
         /// <summary>零额、扣款失败、封顶和回滚都保持有效余额。</summary>
@@ -74,19 +74,19 @@ namespace GameLogic.Profile.Tests
         public void Wallet_PreservesBalanceAcrossNoOpsAndRestore()
         {
             Wallet wallet = new(30);
-            wallet.AddGold(0);
-            Assert.True(wallet.TrySpendGold(0));
-            Assert.False(wallet.TrySpendGold(31));
-            Assert.Equal(30, wallet.Gold);
-            Assert.True(wallet.TrySpendGold(10));
-            Assert.Equal(20, wallet.Gold);
+            wallet.AddSoul(0);
+            Assert.True(wallet.TrySpendSoul(0));
+            Assert.False(wallet.TrySpendSoul(31));
+            Assert.Equal(30, wallet.Soul);
+            Assert.True(wallet.TrySpendSoul(10));
+            Assert.Equal(20, wallet.Soul);
             wallet.Restore(20);
-            Assert.Equal(20, wallet.Gold);
-            wallet.AddGold(int.MaxValue);
-            wallet.AddGold(1);
-            Assert.Equal(int.MaxValue, wallet.Gold);
+            Assert.Equal(20, wallet.Soul);
+            wallet.AddSoul(int.MaxValue);
+            wallet.AddSoul(1);
+            Assert.Equal(int.MaxValue, wallet.Soul);
             wallet.Restore(-1);
-            Assert.Equal(0, wallet.Gold);
+            Assert.Equal(0, wallet.Soul);
         }
 
 		/// <summary>档案拒绝重复英雄与未拥有的出战英雄。</summary>
@@ -183,7 +183,7 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(GameData.CurrentVersion, data.SaveVersion);
             Assert.Equal(0, data.ActiveHeroId);
             Assert.Empty(data.Heroes);
-            Assert.Equal(0, data.Gold);
+            Assert.Equal(0, data.Soul);
             Assert.Equal(7, data.UnitId);
         }
 
@@ -192,7 +192,7 @@ namespace GameLogic.Profile.Tests
         public void Mapper_RejectsOtherVersionsAndEmptyHeroes()
         {
 
-            foreach (int version in new[] { 0, 1, 2, GameData.CurrentVersion + 1 })
+            foreach (int version in Enumerable.Range(0, GameData.CurrentVersion).Append(GameData.CurrentVersion + 1))
                 Assert.Throws<NotSupportedException>(() => ProfileSaveHelper.RestoreProfile(new GameData { SaveVersion = version, ActiveHeroId = 1, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve));
             Assert.Throws<ArgumentException>(() => ProfileSaveHelper.RestoreProfile(new GameData(), TestTables.Curve));
         }
@@ -203,13 +203,13 @@ namespace GameLogic.Profile.Tests
 		{
 			PlayerProfile profile = new(1, new[] { new HeroProgression(1, TestTables.Curve, 472) }, new Wallet(42));
 			GameData snapshot = ProfileSaveHelper.CaptureSaveData(profile);
-			profile.Wallet.AddGold(100);
-			Assert.Equal(42, snapshot.Gold);
+			profile.Wallet.AddSoul(100);
+			Assert.Equal(42, snapshot.Soul);
 
 			string json = JsonConvert.SerializeObject(snapshot);
 			GameData loaded = JsonConvert.DeserializeObject<GameData>(json);
 			PlayerProfile restored = ProfileSaveHelper.RestoreProfile(loaded, TestTables.Curve);
-			Assert.Equal(42, restored.Wallet.Gold);
+			Assert.Equal(42, restored.Wallet.Soul);
 			Assert.Equal((4, 37), (restored.ActiveHero.Level, restored.ActiveHero.Experience));
 			Assert.DoesNotContain("\"Player\"", json);
             Assert.DoesNotContain("\"Profile\"", json);
@@ -227,11 +227,11 @@ namespace GameLogic.Profile.Tests
 			progression.Changed += () => levels.Add(progression.Level);
 
 			progression.AddExperience(400);
-			profile.Wallet.AddGold(50);
+			profile.Wallet.AddSoul(50);
 			ProfileSaveHelper.RestoreCheckpoint(profile, snapshot);
 
 			Assert.Same(progression, profile.ActiveHero);
-			Assert.Equal((1, 5), (progression.Level, profile.Wallet.Gold));
+			Assert.Equal((1, 5), (progression.Level, profile.Wallet.Soul));
 			Assert.Equal(new[] { 3, 1 }, levels);
 		}
 	}
