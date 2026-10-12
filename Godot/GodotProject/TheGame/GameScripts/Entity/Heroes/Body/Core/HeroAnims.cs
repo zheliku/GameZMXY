@@ -1,11 +1,6 @@
 namespace GameLogic.Heroes.Body
 {
-	/// <summary>
-	/// 英雄标准动画名（Entity/AGENTS.md「命名标准」，所有英雄的动画库都用这套动画名）。
-	/// 角色专属动画（如悟空的憨笑 idle2）不在这里：由英雄类覆写给出（<see cref="HeroBodyParams.EmoteAnim"/>）；
-	/// 普攻段动画名取自 AttackConfig.Animation（<see cref="HeroBodyParams.AttackAnims"/>）。
-	/// </summary>
-	/// <summary>英雄通用动画库中的标准动画名。</summary>
+	/// <summary>英雄共用的身体与提示动画名；普攻动画名由 AttackConfig.Animation 提供。</summary>
 	public static class HeroAnims
 	{
 		/// <summary>基础待机动画名。</summary>
@@ -26,5 +21,9 @@ namespace GameLogic.Heroes.Body
 		public const string Hurt = "hurt";
 		/// <summary>死亡动画名。</summary>
 		public const string Death = "death";
+		/// <summary>独立升级特效动画名。</summary>
+		public const string LevelUp = "level_up";
+		/// <summary>屏幕空间无双开启提示动画名。</summary>
+		public const string MusouActivation = "musou_activation";
 	}
 }

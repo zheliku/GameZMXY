@@ -4,7 +4,7 @@
 [ext_resource type="SpriteFrames" uid="uid://b0oxbkaxv8w0m" path="res://TheGame/Sprites/Characters/Monsters/demon_monkey/demon_monkey_animations.tres" id="2_frames"]
 [ext_resource type="AnimationLibrary" uid="uid://denuc0ot4c0gs" path="res://TheGame/Entitys/Animations/demon_monkey_anim_library.tres" id="3_lib"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="5_hurtbox"]
-[ext_resource type="PackedScene" path="res://TheGame/UIs/Widgets/monster_health_bar.tscn" id="6_health_bar"]
+[ext_resource type="PackedScene" uid="uid://caauui8brtx47" path="res://TheGame/UIs/Widgets/monster_health_bar.tscn" id="6_health_bar"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
 radius = 21.0
@@ -14,7 +14,7 @@ height = 82.0
 radius = 21.0
 height = 82.0
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_1"]
+[sub_resource type="RectangleShape2D" id="hitbox_rest"]
 size = Vector2(80, 80)
 
 [sub_resource type="RectangleShape2D" id="detector_sight"]
@@ -35,8 +35,8 @@ m_HitBoxRoot = NodePath("m_HitBoxRoot")
 
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=997035204]
 sprite_frames = ExtResource("2_frames")
-animation = &"attack_1"
-offset = Vector2(-26.5, -9.5)
+animation = &"idle"
+offset = Vector2(-2.5, 0)
 
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=857422875]
 position = Vector2(1, 2)
@@ -65,7 +65,7 @@ monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1977422246]
 position = Vector2(-31, -4)
-shape = SubResource("hitbox_attack_1")
+shape = SubResource("hitbox_rest")
 disabled = true
 
 [node name="m_Detector" type="Area2D" parent="." unique_id=979705160]
@@ -81,7 +81,7 @@ debug_color = Color(1, 1, 0, 0.1)
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=767246798]
 libraries/ = ExtResource("3_lib")
 
-[node name="m_HealthBar" parent="." instance=ExtResource("6_health_bar")]
+[node name="m_HealthBar" parent="." unique_id=508518114 instance=ExtResource("6_health_bar")]
 offset_left = -24.0
 offset_top = -52.0
 offset_right = 26.0

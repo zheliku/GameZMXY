@@ -316,7 +316,7 @@ namespace GameLogic.Battle.Tests
 			using AiHarness h = new AiHarness(MonkeyParams(desire: 100), new[] { Basic(0) }, 0.9f);
 			h.Step(1);
 			h.Agent.Target(Hero(-30f, -120f));   // 正上方偏前 30px、高 120px
-			h.Step(3);                           // Wander→WalkToTarget→StandAndStrike→PaceBelowTarget
+			h.Step(2);                           // Wander→WalkToTarget→PaceBelowTarget，不插入站定帧
 			Assert.Equal("PaceBelowTarget", h.State);
 
 			h.Run(3f);                           // 欲望 100 也不出招
@@ -462,6 +462,59 @@ namespace GameLogic.Battle.Tests
 			h.Step(1);
 			Assert.Equal("WalkToTarget", h.State);
 			Assert.Equal(-1, h.Agent.MoveDir);
+		}
+
+		/// <summary>目标高度不可达时，接近后直接踱步，不经过停步一帧的站定状态。</summary>
+		/// <param name="direction">目标位于左侧或右侧。</param>
+		/// <param name="height">目标相对怪物的高度。</param>
+		[Theory]
+		[InlineData(-1, -120f)]
+		[InlineData(1, -120f)]
+		[InlineData(-1, 120f)]
+		[InlineData(1, 120f)]
+		public void Fsm_ApproachingUnreachableTarget_DoesNotInsertIdleFrame(int direction, float height)
+		{
+			using AiHarness h = new(MonkeyParams(), [Basic(0)], 0.9f);
+			h.Agent.Target(Hero(direction * 200f, height));
+			h.Step(1);
+			Assert.Equal("WalkToTarget", h.State);
+			h.Agent.Target(Hero(direction * 30f, height));
+			h.Step(1);
+			Assert.Equal("PaceBelowTarget", h.State);
+			Assert.Equal(direction, h.Agent.MoveDir);
+			h.Step(1);
+			Assert.Equal(direction, h.Agent.MoveDir);
+			Assert.Equal(-1, h.Agent.RequestedAttack);
+		}
+
+		/// <summary>目标刚进入范围又走远时持续追近；目标稳定停留后仍正常站定。</summary>
+		/// <param name="direction">目标位于左侧或右侧。</param>
+		[Theory]
+		[InlineData(-1)]
+		[InlineData(1)]
+		public void Fsm_TargetMovesAcrossReach_DoesNotPulseIdleOnStateEntry(int direction)
+		{
+			using AiHarness h = new(MonkeyParams(desire: 0), [Basic(0)], 0.9f);
+			h.Agent.Target(Hero(direction * 200f));
+			h.Step(1);
+			for (int cycle = 0; cycle < 8; cycle++)
+			{
+				h.Agent.Target(Hero(direction * 40f));
+				h.Step(1);
+				Assert.Equal("StandAndStrike", h.State);
+				Assert.Equal(direction, h.Agent.MoveDir);
+				h.Agent.Target(Hero(direction * 100f));
+				h.Step(1);
+				Assert.Equal("WalkToTarget", h.State);
+				Assert.Equal(direction, h.Agent.MoveDir);
+			}
+
+			// 稳定留在范围内才停步，保留配置的首次反应时间与出手概率。
+			h.Agent.Target(Hero(direction * 40f));
+			h.Step(2);
+			Assert.Equal("StandAndStrike", h.State);
+			Assert.Equal(0, h.Agent.MoveDir);
+			Assert.Equal(-1, h.Agent.RequestedAttack);
 		}
 
 		// ---------------------------------------------------------------- 测试替身

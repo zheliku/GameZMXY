@@ -56,7 +56,13 @@ public partial class LootOrbNode : AnimatedSprite2D, IPoolable
         m_Age = 0;
         m_Speed = config.InitialSpeed;
         Frame = 0;
-        Play(reward.Kind.ToString());
+        Play(reward.Kind switch
+        {
+            LootKind.Soul => LootAnims.Soul,
+            LootKind.Musou => LootAnims.Musou,
+            LootKind.Mana => LootAnims.Mana,
+            _ => throw new ArgumentOutOfRangeException(nameof(reward))
+        });
         SetProcess(true);
     }
 

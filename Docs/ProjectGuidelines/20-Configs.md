@@ -16,7 +16,7 @@
 - 经验曲线：`Hero.TbHeroLevelConfig`，全英雄共用（等级 → 升级所需经验）。
 - 英雄成长：`Hero.TbHeroGrowthConfig`（list，联合索引 `HeroId + Level`，`read_schema_from_file=false`），每行内嵌 `Stats: StatBlock`；每名英雄覆盖经验表全部等级。`HeroConfig` 只保留身份、手感与表现字段。
 - 怪物没有成长：`MonsterConfig` 内嵌一个 `Stats: StatBlock`，`Level` 只用于等级压制与经验门槛；怪物伤害由招式 `AttackConfig.FlatPower` 决定，`Stats.Power` 填 0。
-- 建档规则：单行表 `Profile.TbProfileConfig`（`StartHeroId`、`StartGold`）。
+- 建档规则：单行表 `Profile.TbProfileConfig`（`StartHeroId`、`StartSoul`）。
 - 内嵌 bean 的数据表（`HeroGrowthConfig`、`MonsterConfig`、`LevelConfig`）用多级 `##var` 标题、没有 `##type` 行，记录 bean 定义在 `__beans__.xlsx`。
 
 ## 启动校验
@@ -33,7 +33,7 @@
   - 外层字段的标题行做列合并，合并范围必须覆盖元素的完整宽度（含嵌套多行字段），不足会解析失败；
   - 配方续行的阶段列、关卡列全部留空（原子列留空 = 类型默认值），只在首行填写阶段/关卡字段；
   - 数据表不需要 `##type` 行，类型来自 `__beans__.xlsx` 的 bean 定义。
-- 阶段的 `LeftGateId` / `GateId` 分别引用本阶段独立左右边界，空值使用场景原始左墙 / 右墙。**相邻战斗区域允许重叠，禁止用上一阶段出口推导下一阶段左界**。各边界 ID 唯一，阶段右界递增；位置属于场景空间事实，初始化校验区域位于关卡内且至少容纳一屏。行进保留上一场左界并封住新右界，抵达后切换为本场左右界；清波开放出口，其他门保持停用。花果山官方依据及当前接入范围见 [OfficialHuaguoshan.md](../OfficialHuaguoshan.md)。
+- 阶段的 `LeftGateId` / `GateId` 分别引用本阶段独立左右边界，空值使用场景原始左墙 / 右墙。**相邻战斗区域允许重叠，禁止用上一阶段出口推导下一阶段左界**。各边界 ID 唯一，阶段右界递增；位置属于场景空间事实，初始化校验区域位于关卡内且至少容纳一屏。行进保留上一场左界并封住新右界，抵达后切换为本场左右界；清波开放出口，其他门保持停用。花果山官方依据及当前接入范围见 [OfficialReference.md](../OfficialReference.md)。
 - 人类可读性优先：策划可见的表列与场景导出一律用可读标识（`MonsterEntityId` 填 `HuaguoshanMonkey` 等枚举名），程序运行时仍按 ID/枚举查找；不在表或场景里出现需要反查的裸数字 ID。当关卡配方使用 `MonsterEntityId` 查找 `MonsterConfig` 时，`MonsterConfig.EntityId` 必须与怪物配置保持一对一；运行时会校验并拒绝零条或多条匹配。若以后需要同一实体外观对应多个数值变体，应再引入可读的 MonsterConfig 业务键，而不是回退到数字 ID。
 - `##` 注释行的中文注释与列一一对齐：每个数据列一个注释；多行/合并字段把整段说明写在首列，禁止注释整行错位。
 - Luban 空单元格不会继承上一行：多行列表续行里留空只是“该元素此列为默认值”，关卡级/阶段级字段不会被视觉空白自动合并进续行。

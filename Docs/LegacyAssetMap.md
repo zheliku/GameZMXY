@@ -1,14 +1,8 @@
-# LegacyAssetMap —— 旧项目素材迁移映射
+# 素材来源与复现
 
-> 来源：`P:\Godot-Project\ZMXY_BHYH`（只读素材库，见 AGENTS.md §11.1）
-> 目标：`Godot/GodotProject/TheGame/`
-> 迁移原则见 AGENTS.md §11.2 / §11.3：仅搬当前阶段所需；战斗图集必须重命名为 `<entity>_<state>`（Collection Res 全树 basename 唯一，见 Sprites/AGENTS.md）。
+旧项目 `P:/Godot-Project/ZMXY_BHYH` 只读。下表旧路径相对旧工程，新路径相对 `Godot/GodotProject/TheGame/`；PNG/音频/字体原样复制，不迁入旧脚本或 `.import`。官方包、散列与玩法依据见 [OfficialReference](OfficialReference.md)。
 
-## 当前阶段范围（M1）
-
-`wukong` + `huaguoshan_monkey`（旧 Monster1）+ `demon_monkey`（旧 Monster2，妖猴）+ `Level_1`（花果山）+ `TestArena`（怪物与角色测试关卡）+ `gogo`（旧 `Art/Level/Gogo` 前进提示）+ `hud`（旧 `Role_information` 战斗 HUD 贴图）。
-
-## 贴图映射
+## 角色、关卡与 HUD
 
 | 旧路径 | 新路径 | 规格 / 说明 |
 | --- | --- | --- |
@@ -44,11 +38,11 @@
 | `Art/HeroPicture/Role1SpecialEffect/Role1Hit3.png` | `Sprites/Effects/wukong/wukong_hit_3.png` | 326×66 × 4 帧；普攻 3 段棍气 |
 | `Art/HeroPicture/Role1SpecialEffect/Role1Hit4.png` | `Sprites/Effects/wukong/wukong_hit_4.png` | 315×82 × 2 帧；普攻 4 段棍气 |
 
-不拷贝旧 `.import`，由新工程重新导入（AGENTS.md §11.3.1）。
+地板从 4812×170 裁至 4700×170，去掉右侧透明圆角；该裁剪不覆盖用户后续地形编辑。
 
-## 武器层（换装测试用）
+## 武器
 
-旧项目武器是**独立叠加层**：节点 `Action/RoleEquipment` ← `Role_1_Eq_<武器键>.png`，运行时由 `BaseHero.onEqchange()` → `ChangeEq()` → `Global.LoadRole1EQ()` 按当前装备切换（同网格 6×14，动画帧与身体层对齐）。本次先迁 5 张代表性图，其余 15 把按需再迁：
+下列文件均在旧 `Art/HeroPicture/Role1AllEquipment/`，新 `Sprites/Characters/Heroes/wukong/`；身体和武器共用 6×14、每格 200×200 网格。
 
 | 旧文件 | 新文件 | 旧键 / 名称 |
 | --- | --- | --- |
@@ -58,105 +52,13 @@
 | `Role_1_Eq_qld.png` | `wukong_weapon_dragon_blade.png` | `qld` 青龙刀 |
 | `Role_1_Eq_zjbtg.png` | `wukong_weapon_purple_gold_cudgel.png` | `zjbtg` 紫金镔铁棍 |
 
-每张武器图集对应一个 `wukong_weapon_<name>_animations.tres`（9 个动画，帧序列取自 `Action/RoleEquipment:frame`，与身体层同帧对齐）——这些武器 SpriteFrames 已于 2026-09-30 删除（零引用，见文末说明），帧数据由合并动画库承载。
+## 动画
 
-## 动画映射
+动作数据来自旧场景的帧、特效、判定盒值轨道；当前由身体状态机驱动 AnimationPlayer。动画库位于 `Entitys/Animations/*_anim_library.tres`，棍气 SpriteFrames 为 `Sprites/Effects/wukong/wukong_effect_animations.tres`。攻击特效序列中的 null 是收招空白帧，不能删除。
 
-源数据为旧 `.tscn` 内嵌 `Animation`/`AtlasTexture`，由 `Tools/LegacyMigration/gen_animations.py` 一次性解析生成，禁止手工重切片（AGENTS.md §11.3.3）。
+`Tools/LegacyMigration/gen_animations.py` 负责初次迁入，已有文件默认跳过；当前关键帧以编辑器保存的 `.tres` 为准。`--force` 会覆盖人工调整，仅用于明确需要的资源，不重跑旧 AnimationTree 构建器。
 
-### wukong —— `Sprites/Characters/Heroes/wukong/wukong_animations.tres`（2026-09-30 已删除，内容并入 `wukong_anim_library.tres`）
-
-源：`Scene/Hero/Role_1/Role1.tscn`，轨道 `Action/RoleBody:frame`，`RolePlayer.speed_scale = 2.0`。
-
-| 旧动画名 | 新动画名 | 循环 |
-| --- | --- | --- |
-| `wait` | `idle` | 是 |
-| `run` | `run` | 是 |
-| `jump1` | `jump` | 否 |
-| `hit1` | `attack_1` | 否 |
-| `hit2` | `attack_2` | 否 |
-| `hit3` | `attack_3` | 否 |
-| `hit4` | `attack_4` | 否 |
-| `hurt` | `hurt` | 否 |
-| `death` | `death` | 否 |
-
-暂缓（技能/特效类，M1 不迁）：`drop` `hmz__` `hyjj` `hytj` `jdy` `jdy_1` `lyfb` `lys` `qsez` `slz` `zz`。
-
-### huaguoshan_monkey —— `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_animations.tres`
-
-源：`Scene/Monster/Monster_1.tscn` 的 `AtlasTexture` 切分规格，按固定网格重新生成。
-
-| 旧动画名 | 新动画名 | 帧数 | 循环 |
-| --- | --- | --- | --- |
-| `Wait` | `idle` | 1 | 是 |
-| `Walk` | `run` | 4 | 是 |
-| `Hit` | `attack_1` | 6 | 否 |
-| `Hurt` | `hurt` | 2 | 否 |
-| `Death` | `death` | 6 | 否 |
-
-### demon_monkey（妖猴，旧 Monster_2）—— `Sprites/Characters/Monsters/demon_monkey/demon_monkey_animations.tres`
-
-源：`Scene/Monster/Monster_2.tscn` 的 `AtlasTexture` 切分规格，按固定网格重新生成；身体层与判定盒同原点（不额外下移），动画库见 `Entitys/Animations/demon_monkey_anim_library.tres`。
-
-| 旧动画名 | 新动画名 | 帧数 | 循环 |
-| --- | --- | --- | --- |
-| `wait` | `idle` | 5 | 是 |
-| `walk` | `run` | 4 | 是 |
-| `hit1` | `attack_1` | 4 | 否 |
-| `hurt` | `hurt` | 1 | 否 |
-| `death` | `death` | 5 | 否 |
-
-旧 `hit1` 判定窗 0.10~0.40s；旧 `hit1` 判定盒圆 r=46.0109 @(−31,−4) → 新 80×80 @(−31,−4)（编辑器调校；攻击与静止同值，库含 RESET 默认动画）。
-
-## 棍气特效层（旧 `Action/SpecialEffect`）—— 1:1 迁移
-
-旧项目普攻的"棍气"是英雄场景里的**独立 AnimatedSprite2D**，由旧 AnimationPlayer 的四类**属性轨道**驱动：
-
-| 轨道 | 含义 |
-| --- | --- |
-| `Action/SpecialEffect:animation` | 切换特效动画名（切换时 SpriteFrames 的 frame 归 0） |
-| `Action/SpecialEffect:frame` | 逐帧；值是"条目序号"，**含 null 空白条目** |
-| `Action/SpecialEffect:offset` | 特效相对身体原点的位移（绝对值，覆盖节点 offset） |
-| `Action/SpecialEffect:scale` | 缩放（普攻无此轨道，沿用之前动画留下的 1） |
-
-关键事实（曾是迁移 bug 的来源，见 `Tools/LegacyMigration/dump_legacy_effect_raw.py`）：
-- 每个棍气动画的**末条是 null**（hit1 6 条、hit2 7 条、hit3 6 条、hit4 3 条）——帧号打到最后一条时特效消失，这就是收招"棍气散掉"。丢掉 null 会导致收招时特效不消失、且帧号整体错位。
-- 特效的位移写在节点 `offset` 上，而朝向镜像写在父节点 `Action.scale.x = ±1`——**镜像会连带翻转 offset**，所以新工程的镜像必须做在**父容器**上，不能用 `FlipH`。
-- 时间轴是内部时间，真实秒 = 按 speed_scale 积分（与身体层同一套换算）。
-
-新工程结构（`Entitys/WukongEntity.tscn`）：
-
-```
-m_EffectRoot (Node2D)          ← 朝向镜像：scale.x = ±1（同旧 Action 节点）
-└── m_Effect (AnimatedSprite2D) ← SpriteFrames: wukong_effect_animations.tres
-m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tres   ← M3 中期结构；2026-09-30 该库已删，棍气轨道现由 wukong_anim_library.tres 承载
-```
-
-生成物（由 `gen_animations.py` 输出）：
-
-| 文件 | 内容 |
-| --- | --- |
-| `Sprites/Effects/wukong/wukong_effect_animations.tres` | SpriteFrames：`attack_1..4`（条目序列含 null，逐条对应旧数据）+ `empty`（对应旧空白 `wait`） |
-| `Sprites/Effects/wukong/wukong_effect_library.tres` | AnimationLibrary：同名动画，轨道路径 `m_EffectRoot/m_Effect:<属性>`，键时间已换算为真实秒（2026-09-30 已删除） |
-
-棍气轨道数据（旧 → 新，真实秒）：
-
-| 动画 | frame 序列 | offset | 时长 |
-| --- | --- | --- | --- |
-| `attack_1` | 0,1,2,3,4,5(null) | (-15,-10) → (0,0) | 0.350s |
-| `attack_2` | 0,2,2,2,4,4,6(null) | (-40,40) → (0,0) | 0.317s |
-| `attack_3` | 0,0,1,2,3,5(null),5(null) | (-10,40) → (0,0) | 0.317s |
-| `attack_4` | 2(null),0,0,1,1,2(null) | (-45,40) → (0,0) | 0.317s |
-
-`AttackConfig` 里普攻的 `Interval`（0.35s）与身体动画长度一致，特效与身体同起同收。
-
-未迁移：旧场景还有第二个特效层 `Action/SpecialEffect2`（技能用，SpriteFrames = SubResource 125，含 `hyjj` 等）+ `SpecialEffect` 的技能特效动画（`slz/lys/hytj/lyfb/jdy/jdy_1/zz/zz_2/hyjj_1/hyjj_2`），随技能系统一起迁。
-
-## 音效映射
-
-旧项目音效是"节点 `Sound_` 一次性实例 + mp3 路径"，触发点写在**动画的 method 轨道**（`add_music(idx)`）。新工程走 `GF.Sound.PlaySound(path, group)`（组名来自 `SoundConfig` 表），业务表只引用 `SoundId` 枚举。
-
-接线以旧代码实测为准（**旧文件名与实际用途不一致**）：`Role1.tscn` 的 method 轨道里 hit1→39、hit2→40、hit3→39、hit4→38；死亡→59；受击音 49 在被击逻辑里播（`BaseHero.gd:593`）。
+## 战斗音效
 
 | 旧文件 | 新路径 | `SoundId` | 语义与触发 |
 | --- | --- | --- | --- |
@@ -167,115 +69,11 @@ m_EffectPlayer (AnimationPlayer) ← AnimationLibrary: wukong_effect_library.tre
 | `Music/Hero/59_Role1_dead.mp3` | `Audios/SFX/wukong/wukong_death.mp3` | `WukongDeath` | 死亡语音（旧 death 动画的 `add_music(7)`） |
 | `Music/MonsterHurt/6_BeattackByRole1.mp3` | `Audios/SFX/wukong/wukong_hit_impact.mp3` | `WukongImpact` | **攻击者**的命中音（`BaseMonster.gd:652` 按攻击者选音）；旧名 `monster_hurt` 是错的——它不是怪物语音，是"悟空的棍打中东西"的声音 |
 
-**关键语义纠正（2026-09-28 读旧代码确认）**：命中音属于**攻击方**（谁打的），受击语音属于**受害方**（谁挨打）。旧项目把命中音的**选择**写在怪物的被击逻辑里、且用 `is role1` 硬编码链（旧项目要抛弃的模式），但**语义归属是攻击者**。因此 `WukongImpact` 配在攻击表上（`AttackConfig.HitSoundId`），不配在怪物身上；旧项目也没有任何怪物语音素材。
+起手/命中音绑定 AttackConfig，受击/死亡语音绑定受害者配置；音频播放统一经 GGF，职责规则见第 30/50 章。
 
-表设计（2026-09-28 定稿，最终版）：
+## 伤害数字
 
-| 表 | 职责 | 关键列 |
-| --- | --- | --- |
-| `SoundConfig` | **唯一**音频表：音效资产登记 | `Id`(枚举值) / `Key`(枚举名) / `NameCn` / `Desc` / `LegacyId` / `Group`(框架组名 Music/SFX/UI) / `Path` |
-| `AttackConfig.SoundId` / `HitSoundId` | 攻击的起手音 / 命中音 | 攻击自己的属性（与 `Animation` 同类） |
-| `HeroConfig.HurtSoundId` / `DeathSoundId` | 角色受击/死亡语音 | 受害方向 |
-| `MonsterConfig.HurtSoundId` / `DeathSoundId` | 同上（今天填 `None`：旧项目无怪物语音素材，M5 用） | |
-
-- 规则一句话：**触发者在哪一行，SoundId 就配在哪一列**（与框架实体/界面表配 `AssetPath` 的先例一致）。
-- **框架的统一入口**是 `GF.Sound.PlaySound(资源, 组名)`（`SoundComponent.cs:153`）：组名就是 `SoundGroupRes.tres` 注册的 `Music`/`SFX`/`UI`，各自映射到 Godot 总线（独立音量/静音/代理数）。所以表里直接存框架组名，代码一句 `GF.Sound.PlaySound(cfg.Path, cfg.Group)`（`ActorEntity.PlaySound`）就能播任意组的一次性声音，**不需要自定义组枚举或路由 switch**。
-- `SoundId` 的值**显式写死**（0..6）：自动递增会让"中间插一条音效"导致后续 Id 全部漂移。
-- 只读查询通过 `ActorEntity.PlaySound` 直接读取 `SoundConfig`；BGM 与关卡流程暂不接入。
-
-未迁移：其余技能音效（`1_/8_/11_/17_/18_/26_/27_/35_/36_/37_/42_/45_/44_` 等）随技能系统接入；BGM（`Music/level`、`Music/MainSceneMusic`）待后续流程设计。
-
-音效命名遗留：当前枚举/文件按**用途**命名（`WukongAttack2` 等），是旧项目"文件名与实际用途不一致"教训的延续——将来被其他角色复用时名字会失真。后续应改为按"声音本身"命名（如 `WukongSwingLight`），用途只留在绑定表。
-
-## 动画架构迁移（2026-09-28：AnimationPlayer + AnimationTree，角色属性驱动）
-
-> **2026-10-01 已被取代**：AnimationTree 与表达式事实面已移除，改为"代码身体状态机（GF.Fsm 物理帧驱动）+ AnimationPlayer 直驱"——最终形态为**动画纯数据**（帧/特效/判定盒值轨道，无方法轨道、从不调用代码）：动作时长 OnInit 读动画长度由状态计时，音效由状态钩子触发（音源查表），两份 `*_animation_tree.tres` 已删除。现行契约见 `GameScripts/Entity/AGENTS.md`「状态与动画」；本节保留作迁移记录。
-
-角色动画从"AnimatedSprite2D + C# 状态机（GF.Fsm）"迁到"AnimationPlayer 属性轨道 + AnimationTree 表达式状态机"，时序/帧数据与旧项目 Role1.tscn 逐帧一致：
-
-- **身体/武器层**：AnimatedSprite2D + SpriteFrames → `Sprite2D(hframes=6, vframes=14)`，帧号即 6×14 网格全局序号——与旧 `Action/RoleBody:frame` / `Action/RoleEquipment:frame` 轨道完全同构，换装改为换 Texture。
-- **合并动画库** `Entitys/Animations/wukong_anim_library.tres`（`gen_animations.py` 的 `gen_wukong_library()` 生成）：每个动画含身体帧轨道、武器帧轨道、特效四件套轨道、方法轨道。**轨道完备性**：每个被动画的属性（m_Body:frame / m_Weapon:frame / m_Effect 的 animation/frame/offset/scale）在库内**每个**动画都必须有轨道——AnimationTree 切到不含某属性轨道的动画时会把该属性重置成垃圾值（实测 scale 被写成 1e-05，棍气不可见）。攻击段特效轨道取旧数据（含末尾 null 收招帧、offset），非攻击段统一"切空白 empty + 帧归零 + scale=1"。方法轨道：旧 `add_music` → `OnAttackSwingSound`（hit1..4）/ `OnDeathVoice`（death），触发时机取旧轨道，音源按当前段查 `AttackConfig.SoundId` / `HeroConfig.DeathSoundId`。技能类特效未迁，随技能系统处理。
-- **状态机** `Entitys/Animations/wukong_animation_tree.tres`（`EditorScripts/build_wukong_anim_tree.gd` 生成）：**主图分组 + 子状态机收纳动画**（2026-09-28 定稿，取代单层完全图）：
-  - 主图只有组与单状态：`Ground`（子机：`Idle`（子机：idle1 / idle2）、walk、run）、`Air`（子机：jump / jump_2 / fall）、`Attack`（子机：attack_1..4）、`Hurt`、`Death`；
-  - **进组 = 从 Start 选一个状态**：子机用 ROOT 类型（进组 seek 到第 0 帧重启到 Start），每个状态一条 `Start → 状态` 边；子机可再嵌套（Ground → Idle），层级不改变时序语义；
-  - **组内只连真实转移**（不是完全图）：连段只 +1 推进就只有 1→2→3→4 链；各组的边表与"为什么没有某条边"见生成器 `GROUND_EDGES` / `AIR_EDGES` / `IDLE_EDGES` / `_attack_edges()` 注释；
-  - **组谓词只写一次**（`P_*` 常量，含 `not Dead` 的优先级链，互斥）：主图边 = 目标组谓词，组内边 = 组内区分项（走/跑、跳/二段/落、段序号）；
-  - **进组边必须 `reset=true`**：子机靠"seek 到第 0 帧"启动；缺 reset 子机会停在空 current、永不播放；
-  - 时序（4.7.2 源码 + 冒烟测试）：组内转移（走跑切换、连段推进、跳→落）同帧生效；进组那一帧子机在同一 process 内完成"启动 + 选路"（中间混合权重为 0），可见延迟与主图直切相同。
-- **属性驱动分工**：
-  - C#（`HeroEntity`）只维护**角色属性**并暴露为 `[Export]` 字段（表达式事实面）：`MoveInput / Running / Airborne / Rising / JumpCount / AttackSegment / Hurt / Emoting / Dead`，每物理帧由 `SyncAnimFacts()` 刷新一次（其中 Airborne/Rising/Hurt/Emoting/Dead 由物理与计时器派生）；
-  - **基类 `ActorEntity` 不含任何角色事实**，只把 AnimationTree 的表达式基对象指向实体节点；角色属性、状态机资源都归角色自己；
-  - 各角色的状态机资源自行把属性映射到自己的动画名（wukong 专属动画名只出现在它的 .tres 与 `WukongEntity.IdleFlavorAnim` 覆写里）；新英雄 = 新动画库 + 新状态机资源 + 新 HeroConfig 行，基类零改动。
-- **本引擎版本（4.7.2）状态机实测语义**（探针 + 源码验证，写状态机必须遵守）：
-  1. 表达式边必须 `advance_mode=AUTO`；表达式在状态内**持续**评估，命中即转移；
-  2. 转移在触发它的那次 process 里**同帧**生效；进组那一帧子机在同一 process 内完成"启动 + 选路"；
-  3. 多条边同时为真时取 `priority` 最小者、同值取**后**加入者——本项目用互斥条件规避，不依赖它；
-  4. `advance_expression` 读 C# 成员必须走 `[Export]` 字段（普通属性引擎侧不可见），基对象由 `AnimationTree.AdvanceExpressionBaseNode` 指向实体；`and`/`or`/`not` 可用；表达式在 setter 里解析后缓存，逐帧评估不重复解析；
-  5. 表达式里引用**引擎自带**数据必须用引擎名：`is_on_floor()` / `velocity.y` 可用；写成 C# 风格的 `IsOnFloor()` / `Velocity` 会静默求值为 null（条件恒假）——迁移后"跑/跳动画失效"的根因就是它（`Ground → Air` 的 `not IsOnFloor()` 恒假，树永远出不了地面组）；本项目改用 C# 属性表达，图上不再出现引擎名；
-  6. 子机 ROOT 类型进组重启到 Start；NESTED 类型会恢复上次内部状态（组式写法必须用 ROOT，否则组内边要两两直连才能自纠）。
-- **冒烟测试**（自动化验证动画链路，替代"看日志猜"）：`"S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --quit-after 1500 -- --smoketest`；`TheGame/MainPack/Scripts/Debug/SmokeTestDriver.cs`（autoload，仅 `--smoketest` 时启用）自动注入连打/双击跑/受击/一段跳/二段跳输入，断言 AnimationTree **真正在播**的状态路径（`Attack/attack_1..4` → `Ground/run` → `Hurt` → `Air/jump` → `Air/fall` → `Air/jump_2` → `Ground/Idle/idle1`）、顺序，以及待机时特效层回到空白（动画 empty / 帧 0 / scale 1）；判定看 stdout `SMOKE PASS` / `SMOKE FAIL`（框架关闭流程有既有 bug，偶发段错误冲掉退出码，别只看退出码）。
-- 旧 SpriteFrames 三件套（`wukong_animations.tres` / `wukong_weapon_*_animations.tres` / `wukong_effect_library.tres`）场景不再引用，已于 **2026-09-30 删除**（全项目审计零引用；`gen_animations.py` 对应产出步骤同步停用，重跑不会重建）——帧数据由 `wukong_anim_library.tres` 的帧轨道承载（身体姿势映射见表）；`wukong_effect_animations.tres` 仍被 m_Effect 引用、保留。
-
-## 复现方式
-
-```
-python Tools/LegacyMigration/gen_animations.py
-"S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --script res://EditorScripts/build_wukong_anim_tree.gd
-"S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --quit-after 1500 -- --smoketest
-# 怪物 AI 场景（巡逻/追击/出招/转身/平台守候踱步/丢失目标/受控/死亡，约 20s）：
-"S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --quit-after 2400 -- --smoketest=ai
-```
-
-脚本读取旧项目 `.tscn`，输出到 `TheGame/Sprites/...`（SpriteFrames）与 `TheGame/Entitys/Animations/`（动画库 + 状态机；2026-09-30 从 `Sprites/` 与 `Entitys/` 根移入）；旧项目保持只读，不写入任何文件。
-
-**真相源（2026-09-30 人类裁决）**：`gen_animations.py` 与两个 `build_*_anim_tree.gd` 的产物（两个 `*_anim_library.tres`、两个 `*_animation_tree.tres`、`wukong_effect_animations.tres`、`huaguoshan_monkey_animations.tres`）落地后**以 Godot 编辑器保存的版本为准**——判定盒、特效偏移、帧时长直接在 Animation 面板调。生成器默认跳过已存在的产物，只在文件缺失或显式 `--force [文件名]` 时重写（`--force` 会冲掉编辑器调整，用前先提交）。下表"新几何"列是迁移时的初值，当前值以 `.tres` 为准。在编辑器里调判定盒要改**关键帧**（改完点轨道钥匙覆盖），只改节点属性会被 RESET/动画播放洗掉。
-
-## M4 判定帧与战斗资产（2026-09-29）
-
-### 判定盒（2026-09-30 审查修订：几何与开关全部是动画值轨道，同旧项目）
-
-旧项目"一招一次命中"= 攻击动画里 keyframe HitBox 的 **shape / position / disabled**（Role1.tscn 实测）+ `Area2D.area_entered` 只在进入重叠时触发；朝向由 `base_damagebox.scale.x` 翻转。新工程同构：`m_HitBoxRoot`（朝向镜像容器，C# 只翻 scale.x）→ `m_HitBox`（Area2D，**恒在原点**）→ `CollisionShape2D`——三条值轨道全部落在形状节点上（`…/CollisionShape2D` 的 `:disabled` / `:shape` / `:position`，与旧 `base_damagebox/HitBox/HitBox` 逐级对应；容器负缩放会把形状节点偏移一并镜像，冒烟实测命中正常）。库里每个动画带齐三条（非攻击动画写静止值——轨道完备性：AnimationPlayer 直驱不回卷轨道，切到任何动画首帧写回安全值，受击/死亡打断出招时判定盒随之复位），动画里写**原生朝左**坐标（前方 = 负 X）。出招装填/收招的数值包归 C# 身体状态机（2026-10-01 起不再走 `OnAttackBegin`/`OnAttackEnd` 方法轨道）。C# 另按目标去重（`AttackData.TryRegisterHit`）。
-
-判定窗口沿用旧 disabled 轨道；**几何不再照搬旧形状**（旧胶囊 r76/323 宽矩形远大于视觉棒击范围，"没碰到就受击"的主因），纵向与后缘按判定窗内**武器层像素包围盒**推导（各外扩 10px）；**前缘统一放长到 -130"追击线"**——连段期间每次命中受击方被击退 ~17px（旧 hurtBack × 30 同值），不放长第三段起就够不着；旧项目靠超大方形盒（前缘 121~175）吸收同一漂移，这里用显式常量表达。attack_3/4 旋斩含身后来向帧，attack_4 的正向帧 f55 在旧窗开启之前、几何将其并入。推导与实测数值登记在 `gen_animations.py` 的 `WUKONG_HITBOX` / `MONKEY_HITBOX` 注释：
-
-| 新动画 | 旧来源 | 判定窗口（真实秒） | 旧形状 | 新几何初值（尺寸 @ 原生坐标；现值以编辑器 .tres 为准） |
-| --- | --- | --- | --- | --- |
-| wukong `attack_1` | Role1 `hit1`（speed_scale 3） | 0.0333–0.1667 | 胶囊 r76 h186 @(−45,−17) | 178×114 @(−41, 23) |
-| wukong `attack_2` | `hit2` | 0.0667–0.2333 | 矩形 133.5×43 @(−42.25,41.5) | 172×43 @(−44, 40.5) |
-| wukong `attack_3` | `hit3` | 0.0333–0.1667 | 矩形 323×57 @(0,31.5) | 233×75 @(−13.5, 23.5) |
-| wukong `attack_4` | `hit4` | 0.0667–0.2000 | 矩形 273×74 @(−38.5,38) | 233×96 @(−13.5, 12) |
-| monkey `attack_1` | Monster_1 `hit1`（speed_scale 1） | 0.30–0.40 | 圆 r25 @(−24,−10) | 50×50 @(−24, −23)（Y 修正身体层 (0,−13) 偏移） |
-| demon_monkey `attack_1` | Monster_2 `hit1`（speed_scale 1） | 0.10–0.40 | 圆 r46.0109 @(−31,−4) | 80×80 @(−31, −4)（编辑器调校；身体层与判定盒同原点） |
-
-数值不再进 `AttackConfig`（表只存玩法数值；2026-09-30 删除 HitBoxOffset/HitBoxSize/Interval 三列）。
-
-### huaguoshan_monkey 动画库
-
-`Entitys/Animations/huaguoshan_monkey_anim_library.tres`（`gen_animations.py` 的 `gen_monkey_library()`；状态机 `EditorScripts/build_huaguoshan_monkey_anim_tree.gd` → `Entitys/Animations/huaguoshan_monkey_animation_tree.tres`）。轨道驱动 `m_Body`（AnimatedSprite2D，复用 `huaguoshan_monkey_animations.tres`）的 animation/frame/offset；旧 SpriteFrames 用"重复条目撑时长"，这里合并为同一帧的停留时长：
-
-| 新动画 | 旧 | 帧:秒 | offset（朝左原值，镜像由父缩放处理） |
-| --- | --- | --- | --- |
-| idle | wait | 0:0.8（新工程只迁了 1 帧待机图） | (4,0) |
-| run | walk | 0..3 各 0.2 | (0,0) |
-| attack_1 | hit1 | 0:0.12 1:0.12 2..5 各 0.04 | (−13,0) |
-| hurt | hurt | 0:0.16 1:0.12 | (1.5,−0.5) |
-| death | death | 0..4 各 0.0667，5 停到 0.8 | (4,0) |
-
-### demon_monkey 动画库
-
-`Entitys/Animations/demon_monkey_anim_library.tres`（`gen_animations.py` 的 `gen_demon_monkey_library()`）。轨道驱动 `m_Body`（AnimatedSprite2D，复用 `demon_monkey_animations.tres`）的 animation/frame/offset，规则同 huaguoshan_monkey：
-
-| 新动画 | 旧 | 帧:秒 | offset（朝左原值，镜像由父缩放处理） |
-| --- | --- | --- | --- |
-| idle | wait | 0..4 各 0.1 | (−2.5,0) |
-| run | walk | 0..3 各 0.2 | (13.5,4) |
-| attack_1 | hit1 | 0:0.0667 1:0.0667 2:0.0667 3:0.2668 | (−26.5,−9.5) |
-| hurt | hurt | 0:0.28 | (10,5) |
-| death | death | 0..3 各 0.1，4 停到 1.2 | (0,0) |
-
-### 伤害数字
-
-`Tools/LegacyMigration/gen_damage_numbers.gd` 把旧 `Art/AllNumber/<样式>/<名>_0..9.png`（每位一张）拼成每样式一张 10 格横条，输出 `Sprites/Number/`：
+旧来源相对 `Art/AllNumber/`，目标位于 `Sprites/Number/`；生成入口 `Tools/LegacyMigration/gen_damage_numbers.gd`。
 
 | 新文件 | 旧来源 | 格尺寸 | 用途 |
 | --- | --- | --- | --- |
@@ -288,23 +86,12 @@ python Tools/LegacyMigration/gen_animations.py
 | `damage_number_real.png` | `real/real_N` | 30×30 | 真实伤害（人怪共用） |
 | `damage_number_miss.png` | `miss.png` | 55×24 | 闪避 |
 
-旧 `Physics/`（大写 P）目录旧代码未引用，未迁。飘字时序（旧 `DamageText` "physics"/"Crit" 与 `miss_effect` 动画）作为表现常数写在 `GameScripts/UI/DamagePop.cs`。
-
-```bat
-"S:\Godot4\Godot4CSharp_console.exe" --headless --script Tools/LegacyMigration/gen_damage_numbers.gd
-"S:\Godot4\Godot4CSharp_console.exe" --headless --path Godot/GodotProject --script res://EditorScripts/build_huaguoshan_monkey_anim_tree.gd
-```
-
-## 2026-10-07 HUD 经验与魔法条
+## HUD 补充与字体
 
 | 新资源（`TheGame/Sprites/UI/hud/`） | 旧资源（`ZMXY_BHYH/`） | 用途 |
 | --- | --- | --- |
 | `hud_mp_fill.png` | `Art/HeroPicture/RoleProperiesBox/739.png` | 角色魔法填充 |
 | `hud_exp_fill.png` | `Art/HeroPicture/RoleProperiesBox/742.png` | 本级经验填充 |
-
-仅复制 PNG，导入元数据由新工程 Godot 生成；坐标与旧 `Scene/Level/Role_information.tscn` 对齐。
-
-## 2026-10-11 HUD 字体与无双残影
 
 | 新资源（`TheGame/MainPack/Fonts/`） | 旧资源（`ZMXY_BHYH/Font/`） | 用途 |
 | --- | --- | --- |
@@ -312,13 +99,11 @@ python Tools/LegacyMigration/gen_animations.py
 | `fz_cu_yuan.ttf` | `1_fonts.FZCY_FZCuYuan-M03.ttf` | 粗圆中文完整字形回退 |
 | `dfp_hai_bao_w12.ttc` | `华康海报体W12 &amp; 华康海报体W12(P).ttc` | 旧 HUD 等级数字字体 |
 
-只复制字体原文件，不带旧 `.import`；导入元数据由新工程生成。`game_font.tres` 组合 HUD 字体与中文回退，经 `MainThemes.tres` 应用于共享主题；BattleHud 三个数字标签另显式绑定该字体，避免 `Sprite2D` 隔断主题继承，等级单独绑定海报体。迁入文件与旧文件的 SHA-256 全部一致，实际字体解析结果见 [OfficialBattlePolish.md](OfficialBattlePolish.md) 复查记录。没有复制旧工程的全部字体或场景。
+守关姓名另用 `MainPack/Fonts/df_poster_w12.ttc`，源为旧 `Font/华康海报体W12 &amp; 华康海报体W12(P).ttc`；SHA-256 `b47e00483c38ec74c63601c9200faadb27809374a6a0b720c2f029723342fe3d`，迁入函数 `import_gorilla_assets.import_boss_name_font`。这些字体来自旧工程，不称为官方原包提取字体。
 
-角色无双残影参考 `Script/Base/BaseHero.gd:add_WSEffect/_on_ws_timer_timeout`、`Scene/Hero/Role_1/WS_Effect.tscn` 与 `Script/Hero/WS_Effect.gd`：0.1 秒采样、0.27 秒寿命、暖色及初始透明度 0.8。新工程在 `MusouAfterimage.cs` 重写，只缓存身体/武器精灵的显示帧和世界变换，固定槽位复用，不复制旧动作树或判定节点。玩法与官方关卡依据见 [OfficialBattlePolish.md](OfficialBattlePolish.md)。
+## 菜单、地图、存档与音乐
 
-## 2026-10-11 入口菜单、音乐与外置无双帧
-
-一次性迁入入口为 `Tools/LegacyMigration/import_frontend_assets.py`。以下原文件逐字节复制，未复制旧脚本、场景或 `.import`；导入元数据由新工程生成。目标路径相对 `TheGame/`，旧来源相对 `ZMXY_BHYH/`。
+迁入入口 `Tools/LegacyMigration/import_frontend_assets.py`；布局参考旧 Main_Menu、Map_1、set_menu、read_archive_interface 场景，仅取素材和布局。
 
 | 新资源 | 旧来源 | 用途 |
 | --- | --- | --- |
@@ -327,42 +112,8 @@ python Tools/LegacyMigration/gen_animations.py
 | `Audios/Music/map_theme.mp3` | `Music/MainSceneMusic/zmxy_1BGM.mp3` | 标题、选角与地图共用造梦一音乐，145.76 秒 |
 | `Audios/Music/huaguoshan_theme.mp3` | `Music/level/1_music.mp3` | 花果山音乐 |
 
-两首音乐的 `.import` 开启循环，由 GGF Music 组加载和播放。`Audios/UI/menu_confirm.wav` 为迁入脚本生成的原创 0.12 秒衰减双正弦确认音（44100 Hz、单声道 PCM16），没有旧文件来源。
-
-### 官方选角完整卡片（后续按用户参考图复原）
-
-来源链为 [4399 系列入口](https://www.4399.com/flash/zmhj.htm) → [第一代游戏页面](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/v25928.htm) → [OtherMat_v9.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/OtherMat_v9.swf)。这些是官方包内矢量卡片的静态渲染，不是截图，也不是旧工程新找到的素材；替代此前的 swk/tsz/zbj/shs 长图。
-
-| 目标 PNG（Sprites/UI/frontend） | 官方矢量编号 | AtlasTexture 区域 |
-| --- | --- | --- |
-| `character_wukong_card.png` | DefineSprite 511 | (9, 0, 237, 610) |
-| `character_sanzang_card.png` | DefineSprite 521 | (21, 0, 237, 610) |
-| `character_bajie_card.png` | DefineSprite 515 | (15, 0, 237, 610) |
-| `character_wujing_card.png` | DefineSprite 518 | (22, 0, 237, 610) |
-
-重现入口为 `Tools/LegacyMigration/export_official_character_cards.py --java <java.exe> --ffdec <ffdec.jar> --swf <OtherMat_v9.swf>`，FFDec 26.3.0。脚本按官方 Aloader 的规则恢复排列：bytes[100:110] + bytes[0:100] + bytes[110:]；读取已恢复的文件也可。原始包 SHA-256 为 `ef03008e68d64f613a2f7b3abfeec4cba3d4bd579c67e0f4703d8f15d3e115c9`，恢复后为 `fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e`，脚本核对后者。
-
-PNG 保留导出内容，场景通过 AtlasTexture 排除遮罩外的透明侧边，不用 shader 缩放或移动角色。每栏 235×590，姓名描边、笔刷、剪影与问号已经包含在卡片内；shader 只用原版灰度系数 (0.3086, 0.6094, 0.082) 切换饱和度。官方 SWF 和脚本留在临时目录，不进入正式工程。
-
-`Sprites/UI/hud/hud_ws_full_frames.tres` 从现有 `BattleHud.tscn` 原样提取 10 个 AtlasTexture 与 20 帧往返循环时间线（25 fps）；HUD 只引用该资源。图集与 shader 不变，保留材质当前圆形裁剪参数。
-
-## 待办
-
-- `wukong` 的 `hurt` / `death` 在旧动画中仅单帧（旧工程另有 `RoleDeath.png` 等独立节点），后续接入死亡表现时再评估。
-- `huaguoshan_monkey` 时序已由动画库按旧 `mr_player` 轨道复刻（见上节）；`huaguoshan_monkey_animations.tres` 里的 0.1s 帧时长不再参与播放。待机图只迁了 1 帧（旧 `Wait.png` 4 帧），M5 补齐。
-- 武器层已迁 5 张（含空手）用于换装测试；其余 15 把武器与 25 套防具图集待装备系统阶段按 Luban 表按需迁入。
-- 身体层 `wukong_body.png` 的部分动作帧自带默认棍（旧美术遗留）；接武器层后需确认是否与 `wukong_weapon_*` 叠加导致重复，必要时清理身体层里的武器像素。
-- 技能特效与技能音效（见上两节"未迁移"）随技能系统一起迁；`Action/SpecialEffect2` 第二特效层同理。
-- 打击特效（`MonsterBeHurt_*`、`RoleBeHit`，`Art/StrikeSpecialEffects/`）M4 未迁：命中链路已留 `ActorEntity.OnHurt` 钩子，迁入时同样走 NodePool。`MissEffect` 已由 `damage_number_miss.png` 覆盖。
-
-
-## 原项目菜单视觉与鼠标交互恢复（2026-10-11）
-
-以下文件由 `Tools/LegacyMigration/import_frontend_assets.py` 原样复制，旧工程只读。主菜单依据 `Scene/Main_menu/Main_Menu.tscn`，保留透明按钮、Aa 山月字体和原分隔图片，提供开始、设置、帮助与须知。地图依据 `Map_1.tscn` 的地点图像、坐标与配对悬停图；第一关为花果山，水帘洞为第二关。当前只有花果山开放，其他地点显示原图且禁用。
-
 | 旧项目相对路径 | 新项目 TheGame 相对路径 |
 | --- | --- |
-| `Music/MainSceneMusic/zmxy_1BGM.mp3` | `Audios/Music/map_theme.mp3` |
 | `Art/game_pic/679.PNG` | `Sprites/UI/frontend/menu_separator.png` |
 | `Art/set_menu/653.png` | `Sprites/UI/frontend/settings_scroll.png` |
 | `Art/BackPack/49.png` | `Sprites/UI/frontend/menu_close.png` |
@@ -404,13 +155,6 @@ PNG 保留导出内容，场景通过 AtlasTexture 排除遮罩外的透明侧�
 | `Art/HeroPicture/RoleProperiesBox/777.png` | `Sprites/UI/hud/menu_pet_hover.png` |
 | `Art/HeroPicture/RoleProperiesBox/774.png` | `Sprites/UI/hud/menu_pet_caption.png` |
 
-地图黄色轮廓参考 `Shader/LevelButton.gdshader` 的 8 向 alpha 邻域，业务侧重写为 `map_location_outline.gdshader`；保留透明边界并修正颜色重复相乘，悬停画面使用原来的带名称与黄光贴图。`map_location_hover.tres` 外置 AnimationLibrary 在 1 秒内循环改变缩放和轮廓厚度；移开、关闭和复用时执行 RESET。
-
-左下角图标按 `Scene/Level/Role_information.tscn/role_menu` 的位置和 caption 图片排列；设置 caption 上移 4px，避免 590px 画布底部裁掉文字。只有设置接入现有功能，背包、技能、法宝与宠物明确禁用，等待对应系统。`settings_form.tscn` 采用 `Scene/set_menu.tscn` 的黑色笔刷框与红色关闭图片（本轮按官方截图使用方正粗圆字体重排）；声音开关使用 GGF Music/SFX/UI 组和持久设置，返回路径为设置 → 返回地图。未复制旧脚本、联网校时、到期检查或存档逻辑。
-
-
-### 六格存档与菜单修正（2026-10-11）
-
 | 旧项目相对路径 | 新项目 TheGame 相对路径 | 用途 |
 | --- | --- | --- |
 | `Art/MagicWeapon/222.png` | `Sprites/UI/frontend/menu_close_hover.png` | 41×41 关闭叉白光悬停 |
@@ -420,13 +164,22 @@ PNG 保留导出内容，场景通过 AtlasTexture 排除遮罩外的透明侧�
 | `Art/MainGame/BasicPicCd_1.png` | `Sprites/UI/frontend/save_slot_normal.png` | 存档格普通图 |
 | `Art/MainGame/BasicPicCd_2.png` | `Sprites/UI/frontend/save_slot_hover.png` | 存档格白框悬停图 |
 
-以上为原样复制，迁移脚本已同步；未迁入旧项目的存档、联网或时间校验代码。设置布局以用户提供的官方造梦一截图为准；六格布局以用户提供的造梦二截图与旧 `read_archive_interface.tscn` 为参照，直接接入当前 GGF 存档入口。
+`Audios/UI/menu_confirm.wav` 是迁入脚本生成的原创 0.12 秒双正弦衰减音，44100 Hz 单声道 PCM16；没有旧文件来源。Music 资源导入开启循环，由 GGF Music 组管理。
 
-地图原 shader 只绘制轮廓，没有改变 GUI 命中范围。后续已按用户要求让悬停命中范围跟随放大后的可见轮廓，当前行为以 `MapForm.Logic.cs` 为准。
+官方选角卡片来自 OtherMat_v9 原始矢量，直接渲染而非截图或 AI 重绘：
 
-### 大猩猩守关与出口（2026-10-12）
+| 目标 PNG（Sprites/UI/frontend） | 官方矢量编号 | AtlasTexture 区域 |
+| --- | --- | --- |
+| `character_wukong_card.png` | DefineSprite 511 | (9, 0, 237, 610) |
+| `character_sanzang_card.png` | DefineSprite 521 | (21, 0, 237, 610) |
+| `character_bajie_card.png` | DefineSprite 515 | (15, 0, 237, 610) |
+| `character_wujing_card.png` | DefineSprite 518 | (22, 0, 237, 610) |
 
-以下贴图均从只读旧项目原样复制，未使用截图重绘或 AI 生图；SpriteFrames/AnimationLibrary 通过 `Tools/LegacyMigration/import_gorilla_assets.py` 生成。
+复现：`python Tools/LegacyMigration/export_official_character_cards.py --java <java.exe> --ffdec <ffdec.jar> --swf <OtherMat_v9.swf>`。贴图自带姓名、笔刷、剪影和问号；AtlasTexture 只排除透明侧边。
+
+## 大猩猩、出口与血条
+
+迁入入口 `Tools/LegacyMigration/import_gorilla_assets.py`；已有产物默认跳过。
 
 | 旧项目相对路径 | 新项目 TheGame 相对路径 |
 | --- | --- |
@@ -439,12 +192,20 @@ PNG 保留导出内容，场景通过 AtlasTexture 排除遮罩外的透明侧�
 | `Art/HeroPicture/RoleProperiesBox/128.png` | `Sprites/UI/hud/boss_health_fill.png` |
 | `Art/HeroPicture/RoleProperiesBox/124.png` | `Sprites/UI/hud/boss_health_under.png` |
 
-守关角色仍是普通 `GorillaEntity`；按后续要求只保留一个基础 MonsterConfig，花果山配方提供生命倍率 3 和经验覆盖 25。五波关卡、W 出口与数值证据见 [HuaguoshanEncounter](HuaguoshanEncounter.md)。
+平台来源：旧 `Art/Level/level_2/177.png` → `Sprites/Levels/huaguoshan/level_1_platform.png`。
 
-## 守关名称字体（2026-10-12）
+## 官方升级、掉落球与无双演出
 
-按用户官方截图把名称拼在笔刷血条左侧，取消入场弹窗。字体沿用只读旧项目 `Scene/MonsterBlood/BossBlood.tscn/MonsterName` 所引用的 `Font/华康海报体W12 &amp; 华康海报体W12(P).ttc`，原文件直接复制到 `TheGame/MainPack/Fonts/df_poster_w12.ttc`，不截屏、不重新绘制字形。SHA-256：`b47e00483c38ec74c63601c9200faadb27809374a6a0b720c2f029723342fe3d`。迁入函数为 `import_gorilla_assets.import_boss_name_font`；普通与守关的生命条图片继续复用上表原素材。
+| 目标 | 官方资源编号 | 复现入口 |
+| --- | --- | --- |
+| `Sprites/Effects/level_up/` | Role_v7 sprite 240，28 帧 | `export_official_combat_effects.py` |
+| `Sprites/Effects/loot/musou_01..19.png` | Monster_v1 sprite 5，黄球 | 同上 |
+| `Sprites/Effects/loot/soul_*.png` | Monster_v1 sprite 9，紫球 | 同上 |
+| `Sprites/Effects/loot/mana_*.png` | Monster_v1 sprite 7，蓝球 | 同上 |
+| `Sprites/UI/hud/musou_activation/` | Role_v7 WsEffect 59：背景 52、悟空 55 | `export_official_musou_activation.py` |
 
-## 飞行奖励与升级（2026-10-12）
+升级动画保留原始 PNG；后半段位图外的蓝色标记会被 FFDec 边缘采样带入，导出器通过 `AtlasTexture.region` 裁掉这一行，并用 `margin` 补回透明留白、启用 `filter_clip`。28 帧仍为 122×136，播放位置和时长不变；只重导升级动画可加 `--group level_up`。
 
-平台原样复制 `Art/Level/level_2/177.png` → `Sprites/Levels/huaguoshan/level_1_platform.png`。升级动画与三种飞行球来自造梦一官方 Role_v7 / Monster_v1 的原始矢量 clip，经 `export_official_combat_effects.py` 渲染并原样复制 PNG；具体网址、clip、哈希和外置资源见 [CombatFeedback](CombatFeedback.md)。白球仅复用视觉用于当前经验球，原版用途是无双。
+两个导出器均用 Java/FFDec 26.3，在临时目录校验散列和渲染，再复制 PNG 与外置 SpriteFrames。无双开场在 `(470,295)` 输出 940×590、24 帧；悟空末姿势保持时，火焰子动画继续播放。调用参数见各脚本 `--help`。
+
+满值提示另来自旧 WSBar.png：`hud_ws_full_frames.tres` 保存 10 个 AtlasTexture 的 20 帧往返循环（25 fps）；圆形裁剪只在 shader 中进行，不修改源图。

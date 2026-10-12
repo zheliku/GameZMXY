@@ -5,7 +5,7 @@
 
 [node name="LevelUp" type="AnimatedSprite2D"]
 visible = false
-position = Vector2(0, -20)
+position = Vector2(0, 2)
 z_index = 6
 script = ExtResource("script")
 sprite_frames = ExtResource("frames")

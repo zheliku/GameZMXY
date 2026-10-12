@@ -148,17 +148,37 @@ public partial class TbBattleConfig
     /// </summary>
      public float MonsterHealthBarFadeDuration => _data.MonsterHealthBarFadeDuration;
     /// <summary>
-    /// 无双持续秒数（旧项目每0.5秒扣4/100，共12.5秒）
+    /// 命中蓄力：伤害/基础攻击&#215;系数；不改变攻击力
     /// </summary>
-     public float WsDuration => _data.WsDuration;
+     public float WsGainPerDamageRatio => _data.WsGainPerDamageRatio;
     /// <summary>
-    /// 无双攻击力独立倍率（旧项目1.5）
+    /// 开启后整招威力倍率（含固定加值）
     /// </summary>
-     public float WsPowerMultiplier => _data.WsPowerMultiplier;
+     public float WsAttackMultiplier => _data.WsAttackMultiplier;
     /// <summary>
-    /// 无双横向移速倍率（旧项目1.5）
+    /// 开启后走路、跑步速度倍率
     /// </summary>
      public float WsMoveSpeedMultiplier => _data.WsMoveSpeedMultiplier;
+    /// <summary>
+    /// 开启后起跳速度倍率
+    /// </summary>
+     public float WsJumpSpeedMultiplier => _data.WsJumpSpeedMultiplier;
+    /// <summary>
+    /// 开启后重力倍率
+    /// </summary>
+     public float WsGravityMultiplier => _data.WsGravityMultiplier;
+    /// <summary>
+    /// 未满时自然衰减（点/秒）；开启期间仍生效
+    /// </summary>
+     public float WsDecayPerSecond => _data.WsDecayPerSecond;
+    /// <summary>
+    /// 开启后额外消耗（点/秒）
+    /// </summary>
+     public float WsDrainPerSecond => _data.WsDrainPerSecond;
+    /// <summary>
+    /// 开启演出暂停（秒）；不计入消耗时间
+    /// </summary>
+     public float WsIntroPauseDuration => _data.WsIntroPauseDuration;
     
     public void ResolveRef(Tables tables)
     {

@@ -1,4 +1,5 @@
 using GameLogic.Event.Combat;
+using GameConfig.Constant;
 using System;
 using GameFramework.Event;
 using Godot;
@@ -14,9 +15,6 @@ namespace GameLogic.UI
 	/// </summary>
 	public sealed class DamagePopPresenter : IDisposable
 	{
-		/// <summary>飘字场景（池名 = 场景路径，与 NodePoolConfigRes 条目一致）</summary>
-		public static readonly string DamagePopScene = "res://TheGame/UIs/DamagePop.tscn";
-
 		private readonly Node m_Layer; // 飘字父节点，必须位于世界坐标系；随所有者的场景一起存在。
 
 		private bool m_Disposed; // 已退订并回收；重复释放直接返回。
@@ -40,7 +38,7 @@ namespace GameLogic.UI
 
 			m_Disposed = true;
 			GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
-			NodePool.Instance.ReleaseAll(DamagePopScene);
+			NodePool.Instance.ReleaseAll(ResourcesCollectionConstant.UIs_DamagePop);
 		}
 
 		/// <summary>校验伤害事件并显示对应的池化飘字。</summary>
@@ -61,7 +59,7 @@ namespace GameLogic.UI
 			}
 
 			// 取得池化实例后按闪避或伤害结果选择显示内容。
-			DamagePopNode pop = NodePool.Instance.Get<DamagePopNode>(DamagePopScene, m_Layer);
+			DamagePopNode pop = NodePool.Instance.Get<DamagePopNode>(ResourcesCollectionConstant.UIs_DamagePop, m_Layer);
 			if (pop == null)
 			{
 				return;

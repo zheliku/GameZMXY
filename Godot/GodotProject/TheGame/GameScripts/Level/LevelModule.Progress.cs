@@ -49,7 +49,7 @@ public partial class LevelModule
         m_Player.Died += OnHeroDied;
     }
 
-    /// <summary>经验球接触后才入账；升级时刷新装配、补满生命魔法并播放独立升级动画。</summary>
+    /// <summary>击败即结算固定经验；升级时刷新装配、补满生命魔法并播放脚底升级动画。</summary>
     /// <param name="experienceReward">本次击败的经验奖励。</param>
     private void AwardExperience(int experienceReward)
     {

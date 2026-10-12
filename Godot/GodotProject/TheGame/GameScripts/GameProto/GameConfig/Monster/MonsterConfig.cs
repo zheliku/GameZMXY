@@ -48,6 +48,8 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         SoulCount = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
         ManaDropChance = _buf.ReadFloat();
         ManaCount = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
+        MusouDropChance = _buf.ReadFloat();
+        MusouCount = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
     }
 
     public static MonsterConfig DeserializeMonsterConfig(ByteBuf _buf)
@@ -171,6 +173,14 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// 触发后蓝球数量闭区间（官方1～3均匀）
     /// </summary>
     public readonly Godot.Vector2I ManaCount;
+    /// <summary>
+    /// 白色无双球掉落概率（官方12%）
+    /// </summary>
+    public readonly float MusouDropChance;
+    /// <summary>
+    /// 触发后无双球数量闭区间（官方1～3均匀）
+    /// </summary>
+    public readonly Godot.Vector2I MusouCount;
    
     public const int __ID__ = 129443944;
     public override int GetTypeId() => __ID__;
@@ -212,6 +222,8 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "SoulCount:" + SoulCount + ","
         + "ManaDropChance:" + ManaDropChance + ","
         + "ManaCount:" + ManaCount + ","
+        + "MusouDropChance:" + MusouDropChance + ","
+        + "MusouCount:" + MusouCount + ","
         + "}";
     }
 }

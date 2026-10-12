@@ -9,30 +9,28 @@ namespace GameLogic.Drops;
 /// <summary>生成一次击败的掉落清单；外部提供随机数，规则不创建节点或修改档案。</summary>
 public static class LootHelper
 {
-    /// <summary>按怪物配方生成灵魂、经验和魔法球；经验拆分后总量保持不变。</summary>
+    /// <summary>按原版规则生成灵魂、魔法与无双球；经验独立在击败时结算。</summary>
     /// <param name="monster">怪物基础掉落配置。</param>
-    /// <param name="experience">已应用关卡配方覆盖的总经验。</param>
     /// <param name="drops">共用掉落配置。</param>
     /// <param name="random">返回 [0,1) 随机值的函数。</param>
     /// <returns>每颗球的类型和奖励；魔法在拾取时按角色上限计算。</returns>
-    public static List<LootReward> Roll(MonsterConfig monster, int experience, DropConfig drops, Func<float> random)
+    public static List<LootReward> Roll(MonsterConfig monster, DropConfig drops, Func<float> random)
     {
         var rewards = new List<LootReward>();
         int souls = Count(monster.SoulCount, random());
         for (int i = 0; i < souls; i++) rewards.Add(new(LootKind.Soul, monster.SoulPerOrb));
 
-        // 原版经验固定；按当前玩法要求拆成飞行球，不能因随机颗数增减总经验。
-        if (experience > 0)
-        {
-            int count = Math.Min(experience, Count(drops.ExperienceOrbCount, random()));
-            for (int i = 0; i < count; i++)
-                rewards.Add(new(LootKind.Experience, experience / count + (i < experience % count ? 1 : 0)));
-        }
         // 原版蓝球 12%：1、2、3 颗各 4%，在条件数量区间内均匀采样。
         if (random() < monster.ManaDropChance)
         {
             int count = Count(monster.ManaCount, random());
             for (int i = 0; i < count; i++) rewards.Add(new(LootKind.Mana, 0));
+        }
+        // 黄球是无双，每颗 5 点；独立于蓝球采样，不再额外生成经验球。
+        if (random() < monster.MusouDropChance)
+        {
+            int count = Count(monster.MusouCount, random());
+            for (int i = 0; i < count; i++) rewards.Add(new(LootKind.Musou, drops.MusouPerOrb));
         }
         return rewards;
     }
@@ -57,13 +55,13 @@ public enum LootKind
 {
     /// <summary>持久灵魂。</summary>
     Soul,
-    /// <summary>持久累计经验。</summary>
-    Experience,
+    /// <summary>本次出战的无双积累。</summary>
+    Musou,
     /// <summary>本次出战的魔法恢复。</summary>
     Mana,
 }
 
 /// <summary>一颗球的不可变奖励；魔法值在实际接触时按当前上限计算。</summary>
 /// <param name="Kind">奖励类型。</param>
-/// <param name="Amount">灵魂或经验数量。</param>
+/// <param name="Amount">灵魂或无双数量。</param>
 public readonly record struct LootReward(LootKind Kind, int Amount);

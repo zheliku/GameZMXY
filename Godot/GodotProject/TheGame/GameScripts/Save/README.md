@@ -35,7 +35,7 @@
 
 `GameData`、`GameCatalogue` 的名字和全局命名空间沿用现有 GGF 绑定。目录存于 `user://GameData/Catalogue.sav`，每格存于 `user://GameData/Data/{UnitId}.sav`；`.bak` 是备份，由框架负责原子写和恢复。只读取当前 v4 格式，不做历史兼容。
 
-运行时 `PlayerProfile.Heroes` 直接按 ID 持有 `HeroProgression`（英雄 ID + 累计经验与派生进度），没有额外的 `HeroRecord` 层。`GameContext` 把它与本槽 `SaveModule` 一起传给流程；`Level/LevelModule` 只负责本关奖励、提交与回滚；通关由清场后靠近出口按 W 触发，写盘完成后返回地图。完整阅读路径见 [玩法架构](../../../../../Docs/GameplayArchitecture.md)。
+运行时 `PlayerProfile.Heroes` 直接按 ID 持有 `HeroProgression`（英雄 ID + 累计经验与派生进度），没有额外的 `HeroRecord` 层。`GameContext` 把它与本槽 `SaveModule` 一起传给流程；`Level/LevelModule` 只负责本关奖励、提交与回滚；通关由清场后靠近出口按 W 触发，写盘完成后返回地图。完整阅读路径见 [玩法架构](../../../../../Docs/ProjectTour.md)。
 
 ## 新增一个持久字段
 

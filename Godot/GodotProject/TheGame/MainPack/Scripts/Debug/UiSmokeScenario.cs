@@ -87,7 +87,7 @@ public sealed partial class UiSmokeScenario
             await CheckLevelUpAsync(context, level);
             await CheckPlatformsAsync(level);
             await CheckManaPickupAsync(context, level, hero);
-            // 从真实保存的临界经验重入，下一次经验球拾取应立即触发升级动画。
+            // 从真实保存的临界经验重入，下一次击败应立即触发脚底升级动画。
             level.Cleanup(); // 先结束旧关卡事务，再设置下一场的测试检查点。
             Check(!level.GetChildren().OfType<GameLogic.Drops.LootOrbNode>().Any(), "关停后仍有本关飞行奖励");
             var active = context.Profile.ActiveHero;
@@ -315,7 +315,7 @@ public sealed partial class UiSmokeScenario
         animation.AnimationLooped += onLooped;
         try
         {
-            hero.Musou.Add(hero.Musou.Max);
+            hero.Musou.Add(hero.Musou.Max - hero.Musou.Value);
             Check(animation.Visible && animation.IsPlaying(), "无双蓄满后没有开始闪烁");
             await WaitUntilAsync(() => loops >= 2, "无双蓄满后没有在数值不变时连续循环");
             int frame = animation.Frame;
@@ -330,14 +330,14 @@ public sealed partial class UiSmokeScenario
         }
 
         // 消耗与零上限都应隐藏并复位；重新蓄满留给调用方验证窗口池复用。
-        Check(hero.Musou.TryConsume(), "烟测未能消耗已蓄满的无双");
+        hero.Musou.Clear();
         await WaitFramesAsync(3);
         Check(!animation.Visible && !animation.IsPlaying() && animation.Frame == 0 && Near(bar.Value, 0),
             "无双消耗后动画没有停止并复位");
         int originalMaximum = hero.Musou.Max;
-        hero.Musou.Reset(0);
+        hero.Musou.Reset(0, 1f, 6f);
         Check(!animation.Visible && !animation.IsPlaying(), "零上限错误地触发了满值动画");
-        hero.Musou.Reset(originalMaximum);
+        hero.Musou.Reset(originalMaximum, 1f, 6f);
         hero.Musou.Add(originalMaximum);
         GD.Print("SMOKE-UI: 无双未满/经验变化不闪烁、满值连续循环、消耗与零上限复位验证完成");
     }
@@ -352,11 +352,15 @@ public sealed partial class UiSmokeScenario
         m_TestHud = null;
         m_ExtraHero = await ShowHeroAsync(context, new HeroProgression(1, SmokeInspection.ReadField<ExperienceCurve>(context.Profile.ActiveHero, "m_Curve"), 0));
         HeroEntity previous = m_ExtraHero;
+        m_TestHud = await OpenHudAsync(new BattleHudData(previous, context.Profile.ActiveHero,
+            SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel)));
         await CheckMusouActivationAsync(previous);
+        CloseHud(m_TestHud);
+        m_TestHud = null;
         var vitals = previous.Vitals;
         previous.Vitals.Damage(70);
         previous.Musou.Add(70);
-        previous.Musou.Add(previous.Musou.Max);
+        previous.Musou.Add(previous.Musou.Max - previous.Musou.Value);
         Check(previous.TryActivateMusou(), "复用测试前未开启无双");
         previous.Stats.SetSource(new AttributeSourceId("Buff", 1),
             new[] { AttributeModifier.Flat(GameConfig.Stat.StatType.MaxHp, 999) });
@@ -384,7 +388,7 @@ public sealed partial class UiSmokeScenario
 
         Check(rejected, "英雄接受了其他英雄的装配");
         float power = m_ExtraHero.Stats.Get(GameConfig.Stat.StatType.Power);
-        m_ExtraHero.Musou.Add(m_ExtraHero.Musou.Max);
+        m_ExtraHero.Musou.Add(m_ExtraHero.Musou.Max - m_ExtraHero.Musou.Value);
         Check(m_ExtraHero.TryActivateMusou(), "死亡测试前未开启无双");
         KillHero(m_ExtraHero);
         Check(!m_ExtraHero.Musou.IsActive && m_ExtraHero.Musou.Value == 0 &&
@@ -403,19 +407,45 @@ public sealed partial class UiSmokeScenario
     {
         var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
         float power = hero.Stats.Get(GameConfig.Stat.StatType.Power);
+        var body = (IHeroBody)hero;
+        GD.Seed(73);
+        body.BeginAttack(0);
+        float normalStrike = SmokeInspection.ReadField<GameLogic.Battle.Attacks.AttackInstance>(hero, "m_ActiveAttack").Power;
+        body.EndAttack();
+        var activation = SmokeInspection.ReadField<MusouActivationNode>(m_TestHud, "m_MusouActivation");
         Check(!hero.TryActivateMusou(), "无双未满也能开启");
-        hero.Musou.Add(hero.Musou.Max);
+        hero.Musou.Add(hero.Musou.Max - hero.Musou.Value);
         try
         {
             hero.SetPhysicsProcess(true);
             Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.Space, Keycode = Key.Space, Pressed = true });
             await WaitFramesAsync(10);
             Check(hero.Musou.IsActive && !hero.Musou.IsFull, "空格没有经项目输入映射开启无双");
-            Check(Near(hero.Stats.Get(GameConfig.Stat.StatType.Power), power * battle.WsPowerMultiplier),
-                "无双没有通过属性来源提高攻击力");
+            GD.Seed(73);
+            body.BeginAttack(0);
+            float boostedStrike = SmokeInspection.ReadField<GameLogic.Battle.Attacks.AttackInstance>(hero, "m_ActiveAttack").Power;
+            body.EndAttack();
+            GD.Randomize();
+            Check(Near(boostedStrike, normalStrike * battle.WsAttackMultiplier),
+                "无双没有对含固定加值的整招威力应用一次攻击倍率");
             Check(Near(((IHeroBody)hero).MoveSpeedMultiplier, battle.WsMoveSpeedMultiplier),
                 "无双横向移速倍率不正确");
+            Check(Near(body.JumpSpeedMultiplier, battle.WsJumpSpeedMultiplier)
+                && Near(body.Gravity, body.Params.Gravity * battle.WsGravityMultiplier), "无双跳跃或重力倍率不正确");
             Check(!hero.TryActivateMusou(), "无双期间可以重复开启");
+            Check(GF.Base.IsGamePaused && activation.Visible, "开启无双没有短暂停顿和屏幕提示");
+            AnimatedSprite2D clip = activation.GetNode<AnimatedSprite2D>("Animation");
+            Check(clip.Frame > 0 && clip.SpriteFrames.GetFrameTexture(clip.Animation, clip.Frame).GetSize() == new Vector2(940, 590),
+                "暂停时原版开启动画未推进，或帧画布不匹配940×590");
+            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(.45, true, false, true), SceneTreeTimer.SignalName.Timeout);
+            await CaptureCombatAsync("musou_activation");
+            await WaitUntilAsync(() => clip.Frame >= 18 || !activation.Visible, "无双大立绘没有进入后半段动态火焰", 2000);
+            Check(activation.Visible && clip.SpriteFrames.GetFrameCount(clip.Animation) == 24
+                && Near(clip.SpriteFrames.GetAnimationSpeed(clip.Animation), 24), "无双大立绘提前结束或时间轴与官方不一致");
+            await CaptureCombatAsync("musou_activation_tail");
+            await WaitUntilAsync(() => !GF.Base.IsGamePaused, "无双开启停顿未恢复游戏", 4000);
+            await WaitFramesAsync(10);
+            Check(!activation.Visible, "无双开启提示结束后未隐藏");
         }
         finally
         {
@@ -440,12 +470,13 @@ public sealed partial class UiSmokeScenario
         }
         Check(hero.Vitals.Hp < hp && !((IHeroBody)hero).HasPendingHurt,
             "无双霸体没有保留正常伤害或仍登记了受击击退");
-        hero._PhysicsProcess(battle.WsDuration + 1f);
+        hero._PhysicsProcess(battle.WsMax / battle.WsDrainPerSecond + 1f);
         Check(!hero.Musou.IsActive && hero.Musou.Value == 0 && Near(hero.Stats.Get(GameConfig.Stat.StatType.Power), power)
-            && Near(((IHeroBody)hero).MoveSpeedMultiplier, 1f), "无双耗尽没有完整还原战斗效果");
+            && Near(body.MoveSpeedMultiplier, 1f) && Near(body.JumpSpeedMultiplier, 1f)
+            && Near(body.Gravity, body.Params.Gravity), "无双耗尽没有完整还原战斗效果");
         await WaitUntilAsync(() => snapshots.All(x => !x.Visible), "结束无双后残影没有自然淡出");
         Check(effect.GetChildCount() == snapshots.Length, "无双残影反复分配节点而未复用缓存");
-        GD.Print("SMOKE-UI: 空格开启无双、攻击/移速/霸体、残影定位与耗尽还原验证完成");
+        GD.Print("SMOKE-UI: 空格开启无双、整招攻击/移速/跳跃/重力/霸体、残影定位与耗尽还原验证完成");
     }
 
     /// <summary>验证两种小怪的共享血条、生命通知、定位、死亡隐藏与真实实体池复用。</summary>
@@ -773,23 +804,27 @@ public sealed partial class UiSmokeScenario
 
             return SmokeInspection.ReadField<int>(run, "m_DefeatedMonsterCount") > kills;
         }, "击败怪物没有经关卡运行结算", 10000, () => Describe(monster, run, level));
-        Check(SmokeInspection.Context(procedure).Profile.ActiveHero.TotalExperience == beforeXp &&
-            SmokeInspection.Context(procedure).Profile.Wallet.Soul == beforeSoul, "死亡时立即入账，未等待球接触英雄");
-        await CheckFlyingLootAsync(level, hero);
-        await WaitUntilAsync(() => SmokeInspection.ReadField<System.Collections.Generic.HashSet<GameLogic.Drops.LootOrbNode>>(level, "m_LootOrbs").Count == 0,
-            "掉落没有追踪并接触英雄", 12000);
         int reward = SmokeInspection.ReadField<int>(monster, "m_ExperienceReward");
-        Check(SmokeInspection.Context(procedure).Profile.ActiveHero.TotalExperience == beforeXp + reward, "经验球总额与击败经验不同");
-        int souls = SmokeInspection.Context(procedure).Profile.Wallet.Soul - beforeSoul;
-        Check(souls >= monster.Config.SoulCount.X * monster.Config.SoulPerOrb &&
-            souls <= monster.Config.SoulCount.Y * monster.Config.SoulPerOrb, "灵魂球没有按配置入账");
+        Check(SmokeInspection.Context(procedure).Profile.ActiveHero.TotalExperience == beforeXp + reward &&
+            SmokeInspection.Context(procedure).Profile.Wallet.Soul == beforeSoul, "击败经验未直接结算或灵魂未拾取就入账");
         if (hero.Level > beforeLevel)
         {
             var effect = SmokeInspection.ReadField<GameLogic.Heroes.Effects.HeroLevelUpNode>(hero, "m_LevelUp");
-            Check(effect.Visible && effect.IsPlaying(), "实际拾取升级的瞬间没有升级动画");
+            Check(effect.Visible && effect.IsPlaying() && effect.Position.IsEqualApprox(new Vector2(0, 2)),
+                "击败升级时没有立即播放脚底升级动画");
             await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(.25), SceneTreeTimer.SignalName.Timeout);
             await CaptureCombatAsync("level_up");
+            await WaitUntilAsync(() => effect.Frame >= 22, "升级动画没有播放到后半段", 1000);
+            Check(effect.Visible && effect.IsPlaying(), "升级动画后半段提前隐藏或停止");
+            await CaptureCombatAsync("level_up_tail");
         }
+        await CheckFlyingLootAsync(level, hero);
+        await WaitUntilAsync(() => SmokeInspection.ReadField<System.Collections.Generic.HashSet<GameLogic.Drops.LootOrbNode>>(level, "m_LootOrbs").Count == 0,
+            "掉落没有追踪并接触英雄", 12000);
+        Check(SmokeInspection.Context(procedure).Profile.ActiveHero.TotalExperience == beforeXp + reward, "拾取黄球额外发放了经验");
+        int souls = SmokeInspection.Context(procedure).Profile.Wallet.Soul - beforeSoul;
+        Check(souls >= monster.Config.SoulCount.X * monster.Config.SoulPerOrb &&
+            souls <= monster.Config.SoulCount.Y * monster.Config.SoulPerOrb, "灵魂球没有按配置入账");
         hero.SetPhysicsProcess(false);
     }
 

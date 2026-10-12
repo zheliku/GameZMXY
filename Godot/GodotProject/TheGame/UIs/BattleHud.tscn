@@ -19,10 +19,11 @@
 [ext_resource type="Theme" uid="uid://2gwbh6otun6r" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="18_theme"]
 [ext_resource type="FontFile" uid="uid://dy01vypttvr" path="res://TheGame/MainPack/Fonts/dfp_hai_bao_w12.ttc" id="19_level_font"]
 [ext_resource type="FontVariation" path="res://TheGame/MainPack/Fonts/game_font.tres" id="20_hud_font"]
-[ext_resource type="PackedScene" path="res://TheGame/UIs/Widgets/encounter_health_bar.tscn" id="encounter"]
+[ext_resource type="PackedScene" uid="uid://d1snaq64saolw" path="res://TheGame/UIs/Widgets/encounter_health_bar.tscn" id="encounter"]
 [ext_resource type="Texture2D" uid="uid://dnusvvhljgk87" path="res://TheGame/Sprites/UI/hud/menu_inventory_caption.png" id="inventory_caption"]
 [ext_resource type="Texture2D" uid="uid://bp04w8lqa5lgf" path="res://TheGame/Sprites/UI/hud/menu_inventory_hover.png" id="inventory_hover"]
 [ext_resource type="Texture2D" uid="uid://dupeqk5y4l6qd" path="res://TheGame/Sprites/UI/hud/menu_inventory_normal.png" id="inventory_normal"]
+[ext_resource type="PackedScene" uid="uid://bjub483gtcj0n" path="res://TheGame/UIs/Widgets/musou_activation.tscn" id="musou_activation"]
 [ext_resource type="Texture2D" uid="uid://pyq4cimfpyqw" path="res://TheGame/Sprites/UI/hud/menu_pet_caption.png" id="pet_caption"]
 [ext_resource type="Texture2D" uid="uid://b2rglh1l8flli" path="res://TheGame/Sprites/UI/hud/menu_pet_hover.png" id="pet_hover"]
 [ext_resource type="Texture2D" uid="uid://bfcfmu6amyvk1" path="res://TheGame/Sprites/UI/hud/menu_pet_normal.png" id="pet_normal"]
@@ -42,7 +43,7 @@ shader_parameter/clip_center = Vector2(0.5, 0.5)
 shader_parameter/clip_radius = 32.0
 shader_parameter/clip_feather = 0.0
 
-[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_WsMax", "m_Go", "m_SettingsButton", "m_EncounterHealthBar")]
+[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_WsMax", "m_Go", "m_SettingsButton", "m_EncounterHealthBar", "m_MusouActivation")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -61,6 +62,7 @@ m_WsMax = NodePath("MenuPanel/m_WsMax")
 m_Go = NodePath("m_Go")
 m_SettingsButton = NodePath("MenuPanel/m_SettingsButton")
 m_EncounterHealthBar = NodePath("m_EncounterHealthBar")
+m_MusouActivation = NodePath("m_MusouActivation")
 
 [node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247]
 position = Vector2(116, 44)
@@ -285,4 +287,8 @@ sprite_frames = ExtResource("13_gogo")
 animation = &"go"
 
 [node name="m_EncounterHealthBar" parent="." unique_id=1088788372 instance=ExtResource("encounter")]
-anchors_preset = 0
+visible = false
+layout_mode = 1
+
+[node name="m_MusouActivation" parent="." unique_id=520113477 instance=ExtResource("musou_activation")]
+layout_mode = 1

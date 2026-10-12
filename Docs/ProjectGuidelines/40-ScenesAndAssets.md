@@ -65,6 +65,6 @@
 
 ### 守关生命条
 
-`UIs/Widgets/encounter_health_bar.tscn` 是被动控件，HUD 提供名称与生命值。设计坐标 x=245、y=31，名称与血条横向拼接；白字黑边，字体沿用旧项目 BossBlood 的华康海报体 W12（MainPack/Fonts/df_poster_w12.ttc），右侧使用 boss_health_under/fill 原图。无进场弹窗、无生命数字、无额外背景面板。
+`UIs/Widgets/encounter_health_bar.tscn` 是被动控件，HUD 提供名称与生命值。按用户要求将“名称＋条体”作为整体顶部居中，根节点用 Top Center 锚点，HUD 实例不覆盖位置；内部间距和高度参考 [官方组件](../OfficialReference.md)。名称白字黑边，字体沿用旧项目 BossBlood 的华康海报体 W12（MainPack/Fonts/df_poster_w12.ttc），条使用 boss_health_under/fill 原图。无进场弹窗、无生命数字、无额外背景面板。
 
 关卡的 World/Exit 只保留一个出口子场景实例，不再同时建立同名占位节点；NodePath 与 node_paths 同步。资源检查同时覆盖重复节点路径、导出路径和资源字符串常量。

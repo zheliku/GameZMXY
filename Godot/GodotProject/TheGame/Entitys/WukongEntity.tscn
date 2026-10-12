@@ -92,6 +92,5 @@ disabled = true
 
 [node name="m_LevelUp" parent="." unique_id=1277663518 instance=ExtResource("level_up")]
 visible = true
-position = Vector2(0, 2)
 frame = 27
 frame_progress = 1.0

@@ -17,7 +17,7 @@ public sealed partial class DropConfig : Luban.BeanBase
     public DropConfig(ByteBuf _buf) 
     {
         NameCn = _buf.ReadString();
-        ExperienceOrbCount = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
+        MusouPerOrb = _buf.ReadInt();
         ManaMinimum = _buf.ReadInt();
         ManaMaxFraction = _buf.ReadFloat();
         ScatterRadius = _buf.ReadFloat();
@@ -40,9 +40,9 @@ public sealed partial class DropConfig : Luban.BeanBase
     /// </summary>
     public readonly string NameCn;
     /// <summary>
-    /// 经验球数量区间；总经验不变
+    /// 每颗黄球无双值（官方 auraWhile.power=5）
     /// </summary>
-    public readonly Godot.Vector2I ExperienceOrbCount;
+    public readonly int MusouPerOrb;
     /// <summary>
     /// 每颗蓝球最低回蓝量
     /// </summary>
@@ -95,7 +95,7 @@ public sealed partial class DropConfig : Luban.BeanBase
     {
         return "{ "
         + "NameCn:" + NameCn + ","
-        + "ExperienceOrbCount:" + ExperienceOrbCount + ","
+        + "MusouPerOrb:" + MusouPerOrb + ","
         + "ManaMinimum:" + ManaMinimum + ","
         + "ManaMaxFraction:" + ManaMaxFraction + ","
         + "ScatterRadius:" + ScatterRadius + ","

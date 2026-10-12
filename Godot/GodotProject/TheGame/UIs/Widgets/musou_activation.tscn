@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://bjub483gtcj0n"]
+
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://bymxyt55xb04o" path="res://TheGame/GameScripts/UI/Widgets/MusouActivationNode.cs" id="script"]
+
+[node name="MusouActivation" type="Control" unique_id=109249331 node_paths=PackedStringArray("m_Animation")]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("script")
+m_Animation = NodePath("Animation")
+
+[node name="Animation" type="AnimatedSprite2D" parent="." unique_id=1962252916]
+position = Vector2(470, 295)
+sprite_frames = ExtResource("frames")
+animation = &"musou_activation"
+frame = 23
+frame_progress = 1.0

@@ -5,12 +5,11 @@ using GameFramework.Fsm;
 namespace GameLogic.Monsters.AI
 {
 	/// <summary>
-	/// 水平走向目标（旧 have_target）；攻击判定盒**水平**吃进目标即转站定出招——不看高度：目标在头顶也走到下面
-	/// （高度由站定出招状态把关）。
+	/// 水平走向目标（旧 have_target）；水平到位后，可命中则站定出招，高度不可达则直接踱步。
 	/// </summary>
 	public class WalkToTargetState : EngageState
 	{
-		/// <summary>进入追击当帧就给出方向，避免基类停步导致一帧持棒待机。</summary>
+		/// <summary>进入追击当帧就给出方向，避免沿用上个状态的停步意图。</summary>
 		/// <param name="agent">提供当前目标与移动意图的怪物。</param>
 		protected override void Enter(IMonsterAiAgent agent)
 		{
@@ -23,7 +22,15 @@ namespace GameLogic.Monsters.AI
 		{
 			if (agent.Attacks.BasicGapX(agent.TargetBox, dir) <= -MonsterAttackBook.ReachMargin)
 			{
-				ChangeState<StandAndStrikeState>(fsm);
+				// 不经过会停步的中间状态，避免平台目标导致一帧举棒再走动。
+				if (agent.Attacks.BasicInReach(agent.TargetBox, dir))
+				{
+					ChangeState<StandAndStrikeState>(fsm);
+				}
+				else
+				{
+					ChangeState<PaceBelowTargetState>(fsm);
+				}
 			}
 			else
 			{

@@ -14,11 +14,11 @@ namespace GameLogic.Monsters.AI
 	{
 		private float m_ReactionLeft; // 每次进入交战状态的优先招反应时间，避免突进绕过起手等待。
 
-		/// <summary>停步并按配置安排优先招的首次反应时间。</summary>
+		/// <summary>保留移动意图，并按配置安排优先招的首次反应时间。</summary>
 		/// <param name="agent">本状态的怪物宿主。</param>
 		protected override void Enter(IMonsterAiAgent agent)
 		{
-			base.Enter(agent);
+			// 状态进入只初始化计时；由具体决策确认停步，避免切换当帧先清零、下一帧又追击。
 			m_ReactionLeft = MonsterAttackSpec.Roll(agent.Params.AttackFirstDelay, agent.NextRandom());
 		}
 

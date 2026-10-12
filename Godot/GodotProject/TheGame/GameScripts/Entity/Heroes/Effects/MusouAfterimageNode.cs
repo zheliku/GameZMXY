@@ -7,9 +7,9 @@ namespace GameLogic.Heroes.Effects;
 public partial class MusouAfterimageNode : Node2D
 {
 	[Export] private Godot.Collections.Array<Sprite2D> m_Layers = new(); // 场景显式绑定的身体、武器等表现层。
-	[Export(PropertyHint.Range, "0.01,1,0.01")] private float m_Interval = 0.1f; // 旧项目残影采样间隔秒数。
-	[Export(PropertyHint.Range, "0.01,1,0.01")] private float m_Lifetime = 0.27f; // 旧项目每帧残影存活秒数。
-	[Export] private Color m_Tint = new(1f, 0.85098f, 0.827451f, 0.8f); // 旧项目暖色残影与初始透明度。
+	[Export(PropertyHint.Range, "0.01,1,0.01")] private float m_Interval = 1f / 6f; // 官方残影采样周期，秒。
+	[Export(PropertyHint.Range, "0.01,2,0.01")] private float m_Lifetime = 1f; // 官方 TweenMax 残影淡出秒数。
+	[Export] private Color m_Tint = Colors.White; // 保留角色原色与初始透明度。
 	private const int SnapshotLimit = 32; // 表现缓存的工程上限，避免错误检查器参数分配过量节点。
 	private Sprite2D[][] m_Snapshots = []; // 固定复用的各帧精灵层，不逐帧创建或释放节点。
 	private float[] m_Ages = []; // 各帧已存活秒数；达到寿命后隐藏。
@@ -73,7 +73,8 @@ public partial class MusouAfterimageNode : Node2D
 			foreach (Sprite2D layer in m_Snapshots[i])
 			{
 				if (alpha <= 0f) layer.Visible = false;
-				layer.Modulate = new Color(m_Tint.R, m_Tint.G, m_Tint.B, m_Tint.A * alpha);
+				// 官方 TweenMax 默认 Quad.easeOut：透明度由 1 降至 0。
+				layer.Modulate = new Color(m_Tint.R, m_Tint.G, m_Tint.B, m_Tint.A * alpha * alpha);
 				visible |= layer.Visible;
 			}
 		}

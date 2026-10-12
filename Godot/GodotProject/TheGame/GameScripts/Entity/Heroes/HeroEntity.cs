@@ -8,7 +8,6 @@ using GameLogic.Input;
 using System;
 using GameConfig.Battle;
 using GameConfig.Hero;
-using GameConfig.Stat;
 using GameFramework.Entity;
 using GameFramework.Fsm;
 using GameLogic.Body;
@@ -28,8 +27,6 @@ namespace GameLogic.Heroes
 	{
 		// ---- 字段 ----
 
-		private static readonly AttributeSourceId m_MusouSource = new("Musou", 0); // 当前英雄独有的局内属性来源。
-
 		[Export] private Sprite2D m_Weapon; // 武器表现层，与身体层同网格并由动画轨道驱动。
 
 		[Export] private Node2D m_EffectRoot; // 攻击特效层容器，由动画轨道驱动并随朝向镜像。
@@ -42,6 +39,7 @@ namespace GameLogic.Heroes
 		private HeroBodyParams m_BodyParams; // 从英雄配置和动画库构建的身体参数快照。
 
 		private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
+		private ulong m_MusouIntroEnds; // 本英雄拥有的短暂停顿截止时间；零表示没有拥有暂停。
 
 		// ---- 属性 ----
 
@@ -69,7 +67,7 @@ namespace GameLogic.Heroes
 		/// <inheritdoc />
 		public override CombatSide Side => CombatSide.Hero;
 
-		/// <summary>无双进度（本次显示期间有效，不写入存档）：普攻命中按 AttackConfig.WsGain 区间累计。</summary>
+		/// <summary>无双进度：按实际伤害比例与黄球积累，未满时自然衰减，不写入存档。</summary>
 		public MusouGauge Musou { get; } = new();
 
 		/// <summary>由具体英雄给出身体初始状态类型。</summary>
@@ -122,7 +120,8 @@ namespace GameLogic.Heroes
 			// 池实例可能带着上次的修正来源，先清空再按装配重建。
 			Stats.Clear();
 			ApplyLoadout(snapshot, refill: true);
-			Musou.Reset(ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMax);
+			var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
+			Musou.Reset(battle.WsMax, battle.WsDecayPerSecond, battle.WsDrainPerSecond);
 			m_MusouAfterimage?.Reset();
             m_LevelUp?.Reset();
 
@@ -141,8 +140,8 @@ namespace GameLogic.Heroes
 		/// <param name="userData">本次隐藏参数。</param>
 		public override void OnHide(bool isShutdown, object userData)
 		{
+			EndMusouIntro(!isShutdown);
 			Musou.Clear();
-			Stats.RemoveSource(m_MusouSource);
 			if (!isShutdown && IsInstanceValid(m_MusouAfterimage)) m_MusouAfterimage.Reset();
             if (!isShutdown && IsInstanceValid(m_LevelUp)) m_LevelUp.Reset();
 			DestroyBody(isShutdown);
@@ -151,6 +150,22 @@ namespace GameLogic.Heroes
 
         /// <summary>在档案确认升级并重新注入装配后显示提示；普通进关不触发。</summary>
         public void PlayLevelUp() => m_LevelUp?.ShowLevelUp();
+
+		/// <summary>真实时间结束本英雄拥有的无双开启停顿；暂停时游戏时间为零仍能恢复。</summary>
+		/// <param name="delta">游戏帧秒数，本计时只使用单调真实时间。</param>
+		public override void _Process(double delta)
+		{
+			if (m_MusouIntroEnds != 0 && Time.GetTicksMsec() >= m_MusouIntroEnds) EndMusouIntro(true);
+		}
+
+		/// <summary>只释放本次开启拥有的暂停；隐藏时对称清理，关停时只清字段。</summary>
+		/// <param name="resume">是否仍可访问框架恢复游戏。</param>
+		private void EndMusouIntro(bool resume)
+		{
+			if (m_MusouIntroEnds == 0) return;
+			m_MusouIntroEnds = 0;
+			if (resume && GF.Base.IsGamePaused) GF.Base.ResumeGame();
+		}
 
 		/// <summary>物理步长：采样输入 → 身体状态机 → 物理。AnimationPlayer（子节点）同帧稍后消费播放请求。</summary>
 		/// <param name="delta">本次物理帧秒数。</param>
@@ -189,28 +204,29 @@ namespace GameLogic.Heroes
 
 		// ---- 业务入口 ----
 
-		/// <summary>存活且蓄满时开启无双，登记独立攻击加成并开始角色残影。</summary>
+		/// <summary>存活且蓄满时开启无双，使出招与运动读取加成并开始角色残影。</summary>
 		/// <returns>本次是否成功开启；按住按键、未满值、已开启或已死亡均不重复开启。</returns>
 		public bool TryActivateMusou()
 		{
 			BattleConfig battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
-			if (!IsShown || Dead || !Musou.TryActivate(battle.WsDuration)) return false;
-			Stats.SetSource(m_MusouSource, [AttributeModifier.PercentMult(StatType.Power, battle.WsPowerMultiplier - 1f)]);
+			if (!IsShown || Dead || GF.Base.IsGamePaused || !Musou.TryActivate()) return false;
 			m_PendingHurt = null;
 			m_MusouAfterimage?.SetEmitting(true);
+			m_MusouIntroEnds = Time.GetTicksMsec() + (ulong)(battle.WsIntroPauseDuration * 1000f);
+			GF.Base.PauseGame();
 			return true;
 		}
 
 		/// <summary>移除局内加成并结束残影采样，不影响成长或装备来源。</summary>
 		private void EndMusou()
 		{
+			EndMusouIntro(true);
 			Musou.Clear();
-			Stats.RemoveSource(m_MusouSource);
 			m_MusouAfterimage?.SetEmitting(false);
 		}
 
 		/// <summary>
-		/// 应用战斗快照：替换成长基础值（保留无双等局内修正），再同步生命魔法上限。
+		/// 应用战斗快照：替换成长基础值并保留局内修正，再同步生命魔法上限。
 		/// 显示时由 OnShow 调用；升级后由关卡收益事务调用。
 		/// </summary>
 		/// <param name="snapshot">由档案构建的出战装配。</param>
@@ -225,7 +241,7 @@ namespace GameLogic.Heroes
 				throw new ArgumentException($"装配属于英雄 {snapshot.HeroId}，不能应用到英雄 {HeroId}。", nameof(snapshot));
 			}
 
-			// 替换成长基础值，保留本局无双等独立来源，再同步资源上限。
+			// 替换成长基础值，保留局内修正，再同步资源上限。
 			Stats.SetBase(snapshot.BaseAttributes);
 			Level = snapshot.Level;
 			SyncVitalsToStats(refill);
@@ -252,17 +268,15 @@ namespace GameLogic.Heroes
 		}
 
 		/// <summary>
-		/// 命中收益（英雄专属）：按本招 AttackConfig.WsGain 掷定无双值并累计。
+		/// 命中收益（英雄专属）：按实际伤害相对出招时攻击力计算官方无双增长。
 		/// 收益规则属于英雄，不进攻击包、不进 ActorEntity（怪物没有无双值）。
 		/// </summary>
 		/// <param name="attack">本次攻击快照，仅在回调内使用。</param>
 		/// <param name="result">目标已完成的伤害结算结果。</param>
 		protected override void OnHitLanded(AttackInstance attack, DamageResult result)
 		{
-			if (ConfigSystem.Instance.Tables.TbAttackConfig.GetOrDefault(attack.AttackId) is { } config)
-			{
-				Musou.Add(GD.RandRange(config.WsGain.X, Mathf.Max(config.WsGain.X, config.WsGain.Y)));
-			}
+			Musou.Add(MusouHelper.HitGain(result.Damage, attack.Attacker.Power,
+				ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsGainPerDamageRatio));
 		}
 
 		/// <summary>
@@ -356,9 +370,13 @@ namespace GameLogic.Heroes
 		/// <summary>提供身体状态机使用的参数快照。</summary>
 		HeroBodyParams IHeroBody.Params => m_BodyParams;
 
-		/// <summary>无双仅提高横向走跑速度，不改变跳跃和动画时序。</summary>
+		/// <summary>无双提高横向走跑速度。</summary>
 		float IHeroBody.MoveSpeedMultiplier => Musou.IsActive
 			? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMoveSpeedMultiplier : 1f;
+
+		/// <summary>无双提高起跳速度；读取时生效，不改写配置快照。</summary>
+		float IHeroBody.JumpSpeedMultiplier => Musou.IsActive
+			? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsJumpSpeedMultiplier : 1f;
 
 		/// <summary>无双期间免受击硬直与击退，仍正常结算伤害。</summary>
 		bool IHeroBody.SuperArmor => Musou.IsActive;
@@ -381,15 +399,18 @@ namespace GameLogic.Heroes
 		/// <returns>范围为零到一的随机值。</returns>
 		float IHeroBody.NextRandom() => GD.Randf();
 
-		/// <summary>提供英雄重力参数。</summary>
-		float IActorBody.Gravity => m_BodyParams.Gravity;
+		/// <summary>提供当前重力，无双时应用官方倍率。</summary>
+		float IActorBody.Gravity => m_BodyParams.Gravity * (Musou.IsActive
+			? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsGravityMultiplier : 1f);
 
 		/// <summary>提交攻击段并装填攻击数据和起手音效。</summary>
 		/// <param name="segment">英雄连段下标。</param>
 		void IActorBody.BeginAttack(int segment)
 		{
 			AttackSegment = segment;
-			ArmAttack(m_OwnAttacks[segment]);
+			// 官方加成乘在整招威力上，包含随机固定加值，避免只放大基础攻击。
+			ArmAttack(m_OwnAttacks[segment], Musou.IsActive
+				? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsAttackMultiplier : 1f);
 			PlaySound(m_OwnAttacks[segment].SoundId);   // 起手音：音源查表，与旧 add_music 同点（第 0 帧）
 		}
 

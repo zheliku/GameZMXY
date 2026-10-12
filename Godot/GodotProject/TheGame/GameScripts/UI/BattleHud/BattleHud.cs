@@ -99,6 +99,8 @@ namespace GameLogic.UI
 		private TextureButton m_SettingsButton;
 		[Export]
 		private EncounterHealthBar m_EncounterHealthBar;
+		[Export]
+		private MusouActivationNode m_MusouActivation;
 
 	}
 }

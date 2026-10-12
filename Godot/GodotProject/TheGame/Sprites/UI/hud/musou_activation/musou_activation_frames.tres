@@ -1,0 +1,52 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_01.png" id="f1"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_02.png" id="f2"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_03.png" id="f3"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_04.png" id="f4"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_05.png" id="f5"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_06.png" id="f6"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_07.png" id="f7"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_08.png" id="f8"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_09.png" id="f9"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_10.png" id="f10"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_11.png" id="f11"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_12.png" id="f12"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_13.png" id="f13"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_14.png" id="f14"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_15.png" id="f15"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_16.png" id="f16"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_17.png" id="f17"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_18.png" id="f18"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_19.png" id="f19"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_20.png" id="f20"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_21.png" id="f21"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_22.png" id="f22"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_23.png" id="f23"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_24.png" id="f24"]
+
+[resource]
+animations = [{"frames": [{"duration": 1.0, "texture": ExtResource("f1")},
+{"duration": 1.0, "texture": ExtResource("f2")},
+{"duration": 1.0, "texture": ExtResource("f3")},
+{"duration": 1.0, "texture": ExtResource("f4")},
+{"duration": 1.0, "texture": ExtResource("f5")},
+{"duration": 1.0, "texture": ExtResource("f6")},
+{"duration": 1.0, "texture": ExtResource("f7")},
+{"duration": 1.0, "texture": ExtResource("f8")},
+{"duration": 1.0, "texture": ExtResource("f9")},
+{"duration": 1.0, "texture": ExtResource("f10")},
+{"duration": 1.0, "texture": ExtResource("f11")},
+{"duration": 1.0, "texture": ExtResource("f12")},
+{"duration": 1.0, "texture": ExtResource("f13")},
+{"duration": 1.0, "texture": ExtResource("f14")},
+{"duration": 1.0, "texture": ExtResource("f15")},
+{"duration": 1.0, "texture": ExtResource("f16")},
+{"duration": 1.0, "texture": ExtResource("f17")},
+{"duration": 1.0, "texture": ExtResource("f18")},
+{"duration": 1.0, "texture": ExtResource("f19")},
+{"duration": 1.0, "texture": ExtResource("f20")},
+{"duration": 1.0, "texture": ExtResource("f21")},
+{"duration": 1.0, "texture": ExtResource("f22")},
+{"duration": 1.0, "texture": ExtResource("f23")},
+{"duration": 1.0, "texture": ExtResource("f24")}], "loop": false, "name": &"musou_activation", "speed": 24.0}]

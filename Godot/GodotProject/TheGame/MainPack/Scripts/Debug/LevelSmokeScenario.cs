@@ -54,6 +54,7 @@ public sealed class LevelSmokeScenario
     private bool m_ExitLatencyRecorded; // 延迟只采样一次，不包含随后验证读盘的时间。
     private bool m_ExitHadPendingLoot; // W 时还有球在飞行；等待真实拾取与额外关卡延迟分别观测。
     private Task m_PlatformCapture; // 第三阶段的实际画面证据。
+    private Task m_FeaturedCapture; // 守关血条的实际位置与无数字画面证据。
     private int m_ExitStep; // 远处按 W、接近、出口交互的验证顺序。
     private bool m_SawFeatured; // 是否实际展示过大猩猩入场和生命条。
     private bool m_WaitingForMap; // 通关后停止访问即将卸载的场景。
@@ -130,9 +131,14 @@ public sealed class LevelSmokeScenario
                     var banner = SmokeInspection.ReadField<EncounterHealthBar>(
                         GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_BattleHud), "m_EncounterHealthBar");
                     if (!ReferenceEquals(m_Level.FeaturedOpponent, monster) || monster.Vitals.MaxHp != 900 ||
-                        !banner.Visible || banner.HasNode("Entrance") ||
+                          !banner.Visible || banner.HasNode("Entrance") ||
+                          !Mathf.IsEqualApprox(banner.GetGlobalRect().GetCenter().X,
+                              banner.GetParent<Control>().GetGlobalRect().GetCenter().X) ||
+                          !Mathf.IsEqualApprox(banner.GetNode<Control>("Health").GlobalPosition.Y, 36f) ||
+                          banner.FindChildren("*", "Label", true, false).Count != 1 ||
                         SmokeInspection.ReadField<Label>(banner, "m_Name").Text != monster.Config.NameCn)
                         Fail("大猩猩配置或守关血条未绑定，或仍残留入场弹窗");
+                    m_FeaturedCapture = CaptureFeaturedAsync();
                 }
                 // 在地形上方横穿当前右门，验证怪物可进入，玩家仍被同一道边界阻挡。
                 float right = m_Gates.BoundsOf(SmokeInspection.Sequence(m_Level).Current.StageOrder).Right;
@@ -190,6 +196,8 @@ public sealed class LevelSmokeScenario
         else if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Completed)
         {
             if (m_PlatformCapture?.IsFaulted == true) { Fail(m_PlatformCapture.Exception.ToString()); return; }
+            if (m_FeaturedCapture?.IsFaulted == true) { Fail(m_FeaturedCapture.Exception.ToString()); return; }
+            if (m_FeaturedCapture is not { IsCompleted: true }) return;
             if (m_ExitStep != 5) Fail("出口尚未完成远处拒绝与靠近交互验证，就提前通关");
             int expected = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages.Sum(x => x.Recipes.Sum(r => r.Count));
             if (m_Seen.Count != expected)
@@ -386,6 +394,9 @@ public sealed class LevelSmokeScenario
         if (m_Step == Step.Kill)
         {
             Move(null);
+            // 守关条先完成真实绘制与截图，再清怪；否则同帧死亡会让截图只留下隐藏后的 HUD。
+            if (m_FeaturedCapture is { IsCompleted: false }) return;
+            if (m_FeaturedCapture?.IsFaulted == true) { Fail(m_FeaturedCapture.Exception.ToString()); return; }
             if (stage.StageOrder == 1 && !m_FirstSpawnEntered)
             {
                 if (m_BattleTime > 15) Fail("首波场外怪物未通过真实 AI 进入画面");
@@ -442,6 +453,20 @@ public sealed class LevelSmokeScenario
         string path = ProjectSettings.GlobalizePath("res://.godot/validation/stage_3_platforms.png");
         if (m_Hero.GetViewport().GetTexture().GetImage().SavePng(path) != Error.Ok)
             throw new IOException("第三阶段平台截图失败。");
+    }
+
+    /// <summary>记录守关对手出现时的真实 HUD，覆盖血条位置及名称与数字显示。</summary>
+    /// <returns>画面保存任务；无渲染器时直接完成。</returns>
+    private async Task CaptureFeaturedAsync()
+    {
+        if (DisplayServer.GetName() == "headless") return;
+        await m_Hero.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        string directory = ProjectSettings.GlobalizePath("res://.godot/validation/encounter");
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "featured_health_bar.png");
+        if (m_Hero.GetViewport().GetTexture().GetImage().SavePng(path) != Error.Ok)
+            throw new IOException("守关血条截图失败。");
+        GD.Print($"SMOKE-LEVEL: featured preview={path}");
     }
 
     private void PlaceForWallTest(float x) // 把玩家放到待测墙边，避免中途被地形或怪物的身体卡住。

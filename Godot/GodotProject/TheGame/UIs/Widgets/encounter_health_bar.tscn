@@ -7,13 +7,15 @@
 [ext_resource type="Texture2D" uid="uid://csf5pqq6wfrx1" path="res://TheGame/Sprites/UI/hud/boss_health_under.png" id="under"]
 
 [node name="EncounterHealthBar" type="Control" unique_id=1140017495 node_paths=PackedStringArray("m_Health", "m_Name")]
-visible = false
 layout_mode = 3
-anchors_preset = 0
-offset_left = 245.0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -202.75
 offset_top = 31.0
-offset_right = 630.0
-offset_bottom = 73.0
+offset_right = 202.75
+offset_bottom = 69.0
+grow_horizontal = 2
 mouse_filter = 2
 script = ExtResource("script")
 m_Health = NodePath("Health")
@@ -21,9 +23,9 @@ m_Name = NodePath("Name")
 
 [node name="Health" type="TextureProgressBar" parent="." unique_id=1120444682]
 layout_mode = 0
-offset_left = 45.0
+offset_left = 65.5
 offset_top = 5.0
-offset_right = 385.0
+offset_right = 405.5
 offset_bottom = 34.0
 mouse_filter = 2
 max_value = 1.0
@@ -44,4 +46,5 @@ theme_override_constants/line_spacing = 0
 theme_override_constants/outline_size = 8
 theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 29
+horizontal_alignment = 1
 vertical_alignment = 1

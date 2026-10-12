@@ -6,5 +6,5 @@
 [node name="LootOrb" type="AnimatedSprite2D" unique_id=480480063]
 z_index = 5
 sprite_frames = ExtResource("frames")
-animation = &"Experience"
+animation = &"Musou"
 script = ExtResource("script")

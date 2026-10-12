@@ -1,3 +1,10 @@
 # Docs 导航
 
-文档维护与验证规则见 [`ProjectGuidelines/AGENTS.md`](ProjectGuidelines/AGENTS.md)；项目现状文档记录经代码核实的事实，不替代规范模块。
+唯一规范入口：[ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md)。
+
+- [ProjectTour](ProjectTour.md)：启动、职责、类图、击杀调用链与代码入口。
+- [OfficialReference](OfficialReference.md)：官方原文件、无双规则、球颜色、关卡数据及项目差异。
+- [LegacyAssetMap](LegacyAssetMap.md)：素材路径、来源、散列与复现工具。
+- [Validation](Validation.md)：验证命令、最近结果与已知限制。
+
+规则只在 ProjectGuidelines 维护；其余文档说明当前事实，不按每轮任务新增交付记录。

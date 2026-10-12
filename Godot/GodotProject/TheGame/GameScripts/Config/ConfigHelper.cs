@@ -100,11 +100,16 @@ namespace GameLogic.Config
 			}
 
 			var battle = tables.TbBattleConfig.Data;
-			if (battle.WsMax <= 0 || !float.IsFinite(battle.WsDuration) || battle.WsDuration <= 0f
-				|| !float.IsFinite(battle.WsPowerMultiplier) || battle.WsPowerMultiplier < 1f
-				|| !float.IsFinite(battle.WsMoveSpeedMultiplier) || battle.WsMoveSpeedMultiplier < 1f)
+			if (battle.WsMax <= 0 || !float.IsFinite(battle.WsDrainPerSecond) || battle.WsDrainPerSecond <= 0f
+				|| !float.IsFinite(battle.WsIntroPauseDuration) || battle.WsIntroPauseDuration <= 0f
+				|| !float.IsFinite(battle.WsGainPerDamageRatio) || battle.WsGainPerDamageRatio <= 0f
+				|| !float.IsFinite(battle.WsDecayPerSecond) || battle.WsDecayPerSecond <= 0f
+				|| !float.IsFinite(battle.WsAttackMultiplier) || battle.WsAttackMultiplier < 1f
+				|| !float.IsFinite(battle.WsMoveSpeedMultiplier) || battle.WsMoveSpeedMultiplier < 1f
+				|| !float.IsFinite(battle.WsJumpSpeedMultiplier) || battle.WsJumpSpeedMultiplier < 1f
+				|| !float.IsFinite(battle.WsGravityMultiplier) || battle.WsGravityMultiplier < 1f)
 			{
-				errors.Add("战斗常数：无双上限与持续时间必须为正，攻击和移速倍率必须为有限数且至少为 1。");
+				errors.Add("战斗常数：无双上限、每秒衰减/消耗、蓄力系数和开启停顿须为正；攻击、移速、跳跃和重力倍率须有限且至少为 1。");
 			}
 
 			if (errors.Count > 0)
@@ -121,7 +126,7 @@ namespace GameLogic.Config
         private static void ValidateDrops(Tables tables, List<string> errors)
         {
             var drop = tables.TbDropConfig.Data;
-            if (drop.ExperienceOrbCount.X < 1 || drop.ExperienceOrbCount.Y < drop.ExperienceOrbCount.X ||
+            if (drop.MusouPerOrb <= 0 ||
                 drop.ManaMinimum < 0 || !float.IsFinite(drop.ManaMaxFraction) || drop.ManaMaxFraction < 0f ||
                 !float.IsFinite(drop.ScatterRadius) || drop.ScatterRadius < 0f ||
                 !float.IsFinite(drop.Delay) || drop.Delay < 0f ||
@@ -136,8 +141,10 @@ namespace GameLogic.Config
             {
                 if (monster.SoulPerOrb < 0 || monster.SoulCount.X < 0 || monster.SoulCount.Y < monster.SoulCount.X ||
                     !float.IsFinite(monster.ManaDropChance) || monster.ManaDropChance is < 0f or > 1f ||
-                    monster.ManaCount.X < 1 || monster.ManaCount.Y < monster.ManaCount.X)
-                    errors.Add($"怪物 {monster.Id}：灵魂数量和蓝球概率/数量配置非法。");
+                    monster.ManaCount.X < 1 || monster.ManaCount.Y < monster.ManaCount.X ||
+                    !float.IsFinite(monster.MusouDropChance) || monster.MusouDropChance is < 0f or > 1f ||
+                    monster.MusouCount.X < 1 || monster.MusouCount.Y < monster.MusouCount.X)
+                    errors.Add($"怪物 {monster.Id}：灵魂数量和蓝球/无双球概率、数量配置非法。");
             }
         }
 

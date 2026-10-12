@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using GameConfig.Monster;
+using GameConfig.Constant;
 using GameLogic.Drops;
 using Godot;
 using GodotGameFramework.NodePool;
@@ -10,7 +11,6 @@ namespace GameLogic.Level;
 /// <summary>关卡拥有的飞行掉落；拾取才入账，死亡、放弃和卸载时回收未领取的球。</summary>
 public partial class LevelModule
 {
-    private const string LootOrbScene = "res://TheGame/Entitys/LootOrb.tscn"; // GGF 节点池注册的可复用场景。
     private readonly HashSet<LootOrbNode> m_LootOrbs = new(); // 仅本关当前在场的球，不用全池清理影响其他作用域。
     private readonly RandomNumberGenerator m_LootRandom = new(); // 本关掉落采样器；纯规则通过委托取值。
     private bool m_ExitRequested; // W 已确认，等待尚在飞行的球接触后提交检查点。
@@ -23,12 +23,13 @@ public partial class LevelModule
     {
         if (Outcome != LevelOutcome.Running || !m_Player.IsAlive) return;
         m_DefeatedMonsterCount++;
+        AwardExperience(experienceReward);
         var config = ConfigSystem.Instance.Tables.TbDropConfig.Data;
         try
         {
-            foreach (LootReward reward in LootHelper.Roll(monster, experienceReward, config, m_LootRandom.Randf))
+            foreach (LootReward reward in LootHelper.Roll(monster, config, m_LootRandom.Randf))
             {
-                var orb = NodePool.Instance.Get<LootOrbNode>(LootOrbScene, this)
+                var orb = NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Entitys_LootOrb, this)
                     ?? throw new InvalidOperationException("飞行掉落节点池未注册或资源无法显示。");
                 m_LootOrbs.Add(orb);
                 Vector2 offset = new(m_LootRandom.RandfRange(-config.ScatterRadius, config.ScatterRadius),
@@ -56,7 +57,7 @@ public partial class LevelModule
             switch (reward.Kind)
             {
                 case LootKind.Soul: m_Profile.Wallet.AddSoul(reward.Amount); break;
-                case LootKind.Experience: AwardExperience(reward.Amount); break;
+                case LootKind.Musou: m_Player.Musou.AddFromPickup(reward.Amount); break;
                 case LootKind.Mana:
                     m_Player.Vitals.RestoreMp(LootHelper.ManaAmount(m_Player.Vitals.MaxMp,
                         ConfigSystem.Instance.Tables.TbDropConfig.Data));

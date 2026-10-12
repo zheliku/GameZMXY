@@ -1,4 +1,5 @@
 using Godot;
+using GameLogic.Heroes.Body;
 
 namespace GameLogic.Heroes.Effects;
 
@@ -18,7 +19,7 @@ public partial class HeroLevelUpNode : AnimatedSprite2D
         Stop();
         Frame = 0;
         Visible = true;
-        Play("level_up");
+        Play(HeroAnims.LevelUp);
     }
 
     /// <summary>动画结束或英雄回池时停止并隐藏，防止下一次显示残留。</summary>

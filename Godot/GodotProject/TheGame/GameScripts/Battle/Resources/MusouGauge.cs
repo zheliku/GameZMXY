@@ -2,16 +2,17 @@ using System;
 
 namespace GameLogic.Battle.Resources;
 
-/// <summary>英雄无双：命中蓄力，满值开启后按持续时间耗尽；只存在于关卡运行期，不写入存档。</summary>
+/// <summary>英雄无双：伤害比例蓄力，未满时定时衰减，满值保留；开启后耗尽，不写入存档。</summary>
 public sealed class MusouGauge
 {
-	private float m_Duration; // 本次无双持续秒数，用于把剩余时长映射回进度。
-
-	/// <summary>无双状态剩余秒数；零表示尚未开启或已经结束。</summary>
-	public float RemainingSeconds { get; private set; }
+	private const double TickTolerance = 1e-5; // 浮点秒数累计的点数容差。
+	private double m_DrainProgress; // 开启消耗尚不足一点的累计量。
+	private float m_DrainPerSecond; // 开启后额外消耗的点数/秒。
+	private double m_DecayProgress; // 自然衰减尚不足一点的累计量；命中不重置。
+	private float m_DecayPerSecond; // 未满时自然衰减的点数/秒。
 
 	/// <summary>当前处于无双状态。</summary>
-	public bool IsActive => RemainingSeconds > 0f;
+	public bool IsActive { get; private set; }
 
 	/// <summary>当前无双值。</summary>
 	public int Value { get; private set; }
@@ -23,77 +24,89 @@ public sealed class MusouGauge
 	public bool IsFull => !IsActive && Max > 0 && Value >= Max;
 
 	/// <summary>数值与上限更新或重置完成后同步通知外部观察者。</summary>
-	/// <remarks>订阅方读取 Value、Max、IsFull 与 IsActive；状态切换也会通知，剩余时长的逐帧变化不单独通知。</remarks>
+	/// <remarks>订阅方读取 Value、Max、IsFull 与 IsActive；一次推进完成后通知。</remarks>
 	public event Action Changed;
 
 	/// <summary>设置上限并清零（实体显示时调用）。</summary>
 	/// <param name="max">无双上限，下限 0。</param>
-	public void Reset(int max)
+	/// <param name="decayPerSecond">自然衰减速度，有限正点数/秒。</param>
+	/// <param name="drainPerSecond">开启后额外消耗速度，有限正点数/秒。</param>
+	/// <exception cref="ArgumentOutOfRangeException">衰减参数非法。</exception>
+	public void Reset(int max, float decayPerSecond, float drainPerSecond)
 	{
+		if (!float.IsFinite(decayPerSecond) || decayPerSecond <= 0f
+			|| !float.IsFinite(drainPerSecond) || drainPerSecond <= 0f)
+			throw new ArgumentOutOfRangeException(nameof(decayPerSecond), "无双每秒衰减和消耗必须为有限正数。");
 		Max = Math.Max(0, max);
+		m_DecayPerSecond = decayPerSecond;
+		m_DecayProgress = 0;
+		m_DrainPerSecond = drainPerSecond;
+		m_DrainProgress = 0;
 		Value = 0;
-		RemainingSeconds = 0f;
-		m_Duration = 0f;
+		IsActive = false;
 		Changed?.Invoke();
 	}
 
-	/// <summary>累计无双值，不超过上限。</summary>
-	/// <param name="amount">增加量；非正数不处理。</param>
+	/// <summary>按官方规则累计：正在开启或本次加值会超过上限时整次不增加。</summary>
+	/// <param name="amount">增加量；非正数不处理，满值保持。</param>
 	public void Add(int amount)
 	{
-		if (amount <= 0 || Value >= Max || IsActive)
-		{
-			return;
-		}
+		if (!IsActive) AddFromPickup(amount);
+	}
 
-		Value += Math.Min(amount, Max - Value);
+	/// <summary>黄球增加无双；开启期间也可补充，超过上限仍整次忽略。</summary>
+	/// <param name="amount">本颗黄球的配置值，通常为 5。</param>
+	public void AddFromPickup(int amount)
+	{
+		if (amount <= 0 || amount > Max - Value) return;
+		Value += amount;
 		Changed?.Invoke();
 	}
 
-	/// <summary>消耗全部无双值（释放无双技）。</summary>
-	/// <returns>是否已蓄满并已清零。</returns>
-	public bool TryConsume()
+	/// <summary>蓄满时开启无双；激活期间不再次开启，也不累计命中收益。</summary>
+	/// <returns>是否已进入无双状态。</returns>
+	public bool TryActivate()
 	{
 		if (!IsFull)
 		{
 			return false;
 		}
 
-		Value = 0;
+		IsActive = true;
+		m_DrainProgress = 0;
 		Changed?.Invoke();
 		return true;
 	}
 
-	/// <summary>蓄满时开启无双；激活期间不再次开启，也不累计命中收益。</summary>
-	/// <param name="duration">配置提供的持续秒数，必须是有限正数。</param>
-	/// <returns>是否已进入无双状态。</returns>
-	public bool TryActivate(float duration)
-	{
-		if (!IsFull || !float.IsFinite(duration) || duration <= 0f)
-		{
-			return false;
-		}
-
-		m_Duration = duration;
-		RemainingSeconds = duration;
-		Changed?.Invoke();
-		return true;
-	}
-
-	/// <summary>推进无双时间并同步进度；暂停时宿主不推进。</summary>
+	/// <summary>推进未满时的自然衰减或开启后的耗尽；满值保留，暂停时宿主不推进。</summary>
 	/// <param name="delta">本次物理步长秒数。</param>
 	public void Advance(float delta)
 	{
-		if (!IsActive || !float.IsFinite(delta) || delta <= 0f)
+		if (!float.IsFinite(delta) || delta <= 0f)
 		{
 			return;
 		}
 
-		RemainingSeconds = Math.Max(0f, RemainingSeconds - delta);
-		int value = (int)Math.Ceiling(Max * (double)RemainingSeconds / m_Duration);
-		if (Value != value || !IsActive)
+		if (IsFull || m_DecayPerSecond <= 0f) return;
+		int before = Value;
+		bool wasActive = IsActive;
+		// 官方满值不推进自然衰减；首次开启扣点后，普通衰减恢复。
+		double decayDelta = delta;
+		if (IsActive)
 		{
-			Value = value;
+			if (Value == Max) decayDelta = Math.Max(0, delta - (1 - m_DrainProgress) / m_DrainPerSecond);
+			m_DrainProgress += delta * (double)m_DrainPerSecond;
+			double ticks = Math.Floor(m_DrainProgress + TickTolerance);
+			m_DrainProgress = Math.Max(0, m_DrainProgress - ticks);
+			Value = (int)Math.Max(0, Value - ticks);
+		}
+		m_DecayProgress += decayDelta * m_DecayPerSecond;
+		double decayTicks = Math.Floor(m_DecayProgress + TickTolerance);
+		m_DecayProgress = Math.Max(0, m_DecayProgress - decayTicks);
+		Value = (int)Math.Max(0, Value - decayTicks);
+		if (Value == 0) IsActive = false;
+		if (before != Value || wasActive != IsActive)
+		{
 			Changed?.Invoke();
 		}
 	}
@@ -101,14 +114,11 @@ public sealed class MusouGauge
 	/// <summary>立即结束并清空进度（死亡或隐藏），不影响无双上限。</summary>
 	public void Clear()
 	{
-		if (Value == 0 && !IsActive)
-		{
-			return;
-		}
-
+		bool changed = Value != 0 || IsActive;
 		Value = 0;
-		RemainingSeconds = 0f;
-		m_Duration = 0f;
-		Changed?.Invoke();
+		IsActive = false;
+		m_DrainProgress = 0;
+		m_DecayProgress = 0;
+		if (changed) Changed?.Invoke();
 	}
 }

@@ -2,7 +2,7 @@
 
 本目录是 GameZMXY 唯一规范源。根及其他目录的 `AGENTS.md` 只作导航；规范正文集中在以下模块：
 
-模块中的 `TheGame/...` 路径相对 `Godot/GodotProject/`；`Configs/`、`Docs/`、`Tools/` 路径相对仓库根。`Docs/EngineeringStandards.md` 是通用模板，不是本项目规范。
+模块中的 `TheGame/...` 路径相对 `Godot/GodotProject/`；`Configs/`、`Docs/`、`Tools/` 路径相对仓库根。
 
 - [00 架构](00-Architecture.md)：项目边界、分层、依赖、运行时约束。
 - [10 C#](10-CSharp.md)：命名、XML 文档、类型与代码约定。

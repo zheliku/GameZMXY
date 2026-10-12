@@ -32,9 +32,9 @@ public partial class TbDropConfig
     /// </summary>
      public string NameCn => _data.NameCn;
     /// <summary>
-    /// 经验球数量区间；总经验不变
+    /// 每颗黄球无双值（官方 auraWhile.power=5）
     /// </summary>
-     public Godot.Vector2I ExperienceOrbCount => _data.ExperienceOrbCount;
+     public int MusouPerOrb => _data.MusouPerOrb;
     /// <summary>
     /// 每颗蓝球最低回蓝量
     /// </summary>

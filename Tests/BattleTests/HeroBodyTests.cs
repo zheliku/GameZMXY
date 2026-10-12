@@ -354,12 +354,13 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal(-1, h.Body.Facing);
 		}
 
-		/// <summary>无双移速作用于横向控制；霸体解除已生效硬直，跳跃速度保持配置值。</summary>
+		/// <summary>无双提高横向与起跳速度；霸体解除已生效硬直。</summary>
 		[Fact]
 		public void Musou_SpeedsHorizontalMotionAndReleasesHurt()
 		{
 			using HeroHarness h = new(Params());
 			h.Body.MoveSpeedMultiplier = 1.5f;
+			h.Body.JumpSpeedMultiplier = 1.5f;
 			h.Step(1, move: 1);
 			Assert.Equal(180f, h.Body.Velocity.X);
 			h.Body.PendingHurt = new Vector2(-400f, 0f);
@@ -370,9 +371,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("Ground", h.State);
 			Assert.Equal(0f, h.Body.Velocity.X);
 			h.Press(jump: true);
-			using HeroHarness normal = new(Params());
-			normal.Press(jump: true);
-			Assert.Equal(normal.Body.Velocity.Y, h.Body.Velocity.Y);
+			Assert.Equal(-h.Body.Params.JumpSpeed * 1.5f + h.Body.Gravity * Dt, h.Body.Velocity.Y, 3);
 		}
 
 		// ---------------------------------------------------------------- 假宿主与驱动
@@ -390,6 +389,8 @@ namespace GameLogic.Battle.Tests
 			public HeroBodyParams Params { get; }
 			/// <summary>测试注入的横向移动倍率。</summary>
 			public float MoveSpeedMultiplier { get; set; } = 1f;
+			/// <summary>测试注入的起跳速度倍率。</summary>
+			public float JumpSpeedMultiplier { get; set; } = 1f;
 			/// <summary>测试注入的霸体能力。</summary>
 			public bool SuperArmor { get; set; }
 			/// <summary>由测试驱动的输入状态。</summary>

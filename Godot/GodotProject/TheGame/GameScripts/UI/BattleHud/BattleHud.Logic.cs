@@ -18,6 +18,7 @@ public partial class BattleHud
 {
     private BattleHudData m_Data; // 本次打开的状态源引用，关闭后释放。
     private MonsterEntity m_Opponent; // 本次观察的守关怪，实体所有权仍归关卡。
+    private bool m_WasMusouActive; // 当前绑定观察到的激活边沿，避免每次扣点重播。
 
     /// <summary>初始化框架字段；业务订阅只在 OnOpen 建立。</summary>
     /// <param name="serialId">界面请求编号。</param>
@@ -70,13 +71,14 @@ public partial class BattleHud
         }
 
         if (m_HpBar == null || m_MpBar == null || m_ExpBar == null || m_LevelLabel == null ||
-            m_WsBar == null || m_WsMax == null || m_Go == null || m_EncounterHealthBar == null)
+            m_WsBar == null || m_WsMax == null || m_Go == null || m_EncounterHealthBar == null || m_MusouActivation == null)
         {
             throw new InvalidOperationException("BattleHud 必须绑定资源条、无双满值提示、等级、Go 和守关怪提示节点。");
         }
 
         // 先登记本次引用再订阅，部分订阅失败时也能完整退订。
         m_Data = data;
+        m_WasMusouActive = data.Hero.Musou.IsActive;
         try
         {
             data.Hero.Vitals.Changed += RefreshVitals;
@@ -165,6 +167,8 @@ public partial class BattleHud
         }
 
         ResetMusouAnimation();
+        if (IsInstanceValid(m_MusouActivation)) m_MusouActivation.Reset();
+        m_WasMusouActive = false;
         BindEncounter(null);
         if (IsInstanceValid(m_Go))
         {
@@ -219,6 +223,9 @@ public partial class BattleHud
     private void RefreshMusou()
     {
         var musou = m_Data.Hero.Musou;
+        if (musou.IsActive && !m_WasMusouActive) m_MusouActivation.ShowActivation();
+        else if (!musou.IsActive) m_MusouActivation.Reset();
+        m_WasMusouActive = musou.IsActive;
         m_WsBar.SetValue(musou.Value, musou.Max);
         if (!musou.IsFull)
         {

@@ -86,7 +86,7 @@ namespace GameLogic.Heroes.Body
 
 			body.JumpCount++;
 			body.ComboIndex = 0;
-			body.Velocity = new Godot.Vector2(body.Velocity.X, -body.Params.JumpSpeed);
+			body.Velocity = new Godot.Vector2(body.Velocity.X, -body.Params.JumpSpeed * body.JumpSpeedMultiplier);
 			return true;
 		}
 

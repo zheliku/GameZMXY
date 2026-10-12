@@ -25,7 +25,6 @@ public sealed partial class AttackConfig : Luban.BeanBase
         FlatPower = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         DamageKind = (Battle.DamageKind)_buf.ReadInt();
         Knockback = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
-        WsGain = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
         HitProtect = _buf.ReadInt();
         SoundId = (Sound.SoundId)_buf.ReadInt();
         HitSoundId = (Sound.SoundId)_buf.ReadInt();
@@ -80,10 +79,6 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// 击退(X&gt;0=远离攻击者,Y&lt;0=向上;单位同旧 hurtBack,乘 BattleConfig.KnockbackScale* 换算 px/s,写法 2,0)
     /// </summary>
     public readonly Godot.Vector2 Knockback;
-    /// <summary>
-    /// 命中获得无双值范围(旧 WSValue,X=下限,Y=上限,写法 3,5)
-    /// </summary>
-    public readonly Godot.Vector2I WsGain;
     /// <summary>
     /// 受击保护累计值(旧 HitProtect)
     /// </summary>
@@ -148,7 +143,6 @@ public sealed partial class AttackConfig : Luban.BeanBase
         + "FlatPower:" + FlatPower + ","
         + "DamageKind:" + DamageKind + ","
         + "Knockback:" + Knockback + ","
-        + "WsGain:" + WsGain + ","
         + "HitProtect:" + HitProtect + ","
         + "SoundId:" + SoundId + ","
         + "HitSoundId:" + HitSoundId + ","

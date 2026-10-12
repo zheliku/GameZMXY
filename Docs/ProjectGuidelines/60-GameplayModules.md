@@ -15,7 +15,7 @@
 - **战斗 HUD**：`UIs/BattleHud.tscn`（`UIFormId.BattleHud`），打开参数 `BattleHudData`（英雄、档案成长、关卡）；订阅 `Vitals/Musou/HeroProgression.Changed` 与 `TravelAvailableChanged`，变化时拉取一致快照刷新被动 `ResourceBar`；关闭时对称退订。技能槽、增益和护体待对应玩法接入。
 - **血条表现**：小怪受伤后重新以不透明显示，按 BattleConfig.MonsterHealthBarFadeDuration（当前官方值 2 秒）淡出并隐藏；治疗更新比例但不延长显示，暂停时停止计时，死亡/隐藏/复用复位。守关 HUD 无入场弹窗，名称在左侧，白字黑边华康海报体，右侧原笔刷条，不显示当前/最大生命数字；HUD 订阅生命并把完整数值交给被动 EncounterHealthBar。
 - **阶段编排**：唯一当前阶段使用 `Ready → Travelling → Fighting → Travelling/AwaitingExit → Completed`，停止后为 `Stopped`。普通关卡每段都由实际相机抵达启动；清波不会直接生成下一波。特殊阶段可选 `Trigger`，只启用当前触发区并过滤本会话玩家。
-- **空间与相机**：门集合从阶段独立左右门预计算区域，允许重叠；行进保留旧左界、启用新右界，抵达后只保留本场左右门。门仅约束玩家，怪物可从场外进入。花果山前四波恢复官方出生点、延迟及边界，依据与第五波缺口见 [OfficialHuaguoshan.md](../OfficialHuaguoshan.md)。清波后到下一场开战之间显示 Go，取景仍保留用户指定中央 ±40px 死区。
+- **空间与相机**：阶段独立左右门允许区域重叠；行进保留旧左界、启用新右界，抵达后只保留本场左右门。门仅约束玩家，怪物可从场外进入。花果山五波配方与官方标记依据见 [OfficialReference](../OfficialReference.md)；用户后续调整的点位以场景为准。清波后到下场开战之间显示 Go，取景保留中央 ±40px 死区。
 - **配方与实体**：`LevelConfig` 以 `LevelId` 为主键，`*Stages / *Recipes` 是嵌套多行列表；同段各配方并行。`LevelSpawnSchedule` 按游戏时间调度、轮转分配并存名额；`LevelSpawnerNode` 按死亡事件归还名额，配方全部发完且存活/在途清空才报告清波。
 - **所有权与退出**：本关所有运行实体 ID（含死亡动画中的实体）由刷怪服务持有；停止时取消会话、退订、按 ID 隐藏。异步显示返回后使用捕获的令牌和服务清理旧结果；失败回到流程统一结束（运行回滚）。
 - **场景首版**：`Level_1.tscn` 登记十五个生成点（玩家 + 五波十四处）、九个独立阶段边界和一个出口实例；`TestArena.tscn` 不进入游戏流程，F6 运行（详见 [40-ScenesAndAssets.md](40-ScenesAndAssets.md)）。

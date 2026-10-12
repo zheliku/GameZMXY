@@ -19,6 +19,9 @@ namespace GameLogic.Heroes.Body
 		/// <summary>局内效果对横向移动的倍率，默认不加成。</summary>
 		float MoveSpeedMultiplier => 1f;
 
+		/// <summary>局内效果对起跳速度的倍率，默认不加成。</summary>
+		float JumpSpeedMultiplier => 1f;
+
 		/// <summary>是否免受击硬直与击退；不代表免伤。</summary>
 		bool SuperArmor => false;
 

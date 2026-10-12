@@ -46,9 +46,14 @@ public sealed partial class BattleConfig : Luban.BeanBase
         WsMax = _buf.ReadInt();
         DeathRestartDelay = _buf.ReadFloat();
         MonsterHealthBarFadeDuration = _buf.ReadFloat();
-        WsDuration = _buf.ReadFloat();
-        WsPowerMultiplier = _buf.ReadFloat();
+        WsGainPerDamageRatio = _buf.ReadFloat();
+        WsAttackMultiplier = _buf.ReadFloat();
         WsMoveSpeedMultiplier = _buf.ReadFloat();
+        WsJumpSpeedMultiplier = _buf.ReadFloat();
+        WsGravityMultiplier = _buf.ReadFloat();
+        WsDecayPerSecond = _buf.ReadFloat();
+        WsDrainPerSecond = _buf.ReadFloat();
+        WsIntroPauseDuration = _buf.ReadFloat();
     }
 
     public static BattleConfig DeserializeBattleConfig(ByteBuf _buf)
@@ -177,17 +182,37 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// </summary>
     public readonly float MonsterHealthBarFadeDuration;
     /// <summary>
-    /// 无双持续秒数（旧项目每0.5秒扣4/100，共12.5秒）
+    /// 命中蓄力：伤害/基础攻击&#215;系数；不改变攻击力
     /// </summary>
-    public readonly float WsDuration;
+    public readonly float WsGainPerDamageRatio;
     /// <summary>
-    /// 无双攻击力独立倍率（旧项目1.5）
+    /// 开启后整招威力倍率（含固定加值）
     /// </summary>
-    public readonly float WsPowerMultiplier;
+    public readonly float WsAttackMultiplier;
     /// <summary>
-    /// 无双横向移速倍率（旧项目1.5）
+    /// 开启后走路、跑步速度倍率
     /// </summary>
     public readonly float WsMoveSpeedMultiplier;
+    /// <summary>
+    /// 开启后起跳速度倍率
+    /// </summary>
+    public readonly float WsJumpSpeedMultiplier;
+    /// <summary>
+    /// 开启后重力倍率
+    /// </summary>
+    public readonly float WsGravityMultiplier;
+    /// <summary>
+    /// 未满时自然衰减（点/秒）；开启期间仍生效
+    /// </summary>
+    public readonly float WsDecayPerSecond;
+    /// <summary>
+    /// 开启后额外消耗（点/秒）
+    /// </summary>
+    public readonly float WsDrainPerSecond;
+    /// <summary>
+    /// 开启演出暂停（秒）；不计入消耗时间
+    /// </summary>
+    public readonly float WsIntroPauseDuration;
    
     public const int __ID__ = -1776797808;
     public override int GetTypeId() => __ID__;
@@ -229,9 +254,14 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "WsMax:" + WsMax + ","
         + "DeathRestartDelay:" + DeathRestartDelay + ","
         + "MonsterHealthBarFadeDuration:" + MonsterHealthBarFadeDuration + ","
-        + "WsDuration:" + WsDuration + ","
-        + "WsPowerMultiplier:" + WsPowerMultiplier + ","
+        + "WsGainPerDamageRatio:" + WsGainPerDamageRatio + ","
+        + "WsAttackMultiplier:" + WsAttackMultiplier + ","
         + "WsMoveSpeedMultiplier:" + WsMoveSpeedMultiplier + ","
+        + "WsJumpSpeedMultiplier:" + WsJumpSpeedMultiplier + ","
+        + "WsGravityMultiplier:" + WsGravityMultiplier + ","
+        + "WsDecayPerSecond:" + WsDecayPerSecond + ","
+        + "WsDrainPerSecond:" + WsDrainPerSecond + ","
+        + "WsIntroPauseDuration:" + WsIntroPauseDuration + ","
         + "}";
     }
 }

@@ -133,14 +133,15 @@ namespace GameLogic.Battle.Tests
 			MusouGauge gauge = new();
 			int notifications = 0;
 			gauge.Changed += () => notifications++;
-			gauge.Reset(100);
+			gauge.Reset(100, 1f, 6f);
 			gauge.Add(60);
-			Assert.False(gauge.TryConsume());
+			Assert.False(gauge.TryActivate());
 			gauge.Add(60);
-			gauge.Add(5);
+			Assert.Equal(60, gauge.Value);
+			gauge.Add(40);
 			Assert.True(gauge.IsFull);
 			Assert.Equal(100, gauge.Value);
-			Assert.True(gauge.TryConsume());
+			gauge.Clear();
 			Assert.Equal(0, gauge.Value);
 			Assert.Equal(4, notifications);
 		}
