@@ -6,7 +6,7 @@
 
 `Launch → Update → Preload → Title（开始、六格存档）→ LoadProfile → 新档 Character / 已有档 Map → 点击花果山 → Level`。
 
-当前只有悟空和花果山开放。未解锁角色无交互；选角卡片自带姓名，悬停显示颜色和 1P。关卡清场后靠近出口、落地按 W，待掉落拾取和检查点完成即回地图；死亡保留收益并重开，设置中途返回则回滚。
+当前只有悟空和花果山开放。未解锁角色无交互；选角卡片自带姓名，悬停显示颜色和 1P。关卡清场后靠近出口、落地按 W，待掉落拾取后显示成功结算；死亡保留收益并显示失败结算。成功返回地图，失败可重试或返回地图；导航等待检查点完成。设置中途返回仍回滚。
 
 ## 对象与状态归属
 
@@ -14,6 +14,8 @@
 classDiagram
     GameContext o-- PlayerProfile
     GameContext o-- SaveModule
+    GameContext o-- EquipmentModule
+    EquipmentModule --> HeroLoadout
     PlayerProfile *-- HeroProgression
     PlayerProfile *-- Wallet
     SaveModule *-- SaveSlotDirectory
@@ -32,6 +34,9 @@ classDiagram
     BattleHud --> HeroEntity
     BattleHud --> HeroProgression
     BattleHud --> LevelModule
+    InventoryForm --> HeroEntity
+    InventoryForm --> PlayerProfile
+    SettlementForm --> LevelResult
 ```
 
 | 状态 | 所有者 / 生命周期 |
@@ -55,6 +60,17 @@ classDiagram
 | [ActorEntity](../Godot/GodotProject/TheGame/GameScripts/Entity/ActorEntity.cs) | 出招快照、判定去重、DamageHelper、扣血与死亡事实 |
 | [HeroEntity](../Godot/GodotProject/TheGame/GameScripts/Entity/Heroes/HeroEntity.cs) | 输入、身体状态、无双秒制计时与加成 |
 | [BattleHud.Logic](../Godot/GodotProject/TheGame/GameScripts/UI/BattleHud/BattleHud.Logic.cs) | 订阅、立即刷新、关闭退订；控件只接收数值 |
+| [EquipmentModule](../Godot/GodotProject/TheGame/GameScripts/Equipment/EquipmentModule.cs) | 出战和升级共用的装配入口，生成 HeroLoadout；后续装备修正在这里汇入 |
+| [InventoryForm.Logic](../Godot/GodotProject/TheGame/GameScripts/UI/InventoryForm/InventoryForm.Logic.cs) | 实际属性、经验、灵魂与 5×5 格；打开暂停，关闭退订；预览与战斗实体分离 |
+| [SettlementForm.Logic](../Godot/GodotProject/TheGame/GameScripts/UI/SettlementForm/SettlementForm.Logic.cs) | 只读冻结的 LevelResult，提交带窗口编号的地图或重试事件 |
+
+背包场景按 `Window / CharacterPanel（Identity、EquipmentSlots、Attributes、Experience）/ BagPanel（Tabs、BagGrid、Footer）` 分组。每项属性有独立的 Caption 与数值 Label。外置 `hero_preview.tscn` 和动画库只含身体、武器与光效表现，不创建第二个战斗实体。
+
+预览采用独立场景组合，动画保存为外置资源；参考 Godot 官方的 [场景组织](https://docs.godotengine.org/en/stable/tutorials/best_practices/scene_organization.html) 与 [Resources](https://docs.godotengine.org/en/stable/tutorials/scripting/resources.html)。数值配置和档案所有权仍遵循本项目的 Luban 与 PlayerProfile 约定。
+
+目前装备位、分类和页码只展示，不接受物品操作；没有虚构物品、战斗力或额外空存档字段。物品实例与穿戴状态后续归入 PlayerProfile，并在同次开发补齐存档映射、回滚及版本变更。当前数值沿用造梦一战斗配置，造梦三截图仅作为界面参考。
+
+结算展示实际游玩秒数（不含暂停）、剩余生命比例、击败数和发放经验。连击与评分尚未实现，因此未显示虚构成绩。按本次用户要求替换第 60 章旧的自动重开/直接回地图行为，并将装配工厂从 HeroLoadout.Create 移到 EquipmentModule.CreateLoadout，HeroLoadout 保留为不可变输入；规范正文的旧描述保留待用户同步。
 
 ## 追一次击杀
 

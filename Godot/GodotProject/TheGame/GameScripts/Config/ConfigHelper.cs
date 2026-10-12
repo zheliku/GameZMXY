@@ -93,7 +93,7 @@ namespace GameLogic.Config
                     errors.Add($"关卡 {level.LevelId}：MusicId={level.MusicId} 必须引用 Music 组音效配置。");
             }
 
-			if (!float.IsFinite(tables.TbBattleConfig.DeathRestartDelay) || tables.TbBattleConfig.DeathRestartDelay < 0f ||
+			if (!float.IsFinite(tables.TbBattleConfig.DeathSettlementDelay) || tables.TbBattleConfig.DeathSettlementDelay < 0f ||
                 !float.IsFinite(tables.TbBattleConfig.MonsterHealthBarFadeDuration) || tables.TbBattleConfig.MonsterHealthBarFadeDuration <= 0f)
 			{
 				errors.Add("战斗常数：死亡等待必须非负，小怪血条淡出秒数必须为正，且均为有限数。");

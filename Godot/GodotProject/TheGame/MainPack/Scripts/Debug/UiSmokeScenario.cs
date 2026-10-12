@@ -1,3 +1,4 @@
+using GameLogic.Equipment;
 using GameLogic.Level;
 using GameLogic.Heroes.Body;
 using GameLogic.Battle.Resources;
@@ -77,6 +78,7 @@ public sealed partial class UiSmokeScenario
             Check(onDisk?.SaveVersion == GameData.CurrentVersion && onDisk.Heroes.Count == 1, "首次启动未按当前版本写回新档");
             CheckDisplay(hud, hero, context.Profile.ActiveHero, level);
 
+            await CheckInventoryAsync(hud, hero, context, level);
             await CheckHudLifecycleAsync(hud, hero, context, level);
             await CheckEntityReuseAsync(context);
             m_TestHud = await OpenHudAsync(new BattleHudData(hero, context.Profile.ActiveHero, level));
@@ -110,7 +112,7 @@ public sealed partial class UiSmokeScenario
             Check(progression.TotalExperience == before, "中途离开没有回滚关内收益");
             Check(context.Profile.Wallet.Soul == soulBefore, "中途离开没有回滚已拾取的灵魂");
 
-            // 死亡：提交本关收益（写盘），延迟后自动重开。关卡运行在击杀前捕获，重开后流程会换成新运行。
+            // 死亡：提交本关收益（写盘），显示失败结算并由玩家重试。关卡运行在击杀前捕获，重开后流程会换成新运行。
             await DefeatMonsterAsync(FindLevel(), procedure);
             int afterKill = progression.TotalExperience;
             int soulAfterKill = context.Profile.Wallet.Soul;
@@ -120,11 +122,13 @@ public sealed partial class UiSmokeScenario
             Check(await deathRun.CheckpointWrite, "死亡检查点写入失败");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == afterKill, "死亡没有保存本关收益");
             Check((await ReadDiskAsync()).Soul == soulAfterKill, "死亡没有保存已拾取的灵魂");
+            await CheckFailureSettlementAsync(deathRun);
             await WaitUntilAsync(() => SmokeInspection.Level(procedure) != null && !ReferenceEquals(SmokeInspection.Level(procedure), deathRun) &&
                 SmokeInspection.Level(procedure).Outcome == LevelOutcome.Running && CurrentHud() != null,
-                "死亡后没有自动重开关卡", 15000);
+                "失败结算点击重试后没有重开关卡", 15000);
             Check(progression.TotalExperience == afterKill, "死亡重开后档案收益丢失");
 
+            await CheckFailureReturnMapAsync();
             await CheckBackupRecoveryAsync(context);
             await CheckUnsupportedFormatAsync();
             await CheckLoadingCancellationAsync();
@@ -137,6 +141,8 @@ public sealed partial class UiSmokeScenario
         }
         finally
         {
+            foreach (var form in GF.UI.GetAllLoadedUIForms().OfType<Control>().Where(x => x.Visible && x is InventoryForm or SettlementForm).ToArray())
+                GF.UI.CloseUIForm(((GameFramework.UI.IUIForm)form).SerialId);
             CloseHud(m_TestHud);
             ReleaseTestEntity(m_ExtraHero);
             ReleaseTestEntity(m_Monster);
@@ -609,7 +615,7 @@ public sealed partial class UiSmokeScenario
 
         // 跨三级：与 LevelModule 相同的注入路径（档案 → 装配 → 实体，补满）。
         record.AddExperience(338);
-        m_ExtraHero.ApplyLoadout(HeroLoadout.Create(record.HeroId, record.Level, ConfigSystem.Instance.Tables.TbHeroGrowthConfig), refill: true);
+        m_ExtraHero.ApplyLoadout(context.Equipment.CreateLoadout(record), refill: true);
         var row = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1, 4).Stats;
         Check(record.Level == 4 && record.Experience == 37 && record.MaxExperience == 165,
             "连升未保留余量或等级错误");
@@ -876,7 +882,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>已显示的英雄。</returns>
     private static async Task<HeroEntity> ShowHeroAsync(GameContext context, HeroProgression record)
     {
-        WukongEntity hero = await GF.Entity.ShowEntityAsync<WukongEntity>(EntityId.Wukong, HeroLoadout.Create(record.HeroId, record.Level, ConfigSystem.Instance.Tables.TbHeroGrowthConfig));
+        WukongEntity hero = await GF.Entity.ShowEntityAsync<WukongEntity>(EntityId.Wukong, context.Equipment.CreateLoadout(record));
         hero.SetPhysicsProcess(false);
         return hero;
     }

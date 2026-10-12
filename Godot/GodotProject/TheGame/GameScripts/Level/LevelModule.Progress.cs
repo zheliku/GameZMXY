@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
-using GameLogic.Battle.Attributes;
 using GameLogic.Entity;
 using GameLogic.Profile;
+using GameLogic.Equipment;
 using GameLogic.Save;
 using GameLogic.Save.Data;
 using GodotGameFramework;
@@ -16,8 +16,13 @@ public partial class LevelModule
     private SaveModule m_Save; // 本槽唯一检查点入口。
     private HeroProgression m_Progression; // 出战英雄的持久进度。
     private GameData m_EntrySnapshot; // 尚未结算时的内存回滚快照。
-    private int m_DefeatedMonsterCount; // 本关统计，仅日志使用，不写存档。
-    private int m_AwardedExperience; // 本关实际奖励经验，仅日志使用。
+    private int m_DefeatedMonsterCount; // 本关击败数，结算展示，不写存档。
+    private int m_AwardedExperience; // 本关实际奖励经验，结算展示，不写独立存档字段。
+    private EquipmentModule m_Equipment; // 档案作用域的装配入口。
+    private double m_ElapsedSeconds; // 本关实际游玩时间，暂停和结算时停止。
+
+    /// <summary>结局时冻结的本局成绩；进行中为空。</summary>
+    public LevelResult Result { get; private set; }
 
     /// <summary>本次结局；Running 时接收奖励。</summary>
     public LevelOutcome Outcome { get; private set; } = LevelOutcome.Running;
@@ -39,10 +44,13 @@ public partial class LevelModule
             throw new InvalidOperationException("关卡实体必须与档案的出战英雄一致。");
         m_Profile = context.Profile;
         m_Save = context.Save;
+        m_Equipment = context.Equipment;
         m_Progression = m_Profile.ActiveHero;
         m_EntrySnapshot = ProfileSaveHelper.CaptureSaveData(m_Profile);
         m_DefeatedMonsterCount = m_AwardedExperience = 0;
         CheckpointWrite = null;
+        Result = null;
+        m_ElapsedSeconds = 0;
         Outcome = LevelOutcome.Running;
         m_ExitRequested = false;
         m_LootRandom.Randomize();
@@ -58,8 +66,7 @@ public partial class LevelModule
         m_AwardedExperience += experienceReward;
         if (m_Progression.AddExperience(experienceReward) > 0)
         {
-            m_Player.ApplyLoadout(HeroLoadout.Create(m_Progression.HeroId, m_Progression.Level,
-                ConfigSystem.Instance.Tables.TbHeroGrowthConfig), refill: true);
+            m_Player.ApplyLoadout(m_Equipment.CreateLoadout(m_Progression), refill: true);
             m_Player.PlayLevelUp();
         }
     }
@@ -74,6 +81,9 @@ public partial class LevelModule
     {
         if (Outcome != LevelOutcome.Running) return;
         Outcome = outcome;
+        Result = new LevelResult(outcome, m_ElapsedSeconds,
+            (int)Math.Round(100.0 * m_Player.Vitals.Hp / m_Player.Vitals.MaxHp),
+            m_DefeatedMonsterCount, m_AwardedExperience);
         ClearLoot();
         Detach();
         m_EntrySnapshot = null;
@@ -81,6 +91,13 @@ public partial class LevelModule
         Log.Info("[LevelModule] 关卡 {0}：{1}，击败 {2}，经验 {3}",
             m_LevelId, outcome, m_DefeatedMonsterCount, m_AwardedExperience);
         Ended?.Invoke(outcome);
+    }
+
+    /// <summary>仅在本局运行时累计游戏秒数；GGF 暂停使 delta 为零。</summary>
+    /// <param name="delta">游戏帧秒数。</param>
+    public override void _Process(double delta)
+    {
+        if (m_EntrySnapshot != null && Outcome == LevelOutcome.Running) m_ElapsedSeconds += delta;
     }
 
     /// <summary>未结算离开时恢复进关档案；已提交和初始化失败不重复操作。</summary>

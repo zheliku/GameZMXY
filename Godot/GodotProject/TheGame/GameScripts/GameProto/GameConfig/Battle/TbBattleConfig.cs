@@ -140,9 +140,9 @@ public partial class TbBattleConfig
     /// </summary>
      public int WsMax => _data.WsMax;
     /// <summary>
-    /// 英雄死亡后自动重开本关的等待秒数(含死亡动画 1.1 秒)
+    /// 死亡动画播放后显示失败结算（秒）
     /// </summary>
-     public float DeathRestartDelay => _data.DeathRestartDelay;
+     public float DeathSettlementDelay => _data.DeathSettlementDelay;
     /// <summary>
     /// 小怪受伤血条淡出总时长（秒）；本项目延长为4秒，官方原值2秒
     /// </summary>

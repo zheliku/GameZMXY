@@ -36,7 +36,11 @@ public partial class BattleHud
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = pauseCoveredUIForm;
         UIStringKeys.ForEach(key => key.SetLocalizationValue());
-        if (isNewInstance) m_SettingsButton.Pressed += OnSettingsClicked;
+        if (isNewInstance)
+        {
+            m_SettingsButton.Pressed += OnSettingsClicked;
+            m_InventoryButton.Pressed += OnInventoryClicked;
+        }
     }
 
     /// <summary>回池时重复执行本地解绑，清空框架字段。</summary>
@@ -151,6 +155,14 @@ public partial class BattleHud
         if (m_Data == null) return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, SettingsRequestedEventArgs.Create(SerialId));
+    }
+
+    /// <summary>请关卡流程打开战斗背包。</summary>
+    private void OnInventoryClicked()
+    {
+        if (m_Data == null) return;
+        GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        GF.Event.Fire(this, InventoryRequestedEventArgs.Create(SerialId));
     }
 
     /// <summary>释放本次订阅与表现任务，重复调用安全。</summary>

@@ -43,7 +43,7 @@ shader_parameter/clip_center = Vector2(0.5, 0.5)
 shader_parameter/clip_radius = 32.0
 shader_parameter/clip_feather = 0.0
 
-[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_WsMax", "m_Go", "m_SettingsButton", "m_EncounterHealthBar", "m_MusouActivation")]
+[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_WsMax", "m_Go", "m_SettingsButton", "m_InventoryButton", "m_EncounterHealthBar", "m_MusouActivation")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -60,6 +60,7 @@ m_LevelLabel = NodePath("StatusPanel/m_LevelLabel")
 m_WsBar = NodePath("MenuPanel/WsFrame/m_WsBar")
 m_WsMax = NodePath("MenuPanel/m_WsMax")
 m_Go = NodePath("m_Go")
+m_InventoryButton = NodePath("MenuPanel/m_InventoryButton")
 m_SettingsButton = NodePath("MenuPanel/m_SettingsButton")
 m_EncounterHealthBar = NodePath("m_EncounterHealthBar")
 m_MusouActivation = NodePath("m_MusouActivation")
@@ -195,20 +196,20 @@ position = Vector2(-24, -4)
 sprite_frames = ExtResource("12_ws_frames")
 animation = &"full"
 
-[node name="InventoryButton" type="TextureButton" parent="MenuPanel" unique_id=1185699338]
+[node name="m_InventoryButton" type="TextureButton" parent="MenuPanel" unique_id=1185699338]
 offset_left = -87.0
 offset_top = -2.0
 offset_right = -40.0
 offset_bottom = 38.0
-tooltip_text = "尚未开放"
+tooltip_text = "背包"
 focus_mode = 0
-disabled = true
+mouse_default_cursor_shape = 2
 texture_normal = ExtResource("inventory_normal")
 texture_pressed = ExtResource("inventory_normal")
 texture_hover = ExtResource("inventory_hover")
 texture_disabled = ExtResource("inventory_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanel/InventoryButton" unique_id=1212129767]
+[node name="Caption" type="Sprite2D" parent="MenuPanel/m_InventoryButton" unique_id=1212129767]
 position = Vector2(21, 37)
 texture = ExtResource("inventory_caption")
 

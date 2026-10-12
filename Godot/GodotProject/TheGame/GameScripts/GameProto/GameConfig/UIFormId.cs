@@ -45,6 +45,14 @@ namespace GameConfig
         /// 保存成功提示
         /// </summary>
         SaveNoticeForm = 7,
+        /// <summary>
+        /// 战斗背包与个人资料
+        /// </summary>
+        InventoryForm = 8,
+        /// <summary>
+        /// 关卡成功或失败结算
+        /// </summary>
+        SettlementForm = 9,
     }
 
 } 

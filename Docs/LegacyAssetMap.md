@@ -209,3 +209,40 @@
 两个导出器均用 Java/FFDec 26.3，在临时目录校验散列和渲染，再复制 PNG 与外置 SpriteFrames。无双开场在 `(470,295)` 输出 940×590、24 帧；悟空末姿势保持时，火焰子动画继续播放。调用参数见各脚本 `--help`。
 
 满值提示另来自旧 WSBar.png：`hud_ws_full_frames.tres` 保存 10 个 AtlasTexture 的 20 帧往返循环（25 fps）；圆形裁剪只在 shader 中进行，不修改源图。
+
+## 结算与战斗背包
+
+`Tools/LegacyMigration/import_battle_ui_assets.py` 逐字节复制以下旧工程图片，不迁入旧脚本、场景或 `.import`。此次图片来源为旧工程，未将其宣称为新下载的官方原包。
+
+| 旧项目相对路径 | 新项目 TheGame 相对路径 |
+| --- | --- |
+| `Art/Level/Settlement/623.png` | `Sprites/UI/settlement/settlement_backdrop.png` |
+| `Art/Level/Settlement/637.png` | `Sprites/UI/settlement/settlement_success.png` |
+| `Art/Level/Settlement/622.png` | `Sprites/UI/settlement/settlement_failure.png` |
+| `Art/Level/Settlement/436.png` | `Sprites/UI/settlement/settlement_results.png` |
+| `Art/Level/Settlement/630.png` | `Sprites/UI/settlement/settlement_map_normal.png` |
+| `Art/Level/Settlement/632.png` | `Sprites/UI/settlement/settlement_map_hover.png` |
+| `Art/Level/Settlement/457.png` | `Sprites/UI/settlement/settlement_retry_normal.png` |
+| `Art/Level/Settlement/459.png` | `Sprites/UI/settlement/settlement_retry_hover.png` |
+| `Art/BackPack/BackPackLight.png` | `Sprites/UI/inventory/inventory_preview_light.png` |
+| `Art/BackPack/207.png` | `Sprites/UI/inventory/inventory_panels.png` |
+| `Art/BackPack/28.png` | `Sprites/UI/inventory/inventory_ink_frame.png` |
+| `Art/BackPack/113.png` | `Sprites/UI/inventory/inventory_cell.png` |
+| `Art/BackPack/244.png` | `Sprites/UI/inventory/inventory_attributes.png` |
+| `Art/BackPack/219.png` | `Sprites/UI/inventory/inventory_level_badge.png` |
+| `Art/BackPack/zdlnc.png` | `Sprites/UI/inventory/inventory_name_plate.png` |
+| `Art/BackPack/lh_wk.png` | `Sprites/UI/inventory/inventory_soul_plate.png` |
+| `Art/BackPack/209.png` | `Sprites/UI/inventory/inventory_exp_fill.png` |
+| `Art/BackPack/211.png` | `Sprites/UI/inventory/inventory_exp_frame.png` |
+| `Art/BackPack/123.png` | `Sprites/UI/inventory/inventory_page_one.png` |
+| `Art/BackPack/118.png` | `Sprites/UI/inventory/inventory_page_two.png` |
+| `Art/BackPack/zb_button.png` | `Sprites/UI/inventory/inventory_tab_normal.png` |
+| `Art/BackPack/zb_button_choose.png` | `Sprites/UI/inventory/inventory_tab_selected.png` |
+| `Art/BackPack/wq.png` | `Sprites/UI/inventory/inventory_slot_weapon.png` |
+| `Art/BackPack/fj.png` | `Sprites/UI/inventory/inventory_slot_armor.png` |
+| `Art/BackPack/sp.png` | `Sprites/UI/inventory/inventory_slot_accessory.png` |
+| `Art/BackPack/fb.png` | `Sprites/UI/inventory/inventory_slot_treasure.png` |
+| `Art/BackPack/sz.png` | `Sprites/UI/inventory/inventory_slot_costume.png` |
+| `Art/BackPack/tx.png` | `Sprites/UI/inventory/inventory_slot_title.png` |
+
+`UIs/Widgets/hero_preview.tscn` 复用现有悟空身体和空手武器图集。外置 `inventory_preview_animation.tres` 取当前待机的 0..5 帧（0.8 秒循环）；金光取旧背包 BackPackLight 的第 3..8 格（192×192，15 fps，竖直翻转）。动画只改变显示帧，不带攻击或碰撞轨道。

@@ -44,7 +44,7 @@ public class ProcedureLoadProfile : ProcedureBase
             Log.Info("[ProcedureLoadProfile] 档案就绪：来源 {0}，出战英雄 {1}，等级 {2}", loaded.Origin,
                 loaded.Profile.ActiveHeroId, loaded.Profile.ActiveHero.Level);
 
-            GameContext session = new(loaded.Profile, save);
+            GameContext session = new(loaded.Profile, save, ConfigSystem.Instance.Tables.TbHeroGrowthConfig);
             procedureOwner.SetData(FlowKeys.GameContext, GameContextVariable.Create(session));
             // 新建档案才需要确认角色；已有档案直接恢复地图入口。
             if (loaded.Origin == SaveOrigin.Created)

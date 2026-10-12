@@ -59,6 +59,8 @@ public sealed class LevelSmokeScenario
     private bool m_SawFeatured; // 是否实际展示过大猩猩入场和生命条。
     private bool m_WaitingForMap; // 通关后停止访问即将卸载的场景。
     private Task<SaveLoadResult> m_Reload; // 返回地图后重新读盘验证保存结果。
+    private Task m_SettlementCapture; // 成功结算渲染证据。
+    private bool m_SettlementClicked; // 成功页只提交一次返回地图请求。
     private Task m_ExitCapture; // 有渲染器时先保存出口提示画面再按 W。
     private int m_ExpectedTotalExperience; // 通关保存应保留的累计经验。
     private int m_ExpectedSoul; // 已实际拾取、应由 v4 检查点保存的灵魂。
@@ -322,6 +324,18 @@ public sealed class LevelSmokeScenario
         GD.Print($"SMOKE-LEVEL: exit preview={path}");
     }
 
+    /// <summary>记录正式成功结算画面。</summary>
+    /// <returns>画面保存完成的任务。</returns>
+    private async Task CaptureSettlementAsync()
+    {
+        if (DisplayServer.GetName() == "headless") return;
+        await m_Hero.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        string directory = ProjectSettings.GlobalizePath("res://.godot/validation/encounter");
+        Directory.CreateDirectory(directory);
+        Error result = m_Hero.GetViewport().GetTexture().GetImage().SavePng(Path.Combine(directory, "settlement_success.png"));
+        if (result != Error.Ok) throw new IOException($"成功结算截图失败：{result}");
+    }
+
     /// <summary>从视口发送完整按下与释放，覆盖 W 绑定和未处理输入路径。</summary>
     private void PressW()
     {
@@ -333,6 +347,17 @@ public sealed class LevelSmokeScenario
     private void CheckReturnAndReload()
     {
         if (m_Time > 180) { Fail("出口交互后未返回地图或完成自动保存"); return; }
+        var settlement = GF.UI.GetAllLoadedUIForms().OfType<SettlementForm>().FirstOrDefault(x => x.Visible);
+        if (settlement != null && !m_SettlementClicked)
+        {
+            if (m_Level.Result?.Outcome != LevelOutcome.Cleared || settlement.GetNode<TextureButton>("Content/Actions/m_Retry").Visible || !GF.Base.IsGamePaused)
+            { Fail("成功结算成绩、重试按钮或暂停状态不正确"); return; }
+            m_SettlementCapture ??= CaptureSettlementAsync();
+            if (!m_SettlementCapture.IsCompleted) return;
+            if (m_SettlementCapture.IsFaulted) { Fail(m_SettlementCapture.Exception.ToString()); return; }
+            settlement.GetNode<TextureButton>("Content/Actions/m_ReturnMap").EmitSignal(BaseButton.SignalName.Pressed);
+            m_SettlementClicked = true;
+        }
         if (GF.Procedure.CurrentProcedure is not ProcedureMap) return;
         if (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_map_form) is not MapForm { Visible: true }) return;
         if (!m_ExitLatencyRecorded)

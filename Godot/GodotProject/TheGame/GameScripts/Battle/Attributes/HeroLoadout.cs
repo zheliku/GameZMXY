@@ -1,5 +1,4 @@
 using System;
-using GameConfig.Hero;
 using GameConfig.Stat;
 
 namespace GameLogic.Battle.Attributes;
@@ -28,18 +27,4 @@ public sealed class HeroLoadout
         BaseAttributes = baseAttributes ?? throw new ArgumentNullException(nameof(baseAttributes));
     }
 
-    /// <summary>按英雄与等级读取成长表，创建本次战斗的输入快照。</summary>
-    /// <param name="heroId">英雄配置编号。</param>
-    /// <param name="level">当前等级。</param>
-    /// <param name="growth">启动期已验证的成长表。</param>
-    /// <returns>独立于档案后续变化的战斗输入。</returns>
-    /// <exception cref="ArgumentNullException">成长表为空。</exception>
-    /// <exception cref="InvalidOperationException">成长行不存在。</exception>
-    public static HeroLoadout Create(int heroId, int level, TbHeroGrowthConfig growth)
-    {
-        ArgumentNullException.ThrowIfNull(growth);
-        HeroGrowthConfig row = growth.Get(heroId, level)
-            ?? throw new InvalidOperationException($"成长表缺少英雄 {heroId} 的 {level} 级。");
-        return new HeroLoadout(heroId, level, row.Stats);
-    }
 }

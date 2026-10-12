@@ -1,3 +1,4 @@
+using GameLogic.Equipment;
 using GameLogic.Profile;
 using GameLogic.Config;
 using GameLogic.Battle.Attributes;
@@ -99,14 +100,36 @@ namespace GameLogic.Profile.Tests
 			Assert.Equal(1, new PlayerProfile(1, new[] { hero }, new Wallet(0)).ActiveHero.HeroId);
 		}
 
+        /// <summary>钱包只在余额实际提交后通知，失败消费、零增量和封顶不重复通知。</summary>
+        [Fact]
+        public void Wallet_NotifiesOnlyCommittedBalanceChanges()
+        {
+            Wallet wallet = new(10);
+            int notifications = 0;
+            int observed = -1;
+            wallet.Changed += () => { notifications++; observed = wallet.Soul; };
+            wallet.AddSoul(0);
+            Assert.False(wallet.TrySpendSoul(11));
+            Assert.Equal(0, notifications);
+            wallet.AddSoul(5);
+            Assert.Equal((1, 15), (notifications, observed));
+            Assert.True(wallet.TrySpendSoul(3));
+            Assert.Equal((2, 12), (notifications, observed));
+            wallet.Restore(12);
+            Assert.Equal(2, notifications);
+            wallet.Restore(int.MaxValue);
+            wallet.AddSoul(1);
+            Assert.Equal((3, int.MaxValue), (notifications, observed));
+        }
+
         /// <summary>战斗快照冻结当前等级，升级时只替换基础值并保留本局修正。</summary>
         [Fact]
         public void BattleSnapshot_FreezesGrowthAndPreservesRuntimeModifiers()
         {
             HeroProgression hero = new(1, TestTables.Curve, 0);
-            HeroLoadout first = HeroLoadout.Create(hero.HeroId, hero.Level, TestTables.Tables.TbHeroGrowthConfig);
+            HeroLoadout first = new EquipmentModule(TestTables.Tables.TbHeroGrowthConfig).CreateLoadout(hero);
             hero.AddExperience(135);
-            HeroLoadout second = HeroLoadout.Create(hero.HeroId, hero.Level, TestTables.Tables.TbHeroGrowthConfig);
+            HeroLoadout second = new EquipmentModule(TestTables.Tables.TbHeroGrowthConfig).CreateLoadout(hero);
             Assert.Equal((1, 80, 50, 10), (first.Level, first.BaseAttributes.MaxHp, first.BaseAttributes.MaxMp, first.BaseAttributes.Power));
             Assert.Equal((2, 130, 70, 15, 4), (second.Level, second.BaseAttributes.MaxHp, second.BaseAttributes.MaxMp,
                 second.BaseAttributes.Power, second.BaseAttributes.Def));
@@ -125,7 +148,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void BattleSnapshot_RejectsMissingGrowth()
         {
-            Assert.Throws<InvalidOperationException>(() => HeroLoadout.Create(999, 1, TestTables.Tables.TbHeroGrowthConfig));
+            Assert.Throws<InvalidOperationException>(() => new EquipmentModule(TestTables.Tables.TbHeroGrowthConfig).CreateLoadout(new HeroProgression(999, TestTables.Curve, 0)));
             Assert.Throws<ArgumentNullException>(() => new HeroLoadout(1, 1, null));
         }
 

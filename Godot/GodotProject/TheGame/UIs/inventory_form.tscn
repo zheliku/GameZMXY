@@ -1,0 +1,1026 @@
+[gd_scene format=3 uid="uid://bcur4jvgd48dm"]
+
+[ext_resource type="Texture2D" uid="uid://bmpaf7wdvtwnd" path="res://TheGame/Sprites/UI/inventory/inventory_attributes.png" id="attributes"]
+[ext_resource type="FontFile" uid="uid://c5eah8rqotkno" path="res://TheGame/MainPack/Fonts/df_poster_w12.ttc" id="badge_font"]
+[ext_resource type="Texture2D" uid="uid://co0l2xrbfngd" path="res://TheGame/Sprites/UI/inventory/inventory_cell.png" id="cell"]
+[ext_resource type="Texture2D" uid="uid://cp42ocwlfjgvb" path="res://TheGame/Sprites/UI/frontend/menu_close.png" id="close"]
+[ext_resource type="Texture2D" uid="uid://dyutmtu7t78n4" path="res://TheGame/Sprites/UI/frontend/menu_close_hover.png" id="close_hover"]
+[ext_resource type="Texture2D" uid="uid://bad1w8e05nqgs" path="res://TheGame/Sprites/UI/inventory/inventory_exp_fill.png" id="exp_fill"]
+[ext_resource type="Texture2D" uid="uid://bcc837l6er4ae" path="res://TheGame/Sprites/UI/inventory/inventory_exp_frame.png" id="exp_frame"]
+[ext_resource type="FontFile" uid="uid://d3bh5a3jtbsib" path="res://TheGame/MainPack/Fonts/fz_cu_yuan.ttf" id="font"]
+[ext_resource type="Texture2D" uid="uid://bn7fjnivur3uq" path="res://TheGame/Sprites/UI/inventory/inventory_ink_frame.png" id="ink_frame"]
+[ext_resource type="Texture2D" uid="uid://dvsuabxqyp5yq" path="res://TheGame/Sprites/UI/inventory/inventory_level_badge.png" id="level_badge"]
+[ext_resource type="Texture2D" uid="uid://dox0lx64omowe" path="res://TheGame/Sprites/UI/inventory/inventory_name_plate.png" id="name_plate"]
+[ext_resource type="FontFile" uid="uid://p78hartfg67e" path="res://TheGame/MainPack/Fonts/fz_cu_yuan_hud.ttf" id="number_font"]
+[ext_resource type="Texture2D" uid="uid://br44xxtil6f0t" path="res://TheGame/Sprites/UI/inventory/inventory_page_one.png" id="page_one"]
+[ext_resource type="Texture2D" uid="uid://bhl8lbjdfalrc" path="res://TheGame/Sprites/UI/inventory/inventory_page_two.png" id="page_two"]
+[ext_resource type="Texture2D" uid="uid://0mc1vobh4od0" path="res://TheGame/Sprites/UI/inventory/inventory_panels.png" id="panels"]
+[ext_resource type="PackedScene" uid="uid://dc18lorsjswmc" path="res://TheGame/UIs/Widgets/hero_preview.tscn" id="preview"]
+[ext_resource type="Script" uid="uid://2d05nqjfoajs" path="res://TheGame/GameScripts/UI/InventoryForm/InventoryForm.cs" id="script"]
+[ext_resource type="Texture2D" uid="uid://chub3ebk11y6v" path="res://TheGame/Sprites/UI/inventory/inventory_slot_accessory.png" id="slot_accessory"]
+[ext_resource type="Texture2D" uid="uid://bhpaosv0tq1fm" path="res://TheGame/Sprites/UI/inventory/inventory_slot_armor.png" id="slot_armor"]
+[ext_resource type="Texture2D" uid="uid://bmfbr3jkej6xe" path="res://TheGame/Sprites/UI/inventory/inventory_slot_costume.png" id="slot_costume"]
+[ext_resource type="Texture2D" uid="uid://c5uj7ggw57sog" path="res://TheGame/Sprites/UI/inventory/inventory_slot_title.png" id="slot_title"]
+[ext_resource type="Texture2D" uid="uid://b35e0av04upxy" path="res://TheGame/Sprites/UI/inventory/inventory_slot_treasure.png" id="slot_treasure"]
+[ext_resource type="Texture2D" uid="uid://b2xdwivf1hjtq" path="res://TheGame/Sprites/UI/inventory/inventory_slot_weapon.png" id="slot_weapon"]
+[ext_resource type="Texture2D" uid="uid://w4ufs22mjgks" path="res://TheGame/Sprites/UI/inventory/inventory_soul_plate.png" id="soul_plate"]
+[ext_resource type="Texture2D" uid="uid://5n4opi1ss50s" path="res://TheGame/Sprites/UI/inventory/inventory_tab_normal.png" id="tab_normal"]
+[ext_resource type="Texture2D" uid="uid://d1wrtpin1ifq7" path="res://TheGame/Sprites/UI/inventory/inventory_tab_selected.png" id="tab_selected"]
+
+[sub_resource type="AtlasTexture" id="name_row"]
+atlas = ExtResource("name_plate")
+region = Rect2(0, 0, 213, 25)
+filter_clip = true
+
+[node name="InventoryForm" type="Control" unique_id=1552540174 node_paths=PackedStringArray("m_Close", "m_Name", "m_Level", "m_Experience", "m_ExperienceText", "m_Soul", "m_Preview", "m_Hp", "m_Mp", "m_Attack", "m_Defense", "m_Lucky", "m_MagicResistance", "m_Crit", "m_Dodge", "m_HpRegen", "m_MpRegen")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("script")
+m_Close = NodePath("Window/Header/m_Close")
+m_Name = NodePath("Window/CharacterPanel/Identity/m_Name")
+m_Level = NodePath("Window/CharacterPanel/Identity/m_Level")
+m_Experience = NodePath("Window/CharacterPanel/Experience/m_Experience")
+m_ExperienceText = NodePath("Window/CharacterPanel/Experience/m_ExperienceText")
+m_Soul = NodePath("Window/BagPanel/Footer/Soul/m_Soul")
+m_Preview = NodePath("Window/CharacterPanel/m_Preview")
+m_Hp = NodePath("Window/CharacterPanel/Attributes/Hp/m_Hp")
+m_Mp = NodePath("Window/CharacterPanel/Attributes/Mp/m_Mp")
+m_Attack = NodePath("Window/CharacterPanel/Attributes/Attack/m_Attack")
+m_Defense = NodePath("Window/CharacterPanel/Attributes/Defense/m_Defense")
+m_Lucky = NodePath("Window/CharacterPanel/Attributes/Lucky/m_Lucky")
+m_MagicResistance = NodePath("Window/CharacterPanel/Attributes/MagicResistance/m_MagicResistance")
+m_Crit = NodePath("Window/CharacterPanel/Attributes/Crit/m_Crit")
+m_Dodge = NodePath("Window/CharacterPanel/Attributes/Dodge/m_Dodge")
+m_HpRegen = NodePath("Window/CharacterPanel/Attributes/HpRegen/m_HpRegen")
+m_MpRegen = NodePath("Window/CharacterPanel/Attributes/MpRegen/m_MpRegen")
+
+[node name="Dim" type="ColorRect" parent="." unique_id=471528848]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.2)
+
+[node name="Window" type="Control" parent="." unique_id=1144447489]
+anchors_preset = 0
+offset_right = 940.0
+offset_bottom = 590.0
+mouse_filter = 2
+
+[node name="InkFrame" type="TextureRect" parent="Window" unique_id=1577945284]
+layout_mode = 0
+offset_left = 118.0
+offset_top = 68.0
+offset_right = 853.0
+offset_bottom = 538.0
+mouse_filter = 2
+texture = ExtResource("ink_frame")
+expand_mode = 1
+
+[node name="Panels" type="TextureRect" parent="Window" unique_id=1060925959]
+layout_mode = 0
+offset_right = 940.0
+offset_bottom = 590.0
+mouse_filter = 2
+texture = ExtResource("panels")
+expand_mode = 1
+
+[node name="Header" type="Control" parent="Window" unique_id=1261073863]
+anchors_preset = 0
+offset_left = 140.0
+offset_top = 56.0
+offset_right = 853.0
+offset_bottom = 106.0
+mouse_filter = 2
+
+[node name="m_Close" type="TextureButton" parent="Window/Header" unique_id=1989205325]
+layout_mode = 0
+offset_left = 670.0
+offset_top = 6.0
+offset_right = 711.0
+offset_bottom = 47.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("close")
+texture_pressed = ExtResource("close_hover")
+texture_hover = ExtResource("close_hover")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="CharacterPanel" type="Control" parent="Window" unique_id=2061646098]
+anchors_preset = 0
+offset_left = 140.0
+offset_top = 104.0
+offset_right = 497.0
+offset_bottom = 506.0
+mouse_filter = 2
+
+[node name="Identity" type="Control" parent="Window/CharacterPanel" unique_id=274555624]
+anchors_preset = 0
+offset_left = 26.0
+offset_top = 12.0
+offset_right = 336.0
+offset_bottom = 72.0
+mouse_filter = 2
+
+[node name="NamePlate" type="TextureRect" parent="Window/CharacterPanel/Identity" unique_id=409852759]
+layout_mode = 0
+offset_right = 213.0
+offset_bottom = 25.0
+mouse_filter = 2
+texture = SubResource("name_row")
+expand_mode = 1
+
+[node name="m_Name" type="Label" parent="Window/CharacterPanel/Identity" unique_id=1139354011]
+layout_mode = 0
+offset_left = 54.0
+offset_top = 2.0
+offset_right = 209.0
+offset_bottom = 27.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 16
+text = "悟空"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LevelBadge" type="TextureRect" parent="Window/CharacterPanel/Identity" unique_id=1603079284]
+layout_mode = 0
+offset_left = 214.0
+offset_top = -7.0
+offset_right = 297.0
+offset_bottom = 52.0
+mouse_filter = 2
+texture = ExtResource("level_badge")
+expand_mode = 1
+
+[node name="m_Level" type="Label" parent="Window/CharacterPanel/Identity" unique_id=1344230314]
+layout_mode = 0
+offset_left = 233.0
+offset_top = 12.0
+offset_right = 278.0
+offset_bottom = 57.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("badge_font")
+theme_override_font_sizes/font_size = 34
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EquipmentSlots" type="Control" parent="Window/CharacterPanel" unique_id=404548675]
+anchors_preset = 0
+offset_right = 357.0
+offset_bottom = 202.0
+mouse_filter = 2
+
+[node name="Slotcostume" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=309040610]
+layout_mode = 0
+offset_left = 29.0
+offset_top = 66.0
+offset_right = 76.0
+offset_bottom = 113.0
+mouse_filter = 2
+texture = ExtResource("slot_costume")
+expand_mode = 1
+
+[node name="Slottitle" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=911544497]
+layout_mode = 0
+offset_left = 29.0
+offset_top = 140.0
+offset_right = 76.0
+offset_bottom = 187.0
+mouse_filter = 2
+texture = ExtResource("slot_title")
+expand_mode = 1
+
+[node name="Slotweapon" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=943635423]
+layout_mode = 0
+offset_left = 223.0
+offset_top = 74.0
+offset_right = 270.0
+offset_bottom = 121.0
+mouse_filter = 2
+texture = ExtResource("slot_weapon")
+expand_mode = 1
+
+[node name="Slotarmor" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=1110672857]
+layout_mode = 0
+offset_left = 223.0
+offset_top = 139.0
+offset_right = 270.0
+offset_bottom = 186.0
+mouse_filter = 2
+texture = ExtResource("slot_armor")
+expand_mode = 1
+
+[node name="Slotaccessory" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=1698131076]
+layout_mode = 0
+offset_left = 293.0
+offset_top = 74.0
+offset_right = 340.0
+offset_bottom = 121.0
+mouse_filter = 2
+texture = ExtResource("slot_accessory")
+expand_mode = 1
+
+[node name="Slottreasure" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=433319451]
+layout_mode = 0
+offset_left = 293.0
+offset_top = 140.0
+offset_right = 340.0
+offset_bottom = 187.0
+mouse_filter = 2
+texture = ExtResource("slot_treasure")
+expand_mode = 1
+
+[node name="m_Preview" parent="Window/CharacterPanel" unique_id=1036937726 instance=ExtResource("preview")]
+position = Vector2(149.00002, 128)
+scale = Vector2(0.95, 0.95)
+
+[node name="Attributes" type="Control" parent="Window/CharacterPanel" unique_id=90866621]
+anchors_preset = 0
+offset_left = 27.0
+offset_top = 205.0
+offset_right = 343.0
+offset_bottom = 369.0
+mouse_filter = 2
+
+[node name="Background" type="TextureRect" parent="Window/CharacterPanel/Attributes" unique_id=398055947]
+layout_mode = 0
+offset_top = -2.0
+offset_right = 316.0
+offset_bottom = 162.0
+mouse_filter = 2
+texture = ExtResource("attributes")
+expand_mode = 1
+
+[node name="Hp" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=625368898]
+anchors_preset = 0
+offset_right = 152.0
+offset_bottom = 31.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Hp" unique_id=176789584]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "HP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_Hp" type="Label" parent="Window/CharacterPanel/Attributes/Hp" unique_id=1931640089]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Mp" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1059326719]
+anchors_preset = 0
+offset_left = 160.0
+offset_right = 312.0
+offset_bottom = 31.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Mp" unique_id=538350654]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "MP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_Mp" type="Label" parent="Window/CharacterPanel/Attributes/Mp" unique_id=1511760250]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Attack" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1886318127]
+anchors_preset = 0
+offset_top = 33.0
+offset_right = 152.0
+offset_bottom = 64.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Attack" unique_id=264979552]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "攻击"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_Attack" type="Label" parent="Window/CharacterPanel/Attributes/Attack" unique_id=1637216805]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Defense" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1885176249]
+anchors_preset = 0
+offset_left = 160.0
+offset_top = 33.0
+offset_right = 312.0
+offset_bottom = 64.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Defense" unique_id=1755832866]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "防御"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_Defense" type="Label" parent="Window/CharacterPanel/Attributes/Defense" unique_id=1109453982]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Lucky" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1529550948]
+anchors_preset = 0
+offset_top = 66.0
+offset_right = 152.0
+offset_bottom = 97.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Lucky" unique_id=1191467582]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "幸运"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_Lucky" type="Label" parent="Window/CharacterPanel/Attributes/Lucky" unique_id=841350912]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MagicResistance" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=31788673]
+anchors_preset = 0
+offset_left = 160.0
+offset_top = 66.0
+offset_right = 312.0
+offset_bottom = 97.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/MagicResistance" unique_id=1224374938]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "魔抗"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_MagicResistance" type="Label" parent="Window/CharacterPanel/Attributes/MagicResistance" unique_id=944748457]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Crit" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1283880999]
+anchors_preset = 0
+offset_top = 98.0
+offset_right = 152.0
+offset_bottom = 129.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Crit" unique_id=470468339]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "暴击"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_Crit" type="Label" parent="Window/CharacterPanel/Attributes/Crit" unique_id=1172539619]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Dodge" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1869973628]
+anchors_preset = 0
+offset_left = 160.0
+offset_top = 98.0
+offset_right = 312.0
+offset_bottom = 129.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Dodge" unique_id=1485757573]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "闪避"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_Dodge" type="Label" parent="Window/CharacterPanel/Attributes/Dodge" unique_id=610436889]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HpRegen" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=2030344795]
+anchors_preset = 0
+offset_top = 131.0
+offset_right = 152.0
+offset_bottom = 162.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/HpRegen" unique_id=651056934]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "回血"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_HpRegen" type="Label" parent="Window/CharacterPanel/Attributes/HpRegen" unique_id=1872427859]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MpRegen" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=2115439010]
+anchors_preset = 0
+offset_left = 160.0
+offset_top = 131.0
+offset_right = 312.0
+offset_bottom = 162.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/MpRegen" unique_id=1150746975]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "回蓝"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_MpRegen" type="Label" parent="Window/CharacterPanel/Attributes/MpRegen" unique_id=2068569908]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Experience" type="Control" parent="Window/CharacterPanel" unique_id=2055444656]
+anchors_preset = 0
+offset_left = 46.0
+offset_top = 373.0
+offset_right = 324.0
+offset_bottom = 395.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Experience" unique_id=183883013]
+layout_mode = 0
+offset_right = 33.0
+offset_bottom = 22.0
+theme_override_colors/font_color = Color(1, 0.84, 0.48, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "EXP"
+vertical_alignment = 1
+
+[node name="m_Experience" type="TextureProgressBar" parent="Window/CharacterPanel/Experience" unique_id=2012779201]
+layout_mode = 0
+offset_left = 37.0
+offset_top = 1.0
+offset_right = 274.0
+offset_bottom = 21.0
+mouse_filter = 2
+step = 0.0
+nine_patch_stretch = true
+stretch_margin_left = 10
+stretch_margin_top = 10
+stretch_margin_right = 10
+stretch_margin_bottom = 10
+texture_under = ExtResource("exp_frame")
+texture_progress = ExtResource("exp_fill")
+
+[node name="m_ExperienceText" type="Label" parent="Window/CharacterPanel/Experience" unique_id=952829141]
+layout_mode = 0
+offset_left = 38.0
+offset_top = 1.0
+offset_right = 274.0
+offset_bottom = 23.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0/140"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BagPanel" type="Control" parent="Window" unique_id=1453173021]
+anchors_preset = 0
+offset_left = 507.0
+offset_top = 104.0
+offset_right = 817.0
+offset_bottom = 506.0
+mouse_filter = 2
+
+[node name="Tabs" type="Control" parent="Window/BagPanel" unique_id=1058678713]
+anchors_preset = 0
+offset_left = 9.0
+offset_top = 13.0
+offset_right = 297.0
+offset_bottom = 38.0
+mouse_filter = 2
+
+[node name="Tab0" type="TextureRect" parent="Window/BagPanel/Tabs" unique_id=229877548]
+layout_mode = 0
+offset_right = 71.0
+offset_bottom = 25.0
+mouse_filter = 2
+texture = ExtResource("tab_selected")
+expand_mode = 1
+
+[node name="Caption" type="Label" parent="Window/BagPanel/Tabs/Tab0" unique_id=693586328]
+layout_mode = 0
+offset_right = 71.0
+offset_bottom = 25.0
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, 1)
+theme_override_colors/font_color = Color(1, 0.84, 0.48, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 18
+text = "装备"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Tab1" type="TextureRect" parent="Window/BagPanel/Tabs" unique_id=504623778]
+layout_mode = 0
+offset_left = 73.0
+offset_right = 144.0
+offset_bottom = 25.0
+mouse_filter = 2
+texture = ExtResource("tab_normal")
+expand_mode = 1
+
+[node name="Caption" type="Label" parent="Window/BagPanel/Tabs/Tab1" unique_id=96709873]
+layout_mode = 0
+offset_right = 71.0
+offset_bottom = 25.0
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, 1)
+theme_override_colors/font_color = Color(1, 0.84, 0.48, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 18
+text = "道具"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Tab2" type="TextureRect" parent="Window/BagPanel/Tabs" unique_id=1532529724]
+layout_mode = 0
+offset_left = 146.0
+offset_right = 217.0
+offset_bottom = 25.0
+mouse_filter = 2
+texture = ExtResource("tab_normal")
+expand_mode = 1
+
+[node name="Caption" type="Label" parent="Window/BagPanel/Tabs/Tab2" unique_id=1895080060]
+layout_mode = 0
+offset_right = 71.0
+offset_bottom = 25.0
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, 1)
+theme_override_colors/font_color = Color(1, 0.84, 0.48, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 18
+text = "时装"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Tab3" type="TextureRect" parent="Window/BagPanel/Tabs" unique_id=1772544815]
+layout_mode = 0
+offset_left = 219.0
+offset_right = 290.0
+offset_bottom = 25.0
+mouse_filter = 2
+texture = ExtResource("tab_normal")
+expand_mode = 1
+
+[node name="Caption" type="Label" parent="Window/BagPanel/Tabs/Tab3" unique_id=396657784]
+layout_mode = 0
+offset_right = 71.0
+offset_bottom = 25.0
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, 1)
+theme_override_colors/font_color = Color(1, 0.84, 0.48, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 18
+text = "经书"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BagGrid" type="GridContainer" parent="Window/BagPanel" unique_id=896351374]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 51.0
+offset_right = 295.0
+offset_bottom = 334.0
+mouse_filter = 2
+theme_override_constants/h_separation = 11
+theme_override_constants/v_separation = 12
+columns = 5
+
+[node name="Cell1" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=395786351]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell2" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1955264235]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell3" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=479783932]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell4" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1997376121]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell5" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=2114427512]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell6" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=157140145]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell7" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=910160664]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell8" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1360853206]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell9" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1670511690]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell10" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1922396720]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell11" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=588310909]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell12" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=763527820]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell13" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1594419998]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell14" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1893368032]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell15" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1722682425]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell16" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=4402306]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell17" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1179061088]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell18" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1807350260]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell19" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=228979254]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell20" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=2095605599]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell21" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=446136994]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell22" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=291845362]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell23" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1960146836]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell24" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1302504399]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Cell25" type="TextureRect" parent="Window/BagPanel/BagGrid" unique_id=1178304428]
+custom_minimum_size = Vector2(47, 47)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("cell")
+expand_mode = 1
+
+[node name="Footer" type="Control" parent="Window/BagPanel" unique_id=2029022878]
+anchors_preset = 0
+offset_left = 4.0
+offset_top = 353.0
+offset_right = 302.0
+offset_bottom = 388.0
+mouse_filter = 2
+
+[node name="Soul" type="Control" parent="Window/BagPanel/Footer" unique_id=1890665881]
+anchors_preset = 0
+offset_left = 12.0
+offset_right = 176.0
+offset_bottom = 28.0
+mouse_filter = 2
+
+[node name="Plate" type="NinePatchRect" parent="Window/BagPanel/Footer/Soul" unique_id=1356287443]
+layout_mode = 0
+offset_right = 165.0
+offset_bottom = 28.0
+texture = ExtResource("soul_plate")
+region_rect = Rect2(0, 0, 129, 28)
+patch_margin_left = 60
+patch_margin_right = 20
+
+[node name="m_Soul" type="Label" parent="Window/BagPanel/Footer/Soul" unique_id=109303387]
+layout_mode = 0
+offset_left = 56.0
+offset_top = 4.0
+offset_right = 159.0
+offset_bottom = 29.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+vertical_alignment = 1
+
+[node name="Pages" type="Control" parent="Window/BagPanel/Footer" unique_id=1194183497]
+anchors_preset = 0
+offset_left = 195.0
+offset_top = 3.0
+offset_right = 268.0
+offset_bottom = 26.0
+mouse_filter = 2
+
+[node name="PageOne" type="TextureRect" parent="Window/BagPanel/Footer/Pages" unique_id=1121950832]
+layout_mode = 0
+offset_right = 32.0
+offset_bottom = 24.0
+mouse_filter = 2
+texture = ExtResource("page_one")
+expand_mode = 1
+
+[node name="PageTwo" type="TextureRect" parent="Window/BagPanel/Footer/Pages" unique_id=1228335090]
+layout_mode = 0
+offset_left = 37.0
+offset_right = 69.0
+offset_bottom = 24.0
+mouse_filter = 2
+texture = ExtResource("page_two")
+expand_mode = 1

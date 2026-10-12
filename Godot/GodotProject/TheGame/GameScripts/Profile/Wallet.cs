@@ -8,6 +8,9 @@ public sealed class Wallet
 	/// <summary>灵魂余额。</summary>
 	public int Soul { get; private set; }
 
+	/// <summary>余额实际变化后通知一次，界面重新读取完整余额。</summary>
+	public event Action Changed;
+
 	/// <summary>按存档余额创建钱包。</summary>
 	/// <param name="soul">初始灵魂，负数视为 0。</param>
 	public Wallet(int soul)
@@ -21,7 +24,7 @@ public sealed class Wallet
 	public void AddSoul(int amount)
 	{
 		ArgumentOutOfRangeException.ThrowIfNegative(amount);
-		Soul = (int)Math.Min((long)Soul + amount, int.MaxValue);
+		SetSoul((int)Math.Min((long)Soul + amount, int.MaxValue));
 	}
 
 	/// <summary>扣除灵魂；余额不足时不扣除。</summary>
@@ -36,7 +39,7 @@ public sealed class Wallet
 			return false;
 		}
 
-		Soul -= amount;
+		SetSoul(Soul - amount);
 
 		return true;
 	}
@@ -45,6 +48,15 @@ public sealed class Wallet
 	/// <param name="soul">要恢复的余额，负数视为 0。</param>
 	public void Restore(int soul)
 	{
-		Soul = Math.Max(0, soul);
+		SetSoul(Math.Max(0, soul));
+	}
+
+	/// <summary>提交完整余额后发出聚合变更，无变化不重复通知。</summary>
+	/// <param name="soul">已校验的非负余额。</param>
+	private void SetSoul(int soul)
+	{
+		if (soul == Soul) return;
+		Soul = soul;
+		Changed?.Invoke();
 	}
 }

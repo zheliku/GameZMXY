@@ -10,6 +10,7 @@ namespace GameLogic.UI;
 public partial class SaveNoticeForm
 {
     private bool m_IsOpen; // 当前是否已订阅保存事实。
+    private ulong m_LastTick; // 提示按真实时间结束，背包暂停时也不滞留。
 
     /// <summary>初始化框架身份与一次性动画回调。</summary>
     /// <param name="serialId">窗口编号。</param>
@@ -49,6 +50,7 @@ public partial class SaveNoticeForm
         m_SaveFeedbackAnimation.Stop();
         m_SaveFeedbackAnimation.Play("feedback/show");
         m_SaveFeedbackAnimation.Advance(0);
+        m_LastTick = Time.GetTicksUsec();
     }
 
     /// <summary>提示结束后恢复位置、透明度并隐藏。</summary>
@@ -90,10 +92,16 @@ public partial class SaveNoticeForm
         m_IsOpen = false;
     }
 
-    /// <summary>提示动画由 AnimationPlayer 推进。</summary>
+    /// <summary>手动按真实时间推进提示，不随战斗暂停冻结在其他窗口上。</summary>
     /// <param name="elapseSeconds">游戏秒数。</param>
     /// <param name="realElapseSeconds">真实秒数。</param>
-    public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
+    public void OnUpdate(float elapseSeconds, float realElapseSeconds)
+    {
+        if (!m_IsOpen || !m_SaveFeedbackAnimation.IsPlaying()) return;
+        ulong now = Time.GetTicksUsec();
+        m_SaveFeedbackAnimation.Advance((now - m_LastTick) / 1_000_000d);
+        m_LastTick = now;
+    }
     /// <summary>提示不会主动暂停。</summary>
     public void OnPause() { }
     /// <summary>恢复时没有额外状态。</summary>

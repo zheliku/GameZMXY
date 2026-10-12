@@ -44,7 +44,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
         KnockbackScaleXMonsterDef = _buf.ReadFloat();
         KnockbackScaleY = _buf.ReadFloat();
         WsMax = _buf.ReadInt();
-        DeathRestartDelay = _buf.ReadFloat();
+        DeathSettlementDelay = _buf.ReadFloat();
         MonsterHealthBarFadeDuration = _buf.ReadFloat();
         WsGainPerDamageRatio = _buf.ReadFloat();
         WsAttackMultiplier = _buf.ReadFloat();
@@ -174,9 +174,9 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// </summary>
     public readonly int WsMax;
     /// <summary>
-    /// 英雄死亡后自动重开本关的等待秒数(含死亡动画 1.1 秒)
+    /// 死亡动画播放后显示失败结算（秒）
     /// </summary>
-    public readonly float DeathRestartDelay;
+    public readonly float DeathSettlementDelay;
     /// <summary>
     /// 小怪受伤血条淡出总时长（秒）；本项目延长为4秒，官方原值2秒
     /// </summary>
@@ -252,7 +252,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "KnockbackScaleXMonsterDef:" + KnockbackScaleXMonsterDef + ","
         + "KnockbackScaleY:" + KnockbackScaleY + ","
         + "WsMax:" + WsMax + ","
-        + "DeathRestartDelay:" + DeathRestartDelay + ","
+        + "DeathSettlementDelay:" + DeathSettlementDelay + ","
         + "MonsterHealthBarFadeDuration:" + MonsterHealthBarFadeDuration + ","
         + "WsGainPerDamageRatio:" + WsGainPerDamageRatio + ","
         + "WsAttackMultiplier:" + WsAttackMultiplier + ","

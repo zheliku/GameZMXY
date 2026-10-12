@@ -46,4 +46,5 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="m_SaveFeedbackAnimation" type="AnimationPlayer" parent="." unique_id=1249960999]
+callback_mode_process = 2
 libraries/feedback = ExtResource("save_feedback")
