@@ -20,6 +20,7 @@ public sealed partial class ProfileConfig : Luban.BeanBase
         Desc = _buf.ReadString();
         StartHeroId = _buf.ReadInt();
         StartSoul = _buf.ReadInt();
+        EquipmentCapacity = _buf.ReadInt();
     }
 
     public static ProfileConfig DeserializeProfileConfig(ByteBuf _buf)
@@ -43,6 +44,10 @@ public sealed partial class ProfileConfig : Luban.BeanBase
     /// 初始灵魂
     /// </summary>
     public readonly int StartSoul;
+    /// <summary>
+    /// 装备背包容量，三页每页25格
+    /// </summary>
+    public readonly int EquipmentCapacity;
    
     public const int __ID__ = -1299972474;
     public override int GetTypeId() => __ID__;
@@ -58,6 +63,7 @@ public sealed partial class ProfileConfig : Luban.BeanBase
         + "Desc:" + Desc + ","
         + "StartHeroId:" + StartHeroId + ","
         + "StartSoul:" + StartSoul + ","
+        + "EquipmentCapacity:" + EquipmentCapacity + ","
         + "}";
     }
 }

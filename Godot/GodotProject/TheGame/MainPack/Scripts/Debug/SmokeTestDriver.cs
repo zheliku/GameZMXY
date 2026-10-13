@@ -56,22 +56,23 @@ public partial class SmokeTestDriver : Node
 	private static readonly (double At, string Action, string Mode)[] Plan =
 	{
 		(2.00, "attack", "mash"),
-		(4.00, "attack", "release"),
+		(4.60, "attack", "release"),
 		(5.00, "move_right", "hold"),
 		(5.10, "move_right", "release"),
 		(5.20, "move_right", "hold"),
 		(6.30, "move_right", "release"),
 		(6.35, "hurt", "damage"),
 		(6.70, "jump", "tap"),
+		(6.85, "attack", "tap"),
 		(7.40, "jump", "tap"),
 		// 首阶段已在准备阶段激活；第二轮连打覆盖跳跃后落地的真实命中链路。
 		(8.30, "attack", "mash"),
-		(10.30, "attack", "release"),
+		(11.00, "attack", "release"),
 	}; // 按时间安排英雄烟测的输入动作。
 
 	private static readonly string[] Required =
 	{
-		"Attack/attack_1", "Attack/attack_2", "Attack/attack_3", "Attack/attack_4",
+		"Attack/attack_1", "Attack/attack_2", "Attack/attack_3", "Attack/attack_4", "Attack/attack_5",
 		"Ground/run", "Hurt/hurt", "Air/jump", "Air/fall", "Air/jump_2", "Ground/idle1",
 	}; // 必须观测到的身体状态与实际动画组合。
 
@@ -80,7 +81,8 @@ public partial class SmokeTestDriver : Node
 		("Attack/attack_1", "Attack/attack_2", false, false),
 		("Attack/attack_2", "Attack/attack_3", false, false),
 		("Attack/attack_3", "Attack/attack_4", false, false),
-		("Attack/attack_4", "Ground/run", false, false),
+		("Attack/attack_4", "Attack/attack_5", false, false),
+		("Attack/attack_5", "Ground/run", false, false),
 		("Ground/run", "Hurt/hurt", false, false),
 		("Hurt/hurt", "Air/jump", false, false),
 		("Air/jump", "Air/jump_2", false, false),
@@ -88,10 +90,10 @@ public partial class SmokeTestDriver : Node
 		("Air/jump_2", "Ground/idle1", false, true), // 落地后回待机，取最后一次 idle1
 	}; // 必须按顺序出现的状态与动画组合。
 
-	private const double EndTime = 11.5; // 英雄烟测最长运行时间（秒）。
+	private const double EndTime = 12.5; // 英雄烟测最长运行时间（秒）。
 	private const double FindTimeout = 5.0; // 等待实体出现的超时时间（秒）。
 
-	private const float SandbagOffset = 100f; // 沙包猴子相对英雄的水平站位（像素）。
+	private const float SandbagOffset = 60f; // 沙包站在可见棍身范围内（像素）；越界不命中由逐帧物理验证覆盖。
 
 	private HeroEntity m_Hero; // 烟测中的英雄实体。
 
@@ -642,7 +644,7 @@ public partial class SmokeTestDriver : Node
 
 	private void CheckAttackFinishTiming(List<string> failures) // 校验连段切换等待当前攻击动画结束。
 	{
-		for (int seg = 1; seg < 4; seg++)
+		for (int seg = 1; seg < 5; seg++)
 		{
 			int indexA = FirstIndex($"Attack/attack_{seg}");
 			int indexB = FirstIndex($"Attack/attack_{seg + 1}");
@@ -652,9 +654,10 @@ public partial class SmokeTestDriver : Node
 			}
 
 			double gap = m_Observed[indexB].Time - m_Observed[indexA].Time;
-			if (gap < 0.30)
+			double length = m_Hero.AnimPlayer.GetAnimation($"attack_{seg}").Length;
+			if (gap < length - 1d / 60 || gap > length + 3d / 60)
 			{
-				failures.Add($"连段 {seg}→{seg + 1} 间隔 {gap:F2}s < 动画长度 0.35s（没等播完就切段？）");
+				failures.Add($"连段 {seg}→{seg + 1} 间隔 {gap:F3}s 与动画长度 {length:F3}s 不符");
 			}
 		}
 	}

@@ -1,3 +1,4 @@
+using Godot;
 using GameLogic.Monsters.AI;
 namespace GameLogic.Monsters.AI
 {
@@ -28,7 +29,7 @@ namespace GameLogic.Monsters.AI
 		/// **空盒 = 没有目标**（未发现 / 已死亡回收 / 已丢失）。与招式判定盒（<see cref="MonsterAttackSpec.Reach"/>）
 		/// 求交决定"够不够得着"——含高度；中心 X 即目标的水平方位。
 		/// </summary>
-		AiBox TargetBox { get; }
+		Rect2 TargetBox { get; }
 
 		/// <summary>自己相对巡逻中心的水平偏移；关卡使用当前相机中心，独立场地使用出生点</summary>
 		float PatrolOffsetX { get; }

@@ -6,8 +6,6 @@
 
 | 旧路径 | 新路径 | 规格 / 说明 |
 | --- | --- | --- |
-| `Art/HeroPicture/Role1AllEquipment/Role_1_Body_Empty.png` | `Sprites/Characters/Heroes/wukong/wukong_body.png` | 1200×2800，6 列 × 14 行，200×200 / 帧（84 帧） |
-| `Art/HeroPicture/Role1AllEquipment/Role_1_Eq_Empty.png` | `Sprites/Characters/Heroes/wukong/wukong_weapon_empty.png` | 同上网格；**武器层**（空手），见下「武器层」 |
 | `Art/Monster/Monster1/Wait.png` | `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_idle.png` | 43×63，1 帧 |
 | `Art/Monster/Monster1/Walk.png` | `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_run.png` | 64×88 × 4 帧 |
 | `Art/Monster/Monster1/Hit.png` | `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_attack.png` | 91×83 × 6 帧 |
@@ -33,43 +31,29 @@
 | `Art/HeroPicture/WSBar.png` | `Sprites/UI/hud/hud_ws_max_sheet.png` | 890×89，10 张 89×89 帧；满值时 `AnimatedSprite2D` 以 25 FPS 往返循环。`hud_ws_flash.gdshader` 用首帧轮廓和可调圆形范围限制透明度；默认半径 32px、圆心 (0.5, 0.5)、向内羽化 1px，源图保留不变 |
 | `Art/HeroPicture/RoleProperiesBox/swk.png` | `Sprites/UI/hud/hud_head_wukong.png` | 83×76，悟空头像 |
 | `Art/HeroPicture/RoleProperiesBox/748.png` | `Sprites/UI/hud/hud_status_label.png` | 17×46，状态标签装饰 |
-| `Art/HeroPicture/Role1SpecialEffect/Role1Hit1.png` | `Sprites/Effects/wukong/wukong_hit_1.png` | 210×206 × 5 帧；普攻 1 段棍气 |
-| `Art/HeroPicture/Role1SpecialEffect/Role1Hit2.png` | `Sprites/Effects/wukong/wukong_hit_2.png` | 159×54 × 2 帧；普攻 2 段棍气 |
-| `Art/HeroPicture/Role1SpecialEffect/Role1Hit3.png` | `Sprites/Effects/wukong/wukong_hit_3.png` | 326×66 × 4 帧；普攻 3 段棍气 |
-| `Art/HeroPicture/Role1SpecialEffect/Role1Hit4.png` | `Sprites/Effects/wukong/wukong_hit_4.png` | 315×82 × 2 帧；普攻 4 段棍气 |
 
 地板从 4812×170 裁至 4700×170，去掉右侧透明圆角；该裁剪不覆盖用户后续地形编辑。
 
-## 武器
-
-下列文件均在旧 `Art/HeroPicture/Role1AllEquipment/`，新 `Sprites/Characters/Heroes/wukong/`；身体和武器共用 6×14、每格 200×200 网格。
-
-| 旧文件 | 新文件 | 旧键 / 名称 |
-| --- | --- | --- |
-| `Role_1_Eq_Empty.png` | `wukong_weapon_empty.png` | 空手 |
-| `Role_1_Eq_ryjgb.png` | `wukong_weapon_golden_cudgel.png` | `ryjgb` 如意金箍棒 |
-| `Role_1_Eq_wkjdyhwq.png` | `wukong_weapon_wooden_stick.png` | `wkjdyhwq` 经典原画·木棍 |
-| `Role_1_Eq_qld.png` | `wukong_weapon_dragon_blade.png` | `qld` 青龙刀 |
-| `Role_1_Eq_zjbtg.png` | `wukong_weapon_purple_gold_cudgel.png` | `zjbtg` 紫金镔铁棍 |
+旧 `Role1AllEquipment` 的身体、空手、如意金箍棒、木棍、青龙刀和紫金镔铁棍六张图集，以及 `Role1SpecialEffect/Role1Hit1..4.png` 四张棍气图，已由下文官方造一资源替换。工程内十张无引用副本及其 `.import` 已删除，原件仍在只读旧工程中；不将造三式四段轨道继续用于造一图集。
 
 ## 动画
 
-动作数据来自旧场景的帧、特效、判定盒值轨道；当前由身体状态机驱动 AnimationPlayer。动画库位于 `Entitys/Animations/*_anim_library.tres`，棍气 SpriteFrames 为 `Sprites/Effects/wukong/wukong_effect_animations.tres`。攻击特效序列中的 null 是收招空白帧，不能删除。
+怪物动作数据来自旧场景的帧、特效、判定盒值轨道；悟空普攻来自官方造一完整时间轴。当前由身体状态机驱动 AnimationPlayer，动画库位于 `Entitys/Animations/*_anim_library.tres`。悟空特效 SpriteFrames 为 `Sprites/Effects/wukong/wukong_effect_animations.tres`；序列中的 null 表示源时间轴上没有特效的帧，不能删除其播放时长。
 
-`Tools/LegacyMigration/gen_animations.py` 负责初次迁入，已有文件默认跳过；当前关键帧以编辑器保存的 `.tres` 为准。`--force` 会覆盖人工调整，仅用于明确需要的资源，不重跑旧 AnimationTree 构建器。
+`Tools/LegacyMigration/gen_animations.py` 只继续写出怪物初次迁入资源，已有文件默认跳过；当前关键帧以编辑器保存的 `.tres` 为准。悟空旧生成入口已停用，改用下文的官方导出与定向导入工具；不重跑旧 AnimationTree 构建器，也不整库覆盖人工调整。
 
 ## 战斗音效
 
 | 旧文件 | 新路径 | `SoundId` | 语义与触发 |
 | --- | --- | --- | --- |
-| `Music/Hero/40_Role1_hit1AndHit2.mp3` | `Audios/SFX/wukong/wukong_attack_2.mp3` | `WukongAttack2` | 挥棍起手（普攻第 2 段）；旧文件名与实际用法不符，以 method 轨道实测为准 |
-| `Music/Hero/39_Role1_hit3AndHit4.mp3` | `Audios/SFX/wukong/wukong_attack_1_3.mp3` | `WukongAttack1And3` | 挥棍起手（普攻 1、3 段共用） |
-| `Music/Hero/38_Role1_hit5.mp3` | `Audios/SFX/wukong/wukong_attack_4.mp3` | `WukongAttack4` | 挥棍起手（普攻第 4 段） |
+| `Music/Hero/40_Role1_hit1AndHit2.mp3` | `Audios/SFX/wukong/wukong_attack_2.mp3` | `WukongAttack1And2` | 造一普攻第 1、2 段共用 |
+| `Music/Hero/39_Role1_hit3AndHit4.mp3` | `Audios/SFX/wukong/wukong_attack_1_3.mp3` | `WukongAttack3And4` | 造一普攻第 3、4 段共用 |
+| `Music/Hero/38_Role1_hit5.mp3` | `Audios/SFX/wukong/wukong_attack_4.mp3` | `WukongAttack5` | 造一普攻第 5 段 |
 | `Music/Hero/49_Role1_beAttack.mp3` | `Audios/SFX/wukong/wukong_hurt.mp3` | `WukongHurt` | **受害者**的受击语音（`BaseHero.gd:592` 按 `self` 选音） |
 | `Music/Hero/59_Role1_dead.mp3` | `Audios/SFX/wukong/wukong_death.mp3` | `WukongDeath` | 死亡语音（旧 death 动画的 `add_music(7)`） |
 | `Music/MonsterHurt/6_BeattackByRole1.mp3` | `Audios/SFX/wukong/wukong_hit_impact.mp3` | `WukongImpact` | **攻击者**的命中音（`BaseMonster.gd:652` 按攻击者选音）；旧名 `monster_hurt` 是错的——它不是怪物语音，是"悟空的棍打中东西"的声音 |
 
-起手/命中音绑定 AttackConfig，受击/死亡语音绑定受害者配置；音频播放统一经 GGF，职责规则见第 30/50 章。
+音频文件名保留迁入时的历史名称，实际段号以表中 SoundId 为准。起手/命中音绑定 AttackConfig，受击/死亡语音绑定受害者配置；音频播放统一经 GGF，职责规则见第 30/50 章。
 
 ## 伤害数字
 
@@ -245,4 +229,65 @@
 | `Art/BackPack/sz.png` | `Sprites/UI/inventory/inventory_slot_costume.png` |
 | `Art/BackPack/tx.png` | `Sprites/UI/inventory/inventory_slot_title.png` |
 
-`UIs/Widgets/hero_preview.tscn` 复用现有悟空身体和空手武器图集。外置 `inventory_preview_animation.tres` 取当前待机的 0..5 帧（0.8 秒循环）；金光取旧背包 BackPackLight 的第 3..8 格（192×192，15 fps，竖直翻转）。动画只改变显示帧，不带攻击或碰撞轨道。
+`UIs/Widgets/hero_preview.tscn` 与战斗实体共用下述官方身体、武器图集及 `wukong_appearance.tres`。外置 `inventory_preview_animation.tres` 取当前待机的 0..5 帧（0.8 秒循环）；金光取旧背包 BackPackLight 的第 3..8 格（192×192，15 fps，竖直翻转）。动画只改变显示帧，不带攻击或碰撞轨道。
+
+## 装备与地面恢复品
+
+`Tools/LegacyMigration/import_equipment_assets.py` 逐字节复制旧项目 `Art/ItemIcon/peach.png` 为 `Sprites/Items/consumables/pickup_small_peach.png` 与 `pickup_large_peach.png`（大桃子通过显示比例区分），`Bble.png` 为 `pickup_mana_bottle.png`。
+
+旧工程的粗糙装备图标缺失，曾暂用普通图；现已删除这组临时替代图。八件装备的图片均直接导出自官方 [OtherMat_v9.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/OtherMat_v9.swf)，恢复后 SHA-256 见 OfficialReference。原背包位图带黑色底板；按用户要求，背包和地面现在均使用对应的透明前景位图，保留原始 alpha，未重绘或调色。
+
+| 装备 | 背包位图 ID | 地面位图 ID | TheGame/Sprites/Items/equipment 文件名后缀 |
+| --- | ---: | ---: | --- |
+| 粗糙行者服 | 52 | 29 | rough_pilgrim_clothes |
+| 粗糙行者棍 | 60 | 16 | rough_pilgrim_staff |
+| 粗糙袈裟 | 48 | 25 | rough_cassock |
+| 粗糙松木杖 | 55 | 14 | rough_pine_staff |
+| 普通行者服 | 51 | 28 | common_pilgrim_clothes |
+| 普通行者棍 | 59 | 15 | common_pilgrim_staff |
+| 普通袈裟 | 47 | 24 | common_cassock |
+| 普通松木杖 | 54 | 13 | common_pine_staff |
+
+背包文件为 `equipment_<后缀>.png`，地面文件为 `ground_<后缀>.png`。复现：`python Tools/LegacyMigration/export_official_equipment.py --java <java.exe> --ffdec <ffdec.jar> --source <OtherMat_v9.swf>`；源包、解包 XML 与工具留在临时目录，不提交旧项目脚本。
+
+粗糙与普通的原背包位图不同，但同款装备的两个透明前景位图在原文件中内容相同；目前保留原样，品质由名称和详情区分，不人为改色。
+
+## 悟空独立身体与武器
+
+当前战斗和背包使用官方 `Role_v7.swf` 的 `export.hero.Role1`（sprite 575）动作。四张图均为 1200×3000、6×15、每格 200×200；87 个有效帧紧凑排列，仅末行余 3 格：
+
+| 新文件（`Sprites/Characters/Heroes/wukong/`） | 源选择帧 | 用途 |
+| --- | --- | --- |
+| `wukong_body_bare.png` | 衣服元件 143/152/160/186 的第 1 帧 | 未穿防具的身体 |
+| `wukong_body_pilgrim.png` | 同上第 2 帧 | 粗糙/普通行者服共用外观 |
+| `wukong_weapon_default.png` | 武器元件 177 第 1 帧 | 默认木棍 |
+| `wukong_weapon_pilgrim.png` | 同上第 2 帧 | 粗糙/普通行者棍共用外观 |
+
+沿用旧 `Scene/Hero/Role_1/Role1.tscn` 的两层结构：完整身体在后，武器在前；源绘制深度位于武器前方的头部、手臂等作为导出遮罩，裁掉武器被遮挡的部分。遮罩只在导出时使用，不创建第三个运行时层，也不导出武器和防具的组合图集。两种防具须保持相同的前景遮挡轮廓，便于武器独立替换。
+
+所有动作保留 Role1 父级中的完整矩阵，统一 SVG viewBox `(-100,-128,200,200)`，原 Flash 原点位于格内 `(100,128)`。例如待机平移 `(1.45,0.8)`、慢走 `(-6.85,0.85)`、跑步 `(3.75,0.2)`、受击 `(-17.95,2.6)`；漏掉这些矩阵会造成动作切换跳位。不能按各帧可见边界重新居中，也不能在运行时移动角色根节点补偿。
+
+帧号为零起：基础动作 0..24；五段普攻依次为 25..32、33..40、41..51、52..71、72..86。身体与武器共用帧号，源动作暂时隐藏武器的 3 帧保留透明，不能因此移除武器槽并破坏同步。已删除旧技能占位和重复采样的攻击姿势，不预留整片空槽。
+
+固定红金色金箍棒形状的残影只来自元件 246，导出时在所有动作中过滤；保留 203/254/282 的弧光和旋转特效。第三、四段仍有原版动态效果，第五段去掉棒影后没有独立可见特效。身体、真实武器及源时序不变。特效图 `Sprites/Effects/wukong/wukong_attack_effects.png` 为 2400×1200、6×4、每格 400×300，19 个可见源帧、末行余 5 格。五段共 62 个源帧，43 个无特效帧用 null 保留时序而不占图集。特效 viewBox `(-200,-178,400,300)`，Flash 原点对应本地 `(0,28)`；按源深度裁去被后续身体/武器遮挡的部分，不混入装备层。
+
+判定使用两种真实武器 alpha≥0.25 与当帧剑气 alpha≥0.1 的像素并集，生成覆盖武器和剑气残留的矩形；水平与长轴旋转两种候选取面积较小者，外围 3px 余量、最小厚度 14px。防具和武器外观不改变命中范围。原版探针提供有效时间窗，保留剑气均在窗口内；第四段前三帧只有弧光也保持判定。修改美术后经导出工具更新几何，再用逐帧截图及真实武器近端、剑气区域和范围外目标检查对齐。
+
+复现入口为 `Tools/LegacyMigration/export_official_wukong.py`（核对源 SHA、保留矩阵和逐帧深度）与 `EditorScripts/import_official_wukong.gd`（原生 SVG 栅格化、紧凑打包、拟合判定并输出 manifest）。必须显式指定工程内的特效输出路径；完整命令统一放在 [Validation](Validation.md)。随后 `Tools/LegacyMigration/import_official_wukong_attacks.py` 按 manifest 定向替换五段攻击、特效序列和矩形判定轨道，移除无消费者的 skill_*，一次性映射基础帧号并更新两处场景网格；其余基础动作只补齐判定旋转归零轨道，手调时序及已有轨道保持原样。重复执行不会再次映射。
+
+当前 14 个玩法动作（9 个基础动作、5 段攻击）和 RESET 使用同一两层资源，背包待机引用不变。造三攻击和未实现技能等将来取得对应素材时再完整迁入，不保留混代的占位动画。
+
+## 恢复飘字与装备菜单
+
+| 新资源 | 来源 | 处理 |
+| --- | --- | --- |
+| `Sprites/Number/recovery_number_health.png` | 旧 `Art/AllNumber/cure/cure_0..9.png` | 原位图横向拼接，绿色恢复生命数字 |
+| `Sprites/Number/recovery_number_mana.png` | 旧 `Art/AllNumber/CureMp/CureMp_0..9.png` | 原位图横向拼接，蓝色恢复魔法数字 |
+| `Sprites/UI/inventory/inventory_actions_background.png` | 造梦三 `Commonv3720.swf`，shape 369 | 87×115 菜单底板 |
+| `inventory_action_equip.png` / `inventory_action_equip_disabled.png` | 同包 sprite 376，第 1/2 帧 | 77×31 装备按钮 |
+| `inventory_action_gift_disabled.png` | 同包 sprite 367，第 2 帧 | 单人赠送禁用 |
+| `inventory_action_sell.png` | 同包 sprite 381，第 1 帧 | 出售按钮 |
+
+恢复数字由 `Tools/LegacyMigration/gen_damage_numbers.gd` 拼接，表现规则见 OfficialReference。菜单由 `Tools/LegacyMigration/export_official_inventory_actions.py` 核对官方包散列后导出；来源为矢量元件，未截图或重绘。提示框按官方 `AttributeCon.as` 的字体、间距、颜色和装饰重建为原生 Godot 控件。
+
+翻页按钮直接迁自旧项目 `Art/BackPack/LastPageN/Y.png`、`NextPageN/Y.png`，分别保留普通/悬停图，命名为 `inventory_previous_page[_hover].png`、`inventory_next_page[_hover].png`；图片已有箭头和文字，不叠加 Label。只复制 PNG，Godot 在新路径生成导入信息。

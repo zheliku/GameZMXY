@@ -17,7 +17,10 @@ sequences from the legacy scene data once, then commit the generated .tres.
 
 Run:  python Tools/LegacyMigration/gen_animations.py            # 只补缺失的产物
       python Tools/LegacyMigration/gen_animations.py --force    # 强制全部重建（覆盖编辑器里的调整！）
-      python Tools/LegacyMigration/gen_animations.py --force wukong_anim_library.tres   # 只重建指定产物
+      python Tools/LegacyMigration/gen_animations.py --force demon_monkey_anim_library.tres   # 只重建指定产物
+
+悟空已改用官方造一完整帧导出，旧悟空迁移数据只保留溯源，不再由本入口写出。
+使用 export_official_wukong.py 与 import_official_wukong_attacks.py，不能用旧轨道覆盖新图集。
 
 真相源（2026-09-30 人类裁决）：产物一旦存在，**以 Godot 编辑器里保存的 .tres 为准**
 （判定盒、特效偏移等在 Animation 面板里调）。本脚本默认跳过已存在的产物，
@@ -1189,7 +1192,6 @@ def build_wukong_library():
 
         tracks = [
             (BODY_NODE + ":frame", "int", keys),
-            (WEAPON_NODE + ":frame", "int", keys),
         ]
 
         # 非攻击/特效未迁移的动画：统一"切空白 + 帧归零 + 位置归零 + scale=1"四件套。
@@ -1239,7 +1241,6 @@ def build_wukong_library():
         hit_track = _hitbox_track(None, None)
         tracks = [
             (BODY_NODE + ":frame", "int", keys),
-            (WEAPON_NODE + ":frame", "int", keys),
             (FX_NODE + ":animation", "string", [(0.0, "empty")]),
             (FX_NODE + ":frame", "int", [(0.0, 0)]),
             (FX_NODE + ":offset", "vector2", [(0.0, (0.0, 0.0))]),
@@ -1250,6 +1251,11 @@ def build_wukong_library():
         anims.append({"name": name, "loop": loop, "length": length, "tracks": tracks})
 
     _append_reset_animation(anims, shape_res, hero=True)
+    # Body and weapon remain independent; source atlases share frame registration.
+    for animation in anims:
+        animation["tracks"] = [track for track in animation["tracks"] if not track[0].startswith(WEAPON_NODE + ":")]
+        body = next(track for track in animation["tracks"] if track[0] == BODY_NODE + ":frame")
+        animation["tracks"].insert(1, (WEAPON_NODE + ":frame", body[1], body[2]))
     return anims, shape_res
 
 
@@ -1337,14 +1343,42 @@ def gen_wukong_library():
     emit_anim_library(out, anims, shape_res)
 
 
+def synchronize_weapon_tracks():
+    """Synchronize independent weapon frames, preserving editor-authored timing and geometry."""
+    paths = [os.path.join(ENTITY_ANIMS, 'wukong_anim_library.tres'),
+             os.path.join(SPRITES, 'UI', 'inventory', 'inventory_preview_animation.tres')]
+    for path in paths:
+        with open(path, encoding='utf-8') as source:
+            text = source.read()
+        chunks = re.split(r'(?=\[sub_resource type="Animation")', text)
+        for i, chunk in enumerate(chunks):
+            parts = re.split(r'(?=tracks/\d+/type =)', chunk)
+            if len(parts) == 1:
+                continue
+            kept = [parts[0]]
+            index = 0
+            weapon_name = 'm_Weapon' if 'wukong_anim_library' in path else 'Weapon'
+            body_name = 'm_Body' if weapon_name == 'm_Weapon' else 'Body'
+            for part in parts[1:]:
+                if re.search(r'NodePath\("(?:m_Weapon|Weapon):', part):
+                    continue
+                kept.append(re.sub(r'tracks/\d+/', f'tracks/{index}/', part))
+                index += 1
+                if 'NodePath("' + body_name + ':frame")' in part:
+                    duplicate = part.replace(body_name + ':frame', weapon_name + ':frame')
+                    kept.append(re.sub(r'tracks/\d+/', f'tracks/{index}/', duplicate))
+                    index += 1
+            chunks[i] = ''.join(kept)
+        with open(path, 'w', encoding='utf-8', newline='\n') as target:
+            target.write(''.join(chunks))
+        print('Synchronized weapon tracks:', path)
+
+
 if __name__ == "__main__":
-    print("wukong merged library (AnimationPlayer direct-drive):")
-    gen_wukong_library()
-    # 2026-09-30：零引用的帧序列参照文件（wukong_animations.tres / wukong_weapon_*_animations.tres /
-    # wukong_effect_library.tres）已删除，对应 gen_wukong / gen_wukong_weapons 步骤停用；
-    # 帧数据现由 wukong_anim_library.tres 的帧轨道承载（gen_wukong_library）。
-    print("wukong effect (棍气):")
-    gen_wukong_effect()
+    if '--sync-weapon-tracks' in sys.argv:
+        synchronize_weapon_tracks()
+        sys.exit(0)
+    print("wukong: use the official exporter and targeted attack importer; legacy output disabled")
     print("huaguoshan_monkey:")
     gen_monkey()
     print("huaguoshan_monkey library (AnimationPlayer direct-drive):")

@@ -36,8 +36,8 @@ namespace GameLogic.Monsters
 		/// <returns>AI 抽选与释放判定使用的规格。</returns>
 		protected virtual MonsterAttackSpec BuildAttackSpec(int index, AttackConfig attack)
 		{
-			AiBox reach = ReadAttackReach(attack.Animation);
-			if (attack.AiWeight > 0 && reach.IsEmpty && attack.AiRange.Y <= 0f)
+			Rect2 reach = ReadAttackReach(attack.Animation);
+			if (attack.AiWeight > 0 && !reach.HasArea() && attack.AiRange.Y <= 0f)
 			{
 				Log.Warning("[MonsterEntity] 招式 {0}（动画 {1}）无有效判定范围且 AiRange 为 0，AI 不会使用这招",
 					attack.Id, attack.Animation);
@@ -60,7 +60,7 @@ namespace GameLogic.Monsters
 		private void BeginAttackIndex(int index)
 		{
 			// 出招开始时固定朝向并记录冷却，随后装填本段结算数据。
-			SetFacing(Math.Sign(TargetBox.CenterX));
+			SetFacing(Math.Sign(TargetBox.GetCenter().X));
 			Attacks.MarkUsed(index, GD.Randf);
 			AttackSegment = index;
 			ArmAttack(m_OwnAttacks[index], m_AttackMultiplier);
@@ -78,7 +78,7 @@ namespace GameLogic.Monsters
 		/// <summary>取攻击动画每个启用窗口内的形状矩形并集；只读取首个直接碰撞子节点。</summary>
 		/// <param name="animName">攻击动画名；原生判定坐标朝左。</param>
 		/// <returns>相对实体原点的范围；缺少有效判定窗口时为空。</returns>
-		private AiBox ReadAttackReach(string animName)
+		private Rect2 ReadAttackReach(string animName)
 		{
 			AnimationPlayer player = AnimPlayer;
 			if (player == null || HitBox == null || string.IsNullOrEmpty(animName) || !player.HasAnimation(animName) ||
@@ -95,7 +95,7 @@ namespace GameLogic.Monsters
 			// 判定盒容器与 Area2D 的本地位置（容器 scale 只负责朝向镜像，不参与原生坐标）
 			Vector2 offset = HitBox.Position + (HitBoxRoot?.Position ?? Vector2.Zero);
 
-			AiBox RectAt(float t)
+			Rect2 RectAt(float t)
 			{
 				Shape2D s = ValueAt(anim, shape, t)?.As<Shape2D>() ?? node.Shape;
 				if (s == null)
@@ -105,11 +105,15 @@ namespace GameLogic.Monsters
 
 				Vector2 p = (ValueAt(anim, position, t)?.AsVector2() ?? node.Position) + offset;
 				Rect2 r = s.GetRect();
-				return new AiBox(r.Position.X + p.X, r.End.X + p.X, r.Position.Y + p.Y, r.End.Y + p.Y);
+				return new Rect2(r.Position + p, r.Size);
 			}
 
 			// 采样时刻：disabled 轨道把动画切成若干窗口；每个启用窗口取起点 + 窗口内 shape/position 的关键帧
-			AiBox reach = default;
+			Rect2 reach = default;
+			void Include(Rect2 sample)
+			{
+				if (sample.HasArea()) reach = reach.HasArea() ? reach.Merge(sample) : sample;
+			}
 			float length = (float)anim.Length;
 			int keys = disabled < 0 ? 0 : anim.TrackGetKeyCount(disabled);
 			float start = 0f;
@@ -119,7 +123,7 @@ namespace GameLogic.Monsters
 				float end = k < keys ? (float)anim.TrackGetKeyTime(disabled, k) : length;
 				if (enabled && end > start)
 				{
-					reach = reach.Union(RectAt(start));
+					Include(RectAt(start));
 					foreach (int track in new[] { shape, position })
 					{
 						for (int i = 0; track >= 0 && i < anim.TrackGetKeyCount(track); i++)
@@ -127,7 +131,7 @@ namespace GameLogic.Monsters
 							float t = (float)anim.TrackGetKeyTime(track, i);
 							if (t > start && t < end)
 							{
-								reach = reach.Union(RectAt(t));
+								Include(RectAt(t));
 							}
 						}
 					}

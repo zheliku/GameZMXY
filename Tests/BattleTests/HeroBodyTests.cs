@@ -32,8 +32,9 @@ namespace GameLogic.Battle.Tests
 				EmoteTime = emoteTime,
 				EmoteDelayMin = 1f,
 				EmoteDelayMax = 1f,
-				AttackAnims = ["attack_1", "attack_2", "attack_3", "attack_4"],
-				AttackTimes = [attackTime, attackTime, attackTime, attackTime],
+				AttackAnims = ["attack_1", "attack_2", "attack_3", "attack_4", "attack_5"],
+				AttackTimes = [attackTime, attackTime, attackTime, attackTime, attackTime],
+				AirAttackIndex = 2,
 			};
 		}
 
@@ -93,9 +94,9 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("idle1", h.Body.LastAnim);
 		}
 
-		/// <summary>验证四段攻击连段推进并在末段后重新循环。</summary>
+		/// <summary>验证造一五段攻击连段推进并在末段后重新循环。</summary>
 		[Fact]
-		public void Combo_ChainsOneToFour_ThenLoops()
+		public void Combo_ChainsOneToFive_ThenLoops()
 		{
 			using HeroHarness h = new HeroHarness(Params());
 			h.Step(1);
@@ -103,7 +104,7 @@ namespace GameLogic.Battle.Tests
 			Assert.Equal("Attack", h.State);
 			Assert.Equal("attack_1", h.Body.LastAnim);
 
-			for (int seg = 2; seg <= 4; seg++)
+			for (int seg = 2; seg <= 5; seg++)
 			{
 				h.Press(attack: true);                       // 出招中按普攻 = 连击缓冲
 				int frames = h.StepUntil(s => s == "Attack" && h.Body.LastAnim == $"attack_{seg}");
@@ -167,9 +168,11 @@ namespace GameLogic.Battle.Tests
 			h.StepUntil(s => h.Body.LastAnim == "attack_3");
 			h.Press(attack: true);
 			h.StepUntil(s => h.Body.LastAnim == "attack_4");
+			h.Press(attack: true);
+			h.StepUntil(s => h.Body.LastAnim == "attack_5");
 			h.StepUntil(s => s == "Ground");
-			// 四段提交四次（连段推进不离开状态，收招离开时补一次归还）
-			Assert.Equal(4, h.Body.BeginCount);
+			// 五段各提交一次（连段推进不离开状态，收招离开时补一次归还）。
+			Assert.Equal(5, h.Body.BeginCount);
 			Assert.Equal(1, h.Body.EndCount);
 			Assert.Equal(-1, h.Body.AttackSegment);
 		}
@@ -294,9 +297,12 @@ namespace GameLogic.Battle.Tests
 			h.Step(1);
 			h.Press(attack: true);
 			Assert.Equal("Attack", h.State);
+			Assert.Equal("attack_3", h.Body.LastAnim);
+			Assert.Equal(2, h.Body.AttackSegment);
 			h.Press(attack: true);
 			h.StepUntil(s => s != "Attack");
 			Assert.Equal("Air", h.State);                  // 空中起手：不推进连段
+			Assert.Equal(0, h.Body.ComboIndex);
 		}
 
 		/// <summary>验证死亡可中断攻击并保持终止状态。</summary>

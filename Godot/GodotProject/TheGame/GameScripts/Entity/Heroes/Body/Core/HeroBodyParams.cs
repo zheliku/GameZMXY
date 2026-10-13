@@ -43,6 +43,9 @@ namespace GameLogic.Heroes.Body
 		/// <summary>普攻连段每段的时长秒（= 段动画长度，OnInit 读动画资源；状态计时）</summary>
 		public float[] AttackTimes { get; init; }
 
+		/// <summary>空中起手使用的普攻段下标，由具体英雄指定。</summary>
+		public int AirAttackIndex { get; init; }
+
 		/// <summary>普攻段数</summary>
 		public int ComboLength => AttackAnims?.Length ?? 0;
 	}

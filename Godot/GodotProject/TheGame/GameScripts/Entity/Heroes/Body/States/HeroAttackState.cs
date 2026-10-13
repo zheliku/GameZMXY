@@ -8,7 +8,8 @@ namespace GameLogic.Heroes.Body
 	/// 普攻连段。**段时长 = 段动画长度**（OnInit 读动画资源进 Params，状态用物理 dt 计时）：
 	///  * 进入（状态 Enter）即提交出招（宿主 BeginAttack：装填攻击包、播起手音）并从第 0 帧播本段动画；
 	///  * 段时长到点：出招中按过普攻（连击缓冲）且起手站在地面、还有下一段 → 接下一段；否则收招回 Ground/Air。
-	/// 连段序号每执行一段 +1（末段回 0），跨按键保持——连段始终 1→2→3→4→1 循环（同旧 hit_count）。
+	/// 地面连段序号每执行一段 +1（末段回 0），跨按键保持；段数由角色招式表决定。
+	/// 空中使用角色指定的下劈段，结束后连段归零。
 	///
 	/// 出招中：地面定身、空中保留动量（旧 is_can_move_attack_in_sky），朝向锁定；跳跃不打断出招；
 	/// **受击挂起**到收招后才生效（有意的手感取舍：连段不被单次受击清空）；死亡立即打断。
@@ -29,8 +30,10 @@ namespace GameLogic.Heroes.Body
 		/// <summary>记录起手是否在地面，并开始当前连段。</summary>
 		protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
 		{
-			m_Chainable = body.OnFloor;
-			StartSegment(body, Mathf.Clamp(body.ComboIndex, 0, body.Params.ComboLength - 1));
+			m_Chainable = !IsAirborne(body);
+			StartSegment(body, m_Chainable
+				? Mathf.Clamp(body.ComboIndex, 0, body.Params.ComboLength - 1)
+				: body.Params.AirAttackIndex);
 		}
 
 		/// <summary>离开攻击状态时归还攻击包。</summary>
@@ -63,12 +66,15 @@ namespace GameLogic.Heroes.Body
 			m_Left -= dt;
 		}
 
-		private void FinishSegment(IFsm<IHeroBody> fsm, IHeroBody body) // 推进连段序号，并选择接续下一段或结束攻击。
+		/// <summary>推进地面连段或重置空中连段，并选择接续攻击或返回移动。</summary>
+		/// <param name="fsm">拥有当前身体状态的状态机。</param>
+		/// <param name="body">提供输入缓冲和动作参数的英雄身体。</param>
+		private void FinishSegment(IFsm<IHeroBody> fsm, IHeroBody body)
 		{
 			int combo = body.Params.ComboLength;
 			int finished = m_Segment;
 			// 无论是否接段，连段序号都前进；末段后回到首段。
-			body.ComboIndex = (finished + 1) % combo;
+			body.ComboIndex = m_Chainable ? (finished + 1) % combo : 0;
 			if (m_Chain && m_Chainable && finished < combo - 1)
 			{
 				// 只有地面起手且存在后续段时消费缓存输入。
@@ -80,7 +86,10 @@ namespace GameLogic.Heroes.Body
 			ChangeToLocomotion(fsm, body);
 		}
 
-		private void StartSegment(IHeroBody body, int segment) // 重置段内输入与计时，再提交攻击并重播对应动画。
+		/// <summary>清空段内缓冲，装填攻击并从头播放对应动画。</summary>
+		/// <param name="body">执行攻击的英雄身体。</param>
+		/// <param name="segment">招式表中从零开始的段号。</param>
+		private void StartSegment(IHeroBody body, int segment)
 		{
 			m_Segment = segment;
 			m_Chain = false;

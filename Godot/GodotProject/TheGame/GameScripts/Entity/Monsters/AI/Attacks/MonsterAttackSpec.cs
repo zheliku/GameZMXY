@@ -1,3 +1,4 @@
+using Godot;
 using GameLogic.Monsters.AI;
 using System;
 
@@ -18,7 +19,7 @@ namespace GameLogic.Monsters.AI
 		public int Priority { get; init; }
 
 		/// <summary>近战攻击动画判定盒的并集（素材原生朝左）。</summary>
-		public AiBox Reach { get; init; }
+		public Rect2 Reach { get; init; }
 
 		/// <summary>无近战判定盒招式的水平释放距离区间（远程/冲锋）</summary>
 		public (float Min, float Max) Range { get; init; }

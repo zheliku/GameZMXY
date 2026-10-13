@@ -1,3 +1,4 @@
+using Godot;
 using GameLogic.Monsters.AI;
 using System;
 using GameFramework.Fsm;
@@ -17,7 +18,7 @@ namespace GameLogic.Battle.Tests
 	{
 		private const float Dt = 1f / 60f; // 单个物理帧的时长。
 
-		private static readonly AiBox MonkeyReach = new AiBox(-49f, 1f, -48f, 2f); // 猴子 attack_1 判定盒范围（原生朝左）。
+		private static readonly Rect2 MonkeyReach = new Rect2(-49f, -48f, 50f, 50f); // 猴子 attack_1 判定盒范围（原生朝左）。
 
 		private static MonsterAiParams MonkeyParams(int desire = 70, float calm = 0f, float pace = 60f) // 猴子同款参数：欲望 70、判定 1s、首次延迟 0.35~1.0s、巡逻 2s/10%/半径 200、僵直 0、滞回 25、踱步半幅 60。
 		{
@@ -57,9 +58,9 @@ namespace GameLogic.Battle.Tests
 			};
 		}
 
-		private static AiBox Hero(float dx, float dy = 0f) // 创建同一地面上指定偏移的英雄受击盒。
+		private static Rect2 Hero(float dx, float dy = 0f) // 创建同一地面上指定偏移的英雄受击盒。
 		{
-			return new AiBox(dx - 20f, dx + 20f, -79f + dy, 19f + dy);
+			return new Rect2(dx - 20f, -79f + dy, 40f, 98f);
 		}
 
 		// ---------------------------------------------------------------- 规则（几何）
@@ -68,14 +69,14 @@ namespace GameLogic.Battle.Tests
 		[Fact]
 		public void Box_Facing_MirrorsOnlyWhenFacingRight()
 		{
-			AiBox right = MonkeyReach.Facing(1);
-			Assert.Equal(-1f, right.Left, 3);
-			Assert.Equal(49f, right.Right, 3);
-			Assert.Equal(-48f, right.Top, 3);
+			Rect2 right = MonkeyReach.Facing(1);
+			Assert.Equal(-1f, right.Position.X, 3);
+			Assert.Equal(49f, right.End.X, 3);
+			Assert.Equal(-48f, right.Position.Y, 3);
 
-			AiBox left = MonkeyReach.Facing(-1);
-			Assert.Equal(-49f, left.Left, 3);
-			Assert.Equal(1f, left.Right, 3);
+			Rect2 left = MonkeyReach.Facing(-1);
+			Assert.Equal(-49f, left.Position.X, 3);
+			Assert.Equal(1f, left.End.X, 3);
 		}
 
 		/// <summary>验证朝左攻击判定盒与英雄受击盒的水平间距。</summary>
@@ -539,7 +540,7 @@ namespace GameLogic.Battle.Tests
 			/// <summary>宿主是否正在攻击或收招硬直。</summary>
 			public bool IsAttacking { get; set; }
 			/// <summary>测试直接设置的目标判定盒；默认值表示无目标。</summary>
-			public AiBox TargetBox { get; set; }
+			public Rect2 TargetBox { get; set; }
 			/// <summary>宿主相对出生点的水平偏移。</summary>
 			public float PatrolOffsetX { get; set; }
 			/// <summary>怪物 AI 参数。</summary>
@@ -555,7 +556,7 @@ namespace GameLogic.Battle.Tests
 			public int RequestedAttack { get; private set; } = -1;
 
 			/// <summary>设置测试目标判定盒。</summary>
-			public void Target(AiBox box) => TargetBox = box;
+			public void Target(Rect2 box) => TargetBox = box;
 
 			/// <summary>清除当前测试目标。</summary>
 			public void LoseTarget() => TargetBox = default;

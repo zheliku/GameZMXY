@@ -6,6 +6,8 @@ using GameConfig.Hero;
 using GameConfig.Monster;
 using GameConfig.Sound;
 using GameLogic.Profile;
+using GameConfig.Equipment;
+using GameConfig.Loot;
 
 namespace GameLogic.Config
 {
@@ -57,57 +59,70 @@ namespace GameLogic.Config
 			// 怪物：生命上限为正、经验奖励非负、等级为正。
 			foreach (MonsterConfig monster in tables.TbMonsterConfig.DataList)
 			{
-				if (monster.Stats.MaxHp <= 0 || monster.AddExp < 0 || monster.Level < 1)
+				if (monster.BaseAttributes.MaxHp <= 0 || monster.AddExp < 0 || monster.Level < 1)
 				{
 					errors.Add($"怪物 {monster.Id}：MaxHp 必须为正、AddExp 非负、Level 至少为 1。");
 				}
 			}
+
 			foreach (var group in tables.TbMonsterConfig.DataList.GroupBy(x => x.EntityId))
 			{
 				if (group.Count() != 1)
 					errors.Add($"怪物实体 {group.Key} 必须只有一条基础配置，关卡差异通过刷怪配方描述。");
 			}
 
-            // 关卡音乐由关卡表声明，避免新关卡仍播放花果山硬编码音乐。
-            ValidateDrops(tables, errors);
-            foreach (var level in tables.TbLevelConfig.DataList)
-            {
-                foreach (var stage in level.Stages)
-                {
-                    foreach (var recipe in stage.Recipes)
-                    {
-                        if (tables.TbMonsterConfig.DataList.Count(x => x.EntityId == recipe.MonsterEntityId) != 1)
-                            errors.Add($"关卡 {level.LevelId} 阶段 {stage.StageOrder}：怪物 {recipe.MonsterEntityId} 必须关联唯一基础配置。");
-                        if (!float.IsFinite(recipe.HealthMultiplier) || recipe.HealthMultiplier <= 0f ||
-                            !float.IsFinite(recipe.DefenseMultiplier) || recipe.DefenseMultiplier < 0f ||
-                            !float.IsFinite(recipe.AttackMultiplier) || recipe.AttackMultiplier < 0f || recipe.ExperienceOverride < -1)
-                            errors.Add($"关卡 {level.LevelId} 配方 {recipe.SpawnPointId}：生命倍率必须为有限正数，防御/攻击倍率须有限且非负，经验覆盖须至少为 -1。");
-                    }
-                    if (stage.FeaturedOpponentId == GameConfig.Entity.EntityId.None) continue;
-                    if (stage.Recipes.Where(x => x.MonsterEntityId == stage.FeaturedOpponentId).Sum(x => x.Count) != 1)
-                        errors.Add($"关卡 {level.LevelId} 阶段 {stage.StageOrder}：守关展示必须唯一关联一只本阶段怪物。");
-                }
-                if (level.MusicId == SoundId.None) continue;
-                var music = tables.TbSoundConfig.GetOrDefault((int)level.MusicId);
-                if (music == null || music.Group != "Music")
-                    errors.Add($"关卡 {level.LevelId}：MusicId={level.MusicId} 必须引用 Music 组音效配置。");
-            }
+			// 关卡音乐由关卡表声明，避免新关卡仍播放花果山硬编码音乐。
+			ValidateDrops(tables, errors);
+			ValidateEquipment(tables, errors);
+			foreach (var level in tables.TbLevelConfig.DataList)
+			{
+				foreach (var stage in level.Stages)
+				{
+					foreach (var recipe in stage.Recipes)
+					{
+						if (recipe.EquipmentDropPoolOverride != EquipmentDropPoolId.UseMonster &&
+						    recipe.EquipmentDropPoolOverride != EquipmentDropPoolId.None &&
+						    tables.TbEquipmentDropPoolConfig.GetOrDefault(recipe.EquipmentDropPoolOverride) == null)
+							errors.Add($"关卡 {level.LevelId} 配方 {recipe.SpawnPointId}：装备掉落池不存在。");
+						if (tables.TbMonsterConfig.DataList.Count(x => x.EntityId == recipe.MonsterEntityId) != 1)
+							errors.Add(
+								$"关卡 {level.LevelId} 阶段 {stage.StageOrder}：怪物 {recipe.MonsterEntityId} 必须关联唯一基础配置。");
+						if (!float.IsFinite(recipe.HealthMultiplier) || recipe.HealthMultiplier <= 0f ||
+						    !float.IsFinite(recipe.DefenseMultiplier) || recipe.DefenseMultiplier < 0f ||
+						    !float.IsFinite(recipe.AttackMultiplier) || recipe.AttackMultiplier < 0f ||
+						    recipe.ExperienceOverride < -1)
+							errors.Add(
+								$"关卡 {level.LevelId} 配方 {recipe.SpawnPointId}：生命倍率必须为有限正数，防御/攻击倍率须有限且非负，经验覆盖须至少为 -1。");
+					}
 
-			if (!float.IsFinite(tables.TbBattleConfig.DeathSettlementDelay) || tables.TbBattleConfig.DeathSettlementDelay < 0f ||
-                !float.IsFinite(tables.TbBattleConfig.MonsterHealthBarFadeDuration) || tables.TbBattleConfig.MonsterHealthBarFadeDuration <= 0f)
+					if (stage.FeaturedOpponentId == GameConfig.Entity.EntityId.None) continue;
+					if (stage.Recipes.Where(x => x.MonsterEntityId == stage.FeaturedOpponentId).Sum(x => x.Count) != 1)
+						errors.Add($"关卡 {level.LevelId} 阶段 {stage.StageOrder}：守关展示必须唯一关联一只本阶段怪物。");
+				}
+
+				if (level.MusicId == SoundId.None) continue;
+				var music = tables.TbSoundConfig.GetOrDefault((int)level.MusicId);
+				if (music == null || music.Group != "Music")
+					errors.Add($"关卡 {level.LevelId}：MusicId={level.MusicId} 必须引用 Music 组音效配置。");
+			}
+
+			if (!float.IsFinite(tables.TbBattleConfig.DeathSettlementDelay) ||
+			    tables.TbBattleConfig.DeathSettlementDelay < 0f ||
+			    !float.IsFinite(tables.TbBattleConfig.MonsterHealthBarFadeDuration) ||
+			    tables.TbBattleConfig.MonsterHealthBarFadeDuration <= 0f)
 			{
 				errors.Add("战斗常数：死亡等待必须非负，小怪血条淡出秒数必须为正，且均为有限数。");
 			}
 
 			var battle = tables.TbBattleConfig.Data;
 			if (battle.WsMax <= 0 || !float.IsFinite(battle.WsDrainPerSecond) || battle.WsDrainPerSecond <= 0f
-				|| !float.IsFinite(battle.WsIntroPauseDuration) || battle.WsIntroPauseDuration <= 0f
-				|| !float.IsFinite(battle.WsGainPerDamageRatio) || battle.WsGainPerDamageRatio <= 0f
-				|| !float.IsFinite(battle.WsDecayPerSecond) || battle.WsDecayPerSecond <= 0f
-				|| !float.IsFinite(battle.WsAttackMultiplier) || battle.WsAttackMultiplier < 1f
-				|| !float.IsFinite(battle.WsMoveSpeedMultiplier) || battle.WsMoveSpeedMultiplier < 1f
-				|| !float.IsFinite(battle.WsJumpSpeedMultiplier) || battle.WsJumpSpeedMultiplier < 1f
-				|| !float.IsFinite(battle.WsGravityMultiplier) || battle.WsGravityMultiplier < 1f)
+			    || !float.IsFinite(battle.WsIntroPauseDuration) || battle.WsIntroPauseDuration <= 0f
+			    || !float.IsFinite(battle.WsGainPerDamageRatio) || battle.WsGainPerDamageRatio <= 0f
+			    || !float.IsFinite(battle.WsDecayPerSecond) || battle.WsDecayPerSecond <= 0f
+			    || !float.IsFinite(battle.WsAttackMultiplier) || battle.WsAttackMultiplier < 1f
+			    || !float.IsFinite(battle.WsMoveSpeedMultiplier) || battle.WsMoveSpeedMultiplier < 1f
+			    || !float.IsFinite(battle.WsJumpSpeedMultiplier) || battle.WsJumpSpeedMultiplier < 1f
+			    || !float.IsFinite(battle.WsGravityMultiplier) || battle.WsGravityMultiplier < 1f)
 			{
 				errors.Add("战斗常数：无双上限、每秒衰减/消耗、蓄力系数和开启停顿须为正；攻击、移速、跳跃和重力倍率须有限且至少为 1。");
 			}
@@ -120,35 +135,96 @@ namespace GameLogic.Config
 			return curve;
 		}
 
-        /// <summary>在预加载边界校验掉落数量、概率与飞行参数，运行时直接消费。</summary>
-        /// <param name="tables">只读配置总表。</param>
-        /// <param name="errors">集中错误列表。</param>
-        private static void ValidateDrops(Tables tables, List<string> errors)
-        {
-            var drop = tables.TbDropConfig.Data;
-            if (drop.MusouPerOrb <= 0 ||
-                drop.ManaMinimum < 0 || !float.IsFinite(drop.ManaMaxFraction) || drop.ManaMaxFraction < 0f ||
-                !float.IsFinite(drop.ScatterRadius) || drop.ScatterRadius < 0f ||
-                !float.IsFinite(drop.Delay) || drop.Delay < 0f ||
-                !float.IsFinite(drop.RiseDuration) || drop.RiseDuration <= 0f ||
-                !drop.RiseDistance.IsFinite() || drop.RiseDistance.X < 0f || drop.RiseDistance.Y < drop.RiseDistance.X ||
-                !float.IsFinite(drop.InitialSpeed) || drop.InitialSpeed <= 0f ||
-                !float.IsFinite(drop.Acceleration) || drop.Acceleration < 0f ||
-                !float.IsFinite(drop.MaxSpeed) || drop.MaxSpeed < drop.InitialSpeed ||
-                !float.IsFinite(drop.PickupRadius) || drop.PickupRadius <= 0f)
-                errors.Add("掉落：数量、回蓝、散布、时间、速度与接触半径配置非法。");
-            foreach (var monster in tables.TbMonsterConfig.DataList)
-            {
-                if (monster.SoulPerOrb < 0 || monster.SoulCount.X < 0 || monster.SoulCount.Y < monster.SoulCount.X ||
-                    !float.IsFinite(monster.ManaDropChance) || monster.ManaDropChance is < 0f or > 1f ||
-                    monster.ManaCount.X < 1 || monster.ManaCount.Y < monster.ManaCount.X ||
-                    !float.IsFinite(monster.MusouDropChance) || monster.MusouDropChance is < 0f or > 1f ||
-                    monster.MusouCount.X < 1 || monster.MusouCount.Y < monster.MusouCount.X)
-                    errors.Add($"怪物 {monster.Id}：灵魂数量和蓝球/无双球概率、数量配置非法。");
-            }
-        }
+		/// <summary>在预加载边界校验掉落数量、概率与飞行参数，运行时直接消费。</summary>
+		/// <param name="tables">只读配置总表。</param>
+		/// <param name="errors">集中错误列表。</param>
+		private static void ValidateDrops(Tables tables, List<string> errors)
+		{
+			var drop = tables.TbDropConfig.Data;
+			if (!float.IsFinite(drop.GroundLifetime) || drop.GroundLifetime <= 0 ||
+			    !float.IsFinite(drop.GroundGravity) || drop.GroundGravity <= 0 ||
+			    !float.IsFinite(drop.GroundPickupRadius) || drop.GroundPickupRadius <= 0)
+				errors.Add("地面掉落：存在秒数、重力与接触半径必须为有限正数。");
+			float chance = 0;
+			foreach (var pickup in tables.TbPickupConfig.DataList)
+			{
+				if (pickup.Id == PickupId.None || !Enum.IsDefined(pickup.Effect) || pickup.RestoreAmount <= 0 ||
+				    !float.IsFinite(pickup.DropChance) || pickup.DropChance is < 0 or > 1 ||
+				    !pickup.IconPath.StartsWith("res://TheGame/", StringComparison.Ordinal))
+					errors.Add($"恢复品 {pickup.Id}：恢复量、概率或资源路径非法。");
+				chance += pickup.DropChance;
+			}
 
-        /// <summary>校验每名英雄的成长行覆盖经验表全部等级且属性生命上限为正。</summary>
+			if (chance > 1) errors.Add("恢复品互斥掉落概率总和不能超过 1。");
+			if (drop.MusouPerOrb <= 0 ||
+			    drop.ManaMinimum < 0 || !float.IsFinite(drop.ManaMaxFraction) || drop.ManaMaxFraction < 0f ||
+			    !float.IsFinite(drop.ScatterRadius) || drop.ScatterRadius < 0f ||
+			    !float.IsFinite(drop.Delay) || drop.Delay < 0f ||
+			    !float.IsFinite(drop.RiseDuration) || drop.RiseDuration <= 0f ||
+			    !drop.RiseDistance.IsFinite() || drop.RiseDistance.X < 0f ||
+			    drop.RiseDistance.Y < drop.RiseDistance.X ||
+			    !float.IsFinite(drop.InitialSpeed) || drop.InitialSpeed <= 0f ||
+			    !float.IsFinite(drop.Acceleration) || drop.Acceleration < 0f ||
+			    !float.IsFinite(drop.MaxSpeed) || drop.MaxSpeed < drop.InitialSpeed ||
+			    !float.IsFinite(drop.PickupRadius) || drop.PickupRadius <= 0f)
+				errors.Add("掉落：数量、回蓝、散布、时间、速度与接触半径配置非法。");
+			foreach (var monster in tables.TbMonsterConfig.DataList)
+			{
+				if (!float.IsFinite(monster.EquipmentDropChance) || monster.EquipmentDropChance is < 0 or > 1 ||
+				    monster.EquipmentDropPoolId != EquipmentDropPoolId.None &&
+				    tables.TbEquipmentDropPoolConfig.GetOrDefault(monster.EquipmentDropPoolId) == null)
+					errors.Add($"怪物 {monster.Id}：装备概率或基础装备池非法。");
+				if (monster.SoulPerOrb < 0 || monster.SoulCount.X < 0 || monster.SoulCount.Y < monster.SoulCount.X ||
+				    !float.IsFinite(monster.ManaDropChance) || monster.ManaDropChance is < 0f or > 1f ||
+				    monster.ManaCount.X < 1 || monster.ManaCount.Y < monster.ManaCount.X ||
+				    !float.IsFinite(monster.MusouDropChance) || monster.MusouDropChance is < 0f or > 1f ||
+				    monster.MusouCount.X < 1 || monster.MusouCount.Y < monster.MusouCount.X)
+					errors.Add($"怪物 {monster.Id}：灵魂数量和蓝球/无双球概率、数量配置非法。");
+			}
+		}
+
+		/// <summary>校验装备定义、实例随机范围和掉落池外键，不等到实际掉落时才报错。</summary>
+		/// <param name="tables">只读配置总表。</param>
+		/// <param name="errors">集中错误列表。</param>
+		private static void ValidateEquipment(Tables tables, List<string> errors)
+		{
+			if (tables.TbProfileConfig.EquipmentCapacity is <= 0 or > 75)
+				errors.Add("背包容量必须在当前三页、每页 25 格的界面范围内。");
+			foreach (var item in tables.TbEquipmentConfig.DataList)
+			{
+				if (item.Id == EquipmentId.None || !Enum.IsDefined(item.Owner) || !Enum.IsDefined(item.Slot) ||
+				    !Enum.IsDefined(item.Quality) || item.SellPrice < 0 || string.IsNullOrWhiteSpace(item.NameCn) ||
+				    !item.IconPath.StartsWith("res://TheGame/", StringComparison.Ordinal) ||
+				    !item.GroundIconPath.StartsWith("res://TheGame/", StringComparison.Ordinal) ||
+				    item.AttributeRanges.Count == 0)
+					errors.Add($"装备 {item.Id}：身份、角色、部位、品质或资源非法。");
+				HashSet<(GameConfig.Attributes.AttributeType, GameConfig.Attributes.AttributeModifierKind)> attributes =
+					new();
+				foreach (var roll in item.AttributeRanges)
+					if (!Enum.IsDefined(roll.Attribute) ||
+					    roll.Kind != GameConfig.Attributes.AttributeModifierKind.Flat || roll.Minimum < 0 ||
+					    roll.Maximum < roll.Minimum ||
+					    !attributes.Add((roll.Attribute, roll.Kind)))
+						errors.Add($"装备 {item.Id}：随机范围非法或属性重复。");
+			}
+
+			foreach (var pool in tables.TbEquipmentDropPoolConfig.DataList)
+			{
+				long total = 0;
+				if (pool.Id is EquipmentDropPoolId.None or EquipmentDropPoolId.UseMonster || pool.Entries.Count == 0)
+					errors.Add($"装备池 {pool.Id}：编号或条目非法。");
+				foreach (var entry in pool.Entries)
+				{
+					total += entry.Weight;
+					if (entry.Weight <= 0 || tables.TbEquipmentConfig.GetOrDefault(entry.EquipmentId) == null)
+						errors.Add($"装备池 {pool.Id}：权重须为正且装备必须存在。");
+				}
+
+				if (total > int.MaxValue) errors.Add($"装备池 {pool.Id}：总权重溢出。");
+			}
+		}
+
+		/// <summary>校验每名英雄的成长行覆盖经验表全部等级且属性生命上限为正。</summary>
 		/// <param name="tables">配置总表。</param>
 		/// <param name="maxLevel">经验表最高等级。</param>
 		/// <param name="errors">错误汇总。</param>
@@ -167,7 +243,7 @@ namespace GameLogic.Config
 					errors.Add($"成长表：英雄 {row.HeroId} 的等级 {row.Level} 超出 1..{maxLevel}。");
 				}
 
-				if (row.Stats.MaxHp <= 0)
+				if (row.BaseAttributes.MaxHp <= 0)
 				{
 					errors.Add($"成长表：英雄 {row.HeroId} 的 {row.Level} 级 MaxHp 必须为正。");
 				}

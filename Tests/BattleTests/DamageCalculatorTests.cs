@@ -29,22 +29,22 @@ namespace GameLogic.Battle.Tests
 			return new TbBattleConfig(new ByteBuf(File.ReadAllBytes(path))).Data;
 		}
 
-		private static CombatantStats Hero(int level = 1, int power = 8, int def = 10, int mdef = 10, int crit = 0,
+		private static CombatantAttributes Hero(int level = 1, int power = 8, int def = 10, int mdef = 10, int crit = 0,
 			int miss = 0, int lucky = 0, int toughness = 0, int htarget = 0, int critReduce = 0, int ar = 0, int sp = 0) // 创建指定属性的英雄战斗数据。
 		{
-			return new CombatantStats(CombatSide.Hero, level, power, def, mdef, crit, miss, lucky, toughness, htarget,
+			return new CombatantAttributes(CombatSide.Hero, level, power, def, mdef, crit, miss, lucky, toughness, htarget,
 				critReduce, ar, sp);
 		}
 
-		private static CombatantStats Monster(int level = 5, int power = 0, int def = 50, int mdef = 80, int crit = 0,
+		private static CombatantAttributes Monster(int level = 5, int power = 0, int def = 50, int mdef = 80, int crit = 0,
 			int miss = 0, int lucky = 0, int toughness = 0, int htarget = 0, int critReduce = 0, int ar = 0, int sp = 0) // 创建指定属性的怪物战斗数据。
 		{
-			return new CombatantStats(CombatSide.Monster, level, power, def, mdef, crit, miss, lucky, toughness,
+			return new CombatantAttributes(CombatSide.Monster, level, power, def, mdef, crit, miss, lucky, toughness,
 				htarget, critReduce, ar, sp);
 		}
 
-		private static DamageResult Hit(in CombatantStats attacker, float power, DamageKind kind,
-			in CombatantStats defender, float missRoll, float critRoll) // 结算并立即归还攻击包。
+		private static DamageResult Hit(in CombatantAttributes attacker, float power, DamageKind kind,
+			in CombatantAttributes defender, float missRoll, float critRoll) // 结算并立即归还攻击包。
 		{
 			// 从对象池创建一次性攻击包，确保测试覆盖与游戏内相同的生命周期。
 			AttackInstance attack = AttackInstance.Create(0, attacker, power, kind, Vector2.Zero, 1, 0, SoundId.None);
@@ -237,14 +237,14 @@ namespace GameLogic.Battle.Tests
 		{
 			// 防守方(怪物)等级高 10 级：闪避系数 min(10×0.04, 0.9) = 0.4 → 闪避 70 × 1.4 = 98
 			// 率 98/(98+70) = 0.583；roll 0.58 → 闪避，0.59 → 不闪避
-			CombatantStats hero = Hero(level: 1);
-			CombatantStats monkey = Monster(level: 11, miss: 70);
+			CombatantAttributes hero = Hero(level: 1);
+			CombatantAttributes monkey = Monster(level: 11, miss: 70);
 			Assert.True(Hit(hero, 100f, DamageKind.Real, monkey, 0.58f, 0.9999f).IsMiss);
 			Assert.False(Hit(hero, 100f, DamageKind.Real, monkey, 0.59f, 0.9999f).IsMiss);
 
 			// 攻击方(英雄)等级高 30 级：闪避系数封顶 0.9 → 70 × 0.1 = 7 → 7/77 = 0.091
-			CombatantStats strongHero = Hero(level: 31);
-			CombatantStats weakMonkey = Monster(level: 1, miss: 70);
+			CombatantAttributes strongHero = Hero(level: 31);
+			CombatantAttributes weakMonkey = Monster(level: 1, miss: 70);
 			Assert.True(Hit(strongHero, 100f, DamageKind.Real, weakMonkey, 0.09f, 0.9999f).IsMiss);
 			Assert.False(Hit(strongHero, 100f, DamageKind.Real, weakMonkey, 0.092f, 0.9999f).IsMiss);
 		}
@@ -254,8 +254,8 @@ namespace GameLogic.Battle.Tests
 		public void LevelSuppression_CritScalesUpForHigherAttacker()
 		{
 			// 英雄高 5 级打怪：暴击系数 min(5×0.11, 1) = 0.55 → 暴击 50 × 1.55 = 77.5 → 率 77.5/177.5 = 0.437
-			CombatantStats hero = Hero(level: 10, crit: 50);
-			CombatantStats monkey = Monster(level: 5);
+			CombatantAttributes hero = Hero(level: 10, crit: 50);
+			CombatantAttributes monkey = Monster(level: 5);
 			Assert.True(Hit(hero, 100f, DamageKind.Real, monkey, 0.9999f, 0.436f).IsCrit);
 			Assert.False(Hit(hero, 100f, DamageKind.Real, monkey, 0.9999f, 0.438f).IsCrit);
 		}

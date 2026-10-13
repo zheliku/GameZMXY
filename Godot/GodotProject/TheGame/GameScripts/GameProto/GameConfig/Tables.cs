@@ -231,6 +231,69 @@ public partial class Tables
             m_TbDropConfig.ResolveRef(this);
         }
     }
+    /// <summary>
+    /// 造一粗糙与普通装备
+    /// </summary>
+    private Equipment.TbEquipmentConfig m_TbEquipmentConfig;
+    public Equipment.TbEquipmentConfig TbEquipmentConfig
+    {
+        get
+        {
+            if (m_TbEquipmentConfig == null)
+            {
+                m_TbEquipmentConfig = new Equipment.TbEquipmentConfig(defaultLoader("equipment_tbequipmentconfig"));
+                m_TbEquipmentConfig.ResolveRef(this);
+            }
+            return m_TbEquipmentConfig;
+        }
+        set
+        {
+            m_TbEquipmentConfig = value;
+            m_TbEquipmentConfig.ResolveRef(this);
+        }
+    }
+    /// <summary>
+    /// 怪物装备池
+    /// </summary>
+    private Loot.TbEquipmentDropPoolConfig m_TbEquipmentDropPoolConfig;
+    public Loot.TbEquipmentDropPoolConfig TbEquipmentDropPoolConfig
+    {
+        get
+        {
+            if (m_TbEquipmentDropPoolConfig == null)
+            {
+                m_TbEquipmentDropPoolConfig = new Loot.TbEquipmentDropPoolConfig(defaultLoader("loot_tbequipmentdroppoolconfig"));
+                m_TbEquipmentDropPoolConfig.ResolveRef(this);
+            }
+            return m_TbEquipmentDropPoolConfig;
+        }
+        set
+        {
+            m_TbEquipmentDropPoolConfig = value;
+            m_TbEquipmentDropPoolConfig.ResolveRef(this);
+        }
+    }
+    /// <summary>
+    /// 地面恢复品，接触立即使用
+    /// </summary>
+    private Loot.TbPickupConfig m_TbPickupConfig;
+    public Loot.TbPickupConfig TbPickupConfig
+    {
+        get
+        {
+            if (m_TbPickupConfig == null)
+            {
+                m_TbPickupConfig = new Loot.TbPickupConfig(defaultLoader("loot_tbpickupconfig"));
+                m_TbPickupConfig.ResolveRef(this);
+            }
+            return m_TbPickupConfig;
+        }
+        set
+        {
+            m_TbPickupConfig = value;
+            m_TbPickupConfig.ResolveRef(this);
+        }
+    }
 
     #endregion
 

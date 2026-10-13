@@ -10,12 +10,16 @@ public sealed class DamageDealtEventArgs : GameEventArgs
 {
     /// <summary>GGF 事件编号。</summary>
     public static readonly int EventId = typeof(DamageDealtEventArgs).GetHashCode();
+
     /// <inheritdoc />
     public override int Id => EventId;
+
     /// <summary>本次伤害、闪避、暴击和伤害类型。</summary>
     public DamageResult Result { get; private set; }
+
     /// <summary>是否使用英雄受伤的飘字样式。</summary>
     public bool TargetIsHero { get; private set; }
+
     /// <summary>受击时的世界坐标锚点，实体回收后仍有效。</summary>
     public Vector2 PopPosition { get; private set; }
 

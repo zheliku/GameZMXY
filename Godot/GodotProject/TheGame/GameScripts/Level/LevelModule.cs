@@ -56,7 +56,7 @@ public partial class LevelModule : Node2D
         }
 
         m_Config = ConfigSystem.Instance.Tables.TbLevelConfig.GetOrDefault(m_LevelId)
-            ?? throw new InvalidOperationException($"关卡配置不存在：LevelId={m_LevelId}");
+                   ?? throw new InvalidOperationException($"关卡配置不存在：LevelId={m_LevelId}");
         if (!string.Equals(m_Config.ScenePath, SceneFilePath, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException($"关卡场景不匹配：{m_Config.ScenePath} / {SceneFilePath}");
@@ -80,7 +80,8 @@ public partial class LevelModule : Node2D
     /// <param name="player">本会话的玩家节点。</param>
     /// <param name="context">档案与存档模块；关内收益由本模块统一提交或回滚。</param>
     /// <param name="cancellationToken">流程离开时取消在途实体显示。</param>
-    public void StartSession(EntityComponent entities, HeroEntity player, GameContext context, CancellationToken cancellationToken)
+    public void StartSession(EntityComponent entities, HeroEntity player, GameContext context,
+        CancellationToken cancellationToken)
     {
         SetTravelAvailable(false);
         m_Player = player;

@@ -63,7 +63,7 @@ public sealed class LevelSmokeScenario
     private bool m_SettlementClicked; // 成功页只提交一次返回地图请求。
     private Task m_ExitCapture; // 有渲染器时先保存出口提示画面再按 W。
     private int m_ExpectedTotalExperience; // 通关保存应保留的累计经验。
-    private int m_ExpectedSoul; // 已实际拾取、应由 v4 检查点保存的灵魂。
+    private int m_ExpectedSoul; // 已实际拾取、应由当前检查点保存的灵魂。
 
     /// <summary>创建正式关卡的物理回归场景。</summary>
     /// <param name="hero">正式流程显示的英雄。</param>
@@ -435,7 +435,7 @@ public sealed class LevelSmokeScenario
                 ReferencePool.Release(attack);
                 // 同一死亡再发一次普通事件，刷怪服务必须只发一次奖励和清波名额。
                 GF.Event.Fire(this, MonsterDiedEventArgs.Create(monster.Id,
-                    SmokeInspection.ReadField<int>(monster, "m_ExperienceReward"), monster.Config, monster.GlobalPosition));
+                    SmokeInspection.ReadField<int>(monster, "m_ExperienceReward"), monster.Config, monster.GlobalPosition, SmokeInspection.ReadField<GameConfig.Loot.EquipmentDropPoolId>(monster, "m_EquipmentDropPoolId")));
             }
 
             return;

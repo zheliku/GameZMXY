@@ -18,17 +18,17 @@ namespace GameConfig.Sound
         /// </summary>
         None = 0,
         /// <summary>
-        /// 悟空挥棍2
+        /// 悟空挥棍1/2
         /// </summary>
-        WukongAttack2 = 1,
+        WukongAttack1And2 = 1,
         /// <summary>
-        /// 悟空挥棍1/3
+        /// 悟空挥棍3/4
         /// </summary>
-        WukongAttack1And3 = 2,
+        WukongAttack3And4 = 2,
         /// <summary>
-        /// 悟空挥棍4
+        /// 悟空挥棍5
         /// </summary>
-        WukongAttack4 = 3,
+        WukongAttack5 = 3,
         /// <summary>
         /// 悟空受击语音
         /// </summary>

@@ -47,8 +47,10 @@ public enum SaveSlotState
 {
     /// <summary>尚未创建角色。</summary>
     Empty,
+
     /// <summary>已有可读取的档案。</summary>
     Occupied,
+
     /// <summary>文件损坏或版本不支持。</summary>
     Unreadable,
 }

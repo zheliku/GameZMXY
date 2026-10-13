@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/UI/Widgets/EquipmentActionsMenu.cs" id="script"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_actions_background.png" id="background"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_equip.png" id="equip"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_equip_disabled.png" id="equip_disabled"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_gift_disabled.png" id="gift"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_sell.png" id="sell"]
+
+[node name="EquipmentActionsMenu" type="Control" node_paths=PackedStringArray("m_Panel", "m_Equip", "m_Sell")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("script")
+m_Panel = NodePath("Panel")
+m_Equip = NodePath("Panel/Equip")
+m_Sell = NodePath("Panel/Sell")
+
+[node name="Panel" type="TextureRect" parent="."]
+offset_right = 87.0
+offset_bottom = 115.0
+texture = ExtResource("background")
+mouse_filter = 0
+
+[node name="Equip" type="TextureButton" parent="Panel"]
+offset_left = 5.0
+offset_top = 4.0
+offset_right = 82.0
+offset_bottom = 35.0
+texture_normal = ExtResource("equip")
+texture_disabled = ExtResource("equip_disabled")
+mouse_default_cursor_shape = 2
+
+[node name="Gift" type="TextureButton" parent="Panel"]
+offset_left = 5.0
+offset_top = 40.0
+offset_right = 82.0
+offset_bottom = 71.0
+texture_normal = ExtResource("gift")
+disabled = true
+texture_disabled = ExtResource("gift")
+
+[node name="Sell" type="TextureButton" parent="Panel"]
+offset_left = 5.0
+offset_top = 78.0
+offset_right = 82.0
+offset_bottom = 109.0
+texture_normal = ExtResource("sell")
+mouse_default_cursor_shape = 2

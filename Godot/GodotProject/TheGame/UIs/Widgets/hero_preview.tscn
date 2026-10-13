@@ -1,17 +1,21 @@
 [gd_scene format=3 uid="uid://dc18lorsjswmc"]
 
 [ext_resource type="AnimationLibrary" uid="uid://ck0jpy5t7x5uk" path="res://TheGame/Sprites/UI/inventory/inventory_preview_animation.tres" id="animation"]
-[ext_resource type="Texture2D" uid="uid://dqvt3y3m7q8nk" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body.png" id="body"]
+[ext_resource type="Resource" uid="uid://xk36fcf4y640" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_appearance.tres" id="appearance"]
+[ext_resource type="Texture2D" uid="uid://cvhrf247evpd6" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_bare.png" id="body"]
 [ext_resource type="Texture2D" uid="uid://dqjvrx02l5bte" path="res://TheGame/Sprites/UI/inventory/inventory_preview_light.png" id="light"]
 [ext_resource type="Script" uid="uid://b7c4mucar2g2x" path="res://TheGame/GameScripts/UI/Widgets/HeroPreviewNode.cs" id="script"]
-[ext_resource type="Texture2D" uid="uid://blsi5r84vgt5y" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_empty.png" id="weapon"]
+[ext_resource type="Texture2D" uid="uid://di26s8wme22dn" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_default.png" id="weapon"]
 
-[node name="HeroPreview" type="Node2D" unique_id=34720529 node_paths=PackedStringArray("m_Player")]
+[node name="HeroPreview" type="Node2D" unique_id=34720529 node_paths=PackedStringArray("m_Player", "m_Body", "m_Weapon")]
 script = ExtResource("script")
 m_Player = NodePath("AnimationPlayer")
+m_Body = NodePath("Body")
+m_Weapon = NodePath("Weapon")
+m_Appearance = ExtResource("appearance")
 
 [node name="Aura" type="Sprite2D" parent="." unique_id=53255081]
-position = Vector2(0.9999999, 6)
+position = Vector2(1.9999999, 13)
 scale = Vector2(1.4, 0.75)
 texture = ExtResource("light")
 flip_v = true
@@ -22,12 +26,12 @@ frame = 3
 [node name="Body" type="Sprite2D" parent="." unique_id=1513800798]
 texture = ExtResource("body")
 hframes = 6
-vframes = 14
+vframes = 15
 
-[node name="Weapon" type="Sprite2D" parent="." unique_id=839986485]
+[node name="Weapon" type="Sprite2D" parent="." unique_id=922135903]
 texture = ExtResource("weapon")
 hframes = 6
-vframes = 14
+vframes = 15
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1083198312]
 callback_mode_process = 2

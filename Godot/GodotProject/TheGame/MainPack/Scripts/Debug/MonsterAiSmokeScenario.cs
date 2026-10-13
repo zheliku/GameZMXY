@@ -5,6 +5,7 @@ using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using GameConfig.Battle;
 using GameConfig.Sound;
 using GameFramework;
@@ -46,7 +47,7 @@ public sealed class MonsterAiSmokeScenario
 	private const float OutOfSightOffset = 600f; // 初始视野外偏移（像素）。
 	private const float InSightOffset = 150f; // 进入怪物视野时的水平偏移（像素）。
 	private const float BehindOffset = 60f; // 转身测试中英雄位于怪物身后的水平偏移（像素）。
-	private static readonly AiBox ExpectedReach = new AiBox(-49f, 1f, -48f, 2f); // attack_1 判定盒期望范围。
+	private static readonly Rect2 ExpectedReach = new Rect2(-49f, -48f, 50f, 50f); // attack_1 判定盒期望范围。
 	private const float ReachTolerance = 0.5f; // 判定盒边界允许误差（像素）。
 
 	private enum Phase // AI 烟测的阶段状态。
@@ -75,6 +76,7 @@ public sealed class MonsterAiSmokeScenario
 
 	private readonly HeroEntity m_Hero; // 受测英雄实体。
 	private readonly MonsterEntity m_Monster; // 受测怪物实体。
+	private readonly MonsterAiParams m_OriginalAiParams; // 结束时恢复测试夹具覆盖的出手概率。
 	private readonly int m_MonsterId; // 受测怪物实体编号。
 	private Phase m_Phase = Phase.OutOfSight; // 当前场景阶段。
 	private double m_PhaseStart; // 当前阶段开始时间（秒）。
@@ -115,6 +117,10 @@ public sealed class MonsterAiSmokeScenario
 		m_Hero = hero;
 		m_Monster = monster;
 		m_MonsterId = monster.Id;
+		m_OriginalAiParams = ((IMonsterAiAgent)monster).Params;
+		// 本场验证行为能否恢复，不验证随机出手概率；只在测试侧固定，避免把连续未出手误判为卡死。
+		typeof(MonsterEntity).GetField("m_AiParams", BindingFlags.Instance | BindingFlags.NonPublic)
+			.SetValue(monster, m_OriginalAiParams with { AttackDesire = 100 });
 		GF.Event.Subscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
 		GF.Event.Subscribe(MonsterDiedEventArgs.EventId, OnMonsterDied);
 		CheckReach();
@@ -231,6 +237,8 @@ public sealed class MonsterAiSmokeScenario
 	/// <returns>断言失败原因；全部通过时为空列表。</returns>
 	public List<string> Finish()
 	{
+		typeof(MonsterEntity).GetField("m_AiParams", BindingFlags.Instance | BindingFlags.NonPublic)
+			.SetValue(m_Monster, m_OriginalAiParams);
 		GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
 		GF.Event.Unsubscribe(MonsterDiedEventArgs.EventId, OnMonsterDied);
 
@@ -408,14 +416,14 @@ public sealed class MonsterAiSmokeScenario
 
 	private void CheckReach() // 校验 attack_1 判定盒推导出的范围。
 	{
-		AiBox reach = Array.Find(SmokeInspection.ReadField<MonsterAttackSpec[]>(m_Monster.Attacks, "m_Specs"),
+		Rect2 reach = Array.Find(SmokeInspection.ReadField<MonsterAttackSpec[]>(m_Monster.Attacks, "m_Specs"),
 			spec => spec.Index == 0).Reach;
 		GD.Print($"SMOKE-AI: attack_1 判定盒推导范围 {reach}");
-		if (reach.IsEmpty ||
-		    Math.Abs(reach.Left - ExpectedReach.Left) > ReachTolerance ||
-		    Math.Abs(reach.Right - ExpectedReach.Right) > ReachTolerance ||
-		    Math.Abs(reach.Top - ExpectedReach.Top) > ReachTolerance ||
-		    Math.Abs(reach.Bottom - ExpectedReach.Bottom) > ReachTolerance)
+		if (!reach.HasArea() ||
+		    Math.Abs(reach.Position.X - ExpectedReach.Position.X) > ReachTolerance ||
+		    Math.Abs(reach.End.X - ExpectedReach.End.X) > ReachTolerance ||
+		    Math.Abs(reach.Position.Y - ExpectedReach.Position.Y) > ReachTolerance ||
+		    Math.Abs(reach.End.Y - ExpectedReach.End.Y) > ReachTolerance)
 		{
 			m_Failures.Add($"attack_1 判定盒推导范围 {reach} ≠ 期望 {ExpectedReach}");
 		}

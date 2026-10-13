@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using GameConfig.Stat;
+using GameConfig.Attributes;
 
 namespace GameLogic.Battle.Attributes;
 
@@ -12,40 +12,88 @@ namespace GameLogic.Battle.Attributes;
 /// </summary>
 public sealed class ActorAttributes
 {
-	private static readonly int StatCount = Enum.GetValues<StatType>().Length; // 属性种类数，枚举值从 0 连续。
+	private static readonly int AttributeCount = Enum.GetValues<AttributeType>().Length; // 属性种类数，枚举值从 0 连续。
 
-	private readonly float[] m_Base = new float[StatCount]; // 基础值，按 StatType 索引。
+	private readonly float[] m_Base = new float[AttributeCount]; // 基础值，按 AttributeType 索引。
 
-	private readonly float[] m_Final = new float[StatCount]; // 最近一次重算的最终值缓存。
+	private readonly float[] m_Final = new float[AttributeCount]; // 最近一次重算的最终值缓存。
 
 	private readonly Dictionary<AttributeSourceId, AttributeModifier[]> m_Sources = new(); // 来源到其全部修正的登记表。
 
 	private bool m_Dirty = true; // 基础值或修正变化后需要重算。
 
+	/// <summary>最终生命上限。</summary>
+	public int MaxHp => GetInt(AttributeType.MaxHp);
+
+	/// <summary>最终魔法上限。</summary>
+	public int MaxMp => GetInt(AttributeType.MaxMp);
+
+	/// <summary>最终攻击。</summary>
+	public int Power => GetInt(AttributeType.Power);
+
+	/// <summary>最终防御。</summary>
+	public int Def => GetInt(AttributeType.Def);
+
+	/// <summary>最终魔抗。</summary>
+	public int Mdef => GetInt(AttributeType.Mdef);
+
+	/// <summary>最终暴击点数。</summary>
+	public int Crit => GetInt(AttributeType.Crit);
+
+	/// <summary>最终闪避点数。</summary>
+	public int Miss => GetInt(AttributeType.Miss);
+
+	/// <summary>最终幸运。</summary>
+	public int Lucky => GetInt(AttributeType.Lucky);
+
+	/// <summary>最终韧性。</summary>
+	public int Toughness => GetInt(AttributeType.Toughness);
+
+	/// <summary>最终命中。</summary>
+	public int Htarget => GetInt(AttributeType.Htarget);
+
+	/// <summary>最终抗暴。</summary>
+	public int CritReduce => GetInt(AttributeType.CritReduce);
+
+	/// <summary>最终破甲。</summary>
+	public int Ar => GetInt(AttributeType.Ar);
+
+	/// <summary>最终破魔。</summary>
+	public int Sp => GetInt(AttributeType.Sp);
+
+	/// <summary>最终吸血百分点。</summary>
+	public int Vampirism => GetInt(AttributeType.Vampirism);
+
+	/// <summary>最终每秒回血。</summary>
+	public int HpRegen => GetInt(AttributeType.HpRegen);
+
+	/// <summary>最终每秒回蓝。</summary>
+	public int MpRegen => GetInt(AttributeType.MpRegen);
+
 	/// <summary>用一组完整属性替换基础值；不影响已登记的修正。</summary>
 	/// <param name="block">成长表或怪物配置中的属性块。</param>
 	/// <exception cref="ArgumentNullException">属性块为空。</exception>
-	public void SetBase(StatBlock block)
+	public void SetBase(ActorBaseAttributes block)
 	{
 		ArgumentNullException.ThrowIfNull(block);
 
 		// 按枚举顺序整体覆盖，生成类型的字段与枚举一一对应。
-		m_Base[(int)StatType.MaxHp] = block.MaxHp;
-		m_Base[(int)StatType.MaxMp] = block.MaxMp;
-		m_Base[(int)StatType.Power] = block.Power;
-		m_Base[(int)StatType.Def] = block.Def;
-		m_Base[(int)StatType.Mdef] = block.Mdef;
-		m_Base[(int)StatType.Crit] = block.Crit;
-		m_Base[(int)StatType.Miss] = block.Miss;
-		m_Base[(int)StatType.Lucky] = block.Lucky;
-		m_Base[(int)StatType.Toughness] = block.Toughness;
-		m_Base[(int)StatType.Htarget] = block.Htarget;
-		m_Base[(int)StatType.CritReduce] = block.CritReduce;
-		m_Base[(int)StatType.Ar] = block.Ar;
-		m_Base[(int)StatType.Sp] = block.Sp;
-		m_Base[(int)StatType.Vampirism] = block.Vampirism;
-		m_Base[(int)StatType.HpRegen] = block.HpRegen;
-		m_Base[(int)StatType.MpRegen] = block.MpRegen;
+		m_Base[(int)AttributeType.MaxHp] = block.MaxHp;
+		m_Base[(int)AttributeType.MaxMp] = block.MaxMp;
+		m_Base[(int)AttributeType.Power] = block.Power;
+		m_Base[(int)AttributeType.Def] = block.Def;
+		m_Base[(int)AttributeType.Mdef] = block.Mdef;
+		m_Base[(int)AttributeType.Crit] = block.Crit;
+		m_Base[(int)AttributeType.Miss] = block.Miss;
+		m_Base[(int)AttributeType.Lucky] = block.Lucky;
+		m_Base[(int)AttributeType.Toughness] = block.Toughness;
+		m_Base[(int)AttributeType.Htarget] = block.Htarget;
+		m_Base[(int)AttributeType.CritReduce] = block.CritReduce;
+		m_Base[(int)AttributeType.Ar] = block.Ar;
+		m_Base[(int)AttributeType.Sp] = block.Sp;
+		m_Base[(int)AttributeType.Vampirism] = block.Vampirism;
+		m_Base[(int)AttributeType.HpRegen] = block.HpRegen;
+		m_Base[(int)AttributeType.MpRegen] = block.MpRegen;
 		m_Dirty = true;
 	}
 
@@ -97,45 +145,45 @@ public sealed class ActorAttributes
 	}
 
 	/// <summary>读取最终值（浮点）。</summary>
-	/// <param name="stat">属性种类。</param>
+	/// <param name="attribute">属性种类。</param>
 	/// <returns>汇总后的最终值，下限为 0。</returns>
-	public float Get(StatType stat)
+	public float Get(AttributeType attribute)
 	{
 		if (m_Dirty)
 		{
 			Recalculate();
 		}
 
-		return m_Final[(int)stat];
+		return m_Final[(int)attribute];
 	}
 
 	/// <summary>读取最终值并四舍五入为整数（生命、攻防等整数属性）。</summary>
-	/// <param name="stat">属性种类。</param>
+	/// <param name="attribute">属性种类。</param>
 	/// <returns>四舍五入（远离零）后的最终值。</returns>
-	public int GetInt(StatType stat) => (int)MathF.Round(Get(stat), MidpointRounding.AwayFromZero);
+	public int GetInt(AttributeType attribute) => (int)MathF.Round(Get(attribute), MidpointRounding.AwayFromZero);
 
 	/// <summary>按修正方式分组汇总全部来源，刷新最终值缓存。</summary>
 	private void Recalculate()
 	{
 		// 分三类累加：固定值相加、同类百分比相加、独立百分比连乘。
-		Span<float> flat = stackalloc float[StatCount];
-		Span<float> percentAdd = stackalloc float[StatCount];
-		Span<float> percentMult = stackalloc float[StatCount];
+		Span<float> flat = stackalloc float[AttributeCount];
+		Span<float> percentAdd = stackalloc float[AttributeCount];
+		Span<float> percentMult = stackalloc float[AttributeCount];
 		percentMult.Fill(1f);
 		foreach (AttributeModifier[] modifiers in m_Sources.Values)
 		{
 			foreach (AttributeModifier modifier in modifiers)
 			{
-				int index = (int)modifier.Stat;
+				int index = (int)modifier.Attribute;
 				switch (modifier.Kind)
 				{
-					case StatModifierKind.Flat:
+					case AttributeModifierKind.Flat:
 						flat[index] += modifier.Value;
 						break;
-					case StatModifierKind.PercentAdd:
+					case AttributeModifierKind.PercentAdd:
 						percentAdd[index] += modifier.Value;
 						break;
-					case StatModifierKind.PercentMult:
+					case AttributeModifierKind.PercentMult:
 						percentMult[index] *= 1f + modifier.Value;
 						break;
 				}
@@ -143,7 +191,7 @@ public sealed class ActorAttributes
 		}
 
 		// 属性没有负值语义，最终值统一下限为 0。
-		for (int i = 0; i < StatCount; i++)
+		for (int i = 0; i < AttributeCount; i++)
 		{
 			m_Final[i] = MathF.Max(0f, (m_Base[i] + flat[i]) * (1f + percentAdd[i]) * percentMult[i]);
 		}

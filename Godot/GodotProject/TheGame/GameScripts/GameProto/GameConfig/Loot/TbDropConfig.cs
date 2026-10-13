@@ -75,6 +75,18 @@ public partial class TbDropConfig
     /// 碰到角色的拾取距离（px）
     /// </summary>
      public float PickupRadius => _data.PickupRadius;
+    /// <summary>
+    /// 地面物品存在秒数（官方240/24）
+    /// </summary>
+     public float GroundLifetime => _data.GroundLifetime;
+    /// <summary>
+    /// 地面掉落重力 px/s&#178;
+    /// </summary>
+     public float GroundGravity => _data.GroundGravity;
+    /// <summary>
+    /// 拾取范围扩展 px
+    /// </summary>
+     public float GroundPickupRadius => _data.GroundPickupRadius;
     
     public void ResolveRef(Tables tables)
     {

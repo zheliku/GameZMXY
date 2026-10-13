@@ -14,7 +14,7 @@ namespace GameLogic.Monsters.AI
 		protected override void Enter(IMonsterAiAgent agent)
 		{
 			base.Enter(agent);
-			if (!agent.TargetBox.IsEmpty) agent.Move(Math.Sign(agent.TargetBox.CenterX));
+			if (agent.TargetBox.HasArea()) agent.Move(Math.Sign(agent.TargetBox.GetCenter().X));
 		}
 
 		/// <summary>未进入普通攻击水平范围时追向目标。</summary>

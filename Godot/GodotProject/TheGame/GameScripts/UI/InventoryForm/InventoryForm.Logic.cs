@@ -7,11 +7,13 @@ using GameConfig.Sound;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.UI;
-using GameConfig.Stat;
+using GameConfig.Attributes;
+using GameConfig.Equipment;
+using GameLogic.Equipment;
 
 namespace GameLogic.UI;
 
-/// <summary>战斗个人资料与背包展示；只观察档案和实体，不持有物品或修改装备。</summary>
+/// <summary>观察战斗个人资料与背包，向关卡提交穿脱装备请求。</summary>
 public partial class InventoryForm
 {
     private InventoryFormData m_Data; // 本次打开借用的状态源。
@@ -34,6 +36,12 @@ public partial class InventoryForm
         if (isNewInstance)
         {
             m_Close.Pressed += OnCloseClicked;
+            m_Actions.EquipRequested += OnEquipRequested;
+            m_Actions.SellRequested += OnSellRequested;
+            foreach (EquipmentCell cell in m_BagGrid.GetChildren()) cell.Clicked += OnBagClicked;
+            m_WeaponSlot.Clicked += _ => OnSlotClicked(EquipmentSlot.Weapon);
+            m_ArmorSlot.Clicked += _ => OnSlotClicked(EquipmentSlot.Armor);
+            BindBagControls();
         }
     }
     /// <summary>关闭时释放状态源与本窗口拥有的暂停。</summary>
@@ -90,10 +98,13 @@ public partial class InventoryForm
             data.Hero.Vitals.Changed += Refresh;
             data.Profile.ActiveHero.Changed += Refresh;
             data.Profile.Wallet.Changed += Refresh;
+            data.Profile.Inventory.Changed += Refresh;
+            data.Profile.ActiveEquipment.Changed += Refresh;
             data.Level.Ended += OnLevelEnded;
             m_ResumeGame = !GF.Base.IsGamePaused;
             if (m_ResumeGame) GF.Base.PauseGame();
             m_Preview.Reset();
+            ResetBagView();
             Refresh();
             Visible = true;
         }
@@ -115,11 +126,16 @@ public partial class InventoryForm
     /// <summary>关闭后解除全部借用与订阅。</summary>
     private void Release()
     {
+        m_Actions.Close();
+        m_QualityOptions.Hide();
+        CancelQualitySale();
         if (m_Data != null)
         {
             m_Data.Hero.Vitals.Changed -= Refresh;
             m_Data.Profile.ActiveHero.Changed -= Refresh;
             m_Data.Profile.Wallet.Changed -= Refresh;
+            m_Data.Profile.Inventory.Changed -= Refresh;
+            m_Data.Profile.ActiveEquipment.Changed -= Refresh;
             m_Data.Level.Ended -= OnLevelEnded;
             m_Data = null;
         }
@@ -142,26 +158,94 @@ public partial class InventoryForm
     /// <summary>拉取一致状态；百分比按同等级、无穿透对手显示基础概率和减伤。</summary>
     private void Refresh()
     {
+        m_Actions.Close();
         var hero = m_Data.Hero;
         var progression = m_Data.Profile.ActiveHero;
-        var stats = hero.Stats;
+        var attributes = hero.Attributes;
         var vitals = hero.Vitals;
         var battle = ConfigSystem.Instance.Tables.TbBattleConfig;
         m_Name.Text = hero.Config.NameCn;
         m_Level.Text = progression.Level.ToString();
         m_Hp.Text = $"{vitals.Hp} / {vitals.MaxHp}";
         m_Mp.Text = $"{vitals.Mp} / {vitals.MaxMp}";
-        m_Attack.Text = stats.GetInt(StatType.Power).ToString();
-        m_Defense.Text = stats.GetInt(StatType.Def).ToString();
-        m_Lucky.Text = stats.GetInt(StatType.Lucky).ToString();
-        m_MagicResistance.Text = Percent(stats.Get(StatType.Mdef), battle.MdefKHero);
-        m_Crit.Text = Percent(stats.Get(StatType.Crit), battle.CritK);
-        m_Dodge.Text = Percent(stats.Get(StatType.Miss), battle.MissKHero);
-        m_HpRegen.Text = stats.GetInt(StatType.HpRegen).ToString();
-        m_MpRegen.Text = stats.GetInt(StatType.MpRegen).ToString();
+        m_Attack.Text = attributes.Power.ToString();
+        m_Defense.Text = attributes.Def.ToString();
+        m_Lucky.Text = attributes.Lucky.ToString();
+        m_MagicResistance.Text = Percent(attributes.Get(AttributeType.Mdef), battle.MdefKHero);
+        m_Crit.Text = Percent(attributes.Get(AttributeType.Crit), battle.CritK);
+        m_Dodge.Text = Percent(attributes.Get(AttributeType.Miss), battle.MissKHero);
+        m_HpRegen.Text = attributes.HpRegen.ToString();
+        m_MpRegen.Text = attributes.MpRegen.ToString();
         m_Experience.Value = progression.MaxExperience == 0 ? 100 : 100.0 * progression.Experience / progression.MaxExperience;
         m_ExperienceText.Text = progression.MaxExperience == 0 ? "MAX" : $"{progression.Experience}/{progression.MaxExperience}";
         m_Soul.Text = m_Data.Profile.Wallet.Soul.ToString();
+        BindSlot(m_WeaponSlot, m_Data.Profile.ActiveEquipment.Weapon);
+        BindSlot(m_ArmorSlot, m_Data.Profile.ActiveEquipment.Armor);
+        m_Preview.ApplyAppearance(m_Data.Profile.ActiveEquipment.Weapon != null, m_Data.Profile.ActiveEquipment.Armor != null);
+        RefreshBag();
+    }
+
+    /// <summary>打开所选背包格的操作菜单；点击本身不改变穿戴。</summary>
+    /// <param name="instanceId">被点击的背包实例。</param>
+    private void OnBagClicked(Guid instanceId)
+    {
+        if (m_Data == null || m_SelectedTab != 0) return;
+        var items = m_Data.Profile.Inventory.Items;
+        for (int i = 0; i < m_BagGrid.GetChildCount(); i++)
+        {
+            int index = m_PageIndex * BagPageSize + i;
+            if (index >= items.Count) break;
+            if (items[index].InstanceId != instanceId) continue;
+            var definition = ConfigSystem.Instance.Tables.TbEquipmentConfig.Get(items[index].EquipmentId);
+            m_Actions.Open(instanceId, m_BagGrid.GetChild<EquipmentCell>(i).GetGlobalRect(),
+                (int)definition.Owner == m_Data.Profile.ActiveHeroId);
+            return;
+        }
+    }
+
+    /// <summary>所选菜单确认后提交穿戴请求。</summary>
+    /// <param name="instanceId">菜单捕获的背包实例。</param>
+    private void OnEquipRequested(Guid instanceId)
+    {
+        if (m_Data?.Level.TryEquip(instanceId) == true) GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+    }
+
+    /// <summary>按配置售价出售背包装备，过期选择不会重复入账。</summary>
+    /// <param name="instanceId">菜单捕获的背包实例。</param>
+    private void OnSellRequested(Guid instanceId)
+    {
+        if (m_Data?.Level.TrySell(instanceId) == true) GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+    }
+
+    /// <summary>背包暂停期间仍接收关闭动作，拒绝按键自动重复。</summary>
+    /// <param name="inputEvent">已映射的输入事件。</param>
+    public override void _Input(InputEvent inputEvent)
+    {
+        if (m_Data != null && Visible && m_SaleConfirmation.Visible && inputEvent.IsActionPressed("ui_cancel"))
+        {
+            GetViewport().SetInputAsHandled();
+            CancelQualitySale();
+            return;
+        }
+        if (m_Data == null || !Visible || !inputEvent.IsActionPressed(GameLogic.Input.InputActions.InventoryToggle)) return;
+        GetViewport().SetInputAsHandled();
+        OnCloseClicked();
+    }
+
+    /// <summary>请求卸下当前部位；背包满时保持原状态。</summary>
+    /// <param name="slot">被点击的穿戴部位。</param>
+    private void OnSlotClicked(EquipmentSlot slot)
+    {
+        if (m_Data?.Level.TryUnequip(slot) == true) GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+    }
+
+    /// <summary>显示穿戴实例及实际属性，空槽使用场景的部位底图。</summary>
+    /// <param name="cell">武器或防具格。</param>
+    /// <param name="item">当前穿戴实例或空。</param>
+    private static void BindSlot(EquipmentCell cell, EquipmentInstance item)
+    {
+        var definition = item == null ? null : ConfigSystem.Instance.Tables.TbEquipmentConfig.Get(item.EquipmentId);
+        cell.Bind(item, definition, definition == null ? null : GF.Resource.LoadAsset<Texture2D>(definition.IconPath));
     }
 
     /// <summary>将战斗的 x/(x+K) 显示为百分比，不把属性点当作百分数。</summary>

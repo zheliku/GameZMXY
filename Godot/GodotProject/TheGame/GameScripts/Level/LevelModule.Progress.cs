@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using GameLogic.Entity;
 using GameLogic.Profile;
 using GameLogic.Equipment;
+using GameConfig.Equipment;
 using GameLogic.Save;
 using GameLogic.Save.Data;
 using GodotGameFramework;
@@ -55,6 +56,7 @@ public partial class LevelModule
         m_ExitRequested = false;
         m_LootRandom.Randomize();
         m_Player.Died += OnHeroDied;
+        m_Profile.ActiveEquipment.Changed += OnEquipmentChanged;
     }
 
     /// <summary>击败即结算固定经验；升级时刷新装配、补满生命魔法并播放脚底升级动画。</summary>
@@ -66,7 +68,7 @@ public partial class LevelModule
         m_AwardedExperience += experienceReward;
         if (m_Progression.AddExperience(experienceReward) > 0)
         {
-            m_Player.ApplyLoadout(m_Equipment.CreateLoadout(m_Progression), refill: true);
+            m_Player.ApplyLoadout(m_Equipment.CreateLoadout(m_Profile), refill: true);
             m_Player.PlayLevelUp();
         }
     }
@@ -74,6 +76,33 @@ public partial class LevelModule
     /// <summary>英雄死亡时保留本关收益并提交检查点。</summary>
     /// <param name="actor">本关的出战英雄。</param>
     private void OnHeroDied(ActorEntity actor) => SubmitOutcome(LevelOutcome.Defeated);
+
+    /// <summary>提交玩家在背包发起的穿戴请求，规则由档案作用域装备模块执行。</summary>
+    /// <param name="instanceId">背包实例编号。</param>
+    /// <returns>进行中的本关成功穿戴时为 true。</returns>
+    public bool TryEquip(Guid instanceId) =>
+        Outcome == LevelOutcome.Running && m_Equipment.TryEquip(m_Profile, instanceId);
+
+    /// <summary>提交卸装请求；满包时保留装备。</summary>
+    /// <param name="slot">武器或防具部位。</param>
+    /// <returns>成功卸下时为 true。</returns>
+    public bool TryUnequip(EquipmentSlot slot) =>
+        Outcome == LevelOutcome.Running && m_Equipment.TryUnequip(m_Profile, slot);
+
+    /// <summary>提交背包出售请求；收益与本关其他档案变化一起保存或回滚。</summary>
+    /// <param name="instanceId">仍在背包中的装备实例。</param>
+    /// <returns>本关进行中且实际出售时为 true。</returns>
+    public bool TrySell(Guid instanceId) =>
+        Outcome == LevelOutcome.Running && m_Equipment.TrySell(m_Profile, instanceId);
+
+    /// <summary>关卡运行期间提交按品质出售；收益遵守本关检查点和放弃回滚规则。</summary>
+    /// <param name="quality">背包内要出售的装备品质。</param>
+    /// <returns>实际出售件数。</returns>
+    public int SellByQuality(EquipmentQuality quality) =>
+        Outcome == LevelOutcome.Running ? m_Equipment.SellByQuality(m_Profile, quality) : 0;
+
+    /// <summary>装备交换提交后重建战斗输入，不补血补蓝，保留局内 Buff。</summary>
+    private void OnEquipmentChanged() => m_Player.ApplyLoadout(m_Equipment.CreateLoadout(m_Profile), refill: false);
 
     /// <summary>接受第一个结局，停止奖励，提交检查点，然后直接通知流程。</summary>
     /// <param name="outcome">通关或死亡。</param>
@@ -115,6 +144,7 @@ public partial class LevelModule
     public void Detach()
     {
         if (m_Player != null) m_Player.Died -= OnHeroDied;
+        if (m_Profile != null) m_Profile.ActiveEquipment.Changed -= OnEquipmentChanged;
     }
 }
 
@@ -123,10 +153,13 @@ public enum LevelOutcome
 {
     /// <summary>关卡进行中。</summary>
     Running,
+
     /// <summary>出口交互已提交检查点。</summary>
     Cleared,
+
     /// <summary>英雄死亡已提交检查点。</summary>
     Defeated,
+
     /// <summary>中途离开，收益已回滚。</summary>
     Abandoned,
 }

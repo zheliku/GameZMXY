@@ -9,6 +9,8 @@ const OUT := "P:/Godot-Project/GameZMXY/Godot/GodotProject/TheGame/Sprites/Numbe
 
 ## 新文件名 ← 旧（目录/前缀）。选型对应旧 DamageNumber.gd 的贴图选择（见 LegacyAssetMap.md）。
 const SHEETS := {
+    "recovery_number_health.png": "cure/cure_",
+    "recovery_number_mana.png": "CureMp/CureMp_",
 	"damage_number_monster_physics.png": "magic/physics_",        # 怪物受物理伤害（旧放在 magic 目录）
 	"damage_number_monster_physics_crit.png": "physicscrit/physics_",
 	"damage_number_monster_magic.png": "magic/magic_",

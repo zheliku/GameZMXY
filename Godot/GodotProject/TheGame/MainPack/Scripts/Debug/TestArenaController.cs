@@ -141,7 +141,7 @@ public partial class TestArenaController : Node2D
 		int heroId = tables.TbHeroConfig.DataList.FirstOrDefault(x => x.EntityId == m_HeroEntityId)?.Id
 			?? throw new InvalidOperationException($"HeroConfig 中没有实体 {m_HeroEntityId}");
 		HeroProgression record = new(heroId, curve, 0);
-		HeroLoadout loadout = new EquipmentModule(tables.TbHeroGrowthConfig).CreateLoadout(record);
+		HeroLoadout loadout = new EquipmentModule(tables.TbHeroGrowthConfig, tables.TbEquipmentConfig).CreateLoadout(record);
 		IEntity entity = await GF.Entity.ShowEntityAsync(m_HeroEntityId, loadout);
 		if (entity?.Handle is not Node2D hero)
 		{

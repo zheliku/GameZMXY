@@ -18,7 +18,7 @@ namespace GameLogic.Monsters.AI
 		{
 			base.Enter(agent);
 			// 踱步与追击一样在进入时提交方向，站定等待只用于半幅为零的配置。
-			m_Dir = agent.Params.PaceRange > 0f ? Math.Sign(agent.TargetBox.CenterX) : 0;
+			m_Dir = agent.Params.PaceRange > 0f ? Math.Sign(agent.TargetBox.GetCenter().X) : 0;
 			if (m_Dir == 0 && agent.Params.PaceRange > 0f) m_Dir = 1;
 			agent.Move(m_Dir);
 		}
@@ -48,7 +48,7 @@ namespace GameLogic.Monsters.AI
 			}
 
 			// 走到半幅外（且还在往外走）就掉头
-			float fromTarget = -agent.TargetBox.CenterX;   // 自己相对目标的水平偏移
+			float fromTarget = -agent.TargetBox.GetCenter().X;   // 自己相对目标的水平偏移
 			if (m_Dir == 0 || (Math.Abs(fromTarget) >= range && Math.Sign(fromTarget) == m_Dir))
 			{
 				m_Dir = fromTarget > 0f ? -1 : 1;

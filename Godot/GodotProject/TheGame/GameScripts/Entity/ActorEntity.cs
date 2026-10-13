@@ -11,7 +11,7 @@ using System;
 using GameConfig.Battle;
 using GameConfig.Entity;
 using GameConfig.Sound;
-using GameConfig.Stat;
+using GameConfig.Attributes;
 using GameFramework.Entity;
 using GameFramework;
 using GameLogic.Config;
@@ -53,6 +53,9 @@ namespace GameLogic.Entity
 
 		// ---- 属性 ----
 
+		/// <summary>供英雄外观装配使用的身体表现节点。</summary>
+		protected Node2D Body => m_Body;
+
 		/// <summary>实体编号</summary>
 		public int Id { get; private set; }
 
@@ -78,9 +81,9 @@ namespace GameLogic.Entity
 		public Node2D HitBoxRoot => m_HitBoxRoot;
 
 		/// <summary>属性汇总（基础值 + 按来源修正）；容器随实体存续，子类在 OnShow 写入基础值与修正。</summary>
-		public ActorAttributes Stats { get; } = new();
+		public ActorAttributes Attributes { get; } = new();
 
-		/// <summary>生命与魔法资源；容器随实体存续，上限随 <see cref="Stats"/> 同步，扣血与死亡规则由 ReceiveHit 负责。</summary>
+		/// <summary>生命与魔法资源；容器随实体存续，上限随 <see cref="Attributes"/> 同步，扣血与死亡规则由 ReceiveHit 负责。</summary>
 		public Vitals Vitals { get; } = new();
 
 		/// <summary>等级（参与等级压制）；子类在 OnShow 写入。</summary>
@@ -379,7 +382,7 @@ namespace GameLogic.Entity
 			}
 
 			BattleConfig config = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
-			CombatantStats defender = GetCombatStats();
+			CombatantAttributes defender = CaptureCombatAttributes();
 			float missRoll = GD.Randf();
 			float critRoll = GD.Randf();
 			DamageResult result = DamageHelper.Calculate(config, attack, defender, missRoll, critRoll);
@@ -414,9 +417,9 @@ namespace GameLogic.Entity
 
 		/// <summary>按属性汇总的最终值同步生命与魔法上限。</summary>
 		/// <param name="refill">是否补满（显示、升级）；否则把当前值钳到新上限。</param>
-		protected void SyncVitalsToStats(bool refill)
+		protected void SyncVitalsToAttributes(bool refill)
 		{
-			Vitals.SetMaximums(Stats.GetInt(StatType.MaxHp), Stats.GetInt(StatType.MaxMp), refill);
+			Vitals.SetMaximums(Attributes.MaxHp, Attributes.MaxMp, refill);
 		}
 
 		// ---- 内部方法与扩展点 ----
@@ -460,10 +463,10 @@ namespace GameLogic.Entity
 				return;
 			}
 
-			CombatantStats stats = GetCombatStats();
-			float power = stats.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf())
+			CombatantAttributes attributes = CaptureCombatAttributes();
+			float power = attributes.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf())
 				+ MathF.Round(Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf()), MidpointRounding.AwayFromZero);
-			m_ActiveAttack = AttackInstance.Create(attack.Id, stats, power * powerMultiplier, attack.DamageKind, attack.Knockback, Facing,
+			m_ActiveAttack = AttackInstance.Create(attack.Id, attributes, power * powerMultiplier, attack.DamageKind, attack.Knockback, Facing,
 				attack.HitProtect, attack.HitSoundId);
 		}
 
@@ -501,20 +504,17 @@ namespace GameLogic.Entity
 
 		/// <summary>结算用属性快照：取属性汇总当前最终值（出招与受击各取一次）。</summary>
 		/// <returns>当前属性与等级对应的结算快照。</returns>
-		protected CombatantStats GetCombatStats() => CombatantStats.From(Side, Level, Stats, Id);
+		protected CombatantAttributes CaptureCombatAttributes() => CombatantAttributes.From(Side, Level, Attributes, Id);
 
 		/// <summary>
 		/// 受击表现钩子（已扣血、未闪避时调用）：子类决定硬直/击退如何生效。
-		/// 基类只做"面向攻击者"：击退方向与攻击方出招方向相同，受击方转身面对攻击方。
+		/// 沿用造一受击朝向：击退改变速度，不强制受击方转身。
 		/// </summary>
 		/// <param name="knockback">击退速度 px/s（已按侧别换算，方向已含攻击方朝向）</param>
 		/// <param name="attackerEntityId">攻击方实体编号（0 = 无实体来源，如 Buff/调试伤害）；怪物用它锁定仇恨</param>
 		/// <param name="attack">本次攻击快照，不得保留池化引用。</param>
 		/// <param name="result">已完成的伤害结算结果。</param>
-		protected virtual void OnHurt(AttackInstance attack, DamageResult result, Vector2 knockback, int attackerEntityId)
-		{
-			SetFacing(-attack.Direction);
-		}
+		protected abstract void OnHurt(AttackInstance attack, DamageResult result, Vector2 knockback, int attackerEntityId);
 
 		/// <summary>
 		/// 命中他人钩子（未闪避时）：攻击方收益的扩展点，英雄按实际伤害积累无双。

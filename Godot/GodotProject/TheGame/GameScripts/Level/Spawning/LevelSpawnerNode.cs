@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using GameConfig.Level;
 using GameLogic.Monsters;
 using GameConfig.Monster;
+using GameConfig.Loot;
 using GameFramework.Entity;
 using GameFramework.Event;
 using Godot;
@@ -34,7 +35,7 @@ public partial class LevelSpawnerNode : Node
     public event Action StageCleared;
 
     /// <summary>本会话怪物死亡且首次归还名额时报告一次，携带只读配置、死亡位置和配方经验。</summary>
-    public event Action<MonsterConfig, Vector2, int> MonsterDefeated;
+    public event Action<MonsterConfig, Vector2, int, EquipmentDropPoolId> MonsterDefeated;
 
     /// <summary>本会话怪物已显示并登记所有权，供关卡绑定守关展示。</summary>
     public event Action<MonsterEntity> MonsterShown;
@@ -67,9 +68,12 @@ public partial class LevelSpawnerNode : Node
                     throw new InvalidOperationException($"阶段 {stage.StageOrder} 配方 {recipe.SpawnPointId} 数值非法。");
                 }
 
-                var monster = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.SingleOrDefault(x => x.EntityId == recipe.MonsterEntityId);
+                var monster =
+                    ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.SingleOrDefault(x =>
+                        x.EntityId == recipe.MonsterEntityId);
                 if (monster == null ||
-                    ConfigSystem.Instance.Tables.TbEntityConfig.DataList.Count(x => x.EntityId == monster.EntityId) != 1)
+                    ConfigSystem.Instance.Tables.TbEntityConfig.DataList.Count(x => x.EntityId == monster.EntityId) !=
+                    1)
                 {
                     throw new InvalidOperationException($"怪物配方必须关联有效配置和唯一实体资源：{recipe.MonsterEntityId}");
                 }
@@ -157,7 +161,7 @@ public partial class LevelSpawnerNode : Node
             Node2D patrolAnchor = m_PatrolAnchor;
             // 显示 API 可能从池中同步返回，名额已由调度器提前预约。
             MonsterSpawn spawn = new(spawnPosition, recipe.HealthMultiplier, recipe.DefenseMultiplier,
-                recipe.AttackMultiplier, recipe.ExperienceOverride);
+                recipe.AttackMultiplier, recipe.ExperienceOverride, recipe.EquipmentDropPoolOverride);
             IEntity entity = await entities.ShowEntityAsync(recipe.MonsterEntityId, spawn);
             if (entity == null)
             {
@@ -193,7 +197,7 @@ public partial class LevelSpawnerNode : Node
         if (args is MonsterDiedEventArgs died && m_ActiveMonsters.Remove(died.EntityId))
         {
             m_Schedule.Release();
-            MonsterDefeated?.Invoke(died.Config, died.Position, died.ExperienceReward);
+            MonsterDefeated?.Invoke(died.Config, died.Position, died.ExperienceReward, died.EquipmentDropPoolId);
             if (!m_SessionActive) return; // 掉落显示失败可能已让模块同步结束会话。
             if (m_Schedule.IsCleared)
             {

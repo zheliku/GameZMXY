@@ -25,7 +25,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         Desc = _buf.ReadString();
         EntityId = (Entity.EntityId)_buf.ReadInt();
         Level = _buf.ReadInt();
-        Stats = global::GameConfig.Stat.StatBlock.DeserializeStatBlock(_buf);
+        BaseAttributes = global::GameConfig.Attributes.ActorBaseAttributes.DeserializeActorBaseAttributes(_buf);
         MoveSpeed = _buf.ReadFloat();
         SightRange = _buf.ReadInt();
         AttackDesire = _buf.ReadInt();
@@ -50,6 +50,8 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         ManaCount = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
         MusouDropChance = _buf.ReadFloat();
         MusouCount = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
+        EquipmentDropChance = _buf.ReadFloat();
+        EquipmentDropPoolId = (Loot.EquipmentDropPoolId)_buf.ReadInt();
     }
 
     public static MonsterConfig DeserializeMonsterConfig(ByteBuf _buf)
@@ -84,7 +86,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// <summary>
     /// 战斗属性(攻击 Power 填 0：怪物伤害由招式 FlatPower 决定)
     /// </summary>
-    public readonly Stat.StatBlock Stats;
+    public readonly Attributes.ActorBaseAttributes BaseAttributes;
     /// <summary>
     /// 移动速度 px/s(旧 speed=8,代码里&#215;10)
     /// </summary>
@@ -181,13 +183,21 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// 触发后无双球数量闭区间（官方1～3均匀）
     /// </summary>
     public readonly Godot.Vector2I MusouCount;
+    /// <summary>
+    /// 装备判定概率；官方小怪15%
+    /// </summary>
+    public readonly float EquipmentDropChance;
+    /// <summary>
+    /// 装备池；怪物基础配置不得使用 UseMonster
+    /// </summary>
+    public readonly Loot.EquipmentDropPoolId EquipmentDropPoolId;
    
     public const int __ID__ = 129443944;
     public override int GetTypeId() => __ID__;
 
     public  void ResolveRef(Tables tables)
     {
-        Stats?.ResolveRef(tables);
+        BaseAttributes?.ResolveRef(tables);
     }
 
     public override string ToString()
@@ -199,7 +209,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "Desc:" + Desc + ","
         + "EntityId:" + EntityId + ","
         + "Level:" + Level + ","
-        + "Stats:" + Stats + ","
+        + "BaseAttributes:" + BaseAttributes + ","
         + "MoveSpeed:" + MoveSpeed + ","
         + "SightRange:" + SightRange + ","
         + "AttackDesire:" + AttackDesire + ","
@@ -224,6 +234,8 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "ManaCount:" + ManaCount + ","
         + "MusouDropChance:" + MusouDropChance + ","
         + "MusouCount:" + MusouCount + ","
+        + "EquipmentDropChance:" + EquipmentDropChance + ","
+        + "EquipmentDropPoolId:" + EquipmentDropPoolId + ","
         + "}";
     }
 }

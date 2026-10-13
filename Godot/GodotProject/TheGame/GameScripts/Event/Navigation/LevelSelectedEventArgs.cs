@@ -8,10 +8,13 @@ public sealed class LevelSelectedEventArgs : GameEventArgs
 {
     /// <summary>本事件的框架编号。</summary>
     public static readonly int EventId = typeof(LevelSelectedEventArgs).GetHashCode();
+
     /// <inheritdoc />
     public override int Id => EventId;
+
     /// <summary>发出请求的窗口打开编号，防止旧窗口的排队事件影响新周期。</summary>
     public int FormSerialId { get; private set; }
+
     /// <summary>所选关卡的配置主键。</summary>
     public int LevelId { get; private set; }
 

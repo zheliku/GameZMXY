@@ -12,6 +12,7 @@ public partial class LevelGatesNode : LevelMarkersNode
 {
     /// <summary>一场战斗的独立世界边界及左右门稳定 ID。</summary>
     private readonly record struct StageRegion(float Left, float Right, string EntryGateId, string ExitGateId);
+
     private readonly List<StageRegion> m_Regions = new(); // 按阶段顺序预计算的空间区域。
     private Dictionary<string, StaticBody2D> m_Gates; // 初始化校验后的稳定 ID 到物理门索引。
     private string m_TravelLeftGateId = string.Empty; // 行进期间保留上一场战斗左界，抵达后替换。
@@ -56,6 +57,7 @@ public partial class LevelGatesNode : LevelMarkersNode
             m_Regions.Add(new StageRegion(left, right, entryGateId, exitGateId));
             previousRight = right;
         }
+
         m_TravelLeftGateId = string.Empty;
         CloseOnly(string.Empty, string.Empty);
     }

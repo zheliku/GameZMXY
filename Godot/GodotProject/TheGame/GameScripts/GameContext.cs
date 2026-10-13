@@ -3,6 +3,7 @@ using GameLogic.Profile;
 using GameLogic.Save;
 using GameLogic.Equipment;
 using GameConfig.Hero;
+using GameConfig.Equipment;
 
 namespace GameLogic;
 
@@ -22,11 +23,12 @@ public sealed class GameContext
     /// <param name="profile">本槽档案。</param>
     /// <param name="save">本槽存档服务。</param>
     /// <param name="growth">已验证的成长配置。</param>
+    /// <param name="equipment">装备定义表。</param>
     /// <exception cref="ArgumentNullException">任一参数为空。</exception>
-    public GameContext(PlayerProfile profile, SaveModule save, TbHeroGrowthConfig growth)
+    public GameContext(PlayerProfile profile, SaveModule save, TbHeroGrowthConfig growth, TbEquipmentConfig equipment)
     {
         Profile = profile ?? throw new ArgumentNullException(nameof(profile));
         Save = save ?? throw new ArgumentNullException(nameof(save));
-        Equipment = new EquipmentModule(growth);
+        Equipment = new EquipmentModule(growth, equipment);
     }
 }

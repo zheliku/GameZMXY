@@ -100,14 +100,19 @@ public enum LevelStagePhase
 {
     /// <summary>已初始化，尚未开放玩法事件。</summary>
     Ready,
+
     /// <summary>通路已开放，等待当前阶段的启动条件。</summary>
     Travelling,
+
     /// <summary>区域已锁定，等待配方发完和敌人清空。</summary>
     Fighting,
+
     /// <summary>最后一波已清除，等待玩家使用出口。</summary>
     AwaitingExit,
+
     /// <summary>玩家已使用出口，提交通关。</summary>
     Completed,
+
     /// <summary>会话已停止。</summary>
     Stopped,
 }

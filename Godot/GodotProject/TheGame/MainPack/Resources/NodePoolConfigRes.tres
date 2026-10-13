@@ -1,22 +1,27 @@
-[gd_resource type="Resource" script_class="NodePoolConfig" format=3 uid="uid://pumdstkerbev"]
+[gd_resource type="Resource" script_class="NodePoolConfig" format=3 uid="uid://cabam3r0vrcot"]
 
 [ext_resource type="Script" uid="uid://yiewfnn1gx67" path="res://TheGame/MainPack/Scripts/Resources/Pooling/NodePoolConfig.cs" id="1_8jdg"]
 [ext_resource type="Script" uid="uid://cyfjle46grtw4" path="res://TheGame/MainPack/Scripts/Resources/Pooling/PoolEntry.cs" id="1_j1vs4"]
 
-[sub_resource type="Resource" id="Resource_damage_pop"]
+[sub_resource type="Resource" id="Resource_lqe6w"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/UIs/DamagePop.tscn"
-Capacity = 64
-metadata/_custom_type_script = "uid://cyfjle46grtw4"
+Scene = "res://TheGame/Entitys/Effects/recovery_number.tscn"
 
-[sub_resource type="Resource" id="Resource_loot_orb"]
+[sub_resource type="Resource" id="Resource_kq84q"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/ground_item.tscn"
+
+[sub_resource type="Resource" id="Resource_3vwbs"]
 script = ExtResource("1_j1vs4")
 Scene = "res://TheGame/Entitys/LootOrb.tscn"
-Capacity = 128
+
+[sub_resource type="Resource" id="Resource_e1wg2"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/UIs/DamagePop.tscn"
 
 [resource]
 script = ExtResource("1_8jdg")
-Entries = Array[ExtResource("1_j1vs4")]([SubResource("Resource_damage_pop"), SubResource("Resource_loot_orb")])
+Entries = Array[ExtResource("1_j1vs4")]([SubResource("Resource_lqe6w"), SubResource("Resource_kq84q"), SubResource("Resource_3vwbs"), SubResource("Resource_e1wg2")])
 DefaultExpireTime = 300.0
 DefaultAutoReleaseInterval = 300.0
 metadata/_custom_type_script = "uid://yiewfnn1gx67"

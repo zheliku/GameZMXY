@@ -43,6 +43,10 @@ public partial class TbProfileConfig
     /// 初始灵魂
     /// </summary>
      public int StartSoul => _data.StartSoul;
+    /// <summary>
+    /// 装备背包容量，三页每页25格
+    /// </summary>
+     public int EquipmentCapacity => _data.EquipmentCapacity;
     
     public void ResolveRef(Tables tables)
     {

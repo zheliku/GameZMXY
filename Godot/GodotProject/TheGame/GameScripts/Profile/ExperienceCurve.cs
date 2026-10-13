@@ -37,6 +37,7 @@ public sealed class ExperienceCurve
             {
                 throw new ArgumentException("等级必须从 1 连续且唯一，非末级经验为正，末级经验为零。", nameof(levels));
             }
+
             found[level.Id - 1] = true;
             requirements[level.Id - 1] = level.MaxExp;
         }
@@ -50,6 +51,7 @@ public sealed class ExperienceCurve
             {
                 throw new ArgumentException("等级累计经验超出整数范围。", nameof(levels));
             }
+
             m_Thresholds[index] = (int)total;
         }
     }
@@ -76,6 +78,7 @@ public sealed class ExperienceCurve
         {
             index = ~index - 1;
         }
+
         return index == MaxLevel - 1
             ? (MaxLevel, 0, 0)
             : (index + 1, total - m_Thresholds[index], m_Thresholds[index + 1] - m_Thresholds[index]);

@@ -30,8 +30,11 @@
   <ItemGroup>
     <Compile Include="*.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Battle\**\*.cs" Link="Linked\Battle\%(Filename)%(Extension)" />
-    <!-- 属性汇总、生命魔法资源、无双进度：纯 C#，按 StatType 枚举与 StatBlock 生成类工作 -->
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Stat\*.cs" Link="Linked\GameConfig\Stat\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Equipment\EquipmentInstance.cs" Link="Linked\EquipmentInstance.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Equipment\EquipmentAttributes.cs" Link="Linked\EquipmentAttributes.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Equipment\EquipmentId.cs" Link="Linked\EquipmentId.cs" />
+    <!-- 属性汇总、生命魔法资源、无双进度：纯 C#，按 AttributeType 枚举与 ActorBaseAttributes 生成类工作 -->
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Attributes\*.cs" Link="Linked\GameConfig\Attributes\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Hero\HeroGrowthConfig.cs" Link="Linked\GameConfig\HeroGrowthConfig.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Hero\TbHeroGrowthConfig.cs" Link="Linked\GameConfig\TbHeroGrowthConfig.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Battle\BattleConfig.cs" Link="Linked\GameConfig\BattleConfig.cs" />
@@ -44,7 +47,7 @@
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.cs" Link="Linked\Framework\Utility.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.Text.cs" Link="Linked\Framework\Utility.Text.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.Text.ITextHelper.cs" Link="Linked\Framework\Utility.Text.ITextHelper.cs" />
-    <!-- M5 怪物 AI：Monsters/AI 目录是纯 C#（只依赖 GF.Fsm 纯 C# 层），状态机用框架真实实现驱动 -->
+    <!-- M5 怪物 AI：Monsters/AI 目录使用 GF.Fsm 纯 C# 层与 Godot.Rect2 值类型，不依赖引擎节点，状态机用框架真实实现驱动 -->
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Monsters\AI\**\*.cs" Link="Linked\AI\%(Filename)%(Extension)" />
     <!-- 2026-10-01 身体状态机：Entity/Body + Heroes/Body + Monsters/Body 是纯 C#（GF.Fsm 纯 C# 层 + Godot 值类型），物理帧由测试按 BodyFsmHelper.Tick 驱动 -->
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Body\*.cs" Link="Linked\Body\%(Filename)%(Extension)" />

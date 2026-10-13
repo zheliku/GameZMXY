@@ -5,6 +5,7 @@ using GameLogic;
 using GameLogic.Heroes;
 using GameLogic.Level;
 using GameLogic.UI;
+using GameConfig.Equipment;
 using Godot;
 using GodotGameFramework;
 
@@ -19,11 +20,19 @@ public sealed partial class UiSmokeScenario
     /// <returns>全部背包检查完成的任务。</returns>
     private async Task CheckInventoryAsync(BattleHud hud, HeroEntity hero, GameContext context, LevelModule level)
     {
-        hud.GetNode<TextureButton>("MenuPanel/m_InventoryButton").EmitSignal(BaseButton.SignalName.Pressed);
+        var originalEquipment = context.Profile.Inventory.Items.ToArray();
+        foreach (var definition in ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList)
+            context.Profile.Inventory.TryAdd(context.Equipment.Roll(Guid.NewGuid(), definition.Id, () => .37f));
+        PushInventoryKey(true);
+        PushInventoryKey(false);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Any(x => x.Visible), "HUD 没有打开背包");
         InventoryForm form = GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Single(x => x.Visible);
         Check(GF.Base.IsGamePaused, "背包打开后战斗未暂停");
-        Check(form.GetNode<GridContainer>("Window/BagPanel/BagGrid").GetChildCount() == 25, "背包不是 5×5 格");
+        PushInventoryKey(true, echo: true);
+        await WaitFramesAsync(2);
+        Check(form.Visible, "长按背包键的重复事件关闭了窗口");
+        CheckHeroAnimationLayers(hero);
+        Check(form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid").GetChildCount() == 25, "背包不是 5×5 格");
         Check(form.GetNode<Label>("Window/CharacterPanel/Attributes/Hp/m_Hp").Text == $"{hero.Vitals.Hp} / {hero.Vitals.MaxHp}", "背包生命不是实际值");
         var body = form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Body");
         int initialFrame = body.Frame;
@@ -35,8 +44,70 @@ public sealed partial class UiSmokeScenario
         Check(form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text == (originalSoul + 17).ToString(), "背包未响应钱包变化");
         await WaitUntilAsync(() => !GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().GetNode<Label>("SaveFeedback/m_SaveFeedback").Visible,
             "保存成功提示在背包暂停时没有结束", 5000);
+        var cell = form.GetNode<EquipmentCell>("Window/BagPanel/m_BagGrid/Cell8");
+        using (var tooltip = cell._MakeCustomTooltip(cell.TooltipText))
+        {
+            Check(cell.GetNode<TextureRect>("Icon").Texture != null &&
+                tooltip.GetNode<Label>("Content/Header/Type/Value").Text == "武器·唐僧" &&
+                tooltip.GetNode<VBoxContainer>("Content/Attributes").GetChildren().OfType<Label>().Any(x => x.Text == "攻击： 11") &&
+                tooltip.GetNode<Label>("Content/Footer/Price").Text == "价值 : 20 灵魂" && tooltip.GetCombinedMinimumSize().Y > 100,
+                "背包提示类型、实际属性、售价或首次布局错误");
+            tooltip.Free();
+        }
+        Check(form.GetNode<Label>("Window/CharacterPanel/Attributes/MagicResistance/m_MagicResistance").Text == "0%", "无装备基础魔抗不是0%");
+        m_Driver.GetViewport().PushInput(new InputEventMouseMotion { Position = cell.GetGlobalRect().GetCenter(), GlobalPosition = cell.GetGlobalRect().GetCenter() }, true);
+        await WaitFramesAsync(50);
+        await CaptureCombatAsync("inventory_equipment");
         await CaptureCombatAsync("inventory_form");
-        form.GetNode<TextureButton>("Window/Header/m_Close").EmitSignal(BaseButton.SignalName.Pressed);
+        await CheckTooltipLayoutAsync(form, context);
+        await CheckBagNavigationAsync(form, context);
+        // 从真实装备格的 GUI 输入走窗口请求、关卡协调、档案事务、装配刷新整条链路。
+        int basePower = hero.Attributes.Power;
+        int baseDefense = hero.Attributes.Def;
+        int baseMaxHp = hero.Attributes.MaxHp;
+        int currentHp = hero.Vitals.Hp;
+        ClickBagEquipment(form, context, EquipmentId.RoughPilgrimStaff);
+        Check(context.Profile.ActiveEquipment.Weapon?.EquipmentId == EquipmentId.RoughPilgrimStaff &&
+            hero.Attributes.Power == basePower + 3, "背包点击未穿戴武器或攻击未刷新");
+        CheckHeroAnimationLayers(hero);
+        ClickBagEquipment(form, context, EquipmentId.CommonPilgrimClothes);
+        Check(context.Profile.ActiveEquipment.Armor?.EquipmentId == EquipmentId.CommonPilgrimClothes &&
+            hero.Attributes.Def == baseDefense + 3 && hero.Vitals.MaxHp == baseMaxHp + 27 && hero.Vitals.Hp == currentHp,
+            "防具未刷新具名属性，或换装意外补血");
+        CheckHeroAnimationLayers(hero);
+        Check(form.GetNode<Label>("Window/CharacterPanel/Attributes/Attack/m_Attack").Text == hero.Attributes.Power.ToString(),
+            "穿戴后界面未响应最终攻击变化");
+        ClickBagEquipment(form, context, EquipmentId.RoughPineStaff);
+        Check(context.Profile.ActiveEquipment.Weapon.EquipmentId == EquipmentId.RoughPilgrimStaff, "悟空穿上了唐僧武器");
+        var actions = form.GetNode<EquipmentActionsMenu>("m_Actions");
+        Check(actions.Visible && actions.GetNode<TextureButton>("Panel/Equip").Disabled &&
+            actions.GetNode<TextureButton>("Panel/Gift").Disabled, "单人赠送或异角色装备没有禁用");
+        // Freeze only the visual fixture while capturing; the desktop pointer
+        // can move independently of the injected viewport mouse event.
+        actions.SetProcess(false);
+        Guid saleId = context.Profile.Inventory.Items.First(x => x.EquipmentId == EquipmentId.RoughPineStaff).InstanceId;
+        await CaptureCombatAsync("inventory_actions");
+        int saleSoul = context.Profile.Wallet.Soul;
+        actions.GetNode<TextureButton>("Panel/Sell").EmitSignal(BaseButton.SignalName.Pressed);
+        Check(context.Profile.Wallet.Soul == saleSoul + 10 &&
+            context.Profile.Inventory.Items.All(x => x.InstanceId != saleId), "菜单出售没有按配置入账并移除装备");
+        await CaptureCombatAsync("inventory_wearing");
+        foreach (string path in new[] { "m_WeaponSlot", "m_ArmorSlot" })
+        {
+            form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/" + path)
+                ._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+            CheckHeroAnimationLayers(hero);
+        }
+        Check(context.Profile.ActiveEquipment.Weapon == null && context.Profile.ActiveEquipment.Armor == null &&
+            hero.Attributes.Power == basePower && hero.Attributes.Def == baseDefense && hero.Vitals.MaxHp == baseMaxHp,
+            "卸装后装备栏或属性来源残留");
+        form.GetNode<Button>("Window/BagPanel/Footer/m_SellQuality").EmitSignal(BaseButton.SignalName.Pressed);
+        form.GetNode<PopupMenu>("Window/BagPanel/Footer/m_SellQuality/m_QualityOptions")
+            .EmitSignal(PopupMenu.SignalName.IdPressed, (long)EquipmentQuality.Rough);
+        Check(form.GetNode<Control>("m_SaleConfirmation").Visible, "关窗夹具没有打开出售确认");
+        var beforeCloseItems = context.Profile.Inventory.Items.ToArray();
+        PushInventoryKey(true);
+        PushInventoryKey(false);
         await WaitFramesAsync(2);
         Check(!GF.Base.IsGamePaused && !form.Visible, "关闭背包没有恢复战斗");
         string closedValue = form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text;
@@ -45,9 +116,281 @@ public sealed partial class UiSmokeScenario
         hud.GetNode<TextureButton>("MenuPanel/m_InventoryButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => form.Visible, "背包未复用原窗口");
         Check(form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text == originalSoul.ToString(), "重新打开未拉取当前钱包");
+        form.GetNode<Button>("m_SaleConfirmation/Center/Panel/Content/Actions/m_SaleConfirm").EmitSignal(BaseButton.SignalName.Pressed);
+        Check(!form.GetNode<Control>("m_SaleConfirmation").Visible &&
+            context.Profile.Inventory.Items.SequenceEqual(beforeCloseItems) && context.Profile.Wallet.Soul == originalSoul,
+            "窗口复用残留出售确认或提交了旧交易");
         form.GetNode<TextureButton>("Window/Header/m_Close").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitFramesAsync(2);
-        GD.Print("SMOKE-UI: inventory actual attributes, 25 cells, live soul, pause, animated preview, unsubscribe and reuse passed");
+        // 临时改映射验证业务只依赖动作名，完成后恢复项目原输入配置。
+        var originalKeys = InputMap.ActionGetEvents(GameLogic.Input.InputActions.InventoryToggle);
+        try
+        {
+            InputMap.ActionEraseEvents(GameLogic.Input.InputActions.InventoryToggle);
+            InputMap.ActionAddEvent(GameLogic.Input.InputActions.InventoryToggle, new InputEventKey { PhysicalKeycode = Key.V });
+            PushInventoryKey(true);
+            PushInventoryKey(false);
+            await WaitUntilAsync(() => form.Visible, "重映射后背包快捷键失效");
+            PushInventoryKey(true);
+            PushInventoryKey(false);
+            await WaitFramesAsync(2);
+            Check(!form.Visible && !GF.Base.IsGamePaused, "重映射后快捷键没有关闭背包");
+        }
+        finally
+        {
+            InputMap.ActionEraseEvents(GameLogic.Input.InputActions.InventoryToggle);
+            foreach (var input in originalKeys) InputMap.ActionAddEvent(GameLogic.Input.InputActions.InventoryToggle, input);
+        }
+        context.Profile.Inventory.Restore(originalEquipment);
+        GD.Print("SMOKE-UI: inventory actual attributes, 25 cells, live soul, pause, animated preview, key remap/echo, unsubscribe and reuse passed");
+    }
+
+    /// <summary>由当前背包格提交一次鼠标穿戴输入，不绕过窗口业务。</summary>
+    /// <param name="form">已打开的真实窗口。</param>
+    /// <param name="context">受测档案。</param>
+    /// <param name="id">要点击的装备定义。</param>
+    private static void ClickBagEquipment(InventoryForm form, GameContext context, EquipmentId id)
+    {
+        int index = context.Profile.Inventory.Items.ToList().FindIndex(x => x.EquipmentId == id);
+        Check(index >= 0, "受测装备不在背包中");
+        var cell = form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid").GetChild<EquipmentCell>(index);
+        form.GetViewport().PushInput(new InputEventMouseMotion { Position = cell.GetGlobalRect().GetCenter(), GlobalPosition = cell.GetGlobalRect().GetCenter() }, true);
+        Guid weapon = context.Profile.ActiveEquipment.Weapon?.InstanceId ?? Guid.Empty;
+        Guid armor = context.Profile.ActiveEquipment.Armor?.InstanceId ?? Guid.Empty;
+        cell._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        Check((context.Profile.ActiveEquipment.Weapon?.InstanceId ?? Guid.Empty) == weapon &&
+            (context.Profile.ActiveEquipment.Armor?.InstanceId ?? Guid.Empty) == armor, "点击格子直接穿戴，跳过菜单");
+        var menu = form.GetNode<EquipmentActionsMenu>("m_Actions");
+        Check(menu.Visible, "装备格没有打开操作菜单");
+        var equip = menu.GetNode<TextureButton>("Panel/Equip");
+        if (!equip.Disabled) equip.EmitSignal(BaseButton.SignalName.Pressed);
+    }
+
+    /// <summary>比较一项和三项属性的实际布局，头部固定、价格只随中间属性下移。</summary>
+    /// <param name="form">提供正式字体主题的背包。</param>
+    /// <param name="context">提供真实装备定义和实际属性的档案。</param>
+    /// <returns>布局完成并清理夹具后的任务。</returns>
+    private async Task CheckTooltipLayoutAsync(InventoryForm form, GameContext context)
+    {
+        var grid = form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid");
+        grid.Hide(); // 清掉前一张截图的原生悬停框，避免与本测试的布局夹具重叠。
+        await WaitFramesAsync(1);
+        grid.Show();
+        var scene = GD.Load<PackedScene>("res://TheGame/UIs/Widgets/equipment_tooltip.tscn");
+        Vector2? headerPosition = null;
+        float previousPrice = 0;
+        int previousCount = 0;
+        foreach (var id in new[] { EquipmentId.CommonPineStaff, EquipmentId.CommonPilgrimClothes })
+        {
+            var tooltip = scene.Instantiate<EquipmentTooltip>();
+            tooltip.Theme = form.Theme;
+            tooltip.Position = new Vector2(650, 220);
+            tooltip.Bind(context.Equipment.Roll(Guid.NewGuid(), id, () => .37f),
+                ConfigSystem.Instance.Tables.TbEquipmentConfig.Get(id));
+            form.AddChild(tooltip);
+            await WaitFramesAsync(2);
+            var header = tooltip.GetNode<VBoxContainer>("Content/Header");
+            var attributes = tooltip.GetNode<VBoxContainer>("Content/Attributes");
+            var price = tooltip.GetNode<Label>("Content/Footer/Price");
+            Check(headerPosition == null || header.Position == headerPosition &&
+                Math.Abs(price.Position.Y + price.GetParent<Control>().Position.Y - previousPrice -
+                    (attributes.GetChildCount() - previousCount) * 25) < .01,
+                "属性行数改变时详情头部移动、价格重叠或多出空白");
+            headerPosition = header.Position;
+            previousPrice = price.Position.Y + price.GetParent<Control>().Position.Y;
+            previousCount = attributes.GetChildCount();
+            var quality = tooltip.GetNode<TextureRect>("Content/Header/Quality/Caption/Underline");
+            var type = tooltip.GetNode<TextureRect>("Content/Header/Type/Caption/Underline");
+            Check(quality.Position == type.Position && quality.Size == new Vector2(80, 2) &&
+                type.Size == quality.Size, "品质/类型下划线未对齐");
+            if (id == EquipmentId.CommonPilgrimClothes) await CaptureCombatAsync("inventory_tooltip_attributes");
+            form.RemoveChild(tooltip);
+            tooltip.Free();
+        }
+        Check(form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid").GetChild<EquipmentCell>(0)
+            .GetThemeStylebox("panel", "TooltipPanel") is StyleBoxEmpty, "Godot 外层提示仍绘制第二个背景");
+    }
+
+    /// <summary>从正式按钮验证分类、三页边界、第三页选择与整包出售，结束后还原夹具。</summary>
+    /// <param name="form">正式背包窗口。</param>
+    /// <param name="context">受测档案。</param>
+    /// <returns>包含实际窗口截图的回归任务。</returns>
+    private async Task CheckBagNavigationAsync(InventoryForm form, GameContext context)
+    {
+        var inventory = context.Profile.Inventory;
+        var before = inventory.Items.ToArray();
+        int soul = context.Profile.Wallet.Soul;
+        var items = Enumerable.Range(0, 75).Select(i => context.Equipment.Roll(Guid.NewGuid(),
+            i % 3 == 0 ? EquipmentId.CommonPineStaff : EquipmentId.RoughPilgrimStaff, () => .37f)).ToArray();
+        inventory.Restore(items);
+        var grid = form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid");
+        var tabs = form.GetNode<Control>("Window/BagPanel/m_Tabs");
+        var previous = form.GetNode<TextureButton>("Window/BagPanel/Footer/Pages/m_PreviousPage");
+        var next = form.GetNode<TextureButton>("Window/BagPanel/Footer/Pages/m_NextPage");
+        var number = form.GetNode<Label>("Window/BagPanel/Footer/Pages/m_PageNumber");
+        var sale = form.GetNode<Button>("Window/BagPanel/Footer/m_SellQuality");
+        Check(previous.Disabled && !next.Disabled && number.Text == "1 / 3", "第一页边界或页数错误");
+        foreach (int index in new[] { 1, 2, 3 })
+        {
+            tabs.GetChild<TextureButton>(index).EmitSignal(BaseButton.SignalName.Pressed);
+            Check(tabs.GetChild<TextureButton>(index).ButtonPressed &&
+                tabs.GetChildren().OfType<TextureButton>().Count(x => x.ButtonPressed) == 1 &&
+                grid.GetChildren().OfType<EquipmentCell>().All(x => x.GetNode<TextureRect>("Icon").Texture == null) &&
+                previous.Disabled && next.Disabled && number.Text == "1 / 1" && sale.Disabled,
+                $"分类 {index} 选中态、清空内容或分页限制错误");
+        }
+        tabs.GetChild<TextureButton>(0).EmitSignal(BaseButton.SignalName.Pressed);
+        next.EmitSignal(BaseButton.SignalName.Pressed);
+        Check(!previous.Disabled && !next.Disabled && number.Text == "2 / 3", "第二页不可双向翻页");
+        next.EmitSignal(BaseButton.SignalName.Pressed);
+        Check(!previous.Disabled && next.Disabled && number.Text == "3 / 3" &&
+            SmokeInspection.ReadField<Guid>(grid.GetChild<EquipmentCell>(0), "m_InstanceId") == items[50].InstanceId,
+            "第三页边界或实例偏移错误");
+        grid.GetChild<EquipmentCell>(0)._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        var actions = form.GetNode<EquipmentActionsMenu>("m_Actions");
+        Check(actions.Visible, "第三页装备没有打开操作菜单");
+        actions.GetNode<TextureButton>("Panel/Sell").EmitSignal(BaseButton.SignalName.Pressed);
+        Check(inventory.Items.All(x => x.InstanceId != items[50].InstanceId) && context.Profile.Wallet.Soul == soul + 10,
+            "第三页出售选择了第一页同位置装备");
+        previous.EmitSignal(BaseButton.SignalName.Pressed);
+        previous.EmitSignal(BaseButton.SignalName.Pressed);
+        sale.EmitSignal(BaseButton.SignalName.Pressed);
+        var popup = sale.GetNode<PopupMenu>("m_QualityOptions");
+        Check(popup.ItemCount == 6 && popup.GetItemText(0) == "出售粗糙装备（49）" &&
+            popup.GetItemText(1) == "出售普通装备（25）" && popup.IsItemDisabled(2),
+            "品质菜单未统计全部三页或没有禁用空品质");
+        await WaitFramesAsync(3);
+        Check(popup.Position.Y + popup.Size.Y <= sale.GetScreenPosition().Y &&
+            popup.Position.X + popup.Size.X <= (sale.GetScreenTransform() * sale.Size).X, "出售菜单未向上展开或越过按钮右边界");
+        await CaptureCombatAsync("inventory_quality_sale");
+        popup.Hide();
+        var window = m_Driver.GetTree().Root;
+        Vector2I originalSize = window.Size;
+        window.Size = new Vector2I(1175, 738);
+        await WaitFramesAsync(3);
+        sale.EmitSignal(BaseButton.SignalName.Pressed);
+        await WaitFramesAsync(2);
+        Check(Math.Abs(popup.Position.X + popup.Size.X - (sale.GetScreenTransform() * sale.Size).X) <= 1 &&
+            popup.Position.Y + popup.Size.Y <= sale.GetScreenPosition().Y, "缩放窗口时品质菜单脱离按钮");
+        await CaptureCombatAsync("inventory_quality_sale_scaled");
+        popup.Hide();
+        window.Size = originalSize;
+        await WaitFramesAsync(3);
+        sale.EmitSignal(BaseButton.SignalName.Pressed);
+        popup.EmitSignal(PopupMenu.SignalName.IdPressed, (long)EquipmentQuality.Rough);
+        var confirmation = form.GetNode<Control>("m_SaleConfirmation");
+        var summary = confirmation.GetNode<Label>("Center/Panel/Content/m_SaleSummary");
+        var cancel = confirmation.GetNode<Button>("Center/Panel/Content/Actions/m_SaleCancel");
+        var confirm = confirmation.GetNode<Button>("Center/Panel/Content/Actions/m_SaleConfirm");
+        Check(confirmation.Visible && !popup.Visible && summary.Text.Contains("粗糙") &&
+            summary.Text.Contains("49 件") && summary.Text.Contains("490 灵魂") && cancel.HasFocus() &&
+            inventory.Items.Count == 74 && context.Profile.Wallet.Soul == soul + 10,
+            "选中品质直接出售、确认摘要错误或默认焦点不是取消");
+        await WaitFramesAsync(2);
+        PushMouseClick(next);
+        await WaitFramesAsync(2);
+        Check(number.Text == "1 / 3" && confirmation.Visible, "确认弹层未拦截背后的翻页按钮");
+        await CaptureCombatAsync("inventory_sale_confirmation");
+        window.Size = new Vector2I(1175, 738);
+        await WaitFramesAsync(3);
+        Check(confirmation.GetNode<PanelContainer>("Center/Panel").GetGlobalRect().GetCenter()
+            .DistanceTo(form.GetGlobalRect().GetCenter()) < 1, "缩放窗口时确认框未保持居中");
+        await CaptureCombatAsync("inventory_sale_confirmation_scaled");
+        window.Size = originalSize;
+        await WaitFramesAsync(3);
+        cancel.EmitSignal(BaseButton.SignalName.Pressed);
+        confirm.EmitSignal(BaseButton.SignalName.Pressed);
+        Check(!confirmation.Visible && inventory.Items.Count == 74 && context.Profile.Wallet.Soul == soul + 10,
+            "取消交易后仍可提交旧确认");
+        sale.EmitSignal(BaseButton.SignalName.Pressed);
+        popup.EmitSignal(PopupMenu.SignalName.IdPressed, (long)EquipmentQuality.Rough);
+        using (var escape = new InputEventAction { Action = "ui_cancel", Pressed = true })
+            form.GetViewport().PushInput(escape, true);
+        Check(!confirmation.Visible && form.Visible && inventory.Items.Count == 74, "Esc 未取消交易或关闭了整个背包");
+        sale.EmitSignal(BaseButton.SignalName.Pressed);
+        popup.EmitSignal(PopupMenu.SignalName.IdPressed, (long)EquipmentQuality.Rough);
+        context.Profile.Wallet.AddSoul(1);
+        confirm.EmitSignal(BaseButton.SignalName.Pressed);
+        Check(!confirmation.Visible && inventory.Items.Count == 74 && context.Profile.Wallet.Soul == soul + 11,
+            "数据变化后旧确认仍能出售装备");
+        context.Profile.Wallet.Restore(soul + 10);
+        sale.EmitSignal(BaseButton.SignalName.Pressed);
+        popup.EmitSignal(PopupMenu.SignalName.IdPressed, (long)EquipmentQuality.Rough);
+        await WaitFramesAsync(2);
+        PushMouseClick(confirm);
+        await WaitFramesAsync(2);
+        Check(inventory.Items.SequenceEqual(items.Where(x => x.EquipmentId == EquipmentId.CommonPineStaff)) &&
+            context.Profile.Wallet.Soul == soul + 500 && !popup.Visible && !confirmation.Visible,
+            "品质出售未跨页提交完整交易或未关闭菜单");
+        confirm.EmitSignal(BaseButton.SignalName.Pressed);
+        Check(context.Profile.Wallet.Soul == soul + 500 && inventory.Items.Count == 25, "重复确认重复入账");
+        inventory.Restore(before);
+        context.Profile.Wallet.Restore(soul);
+        GD.Print("SMOKE-UI: four tabs, 75 slots, three-page bounds; quality sale confirmation, cancel/Esc, modal input, stale/duplicate rejection and bulk transaction passed");
+    }
+
+    /// <summary>通过真实视口鼠标事件点击控件，验证弹层输入阻挡与按钮响应。</summary>
+    /// <param name="control">鼠标目标控件。</param>
+    private static void PushMouseClick(Control control)
+    {
+        Vector2 position = control.GetGlobalRect().GetCenter();
+        using var motion = new InputEventMouseMotion { Position = position, GlobalPosition = position };
+        control.GetViewport().PushInput(motion, true);
+        foreach (bool pressed in new[] { true, false })
+        {
+            using var click = new InputEventMouseButton { Position = position, GlobalPosition = position,
+                ButtonIndex = MouseButton.Left, Pressed = pressed };
+            control.GetViewport().PushInput(click, true);
+        }
+    }
+
+    /// <summary>从项目输入映射取得真实按键，避免烟测绕开动作映射。</summary>
+    /// <param name="pressed">按下或释放。</param>
+    /// <param name="echo">是否模拟长按产生的重复按下。</param>
+    private void PushInventoryKey(bool pressed, bool echo = false)
+    {
+        var input = (InputEventKey)InputMap.ActionGetEvents(GameLogic.Input.InputActions.InventoryToggle).OfType<InputEventKey>().First().Duplicate();
+        input.Pressed = pressed;
+        input.Echo = echo;
+        m_Driver.GetViewport().PushInput(input, true);
+        input.Dispose();
+    }
+
+    /// <summary>在暂停中的真实实体上逐帧采样全部已接入动作，验证两层同步、有效素材与固定根原点。</summary>
+    /// <param name="hero">当前暂停中的英雄。</param>
+    private static void CheckHeroAnimationLayers(HeroEntity hero)
+    {
+        var player = hero.GetNode<AnimationPlayer>("m_AnimPlayer");
+        var body = hero.GetNode<Sprite2D>("m_Body");
+        var weapon = hero.GetNode<Sprite2D>("m_Weapon");
+        Vector2 root = hero.Position;
+        int facing = hero.Facing;
+        string previous = player.CurrentAnimation;
+        double position = player.CurrentAnimationPosition;
+        bool active = player.Active;
+        using var image = body.Texture.GetImage();
+        foreach (int direction in new[] { -1, 1 })
+        {
+            hero.SetFacing(direction);
+            foreach (string name in new[] { "idle1", "idle2", "walk", "run", "jump", "jump_2", "fall", "hurt", "death", "attack_1", "attack_2", "attack_3", "attack_4", "attack_5" })
+            {
+                var animation = player.GetAnimation(name);
+                player.Play(name);
+                for (double time = 0; time < animation.Length; time += 1d / 60)
+                {
+                    player.Seek(time, true);
+                    Check(body.Frame == weapon.Frame && body.FlipH == weapon.FlipH && hero.Position == root,
+                        $"动作 {name} 身体/武器帧、朝向不同步或修改了角色根坐标");
+                    Rect2I frame = new(body.Frame % 6 * 200, body.Frame / 6 * 200, 200, 200);
+                    using var crop = image.GetRegion(frame);
+                    Check(!crop.IsInvisible(), $"动作 {name} 引用空白身体帧 {body.Frame}");
+                }
+            }
+        }
+        hero.SetFacing(facing);
+        player.Play(string.IsNullOrEmpty(previous) ? "idle1" : previous);
+        player.Seek(position, true);
+        player.Active = active;
     }
 
     /// <summary>等待失败结算并检查成绩、按钮和暂停，然后按重试。</summary>

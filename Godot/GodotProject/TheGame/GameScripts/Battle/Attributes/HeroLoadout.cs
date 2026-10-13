@@ -1,5 +1,6 @@
 using System;
-using GameConfig.Stat;
+using GameConfig.Attributes;
+using GameLogic.Equipment;
 
 namespace GameLogic.Battle.Attributes;
 
@@ -13,18 +14,28 @@ public sealed class HeroLoadout
     public int Level { get; }
 
     /// <summary>该等级的只读成长属性。</summary>
-    public StatBlock BaseAttributes { get; }
+    public ActorBaseAttributes BaseAttributes { get; }
+
+    /// <summary>冻结的武器实例或空。</summary>
+    public EquipmentInstance Weapon { get; }
+
+    /// <summary>冻结的防具实例或空。</summary>
+    public EquipmentInstance Armor { get; }
 
     /// <summary>冻结一份英雄战斗输入。</summary>
     /// <param name="heroId">英雄配置编号。</param>
     /// <param name="level">当前等级。</param>
     /// <param name="baseAttributes">已验证的只读成长属性。</param>
+    /// <param name="weapon">出战时穿戴的不可变武器实例。</param>
+    /// <param name="armor">出战时穿戴的不可变防具实例。</param>
     /// <exception cref="ArgumentNullException">成长属性为空。</exception>
-    public HeroLoadout(int heroId, int level, StatBlock baseAttributes)
+    public HeroLoadout(int heroId, int level, ActorBaseAttributes baseAttributes, EquipmentInstance weapon = null,
+        EquipmentInstance armor = null)
     {
         HeroId = heroId;
         Level = level;
         BaseAttributes = baseAttributes ?? throw new ArgumentNullException(nameof(baseAttributes));
+        Weapon = weapon;
+        Armor = armor;
     }
-
 }

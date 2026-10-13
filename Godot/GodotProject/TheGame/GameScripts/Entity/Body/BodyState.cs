@@ -102,6 +102,5 @@ namespace GameLogic.Body
 		{
 			body.Velocity = new Vector2(0f, body.Velocity.Y);
 		}
-
 	}
 }

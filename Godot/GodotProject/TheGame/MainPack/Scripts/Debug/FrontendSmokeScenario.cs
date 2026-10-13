@@ -125,6 +125,17 @@ public sealed class FrontendSmokeScenario
             TextureButton location = map.GetNode<TextureButton>("m_Huaguoshan");
             Check(location.TextureNormal.ResourcePath.EndsWith("map_huaguoshan_normal.png", StringComparison.Ordinal), "花果山未使用原项目地点图片");
             Check(location is MapLocationButton, "花果山未使用随显示图像变化的命中控件");
+            await MoveMouseAsync(new Vector2(30, 30));
+            var currentHint = map.GetNode<AnimationPlayer>("m_LocationAnimation");
+            Check(currentHint.IsPlaying() && currentHint.CurrentAnimation == "location/current", "最新关卡没有默认闪烁提示");
+            currentHint.Seek(0, true); currentHint.Pause();
+            float currentLow = ((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("line_thickness").AsSingle();
+            await CaptureAsync("map_current_low");
+            currentHint.Play("location/current"); currentHint.Seek(.5, true); currentHint.Pause();
+            Check(((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("line_thickness").AsSingle() > currentLow, "最新关卡边缘没有闪烁");
+            Check(Mathf.IsEqualApprox(((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("image_scale").AsSingle(), .9f), "默认提示错误放大了地点");
+            await CaptureAsync("map_current");
+            currentHint.Play("location/current");
             await CheckLocationHitRegionAsync(map, location);
             await MoveMouseAsync(location.GetGlobalRect().GetCenter());
             var hover = map.GetNode<AnimationPlayer>("m_LocationAnimation");
@@ -151,7 +162,7 @@ public sealed class FrontendSmokeScenario
                 Check(changed > 100, "黄色光晕两次采样没有产生实际像素变化");
             }
             await MoveMouseAsync(new Vector2(30, 30));
-            Check(!hover.IsPlaying() && Mathf.IsEqualApprox(((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("image_scale").AsSingle(), 1f), "离开地点后动画没有复位");
+            Check(hover.IsPlaying() && hover.CurrentAnimation == "location/current" && Mathf.IsEqualApprox(((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("image_scale").AsSingle(), .9f), "离开地点后动画没有复位");
             await CheckMusicAsync("map_theme.mp3");
 
             // 保存图标写入第二格；第六格建档后再读第二格，不能误读最新档。
@@ -466,11 +477,11 @@ public sealed class FrontendSmokeScenario
         location.Pressed += observe;
         try
         {
-            foreach (Vector2 local in new[] { new Vector2(3, 3), imageOrigin + new Vector2(0.5f, 0.5f), new Vector2(40, 80) })
+            foreach (Vector2 local in new[] { new Vector2(3, 3), new Vector2(157, 3), new Vector2(3, 171), new Vector2(157, 171) })
             {
                 Vector2 position = location.GlobalPosition + local;
                 await MoveMouseAsync(position);
-                Check(!map.GetNode<AnimationPlayer>("m_LocationAnimation").IsPlaying(), $"透明区域触发悬停：{local}");
+                Check(map.GetNode<AnimationPlayer>("m_LocationAnimation").CurrentAnimation == "location/current" && m_Driver.GetViewport().GuiGetHoveredControl() != location, $"透明区域触发悬停：{local}");
                 m_Driver.GetViewport().PushInput(new InputEventMouseButton { Position = position, GlobalPosition = position, ButtonIndex = MouseButton.Left, Pressed = true }, true);
                 await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
                 m_Driver.GetViewport().PushInput(new InputEventMouseButton { Position = position, GlobalPosition = position, ButtonIndex = MouseButton.Left, Pressed = false }, true);
@@ -512,9 +523,9 @@ public sealed class FrontendSmokeScenario
             glow.Scale = originalScale;
         }
         await MoveMouseAsync(new Vector2(30, 30));
-        Check(!hover.IsPlaying() && !glow.Visible, "离开放大图后未恢复普通状态");
-        await MoveMouseAsync(expanded);
-        Check(!hover.IsPlaying() && !glow.Visible, "普通状态仍沿用放大图命中范围");
+        Check(hover.IsPlaying() && hover.CurrentAnimation == "location/current" && glow.Visible, "离开放大图后未恢复最新进度提示");
+        await MoveMouseAsync(location.GlobalPosition + new Vector2(3, 3));
+        Check(hover.CurrentAnimation == "location/current" && m_Driver.GetViewport().GuiGetHoveredControl() != location, "默认提示的透明区域错误接收输入");
     }
 
     /// <summary>通过真实鼠标按下和松开验证点击、遮挡、坐标与按钮绑定。</summary>

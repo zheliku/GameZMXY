@@ -17,6 +17,7 @@
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Level\*.cs" Link="Linked\Config\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Entity\EntityId.cs" Link="Linked\Config\EntityId.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Sound\SoundId.cs" Link="Linked\Config\SoundId.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Loot\EquipmentDropPoolId.cs" Link="Linked\Config\EquipmentDropPoolId.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GodotGameFrameworkCore\Lib\LubanLib\*.cs" Link="Linked\Luban\%(Filename)%(Extension)" />
     <None Include="$(GodotProjectDir)TheGame\DataTables\GameConfigs\level_tblevelconfig.bytes" Link="Data\level_tblevelconfig.bytes" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

@@ -7,8 +7,13 @@ namespace GameLogic.Heroes.Effects;
 public partial class MusouAfterimageNode : Node2D
 {
 	[Export] private Godot.Collections.Array<Sprite2D> m_Layers = new(); // 场景显式绑定的身体、武器等表现层。
-	[Export(PropertyHint.Range, "0.01,1,0.01")] private float m_Interval = 1f / 6f; // 官方残影采样周期，秒。
-	[Export(PropertyHint.Range, "0.01,2,0.01")] private float m_Lifetime = 1f; // 官方 TweenMax 残影淡出秒数。
+
+	[Export(PropertyHint.Range, "0.01,1,0.01")]
+	private float m_Interval = 1f / 6f; // 官方残影采样周期，秒。
+
+	[Export(PropertyHint.Range, "0.01,2,0.01")]
+	private float m_Lifetime = 1f; // 官方 TweenMax 残影淡出秒数。
+
 	[Export] private Color m_Tint = Colors.White; // 保留角色原色与初始透明度。
 	private const int SnapshotLimit = 32; // 表现缓存的工程上限，避免错误检查器参数分配过量节点。
 	private Sprite2D[][] m_Snapshots = []; // 固定复用的各帧精灵层，不逐帧创建或释放节点。
@@ -36,6 +41,7 @@ public partial class MusouAfterimageNode : Node2D
 				m_Snapshots[i][j] = sprite;
 			}
 		}
+
 		Reset();
 	}
 
@@ -57,7 +63,8 @@ public partial class MusouAfterimageNode : Node2D
 		m_SampleTime = 0f;
 		Array.Fill(m_Ages, m_Lifetime);
 		foreach (Sprite2D[] snapshot in m_Snapshots)
-			foreach (Sprite2D layer in snapshot) layer.Visible = false;
+		foreach (Sprite2D layer in snapshot)
+			layer.Visible = false;
 		SetProcess(false);
 	}
 
@@ -114,6 +121,7 @@ public partial class MusouAfterimageNode : Node2D
 			target.SelfModulate = source.SelfModulate;
 			target.Modulate = m_Tint;
 		}
+
 		m_Ages[m_Next] = 0f;
 		m_Next = (m_Next + 1) % m_Snapshots.Length;
 	}

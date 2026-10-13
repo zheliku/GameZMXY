@@ -67,6 +67,7 @@ namespace GameLogic.Save
                 loaded = await GF.Archive.SaveAsync();
             }
             else loaded = await GF.Archive.LoadAsync(unitId);
+
             if (!loaded || GF.Archive.CurrentData == null || GF.Archive.CurrentCatalogue == null ||
                 GF.Archive.CurrentData.UnitId != GF.Archive.CurrentCatalogue.UnitId)
                 throw new InvalidOperationException("没有成功读取有效存档，已拒绝覆盖。");
@@ -80,8 +81,10 @@ namespace GameLogic.Save
             // 只有明确的新槽或框架新建的空槽才按建档规则创建，不转换历史文件。
             PlayerProfile profile = created
                 ? new PlayerProfile(m_StartHeroId,
-                    [new HeroProgression(m_StartHeroId, m_Curve, 0)], new Wallet(m_StartSoul))
-                : ProfileSaveHelper.RestoreProfile(data, m_Curve);
+                    [new HeroProgression(m_StartHeroId, m_Curve, 0)], new Wallet(m_StartSoul),
+                    new Inventory(m_Tables.TbProfileConfig.EquipmentCapacity))
+                : ProfileSaveHelper.RestoreProfile(data, m_Curve, m_Tables.TbEquipmentConfig,
+                    m_Tables.TbProfileConfig.EquipmentCapacity);
             m_ActiveSlotUnitId = data.UnitId;
             SaveOrigin origin = created ? SaveOrigin.Created : SaveOrigin.Loaded;
             if (created)
@@ -90,6 +93,7 @@ namespace GameLogic.Save
                 if (!await WriteSnapshotAsync(ProfileSaveHelper.CaptureSaveData(profile)))
                     throw new InvalidOperationException("新档案写入失败。");
             }
+
             return new SaveLoadResult(profile, origin);
         }
 
@@ -129,19 +133,24 @@ namespace GameLogic.Save
                     {
                         if (catalogue.SlotNumber != number || catalogue.SavedAtUtc <= 0)
                             throw new InvalidOperationException("已有档案缺少稳定格号或检查点时间。");
-                        var profile = ProfileSaveHelper.RestoreProfile(GF.Archive.CurrentData, m_Curve);
+                        var profile = ProfileSaveHelper.RestoreProfile(GF.Archive.CurrentData, m_Curve,
+                            m_Tables.TbEquipmentConfig, m_Tables.TbProfileConfig.EquipmentCapacity);
                         string name = m_Tables.TbHeroConfig.Get(profile.ActiveHeroId).NameCn;
                         slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Occupied,
                             name, profile.ActiveHero.Level, DateTimeOffset.FromUnixTimeSeconds(catalogue.SavedAtUtc));
                     }
                 }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
                 catch (Exception error)
                 {
                     Log.Warning("[SaveModule] 存档格 {0} 不可读：{1}", number, error.Message);
                     slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Unreadable);
                 }
             }
+
             return Array.AsReadOnly(slots);
         }
 
@@ -152,6 +161,7 @@ namespace GameLogic.Save
         private static bool IsUnclaimedSlot(GameCatalogue catalogue, GameData data) =>
             data != null && data.UnitId == catalogue.UnitId && data.SaveVersion == GameData.CurrentVersion &&
             data.ActiveHeroId == 0 && data.Heroes is { Count: 0 } && data.Soul == 0 &&
+            data.EquipmentItems is { Count: 0 } &&
             catalogue.SlotNumber == 0 && catalogue.SavedAtUtc == 0 && string.IsNullOrEmpty(catalogue.Name);
 
         /// <summary>把档案当前状态写成一个检查点（调用时刻捕获快照，之后的修改不影响本次写入）。</summary>
@@ -170,7 +180,8 @@ namespace GameLogic.Save
         private Task<bool> WriteSnapshotAsync(GameData snapshot)
         {
             GameData data = GF.Archive.CurrentData;
-            if (data == null || GF.Archive.CurrentCatalogue?.UnitId != m_ActiveSlotUnitId || data.UnitId != m_ActiveSlotUnitId)
+            if (data == null || GF.Archive.CurrentCatalogue?.UnitId != m_ActiveSlotUnitId ||
+                data.UnitId != m_ActiveSlotUnitId)
             {
                 Log.Error("[SaveModule] 当前存档不属于本档案作用域，检查点未写入。");
                 return m_PendingWrite = Task.FromResult(false);
@@ -183,6 +194,7 @@ namespace GameLogic.Save
             data.ActiveHeroId = snapshot.ActiveHeroId;
             data.Heroes = snapshot.Heroes;
             data.Soul = snapshot.Soul;
+            data.EquipmentItems = snapshot.EquipmentItems;
             m_PendingWrite = NotifyWriteAsync(GF.Archive.OverWriteAsync());
             return m_PendingWrite;
         }

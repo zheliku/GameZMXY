@@ -1,3 +1,4 @@
+using GameLogic.UI;
 using GameLogic.UI.Widgets;
 using GameFramework.UI;
 using Godot;
@@ -82,6 +83,8 @@ namespace GameLogic.UI
 		#endregion
 
 		[Export]
+		private EquipmentActionsMenu m_Actions;
+		[Export]
 		private TextureButton m_Close;
 		[Export]
 		private Label m_Name;
@@ -115,6 +118,32 @@ namespace GameLogic.UI
 		private Label m_HpRegen;
 		[Export]
 		private Label m_MpRegen;
+		[Export]
+		private GridContainer m_BagGrid;
+		[Export]
+		private EquipmentCell m_WeaponSlot;
+		[Export]
+		private EquipmentCell m_ArmorSlot;
+		[Export]
+		private Control m_Tabs;
+		[Export]
+		private TextureButton m_PreviousPage;
+		[Export]
+		private Label m_PageNumber;
+		[Export]
+		private TextureButton m_NextPage;
+		[Export]
+		private Button m_SellQuality;
+		[Export]
+		private PopupMenu m_QualityOptions;
+		[Export]
+		private Control m_SaleConfirmation;
+		[Export]
+		private Label m_SaleSummary;
+		[Export]
+		private Button m_SaleCancel;
+		[Export]
+		private Button m_SaleConfirm;
 
 	}
 }

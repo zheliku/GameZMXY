@@ -14,6 +14,8 @@ using GameLogic.Body;
 using GameLogic.Heroes.Effects;
 using GameLogic.Heroes.Input;
 using GameLogic.Profile;
+using GameLogic.Equipment;
+using System.Linq;
 using Godot;
 using GodotGameFramework;
 
@@ -27,19 +29,21 @@ namespace GameLogic.Heroes
 	{
 		// ---- 字段 ----
 
-		[Export] private Sprite2D m_Weapon; // 武器表现层，与身体层同网格并由动画轨道驱动。
+		[Export] private Sprite2D m_Weapon; // 与身体共用定位及帧号，透明区保留原始遮挡。
+		[Export] private HeroAppearanceResource m_Appearance; // 身体、防具与武器独立换装的图集资源。
 
 		[Export] private Node2D m_EffectRoot; // 攻击特效层容器，由动画轨道驱动并随朝向镜像。
 
 		[Export] private int m_HeroId; // 场景绑定的 HeroConfig 主键。
 
 		[Export] private MusouAfterimageNode m_MusouAfterimage; // 英雄自有的残影表现，可按角色场景选配。
-        [Export] private HeroLevelUpNode m_LevelUp; // 独立升级动画层，不随身体朝向镜像。
+		[Export] private HeroLevelUpNode m_LevelUp; // 独立升级动画层，不随身体朝向镜像。
 
 		private HeroBodyParams m_BodyParams; // 从英雄配置和动画库构建的身体参数快照。
 
 		private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
 		private ulong m_MusouIntroEnds; // 本英雄拥有的短暂停顿截止时间；零表示没有拥有暂停。
+		private HeroLoadout m_Loadout; // 当前不可变装配，用于替换上一份持久装备来源。
 
 		// ---- 属性 ----
 
@@ -118,12 +122,12 @@ namespace GameLogic.Heroes
 			}
 
 			// 池实例可能带着上次的修正来源，先清空再按装配重建。
-			Stats.Clear();
+			Attributes.Clear();
 			ApplyLoadout(snapshot, refill: true);
 			var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
 			Musou.Reset(battle.WsMax, battle.WsDecayPerSecond, battle.WsDrainPerSecond);
 			m_MusouAfterimage?.Reset();
-            m_LevelUp?.Reset();
+			m_LevelUp?.Reset();
 
 			// 池复用的实例带着上次的脏事实回来，一律在 OnShow 复位（见 Entity/AGENTS.md 生命周期）
 			ComboIndex = 0;
@@ -143,13 +147,13 @@ namespace GameLogic.Heroes
 			EndMusouIntro(!isShutdown);
 			Musou.Clear();
 			if (!isShutdown && IsInstanceValid(m_MusouAfterimage)) m_MusouAfterimage.Reset();
-            if (!isShutdown && IsInstanceValid(m_LevelUp)) m_LevelUp.Reset();
+			if (!isShutdown && IsInstanceValid(m_LevelUp)) m_LevelUp.Reset();
 			DestroyBody(isShutdown);
 			base.OnHide(isShutdown, userData);
 		}
 
-        /// <summary>在档案确认升级并重新注入装配后显示提示；普通进关不触发。</summary>
-        public void PlayLevelUp() => m_LevelUp?.ShowLevelUp();
+		/// <summary>在档案确认升级并重新注入装配后显示提示；普通进关不触发。</summary>
+		public void PlayLevelUp() => m_LevelUp?.ShowLevelUp();
 
 		/// <summary>真实时间结束本英雄拥有的无双开启停顿；暂停时游戏时间为零仍能恢复。</summary>
 		/// <param name="delta">游戏帧秒数，本计时只使用单调真实时间。</param>
@@ -242,23 +246,40 @@ namespace GameLogic.Heroes
 			}
 
 			// 替换成长基础值，保留局内修正，再同步资源上限。
-			Stats.SetBase(snapshot.BaseAttributes);
+			Attributes.SetBase(snapshot.BaseAttributes);
+			if (m_Loadout?.Weapon != null) Attributes.RemoveSource(EquipmentSource(m_Loadout.Weapon));
+			if (m_Loadout?.Armor != null) Attributes.RemoveSource(EquipmentSource(m_Loadout.Armor));
+			if (snapshot.Weapon != null)
+				Attributes.SetSource(EquipmentSource(snapshot.Weapon),
+					snapshot.Weapon.Attributes.EnumerateModifiers().ToArray());
+			if (snapshot.Armor != null)
+				Attributes.SetSource(EquipmentSource(snapshot.Armor),
+					snapshot.Armor.Attributes.EnumerateModifiers().ToArray());
+			m_Loadout = snapshot;
 			Level = snapshot.Level;
-			SyncVitalsToStats(refill);
+			SyncVitalsToAttributes(refill);
+			ApplyAppearance(snapshot);
 		}
+
+		/// <summary>为一件装备保留完整实例标识，不把 Guid 哈希成可能碰撞的数值。</summary>
+		/// <param name="item">已穿戴的不可变实例。</param>
+		/// <returns>该实例在属性管线中的唯一来源。</returns>
+		private static AttributeSourceId EquipmentSource(EquipmentInstance item) =>
+			new($"Equipment:{item.InstanceId:N}", 0);
+
+		/// <summary>按装配独立选择身体与武器外观。</summary>
+		/// <param name="snapshot">当前不可变装配。</param>
+		private void ApplyAppearance(HeroLoadout snapshot) =>
+			m_Appearance.Apply((Sprite2D)Body, m_Weapon, snapshot.Weapon != null, snapshot.Armor != null);
 
 		// ---- 内部方法与扩展点 ----
 
-		/// <summary>镜像英雄专属武器层与特效层。</summary>
+		/// <summary>同步镜像英雄武器及特效，身体层由公共实体镜像。</summary>
 		/// <param name="dir">朝向：1 右，-1 左。</param>
 		protected override void OnFacingChanged(int dir)
 		{
 			bool mirror = dir > 0;
-			if (m_Weapon != null)
-			{
-				m_Weapon.FlipH = mirror;
-			}
-
+			m_Weapon.FlipH = mirror;
 			// 特效层用父容器负 scale 镜像（同旧项目 Action.scale.x = ±1）：
 			// 这样特效节点上由轨道写入的 offset 会一起镜像，特效不会跑到身体另一侧。
 			if (m_EffectRoot != null)
@@ -289,9 +310,9 @@ namespace GameLogic.Heroes
 		/// <param name="result">已完成的伤害结算结果。</param>
 		/// <param name="knockback">击退速度，单位像素每秒。</param>
 		/// <param name="attackerEntityId">攻击方运行编号；无来源时为零。</param>
-		protected override void OnHurt(AttackInstance attack, DamageResult result, Vector2 knockback, int attackerEntityId)
+		protected override void OnHurt(AttackInstance attack, DamageResult result, Vector2 knockback,
+			int attackerEntityId)
 		{
-			base.OnHurt(attack, result, knockback, attackerEntityId);
 			if (Dead) EndMusou();
 			if (!Dead && !Musou.IsActive && m_BodyParams.HurtTime > 0f)
 			{
@@ -372,11 +393,13 @@ namespace GameLogic.Heroes
 
 		/// <summary>无双提高横向走跑速度。</summary>
 		float IHeroBody.MoveSpeedMultiplier => Musou.IsActive
-			? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMoveSpeedMultiplier : 1f;
+			? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMoveSpeedMultiplier
+			: 1f;
 
 		/// <summary>无双提高起跳速度；读取时生效，不改写配置快照。</summary>
 		float IHeroBody.JumpSpeedMultiplier => Musou.IsActive
-			? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsJumpSpeedMultiplier : 1f;
+			? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsJumpSpeedMultiplier
+			: 1f;
 
 		/// <summary>无双期间免受击硬直与击退，仍正常结算伤害。</summary>
 		bool IHeroBody.SuperArmor => Musou.IsActive;
@@ -401,7 +424,8 @@ namespace GameLogic.Heroes
 
 		/// <summary>提供当前重力，无双时应用官方倍率。</summary>
 		float IActorBody.Gravity => m_BodyParams.Gravity * (Musou.IsActive
-			? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsGravityMultiplier : 1f);
+			? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsGravityMultiplier
+			: 1f);
 
 		/// <summary>提交攻击段并装填攻击数据和起手音效。</summary>
 		/// <param name="segment">英雄连段下标。</param>
@@ -410,8 +434,9 @@ namespace GameLogic.Heroes
 			AttackSegment = segment;
 			// 官方加成乘在整招威力上，包含随机固定加值，避免只放大基础攻击。
 			ArmAttack(m_OwnAttacks[segment], Musou.IsActive
-				? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsAttackMultiplier : 1f);
-			PlaySound(m_OwnAttacks[segment].SoundId);   // 起手音：音源查表，与旧 add_music 同点（第 0 帧）
+				? ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsAttackMultiplier
+				: 1f);
+			PlaySound(m_OwnAttacks[segment].SoundId); // 起手音：音源查表，与旧 add_music 同点（第 0 帧）
 		}
 
 		/// <summary>结束攻击段并归还攻击数据。</summary>
@@ -426,6 +451,5 @@ namespace GameLogic.Heroes
 
 		/// <summary>播放英雄配置的死亡音效。</summary>
 		void IActorBody.OnDied() => PlaySound(Config.DeathSoundId);
-
 	}
 }

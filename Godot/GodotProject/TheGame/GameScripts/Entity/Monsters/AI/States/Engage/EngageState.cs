@@ -30,13 +30,13 @@ namespace GameLogic.Monsters.AI
 				return;
 			}
 
-			if (agent.TargetBox.IsEmpty)
+			if (!agent.TargetBox.HasArea())
 			{
 				ChangeState<WanderState>(fsm);
 				return;
 			}
 
-			int dir = Math.Sign(agent.TargetBox.CenterX);
+			int dir = Math.Sign(agent.TargetBox.GetCenter().X);
 			int priority = agent.Attacks.HighestPriority(agent.TargetBox, dir);
 			m_ReactionLeft -= elapseSeconds;
 			if (m_ReactionLeft <= 0f && priority > 0 && agent.RequestAttack(agent.Attacks.SelectPriority(

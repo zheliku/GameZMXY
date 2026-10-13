@@ -11,7 +11,8 @@ using System;
 using GameConfig.Battle;
 using GameConfig.Entity;
 using GameConfig.Monster;
-using GameConfig.Stat;
+using GameConfig.Loot;
+using GameConfig.Attributes;
 using GameFramework.Entity;
 using GameFramework.Fsm;
 using GameLogic.Body;
@@ -33,7 +34,8 @@ namespace GameLogic.Monsters
 
 		private float m_AttackMultiplier = 1f; // 本次显示的招式威力倍率，每次从刷怪参数重置。
 
-		private int m_ExperienceReward; // 本次显示的击败经验；配方可覆盖基础配置奖励。
+		private EquipmentDropPoolId m_EquipmentDropPoolId; // 本次配方确定的装备池；显示时整体重置。
+        private int m_ExperienceReward; // 本次显示的击败经验；配方可覆盖基础配置奖励。
 
 		[Export] private ResourceBar m_HealthBar; // 可选头顶小血条，作为实体子场景随 GGF 实体池复用。
 
@@ -96,7 +98,7 @@ namespace GameLogic.Monsters
 		private bool CanAct => !Dead && !InHurt && !HasPendingHurt;
 
 		/// <summary>目标受击盒相对本实体原点的范围。</summary>
-		private AiBox TargetBox
+		private Rect2 TargetBox
 		{
 			get
 			{
@@ -108,11 +110,11 @@ namespace GameLogic.Monsters
 				Vector2 o = GlobalPosition;
 				if (target.HurtBox == null)
 				{
-					return AiBox.Point(target.GlobalPosition.X - o.X, target.GlobalPosition.Y - o.Y);
+					return new Rect2(target.GlobalPosition - o - Vector2.One * 0.5f, Vector2.One);
 				}
 
 				Rect2 r = target.HurtBox.GetGlobalBounds();
-				return new AiBox(r.Position.X - o.X, r.End.X - o.X, r.Position.Y - o.Y, r.End.Y - o.Y);
+				return new Rect2(r.Position - o, r.Size);
 			}
 		}
 
@@ -152,17 +154,18 @@ namespace GameLogic.Monsters
 				throw new ArgumentException("怪物显示参数必须包含出生位置与基础属性倍率。", nameof(userData));
 
 			// 每次从基础配置装配倍率，随后补满生命；不修改共享表，也不沿用上次显示的修正。
-			Stats.Clear();
-			Stats.SetBase(Config.Stats);
-			Stats.SetSource(new AttributeSourceId("Spawn", 0),
+			Attributes.Clear();
+			Attributes.SetBase(Config.BaseAttributes);
+			Attributes.SetSource(new AttributeSourceId("Spawn", 0),
 			[
-				AttributeModifier.PercentMult(StatType.MaxHp, spawn.HealthMultiplier - 1f),
-				AttributeModifier.PercentMult(StatType.Def, spawn.DefenseMultiplier - 1f),
+				AttributeModifier.PercentMult(AttributeType.MaxHp, spawn.HealthMultiplier - 1f),
+				AttributeModifier.PercentMult(AttributeType.Def, spawn.DefenseMultiplier - 1f),
 			]);
 			m_AttackMultiplier = spawn.AttackMultiplier;
 			m_ExperienceReward = spawn.ExperienceOverride < 0 ? Config.AddExp : spawn.ExperienceOverride;
+            m_EquipmentDropPoolId = spawn.EquipmentDropPoolOverride == EquipmentDropPoolId.UseMonster ? Config.EquipmentDropPoolId : spawn.EquipmentDropPoolOverride;
 			Level = Config.Level;
-			SyncVitalsToStats(refill: true);
+			SyncVitalsToAttributes(refill: true);
 			m_MoveIntent = 0;
 			AttackSegment = m_AttackRequest = -1;
 			m_PendingHurt = null;
@@ -296,12 +299,6 @@ namespace GameLogic.Monsters
 		/// <param name="attackerEntityId">攻击方运行编号；无来源时为零。</param>
 		protected override void OnHurt(AttackInstance attack, DamageResult result, Vector2 knockback, int attackerEntityId)
 		{
-			// 基类"面向攻击者"：霸体出招中不转身（会打乱出招朝向）
-			if (!(IsSuperArmor && AttackSegment >= 0))
-			{
-				base.OnHurt(attack, result, knockback, attackerEntityId);
-			}
-
 			if (Dead)
 			{
 				return;
@@ -535,7 +532,7 @@ namespace GameLogic.Monsters
 			SetHurtBoxEnabled(false);
 			PlaySound(Config.DeathSoundId);
 			GF.Event.Fire(this,
-                MonsterDiedEventArgs.Create(Id, m_ExperienceReward, Config, HurtBox.GetGlobalBounds().GetCenter()));
+                MonsterDiedEventArgs.Create(Id, m_ExperienceReward, Config, HurtBox.GetGlobalBounds().GetCenter(), m_EquipmentDropPoolId));
 		}
 
 		/// <summary>请求在当前物理帧完成后安全回收实体。</summary>
@@ -551,7 +548,7 @@ namespace GameLogic.Monsters
 		bool IMonsterAiAgent.IsAttacking => IsBusy;
 
 		/// <summary>提供目标受击盒相对怪物原点的范围。</summary>
-		AiBox IMonsterAiAgent.TargetBox => TargetBox;
+		Rect2 IMonsterAiAgent.TargetBox => TargetBox;
 
 		/// <summary>提供怪物相对出生点的水平偏移。</summary>
 		float IMonsterAiAgent.PatrolOffsetX => GlobalPosition.X -
@@ -601,6 +598,7 @@ namespace GameLogic.Monsters
 	/// <param name="DefenseMultiplier">物理防御倍率，不能为负。</param>
 	/// <param name="AttackMultiplier">全部招式威力倍率，不能为负。</param>
 	/// <param name="ExperienceOverride">击败经验覆盖；-1 使用基础配置，0 表示不给经验。</param>
-	public readonly record struct MonsterSpawn(Vector2 Position, float HealthMultiplier = 1f,
-		float DefenseMultiplier = 1f, float AttackMultiplier = 1f, int ExperienceOverride = -1);
+	/// <param name="EquipmentDropPoolOverride">装备池覆盖；UseMonster 读取怪物基础配置。</param>
+    public readonly record struct MonsterSpawn(Vector2 Position, float HealthMultiplier = 1f,
+		float DefenseMultiplier = 1f, float AttackMultiplier = 1f, int ExperienceOverride = -1, EquipmentDropPoolId EquipmentDropPoolOverride = EquipmentDropPoolId.UseMonster);
 }

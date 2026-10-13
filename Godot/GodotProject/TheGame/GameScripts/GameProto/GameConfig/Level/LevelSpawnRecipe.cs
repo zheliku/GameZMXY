@@ -25,6 +25,7 @@ public sealed partial class LevelSpawnRecipe : Luban.BeanBase
         DefenseMultiplier = _buf.ReadFloat();
         AttackMultiplier = _buf.ReadFloat();
         ExperienceOverride = _buf.ReadInt();
+        EquipmentDropPoolOverride = (Loot.EquipmentDropPoolId)_buf.ReadInt();
     }
 
     public static LevelSpawnRecipe DeserializeLevelSpawnRecipe(ByteBuf _buf)
@@ -68,6 +69,10 @@ public sealed partial class LevelSpawnRecipe : Luban.BeanBase
     /// 击败经验覆盖；-1 使用 MonsterConfig.AddExp，0 表示不给经验
     /// </summary>
     public readonly int ExperienceOverride;
+    /// <summary>
+    /// UseMonster 使用怪物配置；None 不掉装备；可覆盖为指定池
+    /// </summary>
+    public readonly Loot.EquipmentDropPoolId EquipmentDropPoolOverride;
    
     public const int __ID__ = 119935023;
     public override int GetTypeId() => __ID__;
@@ -88,6 +93,7 @@ public sealed partial class LevelSpawnRecipe : Luban.BeanBase
         + "DefenseMultiplier:" + DefenseMultiplier + ","
         + "AttackMultiplier:" + AttackMultiplier + ","
         + "ExperienceOverride:" + ExperienceOverride + ","
+        + "EquipmentDropPoolOverride:" + EquipmentDropPoolOverride + ","
         + "}";
     }
 }

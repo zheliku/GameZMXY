@@ -55,7 +55,7 @@ namespace GameLogic.Battle.Damage
 		/// <param name="critRoll">暴击判定随机数 [0,1)（由 Godot 层取好传入）</param>
 		/// <returns>本次命中的伤害、闪避、暴击和伤害类型结果。</returns>
 		/// <exception cref="ArgumentNullException"><paramref name="config"/> 或 <paramref name="attack"/> 为 <see langword="null"/>。</exception>
-		public static DamageResult Calculate(BattleConfig config, AttackInstance attack, in CombatantStats defender,
+		public static DamageResult Calculate(BattleConfig config, AttackInstance attack, in CombatantAttributes defender,
 			float missRoll, float critRoll)
 		{
 			if (config == null)
@@ -68,7 +68,7 @@ namespace GameLogic.Battle.Damage
 				throw new ArgumentNullException(nameof(attack));
 			}
 
-			CombatantStats attacker = attack.Attacker;
+			CombatantAttributes attacker = attack.Attacker;
 			bool heroDefends = defender.Side == CombatSide.Hero;
 
 			// 1. 净值（下限 0）

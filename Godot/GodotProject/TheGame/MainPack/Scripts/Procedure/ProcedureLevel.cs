@@ -123,7 +123,7 @@ public class ProcedureLevel : ProcedureBase
 
             // 英雄只接收由档案构建的出战装配；等待后使用捕获的实体服务清理旧结果。
             HeroProgression record = session.Profile.ActiveHero;
-            HeroLoadout loadout = session.Equipment.CreateLoadout(record);
+            HeroLoadout loadout = session.Equipment.CreateLoadout(session.Profile);
             WukongEntity hero = await entities.ShowEntityAsync<WukongEntity>(GameConfig.Entity.EntityId.Wukong, loadout);
             if (entrySerial != m_EntrySerial)
             {

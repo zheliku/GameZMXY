@@ -1,17 +1,17 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://btsoc4e1maxsc"]
 
-[ext_resource type="Script" path="res://TheGame/GameScripts/UI/SettlementForm/SettlementForm.cs" id="script"]
-[ext_resource type="FontFile" path="res://TheGame/MainPack/Fonts/fz_cu_yuan.ttf" id="font"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/settlement/settlement_backdrop.png" id="backdrop"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/settlement/settlement_success.png" id="success"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/settlement/settlement_failure.png" id="failure"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/settlement/settlement_results.png" id="results"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/settlement/settlement_map_normal.png" id="map_normal"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/settlement/settlement_map_hover.png" id="map_hover"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/settlement/settlement_retry_normal.png" id="retry_normal"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/settlement/settlement_retry_hover.png" id="retry_hover"]
+[ext_resource type="Texture2D" uid="uid://504m0u81suav" path="res://TheGame/Sprites/UI/settlement/settlement_backdrop.png" id="backdrop"]
+[ext_resource type="Texture2D" uid="uid://46ouevtswkjj" path="res://TheGame/Sprites/UI/settlement/settlement_failure.png" id="failure"]
+[ext_resource type="FontFile" uid="uid://d3bh5a3jtbsib" path="res://TheGame/MainPack/Fonts/fz_cu_yuan.ttf" id="font"]
+[ext_resource type="Texture2D" uid="uid://dr6uqilc41ond" path="res://TheGame/Sprites/UI/settlement/settlement_map_hover.png" id="map_hover"]
+[ext_resource type="Texture2D" uid="uid://bwr0cwafqbvs1" path="res://TheGame/Sprites/UI/settlement/settlement_map_normal.png" id="map_normal"]
+[ext_resource type="Texture2D" uid="uid://d3bwlgysogc8y" path="res://TheGame/Sprites/UI/settlement/settlement_results.png" id="results"]
+[ext_resource type="Texture2D" uid="uid://d18u1kysckyuf" path="res://TheGame/Sprites/UI/settlement/settlement_retry_hover.png" id="retry_hover"]
+[ext_resource type="Texture2D" uid="uid://dhxjesd3wdpf5" path="res://TheGame/Sprites/UI/settlement/settlement_retry_normal.png" id="retry_normal"]
+[ext_resource type="Script" uid="uid://datp3ioaeabv0" path="res://TheGame/GameScripts/UI/SettlementForm/SettlementForm.cs" id="script"]
+[ext_resource type="Texture2D" uid="uid://cob1djukuy5n7" path="res://TheGame/Sprites/UI/settlement/settlement_success.png" id="success"]
 
-[node name="SettlementForm" type="Control" node_paths=PackedStringArray("m_OutcomeArt", "m_ReturnMap", "m_Retry", "m_Time", "m_Health", "m_Kills", "m_Experience")]
+[node name="SettlementForm" type="Control" unique_id=1810590113 node_paths=PackedStringArray("m_OutcomeArt", "m_ReturnMap", "m_Retry", "m_Time", "m_Health", "m_Kills", "m_Experience")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -29,38 +29,34 @@ m_Experience = NodePath("Content/Results/Experience/m_Experience")
 m_SuccessTexture = ExtResource("success")
 m_FailureTexture = ExtResource("failure")
 
-[node name="Content" type="Control" parent="."]
-offset_left = 0.0
-offset_top = 0.0
+[node name="Content" type="Control" parent="." unique_id=464857417]
+anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="Backdrop" type="Control" parent="Content"]
-offset_left = 0.0
-offset_top = 0.0
+[node name="Backdrop" type="Control" parent="Content" unique_id=191631370]
+anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="Background" type="TextureRect" parent="Content/Backdrop"]
-offset_left = 0.0
-offset_top = 0.0
+[node name="Background" type="TextureRect" parent="Content/Backdrop" unique_id=246313495]
+layout_mode = 0
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 texture = ExtResource("backdrop")
 expand_mode = 1
-stretch_mode = 0
 
-[node name="Outcome" type="Control" parent="Content"]
-offset_left = 0.0
-offset_top = 0.0
+[node name="Outcome" type="Control" parent="Content" unique_id=169672474]
+anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="m_OutcomeArt" type="TextureRect" parent="Content/Outcome"]
+[node name="m_OutcomeArt" type="TextureRect" parent="Content/Outcome" unique_id=871165487]
+layout_mode = 0
 offset_left = 20.0
 offset_top = 100.0
 offset_right = 530.0
@@ -68,16 +64,15 @@ offset_bottom = 404.0
 mouse_filter = 2
 texture = ExtResource("success")
 expand_mode = 1
-stretch_mode = 0
 
-[node name="Results" type="Control" parent="Content"]
-offset_left = 0.0
-offset_top = 0.0
+[node name="Results" type="Control" parent="Content" unique_id=1860256897]
+anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="ResultsTitle" type="TextureRect" parent="Content/Results"]
+[node name="ResultsTitle" type="TextureRect" parent="Content/Results" unique_id=1773729257]
+layout_mode = 0
 offset_left = 550.0
 offset_top = 86.0
 offset_right = 890.0
@@ -85,205 +80,197 @@ offset_bottom = 153.0
 mouse_filter = 2
 texture = ExtResource("results")
 expand_mode = 1
-stretch_mode = 0
 
-[node name="Time" type="Control" parent="Content/Results"]
-offset_left = 0.0
-offset_top = 0.0
+[node name="Time" type="Control" parent="Content/Results" unique_id=1983173488]
+anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="BandTime" type="Polygon2D" parent="Content/Results/Time"]
+[node name="BandTime" type="Polygon2D" parent="Content/Results/Time" unique_id=663086933]
 position = Vector2(567, 185)
+color = Color(0.7, 0.12, 0.12, 0.8)
 polygon = PackedVector2Array(0, 4, 18, 0, 286, 3, 301, 0, 296, 18, 303, 26, 295, 48, 277, 51, 14, 48, 0, 51, 5, 33, -3, 20)
-color = Color(0.7,0.12,0.12,0.8)
 
-[node name="CaptionTime" type="Label" parent="Content/Results/Time"]
+[node name="CaptionTime" type="Label" parent="Content/Results/Time" unique_id=942154007]
+layout_mode = 0
 offset_left = 580.0
 offset_top = 185.0
 offset_right = 725.0
 offset_bottom = 236.0
-mouse_filter = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 23
-theme_override_colors/font_color = Color(1,1,1,1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
 theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 23
 text = "过关用时"
-horizontal_alignment = 0
 vertical_alignment = 1
 
-[node name="m_Time" type="Label" parent="Content/Results/Time"]
+[node name="m_Time" type="Label" parent="Content/Results/Time" unique_id=1834387634]
+layout_mode = 0
 offset_left = 720.0
 offset_top = 185.0
 offset_right = 858.0
 offset_bottom = 236.0
-mouse_filter = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 30
-theme_override_colors/font_color = Color(1,1,1,1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
 theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 30
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Health" type="Control" parent="Content/Results"]
-offset_left = 0.0
-offset_top = 0.0
+[node name="Health" type="Control" parent="Content/Results" unique_id=625983590]
+anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="BandHealth" type="Polygon2D" parent="Content/Results/Health"]
+[node name="BandHealth" type="Polygon2D" parent="Content/Results/Health" unique_id=1408941262]
 position = Vector2(567, 247)
+color = Color(0.1, 0.45, 0.19, 0.8)
 polygon = PackedVector2Array(0, 4, 18, 0, 286, 3, 301, 0, 296, 18, 303, 26, 295, 48, 277, 51, 14, 48, 0, 51, 5, 33, -3, 20)
-color = Color(0.1,0.45,0.19,0.8)
 
-[node name="CaptionHealth" type="Label" parent="Content/Results/Health"]
+[node name="CaptionHealth" type="Label" parent="Content/Results/Health" unique_id=1421613687]
+layout_mode = 0
 offset_left = 580.0
 offset_top = 247.0
 offset_right = 725.0
 offset_bottom = 298.0
-mouse_filter = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 23
-theme_override_colors/font_color = Color(1,1,1,1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
 theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 23
 text = "过关状态"
-horizontal_alignment = 0
 vertical_alignment = 1
 
-[node name="m_Health" type="Label" parent="Content/Results/Health"]
+[node name="m_Health" type="Label" parent="Content/Results/Health" unique_id=294448669]
+layout_mode = 0
 offset_left = 720.0
 offset_top = 247.0
 offset_right = 858.0
 offset_bottom = 298.0
-mouse_filter = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 30
-theme_override_colors/font_color = Color(1,1,1,1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
 theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 30
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Kills" type="Control" parent="Content/Results"]
-offset_left = 0.0
-offset_top = 0.0
+[node name="Kills" type="Control" parent="Content/Results" unique_id=201297828]
+anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="BandKills" type="Polygon2D" parent="Content/Results/Kills"]
+[node name="BandKills" type="Polygon2D" parent="Content/Results/Kills" unique_id=1957780831]
 position = Vector2(567, 309)
+color = Color(0.1, 0.26, 0.65, 0.8)
 polygon = PackedVector2Array(0, 4, 18, 0, 286, 3, 301, 0, 296, 18, 303, 26, 295, 48, 277, 51, 14, 48, 0, 51, 5, 33, -3, 20)
-color = Color(0.1,0.26,0.65,0.8)
 
-[node name="CaptionKills" type="Label" parent="Content/Results/Kills"]
+[node name="CaptionKills" type="Label" parent="Content/Results/Kills" unique_id=1827521496]
+layout_mode = 0
 offset_left = 580.0
 offset_top = 309.0
 offset_right = 725.0
 offset_bottom = 360.0
-mouse_filter = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 23
-theme_override_colors/font_color = Color(1,1,1,1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
 theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 23
 text = "击败敌人"
-horizontal_alignment = 0
 vertical_alignment = 1
 
-[node name="m_Kills" type="Label" parent="Content/Results/Kills"]
+[node name="m_Kills" type="Label" parent="Content/Results/Kills" unique_id=1253758899]
+layout_mode = 0
 offset_left = 720.0
 offset_top = 309.0
 offset_right = 858.0
 offset_bottom = 360.0
-mouse_filter = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 30
-theme_override_colors/font_color = Color(1,1,1,1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
 theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 30
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Experience" type="Control" parent="Content/Results"]
-offset_left = 0.0
-offset_top = 0.0
+[node name="Experience" type="Control" parent="Content/Results" unique_id=1784747198]
+anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="BandExperience" type="Polygon2D" parent="Content/Results/Experience"]
+[node name="BandExperience" type="Polygon2D" parent="Content/Results/Experience" unique_id=756380144]
 position = Vector2(567, 371)
+color = Color(0.55, 0.06, 0.48, 0.8)
 polygon = PackedVector2Array(0, 4, 18, 0, 286, 3, 301, 0, 296, 18, 303, 26, 295, 48, 277, 51, 14, 48, 0, 51, 5, 33, -3, 20)
-color = Color(0.55,0.06,0.48,0.8)
 
-[node name="CaptionExperience" type="Label" parent="Content/Results/Experience"]
+[node name="CaptionExperience" type="Label" parent="Content/Results/Experience" unique_id=832596129]
+layout_mode = 0
 offset_left = 580.0
 offset_top = 371.0
 offset_right = 725.0
 offset_bottom = 422.0
-mouse_filter = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 23
-theme_override_colors/font_color = Color(1,1,1,1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
 theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 23
 text = "获得经验"
-horizontal_alignment = 0
 vertical_alignment = 1
 
-[node name="m_Experience" type="Label" parent="Content/Results/Experience"]
+[node name="m_Experience" type="Label" parent="Content/Results/Experience" unique_id=182620338]
+layout_mode = 0
 offset_left = 720.0
 offset_top = 371.0
 offset_right = 858.0
 offset_bottom = 422.0
-mouse_filter = 2
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 30
-theme_override_colors/font_color = Color(1,1,1,1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
 theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 30
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Actions" type="Control" parent="Content"]
-offset_left = 0.0
-offset_top = 0.0
+[node name="Actions" type="Control" parent="Content" unique_id=2028358176]
+anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="m_ReturnMap" type="TextureButton" parent="Content/Actions"]
+[node name="m_ReturnMap" type="TextureButton" parent="Content/Actions" unique_id=1803272650]
+layout_mode = 0
 offset_left = 285.0
 offset_top = 405.0
 offset_right = 445.0
 offset_bottom = 464.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
+texture_normal = ExtResource("map_normal")
+texture_pressed = ExtResource("map_hover")
+texture_hover = ExtResource("map_hover")
 ignore_texture_size = true
 stretch_mode = 0
-texture_normal = ExtResource("map_normal")
-texture_hover = ExtResource("map_hover")
-texture_pressed = ExtResource("map_hover")
 
-[node name="m_Retry" type="TextureButton" parent="Content/Actions"]
+[node name="m_Retry" type="TextureButton" parent="Content/Actions" unique_id=1672475041]
+layout_mode = 0
 offset_left = 95.0
 offset_top = 405.0
 offset_right = 256.0
 offset_bottom = 465.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
+texture_normal = ExtResource("retry_normal")
+texture_pressed = ExtResource("retry_hover")
+texture_hover = ExtResource("retry_hover")
 ignore_texture_size = true
 stretch_mode = 0
-texture_normal = ExtResource("retry_normal")
-texture_hover = ExtResource("retry_hover")
-texture_pressed = ExtResource("retry_hover")

@@ -6,5 +6,9 @@ namespace GameLogic.Level;
 /// <param name="HealthPercent">结局时剩余生命百分比。</param>
 /// <param name="DefeatedMonsters">本局实际击败的敌人数。</param>
 /// <param name="Experience">本局发放的经验。</param>
-public sealed record LevelResult(LevelOutcome Outcome, double ElapsedSeconds, int HealthPercent,
-    int DefeatedMonsters, int Experience);
+public sealed record LevelResult(
+    LevelOutcome Outcome,
+    double ElapsedSeconds,
+    int HealthPercent,
+    int DefeatedMonsters,
+    int Experience);

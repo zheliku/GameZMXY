@@ -254,6 +254,7 @@ public sealed class LevelFlowTests
             bytes.WriteFloat(1f);
             bytes.WriteFloat(1f);
             bytes.WriteInt(-1);
+            bytes.WriteInt((int)GameConfig.Loot.EquipmentDropPoolId.UseMonster);
         }
 
         return new LevelStage(bytes);

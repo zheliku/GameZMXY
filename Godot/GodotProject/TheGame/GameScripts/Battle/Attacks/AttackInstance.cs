@@ -14,7 +14,7 @@ namespace GameLogic.Battle.Attacks
 		public int AttackId { get; private set; }
 
 		/// <summary>攻击方属性快照（出招时刻）</summary>
-		public CombatantStats Attacker { get; private set; }
+		public CombatantAttributes Attacker { get; private set; }
 
 		/// <summary>本招威力（属性威力与固定威力之和，再乘生成攻击倍率；最终取整由伤害结算负责）。</summary>
 		public float Power { get; private set; }
@@ -46,7 +46,7 @@ namespace GameLogic.Battle.Attacks
 		/// <param name="hitProtect">本次命中增加的受击保护值。</param>
 		/// <param name="hitSoundId">命中音效编号。</param>
 		/// <returns>已装填并由引用池管理的攻击数据包。</returns>
-		public static AttackInstance Create(int attackId, in CombatantStats attacker, float power, DamageKind kind,
+		public static AttackInstance Create(int attackId, in CombatantAttributes attacker, float power, DamageKind kind,
 			Vector2 knockback, int direction, int hitProtect, SoundId hitSoundId)
 		{
 			AttackInstance data = ReferencePool.Acquire<AttackInstance>();

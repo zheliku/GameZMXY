@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using GameConfig;
 using GameConfig.Constant;
 using GameConfig.Entity;
-using GameConfig.Stat;
+using GameConfig.Attributes;
 using GameFramework.Event;
 using GameFramework.Fsm;
 using GameFramework.Procedure;
@@ -78,7 +78,9 @@ public sealed partial class UiSmokeScenario
             Check(onDisk?.SaveVersion == GameData.CurrentVersion && onDisk.Heroes.Count == 1, "首次启动未按当前版本写回新档");
             CheckDisplay(hud, hero, context.Profile.ActiveHero, level);
 
+            await CheckGroundItemsAsync(context, hero, level);
             await CheckInventoryAsync(hud, hero, context, level);
+            await CheckHitFacingAsync(context);
             await CheckHudLifecycleAsync(hud, hero, context, level);
             await CheckEntityReuseAsync(context);
             m_TestHud = await OpenHudAsync(new BattleHudData(hero, context.Profile.ActiveHero, level));
@@ -103,17 +105,24 @@ public sealed partial class UiSmokeScenario
             HeroProgression progression = context.Profile.ActiveHero;
             int before = progression.TotalExperience;
             int soulBefore = context.Profile.Wallet.Soul;
+            var inventoryBefore = context.Profile.Inventory.Items.Select(x => x.InstanceId).ToArray();
             await DefeatMonsterAsync(level, procedure);
+            context.Profile.Inventory.TryAdd(context.Equipment.Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPilgrimStaff, () => .7f));
+            Check(FindLevel().SellByQuality(GameConfig.Equipment.EquipmentQuality.Common) > 0,
+                "关卡未接收整包品质出售请求");
             Check(progression.TotalExperience > before, "击败怪物没有把经验写入档案");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == before, "关内收益在结算前就写盘了");
             ReenterLevel();
             procedure = await WaitForLevelAsync();
             Check(ReferenceEquals(SmokeInspection.Context(procedure), context), "重入关卡没有沿用同一档案作用域");
             Check(progression.TotalExperience == before, "中途离开没有回滚关内收益");
+            Check(context.Profile.Inventory.Items.Select(x => x.InstanceId).SequenceEqual(inventoryBefore), "中途离开没有回滚装备实例");
             Check(context.Profile.Wallet.Soul == soulBefore, "中途离开没有回滚已拾取的灵魂");
 
             // 死亡：提交本关收益（写盘），显示失败结算并由玩家重试。关卡运行在击杀前捕获，重开后流程会换成新运行。
             await DefeatMonsterAsync(FindLevel(), procedure);
+            var checkpointGear = context.Equipment.Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPineStaff, () => .73f);
+            context.Profile.Inventory.TryAdd(checkpointGear);
             int afterKill = progression.TotalExperience;
             int soulAfterKill = context.Profile.Wallet.Soul;
             LevelModule deathRun = SmokeInspection.Level(procedure);
@@ -122,6 +131,8 @@ public sealed partial class UiSmokeScenario
             Check(await deathRun.CheckpointWrite, "死亡检查点写入失败");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == afterKill, "死亡没有保存本关收益");
             Check((await ReadDiskAsync()).Soul == soulAfterKill, "死亡没有保存已拾取的灵魂");
+            var savedGear = (await ReadDiskAsync()).EquipmentItems.Single(x => x.InstanceId == checkpointGear.InstanceId);
+            Check(savedGear.Attributes == checkpointGear.Attributes, "死亡检查点没有保存实际装备属性");
             await CheckFailureSettlementAsync(deathRun);
             await WaitUntilAsync(() => SmokeInspection.Level(procedure) != null && !ReferenceEquals(SmokeInspection.Level(procedure), deathRun) &&
                 SmokeInspection.Level(procedure).Outcome == LevelOutcome.Running && CurrentHud() != null,
@@ -175,16 +186,16 @@ public sealed partial class UiSmokeScenario
             IMonsterAiAgent ai = m_Monster;
             Check(!m_Monster.OnFloor && !ai.RequestAttack(0), $"怪物 {id} 出生下落时允许出招");
             await WaitUntilAsync(() => m_Monster.OnFloor, $"怪物 {id} 没有真实落地");
-            Check(m_Monster.Vitals.MaxHp == config.Stats.MaxHp * health &&
-                  m_Monster.Stats.GetInt(StatType.Def) == config.Stats.Def * defense &&
-                  m_Monster.Stats.GetInt(StatType.Mdef) == config.Stats.Mdef &&
-                  m_Monster.Stats.GetInt(StatType.Crit) == config.Stats.Crit,
+            Check(m_Monster.Vitals.MaxHp == config.BaseAttributes.MaxHp * health &&
+                  m_Monster.Attributes.GetInt(AttributeType.Def) == config.BaseAttributes.Def * defense &&
+                  m_Monster.Attributes.GetInt(AttributeType.Mdef) == config.BaseAttributes.Mdef &&
+                  m_Monster.Attributes.GetInt(AttributeType.Crit) == config.BaseAttributes.Crit,
                 $"怪物 {id} 的生命/物防倍率错误，或误改了高级属性");
             Check(SmokeInspection.ReadField<int>(m_Monster, "m_ExperienceReward") == (boosted ? 25 : config.AddExp),
                 $"怪物 {id} 的经验覆盖没有复位");
             if (id == 3)
             {
-                Check(m_Monster is GorillaEntity && config.Stats.MaxHp == 300, "大猩猩的共享基础配置被改动");
+                Check(m_Monster is GorillaEntity && config.BaseAttributes.MaxHp == 300, "大猩猩的共享基础配置被改动");
                 if (previousGorilla != null) Check(ReferenceEquals(previousGorilla, m_Monster), "大猩猩未复用同一实体实例");
                 previousGorilla = m_Monster;
             }
@@ -368,14 +379,14 @@ public sealed partial class UiSmokeScenario
         previous.Musou.Add(70);
         previous.Musou.Add(previous.Musou.Max - previous.Musou.Value);
         Check(previous.TryActivateMusou(), "复用测试前未开启无双");
-        previous.Stats.SetSource(new AttributeSourceId("Buff", 1),
-            new[] { AttributeModifier.Flat(GameConfig.Stat.StatType.MaxHp, 999) });
+        previous.Attributes.SetSource(new AttributeSourceId("Buff", 1),
+            new[] { AttributeModifier.Flat(GameConfig.Attributes.AttributeType.MaxHp, 999) });
         ReleaseTestEntity(previous);
         await WaitFramesAsync(2);
 
         // 2 级装配：生命上限来自成长表 2 级行。
         m_ExtraHero = await ShowHeroAsync(context, new HeroProgression(1, SmokeInspection.ReadField<ExperienceCurve>(context.Profile.ActiveHero, "m_Curve"), 140));
-        int expectedMaxHp = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1, 2).Stats.MaxHp;
+        int expectedMaxHp = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1, 2).BaseAttributes.MaxHp;
         Check(ReferenceEquals(previous, m_ExtraHero) && ReferenceEquals(vitals, m_ExtraHero.Vitals), "英雄运行时容器未随池实例稳定复用");
         Check(m_ExtraHero.Level == 2 && m_ExtraHero.Vitals.MaxHp == expectedMaxHp &&
             m_ExtraHero.Vitals.Hp == expectedMaxHp && m_ExtraHero.Musou.Value == 0 &&
@@ -385,7 +396,7 @@ public sealed partial class UiSmokeScenario
         try
         {
             m_ExtraHero.ApplyLoadout(new HeroLoadout(99, 1,
-                ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1, 1).Stats), refill: true);
+                ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1, 1).BaseAttributes), refill: true);
         }
         catch (ArgumentException)
         {
@@ -393,12 +404,12 @@ public sealed partial class UiSmokeScenario
         }
 
         Check(rejected, "英雄接受了其他英雄的装配");
-        float power = m_ExtraHero.Stats.Get(GameConfig.Stat.StatType.Power);
+        float power = m_ExtraHero.Attributes.Get(GameConfig.Attributes.AttributeType.Power);
         m_ExtraHero.Musou.Add(m_ExtraHero.Musou.Max - m_ExtraHero.Musou.Value);
         Check(m_ExtraHero.TryActivateMusou(), "死亡测试前未开启无双");
         KillHero(m_ExtraHero);
         Check(!m_ExtraHero.Musou.IsActive && m_ExtraHero.Musou.Value == 0 &&
-            Near(m_ExtraHero.Stats.Get(GameConfig.Stat.StatType.Power), power), "死亡没有结束无双或移除局内加成");
+            Near(m_ExtraHero.Attributes.Get(GameConfig.Attributes.AttributeType.Power), power), "死亡没有结束无双或移除局内加成");
         ReleaseTestEntity(m_ExtraHero);
         m_ExtraHero = null;
 
@@ -412,7 +423,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckMusouActivationAsync(HeroEntity hero)
     {
         var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
-        float power = hero.Stats.Get(GameConfig.Stat.StatType.Power);
+        float power = hero.Attributes.Get(GameConfig.Attributes.AttributeType.Power);
         var body = (IHeroBody)hero;
         GD.Seed(73);
         body.BeginAttack(0);
@@ -477,7 +488,7 @@ public sealed partial class UiSmokeScenario
         Check(hero.Vitals.Hp < hp && !((IHeroBody)hero).HasPendingHurt,
             "无双霸体没有保留正常伤害或仍登记了受击击退");
         hero._PhysicsProcess(battle.WsMax / battle.WsDrainPerSecond + 1f);
-        Check(!hero.Musou.IsActive && hero.Musou.Value == 0 && Near(hero.Stats.Get(GameConfig.Stat.StatType.Power), power)
+        Check(!hero.Musou.IsActive && hero.Musou.Value == 0 && Near(hero.Attributes.Get(GameConfig.Attributes.AttributeType.Power), power)
             && Near(body.MoveSpeedMultiplier, 1f) && Near(body.JumpSpeedMultiplier, 1f)
             && Near(body.Gravity, body.Params.Gravity), "无双耗尽没有完整还原战斗效果");
         await WaitUntilAsync(() => snapshots.All(x => !x.Visible), "结束无双后残影没有自然淡出");
@@ -573,7 +584,7 @@ public sealed partial class UiSmokeScenario
             ReleaseTestEntity(m_Monster);
 
             // 隐藏后仍存活的纯 C# 状态源不再驱动控件；池复用使用同一血条并重新订阅一次。
-            previous.Vitals.SetMaximums(config.Stats.MaxHp, config.Stats.MaxMp, refill: true);
+            previous.Vitals.SetMaximums(config.BaseAttributes.MaxHp, config.BaseAttributes.MaxMp, refill: true);
             previous.Vitals.Damage(1);
             Check(!bar.Visible && Near(bar.Value, 0), $"{entityId} 隐藏后血条仍订阅旧状态");
             await WaitFramesAsync(2);
@@ -582,7 +593,7 @@ public sealed partial class UiSmokeScenario
             m_Monster.SetPhysicsProcess(false);
             Check(ReferenceEquals(previous, m_Monster) && ReferenceEquals(bar, m_Monster.GetNode<ResourceBar>("m_HealthBar")),
                 $"{entityId} 怪物和血条未从同一实体池实例复用");
-            Check(m_Monster.Vitals.Hp == config.Stats.MaxHp && m_Monster.Vitals.MaxHp == config.Stats.MaxHp &&
+            Check(m_Monster.Vitals.Hp == config.BaseAttributes.MaxHp && m_Monster.Vitals.MaxHp == config.BaseAttributes.MaxHp &&
                 !m_Monster.Dead && !bar.Visible && Near(bar.Value, 1),
                 $"{entityId} 复用残留上次生命、死亡事实或血条表现");
             m_Monster.Vitals.Damage(1);
@@ -616,7 +627,7 @@ public sealed partial class UiSmokeScenario
         // 跨三级：与 LevelModule 相同的注入路径（档案 → 装配 → 实体，补满）。
         record.AddExperience(338);
         m_ExtraHero.ApplyLoadout(context.Equipment.CreateLoadout(record), refill: true);
-        var row = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1, 4).Stats;
+        var row = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1, 4).BaseAttributes;
         Check(record.Level == 4 && record.Experience == 37 && record.MaxExperience == 165,
             "连升未保留余量或等级错误");
         Check(m_ExtraHero.Level == 4 && m_ExtraHero.Vitals.MaxHp == row.MaxHp && m_ExtraHero.Vitals.Hp == row.MaxHp &&

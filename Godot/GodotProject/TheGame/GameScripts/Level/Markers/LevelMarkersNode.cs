@@ -10,7 +10,10 @@ namespace GameLogic.Level;
 public abstract partial class LevelMarkersNode : Node2D
 {
     [Export] private Godot.Collections.Array<LevelMarkerResource> m_Entries = new(); // 当前集合登记的子节点条目。
-    [Export(PropertyHint.Range, "1,700,1")] private float m_MarkerSize = 16f; // 圆圈半径或门标注半高，单位为世界像素。
+
+    [Export(PropertyHint.Range, "1,700,1")]
+    private float m_MarkerSize = 16f; // 圆圈半径或门标注半高，单位为世界像素。
+
     [Export] private bool m_DrawInGame; // 调试时显示锚点标注。
 
     /// <summary>显式同步新增和删除的子节点，保留已有条目的业务键与颜色。</summary>

@@ -31,7 +31,7 @@ namespace GameLogic.Monsters.AI
 			m_CalmElapsed += elapseSeconds;
 			if (m_CalmElapsed >= agent.Params.CalmTime)
 			{
-				if (agent.TargetBox.IsEmpty)
+				if (!agent.TargetBox.HasArea())
 				{
 					ChangeState<WanderState>(fsm);
 				}

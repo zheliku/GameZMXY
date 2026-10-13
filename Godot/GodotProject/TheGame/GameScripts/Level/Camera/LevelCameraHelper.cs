@@ -13,7 +13,8 @@ public static class LevelCameraHelper
     /// <param name="maxCenter">允许的最大中心横坐标，由区域右界减半屏宽得到。</param>
     /// <param name="maxMovement">本帧允许的最大位移，单位为世界像素。</param>
     /// <returns>约束后的相机中心世界横坐标，始终位于可显示范围内。</returns>
-    public static float StepCenter(float current, float target, float halfDeadZone, float minCenter, float maxCenter, float maxMovement)
+    public static float StepCenter(float current, float target, float halfDeadZone, float minCenter, float maxCenter,
+        float maxMovement)
     {
         // 目标位于死区内时偏移被抵消，相机不移动；越过死区后按超出量追随。
         float offset = target - current;

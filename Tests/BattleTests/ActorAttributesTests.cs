@@ -2,7 +2,7 @@ using GameLogic.Battle.Resources;
 using GameLogic.Battle.Attributes;
 using GameLogic.Battle.Damage;
 using System;
-using GameConfig.Stat;
+using GameConfig.Attributes;
 using Xunit;
 
 namespace GameLogic.Battle.Tests
@@ -16,12 +16,12 @@ namespace GameLogic.Battle.Tests
 		{
 			ActorAttributes attributes = new();
 			AttributeSourceId source = new("Buff", 1);
-			attributes.SetSource(source, [AttributeModifier.Flat(StatType.Power, 15)]);
-			CombatantStats snapshot = CombatantStats.From(CombatSide.Hero, 2, attributes, -42);
-			attributes.SetSource(source, [AttributeModifier.Flat(StatType.Power, 99)]);
+			attributes.SetSource(source, [AttributeModifier.Flat(AttributeType.Power, 15)]);
+			CombatantAttributes snapshot = CombatantAttributes.From(CombatSide.Hero, 2, attributes, -42);
+			attributes.SetSource(source, [AttributeModifier.Flat(AttributeType.Power, 99)]);
 			Assert.Equal((-42, CombatSide.Hero, 2, 15),
 				(snapshot.ActorId, snapshot.Side, snapshot.Level, snapshot.Power));
-			Assert.Equal(99, attributes.GetInt(StatType.Power));
+			Assert.Equal(99, attributes.GetInt(AttributeType.Power));
 		}
 
 		/// <summary>最终值 = (基础 + Σ固定) × (1 + Σ同类百分比) × Π(1 + 独立百分比)。</summary>
@@ -31,18 +31,18 @@ namespace GameLogic.Battle.Tests
 			ActorAttributes sheet = new();
 			sheet.SetSource(new AttributeSourceId("Equipment", 1), new[]
 			{
-				AttributeModifier.Flat(StatType.Power, 10),
-				AttributeModifier.PercentAdd(StatType.Power, 0.1f),
+				AttributeModifier.Flat(AttributeType.Power, 10),
+				AttributeModifier.PercentAdd(AttributeType.Power, 0.1f),
 			});
 			sheet.SetSource(new AttributeSourceId("Buff", 1), new[]
 			{
-				AttributeModifier.PercentAdd(StatType.Power, 0.1f),
-				AttributeModifier.PercentMult(StatType.Power, 0.5f),
+				AttributeModifier.PercentAdd(AttributeType.Power, 0.1f),
+				AttributeModifier.PercentMult(AttributeType.Power, 0.5f),
 			});
 
 			// 基础 0 + 固定 10 = 10；同类百分比 0.1+0.1 → ×1.2 = 12；独立 ×1.5 = 18。
-			Assert.Equal(18f, sheet.Get(StatType.Power), 3);
-			Assert.Equal(0f, sheet.Get(StatType.Def));
+			Assert.Equal(18f, sheet.Get(AttributeType.Power), 3);
+			Assert.Equal(0f, sheet.Get(AttributeType.Def));
 		}
 
 		/// <summary>按来源整体移除，同一来源再次登记时整体替换。</summary>
@@ -51,13 +51,13 @@ namespace GameLogic.Battle.Tests
 		{
 			ActorAttributes sheet = new();
 			AttributeSourceId sword = new("Equipment", 7);
-			sheet.SetSource(sword, new[] { AttributeModifier.Flat(StatType.Power, 5), AttributeModifier.Flat(StatType.Crit, 2) });
-			sheet.SetSource(sword, new[] { AttributeModifier.Flat(StatType.Power, 8) });
-			Assert.Equal((8, 0), (sheet.GetInt(StatType.Power), sheet.GetInt(StatType.Crit)));
+			sheet.SetSource(sword, new[] { AttributeModifier.Flat(AttributeType.Power, 5), AttributeModifier.Flat(AttributeType.Crit, 2) });
+			sheet.SetSource(sword, new[] { AttributeModifier.Flat(AttributeType.Power, 8) });
+			Assert.Equal((8, 0), (sheet.GetInt(AttributeType.Power), sheet.GetInt(AttributeType.Crit)));
 
 			Assert.True(sheet.RemoveSource(sword));
 			Assert.False(sheet.RemoveSource(sword));
-			Assert.Equal(0, sheet.GetInt(StatType.Power));
+			Assert.Equal(0, sheet.GetInt(AttributeType.Power));
 		}
 
 		/// <summary>最终值下限为 0，整数读取四舍五入（远离零）。</summary>
@@ -65,11 +65,11 @@ namespace GameLogic.Battle.Tests
 		public void Attributes_ClampsAndRounds()
 		{
 			ActorAttributes sheet = new();
-			sheet.SetSource(new AttributeSourceId("Debuff", 1), new[] { AttributeModifier.Flat(StatType.Def, -5) });
-			Assert.Equal(0, sheet.GetInt(StatType.Def));
+			sheet.SetSource(new AttributeSourceId("Debuff", 1), new[] { AttributeModifier.Flat(AttributeType.Def, -5) });
+			Assert.Equal(0, sheet.GetInt(AttributeType.Def));
 
-			sheet.SetSource(new AttributeSourceId("Buff", 2), new[] { AttributeModifier.Flat(StatType.Mdef, 2.5f) });
-			Assert.Equal(3, sheet.GetInt(StatType.Mdef));
+			sheet.SetSource(new AttributeSourceId("Buff", 2), new[] { AttributeModifier.Flat(AttributeType.Mdef, 2.5f) });
+			Assert.Equal(3, sheet.GetInt(AttributeType.Mdef));
 		}
 
 		/// <summary>调用方集合被修改不影响已登记修正，无效来源被拒绝。</summary>
@@ -77,12 +77,12 @@ namespace GameLogic.Battle.Tests
 		public void Attributes_CopiesModifiersAndRejectsInvalidSources()
 		{
 			ActorAttributes sheet = new();
-			AttributeModifier[] modifiers = { AttributeModifier.Flat(StatType.Power, 4) };
+			AttributeModifier[] modifiers = { AttributeModifier.Flat(AttributeType.Power, 4) };
 			sheet.SetSource(new AttributeSourceId("Pellet", 1), modifiers);
-			modifiers[0] = AttributeModifier.Flat(StatType.Power, 100);
-			Assert.Equal(4, sheet.GetInt(StatType.Power));
+			modifiers[0] = AttributeModifier.Flat(AttributeType.Power, 100);
+			Assert.Equal(4, sheet.GetInt(AttributeType.Power));
 			sheet.RemoveSource(new AttributeSourceId("Pellet", 1));
-			Assert.Equal(0, sheet.GetInt(StatType.Power));
+			Assert.Equal(0, sheet.GetInt(AttributeType.Power));
 			Assert.Throws<ArgumentException>(() => new AttributeSourceId("", 1));
 			Assert.Throws<ArgumentException>(() => sheet.SetSource(default, modifiers));
 		}

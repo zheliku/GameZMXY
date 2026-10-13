@@ -16,6 +16,15 @@ namespace GameLogic.UI;
 /// </summary>
 public partial class BattleHud
 {
+    /// <summary>战斗界面通过统一动作请求背包，暂停或覆盖时不响应。</summary>
+    /// <param name="inputEvent">输入映射处理的事件。</param>
+    public override void _UnhandledInput(InputEvent inputEvent)
+    {
+        if (m_Data == null || !Visible || GF.Base.IsGamePaused ||
+            !inputEvent.IsActionPressed(GameLogic.Input.InputActions.InventoryToggle)) return;
+        GetViewport().SetInputAsHandled();
+        OnInventoryClicked();
+    }
     private BattleHudData m_Data; // 本次打开的状态源引用，关闭后释放。
     private MonsterEntity m_Opponent; // 本次观察的守关怪，实体所有权仍归关卡。
     private bool m_WasMusouActive; // 当前绑定观察到的激活边沿，避免每次扣点重播。

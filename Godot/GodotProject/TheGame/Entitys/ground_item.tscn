@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Drops/GroundItemNode.cs" id="script"]
+
+[sub_resource type="RectangleShape2D" id="feet"]
+size = Vector2(12, 8)
+
+[node name="GroundItem" type="CharacterBody2D" node_paths=PackedStringArray("m_Icon")]
+z_index = 4
+collision_layer = 0
+collision_mask = 9
+script = ExtResource("script")
+m_Icon = NodePath("Icon")
+
+[node name="Feet" type="CollisionShape2D" parent="."]
+position = Vector2(0, -4)
+shape = SubResource("feet")
+
+[node name="Shadow" type="Polygon2D" parent="."]
+color = Color(0, 0, 0, 0.3)
+polygon = PackedVector2Array(-14, -2, -10, -5, 10, -5, 14, -2, 10, 1, -10, 1)
+
+[node name="Icon" type="Sprite2D" parent="."]
+position = Vector2(0, -18)
+

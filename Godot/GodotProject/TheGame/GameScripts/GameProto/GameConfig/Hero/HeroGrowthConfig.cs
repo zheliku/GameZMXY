@@ -21,7 +21,7 @@ public sealed partial class HeroGrowthConfig : Luban.BeanBase
     {
         HeroId = _buf.ReadInt();
         Level = _buf.ReadInt();
-        Stats = global::GameConfig.Stat.StatBlock.DeserializeStatBlock(_buf);
+        BaseAttributes = global::GameConfig.Attributes.ActorBaseAttributes.DeserializeActorBaseAttributes(_buf);
     }
 
     public static HeroGrowthConfig DeserializeHeroGrowthConfig(ByteBuf _buf)
@@ -40,14 +40,14 @@ public sealed partial class HeroGrowthConfig : Luban.BeanBase
     /// <summary>
     /// 该等级的成长属性
     /// </summary>
-    public readonly Stat.StatBlock Stats;
+    public readonly Attributes.ActorBaseAttributes BaseAttributes;
    
     public const int __ID__ = 1906899063;
     public override int GetTypeId() => __ID__;
 
     public  void ResolveRef(Tables tables)
     {
-        Stats?.ResolveRef(tables);
+        BaseAttributes?.ResolveRef(tables);
     }
 
     public override string ToString()
@@ -55,7 +55,7 @@ public sealed partial class HeroGrowthConfig : Luban.BeanBase
         return "{ "
         + "HeroId:" + HeroId + ","
         + "Level:" + Level + ","
-        + "Stats:" + Stats + ","
+        + "BaseAttributes:" + BaseAttributes + ","
         + "}";
     }
 }

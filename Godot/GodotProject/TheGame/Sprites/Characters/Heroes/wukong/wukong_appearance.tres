@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroAppearanceResource" format=3 uid="uid://xk36fcf4y640"]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Heroes/HeroAppearanceResource.cs" id="script"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_bare.png" id="body_bare"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_pilgrim.png" id="body_pilgrim"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_default.png" id="weapon_default"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_pilgrim.png" id="weapon_pilgrim"]
+
+[resource]
+script = ExtResource("script")
+m_BaseBody = ExtResource("body_bare")
+m_ArmoredBody = ExtResource("body_pilgrim")
+m_BaseWeapon = ExtResource("weapon_default")
+m_EquippedWeapon = ExtResource("weapon_pilgrim")

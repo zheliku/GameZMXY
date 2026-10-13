@@ -57,6 +57,7 @@ public partial class MapForm
         m_Save.SelfModulate = Colors.White;
         m_Save.TooltipText = "保存游戏";
         ResetLocationHover();
+        PlayCurrentLocationHint();
         Visible = true;
     }
 
@@ -176,8 +177,19 @@ public partial class MapForm
         m_LocationAnimation.Advance(0);
     }
 
-    /// <summary>鼠标离开时恢复原图和比例。</summary>
-    private void OnLocationMouseExited() => ResetLocationHover();
+    /// <summary>鼠标离开后继续显示最新开放关卡的边缘闪烁。</summary>
+    private void OnLocationMouseExited()
+    {
+        if (m_IsOpen) PlayCurrentLocationHint();
+        else ResetLocationHover();
+    }
+
+    /// <summary>当前仅花果山开放，以普通尺寸持续提示最新进度；关闭后不保留动画。</summary>
+    private void PlayCurrentLocationHint()
+    {
+        m_LocationAnimation.Play("location/current");
+        m_LocationAnimation.Advance(0);
+    }
 
     /// <summary>清除悬停参数，窗口复用时从普通图像开始。</summary>
     private void ResetLocationHover()

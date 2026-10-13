@@ -1,149 +1,245 @@
 [gd_resource type="SpriteFrames" format=3 uid="uid://boxumpj2pyv2s"]
 
-[ext_resource type="Texture2D" uid="uid://cmku0nxku3j2w" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_1.png" id="tex0"]
-[ext_resource type="Texture2D" uid="uid://bt3qhx2oxmxnh" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_2.png" id="tex1"]
-[ext_resource type="Texture2D" uid="uid://b20jp4pgxvf7d" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_3.png" id="tex2"]
-[ext_resource type="Texture2D" uid="uid://bo3wa6pwjqvu0" path="res://TheGame/Sprites/Effects/wukong/wukong_hit_4.png" id="tex3"]
+[ext_resource type="Texture2D" uid="uid://cuhegh7fbyvok" path="res://TheGame/Sprites/Effects/wukong/wukong_attack_effects.png" id="effects"]
 
-[sub_resource type="AtlasTexture" id="Atlas_0"]
-atlas = ExtResource("tex0")
-region = Rect2(0, 0, 210, 206)
+[sub_resource type="AtlasTexture" id="effect_attack_1_3"]
+atlas = ExtResource("effects")
+region = Rect2(0, 0, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_1"]
-atlas = ExtResource("tex0")
-region = Rect2(210, 0, 210, 206)
+[sub_resource type="AtlasTexture" id="effect_attack_1_4"]
+atlas = ExtResource("effects")
+region = Rect2(400, 0, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_2"]
-atlas = ExtResource("tex0")
-region = Rect2(420, 0, 210, 206)
+[sub_resource type="AtlasTexture" id="effect_attack_1_5"]
+atlas = ExtResource("effects")
+region = Rect2(800, 0, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_3"]
-atlas = ExtResource("tex0")
-region = Rect2(630, 0, 210, 206)
+[sub_resource type="AtlasTexture" id="effect_attack_2_3"]
+atlas = ExtResource("effects")
+region = Rect2(1200, 0, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_4"]
-atlas = ExtResource("tex0")
-region = Rect2(840, 0, 210, 206)
+[sub_resource type="AtlasTexture" id="effect_attack_2_4"]
+atlas = ExtResource("effects")
+region = Rect2(1600, 0, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_5"]
-atlas = ExtResource("tex1")
-region = Rect2(0, 0, 159, 54)
+[sub_resource type="AtlasTexture" id="effect_attack_2_5"]
+atlas = ExtResource("effects")
+region = Rect2(2000, 0, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_6"]
-atlas = ExtResource("tex1")
-region = Rect2(159, 0, 159, 54)
+[sub_resource type="AtlasTexture" id="effect_attack_3_0"]
+atlas = ExtResource("effects")
+region = Rect2(0, 300, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_7"]
-atlas = ExtResource("tex2")
-region = Rect2(0, 0, 326, 66)
+[sub_resource type="AtlasTexture" id="effect_attack_3_1"]
+atlas = ExtResource("effects")
+region = Rect2(400, 300, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_8"]
-atlas = ExtResource("tex2")
-region = Rect2(326, 0, 326, 66)
+[sub_resource type="AtlasTexture" id="effect_attack_3_2"]
+atlas = ExtResource("effects")
+region = Rect2(800, 300, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_9"]
-atlas = ExtResource("tex2")
-region = Rect2(652, 0, 326, 66)
+[sub_resource type="AtlasTexture" id="effect_attack_3_3"]
+atlas = ExtResource("effects")
+region = Rect2(1200, 300, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_10"]
-atlas = ExtResource("tex2")
-region = Rect2(978, 0, 326, 66)
+[sub_resource type="AtlasTexture" id="effect_attack_3_4"]
+atlas = ExtResource("effects")
+region = Rect2(1600, 300, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_11"]
-atlas = ExtResource("tex3")
-region = Rect2(0, 0, 315, 82)
+[sub_resource type="AtlasTexture" id="effect_attack_3_5"]
+atlas = ExtResource("effects")
+region = Rect2(2000, 300, 400, 300)
 
-[sub_resource type="AtlasTexture" id="Atlas_12"]
-atlas = ExtResource("tex3")
-region = Rect2(315, 0, 315, 82)
+[sub_resource type="AtlasTexture" id="effect_attack_3_6"]
+atlas = ExtResource("effects")
+region = Rect2(0, 600, 400, 300)
+
+[sub_resource type="AtlasTexture" id="effect_attack_3_7"]
+atlas = ExtResource("effects")
+region = Rect2(400, 600, 400, 300)
+
+[sub_resource type="AtlasTexture" id="effect_attack_3_8"]
+atlas = ExtResource("effects")
+region = Rect2(800, 600, 400, 300)
+
+[sub_resource type="AtlasTexture" id="effect_attack_4_0"]
+atlas = ExtResource("effects")
+region = Rect2(1200, 600, 400, 300)
+
+[sub_resource type="AtlasTexture" id="effect_attack_4_1"]
+atlas = ExtResource("effects")
+region = Rect2(1600, 600, 400, 300)
+
+[sub_resource type="AtlasTexture" id="effect_attack_4_2"]
+atlas = ExtResource("effects")
+region = Rect2(2000, 600, 400, 300)
+
+[sub_resource type="AtlasTexture" id="effect_attack_4_4"]
+atlas = ExtResource("effects")
+region = Rect2(0, 900, 400, 300)
 
 [resource]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("Atlas_0")
+"texture": null
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_1")
+"texture": null
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_2")
+"texture": null
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_3")
+"texture": SubResource("effect_attack_1_3")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_4")
+"texture": SubResource("effect_attack_1_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("effect_attack_1_5")
+}, {
+"duration": 1.0,
+"texture": null
 }, {
 "duration": 1.0,
 "texture": null
 }],
 "loop": 0,
 "name": &"attack_1",
-"speed": 1.0
+"speed": 24.0
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("Atlas_5")
+"texture": null
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_5")
+"texture": null
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_5")
+"texture": null
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_6")
+"texture": SubResource("effect_attack_2_3")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_6")
+"texture": SubResource("effect_attack_2_4")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_6")
+"texture": SubResource("effect_attack_2_5")
+}, {
+"duration": 1.0,
+"texture": null
 }, {
 "duration": 1.0,
 "texture": null
 }],
 "loop": 0,
 "name": &"attack_2",
-"speed": 1.0
+"speed": 24.0
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("Atlas_7")
+"texture": SubResource("effect_attack_3_0")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_8")
+"texture": SubResource("effect_attack_3_1")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_9")
+"texture": SubResource("effect_attack_3_2")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_10")
+"texture": SubResource("effect_attack_3_3")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_7")
+"texture": SubResource("effect_attack_3_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("effect_attack_3_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("effect_attack_3_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("effect_attack_3_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("effect_attack_3_8")
+}, {
+"duration": 1.0,
+"texture": null
 }, {
 "duration": 1.0,
 "texture": null
 }],
 "loop": 0,
 "name": &"attack_3",
-"speed": 1.0
+"speed": 24.0
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("Atlas_11")
+"texture": SubResource("effect_attack_4_0")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_12")
+"texture": SubResource("effect_attack_4_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("effect_attack_4_2")
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": SubResource("effect_attack_4_4")
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
 }, {
 "duration": 1.0,
 "texture": null
 }],
 "loop": 0,
 "name": &"attack_4",
-"speed": 1.0
+"speed": 24.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -152,6 +248,50 @@ animations = [{
 "duration": 1.0,
 "texture": null
 }, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": 0,
+"name": &"attack_5",
+"speed": 24.0
+}, {
+"frames": [{
 "duration": 1.0,
 "texture": null
 }],
