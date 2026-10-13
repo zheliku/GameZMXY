@@ -44,9 +44,10 @@ public partial class EquipmentCell : TextureRect
 
     /// <summary>让 Godot 负责提示的屏幕边界定位；详情场景只显示注入的文字。</summary>
     /// <param name="forText">触发提示的装备名称。</param>
-    /// <returns>本次提示的独立控件。</returns>
+    /// <returns>本次提示的独立控件；空装备格返回 null，不显示提示。</returns>
     public override Control _MakeCustomTooltip(string forText)
     {
+        if (m_Item == null) return null;
         var tooltip = m_TooltipScene.Instantiate<EquipmentTooltip>();
         tooltip.Bind(m_Item, m_Definition);
         return tooltip;
