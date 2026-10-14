@@ -57,6 +57,34 @@ namespace GameConfig.Sound
         /// 菜单确认音
         /// </summary>
         MenuConfirm = 103,
+        /// <summary>
+        /// 悟空升龙斩
+        /// </summary>
+        WukongRisingDragon = 7,
+        /// <summary>
+        /// 悟空火炎突击
+        /// </summary>
+        WukongFlameThrust = 8,
+        /// <summary>
+        /// 悟空烈焰闪
+        /// </summary>
+        WukongBlazingFlash = 9,
+        /// <summary>
+        /// 悟空烈焰风暴
+        /// </summary>
+        WukongFlameStorm = 10,
+        /// <summary>
+        /// 悟空火魔斩起手
+        /// </summary>
+        WukongFireDemonStart = 11,
+        /// <summary>
+        /// 悟空火魔九连斩
+        /// </summary>
+        WukongFireDemonCombo = 12,
+        /// <summary>
+        /// 悟空火魔斩落地
+        /// </summary>
+        WukongFireDemonLanding = 13,
     }
 
 } 

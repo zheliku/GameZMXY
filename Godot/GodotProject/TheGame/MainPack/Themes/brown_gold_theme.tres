@@ -1,0 +1,30 @@
+[gd_resource type="Theme" format=3 uid="uid://s48yl51sqo68"]
+
+[ext_resource type="StyleBox" uid="uid://bp2n72ixg5b4s" path="res://TheGame/MainPack/Themes/Styles/brown_gold_button_active.tres" id="1_7hbv3"]
+[ext_resource type="StyleBox" uid="uid://fs83tub7q8lo" path="res://TheGame/MainPack/Themes/Styles/gold_focus_border.tres" id="2_o8j8e"]
+[ext_resource type="StyleBox" uid="uid://1xxkxi1vsclw" path="res://TheGame/MainPack/Themes/Styles/brown_gold_button.tres" id="3_plssv"]
+[ext_resource type="StyleBox" uid="uid://8u4gy7ltjhro" path="res://TheGame/MainPack/Themes/Styles/brown_popup_panel.tres" id="4_dqv7b"]
+[ext_resource type="FontFile" uid="uid://d3bh5a3jtbsib" path="res://TheGame/MainPack/Fonts/fz_cu_yuan.ttf" id="5_omsdx"]
+
+[resource]
+default_font = ExtResource("5_omsdx")
+default_font_size = 16
+Button/colors/font_color = Color(1, 1, 0.6509804, 1)
+Button/colors/font_disabled_color = Color(0.53, 0.43, 0.29, 1)
+Button/colors/font_focus_color = Color(1, 0.94, 0.7, 1)
+Button/colors/font_hover_color = Color(1, 0.94, 0.7, 1)
+Button/colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+Button/colors/font_pressed_color = Color(1, 0.94, 0.7, 1)
+Button/constants/outline_size = 3
+Button/fonts/font = ExtResource("5_omsdx")
+Button/styles/disabled = ExtResource("1_7hbv3")
+Button/styles/focus = ExtResource("2_o8j8e")
+Button/styles/hover = ExtResource("1_7hbv3")
+Button/styles/hover_pressed = ExtResource("1_7hbv3")
+Button/styles/normal = ExtResource("3_plssv")
+Button/styles/pressed = ExtResource("1_7hbv3")
+PopupMenu/colors/font_color = Color(1, 0.84, 0.48, 1)
+PopupMenu/colors/font_disabled_color = Color(0.53, 0.43, 0.29, 1)
+PopupMenu/colors/font_hover_color = Color(1, 0.94, 0.7, 1)
+PopupMenu/styles/hover = ExtResource("1_7hbv3")
+PopupMenu/styles/panel = ExtResource("4_dqv7b")

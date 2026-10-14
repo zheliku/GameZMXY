@@ -12,6 +12,7 @@ using GameLogic.Level;
 using GameLogic.Monsters;
 using GameLogic.Monsters.AI;
 using GameLogic;
+using GameLogic.Input;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
@@ -154,8 +155,9 @@ public sealed partial class UiSmokeScenario
 
     /// <summary>用真实 CharacterBody2D 分别穿过平台底部并落在平台上。</summary>
     /// <param name="level">平台所在关卡。</param>
-    /// <returns>三个物理探针完成的任务。</returns>
-    private async Task CheckPlatformsAsync(LevelModule level)
+    /// <param name="context">用于创建独立测试英雄的档案作用域。</param>
+    /// <returns>三个物理探针及英雄下穿完成的任务。</returns>
+    private async Task CheckPlatformsAsync(LevelModule level, GameContext context)
     {
         foreach (StaticBody2D platform in level.GetNode("World/Platforms").GetChildren())
         {
@@ -173,16 +175,54 @@ public sealed partial class UiSmokeScenario
                     probe.Velocity += new Vector2(0, 900f / Engine.PhysicsTicksPerSecond);
                     probe.MoveAndSlide();
                     above |= probe.GlobalPosition.Y < platform.GlobalPosition.Y - 20;
-                    if (above && probe.IsOnFloor()) break;
+                    if (above && probe.IsOnFloor())
+                        break;
                 }
                 CollisionShape2D surface = platform.GetNode<CollisionShape2D>("Surface");
                 float landingY = surface.GlobalPosition.Y - ((RectangleShape2D)surface.Shape).Size.Y / 2f - 10f;
                 Check(above && probe.IsOnFloor() && Math.Abs(probe.GlobalPosition.Y - landingY) < 1.1f,
                     $"平台 {platform.Name} 无法从下方穿过并落到上方：{probe.GlobalPosition}");
             }
-            finally { probe.QueueFree(); }
+            finally
+            {
+                probe.QueueFree();
+            }
         }
-        GD.Print("SMOKE-UI: three official one-way platforms passed real physics");
+        m_ExtraHero = await ShowHeroAsync(context, context.Profile.ActiveHero);
+        HeroEntity hero = m_ExtraHero;
+        try
+        {
+            StaticBody2D platform = level.GetNode("World/Platforms").GetChildren().OfType<StaticBody2D>().First();
+            CollisionShape2D bodyShape = hero.GetNode<CollisionShape2D>("CollisionShape2D");
+            CollisionShape2D platformSurface = platform.GetNode<CollisionShape2D>("Surface");
+            float feetOffset = bodyShape.Position.Y + bodyShape.Shape.GetRect().End.Y;
+            float surfaceTop = platformSurface.GlobalPosition.Y + platformSurface.Shape.GetRect().Position.Y;
+            hero.GlobalPosition = new Vector2(platform.GlobalPosition.X, surfaceTop - feetOffset - 40f);
+            hero.Velocity = Vector2.Zero;
+            hero.SetPhysicsProcess(true);
+            // 等两次帧信号，确保至少完成一次移位后的物理更新。
+            for (int frame = 0; frame < 2; frame++)
+                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+            for (int frame = 0; frame < 120 && !hero.IsOnFloor(); frame++)
+                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+            Check(hero.IsOnFloor() && Enumerable.Range(0, hero.GetSlideCollisionCount()).Any(index =>
+                ReferenceEquals(hero.GetSlideCollision(index).GetCollider(), platform)), "英雄未落在可穿平台");
+            float before = hero.GlobalPosition.Y;
+            Input.ActionPress(InputActions.MoveDown);
+            Input.ActionPress(InputActions.Jump);
+            for (int frame = 0; frame < 20; frame++)
+                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+            Check(hero.GlobalPosition.Y > before + hero.Config.PlatformDropDistance && hero.Velocity.Y >= 0,
+                $"S+K 未从单向平台向下离开，或误触起跳：before={before}, after={hero.GlobalPosition.Y}, vy={hero.Velocity.Y}, floor={hero.IsOnFloor()}");
+        }
+        finally
+        {
+            Input.ActionRelease(InputActions.MoveDown);
+            Input.ActionRelease(InputActions.Jump);
+            ReleaseTestEntity(m_ExtraHero);
+            m_ExtraHero = null;
+        }
+        GD.Print("SMOKE-UI: three official one-way platforms and hero S+K drop passed real physics");
     }
 
     /// <summary>观测真正的在场球：未接触不入账，暂停不前进，恢复后追踪移动中的英雄。</summary>
@@ -193,7 +233,8 @@ public sealed partial class UiSmokeScenario
     {
         var orbs = SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "m_LootOrbs");
         Check(orbs.Count is >= 2 and <= 10, "怪物死亡掉落数量超出官方范围");
-        if (m_PreviousOrb != null) Check(orbs.Contains(m_PreviousOrb), "下一次击败未复用已归还的飞行球");
+        if (m_PreviousOrb != null)
+            Check(orbs.Contains(m_PreviousOrb), "下一次击败未复用已归还的飞行球");
         m_PreviousOrb = orbs.First();
         var positions = orbs.ToDictionary(x => x, x => x.GlobalPosition);
         GF.Base.PauseGame();
@@ -202,7 +243,10 @@ public sealed partial class UiSmokeScenario
             await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(.3, true, false, true), SceneTreeTimer.SignalName.Timeout);
             Check(positions.All(x => x.Key.GlobalPosition.IsEqualApprox(x.Value)), "暂停时飞行球仍在运动");
         }
-        finally { GF.Base.ResumeGame(); }
+        finally
+        {
+            GF.Base.ResumeGame();
+        }
 
         // 跟踪目标换位置，后续调用方等待真正接触后的档案变化。
         hero.GlobalPosition += new Vector2(-40, 0);
@@ -216,7 +260,8 @@ public sealed partial class UiSmokeScenario
     /// <returns>渲染帧保存任务。</returns>
     private async Task CaptureCombatAsync(string name)
     {
-        if (DisplayServer.GetName() == "headless") return;
+        if (DisplayServer.GetName() == "headless")
+            return;
         await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         DirAccess.MakeDirRecursiveAbsolute("res://.godot/validation");
         Check(m_Driver.GetViewport().GetTexture().GetImage().SavePng($"res://.godot/validation/{name}.png") == Error.Ok,

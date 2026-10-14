@@ -1,10 +1,11 @@
 [gd_scene format=3 uid="uid://bmm87kfrr6bcv"]
 
 [ext_resource type="Script" uid="uid://d4b5dtv7bca62" path="res://TheGame/MainPack/Scripts/Debug/TestArenaController.cs" id="1_controller"]
-[ext_resource type="PackedScene" uid="uid://bggentry001" path="res://Framework/GameFramework.tscn" id="2_framework"]
+[ext_resource type="PackedScene" path="res://Framework/GameFramework.tscn" id="2_framework"]
 [ext_resource type="Texture2D" uid="uid://bo4uw8k2ajk8o" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_floor.png" id="3_floor"]
 [ext_resource type="PackedScene" uid="uid://y6q3h5fly83h" path="res://TheGame/Entitys/DemonMonkeyEntity.tscn" id="4_demon"]
 [ext_resource type="PackedScene" uid="uid://cc7r187g26xr8" path="res://TheGame/Entitys/HuaguoshanMonkeyEntity.tscn" id="5_monkey"]
+[ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/FloatingText/FloatingTextModule.cs" id="floating_text"]
 
 [sub_resource type="RectangleShape2D" id="GroundShape"]
 size = Vector2(1600, 93)
@@ -12,14 +13,18 @@ size = Vector2(1600, 93)
 [sub_resource type="RectangleShape2D" id="WallShape"]
 size = Vector2(80, 700)
 
-[node name="TestArena" type="Node2D" unique_id=1771597482 node_paths=PackedStringArray("m_PlayerStart", "m_Monsters", "m_Camera")]
+[node name="TestArena" type="Node2D" unique_id=1771597482 node_paths=PackedStringArray("m_PlayerStart", "m_Monsters", "m_Camera", "m_FloatingText")]
 script = ExtResource("1_controller")
 m_FrameworkScene = ExtResource("2_framework")
 m_PlayerStart = NodePath("World/PlayerStart")
 m_Monsters = NodePath("Monsters")
 m_Camera = NodePath("Camera2D")
+m_FloatingText = NodePath("World/FloatingText")
 
 [node name="World" type="Node2D" parent="." unique_id=518203444]
+
+[node name="FloatingText" type="Node2D" parent="World"]
+script = ExtResource("floating_text")
 
 [node name="FloorSprite" type="Sprite2D" parent="World" unique_id=1756109385]
 z_index = -5

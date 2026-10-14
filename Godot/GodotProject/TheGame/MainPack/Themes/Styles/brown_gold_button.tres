@@ -1,0 +1,14 @@
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://1xxkxi1vsclw"]
+
+[ext_resource type="Texture2D" uid="uid://5n4opi1ss50s" path="res://TheGame/Sprites/UI/inventory/inventory_tab_normal.png" id="1_fbu67"]
+
+[resource]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+texture = ExtResource("1_fbu67")
+texture_margin_left = 3.0
+texture_margin_top = 3.0
+texture_margin_right = 3.0
+texture_margin_bottom = 3.0

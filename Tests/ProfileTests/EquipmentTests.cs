@@ -33,7 +33,11 @@ public sealed class EquipmentTests
         int inventoryNotifications = 0;
         int walletNotifications = 0;
         profile.Inventory.Changed += Observe;
-        profile.Wallet.Changed += () => { walletNotifications++; ObserveCommittedState(); };
+        profile.Wallet.Changed += () =>
+        {
+            walletNotifications++;
+            ObserveCommittedState();
+        };
 
         Assert.Equal(50, module.SellByQuality(profile, EquipmentQuality.Rough));
         Assert.Equal(1, inventoryNotifications);
@@ -45,7 +49,11 @@ public sealed class EquipmentTests
         Assert.Equal(1, inventoryNotifications);
         Assert.Equal(1, walletNotifications);
 
-        void Observe() { inventoryNotifications++; ObserveCommittedState(); }
+        void Observe()
+        {
+            inventoryNotifications++;
+            ObserveCommittedState();
+        }
         void ObserveCommittedState()
         {
             Assert.Equal(retained, profile.Inventory.Items);
@@ -165,13 +173,16 @@ public sealed class EquipmentTests
     [Fact]
     public void Inventory_IsAtomicAndRejectsDuplicateOrFullPickup()
     {
-        Inventory bag = new(1); int changes = 0; bag.Changed += () => changes++;
+        Inventory bag = new(1);
+        int changes = 0;
+        bag.Changed += () => changes++;
         var item = Module().Roll(Guid.NewGuid(), EquipmentId.CommonPineStaff, () => .5f);
         Assert.True(bag.TryAdd(item));
         Assert.False(bag.TryAdd(item));
         Assert.False(bag.TryAdd(Module().Roll(Guid.NewGuid(), EquipmentId.RoughCassock, () => 0)));
         Assert.Throws<ArgumentException>(() => bag.Restore(new[] { item, item }));
-        Assert.Same(item, Assert.Single(bag.Items)); Assert.Equal(1, changes);
+        Assert.Same(item, Assert.Single(bag.Items));
+        Assert.Equal(1, changes);
     }
 
     /// <summary>保存实际属性及稳定顺序，JSON 读回和关卡回滚都不重抽。</summary>
@@ -196,7 +207,8 @@ public sealed class EquipmentTests
         snapshot.EquipmentItems[0].Attributes = first.Attributes with { MaxHp = 999 };
         Assert.Throws<ArgumentException>(() => ProfileSaveHelper.RestoreProfile(snapshot, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
         Assert.Equal(35, first.Attributes.MaxHp);
-        var missing = Newtonsoft.Json.Linq.JObject.Parse(json); ((Newtonsoft.Json.Linq.JObject)missing["EquipmentItems"][0]["Attributes"]).Remove("MaxHp");
+        var missing = Newtonsoft.Json.Linq.JObject.Parse(json);
+        ((Newtonsoft.Json.Linq.JObject)missing["EquipmentItems"][0]["Attributes"]).Remove("MaxHp");
         Assert.Throws<JsonSerializationException>(() => missing.ToObject<GameData>());
     }
 

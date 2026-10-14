@@ -36,7 +36,8 @@ public static class LootHelper
         if (pool != null && random() < equipmentChance)
         {
             int total = 0;
-            foreach (var entry in pool.Entries) total = checked(total + entry.Weight);
+            foreach (var entry in pool.Entries)
+                total = checked(total + entry.Weight);
             int sample = Math.Min(total - 1, (int)(random() * total));
             foreach (var entry in pool.Entries)
             {
@@ -61,20 +62,23 @@ public static class LootHelper
     {
         var rewards = new List<LootReward>();
         int souls = Count(monster.SoulCount, random());
-        for (int i = 0; i < souls; i++) rewards.Add(new(LootKind.Soul, monster.SoulPerOrb));
+        for (int i = 0; i < souls; i++)
+            rewards.Add(new(LootKind.Soul, monster.SoulPerOrb));
 
         // 原版蓝球 12%：1、2、3 颗各 4%，在条件数量区间内均匀采样。
         if (random() < monster.ManaDropChance)
         {
             int count = Count(monster.ManaCount, random());
-            for (int i = 0; i < count; i++) rewards.Add(new(LootKind.Mana, 0));
+            for (int i = 0; i < count; i++)
+                rewards.Add(new(LootKind.Mana, 0));
         }
 
         // 黄球是无双，每颗 5 点；独立于蓝球采样，不再额外生成经验球。
         if (random() < monster.MusouDropChance)
         {
             int count = Count(monster.MusouCount, random());
-            for (int i = 0; i < count; i++) rewards.Add(new(LootKind.Musou, drops.MusouPerOrb));
+            for (int i = 0; i < count; i++)
+                rewards.Add(new(LootKind.Musou, drops.MusouPerOrb));
         }
 
         return rewards;

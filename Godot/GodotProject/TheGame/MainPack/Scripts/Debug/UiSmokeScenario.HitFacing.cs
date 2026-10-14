@@ -40,22 +40,22 @@ public sealed partial class UiSmokeScenario
         void CheckActor(ActorEntity actor)
         {
             foreach (int facing in new[] { -1, 1 })
-            foreach (int direction in new[] { -1, 1 })
-            {
-                actor.SetFacing(facing);
-                var hit = AttackInstance.Create(0, default, 1, DamageKind.Real,
-                    new Vector2(2, -5), direction, 0, SoundId.None);
-                var result = actor.ReceiveHit(hit, 0);
-                GameFramework.ReferencePool.Release(hit);
-                Check(!result.IsMiss && actor.Facing == facing && actor.HasPendingHurt,
-                    $"{actor.GetType().Name} 受击意外转身或未登记击退");
-                var knockback = actor.TakePendingHurt();
-                Check(Math.Sign(knockback.X) == direction, "保留朝向时错误反转了击退方向");
-                var player = actor.GetNode<AnimationPlayer>("m_AnimPlayer");
-                player.Play("hurt");
-                player.Seek(1d / 24, true);
-                Check(actor.Facing == facing, "受击动画修改了角色朝向");
-            }
+                foreach (int direction in new[] { -1, 1 })
+                {
+                    actor.SetFacing(facing);
+                    var hit = AttackInstance.Create(0, default, 1, DamageKind.Real,
+                        new Vector2(2, -5), direction, 0, SoundId.None);
+                    var result = actor.ReceiveHit(hit, 0);
+                    GameFramework.ReferencePool.Release(hit);
+                    Check(!result.IsMiss && actor.Facing == facing && actor.HasPendingHurt,
+                        $"{actor.GetType().Name} 受击意外转身或未登记击退");
+                    var knockback = actor.TakePendingHurt();
+                    Check(Math.Sign(knockback.X) == direction, "保留朝向时错误反转了击退方向");
+                    var player = actor.GetNode<AnimationPlayer>("m_AnimPlayer");
+                    player.Play("hurt");
+                    player.Seek(1d / 24, true);
+                    Check(actor.Facing == facing, "受击动画修改了角色朝向");
+                }
         }
     }
 }

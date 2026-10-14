@@ -5,7 +5,12 @@
 [ext_resource type="FontFile" uid="uid://c5eah8rqotkno" path="res://TheGame/MainPack/Fonts/df_poster_w12.ttc" id="badge_font"]
 [ext_resource type="Texture2D" uid="uid://cp42ocwlfjgvb" path="res://TheGame/Sprites/UI/frontend/menu_close.png" id="close"]
 [ext_resource type="Texture2D" uid="uid://dyutmtu7t78n4" path="res://TheGame/Sprites/UI/frontend/menu_close_hover.png" id="close_hover"]
-[ext_resource type="PackedScene" path="res://TheGame/UIs/Widgets/equipment_cell.tscn" id="equipment_cell"]
+[ext_resource type="Script" uid="uid://dp8oj4ms6jn5t" path="res://TheGame/GameScripts/UI/InventoryForm/Components/InventoryBagPanel.cs" id="component_InventoryBagPanel"]
+[ext_resource type="Script" uid="uid://bpwf4dl6xqgqr" path="res://TheGame/GameScripts/UI/InventoryForm/Components/InventoryCharacterPanel.cs" id="component_InventoryCharacterPanel"]
+[ext_resource type="Script" uid="uid://mxfrxwlrtoie" path="res://TheGame/GameScripts/UI/InventoryForm/Components/InventorySaleConfirmation.cs" id="component_InventorySaleConfirmation"]
+[ext_resource type="Theme" uid="uid://s48yl51sqo68" path="res://TheGame/MainPack/Themes/brown_gold_theme.tres" id="controls_theme"]
+[ext_resource type="StyleBox" uid="uid://c5cno7vj11g4b" path="res://TheGame/MainPack/Themes/Styles/brown_dialog_panel.tres" id="dialog_panel_style"]
+[ext_resource type="PackedScene" uid="uid://b538mvhe6ldua" path="res://TheGame/UIs/Widgets/equipment_cell.tscn" id="equipment_cell"]
 [ext_resource type="Texture2D" uid="uid://bad1w8e05nqgs" path="res://TheGame/Sprites/UI/inventory/inventory_exp_fill.png" id="exp_fill"]
 [ext_resource type="Texture2D" uid="uid://bcc837l6er4ae" path="res://TheGame/Sprites/UI/inventory/inventory_exp_frame.png" id="exp_frame"]
 [ext_resource type="FontFile" uid="uid://d3bh5a3jtbsib" path="res://TheGame/MainPack/Fonts/fz_cu_yuan.ttf" id="font"]
@@ -22,6 +27,7 @@
 [ext_resource type="Script" uid="uid://2d05nqjfoajs" path="res://TheGame/GameScripts/UI/InventoryForm/InventoryForm.cs" id="script"]
 [ext_resource type="Texture2D" uid="uid://chub3ebk11y6v" path="res://TheGame/Sprites/UI/inventory/inventory_slot_accessory.png" id="slot_accessory"]
 [ext_resource type="Texture2D" uid="uid://bhpaosv0tq1fm" path="res://TheGame/Sprites/UI/inventory/inventory_slot_armor.png" id="slot_armor"]
+[ext_resource type="Shader" uid="uid://b21uu4fakawvq" path="res://TheGame/Sprites/UI/inventory/equipment_slot_background.gdshader" id="slot_background"]
 [ext_resource type="Texture2D" uid="uid://bmfbr3jkej6xe" path="res://TheGame/Sprites/UI/inventory/inventory_slot_costume.png" id="slot_costume"]
 [ext_resource type="Texture2D" uid="uid://c5uj7ggw57sog" path="res://TheGame/Sprites/UI/inventory/inventory_slot_title.png" id="slot_title"]
 [ext_resource type="Texture2D" uid="uid://b35e0av04upxy" path="res://TheGame/Sprites/UI/inventory/inventory_slot_treasure.png" id="slot_treasure"]
@@ -30,124 +36,37 @@
 [ext_resource type="Texture2D" uid="uid://5n4opi1ss50s" path="res://TheGame/Sprites/UI/inventory/inventory_tab_normal.png" id="tab_normal"]
 [ext_resource type="Texture2D" uid="uid://d1wrtpin1ifq7" path="res://TheGame/Sprites/UI/inventory/inventory_tab_selected.png" id="tab_selected"]
 
-[sub_resource type="StyleBoxFlat" id="control_normal"]
-content_margin_left = 6.0
-content_margin_top = 2.0
-content_margin_right = 6.0
-content_margin_bottom = 2.0
-bg_color = Color(0.37, 0.2, 0.09, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.76, 0.49, 0.21, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxEmpty" id="empty"]
-
-[sub_resource type="StyleBoxFlat" id="control_hover"]
-content_margin_left = 6.0
-content_margin_top = 2.0
-content_margin_right = 6.0
-content_margin_bottom = 2.0
-bg_color = Color(0.55, 0.31, 0.1, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(1, 0.83, 0.42, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="Theme" id="inventory_controls"]
-default_font = ExtResource("font")
-default_font_size = 16
-Button/colors/font_color = Color(1, 0.84, 0.48, 1)
-Button/colors/font_disabled_color = Color(0.53, 0.43, 0.29, 1)
-Button/colors/font_hover_color = Color(1, 0.94, 0.7, 1)
-Button/colors/font_pressed_color = Color(1, 0.94, 0.7, 1)
-Button/styles/disabled = SubResource("control_normal")
-Button/styles/focus = SubResource("empty")
-Button/styles/hover = SubResource("control_hover")
-Button/styles/normal = SubResource("control_normal")
-Button/styles/pressed = SubResource("control_hover")
-PopupMenu/colors/font_color = Color(1, 0.84, 0.48, 1)
-PopupMenu/colors/font_disabled_color = Color(0.53, 0.43, 0.29, 1)
-PopupMenu/colors/font_hover_color = Color(1, 0.94, 0.7, 1)
-PopupMenu/colors/font_pressed_color = Color(1, 0.94, 0.7, 1)
-PopupMenu/styles/hover = SubResource("control_hover")
-PopupMenu/styles/panel = SubResource("control_normal")
-
 [sub_resource type="AtlasTexture" id="name_row"]
 atlas = ExtResource("name_plate")
 region = Rect2(0, 0, 213, 25)
 filter_clip = true
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_46cyk"]
+resource_local_to_scene = true
+shader = ExtResource("slot_background")
+shader_parameter/occupied = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_41ypg"]
+resource_local_to_scene = true
+shader = ExtResource("slot_background")
+shader_parameter/occupied = false
+
 [sub_resource type="ButtonGroup" id="bag_tabs"]
 
-[sub_resource type="StyleBoxFlat" id="sale_panel"]
-content_margin_left = 24.0
-content_margin_top = 20.0
-content_margin_right = 24.0
-content_margin_bottom = 20.0
-bg_color = Color(0.2, 0.1, 0.04, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.86, 0.61, 0.29, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-shadow_color = Color(0, 0, 0, 0.5)
-shadow_size = 8
-
-[node name="InventoryForm" type="Control" unique_id=1552540174 node_paths=PackedStringArray("m_Actions", "m_Close", "m_Name", "m_Level", "m_Experience", "m_ExperienceText", "m_Soul", "m_Preview", "m_Hp", "m_Mp", "m_Attack", "m_Defense", "m_Lucky", "m_MagicResistance", "m_Crit", "m_Dodge", "m_HpRegen", "m_MpRegen", "m_BagGrid", "m_WeaponSlot", "m_ArmorSlot", "m_Tabs", "m_PreviousPage", "m_PageNumber", "m_NextPage", "m_SellQuality", "m_QualityOptions", "m_SaleConfirmation", "m_SaleSummary", "m_SaleCancel", "m_SaleConfirm")]
+[node name="InventoryForm" type="Control" unique_id=1552540174 node_paths=PackedStringArray("m_Actions", "m_Close", "m_Character", "m_Bag", "m_SaleConfirmation")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = SubResource("inventory_controls")
+theme = ExtResource("controls_theme")
 script = ExtResource("script")
 m_Actions = NodePath("m_Actions")
 m_Close = NodePath("Window/Header/m_Close")
-m_Name = NodePath("Window/CharacterPanel/Identity/m_Name")
-m_Level = NodePath("Window/CharacterPanel/Identity/m_Level")
-m_Experience = NodePath("Window/CharacterPanel/Experience/m_Experience")
-m_ExperienceText = NodePath("Window/CharacterPanel/Experience/m_ExperienceText")
-m_Soul = NodePath("Window/BagPanel/Footer/Soul/m_Soul")
-m_Preview = NodePath("Window/CharacterPanel/m_Preview")
-m_Hp = NodePath("Window/CharacterPanel/Attributes/Hp/m_Hp")
-m_Mp = NodePath("Window/CharacterPanel/Attributes/Mp/m_Mp")
-m_Attack = NodePath("Window/CharacterPanel/Attributes/Attack/m_Attack")
-m_Defense = NodePath("Window/CharacterPanel/Attributes/Defense/m_Defense")
-m_Lucky = NodePath("Window/CharacterPanel/Attributes/Lucky/m_Lucky")
-m_MagicResistance = NodePath("Window/CharacterPanel/Attributes/MagicResistance/m_MagicResistance")
-m_Crit = NodePath("Window/CharacterPanel/Attributes/Crit/m_Crit")
-m_Dodge = NodePath("Window/CharacterPanel/Attributes/Dodge/m_Dodge")
-m_HpRegen = NodePath("Window/CharacterPanel/Attributes/HpRegen/m_HpRegen")
-m_MpRegen = NodePath("Window/CharacterPanel/Attributes/MpRegen/m_MpRegen")
-m_BagGrid = NodePath("Window/BagPanel/m_BagGrid")
-m_WeaponSlot = NodePath("Window/CharacterPanel/EquipmentSlots/m_WeaponSlot")
-m_ArmorSlot = NodePath("Window/CharacterPanel/EquipmentSlots/m_ArmorSlot")
-m_Tabs = NodePath("Window/BagPanel/m_Tabs")
-m_PreviousPage = NodePath("Window/BagPanel/Footer/Pages/m_PreviousPage")
-m_PageNumber = NodePath("Window/BagPanel/Footer/Pages/m_PageNumber")
-m_NextPage = NodePath("Window/BagPanel/Footer/Pages/m_NextPage")
-m_SellQuality = NodePath("Window/BagPanel/Footer/m_SellQuality")
-m_QualityOptions = NodePath("Window/BagPanel/Footer/m_SellQuality/m_QualityOptions")
+m_Character = NodePath("Window/CharacterPanel")
+m_Bag = NodePath("Window/BagPanel")
 m_SaleConfirmation = NodePath("m_SaleConfirmation")
-m_SaleSummary = NodePath("m_SaleConfirmation/Center/Panel/Content/m_SaleSummary")
-m_SaleCancel = NodePath("m_SaleConfirmation/Center/Panel/Content/Actions/m_SaleCancel")
-m_SaleConfirm = NodePath("m_SaleConfirmation/Center/Panel/Content/Actions/m_SaleConfirm")
 
 [node name="Dim" type="ColorRect" parent="." unique_id=471528848]
 layout_mode = 0
@@ -201,13 +120,31 @@ texture_hover = ExtResource("close_hover")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="CharacterPanel" type="Control" parent="Window" unique_id=2061646098]
+[node name="CharacterPanel" type="Control" parent="Window" unique_id=2061646098 node_paths=PackedStringArray("m_Name", "m_Level", "m_Preview", "m_WeaponSlot", "m_ArmorSlot", "m_Hp", "m_Mp", "m_Power", "m_Def", "m_Lucky", "m_Mdef", "m_Crit", "m_Miss", "m_HpRegen", "m_MpRegen", "m_Experience", "m_ExperienceText")]
 anchors_preset = 0
 offset_left = 140.0
 offset_top = 104.0
 offset_right = 497.0
 offset_bottom = 506.0
 mouse_filter = 2
+script = ExtResource("component_InventoryCharacterPanel")
+m_Name = NodePath("Identity/m_Name")
+m_Level = NodePath("Identity/m_Level")
+m_Preview = NodePath("m_Preview")
+m_WeaponSlot = NodePath("EquipmentSlots/m_WeaponSlot")
+m_ArmorSlot = NodePath("EquipmentSlots/m_ArmorSlot")
+m_Hp = NodePath("Attributes/Left/Hp/m_Hp")
+m_Mp = NodePath("Attributes/Right/Mp/m_Mp")
+m_Power = NodePath("Attributes/Left/Attack/m_Attack")
+m_Def = NodePath("Attributes/Right/Defense/m_Defense")
+m_Lucky = NodePath("Attributes/Left/Lucky/m_Lucky")
+m_Mdef = NodePath("Attributes/Right/MagicResistance/m_MagicResistance")
+m_Crit = NodePath("Attributes/Left/Crit/m_Crit")
+m_Miss = NodePath("Attributes/Right/Dodge/m_Dodge")
+m_HpRegen = NodePath("Attributes/Left/HpRegen/m_HpRegen")
+m_MpRegen = NodePath("Attributes/Right/MpRegen/m_MpRegen")
+m_Experience = NodePath("Experience/m_Experience")
+m_ExperienceText = NodePath("Experience/m_ExperienceText")
 
 [node name="Identity" type="Control" parent="Window/CharacterPanel" unique_id=274555624]
 anchors_preset = 0
@@ -292,6 +229,7 @@ texture = ExtResource("slot_title")
 expand_mode = 1
 
 [node name="m_WeaponSlot" parent="Window/CharacterPanel/EquipmentSlots" unique_id=943635423 instance=ExtResource("equipment_cell")]
+material = SubResource("ShaderMaterial_46cyk")
 layout_mode = 0
 offset_left = 223.0
 offset_top = 74.0
@@ -300,6 +238,7 @@ offset_bottom = 121.0
 texture = ExtResource("slot_weapon")
 
 [node name="m_ArmorSlot" parent="Window/CharacterPanel/EquipmentSlots" unique_id=1110672857 instance=ExtResource("equipment_cell")]
+material = SubResource("ShaderMaterial_41ypg")
 layout_mode = 0
 offset_left = 223.0
 offset_top = 139.0
@@ -348,13 +287,17 @@ mouse_filter = 2
 texture = ExtResource("attributes")
 expand_mode = 1
 
-[node name="Hp" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=625368898]
+[node name="Left" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=505171379]
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="Hp" type="Control" parent="Window/CharacterPanel/Attributes/Left" unique_id=625368898]
 anchors_preset = 0
 offset_right = 152.0
 offset_bottom = 31.0
 mouse_filter = 2
 
-[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Hp" unique_id=176789584]
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Left/Hp" unique_id=176789584]
 layout_mode = 0
 offset_left = 3.0
 offset_right = 42.0
@@ -368,7 +311,7 @@ text = "HP"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_Hp" type="Label" parent="Window/CharacterPanel/Attributes/Hp" unique_id=1931640089]
+[node name="m_Hp" type="Label" parent="Window/CharacterPanel/Attributes/Left/Hp" unique_id=1931640089]
 layout_mode = 0
 offset_left = 40.0
 offset_right = 150.0
@@ -382,49 +325,14 @@ text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Mp" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1059326719]
-anchors_preset = 0
-offset_left = 160.0
-offset_right = 312.0
-offset_bottom = 31.0
-mouse_filter = 2
-
-[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Mp" unique_id=538350654]
-layout_mode = 0
-offset_left = 3.0
-offset_right = 42.0
-offset_bottom = 31.0
-theme_override_colors/font_color = Color(1, 1, 0.65, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
-theme_override_constants/outline_size = 3
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 17
-text = "MP"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="m_Mp" type="Label" parent="Window/CharacterPanel/Attributes/Mp" unique_id=1511760250]
-layout_mode = 0
-offset_left = 40.0
-offset_right = 150.0
-offset_bottom = 31.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
-theme_override_constants/outline_size = 0
-theme_override_fonts/font = ExtResource("number_font")
-theme_override_font_sizes/font_size = 15
-text = "0"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Attack" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1886318127]
+[node name="Attack" type="Control" parent="Window/CharacterPanel/Attributes/Left" unique_id=1886318127]
 anchors_preset = 0
 offset_top = 33.0
 offset_right = 152.0
 offset_bottom = 64.0
 mouse_filter = 2
 
-[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Attack" unique_id=264979552]
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Left/Attack" unique_id=264979552]
 layout_mode = 0
 offset_left = 3.0
 offset_right = 42.0
@@ -438,7 +346,7 @@ text = "攻击"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_Attack" type="Label" parent="Window/CharacterPanel/Attributes/Attack" unique_id=1637216805]
+[node name="m_Attack" type="Label" parent="Window/CharacterPanel/Attributes/Left/Attack" unique_id=1637216805]
 layout_mode = 0
 offset_left = 40.0
 offset_right = 150.0
@@ -452,50 +360,14 @@ text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Defense" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1885176249]
-anchors_preset = 0
-offset_left = 160.0
-offset_top = 33.0
-offset_right = 312.0
-offset_bottom = 64.0
-mouse_filter = 2
-
-[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Defense" unique_id=1755832866]
-layout_mode = 0
-offset_left = 3.0
-offset_right = 42.0
-offset_bottom = 31.0
-theme_override_colors/font_color = Color(1, 1, 0.65, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
-theme_override_constants/outline_size = 3
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 17
-text = "防御"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="m_Defense" type="Label" parent="Window/CharacterPanel/Attributes/Defense" unique_id=1109453982]
-layout_mode = 0
-offset_left = 40.0
-offset_right = 150.0
-offset_bottom = 31.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
-theme_override_constants/outline_size = 0
-theme_override_fonts/font = ExtResource("number_font")
-theme_override_font_sizes/font_size = 15
-text = "0"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Lucky" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1529550948]
+[node name="Lucky" type="Control" parent="Window/CharacterPanel/Attributes/Left" unique_id=1529550948]
 anchors_preset = 0
 offset_top = 66.0
 offset_right = 152.0
 offset_bottom = 97.0
 mouse_filter = 2
 
-[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Lucky" unique_id=1191467582]
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Left/Lucky" unique_id=1191467582]
 layout_mode = 0
 offset_left = 3.0
 offset_right = 42.0
@@ -509,7 +381,7 @@ text = "幸运"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_Lucky" type="Label" parent="Window/CharacterPanel/Attributes/Lucky" unique_id=841350912]
+[node name="m_Lucky" type="Label" parent="Window/CharacterPanel/Attributes/Left/Lucky" unique_id=841350912]
 layout_mode = 0
 offset_left = 40.0
 offset_right = 150.0
@@ -523,50 +395,14 @@ text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="MagicResistance" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=31788673]
-anchors_preset = 0
-offset_left = 160.0
-offset_top = 66.0
-offset_right = 312.0
-offset_bottom = 97.0
-mouse_filter = 2
-
-[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/MagicResistance" unique_id=1224374938]
-layout_mode = 0
-offset_left = 3.0
-offset_right = 42.0
-offset_bottom = 31.0
-theme_override_colors/font_color = Color(1, 1, 0.65, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
-theme_override_constants/outline_size = 3
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 17
-text = "魔抗"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="m_MagicResistance" type="Label" parent="Window/CharacterPanel/Attributes/MagicResistance" unique_id=944748457]
-layout_mode = 0
-offset_left = 40.0
-offset_right = 150.0
-offset_bottom = 31.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
-theme_override_constants/outline_size = 0
-theme_override_fonts/font = ExtResource("number_font")
-theme_override_font_sizes/font_size = 15
-text = "0"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Crit" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1283880999]
+[node name="Crit" type="Control" parent="Window/CharacterPanel/Attributes/Left" unique_id=1283880999]
 anchors_preset = 0
 offset_top = 98.0
 offset_right = 152.0
 offset_bottom = 129.0
 mouse_filter = 2
 
-[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Crit" unique_id=470468339]
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Left/Crit" unique_id=470468339]
 layout_mode = 0
 offset_left = 3.0
 offset_right = 42.0
@@ -580,7 +416,7 @@ text = "暴击"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_Crit" type="Label" parent="Window/CharacterPanel/Attributes/Crit" unique_id=1172539619]
+[node name="m_Crit" type="Label" parent="Window/CharacterPanel/Attributes/Left/Crit" unique_id=1172539619]
 layout_mode = 0
 offset_left = 40.0
 offset_right = 150.0
@@ -594,50 +430,14 @@ text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Dodge" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1869973628]
-anchors_preset = 0
-offset_left = 160.0
-offset_top = 98.0
-offset_right = 312.0
-offset_bottom = 129.0
-mouse_filter = 2
-
-[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Dodge" unique_id=1485757573]
-layout_mode = 0
-offset_left = 3.0
-offset_right = 42.0
-offset_bottom = 31.0
-theme_override_colors/font_color = Color(1, 1, 0.65, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
-theme_override_constants/outline_size = 3
-theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 17
-text = "闪避"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="m_Dodge" type="Label" parent="Window/CharacterPanel/Attributes/Dodge" unique_id=610436889]
-layout_mode = 0
-offset_left = 40.0
-offset_right = 150.0
-offset_bottom = 31.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
-theme_override_constants/outline_size = 0
-theme_override_fonts/font = ExtResource("number_font")
-theme_override_font_sizes/font_size = 15
-text = "0"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="HpRegen" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=2030344795]
+[node name="HpRegen" type="Control" parent="Window/CharacterPanel/Attributes/Left" unique_id=2030344795]
 anchors_preset = 0
 offset_top = 131.0
 offset_right = 152.0
 offset_bottom = 162.0
 mouse_filter = 2
 
-[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/HpRegen" unique_id=651056934]
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Left/HpRegen" unique_id=651056934]
 layout_mode = 0
 offset_left = 3.0
 offset_right = 42.0
@@ -651,7 +451,7 @@ text = "回血"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_HpRegen" type="Label" parent="Window/CharacterPanel/Attributes/HpRegen" unique_id=1872427859]
+[node name="m_HpRegen" type="Label" parent="Window/CharacterPanel/Attributes/Left/HpRegen" unique_id=1872427859]
 layout_mode = 0
 offset_left = 40.0
 offset_right = 150.0
@@ -665,7 +465,154 @@ text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="MpRegen" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=2115439010]
+[node name="Right" type="Control" parent="Window/CharacterPanel/Attributes" unique_id=1512132056]
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="Mp" type="Control" parent="Window/CharacterPanel/Attributes/Right" unique_id=1059326719]
+anchors_preset = 0
+offset_left = 160.0
+offset_right = 312.0
+offset_bottom = 31.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Right/Mp" unique_id=538350654]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "MP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_Mp" type="Label" parent="Window/CharacterPanel/Attributes/Right/Mp" unique_id=1511760250]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Defense" type="Control" parent="Window/CharacterPanel/Attributes/Right" unique_id=1885176249]
+anchors_preset = 0
+offset_left = 160.0
+offset_top = 33.0
+offset_right = 312.0
+offset_bottom = 64.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Right/Defense" unique_id=1755832866]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "防御"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_Defense" type="Label" parent="Window/CharacterPanel/Attributes/Right/Defense" unique_id=1109453982]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MagicResistance" type="Control" parent="Window/CharacterPanel/Attributes/Right" unique_id=31788673]
+anchors_preset = 0
+offset_left = 160.0
+offset_top = 66.0
+offset_right = 312.0
+offset_bottom = 97.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Right/MagicResistance" unique_id=1224374938]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "魔抗"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_MagicResistance" type="Label" parent="Window/CharacterPanel/Attributes/Right/MagicResistance" unique_id=944748457]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Dodge" type="Control" parent="Window/CharacterPanel/Attributes/Right" unique_id=1869973628]
+anchors_preset = 0
+offset_left = 160.0
+offset_top = 98.0
+offset_right = 312.0
+offset_bottom = 129.0
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Right/Dodge" unique_id=1485757573]
+layout_mode = 0
+offset_left = 3.0
+offset_right = 42.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 17
+text = "闪避"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_Dodge" type="Label" parent="Window/CharacterPanel/Attributes/Right/Dodge" unique_id=610436889]
+layout_mode = 0
+offset_left = 40.0
+offset_right = 150.0
+offset_bottom = 31.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = ExtResource("number_font")
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MpRegen" type="Control" parent="Window/CharacterPanel/Attributes/Right" unique_id=2115439010]
 anchors_preset = 0
 offset_left = 160.0
 offset_top = 131.0
@@ -673,7 +620,7 @@ offset_right = 312.0
 offset_bottom = 162.0
 mouse_filter = 2
 
-[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/MpRegen" unique_id=1150746975]
+[node name="Caption" type="Label" parent="Window/CharacterPanel/Attributes/Right/MpRegen" unique_id=1150746975]
 layout_mode = 0
 offset_left = 3.0
 offset_right = 42.0
@@ -687,7 +634,7 @@ text = "回蓝"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_MpRegen" type="Label" parent="Window/CharacterPanel/Attributes/MpRegen" unique_id=2068569908]
+[node name="m_MpRegen" type="Label" parent="Window/CharacterPanel/Attributes/Right/MpRegen" unique_id=2068569908]
 layout_mode = 0
 offset_left = 40.0
 offset_right = 150.0
@@ -752,13 +699,22 @@ text = "0/140"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="BagPanel" type="Control" parent="Window" unique_id=1453173021]
+[node name="BagPanel" type="Control" parent="Window" unique_id=1453173021 node_paths=PackedStringArray("m_Tabs", "m_Grid", "m_SoulText", "m_PreviousPage", "m_NextPage", "m_PageNumber", "m_SellQuality", "m_QualityOptions")]
 anchors_preset = 0
 offset_left = 507.0
 offset_top = 104.0
 offset_right = 817.0
 offset_bottom = 506.0
 mouse_filter = 2
+script = ExtResource("component_InventoryBagPanel")
+m_Tabs = NodePath("m_Tabs")
+m_Grid = NodePath("m_BagGrid")
+m_SoulText = NodePath("Footer/Soul/m_Soul")
+m_PreviousPage = NodePath("Footer/Pages/m_PreviousPage")
+m_NextPage = NodePath("Footer/Pages/m_NextPage")
+m_PageNumber = NodePath("Footer/Pages/m_PageNumber")
+m_SellQuality = NodePath("Footer/m_SellQuality")
+m_QualityOptions = NodePath("Footer/m_SellQuality/m_QualityOptions")
 
 [node name="m_Tabs" type="Control" parent="Window/BagPanel" unique_id=1058678713]
 anchors_preset = 0
@@ -891,9 +847,9 @@ vertical_alignment = 1
 [node name="m_BagGrid" type="GridContainer" parent="Window/BagPanel" unique_id=896351374]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 51.0
+offset_top = 45.0
 offset_right = 295.0
-offset_bottom = 334.0
+offset_bottom = 328.0
 mouse_filter = 2
 theme_override_constants/h_separation = 11
 theme_override_constants/v_separation = 12
@@ -977,16 +933,17 @@ layout_mode = 2
 [node name="Footer" type="Control" parent="Window/BagPanel" unique_id=2029022878]
 anchors_preset = 0
 offset_left = 4.0
-offset_top = 342.0
+offset_top = 337.0
 offset_right = 302.0
-offset_bottom = 400.0
+offset_bottom = 395.0
 mouse_filter = 2
 
 [node name="Soul" type="Control" parent="Window/BagPanel/Footer" unique_id=1890665881]
 anchors_preset = 0
 offset_left = 12.0
+offset_top = -2.0
 offset_right = 176.0
-offset_bottom = 28.0
+offset_bottom = 26.0
 mouse_filter = 2
 
 [node name="Plate" type="NinePatchRect" parent="Window/BagPanel/Footer/Soul" unique_id=1356287443]
@@ -1015,26 +972,30 @@ vertical_alignment = 1
 [node name="m_SellQuality" type="Button" parent="Window/BagPanel/Footer" unique_id=825850030]
 layout_mode = 0
 offset_left = 190.0
+offset_top = -2.0
 offset_right = 288.0
-offset_bottom = 28.0
+offset_bottom = 26.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 theme_override_font_sizes/font_size = 14
 text = "一键出售"
 
 [node name="m_QualityOptions" type="PopupMenu" parent="Window/BagPanel/Footer/m_SellQuality" unique_id=1662396443]
+oversampling_override = 1.0
+visible = true
 
 [node name="Pages" type="HBoxContainer" parent="Window/BagPanel/Footer" unique_id=1194183497]
 layout_mode = 0
-offset_left = 35.0
+offset_left = 42.0
 offset_top = 32.0
-offset_right = 269.0
+offset_right = 276.0
 offset_bottom = 58.0
 mouse_filter = 2
 theme_override_constants/separation = 6
+alignment = 1
 
 [node name="m_PreviousPage" type="TextureButton" parent="Window/BagPanel/Footer/Pages" unique_id=1487092114]
-custom_minimum_size = Vector2(78, 26)
+custom_minimum_size = Vector2(70, 26)
 layout_mode = 2
 focus_mode = 0
 mouse_default_cursor_shape = 2
@@ -1054,7 +1015,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="m_NextPage" type="TextureButton" parent="Window/BagPanel/Footer/Pages" unique_id=10065010]
-custom_minimum_size = Vector2(78, 26)
+custom_minimum_size = Vector2(70, 26)
 layout_mode = 2
 focus_mode = 0
 mouse_default_cursor_shape = 2
@@ -1068,7 +1029,7 @@ stretch_mode = 0
 [node name="m_Actions" parent="." unique_id=1107248748 instance=ExtResource("actions")]
 layout_mode = 1
 
-[node name="m_SaleConfirmation" type="Control" parent="." unique_id=541932993]
+[node name="m_SaleConfirmation" type="Control" parent="." unique_id=541932993 node_paths=PackedStringArray("m_SaleSummary", "m_SaleCancel", "m_SaleConfirm")]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -1076,6 +1037,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("component_InventorySaleConfirmation")
+m_SaleSummary = NodePath("Center/Panel/Content/m_SaleSummary")
+m_SaleCancel = NodePath("Center/Panel/Content/Actions/m_SaleCancel")
+m_SaleConfirm = NodePath("Center/Panel/Content/Actions/m_SaleConfirm")
 
 [node name="Dim" type="ColorRect" parent="m_SaleConfirmation" unique_id=1449887064]
 layout_mode = 1
@@ -1099,7 +1064,7 @@ mouse_filter = 2
 [node name="Panel" type="PanelContainer" parent="m_SaleConfirmation/Center" unique_id=1011931979]
 custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
-theme_override_styles/panel = SubResource("sale_panel")
+theme_override_styles/panel = ExtResource("dialog_panel_style")
 
 [node name="Content" type="VBoxContainer" parent="m_SaleConfirmation/Center/Panel" unique_id=53773358]
 layout_mode = 2
@@ -1137,12 +1102,10 @@ alignment = 1
 custom_minimum_size = Vector2(120, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-theme_override_styles/focus = SubResource("control_hover")
 text = "取消"
 
 [node name="m_SaleConfirm" type="Button" parent="m_SaleConfirmation/Center/Panel/Content/Actions" unique_id=1330021323]
 custom_minimum_size = Vector2(120, 34)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-theme_override_styles/focus = SubResource("control_hover")
 text = "确认出售"

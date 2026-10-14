@@ -49,7 +49,8 @@ public partial class MapForm
     /// <param name="userData">本次窗口打开参数。</param>
     public void OnOpen(object userData)
     {
-        if (m_IsOpen) GF.Event.Unsubscribe(ProfileSavedEventArgs.EventId, OnProfileSaved);
+        if (m_IsOpen)
+            GF.Event.Unsubscribe(ProfileSavedEventArgs.EventId, OnProfileSaved);
         m_IsOpen = true;
         GF.Event.Subscribe(ProfileSavedEventArgs.EventId, OnProfileSaved);
         m_Save.Disabled = false;
@@ -67,19 +68,23 @@ public partial class MapForm
     public void OnClose(bool isShutdown, object userData)
     {
         ReleaseSubscription();
-        if (IsInstanceValid(m_LocationAnimation)) ResetLocationHover();
-        if (!isShutdown && IsInstanceValid(this)) Visible = false;
+        if (IsInstanceValid(m_LocationAnimation))
+            ResetLocationHover();
+        if (!isShutdown && IsInstanceValid(this))
+            Visible = false;
     }
 
     /// <summary>回池时清除本次打开的引用和框架编号。</summary>
     public void OnRecycle()
     {
         ReleaseSubscription();
-        if (IsInstanceValid(m_LocationAnimation)) ResetLocationHover();
+        if (IsInstanceValid(m_LocationAnimation))
+            ResetLocationHover();
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = true;
-        if (IsInstanceValid(this)) Visible = false;
+        if (IsInstanceValid(this))
+            Visible = false;
     }
 
     /// <summary>界面暂停；点击导航不依赖轮询。</summary>
@@ -113,7 +118,8 @@ public partial class MapForm
     /// <param name="userData">新打开参数；null 保持当前绑定。</param>
     public void OnRefocus(object userData)
     {
-        if (userData != null) OnOpen(userData);
+        if (userData != null)
+            OnOpen(userData);
     }
 
     /// <summary>记录框架分配的窗口层级。</summary>
@@ -128,7 +134,8 @@ public partial class MapForm
     /// <summary>返回主菜单。</summary>
     private void OnBackClicked()
     {
-        if (!m_IsOpen) return;
+        if (!m_IsOpen)
+            return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, TitleRequestedEventArgs.Create(SerialId));
     }
@@ -136,7 +143,8 @@ public partial class MapForm
     /// <summary>请求流程提交当前档案，等待期间禁用重复点击。</summary>
     private void OnSaveClicked()
     {
-        if (!m_IsOpen || m_Save.Disabled) return;
+        if (!m_IsOpen || m_Save.Disabled)
+            return;
         m_Save.Disabled = true;
         m_Save.MouseDefaultCursorShape = CursorShape.Arrow;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
@@ -148,7 +156,8 @@ public partial class MapForm
     private void OnProfileSaved(object sender, GameEventArgs args)
     {
         var result = (ProfileSavedEventArgs)args;
-        if (!m_IsOpen || result.FormSerialId != SerialId) return;
+        if (!m_IsOpen || result.FormSerialId != SerialId)
+            return;
         m_Save.Disabled = false;
         m_Save.MouseDefaultCursorShape = CursorShape.PointingHand;
         m_Save.SelfModulate = result.Succeeded ? new Color(0.65f, 1f, 0.65f) : new Color(1f, 0.55f, 0.55f);
@@ -158,13 +167,15 @@ public partial class MapForm
     /// <summary>关闭即解除本窗口的保存按钮结果订阅。</summary>
     private void ReleaseSubscription()
     {
-        if (m_IsOpen) GF.Event.Unsubscribe(ProfileSavedEventArgs.EventId, OnProfileSaved);
+        if (m_IsOpen)
+            GF.Event.Unsubscribe(ProfileSavedEventArgs.EventId, OnProfileSaved);
         m_IsOpen = false;
     }
     /// <summary>提交花果山的配置主键。</summary>
     private void OnHuaguoshanClicked()
     {
-        if (!m_IsOpen) return;
+        if (!m_IsOpen)
+            return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, LevelSelectedEventArgs.Create(SerialId, 1));
     }
@@ -172,7 +183,8 @@ public partial class MapForm
     /// <summary>悬停时轻微放大，并循环闪烁原图中的黄色光晕。</summary>
     private void OnLocationMouseEntered()
     {
-        if (!m_IsOpen) return;
+        if (!m_IsOpen)
+            return;
         m_LocationAnimation.Play("location/hover");
         m_LocationAnimation.Advance(0);
     }
@@ -180,8 +192,10 @@ public partial class MapForm
     /// <summary>鼠标离开后继续显示最新开放关卡的边缘闪烁。</summary>
     private void OnLocationMouseExited()
     {
-        if (m_IsOpen) PlayCurrentLocationHint();
-        else ResetLocationHover();
+        if (m_IsOpen)
+            PlayCurrentLocationHint();
+        else
+            ResetLocationHover();
     }
 
     /// <summary>当前仅花果山开放，以普通尺寸持续提示最新进度；关闭后不保留动画。</summary>

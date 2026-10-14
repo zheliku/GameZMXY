@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://d1snaq64saolw"]
 
-[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/Widgets/ResourceBar.cs" id="bar"]
+[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/BattleHud/Components/ResourceBar.cs" id="bar"]
 [ext_resource type="Texture2D" uid="uid://doj1dekuqqevf" path="res://TheGame/Sprites/UI/hud/boss_health_fill.png" id="fill"]
 [ext_resource type="FontFile" uid="uid://c5eah8rqotkno" path="res://TheGame/MainPack/Fonts/df_poster_w12.ttc" id="font"]
-[ext_resource type="Script" uid="uid://bn2sg3olgc8dc" path="res://TheGame/GameScripts/UI/Widgets/EncounterHealthBar.cs" id="script"]
+[ext_resource type="Script" uid="uid://bn2sg3olgc8dc" path="res://TheGame/GameScripts/UI/BattleHud/Components/EncounterHealthBar.cs" id="script"]
 [ext_resource type="Texture2D" uid="uid://csf5pqq6wfrx1" path="res://TheGame/Sprites/UI/hud/boss_health_under.png" id="under"]
 
 [node name="EncounterHealthBar" type="Control" unique_id=1140017495 node_paths=PackedStringArray("m_Health", "m_Name")]

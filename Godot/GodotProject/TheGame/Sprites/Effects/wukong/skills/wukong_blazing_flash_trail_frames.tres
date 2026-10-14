@@ -1,0 +1,56 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_blazing_flash_trail_atlas.png" id="atlas"]
+
+[sub_resource type="AtlasTexture" id="play_0"]
+atlas = ExtResource("atlas")
+region = Rect2(0, 0, 588, 102)
+
+
+[sub_resource type="AtlasTexture" id="play_1"]
+atlas = ExtResource("atlas")
+region = Rect2(588, 0, 588, 102)
+
+
+[sub_resource type="AtlasTexture" id="play_2"]
+atlas = ExtResource("atlas")
+region = Rect2(1176, 0, 588, 102)
+
+
+[sub_resource type="AtlasTexture" id="play_3"]
+atlas = ExtResource("atlas")
+region = Rect2(1764, 0, 588, 102)
+
+
+[sub_resource type="AtlasTexture" id="play_4"]
+atlas = ExtResource("atlas")
+region = Rect2(2352, 0, 588, 102)
+
+
+[sub_resource type="AtlasTexture" id="play_5"]
+atlas = ExtResource("atlas")
+region = Rect2(2940, 0, 588, 102)
+
+
+[sub_resource type="AtlasTexture" id="play_6"]
+atlas = ExtResource("atlas")
+region = Rect2(0, 102, 588, 102)
+
+
+[sub_resource type="AtlasTexture" id="play_7"]
+atlas = ExtResource("atlas")
+region = Rect2(588, 102, 588, 102)
+
+
+[sub_resource type="AtlasTexture" id="play_8"]
+atlas = ExtResource("atlas")
+region = Rect2(1176, 102, 588, 102)
+
+
+[sub_resource type="AtlasTexture" id="play_9"]
+atlas = ExtResource("atlas")
+region = Rect2(1764, 102, 588, 102)
+
+
+[resource]
+animations = [{"name": &"play", "loop": false, "speed": 24.0, "frames": [{"duration": 1.0, "texture": SubResource("play_0")}, {"duration": 1.0, "texture": SubResource("play_1")}, {"duration": 1.0, "texture": SubResource("play_2")}, {"duration": 1.0, "texture": SubResource("play_3")}, {"duration": 1.0, "texture": SubResource("play_4")}, {"duration": 1.0, "texture": SubResource("play_5")}, {"duration": 1.0, "texture": SubResource("play_6")}, {"duration": 1.0, "texture": SubResource("play_7")}, {"duration": 1.0, "texture": SubResource("play_8")}, {"duration": 1.0, "texture": SubResource("play_9")}]}]

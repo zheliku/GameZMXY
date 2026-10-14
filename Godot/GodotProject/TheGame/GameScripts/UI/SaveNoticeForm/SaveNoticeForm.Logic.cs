@@ -26,7 +26,8 @@ public partial class SaveNoticeForm
         m_UIFormAssetName = uiFormAssetName;
         m_UIGroup = uiGroup;
         m_PauseCoveredUIForm = pauseCoveredUIForm;
-        if (isNewInstance) m_SaveFeedbackAnimation.AnimationFinished += OnAnimationFinished;
+        if (isNewInstance)
+            m_SaveFeedbackAnimation.AnimationFinished += OnAnimationFinished;
     }
 
     /// <summary>在应用预加载后开放监听，文字默认隐藏。</summary>
@@ -57,7 +58,8 @@ public partial class SaveNoticeForm
     /// <param name="name">结束的动画名称。</param>
     private void OnAnimationFinished(StringName name)
     {
-        if (name == "feedback/show") ResetFeedback();
+        if (name == "feedback/show")
+            ResetFeedback();
     }
 
     /// <summary>复位外置动画，避免下一次提示继承淡出状态。</summary>
@@ -75,7 +77,8 @@ public partial class SaveNoticeForm
     public void OnClose(bool isShutdown, object userData)
     {
         ReleaseSubscription();
-        if (!isShutdown) ResetFeedback();
+        if (!isShutdown)
+            ResetFeedback();
     }
 
     /// <summary>回池清除框架编号与订阅。</summary>
@@ -88,7 +91,8 @@ public partial class SaveNoticeForm
     /// <summary>解除本次显示期间的订阅。</summary>
     private void ReleaseSubscription()
     {
-        if (m_IsOpen) GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
+        if (m_IsOpen)
+            GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
         m_IsOpen = false;
     }
 
@@ -97,7 +101,8 @@ public partial class SaveNoticeForm
     /// <param name="realElapseSeconds">真实秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds)
     {
-        if (!m_IsOpen || !m_SaveFeedbackAnimation.IsPlaying()) return;
+        if (!m_IsOpen || !m_SaveFeedbackAnimation.IsPlaying())
+            return;
         ulong now = Time.GetTicksUsec();
         m_SaveFeedbackAnimation.Advance((now - m_LastTick) / 1_000_000d);
         m_LastTick = now;

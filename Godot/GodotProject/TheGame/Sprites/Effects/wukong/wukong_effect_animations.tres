@@ -1,6 +1,7 @@
 [gd_resource type="SpriteFrames" format=3 uid="uid://boxumpj2pyv2s"]
 
 [ext_resource type="Texture2D" uid="uid://cuhegh7fbyvok" path="res://TheGame/Sprites/Effects/wukong/wukong_attack_effects.png" id="effects"]
+[ext_resource type="Texture2D" uid="uid://d4gmiho8qq84j" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_skill_inline_effects.png" id="skills"]
 
 [sub_resource type="AtlasTexture" id="effect_attack_1_3"]
 atlas = ExtResource("effects")
@@ -77,6 +78,170 @@ region = Rect2(2000, 600, 400, 300)
 [sub_resource type="AtlasTexture" id="effect_attack_4_4"]
 atlas = ExtResource("effects")
 region = Rect2(0, 900, 400, 300)
+
+[sub_resource type="AtlasTexture" id="blazing_flash_0"]
+atlas = ExtResource("skills")
+region = Rect2(1600, 2000, 800, 400)
+
+[sub_resource type="AtlasTexture" id="blazing_flash_1"]
+atlas = ExtResource("skills")
+region = Rect2(2400, 2000, 800, 400)
+
+[sub_resource type="AtlasTexture" id="blazing_flash_2"]
+atlas = ExtResource("skills")
+region = Rect2(0, 2400, 800, 400)
+
+[sub_resource type="AtlasTexture" id="blazing_flash_3"]
+atlas = ExtResource("skills")
+region = Rect2(800, 2400, 800, 400)
+
+[sub_resource type="AtlasTexture" id="blazing_flash_4"]
+atlas = ExtResource("skills")
+region = Rect2(1600, 2400, 800, 400)
+
+[sub_resource type="AtlasTexture" id="blazing_flash_5"]
+atlas = ExtResource("skills")
+region = Rect2(2400, 2400, 800, 400)
+
+[sub_resource type="AtlasTexture" id="blazing_flash_6"]
+atlas = ExtResource("skills")
+region = Rect2(0, 2800, 800, 400)
+
+[sub_resource type="AtlasTexture" id="blazing_flash_7"]
+atlas = ExtResource("skills")
+region = Rect2(800, 2800, 800, 400)
+
+[sub_resource type="AtlasTexture" id="blazing_flash_8"]
+atlas = ExtResource("skills")
+region = Rect2(1600, 2800, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_storm_0"]
+atlas = ExtResource("skills")
+region = Rect2(2400, 2800, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_storm_1"]
+atlas = ExtResource("skills")
+region = Rect2(0, 3200, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_storm_2"]
+atlas = ExtResource("skills")
+region = Rect2(800, 3200, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_storm_3"]
+atlas = ExtResource("skills")
+region = Rect2(1600, 3200, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_storm_4"]
+atlas = ExtResource("skills")
+region = Rect2(2400, 3200, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_storm_5"]
+atlas = ExtResource("skills")
+region = Rect2(0, 3600, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_storm_6"]
+atlas = ExtResource("skills")
+region = Rect2(800, 3600, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_storm_7"]
+atlas = ExtResource("skills")
+region = Rect2(1600, 3600, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_storm_8"]
+atlas = ExtResource("skills")
+region = Rect2(2400, 3600, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_storm_9"]
+atlas = ExtResource("skills")
+region = Rect2(0, 4000, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_0"]
+atlas = ExtResource("skills")
+region = Rect2(2400, 400, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_1"]
+atlas = ExtResource("skills")
+region = Rect2(0, 800, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_2"]
+atlas = ExtResource("skills")
+region = Rect2(800, 800, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_3"]
+atlas = ExtResource("skills")
+region = Rect2(1600, 800, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_4"]
+atlas = ExtResource("skills")
+region = Rect2(2400, 800, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_5"]
+atlas = ExtResource("skills")
+region = Rect2(0, 1200, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_6"]
+atlas = ExtResource("skills")
+region = Rect2(800, 1200, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_7"]
+atlas = ExtResource("skills")
+region = Rect2(1600, 1200, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_8"]
+atlas = ExtResource("skills")
+region = Rect2(2400, 1200, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_9"]
+atlas = ExtResource("skills")
+region = Rect2(0, 1600, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_10"]
+atlas = ExtResource("skills")
+region = Rect2(800, 1600, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_11"]
+atlas = ExtResource("skills")
+region = Rect2(1600, 1600, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_12"]
+atlas = ExtResource("skills")
+region = Rect2(2400, 1600, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_13"]
+atlas = ExtResource("skills")
+region = Rect2(0, 2000, 800, 400)
+
+[sub_resource type="AtlasTexture" id="flame_thrust_14"]
+atlas = ExtResource("skills")
+region = Rect2(800, 2000, 800, 400)
+
+[sub_resource type="AtlasTexture" id="rising_dragon_4"]
+atlas = ExtResource("skills")
+region = Rect2(0, 0, 800, 400)
+
+[sub_resource type="AtlasTexture" id="rising_dragon_5"]
+atlas = ExtResource("skills")
+region = Rect2(800, 0, 800, 400)
+
+[sub_resource type="AtlasTexture" id="rising_dragon_6"]
+atlas = ExtResource("skills")
+region = Rect2(1600, 0, 800, 400)
+
+[sub_resource type="AtlasTexture" id="rising_dragon_7"]
+atlas = ExtResource("skills")
+region = Rect2(2400, 0, 800, 400)
+
+[sub_resource type="AtlasTexture" id="rising_dragon_8"]
+atlas = ExtResource("skills")
+region = Rect2(0, 400, 800, 400)
+
+[sub_resource type="AtlasTexture" id="rising_dragon_9"]
+atlas = ExtResource("skills")
+region = Rect2(800, 400, 800, 400)
+
+[sub_resource type="AtlasTexture" id="rising_dragon_14"]
+atlas = ExtResource("skills")
+region = Rect2(1600, 400, 800, 400)
 
 [resource]
 animations = [{
@@ -293,9 +458,400 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("blazing_flash_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("blazing_flash_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("blazing_flash_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("blazing_flash_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("blazing_flash_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("blazing_flash_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("blazing_flash_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("blazing_flash_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("blazing_flash_8")
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": 0,
+"name": &"blazing_flash",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": null
 }],
 "loop": 0,
 "name": &"empty",
 "speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": 0,
+"name": &"fire_demon_slash",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("flame_storm_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_storm_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_storm_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_storm_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_storm_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_storm_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_storm_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_storm_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_storm_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_storm_9")
+}],
+"loop": 0,
+"name": &"flame_storm",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("flame_thrust_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_11")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_12")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_13")
+}, {
+"duration": 1.0,
+"texture": SubResource("flame_thrust_14")
+}],
+"loop": 0,
+"name": &"flame_thrust",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": SubResource("rising_dragon_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("rising_dragon_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("rising_dragon_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("rising_dragon_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("rising_dragon_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("rising_dragon_9")
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": SubResource("rising_dragon_14")
+}],
+"loop": 0,
+"name": &"rising_dragon",
+"speed": 24.0
 }]

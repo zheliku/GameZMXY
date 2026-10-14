@@ -77,7 +77,8 @@ public partial class LootOrbNode : AnimatedSprite2D, IPoolable
         }
         float dt = (float)delta;
         m_Age += dt;
-        if (m_Age < m_Config.Delay) return;
+        if (m_Age < m_Config.Delay)
+            return;
         if (m_Age < m_Config.Delay + m_Config.RiseDuration)
         {
             float t = (m_Age - m_Config.Delay) / m_Config.RiseDuration;

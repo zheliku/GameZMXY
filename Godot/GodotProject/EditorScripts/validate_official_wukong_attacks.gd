@@ -105,7 +105,9 @@ func _run() -> void:
         for armed in range(2):
             body.texture = appearance.get("m_ArmoredBody" if armor else "m_BaseBody")
             weapon.texture = appearance.get("m_EquippedWeapon" if armed else "m_BaseWeapon")
-            var atlas_size := Vector2(int(manifest.columns) * 200, int(manifest.rows) * 200)
+            # Skills append after the original 87 poses on the unchanged grid.
+            var atlas_size := Vector2(body.hframes * 200, body.vframes * 200)
+            _check(body.hframes == int(manifest.columns) and body.vframes >= int(manifest.rows), "Existing pose grid changed")
             _check(body.texture.get_size() == atlas_size and weapon.texture.get_size() == atlas_size, "Unexpected atlas registration")
             var body_image := body.texture.get_image()
             var weapon_image := weapon.texture.get_image()

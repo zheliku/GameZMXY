@@ -101,10 +101,13 @@ public sealed class EquipmentModule
     {
         ArgumentNullException.ThrowIfNull(profile);
         var item = profile.Inventory.Items.FirstOrDefault(x => x.InstanceId == instanceId);
-        if (item == null) return false;
+        if (item == null)
+            return false;
         var definition = m_Definitions.Get(item.EquipmentId);
-        if ((int)definition.Owner != profile.ActiveHeroId) return false;
-        if (!profile.Inventory.Exchange(instanceId, profile.ActiveEquipment.Get(definition.Slot))) return false;
+        if ((int)definition.Owner != profile.ActiveHeroId)
+            return false;
+        if (!profile.Inventory.Exchange(instanceId, profile.ActiveEquipment.Get(definition.Slot)))
+            return false;
         profile.ActiveEquipment.Set(definition.Slot, item);
         profile.Inventory.NotifyChanged();
         return true;
@@ -118,7 +121,8 @@ public sealed class EquipmentModule
     {
         ArgumentNullException.ThrowIfNull(profile);
         var item = profile.ActiveEquipment.Get(slot);
-        if (item == null || !profile.Inventory.Exchange(Guid.Empty, item)) return false;
+        if (item == null || !profile.Inventory.Exchange(Guid.Empty, item))
+            return false;
         profile.ActiveEquipment.Set(slot, null);
         profile.Inventory.NotifyChanged();
         return true;
@@ -132,10 +136,13 @@ public sealed class EquipmentModule
     {
         ArgumentNullException.ThrowIfNull(profile);
         var item = profile.Inventory.Items.FirstOrDefault(x => x.InstanceId == instanceId);
-        if (item == null) return false;
+        if (item == null)
+            return false;
         int price = m_Definitions.Get(item.EquipmentId).SellPrice;
-        if (price > int.MaxValue - profile.Wallet.Soul) return false;
-        if (!profile.Inventory.Exchange(instanceId, null)) return false;
+        if (price > int.MaxValue - profile.Wallet.Soul)
+            return false;
+        if (!profile.Inventory.Exchange(instanceId, null))
+            return false;
         // 两份状态已提交再通知；钱包观察者看到的背包也已移除此物。
         profile.Wallet.AddSoul(price);
         profile.Inventory.NotifyChanged();
@@ -149,18 +156,21 @@ public sealed class EquipmentModule
     public int SellByQuality(PlayerProfile profile, EquipmentQuality quality)
     {
         ArgumentNullException.ThrowIfNull(profile);
-        if (!Enum.IsDefined(quality)) return 0;
+        if (!Enum.IsDefined(quality))
+            return 0;
         HashSet<Guid> ids = new();
         long price = 0;
         foreach (var item in profile.Inventory.Items)
         {
             var definition = m_Definitions.Get(item.EquipmentId);
-            if (definition.Quality != quality) continue;
+            if (definition.Quality != quality)
+                continue;
             ids.Add(item.InstanceId);
             price += definition.SellPrice;
         }
 
-        if (ids.Count == 0 || price > int.MaxValue - profile.Wallet.Soul || !profile.Inventory.RemoveAll(ids)) return 0;
+        if (ids.Count == 0 || price > int.MaxValue - profile.Wallet.Soul || !profile.Inventory.RemoveAll(ids))
+            return 0;
         profile.Wallet.AddSoul((int)price);
         profile.Inventory.NotifyChanged();
         return ids.Count;

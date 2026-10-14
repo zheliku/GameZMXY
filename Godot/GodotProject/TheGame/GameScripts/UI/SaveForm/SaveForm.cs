@@ -85,41 +85,7 @@ namespace GameLogic.UI
 		[Export]
 		private Label m_Status;
 		[Export]
-		private TextureButton m_Slot1;
-		[Export]
-		private Label m_Name1;
-		[Export]
-		private Label m_Date1;
-		[Export]
-		private TextureButton m_Slot2;
-		[Export]
-		private Label m_Name2;
-		[Export]
-		private Label m_Date2;
-		[Export]
-		private TextureButton m_Slot3;
-		[Export]
-		private Label m_Name3;
-		[Export]
-		private Label m_Date3;
-		[Export]
-		private TextureButton m_Slot4;
-		[Export]
-		private Label m_Name4;
-		[Export]
-		private Label m_Date4;
-		[Export]
-		private TextureButton m_Slot5;
-		[Export]
-		private Label m_Name5;
-		[Export]
-		private Label m_Date5;
-		[Export]
-		private TextureButton m_Slot6;
-		[Export]
-		private Label m_Name6;
-		[Export]
-		private Label m_Date6;
+		private Control m_Slots;
 
 	}
 }

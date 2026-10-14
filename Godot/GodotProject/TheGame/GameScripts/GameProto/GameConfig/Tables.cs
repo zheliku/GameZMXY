@@ -294,6 +294,132 @@ public partial class Tables
             m_TbPickupConfig.ResolveRef(this);
         }
     }
+    /// <summary>
+    /// 造一主动技能面板、学习费用与耗蓝
+    /// </summary>
+    private Skills.TbSkillConfig m_TbSkillConfig;
+    public Skills.TbSkillConfig TbSkillConfig
+    {
+        get
+        {
+            if (m_TbSkillConfig == null)
+            {
+                m_TbSkillConfig = new Skills.TbSkillConfig(defaultLoader("skills_tbskillconfig"));
+                m_TbSkillConfig.ResolveRef(this);
+            }
+            return m_TbSkillConfig;
+        }
+        set
+        {
+            m_TbSkillConfig = value;
+            m_TbSkillConfig.ResolveRef(this);
+        }
+    }
+    /// <summary>
+    /// 造一五项被动，每项五级
+    /// </summary>
+    private Skills.TbPassiveConfig m_TbPassiveConfig;
+    public Skills.TbPassiveConfig TbPassiveConfig
+    {
+        get
+        {
+            if (m_TbPassiveConfig == null)
+            {
+                m_TbPassiveConfig = new Skills.TbPassiveConfig(defaultLoader("skills_tbpassiveconfig"));
+                m_TbPassiveConfig.ResolveRef(this);
+            }
+            return m_TbPassiveConfig;
+        }
+        set
+        {
+            m_TbPassiveConfig = value;
+            m_TbPassiveConfig.ResolveRef(this);
+        }
+    }
+    /// <summary>
+    /// 技能分段威力、伤害类型、击退与总命中预算
+    /// </summary>
+    private Skills.TbSkillHitConfig m_TbSkillHitConfig;
+    public Skills.TbSkillHitConfig TbSkillHitConfig
+    {
+        get
+        {
+            if (m_TbSkillHitConfig == null)
+            {
+                m_TbSkillHitConfig = new Skills.TbSkillHitConfig(defaultLoader("skills_tbskillhitconfig"));
+                m_TbSkillHitConfig.ResolveRef(this);
+            }
+            return m_TbSkillHitConfig;
+        }
+        set
+        {
+            m_TbSkillHitConfig = value;
+            m_TbSkillHitConfig.ResolveRef(this);
+        }
+    }
+    /// <summary>
+    /// 已准备的悟空动作资源、起手音与无敌时间
+    /// </summary>
+    private Skills.TbSkillActionConfig m_TbSkillActionConfig;
+    public Skills.TbSkillActionConfig TbSkillActionConfig
+    {
+        get
+        {
+            if (m_TbSkillActionConfig == null)
+            {
+                m_TbSkillActionConfig = new Skills.TbSkillActionConfig(defaultLoader("skills_tbskillactionconfig"));
+                m_TbSkillActionConfig.ResolveRef(this);
+            }
+            return m_TbSkillActionConfig;
+        }
+        set
+        {
+            m_TbSkillActionConfig = value;
+            m_TbSkillActionConfig.ResolveRef(this);
+        }
+    }
+    /// <summary>
+    /// 悟空独立特效、分段声音与普通/无双缩放
+    /// </summary>
+    private Skills.TbSkillEffectConfig m_TbSkillEffectConfig;
+    public Skills.TbSkillEffectConfig TbSkillEffectConfig
+    {
+        get
+        {
+            if (m_TbSkillEffectConfig == null)
+            {
+                m_TbSkillEffectConfig = new Skills.TbSkillEffectConfig(defaultLoader("skills_tbskilleffectconfig"));
+                m_TbSkillEffectConfig.ResolveRef(this);
+            }
+            return m_TbSkillEffectConfig;
+        }
+        set
+        {
+            m_TbSkillEffectConfig = value;
+            m_TbSkillEffectConfig.ResolveRef(this);
+        }
+    }
+    /// <summary>
+    /// 悟空技能秒制位移、分段编号、特效及条件分支
+    /// </summary>
+    private Skills.TbSkillTimelineConfig m_TbSkillTimelineConfig;
+    public Skills.TbSkillTimelineConfig TbSkillTimelineConfig
+    {
+        get
+        {
+            if (m_TbSkillTimelineConfig == null)
+            {
+                m_TbSkillTimelineConfig = new Skills.TbSkillTimelineConfig(defaultLoader("skills_tbskilltimelineconfig"));
+                m_TbSkillTimelineConfig.ResolveRef(this);
+            }
+            return m_TbSkillTimelineConfig;
+        }
+        set
+        {
+            m_TbSkillTimelineConfig = value;
+            m_TbSkillTimelineConfig.ResolveRef(this);
+        }
+    }
 
     #endregion
 

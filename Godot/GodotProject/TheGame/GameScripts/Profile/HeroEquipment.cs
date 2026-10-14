@@ -23,7 +23,8 @@ public sealed class HeroEquipment
     /// <exception cref="ArgumentOutOfRangeException">部位无效。</exception>
     public EquipmentInstance Get(EquipmentSlot slot) => slot switch
     {
-        EquipmentSlot.Weapon => Weapon, EquipmentSlot.Armor => Armor,
+        EquipmentSlot.Weapon => Weapon,
+        EquipmentSlot.Armor => Armor,
         _ => throw new ArgumentOutOfRangeException(nameof(slot))
     };
 
@@ -31,8 +32,10 @@ public sealed class HeroEquipment
     /// <returns>武器、防具，不包含空槽。</returns>
     public IEnumerable<EquipmentInstance> EnumerateItems()
     {
-        if (Weapon != null) yield return Weapon;
-        if (Armor != null) yield return Armor;
+        if (Weapon != null)
+            yield return Weapon;
+        if (Armor != null)
+            yield return Armor;
     }
 
     /// <summary>事务完成背包校验和修改后，提交单个装备栏。</summary>
@@ -40,9 +43,12 @@ public sealed class HeroEquipment
     /// <param name="item">穿上的实例；空表示卸下。</param>
     internal void Set(EquipmentSlot slot, EquipmentInstance item)
     {
-        if (slot == EquipmentSlot.Weapon) Weapon = item;
-        else if (slot == EquipmentSlot.Armor) Armor = item;
-        else throw new ArgumentOutOfRangeException(nameof(slot));
+        if (slot == EquipmentSlot.Weapon)
+            Weapon = item;
+        else if (slot == EquipmentSlot.Armor)
+            Armor = item;
+        else
+            throw new ArgumentOutOfRangeException(nameof(slot));
         Changed?.Invoke();
     }
 

@@ -1,6 +1,7 @@
 extends SceneTree
 ## 一次性迁移：旧项目伤害数字（Art/AllNumber/<样式>/<名>_0..9.png，每位一张）→ 新工程每样式一张横条图集。
 ## 横条 10 格（0..9），格宽 = 旧单图宽；飘字按格切 AtlasTexture，一张图一个 ext_resource。
+## 等宽格只决定存储位置；FloatingTextNode 按实际字符轮廓宽度排布，不把格宽当作字符步长。
 ## 运行：S:\Godot4\Godot4CSharp_console.exe --headless --script Tools/LegacyMigration/gen_damage_numbers.gd
 ## 只读旧项目（Image.load_from_file 读 PNG，不经旧工程 import）；产物登记 Docs/LegacyAssetMap.md。
 

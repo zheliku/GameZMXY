@@ -1,0 +1,26 @@
+[gd_scene format=3]
+
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_descent_frames.tres" id="frames"]
+[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Skills/wukong_fire_demon_descent_library.tres" id="animation"]
+
+[sub_resource type="RectangleShape2D" id="rest"]
+size = Vector2(1, 1)
+
+[node name="FireDemonDescent" type="Node2D"]
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("frames")
+animation = &"play"
+offset = Vector2(95, 83.95)
+
+[node name="HitBox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 32
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox"]
+shape = SubResource("rest")
+disabled = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries/ = ExtResource("animation")

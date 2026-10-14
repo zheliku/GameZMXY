@@ -79,7 +79,8 @@ public sealed class MusouTests
             Assert.True(gauge.TryActivate());
         }
         whole.Advance(5);
-        for (int i = 0; i < 5 * updatesPerSecond; i++) split.Advance(1f / updatesPerSecond);
+        for (int i = 0; i < 5 * updatesPerSecond; i++)
+            split.Advance(1f / updatesPerSecond);
         Assert.Equal(66, whole.Value);
         Assert.Equal(whole.Value, split.Value);
         whole.Advance(20);
@@ -87,52 +88,56 @@ public sealed class MusouTests
         Assert.False(whole.IsActive);
         Assert.False(split.IsActive);
     }
-	/// <summary>未满不能开启；开启后失去满值提示且命中不续充、不能重开。</summary>
-	[Fact]
-	public void Activation_RequiresFullGaugeAndLocksGains()
-	{
-		MusouGauge gauge = new();
-		gauge.Reset(100, 1f, 6f);
-		gauge.Add(99);
-		Assert.False(gauge.TryActivate());
-		gauge.Add(1);
-		Assert.Equal(100, gauge.Value);
-		Assert.True(gauge.TryActivate());
-		Assert.True(gauge.IsActive);
-		Assert.False(gauge.IsFull);
-		Assert.False(gauge.TryActivate());
-		gauge.Advance(2.5f);
-		gauge.Add(40);
-		Assert.Equal(83, gauge.Value);
-	}
+    /// <summary>未满不能开启；开启后失去满值提示且命中不续充、不能重开。</summary>
+    [Fact]
+    public void Activation_RequiresFullGaugeAndLocksGains()
+    {
+        MusouGauge gauge = new();
+        gauge.Reset(100, 1f, 6f);
+        gauge.Add(99);
+        Assert.False(gauge.TryActivate());
+        gauge.Add(1);
+        Assert.Equal(100, gauge.Value);
+        Assert.True(gauge.TryActivate());
+        Assert.True(gauge.IsActive);
+        Assert.False(gauge.IsFull);
+        Assert.False(gauge.TryActivate());
+        gauge.Advance(2.5f);
+        gauge.Add(40);
+        Assert.Equal(83, gauge.Value);
+    }
 
-	/// <summary>观察者能读到完整激活/耗尽快照；不同步长不改变持续时间，清零后可再次蓄力。</summary>
-	[Fact]
-	public void TimeAndReset_NotifyCommittedStateAndAllowReuse()
-	{
-		MusouGauge gauge = new();
-		gauge.Reset(100, 1f, 6f);
-		gauge.Add(100);
-		int notices = 0;
-		bool observedActive = false;
-		gauge.Changed += () => { notices++; observedActive = gauge.IsActive; };
-		Assert.True(gauge.TryActivate());
-		Assert.True(observedActive);
-		gauge.Advance(6.25f);
-		Assert.Equal(57, gauge.Value);
-		gauge.Advance(20f);
-		Assert.False(observedActive);
-		Assert.Equal(0, gauge.Value);
-		Assert.Equal(3, notices);
-		gauge.Add(100);
-		Assert.True(gauge.TryActivate());
-		gauge.Reset(50, 1f, 6f);
-		Assert.False(gauge.IsActive);
-		Assert.Equal((0, 50), (gauge.Value, gauge.Max));
-		gauge.Add(50);
-		Assert.True(gauge.TryActivate());
-		gauge.Clear();
-		Assert.False(gauge.IsActive);
-		Assert.Equal(0, gauge.Value);
-	}
+    /// <summary>观察者能读到完整激活/耗尽快照；不同步长不改变持续时间，清零后可再次蓄力。</summary>
+    [Fact]
+    public void TimeAndReset_NotifyCommittedStateAndAllowReuse()
+    {
+        MusouGauge gauge = new();
+        gauge.Reset(100, 1f, 6f);
+        gauge.Add(100);
+        int notices = 0;
+        bool observedActive = false;
+        gauge.Changed += () =>
+        {
+            notices++;
+            observedActive = gauge.IsActive;
+        };
+        Assert.True(gauge.TryActivate());
+        Assert.True(observedActive);
+        gauge.Advance(6.25f);
+        Assert.Equal(57, gauge.Value);
+        gauge.Advance(20f);
+        Assert.False(observedActive);
+        Assert.Equal(0, gauge.Value);
+        Assert.Equal(3, notices);
+        gauge.Add(100);
+        Assert.True(gauge.TryActivate());
+        gauge.Reset(50, 1f, 6f);
+        Assert.False(gauge.IsActive);
+        Assert.Equal((0, 50), (gauge.Value, gauge.Max));
+        gauge.Add(50);
+        Assert.True(gauge.TryActivate());
+        gauge.Clear();
+        Assert.False(gauge.IsActive);
+        Assert.Equal(0, gauge.Value);
+    }
 }

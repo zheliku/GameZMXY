@@ -190,8 +190,8 @@ namespace GameLogic
         }
 
         /// <summary>请求关闭加载界面，并等待实际关闭；取消只终止等待，不保存跨周期回调。</summary>
-    /// <param name="cancellationToken">所属流程的取消令牌。</param>
-    /// <returns>窗口实际关闭后的任务。</returns>
+        /// <param name="cancellationToken">所属流程的取消令牌。</param>
+        /// <returns>窗口实际关闭后的任务。</returns>
         public Task CloseLoadingAsync(CancellationToken cancellationToken)
         {
             Task closed = m_CloseCompletion.Task;

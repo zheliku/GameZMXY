@@ -68,7 +68,8 @@ public abstract class MenuProcedure : ProcedureBase
         {
             if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
                 GF.UI.CloseUIForm(m_FormSerialId);
-            if (m_MusicSerialId != 0) GF.Sound.StopSound(m_MusicSerialId, 0.2f);
+            if (m_MusicSerialId != 0)
+                GF.Sound.StopSound(m_MusicSerialId, 0.2f);
         }
         m_FormSerialId = m_MusicSerialId = 0;
         Owner = null;
@@ -95,7 +96,8 @@ public abstract class MenuProcedure : ProcedureBase
     /// <returns>本周期的返回任务。</returns>
     protected async Task ReturnToTitleAsync()
     {
-        if (IsReturningToTitle) return;
+        if (IsReturningToTitle)
+            return;
         IsReturningToTitle = true;
         var token = CancellationToken;
         var owner = Owner;
@@ -105,12 +107,21 @@ public abstract class MenuProcedure : ProcedureBase
             // 捕获本周期引用，等待后不得访问已经换周期的流程字段。
             bool saved = await save.PendingWrite;
             token.ThrowIfCancellationRequested();
-            if (saved) ChangeState<ProcedureTitle>(owner);
-            else Log.Error("[{0}] 存档写入失败，已保留档案，暂不能返回标题。", GetType().Name);
+            if (saved)
+                ChangeState<ProcedureTitle>(owner);
+            else
+                Log.Error("[{0}] 存档写入失败，已保留档案，暂不能返回标题。", GetType().Name);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception error) { Log.Error("[{0}] 返回标题失败：{1}", GetType().Name, error); }
-        finally { if (!token.IsCancellationRequested) IsReturningToTitle = false; }
+        catch (Exception error)
+        {
+            Log.Error("[{0}] 返回标题失败：{1}", GetType().Name, error);
+        }
+        finally
+        {
+            if (!token.IsCancellationRequested)
+                IsReturningToTitle = false;
+        }
     }
 
     /// <summary>目标窗口可见后关闭启动加载界面。</summary>

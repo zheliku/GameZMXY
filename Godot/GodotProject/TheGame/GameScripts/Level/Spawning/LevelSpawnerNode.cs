@@ -43,6 +43,11 @@ public partial class LevelSpawnerNode : Node
     /// <summary>当前会话显示实体失败；控制器负责结束会话。</summary>
     public event Action<Exception> SpawnFailed;
 
+    /// <summary>判断运行实体是否由本会话创建，包含仍在播放死亡动画的怪物。</summary>
+    /// <param name="entityId">GGF 本次显示分配的运行实体编号。</param>
+    /// <returns>是否仍归本会话所有。</returns>
+    public bool OwnsEntity(int entityId) => m_OwnedIds.Contains(entityId);
+
     /// <summary>初始禁用游戏帧调度，加载期不生成实体。</summary>
     public override void _Ready() => SetProcess(false);
 
@@ -198,7 +203,8 @@ public partial class LevelSpawnerNode : Node
         {
             m_Schedule.Release();
             MonsterDefeated?.Invoke(died.Config, died.Position, died.ExperienceReward, died.EquipmentDropPoolId);
-            if (!m_SessionActive) return; // 掉落显示失败可能已让模块同步结束会话。
+            if (!m_SessionActive)
+                return; // 掉落显示失败可能已让模块同步结束会话。
             if (m_Schedule.IsCleared)
             {
                 // 先停调度再分发，控制器可以同步开放下一段通路。

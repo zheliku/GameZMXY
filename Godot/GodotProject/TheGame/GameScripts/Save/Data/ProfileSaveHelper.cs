@@ -22,7 +22,8 @@ public static class ProfileSaveHelper
             var slots = profile.GetEquipment(hero.HeroId);
             data.Heroes.Add(new HeroSaveData
             {
-                HeroId = hero.HeroId, TotalExperience = hero.TotalExperience,
+                HeroId = hero.HeroId,
+                TotalExperience = hero.TotalExperience,
                 WeaponInstanceId = slots.Weapon?.InstanceId ?? Guid.Empty,
                 ArmorInstanceId = slots.Armor?.InstanceId ?? Guid.Empty
             });
@@ -33,7 +34,7 @@ public static class ProfileSaveHelper
             .SelectMany(x => profile.GetEquipment(x).EnumerateItems()));
         foreach (var item in items)
             data.EquipmentItems.Add(new EquipmentSaveData
-                { InstanceId = item.InstanceId, EquipmentId = item.EquipmentId, Attributes = item.Attributes });
+            { InstanceId = item.InstanceId, EquipmentId = item.EquipmentId, Attributes = item.Attributes });
         return data;
     }
 
@@ -78,7 +79,8 @@ public static class ProfileSaveHelper
             snapshot.Soul < 0)
             throw new InvalidOperationException("回滚快照与档案不一致或数值非法。");
         var (bag, slots) = ReadItems(snapshot, profile.Inventory.Capacity);
-        foreach (var hero in snapshot.Heroes) profile.Heroes[hero.HeroId].Restore(hero.TotalExperience);
+        foreach (var hero in snapshot.Heroes)
+            profile.Heroes[hero.HeroId].Restore(hero.TotalExperience);
         profile.Wallet.Restore(snapshot.Soul);
         profile.Inventory.Restore(bag);
         foreach (var hero in snapshot.Heroes)
@@ -139,13 +141,15 @@ public static class ProfileSaveHelper
             if (!slots.TryAdd(hero.HeroId, (Resolve(hero.WeaponInstanceId), Resolve(hero.ArmorInstanceId))))
                 throw new ArgumentException("英雄编号重复。");
         var bag = items.Values.Where(x => !equipped.Contains(x.InstanceId)).ToArray();
-        if (bag.Length > capacity) throw new ArgumentException("装备背包超出容量。");
+        if (bag.Length > capacity)
+            throw new ArgumentException("装备背包超出容量。");
         return (bag, slots);
 
         // 同一实例只能归一个英雄、一个部位所有。
         EquipmentInstance Resolve(Guid id)
         {
-            if (id == Guid.Empty) return null;
+            if (id == Guid.Empty)
+                return null;
             if (!items.TryGetValue(id, out var item) || !equipped.Add(id))
                 throw new ArgumentException("穿戴引用不存在或重复占用实例。");
             return item;
@@ -160,7 +164,8 @@ public static class ProfileSaveHelper
     private static void ValidateSlot(EquipmentInstance item, int heroId, EquipmentSlot slot,
         TbEquipmentConfig definitions)
     {
-        if (item == null) return;
+        if (item == null)
+            return;
         var definition = definitions.Get(item.EquipmentId);
         if ((int)definition.Owner != heroId || definition.Slot != slot)
             throw new ArgumentException("装备不属于该英雄或该部位。");

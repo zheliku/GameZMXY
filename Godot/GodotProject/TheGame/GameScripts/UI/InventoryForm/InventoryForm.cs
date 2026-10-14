@@ -87,63 +87,11 @@ namespace GameLogic.UI
 		[Export]
 		private TextureButton m_Close;
 		[Export]
-		private Label m_Name;
+		private InventoryCharacterPanel m_Character;
 		[Export]
-		private Label m_Level;
+		private InventoryBagPanel m_Bag;
 		[Export]
-		private TextureProgressBar m_Experience;
-		[Export]
-		private Label m_ExperienceText;
-		[Export]
-		private Label m_Soul;
-		[Export]
-		private HeroPreviewNode m_Preview;
-		[Export]
-		private Label m_Hp;
-		[Export]
-		private Label m_Mp;
-		[Export]
-		private Label m_Attack;
-		[Export]
-		private Label m_Defense;
-		[Export]
-		private Label m_Lucky;
-		[Export]
-		private Label m_MagicResistance;
-		[Export]
-		private Label m_Crit;
-		[Export]
-		private Label m_Dodge;
-		[Export]
-		private Label m_HpRegen;
-		[Export]
-		private Label m_MpRegen;
-		[Export]
-		private GridContainer m_BagGrid;
-		[Export]
-		private EquipmentCell m_WeaponSlot;
-		[Export]
-		private EquipmentCell m_ArmorSlot;
-		[Export]
-		private Control m_Tabs;
-		[Export]
-		private TextureButton m_PreviousPage;
-		[Export]
-		private Label m_PageNumber;
-		[Export]
-		private TextureButton m_NextPage;
-		[Export]
-		private Button m_SellQuality;
-		[Export]
-		private PopupMenu m_QualityOptions;
-		[Export]
-		private Control m_SaleConfirmation;
-		[Export]
-		private Label m_SaleSummary;
-		[Export]
-		private Button m_SaleCancel;
-		[Export]
-		private Button m_SaleConfirm;
+		private InventorySaleConfirmation m_SaleConfirmation;
 
 	}
 }

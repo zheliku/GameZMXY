@@ -63,8 +63,10 @@ public partial class LevelModule
     /// <param name="experienceReward">本次击败的经验奖励。</param>
     private void AwardExperience(int experienceReward)
     {
-        if (Outcome != LevelOutcome.Running) return;
-        if (experienceReward <= 0 || !m_Player.IsAlive) return;
+        if (Outcome != LevelOutcome.Running)
+            return;
+        if (experienceReward <= 0 || !m_Player.IsAlive)
+            return;
         m_AwardedExperience += experienceReward;
         if (m_Progression.AddExperience(experienceReward) > 0)
         {
@@ -108,13 +110,14 @@ public partial class LevelModule
     /// <param name="outcome">通关或死亡。</param>
     private void SubmitOutcome(LevelOutcome outcome)
     {
-        if (Outcome != LevelOutcome.Running) return;
+        if (Outcome != LevelOutcome.Running)
+            return;
         Outcome = outcome;
         Result = new LevelResult(outcome, m_ElapsedSeconds,
             (int)Math.Round(100.0 * m_Player.Vitals.Hp / m_Player.Vitals.MaxHp),
             m_DefeatedMonsterCount, m_AwardedExperience);
         ClearLoot();
-        Detach();
+        UnsubscribeProgressEvents();
         m_EntrySnapshot = null;
         CheckpointWrite = m_Save.SaveCheckpointAsync(m_Profile);
         Log.Info("[LevelModule] 关卡 {0}：{1}，击败 {2}，经验 {3}",
@@ -126,14 +129,16 @@ public partial class LevelModule
     /// <param name="delta">游戏帧秒数。</param>
     public override void _Process(double delta)
     {
-        if (m_EntrySnapshot != null && Outcome == LevelOutcome.Running) m_ElapsedSeconds += delta;
+        if (m_EntrySnapshot != null && Outcome == LevelOutcome.Running)
+            m_ElapsedSeconds += delta;
     }
 
     /// <summary>未结算离开时恢复进关档案；已提交和初始化失败不重复操作。</summary>
     private void AbandonProgress()
     {
-        Detach();
-        if (m_EntrySnapshot == null) return;
+        UnsubscribeProgressEvents();
+        if (m_EntrySnapshot == null)
+            return;
         ProfileSaveHelper.RestoreCheckpoint(m_Profile, m_EntrySnapshot);
         m_EntrySnapshot = null;
         Outcome = LevelOutcome.Abandoned;
@@ -141,10 +146,12 @@ public partial class LevelModule
     }
 
     /// <summary>解除英雄的纯 C# 订阅；框架关停时不访问节点或写盘。</summary>
-    public void Detach()
+    public void UnsubscribeProgressEvents()
     {
-        if (m_Player != null) m_Player.Died -= OnHeroDied;
-        if (m_Profile != null) m_Profile.ActiveEquipment.Changed -= OnEquipmentChanged;
+        if (m_Player != null)
+            m_Player.Died -= OnHeroDied;
+        if (m_Profile != null)
+            m_Profile.ActiveEquipment.Changed -= OnEquipmentChanged;
     }
 }
 

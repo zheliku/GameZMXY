@@ -7,10 +7,11 @@ using GodotGameFramework.NodePool;
 
 namespace GameLogic.Drops;
 
-/// <summary>地面恢复品或装备：受重力落地、接触拾取、按游戏秒数过期；关卡拥有回收与收益。</summary>
+/// <summary>地面恢复品或装备：落地、接触入账、上移淡出与按秒过期；关卡拥有回收与收益。</summary>
 public partial class GroundItemNode : CharacterBody2D, IPoolable
 {
     [Export] private Sprite2D m_Icon; // 本次掉落的图标，不在节点内查装备配置。
+    [Export] private AnimationPlayer m_PickupAnimation; // 外置上移淡出动画，按物理游戏秒手动推进。
     private HeroEntity m_Target; // 当前关卡活着的出战英雄。
     private DropConfig m_Config; // 地面存在时间、重力和接触范围。
     private PickupConfig m_Pickup; // 恢复品定义，与装备互斥。
@@ -18,6 +19,7 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable
     private Func<PickupConfig, EquipmentInstance, bool> m_Collect; // 关卡结算；满包返回 false，继续留地。
     private Action<GroundItemNode> m_Finished; // 关卡移除所有权并回池。
     private float m_Age; // 已存在的游戏秒数，暂停时不增加。
+    private bool m_Collected; // 已成功入账，只完成淡出，不再检测接触或过期。
 
     /// <summary>取池时等待本次关卡参数。</summary>
     public void OnGet()
@@ -25,6 +27,8 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable
         SetPhysicsProcess(false);
         Velocity = Vector2.Zero;
         m_Age = 0;
+        m_Collected = false;
+        ResetPresentation();
     }
 
     /// <summary>归还时清除全部借用引用与视觉，防止复用重复入账。</summary>
@@ -39,6 +43,8 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable
         m_Finished = null;
         m_Icon.Texture = null;
         Velocity = Vector2.Zero;
+        m_Collected = false;
+        ResetPresentation();
     }
 
     /// <summary>显示已确定的恢复品或装备；图标由关卡提供。</summary>
@@ -49,15 +55,18 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable
     /// <param name="equipment">实际装备，恢复品时为空。</param>
     /// <param name="texture">通过 GGF 加载的图标。</param>
     /// <param name="collect">结算回调；满包时拒绝领取。</param>
-    /// <param name="finished">过期或拾取后的回收回调。</param>
+    /// <param name="finished">过期或领取动画结束后的回收回调。</param>
     public void Show(Vector2 position, HeroEntity target, DropConfig config, PickupConfig pickup,
         EquipmentInstance equipment, Texture2D texture,
         Func<PickupConfig, EquipmentInstance, bool> collect, Action<GroundItemNode> finished)
     {
-        if ((pickup == null) == (equipment == null)) throw new ArgumentException("一次地面掉落必须且只能包含一种物品。");
+        if ((pickup == null) == (equipment == null))
+            throw new ArgumentException("一次地面掉落必须且只能包含一种物品。");
         GlobalPosition = position;
         Velocity = Vector2.Zero;
         m_Age = 0;
+        m_Collected = false;
+        ResetPresentation();
         m_Target = target;
         m_Config = config;
         m_Pickup = pickup;
@@ -73,7 +82,16 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable
     /// <param name="delta">游戏秒数。</param>
     public override void _PhysicsProcess(double delta)
     {
-        if (delta <= 0) return;
+        if (delta <= 0)
+            return;
+        // 成功领取后只推进表现，暂停停止；交易已经完成，不再访问英雄或物品。
+        if (m_Collected)
+        {
+            m_PickupAnimation.Advance(delta);
+            if (!m_PickupAnimation.IsPlaying())
+                Finish();
+            return;
+        }
         if (m_Target is not { IsAlive: true })
         {
             Finish();
@@ -92,7 +110,26 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable
         MoveAndSlide();
         if (m_Target.HurtBox.GetGlobalBounds().Grow(m_Config.GroundPickupRadius)
                 .HasPoint(GlobalPosition + Vector2.Up * 8)
-            && m_Collect(m_Pickup, m_Equipment)) Finish();
+            && m_Collect(m_Pickup, m_Equipment))
+        {
+            m_Collected = true;
+            Velocity = Vector2.Zero;
+            m_Target = null;
+            m_Config = null;
+            m_Pickup = null;
+            m_Equipment = null;
+            m_Collect = null;
+            m_PickupAnimation.Play("pickup");
+            m_PickupAnimation.Advance(0);
+        }
+    }
+
+    /// <summary>恢复图标原点、透明度与地面阴影，清除上一轮领取表现。</summary>
+    private void ResetPresentation()
+    {
+        m_PickupAnimation.Play("RESET");
+        m_PickupAnimation.Advance(0);
+        m_PickupAnimation.Stop();
     }
 
     /// <summary>先停处理和回调，再交给关卡回收，保证只回收一次。</summary>

@@ -56,6 +56,8 @@
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Monsters\Body\**\*.cs" Link="Linked\MonsterBody\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Fsm\*.cs" Link="Linked\Fsm\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Base\Variable\*.cs" Link="Linked\Framework\Variable\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)Framework\GodotGameFrameworkCore\Variable\VarInt32.cs" Link="Linked\Framework\Variable\VarInt32.cs" />
+    <Compile Include="$(GodotProjectDir)Framework\GodotGameFrameworkCore\Variable\VarSingle.cs" Link="Linked\Framework\Variable\VarSingle.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Base\DataStruct\TypeNamePair.cs" Link="Linked\Framework\TypeNamePair.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Base\GameFrameworkModule.cs" Link="Linked\Framework\GameFrameworkModule.cs" />
   </ItemGroup>

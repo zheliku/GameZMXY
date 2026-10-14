@@ -82,23 +82,11 @@ namespace GameLogic.UI
 		#endregion
 
 		[Export]
-		private ResourceBar m_HpBar;
+		private BattleStatusPanel m_Status;
 		[Export]
-		private ResourceBar m_MpBar;
-		[Export]
-		private ResourceBar m_ExpBar;
-		[Export]
-		private Label m_LevelLabel;
-		[Export]
-		private ResourceBar m_WsBar;
-		[Export]
-		private AnimatedSprite2D m_WsMax;
+		private BattleMenuPanel m_Menu;
 		[Export]
 		private AnimatedSprite2D m_Go;
-		[Export]
-		private TextureButton m_SettingsButton;
-		[Export]
-		private TextureButton m_InventoryButton;
 		[Export]
 		private EncounterHealthBar m_EncounterHealthBar;
 		[Export]

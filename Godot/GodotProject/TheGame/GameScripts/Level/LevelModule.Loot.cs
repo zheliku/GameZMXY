@@ -9,7 +9,7 @@ using GameConfig.Constant;
 using GameLogic.Drops;
 using Godot;
 using GodotGameFramework.NodePool;
-using GameLogic.UI;
+using GameLogic.FloatingText;
 
 namespace GameLogic.Level;
 
@@ -18,7 +18,6 @@ public partial class LevelModule
 {
     private readonly HashSet<GroundItemNode> m_GroundItems = new(); // 本关地面物品；未拾取不会阻止出口。
     private readonly HashSet<LootOrbNode> m_LootOrbs = new(); // 仅本关当前在场的球，不用全池清理影响其他作用域。
-    private readonly HashSet<RecoveryPopNode> m_RecoveryPops = new(); // 本关拾取恢复提示，关卡退出时统一回收。
     private readonly RandomNumberGenerator m_LootRandom = new(); // 本关掉落采样器；纯规则通过委托取值。
     private bool m_ExitRequested; // W 已确认，等待尚在飞行的球接触后提交检查点。
 
@@ -30,7 +29,8 @@ public partial class LevelModule
     private void OnMonsterDefeated(MonsterConfig monster, Vector2 position, int experienceReward,
         EquipmentDropPoolId equipmentPoolId)
     {
-        if (Outcome != LevelOutcome.Running || !m_Player.IsAlive) return;
+        if (Outcome != LevelOutcome.Running || !m_Player.IsAlive)
+            return;
         m_DefeatedMonsterCount++;
         AwardExperience(experienceReward);
         var config = ConfigSystem.Instance.Tables.TbDropConfig.Data;
@@ -84,38 +84,25 @@ public partial class LevelModule
     /// <returns>是否完成领取。</returns>
     private bool TryCollectGroundItem(PickupConfig pickup, EquipmentInstance equipment)
     {
-        if (Outcome != LevelOutcome.Running || !m_Player.IsAlive) return false;
-        if (equipment != null) return m_Profile.Inventory.TryAdd(equipment);
-        if (pickup.Effect == PickupEffect.Health) m_Player.Vitals.Heal(pickup.RestoreAmount);
-        else m_Player.Vitals.RestoreMp(pickup.RestoreAmount);
-        ShowRecovery(pickup.RestoreAmount, pickup.Effect == PickupEffect.Mana);
+        if (Outcome != LevelOutcome.Running || !m_Player.IsAlive)
+            return false;
+        if (equipment != null)
+            return m_Profile.Inventory.TryAdd(equipment);
+        if (pickup.Effect == PickupEffect.Health)
+            m_Player.Vitals.Heal(pickup.RestoreAmount);
+        else
+            m_Player.Vitals.RestoreMp(pickup.RestoreAmount);
+        m_FloatingText.ShowRecovery(m_Player.GlobalPosition, pickup.RestoreAmount,
+            pickup.Effect == PickupEffect.Mana ? RecoveryKind.Mana : RecoveryKind.Health);
         return true;
-    }
-
-    /// <summary>在英雄头顶显示恢复量；只由实际领取路径调用。</summary>
-    /// <param name="amount">恢复品或蓝球的配置量。</param>
-    /// <param name="mana">蓝色魔法恢复，false 为绿色生命恢复。</param>
-    private void ShowRecovery(int amount, bool mana)
-    {
-        if (amount <= 0) return;
-        var pop = NodePool.Instance.Get<RecoveryPopNode>(ResourcesCollectionConstant.Effects_recovery_number, this)
-                  ?? throw new InvalidOperationException("恢复数字节点池未注册。");
-        m_RecoveryPops.Add(pop);
-        pop.Show(m_Player.GlobalPosition, amount, mana, OnRecoveryFinished);
-    }
-
-    /// <summary>恢复提示结束，只归还本关仍拥有的实例。</summary>
-    /// <param name="pop">结束显示的节点。</param>
-    private void OnRecoveryFinished(RecoveryPopNode pop)
-    {
-        if (m_RecoveryPops.Remove(pop)) NodePool.Instance.Release(pop);
     }
 
     /// <summary>拾取或过期后只回收本关拥有的实例。</summary>
     /// <param name="item">已经停止处理的节点。</param>
     private void OnGroundItemFinished(GroundItemNode item)
     {
-        if (m_GroundItems.Remove(item)) NodePool.Instance.Release(item);
+        if (m_GroundItems.Remove(item))
+            NodePool.Instance.Release(item);
     }
 
     /// <summary>只接受本关仍拥有的球，先归还实例，再在一次接触中发放对应奖励。</summary>
@@ -124,35 +111,41 @@ public partial class LevelModule
     /// <param name="collected">是否已实际接触活着的英雄。</param>
     private void OnLootFinished(LootOrbNode orb, LootReward reward, bool collected)
     {
-        if (!m_LootOrbs.Remove(orb)) return;
+        if (!m_LootOrbs.Remove(orb))
+            return;
         NodePool.Instance.Release(orb);
         if (collected && Outcome == LevelOutcome.Running && m_Player.IsAlive)
         {
             switch (reward.Kind)
             {
-                case LootKind.Soul: m_Profile.Wallet.AddSoul(reward.Amount); break;
-                case LootKind.Musou: m_Player.Musou.AddFromPickup(reward.Amount); break;
+                case LootKind.Soul:
+                    m_Profile.Wallet.AddSoul(reward.Amount);
+                    break;
+                case LootKind.Musou:
+                    m_Player.Musou.AddFromPickup(reward.Amount);
+                    break;
                 case LootKind.Mana:
                     int amount = LootHelper.ManaAmount(m_Player.Vitals.MaxMp,
                         ConfigSystem.Instance.Tables.TbDropConfig.Data);
                     m_Player.Vitals.RestoreMp(amount);
-                    ShowRecovery(amount, true);
+                    m_FloatingText.ShowRecovery(m_Player.GlobalPosition, amount, RecoveryKind.Mana);
                     break;
             }
         }
 
-        if (m_ExitRequested && m_LootOrbs.Count == 0 && Outcome == LevelOutcome.Running) OnExitEntered();
+        if (m_ExitRequested && m_LootOrbs.Count == 0 && Outcome == LevelOutcome.Running)
+            OnExitEntered();
     }
 
     /// <summary>逆序结束关卡时清除本关在场奖励；回收不触发拾取，不写档案。</summary>
     private void ClearLoot()
     {
-        foreach (LootOrbNode orb in m_LootOrbs) NodePool.Instance.Release(orb);
+        foreach (LootOrbNode orb in m_LootOrbs)
+            NodePool.Instance.Release(orb);
         m_LootOrbs.Clear();
-        foreach (var item in m_GroundItems) NodePool.Instance.Release(item);
+        foreach (var item in m_GroundItems)
+            NodePool.Instance.Release(item);
         m_GroundItems.Clear();
-        foreach (var pop in m_RecoveryPops) NodePool.Instance.Release(pop);
-        m_RecoveryPops.Clear();
         m_ExitRequested = false;
     }
 }

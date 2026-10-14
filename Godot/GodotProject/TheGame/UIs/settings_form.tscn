@@ -42,72 +42,72 @@ expand_mode = 1
 
 [node name="m_Continue" type="Button" parent="Scroll" unique_id=1180235255]
 layout_mode = 0
-mouse_default_cursor_shape = 2
 offset_left = 19.0
 offset_top = 62.0
 offset_right = 292.0
 offset_bottom = 100.0
 focus_mode = 0
+mouse_default_cursor_shape = 2
 theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 24
 text = "继续游戏"
 
 [node name="m_Sound" type="Button" parent="Scroll" unique_id=974956146]
 layout_mode = 0
-mouse_default_cursor_shape = 2
 offset_left = 19.0
 offset_top = 114.0
 offset_right = 292.0
 offset_bottom = 152.0
 focus_mode = 0
+mouse_default_cursor_shape = 2
 theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 24
 text = "关闭声音"
 
 [node name="m_ReturnMap" type="Button" parent="Scroll" unique_id=597106212]
 layout_mode = 0
-mouse_default_cursor_shape = 2
 offset_left = 19.0
 offset_top = 166.0
 offset_right = 292.0
 offset_bottom = 204.0
 focus_mode = 0
+mouse_default_cursor_shape = 2
 theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 24
 text = "返回地图"
 
 [node name="m_Help" type="Button" parent="Scroll" unique_id=1851831803]
 layout_mode = 0
-mouse_default_cursor_shape = 2
 offset_left = 19.0
 offset_top = 218.0
 offset_right = 292.0
 offset_bottom = 256.0
 focus_mode = 0
+mouse_default_cursor_shape = 2
 theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 24
 text = "游戏帮助"
 
 [node name="m_ReturnTitle" type="Button" parent="Scroll" unique_id=1484751417]
 layout_mode = 0
-mouse_default_cursor_shape = 2
 offset_left = 19.0
 offset_top = 270.0
 offset_right = 292.0
 offset_bottom = 308.0
 focus_mode = 0
+mouse_default_cursor_shape = 2
 theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 24
 text = "返回主菜单"
 
 [node name="m_Close" type="TextureButton" parent="Scroll" unique_id=1059835465]
 layout_mode = 0
-mouse_default_cursor_shape = 2
 offset_left = 270.0
 offset_top = 11.0
 offset_right = 311.0
 offset_bottom = 52.0
 focus_mode = 0
+mouse_default_cursor_shape = 2
 texture_normal = ExtResource("close")
 texture_pressed = ExtResource("close_hover")
 texture_hover = ExtResource("close_hover")

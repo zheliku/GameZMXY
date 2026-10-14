@@ -60,12 +60,16 @@ public sealed class ProcedureMap : MenuProcedure
     /// <param name="args">本次保存请求。</param>
     private async void OnSaveRequested(object sender, GameEventArgs args)
     {
-        if (((SaveRequestedEventArgs)args).FormSerialId != FormSerialId || IsReturningToTitle) return;
+        if (((SaveRequestedEventArgs)args).FormSerialId != FormSerialId || IsReturningToTitle)
+            return;
         var session = GetGameContext(Owner);
         var token = CancellationToken;
         int serial = FormSerialId;
         bool succeeded;
-        try { succeeded = await session.Save.SaveCheckpointAsync(session.Profile); }
+        try
+        {
+            succeeded = await session.Save.SaveCheckpointAsync(session.Profile);
+        }
         catch (Exception error)
         {
             Log.Error("[ProcedureMap] 手动保存失败：{0}", error);
@@ -81,7 +85,8 @@ public sealed class ProcedureMap : MenuProcedure
     private void OnLevelSelected(object sender, GameEventArgs args)
     {
         var selection = (LevelSelectedEventArgs)args;
-        if (selection.FormSerialId != FormSerialId || IsReturningToTitle) return;
+        if (selection.FormSerialId != FormSerialId || IsReturningToTitle)
+            return;
         if (ConfigSystem.Instance.Tables.TbLevelConfig.GetOrDefault(selection.LevelId) == null)
         {
             Log.Error("[ProcedureMap] 地图请求了不存在的关卡：{0}", selection.LevelId);

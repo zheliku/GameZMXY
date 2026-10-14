@@ -1,16 +1,18 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Drops/GroundItemNode.cs" id="script"]
+[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/ground_item_pickup_library.tres" id="pickup"]
 
 [sub_resource type="RectangleShape2D" id="feet"]
 size = Vector2(12, 8)
 
-[node name="GroundItem" type="CharacterBody2D" node_paths=PackedStringArray("m_Icon")]
+[node name="GroundItem" type="CharacterBody2D" node_paths=PackedStringArray("m_Icon", "m_PickupAnimation")]
 z_index = 4
 collision_layer = 0
 collision_mask = 9
 script = ExtResource("script")
 m_Icon = NodePath("Icon")
+m_PickupAnimation = NodePath("AnimationPlayer")
 
 [node name="Feet" type="CollisionShape2D" parent="."]
 position = Vector2(0, -4)
@@ -22,4 +24,8 @@ polygon = PackedVector2Array(-14, -2, -10, -5, 10, -5, 14, -2, 10, 1, -10, 1)
 
 [node name="Icon" type="Sprite2D" parent="."]
 position = Vector2(0, -18)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+callback_mode_process = 2
+libraries = {&"": ExtResource("pickup")}
 

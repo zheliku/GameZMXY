@@ -26,7 +26,8 @@ public sealed class ProcedureTitle : MenuProcedure
     /// <inheritdoc />
     protected override SoundId MusicId => SoundId.MenuTheme;
     /// <inheritdoc />
-    protected override object CreateData(ProcedureOwner owner) {
+    protected override object CreateData(ProcedureOwner owner)
+    {
         owner.RemoveData(FlowKeys.GameContext);
         owner.RemoveData(FlowKeys.SelectedLevelId);
         owner.RemoveData(FlowKeys.SaveSelection);
@@ -72,8 +73,10 @@ public sealed class ProcedureTitle : MenuProcedure
     /// <param name="args">本次开始请求。</param>
     private async void OnStartGameRequested(object sender, GameEventArgs args)
     {
-        if (((StartGameRequestedEventArgs)args).FormSerialId != FormSerialId) return;
-        if (m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId))) return;
+        if (((StartGameRequestedEventArgs)args).FormSerialId != FormSerialId)
+            return;
+        if (m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId)))
+            return;
         var save = m_Save;
         var token = CancellationToken;
         m_SaveSerialId = GF.UI.OpenUIForm(UIFormId.SaveForm, new SaveFormData(save.Directory));
@@ -86,10 +89,13 @@ public sealed class ProcedureTitle : MenuProcedure
     private void OnSaveSlotSelected(object sender, GameEventArgs args)
     {
         var selection = (SaveSlotSelectedEventArgs)args;
-        if (selection.FormSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) || m_Save.Directory.Phase != SaveDirectoryPhase.Ready) return;
-        if (selection.SlotNumber < 1 || selection.SlotNumber > m_Save.Directory.Slots.Count) return;
+        if (selection.FormSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) || m_Save.Directory.Phase != SaveDirectoryPhase.Ready)
+            return;
+        if (selection.SlotNumber < 1 || selection.SlotNumber > m_Save.Directory.Slots.Count)
+            return;
         var slot = m_Save.Directory.Slots[selection.SlotNumber - 1];
-        if (slot.State == SaveSlotState.Unreadable) return;
+        if (slot.State == SaveSlotState.Unreadable)
+            return;
         Owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(slot.SlotNumber, slot.UnitId));
         ChangeState<ProcedureLoadProfile>(Owner);
     }
@@ -99,8 +105,10 @@ public sealed class ProcedureTitle : MenuProcedure
     /// <param name="args">本次设置请求。</param>
     private void OnSettingsRequested(object sender, GameEventArgs args)
     {
-        if (((SettingsRequestedEventArgs)args).FormSerialId != FormSerialId) return;
-        if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId))) return;
+        if (((SettingsRequestedEventArgs)args).FormSerialId != FormSerialId)
+            return;
+        if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
+            return;
         m_SettingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm, new SettingsFormData());
     }
 

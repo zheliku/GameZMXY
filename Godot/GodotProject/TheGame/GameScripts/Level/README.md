@@ -17,4 +17,6 @@
 
 推荐先读 `LevelModule.Initialize → StartSession → BeginTravel → StartBattle → Cleanup`，再按要改的功能进入子目录。收益沿 `OnMonsterDefeated → AwardExperience` 阅读：经验在击败时立即结算，飞行球只承载灵魂、魔法和无双。通关沿 `LevelExitNode.Entered → LevelModule.OnExitEntered → SubmitOutcome` 阅读，文件读写交给 `SaveModule`，流程负责回地图。
 
+`World/FloatingText` 绑定共用的 [FloatingTextModule](../FloatingText/FloatingTextModule.cs)，由关卡开始和结束会话；伤害/闪避走 GGF 事件，桃子、蓝瓶与蓝球领取后直接提交恢复提示。飘字模块统一拥有和归还池实例，关卡不再保存恢复数字集合。
+
 后续新增功能也按职责落位。只有具备独立职责、实际需要的功能才建目录；入口 partial 保持同一对象的状态与生命周期。完整调用图见 [项目导览](../../../../../Docs/ProjectTour.md)。

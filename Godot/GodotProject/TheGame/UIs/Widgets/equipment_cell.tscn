@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://b538mvhe6ldua"]
 
 [ext_resource type="Texture2D" uid="uid://co0l2xrbfngd" path="res://TheGame/Sprites/UI/inventory/inventory_cell.png" id="background"]
-[ext_resource type="Script" uid="uid://c7ajyr1tfamcx" path="res://TheGame/GameScripts/UI/Widgets/EquipmentCell.cs" id="script"]
+[ext_resource type="Script" uid="uid://c7ajyr1tfamcx" path="res://TheGame/GameScripts/UI/InventoryForm/Components/EquipmentCell.cs" id="script"]
 [ext_resource type="PackedScene" uid="uid://boy8tad4y4d68" path="res://TheGame/UIs/Widgets/equipment_tooltip.tscn" id="tooltip"]
 
 [sub_resource type="StyleBoxEmpty" id="tooltip_wrapper"]

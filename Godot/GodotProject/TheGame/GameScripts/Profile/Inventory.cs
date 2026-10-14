@@ -36,7 +36,8 @@ public sealed class Inventory
     public bool TryAdd(EquipmentInstance item)
     {
         ArgumentNullException.ThrowIfNull(item);
-        if (m_Items.Count == Capacity || m_Items.Exists(x => x.InstanceId == item.InstanceId)) return false;
+        if (m_Items.Count == Capacity || m_Items.Exists(x => x.InstanceId == item.InstanceId))
+            return false;
         m_Items.Add(item);
         Changed?.Invoke();
         return true;
@@ -49,15 +50,20 @@ public sealed class Inventory
     internal bool Exchange(Guid removeId, EquipmentInstance add)
     {
         int index = removeId == Guid.Empty ? -1 : m_Items.FindIndex(x => x.InstanceId == removeId);
-        if (removeId != Guid.Empty && index < 0) return false;
+        if (removeId != Guid.Empty && index < 0)
+            return false;
         if (add != null && (m_Items.Exists(x => x.InstanceId == add.InstanceId) ||
-                            (index < 0 && m_Items.Count == Capacity))) return false;
+                            (index < 0 && m_Items.Count == Capacity)))
+            return false;
         if (index >= 0)
         {
-            if (add == null) m_Items.RemoveAt(index);
-            else m_Items[index] = add;
+            if (add == null)
+                m_Items.RemoveAt(index);
+            else
+                m_Items[index] = add;
         }
-        else if (add != null) m_Items.Add(add);
+        else if (add != null)
+            m_Items.Add(add);
 
         return true;
     }
@@ -70,7 +76,8 @@ public sealed class Inventory
     /// <returns>全部存在并完成移除时为 true。</returns>
     internal bool RemoveAll(HashSet<Guid> instanceIds)
     {
-        if (!instanceIds.IsSubsetOf(new HashSet<Guid>(m_Items.ConvertAll(x => x.InstanceId)))) return false;
+        if (!instanceIds.IsSubsetOf(new HashSet<Guid>(m_Items.ConvertAll(x => x.InstanceId))))
+            return false;
         m_Items.RemoveAll(x => instanceIds.Contains(x.InstanceId));
         return true;
     }

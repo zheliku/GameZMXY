@@ -80,13 +80,22 @@ public sealed record EquipmentAttributes
     /// <exception cref="ArgumentOutOfRangeException">类型未定义。</exception>
     public int Get(AttributeType attribute) => attribute switch
     {
-        AttributeType.MaxHp => MaxHp, AttributeType.MaxMp => MaxMp, AttributeType.Power => Power,
+        AttributeType.MaxHp => MaxHp,
+        AttributeType.MaxMp => MaxMp,
+        AttributeType.Power => Power,
         AttributeType.Def => Def,
-        AttributeType.Mdef => Mdef, AttributeType.Crit => Crit, AttributeType.Miss => Miss,
+        AttributeType.Mdef => Mdef,
+        AttributeType.Crit => Crit,
+        AttributeType.Miss => Miss,
         AttributeType.Lucky => Lucky,
-        AttributeType.Toughness => Toughness, AttributeType.Htarget => Htarget, AttributeType.CritReduce => CritReduce,
-        AttributeType.Ar => Ar, AttributeType.Sp => Sp, AttributeType.Vampirism => Vampirism,
-        AttributeType.HpRegen => HpRegen, AttributeType.MpRegen => MpRegen,
+        AttributeType.Toughness => Toughness,
+        AttributeType.Htarget => Htarget,
+        AttributeType.CritReduce => CritReduce,
+        AttributeType.Ar => Ar,
+        AttributeType.Sp => Sp,
+        AttributeType.Vampirism => Vampirism,
+        AttributeType.HpRegen => HpRegen,
+        AttributeType.MpRegen => MpRegen,
         _ => throw new ArgumentOutOfRangeException(nameof(attribute))
     };
 
@@ -97,15 +106,22 @@ public sealed record EquipmentAttributes
     /// <exception cref="ArgumentOutOfRangeException">类型未定义。</exception>
     internal EquipmentAttributes WithValue(AttributeType attribute, int value) => attribute switch
     {
-        AttributeType.MaxHp => this with { MaxHp = value }, AttributeType.MaxMp => this with { MaxMp = value },
-        AttributeType.Power => this with { Power = value }, AttributeType.Def => this with { Def = value },
-        AttributeType.Mdef => this with { Mdef = value }, AttributeType.Crit => this with { Crit = value },
-        AttributeType.Miss => this with { Miss = value }, AttributeType.Lucky => this with { Lucky = value },
+        AttributeType.MaxHp => this with { MaxHp = value },
+        AttributeType.MaxMp => this with { MaxMp = value },
+        AttributeType.Power => this with { Power = value },
+        AttributeType.Def => this with { Def = value },
+        AttributeType.Mdef => this with { Mdef = value },
+        AttributeType.Crit => this with { Crit = value },
+        AttributeType.Miss => this with { Miss = value },
+        AttributeType.Lucky => this with { Lucky = value },
         AttributeType.Toughness => this with { Toughness = value },
         AttributeType.Htarget => this with { Htarget = value },
-        AttributeType.CritReduce => this with { CritReduce = value }, AttributeType.Ar => this with { Ar = value },
-        AttributeType.Sp => this with { Sp = value }, AttributeType.Vampirism => this with { Vampirism = value },
-        AttributeType.HpRegen => this with { HpRegen = value }, AttributeType.MpRegen => this with { MpRegen = value },
+        AttributeType.CritReduce => this with { CritReduce = value },
+        AttributeType.Ar => this with { Ar = value },
+        AttributeType.Sp => this with { Sp = value },
+        AttributeType.Vampirism => this with { Vampirism = value },
+        AttributeType.HpRegen => this with { HpRegen = value },
+        AttributeType.MpRegen => this with { MpRegen = value },
         _ => throw new ArgumentOutOfRangeException(nameof(attribute))
     };
 
@@ -116,7 +132,8 @@ public sealed record EquipmentAttributes
         foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
         {
             int value = Get(attribute);
-            if (value != 0) yield return new AttributeModifier(attribute, AttributeModifierKind.Flat, value);
+            if (value != 0)
+                yield return new AttributeModifier(attribute, AttributeModifierKind.Flat, value);
         }
     }
 }

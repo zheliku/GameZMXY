@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://TheGame/GameScripts/UI/Widgets/EquipmentActionsMenu.cs" id="script"]
+[ext_resource type="Script" path="res://TheGame/GameScripts/UI/InventoryForm/Components/EquipmentActionsMenu.cs" id="script"]
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_actions_background.png" id="background"]
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_equip.png" id="equip"]
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_equip_disabled.png" id="equip_disabled"]

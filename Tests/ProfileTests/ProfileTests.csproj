@@ -26,6 +26,7 @@
   <ItemGroup>
     <Compile Include="*.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Equipment\*.cs" Link="Linked\Equipment\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Skills\*.cs" Link="Linked\Skills\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Drops\LootHelper.cs" Link="Linked\LootHelper.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Profile\*.cs" Link="Linked\Profile\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Save\**\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Save\SaveModule*.cs;$(GodotProjectDir)TheGame\GameScripts\Save\Slots\SaveSlotDirectory.cs" Link="Linked\Save\%(Filename)%(Extension)" />

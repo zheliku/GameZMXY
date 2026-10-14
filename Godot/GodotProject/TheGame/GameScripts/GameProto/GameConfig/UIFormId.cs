@@ -53,6 +53,10 @@ namespace GameConfig
         /// 关卡成功或失败结算
         /// </summary>
         SettlementForm = 9,
+        /// <summary>
+        /// 造一技能面板
+        /// </summary>
+        SkillForm = 10,
     }
 
 } 

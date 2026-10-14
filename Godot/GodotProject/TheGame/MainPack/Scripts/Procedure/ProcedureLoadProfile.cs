@@ -32,7 +32,8 @@ public class ProcedureLoadProfile : ProcedureBase
         {
             // 标题界面已关闭加载页；读档期间重新显示框架共享加载界面。
             await GF.UI.OpenLoadingUIFormAsync();
-            if (entrySerial != m_EntrySerial) return;
+            if (entrySerial != m_EntrySerial)
+                return;
             // 预加载流程已校验配置并放入经验曲线。
             ExperienceCurve curve = procedureOwner.GetData<ExperienceCurveVariable>(FlowKeys.ExperienceCurve)?.Value
                 ?? throw new InvalidOperationException("流程数据缺少经验曲线（预加载流程未完成）。");
@@ -40,7 +41,8 @@ public class ProcedureLoadProfile : ProcedureBase
             var selection = procedureOwner.GetData<SaveSelectionVariable>(FlowKeys.SaveSelection)?.Value
                 ?? throw new InvalidOperationException("缺少存档选择结果。");
             SaveLoadResult loaded = await save.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId);
-            if (entrySerial != m_EntrySerial) return;
+            if (entrySerial != m_EntrySerial)
+                return;
             Log.Info("[ProcedureLoadProfile] 档案就绪：来源 {0}，出战英雄 {1}，等级 {2}", loaded.Origin,
                 loaded.Profile.ActiveHeroId, loaded.Profile.ActiveHero.Level);
 
@@ -54,7 +56,8 @@ public class ProcedureLoadProfile : ProcedureBase
         }
         catch (Exception ex)
         {
-            if (entrySerial != m_EntrySerial) return;
+            if (entrySerial != m_EntrySerial)
+                return;
             Log.Fatal("[ProcedureLoadProfile] 读档失败：{0}", ex);
             (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.SetLogState("存档读取失败", 0);
         }

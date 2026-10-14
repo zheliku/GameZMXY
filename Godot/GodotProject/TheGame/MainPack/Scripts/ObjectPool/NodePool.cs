@@ -124,7 +124,8 @@ public partial class NodePool : SingletonNode<NodePool>
     public T Get<T>(string scenePath, Node parent = null) where T : class, IPoolable
     {
         var obj = GetInternal(scenePath, parent);
-        if (obj == null) return null;
+        if (obj == null)
+            return null;
 
         if (obj.Target is T target)
             return target;
@@ -169,7 +170,10 @@ public partial class NodePool : SingletonNode<NodePool>
             }
 
             Node newNode;
-            try { newNode = packedScene.Instantiate(); }
+            try
+            {
+                newNode = packedScene.Instantiate();
+            }
             catch (Exception ex)
             {
                 Log.Error("[NodePool] Instantiate 失败: {0} — {1}", scenePath, ex.Message);
@@ -203,8 +207,10 @@ public partial class NodePool : SingletonNode<NodePool>
             poolable.OnGet();
 
         // 设置可见
-        if (node is CanvasItem ci) ci.Visible = true;
-        else if (node is Node3D n3d) n3d.Visible = true;
+        if (node is CanvasItem ci)
+            ci.Visible = true;
+        else if (node is Node3D n3d)
+            n3d.Visible = true;
 
         // 挂到请求的父节点下（会从容器下摘走）
         if (parent != null)
@@ -229,10 +235,12 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <param name="nodeObj">由此节点池取出的包装对象。</param>
     public void Release(NodeObject nodeObj)
     {
-        if (nodeObj == null) return;
+        if (nodeObj == null)
+            return;
 
         var target = nodeObj.Target as Node;
-        if (target == null) return;
+        if (target == null)
+            return;
 
         ulong id = target.GetInstanceId();
 
@@ -248,8 +256,10 @@ public partial class NodePool : SingletonNode<NodePool>
             poolable.OnRelease();
 
         // 隐藏
-        if (target is CanvasItem ci) ci.Visible = false;
-        else if (target is Node3D n3d) n3d.Visible = false;
+        if (target is CanvasItem ci)
+            ci.Visible = false;
+        else if (target is Node3D n3d)
+            n3d.Visible = false;
 
         if (target.GetParent() != container)
         {
@@ -276,8 +286,10 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <param name="poolItem">由此节点池取出的节点。</param>
     public void Release(IPoolable poolItem)
     {
-        if (poolItem == null) return;
-        if (poolItem is not Node node) return;
+        if (poolItem == null)
+            return;
+        if (poolItem is not Node node)
+            return;
 
         ulong id = node.GetInstanceId();
 
@@ -299,8 +311,10 @@ public partial class NodePool : SingletonNode<NodePool>
 
         poolItem.OnRelease();
 
-        if (node is CanvasItem ci) ci.Visible = false;
-        else if (node is Node3D n3d) n3d.Visible = false;
+        if (node is CanvasItem ci)
+            ci.Visible = false;
+        else if (node is Node3D n3d)
+            n3d.Visible = false;
         if (node.GetParent() != null)
         {
             node.GetParent().RemoveChild(node);

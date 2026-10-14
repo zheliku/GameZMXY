@@ -31,9 +31,30 @@ XLSX Diff 1.6.4 的解析器无法读取带 `x:` 前缀的 SpreadsheetML 标签�
 
 装备背包与实际详情为 `inventory_equipment.png`，操作菜单为 `inventory_actions.png`，武器/防具同时穿戴为 `inventory_wearing.png`，绿色/蓝色恢复数字为 `recovery_numbers.png`；无名称的地面恢复品和装备为 `ground_pickups.png`；地图默认边缘闪烁的两端画面为 `frontend/map_current_low.png`、`frontend/map_current.png`。
 
+## 命名复查与扩展验证（2026-10-14）
+
+按第 10 章检查手写业务、流程及测试的方法命名，统一组合输入、水平移动、巡逻折返、怪物选招、动画采样、状态机生命周期和窗口清理方法；调用、事件订退和测试反射同步更新。
+
+- `dotnet build Godot/GodotProject --no-restore -v quiet`：0 错误，5 个既有框架警告和 1 个 NU1900。三个 `dotnet test Tests/{BattleTests,ProfileTests,LevelTests} --no-restore -v quiet`：分别 **137/137、92/92、18/18**；新增一段/三段英雄的配置、循环和空中段号验证，覆盖 60/120Hz。
+- OpenGL `--smoketest=ui`：**PASS，退出 0**；覆盖怪物行为、界面清理、实体复用、反射调用、加载失败清理与存档重入。日志仍有既有证书错误、预期 HUD 失败注入、框架关停 `ObjectDisposedException` 及 4 个退出泄漏实例；没有新增玩法失败。日志为 `.godot/validation/readable_names_{build,battle,profile,level,ui}.log`。
+- 本轮 21 份 C# 的 `dotnet format whitespace . --folder --include <绝对路径> --verify-no-changes`、`git diff --check` 和引用检查通过（441 条路径、292 个 UID、23 个几何节点）；旧标识符检索无残留。唐僧弹道与飞行怪尚未实现，复用边界及现有落地限制见 [项目导览](ProjectTour.md)。
+
+## 官方输入、状态职责与格式整理（2026-10-14）
+
+按第 00/10/20/30/50 章维护所有权、手写命名、配置导出、身体状态机与验证边界；玩法以用户本轮要求的造一源码为准，规范正文未自行改写。
+
+- Luban 导出成功；构建 0 错误、5 个既有框架警告及 1 个 NU1900 联网警告。BattleTests **133/133**、ProfileTests **92/92**、LevelTests **18/18**；覆盖 60/120Hz 第四段松手、有效输入即时换段、独立冷却、超时、组合键、跳跃、空中方向及受击打断；配置拒绝缺段、非正和非有限参数。另补空中攻击松方向再按回、一帧内松按、受击后续段、不同英雄独立序列及怪物第二招的切换参数；空中松按问题先复现失败再修复。
+- `--smoketest` **PASS，退出 0**：真实五段连击、走跑、两次跳跃、空中下劈与命中；新增末轮打到第四段后注入过早按键并彻底松开，收招后不出现第五段。
+- OpenGL `--smoketest=level` **PASS，退出 0**：五波战斗、怪物出招/收招、相机、物理门、守关血条、成功结算、检查点写盘及返回地图重读；新增近处 W＋J/K/S 不误触出口，再验证单独 W 通关。
+- OpenGL `--smoketest=ui` **PASS，退出 0**：三座单向平台、真实英雄 S＋K 下落；背包刷新、穿戴外观、存档目录、技能目录、无双、受击、实体池与隔离存档重入继续通过。平台夹具按实际脚底和平台表面放置；移位后等待真实物理更新再读取落地事实。
+- HeroConfig 的 XLSX Diff 普通/公式模式均识别 **24 格**目标变化，旧缓冲字段已删除，秒制冷却及移动数值可见；默认 XML 命名空间保持可读。引用检查 **441 条路径、292 个 UID、23 个几何节点**通过；`git diff --check` 通过。
+- `HeroAttackSequence` 归英雄拥有，状态只调用序列并自行切换；删除基类反查攻击子状态的方法。怪物两处跨状态 `Arm` 调用改用 GGF 切换数据，进入时消费并归还池化参数。全项目手写业务不再有 `GetState<T>().方法` 的跨状态调用。
+- 将格式配置集中到仓库根 `.editorconfig`；使用 `dotnet format whitespace . --folder --include <手写文件绝对路径> --verify-no-changes` 分批验证 **216 份**手写 C#，排除框架与生成物。展开拥挤语句，统一四空格缩进和换行；Roslyn 核对格式化前后语法标记一致。新增 C# 已经 Godot 扫描、构建并生成 UID；编辑器插件退出仍报告下文已有的释放错误，扫描退出码为 0。
+- 手写玩法代码中的含糊组合输入、普攻起手、成长更新、目录更新、外观应用和背包刷新方法已更名，调用、订退与文档同步；框架契约与生成流程保持原有边界。日志：`.godot/validation/official_input_{build,battle,profile,level_unit,smoke,level_render,ui_render,scan}.log`；仍有下文已登记的证书、故意失败注入及框架关停异常。
+
 ## 悟空造一资源复现与逐帧检查
 
-官方源包地址与散列见 [OfficialReference](OfficialReference.md)，需先准备 Java、FFDec 26.3 和原始 Role_v7.swf；工具自行恢复包头并核对 SHA。以下只更新悟空美术、五段攻击和资源登记，不重生成其他角色或基础动作时序。
+官方源包地址与散列见 [OfficialReference](OfficialReference.md)，需先准备 Java、FFDec 26.3 和原始 Role_v7.swf；工具自行恢复包头并核对 SHA。以下更新悟空基础美术与五段攻击，不重生成其他角色或基础动作时序。重跑基础导出后，继续执行下节技能导出，恢复完整的共享图集与技能特效序列。
 
 ```powershell
 $workPath = Join-Path $env:TEMP 'gamezmxy-wukong-export'
@@ -53,9 +74,107 @@ dotnet build Godot/GodotProject --no-restore -v quiet
 & 'S:/Godot4/Godot4CSharp_console.exe' --path Godot/GodotProject --rendering-method gl_compatibility --script res://EditorScripts/validate_official_wukong_attacks.gd -- (Join-Path $workPath 'manifest.json')
 ```
 
-逐帧检查覆盖全部 62 个源攻击帧 × 四种穿戴 × 两个朝向，共 496 次实际绘制；核对 24 fps 秒制关键帧、身体/武器帧号、固定金箍棒棒影已移除、原版弧光保留、朝向、根坐标及矩形覆盖。独立读取武器与剑气像素验证范围、3px 余量和 14px 最小厚度；检查判定窗口未早于可见剑气结束。真实 Area2D 验证近端命中、武器之外的剑气及残留命中、矩形外和关闭窗口不命中。带矩形轮廓的图片在 `.godot/validation/official_attacks/attacks_armor*_weapon*_facing*.png`；轮廓仅由验证脚本绘制。真实输入用 `--smoketest` 检查五段连击、按动画长度结束、空中第三段下劈和近距离命中；`--smoketest=ui` 检查全部 14 个玩法动作、四种穿戴及背包。
+逐帧检查覆盖全部 62 个源攻击帧 × 四种穿戴 × 两个朝向，共 496 次实际绘制；核对 24 fps 秒制关键帧、身体/武器帧号、固定金箍棒棒影已移除、原版弧光保留、朝向、根坐标及矩形覆盖。独立读取武器与剑气像素验证范围、3px 余量和 14px 最小厚度；检查判定窗口未早于可见剑气结束。真实 Area2D 验证近端命中、武器之外的剑气及残留命中、矩形外和关闭窗口不命中。带矩形轮廓的图片在 `.godot/validation/official_attacks/attacks_armor*_weapon*_facing*.png`；轮廓仅由验证脚本绘制。真实输入用 `--smoketest` 检查五段连击、独立输入冷却、无后续输入时按动画长度收招、空中第三段下劈和近距离命中；`--smoketest=ui` 检查全部 13 个玩法动作、四种穿戴及背包。
 
-## 最近结果（2026-10-13）
+## 悟空技能资源复现
+
+Python 环境需要 Pillow、NumPy；`--source` 使用同版 Role_v7，音频使用 Music.swf。后三个步骤依次消费前一步 manifest，所有解包文件留在忽略目录。
+
+```powershell
+$skillWork = Join-Path (Resolve-Path Godot/GodotProject/.godot/validation).Path 'wukong-skills-export'
+$javaPath = 'S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe'
+$ffdecPath = Join-Path $env:TEMP 'gamezmxy-ffdec/ffdec.jar'
+python Tools/LegacyMigration/export_official_wukong_skills.py `
+  --java $javaPath --ffdec $ffdecPath `
+  --source (Join-Path $env:TEMP 'gamezmxy-official-role.swf') --work $skillWork
+& 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject `
+  --script res://EditorScripts/import_official_wukong_skills.gd -- (Join-Path $skillWork 'manifest.json')
+python Tools/LegacyMigration/import_official_wukong_skills.py (Join-Path $skillWork 'manifest.json')
+python Tools/LegacyMigration/export_official_skill_audio.py `
+  --java $javaPath --ffdec $ffdecPath --source (Join-Path $env:TEMP 'gamezmxy-official-music.swf') `
+  --work (Join-Path $skillWork 'audio') --output Godot/GodotProject/TheGame/Audios/SFX/wukong/skills
+& 'S:/Godot4/Godot4CSharp_console.exe' --headless --editor --path Godot/GodotProject `
+  --script res://EditorScripts/regenerate_collection.gd
+& 'S:/Godot4/Godot4CSharp_console.exe' --path Godot/GodotProject --rendering-method gl_compatibility `
+  --script res://EditorScripts/validate_official_wukong_skills.gd -- (Join-Path $skillWork 'manifest.json')
+```
+
+当前结果：122 个源动作帧 × 四种穿戴 × 两朝向，共 976 次检查 PASS、退出 0；五个独立特效逐帧双朝向及真实 Area2D 近端/范围外/关闭窗口 PASS。验证直接读取导入后的武器、能量或透明探针像素，检查实际矩形覆盖；截图带青色判定轮廓，位于 `.godot/validation/official_skills/`。技能资源更新后，原五段普攻 496 次检查再通过；四张图的原有 348 格像素逐一与 HEAD 对比相同。只有根证书读取错误，未发生资源解析或断言错误。
+
+## 完整待机、领取动画与角色页签（2026-10-14）
+
+完成上面的基础与技能导入后，使用基础导出的完整 529 SVG 补齐待机。只追加姿势并定向更新待机轨道，不重生成其他动作：
+
+```powershell
+& 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject `
+  --script res://EditorScripts/import_official_wukong_idle.gd -- `
+  (Join-Path $workPath 'manifest.json') res://.godot/validation/wukong_idle_manifest.json
+python Tools/LegacyMigration/import_official_wukong_idle.py `
+  Godot/GodotProject/.godot/validation/wukong_idle_manifest.json
+& 'S:/Godot4/Godot4CSharp_console.exe' --headless --editor --path Godot/GodotProject `
+  --script res://EditorScripts/regenerate_collection.gd
+& 'S:/Godot4/Godot4CSharp_console.exe' --path Godot/GodotProject --rendering-method gl_compatibility `
+  --script res://EditorScripts/validate_official_wukong_idle.gd -- `
+  (Join-Path $workPath 'manifest.json') res://.godot/validation/wukong_idle_manifest.json
+```
+
+- 待机逐帧 PASS、退出 0：400 个身体/武器源图层帧与正式 AnimationPlayer 取样像素一致，另核对引擎透明边缘导入处理、100 个背包帧与完整 100/24 秒循环。四种穿戴 × 双朝向截图 `official_idle_contact.png` 已查看。前 108 格 × 四张图与修改前暂存像素相同，仅追加 8 个姿势；完整动画库验证通过。
+- `HeroConfig.xlsx` 删除无消费者的 IdleEmoteDelay，经 Luban 导出；其余单元格值与暂存版本逐项相同。命名空间检查及已安装 XLSX Diff worker 的普通/公式模式均能读出新表头与变化；没有运行时兼容代码。
+- `dotnet build Godot/GodotProject --no-restore -v quiet`：0 错误、5 个既有框架警告；BattleTests 106/106、ProfileTests 85/85。Godot 扫描及构建日志显示完成，编辑器关停停留在既有插件释放问题后，终止该验证进程；未终止用户编辑器。
+- OpenGL `--smoketest=ui` PASS、退出 0：外置领取动画按 0.8 秒上移 100px 并二次缓出淡出，暂停冻结、收益只入账一次、满包不播、结束回池与复用重置通过；`pickup_rising.png` 已查看。技能窗口仅显示出战角色，禁用角色的模拟信号也不能切页；主动/被动、暂停、余额订退和复用通过。日志 `form_pickup_skills_ui.log`。
+- OpenGL `--smoketest=frontend` 与 `--smoketest` 均 PASS、退出 0：六格存档、损坏格、建档读档、导航，以及真实输入走跑跳和五段攻击通过。日志 `saveform_frontend_final.log`、`idle_input_final.log`。仍有下文登记的根证书与框架关停异常，UI/基础输入报告 4 个、frontend 报告 3 个 ObjectDB 泄漏。
+- 引用验证：441 条路径、291 个 UID，23 个关卡几何节点与暂存版本一致。本轮 `git diff --check` 通过；`git diff --cached --check` 报既有 Luban 技能生成文件的空白，未手改生成物或 Git 索引。
+
+## 技能准备、通用飘字与 UI 组件（2026-10-14）
+
+本轮按第 00/10/50 章的作用域、显式会话与 GGF 池约定实现。飘字由 `World/FloatingText` 开始/结束会话，共用一个 `FloatingTextNode` 池；UI 已按后续用户要求收敛到完整面板，见下节。第 00/10/60 章旧 Presenter/UI 目录示例及第 40 章 HUD 根绑定示例未自行改写；当前用户要求与规范差异见 [ProjectTour](ProjectTour.md)。
+
+| 检查 | 当前结果 |
+| --- | --- |
+| `dotnet build Godot/GodotProject --no-restore -v quiet` | 0 错误；5 个框架既有警告及 NU1900 网络警告 |
+| `dotnet test Tests/ProfileTests --no-restore -v quiet` | 85/85；两角色目录、费用、被动总效果、声音、11 个伤害阶段、五个动作/特效与 47 条事件的普通/无双位移、目标分支、独立攻击编号及非法数据拒绝 |
+| `--smoketest=ui` | 最终 OpenGL PASS、退出 0；九种数字样式各 100 组相邻组合共 900 组，独立读取真实 PNG alpha 核对比例字宽、描边、完整高度及居中/左起；同池实例跨生命/十位暴击/魔法/闪避复用、暂停、作用域隔离、旧事件过滤、实际恢复品/蓝球领取通过 |
+| UI 组件回归 | 最新背包根绑定 5、存档 3、HUD 5、技能 8；原背包出售/穿戴/详情、技能切页/暂停/余额/退订/复用、HUD 满值连续闪烁与失败清理继续通过 |
+| 技能资源关联 | 五个正式动作、五个独立特效与 47 条事件的所属局部时间/跳转位置均处于真实动画长度内；七段 MP3 经 GGF SFX 代理播放、按编号停止；未接入施放 |
+| `--smoketest=frontend` | 组件接线后 OpenGL PASS、退出 0；六格目录、建档/读档、选角、地图悬停、保存提示和放弃回滚通过 |
+| `--smoketest` | 通用飘字合并后 OpenGL PASS、退出 0；真实五段连击、命中、死亡及池化伤害文字通过；TestArena 活动恢复节点退出场景通过 |
+| XLSX Diff 1.6.4 | 四张技能战斗源表及两个 Luban 定义表在实际 worker 的普通/公式两种模式均可读；受控副本 SkillHit F6 单格变化准确识别。新事件表 905 个单元格；源表默认命名空间及 Luban 产物同步 |
+| 资源登记 | 技能行展开、删除三个行子场景并新增装备槽 shader 后，既有 Collection Res 生成器在 editor 模式收集 440 个资源，无 basename 冲突，含事件表 bytes；入口脚本检查 editor 模式并等待扫描/导入完成后退出 |
+| `validate_game_references.py --compare-staged-geometry` / `git diff --check` | 最新 450 条序列化路径、309 个 UID 通过；23 个关卡几何节点与暂存版本一致，diff 无空白错误 |
+
+已经实际检查 `.godot/validation/floating_text_spacing.png`：九种 `111 / 108 / 888` 及 `10、17、24、36、59、70、99、1234567890`。宽字额外间隙默认 0px，窄字侧留白比例默认 1/6；统一公式覆盖 0–9，既有 PNG 不重写，首次使用后缓存字宽。背包、六格存档、悟空/唐僧/被动页截图亦已查看。
+
+最终 UI 日志为 `.godot/validation/skills-source/final_ui.log`，组件 frontend 日志为 `combat_text/all_components_frontend.log`，Collection 为 `skills-source/final_collection.log`。系统根证书读取错误、编辑器插件 RefCounted/free 及关停 RID/ObjectDB 泄漏仍存在；UI 退出的 WebRequest ObjectDisposedException 和 4 个 ObjectDB 实例泄漏仍存在。HUD 缺绑定和 frontend 跨槽/损坏档属于故意失败注入；业务 PASS 与这些异常分开记录，未修改只读框架。
+
+本轮已完成技能目录/面板、悟空动作/判定/特效/音效、伤害/动作/特效/条件分支与位移配置。学习记录、商店购买、扣费及实战施放依用户要求留待后续接入，当前不改存档格式。数据形状和源规则见 [OfficialReference](OfficialReference.md)。
+
+### 技能面板直编与穿戴槽底图
+
+- 将十五行全部展开到 `skill_form.tscn`，主动为五列 GridContainer、被动为六列；删除三个行子场景。预填全部名称、费用、按键、说明和图标；后续合并行脚本，由两个完整页统一绑定数据。编辑位置见 [ProjectTour](ProjectTour.md)。
+- `dotnet build Godot/GodotProject --no-restore -v quiet`：0 错误、5 个框架既有警告。`--smoketest=ui`：PASS、退出 0；新增所有行属于主场景、同页列对齐、列无重叠/溢出及长说明高度检查；将十项主动和五项被动的预填文字/图标扰动后重新绑定，全部恢复为真实表值。
+- 武器与防具槽各用独立的局部 shader 材质；真实穿戴武器时只清除武器题签，穿戴防具后两槽均清除，分别卸装/关闭复用后恢复空槽题签，背包图标透明度保留。完整背包交易和旧 UI 回归继续通过。
+- 独立 OpenGL 预览与像素检查 PASS、退出 0：不调用运行时数据绑定也可渲染三页；两张原槽图只清掉 765 个字样像素，渐变颜色与边框保持，occupied 从 true 切回 false 后逐像素恢复。截图 `skills_editor_{wukong,tangseng,passive}.png`、`equipment_slot_backgrounds.png`、实际 `inventory_wearing.png` 已查看。
+- 日志在 `.godot/validation/inline_grids_{build,collection,preview,ui}.log`。UI 日志的 HUD 缺绑定仍是预期故障注入；根证书读取、编辑器插件关停及 WebRequest 关停异常/4 个 ObjectDB 泄漏仍存在，未修改只读依赖。
+
+### 背包出售控件颜色（2026-10-14）
+
+- 按用户最终参考，一键出售与确认/取消常态使用原版棕金渐变底图，悬停/按下保留原深棕纯色；禁用保持暗色，焦点只描边。品质上拉菜单为接近背包面板的深棕底与浅金字。主题与五个 StyleBox 外置到 `MainPack/Themes/` 及其 `Styles/` 子目录，重复状态共用样式；按第 40/50 章处理，未改业务或新增生产测试接口。
+- `--smoketest=ui`：PASS、退出 0；背包出售、取消/Esc、确认、防重复、关窗复用及既有 UI 回归通过。日志 `.godot/validation/inventory_colors_ui.log`，实际背包、品质选项和确认框截图已查看。
+- 一次性 OpenGL 预览：PASS、退出 0；真实鼠标悬停、按下、组合按下、焦点与禁用状态和菜单高亮截图已查看。脚本与图片仅在忽略目录 `.godot/validation/`，日志 `inventory_colors_preview.log`。预览仍有系统根证书读取错误；UI 回归的预期 HUD 缺绑定、WebRequest 关停异常及 4 个 ObjectDB 泄漏仍存在。
+- `dotnet build Godot/GodotProject --no-restore -v quiet`：0 错误、5 个框架既有警告；通过既有 `EditorScripts/regenerate_collection.gd` 收集 446 个资源，新增主题与样式六项，无 basename 冲突。日志 `inventory_theme_{build,collection}.log`；编辑器既有 RefCounted/free 与关停泄漏仍在。
+- `validate_game_references.py --compare-staged-geometry`：457 条序列化路径、309 个 UID 通过，23 个关卡几何节点与暂存版本一致；`git diff --check` 通过。
+- 样式审计：新主题与五个外置 StyleBox 均有正式场景引用，确认框 panel 通过局部覆盖使用；装备格的 tooltip_theme / StyleBoxEmpty 用于隐藏引擎外壳，保留。删除 PopupMenu 不支持的 `font_pressed_color`，其他颜色与描边保留用户调整；实际 Godot 默认主题查询确认该项无效，清理后无未知颜色项。检查脚本仅在忽略目录，日志 `audit_ui_theme.log`。
+
+### UI 职责合并与目录整理（2026-10-14）
+
+- 按用户要求删除 18 个过细脚本及对应 UID：背包身份/装备/属性列/经验、分类/格子/底栏/分页/品质按钮，存档 Grid/Button，技能 Header/Footer/行组/行脚本，以及仅含三个处理方法的 InventoryForm.Bag partial。背包保留个人资料、背包和出售确认三个完整面板；技能保留主动、被动两页；SaveForm 直接管理六格。
+- `GameScripts/UI/Widgets/` 中九个保留控件连同 UID 归入 InventoryForm、BattleHud、MapForm 的 Components，场景引用同步更新。检查全部 Form，其余简单表单无需增加或合并包装。保留场景分组、外置主题及自定义 tooltip，不新增生产测试接口；目录与职责依据第 00/10 章，生成与验证依据第 50 章。
+- SaveForm、SkillForm 根绑定经 `regenerate_ui_form.py <场景> --namespace GameLogic.UI` 生成。Godot `--headless --build-solutions --quit --no-window` 完成扫描及构建；`dotnet build Godot/GodotProject --no-restore -v quiet` 为 0 错误、1 个 NU1900 网络警告。
+- `--smoketest=ui` 与 `--smoketest=frontend` 均 PASS、退出 0：完整背包交易、弹层定位、技能数据覆盖/切页/暂停/复用、HUD、六格目录/建档/读档/损坏格及菜单导航回归通过。背包、技能和存档截图已查看。日志 `.godot/validation/ui_consolidation_{smoke,frontend}.log`。
+- `validate_game_references.py --compare-staged-geometry` 为 440 条路径、291 个 UID 通过，23 个关卡节点与暂存版本一致；`git diff --check` 通过。另对本轮所有 UI 场景的节点树和非脚本属性与暂存版本逐项比对，布局及样式一致。
+- 已有根证书读取错误、编辑器插件 RefCounted/free、运行关停 WebRequest ObjectDisposedException 仍出现；UI / frontend 分别报告 4 / 3 个 ObjectDB 泄漏。HUD 缺绑定及跨槽/损坏档报错是预期失败注入，与本轮业务断言分开记录，未修改只读框架。
+
+## 最近完整战斗结果（2026-10-13）
 
 | 检查 | 结果 |
 | --- | --- |
@@ -87,6 +206,6 @@ dotnet build Godot/GodotProject --no-restore -v quiet
 - frontend 回归故意注入跨槽写盘和损坏档案；拒绝写入与读取失败日志为预期。烟测使用隔离目录，不改正式档；用户授权的正式开发档一次性维护单独登记在上表。当前格式 v6，无旧格式运行时兼容。
 - 引擎关停的 `DefaultWebRequestAgentHelper.Reset` 仍抛 ObjectDisposedException，并报告 ObjectDB 实例未释放。业务断言 PASS、进程退出 0，不能称为无错误退出；独立升级渲染检查无此异常。
 - 历史关停还出现过 GC `0xC0000005` 与编辑器 `ComponentInsoector._ExitTree` 释放错误；依赖只读，未在业务层绕过或修改。
-- 当前悟空已接入基础动作与造一五段普攻；无消费者的旧 skill_* 已删除，技能及造三攻击尚未实现，后续须同时迁入对应素材、特效与时间轴。规范第 20/30/50/60/70 章仍有旧属性名、存档版本和装配描述，规范正文未自行改写；本轮资源遵循第 40 章既有美术规则。
+- 当前悟空实战仍只有基础动作与造一五段普攻；五项造一技能已准备完整动作、特效、判定和声音，尚未接入施放；造三攻击未迁入。规范第 20/30/50/60/70 章仍有旧属性名、存档版本和装配描述，规范正文未自行改写；本轮资源遵循第 40 章既有美术规则。
 
 规范依据和依赖修改授权仅在 [第 50 章](ProjectGuidelines/50-FrameworkAndTools.md) 维护；本页只保留可执行命令、当前结果和限制。

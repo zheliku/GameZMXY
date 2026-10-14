@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://boy8tad4y4d68"]
 
-[ext_resource type="Script" uid="uid://coi0omcu83h4" path="res://TheGame/GameScripts/UI/Widgets/EquipmentTooltip.cs" id="script"]
+[ext_resource type="Script" uid="uid://coi0omcu83h4" path="res://TheGame/GameScripts/UI/InventoryForm/Components/EquipmentTooltip.cs" id="script"]
 
 [sub_resource type="StyleBoxFlat" id="panel"]
 content_margin_left = 20.0

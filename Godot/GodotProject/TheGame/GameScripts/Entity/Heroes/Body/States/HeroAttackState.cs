@@ -1,101 +1,61 @@
-using GameLogic.Heroes.Body;
 using GameFramework.Fsm;
 using Godot;
 
 namespace GameLogic.Heroes.Body
 {
-	/// <summary>
-	/// 普攻连段。**段时长 = 段动画长度**（OnInit 读动画资源进 Params，状态用物理 dt 计时）：
-	///  * 进入（状态 Enter）即提交出招（宿主 BeginAttack：装填攻击包、播起手音）并从第 0 帧播本段动画；
-	///  * 段时长到点：出招中按过普攻（连击缓冲）且起手站在地面、还有下一段 → 接下一段；否则收招回 Ground/Air。
-	/// 地面连段序号每执行一段 +1（末段回 0），跨按键保持；段数由角色招式表决定。
-	/// 空中使用角色指定的下劈段，结束后连段归零。
-	///
-	/// 出招中：地面定身、空中保留动量（旧 is_can_move_attack_in_sky），朝向锁定；跳跃不打断出招；
-	/// **受击挂起**到收招后才生效（有意的手感取舍：连段不被单次受击清空）；死亡立即打断。
-	/// </summary>
-	public sealed class HeroAttackState : HeroBodyState
-	{
-		private int m_Segment; // 当前播放的攻击段下标。
+    /// <summary>造一普攻：按键当场检查冷却，允许立即换段，无有效输入则正常收招。</summary>
+    public sealed class HeroAttackState : HeroBodyState
+    {
+        private int m_MoveAxis; // 起手时已有的移动方向，攻击中不接受新的方向。
+        private double m_EndsAt; // 本段动画收招的游戏时刻，单位秒。
 
-		private bool m_Chainable; // 起手时是否在地面，决定本套攻击能否继续连段。
+        /// <summary>开始已裁定的攻击段。</summary>
+        protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
+        {
+            m_MoveAxis = body.Input.MoveAxis;
+            body.SetFacing(m_MoveAxis);
+            StartSegment(body);
+        }
 
-		private bool m_Chain; // 当前攻击段期间是否缓存了下一段的普攻输入。
+        /// <summary>收招、受击、死亡或隐藏时归还攻击包。</summary>
+        protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown) => body.EndAttack();
 
-		private float m_Left; // 当前攻击段剩余时长（秒）。
+        /// <summary>消费普攻，地面定身，空中只保留起手方向并允许松键停止，按动画时长收招。</summary>
+        protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
+        {
+            // 原版松键清除 isLeft/isRight；攻击中再按方向不会重新置位，须等收招。
+            if (!body.Input.IsDirectionHeld(m_MoveAxis) || body.Input.WasDirectionReleased(m_MoveAxis))
+            {
+                m_MoveAxis = 0;
+            }
 
-		/// <summary>攻击段期间挂起受击，待收招后再处理。</summary>
-		protected override bool HurtInterrupts => false;
+            if (body.NormalAttack.TryAdvance(body.Input, IsAirborne(body), isAttacking: true))
+            {
+                StartSegment(body);
+            }
 
-		/// <summary>记录起手是否在地面，并开始当前连段。</summary>
-		protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
-		{
-			m_Chainable = !IsAirborne(body);
-			StartSegment(body, m_Chainable
-				? Mathf.Clamp(body.ComboIndex, 0, body.Params.ComboLength - 1)
-				: body.Params.AirAttackIndex);
-		}
+            ApplyGravity(body, dt);
+            int axis = IsAirborne(body) ? m_MoveAxis : 0;
+            float speed = body.Input.Running ? body.Params.RunSpeed : body.Params.WalkSpeed;
+            body.Velocity = new Vector2(axis * speed * body.MoveSpeedMultiplier, body.Velocity.Y);
+            if (body.Input.Time + TimeEpsilon >= m_EndsAt)
+            {
+                ChangeToLocomotion(fsm, body);
+            }
+        }
 
-		/// <summary>离开攻击状态时归还攻击包。</summary>
-		protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
-		{
-			// 收招、死亡打断、实体隐藏都走这里：动画被切走，攻击包在此归还
-			body.EndAttack();
-		}
-
-		/// <summary>推进攻击段计时并消费连段输入。</summary>
-		protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
-		{
-			if (body.Input.ConsumeAttack())
-			{
-				m_Chain = true;
-			}
-
-			ApplyGravity(body, dt);
-			if (body.OnFloor)
-			{
-				body.Velocity = new Vector2(0f, body.Velocity.Y);
-			}
-
-			if (Elapsed(m_Left))
-			{
-				FinishSegment(fsm, body);
-				return;
-			}
-
-			m_Left -= dt;
-		}
-
-		/// <summary>推进地面连段或重置空中连段，并选择接续攻击或返回移动。</summary>
-		/// <param name="fsm">拥有当前身体状态的状态机。</param>
-		/// <param name="body">提供输入缓冲和动作参数的英雄身体。</param>
-		private void FinishSegment(IFsm<IHeroBody> fsm, IHeroBody body)
-		{
-			int combo = body.Params.ComboLength;
-			int finished = m_Segment;
-			// 无论是否接段，连段序号都前进；末段后回到首段。
-			body.ComboIndex = m_Chainable ? (finished + 1) % combo : 0;
-			if (m_Chain && m_Chainable && finished < combo - 1)
-			{
-				// 只有地面起手且存在后续段时消费缓存输入。
-				StartSegment(body, finished + 1);
-				return;
-			}
-
-			// 没有可接续段时按当前垂直状态回到地面或空中移动。
-			ChangeToLocomotion(fsm, body);
-		}
-
-		/// <summary>清空段内缓冲，装填攻击并从头播放对应动画。</summary>
-		/// <param name="body">执行攻击的英雄身体。</param>
-		/// <param name="segment">招式表中从零开始的段号。</param>
-		private void StartSegment(IHeroBody body, int segment)
-		{
-			m_Segment = segment;
-			m_Chain = false;
-			m_Left = body.Params.AttackTimes[segment];
-			body.BeginAttack(segment);
-			body.RestartAnim(body.Params.AttackAnims[segment]);
-		}
-	}
+        /// <summary>装填攻击包并从零播放本次动作，空中使用指定下劈。</summary>
+        /// <param name="body">英雄身体。</param>
+        private void StartSegment(IHeroBody body)
+        {
+            int segment = body.NormalAttack.Segment;
+            m_EndsAt = body.Input.Time + body.Params.AttackTimes[segment];
+            body.BeginAttack(segment);
+            body.RestartAnim(body.Params.AttackAnims[segment]);
+            if (!IsAirborne(body))
+            {
+                body.Velocity = new Vector2(0f, body.Velocity.Y);
+            }
+        }
+    }
 }

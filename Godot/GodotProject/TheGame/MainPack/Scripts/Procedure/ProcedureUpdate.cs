@@ -398,7 +398,8 @@ public class ProcedureUpdate : ProcedureBase
 
         foreach (var pack in localVersion.Packs)
         {
-            if (!pack.IsValid()) continue;
+            if (!pack.IsValid())
+                continue;
 
             string packPath = Path.Combine(SubpackDir, pack.Name + ".pck");
             string damageReason = null;
@@ -729,7 +730,8 @@ public class ProcedureUpdate : ProcedureBase
 
         foreach (var pack in ordered)
         {
-            if (!pack.IsValid()) continue;
+            if (!pack.IsValid())
+                continue;
 
             string packPath = Path.Combine(SubpackDir, pack.Name + ".pck");
             if (!File.Exists(packPath))
@@ -806,7 +808,8 @@ public class ProcedureUpdate : ProcedureBase
     private void CleanStalePacks(PackVersionList version)
     {
         // 以当前清单建立白名单，只清理目录中的过期 .pck 文件。
-        if (!Directory.Exists(SubpackDir)) return;
+        if (!Directory.Exists(SubpackDir))
+            return;
 
         var validNames = new HashSet<string>(
             version.Packs.Where(p => p.IsValid()).Select(p => p.Name + ".pck"));
@@ -899,10 +902,14 @@ public class ProcedureUpdate : ProcedureBase
     /// <returns>请求成功且响应内容非空时为 true。</returns>
     private bool IsHttpSuccess(WebRequestCompleteEventArgs result)
     {
-        if (result == null) return false;
-        if (result.Result == -1 && result.ResponseCode == 0) return false; // timeout
-        if (result.ResponseCode != 200 || result.Result != (long)Error.Ok) return false;
-        if (result.Body == null || result.Body.Length == 0) return false;
+        if (result == null)
+            return false;
+        if (result.Result == -1 && result.ResponseCode == 0)
+            return false; // timeout
+        if (result.ResponseCode != 200 || result.Result != (long)Error.Ok)
+            return false;
+        if (result.Body == null || result.Body.Length == 0)
+            return false;
         return true;
     }
 

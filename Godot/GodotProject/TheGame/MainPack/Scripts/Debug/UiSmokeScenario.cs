@@ -78,8 +78,10 @@ public sealed partial class UiSmokeScenario
             Check(onDisk?.SaveVersion == GameData.CurrentVersion && onDisk.Heroes.Count == 1, "首次启动未按当前版本写回新档");
             CheckDisplay(hud, hero, context.Profile.ActiveHero, level);
 
+            await CheckFloatingTextAsync();
             await CheckGroundItemsAsync(context, hero, level);
             await CheckInventoryAsync(hud, hero, context, level);
+            await CheckSkillsAsync(hud, context, level);
             await CheckHitFacingAsync(context);
             await CheckHudLifecycleAsync(hud, hero, context, level);
             await CheckEntityReuseAsync(context);
@@ -89,7 +91,7 @@ public sealed partial class UiSmokeScenario
             CloseHud(m_TestHud);
             m_TestHud = null;
             await CheckLevelUpAsync(context, level);
-            await CheckPlatformsAsync(level);
+            await CheckPlatformsAsync(level, context);
             await CheckManaPickupAsync(context, level, hero);
             // 从真实保存的临界经验重入，下一次击败应立即触发脚底升级动画。
             level.Cleanup(); // 先结束旧关卡事务，再设置下一场的测试检查点。
@@ -152,7 +154,7 @@ public sealed partial class UiSmokeScenario
         }
         finally
         {
-            foreach (var form in GF.UI.GetAllLoadedUIForms().OfType<Control>().Where(x => x.Visible && x is InventoryForm or SettlementForm).ToArray())
+            foreach (var form in GF.UI.GetAllLoadedUIForms().OfType<Control>().Where(x => x.Visible && x is InventoryForm or SkillForm or SettlementForm).ToArray())
                 GF.UI.CloseUIForm(((GameFramework.UI.IUIForm)form).SerialId);
             CloseHud(m_TestHud);
             ReleaseTestEntity(m_ExtraHero);
@@ -169,6 +171,9 @@ public sealed partial class UiSmokeScenario
         hero.GlobalPosition = new Vector2(500, 350);
         hero.Velocity = Vector2.Zero;
         hero.SetPhysicsProcess(true);
+        // 移位后必须经过真实物理帧，不能把上一个位置的落地事实当作完成条件。
+        await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+        await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
         await WaitUntilAsync(() => hero.OnFloor, "测试英雄没有落地");
         hero.SetPhysicsProcess(false);
         var banner = SmokeInspection.ReadField<EncounterHealthBar>(hud, "m_EncounterHealthBar");
@@ -196,7 +201,8 @@ public sealed partial class UiSmokeScenario
             if (id == 3)
             {
                 Check(m_Monster is GorillaEntity && config.BaseAttributes.MaxHp == 300, "大猩猩的共享基础配置被改动");
-                if (previousGorilla != null) Check(ReferenceEquals(previousGorilla, m_Monster), "大猩猩未复用同一实体实例");
+                if (previousGorilla != null)
+                    Check(ReferenceEquals(previousGorilla, m_Monster), "大猩猩未复用同一实体实例");
                 previousGorilla = m_Monster;
             }
             hero.Heal(hero.Vitals.MaxHp);
@@ -216,7 +222,8 @@ public sealed partial class UiSmokeScenario
                 await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
                 await CaptureEncounterAsync("gorilla_attack.png");
             }
-            await WaitUntilAsync(() => hero.Vitals.Hp < hp, $"怪物 {id} 攻击动画未造成实际命中");
+            await WaitUntilAsync(() => hero.Vitals.Hp < hp, $"怪物 {id} 攻击动画未造成实际命中",
+                describe: () => $"hero={hero.GlobalPosition}, monster={m_Monster.GlobalPosition}, facing={m_Monster.Facing}");
             Check(Time.GetTicksMsec() - started >= 250, $"怪物 {id} 命中过快，缺少前摇");
             await WaitUntilAsync(() => m_Monster.AttackSegment < 0 && !SmokeInspection.InRecovery(m_Monster),
                 $"怪物 {id} 未正常收招");
@@ -244,7 +251,8 @@ public sealed partial class UiSmokeScenario
     /// <returns>本帧渲染与保存完成的任务。</returns>
     private async Task CaptureEncounterAsync(string name)
     {
-        if (DisplayServer.GetName() == "headless") return;
+        if (DisplayServer.GetName() == "headless")
+            return;
         await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         string directory = ProjectSettings.GlobalizePath("res://.godot/validation/encounter");
         Directory.CreateDirectory(directory);
@@ -682,7 +690,10 @@ public sealed partial class UiSmokeScenario
             {
                 await save.LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentCatalogue.UnitId);
             }
-            catch (NotSupportedException) { rejected = true; }
+            catch (NotSupportedException)
+            {
+                rejected = true;
+            }
             Check(rejected && File.ReadAllText(path) == unsupported, "非当前格式被转换或覆盖");
         }
         finally
@@ -740,10 +751,10 @@ public sealed partial class UiSmokeScenario
     {
         await WaitForLevelAsync();
         BattleHud reenteredHud = CurrentHud();
-        ResourceBar savedBar = reenteredHud.GetNode<ResourceBar>("StatusPanel/m_HpBar");
+        BattleStatusPanel savedStatus = reenteredHud.GetNode<BattleStatusPanel>("StatusPanel");
         CloseHud(reenteredHud);
         await WaitFramesAsync(2);
-        reenteredHud.Set("m_HpBar", default(Variant));
+        reenteredHud.Set("m_Status", default(Variant));
         string openFailure = null;
         EventHandler<GameEventArgs> onFailure = (_, args) =>
         {
@@ -763,7 +774,7 @@ public sealed partial class UiSmokeScenario
         finally
         {
             GF.Event.Unsubscribe(OpenUIFormFailureEventArgs.EventId, onFailure);
-            reenteredHud.Set("m_HpBar", savedBar);
+            reenteredHud.Set("m_Status", savedStatus);
         }
 
         ReenterLevel();

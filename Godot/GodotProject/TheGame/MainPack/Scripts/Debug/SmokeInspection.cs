@@ -92,8 +92,8 @@ internal static class SmokeInspection
         }
 
         // 复用正式隐藏时的 AI 清理，不在实体中保留测试开关与额外状态。
-        MethodInfo destroy = typeof(MonsterEntity).GetMethod("DestroyAi", BindingFlags.Instance | BindingFlags.NonPublic)
-            ?? throw new MissingMethodException(typeof(MonsterEntity).FullName, "DestroyAi");
+        MethodInfo destroy = typeof(MonsterEntity).GetMethod("DestroyAiStateMachine", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(typeof(MonsterEntity).FullName, "DestroyAiStateMachine");
         destroy.Invoke(monster, [false]);
         IMonsterBody body = monster;
         body.MoveIntent = 0;

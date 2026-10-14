@@ -1,6 +1,7 @@
 using GameLogic.Save.Slots;
 using GameLogic.Event.Navigation;
 using System;
+using System.Linq;
 using GameFramework.UI;
 using GameLogic.Audio;
 using GameLogic.Save;
@@ -17,9 +18,7 @@ namespace GameLogic.UI;
 public partial class SaveForm
 {
     private SaveFormData m_Data; // 当前目录引用，关闭即解绑。
-    private TextureButton[] m_Slots; // 六个固定的场景槽位。
-    private Label[] m_Names; // 各格角色名称。
-    private Label[] m_Dates; // 各格检查点时间。
+    private (TextureButton Button, Label Name, Label Date)[] m_SlotViews; // 六个存档格的控件引用，不另建格子脚本。
 
     /// <summary>绑定 GGF 字段与一次性的按钮订阅。</summary>
     /// <param name="serialId">窗口编号。</param>
@@ -37,17 +36,21 @@ public partial class SaveForm
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = pauseCoveredUIForm;
         UIStringKeys.ForEach(key => key.SetLocalizationValue());
-        if (!isNewInstance) return;
-        m_Slots = [m_Slot1, m_Slot2, m_Slot3, m_Slot4, m_Slot5, m_Slot6];
-        m_Names = [m_Name1, m_Name2, m_Name3, m_Name4, m_Name5, m_Name6];
-        m_Dates = [m_Date1, m_Date2, m_Date3, m_Date4, m_Date5, m_Date6];
+        if (!isNewInstance)
+            return;
         m_Close.Pressed += OnCloseClicked;
-        m_Slot1.Pressed += OnSlot1Clicked;
-        m_Slot2.Pressed += OnSlot2Clicked;
-        m_Slot3.Pressed += OnSlot3Clicked;
-        m_Slot4.Pressed += OnSlot4Clicked;
-        m_Slot5.Pressed += OnSlot5Clicked;
-        m_Slot6.Pressed += OnSlot6Clicked;
+        var buttons = m_Slots.GetChildren().Cast<TextureButton>().ToArray();
+        if (buttons.Length != SaveSlotDirectory.SlotCount)
+            throw new InvalidOperationException("存档页必须为六格。");
+        m_SlotViews = new (TextureButton, Label, Label)[buttons.Length];
+        // 只在新建实例时收集本表单的固定格子，复用期间沿用引用与订阅。
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            int number = i + 1;
+            var button = buttons[i];
+            m_SlotViews[i] = (button, button.GetNode<Label>($"m_Name{number}"), button.GetNode<Label>($"m_Date{number}"));
+            button.Pressed += () => SelectSlot(number);
+        }
     }
 
     /// <summary>订阅目录并立即绘制当前状态。</summary>
@@ -68,7 +71,8 @@ public partial class SaveForm
     public void OnClose(bool isShutdown, object userData)
     {
         ReleaseDirectory();
-        if (!isShutdown && IsInstanceValid(this)) Visible = false;
+        if (!isShutdown && IsInstanceValid(this))
+            Visible = false;
     }
 
     /// <summary>清除回池窗口编号。</summary>
@@ -78,7 +82,8 @@ public partial class SaveForm
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = true;
-        if (IsInstanceValid(this)) Visible = false;
+        if (IsInstanceValid(this))
+            Visible = false;
     }
 
     /// <summary>界面暂停；点击导航不依赖轮询。</summary>
@@ -112,7 +117,8 @@ public partial class SaveForm
     /// <param name="userData">新打开参数；null 保持当前绑定。</param>
     public void OnRefocus(object userData)
     {
-        if (userData != null) OnOpen(userData);
+        if (userData != null)
+            OnOpen(userData);
     }
 
     /// <summary>记录框架分配的窗口层级。</summary>
@@ -127,7 +133,8 @@ public partial class SaveForm
     /// <summary>解除旧目录订阅。</summary>
     private void ReleaseDirectory()
     {
-        if (m_Data != null) m_Data.Directory.Changed -= RefreshDirectory;
+        if (m_Data != null)
+            m_Data.Directory.Changed -= RefreshDirectory;
         m_Data = null;
     }
 
@@ -137,23 +144,23 @@ public partial class SaveForm
         var directory = m_Data.Directory;
         bool ready = directory.Phase == SaveDirectoryPhase.Ready;
         m_Status.Text = directory.Phase == SaveDirectoryPhase.Failed ? directory.ErrorMessage : ready ? "" : "正在读取存档…";
-        for (int index = 0; index < m_Slots.Length; index++)
+        for (int i = 0; i < m_SlotViews.Length; i++)
         {
-            var slot = ready ? directory.Slots[index] : null;
-            m_Slots[index].Disabled = slot == null || slot.State == SaveSlotState.Unreadable;
-            m_Slots[index].MouseDefaultCursorShape = m_Slots[index].Disabled ? CursorShape.Arrow : CursorShape.PointingHand;
-            m_Slots[index].TooltipText = slot?.State switch
+            var (button, name, date) = m_SlotViews[i];
+            var slot = ready ? directory.Slots[i] : null;
+            button.Disabled = slot == null || slot.State == SaveSlotState.Unreadable;
+            button.MouseDefaultCursorShape = button.Disabled ? CursorShape.Arrow : CursorShape.PointingHand;
+            button.TooltipText = slot?.State switch
             {
                 SaveSlotState.Empty => "空存档，点击开始新游戏",
                 SaveSlotState.Occupied => $"{slot.HeroName} · Lv.{slot.Level}",
                 SaveSlotState.Unreadable => "存档不可读，已保留原文件",
-                _ => "正在读取存档",
+                _ => "正在读取存档"
             };
-            m_Names[index].Text = slot?.State == SaveSlotState.Occupied ? $"{slot.HeroName} · Lv.{slot.Level}" :
+            name.Text = slot?.State == SaveSlotState.Occupied ? $"{slot.HeroName} · Lv.{slot.Level}" :
                 slot?.State == SaveSlotState.Unreadable ? "存档不可读" : "";
-            m_Dates[index].Text = slot?.State == SaveSlotState.Occupied
-                ? slot.SavedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? ""
-                : "";
+            date.Text = slot?.State == SaveSlotState.Occupied
+                ? slot.SavedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "" : "";
         }
     }
 
@@ -162,33 +169,17 @@ public partial class SaveForm
     private void SelectSlot(int number)
     {
         if (m_Data?.Directory.Phase != SaveDirectoryPhase.Ready ||
-            m_Data.Directory.Slots[number - 1].State == SaveSlotState.Unreadable) return;
+            m_Data.Directory.Slots[number - 1].State == SaveSlotState.Unreadable)
+            return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, SaveSlotSelectedEventArgs.Create(SerialId, number));
     }
 
-    /// <summary>选择第一个存档格。</summary>
-    private void OnSlot1Clicked() => SelectSlot(1);
-
-    /// <summary>选择第二个存档格。</summary>
-    private void OnSlot2Clicked() => SelectSlot(2);
-
-    /// <summary>选择第三个存档格。</summary>
-    private void OnSlot3Clicked() => SelectSlot(3);
-
-    /// <summary>选择第四个存档格。</summary>
-    private void OnSlot4Clicked() => SelectSlot(4);
-
-    /// <summary>选择第五个存档格。</summary>
-    private void OnSlot5Clicked() => SelectSlot(5);
-
-    /// <summary>选择第六个存档格。</summary>
-    private void OnSlot6Clicked() => SelectSlot(6);
-
     /// <summary>关闭存档页，返回开始界面。</summary>
     private void OnCloseClicked()
     {
-        if (m_Data == null) return;
+        if (m_Data == null)
+            return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.UI.CloseUIForm(SerialId);
     }

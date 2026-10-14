@@ -12,7 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://diqfyhu6sufse" path="res://TheGame/Sprites/UI/hud/hud_ws_grey.png" id="11_ws_grey"]
 [ext_resource type="SpriteFrames" uid="uid://dxqm2awjmwes2" path="res://TheGame/Sprites/UI/hud/hud_ws_full_frames.tres" id="12_ws_frames"]
 [ext_resource type="SpriteFrames" uid="uid://cxs2dh6k62665" path="res://TheGame/Sprites/UI/gogo/gogo_animations.tres" id="13_gogo"]
-[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/Widgets/ResourceBar.cs" id="14_resourcebar"]
+[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/BattleHud/Components/ResourceBar.cs" id="14_resourcebar"]
 [ext_resource type="Texture2D" uid="uid://cgqqx20qcko1c" path="res://TheGame/Sprites/UI/hud/hud_mp_fill.png" id="15_mp"]
 [ext_resource type="Texture2D" uid="uid://2578tc6hjyl0" path="res://TheGame/Sprites/UI/hud/hud_exp_fill.png" id="16_exp"]
 [ext_resource type="Shader" uid="uid://cehdk4w6d0vqr" path="res://TheGame/Sprites/UI/hud/hud_ws_flash.gdshader" id="17_ws_flash"]
@@ -23,6 +23,7 @@
 [ext_resource type="Texture2D" uid="uid://dnusvvhljgk87" path="res://TheGame/Sprites/UI/hud/menu_inventory_caption.png" id="inventory_caption"]
 [ext_resource type="Texture2D" uid="uid://bp04w8lqa5lgf" path="res://TheGame/Sprites/UI/hud/menu_inventory_hover.png" id="inventory_hover"]
 [ext_resource type="Texture2D" uid="uid://dupeqk5y4l6qd" path="res://TheGame/Sprites/UI/hud/menu_inventory_normal.png" id="inventory_normal"]
+[ext_resource type="Script" uid="uid://degah6prk2pc5" path="res://TheGame/GameScripts/UI/BattleHud/Components/BattleMenuPanel.cs" id="menu_panel"]
 [ext_resource type="PackedScene" uid="uid://bjub483gtcj0n" path="res://TheGame/UIs/Widgets/musou_activation.tscn" id="musou_activation"]
 [ext_resource type="Texture2D" uid="uid://pyq4cimfpyqw" path="res://TheGame/Sprites/UI/hud/menu_pet_caption.png" id="pet_caption"]
 [ext_resource type="Texture2D" uid="uid://b2rglh1l8flli" path="res://TheGame/Sprites/UI/hud/menu_pet_hover.png" id="pet_hover"]
@@ -33,6 +34,7 @@
 [ext_resource type="Texture2D" uid="uid://2sst8lec4swu" path="res://TheGame/Sprites/UI/hud/menu_skills_caption.png" id="skills_caption"]
 [ext_resource type="Texture2D" uid="uid://rxicl8a8ghbt" path="res://TheGame/Sprites/UI/hud/menu_skills_hover.png" id="skills_hover"]
 [ext_resource type="Texture2D" uid="uid://chawhgtn222qb" path="res://TheGame/Sprites/UI/hud/menu_skills_normal.png" id="skills_normal"]
+[ext_resource type="Script" uid="uid://dqwfxty427s6q" path="res://TheGame/GameScripts/UI/BattleHud/Components/BattleStatusPanel.cs" id="status_panel"]
 [ext_resource type="Texture2D" uid="uid://cq76tj2cjr0n7" path="res://TheGame/Sprites/UI/hud/menu_weapon_caption.png" id="weapon_caption"]
 [ext_resource type="Texture2D" uid="uid://dp25pruwcy6xk" path="res://TheGame/Sprites/UI/hud/menu_weapon_hover.png" id="weapon_hover"]
 [ext_resource type="Texture2D" uid="uid://c80du00fmxodl" path="res://TheGame/Sprites/UI/hud/menu_weapon_normal.png" id="weapon_normal"]
@@ -43,7 +45,7 @@ shader_parameter/clip_center = Vector2(0.5, 0.5)
 shader_parameter/clip_radius = 32.0
 shader_parameter/clip_feather = 0.0
 
-[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_WsBar", "m_WsMax", "m_Go", "m_SettingsButton", "m_InventoryButton", "m_EncounterHealthBar", "m_MusouActivation")]
+[node name="BattleHud" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_Status", "m_Menu", "m_Go", "m_EncounterHealthBar", "m_MusouActivation")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -53,21 +55,20 @@ grow_vertical = 2
 mouse_filter = 2
 theme = ExtResource("18_theme")
 script = ExtResource("1_script")
-m_HpBar = NodePath("StatusPanel/m_HpBar")
-m_MpBar = NodePath("StatusPanel/m_MpBar")
-m_ExpBar = NodePath("StatusPanel/m_ExpBar")
-m_LevelLabel = NodePath("StatusPanel/m_LevelLabel")
-m_WsBar = NodePath("MenuPanel/WsFrame/m_WsBar")
-m_WsMax = NodePath("MenuPanel/m_WsMax")
+m_Status = NodePath("StatusPanel")
+m_Menu = NodePath("MenuPanel")
 m_Go = NodePath("m_Go")
-m_SettingsButton = NodePath("MenuPanel/m_SettingsButton")
-m_InventoryButton = NodePath("MenuPanel/m_InventoryButton")
 m_EncounterHealthBar = NodePath("m_EncounterHealthBar")
 m_MusouActivation = NodePath("m_MusouActivation")
 
-[node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247]
+[node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel")]
 position = Vector2(116, 44)
 texture = ExtResource("2_status")
+script = ExtResource("status_panel")
+m_HpBar = NodePath("m_HpBar")
+m_MpBar = NodePath("m_MpBar")
+m_ExpBar = NodePath("m_ExpBar")
+m_LevelLabel = NodePath("m_LevelLabel")
 
 [node name="m_HpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=172288184 node_paths=PackedStringArray("m_Text")]
 offset_left = -33.0
@@ -163,9 +164,15 @@ texture = ExtResource("6_head")
 position = Vector2(-19, -5)
 texture = ExtResource("3_label")
 
-[node name="MenuPanel" type="Sprite2D" parent="." unique_id=1301947710]
+[node name="MenuPanel" type="Sprite2D" parent="." unique_id=1301947710 node_paths=PackedStringArray("m_WsBar", "m_WsMax", "m_SettingsButton", "m_InventoryButton", "m_SkillsButton")]
 position = Vector2(90, 531)
 texture = ExtResource("7_menu")
+script = ExtResource("menu_panel")
+m_WsBar = NodePath("WsFrame/m_WsBar")
+m_WsMax = NodePath("m_WsMax")
+m_SettingsButton = NodePath("m_SettingsButton")
+m_InventoryButton = NodePath("m_InventoryButton")
+m_SkillsButton = NodePath("m_SkillsButton")
 
 [node name="WsFrame" type="Sprite2D" parent="MenuPanel" unique_id=129619926]
 position = Vector2(113, 25)
@@ -229,20 +236,20 @@ texture_disabled = ExtResource("settings_normal")
 position = Vector2(24, 30)
 texture = ExtResource("settings_caption")
 
-[node name="SkillsButton" type="TextureButton" parent="MenuPanel" unique_id=1008367831]
+[node name="m_SkillsButton" type="TextureButton" parent="MenuPanel" unique_id=1008367831]
 offset_left = -93.0
 offset_top = -39.0
 offset_right = -46.0
 offset_bottom = 1.0
-tooltip_text = "尚未开放"
+tooltip_text = "技能"
 focus_mode = 0
-disabled = true
+mouse_default_cursor_shape = 2
 texture_normal = ExtResource("skills_normal")
 texture_pressed = ExtResource("skills_normal")
 texture_hover = ExtResource("skills_hover")
 texture_disabled = ExtResource("skills_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanel/SkillsButton" unique_id=1611086862]
+[node name="Caption" type="Sprite2D" parent="MenuPanel/m_SkillsButton" unique_id=1611086862]
 position = Vector2(22, 31)
 texture = ExtResource("skills_caption")
 

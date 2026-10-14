@@ -21,7 +21,8 @@ public partial class BattleHud
     public override void _UnhandledInput(InputEvent inputEvent)
     {
         if (m_Data == null || !Visible || GF.Base.IsGamePaused ||
-            !inputEvent.IsActionPressed(GameLogic.Input.InputActions.InventoryToggle)) return;
+            !inputEvent.IsActionPressed(GameLogic.Input.InputActions.InventoryToggle))
+            return;
         GetViewport().SetInputAsHandled();
         OnInventoryClicked();
     }
@@ -47,8 +48,9 @@ public partial class BattleHud
         UIStringKeys.ForEach(key => key.SetLocalizationValue());
         if (isNewInstance)
         {
-            m_SettingsButton.Pressed += OnSettingsClicked;
-            m_InventoryButton.Pressed += OnInventoryClicked;
+            m_Menu.SettingsSelected += OnSettingsClicked;
+            m_Menu.InventorySelected += OnInventoryClicked;
+            m_Menu.SkillsSelected += OnSkillsClicked;
         }
     }
 
@@ -83,10 +85,9 @@ public partial class BattleHud
             throw new InvalidOperationException("BattleHud 绑定的英雄或关卡已经失效。");
         }
 
-        if (m_HpBar == null || m_MpBar == null || m_ExpBar == null || m_LevelLabel == null ||
-            m_WsBar == null || m_WsMax == null || m_Go == null || m_EncounterHealthBar == null || m_MusouActivation == null)
+        if (m_Status == null || m_Menu == null || m_Go == null || m_EncounterHealthBar == null || m_MusouActivation == null)
         {
-            throw new InvalidOperationException("BattleHud 必须绑定资源条、无双满值提示、等级、Go 和守关怪提示节点。");
+            throw new InvalidOperationException("BattleHud 必须绑定状态区、菜单区、Go、守关生命条和无双开启表现。");
         }
 
         // 先登记本次引用再订阅，部分订阅失败时也能完整退订。
@@ -161,7 +162,8 @@ public partial class BattleHud
     /// <summary>请关卡流程打开左下角设置菜单。</summary>
     private void OnSettingsClicked()
     {
-        if (m_Data == null) return;
+        if (m_Data == null)
+            return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, SettingsRequestedEventArgs.Create(SerialId));
     }
@@ -169,9 +171,19 @@ public partial class BattleHud
     /// <summary>请关卡流程打开战斗背包。</summary>
     private void OnInventoryClicked()
     {
-        if (m_Data == null) return;
+        if (m_Data == null)
+            return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, InventoryRequestedEventArgs.Create(SerialId));
+    }
+
+    /// <summary>请关卡流程打开技能目录。</summary>
+    private void OnSkillsClicked()
+    {
+        if (m_Data == null)
+            return;
+        GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        GF.Event.Fire(this, SkillsRequestedEventArgs.Create(SerialId));
     }
 
     /// <summary>释放本次订阅与表现任务，重复调用安全。</summary>
@@ -187,8 +199,10 @@ public partial class BattleHud
             m_Data = null;
         }
 
-        ResetMusouAnimation();
-        if (IsInstanceValid(m_MusouActivation)) m_MusouActivation.Reset();
+        if (IsInstanceValid(m_Menu))
+            m_Menu.ResetMusou();
+        if (IsInstanceValid(m_MusouActivation))
+            m_MusouActivation.Reset();
         m_WasMusouActive = false;
         BindEncounter(null);
         if (IsInstanceValid(m_Go))
@@ -217,9 +231,11 @@ public partial class BattleHud
     {
         if (m_Opponent != opponent)
         {
-            if (m_Opponent != null) m_Opponent.Vitals.Changed -= RefreshEncounterHealth;
+            if (m_Opponent != null)
+                m_Opponent.Vitals.Changed -= RefreshEncounterHealth;
             m_Opponent = opponent;
-            if (opponent != null) opponent.Vitals.Changed += RefreshEncounterHealth;
+            if (opponent != null)
+                opponent.Vitals.Changed += RefreshEncounterHealth;
         }
         RefreshEncounterHealth();
     }
@@ -227,56 +243,38 @@ public partial class BattleHud
     /// <summary>从唯一生命状态源读取并更新左名右条；关闭或死亡后隐藏。</summary>
     private void RefreshEncounterHealth()
     {
-        if (!IsInstanceValid(m_EncounterHealthBar)) return;
-        if (m_Opponent == null) m_EncounterHealthBar.Visible = false;
-        else m_EncounterHealthBar.SetValue(m_Opponent.Config.NameCn, m_Opponent.Vitals.Hp, m_Opponent.Vitals.MaxHp);
+        if (!IsInstanceValid(m_EncounterHealthBar))
+            return;
+        if (m_Opponent == null)
+            m_EncounterHealthBar.Visible = false;
+        else
+            m_EncounterHealthBar.SetValue(m_Opponent.Config.NameCn, m_Opponent.Vitals.Hp, m_Opponent.Vitals.MaxHp);
     }
 
     /// <summary>生命与魔法变化：一次读取当前值与上限，不会看到中间态。</summary>
     private void RefreshVitals()
     {
         var vitals = m_Data.Hero.Vitals;
-        m_HpBar.SetValue(vitals.Hp, vitals.MaxHp);
-        m_MpBar.SetValue(vitals.Mp, vitals.MaxMp);
+        m_Status.SetVitals(vitals.Hp, vitals.MaxHp, vitals.Mp, vitals.MaxMp);
     }
 
     /// <summary>刷新无双条，并按蓄满状态控制 HUD 专属提示；重复满值通知保持动画进度。</summary>
     private void RefreshMusou()
     {
         var musou = m_Data.Hero.Musou;
-        if (musou.IsActive && !m_WasMusouActive) m_MusouActivation.ShowActivation();
-        else if (!musou.IsActive) m_MusouActivation.Reset();
+        if (musou.IsActive && !m_WasMusouActive)
+            m_MusouActivation.ShowActivation();
+        else if (!musou.IsActive)
+            m_MusouActivation.Reset();
         m_WasMusouActive = musou.IsActive;
-        m_WsBar.SetValue(musou.Value, musou.Max);
-        if (!musou.IsFull)
-        {
-            ResetMusouAnimation();
-            return;
-        }
-
-        m_WsMax.Visible = true;
-        if (!m_WsMax.IsPlaying())
-        {
-            m_WsMax.Play();
-        }
-    }
-
-    /// <summary>停止并复位无双满值提示，关闭、改绑或消耗无双后不残留播放状态。</summary>
-    private void ResetMusouAnimation()
-    {
-        if (IsInstanceValid(m_WsMax))
-        {
-            m_WsMax.Stop();
-            m_WsMax.Visible = false;
-        }
+        m_Menu.SetMusou(musou.Value, musou.Max, musou.IsFull);
     }
 
     /// <summary>刷新等级与经验条（等级、本级经验、上限来自同一次派生）。</summary>
     private void RefreshProgression()
     {
         var progression = m_Data.Progression;
-        m_LevelLabel.Text = progression.Level.ToString();
-        m_ExpBar.SetValue(progression.Experience, progression.MaxExperience);
+        m_Status.SetProgression(progression.Level, progression.Experience, progression.MaxExperience);
     }
 
     /// <summary>显示或隐藏前进提示，并同步控制动画。</summary>

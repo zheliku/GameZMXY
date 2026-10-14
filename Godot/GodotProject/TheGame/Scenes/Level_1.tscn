@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://b6ai16cs6v6de" path="res://TheGame/GameScripts/Level/Stages/LevelGatesNode.cs" id="11_gate_manager"]
 [ext_resource type="Script" uid="uid://ccjmic0fgxfrv" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnerNode.cs" id="12_monster_manager"]
 [ext_resource type="PackedScene" uid="uid://qk7b0ixfs2in" path="res://TheGame/Scenes/Widgets/level_exit.tscn" id="exit_scene"]
+[ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/FloatingText/FloatingTextModule.cs" id="floating_text"]
 [ext_resource type="Texture2D" uid="uid://b3sopo3lus4t5" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_platform.png" id="platform"]
 
 [sub_resource type="RectangleShape2D" id="GroundShape"]
@@ -166,7 +167,7 @@ size = Vector2(253.0001, 31.843739)
 [sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
 size = Vector2(8, 4000)
 
-[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit")]
+[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText")]
 script = ExtResource("1_controller")
 m_SpawnPoints = NodePath("World/SpawnPoints")
 m_Triggers = NodePath("World/StageTriggers")
@@ -174,8 +175,12 @@ m_Gates = NodePath("World/StageGates")
 m_Spawner = NodePath("Spawner")
 m_Camera = NodePath("Camera2D")
 m_Exit = NodePath("World/Exit")
+m_FloatingText = NodePath("World/FloatingText")
 
 [node name="World" type="Node2D" parent="." unique_id=219105317]
+
+[node name="FloatingText" type="Node2D" parent="World" unique_id=660000079]
+script = ExtResource("floating_text")
 
 [node name="Background" type="Node2D" parent="World" unique_id=415239467]
 z_index = -20

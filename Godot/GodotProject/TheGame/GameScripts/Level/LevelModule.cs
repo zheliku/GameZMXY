@@ -5,6 +5,7 @@ using System;
 using System.Threading;
 using GameConfig.Level;
 using GameLogic.Heroes;
+using GameLogic.FloatingText;
 using Godot;
 using GodotGameFramework.Entity;
 
@@ -23,6 +24,7 @@ public partial class LevelModule : Node2D
     [Export] private LevelSpawnerNode m_Spawner; // 配方调度和关卡实体所有权，必需。
     [Export] private LevelCameraNode m_Camera; // 实际取景和阶段抵达事件，必需。
     [Export] private LevelExitNode m_Exit; // 清场后开放的出口交互，必需。
+    [Export] private FloatingTextModule m_FloatingText; // 本关伤害、闪避和恢复量的显示与池实例所有权。
 
     private LevelConfig m_Config; // 本场景对应的只读配置。
     private LevelStageSequence m_Sequence; // 会话当前阶段的唯一权威。
@@ -50,9 +52,10 @@ public partial class LevelModule : Node2D
     /// <exception cref="InvalidOperationException">绑定缺失、配置不存在、场景不匹配或管理器校验失败时抛出。</exception>
     public void Initialize()
     {
-        if (m_SpawnPoints == null || m_Gates == null || m_Spawner == null || m_Camera == null || m_Exit == null)
+        if (m_SpawnPoints == null || m_Gates == null || m_Spawner == null || m_Camera == null || m_Exit == null ||
+            m_FloatingText == null)
         {
-            throw new InvalidOperationException("关卡必须绑定 SpawnPoints、Gates、Spawner、Camera 和 Exit。");
+            throw new InvalidOperationException("关卡必须绑定 SpawnPoints、Gates、Spawner、Camera、Exit 和 FloatingText。");
         }
 
         m_Config = ConfigSystem.Instance.Tables.TbLevelConfig.GetOrDefault(m_LevelId)
@@ -87,6 +90,7 @@ public partial class LevelModule : Node2D
         m_Player = player;
         BeginProgress(context);
         m_Spawner.StartSession(entities, m_Camera, cancellationToken);
+        m_FloatingText.StartSession(OwnsActor);
         m_Spawner.StageCleared += OnStageCleared;
         m_Spawner.MonsterDefeated += OnMonsterDefeated;
         m_Spawner.MonsterShown += OnMonsterShown;
@@ -106,6 +110,7 @@ public partial class LevelModule : Node2D
     /// <summary>停止信号、调度和跟随并清理本关实体；初始化失败与流程离开时可重复调用。</summary>
     public void Cleanup()
     {
+        m_FloatingText?.StopSession();
         AbandonProgress();
         ClearLoot();
         if (m_Sequence == null || m_Sequence.Phase == LevelStagePhase.Stopped)
@@ -133,6 +138,11 @@ public partial class LevelModule : Node2D
         m_Player = null;
         SetTravelAvailable(false);
     }
+
+    /// <summary>飘字只接收本场玩家及本关刷怪服务拥有的运行实体。</summary>
+    /// <param name="entityId">伤害发生时复制的受击实体编号。</param>
+    /// <returns>是否归属本会话。</returns>
+    private bool OwnsActor(int entityId) => m_Player?.Id == entityId || m_Spawner.OwnsEntity(entityId);
 
     /// <summary>清波后开放当前阶段通路并设置相机右界，特殊阶段同时启用触发区监听。</summary>
     private void BeginTravel()
@@ -186,10 +196,12 @@ public partial class LevelModule : Node2D
     /// <summary>出口交互才提交通关；清场本身不保存、不导航。</summary>
     private void OnExitEntered()
     {
-        if (m_Sequence.Phase != LevelStagePhase.AwaitingExit || !m_Player.IsAlive) return;
+        if (m_Sequence.Phase != LevelStagePhase.AwaitingExit || !m_Player.IsAlive)
+            return;
         // 已按 W 时等最后的球实际接触再保存，避免把尚未拾取的收益丢在卸载场景中。
         m_ExitRequested = true;
-        if (m_LootOrbs.Count != 0) return;
+        if (m_LootOrbs.Count != 0)
+            return;
         m_Sequence.Complete();
         SubmitOutcome(LevelOutcome.Cleared);
     }
@@ -198,7 +210,8 @@ public partial class LevelModule : Node2D
     /// <param name="monster">已经归属本关的怪物。</param>
     private void OnMonsterShown(MonsterEntity monster)
     {
-        if (monster.Config.EntityId != m_Sequence.Current.FeaturedOpponentId) return;
+        if (monster.Config.EntityId != m_Sequence.Current.FeaturedOpponentId)
+            return;
         ClearFeaturedOpponent();
         FeaturedOpponent = monster;
         monster.Died += OnFeaturedOpponentDied;
@@ -212,7 +225,8 @@ public partial class LevelModule : Node2D
     /// <summary>解除对手事件，避免池复用或关卡离开后残留旧生命条。</summary>
     private void ClearFeaturedOpponent()
     {
-        if (FeaturedOpponent == null) return;
+        if (FeaturedOpponent == null)
+            return;
         FeaturedOpponent.Died -= OnFeaturedOpponentDied;
         FeaturedOpponent = null;
         FeaturedOpponentChanged?.Invoke();

@@ -53,12 +53,14 @@ public class ProcedurePreload : ProcedureBase
         }
         catch (Exception ex)
         {
-            if (entrySerial != m_EntrySerial) return;
+            if (entrySerial != m_EntrySerial)
+                return;
             Log.Fatal("[ProcedurePreload] 打开加载界面失败: {0}", ex);
             return;
         }
 
-        if (entrySerial != m_EntrySerial) return;
+        if (entrySerial != m_EntrySerial)
+            return;
         if (!groupsLoaded)
         {
             Log.Fatal("[ProcedurePreload] 必要资源组加载失败，停止进入游戏。");
@@ -92,7 +94,8 @@ public class ProcedurePreload : ProcedureBase
         }
         catch (Exception ex)
         {
-            if (entrySerial != m_EntrySerial) return;
+            if (entrySerial != m_EntrySerial)
+                return;
             Log.Fatal("[ProcedurePreload] 保存提示初始化失败：{0}", ex);
             return;
         }

@@ -14,13 +14,14 @@ public sealed partial class SaveModule
     /// <returns>读取任务；文件错误转换为目录失败提示。</returns>
     public async Task RefreshDirectoryAsync(CancellationToken cancellationToken)
     {
-        if (Directory.Phase == SaveDirectoryPhase.Loading) return;
-        Directory.Update(SaveDirectoryPhase.Loading);
+        if (Directory.Phase == SaveDirectoryPhase.Loading)
+            return;
+        Directory.UpdateState(SaveDirectoryPhase.Loading);
         try
         {
             var slots = await ReadSlotsAsync(cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-            Directory.Update(SaveDirectoryPhase.Ready, slots);
+            Directory.UpdateState(SaveDirectoryPhase.Ready, slots);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -29,7 +30,7 @@ public sealed partial class SaveModule
         catch (Exception error)
         {
             Log.Error("[SaveModule] 目录读取失败：{0}", error);
-            Directory.Update(SaveDirectoryPhase.Failed, errorMessage: "存档目录读取失败，请关闭后重试。");
+            Directory.UpdateState(SaveDirectoryPhase.Failed, errorMessage: "存档目录读取失败，请关闭后重试。");
         }
     }
 }

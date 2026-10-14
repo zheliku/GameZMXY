@@ -33,11 +33,15 @@ public sealed partial class UiSmokeScenario
         Check(form.Visible, "长按背包键的重复事件关闭了窗口");
         CheckHeroAnimationLayers(hero);
         Check(form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid").GetChildCount() == 25, "背包不是 5×5 格");
-        Check(form.GetNode<Label>("Window/CharacterPanel/Attributes/Hp/m_Hp").Text == $"{hero.Vitals.Hp} / {hero.Vitals.MaxHp}", "背包生命不是实际值");
+        Check(form.GetNode<Label>("Window/CharacterPanel/Attributes/Left/Hp/m_Hp").Text == $"{hero.Vitals.Hp} / {hero.Vitals.MaxHp}", "背包生命不是实际值");
         var body = form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Body");
         int initialFrame = body.Frame;
         double elapsed = SmokeInspection.ReadField<double>(level, "m_ElapsedSeconds");
         await WaitUntilAsync(() => body.Frame != initialFrame, "暂停时背包角色预览停止播放");
+        var weaponBackground = (ShaderMaterial)form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_WeaponSlot").Material;
+        var armorBackground = (ShaderMaterial)form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_ArmorSlot").Material;
+        Check(weaponBackground != armorBackground && !weaponBackground.GetShaderParameter("occupied").AsBool() &&
+            !armorBackground.GetShaderParameter("occupied").AsBool(), "空穿戴槽题签未恢复，或两个槽共用可变材质");
         Check(Math.Abs(SmokeInspection.ReadField<double>(level, "m_ElapsedSeconds") - elapsed) < .001, "背包暂停计入关卡时间");
         int originalSoul = context.Profile.Wallet.Soul;
         context.Profile.Wallet.AddSoul(17);
@@ -54,7 +58,7 @@ public sealed partial class UiSmokeScenario
                 "背包提示类型、实际属性、售价或首次布局错误");
             tooltip.Free();
         }
-        Check(form.GetNode<Label>("Window/CharacterPanel/Attributes/MagicResistance/m_MagicResistance").Text == "0%", "无装备基础魔抗不是0%");
+        Check(form.GetNode<Label>("Window/CharacterPanel/Attributes/Right/MagicResistance/m_MagicResistance").Text == "0%", "无装备基础魔抗不是0%");
         m_Driver.GetViewport().PushInput(new InputEventMouseMotion { Position = cell.GetGlobalRect().GetCenter(), GlobalPosition = cell.GetGlobalRect().GetCenter() }, true);
         await WaitFramesAsync(50);
         await CaptureCombatAsync("inventory_equipment");
@@ -69,13 +73,17 @@ public sealed partial class UiSmokeScenario
         ClickBagEquipment(form, context, EquipmentId.RoughPilgrimStaff);
         Check(context.Profile.ActiveEquipment.Weapon?.EquipmentId == EquipmentId.RoughPilgrimStaff &&
             hero.Attributes.Power == basePower + 3, "背包点击未穿戴武器或攻击未刷新");
+        Check(weaponBackground.GetShaderParameter("occupied").AsBool() && !armorBackground.GetShaderParameter("occupied").AsBool(),
+            "穿戴武器没有隐藏对应题签，或影响了空防具槽");
         CheckHeroAnimationLayers(hero);
         ClickBagEquipment(form, context, EquipmentId.CommonPilgrimClothes);
         Check(context.Profile.ActiveEquipment.Armor?.EquipmentId == EquipmentId.CommonPilgrimClothes &&
             hero.Attributes.Def == baseDefense + 3 && hero.Vitals.MaxHp == baseMaxHp + 27 && hero.Vitals.Hp == currentHp,
             "防具未刷新具名属性，或换装意外补血");
         CheckHeroAnimationLayers(hero);
-        Check(form.GetNode<Label>("Window/CharacterPanel/Attributes/Attack/m_Attack").Text == hero.Attributes.Power.ToString(),
+        Check(weaponBackground.GetShaderParameter("occupied").AsBool() && armorBackground.GetShaderParameter("occupied").AsBool(),
+            "两件穿戴后仍显示空槽题签");
+        Check(form.GetNode<Label>("Window/CharacterPanel/Attributes/Left/Attack/m_Attack").Text == hero.Attributes.Power.ToString(),
             "穿戴后界面未响应最终攻击变化");
         ClickBagEquipment(form, context, EquipmentId.RoughPineStaff);
         Check(context.Profile.ActiveEquipment.Weapon.EquipmentId == EquipmentId.RoughPilgrimStaff, "悟空穿上了唐僧武器");
@@ -97,6 +105,9 @@ public sealed partial class UiSmokeScenario
             form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/" + path)
                 ._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
             CheckHeroAnimationLayers(hero);
+            Check(!weaponBackground.GetShaderParameter("occupied").AsBool() &&
+                armorBackground.GetShaderParameter("occupied").AsBool() == (path == "m_WeaponSlot"),
+                "卸装没有独立恢复对应部位题签");
         }
         Check(context.Profile.ActiveEquipment.Weapon == null && context.Profile.ActiveEquipment.Armor == null &&
             hero.Attributes.Power == basePower && hero.Attributes.Def == baseDefense && hero.Vitals.MaxHp == baseMaxHp,
@@ -115,6 +126,8 @@ public sealed partial class UiSmokeScenario
         Check(form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text == closedValue, "关闭后背包仍订阅钱包");
         hud.GetNode<TextureButton>("MenuPanel/m_InventoryButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => form.Visible, "背包未复用原窗口");
+        Check(!weaponBackground.GetShaderParameter("occupied").AsBool() && !armorBackground.GetShaderParameter("occupied").AsBool(),
+            "背包复用残留穿戴背景状态");
         Check(form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text == originalSoul.ToString(), "重新打开未拉取当前钱包");
         form.GetNode<Button>("m_SaleConfirmation/Center/Panel/Content/Actions/m_SaleConfirm").EmitSignal(BaseButton.SignalName.Pressed);
         Check(!form.GetNode<Control>("m_SaleConfirmation").Visible &&
@@ -139,7 +152,8 @@ public sealed partial class UiSmokeScenario
         finally
         {
             InputMap.ActionEraseEvents(GameLogic.Input.InputActions.InventoryToggle);
-            foreach (var input in originalKeys) InputMap.ActionAddEvent(GameLogic.Input.InputActions.InventoryToggle, input);
+            foreach (var input in originalKeys)
+                InputMap.ActionAddEvent(GameLogic.Input.InputActions.InventoryToggle, input);
         }
         context.Profile.Inventory.Restore(originalEquipment);
         GD.Print("SMOKE-UI: inventory actual attributes, 25 cells, live soul, pause, animated preview, key remap/echo, unsubscribe and reuse passed");
@@ -163,7 +177,8 @@ public sealed partial class UiSmokeScenario
         var menu = form.GetNode<EquipmentActionsMenu>("m_Actions");
         Check(menu.Visible, "装备格没有打开操作菜单");
         var equip = menu.GetNode<TextureButton>("Panel/Equip");
-        if (!equip.Disabled) equip.EmitSignal(BaseButton.SignalName.Pressed);
+        if (!equip.Disabled)
+            equip.EmitSignal(BaseButton.SignalName.Pressed);
     }
 
     /// <summary>比较一项和三项属性的实际布局，头部固定、价格只随中间属性下移。</summary>
@@ -203,7 +218,8 @@ public sealed partial class UiSmokeScenario
             var type = tooltip.GetNode<TextureRect>("Content/Header/Type/Caption/Underline");
             Check(quality.Position == type.Position && quality.Size == new Vector2(80, 2) &&
                 type.Size == quality.Size, "品质/类型下划线未对齐");
-            if (id == EquipmentId.CommonPilgrimClothes) await CaptureCombatAsync("inventory_tooltip_attributes");
+            if (id == EquipmentId.CommonPilgrimClothes)
+                await CaptureCombatAsync("inventory_tooltip_attributes");
             form.RemoveChild(tooltip);
             tooltip.Free();
         }
@@ -338,8 +354,13 @@ public sealed partial class UiSmokeScenario
         control.GetViewport().PushInput(motion, true);
         foreach (bool pressed in new[] { true, false })
         {
-            using var click = new InputEventMouseButton { Position = position, GlobalPosition = position,
-                ButtonIndex = MouseButton.Left, Pressed = pressed };
+            using var click = new InputEventMouseButton
+            {
+                Position = position,
+                GlobalPosition = position,
+                ButtonIndex = MouseButton.Left,
+                Pressed = pressed
+            };
             control.GetViewport().PushInput(click, true);
         }
     }
@@ -372,7 +393,7 @@ public sealed partial class UiSmokeScenario
         foreach (int direction in new[] { -1, 1 })
         {
             hero.SetFacing(direction);
-            foreach (string name in new[] { "idle1", "idle2", "walk", "run", "jump", "jump_2", "fall", "hurt", "death", "attack_1", "attack_2", "attack_3", "attack_4", "attack_5" })
+            foreach (string name in new[] { "idle1", "walk", "run", "jump", "jump_2", "fall", "hurt", "death", "attack_1", "attack_2", "attack_3", "attack_4", "attack_5" })
             {
                 var animation = player.GetAnimation(name);
                 player.Play(name);
@@ -420,7 +441,11 @@ public sealed partial class UiSmokeScenario
         form.GetNode<TextureButton>("Content/Actions/m_ReturnMap").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.Procedure.CurrentProcedure is ProcedureMap && GF.UI.GetAllLoadedUIForms().OfType<MapForm>().Any(x => x.Visible), "失败结算没有返回地图");
         Check(!GF.Base.IsGamePaused && !form.Visible, "失败返回地图残留结算或暂停");
-        await WaitUntilAsync(() => { FrontendSmokeScenario.AdvanceToLevel(); return GF.Procedure.CurrentProcedure is ProcedureLevel && CurrentHud() != null; }, "失败返回地图后无法重新进关");
+        await WaitUntilAsync(() =>
+        {
+            FrontendSmokeScenario.AdvanceToLevel();
+            return GF.Procedure.CurrentProcedure is ProcedureLevel && CurrentHud() != null;
+        }, "失败返回地图后无法重新进关");
         GD.Print("SMOKE-UI: failure settlement retry, return map, retained checkpoint and pooled results passed");
     }
 

@@ -18,7 +18,8 @@ public static class SoundHelper
         /// <exception cref="InvalidOperationException">声音配置缺失。</exception>
         public int PlayConfigured(SoundId id, float fadeInSeconds = 0f)
         {
-            if (id == SoundId.None) return 0;
+            if (id == SoundId.None)
+                return 0;
             var config = ConfigSystem.Instance.Tables.TbSoundConfig.GetOrDefault((int)id)
                          ?? throw new InvalidOperationException($"声音配置缺失：{id}");
             // 每次请求独立取得池化参数，避免异步加载期间复用同一参数对象。

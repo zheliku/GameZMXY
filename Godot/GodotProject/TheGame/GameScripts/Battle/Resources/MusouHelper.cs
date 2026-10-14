@@ -12,7 +12,8 @@ public static class MusouHelper
     /// <returns>本次命中增长量；无有效伤害或基础攻击力时为零。</returns>
     public static int HitGain(int damage, int basePower, float coefficient)
     {
-        if (damage <= 0 || basePower <= 0 || !float.IsFinite(coefficient) || coefficient <= 0f) return 0;
+        if (damage <= 0 || basePower <= 0 || !float.IsFinite(coefficient) || coefficient <= 0f)
+            return 0;
         return (int)Math.Min(int.MaxValue, Math.Floor((double)damage / basePower * coefficient + .5));
     }
 }

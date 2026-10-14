@@ -11,7 +11,7 @@
 [ext_resource type="Texture2D" uid="uid://bj73pt6rq6bcr" path="res://TheGame/Sprites/UI/frontend/map_huaguoshan_normal.png" id="huaguoshan_normal"]
 [ext_resource type="Texture2D" uid="uid://456snmlisv53" path="res://TheGame/Sprites/UI/frontend/map_jialuoluo_hover.png" id="jialuoluo_hover"]
 [ext_resource type="Texture2D" uid="uid://l6vfnm668mrf" path="res://TheGame/Sprites/UI/frontend/map_jialuoluo_normal.png" id="jialuoluo_normal"]
-[ext_resource type="Script" uid="uid://bgiaah227v81a" path="res://TheGame/GameScripts/UI/Widgets/MapLocationButton.cs" id="location_button"]
+[ext_resource type="Script" uid="uid://bgiaah227v81a" path="res://TheGame/GameScripts/UI/MapForm/Components/MapLocationButton.cs" id="location_button"]
 [ext_resource type="Texture2D" uid="uid://dgolqegcy6inw" path="res://TheGame/Sprites/UI/frontend/map_niumogu_hover.png" id="niumogu_hover"]
 [ext_resource type="Texture2D" uid="uid://dda6pmgrebrk7" path="res://TheGame/Sprites/UI/frontend/map_niumogu_normal.png" id="niumogu_normal"]
 [ext_resource type="Shader" uid="uid://dwpg72nk34cge" path="res://TheGame/Sprites/UI/frontend/map_location_outline.gdshader" id="outline"]

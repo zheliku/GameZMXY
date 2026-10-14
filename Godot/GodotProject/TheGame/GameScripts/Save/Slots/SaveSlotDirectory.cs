@@ -30,10 +30,11 @@ public sealed class SaveSlotDirectory
     /// <param name="phase">目录读取阶段。</param>
     /// <param name="slots">完整格子摘要；省略时保留上次结果。</param>
     /// <param name="errorMessage">本次读取失败提示。</param>
-    internal void Update(SaveDirectoryPhase phase, IReadOnlyList<SaveSlotInfo> slots = null, string errorMessage = "")
+    internal void UpdateState(SaveDirectoryPhase phase, IReadOnlyList<SaveSlotInfo> slots = null, string errorMessage = "")
     {
         Phase = phase;
-        if (slots != null) Slots = slots;
+        if (slots != null)
+            Slots = slots;
         ErrorMessage = errorMessage;
         Changed?.Invoke();
     }

@@ -16,7 +16,7 @@ public partial class HeroAppearanceResource : Resource
     /// <param name="weapon">武器表现层，绘制在身体层上方。</param>
     /// <param name="armed">是否穿戴武器。</param>
     /// <param name="armored">是否穿戴防具。</param>
-    public void Apply(Sprite2D body, Sprite2D weapon, bool armed, bool armored)
+    public void ApplyToSprites(Sprite2D body, Sprite2D weapon, bool armed, bool armored)
     {
         body.Texture = armored ? m_ArmoredBody : m_BaseBody;
         weapon.Texture = armed ? m_EquippedWeapon : m_BaseWeapon;

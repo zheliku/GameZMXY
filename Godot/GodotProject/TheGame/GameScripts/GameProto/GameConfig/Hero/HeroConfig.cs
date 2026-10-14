@@ -24,13 +24,15 @@ public sealed partial class HeroConfig : Luban.BeanBase
         WalkSpeed = _buf.ReadFloat();
         RunSpeed = _buf.ReadFloat();
         RunDoubleTapWindow = _buf.ReadFloat();
-        IdleEmoteDelay = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         JumpSpeed = _buf.ReadFloat();
         Gravity = _buf.ReadFloat();
         JumpCountMax = _buf.ReadInt();
         HurtSoundId = (Sound.SoundId)_buf.ReadInt();
         DeathSoundId = (Sound.SoundId)_buf.ReadInt();
-        InputBufferTime = _buf.ReadFloat();
+        {int __n0 = _buf.ReadSize(); AttackInputCooldowns = new float[__n0];for(var __index0 = 0 ; __index0 < __n0 ; __index0++) { float __e0;__e0 = _buf.ReadFloat(); AttackInputCooldowns[__index0] = __e0;}}
+        AirAttackCooldown = _buf.ReadFloat();
+        ComboResetTime = _buf.ReadFloat();
+        PlatformDropDistance = _buf.ReadFloat();
     }
 
     public static HeroConfig DeserializeHeroConfig(ByteBuf _buf)
@@ -59,27 +61,23 @@ public sealed partial class HeroConfig : Luban.BeanBase
     /// </summary>
     public readonly Entity.EntityId EntityId;
     /// <summary>
-    /// 慢走速度 px/s
+    /// 慢走速度px/s，造一悟空6px/帧&#215;24
     /// </summary>
     public readonly float WalkSpeed;
     /// <summary>
-    /// 跑步(快走)速度 px/s
+    /// 奔跑速度px/s，造一10px/帧&#215;24
     /// </summary>
     public readonly float RunSpeed;
     /// <summary>
-    /// 双击方向键进入跑步的判定窗口(秒)
+    /// 同方向两次按下间隔严格小于此秒数进入奔跑；原500ms
     /// </summary>
     public readonly float RunDoubleTapWindow;
     /// <summary>
-    /// 待机后隔多久随机播一次憨笑(秒,x=最短,y=最长,写法 6,12)
-    /// </summary>
-    public readonly Godot.Vector2 IdleEmoteDelay;
-    /// <summary>
-    /// 起跳速度(向上为正,旧 jump_power=-540)
+    /// 起跳速度px/s，向上为正；造一20px/帧&#215;24
     /// </summary>
     public readonly float JumpSpeed;
     /// <summary>
-    /// 重力(旧 gravity=980 向下)
+    /// 重力px/s&#178;，造一1.5px/帧&#178;&#215;24&#178;
     /// </summary>
     public readonly float Gravity;
     /// <summary>
@@ -95,9 +93,21 @@ public sealed partial class HeroConfig : Luban.BeanBase
     /// </summary>
     public readonly Sound.SoundId DeathSoundId;
     /// <summary>
-    /// 输入缓冲秒:跳跃/普攻按键在这段时间内等到可执行时机仍生效(0=只在按下那一帧有效)
+    /// 按上次地面普攻1~5段取本次起手后的冷却秒数，先取值再推进段号；Role1.normalHit 原8/8/15/18/8帧除24
     /// </summary>
-    public readonly float InputBufferTime;
+    public readonly float[] AttackInputCooldowns;
+    /// <summary>
+    /// 空中普攻起手后冷却秒数；原15帧除24
+    /// </summary>
+    public readonly float AirAttackCooldown;
+    /// <summary>
+    /// 两次普攻尝试间隔超过此秒数重置首段，拒绝的输入也更新时间
+    /// </summary>
+    public readonly float ComboResetTime;
+    /// <summary>
+    /// S+K从单向平台向下移动距离px；普通地面无效
+    /// </summary>
+    public readonly float PlatformDropDistance;
    
     public const int __ID__ = -1911300528;
     public override int GetTypeId() => __ID__;
@@ -117,13 +127,15 @@ public sealed partial class HeroConfig : Luban.BeanBase
         + "WalkSpeed:" + WalkSpeed + ","
         + "RunSpeed:" + RunSpeed + ","
         + "RunDoubleTapWindow:" + RunDoubleTapWindow + ","
-        + "IdleEmoteDelay:" + IdleEmoteDelay + ","
         + "JumpSpeed:" + JumpSpeed + ","
         + "Gravity:" + Gravity + ","
         + "JumpCountMax:" + JumpCountMax + ","
         + "HurtSoundId:" + HurtSoundId + ","
         + "DeathSoundId:" + DeathSoundId + ","
-        + "InputBufferTime:" + InputBufferTime + ","
+        + "AttackInputCooldowns:" + Luban.StringUtil.CollectionToString(AttackInputCooldowns) + ","
+        + "AirAttackCooldown:" + AirAttackCooldown + ","
+        + "ComboResetTime:" + ComboResetTime + ","
+        + "PlatformDropDistance:" + PlatformDropDistance + ","
         + "}";
     }
 }

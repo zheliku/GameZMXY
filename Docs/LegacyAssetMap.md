@@ -229,7 +229,7 @@
 | `Art/BackPack/sz.png` | `Sprites/UI/inventory/inventory_slot_costume.png` |
 | `Art/BackPack/tx.png` | `Sprites/UI/inventory/inventory_slot_title.png` |
 
-`UIs/Widgets/hero_preview.tscn` 与战斗实体共用下述官方身体、武器图集及 `wukong_appearance.tres`。外置 `inventory_preview_animation.tres` 取当前待机的 0..5 帧（0.8 秒循环）；金光取旧背包 BackPackLight 的第 3..8 格（192×192，15 fps，竖直翻转）。动画只改变显示帧，不带攻击或碰撞轨道。
+`UIs/Widgets/hero_preview.tscn` 与战斗实体共用下述官方身体、武器图集及 `wukong_appearance.tres`。外置 `inventory_preview_animation.tres` 使用原版完整待机 100 帧（24 fps，约 4.167 秒循环）；金光取旧背包 BackPackLight 的第 3..8 格（192×192，15 fps，竖直翻转）。动画只改变显示帧，不带攻击或碰撞轨道。
 
 ## 装备与地面恢复品
 
@@ -254,7 +254,7 @@
 
 ## 悟空独立身体与武器
 
-当前战斗和背包使用官方 `Role_v7.swf` 的 `export.hero.Role1`（sprite 575）动作。四张图均为 1200×3000、6×15、每格 200×200；87 个有效帧紧凑排列，仅末行余 3 格：
+当前战斗和背包使用官方 `Role_v7.swf` 的 `export.hero.Role1`（sprite 575）动作。四张图均为 1200×4000、6×20、每格 200×200；保留基础与技能的前 108 格（含原填充格），追加完整待机缺少的 8 个姿势，末行余 4 格：
 
 | 新文件（`Sprites/Characters/Heroes/wukong/`） | 源选择帧 | 用途 |
 | --- | --- | --- |
@@ -267,7 +267,7 @@
 
 所有动作保留 Role1 父级中的完整矩阵，统一 SVG viewBox `(-100,-128,200,200)`，原 Flash 原点位于格内 `(100,128)`。例如待机平移 `(1.45,0.8)`、慢走 `(-6.85,0.85)`、跑步 `(3.75,0.2)`、受击 `(-17.95,2.6)`；漏掉这些矩阵会造成动作切换跳位。不能按各帧可见边界重新居中，也不能在运行时移动角色根节点补偿。
 
-帧号为零起：基础动作 0..24；五段普攻依次为 25..32、33..40、41..51、52..71、72..86。身体与武器共用帧号，源动作暂时隐藏武器的 3 帧保留透明，不能因此移除武器槽并破坏同步。已删除旧技能占位和重复采样的攻击姿势，不预留整片空槽。
+帧号为零起：基础动作 0..24；五段普攻依次为 25..32、33..40、41..51、52..71、72..86。身体与武器共用帧号，源动作暂时隐藏武器的 3 帧保留透明，不能因此移除武器槽并破坏同步。技能 122 个源帧按四张图共同的像素签名复用 20 格，映射记录在技能导出 manifest 的 `frame_cells`；透明阶段共用一格，原始时间轴仍完整保留，不预留整片空槽。
 
 固定红金色金箍棒形状的残影只来自元件 246，导出时在所有动作中过滤；保留 203/254/282 的弧光和旋转特效。第三、四段仍有原版动态效果，第五段去掉棒影后没有独立可见特效。身体、真实武器及源时序不变。特效图 `Sprites/Effects/wukong/wukong_attack_effects.png` 为 2400×1200、6×4、每格 400×300，19 个可见源帧、末行余 5 格。五段共 62 个源帧，43 个无特效帧用 null 保留时序而不占图集。特效 viewBox `(-200,-178,400,300)`，Flash 原点对应本地 `(0,28)`；按源深度裁去被后续身体/武器遮挡的部分，不混入装备层。
 
@@ -275,7 +275,7 @@
 
 复现入口为 `Tools/LegacyMigration/export_official_wukong.py`（核对源 SHA、保留矩阵和逐帧深度）与 `EditorScripts/import_official_wukong.gd`（原生 SVG 栅格化、紧凑打包、拟合判定并输出 manifest）。必须显式指定工程内的特效输出路径；完整命令统一放在 [Validation](Validation.md)。随后 `Tools/LegacyMigration/import_official_wukong_attacks.py` 按 manifest 定向替换五段攻击、特效序列和矩形判定轨道，移除无消费者的 skill_*，一次性映射基础帧号并更新两处场景网格；其余基础动作只补齐判定旋转归零轨道，手调时序及已有轨道保持原样。重复执行不会再次映射。
 
-当前 14 个玩法动作（9 个基础动作、5 段攻击）和 RESET 使用同一两层资源，背包待机引用不变。造三攻击和未实现技能等将来取得对应素材时再完整迁入，不保留混代的占位动画。
+当前 13 个玩法动作（8 个基础动作、5 段攻击）和 RESET 使用同一两层资源。`wait` 子元件 529 的普通待机、立棍和张望属于同一条 100 帧时间轴，完整导入 `idle1` 与背包 `idle`，不再截取两帧拼成 `idle2` 或额外随机触发。`import_official_wukong_idle.gd` 只追加缺少姿势，`Tools/LegacyMigration/import_official_wukong_idle.py` 只更新待机轨道和两处网格；已有攻击、技能及手调时序保持不变。复现时在基础与技能导入后执行，命令见 Validation。悟空五项造一技能另挂 `skills` 动画库，仅供准备与预览；造三攻击没有混入这些资源。
 
 ## 恢复飘字与装备菜单
 
@@ -288,6 +288,43 @@
 | `inventory_action_gift_disabled.png` | 同包 sprite 367，第 2 帧 | 单人赠送禁用 |
 | `inventory_action_sell.png` | 同包 sprite 381，第 1 帧 | 出售按钮 |
 
-恢复数字由 `Tools/LegacyMigration/gen_damage_numbers.gd` 拼接，表现规则见 OfficialReference。菜单由 `Tools/LegacyMigration/export_official_inventory_actions.py` 核对官方包散列后导出；来源为矢量元件，未截图或重绘。提示框按官方 `AttributeCon.as` 的字体、间距、颜色和装饰重建为原生 Godot 控件。
+恢复数字由 `Tools/LegacyMigration/gen_damage_numbers.gd` 拼接，与伤害数字、闪避共用 `Entitys/Effects/floating_text.tscn` 和 `FloatingTextNode`，表现规则见 OfficialReference。菜单由 `Tools/LegacyMigration/export_official_inventory_actions.py` 核对官方包散列后导出；来源为矢量元件，未截图或重绘。提示框按官方 `AttributeCon.as` 的字体、间距、颜色和装饰重建为原生 Godot 控件。
+
+数字排布参考旧 `Script/Hittext/DamageText.gd` 的 HBox 组合和造一 `my/ANumber.as` 的固定步长，再按用户要求改为比例字宽。图集仍为等宽十格存储；显示时仅去除各数字横向的全透明列，包含所有非透明描边，保留完整高度及纵向注册位置。后续美术应保持各数字同一基线、风格和格高，无需把“1”等窄字符拉宽；不得以图集格宽代替字符可见宽度。场景 `floating_text.tscn` 的 `m_DigitGap` 控制可见轮廓之间的间隙，默认 0px；`m_NarrowGlyphPadding` 默认 1/6，按当前字符与同样式最宽字符的宽度差给窄字补侧留白，适用于全部 0–9，而非特判 1/8。既有 PNG 未修改。
 
 翻页按钮直接迁自旧项目 `Art/BackPack/LastPageN/Y.png`、`NextPageN/Y.png`，分别保留普通/悬停图，命名为 `inventory_previous_page[_hover].png`、`inventory_next_page[_hover].png`；图片已有箭头和文字，不叠加 Label。只复制 PNG，Godot 在新路径生成导入信息。
+
+## 造一技能面板
+
+`Sprites/UI/skills/` 的 34 张图片由 `Tools/LegacyMigration/export_official_skill_ui.py` 直接从上述官方 `OtherMat_v9.swf` 导出，没有截图、重绘或迁入旧逻辑。脚本检查恢复后的 SHA-256，使用 FFDec 原生 PNG 渲染保留位图图案和透明度；简单按钮按原始 Up/Over 显示列表导出。
+
+| 原元件 | 新资源 | 状态 / 尺寸 |
+| --- | --- | --- |
+| bitmap 375 / 586 | `skills_background.jpg` / `skills_soul_badge.png` | 940×590 背景 / 74×66 灵魂徽章 |
+| sprite 585 | `skills_table_active.png` / `skills_table_passive.png` | 第 1/2 帧，746×429 表格 |
+| sprite 382 / 386 | `skills_wukong_*` / `skills_sanzang_*` | 第 3 帧灰色未选中、第 2 帧彩色选中；两页均可查看 |
+| button 295 / 657 / 653 | `skills_back_*` / `skills_active_*` / `skills_passive_*` | 普通与悬停 |
+| sprite 594/599/604/609/614 | 五项悟空 `skill_*_unlearned/learned.png` | 第 1 帧灰色含“学习”、第 2 帧彩色，65×65 |
+| sprite 624/629/634/639/644 | 五项唐僧 `skill_*_unlearned/learned.png` | 同上；629 对应玄冰阵 |
+
+原点取 `BuySkill`、`SkillControl` 和子元件矩阵：角色页签 `(89.35,6.85)` / `(228.35,5.85)`、返回 `(854,15.05)`、表格左上 `(100,85)`。十行主动与五行被动直接位于技能主场景，以 GridContainer 对齐，不使用行子场景；唐僧长说明在行内 MarginContainer + Label 控制留白和换行。预填文本和图标仅供编辑预览，运行时读取正式技能表覆盖。当前全部技能展示未学习状态，图标和升级字样不提交购买。
+
+## 悟空造一技能动作与声音
+
+`Tools/LegacyMigration/export_official_wukong_skills.py` 检查同一 Role_v7 散列，冻结衣服与武器选择器并保留 Role1 父级矩阵；`EditorScripts/import_official_wukong_skills.gd` 栅格化两层与遮罩；`Tools/LegacyMigration/import_official_wukong_skills.py` 紧凑打包并生成外置值轨道。原有 87 格逐像素保持相同，基础动作库不重生成。
+
+| 动画库名称（`skills/`） | 源 body 元件 | 源帧数 / 24 fps | Role1 父级变换 |
+| --- | --- | --- | --- |
+| rising_dragon 升龙斩 | 384 | 15 / 0.625 秒 | 平移 (2.15,-1.6) |
+| flame_thrust 火炎突击 | 569 | 15 / 0.625 秒 | 平移 (-15.2,-3.8) |
+| blazing_flash 烈焰闪 | 344 | 12 / 0.5 秒 | 平移 (0.75,0.25) |
+| flame_storm 烈焰风暴 | 417 | 10 / 0.416667 秒 | 平移 (-17.55,2.3) |
+| fire_demon_slash 火魔斩 | 574 | 70 / 2.916667 秒 | X 镜像、平移 (4.75,26) |
+
+统一角色原点仍为格内 `(100,128)`、Sprite 本地 `(0,28)`；技能只改变帧和判定，不移动角色根节点。源元件 338 是烈焰闪的模糊轮廓，Godot SVG 滤镜会画成矩形色块，因此与 371/416/568 的弧光改用 FFDec 原生 PNG。`FlashSpriteBounds.java` 读取 `Timeline.getDisplayRectWithFilters` 的精确导出矩形后再应用父级变换，不能按可见像素重新居中或猜测滤镜留白。41 个可见帧存于 `wukong_skill_inline_effects.png`（800×400 格，4 列）；无光效帧保留 null。
+
+烈焰闪不把模糊光效当作超宽命中区：保留原透明探针 205 的几何，只在验证/拟合时转为不透明。其他有 stick 的技能按源窗口及可见能量拟合两种武器共同的矩形，沿用 3px 余量、最小厚度 14px；透明能量阶段关闭判定。火魔斩主体没有 stick，70 帧内的大段透明是原文件事实，伤害与表现由独立特效承担。
+
+独立特效位于 `Sprites/Effects/wukong/skills/`、外置库 `Entitys/Animations/Skills/`、场景 `Entitys/Effects/Skills/`；图片用 `_atlas`、场景用 `_effect`、序列用 `_frames`、库用 `_library` 后缀，保证全树 basename 唯一：烈焰闪拖尾 66（10 帧）、火魔起手 129（40 帧）、九连斩 112（44 帧）、下冲 133（2 帧）、落地斩 123（13 帧）。后三项带独立 HitBox；无方法轨道、玩法脚本或自动播放，不提前接入实战。
+
+七段声音取自[官方 Music.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/Music.swf)，恢复后 SHA-256 `5cad2f1ef3ce592c2e9e44c631748e042d8cacae2c7571e57b1a0546998a7578`。`export_official_skill_audio.py` 原样导出 MP3：6/8/11/1 分别为升龙斩/火炎突击/烈焰闪/烈焰风暴，13/14/15 为火魔起手/九连斩/落地。正式路径 `Audios/SFX/wukong/skills/`，SoundId 7..13，全部登记到 GGF SFX，无循环。

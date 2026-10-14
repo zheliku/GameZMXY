@@ -29,14 +29,14 @@ public sealed class LootTests
     {
         var drop = TestTables.Tables.TbDropConfig.Data;
         foreach (var monster in TestTables.Tables.TbMonsterConfig.DataList)
-        foreach (float random in new[] { 0f, .34f, .67f, .99999f, 1f })
-        {
-            var loot = LootHelper.Roll(monster, drop, () => random);
-            Assert.InRange(loot.Count, 2, 10);
-            Assert.All(loot.Where(x => x.Kind == LootKind.Musou), x => Assert.Equal(5, x.Amount));
-            Assert.InRange(loot.Count(x => x.Kind == LootKind.Soul), monster.SoulCount.X, monster.SoulCount.Y);
-            Assert.All(loot.Where(x => x.Kind == LootKind.Soul), x => Assert.Equal(monster.SoulPerOrb, x.Amount));
-        }
+            foreach (float random in new[] { 0f, .34f, .67f, .99999f, 1f })
+            {
+                var loot = LootHelper.Roll(monster, drop, () => random);
+                Assert.InRange(loot.Count, 2, 10);
+                Assert.All(loot.Where(x => x.Kind == LootKind.Musou), x => Assert.Equal(5, x.Amount));
+                Assert.InRange(loot.Count(x => x.Kind == LootKind.Soul), monster.SoulCount.X, monster.SoulCount.Y);
+                Assert.All(loot.Where(x => x.Kind == LootKind.Soul), x => Assert.Equal(monster.SoulPerOrb, x.Amount));
+            }
     }
 
     /// <summary>12% 概率边界不多发蓝球，触发时数量可覆盖区间两端。</summary>

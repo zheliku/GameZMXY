@@ -7,38 +7,34 @@ extends SceneTree
 ##      动作时长由 C# OnInit 读动画长度（ActorEntity.GetAnimLength），音效由状态钩子触发；
 ##      将来"第 N 帧放子弹/脚步声"这类中途时点用 Godot 4.3+ 动画标记（Animation.GetMarkerTime，
 ##      代码读时间自己计时），也不是方法轨道；
-##   3. 身体状态要计时的动画（attack_*、hurt、death、待机小动作）不得循环
+##   3. 身体状态要计时的动画（attack_*、hurt、death）不得循环
 ##      ——时长 = 长度是隐含契约，循环动画语义不符；
 ##   4. 值轨道完备：库里**任一**动画写过的值轨道路径，**每个**动画（含 RESET）都必须带
 ##      ——AnimationPlayer 直驱不回卷轨道，缺轨的属性会残留上一个动画写入的值。
 ##
 ## 运行：S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --script res://EditorScripts/validate_anim_libraries.gd
 
-## 角色差异表：新角色加一行（必需动画、待机小动作动画名）
+## 角色差异表：新角色加一行必需动画。
 const CHARACTERS := [
 	{
 		"lib": "res://TheGame/Entitys/Animations/wukong_anim_library.tres",
 		"name": "悟空",
-		"required": ["idle1", "idle2", "walk", "run", "jump", "jump_2", "fall", "hurt", "death"],
-		"emote": "idle2",
+		"required": ["idle1", "walk", "run", "jump", "jump_2", "fall", "hurt", "death"],
 	},
 	{
 		"lib": "res://TheGame/Entitys/Animations/huaguoshan_monkey_anim_library.tres",
 		"name": "花果山猴子",
 		"required": ["idle", "run", "hurt", "death"],
-		"emote": "",
 	},
 	{
 		"lib": "res://TheGame/Entitys/Animations/demon_monkey_anim_library.tres",
 		"name": "妖猴",
 		"required": ["idle", "run", "hurt", "death"],
-		"emote": "",
 	},
 	{
 		"lib": "res://TheGame/Entitys/Animations/gorilla_anim_library.tres",
 		"name": "大猩猩",
 		"required": ["idle", "run", "hurt", "death"],
-		"emote": "",
 	},
 ]
 
@@ -88,11 +84,6 @@ func _validate(ch: Dictionary, lib: AnimationLibrary) -> bool:
 			if a.track_get_type(t) == Animation.TYPE_VALUE:
 				value_paths[String(a.track_get_path(t))] = true
 
-	# 身体状态要计时的动画：attack_*/hurt/death + 各角色 emote；必须非循环
-	var wait_anims := ["^attack_\\d+$", "^hurt$", "^death$"]
-	if String(ch.emote) != "":
-		wait_anims.append("^" + String(ch.emote) + "$")
-
 	for anim in anims:
 		var a := lib.get_animation(String(anim))
 		var anim_name := String(anim)
@@ -108,11 +99,10 @@ func _validate(ch: Dictionary, lib: AnimationLibrary) -> bool:
 				ok = false
 
 		# 要计时的动画必须非循环
-		for pattern in wait_anims:
-			if anim_name.matchn(pattern) and a.loop_mode != Animation.LOOP_NONE:
-				push_error("%s/%s 是循环动画：身体状态按「动画长度」计时，循环动画语义不符"
-					% [String(ch.name), anim_name])
-				ok = false
+		if (anim_name.begins_with("attack_") or anim_name in ["hurt", "death"]) and a.loop_mode != Animation.LOOP_NONE:
+			push_error("%s/%s 是循环动画：身体状态按「动画长度」计时，循环动画语义不符"
+				% [String(ch.name), anim_name])
+			ok = false
 
 		# 值轨道完备（含 RESET）
 		var own := {}

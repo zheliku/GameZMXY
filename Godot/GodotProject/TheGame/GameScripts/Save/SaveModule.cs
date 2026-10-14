@@ -66,7 +66,8 @@ namespace GameLogic.Save
                     throw new InvalidOperationException("该存档格已有文件，拒绝覆盖。");
                 loaded = await GF.Archive.SaveAsync();
             }
-            else loaded = await GF.Archive.LoadAsync(unitId);
+            else
+                loaded = await GF.Archive.LoadAsync(unitId);
 
             if (!loaded || GF.Archive.CurrentData == null || GF.Archive.CurrentCatalogue == null ||
                 GF.Archive.CurrentData.UnitId != GF.Archive.CurrentCatalogue.UnitId)
@@ -205,7 +206,8 @@ namespace GameLogic.Save
         private async Task<bool> NotifyWriteAsync(Task<bool> write)
         {
             bool succeeded = await write;
-            if (succeeded) GF.Event.Fire(this, SaveSucceededEventArgs.Create());
+            if (succeeded)
+                GF.Event.Fire(this, SaveSucceededEventArgs.Create());
             return succeeded;
         }
     }

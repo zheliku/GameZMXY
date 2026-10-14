@@ -15,6 +15,9 @@ public static class InputActions
     /// <summary>角色向右移动。</summary>
     public const string MoveRight = "move_right";
 
+    /// <summary>下方向，与跳跃组合穿过单向平台（S）。</summary>
+    public const string MoveDown = "move_down";
+
     /// <summary>跳跃。</summary>
     public const string Jump = "jump";
 

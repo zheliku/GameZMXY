@@ -8,75 +8,75 @@ namespace GameLogic.Profile;
 /// </summary>
 public sealed class HeroProgression
 {
-	private readonly ExperienceCurve m_Curve; // 已验证的共享经验曲线。
+    private readonly ExperienceCurve m_Curve; // 已验证的共享经验曲线。
 
-	/// <summary>本进度所属英雄的 HeroConfig 主键。</summary>
-	public int HeroId { get; }
+    /// <summary>本进度所属英雄的 HeroConfig 主键。</summary>
+    public int HeroId { get; }
 
-	/// <summary>累计经验。</summary>
-	public int TotalExperience { get; private set; }
+    /// <summary>累计经验。</summary>
+    public int TotalExperience { get; private set; }
 
-	/// <summary>当前等级。</summary>
-	public int Level { get; private set; }
+    /// <summary>当前等级。</summary>
+    public int Level { get; private set; }
 
-	/// <summary>本级已获得经验。</summary>
-	public int Experience { get; private set; }
+    /// <summary>本级已获得经验。</summary>
+    public int Experience { get; private set; }
 
-	/// <summary>升下一级所需经验；满级为 0。</summary>
-	public int MaxExperience { get; private set; }
+    /// <summary>升下一级所需经验；满级为 0。</summary>
+    public int MaxExperience { get; private set; }
 
-	/// <summary>累计经验或等级发生变化；订阅方一次读取全部派生值。</summary>
-	public event Action Changed;
+    /// <summary>累计经验或等级发生变化；订阅方一次读取全部派生值。</summary>
+    public event Action Changed;
 
-	/// <summary>按累计经验创建成长状态。</summary>
-	/// <param name="heroId">本进度所属的英雄编号。</param>
-	/// <param name="curve">共享经验曲线。</param>
-	/// <param name="totalExperience">累计经验，超出范围时钳到首末门槛。</param>
-	/// <exception cref="ArgumentNullException">经验曲线为空。</exception>
-	public HeroProgression(int heroId, ExperienceCurve curve, int totalExperience)
-	{
-		HeroId = heroId;
-		m_Curve = curve ?? throw new ArgumentNullException(nameof(curve));
-		Apply(totalExperience);
-	}
+    /// <summary>按累计经验创建成长状态。</summary>
+    /// <param name="heroId">本进度所属的英雄编号。</param>
+    /// <param name="curve">共享经验曲线。</param>
+    /// <param name="totalExperience">累计经验，超出范围时钳到首末门槛。</param>
+    /// <exception cref="ArgumentNullException">经验曲线为空。</exception>
+    public HeroProgression(int heroId, ExperienceCurve curve, int totalExperience)
+    {
+        HeroId = heroId;
+        m_Curve = curve ?? throw new ArgumentNullException(nameof(curve));
+        UpdateExperienceAndLevel(totalExperience);
+    }
 
-	/// <summary>获得经验，可一次跨多级，满级后不再增加。</summary>
-	/// <param name="amount">非负经验值。</param>
-	/// <returns>本次提升的等级数；未升级为 0。</returns>
-	/// <exception cref="ArgumentOutOfRangeException">经验为负。</exception>
-	public int AddExperience(int amount)
-	{
-		ArgumentOutOfRangeException.ThrowIfNegative(amount);
-		int total = m_Curve.Add(TotalExperience, amount);
-		if (total == TotalExperience)
-		{
-			return 0;
-		}
+    /// <summary>获得经验，可一次跨多级，满级后不再增加。</summary>
+    /// <param name="amount">非负经验值。</param>
+    /// <returns>本次提升的等级数；未升级为 0。</returns>
+    /// <exception cref="ArgumentOutOfRangeException">经验为负。</exception>
+    public int AddExperience(int amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        int total = m_Curve.Add(TotalExperience, amount);
+        if (total == TotalExperience)
+        {
+            return 0;
+        }
 
-		int previousLevel = Level;
-		Apply(total);
-		Changed?.Invoke();
-		return Level - previousLevel;
-	}
+        int previousLevel = Level;
+        UpdateExperienceAndLevel(total);
+        Changed?.Invoke();
+        return Level - previousLevel;
+    }
 
-	/// <summary>回滚到指定累计经验（关卡事务回滚时使用）。</summary>
-	/// <param name="totalExperience">要恢复的累计经验。</param>
-	public void Restore(int totalExperience)
-	{
-		if (totalExperience == TotalExperience)
-		{
-			return;
-		}
+    /// <summary>回滚到指定累计经验（关卡事务回滚时使用）。</summary>
+    /// <param name="totalExperience">要恢复的累计经验。</param>
+    public void Restore(int totalExperience)
+    {
+        if (totalExperience == TotalExperience)
+        {
+            return;
+        }
 
-		Apply(totalExperience);
-		Changed?.Invoke();
-	}
+        UpdateExperienceAndLevel(totalExperience);
+        Changed?.Invoke();
+    }
 
-	/// <summary>写入累计经验并刷新全部派生值。</summary>
-	/// <param name="totalExperience">累计经验。</param>
-	private void Apply(int totalExperience)
-	{
-		TotalExperience = Math.Clamp(totalExperience, 0, m_Curve.MaxTotalExperience);
-		(Level, Experience, MaxExperience) = m_Curve.Evaluate(TotalExperience);
-	}
+    /// <summary>写入累计经验并刷新全部派生值。</summary>
+    /// <param name="totalExperience">累计经验。</param>
+    private void UpdateExperienceAndLevel(int totalExperience)
+    {
+        TotalExperience = Math.Clamp(totalExperience, 0, m_Curve.MaxTotalExperience);
+        (Level, Experience, MaxExperience) = m_Curve.Evaluate(TotalExperience);
+    }
 }

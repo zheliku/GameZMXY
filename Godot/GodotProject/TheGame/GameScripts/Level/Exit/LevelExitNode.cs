@@ -44,11 +44,16 @@ public partial class LevelExitNode : Area2D
     /// <param name="delta">物理帧秒数。</param>
     public override void _PhysicsProcess(double delta) => m_Prompt.Visible = CanEnter();
 
-    /// <summary>只接受靠近、落地、存活玩家的新按键，拒绝按住自动重复。</summary>
+    /// <summary>只接受靠近、落地、存活玩家的单独 W，拒绝动作组合与按住自动重复。</summary>
     /// <param name="input">尚未被界面消费的输入。</param>
     public override void _UnhandledInput(InputEvent input)
     {
-        if (!input.IsActionPressed(InputActions.Interact) || input.IsEcho() || !CanEnter()) return;
+        if (!input.IsActionPressed(InputActions.Interact) || input.IsEcho() || !CanEnter())
+            return;
+        // 造一只把 S/J/K/W 中的单独 W 当作出口输入，W＋J 等组合属于动作输入。
+        if (Godot.Input.IsActionPressed(InputActions.Attack) || Godot.Input.IsActionPressed(InputActions.Jump) ||
+            Godot.Input.IsActionPressed(InputActions.MoveDown))
+            return;
         GetViewport().SetInputAsHandled();
         Disable();
         Entered?.Invoke();

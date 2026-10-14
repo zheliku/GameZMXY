@@ -1,0 +1,71 @@
+[gd_resource type="AnimationLibrary" format=3]
+
+[sub_resource type="RectangleShape2D" id="rest"]
+size = Vector2(1, 1)
+
+[sub_resource type="Animation" id="play"]
+resource_name = "play"
+length = 1.666666667
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.041666667, 0.083333333, 0.125, 0.166666667, 0.208333333, 0.25, 0.291666667, 0.333333333, 0.375, 0.416666667, 0.458333333, 0.5, 0.541666667, 0.583333333, 0.625, 0.666666667, 0.708333333, 0.75, 0.791666667, 0.833333333, 0.875, 0.916666667, 0.958333333, 1, 1.041666667, 1.083333333, 1.125, 1.166666667, 1.208333333, 1.25, 1.291666667, 1.333333333, 1.375, 1.416666667, 1.458333333, 1.5, 1.541666667, 1.583333333, 1.625),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HitBox/CollisionShape2D:disabled")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.041666667, 0.083333333, 0.125, 0.166666667, 0.208333333, 0.25, 0.291666667, 0.333333333, 0.375, 0.416666667, 0.458333333, 0.5, 0.541666667, 0.583333333, 0.625, 0.666666667, 0.708333333, 0.75, 0.791666667, 0.833333333, 0.875, 0.916666667, 0.958333333, 1, 1.041666667, 1.083333333, 1.125, 1.166666667, 1.208333333, 1.25, 1.291666667, 1.333333333, 1.375, 1.416666667, 1.458333333, 1.5, 1.541666667, 1.583333333, 1.625, 1.666666667),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("HitBox/CollisionShape2D:shape")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.041666667, 0.083333333, 0.125, 0.166666667, 0.208333333, 0.25, 0.291666667, 0.333333333, 0.375, 0.416666667, 0.458333333, 0.5, 0.541666667, 0.583333333, 0.625, 0.666666667, 0.708333333, 0.75, 0.791666667, 0.833333333, 0.875, 0.916666667, 0.958333333, 1, 1.041666667, 1.083333333, 1.125, 1.166666667, 1.208333333, 1.25, 1.291666667, 1.333333333, 1.375, 1.416666667, 1.458333333, 1.5, 1.541666667, 1.583333333, 1.625),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest"), SubResource("rest")]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("HitBox/CollisionShape2D:position")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.041666667, 0.083333333, 0.125, 0.166666667, 0.208333333, 0.25, 0.291666667, 0.333333333, 0.375, 0.416666667, 0.458333333, 0.5, 0.541666667, 0.583333333, 0.625, 0.666666667, 0.708333333, 0.75, 0.791666667, 0.833333333, 0.875, 0.916666667, 0.958333333, 1, 1.041666667, 1.083333333, 1.125, 1.166666667, 1.208333333, 1.25, 1.291666667, 1.333333333, 1.375, 1.416666667, 1.458333333, 1.5, 1.541666667, 1.583333333, 1.625),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("HitBox/CollisionShape2D:rotation")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.041666667, 0.083333333, 0.125, 0.166666667, 0.208333333, 0.25, 0.291666667, 0.333333333, 0.375, 0.416666667, 0.458333333, 0.5, 0.541666667, 0.583333333, 0.625, 0.666666667, 0.708333333, 0.75, 0.791666667, 0.833333333, 0.875, 0.916666667, 0.958333333, 1, 1.041666667, 1.083333333, 1.125, 1.166666667, 1.208333333, 1.25, 1.291666667, 1.333333333, 1.375, 1.416666667, 1.458333333, 1.5, 1.541666667, 1.583333333, 1.625),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+}
+
+[resource]
+_data = {&"play": SubResource("play")}

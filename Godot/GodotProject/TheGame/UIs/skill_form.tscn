@@ -1,0 +1,1343 @@
+[gd_scene format=3 uid="uid://h63lbsxvr3l0"]
+
+[ext_resource type="Texture2D" uid="uid://crqn2wjhowq8q" path="res://TheGame/Sprites/UI/skills/skills_active_hover.png" id="active_hover"]
+[ext_resource type="Texture2D" uid="uid://cd0m21lfubf7p" path="res://TheGame/Sprites/UI/skills/skills_active_normal.png" id="active_normal"]
+[ext_resource type="Script" uid="uid://cti7n14nm56xr" path="res://TheGame/GameScripts/UI/SkillForm/Components/ActiveSkillsPage.cs" id="active_page"]
+[ext_resource type="Texture2D" uid="uid://c8syxoafd2udv" path="res://TheGame/Sprites/UI/skills/skills_background.jpg" id="background"]
+[ext_resource type="Texture2D" uid="uid://dmngkpfhqgrdg" path="res://TheGame/Sprites/UI/skills/skills_back_hover.png" id="back_hover"]
+[ext_resource type="Texture2D" uid="uid://d0t0ukf08noa4" path="res://TheGame/Sprites/UI/skills/skills_back_normal.png" id="back_normal"]
+[ext_resource type="Texture2D" uid="uid://8xicifc33pfl" path="res://TheGame/Sprites/UI/skills/skills_passive_hover.png" id="passive_hover"]
+[ext_resource type="Texture2D" uid="uid://ednn1y6t06n" path="res://TheGame/Sprites/UI/skills/skills_passive_normal.png" id="passive_normal"]
+[ext_resource type="Script" uid="uid://3k3gju1ac8fo" path="res://TheGame/GameScripts/UI/SkillForm/Components/PassiveSkillsPage.cs" id="passive_page"]
+[ext_resource type="Texture2D" uid="uid://f33yngplw1l1" path="res://TheGame/Sprites/UI/skills/skill_blazing_flash_unlearned.png" id="preview_BlazingFlash"]
+[ext_resource type="Texture2D" uid="uid://bstp843s10eri" path="res://TheGame/Sprites/UI/skills/skill_dark_ice_thorn_unlearned.png" id="preview_DarkIceFormation"]
+[ext_resource type="Texture2D" uid="uid://c6xwvopbwydw1" path="res://TheGame/Sprites/UI/skills/skill_fire_demon_slash_unlearned.png" id="preview_FireDemonSlash"]
+[ext_resource type="Texture2D" uid="uid://b47mw4rfj1ef2" path="res://TheGame/Sprites/UI/skills/skill_flame_storm_unlearned.png" id="preview_FlameStorm"]
+[ext_resource type="Texture2D" uid="uid://cu1sjn2ar7fdg" path="res://TheGame/Sprites/UI/skills/skill_flame_thrust_unlearned.png" id="preview_FlameThrust"]
+[ext_resource type="Texture2D" uid="uid://btd571anp7inb" path="res://TheGame/Sprites/UI/skills/skill_heavenly_dew_unlearned.png" id="preview_HeavenlyDew"]
+[ext_resource type="Texture2D" uid="uid://dql7ujoloihc0" path="res://TheGame/Sprites/UI/skills/skill_ice_dragon_wave_unlearned.png" id="preview_IceDragonWave"]
+[ext_resource type="Texture2D" uid="uid://bxi27gk75nvau" path="res://TheGame/Sprites/UI/skills/skill_rising_dragon_unlearned.png" id="preview_RisingDragon"]
+[ext_resource type="Texture2D" uid="uid://no0nhsi2368m" path="res://TheGame/Sprites/UI/skills/skill_water_clone_unlearned.png" id="preview_WaterClone"]
+[ext_resource type="Texture2D" uid="uid://be1k5w44ul7vo" path="res://TheGame/Sprites/UI/skills/skill_water_demon_burst_unlearned.png" id="preview_WaterDemonBurst"]
+[ext_resource type="Texture2D" uid="uid://bg1ny27sxcsr0" path="res://TheGame/Sprites/UI/skills/skills_sanzang_normal.png" id="sanzang_normal"]
+[ext_resource type="Texture2D" uid="uid://be3obq5rt4ky6" path="res://TheGame/Sprites/UI/skills/skills_sanzang_selected.png" id="sanzang_selected"]
+[ext_resource type="Script" uid="uid://cib6g24vitb2x" path="res://TheGame/GameScripts/UI/SkillForm/SkillForm.cs" id="script"]
+[ext_resource type="Texture2D" uid="uid://b1s8quf6qusmj" path="res://TheGame/Sprites/UI/skills/skills_soul_badge.png" id="soul_badge"]
+[ext_resource type="Texture2D" uid="uid://d04e05qkegwn0" path="res://TheGame/Sprites/UI/skills/skills_table_active.png" id="table_active"]
+[ext_resource type="Texture2D" uid="uid://pnu3s2y83uhk" path="res://TheGame/Sprites/UI/skills/skills_table_passive.png" id="table_passive"]
+[ext_resource type="Texture2D" uid="uid://dflf2u60a6bce" path="res://TheGame/Sprites/UI/skills/skills_wukong_normal.png" id="wukong_normal"]
+[ext_resource type="Texture2D" uid="uid://c62rdxg1jxdkh" path="res://TheGame/Sprites/UI/skills/skills_wukong_selected.png" id="wukong_selected"]
+
+[node name="SkillForm" type="Control" unique_id=1949534136 node_paths=PackedStringArray("m_Wukong", "m_Tangseng", "m_Back", "m_ActivePage", "m_PassivePage", "m_Active", "m_Passive", "m_Soul")]
+editor_description = "技能行直接位于本场景。预填文字和图标用于编辑预览；运行时 Bind 使用正式配置覆盖。每行 GridContainer 管列宽，行内 MarginContainer 管说明留白。"
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("script")
+m_Wukong = NodePath("Content/Header/m_Wukong")
+m_Tangseng = NodePath("Content/Header/m_Tangseng")
+m_Back = NodePath("Content/Header/m_Back")
+m_ActivePage = NodePath("Content/m_ActivePage")
+m_PassivePage = NodePath("Content/m_PassivePage")
+m_Active = NodePath("Content/Footer/m_Active")
+m_Passive = NodePath("Content/Footer/m_Passive")
+m_Soul = NodePath("Content/Footer/Balance/m_Soul")
+
+[node name="Content" type="Control" parent="." unique_id=2134977421]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -470.0
+offset_top = -295.0
+offset_right = 470.0
+offset_bottom = 295.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Backdrop" type="TextureRect" parent="Content" unique_id=1410101841]
+layout_mode = 0
+offset_right = 940.0
+offset_bottom = 590.0
+mouse_filter = 2
+texture = ExtResource("background")
+
+[node name="Header" type="Control" parent="Content" unique_id=1643931355]
+anchors_preset = 0
+offset_right = 940.0
+offset_bottom = 50.0
+mouse_filter = 2
+
+[node name="m_Wukong" type="TextureButton" parent="Content/Header" unique_id=1849462881]
+layout_mode = 0
+offset_left = 89.35
+offset_top = 6.85
+offset_right = 149.35
+offset_bottom = 40.85
+focus_mode = 0
+mouse_default_cursor_shape = 2
+toggle_mode = true
+button_pressed = true
+texture_normal = ExtResource("wukong_normal")
+texture_disabled = ExtResource("wukong_normal")
+texture_pressed = ExtResource("wukong_selected")
+texture_hover = ExtResource("wukong_selected")
+
+[node name="m_Tangseng" type="TextureButton" parent="Content/Header" unique_id=1668072631]
+layout_mode = 0
+offset_left = 228.35
+offset_top = 5.85
+offset_right = 289.35
+offset_bottom = 40.85
+focus_mode = 0
+mouse_default_cursor_shape = 2
+toggle_mode = true
+texture_normal = ExtResource("sanzang_normal")
+texture_disabled = ExtResource("sanzang_normal")
+texture_pressed = ExtResource("sanzang_selected")
+texture_hover = ExtResource("sanzang_selected")
+
+[node name="m_Back" type="TextureButton" parent="Content/Header" unique_id=1035133636]
+layout_mode = 0
+offset_left = 854.0
+offset_top = 15.05
+offset_right = 908.0
+offset_bottom = 35.05
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("back_normal")
+texture_pressed = ExtResource("back_hover")
+texture_hover = ExtResource("back_hover")
+
+[node name="m_ActivePage" type="Control" parent="Content" unique_id=1979918179 node_paths=PackedStringArray("m_WukongRows", "m_TangsengRows")]
+anchors_preset = 0
+offset_right = 940.0
+offset_bottom = 535.0
+mouse_filter = 2
+script = ExtResource("active_page")
+m_WukongRows = NodePath("m_WukongRows")
+m_TangsengRows = NodePath("m_TangsengRows")
+
+[node name="TableBackground" type="TextureRect" parent="Content/m_ActivePage" unique_id=1479476789]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 85.0
+offset_right = 846.0
+offset_bottom = 514.0
+mouse_filter = 2
+texture = ExtResource("table_active")
+
+[node name="Headers" type="Control" parent="Content/m_ActivePage" unique_id=943064318]
+anchors_preset = 0
+offset_left = 100.0
+offset_top = 85.0
+offset_right = 846.0
+offset_bottom = 121.0
+mouse_filter = 2
+
+[node name="Column1" type="Label" parent="Content/m_ActivePage/Headers" unique_id=1246507068]
+layout_mode = 0
+offset_right = 81.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 13
+text = "技能名称"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column2" type="Label" parent="Content/m_ActivePage/Headers" unique_id=1459736425]
+layout_mode = 0
+offset_left = 81.0
+offset_right = 166.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 13
+text = "技能图标"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column3" type="Label" parent="Content/m_ActivePage/Headers" unique_id=939449220]
+layout_mode = 0
+offset_left = 166.0
+offset_right = 250.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 13
+text = "所需灵魂"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column4" type="Label" parent="Content/m_ActivePage/Headers" unique_id=774264179]
+layout_mode = 0
+offset_left = 250.0
+offset_right = 335.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 13
+text = "技能按键"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column5" type="Label" parent="Content/m_ActivePage/Headers" unique_id=2040529320]
+layout_mode = 0
+offset_left = 335.0
+offset_right = 746.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 13
+text = "技能说明"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_WukongRows" type="Control" parent="Content/m_ActivePage" unique_id=2076142921]
+anchors_preset = 0
+offset_left = 100.0
+offset_top = 121.0
+offset_right = 846.0
+offset_bottom = 514.0
+mouse_filter = 2
+
+[node name="Skill1" type="GridContainer" parent="Content/m_ActivePage/m_WukongRows" unique_id=656784276]
+layout_mode = 0
+offset_right = 746.0
+offset_bottom = 79.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 5
+
+[node name="Name" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill1" unique_id=2118256721]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "升龙斩"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="IconCell" type="Control" parent="Content/m_ActivePage/m_WukongRows/Skill1" unique_id=1175145636]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_WukongRows/Skill1/IconCell" unique_id=721277726]
+layout_mode = 0
+offset_left = 12.05
+offset_top = 5.0
+offset_right = 77.05
+offset_bottom = 70.0
+mouse_filter = 2
+texture = ExtResource("preview_RisingDragon")
+expand_mode = 1
+
+[node name="Soul" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill1" unique_id=548892053]
+custom_minimum_size = Vector2(84, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Key" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill1" unique_id=1560193294]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "↑ J"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="DescriptionCell" type="MarginContainer" parent="Content/m_ActivePage/m_WukongRows/Skill1" unique_id=569869741]
+custom_minimum_size = Vector2(411, 79)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_right = 4
+
+[node name="Description" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill1/DescriptionCell" unique_id=128016009]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "近身后用力将怪物挑到空中"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Skill2" type="GridContainer" parent="Content/m_ActivePage/m_WukongRows" unique_id=1267759166]
+layout_mode = 0
+offset_top = 77.0
+offset_right = 746.0
+offset_bottom = 156.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 5
+
+[node name="Name" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill2" unique_id=1475751905]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "火炎突击"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="IconCell" type="Control" parent="Content/m_ActivePage/m_WukongRows/Skill2" unique_id=1876199352]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_WukongRows/Skill2/IconCell" unique_id=124385646]
+layout_mode = 0
+offset_left = 12.05
+offset_top = 5.0
+offset_right = 77.05
+offset_bottom = 70.0
+mouse_filter = 2
+texture = ExtResource("preview_FlameThrust")
+expand_mode = 1
+
+[node name="Soul" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill2" unique_id=1485675073]
+custom_minimum_size = Vector2(84, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "200"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Key" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill2" unique_id=1413233029]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "→→J"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="DescriptionCell" type="MarginContainer" parent="Content/m_ActivePage/m_WukongRows/Skill2" unique_id=1022704190]
+custom_minimum_size = Vector2(411, 79)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_right = 4
+
+[node name="Description" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill2/DescriptionCell" unique_id=916915178]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "打退前方怪物并造成3次伤害"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Skill3" type="GridContainer" parent="Content/m_ActivePage/m_WukongRows" unique_id=1503674627]
+layout_mode = 0
+offset_top = 158.0
+offset_right = 746.0
+offset_bottom = 237.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 5
+
+[node name="Name" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill3" unique_id=1239312752]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "烈焰闪"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="IconCell" type="Control" parent="Content/m_ActivePage/m_WukongRows/Skill3" unique_id=1163231145]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_WukongRows/Skill3/IconCell" unique_id=1919386816]
+layout_mode = 0
+offset_left = 12.05
+offset_top = 5.0
+offset_right = 77.05
+offset_bottom = 70.0
+mouse_filter = 2
+texture = ExtResource("preview_BlazingFlash")
+expand_mode = 1
+
+[node name="Soul" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill3" unique_id=2030989631]
+custom_minimum_size = Vector2(84, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "500"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Key" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill3" unique_id=2061715319]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "U"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="DescriptionCell" type="MarginContainer" parent="Content/m_ActivePage/m_WukongRows/Skill3" unique_id=1589060059]
+custom_minimum_size = Vector2(411, 79)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_right = 4
+
+[node name="Description" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill3/DescriptionCell" unique_id=1137766435]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "向前冲刺对碰到的怪物造成伤害，冲刺过程处于无敌状态"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Skill4" type="GridContainer" parent="Content/m_ActivePage/m_WukongRows" unique_id=1922989426]
+layout_mode = 0
+offset_top = 238.0
+offset_right = 746.0
+offset_bottom = 317.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 5
+
+[node name="Name" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill4" unique_id=1182406373]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "烈焰风暴"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="IconCell" type="Control" parent="Content/m_ActivePage/m_WukongRows/Skill4" unique_id=603835698]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_WukongRows/Skill4/IconCell" unique_id=1377692644]
+layout_mode = 0
+offset_left = 12.05
+offset_top = 5.0
+offset_right = 77.05
+offset_bottom = 70.0
+mouse_filter = 2
+texture = ExtResource("preview_FlameStorm")
+expand_mode = 1
+
+[node name="Soul" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill4" unique_id=1301275521]
+custom_minimum_size = Vector2(84, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "1000"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Key" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill4" unique_id=2073015634]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "I"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="DescriptionCell" type="MarginContainer" parent="Content/m_ActivePage/m_WukongRows/Skill4" unique_id=1083865434]
+custom_minimum_size = Vector2(411, 79)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_right = 4
+
+[node name="Description" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill4/DescriptionCell" unique_id=2018743050]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "快速旋转震开周围怪物并造成多次伤害"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Skill5" type="GridContainer" parent="Content/m_ActivePage/m_WukongRows" unique_id=1174363516]
+layout_mode = 0
+offset_top = 317.0
+offset_right = 746.0
+offset_bottom = 396.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 5
+
+[node name="Name" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill5" unique_id=2111499126]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "火魔斩"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="IconCell" type="Control" parent="Content/m_ActivePage/m_WukongRows/Skill5" unique_id=775257503]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_WukongRows/Skill5/IconCell" unique_id=161100587]
+layout_mode = 0
+offset_left = 12.05
+offset_top = 5.0
+offset_right = 77.05
+offset_bottom = 70.0
+mouse_filter = 2
+texture = ExtResource("preview_FireDemonSlash")
+expand_mode = 1
+
+[node name="Soul" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill5" unique_id=628733039]
+custom_minimum_size = Vector2(84, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "2000"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Key" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill5" unique_id=814816380]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "O"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="DescriptionCell" type="MarginContainer" parent="Content/m_ActivePage/m_WukongRows/Skill5" unique_id=1918557739]
+custom_minimum_size = Vector2(411, 79)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_right = 4
+
+[node name="Description" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill5/DescriptionCell" unique_id=1291963407]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "冲向空中施放火魔九连斩，落地后为最后一斩，造成极高的伤害"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="m_TangsengRows" type="Control" parent="Content/m_ActivePage" unique_id=545639497]
+visible = false
+anchors_preset = 0
+offset_left = 100.0
+offset_top = 121.0
+offset_right = 846.0
+offset_bottom = 514.0
+mouse_filter = 2
+
+[node name="Skill1" type="GridContainer" parent="Content/m_ActivePage/m_TangsengRows" unique_id=1125440962]
+layout_mode = 0
+offset_right = 746.0
+offset_bottom = 79.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 5
+
+[node name="Name" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill1" unique_id=216461499]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "冰龙波"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="IconCell" type="Control" parent="Content/m_ActivePage/m_TangsengRows/Skill1" unique_id=943665999]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_TangsengRows/Skill1/IconCell" unique_id=146358664]
+layout_mode = 0
+offset_left = 12.05
+offset_top = 5.0
+offset_right = 77.05
+offset_bottom = 70.0
+mouse_filter = 2
+texture = ExtResource("preview_IceDragonWave")
+expand_mode = 1
+
+[node name="Soul" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill1" unique_id=622098422]
+custom_minimum_size = Vector2(84, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Key" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill1" unique_id=1712788376]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "长按J"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="DescriptionCell" type="MarginContainer" parent="Content/m_ActivePage/m_TangsengRows/Skill1" unique_id=1296347562]
+custom_minimum_size = Vector2(411, 79)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 43
+theme_override_constants/margin_right = 13
+
+[node name="Description" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill1/DescriptionCell" unique_id=979279865]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "蓄气放出一条冰龙，对一条直线的怪物造成伤害"
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Skill2" type="GridContainer" parent="Content/m_ActivePage/m_TangsengRows" unique_id=1148629039]
+layout_mode = 0
+offset_top = 77.0
+offset_right = 746.0
+offset_bottom = 156.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 5
+
+[node name="Name" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill2" unique_id=432919552]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "玄冰阵"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="IconCell" type="Control" parent="Content/m_ActivePage/m_TangsengRows/Skill2" unique_id=1628693264]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_TangsengRows/Skill2/IconCell" unique_id=1463780410]
+layout_mode = 0
+offset_left = 12.05
+offset_top = 5.0
+offset_right = 77.05
+offset_bottom = 70.0
+mouse_filter = 2
+texture = ExtResource("preview_DarkIceFormation")
+expand_mode = 1
+
+[node name="Soul" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill2" unique_id=1813574036]
+custom_minimum_size = Vector2(84, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "200"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Key" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill2" unique_id=1507798121]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "U"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="DescriptionCell" type="MarginContainer" parent="Content/m_ActivePage/m_TangsengRows/Skill2" unique_id=676717957]
+custom_minimum_size = Vector2(411, 79)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 43
+theme_override_constants/margin_right = 13
+
+[node name="Description" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill2/DescriptionCell" unique_id=1821322848]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "释放玄冰对周围怪物造成伤害，并减缓移动速度"
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Skill3" type="GridContainer" parent="Content/m_ActivePage/m_TangsengRows" unique_id=1342654462]
+layout_mode = 0
+offset_top = 158.0
+offset_right = 746.0
+offset_bottom = 237.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 5
+
+[node name="Name" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill3" unique_id=105965260]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "水幻影"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="IconCell" type="Control" parent="Content/m_ActivePage/m_TangsengRows/Skill3" unique_id=596775384]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_TangsengRows/Skill3/IconCell" unique_id=975815593]
+layout_mode = 0
+offset_left = 12.05
+offset_top = 5.0
+offset_right = 77.05
+offset_bottom = 70.0
+mouse_filter = 2
+texture = ExtResource("preview_WaterClone")
+expand_mode = 1
+
+[node name="Soul" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill3" unique_id=589241240]
+custom_minimum_size = Vector2(84, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "500"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Key" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill3" unique_id=1796536137]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "I"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="DescriptionCell" type="MarginContainer" parent="Content/m_ActivePage/m_TangsengRows/Skill3" unique_id=927413165]
+custom_minimum_size = Vector2(411, 79)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 43
+theme_override_constants/margin_right = 13
+
+[node name="Description" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill3/DescriptionCell" unique_id=1793527970]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "召唤出幻影向前冲去，幻影继承某些技能的释放，可以随时传送到幻影位置"
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Skill4" type="GridContainer" parent="Content/m_ActivePage/m_TangsengRows" unique_id=493469624]
+layout_mode = 0
+offset_top = 238.0
+offset_right = 746.0
+offset_bottom = 317.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 5
+
+[node name="Name" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill4" unique_id=1195352675]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "天降甘露"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="IconCell" type="Control" parent="Content/m_ActivePage/m_TangsengRows/Skill4" unique_id=1571435999]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_TangsengRows/Skill4/IconCell" unique_id=98242802]
+layout_mode = 0
+offset_left = 12.05
+offset_top = 5.0
+offset_right = 77.05
+offset_bottom = 70.0
+mouse_filter = 2
+texture = ExtResource("preview_HeavenlyDew")
+expand_mode = 1
+
+[node name="Soul" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill4" unique_id=2111330533]
+custom_minimum_size = Vector2(84, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "1000"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Key" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill4" unique_id=471901133]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "O"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="DescriptionCell" type="MarginContainer" parent="Content/m_ActivePage/m_TangsengRows/Skill4" unique_id=484435351]
+custom_minimum_size = Vector2(411, 79)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 43
+theme_override_constants/margin_right = 13
+
+[node name="Description" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill4/DescriptionCell" unique_id=1355697508]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "蓄气一秒，之后回复范围内自身和队友一定生命值"
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Skill5" type="GridContainer" parent="Content/m_ActivePage/m_TangsengRows" unique_id=1457075594]
+layout_mode = 0
+offset_top = 317.0
+offset_right = 746.0
+offset_bottom = 396.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 5
+
+[node name="Name" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill5" unique_id=993022082]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "水魔爆"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="IconCell" type="Control" parent="Content/m_ActivePage/m_TangsengRows/Skill5" unique_id=2812346]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_TangsengRows/Skill5/IconCell" unique_id=1077580977]
+layout_mode = 0
+offset_left = 12.05
+offset_top = 5.0
+offset_right = 77.05
+offset_bottom = 70.0
+mouse_filter = 2
+texture = ExtResource("preview_WaterDemonBurst")
+expand_mode = 1
+
+[node name="Soul" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill5" unique_id=1507884547]
+custom_minimum_size = Vector2(84, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "2000"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Key" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill5" unique_id=2059373695]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "L"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="DescriptionCell" type="MarginContainer" parent="Content/m_ActivePage/m_TangsengRows/Skill5" unique_id=126657432]
+custom_minimum_size = Vector2(411, 79)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 43
+theme_override_constants/margin_right = 13
+
+[node name="Description" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill5/DescriptionCell" unique_id=1279411498]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "召唤出魔法阵，向空中引出一道光柱，对目标造成较大的伤害"
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="m_PassivePage" type="Control" parent="Content" unique_id=1676550797 node_paths=PackedStringArray("m_Rows")]
+visible = false
+anchors_preset = 0
+offset_right = 940.0
+offset_bottom = 535.0
+mouse_filter = 2
+script = ExtResource("passive_page")
+m_Rows = NodePath("m_PassiveRows")
+
+[node name="TableBackground" type="TextureRect" parent="Content/m_PassivePage" unique_id=1582481764]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 85.0
+offset_right = 846.0
+offset_bottom = 514.0
+mouse_filter = 2
+texture = ExtResource("table_passive")
+
+[node name="Headers" type="Control" parent="Content/m_PassivePage" unique_id=1787786747]
+anchors_preset = 0
+offset_left = 100.0
+offset_top = 85.0
+offset_right = 846.0
+offset_bottom = 121.0
+mouse_filter = 2
+
+[node name="Column1" type="Label" parent="Content/m_PassivePage/Headers" unique_id=603451891]
+layout_mode = 0
+offset_right = 81.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 13
+text = "技能名称"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column2" type="Label" parent="Content/m_PassivePage/Headers" unique_id=1734171900]
+layout_mode = 0
+offset_left = 81.0
+offset_right = 166.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 13
+text = "当前等级"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column3" type="Label" parent="Content/m_PassivePage/Headers" unique_id=1333961302]
+layout_mode = 0
+offset_left = 166.0
+offset_right = 348.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 13
+text = "效果"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column4" type="Label" parent="Content/m_PassivePage/Headers" unique_id=2076216264]
+layout_mode = 0
+offset_left = 348.0
+offset_right = 536.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 13
+text = "下一级效果"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column5" type="Label" parent="Content/m_PassivePage/Headers" unique_id=920353375]
+layout_mode = 0
+offset_left = 536.0
+offset_right = 643.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 13
+text = "升级"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column6" type="Label" parent="Content/m_PassivePage/Headers" unique_id=1784686743]
+layout_mode = 0
+offset_left = 643.0
+offset_right = 746.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 13
+text = "所需灵魂"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_PassiveRows" type="Control" parent="Content/m_PassivePage" unique_id=805528924]
+anchors_preset = 0
+offset_left = 100.0
+offset_top = 121.0
+offset_right = 846.0
+offset_bottom = 514.0
+mouse_filter = 2
+
+[node name="Passive1" type="GridContainer" parent="Content/m_PassivePage/m_PassiveRows" unique_id=1591778051]
+layout_mode = 0
+offset_right = 746.0
+offset_bottom = 79.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 6
+
+[node name="Name" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive1" unique_id=1285518203]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "热血"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Level" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive1" unique_id=1318304592]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="CurrentEffect" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive1" unique_id=2551202]
+custom_minimum_size = Vector2(182, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "----"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="NextEffect" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive1" unique_id=915222447]
+custom_minimum_size = Vector2(188, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "生命上限增加 200"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Upgrade" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive1" unique_id=169404380]
+custom_minimum_size = Vector2(107, 79)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_font_sizes/font_size = 22
+text = "升级"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Soul" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive1" unique_id=913271586]
+custom_minimum_size = Vector2(103, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "5000"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Passive2" type="GridContainer" parent="Content/m_PassivePage/m_PassiveRows" unique_id=805647086]
+layout_mode = 0
+offset_top = 83.0
+offset_right = 746.0
+offset_bottom = 162.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 6
+
+[node name="Name" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive2" unique_id=320782]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "魔泉"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Level" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive2" unique_id=402036506]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="CurrentEffect" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive2" unique_id=1970184989]
+custom_minimum_size = Vector2(182, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "----"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="NextEffect" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive2" unique_id=1039378976]
+custom_minimum_size = Vector2(188, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "魔法上限增加 200"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Upgrade" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive2" unique_id=572383161]
+custom_minimum_size = Vector2(107, 79)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_font_sizes/font_size = 22
+text = "升级"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Soul" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive2" unique_id=1547520621]
+custom_minimum_size = Vector2(103, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "5000"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Passive3" type="GridContainer" parent="Content/m_PassivePage/m_PassiveRows" unique_id=150855005]
+layout_mode = 0
+offset_top = 168.0
+offset_right = 746.0
+offset_bottom = 247.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 6
+
+[node name="Name" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive3" unique_id=1524375704]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "狂暴"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Level" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive3" unique_id=671276451]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="CurrentEffect" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive3" unique_id=1749929646]
+custom_minimum_size = Vector2(182, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "----"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="NextEffect" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive3" unique_id=149970466]
+custom_minimum_size = Vector2(188, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "暴击率增加 2 %"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Upgrade" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive3" unique_id=1071111691]
+custom_minimum_size = Vector2(107, 79)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_font_sizes/font_size = 22
+text = "升级"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Soul" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive3" unique_id=834047613]
+custom_minimum_size = Vector2(103, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "5000"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Passive4" type="GridContainer" parent="Content/m_PassivePage/m_PassiveRows" unique_id=1638911907]
+layout_mode = 0
+offset_top = 247.0
+offset_right = 746.0
+offset_bottom = 326.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 6
+
+[node name="Name" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive4" unique_id=258806926]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "光之永恒"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Level" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive4" unique_id=1972396007]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="CurrentEffect" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive4" unique_id=637135841]
+custom_minimum_size = Vector2(182, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "----"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="NextEffect" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive4" unique_id=1462071937]
+custom_minimum_size = Vector2(188, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "每秒回血增加 2"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Upgrade" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive4" unique_id=682032894]
+custom_minimum_size = Vector2(107, 79)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_font_sizes/font_size = 22
+text = "升级"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Soul" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive4" unique_id=311610422]
+custom_minimum_size = Vector2(103, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "5000"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Passive5" type="GridContainer" parent="Content/m_PassivePage/m_PassiveRows" unique_id=2126969419]
+layout_mode = 0
+offset_top = 321.0
+offset_right = 746.0
+offset_bottom = 400.0
+mouse_filter = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 6
+
+[node name="Name" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive5" unique_id=1656906953]
+custom_minimum_size = Vector2(81, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "月之辉煌"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Level" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive5" unique_id=2033301623]
+custom_minimum_size = Vector2(85, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="CurrentEffect" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive5" unique_id=1188628721]
+custom_minimum_size = Vector2(182, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "----"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="NextEffect" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive5" unique_id=796685033]
+custom_minimum_size = Vector2(188, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "每秒回魔增加 2"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Upgrade" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive5" unique_id=264161649]
+custom_minimum_size = Vector2(107, 79)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_font_sizes/font_size = 22
+text = "升级"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Soul" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive5" unique_id=1945180880]
+custom_minimum_size = Vector2(103, 79)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "5000"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Footer" type="Control" parent="Content" unique_id=1833738149]
+anchors_preset = 0
+offset_right = 940.0
+offset_bottom = 590.0
+mouse_filter = 2
+
+[node name="m_Active" type="TextureButton" parent="Content/Footer" unique_id=2125499342]
+layout_mode = 0
+offset_left = 106.0
+offset_top = 552.0
+offset_right = 185.0
+offset_bottom = 571.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("active_normal")
+texture_pressed = ExtResource("active_hover")
+texture_hover = ExtResource("active_hover")
+
+[node name="m_Passive" type="TextureButton" parent="Content/Footer" unique_id=796523148]
+layout_mode = 0
+offset_left = 208.0
+offset_top = 553.0
+offset_right = 287.0
+offset_bottom = 572.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("passive_normal")
+texture_pressed = ExtResource("passive_hover")
+texture_hover = ExtResource("passive_hover")
+
+[node name="Balance" type="Control" parent="Content/Footer" unique_id=2041275718]
+anchors_preset = 0
+offset_left = 713.0
+offset_top = 511.0
+offset_right = 867.0
+offset_bottom = 590.0
+mouse_filter = 2
+
+[node name="Badge" type="TextureRect" parent="Content/Footer/Balance" unique_id=720355842]
+layout_mode = 0
+offset_right = 74.0
+offset_bottom = 66.0
+mouse_filter = 2
+texture = ExtResource("soul_badge")
+
+[node name="m_Soul" type="Label" parent="Content/Footer/Balance" unique_id=1119905109]
+layout_mode = 0
+offset_left = 84.0
+offset_top = 33.65
+offset_right = 154.0
+offset_bottom = 69.65
+theme_override_font_sizes/font_size = 23
+text = "0"
+vertical_alignment = 1

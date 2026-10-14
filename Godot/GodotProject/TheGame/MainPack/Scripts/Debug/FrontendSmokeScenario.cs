@@ -44,8 +44,10 @@ public sealed class FrontendSmokeScenario
     /// <returns>已进入关卡流程时返回 true，否则继续等待菜单资源加载。</returns>
     public static bool AdvanceToLevel()
     {
-        if (GF.Procedure.CurrentProcedure is ProcedureLevel) return true;
-        if (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) != null) return false;
+        if (GF.Procedure.CurrentProcedure is ProcedureLevel)
+            return true;
+        if (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) != null)
+            return false;
         // GGF 的全组枚举顺序不保证最后一项就是当前模态窗，明确选择可见的存档页优先。
         var forms = GF.UI.GetAllLoadedUIForms().OfType<Control>().Where(form => form.Visible).ToArray();
         var form = forms.FirstOrDefault(form => form is SaveForm)
@@ -53,12 +55,13 @@ public sealed class FrontendSmokeScenario
         string button = form switch
         {
             StartForm => "m_Start",
-            SaveForm save when SmokeInspection.ReadField<SaveFormData>(save, "m_Data")?.Directory.Phase == SaveDirectoryPhase.Ready => "m_Slot1",
+            SaveForm save when SmokeInspection.ReadField<SaveFormData>(save, "m_Data")?.Directory.Phase == SaveDirectoryPhase.Ready => "Slots/m_Slot1",
             CharacterForm => "Roles/m_Wukong",
             MapForm => "m_Huaguoshan",
             _ => null,
         };
-        if (form?.Visible == true && button != null) Press(form, button);
+        if (form?.Visible == true && button != null)
+            Press(form, button);
         return false;
     }
 
@@ -110,7 +113,7 @@ public sealed class FrontendSmokeScenario
             Check(SmokeInspection.ReadField<SaveFormData>(saves, "m_Data") == null, "存档页关闭后保留目录引用");
             await ClickAsync(start, "m_Start");
             Check(ReferenceEquals(saves, await WaitForSaveAsync()), "存档页未复用 GGF 池实例");
-            await ClickAsync(saves, "m_Slot2");
+            await ClickAsync(saves, "Slots/m_Slot2");
             CharacterForm character = await WaitForAsync<CharacterForm>();
             var characterContext = SmokeInspection.ReadField<GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>>(GF.Procedure.CurrentProcedure, "<Owner>k__BackingField")
                 .GetData<GameContextVariable>(FlowKeys.GameContext).Value;
@@ -128,10 +131,13 @@ public sealed class FrontendSmokeScenario
             await MoveMouseAsync(new Vector2(30, 30));
             var currentHint = map.GetNode<AnimationPlayer>("m_LocationAnimation");
             Check(currentHint.IsPlaying() && currentHint.CurrentAnimation == "location/current", "最新关卡没有默认闪烁提示");
-            currentHint.Seek(0, true); currentHint.Pause();
+            currentHint.Seek(0, true);
+            currentHint.Pause();
             float currentLow = ((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("line_thickness").AsSingle();
             await CaptureAsync("map_current_low");
-            currentHint.Play("location/current"); currentHint.Seek(.5, true); currentHint.Pause();
+            currentHint.Play("location/current");
+            currentHint.Seek(.5, true);
+            currentHint.Pause();
             Check(((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("line_thickness").AsSingle() > currentLow, "最新关卡边缘没有闪烁");
             Check(Mathf.IsEqualApprox(((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("image_scale").AsSingle(), .9f), "默认提示错误放大了地点");
             await CaptureAsync("map_current");
@@ -158,7 +164,8 @@ public sealed class FrontendSmokeScenario
                 Rect2 region = location.GetGlobalRect();
                 for (int y = (int)region.Position.Y; y < (int)region.End.Y; y++)
                     for (int x = (int)region.Position.X; x < (int)region.End.X; x++)
-                        if (low.GetPixel(x, y) != high.GetPixel(x, y)) changed++;
+                        if (low.GetPixel(x, y) != high.GetPixel(x, y))
+                            changed++;
                 Check(changed > 100, "黄色光晕两次采样没有产生实际像素变化");
             }
             await MoveMouseAsync(new Vector2(30, 30));
@@ -182,9 +189,9 @@ public sealed class FrontendSmokeScenario
             saves = await WaitForSaveAsync();
             var slots = SmokeInspection.ReadField<SaveFormData>(saves, "m_Data").Directory.Slots;
             Check(slots[1].State == SaveSlotState.Occupied && slots[1].UnitId == secondId && slots[0].State == SaveSlotState.Empty, "存档摘要或框架空槽位置不正确");
-            await MoveMouseAsync(saves.GetNode<BaseButton>("m_Slot2").GetGlobalRect().GetCenter());
+            await MoveMouseAsync(saves.GetNode<BaseButton>("Slots/m_Slot2").GetGlobalRect().GetCenter());
             await CaptureAsync("save_slots_occupied");
-            await ClickAsync(saves, "m_Slot6");
+            await ClickAsync(saves, "Slots/m_Slot6");
             character = await WaitForAsync<CharacterForm>();
             await CheckCharacterHoverAsync(character);
             Check(GF.Archive.CurrentCatalogue.SlotNumber == 6 && GF.Archive.CurrentCatalogue.UnitId != secondId, "第六格覆盖了第二格");
@@ -195,7 +202,7 @@ public sealed class FrontendSmokeScenario
             start = await WaitForAsync<StartForm>();
             await ClickAsync(start, "m_Start");
             saves = await WaitForSaveAsync();
-            await ClickAsync(saves, "m_Slot2");
+            await ClickAsync(saves, "Slots/m_Slot2");
             map = await WaitForAsync<MapForm>();
             Check(!character.Visible && GF.Procedure.CurrentProcedure is ProcedureMap, "已有档案未直接进入地图");
             GF.Event.Fire(this, ProfileSavedEventArgs.Create(savedMapSerialId, true));
@@ -260,9 +267,10 @@ public sealed class FrontendSmokeScenario
             File.WriteAllText(broken + ".bak", "{ broken json");
             await ClickAsync(start, "m_Start");
             saves = await WaitForSaveAsync();
-            Check(saves.GetNode<BaseButton>("m_Slot6").Disabled && SmokeInspection.ReadField<SaveFormData>(saves, "m_Data").Directory.Slots[1].State == SaveSlotState.Occupied, "损坏格未禁用或影响其他存档");
+            Check(saves.GetNode<BaseButton>("Slots/m_Slot6").Disabled && SmokeInspection.ReadField<SaveFormData>(saves, "m_Data").Directory.Slots[1].State == SaveSlotState.Occupied, "损坏格未禁用或影响其他存档");
             GF.Event.Fire(this, SaveSlotSelectedEventArgs.Create(saves.SerialId, 6));
-            for (int frame = 0; frame < 4; frame++) await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+            for (int frame = 0; frame < 4; frame++)
+                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
             Check(GF.Procedure.CurrentProcedure is ProcedureTitle, "损坏格仍能进入读档流程");
             await ClickAsync(saves, "m_Close");
             await CheckMusicAsync("map_theme.mp3");
@@ -300,7 +308,8 @@ public sealed class FrontendSmokeScenario
         first.GetNode<BaseButton>("Content/VBoxContainer/HBoxContainer/m_Btn_Confirm").EmitSignal(BaseButton.SignalName.Pressed);
         Check(callbacks == 0, "隐藏提示执行了旧回调");
         // GGF 在下一轮更新归还关闭对象，再请求才验证同一实例复用。
-        for (int frame = 0; frame < 4; frame++) await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+        for (int frame = 0; frame < 4; frame++)
+            await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
         GF.UI.OpenQuestionTipsAsync("复用后执行本次确认", "取消", "确认", null, () => callbacks++);
         var second = await WaitForAsync<QuestionTips>();
         Check(ReferenceEquals(first, second), "共享提示没有复用 GGF 池实例");
@@ -338,7 +347,8 @@ public sealed class FrontendSmokeScenario
         while (Time.GetTicksMsec() < deadline)
         {
             var form = GF.UI.GetAllLoadedUIForms().OfType<T>().FirstOrDefault(x => x.Visible);
-            if (form != null && GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) == null) return form;
+            if (form != null && GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) == null)
+                return form;
             await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
         }
         throw new InvalidOperationException($"等待 {typeof(T).Name} 超时。");
@@ -364,7 +374,8 @@ public sealed class FrontendSmokeScenario
     /// <returns>截图任务。</returns>
     private async Task CaptureAsync(string name)
     {
-        if (DisplayServer.GetName() == "headless") return;
+        if (DisplayServer.GetName() == "headless")
+            return;
         for (int frame = 0; frame < 3; frame++)
             await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
         await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
@@ -422,7 +433,8 @@ public sealed class FrontendSmokeScenario
             Check(roles.All(card => Mathf.IsEqualApprox(((ShaderMaterial)card.Material).GetShaderParameter("grayscale").AsSingle(), card == role && card is TextureButton ? 0f : 1f)), "已开放角色悬停未恢复颜色、未开放角色变色或旧卡片未复位");
             Check((m_Driver.GetViewport().GuiGetHoveredControl() == role) == selectable, "已开放角色不能悬停或未开放角色仍接收鼠标");
             Check(role.GetCursorShape() == (role is TextureButton ? Control.CursorShape.PointingHand : Control.CursorShape.Arrow), "角色光标没有反映可选状态");
-            if (role.Name == "m_Sanzang") await CaptureAsync("character_sanzang_hover");
+            if (role.Name == "m_Sanzang")
+                await CaptureAsync("character_sanzang_hover");
             if (role is TextureRect)
             {
                 Check(role.MouseFilter == Control.MouseFilterEnum.Ignore && string.IsNullOrEmpty(role.TooltipText), "未开放角色仍存在鼠标交互或悬停提示");
@@ -547,8 +559,10 @@ public sealed class FrontendSmokeScenario
         m_Driver.GetViewport().PushInput(new InputEventMouseButton { Position = position, GlobalPosition = position, ButtonIndex = MouseButton.Left, Pressed = false }, true);
         for (int frame = 0; frame < 3; frame++)
             await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
-        if (GodotObject.IsInstanceValid(button)) button.Pressed -= observePress;
-        if (!pressed) await CaptureAsync("click_failure");
+        if (GodotObject.IsInstanceValid(button))
+            button.Pressed -= observePress;
+        if (!pressed)
+            await CaptureAsync("click_failure");
         Check(pressed, $"真实鼠标未触发按钮：{path} @ {position}，窗口 {form.Name} Z={form.ZIndex}，悬停节点 {m_Driver.GetViewport().GuiGetHoveredControl()?.GetPath()}");
     }
 
@@ -557,6 +571,7 @@ public sealed class FrontendSmokeScenario
     /// <param name="message">失败原因。</param>
     private static void Check(bool condition, string message)
     {
-        if (!condition) throw new InvalidOperationException(message);
+        if (!condition)
+            throw new InvalidOperationException(message);
     }
 }

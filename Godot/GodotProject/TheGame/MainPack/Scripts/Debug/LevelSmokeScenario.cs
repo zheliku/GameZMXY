@@ -124,7 +124,8 @@ public sealed class LevelSmokeScenario
                 m_FirstSpawnEntered = true;
                 GD.Print($"SMOKE-LEVEL: offscreen spawn entered, monster={monster.GlobalPosition.X:0.0}, viewRight={m_Camera.ViewRight:0.0}");
             }
-            if (m_FirstSpawnEntered) SmokeInspection.FreezeAi(monster);
+            if (m_FirstSpawnEntered)
+                SmokeInspection.FreezeAi(monster);
             if (m_Seen.Add(monster.Id))
             {
                 if (monster is GorillaEntity)
@@ -197,10 +198,20 @@ public sealed class LevelSmokeScenario
         }
         else if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Completed)
         {
-            if (m_PlatformCapture?.IsFaulted == true) { Fail(m_PlatformCapture.Exception.ToString()); return; }
-            if (m_FeaturedCapture?.IsFaulted == true) { Fail(m_FeaturedCapture.Exception.ToString()); return; }
-            if (m_FeaturedCapture is not { IsCompleted: true }) return;
-            if (m_ExitStep != 5) Fail("出口尚未完成远处拒绝与靠近交互验证，就提前通关");
+            if (m_PlatformCapture?.IsFaulted == true)
+            {
+                Fail(m_PlatformCapture.Exception.ToString());
+                return;
+            }
+            if (m_FeaturedCapture?.IsFaulted == true)
+            {
+                Fail(m_FeaturedCapture.Exception.ToString());
+                return;
+            }
+            if (m_FeaturedCapture is not { IsCompleted: true })
+                return;
+            if (m_ExitStep != 5)
+                Fail("出口尚未完成远处拒绝与靠近交互验证，就提前通关");
             int expected = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages.Sum(x => x.Recipes.Sum(r => r.Count));
             if (m_Seen.Count != expected)
             {
@@ -228,7 +239,8 @@ public sealed class LevelSmokeScenario
             }
             m_ExpectedSoul = m_Context.Profile.Wallet.Soul;
             int gainedSoul = m_ExpectedSoul - m_StartSoul;
-            if (gainedSoul < minimumSoul || gainedSoul > maximumSoul) Fail("本关灵魂奖励超出官方掉落范围");
+            if (gainedSoul < minimumSoul || gainedSoul > maximumSoul)
+                Fail("本关灵魂奖励超出官方掉落范围");
             GD.Print($"SMOKE-LEVEL: soul={gainedSoul}, expected range={minimumSoul}..{maximumSoul}");
 
             // 通关是检查点：关卡运行已提交并结束。
@@ -242,7 +254,8 @@ public sealed class LevelSmokeScenario
                 Fail("清波后未出现前进提示（Go）");
             }
 
-            if (!m_SawFeatured) Fail("第五波未展示大猩猩守关对手");
+            if (!m_SawFeatured)
+                Fail("第五波未展示大猩猩守关对手");
             m_ExpectedTotalExperience = m_StartExperience + expectedExperience;
             m_WaitingForMap = true;
             Move(null);
@@ -264,7 +277,11 @@ public sealed class LevelSmokeScenario
     private void DriveExit()
     {
         LevelExitNode exit = m_Level.GetNode<LevelExitNode>("World/Exit");
-        if (!exit.Visible && m_ExitStep < 5) { Fail("清场后出口未显示"); return; }
+        if (!exit.Visible && m_ExitStep < 5)
+        {
+            Fail("清场后出口未显示");
+            return;
+        }
         if (m_ExitStep == 0)
         {
             LevelModule run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
@@ -302,7 +319,30 @@ public sealed class LevelSmokeScenario
         }
         else if (m_ExitStep == 4 && m_ExitCapture.IsCompleted)
         {
-            if (m_ExitCapture.IsFaulted) { Fail(m_ExitCapture.Exception.ToString()); return; }
+            if (m_ExitCapture.IsFaulted)
+            {
+                Fail(m_ExitCapture.Exception.ToString());
+                return;
+            }
+            // 靠近出口时攻击、跳跃、下方向与 W 的组合不能误提交通关。
+            foreach (string action in new[] { InputActions.Attack, InputActions.Jump, InputActions.MoveDown })
+            {
+                Input.ActionPress(action);
+                try
+                {
+                    PressW();
+                    if (!exit.Visible || m_Level.Outcome != LevelOutcome.Running || m_Level.CheckpointWrite != null)
+                    {
+                        Fail($"出口把 W＋{action} 组合误当成单独 W");
+                        return;
+                    }
+                }
+                finally
+                {
+                    Input.ActionRelease(action);
+                }
+            }
+            GD.Print("SMOKE-LEVEL: exit rejects W+J/K/S combinations");
             m_ExitRequestedAt = Time.GetTicksMsec();
             m_ExitHadPendingLoot = SmokeInspection.ReadField<HashSet<GameLogic.Drops.LootOrbNode>>(m_Level, "m_LootOrbs").Count != 0;
             PressW();
@@ -314,13 +354,15 @@ public sealed class LevelSmokeScenario
     /// <returns>本帧画面保存完成的任务。</returns>
     private async Task CaptureExitAsync()
     {
-        if (DisplayServer.GetName() == "headless") return;
+        if (DisplayServer.GetName() == "headless")
+            return;
         await m_Hero.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         string directory = ProjectSettings.GlobalizePath("res://.godot/validation/encounter");
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, "level_exit.png");
         Error result = m_Hero.GetViewport().GetTexture().GetImage().SavePng(path);
-        if (result != Error.Ok) throw new IOException($"出口预览保存失败：{result}，{path}");
+        if (result != Error.Ok)
+            throw new IOException($"出口预览保存失败：{result}，{path}");
         GD.Print($"SMOKE-LEVEL: exit preview={path}");
     }
 
@@ -328,12 +370,14 @@ public sealed class LevelSmokeScenario
     /// <returns>画面保存完成的任务。</returns>
     private async Task CaptureSettlementAsync()
     {
-        if (DisplayServer.GetName() == "headless") return;
+        if (DisplayServer.GetName() == "headless")
+            return;
         await m_Hero.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         string directory = ProjectSettings.GlobalizePath("res://.godot/validation/encounter");
         Directory.CreateDirectory(directory);
         Error result = m_Hero.GetViewport().GetTexture().GetImage().SavePng(Path.Combine(directory, "settlement_success.png"));
-        if (result != Error.Ok) throw new IOException($"成功结算截图失败：{result}");
+        if (result != Error.Ok)
+            throw new IOException($"成功结算截图失败：{result}");
     }
 
     /// <summary>从视口发送完整按下与释放，覆盖 W 绑定和未处理输入路径。</summary>
@@ -346,29 +390,48 @@ public sealed class LevelSmokeScenario
     /// <summary>流程实际返回地图后重新读盘，避免只检查内存中的框架数据。</summary>
     private void CheckReturnAndReload()
     {
-        if (m_Time > 180) { Fail("出口交互后未返回地图或完成自动保存"); return; }
+        if (m_Time > 180)
+        {
+            Fail("出口交互后未返回地图或完成自动保存");
+            return;
+        }
         var settlement = GF.UI.GetAllLoadedUIForms().OfType<SettlementForm>().FirstOrDefault(x => x.Visible);
         if (settlement != null && !m_SettlementClicked)
         {
             if (m_Level.Result?.Outcome != LevelOutcome.Cleared || settlement.GetNode<TextureButton>("Content/Actions/m_Retry").Visible || !GF.Base.IsGamePaused)
-            { Fail("成功结算成绩、重试按钮或暂停状态不正确"); return; }
+            {
+                Fail("成功结算成绩、重试按钮或暂停状态不正确");
+                return;
+            }
             m_SettlementCapture ??= CaptureSettlementAsync();
-            if (!m_SettlementCapture.IsCompleted) return;
-            if (m_SettlementCapture.IsFaulted) { Fail(m_SettlementCapture.Exception.ToString()); return; }
+            if (!m_SettlementCapture.IsCompleted)
+                return;
+            if (m_SettlementCapture.IsFaulted)
+            {
+                Fail(m_SettlementCapture.Exception.ToString());
+                return;
+            }
             settlement.GetNode<TextureButton>("Content/Actions/m_ReturnMap").EmitSignal(BaseButton.SignalName.Pressed);
             m_SettlementClicked = true;
         }
-        if (GF.Procedure.CurrentProcedure is not ProcedureMap) return;
-        if (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_map_form) is not MapForm { Visible: true }) return;
+        if (GF.Procedure.CurrentProcedure is not ProcedureMap)
+            return;
+        if (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_map_form) is not MapForm { Visible: true })
+            return;
         if (!m_ExitLatencyRecorded)
         {
             ulong latency = Time.GetTicksMsec() - m_ExitRequestedAt;
             m_ExitLatencyRecorded = true;
             GD.Print($"SMOKE-LEVEL: exit W → visible map = {latency} ms (checkpoint included, pending loot={m_ExitHadPendingLoot})");
-            if (latency > (m_ExitHadPendingLoot ? 10000UL : 1500UL)) { Fail($"出口返回地图过慢：{latency} ms"); return; }
+            if (latency > (m_ExitHadPendingLoot ? 10000UL : 1500UL))
+            {
+                Fail($"出口返回地图过慢：{latency} ms");
+                return;
+            }
         }
         m_Reload ??= m_Context.Save.LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentData.UnitId);
-        if (!m_Reload.IsCompleted) return;
+        if (!m_Reload.IsCompleted)
+            return;
         if (m_Reload.IsFaulted || m_Reload.Result.Profile.ActiveHero.TotalExperience != m_ExpectedTotalExperience ||
             m_Reload.Result.Profile.Wallet.Soul != m_ExpectedSoul)
             Fail("返回地图后重新读取存档，经验或灵魂与通关收益不一致");
@@ -379,7 +442,8 @@ public sealed class LevelSmokeScenario
                 .OfType<SaveNoticeForm>().FirstOrDefault(x => x.SerialId != 0);
             if (notice == null || !notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Visible)
                 Fail("W 返回地图后的实际检查点未显示全局保存成功提示");
-            else GD.Print("SMOKE-LEVEL: checkpoint success notice visible on map");
+            else
+                GD.Print("SMOKE-LEVEL: checkpoint success notice visible on map");
             IsDone = true;
         }
     }
@@ -401,7 +465,8 @@ public sealed class LevelSmokeScenario
             }
 
             GD.Print($"SMOKE-LEVEL: stage {stage.StageOrder} arrived, camera={m_Camera.GlobalPosition.X:0.0}, player={m_Hero.GlobalPosition.X:0.0}");
-            if (stage.StageOrder == 3) m_PlatformCapture = CapturePlatformsAsync();
+            if (stage.StageOrder == 3)
+                m_PlatformCapture = CapturePlatformsAsync();
             PlaceForWallTest(region.Right - 40f);
         }
 
@@ -420,11 +485,17 @@ public sealed class LevelSmokeScenario
         {
             Move(null);
             // 守关条先完成真实绘制与截图，再清怪；否则同帧死亡会让截图只留下隐藏后的 HUD。
-            if (m_FeaturedCapture is { IsCompleted: false }) return;
-            if (m_FeaturedCapture?.IsFaulted == true) { Fail(m_FeaturedCapture.Exception.ToString()); return; }
+            if (m_FeaturedCapture is { IsCompleted: false })
+                return;
+            if (m_FeaturedCapture?.IsFaulted == true)
+            {
+                Fail(m_FeaturedCapture.Exception.ToString());
+                return;
+            }
             if (stage.StageOrder == 1 && !m_FirstSpawnEntered)
             {
-                if (m_BattleTime > 15) Fail("首波场外怪物未通过真实 AI 进入画面");
+                if (m_BattleTime > 15)
+                    Fail("首波场外怪物未通过真实 AI 进入画面");
                 return;
             }
             foreach (MonsterEntity monster in monsters)
@@ -453,7 +524,8 @@ public sealed class LevelSmokeScenario
             float edge = (shape.GlobalTransform * (right ? body.End : body.Position)).X;
             float screenEdge = m_Camera.GetScreenCenterPosition().X + (right ? 0.5f : -0.5f) * m_Camera.ViewSize.X;
             float margin = right ? screenEdge - edge : edge - screenEdge;
-            if (Math.Abs(margin - 20f) > 1f) Fail($"角色屏幕边界留白错误：{margin:0.00}px");
+            if (Math.Abs(margin - 20f) > 1f)
+                Fail($"角色屏幕边界留白错误：{margin:0.00}px");
             // 第二阶段额外验证左门；其余阶段在右墙前清波，覆盖最容易发生相机跳变的站位。
             if (right && stage.StageOrder == 2)
             {
@@ -473,7 +545,8 @@ public sealed class LevelSmokeScenario
     /// <returns>画面保存任务。</returns>
     private async Task CapturePlatformsAsync()
     {
-        if (DisplayServer.GetName() == "headless") return;
+        if (DisplayServer.GetName() == "headless")
+            return;
         await m_Hero.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         string path = ProjectSettings.GlobalizePath("res://.godot/validation/stage_3_platforms.png");
         if (m_Hero.GetViewport().GetTexture().GetImage().SavePng(path) != Error.Ok)
@@ -484,7 +557,8 @@ public sealed class LevelSmokeScenario
     /// <returns>画面保存任务；无渲染器时直接完成。</returns>
     private async Task CaptureFeaturedAsync()
     {
-        if (DisplayServer.GetName() == "headless") return;
+        if (DisplayServer.GetName() == "headless")
+            return;
         await m_Hero.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         string directory = ProjectSettings.GlobalizePath("res://.godot/validation/encounter");
         Directory.CreateDirectory(directory);

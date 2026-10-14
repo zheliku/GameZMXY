@@ -28,7 +28,8 @@ public partial class QuestionTips : ITips
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = pauseCoveredUIForm;
         UIStringKeys.ForEach(key => key.SetLocalizationValue());
-        if (!isNewInstance) return;
+        if (!isNewInstance)
+            return;
         m_Btn_Cancle.Pressed += OnCancelClicked;
         m_Btn_Confirm.Pressed += OnConfirmClicked;
     }
@@ -62,7 +63,8 @@ public partial class QuestionTips : ITips
     public void OnClose(bool isShutdown, object userData)
     {
         ReleaseCallbacks();
-        if (!isShutdown && IsInstanceValid(this)) Visible = false;
+        if (!isShutdown && IsInstanceValid(this))
+            Visible = false;
     }
 
     /// <summary>回池清除编号与回调。</summary>
@@ -72,7 +74,8 @@ public partial class QuestionTips : ITips
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = true;
-        if (IsInstanceValid(this)) Visible = false;
+        if (IsInstanceValid(this))
+            Visible = false;
     }
 
     /// <summary>界面暂停；点击导航不依赖轮询。</summary>
@@ -99,29 +102,31 @@ public partial class QuestionTips : ITips
         ZIndex = depthInUIGroup;
     }
 
-        /// <summary>取消前捕获回调，关闭会同步释放窗口引用。</summary>
-        private void OnCancelClicked()
-        {
-            if (!m_IsOpen) return;
-            Action callback = m_Cancel;
-            GF.UI.CloseUIForm(this);
-            callback?.Invoke();
-        }
+    /// <summary>取消前捕获回调，关闭会同步释放窗口引用。</summary>
+    private void OnCancelClicked()
+    {
+        if (!m_IsOpen)
+            return;
+        Action callback = m_Cancel;
+        GF.UI.CloseUIForm(this);
+        callback?.Invoke();
+    }
 
-        /// <summary>确认前捕获回调，允许回调安全打开下一提示。</summary>
-        private void OnConfirmClicked()
-        {
-            if (!m_IsOpen) return;
-            Action callback = m_Confirm;
-            GF.UI.CloseUIForm(this);
-            callback?.Invoke();
-        }
+    /// <summary>确认前捕获回调，允许回调安全打开下一提示。</summary>
+    private void OnConfirmClicked()
+    {
+        if (!m_IsOpen)
+            return;
+        Action callback = m_Confirm;
+        GF.UI.CloseUIForm(this);
+        callback?.Invoke();
+    }
 
-        /// <summary>关闭或回池时清除本周期回调。</summary>
-        private void ReleaseCallbacks()
-        {
-            m_IsOpen = false;
-            m_Cancel = m_Confirm = null;
-        }
+    /// <summary>关闭或回池时清除本周期回调。</summary>
+    private void ReleaseCallbacks()
+    {
+        m_IsOpen = false;
+        m_Cancel = m_Confirm = null;
+    }
 
 }

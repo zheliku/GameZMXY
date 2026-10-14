@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://mkt51coh4f15" path="res://TheGame/Sprites/UI/frontend/save_slot_normal.png" id="normal"]
 [ext_resource type="Script" uid="uid://qer77g8x3nwt" path="res://TheGame/GameScripts/UI/SaveForm/SaveForm.cs" id="script"]
 
-[node name="SaveForm" type="Control" unique_id=462654616 node_paths=PackedStringArray("m_Close", "m_Status", "m_Slot1", "m_Name1", "m_Date1", "m_Slot2", "m_Name2", "m_Date2", "m_Slot3", "m_Name3", "m_Date3", "m_Slot4", "m_Name4", "m_Date4", "m_Slot5", "m_Name5", "m_Date5", "m_Slot6", "m_Name6", "m_Date6")]
+[node name="SaveForm" type="Control" unique_id=462654616 node_paths=PackedStringArray("m_Close", "m_Status", "m_Slots")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,24 +18,8 @@ grow_vertical = 2
 script = ExtResource("script")
 m_Close = NodePath("m_Close")
 m_Status = NodePath("m_Status")
-m_Slot1 = NodePath("m_Slot1")
-m_Name1 = NodePath("m_Slot1/m_Name1")
-m_Date1 = NodePath("m_Slot1/m_Date1")
-m_Slot2 = NodePath("m_Slot2")
-m_Name2 = NodePath("m_Slot2/m_Name2")
-m_Date2 = NodePath("m_Slot2/m_Date2")
-m_Slot3 = NodePath("m_Slot3")
-m_Name3 = NodePath("m_Slot3/m_Name3")
-m_Date3 = NodePath("m_Slot3/m_Date3")
-m_Slot4 = NodePath("m_Slot4")
-m_Name4 = NodePath("m_Slot4/m_Name4")
-m_Date4 = NodePath("m_Slot4/m_Date4")
-m_Slot5 = NodePath("m_Slot5")
-m_Name5 = NodePath("m_Slot5/m_Name5")
-m_Date5 = NodePath("m_Slot5/m_Date5")
-m_Slot6 = NodePath("m_Slot6")
-m_Name6 = NodePath("m_Slot6/m_Name6")
-m_Date6 = NodePath("m_Slot6/m_Date6")
+m_Slots = NodePath("Slots")
+
 
 [node name="Shade" type="ColorRect" parent="." unique_id=2101302214]
 layout_mode = 0
@@ -51,7 +35,16 @@ mouse_filter = 2
 texture = ExtResource("bg")
 expand_mode = 1
 
-[node name="m_Slot1" type="TextureButton" parent="." unique_id=1899709907]
+[node name="Slots" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="m_Slot1" type="TextureButton" parent="Slots" unique_id=1899709907]
 layout_mode = 0
 mouse_default_cursor_shape = 2
 offset_left = 211.0
@@ -64,7 +57,7 @@ texture_pressed = ExtResource("hover")
 texture_hover = ExtResource("hover")
 texture_disabled = ExtResource("normal")
 
-[node name="Number" type="Label" parent="m_Slot1" unique_id=1592294618]
+[node name="Number" type="Label" parent="Slots/m_Slot1" unique_id=1592294618]
 layout_mode = 0
 offset_left = 19.0
 offset_top = 10.0
@@ -76,7 +69,7 @@ theme_override_font_sizes/font_size = 30
 text = "1"
 vertical_alignment = 1
 
-[node name="m_Name1" type="Label" parent="m_Slot1" unique_id=365971897]
+[node name="m_Name1" type="Label" parent="Slots/m_Slot1" unique_id=365971897]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 15.0
@@ -86,7 +79,7 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 22
 vertical_alignment = 1
 
-[node name="m_Date1" type="Label" parent="m_Slot1" unique_id=1654243266]
+[node name="m_Date1" type="Label" parent="Slots/m_Slot1" unique_id=1654243266]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
@@ -96,7 +89,7 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 16
 vertical_alignment = 1
 
-[node name="m_Slot2" type="TextureButton" parent="." unique_id=1021501749]
+[node name="m_Slot2" type="TextureButton" parent="Slots" unique_id=1021501749]
 layout_mode = 0
 mouse_default_cursor_shape = 2
 offset_left = 471.0
@@ -109,7 +102,7 @@ texture_pressed = ExtResource("hover")
 texture_hover = ExtResource("hover")
 texture_disabled = ExtResource("normal")
 
-[node name="Number" type="Label" parent="m_Slot2" unique_id=2087550635]
+[node name="Number" type="Label" parent="Slots/m_Slot2" unique_id=2087550635]
 layout_mode = 0
 offset_left = 19.0
 offset_top = 10.0
@@ -121,7 +114,7 @@ theme_override_font_sizes/font_size = 30
 text = "2"
 vertical_alignment = 1
 
-[node name="m_Name2" type="Label" parent="m_Slot2" unique_id=1355533414]
+[node name="m_Name2" type="Label" parent="Slots/m_Slot2" unique_id=1355533414]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 15.0
@@ -131,7 +124,7 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 22
 vertical_alignment = 1
 
-[node name="m_Date2" type="Label" parent="m_Slot2" unique_id=1160926736]
+[node name="m_Date2" type="Label" parent="Slots/m_Slot2" unique_id=1160926736]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
@@ -141,7 +134,7 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 16
 vertical_alignment = 1
 
-[node name="m_Slot3" type="TextureButton" parent="." unique_id=292185257]
+[node name="m_Slot3" type="TextureButton" parent="Slots" unique_id=292185257]
 layout_mode = 0
 mouse_default_cursor_shape = 2
 offset_left = 211.0
@@ -154,7 +147,7 @@ texture_pressed = ExtResource("hover")
 texture_hover = ExtResource("hover")
 texture_disabled = ExtResource("normal")
 
-[node name="Number" type="Label" parent="m_Slot3" unique_id=397692085]
+[node name="Number" type="Label" parent="Slots/m_Slot3" unique_id=397692085]
 layout_mode = 0
 offset_left = 19.0
 offset_top = 10.0
@@ -166,7 +159,7 @@ theme_override_font_sizes/font_size = 30
 text = "3"
 vertical_alignment = 1
 
-[node name="m_Name3" type="Label" parent="m_Slot3" unique_id=1795938668]
+[node name="m_Name3" type="Label" parent="Slots/m_Slot3" unique_id=1795938668]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 15.0
@@ -176,7 +169,7 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 22
 vertical_alignment = 1
 
-[node name="m_Date3" type="Label" parent="m_Slot3" unique_id=1440104314]
+[node name="m_Date3" type="Label" parent="Slots/m_Slot3" unique_id=1440104314]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
@@ -186,7 +179,7 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 16
 vertical_alignment = 1
 
-[node name="m_Slot4" type="TextureButton" parent="." unique_id=298249113]
+[node name="m_Slot4" type="TextureButton" parent="Slots" unique_id=298249113]
 layout_mode = 0
 mouse_default_cursor_shape = 2
 offset_left = 471.0
@@ -199,7 +192,7 @@ texture_pressed = ExtResource("hover")
 texture_hover = ExtResource("hover")
 texture_disabled = ExtResource("normal")
 
-[node name="Number" type="Label" parent="m_Slot4" unique_id=1050048694]
+[node name="Number" type="Label" parent="Slots/m_Slot4" unique_id=1050048694]
 layout_mode = 0
 offset_left = 19.0
 offset_top = 10.0
@@ -211,7 +204,7 @@ theme_override_font_sizes/font_size = 30
 text = "4"
 vertical_alignment = 1
 
-[node name="m_Name4" type="Label" parent="m_Slot4" unique_id=278095808]
+[node name="m_Name4" type="Label" parent="Slots/m_Slot4" unique_id=278095808]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 15.0
@@ -221,7 +214,7 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 22
 vertical_alignment = 1
 
-[node name="m_Date4" type="Label" parent="m_Slot4" unique_id=554917758]
+[node name="m_Date4" type="Label" parent="Slots/m_Slot4" unique_id=554917758]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
@@ -231,7 +224,7 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 16
 vertical_alignment = 1
 
-[node name="m_Slot5" type="TextureButton" parent="." unique_id=287283765]
+[node name="m_Slot5" type="TextureButton" parent="Slots" unique_id=287283765]
 layout_mode = 0
 mouse_default_cursor_shape = 2
 offset_left = 211.0
@@ -244,7 +237,7 @@ texture_pressed = ExtResource("hover")
 texture_hover = ExtResource("hover")
 texture_disabled = ExtResource("normal")
 
-[node name="Number" type="Label" parent="m_Slot5" unique_id=1321898684]
+[node name="Number" type="Label" parent="Slots/m_Slot5" unique_id=1321898684]
 layout_mode = 0
 offset_left = 19.0
 offset_top = 10.0
@@ -256,7 +249,7 @@ theme_override_font_sizes/font_size = 30
 text = "5"
 vertical_alignment = 1
 
-[node name="m_Name5" type="Label" parent="m_Slot5" unique_id=826528769]
+[node name="m_Name5" type="Label" parent="Slots/m_Slot5" unique_id=826528769]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 15.0
@@ -266,7 +259,7 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 22
 vertical_alignment = 1
 
-[node name="m_Date5" type="Label" parent="m_Slot5" unique_id=1860529535]
+[node name="m_Date5" type="Label" parent="Slots/m_Slot5" unique_id=1860529535]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
@@ -276,7 +269,7 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 16
 vertical_alignment = 1
 
-[node name="m_Slot6" type="TextureButton" parent="." unique_id=1380690893]
+[node name="m_Slot6" type="TextureButton" parent="Slots" unique_id=1380690893]
 layout_mode = 0
 mouse_default_cursor_shape = 2
 offset_left = 471.0
@@ -289,7 +282,7 @@ texture_pressed = ExtResource("hover")
 texture_hover = ExtResource("hover")
 texture_disabled = ExtResource("normal")
 
-[node name="Number" type="Label" parent="m_Slot6" unique_id=923876602]
+[node name="Number" type="Label" parent="Slots/m_Slot6" unique_id=923876602]
 layout_mode = 0
 offset_left = 19.0
 offset_top = 10.0
@@ -301,7 +294,7 @@ theme_override_font_sizes/font_size = 30
 text = "6"
 vertical_alignment = 1
 
-[node name="m_Name6" type="Label" parent="m_Slot6" unique_id=968440048]
+[node name="m_Name6" type="Label" parent="Slots/m_Slot6" unique_id=968440048]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 15.0
@@ -311,7 +304,7 @@ theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 22
 vertical_alignment = 1
 
-[node name="m_Date6" type="Label" parent="m_Slot6" unique_id=2005064659]
+[node name="m_Date6" type="Label" parent="Slots/m_Slot6" unique_id=2005064659]
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
