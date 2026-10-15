@@ -9,7 +9,6 @@ namespace GameLogic;
 /// <summary>池化确认提示，关闭即释放回调；按钮订阅只建立一次。</summary>
 public partial class QuestionTips : ITips
 {
-    private bool m_IsOpen; // 关闭的池实例不响应点击。
     private Action m_Cancel; // 本周期取消回调。
     private Action m_Confirm; // 本周期确认回调。
 
@@ -53,7 +52,6 @@ public partial class QuestionTips : ITips
     /// <param name="userData">不使用的打开参数。</param>
     public void OnOpen(object userData)
     {
-        m_IsOpen = true;
         Visible = true;
     }
 
@@ -62,7 +60,7 @@ public partial class QuestionTips : ITips
     /// <param name="userData">不使用的关闭参数。</param>
     public void OnClose(bool isShutdown, object userData)
     {
-        ReleaseCallbacks();
+        m_Cancel = m_Confirm = null;
         if (!isShutdown && IsInstanceValid(this))
             Visible = false;
     }
@@ -70,7 +68,7 @@ public partial class QuestionTips : ITips
     /// <summary>回池清除编号与回调。</summary>
     public void OnRecycle()
     {
-        ReleaseCallbacks();
+        m_Cancel = m_Confirm = null;
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = true;
@@ -105,7 +103,7 @@ public partial class QuestionTips : ITips
     /// <summary>取消前捕获回调，关闭会同步释放窗口引用。</summary>
     private void OnCancelClicked()
     {
-        if (!m_IsOpen)
+        if (!GF.UI.HasUIForm(SerialId))
             return;
         Action callback = m_Cancel;
         GF.UI.CloseUIForm(this);
@@ -115,18 +113,11 @@ public partial class QuestionTips : ITips
     /// <summary>确认前捕获回调，允许回调安全打开下一提示。</summary>
     private void OnConfirmClicked()
     {
-        if (!m_IsOpen)
+        if (!GF.UI.HasUIForm(SerialId))
             return;
         Action callback = m_Confirm;
         GF.UI.CloseUIForm(this);
         callback?.Invoke();
-    }
-
-    /// <summary>关闭或回池时清除本周期回调。</summary>
-    private void ReleaseCallbacks()
-    {
-        m_IsOpen = false;
-        m_Cancel = m_Confirm = null;
     }
 
 }

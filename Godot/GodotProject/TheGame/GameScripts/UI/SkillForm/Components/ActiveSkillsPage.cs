@@ -1,16 +1,21 @@
+using GameLogic.Architecture;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using GameConfig.Skills;
-using GameLogic.Skills;
+using GameLogic.Config;
 using Godot;
 using GodotGameFramework;
 
 namespace GameLogic.UI.Widgets;
 
 /// <summary>主动技能页组合两名角色目录，负责装配和当前角色显示。</summary>
-public partial class ActiveSkillsPage : Control
+public partial class ActiveSkillsPage : Control, IController
 {
+    /// <summary>借用所属主流程的共享数据访问入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     [Export] private Control m_WukongRows; // 悟空的五行目录。
     [Export] private Control m_TangsengRows; // 唐僧的五行目录。
     private (Label Name, TextureRect Icon, Label Soul, Label Key, Label Description)[][] m_HeroRows; // 两名角色的固定行引用，由本页统一刷新。
@@ -19,11 +24,11 @@ public partial class ActiveSkillsPage : Control
     public override void _Ready() => m_HeroRows = [CollectRows(m_WukongRows), CollectRows(m_TangsengRows)];
 
     /// <summary>把正式只读目录分配给对应角色。</summary>
-    /// <param name="catalog">由窗口借用的技能目录。</param>
-    public void Bind(SkillCatalog catalog)
+    public void Refresh()
     {
-        BindRows(m_HeroRows[0], catalog.GetActive(SkillHero.Wukong));
-        BindRows(m_HeroRows[1], catalog.GetActive(SkillHero.Tangseng));
+        var configurationModel = this.GetModel<ConfigurationModel>();
+        BindRows(m_HeroRows[0], configurationModel.GetActive(SkillHero.Wukong));
+        BindRows(m_HeroRows[1], configurationModel.GetActive(SkillHero.Tangseng));
     }
 
     /// <summary>在主动页显示选中的角色行。</summary>

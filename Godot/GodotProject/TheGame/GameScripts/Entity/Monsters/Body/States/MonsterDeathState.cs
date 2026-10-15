@@ -9,7 +9,7 @@ namespace GameLogic.Monsters.Body
     /// MonsterDiedEventArgs），作废出招请求，从头播 death 动画、定身；**death 动画时长**（OnInit 读进 Params，
     /// 状态计时）走完请求回收一次。池复用由 OnShow 重建整台状态机。
     /// </summary>
-    public sealed class MonsterDeathState : MonsterBodyState
+    public sealed class MonsterDeathState : AbstractMonsterBodyState
     {
         private float m_Left; // 死亡动画结束前的剩余时间（秒）。
 

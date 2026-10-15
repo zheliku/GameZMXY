@@ -27,7 +27,7 @@ public sealed class SpawnConfigTests
         Tables tables = LoadTables();
         LevelSpawnRecipe recipe = tables.TbLevelConfig.Get(1).Stages[0].Recipes[0];
         typeof(LevelSpawnRecipe).GetField(field).SetValue(recipe, value);
-        Assert.Contains("倍率", Assert.Throws<InvalidOperationException>(() => ConfigHelper.ValidateAll(tables)).Message);
+        Assert.Contains("倍率", Assert.Throws<InvalidOperationException>(() => ConfigurationSystem.ValidateTables(tables)).Message);
     }
 
     /// <summary>经验覆盖只接受 -1 或非负整数。</summary>
@@ -37,7 +37,7 @@ public sealed class SpawnConfigTests
         Tables tables = LoadTables();
         LevelSpawnRecipe recipe = tables.TbLevelConfig.Get(1).Stages[0].Recipes[0];
         typeof(LevelSpawnRecipe).GetField("ExperienceOverride").SetValue(recipe, -2);
-        Assert.Throws<InvalidOperationException>(() => ConfigHelper.ValidateAll(tables));
+        Assert.Throws<InvalidOperationException>(() => ConfigurationSystem.ValidateTables(tables));
     }
 
     /// <summary>同一怪物实体不再允许使用多条基础配置表达关卡差异。</summary>
@@ -47,7 +47,7 @@ public sealed class SpawnConfigTests
         Tables tables = LoadTables();
         typeof(GameConfig.Monster.MonsterConfig).GetField("EntityId")
             .SetValue(tables.TbMonsterConfig.Get(2), GameConfig.Entity.EntityId.Gorilla);
-        Assert.Contains("只有一条基础配置", Assert.Throws<InvalidOperationException>(() => ConfigHelper.ValidateAll(tables)).Message);
+        Assert.Contains("只有一条基础配置", Assert.Throws<InvalidOperationException>(() => ConfigurationSystem.ValidateTables(tables)).Message);
     }
 
     /// <summary>每次读取独立表实例，避免篡改共享测试配置或影响并行用例。</summary>

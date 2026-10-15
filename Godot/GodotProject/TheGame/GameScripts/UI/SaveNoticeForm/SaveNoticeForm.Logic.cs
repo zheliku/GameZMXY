@@ -9,7 +9,6 @@ namespace GameLogic.UI;
 /// <summary>应用级非交互保存提示，跨地图与关卡流程保持，由真实写盘成功事件触发。</summary>
 public partial class SaveNoticeForm
 {
-    private bool m_IsOpen; // 当前是否已订阅保存事实。
     private ulong m_LastTick; // 提示按真实时间结束，背包暂停时也不滞留。
 
     /// <summary>初始化框架身份与一次性动画回调。</summary>
@@ -34,15 +33,15 @@ public partial class SaveNoticeForm
     /// <param name="userData">没有打开参数。</param>
     public void OnOpen(object userData)
     {
-        ReleaseSubscription();
-        m_IsOpen = true;
+        if (GF.Event.Check(SaveSucceededEventArgs.EventId, OnSaveSucceeded))
+            GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
         GF.Event.Subscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
         Visible = true;
         ResetFeedback();
     }
 
     /// <summary>写盘成功立即重播提示，重复保存从完整透明度开始。</summary>
-    /// <param name="sender">保存模块。</param>
+    /// <param name="sender">保存系统。</param>
     /// <param name="args">当帧有效的成功事实。</param>
     private void OnSaveSucceeded(object sender, GameEventArgs args)
     {
@@ -76,7 +75,8 @@ public partial class SaveNoticeForm
     /// <param name="userData">关闭参数。</param>
     public void OnClose(bool isShutdown, object userData)
     {
-        ReleaseSubscription();
+        if (GF.Event.Check(SaveSucceededEventArgs.EventId, OnSaveSucceeded))
+            GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
         if (!isShutdown)
             ResetFeedback();
     }
@@ -84,16 +84,7 @@ public partial class SaveNoticeForm
     /// <summary>回池清除框架编号与订阅。</summary>
     public void OnRecycle()
     {
-        ReleaseSubscription();
         m_SerialId = m_DepthInUIGroup = 0;
-    }
-
-    /// <summary>解除本次显示期间的订阅。</summary>
-    private void ReleaseSubscription()
-    {
-        if (m_IsOpen)
-            GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
-        m_IsOpen = false;
     }
 
     /// <summary>手动按真实时间推进提示，不随战斗暂停冻结在其他窗口上。</summary>
@@ -101,7 +92,7 @@ public partial class SaveNoticeForm
     /// <param name="realElapseSeconds">真实秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds)
     {
-        if (!m_IsOpen || !m_SaveFeedbackAnimation.IsPlaying())
+        if (!GF.UI.HasUIForm(SerialId) || !m_SaveFeedbackAnimation.IsPlaying())
             return;
         ulong now = Time.GetTicksUsec();
         m_SaveFeedbackAnimation.Advance((now - m_LastTick) / 1_000_000d);

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bvkf8qofj10yc"]
 
-[ext_resource type="Script" uid="uid://d2x72rm6l5oeq" path="res://TheGame/GameScripts/Level/LevelModule.cs" id="1_controller"]
+[ext_resource type="Script" uid="uid://d2x72rm6l5oeq" path="res://TheGame/GameScripts/Level/LevelViewController.cs" id="1_controller"]
 [ext_resource type="Script" uid="uid://dkuuiel88m4ep" path="res://TheGame/GameScripts/Level/Camera/LevelCameraNode.cs" id="2_camera"]
 [ext_resource type="Texture2D" uid="uid://cpk7ttkaom0hn" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_bg_end.png" id="3_bg_end"]
 [ext_resource type="Texture2D" uid="uid://dsa76w2xxiq0b" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_front.png" id="4_front"]
@@ -11,7 +11,7 @@
 [ext_resource type="Script" uid="uid://b6ai16cs6v6de" path="res://TheGame/GameScripts/Level/Stages/LevelGatesNode.cs" id="11_gate_manager"]
 [ext_resource type="Script" uid="uid://ccjmic0fgxfrv" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnerNode.cs" id="12_monster_manager"]
 [ext_resource type="PackedScene" uid="uid://qk7b0ixfs2in" path="res://TheGame/Scenes/Widgets/level_exit.tscn" id="exit_scene"]
-[ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/FloatingText/FloatingTextModule.cs" id="floating_text"]
+[ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/FloatingText/FloatingTextPresenter.cs" id="floating_text"]
 [ext_resource type="Texture2D" uid="uid://b3sopo3lus4t5" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_platform.png" id="platform"]
 
 [sub_resource type="RectangleShape2D" id="GroundShape"]

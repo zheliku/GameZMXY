@@ -19,6 +19,8 @@ python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geo
 & 'S:/Godot4/Godot4CSharp_console.exe' --path Godot/GodotProject --rendering-method gl_compatibility -- --smoketest=level
 & 'S:/Godot4/Godot4CSharp_console.exe' --path Godot/GodotProject --rendering-method gl_compatibility -- --smoketest=frontend
 & 'S:/Godot4/Godot4CSharp_console.exe' --path Godot/GodotProject --rendering-method gl_compatibility -- --smoketest
+# F6 独立测试场地，不启动正式流程或读写玩家档案
+& 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360
 ```
 
 按修改范围选用 `--smoketest=level-cancel`、`ai`；规则单测无需打开编辑器。场景装配用 `--headless --script res://EditorScripts/validate_level_scene.gd -- --resize --fractional`，编辑器 Tool 再加 `--editor`；触发区用 `validate_level_triggers.gd`，动画库用 `validate_anim_libraries.gd`。有渲染器时，`validate_musou_flash.gd` 检查无双圆形裁剪，`validate_level_up.gd` 检查升级蓝线裁剪、画面和注册尺寸。
@@ -30,6 +32,27 @@ XLSX Diff 1.6.4 的解析器无法读取带 `x:` 前缀的 SpreadsheetML 标签�
 战斗背包为 `inventory_form.png`，品质上拉菜单为 `inventory_quality_sale.png` / `inventory_quality_sale_scaled.png`，出售确认框为 `inventory_sale_confirmation.png` / `inventory_sale_confirmation_scaled.png`，多属性详情为 `inventory_tooltip_attributes.png`，失败结算为 `settlement_failure.png`，成功结算为 `encounter/settlement_success.png`。成功页截图在真实检查点完成后立即采集，可能带有短暂的保存成功提示；提示按真实时间淡出，背包和结算暂停不会将它冻结。
 
 装备背包与实际详情为 `inventory_equipment.png`，操作菜单为 `inventory_actions.png`，武器/防具同时穿戴为 `inventory_wearing.png`，绿色/蓝色恢复数字为 `recovery_numbers.png`；无名称的地面恢复品和装备为 `ground_pickups.png`；地图默认边缘闪烁的两端画面为 `frontend/map_current_low.png`、`frontend/map_current.png`。
+
+## 当前架构与启动流程回归（2026-10-15）
+
+按用户最新要求统一业务 System、实体 ActionData 和 IController 访问方式。飞行球删除英雄成员，由本关控制器逐帧提供目标坐标；UI Data 不再传递共享 Model，存档/设置/技能 Data 删除。Prepare 集中注册工具、模型和系统，Preload 预加载界面，LoadGame 建立档案作用域；Startup 与 AbstractMenuProcedure 删除。此前的物理接触、AI 状态工厂集合、统一输入采样和不可变装配仍保留。所有者、调用链及旧规范差异见 [项目导览](ProjectTour.md)。按第 10/30/40/50 章执行命名、文档、功能分组、UID 与隔离验证；第 50 章仅登记用户要求的必要流程注册项。
+
+- 上述 `dotnet build`：**0 错误、5 个既有框架警告**；三组 `dotnet test` 分别 **145/145、96/96、18/18**，共 **259 项通过**。单测仍有 NU1900 联网告警及既有 nullable 告警。
+- OpenGL `--smoketest=frontend`、`ui`、`level`：均 **PASS、退出 0**。前端覆盖 Prepare/LoadGame、新建/读档、选角、地图、回滚、保存提示与设置复用；Get 查询验证未注册时返回 null、同一引用、移除、销毁及 FSM 隔离。UI 覆盖直接读取 Model 的技能页、背包刷新/交易、订退、窗口/实体复用、失败清理、死亡保存和重入；飞行球覆盖暂停、目标位置更新、同场景其他英雄、拾取上限、池复用和死亡回收。关卡覆盖五波、相机、门、守关条、出口等待飞行掉落、检查点和地图重读。
+- 上述 F6 命令：**场地就绪、退出 0**，测试入口直接建立资源组与临时 FSM，显示玩家和两只怪物；不启动正式流程或读取玩家档案。
+- Godot `--headless --editor --build-solutions --quit --no-window`：文件扫描、脚本注册和构建完成，**退出 0**；仍报告既有 ComponentInsoector 的 RefCounted/free 释放错误。四个脚本迁移保留原 UID；引用检查 **441 路径、291 UID、23 几何节点通过**，场景几何未变。C# 格式、文档本地链接与 `git diff --check` 检查见本轮验证输出，Git 索引保持不变。
+- 日志在 `.godot/validation/ui_flow_{scan,frontend,ui,level,arena,format}.log`。HUD 缺绑定、旧档案写入拒绝与损坏存档是预期失败注入；框架关停 WebRequest `ObjectDisposedException` 仍在，frontend/ui/level/F6 分别有 **3/4/4/3** 个退出泄漏告警，未计为玩法验证通过的依据。生成代码、源表和正式存档未改动；Framework 仅更新已登记的 Procedure.Procedures 清单。
+- UI 订退简化：HUD、背包、存档、设置、技能五个窗口删除退订委托，打开时 `+=`、关闭时直接 `-=`；流程先关窗再移除 Model。再次执行上述 `dotnet build` 和 OpenGL `--smoketest=frontend`、`--smoketest=ui`：**0 编译错误，两组回归均 PASS、退出 0**；实际事件列表确认存档页关闭后处理器为 0、复用后为 1，设置关闭后不再订阅关卡；HUD/背包/技能关闭后不响应旧状态源，失败清理、暂停恢复、重绑和池复用正常。7 个 C# 文件格式、UTF-8/CRLF 与 `git diff --check` 通过，验证期间未改 Git 索引。日志为 `.godot/validation/ui_subscription_{build,frontend,ui}.log`，既有框架退出错误与前端/UI 的 3/4 个泄漏告警仍在。
+- 初始化与 UI 状态简化：Prepare.OnEnter 直接注册资源组、工具、Model 和 System；删除语言初始化、返回标题、目录创建及标记创建等简单包装。核对 GGF 的 IUIForm、UIManager 与 UIComponent：交互直接查询 `GF.UI.HasUIForm(SerialId)`，8 个重复打开标志已删除，退订留在 OnClose，OnRecycle 不再查询已结束的共享模型。再次执行上述 build、frontend/ui 和 F6 命令：**0 编译错误，前端/UI 均 PASS，三组引擎进程均退出 0**；关闭后尚未回池时 HasUIForm/IsValidUIForm 已为 false，迟到存档按钮没有导航，确认提示没有执行旧回调；订退、暂停、失败清理及池复用通过。日志为 `.godot/validation/entry_ui_{build,frontend,ui,arena}.log`。16 个 C# 文件格式、UTF-8/CRLF、直接注册顺序和本地文档链接通过；引用检查仍为 **441 路径、291 UID、23 几何节点**，Git 索引未改。既有 5 个框架编译警告、WebRequest 退出错误及前端/UI/F6 的 3/4/3 个泄漏告警仍在；框架、生成物、源表和正式存档未改动。
+
+## 作用域装配与引用生命周期（2026-10-14）
+
+按用户最新要求借鉴 QFramework 的状态/业务分离，以 GGF 流程 FSM 类型化 SetData/GetData 统一访问；ProcedureLoadProfile 初始化并注册 Profile、SaveSystem、EquipmentSystem，Title 统一移除。删除 GameContext 及两个专用包装，保留纯状态/规则和 UI 子组件的显式参数。第 00/70 章的旧约定差异、初始化表、保存与运行时边界见 [项目导览](ProjectTour.md#所有者与初始化位置)。
+
+- `dotnet build Godot/GodotProject --no-restore -v quiet`：**0 错误、5 个既有框架警告**。`dotnet test Tests/{BattleTests,ProfileTests,LevelTests} --no-restore -v quiet`：**137/137、92/92、18/18**；单测另有既有 NU1900 联网警告。
+- OpenGL `--smoketest=frontend`：**PASS，退出 0**。真实双 FSM 验证同类型隔离、重复初始化拒绝、未初始化读取拒绝、移除与包装复用；选角到地图保持档案/模块身份，关卡和 HUD 借用同一状态，离关解除流程引用，回标题移除档案数据，再读档创建新实例并恢复数值。测试通过既有对象、实际 FSM 和反射观测。
+- OpenGL `--smoketest=ui` 与 `--smoketest=level`：均 **PASS，退出 0**。覆盖背包刷新、换装、窗口和实体复用、收益回滚、死亡保存、备份回退、加载取消、失败清理，以及五波关卡、守关血条、出口结算、检查点写盘与地图重读。日志仍有既有证书读取错误、框架关停 ObjectDisposedException；frontend/ui/level 分别有 3/4/4 个退出泄漏实例。前端的旧槽写入拒绝、损坏档案和 UI 的 HUD 失败注入为预期用例。
+- 新脚本经 `--headless --editor --quit` 扫描，退出 0；日志仍有既有编辑器插件 RefCounted/free 释放错误。25 份 C# 的 `dotnet format whitespace . --folder --include <绝对路径> --verify-no-changes`、`git diff --check` 通过。`validate_game_references.py --compare-staged-geometry`：**441 条路径、290 个 UID、23 个几何节点通过**；文档本地链接检查通过。日志为 `.godot/validation/typed_data_{scan,build,BattleTests,ProfileTests,LevelTests,frontend,ui,level_engine}.log`。
 
 ## 命名复查与扩展验证（2026-10-14）
 

@@ -9,7 +9,7 @@ namespace GameLogic.Monsters.Body
     /// 不接受出招请求（请求留到硬直结束后由 Move 消费）；结束回 Move。
     /// 受击打断（同旧项目：受击打断出招与硬直）。
     /// </summary>
-    public sealed class MonsterRecoveryState : MonsterBodyState
+    public sealed class MonsterRecoveryState : AbstractMonsterBodyState
     {
         private float m_Left; // 当前收招硬直剩余时间（秒）。
 

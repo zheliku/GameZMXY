@@ -6,17 +6,17 @@ namespace GameLogic.Save
     public readonly struct SaveLoadResult
     {
         /// <summary>运行时档案。</summary>
-        public readonly PlayerProfile Profile;
+        public readonly PlayerModel PlayerModel;
 
         /// <summary>存档来源（读取或新建）。</summary>
         public readonly SaveOrigin Origin;
 
         /// <summary>创建读档结果。</summary>
-        /// <param name="profile">运行时档案。</param>
+        /// <param name="playerModel">运行时档案。</param>
         /// <param name="origin">存档来源。</param>
-        public SaveLoadResult(PlayerProfile profile, SaveOrigin origin)
+        public SaveLoadResult(PlayerModel playerModel, SaveOrigin origin)
         {
-            Profile = profile;
+            PlayerModel = playerModel;
             Origin = origin;
         }
     }

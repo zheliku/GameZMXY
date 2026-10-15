@@ -1,9 +1,9 @@
+using GameLogic.Config;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using GameConfig.Skills;
 using GameConfig.Sound;
-using GameLogic.Skills;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
@@ -16,9 +16,9 @@ public sealed class SkillConfigTests
     public void ActiveSkills_PreserveOfficialOrderCostAndMana()
     {
         var tables = TestTables.Tables;
-        var catalog = new SkillCatalog(tables.TbSkillConfig, tables.TbPassiveConfig);
-        var wukong = catalog.GetActive(SkillHero.Wukong);
-        var tangseng = catalog.GetActive(SkillHero.Tangseng);
+        var configuration = new ConfigurationModel(tables);
+        var wukong = configuration.GetActive(SkillHero.Wukong);
+        var tangseng = configuration.GetActive(SkillHero.Tangseng);
         Assert.Equal(new[] { "升龙斩", "火炎突击", "烈焰闪", "烈焰风暴", "火魔斩" }, wukong.Select(x => x.NameCn));
         Assert.Equal(new[] { "冰龙波", "玄冰阵", "水幻影", "天降甘露", "水魔爆" }, tangseng.Select(x => x.NameCn));
         foreach (var skills in new[] { wukong, tangseng })
@@ -62,7 +62,7 @@ public sealed class SkillConfigTests
     public void PreparedCatalog_PassesStartupValidation()
     {
         List<string> errors = new();
-        SkillCatalog.Validate(TestTables.Tables.TbSkillConfig, TestTables.Tables.TbPassiveConfig, errors);
+        ConfigurationSystem.ValidateSkillCatalog(TestTables.Tables.TbSkillConfig, TestTables.Tables.TbPassiveConfig, errors);
         Assert.Empty(errors);
     }
 

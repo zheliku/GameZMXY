@@ -1,3 +1,5 @@
+using GameLogic.Config;
+using GameLogic.Architecture;
 using System;
 using GameConfig.Attributes;
 using GameConfig.Equipment;
@@ -10,8 +12,12 @@ using GodotGameFramework;
 namespace GameLogic.UI.Widgets;
 
 /// <summary>个人资料面板统一显示身份、穿戴、最终属性和经验，不修改角色状态。</summary>
-public partial class InventoryCharacterPanel : Control
+public partial class InventoryCharacterPanel : Control, IController
 {
+    /// <summary>借用所属主流程的共享数据访问入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     [Export] private Label m_Name; // 角色昵称。
     [Export] private Label m_Level; // 当前等级。
     [Export] private HeroPreviewNode m_Preview; // 独立角色预览。
@@ -48,15 +54,16 @@ public partial class InventoryCharacterPanel : Control
 
     /// <summary>从同一组状态刷新个人资料与预览，不拥有或修改状态。</summary>
     /// <param name="hero">当前存活的出战角色。</param>
-    /// <param name="progression">当前角色成长。</param>
-    /// <param name="equipment">当前角色穿戴状态。</param>
-    public void Bind(HeroEntity hero, HeroProgression progression, HeroEquipment equipment)
+    public void Refresh(AbstractHeroEntity hero)
     {
+        var playerModel = this.GetModel<PlayerModel>();
+        var progression = playerModel.ActiveHero;
+        var equipment = playerModel.ActiveEquipment;
         m_Name.Text = hero.Config.NameCn;
         m_Level.Text = progression.Level.ToString();
         var attributes = hero.Attributes;
         var vitals = hero.Vitals;
-        var battle = ConfigSystem.Instance.Tables.TbBattleConfig;
+        var battle = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig;
         m_Hp.Text = $"{vitals.Hp} / {vitals.MaxHp}";
         m_Mp.Text = $"{vitals.Mp} / {vitals.MaxMp}";
         m_Power.Text = attributes.Power.ToString();
@@ -77,10 +84,10 @@ public partial class InventoryCharacterPanel : Control
     /// <summary>装配穿戴槽的图标及详情输入。</summary>
     /// <param name="cell">本面板的穿戴槽。</param>
     /// <param name="item">当前装备；null 恢复为空槽。</param>
-    private static void BindSlot(EquipmentCell cell, EquipmentInstance item)
+    private void BindSlot(EquipmentCell cell, EquipmentInstance item)
     {
-        var definition = item == null ? null : ConfigSystem.Instance.Tables.TbEquipmentConfig.Get(item.EquipmentId);
-        cell.Bind(item, definition, definition == null ? null : GF.Resource.LoadAsset<Texture2D>(definition.IconPath));
+        var definition = item == null ? null : this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
+        cell.Bind(item, definition == null ? null : GF.Resource.LoadAsset<Texture2D>(definition.IconPath));
     }
 
     /// <summary>将属性点按 x/(x+K) 转换为显示百分比。</summary>

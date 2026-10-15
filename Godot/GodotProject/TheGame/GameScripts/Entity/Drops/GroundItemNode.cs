@@ -1,3 +1,6 @@
+using GodotGameFramework;
+using GameLogic.Config;
+using GameLogic.Architecture;
 using System;
 using GameConfig.Loot;
 using GameLogic.Equipment;
@@ -8,15 +11,19 @@ using GodotGameFramework.NodePool;
 namespace GameLogic.Drops;
 
 /// <summary>地面恢复品或装备：落地、接触入账、上移淡出与按秒过期；关卡拥有回收与收益。</summary>
-public partial class GroundItemNode : CharacterBody2D, IPoolable
+public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
 {
-    [Export] private Sprite2D m_Icon; // 本次掉落的图标，不在节点内查装备配置。
+    /// <summary>借用当前游戏流程的架构入口。</summary>
+    /// <returns>所属流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
+    [Export] private Sprite2D m_Icon; // 按本次恢复品或装备定义显示的图标。
     [Export] private AnimationPlayer m_PickupAnimation; // 外置上移淡出动画，按物理游戏秒手动推进。
-    private HeroEntity m_Target; // 当前关卡活着的出战英雄。
-    private DropConfig m_Config; // 地面存在时间、重力和接触范围。
-    private PickupConfig m_Pickup; // 恢复品定义，与装备互斥。
+    [Export] private Area2D m_PickupArea; // 本物品的接触检测区，只检测玩家身体层。
+    [Export] private CollisionShape2D m_PickupShape; // 独立拾取形状，半径来自掉落配置。
+    private PickupId m_PickupId; // 恢复品定义，与装备互斥。
     private EquipmentInstance m_Equipment; // 已抽取实际属性的地面装备。
-    private Func<PickupConfig, EquipmentInstance, bool> m_Collect; // 关卡结算；满包返回 false，继续留地。
+    private Func<AbstractHeroEntity, PickupId, EquipmentInstance, bool> m_Collect; // 接触者交给关卡校验并结算；满包继续留地。
     private Action<GroundItemNode> m_Finished; // 关卡移除所有权并回池。
     private float m_Age; // 已存在的游戏秒数，暂停时不增加。
     private bool m_Collected; // 已成功入账，只完成淡出，不再检测接触或过期。
@@ -25,6 +32,7 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable
     public void OnGet()
     {
         SetPhysicsProcess(false);
+        m_PickupArea.SetDeferred(Area2D.PropertyName.Monitoring, false);
         Velocity = Vector2.Zero;
         m_Age = 0;
         m_Collected = false;
@@ -35,9 +43,8 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable
     public void OnRelease()
     {
         SetPhysicsProcess(false);
-        m_Target = null;
-        m_Config = null;
-        m_Pickup = null;
+        m_PickupArea.SetDeferred(Area2D.PropertyName.Monitoring, false);
+        m_PickupId = PickupId.None;
         m_Equipment = null;
         m_Collect = null;
         m_Finished = null;
@@ -47,32 +54,35 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable
         ResetPresentation();
     }
 
-    /// <summary>显示已确定的恢复品或装备；图标由关卡提供。</summary>
+    /// <summary>显示已确定的恢复品或装备，并启用自身接触检测。</summary>
     /// <param name="position">死亡位置附近。</param>
-    /// <param name="target">本关英雄。</param>
-    /// <param name="config">已校验的地面参数。</param>
-    /// <param name="pickup">恢复品，装备时为空。</param>
+    /// <param name="pickupId">恢复品主键，装备使用 None。</param>
     /// <param name="equipment">实际装备，恢复品时为空。</param>
-    /// <param name="texture">通过 GGF 加载的图标。</param>
-    /// <param name="collect">结算回调；满包时拒绝领取。</param>
+    /// <param name="collect">校验实际接触者并结算；满包时拒绝领取。</param>
     /// <param name="finished">过期或领取动画结束后的回收回调。</param>
-    public void Show(Vector2 position, HeroEntity target, DropConfig config, PickupConfig pickup,
-        EquipmentInstance equipment, Texture2D texture,
-        Func<PickupConfig, EquipmentInstance, bool> collect, Action<GroundItemNode> finished)
+    public void Show(Vector2 position, PickupId pickupId, EquipmentInstance equipment,
+        Func<AbstractHeroEntity, PickupId, EquipmentInstance, bool> collect, Action<GroundItemNode> finished)
     {
-        if ((pickup == null) == (equipment == null))
+        if ((pickupId == PickupId.None) == (equipment == null))
             throw new ArgumentException("一次地面掉落必须且只能包含一种物品。");
         GlobalPosition = position;
         Velocity = Vector2.Zero;
         m_Age = 0;
         m_Collected = false;
         ResetPresentation();
-        m_Target = target;
-        m_Config = config;
-        m_Pickup = pickup;
+        m_PickupId = pickupId;
         m_Equipment = equipment;
-        m_Icon.Texture = texture;
-        m_Icon.Scale = Vector2.One * (pickup?.Id == PickupId.LargePeach ? .9f : .7f);
+        var tables = this.GetModel<ConfigurationModel>().Tables;
+        // 每个池实例拥有自己的形状，避免修改 PackedScene 共享子资源。
+        m_PickupShape.Shape = new CircleShape2D { Radius = tables.TbDropConfig.Data.GroundPickupRadius };
+        m_PickupArea.CollisionMask = LayerMask.LayerToMask2D("PlayerBody");
+        m_PickupArea.SetDeferred(Area2D.PropertyName.Monitoring, true);
+        string iconPath = equipment == null
+            ? tables.TbPickupConfig.Get(pickupId).IconPath
+            : tables.TbEquipmentConfig.Get(equipment.EquipmentId).GroundIconPath;
+        m_Icon.Texture = GF.Resource.LoadAsset<Texture2D>(iconPath)
+                         ?? throw new InvalidOperationException("地面物品图标加载失败。");
+        m_Icon.Scale = Vector2.One * (pickupId == PickupId.LargePeach ? .9f : .7f);
         m_Collect = collect;
         m_Finished = finished;
         SetPhysicsProcess(true);
@@ -92,35 +102,36 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable
                 Finish();
             return;
         }
-        if (m_Target is not { IsAlive: true })
-        {
-            Finish();
-            return;
-        }
 
+        var config = this.GetModel<ConfigurationModel>().Tables.TbDropConfig.Data;
         float dt = (float)delta;
         m_Age += dt;
-        if (m_Age >= m_Config.GroundLifetime)
+        if (m_Age >= config.GroundLifetime)
         {
             Finish();
             return;
         }
 
-        Velocity += Vector2.Down * m_Config.GroundGravity * dt;
+        Velocity += Vector2.Down * config.GroundGravity * dt;
         MoveAndSlide();
-        if (m_Target.HurtBox.GetGlobalBounds().Grow(m_Config.GroundPickupRadius)
-                .HasPoint(GlobalPosition + Vector2.Up * 8)
-            && m_Collect(m_Pickup, m_Equipment))
+        // Show/归还通过 deferred 切换监测；切换尚未生效时不查询物理重叠。
+        if (!m_PickupArea.Monitoring)
+            return;
+        // 每帧重试实际重叠；满包后腾出空位，无须离开再进入。
+        foreach (Node2D body in m_PickupArea.GetOverlappingBodies())
         {
+            if (body is not AbstractHeroEntity { IsAlive: true } hero ||
+                !m_Collect(hero, m_PickupId, m_Equipment))
+                continue;
             m_Collected = true;
             Velocity = Vector2.Zero;
-            m_Target = null;
-            m_Config = null;
-            m_Pickup = null;
+            m_PickupArea.SetDeferred(Area2D.PropertyName.Monitoring, false);
+            m_PickupId = PickupId.None;
             m_Equipment = null;
             m_Collect = null;
             m_PickupAnimation.Play("pickup");
             m_PickupAnimation.Advance(0);
+            break;
         }
     }
 
@@ -136,6 +147,7 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable
     private void Finish()
     {
         SetPhysicsProcess(false);
+        m_PickupArea.SetDeferred(Area2D.PropertyName.Monitoring, false);
         var finished = m_Finished;
         m_Finished = null;
         m_Collect = null;

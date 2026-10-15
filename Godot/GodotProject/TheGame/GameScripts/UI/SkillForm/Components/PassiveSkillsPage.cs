@@ -1,14 +1,19 @@
+using GodotGameFramework;
+using GameLogic.Config;
+using GameLogic.Architecture;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using GameConfig.Skills;
 using Godot;
 
 namespace GameLogic.UI.Widgets;
 
 /// <summary>共用被动页管理自己的五行，初期只展示未学习和一级效果。</summary>
-public partial class PassiveSkillsPage : Control
+public partial class PassiveSkillsPage : Control, IController
 {
+    /// <summary>借用所属主流程的共享数据访问入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     [Export] private Control m_Rows; // 本页的五行容器。
     private (Label Name, Label NextEffect, Label Soul)[] m_Items; // 本页统一刷新的五行内容，行不挂脚本。
 
@@ -23,9 +28,9 @@ public partial class PassiveSkillsPage : Control
     }
 
     /// <summary>刷新尚未学习的五项被动定义。</summary>
-    /// <param name="definitions">按原版顺序排列的五项一级定义。</param>
-    public void Bind(IReadOnlyList<PassiveConfig> definitions)
+    public void Refresh()
     {
+        var definitions = this.GetModel<ConfigurationModel>().GetPassives(1);
         for (int i = 0; i < m_Items.Length; i++)
         {
             var (name, nextEffect, soul) = m_Items[i];

@@ -1,4 +1,6 @@
-using GameLogic.Battle.Resources;
+using GameLogic.Profile;
+using GameLogic.Level;
+using GameLogic.Architecture;
 using GameLogic.Event.Navigation;
 using System;
 using GameFramework.UI;
@@ -14,20 +16,23 @@ namespace GameLogic.UI;
 /// 战斗 HUD：订阅状态源的聚合变更事件，变化时拉取一组一致数值刷新被动控件；由 GGF 管理打开、关闭和复用。
 /// 不写任何状态，不执行玩法结算。
 /// </summary>
-public partial class BattleHud
+public partial class BattleHud : IController
 {
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
     /// <summary>战斗界面通过统一动作请求背包，暂停或覆盖时不响应。</summary>
     /// <param name="inputEvent">输入映射处理的事件。</param>
     public override void _UnhandledInput(InputEvent inputEvent)
     {
         if (m_Data == null || !Visible || GF.Base.IsGamePaused ||
-            !inputEvent.IsActionPressed(GameLogic.Input.InputActions.InventoryToggle))
+            !inputEvent.IsActionPressed(Input.InputSystem.InventoryToggle))
             return;
         GetViewport().SetInputAsHandled();
         OnInventoryClicked();
     }
     private BattleHudData m_Data; // 本次打开的状态源引用，关闭后释放。
-    private MonsterEntity m_Opponent; // 本次观察的守关怪，实体所有权仍归关卡。
+    private AbstractMonsterEntity m_Opponent; // 本次观察的守关怪，实体所有权仍归关卡。
     private bool m_WasMusouActive; // 当前绑定观察到的激活边沿，避免每次扣点重播。
 
     /// <summary>初始化框架字段；业务订阅只在 OnOpen 建立。</summary>
@@ -68,7 +73,7 @@ public partial class BattleHud
     }
 
     /// <summary>验证装配，订阅各状态源的变更事件，并用当前值一次性初始化显示。</summary>
-    /// <param name="userData">携带英雄、成长与关卡的 <see cref="BattleHudData"/>。</param>
+    /// <param name="userData">携带本次英雄与场景的 <see cref="BattleHudData"/>。</param>
     /// <exception cref="ArgumentException">打开参数类型错误。</exception>
     /// <exception cref="InvalidOperationException">必需节点未绑定或英雄未显示。</exception>
     public void OnOpen(object userData)
@@ -80,7 +85,9 @@ public partial class BattleHud
             throw new ArgumentException("BattleHud 必须接收 BattleHudData。", nameof(userData));
         }
 
-        if (!IsInstanceValid(data.Hero) || !data.Hero.IsShown || !IsInstanceValid(data.Level))
+        var levelModel = this.GetModel<LevelModel>();
+        var progression = this.GetModel<PlayerModel>().ActiveHero;
+        if (!IsInstanceValid(data.Hero) || !data.Hero.IsShown || levelModel == null || !levelModel.Initialized)
         {
             throw new InvalidOperationException("BattleHud 绑定的英雄或关卡已经失效。");
         }
@@ -97,9 +104,9 @@ public partial class BattleHud
         {
             data.Hero.Vitals.Changed += RefreshVitals;
             data.Hero.Musou.Changed += RefreshMusou;
-            data.Progression.Changed += RefreshProgression;
-            data.Level.TravelAvailableChanged += RefreshTravel;
-            data.Level.FeaturedOpponentChanged += RefreshEncounter;
+            progression.Changed += RefreshProgression;
+            levelModel.TravelAvailableChanged += RefreshTravel;
+            data.ViewController.FeaturedOpponentChanged += RefreshEncounter;
             RefreshAll();
             Visible = true;
         }
@@ -189,14 +196,16 @@ public partial class BattleHud
     /// <summary>释放本次订阅与表现任务，重复调用安全。</summary>
     private void Unbind()
     {
-        if (m_Data != null)
+        var data = m_Data;
+        m_Data = null;
+        if (data != null)
         {
-            m_Data.Hero.Vitals.Changed -= RefreshVitals;
-            m_Data.Hero.Musou.Changed -= RefreshMusou;
-            m_Data.Progression.Changed -= RefreshProgression;
-            m_Data.Level.TravelAvailableChanged -= RefreshTravel;
-            m_Data.Level.FeaturedOpponentChanged -= RefreshEncounter;
-            m_Data = null;
+            // 关窗先于模型移除和实体隐藏，直接解除本周期的对应订阅。
+            data.Hero.Vitals.Changed -= RefreshVitals;
+            data.Hero.Musou.Changed -= RefreshMusou;
+            this.GetModel<PlayerModel>().ActiveHero.Changed -= RefreshProgression;
+            this.GetModel<LevelModel>().TravelAvailableChanged -= RefreshTravel;
+            data.ViewController.FeaturedOpponentChanged -= RefreshEncounter;
         }
 
         if (IsInstanceValid(m_Menu))
@@ -223,11 +232,11 @@ public partial class BattleHud
     }
 
     /// <summary>在 HUD 绑定关卡指定的守关对手；该怪物仍由实体系统管理。</summary>
-    private void RefreshEncounter() => BindEncounter(m_Data.Level.FeaturedOpponent);
+    private void RefreshEncounter() => BindEncounter(m_Data.ViewController.FeaturedOpponent);
 
     /// <summary>只在对手改变时重绑生命事件；控件本身只接收完整数值。</summary>
     /// <param name="opponent">关卡指定的怪物；空值解除显示。</param>
-    private void BindEncounter(MonsterEntity opponent)
+    private void BindEncounter(AbstractMonsterEntity opponent)
     {
         if (m_Opponent != opponent)
         {
@@ -273,14 +282,14 @@ public partial class BattleHud
     /// <summary>刷新等级与经验条（等级、本级经验、上限来自同一次派生）。</summary>
     private void RefreshProgression()
     {
-        var progression = m_Data.Progression;
+        var progression = this.GetModel<PlayerModel>().ActiveHero;
         m_Status.SetProgression(progression.Level, progression.Experience, progression.MaxExperience);
     }
 
     /// <summary>显示或隐藏前进提示，并同步控制动画。</summary>
     private void RefreshTravel()
     {
-        bool visible = m_Data.Level.TravelAvailable;
+        bool visible = this.GetModel<LevelModel>().TravelAvailable;
         m_Go.Visible = visible;
         if (visible)
         {

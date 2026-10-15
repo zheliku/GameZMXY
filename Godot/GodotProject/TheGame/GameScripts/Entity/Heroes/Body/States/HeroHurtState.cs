@@ -1,3 +1,5 @@
+using GameLogic.Architecture;
+using GameLogic.Input;
 using GameLogic.Heroes.Body;
 using GameFramework.Fsm;
 
@@ -9,7 +11,7 @@ namespace GameLogic.Heroes.Body
     /// 硬直中再受击：重新生效（重置击退、计时，从头重播动画）。结束回 Ground/Air，移动逻辑接管
     ///（与旧项目一致：击退只在 hurt 动画期间生效）。
     /// </summary>
-    public sealed class HeroHurtState : HeroBodyState
+    public sealed class HeroHurtState : AbstractHeroBodyState
     {
         private float m_Left; // 受击硬直剩余时长（秒）。
 
@@ -19,7 +21,7 @@ namespace GameLogic.Heroes.Body
         /// <summary>进入受击状态时取消奔跑并立即应用击退，不制造跨松键的输入缓冲。</summary>
         protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
         {
-            body.Input.StopRunning();
+            body.GetSystem<InputSystem>().StopRunning(body.ActionData);
             ApplyHurt(body);
         }
 

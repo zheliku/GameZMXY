@@ -12,11 +12,11 @@ namespace GameLogic.Monsters.Body
     ///
     /// **两台状态机的边界**：AI 状态机（<see cref="AI.IMonsterAiAgent"/>）只写意图——移动意图 <see cref="MoveIntent"/>
     /// 与出招请求（<see cref="TakeAttackRequest"/> 取走）；身体状态机是受击、死亡、出招、收招硬直的唯一权威，
-    /// 它不知道 AI 的存在。实现方：<see cref="MonsterEntity"/> 与 Tests 里的假宿主。
+    /// 它不知道 AI 的存在。实现方：<see cref="AbstractMonsterEntity"/> 与 Tests 里的假宿主。
     /// </summary>
     public interface IMonsterBody : IActorBody
     {
-        /// <summary>身体参数（配置快照，含各动作时长 = 动画长度）</summary>
+        /// <summary>同类怪物共享的只读身体定义，动作时长来自动画资源。</summary>
         MonsterBodyParams Params { get; }
 
         /// <summary>移动意图：-1 左 / 0 停 / 1 右（AI 写入；身体在可移动状态下执行）</summary>

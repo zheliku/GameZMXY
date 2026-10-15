@@ -1,3 +1,5 @@
+using GameLogic.Architecture;
+using GameLogic.Input;
 using GameLogic.Heroes.Body;
 using GameFramework.Fsm;
 
@@ -8,14 +10,14 @@ namespace GameLogic.Heroes.Body
     /// 落地进 Ground；仅空中普攻清空地面连段，普通跳跃不清空。
     /// jump/jump_2 播完停在末帧（不循环），Air 不计时——下落姿势由纵向速度切换。
     /// </summary>
-    public sealed class HeroAirState : HeroBodyState
+    public sealed class HeroAirState : AbstractHeroBodyState
     {
         /// <summary>处理空中攻击、二段跳、转向与跳跃/下落动画。</summary>
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
             HandleJumpKeyCombinations(body);
 
-            if (body.NormalAttack.TryAdvance(body.Input, IsAirborne(body), isAttacking: false))
+            if (body.GetSystem<InputSystem>().TryStartAttack(body.ActionData, body.Params, IsAirborne(body), isAttacking: false))
             {
                 ChangeState<HeroAttackState>(fsm);
                 return;

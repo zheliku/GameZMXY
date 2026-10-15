@@ -1,3 +1,5 @@
+using GameLogic.Config;
+using GameLogic.Architecture;
 using GameLogic.Event.Combat;
 using System;
 using System.Collections.Generic;
@@ -38,7 +40,7 @@ public partial class LevelSpawnerNode : Node
     public event Action<MonsterConfig, Vector2, int, EquipmentDropPoolId> MonsterDefeated;
 
     /// <summary>本会话怪物已显示并登记所有权，供关卡绑定守关展示。</summary>
-    public event Action<MonsterEntity> MonsterShown;
+    public event Action<AbstractMonsterEntity> MonsterShown;
 
     /// <summary>当前会话显示实体失败；控制器负责结束会话。</summary>
     public event Action<Exception> SpawnFailed;
@@ -74,10 +76,10 @@ public partial class LevelSpawnerNode : Node
                 }
 
                 var monster =
-                    ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.SingleOrDefault(x =>
+                    GF.Fsm.GetModel<ConfigurationModel>().Tables.TbMonsterConfig.DataList.SingleOrDefault(x =>
                         x.EntityId == recipe.MonsterEntityId);
                 if (monster == null ||
-                    ConfigSystem.Instance.Tables.TbEntityConfig.DataList.Count(x => x.EntityId == monster.EntityId) !=
+                    GF.Fsm.GetModel<ConfigurationModel>().Tables.TbEntityConfig.DataList.Count(x => x.EntityId == monster.EntityId) !=
                     1)
                 {
                     throw new InvalidOperationException($"怪物配方必须关联有效配置和唯一实体资源：{recipe.MonsterEntityId}");
@@ -181,8 +183,8 @@ public partial class LevelSpawnerNode : Node
 
             m_OwnedIds.Add(entity.Id);
             m_ActiveMonsters.Add(entity.Id);
-            ((MonsterEntity)entity).SetPatrolAnchor(patrolAnchor);
-            MonsterShown?.Invoke((MonsterEntity)entity);
+            ((AbstractMonsterEntity)entity).SetPatrolAnchor(patrolAnchor);
+            MonsterShown?.Invoke((AbstractMonsterEntity)entity);
         }
         catch (Exception error)
         {

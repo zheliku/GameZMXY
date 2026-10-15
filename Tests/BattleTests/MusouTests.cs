@@ -1,3 +1,4 @@
+using GameLogic.Battle.Damage;
 using GameLogic.Battle.Resources;
 using System;
 using Xunit;
@@ -16,7 +17,7 @@ public sealed class MusouTests
     [InlineData(10, 0, 0)]
     [InlineData(0, 10, 0)]
     public void HitGain_UsesOfficialDamageRatio(int damage, int power, int expected) =>
-        Assert.Equal(expected, MusouHelper.HitGain(damage, power, 2));
+        Assert.Equal(expected, new CombatSystem(BattleArchitecture.Instance).HitGain(damage, power));
 
     /// <summary>自然衰减不随命中重置，满值冻结相位，暂停与长帧保持一致。</summary>
     [Fact]

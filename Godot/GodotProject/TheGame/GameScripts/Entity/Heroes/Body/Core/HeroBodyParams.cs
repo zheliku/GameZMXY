@@ -1,14 +1,15 @@
+using System.Collections.Generic;
 using GameLogic.Heroes;
 namespace GameLogic.Heroes.Body
 {
-    /// <summary>
-    /// 英雄身体参数（值快照）：HeroEntity 从 HeroConfig / AttackConfig / 动画库拷入，身体状态只读这里。
-    /// 纯 C#——状态不直接依赖 Luban 生成类，单测用对象初始化器直接构造。
-    /// </summary>
-    public readonly struct HeroBodyParams
+    /// <summary>同类实体共享的只读身体参数；配置和动画派生数据由 ConfigurationModel 集中持有。</summary>
+    public sealed record HeroBodyParams
     {
         /// <summary>慢走速度 px/s（HeroConfig.WalkSpeed）</summary>
         public float WalkSpeed { get; init; }
+
+        /// <summary>同方向双击触发奔跑的窗口秒数（HeroConfig.RunDoubleTapWindow）。</summary>
+        public float RunDoubleTapWindow { get; init; }
 
         /// <summary>跑步速度 px/s（HeroConfig.RunSpeed）</summary>
         public float RunSpeed { get; init; }
@@ -26,13 +27,13 @@ namespace GameLogic.Heroes.Body
         public float HurtTime { get; init; }
 
         /// <summary>普攻连段每段的动画名（下标 = 段序号，AttackConfig.Animation 按 ComboIndex 排序）</summary>
-        public string[] AttackAnims { get; init; }
+        public IReadOnlyList<string> AttackAnims { get; init; }
 
         /// <summary>普攻连段每段的时长秒（= 段动画长度，OnInit 读动画资源；状态计时）</summary>
-        public float[] AttackTimes { get; init; }
+        public IReadOnlyList<float> AttackTimes { get; init; }
 
         /// <summary>按上一次地面段号选取本次起手后的输入冷却，单位秒；沿用 Role1.normalHit 的赋值顺序。</summary>
-        public float[] AttackInputCooldowns { get; init; }
+        public IReadOnlyList<float> AttackInputCooldowns { get; init; }
 
         /// <summary>空中普攻起手后的输入冷却，单位秒。</summary>
         public float AirAttackCooldown { get; init; }
@@ -44,6 +45,6 @@ namespace GameLogic.Heroes.Body
         public int AirAttackIndex { get; init; }
 
         /// <summary>普攻段数</summary>
-        public int ComboLength => AttackAnims?.Length ?? 0;
+        public int ComboLength => AttackAnims?.Count ?? 0;
     }
 }

@@ -8,7 +8,7 @@ namespace GameLogic.Level;
 
 /// <summary>管理阶段空间区域与物理门，区分行进时开放通路和开战时封闭左右边界。</summary>
 [Tool]
-public partial class LevelGatesNode : LevelMarkersNode
+public partial class LevelGatesNode : AbstractLevelMarkersNode
 {
     /// <summary>一场战斗的独立世界边界及左右门稳定 ID。</summary>
     private readonly record struct StageRegion(float Left, float Right, string EntryGateId, string ExitGateId);

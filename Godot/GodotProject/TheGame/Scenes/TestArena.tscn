@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://bo4uw8k2ajk8o" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_floor.png" id="3_floor"]
 [ext_resource type="PackedScene" uid="uid://y6q3h5fly83h" path="res://TheGame/Entitys/DemonMonkeyEntity.tscn" id="4_demon"]
 [ext_resource type="PackedScene" uid="uid://cc7r187g26xr8" path="res://TheGame/Entitys/HuaguoshanMonkeyEntity.tscn" id="5_monkey"]
-[ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/FloatingText/FloatingTextModule.cs" id="floating_text"]
+[ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/FloatingText/FloatingTextPresenter.cs" id="floating_text"]
 
 [sub_resource type="RectangleShape2D" id="GroundShape"]
 size = Vector2(1600, 93)

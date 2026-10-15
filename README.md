@@ -27,23 +27,23 @@ dotnet build Godot/GodotProject/GodotProject.csproj
 
 ## 架构与目录
 
-正式流程为 `Launch → Update → Preload → Title（开始与六格存档选择）→ LoadProfile → Character → Map → Level`。预加载与独立场地共用 `MainPack/Scripts/Startup/GameResourceGroups.cs` 注册资源组。
+正式流程为 `Launch → Update → Prepare → Preload → Title（开始与六格存档选择）→ LoadGame → 新档选角 / 已有档地图 → Level`。`MainPack/Scripts/Procedure/ProcedurePrepare.cs` 的 OnEnter 直接注册资源组、工具、Model 与 System；独立 F6 场地由测试入口自行装配。
 
 | 目录 | 内容 |
 | --- | --- |
 | `TheGame/MainPack/` | 启动流程、共享 UI、资源组与通用节点池 |
 | `TheGame/GameScripts/Battle/` | 确定性战斗规则与战斗运行时 |
-| `TheGame/GameScripts/Profile/`、`Save/` | 玩家档案、成长、SaveModule、存档格式与映射 |
-| `TheGame/GameScripts/GameContext.cs` | 当前存档槽的 PlayerProfile 与 SaveModule |
-| `TheGame/MainPack/Scripts/Startup/FlowData/` | 流程数据键与 GGF 池化包装 |
+| `TheGame/GameScripts/Profile/`、`Save/` | 玩家档案、成长、SaveSystem、存档格式与映射 |
+| `TheGame/GameScripts/Architecture/` | Model、System、Utility、Controller 契约与 GGF FSM 适配 |
+| `TheGame/MainPack/Scripts/Procedure/FlowData/` | 流程数据键与 GGF 池化包装 |
 | `TheGame/GameScripts/Entity/` | 英雄、怪物、身体/AI 状态机、判定与动画适配 |
-| `TheGame/GameScripts/Level/`、`UI/` | LevelModule 及按功能分组的内部组件；HUD 与被动控件 |
+| `TheGame/GameScripts/Level/`、`UI/` | LevelModel、LevelSystem、LevelViewController 及功能组件；HUD 与控件 |
 | `TheGame/Scenes/`、`Entitys/`、`UIs/` | 正式场景、实体场景与 GGF 窗口 |
 | `Configs/GameConfig/` | Luban 源表和生成入口 |
 | `Tests/`、`MainPack/Scripts/Debug/`、`EditorScripts/` | 纯 C# 单测、真实引擎回归、场景与资源验证 |
 | `Framework/`、`addons/` | 只读 GGF 依赖和编辑器插件 |
 
-档案状态由 GameContext 持有，LevelModule 统一关卡推进、收益、结局与回滚，SaveModule 统一读档与检查点写盘。实体持有本次显示期间的战斗运行时。HUD 订阅状态变化，动画与控件只负责表现。具体关系见导览中的图。
+GGF 主流程 FSM 分别持有 Model 和 System，System 借用 Model。PlayerModel 拥有本槽档案；LevelModel 保存本局状态，LevelSystem 执行关卡业务，LevelViewController 协调节点；SaveSystem 负责读档与检查点写盘。实体拥有各自战斗运行时，HUD 观察状态并提交请求。初始化与生命周期见项目导览。
 
 ## 常用验证
 
@@ -55,7 +55,7 @@ python Tools/ProjectMaintenance/validate_game_references.py
 & 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject --quit-after 2400 -- --smoketest=ui
 ```
 
-菜单与 GGF 声音回归使用 `--smoketest=frontend`；非 headless 模式同时在 `.godot/validation/frontend/` 保存实际截图。[本轮模块整理记录](Docs/ModuleRefactor.md) 列出验证与限制，菜单历史交付见 [FrontendDelivery](Docs/FrontendDelivery.md)。
+菜单与 GGF 声音回归使用 `--smoketest=frontend`；非 headless 模式同时在 `.godot/validation/frontend/` 保存实际截图。验证结果与已知限制统一见 [验证记录](Docs/Validation.md)。
 
 引擎回归还支持 `--smoketest`（英雄与命中）、`--smoketest=ai`、`--smoketest=level`、`--smoketest=level-cancel`。各模式使用随机的 `user://Validation/<模式>/<ID>` 目录，隔离玩家进度。以 `SMOKE PASS/FAIL` 判断断言，同时检查退出码；框架既有退出异常单独记录在 [验证规范](Docs/ProjectGuidelines/50-FrameworkAndTools.md)。
 
@@ -74,5 +74,3 @@ python Tools/ProjectMaintenance/validate_game_references.py
 - [GGF](https://github.com/NuoYan/GGF) 是 [Game Framework](https://gameframework.cn/) 的 Godot 移植。本项目保留依赖来源及其许可证，框架和插件不随业务优化直接修改。
 
 本项目仅用于学习；按项目规范禁止商用与公开发布。
-
-

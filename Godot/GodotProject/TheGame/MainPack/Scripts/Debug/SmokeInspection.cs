@@ -1,3 +1,4 @@
+using GameLogic.Architecture;
 using GameLogic.Level;
 using GameLogic.Monsters.Body;
 using GameLogic.Monsters.AI;
@@ -6,7 +7,7 @@ using System;
 using System.Reflection;
 using GameFramework.Fsm;
 using GameFramework.Procedure;
-using GameLogic.Startup.FlowData;
+using GameLogic.Procedure.FlowData;
 using GameLogic.Entity;
 using GameLogic.Heroes;
 using GameLogic.Monsters;
@@ -39,12 +40,28 @@ internal static class SmokeInspection
         throw new MissingFieldException(instance.GetType().FullName, name);
     }
 
+    /// <summary>读取 C# 事件的实际处理器数，验证关闭退订及复用时没有重复订阅。</summary>
+    /// <param name="source">事件所属的状态源。</param>
+    /// <param name="eventName">字段式事件名称。</param>
+    /// <param name="listener">接收事件的窗口或对象。</param>
+    /// <returns>该对象在事件上的处理器数量。</returns>
+    public static int CountEventHandlers(object source, string eventName, object listener)
+    {
+        var handlers = ReadField<Delegate>(source, eventName);
+        int count = 0;
+        if (handlers != null)
+            foreach (var handler in handlers.GetInvocationList())
+                if (ReferenceEquals(handler.Target, listener))
+                    count++;
+        return count;
+    }
+
     /// <summary>读取英雄或怪物状态机的真实当前状态，并格式化日志名称。</summary>
     /// <param name="actor">受测英雄或怪物。</param>
     /// <returns>身体状态名；状态机未运行时为空。</returns>
-    public static string BodyStateName(ActorEntity actor)
+    public static string BodyStateName(AbstractActorEntity actor)
     {
-        object state = actor is HeroEntity
+        object state = actor is AbstractHeroEntity
             ? ReadField<IFsm<IHeroBody>>(actor, "m_BodyFsm")?.CurrentState
             : ReadField<IFsm<IMonsterBody>>(actor, "m_BodyFsm")?.CurrentState;
         return StateName(state);
@@ -53,38 +70,52 @@ internal static class SmokeInspection
     /// <summary>读取怪物 AI 状态机的真实当前状态。</summary>
     /// <param name="monster">受测怪物。</param>
     /// <returns>AI 状态名；状态机未运行时为空。</returns>
-    public static string AiStateName(MonsterEntity monster) =>
+    public static string AiStateName(AbstractMonsterEntity monster) =>
         StateName(ReadField<IFsm<IMonsterAiAgent>>(monster, "m_AiFsm")?.CurrentState);
 
     /// <summary>读取怪物是否处于收招状态。</summary>
     /// <param name="monster">受测怪物。</param>
     /// <returns>身体状态机是否正在收招。</returns>
-    public static bool InRecovery(MonsterEntity monster) =>
+    public static bool InRecovery(AbstractMonsterEntity monster) =>
         ReadField<IFsm<IMonsterBody>>(monster, "m_BodyFsm")?.CurrentState is MonsterRecoveryState;
 
     /// <summary>读取关卡阶段所有者，未找到关卡时返回空。</summary>
     /// <param name="level">受测关卡。</param>
     /// <returns>正式逻辑使用的阶段序列。</returns>
-    public static LevelStageSequence Sequence(LevelModule level) =>
-        level == null ? null : ReadField<LevelStageSequence>(level, "m_Sequence");
+    public static LevelStageSequence Sequence(LevelViewController level) =>
+        level == null ? null : Model(level).Sequence;
+
+    /// <summary>读取真实场景控制器，不向生产代码添加测试 getter。</summary>
+    /// <param name="level">受测关卡控制器。</param>
+    /// <returns>对应场景根节点。</returns>
+    public static LevelViewController Scene(LevelViewController level) => level;
+
+    /// <summary>借用测试对象归属的本局模型。</summary>
+    /// <param name="level">受测控制器。</param>
+    /// <returns>真实注册模型；控制器为空时为空。</returns>
+    public static LevelModel Model(LevelViewController level) => level?.GetModel<LevelModel>();
+
+    /// <summary>借用测试对象归属的业务模块。</summary>
+    /// <param name="level">受测控制器。</param>
+    /// <returns>真实注册模块。</returns>
+    public static LevelSystem GetLevelSystem(LevelViewController level) => level.GetSystem<LevelSystem>();
 
     /// <summary>读取正式流程拥有的本次运行，流程不在关卡时返回空。</summary>
     /// <param name="procedure">当前关卡流程；允许为空。</param>
     /// <returns>本次关卡运行。</returns>
-    public static LevelModule Level(ProcedureLevel procedure) =>
-        procedure == null ? null : ReadField<LevelModule>(procedure, "m_Level");
+    public static LevelViewController Level(ProcedureLevel procedure) =>
+        procedure == null ? null : ReadField<LevelViewController>(procedure, "m_LevelViewController");
 
-    /// <summary>读取正式流程已注入的档案作用域，流程不在关卡时返回空。</summary>
+    /// <summary>读取正式流程持有状态的 FSM，流程不在关卡时返回空。</summary>
     /// <param name="procedure">当前关卡流程；允许为空。</param>
-    /// <returns>当前档案作用域。</returns>
-    public static GameContext Context(ProcedureLevel procedure) =>
-        procedure == null ? null : ReadField<IFsm<IProcedureManager>>(procedure, "m_Owner")
-            .GetData<GameContextVariable>(FlowKeys.GameContext)?.Value;
+    /// <returns>持有档案状态与模块的流程 FSM。</returns>
+    public static IFsm<IProcedureManager> Flow(ProcedureLevel procedure) =>
+        procedure == null ? null : ReadField<IFsm<IProcedureManager>>(procedure, "m_Owner");
 
     /// <summary>仅在测试中停止怪物 AI 并清除待消费意图，身体动作仍按正式逻辑执行。</summary>
     /// <param name="monster">作为沙包的怪物；允许为空。</param>
     /// <exception cref="MissingMethodException">正式 AI 清理方法已更名或删除。</exception>
-    public static void FreezeAi(MonsterEntity monster)
+    public static void FreezeAi(AbstractMonsterEntity monster)
     {
         if (monster == null)
         {
@@ -92,8 +123,8 @@ internal static class SmokeInspection
         }
 
         // 复用正式隐藏时的 AI 清理，不在实体中保留测试开关与额外状态。
-        MethodInfo destroy = typeof(MonsterEntity).GetMethod("DestroyAiStateMachine", BindingFlags.Instance | BindingFlags.NonPublic)
-            ?? throw new MissingMethodException(typeof(MonsterEntity).FullName, "DestroyAiStateMachine");
+        MethodInfo destroy = typeof(AbstractMonsterEntity).GetMethod("DestroyAiStateMachine", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(typeof(AbstractMonsterEntity).FullName, "DestroyAiStateMachine");
         destroy.Invoke(monster, [false]);
         IMonsterBody body = monster;
         body.MoveIntent = 0;

@@ -1,5 +1,5 @@
+using GameLogic.Architecture;
 using GameLogic.Event.Navigation;
-using System;
 using GameFramework.UI;
 using GameLogic.Audio;
 using GameLogic;
@@ -14,9 +14,12 @@ using GodotGameFramework.UI;
 namespace GameLogic.UI;
 
 /// <summary>声音和战斗设置：使用 GGF 保存音量，战斗中暂停并提供返回地图入口。</summary>
-public partial class SettingsForm
+public partial class SettingsForm : IController
 {
-    private SettingsFormData m_Data; // 本次所属关卡，标题中 Level 为空。
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    private bool m_InBattle; // 本次打开时确定的显示模式，关闭后清除。
     private bool m_ShowingHelp; // 帮助复用当前卷轴，关闭后复位。
     private bool m_ResumeGame; // 只恢复由本窗口发起的暂停。
     /// <summary>设置框架字段；按钮事件只在新建实例时绑定一次。</summary>
@@ -46,15 +49,15 @@ public partial class SettingsForm
     }
 
     /// <summary>绑定本次状态源并立即刷新页面。</summary>
-    /// <param name="userData">本次窗口打开参数。</param>
-    /// <exception cref="ArgumentException">需要的打开参数缺失或类型错误。</exception>
+    /// <param name="userData">未使用；是否处于关卡由当前 Model 判断。</param>
     public void OnOpen(object userData)
     {
         ReleaseTransaction();
-        m_Data = userData as SettingsFormData ?? throw new ArgumentException("需要 SettingsFormData。", nameof(userData));
-        if (m_Data.Level != null)
+        var levelModel = this.GetModel<LevelModel>();
+        m_InBattle = levelModel?.SessionActive == true;
+        if (m_InBattle)
         {
-            m_Data.Level.Ended += OnLevelEnded;
+            levelModel.Ended += OnLevelEnded;
             m_ResumeGame = !GF.Base.IsGamePaused;
             if (m_ResumeGame)
                 GF.Base.PauseGame();
@@ -78,7 +81,6 @@ public partial class SettingsForm
     /// <summary>回池时清除本次打开的引用和框架编号。</summary>
     public void OnRecycle()
     {
-        ReleaseTransaction();
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = true;
@@ -117,9 +119,11 @@ public partial class SettingsForm
     /// <summary>释放运行订阅并对称恢复时间缩放。</summary>
     private void ReleaseTransaction()
     {
-        if (m_Data?.Level != null)
-            m_Data.Level.Ended -= OnLevelEnded;
-        m_Data = null;
+        if (m_InBattle)
+        {
+            m_InBattle = false;
+            this.GetModel<LevelModel>().Ended -= OnLevelEnded;
+        }
         if (m_ResumeGame && IsInstanceValid(GF.Base))
             GF.Base.ResumeGame();
         m_ResumeGame = false;
@@ -130,7 +134,7 @@ public partial class SettingsForm
     /// <summary>继续游戏或从帮助回到设置选项。</summary>
     private void OnContinueClicked()
     {
-        if (m_Data == null)
+        if (!GF.UI.HasUIForm(SerialId))
             return;
         if (!m_ShowingHelp)
         {
@@ -144,7 +148,7 @@ public partial class SettingsForm
     /// <summary>右上角叉始终关闭整个设置窗口。</summary>
     private void OnCloseClicked()
     {
-        if (m_Data == null)
+        if (!GF.UI.HasUIForm(SerialId))
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.UI.CloseUIForm(SerialId);
@@ -152,7 +156,7 @@ public partial class SettingsForm
     /// <summary>按当前上下文排列官方五项，标题只保留三个可用选项。</summary>
     private void RefreshOptions()
     {
-        bool battle = m_Data.Level != null;
+        bool battle = m_InBattle;
         m_HelpText.Visible = m_ShowingHelp;
         m_Sound.Visible = m_Help.Visible = !m_ShowingHelp;
         m_ReturnMap.Visible = m_ReturnTitle.Visible = battle && !m_ShowingHelp;
@@ -169,7 +173,7 @@ public partial class SettingsForm
     /// <summary>统一开关音乐和效果音，并保留静音前的音量。</summary>
     private void OnSoundClicked()
     {
-        if (m_Data == null)
+        if (!GF.UI.HasUIForm(SerialId))
             return;
         bool mute = SoundEnabled();
         SetMuted("Music", mute, 0.7f);
@@ -193,7 +197,7 @@ public partial class SettingsForm
     /// <summary>在当前卷轴显示实际可用的游戏操作。</summary>
     private void OnHelpClicked()
     {
-        if (m_Data == null)
+        if (!GF.UI.HasUIForm(SerialId))
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         m_ShowingHelp = true;
@@ -202,7 +206,7 @@ public partial class SettingsForm
     /// <summary>请关卡流程回滚当前关卡并返回标题。</summary>
     private void OnReturnTitleClicked()
     {
-        if (m_Data?.Level == null)
+        if (!GF.UI.HasUIForm(SerialId) || !m_InBattle)
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, TitleRequestedEventArgs.Create(SerialId));
@@ -210,7 +214,7 @@ public partial class SettingsForm
     /// <summary>请关卡流程关闭设置并回滚未完成的关卡。</summary>
     private void OnReturnMapClicked()
     {
-        if (m_Data?.Level == null)
+        if (!GF.UI.HasUIForm(SerialId) || !m_InBattle)
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, MapRequestedEventArgs.Create(SerialId));

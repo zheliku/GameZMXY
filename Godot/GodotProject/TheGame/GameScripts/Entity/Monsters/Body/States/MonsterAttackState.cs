@@ -10,9 +10,9 @@ namespace GameLogic.Monsters.Body
     /// 到点后本招 AiRecovery &gt; 0 进 Recovery 收招硬直，否则回 Move。
     /// 受击打断（霸体由宿主不登记受击）；离开时归还攻击包。
     /// </summary>
-    public sealed class MonsterAttackState : MonsterBodyState
+    public sealed class MonsterAttackState : AbstractMonsterBodyState
     {
-        private int m_Index; // 当前攻击配置在身体参数快照中的下标。
+        private int m_Index; // 当前攻击配置在身体共享身体定义中的下标。
 
         private float m_Left; // 当前招式剩余时长（秒）。
 

@@ -8,7 +8,7 @@ namespace GameLogic.Monsters.Body
     ///（OnInit 读进 Params，状态计时）。期间保持击退速度、作废 AI 出招请求。
     /// 硬直中再受击：重新生效（重置击退、计时，从头重播动画）。结束回 Move。
     /// </summary>
-    public sealed class MonsterHurtState : MonsterBodyState
+    public sealed class MonsterHurtState : AbstractMonsterBodyState
     {
         private float m_Left; // 受击硬直剩余时间（秒）。
 

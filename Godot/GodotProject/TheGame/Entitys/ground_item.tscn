@@ -6,13 +6,28 @@
 [sub_resource type="RectangleShape2D" id="feet"]
 size = Vector2(12, 8)
 
-[node name="GroundItem" type="CharacterBody2D" node_paths=PackedStringArray("m_Icon", "m_PickupAnimation")]
+[sub_resource type="CircleShape2D" id="pickup_shape"]
+radius = 18.0
+
+[node name="GroundItem" type="CharacterBody2D" node_paths=PackedStringArray("m_Icon", "m_PickupAnimation", "m_PickupArea", "m_PickupShape")]
 z_index = 4
 collision_layer = 0
 collision_mask = 9
 script = ExtResource("script")
 m_Icon = NodePath("Icon")
 m_PickupAnimation = NodePath("AnimationPlayer")
+m_PickupArea = NodePath("PickupArea")
+m_PickupShape = NodePath("PickupArea/Shape")
+
+[node name="PickupArea" type="Area2D" parent="."]
+position = Vector2(0, -8)
+collision_layer = 0
+collision_mask = 2
+monitoring = false
+monitorable = false
+
+[node name="Shape" type="CollisionShape2D" parent="PickupArea"]
+shape = SubResource("pickup_shape")
 
 [node name="Feet" type="CollisionShape2D" parent="."]
 position = Vector2(0, -4)

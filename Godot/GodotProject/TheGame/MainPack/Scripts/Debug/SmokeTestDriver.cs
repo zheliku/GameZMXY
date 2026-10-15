@@ -1,3 +1,4 @@
+using GameLogic.Architecture;
 using GameLogic.Level;
 using GameLogic.FloatingText;
 using GameLogic.Battle.Resources;
@@ -97,11 +98,11 @@ public partial class SmokeTestDriver : Node
 
     private const float SandbagOffset = 60f; // 沙包站在可见棍身范围内（像素）；越界不命中由逐帧物理验证覆盖。
 
-    private HeroEntity m_Hero; // 烟测中的英雄实体。
+    private AbstractHeroEntity m_Hero; // 烟测中的英雄实体。
 
     // ---- M4 命中链路观测（悟空连打面前的猴子）----
 
-    private MonsterEntity m_Monster; // 沙包猴子（场上第一只怪物）。
+    private AbstractMonsterEntity m_Monster; // 沙包猴子（场上第一只怪物）。
 
     private readonly List<(int Damage, bool Crit, bool Miss)> m_MonsterHits = new(); // 按事件记录猴子每次受击结果。
 
@@ -133,7 +134,7 @@ public partial class SmokeTestDriver : Node
 
     private double m_TravelTime; // 战斗烟测进入首阶段的准备时间。
     private bool m_StageEntered; // 相机已到达首阶段右界，战斗时间轴可开始。
-    private LevelModule m_Level; // 烟测观测的关卡会话。
+    private LevelViewController m_Level; // 烟测观测的关卡会话。
 
     private double m_MonsterFoundAt = -1.0; // 找到受测猴子的时间（秒）；-1 表示尚未找到。
 
@@ -225,7 +226,7 @@ public partial class SmokeTestDriver : Node
             // FindChildren 的类型过滤只认引擎原生类名（C# 脚本类名不匹配），按 CharacterBody2D 取再判脚本类型
             foreach (Node node in GetTree().Root.FindChildren("*", "CharacterBody2D", true, false))
             {
-                if (node is HeroEntity hero)
+                if (node is AbstractHeroEntity hero)
                 {
                     m_Hero = hero;
                     break;
@@ -315,16 +316,16 @@ public partial class SmokeTestDriver : Node
             m_MashFrame++;
             if (m_Time >= m_MashUntil)
             {
-                Input.ActionRelease(InputActions.Attack);
+                Input.ActionRelease(InputSystem.Attack);
                 m_Mashing = false;
             }
             else if (m_MashFrame % 2 == 0)
             {
-                Input.ActionPress(InputActions.Attack);
+                Input.ActionPress(InputSystem.Attack);
             }
             else
             {
-                Input.ActionRelease(InputActions.Attack);
+                Input.ActionRelease(InputSystem.Attack);
             }
         }
 
@@ -430,7 +431,7 @@ public partial class SmokeTestDriver : Node
         m_TravelTime += delta;
         foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
         {
-            if (node is LevelModule level)
+            if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level)
             {
                 m_Level = level;
                 break;
@@ -439,25 +440,25 @@ public partial class SmokeTestDriver : Node
 
         if (SmokeInspection.Sequence(m_Level)?.Phase == LevelStagePhase.Fighting)
         {
-            Input.ActionRelease(InputActions.MoveRight);
-            Input.ActionRelease(InputActions.Jump);
+            Input.ActionRelease(InputSystem.MoveRight);
+            Input.ActionRelease(InputSystem.Jump);
             // 战斗回归需要平地，使用场景中已配置的平坦玩家出生点，避免斜坡改变高度断言。
             m_Hero.GlobalPosition = m_Level.PlayerSpawnPosition;
             m_Hero.Velocity = Vector2.Zero;
-            m_Hero.Input.Reset();
+            GF.Fsm.GetSystem<InputSystem>().Reset(m_Hero.ActionData);
             m_StageEntered = true;
             GD.Print("SMOKE: 相机抵达首阶段，开始战斗时间轴");
             return;
         }
 
-        Input.ActionPress(InputActions.MoveRight);
+        Input.ActionPress(InputSystem.MoveRight);
         if (m_Hero.IsOnWall() && m_Hero.IsOnFloor())
         {
-            Input.ActionPress(InputActions.Jump);
+            Input.ActionPress(InputSystem.Jump);
         }
         else
         {
-            Input.ActionRelease(InputActions.Jump);
+            Input.ActionRelease(InputSystem.Jump);
         }
         if (m_TravelTime > 20.0)
         {
@@ -471,7 +472,7 @@ public partial class SmokeTestDriver : Node
         {
             foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
             {
-                if (node is LevelModule level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
+                if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
                 {
                     m_LevelScenario = new LevelSmokeScenario(m_Hero, level);
                     break;
@@ -505,7 +506,7 @@ public partial class SmokeTestDriver : Node
         {
             foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
             {
-                if (node is LevelModule level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
+                if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
                 {
                     m_CancelScenario = new LevelCancellationSmokeScenario(m_Hero, level);
                     break;
@@ -576,7 +577,7 @@ public partial class SmokeTestDriver : Node
 
     private string Facts() // 生成英雄身体状态快照供烟测日志定位问题。
     {
-        return $"move={m_Hero.Input.MoveAxis} run={m_Hero.Input.Running} jump={m_Hero.JumpCount} "
+        return $"move={m_Hero.ActionData.MoveAxis} run={m_Hero.ActionData.Running} jump={m_Hero.ActionData.JumpCount} "
             + $"seg={m_Hero.AttackSegment} dead={m_Hero.Dead} "
             + $"floor={m_Hero.IsOnFloor()} vy={m_Hero.Velocity.Y:F0}";
     }
@@ -685,7 +686,7 @@ public partial class SmokeTestDriver : Node
         // 避免活怪攻击英雄带来不确定的受击/击退时序（AI 行为由 ai 场景单独覆盖）。
         foreach (Node node in GetTree().Root.FindChildren("*", "CharacterBody2D", true, false))
         {
-            if (node is not MonsterEntity { IsShown: true } monster)
+            if (node is not AbstractMonsterEntity { IsShown: true } monster)
             {
                 continue;
             }
@@ -806,9 +807,9 @@ public partial class SmokeTestDriver : Node
     {
         // 先停止帧驱动并释放事件订阅，避免退出等待期间继续触发烟测逻辑。
         SetPhysicsProcess(false);
-        Input.ActionRelease(InputActions.MoveLeft);
-        Input.ActionRelease(InputActions.MoveRight);
-        Input.ActionRelease(InputActions.Jump);
+        Input.ActionRelease(InputSystem.MoveLeft);
+        Input.ActionRelease(InputSystem.MoveRight);
+        Input.ActionRelease(InputSystem.Jump);
         if (m_Hero != null)
         {
             GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnDamageDealt);

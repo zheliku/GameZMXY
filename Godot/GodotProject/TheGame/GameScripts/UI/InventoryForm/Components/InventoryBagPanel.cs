@@ -1,3 +1,5 @@
+using GameLogic.Config;
+using GameLogic.Architecture;
 using System;
 using System.Linq;
 using GameConfig.Equipment;
@@ -11,8 +13,12 @@ using GodotGameFramework;
 namespace GameLogic.UI.Widgets;
 
 /// <summary>背包面板统一管理分类、格子、分页、钱包和品质出售选择，不执行交易。</summary>
-public partial class InventoryBagPanel : Control
+public partial class InventoryBagPanel : Control, IController
 {
+    /// <summary>借用所属主流程的共享数据访问入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     private const int PageSize = 25; // 每页固定 5×5 格。
     private const int MaximumPages = 3; // 当前场景支持的装备页数。
     [Export] private Control m_Tabs; // 四个分类按钮的容器。
@@ -26,8 +32,7 @@ public partial class InventoryBagPanel : Control
     private TextureButton[] m_TabButtons; // 本面板的四个分类按钮。
     private EquipmentCell[] m_Cells; // 当前页的固定格子。
     private readonly EquipmentInstance[] m_VisibleItems = new EquipmentInstance[PageSize]; // 与当前页格子一一对应，关闭后清空。
-    private Inventory m_Inventory; // 只读借用的背包，不订阅、不执行事务。
-    private int m_Soul; // 最近刷新时的钱包显示输入。
+    private bool m_IsBound; // 窗口明确启用/清理本面板，关闭后不处理交互。
     private int m_SelectedTab; // 当前分类；零为装备。
     private int m_PageIndex; // 当前分类内从零开始的页号。
 
@@ -64,16 +69,14 @@ public partial class InventoryBagPanel : Control
     }
 
     /// <summary>更新只读显示数据；窗口打开时明确重置到装备第一页。</summary>
-    /// <param name="inventory">完整装备背包。</param>
-    /// <param name="soul">当前钱包灵魂。</param>
     /// <param name="resetPage">是否开始新的窗口周期。</param>
     /// <exception cref="InvalidOperationException">容量超过当前三页的显示能力。</exception>
-    public void Bind(Inventory inventory, int soul, bool resetPage = false)
+    public void Refresh(bool resetPage = false)
     {
+        var inventory = this.GetModel<PlayerModel>().Inventory;
         if (inventory.Capacity > PageSize * MaximumPages)
             throw new InvalidOperationException("背包容量超过当前三页界面的显示上限。");
-        m_Inventory = inventory;
-        m_Soul = soul;
+        m_IsBound = true;
         if (resetPage)
         {
             m_SelectedTab = 0;
@@ -86,10 +89,10 @@ public partial class InventoryBagPanel : Control
     /// <summary>关闭后停止提交交互，清除当前格子、弹出窗口和数据借用。</summary>
     public void Clear()
     {
-        m_Inventory = null;
+        m_IsBound = false;
         Array.Clear(m_VisibleItems);
         foreach (var cell in m_Cells)
-            cell.Bind(null, null, null);
+            cell.Bind(null, null);
         m_QualityOptions.Hide();
         m_SellQuality.Disabled = true;
         m_SellQuality.MouseDefaultCursorShape = CursorShape.Arrow;
@@ -99,7 +102,7 @@ public partial class InventoryBagPanel : Control
     /// <param name="index">当前分类编号。</param>
     private void OnTabSelected(int index)
     {
-        if (m_Inventory == null)
+        if (!m_IsBound)
             return;
         m_SelectedTab = index;
         m_PageIndex = 0;
@@ -112,7 +115,7 @@ public partial class InventoryBagPanel : Control
     /// <param name="offset">翻页方向。</param>
     private void OnPageRequested(int offset)
     {
-        if (m_Inventory == null)
+        if (!m_IsBound)
             return;
         m_PageIndex = Math.Clamp(m_PageIndex + offset, 0, PageCount() - 1);
         ViewChanged?.Invoke();
@@ -129,13 +132,13 @@ public partial class InventoryBagPanel : Control
     /// <summary>装备按容量分页，尚无数据的分类只显示一页。</summary>
     /// <returns>当前分类的总页数。</returns>
     private int PageCount() => m_SelectedTab == 0
-        ? (m_Inventory.Capacity + PageSize - 1) / PageSize
+        ? (this.GetModel<PlayerModel>().Inventory.Capacity + PageSize - 1) / PageSize
         : 1;
 
     /// <summary>按当前分类和页号刷新全部控件，并关闭过期出售选项。</summary>
     private void RefreshView()
     {
-        var items = m_SelectedTab == 0 ? m_Inventory.Items : null;
+        var items = m_SelectedTab == 0 ? this.GetModel<PlayerModel>().Inventory.Items : null;
         for (int i = 0; i < m_TabButtons.Length; i++)
             m_TabButtons[i].SetPressedNoSignal(i == m_SelectedTab);
         // 隐藏期间更新整页，避免相邻格出现新旧输入混合。
@@ -144,14 +147,14 @@ public partial class InventoryBagPanel : Control
         {
             int index = m_PageIndex * PageSize + i;
             var item = items != null && index < items.Count ? items[index] : null;
-            var definition = item == null ? null : ConfigSystem.Instance.Tables.TbEquipmentConfig.Get(item.EquipmentId);
+            var definition = item == null ? null : this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
             m_VisibleItems[i] = item;
-            m_Cells[i].Bind(item, definition,
+            m_Cells[i].Bind(item,
                 definition == null ? null : GF.Resource.LoadAsset<Texture2D>(definition.IconPath));
         }
 
         m_Grid.Show();
-        m_SoulText.Text = m_Soul.ToString();
+        m_SoulText.Text = this.GetModel<PlayerModel>().Wallet.Soul.ToString();
         m_PageNumber.Text = $"{m_PageIndex + 1} / {PageCount()}";
         SetPageButton(m_PreviousPage, m_PageIndex > 0);
         SetPageButton(m_NextPage, m_PageIndex + 1 < PageCount());
@@ -174,7 +177,7 @@ public partial class InventoryBagPanel : Control
     /// <param name="instanceId">格子提交的装备编号。</param>
     private void OnCellClicked(Guid instanceId)
     {
-        if (m_Inventory == null || m_SelectedTab != 0)
+        if (!m_IsBound || m_SelectedTab != 0)
             return;
         for (int i = 0; i < m_VisibleItems.Length; i++)
         {
@@ -189,7 +192,7 @@ public partial class InventoryBagPanel : Control
     /// <summary>统计完整未穿戴背包，在出售按钮上方显示品质选项。</summary>
     private void OnSellQualityClicked()
     {
-        if (m_Inventory == null || m_SelectedTab != 0)
+        if (!m_IsBound || m_SelectedTab != 0)
             return;
         m_QualityOptions.Clear();
         foreach (EquipmentQuality quality in Enum.GetValues<EquipmentQuality>())
@@ -197,7 +200,7 @@ public partial class InventoryBagPanel : Control
             var (count, price) = GetSummary(quality);
             m_QualityOptions.AddItem($"出售{quality.DisplayName()}装备（{count}）", (int)quality);
             int index = m_QualityOptions.ItemCount - 1;
-            bool overflow = price > int.MaxValue - m_Soul;
+            bool overflow = price > int.MaxValue - this.GetModel<PlayerModel>().Wallet.Soul;
             m_QualityOptions.SetItemDisabled(index, count == 0 || overflow);
             m_QualityOptions.SetItemTooltip(index, overflow ? "出售后灵魂将超过上限" : $"获得 {price} 灵魂");
         }
@@ -217,9 +220,9 @@ public partial class InventoryBagPanel : Control
     {
         int count = 0;
         long price = 0;
-        foreach (var item in m_Inventory.Items)
+        foreach (var item in this.GetModel<PlayerModel>().Inventory.Items)
         {
-            var definition = ConfigSystem.Instance.Tables.TbEquipmentConfig.Get(item.EquipmentId);
+            var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
             if (definition.Quality != quality)
                 continue;
             count++;
@@ -233,12 +236,12 @@ public partial class InventoryBagPanel : Control
     /// <param name="id">菜单保存的品质枚举编号。</param>
     private void OnQualitySelected(long id)
     {
-        if (m_Inventory == null || m_SelectedTab != 0 || id < 0 || id > int.MaxValue ||
+        if (!m_IsBound || m_SelectedTab != 0 || id < 0 || id > int.MaxValue ||
             !Enum.IsDefined((EquipmentQuality)id))
             return;
         var quality = (EquipmentQuality)id;
         var (count, price) = GetSummary(quality);
-        if (count == 0 || price > int.MaxValue - m_Soul)
+        if (count == 0 || price > int.MaxValue - this.GetModel<PlayerModel>().Wallet.Soul)
             return;
         m_QualityOptions.Hide();
         QualitySelected?.Invoke(quality, count, price);

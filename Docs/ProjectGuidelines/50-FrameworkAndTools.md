@@ -34,7 +34,7 @@
 | 文件 / 范围 | 已授权修改 |
 | --- | --- |
 | addons/TopMenu/GameFrameworkTopMenu.Generate.cs | Collection Res 过滤链排除 Markdown，防止 AGENTS.md 被作为同名资源收集；仅此一行过滤 |
-| Framework/GameFramework.tscn 的 Procedure.Procedures | Launch、Update、Preload、Title、LoadProfile、Character、Map、Level；包含先前流程改名和菜单新增，EnterProcedure 不变；新增其他流程另行授权 |
+| Framework/GameFramework.tscn 的 Procedure.Procedures | Launch、Update、Prepare、Preload、Title、LoadGame、Character、Map、Level；2026-10-15 用户要求整理准备流程并重命名读档流程，登记 Prepare 与 LoadGame；EnterProcedure 不变；新增其他流程另行授权 |
 | Framework/GodotGameFrameworkCore/Json/EasySave.cs | 增加 Serialize、WriteUserTextAtomicAsync、LoadFromUserWithBackupAsync、ExistsInUserOrBackup、DeleteInUserWithBackupAsync、BackupSuffix；原接口及热更调用不变 |
 | Framework/GodotGameFrameworkCore/Archive/ArchiveSystem.cs | 原子写/.bak、调用顺序串行、调用时序列化、读取备份回退、严格首次建档、覆盖时重写目录、读写/删除返回 Task<bool>；ArchiveCatalogue/ArchiveData、布局、加密和 GF 泛型绑定不变 |
 | 生成代码与资源 | 用户要求改源表、UI 或资源登记时，只经上述既有生成流程更新；脚本迁移携带 UID，并修复引用后由 Godot 重扫 |

@@ -1,3 +1,4 @@
+using GameLogic.Architecture;
 using GameLogic.Event.Navigation;
 using System;
 using GameFramework.UI;
@@ -12,9 +13,11 @@ using GodotGameFramework.UI;
 namespace GameLogic.UI;
 
 /// <summary>四栏选角：已开放角色响应悬停和确认；未开放角色只作静态展示。</summary>
-public partial class CharacterForm
+public partial class CharacterForm : IController
 {
-    private bool m_IsOpen; // 静态选角页只在本次打开期间提交导航请求。
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
 
     /// <summary>设置框架字段；按钮事件只在新建实例时绑定一次。</summary>
     /// <param name="serialId">窗口打开编号。</param>
@@ -45,7 +48,6 @@ public partial class CharacterForm
     public void OnOpen(object userData)
     {
         ResetRoleHover();
-        m_IsOpen = true;
         Visible = true;
     }
 
@@ -54,7 +56,6 @@ public partial class CharacterForm
     /// <param name="userData">关闭参数，不保存。</param>
     public void OnClose(bool isShutdown, object userData)
     {
-        m_IsOpen = false;
         if (!isShutdown)
             ResetRoleHover();
         if (!isShutdown && IsInstanceValid(this))
@@ -64,7 +65,6 @@ public partial class CharacterForm
     /// <summary>回池时清除本次打开的引用和框架编号。</summary>
     public void OnRecycle()
     {
-        m_IsOpen = false;
         ResetRoleHover();
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
@@ -120,7 +120,7 @@ public partial class CharacterForm
     /// <summary>确认出战角色，进入地图。</summary>
     private void OnConfirmClicked()
     {
-        if (!m_IsOpen)
+        if (!GF.UI.HasUIForm(SerialId))
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, CharacterConfirmedEventArgs.Create(SerialId));
@@ -129,7 +129,7 @@ public partial class CharacterForm
     /// <summary>预览已开放的悟空，将 1P 放到卡片顶部中央。</summary>
     private void OnWukongMouseEntered()
     {
-        if (!m_IsOpen)
+        if (!GF.UI.HasUIForm(SerialId))
             return;
         ((ShaderMaterial)m_Wukong.Material).SetShaderParameter("grayscale", 0f);
         m_PlayerOne.GlobalPosition = new Vector2(m_Wukong.GetGlobalRect().GetCenter().X - m_PlayerOne.Size.X / 2,

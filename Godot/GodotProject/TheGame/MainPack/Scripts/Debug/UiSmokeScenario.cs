@@ -1,3 +1,5 @@
+using GameLogic.Architecture;
+using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 using GameLogic.Equipment;
 using GameLogic.Level;
 using GameLogic.Heroes.Body;
@@ -7,6 +9,7 @@ using GameLogic.Battle.Attacks;
 using GameLogic.Save.Data;
 using GameLogic.Input;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -41,8 +44,8 @@ public sealed partial class UiSmokeScenario
 {
     private readonly Node m_Driver; // 提供真实引擎帧信号的烟测节点。
     private readonly Task m_RunTask; // 已捕获异常的测试任务。
-    private HeroEntity m_ExtraHero; // 测试创建的额外英雄，结束时归还。
-    private MonsterEntity m_Monster; // 复用验证创建的怪物，结束时归还。
+    private AbstractHeroEntity m_ExtraHero; // 测试创建的额外英雄，结束时归还。
+    private AbstractMonsterEntity m_Monster; // 复用验证创建的怪物，结束时归还。
     private BattleHud m_TestHud; // 当前由测试打开的 HUD，结束时关闭。
 
     /// <summary>开始一次 UI 与存档回归，原流程与测试使用同一套框架服务。</summary>
@@ -67,82 +70,87 @@ public sealed partial class UiSmokeScenario
         {
             ProcedureLevel procedure = await WaitForLevelAsync();
             Check(!GF.Debugger.ActiveWindow, "框架调试入口仍然遮挡游戏 HUD");
-            GameContext context = SmokeInspection.Context(procedure);
-            HeroEntity hero = FindHero();
-            LevelModule level = FindLevel();
+            ProcedureOwner flow = SmokeInspection.Flow(procedure);
+            AbstractHeroEntity hero = FindHero();
+            LevelViewController level = FindLevel();
             BattleHud hud = CurrentHud();
             hero.SetPhysicsProcess(false);
 
             // 首次启动按建档规则新建并立即写回为当前版本。
             GameData onDisk = await ReadDiskAsync();
             Check(onDisk?.SaveVersion == GameData.CurrentVersion && onDisk.Heroes.Count == 1, "首次启动未按当前版本写回新档");
-            CheckDisplay(hud, hero, context.Profile.ActiveHero, level);
+            CheckDisplay(hud, hero, flow.GetModel<PlayerModel>().ActiveHero, level);
 
             await CheckFloatingTextAsync();
-            await CheckGroundItemsAsync(context, hero, level);
-            await CheckInventoryAsync(hud, hero, context, level);
-            await CheckSkillsAsync(hud, context, level);
-            await CheckHitFacingAsync(context);
-            await CheckHudLifecycleAsync(hud, hero, context, level);
-            await CheckEntityReuseAsync(context);
-            m_TestHud = await OpenHudAsync(new BattleHudData(hero, context.Profile.ActiveHero, level));
+            await CheckGroundItemsAsync(flow, hero, level);
+            await CheckInventoryAsync(hud, hero, flow, level);
+            await CheckSkillsAsync(hud, flow, level);
+            await CheckHitFacingAsync(flow);
+            await CheckHudLifecycleAsync(hud, hero, flow, level);
+            await CheckEntityReuseAsync(flow);
+            m_TestHud = await OpenHudAsync(new BattleHudData(hero, level));
             await CheckGroundCombatAsync(hero, m_TestHud);
             await CheckDemonChaseAsync(hero);
             CloseHud(m_TestHud);
             m_TestHud = null;
-            await CheckLevelUpAsync(context, level);
-            await CheckPlatformsAsync(level, context);
-            await CheckManaPickupAsync(context, level, hero);
+            await CheckLevelUpAsync(flow, level);
+            await CheckPlatformsAsync(level, flow);
+            await CheckManaPickupAsync(flow, level, hero);
             // 从真实保存的临界经验重入，下一次击败应立即触发脚底升级动画。
             level.Cleanup(); // 先结束旧关卡事务，再设置下一场的测试检查点。
-            Check(!level.GetChildren().OfType<GameLogic.Drops.LootOrbNode>().Any(), "关停后仍有本关飞行奖励");
-            var active = context.Profile.ActiveHero;
+            Check(!SmokeInspection.Scene(level).GetChildren().OfType<GameLogic.Drops.LootOrbNode>().Any(), "关停后仍有本关飞行奖励");
+            var active = flow.GetModel<PlayerModel>().ActiveHero;
             active.AddExperience(active.MaxExperience - active.Experience - 1);
-            Check(await context.Save.SaveCheckpointAsync(context.Profile), "升级临界检查点保存失败");
+            Check(await flow.GetSystem<SaveSystem>().SaveCheckpointAsync(flow.GetModel<PlayerModel>()), "升级临界检查点保存失败");
             ReenterLevel();
             procedure = await WaitForLevelAsync();
             level = FindLevel();
 
             // 中途离开：关内收益回滚，不写盘；重入读回进关前状态。
-            HeroProgression progression = context.Profile.ActiveHero;
+            HeroProgression progression = flow.GetModel<PlayerModel>().ActiveHero;
             int before = progression.TotalExperience;
-            int soulBefore = context.Profile.Wallet.Soul;
-            var inventoryBefore = context.Profile.Inventory.Items.Select(x => x.InstanceId).ToArray();
+            int soulBefore = flow.GetModel<PlayerModel>().Wallet.Soul;
+            var inventoryBefore = flow.GetModel<PlayerModel>().Inventory.Items.Select(x => x.InstanceId).ToArray();
             await DefeatMonsterAsync(level, procedure);
-            context.Profile.Inventory.TryAdd(context.Equipment.Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPilgrimStaff, () => .7f));
-            Check(FindLevel().SellByQuality(GameConfig.Equipment.EquipmentQuality.Common) > 0,
+            flow.GetModel<PlayerModel>().Inventory.TryAdd(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPilgrimStaff, () => .7f));
+            Check(SmokeInspection.GetLevelSystem(FindLevel()).SellByQuality(GameConfig.Equipment.EquipmentQuality.Common) > 0,
                 "关卡未接收整包品质出售请求");
             Check(progression.TotalExperience > before, "击败怪物没有把经验写入档案");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == before, "关内收益在结算前就写盘了");
             ReenterLevel();
             procedure = await WaitForLevelAsync();
-            Check(ReferenceEquals(SmokeInspection.Context(procedure), context), "重入关卡没有沿用同一档案作用域");
+            Check(ReferenceEquals(SmokeInspection.Flow(procedure), flow), "重入关卡没有沿用同一档案作用域");
             Check(progression.TotalExperience == before, "中途离开没有回滚关内收益");
-            Check(context.Profile.Inventory.Items.Select(x => x.InstanceId).SequenceEqual(inventoryBefore), "中途离开没有回滚装备实例");
-            Check(context.Profile.Wallet.Soul == soulBefore, "中途离开没有回滚已拾取的灵魂");
+            Check(flow.GetModel<PlayerModel>().Inventory.Items.Select(x => x.InstanceId).SequenceEqual(inventoryBefore), "中途离开没有回滚装备实例");
+            Check(flow.GetModel<PlayerModel>().Wallet.Soul == soulBefore, "中途离开没有回滚已拾取的灵魂");
 
             // 死亡：提交本关收益（写盘），显示失败结算并由玩家重试。关卡运行在击杀前捕获，重开后流程会换成新运行。
             await DefeatMonsterAsync(FindLevel(), procedure);
-            var checkpointGear = context.Equipment.Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPineStaff, () => .73f);
-            context.Profile.Inventory.TryAdd(checkpointGear);
+            var checkpointGear = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPineStaff, () => .73f);
+            flow.GetModel<PlayerModel>().Inventory.TryAdd(checkpointGear);
             int afterKill = progression.TotalExperience;
-            int soulAfterKill = context.Profile.Wallet.Soul;
-            LevelModule deathRun = SmokeInspection.Level(procedure);
+            int soulAfterKill = flow.GetModel<PlayerModel>().Wallet.Soul;
+            LevelViewController deathRun = SmokeInspection.Level(procedure);
+            var pendingOrbs = SmokeInspection.ReadField<HashSet<GameLogic.Drops.LootOrbNode>>(deathRun, "m_LootOrbs");
+            SpawnOrb(deathRun, FindHero().GlobalPosition, new(GameLogic.Drops.LootKind.Soul, 50));
+            Check(pendingOrbs.Count > 0, "死亡回收测试缺少在途奖励");
             KillHero(FindHero());
-            Check(deathRun.Outcome == LevelOutcome.Defeated, $"英雄死亡没有结束关卡运行：{deathRun.Outcome}");
-            Check(await deathRun.CheckpointWrite, "死亡检查点写入失败");
+            Check(pendingOrbs.Count == 0 && flow.GetModel<PlayerModel>().Wallet.Soul == soulAfterKill,
+                "死亡没有回收在途球，或错误领取了未接触奖励");
+            Check(SmokeInspection.Model(deathRun).Outcome == LevelOutcome.Defeated, $"英雄死亡没有结束关卡运行：{SmokeInspection.Model(deathRun).Outcome}");
+            Check(await SmokeInspection.GetLevelSystem(deathRun).CheckpointWrite, "死亡检查点写入失败");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == afterKill, "死亡没有保存本关收益");
             Check((await ReadDiskAsync()).Soul == soulAfterKill, "死亡没有保存已拾取的灵魂");
             var savedGear = (await ReadDiskAsync()).EquipmentItems.Single(x => x.InstanceId == checkpointGear.InstanceId);
             Check(savedGear.Attributes == checkpointGear.Attributes, "死亡检查点没有保存实际装备属性");
             await CheckFailureSettlementAsync(deathRun);
             await WaitUntilAsync(() => SmokeInspection.Level(procedure) != null && !ReferenceEquals(SmokeInspection.Level(procedure), deathRun) &&
-                SmokeInspection.Level(procedure).Outcome == LevelOutcome.Running && CurrentHud() != null,
+                SmokeInspection.Model(SmokeInspection.Level(procedure)).Outcome == LevelOutcome.Running && CurrentHud() != null,
                 "失败结算点击重试后没有重开关卡", 15000);
             Check(progression.TotalExperience == afterKill, "死亡重开后档案收益丢失");
 
             await CheckFailureReturnMapAsync();
-            await CheckBackupRecoveryAsync(context);
+            await CheckBackupRecoveryAsync(flow);
             await CheckUnsupportedFormatAsync();
             await CheckLoadingCancellationAsync();
             await CheckHudOpenFailureAsync();
@@ -166,7 +174,7 @@ public sealed partial class UiSmokeScenario
     /// <param name="hero">正式流程英雄。</param>
     /// <param name="hud">正式 HUD。</param>
     /// <returns>全部怪物行为验证完成的任务。</returns>
-    private async Task CheckGroundCombatAsync(HeroEntity hero, BattleHud hud)
+    private async Task CheckGroundCombatAsync(AbstractHeroEntity hero, BattleHud hud)
     {
         hero.GlobalPosition = new Vector2(500, 350);
         hero.Velocity = Vector2.Zero;
@@ -177,14 +185,14 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() => hero.OnFloor, "测试英雄没有落地");
         hero.SetPhysicsProcess(false);
         var banner = SmokeInspection.ReadField<EncounterHealthBar>(hud, "m_EncounterHealthBar");
-        MonsterEntity previousGorilla = null;
+        AbstractMonsterEntity previousGorilla = null;
         (int Id, float Health, float Defense, float Attack)[] cases =
             [(1, 1, 1, 1), (2, 1, 1, 1), (3, 1, 1, 1), (3, 3, 2, 3), (3, 1, 1, 1)];
         foreach (var (id, health, defense, attack) in cases)
         {
             var config = ConfigSystem.Instance.Tables.TbMonsterConfig.Get(id);
             bool boosted = health > 1f;
-            m_Monster = (MonsterEntity)await GF.Entity.ShowEntityAsync(config.EntityId,
+            m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(config.EntityId,
                 new MonsterSpawn(new Vector2(hero.GlobalPosition.X + 40, 100), health, defense, attack,
                     boosted ? 25 : -1));
             SmokeInspection.FreezeAi(m_Monster);
@@ -262,19 +270,19 @@ public sealed partial class UiSmokeScenario
     /// <summary>HUD 打开时拉取一致快照、变化时刷新、关闭后不再响应、窗口池复用、改绑到其他状态源。</summary>
     /// <param name="hud">正式流程已打开的 HUD。</param>
     /// <param name="hero">正式英雄。</param>
-    /// <param name="context">档案作用域。</param>
+    /// <param name="flow">档案作用域。</param>
     /// <param name="level">正式关卡。</param>
     /// <returns>验证完成的任务。</returns>
-    private async Task CheckHudLifecycleAsync(BattleHud hud, HeroEntity hero, GameContext context, LevelModule level)
+    private async Task CheckHudLifecycleAsync(BattleHud hud, AbstractHeroEntity hero, ProcedureOwner flow, LevelViewController level)
     {
-        HeroProgression progression = context.Profile.ActiveHero;
+        HeroProgression progression = flow.GetModel<PlayerModel>().ActiveHero;
         CloseHud(hud);
         await WaitFramesAsync(2);
 
         // 打开前改变状态，验证打开时读取当前值而不是依赖后续事件。
         hero.Vitals.Damage(30);
         hero.Musou.Add(35);
-        m_TestHud = await OpenHudAsync(new BattleHudData(hero, progression, level));
+        m_TestHud = await OpenHudAsync(new BattleHudData(hero, level));
         Check(ReferenceEquals(hud, m_TestHud), "HUD 未从真实窗口池复用");
         CheckDisplay(m_TestHud, hero, progression, level);
 
@@ -299,22 +307,21 @@ public sealed partial class UiSmokeScenario
         await WaitFramesAsync(2);
 
         // 改绑到另一英雄：旧英雄的变化不再影响显示。
-        m_TestHud = await OpenHudAsync(new BattleHudData(hero, progression, level));
+        m_TestHud = await OpenHudAsync(new BattleHudData(hero, level));
         Check(fullAnimation.Visible && fullAnimation.IsPlaying(), "HUD 复用后没有恢复已蓄满的无双动画");
-        m_ExtraHero = await ShowHeroAsync(context, new HeroProgression(1, SmokeInspection.ReadField<ExperienceCurve>(context.Profile.ActiveHero, "m_Curve"), 517));
-        HeroProgression extraProgression = new(1, SmokeInspection.ReadField<ExperienceCurve>(context.Profile.ActiveHero, "m_Curve"), 517);
-        GF.UI.RefocusUIForm(m_TestHud, new BattleHudData(m_ExtraHero, extraProgression, level));
-        CheckDisplay(m_TestHud, m_ExtraHero, extraProgression, level);
+        m_ExtraHero = await ShowHeroAsync(flow, new HeroProgression(1, SmokeInspection.ReadField<ExperienceCurve>(flow.GetModel<PlayerModel>().ActiveHero, "m_Curve"), 517));
+        GF.UI.RefocusUIForm(m_TestHud, new BattleHudData(m_ExtraHero, level));
+        CheckDisplay(m_TestHud, m_ExtraHero, progression, level);
         Check(!fullAnimation.Visible && !fullAnimation.IsPlaying(), "改绑未蓄满的英雄后残留旧无双动画");
         hero.Vitals.Damage(1);
-        CheckDisplay(m_TestHud, m_ExtraHero, extraProgression, level);
+        CheckDisplay(m_TestHud, m_ExtraHero, progression, level);
         CloseHud(m_TestHud);
         ReleaseTestEntity(m_ExtraHero);
         m_ExtraHero = null;
 
         // 正式英雄恢复满血并重新打开正式 HUD，后续关卡事务用例从干净状态开始。
         hero.Heal(hero.Vitals.MaxHp);
-        m_TestHud = await OpenHudAsync(new BattleHudData(hero, progression, level));
+        m_TestHud = await OpenHudAsync(new BattleHudData(hero, level));
         await WaitFramesAsync(2);
     }
 
@@ -323,7 +330,7 @@ public sealed partial class UiSmokeScenario
     /// <param name="hero">HUD 绑定的英雄，验证后保持蓄满以继续检查关闭与复用。</param>
     /// <param name="progression">HUD 绑定的成长，经验验证后恢复原值。</param>
     /// <returns>真实动画至少循环两次后的验证任务。</returns>
-    private async Task CheckMusouAnimationAsync(BattleHud hud, HeroEntity hero, HeroProgression progression)
+    private async Task CheckMusouAnimationAsync(BattleHud hud, AbstractHeroEntity hero, HeroProgression progression)
     {
         AnimatedSprite2D animation = hud.GetNode<AnimatedSprite2D>("MenuPanel/m_WsMax");
         ResourceBar bar = hud.GetNode<ResourceBar>("MenuPanel/WsFrame/m_WsBar");
@@ -368,17 +375,16 @@ public sealed partial class UiSmokeScenario
     }
 
     /// <summary>池化实体复用时按装配/配置重建属性，不残留上次的数值或修正来源。</summary>
-    /// <param name="context">档案作用域。</param>
+    /// <param name="flow">档案作用域。</param>
     /// <returns>验证完成的任务。</returns>
-    private async Task CheckEntityReuseAsync(GameContext context)
+    private async Task CheckEntityReuseAsync(ProcedureOwner flow)
     {
         // 正式英雄占用一个池实例；先关掉测试 HUD 以免它观察额外英雄。
         CloseHud(m_TestHud);
         m_TestHud = null;
-        m_ExtraHero = await ShowHeroAsync(context, new HeroProgression(1, SmokeInspection.ReadField<ExperienceCurve>(context.Profile.ActiveHero, "m_Curve"), 0));
-        HeroEntity previous = m_ExtraHero;
-        m_TestHud = await OpenHudAsync(new BattleHudData(previous, context.Profile.ActiveHero,
-            SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel)));
+        m_ExtraHero = await ShowHeroAsync(flow, new HeroProgression(1, SmokeInspection.ReadField<ExperienceCurve>(flow.GetModel<PlayerModel>().ActiveHero, "m_Curve"), 0));
+        AbstractHeroEntity previous = m_ExtraHero;
+        m_TestHud = await OpenHudAsync(new BattleHudData(previous, FindLevel()));
         await CheckMusouActivationAsync(previous);
         CloseHud(m_TestHud);
         m_TestHud = null;
@@ -393,7 +399,7 @@ public sealed partial class UiSmokeScenario
         await WaitFramesAsync(2);
 
         // 2 级装配：生命上限来自成长表 2 级行。
-        m_ExtraHero = await ShowHeroAsync(context, new HeroProgression(1, SmokeInspection.ReadField<ExperienceCurve>(context.Profile.ActiveHero, "m_Curve"), 140));
+        m_ExtraHero = await ShowHeroAsync(flow, new HeroProgression(1, SmokeInspection.ReadField<ExperienceCurve>(flow.GetModel<PlayerModel>().ActiveHero, "m_Curve"), 140));
         int expectedMaxHp = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1, 2).BaseAttributes.MaxHp;
         Check(ReferenceEquals(previous, m_ExtraHero) && ReferenceEquals(vitals, m_ExtraHero.Vitals), "英雄运行时容器未随池实例稳定复用");
         Check(m_ExtraHero.Level == 2 && m_ExtraHero.Vitals.MaxHp == expectedMaxHp &&
@@ -428,7 +434,7 @@ public sealed partial class UiSmokeScenario
     /// <summary>验证空格真实输入、无双战斗效果、残影世界位置与耗尽还原。</summary>
     /// <param name="hero">由实体池显示的额外英雄，不影响正式关卡档案。</param>
     /// <returns>引擎输入和残影淡出验证完成的任务。</returns>
-    private async Task CheckMusouActivationAsync(HeroEntity hero)
+    private async Task CheckMusouActivationAsync(AbstractHeroEntity hero)
     {
         var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
         float power = hero.Attributes.Get(GameConfig.Attributes.AttributeType.Power);
@@ -511,10 +517,10 @@ public sealed partial class UiSmokeScenario
         foreach (EntityId entityId in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey })
         {
             var config = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Single(x => x.EntityId == entityId);
-            m_Monster = (MonsterEntity)await GF.Entity.ShowEntityAsync(entityId, new MonsterSpawn(new Vector2(200, 200)));
+            m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(entityId, new MonsterSpawn(new Vector2(200, 200)));
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
-            MonsterEntity previous = m_Monster;
+            AbstractMonsterEntity previous = m_Monster;
             ResourceBar bar = m_Monster.GetNode<ResourceBar>("m_HealthBar");
             Check(bar.Size.IsEqualApprox(bar.TextureProgress.GetSize()) && bar.Size.IsEqualApprox(new Vector2(50, 5)),
                 $"{entityId} 实例尺寸覆盖了官方 50×5 填充，导致可见血条偏心");
@@ -596,7 +602,7 @@ public sealed partial class UiSmokeScenario
             previous.Vitals.Damage(1);
             Check(!bar.Visible && Near(bar.Value, 0), $"{entityId} 隐藏后血条仍订阅旧状态");
             await WaitFramesAsync(2);
-            m_Monster = (MonsterEntity)await GF.Entity.ShowEntityAsync(entityId, new MonsterSpawn(Vector2.Zero));
+            m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(entityId, new MonsterSpawn(Vector2.Zero));
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             Check(ReferenceEquals(previous, m_Monster) && ReferenceEquals(bar, m_Monster.GetNode<ResourceBar>("m_HealthBar")),
@@ -616,14 +622,16 @@ public sealed partial class UiSmokeScenario
     }
 
     /// <summary>升级：档案成长变化后由装配重建注入实体并补满；HUD 跟随刷新；满级显示 MAX。</summary>
-    /// <param name="context">档案作用域。</param>
+    /// <param name="flow">档案作用域。</param>
     /// <param name="level">正式关卡。</param>
     /// <returns>验证完成的任务。</returns>
-    private async Task CheckLevelUpAsync(GameContext context, LevelModule level)
+    private async Task CheckLevelUpAsync(ProcedureOwner flow, LevelViewController level)
     {
-        HeroProgression record = new(1, SmokeInspection.ReadField<ExperienceCurve>(context.Profile.ActiveHero, "m_Curve"), 0);
-        m_ExtraHero = await ShowHeroAsync(context, record);
-        m_TestHud = await OpenHudAsync(new BattleHudData(m_ExtraHero, record, level));
+        HeroProgression record = flow.GetModel<PlayerModel>().ActiveHero;
+        int originalExperience = record.TotalExperience;
+        record.Restore(0);
+        m_ExtraHero = await ShowHeroAsync(flow, record);
+        m_TestHud = await OpenHudAsync(new BattleHudData(m_ExtraHero, level));
         m_ExtraHero.Vitals.Damage(m_ExtraHero.Vitals.MaxHp - 1);
         m_ExtraHero.Vitals.TrySpendMp(m_ExtraHero.Vitals.Mp - 1);
 
@@ -632,9 +640,9 @@ public sealed partial class UiSmokeScenario
         Check(record.Level == 1 && m_ExtraHero.Vitals.Hp == 1, "升级前门槛或补满时机错误");
         CheckDisplay(m_TestHud, m_ExtraHero, record, level);
 
-        // 跨三级：与 LevelModule 相同的注入路径（档案 → 装配 → 实体，补满）。
+        // 跨三级：与 LevelViewController 相同的注入路径（档案 → 装配 → 实体，补满）。
         record.AddExperience(338);
-        m_ExtraHero.ApplyLoadout(context.Equipment.CreateLoadout(record), refill: true);
+        m_ExtraHero.ApplyLoadout(flow.GetSystem<EquipmentSystem>().CreateLoadout(record), refill: true);
         var row = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1, 4).BaseAttributes;
         Check(record.Level == 4 && record.Experience == 37 && record.MaxExperience == 165,
             "连升未保留余量或等级错误");
@@ -643,22 +651,23 @@ public sealed partial class UiSmokeScenario
         CheckDisplay(m_TestHud, m_ExtraHero, record, level);
 
         record.AddExperience(int.MaxValue);
-        Check(record.Level == SmokeInspection.ReadField<ExperienceCurve>(context.Profile.ActiveHero, "m_Curve").MaxLevel && record.MaxExperience == 0, "满级没有封顶");
+        Check(record.Level == SmokeInspection.ReadField<ExperienceCurve>(flow.GetModel<PlayerModel>().ActiveHero, "m_Curve").MaxLevel && record.MaxExperience == 0, "满级没有封顶");
         CheckDisplay(m_TestHud, m_ExtraHero, record, level);
         CloseHud(m_TestHud);
         ReleaseTestEntity(m_ExtraHero);
         m_ExtraHero = null;
+        record.Restore(originalExperience);
         await WaitFramesAsync(2);
     }
 
     /// <summary>主数据文件损坏时读档回退 .bak（覆盖写时由原子替换保留）。</summary>
-    /// <param name="context">档案作用域。</param>
+    /// <param name="flow">档案作用域。</param>
     /// <returns>验证完成的任务。</returns>
-    private async Task CheckBackupRecoveryAsync(GameContext context)
+    private async Task CheckBackupRecoveryAsync(ProcedureOwner flow)
     {
         // 再写一个检查点，确保 .bak 是上一份完整数据、主文件是最新数据。
-        int expected = context.Profile.ActiveHero.TotalExperience;
-        Check(await context.Save.SaveCheckpointAsync(context.Profile), "检查点写入失败");
+        int expected = flow.GetModel<PlayerModel>().ActiveHero.TotalExperience;
+        Check(await flow.GetSystem<SaveSystem>().SaveCheckpointAsync(flow.GetModel<PlayerModel>()), "检查点写入失败");
         string dataPath = DataFilePath();
         Check(File.Exists(dataPath + EasySave.BackupSuffix), "覆盖写入没有保留 .bak");
         File.WriteAllText(dataPath, "{ broken json");
@@ -667,7 +676,7 @@ public sealed partial class UiSmokeScenario
         Check(GF.Archive.CurrentData.Heroes[0].TotalExperience == expected, "备份回退读到的不是最近一次检查点");
 
         // 用恢复后的数据重写主文件，后续用例从完好的存档开始。
-        Check(await context.Save.SaveCheckpointAsync(context.Profile), "备份回退后重写失败");
+        Check(await flow.GetSystem<SaveSystem>().SaveCheckpointAsync(flow.GetModel<PlayerModel>()), "备份回退后重写失败");
     }
 
     /// <summary>非当前格式被拒绝且不被自动改写，随后恢复测试检查点。</summary>
@@ -683,12 +692,11 @@ public sealed partial class UiSmokeScenario
         File.WriteAllText(path, unsupported);
         try
         {
-            SaveModule save = new(SmokeInspection.ReadField<ExperienceCurve>(
-                SmokeInspection.Context(FindLevelProcedure()).Profile.ActiveHero, "m_Curve"), ConfigSystem.Instance.Tables);
+            SaveSystem saveSystem = new(SmokeInspection.Flow(FindLevelProcedure()).GetArchitecture());
             bool rejected = false;
             try
             {
-                await save.LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentCatalogue.UnitId);
+                await saveSystem.LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentCatalogue.UnitId);
             }
             catch (NotSupportedException)
             {
@@ -728,7 +736,7 @@ public sealed partial class UiSmokeScenario
         try
         {
             serial = GF.UI.OpenUIForm(path, "Normal",
-                new BattleHudData(FindHero(), SmokeInspection.Context(procedure).Profile.ActiveHero, FindLevel()));
+                new BattleHudData(FindHero(), FindLevel()));
             Check(GF.UI.IsLoadingUIForm(serial), "取消用例没有覆盖实际加载中的窗口请求");
             ReenterLevel();
             GF.UI.CloseUIForm(serial);
@@ -779,21 +787,21 @@ public sealed partial class UiSmokeScenario
 
         ReenterLevel();
         ProcedureLevel procedure = await WaitForLevelAsync();
-        CheckDisplay(CurrentHud(), FindHero(), SmokeInspection.Context(procedure).Profile.ActiveHero, FindLevel());
+        CheckDisplay(CurrentHud(), FindHero(), SmokeInspection.Flow(procedure).GetModel<PlayerModel>().ActiveHero, FindLevel());
     }
 
     /// <summary>经真实结算链路击败一只本关怪物，等待关卡运行结算经验。</summary>
     /// <param name="level">正式关卡。</param>
     /// <param name="procedure">关卡流程。</param>
     /// <returns>结算完成的任务。</returns>
-    private async Task DefeatMonsterAsync(LevelModule level, ProcedureLevel procedure)
+    private async Task DefeatMonsterAsync(LevelViewController level, ProcedureLevel procedure)
     {
-        HeroEntity hero = FindHero();
-        LevelModule run = SmokeInspection.Level(procedure);
+        AbstractHeroEntity hero = FindHero();
+        LevelViewController run = SmokeInspection.Level(procedure);
         hero.SetPhysicsProcess(true);
-        int kills = SmokeInspection.ReadField<int>(run, "m_DefeatedMonsterCount");
-        int beforeXp = SmokeInspection.Context(procedure).Profile.ActiveHero.TotalExperience;
-        int beforeSoul = SmokeInspection.Context(procedure).Profile.Wallet.Soul;
+        int kills = SmokeInspection.ReadField<int>(SmokeInspection.Model(run), "m_DefeatedMonsterCount");
+        int beforeXp = SmokeInspection.Flow(procedure).GetModel<PlayerModel>().ActiveHero.TotalExperience;
+        int beforeSoul = SmokeInspection.Flow(procedure).GetModel<PlayerModel>().Wallet.Soul;
         int beforeLevel = hero.Level;
 
         // 推动相机抵达首阶段右界触发首波刷怪；刷出的怪物立即停用 AI，避免它先打死测试英雄。
@@ -801,20 +809,20 @@ public sealed partial class UiSmokeScenario
         {
             if (SmokeInspection.Sequence(level).Phase != LevelStagePhase.Fighting)
             {
-                Input.ActionPress(InputActions.MoveRight);
-                Input.ActionPress(InputActions.Jump);
-                Input.ActionRelease(InputActions.Jump);
+                Input.ActionPress(InputSystem.MoveRight);
+                Input.ActionPress(InputSystem.Jump);
+                Input.ActionRelease(InputSystem.Jump);
                 return false;
             }
 
-            Input.ActionRelease(InputActions.MoveRight);
-            MonsterEntity spawned = FindMonster();
+            Input.ActionRelease(InputSystem.MoveRight);
+            AbstractMonsterEntity spawned = FindMonster();
             SmokeInspection.FreezeAi(spawned);
             return spawned != null;
         }, "首阶段没有刷出怪物", 20000);
 
-        Check(run.Outcome == LevelOutcome.Running, $"击杀前关卡运行已结束：{run.Outcome}");
-        MonsterEntity monster = FindMonster();
+        Check(SmokeInspection.Model(run).Outcome == LevelOutcome.Running, $"击杀前关卡运行已结束：{SmokeInspection.Model(run).Outcome}");
+        AbstractMonsterEntity monster = FindMonster();
 
         // 死亡事件由身体状态机进入死亡状态时广播：受测怪物必须保留物理步进。
         monster.SetPhysicsProcess(true);
@@ -830,11 +838,11 @@ public sealed partial class UiSmokeScenario
                 GameFramework.ReferencePool.Release(attack);
             }
 
-            return SmokeInspection.ReadField<int>(run, "m_DefeatedMonsterCount") > kills;
+            return SmokeInspection.ReadField<int>(SmokeInspection.Model(run), "m_DefeatedMonsterCount") > kills;
         }, "击败怪物没有经关卡运行结算", 10000, () => Describe(monster, run, level));
         int reward = SmokeInspection.ReadField<int>(monster, "m_ExperienceReward");
-        Check(SmokeInspection.Context(procedure).Profile.ActiveHero.TotalExperience == beforeXp + reward &&
-            SmokeInspection.Context(procedure).Profile.Wallet.Soul == beforeSoul, "击败经验未直接结算或灵魂未拾取就入账");
+        Check(SmokeInspection.Flow(procedure).GetModel<PlayerModel>().ActiveHero.TotalExperience == beforeXp + reward &&
+            SmokeInspection.Flow(procedure).GetModel<PlayerModel>().Wallet.Soul == beforeSoul, "击败经验未直接结算或灵魂未拾取就入账");
         if (hero.Level > beforeLevel)
         {
             var effect = SmokeInspection.ReadField<GameLogic.Heroes.Effects.HeroLevelUpNode>(hero, "m_LevelUp");
@@ -849,8 +857,8 @@ public sealed partial class UiSmokeScenario
         await CheckFlyingLootAsync(level, hero);
         await WaitUntilAsync(() => SmokeInspection.ReadField<System.Collections.Generic.HashSet<GameLogic.Drops.LootOrbNode>>(level, "m_LootOrbs").Count == 0,
             "掉落没有追踪并接触英雄", 12000);
-        Check(SmokeInspection.Context(procedure).Profile.ActiveHero.TotalExperience == beforeXp + reward, "拾取黄球额外发放了经验");
-        int souls = SmokeInspection.Context(procedure).Profile.Wallet.Soul - beforeSoul;
+        Check(SmokeInspection.Flow(procedure).GetModel<PlayerModel>().ActiveHero.TotalExperience == beforeXp + reward, "拾取黄球额外发放了经验");
+        int souls = SmokeInspection.Flow(procedure).GetModel<PlayerModel>().Wallet.Soul - beforeSoul;
         Check(souls >= monster.Config.SoulCount.X * monster.Config.SoulPerOrb &&
             souls <= monster.Config.SoulCount.Y * monster.Config.SoulPerOrb, "灵魂球没有按配置入账");
         hero.SetPhysicsProcess(false);
@@ -861,15 +869,15 @@ public sealed partial class UiSmokeScenario
     /// <param name="run">关卡运行。</param>
     /// <param name="level">关卡。</param>
     /// <returns>可读的状态描述。</returns>
-    private static string Describe(MonsterEntity monster, LevelModule run, LevelModule level) =>
+    private static string Describe(AbstractMonsterEntity monster, LevelViewController run, LevelViewController level) =>
         $"monster shown={monster.IsShown} dead={monster.Dead} hp={monster.Vitals.Hp}/{monster.Vitals.MaxHp} " +
-        $"id={monster.Id}; run={run.Outcome} kills={SmokeInspection.ReadField<int>(run, "m_DefeatedMonsterCount")}; level={SmokeInspection.Sequence(level).Phase}/{SmokeInspection.Sequence(level).Current.StageOrder}; " +
+        $"id={monster.Id}; run={SmokeInspection.Model(run).Outcome} kills={SmokeInspection.ReadField<int>(SmokeInspection.Model(run), "m_DefeatedMonsterCount")}; level={SmokeInspection.Sequence(level).Phase}/{SmokeInspection.Sequence(level).Current.StageOrder}; " +
         $"procedure={GF.Procedure.CurrentProcedure?.GetType().Name}";
 
     /// <summary>经真实结算链路击杀英雄（闪避按真实概率结算，重复攻击直到死亡）。</summary>
     /// <param name="hero">正式英雄。</param>
     /// <exception cref="InvalidOperationException">多次攻击仍未致死。</exception>
-    private static void KillHero(HeroEntity hero)
+    private static void KillHero(AbstractHeroEntity hero)
     {
         for (int i = 0; i < 100 && !hero.Dead; i++)
         {
@@ -887,7 +895,7 @@ public sealed partial class UiSmokeScenario
     /// 不恢复的话正式流程复用该实例时身体状态机不再推进（死亡事件也不会广播）。
     /// </summary>
     /// <param name="entity">测试显示的实体，可为空。</param>
-    private static void ReleaseTestEntity(ActorEntity entity)
+    private static void ReleaseTestEntity(AbstractActorEntity entity)
     {
         if (entity == null || !GodotObject.IsInstanceValid(entity))
         {
@@ -899,12 +907,12 @@ public sealed partial class UiSmokeScenario
     }
 
     /// <summary>按出战装配显示一名额外英雄（关闭物理，测试只观测数值；归还经 <see cref="ReleaseTestEntity"/>）。</summary>
-    /// <param name="context">档案作用域。</param>
+    /// <param name="flow">档案作用域。</param>
     /// <param name="record">英雄记录。</param>
     /// <returns>已显示的英雄。</returns>
-    private static async Task<HeroEntity> ShowHeroAsync(GameContext context, HeroProgression record)
+    private static async Task<AbstractHeroEntity> ShowHeroAsync(ProcedureOwner flow, HeroProgression record)
     {
-        WukongEntity hero = await GF.Entity.ShowEntityAsync<WukongEntity>(EntityId.Wukong, context.Equipment.CreateLoadout(record));
+        WukongEntity hero = await GF.Entity.ShowEntityAsync<WukongEntity>(EntityId.Wukong, flow.GetSystem<EquipmentSystem>().CreateLoadout(record));
         hero.SetPhysicsProcess(false);
         return hero;
     }
@@ -923,7 +931,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>当前关卡流程。</returns>
     private async Task<ProcedureLevel> WaitForLevelAsync()
     {
-        await WaitUntilAsync(() => SmokeInspection.Level(FindLevelProcedure())?.Outcome == LevelOutcome.Running &&
+        await WaitUntilAsync(() => SmokeInspection.Model(SmokeInspection.Level(FindLevelProcedure()))?.Outcome == LevelOutcome.Running &&
             CurrentHud() != null && FindHero() != null, "关卡流程未就绪", 15000);
         return FindLevelProcedure();
     }
@@ -955,18 +963,17 @@ public sealed partial class UiSmokeScenario
 
     /// <summary>查找当前已显示的英雄，场景树查询只用于调试断言。</summary>
     /// <returns>当前英雄或 null。</returns>
-    private HeroEntity FindHero() => m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
-        .OfType<HeroEntity>().FirstOrDefault(x => x.IsShown && x != m_ExtraHero);
+    private AbstractHeroEntity FindHero() => m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+        .OfType<AbstractHeroEntity>().FirstOrDefault(x => x.IsShown && x != m_ExtraHero);
 
     /// <summary>查找当前已显示且存活的怪物。</summary>
     /// <returns>怪物或 null。</returns>
-    private MonsterEntity FindMonster() => m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
-        .OfType<MonsterEntity>().FirstOrDefault(x => x.IsShown && !x.Dead && x != m_Monster);
+    private AbstractMonsterEntity FindMonster() => m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+        .OfType<AbstractMonsterEntity>().FirstOrDefault(x => x.IsShown && !x.Dead && x != m_Monster);
 
     /// <summary>查找当前正式关卡，排除已经等待释放的旧节点。</summary>
     /// <returns>当前关卡或 null。</returns>
-    private LevelModule FindLevel() => m_Driver.GetTree().Root.FindChildren("*", "Node2D", true, false)
-        .OfType<LevelModule>().FirstOrDefault(x => !x.IsQueuedForDeletion());
+    private static LevelViewController FindLevel() => SmokeInspection.Level(FindLevelProcedure());
 
     /// <summary>读取当前正式 HUD。</summary>
     /// <returns>当前窗口或 null。</returns>
@@ -987,7 +994,7 @@ public sealed partial class UiSmokeScenario
     /// <param name="hero">预期绑定英雄。</param>
     /// <param name="progression">预期绑定成长。</param>
     /// <param name="level">预期绑定关卡。</param>
-    private static void CheckDisplay(BattleHud hud, HeroEntity hero, HeroProgression progression, LevelModule level)
+    private static void CheckDisplay(BattleHud hud, AbstractHeroEntity hero, HeroProgression progression, LevelViewController level)
     {
         foreach (string path in new[] { "StatusPanel/m_HpBar", "StatusPanel/m_MpBar", "StatusPanel/m_ExpBar", "MenuPanel/WsFrame/m_WsBar" })
         {
@@ -1017,7 +1024,7 @@ public sealed partial class UiSmokeScenario
             (progression.MaxExperience == 0 ? "MAX" : $"{progression.Experience}/{progression.MaxExperience}"), "经验文本不一致");
         Check(Near(hud.GetNode<TextureProgressBar>("MenuPanel/WsFrame/m_WsBar").Value, (double)hero.Musou.Value / hero.Musou.Max),
             "无双条不一致");
-        Check(hud.GetNode<AnimatedSprite2D>("m_Go").Visible == level.TravelAvailable, "Go 显示与关卡状态不一致");
+        Check(hud.GetNode<AnimatedSprite2D>("m_Go").Visible == SmokeInspection.Model(level).TravelAvailable, "Go 显示与关卡状态不一致");
     }
 
     /// <summary>比较控件比例，容纳浮点显示误差。</summary>

@@ -1,3 +1,4 @@
+using GameLogic.Config;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,7 +7,6 @@ using GameConfig;
 using GameConfig.Battle;
 using GameConfig.Skills;
 using GameConfig.Sound;
-using GameLogic.Skills;
 using Godot;
 using Luban;
 using Xunit;
@@ -150,7 +150,7 @@ public sealed class SkillCombatConfigTests
         typeof(SkillTimelineConfig).GetField(nameof(motion.EffectId)).SetValue(motion, SkillEffectId.FireDemonPrelude);
         typeof(SkillTimelineConfig).GetField(nameof(motion.AtSeconds)).SetValue(motion, -1f);
         List<string> errors = new();
-        SkillCombatConfigHelper.Validate(tables, errors);
+        ConfigurationSystem.ValidateSkillCombat(tables, errors);
         Assert.Contains(errors, error => error.Contains("不属于该技能"));
         Assert.Contains(errors, error => error.Contains("局部秒数"));
         Assert.Contains(errors, error => error.Contains("事件职责"));
@@ -161,7 +161,7 @@ public sealed class SkillCombatConfigTests
     public void PreparedCombatTables_PassStartupValidation()
     {
         List<string> errors = new();
-        SkillCombatConfigHelper.Validate(TestTables.Tables, errors);
+        ConfigurationSystem.ValidateSkillCombat(TestTables.Tables, errors);
         Assert.Empty(errors);
     }
 
@@ -175,7 +175,7 @@ public sealed class SkillCombatConfigTests
         typeof(SkillActionConfig).GetField(nameof(action.BodyHitId)).SetValue(action, SkillHitId.WaterDemonFall);
         typeof(SkillActionConfig).GetField(nameof(action.InvincibleDurationSeconds)).SetValue(action, -1f);
         List<string> errors = new();
-        SkillCombatConfigHelper.Validate(tables, errors);
+        ConfigurationSystem.ValidateSkillCombat(tables, errors);
         Assert.Contains(errors, error => error.Contains("无敌时间"));
         Assert.Contains(errors, error => error.Contains("不属于该技能"));
     }

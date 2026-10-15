@@ -17,8 +17,8 @@ public sealed partial class UiSmokeScenario
     private async Task CheckFloatingTextAsync()
     {
         int subscribers = GF.Event.Count(DamageDealtEventArgs.EventId);
-        var first = new FloatingTextModule();
-        var second = new FloatingTextModule();
+        var first = new FloatingTextPresenter();
+        var second = new FloatingTextPresenter();
         var targets = new HashSet<int> { -101 };
         m_Driver.AddChild(first);
         m_Driver.AddChild(second);

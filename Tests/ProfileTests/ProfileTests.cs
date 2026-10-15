@@ -1,3 +1,4 @@
+using GameLogic.Architecture;
 using GameLogic.Equipment;
 using GameLogic.Profile;
 using GameLogic.Config;
@@ -95,9 +96,9 @@ namespace GameLogic.Profile.Tests
         public void Profile_RejectsInvalidHeroSets()
         {
             HeroProgression hero = new(1, TestTables.Curve, 0);
-            Assert.Throws<ArgumentException>(() => new PlayerProfile(1, new[] { hero, hero }, new Wallet(0), new Inventory(25)));
-            Assert.Throws<ArgumentException>(() => new PlayerProfile(2, new[] { hero }, new Wallet(0), new Inventory(25)));
-            Assert.Equal(1, new PlayerProfile(1, new[] { hero }, new Wallet(0), new Inventory(25)).ActiveHero.HeroId);
+            Assert.Throws<ArgumentException>(() => new PlayerModel(1, new[] { hero, hero }, new Wallet(0), new Inventory(25)));
+            Assert.Throws<ArgumentException>(() => new PlayerModel(2, new[] { hero }, new Wallet(0), new Inventory(25)));
+            Assert.Equal(1, new PlayerModel(1, new[] { hero }, new Wallet(0), new Inventory(25)).ActiveHero.HeroId);
         }
 
         /// <summary>钱包只在余额实际提交后通知，失败消费、零增量和封顶不重复通知。</summary>
@@ -131,9 +132,9 @@ namespace GameLogic.Profile.Tests
         public void BattleSnapshot_FreezesGrowthAndPreservesRuntimeModifiers()
         {
             HeroProgression hero = new(1, TestTables.Curve, 0);
-            HeroLoadout first = new EquipmentModule(TestTables.Tables.TbHeroGrowthConfig, TestTables.Tables.TbEquipmentConfig).CreateLoadout(hero);
+            HeroLoadout first = new EquipmentSystem(TestTables.Architecture).CreateLoadout(hero);
             hero.AddExperience(135);
-            HeroLoadout second = new EquipmentModule(TestTables.Tables.TbHeroGrowthConfig, TestTables.Tables.TbEquipmentConfig).CreateLoadout(hero);
+            HeroLoadout second = new EquipmentSystem(TestTables.Architecture).CreateLoadout(hero);
             Assert.Equal((1, 80, 50, 10), (first.Level, first.BaseAttributes.MaxHp, first.BaseAttributes.MaxMp, first.BaseAttributes.Power));
             Assert.Equal((2, 130, 70, 15, 4), (second.Level, second.BaseAttributes.MaxHp, second.BaseAttributes.MaxMp,
                 second.BaseAttributes.Power, second.BaseAttributes.Def));
@@ -152,7 +153,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void BattleSnapshot_RejectsMissingGrowth()
         {
-            Assert.Throws<InvalidOperationException>(() => new EquipmentModule(TestTables.Tables.TbHeroGrowthConfig, TestTables.Tables.TbEquipmentConfig).CreateLoadout(new HeroProgression(999, TestTables.Curve, 0)));
+            Assert.Throws<InvalidOperationException>(() => new EquipmentSystem(TestTables.Architecture).CreateLoadout(new HeroProgression(999, TestTables.Curve, 0)));
             Assert.Throws<ArgumentNullException>(() => new HeroLoadout(1, 1, null));
         }
 
@@ -188,9 +189,9 @@ namespace GameLogic.Profile.Tests
 
         /// <summary>真实配置通过启动校验。</summary>
         [Fact]
-        public void ConfigHelper_AcceptsShippedTables()
+        public void ConfigurationModel_AcceptsShippedTables()
         {
-            ExperienceCurve curve = GameLogic.Config.ConfigHelper.ValidateAll(TestTables.Tables);
+            ExperienceCurve curve = GameLogic.Config.ConfigurationSystem.ValidateTables(TestTables.Tables);
             Assert.Equal(55, curve.MaxLevel);
         }
 
@@ -220,22 +221,22 @@ namespace GameLogic.Profile.Tests
         {
 
             foreach (int version in Enumerable.Range(0, GameData.CurrentVersion).Append(GameData.CurrentVersion + 1))
-                Assert.Throws<NotSupportedException>(() => ProfileSaveHelper.RestoreProfile(new GameData { SaveVersion = version, ActiveHeroId = 1, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
-            Assert.Throws<ArgumentException>(() => ProfileSaveHelper.RestoreProfile(new GameData(), TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
+                Assert.Throws<NotSupportedException>(() => PlayerModel.FromSaveData(new GameData { SaveVersion = version, ActiveHeroId = 1, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
+            Assert.Throws<ArgumentException>(() => PlayerModel.FromSaveData(new GameData(), TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
         }
 
         /// <summary>档案 → 快照 → JSON → 快照 → 档案往返不丢状态，快照与运行时不共享引用。</summary>
         [Fact]
         public void Mapper_RoundTripsThroughJson()
         {
-            PlayerProfile profile = new(1, new[] { new HeroProgression(1, TestTables.Curve, 472) }, new Wallet(42), new Inventory(25));
-            GameData snapshot = ProfileSaveHelper.CaptureSaveData(profile);
-            profile.Wallet.AddSoul(100);
+            PlayerModel playerModel = new(1, new[] { new HeroProgression(1, TestTables.Curve, 472) }, new Wallet(42), new Inventory(25));
+            GameData snapshot = playerModel.CaptureSaveData();
+            playerModel.Wallet.AddSoul(100);
             Assert.Equal(42, snapshot.Soul);
 
             string json = JsonConvert.SerializeObject(snapshot);
             GameData loaded = JsonConvert.DeserializeObject<GameData>(json);
-            PlayerProfile restored = ProfileSaveHelper.RestoreProfile(loaded, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
+            PlayerModel restored = PlayerModel.FromSaveData(loaded, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
             Assert.Equal(42, restored.Wallet.Soul);
             Assert.Equal((4, 37), (restored.ActiveHero.Level, restored.ActiveHero.Experience));
             Assert.DoesNotContain("\"Player\"", json);
@@ -247,18 +248,18 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void Mapper_RollsBackToSnapshot()
         {
-            PlayerProfile profile = new(1, new[] { new HeroProgression(1, TestTables.Curve, 0) }, new Wallet(5), new Inventory(25));
-            GameData snapshot = ProfileSaveHelper.CaptureSaveData(profile);
-            HeroProgression progression = profile.ActiveHero;
+            PlayerModel playerModel = new(1, new[] { new HeroProgression(1, TestTables.Curve, 0) }, new Wallet(5), new Inventory(25));
+            GameData snapshot = playerModel.CaptureSaveData();
+            HeroProgression progression = playerModel.ActiveHero;
             List<int> levels = new();
             progression.Changed += () => levels.Add(progression.Level);
 
             progression.AddExperience(400);
-            profile.Wallet.AddSoul(50);
-            ProfileSaveHelper.RestoreCheckpoint(profile, snapshot);
+            playerModel.Wallet.AddSoul(50);
+            playerModel.RestoreCheckpoint(snapshot);
 
-            Assert.Same(progression, profile.ActiveHero);
-            Assert.Equal((1, 5), (progression.Level, profile.Wallet.Soul));
+            Assert.Same(progression, playerModel.ActiveHero);
+            Assert.Equal((1, 5), (progression.Level, playerModel.Wallet.Soul));
             Assert.Equal(new[] { 3, 1 }, levels);
         }
     }

@@ -1,3 +1,9 @@
+using GameLogic.Config;
+using GameLogic.Architecture;
+using GameLogic.Equipment;
+using GameLogic.Save;
+using GameLogic.Profile;
+using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,12 +22,12 @@ public sealed partial class UiSmokeScenario
 {
     /// <summary>通过正式 HUD 打开技能页，确认准备阶段没有学习或扣费行为。</summary>
     /// <param name="hud">正式 HUD。</param>
-    /// <param name="context">隔离测试档案。</param>
+    /// <param name="flow">隔离测试档案。</param>
     /// <param name="level">当前关卡。</param>
     /// <returns>全部技能面板检查完成的任务。</returns>
-    private async Task CheckSkillsAsync(BattleHud hud, GameContext context, LevelModule level)
+    private async Task CheckSkillsAsync(BattleHud hud, ProcedureOwner flow, LevelViewController level)
     {
-        int soul = context.Profile.Wallet.Soul;
+        int soul = flow.GetModel<PlayerModel>().Wallet.Soul;
         var entrance = hud.GetNode<TextureButton>("MenuPanel/m_SkillsButton");
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
@@ -35,10 +41,10 @@ public sealed partial class UiSmokeScenario
         Check(form.GetNode<Control>(active + "m_WukongRows").Visible &&
             form.GetNode<Label>(active + "m_WukongRows/Skill1/Name").Text == "升龙斩" &&
             form.GetNode<Label>(active + "m_WukongRows/Skill5/Soul").Text == "2000", "悟空技能顺序或费用错误");
-        double elapsed = SmokeInspection.ReadField<double>(level, "m_ElapsedSeconds");
+        double elapsed = SmokeInspection.ReadField<double>(SmokeInspection.Model(level), "m_ElapsedSeconds");
         await WaitFramesAsync(4);
         CheckInlineSkillGrid(form, active + "m_WukongRows");
-        Check(Math.Abs(SmokeInspection.ReadField<double>(level, "m_ElapsedSeconds") - elapsed) < .001, "技能窗口暂停仍累计关卡时间");
+        Check(Math.Abs(SmokeInspection.ReadField<double>(SmokeInspection.Model(level), "m_ElapsedSeconds") - elapsed) < .001, "技能窗口暂停仍累计关卡时间");
         await CaptureCombatAsync("skills_wukong");
         var otherHero = form.GetNode<TextureButton>("Content/Header/m_Tangseng");
         Check(otherHero.Disabled && otherHero.MouseDefaultCursorShape == Control.CursorShape.Arrow &&
@@ -56,14 +62,14 @@ public sealed partial class UiSmokeScenario
         otherHero.EmitSignal(BaseButton.SignalName.Pressed);
         Check(form.GetNode<Control>("Content/m_PassivePage").Visible &&
             !form.GetNode<Control>("Content/m_ActivePage").Visible, "非出战页签改变了当前主动/被动分类");
-        Check(context.Profile.Wallet.Soul == soul, "技能展示页意外消费灵魂");
-        context.Profile.Wallet.AddSoul(7);
+        Check(flow.GetModel<PlayerModel>().Wallet.Soul == soul, "技能展示页意外消费灵魂");
+        flow.GetModel<PlayerModel>().Wallet.AddSoul(7);
         var balance = form.GetNode<Label>(footer + "Balance/m_Soul");
         Check(balance.Text == (soul + 7).ToString(), "技能面板没有观察钱包变化");
         form.GetNode<TextureButton>("Content/Header/m_Back").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitFramesAsync(2);
         Check(!form.Visible && !GF.Base.IsGamePaused, "返回没有关闭技能页或恢复战斗");
-        context.Profile.Wallet.Restore(soul);
+        flow.GetModel<PlayerModel>().Wallet.Restore(soul);
         Check(balance.Text == (soul + 7).ToString(), "关闭后仍保留钱包订阅");
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => form.Visible, "技能窗口没有从池复用");
@@ -81,7 +87,7 @@ public sealed partial class UiSmokeScenario
     /// <param name="form">已打开的正式技能窗口。</param>
     private static void CheckSkillPreviewReplacement(SkillForm form)
     {
-        var catalog = SmokeInspection.ReadField<SkillFormData>(form, "m_Data").Catalog;
+        var configuration = GF.Fsm.GetModel<ConfigurationModel>();
         var activePage = form.GetNode<ActiveSkillsPage>("Content/m_ActivePage");
         foreach (var group in new[] { "m_WukongRows", "m_TangsengRows" })
             foreach (var row in activePage.GetNode<Control>(group).GetChildren().Cast<GridContainer>())
@@ -90,14 +96,14 @@ public sealed partial class UiSmokeScenario
                     row.GetNode<Label>(field).Text = "编辑器预览";
                 row.GetNode<TextureRect>("IconCell/Icon").Texture = null;
             }
-        activePage.Bind(catalog);
+        activePage.Refresh();
         foreach (var (group, hero) in new[]
         {
             ("m_WukongRows", GameConfig.Skills.SkillHero.Wukong),
             ("m_TangsengRows", GameConfig.Skills.SkillHero.Tangseng)
         })
         {
-            var definitions = catalog.GetActive(hero);
+            var definitions = configuration.GetActive(hero);
             for (int i = 0; i < definitions.Count; i++)
             {
                 var row = activePage.GetNode<GridContainer>($"{group}/Skill{i + 1}");
@@ -112,11 +118,11 @@ public sealed partial class UiSmokeScenario
         }
 
         var passivePage = form.GetNode<PassiveSkillsPage>("Content/m_PassivePage");
-        var passives = catalog.GetPassives(1);
+        var passives = configuration.GetPassives(1);
         foreach (var row in passivePage.GetNode<Control>("m_PassiveRows").GetChildren().Cast<GridContainer>())
             foreach (var field in new[] { "Name", "NextEffect", "Soul" })
                 row.GetNode<Label>(field).Text = "编辑器预览";
-        passivePage.Bind(passives);
+        passivePage.Refresh();
         for (int i = 0; i < passives.Count; i++)
         {
             var row = passivePage.GetNode<GridContainer>($"m_PassiveRows/Passive{i + 1}");

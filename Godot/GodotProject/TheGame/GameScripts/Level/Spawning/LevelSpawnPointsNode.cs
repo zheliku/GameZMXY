@@ -7,7 +7,7 @@ namespace GameLogic.Level;
 
 /// <summary>按稳定 ID 索引生成点，并在初始化时解析玩家和配方使用的空间外键。</summary>
 [Tool]
-public partial class LevelSpawnPointsNode : LevelMarkersNode
+public partial class LevelSpawnPointsNode : AbstractLevelMarkersNode
 {
     private Dictionary<string, Marker2D> m_Points; // 初始化校验后的稳定 ID 到生成点索引。
 

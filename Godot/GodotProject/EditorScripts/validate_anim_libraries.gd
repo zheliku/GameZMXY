@@ -4,7 +4,7 @@ extends SceneTree
 ## 动画契约（2026-10-01 定稿，A 方案：动画纯数据、代码唯一时钟）：
 ##   1. 必需动画齐全，attack_<i> 编号连续；
 ##   2. **禁止一切方法轨道**——动画库只放表现数据（帧/特效/判定盒值轨道），从不调用代码；
-##      动作时长由 C# OnInit 读动画长度（ActorEntity.GetAnimLength），音效由状态钩子触发；
+##      动作时长由 C# OnInit 读动画长度（AbstractActorEntity.GetAnimLength），音效由状态钩子触发；
 ##      将来"第 N 帧放子弹/脚步声"这类中途时点用 Godot 4.3+ 动画标记（Animation.GetMarkerTime，
 ##      代码读时间自己计时），也不是方法轨道；
 ##   3. 身体状态要计时的动画（attack_*、hurt、death）不得循环

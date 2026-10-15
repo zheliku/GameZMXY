@@ -127,4 +127,5 @@ public sealed class MusouGauge
         if (changed)
             Changed?.Invoke();
     }
+
 }

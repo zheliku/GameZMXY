@@ -20,7 +20,7 @@ public sealed class HeroInputConfigTests
         HeroConfig hero = tables.TbHeroConfig.Get(1);
         float[] values = invalid == 0 ? [0.1f] : [0.1f, 0.1f, invalid, 0.1f, 0.1f];
         typeof(HeroConfig).GetField("AttackInputCooldowns").SetValue(hero, values);
-        Assert.Contains("普攻冷却", Assert.Throws<InvalidOperationException>(() => ConfigHelper.ValidateAll(tables)).Message);
+        Assert.Contains("普攻冷却", Assert.Throws<InvalidOperationException>(() => ConfigurationSystem.ValidateTables(tables)).Message);
     }
 
     /// <summary>时序和穿平台距离拒绝非正或非有限配置。</summary>
@@ -31,7 +31,7 @@ public sealed class HeroInputConfigTests
     {
         Tables tables = Load();
         typeof(HeroConfig).GetField(field).SetValue(tables.TbHeroConfig.Get(1), invalid);
-        Assert.Contains("普攻冷却", Assert.Throws<InvalidOperationException>(() => ConfigHelper.ValidateAll(tables)).Message);
+        Assert.Contains("普攻冷却", Assert.Throws<InvalidOperationException>(() => ConfigurationSystem.ValidateTables(tables)).Message);
     }
 
     /// <summary>每例加载独立正式表，反射修改不会污染其他用例。</summary>

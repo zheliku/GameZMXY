@@ -1,9 +1,11 @@
+using GameLogic.Architecture;
+using GameLogic.Input;
 using GameFramework.Fsm;
 
 namespace GameLogic.Heroes.Body
 {
     /// <summary>地面走、跑与完整待机循环；攻击、跳跃和离地立即打断。</summary>
-    public sealed class HeroGroundState : HeroBodyState
+    public sealed class HeroGroundState : AbstractHeroBodyState
     {
         /// <summary>处理地面攻击、跳跃、移动和待机动画。</summary>
         /// <param name="fsm">所属身体状态机。</param>
@@ -12,7 +14,7 @@ namespace GameLogic.Heroes.Body
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
             HandleJumpKeyCombinations(body);
-            if (body.NormalAttack.TryAdvance(body.Input, IsAirborne(body), isAttacking: false))
+            if (body.GetSystem<InputSystem>().TryStartAttack(body.ActionData, body.Params, IsAirborne(body), isAttacking: false))
             {
                 ChangeState<HeroAttackState>(fsm);
                 return;
@@ -26,8 +28,8 @@ namespace GameLogic.Heroes.Body
             ApplyGravity(body, dt);
             ApplyHorizontalMovement(body);
             // 包括立棍张望的时序归动画，不另设随机小动作计时。
-            body.PlayAnim(body.Input.MoveAxis == 0 ? HeroAnims.Idle :
-                body.Input.Running ? HeroAnims.Run : HeroAnims.Walk);
+            body.PlayAnim(body.ActionData.MoveAxis == 0 ? HeroAnims.Idle :
+                body.ActionData.Running ? HeroAnims.Run : HeroAnims.Walk);
         }
     }
 }

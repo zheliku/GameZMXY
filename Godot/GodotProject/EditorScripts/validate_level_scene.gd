@@ -26,7 +26,7 @@ func validate() -> void:
 	check(level.get("m_Exit") == exit, "关卡控制器必须绑定 World/Exit")
 	check(level.get_node_or_null("World/Exit2") == null, "不应残留因重名而自动改名的 Exit2")
 	var floating_text := level.get_node_or_null("World/FloatingText")
-	check(floating_text != null and floating_text.get_script() == load("res://TheGame/GameScripts/FloatingText/FloatingTextModule.cs"), "世界飘字必须绑定通用 FloatingTextModule")
+	check(floating_text != null and floating_text.get_script() == load("res://TheGame/GameScripts/FloatingText/FloatingTextPresenter.cs"), "世界飘字必须绑定通用 FloatingTextPresenter")
 	check(level.get("m_FloatingText") == floating_text, "关卡必须通过导出字段绑定本场飘字入口")
 	for path in ["World/SpawnPoints", "World/StageGates", "World/StageTriggers"]:
 		var manager := level.get_node(path)

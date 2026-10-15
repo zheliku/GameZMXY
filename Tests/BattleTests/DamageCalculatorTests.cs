@@ -12,7 +12,7 @@ using Xunit;
 namespace GameLogic.Battle.Tests
 {
     /// <summary>
-    /// DamageHelper 回归：常数取自真实表产物（battle_tbbattleconfig.bytes），期望值为手算。
+    /// DamageResult 回归：常数取自真实表产物（battle_tbbattleconfig.bytes），期望值为手算。
     /// 手算前提（当前表值）：DefK 英雄250/怪物100，MissK 英雄100/怪物70，CritK 100，
     /// LuckyK 英雄攻击100/怪物攻击50，CritBase 2，等级系数 闪避0.03/0.04、暴击0.07/0.11、幸运0.07、伤害0.05，
     /// 封顶 闪避1/0.9、暴击1、幸运0.7、伤害级数5/2。表值变更导致失败时，先确认是改表而非改坏公式。
@@ -50,7 +50,7 @@ namespace GameLogic.Battle.Tests
             AttackInstance attack = AttackInstance.Create(0, attacker, power, kind, Vector2.Zero, 1, 0, SoundId.None);
             try
             {
-                return DamageHelper.Calculate(Config, attack, defender, missRoll, critRoll);
+                return new CombatSystem(BattleArchitecture.Instance).Calculate(attack, defender, missRoll, critRoll);
             }
             finally
             {
@@ -222,7 +222,7 @@ namespace GameLogic.Battle.Tests
         public void LevelSuppression_HeroDefends_CapsAtFiveLevels()
         {
             // 1 级英雄被 10 级怪打：封顶 5 级，攻击方(怪)等级高 → ×1.25
-            // （回归：表系数是 float，×0.75 一侧曾因 74.9999996 被截成 74，见 DamageHelper.TruncateEpsilon）
+            // （回归：表系数是 float，×0.75 一侧曾因 74.9999996 被截成 74，见 DamageResult.TruncateEpsilon）
             DamageResult up = Hit(Monster(level: 10), 100f, DamageKind.Real, Hero(level: 1), NoProc, NoProc);
             Assert.Equal(125, up.Damage);
 
@@ -277,9 +277,9 @@ namespace GameLogic.Battle.Tests
             try
             {
                 // 怪物被击退：X × 30、Y × 15，方向随出招朝左
-                Assert.Equal(new Vector2(-180, -75), DamageHelper.KnockbackVelocity(Config, attack, CombatSide.Monster));
+                Assert.Equal(new Vector2(-180, -75), new CombatSystem(BattleArchitecture.Instance).KnockbackVelocity(attack, CombatSide.Monster));
                 // 英雄被击退：X × 25
-                Assert.Equal(new Vector2(-150, -75), DamageHelper.KnockbackVelocity(Config, attack, CombatSide.Hero));
+                Assert.Equal(new Vector2(-150, -75), new CombatSystem(BattleArchitecture.Instance).KnockbackVelocity(attack, CombatSide.Hero));
             }
             finally
             {

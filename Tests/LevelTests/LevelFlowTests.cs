@@ -1,3 +1,4 @@
+using GameLogic.Utility;
 using GameLogic.Level;
 using System;
 using System.IO;
@@ -181,7 +182,7 @@ public sealed class LevelFlowTests
     [InlineData(440f)]
     public void CameraHoldsInsideCentralWindow(float target)
     {
-        Assert.Equal(470f, LevelCameraHelper.StepCenter(470f, target, 40f, 470f, 1210f, 10f));
+        Assert.Equal(470f, new SpatialUtility().StepCameraCenter(470f, target, 40f, 470f, 1210f, 10f));
     }
 
     /// <summary>相机停止在墙前时，角色可继续移动，脚本中心仍等于实际显示中心。</summary>
@@ -191,7 +192,7 @@ public sealed class LevelFlowTests
         float center = 1210f;
         for (float player = 1250f; player <= 1660f; player += 10f)
         {
-            center = LevelCameraHelper.StepCenter(center, player, 40f, 470f, 1210f, 10f);
+            center = new SpatialUtility().StepCameraCenter(center, player, 40f, 470f, 1210f, 10f);
             Assert.Equal(1210f, center);
         }
     }
@@ -200,11 +201,11 @@ public sealed class LevelFlowTests
     [Fact]
     public void OpeningGateDoesNotSnapToPlayerAtRightWall()
     {
-        float center = LevelCameraHelper.StepCenter(1210f, 1660f, 40f, 470f, 2310f, 10f);
+        float center = new SpatialUtility().StepCameraCenter(1210f, 1660f, 40f, 470f, 2310f, 10f);
         Assert.Equal(1220f, center);
         for (int i = 0; i < 50; i++)
         {
-            float next = LevelCameraHelper.StepCenter(center, 1660f, 40f, 470f, 2310f, 10f);
+            float next = new SpatialUtility().StepCameraCenter(center, 1660f, 40f, 470f, 2310f, 10f);
             Assert.InRange(next - center, 0f, 10f);
             center = next;
         }
@@ -221,7 +222,7 @@ public sealed class LevelFlowTests
         while (center < 1210f)
         {
             player += 3f;
-            center = LevelCameraHelper.StepCenter(center, player, 40f, 470f, 1210f, 10f);
+            center = new SpatialUtility().StepCameraCenter(center, player, 40f, 470f, 1210f, 10f);
         }
 
         Assert.InRange(player - center, 40f, 43f);

@@ -9,7 +9,7 @@ namespace GameLogic.Monsters.Body
     /// <summary>
     /// 移动 / 待机：按 AI 的移动意图走动并随之转向（idle / run）；有出招请求就进 Attack。
     /// </summary>
-    public sealed class MonsterMoveState : MonsterBodyState
+    public sealed class MonsterMoveState : AbstractMonsterBodyState
     {
         /// <summary>优先提交待攻击请求，否则按 AI 意图移动或待机。</summary>
         protected override void Tick(IFsm<IMonsterBody> fsm, IMonsterBody body, float dt)

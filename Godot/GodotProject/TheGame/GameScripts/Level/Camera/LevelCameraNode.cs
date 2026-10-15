@@ -1,3 +1,6 @@
+using GodotGameFramework;
+using GameLogic.Architecture;
+using GameLogic.Utility;
 using System;
 using Godot;
 
@@ -35,14 +38,20 @@ public partial class LevelCameraNode : Camera2D
     public float SceneRight { get; private set; }
 
     /// <summary>当前视野的世界尺寸，包含窗口扩展和相机缩放。</summary>
-    public Vector2 ViewSize => (Engine.IsEditorHint() ? DesignViewSize : GetViewportRect().Size) / Zoom;
+    public Vector2 ViewSize
+    {
+        get
+        {
+            // 编辑器按项目设计视口绘制，不读取编辑器面板尺寸。
+            var size = Engine.IsEditorHint() ? new Vector2(
+                ProjectSettings.GetSetting("display/window/size/viewport_width").AsSingle(),
+                ProjectSettings.GetSetting("display/window/size/viewport_height").AsSingle()) : GetViewportRect().Size;
+            return size / Zoom;
+        }
+    }
 
     /// <summary>实际取景右缘的世界坐标。</summary>
     public float ViewRight => GetScreenCenterPosition().X + ViewSize.X * 0.5f;
-
-    private static Vector2 DesignViewSize => new( // 编辑器使用项目设计视口，不读取编辑器面板尺寸。
-        ProjectSettings.GetSetting("display/window/size/viewport_width").AsSingle(),
-        ProjectSettings.GetSetting("display/window/size/viewport_height").AsSingle());
 
     /// <summary>记录关卡边界并验证玩家屏幕墙，只在会话开始后启用跟随。</summary>
     /// <exception cref="InvalidOperationException">运行场景缺少玩家屏幕墙或碰撞形状。</exception>
@@ -113,7 +122,7 @@ public partial class LevelCameraNode : Camera2D
     {
         // 玩家由会话显式注入和解除，不根据节点是否存在推测加载状态。
         float halfView = ViewSize.X * 0.5f;
-        float center = LevelCameraHelper.StepCenter(GlobalPosition.X, m_Target.GlobalPosition.X,
+        float center = GF.Fsm.GetUtility<SpatialUtility>().StepCameraCenter(GlobalPosition.X, m_Target.GlobalPosition.X,
             m_DeadZoneHalfWidth / Zoom.X, m_Left + halfView, m_Right - halfView, m_MaxPanSpeed * (float)delta);
         GlobalPosition = new Vector2(center, GlobalPosition.Y);
         ForceUpdateScroll();

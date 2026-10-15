@@ -217,7 +217,7 @@ namespace GameLogic.Battle.Tests
 
         // ---------------------------------------------------------------- 假宿主与驱动
 
-        private sealed class FakeMonster : FakeActorBody, IMonsterBody // 为怪物身体状态机提供可控的测试宿主。
+        private sealed class FakeMonster : AbstractFakeActorBody, IMonsterBody // 为怪物身体状态机提供可控的测试宿主。
         {
             /// <summary>初始化怪物身体状态参数。</summary>
             public FakeMonster(MonsterBodyParams p)

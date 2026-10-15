@@ -47,7 +47,7 @@ public class ProcedureUpdate : ProcedureBase
         string customPath = GF.Resource?.UpdateSettingRes?.HotUpdatePath;
         if (!string.IsNullOrEmpty(customPath))
         {
-            EnsureDirectory(customPath);
+            Directory.CreateDirectory(customPath);
             return customPath;
         }
 
@@ -66,7 +66,7 @@ public class ProcedureUpdate : ProcedureBase
         // 3. 回退 user://（一定能写，但在 C 盘）
         string userSubpackDir = Path.Combine(
             ProjectSettings.GlobalizePath("user://"), "subpackages");
-        EnsureDirectory(userSubpackDir);
+        Directory.CreateDirectory(userSubpackDir);
         return userSubpackDir;
     }
 
@@ -77,7 +77,7 @@ public class ProcedureUpdate : ProcedureBase
     {
         try
         {
-            EnsureDirectory(path);
+            Directory.CreateDirectory(path);
             string testFile = Path.Combine(path, ".write_test");
             File.WriteAllText(testFile, " ");
             File.Delete(testFile);
@@ -138,7 +138,7 @@ public class ProcedureUpdate : ProcedureBase
             {
                 await TryLoadLocalSubpackagesAsync();
             }
-            ChangeState<ProcedurePreload>(procedureOwner);
+            ChangeState<ProcedurePrepare>(procedureOwner);
             return;
         }
 
@@ -147,7 +147,7 @@ public class ProcedureUpdate : ProcedureBase
         {
             HotUpdateSafetyGuard.EnterSafeMode();
             Log.Warning("[ProcedureUpdate] 上次启动崩溃，本次跳过所有热更补丁。");
-            ChangeState<ProcedurePreload>(procedureOwner);
+            ChangeState<ProcedurePrepare>(procedureOwner);
             return;
         }
 
@@ -166,7 +166,7 @@ public class ProcedureUpdate : ProcedureBase
                     Log.Warning("[ProcedureUpdate] 本地 {0} 个文件损坏，但无法连接服务器修复。", damaged);
                 await LoadDownloadedPacksAsync(localVersion);
             }
-            ChangeState<ProcedurePreload>(procedureOwner);
+            ChangeState<ProcedurePrepare>(procedureOwner);
             return;
         }
 
@@ -347,7 +347,7 @@ public class ProcedureUpdate : ProcedureBase
             else
             {
                 await LoadDownloadedPacksAsync(localVersion);
-                ChangeState<ProcedurePreload>(procedureOwner);
+                ChangeState<ProcedurePrepare>(procedureOwner);
                 Log.Info("[ProcedureUpdate] 所有包已是最新，无需下载。");
             }
         }
@@ -538,7 +538,7 @@ public class ProcedureUpdate : ProcedureBase
             }
         }
 
-        EnsureDirectory(SubpackDir);
+        Directory.CreateDirectory(SubpackDir);
 
         // 每包一个进度槽位；下载事件回调都在主线程，无需加锁
         long[] perPackBytes = new long[packs.Count];
@@ -913,14 +913,6 @@ public class ProcedureUpdate : ProcedureBase
         return true;
     }
 
-    /// <summary>确保目标目录存在。</summary>
-    /// <param name="path">需要存在的目录。</param>
-    private void EnsureDirectory(string path)
-    {
-        if (!Directory.Exists(path))
-            Directory.CreateDirectory(path);
-    }
-
     /// <summary>加载可用本地子包后进入预加载流程。</summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     /// <returns>加载本地子包并切入预加载的任务。</returns>
@@ -935,7 +927,7 @@ public class ProcedureUpdate : ProcedureBase
             await LoadDownloadedPacksAsync(local);
         }
 
-        ChangeState<ProcedurePreload>(procedureOwner);
+        ChangeState<ProcedurePrepare>(procedureOwner);
     }
 
 }

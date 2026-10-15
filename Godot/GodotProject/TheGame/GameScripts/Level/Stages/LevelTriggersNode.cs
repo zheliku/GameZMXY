@@ -1,20 +1,20 @@
 using System;
 using System.Collections.Generic;
 using GameConfig.Level;
+using GameLogic.Heroes;
 using Godot;
 
 namespace GameLogic.Level;
 
 /// <summary>为特殊阶段提供可选区域激活，只监听当前会话明确启用的一个触发区。</summary>
 [Tool]
-public partial class LevelTriggersNode : LevelMarkersNode
+public partial class LevelTriggersNode : AbstractLevelMarkersNode
 {
     private Dictionary<string, Area2D> m_Triggers; // 初始化校验后的稳定 ID 到触发区索引。
     private Area2D m_Watched; // 当前阶段唯一启用的触发区。
-    private Node2D m_Player; // 本会话的玩家，用于过滤其他物理实体。
 
-    /// <summary>本会话玩家进入当前触发区，只发送一次。</summary>
-    public event Action Activated;
+    /// <summary>报告进入当前区域的存活英雄；关卡接受后调用 EndWatching 结束监听。</summary>
+    public event Action<AbstractHeroEntity> Activated;
 
     /// <summary>只支持 Area2D 作为触发区节点。</summary>
     /// <param name="node">待检查的直接子节点。</param>
@@ -49,11 +49,9 @@ public partial class LevelTriggersNode : LevelMarkersNode
 
     /// <summary>在会话开始后监听一个特殊阶段的触发区，并先解除上一个监听。</summary>
     /// <param name="id">特殊阶段配置引用的触发区稳定 ID。</param>
-    /// <param name="player">本会话玩家，只有它进入才会激活阶段。</param>
-    public void BeginWatching(string id, Node2D player)
+    public void BeginWatching(string id)
     {
         EndWatching();
-        m_Player = player;
         m_Watched = m_Triggers[id];
         m_Watched.BodyEntered += OnBodyEntered;
         m_Watched.SetDeferred(Area2D.PropertyName.Monitoring, true);
@@ -70,17 +68,13 @@ public partial class LevelTriggersNode : LevelMarkersNode
         m_Watched.BodyEntered -= OnBodyEntered;
         m_Watched.SetDeferred(Area2D.PropertyName.Monitoring, false);
         m_Watched = null;
-        m_Player = null;
     }
 
-    /// <summary>只允许注入的玩家激活当前阶段，先解除监听再分发事件。</summary>
+    /// <summary>从物理接触识别存活英雄，不保存接触者引用。</summary>
     /// <param name="body">进入触发区的物理实体。</param>
     private void OnBodyEntered(Node2D body)
     {
-        if (body == m_Player)
-        {
-            Activated?.Invoke();
-            EndWatching();
-        }
+        if (body is AbstractHeroEntity { IsAlive: true } hero)
+            Activated?.Invoke(hero);
     }
 }

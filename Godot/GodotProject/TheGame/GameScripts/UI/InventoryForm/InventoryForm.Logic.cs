@@ -1,20 +1,25 @@
+using GameLogic.Profile;
+using GameLogic.Config;
+using GameLogic.Architecture;
 using System;
 using GameFramework.UI;
 using GameLogic.Audio;
-using GameLogic.Event.Navigation;
 using GameLogic.Level;
 using GameConfig.Sound;
 using Godot;
 using GodotGameFramework;
-using GodotGameFramework.UI;
 using GameConfig.Equipment;
 using GameLogic.Equipment;
 
 namespace GameLogic.UI;
 
 /// <summary>观察战斗个人资料与背包，向关卡提交穿脱装备请求。</summary>
-public partial class InventoryForm
+public partial class InventoryForm : IController
 {
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     private InventoryFormData m_Data; // 本次打开借用的状态源。
     private bool m_ResumeGame; // 只对称恢复本窗口发起的暂停。
 
@@ -112,25 +117,27 @@ public partial class InventoryForm
     {
         ReleaseBindingsAndPause();
         Visible = false;
+        var playerModel = this.GetModel<PlayerModel>();
+        var levelModel = this.GetModel<LevelModel>();
         if (userData is not InventoryFormData data || !IsInstanceValid(data.Hero) || !data.Hero.IsAlive ||
-            !IsInstanceValid(data.Level) ||
-            data.Level.Outcome != LevelOutcome.Running || data.Hero.HeroId != data.Profile.ActiveHeroId)
+            levelModel == null || !levelModel.Initialized ||
+            levelModel.Outcome != LevelOutcome.Running || data.Hero.HeroId != playerModel.ActiveHeroId)
             throw new ArgumentException("背包需要本关存活的出战英雄与档案。", nameof(userData));
         m_Data = data;
         // 先记录借用引用，装配失败时也能完整解除订阅与暂停。
         try
         {
             data.Hero.Vitals.Changed += RefreshInventoryPanels;
-            data.Profile.ActiveHero.Changed += RefreshInventoryPanels;
-            data.Profile.Wallet.Changed += RefreshInventoryPanels;
-            data.Profile.Inventory.Changed += RefreshInventoryPanels;
-            data.Profile.ActiveEquipment.Changed += RefreshInventoryPanels;
-            data.Level.Ended += OnLevelEnded;
+            playerModel.ActiveHero.Changed += RefreshInventoryPanels;
+            playerModel.Wallet.Changed += RefreshInventoryPanels;
+            playerModel.Inventory.Changed += RefreshInventoryPanels;
+            playerModel.ActiveEquipment.Changed += RefreshInventoryPanels;
+            levelModel.Ended += OnLevelEnded;
             m_ResumeGame = !GF.Base.IsGamePaused;
             if (m_ResumeGame)
                 GF.Base.PauseGame();
             m_Character.ResetPreview();
-            m_Bag.Bind(data.Profile.Inventory, data.Profile.Wallet.Soul, resetPage: true);
+            m_Bag.Refresh(resetPage: true);
             RefreshInventoryPanels();
             Visible = true;
         }
@@ -156,15 +163,18 @@ public partial class InventoryForm
         m_Actions.Close();
         m_Bag.Clear();
         m_SaleConfirmation.Cancel();
-        if (m_Data != null)
+        var data = m_Data;
+        m_Data = null;
+        if (data != null)
         {
-            m_Data.Hero.Vitals.Changed -= RefreshInventoryPanels;
-            m_Data.Profile.ActiveHero.Changed -= RefreshInventoryPanels;
-            m_Data.Profile.Wallet.Changed -= RefreshInventoryPanels;
-            m_Data.Profile.Inventory.Changed -= RefreshInventoryPanels;
-            m_Data.Profile.ActiveEquipment.Changed -= RefreshInventoryPanels;
-            m_Data.Level.Ended -= OnLevelEnded;
-            m_Data = null;
+            // 流程先关闭窗口再移除 Model，本次订阅源在关闭前保持同一实例。
+            var playerModel = this.GetModel<PlayerModel>();
+            data.Hero.Vitals.Changed -= RefreshInventoryPanels;
+            playerModel.ActiveHero.Changed -= RefreshInventoryPanels;
+            playerModel.Wallet.Changed -= RefreshInventoryPanels;
+            playerModel.Inventory.Changed -= RefreshInventoryPanels;
+            playerModel.ActiveEquipment.Changed -= RefreshInventoryPanels;
+            this.GetModel<LevelModel>().Ended -= OnLevelEnded;
         }
 
         if (m_ResumeGame && IsInstanceValid(GF.Base))
@@ -189,8 +199,8 @@ public partial class InventoryForm
     private void RefreshInventoryPanels()
     {
         CloseTransientSelection();
-        m_Character.Bind(m_Data.Hero, m_Data.Profile.ActiveHero, m_Data.Profile.ActiveEquipment);
-        m_Bag.Bind(m_Data.Profile.Inventory, m_Data.Profile.Wallet.Soul);
+        m_Character.Refresh(m_Data.Hero);
+        m_Bag.Refresh();
     }
 
     /// <summary>打开所选背包格的操作菜单；点击本身不改变穿戴。</summary>
@@ -200,15 +210,15 @@ public partial class InventoryForm
     {
         if (m_Data == null || m_SaleConfirmation.Visible)
             return;
-        var definition = ConfigSystem.Instance.Tables.TbEquipmentConfig.Get(item.EquipmentId);
-        m_Actions.Open(item.InstanceId, anchor, (int)definition.Owner == m_Data.Profile.ActiveHeroId);
+        var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
+        m_Actions.Open(item.InstanceId, anchor, (int)definition.Owner == this.GetModel<PlayerModel>().ActiveHeroId);
     }
 
     /// <summary>所选菜单确认后提交穿戴请求。</summary>
     /// <param name="instanceId">菜单捕获的背包实例。</param>
     private void OnEquipRequested(Guid instanceId)
     {
-        if (m_Data?.Level.TryEquip(instanceId) == true)
+        if (m_Data != null && this.GetSystem<LevelSystem>().TryEquip(instanceId) == true)
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
@@ -216,7 +226,7 @@ public partial class InventoryForm
     /// <param name="instanceId">菜单捕获的背包实例。</param>
     private void OnSellRequested(Guid instanceId)
     {
-        if (m_Data?.Level.TrySell(instanceId) == true)
+        if (m_Data != null && this.GetSystem<LevelSystem>().TrySell(instanceId) == true)
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
@@ -232,7 +242,7 @@ public partial class InventoryForm
         }
 
         if (m_Data == null || !Visible ||
-            !inputEvent.IsActionPressed(GameLogic.Input.InputActions.InventoryToggle))
+            !inputEvent.IsActionPressed(GameLogic.Input.InputSystem.InventoryToggle))
             return;
         GetViewport().SetInputAsHandled();
         OnCloseClicked();
@@ -242,7 +252,7 @@ public partial class InventoryForm
     /// <param name="slot">被点击的穿戴部位。</param>
     private void OnSlotClicked(EquipmentSlot slot)
     {
-        if (m_Data?.Level.TryUnequip(slot) == true)
+        if (m_Data != null && this.GetSystem<LevelSystem>().TryUnequip(slot) == true)
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
@@ -269,7 +279,7 @@ public partial class InventoryForm
     /// <param name="quality">本次明确确认的品质。</param>
     private void OnQualitySaleConfirmed(EquipmentQuality quality)
     {
-        if (m_Data?.Level.SellByQuality(quality) > 0)
+        if (m_Data != null && this.GetSystem<LevelSystem>().SellByQuality(quality) > 0)
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 }

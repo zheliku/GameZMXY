@@ -1,4 +1,14 @@
+using GameFramework.Procedure;
+using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
+using GameLogic.Architecture;
 using GameLogic.Equipment;
+using GameLogic.Battle.Damage;
+using GameLogic.Drops;
+using GameLogic.Input;
+using GameLogic.Monsters.AI;
+using GameLogic.Save;
+using GameLogic.Utility;
+using GameLogic;
 using GameLogic.Battle.Attributes;
 using System;
 using System.Collections.Generic;
@@ -12,19 +22,19 @@ using GameFramework.Entity;
 using GameLogic.Config;
 using GameLogic.Monsters;
 using GameLogic.Profile;
-using GameLogic.Startup;
 using GameLogic.FloatingText;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
 using GodotGameFramework.NodePool;
+using GodotGameFramework.Sound;
 
 /// <summary>
 /// 怪物与角色测试场地（独立场景，不进入游戏流程）。
 ///
 /// 用法：在 Godot 里对 <c>TestArena.tscn</c> 按 F6“运行当前场景”即可，不需要改流程或配置表。
-/// 场景内自带一份**真实的** <c>Framework/GameFramework.tscn</c>（去掉 Procedure 流程），脚本只补上正式流程里
-/// <c>ProcedurePreload</c> 的三组注册与节点池启动；之后把怪物实体场景拖进 <c>Monsters</c> 容器、摆好位置即可测试。
+/// 场景内自带一份**真实的** <c>Framework/GameFramework.tscn</c>（去掉 Procedure 流程），由测试入口直接装配资源组和临时 FSM；
+/// 将怪物实体场景拖进 <c>Monsters</c> 容器、摆好位置即可测试，不读取玩家档案。
 ///
 /// 占位节点只提供“哪只怪、放在哪”，真正的实体仍由 <see cref="GF.Entity"/> 池化创建，生命周期与正式关卡一致。
 /// </summary>
@@ -39,12 +49,13 @@ public partial class TestArenaController : Node2D
     [Export] private Node2D m_Monsters; // 怪物占位容器：拖入怪物实体场景即可测试。
 
     [Export] private Camera2D m_Camera; // 跟随玩家的测试相机；限位由场景 Camera2D 设置。
-    [Export] private FloatingTextModule m_FloatingText; // 与正式关卡共用的飘字组件。
+    [Export] private FloatingTextPresenter m_FloatingText; // 与正式关卡共用的飘字组件。
 
     private Node2D m_Hero; // 已显示的玩家节点，供相机跟随。
     private float m_CameraY; // 相机固定的纵向位置。
     private readonly HashSet<int> m_OwnedIds = new(); // 只接受本场地创建的实体反馈，退出时按编号隐藏。
     private CancellationTokenSource m_Cancellation; // 场地退出后不再登记晚到的显示结果。
+    private ProcedureOwner m_TestFlow; // 独立 F6 场地拥有的原生 FSM；正常游戏内运行时借用现有主 FSM。
     private EntityComponent m_Entities; // 本次启动捕获的实体服务。
 
     /// <summary>离开场景树时取消显示任务、停止飘字并清理本场地实体。</summary>
@@ -59,14 +70,53 @@ public partial class TestArenaController : Node2D
                 m_Entities.HideEntitySafe(id);
         m_OwnedIds.Clear();
         m_Entities = null;
+        if (m_TestFlow != null)
+            GF.Fsm.DestroyFsm(m_TestFlow);
+        m_TestFlow = null;
     }
 
     /// <summary>准备框架、取走怪物占位节点，然后异步启动测试场地。</summary>
     public override void _Ready()
     {
         m_CameraY = m_Camera.GlobalPosition.Y;
-        EnsureFramework();
-        ActivateTestServices();
+        // 独立 F6 运行时复用真实框架，但不启动正式流程。
+        if (GameEntry.GetComponent<EntityComponent>() == null)
+        {
+            Node framework = m_FrameworkScene.Instantiate();
+            if (framework.GetNodeOrNull("Procedure") is Node procedure)
+            {
+                framework.RemoveChild(procedure);
+                procedure.Free();
+            }
+            AddChild(framework);
+            // 子节点按逆序退出，框架最后释放，保证飘字回收时节点池仍存活。
+            MoveChild(framework, 0);
+        }
+
+        // 测试侧直接建立分组，不为 F6 在正式流程增加注册包装。
+        foreach (var group in GF.Entity.EntityGroupRes.EntityGroups)
+        {
+            if (!GF.Entity.HasEntityGroup(group.Name) && !GF.Entity.AddEntityGroup(group.Name, group.ReleaseInterval,
+                    group.Capacity, group.ExpireTime, group.Priority))
+                throw new InvalidOperationException($"实体组 {group.Name} 创建失败。");
+        }
+        foreach (var group in GF.UI.UIGroupRes.Groups)
+        {
+            if (!GF.UI.HasUIGroup(group.Name) && !GF.UI.AddUIGroup(group.Name, group.Depth))
+                throw new InvalidOperationException($"UI 组 {group.Name} 创建失败。");
+        }
+        foreach (var group in GF.Sound.SoundGroupRes.SoundGroups)
+        {
+            if (!GF.Sound.HasSoundGroup(group.Name) && !GF.Sound.AddSoundGroup(group.Name, group.AgentCounts,
+                    group.AvoidBeingReplacedBySamePriority))
+                throw new InvalidOperationException($"声音组 {group.Name} 创建失败。");
+        }
+        GF.Sound.SetVolume(SoundComponent.DefaultMusicGroup, GF.Setting.GetFloat(SoundComponent.DefaultMusicGroup, 1));
+        GF.Sound.SetVolume(SoundComponent.DefaultSfxGroup, GF.Setting.GetFloat(SoundComponent.DefaultSfxGroup, 1));
+        GF.Sound.SetVolume(SoundComponent.DefaultUiGroup, GF.Setting.GetFloat(SoundComponent.DefaultUiGroup, 1));
+        GF.Debugger.ActiveWindow = false;
+        NodePool.Instance.Active();
+        LayerMask.Instance.Active();
         m_Entities = GF.Entity;
         m_Cancellation = new CancellationTokenSource();
         List<(EntityId Id, Vector2 Position)> monsters = TakeMonsterPlaceholders();
@@ -85,40 +135,6 @@ public partial class TestArenaController : Node2D
         m_Camera.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X, m_CameraY);
     }
 
-    /// <summary>复用真实框架场景；若已在框架内运行则跳过，去掉 Procedure 以避免进入正式流程。</summary>
-    private void EnsureFramework()
-    {
-        if (GameEntry.GetComponent<EntityComponent>() != null)
-        {
-            return;
-        }
-
-        Node framework = m_FrameworkScene.Instantiate();
-        if (framework.GetNodeOrNull("Procedure") is Node procedure)
-        {
-            // 在挂树前移除流程组件：它一旦 OnInit 就会启动 ProcedureLaunch 进入正式游戏。
-            framework.RemoveChild(procedure);
-            procedure.Free();
-        }
-
-        AddChild(framework);
-        // 子节点按逆序退出，框架放在首位以保证飘字回收时节点池仍然存活。
-        MoveChild(framework, 0);
-    }
-
-    /// <summary>补上正式流程 <c>ProcedurePreload</c> 的注册步骤：实体/UI/声音分组与节点池、层级工具。</summary>
-    private void ActivateTestServices()
-    {
-        if (!GameResourceGroups.Register())
-        {
-            throw new InvalidOperationException("测试场地的必要资源组注册失败。");
-        }
-
-        GF.Debugger.ActiveWindow = false;
-        NodePool.Instance.Active();
-        LayerMask.Instance.Active();
-    }
-
     /// <summary>等框架组件就绪后显示玩家与全部占位怪物。</summary>
     /// <param name="monsters">占位节点提供的怪物枚举与出生坐标。</param>
     /// <param name="entities">本场地捕获的实体服务。</param>
@@ -132,6 +148,21 @@ public partial class TestArenaController : Node2D
             // 等一帧，确保框架组件的 OnEnter 已完成。
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             cancellationToken.ThrowIfCancellationRequested();
+            if (!GF.Fsm.HasFsm<IProcedureManager>())
+            {
+                m_TestFlow = GF.Fsm.CreateFsm<IProcedureManager>(GameFrameworkEntry.GetModule<IProcedureManager>(), new ArenaState());
+                var architecture = m_TestFlow.InitializeArchitecture();
+                m_TestFlow.RegisterUtility(new ArchiveUtility<GameCatalogue, GameData>(GF.Archive));
+                m_TestFlow.RegisterUtility(new SpatialUtility());
+                m_TestFlow.RegisterModel(new ConfigurationModel(ConfigSystem.Instance.Tables));
+                m_TestFlow.RegisterModel(new SaveModel());
+                m_TestFlow.RegisterSystem(new ConfigurationSystem(architecture));
+                m_TestFlow.RegisterSystem(new CombatSystem(architecture));
+                m_TestFlow.RegisterSystem(new InputSystem(architecture));
+                m_TestFlow.RegisterSystem(new MonsterAiSystem(architecture));
+                m_TestFlow.RegisterSystem(new LootSystem(architecture));
+                m_TestFlow.RegisterSystem(new SaveSystem(architecture));
+            }
             m_FloatingText.StartSession(m_OwnedIds.Contains);
             await SpawnHeroAsync(entities, cancellationToken);
             foreach ((EntityId id, Vector2 position) in monsters)
@@ -158,12 +189,13 @@ public partial class TestArenaController : Node2D
     /// <param name="cancellationToken">场地退出时取消。</param>
     private async Task SpawnHeroAsync(EntityComponent entities, CancellationToken cancellationToken)
     {
-        Tables tables = ConfigSystem.Instance.Tables;
-        ExperienceCurve curve = ConfigHelper.ValidateAll(tables);
+        var configuration = GF.Fsm.GetArchitecture().GetModel<ConfigurationModel>();
+        Tables tables = configuration.Tables;
+        ExperienceCurve curve = configuration.ExperienceCurve;
         int heroId = tables.TbHeroConfig.DataList.FirstOrDefault(x => x.EntityId == m_HeroEntityId)?.Id
             ?? throw new InvalidOperationException($"HeroConfig 中没有实体 {m_HeroEntityId}");
         HeroProgression record = new(heroId, curve, 0);
-        HeroLoadout loadout = new EquipmentModule(tables.TbHeroGrowthConfig, tables.TbEquipmentConfig).CreateLoadout(record);
+        HeroLoadout loadout = new EquipmentSystem(GF.Fsm.GetArchitecture()).CreateLoadout(record);
         IEntity entity = await ShowOwnedEntityAsync(entities, m_HeroEntityId, loadout, cancellationToken);
         if (entity?.Handle is not Node2D hero)
         {
@@ -200,6 +232,9 @@ public partial class TestArenaController : Node2D
         return entity;
     }
 
+    /// <summary>只提供原生 FSM 宿主，不启动正式流程导航。</summary>
+    private sealed class ArenaState : GameFramework.Fsm.FsmState<IProcedureManager> { }
+
     /// <summary>取出并移除 Monsters 容器中的怪物占位节点，返回它们提供的枚举与坐标。</summary>
     /// <returns>每只待生成怪物的枚举与出生坐标。</returns>
     private List<(EntityId Id, Vector2 Position)> TakeMonsterPlaceholders()
@@ -207,7 +242,7 @@ public partial class TestArenaController : Node2D
         List<(EntityId Id, Vector2 Position)> monsters = new();
         foreach (Node child in m_Monsters.GetChildren())
         {
-            if (child is not MonsterEntity placeholder)
+            if (child is not AbstractMonsterEntity placeholder)
             {
                 continue;
             }

@@ -31,7 +31,7 @@ public sealed class LootTests
         foreach (var monster in TestTables.Tables.TbMonsterConfig.DataList)
             foreach (float random in new[] { 0f, .34f, .67f, .99999f, 1f })
             {
-                var loot = LootHelper.Roll(monster, drop, () => random);
+                var loot = new LootSystem(TestTables.Architecture).Roll(monster, () => random);
                 Assert.InRange(loot.Count, 2, 10);
                 Assert.All(loot.Where(x => x.Kind == LootKind.Musou), x => Assert.Equal(5, x.Amount));
                 Assert.InRange(loot.Count(x => x.Kind == LootKind.Soul), monster.SoulCount.X, monster.SoulCount.Y);
@@ -49,7 +49,7 @@ public sealed class LootTests
         int calls = 0;
         float Random() => ++calls == 2 ? chance : count;
         var monster = TestTables.Tables.TbMonsterConfig.DataList[0];
-        var loot = LootHelper.Roll(monster, TestTables.Tables.TbDropConfig.Data, Random);
+        var loot = new LootSystem(TestTables.Architecture).Roll(monster, Random);
         Assert.Equal(expected, loot.Count(x => x.Kind == LootKind.Mana));
     }
 
@@ -62,7 +62,7 @@ public sealed class LootTests
     {
         int calls = 0;
         float Random() => ++calls switch { 1 => 0f, 2 => .99f, 3 => chance, _ => count };
-        var loot = LootHelper.Roll(TestTables.Tables.TbMonsterConfig.DataList[0], TestTables.Tables.TbDropConfig.Data, Random);
+        var loot = new LootSystem(TestTables.Architecture).Roll(TestTables.Tables.TbMonsterConfig.DataList[0], Random);
         Assert.DoesNotContain(loot, x => x.Kind == LootKind.Mana);
         Assert.Equal(expected, loot.Count(x => x.Kind == LootKind.Musou));
         Assert.All(loot.Where(x => x.Kind == LootKind.Musou), x => Assert.Equal(5, x.Amount));
@@ -74,5 +74,5 @@ public sealed class LootTests
     [InlineData(1000, 50)]
     [InlineData(1039, 51)]
     public void Mana_UsesCurrentMaximum(int maximum, int expected) =>
-        Assert.Equal(expected, LootHelper.ManaAmount(maximum, TestTables.Tables.TbDropConfig.Data));
+        Assert.Equal(expected, new LootSystem(TestTables.Architecture).ManaAmount(maximum));
 }

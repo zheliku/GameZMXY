@@ -1,3 +1,7 @@
+using GameLogic.Architecture;
+using GameLogic.Equipment;
+using GameLogic.Save;
+using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 using System;
 using System.Threading.Tasks;
 using GameConfig.Battle;
@@ -16,18 +20,18 @@ using GodotGameFramework.Entity;
 public sealed partial class UiSmokeScenario
 {
     /// <summary>验证悟空及三种怪物的两种朝向、两种受击方向，不增加生产观测接口。</summary>
-    /// <param name="context">创建受测英雄所需的档案作用域。</param>
+    /// <param name="flow">创建受测英雄所需的档案作用域。</param>
     /// <returns>实体创建、检查与归还完成的任务。</returns>
-    private async Task CheckHitFacingAsync(GameContext context)
+    private async Task CheckHitFacingAsync(ProcedureOwner flow)
     {
-        m_ExtraHero = await ShowHeroAsync(context, new HeroProgression(1,
-            SmokeInspection.ReadField<ExperienceCurve>(context.Profile.ActiveHero, "m_Curve"), 0));
+        m_ExtraHero = await ShowHeroAsync(flow, new HeroProgression(1,
+            SmokeInspection.ReadField<ExperienceCurve>(flow.GetModel<PlayerModel>().ActiveHero, "m_Curve"), 0));
         CheckActor(m_ExtraHero);
         ReleaseTestEntity(m_ExtraHero);
         m_ExtraHero = null;
         foreach (int id in new[] { 1, 2, 3 })
         {
-            m_Monster = (MonsterEntity)await GF.Entity.ShowEntityAsync(
+            m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(
                 ConfigSystem.Instance.Tables.TbMonsterConfig.Get(id).EntityId, new MonsterSpawn(new Vector2(200, 100)));
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
@@ -37,7 +41,7 @@ public sealed partial class UiSmokeScenario
         }
         GD.Print("SMOKE-UI: Wukong and three monsters retain facing on hits from either direction; knockback direction passed");
 
-        void CheckActor(ActorEntity actor)
+        void CheckActor(AbstractActorEntity actor)
         {
             foreach (int facing in new[] { -1, 1 })
                 foreach (int direction in new[] { -1, 1 })

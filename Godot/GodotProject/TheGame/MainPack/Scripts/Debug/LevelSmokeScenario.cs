@@ -1,3 +1,7 @@
+using GameLogic.Architecture;
+using GameLogic.Equipment;
+using GameLogic.Profile;
+using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 using GameLogic.Level;
 using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
@@ -30,8 +34,8 @@ public sealed class LevelSmokeScenario
         Kill,
     }
 
-    private readonly HeroEntity m_Hero; // 通过游戏流程实际显示的玩家。
-    private readonly LevelModule m_Level; // 受测关卡会话。
+    private readonly AbstractHeroEntity m_Hero; // 通过游戏流程实际显示的玩家。
+    private readonly LevelViewController m_Level; // 受测关卡会话。
     private readonly LevelCameraNode m_Camera; // 受测实际取景。
     private readonly LevelGatesNode m_Gates; // 受测阶段区域。
     private readonly HashSet<int> m_Seen = new(); // 所有实际显示过的运行实体 ID。
@@ -49,7 +53,7 @@ public sealed class LevelSmokeScenario
     private readonly int m_StartExperience; // 进关时档案中的累计经验。
     private readonly int m_StartSoul; // 进关时的钱包，通关后按真实随机奖励核对写盘。
     private bool m_FirstSpawnEntered; // 首波保留真实 AI，直到观测到它从场外走入画面。
-    private readonly GameContext m_Context; // 本次受测档案与存档入口。
+    private readonly ProcedureOwner m_Flow; // 本次受测档案与存档入口。
     private ulong m_ExitRequestedAt; // 近处 W 按下到地图实际可见的实际时刻。
     private bool m_ExitLatencyRecorded; // 延迟只采样一次，不包含随后验证读盘的时间。
     private bool m_ExitHadPendingLoot; // W 时还有球在飞行；等待真实拾取与额外关卡延迟分别观测。
@@ -68,15 +72,15 @@ public sealed class LevelSmokeScenario
     /// <summary>创建正式关卡的物理回归场景。</summary>
     /// <param name="hero">正式流程显示的英雄。</param>
     /// <param name="level">受测关卡。</param>
-    public LevelSmokeScenario(HeroEntity hero, LevelModule level)
+    public LevelSmokeScenario(AbstractHeroEntity hero, LevelViewController level)
     {
         m_Hero = hero;
         m_Level = level;
-        m_Context = SmokeInspection.Context(GF.Procedure.CurrentProcedure as ProcedureLevel);
-        m_StartExperience = m_Context.Profile.ActiveHero.TotalExperience;
-        m_StartSoul = m_Context.Profile.Wallet.Soul;
-        m_Camera = level.GetNode<LevelCameraNode>("Camera2D");
-        m_Gates = level.GetNode<LevelGatesNode>("World/StageGates");
+        m_Flow = SmokeInspection.Flow(GF.Procedure.CurrentProcedure as ProcedureLevel);
+        m_StartExperience = m_Flow.GetModel<PlayerModel>().ActiveHero.TotalExperience;
+        m_StartSoul = m_Flow.GetModel<PlayerModel>().Wallet.Soul;
+        m_Camera = SmokeInspection.Scene(level).GetNode<LevelCameraNode>("Camera2D");
+        m_Gates = SmokeInspection.Scene(level).GetNode<LevelGatesNode>("World/StageGates");
         m_LastCenter = m_Camera.GlobalPosition.X;
         m_LastPlayerX = hero.GlobalPosition.X;
     }
@@ -114,9 +118,9 @@ public sealed class LevelSmokeScenario
         }
 
         m_LastCenter = center;
-        MonsterEntity[] monsters = m_Hero.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
-            .OfType<MonsterEntity>().Where(x => x.IsShown && !x.Dead).ToArray();
-        foreach (MonsterEntity monster in monsters)
+        AbstractMonsterEntity[] monsters = m_Hero.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+            .OfType<AbstractMonsterEntity>().Where(x => x.IsShown && !x.Dead).ToArray();
+        foreach (AbstractMonsterEntity monster in monsters)
         {
             if (!m_FirstSpawnEntered && SmokeInspection.Sequence(m_Level).Current.StageOrder == 1 &&
                 monster.GlobalPosition.X < m_Camera.ViewRight - 20f)
@@ -167,7 +171,7 @@ public sealed class LevelSmokeScenario
             }
 
             // 清波后到下一场开战之间，关卡应处于可前进窗口（HUD 据此显示 Go）。
-            if (m_Level.TravelAvailable)
+            if (SmokeInspection.Model(m_Level).TravelAvailable)
             {
                 m_GoHintSeen = true;
             }
@@ -176,16 +180,16 @@ public sealed class LevelSmokeScenario
             // 用户保留的斜坡含竖直端面，烟测用真实跳跃跨越，不修改场景地形。
             if (m_Hero.IsOnWall() && m_Hero.IsOnFloor())
             {
-                Input.ActionPress(InputActions.Jump);
+                Input.ActionPress(InputSystem.Jump);
             }
             else
             {
-                Input.ActionRelease(InputActions.Jump);
+                Input.ActionRelease(InputSystem.Jump);
             }
         }
         else if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Fighting)
         {
-            if (m_Level.TravelAvailable)
+            if (SmokeInspection.Model(m_Level).TravelAvailable)
             {
                 Fail("开战后仍处于可前进窗口");
             }
@@ -222,12 +226,13 @@ public sealed class LevelSmokeScenario
             int expectedExperience = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages
                 .Sum(x => x.Recipes.Sum(r => r.Count * (r.ExperienceOverride >= 0 ? r.ExperienceOverride :
                     ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Single(m => m.EntityId == r.MonsterEntityId).AddExp)));
-            LevelModule run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
-            int gained = SmokeInspection.Context(GF.Procedure.CurrentProcedure as ProcedureLevel)?.Profile.ActiveHero
+            LevelViewController run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
+            int gained = SmokeInspection.Flow(GF.Procedure.CurrentProcedure as ProcedureLevel)?.GetModel<PlayerModel>().ActiveHero
                 .TotalExperience - m_StartExperience ?? -1;
-            if (gained != expectedExperience || SmokeInspection.ReadField<int>(run, "m_AwardedExperience") != expectedExperience)
+            int awardedExperience = SmokeInspection.ReadField<int>(SmokeInspection.Model(run), "m_AwardedExperience");
+            if (gained != expectedExperience || awardedExperience != expectedExperience)
             {
-                Fail($"本关经验错误或重复死亡奖励：档案 {gained}，统计 {SmokeInspection.ReadField<int>(run, "m_AwardedExperience")}，配置 {expectedExperience}");
+                Fail($"本关经验错误或重复死亡奖励：档案 {gained}，统计 {awardedExperience}，配置 {expectedExperience}");
             }
             GD.Print($"SMOKE-LEVEL: experience={gained}, expected={expectedExperience}");
             int minimumSoul = 0, maximumSoul = 0;
@@ -237,16 +242,16 @@ public sealed class LevelSmokeScenario
                 minimumSoul += recipe.Count * monster.SoulCount.X * monster.SoulPerOrb;
                 maximumSoul += recipe.Count * monster.SoulCount.Y * monster.SoulPerOrb;
             }
-            m_ExpectedSoul = m_Context.Profile.Wallet.Soul;
+            m_ExpectedSoul = m_Flow.GetModel<PlayerModel>().Wallet.Soul;
             int gainedSoul = m_ExpectedSoul - m_StartSoul;
             if (gainedSoul < minimumSoul || gainedSoul > maximumSoul)
                 Fail("本关灵魂奖励超出官方掉落范围");
             GD.Print($"SMOKE-LEVEL: soul={gainedSoul}, expected range={minimumSoul}..{maximumSoul}");
 
             // 通关是检查点：关卡运行已提交并结束。
-            if (run?.Outcome != LevelOutcome.Cleared || run.CheckpointWrite == null)
+            if (SmokeInspection.Model(run)?.Outcome != LevelOutcome.Cleared || SmokeInspection.GetLevelSystem(run).CheckpointWrite == null)
             {
-                Fail($"通关没有提交检查点：结局 {run?.Outcome}");
+                Fail($"通关没有提交检查点：结局 {SmokeInspection.Model(run)?.Outcome}");
             }
 
             if (!m_GoHintSeen)
@@ -276,7 +281,7 @@ public sealed class LevelSmokeScenario
     /// <summary>远处按键不通关；清场后靠近出口，再发送真实 W 按键。</summary>
     private void DriveExit()
     {
-        LevelExitNode exit = m_Level.GetNode<LevelExitNode>("World/Exit");
+        LevelExitNode exit = SmokeInspection.Scene(m_Level).GetNode<LevelExitNode>("World/Exit");
         if (!exit.Visible && m_ExitStep < 5)
         {
             Fail("清场后出口未显示");
@@ -284,8 +289,8 @@ public sealed class LevelSmokeScenario
         }
         if (m_ExitStep == 0)
         {
-            LevelModule run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
-            if (run.Outcome != LevelOutcome.Running || run.CheckpointWrite != null)
+            LevelViewController run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
+            if (SmokeInspection.Model(run).Outcome != LevelOutcome.Running || SmokeInspection.GetLevelSystem(run).CheckpointWrite != null)
                 Fail("仅清场就提前通关或写盘");
             PlaceForWallTest(exit.GlobalPosition.X - 220f);
             Move(null);
@@ -303,13 +308,13 @@ public sealed class LevelSmokeScenario
         }
         else if (m_ExitStep == 3)
         {
-            LevelModule run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
-            if (run.Outcome != LevelOutcome.Running || run.CheckpointWrite != null)
+            LevelViewController run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
+            if (SmokeInspection.Model(run).Outcome != LevelOutcome.Running || SmokeInspection.GetLevelSystem(run).CheckpointWrite != null)
             {
                 Fail("远处按 W 就提交通关或写盘");
                 return;
             }
-            Move(InputActions.MoveRight);
+            Move(InputSystem.MoveRight);
             if (exit.GetOverlappingBodies().Contains(m_Hero) && m_Hero.OnFloor)
             {
                 Move(null);
@@ -325,13 +330,13 @@ public sealed class LevelSmokeScenario
                 return;
             }
             // 靠近出口时攻击、跳跃、下方向与 W 的组合不能误提交通关。
-            foreach (string action in new[] { InputActions.Attack, InputActions.Jump, InputActions.MoveDown })
+            foreach (string action in new[] { InputSystem.Attack, InputSystem.Jump, InputSystem.MoveDown })
             {
                 Input.ActionPress(action);
                 try
                 {
                     PressW();
-                    if (!exit.Visible || m_Level.Outcome != LevelOutcome.Running || m_Level.CheckpointWrite != null)
+                    if (!exit.Visible || SmokeInspection.Model(m_Level).Outcome != LevelOutcome.Running || SmokeInspection.GetLevelSystem(m_Level).CheckpointWrite != null)
                     {
                         Fail($"出口把 W＋{action} 组合误当成单独 W");
                         return;
@@ -398,7 +403,7 @@ public sealed class LevelSmokeScenario
         var settlement = GF.UI.GetAllLoadedUIForms().OfType<SettlementForm>().FirstOrDefault(x => x.Visible);
         if (settlement != null && !m_SettlementClicked)
         {
-            if (m_Level.Result?.Outcome != LevelOutcome.Cleared || settlement.GetNode<TextureButton>("Content/Actions/m_Retry").Visible || !GF.Base.IsGamePaused)
+            if (SmokeInspection.Model(m_Level).Result?.Outcome != LevelOutcome.Cleared || settlement.GetNode<TextureButton>("Content/Actions/m_Retry").Visible || !GF.Base.IsGamePaused)
             {
                 Fail("成功结算成绩、重试按钮或暂停状态不正确");
                 return;
@@ -429,11 +434,11 @@ public sealed class LevelSmokeScenario
                 return;
             }
         }
-        m_Reload ??= m_Context.Save.LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentData.UnitId);
+        m_Reload ??= m_Flow.GetSystem<SaveSystem>().LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentData.UnitId);
         if (!m_Reload.IsCompleted)
             return;
-        if (m_Reload.IsFaulted || m_Reload.Result.Profile.ActiveHero.TotalExperience != m_ExpectedTotalExperience ||
-            m_Reload.Result.Profile.Wallet.Soul != m_ExpectedSoul)
+        if (m_Reload.IsFaulted || m_Reload.Result.PlayerModel.ActiveHero.TotalExperience != m_ExpectedTotalExperience ||
+            m_Reload.Result.PlayerModel.Wallet.Soul != m_ExpectedSoul)
             Fail("返回地图后重新读取存档，经验或灵魂与通关收益不一致");
         else
         {
@@ -448,7 +453,7 @@ public sealed class LevelSmokeScenario
         }
     }
 
-    private void DriveBattle(double delta, MonsterEntity[] monsters) // 先验证抵达时取景和配置延迟，再验证墙体与真实清波。
+    private void DriveBattle(double delta, AbstractMonsterEntity[] monsters) // 先验证抵达时取景和配置延迟，再验证墙体与真实清波。
     {
         var stage = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages[SmokeInspection.Sequence(m_Level).Current.StageOrder - 1];
         var region = m_Gates.BoundsOf(stage.StageOrder);
@@ -498,7 +503,7 @@ public sealed class LevelSmokeScenario
                     Fail("首波场外怪物未通过真实 AI 进入画面");
                 return;
             }
-            foreach (MonsterEntity monster in monsters)
+            foreach (AbstractMonsterEntity monster in monsters)
             {
                 AttackInstance attack = AttackInstance.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero,
                     m_Hero.Id, 0, SoundId.None);

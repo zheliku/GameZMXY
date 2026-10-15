@@ -1,3 +1,4 @@
+using GameLogic.Architecture;
 using GameLogic.Save.Slots;
 using GameLogic.Event.Navigation;
 using System;
@@ -8,16 +9,16 @@ using GameLogic.Save;
 using GameConfig.Sound;
 using Godot;
 using GodotGameFramework;
-using GodotGameFramework.Localization;
-using GodotGameFramework.Sound;
-using GodotGameFramework.UI;
 
 namespace GameLogic.UI;
 
 /// <summary>六格存档窗口，订阅目录变化并以具名事件请求读档。</summary>
-public partial class SaveForm
+public partial class SaveForm : IController
 {
-    private SaveFormData m_Data; // 当前目录引用，关闭即解绑。
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     private (TextureButton Button, Label Name, Label Date)[] m_SlotViews; // 六个存档格的控件引用，不另建格子脚本。
 
     /// <summary>绑定 GGF 字段与一次性的按钮订阅。</summary>
@@ -40,7 +41,7 @@ public partial class SaveForm
             return;
         m_Close.Pressed += OnCloseClicked;
         var buttons = m_Slots.GetChildren().Cast<TextureButton>().ToArray();
-        if (buttons.Length != SaveSlotDirectory.SlotCount)
+        if (buttons.Length != SaveModel.SlotCount)
             throw new InvalidOperationException("存档页必须为六格。");
         m_SlotViews = new (TextureButton, Label, Label)[buttons.Length];
         // 只在新建实例时收集本表单的固定格子，复用期间沿用引用与订阅。
@@ -48,19 +49,19 @@ public partial class SaveForm
         {
             int number = i + 1;
             var button = buttons[i];
-            m_SlotViews[i] = (button, button.GetNode<Label>($"m_Name{number}"), button.GetNode<Label>($"m_Date{number}"));
+            m_SlotViews[i] = (button, button.GetNode<Label>($"m_Name{number}"),
+                button.GetNode<Label>($"m_Date{number}"));
             button.Pressed += () => SelectSlot(number);
         }
     }
 
     /// <summary>订阅目录并立即绘制当前状态。</summary>
-    /// <param name="userData">SaveFormData。</param>
-    /// <exception cref="ArgumentException">打开参数不正确。</exception>
+    /// <param name="userData">未使用；目录由共享 SaveModel 提供。</param>
     public void OnOpen(object userData)
     {
-        ReleaseDirectory();
-        m_Data = userData as SaveFormData ?? throw new ArgumentException("需要 SaveFormData。", nameof(userData));
-        m_Data.Directory.Changed += RefreshDirectory;
+        var saveModel = this.GetModel<SaveModel>();
+        saveModel.Changed -= RefreshDirectory;
+        saveModel.Changed += RefreshDirectory;
         RefreshDirectory();
         Visible = true;
     }
@@ -70,7 +71,7 @@ public partial class SaveForm
     /// <param name="userData">关闭参数。</param>
     public void OnClose(bool isShutdown, object userData)
     {
-        ReleaseDirectory();
+        this.GetModel<SaveModel>().Changed -= RefreshDirectory;
         if (!isShutdown && IsInstanceValid(this))
             Visible = false;
     }
@@ -78,7 +79,6 @@ public partial class SaveForm
     /// <summary>清除回池窗口编号。</summary>
     public void OnRecycle()
     {
-        ReleaseDirectory();
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = true;
@@ -130,20 +130,12 @@ public partial class SaveForm
         ZIndex = depthInUIGroup;
     }
 
-    /// <summary>解除旧目录订阅。</summary>
-    private void ReleaseDirectory()
-    {
-        if (m_Data != null)
-            m_Data.Directory.Changed -= RefreshDirectory;
-        m_Data = null;
-    }
-
     /// <summary>完整刷新六个格及加载反馈。</summary>
     private void RefreshDirectory()
     {
-        var directory = m_Data.Directory;
-        bool ready = directory.Phase == SaveDirectoryPhase.Ready;
-        m_Status.Text = directory.Phase == SaveDirectoryPhase.Failed ? directory.ErrorMessage : ready ? "" : "正在读取存档…";
+        var directory = this.GetModel<SaveModel>();
+        bool ready = directory.Phase == SaveListState.Ready;
+        m_Status.Text = directory.Phase == SaveListState.Failed ? directory.ErrorMessage : ready ? "" : "正在读取存档…";
         for (int i = 0; i < m_SlotViews.Length; i++)
         {
             var (button, name, date) = m_SlotViews[i];
@@ -160,7 +152,8 @@ public partial class SaveForm
             name.Text = slot?.State == SaveSlotState.Occupied ? $"{slot.HeroName} · Lv.{slot.Level}" :
                 slot?.State == SaveSlotState.Unreadable ? "存档不可读" : "";
             date.Text = slot?.State == SaveSlotState.Occupied
-                ? slot.SavedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "" : "";
+                ? slot.SavedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? ""
+                : "";
         }
     }
 
@@ -168,8 +161,8 @@ public partial class SaveForm
     /// <param name="number">从 1 开始的格号。</param>
     private void SelectSlot(int number)
     {
-        if (m_Data?.Directory.Phase != SaveDirectoryPhase.Ready ||
-            m_Data.Directory.Slots[number - 1].State == SaveSlotState.Unreadable)
+        if (!GF.UI.HasUIForm(SerialId) || this.GetModel<SaveModel>().Phase != SaveListState.Ready ||
+            this.GetModel<SaveModel>().Slots[number - 1].State == SaveSlotState.Unreadable)
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.Event.Fire(this, SaveSlotSelectedEventArgs.Create(SerialId, number));
@@ -178,7 +171,7 @@ public partial class SaveForm
     /// <summary>关闭存档页，返回开始界面。</summary>
     private void OnCloseClicked()
     {
-        if (m_Data == null)
+        if (!GF.UI.HasUIForm(SerialId))
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.UI.CloseUIForm(SerialId);
