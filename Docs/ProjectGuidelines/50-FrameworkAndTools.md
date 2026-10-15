@@ -34,6 +34,7 @@
 | 文件 / 范围 | 已授权修改 |
 | --- | --- |
 | addons/TopMenu/GameFrameworkTopMenu.Generate.cs | Collection Res 过滤链排除 Markdown，防止 AGENTS.md 被作为同名资源收集；仅此一行过滤 |
+| addons/ExportInspector/ExportInspector.cs | 2026-10-15 用户授权扫描修补：先读脚本依赖元数据，只加载候选包标记并校验；条目扫描和打包复用已识别标记，避免提前加载普通资源触发编辑器 GCHandle 异常；仅此扫描与排除逻辑 |
 | Framework/GameFramework.tscn 的 Procedure.Procedures | Launch、Update、Prepare、Preload、Title、LoadGame、Character、Map、Level；2026-10-15 用户要求整理准备流程并重命名读档流程，登记 Prepare 与 LoadGame；EnterProcedure 不变；新增其他流程另行授权 |
 | Framework/GodotGameFrameworkCore/Json/EasySave.cs | 增加 Serialize、WriteUserTextAtomicAsync、LoadFromUserWithBackupAsync、ExistsInUserOrBackup、DeleteInUserWithBackupAsync、BackupSuffix；原接口及热更调用不变 |
 | Framework/GodotGameFrameworkCore/Archive/ArchiveSystem.cs | 原子写/.bak、调用顺序串行、调用时序列化、读取备份回退、严格首次建档、覆盖时重写目录、读写/删除返回 Task<bool>；ArchiveCatalogue/ArchiveData、布局、加密和 GF 泛型绑定不变 |

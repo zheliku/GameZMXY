@@ -33,6 +33,18 @@ XLSX Diff 1.6.4 的解析器无法读取带 `x:` 前缀的 SpreadsheetML 标签�
 
 装备背包与实际详情为 `inventory_equipment.png`，操作菜单为 `inventory_actions.png`，武器/防具同时穿戴为 `inventory_wearing.png`，绿色/蓝色恢复数字为 `recovery_numbers.png`；无名称的地面恢复品和装备为 `ground_pickups.png`；地图默认边缘闪烁的两端画面为 `frontend/map_current_low.png`、`frontend/map_current.png`。
 
+## 编辑器 GCHandle 修补（2026-10-15）
+
+按第 50 章的用户授权，仅修改 ExportInspector：先读资源依赖及全局脚本登记，只加载候选包标记并校验，文件列表和打包复用已识别标记，避免扫描时提前加载普通资源。ComponentInsoector 的 14 处释放修改按用户最新要求全部撤回，恢复原文件；这项修改处理退出错误，没有解决本次启动异常。未增加业务测试 API。
+
+- 修补前，实际工程同程序集、同布局普通窗口启动：启用 ExportInspector 出现 **4 次 SwapGCHandleForType 和 2 次退出 SetGodotObjectPtr 异常**，仅临时禁用此插件为 **0 错误**，恢复启用再次为 **4 + 2**。插件扫描会提前加载 54 个候选资源、在条目扫描中再加载 37 个资源。该路径与 Godot 官方 [#112067](https://github.com/godotengine/godot/issues/112067) 的资源句柄问题相符，具体失效的原生资源未唯一定位。
+- `dotnet build Godot/GodotProject --no-restore -v quiet`：**0 错误、5 个既有框架警告**。正式 ExportInspector 与已验证候选逐字节一致；原版和候选均识别 6 个正式包及 1 个二进制 .res 测试包，**748 项文件清单逐字节一致**，普通动画的提前缓存由 True 变为 False。PCK 在空白工程读回，普通资源存在、二进制标记已排除；副本重建资源索引后的首次扫描也通过。
+- 撤回 ComponentInsoector 之前（当时仍包含它的释放修正），在实际工程保留全部插件、原布局和正式缓存，用 `--editor --path Godot/GodotProject --max-fps 60 --quit-after 600` 完成 **3 次普通窗口冷启动：均退出 0，0 错误、0 警告**。另一次旧程序集对照本轮也未复现，说明问题有间歇性；上述结果不代表 Godot 所有句柄缺陷均已修复。未使用最小化、离屏或副本启动替代实际工程验证。
+- 最终仅保留 ExportInspector 修补后，再次执行上述 build：**0 错误、5 个既有框架警告**；实际工程普通窗口冷启动 **退出 0，SwapGCHandleForType / SetGodotObjectPtr 目标异常均为 0**。退出时恢复既有 **14 条 Can't free a RefCounted object 和 14 条 Nonexistent function 'free'**，堆栈均指向 ComponentInsoector._ExitTree；这项独立的退出问题按用户要求不纳入本轮修改，不能把本次完整退出日志称为零错误。`git diff --exit-code -- addons/ComponentInsoector/ComponentInsoector.cs` 为 0，确认该文件恢复原版。
+- 验证后已恢复修补程序集及原布局，布局按原字节比对通过；project.godot、正式存档及 Git 索引未修改，未清理正式缓存。此前重载验证仍有 8 条断开不存在连接错误和 3 个 GodotBody2D RID 泄漏；本轮只验证启动，不宣称这些既有重载问题已解决。
+
+日志在忽略的 `.godot/validation/`：修补前对照为 `editor_gc_ab_{baseline,no_export,reenabled}.{out,err}.log`；撤回前验证为 `editor_gc_scan_fixed_{1,2,3}.{out,err}.log`，旧程序集对照为 `editor_gc_scan_previous_control.{out,err}.log`，构建为 `editor_gc_scan_fixed_build.log`；最终最小修改的构建与冷启动为 `editor_gc_minimal_build.log`、`editor_gc_minimal_cold.{out,err}.log`；文件清单、首次扫描与打包为 `editor_gc_metadata_{before,probe,fresh}.{out,err}.log`、`editor_gc_bundle_pack.log`。诊断副本、探针、补丁和日志不提交。
+
 ## 当前架构与启动流程回归（2026-10-15）
 
 按用户最新要求统一业务 System、实体 ActionData 和 IController 访问方式。飞行球删除英雄成员，由本关控制器逐帧提供目标坐标；UI Data 不再传递共享 Model，存档/设置/技能 Data 删除。Prepare 集中注册工具、模型和系统，Preload 预加载界面，LoadGame 建立档案作用域；Startup 与 AbstractMenuProcedure 删除。此前的物理接触、AI 状态工厂集合、统一输入采样和不可变装配仍保留。所有者、调用链及旧规范差异见 [项目导览](ProjectTour.md)。按第 10/30/40/50 章执行命名、文档、功能分组、UID 与隔离验证；第 50 章仅登记用户要求的必要流程注册项。

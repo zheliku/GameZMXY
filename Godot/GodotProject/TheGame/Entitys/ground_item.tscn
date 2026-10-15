@@ -1,15 +1,15 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://4587fehb82nt"]
 
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Drops/GroundItemNode.cs" id="script"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/ground_item_pickup_library.tres" id="pickup"]
-
-[sub_resource type="RectangleShape2D" id="feet"]
-size = Vector2(12, 8)
+[ext_resource type="AnimationLibrary" uid="uid://jxbbo6cinwnr" path="res://TheGame/Entitys/Animations/ground_item_pickup_library.tres" id="pickup"]
+[ext_resource type="Script" uid="uid://7c1yhkshn5gc" path="res://TheGame/GameScripts/Entity/Drops/GroundItemNode.cs" id="script"]
 
 [sub_resource type="CircleShape2D" id="pickup_shape"]
 radius = 18.0
 
-[node name="GroundItem" type="CharacterBody2D" node_paths=PackedStringArray("m_Icon", "m_PickupAnimation", "m_PickupArea", "m_PickupShape")]
+[sub_resource type="RectangleShape2D" id="feet"]
+size = Vector2(12, 8)
+
+[node name="GroundItem" type="CharacterBody2D" unique_id=39514946 node_paths=PackedStringArray("m_Icon", "m_PickupAnimation", "m_PickupArea", "m_PickupShape")]
 z_index = 4
 collision_layer = 0
 collision_mask = 9
@@ -19,28 +19,27 @@ m_PickupAnimation = NodePath("AnimationPlayer")
 m_PickupArea = NodePath("PickupArea")
 m_PickupShape = NodePath("PickupArea/Shape")
 
-[node name="PickupArea" type="Area2D" parent="."]
+[node name="PickupArea" type="Area2D" parent="." unique_id=505850997]
 position = Vector2(0, -8)
 collision_layer = 0
 collision_mask = 2
 monitoring = false
 monitorable = false
 
-[node name="Shape" type="CollisionShape2D" parent="PickupArea"]
+[node name="Shape" type="CollisionShape2D" parent="PickupArea" unique_id=1637135473]
 shape = SubResource("pickup_shape")
 
-[node name="Feet" type="CollisionShape2D" parent="."]
+[node name="Feet" type="CollisionShape2D" parent="." unique_id=1174947348]
 position = Vector2(0, -4)
 shape = SubResource("feet")
 
-[node name="Shadow" type="Polygon2D" parent="."]
+[node name="Shadow" type="Polygon2D" parent="." unique_id=221775772]
 color = Color(0, 0, 0, 0.3)
 polygon = PackedVector2Array(-14, -2, -10, -5, 10, -5, 14, -2, 10, 1, -10, 1)
 
-[node name="Icon" type="Sprite2D" parent="."]
+[node name="Icon" type="Sprite2D" parent="." unique_id=1227132205]
 position = Vector2(0, -18)
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=561234214]
 callback_mode_process = 2
-libraries = {&"": ExtResource("pickup")}
-
+libraries/ = ExtResource("pickup")

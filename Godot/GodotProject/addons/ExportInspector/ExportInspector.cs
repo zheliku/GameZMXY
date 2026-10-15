@@ -402,6 +402,9 @@ namespace GodotGameFramework.Editor
             var ext = Path.GetExtension(path)?.ToLower();
             if (ext != ".tres" && ext != ".res") return;
 
+            // 先读取依赖元数据，避免为识别标记提前加载动画、主题及其贴图。
+            if (!HasAssetBundleScriptDependency(path)) return;
+
             var resource = ResourceLoader.Load(path);
             if (resource == null) return;
 
@@ -415,6 +418,33 @@ namespace GodotGameFramework.Editor
             {
                 _bundles[path] = resource;
             }
+        }
+
+        /// <summary>只读取资源依赖及全局脚本登记，筛选可能使用 AssetBundle 脚本的资源。</summary>
+        /// <param name="path">文本或二进制资源路径。</param>
+        /// <returns>资源直接依赖已登记的 AssetBundle 脚本时为 true；实际类型仍由加载后校验。</returns>
+        private static bool HasAssetBundleScriptDependency(string path)
+        {
+            var globalClasses = ProjectSettings.GetGlobalClassList();
+            foreach (var dependency in ResourceLoader.GetDependencies(path))
+            {
+                var dependencyPath = dependency;
+                if (dependency.Contains("::", StringComparison.Ordinal))
+                {
+                    var parts = dependency.Split("::", StringSplitOptions.None);
+                    var uid = ResourceUid.TextToId(parts[0]);
+                    dependencyPath = ResourceUid.HasId(uid) ? ResourceUid.GetIdPath(uid) : parts[2];
+                }
+
+                foreach (var globalClass in globalClasses)
+                {
+                    if (globalClass["path"].AsString() == dependencyPath &&
+                        globalClass["class"].AsString().Contains("AssetBundle", StringComparison.Ordinal))
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>从 Resource 读取 Bundle 信息，并扫描文件夹内的具体文件</summary>
@@ -511,18 +541,9 @@ namespace GodotGameFramework.Editor
         /// <summary>添加单个资源条目到 BundleInfo</summary>
         private void AddResourceItem(BundleInfo info, string fullPath, string fileName)
         {
-            // 跳过 AssetBundle 元数据文件自身
+            // 包标记已在第一轮扫描中完成类型校验，无需再次加载普通资源。
             var ext = Path.GetExtension(fileName)?.ToLower();
-            if (ext is ".tres" or ".res")
-            {
-                var resCheck = ResourceLoader.Load(fullPath);
-                if (resCheck != null)
-                {
-                    var script = resCheck.GetScript().As<Script>();
-                    if (script != null && script.GetGlobalName().ToString().Contains("AssetBundle"))
-                        return;
-                }
-            }
+            if (_bundles.ContainsKey(fullPath)) return;
 
             var typeLabel = GetTypeLabel(ext, fileName);
             long fileSize = GetFileSize(fullPath);
@@ -831,7 +852,7 @@ namespace GodotGameFramework.Editor
             }
         }
 
-        private static void PackDirectoryContents(PckPacker packer, string dirPath, BundleInfo bundle)
+        private void PackDirectoryContents(PckPacker packer, string dirPath, BundleInfo bundle)
         {
             var dir = DirAccess.Open(dirPath);
             if (dir == null) return;
@@ -855,20 +876,11 @@ namespace GodotGameFramework.Editor
                 }
                 else
                 {
-                    // 跳过 AssetBundle 元数据文件
-                    var ext = Path.GetExtension(fileName)?.ToLower();
-                    if (ext is ".tres" or ".res")
+                    // 复用已识别的包标记，不为导出筛选加载普通资源。
+                    if (_bundles.ContainsKey(fullPath))
                     {
-                        var resCheck = ResourceLoader.Load(fullPath);
-                        if (resCheck != null)
-                        {
-                            var script = resCheck.GetScript().As<Script>();
-                            if (script != null && script.GetGlobalName().ToString().Contains("AssetBundle"))
-                            {
-                                fileName = dir.GetNext();
-                                continue;
-                            }
-                        }
+                        fileName = dir.GetNext();
+                        continue;
                     }
 
                     PackFileWithImport(packer, fullPath, bundle.ExportOnlyImported);
