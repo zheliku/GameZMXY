@@ -1,3 +1,6 @@
+using GameConfig.Entity;
+using GameLogic.Monsters.Body;
+using GameLogic.Heroes.Body;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,13 +27,12 @@ public sealed class ConfigurationSystem : AbstractSystem
     /// <summary>配置模型先注册，随后执行一次跨表校验。</summary>
     protected override void OnInit()
     {
-        var configuration = this.GetModel<ConfigurationModel>();
-        ValidateTables(configuration.Tables, configuration.ExperienceCurve);
+        ValidateTables(this.GetModel<ConfigurationModel>().Tables, this.GetUtility<ExperienceCurve>());
     }
 
     /// <summary>校验全部启动约束，汇总所有错误后一次抛出。</summary>
     /// <param name="tables">已加载的配置总表。</param>
-    /// <param name="curve">模型已构建的共享曲线；独立校验未提供时才构建。</param>
+    /// <param name="curve">已注册的共享曲线；独立校验未提供时才构建。</param>
     /// <returns>经过校验的共享经验曲线（供档案与存档使用，避免重复构建）。</returns>
     /// <exception cref="ArgumentNullException">总表为空。</exception>
     /// <exception cref="InvalidOperationException">任一约束不满足；消息列出全部问题。</exception>
@@ -159,9 +161,8 @@ public sealed class ConfigurationSystem : AbstractSystem
     {
         var drop = tables.TbDropConfig.Data;
         if (!float.IsFinite(drop.GroundLifetime) || drop.GroundLifetime <= 0 ||
-            !float.IsFinite(drop.GroundGravity) || drop.GroundGravity <= 0 ||
-            !float.IsFinite(drop.GroundPickupRadius) || drop.GroundPickupRadius <= 0)
-            errors.Add("地面掉落：存在秒数、重力与接触半径必须为有限正数。");
+            !float.IsFinite(drop.GroundGravity) || drop.GroundGravity <= 0)
+            errors.Add("地面掉落：存在秒数与重力必须为有限正数。");
         float chance = 0;
         foreach (var pickup in tables.TbPickupConfig.DataList)
         {
@@ -509,5 +510,23 @@ public sealed class ConfigurationSystem : AbstractSystem
                 string.IsNullOrWhiteSpace(level.NameCn) || string.IsNullOrWhiteSpace(level.Description))
                 errors.Add($"被动 {level.PassiveId}/{level.Level}：费用、效果或文字无效。");
         }
+    }
+
+    /// <summary>首次加载同类英雄时建立参数，后续池实例复用。</summary>
+    /// <param name="heroId">英雄配置主键。</param>
+    /// <param name="create">从当前场景动画读取纯数据的工厂；模型不保留委托。</param>
+    public void EnsureHeroBodyParams(int heroId, Func<HeroBodyParams> create)
+    {
+        if (!this.GetModel<ConfigurationModel>().HeroBodies.ContainsKey(heroId))
+            this.GetModel<ConfigurationModel>().HeroBodies.Add(heroId, create());
+    }
+
+    /// <summary>首次加载同类怪物时建立参数，后续池实例复用。</summary>
+    /// <param name="entityId">怪物实体类型。</param>
+    /// <param name="create">从当前场景动画读取纯数据的工厂；模型不保留委托。</param>
+    public void EnsureMonsterBodyParams(EntityId entityId, Func<MonsterBodyParams> create)
+    {
+        if (!this.GetModel<ConfigurationModel>().MonsterBodies.ContainsKey(entityId))
+            this.GetModel<ConfigurationModel>().MonsterBodies.Add(entityId, create());
     }
 }

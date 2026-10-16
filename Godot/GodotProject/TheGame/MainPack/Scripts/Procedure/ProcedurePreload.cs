@@ -78,6 +78,7 @@ public class ProcedurePreload : ProcedureBase
         }
         ChangeState<ProcedureTitle>(procedureOwner);
     }
+
     /// <summary>使在途加载结果失效，不让旧周期继续启动游戏。</summary>
     /// <param name="procedureOwner">流程状态机。</param>
     /// <param name="isShutdown">是否框架关停。</param>
@@ -86,5 +87,4 @@ public class ProcedurePreload : ProcedureBase
         ++m_EntrySerial;
         base.OnLeave(procedureOwner, isShutdown);
     }
-
 }

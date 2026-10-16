@@ -15,10 +15,6 @@ namespace GameLogic.UI.Widgets;
 /// <summary>背包面板统一管理分类、格子、分页、钱包和品质出售选择，不执行交易。</summary>
 public partial class InventoryBagPanel : Control, IController
 {
-    /// <summary>借用所属主流程的共享数据访问入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
-
     private const int PageSize = 25; // 每页固定 5×5 格。
     private const int MaximumPages = 3; // 当前场景支持的装备页数。
     [Export] private Control m_Tabs; // 四个分类按钮的容器。
@@ -68,12 +64,16 @@ public partial class InventoryBagPanel : Control, IController
         m_QualityOptions.IdPressed += OnQualitySelected;
     }
 
+    /// <summary>借用所属主流程的共享数据访问入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     /// <summary>更新只读显示数据；窗口打开时明确重置到装备第一页。</summary>
     /// <param name="resetPage">是否开始新的窗口周期。</param>
     /// <exception cref="InvalidOperationException">容量超过当前三页的显示能力。</exception>
     public void Refresh(bool resetPage = false)
     {
-        var inventory = this.GetModel<PlayerModel>().Inventory;
+        var inventory = this.GetModel<ProfileModel>();
         if (inventory.Capacity > PageSize * MaximumPages)
             throw new InvalidOperationException("背包容量超过当前三页界面的显示上限。");
         m_IsBound = true;
@@ -132,13 +132,13 @@ public partial class InventoryBagPanel : Control, IController
     /// <summary>装备按容量分页，尚无数据的分类只显示一页。</summary>
     /// <returns>当前分类的总页数。</returns>
     private int PageCount() => m_SelectedTab == 0
-        ? (this.GetModel<PlayerModel>().Inventory.Capacity + PageSize - 1) / PageSize
+        ? (this.GetModel<ProfileModel>().Capacity + PageSize - 1) / PageSize
         : 1;
 
     /// <summary>按当前分类和页号刷新全部控件，并关闭过期出售选项。</summary>
     private void RefreshView()
     {
-        var items = m_SelectedTab == 0 ? this.GetModel<PlayerModel>().Inventory.Items : null;
+        var items = m_SelectedTab == 0 ? this.GetModel<ProfileModel>().Items : null;
         for (int i = 0; i < m_TabButtons.Length; i++)
             m_TabButtons[i].SetPressedNoSignal(i == m_SelectedTab);
         // 隐藏期间更新整页，避免相邻格出现新旧输入混合。
@@ -154,7 +154,7 @@ public partial class InventoryBagPanel : Control, IController
         }
 
         m_Grid.Show();
-        m_SoulText.Text = this.GetModel<PlayerModel>().Wallet.Soul.ToString();
+        m_SoulText.Text = this.GetModel<ProfileModel>().Soul.Value.ToString();
         m_PageNumber.Text = $"{m_PageIndex + 1} / {PageCount()}";
         SetPageButton(m_PreviousPage, m_PageIndex > 0);
         SetPageButton(m_NextPage, m_PageIndex + 1 < PageCount());
@@ -200,7 +200,7 @@ public partial class InventoryBagPanel : Control, IController
             var (count, price) = GetSummary(quality);
             m_QualityOptions.AddItem($"出售{quality.DisplayName()}装备（{count}）", (int)quality);
             int index = m_QualityOptions.ItemCount - 1;
-            bool overflow = price > int.MaxValue - this.GetModel<PlayerModel>().Wallet.Soul;
+            bool overflow = price > int.MaxValue - this.GetModel<ProfileModel>().Soul.Value;
             m_QualityOptions.SetItemDisabled(index, count == 0 || overflow);
             m_QualityOptions.SetItemTooltip(index, overflow ? "出售后灵魂将超过上限" : $"获得 {price} 灵魂");
         }
@@ -220,7 +220,7 @@ public partial class InventoryBagPanel : Control, IController
     {
         int count = 0;
         long price = 0;
-        foreach (var item in this.GetModel<PlayerModel>().Inventory.Items)
+        foreach (var item in this.GetModel<ProfileModel>().Items)
         {
             var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
             if (definition.Quality != quality)
@@ -241,7 +241,7 @@ public partial class InventoryBagPanel : Control, IController
             return;
         var quality = (EquipmentQuality)id;
         var (count, price) = GetSummary(quality);
-        if (count == 0 || price > int.MaxValue - this.GetModel<PlayerModel>().Wallet.Soul)
+        if (count == 0 || price > int.MaxValue - this.GetModel<ProfileModel>().Soul.Value)
             return;
         m_QualityOptions.Hide();
         QualitySelected?.Invoke(quality, count, price);

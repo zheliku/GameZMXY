@@ -1,5 +1,6 @@
 using Godot;
 using System;
+
 /// <summary>实体对象池分组资源。</summary>
 [GlobalClass]
 public partial class EntityGroupRes : Resource

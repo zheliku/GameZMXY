@@ -14,6 +14,7 @@ public partial class NodePoolConfig : Resource
     /// </summary>
     [Export]
     public Array<PoolEntry> Entries { get; set; } = new();
+
     /// <summary>
     /// 全局默认池容量（单条目未配置时使用）。
     /// </summary>

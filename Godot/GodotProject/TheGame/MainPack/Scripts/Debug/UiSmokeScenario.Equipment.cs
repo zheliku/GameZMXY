@@ -1,3 +1,4 @@
+using GameLogic.Battle;
 using GameLogic.Architecture;
 using GameLogic.Save;
 using GameLogic.Profile;
@@ -30,7 +31,7 @@ public sealed partial class UiSmokeScenario
     {
         var tables = ConfigSystem.Instance.Tables;
         var owned = SmokeInspection.ReadField<HashSet<GroundItemNode>>(level, "m_GroundItems");
-        var original = flow.GetModel<PlayerModel>().Inventory.Items.ToArray();
+        var original = flow.GetModel<ProfileModel>().Items.ToArray();
         SpawnGround(level, hero.GlobalPosition + new Vector2(180, -80), tables.TbPickupConfig.Get(PickupId.SmallPeach), null);
         var peach = owned.Single();
         await WaitUntilAsync(() => peach.IsOnFloor(), "桃子没有落到实际关卡地形上", 5000);
@@ -44,7 +45,7 @@ public sealed partial class UiSmokeScenario
         otherBody.AddChild(new CollisionShape2D { Shape = new CircleShape2D { Radius = 20 } });
         level.AddChild(otherBody);
         await WaitFramesAsync(6);
-        Check(peach.GetNode<Area2D>("PickupArea").GetOverlappingBodies().Contains(otherBody) &&
+        Check(GroundOverlaps(peach, otherBody) &&
             !SmokeInspection.ReadField<bool>(peach, "m_Collected"), "非英雄碰撞体触发了拾取");
         otherBody.QueueFree();
         WukongEntity foreignHero = new()
@@ -60,29 +61,29 @@ public sealed partial class UiSmokeScenario
         foreignHero.SetPhysicsProcess(false);
         foreignHero.SetProcess(false);
         await WaitFramesAsync(6);
-        Check(peach.GetNode<Area2D>("PickupArea").GetOverlappingBodies().Contains(foreignHero) &&
+        Check(GroundOverlaps(peach, foreignHero) &&
             !SmokeInspection.ReadField<bool>(peach, "m_Collected"), "其他会话英雄领取了本关物品");
         foreignHero.QueueFree();
         float age = SmokeInspection.ReadField<float>(peach, "m_Age");
         GF.Base.PauseGame();
         await WaitFramesAsync(12);
         Check(SmokeInspection.ReadField<float>(peach, "m_Age") == age, "暂停时地面物品仍在过期");
-        hero.Vitals.Damage(hero.Vitals.Hp - 1);
+        GF.Fsm.GetSystem<HeroSystem>().Damage(GF.Fsm.GetModel<HeroModel>().Hp.Value - 1);
         peach.GlobalPosition = hero.HurtBox.GetGlobalBounds().GetCenter();
         await WaitFramesAsync(6);
-        Check(hero.Vitals.Hp == 1 && !SmokeInspection.ReadField<bool>(peach, "m_Collected"),
+        Check(GF.Fsm.GetModel<HeroModel>().Hp.Value == 1 && !SmokeInspection.ReadField<bool>(peach, "m_Collected"),
             "暂停时接触仍发放收益");
         GF.Base.ResumeGame();
         await WaitUntilAsync(() => SmokeInspection.ReadField<bool>(peach, "m_Collected"), "真实拾取区域没有识别接触英雄", 3000);
-        Check(owned.Count == 1 && hero.Vitals.Hp == Math.Min(hero.Vitals.MaxHp, 101), "小桃子未即时入账或未保留领取动画");
+        Check(owned.Count == 1 && GF.Fsm.GetModel<HeroModel>().Hp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().MaxHp.Value, 101), "小桃子未即时入账或未保留领取动画");
         var icon = peach.GetNode<Sprite2D>("Icon");
         var pickupPlayer = peach.GetNode<AnimationPlayer>("AnimationPlayer");
-        Check(pickupPlayer.IsPlaying() && !peach.GetNode<Polygon2D>("Shadow").Visible,
+        Check(pickupPlayer.IsPlaying() && !peach.HasNode("Shadow"),
             "领取后未开始上移淡出或仍显示地面阴影");
         GF.Base.PauseGame();
         pickupPlayer.Seek(0, update: true);
         peach._PhysicsProcess(.2);
-        Check(Math.Abs(icon.Position.Y + 61.75f) < .02f && Math.Abs(icon.Modulate.A - .5625f) < .001f,
+        Check(Math.Abs(icon.Position.Y + 43.75f) < .02f && Math.Abs(icon.Modulate.A - .5625f) < .001f,
             "领取动画没有按原版 0.8 秒、上移 100 像素的二次缓出推进");
         Vector2 pausedIconPosition = icon.Position;
         float pausedIconAlpha = icon.Modulate.A;
@@ -91,7 +92,7 @@ public sealed partial class UiSmokeScenario
             "暂停时领取动画继续推进");
         peach._PhysicsProcess(.2);
         await CaptureCombatAsync("pickup_rising");
-        Check(hero.Vitals.Hp == Math.Min(hero.Vitals.MaxHp, 101), "领取动画重复发放恢复收益");
+        Check(GF.Fsm.GetModel<HeroModel>().Hp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().MaxHp.Value, 101), "领取动画重复发放恢复收益");
         peach._PhysicsProcess(.39);
         Check(owned.Contains(peach), "领取动画未满 0.8 秒就提前回池");
         peach._PhysicsProcess(.02);
@@ -100,17 +101,18 @@ public sealed partial class UiSmokeScenario
         SpawnGround(level, hero.GlobalPosition + new Vector2(180, 0), tables.TbPickupConfig.Get(PickupId.ManaBottle), null);
         var bottle = owned.Single();
         Check(ReferenceEquals(peach, bottle), "地面物品没有使用 GGF 节点池复用");
-        Check(icon.Position == new Vector2(0, -18) && icon.Modulate.A == 1 &&
-            bottle.GetNode<Polygon2D>("Shadow").Visible && !pickupPlayer.IsPlaying(),
-            "地面物品复用后未恢复原点、透明度、阴影或动画状态");
-        hero.Vitals.TrySpendMp(hero.Vitals.Mp);
+        CheckGroundShape(bottle);
+        Check(icon.Position == Vector2.Zero && icon.Modulate.A == 1 &&
+            !bottle.HasNode("Shadow") && !pickupPlayer.IsPlaying(),
+            "地面物品复用后未恢复原点、透明度、无阴影或动画状态");
+        GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(GF.Fsm.GetModel<HeroModel>().Mp.Value);
         bottle._PhysicsProcess(1.0 / 60);
         await WaitFramesAsync(4);
-        Check(hero.Vitals.Mp == 0 && !SmokeInspection.ReadField<bool>(bottle, "m_Collected"),
+        Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == 0 && !SmokeInspection.ReadField<bool>(bottle, "m_Collected"),
             "池复用继承了旧的英雄接触");
         bottle.GlobalPosition = hero.HurtBox.GetGlobalBounds().GetCenter();
         await WaitUntilAsync(() => SmokeInspection.ReadField<bool>(bottle, "m_Collected"), "蓝瓶的真实接触未触发领取", 3000);
-        Check(owned.Count == 1 && hero.Vitals.Mp == Math.Min(hero.Vitals.MaxMp, 100), "蓝瓶没有接触回蓝或超出上限");
+        Check(owned.Count == 1 && GF.Fsm.GetModel<HeroModel>().Mp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().MaxMp.Value, 100), "蓝瓶没有接触回蓝或超出上限");
         bottle._PhysicsProcess(.81);
         Check(owned.Count == 0, "蓝瓶领取动画结束后未回池");
         var floatingText = SmokeInspection.ReadField<GameLogic.FloatingText.FloatingTextPresenter>(level, "m_FloatingText");
@@ -147,23 +149,23 @@ public sealed partial class UiSmokeScenario
         Check(numbers.Count == 0, "恢复数字没有按一秒生命周期回池");
 
         var item = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.CommonPineStaff, () => .75f);
-        while (flow.GetModel<PlayerModel>().Inventory.Items.Count < flow.GetModel<PlayerModel>().Inventory.Capacity)
-            flow.GetModel<PlayerModel>().Inventory.TryAdd(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.RoughCassock, () => 0));
+        while (flow.GetModel<ProfileModel>().Items.Count < flow.GetModel<ProfileModel>().Capacity)
+            flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.RoughCassock, () => 0));
         SpawnGround(level, hero.HurtBox.GetGlobalBounds().GetCenter(), null, item);
         var gear = owned.Single();
         await WaitFramesAsync(6);
-        Check(gear.GetNode<Area2D>("PickupArea").GetOverlappingBodies().Contains(hero) && owned.Count == 1 &&
-            !flow.GetModel<PlayerModel>().Inventory.Items.Any(x => x.InstanceId == item.InstanceId), "满包时装备消失或超出容量");
+        Check(GroundOverlaps(gear, hero) && owned.Count == 1 &&
+            !flow.GetModel<ProfileModel>().Items.Any(x => x.InstanceId == item.InstanceId), "满包时装备消失或超出容量");
         Check(!gear.GetNode<AnimationPlayer>("AnimationPlayer").IsPlaying(), "满包拒绝领取却播放了领取动画");
-        flow.GetModel<PlayerModel>().Inventory.Restore(original);
+        flow.GetModel<ProfileModel>().RestoreItems(original);
         await WaitUntilAsync(() => SmokeInspection.ReadField<bool>(gear, "m_Collected"), "满包腾出空间后未重试实际接触", 3000);
-        Check(owned.Count == 1 && flow.GetModel<PlayerModel>().Inventory.Items.Last().InstanceId == item.InstanceId, "腾出空间后没有领取同一装备实例");
+        Check(owned.Count == 1 && flow.GetModel<ProfileModel>().Items.Last().InstanceId == item.InstanceId, "腾出空间后没有领取同一装备实例");
         gear.GetNode<AnimationPlayer>("AnimationPlayer").Seek(0, update: true);
         gear._PhysicsProcess(.4);
-        Check(flow.GetModel<PlayerModel>().Inventory.Items.Count == original.Length + 1, "装备领取动画重复发放装备");
+        Check(flow.GetModel<ProfileModel>().Items.Count == original.Length + 1, "装备领取动画重复发放装备");
         gear._PhysicsProcess(.41);
         Check(owned.Count == 0, "装备领取动画结束后未回池");
-        flow.GetModel<PlayerModel>().Inventory.Restore(original);
+        flow.GetModel<ProfileModel>().RestoreItems(original);
 
         SpawnGround(level, hero.GlobalPosition + new Vector2(180, -80), null, item);
         gear = owned.Single();
@@ -171,14 +173,21 @@ public sealed partial class UiSmokeScenario
         gear._PhysicsProcess(.02);
         Check(owned.Count == 0, "地面物品没有按秒过期");
 
+        int groundIndex = 0;
         foreach (var pickup in tables.TbPickupConfig.DataList)
-            SpawnGround(level, hero.GlobalPosition + new Vector2(110 + (int)pickup.Id * 55, -80), pickup, null);
-        SpawnGround(level, hero.GlobalPosition + new Vector2(330, -80), null, item);
-        await WaitUntilAsync(() => owned.Count == 4 && owned.All(x => x.IsOnFloor()), "地面物品画面夹具没有全部落地", 5000);
+            SpawnGround(level, hero.GlobalPosition + new Vector2(110 + groundIndex++ * 45, -80), pickup, null);
+        // 覆盖所有装备，尤其是画布下方有透明留白的唐僧武器与防具。
+        foreach (var equipment in tables.TbEquipmentConfig.DataList)
+            SpawnGround(level, hero.GlobalPosition + new Vector2(110 + groundIndex++ * 45, -80), null,
+                flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), equipment.Id, () => 0));
+        await WaitUntilAsync(() => owned.Count == tables.TbPickupConfig.DataList.Count + tables.TbEquipmentConfig.DataList.Count &&
+            owned.All(x => x.IsOnFloor()), "地面物品画面夹具没有全部落地", 5000);
+        foreach (var node in owned)
+            CheckGroundShape(node);
         await CaptureCombatAsync("ground_pickups");
         foreach (var node in owned.ToArray())
             typeof(LevelViewController).GetMethod("OnGroundItemFinished", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(level, [node]);
-        GD.Print("SMOKE-UI: ground physics, pickup rise/fade, single transaction, pause, full inventory, expiration and pool reuse passed");
+        GD.Print("SMOKE-UI: all pickup/equipment opaque bottoms aligned to ground shape, no shadow, pickup rise/fade, single transaction, pause, full inventory, expiration and pool reuse passed");
     }
 
     /// <summary>用关卡正式创建方法生成受控夹具，不增加生产测试 API。</summary>
@@ -189,4 +198,49 @@ public sealed partial class UiSmokeScenario
     private static void SpawnGround(LevelViewController level, Vector2 position, PickupConfig pickup, EquipmentInstance equipment) =>
         typeof(LevelViewController).GetMethod("ShowGroundItem", BindingFlags.NonPublic | BindingFlags.Instance)
             .Invoke(level, [position, pickup?.Id ?? PickupId.None, equipment]);
+
+    /// <summary>测试侧用实际唯一形状查询接触，不为生产代码增加观测接口。</summary>
+    /// <param name="node">地面物品。</param>
+    /// <param name="body">接触的身体。</param>
+    /// <returns>物品形状是否与身体重叠。</returns>
+    private static bool GroundOverlaps(GroundItemNode node, Node2D body)
+    {
+        var shape = node.GetNode<CollisionShape2D>("Shape");
+        using var query = new PhysicsShapeQueryParameters2D
+        {
+            Shape = shape.Shape,
+            Transform = shape.GlobalTransform,
+            CollisionMask = LayerMask.LayerToMask2D("PlayerBody")
+        };
+        return node.GetWorld2D().DirectSpaceState.IntersectShape(query)
+            .Any(hit => ReferenceEquals(hit["collider"].AsGodotObject(), body));
+    }
+
+    /// <summary>逐像素独立检查可见底边与碰撞底边对齐，碰撞尺寸保持统一且没有第二范围或阴影。</summary>
+    /// <param name="node">已经显示的物品，尚未播放领取动画。</param>
+    private static void CheckGroundShape(GroundItemNode node)
+    {
+        Check(node.GetChildren().OfType<CollisionShape2D>().Count() == 1 &&
+            !node.GetChildren().OfType<Area2D>().Any() && !node.HasNode("Shadow"), "物品保留了两个碰撞范围或阴影");
+        var shapeNode = node.GetNode<CollisionShape2D>("Shape");
+        var shape = (RectangleShape2D)shapeNode.Shape;
+        var icon = node.GetNode<Sprite2D>("Icon");
+        Check(shape.Size.IsEqualApprox(new Vector2(32, 40)) && shapeNode.Position.IsEqualApprox(new Vector2(0, -20)),
+            "地面物品没有使用统一预设碰撞盒");
+        using var image = icon.Texture.GetImage();
+        Check(image != null && (!image.IsCompressed() || image.Decompress() == Error.Ok), "掉落物图标不可读取");
+        int opaqueBottom = 0;
+        for (int y = image.GetHeight() - 1; y >= 0 && opaqueBottom == 0; y--)
+            for (int x = 0; x < image.GetWidth(); x++)
+                if (image.GetPixel(x, y).A > 0)
+                {
+                    opaqueBottom = y + 1;
+                    break;
+                }
+        float visibleBottom = icon.ToGlobal(icon.Offset + new Vector2(0,
+            opaqueBottom - icon.Texture.GetHeight() * .5f)).Y;
+        float collisionBottom = (shapeNode.GlobalTransform * shape.GetRect()).End.Y;
+        Check(icon.Centered && opaqueBottom > 0 && Math.Abs(visibleBottom - collisionBottom) < .01f,
+            $"图标非透明底边没有对齐碰撞底边：{icon.Texture.ResourcePath}，可见底边 {visibleBottom}，碰撞底边 {collisionBottom}");
+    }
 }

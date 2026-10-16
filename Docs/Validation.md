@@ -33,6 +33,161 @@ XLSX Diff 1.6.4 的解析器无法读取带 `x:` 前缀的 SpreadsheetML 标签�
 
 装备背包与实际详情为 `inventory_equipment.png`，操作菜单为 `inventory_actions.png`，武器/防具同时穿戴为 `inventory_wearing.png`，绿色/蓝色恢复数字为 `recovery_numbers.png`；无名称的地面恢复品和装备为 `ground_pickups.png`；地图默认边缘闪烁的两端画面为 `frontend/map_current_low.png`、`frontend/map_current.png`。
 
+## 地面物品透明留白贴地（2026-10-16）
+
+`GroundItemNode` 按非透明区域底边与实际碰撞体底边对齐，考虑图标缩放，通过 Offset 保留领取动画的 Position 轨道。袈裟/行者服原先悬空约 4.9 像素；原图、32×40 碰撞盒、接触范围和领取规则不变。规则依据第 40 章的资源与动画职责、第 50 章的真实引擎验证；没有修改规范正文或只读资源。
+
+当前工程编辑器打开，以下构建及引擎检查在 `.godot/validation/ground_alignment/project` 隔离副本执行，避免 C# 热重载；使用烟测独立存档。
+
+| 验证 | 结果 |
+| --- | --- |
+| `dotnet build <隔离副本> -v quiet` | 0 错误、5 个既有框架警告 |
+| Godot `--path <隔离副本> --rendering-method gl_compatibility -- --smoketest=ui` | SMOKE PASS、退出 0；逐像素检查全部 8 种装备、3 种恢复品与池复用的可见底边；落地、拾取上移淡出、暂停、满包、过期及背包回归通过 |
+| `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry` | 441 路径、278 UID、23 几何节点通过 |
+| `dotnet format whitespace . --folder --include <本轮两个 C# 文件> --verify-no-changes` | 通过 |
+
+已人工检查 `ground_alignment/ground_pickups.png`，各图标贴地；日志为同目录 `build.log`、`ui.log`。UI 缺绑定仍为预期失败注入；既有 Framework WebRequest 退出释放异常及 4 个 ObjectDB 泄漏仍在，本轮未修改框架。贴地修复无未完成项。
+
+## Bindable 简化与 QFramework / GGF 核对（2026-10-16）
+
+依据用户最新要求，删除全部手动补发通知 API 和旧/新双值回调；HP、最终属性、无双、换装、出售、回滚均使用正常赋值和集合操作。Property、List、Dictionary 的 Register / RegisterWithInitValue 统一为单参数，整数 priority 默认 0，越大越先执行，同优先级按注册顺序。只共用内部订阅列表，没有 BindableEvent、优先级枚举或第二个全局事件系统。
+
+对照 QFramework 官方核心和 BindableKit 源码恢复列表标准操作、Move 和逐项通知，补充泛型 BindableDictionary、键比较器、转换方法及实时只读回调视图。集合不再为每次通知复制前后快照；字典输入复制，避免外部写入绕过通知。不移植 Unity/EasyEvent、旧格式化序列化或 QFramework IOC。Model/System/Utility 仍由 GGF 主流程 FSM GetData/SetData 持有与访问。
+
+HeroSystem 成长/穿戴同步的优先级为 100，UI 默认 0；新增 UI 先注册的实测，证明派生属性先同步。删空 AbstractUtility，工具直接实现 IUtility；SaveDataUtility.Capture 显式接收 ProfileModel，不查询 Architecture；ExperienceCurve 独立注册，不在 ConfigurationModel 重复持有。扫描 195 份手写游戏 C#，核对 5 个 Model、10 个 System、4 个 Utility 及流程注册/移除：未发现 Model 查询 Model/System 或 Utility 反向查询架构。
+
+| 验证 | 结果 |
+| --- | --- |
+| `dotnet build Godot/GodotProject --no-restore -v quiet` | 0 错误，5 个既有框架警告 |
+| `dotnet test Tests/BattleTests --no-restore -v quiet` | 165/165；死亡、无双重置、属性重算与动作规则通过 |
+| `dotnet test Tests/ProfileTests --no-restore -v quiet` | 118/118；整数极值优先级、稳定顺序、重复退订、分发中增删/嵌套赋值、初始化失败清理、标准列表/字典操作、只读视图、坏输入和真实换装/回滚通过 |
+| `dotnet test Tests/LevelTests --no-restore -v quiet` | 18/18；共 301 项通过 |
+| OpenGL `--smoketest=ui` | SMOKE PASS、退出 0；数值、换装、出售、无双、暂停、退订与池复用通过 |
+| OpenGL `--smoketest=frontend` | SMOKE PASS、退出 0；启动、六格档案、地图、保存、回滚、作用域与生命周期通过 |
+| OpenGL `--smoketest=level` | SMOKE PASS、退出 0；五波、结局导航、自动保存与地图重读通过 |
+| F6 `--headless --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360` | 玩家与两只怪物就绪，独立装配正常，退出 0 |
+| `validate_game_references.py --compare-staged-geometry` | 441 路径、278 UID、23 几何节点通过 |
+| `dotnet format whitespace . --folder --include <手写文件清单> --verify-no-changes` | 214 份手写 C# 格式通过；UTF-8/CRLF、文档链接与 git diff --check 通过 |
+
+代码全仓确认没有手动通知 API、双值绑定、BindableEvent、AbstractUtility 或旧字段反射依赖；烟测反射适配在测试侧完成，没有新增生产测试接口。459 个框架、插件和生成文件 SHA-256 未变；没有暂存或提交。第 00/10 章仍描述旧架构及整批 Changed 约定，本轮依据用户最新要求采用 Model/System 和单值同步绑定，未自行修改规范正文。多个独立状态源依业务顺序通知，不再承诺它们在每个属性回调中都同时改变。
+
+日志在忽略的 `.godot/validation/qf_binding_review/`。既有 NU1900、CS8632 与 Framework WebRequest 关停 ObjectDisposedException 仍在；UI/frontend/level/arena 分别有 4/3/4/3 个退出对象泄漏。编辑器扫描退出 0，仍有 ComponentInsoector 的 RefCounted 释放报错；未修改插件。坏存档、旧档案写入拒绝和 HUD 缺绑定为失败注入，不将完整日志称为零错误。
+
+以下条目保留历史验证结果；当前绑定契约以上节和 ProjectTour 为准。
+
+## Model 写入职责与全项目 C# 整理（2026-10-16）
+
+Model 只保存数据与查询，System 直接修改绑定属性。删除 Profile/Hero/Level/Save/Configuration Models 中的业务修改方法与对应纯转发；保留完整事务提交顺序。关卡规则测试调用正式 LevelSystem，仅用测试侧 SaveSystem 替身隔离磁盘；未增加生产测试 API。
+
+| 验证 | 结果 |
+| --- | --- |
+| `dotnet build Godot/GodotProject --no-restore -v quiet` | 0 错误，5 个既有框架警告 |
+| `dotnet test Tests/BattleTests --no-restore -v quiet` | 165/165；新增无双三字段提交后通知与相等值不重复通知 |
+| `dotnet test Tests/ProfileTests --no-restore -v quiet` | 106/106；正式 System 奖励/穿戴/回滚、关卡计时与冻结、重复开始/结局保护 |
+| `dotnet test Tests/LevelTests --no-restore -v quiet` | 18/18；合计 289 项通过 |
+| Godot `--headless --editor --build-solutions --quit --no-window` | 脚本扫描及构建完成，退出 0 |
+| OpenGL `--smoketest=frontend` / `ui` / `level` / `level-cancel` | 四组 SMOKE PASS、退出 0；保存回滚、背包绑定与复用、整关结算和加载取消通过 |
+| F6 `--headless --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360` | 玩家与两只怪物就绪，独立模型/系统装配正常，退出 0 |
+| `validate_game_references.py --compare-staged-geometry` | 441 路径、278 UID、23 几何节点通过 |
+| `dotnet format whitespace . --folder --include <手写文件清单> --verify-no-changes` | 212 份手写 C# 全部通过；UTF-8 无 BOM、CRLF 通过 |
+
+成员按字段、事件、属性、构造、生命周期、其他方法与嵌套类型归类，共整理 78 个类型。Roslyn 保留成员内容并核对语法标记；11 组跨字段/属性初始化顺序变化均无依赖（测试实例独立初始化、SaveModel 常量），构建与运行验证通过。相对暂存版本，180 个文件语法标记不变，31 个为上述业务及测试调整，1 个为测试磁盘替身；459 个框架/插件/生成文件的 SHA-256 与 Git 索引均不变。
+
+日志与手写清单在忽略的 `.godot/validation/model_writes_{build,battle,profile,levelrules,scan,frontend,ui,level,cancel,arena,format,editorconfig,token_audit}.log`、`layout_manifest.json`。UI 测试同步改读现有内部关卡属性，不再反射已移除的旧字段。
+
+仍有既有 NU1900 网络警告、BattleTests CS8632 警告、ComponentInsoector 编辑器退出释放错误及 Framework WebRequest 关停 ObjectDisposedException；frontend/UI/level/cancel/F6 分别报告 3/4/4/4/3 个退出泄漏。HUD 装配失败、坏存档和跨槽拒绝是预期失败注入，不将完整日志称为零错误。本轮遵循集中规范的只读边界和验证要求；第 00/10/70 章旧 Model 修改方法、架构及绑定约定与用户最新方向冲突，按用户指令实现，规范正文未自行更改。
+
+## Model 按生命周期归并与系统职责（2026-10-16）
+
+本轮实现以用户最新确认的合并方向为准：本局属性、HP/MP/WS 合入 HeroModel；成长、穿戴、背包、灵魂直接合入 ProfileModel，不保留子 Model 或兼容别名。ConfigurationModel、SaveModel、LevelModel 因数据归属和生命周期独立而保留。主流程 FSM 仍是唯一注册持有者。
+
+HeroSystem 承担属性汇总、成长/装备联动、资源与无双规则；ProfileSystem 承担奖励、装备归属校验和检查点回滚；SaveSystem 接管手动保存的状态与过期结果校验。Model 保留内部 CRUD 和完整提交，对外只读，UI/Entity 修改经系统。删除正式 Model 中仅测试使用的三个恢复入口，夹具移到 Debug/ProfileTestData.cs，纯测试链接同一文件。导航回调与直接 GGF UI 调用的区别见 ProjectTour。
+
+| 验证 | 结果 |
+| --- | --- |
+| `dotnet build Godot/GodotProject --no-restore -v:q -nologo` | 0 错误、5 个既有框架警告 |
+| `dotnet test Tests/BattleTests --no-restore -v:q -nologo` | 164/164；含死亡时 HP/无双完整提交、无双倍率开启/结束 |
+| `dotnet test Tests/ProfileTests --no-restore -v:q -nologo` | 106/106；含换装、升级、已穿戴实例重复领取拒绝、回滚完整性与绑定身份 |
+| `dotnet test Tests/LevelTests --no-restore -v:q -nologo` | 18/18；三组共 288 项通过 |
+| Godot `--headless --editor --build-solutions --quit --no-window` | 扫描和构建完成、退出 0 |
+| OpenGL `--smoketest=frontend` | SMOKE PASS、退出 0；六格保存重读、跨槽拒绝、模型同一引用、入关订阅与离关退订、回标题清理 |
+| OpenGL `--smoketest=ui` | 最终构建 SMOKE PASS、退出 0；生命/魔法/无双绑定、穿脱与出售、预览、结算重试、取消、失败清理与重入 |
+| OpenGL `--smoketest=level` | SMOKE PASS、退出 0；五波、守关条、出口、检查点和地图重读 |
+| OpenGL `--smoketest=level-cancel` | SMOKE PASS、退出 0；在途取消及迟到实体回收 |
+| F6 `--headless --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360` | 最终构建退出 0；玩家及两只怪物正常显示，无启动/运行空引用 |
+| `validate_game_references.py --compare-staged-geometry` | 441 条序列化路径、278 个 UID、23 个几何节点通过 |
+| 本地 Markdown 链接、UTF-8/CRLF、`git diff --check` / `git diff --cached --check` | 通过；本轮未修改 Framework/addons/生成物/配置/规范正文，原暂存区保留 |
+
+F6 初次验证发现合并注册块时漏掉配置、输入、战斗、AI、掉落系统，导致玩家 OnShow 空引用；补回注册并修正清理分支的括号后，重跑通过。日志保留最终成功运行。
+
+日志：`Godot/GodotProject/.godot/validation/model_merge_{build,battle,profile,levelrules,scan,frontend,ui_final,level,cancel,arena}.log`。
+
+已知异常单独记录：UI 故意破坏 HUD 绑定以验证失败清理；frontend 故意注入坏档和跨槽旧档请求；编辑器退出仍有 ComponentInsoector Free/RefCounted 错误，运行退出仍有 DefaultWebRequestAgentHelper.Reset ObjectDisposedException 和 ObjectDB 泄漏警告。这些不是零错误日志。包源不可达时单测有 NU1900，BattleTests 另有原有 CS8632。未修改只读框架或插件处理上述问题。第 00/10/70 章旧架构描述与本轮用户指令冲突，已报告并保留规范正文。
+
+## 英雄逐项属性与 UI 回调（2026-10-16，历史记录）
+
+按用户最新要求，HeroRuntimeModel 更名为 HeroAttributeModel，删除 ActorAttributes、HeroLoadout 和装配工厂。等级、HP/MP/WS 与全部 16 项最终数值各自可绑定；Model 管来源、重算与钳制，HeroAttributeSystem 协调成长和穿戴。升级/回滚同时更新基础和装备，只重算一次；属性通知读取完整结果。Entity 即时 GetModel，Show 不传数据，Hide 仅清理表现。SaveDataUtility.Capture / RestoreCheckpoint 改为调用期间借用 IArchitecture。
+
+删除 MutateWithoutEvent；保留内部静默提交与显式通知，用于事务一致性。UiRequestKind / UiRequestEventArgs 删除，窗口通过具名回调交给流程；仍由 GGF 打开窗口。关闭清空回调，拒绝迟到通知重新绑定，池复用保持唯一绑定。未添加生产测试接口，测试通过现有属性和反射检查生命周期。
+
+| 验证命令 | 结果 |
+| --- | --- |
+| `dotnet build Godot/GodotProject --no-restore -v:q -nologo` | 0 错误，5 个既有框架警告 |
+| `dotnet test Tests/BattleTests --no-restore -v:q -nologo` | 162/162；16 项属性通知、相等值、修正公式、完整重算与已发攻击冻结 |
+| `dotnet test Tests/ProfileTests --no-restore -v:q -nologo` | 105/105；换装/升级自动同步、Buff 保留、检查点回滚观察一致性；同时恢复等级/装备时属性只发布最终结果 |
+| `dotnet test Tests/LevelTests --no-restore -v:q -nologo` | 18/18；三组共 285 项通过 |
+| Godot `--headless --editor --build-solutions --quit --no-window` | 扫描、脚本注册及编译完成，退出 0 |
+| OpenGL `--smoketest=ui` | SMOKE PASS、退出 0；最终代码下的穿脱、升级、资源绑定、结算重试、失败清理与重入通过 |
+| OpenGL `--smoketest=frontend` | SMOKE PASS、退出 0；补充关闭零回调、重开唯一回调、迟到绑定拒绝；属性系统入关唯一订阅、离关完全退订 |
+| OpenGL `--smoketest=level` | SMOKE PASS、退出 0；五波、守关条、出口、结算保存与地图重读 |
+| OpenGL `--smoketest=level-cancel` | SMOKE PASS、退出 0；在途显示取消与迟到回收 |
+| F6 `--headless --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360` | 独立 FSM 的属性模型/系统就绪，玩家和两只怪物正常显示，退出 0 |
+| `validate_game_references.py --compare-staged-geometry` | 441 条序列化路径、278 个 UID、23 个关卡几何节点通过 |
+| 本地 Markdown 链接、UTF-8/CRLF、`git diff --check` / `git diff --cached --check` | 通过；暂存区保留，Framework/addons/生成代码与配置无本轮改动 |
+
+日志位于 `Godot/GodotProject/.godot/validation/attributes_{build,battle,profile,levelrules,scan,ui,frontend,level,cancel,arena}.log`。测试仍有 NU1900 网络警告；编辑器既有 ComponentInsoector 退出释放错误、游戏关停 Framework WebRequest ObjectDisposedException 和 ObjectDB 泄漏未纳入修改。HUD 缺绑定、跨槽和损坏档案仍为预期失败注入，不将完整日志称为零错误。第 00/10/70 章旧架构约定与最新要求冲突，按用户指令实施，规范正文未自行改写。
+
+## Model 归并与数据所有权（2026-10-16，历史记录）
+
+以下是上一轮结果；ActorAttributes 容器、HeroLoadout 和 UI 请求事件已由上方实现取代。
+
+按用户最新要求将英雄最终属性、等级、HP/MP/WS 合并为关卡注册的 HeroRuntimeModel，删除 Vitals、MusouGauge 和私有 ActorModel。档案分别注册 HeroProgressionModel、InventoryModel、HeroEquipmentModel；灵魂并入背包资产，不再保留 PlayerModel 聚合层或 Wallet。怪物保留普通实例状态，扣血直接刷新自身血条。初始化与借用边界见 [ProjectTour](ProjectTour.md#所有者与初始化位置)。
+
+集合采用 BindableList，换装、出售和回滚先提交全部状态再通知；新增数量不变的装备替换和跨模型回滚一致性测试。SaveDataUtility 与 ExperienceCurve 为共享 Utility；加载只返回 DTO 与来源，删除 SaveLoadResult。十二个导航/保存结果事件归并，持续状态走绑定，一次性跨职责请求/事实走 GGF Event。地面物品改为场景预设 32×40 盒；蓝球只回蓝，地面恢复品继续显示数字。
+
+| 验证命令 | 结果 |
+| --- | --- |
+| `dotnet build Godot/GodotProject --no-restore -v:q -nologo` | 0 错误，5 个既有框架警告 |
+| `dotnet test Tests/ProfileTests --no-restore -v:q -nologo` | 106/106，含集合身份与事务观察一致性 |
+| `dotnet test Tests/BattleTests --no-restore -v:q -nologo` | 145/145，英雄资源与无双秒制规则通过 |
+| `dotnet test Tests/LevelTests --no-restore -v:q -nologo` | 18/18 |
+| Godot `--headless --editor --build-solutions --quit --no-window` | 完成扫描与编译，退出 0 |
+| OpenGL `--smoketest=ui` | SMOKE PASS、退出 0；背包穿脱/出售/分页、资源绑定、怪物血条、恢复品/蓝球、池复用和失败清理通过 |
+| OpenGL `--smoketest=frontend` | SMOKE PASS、退出 0；新档/读档、地图保存提示、放弃回滚、模型移除与重建通过 |
+| OpenGL `--smoketest=level` | SMOKE PASS、退出 0；五波、守关怪、W 出口、结算保存和地图重读通过 |
+| OpenGL `--smoketest=level-cancel` | SMOKE PASS、退出 0；在途显示取消、迟到怪物回收通过 |
+| F6 `--headless --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360` | 玩家与两只怪物就绪，退出 0；独立 FSM 注册模型、系统和工具 |
+| `validate_game_references.py --compare-staged-geometry` | 441 条路径、279 个 UID、23 个关卡几何节点通过 |
+| `git diff --check`、`git diff --cached --check` | 均通过；保留原暂存区，Framework/addons/生成代码无本轮改动 |
+
+日志位于忽略目录 `.godot/validation/models_{build,scan,ui,frontend,level,cancel,arena}.log`。已查看最新 `ground_pickups.png`，图标底部贴地且没有名称或阴影。纯测试仍有 NU1900 网络警告和既有可空注释警告。编辑器退出仍有 ComponentInsoector 的 RefCounted/free 错误；游戏关停仍有 Framework WebRequest ObjectDisposedException 和 ObjectDB 泄漏。HUD 缺绑定、跨槽和损坏档属于预期失败注入，不能将完整日志称为零错误。第 00/10/70 章旧架构条款与本轮指令冲突，按用户当前要求实施，规范正文未自行修改。
+
+## 地面物品与 Model 绑定（2026-10-15，历史记录）
+
+以下记录当时实现；动态图标碰撞盒、Vitals 与聚合 PlayerModel 已由上方 2026-10-16 的实现取代。
+
+按用户最新要求，用一个按图标非透明范围生成的矩形同时处理地形碰撞与拾取查询，删除额外 Area2D、脚底小盒、阴影及动画阴影轨。DropConfig 源表移除失效 GroundPickupRadius，再经既有 Luban 命令生成；其余单元格和 XLSX 包内文件保持不变，命名空间检查无需修复。
+
+参考 QFramework 原源码实现当前使用的 BindableProperty：Value、Register、RegisterWithInitValue、UnRegister、默认相等比较及事务静默提交/通知。模型对外只读，钱包、成长、装备集合、穿戴、存档目录和关卡状态改为绑定；窗口关闭对称解绑。关联字段使用不可变快照，跨背包/穿戴/余额交易先提交再通知；存档 DTO 不变。没有移植 EasyEvent、注销句柄链或增加生产测试接口。第 00/10 章的禁用 BindableProperty / 统一 Changed 条款与本轮指令冲突，按最新要求实现，规范正文未改。
+
+- `dotnet build Godot/GodotProject --no-restore -v quiet`：0 错误、5 个既有框架警告。新增脚本经 Godot `--headless --editor --build-solutions --quit --no-window` 扫描、构建，退出 0；仍有既有 ComponentInsoector 的 RefCounted/free 退出错误。
+- `dotnet test Tests/ProfileTests --no-restore -v quiet`：104/104；BattleTests：145/145；LevelTests：18/18。覆盖绑定初始化、相等值与 null、退订重绑、初始化失败清理、初始化期间更新、成长一致性、目录集合所有权、穿戴及出售事务和结局发布顺序。NuGet 漏洞服务不可达的 NU1900 与既有可空注释警告分别保留。
+- 正式工程 `--smoketest=ui`：SMOKE PASS、退出 0。验证唯一形状贴合图标非透明范围且与拾取查询共用同一 Shape2D；实际落地、非英雄/异会话拒绝、满包保留及原地重试、暂停、0.8 秒上移淡出、过期和池复用均通过。背包实时灵魂、穿脱出售、HUD 成长/Go、技能钱包及窗口解绑重开通过。`ground_pickups.png` 已查看，物品底部贴地、无阴影。
+- `--smoketest=frontend` 与最终表产物下的 `--smoketest=level`：均 SMOKE PASS、退出 0；覆盖存档目录关闭零绑定/重开一份绑定、设置关闭退订、读档重入、整关五波、前进提示、结局、检查点与地图重读。所有烟测使用隔离 Validation 存档。
+- `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry`：441 路径、292 UID、23 关卡几何节点通过；`normalize_xlsx_namespaces.py Configs/GameConfig/Datas/DropConfig.xlsx`：0 文件需要修复。32 个手写 C# 格式化前后 token 哈希一致；`git diff --check` 通过。
+
+烟测中的坏备份、过期会话、HUD 装配失败为既有失败注入；正常关停仍报告 Framework WebRequest 的 ObjectDisposedException 和 3/4 个 ObjectDB 泄漏，不能将完整日志称为零错误。最终 `--verbose --smoketest=ui` 再次 PASS，退出日志仍为 4 个 RefCounted 实例，没有报告 PhysicsShapeQueryParameters2D 泄漏。本轮未改 Framework 或 addons。日志在忽略的 `.godot/validation/bindable_{scan,ui,ui_final,frontend,level}.log`；使用方法见 [ProjectTour](ProjectTour.md#model-的属性绑定)。
+
 ## 编辑器 GCHandle 修补（2026-10-15）
 
 按第 50 章的用户授权，仅修改 ExportInspector：先读资源依赖及全局脚本登记，只加载候选包标记并校验，文件列表和打包复用已识别标记，避免扫描时提前加载普通资源。ComponentInsoector 的 14 处释放修改按用户最新要求全部撤回，恢复原文件；这项修改处理退出错误，没有解决本次启动异常。未增加业务测试 API。

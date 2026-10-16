@@ -2,7 +2,6 @@ using GameLogic.Architecture;
 using System;
 using GameFramework.UI;
 using GameLogic.Audio;
-using GameLogic.Event.Navigation;
 using GameLogic.Level;
 using GameConfig.Sound;
 using Godot;
@@ -14,14 +13,16 @@ namespace GameLogic.UI;
 /// <summary>成功与失败共用的结算窗口；显示冻结成绩，只提交导航请求。</summary>
 public partial class SettlementForm : IController
 {
-    /// <summary>读取所属游戏流程的架构入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
-
     [Export] private Texture2D m_SuccessTexture; // 成功原画。
     [Export] private Texture2D m_FailureTexture; // 失败原画。
     private LevelResult m_Result; // 本次结局的不可变成绩。
     private bool m_ResumeGame; // 只恢复本窗口拥有的暂停。
+
+    /// <summary>由所属流程处理 MapRequested；参数为本次窗口编号。</summary>
+    public event Action<int> MapRequested;
+
+    /// <summary>由所属流程处理 RetryRequested；参数为本次窗口编号。</summary>
+    public event Action<int> RetryRequested;
 
     /// <summary>初始化框架字段；新实例的按钮只绑定一次。</summary>
     /// <param name="serialId">本次窗口编号。</param>
@@ -51,6 +52,8 @@ public partial class SettlementForm : IController
     /// <param name="userData">关闭参数，不使用。</param>
     public void OnClose(bool isShutdown, object userData)
     {
+        MapRequested = null;
+        RetryRequested = null;
         ReleaseResultAndPause();
         if (!isShutdown && IsInstanceValid(this))
             Visible = false;
@@ -78,23 +81,6 @@ public partial class SettlementForm : IController
 
     /// <summary>重新露出窗口。</summary>
     public void OnReveal() { }
-
-    /// <summary>显式参数可重新绑定本窗口。</summary>
-    /// <param name="userData">新的打开参数；null 保持当前内容。</param>
-    public void OnRefocus(object userData)
-    {
-        if (userData != null)
-            OnOpen(userData);
-    }
-
-    /// <summary>同步框架分配的窗口层级。</summary>
-    /// <param name="uiGroupDepth">窗口组层级。</param>
-    /// <param name="depthInUIGroup">窗口在组内的层级。</param>
-    public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
-    {
-        m_DepthInUIGroup = depthInUIGroup;
-        ZIndex = depthInUIGroup;
-    }
 
     /// <summary>显示已经结算的成绩，暂停背后的关卡。</summary>
     /// <param name="userData">成功或失败的关卡结果。</param>
@@ -126,6 +112,27 @@ public partial class SettlementForm : IController
     /// <param name="realElapseSeconds">实际秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
 
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
+    /// <summary>显式参数可重新绑定本窗口。</summary>
+    /// <param name="userData">新的打开参数；null 保持当前内容。</param>
+    public void OnRefocus(object userData)
+    {
+        if (userData != null)
+            OnOpen(userData);
+    }
+
+    /// <summary>同步框架分配的窗口层级。</summary>
+    /// <param name="uiGroupDepth">窗口组层级。</param>
+    /// <param name="depthInUIGroup">窗口在组内的层级。</param>
+    public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
+    {
+        m_DepthInUIGroup = depthInUIGroup;
+        ZIndex = depthInUIGroup;
+    }
+
     /// <summary>释放结果引用与暂停所有权。</summary>
     private void ReleaseResultAndPause()
     {
@@ -148,7 +155,7 @@ public partial class SettlementForm : IController
         if (m_Result == null || m_ReturnMap.Disabled)
             return;
         DisableNavigation();
-        GF.Event.Fire(this, MapRequestedEventArgs.Create(SerialId));
+        MapRequested?.Invoke(SerialId);
     }
 
     /// <summary>失败时请求重新挑战。</summary>
@@ -157,6 +164,6 @@ public partial class SettlementForm : IController
         if (m_Result?.Outcome != LevelOutcome.Defeated || m_Retry.Disabled)
             return;
         DisableNavigation();
-        GF.Event.Fire(this, RetryLevelRequestedEventArgs.Create(SerialId));
+        RetryRequested?.Invoke(SerialId);
     }
 }

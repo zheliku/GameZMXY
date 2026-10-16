@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using GameConfig.Constant;
 namespace GodotGameFramework.NodePool;
+
 /// <summary>
 /// 池化对象接口
 /// </summary>
@@ -24,14 +25,14 @@ public interface IPoolable
 /// </summary>
 public partial class NodePool : SingletonNode<NodePool>
 {
-    /// <summary>当前节点池配置；加载失败时为空。</summary>
-    public NodePoolConfig Config { get; private set; }
-
     private readonly List<PoolContainer> m_Containers = new(); // 每种场景对应的容器节点，归还时对象放回此处。
 
     private readonly Dictionary<ulong, PoolContainer> m_NodeToContainer = new(); // 节点实例号到所属容器的映射，归还时查询并清理。
 
     private readonly Dictionary<string, PackedScene> m_PoolScenes = new(); // 池名到场景资源的映射，取用时用于懒实例化。
+
+    /// <summary>当前节点池配置；加载失败时为空。</summary>
+    public NodePoolConfig Config { get; private set; }
 
     /// <summary>加载池配置并注册场景池。</summary>
     protected override void OnLoad()
@@ -324,6 +325,7 @@ public partial class NodePool : SingletonNode<NodePool>
             container.AddChild(node);
         m_NodeToContainer.Remove(id);
     }
+
     /// <summary>
     /// 回收所有已获取的节点到池中。
     /// </summary>
@@ -349,6 +351,7 @@ public partial class NodePool : SingletonNode<NodePool>
             }
         }
     }
+
     /// <summary>
     /// 回收指定场景的所有已获取节点到池中。
     /// </summary>

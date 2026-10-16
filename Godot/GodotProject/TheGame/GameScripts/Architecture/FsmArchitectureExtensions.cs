@@ -8,6 +8,49 @@ namespace GameLogic.Architecture;
 /// <summary>以 GGF 主流程 FSM 的 GetData/SetData 实现 Architecture；不创建第二个数据容器。</summary>
 public static class FsmArchitectureExtensions
 {
+    /// <summary>先检查类型是否已占用，避免重复注册改变对象的归属或状态。</summary>
+    /// <typeparam name="T">注册类型。</typeparam>
+    /// <param name="fsm">所属 FSM。</param>
+    private static void EnsureMissing<T>(IFsm<IProcedureManager> fsm) where T : class
+    {
+        if (fsm.HasData(Entry<T>.Key))
+            throw new InvalidOperationException($"FSM 已持有 {typeof(T).Name}，须先结束原作用域。");
+    }
+
+    /// <summary>结束同步生命周期后解除 FSM 的持有。</summary>
+    /// <typeparam name="T">模型或系统注册类型。</typeparam>
+    /// <param name="fsm">所属 FSM。</param>
+    /// <returns>是否实际移除。</returns>
+    private static bool RemoveMember<T>(IFsm<IProcedureManager> fsm) where T : class, ICanInit
+    {
+        if (!fsm.HasData(Entry<T>.Key))
+            return false;
+        ReadRequired<T>(fsm).Deinit();
+        return fsm.RemoveData(Entry<T>.Key);
+    }
+
+    /// <summary>只负责 GGF Variable 的包装与重复注册检查。</summary>
+    /// <typeparam name="T">注册类型。</typeparam>
+    /// <param name="fsm">唯一实际存储位置。</param>
+    /// <param name="value">已初始化的对象。</param>
+    private static void Store<T>(IFsm<IProcedureManager> fsm, T value) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        if (fsm.HasData(Entry<T>.Key))
+            throw new InvalidOperationException($"FSM 已持有 {typeof(T).Name}，须先结束原作用域。");
+        var entry = ReferencePool.Acquire<Entry<T>>();
+        entry.Value = value;
+        fsm.SetData(Entry<T>.Key, entry);
+    }
+
+    /// <summary>读取内部必需注册项；用于架构入口及已经确认存在的生命周期操作。</summary>
+    /// <typeparam name="T">注册类型。</typeparam>
+    /// <param name="fsm">所属 FSM。</param>
+    /// <returns>已注册的对象。</returns>
+    private static T ReadRequired<T>(IFsm<IProcedureManager> fsm) where T : class =>
+        fsm.GetData<Entry<T>>(Entry<T>.Key)?.Value
+        ?? throw new InvalidOperationException($"当前 FSM 未初始化 {typeof(T).Name}。");
+
     /// <summary>扩展明确传入的流程 FSM，具名 FSM 之间保持完全隔离。</summary>
     /// <param name="fsm">所属流程状态机。</param>
     extension(IFsm<IProcedureManager> fsm)
@@ -96,49 +139,6 @@ public static class FsmArchitectureExtensions
         public TUtility GetUtility<TUtility>() where TUtility : class, IUtility => fsm.GetArchitecture().GetUtility<TUtility>();
     }
 
-    /// <summary>先检查类型是否已占用，避免重复注册改变对象的归属或状态。</summary>
-    /// <typeparam name="T">注册类型。</typeparam>
-    /// <param name="fsm">所属 FSM。</param>
-    private static void EnsureMissing<T>(IFsm<IProcedureManager> fsm) where T : class
-    {
-        if (fsm.HasData(Entry<T>.Key))
-            throw new InvalidOperationException($"FSM 已持有 {typeof(T).Name}，须先结束原作用域。");
-    }
-
-    /// <summary>结束同步生命周期后解除 FSM 的持有。</summary>
-    /// <typeparam name="T">模型或系统注册类型。</typeparam>
-    /// <param name="fsm">所属 FSM。</param>
-    /// <returns>是否实际移除。</returns>
-    private static bool RemoveMember<T>(IFsm<IProcedureManager> fsm) where T : class, ICanInit
-    {
-        if (!fsm.HasData(Entry<T>.Key))
-            return false;
-        ReadRequired<T>(fsm).Deinit();
-        return fsm.RemoveData(Entry<T>.Key);
-    }
-
-    /// <summary>只负责 GGF Variable 的包装与重复注册检查。</summary>
-    /// <typeparam name="T">注册类型。</typeparam>
-    /// <param name="fsm">唯一实际存储位置。</param>
-    /// <param name="value">已初始化的对象。</param>
-    private static void Store<T>(IFsm<IProcedureManager> fsm, T value) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        if (fsm.HasData(Entry<T>.Key))
-            throw new InvalidOperationException($"FSM 已持有 {typeof(T).Name}，须先结束原作用域。");
-        var entry = ReferencePool.Acquire<Entry<T>>();
-        entry.Value = value;
-        fsm.SetData(Entry<T>.Key, entry);
-    }
-
-    /// <summary>读取内部必需注册项；用于架构入口及已经确认存在的生命周期操作。</summary>
-    /// <typeparam name="T">注册类型。</typeparam>
-    /// <param name="fsm">所属 FSM。</param>
-    /// <returns>已注册的对象。</returns>
-    private static T ReadRequired<T>(IFsm<IProcedureManager> fsm) where T : class =>
-        fsm.GetData<Entry<T>>(Entry<T>.Key)?.Value
-        ?? throw new InvalidOperationException($"当前 FSM 未初始化 {typeof(T).Name}。");
-
     /// <summary>GGF 数据区的访问视图；本身不拥有另一组 Model、System 或 Utility 字典。</summary>
     private sealed class FsmArchitecture : IArchitecture
     {
@@ -165,6 +165,7 @@ public static class FsmArchitectureExtensions
             EnsureActive();
             return m_Fsm.GetData<Entry<T>>(Entry<T>.Key)?.Value;
         }
+
         /// <summary>拒绝已经销毁或池化复用后的旧架构视图。</summary>
         /// <exception cref="InvalidOperationException">所属作用域已经结束。</exception>
         private void EnsureActive()

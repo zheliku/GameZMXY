@@ -17,27 +17,6 @@ public partial class LevelExitNode : Area2D
     /// <summary>加载期禁用出口及输入。</summary>
     public override void _Ready() => Disable();
 
-    /// <summary>最后一波清场后显示光标并启用局部交互检测。</summary>
-    public void Enable()
-    {
-        SetDeferred(Area2D.PropertyName.Monitoring, true);
-        Visible = true;
-        m_Marker.Play("exit");
-        SetPhysicsProcess(true);
-        SetProcessUnhandledInput(true);
-    }
-
-    /// <summary>清理会话或已提交通关时停止光标与输入。</summary>
-    public void Disable()
-    {
-        SetDeferred(Area2D.PropertyName.Monitoring, false);
-        Visible = false;
-        m_Marker.Stop();
-        m_Prompt.Visible = false;
-        SetPhysicsProcess(false);
-        SetProcessUnhandledInput(false);
-    }
-
     /// <summary>玩家靠近时显示提示；暂停时由场景树一起暂停。</summary>
     /// <param name="delta">物理帧秒数。</param>
     public override void _PhysicsProcess(double delta) => m_Prompt.Visible = FindEligibleHero() != null;
@@ -57,6 +36,27 @@ public partial class LevelExitNode : Area2D
             return;
         GetViewport().SetInputAsHandled();
         Entered?.Invoke(hero);
+    }
+
+    /// <summary>最后一波清场后显示光标并启用局部交互检测。</summary>
+    public void Enable()
+    {
+        SetDeferred(Area2D.PropertyName.Monitoring, true);
+        Visible = true;
+        m_Marker.Play("exit");
+        SetPhysicsProcess(true);
+        SetProcessUnhandledInput(true);
+    }
+
+    /// <summary>清理会话或已提交通关时停止光标与输入。</summary>
+    public void Disable()
+    {
+        SetDeferred(Area2D.PropertyName.Monitoring, false);
+        Visible = false;
+        m_Marker.Stop();
+        m_Prompt.Visible = false;
+        SetPhysicsProcess(false);
+        SetProcessUnhandledInput(false);
     }
 
     /// <summary>从真实物理重叠和角色状态判断交互条件。</summary>

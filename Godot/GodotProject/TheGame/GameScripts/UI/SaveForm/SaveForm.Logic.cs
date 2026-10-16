@@ -1,6 +1,5 @@
 using GameLogic.Architecture;
 using GameLogic.Save.Slots;
-using GameLogic.Event.Navigation;
 using System;
 using System.Linq;
 using GameFramework.UI;
@@ -15,11 +14,10 @@ namespace GameLogic.UI;
 /// <summary>六格存档窗口，订阅目录变化并以具名事件请求读档。</summary>
 public partial class SaveForm : IController
 {
-    /// <summary>读取所属游戏流程的架构入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
-
     private (TextureButton Button, Label Name, Label Date)[] m_SlotViews; // 六个存档格的控件引用，不另建格子脚本。
+
+    /// <summary>由所属流程处理 SaveSlotSelected；参数为本次窗口编号及选择编号。</summary>
+    public event Action<int, int> SaveSlotSelected;
 
     /// <summary>绑定 GGF 字段与一次性的按钮订阅。</summary>
     /// <param name="serialId">窗口编号。</param>
@@ -60,9 +58,8 @@ public partial class SaveForm : IController
     public void OnOpen(object userData)
     {
         var saveModel = this.GetModel<SaveModel>();
-        saveModel.Changed -= RefreshDirectory;
-        saveModel.Changed += RefreshDirectory;
-        RefreshDirectory();
+        saveModel.Directory.UnRegister(RefreshDirectory);
+        saveModel.Directory.RegisterWithInitValue(RefreshDirectory);
         Visible = true;
     }
 
@@ -71,7 +68,8 @@ public partial class SaveForm : IController
     /// <param name="userData">关闭参数。</param>
     public void OnClose(bool isShutdown, object userData)
     {
-        this.GetModel<SaveModel>().Changed -= RefreshDirectory;
+        SaveSlotSelected = null;
+        this.GetModel<SaveModel>().Directory.UnRegister(RefreshDirectory);
         if (!isShutdown && IsInstanceValid(this))
             Visible = false;
     }
@@ -113,6 +111,10 @@ public partial class SaveForm : IController
     {
     }
 
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     /// <summary>重新绑定显式传入的状态源。</summary>
     /// <param name="userData">新打开参数；null 保持当前绑定。</param>
     public void OnRefocus(object userData)
@@ -131,9 +133,9 @@ public partial class SaveForm : IController
     }
 
     /// <summary>完整刷新六个格及加载反馈。</summary>
-    private void RefreshDirectory()
+    /// <param name="directory">已原子提交的目录快照。</param>
+    private void RefreshDirectory(SaveDirectoryState directory)
     {
-        var directory = this.GetModel<SaveModel>();
         bool ready = directory.Phase == SaveListState.Ready;
         m_Status.Text = directory.Phase == SaveListState.Failed ? directory.ErrorMessage : ready ? "" : "正在读取存档…";
         for (int i = 0; i < m_SlotViews.Length; i++)
@@ -165,7 +167,7 @@ public partial class SaveForm : IController
             this.GetModel<SaveModel>().Slots[number - 1].State == SaveSlotState.Unreadable)
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        GF.Event.Fire(this, SaveSlotSelectedEventArgs.Create(SerialId, number));
+        SaveSlotSelected?.Invoke(SerialId, number);
     }
 
     /// <summary>关闭存档页，返回开始界面。</summary>

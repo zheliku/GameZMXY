@@ -13,7 +13,7 @@ public interface IArchitecture
     /// <returns>同一系统引用；未注册时返回 null。</returns>
     TSystem GetSystem<TSystem>() where TSystem : class, ISystem;
 
-    /// <summary>借用已注册的第三方工具。</summary>
+    /// <summary>借用已注册的无状态工具或平台适配器。</summary>
     /// <typeparam name="TUtility">工具注册类型。</typeparam>
     /// <returns>同一工具引用；未注册时返回 null。</returns>
     TUtility GetUtility<TUtility>() where TUtility : class, IUtility;
@@ -40,8 +40,10 @@ public interface ICanInit
 {
     /// <summary>是否已经完成注册初始化。</summary>
     bool Initialized { get; }
+
     /// <summary>完成依赖绑定后的初始化。</summary>
     void Init();
+
     /// <summary>解除注册前结束本对象的同步生命周期。</summary>
     void Deinit();
 }
@@ -55,13 +57,13 @@ public interface ICanGetSystem : IBelongToArchitecture { }
 /// <summary>允许使用第三方 Utility；工具自身不具有此能力。</summary>
 public interface ICanGetUtility : IBelongToArchitecture { }
 
-/// <summary>拥有数据并维护自身不变量；可使用工具，不查询其他模型或业务系统。</summary>
+/// <summary>拥有权威数据并提供查询；可使用工具，不查询其他模型或业务系统，业务修改由 System 执行。</summary>
 public interface IModel : IBelongToArchitecture, ICanSetArchitecture, ICanGetUtility, ICanInit { }
 
 /// <summary>业务功能入口，对应 QFramework 的 System 职责。</summary>
 public interface ISystem : IBelongToArchitecture, ICanSetArchitecture, ICanGetModel, ICanGetSystem, ICanGetUtility, ICanInit { }
 
-/// <summary>第三方框架或平台适配器；没有 Architecture，不查询 Model 或 System。</summary>
+/// <summary>纯转换或平台适配器；不持有 Architecture、Model 或 System，可按显式调用参数临时读取数据。</summary>
 public interface IUtility { }
 
 /// <summary>表现入口的访问能力；Godot 节点与 GGF 窗口保留各自继承链。</summary>

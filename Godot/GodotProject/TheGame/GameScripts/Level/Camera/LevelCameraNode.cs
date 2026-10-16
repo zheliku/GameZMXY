@@ -81,6 +81,34 @@ public partial class LevelCameraNode : Camera2D
     /// <param name="delta">距上一帧的秒数；绘制刷新与它无关。</param>
     public override void _Process(double delta) => QueueRedraw();
 
+    /// <summary>用实际中心推进相机窗口，随后按实际视野检测阶段抵达。</summary>
+    /// <param name="delta">距上一物理帧的秒数，用于换算本帧位移上限。</param>
+    public override void _PhysicsProcess(double delta)
+    {
+        // 玩家由会话显式注入和解除，不根据节点是否存在推测加载状态。
+        float halfView = ViewSize.X * 0.5f;
+        float center = GF.Fsm.GetUtility<SpatialUtility>().StepCameraCenter(GlobalPosition.X, m_Target.GlobalPosition.X,
+            m_DeadZoneHalfWidth / Zoom.X, m_Left + halfView, m_Right - halfView, m_MaxPanSpeed * (float)delta);
+        GlobalPosition = new Vector2(center, GlobalPosition.Y);
+        ForceUpdateScroll();
+
+        // 屏幕移动边界跟随实际取景；阶段标记决定相机何时停止，怪物不受玩家墙阻挡。
+        float edge = halfView - PlayerScreenMargin / Zoom.X;
+        m_LeftPlayerWall.Position = new Vector2(-edge - m_LeftPlayerWall.Shape.GetRect().Size.X * 0.5f, 0f);
+        m_RightPlayerWall.Position = new Vector2(edge + m_RightPlayerWall.Shape.GetRect().Size.X * 0.5f, 0f);
+
+        if (m_WaitingForArrival && Mathf.IsEqualApprox(ViewRight, m_Right))
+        {
+            m_WaitingForArrival = false;
+            RightBoundaryReached?.Invoke();
+        }
+
+        if (m_DrawInGame)
+        {
+            QueueRedraw();
+        }
+    }
+
     /// <summary>开始跟随已经显示的玩家；保留场景初始取景。</summary>
     /// <param name="target">关卡会话注入的玩家节点。</param>
     public void Follow(Node2D target)
@@ -114,34 +142,6 @@ public partial class LevelCameraNode : Camera2D
         SetPhysicsProcess(false);
         m_Target = null;
         m_WaitingForArrival = false;
-    }
-
-    /// <summary>用实际中心推进相机窗口，随后按实际视野检测阶段抵达。</summary>
-    /// <param name="delta">距上一物理帧的秒数，用于换算本帧位移上限。</param>
-    public override void _PhysicsProcess(double delta)
-    {
-        // 玩家由会话显式注入和解除，不根据节点是否存在推测加载状态。
-        float halfView = ViewSize.X * 0.5f;
-        float center = GF.Fsm.GetUtility<SpatialUtility>().StepCameraCenter(GlobalPosition.X, m_Target.GlobalPosition.X,
-            m_DeadZoneHalfWidth / Zoom.X, m_Left + halfView, m_Right - halfView, m_MaxPanSpeed * (float)delta);
-        GlobalPosition = new Vector2(center, GlobalPosition.Y);
-        ForceUpdateScroll();
-
-        // 屏幕移动边界跟随实际取景；阶段标记决定相机何时停止，怪物不受玩家墙阻挡。
-        float edge = halfView - PlayerScreenMargin / Zoom.X;
-        m_LeftPlayerWall.Position = new Vector2(-edge - m_LeftPlayerWall.Shape.GetRect().Size.X * 0.5f, 0f);
-        m_RightPlayerWall.Position = new Vector2(edge + m_RightPlayerWall.Shape.GetRect().Size.X * 0.5f, 0f);
-
-        if (m_WaitingForArrival && Mathf.IsEqualApprox(ViewRight, m_Right))
-        {
-            m_WaitingForArrival = false;
-            RightBoundaryReached?.Invoke();
-        }
-
-        if (m_DrawInGame)
-        {
-            QueueRedraw();
-        }
     }
 
     /// <summary>绘制视野框和中央死区，两侧区域表示角色会推动相机。</summary>

@@ -11,10 +11,6 @@ namespace GameLogic.UI;
 /// <summary>被动装备格：接收图标和实例，显示实际属性提示；不查询档案、不执行穿戴。</summary>
 public partial class EquipmentCell : TextureRect, IController
 {
-    /// <summary>借用当前游戏流程的架构入口。</summary>
-    /// <returns>所属流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
-
     [Export] private TextureRect m_Icon; // 当前格图标，空格时清除。
     [Export] private PackedScene m_TooltipScene; // 可编辑的外置详情布局。
     private Guid m_InstanceId; // 当前显示实例；空格不提交点击。
@@ -22,6 +18,10 @@ public partial class EquipmentCell : TextureRect, IController
 
     /// <summary>玩家点击装备格；窗口决定这是穿戴还是卸装请求。</summary>
     public event Action<Guid> Clicked;
+
+    /// <summary>借用当前游戏流程的架构入口。</summary>
+    /// <returns>所属流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
 
     /// <summary>只处理左键按下，不在控件中改变档案。</summary>
     /// <param name="inputEvent">Godot 分发给本格的鼠标事件。</param>
@@ -61,5 +61,4 @@ public partial class EquipmentCell : TextureRect, IController
         tooltip.Bind(m_Item, this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(m_Item.EquipmentId));
         return tooltip;
     }
-
 }

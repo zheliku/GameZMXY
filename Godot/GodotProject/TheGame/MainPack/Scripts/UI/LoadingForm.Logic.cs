@@ -20,6 +20,7 @@ namespace GameLogic
 
         private bool m_IsCloseRequested; // 场景和界面加载事件可能重复触发关闭请求，用于防止重入。
         private TaskCompletionSource m_CloseCompletion; // 当前打开周期的实际关闭通知，先于关闭请求创建。
+
         /// <summary>
         /// 初始化界面。
         /// </summary>
@@ -117,14 +118,14 @@ namespace GameLogic
         public void OnReveal() { }
 
         /// <summary>
-        /// 界面重新获得焦点。
-        /// </summary>
-        public void OnRefocus(object userData) { }
-
-        /// <summary>
         /// 界面轮询。
         /// </summary>
         public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
+
+        /// <summary>
+        /// 界面重新获得焦点。
+        /// </summary>
+        public void OnRefocus(object userData) { }
 
         /// <summary>
         /// 界面深度改变。

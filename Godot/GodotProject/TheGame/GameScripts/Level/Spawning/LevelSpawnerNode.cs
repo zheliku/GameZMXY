@@ -45,13 +45,29 @@ public partial class LevelSpawnerNode : Node
     /// <summary>当前会话显示实体失败；控制器负责结束会话。</summary>
     public event Action<Exception> SpawnFailed;
 
+    /// <summary>初始禁用游戏帧调度，加载期不生成实体。</summary>
+    public override void _Ready() => SetProcess(false);
+
+    /// <summary>提交到期配方，统一预约名额；暂停时由场景树停止游戏时间。</summary>
+    /// <param name="delta">本帧经过的游戏秒数。</param>
+    public override void _Process(double delta)
+    {
+        m_Schedule.Advance(delta);
+        while (m_Schedule.TryTake(out LevelSpawnRecipe recipe))
+        {
+            _ = ShowMonsterAsync(recipe, m_Schedule, m_Entities, m_Cancellation.Token);
+            if (!IsProcessing())
+            {
+                // 池化显示可能同步清波并停止调度，本帧不再提交剩余配方。
+                return;
+            }
+        }
+    }
+
     /// <summary>判断运行实体是否由本会话创建，包含仍在播放死亡动画的怪物。</summary>
     /// <param name="entityId">GGF 本次显示分配的运行实体编号。</param>
     /// <returns>是否仍归本会话所有。</returns>
     public bool OwnsEntity(int entityId) => m_OwnedIds.Contains(entityId);
-
-    /// <summary>初始禁用游戏帧调度，加载期不生成实体。</summary>
-    public override void _Ready() => SetProcess(false);
 
     /// <summary>在初始化边界验证配方和怪物实体配置，运行时不重复查表。</summary>
     /// <param name="config">本场景对应的关卡配置。</param>
@@ -107,22 +123,6 @@ public partial class LevelSpawnerNode : Node
     {
         m_Schedule = new LevelSpawnSchedule(stage);
         SetProcess(true);
-    }
-
-    /// <summary>提交到期配方，统一预约名额；暂停时由场景树停止游戏时间。</summary>
-    /// <param name="delta">本帧经过的游戏秒数。</param>
-    public override void _Process(double delta)
-    {
-        m_Schedule.Advance(delta);
-        while (m_Schedule.TryTake(out LevelSpawnRecipe recipe))
-        {
-            _ = ShowMonsterAsync(recipe, m_Schedule, m_Entities, m_Cancellation.Token);
-            if (!IsProcessing())
-            {
-                // 池化显示可能同步清波并停止调度，本帧不再提交剩余配方。
-                return;
-            }
-        }
     }
 
     /// <summary>停止生成、取消在途登记、退订死亡事件并清理本关所有实体；重复调用直接返回。</summary>

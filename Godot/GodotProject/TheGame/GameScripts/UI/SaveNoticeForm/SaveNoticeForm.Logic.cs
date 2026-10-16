@@ -40,6 +40,47 @@ public partial class SaveNoticeForm
         ResetFeedback();
     }
 
+    /// <summary>关闭时对称解除监听，框架关停不再访问节点。</summary>
+    /// <param name="isShutdown">是否框架关停。</param>
+    /// <param name="userData">关闭参数。</param>
+    public void OnClose(bool isShutdown, object userData)
+    {
+        if (GF.Event.Check(SaveSucceededEventArgs.EventId, OnSaveSucceeded))
+            GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
+        if (!isShutdown)
+            ResetFeedback();
+    }
+
+    /// <summary>回池清除框架编号与订阅。</summary>
+    public void OnRecycle()
+    {
+        m_SerialId = m_DepthInUIGroup = 0;
+    }
+
+    /// <summary>手动按真实时间推进提示，不随战斗暂停冻结在其他窗口上。</summary>
+    /// <param name="elapseSeconds">游戏秒数。</param>
+    /// <param name="realElapseSeconds">真实秒数。</param>
+    public void OnUpdate(float elapseSeconds, float realElapseSeconds)
+    {
+        if (!GF.UI.HasUIForm(SerialId) || !m_SaveFeedbackAnimation.IsPlaying())
+            return;
+        ulong now = Time.GetTicksUsec();
+        m_SaveFeedbackAnimation.Advance((now - m_LastTick) / 1_000_000d);
+        m_LastTick = now;
+    }
+
+    /// <summary>提示不会主动暂停。</summary>
+    public void OnPause() { }
+
+    /// <summary>恢复时没有额外状态。</summary>
+    public void OnResume() { }
+
+    /// <summary>覆盖不改变正在播放的提示。</summary>
+    public void OnCover() { }
+
+    /// <summary>重新显示不重播。</summary>
+    public void OnReveal() { }
+
     /// <summary>写盘成功立即重播提示，重复保存从完整透明度开始。</summary>
     /// <param name="sender">保存系统。</param>
     /// <param name="args">当帧有效的成功事实。</param>
@@ -70,45 +111,10 @@ public partial class SaveNoticeForm
         m_SaveFeedback.Visible = false;
     }
 
-    /// <summary>关闭时对称解除监听，框架关停不再访问节点。</summary>
-    /// <param name="isShutdown">是否框架关停。</param>
-    /// <param name="userData">关闭参数。</param>
-    public void OnClose(bool isShutdown, object userData)
-    {
-        if (GF.Event.Check(SaveSucceededEventArgs.EventId, OnSaveSucceeded))
-            GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
-        if (!isShutdown)
-            ResetFeedback();
-    }
-
-    /// <summary>回池清除框架编号与订阅。</summary>
-    public void OnRecycle()
-    {
-        m_SerialId = m_DepthInUIGroup = 0;
-    }
-
-    /// <summary>手动按真实时间推进提示，不随战斗暂停冻结在其他窗口上。</summary>
-    /// <param name="elapseSeconds">游戏秒数。</param>
-    /// <param name="realElapseSeconds">真实秒数。</param>
-    public void OnUpdate(float elapseSeconds, float realElapseSeconds)
-    {
-        if (!GF.UI.HasUIForm(SerialId) || !m_SaveFeedbackAnimation.IsPlaying())
-            return;
-        ulong now = Time.GetTicksUsec();
-        m_SaveFeedbackAnimation.Advance((now - m_LastTick) / 1_000_000d);
-        m_LastTick = now;
-    }
-    /// <summary>提示不会主动暂停。</summary>
-    public void OnPause() { }
-    /// <summary>恢复时没有额外状态。</summary>
-    public void OnResume() { }
-    /// <summary>覆盖不改变正在播放的提示。</summary>
-    public void OnCover() { }
-    /// <summary>重新显示不重播。</summary>
-    public void OnReveal() { }
     /// <summary>复用同一应用级监听。</summary>
     /// <param name="userData">没有打开参数。</param>
     public void OnRefocus(object userData) { }
+
     /// <summary>应用提示组拥有层级，窗口记录组内深度。</summary>
     /// <param name="uiGroupDepth">组层级。</param>
     /// <param name="depthInUIGroup">组内深度。</param>

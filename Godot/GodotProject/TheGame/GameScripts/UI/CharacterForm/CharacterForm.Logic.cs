@@ -1,5 +1,4 @@
 using GameLogic.Architecture;
-using GameLogic.Event.Navigation;
 using System;
 using GameFramework.UI;
 using GameLogic.Audio;
@@ -15,9 +14,8 @@ namespace GameLogic.UI;
 /// <summary>四栏选角：已开放角色响应悬停和确认；未开放角色只作静态展示。</summary>
 public partial class CharacterForm : IController
 {
-    /// <summary>读取所属游戏流程的架构入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    /// <summary>由所属流程处理 CharacterConfirmed；参数为本次窗口编号。</summary>
+    public event Action<int> CharacterConfirmed;
 
     /// <summary>设置框架字段；按钮事件只在新建实例时绑定一次。</summary>
     /// <param name="serialId">窗口打开编号。</param>
@@ -56,6 +54,7 @@ public partial class CharacterForm : IController
     /// <param name="userData">关闭参数，不保存。</param>
     public void OnClose(bool isShutdown, object userData)
     {
+        CharacterConfirmed = null;
         if (!isShutdown)
             ResetRoleHover();
         if (!isShutdown && IsInstanceValid(this))
@@ -100,6 +99,10 @@ public partial class CharacterForm : IController
     {
     }
 
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     /// <summary>重新绑定显式传入的状态源。</summary>
     /// <param name="userData">新打开参数；null 保持当前绑定。</param>
     public void OnRefocus(object userData)
@@ -123,7 +126,7 @@ public partial class CharacterForm : IController
         if (!GF.UI.HasUIForm(SerialId))
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        GF.Event.Fire(this, CharacterConfirmedEventArgs.Create(SerialId));
+        CharacterConfirmed?.Invoke(SerialId);
     }
 
     /// <summary>预览已开放的悟空，将 1P 放到卡片顶部中央。</summary>

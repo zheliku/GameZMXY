@@ -23,6 +23,7 @@ public sealed class LootTests
         Assert.Equal(1, battle.WsIntroPauseDuration);
         Assert.Equal(5, TestTables.Tables.TbDropConfig.Data.MusouPerOrb);
     }
+
     /// <summary>灵魂数量落在官方区间；奖励只含三种球，数量与经验规模无关。</summary>
     [Fact]
     public void Rewards_RespectOfficialRanges_AndHaveBoundedCount()

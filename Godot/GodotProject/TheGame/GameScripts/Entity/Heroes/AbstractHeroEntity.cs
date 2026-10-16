@@ -2,7 +2,7 @@ using GameLogic.Config;
 using GameLogic.Architecture;
 using GameLogic.Heroes.Body;
 using GameLogic.Entity;
-using GameLogic.Battle.Resources;
+using GameLogic.Battle;
 using GameLogic.Battle.Attributes;
 using GameLogic.Battle.Damage;
 using GameLogic.Battle.Attacks;
@@ -15,6 +15,7 @@ using GameFramework.Fsm;
 using GameLogic.Body;
 using GameLogic.Heroes.Effects;
 using GameLogic.Equipment;
+using GameLogic.Profile;
 using System.Linq;
 using Godot;
 using GodotGameFramework;
@@ -22,8 +23,8 @@ using GodotGameFramework;
 namespace GameLogic.Heroes
 {
     /// <summary>
-    /// 英雄的表现与战斗运行时：输入、身体状态机、动画/武器层、出招，以及本次显示期间的属性汇总、生命魔法与无双。
-    /// 不持有持久进度（等级、经验、灵魂属于档案）；显示时由 <see cref="HeroLoadout"/> 注入属性，升级后由关卡运行重新注入。
+    /// 英雄表现与交互：输入、身体状态机、动画、武器层及出招；数值状态借用已注册的 HeroModel。
+    /// 不持有持久进度（等级、经验、灵魂属于档案）；属性由 HeroSystem 随成长、穿戴和局内来源更新，实体只读取。
     /// </summary>
     public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBody
     {
@@ -39,12 +40,12 @@ namespace GameLogic.Heroes
         [Export] private MusouAfterimageNode m_MusouAfterimage; // 英雄自有的残影表现，可按角色场景选配。
         [Export] private HeroLevelUpNode m_LevelUp; // 独立升级动画层，不随身体朝向镜像。
 
+        private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
+        private ulong m_MusouIntroEnds; // 本英雄拥有的短暂停顿截止时间；零表示没有拥有暂停。
+
         /// <summary>借用模型中同类英雄共享的身体参数。</summary>
         private HeroBodyParams BodyParams => this.GetModel<ConfigurationModel>().GetHeroBodyParams(HeroId);
 
-        private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
-        private ulong m_MusouIntroEnds; // 本英雄拥有的短暂停顿截止时间；零表示没有拥有暂停。
-        private HeroLoadout m_Loadout; // 当前不可变装配，用于替换上一份持久装备来源。
 
         // ---- 属性 ----
 
@@ -63,11 +64,35 @@ namespace GameLogic.Heroes
         /// <inheritdoc />
         public override CombatSide Side => CombatSide.Hero;
 
-        /// <summary>无双进度：按实际伤害比例与黄球积累，未满时自然衰减，不写入存档。</summary>
-        public MusouGauge Musou { get; } = new();
+        /// <summary>直接读取本局已注册属性模型，实体不缓存、创建或销毁模型。</summary>
+        private HeroModel Attributes => this.GetModel<HeroModel>();
+
+        /// <inheritdoc />
+        public override int Hp => Attributes.Hp.Value;
+        /// <inheritdoc />
+        public override int MaxHp => Attributes.MaxHp.Value;
+        /// <inheritdoc />
+        public override int Level => Attributes.Level.Value;
 
         /// <summary>由具体英雄给出身体初始状态类型。</summary>
         protected abstract Type InitialBodyStateType { get; }
+
+        // ---- 接口实现 ----
+
+        /// <summary>提供身体状态机使用的共享身体参数。</summary>
+        HeroBodyParams IHeroBody.Params => BodyParams;
+
+        /// <summary>无双提高横向走跑速度。</summary>
+        float IHeroBody.MoveSpeedMultiplier => this.GetSystem<HeroSystem>().MoveSpeedMultiplier;
+
+        /// <summary>无双提高起跳速度；读取时生效，不改写配置快照。</summary>
+        float IHeroBody.JumpSpeedMultiplier => this.GetSystem<HeroSystem>().JumpSpeedMultiplier;
+
+        /// <summary>无双期间免受击硬直与击退，仍正常结算伤害。</summary>
+        bool IHeroBody.SuperArmor => this.GetSystem<HeroSystem>().SuperArmor;
+
+        /// <summary>提供当前重力，无双时应用官方倍率。</summary>
+        float IActorBody.Gravity => BodyParams.Gravity * this.GetSystem<HeroSystem>().GravityMultiplier;
 
         // ---- 生命周期 ----
 
@@ -89,32 +114,19 @@ namespace GameLogic.Heroes
                 return;
             }
 
-            this.GetModel<ConfigurationModel>().EnsureHeroBodyParams(HeroId, BuildBodyParams);
+            this.GetSystem<ConfigurationSystem>().EnsureHeroBodyParams(HeroId, BuildBodyParams);
         }
 
-        /// <summary>显示时按出战装配重建属性、补满生命魔法、清零无双，复位战斗事实与输入并创建身体状态机。</summary>
-        /// <param name="userData">出战装配 <see cref="HeroLoadout"/>（由档案构建），不能为空。</param>
-        /// <exception cref="ArgumentException">参数不是本英雄的出战装配。</exception>
+        /// <summary>显示时绑定流程已经准备好的数据，复位动作表现并创建身体状态机。</summary>
+        /// <param name="userData">不传递英雄数据；属性从本局模型读取。</param>
+        /// <exception cref="InvalidOperationException">本局属性模型未准备，或不是当前英雄。</exception>
         public override void OnShow(object userData)
         {
+            // 显示只装配表现；即使异步迟到，也不重置或修改当前模型。
+            if (Attributes == null || Attributes.HeroId != HeroId)
+                throw new InvalidOperationException($"英雄 {HeroId} 显示前必须准备本局属性模型。");
             base.OnShow(userData);
-
-            if (Config == null)
-            {
-                return;
-            }
-
-            // 显示参数只接受出战装配：属性来源唯一，测试场地也必须经档案构建。
-            if (userData is not HeroLoadout snapshot || snapshot.HeroId != HeroId)
-            {
-                throw new ArgumentException($"英雄 {HeroId} 的显示参数必须是同一英雄的 HeroLoadout。", nameof(userData));
-            }
-
-            // 池实例可能带着上次的修正来源，先清空再按装配重建。
-            Attributes.Clear();
-            ApplyLoadout(snapshot, refill: true);
-            var battle = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
-            Musou.Reset(battle.WsMax, battle.WsDecayPerSecond, battle.WsDrainPerSecond);
+            RefreshAppearance();
             m_MusouAfterimage?.Reset();
             m_LevelUp?.Reset();
 
@@ -132,7 +144,6 @@ namespace GameLogic.Heroes
         public override void OnHide(bool isShutdown, object userData)
         {
             EndMusouIntro(!isShutdown);
-            Musou.Clear();
             if (!isShutdown && IsInstanceValid(m_MusouAfterimage))
                 m_MusouAfterimage.Reset();
             if (!isShutdown && IsInstanceValid(m_LevelUp))
@@ -141,26 +152,12 @@ namespace GameLogic.Heroes
             base.OnHide(isShutdown, userData);
         }
 
-        /// <summary>在档案确认升级并重新注入装配后显示提示；普通进关不触发。</summary>
-        public void PlayLevelUp() => m_LevelUp?.ShowLevelUp();
-
         /// <summary>真实时间结束本英雄拥有的无双开启停顿；暂停时游戏时间为零仍能恢复。</summary>
         /// <param name="delta">游戏帧秒数，本计时只使用单调真实时间。</param>
         public override void _Process(double delta)
         {
             if (m_MusouIntroEnds != 0 && Time.GetTicksMsec() >= m_MusouIntroEnds)
                 EndMusouIntro(true);
-        }
-
-        /// <summary>只释放本次开启拥有的暂停；隐藏时对称清理，关停时只清字段。</summary>
-        /// <param name="resume">是否仍可访问框架恢复游戏。</param>
-        private void EndMusouIntro(bool resume)
-        {
-            if (m_MusouIntroEnds == 0)
-                return;
-            m_MusouIntroEnds = 0;
-            if (resume && GF.Base.IsGamePaused)
-                GF.Base.ResumeGame();
         }
 
         /// <summary>物理步长：采样输入 → 身体状态机 → 物理。AnimationPlayer（子节点）同帧稍后消费播放请求。</summary>
@@ -173,9 +170,9 @@ namespace GameLogic.Heroes
             }
 
             float dt = (float)delta;
-            bool wasActive = Musou.IsActive;
-            Musou.Advance(dt);
-            if (wasActive && !Musou.IsActive)
+            bool wasActive = this.GetModel<HeroModel>().WsActive.Value;
+            this.GetSystem<HeroSystem>().AdvanceWs(dt);
+            if (wasActive && !this.GetModel<HeroModel>().WsActive.Value)
                 EndMusou();
             // 引擎采样保留按住及短按边沿，组合闩锁在输入层，连段与冷却由共享 InputSystem 根据本英雄动作数据裁定。
             this.GetSystem<InputSystem>().Sample(this, dt);
@@ -193,6 +190,25 @@ namespace GameLogic.Heroes
             }
         }
 
+        /// <inheritdoc />
+        protected override bool ApplyDamage(int amount) => this.GetSystem<HeroSystem>().Damage(amount);
+        /// <inheritdoc />
+        protected override void RestoreHealth(int amount) => this.GetSystem<HeroSystem>().Heal(amount);
+
+        /// <summary>在成长模型确认升级并更新属性后显示提示；普通进关不触发。</summary>
+        public void PlayLevelUp() => m_LevelUp?.ShowLevelUp();
+
+        /// <summary>只释放本次开启拥有的暂停；隐藏时对称清理，关停时只清字段。</summary>
+        /// <param name="resume">是否仍可访问框架恢复游戏。</param>
+        private void EndMusouIntro(bool resume)
+        {
+            if (m_MusouIntroEnds == 0)
+                return;
+            m_MusouIntroEnds = 0;
+            if (resume && GF.Base.IsGamePaused)
+                GF.Base.ResumeGame();
+        }
+
         // ---- 业务入口 ----
 
         /// <summary>存活且蓄满时开启无双，使出招与运动读取加成并开始角色残影。</summary>
@@ -200,7 +216,7 @@ namespace GameLogic.Heroes
         public bool TryActivateMusou()
         {
             BattleConfig battle = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
-            if (!IsShown || Dead || GF.Base.IsGamePaused || !Musou.TryActivate())
+            if (!IsShown || Dead || GF.Base.IsGamePaused || !this.GetSystem<HeroSystem>().TryActivateWs())
                 return false;
             m_PendingHurt = null;
             m_MusouAfterimage?.SetEmitting(true);
@@ -213,54 +229,25 @@ namespace GameLogic.Heroes
         private void EndMusou()
         {
             EndMusouIntro(true);
-            Musou.Clear();
+            this.GetSystem<HeroSystem>().ClearWs();
             m_MusouAfterimage?.SetEmitting(false);
         }
 
-        /// <summary>
-        /// 应用战斗快照：替换成长基础值并保留局内修正，再同步生命魔法上限。
-        /// 显示时由 OnShow 调用；升级后由关卡收益事务调用。
-        /// </summary>
-        /// <param name="snapshot">由档案构建的出战装配。</param>
-        /// <param name="refill">是否补满生命与魔法（显示、升级）；否则把当前值钳到新上限。</param>
-        /// <exception cref="ArgumentNullException">装配为空。</exception>
-        /// <exception cref="ArgumentException">装配属于其他英雄。</exception>
-        public void ApplyLoadout(HeroLoadout snapshot, bool refill)
+        /// <summary>读取当前穿戴，仅刷新身体和武器视觉，不修改属性。</summary>
+        public void RefreshAppearance()
         {
-            ArgumentNullException.ThrowIfNull(snapshot);
-            if (snapshot.HeroId != HeroId)
-            {
-                throw new ArgumentException($"装配属于英雄 {snapshot.HeroId}，不能应用到英雄 {HeroId}。", nameof(snapshot));
-            }
-
-            // 替换成长基础值，保留局内修正，再同步资源上限。
-            Attributes.SetBase(snapshot.BaseAttributes);
-            if (m_Loadout?.Weapon != null)
-                Attributes.RemoveSource(EquipmentSource(m_Loadout.Weapon));
-            if (m_Loadout?.Armor != null)
-                Attributes.RemoveSource(EquipmentSource(m_Loadout.Armor));
-            if (snapshot.Weapon != null)
-                Attributes.SetSource(EquipmentSource(snapshot.Weapon),
-                    snapshot.Weapon.Attributes.EnumerateModifiers().ToArray());
-            if (snapshot.Armor != null)
-                Attributes.SetSource(EquipmentSource(snapshot.Armor),
-                    snapshot.Armor.Attributes.EnumerateModifiers().ToArray());
-            m_Loadout = snapshot;
-            Level = snapshot.Level;
-            SyncVitalsToAttributes(refill);
-            ApplyAppearance(snapshot);
+            var equipment = this.GetModel<ProfileModel>();
+            ApplyAppearance(equipment.Weapon != null, equipment.Armor != null);
         }
 
-        /// <summary>为一件装备保留完整实例标识，不把 Guid 哈希成可能碰撞的数值。</summary>
-        /// <param name="item">已穿戴的不可变实例。</param>
-        /// <returns>该实例在属性管线中的唯一来源。</returns>
-        private static AttributeSourceId EquipmentSource(EquipmentInstance item) =>
-            new($"Equipment:{item.InstanceId:N}", 0);
+        /// <inheritdoc />
+        protected override CombatantAttributes CaptureCombatAttributes() => Attributes.CaptureCombatAttributes(Id);
 
         /// <summary>按装配独立选择身体与武器外观。</summary>
-        /// <param name="snapshot">当前不可变装配。</param>
-        private void ApplyAppearance(HeroLoadout snapshot) =>
-            m_Appearance.ApplyToSprites((Sprite2D)Body, m_Weapon, snapshot.Weapon != null, snapshot.Armor != null);
+        /// <param name="hasWeapon">是否穿戴武器。</param>
+        /// <param name="hasArmor">是否穿戴防具。</param>
+        private void ApplyAppearance(bool hasWeapon, bool hasArmor) =>
+            m_Appearance.ApplyToSprites((Sprite2D)Body, m_Weapon, hasWeapon, hasArmor);
 
         // ---- 内部方法与扩展点 ----
 
@@ -286,7 +273,7 @@ namespace GameLogic.Heroes
         /// <param name="result">目标已完成的伤害结算结果。</param>
         protected override void OnHitLanded(AttackInstance attack, DamageResult result)
         {
-            Musou.Add(this.GetSystem<CombatSystem>().HitGain(result.Damage, attack.Attacker.Power));
+            this.GetSystem<HeroSystem>().RecordHit(result.Damage, attack.Attacker.Power);
         }
 
         /// <summary>
@@ -304,7 +291,7 @@ namespace GameLogic.Heroes
         {
             if (Dead)
                 EndMusou();
-            if (!Dead && !Musou.IsActive && BodyParams.HurtTime > 0f)
+            if (!Dead && !this.GetModel<HeroModel>().WsActive.Value && BodyParams.HurtTime > 0f)
             {
                 m_PendingHurt = knockback;
             }
@@ -375,24 +362,6 @@ namespace GameLogic.Heroes
             };
         }
 
-        // ---- 接口实现 ----
-
-        /// <summary>提供身体状态机使用的共享身体参数。</summary>
-        HeroBodyParams IHeroBody.Params => BodyParams;
-
-        /// <summary>无双提高横向走跑速度。</summary>
-        float IHeroBody.MoveSpeedMultiplier => Musou.IsActive
-            ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data.WsMoveSpeedMultiplier
-            : 1f;
-
-        /// <summary>无双提高起跳速度；读取时生效，不改写配置快照。</summary>
-        float IHeroBody.JumpSpeedMultiplier => Musou.IsActive
-            ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data.WsJumpSpeedMultiplier
-            : 1f;
-
-        /// <summary>无双期间免受击硬直与击退，仍正常结算伤害。</summary>
-        bool IHeroBody.SuperArmor => Musou.IsActive;
-
         /// <summary>S＋K 仅从单向平台向下离开，不穿越普通地面。</summary>
         /// <returns>是否执行平台下落。</returns>
         bool IHeroBody.TryDropThroughPlatform()
@@ -414,20 +383,13 @@ namespace GameLogic.Heroes
             return false;
         }
 
-        /// <summary>提供当前重力，无双时应用官方倍率。</summary>
-        float IActorBody.Gravity => BodyParams.Gravity * (Musou.IsActive
-            ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data.WsGravityMultiplier
-            : 1f);
-
         /// <summary>提交攻击段并装填攻击数据和起手音效。</summary>
         /// <param name="segment">英雄连段下标。</param>
         void IActorBody.BeginAttack(int segment)
         {
             AttackSegment = segment;
             // 官方加成乘在整招威力上，包含随机固定加值，避免只放大基础攻击。
-            PrepareAttack(OwnAttacks[segment], Musou.IsActive
-                ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data.WsAttackMultiplier
-                : 1f);
+            PrepareAttack(OwnAttacks[segment], this.GetSystem<HeroSystem>().AttackPowerMultiplier);
             PlaySound(OwnAttacks[segment].SoundId); // 起手音：音源查表，与旧 add_music 同点（第 0 帧）
         }
 

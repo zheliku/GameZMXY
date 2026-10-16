@@ -19,6 +19,9 @@ public partial class FloatingTextPresenter : Node2D
     private Func<int, bool> m_OwnsTarget; // 拒绝其他战斗场景或旧会话的伤害事件。
     private bool m_SessionActive; // 只在显式开始后接收反馈。
 
+    /// <summary>拥有者正常结束会话之外，场景退出仍保证解除订阅并归还节点。</summary>
+    public override void _ExitTree() => StopSession();
+
     /// <summary>开始接收本场战斗的伤害事件；初始化和挂树本身不会订阅。</summary>
     /// <param name="ownsTarget">按运行实体编号判断受击方是否属于本会话，结束后不再调用。</param>
     /// <exception cref="ArgumentNullException">所有权判断为空。</exception>
@@ -67,9 +70,6 @@ public partial class FloatingTextPresenter : Node2D
             return;
         TakeText().ShowRecovery(position, amount, kind, OnFinished);
     }
-
-    /// <summary>拥有者正常结束会话之外，场景退出仍保证解除订阅并归还节点。</summary>
-    public override void _ExitTree() => StopSession();
 
     /// <summary>只消费本会话实体的伤害快照，不保留池化参数或实体引用。</summary>
     /// <param name="sender">事件发布方，不使用。</param>

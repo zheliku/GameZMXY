@@ -10,12 +10,13 @@ namespace GameLogic.Battle.Tests;
 /// <summary>纯规则测试的显式配置入口，不创建全局游戏或 Godot 节点。</summary>
 internal sealed class BattleArchitecture : IArchitecture
 {
-    /// <summary>本测试程序集共享的只读配置来源。</summary>
-    public static BattleArchitecture Instance { get; } = new();
     private readonly ConfigurationModel m_Configuration = new(new Tables(name =>
         new ByteBuf(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Data", name + ".bytes"))))); // 读取真实表产物。
     private readonly GameLogic.Input.InputSystem m_Input; // 所有测试宿主借用同一无状态规则入口。
     private readonly GameLogic.Monsters.AI.MonsterAiSystem m_Ai; // 共享规则；每个测试怪物的数据独立。
+
+    /// <summary>本测试程序集共享的只读配置来源。</summary>
+    public static BattleArchitecture Instance { get; } = new();
 
     /// <summary>装配规则入口，保持与游戏相同的共享系统身份。</summary>
     private BattleArchitecture()

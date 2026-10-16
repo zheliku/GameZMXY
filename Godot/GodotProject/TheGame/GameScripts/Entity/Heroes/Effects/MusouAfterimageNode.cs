@@ -45,31 +45,6 @@ public partial class MusouAfterimageNode : Node2D
         Reset();
     }
 
-    /// <summary>开启或结束采样；结束时已有残影自然淡出。</summary>
-    /// <param name="emitting">是否处于无双状态。</param>
-    public void SetEmitting(bool emitting)
-    {
-        if (m_Emitting == emitting)
-            return;
-        m_Emitting = emitting;
-        m_SampleTime = m_Interval;
-        if (emitting)
-            SetProcess(true);
-    }
-
-    /// <summary>隐藏全部残影并停止采样（实体隐藏或池复用）。</summary>
-    public void Reset()
-    {
-        m_Emitting = false;
-        m_Next = 0;
-        m_SampleTime = 0f;
-        Array.Fill(m_Ages, m_Lifetime);
-        foreach (Sprite2D[] snapshot in m_Snapshots)
-            foreach (Sprite2D layer in snapshot)
-                layer.Visible = false;
-        SetProcess(false);
-    }
-
     /// <summary>淡出已有残影，并按间隔截取动画的当前身体和武器帧。</summary>
     /// <param name="delta">本次渲染步长秒数。</param>
     public override void _Process(double delta)
@@ -100,6 +75,31 @@ public partial class MusouAfterimageNode : Node2D
         }
         else if (!visible)
             SetProcess(false);
+    }
+
+    /// <summary>开启或结束采样；结束时已有残影自然淡出。</summary>
+    /// <param name="emitting">是否处于无双状态。</param>
+    public void SetEmitting(bool emitting)
+    {
+        if (m_Emitting == emitting)
+            return;
+        m_Emitting = emitting;
+        m_SampleTime = m_Interval;
+        if (emitting)
+            SetProcess(true);
+    }
+
+    /// <summary>隐藏全部残影并停止采样（实体隐藏或池复用）。</summary>
+    public void Reset()
+    {
+        m_Emitting = false;
+        m_Next = 0;
+        m_SampleTime = 0f;
+        Array.Fill(m_Ages, m_Lifetime);
+        foreach (Sprite2D[] snapshot in m_Snapshots)
+            foreach (Sprite2D layer in snapshot)
+                layer.Visible = false;
+        SetProcess(false);
     }
 
     /// <summary>只复制显示数据；每个槽位保留独立的世界变换和朝向。</summary>

@@ -9,16 +9,11 @@ namespace GameLogic.Utility;
 /// <summary>泛型 GGF 存档适配器；传递框架读写结果，不解释游戏字段、版本或检查点。</summary>
 /// <typeparam name="TCatalogue">框架目录类型。</typeparam>
 /// <typeparam name="TData">框架存档类型，工具不依赖它的业务字段。</typeparam>
-public sealed class ArchiveUtility<TCatalogue, TData> : AbstractUtility
+public sealed class ArchiveUtility<TCatalogue, TData> : IUtility
     where TCatalogue : ArchiveCatalogue, new()
     where TData : ArchiveData, new()
 {
     private readonly ArchiveSystem<TCatalogue, TData> m_Archive; // 借用：GGF 拥有并串行调度的存档服务。
-
-    /// <summary>绑定已初始化的第三方存档服务。</summary>
-    /// <param name="archive">框架存档服务。</param>
-    public ArchiveUtility(ArchiveSystem<TCatalogue, TData> archive) =>
-        m_Archive = archive ?? throw new ArgumentNullException(nameof(archive));
 
     /// <summary>框架当前目录列表，只借用。</summary>
     public IReadOnlyList<TCatalogue> Catalogues => m_Archive.Catalogues;
@@ -28,6 +23,11 @@ public sealed class ArchiveUtility<TCatalogue, TData> : AbstractUtility
 
     /// <summary>框架当前数据记录，只借用。</summary>
     public TData CurrentData => m_Archive.CurrentData;
+
+    /// <summary>绑定已初始化的第三方存档服务。</summary>
+    /// <param name="archive">框架存档服务。</param>
+    public ArchiveUtility(ArchiveSystem<TCatalogue, TData> archive) =>
+        m_Archive = archive ?? throw new ArgumentNullException(nameof(archive));
 
     /// <summary>由框架新建一个槽位并写盘。</summary>
     /// <returns>框架读写是否成功。</returns>

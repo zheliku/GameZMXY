@@ -10,10 +10,6 @@ namespace GameLogic.UI.Widgets;
 /// <summary>共用被动页管理自己的五行，初期只展示未学习和一级效果。</summary>
 public partial class PassiveSkillsPage : Control, IController
 {
-    /// <summary>借用所属主流程的共享数据访问入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
-
     [Export] private Control m_Rows; // 本页的五行容器。
     private (Label Name, Label NextEffect, Label Soul)[] m_Items; // 本页统一刷新的五行内容，行不挂脚本。
 
@@ -26,6 +22,10 @@ public partial class PassiveSkillsPage : Control, IController
             throw new InvalidOperationException("共用被动目录必须为五行。");
         m_Items = rows.Select(row => (row.GetNode<Label>("Name"), row.GetNode<Label>("NextEffect"), row.GetNode<Label>("Soul"))).ToArray();
     }
+
+    /// <summary>借用所属主流程的共享数据访问入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
 
     /// <summary>刷新尚未学习的五项被动定义。</summary>
     public void Refresh()

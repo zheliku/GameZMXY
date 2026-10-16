@@ -1,9 +1,12 @@
+using GodotGameFramework;
+using System.Linq;
 using GameLogic.Architecture;
 using GameLogic.Level;
 using GameLogic.Monsters.Body;
 using GameLogic.Monsters.AI;
 using GameLogic.Heroes.Body;
 using System;
+using GameLogic.Battle;
 using System.Reflection;
 using GameFramework.Fsm;
 using GameFramework.Procedure;
@@ -40,21 +43,34 @@ internal static class SmokeInspection
         throw new MissingFieldException(instance.GetType().FullName, name);
     }
 
-    /// <summary>读取 C# 事件的实际处理器数，验证关闭退订及复用时没有重复订阅。</summary>
-    /// <param name="source">事件所属的状态源。</param>
-    /// <param name="eventName">字段式事件名称。</param>
-    /// <param name="listener">接收事件的窗口或对象。</param>
-    /// <returns>该对象在事件上的处理器数量。</returns>
-    public static int CountEventHandlers(object source, string eventName, object listener)
+    /// <summary>反射读取属性绑定数，验证关闭退订及复用时没有重复绑定。</summary>
+    /// <param name="source">受测的可绑定属性。</param>
+    /// <param name="listener">接收更新的窗口或对象。</param>
+    /// <returns>该对象在属性上的回调数量。</returns>
+    public static int CountBindingHandlers(object source, object listener)
     {
-        var handlers = ReadField<Delegate>(source, eventName);
+        object callbacks = ReadField<object>(source, "m_Callbacks");
+        var handlers = (Delegate[])callbacks.GetType()
+            .GetProperty("Snapshot", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(callbacks);
         int count = 0;
         if (handlers != null)
-            foreach (var handler in handlers.GetInvocationList())
+            foreach (var handler in handlers)
                 if (ReferenceEquals(handler.Target, listener))
                     count++;
         return count;
     }
+
+    /// <summary>测试侧直接调用怪物的实际扣血入口，避免血条断言受到随机闪避影响。</summary>
+    /// <param name="monster">受测怪物。</param>
+    /// <param name="amount">伤害量。</param>
+    public static void DamageMonster(AbstractMonsterEntity monster, int amount) =>
+        typeof(AbstractMonsterEntity).GetMethod("ApplyDamage", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(monster, [amount]);
+
+    /// <summary>只在隐藏状态测试中准备生命，正式代码不增加测试写入接口。</summary>
+    /// <param name="monster">隐藏的池实例。</param>
+    /// <param name="hp">准备值。</param>
+    public static void SetMonsterHp(AbstractMonsterEntity monster, int hp) =>
+        typeof(AbstractMonsterEntity).GetField("m_Hp", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(monster, hp);
 
     /// <summary>读取英雄或怪物状态机的真实当前状态，并格式化日志名称。</summary>
     /// <param name="actor">受测英雄或怪物。</param>
@@ -148,4 +164,42 @@ internal static class SmokeInspection
 
         return name.EndsWith("State", StringComparison.Ordinal) ? name[..^"State".Length] : name;
     }
+
+    /// <summary>读取实体的受击/出招快照，不添加生产观测属性。</summary>
+    /// <param name="actor">被观测实体。</param>
+    /// <returns>当前结算快照。</returns>
+    public static GameLogic.Battle.Damage.CombatantAttributes CombatAttributes(GameLogic.Entity.AbstractActorEntity actor) =>
+        (GameLogic.Battle.Damage.CombatantAttributes)typeof(GameLogic.Entity.AbstractActorEntity)
+            .GetMethod("CaptureCombatAttributes", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(actor, null);
+
+    /// <summary>验证实体即时查询的是当前架构注册对象。</summary>
+    /// <param name="hero">被观测英雄。</param>
+    /// <returns>实体读取的模型。</returns>
+    public static HeroModel HeroAttributes(AbstractHeroEntity hero) =>
+        (HeroModel)typeof(AbstractHeroEntity).GetProperty("Attributes", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(hero);
+
+    /// <summary>仅测试无返回按钮的流程切换，通过框架受保护入口完成。</summary>
+    /// <typeparam name="TProcedure">目标流程。</typeparam>
+    public static void ChangeProcedure<TProcedure>() where TProcedure : GameFramework.Procedure.ProcedureBase
+    {
+        var current = GF.Procedure.CurrentProcedure;
+        var change = current.GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
+            .Single(method => method.Name == "ChangeState" && method.IsGenericMethodDefinition);
+        change.MakeGenericMethod(typeof(TProcedure)).Invoke(current, [GodotGameFramework.GF.Fsm.GetFsm<IProcedureManager>()]);
+    }
+
+    /// <summary>向当前流程注入旧窗口编号或非法选择，验证实际入口拒绝它们。</summary>
+    /// <param name="name">实际回调名。</param>
+    /// <param name="arguments">回调参数。</param>
+    public static void InvokeProcedureCallback(string name, params object[] arguments) =>
+        GF.Procedure.CurrentProcedure.GetType().GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic)
+            .Invoke(GF.Procedure.CurrentProcedure, arguments);
+
+    /// <summary>统计窗口局部回调，用于验证关闭解绑与池复用。</summary>
+    /// <param name="form">实际窗口。</param>
+    /// <param name="name">事件字段名。</param>
+    /// <returns>当前订阅数。</returns>
+    public static int CallbackCount(object form, string name) =>
+        (form.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(form) as Delegate)
+            ?.GetInvocationList().Length ?? 0;
 }

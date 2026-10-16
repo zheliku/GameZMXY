@@ -1,7 +1,7 @@
 using GameLogic.Architecture;
 using GameLogic.Level;
 using GameLogic.FloatingText;
-using GameLogic.Battle.Resources;
+using GameLogic.Battle;
 using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
 using GameLogic.Input;
@@ -43,18 +43,6 @@ using GodotGameFramework;
 /// </summary>
 public partial class SmokeTestDriver : Node
 {
-    /// <summary>互斥的自动回归模式。</summary>
-    private enum SmokeMode
-    {
-        Disabled,
-        Hero,
-        MonsterAi,
-        Level,
-        Cancellation,
-        Ui,
-        Frontend,
-    }
-
     private static readonly (double At, string Action, string Mode)[] Plan =
     {
         (2.00, "attack", "mash"),
@@ -701,13 +689,13 @@ public partial class SmokeTestDriver : Node
                     monster.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X + 900f, monster.GlobalPosition.Y);
                     monster.Velocity = Vector2.Zero;
                     m_MonsterFoundAt = m_Time;
-                    GD.Print($"SMOKE[{m_Time:F2}] 找到受测猴子 HP {monster.Vitals.Hp}/{monster.Vitals.MaxHp}，已挪出视野等待丢失目标");
+                    GD.Print($"SMOKE[{m_Time:F2}] 找到受测猴子 HP {monster.Hp}/{monster.MaxHp}，已挪出视野等待丢失目标");
                 }
                 else
                 {
                     // M4 站位：悟空右侧、普攻判定范围内，供第二轮连打命中。
                     monster.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X + SandbagOffset, monster.GlobalPosition.Y);
-                    GD.Print($"SMOKE[{m_Time:F2}] 找到沙包猴子 HP {monster.Vitals.Hp}/{monster.Vitals.MaxHp} 位置 {monster.GlobalPosition}");
+                    GD.Print($"SMOKE[{m_Time:F2}] 找到沙包猴子 HP {monster.Hp}/{monster.MaxHp} 位置 {monster.GlobalPosition}");
                 }
             }
 
@@ -727,7 +715,7 @@ public partial class SmokeTestDriver : Node
         if (args is DamageDealtEventArgs e && m_Monster != null && ReferenceEquals(sender, m_Monster))
         {
             m_MonsterHits.Add((e.Result.Damage, e.Result.IsCrit, e.Result.IsMiss));
-            GD.Print($"SMOKE[{m_Time:F2}] 猴子受击 伤害={e.Result.Damage} 暴击={e.Result.IsCrit} 闪避={e.Result.IsMiss} 剩余HP={m_Monster.Vitals.Hp} "
+            GD.Print($"SMOKE[{m_Time:F2}] 猴子受击 伤害={e.Result.Damage} 暴击={e.Result.IsCrit} 闪避={e.Result.IsMiss} 剩余HP={m_Monster.Hp} "
                 + $"猴子x={m_Monster.GlobalPosition.X:F0} 英雄x={m_Hero.GlobalPosition.X:F0}");
         }
     }
@@ -778,10 +766,10 @@ public partial class SmokeTestDriver : Node
         }
 
         // 事件累计伤害应与实体血量一致，再检查命中后是否确实创建池化飘字。
-        int expectedHp = Mathf.Max(0, m_Monster.Vitals.MaxHp - total);
-        if (m_Monster.Vitals.Hp != expectedHp && !m_Monster.Dead)
+        int expectedHp = Mathf.Max(0, m_Monster.MaxHp - total);
+        if (m_Monster.Hp != expectedHp && !m_Monster.Dead)
         {
-            failures.Add($"猴子 HP {m_Monster.Vitals.Hp} 与事件累计 {expectedHp} 不一致");
+            failures.Add($"猴子 HP {m_Monster.Hp} 与事件累计 {expectedHp} 不一致");
         }
 
         if (m_MaxPopCount == 0)
@@ -789,7 +777,7 @@ public partial class SmokeTestDriver : Node
             failures.Add("命中后场上没有出现过伤害飘字（NodePool 未取出 FloatingTextNode）");
         }
 
-        GD.Print($"SMOKE: 猴子共受击 {m_MonsterHits.Count} 次，累计伤害 {total}，HP {m_Monster.Vitals.Hp}/{m_Monster.Vitals.MaxHp}，同屏飘字峰值 {m_MaxPopCount}");
+        GD.Print($"SMOKE: 猴子共受击 {m_MonsterHits.Count} 次，累计伤害 {total}，HP {m_Monster.Hp}/{m_Monster.MaxHp}，同屏飘字峰值 {m_MaxPopCount}");
     }
 
     private void Fail(string reason) // 输出失败原因及已观察序列，然后停止驱动。
@@ -832,5 +820,17 @@ public partial class SmokeTestDriver : Node
     private int LastIndex(string path) // 返回观测序列中路径最后出现的位置，不存在时为 -1。
     {
         return m_Observed.FindLastIndex(o => o.Path == path);
+    }
+
+    /// <summary>互斥的自动回归模式。</summary>
+    private enum SmokeMode
+    {
+        Disabled,
+        Hero,
+        MonsterAi,
+        Level,
+        Cancellation,
+        Ui,
+        Frontend,
     }
 }

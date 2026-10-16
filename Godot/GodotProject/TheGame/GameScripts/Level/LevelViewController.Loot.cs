@@ -1,3 +1,4 @@
+using GameLogic.Battle;
 using GameLogic.Architecture;
 using GameLogic.Config;
 using System;
@@ -21,6 +22,7 @@ public partial class LevelViewController
     private readonly HashSet<GroundItemNode> m_GroundItems = new(); // 本关地面物品；未拾取不会阻止出口。
     private readonly HashSet<LootOrbNode> m_LootOrbs = new(); // 仅本关当前在场的球，不用全池清理影响其他作用域。
     private readonly List<LootOrbNode> m_LootTickBuffer = new(); // 帧内快照，允许接触回调回池或结束整局。
+    private readonly List<GroundItemNode> m_GroundTickBuffer = new(); // 接触检查期间允许关卡结束并清空掉落集合。
     private readonly RandomNumberGenerator m_LootRandom = new(); // 本关掉落采样器；纯规则通过委托取值。
     private bool m_ExitRequested; // W 已确认，等待尚在飞行的球接触后提交检查点。
 
@@ -32,12 +34,10 @@ public partial class LevelViewController
     private void OnMonsterDefeated(MonsterConfig monster, Vector2 position, int experienceReward,
         EquipmentDropPoolId equipmentPoolId)
     {
-        if (LevelModel.Outcome != LevelOutcome.Running || !m_Player.IsAlive)
+        if (LevelModel.Outcome.Value != LevelOutcome.Running || !m_Player.IsAlive)
             return;
         if (this.GetSystem<LevelSystem>().RecordDefeat(experienceReward))
         {
-            m_Player.ApplyLoadout(this.GetSystem<EquipmentSystem>().CreateLoadout(),
-                refill: true);
             m_Player.PlayLevelUp();
         }
 
@@ -88,15 +88,15 @@ public partial class LevelViewController
     /// <returns>是否完成领取。</returns>
     private bool TryCollectGroundItem(AbstractHeroEntity hero, PickupId pickupId, EquipmentInstance equipment)
     {
-        if (LevelModel.Outcome != LevelOutcome.Running || !ReferenceEquals(hero, m_Player) || !hero.IsAlive)
+        if (LevelModel.Outcome.Value != LevelOutcome.Running || !ReferenceEquals(hero, m_Player) || !hero.IsAlive)
             return false;
         if (equipment != null)
             return this.GetSystem<LevelSystem>().TryCollectEquipment(equipment);
         var pickup = this.GetModel<ConfigurationModel>().Tables.TbPickupConfig.Get(pickupId);
         if (pickup.Effect == PickupEffect.Health)
-            m_Player.Vitals.Heal(pickup.RestoreAmount);
+            this.GetSystem<HeroSystem>().Heal(pickup.RestoreAmount);
         else
-            m_Player.Vitals.RestoreMp(pickup.RestoreAmount);
+            this.GetSystem<HeroSystem>().RestoreMp(pickup.RestoreAmount);
         m_FloatingText.ShowRecovery(m_Player.GlobalPosition, pickup.RestoreAmount,
             pickup.Effect == PickupEffect.Mana ? RecoveryKind.Mana : RecoveryKind.Health);
         return true;
@@ -118,7 +118,7 @@ public partial class LevelViewController
         if (!m_LootOrbs.Remove(orb))
             return;
         NodePool.Instance.Release(orb);
-        if (LevelModel.Outcome == LevelOutcome.Running && m_Player.IsAlive)
+        if (LevelModel.Outcome.Value == LevelOutcome.Running && m_Player.IsAlive)
         {
             switch (reward.Kind)
             {
@@ -126,17 +126,16 @@ public partial class LevelViewController
                     this.GetSystem<LevelSystem>().CollectSoul(reward.Amount);
                     break;
                 case LootKind.Musou:
-                    m_Player.Musou.AddFromPickup(reward.Amount);
+                    this.GetSystem<HeroSystem>().AddWsFromPickup(reward.Amount);
                     break;
                 case LootKind.Mana:
-                    int amount = this.GetSystem<LootSystem>().ManaAmount(m_Player.Vitals.MaxMp);
-                    m_Player.Vitals.RestoreMp(amount);
-                    m_FloatingText.ShowRecovery(m_Player.GlobalPosition, amount, RecoveryKind.Mana);
+                    int amount = this.GetSystem<LootSystem>().ManaAmount(this.GetModel<HeroModel>().MaxMp.Value);
+                    this.GetSystem<HeroSystem>().RestoreMp(amount);
                     break;
             }
         }
 
-        if (m_ExitRequested && m_LootOrbs.Count == 0 && LevelModel.Outcome == LevelOutcome.Running)
+        if (m_ExitRequested && m_LootOrbs.Count == 0 && LevelModel.Outcome.Value == LevelOutcome.Running)
             OnExitEntered();
     }
 
@@ -144,7 +143,20 @@ public partial class LevelViewController
     /// <param name="delta">本帧游戏秒数。</param>
     private void TickLoot(float delta)
     {
-        if (delta <= 0 || m_LootOrbs.Count == 0 || !IsInstanceValid(m_Player) || !m_Player.IsAlive)
+        if (delta <= 0 || !IsInstanceValid(m_Player) || !m_Player.IsAlive)
+            return;
+        m_GroundTickBuffer.AddRange(m_GroundItems);
+        try
+        {
+            foreach (var item in m_GroundTickBuffer)
+                if (m_GroundItems.Contains(item))
+                    item.TryCollect(m_Player);
+        }
+        finally
+        {
+            m_GroundTickBuffer.Clear();
+        }
+        if (m_LootOrbs.Count == 0)
             return;
         Vector2 target = m_Player.HurtBox.GetGlobalBounds().GetCenter();
         m_LootTickBuffer.AddRange(m_LootOrbs);

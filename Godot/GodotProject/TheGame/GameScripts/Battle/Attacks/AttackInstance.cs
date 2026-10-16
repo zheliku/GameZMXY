@@ -10,6 +10,8 @@ namespace GameLogic.Battle.Attacks
     /// <summary>一次出招的池化实例：冻结攻击输入并对目标去重；出招创建，收招归还，命中方不得保留引用。</summary>
     public sealed class AttackInstance : IReference
     {
+        private readonly HashSet<ulong> m_HitTargets = new HashSet<ulong>(); // 本招已命中的目标实例号，防止重复结算。
+
         /// <summary>来源攻击 Id（AttackConfig.Id；运行时动态攻击为 0）。受击结算不回查表；攻击方用它结算自己的命中收益</summary>
         public int AttackId { get; private set; }
 
@@ -33,8 +35,6 @@ namespace GameLogic.Battle.Attacks
 
         /// <summary>命中音效（None = 无）</summary>
         public SoundId HitSoundId { get; private set; }
-
-        private readonly HashSet<ulong> m_HitTargets = new HashSet<ulong>(); // 本招已命中的目标实例号，防止重复结算。
 
         /// <summary>从引用池取一个攻击包并装填（各参数语义见同名属性）。</summary>
         /// <param name="attackId">来源攻击编号；动态攻击传 0。</param>

@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Compile Include="*.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\MainPack\Scripts\Debug\ProfileTestData.cs" Link="ProfileTestData.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Architecture\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Architecture\FsmArchitectureExtensions.cs;$(GodotProjectDir)TheGame\GameScripts\Architecture\GgfArchitectureExtensions.cs" Link="Linked\Architecture\%(Filename)%(Extension)" />
     <!-- 访问契约与扩展保持纯 C#；GGF FSM 适配器由真实引擎烟测覆盖。 -->
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Equipment\*.cs" Link="Linked\Equipment\%(Filename)%(Extension)" />
@@ -33,12 +34,15 @@
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Drops\LootSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Profile\*.cs" Link="Linked\Profile\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Save\**\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Save\SaveSystem*.cs" Link="Linked\Save\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Battle\Hero*.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Battle\Damage\CombatantAttributes.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Battle\Attributes\*.cs" Link="Linked\Attributes\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\Configuration*.cs" Link="Linked\Config\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ExternalTypeUtil.cs" Link="Linked\Config\ExternalTypeUtil.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Body\Core\HeroBodyParams.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Monsters\Body\Core\MonsterBodyParams.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\LevelModel.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\LevelSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\LevelResult.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Stages\LevelStageSequence.cs" />
     <!-- 全量配置类型：Tables 聚合全部表，启动校验需要真实 Tables -->

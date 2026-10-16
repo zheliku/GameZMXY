@@ -1,8 +1,3 @@
-using GameLogic.Battle.Attributes;
-using GameLogic.Battle.Attacks;
-using System;
-using GameConfig.Attributes;
-
 namespace GameLogic.Battle.Damage
 {
     /// <summary>
@@ -63,22 +58,6 @@ namespace GameLogic.Battle.Damage
 
         /// <summary>破魔（减对方魔防）</summary>
         public readonly int Sp;
-
-        /// <summary>从属性汇总取当前最终值生成快照（出招与受击时各取一次，之后不随属性变化）。</summary>
-        /// <param name="side">参与结算的一方。</param>
-        /// <param name="level">等级。</param>
-        /// <param name="attributes">角色的属性汇总。</param>
-        /// <param name="actorId">来源运行实体编号；非实体来源可以省略。</param>
-        /// <returns>当前最终值的结算快照。</returns>
-        /// <exception cref="ArgumentNullException">属性汇总为空。</exception>
-        public static CombatantAttributes From(CombatSide side, int level, ActorAttributes attributes, int? actorId = null)
-        {
-            ArgumentNullException.ThrowIfNull(attributes);
-            return new CombatantAttributes(side, level, attributes.Power, attributes.Def,
-                attributes.Mdef, attributes.Crit, attributes.Miss,
-                attributes.Lucky, attributes.Toughness, attributes.Htarget,
-                attributes.CritReduce, attributes.Ar, attributes.Sp, actorId);
-        }
 
         /// <summary>初始化战斗属性快照。</summary>
         /// <param name="side">参与结算的一方。</param>

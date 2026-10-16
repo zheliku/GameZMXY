@@ -33,21 +33,6 @@ public partial class QuestionTips : ITips
         m_Btn_Confirm.Pressed += OnConfirmClicked;
     }
 
-    /// <summary>设置正文、按钮及本周期回调。</summary>
-    /// <param name="content">提示正文。</param>
-    /// <param name="cancelTxt">取消按钮文本。</param>
-    /// <param name="confirmTxt">确认按钮文本。</param>
-    /// <param name="cancel">取消回调。</param>
-    /// <param name="confirm">确认回调。</param>
-    public void SetAction(string content, string cancelTxt, string confirmTxt, Action cancel, Action confirm)
-    {
-        m_Label.Text = content;
-        m_Btn_Cancle.Text = cancelTxt;
-        m_Btn_Confirm.Text = confirmTxt;
-        m_Cancel = cancel;
-        m_Confirm = confirm;
-    }
-
     /// <summary>显示提示，回调由调用者随后通过 SetAction 绑定。</summary>
     /// <param name="userData">不使用的打开参数。</param>
     public void OnOpen(object userData)
@@ -78,19 +63,40 @@ public partial class QuestionTips : ITips
 
     /// <summary>界面暂停；点击导航不依赖轮询。</summary>
     public void OnPause() { }
+
     /// <summary>恢复界面暂停。</summary>
     public void OnResume() { }
+
     /// <summary>窗口被覆盖。</summary>
     public void OnCover() { }
+
     /// <summary>窗口恢复显示。</summary>
     public void OnReveal() { }
+
     /// <summary>框架要求的更新入口；数值和导航通过事件更新。</summary>
     /// <param name="elapseSeconds">游戏帧间隔秒数。</param>
     /// <param name="realElapseSeconds">真实帧间隔秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
+
+    /// <summary>设置正文、按钮及本周期回调。</summary>
+    /// <param name="content">提示正文。</param>
+    /// <param name="cancelTxt">取消按钮文本。</param>
+    /// <param name="confirmTxt">确认按钮文本。</param>
+    /// <param name="cancel">取消回调。</param>
+    /// <param name="confirm">确认回调。</param>
+    public void SetAction(string content, string cancelTxt, string confirmTxt, Action cancel, Action confirm)
+    {
+        m_Label.Text = content;
+        m_Btn_Cancle.Text = cancelTxt;
+        m_Btn_Confirm.Text = confirmTxt;
+        m_Cancel = cancel;
+        m_Confirm = confirm;
+    }
+
     /// <summary>提示参数通过 SetAction 显式设置。</summary>
     /// <param name="userData">不使用的重新聚焦参数。</param>
     public void OnRefocus(object userData) { }
+
     /// <summary>记录框架分配的窗口层级。</summary>
     /// <param name="uiGroupDepth">界面组深度。</param>
     /// <param name="depthInUIGroup">窗口在组内的深度。</param>
@@ -119,5 +125,4 @@ public partial class QuestionTips : ITips
         GF.UI.CloseUIForm(this);
         callback?.Invoke();
     }
-
 }

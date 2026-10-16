@@ -1,10 +1,11 @@
+using IUIForm = GameFramework.UI.IUIForm;
+using GameLogic.Battle;
 using GameLogic.Config;
 using GameLogic.Architecture;
 using GameLogic.Equipment;
 using GameLogic.Save;
 using GameLogic.Battle.Attributes;
 using GameLogic.Procedure.FlowData;
-using GameLogic.Event.Navigation;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -71,12 +72,7 @@ public class ProcedureLevel : ProcedureBase
         base.OnEnter(procedureOwner);
         int entrySerial = ++m_EntrySerial;
         m_Owner = procedureOwner;
-        GF.Event.Subscribe(SettingsRequestedEventArgs.EventId, OnSettingsRequested);
-        GF.Event.Subscribe(InventoryRequestedEventArgs.EventId, OnInventoryRequested);
-        GF.Event.Subscribe(SkillsRequestedEventArgs.EventId, OnSkillsRequested);
-        GF.Event.Subscribe(RetryLevelRequestedEventArgs.EventId, OnRetryRequested);
-        GF.Event.Subscribe(MapRequestedEventArgs.EventId, OnMapRequested);
-        GF.Event.Subscribe(TitleRequestedEventArgs.EventId, OnTitleRequested);
+
 
         try
         {
@@ -84,9 +80,8 @@ public class ProcedureLevel : ProcedureBase
             CancellationToken cancellationToken = m_SessionCancellation.Token;
             var entities = GF.Entity;
             Tables tables = procedureOwner.GetModel<ConfigurationModel>().Tables;
-            var playerModel = procedureOwner.GetModel<PlayerModel>();
+            var profile = procedureOwner.GetModel<ProfileModel>();
             var saveSystem = procedureOwner.GetSystem<SaveSystem>();
-            var equipmentSystem = procedureOwner.GetSystem<EquipmentSystem>();
 
             // 上一局的检查点必须先落盘：重开前等待，失败只记录（档案仍在内存，下一检查点会再写）。
             if (!await saveSystem.PendingWrite)
@@ -128,17 +123,16 @@ public class ProcedureLevel : ProcedureBase
             m_LevelViewController = levelViewController;
             m_LevelModel = new LevelModel();
             procedureOwner.RegisterModel(m_LevelModel);
+            procedureOwner.RegisterModel(new HeroModel());
+            procedureOwner.RegisterSystem(new HeroSystem(procedureOwner.GetArchitecture()));
             m_LevelSystem = new LevelSystem(procedureOwner.GetArchitecture());
             procedureOwner.RegisterSystem(m_LevelSystem);
             levelViewController.Initialize(procedureOwner.GetArchitecture());
             levelViewController.Failed += OnLevelFailed;
 
-            // 飘字挂在实体系统所在世界坐标系，随本关结束释放。
-
-            // 英雄只接收由档案构建的出战装配；等待后使用捕获的实体服务清理旧结果。
-            HeroLoadout loadout = equipmentSystem.CreateLoadout();
+            // 属性系统已准备全部数据，实体显示参数不再携带模型或装配包装。
             WukongEntity hero =
-                await entities.ShowEntityAsync<WukongEntity>(GameConfig.Entity.EntityId.Wukong, loadout);
+                await entities.ShowEntityAsync<WukongEntity>(GameConfig.Entity.EntityId.Wukong);
             if (entrySerial != m_EntrySerial)
             {
                 entities.HideEntitySafe(hero);
@@ -164,12 +158,14 @@ public class ProcedureLevel : ProcedureBase
                 return;
             }
 
-            m_LevelModel.Ended += OnLevelEnded;
+            m_LevelModel.Outcome.Register(OnLevelEnded);
             m_LevelViewController.StartSession(entities, m_Hero, cancellationToken);
 
             // 先订阅结果再提交请求，缓存命中也能处理；失败参数只在事件分发期间使用。
+            GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
             GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnHudOpenFailed);
             m_HudSerialId = GF.UI.OpenUIForm(UIFormId.BattleHud, new BattleHudData(m_Hero, m_LevelViewController));
+            SetFormCallbacks(GF.UI.GetUIForm(m_HudSerialId), bind: true);
             Log.Info("[ProcedureLevel] 已提交战斗 HUD 请求：{0}", m_HudSerialId);
         }
         catch (Exception ex)
@@ -188,85 +184,6 @@ public class ProcedureLevel : ProcedureBase
         }
     }
 
-    /// <summary>收到左下角设置点击后打开暂停菜单。</summary>
-    /// <param name="sender">战斗 HUD。</param>
-    /// <param name="args">本次设置请求。</param>
-    private void OnSettingsRequested(object sender, GameEventArgs args)
-    {
-        if (((SettingsRequestedEventArgs)args).FormSerialId != m_HudSerialId ||
-            m_LevelModel?.Outcome != LevelOutcome.Running)
-            return;
-        if (HasWindow(m_SettingsSerialId) || HasWindow(m_InventorySerialId) || HasWindow(m_SkillSerialId))
-            return;
-        m_SettingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
-    }
-
-    /// <summary>在同一关卡中互斥打开背包与设置。</summary>
-    /// <param name="sender">战斗 HUD。</param>
-    /// <param name="args">本次背包请求。</param>
-    private void OnInventoryRequested(object sender, GameEventArgs args)
-    {
-        if (((InventoryRequestedEventArgs)args).FormSerialId != m_HudSerialId ||
-            m_LevelModel?.Outcome != LevelOutcome.Running)
-            return;
-        if (HasWindow(m_SettingsSerialId) || HasWindow(m_InventorySerialId) || HasWindow(m_SkillSerialId))
-            return;
-        m_InventorySerialId =
-            GF.UI.OpenUIForm(UIFormId.InventoryForm, new InventoryFormData(m_Hero));
-    }
-
-    /// <summary>互斥打开本关技能目录；展示当前出战角色。</summary>
-    /// <param name="sender">战斗 HUD。</param>
-    /// <param name="args">带本周期窗口编号的技能请求。</param>
-    private void OnSkillsRequested(object sender, GameEventArgs args)
-    {
-        if (((SkillsRequestedEventArgs)args).FormSerialId != m_HudSerialId ||
-            m_LevelModel?.Outcome != LevelOutcome.Running ||
-            m_Hero == null || !m_Hero.IsAlive)
-            return;
-        if (HasWindow(m_SettingsSerialId) || HasWindow(m_InventorySerialId) || HasWindow(m_SkillSerialId))
-            return;
-        m_SkillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm);
-    }
-
-    /// <summary>设置的放弃与结算的返回地图使用各自的窗口编号校验。</summary>
-    /// <param name="sender">发出请求的窗口。</param>
-    /// <param name="args">返回地图请求。</param>
-    private void OnMapRequested(object sender, GameEventArgs args)
-    {
-        int serial = ((MapRequestedEventArgs)args).FormSerialId;
-        if (serial != 0 && serial == m_SettlementSerialId && m_LevelModel?.Result != null)
-            NavigateAfterCheckpointAsync(m_Owner, m_EntrySerial, retry: false);
-        else if (serial != 0 && serial == m_SettingsSerialId && m_LevelModel?.Outcome == LevelOutcome.Running)
-            ChangeState<ProcedureMap>(m_Owner);
-    }
-
-    /// <summary>只有当前失败结算窗口可以重新挑战。</summary>
-    /// <param name="sender">结算窗口。</param>
-    /// <param name="args">重试请求。</param>
-    private void OnRetryRequested(object sender, GameEventArgs args)
-    {
-        int serial = ((RetryLevelRequestedEventArgs)args).FormSerialId;
-        if (serial != 0 && serial == m_SettlementSerialId && m_LevelModel?.Outcome == LevelOutcome.Defeated)
-            NavigateAfterCheckpointAsync(m_Owner, m_EntrySerial, retry: true);
-    }
-
-    /// <summary>检查窗口是否仍打开或正在加载。</summary>
-    /// <param name="serial">窗口请求编号；零表示无请求。</param>
-    /// <returns>窗口仍属于本周期时为 true。</returns>
-    private static bool HasWindow(int serial) =>
-        serial != 0 && (GF.UI.HasUIForm(serial) || GF.UI.IsLoadingUIForm(serial));
-
-    /// <summary>从设置返回标题，离开边界负责回滚未完成的关卡。</summary>
-    /// <param name="sender">当前设置窗口。</param>
-    /// <param name="args">返回标题请求。</param>
-    private void OnTitleRequested(object sender, GameEventArgs args)
-    {
-        if (((TitleRequestedEventArgs)args).FormSerialId == m_SettingsSerialId &&
-            m_LevelModel?.Outcome == LevelOutcome.Running)
-            ChangeState<ProcedureTitle>(m_Owner);
-    }
-
     /// <summary>
     /// 离开流程：未结束的关卡运行按"中途放弃"回滚（不写盘）；框架关停时只退订、不写盘。
     /// </summary>
@@ -274,12 +191,13 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="isShutdown">是否因框架关闭而离开。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
-        GF.Event.Unsubscribe(SettingsRequestedEventArgs.EventId, OnSettingsRequested);
-        GF.Event.Unsubscribe(InventoryRequestedEventArgs.EventId, OnInventoryRequested);
-        GF.Event.Unsubscribe(SkillsRequestedEventArgs.EventId, OnSkillsRequested);
-        GF.Event.Unsubscribe(RetryLevelRequestedEventArgs.EventId, OnRetryRequested);
-        GF.Event.Unsubscribe(MapRequestedEventArgs.EventId, OnMapRequested);
-        GF.Event.Unsubscribe(TitleRequestedEventArgs.EventId, OnTitleRequested);
+        if (GF.Event.Check(OpenUIFormSuccessEventArgs.EventId, OnFormOpened))
+            GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
+        SetFormCallbacks(GF.UI.GetUIForm(m_HudSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: false);
+
+
         m_PendingSettlement = false;
         base.OnLeave(procedureOwner, isShutdown);
         int entrySerial = m_EntrySerial;
@@ -303,6 +221,98 @@ public class ProcedureLevel : ProcedureBase
         m_LevelModel = null;
         m_Hero = null;
         m_Owner = null;
+    }
+
+    /// <summary>在事件栈退出后的流程帧打开结算，死亡动画等待按游戏秒数推进。</summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
+    /// <param name="elapseSeconds">本帧游戏秒数。</param>
+    /// <param name="realElapseSeconds">本帧实际秒数。</param>
+    protected internal override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds,
+        float realElapseSeconds)
+    {
+        base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
+        if (!m_PendingSettlement)
+            return;
+        m_TransitionDelay -= elapseSeconds;
+        if (m_TransitionDelay > 0f)
+            return;
+        m_PendingSettlement = false;
+        m_SettlementSerialId = GF.UI.OpenUIForm(UIFormId.SettlementForm, m_LevelModel.Result);
+        SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: true);
+    }
+
+    /// <summary>收到左下角设置点击后打开暂停菜单。</summary>
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    private void OnSettingsRequested(int formSerialId)
+    {
+        if (formSerialId != m_HudSerialId ||
+            m_LevelModel?.Outcome.Value != LevelOutcome.Running)
+            return;
+        if (HasWindow(m_SettingsSerialId) || HasWindow(m_InventorySerialId) || HasWindow(m_SkillSerialId))
+            return;
+        m_SettingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
+        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
+    }
+
+    /// <summary>在同一关卡中互斥打开背包与设置。</summary>
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    private void OnInventoryRequested(int formSerialId)
+    {
+        if (formSerialId != m_HudSerialId ||
+            m_LevelModel?.Outcome.Value != LevelOutcome.Running)
+            return;
+        if (HasWindow(m_SettingsSerialId) || HasWindow(m_InventorySerialId) || HasWindow(m_SkillSerialId))
+            return;
+        m_InventorySerialId =
+            GF.UI.OpenUIForm(UIFormId.InventoryForm, new InventoryFormData(m_Hero));
+    }
+
+    /// <summary>互斥打开本关技能目录；展示当前出战角色。</summary>
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    private void OnSkillsRequested(int formSerialId)
+    {
+        if (formSerialId != m_HudSerialId ||
+            m_LevelModel?.Outcome.Value != LevelOutcome.Running ||
+            m_Hero == null || !m_Hero.IsAlive)
+            return;
+        if (HasWindow(m_SettingsSerialId) || HasWindow(m_InventorySerialId) || HasWindow(m_SkillSerialId))
+            return;
+        m_SkillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm);
+    }
+
+    /// <summary>设置的放弃与结算的返回地图使用各自的窗口编号校验。</summary>
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    private void OnMapRequested(int formSerialId)
+    {
+        int serial = formSerialId;
+        if (serial != 0 && serial == m_SettlementSerialId && m_LevelModel?.Result != null)
+            NavigateAfterCheckpointAsync(m_Owner, m_EntrySerial, retry: false);
+        else if (serial != 0 && serial == m_SettingsSerialId && m_LevelModel?.Outcome.Value == LevelOutcome.Running)
+            ChangeState<ProcedureMap>(m_Owner);
+    }
+
+    /// <summary>只有当前失败结算窗口可以重新挑战。</summary>
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    private void OnRetryRequested(int formSerialId)
+    {
+        int serial = formSerialId;
+        if (serial != 0 && serial == m_SettlementSerialId && m_LevelModel?.Outcome.Value == LevelOutcome.Defeated)
+            NavigateAfterCheckpointAsync(m_Owner, m_EntrySerial, retry: true);
+    }
+
+    /// <summary>检查窗口是否仍打开或正在加载。</summary>
+    /// <param name="serial">窗口请求编号；零表示无请求。</param>
+    /// <returns>窗口仍属于本周期时为 true。</returns>
+    private static bool HasWindow(int serial) =>
+        serial != 0 && (GF.UI.HasUIForm(serial) || GF.UI.IsLoadingUIForm(serial));
+
+    /// <summary>从设置返回标题，离开边界负责回滚未完成的关卡。</summary>
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    private void OnTitleRequested(int formSerialId)
+    {
+        if (formSerialId == m_SettingsSerialId &&
+            m_LevelModel?.Outcome.Value == LevelOutcome.Running)
+            ChangeState<ProcedureTitle>(m_Owner);
     }
 
     /// <summary>订阅场景结果并等待加载，命中已加载场景时直接返回。</summary>
@@ -365,6 +375,9 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="entrySerial">被清理的流程进入周期。</param>
     private void CleanupSession(int entrySerial)
     {
+        SetFormCallbacks(GF.UI.GetUIForm(m_HudSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: false);
         m_PendingSettlement = false;
         m_Navigating = false;
         // 启动或运行失败也必须使在途等待失效，随后重新进入可创建新周期。
@@ -376,6 +389,8 @@ public class ProcedureLevel : ProcedureBase
         m_SessionCancellation?.Cancel();
         m_SessionCancellation?.Dispose();
         m_SessionCancellation = null;
+        if (GF.Event.Check(OpenUIFormSuccessEventArgs.EventId, OnFormOpened))
+            GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         // 模态窗口先解除暂停和运行订阅，再清理 HUD、实体及关卡事务。
         if (HasWindow(m_InventorySerialId))
             GF.UI.CloseUIForm(m_InventorySerialId);
@@ -413,9 +428,8 @@ public class ProcedureLevel : ProcedureBase
         if (m_LevelViewController != null)
         {
             m_LevelViewController.Failed -= OnLevelFailed;
-            m_LevelModel.Ended -= OnLevelEnded;
+            m_LevelModel.Outcome.UnRegister(OnLevelEnded);
             m_LevelViewController.Cleanup();
-
         }
 
         if (m_LevelSystem != null)
@@ -423,6 +437,8 @@ public class ProcedureLevel : ProcedureBase
         if (m_LevelModel != null)
             m_Owner.RemoveModel<LevelModel>();
         GF.Entity.HideEntitySafe(m_Hero);
+        m_Owner.RemoveSystem<HeroSystem>();
+        m_Owner.RemoveModel<HeroModel>();
         bool ownsScene = m_LevelOwnerEntry == entrySerial;
         if (ownsScene)
         {
@@ -448,29 +464,12 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="outcome">本次关卡结局。</param>
     private void OnLevelEnded(LevelOutcome outcome)
     {
-        if (outcome == LevelOutcome.Abandoned || m_Owner == null)
+        if (outcome is not (LevelOutcome.Cleared or LevelOutcome.Defeated) || m_Owner == null)
             return;
         m_PendingSettlement = true;
         m_TransitionDelay = outcome == LevelOutcome.Defeated
             ? GF.Fsm.GetModel<ConfigurationModel>().Tables.TbBattleConfig.DeathSettlementDelay
             : 0f;
-    }
-
-    /// <summary>在事件栈退出后的流程帧打开结算，死亡动画等待按游戏秒数推进。</summary>
-    /// <param name="procedureOwner">当前流程状态机。</param>
-    /// <param name="elapseSeconds">本帧游戏秒数。</param>
-    /// <param name="realElapseSeconds">本帧实际秒数。</param>
-    protected internal override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds,
-        float realElapseSeconds)
-    {
-        base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
-        if (!m_PendingSettlement)
-            return;
-        m_TransitionDelay -= elapseSeconds;
-        if (m_TransitionDelay > 0f)
-            return;
-        m_PendingSettlement = false;
-        m_SettlementSerialId = GF.UI.OpenUIForm(UIFormId.SettlementForm, m_LevelModel.Result);
     }
 
     /// <summary>等待检查点后执行玩家选择；旧周期异步结果不触发导航。</summary>
@@ -516,5 +515,53 @@ public class ProcedureLevel : ProcedureBase
     {
         Log.Error("[ProcedureLevel] 关卡运行失败：{0}", error);
         CleanupSession(m_EntrySerial);
+    }
+
+    /// <summary>异步窗口打开后接上本流程拥有的回调。</summary>
+    /// <param name="sender">框架 UI。</param>
+    /// <param name="args">当次打开结果。</param>
+    private void OnFormOpened(object sender, GameEventArgs args)
+    {
+        if (args is OpenUIFormSuccessEventArgs opened)
+            SetFormCallbacks(opened.UIForm, bind: true);
+    }
+
+    /// <summary>按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。</summary>
+    /// <param name="form">已打开窗口；在途时为空。</param>
+    /// <param name="bind">绑定或解除。</param>
+    private void SetFormCallbacks(IUIForm form, bool bind)
+    {
+        if (bind && (form == null || !GF.UI.IsValidUIForm(form)))
+            return;
+        switch (form)
+        {
+            case BattleHud battleHud when battleHud.SerialId == m_HudSerialId:
+                battleHud.SettingsRequested -= OnSettingsRequested;
+                if (bind)
+                    battleHud.SettingsRequested += OnSettingsRequested;
+                battleHud.InventoryRequested -= OnInventoryRequested;
+                if (bind)
+                    battleHud.InventoryRequested += OnInventoryRequested;
+                battleHud.SkillsRequested -= OnSkillsRequested;
+                if (bind)
+                    battleHud.SkillsRequested += OnSkillsRequested;
+                break;
+            case SettingsForm settingsForm when settingsForm.SerialId == m_SettingsSerialId:
+                settingsForm.TitleRequested -= OnTitleRequested;
+                if (bind)
+                    settingsForm.TitleRequested += OnTitleRequested;
+                settingsForm.MapRequested -= OnMapRequested;
+                if (bind)
+                    settingsForm.MapRequested += OnMapRequested;
+                break;
+            case SettlementForm settlementForm when settlementForm.SerialId == m_SettlementSerialId:
+                settlementForm.MapRequested -= OnMapRequested;
+                if (bind)
+                    settlementForm.MapRequested += OnMapRequested;
+                settlementForm.RetryRequested -= OnRetryRequested;
+                if (bind)
+                    settlementForm.RetryRequested += OnRetryRequested;
+                break;
+        }
     }
 }

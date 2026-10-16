@@ -306,6 +306,5 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(DamageKind.Magic, reused.Kind);
             ReferencePool.Release(reused);
         }
-
     }
 }

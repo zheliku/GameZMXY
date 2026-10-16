@@ -65,6 +65,5 @@ namespace GameLogic.Monsters.AI
 
         /// <summary>未被打断时的本状态决策（elapseSeconds 为逻辑时间）。</summary>
         protected abstract void Tick(IFsm<IMonsterAiAgent> fsm, IMonsterAiAgent agent, float elapseSeconds);
-
     }
 }

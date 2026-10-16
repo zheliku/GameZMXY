@@ -1,7 +1,7 @@
+using GameLogic.Battle;
 using GameLogic.Profile;
 using GameLogic.Level;
 using GameLogic.Architecture;
-using GameLogic.Event.Navigation;
 using System;
 using GameFramework.UI;
 using Godot;
@@ -13,14 +13,23 @@ using GameLogic.Monsters;
 namespace GameLogic.UI;
 
 /// <summary>
-/// 战斗 HUD：订阅状态源的聚合变更事件，变化时拉取一组一致数值刷新被动控件；由 GGF 管理打开、关闭和复用。
+/// 战斗 HUD：绑定模型属性并观察实体资源，变化时刷新被动控件；由 GGF 管理打开、关闭和复用。
 /// 不写任何状态，不执行玩法结算。
 /// </summary>
 public partial class BattleHud : IController
 {
-    /// <summary>读取所属游戏流程的架构入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    private BattleHudData m_Data; // 本次打开的状态源引用，关闭后释放。
+    private AbstractMonsterEntity m_Opponent; // 本次观察的守关怪，实体所有权仍归关卡。
+
+    /// <summary>由所属流程处理 SettingsRequested；参数为本次窗口编号。</summary>
+    public event Action<int> SettingsRequested;
+
+    /// <summary>由所属流程处理 InventoryRequested；参数为本次窗口编号。</summary>
+    public event Action<int> InventoryRequested;
+
+    /// <summary>由所属流程处理 SkillsRequested；参数为本次窗口编号。</summary>
+    public event Action<int> SkillsRequested;
+
     /// <summary>战斗界面通过统一动作请求背包，暂停或覆盖时不响应。</summary>
     /// <param name="inputEvent">输入映射处理的事件。</param>
     public override void _UnhandledInput(InputEvent inputEvent)
@@ -31,9 +40,6 @@ public partial class BattleHud : IController
         GetViewport().SetInputAsHandled();
         OnInventoryClicked();
     }
-    private BattleHudData m_Data; // 本次打开的状态源引用，关闭后释放。
-    private AbstractMonsterEntity m_Opponent; // 本次观察的守关怪，实体所有权仍归关卡。
-    private bool m_WasMusouActive; // 当前绑定观察到的激活边沿，避免每次扣点重播。
 
     /// <summary>初始化框架字段；业务订阅只在 OnOpen 建立。</summary>
     /// <param name="serialId">界面请求编号。</param>
@@ -86,7 +92,7 @@ public partial class BattleHud : IController
         }
 
         var levelModel = this.GetModel<LevelModel>();
-        var progression = this.GetModel<PlayerModel>().ActiveHero;
+        var progression = this.GetModel<ProfileModel>();
         if (!IsInstanceValid(data.Hero) || !data.Hero.IsShown || levelModel == null || !levelModel.Initialized)
         {
             throw new InvalidOperationException("BattleHud 绑定的英雄或关卡已经失效。");
@@ -99,13 +105,17 @@ public partial class BattleHud : IController
 
         // 先登记本次引用再订阅，部分订阅失败时也能完整退订。
         m_Data = data;
-        m_WasMusouActive = data.Hero.Musou.IsActive;
         try
         {
-            data.Hero.Vitals.Changed += RefreshVitals;
-            data.Hero.Musou.Changed += RefreshMusou;
-            progression.Changed += RefreshProgression;
-            levelModel.TravelAvailableChanged += RefreshTravel;
+            this.GetModel<HeroModel>().Hp.Register(RefreshResources);
+            this.GetModel<HeroModel>().MaxHp.Register(RefreshResources);
+            this.GetModel<HeroModel>().Mp.Register(RefreshResources);
+            this.GetModel<HeroModel>().MaxMp.Register(RefreshResources);
+            this.GetModel<HeroModel>().Ws.Register(RefreshMusou);
+            this.GetModel<HeroModel>().MaxWs.Register(RefreshMusou);
+            this.GetModel<HeroModel>().WsActive.Register(RefreshMusouActive);
+            progression.Progress.RegisterWithInitValue(RefreshProgression);
+            levelModel.TravelAvailable.RegisterWithInitValue(RefreshTravel);
             data.ViewController.FeaturedOpponentChanged += RefreshEncounter;
             RefreshAll();
             Visible = true;
@@ -123,6 +133,9 @@ public partial class BattleHud : IController
     /// <param name="userData">关闭参数，不使用。</param>
     public void OnClose(bool isShutdown, object userData)
     {
+        SettingsRequested = null;
+        InventoryRequested = null;
+        SkillsRequested = null;
         Unbind();
         if (!isShutdown && IsInstanceValid(this))
         {
@@ -142,6 +155,19 @@ public partial class BattleHud : IController
     /// <summary>恢复被覆盖界面。</summary>
     public void OnReveal() { }
 
+    /// <summary>界面轮询；数值显示由状态源变更事件驱动，计时类显示（冷却、Buff 剩余）以后在这里读取。</summary>
+    /// <param name="elapseSeconds">游戏帧间隔秒数。</param>
+    /// <param name="realElapseSeconds">实际帧间隔秒数。</param>
+    public void OnUpdate(float elapseSeconds, float realElapseSeconds)
+    {
+        if (m_Data != null)
+            RefreshEncounterHealth();
+    }
+
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     /// <summary>重新绑定显式传入的打开参数。</summary>
     /// <param name="userData">新绑定参数；null 保持当前绑定。</param>
     public void OnRefocus(object userData)
@@ -151,11 +177,6 @@ public partial class BattleHud : IController
             OnOpen(userData);
         }
     }
-
-    /// <summary>界面轮询；数值显示由状态源变更事件驱动，计时类显示（冷却、Buff 剩余）以后在这里读取。</summary>
-    /// <param name="elapseSeconds">游戏帧间隔秒数。</param>
-    /// <param name="realElapseSeconds">实际帧间隔秒数。</param>
-    public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
 
     /// <summary>记录框架分配的界面深度。</summary>
     /// <param name="uiGroupDepth">界面组深度。</param>
@@ -172,7 +193,7 @@ public partial class BattleHud : IController
         if (m_Data == null)
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        GF.Event.Fire(this, SettingsRequestedEventArgs.Create(SerialId));
+        SettingsRequested?.Invoke(SerialId);
     }
 
     /// <summary>请关卡流程打开战斗背包。</summary>
@@ -181,7 +202,7 @@ public partial class BattleHud : IController
         if (m_Data == null)
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        GF.Event.Fire(this, InventoryRequestedEventArgs.Create(SerialId));
+        InventoryRequested?.Invoke(SerialId);
     }
 
     /// <summary>请关卡流程打开技能目录。</summary>
@@ -190,7 +211,7 @@ public partial class BattleHud : IController
         if (m_Data == null)
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        GF.Event.Fire(this, SkillsRequestedEventArgs.Create(SerialId));
+        SkillsRequested?.Invoke(SerialId);
     }
 
     /// <summary>释放本次订阅与表现任务，重复调用安全。</summary>
@@ -201,10 +222,15 @@ public partial class BattleHud : IController
         if (data != null)
         {
             // 关窗先于模型移除和实体隐藏，直接解除本周期的对应订阅。
-            data.Hero.Vitals.Changed -= RefreshVitals;
-            data.Hero.Musou.Changed -= RefreshMusou;
-            this.GetModel<PlayerModel>().ActiveHero.Changed -= RefreshProgression;
-            this.GetModel<LevelModel>().TravelAvailableChanged -= RefreshTravel;
+            this.GetModel<HeroModel>().Hp.UnRegister(RefreshResources);
+            this.GetModel<HeroModel>().MaxHp.UnRegister(RefreshResources);
+            this.GetModel<HeroModel>().Mp.UnRegister(RefreshResources);
+            this.GetModel<HeroModel>().MaxMp.UnRegister(RefreshResources);
+            this.GetModel<HeroModel>().Ws.UnRegister(RefreshMusou);
+            this.GetModel<HeroModel>().MaxWs.UnRegister(RefreshMusou);
+            this.GetModel<HeroModel>().WsActive.UnRegister(RefreshMusouActive);
+            this.GetModel<ProfileModel>().Progress.UnRegister(RefreshProgression);
+            this.GetModel<LevelModel>().TravelAvailable.UnRegister(RefreshTravel);
             data.ViewController.FeaturedOpponentChanged -= RefreshEncounter;
         }
 
@@ -212,7 +238,6 @@ public partial class BattleHud : IController
             m_Menu.ResetMusou();
         if (IsInstanceValid(m_MusouActivation))
             m_MusouActivation.Reset();
-        m_WasMusouActive = false;
         BindEncounter(null);
         if (IsInstanceValid(m_Go))
         {
@@ -224,10 +249,8 @@ public partial class BattleHud : IController
     /// <summary>按当前状态立即刷新全部显示。</summary>
     private void RefreshAll()
     {
-        RefreshVitals();
+        RefreshResources();
         RefreshMusou();
-        RefreshProgression();
-        RefreshTravel();
         RefreshEncounter();
     }
 
@@ -238,58 +261,60 @@ public partial class BattleHud : IController
     /// <param name="opponent">关卡指定的怪物；空值解除显示。</param>
     private void BindEncounter(AbstractMonsterEntity opponent)
     {
-        if (m_Opponent != opponent)
-        {
-            if (m_Opponent != null)
-                m_Opponent.Vitals.Changed -= RefreshEncounterHealth;
-            m_Opponent = opponent;
-            if (opponent != null)
-                opponent.Vitals.Changed += RefreshEncounterHealth;
-        }
+        m_Opponent = opponent;
         RefreshEncounterHealth();
     }
 
     /// <summary>从唯一生命状态源读取并更新左名右条；关闭或死亡后隐藏。</summary>
-    private void RefreshEncounterHealth()
+    /// <param name="value">已提交的属性值；同时读取关联上限。</param>
+    private void RefreshEncounterHealth(int value = 0)
     {
         if (!IsInstanceValid(m_EncounterHealthBar))
             return;
         if (m_Opponent == null)
             m_EncounterHealthBar.Visible = false;
         else
-            m_EncounterHealthBar.SetValue(m_Opponent.Config.NameCn, m_Opponent.Vitals.Hp, m_Opponent.Vitals.MaxHp);
+            m_EncounterHealthBar.SetValue(m_Opponent.Config.NameCn, m_Opponent.Hp, m_Opponent.MaxHp);
     }
 
-    /// <summary>生命与魔法变化：一次读取当前值与上限，不会看到中间态。</summary>
-    private void RefreshVitals()
+    /// <summary>生命与魔法变化：读取当前值与上限刷新显示。</summary>
+    /// <param name="value">已提交的属性值；同时读取关联上限。</param>
+    private void RefreshResources(int value = 0)
     {
-        var vitals = m_Data.Hero.Vitals;
-        m_Status.SetVitals(vitals.Hp, vitals.MaxHp, vitals.Mp, vitals.MaxMp);
+        var vitals = this.GetModel<HeroModel>();
+        m_Status.SetResources(vitals.Hp.Value, vitals.MaxHp.Value, vitals.Mp.Value, vitals.MaxMp.Value);
     }
 
     /// <summary>刷新无双条，并按蓄满状态控制 HUD 专属提示；重复满值通知保持动画进度。</summary>
-    private void RefreshMusou()
+    /// <param name="value">已提交的属性值；同时读取关联上限。</param>
+    private void RefreshMusou(int value = 0)
     {
-        var musou = m_Data.Hero.Musou;
-        if (musou.IsActive && !m_WasMusouActive)
+        var musou = this.GetModel<HeroModel>();
+        m_Menu.SetMusou(musou.Ws.Value, musou.MaxWs.Value, musou.IsWsFull);
+    }
+
+    /// <summary>开启状态改变时刷新无双表现。</summary>
+    /// <param name="active">已经提交的开启状态。</param>
+    private void RefreshMusouActive(bool active)
+    {
+        if (active)
             m_MusouActivation.ShowActivation();
-        else if (!musou.IsActive)
+        else
             m_MusouActivation.Reset();
-        m_WasMusouActive = musou.IsActive;
-        m_Menu.SetMusou(musou.Value, musou.Max, musou.IsFull);
+        RefreshMusou();
     }
 
     /// <summary>刷新等级与经验条（等级、本级经验、上限来自同一次派生）。</summary>
-    private void RefreshProgression()
+    /// <param name="progression">完整的成长快照。</param>
+    private void RefreshProgression(HeroProgressionState progression)
     {
-        var progression = this.GetModel<PlayerModel>().ActiveHero;
         m_Status.SetProgression(progression.Level, progression.Experience, progression.MaxExperience);
     }
 
     /// <summary>显示或隐藏前进提示，并同步控制动画。</summary>
-    private void RefreshTravel()
+    /// <param name="visible">本局已提交的前进窗口。</param>
+    private void RefreshTravel(bool visible)
     {
-        bool visible = this.GetModel<LevelModel>().TravelAvailable;
         m_Go.Visible = visible;
         if (visible)
         {

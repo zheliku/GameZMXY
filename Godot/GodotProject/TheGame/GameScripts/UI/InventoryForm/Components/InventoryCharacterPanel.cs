@@ -1,3 +1,4 @@
+using GameLogic.Battle;
 using GameLogic.Config;
 using GameLogic.Architecture;
 using System;
@@ -14,10 +15,6 @@ namespace GameLogic.UI.Widgets;
 /// <summary>个人资料面板统一显示身份、穿戴、最终属性和经验，不修改角色状态。</summary>
 public partial class InventoryCharacterPanel : Control, IController
 {
-    /// <summary>借用所属主流程的共享数据访问入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
-
     [Export] private Label m_Name; // 角色昵称。
     [Export] private Label m_Level; // 当前等级。
     [Export] private HeroPreviewNode m_Preview; // 独立角色预览。
@@ -46,6 +43,10 @@ public partial class InventoryCharacterPanel : Control, IController
         m_ArmorSlot.Clicked += OnArmorClicked;
     }
 
+    /// <summary>借用所属主流程的共享数据访问入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     /// <summary>每次窗口打开从预览待机起点开始。</summary>
     public void ResetPreview() => m_Preview.Reset();
 
@@ -56,29 +57,26 @@ public partial class InventoryCharacterPanel : Control, IController
     /// <param name="hero">当前存活的出战角色。</param>
     public void Refresh(AbstractHeroEntity hero)
     {
-        var playerModel = this.GetModel<PlayerModel>();
-        var progression = playerModel.ActiveHero;
-        var equipment = playerModel.ActiveEquipment;
+        var profile = this.GetModel<ProfileModel>();
         m_Name.Text = hero.Config.NameCn;
-        m_Level.Text = progression.Level.ToString();
-        var attributes = hero.Attributes;
-        var vitals = hero.Vitals;
+        m_Level.Text = profile.Level.ToString();
+        var heroModel = this.GetModel<HeroModel>();
         var battle = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig;
-        m_Hp.Text = $"{vitals.Hp} / {vitals.MaxHp}";
-        m_Mp.Text = $"{vitals.Mp} / {vitals.MaxMp}";
-        m_Power.Text = attributes.Power.ToString();
-        m_Def.Text = attributes.Def.ToString();
-        m_Lucky.Text = attributes.Lucky.ToString();
-        m_Mdef.Text = Percent(attributes.Get(AttributeType.Mdef), battle.MdefKHero);
-        m_Crit.Text = Percent(attributes.Get(AttributeType.Crit), battle.CritK);
-        m_Miss.Text = Percent(attributes.Get(AttributeType.Miss), battle.MissKHero);
-        m_HpRegen.Text = attributes.HpRegen.ToString();
-        m_MpRegen.Text = attributes.MpRegen.ToString();
-        m_Experience.Value = progression.MaxExperience == 0 ? 100 : 100.0 * progression.Experience / progression.MaxExperience;
-        m_ExperienceText.Text = progression.MaxExperience == 0 ? "MAX" : $"{progression.Experience}/{progression.MaxExperience}";
-        BindSlot(m_WeaponSlot, equipment.Weapon);
-        BindSlot(m_ArmorSlot, equipment.Armor);
-        m_Preview.ApplyAppearance(equipment.Weapon != null, equipment.Armor != null);
+        m_Hp.Text = $"{heroModel.Hp.Value} / {heroModel.MaxHp.Value}";
+        m_Mp.Text = $"{heroModel.Mp.Value} / {heroModel.MaxMp.Value}";
+        m_Power.Text = heroModel.Power.Value.ToString();
+        m_Def.Text = heroModel.Def.Value.ToString();
+        m_Lucky.Text = heroModel.Lucky.Value.ToString();
+        m_Mdef.Text = Percent(heroModel.Mdef.Value, battle.MdefKHero);
+        m_Crit.Text = Percent(heroModel.Crit.Value, battle.CritK);
+        m_Miss.Text = Percent(heroModel.Miss.Value, battle.MissKHero);
+        m_HpRegen.Text = heroModel.HpRegen.Value.ToString();
+        m_MpRegen.Text = heroModel.MpRegen.Value.ToString();
+        m_Experience.Value = profile.MaxExperience == 0 ? 100 : 100.0 * profile.Experience / profile.MaxExperience;
+        m_ExperienceText.Text = profile.MaxExperience == 0 ? "MAX" : $"{profile.Experience}/{profile.MaxExperience}";
+        BindSlot(m_WeaponSlot, profile.Weapon);
+        BindSlot(m_ArmorSlot, profile.Armor);
+        m_Preview.ApplyAppearance(profile.Weapon != null, profile.Armor != null);
     }
 
     /// <summary>装配穿戴槽的图标及详情输入。</summary>

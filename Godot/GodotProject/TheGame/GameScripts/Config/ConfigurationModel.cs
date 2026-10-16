@@ -9,11 +9,10 @@ using GameConfig.Skills;
 using System;
 using GameConfig;
 using GameLogic.Architecture;
-using GameLogic.Profile;
 
 namespace GameLogic.Config;
 
-/// <summary>应用级配置模型：拥有查询索引、经验曲线和同类实体共享的只读身体参数。</summary>
+/// <summary>应用级配置模型：拥有配置查询索引和同类实体共享的只读身体参数。</summary>
 /// <remarks>启动时建立索引；身体参数在对应场景首次载入时构建；不保留节点或构建委托。</remarks>
 public sealed class ConfigurationModel : AbstractModel
 {
@@ -21,19 +20,19 @@ public sealed class ConfigurationModel : AbstractModel
     private readonly Dictionary<SkillHero, IReadOnlyList<SkillConfig>> m_ActiveSkills; // 按角色和官方行序建立一次的技能目录。
     private readonly Dictionary<int, IReadOnlyList<PassiveConfig>> m_Passives; // 按等级建立一次的被动目录。
     private readonly Dictionary<EntityId, MonsterConfig> m_Monsters; // 同一实体到唯一基础定义的只读索引。
-    private readonly Dictionary<int, HeroBodyParams> m_HeroBodies = new(); // 每名英雄仅构建一次的身体参数。
-    private readonly Dictionary<EntityId, MonsterBodyParams> m_MonsterBodies = new(); // 每类怪物仅构建一次的身体参数。
+
+    /// <summary>同类英雄共享的身体参数，由配置系统首次建立。</summary>
+    internal Dictionary<int, HeroBodyParams> HeroBodies { get; } = new();
+
+    /// <summary>同类怪物共享的身体参数，由配置系统首次建立。</summary>
+    internal Dictionary<EntityId, MonsterBodyParams> MonsterBodies { get; } = new();
 
     /// <summary>借用 ConfigSystem 已加载的同一总表，运行期只读。</summary>
     public Tables Tables { get; }
 
-    /// <summary>本模型拥有的经验曲线，所有档案共享使用。</summary>
-    public ExperienceCurve ExperienceCurve { get; }
-
-    /// <summary>建立配置查询索引与共享经验曲线；跨表约束由 ConfigurationSystem 校验。</summary>
+    /// <summary>建立配置查询索引；跨表约束由 ConfigurationSystem 校验。</summary>
     /// <param name="tables">已加载的配置总表。</param>
     /// <exception cref="ArgumentNullException">总表为空。</exception>
-    /// <exception cref="ArgumentException">经验曲线约束不满足。</exception>
     public ConfigurationModel(Tables tables)
     {
         Tables = tables ?? throw new ArgumentNullException(nameof(tables));
@@ -44,7 +43,6 @@ public sealed class ConfigurationModel : AbstractModel
             x => (IReadOnlyList<SkillConfig>)Array.AsReadOnly(x.OrderBy(a => a.Order).ToArray()));
         m_Passives = tables.TbPassiveConfig.DataList.GroupBy(x => x.Level).ToDictionary(x => x.Key,
             x => (IReadOnlyList<PassiveConfig>)Array.AsReadOnly(x.OrderBy(a => a.PassiveId).ToArray()));
-        ExperienceCurve = new ExperienceCurve(tables.TbHeroLevelConfig.DataList);
     }
 
     /// <summary>按官方面板行序读取一名角色的主动技能。</summary>
@@ -70,31 +68,14 @@ public sealed class ConfigurationModel : AbstractModel
     public IReadOnlyList<AttackConfig> GetAttacks(EntityId entityId) =>
         m_Attacks.GetValueOrDefault(entityId, Array.Empty<AttackConfig>());
 
-    /// <summary>首次加载同类英雄时建立参数，后续池实例复用。</summary>
-    /// <param name="heroId">英雄配置主键。</param>
-    /// <param name="create">从当前场景动画读取纯数据的工厂；模型不保留委托。</param>
-    public void EnsureHeroBodyParams(int heroId, Func<HeroBodyParams> create)
-    {
-        if (!m_HeroBodies.ContainsKey(heroId))
-            m_HeroBodies.Add(heroId, create());
-    }
-
-    /// <summary>首次加载同类怪物时建立参数，后续池实例复用。</summary>
-    /// <param name="entityId">怪物实体类型。</param>
-    /// <param name="create">从当前场景动画读取纯数据的工厂；模型不保留委托。</param>
-    public void EnsureMonsterBodyParams(EntityId entityId, Func<MonsterBodyParams> create)
-    {
-        if (!m_MonsterBodies.ContainsKey(entityId))
-            m_MonsterBodies.Add(entityId, create());
-    }
 
     /// <summary>借用已构建的共享英雄参数。</summary>
     /// <param name="heroId">英雄主键。</param>
     /// <returns>共享参数。</returns>
-    public HeroBodyParams GetHeroBodyParams(int heroId) => m_HeroBodies[heroId];
+    public HeroBodyParams GetHeroBodyParams(int heroId) => HeroBodies[heroId];
 
     /// <summary>借用已构建的共享怪物参数。</summary>
     /// <param name="entityId">怪物实体类型。</param>
     /// <returns>共享参数。</returns>
-    public MonsterBodyParams GetMonsterBodyParams(EntityId entityId) => m_MonsterBodies[entityId];
+    public MonsterBodyParams GetMonsterBodyParams(EntityId entityId) => MonsterBodies[entityId];
 }

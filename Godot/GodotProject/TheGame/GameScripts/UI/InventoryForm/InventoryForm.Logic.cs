@@ -1,7 +1,9 @@
+using GameLogic.Battle;
 using GameLogic.Profile;
 using GameLogic.Config;
 using GameLogic.Architecture;
 using System;
+using GameConfig.Attributes;
 using GameFramework.UI;
 using GameLogic.Audio;
 using GameLogic.Level;
@@ -10,16 +12,13 @@ using Godot;
 using GodotGameFramework;
 using GameConfig.Equipment;
 using GameLogic.Equipment;
+using System.Collections.Generic;
 
 namespace GameLogic.UI;
 
 /// <summary>观察战斗个人资料与背包，向关卡提交穿脱装备请求。</summary>
 public partial class InventoryForm : IController
 {
-    /// <summary>读取所属游戏流程的架构入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
-
     private InventoryFormData m_Data; // 本次打开借用的状态源。
     private bool m_ResumeGame; // 只对称恢复本窗口发起的暂停。
 
@@ -93,23 +92,6 @@ public partial class InventoryForm : IController
     {
     }
 
-    /// <summary>显式参数可重新绑定本窗口。</summary>
-    /// <param name="userData">新的打开参数；null 保持当前内容。</param>
-    public void OnRefocus(object userData)
-    {
-        if (userData != null)
-            OnOpen(userData);
-    }
-
-    /// <summary>同步框架分配的窗口层级。</summary>
-    /// <param name="uiGroupDepth">窗口组层级。</param>
-    /// <param name="depthInUIGroup">窗口在组内的层级。</param>
-    public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
-    {
-        m_DepthInUIGroup = depthInUIGroup;
-        ZIndex = depthInUIGroup;
-    }
-
     /// <summary>绑定当前角色、成长和灵魂，并暂停战斗。</summary>
     /// <param name="userData">当前关卡的背包打开参数。</param>
     /// <exception cref="ArgumentException">参数类型错误或不是当前出战角色。</exception>
@@ -117,22 +99,26 @@ public partial class InventoryForm : IController
     {
         ReleaseBindingsAndPause();
         Visible = false;
-        var playerModel = this.GetModel<PlayerModel>();
+        var profile = this.GetModel<ProfileModel>();
         var levelModel = this.GetModel<LevelModel>();
         if (userData is not InventoryFormData data || !IsInstanceValid(data.Hero) || !data.Hero.IsAlive ||
             levelModel == null || !levelModel.Initialized ||
-            levelModel.Outcome != LevelOutcome.Running || data.Hero.HeroId != playerModel.ActiveHeroId)
+            levelModel.Outcome.Value != LevelOutcome.Running || data.Hero.HeroId != profile.ActiveHeroId)
             throw new ArgumentException("背包需要本关存活的出战英雄与档案。", nameof(userData));
         m_Data = data;
         // 先记录借用引用，装配失败时也能完整解除订阅与暂停。
         try
         {
-            data.Hero.Vitals.Changed += RefreshInventoryPanels;
-            playerModel.ActiveHero.Changed += RefreshInventoryPanels;
-            playerModel.Wallet.Changed += RefreshInventoryPanels;
-            playerModel.Inventory.Changed += RefreshInventoryPanels;
-            playerModel.ActiveEquipment.Changed += RefreshInventoryPanels;
-            levelModel.Ended += OnLevelEnded;
+            this.GetModel<HeroModel>().Hp.Register(RefreshResources);
+            this.GetModel<HeroModel>().Mp.Register(RefreshResources);
+            foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
+                this.GetModel<HeroModel>().GetAttribute(attribute).Register(RefreshResources);
+            this.GetModel<HeroModel>().Level.Register(RefreshResources);
+            profile.Progress.Register(RefreshProgression);
+            this.GetModel<ProfileModel>().Soul.Register(RefreshSoul);
+            this.GetModel<ProfileModel>().Items.Register(RefreshItems);
+            this.GetModel<ProfileModel>().Slots.Register(RefreshEquipment);
+            levelModel.Outcome.Register(OnLevelEnded);
             m_ResumeGame = !GF.Base.IsGamePaused;
             if (m_ResumeGame)
                 GF.Base.PauseGame();
@@ -157,6 +143,45 @@ public partial class InventoryForm : IController
             m_Character.AdvancePreview();
     }
 
+    /// <summary>背包暂停期间仍接收关闭动作，拒绝按键自动重复。</summary>
+    /// <param name="inputEvent">已映射的输入事件。</param>
+    public override void _Input(InputEvent inputEvent)
+    {
+        if (m_Data != null && Visible && m_SaleConfirmation.Visible && inputEvent.IsActionPressed("ui_cancel"))
+        {
+            GetViewport().SetInputAsHandled();
+            m_SaleConfirmation.Cancel();
+            return;
+        }
+
+        if (m_Data == null || !Visible ||
+            !inputEvent.IsActionPressed(GameLogic.Input.InputSystem.InventoryToggle))
+            return;
+        GetViewport().SetInputAsHandled();
+        OnCloseClicked();
+    }
+
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
+    /// <summary>显式参数可重新绑定本窗口。</summary>
+    /// <param name="userData">新的打开参数；null 保持当前内容。</param>
+    public void OnRefocus(object userData)
+    {
+        if (userData != null)
+            OnOpen(userData);
+    }
+
+    /// <summary>同步框架分配的窗口层级。</summary>
+    /// <param name="uiGroupDepth">窗口组层级。</param>
+    /// <param name="depthInUIGroup">窗口在组内的层级。</param>
+    public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
+    {
+        m_DepthInUIGroup = depthInUIGroup;
+        ZIndex = depthInUIGroup;
+    }
+
     /// <summary>关闭后解除全部借用与订阅。</summary>
     private void ReleaseBindingsAndPause()
     {
@@ -168,13 +193,17 @@ public partial class InventoryForm : IController
         if (data != null)
         {
             // 流程先关闭窗口再移除 Model，本次订阅源在关闭前保持同一实例。
-            var playerModel = this.GetModel<PlayerModel>();
-            data.Hero.Vitals.Changed -= RefreshInventoryPanels;
-            playerModel.ActiveHero.Changed -= RefreshInventoryPanels;
-            playerModel.Wallet.Changed -= RefreshInventoryPanels;
-            playerModel.Inventory.Changed -= RefreshInventoryPanels;
-            playerModel.ActiveEquipment.Changed -= RefreshInventoryPanels;
-            this.GetModel<LevelModel>().Ended -= OnLevelEnded;
+            var profile = this.GetModel<ProfileModel>();
+            this.GetModel<HeroModel>().Hp.UnRegister(RefreshResources);
+            this.GetModel<HeroModel>().Mp.UnRegister(RefreshResources);
+            foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
+                this.GetModel<HeroModel>().GetAttribute(attribute).UnRegister(RefreshResources);
+            this.GetModel<HeroModel>().Level.UnRegister(RefreshResources);
+            profile.Progress.UnRegister(RefreshProgression);
+            this.GetModel<ProfileModel>().Soul.UnRegister(RefreshSoul);
+            this.GetModel<ProfileModel>().Items.UnRegister(RefreshItems);
+            this.GetModel<ProfileModel>().Slots.UnRegister(RefreshEquipment);
+            this.GetModel<LevelModel>().Outcome.UnRegister(OnLevelEnded);
         }
 
         if (m_ResumeGame && IsInstanceValid(GF.Base))
@@ -184,7 +213,11 @@ public partial class InventoryForm : IController
 
     /// <summary>关卡结局后不保留旧英雄窗口。</summary>
     /// <param name="outcome">已提交的结局。</param>
-    private void OnLevelEnded(LevelOutcome outcome) => GF.UI.CloseUIForm(SerialId);
+    private void OnLevelEnded(LevelOutcome outcome)
+    {
+        if (outcome != LevelOutcome.Running)
+            GF.UI.CloseUIForm(SerialId);
+    }
 
     /// <summary>关闭个人资料，继续本关。</summary>
     private void OnCloseClicked()
@@ -203,6 +236,38 @@ public partial class InventoryForm : IController
         m_Bag.Refresh();
     }
 
+    /// <summary>生命、魔法变化只刷新个人资料。</summary>
+    /// <param name="value">已提交的资源值。</param>
+    private void RefreshResources(int value) => m_Character.Refresh(m_Data.Hero);
+
+    /// <summary>成长变化只刷新个人资料。</summary>
+    /// <param name="progress">已经提交的成长快照。</param>
+    private void RefreshProgression(HeroProgressionState progress) => m_Character.Refresh(m_Data.Hero);
+
+    /// <summary>余额变化刷新背包与出售选项，清除已过期的确认。</summary>
+    /// <param name="soul">已经提交的余额。</param>
+    private void RefreshSoul(int soul)
+    {
+        CloseTransientSelection();
+        m_Bag.Refresh();
+    }
+
+    /// <summary>背包集合变化后重新分页和绘制格子。</summary>
+    /// <param name="items">已领取装备的实时只读视图。</param>
+    private void RefreshItems(IReadOnlyList<EquipmentInstance> items)
+    {
+        CloseTransientSelection();
+        m_Bag.Refresh();
+    }
+
+    /// <summary>穿戴提交后刷新槽位、预览与角色属性。</summary>
+    /// <param name="slots">完整的穿戴快照。</param>
+    private void RefreshEquipment(EquippedItems slots)
+    {
+        CloseTransientSelection();
+        m_Character.Refresh(m_Data.Hero);
+    }
+
     /// <summary>打开所选背包格的操作菜单；点击本身不改变穿戴。</summary>
     /// <param name="item">当前可见格提交的装备实例。</param>
     /// <param name="anchor">当前可见格的全局区域。</param>
@@ -211,7 +276,7 @@ public partial class InventoryForm : IController
         if (m_Data == null || m_SaleConfirmation.Visible)
             return;
         var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
-        m_Actions.Open(item.InstanceId, anchor, (int)definition.Owner == this.GetModel<PlayerModel>().ActiveHeroId);
+        m_Actions.Open(item.InstanceId, anchor, (int)definition.Owner == this.GetModel<ProfileModel>().ActiveHeroId);
     }
 
     /// <summary>所选菜单确认后提交穿戴请求。</summary>
@@ -228,24 +293,6 @@ public partial class InventoryForm : IController
     {
         if (m_Data != null && this.GetSystem<LevelSystem>().TrySell(instanceId) == true)
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-    }
-
-    /// <summary>背包暂停期间仍接收关闭动作，拒绝按键自动重复。</summary>
-    /// <param name="inputEvent">已映射的输入事件。</param>
-    public override void _Input(InputEvent inputEvent)
-    {
-        if (m_Data != null && Visible && m_SaleConfirmation.Visible && inputEvent.IsActionPressed("ui_cancel"))
-        {
-            GetViewport().SetInputAsHandled();
-            m_SaleConfirmation.Cancel();
-            return;
-        }
-
-        if (m_Data == null || !Visible ||
-            !inputEvent.IsActionPressed(GameLogic.Input.InputSystem.InventoryToggle))
-            return;
-        GetViewport().SetInputAsHandled();
-        OnCloseClicked();
     }
 
     /// <summary>请求卸下当前部位；背包满时保持原状态。</summary>

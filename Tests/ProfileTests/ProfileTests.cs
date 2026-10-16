@@ -21,35 +21,37 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void Progression_DerivesLevelAndNotifiesOncePerChange()
         {
-            HeroProgression progression = new(1, TestTables.Curve, 0);
+            ProfileModel progression = new(1, [(1, 0)], TestTables.Curve, 25);
+            TestTables.Initialize(progression);
             int notifications = 0;
-            progression.Changed += () => notifications++;
+            progression.Progress.Register(_ => notifications++);
 
             // 135 经验恰好升到 2 级；再加 145 + 1 跨到 3 级并保留 1 点余量。
-            Assert.Equal(1, progression.AddExperience(135));
+            Assert.Equal(1, TestTables.ForProfile(progression).AddExperience(135));
             Assert.Equal((2, 0, 145), (progression.Level, progression.Experience, progression.MaxExperience));
-            Assert.Equal(1, progression.AddExperience(146));
+            Assert.Equal(1, TestTables.ForProfile(progression).AddExperience(146));
             Assert.Equal((3, 1, 155), (progression.Level, progression.Experience, progression.MaxExperience));
-            Assert.Equal(0, progression.AddExperience(0));
+            Assert.Equal(0, TestTables.ForProfile(progression).AddExperience(0));
             Assert.Equal(2, notifications);
 
             // 回滚恢复派生值并通知；相同值不通知。
-            progression.Restore(0);
-            progression.Restore(0);
+            progression.RestoreExperience(progression.ActiveHeroId, 0);
+            progression.RestoreExperience(progression.ActiveHeroId, 0);
             Assert.Equal((1, 0, 135), (progression.Level, progression.Experience, progression.MaxExperience));
             Assert.Equal(3, notifications);
-            Assert.Throws<ArgumentOutOfRangeException>(() => progression.AddExperience(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(progression).AddExperience(-1));
         }
 
         /// <summary>满级后不再增长，也不发通知。</summary>
         [Fact]
         public void Progression_StopsAtMaxLevel()
         {
-            HeroProgression progression = new(1, TestTables.Curve, int.MaxValue);
+            ProfileModel progression = new(1, [(1, int.MaxValue)], TestTables.Curve, 25);
+            TestTables.Initialize(progression);
             int notifications = 0;
-            progression.Changed += () => notifications++;
+            progression.Progress.Register(_ => notifications++);
             Assert.Equal(TestTables.Curve.MaxLevel, progression.Level);
-            Assert.Equal(0, progression.AddExperience(1000));
+            Assert.Equal(0, TestTables.ForProfile(progression).AddExperience(1000));
             Assert.Equal(0, notifications);
             Assert.Equal((55, 0, 0), (progression.Level, progression.Experience, progression.MaxExperience));
         }
@@ -58,103 +60,90 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void Wallet_RejectsOverspendAndNegativeAmounts()
         {
-            Wallet wallet = new(-5);
-            Assert.Equal(0, wallet.Soul);
-            wallet.AddSoul(30);
-            Assert.False(wallet.TrySpendSoul(31));
-            Assert.True(wallet.TrySpendSoul(30));
-            Assert.Equal(0, wallet.Soul);
-            wallet.AddSoul(int.MaxValue);
-            wallet.AddSoul(10);
-            Assert.Equal(int.MaxValue, wallet.Soul);
-            Assert.Throws<ArgumentOutOfRangeException>(() => wallet.AddSoul(-1));
-            Assert.Throws<ArgumentOutOfRangeException>(() => wallet.TrySpendSoul(-1));
+            ProfileModel wallet = new(1, [(1, 0)], TestTables.Curve, 25, -5);
+            Assert.Equal(0, wallet.Soul.Value);
+            TestTables.ForProfile(wallet).AddSoul(30);
+            Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(31));
+            Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(30));
+            Assert.Equal(0, wallet.Soul.Value);
+            TestTables.ForProfile(wallet).AddSoul(int.MaxValue);
+            TestTables.ForProfile(wallet).AddSoul(10);
+            Assert.Equal(int.MaxValue, wallet.Soul.Value);
+            Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(wallet).AddSoul(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(wallet).TrySpendSoul(-1));
         }
 
         /// <summary>零额、扣款失败、封顶和回滚都保持有效余额。</summary>
         [Fact]
         public void Wallet_PreservesBalanceAcrossNoOpsAndRestore()
         {
-            Wallet wallet = new(30);
-            wallet.AddSoul(0);
-            Assert.True(wallet.TrySpendSoul(0));
-            Assert.False(wallet.TrySpendSoul(31));
-            Assert.Equal(30, wallet.Soul);
-            Assert.True(wallet.TrySpendSoul(10));
-            Assert.Equal(20, wallet.Soul);
-            wallet.Restore(20);
-            Assert.Equal(20, wallet.Soul);
-            wallet.AddSoul(int.MaxValue);
-            wallet.AddSoul(1);
-            Assert.Equal(int.MaxValue, wallet.Soul);
-            wallet.Restore(-1);
-            Assert.Equal(0, wallet.Soul);
+            ProfileModel wallet = new(1, [(1, 0)], TestTables.Curve, 25, 30);
+            TestTables.ForProfile(wallet).AddSoul(0);
+            Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(0));
+            Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(31));
+            Assert.Equal(30, wallet.Soul.Value);
+            Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(10));
+            Assert.Equal(20, wallet.Soul.Value);
+            wallet.RestoreSoul(20);
+            Assert.Equal(20, wallet.Soul.Value);
+            TestTables.ForProfile(wallet).AddSoul(int.MaxValue);
+            TestTables.ForProfile(wallet).AddSoul(1);
+            Assert.Equal(int.MaxValue, wallet.Soul.Value);
+            wallet.RestoreSoul(-1);
+            Assert.Equal(0, wallet.Soul.Value);
         }
 
         /// <summary>档案拒绝重复英雄与未拥有的出战英雄。</summary>
         [Fact]
         public void Profile_RejectsInvalidHeroSets()
         {
-            HeroProgression hero = new(1, TestTables.Curve, 0);
-            Assert.Throws<ArgumentException>(() => new PlayerModel(1, new[] { hero, hero }, new Wallet(0), new Inventory(25)));
-            Assert.Throws<ArgumentException>(() => new PlayerModel(2, new[] { hero }, new Wallet(0), new Inventory(25)));
-            Assert.Equal(1, new PlayerModel(1, new[] { hero }, new Wallet(0), new Inventory(25)).ActiveHero.HeroId);
+            ProfileModel hero = new(1, [(1, 0)], TestTables.Curve, 25);
+            TestTables.Initialize(hero);
+            Assert.Throws<ArgumentException>(() => new TestGameScope(1, new[] { (1, 0), (1, 0) }, 0, 25));
+            Assert.Throws<ArgumentException>(() => new TestGameScope(2, new[] { (1, 0) }, 0, 25));
+            Assert.Equal(1, new TestGameScope(1, new[] { (1, 0) }, 0, 25).Profile.ActiveHeroId);
         }
 
         /// <summary>钱包只在余额实际提交后通知，失败消费、零增量和封顶不重复通知。</summary>
         [Fact]
         public void Wallet_NotifiesOnlyCommittedBalanceChanges()
         {
-            Wallet wallet = new(10);
+            ProfileModel wallet = new(1, [(1, 0)], TestTables.Curve, 25, 10);
             int notifications = 0;
             int observed = -1;
-            wallet.Changed += () =>
+            wallet.Soul.Register(_ =>
             {
                 notifications++;
-                observed = wallet.Soul;
-            };
-            wallet.AddSoul(0);
-            Assert.False(wallet.TrySpendSoul(11));
+                observed = wallet.Soul.Value;
+            });
+            TestTables.ForProfile(wallet).AddSoul(0);
+            Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(11));
             Assert.Equal(0, notifications);
-            wallet.AddSoul(5);
+            TestTables.ForProfile(wallet).AddSoul(5);
             Assert.Equal((1, 15), (notifications, observed));
-            Assert.True(wallet.TrySpendSoul(3));
+            Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(3));
             Assert.Equal((2, 12), (notifications, observed));
-            wallet.Restore(12);
+            wallet.RestoreSoul(12);
             Assert.Equal(2, notifications);
-            wallet.Restore(int.MaxValue);
-            wallet.AddSoul(1);
+            wallet.RestoreSoul(int.MaxValue);
+            TestTables.ForProfile(wallet).AddSoul(1);
             Assert.Equal((3, int.MaxValue), (notifications, observed));
         }
 
-        /// <summary>战斗快照冻结当前等级，升级时只替换基础值并保留本局修正。</summary>
+        /// <summary>成长改变自动重算绑定属性，局内 Buff 来源保持，升级补满资源。</summary>
         [Fact]
-        public void BattleSnapshot_FreezesGrowthAndPreservesRuntimeModifiers()
+        public void HeroAttributes_FollowsProgressionAndKeepsBuff()
         {
-            HeroProgression hero = new(1, TestTables.Curve, 0);
-            HeroLoadout first = new EquipmentSystem(TestTables.Architecture).CreateLoadout(hero);
-            hero.AddExperience(135);
-            HeroLoadout second = new EquipmentSystem(TestTables.Architecture).CreateLoadout(hero);
-            Assert.Equal((1, 80, 50, 10), (first.Level, first.BaseAttributes.MaxHp, first.BaseAttributes.MaxMp, first.BaseAttributes.Power));
-            Assert.Equal((2, 130, 70, 15, 4), (second.Level, second.BaseAttributes.MaxHp, second.BaseAttributes.MaxMp,
-                second.BaseAttributes.Power, second.BaseAttributes.Def));
-
-            ActorAttributes attributes = new();
-            attributes.SetSource(new AttributeSourceId("Musou", 0),
+            var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+            var model = scope.Hero;
+            scope.GetSystem<GameLogic.Battle.HeroSystem>().SetSource(new AttributeSourceId("Buff", 1),
                 [AttributeModifier.PercentMult(GameConfig.Attributes.AttributeType.Power, 1)]);
-            attributes.SetBase(first.BaseAttributes);
-            Assert.Equal(20, attributes.GetInt(GameConfig.Attributes.AttributeType.Power));
-            attributes.SetBase(second.BaseAttributes);
-            Assert.Equal(30, attributes.GetInt(GameConfig.Attributes.AttributeType.Power));
-            Assert.Equal(130, attributes.GetInt(GameConfig.Attributes.AttributeType.MaxHp));
-        }
-
-        /// <summary>缺少成长行时明确拒绝，避免默认数值进入实体。</summary>
-        [Fact]
-        public void BattleSnapshot_RejectsMissingGrowth()
-        {
-            Assert.Throws<InvalidOperationException>(() => new EquipmentSystem(TestTables.Architecture).CreateLoadout(new HeroProgression(999, TestTables.Curve, 0)));
-            Assert.Throws<ArgumentNullException>(() => new HeroLoadout(1, 1, null));
+            Assert.Equal(20, model.Power.Value);
+            scope.GetSystem<GameLogic.Battle.HeroSystem>().Damage(20);
+            scope.GetSystem<ProfileSystem>().AddExperience(140);
+            Assert.Equal(30, model.Power.Value);
+            Assert.Equal(130, model.MaxHp.Value);
+            Assert.Equal(model.MaxHp.Value, model.Hp.Value);
         }
 
         /// <summary>成长表与官方 Role1.upGrade 公式逐级一致（防止迁移脚本或手工改表引入偏差）。</summary>
@@ -219,26 +208,25 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void Mapper_RejectsOtherVersionsAndEmptyHeroes()
         {
-
             foreach (int version in Enumerable.Range(0, GameData.CurrentVersion).Append(GameData.CurrentVersion + 1))
-                Assert.Throws<NotSupportedException>(() => PlayerModel.FromSaveData(new GameData { SaveVersion = version, ActiveHeroId = 1, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
-            Assert.Throws<ArgumentException>(() => PlayerModel.FromSaveData(new GameData(), TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
+                Assert.Throws<NotSupportedException>(() => TestGameScope.FromSaveData(new GameData { SaveVersion = version, ActiveHeroId = 1, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
+            Assert.Throws<ArgumentException>(() => TestGameScope.FromSaveData(new GameData(), TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
         }
 
         /// <summary>档案 → 快照 → JSON → 快照 → 档案往返不丢状态，快照与运行时不共享引用。</summary>
         [Fact]
         public void Mapper_RoundTripsThroughJson()
         {
-            PlayerModel playerModel = new(1, new[] { new HeroProgression(1, TestTables.Curve, 472) }, new Wallet(42), new Inventory(25));
+            TestGameScope playerModel = new(1, new[] { (1, 472) }, 42, 25);
             GameData snapshot = playerModel.CaptureSaveData();
-            playerModel.Wallet.AddSoul(100);
+            playerModel.GetSystem<ProfileSystem>().AddSoul(100);
             Assert.Equal(42, snapshot.Soul);
 
             string json = JsonConvert.SerializeObject(snapshot);
             GameData loaded = JsonConvert.DeserializeObject<GameData>(json);
-            PlayerModel restored = PlayerModel.FromSaveData(loaded, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
-            Assert.Equal(42, restored.Wallet.Soul);
-            Assert.Equal((4, 37), (restored.ActiveHero.Level, restored.ActiveHero.Experience));
+            TestGameScope restored = TestGameScope.FromSaveData(loaded, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
+            Assert.Equal(42, restored.Profile.Soul.Value);
+            Assert.Equal((4, 37), (restored.Profile.Level, restored.Profile.Experience));
             Assert.DoesNotContain("\"Player\"", json);
             Assert.DoesNotContain("\"Profile\"", json);
             Assert.Contains("\"TotalExperience\"", json);
@@ -248,18 +236,18 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void Mapper_RollsBackToSnapshot()
         {
-            PlayerModel playerModel = new(1, new[] { new HeroProgression(1, TestTables.Curve, 0) }, new Wallet(5), new Inventory(25));
+            TestGameScope playerModel = new(1, new[] { (1, 0) }, 5, 25);
             GameData snapshot = playerModel.CaptureSaveData();
-            HeroProgression progression = playerModel.ActiveHero;
+            ProfileModel progression = playerModel.Profile;
             List<int> levels = new();
-            progression.Changed += () => levels.Add(progression.Level);
+            progression.Progress.Register(_ => levels.Add(progression.Level));
 
-            progression.AddExperience(400);
-            playerModel.Wallet.AddSoul(50);
+            TestTables.ForProfile(progression).AddExperience(400);
+            playerModel.GetSystem<ProfileSystem>().AddSoul(50);
             playerModel.RestoreCheckpoint(snapshot);
 
-            Assert.Same(progression, playerModel.ActiveHero);
-            Assert.Equal((1, 5), (progression.Level, playerModel.Wallet.Soul));
+            Assert.Same(progression, playerModel.Profile);
+            Assert.Equal((1, 5), (progression.Level, playerModel.Profile.Soul.Value));
             Assert.Equal(new[] { 3, 1 }, levels);
         }
     }

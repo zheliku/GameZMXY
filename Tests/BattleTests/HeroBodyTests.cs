@@ -526,23 +526,6 @@ public sealed class HeroBodyTests
         Assert.Equal(-1, second.AttackSegment);
     }
 
-    /// <summary>脚本输入源使测试走实际 Sample 入口，不暴露生产测试接口。</summary>
-    private sealed class FrameInput : IInputSource
-    {
-        /// <summary>当前按住的动作集合。</summary>
-        public System.Collections.Generic.HashSet<string> Held { get; } = new();
-        /// <summary>本帧按下边沿。</summary>
-        public System.Collections.Generic.HashSet<string> Pressed { get; } = new();
-        /// <summary>本帧松开边沿。</summary>
-        public System.Collections.Generic.HashSet<string> Released { get; } = new();
-        /// <inheritdoc />
-        public bool IsHeld(string action) => Held.Contains(action);
-        /// <inheritdoc />
-        public bool WasPressed(string action) => Pressed.Contains(action);
-        /// <inheritdoc />
-        public bool WasReleased(string action) => Released.Contains(action);
-    }
-
     /// <summary>把测试用的帧事实装入输入源，再调用与游戏相同的二参数采样入口。</summary>
     private static void Sample(HeroActionData data, float doubleTapWindow, float dt,
         bool leftHeld, bool rightHeld, bool leftPressed, bool rightPressed, bool jumpHeld, bool attackHeld,
@@ -582,10 +565,49 @@ public sealed class HeroBodyTests
         system.Sample(new Hero(CreateWukongParameters() with { RunDoubleTapWindow = doubleTapWindow }, data), dt);
     }
 
+    /// <summary>脚本输入源使测试走实际 Sample 入口，不暴露生产测试接口。</summary>
+    private sealed class FrameInput : IInputSource
+    {
+        /// <summary>当前按住的动作集合。</summary>
+        public System.Collections.Generic.HashSet<string> Held { get; } = new();
+
+        /// <summary>本帧按下边沿。</summary>
+        public System.Collections.Generic.HashSet<string> Pressed { get; } = new();
+
+        /// <summary>本帧松开边沿。</summary>
+        public System.Collections.Generic.HashSet<string> Released { get; } = new();
+        /// <inheritdoc />
+        public bool IsHeld(string action) => Held.Contains(action);
+        /// <inheritdoc />
+        public bool WasPressed(string action) => Pressed.Contains(action);
+        /// <inheritdoc />
+        public bool WasReleased(string action) => Released.Contains(action);
+    }
+
     /// <summary>为真实状态机提供可控的物理宿主。</summary>
     private sealed class Hero : AbstractFakeActorBody, IHeroBody
     {
-        IArchitecture IBelongToArchitecture.GetArchitecture() => BattleArchitecture.Instance;
+        /// <summary>是否站在单向平台。</summary>
+        public bool CanDrop;
+
+        /// <summary>实际穿平台次数。</summary>
+        public int DropCount;
+
+        /// <summary>身体动作参数。</summary>
+        public HeroBodyParams Params { get; }
+
+        /// <summary>输入采样器。</summary>
+        public HeroActionData ActionData { get; }
+
+        /// <summary>测试注入的无双霸体。</summary>
+        public bool SuperArmor { get; set; }
+
+        /// <summary>测试注入的横向速度倍率。</summary>
+        public float MoveSpeedMultiplier { get; set; } = 1f;
+
+        /// <summary>测试注入的起跳速度倍率。</summary>
+        public float JumpSpeedMultiplier { get; set; } = 1f;
+
         /// <summary>使用同一共享身体定义创建本英雄拥有的普攻序列。</summary>
         /// <param name="parameters">本测试英雄的身体参数。</param>
         public Hero(HeroBodyParams parameters, HeroActionData actions = null)
@@ -593,21 +615,8 @@ public sealed class HeroBodyTests
             Params = parameters;
             ActionData = actions ?? new();
         }
+        IArchitecture IBelongToArchitecture.GetArchitecture() => BattleArchitecture.Instance;
 
-        /// <summary>身体动作参数。</summary>
-        public HeroBodyParams Params { get; }
-        /// <summary>输入采样器。</summary>
-        public HeroActionData ActionData { get; }
-        /// <summary>测试注入的无双霸体。</summary>
-        public bool SuperArmor { get; set; }
-        /// <summary>测试注入的横向速度倍率。</summary>
-        public float MoveSpeedMultiplier { get; set; } = 1f;
-        /// <summary>测试注入的起跳速度倍率。</summary>
-        public float JumpSpeedMultiplier { get; set; } = 1f;
-        /// <summary>是否站在单向平台。</summary>
-        public bool CanDrop;
-        /// <summary>实际穿平台次数。</summary>
-        public int DropCount;
         /// <summary>仅可穿平台允许 S＋K。</summary>
         /// <returns>是否执行平台下落。</returns>
         public bool TryDropThroughPlatform()
@@ -628,6 +637,16 @@ public sealed class HeroBodyTests
         private readonly IFsm<IHeroBody> m_Fsm; // 真实英雄身体状态机。
         private readonly float m_Dt; // 每物理帧秒数。
         private bool m_Left, m_Right; // 上次方向采样，用于边沿。
+
+        /// <summary>测试身体。</summary>
+        public Hero Body { get; }
+
+        /// <summary>身体使用的输入。</summary>
+        public HeroActionData Input => Body.ActionData;
+
+        /// <summary>直接观测现有 IFsm，不新增生产 API。</summary>
+        public string State => m_Fsm.CurrentState.GetType().Name[4..^5];
+
         /// <summary>创建测试状态机。</summary>
         /// <param name="hz">物理频率。</param>
         /// <param name="parameters">可选的其他英雄参数；省略时使用悟空参数。</param>
@@ -639,12 +658,7 @@ public sealed class HeroBodyTests
                 new HeroGroundState(), new HeroAirState(), new HeroAttackState(), new HeroHurtState(), new HeroDeathState());
             m_Fsm.Start<HeroGroundState>();
         }
-        /// <summary>测试身体。</summary>
-        public Hero Body { get; }
-        /// <summary>身体使用的输入。</summary>
-        public HeroActionData Input => Body.ActionData;
-        /// <summary>直接观测现有 IFsm，不新增生产 API。</summary>
-        public string State => m_Fsm.CurrentState.GetType().Name[4..^5];
+
         /// <summary>采样并推进一帧。</summary>
         /// <param name="move">方向。</param>
         /// <param name="attack">按住普攻。</param>
@@ -664,6 +678,7 @@ public sealed class HeroBodyTests
             if (Body.OnFloor && Body.Velocity.Y > 0)
                 Body.Velocity = new(Body.Velocity.X, 0);
         }
+
         /// <summary>先释放再按下，确保物理边沿与松键闩锁。</summary>
         /// <param name="attack">普攻。</param>
         /// <param name="jump">跳跃。</param>
@@ -672,6 +687,7 @@ public sealed class HeroBodyTests
             Frame();
             Frame(attack: attack, jump: jump);
         }
+
         /// <summary>按秒数推进，并可保持动作键。</summary>
         /// <param name="seconds">推进秒数。</param>
         /// <param name="attack">是否保持普攻。</param>
@@ -681,6 +697,7 @@ public sealed class HeroBodyTests
             for (int i = 0; i < (int)MathF.Ceiling(seconds / m_Dt); i++)
                 Frame(attack: attack, jump: jump);
         }
+
         /// <summary>按原版前三级冷却进入第四段。</summary>
         public void ReachFourth()
         {
@@ -692,6 +709,7 @@ public sealed class HeroBodyTests
             }
             Assert.Equal("attack_4", Body.LastAnim);
         }
+
         /// <summary>释放测试独占状态机。</summary>
         public void Dispose() => m_Manager.Shutdown();
     }

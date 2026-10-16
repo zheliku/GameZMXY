@@ -27,7 +27,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>全部技能面板检查完成的任务。</returns>
     private async Task CheckSkillsAsync(BattleHud hud, ProcedureOwner flow, LevelViewController level)
     {
-        int soul = flow.GetModel<PlayerModel>().Wallet.Soul;
+        int soul = flow.GetModel<ProfileModel>().Soul.Value;
         var entrance = hud.GetNode<TextureButton>("MenuPanel/m_SkillsButton");
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
@@ -41,10 +41,10 @@ public sealed partial class UiSmokeScenario
         Check(form.GetNode<Control>(active + "m_WukongRows").Visible &&
             form.GetNode<Label>(active + "m_WukongRows/Skill1/Name").Text == "升龙斩" &&
             form.GetNode<Label>(active + "m_WukongRows/Skill5/Soul").Text == "2000", "悟空技能顺序或费用错误");
-        double elapsed = SmokeInspection.ReadField<double>(SmokeInspection.Model(level), "m_ElapsedSeconds");
+        double elapsed = SmokeInspection.Model(level).ElapsedSeconds;
         await WaitFramesAsync(4);
         CheckInlineSkillGrid(form, active + "m_WukongRows");
-        Check(Math.Abs(SmokeInspection.ReadField<double>(SmokeInspection.Model(level), "m_ElapsedSeconds") - elapsed) < .001, "技能窗口暂停仍累计关卡时间");
+        Check(Math.Abs(SmokeInspection.Model(level).ElapsedSeconds - elapsed) < .001, "技能窗口暂停仍累计关卡时间");
         await CaptureCombatAsync("skills_wukong");
         var otherHero = form.GetNode<TextureButton>("Content/Header/m_Tangseng");
         Check(otherHero.Disabled && otherHero.MouseDefaultCursorShape == Control.CursorShape.Arrow &&
@@ -62,14 +62,14 @@ public sealed partial class UiSmokeScenario
         otherHero.EmitSignal(BaseButton.SignalName.Pressed);
         Check(form.GetNode<Control>("Content/m_PassivePage").Visible &&
             !form.GetNode<Control>("Content/m_ActivePage").Visible, "非出战页签改变了当前主动/被动分类");
-        Check(flow.GetModel<PlayerModel>().Wallet.Soul == soul, "技能展示页意外消费灵魂");
-        flow.GetModel<PlayerModel>().Wallet.AddSoul(7);
+        Check(flow.GetModel<ProfileModel>().Soul.Value == soul, "技能展示页意外消费灵魂");
+        flow.GetSystem<ProfileSystem>().AddSoul(7);
         var balance = form.GetNode<Label>(footer + "Balance/m_Soul");
         Check(balance.Text == (soul + 7).ToString(), "技能面板没有观察钱包变化");
         form.GetNode<TextureButton>("Content/Header/m_Back").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitFramesAsync(2);
         Check(!form.Visible && !GF.Base.IsGamePaused, "返回没有关闭技能页或恢复战斗");
-        flow.GetModel<PlayerModel>().Wallet.Restore(soul);
+        flow.GetModel<ProfileModel>().RestoreSoul(soul);
         Check(balance.Text == (soul + 7).ToString(), "关闭后仍保留钱包订阅");
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => form.Visible, "技能窗口没有从池复用");

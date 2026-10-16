@@ -1,6 +1,7 @@
+using GameLogic.Architecture;
 using GameLogic.Monsters.Body;
 using GameLogic.Monsters.AI;
-using GameLogic.Battle.Resources;
+using GameLogic.Battle;
 using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
 using System;
@@ -50,30 +51,6 @@ public sealed class MonsterAiSmokeScenario
     private static readonly Rect2 ExpectedReach = new Rect2(-49f, -48f, 50f, 50f); // attack_1 判定盒期望范围。
     private const float ReachTolerance = 0.5f; // 判定盒边界允许误差（像素）。
 
-    private enum Phase // AI 烟测的阶段状态。
-    {
-        /// <summary>怪物位于英雄视野外。</summary>
-        OutOfSight,
-        /// <summary>等待怪物首次命中英雄。</summary>
-        WaitFirstHit,
-        /// <summary>等待下一次攻击开始。</summary>
-        WaitSecondAttack,
-        /// <summary>验证出招和收招期间的朝向锁定。</summary>
-        TurnAround,
-        /// <summary>验证英雄处于空中时的守候行为。</summary>
-        Air,
-        /// <summary>等待英雄落地并验证恢复攻击。</summary>
-        WaitLanded,
-        /// <summary>验证目标丢失后的巡逻恢复。</summary>
-        Lose,
-        /// <summary>等待致命攻击。</summary>
-        WaitKill,
-        /// <summary>等待死亡动画和实体回收。</summary>
-        WaitEnd,
-        /// <summary>场景已完成。</summary>
-        Done,
-    }
-
     private readonly AbstractHeroEntity m_Hero; // 受测英雄实体。
     private readonly AbstractMonsterEntity m_Monster; // 受测怪物实体。
     private readonly int m_OriginalAttackDesire; // 结束时恢复测试夹具覆盖的出手概率。
@@ -109,6 +86,9 @@ public sealed class MonsterAiSmokeScenario
     // 丢失目标阶段
     private bool m_LostTarget; // 是否观察到怪物丢失目标并恢复巡逻。
 
+    /// <summary>场景已结束（通过或超时），驱动器据此调用 <see cref="Finish"/>。</summary>
+    public bool IsDone => m_Phase == Phase.Done;
+
     /// <summary>创建 AI 烟测场景并订阅战斗事件。</summary>
     /// <param name="hero">受测英雄实体。</param>
     /// <param name="monster">受测怪物实体。</param>
@@ -124,9 +104,6 @@ public sealed class MonsterAiSmokeScenario
         GF.Event.Subscribe(MonsterDiedEventArgs.EventId, OnMonsterDied);
         CheckReach();
     }
-
-    /// <summary>场景已结束（通过或超时），驱动器据此调用 <see cref="Finish"/>。</summary>
-    public bool IsDone => m_Phase == Phase.Done;
 
     /// <summary>每物理帧推进（t = 相对开始的秒数）。</summary>
     /// <param name="t">相对场景开始时间（秒）。</param>
@@ -163,7 +140,7 @@ public sealed class MonsterAiSmokeScenario
             case Phase.WaitFirstHit:
                 if (m_HeroHitsByMonster > 0)
                 {
-                    m_Hero.Heal(m_Hero.Vitals.MaxHp);   // 防止后续阶段英雄被打死导致目标失效
+                    m_Hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);   // 防止后续阶段英雄被打死导致目标失效
                     Enter(Phase.WaitSecondAttack, t);
                 }
 
@@ -201,7 +178,7 @@ public sealed class MonsterAiSmokeScenario
 
                 if (m_StruckAfterLanding || t - m_PhaseStart > LandedTimeout)
                 {
-                    m_Hero.Heal(m_Hero.Vitals.MaxHp);
+                    m_Hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
                     Enter(Phase.Lose, t);
                 }
 
@@ -214,7 +191,7 @@ public sealed class MonsterAiSmokeScenario
             case Phase.WaitKill:
                 if (t - m_PhaseStart >= KillDelay)
                 {
-                    HitMonster(m_Monster.Vitals.MaxHp * 10f, Vector2.Zero);
+                    HitMonster(m_Monster.MaxHp * 10f, Vector2.Zero);
                     Enter(Phase.WaitEnd, t);
                 }
 
@@ -293,7 +270,7 @@ public sealed class MonsterAiSmokeScenario
 
         GD.Print($"SMOKE-AI: AI 序列 {string.Join(" → ", m_AiObserved.ConvertAll(o => $"{o.Ai}@{o.Time:F2}"))}");
         GD.Print($"SMOKE-AI: 动画序列 {string.Join(" → ", m_AnimObserved.ConvertAll(o => $"{o.Anim}@{o.Time:F2}"))}");
-        GD.Print($"SMOKE-AI: 猴子命中英雄 {m_HeroHitsByMonster} 次，英雄 HP {m_Hero.Vitals.Hp}/{m_Hero.Vitals.MaxHp}");
+        GD.Print($"SMOKE-AI: 猴子命中英雄 {m_HeroHitsByMonster} 次，英雄 HP {GF.Fsm.GetModel<HeroModel>().Hp.Value}/{GF.Fsm.GetModel<HeroModel>().MaxHp.Value}");
         return failures;
     }
 
@@ -349,7 +326,7 @@ public sealed class MonsterAiSmokeScenario
         m_HeroFloorY = m_Hero.GlobalPosition.Y;
         m_AirX = m_Monster.GlobalPosition.X - m_Monster.Facing * AirOffsetX;
         m_AirMinX = m_AirMaxX = m_Monster.GlobalPosition.X;
-        m_Hero.Heal(m_Hero.Vitals.MaxHp);
+        m_Hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
         Enter(Phase.Air, t);
     }
 
@@ -516,5 +493,38 @@ public sealed class MonsterAiSmokeScenario
 
             from = index + 1;
         }
+    }
+
+    private enum Phase // AI 烟测的阶段状态。
+    {
+        /// <summary>怪物位于英雄视野外。</summary>
+        OutOfSight,
+
+        /// <summary>等待怪物首次命中英雄。</summary>
+        WaitFirstHit,
+
+        /// <summary>等待下一次攻击开始。</summary>
+        WaitSecondAttack,
+
+        /// <summary>验证出招和收招期间的朝向锁定。</summary>
+        TurnAround,
+
+        /// <summary>验证英雄处于空中时的守候行为。</summary>
+        Air,
+
+        /// <summary>等待英雄落地并验证恢复攻击。</summary>
+        WaitLanded,
+
+        /// <summary>验证目标丢失后的巡逻恢复。</summary>
+        Lose,
+
+        /// <summary>等待致命攻击。</summary>
+        WaitKill,
+
+        /// <summary>等待死亡动画和实体回收。</summary>
+        WaitEnd,
+
+        /// <summary>场景已完成。</summary>
+        Done,
     }
 }

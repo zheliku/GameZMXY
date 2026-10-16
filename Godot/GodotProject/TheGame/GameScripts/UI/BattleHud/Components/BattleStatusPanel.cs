@@ -15,7 +15,7 @@ public partial class BattleStatusPanel : Sprite2D
     /// <param name="maxHp">生命上限。</param>
     /// <param name="mp">当前魔法。</param>
     /// <param name="maxMp">魔法上限。</param>
-    public void SetVitals(int hp, int maxHp, int mp, int maxMp)
+    public void SetResources(int hp, int maxHp, int mp, int maxMp)
     {
         m_HpBar.SetValue(hp, maxHp);
         m_MpBar.SetValue(mp, maxMp);

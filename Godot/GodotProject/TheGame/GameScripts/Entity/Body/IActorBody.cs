@@ -30,6 +30,9 @@ namespace GameLogic.Body
         /// <summary>正在播的攻击段（0 起；-1 = 不在出招，宿主在 BeginAttack/EndAttack 里维护）</summary>
         int AttackSegment { get; }
 
+        /// <summary>有待生效的受击（结算登记；身体状态决定何时生效）</summary>
+        bool HasPendingHurt { get; }
+
         /// <summary>
         /// 提交出招：设攻击段、装填攻击包、播起手音（<c>OwnAttacks[index].SoundId</c>，None = 无）；
         /// 怪物宿主另做转向目标、计入冷却、清移动意图。
@@ -38,9 +41,6 @@ namespace GameLogic.Body
 
         /// <summary>收招/打断：归还攻击包、攻击段归 -1（打断与收招都在攻击状态 Leave）。</summary>
         void EndAttack();
-
-        /// <summary>有待生效的受击（结算登记；身体状态决定何时生效）</summary>
-        bool HasPendingHurt { get; }
 
         /// <summary>取出待生效受击的击退速度（取出即清除）</summary>
         Vector2 TakePendingHurt();

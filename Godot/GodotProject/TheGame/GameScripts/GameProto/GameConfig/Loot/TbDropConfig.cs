@@ -83,10 +83,6 @@ public partial class TbDropConfig
     /// 地面掉落重力 px/s&#178;
     /// </summary>
      public float GroundGravity => _data.GroundGravity;
-    /// <summary>
-    /// 拾取范围扩展 px
-    /// </summary>
-     public float GroundPickupRadius => _data.GroundPickupRadius;
     
     public void ResolveRef(Tables tables)
     {

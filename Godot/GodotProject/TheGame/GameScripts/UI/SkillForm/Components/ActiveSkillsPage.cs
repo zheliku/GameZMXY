@@ -12,16 +12,16 @@ namespace GameLogic.UI.Widgets;
 /// <summary>主动技能页组合两名角色目录，负责装配和当前角色显示。</summary>
 public partial class ActiveSkillsPage : Control, IController
 {
-    /// <summary>借用所属主流程的共享数据访问入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
-
     [Export] private Control m_WukongRows; // 悟空的五行目录。
     [Export] private Control m_TangsengRows; // 唐僧的五行目录。
     private (Label Name, TextureRect Icon, Label Soul, Label Key, Label Description)[][] m_HeroRows; // 两名角色的固定行引用，由本页统一刷新。
 
     /// <summary>一次收集两个角色的网格内容，行容器保持纯布局节点。</summary>
     public override void _Ready() => m_HeroRows = [CollectRows(m_WukongRows), CollectRows(m_TangsengRows)];
+
+    /// <summary>借用所属主流程的共享数据访问入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
 
     /// <summary>把正式只读目录分配给对应角色。</summary>
     public void Refresh()

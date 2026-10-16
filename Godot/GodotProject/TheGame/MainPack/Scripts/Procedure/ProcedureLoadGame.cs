@@ -5,9 +5,11 @@ using GameLogic.Procedure.FlowData;
 //------------------------------------------------------------
 
 using System;
+using System.Linq;
 using GameFramework.Procedure;
 using GameLogic.Save;
 using GameLogic.Equipment;
+using GameLogic.Profile;
 using GameLogic;
 using GodotGameFramework;
 using GodotGameFramework.UI;
@@ -16,12 +18,13 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 
 /// <summary>
 /// 读档流程：经 <see cref="SaveSystem"/> 读取当前存档（首次建档或当前格式读取），
-/// 借用应用 SaveSystem，完整加载后注册 PlayerModel 与 EquipmentSystem；新档进入选角，已有档案进入地图。
+/// 借用应用 SaveSystem，完整加载后注册ProfileModel、ProfileSystem 与 EquipmentSystem；新档进入选角，已有档案进入地图。
 /// 读档失败时停在加载界面，绝不新建空档覆盖玩家数据。
 /// </summary>
 public class ProcedureLoadGame : ProcedureBase
 {
     private int m_EntrySerial; // 每次进出使旧异步结果失效，不让离开后的读档覆盖新作用域。
+
     /// <summary>读档并创建档案作用域。</summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal override async void OnEnter(ProcedureOwner procedureOwner)
@@ -40,16 +43,21 @@ public class ProcedureLoadGame : ProcedureBase
                 ?? throw new InvalidOperationException("缺少存档选择结果。");
             // 先完成读档和校验，再一次发布状态与系统；等待期间不暴露半份运行时数据。
             SaveSystem saveSystem = procedureOwner.GetSystem<SaveSystem>();
-            SaveLoadResult loaded = await saveSystem.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId);
+            var loaded = await saveSystem.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId);
             if (entrySerial != m_EntrySerial)
                 return;
-            EquipmentSystem equipmentSystem = new(architecture);
+            // 校验成功后由流程创建、发布档案模型；不把 Model 再包装成 LoadResult。
+            var data = loaded.Data;
+            var config = procedureOwner.GetModel<GameLogic.Config.ConfigurationModel>();
+            var profile = new ProfileModel(data.ActiveHeroId,
+                data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), procedureOwner.GetUtility<ExperienceCurve>(),
+                config.Tables.TbProfileConfig.EquipmentCapacity, data.Soul);
+            procedureOwner.RegisterModel(profile);
+            procedureOwner.RegisterSystem(new ProfileSystem(architecture));
+            procedureOwner.GetSystem<ProfileSystem>().RestoreCheckpoint(data);
+            procedureOwner.RegisterSystem(new EquipmentSystem(architecture));
             Log.Info("[ProcedureLoadGame] 档案就绪：来源 {0}，出战英雄 {1}，等级 {2}", loaded.Origin,
-                loaded.PlayerModel.ActiveHeroId, loaded.PlayerModel.ActiveHero.Level);
-
-            // 档案作为 Model 存放，业务入口作为 System 存放；底层仍是同一个 FSM 数据区。
-            procedureOwner.RegisterModel(loaded.PlayerModel);
-            procedureOwner.RegisterSystem(equipmentSystem);
+                profile.ActiveHeroId, profile.Level);
             // 新建档案才需要确认角色；已有档案直接恢复地图入口。
             if (loaded.Origin == SaveOrigin.Created)
                 ChangeState<ProcedureCharacter>(procedureOwner);

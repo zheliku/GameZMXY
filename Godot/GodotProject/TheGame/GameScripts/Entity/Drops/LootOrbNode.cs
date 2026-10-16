@@ -11,16 +11,16 @@ namespace GameLogic.Drops;
 /// <summary>GGF 节点池中的飞行奖励：短暂停留、上浮、加速追踪，接触后交给关卡结算。</summary>
 public partial class LootOrbNode : AnimatedSprite2D, IPoolable, IController
 {
-    /// <summary>借用当前游戏流程的架构入口。</summary>
-    /// <returns>所属流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
-
     private LootReward m_Reward; // 接触之前尚未入账的奖励。
     private Action<LootOrbNode, LootReward> m_Finished; // 由关卡拥有的完成回调；先清理再调用。
     private Vector2 m_Start; // 上浮起点。
     private float m_Age; // 本次显示经过的游戏秒数。
     private float m_Rise; // 本颗球的随机上升高度。
     private float m_Speed; // 当前追踪速度，像素/秒。
+
+    /// <summary>借用当前游戏流程的架构入口。</summary>
+    /// <returns>所属流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
 
     /// <summary>池取出时停止上次驱动，等待所属关卡提供本次参数。</summary>
     public void OnGet()

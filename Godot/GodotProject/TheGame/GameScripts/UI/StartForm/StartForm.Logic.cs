@@ -1,5 +1,4 @@
 using GameLogic.Architecture;
-using GameLogic.Event.Navigation;
 using System;
 using GameFramework.UI;
 using GameLogic.Audio;
@@ -17,9 +16,11 @@ namespace GameLogic.UI;
 /// <summary>开始界面：沿用旧项目字体与分隔图片，通过具名点击事件通知流程。</summary>
 public partial class StartForm : IController
 {
-    /// <summary>读取所属游戏流程的架构入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    /// <summary>由所属流程处理 StartGameRequested；参数为本次窗口编号。</summary>
+    public event Action<int> StartGameRequested;
+
+    /// <summary>由所属流程处理 SettingsRequested；参数为本次窗口编号。</summary>
+    public event Action<int> SettingsRequested;
 
 
     /// <summary>设置框架字段；按钮事件只在新建实例时绑定一次。</summary>
@@ -60,6 +61,8 @@ public partial class StartForm : IController
     /// <param name="userData">关闭参数，不保存。</param>
     public void OnClose(bool isShutdown, object userData)
     {
+        StartGameRequested = null;
+        SettingsRequested = null;
         if (!isShutdown && IsInstanceValid(this))
             Visible = false;
     }
@@ -91,6 +94,10 @@ public partial class StartForm : IController
     /// <param name="realElapseSeconds">真实帧间隔秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
 
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     /// <summary>重新绑定显式传入的状态源。</summary>
     /// <param name="userData">新打开参数；null 保持当前绑定。</param>
     public void OnRefocus(object userData)
@@ -114,7 +121,7 @@ public partial class StartForm : IController
         if (!GF.UI.HasUIForm(SerialId))
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        GF.Event.Fire(this, StartGameRequestedEventArgs.Create(SerialId));
+        StartGameRequested?.Invoke(SerialId);
     }
 
     /// <summary>请当前流程打开声音设置。</summary>
@@ -123,7 +130,7 @@ public partial class StartForm : IController
         if (!GF.UI.HasUIForm(SerialId))
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        GF.Event.Fire(this, SettingsRequestedEventArgs.Create(SerialId));
+        SettingsRequested?.Invoke(SerialId);
     }
 
     /// <summary>显示本项目已经实现的操作说明。</summary>

@@ -219,20 +219,23 @@ namespace GameLogic.Battle.Tests
 
         private sealed class FakeMonster : AbstractFakeActorBody, IMonsterBody // 为怪物身体状态机提供可控的测试宿主。
         {
+            /// <summary>待身体状态机消费的攻击段索引。</summary>
+            public int AttackRequest = -1;
+
+            /// <summary>请求回收的次数。</summary>
+            public int RecycleCount;
+
+            /// <summary>怪物身体状态参数。</summary>
+            public MonsterBodyParams Params { get; }
+
+            /// <summary>AI 写入的移动方向意图。</summary>
+            public int MoveIntent { get; set; }
+
             /// <summary>初始化怪物身体状态参数。</summary>
             public FakeMonster(MonsterBodyParams p)
             {
                 Params = p;
             }
-
-            /// <summary>怪物身体状态参数。</summary>
-            public MonsterBodyParams Params { get; }
-            /// <summary>AI 写入的移动方向意图。</summary>
-            public int MoveIntent { get; set; }
-            /// <summary>待身体状态机消费的攻击段索引。</summary>
-            public int AttackRequest = -1;
-            /// <summary>请求回收的次数。</summary>
-            public int RecycleCount;
 
             /// <summary>取出并清除待处理的攻击请求。</summary>
             public int TakeAttackRequest()
@@ -252,6 +255,12 @@ namespace GameLogic.Battle.Tests
             private readonly IFsm<IMonsterBody> m_Fsm; // 当前测试使用的怪物身体状态机。
             private bool m_Disposed; // 记录驱动器是否已关闭。
 
+            /// <summary>状态机绑定的假怪物宿主。</summary>
+            public FakeMonster Body { get; }
+
+            /// <summary>当前身体状态名称。</summary>
+            public string State => m_Fsm.CurrentState.GetType().Name["Monster".Length..^"State".Length];
+
             /// <summary>创建假宿主并启动怪物身体状态机。</summary>
             public MonsterHarness(MonsterBodyParams p)
             {
@@ -261,11 +270,6 @@ namespace GameLogic.Battle.Tests
                     new MonsterDeathState());
                 m_Fsm.Start<MonsterMoveState>();
             }
-
-            /// <summary>状态机绑定的假怪物宿主。</summary>
-            public FakeMonster Body { get; }
-            /// <summary>当前身体状态名称。</summary>
-            public string State => m_Fsm.CurrentState.GetType().Name["Monster".Length..^"State".Length];
 
             /// <summary>推进指定数量的物理帧，并固定宿主在地面上。</summary>
             /// <param name="frames">推进的物理帧数。</param>

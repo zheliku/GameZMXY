@@ -34,6 +34,7 @@
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ConfigurationSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ExternalTypeUtil.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Profile\ExperienceCurve.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Profile\*Model.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\**\*.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utility\SpatialExtensions.cs" />
 

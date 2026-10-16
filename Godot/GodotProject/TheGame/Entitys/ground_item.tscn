@@ -3,42 +3,23 @@
 [ext_resource type="AnimationLibrary" uid="uid://jxbbo6cinwnr" path="res://TheGame/Entitys/Animations/ground_item_pickup_library.tres" id="pickup"]
 [ext_resource type="Script" uid="uid://7c1yhkshn5gc" path="res://TheGame/GameScripts/Entity/Drops/GroundItemNode.cs" id="script"]
 
-[sub_resource type="CircleShape2D" id="pickup_shape"]
-radius = 18.0
+[sub_resource type="RectangleShape2D" id="item_shape"]
+size = Vector2(32, 40)
 
-[sub_resource type="RectangleShape2D" id="feet"]
-size = Vector2(12, 8)
-
-[node name="GroundItem" type="CharacterBody2D" unique_id=39514946 node_paths=PackedStringArray("m_Icon", "m_PickupAnimation", "m_PickupArea", "m_PickupShape")]
+[node name="GroundItem" type="CharacterBody2D" unique_id=39514946 node_paths=PackedStringArray("m_Icon", "m_PickupAnimation", "m_Shape")]
 z_index = 4
 collision_layer = 0
 collision_mask = 9
 script = ExtResource("script")
 m_Icon = NodePath("Icon")
 m_PickupAnimation = NodePath("AnimationPlayer")
-m_PickupArea = NodePath("PickupArea")
-m_PickupShape = NodePath("PickupArea/Shape")
+m_Shape = NodePath("Shape")
 
-[node name="PickupArea" type="Area2D" parent="." unique_id=505850997]
-position = Vector2(0, -8)
-collision_layer = 0
-collision_mask = 2
-monitoring = false
-monitorable = false
-
-[node name="Shape" type="CollisionShape2D" parent="PickupArea" unique_id=1637135473]
-shape = SubResource("pickup_shape")
-
-[node name="Feet" type="CollisionShape2D" parent="." unique_id=1174947348]
-position = Vector2(0, -4)
-shape = SubResource("feet")
-
-[node name="Shadow" type="Polygon2D" parent="." unique_id=221775772]
-color = Color(0, 0, 0, 0.3)
-polygon = PackedVector2Array(-14, -2, -10, -5, 10, -5, 14, -2, 10, 1, -10, 1)
+[node name="Shape" type="CollisionShape2D" parent="." unique_id=1174947348]
+position = Vector2(0, -20)
+shape = SubResource("item_shape")
 
 [node name="Icon" type="Sprite2D" parent="." unique_id=1227132205]
-position = Vector2(0, -18)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=561234214]
 callback_mode_process = 2

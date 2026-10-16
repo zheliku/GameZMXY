@@ -1,3 +1,5 @@
+using IUIForm = GameFramework.UI.IUIForm;
+using GameLogic.UI;
 using GameConfig.Constant;
 using GameLogic.Audio;
 using GameFramework.Procedure;
@@ -7,7 +9,6 @@ using GameLogic.Architecture;
 using GameLogic.Save;
 using GameLogic.Profile;
 using GameLogic.Procedure.FlowData;
-using GameLogic.Event.Navigation;
 using System;
 using GameConfig;
 using GameConfig.Sound;
@@ -30,10 +31,6 @@ public sealed class ProcedureMap : ProcedureBase
     /// <param name="procedureOwner">流程状态机。</param>
     protected internal override void OnEnter(ProcedureOwner procedureOwner)
     {
-
-        GF.Event.Subscribe(TitleRequestedEventArgs.EventId, OnTitleRequested);
-        GF.Event.Subscribe(LevelSelectedEventArgs.EventId, OnLevelSelected);
-        GF.Event.Subscribe(SaveRequestedEventArgs.EventId, OnSaveRequested);
         base.OnEnter(procedureOwner);
         m_Owner = procedureOwner;
         m_IsReturningToTitle = false;
@@ -41,6 +38,7 @@ public sealed class ProcedureMap : ProcedureBase
         GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
         m_FormSerialId = GF.UI.OpenUIForm(UIFormId.MapForm);
+        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: true);
         m_MusicSerialId = GF.Sound.PlayConfigured(SoundId.MapTheme, 0.3f);
     }
 
@@ -49,9 +47,8 @@ public sealed class ProcedureMap : ProcedureBase
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
-        GF.Event.Unsubscribe(TitleRequestedEventArgs.EventId, OnTitleRequested);
-        GF.Event.Unsubscribe(LevelSelectedEventArgs.EventId, OnLevelSelected);
-        GF.Event.Unsubscribe(SaveRequestedEventArgs.EventId, OnSaveRequested);
+        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: false);
+
 
         m_Cancellation?.Cancel();
         m_Cancellation?.Dispose();
@@ -71,11 +68,10 @@ public sealed class ProcedureMap : ProcedureBase
     }
 
     /// <summary>返回标题前等待当前检查点。</summary>
-    /// <param name="sender">地图窗口。</param>
-    /// <param name="args">返回标题请求。</param>
-    private async void OnTitleRequested(object sender, GameEventArgs args)
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    private async void OnTitleRequested(int formSerialId)
     {
-        if (((TitleRequestedEventArgs)args).FormSerialId != m_FormSerialId || m_IsReturningToTitle)
+        if (formSerialId != m_FormSerialId || m_IsReturningToTitle)
             return;
         m_IsReturningToTitle = true;
         var token = m_Cancellation.Token;
@@ -104,44 +100,27 @@ public sealed class ProcedureMap : ProcedureBase
     }
 
     /// <summary>手动保存当前档案，等待后只反馈给本周期窗口。</summary>
-    /// <param name="sender">地图窗口。</param>
-    /// <param name="args">本次保存请求。</param>
-    private async void OnSaveRequested(object sender, GameEventArgs args)
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    private async void OnSaveRequested(int formSerialId)
     {
-        if (((SaveRequestedEventArgs)args).FormSerialId != m_FormSerialId || m_IsReturningToTitle)
+        if (formSerialId != m_FormSerialId || m_IsReturningToTitle)
             return;
-        var playerModel = m_Owner.GetModel<PlayerModel>();
-        var saveSystem = m_Owner.GetSystem<SaveSystem>();
-        var token = m_Cancellation.Token;
-        int serial = m_FormSerialId;
-        bool succeeded;
-        try
-        {
-            succeeded = await saveSystem.SaveCheckpointAsync(playerModel);
-        }
-        catch (Exception error)
-        {
-            Log.Error("[ProcedureMap] 手动保存失败：{0}", error);
-            succeeded = false;
-        }
-        if (!token.IsCancellationRequested)
-            GF.Event.Fire(this, ProfileSavedEventArgs.Create(serial, succeeded));
+        await m_Owner.GetSystem<SaveSystem>().SaveManuallyAsync(formSerialId, m_Cancellation.Token);
     }
 
     /// <summary>验证所选关卡并进入战斗流程。</summary>
-    /// <param name="sender">地图窗口。</param>
-    /// <param name="args">携带关卡配置主键的点击事件。</param>
-    private void OnLevelSelected(object sender, GameEventArgs args)
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    /// <param name="selectionId">选中的存档格或关卡编号。</param>
+    private void OnLevelSelected(int formSerialId, int selectionId)
     {
-        var selection = (LevelSelectedEventArgs)args;
-        if (selection.FormSerialId != m_FormSerialId || m_IsReturningToTitle)
+        if (formSerialId != m_FormSerialId || m_IsReturningToTitle)
             return;
-        if (GF.Fsm.GetModel<ConfigurationModel>().Tables.TbLevelConfig.GetOrDefault(selection.LevelId) == null)
+        if (GF.Fsm.GetModel<ConfigurationModel>().Tables.TbLevelConfig.GetOrDefault(selectionId) == null)
         {
-            Log.Error("[ProcedureMap] 地图请求了不存在的关卡：{0}", selection.LevelId);
+            Log.Error("[ProcedureMap] 地图请求了不存在的关卡：{0}", selectionId);
             return;
         }
-        m_Owner.SetData<VarInt32>(FlowKeys.SelectedLevelId, selection.LevelId);
+        m_Owner.SetData<VarInt32>(FlowKeys.SelectedLevelId, selectionId);
         ChangeState<ProcedureLevel>(m_Owner);
     }
 
@@ -150,6 +129,8 @@ public sealed class ProcedureMap : ProcedureBase
     /// <param name="args">只在本次分发内读取的池化参数。</param>
     private void OnFormOpened(object sender, GameEventArgs args)
     {
+        if (args is OpenUIFormSuccessEventArgs opened)
+            SetFormCallbacks(opened.UIForm, bind: true);
         if (args is not OpenUIFormSuccessEventArgs success || success.UIForm.SerialId != m_FormSerialId)
             return;
         (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
@@ -165,4 +146,26 @@ public sealed class ProcedureMap : ProcedureBase
     }
 
 
+    /// <summary>按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。</summary>
+    /// <param name="form">已打开窗口；在途时为空。</param>
+    /// <param name="bind">绑定或解除。</param>
+    private void SetFormCallbacks(IUIForm form, bool bind)
+    {
+        if (bind && (form == null || !GF.UI.IsValidUIForm(form)))
+            return;
+        switch (form)
+        {
+            case MapForm mapForm when mapForm.SerialId == m_FormSerialId:
+                mapForm.TitleRequested -= OnTitleRequested;
+                if (bind)
+                    mapForm.TitleRequested += OnTitleRequested;
+                mapForm.SaveRequested -= OnSaveRequested;
+                if (bind)
+                    mapForm.SaveRequested += OnSaveRequested;
+                mapForm.LevelSelected -= OnLevelSelected;
+                if (bind)
+                    mapForm.LevelSelected += OnLevelSelected;
+                break;
+        }
+    }
 }

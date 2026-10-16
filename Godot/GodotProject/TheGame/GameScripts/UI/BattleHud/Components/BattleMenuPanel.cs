@@ -14,8 +14,10 @@ public partial class BattleMenuPanel : Sprite2D
 
     /// <summary>玩家选择设置菜单。</summary>
     public event Action SettingsSelected;
+
     /// <summary>玩家选择背包。</summary>
     public event Action InventorySelected;
+
     /// <summary>玩家选择技能。</summary>
     public event Action SkillsSelected;
 
@@ -54,8 +56,10 @@ public partial class BattleMenuPanel : Sprite2D
 
     /// <summary>报告本块的设置选择。</summary>
     private void OnSettingsPressed() => SettingsSelected?.Invoke();
+
     /// <summary>报告本块的背包选择。</summary>
     private void OnInventoryPressed() => InventorySelected?.Invoke();
+
     /// <summary>报告本块的技能选择。</summary>
     private void OnSkillsPressed() => SkillsSelected?.Invoke();
 }

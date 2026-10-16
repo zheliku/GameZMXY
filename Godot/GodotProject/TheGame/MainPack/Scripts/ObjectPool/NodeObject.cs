@@ -27,5 +27,4 @@ public partial class NodeObject : ObjectBase
             node.QueueFree();
         }
     }
-
 }

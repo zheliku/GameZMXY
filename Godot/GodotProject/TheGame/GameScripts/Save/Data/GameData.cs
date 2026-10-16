@@ -7,7 +7,7 @@ using GameConfig.Equipment;
 using GameLogic.Equipment;
 
 /// <summary>一格存档的完整数据：版本、出战英雄、经验、灵魂和装备实例；文件编号继承自框架。</summary>
-/// <remarks>GGF 直接写盘；关卡回滚也使用本类型的独立快照。与运行时档案的转换集中在 PlayerModel。</remarks>
+/// <remarks>GGF 直接写盘；关卡回滚也使用本类型的独立快照。与运行时档案的转换集中在 SaveDataUtility。</remarks>
 [Serializable]
 public class GameData : ArchiveData
 {

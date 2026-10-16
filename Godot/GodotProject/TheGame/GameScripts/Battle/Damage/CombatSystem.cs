@@ -10,10 +10,6 @@ namespace GameLogic.Battle.Damage
     /// <summary>战斗结算系统：查询共享配置，确定性计算伤害、击退和命中无双增量；不持有实体。</summary>
     public sealed class CombatSystem : AbstractSystem
     {
-        /// <summary>绑定业务系统的所属架构。</summary>
-        /// <param name="architecture">所属游戏入口。</param>
-        public CombatSystem(IArchitecture architecture) : base(architecture) { }
-
         private const double RatioStep = 0.001; // 比率按旧项目规则保留三位小数。
 
         /// <summary>
@@ -21,6 +17,10 @@ namespace GameLogic.Battle.Damage
         /// 74.9999996 被截成 74；旧项目用 double 字面量不存在该误差。取整前加一个远小于 1 点伤害的容差对齐。
         /// </summary>
         private const double TruncateEpsilon = 1e-6; // 抵消 float 配置转 double 后在取整边界产生的微小误差。
+
+        /// <summary>绑定业务系统的所属架构。</summary>
+        /// <param name="architecture">所属游戏入口。</param>
+        public CombatSystem(IArchitecture architecture) : base(architecture) { }
 
         /// <summary>
         /// 结算一次命中。
@@ -138,17 +138,6 @@ namespace GameLogic.Battle.Damage
 
             // 属性与曲线常数均非负，按旧项目精度对最终比率取整。
             return Mathf.Snapped(x / denominator, RatioStep);
-        }
-        /// <summary>按实际伤害相对出招时基础攻击力的比例计算无双，采用正数四舍五入。</summary>
-        /// <param name="damage">结算后的伤害；零伤害不积累。</param>
-        /// <param name="basePower">出招时攻击力，不含暴击和招式威力倍率。</param>
-        /// <returns>本次命中增长量；无有效伤害或基础攻击力时为零。</returns>
-        public int HitGain(int damage, int basePower)
-        {
-            float coefficient = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.WsGainPerDamageRatio;
-            if (damage <= 0 || basePower <= 0 || !float.IsFinite(coefficient) || coefficient <= 0f)
-                return 0;
-            return (int)Math.Min(int.MaxValue, Math.Floor((double)damage / basePower * coefficient + .5));
         }
     }
 }

@@ -11,6 +11,7 @@ public enum RecoveryKind
 {
     /// <summary>绿色生命恢复。</summary>
     Health,
+
     /// <summary>蓝色魔法恢复。</summary>
     Mana
 }
@@ -18,9 +19,6 @@ public enum RecoveryKind
 /// <summary>共用位图数字与秒制动画的飘字节点；伤害、闪避和恢复只选择不同显示样式。</summary>
 public partial class FloatingTextNode : Node2D, IPoolable
 {
-    /// <summary>决定本次动画节奏，不影响玩法结算。</summary>
-    private enum DisplayKind { Damage, Miss, Recovery }
-
     private const int MaxDigits = 10; // 覆盖 int 正数的全部数位。
     private const float DamageRiseDistance = 50f; // 原伤害数字上升像素。
     private const float DamageRiseSeconds = .6f; // 原伤害数字上升秒数。
@@ -57,6 +55,36 @@ public partial class FloatingTextNode : Node2D, IPoolable
     private bool m_IsCrit; // 伤害样式是否使用暴击脉冲。
     private float m_Age; // 本次已经显示的游戏秒数。
     private Vector2 m_Start; // 本次世界锚点，显示后不跟随角色移动。
+
+    /// <summary>所有样式共用游戏秒数推进；暂停时 delta 为零，完成后只通知一次。</summary>
+    /// <param name="delta">本帧游戏秒数。</param>
+    public override void _Process(double delta)
+    {
+        m_Age += (float)delta;
+        float riseSeconds = m_Kind switch { DisplayKind.Damage => DamageRiseSeconds, DisplayKind.Miss => MissRiseSeconds, _ => RecoveryLifetime };
+        float riseDistance = m_Kind switch { DisplayKind.Damage => DamageRiseDistance, DisplayKind.Miss => MissRiseDistance, _ => RecoveryRiseDistance };
+        float fadeSeconds = m_Kind switch { DisplayKind.Damage => DamageFadeSeconds, DisplayKind.Miss => MissFadeSeconds, _ => 0f };
+
+        // 上升、淡出与脉冲均根据同一年龄计算，不创建第二套动画或后台计时器。
+        GlobalPosition = m_Start + Vector2.Up * (riseDistance * Math.Clamp(m_Age / riseSeconds, 0f, 1f));
+        float alpha = fadeSeconds == 0 ? 1f : 1f - Math.Clamp((m_Age - riseSeconds) / fadeSeconds, 0f, 1f);
+        m_Content.Modulate = new Color(1, 1, 1, alpha);
+        if (m_Kind == DisplayKind.Damage)
+        {
+            float halfPulse = m_IsCrit ? CriticalPulseSeconds : DamagePulseSeconds;
+            float peakScale = m_IsCrit ? CriticalPeakScale : DamagePeakScale;
+            float progress = m_Age < halfPulse ? m_Age / halfPulse : 1f - (m_Age - halfPulse) / halfPulse;
+            m_Content.Scale = Vector2.One * (1f + (peakScale - 1f) * Math.Clamp(progress, 0f, 1f));
+        }
+        if (m_Age < riseSeconds + fadeSeconds)
+            return;
+
+        // 先停止并清除旧回调；归还后同一实例可能立即用于另一种样式。
+        SetProcess(false);
+        var finished = m_Finished;
+        m_Finished = null;
+        finished?.Invoke(this);
+    }
 
     /// <summary>首次取出创建数字子节点；后续取出只复位显示状态。</summary>
     public void OnGet()
@@ -146,36 +174,6 @@ public partial class FloatingTextNode : Node2D, IPoolable
         m_Content.Scale = Vector2.One;
         m_Content.Modulate = Colors.White;
         SetProcess(true);
-    }
-
-    /// <summary>所有样式共用游戏秒数推进；暂停时 delta 为零，完成后只通知一次。</summary>
-    /// <param name="delta">本帧游戏秒数。</param>
-    public override void _Process(double delta)
-    {
-        m_Age += (float)delta;
-        float riseSeconds = m_Kind switch { DisplayKind.Damage => DamageRiseSeconds, DisplayKind.Miss => MissRiseSeconds, _ => RecoveryLifetime };
-        float riseDistance = m_Kind switch { DisplayKind.Damage => DamageRiseDistance, DisplayKind.Miss => MissRiseDistance, _ => RecoveryRiseDistance };
-        float fadeSeconds = m_Kind switch { DisplayKind.Damage => DamageFadeSeconds, DisplayKind.Miss => MissFadeSeconds, _ => 0f };
-
-        // 上升、淡出与脉冲均根据同一年龄计算，不创建第二套动画或后台计时器。
-        GlobalPosition = m_Start + Vector2.Up * (riseDistance * Math.Clamp(m_Age / riseSeconds, 0f, 1f));
-        float alpha = fadeSeconds == 0 ? 1f : 1f - Math.Clamp((m_Age - riseSeconds) / fadeSeconds, 0f, 1f);
-        m_Content.Modulate = new Color(1, 1, 1, alpha);
-        if (m_Kind == DisplayKind.Damage)
-        {
-            float halfPulse = m_IsCrit ? CriticalPulseSeconds : DamagePulseSeconds;
-            float peakScale = m_IsCrit ? CriticalPeakScale : DamagePeakScale;
-            float progress = m_Age < halfPulse ? m_Age / halfPulse : 1f - (m_Age - halfPulse) / halfPulse;
-            m_Content.Scale = Vector2.One * (1f + (peakScale - 1f) * Math.Clamp(progress, 0f, 1f));
-        }
-        if (m_Age < riseSeconds + fadeSeconds)
-            return;
-
-        // 先停止并清除旧回调；归还后同一实例可能立即用于另一种样式。
-        SetProcess(false);
-        var finished = m_Finished;
-        m_Finished = null;
-        finished?.Invoke(this);
     }
 
     /// <summary>按伤害类型、暴击和受击方选择数字位图。</summary>
@@ -281,4 +279,7 @@ public partial class FloatingTextNode : Node2D, IPoolable
         m_GlyphRegions.Add(sheet, regions);
         return regions;
     }
+
+    /// <summary>决定本次动画节奏，不影响玩法结算。</summary>
+    private enum DisplayKind { Damage, Miss, Recovery }
 }

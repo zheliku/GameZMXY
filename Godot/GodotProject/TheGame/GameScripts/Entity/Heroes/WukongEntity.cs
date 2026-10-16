@@ -22,6 +22,9 @@ namespace GameLogic.Heroes
     /// </summary>
     public partial class WukongEntity : AbstractHeroEntity
     {
+        /// <summary>悟空从地面状态起步。</summary>
+        protected override Type InitialBodyStateType => typeof(HeroGroundState);
+
         /// <summary>造一悟空空中使用第三段下劈，地面使用完整五段普攻。</summary>
         /// <returns>包含空中下劈段号的身体参数。</returns>
         protected override HeroBodyParams BuildBodyParams() => base.BuildBodyParams() with { AirAttackIndex = 2 };
@@ -36,8 +39,5 @@ namespace GameLogic.Heroes
                 new HeroDeathState()
             ];
         }
-
-        /// <summary>悟空从地面状态起步。</summary>
-        protected override Type InitialBodyStateType => typeof(HeroGroundState);
     }
 }

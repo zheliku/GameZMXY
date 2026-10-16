@@ -277,6 +277,5 @@ namespace GameLogic.Monsters.AI
         {
             return range.Sample(range.Max > range.Min ? random() : 0f);
         }
-
     }
 }

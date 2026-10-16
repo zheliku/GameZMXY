@@ -1,3 +1,4 @@
+using GameLogic.Battle;
 using GameLogic.Config;
 using GameLogic.Architecture;
 using GameLogic.Entity;
@@ -30,10 +31,11 @@ public partial class LevelViewController : Node2D, IController
     private AbstractHeroEntity m_Player; // 借用流程显示并隐藏的英雄。
     private bool m_SessionActive; // 当前节点订阅是否已建立。
 
-    /// <summary>返回本场景装配时绑定的入口。</summary>
-    /// <returns>所属游戏架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() =>
-        m_Architecture ?? throw new InvalidOperationException("关卡 ViewController 尚未初始化。");
+    /// <summary>守关对手显示、死亡或解除绑定，HUD 据此刷新生命条。</summary>
+    public event Action FeaturedOpponentChanged;
+
+    /// <summary>实体显示失败，交给会话拥有者结束关卡并报告错误。</summary>
+    public event Action<Exception> Failed;
 
     /// <summary>本局唯一状态源。</summary>
     private LevelModel LevelModel => this.GetModel<LevelModel>();
@@ -41,17 +43,27 @@ public partial class LevelViewController : Node2D, IController
     /// <summary>按主键借用共享定义。</summary>
     private LevelConfig Config => this.GetModel<ConfigurationModel>().Tables.TbLevelConfig.Get(m_LevelId);
 
-    /// <summary>守关对手显示、死亡或解除绑定，HUD 据此刷新生命条。</summary>
-    public event Action FeaturedOpponentChanged;
-
     /// <summary>本阶段指定展示的普通怪物；死亡或离开会话后为空。</summary>
     public AbstractMonsterEntity FeaturedOpponent { get; private set; }
 
-    /// <summary>实体显示失败，交给会话拥有者结束关卡并报告错误。</summary>
-    public event Action<Exception> Failed;
-
     /// <summary>玩家出生点的世界坐标，注册初始化完成后可读。</summary>
     public Vector2 PlayerSpawnPosition => m_SpawnPoints.PositionOf(Config.PlayerSpawnPointId);
+
+    /// <summary>把游戏帧交给本局状态；暂停时 delta 为零。</summary>
+    /// <param name="delta">游戏秒数。</param>
+    public override void _Process(double delta)
+    {
+        if (m_SessionActive)
+        {
+            this.GetSystem<LevelSystem>().AdvanceTime(delta);
+            TickLoot((float)delta);
+        }
+    }
+
+    /// <summary>返回本场景装配时绑定的入口。</summary>
+    /// <returns>所属游戏架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() =>
+        m_Architecture ?? throw new InvalidOperationException("关卡 ViewController 尚未初始化。");
 
     /// <summary>绑定游戏入口，校验场景身份并初始化场景节点。</summary>
     /// <param name="architecture">所属游戏入口。</param>
@@ -94,8 +106,8 @@ public partial class LevelViewController : Node2D, IController
         m_ExitRequested = false;
         m_LootRandom.Randomize();
         m_Player.Died += OnHeroDied;
-        this.GetModel<PlayerModel>().ActiveEquipment.Changed += OnEquipmentChanged;
-        LevelModel.Ended += OnSessionEnded;
+        this.GetModel<ProfileModel>().Slots.Register(OnEquipmentChanged);
+        LevelModel.Outcome.Register(OnSessionEnded);
         m_SessionActive = true;
         m_Spawner.StartSession(entities, m_Camera, cancellationToken);
         m_FloatingText.StartSession(OwnsActor);
@@ -264,17 +276,6 @@ public partial class LevelViewController : Node2D, IController
         Failed?.Invoke(error);
     }
 
-    /// <summary>把游戏帧交给本局状态；暂停时 delta 为零。</summary>
-    /// <param name="delta">游戏秒数。</param>
-    public override void _Process(double delta)
-    {
-        if (m_SessionActive)
-        {
-            LevelModel.Tick(delta);
-            TickLoot((float)delta);
-        }
-    }
-
     /// <summary>英雄死亡属于表现事实，结算由模块执行。</summary>
     /// <param name="actor">本关英雄。</param>
     private void OnHeroDied(AbstractActorEntity actor) => Complete(LevelOutcome.Defeated);
@@ -282,19 +283,21 @@ public partial class LevelViewController : Node2D, IController
     /// <summary>传递结局时生命比例，不把实体传入业务模块。</summary>
     /// <param name="outcome">本局结局。</param>
     private void Complete(LevelOutcome outcome) => this.GetSystem<LevelSystem>().Complete(outcome,
-        (int)Math.Round(100.0 * m_Player.Vitals.Hp / m_Player.Vitals.MaxHp));
+        (int)Math.Round(100.0 * this.GetModel<HeroModel>().Hp.Value / this.GetModel<HeroModel>().MaxHp.Value));
 
     /// <summary>模型结局确定后停止奖励表现和订阅。</summary>
     /// <param name="outcome">已确定的结局。</param>
     private void OnSessionEnded(LevelOutcome outcome)
     {
+        if (outcome == LevelOutcome.Running)
+            return;
         ClearLoot();
         UnsubscribeProgressEvents();
     }
 
     /// <summary>装备变化后刷新节点属性；业务模块不持有英雄。</summary>
-    private void OnEquipmentChanged() => m_Player.ApplyLoadout(
-        this.GetSystem<EquipmentSystem>().CreateLoadout(), refill: false);
+    /// <param name="slots">已经提交的穿戴快照。</param>
+    private void OnEquipmentChanged(EquippedItems slots) => m_Player.RefreshAppearance();
 
     /// <summary>解除本局纯 C# 订阅；关停时不访问已释放的节点。</summary>
     public void UnsubscribeProgressEvents()
@@ -302,7 +305,7 @@ public partial class LevelViewController : Node2D, IController
         if (!m_SessionActive)
             return;
         m_Player.Died -= OnHeroDied;
-        this.GetModel<PlayerModel>().ActiveEquipment.Changed -= OnEquipmentChanged;
-        LevelModel.Ended -= OnSessionEnded;
+        this.GetModel<ProfileModel>().Slots.UnRegister(OnEquipmentChanged);
+        LevelModel.Outcome.UnRegister(OnSessionEnded);
     }
 }

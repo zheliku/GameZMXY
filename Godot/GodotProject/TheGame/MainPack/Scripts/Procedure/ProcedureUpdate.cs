@@ -39,6 +39,40 @@ public class ProcedureUpdate : ProcedureBase
     /// <summary>按配置与安装目录可写性选择并创建热更目录。</summary>
     private string SubpackDir => GetOrCreateHotUpdateDir();
 
+
+    /// <summary>执行版本检查、完整性校验、下载和子包加载。</summary>
+    /// <param name="procedureOwner">当前流程状态机。</param>
+    protected internal override async void OnEnter(ProcedureOwner procedureOwner)
+    {
+        base.OnEnter(procedureOwner);
+
+        try
+        {
+            await RunUpdateFlowAsync(procedureOwner);
+        }
+        catch (Exception ex)
+        {
+            Log.Error("[ProcedureUpdate] 更新流程异常: {0}", ex);
+
+            // 检查是否为强制更新，若是则阻塞而非跳过
+            var localVersion = EasySave.LoadFromUser<PackVersionList>(
+                ResourceManager.GameFrameworkVersionData);
+            if (localVersion?.ForceUpdate == true)
+            {
+                bool retry = await ShowForceUpdateDialogAsync("更新流程异常: " + ex.Message + "请重试或退出游戏。");
+                if (retry)
+                {
+                    await RunUpdateFlowAsync(procedureOwner);
+                    return;
+                }
+                GameEntry.Shutdown(ShutdownType.Quit);
+                return;
+            }
+
+            await SkipToNextAsync(procedureOwner);
+        }
+    }
+
     /// <summary>选择并确保存在热更子包目录。</summary>
     /// <returns>已创建且可写的子包目录。</returns>
     private string GetOrCreateHotUpdateDir()
@@ -86,40 +120,6 @@ public class ProcedureUpdate : ProcedureBase
         catch
         {
             return false;
-        }
-    }
-
-
-    /// <summary>执行版本检查、完整性校验、下载和子包加载。</summary>
-    /// <param name="procedureOwner">当前流程状态机。</param>
-    protected internal override async void OnEnter(ProcedureOwner procedureOwner)
-    {
-        base.OnEnter(procedureOwner);
-
-        try
-        {
-            await RunUpdateFlowAsync(procedureOwner);
-        }
-        catch (Exception ex)
-        {
-            Log.Error("[ProcedureUpdate] 更新流程异常: {0}", ex);
-
-            // 检查是否为强制更新，若是则阻塞而非跳过
-            var localVersion = EasySave.LoadFromUser<PackVersionList>(
-                ResourceManager.GameFrameworkVersionData);
-            if (localVersion?.ForceUpdate == true)
-            {
-                bool retry = await ShowForceUpdateDialogAsync("更新流程异常: " + ex.Message + "请重试或退出游戏。");
-                if (retry)
-                {
-                    await RunUpdateFlowAsync(procedureOwner);
-                    return;
-                }
-                GameEntry.Shutdown(ShutdownType.Quit);
-                return;
-            }
-
-            await SkipToNextAsync(procedureOwner);
         }
     }
 
@@ -356,7 +356,6 @@ public class ProcedureUpdate : ProcedureBase
             HotUpdateSafetyGuard.MarkStartupSuccess();
             GF.UI.CloseUIForm(m_LoadingForm);
         }
-
     }
 
     /// <summary>显示强制更新对话框并等待用户选择。</summary>
@@ -929,5 +928,4 @@ public class ProcedureUpdate : ProcedureBase
 
         ChangeState<ProcedurePrepare>(procedureOwner);
     }
-
 }

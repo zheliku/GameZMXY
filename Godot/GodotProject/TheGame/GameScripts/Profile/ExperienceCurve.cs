@@ -1,11 +1,12 @@
 using System;
+using GameLogic.Architecture;
 using System.Collections.Generic;
 using GameConfig.Hero;
 
 namespace GameLogic.Profile;
 
 /// <summary>验证等级表并将累计经验映射到等级与本级进度；不持有运行时玩家状态。</summary>
-public sealed class ExperienceCurve
+public sealed class ExperienceCurve : IUtility
 {
     private readonly int[] m_Thresholds; // 每个等级的累计经验起点，索引为等级减一。
 
@@ -82,5 +83,15 @@ public sealed class ExperienceCurve
         return index == MaxLevel - 1
             ? (MaxLevel, 0, 0)
             : (index + 1, total - m_Thresholds[index], m_Thresholds[index + 1] - m_Thresholds[index]);
+    }
+
+    /// <summary>从累计经验建立可一次提交的完整成长值。</summary>
+    /// <param name="totalExperience">累计经验，限制到有效首末门槛。</param>
+    /// <returns>累计经验、等级、本级经验和门槛的一致结果。</returns>
+    public HeroProgressionState GetProgress(int totalExperience)
+    {
+        int total = Math.Clamp(totalExperience, 0, MaxTotalExperience);
+        var (level, experience, maximum) = Evaluate(total);
+        return new(total, level, experience, maximum);
     }
 }

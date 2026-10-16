@@ -15,10 +15,6 @@ namespace GameLogic.UI;
 /// <summary>造一技能面板：查看当前出战角色的主动/被动目录，观察钱包；购买与实际释放以后接入。</summary>
 public partial class SkillForm : IController
 {
-    /// <summary>读取所属游戏流程的架构入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
-
     private bool m_ShowPassive; // 当前是否展示五项被动。
     private bool m_ResumeGame; // 只恢复本窗口发起的暂停。
 
@@ -54,22 +50,21 @@ public partial class SkillForm : IController
     {
         ReleaseBindingsAndPause();
         Visible = false;
-        var playerModel = this.GetModel<PlayerModel>();
+        var profile = this.GetModel<ProfileModel>();
         var levelModel = this.GetModel<LevelModel>();
-        if (!levelModel.Initialized || levelModel.Outcome != LevelOutcome.Running ||
-            !Enum.IsDefined((SkillHero)playerModel.ActiveHeroId))
+        if (!levelModel.Initialized || levelModel.Outcome.Value != LevelOutcome.Running ||
+            !Enum.IsDefined((SkillHero)profile.ActiveHeroId))
             throw new InvalidOperationException("技能面板需要正在运行的关卡与有效出战角色。");
         try
         {
-            playerModel.Wallet.Changed += RefreshSoul;
-            levelModel.Ended += OnLevelEnded;
+            this.GetModel<ProfileModel>().Soul.RegisterWithInitValue(RefreshSoul);
+            levelModel.Outcome.Register(OnLevelEnded);
             m_ResumeGame = !GF.Base.IsGamePaused;
             if (m_ResumeGame)
                 GF.Base.PauseGame();
             m_ShowPassive = false;
             m_ActivePage.Refresh();
             m_PassivePage.Refresh();
-            RefreshSoul();
             RefreshPage();
             Visible = true;
         }
@@ -100,11 +95,42 @@ public partial class SkillForm : IController
             Visible = false;
     }
 
+    /// <summary>暂停期间接受 Escape 返回关卡。</summary>
+    /// <param name="inputEvent">Godot 分发的输入。</param>
+    public override void _Input(InputEvent inputEvent)
+    {
+        if (!GF.UI.HasUIForm(SerialId) || !Visible || !inputEvent.IsActionPressed("ui_cancel"))
+            return;
+        GetViewport().SetInputAsHandled();
+        OnBackClicked();
+    }
+
+    /// <summary>窗口暂停回调。</summary>
+    public void OnPause() { }
+
+    /// <summary>窗口恢复回调。</summary>
+    public void OnResume() { }
+
+    /// <summary>窗口被覆盖回调。</summary>
+    public void OnCover() { }
+
+    /// <summary>窗口重新露出回调。</summary>
+    public void OnReveal() { }
+
+    /// <summary>静态目录不需要逐帧刷新。</summary>
+    /// <param name="elapseSeconds">游戏秒数。</param>
+    /// <param name="realElapseSeconds">真实秒数。</param>
+    public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
+
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     /// <summary>重绑、关闭或装配失败时退订并恢复暂停；调用时 Model 尚未移除。</summary>
     private void ReleaseBindingsAndPause()
     {
-        this.GetModel<PlayerModel>().Wallet.Changed -= RefreshSoul;
-        this.GetModel<LevelModel>().Ended -= OnLevelEnded;
+        this.GetModel<ProfileModel>().Soul.UnRegister(RefreshSoul);
+        this.GetModel<LevelModel>().Outcome.UnRegister(OnLevelEnded);
 
         if (m_ResumeGame && IsInstanceValid(GF.Base))
             GF.Base.ResumeGame();
@@ -112,12 +138,13 @@ public partial class SkillForm : IController
     }
 
     /// <summary>显示当前钱包余额；切页不会消费灵魂。</summary>
-    private void RefreshSoul() => m_Soul.Text = this.GetModel<PlayerModel>().Wallet.Soul.ToString();
+    /// <param name="soul">已经提交的余额。</param>
+    private void RefreshSoul(int soul) => m_Soul.Text = soul.ToString();
 
     /// <summary>只显示出战角色的目录，其他角色页签没有交互。</summary>
     private void RefreshPage()
     {
-        SkillHero hero = (SkillHero)this.GetModel<PlayerModel>().ActiveHeroId;
+        SkillHero hero = (SkillHero)this.GetModel<ProfileModel>().ActiveHeroId;
         SetHeroButton(m_Wukong, hero == SkillHero.Wukong);
         SetHeroButton(m_Tangseng, hero == SkillHero.Tangseng);
         m_ActivePage.Visible = !m_ShowPassive;
@@ -145,14 +172,14 @@ public partial class SkillForm : IController
     private void OnActiveClicked()
     {
         if (GF.UI.HasUIForm(SerialId) && Visible)
-            SelectPage((SkillHero)this.GetModel<PlayerModel>().ActiveHeroId, false);
+            SelectPage((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId, false);
     }
 
     /// <summary>切换共用被动目录。</summary>
     private void OnPassiveClicked()
     {
         if (GF.UI.HasUIForm(SerialId) && Visible)
-            SelectPage((SkillHero)this.GetModel<PlayerModel>().ActiveHeroId, true);
+            SelectPage((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId, true);
     }
 
     /// <summary>提交一次仅改变显示的切页。</summary>
@@ -160,7 +187,7 @@ public partial class SkillForm : IController
     /// <param name="passive">是否查看被动。</param>
     private void SelectPage(SkillHero hero, bool passive)
     {
-        if (!GF.UI.HasUIForm(SerialId) || !Visible || hero != (SkillHero)this.GetModel<PlayerModel>().ActiveHeroId)
+        if (!GF.UI.HasUIForm(SerialId) || !Visible || hero != (SkillHero)this.GetModel<ProfileModel>().ActiveHeroId)
             return;
         m_ShowPassive = passive;
         RefreshPage();
@@ -178,34 +205,11 @@ public partial class SkillForm : IController
 
     /// <summary>所属关卡结束时关闭窗口。</summary>
     /// <param name="outcome">已经提交的关卡结局。</param>
-    private void OnLevelEnded(LevelOutcome outcome) => GF.UI.CloseUIForm(SerialId);
-
-    /// <summary>暂停期间接受 Escape 返回关卡。</summary>
-    /// <param name="inputEvent">Godot 分发的输入。</param>
-    public override void _Input(InputEvent inputEvent)
+    private void OnLevelEnded(LevelOutcome outcome)
     {
-        if (!GF.UI.HasUIForm(SerialId) || !Visible || !inputEvent.IsActionPressed("ui_cancel"))
-            return;
-        GetViewport().SetInputAsHandled();
-        OnBackClicked();
+        if (outcome != LevelOutcome.Running)
+            GF.UI.CloseUIForm(SerialId);
     }
-
-    /// <summary>窗口暂停回调。</summary>
-    public void OnPause() { }
-
-    /// <summary>窗口恢复回调。</summary>
-    public void OnResume() { }
-
-    /// <summary>窗口被覆盖回调。</summary>
-    public void OnCover() { }
-
-    /// <summary>窗口重新露出回调。</summary>
-    public void OnReveal() { }
-
-    /// <summary>静态目录不需要逐帧刷新。</summary>
-    /// <param name="elapseSeconds">游戏秒数。</param>
-    /// <param name="realElapseSeconds">真实秒数。</param>
-    public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
 
     /// <summary>显式参数重新绑定窗口。</summary>
     /// <param name="userData">新的打开参数。</param>

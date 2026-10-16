@@ -1,4 +1,5 @@
 using GameLogic.Architecture;
+using GameLogic.Config;
 using GameLogic.Equipment;
 using GameLogic.Save;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
@@ -24,8 +25,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>实体创建、检查与归还完成的任务。</returns>
     private async Task CheckHitFacingAsync(ProcedureOwner flow)
     {
-        m_ExtraHero = await ShowHeroAsync(flow, new HeroProgression(1,
-            SmokeInspection.ReadField<ExperienceCurve>(flow.GetModel<PlayerModel>().ActiveHero, "m_Curve"), 0));
+        m_ExtraHero = await ShowHeroAsync(flow, 0);
         CheckActor(m_ExtraHero);
         ReleaseTestEntity(m_ExtraHero);
         m_ExtraHero = null;

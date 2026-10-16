@@ -15,17 +15,6 @@ namespace GameLogic.Monsters
     /// </summary>
     public partial class DemonMonkeyEntity : AbstractMonsterEntity
     {
-        /// <summary>本怪身体状态：地面移动 / 出招 / 收招硬直 / 受击 / 死亡。</summary>
-        /// <returns>本怪使用的身体状态集。</returns>
-        protected override FsmState<IMonsterBody>[] CreateBodyStates()
-        {
-            return
-            [
-                new MonsterMoveState(), new MonsterAttackState(), new MonsterRecoveryState(), new MonsterHurtState(),
-                new MonsterDeathState()
-            ];
-        }
-
         /// <summary>从地面移动状态起步。</summary>
         protected override Type InitialBodyStateType => typeof(MonsterMoveState);
 
@@ -37,5 +26,16 @@ namespace GameLogic.Monsters
 
         /// <summary>收招硬直中：身体状态机处于收招状态。</summary>
         protected override bool InRecovery => m_BodyFsm?.CurrentState is MonsterRecoveryState;
+
+        /// <summary>本怪身体状态：地面移动 / 出招 / 收招硬直 / 受击 / 死亡。</summary>
+        /// <returns>本怪使用的身体状态集。</returns>
+        protected override FsmState<IMonsterBody>[] CreateBodyStates()
+        {
+            return
+            [
+                new MonsterMoveState(), new MonsterAttackState(), new MonsterRecoveryState(), new MonsterHurtState(),
+                new MonsterDeathState()
+            ];
+        }
     }
 }

@@ -12,7 +12,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Architecture\ArchitectureContracts.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Architecture\AbstractUtility.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utility\SpatialUtility.cs" Link="Linked\SpatialUtility.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Stages\LevelStageSequence.cs" Link="Linked\LevelStageSequence.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Spawning\LevelSpawnSchedule.cs" Link="Linked\LevelSpawnSchedule.cs" />

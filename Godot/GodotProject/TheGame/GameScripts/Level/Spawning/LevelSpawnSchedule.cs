@@ -13,6 +13,12 @@ public sealed class LevelSpawnSchedule
     private int m_Cursor; // 轮转取配方的起始下标，避免前一配方占满并存名额。
     private int m_Pending; // 尚未提交的实体总数。
 
+    /// <summary>已预约、正在显示或仍存活的实体数量。</summary>
+    public int ActiveCount { get; private set; }
+
+    /// <summary>配方全部提交且所有预约名额已归还。</summary>
+    public bool IsCleared => m_Pending == 0 && ActiveCount == 0;
+
     /// <summary>创建阶段调度；首只怪物的等待时间为阶段延迟加配方延迟。</summary>
     /// <param name="stage">当前阶段的生成规则。</param>
     public LevelSpawnSchedule(LevelStage stage)
@@ -27,12 +33,6 @@ public sealed class LevelSpawnSchedule
             m_Pending += m_Remaining[i];
         }
     }
-
-    /// <summary>已预约、正在显示或仍存活的实体数量。</summary>
-    public int ActiveCount { get; private set; }
-
-    /// <summary>配方全部提交且所有预约名额已归还。</summary>
-    public bool IsCleared => m_Pending == 0 && ActiveCount == 0;
 
     /// <summary>推进游戏时间；暂停时调用方停止推进。</summary>
     /// <param name="delta">本帧经过的游戏秒数。</param>

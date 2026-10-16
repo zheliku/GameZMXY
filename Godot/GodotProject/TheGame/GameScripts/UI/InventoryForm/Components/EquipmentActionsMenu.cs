@@ -26,6 +26,15 @@ public partial class EquipmentActionsMenu : Control
         Close();
     }
 
+    /// <summary>复现官方 rollOut：指针离开装备格及其菜单后关闭。</summary>
+    /// <param name="delta">本帧秒数，不用于玩法计时。</param>
+    public override void _Process(double delta)
+    {
+        Vector2 mouse = GetGlobalMousePosition();
+        if (!m_Anchor.HasPoint(mouse) && !m_Panel.GetGlobalRect().HasPoint(mouse))
+            Close();
+    }
+
     /// <summary>在所选格的中心偏右下显示面板，靠近屏幕边缘时保持完整可见。</summary>
     /// <param name="instanceId">窗口已验证的背包实例。</param>
     /// <param name="anchor">所选格的屏幕区域。</param>
@@ -48,15 +57,6 @@ public partial class EquipmentActionsMenu : Control
         Visible = false;
         m_InstanceId = Guid.Empty;
         SetProcess(false);
-    }
-
-    /// <summary>复现官方 rollOut：指针离开装备格及其菜单后关闭。</summary>
-    /// <param name="delta">本帧秒数，不用于玩法计时。</param>
-    public override void _Process(double delta)
-    {
-        Vector2 mouse = GetGlobalMousePosition();
-        if (!m_Anchor.HasPoint(mouse) && !m_Panel.GetGlobalRect().HasPoint(mouse))
-            Close();
     }
 
     /// <summary>清除选择后提交一次装备请求，状态刷新不会重复使用旧选择。</summary>

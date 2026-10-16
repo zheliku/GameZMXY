@@ -1,3 +1,4 @@
+using GameLogic.Battle;
 using GameFramework.Procedure;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 using GameLogic.Architecture;
@@ -71,7 +72,10 @@ public partial class TestArenaController : Node2D
         m_OwnedIds.Clear();
         m_Entities = null;
         if (m_TestFlow != null)
+        {
+            m_TestFlow.RemoveSystem<HeroSystem>();
             GF.Fsm.DestroyFsm(m_TestFlow);
+        }
         m_TestFlow = null;
     }
 
@@ -154,13 +158,22 @@ public partial class TestArenaController : Node2D
                 var architecture = m_TestFlow.InitializeArchitecture();
                 m_TestFlow.RegisterUtility(new ArchiveUtility<GameCatalogue, GameData>(GF.Archive));
                 m_TestFlow.RegisterUtility(new SpatialUtility());
+                m_TestFlow.RegisterUtility(new SaveDataUtility());
                 m_TestFlow.RegisterModel(new ConfigurationModel(ConfigSystem.Instance.Tables));
+                m_TestFlow.RegisterUtility(new ExperienceCurve(m_TestFlow.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList));
                 m_TestFlow.RegisterModel(new SaveModel());
+                int heroId = ConfigSystem.Instance.Tables.TbHeroConfig.DataList.First(x => x.EntityId == m_HeroEntityId).Id;
+                m_TestFlow.RegisterModel(new ProfileModel(heroId, [(heroId, 0)], m_TestFlow.GetUtility<ExperienceCurve>(),
+                    ConfigSystem.Instance.Tables.TbProfileConfig.EquipmentCapacity));
+                m_TestFlow.RegisterModel(new HeroModel());
                 m_TestFlow.RegisterSystem(new ConfigurationSystem(architecture));
                 m_TestFlow.RegisterSystem(new CombatSystem(architecture));
                 m_TestFlow.RegisterSystem(new InputSystem(architecture));
                 m_TestFlow.RegisterSystem(new MonsterAiSystem(architecture));
                 m_TestFlow.RegisterSystem(new LootSystem(architecture));
+                m_TestFlow.RegisterSystem(new ProfileSystem(architecture));
+                m_TestFlow.RegisterSystem(new EquipmentSystem(architecture));
+                m_TestFlow.RegisterSystem(new HeroSystem(architecture));
                 m_TestFlow.RegisterSystem(new SaveSystem(architecture));
             }
             m_FloatingText.StartSession(m_OwnedIds.Contains);
@@ -189,14 +202,7 @@ public partial class TestArenaController : Node2D
     /// <param name="cancellationToken">场地退出时取消。</param>
     private async Task SpawnHeroAsync(EntityComponent entities, CancellationToken cancellationToken)
     {
-        var configuration = GF.Fsm.GetArchitecture().GetModel<ConfigurationModel>();
-        Tables tables = configuration.Tables;
-        ExperienceCurve curve = configuration.ExperienceCurve;
-        int heroId = tables.TbHeroConfig.DataList.FirstOrDefault(x => x.EntityId == m_HeroEntityId)?.Id
-            ?? throw new InvalidOperationException($"HeroConfig 中没有实体 {m_HeroEntityId}");
-        HeroProgression record = new(heroId, curve, 0);
-        HeroLoadout loadout = new EquipmentSystem(GF.Fsm.GetArchitecture()).CreateLoadout(record);
-        IEntity entity = await ShowOwnedEntityAsync(entities, m_HeroEntityId, loadout, cancellationToken);
+        IEntity entity = await ShowOwnedEntityAsync(entities, m_HeroEntityId, null, cancellationToken);
         if (entity?.Handle is not Node2D hero)
         {
             GD.PushError($"[TestArena] 玩家实体显示失败：{m_HeroEntityId}");
@@ -232,9 +238,6 @@ public partial class TestArenaController : Node2D
         return entity;
     }
 
-    /// <summary>只提供原生 FSM 宿主，不启动正式流程导航。</summary>
-    private sealed class ArenaState : GameFramework.Fsm.FsmState<IProcedureManager> { }
-
     /// <summary>取出并移除 Monsters 容器中的怪物占位节点，返回它们提供的枚举与坐标。</summary>
     /// <returns>每只待生成怪物的枚举与出生坐标。</returns>
     private List<(EntityId Id, Vector2 Position)> TakeMonsterPlaceholders()
@@ -254,4 +257,7 @@ public partial class TestArenaController : Node2D
 
         return monsters;
     }
+
+    /// <summary>只提供原生 FSM 宿主，不启动正式流程导航。</summary>
+    private sealed class ArenaState : GameFramework.Fsm.FsmState<IProcedureManager> { }
 }

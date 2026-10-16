@@ -10,20 +10,17 @@ namespace GameLogic.Level;
 [Tool]
 public partial class LevelGatesNode : AbstractLevelMarkersNode
 {
-    /// <summary>一场战斗的独立世界边界及左右门稳定 ID。</summary>
-    private readonly record struct StageRegion(float Left, float Right, string EntryGateId, string ExitGateId);
-
     private readonly List<StageRegion> m_Regions = new(); // 按阶段顺序预计算的空间区域。
     private Dictionary<string, StaticBody2D> m_Gates; // 初始化校验后的稳定 ID 到物理门索引。
     private string m_TravelLeftGateId = string.Empty; // 行进期间保留上一场战斗左界，抵达后替换。
+
+    /// <summary>阶段门使用绿色标注，与生成点、触发区区分。</summary>
+    protected override Color DefaultColor => new(0.6f, 1f, 0.2f, 0.9f);
 
     /// <summary>只支持 StaticBody2D 作为物理门节点。</summary>
     /// <param name="node">待检查的直接子节点。</param>
     /// <returns>节点是 StaticBody2D 时返回 true。</returns>
     protected override bool Supports(Node node) => node is StaticBody2D;
-
-    /// <summary>阶段门使用绿色标注，与生成点、触发区区分。</summary>
-    protected override Color DefaultColor => new(0.6f, 1f, 0.2f, 0.9f);
 
     /// <summary>校验独立左右门和视野宽度，允许相邻战斗区域重叠。</summary>
     /// <param name="config">本场景对应的关卡配置。</param>
@@ -148,4 +145,7 @@ public partial class LevelGatesNode : AbstractLevelMarkersNode
             shape.SetDeferred(CollisionShape2D.PropertyName.Disabled, !closed);
         }
     }
+
+    /// <summary>一场战斗的独立世界边界及左右门稳定 ID。</summary>
+    private readonly record struct StageRegion(float Left, float Right, string EntryGateId, string ExitGateId);
 }

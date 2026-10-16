@@ -1,10 +1,11 @@
+using IUIForm = GameFramework.UI.IUIForm;
+using GameLogic.UI;
 using GameConfig.Constant;
 using GameLogic.Save;
 using GameLogic.Architecture;
 using GameLogic.Audio;
 using GameFramework.Procedure;
 using System.Threading;
-using GameLogic.Event.Navigation;
 using System;
 using GameConfig;
 using GameConfig.Sound;
@@ -21,21 +22,18 @@ public sealed class ProcedureCharacter : ProcedureBase
     private int m_MusicSerialId; // 本周期 GGF 音乐请求。
     private ProcedureOwner m_Owner; // 仅当前流程周期借用主 FSM。
     private CancellationTokenSource m_Cancellation; // 离开时使旧异步结果失效。
-    private bool m_IsReturningToTitle; // 等待写盘期间拒绝重复导航。
 
     /// <summary>订阅本页面的点击事件后打开窗口。</summary>
     /// <param name="procedureOwner">流程状态机。</param>
     protected internal override void OnEnter(ProcedureOwner procedureOwner)
     {
-        GF.Event.Subscribe(CharacterConfirmedEventArgs.EventId, OnCharacterConfirmed);
-        GF.Event.Subscribe(TitleRequestedEventArgs.EventId, OnTitleRequested);
         base.OnEnter(procedureOwner);
         m_Owner = procedureOwner;
-        m_IsReturningToTitle = false;
         m_Cancellation = new CancellationTokenSource();
         GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
         m_FormSerialId = GF.UI.OpenUIForm(UIFormId.CharacterForm);
+        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: true);
         m_MusicSerialId = GF.Sound.PlayConfigured(SoundId.MenuTheme, 0.3f);
     }
 
@@ -44,8 +42,8 @@ public sealed class ProcedureCharacter : ProcedureBase
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
-        GF.Event.Unsubscribe(CharacterConfirmedEventArgs.EventId, OnCharacterConfirmed);
-        GF.Event.Unsubscribe(TitleRequestedEventArgs.EventId, OnTitleRequested);
+        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: false);
+
 
         m_Cancellation?.Cancel();
         m_Cancellation?.Dispose();
@@ -65,51 +63,20 @@ public sealed class ProcedureCharacter : ProcedureBase
     }
 
     /// <summary>确认当前出战角色后进入地图。</summary>
-    /// <param name="sender">选角窗口。</param>
-    /// <param name="args">本次确认请求。</param>
-    private void OnCharacterConfirmed(object sender, GameEventArgs args)
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    private void OnCharacterConfirmed(int formSerialId)
     {
-        if (!m_IsReturningToTitle && ((CharacterConfirmedEventArgs)args).FormSerialId == m_FormSerialId)
+        if (formSerialId == m_FormSerialId)
             ChangeState<ProcedureMap>(m_Owner);
     }
 
-    /// <summary>保存完成后释放档案作用域；失败保留页面，允许重试。</summary>
-    /// <param name="sender">选角窗口。</param>
-    /// <param name="args">返回标题请求，仅在等待前读取。</param>
-    private async void OnTitleRequested(object sender, GameEventArgs args)
-    {
-        if (((TitleRequestedEventArgs)args).FormSerialId != m_FormSerialId || m_IsReturningToTitle)
-            return;
-        m_IsReturningToTitle = true;
-        var token = m_Cancellation.Token;
-        var owner = m_Owner;
-        var saveSystem = owner.GetSystem<SaveSystem>();
-        try
-        {
-            // 捕获本周期引用，等待后不得访问已经换周期的流程字段。
-            bool saved = await saveSystem.PendingWrite;
-            token.ThrowIfCancellationRequested();
-            if (saved)
-                ChangeState<ProcedureTitle>(owner);
-            else
-                Log.Error("[{0}] 存档写入失败，已保留档案，暂不能返回标题。", GetType().Name);
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception error)
-        {
-            Log.Error("[{0}] 返回标题失败：{1}", GetType().Name, error);
-        }
-        finally
-        {
-            if (!token.IsCancellationRequested)
-                m_IsReturningToTitle = false;
-        }
-    }
     /// <summary>本周期界面可见后关闭加载页。</summary>
     /// <param name="sender">事件发送者。</param>
     /// <param name="args">只在本次分发内读取的池化参数。</param>
     private void OnFormOpened(object sender, GameEventArgs args)
     {
+        if (args is OpenUIFormSuccessEventArgs opened)
+            SetFormCallbacks(opened.UIForm, bind: true);
         if (args is not OpenUIFormSuccessEventArgs success || success.UIForm.SerialId != m_FormSerialId)
             return;
         (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
@@ -125,4 +92,20 @@ public sealed class ProcedureCharacter : ProcedureBase
     }
 
 
+    /// <summary>按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。</summary>
+    /// <param name="form">已打开窗口；在途时为空。</param>
+    /// <param name="bind">绑定或解除。</param>
+    private void SetFormCallbacks(IUIForm form, bool bind)
+    {
+        if (bind && (form == null || !GF.UI.IsValidUIForm(form)))
+            return;
+        switch (form)
+        {
+            case CharacterForm characterForm when characterForm.SerialId == m_FormSerialId:
+                characterForm.CharacterConfirmed -= OnCharacterConfirmed;
+                if (bind)
+                    characterForm.CharacterConfirmed += OnCharacterConfirmed;
+                break;
+        }
+    }
 }

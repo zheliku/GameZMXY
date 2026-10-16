@@ -250,6 +250,8 @@
 
 背包文件为 `equipment_<后缀>.png`，地面文件为 `ground_<后缀>.png`。复现：`python Tools/LegacyMigration/export_official_equipment.py --java <java.exe> --ffdec <ffdec.jar> --source <OtherMat_v9.swf>`；源包、解包 XML 与工具留在临时目录，不提交旧项目脚本。
 
+地面图保留原始透明画布。`GroundItemNode.Show` 每次显示时读取非透明区域，将其底边按显示缩放对齐场景碰撞体底边；通过 Sprite2D.Offset 定位，Position 留给领取时的上移淡出动画。更换图标或池复用时重新计算，不按整张图片底边定位，也不改碰撞尺寸。此规则仅用于静态掉落图标，角色动作仍保留统一原点。
+
 粗糙与普通的原背包位图不同，但同款装备的两个透明前景位图在原文件中内容相同；目前保留原样，品质由名称和详情区分，不人为改色。
 
 ## 悟空独立身体与武器

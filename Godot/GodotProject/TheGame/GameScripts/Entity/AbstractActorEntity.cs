@@ -2,7 +2,7 @@ using GameLogic.Architecture;
 using GameLogic.Monsters;
 using GameLogic.Heroes;
 using GameLogic.Entity;
-using GameLogic.Battle.Resources;
+using GameLogic.Battle;
 using GameLogic.Battle.Attributes;
 using GameLogic.Battle.Damage;
 using GameLogic.Battle.Attacks;
@@ -25,13 +25,6 @@ namespace GameLogic.Entity
     /// <summary>提供战斗实体的生命周期、生命、动画、判定与受击结算，具体行为由英雄和怪物声明。</summary>
     public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IController
     {
-        /// <summary>借用当前游戏流程的架构入口。</summary>
-        /// <returns>所属流程 FSM 的架构。</returns>
-        IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
-
-        /// <summary>上次 MoveAndSlide 得到的落地事实，英雄与怪物的身体接口共用。</summary>
-        public bool OnFloor => IsOnFloor();
-
         // ---- 字段 ----
 
         [Export] private Node2D m_Body; // 身体表现层，帧由动画轨道驱动。
@@ -50,14 +43,20 @@ namespace GameLogic.Entity
 
         private readonly Dictionary<string, StringName> m_AnimNames = new(); // 动画名到 StringName 的缓存，避免重复转换。
 
+        /// <summary>待生效的受击（值 = 击退速度；null = 无）：OnHurt 登记（子类按门槛），身体状态生效</summary>
+        protected Vector2? m_PendingHurt;
+
+        /// <summary>死亡事实置位的那一刻触发一次（作用域内订阅：关卡运行据此结算英雄死亡）。</summary>
+        public event Action<AbstractActorEntity> Died;
+
+        /// <summary>上次 MoveAndSlide 得到的落地事实，英雄与怪物的身体接口共用。</summary>
+        public bool OnFloor => IsOnFloor();
+
         /// <summary>本角色的招式（AttackConfig 里 OwnerId==自己，按 ComboIndex 排序；子类 OnInit 装填）</summary>
         protected IReadOnlyList<AttackConfig> OwnAttacks => this.GetModel<ConfigurationModel>().GetAttacks(EntityType);
 
         /// <summary>实体的基础配置类型；运行实例编号另由 GGF 管理。</summary>
         protected abstract EntityId EntityType { get; }
-
-        /// <summary>待生效的受击（值 = 击退速度；null = 无）：OnHurt 登记（子类按门槛），身体状态生效</summary>
-        protected Vector2? m_PendingHurt;
 
         // ---- 属性 ----
 
@@ -88,23 +87,20 @@ namespace GameLogic.Entity
         /// <summary>攻击判定区容器（朝向镜像；怪物 AI 推导判定盒范围时要加上它的本地位置）</summary>
         public Node2D HitBoxRoot => m_HitBoxRoot;
 
-        /// <summary>属性汇总（基础值 + 按来源修正）；容器随实体存续，子类在 OnShow 写入基础值与修正。</summary>
-        public ActorAttributes Attributes { get; } = new();
+        /// <summary>实际生命值；英雄从注册模型读取，怪物使用实体独有的普通状态。</summary>
+        public abstract int Hp { get; }
 
-        /// <summary>生命与魔法资源；容器随实体存续，上限随 <see cref="Attributes"/> 同步，扣血与死亡规则由 ReceiveHit 负责。</summary>
-        public Vitals Vitals { get; } = new();
+        /// <summary>当前生命上限。</summary>
+        public abstract int MaxHp { get; }
 
         /// <summary>等级（参与等级压制）；子类在 OnShow 写入。</summary>
-        public int Level { get; protected set; } = 1;
+        public abstract int Level { get; }
 
         /// <summary>
         /// 死亡事实。**单一事实源**：只在 ReceiveHit 扣血扣到 0 的那一刻置位、OnShow 复位；
         /// 身体状态机在下一个物理帧据此进入死亡状态（死亡优先级最高）。
         /// </summary>
         public bool Dead { get; private set; }
-
-        /// <summary>死亡事实置位的那一刻触发一次（作用域内订阅：关卡运行据此结算英雄死亡）。</summary>
-        public event Action<AbstractActorEntity> Died;
 
         /// <summary>朝向：1 右 / -1 左。素材原始朝左，见 SetFacing 注释。</summary>
         public int Facing { get; private set; } = 1;
@@ -242,6 +238,30 @@ namespace GameLogic.Entity
         {
         }
 
+        /// <summary>附加子实体。</summary>
+        public virtual void OnAttached(IEntity childEntity, object userData)
+        {
+        }
+
+        /// <summary>解除子实体。</summary>
+        public virtual void OnDetached(IEntity childEntity, object userData)
+        {
+        }
+
+        /// <summary>被附加到父实体。</summary>
+        public virtual void OnAttachTo(IEntity parentEntity, object userData)
+        {
+        }
+
+        /// <summary>从父实体解除。</summary>
+        public virtual void OnDetachFrom(IEntity parentEntity, object userData)
+        {
+        }
+
+        /// <summary>借用当前游戏流程的架构入口。</summary>
+        /// <returns>所属流程 FSM 的架构。</returns>
+        IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
         // ---- 业务入口 ----
 
         /// <summary>取出待生效受击的击退速度（取出即清除）。</summary>
@@ -287,26 +307,6 @@ namespace GameLogic.Entity
             m_RequestedAnim = anim;
             m_AnimPlayer.Stop();
             m_AnimPlayer.Play(AnimName(anim));
-        }
-
-        /// <summary>附加子实体。</summary>
-        public virtual void OnAttached(IEntity childEntity, object userData)
-        {
-        }
-
-        /// <summary>解除子实体。</summary>
-        public virtual void OnDetached(IEntity childEntity, object userData)
-        {
-        }
-
-        /// <summary>被附加到父实体。</summary>
-        public virtual void OnAttachTo(IEntity parentEntity, object userData)
-        {
-        }
-
-        /// <summary>从父实体解除。</summary>
-        public virtual void OnDetachFrom(IEntity parentEntity, object userData)
-        {
         }
 
         /// <summary>
@@ -399,7 +399,7 @@ namespace GameLogic.Entity
             if (!result.IsMiss)
             {
                 // 死亡事实唯一置位点：只在生命归零的那一次为真，之后保持到下次显示复位。
-                died = Vitals.Damage(result.Damage);
+                died = ApplyDamage(result.Damage);
                 Dead |= died;
                 OnHurt(attack, result, this.GetSystem<CombatSystem>().KnockbackVelocity(attack, Side), attackerEntityId);
             }
@@ -419,16 +419,18 @@ namespace GameLogic.Entity
         {
             if (!Dead)
             {
-                Vitals.Heal(value);
+                RestoreHealth(value);
             }
         }
 
-        /// <summary>按属性汇总的最终值同步生命与魔法上限。</summary>
-        /// <param name="refill">是否补满（显示、升级）；否则把当前值钳到新上限。</param>
-        protected void SyncVitalsToAttributes(bool refill)
-        {
-            Vitals.SetMaximums(Attributes.MaxHp, Attributes.MaxMp, refill);
-        }
+        /// <summary>扣除实际生命；只在本次扣减首次归零时返回真。</summary>
+        /// <param name="amount">实际伤害。</param>
+        /// <returns>本次是否导致死亡。</returns>
+        protected abstract bool ApplyDamage(int amount);
+
+        /// <summary>恢复实际生命，调用前已排除死亡。</summary>
+        /// <param name="amount">恢复量。</param>
+        protected abstract void RestoreHealth(int amount);
 
         // ---- 内部方法与扩展点 ----
 
@@ -512,7 +514,7 @@ namespace GameLogic.Entity
 
         /// <summary>结算用属性快照：取属性汇总当前最终值（出招与受击各取一次）。</summary>
         /// <returns>当前属性与等级对应的结算快照。</returns>
-        protected CombatantAttributes CaptureCombatAttributes() => CombatantAttributes.From(Side, Level, Attributes, Id);
+        protected abstract CombatantAttributes CaptureCombatAttributes();
 
         /// <summary>
         /// 受击表现钩子（已扣血、未闪避时调用）：子类决定硬直/击退如何生效。
@@ -557,6 +559,5 @@ namespace GameLogic.Entity
 
             return (float)m_AnimPlayer.GetAnimation(animName).Length;
         }
-
     }
 }

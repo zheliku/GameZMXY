@@ -7,6 +7,7 @@ using GameLogic.Config;
 using GameLogic.Drops;
 using GameLogic.Input;
 using GameLogic.Monsters.AI;
+using GameLogic.Profile;
 using GameLogic.Save;
 using GameLogic.Utility;
 using GodotGameFramework;
@@ -54,7 +55,9 @@ public sealed class ProcedurePrepare : ProcedureBase
             var architecture = procedureOwner.InitializeArchitecture();
             procedureOwner.RegisterUtility(new ArchiveUtility<GameCatalogue, GameData>(GF.Archive));
             procedureOwner.RegisterUtility(new SpatialUtility());
+            procedureOwner.RegisterUtility(new SaveDataUtility());
             procedureOwner.RegisterModel(new ConfigurationModel(ConfigSystem.Instance.Tables));
+            procedureOwner.RegisterUtility(new ExperienceCurve(procedureOwner.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList));
             procedureOwner.RegisterModel(new SaveModel());
             procedureOwner.RegisterSystem(new ConfigurationSystem(architecture));
             procedureOwner.RegisterSystem(new CombatSystem(architecture));
@@ -69,5 +72,4 @@ public sealed class ProcedurePrepare : ProcedureBase
             Log.Fatal("[ProcedurePrepare] 应用准备失败，停止启动：{0}", error);
         }
     }
-
 }

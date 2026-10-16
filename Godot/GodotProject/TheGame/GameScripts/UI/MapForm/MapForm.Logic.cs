@@ -1,11 +1,11 @@
 using GameLogic.Architecture;
-using GameLogic.Event.Navigation;
 using System;
 using GameFramework.Event;
 using GameFramework.UI;
 using GameLogic.Audio;
 using GameLogic;
 using GameLogic.Level;
+using GameLogic.Save;
 using GameConfig.Sound;
 using Godot;
 using GodotGameFramework;
@@ -18,9 +18,14 @@ namespace GameLogic.UI;
 /// <summary>地图界面：显示旧项目地点图片，以点击事件提交所选关卡。</summary>
 public partial class MapForm : IController
 {
-    /// <summary>读取所属游戏流程的架构入口。</summary>
-    /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    /// <summary>由所属流程处理 TitleRequested；参数为本次窗口编号。</summary>
+    public event Action<int> TitleRequested;
+
+    /// <summary>由所属流程处理 SaveRequested；参数为本次窗口编号。</summary>
+    public event Action<int> SaveRequested;
+
+    /// <summary>由所属流程处理 LevelSelected；参数为本次窗口编号及选择编号。</summary>
+    public event Action<int, int> LevelSelected;
 
 
     /// <summary>设置框架字段；按钮事件只在新建实例时绑定一次。</summary>
@@ -53,9 +58,8 @@ public partial class MapForm : IController
     /// <param name="userData">本次窗口打开参数。</param>
     public void OnOpen(object userData)
     {
-        if (GF.Event.Check(ProfileSavedEventArgs.EventId, OnProfileSaved))
-            GF.Event.Unsubscribe(ProfileSavedEventArgs.EventId, OnProfileSaved);
-        GF.Event.Subscribe(ProfileSavedEventArgs.EventId, OnProfileSaved);
+        this.GetModel<SaveModel>().ManualSave.UnRegister(RefreshManualSave);
+        this.GetModel<SaveModel>().ManualSave.RegisterWithInitValue(RefreshManualSave);
         m_Save.Disabled = false;
         m_Save.MouseDefaultCursorShape = CursorShape.PointingHand;
         m_Save.SelfModulate = Colors.White;
@@ -70,8 +74,10 @@ public partial class MapForm : IController
     /// <param name="userData">关闭参数，不保存。</param>
     public void OnClose(bool isShutdown, object userData)
     {
-        if (GF.Event.Check(ProfileSavedEventArgs.EventId, OnProfileSaved))
-            GF.Event.Unsubscribe(ProfileSavedEventArgs.EventId, OnProfileSaved);
+        TitleRequested = null;
+        SaveRequested = null;
+        LevelSelected = null;
+        this.GetModel<SaveModel>().ManualSave.UnRegister(RefreshManualSave);
         if (IsInstanceValid(m_LocationAnimation))
             ResetLocationHover();
         if (!isShutdown && IsInstanceValid(this))
@@ -117,6 +123,10 @@ public partial class MapForm : IController
     {
     }
 
+    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
     /// <summary>重新绑定显式传入的状态源。</summary>
     /// <param name="userData">新打开参数；null 保持当前绑定。</param>
     public void OnRefocus(object userData)
@@ -140,7 +150,7 @@ public partial class MapForm : IController
         if (!GF.UI.HasUIForm(SerialId))
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        GF.Event.Fire(this, TitleRequestedEventArgs.Create(SerialId));
+        TitleRequested?.Invoke(SerialId);
     }
 
     /// <summary>请求流程提交当前档案，等待期间禁用重复点击。</summary>
@@ -151,21 +161,24 @@ public partial class MapForm : IController
         m_Save.Disabled = true;
         m_Save.MouseDefaultCursorShape = CursorShape.Arrow;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        GF.Event.Fire(this, SaveRequestedEventArgs.Create(SerialId));
+        SaveRequested?.Invoke(SerialId);
     }
 
-    /// <summary>显示本窗口的保存结果，不保留池化参数。</summary>
-    /// <param name="sender">当前地图流程。</param>
-    /// <param name="args">本次写入结果。</param>
-    private void OnProfileSaved(object sender, GameEventArgs args)
+    /// <summary>显示属于本窗口的保存阶段和结果。</summary>
+    /// <param name="result">模型已提交的保存状态。</param>
+    private void RefreshManualSave(ManualSaveState result)
     {
-        var result = (ProfileSavedEventArgs)args;
         if (!GF.UI.HasUIForm(SerialId) || result.FormSerialId != SerialId)
             return;
-        m_Save.Disabled = false;
-        m_Save.MouseDefaultCursorShape = CursorShape.PointingHand;
-        m_Save.SelfModulate = result.Succeeded ? new Color(0.65f, 1f, 0.65f) : new Color(1f, 0.55f, 0.55f);
-        m_Save.TooltipText = result.Succeeded ? "游戏已保存" : "保存失败，点击重试";
+        m_Save.Disabled = result.Phase == SaveWritePhase.Writing;
+        m_Save.MouseDefaultCursorShape = m_Save.Disabled ? CursorShape.Arrow : CursorShape.PointingHand;
+        if (m_Save.Disabled)
+        {
+            m_Save.TooltipText = "正在保存";
+            return;
+        }
+        m_Save.SelfModulate = result.Phase == SaveWritePhase.Succeeded ? new Color(0.65f, 1f, 0.65f) : new Color(1f, 0.55f, 0.55f);
+        m_Save.TooltipText = result.Phase == SaveWritePhase.Succeeded ? "游戏已保存" : "保存失败，点击重试";
     }
 
     /// <summary>提交花果山的配置主键。</summary>
@@ -174,7 +187,7 @@ public partial class MapForm : IController
         if (!GF.UI.HasUIForm(SerialId))
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        GF.Event.Fire(this, LevelSelectedEventArgs.Create(SerialId, 1));
+        LevelSelected?.Invoke(SerialId, 1);
     }
 
     /// <summary>悬停时轻微放大，并循环闪烁原图中的黄色光晕。</summary>

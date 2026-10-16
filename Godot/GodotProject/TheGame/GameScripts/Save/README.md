@@ -1,58 +1,52 @@
 # 存档代码怎么读
 
-想确认“游戏到底保存什么”，先看 [Data/GameData.cs](Data/GameData.cs)，全部写盘字段和配套英雄记录都在这一个文件里。当前实际进度只有下列字段：
+先看 [Data/GameData.cs](Data/GameData.cs)，全部写盘字段和配套记录集中在这一个文件中。
 
 | 字段 | 保存内容 |
 | --- | --- |
-| `ActiveHeroId` | 当前出战英雄的配置 ID |
-| `Heroes[].HeroId` | 已拥有英雄的配置 ID |
-| `Heroes[].TotalExperience` | 每个英雄的累计经验 |
-| `Soul` | 钱包灵魂 |
-| `EquipmentItems[].InstanceId / EquipmentId` | 装备实例唯一编号和定义编号，背包与穿戴共用，每件只保存一次 |
-| `EquipmentItems[].Attributes` | 16 个具名整数属性，读档不重抽 |
-| `Heroes[].WeaponInstanceId / ArmorInstanceId` | 当前穿戴实例编号，空 Guid 表示空槽 |
+| ActiveHeroId | 出战英雄 ID |
+| Heroes[].HeroId / TotalExperience | 拥有的英雄与累计经验 |
+| Soul | 灵魂余额 |
+| EquipmentItems[].InstanceId / EquipmentId / Attributes | 装备唯一编号、定义与实际随机属性，每件只保存一次 |
+| Heroes[].WeaponInstanceId / ArmorInstanceId | 穿戴引用，空 Guid 表示空槽 |
 
-等级、本级经验和战斗属性从累计经验与配置重新计算。当前生命、魔法、无双、位置、怪物与波次不写入档案；未拾取的地面物品不写盘；技能和关卡解锁尚未接入。
+当前格式为 v6，没有历史兼容。等级、本级经验、属性上限从配置与累计经验重算；当前 HP/MP/WS、位置、波次、未拾取掉落不保存，技能与关卡解锁尚未接入。
 
-## 三个业务入口
+## 三个入口
 
-唯一入口是 [SaveSystem.cs](SaveSystem.cs)，顺着一次操作阅读即可：
+唯一文件业务入口是 [SaveSystem](SaveSystem.cs)，框架读写经 ArchiveUtility。
 
-1. 打开六格窗口：`RefreshDirectoryAsync` → 私有读取与目录状态提交 → GGF 读取文件 → `PlayerModel.FromSaveData` → `SaveSlotInfo` 显示摘要。
-2. 选择一个格：`LoadOrCreateAsync` → 读取已有文件或按配置创建 → `SaveLoadResult.PlayerModel` 返回运行时模型，`Origin` 表示 `Loaded / Created` 来源。
-3. 保存游戏：`SaveCheckpointAsync` → `PlayerModel.CaptureSaveData` 捕获快照 → 私有 `WriteSnapshotAsync` → `ArchiveUtility.OverWriteAsync` 写入。
+1. `RefreshDirectoryAsync`：读目录与 DTO → SaveDataUtility.Validate → 生成六格摘要 → 更新 SaveModel.Directory。目录浏览不创建运行时玩家 Model。
+2. `LoadOrCreateAsync`：读已有文件或按配置建档并立即写回 → 返回 `(GameData Data, SaveOrigin Origin)`。ProcedureLoadGame 创建并注册 ProfileModel、ProfileSystem 和 EquipmentSystem；Created 进入选角，Loaded 进入地图。
+3. `SaveCheckpointAsync`：核对捕获的 ProfileModel 仍是当前注册对象 → SaveDataUtility.Capture 捕获独立快照 → 核对文件编号 → ArchiveUtility.OverWriteAsync。
 
-`PendingWrite` 是最近一次写入任务，离开流程或再次读档前等待它。调用时核对 PlayerModel 仍是已注册的当前档案，`SaveModel.ActiveSlotUnitId` 再核对文件编号，防止旧引用写入其他格。
+PendingWrite 是最近一次写入任务。流程离开或重新读档前等待它；框架负责原子写、备份与串行排队，不随每次数值变化写盘。所有检查点写入成功后发 SaveSucceededEventArgs，由 SaveNoticeForm 显示提示；地图调用 SaveManuallyAsync；等待/结果绑定 SaveModel.ManualSave，系统拒绝重复保存并过滤离开窗口后的旧结果。
 
-## 文件与显示对象的区别
+## 谁拥有数据
 
-| 代码 | 职责 | 是否写盘 |
-| --- | --- | --- |
-| `Data/GameData.cs` | 每格文件根对象：`UnitId`、`SaveVersion`、`ActiveHeroId`、`Heroes`、`Soul`、`EquipmentItems` | 是 |
-| `Data/GameData.cs` 中的 `HeroSaveData` | 英雄列表的一条记录：配置 ID、累计经验与武器/防具实例引用 | 是 |
-| 同文件的 `EquipmentSaveData` 与 `Equipment/EquipmentAttributes` | 装备实例及其实际属性，字段显式必需 | 是 |
-| `Data/GameCatalogue.cs` | 目录条目：`UnitId`、`SlotNumber`、`Name`、`SavedAtUtc` | 是 |
-| `Profile/PlayerModel.cs` | 运行时档案 ↔ 保存快照；也用于关卡放弃时恢复检查点 | 否 |
-| `SaveLoadResult.cs` | 一次读档操作的返回结果及加载来源 | 否 |
-| `Slots/SaveSlotInfo.cs` | 六格窗口所需的名称、等级、时间与可读状态 | 否 |
-| `SaveModel.cs` | 当前文件编号、六格摘要、加载阶段、错误和变更通知 | 否 |
+| 对象 | 内容与生命周期 |
+| --- | --- |
+| ProfileModel | 英雄身份、累计经验、穿戴、背包和灵魂；读档 → 回标题 |
+| HeroModel | 本局最终属性、生命、魔法、无双；进关 → 离关，不写盘 |
+| SaveModel | 当前文件 ID、目录与手动保存显示状态；应用期 |
+| LevelModel | 进关快照、阶段、统计和结局；本局 |
+| SaveDataUtility | 无状态校验与捕获；同步调用期间借用 ProfileModel，不保存引用，不改模型、不读写文件 |
+| ProfileSystem | 奖励、领取与回滚业务；统一修改 ProfileModel |
 
-`GameData`、`GameCatalogue` 的名字和全局命名空间沿用现有 GGF 绑定。目录存于 `user://GameData/Catalogue.sav`，每格存于 `user://GameData/Data/{UnitId}.sav`；`.bak` 是备份，由框架负责原子写和恢复。只读取当前 v6 格式，不做历史兼容；旧档保留为不可读格，不自动覆盖。
+所有 Model 由流程 FSM 持有，System 与 UI 经 GetModel 借用。Model 保存数据和提供查询；System 使用 Value、标准集合操作和 ReplaceAll 修改，不经同名 Model 业务方法转发。绑定只传当前值，整数优先级默认 0，数值越大越先执行，同优先级按注册顺序。HeroSystem 的成长、穿戴同步使用 100，UI 使用默认值。没有手动补发通知 API，也没有第二套事件系统。
 
-运行时 `PlayerModel` 继承 AbstractModel，是本槽状态所有者；HeroProgression、Wallet、Inventory 和 HeroEquipment 是它拥有的子对象。ProcedurePrepare 注册 ConfigurationModel（同一 Tables 与共享经验曲线）、SaveModel、ArchiveUtility 等应用对象。SaveSystem 继承 AbstractSystem，经 GetModel 取配置、GetUtility 取框架存档适配；不缓存总表与曲线字段。
+捕获：`SaveDataUtility.Capture(ProfileModel)`。工具只接收本次输入，不反向查询 Architecture。回滚：`ProfileSystem.RestoreCheckpoint(GameData)`。共享经验曲线单独注册为 Utility，ConfigurationModel 只持有配置数据与索引。持久档案与本局 HeroModel 生命周期不同；存档 DTO 保持 GameData 的扁平结构，没有 SaveLoadResult 或兼容层。
 
-ProcedurePrepare.OnEnter 直接注册应用唯一 SaveSystem 与 SaveModel；系统借用存档模型，不拥有它。ProcedureLoadGame 完成准备后注册 PlayerModel、EquipmentSystem；回标题移除档案作用域，存档系统与目录仍保留。目录任务跨标题周期串行，取消后可重新读取。
+## 检查点与回滚
 
-ProcedureLevel 分别注册 LevelModel、LevelSystem，再初始化场景中的 LevelViewController。关内收益、进关快照和成绩归 LevelModel，提交/回滚归 LevelSystem，节点、掉落和英雄事件归 ViewController。装配清单见 [项目导览](../../../../../Docs/ProjectTour.md#所有者与初始化位置)。
+进关时捕获 GameData。关内经验、装备和灵魂经业务 System 即时更新 ProfileModel；通关或死亡提交检查点，死亡保留收益；中途返回地图/标题或运行失败时 RestoreCheckpoint 原地恢复，保留绑定对象与集合身份。
 
-## 新增一个持久字段
+回滚先校验完整快照，再使用正常属性和集合入口依次恢复穿戴、成长、背包、余额。每个状态源修改时自动通知；优先级保证对应派生系统先于同源 UI 刷新，不承诺多个状态源之间的整体通知。Items 绑定提供实时只读视图；只有显式存档/回滚快照才复制集合。
 
-先给运行时 `PlayerModel` 或其所属状态添加真实玩法数据；再修改`GameData` 或配套英雄记录，并在 `PlayerModel.CaptureSaveData / FromSaveData` 两侧补齐转换。关卡内会改变的数据还要处理 `RestoreCheckpoint`，并验证保存、读取与放弃回滚。格式有变化时递增 `GameData.CurrentVersion`。
+新增持久状态：修改所属 Model → 修改 GameData 及配套记录 → 补齐 SaveDataUtility 的校验/捕获与 ProfileSystem 的回滚 → 验证往返和放弃事务。格式变化递增 CurrentVersion，不添加旧 DTO 或运行时迁移器。
 
-音乐与音量属于应用设置，通过 GGF Sound/Setting 保存，不属于上述角色存档。集中规范见 [第 70 章](../../../../../Docs/ProjectGuidelines/70-ProfileAndSave.md)。
+GameData / GameCatalogue 的类名和全局命名空间由 GGF 绑定。正式目录为 `user://GameData/Catalogue.sav`，每格为 `user://GameData/Data/{UnitId}.sav`，`.bak` 为框架备份。烟测使用隔离 Validation 路径，不改正式档。
 
-所有检查点实际写盘成功后，由 SaveSystem 发出 SaveSucceededEventArgs，应用级 SaveNoticeForm 统一显示提示。关内怪物奖励通过池化飞行球接触英雄后入账；W 退出若仍有球在飞行，先完成实际拾取再保存。
+装备满包时留在地面直到过期；桃子和蓝瓶不占背包，接触后恢复并显示数字，蓝量灵魂仅回蓝。穿戴、卸下、出售经 LevelSystem → EquipmentSystem，售价来自 EquipmentConfig。音乐音量属于 GF.Setting，另行保存。
 
-`PlayerModel.Inventory` 只拥有未穿戴的已拾取装备，`HeroEquipment` 拥有每名英雄穿戴的两件装备；`EquipmentSystem` 负责按配置生成实例，`EquipmentInstance.FromSaveData` 负责读档校验，窗口只显示。满包时装备留在地面，直到原定的 10 秒过期，不重抽属性；桃子、蓝瓶接触后立即恢复，不占背包。通关与死亡保存已拾取装备，中途放弃恢复进关时的背包内容。
-
-点击背包格打开装备／赠送／出售菜单，单人赠送禁用；异角色装备不能穿戴，但可出售。售价只来自 EquipmentConfig.SellPrice，粗糙 10、普通 20 灵魂；重复或过期选择不会重复入账。穿戴、卸下、出售均通过 LevelSystem → EquipmentSystem 提交，窗口不直接改档案。C 通过 inventory_toggle 输入动作打开/关闭背包。
+所有者与调用链见 [项目导览](../../../../../Docs/ProjectTour.md)。集中规范见 [第 70 章](../../../../../Docs/ProjectGuidelines/70-ProfileAndSave.md)，其中旧模型与版本描述已由用户后续指令替代，规范正文未自行更改。

@@ -22,20 +22,14 @@ namespace GameLogic.Body
     /// </summary>
     public abstract class AbstractBodyState<TBody> : FsmState<TBody> where TBody : class, IActorBody
     {
-        /// <summary>进入次数（BodyFsmExtensions 据此识别"切回自己"的重新进入）。</summary>
-        internal int EnterSerial { get; private set; }
-
         /// <summary>
         /// 计时到点的容差（工程常数）：按物理 dt 累减有浮点误差（0.2s 在 60Hz 下减 12 次可能剩 1e-8），
         /// 不加容差会多拖一帧。状态计时一律用 <see cref="Elapsed"/> 判到点。
         /// </summary>
         protected const float TimeEpsilon = 1e-4f;
 
-        /// <summary>剩余时间是否已到点（含浮点容差）。</summary>
-        protected static bool Elapsed(float left)
-        {
-            return left <= TimeEpsilon;
-        }
+        /// <summary>进入次数（BodyFsmExtensions 据此识别"切回自己"的重新进入）。</summary>
+        internal int EnterSerial { get; private set; }
 
         /// <summary>框架帧轮询：身体状态不在渲染帧做任何事（见类注释）。</summary>
         protected internal sealed override void OnUpdate(IFsm<TBody> fsm, float elapseSeconds, float realElapseSeconds)
@@ -55,6 +49,12 @@ namespace GameLogic.Body
         {
             Leave(fsm, fsm.Owner, isShutdown);
             base.OnLeave(fsm, isShutdown);
+        }
+
+        /// <summary>剩余时间是否已到点（含浮点容差）。</summary>
+        protected static bool Elapsed(float left)
+        {
+            return left <= TimeEpsilon;
         }
 
         /// <summary>物理帧推进（由状态机扩展 Tick 调用）：先过打断规则，未被打断才跑本状态决策。</summary>

@@ -1,4 +1,5 @@
 using Godot;
+
 /// <summary>
 /// 单个池化场景条目。
 /// </summary>

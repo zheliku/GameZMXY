@@ -12,18 +12,6 @@ public partial class MusouActivationNode : Control
     /// <summary>默认隐藏，等待 HUD 观察到真正的激活状态变化。</summary>
     public override void _Ready() => Reset();
 
-    /// <summary>从首帧开始一次提示，多次通知不应由调用方重复播放。</summary>
-    public void ShowActivation()
-    {
-        m_Started = Time.GetTicksMsec();
-        // 只用下方的真实时间推进，避免子精灵同时自动前进一遍。
-        m_Animation.Stop();
-        m_Animation.Animation = HeroAnims.MusouActivation;
-        m_Animation.SetFrameAndProgress(0, 0);
-        Visible = true;
-        SetProcess(true);
-    }
-
     /// <summary>按原资源帧率显示，正常结束后隐藏；不暂停或恢复游戏。</summary>
     /// <param name="delta">引擎游戏时间，本表现使用真实时间而不依赖它。</param>
     public override void _Process(double delta)
@@ -34,6 +22,18 @@ public partial class MusouActivationNode : Control
             Reset();
         else
             m_Animation.SetFrameAndProgress((int)frames, (float)(frames % 1));
+    }
+
+    /// <summary>从首帧开始一次提示，多次通知不应由调用方重复播放。</summary>
+    public void ShowActivation()
+    {
+        m_Started = Time.GetTicksMsec();
+        // 只用下方的真实时间推进，避免子精灵同时自动前进一遍。
+        m_Animation.Stop();
+        m_Animation.Animation = HeroAnims.MusouActivation;
+        m_Animation.SetFrameAndProgress(0, 0);
+        Visible = true;
+        SetProcess(true);
     }
 
     /// <summary>关闭、改绑或复用时清除旧动画。</summary>

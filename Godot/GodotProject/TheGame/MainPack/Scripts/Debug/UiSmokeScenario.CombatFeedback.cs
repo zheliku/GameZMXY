@@ -1,3 +1,5 @@
+using GameLogic.FloatingText;
+using GameLogic.Battle;
 using GameLogic.Architecture;
 using GameLogic.Equipment;
 using GameLogic.Save;
@@ -35,15 +37,15 @@ public sealed partial class UiSmokeScenario
     private async Task CheckManaPickupAsync(ProcedureOwner flow, LevelViewController level, AbstractHeroEntity hero)
     {
         var owned = SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "m_LootOrbs");
-        hero.Vitals.TrySpendMp(hero.Vitals.Mp - 2);
+        GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(GF.Fsm.GetModel<HeroModel>().Mp.Value - 2);
         LootOrbNode first = SpawnManaOrb(level, hero.GlobalPosition);
-        Check(hero.Vitals.Mp == 2, "蓝球出生时已直接回蓝");
+        Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == 2, "蓝球出生时已直接回蓝");
         Vector2 pausedPosition = first.GlobalPosition;
         GF.Base.PauseGame();
         try
         {
             await WaitFramesAsync(4);
-            Check(first.GlobalPosition.IsEqualApprox(pausedPosition) && owned.Contains(first) && hero.Vitals.Mp == 2,
+            Check(first.GlobalPosition.IsEqualApprox(pausedPosition) && owned.Contains(first) && GF.Fsm.GetModel<HeroModel>().Mp.Value == 2,
                 "暂停时飞行球仍移动或领取");
         }
         finally
@@ -54,38 +56,42 @@ public sealed partial class UiSmokeScenario
         Vector2 originalHeroPosition = hero.GlobalPosition;
         hero.GlobalPosition += new Vector2(-40, 0);
         await WaitUntilAsync(() => owned.Count == 0, "蓝球没有接触英雄", 10000);
-        Check(hero.Vitals.Mp == Math.Min(hero.Vitals.MaxMp, 2 + flow.GetSystem<LootSystem>().ManaAmount(hero.Vitals.MaxMp)), "接触后回蓝量不符合配置");
+        Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().MaxMp.Value, 2 + flow.GetSystem<LootSystem>().ManaAmount(GF.Fsm.GetModel<HeroModel>().MaxMp.Value)), "接触后回蓝量不符合配置");
 
+        var floating = SmokeInspection.ReadField<FloatingTextPresenter>(level, "m_FloatingText");
+        var texts = SmokeInspection.ReadField<HashSet<FloatingTextNode>>(floating, "m_Texts");
+        Check(!texts.Any(x => SmokeInspection.ReadField<object>(x, "m_Kind").ToString() == "Recovery"),
+            "蓝量灵魂不应生成恢复飘字");
         hero.GlobalPosition = originalHeroPosition;
-        hero.Vitals.RestoreMp(hero.Vitals.MaxMp);
-        hero.Vitals.TrySpendMp(2);
+        GF.Fsm.GetSystem<HeroSystem>().RestoreMp(GF.Fsm.GetModel<HeroModel>().MaxMp.Value);
+        GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(2);
         LootOrbNode reused = SpawnManaOrb(level, hero.GlobalPosition);
         Check(ReferenceEquals(first, reused), "蓝球没有复用同一 GGF 池实例");
         await WaitUntilAsync(() => owned.Count == 0, "复用蓝球没有结束飞行", 10000);
-        Check(hero.Vitals.Mp == hero.Vitals.MaxMp, "蓝球超出上限或复用后未正确回蓝");
+        Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == GF.Fsm.GetModel<HeroModel>().MaxMp.Value, "蓝球超出上限或复用后未正确回蓝");
 
         // 黄球只增加无双，不能再次增加经验；开启期间也允许拾取补充。
         var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
-        hero.Musou.Clear();
-        hero.Musou.Add(hero.Musou.Max);
+        GF.Fsm.GetSystem<HeroSystem>().ClearWs();
+        GF.Fsm.GetSystem<HeroSystem>().AddWs(GF.Fsm.GetModel<HeroModel>().MaxWs.Value);
         Check(hero.TryActivateMusou(), "黄球回归前未开启无双");
         await WaitUntilAsync(() => !GF.Base.IsGamePaused, "黄球回归的开启停顿未结束", 4000);
-        hero.Musou.Advance(2);
-        int musou = hero.Musou.Value;
-        int experience = flow.GetModel<PlayerModel>().ActiveHero.TotalExperience;
+        GF.Fsm.GetSystem<HeroSystem>().AdvanceWs(2);
+        int musou = GF.Fsm.GetModel<HeroModel>().Ws.Value;
+        int experience = flow.GetModel<ProfileModel>().TotalExperience;
         SpawnOrb(level, hero.GlobalPosition, new(LootKind.Musou, ConfigSystem.Instance.Tables.TbDropConfig.Data.MusouPerOrb));
         await WaitUntilAsync(() => owned.Count == 0, "黄球没有接触英雄", 10000);
-        Check(hero.Musou.Value == musou + 5 && flow.GetModel<PlayerModel>().ActiveHero.TotalExperience == experience,
+        Check(GF.Fsm.GetModel<HeroModel>().Ws.Value == musou + 5 && flow.GetModel<ProfileModel>().TotalExperience == experience,
             "开启期间的黄球没有补充5无双，或错误增加经验");
         hero._PhysicsProcess(battle.WsMax / battle.WsDrainPerSecond + 1f);
 
-        m_ExtraHero = await ShowHeroAsync(flow, flow.GetModel<PlayerModel>().ActiveHero);
+        m_ExtraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
         m_ExtraHero.GlobalPosition = hero.GlobalPosition;
-        hero.Vitals.TrySpendMp(hero.Vitals.Mp - 2);
+        GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(GF.Fsm.GetModel<HeroModel>().Mp.Value - 2);
         SpawnManaOrb(level, m_ExtraHero.GlobalPosition);
         KillHero(m_ExtraHero);
         await WaitUntilAsync(() => owned.Count == 0, "飞行球没有跟随关卡所有者的实际英雄");
-        Check(hero.Vitals.Mp == Math.Min(hero.Vitals.MaxMp, 2 + flow.GetSystem<LootSystem>().ManaAmount(hero.Vitals.MaxMp)),
+        Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().MaxMp.Value, 2 + flow.GetSystem<LootSystem>().ManaAmount(GF.Fsm.GetModel<HeroModel>().MaxMp.Value)),
             "球错误跟随了同场景的其他英雄，未向本关英雄发放奖励");
         ReleaseTestEntity(m_ExtraHero);
         m_ExtraHero = null;
@@ -209,7 +215,7 @@ public sealed partial class UiSmokeScenario
                 probe.QueueFree();
             }
         }
-        m_ExtraHero = await ShowHeroAsync(flow, flow.GetModel<PlayerModel>().ActiveHero);
+        m_ExtraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
         AbstractHeroEntity hero = m_ExtraHero;
         try
         {

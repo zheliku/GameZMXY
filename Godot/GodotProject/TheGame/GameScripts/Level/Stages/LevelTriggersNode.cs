@@ -16,13 +16,13 @@ public partial class LevelTriggersNode : AbstractLevelMarkersNode
     /// <summary>报告进入当前区域的存活英雄；关卡接受后调用 EndWatching 结束监听。</summary>
     public event Action<AbstractHeroEntity> Activated;
 
+    /// <summary>触发区使用品红色标注，与生成点、门区分。</summary>
+    protected override Color DefaultColor => new(0.95f, 0.2f, 0.85f, 0.9f);
+
     /// <summary>只支持 Area2D 作为触发区节点。</summary>
     /// <param name="node">待检查的直接子节点。</param>
     /// <returns>节点是 Area2D 时返回 true。</returns>
     protected override bool Supports(Node node) => node is Area2D;
-
-    /// <summary>触发区使用品红色标注，与生成点、门区分。</summary>
-    protected override Color DefaultColor => new(0.95f, 0.2f, 0.85f, 0.9f);
 
     /// <summary>校验特殊阶段使用的外键，并停用所有触发区；加载期间不连接玩法信号。</summary>
     /// <param name="config">本场景对应的关卡配置。</param>

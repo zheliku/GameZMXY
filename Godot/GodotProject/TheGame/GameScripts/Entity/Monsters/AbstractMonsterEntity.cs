@@ -3,7 +3,6 @@ using GameLogic.Architecture;
 using GameLogic.Monsters.Body;
 using GameLogic.Monsters.AI;
 using GameLogic.Entity;
-using GameLogic.Battle.Resources;
 using GameLogic.Battle.Attributes;
 using GameLogic.Battle.Damage;
 using GameLogic.Battle.Attacks;
@@ -46,9 +45,6 @@ namespace GameLogic.Monsters
 
         [Export] private Vector2 m_HealthBarOffset = new(0f, -8f); // 血条底边中心相对受击盒顶边中心的像素偏移。
 
-        /// <summary>借用模型中同类怪物共享的身体参数。</summary>
-        private MonsterBodyParams BodyParams => this.GetModel<ConfigurationModel>().GetMonsterBodyParams(m_MonsterEntityId);
-
         /// <summary>按框架帧驱动的怪物 AI 状态机（行为类别按自己的状态类型查询）。</summary>
         protected IFsm<IMonsterAiAgent> m_AiFsm;
 
@@ -65,7 +61,22 @@ namespace GameLogic.Monsters
 
         private float m_OutOfSightTime; // 目标持续在视野外的秒数。
 
+        private int m_Level; // 本次显示的配置等级。
+        private int m_Hp; // 本怪物的普通生命状态，不注册 Model 或绑定观察者。
+        private int m_MaxHp; // 配方生命倍率应用后的上限。
+        private int m_Defense; // 配方防御倍率应用后的物防。
+
+        /// <summary>借用模型中同类怪物共享的身体参数。</summary>
+        private MonsterBodyParams BodyParams => this.GetModel<ConfigurationModel>().GetMonsterBodyParams(m_MonsterEntityId);
+
         // ---- 属性 ----
+
+        /// <inheritdoc />
+        public override int Hp => m_Hp;
+        /// <inheritdoc />
+        public override int MaxHp => m_MaxHp;
+        /// <inheritdoc />
+        public override int Level => m_Level;
 
         /// <inheritdoc />
         protected override EntityId EntityType => m_MonsterEntityId;
@@ -130,6 +141,43 @@ namespace GameLogic.Monsters
         /// <summary>AI 初始状态；默认由预设选择，Boss 可覆写。</summary>
         protected virtual Type InitialAiStateType => AiPreset.IdleStateType;
 
+        // ---- 接口实现 ----
+
+        /// <summary>向身体状态机提供怪物共享身体参数。</summary>
+        MonsterBodyParams IMonsterBody.Params => BodyParams;
+
+        /// <summary>向 AI 提供同一份共享身体及攻击参数。</summary>
+        MonsterBodyParams IMonsterAiAgent.Params => BodyParams;
+
+        /// <summary>转发 AI 写入的移动意图读写。</summary>
+        int IMonsterBody.MoveIntent
+        {
+            get => AiData.MoveIntent;
+            set => AiData.MoveIntent = value;
+        }
+
+        /// <summary>提供怪物身体状态使用的重力参数。</summary>
+        float IActorBody.Gravity => BodyParams.Gravity;
+
+        /// <summary>向 AI 提供实体死亡事实。</summary>
+        bool IMonsterAiAgent.IsDead => Dead;
+
+        /// <summary>向 AI 提供当前受击受控事实。</summary>
+        bool IMonsterAiAgent.IsCcLocked => InHurt;
+
+        /// <summary>向 AI 提供攻击或收招忙碌事实。</summary>
+        bool IMonsterAiAgent.IsAttacking => IsBusy;
+
+        /// <summary>提供目标受击盒相对怪物原点的范围。</summary>
+        Rect2 IMonsterAiAgent.TargetBox => TargetBox;
+
+        /// <summary>提供怪物相对出生点的水平偏移。</summary>
+        float IMonsterAiAgent.PatrolOffsetX => GlobalPosition.X -
+            (IsInstanceValid(m_PatrolAnchor) ? m_PatrolAnchor.GlobalPosition.X : m_SpawnPosition.X);
+
+        /// <summary>向 AI 提供怪物共享定义。</summary>
+        MonsterConfig IMonsterAiAgent.Config => Config;
+
         // ---- 生命周期 ----
 
         /// <summary>读取基础实体信息与怪物配置，并初始化攻击和身体参数。</summary>
@@ -145,7 +193,7 @@ namespace GameLogic.Monsters
 
             if (!isNewInstance)
                 return;
-            this.GetModel<ConfigurationModel>().EnsureMonsterBodyParams(m_MonsterEntityId, BuildBodyParams);
+            this.GetSystem<ConfigurationSystem>().EnsureMonsterBodyParams(m_MonsterEntityId, BuildBodyParams);
             AiData = new MonsterAiData(BodyParams.Attacks.Count);
             ConfigureDetector();
         }
@@ -159,18 +207,14 @@ namespace GameLogic.Monsters
                 throw new ArgumentException("怪物显示参数必须包含出生位置与基础属性倍率。", nameof(userData));
 
             // 每次从基础配置装配倍率，随后补满生命；不修改共享表，也不沿用上次显示的修正。
-            Attributes.Clear();
-            Attributes.SetBase(Config.BaseAttributes);
-            Attributes.SetSource(new AttributeSourceId("Spawn", 0),
-            [
-                AttributeModifier.PercentMult(AttributeType.MaxHp, spawn.HealthMultiplier - 1f),
-                AttributeModifier.PercentMult(AttributeType.Def, spawn.DefenseMultiplier - 1f),
-            ]);
+            // 怪物不建立通用属性容器，出生时应用本配方需要的基础倍率。
+            m_MaxHp = Math.Max(1, (int)MathF.Round(Config.BaseAttributes.MaxHp * spawn.HealthMultiplier, MidpointRounding.AwayFromZero));
+            m_Defense = Math.Max(0, (int)MathF.Round(Config.BaseAttributes.Def * spawn.DefenseMultiplier, MidpointRounding.AwayFromZero));
             m_AttackMultiplier = spawn.AttackMultiplier;
             m_ExperienceReward = spawn.ExperienceOverride < 0 ? Config.AddExp : spawn.ExperienceOverride;
             m_EquipmentDropPoolId = spawn.EquipmentDropPoolOverride == EquipmentDropPoolId.UseMonster ? Config.EquipmentDropPoolId : spawn.EquipmentDropPoolOverride;
-            Level = Config.Level;
-            SyncVitalsToAttributes(refill: true);
+            m_Level = Config.Level;
+            m_Hp = MaxHp;
             AttackSegment = -1;
             m_PendingHurt = null;
             m_RecycleRequested = false;
@@ -192,9 +236,10 @@ namespace GameLogic.Monsters
             if (m_HealthBar != null)
             {
                 m_HealthBarTimeLeft = 0f;
-                m_LastHealthBarHp = Vitals.Hp;
+                m_LastHealthBarHp = Hp;
                 m_HealthBar.Modulate = Colors.White;
-                Vitals.Changed += RefreshHealthBar;
+
+
                 RefreshHealthBar();
             }
         }
@@ -206,7 +251,8 @@ namespace GameLogic.Monsters
         {
             m_PatrolAnchor = null;
             // 先解除纯 C# 订阅；关停时子节点可能已释放，不再访问表现对象。
-            Vitals.Changed -= RefreshHealthBar;
+
+
             if (!isShutdown && IsInstanceValid(m_HealthBar))
             {
                 m_HealthBar.Visible = false;
@@ -258,17 +304,48 @@ namespace GameLogic.Monsters
             }
         }
 
+        /// <inheritdoc />
+        protected override bool ApplyDamage(int amount)
+        {
+            if (amount <= 0 || m_Hp <= 0)
+                return false;
+            m_Hp = Math.Max(0, m_Hp - amount);
+            RefreshHealthBar();
+            return m_Hp == 0;
+        }
+
+        /// <inheritdoc />
+        protected override void RestoreHealth(int amount)
+        {
+            if (amount <= 0)
+                return;
+            m_Hp = (int)Math.Min(MaxHp, (long)m_Hp + amount);
+            RefreshHealthBar();
+        }
+
+
+        /// <inheritdoc />
+        protected override CombatantAttributes CaptureCombatAttributes()
+        {
+            var attributes = Config.BaseAttributes;
+            return new CombatantAttributes(Side, Level, attributes.Power, m_Defense, attributes.Mdef,
+                attributes.Crit, attributes.Miss, attributes.Lucky, attributes.Toughness, attributes.Htarget,
+                attributes.CritReduce, attributes.Ar, attributes.Sp, Id);
+        }
+
         // ---- 内部方法与扩展点 ----
 
         /// <summary>生命变化时重新读取当前值与上限，刷新被动血条。</summary>
         private void RefreshHealthBar()
         {
-            if (Vitals.Hp < m_LastHealthBarHp)
+            if (!IsShown || m_HealthBar == null)
+                return;
+            if (Hp < m_LastHealthBarHp)
                 m_HealthBarTimeLeft = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.MonsterHealthBarFadeDuration;
-            m_LastHealthBarHp = Vitals.Hp;
-            // 用生命值判定归零；Vitals 通知发生在 ReceiveHit 置位 Dead 之前。
-            m_HealthBar.SetValue(Vitals.Hp, Vitals.MaxHp);
-            m_HealthBar.Visible = m_HealthBarTimeLeft > 0f && !Vitals.IsDepleted && Vitals.Hp < Vitals.MaxHp;
+            m_LastHealthBarHp = Hp;
+            // 扣血先刷新血条，再由受击入口确定死亡事实。
+            m_HealthBar.SetValue(Hp, MaxHp);
+            m_HealthBar.Visible = m_HealthBarTimeLeft > 0f && Hp > 0 && Hp < MaxHp;
             UpdateHealthBarFade(0f);
             UpdateHealthBarPosition();
         }
@@ -492,21 +569,6 @@ namespace GameLogic.Monsters
             m_AiFsm = null;
         }
 
-        // ---- 接口实现 ----
-
-        /// <summary>向身体状态机提供怪物共享身体参数。</summary>
-        MonsterBodyParams IMonsterBody.Params => BodyParams;
-
-        /// <summary>向 AI 提供同一份共享身体及攻击参数。</summary>
-        MonsterBodyParams IMonsterAiAgent.Params => BodyParams;
-
-        /// <summary>转发 AI 写入的移动意图读写。</summary>
-        int IMonsterBody.MoveIntent
-        {
-            get => AiData.MoveIntent;
-            set => AiData.MoveIntent = value;
-        }
-
         /// <summary>取出并清除待提交的攻击请求。</summary>
         /// <returns>待提交下标；没有请求时为 -1。</returns>
         int IMonsterBody.TakeAttackRequest()
@@ -515,9 +577,6 @@ namespace GameLogic.Monsters
             AiData.AttackRequest = -1;
             return request;
         }
-
-        /// <summary>提供怪物身体状态使用的重力参数。</summary>
-        float IActorBody.Gravity => BodyParams.Gravity;
 
         /// <summary>提交怪物招式并装填攻击包。</summary>
         /// <param name="index">要提交的怪物攻击下标。</param>
@@ -540,25 +599,6 @@ namespace GameLogic.Monsters
 
         /// <summary>请求在当前物理帧完成后安全回收实体。</summary>
         void IMonsterBody.RequestRecycle() => m_RecycleRequested = true;
-
-        /// <summary>向 AI 提供实体死亡事实。</summary>
-        bool IMonsterAiAgent.IsDead => Dead;
-
-        /// <summary>向 AI 提供当前受击受控事实。</summary>
-        bool IMonsterAiAgent.IsCcLocked => InHurt;
-
-        /// <summary>向 AI 提供攻击或收招忙碌事实。</summary>
-        bool IMonsterAiAgent.IsAttacking => IsBusy;
-
-        /// <summary>提供目标受击盒相对怪物原点的范围。</summary>
-        Rect2 IMonsterAiAgent.TargetBox => TargetBox;
-
-        /// <summary>提供怪物相对出生点的水平偏移。</summary>
-        float IMonsterAiAgent.PatrolOffsetX => GlobalPosition.X -
-            (IsInstanceValid(m_PatrolAnchor) ? m_PatrolAnchor.GlobalPosition.X : m_SpawnPosition.X);
-
-        /// <summary>向 AI 提供怪物共享定义。</summary>
-        MonsterConfig IMonsterAiAgent.Config => Config;
 
         /// <summary>由 Godot 随机源提供 AI 随机值。</summary>
         /// <returns>零到一之间的随机值。</returns>
@@ -597,7 +637,6 @@ namespace GameLogic.Monsters
             AiData.MoveIntent = 0;
             return true;
         }
-
     }
 
     /// <summary>一次怪物显示的出生位置与基础属性倍率；默认倍率 1，池复用时整体重置。</summary>

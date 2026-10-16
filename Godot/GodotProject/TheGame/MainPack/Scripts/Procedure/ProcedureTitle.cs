@@ -1,3 +1,5 @@
+using IUIForm = GameFramework.UI.IUIForm;
+using GameLogic.UI;
 using GameConfig.Constant;
 using GameLogic.Audio;
 using GameFramework.Procedure;
@@ -6,7 +8,6 @@ using GameLogic.Architecture;
 using GameLogic.Equipment;
 using GameLogic.Procedure.FlowData;
 using GameLogic.Save.Slots;
-using GameLogic.Event.Navigation;
 using GameConfig;
 using GameConfig.Sound;
 using GameFramework.Event;
@@ -27,25 +28,25 @@ public sealed class ProcedureTitle : ProcedureBase
 
     private int m_SaveSerialId; // 本流程打开的六格存档窗口。
     private int m_SettingsSerialId; // 本流程打开的设置窗口，包括在途加载。
+
     /// <summary>订阅本页面的点击事件后打开窗口。</summary>
     /// <param name="procedureOwner">流程状态机。</param>
     protected internal override void OnEnter(ProcedureOwner procedureOwner)
     {
         // 上个页面已结束借用；移除流程持有的档案状态和系统，继续借用应用存档系统。
         procedureOwner.RemoveSystem<EquipmentSystem>();
-        procedureOwner.RemoveModel<PlayerModel>();
+        procedureOwner.RemoveSystem<ProfileSystem>();
+        procedureOwner.RemoveModel<ProfileModel>();
         procedureOwner.RemoveData(FlowKeys.SelectedLevelId);
         procedureOwner.RemoveData(FlowKeys.SaveSelection);
 
-        GF.Event.Subscribe(StartGameRequestedEventArgs.EventId, OnStartGameRequested);
-        GF.Event.Subscribe(SaveSlotSelectedEventArgs.EventId, OnSaveSlotSelected);
-        GF.Event.Subscribe(SettingsRequestedEventArgs.EventId, OnSettingsRequested);
         base.OnEnter(procedureOwner);
         m_Owner = procedureOwner;
         m_Cancellation = new CancellationTokenSource();
         GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
         m_FormSerialId = GF.UI.OpenUIForm(UIFormId.StartForm);
+        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: true);
         m_MusicSerialId = GF.Sound.PlayConfigured(SoundId.MenuTheme, 0.3f);
     }
 
@@ -54,9 +55,10 @@ public sealed class ProcedureTitle : ProcedureBase
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
-        GF.Event.Unsubscribe(StartGameRequestedEventArgs.EventId, OnStartGameRequested);
-        GF.Event.Unsubscribe(SaveSlotSelectedEventArgs.EventId, OnSaveSlotSelected);
-        GF.Event.Unsubscribe(SettingsRequestedEventArgs.EventId, OnSettingsRequested);
+        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(m_SaveSerialId), bind: false);
+
+
         if (!isShutdown && m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
             GF.UI.CloseUIForm(m_SettingsSerialId);
         if (!isShutdown && m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId)))
@@ -80,31 +82,30 @@ public sealed class ProcedureTitle : ProcedureBase
     }
 
     /// <summary>开始按钮打开存档选择页，读取目录期间显示加载反馈。</summary>
-    /// <param name="sender">发出请求的窗口。</param>
-    /// <param name="args">本次开始请求。</param>
-    private async void OnStartGameRequested(object sender, GameEventArgs args)
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    private async void OnStartGameRequested(int formSerialId)
     {
-        if (((StartGameRequestedEventArgs)args).FormSerialId != m_FormSerialId)
+        if (formSerialId != m_FormSerialId)
             return;
         if (m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId)))
             return;
         var saveSystem = m_Owner.GetSystem<SaveSystem>();
         var token = m_Cancellation.Token;
         m_SaveSerialId = GF.UI.OpenUIForm(UIFormId.SaveForm);
+        SetFormCallbacks(GF.UI.GetUIForm(m_SaveSerialId), bind: true);
         await saveSystem.RefreshDirectoryAsync(token);
     }
 
     /// <summary>只接受当前窗口中可读的格号，把稳定编号交给读档流程。</summary>
-    /// <param name="sender">存档窗口。</param>
-    /// <param name="args">本次存档选择，仅在当前分发期间读取。</param>
-    private void OnSaveSlotSelected(object sender, GameEventArgs args)
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    /// <param name="selectionId">选中的存档格或关卡编号。</param>
+    private void OnSaveSlotSelected(int formSerialId, int selectionId)
     {
-        var selection = (SaveSlotSelectedEventArgs)args;
-        if (selection.FormSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) || GF.Fsm.GetModel<SaveModel>().Phase != SaveListState.Ready)
+        if (formSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) || GF.Fsm.GetModel<SaveModel>().Phase != SaveListState.Ready)
             return;
-        if (selection.SlotNumber < 1 || selection.SlotNumber > GF.Fsm.GetModel<SaveModel>().Slots.Count)
+        if (selectionId < 1 || selectionId > GF.Fsm.GetModel<SaveModel>().Slots.Count)
             return;
-        var slot = GF.Fsm.GetModel<SaveModel>().Slots[selection.SlotNumber - 1];
+        var slot = GF.Fsm.GetModel<SaveModel>().Slots[selectionId - 1];
         if (slot.State == SaveSlotState.Unreadable)
             return;
         m_Owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(slot.SlotNumber, slot.UnitId));
@@ -112,15 +113,15 @@ public sealed class ProcedureTitle : ProcedureBase
     }
 
     /// <summary>打开声音设置；加载中和已打开时不重复请求。</summary>
-    /// <param name="sender">发出请求的窗口。</param>
-    /// <param name="args">本次设置请求。</param>
-    private void OnSettingsRequested(object sender, GameEventArgs args)
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    private void OnSettingsRequested(int formSerialId)
     {
-        if (((SettingsRequestedEventArgs)args).FormSerialId != m_FormSerialId)
+        if (formSerialId != m_FormSerialId)
             return;
         if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
             return;
         m_SettingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
+        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
     }
 
     /// <summary>本周期界面可见后关闭加载页。</summary>
@@ -128,6 +129,8 @@ public sealed class ProcedureTitle : ProcedureBase
     /// <param name="args">只在本次分发内读取的池化参数。</param>
     private void OnFormOpened(object sender, GameEventArgs args)
     {
+        if (args is OpenUIFormSuccessEventArgs opened)
+            SetFormCallbacks(opened.UIForm, bind: true);
         if (args is not OpenUIFormSuccessEventArgs success || success.UIForm.SerialId != m_FormSerialId)
             return;
         GodotGameFramework.HotUpdate.HotUpdateSafetyGuard.MarkStartupSuccess();
@@ -141,5 +144,30 @@ public sealed class ProcedureTitle : ProcedureBase
     {
         if (args is OpenUIFormFailureEventArgs failure && failure.SerialId == m_FormSerialId)
             Log.Error("[ProcedureTitle] 界面加载失败：{0}", failure.ErrorMessage);
+    }
+
+    /// <summary>按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。</summary>
+    /// <param name="form">已打开窗口；在途时为空。</param>
+    /// <param name="bind">绑定或解除。</param>
+    private void SetFormCallbacks(IUIForm form, bool bind)
+    {
+        if (bind && (form == null || !GF.UI.IsValidUIForm(form)))
+            return;
+        switch (form)
+        {
+            case StartForm startForm when startForm.SerialId == m_FormSerialId:
+                startForm.StartGameRequested -= OnStartGameRequested;
+                if (bind)
+                    startForm.StartGameRequested += OnStartGameRequested;
+                startForm.SettingsRequested -= OnSettingsRequested;
+                if (bind)
+                    startForm.SettingsRequested += OnSettingsRequested;
+                break;
+            case SaveForm saveForm when saveForm.SerialId == m_SaveSerialId:
+                saveForm.SaveSlotSelected -= OnSaveSlotSelected;
+                if (bind)
+                    saveForm.SaveSlotSelected += OnSaveSlotSelected;
+                break;
+        }
     }
 }

@@ -10,6 +10,12 @@ public sealed class LevelStageSequence
     private readonly IReadOnlyList<LevelStage> m_Stages; // 初始化时校验过的阶段列表。
     private int m_Index; // 唯一当前阶段的列表索引。
 
+    /// <summary>当前阶段；完成后仍保留最后阶段供结算读取。</summary>
+    public LevelStage Current => m_Stages[m_Index];
+
+    /// <summary>当前会话阶段状态。</summary>
+    public LevelStagePhase Phase { get; private set; } = LevelStagePhase.Ready;
+
     /// <summary>校验阶段编排并创建尚未开始的会话。</summary>
     /// <param name="stages">关卡配置中按顺序排列的阶段列表。</param>
     /// <exception cref="InvalidOperationException">阶段为空，或顺序、并存上限、延迟、激活方式非法时抛出。</exception>
@@ -45,12 +51,6 @@ public sealed class LevelStageSequence
 
         m_Stages = stages;
     }
-
-    /// <summary>当前阶段；完成后仍保留最后阶段供结算读取。</summary>
-    public LevelStage Current => m_Stages[m_Index];
-
-    /// <summary>当前会话阶段状态。</summary>
-    public LevelStagePhase Phase { get; private set; } = LevelStagePhase.Ready;
 
     /// <summary>在加载界面关闭之后开放阶段推进。</summary>
     /// <exception cref="InvalidOperationException">会话不处于 Ready 状态时抛出。</exception>

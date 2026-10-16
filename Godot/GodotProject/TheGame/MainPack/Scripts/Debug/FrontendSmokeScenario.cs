@@ -1,3 +1,4 @@
+using GameLogic.Battle;
 using GameLogic.Config;
 using GameLogic.Architecture;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
@@ -6,7 +7,6 @@ using GameLogic.Profile;
 using GameLogic.Input;
 using GameLogic.Procedure.FlowData;
 using GameLogic.Save.Slots;
-using GameLogic.Event.Navigation;
 using System;
 using System.Linq;
 using System.IO;
@@ -30,6 +30,12 @@ public sealed class FrontendSmokeScenario
     private readonly Task m_Task; // 回归任务，故障也必须报告失败。
     private string m_Failure; // 已捕获的首个失败证据。
 
+    /// <summary>回归任务是否结束。</summary>
+    public bool IsDone => m_Task.IsCompleted;
+
+    /// <summary>首个失败原因；成功时为空。</summary>
+    public string Failure => m_Failure ?? m_Task.Exception?.ToString();
+
     /// <summary>启动一次完整入口回归。</summary>
     /// <param name="driver">真实场景树中的测试驱动节点。</param>
     public FrontendSmokeScenario(Node driver)
@@ -37,12 +43,6 @@ public sealed class FrontendSmokeScenario
         m_Driver = driver;
         m_Task = RunAsync();
     }
-
-    /// <summary>回归任务是否结束。</summary>
-    public bool IsDone => m_Task.IsCompleted;
-
-    /// <summary>首个失败原因；成功时为空。</summary>
-    public string Failure => m_Failure ?? m_Task.Exception?.ToString();
 
     /// <summary>其他战斗回归通过真实菜单进入关卡，生产流程不读取烟测参数。</summary>
     /// <returns>已进入关卡流程时返回 true，否则继续等待菜单资源加载。</returns>
@@ -117,40 +117,48 @@ public sealed class FrontendSmokeScenario
             saves.GetNode<BaseButton>("m_Close").EmitSignal(BaseButton.SignalName.Pressed);
             Check(saves.SerialId == closedSaveSerial && !GF.UI.HasUIForm(closedSaveSerial) && !GF.UI.IsValidUIForm(saves),
                 "存档页关闭后、回池前框架仍将其视为打开");
+            // 打开成功通知可能比关闭晚到；不能给已关闭窗口重新挂回流程。
+            SmokeInspection.InvokeProcedureCallback("SetFormCallbacks", saves, true);
+            Check(SmokeInspection.CallbackCount(saves, "SaveSlotSelected") == 0,
+                "关闭存档页仍持有流程回调或被迟到通知重新绑定");
             // 此时编号尚未清零；旧节点的迟到信号必须由框架打开状态挡住。
             saves.GetNode<BaseButton>("Slots/m_Slot1").EmitSignal(BaseButton.SignalName.Pressed);
             saves.GetNode<BaseButton>("m_Close").EmitSignal(BaseButton.SignalName.Pressed);
             for (int frame = 0; frame < 2; frame++)
                 await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
             Check(!GF.UI.HasUIForm(saves.SerialId) &&
-                SmokeInspection.CountEventHandlers(GF.Fsm.GetModel<SaveModel>(), nameof(SaveModel.Changed), saves) == 0,
+                SmokeInspection.CountBindingHandlers(GF.Fsm.GetModel<SaveModel>().Directory, saves) == 0,
                 "存档页关闭后仍订阅目录变化");
             Check(GF.Procedure.CurrentProcedure is ProcedureTitle && !Find<CharacterForm>().Any(x => x.Visible),
                 "关闭存档页的迟到按钮信号仍触发导航");
             await ClickAsync(start, "m_Start");
             Check(ReferenceEquals(saves, await WaitForSaveAsync()) &&
-                SmokeInspection.CountEventHandlers(GF.Fsm.GetModel<SaveModel>(), nameof(SaveModel.Changed), saves) == 1,
+                SmokeInspection.CountBindingHandlers(GF.Fsm.GetModel<SaveModel>().Directory, saves) == 1 &&
+                SmokeInspection.CallbackCount(saves, "SaveSlotSelected") == 1,
                 "存档页未复用 GGF 池实例或重复订阅目录");
             await ClickAsync(saves, "Slots/m_Slot2");
             CharacterForm character = await WaitForAsync<CharacterForm>();
             var flow = SmokeInspection.ReadField<GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>>(
                 GF.Procedure.CurrentProcedure, "m_Owner");
             CheckTypedFsmData(flow);
-            var firstPlayerModel = flow.GetModel<PlayerModel>();
+            var firstPlayerModel = flow.GetModel<ProfileModel>();
             var firstSaveSystem = flow.GetSystem<SaveSystem>();
             var firstEquipmentSystem = flow.GetSystem<EquipmentSystem>();
             Check(ReferenceEquals(flow.GetArchitecture(), ((IBelongToArchitecture)firstSaveSystem).GetArchitecture()) &&
                 ReferenceEquals(((IBelongToArchitecture)firstSaveSystem).GetArchitecture(), ((IBelongToArchitecture)firstEquipmentSystem).GetArchitecture()) &&
                 ReferenceEquals(ConfigSystem.Instance.Tables, firstSaveSystem.GetModel<ConfigurationModel>().Tables) &&
-                ReferenceEquals(flow.GetModel<ConfigurationModel>().ExperienceCurve, firstSaveSystem.GetModel<ConfigurationModel>().ExperienceCurve),
+                ReferenceEquals(flow.GetUtility<ExperienceCurve>(), firstSaveSystem.GetUtility<ExperienceCurve>()),
                 "共享配置、经验曲线或模块没有使用主流程唯一的数据来源");
-            Check(firstPlayerModel.Heroes.Count == 1, "选角未使用读档作用域");
+            Check(firstPlayerModel.HeroIds.Count == 1, "选角未使用读档作用域");
             await CheckCharacterHoverAsync(character);
             await ClickAsync(character, "Roles/m_Wukong");
             Check(!character.GetNode<Label>("m_PlayerOne").Visible, "选角关闭后仍保留玩家标记");
 
             MapForm map = await WaitForAsync<MapForm>();
-            Check(ReferenceEquals(firstPlayerModel, flow.GetModel<PlayerModel>()) &&
+            Check(SmokeInspection.CallbackCount(character, "CharacterConfirmed") == 0 &&
+                SmokeInspection.CallbackCount(start, "StartGameRequested") == 0,
+                "离开选角或标题后仍保留导航回调");
+            Check(ReferenceEquals(firstPlayerModel, flow.GetModel<ProfileModel>()) &&
                 ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) && ReferenceEquals(firstEquipmentSystem, flow.GetSystem<EquipmentSystem>()),
                 "选角到地图更换了档案作用域");
             Check(!Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "点击花果山之前已创建关卡");
@@ -203,8 +211,8 @@ public sealed class FrontendSmokeScenario
             await CheckMusicAsync("map_theme.mp3");
 
             // 保存图标写入第二格；第六格建档后再读第二格，不能误读最新档。
-            firstPlayerModel.Wallet.AddSoul(7);
-            int savedSoul = firstPlayerModel.Wallet.Soul;
+            flow.GetSystem<ProfileSystem>().AddSoul(7);
+            int savedSoul = flow.GetModel<ProfileModel>().Soul.Value;
             await ClickAsync(map, "m_Save");
             await WaitUntilAsync(() => !map.GetNode<BaseButton>("m_Save").Disabled, "手动保存反馈超时");
             Check(await firstSaveSystem.PendingWrite && GF.Archive.CurrentCatalogue.SlotNumber == 2, "地图手动保存写错格");
@@ -214,7 +222,7 @@ public sealed class FrontendSmokeScenario
             await ClickAsync(map, "m_Back");
             start = await WaitForAsync<StartForm>();
             Check(Find<SaveNoticeForm>().Any(x => x.SerialId != 0), "切换页面关闭了应用级保存提示");
-            Check(flow.GetModel<PlayerModel>() == null && ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) && flow.GetSystem<EquipmentSystem>() == null, "返回标题仍持有旧档案作用域");
+            Check(flow.GetModel<ProfileModel>() == null && ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) && flow.GetSystem<EquipmentSystem>() == null, "返回标题仍持有旧档案作用域");
             await ClickAsync(start, "m_Start");
             saves = await WaitForSaveAsync();
             var slots = GF.Fsm.GetModel<SaveModel>().Slots;
@@ -228,19 +236,19 @@ public sealed class FrontendSmokeScenario
             long sixthId = GF.Archive.CurrentCatalogue.UnitId;
             Check(!await firstSaveSystem.SaveCheckpointAsync(firstPlayerModel), "旧档案检查点写入了另一格");
             // 选角没有返回按钮；回归通过既有导航事件结束临时第六格会话。
-            GF.Event.Fire(this, TitleRequestedEventArgs.Create(character.SerialId));
+            SmokeInspection.ChangeProcedure<ProcedureTitle>();
             start = await WaitForAsync<StartForm>();
             await ClickAsync(start, "m_Start");
             saves = await WaitForSaveAsync();
             await ClickAsync(saves, "Slots/m_Slot2");
             map = await WaitForAsync<MapForm>();
             Check(!character.Visible && GF.Procedure.CurrentProcedure is ProcedureMap, "已有档案未直接进入地图");
-            var reloadedPlayerModel = flow.GetModel<PlayerModel>();
+            var reloadedPlayerModel = flow.GetModel<ProfileModel>();
             Check(!ReferenceEquals(firstPlayerModel, reloadedPlayerModel) &&
                 ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) &&
                 !ReferenceEquals(firstEquipmentSystem, flow.GetSystem<EquipmentSystem>()), "重新读档复用了已结束的作用域");
-            Check(reloadedPlayerModel.Wallet.Soul == savedSoul, "重新读档没有从快照重建运行时状态");
-            GF.Event.Fire(this, ProfileSavedEventArgs.Create(savedMapSerialId, true));
+            Check(flow.GetModel<ProfileModel>().Soul.Value == savedSoul, "重新读档没有从快照重建运行时状态");
+            GF.Fsm.GetModel<SaveModel>().ManualSave.Value = new(savedMapSerialId, SaveWritePhase.Succeeded);
             await MoveMouseAsync(new Vector2(30, 30));
             Check(map.GetNode<BaseButton>("m_Save").TooltipText == "保存游戏", "旧周期保存结果污染了复用地图");
             Check(GF.Archive.CurrentCatalogue.UnitId == secondId && GF.Archive.CurrentData.Soul == savedSoul, "选择第二格读取成最新格或进度丢失");
@@ -255,6 +263,13 @@ public sealed class FrontendSmokeScenario
             Check(Find<LevelViewController>().Count() == 1, "点击花果山未创建唯一关卡");
             var level = SmokeInspection.Level((ProcedureLevel)GF.Procedure.CurrentProcedure);
             var levelModel = flow.GetModel<LevelModel>();
+            var heroModel = flow.GetModel<HeroModel>();
+            var heroSystem = flow.GetSystem<HeroSystem>();
+            Check(heroModel.Initialized && ReferenceEquals(heroModel, SmokeInspection.HeroAttributes(hero)),
+                "英雄 Entity 没有借用 Architecture 注册的同一运行属性");
+            Check(SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().Progress, heroSystem) == 1 &&
+                SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().Slots, heroSystem) == 1,
+                "英雄属性系统没有唯一订阅成长和穿戴来源");
             var levelSystem = flow.GetSystem<LevelSystem>();
             Check(ReferenceEquals(flow.GetArchitecture(), ((IBelongToArchitecture)level).GetArchitecture()),
                 "关卡没有借用流程持有的档案作用域");
@@ -262,15 +277,18 @@ public sealed class FrontendSmokeScenario
             await CheckMusicAsync("huaguoshan_theme.mp3");
             await CaptureAsync("frontend_battle");
             var data = SmokeInspection.ReadField<BattleHudData>(hud, "m_Data");
-            var playerModel = SmokeInspection.Flow((ProcedureLevel)GF.Procedure.CurrentProcedure).GetModel<PlayerModel>();
+            var playerModel = SmokeInspection.Flow((ProcedureLevel)GF.Procedure.CurrentProcedure).GetModel<ProfileModel>();
             Check(ReferenceEquals(playerModel, reloadedPlayerModel) &&
                 ReferenceEquals(data.Hero, hero) && ReferenceEquals(data.ViewController, level), "HUD 与关卡没有借用同一份运行状态");
-            int experience = playerModel.ActiveHero.TotalExperience;
-            playerModel.ActiveHero.AddExperience(1);
+            int experience = playerModel.TotalExperience;
+            flow.GetSystem<ProfileSystem>().AddExperience(1);
             await ClickAsync(hud, "MenuPanel/m_SettingsButton");
             var settings = await WaitForAsync<SettingsForm>();
             Check(GF.Base.IsGamePaused, "战斗设置未暂停");
             Check(ReferenceEquals(settings, titleSettings), "设置未复用已经关闭的 GGF 池实例");
+            Check(SmokeInspection.CallbackCount(settings, "MapRequested") == 1 &&
+                SmokeInspection.CallbackCount(settings, "TitleRequested") == 1,
+                "复用设置未绑定当前战斗导航或重复绑定");
             Check(settings.ZIndex > hud.ZIndex, "复用设置的显示层级低于 HUD");
             await CaptureAsync("battle_settings");
             Vector2 pausedPosition = hero.Position;
@@ -281,34 +299,48 @@ public sealed class FrontendSmokeScenario
             Check(hero.Position.IsEqualApprox(pausedPosition), "设置暂停时英雄仍在移动");
             await ClickAsync(settings, "Scroll/m_Continue");
             Check(!GF.Base.IsGamePaused && hud.Visible &&
-                SmokeInspection.CountEventHandlers(levelModel, nameof(LevelModel.Ended), settings) == 0,
+                SmokeInspection.CountBindingHandlers(levelModel.Outcome, settings) == 0 &&
+                SmokeInspection.CallbackCount(settings, "MapRequested") == 0 &&
+                SmokeInspection.CallbackCount(settings, "TitleRequested") == 0,
                 "继续游戏未恢复战斗或设置仍订阅关卡");
             await ClickAsync(hud, "MenuPanel/m_SettingsButton");
             settings = await WaitForAsync<SettingsForm>();
             await ClickAsync(settings, "Scroll/m_ReturnMap");
             map = await WaitForAsync<MapForm>();
             Check(!hero.IsShown && !Find<LevelViewController>().Any(), "返回地图未清理英雄与关卡");
-            Check(playerModel.ActiveHero.TotalExperience == experience, "中途返回地图未回滚关内收益");
-            Check(ReferenceEquals(reloadedPlayerModel, flow.GetModel<PlayerModel>()) &&
+            Check(playerModel.TotalExperience == experience, "中途返回地图未回滚关内收益");
+            Check(ReferenceEquals(reloadedPlayerModel, flow.GetModel<ProfileModel>()) &&
                 !levelModel.SessionActive && !levelSystem.Initialized && !levelModel.Initialized, "返回地图未保留档案或未解除关卡借用");
             Check(SmokeInspection.ReadField<BattleHudData>(hud, "m_Data") == null, "HUD 关闭后仍观察旧关卡");
             Check(!GF.Base.IsGamePaused, "返回地图后仍处于暂停");
+            Check(!heroModel.Initialized && flow.GetModel<HeroModel>() == null &&
+                !heroSystem.Initialized && flow.GetSystem<HeroSystem>() == null &&
+                SmokeInspection.CountBindingHandlers(playerModel.Progress, heroSystem) == 0 &&
+                SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().Slots, heroSystem) == 0,
+                "离关没有结束英雄运行模型");
+            Check(SmokeInspection.CallbackCount(hud, "SettingsRequested") == 0 &&
+                SmokeInspection.CallbackCount(hud, "InventoryRequested") == 0 &&
+                SmokeInspection.CallbackCount(hud, "SkillsRequested") == 0,
+                "离关后 HUD 仍持有流程回调");
             Check(!GF.UI.HasUIForm(settings.SerialId) &&
-                SmokeInspection.CountEventHandlers(levelModel, nameof(LevelModel.Ended), settings) == 0,
+                SmokeInspection.CountBindingHandlers(levelModel.Outcome, settings) == 0,
                 "战斗设置未解除关卡订阅");
-            Check(GF.Event.Count(MapRequestedEventArgs.EventId) == 0, "离开战斗后仍订阅返回地图事件");
+            Check(SmokeInspection.CallbackCount(map, "SaveRequested") == 1, "地图保存回调重复绑定");
 
             // 再入关后从官方第五项返回标题，也必须回滚并恢复时钟。
             await ClickAsync(map, "m_Huaguoshan");
             hud = await WaitForAsync<BattleHud>();
             Check(Find<AbstractHeroEntity>().Count(x => x.IsShown) == 1, "重入生成了重复英雄");
-            playerModel.Wallet.AddSoul(9);
+            Check(flow.GetModel<HeroModel>().Initialized && !ReferenceEquals(heroModel, flow.GetModel<HeroModel>()),
+                "新关卡沿用了已结束的英雄运行模型");
+            var previousInventory = flow.GetModel<ProfileModel>();
+            flow.GetSystem<ProfileSystem>().AddSoul(9);
             await ClickAsync(hud, "MenuPanel/m_SettingsButton");
             settings = await WaitForAsync<SettingsForm>();
             await ClickAsync(settings, "Scroll/m_ReturnTitle");
             start = await WaitForAsync<StartForm>();
-            Check(playerModel.Wallet.Soul == savedSoul && !GF.Base.IsGamePaused && !Find<LevelViewController>().Any(), "返回标题未回滚收益、恢复时钟或清理关卡");
-            Check(flow.GetModel<PlayerModel>() == null && ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) && flow.GetSystem<EquipmentSystem>() == null, "战斗返回标题仍持有档案作用域");
+            Check(previousInventory.Soul.Value == savedSoul && !previousInventory.Initialized && flow.GetModel<ProfileModel>() == null && !GF.Base.IsGamePaused && !Find<LevelViewController>().Any(), "返回标题未回滚收益、恢复时钟或清理关卡");
+            Check(flow.GetModel<ProfileModel>() == null && ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) && flow.GetSystem<EquipmentSystem>() == null, "战斗返回标题仍持有档案作用域");
             Check(!GF.UI.HasUIForm(character.SerialId), "关闭后选角仍接收请求");
             // 损坏槽不能被当成空格；读取目录也不能使旧档案向其他槽写入。
             string broken = ProjectSettings.GlobalizePath($"user://{GF.Archive.Setting.Folder}/Data/{sixthId}.sav");
@@ -317,13 +349,13 @@ public sealed class FrontendSmokeScenario
             await ClickAsync(start, "m_Start");
             saves = await WaitForSaveAsync();
             Check(saves.GetNode<BaseButton>("Slots/m_Slot6").Disabled && GF.Fsm.GetModel<SaveModel>().Slots[1].State == SaveSlotState.Occupied, "损坏格未禁用或影响其他存档");
-            GF.Event.Fire(this, SaveSlotSelectedEventArgs.Create(saves.SerialId, 6));
+            SmokeInspection.InvokeProcedureCallback("OnSaveSlotSelected", saves.SerialId, 6);
             for (int frame = 0; frame < 4; frame++)
                 await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
             Check(GF.Procedure.CurrentProcedure is ProcedureTitle, "损坏格仍能进入读档流程");
             await ClickAsync(saves, "m_Close");
             await CheckMusicAsync("map_theme.mp3");
-            GF.Event.Fire(this, StartGameRequestedEventArgs.Create(firstTitleSerial));
+            SmokeInspection.InvokeProcedureCallback("OnStartGameRequested", firstTitleSerial);
             for (int frame = 0; frame < 4; frame++)
                 await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
             Check(GF.Procedure.CurrentProcedure is ProcedureTitle, "旧窗口排队事件改变了新周期流程");
@@ -375,14 +407,24 @@ public sealed class FrontendSmokeScenario
             second.RemoveSystem<EquipmentSystem>();
             bool foreignSystemRejected = false;
             try
-            { second.RegisterSystem(firstEquipmentSystem); }
-            catch (InvalidOperationException) { foreignSystemRejected = true; }
+            {
+                second.RegisterSystem(firstEquipmentSystem);
+            }
+            catch (InvalidOperationException)
+            {
+                foreignSystemRejected = true;
+            }
             Check(foreignSystemRejected, "模块错误转移到其他 Architecture");
             second.RegisterSystem(secondEquipmentSystem);
             bool duplicateRejected = false;
             try
-            { first.RegisterModel(new ArchitectureProbeModel(3)); }
-            catch (InvalidOperationException) { duplicateRejected = true; }
+            {
+                first.RegisterModel(new ArchitectureProbeModel(3));
+            }
+            catch (InvalidOperationException)
+            {
+                duplicateRejected = true;
+            }
             Check(duplicateRejected && ReferenceEquals(model, first.GetModel<ArchitectureProbeModel>()), "重复注册替换了已借出模型");
             Check(first.RemoveModel<ArchitectureProbeModel>() && !model.Initialized && model.DeinitCount == 1 && second.GetModel<ArchitectureProbeModel>().Value == 2,
                 "移除未结束生命周期或影响其他作用域");
@@ -397,8 +439,13 @@ public sealed class FrontendSmokeScenario
             first.RegisterModel(new ArchitectureProbeModel(4));
             bool staleArchitectureRejected = false;
             try
-            { firstEquipmentSystem.GetModel<ArchitectureProbeModel>(); }
-            catch (InvalidOperationException) { staleArchitectureRejected = true; }
+            {
+                firstEquipmentSystem.GetModel<ArchitectureProbeModel>();
+            }
+            catch (InvalidOperationException)
+            {
+                staleArchitectureRejected = true;
+            }
             Check(staleArchitectureRejected && replacementArchitecture.GetModel<ArchitectureProbeModel>().Value == 4,
                 "旧入口穿透到 FSM 复用后的新游戏");
         }
@@ -409,28 +456,14 @@ public sealed class FrontendSmokeScenario
         }
         bool destroyedArchitectureRejected = false;
         try
-        { secondArchitecture.GetModel<ArchitectureProbeModel>(); }
-        catch (InvalidOperationException) { destroyedArchitectureRejected = true; }
+        {
+            secondArchitecture.GetModel<ArchitectureProbeModel>();
+        }
+        catch (InvalidOperationException)
+        {
+            destroyedArchitectureRejected = true;
+        }
         Check(destroyedArchitectureRejected, "FSM 销毁后仍能访问模型");
-    }
-
-    /// <summary>仅供原生 FSM 作用域验证的空状态。</summary>
-    private sealed class ArchitectureProbeState : GameFramework.Fsm.FsmState<GameFramework.Procedure.IProcedureManager> { }
-
-    /// <summary>仅供测试验证注册生命周期，不让正式钱包为测试继承 Model。</summary>
-    /// <param name="value">测试值。</param>
-    private sealed class ArchitectureProbeModel(int value) : AbstractModel
-    {
-        /// <summary>只读测试值。</summary>
-        public int Value { get; } = value;
-        /// <summary>实际初始化次数。</summary>
-        public int InitCount { get; private set; }
-        /// <summary>实际解除次数。</summary>
-        public int DeinitCount { get; private set; }
-        /// <inheritdoc />
-        protected override void OnInit() => InitCount++;
-        /// <inheritdoc />
-        protected override void OnDeinit() => DeinitCount++;
     }
 
     /// <summary>确认提示关闭释放回调，复用后只执行本次回调。</summary>
@@ -601,20 +634,23 @@ public sealed class FrontendSmokeScenario
         var notice = Find<SaveNoticeForm>().First(x => x.SerialId != 0);
         Label feedback = notice.GetNode<Label>("SaveFeedback/m_SaveFeedback");
         AnimationPlayer animation = notice.GetNode<AnimationPlayer>("m_SaveFeedbackAnimation");
-        Check(feedback.Visible && feedback.Text == "保存成功！" && animation.IsPlaying(), "实际写盘成功后未显示保存成功提示");
+        await WaitUntilAsync(() => feedback.Visible && animation.IsPlaying(), "实际写盘成功后未显示保存成功提示");
+        Check(feedback.Text == "保存成功！", "保存成功提示文本错误");
         Check(feedback.MouseFilter == Control.MouseFilterEnum.Ignore && feedback.GetParent<Control>().MouseFilter == Control.MouseFilterEnum.Ignore, "提示遮挡了地图鼠标输入");
         await CaptureAsync("map_save_success");
         await WaitUntilAsync(() => !feedback.Visible, "保存提示未自动消失");
         Check(!animation.IsPlaying() && Mathf.IsEqualApprox(feedback.Modulate.A, 1f) && feedback.Position.IsEqualApprox(new Vector2(-250, -61)), "提示淡出后未恢复初始位置和透明度");
 
         // 在现有结果事件边界模拟写入失败，不破坏文件，也不增加生产测试接口。
-        GF.Event.Fire(this, ProfileSavedEventArgs.Create(map.SerialId, false));
+        GF.Fsm.GetModel<SaveModel>().ManualSave.Value = new(map.SerialId, SaveWritePhase.Failed);
         await WaitUntilAsync(() => map.GetNode<BaseButton>("m_Save").TooltipText.Contains("失败"), "失败结果未更新按钮状态");
         Check(!feedback.Visible && !map.GetNode<BaseButton>("m_Save").Disabled, "写入失败误报成功或不能重试");
         await CaptureAsync("map_save_failure");
         await ClickAsync(map, "m_Save");
         await WaitUntilAsync(() => !map.GetNode<BaseButton>("m_Save").Disabled, "再次保存未完成");
-        Check(feedback.Visible && feedback.Text == "保存成功！" && Mathf.IsEqualApprox(feedback.Modulate.A, 1f), "再次实际保存未刷新提示或沿用旧透明度");
+        // 绑定结果同步提交，GGF 的一次性保存成功事件在下一轮分发。
+        await WaitUntilAsync(() => feedback.Visible && animation.IsPlaying(), "再次保存成功事件未显示提示");
+        Check(feedback.Text == "保存成功！" && Mathf.IsEqualApprox(feedback.Modulate.A, 1f), "再次实际保存未刷新提示或沿用旧透明度");
     }
 
     /// <summary>验证普通图透明区拒绝输入，悬停图扩展区保持悬停且跟随节点缩放。</summary>
@@ -714,5 +750,26 @@ public sealed class FrontendSmokeScenario
     {
         if (!condition)
             throw new InvalidOperationException(message);
+    }
+
+    /// <summary>仅供原生 FSM 作用域验证的空状态。</summary>
+    private sealed class ArchitectureProbeState : GameFramework.Fsm.FsmState<GameFramework.Procedure.IProcedureManager> { }
+
+    /// <summary>仅供测试验证注册生命周期，不让正式钱包为测试继承 Model。</summary>
+    /// <param name="value">测试值。</param>
+    private sealed class ArchitectureProbeModel(int value) : AbstractModel
+    {
+        /// <summary>只读测试值。</summary>
+        public int Value { get; } = value;
+
+        /// <summary>实际初始化次数。</summary>
+        public int InitCount { get; private set; }
+
+        /// <summary>实际解除次数。</summary>
+        public int DeinitCount { get; private set; }
+        /// <inheritdoc />
+        protected override void OnInit() => InitCount++;
+        /// <inheritdoc />
+        protected override void OnDeinit() => DeinitCount++;
     }
 }

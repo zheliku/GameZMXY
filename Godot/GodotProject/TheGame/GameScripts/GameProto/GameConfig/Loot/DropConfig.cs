@@ -30,7 +30,6 @@ public sealed partial class DropConfig : Luban.BeanBase
         PickupRadius = _buf.ReadFloat();
         GroundLifetime = _buf.ReadFloat();
         GroundGravity = _buf.ReadFloat();
-        GroundPickupRadius = _buf.ReadFloat();
     }
 
     public static DropConfig DeserializeDropConfig(ByteBuf _buf)
@@ -94,10 +93,6 @@ public sealed partial class DropConfig : Luban.BeanBase
     /// 地面掉落重力 px/s&#178;
     /// </summary>
     public readonly float GroundGravity;
-    /// <summary>
-    /// 拾取范围扩展 px
-    /// </summary>
-    public readonly float GroundPickupRadius;
    
     public const int __ID__ = -693034473;
     public override int GetTypeId() => __ID__;
@@ -123,7 +118,6 @@ public sealed partial class DropConfig : Luban.BeanBase
         + "PickupRadius:" + PickupRadius + ","
         + "GroundLifetime:" + GroundLifetime + ","
         + "GroundGravity:" + GroundGravity + ","
-        + "GroundPickupRadius:" + GroundPickupRadius + ","
         + "}";
     }
 }

@@ -26,11 +26,6 @@ public abstract partial class AbstractLevelMarkersNode : Node2D
     /// <summary>标注尺寸，单位为世界像素。</summary>
     protected float MarkerSize => m_MarkerSize;
 
-    /// <summary>判断集合支持的直接子节点类型。</summary>
-    /// <param name="node">待检查的直接子节点。</param>
-    /// <returns>支持该节点时返回 true。</returns>
-    protected abstract bool Supports(Node node);
-
     /// <summary>准备编辑器可视化；运行时的索引由关卡初始化显式建立。</summary>
     public override void _Ready()
     {
@@ -44,6 +39,11 @@ public abstract partial class AbstractLevelMarkersNode : Node2D
     {
         QueueRedraw();
     }
+
+    /// <summary>判断集合支持的直接子节点类型。</summary>
+    /// <param name="node">待检查的直接子节点。</param>
+    /// <returns>支持该节点时返回 true。</returns>
+    protected abstract bool Supports(Node node);
 
     /// <summary>为所有支持的子节点绘制标注，未登记节点也可见。</summary>
     public override void _Draw()
@@ -148,5 +148,4 @@ public abstract partial class AbstractLevelMarkersNode : Node2D
         UpdateConfigurationWarnings();
         QueueRedraw();
     }
-
 }

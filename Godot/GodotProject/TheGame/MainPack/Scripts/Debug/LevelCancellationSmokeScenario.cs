@@ -17,18 +17,18 @@ public sealed class LevelCancellationSmokeScenario
     private double m_StopTime; // 停止会话之后经过的游戏秒数。
     private bool m_Stopped; // 已主动停止会话，正在等待在途资源完成。
 
+    /// <summary>回归已经完成。</summary>
+    public bool IsDone { get; private set; }
+
+    /// <summary>失败原因。</summary>
+    public IReadOnlyList<string> Failures => m_Failures;
+
     /// <summary>创建取消回归场景。</summary>
     public LevelCancellationSmokeScenario(AbstractHeroEntity hero, LevelViewController level)
     {
         m_Hero = hero;
         m_Level = level;
     }
-
-    /// <summary>回归已经完成。</summary>
-    public bool IsDone { get; private set; }
-
-    /// <summary>失败原因。</summary>
-    public IReadOnlyList<string> Failures => m_Failures;
 
     /// <summary>驱动相机抵达，提交真实异步显示，随后停止并观测晚到结果。</summary>
     public void Update(double delta)

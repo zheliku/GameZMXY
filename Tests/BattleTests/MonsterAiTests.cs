@@ -22,11 +22,14 @@ namespace GameLogic.Battle.Tests
     /// </summary>
     public class MonsterAiTests
     {
-        private static MonsterAiSystem Ai => BattleArchitecture.Instance.GetSystem<MonsterAiSystem>();
-
         private const float Dt = 1f / 60f; // 单个物理帧的时长。
 
         private static readonly Rect2 MonkeyReach = new Rect2(-49f, -48f, 50f, 50f); // 猴子 attack_1 判定盒范围（原生朝左）。
+        private static MonsterAiSystem Ai => BattleArchitecture.Instance.GetSystem<MonsterAiSystem>();
+
+        /// <summary>可组合的状态集合，直接作为参数传入真实 FSM 测试。</summary>
+        public static System.Collections.Generic.IEnumerable<object[]> Presets =>
+            [new object[] { MonsterAiPreset.Patrol }, new object[] { MonsterAiPreset.Guard }, new object[] { MonsterAiPreset.Pursuer }];
 
         private static MonsterConfig MonkeyParams(int desire = 70, float calm = 0f, float pace = 60f) // 猴子同款参数：欲望 70、判定 1s、首次延迟 0.35~1.0s、巡逻 2s/10%/半径 200、僵直 0、滞回 25、踱步半幅 60。
         {
@@ -530,10 +533,6 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(-1, h.Agent.RequestedAttack);
         }
 
-        /// <summary>可组合的状态集合，直接作为参数传入真实 FSM 测试。</summary>
-        public static System.Collections.Generic.IEnumerable<object[]> Presets =>
-            [new object[] { MonsterAiPreset.Patrol }, new object[] { MonsterAiPreset.Guard }, new object[] { MonsterAiPreset.Pursuer }];
-
         /// <summary>三个预设分别巡逻、守卫和等待；恢复或丢失目标后仍遵守各自移动策略。</summary>
         [Theory]
         [MemberData(nameof(Presets))]
@@ -662,6 +661,38 @@ namespace GameLogic.Battle.Tests
             private readonly float[] m_Randoms; // 测试提供的确定性随机序列。
             private int m_RandomIndex; // 下一随机值的读取索引。
 
+            /// <summary>宿主是否已死亡。</summary>
+            public bool IsDead { get; set; }
+
+            /// <summary>宿主是否处于受控僵直。</summary>
+            public bool IsCcLocked { get; set; }
+
+            /// <summary>宿主是否正在攻击或收招硬直。</summary>
+            public bool IsAttacking { get; set; }
+
+            /// <summary>测试直接设置的目标判定盒；默认值表示无目标。</summary>
+            public Rect2 TargetBox { get; set; }
+
+            /// <summary>宿主相对出生点的水平偏移。</summary>
+            public float PatrolOffsetX { get; set; }
+
+            /// <summary>怪物 AI 参数。</summary>
+            public MonsterConfig Config { get; }
+
+            /// <summary>怪物可用招式及冷却状态。</summary>
+            public MonsterBodyParams Params { get; }
+            public MonsterAiData AiData { get; }
+            public MonsterAiPreset AiPreset { get; }
+
+            /// <summary>最近一次移动意图，右为 1、左为 -1、停止为 0。</summary>
+            public int MoveDir { get; private set; }
+
+            /// <summary>最近一次朝向意图，右为 1、左为 -1。</summary>
+            public int FaceDir { get; private set; }
+
+            /// <summary>最近一次攻击请求索引；尚无请求时为 -1。</summary>
+            public int RequestedAttack { get; private set; } = -1;
+
             /// <summary>初始化可控感知、招式簿和随机序列。</summary>
             public FakeAgent(MonsterConfig p, AttackHarness attacks, float[] randoms)
             {
@@ -671,31 +702,7 @@ namespace GameLogic.Battle.Tests
                 AiPreset = attacks.Preset;
                 m_Randoms = randoms.Length == 0 ? new[] { 0.5f } : randoms;
             }
-
-            /// <summary>宿主是否已死亡。</summary>
-            public bool IsDead { get; set; }
-            /// <summary>宿主是否处于受控僵直。</summary>
-            public bool IsCcLocked { get; set; }
-            /// <summary>宿主是否正在攻击或收招硬直。</summary>
-            public bool IsAttacking { get; set; }
-            /// <summary>测试直接设置的目标判定盒；默认值表示无目标。</summary>
-            public Rect2 TargetBox { get; set; }
-            /// <summary>宿主相对出生点的水平偏移。</summary>
-            public float PatrolOffsetX { get; set; }
-            /// <summary>怪物 AI 参数。</summary>
-            public MonsterConfig Config { get; }
-            /// <summary>怪物可用招式及冷却状态。</summary>
-            public MonsterBodyParams Params { get; }
-            public MonsterAiData AiData { get; }
-            public MonsterAiPreset AiPreset { get; }
             IArchitecture IBelongToArchitecture.GetArchitecture() => BattleArchitecture.Instance;
-
-            /// <summary>最近一次移动意图，右为 1、左为 -1、停止为 0。</summary>
-            public int MoveDir { get; private set; }
-            /// <summary>最近一次朝向意图，右为 1、左为 -1。</summary>
-            public int FaceDir { get; private set; }
-            /// <summary>最近一次攻击请求索引；尚无请求时为 -1。</summary>
-            public int RequestedAttack { get; private set; } = -1;
 
             /// <summary>设置测试目标判定盒。</summary>
             public void Target(Rect2 box) => TargetBox = box;
@@ -749,6 +756,12 @@ namespace GameLogic.Battle.Tests
             /// <summary>状态机绑定的可控测试宿主。</summary>
             public FakeAgent Agent { get; }
 
+            /// <summary>当前 AI 状态实例。</summary>
+            public AbstractMonsterAiState CurrentState => (AbstractMonsterAiState)m_Fsm.CurrentState;
+
+            /// <summary>当前 AI 状态名称。</summary>
+            public string State => CurrentState.GetType().Name[..^"State".Length];
+
             /// <summary>创建 AI 状态机并以游荡状态启动。</summary>
             public AiHarness(MonsterConfig p, MonsterAttackParams[] specs, params float[] randoms)
             {
@@ -764,12 +777,6 @@ namespace GameLogic.Battle.Tests
                 m_Fsm = m_Manager.CreateFsm<IMonsterAiAgent>(Guid.NewGuid().ToString(), Agent, preset.CreateStates());
                 m_Fsm.Start(preset.IdleStateType);
             }
-
-            /// <summary>当前 AI 状态实例。</summary>
-            public AbstractMonsterAiState CurrentState => (AbstractMonsterAiState)m_Fsm.CurrentState;
-
-            /// <summary>当前 AI 状态名称。</summary>
-            public string State => CurrentState.GetType().Name[..^"State".Length];
 
             /// <summary>按物理帧推进招式冷却和 AI 状态机。</summary>
             /// <param name="frames">推进的物理帧数。</param>
