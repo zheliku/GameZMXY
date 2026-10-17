@@ -84,9 +84,13 @@ public partial class SaveNoticeForm
     /// <summary>写盘成功立即重播提示，重复保存从完整透明度开始。</summary>
     /// <param name="sender">保存系统。</param>
     /// <param name="args">当帧有效的成功事实。</param>
-    private void OnSaveSucceeded(object sender, GameEventArgs args)
+    private void OnSaveSucceeded(object sender, GameEventArgs args) => ShowMessage("保存成功！");
+
+    /// <summary>复用居中淡出提示；暂停中的技能窗口也按真实时间播放。</summary>
+    /// <param name="message">本次提示文本。</param>
+    public void ShowMessage(string message)
     {
-        m_SaveFeedback.Text = "保存成功！";
+        m_SaveFeedback.Text = message;
         m_SaveFeedback.Visible = true;
         m_SaveFeedbackAnimation.Stop();
         m_SaveFeedbackAnimation.Play("feedback/show");

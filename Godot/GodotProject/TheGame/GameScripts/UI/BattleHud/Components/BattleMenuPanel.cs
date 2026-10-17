@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using GameConfig.Skills;
 using Godot;
 
 namespace GameLogic.UI.Widgets;
@@ -6,11 +8,17 @@ namespace GameLogic.UI.Widgets;
 /// <summary>左下角菜单和无双蓄力表现，按钮只报告选择，不发布跨模块业务事件。</summary>
 public partial class BattleMenuPanel : Sprite2D
 {
+    // ---- 字段 ----
+
     [Export] private ResourceBar m_WsBar; // 无双蓄力条。
     [Export] private AnimatedSprite2D m_WsMax; // 满值循环闪烁。
     [Export] private TextureButton m_SettingsButton; // 设置入口。
     [Export] private TextureButton m_InventoryButton; // 背包入口。
     [Export] private TextureButton m_SkillsButton; // 技能入口。
+    [Export] private Control m_SkillBar; // 五个主动技能图标，按配置顺序显示。
+    [Export] private SpriteFrames m_SkillIcons; // 官方战斗栏独立的未学习/已学习图标，不使用学习面板图片。
+
+    // ---- 事件 ----
 
     /// <summary>玩家选择设置菜单。</summary>
     public event Action SettingsSelected;
@@ -21,6 +29,8 @@ public partial class BattleMenuPanel : Sprite2D
     /// <summary>玩家选择技能。</summary>
     public event Action SkillsSelected;
 
+    // ---- 节点生命周期 ----
+
     /// <summary>子按钮只绑定一次，初始不播放满值动画。</summary>
     public override void _Ready()
     {
@@ -29,6 +39,8 @@ public partial class BattleMenuPanel : Sprite2D
         m_SkillsButton.Pressed += OnSkillsPressed;
         ResetMusou();
     }
+
+    // ---- 业务方法 ----
 
     /// <summary>只在满值时循环闪烁，重复满值刷新保持动画进度。</summary>
     /// <param name="value">当前无双。</param>
@@ -53,6 +65,23 @@ public partial class BattleMenuPanel : Sprite2D
         m_WsMax.Stop();
         m_WsMax.Hide();
     }
+
+    /// <summary>根据权威学习记录显示灰色或彩色图标，不复制学习状态。</summary>
+    /// <param name="definitions">当前角色的有序技能定义。</param>
+    /// <param name="learned">已学习技能列表。</param>
+    public void SetSkills(IReadOnlyList<SkillConfig> definitions, IReadOnlyList<SkillId> learned)
+    {
+        for (int i = 0; i < definitions.Count; i++)
+        {
+            var definition = definitions[i];
+            bool unlocked = System.Linq.Enumerable.Contains(learned, definition.Id);
+            var cell = m_SkillBar.GetNode<Control>($"Skill{i + 1}");
+            cell.GetNode<TextureRect>("Icon").Texture = m_SkillIcons.GetFrameTexture(definition.Id.ToString(), unlocked ? 1 : 0);
+            cell.TooltipText = $"{definition.NameCn}（{definition.KeyHint}，{definition.ManaCost} MP）" + (unlocked ? "" : "\n尚未学习");
+        }
+    }
+
+    // ---- 私有方法 ----
 
     /// <summary>报告本块的设置选择。</summary>
     private void OnSettingsPressed() => SettingsSelected?.Invoke();

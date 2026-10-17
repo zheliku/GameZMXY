@@ -177,82 +177,104 @@ public sealed partial class UiSmokeScenario
     /// <returns>全部怪物行为验证完成的任务。</returns>
     private async Task CheckGroundCombatAsync(AbstractHeroEntity hero, BattleHud hud)
     {
-        hero.GlobalPosition = new Vector2(500, 350);
-        hero.Velocity = Vector2.Zero;
-        hero.SetPhysicsProcess(true);
-        // 移位后必须经过真实物理帧，不能把上一个位置的落地事实当作完成条件。
-        await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
-        await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
-        await WaitUntilAsync(() => hero.OnFloor, "测试英雄没有落地");
-        hero.SetPhysicsProcess(false);
-        var banner = SmokeInspection.ReadField<EncounterHealthBar>(hud, "m_EncounterHealthBar");
-        AbstractMonsterEntity previousGorilla = null;
-        (int Id, float Health, float Defense, float Attack)[] cases =
-            [(1, 1, 1, 1), (2, 1, 1, 1), (3, 1, 1, 1), (3, 3, 2, 3), (3, 1, 1, 1)];
-        foreach (var (id, health, defense, attack) in cases)
+        // 技能测试会把英雄带到本关怪物附近；此项只验证专用出招夹具，暂时冻结其他怪物。
+        var bystanders = m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+            .OfType<AbstractMonsterEntity>().Where(x => x.IsVisibleInTree()).Select(x => (Actor: x, WasProcessing: x.IsPhysicsProcessing(), Position: x.GlobalPosition, Velocity: x.Velocity)).ToArray();
+        foreach (var (actor, _, _, _) in bystanders)
         {
-            var config = ConfigSystem.Instance.Tables.TbMonsterConfig.Get(id);
-            bool boosted = health > 1f;
-            m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(config.EntityId,
-                new MonsterSpawn(new Vector2(hero.GlobalPosition.X + 40, 100), health, defense, attack,
-                    boosted ? 25 : -1));
-            SmokeInspection.FreezeAi(m_Monster);
-            IMonsterAiAgent ai = m_Monster;
-            Check(!m_Monster.OnFloor && !ai.RequestAttack(0), $"怪物 {id} 出生下落时允许出招");
-            await WaitUntilAsync(() => m_Monster.OnFloor, $"怪物 {id} 没有真实落地");
-            Check(m_Monster.MaxHp == config.BaseAttributes.MaxHp * health &&
-                  SmokeInspection.CombatAttributes(m_Monster).Def == config.BaseAttributes.Def * defense &&
-                  SmokeInspection.CombatAttributes(m_Monster).Mdef == config.BaseAttributes.Mdef &&
-                  SmokeInspection.CombatAttributes(m_Monster).Crit == config.BaseAttributes.Crit,
-                $"怪物 {id} 的生命/物防倍率错误，或误改了高级属性");
-            Check(SmokeInspection.ReadField<int>(m_Monster, "m_ExperienceReward") == (boosted ? 25 : config.AddExp),
-                $"怪物 {id} 的经验覆盖没有复位");
-            if (id == 3)
-            {
-                Check(m_Monster is GorillaEntity && config.BaseAttributes.MaxHp == 300, "大猩猩的共享基础配置被改动");
-                if (previousGorilla != null)
-                    Check(ReferenceEquals(previousGorilla, m_Monster), "大猩猩未复用同一实体实例");
-                previousGorilla = m_Monster;
-            }
-            hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
-            int hp = GF.Fsm.GetModel<HeroModel>().Hp.Value;
-            Check(ai.RequestAttack(0), $"怪物 {id} 落地后拒绝有效出招");
-            await WaitUntilAsync(() => m_Monster.AttackSegment >= 0, $"怪物 {id} 身体未消费出招请求");
-            if (id == 3)
-                Check(Near(SmokeInspection.ReadField<AttackInstance>(m_Monster, "m_ActiveAttack").Power, 20f * attack),
-                    "大猩猩招式固定威力未应用倍率，或池复用残留了旧倍率");
-            var shape = m_Monster.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
-            ulong started = Time.GetTicksMsec();
-            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.15), SceneTreeTimer.SignalName.Timeout);
-            Check(shape.Disabled && GF.Fsm.GetModel<HeroModel>().Hp.Value == hp, $"怪物 {id} 前摇阶段已启用判定或伤害");
-            if (boosted)
-            {
-                banner.SetValue(m_Monster.Config.NameCn, m_Monster.Hp, m_Monster.MaxHp);
-                await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
-                await CaptureEncounterAsync("gorilla_attack.png");
-            }
-            await WaitUntilAsync(() => GF.Fsm.GetModel<HeroModel>().Hp.Value < hp, $"怪物 {id} 攻击动画未造成实际命中",
-                describe: () => $"hero={hero.GlobalPosition}, monster={m_Monster.GlobalPosition}, facing={m_Monster.Facing}");
-            Check(Time.GetTicksMsec() - started >= 250, $"怪物 {id} 命中过快，缺少前摇");
-            await WaitUntilAsync(() => m_Monster.AttackSegment < 0 && !SmokeInspection.InRecovery(m_Monster),
-                $"怪物 {id} 未正常收招");
-            hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
-            Check(ai.RequestAttack(0), $"怪物 {id} 收招后不能再次攻击");
-            await WaitUntilAsync(() => m_Monster.AttackSegment >= 0, "第二次攻击没有开始");
-            AttackInstance hit = AttackInstance.Create(0, default, 1, GameConfig.Battle.DamageKind.Real,
-                new Vector2(2, -5), 1, 0, GameConfig.Sound.SoundId.None);
-            m_Monster.ReceiveHit(hit, hero.Id);
-            GameFramework.ReferencePool.Release(hit);
-            Check(SmokeInspection.ReadField<AttackInstance>(m_Monster, "m_ActiveAttack") == null && !ai.RequestAttack(0),
-                $"怪物 {id} 已受击仍保留攻击包或立即反击");
-            await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "Hurt", "待受击事实未进入身体状态机");
-            Check(GF.Fsm.GetModel<HeroModel>().Hp.Value == GF.Fsm.GetModel<HeroModel>().MaxHp.Value, $"怪物 {id} 被先手打断后仍瞬间造成伤害");
-            banner.Visible = false;
-            ReleaseTestEntity(m_Monster);
-            m_Monster = null;
-            await WaitFramesAsync(2);
+            actor.SetPhysicsProcess(false);
+            actor.GlobalPosition = new Vector2(100000, 100000);
         }
-        GD.Print("SMOKE-UI: 三类怪物空中禁招、前摇与打断；大猩猩生命/物防/攻击倍率、经验覆盖及池复用复位通过");
+        try
+        {
+            hero.GlobalPosition = new Vector2(500, 350);
+            hero.Velocity = Vector2.Zero;
+            hero.SetPhysicsProcess(true);
+            // 移位后必须经过真实物理帧，不能把上一个位置的落地事实当作完成条件。
+            await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+            await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+            await WaitUntilAsync(() => hero.OnFloor, "测试英雄没有落地");
+            hero.SetPhysicsProcess(false);
+            var banner = SmokeInspection.ReadField<EncounterHealthBar>(hud, "m_EncounterHealthBar");
+            AbstractMonsterEntity previousGorilla = null;
+            (int Id, float Health, float Defense, float Attack)[] cases =
+                [(1, 1, 1, 1), (2, 1, 1, 1), (3, 1, 1, 1), (3, 3, 2, 3), (3, 1, 1, 1)];
+            foreach (var (id, health, defense, attack) in cases)
+            {
+                var config = ConfigSystem.Instance.Tables.TbMonsterConfig.Get(id);
+                bool boosted = health > 1f;
+                m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(config.EntityId,
+                    new MonsterSpawn(new Vector2(hero.GlobalPosition.X + 40, 100), health, defense, attack,
+                        boosted ? 25 : -1));
+                SmokeInspection.FreezeAi(m_Monster);
+                IMonsterAiAgent ai = m_Monster;
+                Check(!m_Monster.OnFloor && !ai.RequestAttack(0), $"怪物 {id} 出生下落时允许出招");
+                await WaitUntilAsync(() => m_Monster.OnFloor, $"怪物 {id} 没有真实落地");
+                Check(m_Monster.MaxHp == config.BaseAttributes.MaxHp * health &&
+                      SmokeInspection.CombatAttributes(m_Monster).Def == config.BaseAttributes.Def * defense &&
+                      SmokeInspection.CombatAttributes(m_Monster).Mdef == config.BaseAttributes.Mdef &&
+                      SmokeInspection.CombatAttributes(m_Monster).Crit == config.BaseAttributes.Crit,
+                    $"怪物 {id} 的生命/物防倍率错误，或误改了高级属性");
+                Check(SmokeInspection.ReadField<int>(m_Monster, "m_ExperienceReward") == (boosted ? 25 : config.AddExp),
+                    $"怪物 {id} 的经验覆盖没有复位");
+                if (id == 3)
+                {
+                    Check(m_Monster is GorillaEntity && config.BaseAttributes.MaxHp == 300, "大猩猩的共享基础配置被改动");
+                    if (previousGorilla != null)
+                        Check(ReferenceEquals(previousGorilla, m_Monster), "大猩猩未复用同一实体实例");
+                    previousGorilla = m_Monster;
+                }
+                hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
+                int hp = GF.Fsm.GetModel<HeroModel>().Hp.Value;
+                Check(ai.RequestAttack(0), $"怪物 {id} 落地后拒绝有效出招");
+                await WaitUntilAsync(() => m_Monster.AttackSegment >= 0, $"怪物 {id} 身体未消费出招请求");
+                if (id == 3)
+                    Check(Near(SmokeInspection.ReadField<AttackInstance>(m_Monster, "m_ActiveAttack").Power, 20f * attack),
+                        "大猩猩招式固定威力未应用倍率，或池复用残留了旧倍率");
+                var shape = m_Monster.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
+                ulong started = Time.GetTicksMsec();
+                await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.15), SceneTreeTimer.SignalName.Timeout);
+                Check(shape.Disabled && GF.Fsm.GetModel<HeroModel>().Hp.Value == hp, $"怪物 {id} 前摇阶段已启用判定或伤害");
+                if (boosted)
+                {
+                    banner.SetValue(m_Monster.Config.NameCn, m_Monster.Hp, m_Monster.MaxHp);
+                    await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
+                    await CaptureEncounterAsync("gorilla_attack.png");
+                }
+                await WaitUntilAsync(() => GF.Fsm.GetModel<HeroModel>().Hp.Value < hp, $"怪物 {id} 攻击动画未造成实际命中",
+                    describe: () => $"hero={hero.GlobalPosition}, monster={m_Monster.GlobalPosition}, facing={m_Monster.Facing}");
+                Check(Time.GetTicksMsec() - started >= 250, $"怪物 {id} 命中过快，缺少前摇");
+                await WaitUntilAsync(() => m_Monster.AttackSegment < 0 && !SmokeInspection.InRecovery(m_Monster),
+                    $"怪物 {id} 未正常收招");
+                hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
+                Check(ai.RequestAttack(0), $"怪物 {id} 收招后不能再次攻击");
+                await WaitUntilAsync(() => m_Monster.AttackSegment >= 0, "第二次攻击没有开始");
+                AttackInstance hit = AttackInstance.Create(0, default, 1, GameConfig.Battle.DamageKind.Real,
+                    new Vector2(2, -5), 1, 0, GameConfig.Sound.SoundId.None);
+                m_Monster.ReceiveHit(hit, hero.Id);
+                GameFramework.ReferencePool.Release(hit);
+                Check(SmokeInspection.ReadField<AttackInstance>(m_Monster, "m_ActiveAttack") == null && !ai.RequestAttack(0),
+                    $"怪物 {id} 已受击仍保留攻击包或立即反击");
+                await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "Hurt", "待受击事实未进入身体状态机");
+                Check(GF.Fsm.GetModel<HeroModel>().Hp.Value == GF.Fsm.GetModel<HeroModel>().MaxHp.Value, $"怪物 {id} 被先手打断后仍瞬间造成伤害");
+                banner.Visible = false;
+                ReleaseTestEntity(m_Monster);
+                m_Monster = null;
+                await WaitFramesAsync(2);
+            }
+            GD.Print("SMOKE-UI: 三类怪物空中禁招、前摇与打断；大猩猩生命/物防/攻击倍率、经验覆盖及池复用复位通过");
+        }
+        finally
+        {
+            foreach (var (actor, wasProcessing, position, velocity) in bystanders)
+                if (GodotObject.IsInstanceValid(actor))
+                {
+                    actor.GlobalPosition = position;
+                    actor.Velocity = velocity;
+                    actor.SetPhysicsProcess(wasProcessing);
+                }
+        }
+
     }
 
     /// <summary>有渲染器时保存实际游戏画面，便于核对入场提示与大猩猩素材。</summary>

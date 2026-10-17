@@ -310,10 +310,6 @@ public sealed class ConfigurationSystem : AbstractSystem
                 errors.Add($"技能伤害 {hit.Id}：身份、威力、击退、总命中预算或重复间隔无效。");
         }
 
-        // 本轮只准备悟空动作；唐僧目录与数值可存在，而不伪造尚未迁入的资源。
-        foreach (var skill in tables.TbSkillConfig.DataList.Where(x => x.Hero == SkillHero.Wukong))
-            if (tables.TbSkillActionConfig.GetOrDefault(skill.Id) == null)
-                errors.Add($"技能 {skill.Id}：缺少本轮要求的悟空动作定义。");
         foreach (var action in tables.TbSkillActionConfig.DataList)
         {
             var skill = tables.TbSkillConfig.GetOrDefault(action.SkillId);
@@ -321,6 +317,7 @@ public sealed class ConfigurationSystem : AbstractSystem
                 !IsResourcePath(action.AnimationLibraryPath, ".tres") || string.IsNullOrWhiteSpace(action.Animation) ||
                 !IsNonnegative(action.InvincibleDelaySeconds) || !IsNonnegative(action.InvincibleDurationSeconds) ||
                 !IsNonnegative(action.CancelNormalAttackFrameRatio) || action.CancelNormalAttackFrameRatio > 1 ||
+                !IsNonnegative(action.NormalAttackBlockSeconds) ||
                 (action.InvincibleDurationSeconds == 0 && action.InvincibleDelaySeconds != 0))
                 errors.Add($"技能动作 {action.SkillId}：身份、动画资源或无敌时间无效。");
             ValidateHitReference(tables, action.BodyHitId, action.SkillId, $"技能动作 {action.SkillId}", errors);
@@ -330,7 +327,7 @@ public sealed class ConfigurationSystem : AbstractSystem
         foreach (var effect in tables.TbSkillEffectConfig.DataList)
         {
             if (effect.Id == SkillEffectId.None || !Enum.IsDefined(effect.Id) ||
-                tables.TbSkillActionConfig.GetOrDefault(effect.SkillId) == null ||
+                tables.TbSkillConfig.GetOrDefault(effect.SkillId) == null ||
                 string.IsNullOrWhiteSpace(effect.NameCn) || string.IsNullOrWhiteSpace(effect.LegacyId) ||
                 !IsResourcePath(effect.ScenePath, ".tscn") || !IsFinite(effect.SpawnOffset) ||
                 !IsPositiveScale(effect.Scale) || !IsPositiveScale(effect.MusouScale) || !Enum.IsDefined(effect.Mirror))

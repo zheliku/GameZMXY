@@ -6,6 +6,8 @@ using GameLogic.Config;
 using GameLogic.Save;
 using GameLogic.Level;
 using GameLogic.Equipment;
+using GameLogic.Skills;
+using GameLogic.Input;
 
 namespace GameLogic.Profile.Tests;
 
@@ -17,10 +19,15 @@ internal sealed class TestGameScope : IArchitecture
     private readonly SaveSystem m_SaveSystem; // 仅隔离磁盘写入。
     private readonly ProfileSystem m_ProfileSystem; // 档案数据的业务协调。
     private readonly HeroSystem m_HeroSystem; // 与游戏使用同一来源协调逻辑。
+    private readonly SkillSystem m_SkillSystem; // 正式技能购买规则。
+    private readonly InputSystem m_InputSystem; // 正式输入组合与方向规则。
     private readonly SaveDataUtility m_Save = new(); // 与游戏注册的相同纯转换工具。
 
     /// <summary>档案的唯一权威数据。</summary>
     public ProfileModel Profile { get; }
+
+    /// <summary>当前档案独占的技能学习记录。</summary>
+    public SkillModel Skills { get; }
 
     /// <summary>本局英雄的全部数值。</summary>
     public HeroModel Hero { get; } = new();
@@ -33,11 +40,13 @@ internal sealed class TestGameScope : IArchitecture
     /// <param name="heroes">累计经验。</param>
     /// <param name="soul">灵魂余额。</param>
     /// <param name="capacity">背包容量。</param>
+    /// <param name="initializeHero">是否装配已有可玩英雄数值；未导入角色的技能机制测试自行提供本局蓝量。</param>
     public TestGameScope(int activeHeroId, IEnumerable<(int HeroId, int TotalExperience)> heroes,
-        int soul, int capacity)
+        int soul, int capacity, bool initializeHero = true)
     {
         Profile = new(activeHeroId, heroes, TestTables.Curve, capacity, soul);
-        foreach (IModel model in new IModel[] { Profile, Hero, Level })
+        Skills = new(Profile.HeroIds);
+        foreach (IModel model in new IModel[] { Profile, Skills, Hero, Level })
         {
             model.SetArchitecture(this);
             model.Init();
@@ -45,8 +54,11 @@ internal sealed class TestGameScope : IArchitecture
         m_ProfileSystem = new ProfileSystem(this);
         ((ICanInit)m_ProfileSystem).Init();
         m_HeroSystem = new HeroSystem(this);
-        ((ICanInit)m_HeroSystem).Init();
+        if (initializeHero)
+            ((ICanInit)m_HeroSystem).Init();
         m_EquipmentSystem = new EquipmentSystem(this);
+        m_SkillSystem = new SkillSystem(this);
+        m_InputSystem = new InputSystem(this);
         m_SaveSystem = new SaveSystem(this);
         m_LevelSystem = new LevelSystem(this);
     }
@@ -55,6 +67,7 @@ internal sealed class TestGameScope : IArchitecture
     public TModel GetModel<TModel>() where TModel : class, IModel =>
         (typeof(TModel) == typeof(ConfigurationModel) ? TestTables.Configuration :
             typeof(TModel) == typeof(ProfileModel) ? (IModel)Profile :
+            typeof(TModel) == typeof(SkillModel) ? Skills :
             typeof(TModel) == typeof(HeroModel) ? Hero :
             typeof(TModel) == typeof(LevelModel) ? Level : null) as TModel;
     /// <inheritdoc />
@@ -63,13 +76,15 @@ internal sealed class TestGameScope : IArchitecture
             typeof(TSystem) == typeof(HeroSystem) ? m_HeroSystem :
             typeof(TSystem) == typeof(LevelSystem) ? m_LevelSystem :
             typeof(TSystem) == typeof(EquipmentSystem) ? m_EquipmentSystem :
+            typeof(TSystem) == typeof(SkillSystem) ? m_SkillSystem :
+            typeof(TSystem) == typeof(InputSystem) ? m_InputSystem :
             typeof(TSystem) == typeof(SaveSystem) ? m_SaveSystem : null) as TSystem;
     /// <inheritdoc />
     public TUtility GetUtility<TUtility>() where TUtility : class, IUtility => (typeof(TUtility) == typeof(ExperienceCurve) ? (IUtility)TestTables.Curve : m_Save) as TUtility;
 
     /// <summary>调用正式转换。</summary>
     /// <returns>独立快照。</returns>
-    public GameData CaptureSaveData() => m_Save.Capture(Profile);
+    public GameData CaptureSaveData() => m_Save.Capture(Profile, Skills);
 
     /// <summary>调用正式回滚。</summary>
     /// <param name="snapshot">进关快照。</param>
@@ -85,7 +100,7 @@ internal sealed class TestGameScope : IArchitecture
         GameConfig.Equipment.TbEquipmentConfig definitions, int capacity)
     {
         var utility = new SaveDataUtility();
-        utility.Validate(data, definitions, capacity);
+        utility.Validate(data, definitions, capacity, TestTables.Tables.TbSkillConfig);
         var scope = new TestGameScope(data.ActiveHeroId,
             data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), data.Soul, capacity);
         scope.RestoreCheckpoint(data);

@@ -5,14 +5,15 @@ using GodotGameFramework.Archive;
 using Newtonsoft.Json;
 using GameConfig.Equipment;
 using GameLogic.Equipment;
+using GameConfig.Skills;
 
-/// <summary>一格存档的完整数据：版本、出战英雄、经验、灵魂和装备实例；文件编号继承自框架。</summary>
+/// <summary>一格存档的完整数据：版本、出战英雄、经验、灵魂、装备实例和已学技能；文件编号继承自框架。</summary>
 /// <remarks>GGF 直接写盘；关卡回滚也使用本类型的独立快照。与运行时档案的转换集中在 SaveDataUtility。</remarks>
 [Serializable]
 public class GameData : ArchiveData
 {
     /// <summary>当前存档格式；格式改变时递增，不保留迁移分支。</summary>
-    public const int CurrentVersion = 6;
+    public const int CurrentVersion = 7;
 
     /// <summary>必需的格式版本；框架创建的新空槽使用当前版本。</summary>
     [JsonProperty(Required = Required.Always)]
@@ -22,7 +23,7 @@ public class GameData : ArchiveData
     [JsonProperty(Required = Required.Always)]
     public int ActiveHeroId;
 
-    /// <summary>拥有英雄的配置 ID 与累计经验；等级和战斗属性读档时重新计算。</summary>
+    /// <summary>拥有英雄的配置 ID、累计经验与学习记录；等级和战斗属性读档时重新计算。</summary>
     [JsonProperty(Required = Required.Always)]
     public List<HeroSaveData> Heroes = new();
 
@@ -54,7 +55,7 @@ namespace GameLogic.Save.Data
         public EquipmentAttributes Attributes { get; set; }
     }
 
-    /// <summary>档案快照中的一名英雄：配置 ID 和累计经验。</summary>
+    /// <summary>档案快照中的一名英雄：身份、成长、穿戴引用与技能学习记录。</summary>
     [Serializable]
     public sealed class HeroSaveData
     {
@@ -63,6 +64,10 @@ namespace GameLogic.Save.Data
 
         /// <summary>累计经验，等级和本级经验由经验曲线派生。</summary>
         public int TotalExperience { get; set; }
+
+        /// <summary>已学习的主动技能编号；不保存费用、伤害、图标或施放中的临时状态。</summary>
+        [JsonProperty(Required = Required.Always)]
+        public List<SkillId> LearnedSkills { get; set; } = new();
 
         /// <summary>已穿戴武器的实例编号；空编号表示未穿戴。</summary>
         [JsonProperty(Required = Required.Always)]

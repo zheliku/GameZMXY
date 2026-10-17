@@ -1,13 +1,20 @@
 using GameLogic.Heroes.Body;
+using GameLogic.Heroes.Wukong;
 using GameLogic.Entity;
 using System;
 using GameFramework.Fsm;
+using GameConfig.Skills;
+using GameLogic.Architecture;
+using GameLogic.Config;
+using GameLogic.Input;
+using GameLogic.Skills;
+using Godot;
 
 namespace GameLogic.Heroes
 {
     /// <summary>
-    /// 悟空：**角色专属**部分都在这里。通用宿主机制（输入、物理、结算、状态机推进）在 <see cref="AbstractHeroEntity"/>；
-    /// 悟空这一行为类别（地面近战连段）的身体状态集在本类声明——基类不预设任何具体英雄行为。
+    /// 悟空入口：匹配专属输入、选择技能组并声明身体状态；各招流程由对应的技能状态负责。
+    /// 通用宿主机制（输入采样、物理、结算、状态机推进）在 <see cref="AbstractHeroEntity"/>。
     ///
     /// 场景绑定（Entitys/WukongEntity.tscn）：
     ///  * HeroId —— 对应的 HeroConfig 行；
@@ -22,22 +29,112 @@ namespace GameLogic.Heroes
     /// </summary>
     public partial class WukongEntity : AbstractHeroEntity
     {
+        private const double SourceFrameSeconds = 1d / 24; // 造一悟空源动画一帧的秒数，仅用于取消窗口换算。
+        private static readonly SkillSet m_Skills = new(1,
+            new(SkillId.RisingDragon, _ => new SkillExecution(SkillId.RisingDragon), BodyState: typeof(WukongRisingDragonState)),
+            new(SkillId.FlameThrust, _ => new SkillExecution(SkillId.FlameThrust, actor => actor.OnFloor), BodyState: typeof(WukongFlameThrustState)),
+            new(SkillId.BlazingFlash, _ => new SkillExecution(SkillId.BlazingFlash), 1, typeof(WukongBlazingFlashState)),
+            new(SkillId.FlameStorm, _ => new SkillExecution(SkillId.FlameStorm), 2, typeof(WukongFlameStormState)),
+            new(SkillId.FireDemonSlash, _ => new SkillExecution(SkillId.FireDemonSlash), 3, typeof(WukongFireDemonState))); // 悟空不可变技能与 GGF 状态登记。
+
         /// <summary>悟空从地面状态起步。</summary>
         protected override Type InitialBodyStateType => typeof(HeroGroundState);
+
+        /// <summary>起手前选定悟空的技能组；具体招式不会进入共享输入或身体状态。</summary>
+        /// <param name="userData">框架显示参数。</param>
+        public override void OnShow(object userData)
+        {
+            base.OnShow(userData);
+            this.GetSystem<SkillSystem>().SelectSkillSet(m_Skills, this);
+        }
+
+        /// <summary>悟空独立匹配直接技能、升龙取消与奔跑攻击，不返回供公共层解释的动作分类。</summary>
+        /// <param name="attacking">是否正在普攻。</param>
+        /// <param name="normalRatio">当前普攻帧比例。</param>
+        /// <param name="airborne">是否在空中。</param>
+        public override void ProcessSkillInput(bool attacking, float normalRatio, bool airborne)
+        {
+            var input = this.GetSystem<InputSystem>();
+            var skills = this.GetSystem<SkillSystem>();
+            var body = (IHeroBody)this;
+            int? slot = ActionData.DirectSkillSlot;
+            ActionData.DirectSkillSlot = null;
+            if (!attacking && slot is { } direct && m_Skills.GetSkill(direct) is { } requested &&
+                skills.TryActivate(requested, this, ActionData.Time))
+                return;
+
+            if (IsUpAttackRequested())
+            {
+                if (CanCancelNormalAttack(attacking, normalRatio) &&
+                    !(skills.IsLearned(SkillId.RisingDragon) && !skills.CanAfford(SkillId.RisingDragon)))
+                    skills.TryActivate(SkillId.RisingDragon, this, ActionData.Time);
+                return;
+            }
+
+            // 先验证普攻输入与冷却，再尝试奔跑技能；失败保留输入供正常普攻消费。
+            if (ActionData.Running && !airborne && !attacking && ActionData.CanAct &&
+                ActionData.AttackHeld && !ActionData.JumpHeld && !ActionData.UpHeld &&
+                input.IsAttackReady(ActionData, airborne, attacking) &&
+                skills.TryActivate(SkillId.FlameThrust, this, ActionData.Time))
+            {
+                input.ConsumeAttack(ActionData);
+                ActionData.LastAttackAttempt = ActionData.Time;
+                Velocity = new Vector2(ActionData.MoveAxis * body.Params.RunSpeed * body.MoveSpeedMultiplier, Velocity.Y);
+            }
+        }
+
+        /// <summary>悟空学过升龙但缺蓝时，允许 W+J 回退普攻；其他输入使用共用普攻规则。</summary>
+        /// <param name="attacking">是否正在普攻。</param>
+        /// <param name="normalRatio">当前普攻帧比例。</param>
+        /// <param name="airborne">是否在空中。</param>
+        /// <returns>已选定普攻段时为真。</returns>
+        public override bool TryStartAttack(bool attacking, float normalRatio, bool airborne)
+        {
+            var skills = this.GetSystem<SkillSystem>();
+            var input = this.GetSystem<InputSystem>();
+            if (IsUpAttackRequested() && CanCancelNormalAttack(attacking, normalRatio) &&
+                skills.IsLearned(SkillId.RisingDragon) && !skills.CanAfford(SkillId.RisingDragon))
+                return input.ConsumeAction(ActionData, true) &&
+                    input.TrySelectAttack(ActionData, ((IHeroBody)this).Params, airborne, attacking);
+            return base.TryStartAttack(attacking, normalRatio, airborne);
+        }
+
+        /// <summary>收招时清理悟空专属的身体光效节点。</summary>
+        public override void EndSkillAnimation()
+        {
+            base.EndSkillAnimation();
+            GetNode<AnimatedSprite2D>("m_EffectRoot/m_Effect").Animation = "empty";
+        }
 
         /// <summary>造一悟空空中使用第三段下劈，地面使用完整五段普攻。</summary>
         /// <returns>包含空中下劈段号的身体参数。</returns>
         protected override HeroBodyParams BuildBodyParams() => base.BuildBodyParams() with { AirAttackIndex = 2 };
 
-        /// <summary>悟空的身体状态：地面 / 空中 / 普攻连段 / 受击 / 死亡。</summary>
+        /// <summary>悟空的身体状态与五个具名技能状态；进入、退出与打断统一使用 GGF 生命周期。</summary>
         /// <returns>本角色使用的身体状态集。</returns>
         protected override FsmState<IHeroBody>[] CreateBodyStates()
         {
             return
             [
                 new HeroGroundState(), new HeroAirState(), new HeroAttackState(), new HeroHurtState(),
-                new HeroDeathState()
+                new HeroDeathState(), new WukongRisingDragonState(), new WukongFlameThrustState(),
+                new WukongBlazingFlashState(), new WukongFlameStormState(), new WukongFireDemonState()
             ];
         }
+
+        /// <summary>悟空的升龙组合；不让公共输入系统识别具体招式。</summary>
+        /// <returns>本帧组合与动作闩锁均允许时为真。</returns>
+        private bool IsUpAttackRequested() => ActionData.CanAct && ActionData.UpHeld && ActionData.AttackHeld &&
+            !ActionData.JumpHeld && !ActionData.DownHeld;
+
+        /// <summary>只允许前四段普攻后 30% 取消；不在普攻时直接允许。</summary>
+        /// <param name="attacking">是否正在普攻。</param>
+        /// <param name="normalRatio">当前帧比例。</param>
+        /// <returns>允许升龙或缺蓝回退时为真。</returns>
+        private bool CanCancelNormalAttack(bool attacking, float normalRatio) => !attacking ||
+            (ActionData.AttackSegment >= 0 && ActionData.AttackSegment < ((IHeroBody)this).Params.ComboLength - 1 &&
+             (normalRatio + SourceFrameSeconds / ((IHeroBody)this).Params.AttackTimes[ActionData.AttackSegment]) >=
+             this.GetModel<ConfigurationModel>().Tables.TbSkillActionConfig
+                 .Get(SkillId.RisingDragon).CancelNormalAttackFrameRatio);
     }
 }

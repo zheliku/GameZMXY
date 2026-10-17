@@ -13,6 +13,7 @@ using GameConfig.Sound;
 using GameFramework.Event;
 using GameLogic;
 using GameLogic.Profile;
+using GameLogic.Skills;
 using GameLogic.Save;
 using GodotGameFramework;
 using GodotGameFramework.UI;
@@ -35,6 +36,8 @@ public sealed class ProcedureTitle : ProcedureBase
     {
         // 上个页面已结束借用；移除流程持有的档案状态和系统，继续借用应用存档系统。
         procedureOwner.RemoveSystem<EquipmentSystem>();
+        procedureOwner.RemoveSystem<SkillSystem>();
+        procedureOwner.RemoveModel<SkillModel>();
         procedureOwner.RemoveSystem<ProfileSystem>();
         procedureOwner.RemoveModel<ProfileModel>();
         procedureOwner.RemoveData(FlowKeys.SelectedLevelId);

@@ -587,6 +587,12 @@ public sealed class HeroBodyTests
     /// <summary>为真实状态机提供可控的物理宿主。</summary>
     private sealed class Hero : AbstractFakeActorBody, IHeroBody
     {
+        /// <inheritdoc />
+        public bool TryStartAttack(bool attacking, float normalRatio, bool airborne) =>
+            this.GetSystem<InputSystem>().TryStartAttack(ActionData, Params, airborne, attacking);
+        /// <inheritdoc />
+        public void ProcessSkillInput(bool attacking, float normalRatio, bool airborne) { }
+
         /// <summary>是否站在单向平台。</summary>
         public bool CanDrop;
 

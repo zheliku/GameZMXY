@@ -23,6 +23,7 @@ using GameFramework.Entity;
 using GameLogic.Config;
 using GameLogic.Monsters;
 using GameLogic.Profile;
+using GameLogic.Skills;
 using GameLogic.FloatingText;
 using Godot;
 using GodotGameFramework;
@@ -166,6 +167,7 @@ public partial class TestArenaController : Node2D
                 m_TestFlow.RegisterModel(new ProfileModel(heroId, [(heroId, 0)], m_TestFlow.GetUtility<ExperienceCurve>(),
                     ConfigSystem.Instance.Tables.TbProfileConfig.EquipmentCapacity));
                 m_TestFlow.RegisterModel(new HeroModel());
+                m_TestFlow.RegisterModel(new SkillModel(m_TestFlow.GetModel<ProfileModel>().HeroIds));
                 m_TestFlow.RegisterSystem(new ConfigurationSystem(architecture));
                 m_TestFlow.RegisterSystem(new CombatSystem(architecture));
                 m_TestFlow.RegisterSystem(new InputSystem(architecture));
@@ -173,6 +175,7 @@ public partial class TestArenaController : Node2D
                 m_TestFlow.RegisterSystem(new LootSystem(architecture));
                 m_TestFlow.RegisterSystem(new ProfileSystem(architecture));
                 m_TestFlow.RegisterSystem(new EquipmentSystem(architecture));
+                m_TestFlow.RegisterSystem(new SkillSystem(architecture));
                 m_TestFlow.RegisterSystem(new HeroSystem(architecture));
                 m_TestFlow.RegisterSystem(new SaveSystem(architecture));
             }

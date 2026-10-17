@@ -15,9 +15,29 @@ Scene = "res://TheGame/Entitys/ground_item.tscn"
 script = ExtResource("1_j1vs4")
 Scene = "res://TheGame/Entitys/LootOrb.tscn"
 
+[sub_resource type="Resource" id="Resource_skill_0"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Effects/Skills/wukong_blazing_flash_trail_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_skill_1"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_combo_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_skill_2"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_descent_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_skill_3"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_landing_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_skill_4"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_prelude_effect.tscn"
+
 [resource]
 script = ExtResource("1_8jdg")
-Entries = Array[Object]([SubResource("Resource_lqe6w"), SubResource("Resource_kq84q"), SubResource("Resource_3vwbs")])
+Entries = Array[Object]([SubResource("Resource_lqe6w"), SubResource("Resource_kq84q"), SubResource("Resource_3vwbs"), SubResource("Resource_skill_0"), SubResource("Resource_skill_1"), SubResource("Resource_skill_2"), SubResource("Resource_skill_3"), SubResource("Resource_skill_4")])
 DefaultExpireTime = 300.0
 DefaultAutoReleaseInterval = 300.0
 metadata/_custom_type_script = "uid://yiewfnn1gx67"

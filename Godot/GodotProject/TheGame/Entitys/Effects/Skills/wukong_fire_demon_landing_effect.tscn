@@ -3,10 +3,13 @@
 [ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_landing_frames.tres" id="frames"]
 [ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Skills/wukong_fire_demon_landing_library.tres" id="animation"]
 
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Heroes/Effects/SkillEffectNode.cs" id="script"]
+
 [sub_resource type="RectangleShape2D" id="rest"]
 size = Vector2(1, 1)
 
 [node name="FireDemonLanding" type="Node2D"]
+script = ExtResource("script")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 sprite_frames = ExtResource("frames")

@@ -28,6 +28,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Wukong\Skills\*.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Skills\*.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Profile\ProfileSystem.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Save\SaveDataUtility.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Save\Data\GameData.cs" />
+    <Compile Include="..\ProfileTests\ArchiveDataStub.cs" />
+    <Compile Include="..\ProfileTests\SkillTestDefinitions.cs" />
     <Compile Include="*.cs" Exclude="TablesStub.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Architecture\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Architecture\FsmArchitectureExtensions.cs;$(GodotProjectDir)TheGame\GameScripts\Architecture\GgfArchitectureExtensions.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ConfigurationModel.cs" />
@@ -71,6 +78,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageReference Include="GodotSharp" Version="4.7.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>

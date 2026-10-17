@@ -28,8 +28,10 @@
 [ext_resource type="Texture2D" uid="uid://dflf2u60a6bce" path="res://TheGame/Sprites/UI/skills/skills_wukong_normal.png" id="wukong_normal"]
 [ext_resource type="Texture2D" uid="uid://c62rdxg1jxdkh" path="res://TheGame/Sprites/UI/skills/skills_wukong_selected.png" id="wukong_selected"]
 
+[ext_resource type="Theme" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="official_theme"]
+
 [node name="SkillForm" type="Control" unique_id=1949534136 node_paths=PackedStringArray("m_Wukong", "m_Tangseng", "m_Back", "m_ActivePage", "m_PassivePage", "m_Active", "m_Passive", "m_Soul")]
-editor_description = "技能行直接位于本场景。预填文字和图标用于编辑预览；运行时 Bind 使用正式配置覆盖。每行 GridContainer 管列宽，行内 MarginContainer 管说明留白。"
+editor_description = "技能行直接位于本场景。预填文字和图标用于编辑预览；运行时 Bind 使用正式配置覆盖。列宽对应原版表格；图标保留各自的原始坐标。字体使用原版方正粗圆，说明不额外缩小。"
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -45,6 +47,7 @@ m_PassivePage = NodePath("Content/m_PassivePage")
 m_Active = NodePath("Content/Footer/m_Active")
 m_Passive = NodePath("Content/Footer/m_Passive")
 m_Soul = NodePath("Content/Footer/Balance/m_Soul")
+theme = ExtResource("official_theme")
 
 [node name="Content" type="Control" parent="." unique_id=2134977421]
 layout_mode = 1
@@ -105,10 +108,10 @@ texture_hover = ExtResource("sanzang_selected")
 
 [node name="m_Back" type="TextureButton" parent="Content/Header" unique_id=1035133636]
 layout_mode = 0
-offset_left = 854.0
-offset_top = 15.05
-offset_right = 908.0
-offset_bottom = 35.05
+offset_left = 857.0
+offset_top = 20.7
+offset_right = 911.0
+offset_bottom = 40.7
 focus_mode = 0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("back_normal")
@@ -145,7 +148,7 @@ mouse_filter = 2
 layout_mode = 0
 offset_right = 81.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "技能名称"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -155,7 +158,7 @@ layout_mode = 0
 offset_left = 81.0
 offset_right = 166.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "技能图标"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -165,7 +168,7 @@ layout_mode = 0
 offset_left = 166.0
 offset_right = 250.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "所需灵魂"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -175,7 +178,7 @@ layout_mode = 0
 offset_left = 250.0
 offset_right = 335.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "技能按键"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -185,7 +188,7 @@ layout_mode = 0
 offset_left = 335.0
 offset_right = 746.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "技能说明"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -221,15 +224,17 @@ custom_minimum_size = Vector2(85, 79)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_WukongRows/Skill1/IconCell" unique_id=721277726]
+[node name="Icon" type="TextureButton" parent="Content/m_ActivePage/m_WukongRows/Skill1/IconCell" unique_id=721277726]
 layout_mode = 0
-offset_left = 12.05
-offset_top = 5.0
-offset_right = 77.05
-offset_bottom = 70.0
-mouse_filter = 2
-texture = ExtResource("preview_RisingDragon")
-expand_mode = 1
+offset_left = 11.05
+offset_top = 3.700000000000003
+offset_right = 76.05
+offset_bottom = 68.7
+mouse_filter = 0
+texture_normal = ExtResource("preview_RisingDragon")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
 
 [node name="Soul" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill1" unique_id=548892053]
 custom_minimum_size = Vector2(84, 79)
@@ -258,7 +263,7 @@ theme_override_constants/margin_right = 4
 
 [node name="Description" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill1/DescriptionCell" unique_id=128016009]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "近身后用力将怪物挑到空中"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -288,15 +293,17 @@ custom_minimum_size = Vector2(85, 79)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_WukongRows/Skill2/IconCell" unique_id=124385646]
+[node name="Icon" type="TextureButton" parent="Content/m_ActivePage/m_WukongRows/Skill2/IconCell" unique_id=124385646]
 layout_mode = 0
 offset_left = 12.05
-offset_top = 5.0
+offset_top = 3.8499999999999943
 offset_right = 77.05
-offset_bottom = 70.0
-mouse_filter = 2
-texture = ExtResource("preview_FlameThrust")
-expand_mode = 1
+offset_bottom = 68.85
+mouse_filter = 0
+texture_normal = ExtResource("preview_FlameThrust")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
 
 [node name="Soul" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill2" unique_id=1485675073]
 custom_minimum_size = Vector2(84, 79)
@@ -325,7 +332,7 @@ theme_override_constants/margin_right = 4
 
 [node name="Description" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill2/DescriptionCell" unique_id=916915178]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "打退前方怪物并造成3次伤害"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -355,15 +362,17 @@ custom_minimum_size = Vector2(85, 79)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_WukongRows/Skill3/IconCell" unique_id=1919386816]
+[node name="Icon" type="TextureButton" parent="Content/m_ActivePage/m_WukongRows/Skill3/IconCell" unique_id=1919386816]
 layout_mode = 0
 offset_left = 12.05
 offset_top = 5.0
 offset_right = 77.05
 offset_bottom = 70.0
-mouse_filter = 2
-texture = ExtResource("preview_BlazingFlash")
-expand_mode = 1
+mouse_filter = 0
+texture_normal = ExtResource("preview_BlazingFlash")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
 
 [node name="Soul" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill3" unique_id=2030989631]
 custom_minimum_size = Vector2(84, 79)
@@ -392,7 +401,7 @@ theme_override_constants/margin_right = 4
 
 [node name="Description" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill3/DescriptionCell" unique_id=1137766435]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "向前冲刺对碰到的怪物造成伤害，冲刺过程处于无敌状态"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -422,15 +431,17 @@ custom_minimum_size = Vector2(85, 79)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_WukongRows/Skill4/IconCell" unique_id=1377692644]
+[node name="Icon" type="TextureButton" parent="Content/m_ActivePage/m_WukongRows/Skill4/IconCell" unique_id=1377692644]
 layout_mode = 0
 offset_left = 12.05
-offset_top = 5.0
+offset_top = 5.149999999999977
 offset_right = 77.05
-offset_bottom = 70.0
-mouse_filter = 2
-texture = ExtResource("preview_FlameStorm")
-expand_mode = 1
+offset_bottom = 70.14999999999998
+mouse_filter = 0
+texture_normal = ExtResource("preview_FlameStorm")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
 
 [node name="Soul" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill4" unique_id=1301275521]
 custom_minimum_size = Vector2(84, 79)
@@ -459,7 +470,7 @@ theme_override_constants/margin_right = 4
 
 [node name="Description" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill4/DescriptionCell" unique_id=2018743050]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "快速旋转震开周围怪物并造成多次伤害"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -489,15 +500,17 @@ custom_minimum_size = Vector2(85, 79)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_WukongRows/Skill5/IconCell" unique_id=161100587]
+[node name="Icon" type="TextureButton" parent="Content/m_ActivePage/m_WukongRows/Skill5/IconCell" unique_id=161100587]
 layout_mode = 0
 offset_left = 12.05
-offset_top = 5.0
+offset_top = 5.300000000000011
 offset_right = 77.05
-offset_bottom = 70.0
-mouse_filter = 2
-texture = ExtResource("preview_FireDemonSlash")
-expand_mode = 1
+offset_bottom = 70.30000000000001
+mouse_filter = 0
+texture_normal = ExtResource("preview_FireDemonSlash")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
 
 [node name="Soul" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill5" unique_id=628733039]
 custom_minimum_size = Vector2(84, 79)
@@ -526,7 +539,7 @@ theme_override_constants/margin_right = 4
 
 [node name="Description" type="Label" parent="Content/m_ActivePage/m_WukongRows/Skill5/DescriptionCell" unique_id=1291963407]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "冲向空中施放火魔九连斩，落地后为最后一斩，造成极高的伤害"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -564,15 +577,17 @@ custom_minimum_size = Vector2(85, 79)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_TangsengRows/Skill1/IconCell" unique_id=146358664]
+[node name="Icon" type="TextureButton" parent="Content/m_ActivePage/m_TangsengRows/Skill1/IconCell" unique_id=146358664]
 layout_mode = 0
-offset_left = 12.05
-offset_top = 5.0
-offset_right = 77.05
-offset_bottom = 70.0
-mouse_filter = 2
-texture = ExtResource("preview_IceDragonWave")
-expand_mode = 1
+offset_left = 9.05
+offset_top = 3.700000000000003
+offset_right = 74.05
+offset_bottom = 68.7
+mouse_filter = 0
+texture_normal = ExtResource("preview_IceDragonWave")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
 
 [node name="Soul" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill1" unique_id=622098422]
 custom_minimum_size = Vector2(84, 79)
@@ -601,7 +616,7 @@ theme_override_constants/margin_right = 13
 
 [node name="Description" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill1/DescriptionCell" unique_id=979279865]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "蓄气放出一条冰龙，对一条直线的怪物造成伤害"
 vertical_alignment = 1
 autowrap_mode = 3
@@ -630,15 +645,17 @@ custom_minimum_size = Vector2(85, 79)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_TangsengRows/Skill2/IconCell" unique_id=1463780410]
+[node name="Icon" type="TextureButton" parent="Content/m_ActivePage/m_TangsengRows/Skill2/IconCell" unique_id=1463780410]
 layout_mode = 0
-offset_left = 12.05
-offset_top = 5.0
-offset_right = 77.05
-offset_bottom = 70.0
-mouse_filter = 2
-texture = ExtResource("preview_DarkIceFormation")
-expand_mode = 1
+offset_left = 9.05
+offset_top = 6.349999999999994
+offset_right = 74.05
+offset_bottom = 71.35
+mouse_filter = 0
+texture_normal = ExtResource("preview_DarkIceFormation")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
 
 [node name="Soul" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill2" unique_id=1813574036]
 custom_minimum_size = Vector2(84, 79)
@@ -667,7 +684,7 @@ theme_override_constants/margin_right = 13
 
 [node name="Description" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill2/DescriptionCell" unique_id=1821322848]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "释放玄冰对周围怪物造成伤害，并减缓移动速度"
 vertical_alignment = 1
 autowrap_mode = 3
@@ -696,15 +713,17 @@ custom_minimum_size = Vector2(85, 79)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_TangsengRows/Skill3/IconCell" unique_id=975815593]
+[node name="Icon" type="TextureButton" parent="Content/m_ActivePage/m_TangsengRows/Skill3/IconCell" unique_id=975815593]
 layout_mode = 0
-offset_left = 12.05
+offset_left = 9.05
 offset_top = 5.0
-offset_right = 77.05
+offset_right = 74.05
 offset_bottom = 70.0
-mouse_filter = 2
-texture = ExtResource("preview_WaterClone")
-expand_mode = 1
+mouse_filter = 0
+texture_normal = ExtResource("preview_WaterClone")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
 
 [node name="Soul" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill3" unique_id=589241240]
 custom_minimum_size = Vector2(84, 79)
@@ -733,7 +752,7 @@ theme_override_constants/margin_right = 13
 
 [node name="Description" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill3/DescriptionCell" unique_id=1793527970]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "召唤出幻影向前冲去，幻影继承某些技能的释放，可以随时传送到幻影位置"
 vertical_alignment = 1
 autowrap_mode = 3
@@ -762,15 +781,17 @@ custom_minimum_size = Vector2(85, 79)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_TangsengRows/Skill4/IconCell" unique_id=98242802]
+[node name="Icon" type="TextureButton" parent="Content/m_ActivePage/m_TangsengRows/Skill4/IconCell" unique_id=98242802]
 layout_mode = 0
-offset_left = 12.05
-offset_top = 5.0
-offset_right = 77.05
-offset_bottom = 70.0
-mouse_filter = 2
-texture = ExtResource("preview_HeavenlyDew")
-expand_mode = 1
+offset_left = 9.05
+offset_top = 4.649999999999977
+offset_right = 74.05
+offset_bottom = 69.64999999999998
+mouse_filter = 0
+texture_normal = ExtResource("preview_HeavenlyDew")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
 
 [node name="Soul" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill4" unique_id=2111330533]
 custom_minimum_size = Vector2(84, 79)
@@ -799,7 +820,7 @@ theme_override_constants/margin_right = 13
 
 [node name="Description" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill4/DescriptionCell" unique_id=1355697508]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "蓄气一秒，之后回复范围内自身和队友一定生命值"
 vertical_alignment = 1
 autowrap_mode = 3
@@ -828,15 +849,17 @@ custom_minimum_size = Vector2(85, 79)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Icon" type="TextureRect" parent="Content/m_ActivePage/m_TangsengRows/Skill5/IconCell" unique_id=1077580977]
+[node name="Icon" type="TextureButton" parent="Content/m_ActivePage/m_TangsengRows/Skill5/IconCell" unique_id=1077580977]
 layout_mode = 0
-offset_left = 12.05
-offset_top = 5.0
-offset_right = 77.05
-offset_bottom = 70.0
-mouse_filter = 2
-texture = ExtResource("preview_WaterDemonBurst")
-expand_mode = 1
+offset_left = 9.05
+offset_top = 5.300000000000011
+offset_right = 74.05
+offset_bottom = 70.30000000000001
+mouse_filter = 0
+texture_normal = ExtResource("preview_WaterDemonBurst")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
 
 [node name="Soul" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill5" unique_id=1507884547]
 custom_minimum_size = Vector2(84, 79)
@@ -865,7 +888,7 @@ theme_override_constants/margin_right = 13
 
 [node name="Description" type="Label" parent="Content/m_ActivePage/m_TangsengRows/Skill5/DescriptionCell" unique_id=1279411498]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "召唤出魔法阵，向空中引出一道光柱，对目标造成较大的伤害"
 vertical_alignment = 1
 autowrap_mode = 3
@@ -900,7 +923,7 @@ mouse_filter = 2
 layout_mode = 0
 offset_right = 81.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "技能名称"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -910,7 +933,7 @@ layout_mode = 0
 offset_left = 81.0
 offset_right = 166.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "当前等级"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -920,7 +943,7 @@ layout_mode = 0
 offset_left = 166.0
 offset_right = 348.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "效果"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -930,7 +953,7 @@ layout_mode = 0
 offset_left = 348.0
 offset_right = 536.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "下一级效果"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -940,7 +963,7 @@ layout_mode = 0
 offset_left = 536.0
 offset_right = 643.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "升级"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -950,7 +973,7 @@ layout_mode = 0
 offset_left = 643.0
 offset_right = 746.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "所需灵魂"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1295,10 +1318,10 @@ mouse_filter = 2
 
 [node name="m_Active" type="TextureButton" parent="Content/Footer" unique_id=2125499342]
 layout_mode = 0
-offset_left = 106.0
-offset_top = 552.0
-offset_right = 185.0
-offset_bottom = 571.0
+offset_left = 100.0
+offset_top = 551.0
+offset_right = 179.0
+offset_bottom = 570.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("active_normal")
@@ -1307,10 +1330,10 @@ texture_hover = ExtResource("active_hover")
 
 [node name="m_Passive" type="TextureButton" parent="Content/Footer" unique_id=796523148]
 layout_mode = 0
-offset_left = 208.0
-offset_top = 553.0
-offset_right = 287.0
-offset_bottom = 572.0
+offset_left = 211.15
+offset_top = 552.0
+offset_right = 290.15
+offset_bottom = 571.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("passive_normal")
@@ -1319,10 +1342,10 @@ texture_hover = ExtResource("passive_hover")
 
 [node name="Balance" type="Control" parent="Content/Footer" unique_id=2041275718]
 anchors_preset = 0
-offset_left = 713.0
-offset_top = 511.0
-offset_right = 867.0
-offset_bottom = 590.0
+offset_left = 713.95
+offset_top = 508.95
+offset_right = 930.0
+offset_bottom = 586.7
 mouse_filter = 2
 
 [node name="Badge" type="TextureRect" parent="Content/Footer/Balance" unique_id=720355842]
@@ -1334,10 +1357,10 @@ texture = ExtResource("soul_badge")
 
 [node name="m_Soul" type="Label" parent="Content/Footer/Balance" unique_id=1119905109]
 layout_mode = 0
-offset_left = 84.0
-offset_top = 33.65
-offset_right = 154.0
-offset_bottom = 69.65
+offset_left = 83.05
+offset_top = 36.7
+offset_right = 216.05
+offset_bottom = 67.75
 theme_override_font_sizes/font_size = 23
 text = "0"
-vertical_alignment = 1
+vertical_alignment = 0

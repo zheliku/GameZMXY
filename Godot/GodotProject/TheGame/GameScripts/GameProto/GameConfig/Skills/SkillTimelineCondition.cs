@@ -8,32 +8,34 @@
 //------------------------------------------------------------------------------
 
 
-
 namespace GameConfig.Skills
-{ 
+{
     public enum SkillTimelineCondition
     {
         /// <summary>
         /// 无条件
         /// </summary>
         Always = 0,
+
         /// <summary>
         /// 本次搜索命中目标
         /// </summary>
         TargetFound = 1,
+
         /// <summary>
         /// 本次搜索未命中目标
         /// </summary>
         TargetMissing = 2,
+
         /// <summary>
         /// 角色踩地或平台且尚未创建落地特效
         /// </summary>
         OnFloor = 3,
+
         /// <summary>
         /// 本次技能尚未创建落地特效
         /// </summary>
         LandingMissing = 4,
     }
-
 } 
 

@@ -5,6 +5,8 @@ using System.Linq;
 using GameConfig.Equipment;
 using GameLogic.Equipment;
 using GameLogic.Profile;
+using GameLogic.Skills;
+using GameConfig.Skills;
 using GameLogic.Save.Data;
 
 namespace GameLogic.Save;
@@ -14,10 +16,12 @@ public sealed class SaveDataUtility : IUtility
 {
     /// <summary>捕获完整档案快照，所有可变集合独立于运行时。</summary>
     /// <param name="profile">本次要捕获的档案，只在同步转换期间读取。</param>
+    /// <param name="skills">同一档案唯一的技能书。</param>
     /// <returns>当前格式的独立存档数据。</returns>
-    public GameData Capture(ProfileModel profile)
+    public GameData Capture(ProfileModel profile, SkillModel skills)
     {
         ArgumentNullException.ThrowIfNull(profile);
+        ArgumentNullException.ThrowIfNull(skills);
         GameData data = new() { ActiveHeroId = profile.ActiveHeroId, Soul = profile.Soul.Value };
         List<EquipmentInstance> items = new(profile.Items);
         foreach (int heroId in profile.HeroIds)
@@ -27,6 +31,7 @@ public sealed class SaveDataUtility : IUtility
             {
                 HeroId = heroId,
                 TotalExperience = profile.GetProgress(heroId).Value.TotalExperience,
+                LearnedSkills = skills.GetLearnedSkills(heroId).OrderBy(id => id).ToList(),
                 WeaponInstanceId = slots.Weapon?.InstanceId ?? Guid.Empty,
                 ArmorInstanceId = slots.Armor?.InstanceId ?? Guid.Empty
             });
@@ -45,11 +50,13 @@ public sealed class SaveDataUtility : IUtility
     /// <param name="data">当前格式数据。</param>
     /// <param name="definitions">装备定义。</param>
     /// <param name="capacity">背包容量。</param>
-    /// <exception cref="ArgumentException">英雄、余额、装备或穿戴无效。</exception>
+    /// <param name="skills">主动技能定义。</param>
+    /// <exception cref="ArgumentException">英雄、余额、装备、穿戴或技能记录无效。</exception>
     /// <exception cref="NotSupportedException">版本不一致。</exception>
-    public void Validate(GameData data, TbEquipmentConfig definitions, int capacity)
+    public void Validate(GameData data, TbEquipmentConfig definitions, int capacity, TbSkillConfig skills)
     {
         ValidateEnvelope(data);
+        ValidateSkills(data, skills);
         ArgumentNullException.ThrowIfNull(definitions);
         if (data.Soul < 0 || data.Heroes.Any(x => x.HeroId <= 0 || x.TotalExperience < 0) ||
             !data.Heroes.Any(x => x.HeroId == data.ActiveHeroId))
@@ -74,8 +81,21 @@ public sealed class SaveDataUtility : IUtility
         if (data.SaveVersion != GameData.CurrentVersion)
             throw new NotSupportedException($"只支持存档格式 v{GameData.CurrentVersion}，当前文件为 v{data.SaveVersion}。");
         if (data.Heroes == null || data.Heroes.Count == 0 || data.Heroes.Any(x => x == null) ||
-            data.EquipmentItems == null)
+            data.EquipmentItems == null || data.Heroes.Any(x => x.LearnedSkills == null))
             throw new ArgumentException("存档缺少英雄或装备记录。");
+    }
+
+    /// <summary>校验技能书的唯一性、定义存在及英雄归属；不静默丢弃坏记录。</summary>
+    /// <param name="data">必要字段已通过校验的档案快照。</param>
+    /// <param name="definitions">主动技能定义。</param>
+    /// <exception cref="ArgumentException">技能重复、不存在或不属于该英雄。</exception>
+    internal static void ValidateSkills(GameData data, TbSkillConfig definitions)
+    {
+        ArgumentNullException.ThrowIfNull(definitions);
+        foreach (var hero in data.Heroes)
+            if (hero.LearnedSkills.Distinct().Count() != hero.LearnedSkills.Count ||
+                hero.LearnedSkills.Any(id => definitions.GetOrDefault(id) is not { } skill || (int)skill.Hero != hero.HeroId))
+                throw new ArgumentException($"英雄 {hero.HeroId} 的技能记录无效。");
     }
 
     /// <summary>建立实例索引和穿戴引用，验证唯一所有权与背包容量。</summary>

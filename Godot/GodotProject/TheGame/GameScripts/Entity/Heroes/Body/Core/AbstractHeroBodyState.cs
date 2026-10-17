@@ -3,6 +3,7 @@ using GameLogic.Input;
 using GameLogic.Heroes.Body;
 using GameFramework.Fsm;
 using GameLogic.Body;
+using GameLogic.Skills;
 
 namespace GameLogic.Heroes.Body
 {
@@ -53,6 +54,26 @@ namespace GameLogic.Heroes.Body
             return !body.OnFloor || (body.ActionData.JumpCount > 0 && body.Velocity.Y < 0f);
         }
 
+        /// <summary>让角色提交技能请求，再以系统中的实际身体占用切换 GGF 状态。</summary>
+        /// <param name="fsm">身体状态机。</param>
+        /// <param name="body">英雄宿主。</param>
+        /// <param name="attacking">是否正在普攻。</param>
+        /// <param name="normalRatio">当前普攻帧比例。</param>
+        /// <returns>已经切换到技能状态时为真。</returns>
+        protected bool TryStartSkill(IFsm<IHeroBody> fsm, IHeroBody body, bool attacking = false, float normalRatio = 0)
+        {
+            if (body is not ISkillActor)
+                return false;
+            var skills = body.GetSystem<SkillSystem>();
+            if (skills.BodySkill == null)
+                body.ProcessSkillInput(attacking, normalRatio, IsAirborne(body));
+            if (skills.BodySkill == null)
+                return false;
+            body.SetFacing(body.ActionData.MoveAxis);
+            ChangeState(fsm, skills.BodyStateType);
+            return true;
+        }
+
         /// <summary>回到地面/空中（按当前是否在空中选）。</summary>
         protected void ChangeToLocomotion(IFsm<IHeroBody> fsm, IHeroBody body)
         {
@@ -71,7 +92,8 @@ namespace GameLogic.Heroes.Body
         /// <returns>本次是否执行起跳。</returns>
         protected static bool TryJump(IHeroBody body)
         {
-            if (!body.GetSystem<InputSystem>().ConsumeJump(body.ActionData) || body.ActionData.JumpCount >= body.Params.JumpCountMax)
+            if (!body.GetSystem<InputSystem>().ConsumeJump(body.ActionData) ||
+                body.ActionData.JumpCount >= body.Params.JumpCountMax)
             {
                 return false;
             }

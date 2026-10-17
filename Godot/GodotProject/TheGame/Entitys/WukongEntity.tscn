@@ -8,9 +8,8 @@
 [ext_resource type="Script" uid="uid://cswoo8veqk4d0" path="res://TheGame/GameScripts/Entity/Heroes/Effects/MusouAfterimageNode.cs" id="8_afterimage"]
 [ext_resource type="Resource" uid="uid://xk36fcf4y640" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_appearance.tres" id="appearance"]
 [ext_resource type="PackedScene" path="res://TheGame/Entitys/Effects/level_up.tscn" id="level_up"]
+[ext_resource type="AnimationLibrary" uid="uid://j3uaow5vlljx" path="res://TheGame/Entitys/Animations/Skills/wukong_skill_library.tres" id="skills"]
 [ext_resource type="Texture2D" uid="uid://di26s8wme22dn" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_default.png" id="weapon"]
-
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Skills/wukong_skill_library.tres" id="skills"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
 radius = 20.0

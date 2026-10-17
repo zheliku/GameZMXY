@@ -22,17 +22,18 @@
 | Utility | 转换、共享计算或 GGF 适配；不保存 Architecture / Model 引用 | 显式调用参数 |
 | Procedure | 注册、初始化顺序、导航、取消、逆序释放 | 明确的流程 FSM |
 
-Utility 直接实现 IUtility，不增加空工具基类；SaveDataUtility 的输入是待转换的 ProfileModel，不反向查询架构。ExperienceCurve 在 Prepare 独立注册为共享 Utility，ConfigurationModel 不再重复持有它。三个 Get 返回所属 FSM 的同一引用；未注册返回 null，过期 Architecture 报生命周期错误。Model/System 有各自初始化基类，节点和窗口保留 Godot/GGF 继承链并实现 IController。外部读取只读绑定，业务修改经 System；不为每次按钮操作再增加 Command 类。
+Utility 直接实现 IUtility，不增加空工具基类；SaveDataUtility 的输入是待转换的 ProfileModel 与 SkillModel，不反向查询架构。ExperienceCurve 在 Prepare 独立注册为共享 Utility，ConfigurationModel 不再重复持有它。三个 Get 返回所属 FSM 的同一引用；未注册返回 null，过期 Architecture 报生命周期错误。Model/System 有各自初始化基类，节点和窗口保留 Godot/GGF 继承链并实现 IController。外部读取只读绑定，业务修改经 System；不为每次按钮操作再增加 Command 类。
 
 ## 所有者与初始化位置
 
-**FSM 持有 Model 和 System，其他对象借用。** Model 不持有节点；Entity 不创建私有 Model。按生命周期和数据归属合并，共五个 Model：
+**FSM 持有 Model 和 System，其他对象借用。** Model 不持有节点；Entity 不创建私有 Model。按生命周期和数据归属合并，共六个 Model：
 
 | Model | 唯一拥有的数据 | 注册位置 / 生命周期 |
 | --- | --- | --- |
 | ConfigurationModel | Tables、只读查询索引、共享身体参数 | ProcedurePrepare / 应用期 |
 | SaveModel | 当前文件编号、六格摘要、目录与手动保存状态 | ProcedurePrepare / 应用期 |
 | [ProfileModel](../Godot/GodotProject/TheGame/GameScripts/Profile/ProfileModel.cs) | 英雄身份、累计经验和派生进度、各英雄穿戴、背包、灵魂 | ProcedureLoadGame 校验读档后 / 读档 → 回标题 |
+| [SkillModel](../Godot/GodotProject/TheGame/GameScripts/Skills/SkillModel.cs) | 每名英雄的学习记录、当前技能组、活动执行和秒制无敌时限 | ProcedureLoadGame / 读档 → 回标题；施放临时数据离关清空 |
 | [HeroModel](../Godot/GodotProject/TheGame/GameScripts/Battle/HeroModel.cs) | 本局最终属性、等级、HP/MP/WS、无双状态与计时、基础值及修正来源 | ProcedureLevel 场景加载后 / 进关 → 离关 |
 | LevelModel | 阶段、计时、统计、结局、成绩、进关快照和前进窗口 | ProcedureLevel / 本局 |
 
@@ -43,14 +44,15 @@ Utility 直接实现 IUtility，不增加空工具基类；SaveDataUtility 的�
 | HeroSystem | 读取 ProfileModel 与配置，汇总成长/装备/Buff、管理生命魔法、无双增长与秒制消耗、查询无双倍率，提交 HeroModel |
 | ProfileSystem | 经验与灵魂奖励、领取装备的唯一归属校验、完整检查点回滚，提交 ProfileModel |
 | EquipmentSystem | 随机装备、穿戴交换、卸下、出售和批量出售；配置 + ProfileModel 的事务 |
-| SaveSystem | 目录、读档、建档、检查点写盘、手动保存结果与旧请求校验；SaveModel + ProfileModel + ArchiveUtility |
+| SkillSystem | 学习/扣费、激活检查/扣蓝、活动执行登记/推进/结束、后续输入和换组清理；SkillModel + HeroModel + ProfileModel |
+| SaveSystem | 目录、读档、建档、检查点写盘、手动保存结果与旧请求校验；SaveModel + ProfileModel + SkillModel + ArchiveUtility |
 | LevelSystem | 阶段迁移、有效游戏时间、收益入口、结局提交与放弃回滚；LevelModel + 上述业务系统 |
 | ConfigurationSystem | 启动配置校验、首次建立共享身体参数并存入 ConfigurationModel |
 | Combat / Input / MonsterAi / Loot Systems | 共用伤害、输入、AI 决策和掉落规则；各实体自己的动作/FSM 数据不强行注册成全局 Model |
 
-Prepare 注册应用模型与系统；LoadGame 注册 ProfileModel → ProfileSystem → EquipmentSystem；Level 注册 LevelModel、HeroModel → HeroSystem → LevelSystem。HeroSystem 初始化全部数值并订阅档案成长与穿戴，之后才显示 Entity、打开 HUD。F6 TestArena 在独立 FSM 注册内存 ProfileModel、HeroModel 和相应系统，不读正式存档。
+Prepare 注册应用模型与系统；LoadGame 注册 ProfileModel、SkillModel → ProfileSystem（恢复检查点）→ EquipmentSystem、SkillSystem；Level 注册 LevelModel、HeroModel → HeroSystem → LevelSystem。HeroSystem 初始化全部数值并订阅档案成长与穿戴，之后才显示 Entity、打开 HUD。F6 TestArena 在独立 FSM 注册内存 ProfileModel、HeroModel 和相应系统，不读正式存档。
 
-离关：关窗退订 → 停止场景协作 → 移除 LevelSystem/LevelModel → 隐藏英雄 → 移除 HeroSystem/HeroModel → 卸载场景。回标题先等待写盘、完成回滚和离关，再移除 EquipmentSystem、ProfileSystem、ProfileModel。应用模型保留。
+离关：关窗退订 → 停止场景协作 → 移除 LevelSystem/LevelModel → 隐藏英雄 → 移除 HeroSystem/HeroModel → 卸载场景。回标题先等待写盘、完成回滚和离关，再移除 EquipmentSystem、SkillSystem、SkillModel、ProfileSystem、ProfileModel。应用模型保留。
 
 ```mermaid
 flowchart TD
@@ -125,11 +127,11 @@ HeroLoadout、PlayerModel、SaveLoadResult 这类只转交可直接获取对象�
 
 读档：SaveSystem → ArchiveUtility → GameData → SaveDataUtility.Validate → ProcedureLoadGame 创建并注册 ProfileModel、ProfileSystem、EquipmentSystem。加载仅返回 DTO 与 Loaded/Created 来源，后续访问直接 GetModel。
 
-保存：SaveSystem → SaveDataUtility.Capture(profile) → GameData → ArchiveUtility。回滚：LevelSystem → ProfileSystem.RestoreCheckpoint(snapshot)，先完整校验快照，再通过正常属性与集合入口恢复 ProfileModel。SaveDataUtility 仅校验和转换，不写 Model 或文件；ExperienceCurve 同样经 GetUtility 借用，不缓存共享引用。地图流程调用 SaveSystem.SaveManuallyAsync，系统统一管理等待、结果与旧请求校验。
+保存：SaveSystem → SaveDataUtility.Capture(profile, skills) → GameData → ArchiveUtility。回滚：LevelSystem → ProfileSystem.RestoreCheckpoint(snapshot)，先完整校验快照，再通过正常属性与集合入口恢复 ProfileModel。SaveDataUtility 仅校验和转换，不写 Model 或文件；ExperienceCurve 同样经 GetUtility 借用，不缓存共享引用。地图流程调用 SaveSystem.SaveManuallyAsync，系统统一管理等待、结果与旧请求校验。
 
 GroundItemNode 使用场景中的固定 32×40 盒，不读图片像素或创建 PhysicsShapeQueryParameters2D。关卡每步把本关英雄交给 TryCollect，按预设盒与受击盒接触后校验收益；满包保留并重试，暂停不拾取。图标底部对齐落地点；固定尺寸可在 ground_item.tscn 的 Shape 调整。
 
-飞行球由关卡传入当前目标位置。蓝量灵魂只回蓝，不产生蓝色飘字；桃子、蓝瓶等地面恢复品继续显示恢复数字。通关、死亡保存已拾取收益，放弃恢复进关快照。当前 v6 的字段和写盘入口见 [存档说明](../Godot/GodotProject/TheGame/GameScripts/Save/README.md)。
+飞行球由关卡传入当前目标位置。蓝量灵魂只回蓝，不产生蓝色飘字；桃子、蓝瓶等地面恢复品继续显示恢复数字。通关、死亡保存已拾取收益，放弃恢复进关快照。当前 v7 的字段和写盘入口见 [存档说明](../Godot/GodotProject/TheGame/GameScripts/Save/README.md)。
 
 ## 按顺序阅读
 
@@ -175,9 +177,39 @@ GroundItemNode 使用场景中的固定 32×40 盒，不读图片像素或创建
 | SkillEffectConfig | 五个独立特效的资源、朝向、缩放及声音 |
 | SkillTimelineConfig | 悟空 47 条秒制位移、攻击编号、目标分支、落地及结束事件；特效事件使用所属特效的局部时间 |
 
-`ConfigurationSystem` 在启动期校验所有外键、参数与局部时间顺序。火魔斩的目标命中/缺失、落地暂停/恢复和九连编号均已配置；没有添加学习记录、扣费或施放入口。美术原点与复现流程见 [LegacyAssetMap](LegacyAssetMap.md#悟空造一技能动作与声音)，原版规则见 [OfficialReference](OfficialReference.md#造一技能准备)。
+`ConfigurationSystem` 在启动期校验所有外键、参数与局部时间顺序。SkillModel 拥有每名英雄唯一的学习列表；SkillForm 购买成功后，学习按钮与战斗栏直接观察该列表刷新。SkillSystem 检查灵魂、已学状态和动作实现后扣费；不足提示复用 SaveNoticeForm。学习记录保存在 v7 的 Heroes[].LearnedSkills。
 
-英雄输入按 `AbstractHeroEntity → InputSystem → HeroActionData → Ground/Air/Attack` 阅读。InputSystem 集中动作名称、引擎采样、方向双击、组合闩锁和普攻连段规则；HeroActionData 由每个英雄拥有，保存输入事实、游戏时钟、已用跳数、连段和冷却。JumpCount 是运行状态，不放入同类共享的 HeroBodyParams。原 HeroInput / HeroAttackSequence 已合并，不新增逐英雄 System。
+技能按输入、激活、身体状态分工：
+
+| 职责 | 入口与所有权 |
+| --- | --- |
+| 输入采样与匹配 | InputSystem 采样方向、普攻及 `Skill1/2/3`（默认 U/I/O）；HeroActionData 属于实体，保存按键事实、输入闩锁、连段与时钟。WukongEntity.ProcessSkillInput 匹配悟空组合，不让公共输入层识别升龙或跑攻 |
+| 技能激活 | SkillSystem.TryActivate 校验当前组、已学、费用及执行的 CanStart；成功后只登记一次执行、扣一次蓝。占身体的技能等 GGF 旧状态退出后才开始动画 |
+| 身体转换 | AbstractHeroBodyState 根据 SkillDefinition.BodyState 调用 GGF ChangeState。悟空五招分别进入 WukongRisingDragonState、WukongFlameThrustState、WukongBlazingFlashState、WukongFlameStormState、WukongFireDemonState；状态位于 `Entity/Heroes/Wukong/Skills/` |
+| 执行与表现 | SkillModel 唯一拥有本次 SkillExecution；状态只借用它，实体拥有动画/物理节点与池化特效。AbstractHeroSkillState 统一重力与结束清理，具体状态拥有并执行自己的起手、运动、判定、特效和阶段结束规则 |
+
+```mermaid
+flowchart LR
+    Input[InputSystem 采样] --> Match[具体角色匹配输入]
+    Match --> Activate[SkillSystem 校验与登记]
+    Activate --> Transition[当前身体状态 ChangeState]
+    Transition --> Leave[旧状态 Leave]
+    Leave --> Enter[具体技能状态 Enter]
+    Enter --> Execution[开始并推进本次执行]
+    Execution --> Locomotion[完成后返回 Ground / Air]
+```
+
+SkillSet 是不可变定义（工厂、可选输入槽和身体状态类型），由具体角色选择；SkillModel 保存其引用，不复制配置。SkillExecution 是每次激活的身份、身体占用与输入/重力锁，不持有角色节点。悟空各状态自己拥有局部计时、目标与阶段数据，自己执行运动、判定、特效和完成条件；SkillTimeline 只计算秒数、冻结、跳转并产出到期事件。火魔斩的寻敌、连斩、下冲和落地等待直接写在 WukongFireDemonState 中，没有额外执行类或悟空 Helper。独立持续效果可扩展 SkillExecution 的 Start/Advance/HandleInput/Stop，不必借用悟空的动画事件。
+
+独立持续效果可释放身体后继续由 SkillSystem.AdvanceBackground 按秒推进，后续输入仍发给同一次执行；再次占用身体时进入该技能登记的状态，不重新扣费。相同物理帧的身体与持续推进去重；完成、中断、死亡、换组与离场清理旧身份，旧特效回调不能跳转新招。同一按下边沿交给活动执行后，不再成为新激活请求。普通输入锁与重力暂停分别表达；技能自己的按下/松开在输入锁内仍送达。
+
+悟空的 W+J 取消、缺蓝回退和跑攻匹配归实体；各招的移动、二段跳消耗、连段衔接归自己的状态。源动画从 1 开始的帧比例换算只在悟空取消规则中，公共普攻状态提供从零开始的播放比例。美术原点见 [LegacyAssetMap](LegacyAssetMap.md#悟空造一技能动作与声音)，原版规则见 [OfficialReference](OfficialReference.md#造一技能准备)。
+
+扩展角色时声明自己的输入规则、SkillSet 与具名 GGF 状态，再在 CreateBodyStates 注册；换武器可选择另一组，旧执行结束而学习记录保留。复杂技能需要多个 GGF 阶段状态时，上一阶段在 Leave 中转交原执行，下一阶段 Enter 借用它；最终完成或中断才走公共释放。已有两阶段真实状态机回归，不要求每个简单动作额外创建整台状态机。输入匹配、激活与身体转换各有入口，公共层不按角色或动作分类枚举分支。唐僧当前只有目录及伤害定义，八戒、沙僧未接入；机制测试覆盖二次输入、持续效果、重新占用身体、蓄力松手、30/60/144fps 和换组，不代表这些角色的正式招式已经制作完成。
+
+设计核对了 [Lyra 官方能力文档](https://dev.epicgames.com/documentation/en-us/unreal-engine/abilities-in-lyra-in-unreal-engine) 的技能组、输入与激活生命周期，以及 [Godot Gameplay Abilities 的实际 C++ 源码](https://github.com/OctoD/godot-gameplay-abilities/blob/main/src/ability_system.cpp) 中定义与单次运行状态的分工。本项目继续使用 GGF 的状态与生命周期，Model/System 从主流程 GetData 取得；没有引入其他技能框架或第二个数据容器。
+
+英雄输入按 `AbstractHeroEntity → InputSystem → HeroActionData → Ground/Air/Attack/具体技能状态` 阅读。InputSystem 集中动作名称、引擎采样、方向双击、组合闩锁和普攻连段规则；HeroActionData 由每个英雄拥有，保存输入事实、游戏时钟、已用跳数、连段和冷却。JumpCount 是运行状态，不放入同类共享的 HeroBodyParams。原 HeroInput / HeroAttackSequence 已合并，不新增逐英雄 System。
 
 Ground/Air 提交输入请求并决定是否进入 Attack；Attack 管理当前动画、移动与收招。普攻仍不排队：过早输入丢弃，有效输入立即换段；参数在 HeroConfig，具体源规则见 [官方输入依据](OfficialReference.md#普攻输入与移动2026-10-14)。调用方只执行 `InputSystem.Sample(this, delta)`；系统内部读取默认 Godot 输入源、英雄独占的 ActionData 与共享 Params，不再外传十几个按键布尔值。引擎采样与规则合在 InputSystem.cs；确需替代控制源时通过同文件的 IInputSource 提供按住/按下/松开事实，使用同一套采样与组合规则。
 

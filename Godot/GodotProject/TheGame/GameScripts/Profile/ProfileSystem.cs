@@ -4,6 +4,8 @@ using System.Linq;
 using GameLogic.Architecture;
 using GameLogic.Equipment;
 using GameLogic.Save;
+using GameLogic.Skills;
+using GameLogic.Config;
 
 namespace GameLogic.Profile;
 
@@ -77,6 +79,7 @@ public sealed class ProfileSystem : AbstractSystem
     {
         var profile = this.GetModel<ProfileModel>();
         SaveDataUtility.ValidateEnvelope(snapshot);
+        SaveDataUtility.ValidateSkills(snapshot, this.GetModel<ConfigurationModel>().Tables.TbSkillConfig);
         if (snapshot.ActiveHeroId != profile.ActiveHeroId || snapshot.Heroes.Count != profile.HeroIds.Count ||
             snapshot.Heroes.Select(x => x.HeroId).Distinct().Count() != snapshot.Heroes.Count ||
             snapshot.Heroes.Any(x => !profile.HeroIds.Contains(x.HeroId) || x.TotalExperience < 0) || snapshot.Soul < 0)
@@ -85,6 +88,7 @@ public sealed class ProfileSystem : AbstractSystem
         // 校验完成后使用正常修改入口；派生系统按绑定优先级先于 UI 同步。
         foreach (var hero in snapshot.Heroes)
         {
+            this.GetModel<SkillModel>().GetLearnedSkills(hero.HeroId).ReplaceAll(hero.LearnedSkills);
             profile.GetSlots(hero.HeroId).Value = new(slots[hero.HeroId].Weapon, slots[hero.HeroId].Armor);
             profile.GetProgress(hero.HeroId).Value = this.GetUtility<ExperienceCurve>().GetProgress(hero.TotalExperience);
         }

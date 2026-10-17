@@ -1,4 +1,7 @@
 using GameLogic.Profile;
+using GameLogic.Skills;
+using System.Collections.Generic;
+using System.Linq;
 using GameLogic.Architecture;
 using System;
 using GameConfig.Skills;
@@ -12,11 +15,15 @@ using GodotGameFramework.UI;
 
 namespace GameLogic.UI;
 
-/// <summary>造一技能面板：查看当前出战角色的主动/被动目录，观察钱包；购买与实际释放以后接入。</summary>
+/// <summary>造一技能面板：观察当前角色的技能书与钱包，提交主动技能购买请求；被动页暂为目录。</summary>
 public partial class SkillForm : IController
 {
+    // ---- 字段 ----
+
     private bool m_ShowPassive; // 当前是否展示五项被动。
     private bool m_ResumeGame; // 只恢复本窗口发起的暂停。
+
+    // ---- 窗口生命周期 ----
 
     /// <summary>初始化框架字段；按钮只在实例创建时绑定一次。</summary>
     /// <param name="serialId">本次窗口编号。</param>
@@ -41,6 +48,7 @@ public partial class SkillForm : IController
         m_Tangseng.Pressed += OnTangsengClicked;
         m_Active.Pressed += OnActiveClicked;
         m_Passive.Pressed += OnPassiveClicked;
+        m_ActivePage.LearnRequested += OnLearnRequested;
     }
 
     /// <summary>绑定目录、观察灵魂并暂停本关，初始技能均展示为尚未学习。</summary>
@@ -58,6 +66,7 @@ public partial class SkillForm : IController
         try
         {
             this.GetModel<ProfileModel>().Soul.RegisterWithInitValue(RefreshSoul);
+            this.GetModel<SkillModel>().GetLearnedSkills(profile.ActiveHeroId).RegisterWithInitValue(RefreshLearnedSkills);
             levelModel.Outcome.Register(OnLevelEnded);
             m_ResumeGame = !GF.Base.IsGamePaused;
             if (m_ResumeGame)
@@ -130,6 +139,7 @@ public partial class SkillForm : IController
     private void ReleaseBindingsAndPause()
     {
         this.GetModel<ProfileModel>().Soul.UnRegister(RefreshSoul);
+        this.GetModel<SkillModel>().GetLearnedSkills(this.GetModel<ProfileModel>().ActiveHeroId).UnRegister(RefreshLearnedSkills);
         this.GetModel<LevelModel>().Outcome.UnRegister(OnLevelEnded);
 
         if (m_ResumeGame && IsInstanceValid(GF.Base))
@@ -140,6 +150,23 @@ public partial class SkillForm : IController
     /// <summary>显示当前钱包余额；切页不会消费灵魂。</summary>
     /// <param name="soul">已经提交的余额。</param>
     private void RefreshSoul(int soul) => m_Soul.Text = soul.ToString();
+
+    /// <summary>学习、读档或关卡回滚后重绘同一份技能记录。</summary>
+    /// <param name="skills">当前英雄的权威学习列表。</param>
+    private void RefreshLearnedSkills(IReadOnlyList<SkillId> skills) => m_ActivePage.Refresh();
+
+    /// <summary>只在本窗口有效周期内提交购买，余额不足复用已有提示动画。</summary>
+    /// <param name="skill">点击的技能。</param>
+    private void OnLearnRequested(SkillId skill)
+    {
+        if (!Visible || !GF.UI.HasUIForm(SerialId))
+            return;
+        var result = this.GetSystem<SkillSystem>().Learn(skill);
+        if (result == SkillLearnResult.InsufficientSoul)
+            GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().ShowMessage("灵魂不足！");
+        else if (result == SkillLearnResult.Learned)
+            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+    }
 
     /// <summary>只显示出战角色的目录，其他角色页签没有交互。</summary>
     private void RefreshPage()

@@ -1,0 +1,59 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/battle_skill_icons.png" id="atlas"]
+
+[sub_resource type="AtlasTexture" id="slot_0"]
+atlas = ExtResource("atlas")
+region = Rect2(0, 0, 45, 45)
+
+[sub_resource type="AtlasTexture" id="slot_1"]
+atlas = ExtResource("atlas")
+region = Rect2(45, 0, 45, 45)
+
+[sub_resource type="AtlasTexture" id="slot_2"]
+atlas = ExtResource("atlas")
+region = Rect2(90, 0, 45, 45)
+
+[sub_resource type="AtlasTexture" id="slot_3"]
+atlas = ExtResource("atlas")
+region = Rect2(135, 0, 45, 45)
+
+[sub_resource type="AtlasTexture" id="slot_4"]
+atlas = ExtResource("atlas")
+region = Rect2(180, 0, 45, 45)
+
+[sub_resource type="AtlasTexture" id="slot_5"]
+atlas = ExtResource("atlas")
+region = Rect2(225, 0, 45, 45)
+
+[sub_resource type="AtlasTexture" id="slot_6"]
+atlas = ExtResource("atlas")
+region = Rect2(270, 0, 45, 45)
+
+[sub_resource type="AtlasTexture" id="slot_7"]
+atlas = ExtResource("atlas")
+region = Rect2(315, 0, 45, 45)
+
+[sub_resource type="AtlasTexture" id="slot_8"]
+atlas = ExtResource("atlas")
+region = Rect2(360, 0, 45, 45)
+
+[sub_resource type="AtlasTexture" id="slot_9"]
+atlas = ExtResource("atlas")
+region = Rect2(405, 0, 45, 45)
+
+[sub_resource type="AtlasTexture" id="slot_10"]
+atlas = ExtResource("atlas")
+region = Rect2(450, 0, 45, 45)
+
+[resource]
+animations = [{"frames": [{"duration": 1.0, "texture": SubResource("slot_0")}, {"duration": 1.0, "texture": SubResource("slot_1")}], "loop": false, "name": &"RisingDragon", "speed": 1.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("slot_0")}, {"duration": 1.0, "texture": SubResource("slot_2")}], "loop": false, "name": &"FlameThrust", "speed": 1.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("slot_0")}, {"duration": 1.0, "texture": SubResource("slot_3")}], "loop": false, "name": &"BlazingFlash", "speed": 1.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("slot_0")}, {"duration": 1.0, "texture": SubResource("slot_4")}], "loop": false, "name": &"FlameStorm", "speed": 1.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("slot_0")}, {"duration": 1.0, "texture": SubResource("slot_5")}], "loop": false, "name": &"FireDemonSlash", "speed": 1.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("slot_0")}, {"duration": 1.0, "texture": SubResource("slot_6")}], "loop": false, "name": &"IceDragonWave", "speed": 1.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("slot_0")}, {"duration": 1.0, "texture": SubResource("slot_7")}], "loop": false, "name": &"DarkIceFormation", "speed": 1.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("slot_0")}, {"duration": 1.0, "texture": SubResource("slot_8")}], "loop": false, "name": &"WaterClone", "speed": 1.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("slot_0")}, {"duration": 1.0, "texture": SubResource("slot_9")}], "loop": false, "name": &"HeavenlyDew", "speed": 1.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("slot_0")}, {"duration": 1.0, "texture": SubResource("slot_10")}], "loop": false, "name": &"WaterDemonBurst", "speed": 1.0}]

@@ -28,6 +28,7 @@ public sealed partial class SkillActionConfig : Luban.BeanBase
         InvincibleDurationSeconds = _buf.ReadFloat();
         CancelNormalAttackFrameRatio = _buf.ReadFloat();
         ConsumesSecondAirJump = _buf.ReadBool();
+        NormalAttackBlockSeconds = _buf.ReadFloat();
     }
 
     public static SkillActionConfig DeserializeSkillActionConfig(ByteBuf _buf)
@@ -83,6 +84,10 @@ public sealed partial class SkillActionConfig : Luban.BeanBase
     /// 升龙/风暴在已跳一次时占用第二次跳跃，不施加虚构跳速
     /// </summary>
     public readonly bool ConsumesSecondAirJump;
+    /// <summary>
+    /// 施放后普攻阻止秒数；源 Role1 timers/24，火炎突击不重设
+    /// </summary>
+    public readonly float NormalAttackBlockSeconds;
    
     public const int __ID__ = 496948061;
     public override int GetTypeId() => __ID__;
@@ -106,6 +111,7 @@ public sealed partial class SkillActionConfig : Luban.BeanBase
         + "InvincibleDurationSeconds:" + InvincibleDurationSeconds + ","
         + "CancelNormalAttackFrameRatio:" + CancelNormalAttackFrameRatio + ","
         + "ConsumesSecondAirJump:" + ConsumesSecondAirJump + ","
+        + "NormalAttackBlockSeconds:" + NormalAttackBlockSeconds + ","
         + "}";
     }
 }

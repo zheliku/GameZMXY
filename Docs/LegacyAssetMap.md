@@ -22,13 +22,7 @@
 | `Art/Level/Gogo/1..67.png` | `Sprites/UI/gogo/gogo_sheet.png` + `gogo_animations.tres` | 67 帧 213×92 打包为 8×9 图集；旧 `Role_information` 的 `Gogo`（`AnimatedSprite2D`，speed 25、循环） |
 | `Art/HeroPicture/RoleProperiesBox/408.png` | `Sprites/UI/hud/hud_status_panel.png` | 227×87，状态面板底图 |
 | `Art/HeroPicture/RoleProperiesBox/345.png` | `Sprites/UI/hud/hud_hp_fill.png` | 144×12，血条填充 |
-| `Art/HeroPicture/RoleProperiesBox/742.png` | `Sprites/UI/hud/hud_hp_delay.png` | 144×12，血条残影/经验填充 |
-| `Art/HeroPicture/RoleProperiesBox/712.png` | `Sprites/UI/hud/hud_menu_panel.png` | 169×133，右下菜单面板 |
-| `Art/HeroPicture/RoleProperiesBox/718.png` | `Sprites/UI/hud/hud_ws_frame.png` | 260×22，无双条框 |
-| `Art/HeroPicture/RoleProperiesBox/720.png` | `Sprites/UI/hud/hud_ws_under.png` | 221×28，无双条底 |
-| `Art/HeroPicture/RoleProperiesBox/724.png` | `Sprites/UI/hud/hud_ws_fill.png` | 221×13，无双条填充 |
-| `Art/HeroPicture/WSGrey.png` | `Sprites/UI/hud/hud_ws_grey.png` | 72×71，无双灰底 |
-| `Art/HeroPicture/WSBar.png` | `Sprites/UI/hud/hud_ws_max_sheet.png` | 890×89，10 张 89×89 帧；满值时 `AnimatedSprite2D` 以 25 FPS 往返循环。`hud_ws_flash.gdshader` 用首帧轮廓和可调圆形范围限制透明度；默认半径 32px、圆心 (0.5, 0.5)、向内羽化 1px，源图保留不变 |
+| `Art/HeroPicture/RoleProperiesBox/712.png` | `Sprites/UI/hud/hud_menu_panel.png` | 169×133，左下菜单面板；五个旧入口保留 |
 | `Art/HeroPicture/RoleProperiesBox/swk.png` | `Sprites/UI/hud/hud_head_wukong.png` | 83×76，悟空头像 |
 | `Art/HeroPicture/RoleProperiesBox/748.png` | `Sprites/UI/hud/hud_status_label.png` | 17×46，状态标签装饰 |
 
@@ -192,7 +186,18 @@
 
 两个导出器均用 Java/FFDec 26.3，在临时目录校验散列和渲染，再复制 PNG 与外置 SpriteFrames。无双开场在 `(470,295)` 输出 940×590、24 帧；悟空末姿势保持时，火焰子动画继续播放。调用参数见各脚本 `--help`。
 
-满值提示另来自旧 WSBar.png：`hud_ws_full_frames.tres` 保存 10 个 AtlasTexture 的 20 帧往返循环（25 fps）；圆形裁剪只在 shader 中进行，不修改源图。
+满值提示已改为 OtherMat_v9 的 `340`：`battle_menu_ws_glow_frames.tres` 引用 19 张 78×78 原版透明帧，24 fps 循环；不再使用旧 WSBar 图集与裁剪 shader。原始注册范围为 `(-44,-44)..(34,34)`；最亮帧边缘保留原版低 alpha 柔光。
+
+`Tools/LegacyMigration/export_official_battle_menu.py` 校验同一 OtherMat_v9 散列后导出：
+
+| 原版元件 | 正式资源（`Sprites/UI/hud/`） | 规格 |
+| --- | --- | --- |
+| `328` 的 11 帧 | `battle_skill_icons.png`、`battle_skill_icon_frames.tres` | 45×45；第 1 帧为未学习槽，后 10 帧为两位角色的已学习图标；每技能保留灰/彩两帧 |
+| `330`、`333` | `battle_menu_ws_under.png`、`battle_menu_ws_fill.png` | 221×27 底条、221×12 填充；填充偏移 (0,9) |
+| 位图 `335` | `battle_menu_ws_idle.png` | 68×68 无双未满图 |
+| `340` | `battle_menu_ws_glow_00..18.png`、`battle_menu_ws_glow_frames.tres` | 19 帧、24 fps、78×78 |
+
+按用户要求，HUD 保留旧版法宝、宠物、背包、设置、技能入口及 `hud_menu_panel.png` 的布局。只替换无双和五个主动技能图标；法宝、宠物仍为未实现入口，素材为后续版本保留。
 
 ## 结算与战斗背包
 
@@ -218,8 +223,6 @@
 | `Art/BackPack/lh_wk.png` | `Sprites/UI/inventory/inventory_soul_plate.png` |
 | `Art/BackPack/209.png` | `Sprites/UI/inventory/inventory_exp_fill.png` |
 | `Art/BackPack/211.png` | `Sprites/UI/inventory/inventory_exp_frame.png` |
-| `Art/BackPack/123.png` | `Sprites/UI/inventory/inventory_page_one.png` |
-| `Art/BackPack/118.png` | `Sprites/UI/inventory/inventory_page_two.png` |
 | `Art/BackPack/zb_button.png` | `Sprites/UI/inventory/inventory_tab_normal.png` |
 | `Art/BackPack/zb_button_choose.png` | `Sprites/UI/inventory/inventory_tab_selected.png` |
 | `Art/BackPack/wq.png` | `Sprites/UI/inventory/inventory_slot_weapon.png` |

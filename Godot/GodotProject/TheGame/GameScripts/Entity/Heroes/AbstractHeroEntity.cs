@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using GameLogic.Skills;
 using GameLogic.Config;
 using GameLogic.Architecture;
 using GameLogic.Heroes.Body;
@@ -41,13 +43,16 @@ namespace GameLogic.Heroes
         [Export] private HeroLevelUpNode m_LevelUp; // 独立升级动画层，不随身体朝向镜像。
 
         private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
+        private readonly HashSet<SkillEffectNode> m_SkillEffects = new(); // 本英雄生成的活动特效，隐藏时统一归还。
         private ulong m_MusouIntroEnds; // 本英雄拥有的短暂停顿截止时间；零表示没有拥有暂停。
+
+        // ---- 属性 ----
 
         /// <summary>借用模型中同类英雄共享的身体参数。</summary>
         private HeroBodyParams BodyParams => this.GetModel<ConfigurationModel>().GetHeroBodyParams(HeroId);
 
-
-        // ---- 属性 ----
+        /// <summary>按游戏时间查询技能无敌。</summary>
+        protected override bool Invulnerable => this.GetSystem<SkillSystem>().IsInvulnerable(ActionData.Time);
 
         /// <summary>英雄配置 Id（对应 HeroConfig.Id）。每个英雄场景必须显式填写，缺失时本实体停用。</summary>
         public int HeroId => m_HeroId;
@@ -69,8 +74,10 @@ namespace GameLogic.Heroes
 
         /// <inheritdoc />
         public override int Hp => Attributes.Hp.Value;
+
         /// <inheritdoc />
         public override int MaxHp => Attributes.MaxHp.Value;
+
         /// <inheritdoc />
         public override int Level => Attributes.Level.Value;
 
@@ -149,6 +156,7 @@ namespace GameLogic.Heroes
             if (!isShutdown && IsInstanceValid(m_LevelUp))
                 m_LevelUp.Reset();
             DestroyBodyStateMachine(isShutdown);
+            ClearSkillEffects(isShutdown);
             base.OnHide(isShutdown, userData);
         }
 
@@ -179,7 +187,11 @@ namespace GameLogic.Heroes
             if (ActionData.MusouRequested)
                 TryActivateMusou();
 
+            this.GetSystem<SkillSystem>().HandleInput(this, ActionData);
+            if (this.GetModel<HeroModel>().IsDepleted)
+                this.GetSystem<SkillSystem>().StopAll(this);
             m_BodyFsm.Tick(dt);
+            this.GetSystem<SkillSystem>().AdvanceBackground(this, dt, ActionData.Time);
             MoveAndSlide();
 
             // 落地归零跳跃次数。必须带 "Velocity.Y >= 0"：起跳那一帧角色可能还没离开地面，
@@ -192,6 +204,7 @@ namespace GameLogic.Heroes
 
         /// <inheritdoc />
         protected override bool ApplyDamage(int amount) => this.GetSystem<HeroSystem>().Damage(amount);
+
         /// <inheritdoc />
         protected override void RestoreHealth(int amount) => this.GetSystem<HeroSystem>().Heal(amount);
 
@@ -373,13 +386,15 @@ namespace GameLogic.Heroes
             {
                 KinematicCollision2D collision = GetSlideCollision(i);
                 if (collision.GetNormal().Dot(Vector2.Up) < Mathf.Cos(FloorMaxAngle) ||
-                    collision.GetCollider() is not CollisionObject2D collider || (collider.CollisionLayer & platformMask) == 0)
+                    collision.GetCollider() is not CollisionObject2D collider ||
+                    (collider.CollisionLayer & platformMask) == 0)
                     continue;
                 // 原版从平台向下移 10px；单向碰撞不再阻挡已位于平台下方的脚底。
                 Position += Vector2.Down * Config.PlatformDropDistance;
                 ActionData.JumpCount = 1;
                 return true;
             }
+
             return false;
         }
 

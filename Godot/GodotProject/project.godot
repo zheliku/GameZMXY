@@ -126,6 +126,19 @@ inventory_toggle={
 ]
 }
 
+skill_1={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":85)]
+}
+skill_2={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":73)]
+}
+skill_3={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":79)]
+}
+
 [layer_names]
 
 2d_physics/layer_1="World"

@@ -102,6 +102,9 @@ namespace GameLogic.Entity
         /// </summary>
         public bool Dead { get; private set; }
 
+        /// <summary>技能等临时无敌可拒绝受击；无双霸体不等于无敌。</summary>
+        protected virtual bool Invulnerable => false;
+
         /// <summary>朝向：1 右 / -1 左。素材原始朝左，见 SetFacing 注释。</summary>
         public int Facing { get; private set; } = 1;
 
@@ -384,7 +387,7 @@ namespace GameLogic.Entity
         /// <returns>实际伤害与闪避、暴击结果。</returns>
         public DamageResult ReceiveHit(AttackInstance attack, int attackerEntityId)
         {
-            if (Dead)
+            if (Dead || Invulnerable)
             {
                 return DamageResult.Missed(attack.Kind);
             }
@@ -478,6 +481,26 @@ namespace GameLogic.Entity
                 + MathF.Round(Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf()), MidpointRounding.AwayFromZero);
             m_ActiveAttack = AttackInstance.Create(attack.Id, attributes, power * powerMultiplier, attack.DamageKind, attack.Knockback, Facing,
                 attack.HitProtect, attack.HitSoundId);
+        }
+
+        /// <summary>接管一个已经由技能规则计算好的池化攻击包。</summary>
+        /// <param name="attack">所有权转交给本实体的攻击包。</param>
+        protected void SetAttack(AttackInstance attack)
+        {
+            ReleaseAttack();
+            m_ActiveAttack = attack;
+        }
+
+        /// <summary>处理持续重叠的受击盒；新技能攻击编号不依赖再次进入信号。</summary>
+        protected void PollAttackOverlaps()
+        {
+            foreach (var child in m_HitBox.GetChildren())
+                if (child is CollisionShape2D { Disabled: false })
+                {
+                    foreach (var area in m_HitBox.GetOverlappingAreas())
+                        OnHitBoxAreaEntered(area);
+                    break;
+                }
         }
 
         /// <summary>将攻击判定交给受击方，并保证同一招不重复命中目标。</summary>

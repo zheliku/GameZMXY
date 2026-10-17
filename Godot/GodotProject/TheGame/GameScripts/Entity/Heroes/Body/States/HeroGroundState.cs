@@ -13,12 +13,15 @@ namespace GameLogic.Heroes.Body
         /// <param name="dt">游戏物理帧秒数。</param>
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
+            if (TryStartSkill(fsm, body))
+                return;
             HandleJumpKeyCombinations(body);
-            if (body.GetSystem<InputSystem>().TryStartAttack(body.ActionData, body.Params, IsAirborne(body), isAttacking: false))
+            if (body.TryStartAttack(false, 0, IsAirborne(body)))
             {
                 ChangeState<HeroAttackState>(fsm);
                 return;
             }
+
             if (TryJump(body) || IsAirborne(body))
             {
                 ChangeState<HeroAirState>(fsm);

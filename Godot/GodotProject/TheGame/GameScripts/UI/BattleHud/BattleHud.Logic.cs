@@ -9,6 +9,10 @@ using GodotGameFramework;
 using GameLogic.Audio;
 using GameConfig.Sound;
 using GameLogic.Monsters;
+using GameConfig.Skills;
+using GameLogic.Skills;
+using GameLogic.Config;
+using System.Collections.Generic;
 
 namespace GameLogic.UI;
 
@@ -115,6 +119,7 @@ public partial class BattleHud : IController
             this.GetModel<HeroModel>().MaxWs.Register(RefreshMusou);
             this.GetModel<HeroModel>().WsActive.Register(RefreshMusouActive);
             progression.Progress.RegisterWithInitValue(RefreshProgression);
+            this.GetModel<SkillModel>().GetLearnedSkills(progression.ActiveHeroId).RegisterWithInitValue(RefreshSkills);
             levelModel.TravelAvailable.RegisterWithInitValue(RefreshTravel);
             data.ViewController.FeaturedOpponentChanged += RefreshEncounter;
             RefreshAll();
@@ -230,6 +235,7 @@ public partial class BattleHud : IController
             this.GetModel<HeroModel>().MaxWs.UnRegister(RefreshMusou);
             this.GetModel<HeroModel>().WsActive.UnRegister(RefreshMusouActive);
             this.GetModel<ProfileModel>().Progress.UnRegister(RefreshProgression);
+            this.GetModel<SkillModel>().GetLearnedSkills(this.GetModel<ProfileModel>().ActiveHeroId).UnRegister(RefreshSkills);
             this.GetModel<LevelModel>().TravelAvailable.UnRegister(RefreshTravel);
             data.ViewController.FeaturedOpponentChanged -= RefreshEncounter;
         }
@@ -253,6 +259,11 @@ public partial class BattleHud : IController
         RefreshMusou();
         RefreshEncounter();
     }
+
+    /// <summary>技能学习或关卡回滚后同步战斗栏颜色。</summary>
+    /// <param name="learned">当前英雄的权威学习记录。</param>
+    private void RefreshSkills(IReadOnlyList<SkillId> learned) => m_Menu.SetSkills(
+        this.GetModel<ConfigurationModel>().GetActive((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId), learned);
 
     /// <summary>在 HUD 绑定关卡指定的守关对手；该怪物仍由实体系统管理。</summary>
     private void RefreshEncounter() => BindEncounter(m_Data.ViewController.FeaturedOpponent);

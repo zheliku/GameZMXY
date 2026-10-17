@@ -6,6 +6,7 @@ using GameLogic.Config;
 using GameLogic.Equipment;
 using GameLogic.Profile;
 using GameLogic.Save;
+using GameLogic.Skills;
 
 namespace GameLogic.Level;
 
@@ -45,7 +46,7 @@ public sealed class LevelSystem : AbstractSystem
             throw new InvalidOperationException("关卡会话已经开始。");
 
         // 捕获独立回滚副本后再启动统计，重复开始不得覆盖原快照。
-        LevelModel.EntrySnapshot = this.GetUtility<SaveDataUtility>().Capture(this.GetModel<ProfileModel>());
+        LevelModel.EntrySnapshot = this.GetUtility<SaveDataUtility>().Capture(profile, this.GetModel<SkillModel>());
         CheckpointWrite = null;
         LevelModel.ElapsedSeconds = 0;
         LevelModel.DefeatedMonsterCount = LevelModel.AwardedExperience = 0;

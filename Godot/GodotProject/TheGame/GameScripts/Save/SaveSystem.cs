@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GameConfig;
 using GameLogic.Profile;
+using GameLogic.Skills;
 using GodotGameFramework;
 using GameLogic.Event.Save;
 
@@ -77,7 +78,7 @@ namespace GameLogic.Save
                 Heroes = [new HeroSaveData { HeroId = tables.TbProfileConfig.StartHeroId }]
             } : data;
             this.GetUtility<SaveDataUtility>().Validate(source, tables.TbEquipmentConfig,
-                tables.TbProfileConfig.EquipmentCapacity);
+                tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig);
             this.GetModel<SaveModel>().ActiveSlotUnitId = data.UnitId;
             if (created)
             {
@@ -130,7 +131,7 @@ namespace GameLogic.Save
                             throw new InvalidOperationException("已有档案缺少稳定格号或检查点时间。");
                         var data = archive.CurrentData;
                         this.GetUtility<SaveDataUtility>().Validate(data,
-                            tables.TbEquipmentConfig, tables.TbProfileConfig.EquipmentCapacity);
+                            tables.TbEquipmentConfig, tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig);
                         string name = tables.TbHeroConfig.Get(data.ActiveHeroId).NameCn;
                         int level = curve.Evaluate(data.Heroes.Single(x => x.HeroId == data.ActiveHeroId).TotalExperience).Level;
                         slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Occupied,
@@ -174,7 +175,7 @@ namespace GameLogic.Save
                 return Task.FromResult(false);
             }
 
-            return WriteSnapshotAsync(this.GetUtility<SaveDataUtility>().Capture(profile));
+            return WriteSnapshotAsync(this.GetUtility<SaveDataUtility>().Capture(profile, this.GetModel<SkillModel>()));
         }
 
         /// <summary>保存地图当前档案，并在请求周期仍有效时发布按钮结果。</summary>

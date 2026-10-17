@@ -10,6 +10,7 @@ using GameFramework.Procedure;
 using GameLogic.Save;
 using GameLogic.Equipment;
 using GameLogic.Profile;
+using GameLogic.Skills;
 using GameLogic;
 using GodotGameFramework;
 using GodotGameFramework.UI;
@@ -53,9 +54,11 @@ public class ProcedureLoadGame : ProcedureBase
                 data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), procedureOwner.GetUtility<ExperienceCurve>(),
                 config.Tables.TbProfileConfig.EquipmentCapacity, data.Soul);
             procedureOwner.RegisterModel(profile);
+            procedureOwner.RegisterModel(new SkillModel(profile.HeroIds));
             procedureOwner.RegisterSystem(new ProfileSystem(architecture));
             procedureOwner.GetSystem<ProfileSystem>().RestoreCheckpoint(data);
             procedureOwner.RegisterSystem(new EquipmentSystem(architecture));
+            procedureOwner.RegisterSystem(new SkillSystem(architecture));
             Log.Info("[ProcedureLoadGame] 档案就绪：来源 {0}，出战英雄 {1}，等级 {2}", loaded.Origin,
                 profile.ActiveHeroId, profile.Level);
             // 新建档案才需要确认角色；已有档案直接恢复地图入口。

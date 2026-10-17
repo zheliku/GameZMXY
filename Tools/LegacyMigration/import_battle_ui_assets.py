@@ -25,8 +25,6 @@ MAPPING = {
     'Art/BackPack/lh_wk.png': 'Sprites/UI/inventory/inventory_soul_plate.png',
     'Art/BackPack/209.png': 'Sprites/UI/inventory/inventory_exp_fill.png',
     'Art/BackPack/211.png': 'Sprites/UI/inventory/inventory_exp_frame.png',
-    'Art/BackPack/123.png': 'Sprites/UI/inventory/inventory_page_one.png',
-    'Art/BackPack/118.png': 'Sprites/UI/inventory/inventory_page_two.png',
     'Art/BackPack/zb_button.png': 'Sprites/UI/inventory/inventory_tab_normal.png',
     'Art/BackPack/zb_button_choose.png': 'Sprites/UI/inventory/inventory_tab_selected.png',
 }
