@@ -129,7 +129,7 @@ public sealed class LevelSmokeScenario
                 {
                     m_SawFeatured = true;
                     var banner = SmokeInspection.ReadField<EncounterHealthBar>(
-                        GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_BattleHud), "m_EncounterHealthBar");
+                        GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_BattleForm), "m_EncounterHealthBar");
                     if (!ReferenceEquals(m_Level.FeaturedOpponent, monster) || monster.MaxHp != 900 ||
                           !banner.Visible || banner.HasNode("Entrance") ||
                           !Mathf.IsEqualApprox(banner.GetGlobalRect().GetCenter().X,
@@ -498,10 +498,10 @@ public sealed class LevelSmokeScenario
             }
             foreach (AbstractMonsterEntity monster in monsters)
             {
-                AttackInstance attack = AttackInstance.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero,
+                AttackData data = AttackData.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero,
                     m_Hero.Id, 0, SoundId.None);
-                monster.ReceiveHit(attack, m_Hero.Id);
-                ReferencePool.Release(attack);
+                monster.ReceiveHit(data, m_Hero.Id);
+                ReferencePool.Release(data);
                 // 同一死亡再发一次普通事件，刷怪服务必须只发一次奖励和清波名额。
                 GF.Event.Fire(this, MonsterDiedEventArgs.Create(monster.Id,
                     SmokeInspection.ReadField<int>(monster, "m_ExperienceReward"), monster.Config, monster.GlobalPosition, SmokeInspection.ReadField<GameConfig.Loot.EquipmentDropPoolId>(monster, "m_EquipmentDropPoolId")));

@@ -13,7 +13,6 @@ namespace GameLogic.Heroes.Wukong;
 public sealed class WukongBlazingFlashState : AbstractHeroSkillState
 {
     private int m_MoveAxis; // 闪身前保留的起手方向。
-    private SkillTimeline m_Timeline; // 闪身各阶段的秒制事件。
 
     /// <inheritdoc />
     protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
@@ -24,7 +23,6 @@ public sealed class WukongBlazingFlashState : AbstractHeroSkillState
         m_MoveAxis = body.ActionData.MoveAxis;
         body.ActionData.LastGroundSegment = -1;
         body.ActionData.AttackReadyAt = body.ActionData.Time + action.NormalAttackBlockSeconds;
-        m_Timeline = new(configuration.GetSkillTimeline(SkillId.BlazingFlash, SkillEffectId.None));
         BeginAnimation(body, action);
         AdvanceSkill(body, 0);
     }
@@ -33,7 +31,7 @@ public sealed class WukongBlazingFlashState : AbstractHeroSkillState
     protected override void AdvanceSkill(IHeroBody body, float dt)
     {
         var action = body.GetModel<ConfigurationModel>().Tables.TbSkillActionConfig.Get(SkillId.BlazingFlash);
-        if (m_Timeline.Elapsed < action.InvincibleDelaySeconds)
+        if (SkillTime < action.InvincibleDelaySeconds)
         {
             var input = body.GetSystem<InputSystem>();
             if (!input.IsDirectionHeld(body.ActionData, m_MoveAxis) || input.WasDirectionReleased(body.ActionData, m_MoveAxis))
@@ -42,7 +40,7 @@ public sealed class WukongBlazingFlashState : AbstractHeroSkillState
             body.Velocity = new Vector2(m_MoveAxis * speed * body.MoveSpeedMultiplier, body.Velocity.Y);
         }
         var actor = (ISkillActor)body;
-        foreach (var entry in m_Timeline.Advance(dt, body.OnFloor))
+        foreach (var entry in AdvanceTimeline(dt, body.OnFloor))
         {
             switch (entry.Kind)
             {
@@ -50,7 +48,7 @@ public sealed class WukongBlazingFlashState : AbstractHeroSkillState
                     actor.NewSkillAttack(action.BodyHitId);
                     break;
                 case SkillTimelineKind.SpawnEffect:
-                    actor.SpawnSkillEffect(entry.EffectId, Execution, actor.SkillPosition);
+                    actor.SpawnSkillEffect(entry.EffectId, SkillData, actor.SkillPosition);
                     break;
                 case SkillTimelineKind.SetVelocityX:
                     float speed = body.GetModel<GameLogic.Battle.HeroModel>().WsActive.Value
@@ -61,10 +59,10 @@ public sealed class WukongBlazingFlashState : AbstractHeroSkillState
                     body.Velocity = Vector2.Zero;
                     break;
                 case SkillTimelineKind.CompleteActor:
-                    Execution.Completed = true;
+                    SkillData.Completed = true;
                     break;
             }
         }
-        actor.SetSkillAnimationTime(m_Timeline.Elapsed);
+        actor.SetSkillAnimationTime(SkillTime);
     }
 }

@@ -71,11 +71,11 @@ public sealed class LevelSystem : AbstractSystem
     }
 
     /// <summary>实际拾取时将装备加入本槽背包；结局后拒绝领取，满包不消耗地面物品。</summary>
-    /// <param name="equipment">掉落时已抽定属性的装备实例。</param>
+    /// <param name="data">掉落时已抽定属性的装备实例。</param>
     /// <returns>是否完成领取。</returns>
-    public bool TryCollectEquipment(EquipmentInstance equipment) =>
+    public bool TryCollectEquipment(EquipmentData data) =>
         LevelModel.SessionActive && LevelModel.Outcome.Value == LevelOutcome.Running
-                            && this.GetSystem<ProfileSystem>().TryCollectEquipment(equipment);
+                            && this.GetSystem<ProfileSystem>().TryCollectEquipment(data);
 
     /// <summary>实际接触灵魂球时入账；本关结束后拒绝迟到奖励。</summary>
     /// <param name="amount">球中已确定的灵魂数量。</param>

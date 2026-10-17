@@ -20,7 +20,7 @@ namespace GameConfig
         /// <summary>
         /// 战斗HUD
         /// </summary>
-        BattleHud = 1,
+        BattleForm = 1,
         /// <summary>
         /// 开始界面
         /// </summary>

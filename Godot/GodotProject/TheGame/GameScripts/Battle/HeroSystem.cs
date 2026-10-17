@@ -117,29 +117,29 @@ public sealed class HeroSystem : AbstractSystem
     /// <param name="heroId">英雄身份。</param>
     /// <param name="level">成长等级。</param>
     /// <param name="baseAttributes">对应基础值。</param>
-    /// <param name="weapon">当前武器。</param>
-    /// <param name="armor">当前防具。</param>
+    /// <param name="weaponData">当前武器。</param>
+    /// <param name="armorData">当前防具。</param>
     internal void Reset(int heroId, int level, ActorBaseAttributes baseAttributes,
-        EquipmentInstance weapon = null, EquipmentInstance armor = null)
+        EquipmentData weaponData = null, EquipmentData armorData = null)
     {
         ArgumentNullException.ThrowIfNull(baseAttributes);
         Hero.Sources.Clear();
-        SetGrowth(baseAttributes, heroId, level, weapon, armor, refill: true);
+        SetGrowth(baseAttributes, heroId, level, weaponData, armorData, refill: true);
     }
 
     /// <summary>同步当前成长与穿戴并重算属性，保留技能/Buff 来源。</summary>
     /// <param name="baseAttributes">当前基础值。</param>
     /// <param name="heroId">当前英雄。</param>
     /// <param name="level">当前等级。</param>
-    /// <param name="weapon">武器。</param>
-    /// <param name="armor">防具。</param>
+    /// <param name="weaponData">武器。</param>
+    /// <param name="armorData">防具。</param>
     /// <param name="refill">升级是否补满资源。</param>
     internal void SetGrowth(ActorBaseAttributes baseAttributes, int heroId, int level,
-        EquipmentInstance weapon, EquipmentInstance armor, bool refill)
+        EquipmentData weaponData, EquipmentData armorData, bool refill)
     {
         ArgumentNullException.ThrowIfNull(baseAttributes);
         Hero.BaseAttributes = baseAttributes;
-        ReplaceEquipmentSources(weapon, armor);
+        ReplaceEquipmentSources(weaponData, armorData);
         Recalculate(heroId, level, refill);
     }
 
@@ -188,16 +188,16 @@ public sealed class HeroSystem : AbstractSystem
     }
 
     /// <summary>整体替换两个装备来源。</summary>
-    /// <param name="weapon">当前武器。</param>
-    /// <param name="armor">当前防具。</param>
-    private void ReplaceEquipmentSources(EquipmentInstance weapon, EquipmentInstance armor)
+    /// <param name="weaponData">当前武器。</param>
+    /// <param name="armorData">当前防具。</param>
+    private void ReplaceEquipmentSources(EquipmentData weaponData, EquipmentData armorData)
     {
         Hero.Sources.Remove(m_WeaponSource);
         Hero.Sources.Remove(m_ArmorSource);
-        if (weapon != null)
-            Hero.Sources[m_WeaponSource] = weapon.Attributes.EnumerateModifiers().ToArray();
-        if (armor != null)
-            Hero.Sources[m_ArmorSource] = armor.Attributes.EnumerateModifiers().ToArray();
+        if (weaponData != null)
+            Hero.Sources[m_WeaponSource] = weaponData.Attributes.EnumerateModifiers().ToArray();
+        if (armorData != null)
+            Hero.Sources[m_ArmorSource] = armorData.Attributes.EnumerateModifiers().ToArray();
     }
 
     /// <summary>按固定、加算百分比、乘算百分比顺序汇总，再原子提交模型。</summary>

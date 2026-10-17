@@ -456,9 +456,9 @@ public sealed class MonsterAiSmokeScenario
     private void HitMonster(float power, Vector2 knockback) // 以英雄为攻击方对怪物执行一次真实伤害结算。
     {
         // 攻击数据只在结算期间持有，完成后立即归还引用池。
-        AttackInstance attack = AttackInstance.Create(0, default, power, DamageKind.Real, knockback, 1, 0, SoundId.None);
-        m_Monster.ReceiveHit(attack, m_Hero.Id);
-        ReferencePool.Release(attack);
+        AttackData data = AttackData.Create(0, default, power, DamageKind.Real, knockback, 1, 0, SoundId.None);
+        m_Monster.ReceiveHit(data, m_Hero.Id);
+        ReferencePool.Release(data);
     }
 
     private void OnDamageDealt(object sender, GameEventArgs args) // 记录受测怪物命中英雄的伤害事件。

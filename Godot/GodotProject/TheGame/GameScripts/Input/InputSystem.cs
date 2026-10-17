@@ -70,37 +70,32 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
 
     // ---- 业务方法 ----
 
-    /// <summary>内部读取输入来源并采样本英雄；短按边沿、组合闩锁与连段数据均保留在英雄中。</summary>
+    /// <summary>开始本英雄的新一帧消费记录，采样常规动作并推进独占的闩锁和时钟。</summary>
     /// <param name="hero">本帧采样的英雄宿主，提供动作数据和共享动作参数。</param>
     /// <param name="dt">本帧游戏秒数。</param>
     public void Sample(IHeroBody hero, float dt)
     {
         var data = hero.ActionData;
         data.Time += dt;
-        data.DirectSkillSlot = null;
+        data.ConsumedActions.Clear();
+        data.AttackRequested = false;
         data.MusouRequested = false;
-        SampleSkillButton(data, 1, Skill1);
-        SampleSkillButton(data, 2, Skill2);
-        SampleSkillButton(data, 3, Skill3);
         // 输入锁独立于重力；游戏时钟继续走，锁定期间按键不留到收招后补动作。
-        if (this.GetModel<SkillModel>()?.BodySkill is { InputLocked: true })
+        if (this.GetModel<SkillModel>()?.BodySkillData is { InputLocked: true })
         {
             data.CanAct = false;
             return;
         }
         float doubleTapWindow = hero.Params.RunDoubleTapWindow;
-        bool leftHeld = m_Source.IsHeld(MoveLeft), rightHeld = m_Source.IsHeld(MoveRight);
-        bool leftPressed = m_Source.WasPressed(MoveLeft), rightPressed = m_Source.WasPressed(MoveRight);
-        bool jumpHeld = m_Source.IsHeld(Jump), attackHeld = m_Source.IsHeld(Attack);
-        bool musouPressed = m_Source.WasPressed(Musou);
-        bool downHeld = m_Source.IsHeld(MoveDown), upHeld = m_Source.IsHeld(Interact);
-        bool jumpPressed = m_Source.WasPressed(Jump), attackPressed = m_Source.WasPressed(Attack);
-        bool actionReleased = m_Source.WasReleased(Jump) || m_Source.WasReleased(Attack) ||
-                              m_Source.WasReleased(MoveDown) || m_Source.WasReleased(Interact);
-        bool leftReleased = m_Source.WasReleased(MoveLeft), rightReleased = m_Source.WasReleased(MoveRight);
-        data.DirectSkillSlot = data.GetSkillButton(1).Pressed ? 1 :
-            data.GetSkillButton(2).Pressed ? 2 :
-            data.GetSkillButton(3).Pressed ? 3 : null;
+        bool leftHeld = IsActionPressed(MoveLeft), rightHeld = IsActionPressed(MoveRight);
+        bool leftPressed = IsActionJustPressed(MoveLeft), rightPressed = IsActionJustPressed(MoveRight);
+        bool jumpHeld = IsActionPressed(Jump), attackHeld = IsActionPressed(Attack);
+        bool musouPressed = IsActionJustPressed(Musou);
+        bool downHeld = IsActionPressed(MoveDown), upHeld = IsActionPressed(Interact);
+        bool jumpPressed = IsActionJustPressed(Jump), attackPressed = IsActionJustPressed(Attack);
+        bool actionReleased = IsActionJustReleased(Jump) || IsActionJustReleased(Attack) ||
+            IsActionJustReleased(MoveDown) || IsActionJustReleased(Interact);
+        bool leftReleased = IsActionJustReleased(MoveLeft), rightReleased = IsActionJustReleased(MoveRight);
         data.MusouRequested = musouPressed;
         bool jump = jumpHeld || jumpPressed;
         bool attack = attackHeld || attackPressed;
@@ -273,9 +268,8 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     public void Reset(HeroActionData data)
     {
         data.Time = 0;
-        data.DirectSkillSlot = null;
-        for (int slot = 1; slot <= 3; slot++)
-            data.SetSkillButton(slot, default);
+        data.ConsumedActions.Clear();
+        data.AttackRequested = false;
         data.LastTapTime = data.LastAttackAttempt = double.NegativeInfinity;
         data.LastKeyDirection = data.FacingAxis = data.MoveAxis = data.JumpCount = 0;
         data.LeftHeld = data.RightHeld = data.JumpHeld = data.AttackHeld = data.DownHeld = data.UpHeld = false;
@@ -285,12 +279,27 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
         data.AttackReadyAt = 0;
     }
 
-    /// <summary>采样技能槽原始事实，已活动技能在常规动作锁定时仍能收到后续输入。</summary>
-    /// <param name="data">本英雄动作数据。</param>
-    /// <param name="slot">从 1 开始的技能槽。</param>
+    /// <summary>查询逻辑动作当前是否按住；默认使用 Godot InputMap 与 Input 原生查询。</summary>
     /// <param name="action">输入映射名称。</param>
-    private void SampleSkillButton(HeroActionData data, int slot, string action) =>
-        data.SetSkillButton(slot, new(m_Source.WasPressed(action), m_Source.IsHeld(action), m_Source.WasReleased(action)));
+    /// <returns>当前按住时为真。</returns>
+    public bool IsActionPressed(string action) => m_Source.IsPressed(action);
+
+    /// <summary>查询本物理帧是否出现按下，包括同帧已经松开的短按。</summary>
+    /// <param name="action">输入映射名称。</param>
+    /// <returns>存在按下边沿时为真。</returns>
+    public bool IsActionJustPressed(string action) => m_Source.IsJustPressed(action);
+
+    /// <summary>查询本物理帧是否出现松开，包括同帧已经重新按住。</summary>
+    /// <param name="action">输入映射名称。</param>
+    /// <returns>存在松开边沿时为真。</returns>
+    public bool IsActionJustReleased(string action) => m_Source.IsJustReleased(action);
+
+    /// <summary>按角色消费一次动作按下；同一角色本帧不能重复消费，其他角色互不影响。</summary>
+    /// <param name="data">本角色的动作数据。</param>
+    /// <param name="action">任意动作映射名称。</param>
+    /// <returns>本帧存在尚未消费的按下边沿时为真。</returns>
+    public bool ConsumePress(HeroActionData data, string action) =>
+        IsActionJustPressed(action) && data.ConsumedActions.Add(action);
 
     /// <summary>同方向两次按下间隔严格小于窗口时奔跑。</summary>
     /// <param name="data">本英雄拥有的动作数据。</param>
@@ -307,13 +316,13 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     private sealed class GodotInputSource : IInputSource
     {
         /// <inheritdoc />
-        public bool IsHeld(string action) => Godot.Input.IsActionPressed(action);
+        public bool IsPressed(string action) => Godot.Input.IsActionPressed(action);
 
         /// <inheritdoc />
-        public bool WasPressed(string action) => Godot.Input.IsActionJustPressed(action);
+        public bool IsJustPressed(string action) => Godot.Input.IsActionJustPressed(action);
 
         /// <inheritdoc />
-        public bool WasReleased(string action) => Godot.Input.IsActionJustReleased(action);
+        public bool IsJustReleased(string action) => Godot.Input.IsActionJustReleased(action);
     }
 }
 
@@ -323,15 +332,15 @@ public interface IInputSource
     /// <summary>查询当前是否按住。</summary>
     /// <param name="action">Godot 动作映射名称。</param>
     /// <returns>当前按住时为 true。</returns>
-    bool IsHeld(string action);
+    bool IsPressed(string action);
 
     /// <summary>查询本帧是否刚按下，包括同帧结束的短按。</summary>
     /// <param name="action">Godot 动作映射名称。</param>
     /// <returns>存在按下边沿时为 true。</returns>
-    bool WasPressed(string action);
+    bool IsJustPressed(string action);
 
     /// <summary>查询本帧是否松开过，包括同帧重新按住。</summary>
     /// <param name="action">Godot 动作映射名称。</param>
     /// <returns>存在松开边沿时为 true。</returns>
-    bool WasReleased(string action);
+    bool IsJustReleased(string action);
 }

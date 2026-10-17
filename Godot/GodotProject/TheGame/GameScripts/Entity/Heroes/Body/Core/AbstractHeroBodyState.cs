@@ -48,26 +48,36 @@ namespace GameLogic.Heroes.Body
             return false;
         }
 
+        /// <summary>由当前状态开放动作输入窗口并提供匹配所需事实；具体组合归角色。</summary>
+        /// <param name="body">当前英雄身体事实。</param>
+        /// <param name="attacking">是否处于普通攻击。</param>
+        /// <param name="normalProgress">当前普攻从零开始的播放比例。</param>
+        /// <param name="airborne">是否处于空中，包括起跳尚未离地的那一帧。</param>
+        /// <returns>当前状态允许匹配新动作时为真；否则输出值不参与匹配。</returns>
+        public virtual bool TryGetActionInput(IHeroBody body, out bool attacking, out float normalProgress, out bool airborne)
+        {
+            attacking = false;
+            normalProgress = 0;
+            airborne = false;
+            return false;
+        }
+
         /// <summary>在空中：离地，或已起跳且仍在上升（含起跳那一帧还没离地）。</summary>
         protected static bool IsAirborne(IHeroBody body)
         {
             return !body.OnFloor || (body.ActionData.JumpCount > 0 && body.Velocity.Y < 0f);
         }
 
-        /// <summary>让角色提交技能请求，再以系统中的实际身体占用切换 GGF 状态。</summary>
+        /// <summary>根据已经激活的身体占用切换 GGF 状态，不解析角色输入。</summary>
         /// <param name="fsm">身体状态机。</param>
         /// <param name="body">英雄宿主。</param>
-        /// <param name="attacking">是否正在普攻。</param>
-        /// <param name="normalRatio">当前普攻帧比例。</param>
         /// <returns>已经切换到技能状态时为真。</returns>
-        protected bool TryStartSkill(IFsm<IHeroBody> fsm, IHeroBody body, bool attacking = false, float normalRatio = 0)
+        protected bool TryStartSkill(IFsm<IHeroBody> fsm, IHeroBody body)
         {
             if (body is not ISkillActor)
                 return false;
             var skills = body.GetSystem<SkillSystem>();
-            if (skills.BodySkill == null)
-                body.ProcessSkillInput(attacking, normalRatio, IsAirborne(body));
-            if (skills.BodySkill == null)
+            if (skills.BodySkillData == null)
                 return false;
             body.SetFacing(body.ActionData.MoveAxis);
             ChangeState(fsm, skills.BodyStateType);

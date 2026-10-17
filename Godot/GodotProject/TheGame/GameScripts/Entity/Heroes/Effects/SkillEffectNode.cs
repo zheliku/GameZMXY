@@ -29,8 +29,8 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     private SkillHitConfig m_Hit; // 借用伤害定义；无伤害特效为空。
     private IReadOnlyList<SkillTimelineConfig> m_Events; // 启动期建立的局部事件序列。
     private CombatantAttributes m_Attacker; // 特效生成时冻结的英雄属性。
-    private AttackInstance m_Attack; // 当前攻击编号对应的池化攻击包。
-    private SkillExecution m_Execution; // 验证效果回调仍属于同一次执行。
+    private AttackData m_AttackData; // 当前攻击编号对应的池化攻击包。
+    private SkillData m_SkillData; // 验证效果回调仍属于同一次执行。
     private Action m_Completed; // 可选的本次效果完成通知，不保存角色节点。
     private Action<SkillEffectNode> m_Finished; // 英雄释放本次表现所有权。
     private int m_Direction, m_NextEvent, m_RemainingHits; // 朝向、下一个事件、整个特效的剩余命中数。
@@ -103,12 +103,12 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     public void OnRelease()
     {
         SetPhysicsProcess(false);
-        if (m_Attack != null)
-            ReferencePool.Release(m_Attack);
-        m_Attack = null;
+        if (m_AttackData != null)
+            ReferencePool.Release(m_AttackData);
+        m_AttackData = null;
         m_Definition = null;
         m_Hit = null;
-        m_Execution = null;
+        m_SkillData = null;
         m_Events = null;
         m_Finished = null;
         m_Completed = null;
@@ -121,18 +121,18 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
 
     /// <summary>显示一份新的特效；世界位置固定，不跟随角色后续移动。</summary>
     /// <param name="definition">特效定义。</param>
-    /// <param name="execution">当前施放身份。</param>
+    /// <param name="data">当前施放身份。</param>
     /// <param name="position">世界位置。</param>
     /// <param name="direction">英雄朝向。</param>
     /// <param name="attacker">英雄属性快照。</param>
     /// <param name="powerMultiplier">无双倍率。</param>
     /// <param name="finished">完成后的回收回调。</param>
     /// <param name="completed">本次规则效果的完成通知。</param>
-    public void Show(SkillEffectConfig definition, SkillExecution execution, Vector2 position, int direction,
+    public void Show(SkillEffectConfig definition, SkillData data, Vector2 position, int direction,
         CombatantAttributes attacker, float powerMultiplier, Action<SkillEffectNode> finished, Action completed = null)
     {
         m_Definition = definition;
-        m_Execution = execution;
+        m_SkillData = data;
         m_Attacker = attacker;
         m_Direction = direction;
         m_PowerMultiplier = powerMultiplier;
@@ -163,11 +163,11 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     /// <summary>创建独立攻击编号；不重置整个特效的命中预算。</summary>
     private void NewAttack()
     {
-        if (m_Attack != null)
-            ReferencePool.Release(m_Attack);
-        m_Attack = m_Hit == null
+        if (m_AttackData != null)
+            ReferencePool.Release(m_AttackData);
+        m_AttackData = m_Hit == null
             ? null
-            : AttackInstance.Create((int)m_Hit.Id, m_Attacker,
+            : AttackData.Create((int)m_Hit.Id, m_Attacker,
                 SkillSystem.CalculatePower(m_Hit, m_Attacker.Power, m_PowerMultiplier), m_Hit.DamageKind,
                 m_Hit.Knockback, m_Direction, 0, SoundId.None);
         m_RepeatAt = double.PositiveInfinity;
@@ -177,11 +177,11 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     /// <param name="area">进入或持续重叠的区域。</param>
     private void OnAreaEntered(Area2D area)
     {
-        if (m_Attack == null || m_RemainingHits <= 0 || m_Shape.Disabled ||
+        if (m_AttackData == null || m_RemainingHits <= 0 || m_Shape.Disabled ||
             area is not HurtBoxNode { OwnerEntity: { IsAlive: true, Side: CombatSide.Monster } target } ||
-            !m_Attack.TryRegisterHit(target.GetInstanceId()))
+            !m_AttackData.TryRegisterHit(target.GetInstanceId()))
             return;
-        var result = target.ReceiveHit(m_Attack, m_Attacker.ActorId.Value);
+        var result = target.ReceiveHit(m_AttackData, m_Attacker.ActorId.Value);
         if (result.IsMiss)
             return;
         m_RemainingHits--;
@@ -192,7 +192,7 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     /// <summary>完成后由英雄统一移除并归还对象池。</summary>
     private void Finish()
     {
-        if (this.GetSystem<SkillSystem>().IsActive(m_Execution))
+        if (this.GetSystem<SkillSystem>().IsActive(m_SkillData))
             m_Completed?.Invoke();
         m_Finished(this);
     }

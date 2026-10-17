@@ -47,15 +47,15 @@ namespace GameLogic.Battle.Tests
             in CombatantAttributes defender, float missRoll, float critRoll) // 结算并立即归还攻击包。
         {
             // 从对象池创建一次性攻击包，确保测试覆盖与游戏内相同的生命周期。
-            AttackInstance attack = AttackInstance.Create(0, attacker, power, kind, Vector2.Zero, 1, 0, SoundId.None);
+            AttackData data = AttackData.Create(0, attacker, power, kind, Vector2.Zero, 1, 0, SoundId.None);
             try
             {
-                return new CombatSystem(BattleArchitecture.Instance).Calculate(attack, defender, missRoll, critRoll);
+                return new CombatSystem(BattleArchitecture.Instance).Calculate(data, defender, missRoll, critRoll);
             }
             finally
             {
                 // 无论结算成功或抛错都归还攻击包，避免污染后续测试。
-                ReferencePool.Release(attack);
+                ReferencePool.Release(data);
             }
         }
 
@@ -272,18 +272,18 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void Knockback_DirectionAndPerSideScale()
         {
-            AttackInstance attack = AttackInstance.Create(1004, Hero(), 10f, DamageKind.Physics, new Vector2(6, -5), -1, 0,
+            AttackData data = AttackData.Create(1004, Hero(), 10f, DamageKind.Physics, new Vector2(6, -5), -1, 0,
                 SoundId.None);
             try
             {
                 // 怪物被击退：X × 30、Y × 15，方向随出招朝左
-                Assert.Equal(new Vector2(-180, -75), new CombatSystem(BattleArchitecture.Instance).KnockbackVelocity(attack, CombatSide.Monster));
+                Assert.Equal(new Vector2(-180, -75), new CombatSystem(BattleArchitecture.Instance).KnockbackVelocity(data, CombatSide.Monster));
                 // 英雄被击退：X × 25
-                Assert.Equal(new Vector2(-150, -75), new CombatSystem(BattleArchitecture.Instance).KnockbackVelocity(attack, CombatSide.Hero));
+                Assert.Equal(new Vector2(-150, -75), new CombatSystem(BattleArchitecture.Instance).KnockbackVelocity(data, CombatSide.Hero));
             }
             finally
             {
-                ReferencePool.Release(attack);
+                ReferencePool.Release(data);
             }
         }
 
@@ -291,20 +291,20 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void AttackData_OneHitPerTarget_AndClearedOnRelease()
         {
-            AttackInstance attack = AttackInstance.Create(1001, Hero(), 8f, DamageKind.Physics, Vector2.Zero, 1, 0,
+            AttackData attackData = AttackData.Create(1001, Hero(), 8f, DamageKind.Physics, Vector2.Zero, 1, 0,
                 SoundId.None);
-            Assert.True(attack.TryRegisterHit(42));
-            Assert.False(attack.TryRegisterHit(42));
-            Assert.True(attack.TryRegisterHit(43));
-            ReferencePool.Release(attack);
+            Assert.True(attackData.TryRegisterHit(42));
+            Assert.False(attackData.TryRegisterHit(42));
+            Assert.True(attackData.TryRegisterHit(43));
+            ReferencePool.Release(attackData);
 
             // 同类型复用池内对象：必须是干净的
-            AttackInstance reused = AttackInstance.Create(1002, Hero(), 9f, DamageKind.Magic, Vector2.Zero, 1, 0,
+            AttackData reusedData = AttackData.Create(1002, Hero(), 9f, DamageKind.Magic, Vector2.Zero, 1, 0,
                 SoundId.None);
-            Assert.True(reused.TryRegisterHit(42));
-            Assert.Equal(1002, reused.AttackId);
-            Assert.Equal(DamageKind.Magic, reused.Kind);
-            ReferencePool.Release(reused);
+            Assert.True(reusedData.TryRegisterHit(42));
+            Assert.Equal(1002, reusedData.AttackId);
+            Assert.Equal(DamageKind.Magic, reusedData.Kind);
+            ReferencePool.Release(reusedData);
         }
     }
 }

@@ -209,9 +209,9 @@ namespace GameLogic.Save
         }
 
         /// <summary>把快照写入框架当前存档并提交；返回值即最近一次写入任务。</summary>
-        /// <param name="snapshot">当前版本的档案快照。</param>
+        /// <param name="snapshotData">当前版本的档案快照。</param>
         /// <returns>是否写入成功。</returns>
-        private Task<bool> WriteSnapshotAsync(GameData snapshot)
+        private Task<bool> WriteSnapshotAsync(GameData snapshotData)
         {
             var archive = this.GetUtility<GameArchiveUtility>();
             GameData data = archive.CurrentData;
@@ -224,13 +224,13 @@ namespace GameLogic.Save
 
             // 框架在调用时刻序列化；目录摘要与档案快照一起提交。
             archive.CurrentCatalogue.Name = this.GetModel<ConfigurationModel>().Tables.TbHeroConfig
-                .Get(snapshot.ActiveHeroId).NameCn;
+                .Get(snapshotData.ActiveHeroId).NameCn;
             archive.CurrentCatalogue.SavedAtUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             data.SaveVersion = GameData.CurrentVersion;
-            data.ActiveHeroId = snapshot.ActiveHeroId;
-            data.Heroes = snapshot.Heroes;
-            data.Soul = snapshot.Soul;
-            data.EquipmentItems = snapshot.EquipmentItems;
+            data.ActiveHeroId = snapshotData.ActiveHeroId;
+            data.Heroes = snapshotData.Heroes;
+            data.Soul = snapshotData.Soul;
+            data.EquipmentItems = snapshotData.EquipmentItems;
             m_PendingWrite = NotifyWriteAsync(archive.OverWriteAsync());
             return m_PendingWrite;
         }

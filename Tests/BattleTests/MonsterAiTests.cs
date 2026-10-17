@@ -582,16 +582,16 @@ namespace GameLogic.Battle.Tests
         {
             var system = Ai;
             MonsterBodyParams parameters = new() { Attacks = [Priority(0, 1, 0, 400, 10)] };
-            MonsterAiData first = new(1), second = new(1);
-            system.Reset(first, parameters, () => 0);
-            system.Reset(second, parameters, () => 0);
-            system.MarkUsed(first, parameters, 0, () => 0);
-            Assert.Equal(-1, system.GetHighestUsableAttackPriority(first, parameters, Hero(100), 1));
-            Assert.Equal(1, system.GetHighestUsableAttackPriority(second, parameters, Hero(100), 1));
-            system.Reset(second, parameters, () => 0);
-            Assert.Equal(-1, system.GetHighestUsableAttackPriority(first, parameters, Hero(100), 1));
-            system.AdvanceCooldowns(first, 10);
-            Assert.Equal(1, system.GetHighestUsableAttackPriority(first, parameters, Hero(100), 1));
+            MonsterAiData firstData = new(1), secondData = new(1);
+            system.Reset(firstData, parameters, () => 0);
+            system.Reset(secondData, parameters, () => 0);
+            system.MarkUsed(firstData, parameters, 0, () => 0);
+            Assert.Equal(-1, system.GetHighestUsableAttackPriority(firstData, parameters, Hero(100), 1));
+            Assert.Equal(1, system.GetHighestUsableAttackPriority(secondData, parameters, Hero(100), 1));
+            system.Reset(secondData, parameters, () => 0);
+            Assert.Equal(-1, system.GetHighestUsableAttackPriority(firstData, parameters, Hero(100), 1));
+            system.AdvanceCooldowns(firstData, 10);
+            Assert.Equal(1, system.GetHighestUsableAttackPriority(firstData, parameters, Hero(100), 1));
             Assert.NotSame(MonsterAiPreset.Patrol.CreateStates()[0], MonsterAiPreset.Patrol.CreateStates()[0]);
         }
 

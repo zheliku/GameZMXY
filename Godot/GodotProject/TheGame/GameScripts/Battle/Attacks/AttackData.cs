@@ -7,8 +7,8 @@ using GameFramework;
 
 namespace GameLogic.Battle.Attacks
 {
-    /// <summary>一次出招的池化实例：冻结攻击输入并对目标去重；出招创建，收招归还，命中方不得保留引用。</summary>
-    public sealed class AttackInstance : IReference
+    /// <summary>一次出招的池化数据：保存出招快照与命中记录；攻击方创建并归还，命中方只在结算期间借用。</summary>
+    public sealed class AttackData : IReference
     {
         private readonly HashSet<ulong> m_HitTargets = new HashSet<ulong>(); // 本招已命中的目标实例号，防止重复结算。
 
@@ -46,10 +46,10 @@ namespace GameLogic.Battle.Attacks
         /// <param name="hitProtect">本次命中增加的受击保护值。</param>
         /// <param name="hitSoundId">命中音效编号。</param>
         /// <returns>已装填并由引用池管理的攻击数据包。</returns>
-        public static AttackInstance Create(int attackId, in CombatantAttributes attacker, float power, DamageKind kind,
+        public static AttackData Create(int attackId, in CombatantAttributes attacker, float power, DamageKind kind,
             Vector2 knockback, int direction, int hitProtect, SoundId hitSoundId)
         {
-            AttackInstance data = ReferencePool.Acquire<AttackInstance>();
+            AttackData data = ReferencePool.Acquire<AttackData>();
             data.AttackId = attackId;
             data.Attacker = attacker;
             data.Power = power;

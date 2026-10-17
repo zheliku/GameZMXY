@@ -37,7 +37,7 @@ namespace GameLogic.Entity
 
         [Export] private Node2D m_HitBoxRoot; // 攻击判定区镜像容器，随朝向翻转动画写入的位置。
 
-        private AttackInstance m_ActiveAttack; // 当前招式的攻击包；出招装填、收招归还，null 表示未出招。
+        private AttackData m_ActiveAttackData; // 当前招式的攻击包；出招装填、收招归还，null 表示未出招。
 
         private string m_RequestedAnim; // 最近一次请求播放的动画名；同名请求不重播，OnShow 时清空。
 
@@ -371,10 +371,10 @@ namespace GameLogic.Entity
         /// </summary>
         public void ReleaseAttack()
         {
-            if (m_ActiveAttack != null)
+            if (m_ActiveAttackData != null)
             {
-                ReferencePool.Release(m_ActiveAttack);
-                m_ActiveAttack = null;
+                ReferencePool.Release(m_ActiveAttackData);
+                m_ActiveAttackData = null;
             }
         }
 
@@ -382,21 +382,21 @@ namespace GameLogic.Entity
         /// 受击结算：属性快照 + 攻击包交 DamageResult，扣血、击退、广播 DamageDealtEventArgs。
         /// 公式不写在这里（GameScripts/AGENTS.md：命中回调不写公式）。
         /// </summary>
-        /// <param name="attack">调用方拥有的攻击快照，仅在结算期间读取。</param>
+        /// <param name="data">调用方拥有的攻击快照，仅在结算期间读取。</param>
         /// <param name="attackerEntityId">攻击方运行编号；无实体来源时为零。</param>
         /// <returns>实际伤害与闪避、暴击结果。</returns>
-        public DamageResult ReceiveHit(AttackInstance attack, int attackerEntityId)
+        public DamageResult ReceiveHit(AttackData data, int attackerEntityId)
         {
             if (Dead || Invulnerable)
             {
-                return DamageResult.Missed(attack.Kind);
+                return DamageResult.Missed(data.Kind);
             }
 
             BattleConfig config = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
             CombatantAttributes defender = CaptureCombatAttributes();
             float missRoll = GD.Randf();
             float critRoll = GD.Randf();
-            DamageResult result = this.GetSystem<CombatSystem>().Calculate(attack, defender, missRoll, critRoll);
+            DamageResult result = this.GetSystem<CombatSystem>().Calculate(data, defender, missRoll, critRoll);
 
             bool died = false;
             if (!result.IsMiss)
@@ -404,7 +404,7 @@ namespace GameLogic.Entity
                 // 死亡事实唯一置位点：只在生命归零的那一次为真，之后保持到下次显示复位。
                 died = ApplyDamage(result.Damage);
                 Dead |= died;
-                OnHurt(attack, result, this.GetSystem<CombatSystem>().KnockbackVelocity(attack, Side), attackerEntityId);
+                OnHurt(data, result, this.GetSystem<CombatSystem>().KnockbackVelocity(data, Side), attackerEntityId);
             }
 
             GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == CombatSide.Hero, HeadPosition));
@@ -479,16 +479,16 @@ namespace GameLogic.Entity
             CombatantAttributes attributes = CaptureCombatAttributes();
             float power = attributes.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf())
                 + MathF.Round(Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf()), MidpointRounding.AwayFromZero);
-            m_ActiveAttack = AttackInstance.Create(attack.Id, attributes, power * powerMultiplier, attack.DamageKind, attack.Knockback, Facing,
+            m_ActiveAttackData = AttackData.Create(attack.Id, attributes, power * powerMultiplier, attack.DamageKind, attack.Knockback, Facing,
                 attack.HitProtect, attack.HitSoundId);
         }
 
         /// <summary>接管一个已经由技能规则计算好的池化攻击包。</summary>
-        /// <param name="attack">所有权转交给本实体的攻击包。</param>
-        protected void SetAttack(AttackInstance attack)
+        /// <param name="data">所有权转交给本实体的攻击包。</param>
+        protected void SetAttack(AttackData data)
         {
             ReleaseAttack();
-            m_ActiveAttack = attack;
+            m_ActiveAttackData = data;
         }
 
         /// <summary>处理持续重叠的受击盒；新技能攻击编号不依赖再次进入信号。</summary>
@@ -508,7 +508,7 @@ namespace GameLogic.Entity
         private void OnHitBoxAreaEntered(Area2D area)
         {
             // 只处理有效攻击包和受击盒，过滤判定窗口外或无关区域。
-            if (m_ActiveAttack == null || area is not HurtBoxNode hurtBox)
+            if (m_ActiveAttackData == null || area is not HurtBoxNode hurtBox)
             {
                 return;
             }
@@ -520,18 +520,18 @@ namespace GameLogic.Entity
                 return;
             }
 
-            // AttackInstance 负责一招一目标去重。
-            if (!m_ActiveAttack.TryRegisterHit(target.GetInstanceId()))
+            // AttackData 负责一招一目标去重。
+            if (!m_ActiveAttackData.TryRegisterHit(target.GetInstanceId()))
             {
                 return;
             }
 
             // 命中后播放音效，并将有效命中收益交给具体角色。
-            DamageResult result = target.ReceiveHit(m_ActiveAttack, Id);
+            DamageResult result = target.ReceiveHit(m_ActiveAttackData, Id);
             if (!result.IsMiss)
             {
-                PlaySound(m_ActiveAttack.HitSoundId);
-                OnHitLanded(m_ActiveAttack, result);
+                PlaySound(m_ActiveAttackData.HitSoundId);
+                OnHitLanded(m_ActiveAttackData, result);
             }
         }
 
@@ -545,17 +545,17 @@ namespace GameLogic.Entity
         /// </summary>
         /// <param name="knockback">击退速度 px/s（已按侧别换算，方向已含攻击方朝向）</param>
         /// <param name="attackerEntityId">攻击方实体编号（0 = 无实体来源，如 Buff/调试伤害）；怪物用它锁定仇恨</param>
-        /// <param name="attack">本次攻击快照，不得保留池化引用。</param>
+        /// <param name="data">本次攻击快照，不得保留池化引用。</param>
         /// <param name="result">已完成的伤害结算结果。</param>
-        protected abstract void OnHurt(AttackInstance attack, DamageResult result, Vector2 knockback, int attackerEntityId);
+        protected abstract void OnHurt(AttackData data, DamageResult result, Vector2 knockback, int attackerEntityId);
 
         /// <summary>
         /// 命中他人钩子（未闪避时）：攻击方收益的扩展点，英雄按实际伤害积累无双。
         /// 基类不实现任何收益：收益规则属于具体角色，不进攻击包、不进基类。
         /// </summary>
-        /// <param name="attack">本次攻击快照，仅在回调内使用。</param>
+        /// <param name="data">本次攻击快照，仅在回调内使用。</param>
         /// <param name="result">目标已完成的伤害结算结果。</param>
-        protected virtual void OnHitLanded(AttackInstance attack, DamageResult result)
+        protected virtual void OnHitLanded(AttackData data, DamageResult result)
         {
         }
 

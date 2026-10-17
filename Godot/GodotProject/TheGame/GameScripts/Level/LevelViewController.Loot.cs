@@ -71,27 +71,27 @@ public partial class LevelViewController
     /// <summary>创建关卡拥有的地面物品，实例属性在落地之前已经确定。</summary>
     /// <param name="position">死亡位置附近。</param>
     /// <param name="pickupId">恢复品或空。</param>
-    /// <param name="equipment">装备或空。</param>
-    private void ShowGroundItem(Vector2 position, PickupId pickupId, EquipmentInstance equipment)
+    /// <param name="data">装备或空。</param>
+    private void ShowGroundItem(Vector2 position, PickupId pickupId, EquipmentData data)
     {
         var item = NodePool.Instance.Get<GroundItemNode>(ResourcesCollectionConstant.Entitys_ground_item, this)
                    ?? throw new InvalidOperationException("地面物品节点池未注册。");
         m_GroundItems.Add(item);
-        item.Show(position, pickupId, equipment,
+        item.Show(position, pickupId, data,
             TryCollectGroundItem, OnGroundItemFinished);
     }
 
     /// <summary>接触时立即恢复或领取装备；满包保留地面物品，结局后拒绝入账。</summary>
     /// <param name="hero">物品检测到的实际接触者；必须属于本会话。</param>
     /// <param name="pickupId">接触的恢复品。</param>
-    /// <param name="equipment">接触的实际装备。</param>
+    /// <param name="data">接触的实际装备。</param>
     /// <returns>是否完成领取。</returns>
-    private bool TryCollectGroundItem(AbstractHeroEntity hero, PickupId pickupId, EquipmentInstance equipment)
+    private bool TryCollectGroundItem(AbstractHeroEntity hero, PickupId pickupId, EquipmentData data)
     {
         if (LevelModel.Outcome.Value != LevelOutcome.Running || !ReferenceEquals(hero, m_Player) || !hero.IsAlive)
             return false;
-        if (equipment != null)
-            return this.GetSystem<LevelSystem>().TryCollectEquipment(equipment);
+        if (data != null)
+            return this.GetSystem<LevelSystem>().TryCollectEquipment(data);
         var pickup = this.GetModel<ConfigurationModel>().Tables.TbPickupConfig.Get(pickupId);
         if (pickup.Effect == PickupEffect.Health)
             this.GetSystem<HeroSystem>().Heal(pickup.RestoreAmount);

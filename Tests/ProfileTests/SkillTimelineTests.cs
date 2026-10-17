@@ -24,20 +24,20 @@ public sealed class SkillTimelineTests
         var scope = new TestGameScope(1, [(1, 0)], 9999, 20);
         var actor = new Motion(scope);
         var skills = scope.GetSystem<SkillSystem>();
-        skills.SelectSkillSet(SkillTestDefinitions.Wukong(), actor);
-        Assert.False(skills.TryActivate(SkillId.FlameThrust, actor, 0));
+        skills.SelectSkills(1, SkillTestDefinitions.Wukong());
+        Assert.False(skills.TryActivate(SkillId.FlameThrust, actor));
         skills.Learn(SkillId.FlameThrust);
         int mana = scope.Hero.Mp.Value;
-        Assert.False(skills.TryActivate(SkillId.FlameThrust, actor, 0));
+        Assert.False(skills.TryActivate(SkillId.FlameThrust, actor));
         Assert.Equal(mana, scope.Hero.Mp.Value);
         actor.OnFloor = true;
         scope.Hero.Mp.Value = 19;
-        Assert.False(skills.TryActivate(SkillId.FlameThrust, actor, 0));
+        Assert.False(skills.TryActivate(SkillId.FlameThrust, actor));
         Assert.Equal(19, scope.Hero.Mp.Value);
         scope.Hero.Mp.Value = 20;
-        Assert.True(skills.TryActivate(SkillId.FlameThrust, actor, 0));
+        Assert.True(skills.TryActivate(SkillId.FlameThrust, actor));
         Assert.Equal(0, scope.Hero.Mp.Value);
-        Assert.False(skills.TryActivate(SkillId.FlameThrust, actor, 0));
+        Assert.False(skills.TryActivate(SkillId.FlameThrust, actor));
     }
 
     /// <summary>突刺状态独立更新四次攻击编号与三次减速，结束后保留下一段普攻衔接。</summary>
@@ -57,7 +57,7 @@ public sealed class SkillTimelineTests
         Assert.Equal(4, skill.Actor.Attacks.Count);
         Assert.InRange(skill.Actor.Velocity.X, 184.31, 184.33);
         skill.Advance(.2f);
-        Assert.True(skill.Execution.Completed);
+        Assert.True(skill.SkillData.Completed);
         Assert.Equal(0, skill.Actor.ActionData.LastGroundSegment);
     }
 
@@ -67,10 +67,10 @@ public sealed class SkillTimelineTests
     {
         using var skill = new SkillFixture(SkillId.FlameThrust);
         Assert.Single(skill.Actor.Attacks);
-        skill.System.StopAll(skill.Actor);
+        skill.System.CancelSkill();
         skill.Advance(.3f);
         Assert.Single(skill.Actor.Attacks);
-        Assert.Null(skill.System.BodySkill);
+        Assert.Null(skill.System.BodySkillData);
     }
 
     /// <summary>升龙与风暴由各自状态占用第二次跳跃，并设置表中的普攻禁止时间。</summary>
@@ -99,7 +99,7 @@ public sealed class SkillTimelineTests
         Assert.Empty(skill.Actor.Effects);
         for (int frame = 0; frame < fps; frame++)
             skill.Advance(1f / fps);
-        Assert.True(skill.Execution.Completed);
+        Assert.True(skill.SkillData.Completed);
         Assert.Single(skill.Actor.Effects);
         Assert.Equal(SkillEffectId.BlazingFlashTrail, skill.Actor.Effects[0]);
         Assert.False(skill.System.IsInvulnerable(.08));
@@ -120,15 +120,15 @@ public sealed class SkillTimelineTests
         skill.Actor.OnFloor = true;
         skill.Advance(.1f);
         Assert.Contains(SkillEffectId.FireDemonLanding, skill.Actor.Effects);
-        Assert.False(skill.Execution.Completed);
+        Assert.False(skill.SkillData.Completed);
         double frozen = skill.Actor.AnimationTime;
         skill.Advance(5);
         Assert.Equal(frozen, skill.Actor.AnimationTime);
         skill.Actor.Completions[SkillEffectId.FireDemonLanding]();
         skill.Advance(.01f);
-        Assert.True(skill.Execution.Completed);
-        Assert.False(skill.Execution.GravitySuspended);
-        Assert.False(skill.Execution.InputLocked);
+        Assert.True(skill.SkillData.Completed);
+        Assert.False(skill.SkillData.GravitySuspended);
+        Assert.False(skill.SkillData.InputLocked);
     }
 
     /// <summary>寻敌成功后定位、生成九连斩并冻结，同帧特效事件不能丢失。</summary>
@@ -146,8 +146,8 @@ public sealed class SkillTimelineTests
         Assert.Contains(SkillEffectId.FireDemonCombo, skill.Actor.Effects);
         Assert.InRange(skill.Actor.AnimationTime, .2499, .2501);
         Assert.DoesNotContain(SkillEffectId.FireDemonDescent, skill.Actor.Effects);
-        Assert.True(skill.Execution.GravitySuspended);
-        Assert.True(skill.Execution.InputLocked);
+        Assert.True(skill.SkillData.GravitySuspended);
+        Assert.True(skill.SkillData.InputLocked);
         for (int frame = 0; frame < 3 * fps; frame++)
             skill.Advance(1f / fps);
         Assert.Contains(SkillEffectId.FireDemonDescent, skill.Actor.Effects);
@@ -162,17 +162,17 @@ public sealed class SkillTimelineTests
         skill.Actor.OnFloor = true;
         skill.Advance(.1f);
         var oldCompletion = skill.Actor.Completions[SkillEffectId.FireDemonLanding];
-        skill.System.StopAll(skill.Actor);
+        skill.System.CancelSkill();
         skill.Advance(.01f);
         skill.Scope.Hero.Mp.Value = 100;
-        Assert.True(skill.System.TryActivate(SkillId.FireDemonSlash, skill.Actor, skill.Actor.ActionData.Time));
+        Assert.True(skill.System.TryActivate(SkillId.FireDemonSlash, skill.Actor));
         skill.Advance(.01f);
         double newTime = skill.Actor.AnimationTime;
         oldCompletion();
         skill.Advance(.01f);
         Assert.InRange(skill.Actor.AnimationTime, newTime, newTime + .011);
-        Assert.NotNull(skill.System.BodySkill);
-        Assert.False(skill.System.BodySkill.Completed);
+        Assert.NotNull(skill.System.BodySkillData);
+        Assert.False(skill.System.BodySkillData.Completed);
     }
 
     /// <summary>原版不同招式的取整位置不同，无双最后作用。</summary>
@@ -201,7 +201,7 @@ public sealed class SkillTimelineTests
         /// <summary>真实技能系统。</summary>
         public SkillSystem System => Scope.GetSystem<SkillSystem>();
         /// <summary>借用本次开始的执行身份。</summary>
-        public SkillExecution Execution { get; }
+        public SkillData SkillData { get; }
 
         /// <summary>装配并直接进入指定技能自己的状态。</summary>
         /// <param name="id">悟空招式。</param>
@@ -212,11 +212,11 @@ public sealed class SkillTimelineTests
         {
             Actor = new Motion(Scope) { Target = target, OnFloor = true, Velocity = velocity ?? Vector2.Zero };
             Actor.ActionData.JumpCount = jumpCount;
-            System.SelectSkillSet(SkillTestDefinitions.Wukong(), Actor);
+            System.SelectSkills(1, SkillTestDefinitions.Wukong());
             System.Learn(id);
             Scope.Hero.Mp.Value = 100;
-            Assert.True(System.TryActivate(id, Actor, 0));
-            Execution = System.BodySkill;
+            Assert.True(System.TryActivate(id, Actor));
+            SkillData = System.BodySkillData;
             Actor.OnFloor = false;
             m_Fsm = m_Manager.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), Actor,
                 new HeroGroundState(), new HeroAirState(), new HeroHurtState(), new HeroDeathState(),
@@ -253,10 +253,6 @@ public sealed class SkillTimelineTests
         public int AttackSegment => -1;
         /// <inheritdoc />
         public bool HasPendingHurt => false;
-        /// <inheritdoc />
-        public bool TryStartAttack(bool attacking, float normalRatio, bool airborne) => false;
-        /// <inheritdoc />
-        public void ProcessSkillInput(bool attacking, float normalRatio, bool airborne) { }
         /// <inheritdoc />
         public bool TryDropThroughPlatform() => false;
         /// <inheritdoc />
@@ -304,7 +300,7 @@ public sealed class SkillTimelineTests
         /// <inheritdoc />
         public void NewSkillAttack(SkillHitId hit) => Attacks.Add(hit);
         /// <inheritdoc />
-        public void SpawnSkillEffect(SkillEffectId effect, SkillExecution execution, Vector2 position, Action completed = null)
+        public void SpawnSkillEffect(SkillEffectId effect, SkillData data, Vector2 position, Action completed = null)
         {
             Effects.Add(effect);
             if (completed != null)

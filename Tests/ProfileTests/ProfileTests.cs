@@ -218,13 +218,13 @@ namespace GameLogic.Profile.Tests
         public void Mapper_RoundTripsThroughJson()
         {
             TestGameScope playerModel = new(1, new[] { (1, 472) }, 42, 25);
-            GameData snapshot = playerModel.CaptureSaveData();
+            GameData snapshotData = playerModel.CaptureSaveData();
             playerModel.GetSystem<ProfileSystem>().AddSoul(100);
-            Assert.Equal(42, snapshot.Soul);
+            Assert.Equal(42, snapshotData.Soul);
 
-            string json = JsonConvert.SerializeObject(snapshot);
-            GameData loaded = JsonConvert.DeserializeObject<GameData>(json);
-            TestGameScope restored = TestGameScope.FromSaveData(loaded, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
+            string json = JsonConvert.SerializeObject(snapshotData);
+            GameData loadedData = JsonConvert.DeserializeObject<GameData>(json);
+            TestGameScope restored = TestGameScope.FromSaveData(loadedData, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
             Assert.Equal(42, restored.Profile.Soul.Value);
             Assert.Equal((4, 37), (restored.Profile.Level, restored.Profile.Experience));
             Assert.DoesNotContain("\"Player\"", json);
@@ -237,14 +237,14 @@ namespace GameLogic.Profile.Tests
         public void Mapper_RollsBackToSnapshot()
         {
             TestGameScope playerModel = new(1, new[] { (1, 0) }, 5, 25);
-            GameData snapshot = playerModel.CaptureSaveData();
+            GameData data = playerModel.CaptureSaveData();
             ProfileModel progression = playerModel.Profile;
             List<int> levels = new();
             progression.Progress.Register(_ => levels.Add(progression.Level));
 
             TestTables.ForProfile(progression).AddExperience(400);
             playerModel.GetSystem<ProfileSystem>().AddSoul(50);
-            playerModel.RestoreCheckpoint(snapshot);
+            playerModel.RestoreCheckpoint(data);
 
             Assert.Same(progression, playerModel.Profile);
             Assert.Equal((1, 5), (progression.Level, playerModel.Profile.Soul.Value));

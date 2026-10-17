@@ -1,6 +1,6 @@
 # 项目导览
 
-唯一规范是 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md)。本页记录当前实现；数值看 [OfficialReference](OfficialReference.md)，素材看 [LegacyAssetMap](LegacyAssetMap.md)，验证命令和结果看 [Validation](Validation.md)。
+唯一规范是 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md)。本页记录当前实现；数值看 [OfficialReference](OfficialReference.md)，素材看 [LegacyAssetMap](LegacyAssetMap.md)，验证命令和结果看 [Validation](Validation.md)。修改前先读 [沟通理解与当前方向](WorkingNotes.md)，其中保存最新意图及设计判断。
 
 ## 启动与返回
 
@@ -78,7 +78,7 @@ flowchart TD
 | 状态源 | 观察入口 |
 | --- | --- |
 | HeroModel | Level、Hp / Mp / Ws / MaxWs / WsActive、全部 16 项最终属性 |
-| ProfileModel | Progress、Slots、Soul、Items；GetProgress/GetSlots(heroId) 返回指定英雄的同一绑定 |
+| ProfileModel | Progress、Slots、Soul、EquipmentDatas；GetProgress/GetSlots(heroId) 返回指定英雄的同一绑定 |
 | SaveModel | Directory、ManualSave |
 | LevelModel | Outcome、TravelAvailable |
 
@@ -123,7 +123,9 @@ Event 目录只保留 Combat、Save：DamageDealt 用于伤害/闪避反馈，Mo
 
 ## 配置、存档和场景数据
 
-HeroLoadout、PlayerModel、SaveLoadResult 这类只转交可直接获取对象的包装已删除。保留 CombatantAttributes（冻结已发攻击）、GameData（检查点 DTO）、LevelResult（冻结成绩）。BattleHudData / InventoryFormData 只传英雄与场景表现上下文，不传共享 Model；HeroProgressionState / EquippedItems 是模型内关联字段的一次提交值，防止观察者看到半次更新；HeroActionData 和 MonsterAiData 归各实体自己的输入/FSM。这些对象有独立职责，不按名字含 Data 就机械合并。
+HeroLoadout、PlayerModel、SaveLoadResult 这类只转交可直接获取对象的包装已删除。保留 CombatantAttributes（冻结已发攻击）、GameData（检查点 DTO）、LevelResult（冻结成绩）。BattleFormData / InventoryFormData 只传英雄与场景表现上下文，不传共享 Model；HeroProgressionState / EquippedItems 是模型内关联字段的一次提交值，防止观察者看到半次更新；HeroActionData 和 MonsterAiData 归各实体自己的输入/FSM。这些对象有独立职责，不按名字含 Data 就机械合并。
+
+[AttackData](../Godot/GodotProject/TheGame/GameScripts/Battle/Attacks/AttackData.cs) 保存一次出招的属性快照、威力、击退与命中去重记录，由出招实体或独立特效创建并归还 GGF 引用池，受击方只在结算期间借用。[EquipmentData](../Godot/GodotProject/TheGame/GameScripts/Equipment/EquipmentData.cs) 保存一件装备的 InstanceId、定义编号和已抽取属性，由 ProfileModel 持有，掉落未拾取前由地面节点持有；UI 借用同一份数据。InstanceId 区分同名的不同装备；存档仍使用独立 EquipmentSaveData，配置范围校验归 SaveDataUtility。DamageResult、MonsterSpawn、SkillDefinition 等名称已经表达结果、出生参数和登记职责，保留原名。
 
 读档：SaveSystem → ArchiveUtility → GameData → SaveDataUtility.Validate → ProcedureLoadGame 创建并注册 ProfileModel、ProfileSystem、EquipmentSystem。加载仅返回 DTO 与 Loaded/Created 来源，后续访问直接 GetModel。
 
@@ -150,18 +152,20 @@ GroundItemNode 使用场景中的固定 32×40 盒，不读图片像素或创建
 
 根窗口负责生命周期、订退、暂停和业务请求。只在面板具有完整职责，或控件确实复用、包含独立交互时拆脚本；Footer、Column、行容器等布局分组不需要脚本。面板不拥有档案或执行交易。
 
+GGF 管理的界面统一采用 `XxxForm`：战斗根窗口为 `BattleForm`，对应场景、脚本目录、`BattleFormData` 和 `UIFormId.BattleForm` 同名。内部仍按功能使用 `BattleStatusPanel`、`BattleMenuPanel`、`EncounterHealthBar` 等名称。HUD 可以描述战斗信息这一概念；类后缀服从本项目的 IUIForm 契约。对照 [Unity 官方示例](https://github.com/Unity-Technologies/EntityComponentSystemSamples/blob/master/Dots101/OtherSamples/DotsUI/Assets/README.md) 的 HUDScreen / InventoryScreen，可借鉴同一层统一后缀的方式，不引入其另一套界面架构。第 10/40 章中的 BattleHud 旧示例尚未同步，按用户当前要求执行。
+
 | 窗口 | 根绑定数 | 子组件职责 |
 | --- | --- | --- |
 | InventoryForm | 5 | Character 统一显示身份、穿戴、属性和经验；Bag 统一管理分类、25 格、分页、灵魂和品质选项；SaleConfirmation 负责一次性出售确认；另绑定 Close、Actions |
 | SaveForm | 3 | Close、Status、Slots；表单直接收集六格并更新姓名、日期、提示和交互，不设 Grid/Button 脚本 |
-| BattleHud | 5（原 12） | Status、Menu、Go、EncounterHealthBar、MusouActivation；Status 显示生命/魔法/经验/等级，Menu 管无双满值提示及三个菜单按钮 |
+| BattleForm | 5（原 12） | Status、Menu、Go、EncounterHealthBar、MusouActivation；Status 显示生命/魔法/经验/等级，Menu 管无双满值提示及三个菜单按钮 |
 | SkillForm | 8 | 表单直接处理返回、分类和灵魂，只展示出战角色并禁用其他角色；ActivePage、PassivePage 分别刷新整页，行及行组只负责布局 |
 
-组件脚本按用途归入窗口的 `Components/`，不再设 `GameScripts/UI/Widgets/` 汇总目录：背包的装备格、tooltip、操作菜单、品质格式和预览归 InventoryForm；资源条、守关条和无双开启表现归 BattleHud；地图地点命中归 MapForm。目录移动保留 UID 与稳定命名空间。场景资源仍在既有 `UIs/Widgets/`，不改变资源键；共用 Theme/StyleBox 仍在 `MainPack/Themes/`。其余 Start、Character、Map、Settings、Settlement、SaveNotice 表单没有纯布局包装脚本。第 40 章的 HUD 根绑定旧示例与当前组件装配有差异，按用户当前要求执行，未修改规范正文。
+组件脚本按用途归入窗口的 `Components/`，不再设 `GameScripts/UI/Widgets/` 汇总目录：背包的装备格、tooltip、操作菜单、品质格式和预览归 InventoryForm；资源条、守关条和无双开启表现归 BattleForm；地图地点命中归 MapForm。目录移动保留 UID 与稳定命名空间。场景资源仍在既有 `UIs/Widgets/`，不改变资源键；共用 Theme/StyleBox 仍在 `MainPack/Themes/`。其余 Start、Character、Map、Settings、Settlement、SaveNotice 表单没有纯布局包装脚本。第 40 章的 HUD 根绑定旧示例与当前组件装配有差异，按用户当前要求执行，未修改规范正文。
 
 预览采用独立场景组合，动画保存为外置资源；参考 Godot 官方的 [场景组织](https://docs.godotengine.org/en/stable/tutorials/best_practices/scene_organization.html) 与 [Resources](https://docs.godotengine.org/en/stable/tutorials/scripting/resources.html)。数值配置和档案所有权仍遵循本项目的 Luban 配置与已注册 Model 的所有权约定。
 
-技能入口走 `BattleHud.SkillsRequested → ProcedureLevel → GF.UI.OpenUIForm(SkillForm)`，与背包、设置互斥。场景按 `Content / Header、m_ActivePage、m_PassivePage、Footer` 分组；十行主动和五行被动直接写在 `skill_form.tscn`，不使用行子场景或行脚本。每行是 GridContainer：主动五列为 Name / IconCell / Soul / Key / DescriptionCell，被动六列为 Name / Level / CurrentEffect / NextEffect / Upgrade / Soul。两个页脚本在初始化时收集本页固定节点，绑定数据时统一刷新；窗口通过 Model 读取目录、ProfileModel.Soul 与关卡。返回、Esc 和关卡结束均对称解除暂停及订阅。
+技能入口走 `BattleForm.SkillsRequested → ProcedureLevel → GF.UI.OpenUIForm(SkillForm)`，与背包、设置互斥。场景按 `Content / Header、m_ActivePage、m_PassivePage、Footer` 分组；十行主动和五行被动直接写在 `skill_form.tscn`，不使用行子场景或行脚本。每行是 GridContainer：主动五列为 Name / IconCell / Soul / Key / DescriptionCell，被动六列为 Name / Level / CurrentEffect / NextEffect / Upgrade / Soul。两个页脚本在初始化时收集本页固定节点，绑定数据时统一刷新；窗口通过 Model 读取目录、ProfileModel.Soul 与关卡。返回、Esc 和关卡结束均对称解除暂停及订阅。
 
 在编辑器展开 `Content/m_ActivePage/m_WukongRows/Skill1..5`、`m_TangsengRows/Skill1..5` 或 `Content/m_PassivePage/m_PassiveRows/Passive1..5`，即可直接修改文本与布局。各列的 Custom Minimum Size X 决定列宽，IconCell/Icon 的偏移控制图标，DescriptionCell 的 Margin 控制说明留白；各行在父 Control 中保留可微调的 Y 位置。调整整列时保持该页五行与 Headers 的列宽一致。切换页面的 Visible 可预览唐僧或被动页。场景预填名称、费用、按键、说明及图标，运行时 Refresh 总是以正式表覆盖这些展示内容。
 
@@ -183,35 +187,44 @@ GroundItemNode 使用场景中的固定 32×40 盒，不读图片像素或创建
 
 | 职责 | 入口与所有权 |
 | --- | --- |
-| 输入采样与匹配 | InputSystem 采样方向、普攻及 `Skill1/2/3`（默认 U/I/O）；HeroActionData 属于实体，保存按键事实、输入闩锁、连段与时钟。WukongEntity.ProcessSkillInput 匹配悟空组合，不让公共输入层识别升龙或跑攻 |
-| 技能激活 | SkillSystem.TryActivate 校验当前组、已学、费用及执行的 CanStart；成功后只登记一次执行、扣一次蓝。占身体的技能等 GGF 旧状态退出后才开始动画 |
+| 输入采样与匹配 | InputSystem.IsActionPressed / IsActionJustPressed / IsActionJustReleased 直接查询任意动作名，ConsumePress 按角色消费边沿。HeroActionData 属于实体，只保留常规动作事实、消费记录、闩锁、连段与时钟。当前状态 TryGetActionInput 提供输入窗口，WukongEntity.MatchActionInput 匹配悟空组合 |
+| 技能激活 | SkillSystem.TryActivate 校验当前组、已学、费用及登记中的 CanStart；成功后只登记一次施放数据、扣一次蓝。占身体的技能等 GGF 旧状态退出后才开始动画 |
 | 身体转换 | AbstractHeroBodyState 根据 SkillDefinition.BodyState 调用 GGF ChangeState。悟空五招分别进入 WukongRisingDragonState、WukongFlameThrustState、WukongBlazingFlashState、WukongFlameStormState、WukongFireDemonState；状态位于 `Entity/Heroes/Wukong/Skills/` |
-| 执行与表现 | SkillModel 唯一拥有本次 SkillExecution；状态只借用它，实体拥有动画/物理节点与池化特效。AbstractHeroSkillState 统一重力与结束清理，具体状态拥有并执行自己的起手、运动、判定、特效和阶段结束规则 |
+| 执行与表现 | SkillModel 唯一拥有本次 SkillData；状态只借用它，实体拥有动画/物理节点与池化特效。AbstractHeroSkillState 统一重力与结束清理，具体状态拥有并执行自己的起手、运动、判定、特效和阶段结束规则 |
+
+输入直接查询 [Godot Input](https://docs.godotengine.org/en/stable/classes/class_input.html)，不再构造输入快照。按下、按住、松开分别保留原生帧含义，短按或同帧重新按住都能查询到边沿；ConsumePress 只影响当前角色的消费记录。[InputEventAction](https://docs.godotengine.org/en/stable/classes/class_inputeventaction.html) 是 Godot 的动作事件，需要事件输入或虚拟动作注入时直接使用；当前按帧采样不需要再把查询结果转成事件。原 HeroInputContext 已移除，状态返回窗口是否开放并直接提供三个匹配参数，实体再传给角色规则。
 
 ```mermaid
 flowchart LR
-    Input[InputSystem 采样] --> Match[具体角色匹配输入]
+    Input[InputSystem 采样] --> Context[当前状态直接提供三个匹配参数]
+    Context --> Match[具体角色 MatchActionInput]
     Match --> Activate[SkillSystem 校验与登记]
     Activate --> Transition[当前身体状态 ChangeState]
     Transition --> Leave[旧状态 Leave]
     Leave --> Enter[具体技能状态 Enter]
-    Enter --> Execution[开始并推进本次执行]
-    Execution --> Locomotion[完成后返回 Ground / Air]
+    Enter --> Advance[具体状态推进招式]
+    Advance --> Locomotion[完成后返回 Ground / Air]
 ```
 
-SkillSet 是不可变定义（工厂、可选输入槽和身体状态类型），由具体角色选择；SkillModel 保存其引用，不复制配置。SkillExecution 是每次激活的身份、身体占用与输入/重力锁，不持有角色节点。悟空各状态自己拥有局部计时、目标与阶段数据，自己执行运动、判定、特效和完成条件；SkillTimeline 只计算秒数、冻结、跳转并产出到期事件。火魔斩的寻敌、连斩、下冲和落地等待直接写在 WukongFireDemonState 中，没有额外执行类或悟空 Helper。独立持续效果可扩展 SkillExecution 的 Start/Advance/HandleInput/Stop，不必借用悟空的动画事件。
+SkillModel 直接拥有登记字典与当前 SkillData。SkillDefinition 随模型定义，只登记技能编号、GGF 状态类型、可选动作名及起手条件；不再提供工厂或创建一套技能行为对象。SelectSkills 在替换旧数据前验证角色、编号、具体状态与重复绑定，然后复制登记。三个默认动作 Skill1/2/3 只是 U/I/O 的映射，增加其他动作不需要扩容共享输入。
 
-独立持续效果可释放身体后继续由 SkillSystem.AdvanceBackground 按秒推进，后续输入仍发给同一次执行；再次占用身体时进入该技能登记的状态，不重新扣费。相同物理帧的身体与持续推进去重；完成、中断、死亡、换组与离场清理旧身份，旧特效回调不能跳转新招。同一按下边沿交给活动执行后，不再成为新激活请求。普通输入锁与重力暂停分别表达；技能自己的按下/松开在输入锁内仍送达。
+SkillData 只有本次编号、完成、重力暂停与输入锁标志。它独立成小数据对象是为了跨状态与特效保持本次施放身份；没有生命周期、角色节点或配置副本，也没有单独文件。各招状态拥有局部计时和阶段，AbstractHeroSkillState 共用时间推进、冻结、跳转、重力及释放表现；火魔斩直接执行寻敌、连斩、下冲和落地等待，完成回调核对本次数据身份。独立特效由 SkillEffectNode 的物理帧推进。SkillSystem 保留学习、激活、条件、扣费、登记与取消，不再维护后台技能调度、活动字典或另一套 Start/Advance/HandleInput/Stop。
+
+第 60 章仍以实体持有 SkillSet 描述技能运行时，与用户后续确认的 Model 数据所有权和 GGF 状态分工不同；当前按最新要求实现，规范正文未自行改写。
+
+IHeroBody 不再声明技能匹配或普攻选择。状态消费角色已经选定的攻击请求，并完成身体转换；输入匹配始终在旧状态 Leave 之前，技能动画在新状态 Enter 才开始。TryDropThroughPlatform 保留为真实碰撞检测与位移能力，S+K 识别仍在 InputSystem，身体接口不接收按键名称。
+
+后续输入由各自技能状态通过 InputSystem 查询，消费仍使用本角色的 HeroActionData。输入锁与重力暂停分别表达。完成或取消的数据不能接收旧特效回调；独立特效已有自己的节点生命周期，新增持续、蓄力技能时在实际状态或节点实现，不为尚未制作的技能预设第二个调度系统。
 
 悟空的 W+J 取消、缺蓝回退和跑攻匹配归实体；各招的移动、二段跳消耗、连段衔接归自己的状态。源动画从 1 开始的帧比例换算只在悟空取消规则中，公共普攻状态提供从零开始的播放比例。美术原点见 [LegacyAssetMap](LegacyAssetMap.md#悟空造一技能动作与声音)，原版规则见 [OfficialReference](OfficialReference.md#造一技能准备)。
 
-扩展角色时声明自己的输入规则、SkillSet 与具名 GGF 状态，再在 CreateBodyStates 注册；换武器可选择另一组，旧执行结束而学习记录保留。复杂技能需要多个 GGF 阶段状态时，上一阶段在 Leave 中转交原执行，下一阶段 Enter 借用它；最终完成或中断才走公共释放。已有两阶段真实状态机回归，不要求每个简单动作额外创建整台状态机。输入匹配、激活与身体转换各有入口，公共层不按角色或动作分类枚举分支。唐僧当前只有目录及伤害定义，八戒、沙僧未接入；机制测试覆盖二次输入、持续效果、重新占用身体、蓄力松手、30/60/144fps 和换组，不代表这些角色的正式招式已经制作完成。
+扩展角色时声明自己的 MatchActionInput、SkillDefinition 登记与具名 GGF 状态，再在 CreateBodyStates 注册；换武器可选择另一组，旧执行结束而学习记录保留。复杂技能需要多个 GGF 阶段状态时，上一阶段在 Leave 中转交同一份 SkillData，下一阶段 Enter 借用它；最终完成或中断才走公共释放。已有两阶段真实状态机回归，不要求每个简单动作额外创建整台状态机。输入匹配、激活与身体转换各有入口，公共层不按角色或动作分类枚举分支。唐僧当前只有目录及伤害定义，八戒、沙僧未接入；机制测试覆盖任意绑定、消费隔离、登记原子性、单次扣费、数据身份、换组及真实 GGF 多阶段交接，不代表这些角色的正式招式已经制作完成。
 
 设计核对了 [Lyra 官方能力文档](https://dev.epicgames.com/documentation/en-us/unreal-engine/abilities-in-lyra-in-unreal-engine) 的技能组、输入与激活生命周期，以及 [Godot Gameplay Abilities 的实际 C++ 源码](https://github.com/OctoD/godot-gameplay-abilities/blob/main/src/ability_system.cpp) 中定义与单次运行状态的分工。本项目继续使用 GGF 的状态与生命周期，Model/System 从主流程 GetData 取得；没有引入其他技能框架或第二个数据容器。
 
-英雄输入按 `AbstractHeroEntity → InputSystem → HeroActionData → Ground/Air/Attack/具体技能状态` 阅读。InputSystem 集中动作名称、引擎采样、方向双击、组合闩锁和普攻连段规则；HeroActionData 由每个英雄拥有，保存输入事实、游戏时钟、已用跳数、连段和冷却。JumpCount 是运行状态，不放入同类共享的 HeroBodyParams。原 HeroInput / HeroAttackSequence 已合并，不新增逐英雄 System。
+英雄输入按 `AbstractHeroEntity → InputSystem → HeroActionData → Ground/Air/Attack/具体技能状态` 阅读。InputSystem 集中动作名称、引擎采样、方向双击、组合闩锁和普攻连段规则；HeroActionData 由每个英雄拥有，保存常规输入事实、按角色隔离的消费记录、游戏时钟、已用跳数、连段和冷却。JumpCount 是运行状态，不放入同类共享的 HeroBodyParams。原 HeroInput / HeroAttackSequence 已合并，不新增逐英雄 System。
 
-Ground/Air 提交输入请求并决定是否进入 Attack；Attack 管理当前动画、移动与收招。普攻仍不排队：过早输入丢弃，有效输入立即换段；参数在 HeroConfig，具体源规则见 [官方输入依据](OfficialReference.md#普攻输入与移动2026-10-14)。调用方只执行 `InputSystem.Sample(this, delta)`；系统内部读取默认 Godot 输入源、英雄独占的 ActionData 与共享 Params，不再外传十几个按键布尔值。引擎采样与规则合在 InputSystem.cs；确需替代控制源时通过同文件的 IInputSource 提供按住/按下/松开事实，使用同一套采样与组合规则。
+角色先选定普攻请求，Ground/Air 消费后进入 Attack；Attack 管理当前动画、移动与收招，并消费新的换段请求。普攻仍不排队：过早输入丢弃，有效输入立即换段；参数在 HeroConfig，具体源规则见 [官方输入依据](OfficialReference.md#普攻输入与移动2026-10-14)。调用方只执行 `InputSystem.Sample(this, delta)`；系统内部读取默认 Godot 输入源、英雄独占的 ActionData 与共享 Params，不再外传十几个按键布尔值。引擎采样与规则合在 InputSystem.cs；确需替代控制源时通过同文件的 IInputSource 提供按住/按下/松开事实，使用同一套采样与组合规则。
 
 怪物 AI 按 `AbstractMonsterEntity → MonsterAiPreset / MonsterAiSystem → MonsterAiData / AI 状态` 阅读。[MonsterAiPreset](../Godot/GodotProject/TheGame/GameScripts/Entity/Monsters/AI/MonsterAiPreset.cs) 是状态工厂集合与入口类型的只读配方，包含无目标和交战入口，不是枚举。预设每次创建独立状态，并在建 FSM 前检查重复类型、缺少入口、受控或死亡状态。MonsterAiSystem 集中范围检查、加权选招及冷却规则，MonsterBodyParams.Attacks 保存同类共享的 MonsterAttackParams；每只怪物的剩余冷却、移动意图和待提交攻击放在自己的 MonsterAiData。
 
@@ -244,7 +257,8 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 ## 常改位置
 
 - 无双数值：BattleConfig.xlsx 的 Ws 字段，含义与官方依据集中在 OfficialReference；角色参数不被开启/结束反复改写。
-- 满值提示：`Sprites/UI/hud/hud_ws_full_frames.tres`；圆形范围在 BattleHud 的 m_WsMax 材质参数中改。
+- 满值提示：`Sprites/UI/hud/battle_menu_ws_glow_frames.tres`，原版 19 帧透明图；定位在 `BattleForm/MenuPanel/m_WsMax`，不叠加旧裁剪 shader。
+- 左下布局：保留造三五入口；`MenuPanel/WsFrame` 是 260×22 黑色长底板，子节点 `m_WsBar` 是细灰底和橙色填充；`SkillBar` 位于其上方。整体位置调父节点，条的尺寸调 `m_WsBar` 的偏移和缩放，不删除装饰层来调整进度。
 - 开启大立绘：`Sprites/UI/hud/musou_activation/musou_activation_frames.tres`，独立于满值闪烁。
 - BOSS 条：`UIs/Widgets/encounter_health_bar.tscn`；姓名和笔刷条构成顶部组件，无生命数字。
 - 地图悬停：LocationGlow.Scale 调尺寸，AnimationPlayer.SpeedScale 调速度；命中跟随可见轮廓。
@@ -259,7 +273,7 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 
 地面物品只有一个固定 32×40 的 `CollisionShape2D` 矩形，底部中心对齐节点原点。身体用它落地，拾取以这个预设盒与本关英雄受击盒相交判断；不扫描图片透明像素，不创建物理查询对象。`GroundPickupRadius` 已从 DropConfig 源表删除，尺寸直接在场景中调整。领取时只上移图标，0.8 秒后回池。
 
-当前保存格式 v6：GameData 平铺英雄经验、灵魂、装备实例及具名属性；Heroes 中以实例 Guid 引用穿戴物。ProfileModel.Items 只含未穿戴物，Slots 保存穿戴；HeroSystem 将成长、穿戴变化同步到 HeroModel，实体即时读取同一模型。旧格式不做运行时兼容。已按用户授权备份原 v4 开发档，再一次性转存累计经验 1020 和灵魂 835；原件保留在 GameData.backup-before-v6-20261013-025550，正式主档与备份均经 v6 读取验证。第 20/30/50/60/70 章旧名称与版本尚未同步，本轮只按用户明确要求补充第 40 章美术定位规则。
+保存格式以 GameData.CurrentVersion 为准（当前 v7）：GameData 平铺英雄经验、灵魂、装备及具名属性；Heroes 中以实例 Guid 引用穿戴物，并保存已学习技能 ID。ProfileModel.EquipmentDatas 只含未穿戴物，Slots 保存穿戴；HeroSystem 将成长、穿戴变化同步到 HeroModel，实体即时读取同一模型。旧格式不做运行时兼容。原 v4 开发档曾按用户授权备份后一次性转存累计经验 1020 和灵魂 835，备份名为 GameData.backup-before-v6-20261013-025550。第 20/30/50/60/70 章的旧名称与版本尚未同步，按用户后续要求和当前实现阅读，规范正文未自行改写。
 
 地图打开和鼠标离开后播放外置 `location/current` 边缘闪烁，悬停播放 `location/hover`；关闭时 RESET 并停止，复用重新启动。当前只有花果山开放，因此最新提示就是花果山；多关解锁进度尚未实现，不新增虚构进度字段。用户当前指令覆盖第 40 章旧的离开即停止提示描述；规范正文未自行修改。
 

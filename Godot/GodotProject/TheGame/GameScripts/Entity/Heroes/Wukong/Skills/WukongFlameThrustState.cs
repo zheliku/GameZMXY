@@ -12,7 +12,6 @@ namespace GameLogic.Heroes.Wukong;
 /// <summary>火焰突刺：奔跑转突刺，四次独立命中与逐段减速，收招后衔接地面连段。</summary>
 public sealed class WukongFlameThrustState : AbstractHeroSkillState
 {
-    private SkillTimeline m_Timeline; // 本次突刺的秒制事件游标。
 
     /// <inheritdoc />
     protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
@@ -22,7 +21,6 @@ public sealed class WukongFlameThrustState : AbstractHeroSkillState
         var action = configuration.Tables.TbSkillActionConfig.Get(SkillId.FlameThrust);
         body.ActionData.LastGroundSegment = 0;
         body.ActionData.Running = false;
-        m_Timeline = new(configuration.GetSkillTimeline(SkillId.FlameThrust, SkillEffectId.None));
         BeginAnimation(body, action);
         AdvanceSkill(body, 0);
     }
@@ -33,7 +31,7 @@ public sealed class WukongFlameThrustState : AbstractHeroSkillState
     protected override void AdvanceSkill(IHeroBody body, float dt)
     {
         var actor = (ISkillActor)body;
-        foreach (var entry in m_Timeline.Advance(dt, body.OnFloor))
+        foreach (var entry in AdvanceTimeline(dt, body.OnFloor))
         {
             switch (entry.Kind)
             {
@@ -51,12 +49,12 @@ public sealed class WukongFlameThrustState : AbstractHeroSkillState
                     body.Velocity = new Vector2(body.Velocity.X * entry.XMultiplier, body.Velocity.Y);
                     break;
                 case SkillTimelineKind.CompleteActor:
-                    Execution.Completed = true;
+                    SkillData.Completed = true;
                     break;
             }
-            if (Execution.Completed)
+            if (SkillData.Completed)
                 break;
         }
-        actor.SetSkillAnimationTime(m_Timeline.Elapsed);
+        actor.SetSkillAnimationTime(SkillTime);
     }
 }

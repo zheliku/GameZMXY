@@ -14,12 +14,12 @@ public class ConfigSystem
 {
     private static ConfigSystem _instance; // 配置加载器的唯一实例。
 
-    /// <summary>当前项目配置加载器实例。</summary>
-    public static ConfigSystem Instance => _instance ??= new ConfigSystem();
-
     private bool _init = false; // 所有关联 Tables 是否已经构造。
 
     private Tables _tables; // 当前已加载的 Luban 总表对象。
+
+    /// <summary>当前项目配置加载器实例。</summary>
+    public static ConfigSystem Instance => _instance ??= new ConfigSystem();
 
     /// <summary>首次访问时延迟加载的 Luban 总表。</summary>
     public Tables Tables

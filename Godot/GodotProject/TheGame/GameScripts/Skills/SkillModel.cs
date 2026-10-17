@@ -6,7 +6,7 @@ using GameLogic.Architecture;
 
 namespace GameLogic.Skills;
 
-/// <summary>档案作用域的技能数据所有者：持有各英雄唯一的技能书、当前技能组与本场活动执行。</summary>
+/// <summary>档案作用域的技能数据所有者：持有各英雄唯一的技能书、当前技能组与本次施放数据。</summary>
 public sealed class SkillModel : AbstractModel
 {
     // ---- 字段 ----
@@ -15,14 +15,11 @@ public sealed class SkillModel : AbstractModel
 
     // ---- 属性 ----
 
-    /// <summary>当前占用身体的执行；持续效果释放身体后仍留在活动集合中。</summary>
-    public SkillExecution BodySkill { get; internal set; }
+    /// <summary>当前占用身体的施放数据；每次激活重新创建，状态与特效借用同一身份。</summary>
+    public SkillData BodySkillData { get; internal set; }
 
-    /// <summary>具体角色选择的技能组；只是不可变定义的引用。</summary>
-    public SkillSet SelectedSet { get; internal set; }
-
-    /// <summary>本英雄唯一的活动执行集合，不保存场景节点或存档数据。</summary>
-    internal Dictionary<SkillId, SkillExecution> ActiveExecutions { get; } = new();
+    /// <summary>本次选定的角色或武器技能登记，由技能系统校验和替换；不保存角色节点。</summary>
+    internal Dictionary<SkillId, SkillDefinition> Definitions { get; } = new();
 
     /// <summary>技能无敌开始的游戏时刻，秒。</summary>
     internal double InvulnerableFrom { get; set; } = double.PositiveInfinity;
@@ -46,4 +43,29 @@ public sealed class SkillModel : AbstractModel
     /// <param name="heroId">本档案已经拥有的英雄编号。</param>
     /// <returns>该英雄的可绑定技能书。</returns>
     public BindableList<SkillId> GetLearnedSkills(int heroId) => m_LearnedSkills[heroId];
+}
+
+/// <summary>模型中的一条技能登记；具体行为由登记的 GGF 状态实现，不再创建第二套技能对象。</summary>
+/// <param name="Id">技能编号。</param>
+/// <param name="BodyState">本技能的 GGF 身体状态。</param>
+/// <param name="InputAction">可选直接动作名；组合技能由具体角色匹配。</param>
+/// <param name="CanStart">可选起手条件；在扣费前检查。</param>
+public sealed record SkillDefinition(SkillId Id, Type BodyState,
+    string InputAction = null, Func<ISkillActor, bool> CanStart = null);
+
+/// <summary>模型拥有的一次施放数据；只保存跨状态及特效需要的身份和标志，不承担技能行为。</summary>
+/// <param name="id">本次施放的技能编号。</param>
+public sealed class SkillData(SkillId id)
+{
+    /// <summary>本次施放的技能编号。</summary>
+    public SkillId Id { get; } = id;
+
+    /// <summary>本次施放是否完成或已被取消；旧特效据此拒绝过期通知。</summary>
+    public bool Completed { get; internal set; }
+
+    /// <summary>当前阶段是否暂停身体重力。</summary>
+    public bool GravitySuspended { get; internal set; }
+
+    /// <summary>当前阶段是否禁止常规动作输入。</summary>
+    public bool InputLocked { get; internal set; }
 }

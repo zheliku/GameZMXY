@@ -27,7 +27,7 @@ public partial class InventoryBagPanel : Control, IController
     [Export] private PopupMenu m_QualityOptions; // 品质上拉选项。
     private TextureButton[] m_TabButtons; // 本面板的四个分类按钮。
     private EquipmentCell[] m_Cells; // 当前页的固定格子。
-    private readonly EquipmentInstance[] m_VisibleItems = new EquipmentInstance[PageSize]; // 与当前页格子一一对应，关闭后清空。
+    private readonly EquipmentData[] m_EquipmentDatas = new EquipmentData[PageSize]; // 与当前页格子一一对应，关闭后清空。
     private bool m_IsBound; // 窗口明确启用/清理本面板，关闭后不处理交互。
     private int m_SelectedTab; // 当前分类；零为装备。
     private int m_PageIndex; // 当前分类内从零开始的页号。
@@ -36,7 +36,7 @@ public partial class InventoryBagPanel : Control, IController
     public event Action ViewChanged;
 
     /// <summary>当前可见装备与格子锚点。</summary>
-    public event Action<EquipmentInstance, Rect2> ItemSelected;
+    public event Action<EquipmentData, Rect2> ItemSelected;
 
     /// <summary>品质出售选择及未提交交易的摘要。</summary>
     public event Action<EquipmentQuality, int, long> QualitySelected;
@@ -90,7 +90,7 @@ public partial class InventoryBagPanel : Control, IController
     public void Clear()
     {
         m_IsBound = false;
-        Array.Clear(m_VisibleItems);
+        Array.Clear(m_EquipmentDatas);
         foreach (var cell in m_Cells)
             cell.Bind(null, null);
         m_QualityOptions.Hide();
@@ -138,7 +138,7 @@ public partial class InventoryBagPanel : Control, IController
     /// <summary>按当前分类和页号刷新全部控件，并关闭过期出售选项。</summary>
     private void RefreshView()
     {
-        var items = m_SelectedTab == 0 ? this.GetModel<ProfileModel>().Items : null;
+        var items = m_SelectedTab == 0 ? this.GetModel<ProfileModel>().EquipmentDatas : null;
         for (int i = 0; i < m_TabButtons.Length; i++)
             m_TabButtons[i].SetPressedNoSignal(i == m_SelectedTab);
         // 隐藏期间更新整页，避免相邻格出现新旧输入混合。
@@ -148,7 +148,7 @@ public partial class InventoryBagPanel : Control, IController
             int index = m_PageIndex * PageSize + i;
             var item = items != null && index < items.Count ? items[index] : null;
             var definition = item == null ? null : this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
-            m_VisibleItems[i] = item;
+            m_EquipmentDatas[i] = item;
             m_Cells[i].Bind(item,
                 definition == null ? null : GF.Resource.LoadAsset<Texture2D>(definition.IconPath));
         }
@@ -179,9 +179,9 @@ public partial class InventoryBagPanel : Control, IController
     {
         if (!m_IsBound || m_SelectedTab != 0)
             return;
-        for (int i = 0; i < m_VisibleItems.Length; i++)
+        for (int i = 0; i < m_EquipmentDatas.Length; i++)
         {
-            var item = m_VisibleItems[i];
+            var item = m_EquipmentDatas[i];
             if (item?.InstanceId != instanceId)
                 continue;
             ItemSelected?.Invoke(item, m_Cells[i].GetGlobalRect());
@@ -220,7 +220,7 @@ public partial class InventoryBagPanel : Control, IController
     {
         int count = 0;
         long price = 0;
-        foreach (var item in this.GetModel<ProfileModel>().Items)
+        foreach (var item in this.GetModel<ProfileModel>().EquipmentDatas)
         {
             var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
             if (definition.Quality != quality)

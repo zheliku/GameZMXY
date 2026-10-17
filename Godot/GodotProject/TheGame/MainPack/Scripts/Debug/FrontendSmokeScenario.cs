@@ -258,7 +258,7 @@ public sealed class FrontendSmokeScenario
             Vector2 expandedClick = location.GetGlobalTransformWithCanvas() *
                 (location.GetNode<TextureRect>("LocationGlow").GetTransform() * new Vector2(40, 87));
             await ClickAsync(map, "m_Huaguoshan", expandedClick);
-            BattleHud hud = await WaitForAsync<BattleHud>();
+            BattleForm battleForm = await WaitForAsync<BattleForm>();
             AbstractHeroEntity hero = Find<AbstractHeroEntity>().Single(x => x.IsShown);
             Check(Find<LevelViewController>().Count() == 1, "点击花果山未创建唯一关卡");
             var level = SmokeInspection.Level((ProcedureLevel)GF.Procedure.CurrentProcedure);
@@ -276,20 +276,20 @@ public sealed class FrontendSmokeScenario
             Check(!GF.Debugger.ActiveWindow, "框架调试按钮遮挡头像");
             await CheckMusicAsync("huaguoshan_theme.mp3");
             await CaptureAsync("frontend_battle");
-            var data = SmokeInspection.ReadField<BattleHudData>(hud, "m_Data");
+            var data = SmokeInspection.ReadField<BattleFormData>(battleForm, "m_FormData");
             var playerModel = SmokeInspection.Flow((ProcedureLevel)GF.Procedure.CurrentProcedure).GetModel<ProfileModel>();
             Check(ReferenceEquals(playerModel, reloadedPlayerModel) &&
                 ReferenceEquals(data.Hero, hero) && ReferenceEquals(data.ViewController, level), "HUD 与关卡没有借用同一份运行状态");
             int experience = playerModel.TotalExperience;
             flow.GetSystem<ProfileSystem>().AddExperience(1);
-            await ClickAsync(hud, "MenuPanel/m_SettingsButton");
+            await ClickAsync(battleForm, "MenuPanel/m_SettingsButton");
             var settings = await WaitForAsync<SettingsForm>();
             Check(GF.Base.IsGamePaused, "战斗设置未暂停");
             Check(ReferenceEquals(settings, titleSettings), "设置未复用已经关闭的 GGF 池实例");
             Check(SmokeInspection.CallbackCount(settings, "MapRequested") == 1 &&
                 SmokeInspection.CallbackCount(settings, "TitleRequested") == 1,
                 "复用设置未绑定当前战斗导航或重复绑定");
-            Check(settings.ZIndex > hud.ZIndex, "复用设置的显示层级低于 HUD");
+            Check(settings.ZIndex > battleForm.ZIndex, "复用设置的显示层级低于 HUD");
             await CaptureAsync("battle_settings");
             Vector2 pausedPosition = hero.Position;
             Input.ActionPress(GameLogic.Input.InputSystem.MoveRight);
@@ -298,12 +298,12 @@ public sealed class FrontendSmokeScenario
             Input.ActionRelease(GameLogic.Input.InputSystem.MoveRight);
             Check(hero.Position.IsEqualApprox(pausedPosition), "设置暂停时英雄仍在移动");
             await ClickAsync(settings, "Scroll/m_Continue");
-            Check(!GF.Base.IsGamePaused && hud.Visible &&
+            Check(!GF.Base.IsGamePaused && battleForm.Visible &&
                 SmokeInspection.CountBindingHandlers(levelModel.Outcome, settings) == 0 &&
                 SmokeInspection.CallbackCount(settings, "MapRequested") == 0 &&
                 SmokeInspection.CallbackCount(settings, "TitleRequested") == 0,
                 "继续游戏未恢复战斗或设置仍订阅关卡");
-            await ClickAsync(hud, "MenuPanel/m_SettingsButton");
+            await ClickAsync(battleForm, "MenuPanel/m_SettingsButton");
             settings = await WaitForAsync<SettingsForm>();
             await ClickAsync(settings, "Scroll/m_ReturnMap");
             map = await WaitForAsync<MapForm>();
@@ -311,16 +311,16 @@ public sealed class FrontendSmokeScenario
             Check(playerModel.TotalExperience == experience, "中途返回地图未回滚关内收益");
             Check(ReferenceEquals(reloadedPlayerModel, flow.GetModel<ProfileModel>()) &&
                 !levelModel.SessionActive && !levelSystem.Initialized && !levelModel.Initialized, "返回地图未保留档案或未解除关卡借用");
-            Check(SmokeInspection.ReadField<BattleHudData>(hud, "m_Data") == null, "HUD 关闭后仍观察旧关卡");
+            Check(SmokeInspection.ReadField<BattleFormData>(battleForm, "m_FormData") == null, "HUD 关闭后仍观察旧关卡");
             Check(!GF.Base.IsGamePaused, "返回地图后仍处于暂停");
             Check(!heroModel.Initialized && flow.GetModel<HeroModel>() == null &&
                 !heroSystem.Initialized && flow.GetSystem<HeroSystem>() == null &&
                 SmokeInspection.CountBindingHandlers(playerModel.Progress, heroSystem) == 0 &&
                 SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().Slots, heroSystem) == 0,
                 "离关没有结束英雄运行模型");
-            Check(SmokeInspection.CallbackCount(hud, "SettingsRequested") == 0 &&
-                SmokeInspection.CallbackCount(hud, "InventoryRequested") == 0 &&
-                SmokeInspection.CallbackCount(hud, "SkillsRequested") == 0,
+            Check(SmokeInspection.CallbackCount(battleForm, "SettingsRequested") == 0 &&
+                SmokeInspection.CallbackCount(battleForm, "InventoryRequested") == 0 &&
+                SmokeInspection.CallbackCount(battleForm, "SkillsRequested") == 0,
                 "离关后 HUD 仍持有流程回调");
             Check(!GF.UI.HasUIForm(settings.SerialId) &&
                 SmokeInspection.CountBindingHandlers(levelModel.Outcome, settings) == 0,
@@ -329,13 +329,13 @@ public sealed class FrontendSmokeScenario
 
             // 再入关后从官方第五项返回标题，也必须回滚并恢复时钟。
             await ClickAsync(map, "m_Huaguoshan");
-            hud = await WaitForAsync<BattleHud>();
+            battleForm = await WaitForAsync<BattleForm>();
             Check(Find<AbstractHeroEntity>().Count(x => x.IsShown) == 1, "重入生成了重复英雄");
             Check(flow.GetModel<HeroModel>().Initialized && !ReferenceEquals(heroModel, flow.GetModel<HeroModel>()),
                 "新关卡沿用了已结束的英雄运行模型");
             var previousInventory = flow.GetModel<ProfileModel>();
             flow.GetSystem<ProfileSystem>().AddSoul(9);
-            await ClickAsync(hud, "MenuPanel/m_SettingsButton");
+            await ClickAsync(battleForm, "MenuPanel/m_SettingsButton");
             settings = await WaitForAsync<SettingsForm>();
             await ClickAsync(settings, "Scroll/m_ReturnTitle");
             start = await WaitForAsync<StartForm>();

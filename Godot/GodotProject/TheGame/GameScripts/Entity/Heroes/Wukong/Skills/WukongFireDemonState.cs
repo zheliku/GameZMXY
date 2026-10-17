@@ -12,7 +12,6 @@ namespace GameLogic.Heroes.Wukong;
 /// <summary>火魔斩：起跳、寻敌连斩或直接下冲、落地特效等待与收招由本状态完成。</summary>
 public sealed class WukongFireDemonState : AbstractHeroSkillState
 {
-    private SkillTimeline m_Timeline; // 本次连斩的秒制游标，可在寻敌后冻结或跳转。
     private Vector2? m_Target; // 本次寻敌得到的位置，不保存怪物节点。
     private bool m_LandingSpawned; // 本次最多进入一次落地等待。
 
@@ -26,7 +25,6 @@ public sealed class WukongFireDemonState : AbstractHeroSkillState
         m_LandingSpawned = false;
         body.ActionData.LastGroundSegment = -1;
         body.ActionData.AttackReadyAt = body.ActionData.Time + action.NormalAttackBlockSeconds;
-        m_Timeline = new(configuration.GetSkillTimeline(SkillId.FireDemonSlash, SkillEffectId.None));
         BeginAnimation(body, action);
         AdvanceSkill(body, 0);
     }
@@ -34,14 +32,14 @@ public sealed class WukongFireDemonState : AbstractHeroSkillState
     /// <inheritdoc />
     protected override void AdvanceSkill(IHeroBody body, float dt)
     {
-        foreach (var entry in m_Timeline.Advance(dt, body.OnFloor))
+        foreach (var entry in AdvanceTimeline(dt, body.OnFloor))
         {
             if (Matches(entry.Condition, body))
                 ProcessEvent(entry, body);
-            if (Execution.Completed)
+            if (SkillData.Completed)
                 break;
         }
-        ((ISkillActor)body).SetSkillAnimationTime(m_Timeline.Elapsed);
+        ((ISkillActor)body).SetSkillAnimationTime(SkillTime);
     }
 
     /// <summary>只解释火魔斩的寻敌、落地与兜底条件。</summary>
@@ -67,14 +65,14 @@ public sealed class WukongFireDemonState : AbstractHeroSkillState
         switch (entry.Kind)
         {
             case SkillTimelineKind.SuspendGravityAndInput:
-                Execution.GravitySuspended = true;
-                Execution.InputLocked = true;
+                SkillData.GravitySuspended = true;
+                SkillData.InputLocked = true;
                 break;
             case SkillTimelineKind.StopMotion:
                 body.Velocity = Vector2.Zero;
                 break;
             case SkillTimelineKind.SpawnEffect:
-                actor.SpawnSkillEffect(entry.EffectId, Execution,
+                actor.SpawnSkillEffect(entry.EffectId, SkillData,
                     entry.Anchor == SkillEffectAnchor.SelectedTarget ? m_Target.Value : actor.SkillPosition);
                 break;
             case SkillTimelineKind.SetVelocity:
@@ -87,34 +85,36 @@ public sealed class WukongFireDemonState : AbstractHeroSkillState
                 break;
             case SkillTimelineKind.TeleportToTarget:
                 actor.SkillPosition = m_Target.Value;
-                m_Timeline.Freeze(entry.ActionLockSeconds);
+                FreezeTimeline(entry.ActionLockSeconds);
                 break;
             case SkillTimelineKind.SeekActor:
-                m_Timeline.Seek(entry.SeekSeconds);
+                SeekTimeline(entry.SeekSeconds);
                 break;
             case SkillTimelineKind.SpawnLandingAndPauseActor:
-                // 本次等待只捕获本次游标；旧特效回调不能改变池复用后的新招式。
+                // 回调核对本次身份，旧特效不能改变复用后的新招式。
                 m_LandingSpawned = true;
-                m_Timeline.Paused = true;
+                TimelinePaused = true;
                 body.Velocity = Vector2.Zero;
-                var timeline = m_Timeline;
+                var data = SkillData;
                 float recoveryAt = 0;
                 foreach (var effectEvent in body.GetModel<ConfigurationModel>()
                     .GetSkillTimeline(SkillId.FireDemonSlash, entry.EffectId))
                     if (effectEvent.Kind == SkillTimelineKind.FinishLandingEffect)
                         recoveryAt = effectEvent.SeekSeconds;
-                actor.SpawnSkillEffect(entry.EffectId, Execution, actor.SkillPosition, () =>
+                actor.SpawnSkillEffect(entry.EffectId, SkillData, actor.SkillPosition, () =>
                 {
-                    timeline.Seek(recoveryAt);
-                    timeline.Paused = false;
+                    if (!ReferenceEquals(SkillData, data))
+                        return;
+                    SeekTimeline(recoveryAt);
+                    TimelinePaused = false;
                 });
                 break;
             case SkillTimelineKind.RestoreGravityAndInput:
-                Execution.GravitySuspended = false;
-                Execution.InputLocked = false;
+                SkillData.GravitySuspended = false;
+                SkillData.InputLocked = false;
                 break;
             case SkillTimelineKind.CompleteActor:
-                Execution.Completed = true;
+                SkillData.Completed = true;
                 break;
         }
     }

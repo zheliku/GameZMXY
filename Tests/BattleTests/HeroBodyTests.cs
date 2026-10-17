@@ -447,43 +447,43 @@ public sealed class HeroBodyTests
     [Fact]
     public void Direction_OtherKeyBreaksDoubleTap_LastPressedWins()
     {
-        HeroActionData input = new();
-        Sample(input, 0.5f, 0.01f, false, true, false, true, false, false);
-        Sample(input, 0.5f, 0.01f, false, false, false, false, false, true);
-        Sample(input, 0.5f, 0.01f, false, true, false, true, false, false);
-        Assert.False(input.Running);
-        Sample(input, 0.5f, 0.01f, true, true, true, false, false, false);
-        Assert.Equal(-1, input.MoveAxis);
+        HeroActionData data = new();
+        Sample(data, 0.5f, 0.01f, false, true, false, true, false, false);
+        Sample(data, 0.5f, 0.01f, false, false, false, false, false, true);
+        Sample(data, 0.5f, 0.01f, false, true, false, true, false, false);
+        Assert.False(data.Running);
+        Sample(data, 0.5f, 0.01f, true, true, true, false, false, false);
+        Assert.Equal(-1, data.MoveAxis);
     }
 
     /// <summary>半秒边界不奔跑；松开 S 能重新允许仍按住的 J，符合原版共享闩锁。</summary>
     [Fact]
     public void Input_StrictDoubleTapBoundary_AndSharedActionLatch()
     {
-        HeroActionData input = new();
-        Sample(input, 0.5f, 0.25f, false, true, false, true, false, false);
-        Sample(input, 0.5f, 0.25f, false, false, false, false, false, false);
-        Sample(input, 0.5f, 0.25f, false, true, false, true, false, false);
-        Assert.False(input.Running);
-        Sample(input, 0.5f, 0.01f, false, false, false, false, false, true);
-        Assert.True(Inputs.ConsumeAttack(input));
-        Sample(input, 0.5f, 0.01f, false, false, false, false, false, true, downHeld: true);
-        Assert.False(Inputs.ConsumeAttack(input));
-        Sample(input, 0.5f, 0.01f, false, false, false, false, false, true);
-        Assert.True(Inputs.ConsumeAttack(input));
+        HeroActionData data = new();
+        Sample(data, 0.5f, 0.25f, false, true, false, true, false, false);
+        Sample(data, 0.5f, 0.25f, false, false, false, false, false, false);
+        Sample(data, 0.5f, 0.25f, false, true, false, true, false, false);
+        Assert.False(data.Running);
+        Sample(data, 0.5f, 0.01f, false, false, false, false, false, true);
+        Assert.True(Inputs.ConsumeAttack(data));
+        Sample(data, 0.5f, 0.01f, false, false, false, false, false, true, downHeld: true);
+        Assert.False(Inputs.ConsumeAttack(data));
+        Sample(data, 0.5f, 0.01f, false, false, false, false, false, true);
+        Assert.True(Inputs.ConsumeAttack(data));
     }
 
     /// <summary>动作键一帧内松开并重按会重置共享闩锁，之后继续长按不重复消费。</summary>
     [Fact]
     public void Input_ReleaseAndRepressWithinFrameRearmsAction()
     {
-        HeroActionData input = new();
-        Sample(input, 0.5f, 0.01f, false, false, false, false, false, true);
-        Assert.True(Inputs.ConsumeAttack(input));
-        Sample(input, 0.5f, 0.01f, false, false, false, false, false, true, attackPressed: true, actionReleased: true);
-        Assert.True(Inputs.ConsumeAttack(input));
-        Sample(input, 0.5f, 0.01f, false, false, false, false, false, true);
-        Assert.False(Inputs.ConsumeAttack(input));
+        HeroActionData data = new();
+        Sample(data, 0.5f, 0.01f, false, false, false, false, false, true);
+        Assert.True(Inputs.ConsumeAttack(data));
+        Sample(data, 0.5f, 0.01f, false, false, false, false, false, true, attackPressed: true, actionReleased: true);
+        Assert.True(Inputs.ConsumeAttack(data));
+        Sample(data, 0.5f, 0.01f, false, false, false, false, false, true);
+        Assert.False(Inputs.ConsumeAttack(data));
     }
 
     /// <summary>完整待机循环能被移动和起跳立即打断。</summary>
@@ -510,20 +510,20 @@ public sealed class HeroBodyTests
         source.Held.Add(InputSystem.Attack);
         InputSystem system = new(BattleArchitecture.Instance, source);
         var parameters = CreateWukongParameters();
-        HeroActionData first = new(), second = new();
-        system.Sample(new Hero(parameters, first), .01f);
-        Assert.True(system.TryStartAttack(first, parameters, false, false));
-        first.JumpCount = 2;
-        Assert.Equal(-1, second.AttackSegment);
-        Assert.Equal(0, second.JumpCount);
-        Assert.Equal(0, second.Time);
-        system.Sample(new Hero(parameters, second), .01f);
-        Assert.True(system.TryStartAttack(second, parameters, false, false));
-        system.Reset(second);
-        Assert.Equal(0, first.AttackSegment);
-        Assert.Equal(2, first.JumpCount);
-        Assert.False(system.ConsumeAttack(first));
-        Assert.Equal(-1, second.AttackSegment);
+        HeroActionData firstData = new(), secondData = new();
+        system.Sample(new Hero(parameters, firstData), .01f);
+        Assert.True(system.TryStartAttack(firstData, parameters, false, false));
+        firstData.JumpCount = 2;
+        Assert.Equal(-1, secondData.AttackSegment);
+        Assert.Equal(0, secondData.JumpCount);
+        Assert.Equal(0, secondData.Time);
+        system.Sample(new Hero(parameters, secondData), .01f);
+        Assert.True(system.TryStartAttack(secondData, parameters, false, false));
+        system.Reset(secondData);
+        Assert.Equal(0, firstData.AttackSegment);
+        Assert.Equal(2, firstData.JumpCount);
+        Assert.False(system.ConsumeAttack(firstData));
+        Assert.Equal(-1, secondData.AttackSegment);
     }
 
     /// <summary>把测试用的帧事实装入输入源，再调用与游戏相同的二参数采样入口。</summary>
@@ -577,21 +577,16 @@ public sealed class HeroBodyTests
         /// <summary>本帧松开边沿。</summary>
         public System.Collections.Generic.HashSet<string> Released { get; } = new();
         /// <inheritdoc />
-        public bool IsHeld(string action) => Held.Contains(action);
+        public bool IsPressed(string action) => Held.Contains(action);
         /// <inheritdoc />
-        public bool WasPressed(string action) => Pressed.Contains(action);
+        public bool IsJustPressed(string action) => Pressed.Contains(action);
         /// <inheritdoc />
-        public bool WasReleased(string action) => Released.Contains(action);
+        public bool IsJustReleased(string action) => Released.Contains(action);
     }
 
     /// <summary>为真实状态机提供可控的物理宿主。</summary>
     private sealed class Hero : AbstractFakeActorBody, IHeroBody
     {
-        /// <inheritdoc />
-        public bool TryStartAttack(bool attacking, float normalRatio, bool airborne) =>
-            this.GetSystem<InputSystem>().TryStartAttack(ActionData, Params, airborne, attacking);
-        /// <inheritdoc />
-        public void ProcessSkillInput(bool attacking, float normalRatio, bool airborne) { }
 
         /// <summary>是否站在单向平台。</summary>
         public bool CanDrop;
@@ -616,10 +611,10 @@ public sealed class HeroBodyTests
 
         /// <summary>使用同一共享身体定义创建本英雄拥有的普攻序列。</summary>
         /// <param name="parameters">本测试英雄的身体参数。</param>
-        public Hero(HeroBodyParams parameters, HeroActionData actions = null)
+        public Hero(HeroBodyParams parameters, HeroActionData data = null)
         {
             Params = parameters;
-            ActionData = actions ?? new();
+            ActionData = data ?? new();
         }
         IArchitecture IBelongToArchitecture.GetArchitecture() => BattleArchitecture.Instance;
 
@@ -680,6 +675,10 @@ public sealed class HeroBodyTests
                 rightReleased: rightReleased);
             m_Left = left;
             m_Right = right;
+            // 与真实实体相同：状态提供窗口，输入规则先选定普攻，状态随后消费。
+            if (!Body.Dead && (!Body.HasPendingHurt || Body.SuperArmor) &&
+                ((AbstractHeroBodyState)m_Fsm.CurrentState).TryGetActionInput(Body, out bool attacking, out _, out bool airborne))
+                Input.AttackRequested = Inputs.TryStartAttack(Input, Body.Params, airborne, attacking);
             m_Fsm.Tick(m_Dt);
             if (Body.OnFloor && Body.Velocity.Y > 0)
                 Body.Velocity = new(Body.Velocity.X, 0);

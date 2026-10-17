@@ -23,7 +23,7 @@ python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geo
 & 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360
 ```
 
-按修改范围选用 `--smoketest=level-cancel`、`ai`；规则单测无需打开编辑器。场景装配用 `--headless --script res://EditorScripts/validate_level_scene.gd -- --resize --fractional`，编辑器 Tool 再加 `--editor`；触发区用 `validate_level_triggers.gd`，动画库用 `validate_anim_libraries.gd`。有渲染器时，`validate_musou_flash.gd` 检查原版无双 19 帧透明动画；`validate_skill_layout.gd` 检查原版技能面板坐标、45px 图标及保留的五个旧菜单入口，`validate_level_up.gd` 检查升级蓝线裁剪、画面和注册尺寸。
+按修改范围选用 `--smoketest=level-cancel`、`ai`；规则单测无需打开编辑器。场景装配用 `--headless --script res://EditorScripts/validate_level_scene.gd -- --resize --fractional`，编辑器 Tool 再加 `--editor`；触发区用 `validate_level_triggers.gd`，动画库用 `validate_anim_libraries.gd`。有渲染器时，`validate_musou_flash.gd` 检查原版无双 19 帧透明动画；`validate_skill_layout.gd` 检查技能面板坐标、45px 图标、造三五入口及无双黑底板的空/半满/满值装配，`validate_level_up.gd` 检查升级蓝线裁剪、画面和注册尺寸。
 
 XLSX Diff 1.6.4 的解析器无法读取带 `x:` 前缀的 SpreadsheetML 标签，会错误地显示零张表。导表工具仍能读取这类文件。遇到该问题时，用 `python Tools/ProjectMaintenance/normalize_xlsx_namespaces.py --write <文件.xlsx>` 将标签改为等价的默认命名空间；脚本逐项验证 XML 内容并原子替换，不重新生成单元格或样式。不带 `--write` 时只检查。已暂存的文件需要重新暂存修复后的版本，工作区修复不改 Git 索引；历史版本若含相同前缀，插件仍无法读取历史侧。
 
@@ -33,23 +33,62 @@ XLSX Diff 1.6.4 的解析器无法读取带 `x:` 前缀的 SpreadsheetML 标签�
 
 装备背包与实际详情为 `inventory_equipment.png`，操作菜单为 `inventory_actions.png`，武器/防具同时穿戴为 `inventory_wearing.png`，绿色/蓝色恢复数字为 `recovery_numbers.png`；无名称的地面恢复品和装备为 `ground_pickups.png`；地图默认边缘闪烁的两端画面为 `frontend/map_current_low.png`、`frontend/map_current.png`。
 
-## 技能输入、激活与具体状态分工（2026-10-16）
+## 左下菜单与无双底板（2026-10-17）
 
-依据第 10 章职责与命名、第 30 章“基类只做所有英雄共用的事”，输入使用 Skill1/2/3（默认 U/I/O），角色自己匹配组合；SkillSystem 只做学习、激活扣费与生命周期，身体切换使用 GGF。悟空五个技能状态直接管理各自的运动、判定、特效和阶段；删除 WukongSkillHelper 与集中解释招式的 TimelineSkillExecution。SkillTimeline 只保留秒制事件游标，SkillModel 唯一拥有技能书、技能组和执行；状态借用执行，实体拥有表现节点。分工、数据所有权和已有规范冲突见 [ProjectTour](ProjectTour.md)。本次状态调整未新增配置或存档格式变更。
+依据第 40 章资源装配、第 50 章原工具生成流程及用户明确的版本边界，保留造三左侧五入口，恢复 718.png 黑色长底板和旧条缩放；造一技能栏移至它上方。默认隐藏满值动画，运行时继续由 BattleMenuPanel.SetMusou 控制。本次没有修改战斗规则或新增生产观测 API。
 
 | 验证命令 | 结果 |
 | --- | --- |
-| `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet` | 0 错误、5 个既有框架警告；隔离副本另有 NU1900 |
-| `dotnet test Tests/BattleTests/BattleTests.csproj --no-restore -v quiet` | 183/183；真实 GGF 状态进入/退出、旧普攻先退出、技能阶段交接沿用同次执行与单次扣费通过 |
-| `dotnet test Tests/ProfileTests/ProfileTests.csproj --no-restore -v quiet` | 154/154；四次突刺判定/三次减速、二段跳消耗、火魔斩锁定/落地/旧回调隔离、中断后不再出判定、二次输入不重复扣费、持续/蓄力/换组及 30/60/144fps 通过 |
-| `dotnet test Tests/LevelTests/LevelTests.csproj --no-restore -v quiet` | 18/18；合计 355 项通过 |
-| Godot `--path <skills_runtime/project> --rendering-method gl_compatibility --quit-after 18000 -- --smoketest=ui` | SMOKE PASS、退出 0；五招真实输入、火焰拖尾、火魔斩两分支与真实命中、扣蓝和 UI 同步通过 |
-| `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry` | 471 路径、291 UID、23 个几何节点通过 |
+| `python Godot/GodotProject/.godot/validation/battle_menu_review/audit_menu.py` | PASS：五个入口及题签节点与暂存版本一致；15 张入口图片与旧工程字节相同；底图、五题签与造三官方 OtherMatv3570 导出像素相同；黑底板与旧 718.png 字节相同 |
+| Godot `--path Godot/GodotProject/.godot/validation/skills_runtime/project --rendering-method gl_compatibility --script res://EditorScripts/validate_skill_layout.gd` | PASS、退出 0：技能页、45px 空槽/已学图标、五入口、黑底板及空/半满/满值真实渲染；逐张查看画面 |
+| 隔离编辑器 `--headless --editor --script res://EditorScripts/regenerate_collection.gd` | 原有 CollectionRes 生成器登记 462 项，新增黑底板资源常量；退出 0，仍有既有插件 Free/RefCounted 和资源泄漏日志 |
+| `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry` | PASS：472 条路径、288 个 UID、23 个关卡几何节点 |
+
+官方造一、造三完整 RoleInfo 导出、像素核对报告和引擎日志位于 `Godot/GodotProject/.godot/validation/battle_menu_review/`。本次画面位于隔离工程 `.godot/validation/skills_layout_hud_0.png`、`skills_layout_hud_1.png`、`skills_layout_hud_full.png`；只去掉测试实例业务脚本，按空/半满/满值设置显示，不读写玩家存档。这是场景装配验证，不替代下节已运行的真实技能学习专项；未重新运行无关的整套规则测试。
+
+## 数据与战斗窗口统一命名（2026-10-17）
+
+依据第 10 章命名、第 30 章攻击池所有权和第 50 章生成/验证流程，按用户本轮要求将 AttackInstance / EquipmentInstance 改为 AttackData / EquipmentData，并贯通参数、持有字段、集合及测试反射。InventoryBagPanel 使用 m_EquipmentDatas；ProfileModel 的唯一背包为 EquipmentDatas。保存字段、实例 Guid 和格式版本不变；配置范围校验收回 SaveDataUtility。GGF 窗口统一 Form，BattleForm 同步脚本/目录/场景、打开参数、UI 枚举、源表与资源常量；组件继续按 Panel / Bar 命名。规范旧示例未改写。
+
+| 验证命令 | 结果 |
+| --- | --- |
+| `dotnet test Tests/BattleTests --no-restore -v quiet`、ProfileTests、LevelTests | 186 / 154 / 18，合计 358 项通过 |
+| `dotnet build Godot/GodotProject/.godot/validation/skills_runtime/project/GodotProject.csproj --no-restore -v quiet` | 隔离副本 0 错误、5 个既有框架警告及 NU1900；未构建正在使用的正式编辑器输出 |
+| `python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/BattleForm.tscn --namespace GameLogic.UI`、Luban 原有导表入口、CollectionRes 原有生成器 | Ge 生成五项根绑定；Luban 保留枚举数值 ID；CollectionRes 生成 461 项，正式资源常量只新增名称/路径替换及生成时间 |
+| `node Godot/GodotProject/.godot/validation/check_battle_form_xlsx.mjs` | XLSX Diff 1.6.4 的值/公式两种模式共四项通过：界面UI.xlsx 两格、__enums__.xlsx 一格变化；其他 ZIP 部件不变，保留默认命名空间 |
+| Godot `--path <隔离副本> --rendering-method gl_compatibility -- --smoketest=frontend` | SMOKE PASS：真实启动、六格存档、选角、地图、BattleForm、回滚、提示复用与 GGF 声音通过 |
+| Godot `--path <隔离副本> --rendering-method gl_compatibility -- --smoketest` | SMOKE PASS、退出 0：五段普攻、第四段松手不补第五段、走跑跳、实际命中与死亡、池化飘字通过 |
+| Godot `--path <隔离副本> --rendering-method gl_compatibility -- --smoketest=ui --skills-only` | 技能专项 PASS、退出 0：五项学习即时同步 BattleForm 彩色图标；五招输入、持续升龙、跑攻、火魔斩两分支/命中、声音与资源关联通过，仅隔离副本选取原有技能断言 |
+| `python .godot/validation/prepare_battle_icon_check.py` | 正式图集 11 格逐像素等于官方元件 328；命名核对阶段场景仅名称和换行变化，后续底板与布局修复见上节 |
+| `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry` | 471 路径、288 UID、23 个几何节点通过；改名保留 UID |
+| `dotnet format whitespace . --folder --include <本轮手写 C#> --verify-no-changes`、`git diff --check` | 通过；UTF-8 无 BOM、CRLF 检查通过 |
+
+本轮引擎日志在 `Godot/GodotProject/.godot/validation/`：`battle_form_frontend.log`、`data_names_combat.log`、`battle_icons_skills.log`；已查看隔离工程 `.godot/validation/battle_icons_unlearned.png` 与 `battle_icons_learned.png`。官方 RoleInfo.setSkillIcon 对未学习技能保留灰色空槽，学习后切彩色；没有把空槽改成自制灰度技能图。后续已确认底板缺失与技能栏下移，修复及验证见上节。
+
+技能专项按 `SMOKE-BATTLE-ICONS PASS` 判断覆盖范围，驱动器原有整套 UI 汇总文案不代表未执行断言也已通过。三次引擎日志仍有既有 WebRequest 关停 ObjectDisposedException，攻击/技能各有 4 个退出泄漏；前端的坏槽读取告警属于失败注入。CollectionRes 编辑器退出仍有已登记的 ComponentInsoector Free/RefCounted 与资源泄漏告警。完整 UI 的既有超时/恢复数字暂停失败继续保留下节记录；本轮未改 Framework、addons 或 Git 暂存内容。
+
+## 技能输入、激活与具体状态分工（2026-10-17）
+
+依据第 10 章职责与配套类型合并、第 30 章角色与状态分工，以及本轮 [沟通理解](WorkingNotes.md)，输入决策移出 IHeroBody。当前状态 TryGetActionInput 提供输入窗口，实体 MatchActionInput 匹配角色规则，状态消费请求并进行 GGF 转换。TryDropThroughPlatform 保留物理碰撞与位移能力；S+K 识别归输入系统。
+
+本轮按后续反馈继续简化：删除 InputActionState / ButtonInput 快照，InputSystem 直接查询 Godot 的按下、按住和松开；消费仍按角色隔离。InputEventAction 是原生事件，本次物理帧采样无需先查 Input 再构造事件。Skill / SkillInstance / SkillExecution 行为基类已删除，原正式五招未实现其生命周期；只有测试派生类在使用，不能以这些测试为理由保留空壳。SkillData 与 SkillDefinition 随 SkillModel 定义，前者仅保存施放身份与四项数据，后者登记状态、动作和条件。技能工厂、活动集合、后台调度与空生命周期一并移除；ISkillActor 保留节点能力契约并继承原脚本 UID。具体行为和后续输入归 GGF 状态，独立特效由节点推进。未修改配置、存档格式或生成内容。
+
+| 验证命令 | 结果 |
+| --- | --- |
+| `dotnet build Godot/GodotProject/.godot/validation/skills_runtime/project/GodotProject.csproj --no-restore -v quiet` | 隔离副本 0 错误；5 个既有框架警告及 NU1900。当前工程编辑器打开，未构建其输出目录 |
+| `dotnet test Tests/BattleTests --no-restore -v normal` | 186/186；第五绑定、消费隔离、普攻规则、真实 GGF 五招与多阶段交接通过；阶段输入直接读取原生查询契约 |
+| `dotnet test Tests/ProfileTests --no-restore -v normal` | 154/154；登记所有权、错误类型/重复绑定的原子拒绝、单次扣费、取消和新旧施放身份、同帧双边沿查询、正式五招时间轴与火魔斩旧回调隔离通过 |
+| `dotnet test Tests/LevelTests --no-restore -v quiet` | 18/18；合计 358 项通过，未跳过测试。移除仅验证旧行为壳派生实现的样例，真实玩法回归保留 |
+| Godot `--headless --editor --path <隔离副本> --build-solutions --quit --no-window` | 脚本扫描和构建均 DONE；退出触发既有 ComponentInsoector 的 Free/RefCounted 错误并滞留。核对 PID 63776 与完整工程路径后仅停止该验证进程；不记为正常退出通过 |
+| Godot `--path <隔离副本> --rendering-method gl_compatibility -- --smoketest=ui --skills-only` | 技能专项 PASS、退出 0：现有技能页/学习断言、五招真实输入、持续 W+J、跑攻、火魔斩两分支/命中/输入不排队、七段 GGF 音效和 47 条事件资源关联均通过。仅隔离副本增加截断条件，保留原断言，不执行其余 UI 测试 |
+| `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry` | 471 路径、288 UID、23 个几何节点通过 |
 | `dotnet format whitespace . --folder --include <本轮手写 C#> --verify-no-changes`、`git diff --check` | 通过；UTF-8 无 BOM / CRLF 检查通过 |
 
-日志位于 `.godot/validation/skills_runtime/`：`skill_ownership_main_final.log`、`skill_ownership_build.log`、`skill_ownership_battle_final.log`、`skill_ownership_profile_final.log`、`skill_ownership_level_final.log`、`skill_ownership_ui_final.log`。HUD 缺绑定是预期失败注入；退出仍有既有 Framework WebRequest ObjectDisposedException 与 4 个 ObjectDB 泄漏。编辑器扫描和构建完成，但本次两次编辑器验证在插件卸载后未退出，确认进程归属后终止；不将它们记为退出 0。没有修改框架、插件、只读资源或 Git 暂存内容。
+本轮日志在仓库根 `.godot/validation/skills_runtime/`：`skill_data_build.log`、`skill_data_battle.log`、`skill_data_profile.log`、`skill_data_level.log`、`skill_data_scan.log`、`skill_data_engine.log`、`skill_data_format.log`。专项从原 UiSmokeScenario 中仅选择 CheckSkillsAsync；准备脚本为 `.godot/validation/prepare_focused_skills.py`，隔离补丁为 `focused_skills.patch`。正式调试脚本只同步取消方法名称，不增加测试开关或生产 API。
 
-唐僧目前只有目录和伤害定义，八戒、沙僧尚未接入正式招式；机制复用与两阶段 GGF 测试不等于这些角色已制作完成。
+本轮技能专项通过，仍不能声称整套 UI 通过。此前 `input_names_ui.log` 在升级动画 Frame ≥ 22 等待处超时，退出 1；`input_names_ui_headless.log` 在恢复数字暂停断言失败后未正常退出，原因仍未定位。既有 Framework WebRequest ObjectDisposedException 与 4 个 ObjectDB 退出泄漏仍在本轮技能专项退出时出现。没有修补框架或插件，也未修改 Git 暂存内容；规范正文未改写。
+
+唐僧目前只有目录和伤害定义，八戒、沙僧尚未接入正式招式；输入和技能机制测试不等于这些角色已经制作完成。
 
 ## 悟空技能实战与左下栏恢复（2026-10-16）
 
@@ -387,7 +426,7 @@ python Tools/LegacyMigration/import_official_wukong_idle.py `
 ### UI 职责合并与目录整理（2026-10-14）
 
 - 按用户要求删除 18 个过细脚本及对应 UID：背包身份/装备/属性列/经验、分类/格子/底栏/分页/品质按钮，存档 Grid/Button，技能 Header/Footer/行组/行脚本，以及仅含三个处理方法的 InventoryForm.Bag partial。背包保留个人资料、背包和出售确认三个完整面板；技能保留主动、被动两页；SaveForm 直接管理六格。
-- `GameScripts/UI/Widgets/` 中九个保留控件连同 UID 归入 InventoryForm、BattleHud、MapForm 的 Components，场景引用同步更新。检查全部 Form，其余简单表单无需增加或合并包装。保留场景分组、外置主题及自定义 tooltip，不新增生产测试接口；目录与职责依据第 00/10 章，生成与验证依据第 50 章。
+- `GameScripts/UI/Widgets/` 中九个保留控件连同 UID 归入 InventoryForm、BattleForm、MapForm 的 Components，场景引用同步更新。检查全部 Form，其余简单表单无需增加或合并包装。保留场景分组、外置主题及自定义 tooltip，不新增生产测试接口；目录与职责依据第 00/10 章，生成与验证依据第 50 章。
 - SaveForm、SkillForm 根绑定经 `regenerate_ui_form.py <场景> --namespace GameLogic.UI` 生成。Godot `--headless --build-solutions --quit --no-window` 完成扫描及构建；`dotnet build Godot/GodotProject --no-restore -v quiet` 为 0 错误、1 个 NU1900 网络警告。
 - `--smoketest=ui` 与 `--smoketest=frontend` 均 PASS、退出 0：完整背包交易、弹层定位、技能数据覆盖/切页/暂停/复用、HUD、六格目录/建档/读档/损坏格及菜单导航回归通过。背包、技能和存档截图已查看。日志 `.godot/validation/ui_consolidation_{smoke,frontend}.log`。
 - `validate_game_references.py --compare-staged-geometry` 为 440 条路径、291 个 UID 通过，23 个关卡节点与暂存版本一致；`git diff --check` 通过。另对本轮所有 UI 场景的节点树和非脚本属性与暂存版本逐项比对，布局及样式一致。

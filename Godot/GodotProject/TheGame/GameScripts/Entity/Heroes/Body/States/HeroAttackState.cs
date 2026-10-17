@@ -13,6 +13,8 @@ namespace GameLogic.Heroes.Body
         private double m_StartedAt; // 当前段开始时刻，用于官方逐帧取消比例换算。
 
         /// <summary>开始已裁定的攻击段。</summary>
+        /// <param name="fsm">所属身体状态机。</param>
+        /// <param name="body">本次攻击的身体。</param>
         protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
         {
             m_MoveAxis = body.ActionData.MoveAxis;
@@ -21,14 +23,18 @@ namespace GameLogic.Heroes.Body
         }
 
         /// <summary>收招、受击、死亡或隐藏时归还攻击包。</summary>
+        /// <param name="fsm">所属身体状态机。</param>
+        /// <param name="body">本次攻击的身体。</param>
+        /// <param name="isShutdown">框架是否关停。</param>
         protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown) => body.EndAttack();
 
         /// <summary>消费普攻，地面定身，空中只保留起手方向并允许松键停止，按动画时长收招。</summary>
+        /// <param name="fsm">所属身体状态机。</param>
+        /// <param name="body">本次攻击的身体。</param>
+        /// <param name="dt">游戏物理帧秒数。</param>
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
-            float duration = body.Params.AttackTimes[body.ActionData.AttackSegment];
-            float ratio = (float)(body.ActionData.Time - m_StartedAt) / duration;
-            if (TryStartSkill(fsm, body, true, ratio))
+            if (TryStartSkill(fsm, body))
                 return;
             // 原版松键清除 isLeft/isRight；攻击中再按方向不会重新置位，须等收招。
             if (!body.GetSystem<InputSystem>().IsDirectionHeld(body.ActionData, m_MoveAxis) ||
@@ -37,8 +43,9 @@ namespace GameLogic.Heroes.Body
                 m_MoveAxis = 0;
             }
 
-            if (body.TryStartAttack(true, ratio, IsAirborne(body)))
+            if (body.ActionData.AttackRequested)
             {
+                body.ActionData.AttackRequested = false;
                 StartSegment(body);
             }
 
@@ -50,6 +57,16 @@ namespace GameLogic.Heroes.Body
             {
                 ChangeToLocomotion(fsm, body);
             }
+        }
+
+        /// <inheritdoc />
+        public override bool TryGetActionInput(IHeroBody body, out bool attacking, out float normalProgress, out bool airborne)
+        {
+            attacking = true;
+            normalProgress = (float)(body.ActionData.Time - m_StartedAt) /
+                body.Params.AttackTimes[body.ActionData.AttackSegment];
+            airborne = IsAirborne(body);
+            return true;
         }
 
         /// <summary>装填攻击包并从零播放本次动作，空中使用指定下劈。</summary>

@@ -9,7 +9,7 @@ namespace GameLogic.UI
 	/// <summary>
 	/// 界面,生成时会被覆盖，请勿手动修改
 	/// </summary>
-	public partial class BattleHud : Control, IUIForm
+	public partial class BattleForm : Control, IUIForm
 	{
 		#region 框架属性
 		/// <summary>

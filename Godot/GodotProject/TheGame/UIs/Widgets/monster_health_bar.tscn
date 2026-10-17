@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://caauui8brtx47"]
 
-[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/BattleHud/Components/ResourceBar.cs" id="1_resource_bar"]
+[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/BattleForm/Components/ResourceBar.cs" id="1_resource_bar"]
 
 [sub_resource type="Gradient" id="Gradient_fill"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)

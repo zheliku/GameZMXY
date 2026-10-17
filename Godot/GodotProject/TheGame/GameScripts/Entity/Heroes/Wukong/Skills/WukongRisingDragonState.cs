@@ -13,7 +13,6 @@ namespace GameLogic.Heroes.Wukong;
 public sealed class WukongRisingDragonState : AbstractHeroSkillState
 {
     private int m_MoveAxis; // 本次起手方向，松开后本招内不再恢复。
-    private SkillTimeline m_Timeline; // 升龙的命中与结束时点。
 
     /// <inheritdoc />
     protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
@@ -26,7 +25,6 @@ public sealed class WukongRisingDragonState : AbstractHeroSkillState
         body.ActionData.AttackReadyAt = body.ActionData.Time + action.NormalAttackBlockSeconds;
         if (action.ConsumesSecondAirJump && body.ActionData.JumpCount == 1)
             body.ActionData.JumpCount = 2;
-        m_Timeline = new(configuration.GetSkillTimeline(SkillId.RisingDragon, SkillEffectId.None));
         BeginAnimation(body, action);
         AdvanceSkill(body, 0);
     }
@@ -40,14 +38,14 @@ public sealed class WukongRisingDragonState : AbstractHeroSkillState
         float speed = body.ActionData.Running ? body.Params.RunSpeed : body.Params.WalkSpeed;
         body.Velocity = new Vector2(m_MoveAxis * speed * body.MoveSpeedMultiplier, body.Velocity.Y);
         var actor = (ISkillActor)body;
-        foreach (var entry in m_Timeline.Advance(dt, body.OnFloor))
+        foreach (var entry in AdvanceTimeline(dt, body.OnFloor))
         {
             if (entry.Kind == SkillTimelineKind.NewAttackId)
                 actor.NewSkillAttack(body.GetModel<ConfigurationModel>().Tables.TbSkillActionConfig
                     .Get(SkillId.RisingDragon).BodyHitId);
             else if (entry.Kind == SkillTimelineKind.CompleteActor)
-                Execution.Completed = true;
+                SkillData.Completed = true;
         }
-        actor.SetSkillAnimationTime(m_Timeline.Elapsed);
+        actor.SetSkillAnimationTime(SkillTime);
     }
 }

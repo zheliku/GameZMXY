@@ -81,11 +81,11 @@ public partial class InventoryCharacterPanel : Control, IController
 
     /// <summary>装配穿戴槽的图标及详情输入。</summary>
     /// <param name="cell">本面板的穿戴槽。</param>
-    /// <param name="item">当前装备；null 恢复为空槽。</param>
-    private void BindSlot(EquipmentCell cell, EquipmentInstance item)
+    /// <param name="data">当前装备；null 恢复为空槽。</param>
+    private void BindSlot(EquipmentCell cell, EquipmentData data)
     {
-        var definition = item == null ? null : this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
-        cell.Bind(item, definition == null ? null : GF.Resource.LoadAsset<Texture2D>(definition.IconPath));
+        var definition = data == null ? null : this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(data.EquipmentId);
+        cell.Bind(data, definition == null ? null : GF.Resource.LoadAsset<Texture2D>(definition.IconPath));
     }
 
     /// <summary>将属性点按 x/(x+K) 转换为显示百分比。</summary>

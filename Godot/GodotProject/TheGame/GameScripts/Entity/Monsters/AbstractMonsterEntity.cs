@@ -376,11 +376,11 @@ namespace GameLogic.Monsters
         /// 登记受击，身体状态机下一物理帧打断出招进入硬直（旧 BaseMonster state_hurt：击退 [0,0] 的招式不硬直）。
         /// 死亡由 ReceiveHit 置位 Dead，身体状态机进入死亡。
         /// </summary>
-        /// <param name="attack">本次攻击快照，不得保留池化引用。</param>
+        /// <param name="data">本次攻击快照，不得保留池化引用。</param>
         /// <param name="result">已完成的伤害结算结果。</param>
         /// <param name="knockback">击退速度，单位像素每秒。</param>
         /// <param name="attackerEntityId">攻击方运行编号；无来源时为零。</param>
-        protected override void OnHurt(AttackInstance attack, DamageResult result, Vector2 knockback, int attackerEntityId)
+        protected override void OnHurt(AttackData data, DamageResult result, Vector2 knockback, int attackerEntityId)
         {
             if (Dead)
             {

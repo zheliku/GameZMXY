@@ -12,7 +12,6 @@ namespace GameLogic.Heroes.Wukong;
 /// <summary>烈焰风暴：地面定身、占用空中跳跃次数，并逐段更新旋转攻击判定。</summary>
 public sealed class WukongFlameStormState : AbstractHeroSkillState
 {
-    private SkillTimeline m_Timeline; // 旋转各段判定与结束时点。
 
     /// <inheritdoc />
     protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
@@ -24,7 +23,6 @@ public sealed class WukongFlameStormState : AbstractHeroSkillState
         body.ActionData.AttackReadyAt = body.ActionData.Time + action.NormalAttackBlockSeconds;
         if (action.ConsumesSecondAirJump && body.ActionData.JumpCount == 1)
             body.ActionData.JumpCount = 2;
-        m_Timeline = new(configuration.GetSkillTimeline(SkillId.FlameStorm, SkillEffectId.None));
         BeginAnimation(body, action);
         AdvanceSkill(body, 0);
     }
@@ -35,14 +33,14 @@ public sealed class WukongFlameStormState : AbstractHeroSkillState
         if (body.OnFloor)
             Stand(body);
         var actor = (ISkillActor)body;
-        foreach (var entry in m_Timeline.Advance(dt, body.OnFloor))
+        foreach (var entry in AdvanceTimeline(dt, body.OnFloor))
         {
             if (entry.Kind == SkillTimelineKind.NewAttackId)
                 actor.NewSkillAttack(body.GetModel<ConfigurationModel>().Tables.TbSkillActionConfig
                     .Get(SkillId.FlameStorm).BodyHitId);
             else if (entry.Kind == SkillTimelineKind.CompleteActor)
-                Execution.Completed = true;
+                SkillData.Completed = true;
         }
-        actor.SetSkillAnimationTime(m_Timeline.Elapsed);
+        actor.SetSkillAnimationTime(SkillTime);
     }
 }

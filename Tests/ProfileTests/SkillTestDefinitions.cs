@@ -1,6 +1,7 @@
 using GameConfig.Skills;
 using GameLogic.Heroes.Wukong;
 using GameLogic.Skills;
+using GameLogic.Input;
 
 namespace GameLogic.SkillTests;
 
@@ -8,11 +9,11 @@ namespace GameLogic.SkillTests;
 internal static class SkillTestDefinitions
 {
     /// <summary>登记正式状态，替代需要引擎节点的悟空实体。</summary>
-    /// <returns>每个测试独立选用的不可变技能组。</returns>
-    internal static SkillSet Wukong() => new(1,
-        new(SkillId.RisingDragon, _ => new SkillExecution(SkillId.RisingDragon), BodyState: typeof(WukongRisingDragonState)),
-        new(SkillId.FlameThrust, _ => new SkillExecution(SkillId.FlameThrust, actor => actor.OnFloor), BodyState: typeof(WukongFlameThrustState)),
-        new(SkillId.BlazingFlash, _ => new SkillExecution(SkillId.BlazingFlash), 1, typeof(WukongBlazingFlashState)),
-        new(SkillId.FlameStorm, _ => new SkillExecution(SkillId.FlameStorm), 2, typeof(WukongFlameStormState)),
-        new(SkillId.FireDemonSlash, _ => new SkillExecution(SkillId.FireDemonSlash), 3, typeof(WukongFireDemonState)));
+    /// <returns>由正式状态组成的独立登记项数组。</returns>
+    internal static SkillDefinition[] Wukong() => [
+        new(SkillId.RisingDragon, typeof(WukongRisingDragonState)),
+        new(SkillId.FlameThrust, typeof(WukongFlameThrustState), CanStart: actor => actor.OnFloor),
+        new(SkillId.BlazingFlash, typeof(WukongBlazingFlashState), InputSystem.Skill1),
+        new(SkillId.FlameStorm, typeof(WukongFlameStormState), InputSystem.Skill2),
+        new(SkillId.FireDemonSlash, typeof(WukongFireDemonState), InputSystem.Skill3)];
 }

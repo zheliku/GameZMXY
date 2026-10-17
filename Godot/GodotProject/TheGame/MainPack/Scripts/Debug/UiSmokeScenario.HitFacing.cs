@@ -47,10 +47,10 @@ public sealed partial class UiSmokeScenario
                 foreach (int direction in new[] { -1, 1 })
                 {
                     actor.SetFacing(facing);
-                    var hit = AttackInstance.Create(0, default, 1, DamageKind.Real,
+                    var data = AttackData.Create(0, default, 1, DamageKind.Real,
                         new Vector2(2, -5), direction, 0, SoundId.None);
-                    var result = actor.ReceiveHit(hit, 0);
-                    GameFramework.ReferencePool.Release(hit);
+                    var result = actor.ReceiveHit(data, 0);
+                    GameFramework.ReferencePool.Release(data);
                     Check(!result.IsMiss && actor.Facing == facing && actor.HasPendingHurt,
                         $"{actor.GetType().Name} 受击意外转身或未登记击退");
                     var knockback = actor.TakePendingHurt();

@@ -25,6 +25,7 @@ MAPPING = {
     'Art/Game_2/Button/ButtonReturnMainMenu.png': 'Sprites/UI/frontend/map_return_title.png',
     'Art/game_pic/level_choose/294.png': 'Sprites/UI/frontend/map_save_game.png',
     'Art/game_pic/ArchivePicture/87.png': 'Sprites/UI/frontend/save_slots_backdrop.png',
+    'Art/HeroPicture/RoleProperiesBox/718.png': 'Sprites/UI/hud/hud_ws_frame.png',
     'Art/MainGame/BasicPicCd_1.png': 'Sprites/UI/frontend/save_slot_normal.png',
     'Art/MainGame/BasicPicCd_2.png': 'Sprites/UI/frontend/save_slot_hover.png',
     'Font/Aa我读山月山月独我_mianfeiziti.com.ttf': 'MainPack/Fonts/aa_shan_yue.ttf',

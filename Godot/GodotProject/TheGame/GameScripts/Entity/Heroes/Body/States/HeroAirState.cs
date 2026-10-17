@@ -13,13 +13,17 @@ namespace GameLogic.Heroes.Body
     public sealed class HeroAirState : AbstractHeroBodyState
     {
         /// <summary>处理空中攻击、二段跳、转向与跳跃/下落动画。</summary>
+        /// <param name="fsm">所属身体状态机。</param>
+        /// <param name="body">英雄宿主。</param>
+        /// <param name="dt">游戏物理帧秒数。</param>
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
             if (TryStartSkill(fsm, body))
                 return;
             HandleJumpKeyCombinations(body);
-            if (body.TryStartAttack(false, 0, IsAirborne(body)))
+            if (body.ActionData.AttackRequested)
             {
+                body.ActionData.AttackRequested = false;
                 ChangeState<HeroAttackState>(fsm);
                 return;
             }
@@ -34,6 +38,15 @@ namespace GameLogic.Heroes.Body
             ApplyGravity(body, dt);
             ApplyHorizontalMovement(body);
             body.PlayAnim(SelectAirAnimation(body));
+        }
+
+        /// <inheritdoc />
+        public override bool TryGetActionInput(IHeroBody body, out bool attacking, out float normalProgress, out bool airborne)
+        {
+            attacking = false;
+            normalProgress = 0;
+            airborne = IsAirborne(body);
+            return true;
         }
     }
 }

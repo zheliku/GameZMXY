@@ -352,9 +352,9 @@ public partial class SmokeTestDriver : Node
     private void HurtHeroOnce() // 经真实战斗结算链路对英雄造成一次 1 点伤害。
     {
         // 临时攻击数据只在结算期间持有，并在调用后归还对象池。
-        AttackInstance attack = AttackInstance.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0, SoundId.None);
-        m_Hero.ReceiveHit(attack, 0);
-        ReferencePool.Release(attack);
+        AttackData data = AttackData.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0, SoundId.None);
+        m_Hero.ReceiveHit(data, 0);
+        ReferencePool.Release(data);
     }
 
     private void DriveAiScenario() // 等待测试实体并推进 AI 场景断言。

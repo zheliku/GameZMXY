@@ -27,19 +27,11 @@ public abstract partial class AbstractHeroEntity : ISkillActor
     /// <summary>世界位置是物理表现，不进入技能存档。</summary>
     Vector2 ISkillActor.SkillPosition { get => GlobalPosition; set => GlobalPosition = value; }
 
-    /// <summary>具体英雄匹配自己的技能组合，不向公共输入或身体状态增加专属分支。</summary>
-    /// <param name="attacking">是否正在普攻。</param>
-    /// <param name="normalRatio">当前普攻帧比例。</param>
-    /// <param name="airborne">是否处于空中。</param>
-    public abstract void ProcessSkillInput(bool attacking, float normalRatio, bool airborne);
-
-    /// <summary>默认按共用普攻输入和冷却起手；特殊组合由具体角色处理。</summary>
-    /// <param name="attacking">是否正在普攻。</param>
-    /// <param name="normalRatio">当前普攻帧比例。</param>
-    /// <param name="airborne">是否处于空中。</param>
-    /// <returns>成功选择普攻段时为真。</returns>
-    public virtual bool TryStartAttack(bool attacking, float normalRatio, bool airborne) =>
-        this.GetSystem<InputSystem>().TryStartAttack(ActionData, ((IHeroBody)this).Params, airborne, attacking);
+    /// <summary>角色在身体允许的输入窗口匹配技能和普攻；只登记请求，实际转换归状态机。</summary>
+    /// <param name="attacking">当前是否处于普攻。</param>
+    /// <param name="normalProgress">本段普攻的播放比例。</param>
+    /// <param name="airborne">当前是否处于空中。</param>
+    protected abstract void MatchActionInput(bool attacking, float normalProgress, bool airborne);
 
     // ---- 技能表现接口 ----
 
@@ -76,7 +68,7 @@ public abstract partial class AbstractHeroEntity : ISkillActor
             return;
         var definition = this.GetModel<ConfigurationModel>().Tables.TbSkillHitConfig.Get(hit);
         var attributes = CaptureCombatAttributes();
-        SetAttack(AttackInstance.Create((int)hit, attributes,
+        SetAttack(AttackData.Create((int)hit, attributes,
             SkillSystem.CalculatePower(definition, attributes.Power,
                 this.GetSystem<HeroSystem>().AttackPowerMultiplier),
             definition.DamageKind, definition.Knockback, Facing, 0, SoundId.None));
@@ -106,17 +98,17 @@ public abstract partial class AbstractHeroEntity : ISkillActor
 
     /// <summary>从正式对象池创建独立特效，与角色节点相邻放置以保持世界坐标。</summary>
     /// <param name="effect">特效编号。</param>
-    /// <param name="execution">施放身份。</param>
+    /// <param name="data">施放身份。</param>
     /// <param name="position">世界位置。</param>
     /// <param name="completed">本次效果完成后通知所属技能。</param>
     /// <exception cref="InvalidOperationException">技能场景未登记到对象池。</exception>
-    void ISkillActor.SpawnSkillEffect(SkillEffectId effect, SkillExecution execution, Vector2 position, Action completed)
+    void ISkillActor.SpawnSkillEffect(SkillEffectId effect, SkillData data, Vector2 position, Action completed)
     {
         var definition = this.GetModel<ConfigurationModel>().Tables.TbSkillEffectConfig.Get(effect);
         var node = NodePool.Instance.Get<SkillEffectNode>(definition.ScenePath, GetParent()) ??
                    throw new InvalidOperationException($"技能特效未能取池：{effect}");
         m_SkillEffects.Add(node);
-        node.Show(definition, execution, position, Facing, CaptureCombatAttributes(),
+        node.Show(definition, data, position, Facing, CaptureCombatAttributes(),
             this.GetSystem<HeroSystem>().AttackPowerMultiplier, ReleaseSkillEffect, completed);
     }
 
@@ -138,7 +130,7 @@ public abstract partial class AbstractHeroEntity : ISkillActor
         {
             foreach (var effect in m_SkillEffects.ToArray())
                 ReleaseSkillEffect(effect);
-            this.GetSystem<SkillSystem>().StopAll(this);
+            this.GetSystem<SkillSystem>().CancelSkill();
         }
 
         m_SkillEffects.Clear();

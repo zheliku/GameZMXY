@@ -38,10 +38,10 @@ public sealed class ProfileModel : AbstractModel
     public BindableProperty<EquippedItems> Slots => GetSlots(ActiveHeroId);
 
     /// <summary>当前武器或空。</summary>
-    public EquipmentInstance Weapon => Slots.Value.Weapon;
+    public EquipmentData Weapon => Slots.Value.Weapon;
 
     /// <summary>当前防具或空。</summary>
-    public EquipmentInstance Armor => Slots.Value.Armor;
+    public EquipmentData Armor => Slots.Value.Armor;
 
     /// <summary>灵魂余额。</summary>
     public BindableProperty<int> Soul { get; }
@@ -50,7 +50,7 @@ public sealed class ProfileModel : AbstractModel
     public int Capacity { get; }
 
     /// <summary>唯一背包集合；由业务系统执行修改，表现层只读和订阅。</summary>
-    public BindableList<EquipmentInstance> Items { get; } = new();
+    public BindableList<EquipmentData> EquipmentDatas { get; } = new();
 
     /// <summary>从已验证的档案记录建立数据，不缓存共享经验曲线。</summary>
     /// <param name="activeHeroId">已拥有的出战英雄。</param>
@@ -95,7 +95,7 @@ public sealed class ProfileModel : AbstractModel
     /// <param name="slot">武器或防具。</param>
     /// <returns>该部位的实例或空。</returns>
     /// <exception cref="ArgumentOutOfRangeException">部位无效。</exception>
-    public EquipmentInstance GetEquippedItem(EquipmentSlot slot) => slot switch
+    public EquipmentData GetEquippedItem(EquipmentSlot slot) => slot switch
     {
         EquipmentSlot.Weapon => Weapon,
         EquipmentSlot.Armor => Armor,
@@ -113,4 +113,4 @@ public readonly record struct HeroProgressionState(int TotalExperience, int Leve
 /// <summary>一名英雄完整的穿戴快照，实例不可变。</summary>
 /// <param name="Weapon">武器或空。</param>
 /// <param name="Armor">防具或空。</param>
-public readonly record struct EquippedItems(EquipmentInstance Weapon, EquipmentInstance Armor);
+public readonly record struct EquippedItems(EquipmentData Weapon, EquipmentData Armor);

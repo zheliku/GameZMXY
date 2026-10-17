@@ -23,6 +23,7 @@
 | `Art/HeroPicture/RoleProperiesBox/408.png` | `Sprites/UI/hud/hud_status_panel.png` | 227×87，状态面板底图 |
 | `Art/HeroPicture/RoleProperiesBox/345.png` | `Sprites/UI/hud/hud_hp_fill.png` | 144×12，血条填充 |
 | `Art/HeroPicture/RoleProperiesBox/712.png` | `Sprites/UI/hud/hud_menu_panel.png` | 169×133，左下菜单面板；五个旧入口保留 |
+| `Art/HeroPicture/RoleProperiesBox/718.png` | `Sprites/UI/hud/hud_ws_frame.png` | 260×22，无双条黑色长底板，原样恢复；由 `import_frontend_assets.py` 登记 |
 | `Art/HeroPicture/RoleProperiesBox/swk.png` | `Sprites/UI/hud/hud_head_wukong.png` | 83×76，悟空头像 |
 | `Art/HeroPicture/RoleProperiesBox/748.png` | `Sprites/UI/hud/hud_status_label.png` | 17×46，状态标签装饰 |
 
@@ -192,12 +193,12 @@
 
 | 原版元件 | 正式资源（`Sprites/UI/hud/`） | 规格 |
 | --- | --- | --- |
-| `328` 的 11 帧 | `battle_skill_icons.png`、`battle_skill_icon_frames.tres` | 45×45；第 1 帧为未学习槽，后 10 帧为两位角色的已学习图标；每技能保留灰/彩两帧 |
+| `328` 的 11 帧 | `battle_skill_icons.png`、`battle_skill_icon_frames.tres` | 45×45；第 1 帧为灰色空槽，后 10 帧为两位角色的已学习图标；每技能引用空槽/彩色两帧 |
 | `330`、`333` | `battle_menu_ws_under.png`、`battle_menu_ws_fill.png` | 221×27 底条、221×12 填充；填充偏移 (0,9) |
 | 位图 `335` | `battle_menu_ws_idle.png` | 68×68 无双未满图 |
 | `340` | `battle_menu_ws_glow_00..18.png`、`battle_menu_ws_glow_frames.tres` | 19 帧、24 fps、78×78 |
 
-按用户要求，HUD 保留旧版法宝、宠物、背包、设置、技能入口及 `hud_menu_panel.png` 的布局。只替换无双和五个主动技能图标；法宝、宠物仍为未实现入口，素材为后续版本保留。
+按用户要求，HUD 左侧保留造三的法宝、宠物、背包、设置、技能五入口及 `hud_menu_panel.png` 布局。只替换无双和五个主动技能图标；法宝、宠物仍为未实现入口，素材为后续版本保留。无双条另有 `hud_ws_frame.png` 黑色长底板，不能把细灰底条当成完整底板删除；技能栏随这套菜单排在条上方。
 
 ## 结算与战斗背包
 

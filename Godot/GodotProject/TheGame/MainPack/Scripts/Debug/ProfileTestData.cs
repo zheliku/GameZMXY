@@ -28,10 +28,10 @@ internal static class ProfileTestData
         }
 
         /// <summary>直接设置本测试拥有的背包；非法存档通过正式回滚入口验证。</summary>
-        /// <param name="items">装备集合。</param>
-        internal void RestoreItems(IEnumerable<EquipmentInstance> items)
+        /// <param name="datas">装备集合。</param>
+        internal void RestoreItems(IEnumerable<EquipmentData> datas)
         {
-            profile.Items.ReplaceAll(items);
+            profile.EquipmentDatas.ReplaceAll(datas);
         }
     }
 }

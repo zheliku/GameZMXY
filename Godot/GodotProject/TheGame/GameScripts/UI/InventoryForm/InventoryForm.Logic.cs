@@ -19,7 +19,7 @@ namespace GameLogic.UI;
 /// <summary>观察战斗个人资料与背包，向关卡提交穿脱装备请求。</summary>
 public partial class InventoryForm : IController
 {
-    private InventoryFormData m_Data; // 本次打开借用的状态源。
+    private InventoryFormData m_InventoryData; // 本次打开借用的状态源。
     private bool m_ResumeGame; // 只对称恢复本窗口发起的暂停。
 
     /// <summary>初始化框架字段；新实例的按钮只绑定一次。</summary>
@@ -105,7 +105,7 @@ public partial class InventoryForm : IController
             levelModel == null || !levelModel.Initialized ||
             levelModel.Outcome.Value != LevelOutcome.Running || data.Hero.HeroId != profile.ActiveHeroId)
             throw new ArgumentException("背包需要本关存活的出战英雄与档案。", nameof(userData));
-        m_Data = data;
+        m_InventoryData = data;
         // 先记录借用引用，装配失败时也能完整解除订阅与暂停。
         try
         {
@@ -116,7 +116,7 @@ public partial class InventoryForm : IController
             this.GetModel<HeroModel>().Level.Register(RefreshResources);
             profile.Progress.Register(RefreshProgression);
             this.GetModel<ProfileModel>().Soul.Register(RefreshSoul);
-            this.GetModel<ProfileModel>().Items.Register(RefreshItems);
+            this.GetModel<ProfileModel>().EquipmentDatas.Register(RefreshItems);
             this.GetModel<ProfileModel>().Slots.Register(RefreshEquipment);
             levelModel.Outcome.Register(OnLevelEnded);
             m_ResumeGame = !GF.Base.IsGamePaused;
@@ -139,7 +139,7 @@ public partial class InventoryForm : IController
     /// <param name="realElapseSeconds">真实秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds)
     {
-        if (m_Data != null)
+        if (m_InventoryData != null)
             m_Character.AdvancePreview();
     }
 
@@ -147,14 +147,14 @@ public partial class InventoryForm : IController
     /// <param name="inputEvent">已映射的输入事件。</param>
     public override void _Input(InputEvent inputEvent)
     {
-        if (m_Data != null && Visible && m_SaleConfirmation.Visible && inputEvent.IsActionPressed("ui_cancel"))
+        if (m_InventoryData != null && Visible && m_SaleConfirmation.Visible && inputEvent.IsActionPressed("ui_cancel"))
         {
             GetViewport().SetInputAsHandled();
             m_SaleConfirmation.Cancel();
             return;
         }
 
-        if (m_Data == null || !Visible ||
+        if (m_InventoryData == null || !Visible ||
             !inputEvent.IsActionPressed(GameLogic.Input.InputSystem.InventoryToggle))
             return;
         GetViewport().SetInputAsHandled();
@@ -188,8 +188,8 @@ public partial class InventoryForm : IController
         m_Actions.Close();
         m_Bag.Clear();
         m_SaleConfirmation.Cancel();
-        var data = m_Data;
-        m_Data = null;
+        var data = m_InventoryData;
+        m_InventoryData = null;
         if (data != null)
         {
             // 流程先关闭窗口再移除 Model，本次订阅源在关闭前保持同一实例。
@@ -201,7 +201,7 @@ public partial class InventoryForm : IController
             this.GetModel<HeroModel>().Level.UnRegister(RefreshResources);
             profile.Progress.UnRegister(RefreshProgression);
             this.GetModel<ProfileModel>().Soul.UnRegister(RefreshSoul);
-            this.GetModel<ProfileModel>().Items.UnRegister(RefreshItems);
+            this.GetModel<ProfileModel>().EquipmentDatas.UnRegister(RefreshItems);
             this.GetModel<ProfileModel>().Slots.UnRegister(RefreshEquipment);
             this.GetModel<LevelModel>().Outcome.UnRegister(OnLevelEnded);
         }
@@ -222,7 +222,7 @@ public partial class InventoryForm : IController
     /// <summary>关闭个人资料，继续本关。</summary>
     private void OnCloseClicked()
     {
-        if (m_Data == null)
+        if (m_InventoryData == null)
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         GF.UI.CloseUIForm(SerialId);
@@ -232,17 +232,17 @@ public partial class InventoryForm : IController
     private void RefreshInventoryPanels()
     {
         CloseTransientSelection();
-        m_Character.Refresh(m_Data.Hero);
+        m_Character.Refresh(m_InventoryData.Hero);
         m_Bag.Refresh();
     }
 
     /// <summary>生命、魔法变化只刷新个人资料。</summary>
     /// <param name="value">已提交的资源值。</param>
-    private void RefreshResources(int value) => m_Character.Refresh(m_Data.Hero);
+    private void RefreshResources(int value) => m_Character.Refresh(m_InventoryData.Hero);
 
     /// <summary>成长变化只刷新个人资料。</summary>
     /// <param name="progress">已经提交的成长快照。</param>
-    private void RefreshProgression(HeroProgressionState progress) => m_Character.Refresh(m_Data.Hero);
+    private void RefreshProgression(HeroProgressionState progress) => m_Character.Refresh(m_InventoryData.Hero);
 
     /// <summary>余额变化刷新背包与出售选项，清除已过期的确认。</summary>
     /// <param name="soul">已经提交的余额。</param>
@@ -253,8 +253,8 @@ public partial class InventoryForm : IController
     }
 
     /// <summary>背包集合变化后重新分页和绘制格子。</summary>
-    /// <param name="items">已领取装备的实时只读视图。</param>
-    private void RefreshItems(IReadOnlyList<EquipmentInstance> items)
+    /// <param name="datas">已领取装备的实时只读视图。</param>
+    private void RefreshItems(IReadOnlyList<EquipmentData> datas)
     {
         CloseTransientSelection();
         m_Bag.Refresh();
@@ -265,25 +265,25 @@ public partial class InventoryForm : IController
     private void RefreshEquipment(EquippedItems slots)
     {
         CloseTransientSelection();
-        m_Character.Refresh(m_Data.Hero);
+        m_Character.Refresh(m_InventoryData.Hero);
     }
 
     /// <summary>打开所选背包格的操作菜单；点击本身不改变穿戴。</summary>
-    /// <param name="item">当前可见格提交的装备实例。</param>
+    /// <param name="data">当前可见格提交的装备实例。</param>
     /// <param name="anchor">当前可见格的全局区域。</param>
-    private void OnBagClicked(EquipmentInstance item, Rect2 anchor)
+    private void OnBagClicked(EquipmentData data, Rect2 anchor)
     {
-        if (m_Data == null || m_SaleConfirmation.Visible)
+        if (m_InventoryData == null || m_SaleConfirmation.Visible)
             return;
-        var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
-        m_Actions.Open(item.InstanceId, anchor, (int)definition.Owner == this.GetModel<ProfileModel>().ActiveHeroId);
+        var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(data.EquipmentId);
+        m_Actions.Open(data.InstanceId, anchor, (int)definition.Owner == this.GetModel<ProfileModel>().ActiveHeroId);
     }
 
     /// <summary>所选菜单确认后提交穿戴请求。</summary>
     /// <param name="instanceId">菜单捕获的背包实例。</param>
     private void OnEquipRequested(Guid instanceId)
     {
-        if (m_Data != null && this.GetSystem<LevelSystem>().TryEquip(instanceId) == true)
+        if (m_InventoryData != null && this.GetSystem<LevelSystem>().TryEquip(instanceId) == true)
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
@@ -291,7 +291,7 @@ public partial class InventoryForm : IController
     /// <param name="instanceId">菜单捕获的背包实例。</param>
     private void OnSellRequested(Guid instanceId)
     {
-        if (m_Data != null && this.GetSystem<LevelSystem>().TrySell(instanceId) == true)
+        if (m_InventoryData != null && this.GetSystem<LevelSystem>().TrySell(instanceId) == true)
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
@@ -299,7 +299,7 @@ public partial class InventoryForm : IController
     /// <param name="slot">被点击的穿戴部位。</param>
     private void OnSlotClicked(EquipmentSlot slot)
     {
-        if (m_Data != null && this.GetSystem<LevelSystem>().TryUnequip(slot) == true)
+        if (m_InventoryData != null && this.GetSystem<LevelSystem>().TryUnequip(slot) == true)
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
@@ -316,7 +316,7 @@ public partial class InventoryForm : IController
     /// <param name="price">未截断收益。</param>
     private void OnQualitySaleSelected(EquipmentQuality quality, int count, long price)
     {
-        if (m_Data == null || m_SaleConfirmation.Visible)
+        if (m_InventoryData == null || m_SaleConfirmation.Visible)
             return;
         m_Actions.Close();
         m_SaleConfirmation.Open(quality, count, price);
@@ -326,7 +326,7 @@ public partial class InventoryForm : IController
     /// <param name="quality">本次明确确认的品质。</param>
     private void OnQualitySaleConfirmed(EquipmentQuality quality)
     {
-        if (m_Data != null && this.GetSystem<LevelSystem>().SellByQuality(quality) > 0)
+        if (m_InventoryData != null && this.GetSystem<LevelSystem>().SellByQuality(quality) > 0)
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 }

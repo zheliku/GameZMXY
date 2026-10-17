@@ -23,6 +23,9 @@ internal sealed class TestGameScope : IArchitecture
     private readonly InputSystem m_InputSystem; // 正式输入组合与方向规则。
     private readonly SaveDataUtility m_Save = new(); // 与游戏注册的相同纯转换工具。
 
+    /// <summary>测试提供的任意动作事实，走正式输入采样与消费。</summary>
+    public TestInputSource Input { get; } = new();
+
     /// <summary>档案的唯一权威数据。</summary>
     public ProfileModel Profile { get; }
 
@@ -58,7 +61,7 @@ internal sealed class TestGameScope : IArchitecture
             ((ICanInit)m_HeroSystem).Init();
         m_EquipmentSystem = new EquipmentSystem(this);
         m_SkillSystem = new SkillSystem(this);
-        m_InputSystem = new InputSystem(this);
+        m_InputSystem = new InputSystem(this, Input);
         m_SaveSystem = new SaveSystem(this);
         m_LevelSystem = new LevelSystem(this);
     }
@@ -87,8 +90,8 @@ internal sealed class TestGameScope : IArchitecture
     public GameData CaptureSaveData() => m_Save.Capture(Profile, Skills);
 
     /// <summary>调用正式回滚。</summary>
-    /// <param name="snapshot">进关快照。</param>
-    public void RestoreCheckpoint(GameData snapshot) => m_ProfileSystem.RestoreCheckpoint(snapshot);
+    /// <param name="data">进关快照。</param>
+    public void RestoreCheckpoint(GameData data) => m_ProfileSystem.RestoreCheckpoint(data);
 
     /// <summary>验证后建立测试作用域，映射算法使用正式工具。</summary>
     /// <param name="data">当前格式数据。</param>
@@ -106,4 +109,17 @@ internal sealed class TestGameScope : IArchitecture
         scope.RestoreCheckpoint(data);
         return scope;
     }
+}
+
+/// <summary>测试替代输入源，不在生产代码添加注入状态或观测接口。</summary>
+internal sealed class TestInputSource : IInputSource
+{
+    /// <summary>本帧每个任意动作的事实。</summary>
+    public Dictionary<string, (bool JustPressed, bool IsPressed, bool JustReleased)> Actions { get; } = new();
+    /// <inheritdoc />
+    public bool IsPressed(string action) => Actions.GetValueOrDefault(action).IsPressed;
+    /// <inheritdoc />
+    public bool IsJustPressed(string action) => Actions.GetValueOrDefault(action).JustPressed;
+    /// <inheritdoc />
+    public bool IsJustReleased(string action) => Actions.GetValueOrDefault(action).JustReleased;
 }

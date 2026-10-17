@@ -31,7 +31,7 @@ public sealed partial class UiSmokeScenario
     {
         var tables = ConfigSystem.Instance.Tables;
         var owned = SmokeInspection.ReadField<HashSet<GroundItemNode>>(level, "m_GroundItems");
-        var original = flow.GetModel<ProfileModel>().Items.ToArray();
+        var original = flow.GetModel<ProfileModel>().EquipmentDatas.ToArray();
         SpawnGround(level, hero.GlobalPosition + new Vector2(180, -80), tables.TbPickupConfig.Get(PickupId.SmallPeach), null);
         var peach = owned.Single();
         await WaitUntilAsync(() => peach.IsOnFloor(), "桃子没有落到实际关卡地形上", 5000);
@@ -149,20 +149,20 @@ public sealed partial class UiSmokeScenario
         Check(numbers.Count == 0, "恢复数字没有按一秒生命周期回池");
 
         var item = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.CommonPineStaff, () => .75f);
-        while (flow.GetModel<ProfileModel>().Items.Count < flow.GetModel<ProfileModel>().Capacity)
+        while (flow.GetModel<ProfileModel>().EquipmentDatas.Count < flow.GetModel<ProfileModel>().Capacity)
             flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.RoughCassock, () => 0));
         SpawnGround(level, hero.HurtBox.GetGlobalBounds().GetCenter(), null, item);
         var gear = owned.Single();
         await WaitFramesAsync(6);
         Check(GroundOverlaps(gear, hero) && owned.Count == 1 &&
-            !flow.GetModel<ProfileModel>().Items.Any(x => x.InstanceId == item.InstanceId), "满包时装备消失或超出容量");
+            !flow.GetModel<ProfileModel>().EquipmentDatas.Any(x => x.InstanceId == item.InstanceId), "满包时装备消失或超出容量");
         Check(!gear.GetNode<AnimationPlayer>("AnimationPlayer").IsPlaying(), "满包拒绝领取却播放了领取动画");
         flow.GetModel<ProfileModel>().RestoreItems(original);
         await WaitUntilAsync(() => SmokeInspection.ReadField<bool>(gear, "m_Collected"), "满包腾出空间后未重试实际接触", 3000);
-        Check(owned.Count == 1 && flow.GetModel<ProfileModel>().Items.Last().InstanceId == item.InstanceId, "腾出空间后没有领取同一装备实例");
+        Check(owned.Count == 1 && flow.GetModel<ProfileModel>().EquipmentDatas.Last().InstanceId == item.InstanceId, "腾出空间后没有领取同一装备实例");
         gear.GetNode<AnimationPlayer>("AnimationPlayer").Seek(0, update: true);
         gear._PhysicsProcess(.4);
-        Check(flow.GetModel<ProfileModel>().Items.Count == original.Length + 1, "装备领取动画重复发放装备");
+        Check(flow.GetModel<ProfileModel>().EquipmentDatas.Count == original.Length + 1, "装备领取动画重复发放装备");
         gear._PhysicsProcess(.41);
         Check(owned.Count == 0, "装备领取动画结束后未回池");
         flow.GetModel<ProfileModel>().RestoreItems(original);
@@ -194,10 +194,10 @@ public sealed partial class UiSmokeScenario
     /// <param name="level">真实所有者。</param>
     /// <param name="position">世界位置。</param>
     /// <param name="pickup">恢复品或空。</param>
-    /// <param name="equipment">装备或空。</param>
-    private static void SpawnGround(LevelViewController level, Vector2 position, PickupConfig pickup, EquipmentInstance equipment) =>
+    /// <param name="data">装备或空。</param>
+    private static void SpawnGround(LevelViewController level, Vector2 position, PickupConfig pickup, EquipmentData data) =>
         typeof(LevelViewController).GetMethod("ShowGroundItem", BindingFlags.NonPublic | BindingFlags.Instance)
-            .Invoke(level, [position, pickup?.Id ?? PickupId.None, equipment]);
+            .Invoke(level, [position, pickup?.Id ?? PickupId.None, data]);
 
     /// <summary>测试侧用实际唯一形状查询接触，不为生产代码增加观测接口。</summary>
     /// <param name="node">地面物品。</param>

@@ -58,7 +58,7 @@ public class ProcedureLevel : ProcedureBase
 
     private string m_LevelScenePath; // 从 Luban LevelConfig 读取的场景路径。
 
-    private int m_HudSerialId; // 本会话打开的战斗 HUD 编号；0 表示未打开。
+    private int m_BattleFormSerialId; // 本会话打开的战斗 HUD 编号；0 表示未打开。
 
     private int m_MusicSerial; // 本关 GGF 音乐请求，清理时连在途加载一起取消。
     private int m_SettingsSerialId; // 本周期的设置窗口，含正在加载的请求。
@@ -163,10 +163,10 @@ public class ProcedureLevel : ProcedureBase
 
             // 先订阅结果再提交请求，缓存命中也能处理；失败参数只在事件分发期间使用。
             GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
-            GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnHudOpenFailed);
-            m_HudSerialId = GF.UI.OpenUIForm(UIFormId.BattleHud, new BattleHudData(m_Hero, m_LevelViewController));
-            SetFormCallbacks(GF.UI.GetUIForm(m_HudSerialId), bind: true);
-            Log.Info("[ProcedureLevel] 已提交战斗 HUD 请求：{0}", m_HudSerialId);
+            GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnBattleFormOpenFailed);
+            m_BattleFormSerialId = GF.UI.OpenUIForm(UIFormId.BattleForm, new BattleFormData(m_Hero, m_LevelViewController));
+            SetFormCallbacks(GF.UI.GetUIForm(m_BattleFormSerialId), bind: true);
+            Log.Info("[ProcedureLevel] 已提交战斗 HUD 请求：{0}", m_BattleFormSerialId);
         }
         catch (Exception ex)
         {
@@ -193,7 +193,7 @@ public class ProcedureLevel : ProcedureBase
     {
         if (GF.Event.Check(OpenUIFormSuccessEventArgs.EventId, OnFormOpened))
             GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
-        SetFormCallbacks(GF.UI.GetUIForm(m_HudSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(m_BattleFormSerialId), bind: false);
         SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: false);
         SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: false);
 
@@ -245,7 +245,7 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnSettingsRequested(int formSerialId)
     {
-        if (formSerialId != m_HudSerialId ||
+        if (formSerialId != m_BattleFormSerialId ||
             m_LevelModel?.Outcome.Value != LevelOutcome.Running)
             return;
         if (HasWindow(m_SettingsSerialId) || HasWindow(m_InventorySerialId) || HasWindow(m_SkillSerialId))
@@ -258,7 +258,7 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnInventoryRequested(int formSerialId)
     {
-        if (formSerialId != m_HudSerialId ||
+        if (formSerialId != m_BattleFormSerialId ||
             m_LevelModel?.Outcome.Value != LevelOutcome.Running)
             return;
         if (HasWindow(m_SettingsSerialId) || HasWindow(m_InventorySerialId) || HasWindow(m_SkillSerialId))
@@ -271,7 +271,7 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnSkillsRequested(int formSerialId)
     {
-        if (formSerialId != m_HudSerialId ||
+        if (formSerialId != m_BattleFormSerialId ||
             m_LevelModel?.Outcome.Value != LevelOutcome.Running ||
             m_Hero == null || !m_Hero.IsAlive)
             return;
@@ -375,7 +375,7 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="entrySerial">被清理的流程进入周期。</param>
     private void CleanupSession(int entrySerial)
     {
-        SetFormCallbacks(GF.UI.GetUIForm(m_HudSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(m_BattleFormSerialId), bind: false);
         SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: false);
         SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: false);
         m_PendingSettlement = false;
@@ -408,20 +408,20 @@ public class ProcedureLevel : ProcedureBase
         m_MusicSerial = 0;
 
         // 先关 HUD（退订英雄/成长/关卡）再拆会话，避免界面在已清理的引用上刷新。
-        if (m_HudSerialId != 0)
+        if (m_BattleFormSerialId != 0)
         {
-            if (GF.UI.HasUIForm(m_HudSerialId) || GF.UI.IsLoadingUIForm(m_HudSerialId))
+            if (GF.UI.HasUIForm(m_BattleFormSerialId) || GF.UI.IsLoadingUIForm(m_BattleFormSerialId))
             {
-                GF.UI.CloseUIForm(m_HudSerialId);
-                Log.Info("[ProcedureLevel] 战斗 HUD 关闭：{0}", m_HudSerialId);
+                GF.UI.CloseUIForm(m_BattleFormSerialId);
+                Log.Info("[ProcedureLevel] 战斗 HUD 关闭：{0}", m_BattleFormSerialId);
             }
 
-            m_HudSerialId = 0;
+            m_BattleFormSerialId = 0;
         }
 
-        if (GF.Event.Check(OpenUIFormFailureEventArgs.EventId, OnHudOpenFailed))
+        if (GF.Event.Check(OpenUIFormFailureEventArgs.EventId, OnBattleFormOpenFailed))
         {
-            GF.Event.Unsubscribe(OpenUIFormFailureEventArgs.EventId, OnHudOpenFailed);
+            GF.Event.Unsubscribe(OpenUIFormFailureEventArgs.EventId, OnBattleFormOpenFailed);
         }
 
         // 先停表现和关卡事件，再隐藏实体，最后卸载场景。
@@ -497,9 +497,9 @@ public class ProcedureLevel : ProcedureBase
     /// <summary>战斗窗口打开失败时只处理本流程拥有的请求，统一结束关卡。</summary>
     /// <param name="sender">事件发送者。</param>
     /// <param name="args">池化事件参数，只在本次分发内读取。</param>
-    private void OnHudOpenFailed(object sender, GameEventArgs args)
+    private void OnBattleFormOpenFailed(object sender, GameEventArgs args)
     {
-        if (args is OpenUIFormFailureEventArgs failure && (failure.SerialId == m_HudSerialId ||
+        if (args is OpenUIFormFailureEventArgs failure && (failure.SerialId == m_BattleFormSerialId ||
                                                            failure.SerialId == m_InventorySerialId ||
                                                            failure.SerialId == m_SkillSerialId ||
                                                            failure.SerialId == m_SettlementSerialId))
@@ -535,16 +535,16 @@ public class ProcedureLevel : ProcedureBase
             return;
         switch (form)
         {
-            case BattleHud battleHud when battleHud.SerialId == m_HudSerialId:
-                battleHud.SettingsRequested -= OnSettingsRequested;
+            case BattleForm battleForm when battleForm.SerialId == m_BattleFormSerialId:
+                battleForm.SettingsRequested -= OnSettingsRequested;
                 if (bind)
-                    battleHud.SettingsRequested += OnSettingsRequested;
-                battleHud.InventoryRequested -= OnInventoryRequested;
+                    battleForm.SettingsRequested += OnSettingsRequested;
+                battleForm.InventoryRequested -= OnInventoryRequested;
                 if (bind)
-                    battleHud.InventoryRequested += OnInventoryRequested;
-                battleHud.SkillsRequested -= OnSkillsRequested;
+                    battleForm.InventoryRequested += OnInventoryRequested;
+                battleForm.SkillsRequested -= OnSkillsRequested;
                 if (bind)
-                    battleHud.SkillsRequested += OnSkillsRequested;
+                    battleForm.SkillsRequested += OnSkillsRequested;
                 break;
             case SettingsForm settingsForm when settingsForm.SerialId == m_SettingsSerialId:
                 settingsForm.TitleRequested -= OnTitleRequested;

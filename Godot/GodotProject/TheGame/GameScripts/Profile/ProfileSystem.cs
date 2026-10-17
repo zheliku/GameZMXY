@@ -52,47 +52,47 @@ public sealed class ProfileSystem : AbstractSystem
     }
 
     /// <summary>领取已确定属性的装备；满包、背包或穿戴中已拥有此实例时拒绝。</summary>
-    /// <param name="item">掉落实例。</param>
+    /// <param name="data">掉落实例。</param>
     /// <returns>是否完成领取。</returns>
-    public bool TryCollectEquipment(EquipmentInstance item)
+    public bool TryCollectEquipment(EquipmentData data)
     {
-        ArgumentNullException.ThrowIfNull(item);
+        ArgumentNullException.ThrowIfNull(data);
         var profile = this.GetModel<ProfileModel>();
         foreach (int heroId in profile.HeroIds)
         {
             var slots = profile.GetSlots(heroId).Value;
-            if (slots.Weapon?.InstanceId == item.InstanceId || slots.Armor?.InstanceId == item.InstanceId)
+            if (slots.Weapon?.InstanceId == data.InstanceId || slots.Armor?.InstanceId == data.InstanceId)
                 return false;
         }
 
-        if (profile.Items.Count == profile.Capacity || profile.Items.Any(x => x.InstanceId == item.InstanceId))
+        if (profile.EquipmentDatas.Count == profile.Capacity || profile.EquipmentDatas.Any(x => x.InstanceId == data.InstanceId))
             return false;
-        profile.Items.Add(item);
+        profile.EquipmentDatas.Add(data);
         return true;
     }
 
     /// <summary>先验证关卡快照，再原地恢复档案数据，保留绑定身份。</summary>
-    /// <param name="snapshot">同一档案的进关快照。</param>
+    /// <param name="data">同一档案的进关快照。</param>
     /// <exception cref="ArgumentException">快照内容无效。</exception>
     /// <exception cref="InvalidOperationException">快照不属于当前英雄集合。</exception>
-    public void RestoreCheckpoint(GameData snapshot)
+    public void RestoreCheckpoint(GameData data)
     {
         var profile = this.GetModel<ProfileModel>();
-        SaveDataUtility.ValidateEnvelope(snapshot);
-        SaveDataUtility.ValidateSkills(snapshot, this.GetModel<ConfigurationModel>().Tables.TbSkillConfig);
-        if (snapshot.ActiveHeroId != profile.ActiveHeroId || snapshot.Heroes.Count != profile.HeroIds.Count ||
-            snapshot.Heroes.Select(x => x.HeroId).Distinct().Count() != snapshot.Heroes.Count ||
-            snapshot.Heroes.Any(x => !profile.HeroIds.Contains(x.HeroId) || x.TotalExperience < 0) || snapshot.Soul < 0)
+        SaveDataUtility.ValidateEnvelope(data);
+        SaveDataUtility.ValidateSkills(data, this.GetModel<ConfigurationModel>().Tables.TbSkillConfig);
+        if (data.ActiveHeroId != profile.ActiveHeroId || data.Heroes.Count != profile.HeroIds.Count ||
+            data.Heroes.Select(x => x.HeroId).Distinct().Count() != data.Heroes.Count ||
+            data.Heroes.Any(x => !profile.HeroIds.Contains(x.HeroId) || x.TotalExperience < 0) || data.Soul < 0)
             throw new InvalidOperationException("回滚快照与档案不一致或数值非法。");
-        var (bag, slots) = SaveDataUtility.ReadItems(snapshot, profile.Capacity);
+        var (bag, slots) = SaveDataUtility.ReadItems(data, profile.Capacity);
         // 校验完成后使用正常修改入口；派生系统按绑定优先级先于 UI 同步。
-        foreach (var hero in snapshot.Heroes)
+        foreach (var hero in data.Heroes)
         {
             this.GetModel<SkillModel>().GetLearnedSkills(hero.HeroId).ReplaceAll(hero.LearnedSkills);
             profile.GetSlots(hero.HeroId).Value = new(slots[hero.HeroId].Weapon, slots[hero.HeroId].Armor);
             profile.GetProgress(hero.HeroId).Value = this.GetUtility<ExperienceCurve>().GetProgress(hero.TotalExperience);
         }
-        profile.Items.ReplaceAll(bag);
-        profile.Soul.Value = snapshot.Soul;
+        profile.EquipmentDatas.ReplaceAll(bag);
+        profile.Soul.Value = data.Soul;
     }
 }

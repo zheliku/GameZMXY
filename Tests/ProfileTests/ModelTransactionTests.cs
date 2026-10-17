@@ -20,7 +20,7 @@ public sealed class ModelTransactionTests
         Assert.True(system.TryCollectEquipment(item));
         Assert.True(equipment.TryEquip(item.InstanceId));
         Assert.False(system.TryCollectEquipment(item));
-        Assert.Empty(scope.Profile.Items);
+        Assert.Empty(scope.Profile.EquipmentDatas);
         Assert.Same(item, scope.Profile.Weapon);
     }
 
@@ -32,7 +32,7 @@ public sealed class ModelTransactionTests
         var equipment = new EquipmentSystem(scope);
         var first = equipment.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
         var second = equipment.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimStaff, () => 0);
-        var items = scope.Profile.Items;
+        var items = scope.Profile.EquipmentDatas;
         scope.GetSystem<ProfileSystem>().TryCollectEquipment(first);
         Assert.True(equipment.TryEquip(first.InstanceId));
         scope.GetSystem<ProfileSystem>().TryCollectEquipment(second);
@@ -46,7 +46,7 @@ public sealed class ModelTransactionTests
 
         Assert.True(equipment.TryEquip(second.InstanceId));
         Assert.Same(second, scope.Profile.Weapon);
-        Assert.Same(items, scope.Profile.Items);
+        Assert.Same(items, scope.Profile.EquipmentDatas);
         Assert.Equal(1, notifications);
     }
 
@@ -64,7 +64,7 @@ public sealed class ModelTransactionTests
         scope.GetSystem<ProfileSystem>().AddSoul(100);
         scope.GetSystem<ProfileSystem>().AddExperience(281);
         var progress = scope.Profile.Progress;
-        var items = scope.Profile.Items;
+        var items = scope.Profile.EquipmentDatas;
         var slots = scope.Profile.Slots;
         int notifications = 0;
         progress.Register(value => { notifications++; Assert.Equal(0, value.TotalExperience); });
@@ -81,7 +81,7 @@ public sealed class ModelTransactionTests
         Assert.Equal(TestTables.Tables.TbHeroGrowthConfig.Get(1, 1).BaseAttributes.Power, scope.Hero.Power.Value);
         Assert.Equal(1, scope.Hero.Level.Value);
         Assert.Same(progress, scope.Profile.Progress);
-        Assert.Same(items, scope.Profile.Items);
+        Assert.Same(items, scope.Profile.EquipmentDatas);
         Assert.Same(slots, scope.Profile.Slots);
     }
 }

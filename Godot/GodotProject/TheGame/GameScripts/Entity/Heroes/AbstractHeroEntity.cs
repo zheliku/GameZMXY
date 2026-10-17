@@ -187,11 +187,15 @@ namespace GameLogic.Heroes
             if (ActionData.MusouRequested)
                 TryActivateMusou();
 
-            this.GetSystem<SkillSystem>().HandleInput(this, ActionData);
             if (this.GetModel<HeroModel>().IsDepleted)
-                this.GetSystem<SkillSystem>().StopAll(this);
+                this.GetSystem<SkillSystem>().CancelSkill();
+            // 当前状态声明输入窗口；角色匹配具体组合，状态随后消费请求并决定转换。
+            if (!Dead && (!HasPendingHurt || ((IHeroBody)this).SuperArmor) &&
+                this.GetSystem<SkillSystem>().BodySkillData == null &&
+                m_BodyFsm.CurrentState is AbstractHeroBodyState bodyState &&
+                bodyState.TryGetActionInput(this, out bool attacking, out float normalProgress, out bool airborne))
+                MatchActionInput(attacking, normalProgress, airborne);
             m_BodyFsm.Tick(dt);
-            this.GetSystem<SkillSystem>().AdvanceBackground(this, dt, ActionData.Time);
             MoveAndSlide();
 
             // 落地归零跳跃次数。必须带 "Velocity.Y >= 0"：起跳那一帧角色可能还没离开地面，
@@ -282,11 +286,11 @@ namespace GameLogic.Heroes
         /// 命中收益（英雄专属）：按实际伤害相对出招时攻击力计算官方无双增长。
         /// 收益规则属于英雄，不进攻击包、不进 AbstractActorEntity（怪物没有无双值）。
         /// </summary>
-        /// <param name="attack">本次攻击快照，仅在回调内使用。</param>
+        /// <param name="data">本次攻击快照，仅在回调内使用。</param>
         /// <param name="result">目标已完成的伤害结算结果。</param>
-        protected override void OnHitLanded(AttackInstance attack, DamageResult result)
+        protected override void OnHitLanded(AttackData data, DamageResult result)
         {
-            this.GetSystem<HeroSystem>().RecordHit(result.Damage, attack.Attacker.Power);
+            this.GetSystem<HeroSystem>().RecordHit(result.Damage, data.Attacker.Power);
         }
 
         /// <summary>
@@ -295,11 +299,11 @@ namespace GameLogic.Heroes
         /// 死亡由 ReceiveHit 置位 Dead，身体状态机下一帧进入死亡。
         /// 没有 hurt 动画（时长无从谈起）时不登记。
         /// </summary>
-        /// <param name="attack">本次攻击快照，不得保留池化引用。</param>
+        /// <param name="data">本次攻击快照，不得保留池化引用。</param>
         /// <param name="result">已完成的伤害结算结果。</param>
         /// <param name="knockback">击退速度，单位像素每秒。</param>
         /// <param name="attackerEntityId">攻击方运行编号；无来源时为零。</param>
-        protected override void OnHurt(AttackInstance attack, DamageResult result, Vector2 knockback,
+        protected override void OnHurt(AttackData data, DamageResult result, Vector2 knockback,
             int attackerEntityId)
         {
             if (Dead)

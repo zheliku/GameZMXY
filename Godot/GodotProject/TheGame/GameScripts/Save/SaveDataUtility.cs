@@ -2,6 +2,7 @@ using System;
 using GameLogic.Architecture;
 using System.Collections.Generic;
 using System.Linq;
+using GameConfig.Attributes;
 using GameConfig.Equipment;
 using GameLogic.Equipment;
 using GameLogic.Profile;
@@ -23,7 +24,7 @@ public sealed class SaveDataUtility : IUtility
         ArgumentNullException.ThrowIfNull(profile);
         ArgumentNullException.ThrowIfNull(skills);
         GameData data = new() { ActiveHeroId = profile.ActiveHeroId, Soul = profile.Soul.Value };
-        List<EquipmentInstance> items = new(profile.Items);
+        List<EquipmentData> datas = new(profile.EquipmentDatas);
         foreach (int heroId in profile.HeroIds)
         {
             var slots = profile.GetSlots(heroId).Value;
@@ -36,11 +37,11 @@ public sealed class SaveDataUtility : IUtility
                 ArmorInstanceId = slots.Armor?.InstanceId ?? Guid.Empty
             });
             if (slots.Weapon != null)
-                items.Add(slots.Weapon);
+                datas.Add(slots.Weapon);
             if (slots.Armor != null)
-                items.Add(slots.Armor);
+                datas.Add(slots.Armor);
         }
-        foreach (var item in items)
+        foreach (var item in datas)
             data.EquipmentItems.Add(new EquipmentSaveData
             { InstanceId = item.InstanceId, EquipmentId = item.EquipmentId, Attributes = item.Attributes });
         return data;
@@ -63,7 +64,7 @@ public sealed class SaveDataUtility : IUtility
             throw new ArgumentException("存档英雄或余额无效。", nameof(data));
         var (_, slots) = ReadItems(data, capacity);
         foreach (var item in data.EquipmentItems)
-            EquipmentInstance.FromSaveData(definitions.GetOrDefault(item.EquipmentId), item.InstanceId, item.Attributes);
+            ValidateEquipment(item, definitions.GetOrDefault(item.EquipmentId));
         foreach (var hero in data.Heroes)
         {
             ValidateSlot(slots[hero.HeroId].Weapon, hero.HeroId, EquipmentSlot.Weapon, definitions);
@@ -103,49 +104,68 @@ public sealed class SaveDataUtility : IUtility
     /// <param name="capacity">背包容量。</param>
     /// <returns>背包实例及每名英雄的武器、防具。</returns>
     /// <exception cref="ArgumentException">编号重复、引用不存在或背包超限。</exception>
-    internal static (EquipmentInstance[] Bag, Dictionary<int, (EquipmentInstance Weapon, EquipmentInstance Armor)> Slots)
+    internal static (EquipmentData[] Bag, Dictionary<int, (EquipmentData Weapon, EquipmentData Armor)> Slots)
         ReadItems(GameData data, int capacity)
     {
-        Dictionary<Guid, EquipmentInstance> items = new();
+        Dictionary<Guid, EquipmentData> datas = new();
         foreach (var item in data.EquipmentItems)
         {
-            if (item?.Attributes == null || !items.TryAdd(item.InstanceId,
-                    new EquipmentInstance(item.InstanceId, item.EquipmentId, item.Attributes)))
+            if (item?.Attributes == null || !datas.TryAdd(item.InstanceId,
+                    new EquipmentData(item.InstanceId, item.EquipmentId, item.Attributes)))
                 throw new ArgumentException("装备记录为空或实例编号重复。");
         }
 
         HashSet<Guid> equipped = new();
-        Dictionary<int, (EquipmentInstance Weapon, EquipmentInstance Armor)> slots = new();
+        Dictionary<int, (EquipmentData Weapon, EquipmentData Armor)> slots = new();
         foreach (var hero in data.Heroes)
             if (!slots.TryAdd(hero.HeroId, (Resolve(hero.WeaponInstanceId), Resolve(hero.ArmorInstanceId))))
                 throw new ArgumentException("英雄编号重复。");
-        var bag = items.Values.Where(x => !equipped.Contains(x.InstanceId)).ToArray();
+        var bag = datas.Values.Where(x => !equipped.Contains(x.InstanceId)).ToArray();
         if (bag.Length > capacity)
             throw new ArgumentException("装备背包超出容量。");
         return (bag, slots);
 
         // 同一实例只能归一个英雄、一个部位所有。
-        EquipmentInstance Resolve(Guid id)
+        EquipmentData Resolve(Guid id)
         {
             if (id == Guid.Empty)
                 return null;
-            if (!items.TryGetValue(id, out var item) || !equipped.Add(id))
+            if (!datas.TryGetValue(id, out var item) || !equipped.Add(id))
                 throw new ArgumentException("穿戴引用不存在或重复占用实例。");
             return item;
         }
     }
 
+    /// <summary>校验装备实际属性符合当前定义；读档不重抽或悄悄更换装备。</summary>
+    /// <param name="data">已检查编号与必要字段的装备记录。</param>
+    /// <param name="definition">当前装备定义。</param>
+    /// <exception cref="ArgumentException">定义不存在或属性不符合定义。</exception>
+    private static void ValidateEquipment(EquipmentSaveData data, EquipmentConfig definition)
+    {
+        if (definition == null)
+            throw new ArgumentException("装备定义不存在。");
+
+        // 未配置的属性只能为零，已配置的属性必须处于原抽取范围内。
+        foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
+        {
+            var expected = definition.AttributeRanges.Find(x => x.Attribute == attribute);
+            int value = data.Attributes.Get(attribute);
+            if (expected == null ? value != 0 : value < expected.Minimum || value > expected.Maximum)
+                throw new ArgumentException("装备实际属性不符合当前配置。");
+        }
+    }
+
     /// <summary>校验装备定义与保存的英雄、部位一致。</summary>
-    /// <param name="item">已穿戴的实例或空。</param>
+    /// <param name="data">已穿戴的实例或空。</param>
     /// <param name="heroId">穿戴者编号。</param>
     /// <param name="slot">保存的部位。</param>
     /// <param name="definitions">当前装备定义。</param>
-    private static void ValidateSlot(EquipmentInstance item, int heroId, EquipmentSlot slot,
+    private static void ValidateSlot(EquipmentData data, int heroId, EquipmentSlot slot,
         TbEquipmentConfig definitions)
     {
-        if (item == null)
+        if (data == null)
             return;
-        var definition = definitions.Get(item.EquipmentId);
+        var definition = definitions.Get(data.EquipmentId);
         if ((int)definition.Owner != heroId || definition.Slot != slot)
             throw new ArgumentException("装备不属于该英雄或该部位。");
     }

@@ -28,19 +28,6 @@ namespace GameLogic.Heroes.Body
         /// <summary>本英雄独占的输入、跳跃和连段数据；与共享 Params 分离。</summary>
         HeroActionData ActionData { get; }
 
-        /// <summary>由具体角色匹配技能输入并向技能系统提交激活请求，不返回动作分类。</summary>
-        /// <param name="attacking">是否正在普攻。</param>
-        /// <param name="normalRatio">当前普攻帧比例。</param>
-        /// <param name="airborne">是否处于空中。</param>
-        void ProcessSkillInput(bool attacking, float normalRatio, bool airborne);
-
-        /// <summary>消费当前角色允许的普攻输入并选择攻击段。</summary>
-        /// <param name="attacking">是否正在普攻。</param>
-        /// <param name="normalRatio">当前普攻帧比例。</param>
-        /// <param name="airborne">是否处于空中。</param>
-        /// <returns>已选定新的普攻段时为真。</returns>
-        bool TryStartAttack(bool attacking, float normalRatio, bool airborne);
-
         /// <summary>在单向平台上执行向下穿越；普通地面与空中不执行。</summary>
         /// <returns>是否从可穿平台向下离开。</returns>
         bool TryDropThroughPlatform();

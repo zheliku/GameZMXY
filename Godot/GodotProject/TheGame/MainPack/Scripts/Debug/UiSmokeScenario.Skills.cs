@@ -29,14 +29,14 @@ using GodotGameFramework.Entity;
 public sealed partial class UiSmokeScenario
 {
     /// <summary>通过正式 HUD 打开技能页，确认准备阶段没有学习或扣费行为。</summary>
-    /// <param name="hud">正式 HUD。</param>
+    /// <param name="battleForm">正式 HUD。</param>
     /// <param name="flow">隔离测试档案。</param>
     /// <param name="level">当前关卡。</param>
     /// <returns>全部技能面板检查完成的任务。</returns>
-    private async Task CheckSkillsAsync(BattleHud hud, ProcedureOwner flow, LevelViewController level)
+    private async Task CheckSkillsAsync(BattleForm battleForm, ProcedureOwner flow, LevelViewController level)
     {
         int soul = flow.GetModel<ProfileModel>().Soul.Value;
-        var entrance = hud.GetNode<TextureButton>("MenuPanel/m_SkillsButton");
+        var entrance = battleForm.GetNode<TextureButton>("MenuPanel/m_SkillsButton");
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(x => x.Visible), "技能入口没有打开面板");
@@ -86,7 +86,7 @@ public sealed partial class UiSmokeScenario
         form._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true });
         await WaitFramesAsync(2);
         Check(!form.Visible && !GF.Base.IsGamePaused, "Escape没有关闭技能面板");
-        await CheckSkillLearningAndCastingAsync(hud, form, flow);
+        await CheckSkillLearningAndCastingAsync(battleForm, form, flow);
         await CheckSkillSoundsAsync();
         CheckSkillCombatResources();
         GD.Print("SMOKE-UI: 技能限当前出战角色、禁用角色无交互、被动目录、暂停、钱包观察及窗口复用通过");
@@ -222,11 +222,11 @@ public sealed partial class UiSmokeScenario
     }
 
     /// <summary>真实点击学习、提示、HUD 同步及五招输入与火魔斩分支回归。</summary>
-    /// <param name="hud">正式 HUD。</param>
+    /// <param name="battleForm">正式 HUD。</param>
     /// <param name="form">池化技能窗口。</param>
     /// <param name="flow">测试作用域。</param>
     /// <returns>全部交互与动画验证完成的任务。</returns>
-    private async Task CheckSkillLearningAndCastingAsync(BattleHud hud, SkillForm form, ProcedureOwner flow)
+    private async Task CheckSkillLearningAndCastingAsync(BattleForm battleForm, SkillForm form, ProcedureOwner flow)
     {
         var snapshot = flow.GetUtility<SaveDataUtility>().Capture(flow.GetModel<ProfileModel>(), flow.GetModel<SkillModel>());
         var hero = FindHero();
@@ -239,7 +239,7 @@ public sealed partial class UiSmokeScenario
             InputSystem.Interact, InputSystem.Attack, InputSystem.MoveRight];
         try
         {
-            hud.GetNode<TextureButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
+            battleForm.GetNode<TextureButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
             await WaitUntilAsync(() => form.Visible, "学习时没有打开技能窗口");
             var first = form.GetNode<TextureButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon");
             flow.GetModel<ProfileModel>().Soul.Value = 0;
@@ -252,7 +252,7 @@ public sealed partial class UiSmokeScenario
             {
                 var button = form.GetNode<TextureButton>($"Content/m_ActivePage/m_WukongRows/Skill{definition.Order}/IconCell/Icon");
                 button.EmitSignal(BaseButton.SignalName.Pressed);
-                var hudIcon = hud.GetNode<TextureRect>($"MenuPanel/SkillBar/Skill{definition.Order}/Icon").Texture as AtlasTexture;
+                var hudIcon = battleForm.GetNode<TextureRect>($"MenuPanel/SkillBar/Skill{definition.Order}/Icon").Texture as AtlasTexture;
                 Check(system.IsLearned(definition.Id) && button.Disabled && button.TextureNormal.ResourcePath == definition.LearnedIconPath &&
                     hudIcon?.Atlas.ResourcePath == "res://TheGame/Sprites/UI/hud/battle_skill_icons.png" &&
                     hudIcon.Region == new Rect2(definition.Order * 45, 0, 45, 45),
@@ -276,14 +276,14 @@ public sealed partial class UiSmokeScenario
             attributes.Mp.Value = attributes.MaxMp.Value;
             Input.ActionPress(InputSystem.Interact);
             Input.ActionPress(InputSystem.Attack);
-            await WaitUntilAsync(() => skillModel.BodySkill?.Id == SkillId.RisingDragon, "持续组合键没有开始升龙");
-            var heldCast = skillModel.BodySkill;
-            await WaitUntilAsync(() => skillModel.BodySkill is { } next && !ReferenceEquals(next, heldCast),
+            await WaitUntilAsync(() => skillModel.BodySkillData?.Id == SkillId.RisingDragon, "持续组合键没有开始升龙");
+            var data = skillModel.BodySkillData;
+            await WaitUntilAsync(() => skillModel.BodySkillData is { } next && !ReferenceEquals(next, data),
                 "持续 W+J 被错误消费，升龙收招后不能再次释放", 4000);
-            Check(skillModel.BodySkill.Id == SkillId.RisingDragon, "持续升龙变成了普攻");
+            Check(skillModel.BodySkillData.Id == SkillId.RisingDragon, "持续升龙变成了普攻");
             Input.ActionRelease(InputSystem.Interact);
             Input.ActionRelease(InputSystem.Attack);
-            await WaitUntilAsync(() => skillModel.BodySkill == null && hero.OnFloor, "连续升龙没有正常落地", 4000);
+            await WaitUntilAsync(() => skillModel.BodySkillData == null && hero.OnFloor, "连续升龙没有正常落地", 4000);
             await WaitFramesAsync(24);
 
             // 地面双击 D 后 J，走正式奔跑攻击分支。
@@ -320,7 +320,7 @@ public sealed partial class UiSmokeScenario
             foreach (string action in skillInputs)
                 Input.ActionRelease(action);
             hero.SetPhysicsProcess(false);
-            system.StopAll(hero);
+            system.CancelSkill();
             hero.GlobalPosition = originalPosition;
             hero.Velocity = Vector2.Zero;
             attributes.Mp.Value = originalMp;
@@ -335,7 +335,7 @@ public sealed partial class UiSmokeScenario
             int mana = attributes.Mp.Value;
             foreach (string action in inputs)
                 Input.ActionPress(action);
-            await WaitUntilAsync(() => skillModel.BodySkill?.Id == id, $"输入没有释放 {id}", 2000);
+            await WaitUntilAsync(() => skillModel.BodySkillData?.Id == id, $"输入没有释放 {id}", 2000);
             foreach (string action in inputs)
                 Input.ActionRelease(action);
             Check(attributes.Mp.Value == mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(id).ManaCost, $"{id} 扣蓝不正确");
@@ -350,11 +350,11 @@ public sealed partial class UiSmokeScenario
                 Input.ActionPress(InputSystem.Attack);
                 Input.ActionPress(InputSystem.Skill1);
             }
-            await WaitUntilAsync(() => skillModel.BodySkill == null, $"{id} 没有正确收招", 8000);
+            await WaitUntilAsync(() => skillModel.BodySkillData == null, $"{id} 没有正确收招", 8000);
             if (id == SkillId.FireDemonSlash)
             {
                 await WaitFramesAsync(2);
-                Check(skillModel.BodySkill == null && hero.AttackSegment < 0, "火魔斩禁用输入期间的按键被排队到收招后");
+                Check(skillModel.BodySkillData == null && hero.AttackSegment < 0, "火魔斩禁用输入期间的按键被排队到收招后");
                 Input.ActionRelease(InputSystem.Attack);
                 Input.ActionRelease(InputSystem.Skill1);
             }

@@ -25,23 +25,23 @@ namespace GameLogic.Battle.Damage
         /// <summary>
         /// 结算一次命中。
         /// </summary>
-        /// <param name="attack">攻击包（含攻击方快照与本招威力）</param>
+        /// <param name="data">攻击包（含攻击方快照与本招威力）</param>
         /// <param name="defender">防守方属性快照</param>
         /// <param name="missRoll">闪避判定随机数 [0,1)（由 Godot 层取好传入，Battle/ 不自取随机）</param>
         /// <param name="critRoll">暴击判定随机数 [0,1)（由 Godot 层取好传入）</param>
         /// <returns>本次命中的伤害、闪避、暴击和伤害类型结果。</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="attack"/> 为 <see langword="null"/>。</exception>
-        public DamageResult Calculate(AttackInstance attack, in CombatantAttributes defender,
+        /// <exception cref="ArgumentNullException"><paramref name="data"/> 为 <see langword="null"/>。</exception>
+        public DamageResult Calculate(AttackData data, in CombatantAttributes defender,
             float missRoll, float critRoll)
         {
             var config = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
 
-            if (attack == null)
+            if (data == null)
             {
-                throw new ArgumentNullException(nameof(attack));
+                throw new ArgumentNullException(nameof(data));
             }
 
-            CombatantAttributes attacker = attack.Attacker;
+            CombatantAttributes attacker = data.Attacker;
             bool heroDefends = defender.Side == CombatSide.Hero;
 
             // 1. 净值（下限 0）
@@ -69,13 +69,13 @@ namespace GameLogic.Battle.Damage
             miss *= 1 - sign * missBl;
             crit *= 1 + sign * critBl;
             lucky *= 1 + sign * luckyBl;
-            double hurt = Truncate(attack.Power * (1 + sign * damageBl));
+            double hurt = Truncate(data.Power * (1 + sign * damageBl));
 
             // 3. 闪避
             double missK = heroDefends ? config.MissKHero : config.MissKMonster;
             if (missRoll < Ratio(miss, missK))
             {
-                return DamageResult.Missed(attack.Kind);
+                return DamageResult.Missed(data.Kind);
             }
 
             // 4. 暴击
@@ -87,7 +87,7 @@ namespace GameLogic.Battle.Damage
             }
 
             // 5. 减伤
-            switch (attack.Kind)
+            switch (data.Kind)
             {
                 case DamageKind.Physics:
                     hurt *= 1 - Ratio(def, heroDefends ? config.DefKHero : config.DefKMonster);
@@ -98,21 +98,21 @@ namespace GameLogic.Battle.Damage
             }
 
             int damage = (int)Math.Max(0, Truncate(hurt));
-            return new DamageResult(damage, false, isCrit, attack.Kind);
+            return new DamageResult(damage, false, isCrit, data.Kind);
         }
 
         /// <summary>
         /// 击退速度（px/s）：表单位 × BattleConfig 换算系数，横向按出招方向，纵向向上为负。
         /// 横向换算按防守方分侧（旧项目英雄被击退 ×25、怪物 ×30），纵向两侧一致。
         /// </summary>
-        /// <param name="attack">包含出招方向和击退参数的攻击包。</param>
+        /// <param name="data">包含出招方向和击退参数的攻击包。</param>
         /// <param name="defenderSide">用于选择横向换算系数的防守方侧别。</param>
         /// <returns>世界坐标系下的击退速度（px/s）。</returns>
-        public Vector2 KnockbackVelocity(AttackInstance attack, CombatSide defenderSide)
+        public Vector2 KnockbackVelocity(AttackData data, CombatSide defenderSide)
         {
             var config = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
             float scaleX = defenderSide == CombatSide.Hero ? config.KnockbackScaleXHeroDef : config.KnockbackScaleXMonsterDef;
-            return new Vector2(attack.Direction * attack.Knockback.X * scaleX, attack.Knockback.Y * config.KnockbackScaleY);
+            return new Vector2(data.Direction * data.Knockback.X * scaleX, data.Knockback.Y * config.KnockbackScaleY);
         }
 
         /// <summary>向零取整（旧 int()），带 float 系数容差（见 <see cref="TruncateEpsilon"/>）。</summary>

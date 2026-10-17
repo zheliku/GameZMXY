@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bjub483gtcj0n"]
 
 [ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_frames.tres" id="frames"]
-[ext_resource type="Script" uid="uid://bymxyt55xb04o" path="res://TheGame/GameScripts/UI/BattleHud/Components/MusouActivationNode.cs" id="script"]
+[ext_resource type="Script" uid="uid://bymxyt55xb04o" path="res://TheGame/GameScripts/UI/BattleForm/Components/MusouActivationNode.cs" id="script"]
 
 [node name="MusouActivation" type="Control" unique_id=109249331 node_paths=PackedStringArray("m_Animation")]
 visible = false

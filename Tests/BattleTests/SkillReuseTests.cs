@@ -29,44 +29,95 @@ public sealed class SkillReuseTests
     {
         var scope = new SkillScope();
         scope.Skills.GetLearnedSkills(1).Add(skill);
-        var hero = new SkillHero(scope) { Slot1Skill = skill };
-        scope.GetSystem<SkillSystem>().SelectSkillSet(new SkillSet(1,
-            new SkillDefinition(skill, _ => new TestExecution(skill), 1, typeof(TestSkillState))), hero);
-        var source = new FrameInput();
+        var hero = new SkillHero(scope);
+        scope.GetSystem<SkillSystem>().SelectSkills(1, new SkillDefinition(skill, typeof(TestSkillState), InputSystem.Skill1));
+        var source = scope.Source;
         source.Pressed.Add(InputSystem.Skill1);
         new InputSystem(scope, source).Sample(hero, 1f / 60);
         using var manager = new FsmLifetime();
         var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
             new HeroGroundState(), new HeroAirState(), new TestSkillState(), new HeroHurtState(), new HeroDeathState());
         fsm.Start<HeroGroundState>();
-        fsm.Tick(1f / 60);
+        Tick(fsm, 1f / 60);
         Assert.IsType<TestSkillState>(fsm.CurrentState);
-        Assert.Equal(skill, scope.Skills.BodySkill.Id);
+        Assert.Equal(skill, scope.Skills.BodySkillData.Id);
         Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(skill).ManaCost,
             scope.GetModel<HeroModel>().Mp.Value);
-        Assert.Null(hero.ActionData.DirectSkillSlot);
+        Assert.False(scope.GetSystem<InputSystem>().ConsumePress(hero.ActionData, InputSystem.Skill1));
     }
 
-    /// <summary>输入层只报告槽位，按住或拒绝后不在后续帧补发技能。</summary>
-    /// <param name="action">直接技能动作。</param>
-    /// <param name="slot">对应槽位。</param>
+    /// <summary>任意动作名使用相同采样与消费，不受三个默认快捷键限制，按住不伪造再次按下。</summary>
+    /// <param name="action">任意动作名。</param>
     [Theory]
-    [InlineData(InputSystem.Skill1, 1)]
-    [InlineData(InputSystem.Skill2, 2)]
-    [InlineData(InputSystem.Skill3, 3)]
-    public void DirectSkills_ReportSlotsWithoutBindingToHero(string action, int slot)
+    [InlineData(InputSystem.Skill1)]
+    [InlineData("skill_4")]
+    [InlineData("skill_9")]
+    [InlineData(InputSystem.InventoryToggle)]
+    public void Actions_KeepIdentityAndConsumeOnlyOncePerFrame(string action)
     {
         var scope = new SkillScope();
         var hero = new SkillHero(scope);
-        var source = new FrameInput();
-        var input = new InputSystem(scope, source);
+        var source = scope.Source;
+        var input = scope.GetSystem<InputSystem>();
         source.Pressed.Add(action);
         source.Held.Add(action);
         input.Sample(hero, 1f / 60);
-        Assert.Equal(slot, hero.ActionData.DirectSkillSlot);
+        Assert.True(input.IsActionJustPressed(action));
+        Assert.True(input.IsActionPressed(action));
+        Assert.False(input.IsActionJustReleased(action));
+        Assert.True(input.ConsumePress(hero.ActionData, action));
+        Assert.False(input.ConsumePress(hero.ActionData, action));
         source.Pressed.Clear();
         input.Sample(hero, 1f / 60);
-        Assert.Null(hero.ActionData.DirectSkillSlot);
+        Assert.False(input.IsActionJustPressed(action));
+        Assert.True(input.IsActionPressed(action));
+        Assert.False(input.ConsumePress(hero.ActionData, action));
+    }
+
+    /// <summary>完整登记五个直接动作，第五个可以经正式激活规则进入真实 GGF 技能状态。</summary>
+    [Fact]
+    public void FifthBinding_ActivatesWithoutChangingSharedInputCode()
+    {
+        var scope = new SkillScope();
+        var hero = new SkillHero(scope);
+        SkillId[] ids = [SkillId.RisingDragon, SkillId.FlameThrust, SkillId.BlazingFlash,
+            SkillId.FlameStorm, SkillId.FireDemonSlash];
+        var definitions = new SkillDefinition[ids.Length];
+        for (int i = 0; i < ids.Length; i++)
+        {
+            var id = ids[i];
+            scope.Skills.GetLearnedSkills(1).Add(id);
+            definitions[i] = new(id, typeof(TestSkillState), $"skill_{i + 1}");
+        }
+        var skills = scope.GetSystem<SkillSystem>();
+        skills.SelectSkills(1, definitions);
+        scope.Source.Pressed.Add("skill_5");
+        scope.GetSystem<InputSystem>().Sample(hero, .01f);
+        using var manager = new FsmLifetime();
+        var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
+            new HeroGroundState(), new HeroAirState(), new TestSkillState(), new HeroHurtState(), new HeroDeathState());
+        fsm.Start<HeroGroundState>();
+        Tick(fsm, .01f);
+        Assert.IsType<TestSkillState>(fsm.CurrentState);
+        Assert.Equal(SkillId.FireDemonSlash, skills.BodySkillData.Id);
+        Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(SkillId.FireDemonSlash).ManaCost,
+            scope.GetModel<HeroModel>().Mp.Value);
+    }
+
+    /// <summary>输入系统不持有全局消费标记，采样第二个角色不会清除第一个角色的消费记录。</summary>
+    [Fact]
+    public void ButtonConsumption_IsIsolatedBetweenHeroes()
+    {
+        var scope = new SkillScope();
+        var first = new SkillHero(scope);
+        var second = new SkillHero(scope);
+        var input = scope.GetSystem<InputSystem>();
+        scope.Source.Pressed.Add("custom_action");
+        input.Sample(first, .01f);
+        Assert.True(input.ConsumePress(first.ActionData, "custom_action"));
+        input.Sample(second, .01f);
+        Assert.False(input.ConsumePress(first.ActionData, "custom_action"));
+        Assert.True(input.ConsumePress(second.ActionData, "custom_action"));
     }
 
     /// <summary>暂停重力不隐含输入锁，输入锁也不依赖重力；锁内输入不排队。</summary>
@@ -80,26 +131,26 @@ public sealed class SkillReuseTests
     {
         var scope = new SkillScope();
         var hero = new SkillHero(scope);
-        scope.Skills.BodySkill = new TestExecution(SkillId.RisingDragon)
+        scope.Skills.BodySkillData = new SkillData(SkillId.RisingDragon)
         {
-            TestGravitySuspended = gravitySuspended,
-            TestInputLocked = inputLocked
+            GravitySuspended = gravitySuspended,
+            InputLocked = inputLocked
         };
-        var source = new FrameInput();
+        var source = scope.Source;
         var input = new InputSystem(scope, source);
         source.Pressed.UnionWith([InputSystem.Skill1, InputSystem.Musou]);
         source.Held.Add(InputSystem.Attack);
         input.Sample(hero, .1f);
         Assert.InRange(hero.ActionData.Time, .0999, .1001);
-        Assert.Equal(inputLocked ? null : (int?)1, hero.ActionData.DirectSkillSlot);
+        Assert.True(input.IsActionJustPressed(InputSystem.Skill1));
         Assert.Equal(!inputLocked, hero.ActionData.MusouRequested);
 
         if (!inputLocked)
             return;
-        ((TestExecution)scope.Skills.BodySkill).Unlock();
+        scope.Skills.BodySkillData.InputLocked = false;
         source.Pressed.Clear();
         input.Sample(hero, .1f);
-        Assert.Null(hero.ActionData.DirectSkillSlot);
+        Assert.False(scope.GetSystem<InputSystem>().IsActionJustPressed(InputSystem.Skill1));
         Assert.False(input.ConsumeAttack(hero.ActionData));
         source.Held.Clear();
         input.Sample(hero, .1f);
@@ -115,24 +166,23 @@ public sealed class SkillReuseTests
         var scope = new SkillScope();
         var hero = new SkillHero(scope);
         scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
-        scope.GetSystem<SkillSystem>().SelectSkillSet(new SkillSet(1,
-            new SkillDefinition(SkillId.RisingDragon, _ => new TestExecution(SkillId.RisingDragon), BodyState: typeof(TestSkillState))), hero);
-        Assert.True(scope.GetSystem<SkillSystem>().TryActivate(SkillId.RisingDragon, hero, 0));
+        scope.GetSystem<SkillSystem>().SelectSkills(1, new SkillDefinition(SkillId.RisingDragon, typeof(TestSkillState)));
+        Assert.True(scope.GetSystem<SkillSystem>().TryActivate(SkillId.RisingDragon, hero));
         using var manager = new FsmLifetime();
         var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
             new HeroGroundState(), new HeroAirState(), new TestSkillState(), new HeroHurtState(), new HeroDeathState());
         fsm.Start<TestSkillState>();
         hero.ActionData.Time = .01f;
-        fsm.Tick(.01f);
+        Tick(fsm, .01f);
         Assert.Equal(1, hero.SkillBegins);
         Assert.Equal(321, hero.Velocity.X);
-        Assert.NotNull(scope.Skills.BodySkill);
+        Assert.NotNull(scope.Skills.BodySkillData);
         hero.PendingHurt = new Vector2(-100, 0);
         hero.ActionData.Time += .01f;
-        fsm.Tick(.01f);
+        Tick(fsm, .01f);
         Assert.IsType<HeroHurtState>(fsm.CurrentState);
         Assert.Equal(1, hero.SkillEnds);
-        Assert.Null(scope.Skills.BodySkill);
+        Assert.Null(scope.Skills.BodySkillData);
     }
 
     /// <summary>真实 GGF 先执行普攻离开，再开始技能动画；避免旧攻击清理掉新技能判定。</summary>
@@ -140,20 +190,19 @@ public sealed class SkillReuseTests
     public void AttackToSkill_EndsNormalAttackBeforeStartingSkill()
     {
         var scope = new SkillScope();
-        var hero = new SkillHero(scope) { Slot1Skill = SkillId.RisingDragon, AllowSkillDuringAttack = true };
+        var hero = new SkillHero(scope) { AllowSkillDuringAttack = true };
         var skills = scope.GetSystem<SkillSystem>();
         scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
-        skills.SelectSkillSet(new SkillSet(1, new SkillDefinition(SkillId.RisingDragon,
-            _ => new TestExecution(SkillId.RisingDragon), 1, typeof(TestSkillState))), hero);
+        skills.SelectSkills(1, new SkillDefinition(SkillId.RisingDragon, typeof(TestSkillState), InputSystem.Skill1));
         hero.ActionData.AttackSegment = 0;
         using var manager = new FsmLifetime();
         var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
             new HeroAttackState(), new TestSkillState(), new HeroGroundState(), new HeroAirState(),
             new HeroHurtState(), new HeroDeathState());
         fsm.Start<HeroAttackState>();
-        hero.ActionData.DirectSkillSlot = 1;
+        scope.Source.Pressed.Add(InputSystem.Skill1);
         hero.ActionData.Time = .1;
-        fsm.Tick(.1f);
+        Tick(fsm, .1f);
         Assert.IsType<TestSkillState>(fsm.CurrentState);
         Assert.Equal(new[] { "end_normal", "begin_skill" }, hero.Operations);
         Assert.Equal(1, hero.SkillBegins);
@@ -174,9 +223,9 @@ public sealed class SkillReuseTests
         var hero = new SkillHero(scope) { FinishLandingEffect = true };
         var skills = scope.GetSystem<SkillSystem>();
         scope.Skills.GetLearnedSkills(1).Add(id);
-        skills.SelectSkillSet(SkillTestDefinitions.Wukong(), hero);
-        Assert.True(skills.TryActivate(id, hero, 0));
-        var execution = skills.BodySkill;
+        skills.SelectSkills(1, SkillTestDefinitions.Wukong());
+        Assert.True(skills.TryActivate(id, hero));
+        var data = skills.BodySkillData;
         Assert.Equal(0, hero.SkillBegins);
         using var manager = new FsmLifetime();
         var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
@@ -185,17 +234,17 @@ public sealed class SkillReuseTests
             new WukongFlameStormState(), new WukongFireDemonState());
         fsm.Start<HeroGroundState>();
         hero.ActionData.Time = .01;
-        fsm.Tick(.01f);
+        Tick(fsm, .01f);
         Assert.IsType(stateType, fsm.CurrentState);
         Assert.Equal(1, hero.SkillBegins);
-        for (int frame = 1; frame <= 600 && !execution.Completed; frame++)
+        for (int frame = 1; frame <= 600 && !data.Completed; frame++)
         {
             hero.ActionData.Time += 1d / 60;
-            fsm.Tick(1f / 60);
+            Tick(fsm, 1f / 60);
         }
-        Assert.True(execution.Completed);
+        Assert.True(data.Completed);
         Assert.IsType<HeroGroundState>(fsm.CurrentState);
-        Assert.Null(skills.BodySkill);
+        Assert.Null(skills.BodySkillData);
         Assert.Equal(1, hero.SkillEnds);
     }
 
@@ -207,25 +256,25 @@ public sealed class SkillReuseTests
         var hero = new SkillHero(scope);
         scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
         var skills = scope.GetSystem<SkillSystem>();
-        skills.SelectSkillSet(SkillTestDefinitions.Wukong(), hero);
+        skills.SelectSkills(1, SkillTestDefinitions.Wukong());
         hero.ActionData.MoveAxis = 1;
         hero.ActionData.RightHeld = true;
-        Assert.True(skills.TryActivate(SkillId.RisingDragon, hero, 0));
+        Assert.True(skills.TryActivate(SkillId.RisingDragon, hero));
         using var manager = new FsmLifetime();
         var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
             new WukongRisingDragonState(), new HeroGroundState(), new HeroAirState(),
             new HeroHurtState(), new HeroDeathState());
         fsm.Start<WukongRisingDragonState>();
         hero.ActionData.Time = .01;
-        fsm.Tick(.01f);
+        Tick(fsm, .01f);
         Assert.Equal(hero.Params.WalkSpeed, hero.Velocity.X);
         hero.ActionData.RightHeld = false;
         hero.ActionData.Time += .01;
-        fsm.Tick(.01f);
+        Tick(fsm, .01f);
         Assert.Equal(0, hero.Velocity.X);
         hero.ActionData.RightHeld = true;
         hero.ActionData.Time += .01;
-        fsm.Tick(.01f);
+        Tick(fsm, .01f);
         Assert.Equal(0, hero.Velocity.X);
     }
 
@@ -237,30 +286,44 @@ public sealed class SkillReuseTests
         var hero = new SkillHero(scope);
         var skills = scope.GetSystem<SkillSystem>();
         scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
-        skills.SelectSkillSet(new SkillSet(1, new SkillDefinition(SkillId.RisingDragon,
-            _ => new TestExecution(SkillId.RisingDragon), 1, typeof(TestPreparationState))), hero);
-        Assert.True(skills.TryActivate(SkillId.RisingDragon, hero, 0));
-        var execution = skills.BodySkill;
+        skills.SelectSkills(1, new SkillDefinition(SkillId.RisingDragon, typeof(TestPreparationState), InputSystem.Skill1));
+        Assert.True(skills.TryActivate(SkillId.RisingDragon, hero));
+        var data = skills.BodySkillData;
         int mana = scope.GetModel<HeroModel>().Mp.Value;
         using var manager = new FsmLifetime();
         var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
             new TestPreparationState(), new TestReleaseState(), new HeroGroundState(), new HeroAirState(),
             new HeroHurtState(), new HeroDeathState());
         fsm.Start<TestPreparationState>();
-        hero.ActionData.SetSkillButton(1, new(true, true, false));
-        skills.HandleInput(hero, hero.ActionData);
+        scope.Source.Held.Add(InputSystem.Skill1);
         hero.ActionData.Time = .01;
-        fsm.Tick(.01f);
+        Tick(fsm, .01f);
+        Assert.IsType<TestPreparationState>(fsm.CurrentState);
+        Assert.Equal(mana, scope.GetModel<HeroModel>().Mp.Value);
+        scope.Source.Pressed.Add(InputSystem.Skill1);
+        hero.ActionData.Time = .02;
+        Tick(fsm, .01f);
         Assert.IsType<TestReleaseState>(fsm.CurrentState);
-        Assert.Same(execution, skills.BodySkill);
+        Assert.Same(data, skills.BodySkillData);
         Assert.Equal(1, hero.SkillBegins);
         Assert.Equal(0, hero.SkillEnds);
         Assert.Equal(mana, scope.GetModel<HeroModel>().Mp.Value);
         hero.ActionData.Time += .3;
-        fsm.Tick(.3f);
+        Tick(fsm, .3f);
         Assert.IsType<HeroGroundState>(fsm.CurrentState);
-        Assert.Null(skills.BodySkill);
+        Assert.Null(skills.BodySkillData);
         Assert.Equal(1, hero.SkillEnds);
+    }
+
+    /// <summary>按正式实体的顺序匹配角色输入，再推进真实 GGF 状态。</summary>
+    /// <param name="fsm">本测试状态机。</param>
+    /// <param name="dt">游戏秒数。</param>
+    private static void Tick(IFsm<IHeroBody> fsm, float dt)
+    {
+        if (fsm.Owner is SkillHero hero && !hero.Dead &&
+            ((AbstractHeroBodyState)fsm.CurrentState).TryGetActionInput(hero, out bool attacking, out float normalProgress, out bool airborne))
+            hero.MatchInput(attacking, normalProgress, airborne);
+        fsm.Tick(dt);
     }
 
     /// <summary>本组测试只提供推进时间轴必需的模型与系统。</summary>
@@ -273,6 +336,9 @@ public sealed class SkillReuseTests
         private readonly SkillSystem m_System; // 共用的正式时间轴规则。
         private readonly HeroSystem m_HeroSystem; // 扣蓝使用正式业务入口。
 
+        /// <summary>当前测试的输入来源。</summary>
+        public FrameInput Source { get; } = new();
+
         /// <summary>借用正式配置，测试不复制数值。</summary>
         public ConfigurationModel Configuration => BattleArchitecture.Instance.GetModel<ConfigurationModel>();
         /// <summary>本测试的独立施放。</summary>
@@ -281,7 +347,7 @@ public sealed class SkillReuseTests
         /// <summary>装配规则系统。</summary>
         public SkillScope()
         {
-            m_Input = new(this);
+            m_Input = new(this, Source);
             m_System = new(this);
             m_HeroSystem = new(this);
             m_Hero.Mp.Value = 100;
@@ -322,8 +388,6 @@ public sealed class SkillReuseTests
         public int SkillBegins { get; private set; }
         /// <summary>技能表现释放次数。</summary>
         public int SkillEnds { get; private set; }
-        /// <summary>测试宿主自行决定槽 1 的招式。</summary>
-        public SkillId? Slot1Skill { get; init; }
         /// <summary>测试专用的普攻取消策略。</summary>
         public bool AllowSkillDuringAttack { get; init; }
         /// <summary>测试是否自动完成落地特效回调。</summary>
@@ -334,16 +398,15 @@ public sealed class SkillReuseTests
         IArchitecture IBelongToArchitecture.GetArchitecture() => scope;
         /// <inheritdoc />
         public bool TryDropThroughPlatform() => false;
-        /// <inheritdoc />
-        public void ProcessSkillInput(bool attacking, float normalRatio, bool airborne)
+        /// <summary>测试角色使用当前状态给出的窗口和模型里的绑定，身体接口不承担输入匹配。</summary>
+        /// <param name="attacking">是否处于普攻。</param>
+        /// <param name="normalProgress">普攻播放比例。</param>
+        /// <param name="airborne">是否处于空中。</param>
+        public void MatchInput(bool attacking, float normalProgress, bool airborne)
         {
-            SkillId? requested = (!attacking || AllowSkillDuringAttack) && ActionData.DirectSkillSlot == 1 ? Slot1Skill : null;
-            ActionData.DirectSkillSlot = null;
-            if (requested is { } id)
-                scope.GetSystem<SkillSystem>().TryActivate(id, this, ActionData.Time);
+            if (!attacking || AllowSkillDuringAttack)
+                scope.GetSystem<SkillSystem>().TryActivateInput(this, ActionData);
         }
-        /// <inheritdoc />
-        public bool TryStartAttack(bool attacking, float normalRatio, bool airborne) => false;
         /// <inheritdoc />
         public void BeginSkillAnimation(SkillActionConfig action)
         {
@@ -365,7 +428,7 @@ public sealed class SkillReuseTests
         /// <inheritdoc />
         public void NewSkillAttack(SkillHitId hit) { }
         /// <inheritdoc />
-        public void SpawnSkillEffect(SkillEffectId effect, SkillExecution execution, Vector2 position, Action completed = null)
+        public void SpawnSkillEffect(SkillEffectId effect, SkillData data, Vector2 position, Action completed = null)
         {
             if (FinishLandingEffect && effect == SkillEffectId.FireDemonLanding)
                 completed?.Invoke();
@@ -373,7 +436,19 @@ public sealed class SkillReuseTests
     }
 
     /// <summary>由测试宿主登记的具名技能状态，复用公共身体驱动。</summary>
-    private sealed class TestSkillState : AbstractHeroSkillState { }
+    private sealed class TestSkillState : AbstractHeroSkillState
+    {
+        /// <inheritdoc />
+        protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
+        {
+            base.Enter(fsm, body);
+            ((ISkillActor)body).BeginSkillAnimation(null);
+        }
+
+        /// <inheritdoc />
+        protected override void AdvanceSkill(IHeroBody body, float dt) =>
+            body.Velocity = new Vector2(321, body.Velocity.Y);
+    }
 
     /// <summary>示例起手阶段，第二次按下后转交执行给本技能的释放阶段。</summary>
     private sealed class TestPreparationState : AbstractHeroSkillState
@@ -384,11 +459,12 @@ public sealed class SkillReuseTests
         {
             m_Transferring = false;
             base.Enter(fsm, body);
+            ((ISkillActor)body).BeginSkillAnimation(null);
         }
         /// <inheritdoc />
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
-            if (body.ActionData.GetSkillButton(1).Pressed)
+            if (body.GetSystem<InputSystem>().ConsumePress(body.ActionData, InputSystem.Skill1))
             {
                 m_Transferring = true;
                 ChangeState<TestReleaseState>(fsm);
@@ -400,7 +476,7 @@ public sealed class SkillReuseTests
         protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
         {
             if (m_Transferring)
-                Execution = null;
+                SkillData = null;
             else
                 base.Leave(fsm, body, isShutdown);
         }
@@ -420,23 +496,8 @@ public sealed class SkillReuseTests
         protected override void AdvanceSkill(IHeroBody body, float dt)
         {
             m_Age += dt;
-            Execution.Completed = m_Age >= .2f;
+            SkillData.Completed = m_Age >= .2f;
         }
-    }
-
-    /// <summary>测试自己的技能行为，共用状态不预设悟空移动或第二跳规则。</summary>
-    private sealed class TestExecution(SkillId id) : SkillExecution(id)
-    {
-        /// <summary>设置测试输入锁。</summary>
-        public bool TestInputLocked { init => InputLocked = value; }
-        /// <summary>设置测试重力策略。</summary>
-        public bool TestGravitySuspended { init => GravitySuspended = value; }
-        /// <summary>解除测试锁。</summary>
-        public void Unlock() => InputLocked = false;
-        /// <inheritdoc />
-        public override void Start(ISkillActor actor, double now) => actor.BeginSkillAnimation(null);
-        /// <inheritdoc />
-        public override void Advance(ISkillActor actor, float dt) => actor.Velocity = new Vector2(321, actor.Velocity.Y);
     }
 
     /// <summary>提供可重复的按键事实。</summary>
@@ -447,11 +508,11 @@ public sealed class SkillReuseTests
         /// <summary>本帧按下的动作。</summary>
         public HashSet<string> Pressed { get; } = new();
         /// <inheritdoc />
-        public bool IsHeld(string action) => Held.Contains(action);
+        public bool IsPressed(string action) => Held.Contains(action);
         /// <inheritdoc />
-        public bool WasPressed(string action) => Pressed.Contains(action);
+        public bool IsJustPressed(string action) => Pressed.Contains(action);
         /// <inheritdoc />
-        public bool WasReleased(string action) => false;
+        public bool IsJustReleased(string action) => false;
     }
 
     /// <summary>即使断言失败也归还真实框架状态。</summary>

@@ -17,9 +17,9 @@ public partial class EquipmentTooltip : PanelContainer
     [Export] private Label m_Value; // 出售获得的灵魂。
 
     /// <summary>注入装备并立即建立可测量的文本布局，避免首次悬停出现空白细条。</summary>
-    /// <param name="item">不可变的实际装备。</param>
+    /// <param name="data">不可变的实际装备。</param>
     /// <param name="definition">装备名称、类型、品质与售价。</param>
-    public void Bind(EquipmentInstance item, EquipmentConfig definition)
+    public void Bind(EquipmentData data, EquipmentConfig definition)
     {
         Color qualityColor = definition.Quality.DisplayColor();
         m_Name.Text = definition.NameCn;
@@ -33,7 +33,7 @@ public partial class EquipmentTooltip : PanelContainer
             m_Attributes.RemoveChild(child);
             child.QueueFree();
         }
-        foreach (var modifier in item.Attributes.EnumerateModifiers())
+        foreach (var modifier in data.Attributes.EnumerateModifiers())
         {
             Label line = new() { Text = $"{AttributeName(modifier.Attribute)}： {modifier.Value:0.##}", CustomMinimumSize = new Vector2(0, 25), MouseFilter = MouseFilterEnum.Ignore };
             line.AddThemeColorOverride("font_color", new Color("ff9933"));

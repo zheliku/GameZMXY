@@ -17,8 +17,8 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
     [Export] private AnimationPlayer m_PickupAnimation; // 外置上移淡出动画，按物理游戏秒手动推进。
     [Export] private CollisionShape2D m_Shape; // 场景预设的唯一矩形，落地与接触共用。
     private PickupId m_PickupId; // 恢复品定义，与装备互斥。
-    private EquipmentInstance m_Equipment; // 已抽取实际属性的地面装备。
-    private Func<AbstractHeroEntity, PickupId, EquipmentInstance, bool> m_Collect; // 接触者交给关卡校验并结算；满包继续留地。
+    private EquipmentData m_EquipmentData; // 已抽取实际属性的地面装备。
+    private Func<AbstractHeroEntity, PickupId, EquipmentData, bool> m_Collect; // 接触者交给关卡校验并结算；满包继续留地。
     private Action<GroundItemNode> m_Finished; // 关卡移除所有权并回池。
     private float m_Age; // 已存在的游戏秒数，暂停时不增加。
     private bool m_Collected; // 已成功入账，只完成淡出，不再检测接触或过期。
@@ -70,7 +70,7 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
     {
         SetPhysicsProcess(false);
         m_PickupId = PickupId.None;
-        m_Equipment = null;
+        m_EquipmentData = null;
         m_Collect = null;
         m_Finished = null;
         m_Icon.Texture = null;
@@ -82,15 +82,15 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
     /// <summary>显示已确定的恢复品或装备，并启用自身接触检测。</summary>
     /// <param name="position">死亡位置附近。</param>
     /// <param name="pickupId">恢复品主键，装备使用 None。</param>
-    /// <param name="equipment">实际装备，恢复品时为空。</param>
+    /// <param name="data">实际装备，恢复品时为空。</param>
     /// <param name="collect">校验实际接触者并结算；满包时拒绝领取。</param>
     /// <param name="finished">过期或领取动画结束后的回收回调。</param>
     /// <exception cref="ArgumentException">恢复品和装备未按互斥规则提供。</exception>
     /// <exception cref="InvalidOperationException">图标不存在、无法读取或完全透明。</exception>
-    public void Show(Vector2 position, PickupId pickupId, EquipmentInstance equipment,
-        Func<AbstractHeroEntity, PickupId, EquipmentInstance, bool> collect, Action<GroundItemNode> finished)
+    public void Show(Vector2 position, PickupId pickupId, EquipmentData data,
+        Func<AbstractHeroEntity, PickupId, EquipmentData, bool> collect, Action<GroundItemNode> finished)
     {
-        if ((pickupId == PickupId.None) == (equipment == null))
+        if ((pickupId == PickupId.None) == (data == null))
             throw new ArgumentException("一次地面掉落必须且只能包含一种物品。");
         GlobalPosition = position;
         Velocity = Vector2.Zero;
@@ -98,11 +98,11 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
         m_Collected = false;
         ResetPresentation();
         m_PickupId = pickupId;
-        m_Equipment = equipment;
+        m_EquipmentData = data;
         var tables = this.GetModel<ConfigurationModel>().Tables;
-        string iconPath = equipment == null
+        string iconPath = data == null
             ? tables.TbPickupConfig.Get(pickupId).IconPath
-            : tables.TbEquipmentConfig.Get(equipment.EquipmentId).GroundIconPath;
+            : tables.TbEquipmentConfig.Get(data.EquipmentId).GroundIconPath;
         m_Icon.Texture = GF.Resource.LoadAsset<Texture2D>(iconPath)
                          ?? throw new InvalidOperationException("地面物品图标加载失败。");
         m_Icon.Scale = Vector2.One * (pickupId == PickupId.LargePeach ? .9f : .7f);
@@ -128,12 +128,12 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
     {
         if (m_Collected || m_Collect == null || !IsInstanceValid(hero) || !hero.IsAlive ||
             !(m_Shape.GlobalTransform * m_Shape.Shape.GetRect()).Intersects(hero.HurtBox.GetGlobalBounds()) ||
-            !m_Collect(hero, m_PickupId, m_Equipment))
+            !m_Collect(hero, m_PickupId, m_EquipmentData))
             return false;
         m_Collected = true;
         Velocity = Vector2.Zero;
         m_PickupId = PickupId.None;
-        m_Equipment = null;
+        m_EquipmentData = null;
         m_Collect = null;
         m_PickupAnimation.Play("pickup");
         m_PickupAnimation.Advance(0);

@@ -20,7 +20,7 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
     /// <param name="random">返回 [0,1) 的随机采样器。</param>
     /// <returns>以后查看、拾取和保存均复用的不可变实例。</returns>
     /// <exception cref="ArgumentNullException">采样器为空。</exception>
-    public EquipmentInstance Roll(Guid instanceId, EquipmentId equipmentId, Func<float> random)
+    public EquipmentData Roll(Guid instanceId, EquipmentId equipmentId, Func<float> random)
     {
         ArgumentNullException.ThrowIfNull(random);
         var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(equipmentId);
@@ -33,7 +33,7 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
             attributes = attributes.WithValue(roll.Attribute, value);
         }
 
-        return new EquipmentInstance(instanceId, equipmentId, attributes);
+        return new EquipmentData(instanceId, equipmentId, attributes);
     }
 
     /// <summary>把背包中的装备穿到出战英雄；替换件原位放回，异角色装备没有副作用。</summary>
@@ -42,7 +42,7 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
     public bool TryEquip(Guid instanceId)
     {
         var profile = this.GetModel<ProfileModel>();
-        var item = profile.Items.FirstOrDefault(x => x.InstanceId == instanceId);
+        var item = profile.EquipmentDatas.FirstOrDefault(x => x.InstanceId == instanceId);
         if (item == null)
             return false;
         var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
@@ -83,7 +83,7 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
     public bool TrySell(Guid instanceId)
     {
         var profile = this.GetModel<ProfileModel>();
-        var item = profile.Items.FirstOrDefault(x => x.InstanceId == instanceId);
+        var item = profile.EquipmentDatas.FirstOrDefault(x => x.InstanceId == instanceId);
         if (item == null)
             return false;
         int price = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId).SellPrice;
@@ -107,7 +107,7 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         HashSet<Guid> ids = new();
         long price = 0;
         var definitions = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig;
-        foreach (var item in profile.Items)
+        foreach (var item in profile.EquipmentDatas)
         {
             var definition = definitions.Get(item.EquipmentId);
             if (definition.Quality != quality)
@@ -118,35 +118,35 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
 
         if (ids.Count == 0 || price > int.MaxValue - profile.Soul.Value)
             return 0;
-        profile.Items.ReplaceAll(profile.Items.Where(item => !ids.Contains(item.InstanceId)));
+        profile.EquipmentDatas.ReplaceAll(profile.EquipmentDatas.Where(item => !ids.Contains(item.InstanceId)));
         profile.Soul.Value += (int)price;
         return ids.Count;
     }
 
     /// <summary>交换背包中的一件物品；先验证，再经正常集合入口修改。</summary>
     /// <param name="removeId">移出背包的实例；空编号表示只放回。</param>
-    /// <param name="add">放回背包的实例；空表示只移出。</param>
+    /// <param name="data">放回背包的实例；空表示只移出。</param>
     /// <returns>容量、编号均有效时完成交换。</returns>
-    private bool TryExchange(Guid removeId, EquipmentInstance add)
+    private bool TryExchange(Guid removeId, EquipmentData data)
     {
         var profile = this.GetModel<ProfileModel>();
         int index = removeId == Guid.Empty
             ? -1
-            : Enumerable.Range(0, profile.Items.Count).FirstOrDefault(i => profile.Items[i].InstanceId == removeId, -1);
+            : Enumerable.Range(0, profile.EquipmentDatas.Count).FirstOrDefault(i => profile.EquipmentDatas[i].InstanceId == removeId, -1);
         if (removeId != Guid.Empty && index < 0)
             return false;
-        if (add != null && (profile.Items.Any(x => x.InstanceId == add.InstanceId) ||
-                            (index < 0 && profile.Items.Count == profile.Capacity)))
+        if (data != null && (profile.EquipmentDatas.Any(x => x.InstanceId == data.InstanceId) ||
+                            (index < 0 && profile.EquipmentDatas.Count == profile.Capacity)))
             return false;
         if (index >= 0)
         {
-            if (add == null)
-                profile.Items.RemoveAt(index);
+            if (data == null)
+                profile.EquipmentDatas.RemoveAt(index);
             else
-                profile.Items[index] = add;
+                profile.EquipmentDatas[index] = data;
         }
-        else if (add != null)
-            profile.Items.Add(add);
+        else if (data != null)
+            profile.EquipmentDatas.Add(data);
         return true;
     }
 }

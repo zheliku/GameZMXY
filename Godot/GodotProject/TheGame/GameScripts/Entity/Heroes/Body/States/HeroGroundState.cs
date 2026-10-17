@@ -16,8 +16,9 @@ namespace GameLogic.Heroes.Body
             if (TryStartSkill(fsm, body))
                 return;
             HandleJumpKeyCombinations(body);
-            if (body.TryStartAttack(false, 0, IsAirborne(body)))
+            if (body.ActionData.AttackRequested)
             {
+                body.ActionData.AttackRequested = false;
                 ChangeState<HeroAttackState>(fsm);
                 return;
             }
@@ -33,6 +34,15 @@ namespace GameLogic.Heroes.Body
             // 包括立棍张望的时序归动画，不另设随机小动作计时。
             body.PlayAnim(body.ActionData.MoveAxis == 0 ? HeroAnims.Idle :
                 body.ActionData.Running ? HeroAnims.Run : HeroAnims.Walk);
+        }
+
+        /// <inheritdoc />
+        public override bool TryGetActionInput(IHeroBody body, out bool attacking, out float normalProgress, out bool airborne)
+        {
+            attacking = false;
+            normalProgress = 0;
+            airborne = IsAirborne(body);
+            return true;
         }
     }
 }
