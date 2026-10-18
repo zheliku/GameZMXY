@@ -1,5 +1,11 @@
 [gd_resource type="AnimationLibrary" format=3 uid="uid://j3uaow5vlljx"]
 
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Effects/Skills/wukong_blazing_flash_trail_effect.tscn" id="1_gvsuv"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_combo_effect.tscn" id="2_ql4ms"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_descent_effect.tscn" id="3_eykaf"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_landing_effect.tscn" id="4_yhai6"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_prelude_effect.tscn" id="5_al35k"]
+
 [sub_resource type="RectangleShape2D" id="rest"]
 size = Vector2(1, 1)
 
@@ -156,10 +162,56 @@ tracks/9/keys = {
 "update": 1,
 "values": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 }
+tracks/10/type = "method"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath(".")
+tracks/10/interp = 1
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(0, 0.083333336, 0.375, 0.45833334),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"values": [{
+"args": [9],
+"method": &"PlaySoundAnimEvent"
+}, {
+"args": [ExtResource("1_gvsuv"), 1080.0],
+"method": &"StartBlazingFlashDashAnimEvent"
+}, {
+"args": [],
+"method": &"StopBlazingFlashAnimEvent"
+}, {
+"args": [],
+"method": &"CompleteSkillAnimationAnimEvent"
+}]
+}
+tracks/11/type = "method"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath(".")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"BeginBlazingFlashHitAnimEvent"
+}]
+}
 
 [sub_resource type="Animation" id="fire_demon_slash"]
 resource_name = "fire_demon_slash"
 length = 2.916666667
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"descent",
+"time": 1.9166666666666667
+}, {
+"color": Color(1, 1, 1, 1),
+"name": &"recovery",
+"time": 2.875
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -279,6 +331,52 @@ tracks/9/keys = {
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
 "values": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+}
+tracks/10/type = "method"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath(".")
+tracks/10/interp = 1
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(0, 0.083333336, 0.25, 1.9166666, 2, 2.8333333, 2.875),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"values": [{
+"args": [11],
+"method": &"PlaySoundAnimEvent"
+}, {
+"args": [Vector2(480, -1200)],
+"method": &"LaunchFireDemonAnimEvent"
+}, {
+"args": [ExtResource("2_ql4ms"), 130.0, 20.0, 1.6666666666666667],
+"method": &"SearchFireDemonTargetAnimEvent"
+}, {
+"args": [ExtResource("3_eykaf"), Vector2(720, 480)],
+"method": &"DescendFireDemonAnimEvent"
+}, {
+"args": [ExtResource("4_yhai6")],
+"method": &"OpenFireDemonLandingAnimEvent"
+}, {
+"args": [],
+"method": &"CloseFireDemonLandingAnimEvent"
+}, {
+"args": [ExtResource("4_yhai6")],
+"method": &"RecoverFireDemonAnimEvent"
+}]
+}
+tracks/11/type = "method"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath(".")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [ExtResource("5_al35k")],
+"method": &"BeginFireDemonAnimEvent"
+}]
 }
 
 [sub_resource type="RectangleShape2D" id="flame_storm_hit_0"]
@@ -433,6 +531,32 @@ tracks/9/keys = {
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
 "values": [0, -0.05679699, 0, 0, 0, 0, -0.143437858, 0.089049981, 0.1385944, 0]
+}
+tracks/10/type = "method"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath(".")
+tracks/10/interp = 1
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(0, 0.083333336, 0.16666667, 0.25, 0.375),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"values": [{
+"args": [10],
+"method": &"PlaySoundAnimEvent"
+}, {
+"args": [],
+"method": &"BeginFlameStormHitAnimEvent"
+}, {
+"args": [],
+"method": &"BeginFlameStormHitAnimEvent"
+}, {
+"args": [],
+"method": &"BeginFlameStormHitAnimEvent"
+}, {
+"args": [],
+"method": &"CompleteSkillAnimationAnimEvent"
+}]
 }
 
 [sub_resource type="RectangleShape2D" id="flame_thrust_hit_0"]
@@ -603,6 +727,46 @@ tracks/9/keys = {
 "update": 1,
 "values": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 }
+tracks/10/type = "method"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath(".")
+tracks/10/interp = 1
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(0, 0.16666667, 0.29166666, 0.41666666, 0.5833333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"values": [{
+"args": [8],
+"method": &"PlaySoundAnimEvent"
+}, {
+"args": [0.8],
+"method": &"ContinueFlameThrustAnimEvent"
+}, {
+"args": [0.8],
+"method": &"ContinueFlameThrustAnimEvent"
+}, {
+"args": [0.8],
+"method": &"ContinueFlameThrustAnimEvent"
+}, {
+"args": [],
+"method": &"CompleteSkillAnimationAnimEvent"
+}]
+}
+tracks/11/type = "method"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath(".")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [360.0, 720.0],
+"method": &"BeginFlameThrustAnimEvent"
+}]
+}
 
 [sub_resource type="RectangleShape2D" id="rising_dragon_hit_4"]
 size = Vector2(74, 79)
@@ -747,6 +911,37 @@ tracks/9/keys = {
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
 "values": [0, 0, 0, 0, 0, 1.169578172, 1.409331551, 0, 0, 0.162946742, 0, 0, 0, 0, -0.132662078]
+}
+tracks/10/type = "method"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath(".")
+tracks/10/interp = 1
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(0, 0.5833333),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [7],
+"method": &"PlaySoundAnimEvent"
+}, {
+"args": [],
+"method": &"CompleteSkillAnimationAnimEvent"
+}]
+}
+tracks/11/type = "method"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath(".")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"BeginRisingDragonHitAnimEvent"
+}]
 }
 
 [resource]

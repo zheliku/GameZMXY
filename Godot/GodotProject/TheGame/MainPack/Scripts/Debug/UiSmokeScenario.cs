@@ -549,7 +549,7 @@ public sealed partial class UiSmokeScenario
                 $"{entityId} 部分治疗未刷新血条");
 
             // 真实游戏时间验证淡出、再受伤复位和暂停，不手工调用计时实现。
-            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(ConfigSystem.Instance.Tables.TbBattleConfig.MonsterHealthBarFadeDuration * 0.3), SceneTreeTimer.SignalName.Timeout);
+            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(SmokeInspection.ReadField<float>(m_Monster, "m_HealthBarFadeDuration") * 0.3), SceneTreeTimer.SignalName.Timeout);
             Check(bar.Visible && bar.Modulate.A is > 0f and < 0.8f, $"{entityId} 受伤血条未逐渐淡出");
             SmokeInspection.DamageMonster(m_Monster, 1);
             Check(bar.Visible && Near(bar.Modulate.A, 1), $"{entityId} 连续受伤未重置淡出");
@@ -558,9 +558,9 @@ public sealed partial class UiSmokeScenario
             await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.3, ignoreTimeScale: true), SceneTreeTimer.SignalName.Timeout);
             Check(bar.Visible && Near(bar.Modulate.A, alpha), $"{entityId} 暂停时仍在淡出");
             GF.Base.ResumeGame();
-            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(ConfigSystem.Instance.Tables.TbBattleConfig.MonsterHealthBarFadeDuration * 0.75), SceneTreeTimer.SignalName.Timeout);
+            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(SmokeInspection.ReadField<float>(m_Monster, "m_HealthBarFadeDuration") * 0.75), SceneTreeTimer.SignalName.Timeout);
             Check(bar.Visible, $"{entityId} 连续受伤后的计时没有重新开始");
-            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(ConfigSystem.Instance.Tables.TbBattleConfig.MonsterHealthBarFadeDuration * 0.3), SceneTreeTimer.SignalName.Timeout);
+            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(SmokeInspection.ReadField<float>(m_Monster, "m_HealthBarFadeDuration") * 0.3), SceneTreeTimer.SignalName.Timeout);
             Check(!bar.Visible, $"{entityId} 配置淡出时长结束后血条没有隐藏");
             m_Monster.Heal(1);
             Check(!bar.Visible, $"{entityId} 治疗不应重新唤起已隐藏血条");
@@ -729,7 +729,7 @@ public sealed partial class UiSmokeScenario
         // 新工作区的引擎缓存尚无 validation 目录，夹具保存前先建立它。
         Check(DirAccess.MakeDirRecursiveAbsolute("res://.godot/validation") == Error.Ok, "创建冷加载 UI 夹具目录失败");
         string path = $"res://.godot/validation/hud_cancel_{Guid.NewGuid():N}.tscn";
-        Node fixture = GD.Load<PackedScene>(ResourcesCollectionConstant.UIs_BattleForm).Instantiate();
+        Node fixture = GD.Load<PackedScene>(ResourcesCollectionConstant.UIs_battle_form).Instantiate();
         PackedScene packed = new();
         Check(packed.Pack(fixture) == Error.Ok && ResourceSaver.Save(packed, path) == Error.Ok, "创建冷加载 UI 夹具失败");
         fixture.Free();
@@ -776,7 +776,7 @@ public sealed partial class UiSmokeScenario
         string openFailure = null;
         EventHandler<GameEventArgs> onFailure = (_, args) =>
         {
-            if (args is OpenUIFormFailureEventArgs failed && failed.UIFormAssetName == ResourcesCollectionConstant.UIs_BattleForm)
+            if (args is OpenUIFormFailureEventArgs failed && failed.UIFormAssetName == ResourcesCollectionConstant.UIs_battle_form)
             {
                 openFailure = failed.ErrorMessage;
             }
@@ -1009,7 +1009,7 @@ public sealed partial class UiSmokeScenario
 
     /// <summary>读取当前正式 HUD。</summary>
     /// <returns>当前窗口或 null。</returns>
-    private static BattleForm CurrentBattleForm() => GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_BattleForm) as BattleForm;
+    private static BattleForm CurrentBattleForm() => GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_battle_form) as BattleForm;
 
     /// <summary>关闭仍由框架管理的窗口，重复调用安全。</summary>
     /// <param name="battleForm">待关闭窗口，可为空。</param>

@@ -248,8 +248,8 @@ def build_table_registry():
 # ---------------------------------------------------------------------------
 def build_entity_ui():
     seed_table("实体.xlsx", 5, [
-        (None, 1, "Wukong", "res://TheGame/Entitys/WukongEntity.tscn", "Actor", 0),
-        (None, 2, "HuaguoshanMonkey", "res://TheGame/Entitys/HuaguoshanMonkeyEntity.tscn", "Actor", 0),
+        (None, 1, "Wukong", "res://TheGame/Entitys/wukong_entity.tscn", "Actor", 0),
+        (None, 2, "HuaguoshanMonkey", "res://TheGame/Entitys/huaguoshan_monkey_entity.tscn", "Actor", 0),
     ])
     seed_table("界面UI.xlsx", 5, [])
 

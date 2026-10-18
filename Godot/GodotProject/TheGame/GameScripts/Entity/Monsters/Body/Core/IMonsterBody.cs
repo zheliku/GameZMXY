@@ -25,6 +25,9 @@ namespace GameLogic.Monsters.Body
         /// <summary>取走 AI 的出招请求（招式序号；-1 = 没有）。受击/死亡时取走即作废。</summary>
         int TakeAttackRequest();
 
+        /// <summary>死亡进入时关闭受击判定并报告击败收益，不依赖动画是否播放。</summary>
+        void BeginDeath();
+
         /// <summary>请求回收（宿主在本帧物理结束后 HideEntity，不在状态机推进中途销毁自己）</summary>
         void RequestRecycle();
     }

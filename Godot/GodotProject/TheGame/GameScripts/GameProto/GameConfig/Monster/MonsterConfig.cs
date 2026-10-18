@@ -31,15 +31,12 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         AttackDesire = _buf.ReadInt();
         BehitCalmTime = _buf.ReadFloat();
         AddExp = _buf.ReadInt();
-        HurtSoundId = (Sound.SoundId)_buf.ReadInt();
-        DeathSoundId = (Sound.SoundId)_buf.ReadInt();
         Gravity = _buf.ReadFloat();
         PatrolInterval = _buf.ReadFloat();
         PatrolIdleChance = _buf.ReadInt();
         PatrolRadius = _buf.ReadInt();
         AttackInterval = _buf.ReadFloat();
         AttackFirstDelay = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
-        Rank = (Monster.MonsterRank)_buf.ReadInt();
         SuperArmor = _buf.ReadBool();
         AttackRangeSlack = _buf.ReadInt();
         LoseTargetTime = _buf.ReadFloat();
@@ -108,14 +105,6 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// </summary>
     public readonly int AddExp;
     /// <summary>
-    /// 受击语音(旧项目怪物无语音素材,填 None;M5 用)
-    /// </summary>
-    public readonly Sound.SoundId HurtSoundId;
-    /// <summary>
-    /// 死亡语音(同上)
-    /// </summary>
-    public readonly Sound.SoundId DeathSoundId;
-    /// <summary>
     /// 重力 px/s&#178;(旧 gravity=980 向下)
     /// </summary>
     public readonly float Gravity;
@@ -139,10 +128,6 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// 进入攻击范围后首次出手判定的随机延迟秒(x=最短,y=最长);出手是概率判定,这里只是反应时间
     /// </summary>
     public readonly Godot.Vector2 AttackFirstDelay;
-    /// <summary>
-    /// 阶级 Normal/Elite/Boss(旧 is_boss;供 HUD/掉落/结算区分)
-    /// </summary>
-    public readonly Monster.MonsterRank Rank;
     /// <summary>
     /// 霸体:受击不硬直不击退、不打断出招(旧 IsSuperArmor/Monster_18 类保护)
     /// </summary>
@@ -188,7 +173,7 @@ public sealed partial class MonsterConfig : Luban.BeanBase
     /// </summary>
     public readonly float EquipmentDropChance;
     /// <summary>
-    /// 装备池；怪物基础配置不得使用 UseMonster
+    /// 装备掉落池；None 不掉装备
     /// </summary>
     public readonly Loot.EquipmentDropPoolId EquipmentDropPoolId;
    
@@ -215,15 +200,12 @@ public sealed partial class MonsterConfig : Luban.BeanBase
         + "AttackDesire:" + AttackDesire + ","
         + "BehitCalmTime:" + BehitCalmTime + ","
         + "AddExp:" + AddExp + ","
-        + "HurtSoundId:" + HurtSoundId + ","
-        + "DeathSoundId:" + DeathSoundId + ","
         + "Gravity:" + Gravity + ","
         + "PatrolInterval:" + PatrolInterval + ","
         + "PatrolIdleChance:" + PatrolIdleChance + ","
         + "PatrolRadius:" + PatrolRadius + ","
         + "AttackInterval:" + AttackInterval + ","
         + "AttackFirstDelay:" + AttackFirstDelay + ","
-        + "Rank:" + Rank + ","
         + "SuperArmor:" + SuperArmor + ","
         + "AttackRangeSlack:" + AttackRangeSlack + ","
         + "LoseTargetTime:" + LoseTargetTime + ","

@@ -1,0 +1,94 @@
+[gd_resource type="Resource" script_class="ItemAppearancesResource" format=3 uid="uid://b0cqamjcontb4"]
+
+[ext_resource type="Texture2D" uid="uid://cotpgi3ud157x" path="res://TheGame/Sprites/Items/equipment/ground_rough_pilgrim_clothes.png" id="ground_0"]
+[ext_resource type="Texture2D" uid="uid://csc7r3af0gfjd" path="res://TheGame/Sprites/Items/equipment/ground_rough_pilgrim_staff.png" id="ground_1"]
+[ext_resource type="Texture2D" uid="uid://cwgrqabwos3xx" path="res://TheGame/Sprites/Items/equipment/ground_rough_cassock.png" id="ground_2"]
+[ext_resource type="Texture2D" uid="uid://d0tfiwm4ym4fh" path="res://TheGame/Sprites/Items/equipment/ground_rough_pine_staff.png" id="ground_3"]
+[ext_resource type="Texture2D" uid="uid://cgrx0u37xb22s" path="res://TheGame/Sprites/Items/equipment/ground_common_pilgrim_clothes.png" id="ground_4"]
+[ext_resource type="Texture2D" uid="uid://iamt0yv5m5kp" path="res://TheGame/Sprites/Items/equipment/ground_common_pilgrim_staff.png" id="ground_5"]
+[ext_resource type="Texture2D" uid="uid://l46va1gub3vx" path="res://TheGame/Sprites/Items/equipment/ground_common_cassock.png" id="ground_6"]
+[ext_resource type="Texture2D" uid="uid://cms5bsm7rgw0g" path="res://TheGame/Sprites/Items/equipment/ground_common_pine_staff.png" id="ground_7"]
+[ext_resource type="Texture2D" uid="uid://di3mglm2udsy" path="res://TheGame/Sprites/Items/equipment/equipment_rough_pilgrim_clothes.png" id="icon_0"]
+[ext_resource type="Texture2D" uid="uid://b2v14ujlrtoyg" path="res://TheGame/Sprites/Items/equipment/equipment_rough_pilgrim_staff.png" id="icon_1"]
+[ext_resource type="Texture2D" uid="uid://bil3wadkin7ti" path="res://TheGame/Sprites/Items/equipment/equipment_rough_cassock.png" id="icon_2"]
+[ext_resource type="Texture2D" uid="uid://dla7gyn8pma4i" path="res://TheGame/Sprites/Items/equipment/equipment_rough_pine_staff.png" id="icon_3"]
+[ext_resource type="Texture2D" uid="uid://db6swvxikw5m3" path="res://TheGame/Sprites/Items/equipment/equipment_common_pilgrim_clothes.png" id="icon_4"]
+[ext_resource type="Texture2D" uid="uid://wrasm42qrvdl" path="res://TheGame/Sprites/Items/equipment/equipment_common_pilgrim_staff.png" id="icon_5"]
+[ext_resource type="Texture2D" uid="uid://mkdd7eyq24oy" path="res://TheGame/Sprites/Items/equipment/equipment_common_cassock.png" id="icon_6"]
+[ext_resource type="Texture2D" uid="uid://m61nwp3dls1r" path="res://TheGame/Sprites/Items/equipment/equipment_common_pine_staff.png" id="icon_7"]
+[ext_resource type="Texture2D" uid="uid://5cawdjo4oucs" path="res://TheGame/Sprites/Items/consumables/pickup_small_peach.png" id="icon_8"]
+[ext_resource type="Texture2D" uid="uid://bmqafxeiu0v7x" path="res://TheGame/Sprites/Items/consumables/pickup_large_peach.png" id="icon_9"]
+[ext_resource type="Texture2D" uid="uid://cbjv0x7bftxam" path="res://TheGame/Sprites/Items/consumables/pickup_mana_bottle.png" id="icon_10"]
+[ext_resource type="Script" uid="uid://b5an6k4pog627" path="res://TheGame/GameScripts/Equipment/ItemAppearanceResource.cs" id="item"]
+[ext_resource type="Script" uid="uid://bmcyrwqjdgr1h" path="res://TheGame/GameScripts/Equipment/ItemAppearancesResource.cs" id="library"]
+
+[sub_resource type="Resource" id="item_0"]
+script = ExtResource("item")
+m_EquipmentId = 1
+m_InventoryIcon = ExtResource("icon_0")
+m_GroundIcon = ExtResource("ground_0")
+
+[sub_resource type="Resource" id="item_1"]
+script = ExtResource("item")
+m_EquipmentId = 2
+m_InventoryIcon = ExtResource("icon_1")
+m_GroundIcon = ExtResource("ground_1")
+
+[sub_resource type="Resource" id="item_2"]
+script = ExtResource("item")
+m_EquipmentId = 3
+m_InventoryIcon = ExtResource("icon_2")
+m_GroundIcon = ExtResource("ground_2")
+
+[sub_resource type="Resource" id="item_3"]
+script = ExtResource("item")
+m_EquipmentId = 4
+m_InventoryIcon = ExtResource("icon_3")
+m_GroundIcon = ExtResource("ground_3")
+
+[sub_resource type="Resource" id="item_4"]
+script = ExtResource("item")
+m_EquipmentId = 5
+m_InventoryIcon = ExtResource("icon_4")
+m_GroundIcon = ExtResource("ground_4")
+
+[sub_resource type="Resource" id="item_5"]
+script = ExtResource("item")
+m_EquipmentId = 6
+m_InventoryIcon = ExtResource("icon_5")
+m_GroundIcon = ExtResource("ground_5")
+
+[sub_resource type="Resource" id="item_6"]
+script = ExtResource("item")
+m_EquipmentId = 7
+m_InventoryIcon = ExtResource("icon_6")
+m_GroundIcon = ExtResource("ground_6")
+
+[sub_resource type="Resource" id="item_7"]
+script = ExtResource("item")
+m_EquipmentId = 8
+m_InventoryIcon = ExtResource("icon_7")
+m_GroundIcon = ExtResource("ground_7")
+
+[sub_resource type="Resource" id="item_8"]
+script = ExtResource("item")
+m_PickupId = 1
+m_InventoryIcon = ExtResource("icon_8")
+m_GroundIcon = ExtResource("icon_8")
+
+[sub_resource type="Resource" id="item_9"]
+script = ExtResource("item")
+m_PickupId = 2
+m_InventoryIcon = ExtResource("icon_9")
+m_GroundIcon = ExtResource("icon_9")
+m_GroundScale = Vector2(0.9, 0.9)
+
+[sub_resource type="Resource" id="item_10"]
+script = ExtResource("item")
+m_PickupId = 3
+m_InventoryIcon = ExtResource("icon_10")
+m_GroundIcon = ExtResource("icon_10")
+
+[resource]
+script = ExtResource("library")
+m_Items = Array[ExtResource("item")]([SubResource("item_0"), SubResource("item_1"), SubResource("item_2"), SubResource("item_3"), SubResource("item_4"), SubResource("item_5"), SubResource("item_6"), SubResource("item_7"), SubResource("item_8"), SubResource("item_9"), SubResource("item_10")])

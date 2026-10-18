@@ -28,10 +28,30 @@
 [ext_resource type="Texture2D" uid="uid://dflf2u60a6bce" path="res://TheGame/Sprites/UI/skills/skills_wukong_normal.png" id="wukong_normal"]
 [ext_resource type="Texture2D" uid="uid://c62rdxg1jxdkh" path="res://TheGame/Sprites/UI/skills/skills_wukong_selected.png" id="wukong_selected"]
 
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/skills/skill_blazing_flash_learned.png" id="learned_BlazingFlash"]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/skills/skill_dark_ice_thorn_learned.png" id="learned_DarkIceFormation"]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/skills/skill_fire_demon_slash_learned.png" id="learned_FireDemonSlash"]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/skills/skill_flame_storm_learned.png" id="learned_FlameStorm"]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/skills/skill_flame_thrust_learned.png" id="learned_FlameThrust"]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/skills/skill_heavenly_dew_learned.png" id="learned_HeavenlyDew"]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/skills/skill_ice_dragon_wave_learned.png" id="learned_IceDragonWave"]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/skills/skill_rising_dragon_learned.png" id="learned_RisingDragon"]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/skills/skill_water_clone_learned.png" id="learned_WaterClone"]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/skills/skill_water_demon_burst_learned.png" id="learned_WaterDemonBurst"]
+
 [ext_resource type="Theme" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="official_theme"]
 
 [node name="SkillForm" type="Control" unique_id=1949534136 node_paths=PackedStringArray("m_Wukong", "m_Tangseng", "m_Back", "m_ActivePage", "m_PassivePage", "m_Active", "m_Passive", "m_Soul")]
-editor_description = "技能行直接位于本场景。预填文字和图标用于编辑预览；运行时 Bind 使用正式配置覆盖。列宽对应原版表格；图标保留各自的原始坐标。字体使用原版方正粗圆，说明不额外缩小。"
+editor_description = "技能行直接位于本场景。图标及键位由本场景编辑；运行时只刷新数值目录与学习信息。列宽对应原版表格；图标保留各自的原始坐标。字体使用原版方正粗圆，说明不额外缩小。"
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -232,6 +252,7 @@ offset_right = 76.05
 offset_bottom = 68.7
 mouse_filter = 0
 texture_normal = ExtResource("preview_RisingDragon")
+texture_disabled = ExtResource("learned_RisingDragon")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
@@ -301,6 +322,7 @@ offset_right = 77.05
 offset_bottom = 68.85
 mouse_filter = 0
 texture_normal = ExtResource("preview_FlameThrust")
+texture_disabled = ExtResource("learned_FlameThrust")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
@@ -370,6 +392,7 @@ offset_right = 77.05
 offset_bottom = 70.0
 mouse_filter = 0
 texture_normal = ExtResource("preview_BlazingFlash")
+texture_disabled = ExtResource("learned_BlazingFlash")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
@@ -439,6 +462,7 @@ offset_right = 77.05
 offset_bottom = 70.14999999999998
 mouse_filter = 0
 texture_normal = ExtResource("preview_FlameStorm")
+texture_disabled = ExtResource("learned_FlameStorm")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
@@ -508,6 +532,7 @@ offset_right = 77.05
 offset_bottom = 70.30000000000001
 mouse_filter = 0
 texture_normal = ExtResource("preview_FireDemonSlash")
+texture_disabled = ExtResource("learned_FireDemonSlash")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
@@ -585,6 +610,7 @@ offset_right = 74.05
 offset_bottom = 68.7
 mouse_filter = 0
 texture_normal = ExtResource("preview_IceDragonWave")
+texture_disabled = ExtResource("learned_IceDragonWave")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
@@ -653,6 +679,7 @@ offset_right = 74.05
 offset_bottom = 71.35
 mouse_filter = 0
 texture_normal = ExtResource("preview_DarkIceFormation")
+texture_disabled = ExtResource("learned_DarkIceFormation")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
@@ -721,6 +748,7 @@ offset_right = 74.05
 offset_bottom = 70.0
 mouse_filter = 0
 texture_normal = ExtResource("preview_WaterClone")
+texture_disabled = ExtResource("learned_WaterClone")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
@@ -789,6 +817,7 @@ offset_right = 74.05
 offset_bottom = 69.64999999999998
 mouse_filter = 0
 texture_normal = ExtResource("preview_HeavenlyDew")
+texture_disabled = ExtResource("learned_HeavenlyDew")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
@@ -857,6 +886,7 @@ offset_right = 74.05
 offset_bottom = 70.30000000000001
 mouse_filter = 0
 texture_normal = ExtResource("preview_WaterDemonBurst")
+texture_disabled = ExtResource("learned_WaterDemonBurst")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0

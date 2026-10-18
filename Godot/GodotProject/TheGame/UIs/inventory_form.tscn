@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://bcur4jvgd48dm"]
 
+[ext_resource type="Resource" path="res://TheGame/Sprites/Items/item_appearances.tres" id="appearances"]
 [ext_resource type="PackedScene" path="res://TheGame/UIs/Widgets/equipment_actions_menu.tscn" id="actions"]
 [ext_resource type="Texture2D" uid="uid://bmpaf7wdvtwnd" path="res://TheGame/Sprites/UI/inventory/inventory_attributes.png" id="attributes"]
 [ext_resource type="FontFile" uid="uid://c5eah8rqotkno" path="res://TheGame/MainPack/Fonts/df_poster_w12.ttc" id="badge_font"]
@@ -128,6 +129,7 @@ offset_right = 497.0
 offset_bottom = 506.0
 mouse_filter = 2
 script = ExtResource("component_InventoryCharacterPanel")
+m_Appearances = ExtResource("appearances")
 m_Name = NodePath("Identity/m_Name")
 m_Level = NodePath("Identity/m_Level")
 m_Preview = NodePath("m_Preview")
@@ -707,6 +709,7 @@ offset_right = 817.0
 offset_bottom = 506.0
 mouse_filter = 2
 script = ExtResource("component_InventoryBagPanel")
+m_Appearances = ExtResource("appearances")
 m_Tabs = NodePath("m_Tabs")
 m_Grid = NodePath("m_BagGrid")
 m_SoulText = NodePath("Footer/Soul/m_Soul")

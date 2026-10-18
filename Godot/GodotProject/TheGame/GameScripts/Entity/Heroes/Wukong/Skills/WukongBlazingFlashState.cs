@@ -9,60 +9,56 @@ using Godot;
 
 namespace GameLogic.Heroes.Wukong;
 
-/// <summary>烈焰闪：起手移动、生成火焰拖尾、定向闪身、停止与收招均由本状态管理。</summary>
+/// <summary>烈焰闪：起手保留移动，闪身阶段生成拖尾并开启无敌，末段停止移动。</summary>
 public sealed class WukongBlazingFlashState : AbstractHeroSkillState
 {
+    private const string AnimationName = "skills/blazing_flash"; // 本招的原生动画资源名。
+
     private int m_MoveAxis; // 闪身前保留的起手方向。
+    private bool m_Dashing; // 进入闪身后不再应用常规移动。
 
     /// <inheritdoc />
     protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
     {
         base.Enter(fsm, body);
-        var configuration = body.GetModel<ConfigurationModel>();
-        var action = configuration.Tables.TbSkillActionConfig.Get(SkillId.BlazingFlash);
         m_MoveAxis = body.ActionData.MoveAxis;
+        m_Dashing = false;
         body.ActionData.LastGroundSegment = -1;
-        body.ActionData.AttackReadyAt = body.ActionData.Time + action.NormalAttackBlockSeconds;
-        BeginAnimation(body, action);
-        AdvanceSkill(body, 0);
+        BeginAnimation(body, AnimationName);
     }
 
-    /// <inheritdoc />
-    protected override void AdvanceSkill(IHeroBody body, float dt)
+    /// <summary>起手生成本招攻击包，固定威力仍由数值表提供。</summary>
+    /// <param name="body">悟空身体。</param>
+    public void BeginHit(IHeroBody body) => ((ISkillActor)body).NewSkillAttack(
+        SkillHitId.BlazingFlash, AttackPower(body, SkillHitId.BlazingFlash));
+
+    /// <summary>在动画标出的闪身点开启拖尾、无敌与定向速度。</summary>
+    /// <param name="body">悟空身体。</param>
+    /// <param name="trail">动画直接引用的拖尾场景。</param>
+    /// <param name="speed">闪身速度，px/s。</param>
+    public void StartDash(IHeroBody body, PackedScene trail, float speed)
     {
-        var action = body.GetModel<ConfigurationModel>().Tables.TbSkillActionConfig.Get(SkillId.BlazingFlash);
-        if (SkillTime < action.InvincibleDelaySeconds)
-        {
-            var input = body.GetSystem<InputSystem>();
-            if (!input.IsDirectionHeld(body.ActionData, m_MoveAxis) || input.WasDirectionReleased(body.ActionData, m_MoveAxis))
-                m_MoveAxis = 0;
-            float speed = body.ActionData.Running ? body.Params.RunSpeed : body.Params.WalkSpeed;
-            body.Velocity = new Vector2(m_MoveAxis * speed * body.MoveSpeedMultiplier, body.Velocity.Y);
-        }
+        m_Dashing = true;
         var actor = (ISkillActor)body;
-        foreach (var entry in AdvanceTimeline(dt, body.OnFloor))
-        {
-            switch (entry.Kind)
-            {
-                case SkillTimelineKind.NewAttackId:
-                    actor.NewSkillAttack(action.BodyHitId);
-                    break;
-                case SkillTimelineKind.SpawnEffect:
-                    actor.SpawnSkillEffect(entry.EffectId, SkillData, actor.SkillPosition);
-                    break;
-                case SkillTimelineKind.SetVelocityX:
-                    float speed = body.GetModel<GameLogic.Battle.HeroModel>().WsActive.Value
-                        ? entry.MusouVelocity.X : entry.Velocity.X;
-                    body.Velocity = new Vector2(actor.Facing * speed, body.Velocity.Y);
-                    break;
-                case SkillTimelineKind.StopMotion:
-                    body.Velocity = Vector2.Zero;
-                    break;
-                case SkillTimelineKind.CompleteActor:
-                    SkillData.Completed = true;
-                    break;
-            }
-        }
-        actor.SetSkillAnimationTime(SkillTime);
+        actor.SpawnSkillEffect(trail, actor.SkillPosition);
+        body.GetSystem<SkillSystem>().GrantInvulnerability(body.ActionData.Time,
+            body.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(SkillId.BlazingFlash).InvincibleDurationSeconds);
+        body.Velocity = new Vector2(actor.Facing * speed, body.Velocity.Y);
+    }
+
+    /// <summary>收招点停止身体移动。</summary>
+    /// <param name="body">悟空身体。</param>
+    public void StopDash(IHeroBody body) => body.Velocity = Vector2.Zero;
+
+    /// <inheritdoc />
+    protected override void UpdateSkill(IHeroBody body, float dt)
+    {
+        if (m_Dashing)
+            return;
+        var input = body.GetSystem<InputSystem>();
+        if (!input.IsDirectionHeld(body.ActionData, m_MoveAxis) || input.WasDirectionReleased(body.ActionData, m_MoveAxis))
+            m_MoveAxis = 0;
+        float speed = body.ActionData.Running ? body.Params.RunSpeed : body.Params.WalkSpeed;
+        body.Velocity = new Vector2(m_MoveAxis * speed * body.MoveSpeedMultiplier, body.Velocity.Y);
     }
 }

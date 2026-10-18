@@ -242,7 +242,6 @@ public sealed class LevelFlowTests
         bytes.WriteString("");
         bytes.WriteInt(maxActive);
         bytes.WriteFloat(spawnDelay);
-        bytes.WriteInt((int)EntityId.None);
         bytes.WriteSize(2);
         foreach (string point in new[] { "a", "b" })
         {
@@ -255,7 +254,6 @@ public sealed class LevelFlowTests
             bytes.WriteFloat(1f);
             bytes.WriteFloat(1f);
             bytes.WriteInt(-1);
-            bytes.WriteInt((int)GameConfig.Loot.EquipmentDropPoolId.UseMonster);
         }
 
         return new LevelStage(bytes);

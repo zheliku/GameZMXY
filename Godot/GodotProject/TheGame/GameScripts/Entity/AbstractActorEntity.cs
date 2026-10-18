@@ -31,11 +31,16 @@ namespace GameLogic.Entity
 
         [Export] private AnimationPlayer m_AnimPlayer; // 角色专属动画库，由本类直接驱动。
 
+        [Export] private string[] m_AttackAnimations = Array.Empty<string>(); // 普通招式动画，顺序与本实体的 ComboIndex 一致。
+
+        [Export] private SoundId m_AttackHitSoundId; // 普通攻击有效命中时播放的音效，由实体场景装配。
+
         [Export] private HurtBoxNode m_HurtBox; // 受击判定区，可为空；HurtBox 持有本实体引用。
 
         [Export] private Area2D m_HitBox; // 攻击判定区，几何和开关完全由动画值轨道驱动。
 
         [Export] private Node2D m_HitBoxRoot; // 攻击判定区镜像容器，随朝向翻转动画写入的位置。
+
 
         private AttackData m_ActiveAttackData; // 当前招式的攻击包；出招装填、收招归还，null 表示未出招。
 
@@ -54,6 +59,9 @@ namespace GameLogic.Entity
 
         /// <summary>本角色的招式（AttackConfig 里 OwnerId==自己，按 ComboIndex 排序；子类 OnInit 装填）</summary>
         protected IReadOnlyList<AttackConfig> OwnAttacks => this.GetModel<ConfigurationModel>().GetAttacks(EntityType);
+
+        /// <summary>场景装配的普通攻击动画，顺序对应本实体的数值招式。</summary>
+        protected IReadOnlyList<string> AttackAnimations => m_AttackAnimations;
 
         /// <summary>实体的基础配置类型；运行实例编号另由 GGF 管理。</summary>
         protected abstract EntityId EntityType { get; }
@@ -181,6 +189,13 @@ namespace GameLogic.Entity
             {
                 Log.Error("[AbstractActorEntity] 场景未绑定 m_AnimPlayer（AnimationPlayer）：{0}", entityAssetName);
             }
+
+            // 动画由场景装配，数值按稳定连段顺序关联；装配不完整时在初始化边界停止。
+            if (m_AttackAnimations.Length != OwnAttacks.Count)
+                throw new InvalidOperationException($"{entityAssetName} 的普通攻击动画数与数值招式数不一致。");
+            foreach (string animation in m_AttackAnimations)
+                if (!HasAnim(animation))
+                    throw new InvalidOperationException($"{entityAssetName} 缺少普通攻击动画 {animation}。");
         }
 
         /// <summary>
@@ -312,20 +327,9 @@ namespace GameLogic.Entity
             m_AnimPlayer.Play(AnimName(anim));
         }
 
-        /// <summary>
-        /// 按 SoundId 播放一次性音效：查 SoundConfig 拿路径与组，直接走框架的统一入口
-        /// `GF.Sound.PlaySound(资源, 组名)`。代码里不出现资源路径（根规范 §4.5），路径与组都在表里。
-        /// </summary>
-        /// <param name="id">配置音效枚举；None 不播放。</param>
-        public void PlaySound(SoundId id)
-        {
-            if (id == SoundId.None)
-            {
-                return;
-            }
-
-            GF.Sound.PlayConfigured(id);
-        }
+        /// <summary>动画方法轨道按编号播放音效，资源与声音组仍由 GGF 管理。</summary>
+        /// <param name="id">声音配置编号；None 不播放。</param>
+        public void PlaySoundAnimEvent(SoundId id) => GF.Sound.PlayConfigured(id);
 
         /// <summary>设置朝向（0 表示不变）。翻转通用表现层（身体/判定盒容器），最后调钩子（子类镜像自己的附加层）。</summary>
         /// <param name="dir">朝向：正值右，负值左，零不变。</param>
@@ -404,7 +408,7 @@ namespace GameLogic.Entity
                 // 死亡事实唯一置位点：只在生命归零的那一次为真，之后保持到下次显示复位。
                 died = ApplyDamage(result.Damage);
                 Dead |= died;
-                OnHurt(data, result, this.GetSystem<CombatSystem>().KnockbackVelocity(data, Side), attackerEntityId);
+                OnHurt(data, result, this.GetSystem<CombatSystem>().KnockbackVelocity(data, GlobalPosition.X), attackerEntityId);
             }
 
             GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == CombatSide.Hero, HeadPosition));
@@ -480,7 +484,7 @@ namespace GameLogic.Entity
             float power = attributes.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf())
                 + MathF.Round(Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf()), MidpointRounding.AwayFromZero);
             m_ActiveAttackData = AttackData.Create(attack.Id, attributes, power * powerMultiplier, attack.DamageKind, attack.Knockback, Facing,
-                attack.HitProtect, attack.HitSoundId);
+                attack.HitProtect, m_AttackHitSoundId);
         }
 
         /// <summary>接管一个已经由技能规则计算好的池化攻击包。</summary>
@@ -530,7 +534,7 @@ namespace GameLogic.Entity
             DamageResult result = target.ReceiveHit(m_ActiveAttackData, Id);
             if (!result.IsMiss)
             {
-                PlaySound(m_ActiveAttackData.HitSoundId);
+                GF.Sound.PlayConfigured(m_ActiveAttackData.HitSoundId);
                 OnHitLanded(m_ActiveAttackData, result);
             }
         }

@@ -1,135 +1,103 @@
 using System;
-using System.Collections.Generic;
 using GameConfig.Skills;
-using GameLogic.Config;
 using GameFramework.Fsm;
 using GameLogic.Architecture;
+using GameLogic.Battle;
+using GameLogic.Config;
 using GameLogic.Input;
 using GameLogic.Skills;
 
 namespace GameLogic.Heroes.Body;
 
-/// <summary>具名技能状态共用的身体驱动；具体技能负责自己的进入规则、阶段和移动。</summary>
+/// <summary>技能共用的身体生命周期；原生动画决定时点，具体状态决定招式规则。</summary>
 public abstract class AbstractHeroSkillState : AbstractHeroBodyState
 {
-    private IReadOnlyList<SkillTimelineConfig> m_Events; // 本招本次使用的只读事件序列。
-    private int m_NextEvent; // 下一条尚未交给具体状态的事件。
-    private double m_FreezeRemaining; // 剩余冻结游戏秒数。
+    private SkillId m_SkillId; // 本状态进入时的技能，取消后不借用下一招的编号。
+    private bool m_AnimationCompleted; // 方法轨道只登记完成，退出在动画调用返回后执行。
 
-    /// <summary>本次动画局部秒数。</summary>
-    protected double SkillTime { get; private set; }
+    /// <summary>当前阶段是否暂停身体重力。</summary>
+    protected bool GravitySuspended { get; set; }
+    /// <summary>等待独立效果时暂停本体动画；不暂停效果或游戏。</summary>
+    protected bool AnimationPaused { get; set; }
 
-    /// <summary>具体状态等待独立效果完成时暂停局部时间。</summary>
-    protected bool TimelinePaused { get; set; }
-
-    /// <summary>借用模型拥有的本次施放数据，只在本状态活动期间有效。</summary>
-    protected SkillData SkillData { get; set; }
-
-    /// <summary>旧状态退出后借用本次施放数据，具体状态负责起手。</summary>
-    /// <param name="fsm">身体状态机。</param>
-    /// <param name="body">英雄表现。</param>
-    protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body) =>
-        SkillData = body.GetSystem<SkillSystem>().BodySkillData ??
+    /// <inheritdoc />
+    protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
+    {
+        m_SkillId = body.GetModel<SkillModel>().ActiveSkillId ??
             throw new InvalidOperationException("进入技能状态前必须先成功激活技能。");
+        m_AnimationCompleted = GravitySuspended = AnimationPaused = false;
+    }
 
-    /// <summary>由 GGF 物理帧推进当前招式，完成后回到移动状态；后续输入由具体技能状态读取。</summary>
-    /// <param name="fsm">身体状态机。</param>
-    /// <param name="body">英雄表现。</param>
-    /// <param name="dt">游戏秒数。</param>
+    /// <inheritdoc />
     protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
     {
-        if (SkillData.Completed)
+        if (body.GetModel<SkillModel>().ActiveSkillId != m_SkillId)
         {
             ChangeToLocomotion(fsm, body);
             return;
         }
         body.GetSystem<InputSystem>().ConsumeAttack(body.ActionData);
-        if (!SkillData.GravitySuspended)
+        if (!GravitySuspended)
             ApplyGravity(body, dt);
-        AdvanceSkill(body, dt);
-        if (SkillData.Completed)
+        UpdateSkill(body, dt);
+    }
+
+    /// <summary>状态决策完成后每物理帧推进一次，避免 GGF 同帧状态跳转重复推进动画。</summary>
+    /// <param name="fsm">所属身体状态机。</param>
+    /// <param name="body">英雄表现。</param>
+    /// <param name="dt">游戏秒数。</param>
+    public void AdvanceAnimation(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
+    {
+        if (body.GetModel<SkillModel>().ActiveSkillId != m_SkillId)
+            return;
+        if (!AnimationPaused)
+            ((ISkillActor)body).AdvanceSkillAnimation(dt);
+        // 原生方法回调不能在 AnimationPlayer 遍历轨道时更换动画或释放状态。
+        AfterAnimation(body);
+        if (m_AnimationCompleted)
             ChangeToLocomotion(fsm, body);
     }
 
-    /// <summary>离开身体状态时释放本次表现与施放数据；多阶段技能转交数据时由具体状态处理。</summary>
-    /// <param name="fsm">身体状态机。</param>
-    /// <param name="body">英雄表现。</param>
-    /// <param name="isShutdown">框架是否关停。</param>
+    /// <summary>由动画末尾的方法键请求收招；实际迁移在推进返回后执行。</summary>
+    public void CompleteAnimation() => m_AnimationCompleted = true;
+
+    /// <inheritdoc />
     protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
     {
-        body.GetSystem<SkillSystem>().ReleaseBody(SkillData, (ISkillActor)body);
-        SkillData = null;
+        ((ISkillActor)body).EndSkillAnimation();
+        var model = body.GetModel<SkillModel>();
+        if (model.ActiveSkillId == m_SkillId)
+            model.ActiveSkillId = null;
+        m_AnimationCompleted = GravitySuspended = AnimationPaused = false;
     }
 
-    /// <summary>开始动画技能共用的表现与秒制无敌，不处理具体招式规则。</summary>
-    /// <param name="body">本次身体。</param>
-    /// <param name="action">共享动作定义。</param>
-    protected void BeginAnimation(IHeroBody body, SkillActionConfig action)
+    /// <summary>应用数值表中的普攻冷却后播放本招的原生动画。</summary>
+    /// <param name="body">英雄身体。</param>
+    /// <param name="animation">具体角色的动画名称。</param>
+    protected void BeginAnimation(IHeroBody body, string animation)
     {
-        m_Events = body.GetModel<ConfigurationModel>().GetSkillTimeline(SkillData.Id, SkillEffectId.None);
-        m_NextEvent = 0;
-        m_FreezeRemaining = SkillTime = 0;
-        TimelinePaused = false;
-        if (action.InvincibleDurationSeconds > 0)
-            body.GetSystem<SkillSystem>().GrantInvulnerability(body.ActionData.Time + action.InvincibleDelaySeconds,
-                action.InvincibleDurationSeconds);
-        ((ISkillActor)body).BeginSkillAnimation(action);
+        var definition = body.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(m_SkillId);
+        if (definition.NormalAttackBlockSeconds > 0)
+            body.ActionData.AttackReadyAt = body.ActionData.Time + definition.NormalAttackBlockSeconds;
+        ((ISkillActor)body).BeginSkillAnimation(animation);
     }
 
-    /// <summary>推进本招的具体流程和后续输入；独立特效由自己的节点推进。</summary>
-    /// <param name="body">本次身体。</param>
-    /// <param name="dt">本帧游戏秒数。</param>
-    protected virtual void AdvanceSkill(IHeroBody body, float dt) { }
-
-    /// <summary>产出本帧到期事件；处理者可在事件之间暂停、冻结或跳转。</summary>
-    /// <param name="dt">本次游戏秒数。</param>
-    /// <param name="onFloor">本帧落地事实，用于有截止时间的落地事件。</param>
-    /// <returns>到期事件，由招式状态解释。</returns>
-    protected IEnumerable<SkillTimelineConfig> AdvanceTimeline(float dt, bool onFloor)
+    /// <summary>读取本招固定数值，具体状态决定其取整顺序与击退方向。</summary>
+    /// <param name="body">英雄身体。</param>
+    /// <param name="hit">伤害阶段。</param>
+    /// <returns>乘无双之前的威力。</returns>
+    protected static double AttackPower(IHeroBody body, SkillHitId hit)
     {
-        double remaining = dt;
-        while (m_NextEvent < m_Events.Count && !TimelinePaused)
-        {
-            var entry = m_Events[m_NextEvent];
-            // 同时点先全部产出，再消耗冻结时间；低帧率也保留事件顺序。
-            if (entry.AtSeconds > SkillTime + .0001)
-            {
-                if (m_FreezeRemaining > 0)
-                {
-                    double frozen = Math.Min(remaining, m_FreezeRemaining);
-                    m_FreezeRemaining -= frozen;
-                    remaining -= frozen;
-                }
-                if (remaining <= 0)
-                    yield break;
-                double step = Math.Min(remaining, entry.AtSeconds - SkillTime);
-                SkillTime += step;
-                remaining -= step;
-                if (entry.AtSeconds > SkillTime + .0001)
-                    yield break;
-            }
-            if (entry.Condition == SkillTimelineCondition.OnFloor && !onFloor && SkillTime <= entry.UntilSeconds + .0001)
-            {
-                SkillTime += remaining;
-                remaining = 0;
-                if (SkillTime <= entry.UntilSeconds + .0001)
-                    yield break;
-            }
-            m_NextEvent++;
-            yield return entry;
-        }
+        var definition = body.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
+        return body.GetModel<HeroModel>().Power.Value * (double)definition.PowerScale.X + definition.FlatPower.X;
     }
 
-    /// <summary>冻结后续时间，同时点其他事件仍会产出。</summary>
-    /// <param name="seconds">冻结的游戏秒数。</param>
-    protected void FreezeTimeline(float seconds) => m_FreezeRemaining = seconds;
+    /// <summary>具体招式逐帧运动和阶段条件。</summary>
+    /// <param name="body">英雄身体。</param>
+    /// <param name="dt">游戏秒数。</param>
+    protected virtual void UpdateSkill(IHeroBody body, float dt) { }
 
-    /// <summary>跳过目标时点之前的事件，保留目标时点自身的事件。</summary>
-    /// <param name="seconds">目标局部秒数。</param>
-    protected void SeekTimeline(float seconds)
-    {
-        SkillTime = seconds;
-        while (m_NextEvent < m_Events.Count && m_Events[m_NextEvent].AtSeconds < seconds - .0001)
-            m_NextEvent++;
-    }
+    /// <summary>轨道回调返回后执行阶段切换。</summary>
+    /// <param name="body">英雄身体。</param>
+    protected virtual void AfterAnimation(IHeroBody body) { }
 }

@@ -24,11 +24,14 @@ namespace GameLogic.Battle.Attacks
         /// <summary>伤害类型</summary>
         public DamageKind Kind { get; private set; }
 
-        /// <summary>击退（表单位：X&gt;0 = 远离攻击者，Y&lt;0 = 向上；乘 BattleConfig 换算系数得 px/s）</summary>
+        /// <summary>击退速度（px/s）：X&gt;0 = 远离攻击者，Y&lt;0 = 向上。</summary>
         public Vector2 Knockback { get; private set; }
 
         /// <summary>出招方向：1 右 / -1 左（击退方向 = 本值 × Knockback.X）</summary>
         public int Direction { get; private set; }
+
+        /// <summary>按攻击中心向两侧击退时使用的世界横坐标；为空时按出招朝向。</summary>
+        public float? KnockbackOriginX { get; private set; }
 
         /// <summary>命中给受击方累计的受击保护值（旧 HitProtect；0 = 按表默认）</summary>
         public int HitProtect { get; private set; }
@@ -45,9 +48,10 @@ namespace GameLogic.Battle.Attacks
         /// <param name="direction">出招方向；非负视为向右，负数视为向左。</param>
         /// <param name="hitProtect">本次命中增加的受击保护值。</param>
         /// <param name="hitSoundId">命中音效编号。</param>
+        /// <param name="knockbackOriginX">可选的攻击中心世界横坐标；只用于向两侧击退的攻击。</param>
         /// <returns>已装填并由引用池管理的攻击数据包。</returns>
         public static AttackData Create(int attackId, in CombatantAttributes attacker, float power, DamageKind kind,
-            Vector2 knockback, int direction, int hitProtect, SoundId hitSoundId)
+            Vector2 knockback, int direction, int hitProtect, SoundId hitSoundId, float? knockbackOriginX = null)
         {
             AttackData data = ReferencePool.Acquire<AttackData>();
             data.AttackId = attackId;
@@ -56,6 +60,7 @@ namespace GameLogic.Battle.Attacks
             data.Kind = kind;
             data.Knockback = knockback;
             data.Direction = direction >= 0 ? 1 : -1;
+            data.KnockbackOriginX = knockbackOriginX;
             data.HitProtect = hitProtect;
             data.HitSoundId = hitSoundId;
             return data;
@@ -78,6 +83,7 @@ namespace GameLogic.Battle.Attacks
             Kind = DamageKind.Physics;
             Knockback = Vector2.Zero;
             Direction = 1;
+            KnockbackOriginX = null;
             HitProtect = 0;
             HitSoundId = SoundId.None;
             m_HitTargets.Clear();

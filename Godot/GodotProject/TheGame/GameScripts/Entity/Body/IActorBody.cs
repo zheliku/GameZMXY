@@ -4,15 +4,7 @@ using Godot;
 
 namespace GameLogic.Body
 {
-    /// <summary>
-    /// 身体状态机的公共宿主契约（英雄与怪物共用）：从 <see cref="IHeroBody"/> / <see cref="IMonsterBody"/>
-    /// 提取的重合成员。成员全部由 <c>AbstractActorEntity</c>（或其钩子实现）提供——速度、死亡、攻击段、
-    /// 受击事实、播放、朝向，以及按动作语义的钩子（出招/收招/受击音/死亡副作用）。
-    ///
-    /// **A 方案（2026-10-01 人类裁决）**：动画 = 纯数据（帧/特效/判定盒值轨道），从不调用代码；
-    /// 代码是唯一的逻辑执行者与唯一的时钟——动作时长在 OnInit 时从动画资源**读长度**进共享身体定义
-    /// （<c>*BodyParams</c>），由身体状态用物理 dt 计时；音效由钩子触发、音源 ID 查表。
-    /// </summary>
+    /// <summary>英雄与怪物身体状态共用的物理、动作及受击能力；声音时点由动画方法轨道表达。</summary>
     public interface IActorBody
     {
         /// <summary>上一次物理移动是否站在地面，供起跳、落地与地面出招决策共用。</summary>
@@ -34,7 +26,7 @@ namespace GameLogic.Body
         bool HasPendingHurt { get; }
 
         /// <summary>
-        /// 提交出招：设攻击段、装填攻击包、播起手音（<c>OwnAttacks[index].SoundId</c>，None = 无）；
+        /// 提交出招：设攻击段并装填攻击包；起手音由动画方法轨道控制。
         /// 怪物宿主另做转向目标、计入冷却、清移动意图。
         /// </summary>
         void BeginAttack(int index);
@@ -54,10 +46,5 @@ namespace GameLogic.Body
         /// <summary>从第 0 帧重播动画</summary>
         void RestartAnim(string anim);
 
-        /// <summary>播放受击语音（受击生效时）</summary>
-        void PlayHurtSound();
-
-        /// <summary>死亡生效的副作用：英雄播死亡语音；怪物关受击盒、播死亡音、广播死亡事件</summary>
-        void OnDied();
     }
 }

@@ -6,7 +6,7 @@ using GameLogic.Architecture;
 
 namespace GameLogic.Skills;
 
-/// <summary>档案作用域的技能数据所有者：持有各英雄唯一的技能书、当前技能组与本次施放数据。</summary>
+/// <summary>档案作用域的技能数据所有者：持有各英雄唯一的技能书、当前技能组与当前激活编号。</summary>
 public sealed class SkillModel : AbstractModel
 {
     // ---- 字段 ----
@@ -15,8 +15,8 @@ public sealed class SkillModel : AbstractModel
 
     // ---- 属性 ----
 
-    /// <summary>当前占用身体的施放数据；每次激活重新创建，状态与特效借用同一身份。</summary>
-    public SkillData BodySkillData { get; internal set; }
+    /// <summary>当前激活的技能编号；招式执行与旧回调的有效性归所属 GGF 状态。</summary>
+    public SkillId? ActiveSkillId { get; internal set; }
 
     /// <summary>本次选定的角色或武器技能登记，由技能系统校验和替换；不保存角色节点。</summary>
     internal Dictionary<SkillId, SkillDefinition> Definitions { get; } = new();
@@ -52,20 +52,3 @@ public sealed class SkillModel : AbstractModel
 /// <param name="CanStart">可选起手条件；在扣费前检查。</param>
 public sealed record SkillDefinition(SkillId Id, Type BodyState,
     string InputAction = null, Func<ISkillActor, bool> CanStart = null);
-
-/// <summary>模型拥有的一次施放数据；只保存跨状态及特效需要的身份和标志，不承担技能行为。</summary>
-/// <param name="id">本次施放的技能编号。</param>
-public sealed class SkillData(SkillId id)
-{
-    /// <summary>本次施放的技能编号。</summary>
-    public SkillId Id { get; } = id;
-
-    /// <summary>本次施放是否完成或已被取消；旧特效据此拒绝过期通知。</summary>
-    public bool Completed { get; internal set; }
-
-    /// <summary>当前阶段是否暂停身体重力。</summary>
-    public bool GravitySuspended { get; internal set; }
-
-    /// <summary>当前阶段是否禁止常规动作输入。</summary>
-    public bool InputLocked { get; internal set; }
-}

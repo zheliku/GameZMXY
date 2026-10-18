@@ -21,6 +21,7 @@ using GodotGameFramework.Scene;
 using GodotGameFramework.UI;
 using GameLogic;
 using GameLogic.Heroes;
+using GameLogic.Heroes.Body;
 using GameLogic.Level;
 using GameLogic.Profile;
 using GameLogic.UI;
@@ -36,7 +37,6 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 public class ProcedureLevel : ProcedureBase
 {
     private bool m_PendingSettlement; // 待下一流程帧打开结算，避免输入回调内操作窗口。
-    private float m_TransitionDelay; // 失败结算前保留死亡动画的游戏秒数。
     private int m_InventorySerialId; // 本周期的背包窗口，包括在途请求。
     private int m_SkillSerialId; // 本周期的技能目录窗口，包括在途请求。
     private int m_SettlementSerialId; // 本周期的结算窗口。
@@ -99,7 +99,6 @@ public class ProcedureLevel : ProcedureBase
                                   ?? throw new InvalidOperationException("关卡流程缺少地图选择结果。");
             LevelConfig levelConfig = tables.TbLevelConfig.GetOrDefault(selectedLevelId)
                                       ?? throw new InvalidOperationException($"关卡配置不存在：LevelId={selectedLevelId}");
-            m_MusicSerial = GF.Sound.PlayConfigured(levelConfig.MusicId, 0.4f);
             m_LevelScenePath = levelConfig.ScenePath;
             string scenePath = m_LevelScenePath;
             Log.Info("[ProcedureLevel] 加载关卡场景：{0}", m_LevelScenePath);
@@ -128,6 +127,7 @@ public class ProcedureLevel : ProcedureBase
             m_LevelSystem = new LevelSystem(procedureOwner.GetArchitecture());
             procedureOwner.RegisterSystem(m_LevelSystem);
             levelViewController.Initialize(procedureOwner.GetArchitecture());
+            m_MusicSerial = GF.Sound.PlayConfigured(levelViewController.MusicId, 0.4f);
             levelViewController.Failed += OnLevelFailed;
 
             // 属性系统已准备全部数据，实体显示参数不再携带模型或装配包装。
@@ -223,7 +223,7 @@ public class ProcedureLevel : ProcedureBase
         m_Owner = null;
     }
 
-    /// <summary>在事件栈退出后的流程帧打开结算，死亡动画等待按游戏秒数推进。</summary>
+    /// <summary>在事件栈退出后的流程帧打开结算，死亡先等待真实动作完成。</summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     /// <param name="elapseSeconds">本帧游戏秒数。</param>
     /// <param name="realElapseSeconds">本帧实际秒数。</param>
@@ -233,11 +233,8 @@ public class ProcedureLevel : ProcedureBase
         base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
         if (!m_PendingSettlement)
             return;
-        m_TransitionDelay -= elapseSeconds;
-        if (m_TransitionDelay > 0f)
-            return;
         m_PendingSettlement = false;
-        m_SettlementSerialId = GF.UI.OpenUIForm(UIFormId.SettlementForm, m_LevelModel.Result);
+        m_SettlementSerialId = GF.UI.OpenUIForm(UIFormId.SettlementForm, new SettlementFormData(m_LevelModel.Result));
         SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: true);
     }
 
@@ -460,16 +457,44 @@ public class ProcedureLevel : ProcedureBase
         }
     }
 
-    /// <summary>登记结算请求；出口不附加等待，死亡保留配置的播放时间。</summary>
+    /// <summary>出口直接登记结算；失败等待原生死亡动画结束，离开流程取消旧周期等待。</summary>
     /// <param name="outcome">本次关卡结局。</param>
-    private void OnLevelEnded(LevelOutcome outcome)
+    private async void OnLevelEnded(LevelOutcome outcome)
     {
         if (outcome is not (LevelOutcome.Cleared or LevelOutcome.Defeated) || m_Owner == null)
             return;
-        m_PendingSettlement = true;
-        m_TransitionDelay = outcome == LevelOutcome.Defeated
-            ? GF.Fsm.GetModel<ConfigurationModel>().Tables.TbBattleConfig.DeathSettlementDelay
-            : 0f;
+        int entrySerial = m_EntrySerial;
+        CancellationToken token = m_SessionCancellation.Token;
+        var hero = m_Hero;
+        var owner = m_Owner;
+        try
+        {
+            if (outcome == LevelOutcome.Defeated)
+            {
+                // 在身体死亡状态开始前订阅；动画暂停时自然继续等待，不另建秒数计时。
+                var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                void OnAnimationFinished(StringName animation)
+                {
+                    if (animation == HeroAnims.Death)
+                        completion.TrySetResult();
+                }
+                var player = hero.AnimPlayer;
+                player.AnimationFinished += OnAnimationFinished;
+                try
+                {
+                    using var registration = token.Register(() => completion.TrySetCanceled(token));
+                    await completion.Task;
+                }
+                finally
+                {
+                    if (GodotObject.IsInstanceValid(player))
+                        player.AnimationFinished -= OnAnimationFinished;
+                }
+            }
+            if (entrySerial == m_EntrySerial && !owner.IsDestroyed && !token.IsCancellationRequested)
+                m_PendingSettlement = true;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
     }
 
     /// <summary>等待检查点后执行玩家选择；旧周期异步结果不触发导航。</summary>

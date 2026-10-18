@@ -30,9 +30,7 @@ public partial class LevelViewController
     /// <param name="monster">基础掉落配置。</param>
     /// <param name="position">怪物死亡位置。</param>
     /// <param name="experienceReward">本次配方确定的经验。</param>
-    /// <param name="equipmentPoolId">本次配方确定的装备池。</param>
-    private void OnMonsterDefeated(MonsterConfig monster, Vector2 position, int experienceReward,
-        EquipmentDropPoolId equipmentPoolId)
+    private void OnMonsterDefeated(MonsterConfig monster, Vector2 position, int experienceReward)
     {
         if (LevelModel.Outcome.Value != LevelOutcome.Running || !m_Player.IsAlive)
             return;
@@ -41,11 +39,10 @@ public partial class LevelViewController
             m_Player.PlayLevelUp();
         }
 
-        var config = this.GetModel<ConfigurationModel>().Tables.TbDropConfig.Data;
         try
         {
             var selection = this.GetSystem<LootSystem>()
-                .RollGround(monster.EquipmentDropChance, equipmentPoolId, m_LootRandom.Randf);
+                .RollGround(monster.EquipmentDropChance, monster.EquipmentDropPoolId, m_LootRandom.Randf);
             if (selection.Pickup != PickupId.None)
                 ShowGroundItem(position + new Vector2(-18, 0), selection.Pickup, null);
             if (selection.Equipment != EquipmentId.None)
@@ -53,13 +50,10 @@ public partial class LevelViewController
                     this.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), selection.Equipment, m_LootRandom.Randf));
             foreach (LootReward reward in this.GetSystem<LootSystem>().Roll(monster, m_LootRandom.Randf))
             {
-                var orb = NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Entitys_LootOrb, this)
+                var orb = NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Entitys_loot_orb, this)
                           ?? throw new InvalidOperationException("飞行掉落节点池未注册或资源无法显示。");
                 m_LootOrbs.Add(orb);
-                Vector2 offset = new(m_LootRandom.RandfRange(-config.ScatterRadius, config.ScatterRadius),
-                    m_LootRandom.RandfRange(-config.ScatterRadius, config.ScatterRadius));
-                orb.Show(position + offset, reward,
-                    m_LootRandom.RandfRange(config.RiseDistance.X, config.RiseDistance.Y), OnLootFinished);
+                orb.Show(position, reward, OnLootFinished);
             }
         }
         catch (Exception error)

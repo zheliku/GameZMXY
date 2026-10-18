@@ -102,17 +102,16 @@ namespace GameLogic.Battle.Damage
         }
 
         /// <summary>
-        /// 击退速度（px/s）：表单位 × BattleConfig 换算系数，横向按出招方向，纵向向上为负。
-        /// 横向换算按防守方分侧（旧项目英雄被击退 ×25、怪物 ×30），纵向两侧一致。
+        /// 击退速度（px/s）：数值表已经使用秒制，横向按出招方向，纵向向上为负。
+        /// 中心型攻击在命中时按目标位置决定左右。
         /// </summary>
         /// <param name="data">包含出招方向和击退参数的攻击包。</param>
-        /// <param name="defenderSide">用于选择横向换算系数的防守方侧别。</param>
+        /// <param name="targetX">受击方世界横坐标。</param>
         /// <returns>世界坐标系下的击退速度（px/s）。</returns>
-        public Vector2 KnockbackVelocity(AttackData data, CombatSide defenderSide)
+        public Vector2 KnockbackVelocity(AttackData data, float targetX = 0f)
         {
-            var config = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
-            float scaleX = defenderSide == CombatSide.Hero ? config.KnockbackScaleXHeroDef : config.KnockbackScaleXMonsterDef;
-            return new Vector2(data.Direction * data.Knockback.X * scaleX, data.Knockback.Y * config.KnockbackScaleY);
+            int direction = data.KnockbackOriginX is float origin ? (origin > targetX ? -1 : 1) : data.Direction;
+            return new Vector2(direction * data.Knockback.X, data.Knockback.Y);
         }
 
         /// <summary>向零取整（旧 int()），带 float 系数容差（见 <see cref="TruncateEpsilon"/>）。</summary>

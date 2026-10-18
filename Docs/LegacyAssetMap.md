@@ -331,6 +331,6 @@
 
 烈焰闪不把模糊光效当作超宽命中区：保留原透明探针 205 的几何，只在验证/拟合时转为不透明。其他有 stick 的技能按源窗口及可见能量拟合两种武器共同的矩形，沿用 3px 余量、最小厚度 14px；透明能量阶段关闭判定。火魔斩主体没有 stick，70 帧内的大段透明是原文件事实，伤害与表现由独立特效承担。
 
-独立特效位于 `Sprites/Effects/wukong/skills/`、外置库 `Entitys/Animations/Skills/`、场景 `Entitys/Effects/Skills/`；图片用 `_atlas`、场景用 `_effect`、序列用 `_frames`、库用 `_library` 后缀，保证全树 basename 唯一：烈焰闪拖尾 66（10 帧）、火魔起手 129（40 帧）、九连斩 112（44 帧）、下冲 133（2 帧）、落地斩 123（13 帧）。后三项带独立 HitBox；无方法轨道、玩法脚本或自动播放，不提前接入实战。
+独立特效位于 `Sprites/Effects/wukong/skills/`、外置库 `Entitys/Animations/Skills/`、场景 `Entitys/Effects/Skills/`；图片用 `_atlas`、场景用 `_effect`、序列用 `_frames`、库用 `_library` 后缀，保证全树 basename 唯一：烈焰闪拖尾 66（10 帧）、火魔起手 129（40 帧）、九连斩 112（44 帧）、下冲 133（2 帧）、落地斩 123（13 帧）。后三项带独立 HitBox；现已通过 SkillEffectNode 接入实战。Visual 下同时放图像与判定，原生方法轨道更新攻击包、播放 GGF 声音及请求回池；默认不自动播放。图像、原点和原值轨道保留，偏移/大小/镜像直接编辑场景与动画，详见 ProjectTour。
 
 七段声音取自[官方 Music.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/Music.swf)，恢复后 SHA-256 `5cad2f1ef3ce592c2e9e44c631748e042d8cacae2c7571e57b1a0546998a7578`。`export_official_skill_audio.py` 原样导出 MP3：6/8/11/1 分别为升龙斩/火炎突击/烈焰闪/烈焰风暴，13/14/15 为火魔起手/九连斩/落地。正式路径 `Audios/SFX/wukong/skills/`，SoundId 7..13，全部登记到 GGF SFX，无循环。

@@ -25,11 +25,9 @@ public sealed class SkillConfigTests
         {
             Assert.Equal(new[] { 100, 200, 500, 1000, 2000 }, skills.Select(x => x.LearnSoul));
             Assert.Equal(Enumerable.Range(1, 5), skills.Select(x => x.Order));
-            Assert.All(skills, skill => Assert.NotEqual(skill.UnlearnedIconPath, skill.LearnedIconPath));
         }
         Assert.Equal(new[] { 10, 20, 30, 40, 50 }, wukong.Select(x => x.ManaCost));
         Assert.Equal(new[] { 20, 40, 30, 60, 100 }, tangseng.Select(x => x.ManaCost));
-        Assert.Equal("长按J", tangseng[0].KeyHint);
     }
 
     /// <summary>被动各级记录总加成；暴击为直接概率，不能误作项目中的属性值。</summary>

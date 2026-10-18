@@ -16,6 +16,8 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
     [Export] private Sprite2D m_Icon; // 按本次恢复品或装备定义显示的图标。
     [Export] private AnimationPlayer m_PickupAnimation; // 外置上移淡出动画，按物理游戏秒手动推进。
     [Export] private CollisionShape2D m_Shape; // 场景预设的唯一矩形，落地与接触共用。
+    [Export] private ItemAppearancesResource m_Appearances; // 背包与地面掉落共用的外观资源。
+    [Export] private float m_Gravity = 980f; // 地面物品落下的表现重力，像素/秒²。
     private PickupId m_PickupId; // 恢复品定义，与装备互斥。
     private EquipmentData m_EquipmentData; // 已抽取实际属性的地面装备。
     private Func<AbstractHeroEntity, PickupId, EquipmentData, bool> m_Collect; // 接触者交给关卡校验并结算；满包继续留地。
@@ -38,7 +40,7 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
             return;
         }
 
-        var config = this.GetModel<ConfigurationModel>().Tables.TbDropConfig.Data;
+        var config = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
         float dt = (float)delta;
         m_Age += dt;
         if (m_Age >= config.GroundLifetime)
@@ -47,7 +49,7 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
             return;
         }
 
-        Velocity += Vector2.Down * config.GroundGravity * dt;
+        Velocity += Vector2.Down * m_Gravity * dt;
         MoveAndSlide();
     }
 
@@ -99,13 +101,10 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
         ResetPresentation();
         m_PickupId = pickupId;
         m_EquipmentData = data;
-        var tables = this.GetModel<ConfigurationModel>().Tables;
-        string iconPath = data == null
-            ? tables.TbPickupConfig.Get(pickupId).IconPath
-            : tables.TbEquipmentConfig.Get(data.EquipmentId).GroundIconPath;
-        m_Icon.Texture = GF.Resource.LoadAsset<Texture2D>(iconPath)
-                         ?? throw new InvalidOperationException("地面物品图标加载失败。");
-        m_Icon.Scale = Vector2.One * (pickupId == PickupId.LargePeach ? .9f : .7f);
+        var appearance = data == null ? m_Appearances.Get(pickupId) : m_Appearances.Get(data.EquipmentId);
+        m_Icon.Texture = appearance.GroundIcon;
+        m_Icon.Scale = appearance.GroundScale;
+        string iconPath = m_Icon.Texture.ResourcePath;
         // 透明留白不参与贴地定位；用 Offset 保留领取动画对 Position 的上移控制。
         using var image = m_Icon.Texture.GetImage();
         if (image == null || image.IsEmpty() || image.IsCompressed() && image.Decompress() != Error.Ok)

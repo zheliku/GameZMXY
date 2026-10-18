@@ -79,7 +79,7 @@ public sealed partial class UiSmokeScenario
         GF.Fsm.GetSystem<HeroSystem>().AdvanceWs(2);
         int musou = GF.Fsm.GetModel<HeroModel>().Ws.Value;
         int experience = flow.GetModel<ProfileModel>().TotalExperience;
-        SpawnOrb(level, hero.GlobalPosition, new(LootKind.Musou, ConfigSystem.Instance.Tables.TbDropConfig.Data.MusouPerOrb));
+        SpawnOrb(level, hero.GlobalPosition, new(LootKind.Musou, ConfigSystem.Instance.Tables.TbBattleConfig.Data.MusouPerOrb));
         await WaitUntilAsync(() => owned.Count == 0, "黄球没有接触英雄", 10000);
         Check(GF.Fsm.GetModel<HeroModel>().Ws.Value == musou + 5 && flow.GetModel<ProfileModel>().TotalExperience == experience,
             "开启期间的黄球没有补充5无双，或错误增加经验");
@@ -114,12 +114,11 @@ public sealed partial class UiSmokeScenario
     /// <returns>真实池实例。</returns>
     private static LootOrbNode SpawnOrb(LevelViewController level, Vector2 position, LootReward reward)
     {
-        var orb = GodotGameFramework.NodePool.NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Entitys_LootOrb, SmokeInspection.Scene(level));
+        var orb = GodotGameFramework.NodePool.NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Entitys_loot_orb, SmokeInspection.Scene(level));
         SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "m_LootOrbs").Add(orb);
         MethodInfo finish = typeof(LevelViewController).GetMethod("OnLootFinished", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var config = ConfigSystem.Instance.Tables.TbDropConfig.Data;
         orb.Show(position + new Vector2(180, -30), reward,
-            config.RiseDistance.X, (node, reward) => finish.Invoke(level, [node, reward]));
+            (node, reward) => finish.Invoke(level, [node, reward]));
         return orb;
     }
 

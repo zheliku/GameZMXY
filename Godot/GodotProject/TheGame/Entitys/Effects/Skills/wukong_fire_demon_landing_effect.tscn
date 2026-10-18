@@ -8,20 +8,25 @@
 [sub_resource type="RectangleShape2D" id="rest"]
 size = Vector2(1, 1)
 
-[node name="FireDemonLanding" type="Node2D"]
+[node name="FireDemonLanding" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]
 script = ExtResource("script")
+m_Player = NodePath("AnimationPlayer")
+m_HitBox = NodePath("Visual/HitBox")
+m_Shape = NodePath("Visual/HitBox/CollisionShape2D")
 
-[node name="Sprite" type="AnimatedSprite2D" parent="."]
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Visual"]
 sprite_frames = ExtResource("frames")
 animation = &"play"
 offset = Vector2(0.3, 25.65)
 
-[node name="HitBox" type="Area2D" parent="."]
+[node name="HitBox" type="Area2D" parent="Visual"]
 collision_layer = 16
 collision_mask = 32
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Visual/HitBox"]
 shape = SubResource("rest")
 disabled = true
 

@@ -20,15 +20,14 @@ public sealed class LootTests
         Assert.Equal(1.5f, battle.WsMoveSpeedMultiplier);
         Assert.Equal(1.5f, battle.WsJumpSpeedMultiplier);
         Assert.Equal(2.5f, battle.WsGravityMultiplier);
-        Assert.Equal(1, battle.WsIntroPauseDuration);
-        Assert.Equal(5, TestTables.Tables.TbDropConfig.Data.MusouPerOrb);
+        Assert.Equal(5, TestTables.Tables.TbBattleConfig.Data.MusouPerOrb);
     }
 
     /// <summary>灵魂数量落在官方区间；奖励只含三种球，数量与经验规模无关。</summary>
     [Fact]
     public void Rewards_RespectOfficialRanges_AndHaveBoundedCount()
     {
-        var drop = TestTables.Tables.TbDropConfig.Data;
+        var drop = TestTables.Tables.TbBattleConfig.Data;
         foreach (var monster in TestTables.Tables.TbMonsterConfig.DataList)
             foreach (float random in new[] { 0f, .34f, .67f, .99999f, 1f })
             {

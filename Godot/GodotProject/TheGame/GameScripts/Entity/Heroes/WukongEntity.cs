@@ -16,14 +16,14 @@ namespace GameLogic.Heroes
     /// 悟空入口：匹配专属输入、选择技能组并声明身体状态；各招流程由对应的技能状态负责。
     /// 通用宿主机制（输入采样、物理、结算、状态机推进）在 <see cref="AbstractHeroEntity"/>。
     ///
-    /// 场景绑定（Entitys/WukongEntity.tscn）：
+    /// 场景绑定（Entitys/wukong_entity.tscn）：
     ///  * HeroId —— 对应的 HeroConfig 行；
     ///  * m_Body / m_Weapon —— 独立身体、武器 Sprite2D，共用图集网格、帧号与定位；
     ///  * m_AnimPlayer —— 悟空自己的动画库（Entitys/Animations/wukong_anim_library.tres，
-    ///    纯表现数据：帧/特效/判定盒值轨道，无方法轨道），由 AbstractHeroEntity 经 AbstractActorEntity 直接驱动；
+    ///    帧、特效、判定盒值轨道与具名方法轨道），由 AbstractHeroEntity 经 AbstractActorEntity 直接驱动；
     ///  * m_HurtBox / m_HitBox —— 判定区（层见 Entity/AGENTS.md）。
     ///
-    /// 角色专属动画名只允许出现在三个地方：该角色的动画库资源、本类覆写与 AttackConfig.Animation。
+    /// 角色专属动画名只允许出现在三个地方：该角色的动画库资源、本角色状态与场景动作列表。
     /// 换装通过共用的 wukong_appearance.tres 独立切换身体与武器图集，背包预览使用相同资源。
     /// 唐僧（远程）、八戒、沙僧（双武器）等新角色各自继承 <see cref="AbstractHeroEntity"/>，在本类同样的位置声明自己的状态集。
     /// </summary>
@@ -88,13 +88,6 @@ namespace GameLogic.Heroes
                 airborne, attacking);
         }
 
-        /// <summary>收招时清理悟空专属的身体光效节点。</summary>
-        public override void EndSkillAnimation()
-        {
-            base.EndSkillAnimation();
-            GetNode<AnimatedSprite2D>("m_EffectRoot/m_Effect").Animation = "empty";
-        }
-
         /// <summary>造一悟空空中使用第三段下劈，地面使用完整五段普攻。</summary>
         /// <returns>包含空中下劈段号的身体参数。</returns>
         protected override HeroBodyParams BuildBodyParams() => base.BuildBodyParams() with { AirAttackIndex = 2 };
@@ -123,7 +116,7 @@ namespace GameLogic.Heroes
         private bool CanCancelNormalAttack(bool attacking, float normalRatio) => !attacking ||
             (ActionData.AttackSegment >= 0 && ActionData.AttackSegment < ((IHeroBody)this).Params.ComboLength - 1 &&
              (normalRatio + SourceFrameSeconds / ((IHeroBody)this).Params.AttackTimes[ActionData.AttackSegment]) >=
-             this.GetModel<ConfigurationModel>().Tables.TbSkillActionConfig
+             this.GetModel<ConfigurationModel>().Tables.TbSkillConfig
                  .Get(SkillId.RisingDragon).CancelNormalAttackFrameRatio);
     }
 }

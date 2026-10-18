@@ -64,6 +64,8 @@ internal sealed class TestGameScope : IArchitecture
         m_InputSystem = new InputSystem(this, Input);
         m_SaveSystem = new SaveSystem(this);
         m_LevelSystem = new LevelSystem(this);
+        if (activeHeroId == 1)
+            m_SkillSystem.SelectSkills(1, GameLogic.SkillTests.SkillTestDefinitions.Wukong());
     }
 
     /// <inheritdoc />

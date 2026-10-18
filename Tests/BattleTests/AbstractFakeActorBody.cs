@@ -25,9 +25,6 @@ namespace GameLogic.Battle.Tests
         /// <summary>结束攻击回调次数。</summary>
         public int EndCount;
 
-        /// <summary>受击音效播放次数。</summary>
-        public int HurtSounds;
-
         /// <summary>死亡回调次数。</summary>
         public int DiedCount;
 
@@ -95,10 +92,7 @@ namespace GameLogic.Battle.Tests
             AttackSegment = -1;
         }
 
-        /// <summary>记录一次受击音效播放。</summary>
-        public void PlayHurtSound() => HurtSounds++;
-
         /// <summary>记录一次死亡回调。</summary>
-        public void OnDied() => DiedCount++;
+        public void BeginDeath() => DiedCount++;
     }
 }

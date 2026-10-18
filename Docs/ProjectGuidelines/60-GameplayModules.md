@@ -1,7 +1,7 @@
 # 60 玩法模块
 
 > 状态：登记当前实现、长期系统的落位与数据形状，以及旧项目参考。落位表是新玩法的入口约定：新系统按表放目录、选所有者、定数据形状，不新建平行架构。
-> 证据：`Configs/GameConfig/Datas/`、`Godot/GodotProject/TheGame/GameScripts/`、`TheGame/MainPack/Scripts/Procedure/`、`TheGame/Scenes/Level_1.tscn`、`Docs/LegacyAssetMap.md` 及所列旧项目脚本。
+> 证据：`Configs/GameConfig/Datas/`、`Godot/GodotProject/TheGame/GameScripts/`、`TheGame/MainPack/Scripts/Procedure/`、`TheGame/Scenes/level_1.tscn`、`Docs/LegacyAssetMap.md` 及所列旧项目脚本。
 
 ## 当前实现
 
@@ -11,15 +11,15 @@
 - **角色控制**：悟空实体、输入缓冲、地面/空中/普攻/受击/死亡身体状态，配置驱动移动参数和攻击招式。
 - **怪物行为**：花果山猴子、妖猴（旧 Monster_2）与大猩猩实体；巡逻、追击、攻击、目标丢失、受控和死亡 AI；身体层执行移动、攻击、收招、受击与死亡。妖猴的旧 `RunHit`（追击途中也能出手）由"优先招 + 普攻"两条 AttackConfig 表达，不新增 AI 状态。
 - **属性与成长**：英雄属性 = 成长表当前等级行（`TbHeroGrowthConfig`）+ 持久修正（本轮为空）；怪物属性 = `MonsterConfig.Stats`。数值与重构前公式逐级一致（单测锁定）。
-- **战斗表现**：命中结算、伤害事件和池化伤害飘字（`DamagePopPresenter`，由关卡流程/测试场地持有）。`TestArena.tscn` 测试场地供角色与新怪物战斗测试。
+- **战斗表现**：命中结算、伤害事件和池化伤害飘字（`DamagePopPresenter`，由关卡流程/测试场地持有）。`test_arena.tscn` 测试场地供角色与新怪物战斗测试。
 - **战斗 HUD**：`UIs/BattleHud.tscn`（`UIFormId.BattleHud`），打开参数 `BattleHudData`（英雄、档案成长、关卡）；订阅 `Vitals/Musou/HeroProgression.Changed` 与 `TravelAvailableChanged`，变化时拉取一致快照刷新被动 `ResourceBar`；关闭时对称退订。技能槽、增益和护体待对应玩法接入。
 - **血条表现**：小怪受伤后重新以不透明显示，按 BattleConfig.MonsterHealthBarFadeDuration（当前官方值 2 秒）淡出并隐藏；治疗更新比例但不延长显示，暂停时停止计时，死亡/隐藏/复用复位。守关 HUD 无入场弹窗，名称在左侧，白字黑边华康海报体，右侧原笔刷条，不显示当前/最大生命数字；HUD 订阅生命并把完整数值交给被动 EncounterHealthBar。
 - **阶段编排**：唯一当前阶段使用 `Ready → Travelling → Fighting → Travelling/AwaitingExit → Completed`，停止后为 `Stopped`。普通关卡每段都由实际相机抵达启动；清波不会直接生成下一波。特殊阶段可选 `Trigger`，只启用当前触发区并过滤本会话玩家。
 - **空间与相机**：阶段独立左右门允许区域重叠；行进保留旧左界、启用新右界，抵达后只保留本场左右门。门仅约束玩家，怪物可从场外进入。花果山五波配方与官方标记依据见 [OfficialReference](../OfficialReference.md)；用户后续调整的点位以场景为准。清波后到下场开战之间显示 Go，取景保留中央 ±40px 死区。
 - **配方与实体**：`LevelConfig` 以 `LevelId` 为主键，`*Stages / *Recipes` 是嵌套多行列表；同段各配方并行。`LevelSpawnSchedule` 按游戏时间调度、轮转分配并存名额；`LevelSpawnerNode` 按死亡事件归还名额，配方全部发完且存活/在途清空才报告清波。
 - **所有权与退出**：本关所有运行实体 ID（含死亡动画中的实体）由刷怪服务持有；停止时取消会话、退订、按 ID 隐藏。异步显示返回后使用捕获的令牌和服务清理旧结果；失败回到流程统一结束（运行回滚）。
-- **场景首版**：`Level_1.tscn` 登记十五个生成点（玩家 + 五波十四处）、九个独立阶段边界和一个出口实例；`TestArena.tscn` 不进入游戏流程，F6 运行（详见 [40-ScenesAndAssets.md](40-ScenesAndAssets.md)）。
-- **声音**：标题、选角与地图复用造梦一 `zmxy_1BGM.mp3` 的唯一资源 `map_theme.mp3`；`Audio/SoundHelper.cs` 提供配置播放扩展，演员、菜单和关卡复用；菜单/关卡流程各自持有音乐请求，退出时停止在途和播放中的请求，音量经 `GF.Sound` / `GF.Setting` 管理。关卡音乐来自 `LevelConfig.MusicId`，不硬编码在通用关卡流程。
+- **场景首版**：`level_1.tscn` 登记十五个生成点（玩家 + 五波十四处）、九个独立阶段边界和一个出口实例；`test_arena.tscn` 不进入游戏流程，F6 运行（详见 [40-ScenesAndAssets.md](40-ScenesAndAssets.md)）。
+- **声音**：标题、选角与地图复用造梦一 `zmxy_1BGM.mp3` 的唯一资源 `map_theme.mp3`；`Audio/SoundHelper.cs` 提供配置播放扩展，演员、菜单和关卡复用；菜单/关卡流程各自持有音乐请求，退出时停止在途和播放中的请求，音量经 `GF.Sound` / `GF.Setting` 管理。关卡音乐来自场景 `LevelRoot.MusicId`，不硬编码在通用关卡流程。
 - **编辑器与验证**：`validate_level_scene.gd` 检查编辑器绑定；`--smoketest=level` 驱动真实移动与五波清场并核对档案经验与通关检查点；`--smoketest=ui` 覆盖 HUD、升级注入、关卡事务与存档。
 
 ## 长期系统落位
@@ -28,7 +28,7 @@
 
 | 系统 | 配置 | 档案（`Profile/`） | 运行时 | 规则与表现 |
 | --- | --- | --- | --- | --- |
-| 技能 | `SkillConfig`：耗蓝、冷却、学习条件、招式 ID、效果 | `SkillBook`：已学技能与等级、键位（5 槽） | `SkillSet`（实体持有）：冷却、可用判定 | 释放驱动身体状态机的技能状态；子弹为 `BulletEntity` |
+| 技能 | `SkillConfig`：费用、学习与平衡参数；`AttackConfig`：各段伤害 | `SkillModel` 的英雄技能书，由存档恢复 | `SkillModel.ActiveSkillId` 与无敌区间；阶段和等待归 GGF 状态 | `SkillSystem` 校验/扣费；原生动画编排时点，具体状态执行规则；实体拥有独立效果 |
 | 被动 | `PassiveConfig`：`AttributeModifier` 列表 | 已学被动 | — | `HeroLoadout.Create` 换算为持久修正 |
 | Buff | `BuffConfig`：时长、跳频、叠加规则、修正、控制标签、跳伤 | — | `BuffSet`（实体持有）：实例、层数、剩余时间；写 `ActorAttributes` 局内来源 | 来源：攻击包、技能、装备；HUD 在 `OnUpdate` 读剩余时间 |
 | 背包 | `ItemConfig`：类别、叠加上限、价格、品质 | `Inventory`：可叠加物 `itemId + count`；唯一实例 `instanceId + 强化/宝石/五行` | — | 拾取、使用、丢弃为 `Inventory` 方法 |

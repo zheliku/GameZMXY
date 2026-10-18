@@ -77,7 +77,7 @@ public partial class BattleMenuPanel : Sprite2D
             bool unlocked = System.Linq.Enumerable.Contains(learned, definition.Id);
             var cell = m_SkillBar.GetNode<Control>($"Skill{i + 1}");
             cell.GetNode<TextureRect>("Icon").Texture = m_SkillIcons.GetFrameTexture(definition.Id.ToString(), unlocked ? 1 : 0);
-            cell.TooltipText = $"{definition.NameCn}（{definition.KeyHint}，{definition.ManaCost} MP）" + (unlocked ? "" : "\n尚未学习");
+            cell.TooltipText = $"{definition.NameCn}（{definition.ManaCost} MP）" + (unlocked ? "" : "\n尚未学习");
         }
     }
 

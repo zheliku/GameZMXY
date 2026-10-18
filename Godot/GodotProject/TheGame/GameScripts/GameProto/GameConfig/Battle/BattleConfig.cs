@@ -40,12 +40,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
         LvLuckyCap = _buf.ReadFloat();
         LvDamageCapLvHeroDef = _buf.ReadInt();
         LvDamageCapLvMonsterDef = _buf.ReadInt();
-        KnockbackScaleXHeroDef = _buf.ReadFloat();
-        KnockbackScaleXMonsterDef = _buf.ReadFloat();
-        KnockbackScaleY = _buf.ReadFloat();
         WsMax = _buf.ReadInt();
-        DeathSettlementDelay = _buf.ReadFloat();
-        MonsterHealthBarFadeDuration = _buf.ReadFloat();
         WsGainPerDamageRatio = _buf.ReadFloat();
         WsAttackMultiplier = _buf.ReadFloat();
         WsMoveSpeedMultiplier = _buf.ReadFloat();
@@ -53,7 +48,11 @@ public sealed partial class BattleConfig : Luban.BeanBase
         WsGravityMultiplier = _buf.ReadFloat();
         WsDecayPerSecond = _buf.ReadFloat();
         WsDrainPerSecond = _buf.ReadFloat();
-        WsIntroPauseDuration = _buf.ReadFloat();
+        MonsterKnockbackRetentionPerSecond = _buf.ReadFloat();
+        MusouPerOrb = _buf.ReadInt();
+        ManaMinimum = _buf.ReadInt();
+        ManaMaxFraction = _buf.ReadFloat();
+        GroundLifetime = _buf.ReadFloat();
     }
 
     public static BattleConfig DeserializeBattleConfig(ByteBuf _buf)
@@ -158,29 +157,9 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// </summary>
     public readonly int LvDamageCapLvMonsterDef;
     /// <summary>
-    /// 英雄被击退横向换算: px/s = Knockback.X &#215; 本值
-    /// </summary>
-    public readonly float KnockbackScaleXHeroDef;
-    /// <summary>
-    /// 怪物被击退横向换算: px/s = Knockback.X &#215; 本值
-    /// </summary>
-    public readonly float KnockbackScaleXMonsterDef;
-    /// <summary>
-    /// 击退纵向换算: px/s = Knockback.Y &#215; 本值(人怪一致)
-    /// </summary>
-    public readonly float KnockbackScaleY;
-    /// <summary>
     /// 无双值上限(旧项目 BaseRoleProperies.gd:20)
     /// </summary>
     public readonly int WsMax;
-    /// <summary>
-    /// 死亡动画播放后显示失败结算（秒）
-    /// </summary>
-    public readonly float DeathSettlementDelay;
-    /// <summary>
-    /// 小怪受伤血条淡出总时长（秒）；本项目延长为4秒，官方原值2秒
-    /// </summary>
-    public readonly float MonsterHealthBarFadeDuration;
     /// <summary>
     /// 命中蓄力：伤害/基础攻击&#215;系数；不改变攻击力
     /// </summary>
@@ -210,9 +189,25 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// </summary>
     public readonly float WsDrainPerSecond;
     /// <summary>
-    /// 开启演出暂停（秒）；不计入消耗时间
+    /// 怪物受击横速每秒保留比例；官方每1/24秒乘0.8，降至移动速度后不再减速
     /// </summary>
-    public readonly float WsIntroPauseDuration;
+    public readonly float MonsterKnockbackRetentionPerSecond;
+    /// <summary>
+    /// 每颗黄色无双球恢复的无双值
+    /// </summary>
+    public readonly int MusouPerOrb;
+    /// <summary>
+    /// 每颗蓝球最低回蓝量
+    /// </summary>
+    public readonly int ManaMinimum;
+    /// <summary>
+    /// 每颗蓝球按魔法上限恢复的比例
+    /// </summary>
+    public readonly float ManaMaxFraction;
+    /// <summary>
+    /// 地面物品保留时间，秒
+    /// </summary>
+    public readonly float GroundLifetime;
    
     public const int __ID__ = -1776797808;
     public override int GetTypeId() => __ID__;
@@ -248,12 +243,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "LvLuckyCap:" + LvLuckyCap + ","
         + "LvDamageCapLvHeroDef:" + LvDamageCapLvHeroDef + ","
         + "LvDamageCapLvMonsterDef:" + LvDamageCapLvMonsterDef + ","
-        + "KnockbackScaleXHeroDef:" + KnockbackScaleXHeroDef + ","
-        + "KnockbackScaleXMonsterDef:" + KnockbackScaleXMonsterDef + ","
-        + "KnockbackScaleY:" + KnockbackScaleY + ","
         + "WsMax:" + WsMax + ","
-        + "DeathSettlementDelay:" + DeathSettlementDelay + ","
-        + "MonsterHealthBarFadeDuration:" + MonsterHealthBarFadeDuration + ","
         + "WsGainPerDamageRatio:" + WsGainPerDamageRatio + ","
         + "WsAttackMultiplier:" + WsAttackMultiplier + ","
         + "WsMoveSpeedMultiplier:" + WsMoveSpeedMultiplier + ","
@@ -261,7 +251,11 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "WsGravityMultiplier:" + WsGravityMultiplier + ","
         + "WsDecayPerSecond:" + WsDecayPerSecond + ","
         + "WsDrainPerSecond:" + WsDrainPerSecond + ","
-        + "WsIntroPauseDuration:" + WsIntroPauseDuration + ","
+        + "MonsterKnockbackRetentionPerSecond:" + MonsterKnockbackRetentionPerSecond + ","
+        + "MusouPerOrb:" + MusouPerOrb + ","
+        + "ManaMinimum:" + ManaMinimum + ","
+        + "ManaMaxFraction:" + ManaMaxFraction + ","
+        + "GroundLifetime:" + GroundLifetime + ","
         + "}";
     }
 }

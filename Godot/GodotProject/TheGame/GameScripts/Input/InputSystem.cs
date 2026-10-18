@@ -1,6 +1,5 @@
 using GameLogic.Architecture;
 using GameLogic.Heroes.Body;
-using GameLogic.Skills;
 
 namespace GameLogic.Input;
 
@@ -13,6 +12,9 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
 
     /// <summary>打开或关闭背包；默认 C，可在输入映射中修改。</summary>
     public const string InventoryToggle = "inventory_toggle";
+
+    /// <summary>打开或关闭技能面板；默认 V，可在输入映射中修改。</summary>
+    public const string SkillToggle = "skill_toggle";
 
     /// <summary>使用关卡出口（W）。</summary>
     public const string Interact = "interact";
@@ -81,7 +83,7 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
         data.AttackRequested = false;
         data.MusouRequested = false;
         // 输入锁独立于重力；游戏时钟继续走，锁定期间按键不留到收招后补动作。
-        if (this.GetModel<SkillModel>()?.BodySkillData is { InputLocked: true })
+        if (data.InputLocked)
         {
             data.CanAct = false;
             return;

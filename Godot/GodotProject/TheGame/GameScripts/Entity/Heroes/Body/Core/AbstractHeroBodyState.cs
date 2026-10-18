@@ -77,7 +77,7 @@ namespace GameLogic.Heroes.Body
             if (body is not ISkillActor)
                 return false;
             var skills = body.GetSystem<SkillSystem>();
-            if (skills.BodySkillData == null)
+            if (body.GetModel<SkillModel>().ActiveSkillId == null)
                 return false;
             body.SetFacing(body.ActionData.MoveAxis);
             ChangeState(fsm, skills.BodyStateType);

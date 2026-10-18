@@ -3,6 +3,9 @@ namespace GameLogic.Heroes.Body
     /// <summary>英雄共用的身体与提示动画名；普攻动画名由 AttackConfig.Animation 提供。</summary>
     public static class HeroAnims
     {
+        /// <summary>原生动画复位轨道；中断也恢复特效和判定默认值。</summary>
+        public const string Reset = "RESET";
+
         /// <summary>基础待机动画名。</summary>
         public const string Idle = "idle1";
 

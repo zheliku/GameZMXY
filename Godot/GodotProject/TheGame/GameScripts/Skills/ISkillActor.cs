@@ -4,28 +4,24 @@ using Godot;
 
 namespace GameLogic.Skills;
 
-/// <summary>技能对角色表现的能力要求；调用期间借用，不由模型持有节点。</summary>
+/// <summary>状态借用的角色节点能力；模型不持有场景节点。</summary>
 public interface ISkillActor
 {
     /// <summary>角色世界位置。</summary>
     Vector2 SkillPosition { get; set; }
-
-    /// <summary>速度，像素每秒。</summary>
-    Vector2 Velocity { get; set; }
-
     /// <summary>是否接触地面或平台。</summary>
     bool OnFloor { get; }
-
     /// <summary>朝右为 1，朝左为 -1。</summary>
     int Facing { get; }
 
-    /// <summary>开始手动驱动的技能动画与声音。</summary>
-    /// <param name="action">只读动作配置。</param>
-    void BeginSkillAnimation(SkillActionConfig action);
+    /// <summary>播放原生技能动画，可从命名阶段开始；立即应用起始键。</summary>
+    /// <param name="animation">动画库中的完整名称。</param>
+    /// <param name="startMarker">可选的原生动画阶段标记。</param>
+    void BeginSkillAnimation(string animation, string startMarker = null);
 
-    /// <summary>更新技能动画局部时间。</summary>
-    /// <param name="seconds">局部秒数。</param>
-    void SetSkillAnimationTime(double seconds);
+    /// <summary>由身体物理帧推进原生动画及其方法轨道。</summary>
+    /// <param name="dt">游戏秒数。</param>
+    void AdvanceSkillAnimation(float dt);
 
     /// <summary>释放身体判定并恢复常规动画驱动。</summary>
     void EndSkillAnimation();
@@ -36,14 +32,20 @@ public interface ISkillActor
     /// <returns>目标世界位置，没有则为空。</returns>
     Vector2? FindSkillTarget(float range, float inset);
 
-    /// <summary>打开新的身体攻击编号。</summary>
-    /// <param name="hit">伤害定义。</param>
-    void NewSkillAttack(SkillHitId hit);
+    /// <summary>打开新身体攻击包；具体技能已完成自身的威力取整。</summary>
+    /// <param name="hit">伤害定义编号。</param>
+    /// <param name="power">无双加成前的威力。</param>
+    /// <param name="knockbackOriginX">向中心两侧击退的横坐标；为空时沿朝向。</param>
+    void NewSkillAttack(SkillHitId hit, double power, float? knockbackOriginX = null);
 
-    /// <summary>创建独立技能特效。</summary>
-    /// <param name="effect">特效定义。</param>
-    /// <param name="data">所属技能实例，用于拒绝过期回调。</param>
+    /// <summary>从动画引用的场景创建独立特效并冻结本次攻击属性。</summary>
+    /// <param name="scene">方法轨道直接引用的特效场景。</param>
     /// <param name="position">世界位置。</param>
-    /// <param name="completed">可选完成回调；旧执行回调不得改变新执行。</param>
-    void SpawnSkillEffect(SkillEffectId effect, SkillData data, Vector2 position, Action completed = null);
+    /// <param name="hit">可选伤害编号，纯视觉效果为 None。</param>
+    /// <param name="power">无双加成前的威力。</param>
+    /// <param name="completed">本次效果完成通知。</param>
+    /// <param name="knockbackOriginX">具体招式指定的击退中心。</param>
+    void SpawnSkillEffect(PackedScene scene, Vector2 position,
+        SkillHitId hit = SkillHitId.None, double power = 0, Action completed = null,
+        float? knockbackOriginX = null);
 }

@@ -40,7 +40,7 @@ public sealed class SkillReuseTests
         fsm.Start<HeroGroundState>();
         Tick(fsm, 1f / 60);
         Assert.IsType<TestSkillState>(fsm.CurrentState);
-        Assert.Equal(skill, scope.Skills.BodySkillData.Id);
+        Assert.Equal(skill, scope.Skills.ActiveSkillId.Value);
         Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(skill).ManaCost,
             scope.GetModel<HeroModel>().Mp.Value);
         Assert.False(scope.GetSystem<InputSystem>().ConsumePress(hero.ActionData, InputSystem.Skill1));
@@ -99,7 +99,7 @@ public sealed class SkillReuseTests
         fsm.Start<HeroGroundState>();
         Tick(fsm, .01f);
         Assert.IsType<TestSkillState>(fsm.CurrentState);
-        Assert.Equal(SkillId.FireDemonSlash, skills.BodySkillData.Id);
+        Assert.Equal(SkillId.FireDemonSlash, scope.Skills.ActiveSkillId.Value);
         Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(SkillId.FireDemonSlash).ManaCost,
             scope.GetModel<HeroModel>().Mp.Value);
     }
@@ -121,21 +121,16 @@ public sealed class SkillReuseTests
     }
 
     /// <summary>暂停重力不隐含输入锁，输入锁也不依赖重力；锁内输入不排队。</summary>
-    /// <param name="gravitySuspended">是否暂停重力。</param>
     /// <param name="inputLocked">是否锁定输入。</param>
     [Theory]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    public void InputLock_IsIndependentOfGravity(bool gravitySuspended, bool inputLocked)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InputLock_IsOwnedByHeroInputData(bool inputLocked)
     {
         var scope = new SkillScope();
         var hero = new SkillHero(scope);
-        scope.Skills.BodySkillData = new SkillData(SkillId.RisingDragon)
-        {
-            GravitySuspended = gravitySuspended,
-            InputLocked = inputLocked
-        };
+        scope.Skills.ActiveSkillId = SkillId.RisingDragon;
+        hero.ActionData.InputLocked = inputLocked;
         var source = scope.Source;
         var input = new InputSystem(scope, source);
         source.Pressed.UnionWith([InputSystem.Skill1, InputSystem.Musou]);
@@ -147,7 +142,7 @@ public sealed class SkillReuseTests
 
         if (!inputLocked)
             return;
-        scope.Skills.BodySkillData.InputLocked = false;
+        hero.ActionData.InputLocked = false;
         source.Pressed.Clear();
         input.Sample(hero, .1f);
         Assert.False(scope.GetSystem<InputSystem>().IsActionJustPressed(InputSystem.Skill1));
@@ -176,13 +171,13 @@ public sealed class SkillReuseTests
         Tick(fsm, .01f);
         Assert.Equal(1, hero.SkillBegins);
         Assert.Equal(321, hero.Velocity.X);
-        Assert.NotNull(scope.Skills.BodySkillData);
+        Assert.NotNull(scope.Skills.ActiveSkillId);
         hero.PendingHurt = new Vector2(-100, 0);
         hero.ActionData.Time += .01f;
         Tick(fsm, .01f);
         Assert.IsType<HeroHurtState>(fsm.CurrentState);
         Assert.Equal(1, hero.SkillEnds);
-        Assert.Null(scope.Skills.BodySkillData);
+        Assert.Null(scope.Skills.ActiveSkillId);
     }
 
     /// <summary>真实 GGF 先执行普攻离开，再开始技能动画；避免旧攻击清理掉新技能判定。</summary>
@@ -225,7 +220,7 @@ public sealed class SkillReuseTests
         scope.Skills.GetLearnedSkills(1).Add(id);
         skills.SelectSkills(1, SkillTestDefinitions.Wukong());
         Assert.True(skills.TryActivate(id, hero));
-        var data = skills.BodySkillData;
+        var data = scope.Skills.ActiveSkillId;
         Assert.Equal(0, hero.SkillBegins);
         using var manager = new FsmLifetime();
         var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
@@ -237,14 +232,12 @@ public sealed class SkillReuseTests
         Tick(fsm, .01f);
         Assert.IsType(stateType, fsm.CurrentState);
         Assert.Equal(1, hero.SkillBegins);
-        for (int frame = 1; frame <= 600 && !data.Completed; frame++)
-        {
-            hero.ActionData.Time += 1d / 60;
-            Tick(fsm, 1f / 60);
-        }
-        Assert.True(data.Completed);
+        ((AbstractHeroSkillState)fsm.CurrentState).CompleteAnimation();
+        hero.ActionData.Time += 1d / 60;
+        Tick(fsm, 1f / 60);
+        Assert.Null(scope.Skills.ActiveSkillId);
         Assert.IsType<HeroGroundState>(fsm.CurrentState);
-        Assert.Null(skills.BodySkillData);
+        Assert.Null(scope.Skills.ActiveSkillId);
         Assert.Equal(1, hero.SkillEnds);
     }
 
@@ -288,7 +281,7 @@ public sealed class SkillReuseTests
         scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
         skills.SelectSkills(1, new SkillDefinition(SkillId.RisingDragon, typeof(TestPreparationState), InputSystem.Skill1));
         Assert.True(skills.TryActivate(SkillId.RisingDragon, hero));
-        var data = skills.BodySkillData;
+        var data = scope.Skills.ActiveSkillId;
         int mana = scope.GetModel<HeroModel>().Mp.Value;
         using var manager = new FsmLifetime();
         var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
@@ -304,14 +297,14 @@ public sealed class SkillReuseTests
         hero.ActionData.Time = .02;
         Tick(fsm, .01f);
         Assert.IsType<TestReleaseState>(fsm.CurrentState);
-        Assert.Same(data, skills.BodySkillData);
+        Assert.Equal(data, scope.Skills.ActiveSkillId);
         Assert.Equal(1, hero.SkillBegins);
         Assert.Equal(0, hero.SkillEnds);
         Assert.Equal(mana, scope.GetModel<HeroModel>().Mp.Value);
         hero.ActionData.Time += .3;
         Tick(fsm, .3f);
         Assert.IsType<HeroGroundState>(fsm.CurrentState);
-        Assert.Null(skills.BodySkillData);
+        Assert.Null(scope.Skills.ActiveSkillId);
         Assert.Equal(1, hero.SkillEnds);
     }
 
@@ -324,6 +317,8 @@ public sealed class SkillReuseTests
             ((AbstractHeroBodyState)fsm.CurrentState).TryGetActionInput(hero, out bool attacking, out float normalProgress, out bool airborne))
             hero.MatchInput(attacking, normalProgress, airborne);
         fsm.Tick(dt);
+        if (fsm.CurrentState is AbstractHeroSkillState state)
+            state.AdvanceAnimation(fsm, fsm.Owner, dt);
     }
 
     /// <summary>本组测试只提供推进时间轴必需的模型与系统。</summary>
@@ -408,7 +403,7 @@ public sealed class SkillReuseTests
                 scope.GetSystem<SkillSystem>().TryActivateInput(this, ActionData);
         }
         /// <inheritdoc />
-        public void BeginSkillAnimation(SkillActionConfig action)
+        public void BeginSkillAnimation(string animation, string startMarker = null)
         {
             Operations.Add("begin_skill");
             SkillBegins++;
@@ -420,17 +415,18 @@ public sealed class SkillReuseTests
             EndAttack();
         }
         /// <inheritdoc />
-        public void SetSkillAnimationTime(double seconds) { }
+        public void AdvanceSkillAnimation(float dt) { }
         /// <inheritdoc />
         public void EndSkillAnimation() => SkillEnds++;
         /// <inheritdoc />
         public Vector2? FindSkillTarget(float range, float inset) => null;
         /// <inheritdoc />
-        public void NewSkillAttack(SkillHitId hit) { }
+        public void NewSkillAttack(SkillHitId hit, double power, float? knockbackOriginX = null) { }
         /// <inheritdoc />
-        public void SpawnSkillEffect(SkillEffectId effect, SkillData data, Vector2 position, Action completed = null)
+        public void SpawnSkillEffect(PackedScene scene, Vector2 position, SkillHitId hit = SkillHitId.None, double power = 0, Action completed = null,
+            float? knockbackOriginX = null)
         {
-            if (FinishLandingEffect && effect == SkillEffectId.FireDemonLanding)
+            if (FinishLandingEffect && hit == SkillHitId.FireDemonLanding)
                 completed?.Invoke();
         }
     }
@@ -446,7 +442,7 @@ public sealed class SkillReuseTests
         }
 
         /// <inheritdoc />
-        protected override void AdvanceSkill(IHeroBody body, float dt) =>
+        protected override void UpdateSkill(IHeroBody body, float dt) =>
             body.Velocity = new Vector2(321, body.Velocity.Y);
     }
 
@@ -476,7 +472,7 @@ public sealed class SkillReuseTests
         protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
         {
             if (m_Transferring)
-                SkillData = null;
+                return;
             else
                 base.Leave(fsm, body, isShutdown);
         }
@@ -493,10 +489,11 @@ public sealed class SkillReuseTests
             base.Enter(fsm, body);
         }
         /// <inheritdoc />
-        protected override void AdvanceSkill(IHeroBody body, float dt)
+        protected override void UpdateSkill(IHeroBody body, float dt)
         {
             m_Age += dt;
-            SkillData.Completed = m_Age >= .2f;
+            if (m_Age >= .2f)
+                CompleteAnimation();
         }
     }
 

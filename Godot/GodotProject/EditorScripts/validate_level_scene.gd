@@ -8,7 +8,7 @@ func _init() -> void:
 	call_deferred("validate")
 
 func validate() -> void:
-	var packed := load("res://TheGame/Scenes/Level_1.tscn") as PackedScene
+	var packed := load("res://TheGame/Scenes/level_1.tscn") as PackedScene
 	if packed == null:
 		push_error("LEVEL SCENE FAIL: 无法加载正式关卡")
 		quit(1)
@@ -28,6 +28,7 @@ func validate() -> void:
 	var floating_text := level.get_node_or_null("World/FloatingText")
 	check(floating_text != null and floating_text.get_script() == load("res://TheGame/GameScripts/FloatingText/FloatingTextPresenter.cs"), "世界飘字必须绑定通用 FloatingTextPresenter")
 	check(level.get("m_FloatingText") == floating_text, "关卡必须通过导出字段绑定本场飘字入口")
+	check(level.get("m_FeaturedOpponentSpawnPointIds") == PackedStringArray(["stage_5_a"]), "守关顶部生命条应由场景绑定第五波生成点")
 	for path in ["World/SpawnPoints", "World/StageGates", "World/StageTriggers"]:
 		var manager := level.get_node(path)
 		check(manager.get_script().is_tool(), "%s 必须运行 Tool 脚本" % path)

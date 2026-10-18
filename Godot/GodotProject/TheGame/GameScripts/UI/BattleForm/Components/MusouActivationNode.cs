@@ -1,46 +1,69 @@
-using GameLogic.Heroes.Body;
 using Godot;
+using GodotGameFramework;
 
 namespace GameLogic.UI.Widgets;
 
-/// <summary>屏幕空间无双开启动画；只播放原帧，真实时间驱动以跨越开启时的短暂停顿。</summary>
+/// <summary>屏幕空间无双演出；原生动画完成时释放自己拥有的暂停，不另配表现秒数。</summary>
 public partial class MusouActivationNode : Control
 {
-    [Export] private AnimatedSprite2D m_Animation; // 原版 940×590 完整动画帧。
-    private ulong m_Started; // 本次提示的真实时间原点；暂停不阻止动画。
+    [Export] private AnimatedSprite2D m_Animation; // 官方完整画面帧，帧号由外置动画轨道编辑。
+    [Export] private AnimationPlayer m_Player; // 原生动画轨道是唯一演出时钟。
+    private ulong m_PreviousTick; // 真实时间上次采样点，游戏暂停时仍能推进。
+    private bool m_OwnsPause; // 只恢复本演出自己申请的 GGF 暂停。
 
-    /// <summary>默认隐藏，等待 HUD 观察到真正的激活状态变化。</summary>
-    public override void _Ready() => Reset();
-
-    /// <summary>按原资源帧率显示，正常结束后隐藏；不暂停或恢复游戏。</summary>
-    /// <param name="delta">引擎游戏时间，本表现使用真实时间而不依赖它。</param>
-    public override void _Process(double delta)
+    /// <summary>连接原生完成信号，默认隐藏并停止。</summary>
+    public override void _Ready()
     {
-        double frames = (Time.GetTicksMsec() - m_Started) / 1000d *
-            m_Animation.SpriteFrames.GetAnimationSpeed(HeroAnims.MusouActivation);
-        if (frames >= m_Animation.SpriteFrames.GetFrameCount(HeroAnims.MusouActivation))
-            Reset();
-        else
-            m_Animation.SetFrameAndProgress((int)frames, (float)(frames % 1));
+        m_Player.AnimationFinished += OnAnimationFinished;
+        Reset();
     }
 
-    /// <summary>从首帧开始一次提示，多次通知不应由调用方重复播放。</summary>
+    /// <summary>用真实秒推进原生动画，绕过游戏暂停产生的零 delta。</summary>
+    /// <param name="delta">游戏帧秒数；演出时钟由单调真实时间提供。</param>
+    public override void _Process(double delta)
+    {
+        ulong now = Time.GetTicksMsec();
+        double elapsed = (now - m_PreviousTick) / 1000d;
+        m_PreviousTick = now;
+        m_Player.Advance(elapsed);
+    }
+
+    /// <summary>从首帧播放，暂停时间完全由这段动画的实际长度决定。</summary>
     public void ShowActivation()
     {
-        m_Started = Time.GetTicksMsec();
-        // 只用下方的真实时间推进，避免子精灵同时自动前进一遍。
+        Reset();
+        m_OwnsPause = !GF.Base.IsGamePaused;
+        if (m_OwnsPause)
+            GF.Base.PauseGame();
+        m_PreviousTick = Time.GetTicksMsec();
         m_Animation.Stop();
-        m_Animation.Animation = HeroAnims.MusouActivation;
-        m_Animation.SetFrameAndProgress(0, 0);
+        m_Player.Play("activation");
+        m_Player.Advance(0);
         Visible = true;
         SetProcess(true);
     }
 
-    /// <summary>关闭、改绑或复用时清除旧动画。</summary>
+    /// <summary>关闭、改绑、完成或复用时停止演出并对称释放暂停。</summary>
     public void Reset()
     {
         SetProcess(false);
+        m_Player?.Stop();
         m_Animation?.Stop();
+        if (m_Animation != null)
+            m_Animation.Frame = 0;
         Visible = false;
+        if (!m_OwnsPause)
+            return;
+        m_OwnsPause = false;
+        if (GF.Base.IsGamePaused)
+            GF.Base.ResumeGame();
+    }
+
+    /// <summary>完整演出结束后隐藏并恢复游戏。</summary>
+    /// <param name="animation">原生播放器实际完成的动画名。</param>
+    private void OnAnimationFinished(StringName animation)
+    {
+        if (animation == "activation")
+            Reset();
     }
 }

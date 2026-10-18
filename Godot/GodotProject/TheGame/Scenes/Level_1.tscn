@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://bvkf8qofj10yc"]
+[gd_scene format=3 uid="uid://c3hjf7dekvbrg"]
 
 [ext_resource type="Script" uid="uid://d2x72rm6l5oeq" path="res://TheGame/GameScripts/Level/LevelViewController.cs" id="1_controller"]
 [ext_resource type="Script" uid="uid://dkuuiel88m4ep" path="res://TheGame/GameScripts/Level/Camera/LevelCameraNode.cs" id="2_camera"]
@@ -169,6 +169,7 @@ size = Vector2(8, 4000)
 
 [node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText")]
 script = ExtResource("1_controller")
+m_MusicId = 102
 m_SpawnPoints = NodePath("World/SpawnPoints")
 m_Triggers = NodePath("World/StageTriggers")
 m_Gates = NodePath("World/StageGates")
@@ -176,6 +177,7 @@ m_Spawner = NodePath("Spawner")
 m_Camera = NodePath("Camera2D")
 m_Exit = NodePath("World/Exit")
 m_FloatingText = NodePath("World/FloatingText")
+m_FeaturedOpponentSpawnPointIds = PackedStringArray("stage_5_a")
 
 [node name="World" type="Node2D" parent="." unique_id=219105317]
 

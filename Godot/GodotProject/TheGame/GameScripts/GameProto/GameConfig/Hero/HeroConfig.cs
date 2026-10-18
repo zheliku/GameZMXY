@@ -27,8 +27,6 @@ public sealed partial class HeroConfig : Luban.BeanBase
         JumpSpeed = _buf.ReadFloat();
         Gravity = _buf.ReadFloat();
         JumpCountMax = _buf.ReadInt();
-        HurtSoundId = (Sound.SoundId)_buf.ReadInt();
-        DeathSoundId = (Sound.SoundId)_buf.ReadInt();
         {int __n0 = _buf.ReadSize(); AttackInputCooldowns = new float[__n0];for(var __index0 = 0 ; __index0 < __n0 ; __index0++) { float __e0;__e0 = _buf.ReadFloat(); AttackInputCooldowns[__index0] = __e0;}}
         AirAttackCooldown = _buf.ReadFloat();
         ComboResetTime = _buf.ReadFloat();
@@ -85,14 +83,6 @@ public sealed partial class HeroConfig : Luban.BeanBase
     /// </summary>
     public readonly int JumpCountMax;
     /// <summary>
-    /// 受击语音(自己挨打时的声音,None=无;按受害者选音,BaseHero.gd:592)
-    /// </summary>
-    public readonly Sound.SoundId HurtSoundId;
-    /// <summary>
-    /// 死亡语音(None=无)
-    /// </summary>
-    public readonly Sound.SoundId DeathSoundId;
-    /// <summary>
     /// 按上次地面普攻1~5段取本次起手后的冷却秒数，先取值再推进段号；Role1.normalHit 原8/8/15/18/8帧除24
     /// </summary>
     public readonly float[] AttackInputCooldowns;
@@ -130,8 +120,6 @@ public sealed partial class HeroConfig : Luban.BeanBase
         + "JumpSpeed:" + JumpSpeed + ","
         + "Gravity:" + Gravity + ","
         + "JumpCountMax:" + JumpCountMax + ","
-        + "HurtSoundId:" + HurtSoundId + ","
-        + "DeathSoundId:" + DeathSoundId + ","
         + "AttackInputCooldowns:" + Luban.StringUtil.CollectionToString(AttackInputCooldowns) + ","
         + "AirAttackCooldown:" + AirAttackCooldown + ","
         + "ComboResetTime:" + ComboResetTime + ","

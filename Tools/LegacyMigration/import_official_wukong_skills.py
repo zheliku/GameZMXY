@@ -1,8 +1,10 @@
-"""Pack verified skill renders and generate external value-only animation assets.
+"""One-time import of verified skill renders and their initial animation geometry.
 
 Run export_official_wukong_skills.py and import_official_wukong_skills.gd first.
 The original 87 body/weapon cells are copied verbatim; skill poses append to the
 same 200-pixel grid. No sprite is recentered by its per-frame visible bounds.
+The installed animations now have authored methods and phase markers; this tool
+refuses to overwrite them. Maintain those native resources in the Godot editor.
 """
 import argparse
 import hashlib
@@ -119,6 +121,9 @@ def sprite_frames(path, texture_path, animations, cell_size, columns):
 
 def apply(path):
     """Append skills, preserve basic animation edits, and prepare detached FX."""
+    library = ANIMATION / 'wukong_skill_library.tres'
+    if library.exists() and 'type = "method"' in library.read_text(encoding='utf-8'):
+        raise ValueError('正式技能动画已含人工编排的方法轨道与阶段标记；本一次性导入工具不得重写，请在 Godot 编辑器维护。')
     manifest = json.loads(path.read_text(encoding='utf-8'))
     manifest['source_count'] = 87 + sum(int(action['count']) for action in manifest['skills'])
     for action in manifest['skills']:
@@ -249,10 +254,10 @@ def apply(path):
     blocks.append('[resource]\n_data = {\n' + ',\n'.join(f'&"{action["name"]}": SubResource("{action["name"]}")' for action in manifest['skills']) + '\n}\n')
     library = ANIMATION / 'wukong_skill_library.tres'
     library.write_text(''.join(blocks), encoding='utf-8')
-    for relative in ('TheGame/Entitys/WukongEntity.tscn', 'TheGame/UIs/Widgets/hero_preview.tscn'):
+    for relative in ('TheGame/Entitys/wukong_entity.tscn', 'TheGame/UIs/Widgets/hero_preview.tscn'):
         scene = PROJECT / relative
         text = re.sub(r'(hframes = 6\nvframes = )\d+', lambda m: m[1]+str(rows), scene.read_text(encoding='utf-8'))
-        if relative.endswith('WukongEntity.tscn'):
+        if relative.endswith('wukong_entity.tscn'):
             if 'id="skills"' not in text:
                 text = text.replace('[sub_resource', '[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Skills/wukong_skill_library.tres" id="skills"]\n\n[sub_resource', 1)
             if 'libraries/skills' not in text:

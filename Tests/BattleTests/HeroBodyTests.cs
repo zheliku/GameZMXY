@@ -152,11 +152,11 @@ public sealed class HeroBodyTests
         h.Frame();
         h.Frame(move: 1);
         Assert.Equal(-150, h.Body.Velocity.X);
-        Assert.Equal(1, h.Body.HurtSounds);
+        Assert.Single(h.Body.Anims, animation => animation == HeroAnims.Hurt);
         h.Body.PendingHurt = new Vector2(120, 0);
         h.Frame();
         Assert.Equal(120, h.Body.Velocity.X);
-        Assert.Equal(2, h.Body.HurtSounds);
+        Assert.Equal(2, h.Body.Anims.FindAll(animation => animation == HeroAnims.Hurt).Count);
         h.Run(0.25f);
         Assert.Equal("Ground", h.State);
     }
@@ -273,7 +273,7 @@ public sealed class HeroBodyTests
         h.Body.PendingHurt = new Vector2(-150, 0);
         h.Frame();
         Assert.Equal("Death", h.State);
-        Assert.Equal(1, h.Body.DiedCount);
+        Assert.Equal(HeroAnims.Death, h.Body.LastAnim);
         h.Tap(attack: true);
         h.Tap(jump: true);
         Assert.Equal("Death", h.State);

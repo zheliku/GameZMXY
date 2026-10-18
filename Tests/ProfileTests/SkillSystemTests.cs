@@ -21,7 +21,7 @@ public sealed class SkillSystemTests
         SkillDefinition[] definitions = [first];
         system.SelectSkills(2, definitions);
         Assert.True(system.TryActivate(SkillId.WaterClone, new Actor()));
-        var data = system.BodySkillData;
+        var data = scope.Skills.ActiveSkillId;
         definitions[0] = new SkillDefinition(SkillId.WaterDemonBurst, typeof(TestSkillState), "skill_5");
         Assert.Same(first, scope.Skills.Definitions[SkillId.WaterClone]);
 
@@ -30,8 +30,7 @@ public sealed class SkillSystemTests
         Assert.Throws<ArgumentException>(() => system.SelectSkills(1, first));
         Assert.Throws<ArgumentException>(() => system.SelectSkills(2,
             new SkillDefinition(SkillId.RisingDragon, typeof(TestSkillState))));
-        Assert.Same(data, system.BodySkillData);
-        Assert.True(system.IsActive(data));
+        Assert.Equal(data, scope.Skills.ActiveSkillId);
         Assert.Single(scope.Skills.Definitions);
     }
 
@@ -48,7 +47,7 @@ public sealed class SkillSystemTests
         int mana = scope.Hero.Mp.Value;
         Assert.Throws<ArgumentException>(() => system.SelectSkills(2,
             new SkillDefinition(SkillId.WaterClone, state, InputSystem.Skill1)));
-        Assert.Null(system.BodySkillData);
+        Assert.Null(scope.Skills.ActiveSkillId);
         Assert.Empty(scope.Skills.Definitions);
         Assert.Equal(mana, scope.Hero.Mp.Value);
     }
@@ -74,27 +73,21 @@ public sealed class SkillSystemTests
         Assert.Equal(0, actor.AnimationBegins);
     }
 
-    /// <summary>取消后同一技能使用新数据；过期状态退出不能清掉新施放，无敌区间同时清理。</summary>
+    /// <summary>取消清除激活编号与无敌区间，之后可以重新激活同一技能。</summary>
     [Fact]
-    public void CancelAndReactivate_RejectsStaleIdentity()
+    public void CancelAndReactivate_ClearsOccupancyAndInvulnerability()
     {
         var scope = Ready();
         var system = scope.GetSystem<SkillSystem>();
         var actor = new Actor();
         system.SelectSkills(2, new SkillDefinition(SkillId.WaterClone, typeof(TestSkillState)));
         Assert.True(system.TryActivate(SkillId.WaterClone, actor));
-        var oldData = system.BodySkillData;
         system.GrantInvulnerability(0, 100);
         system.CancelSkill();
-        Assert.True(oldData.Completed);
-        Assert.False(system.IsActive(oldData));
+        Assert.Null(scope.Skills.ActiveSkillId);
         Assert.False(system.IsInvulnerable(1));
         Assert.True(system.TryActivate(SkillId.WaterClone, actor));
-        var currentData = system.BodySkillData;
-        Assert.NotSame(oldData, currentData);
-        system.ReleaseBody(oldData, actor);
-        Assert.Same(currentData, system.BodySkillData);
-        Assert.True(system.IsActive(currentData));
+        Assert.Equal(SkillId.WaterClone, scope.Skills.ActiveSkillId);
     }
 
     /// <summary>保持相同登记不打断施放；切换角色的技能组才取消旧数据，学习记录仍保留。</summary>
@@ -107,12 +100,11 @@ public sealed class SkillSystemTests
         var first = new SkillDefinition(SkillId.WaterClone, typeof(TestSkillState), InputSystem.Skill1);
         system.SelectSkills(2, first);
         Assert.True(system.TryActivate(SkillId.WaterClone, actor));
-        var data = system.BodySkillData;
+        var data = scope.Skills.ActiveSkillId;
         system.SelectSkills(2, first);
-        Assert.Same(data, system.BodySkillData);
+        Assert.Equal(data, scope.Skills.ActiveSkillId);
         system.SelectSkills(2, new SkillDefinition(SkillId.WaterDemonBurst, typeof(TestSkillState), InputSystem.Skill1));
-        Assert.True(data.Completed);
-        Assert.Null(system.BodySkillData);
+        Assert.Null(scope.Skills.ActiveSkillId);
         Assert.True(system.IsLearned(SkillId.WaterClone));
         Assert.False(system.IsAvailable(SkillId.WaterClone));
         Assert.True(system.TryActivate(SkillId.WaterDemonBurst, actor));
@@ -187,16 +179,18 @@ public sealed class SkillSystemTests
         /// <summary>用于核对激活尚未开始表现。</summary>
         public int AnimationBegins { get; private set; }
         /// <inheritdoc />
-        public void BeginSkillAnimation(SkillActionConfig action) => AnimationBegins++;
+        public void BeginSkillAnimation(string animation, string startMarker = null) => AnimationBegins++;
         /// <inheritdoc />
-        public void SetSkillAnimationTime(double seconds) { }
+        public void AdvanceSkillAnimation(float dt) { }
         /// <inheritdoc />
         public void EndSkillAnimation() { }
         /// <inheritdoc />
         public Vector2? FindSkillTarget(float range, float inset) => null;
         /// <inheritdoc />
-        public void NewSkillAttack(SkillHitId hit) { }
+        public void NewSkillAttack(SkillHitId hit, double power, float? knockbackOriginX = null) { }
         /// <inheritdoc />
-        public void SpawnSkillEffect(SkillEffectId effect, SkillData data, Vector2 position, Action completed = null) { }
+        public void SpawnSkillEffect(PackedScene scene, Vector2 position, SkillHitId hit = SkillHitId.None, double power = 0, Action completed = null,
+            float? knockbackOriginX = null)
+        { }
     }
 }

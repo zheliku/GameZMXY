@@ -1,0 +1,22 @@
+[gd_resource type="AnimationLibrary" format=3 uid="uid://dfhhg6kq2xexc"]
+
+[sub_resource type="Animation" id="activation"]
+resource_name = "activation"
+step = 0.041666668
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Animation:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334, 0.5, 0.5416667, 0.5833333, 0.625, 0.6666667, 0.7083333, 0.75, 0.7916667, 0.8333333, 0.875, 0.9166667, 0.9583333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+}
+
+[resource]
+_data = {
+&"activation": SubResource("activation")
+}

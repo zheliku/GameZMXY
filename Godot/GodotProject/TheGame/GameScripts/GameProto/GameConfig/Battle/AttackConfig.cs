@@ -20,14 +20,11 @@ public sealed partial class AttackConfig : Luban.BeanBase
         LegacyId = _buf.ReadString();
         NameCn = _buf.ReadString();
         Desc = _buf.ReadString();
-        Animation = _buf.ReadString();
         PowerScale = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         FlatPower = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         DamageKind = (Battle.DamageKind)_buf.ReadInt();
         Knockback = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         HitProtect = _buf.ReadInt();
-        SoundId = (Sound.SoundId)_buf.ReadInt();
-        HitSoundId = (Sound.SoundId)_buf.ReadInt();
         OwnerId = (Entity.EntityId)_buf.ReadInt();
         ComboIndex = _buf.ReadInt();
         AiWeight = _buf.ReadInt();
@@ -36,6 +33,8 @@ public sealed partial class AttackConfig : Luban.BeanBase
         AiCooldown = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         AiInitCooldown = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         AiRecovery = _buf.ReadFloat();
+        HitBudget = _buf.ReadInt();
+        RepeatIntervalSeconds = _buf.ReadFloat();
     }
 
     public static AttackConfig DeserializeAttackConfig(ByteBuf _buf)
@@ -60,10 +59,6 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly string Desc;
     /// <summary>
-    /// 播放的动画名
-    /// </summary>
-    public readonly string Animation;
-    /// <summary>
     /// 攻击力倍率范围(乘英雄攻击,X=下限,Y=上限,写法 1,1.2)
     /// </summary>
     public readonly Godot.Vector2 PowerScale;
@@ -76,21 +71,13 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly Battle.DamageKind DamageKind;
     /// <summary>
-    /// 击退(X&gt;0=远离攻击者,Y&lt;0=向上;单位同旧 hurtBack,乘 BattleConfig.KnockbackScale* 换算 px/s,写法 2,0)
+    /// 击退速度 px/s；X&gt;0 远离攻击者，Y&lt;0 向上；方向由出招代码确定
     /// </summary>
     public readonly Godot.Vector2 Knockback;
     /// <summary>
     /// 受击保护累计值(旧 HitProtect)
     /// </summary>
     public readonly int HitProtect;
-    /// <summary>
-    /// 起手音效(SoundConfig;None=无)
-    /// </summary>
-    public readonly Sound.SoundId SoundId;
-    /// <summary>
-    /// 命中音效(打中目标时播,None=无;旧项目按攻击者选音)
-    /// </summary>
-    public readonly Sound.SoundId HitSoundId;
     /// <summary>
     /// 这招属于谁(None=通用招,将来多主体共享用)
     /// </summary>
@@ -123,6 +110,14 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// AI 收招硬直秒:收招后原地不动、不转身、不出招(英雄填 0)
     /// </summary>
     public readonly float AiRecovery;
+    /// <summary>
+    /// 单次攻击源累计命中次数上限；多段特效共用此预算
+    /// </summary>
+    public readonly int HitBudget;
+    /// <summary>
+    /// 持续判定更新攻击编号的秒间隔；0 表示无重复
+    /// </summary>
+    public readonly float RepeatIntervalSeconds;
    
     public const int __ID__ = 818309408;
     public override int GetTypeId() => __ID__;
@@ -138,14 +133,11 @@ public sealed partial class AttackConfig : Luban.BeanBase
         + "LegacyId:" + LegacyId + ","
         + "NameCn:" + NameCn + ","
         + "Desc:" + Desc + ","
-        + "Animation:" + Animation + ","
         + "PowerScale:" + PowerScale + ","
         + "FlatPower:" + FlatPower + ","
         + "DamageKind:" + DamageKind + ","
         + "Knockback:" + Knockback + ","
         + "HitProtect:" + HitProtect + ","
-        + "SoundId:" + SoundId + ","
-        + "HitSoundId:" + HitSoundId + ","
         + "OwnerId:" + OwnerId + ","
         + "ComboIndex:" + ComboIndex + ","
         + "AiWeight:" + AiWeight + ","
@@ -154,6 +146,8 @@ public sealed partial class AttackConfig : Luban.BeanBase
         + "AiCooldown:" + AiCooldown + ","
         + "AiInitCooldown:" + AiInitCooldown + ","
         + "AiRecovery:" + AiRecovery + ","
+        + "HitBudget:" + HitBudget + ","
+        + "RepeatIntervalSeconds:" + RepeatIntervalSeconds + ","
         + "}";
     }
 }

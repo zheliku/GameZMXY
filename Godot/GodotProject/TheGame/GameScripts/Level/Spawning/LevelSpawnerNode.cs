@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using GameConfig.Level;
 using GameLogic.Monsters;
 using GameConfig.Monster;
-using GameConfig.Loot;
 using GameFramework.Entity;
 using GameFramework.Event;
 using Godot;
@@ -37,10 +36,10 @@ public partial class LevelSpawnerNode : Node
     public event Action StageCleared;
 
     /// <summary>本会话怪物死亡且首次归还名额时报告一次，携带只读配置、死亡位置和配方经验。</summary>
-    public event Action<MonsterConfig, Vector2, int, EquipmentDropPoolId> MonsterDefeated;
+    public event Action<MonsterConfig, Vector2, int> MonsterDefeated;
 
     /// <summary>本会话怪物已显示并登记所有权，供关卡绑定守关展示。</summary>
-    public event Action<AbstractMonsterEntity> MonsterShown;
+    public event Action<AbstractMonsterEntity, string> MonsterShown;
 
     /// <summary>当前会话显示实体失败；控制器负责结束会话。</summary>
     public event Action<Exception> SpawnFailed;
@@ -168,7 +167,7 @@ public partial class LevelSpawnerNode : Node
             Node2D patrolAnchor = m_PatrolAnchor;
             // 显示 API 可能从池中同步返回，名额已由调度器提前预约。
             MonsterSpawn spawn = new(spawnPosition, recipe.HealthMultiplier, recipe.DefenseMultiplier,
-                recipe.AttackMultiplier, recipe.ExperienceOverride, recipe.EquipmentDropPoolOverride);
+                recipe.AttackMultiplier, recipe.ExperienceOverride);
             IEntity entity = await entities.ShowEntityAsync(recipe.MonsterEntityId, spawn);
             if (entity == null)
             {
@@ -184,7 +183,7 @@ public partial class LevelSpawnerNode : Node
             m_OwnedIds.Add(entity.Id);
             m_ActiveMonsters.Add(entity.Id);
             ((AbstractMonsterEntity)entity).SetPatrolAnchor(patrolAnchor);
-            MonsterShown?.Invoke((AbstractMonsterEntity)entity);
+            MonsterShown?.Invoke((AbstractMonsterEntity)entity, recipe.SpawnPointId);
         }
         catch (Exception error)
         {
@@ -204,7 +203,7 @@ public partial class LevelSpawnerNode : Node
         if (args is MonsterDiedEventArgs died && m_ActiveMonsters.Remove(died.EntityId))
         {
             m_Schedule.Release();
-            MonsterDefeated?.Invoke(died.Config, died.Position, died.ExperienceReward, died.EquipmentDropPoolId);
+            MonsterDefeated?.Invoke(died.Config, died.Position, died.ExperienceReward);
             if (!m_SessionActive)
                 return; // 掉落显示失败可能已让模块同步结束会话。
             if (m_Schedule.IsCleared)

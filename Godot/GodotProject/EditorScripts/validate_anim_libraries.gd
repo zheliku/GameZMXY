@@ -1,12 +1,10 @@
 extends SceneTree
 ## 校验角色动画库（只校验、不写产物；退出码非 0 = 失败）。
 ##
-## 动画契约（2026-10-01 定稿，A 方案：动画纯数据、代码唯一时钟）：
+## 动画契约：
 ##   1. 必需动画齐全，attack_<i> 编号连续；
-##   2. **禁止一切方法轨道**——动画库只放表现数据（帧/特效/判定盒值轨道），从不调用代码；
-##      动作时长由 C# OnInit 读动画长度（AbstractActorEntity.GetAnimLength），音效由状态钩子触发；
-##      将来"第 N 帧放子弹/脚步声"这类中途时点用 Godot 4.3+ 动画标记（Animation.GetMarkerTime，
-##      代码读时间自己计时），也不是方法轨道；
+##   2. 方法轨道只调用 AnimEvent 后缀的具名入口，目标节点及方法必须存在；
+##      RESET 不含方法键；声音和动作时点归原生动画，分支及安全清理归 GGF 状态；
 ##   3. 身体状态要计时的动画（attack_*、hurt、death）不得循环
 ##      ——时长 = 长度是隐含契约，循环动画语义不符；
 ##   4. 值轨道完备：库里**任一**动画写过的值轨道路径，**每个**动画（含 RESET）都必须带
@@ -19,21 +17,25 @@ const CHARACTERS := [
 	{
 		"lib": "res://TheGame/Entitys/Animations/wukong_anim_library.tres",
 		"name": "悟空",
-		"required": ["idle1", "walk", "run", "jump", "jump_2", "fall", "hurt", "death"],
+		"scene": "res://TheGame/Entitys/wukong_entity.tscn",
+		"required": ["RESET", "idle1", "walk", "run", "jump", "jump_2", "fall", "hurt", "death"],
 	},
 	{
 		"lib": "res://TheGame/Entitys/Animations/huaguoshan_monkey_anim_library.tres",
 		"name": "花果山猴子",
+		"scene": "res://TheGame/Entitys/huaguoshan_monkey_entity.tscn",
 		"required": ["idle", "run", "hurt", "death"],
 	},
 	{
 		"lib": "res://TheGame/Entitys/Animations/demon_monkey_anim_library.tres",
 		"name": "妖猴",
+		"scene": "res://TheGame/Entitys/demon_monkey_entity.tscn",
 		"required": ["idle", "run", "hurt", "death"],
 	},
 	{
 		"lib": "res://TheGame/Entitys/Animations/gorilla_anim_library.tres",
 		"name": "大猩猩",
+		"scene": "res://TheGame/Entitys/gorilla_entity.tscn",
 		"required": ["idle", "run", "hurt", "death"],
 	},
 ]
@@ -88,16 +90,6 @@ func _validate(ch: Dictionary, lib: AnimationLibrary) -> bool:
 		var a := lib.get_animation(String(anim))
 		var anim_name := String(anim)
 
-		# 禁止一切方法轨道（动画纯数据）
-		for t in a.get_track_count():
-			if a.track_get_type(t) == Animation.TYPE_METHOD:
-				var methods := []
-				for k in a.track_get_key_count(t):
-					methods.append(String(a.method_track_get_name(t, k)))
-				push_error("%s/%s 有方法轨道 %s（动画库只放表现数据：逻辑/时点/音效归代码，中途时点用动画标记）"
-					% [String(ch.name), anim_name, ",".join(methods)])
-				ok = false
-
 		# 要计时的动画必须非循环
 		if (anim_name.begins_with("attack_") or anim_name in ["hurt", "death"]) and a.loop_mode != Animation.LOOP_NONE:
 			push_error("%s/%s 是循环动画：身体状态按「动画长度」计时，循环动画语义不符"
@@ -114,4 +106,37 @@ func _validate(ch: Dictionary, lib: AnimationLibrary) -> bool:
 				push_error("%s/%s 缺少值轨道 %s（轨道完备性：直驱播放不回卷，会残留上一个动画的值）"
 					% [String(ch.name), anim_name, path])
 				ok = false
+	# 检查实例化后的真实 C# 方法，包括技能库与独立特效；不进入树、不启动玩法。
+	var scene := load(String(ch.scene)) as PackedScene
+	var actor := scene.instantiate()
+	if not _validate_callbacks(actor):
+		ok = false
+	actor.free()
+	return ok
+
+
+func _validate_callbacks(node: Node) -> bool:
+	var ok := true
+	if node is AnimationPlayer:
+		var animation_root := node.get_node(node.root_node)
+		for name in node.get_animation_list():
+			var animation: Animation = node.get_animation(name)
+			for track in animation.get_track_count():
+				if animation.track_get_type(track) != Animation.TYPE_METHOD:
+					continue
+				var target := animation_root.get_node_or_null(animation.track_get_path(track))
+				for key in animation.track_get_key_count(track):
+					var method: StringName = animation.method_track_get_name(track, key)
+					if String(name).get_file() == "RESET" or not String(method).ends_with("AnimEvent") or target == null or not target.has_method(method):
+						push_error("动画方法未绑定或命名不符：%s/%s/%s" % [node.get_parent().name, name, method])
+						ok = false
+					for argument in animation.method_track_get_params(track, key):
+						if argument is PackedScene:
+							var effect: Node = argument.instantiate()
+							if not _validate_callbacks(effect):
+								ok = false
+							effect.free()
+	for child in node.get_children():
+		if not _validate_callbacks(child):
+			ok = false
 	return ok

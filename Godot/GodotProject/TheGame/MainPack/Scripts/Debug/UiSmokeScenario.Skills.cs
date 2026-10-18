@@ -3,6 +3,7 @@ using GameLogic.Architecture;
 using GameLogic.Equipment;
 using GameLogic.Save;
 using GameLogic.Profile;
+using GameLogic.Heroes.Body;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 using System;
 using System.Collections.Generic;
@@ -37,11 +38,18 @@ public sealed partial class UiSmokeScenario
     {
         int soul = flow.GetModel<ProfileModel>().Soul.Value;
         var entrance = battleForm.GetNode<TextureButton>("MenuPanel/m_SkillsButton");
-        entrance.EmitSignal(BaseButton.SignalName.Pressed);
+        Check(InputMap.ActionGetEvents(GameLogic.Input.InputSystem.SkillToggle).OfType<InputEventKey>()
+            .Any(input => input.PhysicalKeycode == Key.V), "技能面板没有默认 V 输入映射");
+        PushSkillKey(true);
+        PushSkillKey(false);
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(x => x.Visible), "技能入口没有打开面板");
         var form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(x => x.Visible);
         Check(GF.Base.IsGamePaused, "技能窗口没有暂停本关");
+        PushSkillKey(true, echo: true);
+        PushSkillKey(false);
+        await WaitFramesAsync(3);
+        Check(form.Visible && GF.Base.IsGamePaused, "长按 V 的重复事件关闭了技能窗口");
         const string active = "Content/m_ActivePage/";
         const string passive = "Content/m_PassivePage/";
         const string footer = "Content/Footer/";
@@ -74,9 +82,10 @@ public sealed partial class UiSmokeScenario
         flow.GetSystem<ProfileSystem>().AddSoul(7);
         var balance = form.GetNode<Label>(footer + "Balance/m_Soul");
         Check(balance.Text == (soul + 7).ToString(), "技能面板没有观察钱包变化");
-        form.GetNode<TextureButton>("Content/Header/m_Back").EmitSignal(BaseButton.SignalName.Pressed);
-        await WaitFramesAsync(2);
-        Check(!form.Visible && !GF.Base.IsGamePaused, "返回没有关闭技能页或恢复战斗");
+        PushSkillKey(true);
+        PushSkillKey(false);
+        await WaitFramesAsync(4);
+        Check(!form.Visible && !GF.Base.IsGamePaused, "V 没有关闭技能页，或同一输入又把窗口打开");
         flow.GetModel<ProfileModel>().RestoreSoul(soul);
         Check(balance.Text == (soul + 7).ToString(), "关闭后仍保留钱包订阅");
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
@@ -86,10 +95,44 @@ public sealed partial class UiSmokeScenario
         form._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true });
         await WaitFramesAsync(2);
         Check(!form.Visible && !GF.Base.IsGamePaused, "Escape没有关闭技能面板");
+        var originalKeys = InputMap.ActionGetEvents(GameLogic.Input.InputSystem.SkillToggle);
+        try
+        {
+            InputMap.ActionEraseEvents(GameLogic.Input.InputSystem.SkillToggle);
+            InputMap.ActionAddEvent(GameLogic.Input.InputSystem.SkillToggle, new InputEventKey { PhysicalKeycode = Key.B });
+            PushSkillKey(true);
+            PushSkillKey(false);
+            await WaitUntilAsync(() => form.Visible, "技能开关重映射后无法打开面板");
+            PushSkillKey(true);
+            PushSkillKey(false);
+            await WaitFramesAsync(4);
+            Check(!form.Visible && !GF.Base.IsGamePaused, "技能开关重映射后无法关闭面板");
+        }
+        finally
+        {
+            InputMap.ActionEraseEvents(GameLogic.Input.InputSystem.SkillToggle);
+            foreach (var input in originalKeys)
+                InputMap.ActionAddEvent(GameLogic.Input.InputSystem.SkillToggle, input);
+        }
+        GD.Print("SMOKE-SKILL-TOGGLE PASS: V open/close, pause, echo suppression, no reopen and remapped action.");
         await CheckSkillLearningAndCastingAsync(battleForm, form, flow);
+        await CheckSkillImpactsAsync();
         await CheckSkillSoundsAsync();
+        await CheckActorAnimationEventsAsync();
         CheckSkillCombatResources();
         GD.Print("SMOKE-UI: 技能限当前出战角色、禁用角色无交互、被动目录、暂停、钱包观察及窗口复用通过");
+    }
+
+    /// <summary>通过当前技能开关映射向真实视口注入键盘事件。</summary>
+    /// <param name="pressed">按下或释放。</param>
+    /// <param name="echo">是否模拟长按重复事件。</param>
+    private void PushSkillKey(bool pressed, bool echo = false)
+    {
+        using var input = (InputEventKey)InputMap.ActionGetEvents(GameLogic.Input.InputSystem.SkillToggle)
+            .OfType<InputEventKey>().First().Duplicate();
+        input.Pressed = pressed;
+        input.Echo = echo;
+        m_Driver.GetViewport().PushInput(input, true);
     }
 
     /// <summary>替换编辑器占位内容后重新绑定，确认所有主动/被动行的数据仍来自正式目录。</summary>
@@ -101,7 +144,7 @@ public sealed partial class UiSmokeScenario
         foreach (var group in new[] { "m_WukongRows", "m_TangsengRows" })
             foreach (var row in activePage.GetNode<Control>(group).GetChildren().Cast<GridContainer>())
             {
-                foreach (var field in new[] { "Name", "Soul", "Key", "DescriptionCell/Description" })
+                foreach (var field in new[] { "Name", "Soul", "DescriptionCell/Description" })
                     row.GetNode<Label>(field).Text = "编辑器预览";
                 row.GetNode<TextureButton>("IconCell/Icon").TextureNormal = null;
             }
@@ -119,9 +162,9 @@ public sealed partial class UiSmokeScenario
                 var definition = definitions[i];
                 Check(row.GetNode<Label>("Name").Text == definition.NameCn &&
                     row.GetNode<Label>("Soul").Text == definition.LearnSoul.ToString() &&
-                    row.GetNode<Label>("Key").Text == definition.KeyHint &&
+                    !string.IsNullOrWhiteSpace(row.GetNode<Label>("Key").Text) &&
                     row.GetNode<Label>("DescriptionCell/Description").Text == definition.Description &&
-                    row.GetNode<TextureButton>("IconCell/Icon").TextureNormal.ResourcePath == definition.UnlearnedIconPath,
+                    row.GetNode<TextureButton>("IconCell/Icon").TextureNormal.ResourcePath.EndsWith("_unlearned.png", StringComparison.Ordinal),
                     "主动技能预填内容没有被正式数据替换");
             }
         }
@@ -169,54 +212,49 @@ public sealed partial class UiSmokeScenario
         GD.Print($"SMOKE-UI: {path} 主场景网格归属、五行列对齐与长文本范围通过");
     }
 
-    /// <summary>用正式表加载动作与特效，核对动画库绑定、独立判定和无自动施放约定。</summary>
+    /// <summary>验证实际原生动画与场景，不再验证已删除的表格指令。</summary>
     private void CheckSkillCombatResources()
     {
-        var tables = ConfigSystem.Instance.Tables;
         var fixtures = new Node();
-        var actorDurations = new Dictionary<GameConfig.Skills.SkillId, double>();
-        var effectDurations = new Dictionary<GameConfig.Skills.SkillEffectId, double>();
         try
         {
-            var hero = GD.Load<PackedScene>("res://TheGame/Entitys/WukongEntity.tscn").Instantiate();
+            var hero = GD.Load<PackedScene>("res://TheGame/Entitys/wukong_entity.tscn").Instantiate();
             fixtures.AddChild(hero);
             var player = hero.GetNode<AnimationPlayer>("m_AnimPlayer");
-            foreach (var action in tables.TbSkillActionConfig.DataList)
+            foreach (string name in new[] { "rising_dragon", "flame_thrust", "blazing_flash", "flame_storm", "fire_demon_slash" })
             {
-                Check(player.HasAnimation(action.Animation), $"技能动作表未绑定正式实体动画 {action.Animation}");
-                string libraryName = action.Animation.Split('/')[0];
-                Check(player.GetAnimationLibrary(libraryName).ResourcePath == action.AnimationLibraryPath,
-                    $"技能动作库路径不一致 {action.SkillId}");
-                var clip = player.GetAnimation(action.Animation);
-                actorDurations.Add(action.SkillId, clip.Length);
-                Check(clip.Length > 0 && clip.LoopMode == Animation.LoopModeEnum.None, $"技能动作长度或循环无效 {action.SkillId}");
+                var clip = player.GetAnimation("skills/" + name);
+                Check(clip != null && clip.Length > 0 && clip.LoopMode == Animation.LoopModeEnum.None,
+                    $"技能原生动画缺失或循环：{name}");
+                bool methods = false;
                 for (int track = 0; track < clip.GetTrackCount(); track++)
-                    Check(clip.TrackGetType(track) == Animation.TrackType.Value, $"技能动画含玩法调用轨道 {action.SkillId}");
+                {
+                    if (clip.TrackGetType(track) != Animation.TrackType.Method)
+                        continue;
+                    methods = true;
+                    for (int key = 0; key < clip.TrackGetKeyCount(track); key++)
+                    {
+                        var call = clip.TrackGetKeyValue(track, key).AsGodotDictionary();
+                        Check(call["method"].AsString().EndsWith("AnimEvent", StringComparison.Ordinal) &&
+                            hero.HasMethod(call["method"].AsStringName()), $"原生方法未绑定或后缀不符：{name}/{call["method"]}");
+                    }
+                }
+                Check(methods, $"技能动画缺少具名方法轨道：{name}");
             }
-            foreach (var effect in tables.TbSkillEffectConfig.DataList)
+            foreach (string name in new[] { "blazing_flash_trail", "fire_demon_prelude", "fire_demon_combo", "fire_demon_descent", "fire_demon_landing" })
             {
-                var node = GD.Load<PackedScene>(effect.ScenePath).Instantiate();
+                var node = GD.Load<PackedScene>($"res://TheGame/Entitys/Effects/Skills/wukong_{name}_effect.tscn").Instantiate();
                 fixtures.AddChild(node);
                 var animation = node.GetNode<AnimationPlayer>("AnimationPlayer");
                 Check(animation.HasAnimation("play") && animation.Autoplay.ToString() == "",
-                    $"技能特效缺少时间轴或提前自动播放 {effect.Id}");
-                Check(node.GetNode<CollisionShape2D>("HitBox/CollisionShape2D").Disabled,
-                    $"技能特效初始判定未关闭 {effect.Id}");
-                effectDurations.Add(effect.Id, animation.GetAnimation("play").Length);
+                    $"特效原生动画缺失或提前播放：{name}");
+                Check(node.GetNode<CollisionShape2D>("Visual/HitBox/CollisionShape2D").Disabled,
+                    $"特效初始判定未关闭：{name}");
             }
-            foreach (var entry in tables.TbSkillTimelineConfig.DataList)
-            {
-                double duration = entry.SourceEffectId == GameConfig.Skills.SkillEffectId.None
-                    ? actorDurations[entry.SkillId] : effectDurations[entry.SourceEffectId];
-                Check(entry.AtSeconds < duration && entry.UntilSeconds < duration,
-                    $"技能事件超出所属角色或特效局部时间轴 {entry.Id}");
-                Check(entry.SeekSeconds < actorDurations[entry.SkillId], $"技能事件跳转超出角色动画 {entry.Id}");
-            }
-            GD.Print("SMOKE-UI: 正式技能动作/特效与47条秒制事件的局部时间轴关联通过");
+            GD.Print("SMOKE-UI: 五招原生方法绑定与五个独立特效场景通过");
         }
         finally
         {
-            // 离树 Node 的 Dispose 只释放 C# 绑定，必须显式 Free 夹具及其子树。
             fixtures.Free();
         }
     }
@@ -253,7 +291,7 @@ public sealed partial class UiSmokeScenario
                 var button = form.GetNode<TextureButton>($"Content/m_ActivePage/m_WukongRows/Skill{definition.Order}/IconCell/Icon");
                 button.EmitSignal(BaseButton.SignalName.Pressed);
                 var hudIcon = battleForm.GetNode<TextureRect>($"MenuPanel/SkillBar/Skill{definition.Order}/Icon").Texture as AtlasTexture;
-                Check(system.IsLearned(definition.Id) && button.Disabled && button.TextureNormal.ResourcePath == definition.LearnedIconPath &&
+                Check(system.IsLearned(definition.Id) && button.Disabled && button.TextureNormal.ResourcePath.EndsWith("_learned.png", StringComparison.Ordinal) &&
                     hudIcon?.Atlas.ResourcePath == "res://TheGame/Sprites/UI/hud/battle_skill_icons.png" &&
                     hudIcon.Region == new Rect2(definition.Order * 45, 0, 45, 45),
                     $"学习没有同步两个图标：{definition.Id}");
@@ -276,14 +314,18 @@ public sealed partial class UiSmokeScenario
             attributes.Mp.Value = attributes.MaxMp.Value;
             Input.ActionPress(InputSystem.Interact);
             Input.ActionPress(InputSystem.Attack);
-            await WaitUntilAsync(() => skillModel.BodySkillData?.Id == SkillId.RisingDragon, "持续组合键没有开始升龙");
-            var data = skillModel.BodySkillData;
-            await WaitUntilAsync(() => skillModel.BodySkillData is { } next && !ReferenceEquals(next, data),
+            await WaitUntilAsync(() => skillModel.ActiveSkillId == SkillId.RisingDragon, "持续组合键没有开始升龙");
+            var fsm = SmokeInspection.ReadField<GameFramework.Fsm.IFsm<GameLogic.Heroes.Body.IHeroBody>>(hero, "m_BodyFsm");
+            var state = fsm.CurrentState;
+            var serial = typeof(GameLogic.Body.AbstractBodyState<GameLogic.Heroes.Body.IHeroBody>).GetProperty("EnterSerial",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            int entered = (int)serial.GetValue(state);
+            await WaitUntilAsync(() => fsm.CurrentState == state && (int)serial.GetValue(state) > entered,
                 "持续 W+J 被错误消费，升龙收招后不能再次释放", 4000);
-            Check(skillModel.BodySkillData.Id == SkillId.RisingDragon, "持续升龙变成了普攻");
+            Check(skillModel.ActiveSkillId.Value == SkillId.RisingDragon, "持续升龙变成了普攻");
             Input.ActionRelease(InputSystem.Interact);
             Input.ActionRelease(InputSystem.Attack);
-            await WaitUntilAsync(() => skillModel.BodySkillData == null && hero.OnFloor, "连续升龙没有正常落地", 4000);
+            await WaitUntilAsync(() => skillModel.ActiveSkillId == null && hero.OnFloor, "连续升龙没有正常落地", 4000);
             await WaitFramesAsync(24);
 
             // 地面双击 D 后 J，走正式奔跑攻击分支。
@@ -309,7 +351,7 @@ public sealed partial class UiSmokeScenario
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             int hp = m_Monster.Hp;
-            await CastAsync(SkillId.FireDemonSlash, [InputSystem.Skill3], "skill_fire_combo", SkillEffectId.FireDemonCombo);
+            await CastAsync(SkillId.FireDemonSlash, [InputSystem.Skill3], "skill_fire_combo", SkillHitId.FireDemonCombo);
             Check(m_Monster.Hp < hp, "九连斩未通过真实判定伤害目标");
             ReleaseTestEntity(m_Monster);
             m_Monster = null;
@@ -329,19 +371,19 @@ public sealed partial class UiSmokeScenario
             flow.GetSystem<ProfileSystem>().RestoreCheckpoint(snapshot);
         }
 
-        async Task CastAsync(SkillId id, string[] inputs, string capture, SkillEffectId expectedEffect = SkillEffectId.None)
+        async Task CastAsync(SkillId id, string[] inputs, string capture, SkillHitId expectedEffect = SkillHitId.None)
         {
             attributes.Mp.Value = attributes.MaxMp.Value;
             int mana = attributes.Mp.Value;
             foreach (string action in inputs)
                 Input.ActionPress(action);
-            await WaitUntilAsync(() => skillModel.BodySkillData?.Id == id, $"输入没有释放 {id}", 2000);
+            await WaitUntilAsync(() => skillModel.ActiveSkillId == id, $"输入没有释放 {id}", 2000);
             foreach (string action in inputs)
                 Input.ActionRelease(action);
             Check(attributes.Mp.Value == mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(id).ManaCost, $"{id} 扣蓝不正确");
-            if (expectedEffect != SkillEffectId.None)
+            if (expectedEffect != SkillHitId.None)
                 await WaitUntilAsync(() => SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects")
-                    .Any(x => SmokeInspection.ReadField<SkillEffectConfig>(x, "m_Definition")?.Id == expectedEffect), "火魔斩没有创建九连特效");
+                    .Any(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)expectedEffect), "火魔斩没有创建九连特效");
             else
                 await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(.15), SceneTreeTimer.SignalName.Timeout);
             await CaptureCombatAsync(capture);
@@ -350,11 +392,11 @@ public sealed partial class UiSmokeScenario
                 Input.ActionPress(InputSystem.Attack);
                 Input.ActionPress(InputSystem.Skill1);
             }
-            await WaitUntilAsync(() => skillModel.BodySkillData == null, $"{id} 没有正确收招", 8000);
+            await WaitUntilAsync(() => skillModel.ActiveSkillId == null, $"{id} 没有正确收招", 8000);
             if (id == SkillId.FireDemonSlash)
             {
                 await WaitFramesAsync(2);
-                Check(skillModel.BodySkillData == null && hero.AttackSegment < 0, "火魔斩禁用输入期间的按键被排队到收招后");
+                Check(skillModel.ActiveSkillId == null && hero.AttackSegment < 0, "火魔斩禁用输入期间的按键被排队到收招后");
                 Input.ActionRelease(InputSystem.Attack);
                 Input.ActionRelease(InputSystem.Skill1);
             }
@@ -390,5 +432,68 @@ public sealed partial class UiSmokeScenario
             }
         }
         GD.Print("SMOKE-UI: 七段原版技能音效经 GGF SFX 代理播放与停止通过");
+    }
+
+    /// <summary>通过原生方法键验证连续受击、死亡语音及技能中断后的资源复位，不增加生产观测接口。</summary>
+    /// <returns>声音已实际加载且复位断言完成的任务。</returns>
+    private async Task CheckActorAnimationEventsAsync()
+    {
+        var hero = FindHero();
+        hero.SetPhysicsProcess(false);
+        var player = hero.GetNode<AnimationPlayer>("m_AnimPlayer");
+        var sounds = new Dictionary<string, int>();
+        var serials = new List<int>();
+        string hurt = GF.Fsm.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)SoundId.WukongHurt).Path;
+        string death = GF.Fsm.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)SoundId.WukongDeath).Path;
+        void OnSoundPlayed(object sender, GameFramework.Event.GameEventArgs args)
+        {
+            var sound = (GodotGameFramework.Sound.PlaySoundSuccessEventArgs)args;
+            if (sound.SoundAssetName != hurt && sound.SoundAssetName != death)
+                return;
+            sounds[sound.SoundAssetName] = sounds.GetValueOrDefault(sound.SoundAssetName) + 1;
+            serials.Add(sound.SerialId);
+        }
+        GF.Event.Subscribe(GodotGameFramework.Sound.PlaySoundSuccessEventArgs.EventId, OnSoundPlayed);
+        try
+        {
+            player.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual;
+            player.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
+            foreach (var (animation, path, expected) in new[]
+            {
+                (HeroAnims.Hurt, hurt, 1), (HeroAnims.Hurt, hurt, 2), (HeroAnims.Death, death, 1)
+            })
+            {
+                hero.RestartAnim(animation);
+                player.Advance(0);
+                await WaitUntilAsync(() => sounds.GetValueOrDefault(path) == expected, "受击/死亡原生声音键没有播放");
+                player.Advance(.1);
+                await WaitFramesAsync(3);
+                Check(sounds[path] == expected, "同一动画的声音键重复播放");
+            }
+
+            // 身体不处于技能状态，具名规则入口应无副作用；RESET 仍须恢复所有可见值。
+            var actor = (GameLogic.Skills.ISkillActor)hero;
+            actor.BeginSkillAnimation("skills/flame_storm");
+            actor.AdvanceSkillAnimation(.2f);
+            actor.EndSkillAnimation();
+            var effect = hero.GetNode<AnimatedSprite2D>("m_EffectRoot/m_Effect");
+            Check(effect.Animation == "empty" && effect.Frame == 0 && effect.Scale == Vector2.One &&
+                hero.GetNode<CollisionShape2D>("m_HitBoxRoot/m_HitBox/CollisionShape2D").Disabled,
+                "中断技能后 RESET 没有恢复光效或判定");
+            hero.PlayAnim(HeroAnims.Idle);
+            Check(player.IsPlaying() && player.CurrentAnimation == HeroAnims.Idle,
+                "RESET 后普通动画请求仍被旧缓存吞掉");
+            Check(sounds.GetValueOrDefault(hurt) == 2 && sounds.GetValueOrDefault(death) == 1 && !hero.Dead,
+                "动画声音重复，或单独播放死亡视觉改变了业务事实");
+            GD.Print("SMOKE-ANIMATION-EVENTS PASS: repeated hurt, death sound, interrupted RESET and ordinary animation resume.");
+        }
+        finally
+        {
+            GF.Event.Unsubscribe(GodotGameFramework.Sound.PlaySoundSuccessEventArgs.EventId, OnSoundPlayed);
+            foreach (int serial in serials)
+                GF.Sound.StopSound(serial);
+            player.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Physics;
+            hero.RestartAnim(HeroAnims.Idle);
+        }
     }
 }

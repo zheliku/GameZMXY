@@ -1,6 +1,5 @@
 using System;
-using System.Collections.Generic;
-using GameConfig.Skills;
+using GameConfig.Battle;
 using GameConfig.Sound;
 using GameFramework;
 using GameLogic.Architecture;
@@ -8,176 +7,154 @@ using GameLogic.Audio;
 using GameLogic.Battle;
 using GameLogic.Battle.Attacks;
 using GameLogic.Battle.Damage;
-using GameLogic.Config;
 using GameLogic.Entity;
-using GameLogic.Skills;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.NodePool;
 
 namespace GameLogic.Heroes.Effects;
 
-/// <summary>独立于角色身体播放的池化技能特效；拥有自己的攻击编号、总命中预算和局部时间轴。</summary>
+/// <summary>独立池化技能效果：原生动画拥有表现及方法键，节点拥有攻击包和命中预算。</summary>
 public partial class SkillEffectNode : Node2D, IPoolable, IController
 {
-    // ---- 字段 ----
+    private const string DefaultAnimation = "play"; // 独立特效场景的普通动画约定。
+    private const string MusouAnimation = "musou"; // 可选无双动画变体。
 
-    private AnimationPlayer m_Player; // 外置动画只驱动显示及几何，规则在技能表。
-    private Area2D m_HitBox; // 本特效独立的判定区。
-    private CollisionShape2D m_Shape; // 当前动画帧写入的判定开关。
-    private SkillEffectConfig m_Definition; // 借用本次特效定义。
-    private SkillHitConfig m_Hit; // 借用伤害定义；无伤害特效为空。
-    private IReadOnlyList<SkillTimelineConfig> m_Events; // 启动期建立的局部事件序列。
-    private CombatantAttributes m_Attacker; // 特效生成时冻结的英雄属性。
-    private AttackData m_AttackData; // 当前攻击编号对应的池化攻击包。
-    private SkillData m_SkillData; // 验证效果回调仍属于同一次执行。
-    private Action m_Completed; // 可选的本次效果完成通知，不保存角色节点。
-    private Action<SkillEffectNode> m_Finished; // 英雄释放本次表现所有权。
-    private int m_Direction, m_NextEvent, m_RemainingHits; // 朝向、下一个事件、整个特效的剩余命中数。
-    private float m_PowerMultiplier; // 生成时的无双倍率。
-    private double m_Age, m_RepeatAt; // 局部游戏秒数及下一次可更新攻击编号的时刻。
+    [Export] private AnimationPlayer m_Player; // 原生动画是唯一的局部播放时钟。
+    [Export] private Area2D m_HitBox; // 本效果独立判定区。
+    [Export] private CollisionShape2D m_Shape; // 几何及启闭均由动画驱动。
+    private AttackConfig m_Hit; // 只借用统一数值表；纯视觉效果为空。
+    private CombatantAttributes m_Attacker; // 效果生成时冻结的英雄属性。
+    private AttackData m_AttackData; // 节点拥有并按段更新的攻击包。
+    private Action m_Completed; // 本次效果完成通知。
+    private Action<SkillEffectNode> m_Finished; // 所属英雄负责归还节点池。
+    private Vector2 m_SourceScale; // 场景原始镜像，不从表复制表现参数。
+    private int m_Direction, m_RemainingHits, m_Power; // 出招朝向、总预算、冻结威力。
+    private float? m_KnockbackOriginX; // 具体招式提供的击退中心。
+    private double m_RepeatAt; // 依原生动画位置计算的下一次重复判定时刻。
+    private bool m_Active, m_FinishRequested; // 防止方法轨道中回池或重复完成。
 
-    // ---- 节点生命周期 ----
-
-    /// <summary>收集固定场景引用并只连接一次判定回调。</summary>
+    /// <summary>使用场景导出绑定，声音与结束回调只连接一次。</summary>
     public override void _Ready()
     {
-        m_Player = GetNode<AnimationPlayer>("AnimationPlayer");
-        m_HitBox = GetNode<Area2D>("HitBox");
-        m_Shape = GetNode<CollisionShape2D>("HitBox/CollisionShape2D");
+        m_SourceScale = Scale;
         m_Player.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual;
+        m_Player.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
+        m_Player.AnimationFinished += OnAnimationFinished;
         m_HitBox.AreaEntered += OnAreaEntered;
         SetPhysicsProcess(false);
     }
 
-    /// <summary>按游戏时间更新动画、攻击编号和命中；暂停时不推进。</summary>
-    /// <param name="delta">物理游戏秒数。</param>
+    /// <summary>推进原生动画，结束后再回池；暂停不推进。</summary>
+    /// <param name="delta">游戏秒数。</param>
     public override void _PhysicsProcess(double delta)
     {
-        if (delta <= 0 || m_Definition == null)
+        if (!m_Active || delta <= 0)
             return;
         if (m_Hit != null && m_RemainingHits <= 0)
         {
             Finish();
             return;
         }
-
-        m_Age += delta;
-        while (m_NextEvent < m_Events.Count && m_Events[m_NextEvent].AtSeconds <= m_Age + .0001)
-        {
-            var entry = m_Events[m_NextEvent++];
-            if (entry.Kind == SkillTimelineKind.NewAttackId)
-                NewAttack();
-            else if (entry.Kind is SkillTimelineKind.CompleteEffect or SkillTimelineKind.FinishLandingEffect)
-            {
-                Finish();
-                return;
-            }
-        }
-
-        if (m_Age >= m_Player.GetAnimation("play").Length)
+        m_Player.Advance(delta);
+        if (m_FinishRequested)
         {
             Finish();
             return;
         }
-
-        m_Player.Seek(m_Age, true);
-        if (m_Hit != null && m_Age >= m_RepeatAt)
-            NewAttack();
-        // 新编号需要处理仍然重叠的受击盒，AreaEntered 只报告初次进入。
+        if (m_Hit != null && m_Player.CurrentAnimationPosition >= m_RepeatAt)
+            NewAttackAnimEvent();
         if (!m_Shape.Disabled && m_RemainingHits > 0)
             foreach (var area in m_HitBox.GetOverlappingAreas())
                 OnAreaEntered(area);
     }
 
-    // ---- 接口实现 ----
-
-    /// <summary>借用当前流程拥有的架构。</summary>
-    /// <returns>流程 FSM 的架构视图。</returns>
+    /// <summary>借用当前 GGF 流程拥有的架构。</summary>
+    /// <returns>当前架构。</returns>
     IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
 
-    /// <summary>取池后等待正式参数。</summary>
+    /// <summary>取池后等待本次参数。</summary>
     public void OnGet() => SetPhysicsProcess(false);
 
-    /// <summary>回池清理攻击包、回调和执行引用，防止复用串招。</summary>
+    /// <summary>回收攻击包并清除本次引用，复用不串技能或回调。</summary>
     public void OnRelease()
     {
         SetPhysicsProcess(false);
         if (m_AttackData != null)
             ReferencePool.Release(m_AttackData);
         m_AttackData = null;
-        m_Definition = null;
         m_Hit = null;
-        m_SkillData = null;
-        m_Events = null;
         m_Finished = null;
         m_Completed = null;
+        m_KnockbackOriginX = null;
+        m_Active = m_FinishRequested = false;
         m_Player.Stop();
         m_Shape.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
         Visible = false;
     }
 
-    // ---- 业务方法 ----
-
-    /// <summary>显示一份新的特效；世界位置固定，不跟随角色后续移动。</summary>
-    /// <param name="definition">特效定义。</param>
-    /// <param name="data">当前施放身份。</param>
+    /// <summary>显示效果，位置固定；大小、偏移与正反朝向留在场景和动画。</summary>
+    /// <param name="hit">可选伤害数值。</param>
     /// <param name="position">世界位置。</param>
-    /// <param name="direction">英雄朝向。</param>
-    /// <param name="attacker">英雄属性快照。</param>
-    /// <param name="powerMultiplier">无双倍率。</param>
-    /// <param name="finished">完成后的回收回调。</param>
-    /// <param name="completed">本次规则效果的完成通知。</param>
-    public void Show(SkillEffectConfig definition, SkillData data, Vector2 position, int direction,
-        CombatantAttributes attacker, float powerMultiplier, Action<SkillEffectNode> finished, Action completed = null)
+    /// <param name="direction">出招朝向。</param>
+    /// <param name="attacker">攻击者快照。</param>
+    /// <param name="power">按具体招式取整并应用无双后的威力。</param>
+    /// <param name="musou">本次是否使用无双视觉变体。</param>
+    /// <param name="finished">回收通知。</param>
+    /// <param name="completed">效果完成通知。</param>
+    /// <param name="knockbackOriginX">具体招式指定的击退中心。</param>
+    public void Show(AttackConfig hit, Vector2 position, int direction,
+        CombatantAttributes attacker, int power, bool musou, Action<SkillEffectNode> finished,
+        Action completed = null, float? knockbackOriginX = null)
     {
-        m_Definition = definition;
-        m_SkillData = data;
+        m_Hit = hit;
         m_Attacker = attacker;
         m_Direction = direction;
-        m_PowerMultiplier = powerMultiplier;
+        m_Power = power;
         m_Finished = finished;
         m_Completed = completed;
-        m_Events = this.GetModel<ConfigurationModel>().GetSkillTimeline(definition.SkillId, definition.Id);
-        m_Hit = definition.HitId == SkillHitId.None
-            ? null
-            : this.GetModel<ConfigurationModel>().Tables.TbSkillHitConfig.Get(definition.HitId);
-        m_RemainingHits = m_Hit?.HitBudget ?? 0;
-        m_Age = m_NextEvent = 0;
+        m_KnockbackOriginX = knockbackOriginX;
+        m_RemainingHits = hit?.HitBudget ?? 0;
         m_RepeatAt = double.PositiveInfinity;
-        Vector2 scale = powerMultiplier > 1 ? definition.MusouScale : definition.Scale;
-        // 源素材朝左；特效按表指定与角色同向或反向镜像，位移也一同镜像。
-        scale.X *= (direction > 0 ? -1 : 1) * (definition.Mirror == SkillEffectMirror.Actor ? 1 : -1);
-        Scale = scale;
-        GlobalPosition = position + new Vector2(definition.SpawnOffset.X * direction, definition.SpawnOffset.Y);
+        m_FinishRequested = false;
+        m_Active = true;
+        Scale = new Vector2(m_SourceScale.X * (direction > 0 ? -1 : 1), m_SourceScale.Y);
+        GlobalPosition = position;
+        if (hit != null)
+            NewAttackAnimEvent();
         m_Player.Stop();
-        m_Player.Play("play");
-        m_Player.Seek(0, true);
-        if (m_Hit != null)
-            NewAttack();
+        m_Player.Play(musou && m_Player.HasAnimation(MusouAnimation) ? MusouAnimation : DefaultAnimation);
+        m_Player.Advance(0);
         Visible = true;
         SetPhysicsProcess(true);
-        GF.Sound.PlayConfigured(definition.SoundId);
     }
 
-    /// <summary>创建独立攻击编号；不重置整个特效的命中预算。</summary>
-    private void NewAttack()
+    /// <summary>动画方法键创建新攻击包，不重置整段效果的预算。</summary>
+    private void NewAttackAnimEvent()
     {
         if (m_AttackData != null)
             ReferencePool.Release(m_AttackData);
-        m_AttackData = m_Hit == null
-            ? null
-            : AttackData.Create((int)m_Hit.Id, m_Attacker,
-                SkillSystem.CalculatePower(m_Hit, m_Attacker.Power, m_PowerMultiplier), m_Hit.DamageKind,
-                m_Hit.Knockback, m_Direction, 0, SoundId.None);
+        m_AttackData = m_Hit == null ? null : AttackData.Create(m_Hit.Id, m_Attacker, m_Power,
+            m_Hit.DamageKind, m_Hit.Knockback, m_Direction, m_Hit.HitProtect, SoundId.None, m_KnockbackOriginX);
         m_RepeatAt = double.PositiveInfinity;
     }
 
-    /// <summary>按当前编号去重并累计整段特效的有效命中。</summary>
+    /// <summary>原生声音键仍经过 GGF 的统一音频管理。</summary>
+    /// <param name="id">已登记的声音编号。</param>
+    private void PlaySoundAnimEvent(SoundId id) => GF.Sound.PlayConfigured(id);
+
+    /// <summary>原生方法键请求结束，待播放器返回后回池。</summary>
+    private void FinishAnimationAnimEvent() => m_FinishRequested = true;
+
+    /// <summary>纯视觉效果在真实动画结束时请求回池。</summary>
+    /// <param name="animation">刚结束的动画。</param>
+    private void OnAnimationFinished(StringName animation) => m_FinishRequested = true;
+
+    /// <summary>同一攻击包对同一目标去重，成功命中才消耗总预算。</summary>
     /// <param name="area">进入或持续重叠的区域。</param>
     private void OnAreaEntered(Area2D area)
     {
-        if (m_AttackData == null || m_RemainingHits <= 0 || m_Shape.Disabled ||
+        if (!m_Active || m_AttackData == null || m_RemainingHits <= 0 || m_Shape.Disabled ||
             area is not HurtBoxNode { OwnerEntity: { IsAlive: true, Side: CombatSide.Monster } target } ||
             !m_AttackData.TryRegisterHit(target.GetInstanceId()))
             return;
@@ -185,15 +162,16 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
         if (result.IsMiss)
             return;
         m_RemainingHits--;
-        m_RepeatAt = Math.Min(m_RepeatAt, m_Age + m_Hit.RepeatIntervalSeconds);
+        if (m_Hit.RepeatIntervalSeconds > 0)
+            m_RepeatAt = Math.Min(m_RepeatAt, m_Player.CurrentAnimationPosition + m_Hit.RepeatIntervalSeconds);
         this.GetSystem<HeroSystem>().RecordHit(result.Damage, m_Attacker.Power);
     }
 
-    /// <summary>完成后由英雄统一移除并归还对象池。</summary>
+    /// <summary>效果完成后通知所属状态并回池；是否仍能改变状态由接收方判断。</summary>
     private void Finish()
     {
-        if (this.GetSystem<SkillSystem>().IsActive(m_SkillData))
-            m_Completed?.Invoke();
+        m_Active = false;
+        m_Completed?.Invoke();
         m_Finished(this);
     }
 }

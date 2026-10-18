@@ -34,15 +34,21 @@ public partial class BattleForm : IController
     /// <summary>由所属流程处理 SkillsRequested；参数为本次窗口编号。</summary>
     public event Action<int> SkillsRequested;
 
-    /// <summary>战斗界面通过统一动作请求背包，暂停或覆盖时不响应。</summary>
+    /// <summary>战斗界面通过输入映射请求背包或技能，暂停或覆盖时不响应。</summary>
     /// <param name="inputEvent">输入映射处理的事件。</param>
     public override void _UnhandledInput(InputEvent inputEvent)
     {
-        if (m_FormData == null || !Visible || GF.Base.IsGamePaused ||
-            !inputEvent.IsActionPressed(Input.InputSystem.InventoryToggle))
+        if (m_FormData == null || !Visible || GF.Base.IsGamePaused)
+            return;
+        bool inventory = inputEvent.IsActionPressed(Input.InputSystem.InventoryToggle);
+        bool skills = inputEvent.IsActionPressed(Input.InputSystem.SkillToggle);
+        if (!inventory && !skills)
             return;
         GetViewport().SetInputAsHandled();
-        OnInventoryClicked();
+        if (inventory)
+            OnInventoryClicked();
+        else
+            OnSkillsClicked();
     }
 
     /// <summary>初始化框架字段；业务订阅只在 OnOpen 建立。</summary>

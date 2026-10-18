@@ -3,7 +3,9 @@
 [ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_frames.tres" id="frames"]
 [ext_resource type="Script" uid="uid://bymxyt55xb04o" path="res://TheGame/GameScripts/UI/BattleForm/Components/MusouActivationNode.cs" id="script"]
 
-[node name="MusouActivation" type="Control" unique_id=109249331 node_paths=PackedStringArray("m_Animation")]
+[ext_resource type="AnimationLibrary" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_library.tres" id="library"]
+
+[node name="MusouActivation" type="Control" unique_id=109249331 node_paths=PackedStringArray("m_Animation", "m_Player")]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -13,6 +15,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("script")
 m_Animation = NodePath("Animation")
+m_Player = NodePath("AnimationPlayer")
 
 [node name="Animation" type="AnimatedSprite2D" parent="." unique_id=1962252916]
 position = Vector2(470, 295)
@@ -20,3 +23,7 @@ sprite_frames = ExtResource("frames")
 animation = &"musou_activation"
 frame = 23
 frame_progress = 1.0
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+callback_mode_process = 2
+libraries/ = ExtResource("library")

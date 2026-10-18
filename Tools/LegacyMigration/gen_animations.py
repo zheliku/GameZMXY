@@ -1063,7 +1063,7 @@ def gen_wukong_effect():
 #     状态自己计时；音效由状态钩子触发（音源查表）；将来中途时点用 Godot 4.3+ 动画标记。
 #     旧 `.`（RolePlayer）的 add_music 方法轨道不再迁移（音源在 SoundConfig/AttackConfig，
 #     C# 按当前动画名查表）；旧项目其他方法轨道（出招生命周期）也不迁移。
-#   - 消费方：Entitys/WukongEntity.tscn 的 m_AnimPlayer（libraries/=本文件）。
+#   - 消费方：Entitys/wukong_entity.tscn 的 m_AnimPlayer（libraries/=本文件）。
 # --------------------------------------------------------------------------
 
 WUKONG_LIB_OUT = "res://TheGame/Entitys/Animations/wukong_anim_library.tres"
@@ -1115,7 +1115,7 @@ def _fx_tracks_generic(chunk, segs):
 
 
 def _method_track(chunk, segs, new_name):
-    """旧 `.`（RolePlayer）方法轨道 → 已不迁移（2026-10-01，A 方案：动画纯数据，无方法轨道）。
+    """旧 `.`（RolePlayer）方法名不直接移植；新宿主使用人工编排的 AnimEvent 方法键。
     保留函数只为了在遇到旧方法轨道时打印说明。"""
     for m in re.finditer(r'tracks/(\d+)/path = NodePath\("\."\)', chunk):
         n = m.group(1)
@@ -1131,7 +1131,7 @@ def _method_track(chunk, segs, new_name):
             continue
         methods = re.findall(r'"method": &"([^"]+)"', km.group(1))
         if methods:
-            print(f"  [skip] {new_name}: 旧方法轨道 {methods[0]}() 不迁移（A 方案：动画纯数据）")
+            print(f"  [skip] {new_name}: 旧方法轨道 {methods[0]}() 不迁移（须在新宿主人工编排 AnimEvent）")
             return True
     return False
 
@@ -1164,7 +1164,7 @@ WUKONG_RECOVERY_EXTRA = {"attack_4": 5.0 / 60.0}
 
 
 def build_wukong_library():
-    """合并版 AnimationLibrary：身体帧 + 武器帧 + 特效轨道 + 判定盒值轨道（纯表现数据，无方法轨道）。
+    """合并版 AnimationLibrary：身体帧 + 武器帧 + 特效轨道 + 判定盒值轨道（一次性初始导入，不能覆盖后续人工编排）。
 
     返回 (anims, shape_res)：shape_res 是判定盒子资源 id → 尺寸（emit 时声明进库文件）。
     """

@@ -22,7 +22,6 @@ public sealed partial class PickupConfig : Luban.BeanBase
         Effect = (Loot.PickupEffect)_buf.ReadInt();
         RestoreAmount = _buf.ReadInt();
         DropChance = _buf.ReadFloat();
-        IconPath = _buf.ReadString();
     }
 
     public static PickupConfig DeserializePickupConfig(ByteBuf _buf)
@@ -54,10 +53,6 @@ public sealed partial class PickupConfig : Luban.BeanBase
     /// 互斥掉落概率
     /// </summary>
     public readonly float DropChance;
-    /// <summary>
-    /// 图标路径
-    /// </summary>
-    public readonly string IconPath;
    
     public const int __ID__ = -327895452;
     public override int GetTypeId() => __ID__;
@@ -75,7 +70,6 @@ public sealed partial class PickupConfig : Luban.BeanBase
         + "Effect:" + Effect + ","
         + "RestoreAmount:" + RestoreAmount + ","
         + "DropChance:" + DropChance + ","
-        + "IconPath:" + IconPath + ","
         + "}";
     }
 }

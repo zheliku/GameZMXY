@@ -24,9 +24,9 @@ public sealed partial class SkillConfig : Luban.BeanBase
         Description = _buf.ReadString();
         LearnSoul = _buf.ReadInt();
         ManaCost = _buf.ReadInt();
-        KeyHint = _buf.ReadString();
-        UnlearnedIconPath = _buf.ReadString();
-        LearnedIconPath = _buf.ReadString();
+        InvincibleDurationSeconds = _buf.ReadFloat();
+        NormalAttackBlockSeconds = _buf.ReadFloat();
+        CancelNormalAttackFrameRatio = _buf.ReadFloat();
     }
 
     public static SkillConfig DeserializeSkillConfig(ByteBuf _buf)
@@ -67,17 +67,17 @@ public sealed partial class SkillConfig : Luban.BeanBase
     /// </summary>
     public readonly int ManaCost;
     /// <summary>
-    /// 原版单人1P默认按键提示
+    /// 技能无敌持续秒数；开始时点由具体动画调用
     /// </summary>
-    public readonly string KeyHint;
+    public readonly float InvincibleDurationSeconds;
     /// <summary>
-    /// 未学习灰色图标，含学习字样
+    /// 激活后阻止普攻的秒数；0 不重设
     /// </summary>
-    public readonly string UnlearnedIconPath;
+    public readonly float NormalAttackBlockSeconds;
     /// <summary>
-    /// 已学习彩色图标
+    /// 允许取消普攻的进度下限；0 不允许
     /// </summary>
-    public readonly string LearnedIconPath;
+    public readonly float CancelNormalAttackFrameRatio;
    
     public const int __ID__ = 2109194567;
     public override int GetTypeId() => __ID__;
@@ -97,9 +97,9 @@ public sealed partial class SkillConfig : Luban.BeanBase
         + "Description:" + Description + ","
         + "LearnSoul:" + LearnSoul + ","
         + "ManaCost:" + ManaCost + ","
-        + "KeyHint:" + KeyHint + ","
-        + "UnlearnedIconPath:" + UnlearnedIconPath + ","
-        + "LearnedIconPath:" + LearnedIconPath + ","
+        + "InvincibleDurationSeconds:" + InvincibleDurationSeconds + ","
+        + "NormalAttackBlockSeconds:" + NormalAttackBlockSeconds + ","
+        + "CancelNormalAttackFrameRatio:" + CancelNormalAttackFrameRatio + ","
         + "}";
     }
 }

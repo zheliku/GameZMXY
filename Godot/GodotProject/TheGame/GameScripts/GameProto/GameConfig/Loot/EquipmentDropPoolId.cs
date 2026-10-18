@@ -14,10 +14,6 @@ namespace GameConfig.Loot
     public enum EquipmentDropPoolId
     {
         /// <summary>
-        /// 继承怪物
-        /// </summary>
-        UseMonster = -1,
-        /// <summary>
         /// 不掉落
         /// </summary>
         None = 0,

@@ -147,7 +147,7 @@ public partial class InventoryForm : IController
     /// <param name="inputEvent">已映射的输入事件。</param>
     public override void _Input(InputEvent inputEvent)
     {
-        if (m_InventoryData != null && Visible && m_SaleConfirmation.Visible && inputEvent.IsActionPressed("ui_cancel"))
+        if (m_InventoryData != null && Visible && m_SaleConfirmation.Visible && inputEvent.IsActionPressed(GameLogic.Input.InputSystem.UiCancel))
         {
             GetViewport().SetInputAsHandled();
             m_SaleConfirmation.Cancel();

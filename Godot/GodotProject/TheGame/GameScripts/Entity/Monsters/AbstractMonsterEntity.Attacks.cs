@@ -17,11 +17,12 @@ namespace GameLogic.Monsters
         /// <returns>AI 抽选与释放判定使用的规格。</returns>
         protected virtual MonsterAttackParams BuildAttackParams(int index, AttackConfig attack)
         {
-            Rect2 reach = ReadAttackReach(attack.Animation);
+            string animation = AttackAnimations[index];
+            Rect2 reach = ReadAttackReach(animation);
             if (attack.AiWeight > 0 && !reach.HasArea() && attack.AiRange.Y <= 0f)
             {
                 Log.Warning("[AbstractMonsterEntity] 招式 {0}（动画 {1}）无有效判定范围且 AiRange 为 0，AI 不会使用这招",
-                    attack.Id, attack.Animation);
+                    attack.Id, animation);
             }
 
             return new MonsterAttackParams
@@ -36,7 +37,7 @@ namespace GameLogic.Monsters
             };
         }
 
-        /// <summary>提交出招：转向目标、装填攻击包并播放起手音。</summary>
+        /// <summary>提交出招：转向目标并装填攻击包，声音时点由动画方法轨道控制。</summary>
         /// <param name="index">本怪物攻击配置数组中的下标。</param>
         private void BeginConfiguredAttack(int index)
         {
@@ -45,7 +46,6 @@ namespace GameLogic.Monsters
             this.GetSystem<MonsterAiSystem>().MarkUsed(AiData, BodyParams, index, GD.Randf);
             AttackSegment = index;
             PrepareAttack(OwnAttacks[index], m_AttackMultiplier);
-            PlaySound(OwnAttacks[index].SoundId);
             Log.Debug("[Monster] {0} 出招 段{1}", Id, index + 1);
         }
 

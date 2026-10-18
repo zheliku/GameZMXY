@@ -61,7 +61,7 @@ func _run() -> void:
     background.size = viewport.size
     background.color = Color(0.18, 0.24, 0.27)
     viewport.add_child(background)
-    var hero = load("res://TheGame/Entitys/WukongEntity.tscn").instantiate()
+    var hero = load("res://TheGame/Entitys/wukong_entity.tscn").instantiate()
     hero.process_mode = Node.PROCESS_MODE_DISABLED
     hero.position = Vector2(400, 210)
     viewport.add_child(hero)
@@ -102,7 +102,9 @@ func _run() -> void:
                     var count := int(action.count)
                     _check(abs(animation.length-count/24.0) < 0.000001, "Incorrect duration: " + name)
                     for index in range(animation.get_track_count()):
-                        _check(animation.track_get_type(index) == Animation.TYPE_VALUE, "Gameplay method in skill animation")
+                        if animation.track_get_type(index) == Animation.TYPE_METHOD:
+                            for key in animation.track_get_key_count(index):
+                                _check(String(animation.method_track_get_name(index, key)).ends_with("AnimEvent"), "Animation event name differs")
                     for property in ["m_Body:frame", "m_Weapon:frame", "m_EffectRoot/m_Effect:frame"]:
                         var index := animation.find_track(NodePath(property), Animation.TYPE_VALUE)
                         _check(index >= 0 and animation.track_get_key_count(index) == count, "Missing original frames: " + name)
@@ -161,8 +163,8 @@ func _run() -> void:
         scene.position = Vector2(400, 270)
         viewport.add_child(scene)
         var fx_player: AnimationPlayer = scene.get_node("AnimationPlayer")
-        var sprite: AnimatedSprite2D = scene.get_node("Sprite")
-        var fx_hit: CollisionShape2D = scene.get_node("HitBox/CollisionShape2D")
+        var sprite: AnimatedSprite2D = scene.get_node("Visual/Sprite")
+        var fx_hit: CollisionShape2D = scene.get_node("Visual/HitBox/CollisionShape2D")
         var fx_area: Area2D = fx_hit.get_parent()
         fx_area.disable_mode = CollisionObject2D.DISABLE_MODE_KEEP_ACTIVE
         _check(sprite.offset.distance_to(Vector2(entry.offset[0], entry.offset[1])) < .00001, "Detached effect origin differs")

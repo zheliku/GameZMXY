@@ -5,7 +5,7 @@ using GameFramework.Fsm;
 namespace GameLogic.Monsters.Body
 {
     /// <summary>
-    /// 死亡（终态）：进入时由宿主做副作用（<see cref="IActorBody.OnDied"/>：关受击盒、播死亡音、广播
+    /// 死亡（终态）：进入时由宿主做副作用（<see cref="IMonsterBody.BeginDeath"/>：关受击盒、广播
     /// MonsterDiedEventArgs），作废出招请求，从头播 death 动画、定身；**death 动画时长**（OnInit 读进 Params，
     /// 状态计时）走完请求回收一次。池复用由 OnShow 重建整台状态机。
     /// </summary>
@@ -24,7 +24,7 @@ namespace GameLogic.Monsters.Body
             body.MoveIntent = 0;
             body.TakeAttackRequest();
             body.TakePendingHurt();
-            body.OnDied();
+            body.BeginDeath();
             m_Left = body.Params.DeathTime;
             m_Recycled = false;
             body.RestartAnim(MonsterAnims.Death);

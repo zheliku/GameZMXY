@@ -188,7 +188,11 @@ public sealed class EquipmentTests
         Assert.Equal(EquipmentId.None, new LootSystem(TestTables.Architecture).RollGround(.15f, pool.Id, noGear.Dequeue).Equipment);
         var boss = TestTables.Tables.TbLevelConfig.DataList.SelectMany(x => x.Stages).SelectMany(x => x.Recipes)
             .Single(x => x.ExperienceOverride == 25);
-        Assert.Equal(EquipmentDropPoolId.None, boss.EquipmentDropPoolOverride);
+        var monster = TestTables.Tables.TbMonsterConfig.DataList.Single(x => x.EntityId == boss.MonsterEntityId);
+        Assert.Equal(EquipmentDropPoolId.None, monster.EquipmentDropPoolId);
+        Assert.Equal(EquipmentId.None,
+            new LootSystem(TestTables.Architecture).RollGround(monster.EquipmentDropChance,
+                monster.EquipmentDropPoolId, () => 0f).Equipment);
     }
 
     /// <summary>满包和重复领取没有副作用，坏快照不能覆盖现有背包。</summary>

@@ -268,23 +268,43 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(0, r.Damage);
         }
 
-        /// <summary>验证击退方向及英雄、怪物各自的缩放系数。</summary>
+        /// <summary>击退数值已经使用 px/s，结算只处理朝向，不重复乘源帧率。</summary>
         [Fact]
-        public void Knockback_DirectionAndPerSideScale()
+        public void Knockback_AppliesDirectionWithoutRescaling()
         {
-            AttackData data = AttackData.Create(1004, Hero(), 10f, DamageKind.Physics, new Vector2(6, -5), -1, 0,
+            AttackData data = AttackData.Create(1004, Hero(), 10f, DamageKind.Physics, new Vector2(144, -120), -1, 0,
                 SoundId.None);
             try
             {
-                // 怪物被击退：X × 30、Y × 15，方向随出招朝左
-                Assert.Equal(new Vector2(-180, -75), new CombatSystem(BattleArchitecture.Instance).KnockbackVelocity(data, CombatSide.Monster));
-                // 英雄被击退：X × 25
-                Assert.Equal(new Vector2(-150, -75), new CombatSystem(BattleArchitecture.Instance).KnockbackVelocity(data, CombatSide.Hero));
+                Assert.Equal(new Vector2(-144, -120), new CombatSystem(BattleArchitecture.Instance).KnockbackVelocity(data));
             }
             finally
             {
                 ReferencePool.Release(data);
             }
+        }
+
+        /// <summary>中心型攻击按目标所在一侧击退，不受角色朝向影响；中心相等时向右。</summary>
+        /// <param name="targetX">受击方世界横坐标。</param>
+        /// <param name="expectedX">应得到的世界横向速度。</param>
+        [Theory]
+        [InlineData(150, -480)]
+        [InlineData(200, 480)]
+        [InlineData(250, 480)]
+        public void Knockback_FromCenter(float targetX, float expectedX)
+        {
+            var data = AttackData.Create(0, Hero(), 10f, DamageKind.Magic, new Vector2(480, -48), -1, 0,
+                SoundId.None, 200f);
+            try
+            {
+                Assert.Equal(new Vector2(expectedX, -48), new CombatSystem(BattleArchitecture.Instance)
+                    .KnockbackVelocity(data, targetX));
+            }
+            finally
+            {
+                ReferencePool.Release(data);
+            }
+            Assert.Null(data.KnockbackOriginX);
         }
 
         /// <summary>验证攻击包每目标只命中一次且归还后清除命中记录。</summary>

@@ -17,6 +17,7 @@ public partial class InventoryBagPanel : Control, IController
 {
     private const int PageSize = 25; // 每页固定 5×5 格。
     private const int MaximumPages = 3; // 当前场景支持的装备页数。
+    [Export] private ItemAppearancesResource m_Appearances; // 与地面掉落共用的物品图标资源。
     [Export] private Control m_Tabs; // 四个分类按钮的容器。
     [Export] private GridContainer m_Grid; // 当前页格子容器。
     [Export] private Label m_SoulText; // 钱包灵魂。
@@ -147,10 +148,9 @@ public partial class InventoryBagPanel : Control, IController
         {
             int index = m_PageIndex * PageSize + i;
             var item = items != null && index < items.Count ? items[index] : null;
-            var definition = item == null ? null : this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
             m_EquipmentDatas[i] = item;
             m_Cells[i].Bind(item,
-                definition == null ? null : GF.Resource.LoadAsset<Texture2D>(definition.IconPath));
+                item == null ? null : m_Appearances.Get(item.EquipmentId).InventoryIcon);
         }
 
         m_Grid.Show();

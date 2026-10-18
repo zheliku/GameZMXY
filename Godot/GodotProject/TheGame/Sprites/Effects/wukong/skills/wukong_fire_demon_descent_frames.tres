@@ -1,16 +1,25 @@
-[gd_resource type="SpriteFrames" format=3]
+[gd_resource type="SpriteFrames" format=3 uid="uid://m37gnpf25xav"]
 
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_descent_atlas.png" id="atlas"]
+[ext_resource type="Texture2D" uid="uid://bkyrqam7kiaq6" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_descent_atlas.png" id="atlas"]
 
 [sub_resource type="AtlasTexture" id="play_0"]
 atlas = ExtResource("atlas")
 region = Rect2(0, 0, 254, 295)
 
-
 [sub_resource type="AtlasTexture" id="play_1"]
 atlas = ExtResource("atlas")
 region = Rect2(254, 0, 254, 295)
 
-
 [resource]
-animations = [{"name": &"play", "loop": false, "speed": 24.0, "frames": [{"duration": 1.0, "texture": SubResource("play_0")}, {"duration": 1.0, "texture": SubResource("play_1")}]}]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("play_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("play_1")
+}],
+"loop": 0,
+"name": &"play",
+"speed": 24.0
+}]

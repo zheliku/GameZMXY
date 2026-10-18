@@ -44,7 +44,6 @@ namespace GameLogic.Heroes
 
         private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
         private readonly HashSet<SkillEffectNode> m_SkillEffects = new(); // 本英雄生成的活动特效，隐藏时统一归还。
-        private ulong m_MusouIntroEnds; // 本英雄拥有的短暂停顿截止时间；零表示没有拥有暂停。
 
         // ---- 属性 ----
 
@@ -121,6 +120,9 @@ namespace GameLogic.Heroes
                 return;
             }
 
+            if (!HasAnim(HeroAnims.Reset))
+                throw new InvalidOperationException($"{entityAssetName} 缺少用于技能退出的 RESET 动画。");
+
             this.GetSystem<ConfigurationSystem>().EnsureHeroBodyParams(HeroId, BuildBodyParams);
         }
 
@@ -150,7 +152,6 @@ namespace GameLogic.Heroes
         /// <param name="userData">本次隐藏参数。</param>
         public override void OnHide(bool isShutdown, object userData)
         {
-            EndMusouIntro(!isShutdown);
             if (!isShutdown && IsInstanceValid(m_MusouAfterimage))
                 m_MusouAfterimage.Reset();
             if (!isShutdown && IsInstanceValid(m_LevelUp))
@@ -158,14 +159,6 @@ namespace GameLogic.Heroes
             DestroyBodyStateMachine(isShutdown);
             ClearSkillEffects(isShutdown);
             base.OnHide(isShutdown, userData);
-        }
-
-        /// <summary>真实时间结束本英雄拥有的无双开启停顿；暂停时游戏时间为零仍能恢复。</summary>
-        /// <param name="delta">游戏帧秒数，本计时只使用单调真实时间。</param>
-        public override void _Process(double delta)
-        {
-            if (m_MusouIntroEnds != 0 && Time.GetTicksMsec() >= m_MusouIntroEnds)
-                EndMusouIntro(true);
         }
 
         /// <summary>物理步长：采样输入 → 身体状态机 → 物理。AnimationPlayer（子节点）同帧稍后消费播放请求。</summary>
@@ -191,11 +184,13 @@ namespace GameLogic.Heroes
                 this.GetSystem<SkillSystem>().CancelSkill();
             // 当前状态声明输入窗口；角色匹配具体组合，状态随后消费请求并决定转换。
             if (!Dead && (!HasPendingHurt || ((IHeroBody)this).SuperArmor) &&
-                this.GetSystem<SkillSystem>().BodySkillData == null &&
+                this.GetModel<SkillModel>().ActiveSkillId == null &&
                 m_BodyFsm.CurrentState is AbstractHeroBodyState bodyState &&
                 bodyState.TryGetActionInput(this, out bool attacking, out float normalProgress, out bool airborne))
                 MatchActionInput(attacking, normalProgress, airborne);
             m_BodyFsm.Tick(dt);
+            if (m_BodyFsm.CurrentState is AbstractHeroSkillState skillState)
+                skillState.AdvanceAnimation(m_BodyFsm, this, dt);
             MoveAndSlide();
 
             // 落地归零跳跃次数。必须带 "Velocity.Y >= 0"：起跳那一帧角色可能还没离开地面，
@@ -215,37 +210,22 @@ namespace GameLogic.Heroes
         /// <summary>在成长模型确认升级并更新属性后显示提示；普通进关不触发。</summary>
         public void PlayLevelUp() => m_LevelUp?.ShowLevelUp();
 
-        /// <summary>只释放本次开启拥有的暂停；隐藏时对称清理，关停时只清字段。</summary>
-        /// <param name="resume">是否仍可访问框架恢复游戏。</param>
-        private void EndMusouIntro(bool resume)
-        {
-            if (m_MusouIntroEnds == 0)
-                return;
-            m_MusouIntroEnds = 0;
-            if (resume && GF.Base.IsGamePaused)
-                GF.Base.ResumeGame();
-        }
-
         // ---- 业务入口 ----
 
         /// <summary>存活且蓄满时开启无双，使出招与运动读取加成并开始角色残影。</summary>
         /// <returns>本次是否成功开启；按住按键、未满值、已开启或已死亡均不重复开启。</returns>
         public bool TryActivateMusou()
         {
-            BattleConfig battle = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
             if (!IsShown || Dead || GF.Base.IsGamePaused || !this.GetSystem<HeroSystem>().TryActivateWs())
                 return false;
             m_PendingHurt = null;
             m_MusouAfterimage?.SetEmitting(true);
-            m_MusouIntroEnds = Time.GetTicksMsec() + (ulong)(battle.WsIntroPauseDuration * 1000f);
-            GF.Base.PauseGame();
             return true;
         }
 
         /// <summary>移除局内加成并结束残影采样，不影响成长或装备来源。</summary>
         private void EndMusou()
         {
-            EndMusouIntro(true);
             this.GetSystem<HeroSystem>().ClearWs();
             m_MusouAfterimage?.SetEmitting(false);
         }
@@ -352,13 +332,8 @@ namespace GameLogic.Heroes
             float[] attackTimes = new float[OwnAttacks.Count];
             for (int i = 0; i < OwnAttacks.Count; i++)
             {
-                attackAnims[i] = OwnAttacks[i].Animation;
+                attackAnims[i] = AttackAnimations[i];
                 attackTimes[i] = GetAnimLength(attackAnims[i]);
-                if (string.IsNullOrEmpty(attackAnims[i]))
-                {
-                    Log.Error("[AbstractHeroEntity] AttackConfig {0} 的 Animation 列为空（连段第 {1} 段无法播放）",
-                        OwnAttacks[i].Id, i + 1);
-                }
             }
 
             // 汇总移动、跳跃与受击参数；待机时序由完整循环动画负责。
@@ -402,14 +377,13 @@ namespace GameLogic.Heroes
             return false;
         }
 
-        /// <summary>提交攻击段并装填攻击数据和起手音效。</summary>
+        /// <summary>提交攻击段并装填攻击数据；起手音效由动画方法轨道播放。</summary>
         /// <param name="segment">英雄连段下标。</param>
         void IActorBody.BeginAttack(int segment)
         {
             AttackSegment = segment;
             // 官方加成乘在整招威力上，包含随机固定加值，避免只放大基础攻击。
             PrepareAttack(OwnAttacks[segment], this.GetSystem<HeroSystem>().AttackPowerMultiplier);
-            PlaySound(OwnAttacks[segment].SoundId); // 起手音：音源查表，与旧 add_music 同点（第 0 帧）
         }
 
         /// <summary>结束攻击段并归还攻击数据。</summary>
@@ -419,10 +393,5 @@ namespace GameLogic.Heroes
             ReleaseAttack();
         }
 
-        /// <summary>播放英雄配置的受击音效。</summary>
-        void IActorBody.PlayHurtSound() => PlaySound(Config.HurtSoundId);
-
-        /// <summary>播放英雄配置的死亡音效。</summary>
-        void IActorBody.OnDied() => PlaySound(Config.DeathSoundId);
     }
 }

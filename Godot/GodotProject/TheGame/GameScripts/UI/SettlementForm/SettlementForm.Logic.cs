@@ -83,12 +83,12 @@ public partial class SettlementForm : IController
     public void OnReveal() { }
 
     /// <summary>显示已经结算的成绩，暂停背后的关卡。</summary>
-    /// <param name="userData">成功或失败的关卡结果。</param>
+    /// <param name="userData">包含成功或失败成绩的 SettlementFormData。</param>
     /// <exception cref="ArgumentException">不是已提交的关卡结局。</exception>
     public void OnOpen(object userData)
     {
         ReleaseResultAndPause();
-        m_Result = userData as LevelResult;
+        m_Result = (userData as SettlementFormData)?.Result;
         if (m_Result == null || m_Result.Outcome is not (LevelOutcome.Cleared or LevelOutcome.Defeated))
             throw new ArgumentException("结算需要成功或失败的成绩。", nameof(userData));
         bool success = m_Result.Outcome == LevelOutcome.Cleared;

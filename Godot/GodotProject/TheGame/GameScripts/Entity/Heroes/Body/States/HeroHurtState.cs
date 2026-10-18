@@ -58,7 +58,6 @@ namespace GameLogic.Heroes.Body
             body.Velocity = body.TakePendingHurt();
             m_Left = body.Params.HurtTime;
             body.RestartAnim(HeroAnims.Hurt);
-            body.PlayHurtSound();
         }
     }
 }

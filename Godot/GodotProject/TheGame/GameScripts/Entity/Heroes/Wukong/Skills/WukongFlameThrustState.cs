@@ -1,60 +1,51 @@
+using System;
 using GameConfig.Skills;
 using GameFramework.Fsm;
 using GameLogic.Architecture;
-using GameLogic.Config;
+using GameLogic.Battle;
 using GameLogic.Heroes.Body;
-using GameLogic.Input;
 using GameLogic.Skills;
 using Godot;
 
 namespace GameLogic.Heroes.Wukong;
 
-/// <summary>火焰突刺：奔跑转突刺，四次独立命中与逐段减速，收招后衔接地面连段。</summary>
+/// <summary>火焰突刺：奔跑转突刺，四次独立命中与逐段减速，结束后衔接地面连段。</summary>
 public sealed class WukongFlameThrustState : AbstractHeroSkillState
 {
+    private const string AnimationName = "skills/flame_thrust"; // 本招的原生动画资源名。
 
     /// <inheritdoc />
     protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
     {
         base.Enter(fsm, body);
-        var configuration = body.GetModel<ConfigurationModel>();
-        var action = configuration.Tables.TbSkillActionConfig.Get(SkillId.FlameThrust);
         body.ActionData.LastGroundSegment = 0;
         body.ActionData.Running = false;
-        BeginAnimation(body, action);
-        AdvanceSkill(body, 0);
+        BeginAnimation(body, AnimationName);
     }
 
-    /// <summary>按突刺事件开启新判定、冲刺、减速与收招，不由公共系统解释本招。</summary>
+    /// <summary>起手沿奔跑方向突刺；速度在动作轨道中编辑。</summary>
     /// <param name="body">悟空身体。</param>
-    /// <param name="dt">本帧游戏秒数。</param>
-    protected override void AdvanceSkill(IHeroBody body, float dt)
+    /// <param name="speed">普通突刺速度，px/s。</param>
+    /// <param name="musouSpeed">无双突刺速度，px/s。</param>
+    public void BeginThrust(IHeroBody body, float speed, float musouSpeed)
     {
-        var actor = (ISkillActor)body;
-        foreach (var entry in AdvanceTimeline(dt, body.OnFloor))
-        {
-            switch (entry.Kind)
-            {
-                case SkillTimelineKind.NewAttackId:
-                    actor.NewSkillAttack(body.GetModel<ConfigurationModel>().Tables.TbSkillActionConfig
-                        .Get(SkillId.FlameThrust).BodyHitId);
-                    break;
-                case SkillTimelineKind.SetVelocityX:
-                    int direction = body.Velocity.X > 0 ? 1 : -1;
-                    float speed = body.GetModel<GameLogic.Battle.HeroModel>().WsActive.Value
-                        ? entry.MusouVelocity.X : entry.Velocity.X;
-                    body.Velocity = new Vector2(direction * speed, body.Velocity.Y);
-                    break;
-                case SkillTimelineKind.MultiplyVelocityX:
-                    body.Velocity = new Vector2(body.Velocity.X * entry.XMultiplier, body.Velocity.Y);
-                    break;
-                case SkillTimelineKind.CompleteActor:
-                    SkillData.Completed = true;
-                    break;
-            }
-            if (SkillData.Completed)
-                break;
-        }
-        actor.SetSkillAnimationTime(SkillTime);
+        int direction = body.Velocity.X > 0 ? 1 : -1;
+        body.Velocity = new Vector2(direction *
+            (body.GetModel<HeroModel>().WsActive.Value ? musouSpeed : speed), body.Velocity.Y);
+        BeginHit(body);
     }
+
+    /// <summary>每个段点更换攻击包并衰减横向速度；倍率由动画键提供。</summary>
+    /// <param name="body">悟空身体。</param>
+    /// <param name="multiplier">本次横速倍率。</param>
+    public void ContinueThrust(IHeroBody body, float multiplier)
+    {
+        body.Velocity = new Vector2(body.Velocity.X * multiplier, body.Velocity.Y);
+        BeginHit(body);
+    }
+
+    /// <summary>先按原版四舍五入基础威力，再由实体应用无双倍率。</summary>
+    /// <param name="body">悟空身体。</param>
+    private static void BeginHit(IHeroBody body) => ((ISkillActor)body).NewSkillAttack(
+        SkillHitId.FlameThrust, Math.Round(AttackPower(body, SkillHitId.FlameThrust), MidpointRounding.AwayFromZero));
 }

@@ -15,6 +15,7 @@ namespace GameLogic.UI.Widgets;
 /// <summary>个人资料面板统一显示身份、穿戴、最终属性和经验，不修改角色状态。</summary>
 public partial class InventoryCharacterPanel : Control, IController
 {
+    [Export] private ItemAppearancesResource m_Appearances; // 与地面掉落共用的物品图标资源。
     [Export] private Label m_Name; // 角色昵称。
     [Export] private Label m_Level; // 当前等级。
     [Export] private HeroPreviewNode m_Preview; // 独立角色预览。
@@ -84,8 +85,7 @@ public partial class InventoryCharacterPanel : Control, IController
     /// <param name="data">当前装备；null 恢复为空槽。</param>
     private void BindSlot(EquipmentCell cell, EquipmentData data)
     {
-        var definition = data == null ? null : this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(data.EquipmentId);
-        cell.Bind(data, definition == null ? null : GF.Resource.LoadAsset<Texture2D>(definition.IconPath));
+        cell.Bind(data, data == null ? null : m_Appearances.Get(data.EquipmentId).InventoryIcon);
     }
 
     /// <summary>将属性点按 x/(x+K) 转换为显示百分比。</summary>

@@ -169,7 +169,7 @@ public sealed partial class UiSmokeScenario
 
         SpawnGround(level, hero.GlobalPosition + new Vector2(180, -80), null, item);
         gear = owned.Single();
-        typeof(GroundItemNode).GetField("m_Age", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(gear, tables.TbDropConfig.GroundLifetime - .01f);
+        typeof(GroundItemNode).GetField("m_Age", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(gear, tables.TbBattleConfig.GroundLifetime - .01f);
         gear._PhysicsProcess(.02);
         Check(owned.Count == 0, "地面物品没有按秒过期");
 

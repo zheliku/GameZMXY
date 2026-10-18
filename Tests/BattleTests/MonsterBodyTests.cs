@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using GameFramework.Fsm;
 using GameLogic.Body;
+using GameLogic.Config;
 using Godot;
 using Xunit;
 
@@ -167,6 +168,56 @@ namespace GameLogic.Battle.Tests
             Assert.Equal("Hurt", h.State);
         }
 
+        /// <summary>官方受击横速按秒指数衰减，不能因物理帧率或怪物体型改变。</summary>
+        /// <param name="frequency">物理帧率。</param>
+        [Theory]
+        [InlineData(24)]
+        [InlineData(60)]
+        [InlineData(120)]
+        public void Hurt_DampingMatchesSourceAcrossPhysicsRates(int frequency)
+        {
+            var config = BattleArchitecture.Instance.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
+            using MonsterHarness h = new(Params(hurtTime: 2) with
+            {
+                MoveSpeed = 72f,
+                KnockbackRetentionPerSecond = config.MonsterKnockbackRetentionPerSecond,
+            });
+            h.Body.PendingHurt = new Vector2(35 * 24, -2 * 24);
+            h.Step(frequency / 4, 1f / frequency);
+            Assert.Equal(840 * MathF.Pow(.8f, 6), h.Body.Velocity.X, .01f);
+            h.Step(frequency / 2, 1f / frequency);
+            Assert.Equal(72f, h.Body.Velocity.X, .01f);
+
+            // 小于移动速度的轻击不被衰减，也不能被强行抬高到移动速度。
+            h.Body.PendingHurt = new Vector2(-2 * 24, -22 * 24);
+            h.Step(1, 1f / frequency);
+            Assert.Equal(-48f, h.Body.Velocity.X);
+        }
+
+        /// <summary>官方先位移后加重力；秒制物理在各帧率重现同一升龙抛物线。</summary>
+        /// <param name="frequency">物理帧率。</param>
+        [Theory]
+        [InlineData(24)]
+        [InlineData(60)]
+        [InlineData(120)]
+        public void Hurt_LaunchPreservesOfficialDisplacement(int frequency)
+        {
+            using MonsterHarness h = new(Params(hurtTime: .5f) with { Gravity = 864 });
+            h.Body.OnFloor = false;
+            h.Body.PendingHurt = new Vector2(48, -528);
+            float y = 0, minimumY = 0, dt = 1f / frequency;
+            for (int step = 1; step <= frequency; step++)
+            {
+                h.Step(1, dt);
+                y += h.Body.Velocity.Y * dt;
+                minimumY = Math.Min(minimumY, y);
+                double t = (double)step / frequency;
+                double sourceY = -528 * t + 864 * t * (t - 1d / 24) / 2;
+                Assert.Equal(sourceY, y, .002);
+            }
+            Assert.InRange(-minimumY, 172.4, 172.6);
+        }
+
         /// <summary>验证宿主不登记受击时霸体攻击不会被中断。</summary>
         [Fact]
         public void SuperArmor_HostNotRegisteringHurt_KeepsAttack()
@@ -219,6 +270,8 @@ namespace GameLogic.Battle.Tests
 
         private sealed class FakeMonster : AbstractFakeActorBody, IMonsterBody // 为怪物身体状态机提供可控的测试宿主。
         {
+            /// <inheritdoc />
+            float IActorBody.Gravity => Params.Gravity;
             /// <summary>待身体状态机消费的攻击段索引。</summary>
             public int AttackRequest = -1;
 
@@ -273,11 +326,12 @@ namespace GameLogic.Battle.Tests
 
             /// <summary>推进指定数量的物理帧，并固定宿主在地面上。</summary>
             /// <param name="frames">推进的物理帧数。</param>
-            public void Step(int frames)
+            /// <param name="dt">每步游戏秒数。</param>
+            public void Step(int frames, float dt = Dt)
             {
                 for (int i = 0; i < frames; i++)
                 {
-                    m_Fsm.Tick(Dt);
+                    m_Fsm.Tick(dt);
                     if (Body.OnFloor)
                         Body.Velocity = new Vector2(Body.Velocity.X, 0f);
                 }

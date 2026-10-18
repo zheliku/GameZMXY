@@ -4,7 +4,7 @@
 
 `TheGame/` 下资源使用既有目录：`Entitys/`、`Scenes/`、`UIs/`、`Sprites/`、`Audios/`、`DataTables/`；不另建平行 `Assets/`。`MainPack/` 放随应用打包的启动和共享资源，游戏逻辑放 `GameScripts/`。
 
-资源文件使用英文小写 `snake_case`，basename 全树唯一；`.import` 与 `.uid` 随资源提交。移动或重命名资源在 Godot 编辑器内完成。旧项目迁入的素材登记在 `Docs/LegacyAssetMap.md`。
+业务场景与资源文件使用英文小写 `snake_case`（如 `battle_form.tscn`），C# 类型、脚本文件和场景根节点仍用 PascalCase；basename 全树唯一。框架只读资源及其直接绑定的主包 `LoadingForm.tscn`、`QuestionTips.tscn` 保留既有名称，不能为改名修改框架；`.import` 与 `.uid` 随资源提交。移动或重命名资源在 Godot 编辑器内完成。旧项目迁入的素材登记在 `Docs/LegacyAssetMap.md`。
 
 从旧项目迁入 PNG/WAV 时不带旧 `.import`；普通文件名保留并记录映射，战斗图集按 `<entity>_<state>` 命名以避免全树重名。动画从旧场景提取为 `.tres` 或按登记规格用一次性脚本生成；无源 TexturePacker 图集保留原 `.tres`，不重新导入。旧场景及脚本逻辑不直接复制。
 
@@ -21,12 +21,12 @@
 - 怪物实体场景用 `[Export] Entity.EntityId` 枚举字段（如 `m_MonsterEntityId`）绑定 `MonsterConfig`，编辑器显示为可读枚举下拉框；禁止导出需要反查的裸数字 ID。运行时按 `MonsterConfig.EntityId` 一对一查找，零条或多条命中在实体初始化时失败并交由会话拥有者报告。
 - `.tscn` 的外部节点路径在场景头部 `node_paths` 声明，否则 Godot 可能忽略 `NodePath` 导出赋值。
 - 动画库位于 `Entitys/Animations/`，资源边界与判定约定见 [30-EntitiesAndCombat.md](30-EntitiesAndCombat.md)。
-- `Scenes/DebugArena.tscn` 仍是战斗验证场景；正式关卡使用 `LevelRoot`（当前实现为 `LevelModule`）和组合式子节点，契约见 [60-GameplayModules.md](60-GameplayModules.md)。
+- `Scenes/debug_arena.tscn` 仍是战斗验证场景；正式关卡使用 `LevelRoot`（当前实现为 `LevelModule`）和组合式子节点，契约见 [60-GameplayModules.md](60-GameplayModules.md)。
 
 ## 关卡场景
 
 - `LevelModule` 根节点绑定生成点、门、刷怪、相机和出口五个必需职责节点；触发区集合按特殊玩法选配。模块统一初始化、开始、清波、收益和结局；门集合拥有区域，刷怪服务拥有本关实体，阶段序列拥有唯一当前阶段。
-- `TestArena.tscn` 是**独立于游戏流程**的怪物与角色测试场地：在编辑器对场景按 F6“运行当前场景”即可，不需要改流程或配置表。场景自带真实 `Framework/GameFramework.tscn`（去掉 Procedure 流程），根脚本 `TestArenaController` 与 `ProcedurePreload` 共用 `MainPack/Scripts/Startup/GameResourceGroups` 注册资源组，再启动节点池。场地用建档规则创建仅内存的临时档案构建英雄装配（不读写存档），并把 `Monsters` 容器里拖入的怪物占位节点替换为 `GF.Entity` 创建的实例。新增怪物时把它的实体场景拖进 `Monsters` 容器、摆好位置即可。
+- `test_arena.tscn` 是**独立于游戏流程**的怪物与角色测试场地：在编辑器对场景按 F6“运行当前场景”即可，不需要改流程或配置表。场景自带真实 `Framework/GameFramework.tscn`（去掉 Procedure 流程），根脚本 `TestArenaController` 与 `ProcedurePreload` 共用 `MainPack/Scripts/Startup/GameResourceGroups` 注册资源组，再启动节点池。场地用建档规则创建仅内存的临时档案构建英雄装配（不读写存档），并把 `Monsters` 容器里拖入的怪物占位节点替换为 `GF.Entity` 创建的实例。新增怪物时把它的实体场景拖进 `Monsters` 容器、摆好位置即可。
 - 集合挂父节点，直接子节点保持纯节点：生成点使用 `Marker2D`，门使用 `StaticBody2D + CollisionShape2D`（PlayerBarrier 层，mask 为零；英雄身体 mask 包含 PlayerBarrier，怪物不包含），特殊触发区使用 `Area2D + CollisionShape2D`（mask 选择 PlayerBody，初始 monitoring 关闭）。触发区放在对应物理区域内，入口侧形状不得跨本阶段左界；会话只启用当前区。不得建立单锚点脚本、块场景或集合场景。
 - `Level/Markers/LevelMarkerResource` 是带 `[Tool]` 的可序列化 Resource，统一导出节点相对路径、稳定 ID 和颜色；所属集合的检查器显示条目列表。为父节点挂脚本并添加子节点后，点击“同步子节点配置”，再填写业务 ID。同步保留已有配置，移除已删除子节点的条目；加载和导入时不自动改写场景。
 - 集合绘制所有支持的子节点：生成点/触发区为圆圈，门为竖线，标注可读 ID；未登记节点用洋红色显示并给出配置警告。颜色、尺寸和调试可见性可编辑；标注层使用 `z_index = 200`，避免被地形和实体遮挡。

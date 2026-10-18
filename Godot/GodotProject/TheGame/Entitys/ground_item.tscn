@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://4587fehb82nt"]
 
+[ext_resource type="Resource" path="res://TheGame/Sprites/Items/item_appearances.tres" id="appearances"]
 [ext_resource type="AnimationLibrary" uid="uid://jxbbo6cinwnr" path="res://TheGame/Entitys/Animations/ground_item_pickup_library.tres" id="pickup"]
 [ext_resource type="Script" uid="uid://7c1yhkshn5gc" path="res://TheGame/GameScripts/Entity/Drops/GroundItemNode.cs" id="script"]
 
@@ -14,6 +15,8 @@ script = ExtResource("script")
 m_Icon = NodePath("Icon")
 m_PickupAnimation = NodePath("AnimationPlayer")
 m_Shape = NodePath("Shape")
+m_Appearances = ExtResource("appearances")
+m_Gravity = 980.0
 
 [node name="Shape" type="CollisionShape2D" parent="." unique_id=1174947348]
 position = Vector2(0, -20)

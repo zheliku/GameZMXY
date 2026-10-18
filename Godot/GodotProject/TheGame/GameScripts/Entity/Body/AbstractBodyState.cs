@@ -11,14 +11,10 @@ namespace GameLogic.Body
     /// 所以这里把框架帧的 OnUpdate 封成空实现，由实体在 _PhysicsProcess 里调用
     /// <c>fsm.Tick(dt)</c>——状态登记、进入/离开生命周期、切换全用框架自带的，框架零改动。
     ///
-    /// 约定（A 方案：动画纯数据、代码唯一时钟）：
-    ///  * 状态只经宿主接口 <typeparamref name="TBody"/> 读写事实、请求播放动画，不碰节点 / GD.* / GF.*（纯 C#，可单测）；
-    ///  * **状态机单入口**：只有 Tick 一条路进状态机——物理/结算事实（受击、死亡、输入、出招请求）
-    ///    都写进宿主、状态在 Tick 里自己消费；动画从不调用代码；
-    ///  * 动作时长 = OnInit 从动画资源读的长度（共享身体定义），状态用物理 dt 自己计时（<see cref="Elapsed"/> 判到点）；
-    ///    **禁止用 <c>fsm.CurrentStateTime</c>**（按渲染帧累计）；
-    ///  * 打断优先级集中在 <see cref="Interrupt"/>（英雄/怪物各自的基类实现），派生状态只写本状态决策；
-    ///  * Tick 先判断要不要切走（切走就 return，新状态当帧接着执行），再做本状态的移动/动画。
+    /// 动画方法轨道用 AnimEvent 后缀标识具名时点；状态负责输入、分支、运动、打断和资源清理。
+    /// 方法回调不得在播放器遍历中切换动画或回收节点，先登记请求，推进返回后再执行。
+    /// 普通身体状态按物理 dt 计时，技能由原生播放器推进；禁止使用按渲染帧累计的 fsm.CurrentStateTime。
+    /// Interrupt 集中处理死亡、受击优先级；同帧迁移由 fsm.Tick 协调。
     /// </summary>
     public abstract class AbstractBodyState<TBody> : FsmState<TBody> where TBody : class, IActorBody
     {

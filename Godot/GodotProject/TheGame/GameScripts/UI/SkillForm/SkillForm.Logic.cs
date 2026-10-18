@@ -104,11 +104,13 @@ public partial class SkillForm : IController
             Visible = false;
     }
 
-    /// <summary>暂停期间接受 Escape 返回关卡。</summary>
+    /// <summary>暂停期间接受技能开关键或 Escape 返回关卡；忽略按住产生的重复事件。</summary>
     /// <param name="inputEvent">Godot 分发的输入。</param>
     public override void _Input(InputEvent inputEvent)
     {
-        if (!GF.UI.HasUIForm(SerialId) || !Visible || !inputEvent.IsActionPressed("ui_cancel"))
+        if (!GF.UI.HasUIForm(SerialId) || !Visible ||
+            (!inputEvent.IsActionPressed(Input.InputSystem.UiCancel) &&
+             !inputEvent.IsActionPressed(Input.InputSystem.SkillToggle)))
             return;
         GetViewport().SetInputAsHandled();
         OnBackClicked();

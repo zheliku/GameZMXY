@@ -13,13 +13,10 @@ namespace GameLogic.Skills;
 /// <summary>技能学习与施放规则入口；借用档案、技能书、英雄数值及只读配置，不持有场景节点。</summary>
 public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(architecture)
 {
-    /// <summary>借用当前占用角色身体的技能。</summary>
-    public SkillData BodySkillData => this.GetModel<SkillModel>().BodySkillData;
-
     /// <summary>当前身体技能登记的 GGF 状态；具体角色负责在身体状态机中注册它。</summary>
-    public Type BodyStateType => BodySkillData == null
+    public Type BodyStateType => this.GetModel<SkillModel>().ActiveSkillId is not { } id
         ? null
-        : this.GetModel<SkillModel>().Definitions[BodySkillData.Id].BodyState;
+        : this.GetModel<SkillModel>().Definitions[id].BodyState;
 
     // ---- 业务方法 ----
 
@@ -49,7 +46,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     public bool IsLearned(SkillId skillId) => this.GetModel<SkillModel>()
         .GetLearnedSkills(this.GetModel<ProfileModel>().ActiveHeroId).Contains(skillId);
 
-    /// <summary>查询当前英雄与技能组是否支持此技能；未选组时使用已有的配置动画定义。</summary>
+    /// <summary>查询当前英雄与技能组是否支持此技能。</summary>
     /// <param name="id">技能编号。</param>
     /// <returns>当前可用时为真。</returns>
     public bool IsAvailable(SkillId id)
@@ -58,9 +55,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
         var tables = this.GetModel<ConfigurationModel>().Tables;
         var definition = tables.TbSkillConfig.GetOrDefault(id);
         return definition != null && (int)definition.Hero == this.GetModel<ProfileModel>().ActiveHeroId &&
-               (model.Definitions.Count > 0
-                   ? model.Definitions.ContainsKey(id)
-                   : tables.TbSkillActionConfig.GetOrDefault(id) != null);
+               model.Definitions.ContainsKey(id);
     }
 
     /// <summary>读取当前蓝量是否足够，不预扣资源。</summary>
@@ -76,29 +71,15 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     public bool TryActivate(SkillId id, ISkillActor actor)
     {
         var model = this.GetModel<SkillModel>();
-        if (model.BodySkillData != null || !IsAvailable(id) || !IsLearned(id) ||
+        if (model.ActiveSkillId != null || !IsAvailable(id) || !IsLearned(id) ||
             !model.Definitions.TryGetValue(id, out var definition) || definition.CanStart?.Invoke(actor) == false)
             return false;
         if (!this.GetSystem<HeroSystem>().TrySpendMp(
                 this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost))
             return false;
 
-        model.BodySkillData = new SkillData(id);
+        model.ActiveSkillId = id;
         return true;
-    }
-
-    /// <summary>身体状态退出时释放表现，只清理仍属于该状态的施放，旧状态不能取消新技能。</summary>
-    /// <param name="data">刚退出的状态借用的数据。</param>
-    /// <param name="actor">借用的角色表现。</param>
-    public void ReleaseBody(SkillData data, ISkillActor actor)
-    {
-        actor.EndSkillAnimation();
-        var model = this.GetModel<SkillModel>();
-        if (data != null && ReferenceEquals(model.BodySkillData, data))
-        {
-            data.Completed = true;
-            model.BodySkillData = null;
-        }
     }
 
     /// <summary>选择角色或武器的一组技能登记；校验完成后才取消旧施放并替换模型数据。</summary>
@@ -143,18 +124,10 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     public void CancelSkill()
     {
         var model = this.GetModel<SkillModel>();
-        if (model.BodySkillData != null)
-            model.BodySkillData.Completed = true;
-        model.BodySkillData = null;
+        model.ActiveSkillId = null;
         model.InvulnerableFrom = double.PositiveInfinity;
         model.InvulnerableUntil = 0;
     }
-
-    /// <summary>按数据身份确认本次施放仍有效，旧特效不能只凭技能编号影响新施放。</summary>
-    /// <param name="data">状态或特效借用的数据。</param>
-    /// <returns>模型仍持有同一次未结束的施放时为真。</returns>
-    public bool IsActive(SkillData data) => data != null && !data.Completed &&
-        ReferenceEquals(this.GetModel<SkillModel>().BodySkillData, data);
 
     /// <summary>登记一个以游戏秒数计的无敌区间，不受动画跳帧影响。</summary>
     /// <param name="from">开始的游戏时刻。</param>
@@ -173,22 +146,6 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     {
         var model = this.GetModel<SkillModel>();
         return now >= model.InvulnerableFrom && now < model.InvulnerableUntil;
-    }
-
-    /// <summary>按原版取整顺序计算技能威力，最后乘无双倍率并截为整数。</summary>
-    /// <param name="hit">共享伤害配置。</param>
-    /// <param name="power">英雄攻击力。</param>
-    /// <param name="multiplier">无双攻击倍率。</param>
-    /// <returns>送入伤害系统前的技能威力。</returns>
-    public static int CalculatePower(SkillHitConfig hit, float power, float multiplier)
-    {
-        double value = hit.PowerRounding == SkillPowerRounding.BeforeScale
-            ? Math.Round(power, MidpointRounding.AwayFromZero)
-            : power;
-        value = value * hit.PowerScale + hit.FlatPower;
-        if (hit.PowerRounding == SkillPowerRounding.AfterScale)
-            value = Math.Round(value, MidpointRounding.AwayFromZero);
-        return (int)(value * multiplier);
     }
 }
 

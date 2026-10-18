@@ -13,7 +13,7 @@ func _run() -> void:
         push_error("MUSOU VISUAL FAIL: 需要真实渲染器。")
         quit(1)
         return
-    var hud: Node = load("res://TheGame/UIs/BattleForm.tscn").instantiate()
+    var hud: Node = load("res://TheGame/UIs/battle_form.tscn").instantiate()
     var source: AnimatedSprite2D = hud.get_node("MenuPanel/m_WsMax")
     var frames := source.sprite_frames
     var animation := source.animation

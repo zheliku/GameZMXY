@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://dhnx51yxevr17"]
+
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/loot/loot_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://2topd8i5sybm" path="res://TheGame/GameScripts/Entity/Drops/LootOrbNode.cs" id="script"]
+
+[node name="LootOrb" type="AnimatedSprite2D" unique_id=480480063]
+z_index = 5
+sprite_frames = ExtResource("frames")
+animation = &"Musou"
+script = ExtResource("script")
+m_ScatterRadius = 15.0
+m_Delay = 0.8333333333333334
+m_RiseDuration = 1.0
+m_RiseDistance = Vector2(30, 50)
+m_InitialSpeed = 120.0
+m_Acceleration = 1152.0
+m_MaxSpeed = 480.0
+m_PickupRadius = 10.0

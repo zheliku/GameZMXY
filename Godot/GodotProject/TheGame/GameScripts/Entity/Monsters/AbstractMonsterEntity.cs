@@ -12,7 +12,6 @@ using System;
 using GameConfig.Battle;
 using GameConfig.Entity;
 using GameConfig.Monster;
-using GameConfig.Loot;
 using GameConfig.Attributes;
 using GameFramework.Entity;
 using GameFramework.Fsm;
@@ -35,10 +34,11 @@ namespace GameLogic.Monsters
 
         private float m_AttackMultiplier = 1f; // 本次显示的招式威力倍率，每次从刷怪参数重置。
 
-        private EquipmentDropPoolId m_EquipmentDropPoolId; // 本次配方确定的装备池；显示时整体重置。
         private int m_ExperienceReward; // 本次显示的击败经验；配方可覆盖基础配置奖励。
 
         [Export] private ResourceBar m_HealthBar; // 可选头顶小血条，作为实体子场景随 GGF 实体池复用。
+
+        [Export(PropertyHint.Range, "0.01,30,0.01,or_greater")] private float m_HealthBarFadeDuration = 4f; // 受伤血条淡出的游戏秒数。
 
         private float m_HealthBarTimeLeft; // 最近一次受伤后的剩余淡出秒数，按游戏帧推进。
         private int m_LastHealthBarHp; // 上次生命值，用于区分受伤与治疗，治疗不延长显示。
@@ -212,7 +212,6 @@ namespace GameLogic.Monsters
             m_Defense = Math.Max(0, (int)MathF.Round(Config.BaseAttributes.Def * spawn.DefenseMultiplier, MidpointRounding.AwayFromZero));
             m_AttackMultiplier = spawn.AttackMultiplier;
             m_ExperienceReward = spawn.ExperienceOverride < 0 ? Config.AddExp : spawn.ExperienceOverride;
-            m_EquipmentDropPoolId = spawn.EquipmentDropPoolOverride == EquipmentDropPoolId.UseMonster ? Config.EquipmentDropPoolId : spawn.EquipmentDropPoolOverride;
             m_Level = Config.Level;
             m_Hp = MaxHp;
             AttackSegment = -1;
@@ -341,7 +340,7 @@ namespace GameLogic.Monsters
             if (!IsShown || m_HealthBar == null)
                 return;
             if (Hp < m_LastHealthBarHp)
-                m_HealthBarTimeLeft = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.MonsterHealthBarFadeDuration;
+                m_HealthBarTimeLeft = m_HealthBarFadeDuration;
             m_LastHealthBarHp = Hp;
             // 扣血先刷新血条，再由受击入口确定死亡事实。
             m_HealthBar.SetValue(Hp, MaxHp);
@@ -357,7 +356,7 @@ namespace GameLogic.Monsters
             if (m_HealthBar is not { Visible: true })
                 return;
             m_HealthBarTimeLeft = Mathf.Max(0f, m_HealthBarTimeLeft - elapseSeconds);
-            float remaining = m_HealthBarTimeLeft / this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.MonsterHealthBarFadeDuration;
+            float remaining = m_HealthBarTimeLeft / m_HealthBarFadeDuration;
             // TweenMax 默认 Quad.easeOut 的 alpha 从 1 到 0，等价于剩余比例的平方。
             m_HealthBar.Modulate = new Color(1f, 1f, 1f, remaining * remaining);
             if (m_HealthBarTimeLeft <= 0f)
@@ -425,7 +424,7 @@ namespace GameLogic.Monsters
             for (int i = 0; i < OwnAttacks.Count; i++)
             {
                 attacks[i] = BuildAttackParams(i, OwnAttacks[i]);
-                anims[i] = OwnAttacks[i].Animation;
+                anims[i] = AttackAnimations[i];
                 times[i] = GetAnimLength(anims[i]);
                 recovery[i] = Mathf.Max(0f, OwnAttacks[i].AiRecovery);
             }
@@ -435,6 +434,7 @@ namespace GameLogic.Monsters
                 MoveSpeed = Config.MoveSpeed,
                 Gravity = Config.Gravity,
                 HurtTime = GetAnimLength(MonsterAnims.Hurt),
+                KnockbackRetentionPerSecond = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data.MonsterKnockbackRetentionPerSecond,
                 DeathTime = GetAnimLength(MonsterAnims.Death),
                 AttackAnims = Array.AsReadOnly(anims),
                 AttackTimes = Array.AsReadOnly(times),
@@ -585,16 +585,12 @@ namespace GameLogic.Monsters
         /// <summary>结束怪物招式并归还攻击包。</summary>
         void IActorBody.EndAttack() => EndCurrentAttack();
 
-        /// <summary>播放配置指定的怪物受击音效。</summary>
-        void IActorBody.PlayHurtSound() => PlaySound(Config.HurtSoundId);
-
-        /// <summary>死亡副作用：关受击盒（尸体不再挨打）、播死亡音、广播死亡事件。</summary>
-        void IActorBody.OnDied()
+        /// <summary>死亡状态进入时关闭受击盒并广播一次击败事件；声音由动画负责。</summary>
+        void IMonsterBody.BeginDeath()
         {
             SetHurtBoxEnabled(false);
-            PlaySound(Config.DeathSoundId);
             GF.Event.Fire(this,
-                MonsterDiedEventArgs.Create(Id, m_ExperienceReward, Config, HurtBox.GetGlobalBounds().GetCenter(), m_EquipmentDropPoolId));
+                MonsterDiedEventArgs.Create(Id, m_ExperienceReward, Config, HurtBox.GetGlobalBounds().GetCenter()));
         }
 
         /// <summary>请求在当前物理帧完成后安全回收实体。</summary>
@@ -645,7 +641,6 @@ namespace GameLogic.Monsters
     /// <param name="DefenseMultiplier">物理防御倍率，不能为负。</param>
     /// <param name="AttackMultiplier">全部招式威力倍率，不能为负。</param>
     /// <param name="ExperienceOverride">击败经验覆盖；-1 使用基础配置，0 表示不给经验。</param>
-    /// <param name="EquipmentDropPoolOverride">装备池覆盖；UseMonster 读取怪物基础配置。</param>
     public readonly record struct MonsterSpawn(Vector2 Position, float HealthMultiplier = 1f,
-        float DefenseMultiplier = 1f, float AttackMultiplier = 1f, int ExperienceOverride = -1, EquipmentDropPoolId EquipmentDropPoolOverride = EquipmentDropPoolId.UseMonster);
+        float DefenseMultiplier = 1f, float AttackMultiplier = 1f, int ExperienceOverride = -1);
 }

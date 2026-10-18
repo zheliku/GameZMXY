@@ -11,6 +11,9 @@ public sealed class HeroActionData
     /// <summary>角色输入规则已选定一次普攻，身体状态消费后立即清除。</summary>
     internal bool AttackRequested { get; set; }
 
+    /// <summary>当前身体动作暂时锁定采样；进入该动作的状态负责在退出时解除。</summary>
+    internal bool InputLocked { get; set; }
+
     /// <summary>游戏时钟秒数。</summary>
     public double Time { get; internal set; } = 0;
 

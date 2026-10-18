@@ -34,7 +34,7 @@ using GodotGameFramework.Sound;
 /// <summary>
 /// 怪物与角色测试场地（独立场景，不进入游戏流程）。
 ///
-/// 用法：在 Godot 里对 <c>TestArena.tscn</c> 按 F6“运行当前场景”即可，不需要改流程或配置表。
+/// 用法：在 Godot 里对 <c>test_arena.tscn</c> 按 F6“运行当前场景”即可，不需要改流程或配置表。
 /// 场景内自带一份**真实的** <c>Framework/GameFramework.tscn</c>（去掉 Procedure 流程），由测试入口直接装配资源组和临时 FSM；
 /// 将怪物实体场景拖进 <c>Monsters</c> 容器、摆好位置即可测试，不读取玩家档案。
 ///

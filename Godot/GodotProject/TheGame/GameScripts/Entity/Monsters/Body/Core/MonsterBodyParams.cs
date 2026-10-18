@@ -15,6 +15,9 @@ namespace GameLogic.Monsters.Body
         /// <summary>受击硬直秒（= hurt 动画长度）</summary>
         public float HurtTime { get; init; }
 
+        /// <summary>受击横速每秒保留比例；只在超过本怪物移动速度时减速。</summary>
+        public float KnockbackRetentionPerSecond { get; init; } = 1f;
+
         /// <summary>死亡到回收的秒数（= death 动画长度）</summary>
         public float DeathTime { get; init; }
 

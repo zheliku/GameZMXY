@@ -124,29 +124,9 @@ public partial class TbBattleConfig
     /// </summary>
      public int LvDamageCapLvMonsterDef => _data.LvDamageCapLvMonsterDef;
     /// <summary>
-    /// 英雄被击退横向换算: px/s = Knockback.X &#215; 本值
-    /// </summary>
-     public float KnockbackScaleXHeroDef => _data.KnockbackScaleXHeroDef;
-    /// <summary>
-    /// 怪物被击退横向换算: px/s = Knockback.X &#215; 本值
-    /// </summary>
-     public float KnockbackScaleXMonsterDef => _data.KnockbackScaleXMonsterDef;
-    /// <summary>
-    /// 击退纵向换算: px/s = Knockback.Y &#215; 本值(人怪一致)
-    /// </summary>
-     public float KnockbackScaleY => _data.KnockbackScaleY;
-    /// <summary>
     /// 无双值上限(旧项目 BaseRoleProperies.gd:20)
     /// </summary>
      public int WsMax => _data.WsMax;
-    /// <summary>
-    /// 死亡动画播放后显示失败结算（秒）
-    /// </summary>
-     public float DeathSettlementDelay => _data.DeathSettlementDelay;
-    /// <summary>
-    /// 小怪受伤血条淡出总时长（秒）；本项目延长为4秒，官方原值2秒
-    /// </summary>
-     public float MonsterHealthBarFadeDuration => _data.MonsterHealthBarFadeDuration;
     /// <summary>
     /// 命中蓄力：伤害/基础攻击&#215;系数；不改变攻击力
     /// </summary>
@@ -176,9 +156,25 @@ public partial class TbBattleConfig
     /// </summary>
      public float WsDrainPerSecond => _data.WsDrainPerSecond;
     /// <summary>
-    /// 开启演出暂停（秒）；不计入消耗时间
+    /// 怪物受击横速每秒保留比例；官方每1/24秒乘0.8，降至移动速度后不再减速
     /// </summary>
-     public float WsIntroPauseDuration => _data.WsIntroPauseDuration;
+     public float MonsterKnockbackRetentionPerSecond => _data.MonsterKnockbackRetentionPerSecond;
+    /// <summary>
+    /// 每颗黄色无双球恢复的无双值
+    /// </summary>
+     public int MusouPerOrb => _data.MusouPerOrb;
+    /// <summary>
+    /// 每颗蓝球最低回蓝量
+    /// </summary>
+     public int ManaMinimum => _data.ManaMinimum;
+    /// <summary>
+    /// 每颗蓝球按魔法上限恢复的比例
+    /// </summary>
+     public float ManaMaxFraction => _data.ManaMaxFraction;
+    /// <summary>
+    /// 地面物品保留时间，秒
+    /// </summary>
+     public float GroundLifetime => _data.GroundLifetime;
     
     public void ResolveRef(Tables tables)
     {

@@ -1,56 +1,90 @@
-[gd_resource type="SpriteFrames" format=3]
+[gd_resource type="SpriteFrames" format=3 uid="uid://ic816w8q7u51"]
 
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_landing_atlas.png" id="atlas"]
+[ext_resource type="Texture2D" uid="uid://dsgyyavkxqil5" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_landing_atlas.png" id="atlas"]
 
 [sub_resource type="AtlasTexture" id="play_0"]
 atlas = ExtResource("atlas")
 region = Rect2(0, 0, 157, 131)
 
-
 [sub_resource type="AtlasTexture" id="play_1"]
 atlas = ExtResource("atlas")
 region = Rect2(157, 0, 157, 131)
-
 
 [sub_resource type="AtlasTexture" id="play_2"]
 atlas = ExtResource("atlas")
 region = Rect2(314, 0, 157, 131)
 
-
 [sub_resource type="AtlasTexture" id="play_3"]
 atlas = ExtResource("atlas")
 region = Rect2(471, 0, 157, 131)
-
 
 [sub_resource type="AtlasTexture" id="play_4"]
 atlas = ExtResource("atlas")
 region = Rect2(628, 0, 157, 131)
 
-
 [sub_resource type="AtlasTexture" id="play_5"]
 atlas = ExtResource("atlas")
 region = Rect2(785, 0, 157, 131)
-
 
 [sub_resource type="AtlasTexture" id="play_6"]
 atlas = ExtResource("atlas")
 region = Rect2(0, 131, 157, 131)
 
-
 [sub_resource type="AtlasTexture" id="play_7"]
 atlas = ExtResource("atlas")
 region = Rect2(157, 131, 157, 131)
-
 
 [sub_resource type="AtlasTexture" id="play_8"]
 atlas = ExtResource("atlas")
 region = Rect2(314, 131, 157, 131)
 
-
 [sub_resource type="AtlasTexture" id="play_9"]
 atlas = ExtResource("atlas")
 region = Rect2(471, 131, 157, 131)
 
-
 [resource]
-animations = [{"name": &"play", "loop": false, "speed": 24.0, "frames": [{"duration": 1.0, "texture": SubResource("play_0")}, {"duration": 1.0, "texture": SubResource("play_1")}, {"duration": 1.0, "texture": SubResource("play_2")}, {"duration": 1.0, "texture": SubResource("play_3")}, {"duration": 1.0, "texture": SubResource("play_4")}, {"duration": 1.0, "texture": SubResource("play_5")}, {"duration": 1.0, "texture": SubResource("play_6")}, {"duration": 1.0, "texture": SubResource("play_7")}, {"duration": 1.0, "texture": SubResource("play_8")}, {"duration": 1.0, "texture": SubResource("play_9")}, {"duration": 1.0, "texture": null}, {"duration": 1.0, "texture": null}, {"duration": 1.0, "texture": null}]}]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("play_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("play_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("play_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("play_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("play_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("play_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("play_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("play_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("play_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("play_9")
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": 0,
+"name": &"play",
+"speed": 24.0
+}]

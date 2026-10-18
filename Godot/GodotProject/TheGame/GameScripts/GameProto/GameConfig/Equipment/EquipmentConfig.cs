@@ -23,8 +23,6 @@ public sealed partial class EquipmentConfig : Luban.BeanBase
         Owner = (Equipment.EquipmentOwner)_buf.ReadInt();
         Slot = (Equipment.EquipmentSlot)_buf.ReadInt();
         Quality = (Equipment.EquipmentQuality)_buf.ReadInt();
-        IconPath = _buf.ReadString();
-        GroundIconPath = _buf.ReadString();
         {int n0 = _buf.ReadSize(); AttributeRanges = new System.Collections.Generic.List<Equipment.EquipmentAttributeRange>(n0);for(var i0 = 0 ; i0 < n0 ; i0++) { Equipment.EquipmentAttributeRange _e0;  _e0 = global::GameConfig.Equipment.EquipmentAttributeRange.DeserializeEquipmentAttributeRange(_buf); AttributeRanges.Add(_e0);}}
         SellPrice = _buf.ReadInt();
     }
@@ -63,14 +61,6 @@ public sealed partial class EquipmentConfig : Luban.BeanBase
     /// </summary>
     public readonly Equipment.EquipmentQuality Quality;
     /// <summary>
-    /// 背包图标资源
-    /// </summary>
-    public readonly string IconPath;
-    /// <summary>
-    /// 官方地面图，不带背包底板
-    /// </summary>
-    public readonly string GroundIconPath;
-    /// <summary>
     /// 生成时抽取，实例保存实际值
     /// </summary>
     public readonly System.Collections.Generic.List<Equipment.EquipmentAttributeRange> AttributeRanges;
@@ -97,8 +87,6 @@ public sealed partial class EquipmentConfig : Luban.BeanBase
         + "Owner:" + Owner + ","
         + "Slot:" + Slot + ","
         + "Quality:" + Quality + ","
-        + "IconPath:" + IconPath + ","
-        + "GroundIconPath:" + GroundIconPath + ","
         + "AttributeRanges:" + Luban.StringUtil.CollectionToString(AttributeRanges) + ","
         + "SellPrice:" + SellPrice + ","
         + "}";

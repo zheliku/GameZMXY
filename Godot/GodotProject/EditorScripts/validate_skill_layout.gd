@@ -45,7 +45,7 @@ func _run() -> void:
 	background.color = Color("809561")
 	background.size = Vector2(940, 590)
 	viewport.add_child(background)
-	var hud: Control = load("res://TheGame/UIs/BattleForm.tscn").instantiate()
+	var hud: Control = load("res://TheGame/UIs/battle_form.tscn").instantiate()
 	_strip_scripts(hud)
 	viewport.add_child(hud)
 	var menu: Sprite2D = hud.get_node("MenuPanel")

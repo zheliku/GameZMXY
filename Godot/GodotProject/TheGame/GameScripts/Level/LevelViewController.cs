@@ -4,8 +4,10 @@ using GameLogic.Architecture;
 using GameLogic.Entity;
 using GameLogic.Monsters;
 using System;
+using System.Linq;
 using System.Threading;
 using GameConfig.Level;
+using GameConfig.Sound;
 using GameLogic.Heroes;
 using GameLogic.FloatingText;
 using GameLogic.Profile;
@@ -18,6 +20,7 @@ namespace GameLogic.Level;
 /// <summary>关卡场景 ViewController：拥有节点协作、掉落表现和英雄订阅；业务数据与结算归 Model/System。</summary>
 public partial class LevelViewController : Node2D, IController
 {
+    [Export] private SoundId m_MusicId; // 关卡场景绑定的背景音乐，播放请求由流程拥有。
     [Export] private int m_LevelId = 1; // 关卡配置主键。
     [Export] private LevelSpawnPointsNode m_SpawnPoints; // 生成点目录。
     [Export] private LevelTriggersNode m_Triggers; // 可选区域触发器。
@@ -26,6 +29,7 @@ public partial class LevelViewController : Node2D, IController
     [Export] private LevelCameraNode m_Camera; // 取景和抵达事件。
     [Export] private LevelExitNode m_Exit; // 出口交互。
     [Export] private FloatingTextPresenter m_FloatingText; // 本场飘字表现。
+    [Export] private string[] m_FeaturedOpponentSpawnPointIds = []; // 使用顶部生命条的生成点；仅影响场景展示。
 
     private IArchitecture m_Architecture; // 借用流程 FSM 的入口，初始化绑定后不跨作用域转移。
     private AbstractHeroEntity m_Player; // 借用流程显示并隐藏的英雄。
@@ -36,6 +40,9 @@ public partial class LevelViewController : Node2D, IController
 
     /// <summary>实体显示失败，交给会话拥有者结束关卡并报告错误。</summary>
     public event Action<Exception> Failed;
+
+    /// <summary>交给关卡流程播放的音乐绑定。</summary>
+    public SoundId MusicId => m_MusicId;
 
     /// <summary>本局唯一状态源。</summary>
     private LevelModel LevelModel => this.GetModel<LevelModel>();
@@ -90,6 +97,14 @@ public partial class LevelViewController : Node2D, IController
 
         m_Triggers?.Initialize(Config);
         m_Spawner.Initialize(Config, m_SpawnPoints);
+        var recipes = Config.Stages.SelectMany(stage => stage.Recipes).ToArray();
+        foreach (string id in m_FeaturedOpponentSpawnPointIds)
+        {
+            if (string.IsNullOrWhiteSpace(id) || m_FeaturedOpponentSpawnPointIds.Count(value => value == id) != 1 ||
+                recipes.Count(recipe => recipe.SpawnPointId == id) != 1 ||
+                recipes.Single(recipe => recipe.SpawnPointId == id).Count != 1)
+                throw new InvalidOperationException($"顶部生命条必须绑定唯一、仅生成一只怪物的生成点：{id}");
+        }
     }
 
     /// <summary>在玩家显示、加载界面关闭后开放玩法事件与相机跟随。</summary>
@@ -242,11 +257,12 @@ public partial class LevelViewController : Node2D, IController
         OnExitEntered();
     }
 
-    /// <summary>按阶段配置绑定需展示的普通怪物，不改变它的战斗行为。</summary>
+    /// <summary>按场景生成点绑定需展示的怪物，不改变它的战斗行为。</summary>
     /// <param name="monster">已经归属本关的怪物。</param>
-    private void OnMonsterShown(AbstractMonsterEntity monster)
+    /// <param name="spawnPointId">本次配方使用的生成点。</param>
+    private void OnMonsterShown(AbstractMonsterEntity monster, string spawnPointId)
     {
-        if (monster.Config.EntityId != LevelModel.Sequence.Current.FeaturedOpponentId)
+        if (!m_FeaturedOpponentSpawnPointIds.Contains(spawnPointId))
             return;
         ClearFeaturedOpponent();
         FeaturedOpponent = monster;

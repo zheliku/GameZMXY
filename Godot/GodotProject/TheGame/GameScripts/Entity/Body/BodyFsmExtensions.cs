@@ -4,7 +4,7 @@ namespace GameLogic.Body
 {
     /// <summary>
     /// 身体状态机的扩展成员：为 GF.Fsm 的 <see cref="IFsm{T}"/> 补充物理帧推进。
-    /// 调度属于状态机，单个状态的决策属于 <see cref="AbstractBodyState{TBody}"/>；动画不回调代码。
+    /// 调度属于状态机，单个状态的决策属于 <see cref="AbstractBodyState{TBody}"/>；技能动画在连续决策后只推进一次。
     /// 状态机未运行 / 已销毁 / 当前状态不是身体状态时一律无操作（实体隐藏期间安全调用）。
     /// </summary>
     public static class BodyFsmExtensions

@@ -2,6 +2,54 @@
 
 在仓库根执行。实际引擎：`S:/Godot4/Godot4CSharp_console.exe`；可换成本机对应路径。
 
+## 场景路径大小写缓存（2026-10-18）
+
+依据第 40 章命名与 UID 约定、第 50 章本地编辑器状态边界检查。正式资源均使用 level_1；旧路径来自 `.godot/editor/editor_layout.cfg` 的 open_scenes、project_metadata.cfg 的最近记录及旧名折叠状态。用户关闭编辑器后已备份并迁移相关缓存，保留标签、布局和已有新版折叠状态；不改场景、业务表、框架或插件，不提交本地缓存。
+
+- 隔离副本复制实际打开/最近记录后，Godot `--headless --editor --quit-after 120` 冷启动复现恰好两条 Level_1 大小写警告；修正缓存后的同命令为零，两次退出均为 0。日志 `.godot/validation/scene_case/reproduce.log` / `isolated_fixed.log`；再次检查修复计划为空。
+- 正式工程同命令连续冷启动两次，大小写警告均为 0，进程退出均为 0；退出后旧路径未写回，修复计划仍为空。日志 `scene_case/actual_fixed_1.log`、`actual_fixed_2.log` 及对应 `.exitcode`；缓存备份 `scene_case/before_editor_actual_20261018_163717/`。九个改名场景、project.godot 及用户正在调整的 item_appearances.tres 前后 SHA256 一致，UID 和内容保留。
+- `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry`：511 条资源路径、274 个 UID、23 个暂存几何节点通过，旧名重复场景不存在。工具增加按磁盘真实名称检查路径各段大小写；正确路径、错误文件名大小写、错误目录大小写及不存在资源四种检查通过。
+- 编辑器退出仍有既有插件释放错误和环境根证书读取错误；它们与本次大小写告警分开记录，未扩大依赖修补范围。
+
+## Form 参数、快捷键与配置边界复核（2026-10-18）
+
+依据第 10 章 FormData 契约、第 20/50 章源表与正常生成入口、第 40 章原生场景绑定实施。恢复 InventoryFormData，并为结算窗口增加 SettlementFormData；战斗 V 经 InputMap 和既有窗口请求开关技能页。九个业务场景改为 snake_case，保留 UID；框架直接绑定的 LoadingForm / QuestionTips 保留原名。未修改 Framework、addons、Tools/Luban 或玩家正式存档。
+
+配置复核删除配方 EquipmentDropPoolOverride / UseMonster 哨兵、只影响血条的 FeaturedOpponentId 及未使用的 Rank / MonsterRank。奖励直接读 MonsterConfig：当前大猩猩基础装备池为 None，花果山仍为 3 倍生命、25 经验；血条由关卡场景绑定 stage_5_a。Schema、源表、事件和消费端同步，生成代码/bytes 只由 Luban 更新。
+
+| 验证 | 结果 |
+| --- | --- |
+| `Configs/GameConfig/gen_code_bin_to_project_lazyload.bat` | 退出 0，自动清理 MonsterRank 和 UID，更新关卡/怪物二进制；`form_navigation/boundary_luban.log` |
+| `dotnet test Tests/BattleTests --no-restore -v quiet`、ProfileTests、LevelTests | 最新配置变更后 194 / 142 / 18，共 354 项通过，包含当前守关无装备奖励与真实序列化容量边界；`battle_final.log` / `profile_final.log` / `level_final.log` |
+| `dotnet build Godot/GodotProject/.godot/validation/skills_runtime/project/GodotProject.csproj --no-restore -v quiet` | 恢复完整正式 UI 驱动后 0 错误、6 个既有框架/网络警告；`build_final.log`。构建隔离副本，避免触发正在打开的正式编辑器重载 |
+| 实际 `--smoketest=ui` 专项 | V 开关、暂停输入、长按重复拒绝、关窗不重开、重映射通过；FormData 背包、五招/命中/音效/RESET、拾取、无双、窗口/实体复用、死亡动画结算与重试/地图通过，真实进程退出 0；`runtime_probe.log` / `.exitcode`。该专项发生在本次三个配置字段清理之前 |
+| 最新实际 `--smoketest=level` | 五波、生成点/相机/物理门、场景绑定的居中血条、W 出口、成功页、地图重读通过，经验 204；真实进程退出 0，`level_runtime_final.log` / `.exitcode` |
+| 原生场景保存与内容对照 | Godot 编辑器脚本生成顶部生命条绑定，仅合入该属性，保留原 UID、出口继承与几何；`bind_scene.log` |
+| 原生 `validate_level_scene.gd` / `validate_anim_libraries.gd` | 最新场景绑定、Tool 条目、地形/相机及四类演员动画调用通过，退出码均 0；`scene_final.log` / `animations_final.log` |
+| XLSX Diff 1.6.4 实际 worker | 全部 11 本在值/公式两种模式均可读；本次四本的前后 diff 均非空，变化格数 LevelConfig 23、Enemy 6、beans 10、enums 18，两模式一致。按行/列删除对照所有保留格 typed values 通过，其他 ZIP 部件保留；`check_xlsx_diff.mjs --boundaries` |
+| `normalize_xlsx_namespaces.py <四本>` | 结构编辑后用既有工具恢复默认命名空间，最终 0 本需修复；未重建样式或其他 Sheet |
+| `dotnet format whitespace ... --verify-no-changes` / `git diff --check` | 通过。当时引用扫描被旧名 WukongEntity.tscn 阻止；该重复场景现已不存在，后续大小写缓存修复已完成最终引用检查，结果见本页首节 |
+
+日志、临时脚本和预览集中在 `.godot/validation/form_navigation/`。已查看表格及实际血条截图。首次 UI 专项因键盘 Device 的错误测试假设失败，已改为检查实际键位；另一次火魔斩等待超时，增加仅限隔离副本的诊断后复测通过，未更改玩法，不能声称修复了一个已定位的技能问题。专项 PASS 不代表完整 UI 所有旧失败已消失。
+
+引擎仍有环境根证书读取及既有 WebRequest 关停异常；编辑器脚本退出仍有 ComponentInsoector 释放异常，分别记录，未修补只读依赖。正式编辑器保留旧打开路径时会重新生成旧名 WukongEntity.tscn，已请求关闭后清理；不将该重复文件当成新的正式资源登记。
+
+## 动画入口与包装清理（2026-10-18）
+
+按用户授权修订第 10/20/30/60 章：方法键统一 `AnimEvent` 后缀，声音直接调用 `PlaySoundAnimEvent(SoundId)`；状态仍负责分支、死亡收益及安全退出。删除 SkillData、音效宿主接口、施放身份转发与 InventoryFormData 单引用包装，补齐悟空场景遗漏的五段普攻列表和命中声。未修改框架、插件、生成物、源表或美术图集。
+
+实际执行与结果：
+
+- `dotnet test Tests/BattleTests --no-restore -v quiet`：194 通过；ProfileTests 142、LevelTests 18，共 354。连续受击改查动画重启，声音由真实引擎断言；保留旧落地回调不能改变复用状态的测试。
+- `dotnet build Godot/GodotProject/.godot/validation/skills_runtime/project --no-restore -v quiet`：恢复完整正式调试代码后 0 错误，6 个既有依赖/网络警告。构建与运行都在隔离副本，不触发用户编辑器重载。
+- 隔离项目执行 `--headless --script res://EditorScripts/validate_anim_libraries.gd`：四类演员的普通/技能/独立效果方法目标及后缀通过，退出码 0。旧的禁止方法轨道断言已删除，官方技能画面校验同步实际 Visual 层级。
+- 原生对照 `check_callback_invariants.gd`：2424 个原值键、动画长度/循环/标记及 48 个原方法键时点和参数不变；只重命名入口，并为 hurt/death 各增加一个零时点声音键；原资源 UID 保留。
+- 60Hz `--smoketest=ui` 专项：五招、七段命中×三类怪物、输入、真实 GGF 音效、连续两次受击/一次死亡语音、技能中断 RESET/普通动画恢复、拾取、背包操作/退订/复用、无双演出、死亡动画结算/重试/返回地图通过，进程退出码 0。专项仅在忽略的验证副本重排入口；技能命中夹具结束后重新冻结怪物并等待旧飘字结束，避免与后续恢复数字计数互相干扰，不改正式测试断言或玩法。
+- `--smoketest`：33 次真实状态切换及全部断言通过，进程退出码 0，包含第四段松手不追加第五段。
+- `validate_game_references.py --compare-staged-geometry`：511 条路径、273 个脚本 UID、23 处暂存几何通过；`dotnet format whitespace . --folder --include <本轮手写 C#> --verify-no-changes`、`git diff --check` 通过。
+
+日志与退出码在 `.godot/validation/animation_callbacks/`。引擎仍报告环境根证书读取失败和既有 `DefaultWebRequestAgentHelper` 退出异常；编辑器导入退出仍有 ComponentInsoector 的 RefCounted Free 错误。以上与断言和进程码分别记录，本轮未扩大只读依赖修改范围，也不将专项结果称为完整 UI 全链路回归。
+
 ## 常用命令
 
 ```powershell
@@ -20,7 +68,7 @@ python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geo
 & 'S:/Godot4/Godot4CSharp_console.exe' --path Godot/GodotProject --rendering-method gl_compatibility -- --smoketest=frontend
 & 'S:/Godot4/Godot4CSharp_console.exe' --path Godot/GodotProject --rendering-method gl_compatibility -- --smoketest
 # F6 独立测试场地，不启动正式流程或读写玩家档案
-& 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360
+& 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject --scene res://TheGame/Scenes/test_arena.tscn --quit-after 360
 ```
 
 按修改范围选用 `--smoketest=level-cancel`、`ai`；规则单测无需打开编辑器。场景装配用 `--headless --script res://EditorScripts/validate_level_scene.gd -- --resize --fractional`，编辑器 Tool 再加 `--editor`；触发区用 `validate_level_triggers.gd`，动画库用 `validate_anim_libraries.gd`。有渲染器时，`validate_musou_flash.gd` 检查原版无双 19 帧透明动画；`validate_skill_layout.gd` 检查技能面板坐标、45px 图标、造三五入口及无双黑底板的空/半满/满值装配，`validate_level_up.gd` 检查升级蓝线裁剪、画面和注册尺寸。
@@ -32,6 +80,67 @@ XLSX Diff 1.6.4 的解析器无法读取带 `x:` 前缀的 SpreadsheetML 标签�
 战斗背包为 `inventory_form.png`，品质上拉菜单为 `inventory_quality_sale.png` / `inventory_quality_sale_scaled.png`，出售确认框为 `inventory_sale_confirmation.png` / `inventory_sale_confirmation_scaled.png`，多属性详情为 `inventory_tooltip_attributes.png`，失败结算为 `settlement_failure.png`，成功结算为 `encounter/settlement_success.png`。成功页截图在真实检查点完成后立即采集，可能带有短暂的保存成功提示；提示按真实时间淡出，背包和结算暂停不会将它冻结。
 
 装备背包与实际详情为 `inventory_equipment.png`，操作菜单为 `inventory_actions.png`，武器/防具同时穿戴为 `inventory_wearing.png`，绿色/蓝色恢复数字为 `recovery_numbers.png`；无名称的地面恢复品和装备为 `ground_pickups.png`；地图默认边缘闪烁的两端画面为 `frontend/map_current_low.png`、`frontend/map_current.png`。
+
+## 配置与原生动画迁移完成（2026-10-18）
+
+依据第 10 章的职责/命名、第 20/50 章的源表与原生成入口、第 40 章的外置资源约定实施。用户本轮明确允许原生方法轨道，覆盖第 30 章旧禁令；规范正文未改。Framework/addons/Tools/Luban 与 Git 索引未改，存档测试使用独立 APPDATA 下的 `user://Validation/<模式>/<Guid>`。
+
+完成删除 SkillAction/SkillEffect/SkillTimeline/Drop 四表，SkillHit 合入 Attack 后删除；五招、独立效果、普通攻击、声音、掉落、物品外观及 UI/结算时序的正式消费者同步迁移。24 个原 xlsx 归为 11 个工作簿、16 张业务 Sheet；Hero / Enemy 按用户最新要求分开。三张 Schema 继续独立，生成类型和保留数据 ID 不改名。
+
+| 命令/证据 | 结果与覆盖范围 |
+| --- | --- |
+| `Configs/GameConfig/gen_code_bin_to_project_lazyload.bat` | 最终 Luban 导出退出 0，自动清理五表 bytes、旧类/四个编排枚举及相应 UID；未手改生成物。`config_rework/final_luban.log` |
+| `python .../.godot/validation/config_rework/audit.py` | 8767 格逐格 typed values、Sheet 绑定与嵌套合并表头通过；原数值保留，击退两轴统一 ×24 为 px/s。Profile 原文件未重写 |
+| `node .../.godot/validation/config_rework/check_plugin.mjs` | 实际安装的 XLSX Diff 1.6.4 值/公式两种模式共 22 次通过：每个工作簿可读，所有 Sheet 名/数量和非空行列符合预期。`normalize_xlsx_namespaces.py <全部 xlsx>` 检查 0 份需修复 |
+| `dotnet test Tests/BattleTests --no-restore -v:q`、ProfileTests、LevelTests | 194 / 142 / 18，共 354 项 PASS。删除旧表解释器测试，保留数值、支付、输入隔离、GGF 状态/中断/身份/回调回归；新增技能伤害不进入普通段索引检查。日志 `battle_migration_final.log` / `profile_migration_final.log` / `level_migration.log` |
+| `dotnet build Godot/GodotProject/.godot/validation/skills_runtime/project/GodotProject.csproj --no-restore -v:q` | 恢复完整正式 UI 驱动后的最终构建：0 错误、1 个 NU1900 警告（此前完整编译另有既有框架警告）。已清除隔离副本里的 41 个过期源文件，避免误编译旧类。`skills_runtime/final_migration_build.log` |
+| 原生 `check_skill_values.gd` / `restore_skill_uid.gd` | 1424 个原值键的时点、帧、几何、形状与动画长度通过；五个零时点声音键存在。22 个修改资源的原 UID 对照通过（主技能库 `j3uaow5vlljx`、普攻库 `dpdyqe7blxbqj`）；新增 ItemAppearancesResource UID 由 Godot 扫描生成后同步 |
+| 60Hz、120Hz 实际引擎技能专项 | 两次 `SMOKE-SKILL-SYNC PASS`、退出 0：五招输入与单次扣蓝、持续 W+J、火魔有/无目标、落地等待和真实伤害、学习/图标/暂停/钱包/池复用、七段技能击退×三种怪物与六条实际轨迹、GGF 音效及原生方法绑定。最终日志 `skills_runtime/migration_combined_verified.log` / `migration_skills_120_verified.log`；进程对象 WaitForExit 后保存真实退出码于对应 `.exitcode` |
+| 原生普攻专项 `--smoketest` | PASS、退出 0，观察 33 次切换：五段普攻、第四段松手不补第五段、走跑跳、命中/死亡及飘字。`skills_runtime/migration_normal_verified.log`；真实退出码 `migration_normal.exitcode` 为 0 |
+| 表现与死亡动画专项 | `SMOKE-PRESENTATION PASS`、`SMOKE-DEATH-ANIMATION PASS`、退出 0：实际装备/恢复品贴地与外观、拾取/暂停/满包/过期/复用、背包穿戴/出售/分页、无双演出结束恢复暂停、小怪血条退订复用；正式死亡动画结束前不结算，完成后重试/返回地图/重入通过。`skills_runtime/migration_combined_verified.log`；真实退出码 `migration_combined.exitcode` 为 0 |
+| Godot 隔离 `--headless --editor --import --quit` | 扫描完成、退出 0；C# 绑定和新资源可用，仍有既有 ComponentInsoector 退出释放异常。`skills_runtime/final_migration_scan.log` |
+| `validate_game_references.py --compare-staged-geometry` / `git diff --check` / `dotnet format whitespace ... --verify-no-changes` | 511 个资源路径、274 个 UID、23 个关卡几何节点通过；空白与本轮 51 个手写 C# 格式检查通过。旧表/枚举/解释器的正式 C# 与场景引用扫描为零 |
+
+技能专项用忽略目录的 `skill_knockback/prepare_impact_runtime.py` 选择现有技能检查；表现专项用 `prepare_presentation_runtime.py` 选择现有掉落/背包/HUD/复用和死亡检查，未添加生产观测 API。二者均在隔离副本运行，驱动最后的通用 UI PASS 文案不代表没有执行的完整 UI 部分通过。最终构建前已还原完整正式场景驱动。这里不声称此前“出生下落时出招”等无关完整 UI 失败已修复。
+
+已查看实际学习页、九连斩、穿戴背包、无双演出后半段，以及 Hero / Enemy 表的预览。根证书读取错误、WebRequest 退出 ObjectDisposedException 和插件退出释放错误仍存在；均记录于上述日志，未扩大到只读依赖修补。支持脚本、临时表与截图均留在忽略的 `.godot/validation/`。
+
+## 配置职责复核与原生动画方案（2026-10-18）
+
+遵循第 10/20/30/50 章的职责、源表和隔离验证要求；本轮报告第 30 章禁止方法轨道与用户最新方向冲突，未直接修改规范正文。正式代码仅补齐具体技能向独立特效传入击退中心，通用节点不再默认所有效果都按中心击退，回池清空该数据。全表审查、动画迁移与工作簿合并方案见 ProjectTour；尚未实施这些配置迁移，也没有提前删除资源或手改生成文件。
+
+| 验证命令 | 结果 |
+| --- | --- |
+| `dotnet test Tests/BattleTests --no-restore -v quiet`、ProfileTests、LevelTests | 195 / 157 / 18，共 370 项 PASS；在既有火魔目标/下冲/落地样例中检查中心坐标，拖尾不强制中心击退。已有 NU1900/CS8632 警告 |
+| `dotnet build Godot/GodotProject/.godot/validation/skills_runtime/project/GodotProject.csproj --no-restore -v quiet` | 同步本轮正式脚本到既有隔离副本后 0 错误、6 个框架/NU1900 警告；不构建正式编辑器输出 |
+| `python Godot/GodotProject/.godot/validation/skill_knockback/audit_source.py`、同目录 `check_xlsx_diff.mjs` | 官方 11 段字典、删列保值及其他 ZIP 部件通过；五张表的实际 XLSX Diff 值/公式两模式 10 项通过。本轮没有进一步改表 |
+| Godot `--path Godot/GodotProject/.godot/validation/skills_runtime/project --rendering-method gl_compatibility -- --smoketest=ui --skills-only` | 技能学习、五招、两分支、七段击退×三类怪物、实际轨迹、音效及资源关联断言通过；驱动未识别 `--skills-only`，仍继续整套 UI，随后在 `CheckGroundCombatAsync` 的“怪物 1 出生下落时允许出招”断言 FAIL、退出 1。整套不计通过 |
+| Godot `--headless --path Godot/GodotProject/.godot/validation/animation_plan --log-file <同目录>/engine.log --script res://probe.gd` | 独立原生 AnimationPlayer 探针 8 项 PASS、退出 0：零时点、24/60/120Hz 顺序、两种 Seek、停止中断、跨多个方法键、Deferred 时序。只验证原生 API，不代表正式技能已迁移；无框架或玩家存档依赖 |
+| `dotnet Tools/Luban/Luban.dll --version` | 本地 4.10.2；官方文档确认 `SheetName@file.xlsx` 语法。正式多 Sheet 合并和合并后的导表/插件核对尚未执行 |
+| `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry`、`git diff --check` | 472 路径、285 UID、23 个几何节点通过；空白检查通过 |
+
+引擎日志为 `.godot/validation/skill_knockback/runtime_skill_rule_review.log`，原生探针与 JSON 报告在 `.godot/validation/animation_plan/`。首次沙箱探针有日志目录/证书读取错误；指定工作区日志并在完整本机环境重跑后无该错误。正式引擎退出仍有已记录的 WebRequest ObjectDisposedException 与 4 个 ObjectDB 泄漏；Framework/addons 未改。出生下落断言失败与此前整套 UI 的已知限制一并保留，未为此次规划改动无关怪物行为。
+
+## 技能击退同步与规则归位（2026-10-17）
+
+依据第 10/30 章状态职责、20 章源表及 50 章生成/验证边界，按用户最新要求让动作选择归具体状态，数值和资源留表。删除新加的 KnockbackFromCenter（SkillHitConfig 回到本轮开始时的完整原文件）；并清理 GroundOnly、ConsumesSecondAirJump、时间轴 Condition/Direction/Anchor 及三个无用枚举。地面资格沿用悟空登记的 CanStart；空中跳跃、风暴击退中心、火魔寻敌/落地窗口和生成位置由具体状态执行，公共时间游标不再判断落地。Monster.SuperArmor、UI 框架覆盖行为与素材镜像具有实际配置职责，保留。
+
+原始技能字典无误，偏差在执行链：击退换算从旧项目 X=25/30、Y=15 改为两轴 24；三种怪物重力 980→864；补齐官方横向 0.8/源步的秒制衰减；三个 hurt 动画经原生 ResourceSaver 将 0.28→0.5 秒，UID/其余轨道不变。首步积分校正重现官方先位移后加重力，24/60/120Hz 的纵向位移均与源公式吻合；不添加质量系数。
+
+| 验证命令 | 结果 |
+| --- | --- |
+| `$env:AI_MODE='1'; cmd /c Configs/GameConfig/gen_code_bin_to_project_lazyload.bat` | Luban 导出同步；三个废弃枚举及 UID 由原有生成流程清理，未手改生成代码 |
+| `python Godot/GodotProject/.godot/validation/skill_knockback/audit_source.py` | 11 个官方伤害阶段的击退、伤害类型、命中预算和间隔一致；原脚本重力/减速路径无质量系数；删列后其余值及五张表其他 ZIP 部件不变 |
+| `node Godot/GodotProject/.godot/validation/skill_knockback/check_xlsx_diff.mjs` | 实际 XLSX Diff 1.6.4 值/公式两种解析共 10 项 PASS；五表默认命名空间检查通过 |
+| `dotnet test Tests/BattleTests --no-restore -v quiet`、ProfileTests、LevelTests | 195 / 157 / 18，合计 370 项 PASS；包括三档帧率的减速/纵向源轨迹、中心击退、状态指定方向与火魔落地窗口 |
+| `dotnet build Godot/GodotProject/.godot/validation/skills_runtime/project/GodotProject.csproj --no-restore -v quiet` | 最终完整隔离副本 0 错误、6 个既有框架/NU1900 警告；此前专项截断副本另有不可达代码警告 |
+| Godot `--path <隔离副本> --rendering-method gl_compatibility -- --smoketest=ui --skills-only` | `SMOKE-SKILL-SYNC PASS`、退出 0：五招真实输入、火魔两分支/命中、图标学习同步、声音与资源关联；七段悟空伤害×三种怪物实际入口及六条真实物理轨迹通过 |
+| Godot `--path <隔离副本> --rendering-method gl_compatibility -- --smoketest` | 最终版本 PASS、退出 0：五段普攻、第四段松键不补第五段、走跑跳、实际命中/死亡与池化飘字通过 |
+| `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry`、`dotnet format whitespace . --folder --include <本轮手写 C#> --verify-no-changes`、`git diff --check` | 472 路径、285 UID、23 个关卡几何节点通过；格式检查通过 |
+
+真实引擎采样：猴子、妖猴、大猩猩的升龙挑高分别为 172.560 / 172.574 / 172.569px，源步理论顶点约 172.5px；突刺的轻微上浮均约 2.5px，横移约 140.09px。轨迹只比较无干扰单次受击；正式火炎突击仍有四次判定，实战距离由实际命中次数、地形和目标行为决定，不把一次命中样本当成整招距离。
+
+证据在 `Godot/GodotProject/.godot/validation/skill_knockback/`，含 `source_audit.json`、`runtime_final.log` 和表格核对工具；六条轨迹在隔离工程 `.godot/validation/skill_impacts.json`。专项仅在忽略副本选取原有技能断言和新增击退断言，驱动器原来的整套 UI 汇总文案不代表未执行部分通过。退出仍有已登记的 WebRequest ObjectDisposedException 和 4 个 ObjectDB 泄漏；未修改 Framework/addons，也未修改 Git 索引或玩家正式档案。
 
 ## 左下菜单与无双底板（2026-10-17）
 
@@ -54,7 +163,7 @@ XLSX Diff 1.6.4 的解析器无法读取带 `x:` 前缀的 SpreadsheetML 标签�
 | --- | --- |
 | `dotnet test Tests/BattleTests --no-restore -v quiet`、ProfileTests、LevelTests | 186 / 154 / 18，合计 358 项通过 |
 | `dotnet build Godot/GodotProject/.godot/validation/skills_runtime/project/GodotProject.csproj --no-restore -v quiet` | 隔离副本 0 错误、5 个既有框架警告及 NU1900；未构建正在使用的正式编辑器输出 |
-| `python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/BattleForm.tscn --namespace GameLogic.UI`、Luban 原有导表入口、CollectionRes 原有生成器 | Ge 生成五项根绑定；Luban 保留枚举数值 ID；CollectionRes 生成 461 项，正式资源常量只新增名称/路径替换及生成时间 |
+| `python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/battle_form.tscn --namespace GameLogic.UI`、Luban 原有导表入口、CollectionRes 原有生成器 | Ge 生成五项根绑定；Luban 保留枚举数值 ID；CollectionRes 生成 461 项，正式资源常量只新增名称/路径替换及生成时间 |
 | `node Godot/GodotProject/.godot/validation/check_battle_form_xlsx.mjs` | XLSX Diff 1.6.4 的值/公式两种模式共四项通过：界面UI.xlsx 两格、__enums__.xlsx 一格变化；其他 ZIP 部件不变，保留默认命名空间 |
 | Godot `--path <隔离副本> --rendering-method gl_compatibility -- --smoketest=frontend` | SMOKE PASS：真实启动、六格存档、选角、地图、BattleForm、回滚、提示复用与 GGF 声音通过 |
 | Godot `--path <隔离副本> --rendering-method gl_compatibility -- --smoketest` | SMOKE PASS、退出 0：五段普攻、第四段松手不补第五段、走跑跳、实际命中与死亡、池化飘字通过 |
@@ -133,7 +242,7 @@ HeroSystem 成长/穿戴同步的优先级为 100，UI 默认 0；新增 UI 先�
 | OpenGL `--smoketest=ui` | SMOKE PASS、退出 0；数值、换装、出售、无双、暂停、退订与池复用通过 |
 | OpenGL `--smoketest=frontend` | SMOKE PASS、退出 0；启动、六格档案、地图、保存、回滚、作用域与生命周期通过 |
 | OpenGL `--smoketest=level` | SMOKE PASS、退出 0；五波、结局导航、自动保存与地图重读通过 |
-| F6 `--headless --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360` | 玩家与两只怪物就绪，独立装配正常，退出 0 |
+| F6 `--headless --scene res://TheGame/Scenes/test_arena.tscn --quit-after 360` | 玩家与两只怪物就绪，独立装配正常，退出 0 |
 | `validate_game_references.py --compare-staged-geometry` | 441 路径、278 UID、23 几何节点通过 |
 | `dotnet format whitespace . --folder --include <手写文件清单> --verify-no-changes` | 214 份手写 C# 格式通过；UTF-8/CRLF、文档链接与 git diff --check 通过 |
 
@@ -155,7 +264,7 @@ Model 只保存数据与查询，System 直接修改绑定属性。删除 Profil
 | `dotnet test Tests/LevelTests --no-restore -v quiet` | 18/18；合计 289 项通过 |
 | Godot `--headless --editor --build-solutions --quit --no-window` | 脚本扫描及构建完成，退出 0 |
 | OpenGL `--smoketest=frontend` / `ui` / `level` / `level-cancel` | 四组 SMOKE PASS、退出 0；保存回滚、背包绑定与复用、整关结算和加载取消通过 |
-| F6 `--headless --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360` | 玩家与两只怪物就绪，独立模型/系统装配正常，退出 0 |
+| F6 `--headless --scene res://TheGame/Scenes/test_arena.tscn --quit-after 360` | 玩家与两只怪物就绪，独立模型/系统装配正常，退出 0 |
 | `validate_game_references.py --compare-staged-geometry` | 441 路径、278 UID、23 几何节点通过 |
 | `dotnet format whitespace . --folder --include <手写文件清单> --verify-no-changes` | 212 份手写 C# 全部通过；UTF-8 无 BOM、CRLF 通过 |
 
@@ -182,7 +291,7 @@ HeroSystem 承担属性汇总、成长/装备联动、资源与无双规则；Pr
 | OpenGL `--smoketest=ui` | 最终构建 SMOKE PASS、退出 0；生命/魔法/无双绑定、穿脱与出售、预览、结算重试、取消、失败清理与重入 |
 | OpenGL `--smoketest=level` | SMOKE PASS、退出 0；五波、守关条、出口、检查点和地图重读 |
 | OpenGL `--smoketest=level-cancel` | SMOKE PASS、退出 0；在途取消及迟到实体回收 |
-| F6 `--headless --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360` | 最终构建退出 0；玩家及两只怪物正常显示，无启动/运行空引用 |
+| F6 `--headless --scene res://TheGame/Scenes/test_arena.tscn --quit-after 360` | 最终构建退出 0；玩家及两只怪物正常显示，无启动/运行空引用 |
 | `validate_game_references.py --compare-staged-geometry` | 441 条序列化路径、278 个 UID、23 个几何节点通过 |
 | 本地 Markdown 链接、UTF-8/CRLF、`git diff --check` / `git diff --cached --check` | 通过；本轮未修改 Framework/addons/生成物/配置/规范正文，原暂存区保留 |
 
@@ -209,7 +318,7 @@ F6 初次验证发现合并注册块时漏掉配置、输入、战斗、AI、掉
 | OpenGL `--smoketest=frontend` | SMOKE PASS、退出 0；补充关闭零回调、重开唯一回调、迟到绑定拒绝；属性系统入关唯一订阅、离关完全退订 |
 | OpenGL `--smoketest=level` | SMOKE PASS、退出 0；五波、守关条、出口、结算保存与地图重读 |
 | OpenGL `--smoketest=level-cancel` | SMOKE PASS、退出 0；在途显示取消与迟到回收 |
-| F6 `--headless --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360` | 独立 FSM 的属性模型/系统就绪，玩家和两只怪物正常显示，退出 0 |
+| F6 `--headless --scene res://TheGame/Scenes/test_arena.tscn --quit-after 360` | 独立 FSM 的属性模型/系统就绪，玩家和两只怪物正常显示，退出 0 |
 | `validate_game_references.py --compare-staged-geometry` | 441 条序列化路径、278 个 UID、23 个关卡几何节点通过 |
 | 本地 Markdown 链接、UTF-8/CRLF、`git diff --check` / `git diff --cached --check` | 通过；暂存区保留，Framework/addons/生成代码与配置无本轮改动 |
 
@@ -234,7 +343,7 @@ F6 初次验证发现合并注册块时漏掉配置、输入、战斗、AI、掉
 | OpenGL `--smoketest=frontend` | SMOKE PASS、退出 0；新档/读档、地图保存提示、放弃回滚、模型移除与重建通过 |
 | OpenGL `--smoketest=level` | SMOKE PASS、退出 0；五波、守关怪、W 出口、结算保存和地图重读通过 |
 | OpenGL `--smoketest=level-cancel` | SMOKE PASS、退出 0；在途显示取消、迟到怪物回收通过 |
-| F6 `--headless --scene res://TheGame/Scenes/TestArena.tscn --quit-after 360` | 玩家与两只怪物就绪，退出 0；独立 FSM 注册模型、系统和工具 |
+| F6 `--headless --scene res://TheGame/Scenes/test_arena.tscn --quit-after 360` | 玩家与两只怪物就绪，退出 0；独立 FSM 注册模型、系统和工具 |
 | `validate_game_references.py --compare-staged-geometry` | 441 条路径、279 个 UID、23 个关卡几何节点通过 |
 | `git diff --check`、`git diff --cached --check` | 均通过；保留原暂存区，Framework/addons/生成代码无本轮改动 |
 

@@ -1,4 +1,8 @@
 {
     "commentTranslate.source": "Bing",
-    "godotToolsCsharp.csharp.dotnetWatch": false
+    "godotToolsCsharp.csharp.dotnetWatch": false,
+    "cSpell.words": [
+        "musou",
+        "Wukong"
+    ]
 }

@@ -62,7 +62,7 @@ def apply(manifest_path):
             text = re.sub(r'\[sub_resource type="Animation" id="idle2"\].*?(?=\n\[)', '', text, flags=re.S)
             text = text.replace('&"idle2": SubResource("idle2"),\n', '')
         path.write_text(text, encoding='utf-8')
-    for relative in ('TheGame/Entitys/WukongEntity.tscn', 'TheGame/UIs/Widgets/hero_preview.tscn'):
+    for relative in ('TheGame/Entitys/wukong_entity.tscn', 'TheGame/UIs/Widgets/hero_preview.tscn'):
         path = PROJECT / relative
         text = re.sub(r'hframes = 6\nvframes = \d+', f'hframes = 6\nvframes = {rows}', path.read_text(encoding='utf-8'))
         path.write_text(text, encoding='utf-8')

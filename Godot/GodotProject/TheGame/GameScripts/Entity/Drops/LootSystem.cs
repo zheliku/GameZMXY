@@ -66,7 +66,7 @@ public sealed class LootSystem : AbstractSystem
     /// <returns>每颗球的类型和奖励；魔法在拾取时按角色上限计算。</returns>
     public List<LootReward> Roll(MonsterConfig monster, Func<float> random)
     {
-        var drops = this.GetModel<ConfigurationModel>().Tables.TbDropConfig.Data;
+        var drops = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
         var rewards = new List<LootReward>();
         int souls = Count(monster.SoulCount, random());
         for (int i = 0; i < souls; i++)
@@ -96,7 +96,7 @@ public sealed class LootSystem : AbstractSystem
     /// <returns>向下取整后的回蓝量。</returns>
     public int ManaAmount(int maximum)
     {
-        var drops = this.GetModel<ConfigurationModel>().Tables.TbDropConfig.Data;
+        var drops = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
         return Math.Max(drops.ManaMinimum, (int)(maximum * drops.ManaMaxFraction));
     }
 
