@@ -37,7 +37,7 @@ namespace GameLogic.Heroes
             new(SkillId.BlazingFlash, typeof(WukongBlazingFlashState), InputSystem.Skill1),
             new(SkillId.FlameStorm, typeof(WukongFlameStormState), InputSystem.Skill2),
             new(SkillId.FireDemonSlash, typeof(WukongFireDemonState), InputSystem.Skill3)
-        ]; // 悟空只提供不可变登记项，运行时容器归 SkillModel。
+        ]; // 悟空只提供不可变登记项，本局登记容器归 HeroModel。
 
         /// <summary>悟空从地面状态起步。</summary>
         protected override Type InitialBodyStateType => typeof(HeroGroundState);

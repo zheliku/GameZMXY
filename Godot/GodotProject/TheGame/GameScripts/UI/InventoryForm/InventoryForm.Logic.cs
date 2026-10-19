@@ -16,7 +16,7 @@ using System.Collections.Generic;
 
 namespace GameLogic.UI;
 
-/// <summary>观察战斗个人资料与背包，向关卡提交穿脱装备请求。</summary>
+/// <summary>观察战斗个人资料与背包，通过命令提交穿戴与出售请求。</summary>
 public partial class InventoryForm : IController
 {
     private InventoryFormData m_InventoryData; // 本次打开借用的状态源。
@@ -283,7 +283,7 @@ public partial class InventoryForm : IController
     /// <param name="instanceId">菜单捕获的背包实例。</param>
     private void OnEquipRequested(Guid instanceId)
     {
-        if (m_InventoryData != null && this.GetSystem<LevelSystem>().TryEquip(instanceId) == true)
+        if (m_InventoryData != null && this.SendCommand(new EquipEquipmentCommand(instanceId)))
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
@@ -291,7 +291,7 @@ public partial class InventoryForm : IController
     /// <param name="instanceId">菜单捕获的背包实例。</param>
     private void OnSellRequested(Guid instanceId)
     {
-        if (m_InventoryData != null && this.GetSystem<LevelSystem>().TrySell(instanceId) == true)
+        if (m_InventoryData != null && this.SendCommand(new SellEquipmentCommand(instanceId)))
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
@@ -299,7 +299,7 @@ public partial class InventoryForm : IController
     /// <param name="slot">被点击的穿戴部位。</param>
     private void OnSlotClicked(EquipmentSlot slot)
     {
-        if (m_InventoryData != null && this.GetSystem<LevelSystem>().TryUnequip(slot) == true)
+        if (m_InventoryData != null && this.SendCommand(new UnequipEquipmentCommand(slot)))
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
@@ -322,11 +322,11 @@ public partial class InventoryForm : IController
         m_SaleConfirmation.Open(quality, count, price);
     }
 
-    /// <summary>确认层已清除一次性意图，窗口只向关卡提交具名交易请求。</summary>
+    /// <summary>确认层已清除一次性意图，窗口通过命令提交已确认的交易请求。</summary>
     /// <param name="quality">本次明确确认的品质。</param>
     private void OnQualitySaleConfirmed(EquipmentQuality quality)
     {
-        if (m_InventoryData != null && this.GetSystem<LevelSystem>().SellByQuality(quality) > 0)
+        if (m_InventoryData != null && this.SendCommand(new SellEquipmentByQualityCommand(quality)) > 0)
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 }

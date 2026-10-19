@@ -1,4 +1,5 @@
 using GameLogic.Config;
+using GameFramework.Fsm;
 using GameLogic.Architecture;
 using GameLogic.Equipment;
 using GameLogic.Save;
@@ -269,7 +270,6 @@ public sealed partial class UiSmokeScenario
         var snapshot = flow.GetUtility<SaveDataUtility>().Capture(flow.GetModel<ProfileModel>(), flow.GetModel<SkillModel>());
         var hero = FindHero();
         var attributes = flow.GetModel<GameLogic.Battle.HeroModel>();
-        var skillModel = flow.GetModel<SkillModel>();
         var system = flow.GetSystem<SkillSystem>();
         Vector2 originalPosition = hero.GlobalPosition;
         int originalMp = attributes.Mp.Value;
@@ -314,7 +314,7 @@ public sealed partial class UiSmokeScenario
             attributes.Mp.Value = attributes.MaxMp.Value;
             Input.ActionPress(InputSystem.Interact);
             Input.ActionPress(InputSystem.Attack);
-            await WaitUntilAsync(() => skillModel.ActiveSkillId == SkillId.RisingDragon, "持续组合键没有开始升龙");
+            await WaitUntilAsync(() => attributes.ActiveSkillId == SkillId.RisingDragon, "持续组合键没有开始升龙");
             var fsm = SmokeInspection.ReadField<GameFramework.Fsm.IFsm<GameLogic.Heroes.Body.IHeroBody>>(hero, "m_BodyFsm");
             var state = fsm.CurrentState;
             var serial = typeof(GameLogic.Body.AbstractBodyState<GameLogic.Heroes.Body.IHeroBody>).GetProperty("EnterSerial",
@@ -322,10 +322,10 @@ public sealed partial class UiSmokeScenario
             int entered = (int)serial.GetValue(state);
             await WaitUntilAsync(() => fsm.CurrentState == state && (int)serial.GetValue(state) > entered,
                 "持续 W+J 被错误消费，升龙收招后不能再次释放", 4000);
-            Check(skillModel.ActiveSkillId.Value == SkillId.RisingDragon, "持续升龙变成了普攻");
+            Check(attributes.ActiveSkillId.Value == SkillId.RisingDragon, "持续升龙变成了普攻");
             Input.ActionRelease(InputSystem.Interact);
             Input.ActionRelease(InputSystem.Attack);
-            await WaitUntilAsync(() => skillModel.ActiveSkillId == null && hero.OnFloor, "连续升龙没有正常落地", 4000);
+            await WaitUntilAsync(() => attributes.ActiveSkillId == null && hero.OnFloor, "连续升龙没有正常落地", 4000);
             await WaitFramesAsync(24);
 
             // 地面双击 D 后 J，走正式奔跑攻击分支。
@@ -377,7 +377,7 @@ public sealed partial class UiSmokeScenario
             int mana = attributes.Mp.Value;
             foreach (string action in inputs)
                 Input.ActionPress(action);
-            await WaitUntilAsync(() => skillModel.ActiveSkillId == id, $"输入没有释放 {id}", 2000);
+            await WaitUntilAsync(() => attributes.ActiveSkillId == id, $"输入没有释放 {id}", 2000);
             foreach (string action in inputs)
                 Input.ActionRelease(action);
             Check(attributes.Mp.Value == mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(id).ManaCost, $"{id} 扣蓝不正确");
@@ -392,11 +392,25 @@ public sealed partial class UiSmokeScenario
                 Input.ActionPress(InputSystem.Attack);
                 Input.ActionPress(InputSystem.Skill1);
             }
-            await WaitUntilAsync(() => skillModel.ActiveSkillId == null, $"{id} 没有正确收招", 8000);
+            try
+            {
+                await WaitUntilAsync(() => attributes.ActiveSkillId == null, $"{id} 没有正确收招", 8000);
+            }
+            catch (InvalidOperationException error)
+            {
+                var fsm = SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "m_BodyFsm");
+                var player = hero.AnimPlayer;
+                string effects = string.Join(", ", SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects")
+                    .Select(effect => $"{effect.Name}:{SmokeInspection.ReadField<AnimationPlayer>(effect, "m_Player").CurrentAnimationPosition:0.###}"));
+                throw new InvalidOperationException($"{error.Message}；动作 {fsm.CurrentState?.GetType().Name}，" +
+                    $"游戏时钟 {hero.ActionData.Time:0.###}，暂停 {GF.Base.IsGamePaused}，物理 {hero.IsPhysicsProcessing()}，" +
+                    $"位置 {hero.GlobalPosition}，速度 {hero.Velocity}，落地 {hero.OnFloor}，" +
+                    $"动画 {player.CurrentAnimation}:{player.CurrentAnimationPosition:0.###}/{player.CurrentAnimationLength:0.###}，效果 [{effects}]。", error);
+            }
             if (id == SkillId.FireDemonSlash)
             {
                 await WaitFramesAsync(2);
-                Check(skillModel.ActiveSkillId == null && hero.AttackSegment < 0, "火魔斩禁用输入期间的按键被排队到收招后");
+                Check(attributes.ActiveSkillId == null && hero.AttackSegment < 0, "火魔斩禁用输入期间的按键被排队到收招后");
                 Input.ActionRelease(InputSystem.Attack);
                 Input.ActionRelease(InputSystem.Skill1);
             }

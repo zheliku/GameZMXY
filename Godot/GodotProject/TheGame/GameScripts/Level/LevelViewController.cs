@@ -147,13 +147,9 @@ public partial class LevelViewController : Node2D, IController
         m_FloatingText?.StopSession();
         UnsubscribeProgressEvents();
         if (m_Architecture != null)
-            this.GetSystem<LevelSystem>().EndSession();
+            this.GetSystem<LevelSystem>()?.EndSession();
         ClearLoot();
         m_SessionActive = false;
-        if (LevelModel.Sequence == null)
-        {
-            return; // 未完成初始化或已经停止的会话没有需要解除的订阅。
-        }
 
         if (m_Triggers != null)
         {
@@ -161,16 +157,26 @@ public partial class LevelViewController : Node2D, IController
             m_Triggers.EndWatching();
         }
 
-        m_Camera.RightBoundaryReached -= OnCameraArrived;
-        m_Camera.StopFollowing();
-        m_Spawner.StageCleared -= OnStageCleared;
-        m_Spawner.MonsterDefeated -= OnMonsterDefeated;
-        m_Spawner.MonsterShown -= OnMonsterShown;
-        m_Exit.Entered -= OnExitContact;
-        m_Exit.Disable();
+        // 初始化可能在任一绑定处失败；清理只依赖本场景已取得的节点。
+        if (m_Camera != null)
+        {
+            m_Camera.RightBoundaryReached -= OnCameraArrived;
+            m_Camera.StopFollowing();
+        }
+        if (m_Exit != null)
+        {
+            m_Exit.Entered -= OnExitContact;
+            m_Exit.Disable();
+        }
         ClearFeaturedOpponent();
-        m_Spawner.SpawnFailed -= OnSpawnFailed;
-        m_Spawner.StopSession();
+        if (m_Spawner != null)
+        {
+            m_Spawner.StageCleared -= OnStageCleared;
+            m_Spawner.MonsterDefeated -= OnMonsterDefeated;
+            m_Spawner.MonsterShown -= OnMonsterShown;
+            m_Spawner.SpawnFailed -= OnSpawnFailed;
+            m_Spawner.StopSession();
+        }
         m_Player = null;
     }
 

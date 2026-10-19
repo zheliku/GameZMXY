@@ -40,7 +40,7 @@ public sealed class SkillReuseTests
         fsm.Start<HeroGroundState>();
         Tick(fsm, 1f / 60);
         Assert.IsType<TestSkillState>(fsm.CurrentState);
-        Assert.Equal(skill, scope.Skills.ActiveSkillId.Value);
+        Assert.Equal(skill, scope.Hero.ActiveSkillId.Value);
         Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(skill).ManaCost,
             scope.GetModel<HeroModel>().Mp.Value);
         Assert.False(scope.GetSystem<InputSystem>().ConsumePress(hero.ActionData, InputSystem.Skill1));
@@ -99,7 +99,7 @@ public sealed class SkillReuseTests
         fsm.Start<HeroGroundState>();
         Tick(fsm, .01f);
         Assert.IsType<TestSkillState>(fsm.CurrentState);
-        Assert.Equal(SkillId.FireDemonSlash, scope.Skills.ActiveSkillId.Value);
+        Assert.Equal(SkillId.FireDemonSlash, scope.Hero.ActiveSkillId.Value);
         Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(SkillId.FireDemonSlash).ManaCost,
             scope.GetModel<HeroModel>().Mp.Value);
     }
@@ -129,7 +129,7 @@ public sealed class SkillReuseTests
     {
         var scope = new SkillScope();
         var hero = new SkillHero(scope);
-        scope.Skills.ActiveSkillId = SkillId.RisingDragon;
+        scope.Hero.ActiveSkillId = SkillId.RisingDragon;
         hero.ActionData.InputLocked = inputLocked;
         var source = scope.Source;
         var input = new InputSystem(scope, source);
@@ -171,13 +171,13 @@ public sealed class SkillReuseTests
         Tick(fsm, .01f);
         Assert.Equal(1, hero.SkillBegins);
         Assert.Equal(321, hero.Velocity.X);
-        Assert.NotNull(scope.Skills.ActiveSkillId);
+        Assert.NotNull(scope.Hero.ActiveSkillId);
         hero.PendingHurt = new Vector2(-100, 0);
         hero.ActionData.Time += .01f;
         Tick(fsm, .01f);
         Assert.IsType<HeroHurtState>(fsm.CurrentState);
         Assert.Equal(1, hero.SkillEnds);
-        Assert.Null(scope.Skills.ActiveSkillId);
+        Assert.Null(scope.Hero.ActiveSkillId);
     }
 
     /// <summary>真实 GGF 先执行普攻离开，再开始技能动画；避免旧攻击清理掉新技能判定。</summary>
@@ -220,7 +220,7 @@ public sealed class SkillReuseTests
         scope.Skills.GetLearnedSkills(1).Add(id);
         skills.SelectSkills(1, SkillTestDefinitions.Wukong());
         Assert.True(skills.TryActivate(id, hero));
-        var data = scope.Skills.ActiveSkillId;
+        var data = scope.Hero.ActiveSkillId;
         Assert.Equal(0, hero.SkillBegins);
         using var manager = new FsmLifetime();
         var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
@@ -235,9 +235,9 @@ public sealed class SkillReuseTests
         ((AbstractHeroSkillState)fsm.CurrentState).CompleteAnimation();
         hero.ActionData.Time += 1d / 60;
         Tick(fsm, 1f / 60);
-        Assert.Null(scope.Skills.ActiveSkillId);
+        Assert.Null(scope.Hero.ActiveSkillId);
         Assert.IsType<HeroGroundState>(fsm.CurrentState);
-        Assert.Null(scope.Skills.ActiveSkillId);
+        Assert.Null(scope.Hero.ActiveSkillId);
         Assert.Equal(1, hero.SkillEnds);
     }
 
@@ -281,7 +281,7 @@ public sealed class SkillReuseTests
         scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
         skills.SelectSkills(1, new SkillDefinition(SkillId.RisingDragon, typeof(TestPreparationState), InputSystem.Skill1));
         Assert.True(skills.TryActivate(SkillId.RisingDragon, hero));
-        var data = scope.Skills.ActiveSkillId;
+        var data = scope.Hero.ActiveSkillId;
         int mana = scope.GetModel<HeroModel>().Mp.Value;
         using var manager = new FsmLifetime();
         var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
@@ -297,14 +297,14 @@ public sealed class SkillReuseTests
         hero.ActionData.Time = .02;
         Tick(fsm, .01f);
         Assert.IsType<TestReleaseState>(fsm.CurrentState);
-        Assert.Equal(data, scope.Skills.ActiveSkillId);
+        Assert.Equal(data, scope.Hero.ActiveSkillId);
         Assert.Equal(1, hero.SkillBegins);
         Assert.Equal(0, hero.SkillEnds);
         Assert.Equal(mana, scope.GetModel<HeroModel>().Mp.Value);
         hero.ActionData.Time += .3;
         Tick(fsm, .3f);
         Assert.IsType<HeroGroundState>(fsm.CurrentState);
-        Assert.Null(scope.Skills.ActiveSkillId);
+        Assert.Null(scope.Hero.ActiveSkillId);
         Assert.Equal(1, hero.SkillEnds);
     }
 
@@ -338,6 +338,9 @@ public sealed class SkillReuseTests
         public ConfigurationModel Configuration => BattleArchitecture.Instance.GetModel<ConfigurationModel>();
         /// <summary>本测试的独立施放。</summary>
         public SkillModel Skills { get; } = new([1]);
+
+        /// <summary>本次关卡的施放与数值状态。</summary>
+        public HeroModel Hero => m_Hero;
 
         /// <summary>装配规则系统。</summary>
         public SkillScope()

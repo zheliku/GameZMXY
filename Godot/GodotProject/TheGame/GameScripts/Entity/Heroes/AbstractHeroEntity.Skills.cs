@@ -49,7 +49,11 @@ public abstract partial class AbstractHeroEntity : ISkillActor
         if (startMarker == null)
             AnimPlayer.Play(animation);
         else
+        {
             AnimPlayer.PlaySectionWithMarkers(animation, startMarker);
+            // 分段播放不会触发恰在起点的方法键；显式求值起点，保持动画拥有阶段动作。
+            AnimPlayer.Seek(AnimPlayer.GetSectionStartTime(), update: true, updateOnly: false);
+        }
         AnimPlayer.Advance(0);
     }
 

@@ -2,6 +2,31 @@
 
 在仓库根执行。实际引擎：`S:/Godot4/Godot4CSharp_console.exe`；可换成本机对应路径。
 
+## GGF + QF 架构巡检（2026-10-19）
+
+规范集中在第 00 章，命名、配置、实体、场景和存档章节同步当前契约；ProjectTour 记录六个 Model 的所有者、注册点及实际调用链，WorkingNotes 提炼设计判断。职责检查覆盖业务 Architecture、Model/System、UI、输入/身体/AI/技能、关卡/掉落、存档/流程及资源生成工具入口。
+
+五类玩家修改请求经 Command 调用 System，整包出售汇总使用同步 Query；绑定独立观察变化。施放临时状态归本局 HeroModel，SkillModel 只留学习记录；拾取收益归 LevelSystem。窗口订退和池复用对称，装备格移除重复 ID，技能栏缓存固定节点并清空旧内容。SaveSystem 捕获异步周期引用、检查取消，ProcedureLoadGame 装配失败回收部分档案对象；关卡未初始化也可重复清理。存档必需 HeroId / TotalExperience 严格读取，版本保持 7。
+
+| 命令 / 场景 | 结果 |
+| --- | --- |
+| `dotnet test Tests/ProfileTests --no-restore -v quiet` | 170 通过，包含 Command/Query、学习/施放作用域、拾取/回滚和缺失存档字段 |
+| 同命令运行 `Tests/BattleTests`、`Tests/LevelTests` | 194 / 18 通过，合计 382 项 |
+| `dotnet build Godot/GodotProject/.godot/validation/skills_runtime/project --no-restore -v quiet` | 0 错误、6 个既有依赖/网络警告；`architecture_lifecycle/build_final.log` |
+| 引擎 `--path <隔离工程> --rendering-method gl_compatibility -- --smoketest=frontend` | PASS、退出 0；菜单、保存反馈、绑定、回滚、取消读档、部分注册失败回收与重读；`frontend_verified.log` / `.exit.txt` |
+| 同方式 `--smoketest=ui`，正式完整驱动 | PASS、退出 0；穿脱/出售/查询、技能/输入、无双、拾取/物理、结算/重试、订退复用、打开失败清理及存档重入；`ui_verified.log` / `.exit.txt` |
+| 同方式 `--smoketest=level-cancel`、`level` | 均 PASS、退出 0；未初始化重复清理、在途取消/晚到回收、五波关卡、出口保存及地图重读 |
+| 引擎 `--headless --path <隔离工程> --script res://EditorScripts/validate_anim_libraries.gd` | 四类演员的动作、方法入口和轨道契约通过、退出 0；`animations.log` |
+| `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry` | 511 条路径、279 个 UID、23 个暂存几何节点通过 |
+| 变更手写 C# 的 `dotnet format whitespace . --folder --include <文件> --verify-no-changes`、`git diff --check` | 通过；初次行尾检查失败后按 CRLF 格式化 |
+| 文档本地链接与标题锚点检查 | 13 份文档、73 条本地引用通过 |
+
+隔离项目先同步正式业务文件，等待完整构建退出，再启动引擎；APPDATA 为 `.godot/validation/migration_userdata`，存档为 `user://Validation/<场景>/<唯一编号>`。本轮详细日志位于 `.godot/validation/architecture_lifecycle/`；前一阶段日志保留在 `architecture_review/`，其中 `ui_complete_final.log` 才是当时完整驱动，其他专项日志按其标记解释。
+
+本轮 `ui_complete.log` 首次因测试反射读取已删除的重复 ID 失败；夹具改读 EquipmentData.InstanceId 后，完整 `ui_verified.log` 通过，未恢复生产冗余字段。原生标记起点方法键的复现及 Seek 修复证据保留在 `architecture_review/marker_probe.log`、`marker_seek_probe.log`。
+
+预期故障包括损坏档、过期档案写入、重复 EquipmentSystem 注册和缺失 BattleForm 绑定。根证书读取、WebRequest 关停 ObjectDisposedException 与关停 ObjectDB 泄漏警告仍存在，属于既有环境/依赖限制；未修改只读 Framework/addons、生成物、正式存档或 Git 索引。
+
 ## 场景路径大小写缓存（2026-10-18）
 
 依据第 40 章命名与 UID 约定、第 50 章本地编辑器状态边界检查。正式资源均使用 level_1；旧路径来自 `.godot/editor/editor_layout.cfg` 的 open_scenes、project_metadata.cfg 的最近记录及旧名折叠状态。用户关闭编辑器后已备份并迁移相关缓存，保留标签、布局和已有新版折叠状态；不改场景、业务表、框架或插件，不提交本地缓存。

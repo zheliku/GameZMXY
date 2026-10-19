@@ -141,6 +141,7 @@ public sealed class FrontendSmokeScenario
             var flow = SmokeInspection.ReadField<GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>>(
                 GF.Procedure.CurrentProcedure, "m_Owner");
             CheckTypedFsmData(flow);
+            await CheckCancelledLoadAsync(flow);
             var firstPlayerModel = flow.GetModel<ProfileModel>();
             var firstSaveSystem = flow.GetSystem<SaveSystem>();
             var firstEquipmentSystem = flow.GetSystem<EquipmentSystem>();
@@ -359,6 +360,7 @@ public sealed class FrontendSmokeScenario
             for (int frame = 0; frame < 4; frame++)
                 await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
             Check(GF.Procedure.CurrentProcedure is ProcedureTitle, "旧窗口排队事件改变了新周期流程");
+            await CheckFailedProfileRegistrationAsync(flow, start);
         }
         catch (Exception error)
         {
@@ -464,6 +466,79 @@ public sealed class FrontendSmokeScenario
             destroyedArchitectureRejected = true;
         }
         Check(destroyedArchitectureRejected, "FSM 销毁后仍能访问模型");
+    }
+
+    /// <summary>通过重复注册制造真实装配失败，验证档案回收和下一次读档。</summary>
+    /// <param name="flow">正式应用作用域。</param>
+    /// <param name="start">本周期标题窗口。</param>
+    /// <returns>失败清理及重新读档验证任务。</returns>
+    private async Task CheckFailedProfileRegistrationAsync(ProcedureOwner flow, StartForm start)
+    {
+        var saveSystem = flow.GetSystem<SaveSystem>();
+        var configuration = flow.GetModel<ConfigurationModel>();
+        await ClickAsync(start, "m_Start");
+        var saves = await WaitForSaveAsync();
+        // 测试拥有的重复项使真实 ProcedureLoadGame 在恢复档案后注册失败。
+        var duplicate = new EquipmentSystem(flow.GetArchitecture());
+        flow.RegisterSystem(duplicate);
+        await ClickAsync(saves, "Slots/m_Slot2");
+        await WaitUntilAsync(() => GF.Procedure.CurrentProcedure is ProcedureLoadGame && !duplicate.Initialized,
+            "读档装配失败未清理已注册的档案对象");
+        Check(flow.GetModel<ProfileModel>() == null && flow.GetModel<GameLogic.Skills.SkillModel>() == null &&
+            flow.GetSystem<ProfileSystem>() == null && flow.GetSystem<EquipmentSystem>() == null &&
+            flow.GetSystem<GameLogic.Skills.SkillSystem>() == null &&
+            ReferenceEquals(configuration, flow.GetModel<ConfigurationModel>()) &&
+            ReferenceEquals(saveSystem, flow.GetSystem<SaveSystem>()), "失败清理遗漏档案对象或移除了应用服务");
+
+        // 正式读档页没有返回按钮，测试使用既有 GGF 状态入口重试。
+        SmokeInspection.ChangeProcedure<ProcedureTitle>();
+        start = await WaitForAsync<StartForm>();
+        await ClickAsync(start, "m_Start");
+        saves = await WaitForSaveAsync();
+        await ClickAsync(saves, "Slots/m_Slot2");
+        await WaitForAsync<MapForm>();
+        Check(flow.GetModel<ProfileModel>()?.Initialized == true &&
+            flow.GetSystem<EquipmentSystem>()?.Initialized == true &&
+            flow.GetSystem<GameLogic.Skills.SkillSystem>()?.Initialized == true,
+            "失败后再次读档未建立完整档案作用域");
+        GD.Print("SMOKE-LOAD-ROLLBACK PASS: partial profile registration is cleared and reload succeeds.");
+    }
+
+    /// <summary>读档在等待检查点期间取消后，不创建空槽或发布当前槽身份。</summary>
+    /// <param name="flow">正式应用作用域，使用反射控制等待，不增加生产测试入口。</param>
+    /// <returns>取消及旧任务观察完成的任务。</returns>
+    private static async Task CheckCancelledLoadAsync(ProcedureOwner flow)
+    {
+        var system = flow.GetSystem<SaveSystem>();
+        var model = flow.GetModel<SaveModel>();
+        var pendingField = typeof(SaveSystem).GetField("m_PendingWrite",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var previousWrite = system.PendingWrite;
+        var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var cancellation = new System.Threading.CancellationTokenSource();
+        long slot = model.ActiveSlotUnitId;
+        var data = GF.Archive.CurrentData;
+        int count = GF.Archive.Catalogues.Count;
+        try
+        {
+            pendingField.SetValue(system, gate.Task);
+            var loading = system.LoadOrCreateAsync(6, 0, cancellation.Token);
+            Check(!loading.IsCompleted, "读档没有等待在途检查点");
+            cancellation.Cancel();
+            gate.SetResult(true);
+            bool cancelled = false;
+            try
+            { await loading; }
+            catch (OperationCanceledException) { cancelled = true; }
+            Check(cancelled && model.ActiveSlotUnitId == slot && ReferenceEquals(GF.Archive.CurrentData, data) &&
+                GF.Archive.Catalogues.Count == count, "取消后的旧读档仍创建文件或发布当前槽");
+        }
+        finally
+        {
+            gate.TrySetResult(true);
+            pendingField.SetValue(system, previousWrite);
+        }
+        GD.Print("SMOKE-LOAD-CANCEL PASS: cancelled load leaves catalogue and active slot unchanged.");
     }
 
     /// <summary>确认提示关闭释放回调，复用后只执行本次回调。</summary>

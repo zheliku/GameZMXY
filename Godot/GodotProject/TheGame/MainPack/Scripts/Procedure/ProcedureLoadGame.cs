@@ -6,6 +6,7 @@ using GameLogic.Procedure.FlowData;
 
 using System;
 using System.Linq;
+using System.Threading;
 using GameFramework.Procedure;
 using GameLogic.Save;
 using GameLogic.Equipment;
@@ -25,6 +26,7 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 public class ProcedureLoadGame : ProcedureBase
 {
     private int m_EntrySerial; // 每次进出使旧异步结果失效，不让离开后的读档覆盖新作用域。
+    private CancellationTokenSource m_Cancellation; // 离开时停止迟到读档结果的校验与发布，已提交的磁盘操作仍由框架完成。
 
     /// <summary>读档并创建档案作用域。</summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
@@ -32,6 +34,9 @@ public class ProcedureLoadGame : ProcedureBase
     {
         base.OnEnter(procedureOwner);
         int entrySerial = ++m_EntrySerial;
+        m_Cancellation = new CancellationTokenSource();
+        var token = m_Cancellation.Token;
+        bool ownsProfile = false;
         try
         {
             // 标题界面已关闭加载页；读档期间重新显示框架共享加载界面。
@@ -44,7 +49,7 @@ public class ProcedureLoadGame : ProcedureBase
                 ?? throw new InvalidOperationException("缺少存档选择结果。");
             // 先完成读档和校验，再一次发布状态与系统；等待期间不暴露半份运行时数据。
             SaveSystem saveSystem = procedureOwner.GetSystem<SaveSystem>();
-            var loaded = await saveSystem.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId);
+            var loaded = await saveSystem.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId, token);
             if (entrySerial != m_EntrySerial)
                 return;
             // 校验成功后由流程创建、发布档案模型；不把 Model 再包装成 LoadResult。
@@ -54,6 +59,7 @@ public class ProcedureLoadGame : ProcedureBase
                 data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), procedureOwner.GetUtility<ExperienceCurve>(),
                 config.Tables.TbProfileConfig.EquipmentCapacity, data.Soul);
             procedureOwner.RegisterModel(profile);
+            ownsProfile = true;
             procedureOwner.RegisterModel(new SkillModel(profile.HeroIds));
             procedureOwner.RegisterSystem(new ProfileSystem(architecture));
             procedureOwner.GetSystem<ProfileSystem>().RestoreCheckpoint(data);
@@ -71,6 +77,15 @@ public class ProcedureLoadGame : ProcedureBase
         {
             if (entrySerial != m_EntrySerial)
                 return;
+            if (ownsProfile)
+            {
+                // 只清理本次已经开始装配的档案，保留应用对象与磁盘文件供下次读取。
+                procedureOwner.RemoveSystem<SkillSystem>();
+                procedureOwner.RemoveSystem<EquipmentSystem>();
+                procedureOwner.RemoveSystem<ProfileSystem>();
+                procedureOwner.RemoveModel<SkillModel>();
+                procedureOwner.RemoveModel<ProfileModel>();
+            }
             Log.Fatal("[ProcedureLoadGame] 读档失败：{0}", ex);
             (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.SetLogState("存档读取失败", 0);
         }
@@ -82,6 +97,9 @@ public class ProcedureLoadGame : ProcedureBase
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
         ++m_EntrySerial;
+        m_Cancellation?.Cancel();
+        m_Cancellation?.Dispose();
+        m_Cancellation = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
 }

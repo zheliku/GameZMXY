@@ -28,6 +28,22 @@ public sealed class LevelCancellationSmokeScenario
     {
         m_Hero = hero;
         m_Level = level;
+        // 构造即有失败清理契约：尚未绑定架构和节点时，也能重复结束。
+        var uninitialized = new LevelViewController();
+        try
+        {
+            uninitialized.Cleanup();
+            uninitialized.Cleanup();
+            GD.Print("SMOKE-LEVEL-INIT PASS: cleanup before initialization is repeatable.");
+        }
+        catch (System.Exception error)
+        {
+            m_Failures.Add($"未初始化的关卡无法清理：{error.Message}");
+        }
+        finally
+        {
+            uninitialized.Free();
+        }
     }
 
     /// <summary>驱动相机抵达，提交真实异步显示，随后停止并观测晚到结果。</summary>

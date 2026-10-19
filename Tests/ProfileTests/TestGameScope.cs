@@ -8,6 +8,7 @@ using GameLogic.Level;
 using GameLogic.Equipment;
 using GameLogic.Skills;
 using GameLogic.Input;
+using GameLogic.Drops;
 
 namespace GameLogic.Profile.Tests;
 
@@ -21,6 +22,7 @@ internal sealed class TestGameScope : IArchitecture
     private readonly HeroSystem m_HeroSystem; // 与游戏使用同一来源协调逻辑。
     private readonly SkillSystem m_SkillSystem; // 正式技能购买规则。
     private readonly InputSystem m_InputSystem; // 正式输入组合与方向规则。
+    private readonly LootSystem m_LootSystem; // 正式球体回蓝与掉落规则。
     private readonly SaveDataUtility m_Save = new(); // 与游戏注册的相同纯转换工具。
 
     /// <summary>测试提供的任意动作事实，走正式输入采样与消费。</summary>
@@ -33,7 +35,7 @@ internal sealed class TestGameScope : IArchitecture
     public SkillModel Skills { get; }
 
     /// <summary>本局英雄的全部数值。</summary>
-    public HeroModel Hero { get; } = new();
+    public HeroModel Hero { get; private set; } = new();
 
     /// <summary>本局模型，由正式关卡系统修改。</summary>
     public LevelModel Level { get; } = new();
@@ -62,6 +64,7 @@ internal sealed class TestGameScope : IArchitecture
         m_EquipmentSystem = new EquipmentSystem(this);
         m_SkillSystem = new SkillSystem(this);
         m_InputSystem = new InputSystem(this, Input);
+        m_LootSystem = new LootSystem(this);
         m_SaveSystem = new SaveSystem(this);
         m_LevelSystem = new LevelSystem(this);
         if (activeHeroId == 1)
@@ -83,6 +86,7 @@ internal sealed class TestGameScope : IArchitecture
             typeof(TSystem) == typeof(EquipmentSystem) ? m_EquipmentSystem :
             typeof(TSystem) == typeof(SkillSystem) ? m_SkillSystem :
             typeof(TSystem) == typeof(InputSystem) ? m_InputSystem :
+            typeof(TSystem) == typeof(LootSystem) ? m_LootSystem :
             typeof(TSystem) == typeof(SaveSystem) ? m_SaveSystem : null) as TSystem;
     /// <inheritdoc />
     public TUtility GetUtility<TUtility>() where TUtility : class, IUtility => (typeof(TUtility) == typeof(ExperienceCurve) ? (IUtility)TestTables.Curve : m_Save) as TUtility;
@@ -90,6 +94,17 @@ internal sealed class TestGameScope : IArchitecture
     /// <summary>调用正式转换。</summary>
     /// <returns>独立快照。</returns>
     public GameData CaptureSaveData() => m_Save.Capture(Profile, Skills);
+
+    /// <summary>模拟正式流程的离关/重试：结束数值系统与旧本局模型，再建立新模型，保留档案及技能系统。</summary>
+    public void RestartHero()
+    {
+        ((ICanInit)m_HeroSystem).Deinit();
+        ((ICanInit)Hero).Deinit();
+        Hero = new HeroModel();
+        ((ICanSetArchitecture)Hero).SetArchitecture(this);
+        ((ICanInit)Hero).Init();
+        ((ICanInit)m_HeroSystem).Init();
+    }
 
     /// <summary>调用正式回滚。</summary>
     /// <param name="data">进关快照。</param>

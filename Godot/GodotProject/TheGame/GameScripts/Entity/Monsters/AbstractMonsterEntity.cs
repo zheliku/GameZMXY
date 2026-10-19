@@ -290,7 +290,7 @@ namespace GameLogic.Monsters
 
             float dt = (float)delta;
             m_BodyFsm.Tick(dt);
-            MoveAndSlide();
+            MoveBody();
             if (m_HealthBar is { Visible: true })
             {
                 UpdateHealthBarPosition();

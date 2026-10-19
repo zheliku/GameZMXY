@@ -86,11 +86,20 @@ public sealed partial class UiSmokeScenario
         hero._PhysicsProcess(battle.WsMax / battle.WsDrainPerSecond + 1f);
 
         m_ExtraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
-        m_ExtraHero.GlobalPosition = hero.GlobalPosition;
+        // 两个表现节点借用同一 HeroModel，不能通过击杀额外节点来伪造独立生命。
+        // 用明显不同的位置验证球的飞行目标，不改动本关生命状态。
+        m_ExtraHero.GlobalPosition = hero.GlobalPosition + new Vector2(400, 0);
         GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(GF.Fsm.GetModel<HeroModel>().Mp.Value - 2);
-        SpawnManaOrb(level, m_ExtraHero.GlobalPosition);
-        KillHero(m_ExtraHero);
-        await WaitUntilAsync(() => owned.Count == 0, "飞行球没有跟随关卡所有者的实际英雄");
+        var targetProbe = SpawnManaOrb(level, m_ExtraHero.GlobalPosition);
+        Vector2 lastPosition = targetProbe.GlobalPosition;
+        await WaitUntilAsync(() =>
+        {
+            if (owned.Contains(targetProbe))
+                lastPosition = targetProbe.GlobalPosition;
+            return owned.Count == 0;
+        }, "飞行球没有跟随关卡所有者的实际英雄", 10000);
+        Check(lastPosition.DistanceTo(hero.GlobalPosition) < lastPosition.DistanceTo(m_ExtraHero.GlobalPosition),
+            "球飞向了额外显示的英雄，没有飞向本关实际英雄");
         Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().MaxMp.Value, 2 + flow.GetSystem<LootSystem>().ManaAmount(GF.Fsm.GetModel<HeroModel>().MaxMp.Value)),
             "球错误跟随了同场景的其他英雄，未向本关英雄发放奖励");
         ReleaseTestEntity(m_ExtraHero);

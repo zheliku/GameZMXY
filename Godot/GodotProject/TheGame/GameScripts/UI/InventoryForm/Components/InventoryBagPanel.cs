@@ -1,4 +1,3 @@
-using GameLogic.Config;
 using GameLogic.Architecture;
 using System;
 using System.Linq;
@@ -197,7 +196,7 @@ public partial class InventoryBagPanel : Control, IController
         m_QualityOptions.Clear();
         foreach (EquipmentQuality quality in Enum.GetValues<EquipmentQuality>())
         {
-            var (count, price) = GetSummary(quality);
+            var (count, price) = this.SendQuery(new EquipmentSaleSummaryQuery(quality));
             m_QualityOptions.AddItem($"出售{quality.DisplayName()}装备（{count}）", (int)quality);
             int index = m_QualityOptions.ItemCount - 1;
             bool overflow = price > int.MaxValue - this.GetModel<ProfileModel>().Soul.Value;
@@ -213,25 +212,6 @@ public partial class InventoryBagPanel : Control, IController
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
-    /// <summary>统计整包所选品质的实际件数和未截断收益。</summary>
-    /// <param name="quality">所选品质。</param>
-    /// <returns>件数和总售价。</returns>
-    private (int Count, long Price) GetSummary(EquipmentQuality quality)
-    {
-        int count = 0;
-        long price = 0;
-        foreach (var item in this.GetModel<ProfileModel>().EquipmentDatas)
-        {
-            var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
-            if (definition.Quality != quality)
-                continue;
-            count++;
-            price += definition.SellPrice;
-        }
-
-        return (count, price);
-    }
-
     /// <summary>重读当前背包以拒绝过期选择，交易确认交给窗口。</summary>
     /// <param name="id">菜单保存的品质枚举编号。</param>
     private void OnQualitySelected(long id)
@@ -240,7 +220,7 @@ public partial class InventoryBagPanel : Control, IController
             !Enum.IsDefined((EquipmentQuality)id))
             return;
         var quality = (EquipmentQuality)id;
-        var (count, price) = GetSummary(quality);
+        var (count, price) = this.SendQuery(new EquipmentSaleSummaryQuery(quality));
         if (count == 0 || price > int.MaxValue - this.GetModel<ProfileModel>().Soul.Value)
             return;
         m_QualityOptions.Hide();

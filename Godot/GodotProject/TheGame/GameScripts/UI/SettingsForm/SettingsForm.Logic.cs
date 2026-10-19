@@ -87,6 +87,7 @@ public partial class SettingsForm : IController
     /// <summary>回池时清除本次打开的引用和框架编号。</summary>
     public void OnRecycle()
     {
+        ReleaseTransaction();
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = true;

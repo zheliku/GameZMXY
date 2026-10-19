@@ -29,7 +29,8 @@
 
   <ItemGroup>
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Wukong\Skills\*.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Skills\*.cs" />
+    <!-- 窗口学习命令在 ProfileTests 验证；本项目只链接战斗执行规则。 -->
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Skills\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Skills\LearnSkillCommand.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Profile\ProfileSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Save\SaveDataUtility.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Save\Data\GameData.cs" />

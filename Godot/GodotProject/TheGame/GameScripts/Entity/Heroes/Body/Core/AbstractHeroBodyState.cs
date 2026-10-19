@@ -1,3 +1,4 @@
+using GameLogic.Battle;
 using GameLogic.Architecture;
 using GameLogic.Input;
 using GameLogic.Heroes.Body;
@@ -77,7 +78,7 @@ namespace GameLogic.Heroes.Body
             if (body is not ISkillActor)
                 return false;
             var skills = body.GetSystem<SkillSystem>();
-            if (body.GetModel<SkillModel>().ActiveSkillId == null)
+            if (body.GetModel<HeroModel>().ActiveSkillId == null)
                 return false;
             body.SetFacing(body.ActionData.MoveAxis);
             ChangeState(fsm, skills.BodyStateType);

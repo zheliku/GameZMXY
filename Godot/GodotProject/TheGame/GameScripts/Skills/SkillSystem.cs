@@ -14,9 +14,9 @@ namespace GameLogic.Skills;
 public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(architecture)
 {
     /// <summary>当前身体技能登记的 GGF 状态；具体角色负责在身体状态机中注册它。</summary>
-    public Type BodyStateType => this.GetModel<SkillModel>().ActiveSkillId is not { } id
+    public Type BodyStateType => this.GetModel<HeroModel>()?.ActiveSkillId is not { } id
         ? null
-        : this.GetModel<SkillModel>().Definitions[id].BodyState;
+        : this.GetModel<HeroModel>().SkillDefinitions[id].BodyState;
 
     // ---- 业务方法 ----
 
@@ -51,11 +51,11 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <returns>当前可用时为真。</returns>
     public bool IsAvailable(SkillId id)
     {
-        var model = this.GetModel<SkillModel>();
+        var model = this.GetModel<HeroModel>();
         var tables = this.GetModel<ConfigurationModel>().Tables;
         var definition = tables.TbSkillConfig.GetOrDefault(id);
-        return definition != null && (int)definition.Hero == this.GetModel<ProfileModel>().ActiveHeroId &&
-               model.Definitions.ContainsKey(id);
+        return model != null && definition != null && (int)definition.Hero == this.GetModel<ProfileModel>().ActiveHeroId &&
+               model.SkillDefinitions.ContainsKey(id);
     }
 
     /// <summary>读取当前蓝量是否足够，不预扣资源。</summary>
@@ -70,9 +70,9 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <returns>本次登记并扣费成功时为真。</returns>
     public bool TryActivate(SkillId id, ISkillActor actor)
     {
-        var model = this.GetModel<SkillModel>();
-        if (model.ActiveSkillId != null || !IsAvailable(id) || !IsLearned(id) ||
-            !model.Definitions.TryGetValue(id, out var definition) || definition.CanStart?.Invoke(actor) == false)
+        var model = this.GetModel<HeroModel>();
+        if (model == null || model.ActiveSkillId != null || !IsAvailable(id) || !IsLearned(id) ||
+            !model.SkillDefinitions.TryGetValue(id, out var definition) || definition.CanStart?.Invoke(actor) == false)
             return false;
         if (!this.GetSystem<HeroSystem>().TrySpendMp(
                 this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost))
@@ -86,10 +86,11 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <param name="heroId">此组所属英雄。</param>
     /// <param name="definitions">角色提供的登记，复制到模型，调用方不拥有运行时容器。</param>
     /// <exception cref="ArgumentException">角色、编号、动作绑定或状态不合法。</exception>
+    /// <exception cref="InvalidOperationException">本局英雄模型尚未注册。</exception>
     public void SelectSkills(int heroId, params SkillDefinition[] definitions)
     {
         ArgumentNullException.ThrowIfNull(definitions);
-        var model = this.GetModel<SkillModel>();
+        var model = this.GetModel<HeroModel>() ?? throw new InvalidOperationException("登记技能前必须先创建本局英雄模型。");
         var tables = this.GetModel<ConfigurationModel>().Tables;
         if (heroId != this.GetModel<ProfileModel>().ActiveHeroId || definitions.Length == 0 ||
             definitions.Any(item => item == null || item.BodyState == null ||
@@ -99,12 +100,12 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
             definitions.Select(item => item.Id).Distinct().Count() != definitions.Length ||
             definitions.Where(item => item.InputAction != null).GroupBy(item => item.InputAction).Any(group => group.Count() > 1))
             throw new ArgumentException("技能登记须属于当前英雄，编号、状态和动作绑定须合法且不重复。", nameof(definitions));
-        if (model.Definitions.Values.SequenceEqual(definitions))
+        if (model.SkillDefinitions.Values.SequenceEqual(definitions))
             return;
         CancelSkill();
-        model.Definitions.Clear();
+        model.SkillDefinitions.Clear();
         foreach (var definition in definitions)
-            model.Definitions.Add(definition.Id, definition);
+            model.SkillDefinitions.Add(definition.Id, definition);
     }
 
     /// <summary>按当前登记尝试一个直接动作；拒绝后不排队，也不尝试较低优先级的同时按键。</summary>
@@ -114,7 +115,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     public bool TryActivateInput(ISkillActor actor, HeroActionData data)
     {
         var input = this.GetSystem<InputSystem>();
-        foreach (var definition in this.GetModel<SkillModel>().Definitions.Values)
+        foreach (var definition in this.GetModel<HeroModel>().SkillDefinitions.Values)
             if (definition.InputAction is { } action && input.ConsumePress(data, action))
                 return TryActivate(definition.Id, actor);
         return false;
@@ -123,10 +124,21 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <summary>换组、离场或死亡时取消当前施放并清除无敌区间；具体状态的退出负责释放动画与判定。</summary>
     public void CancelSkill()
     {
-        var model = this.GetModel<SkillModel>();
+        var model = this.GetModel<HeroModel>();
+        if (model == null)
+            return;
         model.ActiveSkillId = null;
-        model.InvulnerableFrom = double.PositiveInfinity;
-        model.InvulnerableUntil = 0;
+        model.SkillInvulnerableFrom = double.PositiveInfinity;
+        model.SkillInvulnerableUntil = 0;
+    }
+
+    /// <summary>当前招式正常收招后解除身体占用，保留按秒计算的无敌区间；过期招式不得结束其他技能。</summary>
+    /// <param name="id">正在退出的状态所对应的技能。</param>
+    public void EndSkill(SkillId id)
+    {
+        var model = this.GetModel<HeroModel>();
+        if (model?.ActiveSkillId == id)
+            model.ActiveSkillId = null;
     }
 
     /// <summary>登记一个以游戏秒数计的无敌区间，不受动画跳帧影响。</summary>
@@ -134,9 +146,9 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <param name="duration">持续秒数。</param>
     public void GrantInvulnerability(double from, double duration)
     {
-        var model = this.GetModel<SkillModel>();
-        model.InvulnerableFrom = from;
-        model.InvulnerableUntil = from + duration;
+        var model = this.GetModel<HeroModel>();
+        model.SkillInvulnerableFrom = from;
+        model.SkillInvulnerableUntil = from + duration;
     }
 
     /// <summary>查询当前游戏时刻是否在技能无敌区间。</summary>
@@ -144,10 +156,18 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <returns>处于无敌区间时为真。</returns>
     public bool IsInvulnerable(double now)
     {
-        var model = this.GetModel<SkillModel>();
-        return now >= model.InvulnerableFrom && now < model.InvulnerableUntil;
+        var model = this.GetModel<HeroModel>();
+        return model != null && now >= model.SkillInvulnerableFrom && now < model.SkillInvulnerableUntil;
     }
 }
+
+/// <summary>角色提供的一条不可变技能登记，具体行为由登记的 GGF 状态实现。</summary>
+/// <param name="Id">技能编号。</param>
+/// <param name="BodyState">本技能的 GGF 身体状态。</param>
+/// <param name="InputAction">可选直接动作名；组合技能由具体角色匹配。</param>
+/// <param name="CanStart">可选起手条件；在扣费前检查。</param>
+public sealed record SkillDefinition(SkillId Id, Type BodyState,
+    string InputAction = null, Func<ISkillActor, bool> CanStart = null);
 
 /// <summary>学习请求的业务结果；不以 UI 状态代替资格和余额检查。</summary>
 public enum SkillLearnResult

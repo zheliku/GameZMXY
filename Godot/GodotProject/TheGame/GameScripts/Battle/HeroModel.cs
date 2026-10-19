@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
 using GameConfig.Attributes;
+using GameConfig.Skills;
 using GameLogic.Architecture;
 using GameLogic.Battle.Attributes;
 using GameLogic.Battle.Damage;
+using GameLogic.Skills;
 
 namespace GameLogic.Battle;
 
-/// <summary>本局英雄的权威数值；业务规则与完整提交由 HeroSystem 执行。</summary>
+/// <summary>本局英雄的权威属性、资源和技能状态；HeroSystem 与 SkillSystem 执行业务规则。</summary>
 public sealed class HeroModel : AbstractModel
 {
     /// <summary>本局英雄身份。</summary>
@@ -84,6 +86,18 @@ public sealed class HeroModel : AbstractModel
 
     /// <summary>尚未开启且已经蓄满。</summary>
     public bool IsWsFull => !WsActive.Value && MaxWs.Value > 0 && Ws.Value >= MaxWs.Value;
+
+    /// <summary>本局当前激活的技能编号；招式阶段与旧回调有效性归具体 GGF 状态。</summary>
+    public SkillId? ActiveSkillId { get; internal set; }
+
+    /// <summary>本局角色或武器的技能登记，由 SkillSystem 校验并复制，不保存角色节点。</summary>
+    internal Dictionary<SkillId, SkillDefinition> SkillDefinitions { get; } = new();
+
+    /// <summary>技能无敌区间起点，使用本英雄的游戏时钟，单位秒。</summary>
+    internal double SkillInvulnerableFrom { get; set; } = double.PositiveInfinity;
+
+    /// <summary>技能无敌区间终点，单位秒，独立于动画是否跳帧。</summary>
+    internal double SkillInvulnerableUntil { get; set; }
 
     /// <summary>当前等级的只读基础记录，由英雄系统替换。</summary>
     internal ActorBaseAttributes BaseAttributes { get; set; }

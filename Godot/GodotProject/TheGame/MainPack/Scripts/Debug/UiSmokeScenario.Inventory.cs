@@ -266,7 +266,7 @@ public sealed partial class UiSmokeScenario
         Check(!previous.Disabled && !next.Disabled && number.Text == "2 / 3", "第二页不可双向翻页");
         next.EmitSignal(BaseButton.SignalName.Pressed);
         Check(!previous.Disabled && next.Disabled && number.Text == "3 / 3" &&
-            SmokeInspection.ReadField<Guid>(grid.GetChild<EquipmentCell>(0), "m_InstanceId") == items[50].InstanceId,
+            SmokeInspection.ReadField<EquipmentData>(grid.GetChild<EquipmentCell>(0), "m_EquipmentData").InstanceId == items[50].InstanceId,
             "第三页边界或实例偏移错误");
         grid.GetChild<EquipmentCell>(0)._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
         var actions = form.GetNode<EquipmentActionsMenu>("m_Actions");

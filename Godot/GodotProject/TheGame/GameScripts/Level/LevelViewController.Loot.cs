@@ -86,11 +86,9 @@ public partial class LevelViewController
             return false;
         if (data != null)
             return this.GetSystem<LevelSystem>().TryCollectEquipment(data);
+        if (!this.GetSystem<LevelSystem>().TryCollectPickup(pickupId))
+            return false;
         var pickup = this.GetModel<ConfigurationModel>().Tables.TbPickupConfig.Get(pickupId);
-        if (pickup.Effect == PickupEffect.Health)
-            this.GetSystem<HeroSystem>().Heal(pickup.RestoreAmount);
-        else
-            this.GetSystem<HeroSystem>().RestoreMp(pickup.RestoreAmount);
         m_FloatingText.ShowRecovery(m_Player.GlobalPosition, pickup.RestoreAmount,
             pickup.Effect == PickupEffect.Mana ? RecoveryKind.Mana : RecoveryKind.Health);
         return true;
@@ -112,22 +110,7 @@ public partial class LevelViewController
         if (!m_LootOrbs.Remove(orb))
             return;
         NodePool.Instance.Release(orb);
-        if (LevelModel.Outcome.Value == LevelOutcome.Running && m_Player.IsAlive)
-        {
-            switch (reward.Kind)
-            {
-                case LootKind.Soul:
-                    this.GetSystem<LevelSystem>().CollectSoul(reward.Amount);
-                    break;
-                case LootKind.Musou:
-                    this.GetSystem<HeroSystem>().AddWsFromPickup(reward.Amount);
-                    break;
-                case LootKind.Mana:
-                    int amount = this.GetSystem<LootSystem>().ManaAmount(this.GetModel<HeroModel>().MaxMp.Value);
-                    this.GetSystem<HeroSystem>().RestoreMp(amount);
-                    break;
-            }
-        }
+        this.GetSystem<LevelSystem>().CollectLoot(reward);
 
         if (m_ExitRequested && m_LootOrbs.Count == 0 && LevelModel.Outcome.Value == LevelOutcome.Running)
             OnExitEntered();

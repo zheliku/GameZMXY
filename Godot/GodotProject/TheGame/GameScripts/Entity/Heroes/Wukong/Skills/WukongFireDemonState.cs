@@ -1,3 +1,4 @@
+using GameLogic.Battle;
 using System;
 using GameConfig.Skills;
 using GameFramework.Fsm;
@@ -160,7 +161,7 @@ public sealed class WukongFireDemonState : AbstractHeroSkillState
             completed = () =>
             {
                 if (m_Fsm != fsm || fsm.CurrentState != this || EnterSerial != serial ||
-                    body.GetModel<SkillModel>().ActiveSkillId != SkillId.FireDemonSlash)
+                    body.GetModel<HeroModel>().ActiveSkillId != SkillId.FireDemonSlash)
                     return;
                 AnimationPaused = false;
                 m_NextMarker = RecoveryMarker;

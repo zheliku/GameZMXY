@@ -22,6 +22,7 @@ public partial class SkillForm : IController
 
     private bool m_ShowPassive; // 当前是否展示五项被动。
     private bool m_ResumeGame; // 只恢复本窗口发起的暂停。
+    private bool m_IsBound; // 本周期已经开始订阅；关闭后回池不再访问已移除的关卡模型。
 
     // ---- 窗口生命周期 ----
 
@@ -60,11 +61,13 @@ public partial class SkillForm : IController
         Visible = false;
         var profile = this.GetModel<ProfileModel>();
         var levelModel = this.GetModel<LevelModel>();
-        if (!levelModel.Initialized || levelModel.Outcome.Value != LevelOutcome.Running ||
+        if (levelModel is not { Initialized: true, SessionActive: true } || profile == null ||
+            levelModel.Outcome.Value != LevelOutcome.Running ||
             !Enum.IsDefined((SkillHero)profile.ActiveHeroId))
             throw new InvalidOperationException("技能面板需要正在运行的关卡与有效出战角色。");
         try
         {
+            m_IsBound = true;
             this.GetModel<ProfileModel>().Soul.RegisterWithInitValue(RefreshSoul);
             this.GetModel<SkillModel>().GetLearnedSkills(profile.ActiveHeroId).RegisterWithInitValue(RefreshLearnedSkills);
             levelModel.Outcome.Register(OnLevelEnded);
@@ -97,6 +100,7 @@ public partial class SkillForm : IController
     /// <summary>池复用时清除编号与本周期引用。</summary>
     public void OnRecycle()
     {
+        ReleaseBindingsAndPause();
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = true;
@@ -140,9 +144,14 @@ public partial class SkillForm : IController
     /// <summary>重绑、关闭或装配失败时退订并恢复暂停；调用时 Model 尚未移除。</summary>
     private void ReleaseBindingsAndPause()
     {
-        this.GetModel<ProfileModel>().Soul.UnRegister(RefreshSoul);
-        this.GetModel<SkillModel>().GetLearnedSkills(this.GetModel<ProfileModel>().ActiveHeroId).UnRegister(RefreshLearnedSkills);
-        this.GetModel<LevelModel>().Outcome.UnRegister(OnLevelEnded);
+        if (m_IsBound)
+        {
+            m_IsBound = false;
+            var profile = this.GetModel<ProfileModel>();
+            profile.Soul.UnRegister(RefreshSoul);
+            this.GetModel<SkillModel>().GetLearnedSkills(profile.ActiveHeroId).UnRegister(RefreshLearnedSkills);
+            this.GetModel<LevelModel>().Outcome.UnRegister(OnLevelEnded);
+        }
 
         if (m_ResumeGame && IsInstanceValid(GF.Base))
             GF.Base.ResumeGame();
@@ -163,7 +172,7 @@ public partial class SkillForm : IController
     {
         if (!Visible || !GF.UI.HasUIForm(SerialId))
             return;
-        var result = this.GetSystem<SkillSystem>().Learn(skill);
+        var result = this.SendCommand(new LearnSkillCommand(skill));
         if (result == SkillLearnResult.InsufficientSoul)
             GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().ShowMessage("灵魂不足！");
         else if (result == SkillLearnResult.Learned)

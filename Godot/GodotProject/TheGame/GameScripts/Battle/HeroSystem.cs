@@ -200,7 +200,7 @@ public sealed class HeroSystem : AbstractSystem
             Hero.Sources[m_ArmorSource] = armorData.Attributes.EnumerateModifiers().ToArray();
     }
 
-    /// <summary>按固定、加算百分比、乘算百分比顺序汇总，再原子提交模型。</summary>
+    /// <summary>按固定、加算百分比、乘算百分比顺序汇总，再更新模型；各绑定值同步通知。</summary>
     /// <param name="heroId">当前英雄。</param>
     /// <param name="level">当前等级。</param>
     /// <param name="refill">是否补满生命魔法。</param>

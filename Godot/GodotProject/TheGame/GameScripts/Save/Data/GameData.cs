@@ -60,9 +60,11 @@ namespace GameLogic.Save.Data
     public sealed class HeroSaveData
     {
         /// <summary>英雄的 HeroConfig.Id。</summary>
+        [JsonProperty(Required = Required.Always)]
         public int HeroId { get; set; }
 
         /// <summary>累计经验，等级和本级经验由经验曲线派生。</summary>
+        [JsonProperty(Required = Required.Always)]
         public int TotalExperience { get; set; }
 
         /// <summary>已学习的主动技能编号；不保存费用、伤害、图标或施放中的临时状态。</summary>

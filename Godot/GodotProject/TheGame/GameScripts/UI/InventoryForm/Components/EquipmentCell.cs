@@ -13,7 +13,6 @@ public partial class EquipmentCell : TextureRect, IController
 {
     [Export] private TextureRect m_Icon; // 当前格图标，空格时清除。
     [Export] private PackedScene m_TooltipScene; // 可编辑的外置详情布局。
-    private Guid m_InstanceId; // 当前显示实例；空格不提交点击。
     private EquipmentData m_EquipmentData; // 当前装备数据，供悬停详情读取。
 
     /// <summary>玩家点击装备格；窗口决定这是穿戴还是卸装请求。</summary>
@@ -27,9 +26,9 @@ public partial class EquipmentCell : TextureRect, IController
     /// <param name="inputEvent">Godot 分发给本格的鼠标事件。</param>
     public override void _GuiInput(InputEvent inputEvent)
     {
-        if (m_InstanceId != Guid.Empty && inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+        if (m_EquipmentData != null && inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
         {
-            Clicked?.Invoke(m_InstanceId);
+            Clicked?.Invoke(m_EquipmentData.InstanceId);
             AcceptEvent();
         }
     }
@@ -40,7 +39,6 @@ public partial class EquipmentCell : TextureRect, IController
     public void Bind(EquipmentData data, Texture2D icon)
     {
         m_Icon.Texture = icon;
-        m_InstanceId = data?.InstanceId ?? Guid.Empty;
         m_EquipmentData = data;
         var definition = data == null ? null : this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(data.EquipmentId);
         // 穿戴槽的独立材质清除底图题签，透明图标仍保留；背包格不配置该材质。

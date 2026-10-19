@@ -1,111 +1,86 @@
-# 00 架构
+# 00 GGF + QF 架构与使用规范
 
-## 项目与目录
+## 项目边界
 
-- 单人 2D 横版动作 ARPG 学习项目；禁止商用与公开发布。
-- 引擎为 Godot 4.7 .NET，C# `net10.0`；工程根为 `Godot/GodotProject/`，游戏代码与资源位于 `TheGame/`。
-- `Framework/` 与 `addons/` 为只读依赖；发现框架问题先定位到具体实现并报告，不在业务目录绕过框架边界。修改例外须用户明确授权，并在 [50-FrameworkAndTools.md](50-FrameworkAndTools.md) 登记。
-- `MainPack/` 放启动流程、共享 UI、资源组和通用对象池；`GameScripts/` 放玩法代码；其余 bundle 资源目录见 [40-ScenesAndAssets.md](40-ScenesAndAssets.md)。
-- 旧项目 `P:\Godot-Project\ZMXY_BHYH` 只用于玩法、数值与素材核对；不移植 GDScript、场景脚本或旧架构。
+- Godot 4.7 .NET / C# net10.0；工程为 `Godot/GodotProject/`，业务位于 `TheGame/`。
+- GGF 提供流程、实体、UI、资源、声音、事件、对象池和存档；QF 的思想用于划分业务职责。普通界面使用 ViewController，复杂展示按需要提取 Presenter/ViewModel。
+- 主流程 FSM 的 GetData/SetData 唯一持有 Model、System 和 Utility；Architecture 提供按类型访问，Get 返回所属作用域的同一对象。
+- `Framework/`、`addons/`、`Tools/Luban/`、生成物及旧项目为只读边界，例外见 [50](50-FrameworkAndTools.md)。旧项目 `P:\Godot-Project\ZMXY_BHYH` 只作玩法和素材参考。
+- 本项目用于学习，禁止商用和公开发布。
 
-## 顶层范式：GGF 分层 + 作用域所有权
+## 职责与取用能力
 
-不使用 QFramework 式 Architecture / Model / System / Command，也不引入 IOC 容器或服务定位。架构由三条规则组成：
-
-1. **分层**：依赖只能自上而下。
-
-   ```
-   表现层   实体节点（英雄/怪物/子弹/掉落）· UI 窗口与控件 · 关卡场景 · 特效
-   应用层   流程（MainPack/Procedure）：装配与导航；模块（LevelModule、SaveModule）：各自生命周期与业务
-   作用域   GameContext：关联本槽档案与存档模块
-   领域层   档案状态（PlayerProfile…）+ 战斗运行时（ActorAttributes、Vitals、MusouGauge…）
-   规则     伤害公式 · 属性汇总 · 经验曲线 · 存档映射（纯 C#，确定性，可单测）
-   配置     Luban 只读表（启动期集中校验）
-   框架     GGF（GF.*）
-   ```
-
-   领域层与规则不引用节点、场景树、`GF.UI`/`GF.Entity`；`Battle/Attributes/` 等纯 C# 目录可整体链接进单测。
-
-2. **作用域所有权**：每份可变状态只有一个所有者，经方法修改；其他代码只读并订阅变更。上层作用域创建并销毁下层。
-
-   | 作用域 | 所有者 | 创建者 | 生命周期 | 内容 |
-   | --- | --- | --- | --- | --- |
-   | App | GGF + 流程 | 引擎 | 进程 | 只读配置、`GF.Setting` 设置 |
-   | Profile | `GameContext`（持有 `PlayerProfile`） | `ProcedureLoadProfile` | 读档 → 回标题 | 英雄成长、钱包；以后的背包、装备、关卡进度 |
-   | Run | `LevelModule` | `ProcedureLevel` | 进关 → 结局 | 关内结算、关卡事务、本关统计 |
-   | Entity | `ActorEntity` 及其战斗运行时 | `GF.Entity` | Show → Hide | 属性汇总、生命魔法、无双；以后的 Buff、冷却 |
-
-3. **显式依赖**：依赖经构造参数、`Initialize`、`userData` 或流程状态机数据传入。流程数据键与池化包装集中在 `MainPack/Scripts/Startup/FlowData/`（`FlowKeys.GameContext` + `GameContextVariable`）；GGF 只接受 `Variable`，领域对象不承担流程传递契约。
-
-## 允许的全局
-
-只有以下全局可访问，不新增 Autoload、单例节点或可变静态状态：
-
-- `GF.*` 框架门面；
-- `ConfigSystem.Instance`（只读配置，框架 UI/实体扩展依赖它，名称不可改）；
-- `NodePool.Instance`、`LayerMask.Instance`（框架提供的表现层工具）。
-
-`GameData` / `GameCatalogue` 必须保持全局命名空间与类名（`GF.cs` 写死 `ArchiveSystem<GameCatalogue, GameData>`）；流程类保持全局命名空间（`ProcedureComponent` 按短类名加载）。
-
-## 状态变化与通信
-
-| 场景 | 机制 | 示例 |
+| 角色 | 负责 | 可取用 |
 | --- | --- | --- |
-| 状态源 → 观察者（UI、同作用域对象） | 所有者的 C# 聚合事件 `event Action Changed`，订阅方收到后**一次读取全部需要的值** | `Vitals.Changed`、`HeroProgression.Changed`、`LevelModule.TravelAvailableChanged` |
-| 作用域内协作 | 直接调用，或子对象的 C# 事件由拥有者订阅 | `LevelSpawnerNode.MonsterDefeated` → `LevelModule` 直接奖励经验 |
-| 跨模块的一次性业务结果 | `GF.Event` 池化事件参数 | `DamageDealtEventArgs`（飘字）、`MonsterDiedEventArgs`（刷怪名额）、具名菜单点击事件（窗口 → 当前流程） |
+| Procedure | 装配、注册、导航、异步任务和逆序释放 | 当前流程 FSM 及 GGF 服务 |
+| Model | 唯一权威状态、绑定属性和自身数据查询 | Utility |
+| System | 业务校验、计算、修改 Model、协调系统 | Model、System、Utility |
+| Controller / Entity | 输入、节点、动画、物理、界面显示和订退绑定 | Model、System、Utility、Command、Query |
+| Command | 一次玩家业务修改请求与上下文校验 | Model、System、Utility、Query |
+| Query | 一次组合读取、筛选或汇总 | Model、System 的只读方法、Query |
+| Utility | 纯转换、共享计算或 GGF 平台适配 | 显式参数或构造注入的第三方服务 |
 
-- 子组件 → 模块入口 → 实际消费者是允许的事件边界；禁止没有状态变化或独立职责的 Completed → OnCompleted → Ended 等转发链。能在所属模块直接处理的事实就在模块处理。
-- 一次修改只通知一次；状态源内部先更新全部字段再通知，观察者看不到中间态（如等级已变而上限未变）。
-- `GF.Event.Fire` 在下一轮轮询分发；`GameEventArgs` 用 `ReferencePool`，分发结束即失效，不保存到字段、闭包或跨 `await` 使用。有实际消费者才新增事件类型。
-- 订阅与退订成对出现在同一作用域的开始/结束边界（`OnOpen/OnClose`、构造/结束方法）；不靠节点销毁兜底。
-- 框架异步显示 API 可能命中对象池后同步触发事件；先注册回调或创建 `TaskCompletionSource`，再调用 API。切场景或实体死亡相关的异步操作使用 `CancellationToken`。
+节点和窗口保留 Godot/GGF 继承链，实现 IController。Model/System 使用各自初始化基类。Utility 直接实现 IUtility，按参数工作。纯规则使用确定性输入，随机值由调用方传入。
 
-## 数据边界
+## 调用规则
 
-- 可调玩法数值的唯一来源是 `Configs/GameConfig/Datas/*.xlsx`；代码只保留"公式本身即设计"的部分（伤害结算），系数在表。成长、经验、奖励、建档规则都在表里。
-- 配置 / 状态 / 规则 / 表现分离：配置是只读表；状态有唯一所有者；规则是纯函数或无状态服务；表现只读状态并订阅变更。
-- 存档只经 `SaveModule`（项目侧）与 `GF.Archive`（框架侧）读写；规则见 [70-ProfileAndSave.md](70-ProfileAndSave.md)。
-- `GameProto/`、`DataTables/`、`ResourcesCollectionConstant.cs`、`Config/ExternalTypeUtil.cs` 和生成器产物只通过源数据与生成流程更新。
+| 需求 | 使用方式 |
+| --- | --- |
+| 读取 HP、经验、灵魂、背包 | GetModel，读取同一数据 |
+| 查询已学技能、施放资格 | GetSystem 的只读方法 |
+| 组合查询，如整包出售数量和总价 | SendQuery，返回本次值或不可变结果 |
+| 穿戴、卸下、出售、学习等玩家业务修改 | Controller → SendCommand → System → Model |
+| 分页、悬停、tooltip、关闭本窗口 | 窗口或控件直接处理 |
+| 切场景、返回标题、重试 | 向所属 Procedure 提交具名导航请求 |
+| 动作、物理、AI、碰撞与已开始的业务推进 | 具体状态、Entity 与 System 直接协作 |
 
-## 模块入口与目录
+Command/Query 在发送时绑定当前 Architecture，同步执行并返回 bool、件数或既有业务结果。Command 调用 System 的规则；System 按提交时的状态重新校验。Query 的组合逻辑放所属业务目录，简单读取直接使用已有属性或方法。
 
-- 流程负责创建、装配、导航和逆序释放；每个业务模块只有一个对外生命周期入口。流程可以组合不同模块，不能同时操作同一模块中的多个控制器/运行对象。
-- `LevelModule` 统一阶段、奖励、提交与回滚；`SaveModule` 统一目录读取、读档、建档与检查点。内部组件各有实际职责，不再用第二个 owner 包装入口。
-- 入口可以用 `类型.职责.cs` partial 分文件，仍是同一个对象和同一份状态；不拆出相互转发事件的平行入口。
-- 模块内部按功能分组，节点、规则和资源与所属功能放在一起；不建立汇集整个模块节点的 Nodes 目录。目录是浏览分组，命名空间是稳定的业务边界。`Level/{Camera,Spawning,Stages,Markers,Exit}` 统一用 `GameLogic.Level`；Save 的 `Data/Slots` 保留子命名空间；实体用 `GameLogic.Entity`、`GameLogic.Body`、`GameLogic.Heroes[.Body]`、`GameLogic.Monsters[.Body/.AI]`；UI 表单沿用生成器的 `GameLogic.UI`，Widgets 使用 `GameLogic.UI.Widgets`。Core/States 不再扩展命名空间。
-- 纯状态、配置、输入/输出数据可以作为公开只读契约传给 UI；这不意味着它们另有生命周期入口。`SaveSlotDirectory` 仅是 SaveModule 拥有的目录状态，流程不再创建它或调用它读盘。
+Controller 对 Model/System 执行读取和订阅，System 执行业务写入。接口限定取用能力，读写边界按此职责遵守。绑定使用普通属性和集合；关联显示数据用完整的不可变值整体赋给 Value。
 
-阅读地图与调用链见 [GameplayArchitecture](../ProjectTour.md)。
+## 状态与通信
 
-| 目录 | 层 | 职责 |
+- 持续状态用 Model 的 BindableProperty、BindableList、BindableDictionary；需要刷新组合结果时，在绑定回调里重新查询。
+- 同一作用域内用直接调用或拥有者订阅的 C# 事件；窗口导航使用带窗口编号的具名回调。
+- 跨模块的一次性事实用 GF.Event，如伤害、怪物死亡、保存成功。事件参数经 ReferencePool 创建，分发期间复制所需值，分发结束归还。
+- 订阅与退订放在同一生命周期的开始/结束处：OnOpen/OnClose、Init/Deinit、StartSession/StopSession。
+- 绑定同步通知；GF.Event.Fire 在下一轮框架轮询分发。绑定回调优先级用整数，较大值先执行。
+
+## 所有权与生命周期
+
+| 作用域 | 所有者 | 创建与结束 |
 | --- | --- | --- |
-| `Config/` | 配置 | 启动校验 `ConfigHelper`、Luban 外部类型 |
-| `Battle/` | 规则 | 伤害公式、攻击包、结算快照（确定性，随机值由调用方传入） |
-| `Battle/Attributes/` | 领域 | 属性汇总 `ActorAttributes`、修正 `AttributeModifier`/`AttributeSourceId`、生命魔法 `Vitals`；`Battle/Resources/` 保存无双 `MusouGauge` |
-| `Profile/` | 领域 | 档案 `PlayerProfile`、英雄成长、钱包、经验曲线；出战输入 HeroLoadout 位于 Battle/Attributes |
-| `Save/` | 规则 / 应用 | 根目录保留 `SaveModule` 与加载结果；`Data/` 为存档 DTO 与映射（`GameData`/`GameCatalogue` 保持全局命名空间），`Slots/` 为标题目录与格子摘要 |
-| `GameContext.cs` | 应用 | 关联本槽 PlayerProfile 与 SaveModule，随流程数据传递；没有 Session 目录 |
-| `Entity/` | 表现 | 实体节点、身体/AI 状态机、判定组件；规则见 [30-EntitiesAndCombat.md](30-EntitiesAndCombat.md) |
-| `Level/` | 应用 / 表现 | 根目录 LevelModule（含 Progress partial）；Camera 为取景，Spawning 为生成，Stages 为阶段与区域，Markers 为共享空间条目，Exit 为出口交互 |
-| `UI/` | 表现 | 每个界面一个子目录（`BattleHud/`）；`Widgets/` 被动控件；`Damage/` 伤害飘字 |
-| `Input/` | 表现 | 全局输入映射名称 `InputActions`；引擎采样在节点，输入缓冲规则在 `Entity/Heroes/Input/` |
-| `Event/Combat/`、`Event/Navigation/` | — | 战斗结果与窗口导航的池化 `GF.Event` 参数 |
+| 应用 | ConfigurationModel、SaveModel、共享 Utility 与系统 | ProcedurePrepare → 应用退出 |
+| 档案 | ProfileModel、SkillModel、档案业务系统 | ProcedureLoadGame → 返回标题 |
+| 本局 | HeroModel、LevelModel、HeroSystem、LevelSystem | ProcedureLevel → 离关 |
+| 实体 | 节点、运动、输入消费记录、身体/AI FSM、局部计时 | GF.Entity 的 Show → Hide |
+| 窗口 | 页码、悬停、选择、动画及本次订阅 | OnOpen → OnClose |
 
-新玩法按 [60-GameplayModules.md](60-GameplayModules.md) 的落位表放入对应目录；不新建按"所有 Manager"聚合的目录。
+流程按依赖顺序注册；依赖先于消费者。离开时先取消任务、关窗退订，再停止场景、隐藏实体并逆序移除系统和模型。初始化失败清理已经取得的资源；池化节点每次显示重置局部状态。
 
-## UI 数据流
+异步操作在等待前捕获本周期服务、引用、取消令牌和身份；等待后确认本周期仍有效。无法取消的框架显示结果由原服务回收。可能同步完成的 API 先订阅结果，再提交请求。
 
-- 玩法界面用 GGF `UIForm`：场景放 `UIs/`，脚本放 `GameScripts/UI/<界面>/`（`Xxx.cs` Ge 样板 + `Xxx.Logic.cs` 业务 + `XxxData.cs` 打开参数）；在 `界面UI.xlsx` 登记 `UIFormId` 后用 `GF.UI.OpenUIForm(UIFormId.Xxx, data)` 打开。
-- 打开参数只携带状态源引用（实体、档案对象、关卡、标题存档目录），不复制数值、不管理生命周期。
-- 窗口 `OnOpen` 订阅状态源的聚合事件后**立即拉取一次**刷新全部显示，`OnClose` 对称退订；收到事件时重新读取一组一致的值。
-- 控件是被动的：只接收数值（如 `ResourceBar.SetValue(current, max)`），不订阅状态源、不执行玩法结算。残影等表现由控件比较前后两次输入自行决定。
-- 计时类显示（冷却、Buff 剩余时间）在窗口 `OnUpdate` 读取；一次性反馈（飘字、升级特效、获得物品）走 `GF.Event`。
-- 不使用 `BindableProperty` 或字段级可写的可观察容器。
+## 数据、配置与表现
 
-## 运行时约束
+- 共享运行时数据归 Model；角色输入消费、动作阶段和物理事实归对应运行实例。FormData 携带窗口所需参数，存档 DTO 保存持久数据。
+- 玩法数值来自 `Configs/GameConfig/Datas/*.xlsx`，跨表约束由 ConfigurationSystem 在 Prepare 校验；场景绑定由所属初始化边界校验。
+- 动画、判定几何、声音时点和视觉参数在原生场景/AnimationLibrary 编辑；具体角色状态处理招式规则。
+- 持久状态通过 SaveSystem → ArchiveUtility → GF.Archive 读写，模型与 DTO 的转换集中于 SaveDataUtility；检查点与回滚见 [70](70-ProfileAndSave.md)。
+- 生成代码、bytes、UI 绑定与资源常量经源数据和既有生成入口更新，见 [20](20-Configs.md)、[40](40-ScenesAndAssets.md)、[50](50-FrameworkAndTools.md)。
 
-- 高频创建销毁的实体与表现对象使用 `GF.ObjectPool` / `NodePool`。
-- 不穿透场景树查找其他模块；调试与烟测代码除外。
-- 暂停用 `GF.Base.PauseGame()`（时间缩放）；`SceneTree.Paused` 会停止 GGF 轮询。
-- 验证代码位于 `Tests/`（纯 C#）和 `MainPack/Scripts/Debug/`（真实引擎回归）；`EditorScripts/` 放编辑器/资源验证，不放玩法逻辑。
+## UI 与目录
+
+- GGF 窗口统一 XxxForm；脚本放 `GameScripts/UI/<窗口>/`，场景放 `UIs/`。需要打开参数的窗口保留自己的 XxxFormData。
+- Form 管绑定和请求，完整内部区域用 Panel，单个控件接收数据并报告交互；复杂程度达到独立职责时再拆脚本。
+- 目录按业务功能分组，所属节点、状态、规则和资源就近放置。小型配套类型随主要类型，入口较大时按职责使用 partial。
+- `MainPack/` 放启动流程、共享 UI、资源组和对象池；业务模块放 `GameScripts/{Architecture,Config,Battle,Profile,Skills,Equipment,Save,Entity,Level,UI,Input,Event,Utility}`。
+- 目录用于浏览，命名空间保持业务边界：Level 各子目录统一 GameLogic.Level，Save 的 Data/Slots 保留子空间；实体使用 GameLogic.Entity、Body、Heroes、Monsters；窗口用 GameLogic.UI，内部组件沿用 GameLogic.UI.Widgets。
+
+## GGF 接入约定
+
+- 服务通过 GF 门面取用；允许的共享入口为 GF.*、ConfigSystem.Instance、NodePool.Instance、LayerMask.Instance。
+- GameData/GameCatalogue 保持全局类名，流程类保持全局命名空间，以满足 GGF 加载契约。
+- 高频对象经 GF.ObjectPool / NodePool 回收；暂停用 GF.Base.PauseGame()，玩法计时由游戏帧推进。
+- 测试放 Tests、MainPack/Scripts/Debug 或 EditorScripts，使用隔离存档；通过现有状态和反射观测。
+
+实现入口、初始化位置和实际调用链见 [项目导览](../ProjectTour.md)。QF 契约参考 [官方源码](https://github.com/liangxiegame/QFramework/blob/master/QFramework.cs)。

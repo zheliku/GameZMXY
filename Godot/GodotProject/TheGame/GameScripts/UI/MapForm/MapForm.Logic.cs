@@ -18,6 +18,8 @@ namespace GameLogic.UI;
 /// <summary>地图界面：显示旧项目地点图片，以点击事件提交所选关卡。</summary>
 public partial class MapForm : IController
 {
+    private bool m_IsBound; // 当前打开周期拥有保存状态订阅，关闭后不再借用架构。
+
     /// <summary>由所属流程处理 TitleRequested；参数为本次窗口编号。</summary>
     public event Action<int> TitleRequested;
 
@@ -58,8 +60,17 @@ public partial class MapForm : IController
     /// <param name="userData">本次窗口打开参数。</param>
     public void OnOpen(object userData)
     {
-        this.GetModel<SaveModel>().ManualSave.UnRegister(RefreshManualSave);
-        this.GetModel<SaveModel>().ManualSave.RegisterWithInitValue(RefreshManualSave);
+        Unbind();
+        m_IsBound = true;
+        try
+        {
+            this.GetModel<SaveModel>().ManualSave.RegisterWithInitValue(RefreshManualSave);
+        }
+        catch
+        {
+            Unbind();
+            throw;
+        }
         m_Save.Disabled = false;
         m_Save.MouseDefaultCursorShape = CursorShape.PointingHand;
         m_Save.SelfModulate = Colors.White;
@@ -77,7 +88,7 @@ public partial class MapForm : IController
         TitleRequested = null;
         SaveRequested = null;
         LevelSelected = null;
-        this.GetModel<SaveModel>().ManualSave.UnRegister(RefreshManualSave);
+        Unbind();
         if (IsInstanceValid(m_LocationAnimation))
             ResetLocationHover();
         if (!isShutdown && IsInstanceValid(this))
@@ -87,6 +98,7 @@ public partial class MapForm : IController
     /// <summary>回池时清除本次打开的引用和框架编号。</summary>
     public void OnRecycle()
     {
+        Unbind();
         if (IsInstanceValid(m_LocationAnimation))
             ResetLocationHover();
         m_SerialId = 0;
@@ -126,6 +138,15 @@ public partial class MapForm : IController
     /// <summary>读取所属游戏流程的架构入口。</summary>
     /// <returns>当前流程 FSM 的架构。</returns>
     IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
+    /// <summary>只在本周期仍拥有订阅时退订；回池后的重复清理不查询旧架构。</summary>
+    private void Unbind()
+    {
+        if (!m_IsBound)
+            return;
+        m_IsBound = false;
+        this.GetModel<SaveModel>().ManualSave.UnRegister(RefreshManualSave);
+    }
 
     /// <summary>重新绑定显式传入的状态源。</summary>
     /// <param name="userData">新打开参数；null 保持当前绑定。</param>

@@ -73,27 +73,27 @@ namespace GameLogic.Battle.Damage
 
             // 3. 闪避
             double missK = heroDefends ? config.MissKHero : config.MissKMonster;
-            if (missRoll < Ratio(miss, missK))
+            if (missRoll < CalculateAttributeRatio(miss, missK))
             {
                 return DamageResult.Missed(data.Kind);
             }
 
             // 4. 暴击
-            bool isCrit = critRoll < Ratio(crit, config.CritK);
+            bool isCrit = critRoll < CalculateAttributeRatio(crit, config.CritK);
             if (isCrit)
             {
                 double luckyK = heroDefends ? config.LuckyKMonsterAtk : config.LuckyKHeroAtk;
-                hurt *= config.CritBase + Ratio(lucky, luckyK);
+                hurt *= config.CritBase + CalculateAttributeRatio(lucky, luckyK);
             }
 
             // 5. 减伤
             switch (data.Kind)
             {
                 case DamageKind.Physics:
-                    hurt *= 1 - Ratio(def, heroDefends ? config.DefKHero : config.DefKMonster);
+                    hurt *= 1 - CalculateAttributeRatio(def, heroDefends ? config.DefKHero : config.DefKMonster);
                     break;
                 case DamageKind.Magic:
-                    hurt *= 1 - Ratio(mdef, heroDefends ? config.MdefKHero : config.MdefKMonster);
+                    hurt *= 1 - CalculateAttributeRatio(mdef, heroDefends ? config.MdefKHero : config.MdefKMonster);
                     break;
             }
 
@@ -127,7 +127,7 @@ namespace GameLogic.Battle.Damage
         /// <param name="x">非负净属性值。</param>
         /// <param name="k">非负曲线常数。</param>
         /// <returns>按 <see cref="RatioStep"/> 取整的比率。</returns>
-        private static double Ratio(double x, double k) // 计算 x/(x+k) 并按统一步长取整。
+        public static double CalculateAttributeRatio(double x, double k)
         {
             double denominator = x + k;
             if (denominator <= 0)

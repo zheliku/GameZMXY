@@ -21,17 +21,17 @@ public sealed class SkillSystemTests
         SkillDefinition[] definitions = [first];
         system.SelectSkills(2, definitions);
         Assert.True(system.TryActivate(SkillId.WaterClone, new Actor()));
-        var data = scope.Skills.ActiveSkillId;
+        var data = scope.Hero.ActiveSkillId;
         definitions[0] = new SkillDefinition(SkillId.WaterDemonBurst, typeof(TestSkillState), "skill_5");
-        Assert.Same(first, scope.Skills.Definitions[SkillId.WaterClone]);
+        Assert.Same(first, scope.Hero.SkillDefinitions[SkillId.WaterClone]);
 
         Assert.Throws<ArgumentException>(() => system.SelectSkills(2,
             first, new SkillDefinition(SkillId.WaterDemonBurst, typeof(TestSkillState), "skill_5")));
         Assert.Throws<ArgumentException>(() => system.SelectSkills(1, first));
         Assert.Throws<ArgumentException>(() => system.SelectSkills(2,
             new SkillDefinition(SkillId.RisingDragon, typeof(TestSkillState))));
-        Assert.Equal(data, scope.Skills.ActiveSkillId);
-        Assert.Single(scope.Skills.Definitions);
+        Assert.Equal(data, scope.Hero.ActiveSkillId);
+        Assert.Single(scope.Hero.SkillDefinitions);
     }
 
     /// <summary>错误状态在登记边界被拒绝，不等到扣费或切换身体时才失败。</summary>
@@ -47,8 +47,8 @@ public sealed class SkillSystemTests
         int mana = scope.Hero.Mp.Value;
         Assert.Throws<ArgumentException>(() => system.SelectSkills(2,
             new SkillDefinition(SkillId.WaterClone, state, InputSystem.Skill1)));
-        Assert.Null(scope.Skills.ActiveSkillId);
-        Assert.Empty(scope.Skills.Definitions);
+        Assert.Null(scope.Hero.ActiveSkillId);
+        Assert.Empty(scope.Hero.SkillDefinitions);
         Assert.Equal(mana, scope.Hero.Mp.Value);
     }
 
@@ -84,10 +84,53 @@ public sealed class SkillSystemTests
         Assert.True(system.TryActivate(SkillId.WaterClone, actor));
         system.GrantInvulnerability(0, 100);
         system.CancelSkill();
-        Assert.Null(scope.Skills.ActiveSkillId);
+        Assert.Null(scope.Hero.ActiveSkillId);
         Assert.False(system.IsInvulnerable(1));
         Assert.True(system.TryActivate(SkillId.WaterClone, actor));
-        Assert.Equal(SkillId.WaterClone, scope.Skills.ActiveSkillId);
+        Assert.Equal(SkillId.WaterClone, scope.Hero.ActiveSkillId);
+    }
+
+    /// <summary>同一档案重试时技能书保留，旧本局登记、施放和无敌不能泄漏到新模型。</summary>
+    [Fact]
+    public void NewRun_PreservesLearningAndDropsAllCastState()
+    {
+        var scope = new TestGameScope(1, [(1, 0)], 100, 25);
+        var system = scope.GetSystem<SkillSystem>();
+        Assert.Equal(SkillLearnResult.Learned, system.Learn(SkillId.RisingDragon));
+        Assert.True(system.TryActivate(SkillId.RisingDragon, new Actor()));
+        system.GrantInvulnerability(0, 100);
+        var previousHero = scope.Hero;
+        var learned = scope.Skills.GetLearnedSkills(1);
+        scope.RestartHero();
+        Assert.NotSame(previousHero, scope.Hero);
+        Assert.Same(learned, scope.Skills.GetLearnedSkills(1));
+        Assert.True(system.IsLearned(SkillId.RisingDragon));
+        Assert.False(system.IsAvailable(SkillId.RisingDragon));
+        Assert.Null(scope.Hero.ActiveSkillId);
+        Assert.Null(system.BodyStateType);
+        Assert.False(system.IsInvulnerable(1));
+        Assert.Empty(scope.Hero.SkillDefinitions);
+        system.SelectSkills(1, GameLogic.SkillTests.SkillTestDefinitions.Wukong());
+        Assert.True(system.TryActivate(SkillId.RisingDragon, new Actor()));
+        Assert.Equal(SkillId.RisingDragon, scope.Hero.ActiveSkillId);
+    }
+
+    /// <summary>正常收招只释放本技能占用，不能结束别的技能；秒制无敌不随动画提前结束。</summary>
+    [Fact]
+    public void EndSkill_ReleasesMatchingOccupancyWithoutCancellingTimedInvulnerability()
+    {
+        var scope = Ready();
+        var system = scope.GetSystem<SkillSystem>();
+        system.SelectSkills(2, new SkillDefinition(SkillId.WaterClone, typeof(TestSkillState)));
+        Assert.True(system.TryActivate(SkillId.WaterClone, new Actor()));
+        system.GrantInvulnerability(0, 10);
+        system.EndSkill(SkillId.WaterDemonBurst);
+        Assert.Equal(SkillId.WaterClone, scope.Hero.ActiveSkillId);
+        system.EndSkill(SkillId.WaterClone);
+        Assert.Null(scope.Hero.ActiveSkillId);
+        Assert.True(system.IsInvulnerable(1));
+        system.CancelSkill();
+        Assert.False(system.IsInvulnerable(1));
     }
 
     /// <summary>保持相同登记不打断施放；切换角色的技能组才取消旧数据，学习记录仍保留。</summary>
@@ -100,11 +143,11 @@ public sealed class SkillSystemTests
         var first = new SkillDefinition(SkillId.WaterClone, typeof(TestSkillState), InputSystem.Skill1);
         system.SelectSkills(2, first);
         Assert.True(system.TryActivate(SkillId.WaterClone, actor));
-        var data = scope.Skills.ActiveSkillId;
+        var data = scope.Hero.ActiveSkillId;
         system.SelectSkills(2, first);
-        Assert.Equal(data, scope.Skills.ActiveSkillId);
+        Assert.Equal(data, scope.Hero.ActiveSkillId);
         system.SelectSkills(2, new SkillDefinition(SkillId.WaterDemonBurst, typeof(TestSkillState), InputSystem.Skill1));
-        Assert.Null(scope.Skills.ActiveSkillId);
+        Assert.Null(scope.Hero.ActiveSkillId);
         Assert.True(system.IsLearned(SkillId.WaterClone));
         Assert.False(system.IsAvailable(SkillId.WaterClone));
         Assert.True(system.TryActivate(SkillId.WaterDemonBurst, actor));

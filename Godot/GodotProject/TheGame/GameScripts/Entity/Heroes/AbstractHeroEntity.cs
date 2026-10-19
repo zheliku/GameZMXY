@@ -184,18 +184,18 @@ namespace GameLogic.Heroes
                 this.GetSystem<SkillSystem>().CancelSkill();
             // 当前状态声明输入窗口；角色匹配具体组合，状态随后消费请求并决定转换。
             if (!Dead && (!HasPendingHurt || ((IHeroBody)this).SuperArmor) &&
-                this.GetModel<SkillModel>().ActiveSkillId == null &&
+                this.GetModel<HeroModel>().ActiveSkillId == null &&
                 m_BodyFsm.CurrentState is AbstractHeroBodyState bodyState &&
                 bodyState.TryGetActionInput(this, out bool attacking, out float normalProgress, out bool airborne))
                 MatchActionInput(attacking, normalProgress, airborne);
             m_BodyFsm.Tick(dt);
             if (m_BodyFsm.CurrentState is AbstractHeroSkillState skillState)
                 skillState.AdvanceAnimation(m_BodyFsm, this, dt);
-            MoveAndSlide();
+            MoveBody();
 
             // 落地归零跳跃次数。必须带 "Velocity.Y >= 0"：起跳那一帧角色可能还没离开地面，
             // 只判 IsOnFloor() 会把刚用掉的次数立刻清零，变成无限跳。
-            if (IsOnFloor() && Velocity.Y >= 0)
+            if (OnFloor && Velocity.Y >= 0)
             {
                 ActionData.JumpCount = 0;
             }
@@ -358,7 +358,7 @@ namespace GameLogic.Heroes
         /// <returns>是否执行平台下落。</returns>
         bool IHeroBody.TryDropThroughPlatform()
         {
-            if (!IsOnFloor())
+            if (!OnFloor)
                 return false;
             uint platformMask = LayerMask.LayerToMask2D("Platform");
             for (int i = 0; i < GetSlideCollisionCount(); i++)

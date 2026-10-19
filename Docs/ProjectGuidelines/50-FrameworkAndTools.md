@@ -40,7 +40,7 @@
 | Framework/GodotGameFrameworkCore/Archive/ArchiveSystem.cs | 原子写/.bak、调用顺序串行、调用时序列化、读取备份回退、严格首次建档、覆盖时重写目录、读写/删除返回 Task<bool>；ArchiveCatalogue/ArchiveData、布局、加密和 GF 泛型绑定不变 |
 | 生成代码与资源 | 用户要求改源表、UI 或资源登记时，只经上述既有生成流程更新；脚本迁移携带 UID，并修复引用后由 Godot 重扫 |
 
-过去的开发存档清理授权只对应已核对的指定旧档，不代表可随意删除后续存档。当前只支持 v4；字段和存档契约见第 70 章。
+过去的开发存档清理授权只对应已核对的指定旧档，不代表可随意删除后续存档。格式以 GameData.CurrentVersion 为准；字段与存档契约见第 70 章。
 
 ## Git 与工具配置
 

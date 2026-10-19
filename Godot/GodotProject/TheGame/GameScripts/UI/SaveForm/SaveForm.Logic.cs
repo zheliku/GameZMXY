@@ -14,6 +14,8 @@ namespace GameLogic.UI;
 /// <summary>六格存档窗口，订阅目录变化并以具名事件请求读档。</summary>
 public partial class SaveForm : IController
 {
+    private bool m_IsBound; // 本周期拥有目录订阅，关闭或失败后不得在回池时重取模型。
+
     private (TextureButton Button, Label Name, Label Date)[] m_SlotViews; // 六个存档格的控件引用，不另建格子脚本。
 
     /// <summary>由所属流程处理 SaveSlotSelected；参数为本次窗口编号及选择编号。</summary>
@@ -57,10 +59,18 @@ public partial class SaveForm : IController
     /// <param name="userData">未使用；目录由共享 SaveModel 提供。</param>
     public void OnOpen(object userData)
     {
-        var saveModel = this.GetModel<SaveModel>();
-        saveModel.Directory.UnRegister(RefreshDirectory);
-        saveModel.Directory.RegisterWithInitValue(RefreshDirectory);
-        Visible = true;
+        Unbind();
+        m_IsBound = true;
+        try
+        {
+            this.GetModel<SaveModel>().Directory.RegisterWithInitValue(RefreshDirectory);
+            Visible = true;
+        }
+        catch
+        {
+            Unbind();
+            throw;
+        }
     }
 
     /// <summary>解绑目录，关闭实例不保留本周期数据。</summary>
@@ -69,7 +79,7 @@ public partial class SaveForm : IController
     public void OnClose(bool isShutdown, object userData)
     {
         SaveSlotSelected = null;
-        this.GetModel<SaveModel>().Directory.UnRegister(RefreshDirectory);
+        Unbind();
         if (!isShutdown && IsInstanceValid(this))
             Visible = false;
     }
@@ -77,6 +87,7 @@ public partial class SaveForm : IController
     /// <summary>清除回池窗口编号。</summary>
     public void OnRecycle()
     {
+        Unbind();
         m_SerialId = 0;
         m_DepthInUIGroup = 0;
         m_PauseCoveredUIForm = true;
@@ -114,6 +125,15 @@ public partial class SaveForm : IController
     /// <summary>读取所属游戏流程的架构入口。</summary>
     /// <returns>当前流程 FSM 的架构。</returns>
     IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
+    /// <summary>结束当前目录订阅，允许关闭后回池再次清理而不访问旧作用域。</summary>
+    private void Unbind()
+    {
+        if (!m_IsBound)
+            return;
+        m_IsBound = false;
+        this.GetModel<SaveModel>().Directory.UnRegister(RefreshDirectory);
+    }
 
     /// <summary>重新绑定显式传入的状态源。</summary>
     /// <param name="userData">新打开参数；null 保持当前绑定。</param>

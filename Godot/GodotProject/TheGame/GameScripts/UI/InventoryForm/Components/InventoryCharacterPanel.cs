@@ -1,4 +1,5 @@
 using GameLogic.Battle;
+using GameLogic.Battle.Damage;
 using GameLogic.Config;
 using GameLogic.Architecture;
 using System;
@@ -88,12 +89,12 @@ public partial class InventoryCharacterPanel : Control, IController
         cell.Bind(data, data == null ? null : m_Appearances.Get(data.EquipmentId).InventoryIcon);
     }
 
-    /// <summary>将属性点按 x/(x+K) 转换为显示百分比。</summary>
+    /// <summary>格式化战斗系统计算的百分比，不在界面维护第二份属性公式。</summary>
     /// <param name="value">已汇总属性点。</param>
     /// <param name="coefficient">对应战斗系数。</param>
     /// <returns>同等级、无穿透对手下的概率或减伤文字。</returns>
     private static string Percent(float value, float coefficient) =>
-        $"{(value <= 0 ? 0 : 100.0 * value / (value + coefficient)):0.#}%";
+        $"{CombatSystem.CalculateAttributeRatio(value, coefficient) * 100:0.#}%";
 
     /// <summary>提交武器卸装请求。</summary>
     /// <param name="instanceId">当前槽的装备实例编号。</param>

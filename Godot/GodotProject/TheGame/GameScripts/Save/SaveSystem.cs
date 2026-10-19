@@ -22,7 +22,7 @@ namespace GameLogic.Save
     /// </summary>
     /// <remarks>
     /// 全部写盘字段见 <see cref="GameData"/>；运行时档案与快照的转换见 <see cref="SaveDataUtility"/>。
-    /// 文件读写只调用 ArchiveUtility，原子写、备份与串行队列由框架负责；阅读顺序见同目录 README.md。
+    /// 文件读写只调用 ArchiveUtility，原子写、备份与串行队列由框架负责；数据流见 Docs/ProjectTour.md。
     /// 应用装配边界注册唯一实例；标题读取目录，读档流程切换当前槽，关卡提交当前档案。
     /// 本系统借用独立注册的 SaveModel，拥有读写任务；共享配置、经验曲线通过 Architecture 取用，ProfileModel 由流程注册于档案作用域。
     /// </remarks>
@@ -38,17 +38,24 @@ namespace GameLogic.Save
         /// <summary>读取选中的存档格；新格按配置建档并立即写入，已有格只接受当前格式。</summary>
         /// <param name="slotNumber">从 1 开始的存档格号。</param>
         /// <param name="unitId">GGF 存档编号；新格为 0。</param>
+        /// <param name="cancellationToken">流程周期；取消后停止发布迟到结果，已提交的框架读写仍会完成。</param>
         /// <returns>已校验的存档 DTO 及加载来源；运行时模型由流程创建并注册。</returns>
         /// <exception cref="InvalidOperationException">文件读取或写入失败，已拒绝覆盖。</exception>
         /// <exception cref="ArgumentOutOfRangeException">格号不在六格范围内。</exception>
-        public async Task<(GameData Data, SaveOrigin Origin)> LoadOrCreateAsync(int slotNumber, long unitId)
+        public async Task<(GameData Data, SaveOrigin Origin)> LoadOrCreateAsync(int slotNumber, long unitId,
+            CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var archive = this.GetUtility<GameArchiveUtility>();
             if (slotNumber < 1 || slotNumber > SaveModel.SlotCount)
                 throw new ArgumentOutOfRangeException(nameof(slotNumber));
             var tables = this.GetModel<ConfigurationModel>().Tables;
+            var mapper = this.GetUtility<SaveDataUtility>();
+            var saveModel = this.GetModel<SaveModel>();
             await m_DirectoryRead;
+            cancellationToken.ThrowIfCancellationRequested();
             await m_PendingWrite;
+            cancellationToken.ThrowIfCancellationRequested();
             // 空格只创建新槽；已有编号明确读取该槽，不依赖“最近存档”。
             bool loaded;
             if (unitId == 0)
@@ -60,6 +67,7 @@ namespace GameLogic.Save
             else
                 loaded = await archive.LoadAsync(unitId);
 
+            cancellationToken.ThrowIfCancellationRequested();
             if (!loaded || archive.CurrentData == null || archive.CurrentCatalogue == null ||
                 archive.CurrentData.UnitId != archive.CurrentCatalogue.UnitId)
                 throw new InvalidOperationException("没有成功读取有效存档，已拒绝覆盖。");
@@ -77,14 +85,15 @@ namespace GameLogic.Save
                 Soul = tables.TbProfileConfig.StartSoul,
                 Heroes = [new HeroSaveData { HeroId = tables.TbProfileConfig.StartHeroId }]
             } : data;
-            this.GetUtility<SaveDataUtility>().Validate(source, tables.TbEquipmentConfig,
+            mapper.Validate(source, tables.TbEquipmentConfig,
                 tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig);
-            this.GetModel<SaveModel>().ActiveSlotUnitId = data.UnitId;
+            saveModel.ActiveSlotUnitId = data.UnitId;
             if (created)
             {
                 catalogue.SlotNumber = slotNumber;
                 if (!await WriteSnapshotAsync(source))
                     throw new InvalidOperationException("新档案写入失败。");
+                cancellationToken.ThrowIfCancellationRequested();
             }
 
             return (source, created ? SaveOrigin.Created : SaveOrigin.Loaded);
@@ -99,6 +108,7 @@ namespace GameLogic.Save
             var archive = this.GetUtility<GameArchiveUtility>();
             var tables = this.GetModel<ConfigurationModel>().Tables;
             var curve = this.GetUtility<ExperienceCurve>();
+            var mapper = this.GetUtility<SaveDataUtility>();
             await m_PendingWrite;
             cancellationToken.ThrowIfCancellationRequested();
             // GGF 首次初始化可能建立一个空文件；它不创建角色，在界面仍显示为空格。
@@ -130,7 +140,7 @@ namespace GameLogic.Save
                         if (catalogue.SlotNumber != number || catalogue.SavedAtUtc <= 0)
                             throw new InvalidOperationException("已有档案缺少稳定格号或检查点时间。");
                         var data = archive.CurrentData;
-                        this.GetUtility<SaveDataUtility>().Validate(data,
+                        mapper.Validate(data,
                             tables.TbEquipmentConfig, tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig);
                         string name = tables.TbHeroConfig.Get(data.ActiveHeroId).NameCn;
                         int level = curve.Evaluate(data.Heroes.Single(x => x.HeroId == data.ActiveHeroId).TotalExperience).Level;
@@ -240,9 +250,10 @@ namespace GameLogic.Save
         /// <returns>原始写盘结果；失败不发成功事件。</returns>
         private async Task<bool> NotifyWriteAsync(Task<bool> write)
         {
+            var events = GF.Event;
             bool succeeded = await write;
-            if (succeeded)
-                GF.Event.Fire(this, SaveSucceededEventArgs.Create());
+            if (succeeded && Godot.GodotObject.IsInstanceValid(events))
+                events.Fire(this, SaveSucceededEventArgs.Create());
             return succeeded;
         }
 
@@ -263,34 +274,36 @@ namespace GameLogic.Save
         /// <returns>读取任务；文件错误转换为目录失败提示。</returns>
         private async Task ReadDirectoryAsync(CancellationToken cancellationToken)
         {
-            UpdateDirectory(SaveListState.Loading);
+            var model = this.GetModel<SaveModel>();
+            UpdateDirectory(model, SaveListState.Loading);
             try
             {
                 var slots = await ReadSlotsAsync(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                UpdateDirectory(SaveListState.Ready, slots);
+                UpdateDirectory(model, SaveListState.Ready, slots);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 // 取消的是本次读取；共享目录可由下一个标题周期重新读取。
-                UpdateDirectory(SaveListState.NotLoaded);
+                UpdateDirectory(model, SaveListState.NotLoaded);
             }
             catch (Exception error)
             {
                 Log.Error("[SaveSystem] 目录读取失败：{0}", error);
-                UpdateDirectory(SaveListState.Failed, errorMessage: "存档目录读取失败，请关闭后重试。");
+                UpdateDirectory(model, SaveListState.Failed, errorMessage: "存档目录读取失败，请关闭后重试。");
             }
         }
 
         /// <summary>由 SaveSystem 一次提交完整阶段和显示数据，再通知观察者。</summary>
+        /// <param name="model">本次读取开始时借用的目录状态。</param>
         /// <param name="phase">目录读取阶段。</param>
         /// <param name="slots">完整格子摘要；省略时保留上次结果。</param>
         /// <param name="errorMessage">本次读取失败提示。</param>
-        private void UpdateDirectory(SaveListState phase, IReadOnlyList<SaveSlotInfo> slots = null, string errorMessage = "")
+        private static void UpdateDirectory(SaveModel model, SaveListState phase, IReadOnlyList<SaveSlotInfo> slots = null, string errorMessage = "")
         {
             // 复制集合边界，调用方随后修改数组不会偷偷改变已发布目录。
-            var entries = slots == null ? this.GetModel<SaveModel>().Slots : Array.AsReadOnly(slots.ToArray());
-            this.GetModel<SaveModel>().Directory.Value = new(phase, entries, errorMessage);
+            var entries = slots == null ? model.Slots : Array.AsReadOnly(slots.ToArray());
+            model.Directory.Value = new(phase, entries, errorMessage);
         }
     }
 }

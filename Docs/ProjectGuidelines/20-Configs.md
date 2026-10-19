@@ -12,21 +12,21 @@
 
 ## 属性与成长
 
-- 属性种类只有一个定义：枚举 `Stat.StatType`（`__enums__.xlsx`，值显式、只在末尾追加）。完整的一组属性值是 bean `Stat.StatBlock`（`__beans__.xlsx`），字段与枚举一一对应；新增属性时同时追加枚举项、bean 字段并更新 `ActorAttributes.SetBase`。
-- 修正方式是枚举 `Stat.StatModifierKind`（`Flat` / `PercentAdd` / `PercentMult`）；装备、法宝、被动、丹药、Buff 表用它描述加成，不另造字段。
+- 属性种类只有一个定义：枚举 `Attributes.AttributeType`（`__enums__.xlsx`，值显式、只在末尾追加）。完整的一组属性值是 bean `Attributes.ActorBaseAttributes`（`__beans__.xlsx`），字段与枚举一一对应；新增属性时同时追加枚举项、bean 字段并更新 `HeroSystem` 的属性汇总。
+- 修正方式是枚举 `Attributes.AttributeModifierKind`（`Flat` / `PercentAdd` / `PercentMult`）；装备、法宝、被动、丹药、Buff 表用它描述加成，不另造字段。
 - 经验曲线：`Hero.TbHeroLevelConfig`，全英雄共用（等级 → 升级所需经验）。
-- 英雄成长：`Hero.TbHeroGrowthConfig`（list，联合索引 `HeroId + Level`，`read_schema_from_file=false`），每行内嵌 `Stats: StatBlock`；每名英雄覆盖经验表全部等级。`HeroConfig` 只保留身份、手感与表现字段。
-- 怪物没有成长：`MonsterConfig` 内嵌一个 `Stats: StatBlock`，`Level` 只用于等级压制与经验门槛；怪物伤害由招式 `AttackConfig.FlatPower` 决定，`Stats.Power` 填 0。
+- 英雄成长：`Hero.TbHeroGrowthConfig`（list，联合索引 `HeroId + Level`，`read_schema_from_file=false`），每行内嵌 `BaseAttributes: ActorBaseAttributes`；每名英雄覆盖经验表全部等级。`HeroConfig` 保留身份与基础移动参数，外观和声音由场景绑定。
+- 怪物没有成长：`MonsterConfig` 内嵌一个 `BaseAttributes: ActorBaseAttributes`，`Level` 只用于等级压制与经验门槛；怪物伤害由招式 `AttackConfig.FlatPower` 决定，`BaseAttributes.Power` 填 0。
 - 建档规则：单行表 `Profile.TbProfileConfig`（`StartHeroId`、`StartSoul`）。
 - 内嵌 bean 的数据表（`HeroGrowthConfig`、`MonsterConfig`、`LevelConfig`）用多级 `##var` 标题、没有 `##type` 行，记录 bean 定义在 `__beans__.xlsx`。
 
 ## 启动校验
 
-- 跨表约束由 `Config/ConfigHelper.ValidateAll` 在 `ProcedurePreload` 集中校验一次，汇总全部错误后停止启动：经验曲线连续、每英雄成长行覆盖 1..MaxLevel、怪物 `MaxHp > 0` 且 `AddExp ≥ 0`、建档英雄存在、战斗常数非负。
-- 运行期消费已校验的表，不再各自兜底或静默换默认值。关卡与场景装配的约束仍由各自的初始化边界（`LevelModule.Initialize` 等）校验。
-- 新增跨表约束时加到 `ConfigHelper`，并在 `Tests/ProfileTests` 用正式表产物验证通过。
+- 跨表约束由 `Config/ConfigurationSystem.ValidateTables` 在 `ProcedurePrepare` 集中校验一次，汇总全部错误后停止启动：经验曲线连续、每英雄成长行覆盖 1..MaxLevel、怪物 `MaxHp > 0` 且 `AddExp ≥ 0`、建档英雄存在、战斗常数非负。
+- 运行期消费已校验的表，不再各自兜底或静默换默认值。关卡与场景装配的约束仍由各自的初始化边界（`LevelViewController.Initialize` 等）校验。
+- 新增跨表约束时加到 `ConfigurationSystem`，并在 `Tests/ProfileTests` 用正式表产物验证通过。
 
-## 历史脚本
+## 关卡配置
 
 - `Tools/ConfigBootstrap/build_m2_tables.py`、`migrate_stat_tables.py` 是已执行过的一次性种子/迁移脚本，**不要再运行**（会整表重写或检测到已迁移后退出）。之后直接编辑 xlsx。
 - 关卡只使用 `LevelConfig.xlsx` 一张表（`Level.TbLevelConfig`，map 模式，主键 `LevelId`，`read_schema_from_file=false`）。记录 bean `Level.LevelConfig`、`Level.LevelStage`、`Level.LevelSpawnRecipe` 定义在 `__beans__.xlsx`；数据表用多级 `##var` 标题行做列限定，不再有 `LevelStageConfig` / `RowId` / `Sequence` / `StageCount` 等外键与冗余字段。
@@ -38,7 +38,7 @@
 - 人类可读性优先：策划可见的表列与场景导出一律用可读标识（`MonsterEntityId` 填 `HuaguoshanMonkey` 等枚举名），程序运行时仍按 ID/枚举查找；不在表或场景里出现需要反查的裸数字 ID。当关卡配方使用 `MonsterEntityId` 查找 `MonsterConfig` 时，`MonsterConfig.EntityId` 必须与怪物配置保持一对一；运行时会校验并拒绝零条或多条匹配。若以后需要同一实体外观对应多个数值变体，应再引入可读的 MonsterConfig 业务键，而不是回退到数字 ID。
 - `##` 注释行的中文注释与列一一对齐：每个数据列一个注释；多行/合并字段把整段说明写在首列，禁止注释整行错位。
 - Luban 空单元格不会继承上一行：多行列表续行里留空只是“该元素此列为默认值”，关卡级/阶段级字段不会被视觉空白自动合并进续行。
-- 场景 `LevelRoot.MusicId` 引用 `SoundConfig` 的 Music 组，由关卡流程通过 GGF 播放并按请求编号停止；菜单音乐由各菜单流程拥有。
+- 场景 `LevelViewController.MusicId` 引用 `SoundConfig` 的 Music 组，由关卡流程通过 GGF 播放并按请求编号停止；菜单音乐由各菜单流程拥有。
 - 表只描述关卡身份、阶段编排和生成配方；空间位置只写 `SpawnPointId` 外键，不复制场景坐标。各职责所有者在初始化时校验：阶段序列校验 `StageOrder` 等于行序且从 1 连续递增及激活方式；空间目录校验外键唯一且存在；刷怪服务校验配方数值与实体配置；缺失或冲突时中止关卡初始化，禁止静默退回 `(0, 0)`。改表后先导表，再执行构建。
 - 配置目录细节与字段约定只维护在此文件，校验改表后执行 `dotnet build`。
 

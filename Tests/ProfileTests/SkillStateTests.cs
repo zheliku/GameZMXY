@@ -33,7 +33,7 @@ public sealed class SkillStateTests
         Assert.InRange(skill.Actor.Velocity.X, 184.31, 184.33);
         state.CompleteAnimation();
         skill.Advance(.01f);
-        Assert.Null(skill.Scope.Skills.ActiveSkillId);
+        Assert.Null(skill.Scope.Hero.ActiveSkillId);
         Assert.Equal(0, skill.Actor.ActionData.LastGroundSegment);
     }
 
@@ -45,7 +45,7 @@ public sealed class SkillStateTests
         skill.System.CancelSkill();
         skill.Advance(.1f);
         Assert.Equal(0, skill.Actor.Advances);
-        Assert.Null(skill.Scope.Skills.ActiveSkillId);
+        Assert.Null(skill.Scope.Hero.ActiveSkillId);
     }
 
     /// <summary>两招分别消耗空中跳跃并读取冷却数值。</summary>
@@ -132,10 +132,10 @@ public sealed class SkillStateTests
         skill.Scope.Hero.Mp.Value = 100;
         Assert.True(skill.System.TryActivate(SkillId.FireDemonSlash, skill.Actor));
         skill.Advance(.01f);
-        var current = skill.Scope.Skills.ActiveSkillId;
+        var current = skill.Scope.Hero.ActiveSkillId;
         oldCompletion();
         skill.Advance(.01f);
-        Assert.Equal(current, skill.Scope.Skills.ActiveSkillId);
+        Assert.Equal(current, skill.Scope.Hero.ActiveSkillId);
         Assert.Null(skill.Actor.LastMarker);
     }
 

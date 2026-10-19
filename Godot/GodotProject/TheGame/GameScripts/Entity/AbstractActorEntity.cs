@@ -47,6 +47,7 @@ namespace GameLogic.Entity
         private string m_RequestedAnim; // 最近一次请求播放的动画名；同名请求不重播，OnShow 时清空。
 
         private readonly Dictionary<string, StringName> m_AnimNames = new(); // 动画名到 StringName 的缓存，避免重复转换。
+        private bool m_PhysicsInitialized; // 本次显示已完成真实移动；池化 CharacterBody2D 的旧落地缓存此前无效。
 
         /// <summary>待生效的受击（值 = 击退速度；null = 无）：OnHurt 登记（子类按门槛），身体状态生效</summary>
         protected Vector2? m_PendingHurt;
@@ -54,8 +55,8 @@ namespace GameLogic.Entity
         /// <summary>死亡事实置位的那一刻触发一次（作用域内订阅：关卡运行据此结算英雄死亡）。</summary>
         public event Action<AbstractActorEntity> Died;
 
-        /// <summary>上次 MoveAndSlide 得到的落地事实，英雄与怪物的身体接口共用。</summary>
-        public bool OnFloor => IsOnFloor();
+        /// <summary>本次显示的物理移动得到的落地事实；首次移动前不沿用上次池实例的缓存。</summary>
+        public bool OnFloor => IsShown && m_PhysicsInitialized && IsOnFloor();
 
         /// <summary>本角色的招式（AttackConfig 里 OwnerId==自己，按 ComboIndex 排序；子类 OnInit 装填）</summary>
         protected IReadOnlyList<AttackConfig> OwnAttacks => this.GetModel<ConfigurationModel>().GetAttacks(EntityType);
@@ -208,6 +209,7 @@ namespace GameLogic.Entity
             Visible = true;
             IsShown = true;
             Dead = false;
+            m_PhysicsInitialized = false;
             m_RequestedAnim = null;
             if (m_AnimPlayer != null)
             {
@@ -224,6 +226,7 @@ namespace GameLogic.Entity
         public virtual void OnHide(bool isShutdown, object userData)
         {
             IsShown = false;
+            m_PhysicsInitialized = false;
             ReleaseAttack();
 
             if (isShutdown || !IsInstanceValid(this))
@@ -396,7 +399,6 @@ namespace GameLogic.Entity
                 return DamageResult.Missed(data.Kind);
             }
 
-            BattleConfig config = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
             CombatantAttributes defender = CaptureCombatAttributes();
             float missRoll = GD.Randf();
             float critRoll = GD.Randf();
@@ -438,6 +440,13 @@ namespace GameLogic.Entity
         /// <summary>恢复实际生命，调用前已排除死亡。</summary>
         /// <param name="amount">恢复量。</param>
         protected abstract void RestoreHealth(int amount);
+
+        /// <summary>提交一次真实物理移动，再开放本次显示的碰撞结果；避免池复用读取旧落地缓存。</summary>
+        protected void MoveBody()
+        {
+            MoveAndSlide();
+            m_PhysicsInitialized = true;
+        }
 
         // ---- 内部方法与扩展点 ----
 

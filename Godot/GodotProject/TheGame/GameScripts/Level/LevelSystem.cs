@@ -1,16 +1,18 @@
 using System;
 using System.Threading.Tasks;
-using GameConfig.Equipment;
+using GameConfig.Loot;
 using GameLogic.Architecture;
+using GameLogic.Battle;
 using GameLogic.Config;
-using GameLogic.Equipment;
 using GameLogic.Profile;
+using GameLogic.Equipment;
 using GameLogic.Save;
 using GameLogic.Skills;
+using GameLogic.Drops;
 
 namespace GameLogic.Level;
 
-/// <summary>关卡业务系统：借用独立注册的 LevelModel 和档案，执行奖励、装备交易、提交与回滚；不持有节点。</summary>
+/// <summary>关卡业务系统：借用独立注册的 LevelModel 和档案，执行奖励、提交与回滚；不持有节点。</summary>
 public sealed class LevelSystem : AbstractSystem
 {
     /// <summary>借用 Architecture 拥有的本局状态。</summary>
@@ -77,12 +79,55 @@ public sealed class LevelSystem : AbstractSystem
         LevelModel.SessionActive && LevelModel.Outcome.Value == LevelOutcome.Running
                             && this.GetSystem<ProfileSystem>().TryCollectEquipment(data);
 
-    /// <summary>实际接触灵魂球时入账；本关结束后拒绝迟到奖励。</summary>
-    /// <param name="amount">球中已确定的灵魂数量。</param>
-    public void CollectSoul(int amount)
+    /// <summary>接触地面恢复品时执行其配置效果；满值仍消耗，未开始、死亡及结局后拒绝。</summary>
+    /// <param name="id">恢复品定义。</param>
+    /// <returns>本次已消费恢复品时为真，场景据此回收节点并播放反馈。</returns>
+    public bool TryCollectPickup(PickupId id)
     {
-        if (LevelModel.SessionActive && LevelModel.Outcome.Value == LevelOutcome.Running)
-            this.GetSystem<ProfileSystem>().AddSoul(amount);
+        if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
+            this.GetModel<HeroModel>().IsDepleted)
+            return false;
+        var pickup = this.GetModel<ConfigurationModel>().Tables.TbPickupConfig.GetOrDefault(id);
+        if (pickup == null)
+            return false;
+        var hero = this.GetSystem<HeroSystem>();
+        switch (pickup.Effect)
+        {
+            case PickupEffect.Health:
+                hero.Heal(pickup.RestoreAmount);
+                break;
+            case PickupEffect.Mana:
+                hero.RestoreMp(pickup.RestoreAmount);
+                break;
+            default:
+                throw new InvalidOperationException($"恢复品 {id} 的效果未实现：{pickup.Effect}。");
+        }
+
+        return true;
+    }
+
+    /// <summary>本关球体接触后发放收益；场景只确认接触和实例所有权，不执行奖励规则。</summary>
+    /// <param name="reward">球体在生成时确定的收益，蓝球按接触时的魔法上限计算。</param>
+    public void CollectLoot(LootReward reward)
+    {
+        if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
+            this.GetModel<HeroModel>().IsDepleted)
+            return;
+        switch (reward.Kind)
+        {
+            case LootKind.Soul:
+                this.GetSystem<ProfileSystem>().AddSoul(reward.Amount);
+                break;
+            case LootKind.Musou:
+                this.GetSystem<HeroSystem>().AddWsFromPickup(reward.Amount);
+                break;
+            case LootKind.Mana:
+                int amount = this.GetSystem<LootSystem>().ManaAmount(this.GetModel<HeroModel>().MaxMp.Value);
+                this.GetSystem<HeroSystem>().RestoreMp(amount);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(reward));
+        }
     }
 
     /// <summary>接收有效游戏帧时间；暂停、结局和未开始的会话不累计。</summary>
@@ -107,36 +152,6 @@ public sealed class LevelSystem : AbstractSystem
         LevelModel.Sequence.ClearBattle();
         LevelModel.TravelAvailable.Value = LevelModel.Sequence.Phase == LevelStagePhase.Travelling;
     }
-
-    /// <summary>提交玩家在背包发起的穿戴请求，规则由档案作用域装备系统执行。</summary>
-    /// <param name="instanceId">背包实例编号。</param>
-    /// <returns>进行中的本关成功穿戴时为 true。</returns>
-    public bool TryEquip(Guid instanceId) =>
-        LevelModel.Outcome.Value == LevelOutcome.Running && LevelModel.SessionActive && this.GetSystem<EquipmentSystem>()
-            .TryEquip(instanceId);
-
-    /// <summary>提交卸装请求；满包时保留装备。</summary>
-    /// <param name="slot">武器或防具部位。</param>
-    /// <returns>成功卸下时为 true。</returns>
-    public bool TryUnequip(EquipmentSlot slot) =>
-        LevelModel.Outcome.Value == LevelOutcome.Running && LevelModel.SessionActive &&
-        this.GetSystem<EquipmentSystem>().TryUnequip(slot);
-
-    /// <summary>提交背包出售请求；收益与本关其他档案变化一起保存或回滚。</summary>
-    /// <param name="instanceId">仍在背包中的装备实例。</param>
-    /// <returns>本关进行中且实际出售时为 true。</returns>
-    public bool TrySell(Guid instanceId) =>
-        LevelModel.Outcome.Value == LevelOutcome.Running && LevelModel.SessionActive && this.GetSystem<EquipmentSystem>()
-            .TrySell(instanceId);
-
-    /// <summary>关卡运行期间提交按品质出售；收益遵守本关检查点和放弃回滚规则。</summary>
-    /// <param name="quality">背包内要出售的装备品质。</param>
-    /// <returns>实际出售件数。</returns>
-    public int SellByQuality(EquipmentQuality quality) =>
-        LevelModel.Outcome.Value == LevelOutcome.Running && LevelModel.SessionActive
-            ? this.GetSystem<EquipmentSystem>().SellByQuality(quality)
-            : 0;
-
 
     /// <summary>接受第一个结局；先捕获检查点，再发布冻结成绩。</summary>
     /// <param name="outcome">通关或失败。</param>

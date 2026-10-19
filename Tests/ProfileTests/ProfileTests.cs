@@ -192,6 +192,23 @@ namespace GameLogic.Profile.Tests
             Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<GameData>("{\"SaveVersion\":2,\"UnitId\":7}"));
         }
 
+        /// <summary>当前格式的英雄记录必须明确保存身份与累计经验，缺字段不能被零值掩盖。</summary>
+        /// <param name="field">要模拟丢失的字段。</param>
+        [Theory]
+        [InlineData("HeroId")]
+        [InlineData("TotalExperience")]
+        public void Archive_RejectsIncompleteHeroRecord(string field)
+        {
+            var data = Newtonsoft.Json.Linq.JObject.FromObject(new GameData
+            {
+                ActiveHeroId = 1,
+                Heroes = [new GameLogic.Save.Data.HeroSaveData { HeroId = 1, TotalExperience = 0 }]
+            });
+            var hero = (Newtonsoft.Json.Linq.JObject)data["Heroes"][0];
+            hero.Remove(field);
+            Assert.Throws<JsonSerializationException>(() => data.ToObject<GameData>());
+        }
+
         /// <summary>框架创建的当前格式空槽可以序列化回读，仍未建立角色。</summary>
         [Fact]
         public void Archive_RoundTripsUnclaimedCurrentSlot()

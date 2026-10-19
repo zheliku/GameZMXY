@@ -114,8 +114,8 @@ public sealed partial class UiSmokeScenario
             var inventoryBefore = flow.GetModel<ProfileModel>().EquipmentDatas.Select(x => x.InstanceId).ToArray();
             await DefeatMonsterAsync(level, procedure);
             flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPilgrimStaff, () => .7f));
-            Check(SmokeInspection.GetLevelSystem(FindLevel()).SellByQuality(GameConfig.Equipment.EquipmentQuality.Common) > 0,
-                "关卡未接收整包品质出售请求");
+            Check(flow.GetArchitecture().SendCommand(new SellEquipmentByQualityCommand(GameConfig.Equipment.EquipmentQuality.Common)) > 0,
+                "批量出售命令未接收整包品质出售请求");
             Check(progression.TotalExperience > before, "击败怪物没有把经验写入档案");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == before, "关内收益在结算前就写盘了");
             ReenterLevel();
@@ -412,7 +412,8 @@ public sealed partial class UiSmokeScenario
         CloseBattleForm(m_TestBattleForm);
         m_TestBattleForm = null;
         var vitals = GF.Fsm.GetModel<HeroModel>();
-        GF.Fsm.GetSystem<HeroSystem>().Damage(70);
+        // 前面的霸体验证已经造成伤害；本用例需要存活的脏状态，不依赖剩余生命恰好大于 70。
+        GF.Fsm.GetSystem<HeroSystem>().Damage(Math.Max(0, vitals.Hp.Value - 1));
         GF.Fsm.GetSystem<HeroSystem>().AddWs(70);
         GF.Fsm.GetSystem<HeroSystem>().AddWs(GF.Fsm.GetModel<HeroModel>().MaxWs.Value - GF.Fsm.GetModel<HeroModel>().Ws.Value);
         Check(previous.TryActivateMusou(), "复用测试前未开启无双");
@@ -889,6 +890,8 @@ public sealed partial class UiSmokeScenario
     /// <exception cref="InvalidOperationException">多次攻击仍未致死。</exception>
     private static void KillHero(AbstractHeroEntity hero)
     {
+        // 数值探针可能暂停了身体物理；死亡状态和动画仍必须按真实物理帧推进。
+        hero.SetPhysicsProcess(true);
         for (int i = 0; i < 100 && !hero.Dead; i++)
         {
             var attack = GameLogic.Battle.Attacks.AttackData.Create(0, default, GF.Fsm.GetModel<HeroModel>().MaxHp.Value * 100f,

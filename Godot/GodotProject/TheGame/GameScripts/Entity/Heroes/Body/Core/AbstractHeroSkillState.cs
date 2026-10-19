@@ -23,7 +23,7 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     /// <inheritdoc />
     protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
     {
-        m_SkillId = body.GetModel<SkillModel>().ActiveSkillId ??
+        m_SkillId = body.GetModel<HeroModel>().ActiveSkillId ??
             throw new InvalidOperationException("进入技能状态前必须先成功激活技能。");
         m_AnimationCompleted = GravitySuspended = AnimationPaused = false;
     }
@@ -31,7 +31,7 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     /// <inheritdoc />
     protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
     {
-        if (body.GetModel<SkillModel>().ActiveSkillId != m_SkillId)
+        if (body.GetModel<HeroModel>().ActiveSkillId != m_SkillId)
         {
             ChangeToLocomotion(fsm, body);
             return;
@@ -48,7 +48,7 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     /// <param name="dt">游戏秒数。</param>
     public void AdvanceAnimation(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
     {
-        if (body.GetModel<SkillModel>().ActiveSkillId != m_SkillId)
+        if (body.GetModel<HeroModel>().ActiveSkillId != m_SkillId)
             return;
         if (!AnimationPaused)
             ((ISkillActor)body).AdvanceSkillAnimation(dt);
@@ -65,9 +65,7 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
     {
         ((ISkillActor)body).EndSkillAnimation();
-        var model = body.GetModel<SkillModel>();
-        if (model.ActiveSkillId == m_SkillId)
-            model.ActiveSkillId = null;
+        body.GetSystem<SkillSystem>().EndSkill(m_SkillId);
         m_AnimationCompleted = GravitySuspended = AnimationPaused = false;
     }
 
