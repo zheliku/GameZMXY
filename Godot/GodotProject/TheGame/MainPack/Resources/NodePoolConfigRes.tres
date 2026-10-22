@@ -5,39 +5,39 @@
 
 [sub_resource type="Resource" id="Resource_lqe6w"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Effects/floating_text.tscn"
+Scene = "res://TheGame/Entitys/Drops/ground_item.tscn"
 
 [sub_resource type="Resource" id="Resource_kq84q"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/ground_item.tscn"
+Scene = "res://TheGame/Entitys/Drops/loot_orb.tscn"
 
 [sub_resource type="Resource" id="Resource_3vwbs"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/loot_orb.tscn"
+Scene = "res://TheGame/Entitys/Effects/floating_text.tscn"
 
-[sub_resource type="Resource" id="Resource_skill_0"]
+[sub_resource type="Resource" id="Resource_e1wg2"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Effects/Skills/wukong_blazing_flash_trail_effect.tscn"
+Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_02_macaque_king/macaque_wind_blade_effect.tscn"
 
-[sub_resource type="Resource" id="Resource_skill_1"]
+[sub_resource type="Resource" id="Resource_b654q"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_combo_effect.tscn"
+Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_blazing_flash_trail_effect.tscn"
 
-[sub_resource type="Resource" id="Resource_skill_2"]
+[sub_resource type="Resource" id="Resource_xn77p"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_descent_effect.tscn"
+Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_combo_effect.tscn"
 
-[sub_resource type="Resource" id="Resource_skill_3"]
+[sub_resource type="Resource" id="Resource_aiojc"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_landing_effect.tscn"
+Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_descent_effect.tscn"
 
-[sub_resource type="Resource" id="Resource_skill_4"]
+[sub_resource type="Resource" id="Resource_72mqi"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Effects/Skills/wukong_fire_demon_prelude_effect.tscn"
+Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_landing_effect.tscn"
 
 [resource]
 script = ExtResource("1_8jdg")
-Entries = Array[Object]([SubResource("Resource_lqe6w"), SubResource("Resource_kq84q"), SubResource("Resource_3vwbs"), SubResource("Resource_skill_0"), SubResource("Resource_skill_1"), SubResource("Resource_skill_2"), SubResource("Resource_skill_3"), SubResource("Resource_skill_4")])
+Entries = Array[Object]([SubResource("Resource_lqe6w"), SubResource("Resource_kq84q"), SubResource("Resource_3vwbs"), SubResource("Resource_e1wg2"), SubResource("Resource_b654q"), SubResource("Resource_xn77p"), SubResource("Resource_aiojc"), SubResource("Resource_72mqi")])
 DefaultExpireTime = 300.0
 DefaultAutoReleaseInterval = 300.0
 metadata/_custom_type_script = "uid://yiewfnn1gx67"

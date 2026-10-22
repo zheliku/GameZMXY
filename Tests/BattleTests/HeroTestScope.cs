@@ -18,7 +18,10 @@ internal sealed class HeroTestScope : IArchitecture
         System = new(this);
         var buffer = new Luban.ByteBuf();
         for (int i = 0; i < 16; i++)
-            buffer.WriteInt(0);
+            if (i is 5 or 6 or 9 or 10)
+                buffer.WriteFloat(0);
+            else
+                buffer.WriteInt(0);
         System.Reset(1, 1, new GameConfig.Attributes.ActorBaseAttributes(buffer));
     }
     /// <inheritdoc />

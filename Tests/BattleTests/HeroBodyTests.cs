@@ -15,6 +15,18 @@ public sealed class HeroBodyTests
 {
     private static InputSystem Inputs => BattleArchitecture.Instance.GetSystem<InputSystem>();
 
+    /// <summary>上一物理步的上坡负速度不是起跳，不应累积成坡顶飞离。</summary>
+    /// <param name="hz">物理更新频率。</param>
+    [Theory, InlineData(60), InlineData(120)]
+    public void Ground_UphillVelocity_IsResetBeforeGravity(int hz)
+    {
+        using Harness h = new(hz);
+        h.Body.Velocity = new Vector2(144, -144);
+        h.Frame();
+        Assert.Equal("Ground", h.State);
+        Assert.True(h.Body.Velocity.Y >= 0);
+    }
+
     /// <summary>原版动画长度与按上一段号选取的输入冷却，均转换为秒。</summary>
     private static HeroBodyParams CreateWukongParameters() => new()
     {

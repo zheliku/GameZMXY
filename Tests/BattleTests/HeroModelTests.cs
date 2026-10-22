@@ -54,9 +54,9 @@ namespace GameLogic.Battle.Tests
             var scope = new HeroTestScope();
             var sheet = scope.Hero;
             AttributeSourceId sword = new("Equipment", 7);
-            scope.System.SetSource(sword, new[] { AttributeModifier.Flat(AttributeType.Power, 5), AttributeModifier.Flat(AttributeType.Crit, 2) });
+            scope.System.SetSource(sword, new[] { AttributeModifier.Flat(AttributeType.Power, 5), AttributeModifier.Flat(AttributeType.Crit, .02f) });
             scope.System.SetSource(sword, new[] { AttributeModifier.Flat(AttributeType.Power, 8) });
-            Assert.Equal((8, 0), (sheet.Power.Value, sheet.Crit.Value));
+            Assert.Equal((8, 0f), (sheet.Power.Value, sheet.Crit.Value));
 
             Assert.True(scope.System.RemoveSource(sword));
             Assert.False(scope.System.RemoveSource(sword));
@@ -161,23 +161,22 @@ namespace GameLogic.Battle.Tests
             buffer.WriteInt(hp);
             buffer.WriteInt(mp);
             for (int i = 2; i < 16; i++)
-                buffer.WriteInt(0);
+                if (i is 5 or 6 or 9 or 10)
+                    buffer.WriteFloat(0);
+                else
+                    buffer.WriteInt(0);
             return new ActorBaseAttributes(buffer);
         }
 
-        /// <summary>十六种来源修正均立即发布对应属性；相等最终值不重复通知，移除恢复原值。</summary>
+        /// <summary>整数来源修正均立即发布对应属性；相等最终值不重复通知，移除恢复原值。</summary>
         [Theory]
         [InlineData(AttributeType.MaxHp)]
         [InlineData(AttributeType.MaxMp)]
         [InlineData(AttributeType.Power)]
         [InlineData(AttributeType.Def)]
         [InlineData(AttributeType.Mdef)]
-        [InlineData(AttributeType.Crit)]
-        [InlineData(AttributeType.Miss)]
         [InlineData(AttributeType.Lucky)]
         [InlineData(AttributeType.Toughness)]
-        [InlineData(AttributeType.Htarget)]
-        [InlineData(AttributeType.CritReduce)]
         [InlineData(AttributeType.Ar)]
         [InlineData(AttributeType.Sp)]
         [InlineData(AttributeType.Vampirism)]
@@ -188,7 +187,22 @@ namespace GameLogic.Battle.Tests
             var scope = new HeroTestScope();
             var model = scope.Hero;
             scope.System.Reset(1, 1, BaseAttributes(100, 30));
-            var property = model.GetAttribute(attribute);
+            var property = attribute switch
+            {
+                AttributeType.MaxHp => model.MaxHp,
+                AttributeType.MaxMp => model.MaxMp,
+                AttributeType.Power => model.Power,
+                AttributeType.Def => model.Def,
+                AttributeType.Mdef => model.Mdef,
+                AttributeType.Lucky => model.Lucky,
+                AttributeType.Toughness => model.Toughness,
+                AttributeType.Ar => model.Ar,
+                AttributeType.Sp => model.Sp,
+                AttributeType.Vampirism => model.Vampirism,
+                AttributeType.HpRegen => model.HpRegen,
+                AttributeType.MpRegen => model.MpRegen,
+                _ => throw new ArgumentOutOfRangeException(nameof(attribute))
+            };
             int original = property.Value, count = 0;
             property.Register(value => { count++; Assert.Equal(property.Value, value); });
             var source = new AttributeSourceId("Buff", 9);
@@ -199,6 +213,40 @@ namespace GameLogic.Battle.Tests
             scope.System.RemoveSource(source);
             Assert.Equal(original, property.Value);
             Assert.Equal(2, count);
+        }
+
+        /// <summary>概率修正保留小数、限制在 0..1；重复相同值不通知，移除后恢复。</summary>
+        /// <param name="attribute">暴击、闪避及其抵消属性。</param>
+        [Theory]
+        [InlineData(AttributeType.Crit)]
+        [InlineData(AttributeType.Miss)]
+        [InlineData(AttributeType.Htarget)]
+        [InlineData(AttributeType.CritReduce)]
+        public void ProbabilityModifiers_PreserveFractionsAndClamp(AttributeType attribute)
+        {
+            var scope = new HeroTestScope();
+            var model = scope.Hero;
+            var property = attribute switch
+            {
+                AttributeType.Crit => model.Crit,
+                AttributeType.Miss => model.Miss,
+                AttributeType.Htarget => model.Htarget,
+                AttributeType.CritReduce => model.CritReduce,
+                _ => throw new ArgumentOutOfRangeException(nameof(attribute))
+            };
+            var source = new AttributeSourceId("Equipment", 3);
+            int notifications = 0;
+            property.Register(value => { notifications++; Assert.Equal(property.Value, value); });
+            scope.System.SetSource(source, [AttributeModifier.Flat(attribute, .03f)]);
+            Assert.Equal(.03f, property.Value);
+            scope.System.SetSource(source, [AttributeModifier.Flat(attribute, .03f)]);
+            Assert.Equal(1, notifications);
+            scope.System.SetSource(source, [AttributeModifier.Flat(attribute, 1.5f)]);
+            Assert.Equal(1f, property.Value);
+            scope.System.SetSource(source, [AttributeModifier.Flat(attribute, -.1f)]);
+            Assert.Equal(0f, property.Value);
+            scope.System.RemoveSource(source);
+            Assert.Equal(3, notifications);
         }
 
         /// <summary>重算后钳制资源到新上限，各绑定只传对应的新值。</summary>

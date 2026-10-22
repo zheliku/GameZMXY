@@ -45,8 +45,9 @@ public sealed class FrontendSmokeScenario
     }
 
     /// <summary>其他战斗回归通过真实菜单进入关卡，生产流程不读取烟测参数。</summary>
+    /// <param name="levelId">实际点击的地图地点，默认花果山。</param>
     /// <returns>已进入关卡流程时返回 true，否则继续等待菜单资源加载。</returns>
-    public static bool AdvanceToLevel()
+    public static bool AdvanceToLevel(int levelId = 1)
     {
         if (GF.Procedure.CurrentProcedure is ProcedureLevel)
             return true;
@@ -61,11 +62,17 @@ public sealed class FrontendSmokeScenario
             StartForm => "m_Start",
             SaveForm save when GF.Fsm.GetModel<SaveModel>().Phase == SaveListState.Ready => "Slots/m_Slot1",
             CharacterForm => "Roles/m_Wukong",
-            MapForm => "m_Huaguoshan",
+            MapForm => levelId switch { 2 => "m_Shuiliandong", 3 => "m_Taohuayuan", _ => "m_Huaguoshan" },
             _ => null,
         };
         if (form?.Visible == true && button != null)
+        {
+            // 专项第二/三关夹具准备已通关前置关卡，不修改正式存档或生产导航规则。
+            if (form is MapForm && levelId > 1)
+                for (int id = GF.Fsm.GetModel<ProfileModel>().HighestClearedLevelId.Value + 1; id < levelId; id++)
+                    GF.Fsm.GetSystem<ProfileSystem>().RecordLevelClear(id);
             Press(form, button);
+        }
         return false;
     }
 

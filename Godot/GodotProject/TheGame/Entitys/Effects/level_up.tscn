@@ -1,12 +1,12 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cqio6ihe2xbfn"]
 
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Heroes/Effects/HeroLevelUpNode.cs" id="script"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/level_up/level_up_frames.tres" id="frames"]
+[ext_resource type="SpriteFrames" uid="uid://bxl6nbctngbl" path="res://TheGame/Sprites/Effects/level_up/level_up_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://ielvhd8u1n6i" path="res://TheGame/GameScripts/Entity/Heroes/Effects/HeroLevelUpNode.cs" id="script"]
 
-[node name="LevelUp" type="AnimatedSprite2D"]
+[node name="LevelUp" type="AnimatedSprite2D" unique_id=654594723]
 visible = false
-position = Vector2(0, 2)
 z_index = 6
-script = ExtResource("script")
+position = Vector2(0, 2)
 sprite_frames = ExtResource("frames")
 animation = &"level_up"
+script = ExtResource("script")

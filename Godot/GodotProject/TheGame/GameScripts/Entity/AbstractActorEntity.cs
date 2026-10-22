@@ -1,5 +1,5 @@
 using GameLogic.Architecture;
-using GameLogic.Monsters;
+using GameLogic.Enemies;
 using GameLogic.Heroes;
 using GameLogic.Entity;
 using GameLogic.Battle;
@@ -33,7 +33,7 @@ namespace GameLogic.Entity
 
         [Export] private string[] m_AttackAnimations = Array.Empty<string>(); // 普通招式动画，顺序与本实体的 ComboIndex 一致。
 
-        [Export] private SoundId m_AttackHitSoundId; // 普通攻击有效命中时播放的音效，由实体场景装配。
+        [Export] private SoundId m_DamageSoundId; // 本实体成功受击时的反馈，霸体和无击退同样生效；动画不重复播放。
 
         [Export] private HurtBoxNode m_HurtBox; // 受击判定区，可为空；HurtBox 持有本实体引用。
 
@@ -123,7 +123,7 @@ namespace GameLogic.Entity
         /// <summary>
         /// 已显示、可驱动：OnShow 置真、OnHide 置假。子类 _PhysicsProcess 靠它提前返回（实体隐藏/回收后
         /// 节点仍在树上，不挡会继续跑物理）；AI 等外部持有者靠它判断引用是否还有效（配合 IsInstanceValid）。
-        /// （2026-09-30 自 AbstractHeroEntity/AbstractMonsterEntity 各自的 m_Active 下沉合并。）
+        /// （2026-09-30 自 AbstractHeroEntity/AbstractEnemyEntity 各自的 m_Active 下沉合并。）
         /// </summary>
         public bool IsShown { get; private set; }
 
@@ -411,6 +411,7 @@ namespace GameLogic.Entity
                 died = ApplyDamage(result.Damage);
                 Dead |= died;
                 OnHurt(data, result, this.GetSystem<CombatSystem>().KnockbackVelocity(data, GlobalPosition.X), attackerEntityId);
+                GF.Sound.PlayConfigured(m_DamageSoundId);
             }
 
             GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == CombatSide.Hero, HeadPosition));
@@ -493,7 +494,7 @@ namespace GameLogic.Entity
             float power = attributes.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf())
                 + MathF.Round(Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf()), MidpointRounding.AwayFromZero);
             m_ActiveAttackData = AttackData.Create(attack.Id, attributes, power * powerMultiplier, attack.DamageKind, attack.Knockback, Facing,
-                attack.HitProtect, m_AttackHitSoundId);
+                attack.HitProtect);
         }
 
         /// <summary>接管一个已经由技能规则计算好的池化攻击包。</summary>
@@ -543,7 +544,6 @@ namespace GameLogic.Entity
             DamageResult result = target.ReceiveHit(m_ActiveAttackData, Id);
             if (!result.IsMiss)
             {
-                GF.Sound.PlayConfigured(m_ActiveAttackData.HitSoundId);
                 OnHitLanded(m_ActiveAttackData, result);
             }
         }

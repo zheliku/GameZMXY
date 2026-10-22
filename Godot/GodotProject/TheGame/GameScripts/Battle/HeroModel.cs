@@ -43,10 +43,10 @@ public sealed class HeroModel : AbstractModel
     public BindableProperty<int> Mdef { get; } = new();
 
     /// <summary>最终暴击。</summary>
-    public BindableProperty<int> Crit { get; } = new();
+    public BindableProperty<float> Crit { get; } = new();
 
     /// <summary>最终闪避。</summary>
-    public BindableProperty<int> Miss { get; } = new();
+    public BindableProperty<float> Miss { get; } = new();
 
     /// <summary>最终幸运。</summary>
     public BindableProperty<int> Lucky { get; } = new();
@@ -55,10 +55,10 @@ public sealed class HeroModel : AbstractModel
     public BindableProperty<int> Toughness { get; } = new();
 
     /// <summary>最终命中。</summary>
-    public BindableProperty<int> Htarget { get; } = new();
+    public BindableProperty<float> Htarget { get; } = new();
 
     /// <summary>最终抗暴。</summary>
-    public BindableProperty<int> CritReduce { get; } = new();
+    public BindableProperty<float> CritReduce { get; } = new();
 
     /// <summary>最终破甲。</summary>
     public BindableProperty<int> Ar { get; } = new();
@@ -116,30 +116,6 @@ public sealed class HeroModel : AbstractModel
 
     /// <summary>未满时的自然衰减点数/秒。</summary>
     internal float WsDecayPerSecond { get; set; }
-
-    /// <summary>读取指定属性的同一个绑定对象，不复制数据。</summary>
-    /// <param name="attribute">属性种类。</param>
-    /// <returns>对应的只读属性。</returns>
-    public BindableProperty<int> GetAttribute(AttributeType attribute) => attribute switch
-    {
-        AttributeType.MaxHp => MaxHp,
-        AttributeType.MaxMp => MaxMp,
-        AttributeType.Power => Power,
-        AttributeType.Def => Def,
-        AttributeType.Mdef => Mdef,
-        AttributeType.Crit => Crit,
-        AttributeType.Miss => Miss,
-        AttributeType.Lucky => Lucky,
-        AttributeType.Toughness => Toughness,
-        AttributeType.Htarget => Htarget,
-        AttributeType.CritReduce => CritReduce,
-        AttributeType.Ar => Ar,
-        AttributeType.Sp => Sp,
-        AttributeType.Vampirism => Vampirism,
-        AttributeType.HpRegen => HpRegen,
-        AttributeType.MpRegen => MpRegen,
-        _ => throw new ArgumentOutOfRangeException(nameof(attribute))
-    };
 
     /// <summary>冻结出招/受击时的最终值，已发出的攻击不随后续属性变化。</summary>
     /// <param name="actorId">来源实体编号。</param>

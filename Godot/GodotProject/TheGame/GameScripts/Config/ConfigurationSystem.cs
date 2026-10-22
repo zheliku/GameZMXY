@@ -1,5 +1,7 @@
 using GameConfig.Entity;
-using GameLogic.Monsters.Body;
+using GameLogic.Battle.Attributes;
+using GameConfig.Attributes;
+using GameLogic.Enemies.Body;
 using GameLogic.Heroes.Body;
 using System;
 using System.Collections.Generic;
@@ -85,11 +87,21 @@ public sealed class ConfigurationSystem : AbstractSystem
                 errors.Add($"怪物实体 {group.Key} 必须只有一条基础配置，关卡差异通过刷怪配方描述。");
         }
 
+        // 概率与整数共用一份属性定义，启动时拒绝把旧属性点误填成概率。
+        foreach (var attributes in tables.TbHeroGrowthConfig.DataList.SelectMany(x => x.Levels).Select(x => x.BaseAttributes)
+                     .Concat(tables.TbMonsterConfig.DataList.Select(x => x.BaseAttributes)))
+            foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
+                if (attribute.IsProbability && (!float.IsFinite(attributes.Get(attribute)) || attributes.Get(attribute) is < 0 or > 1))
+                    errors.Add($"基础属性 {attribute} 必须为 0..1 的有限概率。");
+
         // 跨表数值引用在预加载时集中校验；场景装配由其拥有者校验。
         ValidateDrops(tables, errors);
         ValidateEquipment(tables, errors);
         ValidateSkillCatalog(tables.TbSkillConfig, tables.TbPassiveConfig, errors);
         ValidateSkillCombat(tables, errors);
+        if (!tables.TbLevelConfig.DataList.Select(level => level.LevelId).OrderBy(id => id)
+                .SequenceEqual(Enumerable.Range(1, tables.TbLevelConfig.DataList.Count)))
+            errors.Add("关卡主键必须从 1 连续递增，供逐关解锁与进度校验使用。");
         foreach (var level in tables.TbLevelConfig.DataList)
         {
             foreach (var stage in level.Stages)
@@ -188,8 +200,11 @@ public sealed class ConfigurationSystem : AbstractSystem
                 new();
             foreach (var roll in item.AttributeRanges)
                 if (!Enum.IsDefined(roll.Attribute) ||
-                    roll.Kind != GameConfig.Attributes.AttributeModifierKind.Flat || roll.Minimum < 0 ||
+                    roll.Kind != GameConfig.Attributes.AttributeModifierKind.Flat ||
+                    !float.IsFinite(roll.Minimum) || !float.IsFinite(roll.Maximum) || roll.Minimum < 0 ||
                     roll.Maximum < roll.Minimum ||
+                    (roll.Attribute.IsProbability ? roll.Maximum > 1
+                        : roll.Minimum != MathF.Truncate(roll.Minimum) || roll.Maximum != MathF.Truncate(roll.Maximum)) ||
                     !attributes.Add((roll.Attribute, roll.Kind)))
                     errors.Add($"装备 {item.Id}：随机范围非法或属性重复。");
         }
@@ -217,22 +232,24 @@ public sealed class ConfigurationSystem : AbstractSystem
     /// <param name="errors">错误汇总。</param>
     private static void ValidateGrowth(Tables tables, int maxLevel, List<string> errors)
     {
-        // 先逐行检查外键、等级范围与生命上限，再按英雄逐级检查缺失（联合索引保证不重复）。
-        foreach (HeroGrowthConfig row in tables.TbHeroGrowthConfig.DataList)
+        // 身份只在外层校验一次；列表按等级排列，运行期可以直接用等级下标读取。
+        foreach (HeroGrowthConfig growth in tables.TbHeroGrowthConfig.DataList)
         {
-            if (tables.TbHeroConfig.GetOrDefault(row.HeroId) == null)
+            if (tables.TbHeroConfig.GetOrDefault(growth.HeroId) == null)
             {
-                errors.Add($"成长表：英雄 {row.HeroId} 不在 HeroConfig 中。");
+                errors.Add($"成长表：英雄 {growth.HeroId} 不在 HeroConfig 中。");
             }
 
-            if (row.Level < 1 || row.Level > maxLevel)
+            if (growth.Levels.Count != maxLevel ||
+                !growth.Levels.Select(row => row.Level).SequenceEqual(Enumerable.Range(1, maxLevel)))
             {
-                errors.Add($"成长表：英雄 {row.HeroId} 的等级 {row.Level} 超出 1..{maxLevel}。");
+                errors.Add($"成长表：英雄 {growth.HeroId} 必须按顺序完整覆盖 1..{maxLevel} 级。");
             }
 
-            if (row.BaseAttributes.MaxHp <= 0)
+            foreach (var row in growth.Levels)
             {
-                errors.Add($"成长表：英雄 {row.HeroId} 的 {row.Level} 级 MaxHp 必须为正。");
+                if (row.BaseAttributes.MaxHp <= 0)
+                    errors.Add($"成长表：英雄 {growth.HeroId} 的 {row.Level} 级 MaxHp 必须为正。");
             }
         }
 
@@ -248,14 +265,8 @@ public sealed class ConfigurationSystem : AbstractSystem
                 errors.Add($"英雄 {hero.Id}：普攻冷却数量须等于段数，冷却、连段超时和穿平台距离须为有限正数。");
             }
 
-            for (int level = 1; level <= maxLevel; level++)
-            {
-                if (tables.TbHeroGrowthConfig.Get(hero.Id, level) == null)
-                {
-                    errors.Add($"成长表：英雄 {hero.Id} 缺少 {level} 级。");
-                    break;
-                }
-            }
+            if (tables.TbHeroGrowthConfig.GetOrDefault(hero.Id) == null)
+                errors.Add($"成长表：英雄 {hero.Id} 缺少等级列表。");
         }
     }
 
@@ -306,20 +317,23 @@ public sealed class ConfigurationSystem : AbstractSystem
 
         foreach (PassiveId id in Enum.GetValues<PassiveId>())
         {
-            var levels = passive.DataList.Where(x => x.PassiveId == id).OrderBy(x => x.Level).ToArray();
-            if (levels.Length != 5 || !levels.Select(x => x.Level).SequenceEqual(Enumerable.Range(1, 5)))
-                errors.Add($"被动 {id}：必须完整覆盖 1..5 级。");
-            if (levels.Select(x => (x.NameCn, x.Effect)).Distinct().Count() != 1)
-                errors.Add($"被动 {id}：各级名称和效果类型必须一致。");
+            var definition = passive.GetOrDefault(id);
+            if (definition == null || !definition.Levels.Select(x => x.Level).SequenceEqual(Enumerable.Range(1, 5)))
+                errors.Add($"被动 {id}：必须按顺序完整覆盖 1..5 级。");
         }
 
-        foreach (var level in passive.DataList)
+        if (!passive.DataList.Select(definition => definition.PassiveId).SequenceEqual(Enum.GetValues<PassiveId>()))
+            errors.Add("被动目录必须按官方编号顺序排列。");
+        foreach (var definition in passive.DataList)
         {
-            if (!Enum.IsDefined(level.PassiveId) || !Enum.IsDefined(level.Effect) || level.LearnSoul < 0 ||
-                !float.IsFinite(level.Value) || level.Value < 0 ||
-                (level.Effect == PassiveEffect.CriticalChance && level.Value > 1) ||
-                string.IsNullOrWhiteSpace(level.NameCn) || string.IsNullOrWhiteSpace(level.Description))
-                errors.Add($"被动 {level.PassiveId}/{level.Level}：费用、效果或文字无效。");
+            if (!Enum.IsDefined(definition.PassiveId) || !Enum.IsDefined(definition.Effect) ||
+                string.IsNullOrWhiteSpace(definition.NameCn) || string.IsNullOrWhiteSpace(definition.LegacyId))
+                errors.Add($"被动 {definition.PassiveId}：身份、效果类型或名称无效。");
+            foreach (var level in definition.Levels)
+                if (level.LearnSoul < 0 || !float.IsFinite(level.Value) || level.Value < 0 ||
+                    (definition.Effect == PassiveEffect.CriticalChance && level.Value > 1) ||
+                    string.IsNullOrWhiteSpace(level.Description))
+                    errors.Add($"被动 {definition.PassiveId}/{level.Level}：费用、效果或文字无效。");
         }
     }
 
@@ -335,9 +349,9 @@ public sealed class ConfigurationSystem : AbstractSystem
     /// <summary>首次加载同类怪物时建立参数，后续池实例复用。</summary>
     /// <param name="entityId">怪物实体类型。</param>
     /// <param name="create">从当前场景动画读取纯数据的工厂；模型不保留委托。</param>
-    public void EnsureMonsterBodyParams(EntityId entityId, Func<MonsterBodyParams> create)
+    public void EnsureEnemyBodyParams(EntityId entityId, Func<EnemyBodyParams> create)
     {
-        if (!this.GetModel<ConfigurationModel>().MonsterBodies.ContainsKey(entityId))
-            this.GetModel<ConfigurationModel>().MonsterBodies.Add(entityId, create());
+        if (!this.GetModel<ConfigurationModel>().EnemyBodies.ContainsKey(entityId))
+            this.GetModel<ConfigurationModel>().EnemyBodies.Add(entityId, create());
     }
 }

@@ -36,8 +36,19 @@ public partial class WukongEntity
     private void BeginFlameStormHitAnimEvent() => (CurrentSkillState as WukongFlameStormState)?.BeginHit(this);
 
     /// <summary>火魔前奏。</summary>
-    /// <param name="scene">前奏场景。</param>
-    private void BeginFireDemonAnimEvent(PackedScene scene) => (CurrentSkillState as WukongFireDemonState)?.BeginPrelude(this, scene);
+    private void BeginFireDemonAnimEvent()
+    {
+        if (CurrentSkillState is not WukongFireDemonState state)
+            return;
+        state.BeginPrelude(this);
+        // TopLevel 保持出招原地，不跟随升空或瞬移；动画完成由场景信号隐藏。
+        m_FireDemonPrelude.GlobalPosition = GlobalPosition + new Vector2(0, 20);
+        m_FireDemonPrelude.Scale = new Vector2(Facing > 0 ? 1 : -1, 1);
+        m_FireDemonPrelude.Stop();
+        m_FireDemonPrelude.Frame = 0;
+        m_FireDemonPrelude.Show();
+        m_FireDemonPrelude.Play();
+    }
 
     /// <summary>火魔升空。</summary>
     /// <param name="velocity">朝右时的速度，px/s。</param>

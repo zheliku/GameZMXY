@@ -65,7 +65,7 @@ func _run() -> void:
     guide.width = 1
     guide.default_color = Color(0.4, 0.7, 0.5)
     viewport.add_child(guide)
-    var hero = load("res://TheGame/Entitys/wukong_entity.tscn").instantiate()
+    var hero = load("res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn").instantiate()
     hero.process_mode = Node.PROCESS_MODE_DISABLED
     hero.position = Vector2(200, 150)
     viewport.add_child(hero)

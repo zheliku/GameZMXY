@@ -1,4 +1,4 @@
-using GameLogic.Monsters.Body;
+using GameLogic.Enemies.Body;
 using GameLogic.Heroes.Body;
 using Godot;
 

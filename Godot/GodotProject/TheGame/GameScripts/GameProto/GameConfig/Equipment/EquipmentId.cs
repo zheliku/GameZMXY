@@ -49,6 +49,18 @@ namespace GameConfig.Equipment
         /// 普通的松木杖
         /// </summary>
         CommonPineStaff = 8,
+        /// <summary>
+        /// 地煞灵戒
+        /// </summary>
+        EarthFiendRing = 9,
+        /// <summary>
+        /// 地煞猿甲
+        /// </summary>
+        EarthFiendApeArmor = 10,
+        /// <summary>
+        /// 地煞权杖
+        /// </summary>
+        EarthFiendScepter = 11,
     }
 
 } 

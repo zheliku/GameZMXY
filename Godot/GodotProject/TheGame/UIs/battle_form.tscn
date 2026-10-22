@@ -13,12 +13,14 @@
 [ext_resource type="Theme" uid="uid://2gwbh6otun6r" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="18_theme"]
 [ext_resource type="FontFile" uid="uid://dy01vypttvr" path="res://TheGame/MainPack/Fonts/dfp_hai_bao_w12.ttc" id="19_level_font"]
 [ext_resource type="FontVariation" path="res://TheGame/MainPack/Fonts/game_font.tres" id="20_hud_font"]
-[ext_resource type="PackedScene" uid="uid://d1snaq64saolw" path="res://TheGame/UIs/Widgets/encounter_health_bar.tscn" id="encounter"]
+[ext_resource type="Script" uid="uid://bn2sg3olgc8dc" path="res://TheGame/GameScripts/UI/BattleForm/Components/EncounterHealthBar.cs" id="38_ogrj0"]
+[ext_resource type="Script" uid="uid://bymxyt55xb04o" path="res://TheGame/GameScripts/UI/BattleForm/Components/MusouActivationNode.cs" id="40_4sdu0"]
+[ext_resource type="PackedScene" uid="uid://d1snaq64saolw" path="res://TheGame/UIs/Battle/encounter_health_bar.tscn" id="encounter"]
 [ext_resource type="Texture2D" uid="uid://dnusvvhljgk87" path="res://TheGame/Sprites/UI/hud/menu_inventory_caption.png" id="inventory_caption"]
 [ext_resource type="Texture2D" uid="uid://bp04w8lqa5lgf" path="res://TheGame/Sprites/UI/hud/menu_inventory_hover.png" id="inventory_hover"]
 [ext_resource type="Texture2D" uid="uid://dupeqk5y4l6qd" path="res://TheGame/Sprites/UI/hud/menu_inventory_normal.png" id="inventory_normal"]
 [ext_resource type="Script" uid="uid://degah6prk2pc5" path="res://TheGame/GameScripts/UI/BattleForm/Components/BattleMenuPanel.cs" id="menu_panel"]
-[ext_resource type="PackedScene" uid="uid://bjub483gtcj0n" path="res://TheGame/UIs/Widgets/musou_activation.tscn" id="musou_activation"]
+[ext_resource type="PackedScene" uid="uid://bjub483gtcj0n" path="res://TheGame/UIs/Battle/musou_activation.tscn" id="musou_activation"]
 [ext_resource type="SpriteFrames" uid="uid://btxyuryys6g5s" path="res://TheGame/Sprites/UI/hud/battle_skill_icon_frames.tres" id="official_skills"]
 [ext_resource type="Texture2D" uid="uid://deltjhsx1oevq" path="res://TheGame/Sprites/UI/hud/battle_menu_ws_fill.png" id="official_ws_fill"]
 [ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/hud/battle_menu_ws_glow_frames.tres" id="official_ws_glow"]
@@ -175,9 +177,9 @@ position = Vector2(113, 25)
 texture = ExtResource("ws_frame")
 
 [node name="m_WsBar" type="TextureProgressBar" parent="MenuPanel/WsFrame" unique_id=607998488]
-offset_left = -125.0
+offset_left = -130.0
 offset_top = -16.0
-offset_right = 96.0
+offset_right = 91.0
 offset_bottom = 12.0
 scale = Vector2(1.17, 1.03)
 max_value = 1.0
@@ -195,7 +197,7 @@ centered = false
 
 [node name="m_WsMax" type="AnimatedSprite2D" parent="MenuPanel" unique_id=1981663794]
 visible = false
-position = Vector2(-63.75, -44.25)
+position = Vector2(-103.75, -84.25)
 sprite_frames = ExtResource("official_ws_glow")
 animation = &"full"
 frame_progress = 0.63037246
@@ -370,9 +372,30 @@ scale = Vector2(0.6, 0.6)
 sprite_frames = ExtResource("13_gogo")
 animation = &"go"
 
-[node name="m_EncounterHealthBar" parent="." unique_id=1088788372 instance=ExtResource("encounter")]
+[node name="m_EncounterHealthBar" type="Control" parent="." unique_id=1088788372 node_paths=PackedStringArray("m_Health", "m_Name") instance=ExtResource("encounter")]
 visible = false
 layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -202.75
+offset_top = 31.0
+offset_right = 202.75
+offset_bottom = 69.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("38_ogrj0")
+m_Health = NodePath("Health")
+m_Name = NodePath("Name")
 
-[node name="m_MusouActivation" parent="." unique_id=520113477 instance=ExtResource("musou_activation")]
+[node name="m_MusouActivation" type="Control" parent="." unique_id=520113477 node_paths=PackedStringArray("m_Animation", "m_Player") instance=ExtResource("musou_activation")]
+visible = false
 layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("40_4sdu0")
+m_Animation = NodePath("Animation")
+m_Player = NodePath("AnimationPlayer")

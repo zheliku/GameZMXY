@@ -30,13 +30,14 @@ public partial class PassiveSkillsPage : Control, IController
     /// <summary>刷新尚未学习的五项被动定义。</summary>
     public void Refresh()
     {
-        var definitions = this.GetModel<ConfigurationModel>().GetPassives(1);
+        var definitions = this.GetModel<ConfigurationModel>().Tables.TbPassiveConfig.DataList;
         for (int i = 0; i < m_Items.Length; i++)
         {
             var (name, nextEffect, soul) = m_Items[i];
+            var level = definitions[i].Levels[0];
             name.Text = definitions[i].NameCn;
-            nextEffect.Text = definitions[i].Description;
-            soul.Text = definitions[i].LearnSoul.ToString();
+            nextEffect.Text = level.Description;
+            soul.Text = level.LearnSoul.ToString();
         }
     }
 }

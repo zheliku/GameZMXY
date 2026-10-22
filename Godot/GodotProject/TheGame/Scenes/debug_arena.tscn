@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://be3gmywqv2m58"]
 
-[ext_resource type="Texture2D" uid="uid://bo4uw8k2ajk8o" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_floor.png" id="1_floor"]
+[ext_resource type="Texture2D" uid="uid://bo4uw8k2ajk8o" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_floor.png" id="1_floor"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
 size = Vector2(2400, 60)

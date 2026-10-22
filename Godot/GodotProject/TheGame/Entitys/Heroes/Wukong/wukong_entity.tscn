@@ -1,0 +1,112 @@
+[gd_scene format=3 uid="uid://b4ysr6hgrk40s"]
+
+[ext_resource type="Script" uid="uid://bvsl2fblhl02l" path="res://TheGame/GameScripts/Entity/Heroes/WukongEntity.cs" id="1_lcmpv"]
+[ext_resource type="Resource" uid="uid://xk36fcf4y640" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_appearance.tres" id="2_p32r7"]
+[ext_resource type="Texture2D" uid="uid://cvhrf247evpd6" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_bare.png" id="3_v2bpf"]
+[ext_resource type="Texture2D" uid="uid://di26s8wme22dn" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_default.png" id="4_yi3k4"]
+[ext_resource type="SpriteFrames" uid="uid://boxumpj2pyv2s" path="res://TheGame/Sprites/Effects/wukong/wukong_effect_animations.tres" id="5_da4kq"]
+[ext_resource type="AnimationLibrary" uid="uid://dpdyqe7blxbqj" path="res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_anim_library.tres" id="6_jwy4g"]
+[ext_resource type="AnimationLibrary" uid="uid://j3uaow5vlljx" path="res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_skill_library.tres" id="7_lcmpv"]
+[ext_resource type="Script" uid="uid://cswoo8veqk4d0" path="res://TheGame/GameScripts/Entity/Heroes/Effects/MusouAfterimageNode.cs" id="8_23xmk"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="9_8wyf5"]
+[ext_resource type="PackedScene" uid="uid://cqio6ihe2xbfn" path="res://TheGame/Entitys/Effects/level_up.tscn" id="10_wse2p"]
+[ext_resource type="SpriteFrames" uid="uid://wtiw24jpg53n" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_prelude_frames.tres" id="11_l7ihn"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_2pdac"]
+radius = 22.50061
+height = 90.01099
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mmwcb"]
+size = Vector2(45.00122, 90.01099)
+
+[sub_resource type="RectangleShape2D" id="hitbox_rest"]
+size = Vector2(90, 90)
+
+[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_FireDemonPrelude", "m_Weapon", "m_EffectRoot", "m_MusouAfterimage", "m_LevelUp", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+collision_layer = 2
+collision_mask = 8201
+floor_constant_speed = true
+floor_max_angle = 0.87266463
+floor_snap_length = 12.0
+script = ExtResource("1_lcmpv")
+m_FireDemonPrelude = NodePath("m_FireDemonPrelude")
+m_Weapon = NodePath("m_Weapon")
+m_Appearance = ExtResource("2_p32r7")
+m_EffectRoot = NodePath("m_EffectRoot")
+m_HeroId = 1
+m_MusouAfterimage = NodePath("m_MusouAfterimage")
+m_LevelUp = NodePath("m_LevelUp")
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AttackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3", "attack_4", "attack_5")
+m_DamageSoundId = 4
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
+
+[node name="m_Body" type="Sprite2D" parent="." unique_id=803944199]
+texture = ExtResource("3_v2bpf")
+hframes = 6
+vframes = 20
+metadata/_edit_lock_ = true
+
+[node name="m_Weapon" type="Sprite2D" parent="." unique_id=1122322079]
+texture = ExtResource("4_yi3k4")
+hframes = 6
+vframes = 20
+
+[node name="m_EffectRoot" type="Node2D" parent="." unique_id=605119054]
+
+[node name="m_Effect" type="AnimatedSprite2D" parent="m_EffectRoot" unique_id=1116269950]
+sprite_frames = ExtResource("5_da4kq")
+animation = &"empty"
+
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=1514772424]
+libraries/ = ExtResource("6_jwy4g")
+libraries/skills = ExtResource("7_lcmpv")
+
+[node name="m_MusouAfterimage" type="Node2D" parent="." unique_id=137909945 node_paths=PackedStringArray("m_Layers")]
+script = ExtResource("8_23xmk")
+m_Layers = [NodePath("../m_Body"), NodePath("../m_Weapon")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=889744088]
+position = Vector2(0.4, 27.95)
+shape = SubResource("CapsuleShape2D_2pdac")
+debug_color = Color(0, 1, 0, 0.41960785)
+
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=648785980 node_paths=PackedStringArray("m_Owner")]
+collision_layer = 128
+collision_mask = 0
+monitoring = false
+script = ExtResource("9_8wyf5")
+m_Owner = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1046093583]
+position = Vector2(0.4, 27.95)
+shape = SubResource("RectangleShape2D_mmwcb")
+debug_color = Color(1, 0, 0, 0.41960785)
+
+[node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=1171906735]
+
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=1293463805]
+collision_layer = 16
+collision_mask = 32
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=2011780076]
+position = Vector2(-55, 0)
+shape = SubResource("hitbox_rest")
+disabled = true
+
+[node name="m_LevelUp" parent="." unique_id=1277663518 instance=ExtResource("10_wse2p")]
+frame = 27
+frame_progress = 1.0
+
+[node name="m_FireDemonPrelude" type="AnimatedSprite2D" parent="." unique_id=1320486072]
+visible = false
+top_level = true
+sprite_frames = ExtResource("11_l7ihn")
+animation = &"play"
+offset = Vector2(52.15, -89.6)
+
+[connection signal="animation_finished" from="m_FireDemonPrelude" to="m_FireDemonPrelude" method="hide"]

@@ -45,8 +45,8 @@ namespace GameLogic.Battle.Damage
             bool heroDefends = defender.Side == CombatSide.Hero;
 
             // 1. 净值（下限 0）
-            double miss = Math.Max(0, defender.Miss - attacker.Htarget);
-            double crit = Math.Max(0, attacker.Crit - defender.CritReduce);
+            double miss = Math.Clamp(defender.Miss - attacker.Htarget, 0f, 1f);
+            double crit = Math.Clamp(attacker.Crit - defender.CritReduce, 0f, 1f);
             double lucky = Math.Max(0, attacker.Lucky - defender.Toughness);
             double def = Math.Max(0, defender.Def - attacker.Ar);
             double mdef = Math.Max(0, defender.Mdef - attacker.Sp);
@@ -56,30 +56,22 @@ namespace GameLogic.Battle.Damage
             int d = Math.Abs(levelGap);
             int sign = Math.Sign(levelGap);
 
-            float missCoef = heroDefends ? config.LvMissCoefHeroDef : config.LvMissCoefMonsterDef;
-            float missCap = heroDefends ? config.LvMissCapHeroDef : config.LvMissCapMonsterDef;
-            float critCoef = heroDefends ? config.LvCritCoefHeroDef : config.LvCritCoefMonsterDef;
             int damageCapLv = heroDefends ? config.LvDamageCapLvHeroDef : config.LvDamageCapLvMonsterDef;
 
-            double missBl = Math.Min(d * (double)missCoef, missCap);
-            double critBl = Math.Min(d * (double)critCoef, config.LvCritCap);
             double luckyBl = Math.Min(d * (double)config.LvLuckyCoef, config.LvLuckyCap);
             double damageBl = Math.Min(d, damageCapLv) * (double)config.LvDamageCoef;
 
-            miss *= 1 - sign * missBl;
-            crit *= 1 + sign * critBl;
             lucky *= 1 + sign * luckyBl;
             double hurt = Truncate(data.Power * (1 + sign * damageBl));
 
-            // 3. 闪避
-            double missK = heroDefends ? config.MissKHero : config.MissKMonster;
-            if (missRoll < CalculateAttributeRatio(miss, missK))
+            // 3. 造一直接概率：不再按属性点曲线或等级差二次换算。
+            if (missRoll < miss)
             {
                 return DamageResult.Missed(data.Kind);
             }
 
             // 4. 暴击
-            bool isCrit = critRoll < CalculateAttributeRatio(crit, config.CritK);
+            bool isCrit = critRoll < crit;
             if (isCrit)
             {
                 double luckyK = heroDefends ? config.LuckyKMonsterAtk : config.LuckyKHeroAtk;

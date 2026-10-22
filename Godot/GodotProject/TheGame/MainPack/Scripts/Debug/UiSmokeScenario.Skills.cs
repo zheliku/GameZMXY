@@ -23,8 +23,9 @@ using GameConfig.Entity;
 using GameLogic.Skills;
 using GameLogic.Input;
 using GameLogic.Heroes;
-using GameLogic.Monsters;
-using GameLogic.Heroes.Effects;
+using GameLogic.Enemies;
+using GameLogic.Enemies.Body;
+using GameLogic.Effects;
 using GodotGameFramework.Entity;
 
 /// <summary>真实技能窗口导航、配置展示、钱包观察及复用回归。</summary>
@@ -171,7 +172,7 @@ public sealed partial class UiSmokeScenario
         }
 
         var passivePage = form.GetNode<PassiveSkillsPage>("Content/m_PassivePage");
-        var passives = configuration.GetPassives(1);
+        var passives = configuration.Tables.TbPassiveConfig.DataList;
         foreach (var row in passivePage.GetNode<Control>("m_PassiveRows").GetChildren().Cast<GridContainer>())
             foreach (var field in new[] { "Name", "NextEffect", "Soul" })
                 row.GetNode<Label>(field).Text = "编辑器预览";
@@ -180,8 +181,8 @@ public sealed partial class UiSmokeScenario
         {
             var row = passivePage.GetNode<GridContainer>($"m_PassiveRows/Passive{i + 1}");
             Check(row.GetNode<Label>("Name").Text == passives[i].NameCn &&
-                row.GetNode<Label>("NextEffect").Text == passives[i].Description &&
-                row.GetNode<Label>("Soul").Text == passives[i].LearnSoul.ToString(),
+                row.GetNode<Label>("NextEffect").Text == passives[i].Levels[0].Description &&
+                row.GetNode<Label>("Soul").Text == passives[i].Levels[0].LearnSoul.ToString(),
                 "被动技能预填内容没有被正式数据替换");
         }
     }
@@ -219,7 +220,7 @@ public sealed partial class UiSmokeScenario
         var fixtures = new Node();
         try
         {
-            var hero = GD.Load<PackedScene>("res://TheGame/Entitys/wukong_entity.tscn").Instantiate();
+            var hero = GD.Load<PackedScene>("res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn").Instantiate();
             fixtures.AddChild(hero);
             var player = hero.GetNode<AnimationPlayer>("m_AnimPlayer");
             foreach (string name in new[] { "rising_dragon", "flame_thrust", "blazing_flash", "flame_storm", "fire_demon_slash" })
@@ -242,9 +243,12 @@ public sealed partial class UiSmokeScenario
                 }
                 Check(methods, $"技能动画缺少具名方法轨道：{name}");
             }
-            foreach (string name in new[] { "blazing_flash_trail", "fire_demon_prelude", "fire_demon_combo", "fire_demon_descent", "fire_demon_landing" })
+            var prelude = hero.GetNode<AnimatedSprite2D>("m_FireDemonPrelude");
+            Check(prelude.TopLevel && !prelude.Visible && prelude.SpriteFrames.GetFrameCount(prelude.Animation) == 40,
+                "火魔前奏未保留原地独立播放或完整源帧");
+            foreach (string name in new[] { "blazing_flash_trail", "fire_demon_combo", "fire_demon_descent", "fire_demon_landing" })
             {
-                var node = GD.Load<PackedScene>($"res://TheGame/Entitys/Effects/Skills/wukong_{name}_effect.tscn").Instantiate();
+                var node = GD.Load<PackedScene>($"res://TheGame/Entitys/Heroes/Wukong/wukong_{name}_effect.tscn").Instantiate();
                 fixtures.AddChild(node);
                 var animation = node.GetNode<AnimationPlayer>("AnimationPlayer");
                 Check(animation.HasAnimation("play") && animation.Autoplay.ToString() == "",
@@ -252,7 +256,7 @@ public sealed partial class UiSmokeScenario
                 Check(node.GetNode<CollisionShape2D>("Visual/HitBox/CollisionShape2D").Disabled,
                     $"特效初始判定未关闭：{name}");
             }
-            GD.Print("SMOKE-UI: 五招原生方法绑定与五个独立特效场景通过");
+            GD.Print("SMOKE-UI: 五招原生方法绑定、角色内前奏与四个独立特效场景通过");
         }
         finally
         {
@@ -273,6 +277,14 @@ public sealed partial class UiSmokeScenario
         var system = flow.GetSystem<SkillSystem>();
         Vector2 originalPosition = hero.GlobalPosition;
         int originalMp = attributes.Mp.Value;
+        int impactSounds = 0;
+        string impactPath = flow.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)SoundId.WukongImpact).Path;
+        void OnImpactPlayed(object sender, GameFramework.Event.GameEventArgs args)
+        {
+            if (args is GodotGameFramework.Sound.PlaySoundSuccessEventArgs sound && sound.SoundAssetName == impactPath)
+                impactSounds++;
+        }
+        GF.Event.Subscribe(GodotGameFramework.Sound.PlaySoundSuccessEventArgs.EventId, OnImpactPlayed);
         string[] skillInputs = [InputSystem.Skill1, InputSystem.Skill2, InputSystem.Skill3,
             InputSystem.Interact, InputSystem.Attack, InputSystem.MoveRight];
         try
@@ -309,7 +321,17 @@ public sealed partial class UiSmokeScenario
             hero.SetPhysicsProcess(true);
             await WaitUntilAsync(() => hero.OnFloor, "技能测试英雄没有落地");
             hero.SetFacing(1);
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+                new EnemySpawn(hero.GlobalPosition + new Vector2(60, 0), 100));
+            SmokeInspection.FreezeAi(m_Monster);
+            m_Monster.SetPhysicsProcess(false);
+            int bodyTargetHp = m_Monster.Hp;
+            int beforeBodyImpact = impactSounds;
             await CastAsync(SkillId.RisingDragon, [InputSystem.Interact, InputSystem.Attack], "skill_rising");
+            Check(m_Monster.Hp < bodyTargetHp && impactSounds > beforeBodyImpact,
+                "身体技能命中没有通过 GGF 播放悟空有效命中音");
+            ReleaseTestEntity(m_Monster);
+            m_Monster = null;
             // 原版成功升龙不消费动作闩锁，持续按 W+J 会在收招后再次施放。
             attributes.Mp.Value = attributes.MaxMp.Value;
             Input.ActionPress(InputSystem.Interact);
@@ -346,19 +368,23 @@ public sealed partial class UiSmokeScenario
             hero.GlobalPosition = new Vector2(400, 360);
             hero.Velocity = Vector2.Zero;
             await WaitFramesAsync(2);
-            m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
-                new MonsterSpawn(hero.GlobalPosition + new Vector2(80, -190), 100));
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+                new EnemySpawn(hero.GlobalPosition + new Vector2(80, -190), 100));
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             int hp = m_Monster.Hp;
+            int beforeEffectImpact = impactSounds;
             await CastAsync(SkillId.FireDemonSlash, [InputSystem.Skill3], "skill_fire_combo", SkillHitId.FireDemonCombo);
             Check(m_Monster.Hp < hp, "九连斩未通过真实判定伤害目标");
+            Check(impactSounds > beforeEffectImpact, "独立技能特效命中没有通过 GGF 播放悟空有效命中音");
             ReleaseTestEntity(m_Monster);
             m_Monster = null;
+            GD.Print("SMOKE-SKILL-HIT-SOUND PASS: body and independent effect hits play the original Wukong impact through GGF.");
             GD.Print("SMOKE-UI: 技能点击学习/不足提示/去重扣费/HUD同步、五招真实输入、火焰拖尾、火魔斩两分支与真实命中通过");
         }
         finally
         {
+            GF.Event.Unsubscribe(GodotGameFramework.Sound.PlaySoundSuccessEventArgs.EventId, OnImpactPlayed);
             foreach (string action in skillInputs)
                 Input.ActionRelease(action);
             hero.SetPhysicsProcess(false);
@@ -389,6 +415,9 @@ public sealed partial class UiSmokeScenario
             await CaptureCombatAsync(capture);
             if (id == SkillId.FireDemonSlash)
             {
+                var prelude = hero.GetNode<AnimatedSprite2D>("m_FireDemonPrelude");
+                Check(prelude.Visible && prelude.IsPlaying() && prelude.GlobalPosition.DistanceTo(hero.GlobalPosition) > 30,
+                    "火魔前奏没有在出招原地继续播放，而是跟随升空或瞬移");
                 Input.ActionPress(InputSystem.Attack);
                 Input.ActionPress(InputSystem.Skill1);
             }
@@ -410,6 +439,8 @@ public sealed partial class UiSmokeScenario
             if (id == SkillId.FireDemonSlash)
             {
                 await WaitFramesAsync(2);
+                await WaitUntilAsync(() => !hero.GetNode<AnimatedSprite2D>("m_FireDemonPrelude").Visible,
+                    "角色内前奏播放完成后没有隐藏");
                 Check(attributes.ActiveSkillId == null && hero.AttackSegment < 0, "火魔斩禁用输入期间的按键被排队到收招后");
                 Input.ActionRelease(InputSystem.Attack);
                 Input.ActionRelease(InputSystem.Skill1);
@@ -448,7 +479,7 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: 七段原版技能音效经 GGF SFX 代理播放与停止通过");
     }
 
-    /// <summary>通过原生方法键验证连续受击、死亡语音及技能中断后的资源复位，不增加生产观测接口。</summary>
+    /// <summary>成功受击发声，纯受伤动画不发声；死亡仍由原生方法键播放，不增加生产观测接口。</summary>
     /// <returns>声音已实际加载且复位断言完成的任务。</returns>
     private async Task CheckActorAnimationEventsAsync()
     {
@@ -459,10 +490,11 @@ public sealed partial class UiSmokeScenario
         var serials = new List<int>();
         string hurt = GF.Fsm.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)SoundId.WukongHurt).Path;
         string death = GF.Fsm.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)SoundId.WukongDeath).Path;
+        string impact = GF.Fsm.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)SoundId.WukongImpact).Path;
         void OnSoundPlayed(object sender, GameFramework.Event.GameEventArgs args)
         {
             var sound = (GodotGameFramework.Sound.PlaySoundSuccessEventArgs)args;
-            if (sound.SoundAssetName != hurt && sound.SoundAssetName != death)
+            if (sound.SoundAssetName != hurt && sound.SoundAssetName != death && sound.SoundAssetName != impact)
                 return;
             sounds[sound.SoundAssetName] = sounds.GetValueOrDefault(sound.SoundAssetName) + 1;
             serials.Add(sound.SerialId);
@@ -472,18 +504,23 @@ public sealed partial class UiSmokeScenario
         {
             player.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual;
             player.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
-            foreach (var (animation, path, expected) in new[]
+            for (int expected = 1; expected <= 2; expected++)
             {
-                (HeroAnims.Hurt, hurt, 1), (HeroAnims.Hurt, hurt, 2), (HeroAnims.Death, death, 1)
-            })
-            {
-                hero.RestartAnim(animation);
+                var data = GameLogic.Battle.Attacks.AttackData.Create(0, default, 1,
+                    GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
+                try
+                { hero.ReceiveHit(data, 0); }
+                finally { GameFramework.ReferencePool.Release(data); }
+                await WaitUntilAsync(() => sounds.GetValueOrDefault(hurt) == expected, "成功受击未播放反馈");
+                hero.RestartAnim(HeroAnims.Hurt);
                 player.Advance(0);
-                await WaitUntilAsync(() => sounds.GetValueOrDefault(path) == expected, "受击/死亡原生声音键没有播放");
                 player.Advance(.1);
                 await WaitFramesAsync(3);
-                Check(sounds[path] == expected, "同一动画的声音键重复播放");
+                Check(sounds[hurt] == expected, "受伤动画重复播放受击反馈");
             }
+            hero.RestartAnim(HeroAnims.Death);
+            player.Advance(0);
+            await WaitUntilAsync(() => sounds.GetValueOrDefault(death) == 1, "死亡原生声音键没有播放");
 
             // 身体不处于技能状态，具名规则入口应无副作用；RESET 仍须恢复所有可见值。
             var actor = (GameLogic.Skills.ISkillActor)hero;
@@ -499,7 +536,50 @@ public sealed partial class UiSmokeScenario
                 "RESET 后普通动画请求仍被旧缓存吞掉");
             Check(sounds.GetValueOrDefault(hurt) == 2 && sounds.GetValueOrDefault(death) == 1 && !hero.Dead,
                 "动画声音重复，或单独播放死亡视觉改变了业务事实");
-            GD.Print("SMOKE-ANIMATION-EVENTS PASS: repeated hurt, death sound, interrupted RESET and ordinary animation resume.");
+            // 普通敌人与首领均从成功受击入口发声；无击退、霸体与致死也不依赖 hurt 动画。
+            foreach (var id in new[] { GameConfig.Entity.EntityId.HuaguoshanMonkey, GameConfig.Entity.EntityId.DemonMonkey,
+                         GameConfig.Entity.EntityId.Gorilla, GameConfig.Entity.EntityId.MacaqueKing, GameConfig.Entity.EntityId.TamarinKing })
+            {
+                var enemy = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(10000, 100)));
+                try
+                {
+                    SmokeInspection.FreezeAi(enemy);
+                    enemy.SetPhysicsProcess(false);
+                    var animation = enemy.GetNode<AnimationPlayer>("m_AnimPlayer");
+                    animation.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual;
+                    animation.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
+                    int before = sounds.GetValueOrDefault(impact);
+                    foreach (int damage in new[] { 1, enemy.MaxHp * 2 })
+                    {
+                        var data = GameLogic.Battle.Attacks.AttackData.Create(0, default, damage,
+                            GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
+                        try
+                        { enemy.ReceiveHit(data, 0); }
+                        finally { GameFramework.ReferencePool.Release(data); }
+                        int expected = ++before;
+                        await WaitUntilAsync(() => sounds.GetValueOrDefault(impact) == expected, $"{id} 成功受击没有反馈");
+                        enemy.RestartAnim(EnemyAnims.Hurt);
+                        animation.Advance(0);
+                        animation.Advance(.1);
+                        await WaitFramesAsync(3);
+                        Check(sounds.GetValueOrDefault(impact) == expected, $"{id} hurt 动画重复反馈");
+                    }
+                    Check(enemy.Dead, $"{id} 致死受击未完成");
+                    var ignored = GameLogic.Battle.Attacks.AttackData.Create(0, default, 1,
+                        GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
+                    try
+                    { Check(enemy.ReceiveHit(ignored, 0).IsMiss, $"{id} 死亡后仍受击"); }
+                    finally { GameFramework.ReferencePool.Release(ignored); }
+                    await WaitFramesAsync(3);
+                    Check(sounds.GetValueOrDefault(impact) == before, $"{id} 无效受击仍然发声");
+                    animation.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Physics;
+                }
+                finally
+                {
+                    GF.Entity.HideEntitySafe(enemy);
+                }
+            }
+            GD.Print("SMOKE-ANIMATION-EVENTS PASS: damage feedback independent of hurt animation, death method, interrupted RESET and resume.");
         }
         finally
         {

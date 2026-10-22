@@ -23,7 +23,11 @@ public sealed class SaveDataUtility : IUtility
     {
         ArgumentNullException.ThrowIfNull(profile);
         ArgumentNullException.ThrowIfNull(skills);
-        GameData data = new() { ActiveHeroId = profile.ActiveHeroId, Soul = profile.Soul.Value };
+        GameData data = new()
+        {
+            ActiveHeroId = profile.ActiveHeroId, Soul = profile.Soul.Value,
+            HighestClearedLevelId = profile.HighestClearedLevelId.Value
+        };
         List<EquipmentData> datas = new(profile.EquipmentDatas);
         foreach (int heroId in profile.HeroIds)
         {
@@ -34,12 +38,15 @@ public sealed class SaveDataUtility : IUtility
                 TotalExperience = profile.GetProgress(heroId).Value.TotalExperience,
                 LearnedSkills = skills.GetLearnedSkills(heroId).OrderBy(id => id).ToList(),
                 WeaponInstanceId = slots.Weapon?.InstanceId ?? Guid.Empty,
-                ArmorInstanceId = slots.Armor?.InstanceId ?? Guid.Empty
+                ArmorInstanceId = slots.Armor?.InstanceId ?? Guid.Empty,
+                AccessoryInstanceId = slots.Accessory?.InstanceId ?? Guid.Empty
             });
             if (slots.Weapon != null)
                 datas.Add(slots.Weapon);
             if (slots.Armor != null)
                 datas.Add(slots.Armor);
+            if (slots.Accessory != null)
+                datas.Add(slots.Accessory);
         }
         foreach (var item in datas)
             data.EquipmentItems.Add(new EquipmentSaveData
@@ -52,12 +59,15 @@ public sealed class SaveDataUtility : IUtility
     /// <param name="definitions">装备定义。</param>
     /// <param name="capacity">背包容量。</param>
     /// <param name="skills">主动技能定义。</param>
+    /// <param name="levels">已实现的关卡定义，用于校验通关记录。</param>
     /// <exception cref="ArgumentException">英雄、余额、装备、穿戴或技能记录无效。</exception>
     /// <exception cref="NotSupportedException">版本不一致。</exception>
-    public void Validate(GameData data, TbEquipmentConfig definitions, int capacity, TbSkillConfig skills)
+    public void Validate(GameData data, TbEquipmentConfig definitions, int capacity, TbSkillConfig skills,
+        GameConfig.Level.TbLevelConfig levels)
     {
         ValidateEnvelope(data);
         ValidateSkills(data, skills);
+        ValidateLevelProgress(data, levels);
         ArgumentNullException.ThrowIfNull(definitions);
         if (data.Soul < 0 || data.Heroes.Any(x => x.HeroId <= 0 || x.TotalExperience < 0) ||
             !data.Heroes.Any(x => x.HeroId == data.ActiveHeroId))
@@ -69,6 +79,7 @@ public sealed class SaveDataUtility : IUtility
         {
             ValidateSlot(slots[hero.HeroId].Weapon, hero.HeroId, EquipmentSlot.Weapon, definitions);
             ValidateSlot(slots[hero.HeroId].Armor, hero.HeroId, EquipmentSlot.Armor, definitions);
+            ValidateSlot(slots[hero.HeroId].Accessory, hero.HeroId, EquipmentSlot.Accessory, definitions);
         }
     }
 
@@ -81,9 +92,20 @@ public sealed class SaveDataUtility : IUtility
         ArgumentNullException.ThrowIfNull(data);
         if (data.SaveVersion != GameData.CurrentVersion)
             throw new NotSupportedException($"只支持存档格式 v{GameData.CurrentVersion}，当前文件为 v{data.SaveVersion}。");
-        if (data.Heroes == null || data.Heroes.Count == 0 || data.Heroes.Any(x => x == null) ||
+        if (data.HighestClearedLevelId < 0 || data.Heroes == null || data.Heroes.Count == 0 || data.Heroes.Any(x => x == null) ||
             data.EquipmentItems == null || data.Heroes.Any(x => x.LearnedSkills == null))
             throw new ArgumentException("存档缺少英雄或装备记录。");
+    }
+
+    /// <summary>最远通关记录必须为空进度或指向已实现关卡，拒绝越界档案。</summary>
+    /// <param name="data">已校验版本的档案。</param>
+    /// <param name="levels">当前关卡定义。</param>
+    /// <exception cref="ArgumentException">通关主键无效。</exception>
+    internal static void ValidateLevelProgress(GameData data, GameConfig.Level.TbLevelConfig levels)
+    {
+        if (data.HighestClearedLevelId < 0 || data.HighestClearedLevelId != 0 &&
+            levels.GetOrDefault(data.HighestClearedLevelId) == null)
+            throw new ArgumentException("最远通关记录不存在。");
     }
 
     /// <summary>校验技能书的唯一性、定义存在及英雄归属；不静默丢弃坏记录。</summary>
@@ -102,9 +124,9 @@ public sealed class SaveDataUtility : IUtility
     /// <summary>建立实例索引和穿戴引用，验证唯一所有权与背包容量。</summary>
     /// <param name="data">已验证必要集合的快照。</param>
     /// <param name="capacity">背包容量。</param>
-    /// <returns>背包实例及每名英雄的武器、防具。</returns>
+    /// <returns>背包实例及每名英雄的完整穿戴。</returns>
     /// <exception cref="ArgumentException">编号重复、引用不存在或背包超限。</exception>
-    internal static (EquipmentData[] Bag, Dictionary<int, (EquipmentData Weapon, EquipmentData Armor)> Slots)
+    internal static (EquipmentData[] Bag, Dictionary<int, EquippedItems> Slots)
         ReadItems(GameData data, int capacity)
     {
         Dictionary<Guid, EquipmentData> datas = new();
@@ -116,9 +138,9 @@ public sealed class SaveDataUtility : IUtility
         }
 
         HashSet<Guid> equipped = new();
-        Dictionary<int, (EquipmentData Weapon, EquipmentData Armor)> slots = new();
+        Dictionary<int, EquippedItems> slots = new();
         foreach (var hero in data.Heroes)
-            if (!slots.TryAdd(hero.HeroId, (Resolve(hero.WeaponInstanceId), Resolve(hero.ArmorInstanceId))))
+            if (!slots.TryAdd(hero.HeroId, new(Resolve(hero.WeaponInstanceId), Resolve(hero.ArmorInstanceId), Resolve(hero.AccessoryInstanceId))))
                 throw new ArgumentException("英雄编号重复。");
         var bag = datas.Values.Where(x => !equipped.Contains(x.InstanceId)).ToArray();
         if (bag.Length > capacity)
@@ -149,8 +171,8 @@ public sealed class SaveDataUtility : IUtility
         foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
         {
             var expected = definition.AttributeRanges.Find(x => x.Attribute == attribute);
-            int value = data.Attributes.Get(attribute);
-            if (expected == null ? value != 0 : value < expected.Minimum || value > expected.Maximum)
+            float value = data.Attributes.Get(attribute);
+            if (!float.IsFinite(value) || (expected == null ? value != 0 : value < expected.Minimum || value > expected.Maximum))
                 throw new ArgumentException("装备实际属性不符合当前配置。");
         }
     }
@@ -166,7 +188,7 @@ public sealed class SaveDataUtility : IUtility
         if (data == null)
             return;
         var definition = definitions.Get(data.EquipmentId);
-        if ((int)definition.Owner != heroId || definition.Slot != slot)
+        if ((definition.Owner != EquipmentOwner.Universal && (int)definition.Owner != heroId) || definition.Slot != slot)
             throw new ArgumentException("装备不属于该英雄或该部位。");
     }
 }

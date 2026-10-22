@@ -14,31 +14,30 @@ namespace GameConfig.Hero
 {
 public partial class TbHeroGrowthConfig
 {
+    private readonly System.Collections.Generic.Dictionary<int, Hero.HeroGrowthConfig> _dataMap;
     private readonly System.Collections.Generic.List<Hero.HeroGrowthConfig> _dataList;
-
-    private System.Collections.Generic.Dictionary<(int, int), Hero.HeroGrowthConfig> _dataMapUnion;
-
+    
     public TbHeroGrowthConfig(ByteBuf _buf)
     {
         int n = _buf.ReadSize();
+        _dataMap = new System.Collections.Generic.Dictionary<int, Hero.HeroGrowthConfig>(n);
         _dataList = new System.Collections.Generic.List<Hero.HeroGrowthConfig>(n);
         for(int i = n ; i > 0 ; --i)
         {
             Hero.HeroGrowthConfig _v;
             _v = global::GameConfig.Hero.HeroGrowthConfig.DeserializeHeroGrowthConfig(_buf);
             _dataList.Add(_v);
-        }
-        _dataMapUnion = new System.Collections.Generic.Dictionary<(int, int), Hero.HeroGrowthConfig>(n);
-        foreach(var _v in _dataList)
-        {
-            _dataMapUnion.Add((_v.HeroId, _v.Level), _v);
+            _dataMap.Add(_v.HeroId, _v);
         }
     }
 
+    public System.Collections.Generic.IReadOnlyDictionary<int, Hero.HeroGrowthConfig> DataMap => _dataMap;
     public System.Collections.Generic.IReadOnlyList<Hero.HeroGrowthConfig> DataList => _dataList;
 
-    public Hero.HeroGrowthConfig Get(int HeroId, int Level) => _dataMapUnion.TryGetValue((HeroId, Level), out Hero.HeroGrowthConfig __v) ? __v : default;
-    
+    public Hero.HeroGrowthConfig GetOrDefault(int key) => _dataMap.TryGetValue(key, out var v) ? v : default;
+    public Hero.HeroGrowthConfig Get(int key) => _dataMap[key];
+    public Hero.HeroGrowthConfig this[int key] => _dataMap[key];
+
     public void ResolveRef(Tables tables)
     {
         foreach(var _v in _dataList)
@@ -46,6 +45,7 @@ public partial class TbHeroGrowthConfig
             _v.ResolveRef(tables);
         }
     }
+
 }
 
 }

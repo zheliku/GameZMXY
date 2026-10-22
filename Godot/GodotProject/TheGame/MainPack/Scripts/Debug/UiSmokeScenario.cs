@@ -23,8 +23,8 @@ using GameFramework.Fsm;
 using GameFramework.Procedure;
 using GameLogic.Entity;
 using GameLogic.Heroes;
-using GameLogic.Monsters;
-using GameLogic.Monsters.AI;
+using GameLogic.Enemies;
+using GameLogic.Enemies.AI;
 using GameLogic.Profile;
 using GameLogic.Save;
 using GameLogic;
@@ -46,7 +46,7 @@ public sealed partial class UiSmokeScenario
     private readonly Node m_Driver; // 提供真实引擎帧信号的烟测节点。
     private readonly Task m_RunTask; // 已捕获异常的测试任务。
     private AbstractHeroEntity m_ExtraHero; // 测试创建的额外英雄，结束时归还。
-    private AbstractMonsterEntity m_Monster; // 复用验证创建的怪物，结束时归还。
+    private AbstractEnemyEntity m_Monster; // 复用验证创建的怪物，结束时归还。
     private BattleForm m_TestBattleForm; // 当前由测试打开的 HUD，结束时关闭。
 
     /// <summary>回归是否已结束。</summary>
@@ -57,15 +57,17 @@ public sealed partial class UiSmokeScenario
 
     /// <summary>开始一次 UI 与存档回归，原流程与测试使用同一套框架服务。</summary>
     /// <param name="driver">烟测帧驱动节点。</param>
-    public UiSmokeScenario(Node driver)
+    /// <param name="bossesOnly">只验证新增 BOSS，不重复全部既有窗口回归。</param>
+    public UiSmokeScenario(Node driver, bool bossesOnly = false)
     {
         m_Driver = driver;
-        m_RunTask = RunAsync();
+        m_RunTask = RunAsync(bossesOnly);
     }
 
     /// <summary>依次验证显示、解绑、复用、升级、关卡事务、存档与重入。</summary>
     /// <returns>整个回归完成的任务，异常被转换为 Failure。</returns>
-    private async Task RunAsync()
+    /// <param name="bossesOnly">是否运行独立 BOSS 回归。</param>
+    private async Task RunAsync(bool bossesOnly)
     {
         try
         {
@@ -82,6 +84,36 @@ public sealed partial class UiSmokeScenario
             Check(data?.SaveVersion == GameData.CurrentVersion && data.Heroes.Count == 1, "首次启动未按当前版本写回新档");
             CheckDisplay(battleForm, hero, flow.GetModel<ProfileModel>(), level);
 
+            if (OS.GetCmdlineUserArgs().Contains("--entry-only"))
+            {
+                level.Cleanup();
+                await WaitFramesAsync(3);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--terrain-only"))
+            {
+                await CheckSlopeMovementAsync(flow);
+                return;
+            }
+
+            if (bossesOnly)
+            {
+                await CheckBossesAsync(hero, flow, level);
+                level.Cleanup();
+                await WaitFramesAsync(3); // 先取消关卡生成，再关闭框架，避免把正常退出当成加载失败。
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--inventory-skills-only"))
+            {
+                await CheckInventoryAsync(battleForm, hero, flow, level);
+                await CheckSkillsAsync(battleForm, flow, level);
+                level.Cleanup();
+                await WaitFramesAsync(3);
+                return;
+            }
+
             await CheckFloatingTextAsync();
             await CheckGroundItemsAsync(flow, hero, level);
             await CheckInventoryAsync(battleForm, hero, flow, level);
@@ -95,10 +127,19 @@ public sealed partial class UiSmokeScenario
             CloseBattleForm(m_TestBattleForm);
             m_TestBattleForm = null;
             await CheckLevelUpAsync(flow, level);
+            await CheckSlopeMovementAsync(flow);
             await CheckPlatformsAsync(level, flow);
             await CheckManaPickupAsync(flow, level, hero);
-            // 从真实保存的临界经验重入，下一次击败应立即触发脚底升级动画。
             level.Cleanup(); // 先结束旧关卡事务，再设置下一场的测试检查点。
+            // 用曾经缺少外观映射的装备重新进关，验证 OnShow 而不只验证界面穿戴。
+            var startupArmor = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(),
+                GameConfig.Equipment.EquipmentId.RoughPilgrimClothes, () => .5f);
+            Check(flow.GetSystem<ProfileSystem>().TryCollectEquipment(startupArmor) &&
+                flow.GetSystem<EquipmentSystem>().TryEquip(startupArmor.InstanceId),
+                "穿戴读档回归的粗糙行者服准备失败");
+            hero.RefreshAppearance(); // 夹具已结束关卡订阅，显式建立这次穿戴的视觉基准。
+            string armorTexture = hero.GetNode<Sprite2D>("m_Body").Texture.ResourcePath;
+            // 从真实保存的临界经验重入，下一次击败应立即触发脚底升级动画。
             Check(!SmokeInspection.Scene(level).GetChildren().OfType<GameLogic.Drops.LootOrbNode>().Any(), "关停后仍有本关飞行奖励");
             var active = flow.GetModel<ProfileModel>();
             flow.GetSystem<ProfileSystem>().AddExperience(active.MaxExperience - active.Experience - 1);
@@ -106,6 +147,11 @@ public sealed partial class UiSmokeScenario
             ReenterLevel();
             procedure = await WaitForLevelAsync();
             level = FindLevel();
+            Check(flow.GetModel<ProfileModel>().Armor?.InstanceId == startupArmor.InstanceId &&
+                FindHero().GetNode<Sprite2D>("m_Body").Texture.ResourcePath == armorTexture,
+                $"穿戴粗糙行者服重新进关后丢失外观：armor={flow.GetModel<ProfileModel>().Armor?.InstanceId}, " +
+                $"expected={startupArmor.InstanceId}, texture={FindHero().GetNode<Sprite2D>("m_Body").Texture.ResourcePath}, expectedTexture={armorTexture}");
+            GD.Print("SMOKE-APPEARANCE-REENTRY PASS: equipped RoughPilgrimClothes survives checkpoint and hero OnShow.");
 
             // 中途离开：关内收益回滚，不写盘；重入读回进关前状态。
             ProfileModel progression = flow.GetModel<ProfileModel>();
@@ -179,7 +225,7 @@ public sealed partial class UiSmokeScenario
     {
         // 技能测试会把英雄带到本关怪物附近；此项只验证专用出招夹具，暂时冻结其他怪物。
         var bystanders = m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
-            .OfType<AbstractMonsterEntity>().Where(x => x.IsVisibleInTree()).Select(x => (Actor: x, WasProcessing: x.IsPhysicsProcessing(), Position: x.GlobalPosition, Velocity: x.Velocity)).ToArray();
+            .OfType<AbstractEnemyEntity>().Where(x => x.IsVisibleInTree()).Select(x => (Actor: x, WasProcessing: x.IsPhysicsProcessing(), Position: x.GlobalPosition, Velocity: x.Velocity)).ToArray();
         foreach (var (actor, _, _, _) in bystanders)
         {
             actor.SetPhysicsProcess(false);
@@ -196,18 +242,18 @@ public sealed partial class UiSmokeScenario
             await WaitUntilAsync(() => hero.OnFloor, "测试英雄没有落地");
             hero.SetPhysicsProcess(false);
             var banner = SmokeInspection.ReadField<EncounterHealthBar>(battleForm, "m_EncounterHealthBar");
-            AbstractMonsterEntity previousGorilla = null;
+            AbstractEnemyEntity previousGorilla = null;
             (int Id, float Health, float Defense, float Attack)[] cases =
                 [(1, 1, 1, 1), (2, 1, 1, 1), (3, 1, 1, 1), (3, 3, 2, 3), (3, 1, 1, 1)];
             foreach (var (id, health, defense, attack) in cases)
             {
                 var config = ConfigSystem.Instance.Tables.TbMonsterConfig.Get(id);
                 bool boosted = health > 1f;
-                m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(config.EntityId,
-                    new MonsterSpawn(new Vector2(hero.GlobalPosition.X + 40, 100), health, defense, attack,
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(config.EntityId,
+                    new EnemySpawn(new Vector2(hero.GlobalPosition.X + 40, 100), health, defense, attack,
                         boosted ? 25 : -1));
                 SmokeInspection.FreezeAi(m_Monster);
-                IMonsterAiAgent ai = m_Monster;
+                IEnemyAiAgent ai = m_Monster;
                 Check(!m_Monster.OnFloor && !ai.RequestAttack(0), $"怪物 {id} 出生下落时允许出招");
                 await WaitUntilAsync(() => m_Monster.OnFloor, $"怪物 {id} 没有真实落地");
                 Check(m_Monster.MaxHp == config.BaseAttributes.MaxHp * health &&
@@ -250,7 +296,7 @@ public sealed partial class UiSmokeScenario
                 Check(ai.RequestAttack(0), $"怪物 {id} 收招后不能再次攻击");
                 await WaitUntilAsync(() => m_Monster.AttackSegment >= 0, "第二次攻击没有开始");
                 AttackData data = AttackData.Create(0, default, 1, GameConfig.Battle.DamageKind.Real,
-                    new Vector2(2, -5), 1, 0, GameConfig.Sound.SoundId.None);
+                    new Vector2(2, -5), 1, 0);
                 m_Monster.ReceiveHit(data, hero.Id);
                 GameFramework.ReferencePool.Release(data);
                 Check(SmokeInspection.ReadField<AttackData>(m_Monster, "m_ActiveAttackData") == null && !ai.RequestAttack(0),
@@ -424,18 +470,18 @@ public sealed partial class UiSmokeScenario
 
         // 2 级装配：生命上限来自成长表 2 级行。
         m_ExtraHero = await ShowHeroAsync(flow, 140);
-        int expectedMaxHp = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1, 2).BaseAttributes.MaxHp;
+        int expectedMaxHp = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1).Levels[1].BaseAttributes.MaxHp;
         Check(ReferenceEquals(previous, m_ExtraHero) && ReferenceEquals(vitals, GF.Fsm.GetModel<HeroModel>()), "英雄运行时容器未随池实例稳定复用");
         Check(m_ExtraHero.Level == 2 && GF.Fsm.GetModel<HeroModel>().MaxHp.Value == expectedMaxHp &&
             GF.Fsm.GetModel<HeroModel>().Hp.Value == expectedMaxHp && GF.Fsm.GetModel<HeroModel>().Ws.Value == 0 &&
             GF.Fsm.GetModel<HeroModel>().MaxWs.Value == ConfigSystem.Instance.Tables.TbBattleConfig.Data.WsMax,
             "英雄复用残留上次的修正、生命或无双");
-        float power = GF.Fsm.GetModel<HeroModel>().GetAttribute(GameConfig.Attributes.AttributeType.Power).Value;
+        float power = GF.Fsm.GetModel<HeroModel>().Power.Value;
         GF.Fsm.GetSystem<HeroSystem>().AddWs(GF.Fsm.GetModel<HeroModel>().MaxWs.Value - GF.Fsm.GetModel<HeroModel>().Ws.Value);
         Check(m_ExtraHero.TryActivateMusou(), "死亡测试前未开启无双");
         KillHero(m_ExtraHero);
         Check(!GF.Fsm.GetModel<HeroModel>().WsActive.Value && GF.Fsm.GetModel<HeroModel>().Ws.Value == 0 &&
-            Near(GF.Fsm.GetModel<HeroModel>().GetAttribute(GameConfig.Attributes.AttributeType.Power).Value, power), "死亡没有结束无双或移除局内加成");
+            Near(GF.Fsm.GetModel<HeroModel>().Power.Value, power), "死亡没有结束无双或移除局内加成");
         ReleaseTestEntity(m_ExtraHero);
         m_ExtraHero = null;
 
@@ -449,7 +495,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckMusouActivationAsync(AbstractHeroEntity hero)
     {
         var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
-        float power = GF.Fsm.GetModel<HeroModel>().GetAttribute(GameConfig.Attributes.AttributeType.Power).Value;
+        float power = GF.Fsm.GetModel<HeroModel>().Power.Value;
         var body = (IHeroBody)hero;
         GD.Seed(73);
         body.BeginAttack(0);
@@ -507,14 +553,14 @@ public sealed partial class UiSmokeScenario
         for (int i = 0; i < 100 && GF.Fsm.GetModel<HeroModel>().Hp.Value == hp; i++)
         {
             var attack = GameLogic.Battle.Attacks.AttackData.Create(0, default, 10f,
-                GameConfig.Battle.DamageKind.Real, new Vector2(30, 0), 1, 0, GameConfig.Sound.SoundId.None);
+                GameConfig.Battle.DamageKind.Real, new Vector2(30, 0), 1, 0);
             hero.ReceiveHit(attack, 0);
             GameFramework.ReferencePool.Release(attack);
         }
         Check(GF.Fsm.GetModel<HeroModel>().Hp.Value < hp && !((IHeroBody)hero).HasPendingHurt,
             "无双霸体没有保留正常伤害或仍登记了受击击退");
         hero._PhysicsProcess(battle.WsMax / battle.WsDrainPerSecond + 1f);
-        Check(!GF.Fsm.GetModel<HeroModel>().WsActive.Value && GF.Fsm.GetModel<HeroModel>().Ws.Value == 0 && Near(GF.Fsm.GetModel<HeroModel>().GetAttribute(GameConfig.Attributes.AttributeType.Power).Value, power)
+        Check(!GF.Fsm.GetModel<HeroModel>().WsActive.Value && GF.Fsm.GetModel<HeroModel>().Ws.Value == 0 && Near(GF.Fsm.GetModel<HeroModel>().Power.Value, power)
             && Near(body.MoveSpeedMultiplier, 1f) && Near(body.JumpSpeedMultiplier, 1f)
             && Near(body.Gravity, body.Params.Gravity), "无双耗尽没有完整还原战斗效果");
         await WaitUntilAsync(() => snapshots.All(x => !x.Visible), "结束无双后残影没有自然淡出");
@@ -529,10 +575,10 @@ public sealed partial class UiSmokeScenario
         foreach (EntityId entityId in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey })
         {
             var config = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Single(x => x.EntityId == entityId);
-            m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(entityId, new MonsterSpawn(new Vector2(200, 200)));
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(entityId, new EnemySpawn(new Vector2(200, 200)));
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
-            AbstractMonsterEntity previous = m_Monster;
+            AbstractEnemyEntity previous = m_Monster;
             ResourceBar bar = m_Monster.GetNode<ResourceBar>("m_HealthBar");
             Check(bar.Size.IsEqualApprox(bar.TextureProgress.GetSize()) && bar.Size.IsEqualApprox(new Vector2(50, 5)),
                 $"{entityId} 实例尺寸覆盖了官方 50×5 填充，导致可见血条偏心");
@@ -588,7 +634,7 @@ public sealed partial class UiSmokeScenario
             SmokeInspection.DamageMonster(m_Monster, 1);
             Check(bar.Visible, $"{entityId} 再次受伤未恢复血条显示");
             var attack = GameLogic.Battle.Attacks.AttackData.Create(0, default, m_Monster.MaxHp * 10f,
-                GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0, GameConfig.Sound.SoundId.None);
+                GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
             try
             {
                 await WaitUntilAsync(() =>
@@ -614,7 +660,7 @@ public sealed partial class UiSmokeScenario
             SmokeInspection.DamageMonster(previous, 1);
             Check(!bar.Visible && Near(bar.Value, 0), $"{entityId} 隐藏后血条仍订阅旧状态");
             await WaitFramesAsync(2);
-            m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(entityId, new MonsterSpawn(Vector2.Zero));
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(entityId, new EnemySpawn(Vector2.Zero));
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             Check(ReferenceEquals(previous, m_Monster) && ReferenceEquals(bar, m_Monster.GetNode<ResourceBar>("m_HealthBar")),
@@ -654,7 +700,7 @@ public sealed partial class UiSmokeScenario
 
         // 跨三级：与 LevelViewController 相同的注入路径（档案 → 装配 → 实体，补满）。
         flow.GetSystem<ProfileSystem>().AddExperience(338);
-        var row = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1, 4).BaseAttributes;
+        var row = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1).Levels[3].BaseAttributes;
         Check(record.Level == 4 && record.Experience == 37 && record.MaxExperience == 165,
             "连升未保留余量或等级错误");
         Check(m_ExtraHero.Level == 4 && GF.Fsm.GetModel<HeroModel>().MaxHp.Value == row.MaxHp && GF.Fsm.GetModel<HeroModel>().Hp.Value == row.MaxHp &&
@@ -810,7 +856,7 @@ public sealed partial class UiSmokeScenario
         AbstractHeroEntity hero = FindHero();
         LevelViewController run = SmokeInspection.Level(procedure);
         hero.SetPhysicsProcess(true);
-        int kills = SmokeInspection.Model(run).DefeatedMonsterCount;
+        int kills = SmokeInspection.Model(run).DefeatedEnemyCount;
         int beforeXp = SmokeInspection.Flow(procedure).GetModel<ProfileModel>().TotalExperience;
         int beforeSoul = SmokeInspection.Flow(procedure).GetModel<ProfileModel>().Soul.Value;
         int beforeLevel = hero.Level;
@@ -827,13 +873,13 @@ public sealed partial class UiSmokeScenario
             }
 
             Input.ActionRelease(InputSystem.MoveRight);
-            AbstractMonsterEntity spawned = FindMonster();
+            AbstractEnemyEntity spawned = FindMonster();
             SmokeInspection.FreezeAi(spawned);
             return spawned != null;
         }, "首阶段没有刷出怪物", 20000);
 
         Check(SmokeInspection.Model(run).Outcome.Value == LevelOutcome.Running, $"击杀前关卡运行已结束：{SmokeInspection.Model(run).Outcome.Value}");
-        AbstractMonsterEntity monster = FindMonster();
+        AbstractEnemyEntity monster = FindMonster();
 
         // 死亡事件由身体状态机进入死亡状态时广播：受测怪物必须保留物理步进。
         monster.SetPhysicsProcess(true);
@@ -844,12 +890,12 @@ public sealed partial class UiSmokeScenario
             if (!monster.Dead)
             {
                 var attack = GameLogic.Battle.Attacks.AttackData.Create(0, default, monster.MaxHp * 10f,
-                    GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0, GameConfig.Sound.SoundId.None);
+                    GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
                 monster.ReceiveHit(attack, hero.Id);
                 GameFramework.ReferencePool.Release(attack);
             }
 
-            return SmokeInspection.Model(run).DefeatedMonsterCount > kills;
+            return SmokeInspection.Model(run).DefeatedEnemyCount > kills;
         }, "击败怪物没有经关卡运行结算", 10000, () => Describe(monster, run, level));
         int reward = SmokeInspection.ReadField<int>(monster, "m_ExperienceReward");
         Check(SmokeInspection.Flow(procedure).GetModel<ProfileModel>().TotalExperience == beforeXp + reward &&
@@ -880,9 +926,9 @@ public sealed partial class UiSmokeScenario
     /// <param name="run">关卡运行。</param>
     /// <param name="level">关卡。</param>
     /// <returns>可读的状态描述。</returns>
-    private static string Describe(AbstractMonsterEntity monster, LevelViewController run, LevelViewController level) =>
+    private static string Describe(AbstractEnemyEntity monster, LevelViewController run, LevelViewController level) =>
         $"monster shown={monster.IsShown} dead={monster.Dead} hp={monster.Hp}/{monster.MaxHp} " +
-        $"id={monster.Id}; run={SmokeInspection.Model(run).Outcome.Value} kills={SmokeInspection.Model(run).DefeatedMonsterCount}; level={SmokeInspection.Sequence(level).Phase}/{SmokeInspection.Sequence(level).Current.StageOrder}; " +
+        $"id={monster.Id}; run={SmokeInspection.Model(run).Outcome.Value} kills={SmokeInspection.Model(run).DefeatedEnemyCount}; level={SmokeInspection.Sequence(level).Phase}/{SmokeInspection.Sequence(level).Current.StageOrder}; " +
         $"procedure={GF.Procedure.CurrentProcedure?.GetType().Name}";
 
     /// <summary>经真实结算链路击杀英雄（闪避按真实概率结算，重复攻击直到死亡）。</summary>
@@ -895,7 +941,7 @@ public sealed partial class UiSmokeScenario
         for (int i = 0; i < 100 && !hero.Dead; i++)
         {
             var attack = GameLogic.Battle.Attacks.AttackData.Create(0, default, GF.Fsm.GetModel<HeroModel>().MaxHp.Value * 100f,
-                GameConfig.Battle.DamageKind.Real, Vector2.Zero, -1, 0, GameConfig.Sound.SoundId.None);
+                GameConfig.Battle.DamageKind.Real, Vector2.Zero, -1, 0);
             hero.ReceiveHit(attack, 0);
             GameFramework.ReferencePool.Release(attack);
         }
@@ -933,7 +979,7 @@ public sealed partial class UiSmokeScenario
     {
         var equipment = GF.Fsm.GetModel<ProfileModel>();
         GF.Fsm.GetSystem<HeroSystem>().Reset(heroId, level,
-            ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(heroId, level).BaseAttributes,
+            ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(heroId).Levels[level - 1].BaseAttributes,
             equipment.Weapon, equipment.Armor);
     }
 
@@ -966,8 +1012,15 @@ public sealed partial class UiSmokeScenario
     /// <returns>当前关卡流程。</returns>
     private async Task<ProcedureLevel> WaitForLevelAsync()
     {
-        await WaitUntilAsync(() => SmokeInspection.Model(SmokeInspection.Level(FindLevelProcedure()))?.Outcome.Value == LevelOutcome.Running &&
-            CurrentBattleForm() != null && FindHero() != null, "关卡流程未就绪", 15000);
+        await WaitUntilAsync(() =>
+        {
+            LevelModel model = SmokeInspection.Model(SmokeInspection.Level(FindLevelProcedure()));
+            BattleForm hud = CurrentBattleForm();
+            if (model?.SessionActive == true)
+                Check(hud?.Visible == true, "关卡已经开始，但 BattleForm 尚未显示");
+            return model is { SessionActive: true } && model.Outcome.Value == LevelOutcome.Running &&
+                hud?.Visible == true && FindHero() != null;
+        }, "关卡流程未就绪", 15000);
         return FindLevelProcedure();
     }
 
@@ -1003,8 +1056,8 @@ public sealed partial class UiSmokeScenario
 
     /// <summary>查找当前已显示且存活的怪物。</summary>
     /// <returns>怪物或 null。</returns>
-    private AbstractMonsterEntity FindMonster() => m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
-        .OfType<AbstractMonsterEntity>().FirstOrDefault(x => x.IsShown && !x.Dead && x != m_Monster);
+    private AbstractEnemyEntity FindMonster() => m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+        .OfType<AbstractEnemyEntity>().FirstOrDefault(x => x.IsShown && !x.Dead && x != m_Monster);
 
     /// <summary>查找当前正式关卡，排除已经等待释放的旧节点。</summary>
     /// <returns>当前关卡或 null。</returns>

@@ -6,7 +6,7 @@ using GameLogic.Battle.Damage;
 using GameLogic.Config;
 using GameLogic.Drops;
 using GameLogic.Input;
-using GameLogic.Monsters.AI;
+using GameLogic.Enemies.AI;
 using GameLogic.Profile;
 using GameLogic.Save;
 using GameLogic.Utility;
@@ -62,7 +62,7 @@ public sealed class ProcedurePrepare : ProcedureBase
             procedureOwner.RegisterSystem(new ConfigurationSystem(architecture));
             procedureOwner.RegisterSystem(new CombatSystem(architecture));
             procedureOwner.RegisterSystem(new InputSystem(architecture));
-            procedureOwner.RegisterSystem(new MonsterAiSystem(architecture));
+            procedureOwner.RegisterSystem(new EnemyAiSystem(architecture));
             procedureOwner.RegisterSystem(new LootSystem(architecture));
             procedureOwner.RegisterSystem(new SaveSystem(architecture));
             ChangeState<ProcedurePreload>(procedureOwner);

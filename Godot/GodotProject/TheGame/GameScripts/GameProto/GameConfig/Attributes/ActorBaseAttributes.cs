@@ -24,12 +24,12 @@ public sealed partial class ActorBaseAttributes : Luban.BeanBase
         Power = _buf.ReadInt();
         Def = _buf.ReadInt();
         Mdef = _buf.ReadInt();
-        Crit = _buf.ReadInt();
-        Miss = _buf.ReadInt();
+        Crit = _buf.ReadFloat();
+        Miss = _buf.ReadFloat();
         Lucky = _buf.ReadInt();
         Toughness = _buf.ReadInt();
-        Htarget = _buf.ReadInt();
-        CritReduce = _buf.ReadInt();
+        Htarget = _buf.ReadFloat();
+        CritReduce = _buf.ReadFloat();
         Ar = _buf.ReadInt();
         Sp = _buf.ReadInt();
         Vampirism = _buf.ReadInt();
@@ -63,13 +63,13 @@ public sealed partial class ActorBaseAttributes : Luban.BeanBase
     /// </summary>
     public readonly int Mdef;
     /// <summary>
-    /// 暴击
+    /// 暴击概率（0..1）；0.03 表示 3%
     /// </summary>
-    public readonly int Crit;
+    public readonly float Crit;
     /// <summary>
-    /// 闪避
+    /// 闪避概率（0..1）
     /// </summary>
-    public readonly int Miss;
+    public readonly float Miss;
     /// <summary>
     /// 幸运(加暴击倍率)
     /// </summary>
@@ -79,13 +79,13 @@ public sealed partial class ActorBaseAttributes : Luban.BeanBase
     /// </summary>
     public readonly int Toughness;
     /// <summary>
-    /// 命中(减对方闪避)
+    /// 命中概率加成（直接抵消闪避）
     /// </summary>
-    public readonly int Htarget;
+    public readonly float Htarget;
     /// <summary>
-    /// 暴击抵抗
+    /// 抗暴概率加成（直接抵消暴击）
     /// </summary>
-    public readonly int CritReduce;
+    public readonly float CritReduce;
     /// <summary>
     /// 破甲(减对方物防)
     /// </summary>

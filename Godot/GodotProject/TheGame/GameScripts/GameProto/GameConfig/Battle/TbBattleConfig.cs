@@ -44,10 +44,6 @@ public partial class TbBattleConfig
     /// </summary>
      public float MdefKHero => _data.MdefKHero;
     /// <summary>
-    /// 英雄作防守方时被命中K: Miss/(Miss+K)
-    /// </summary>
-     public float MissKHero => _data.MissKHero;
-    /// <summary>
     /// 怪物作防守方时物防减伤K
     /// </summary>
      public float DefKMonster => _data.DefKMonster;
@@ -55,14 +51,6 @@ public partial class TbBattleConfig
     /// 怪物作防守方时魔防减伤K
     /// </summary>
      public float MdefKMonster => _data.MdefKMonster;
-    /// <summary>
-    /// 怪物作防守方时被命中K
-    /// </summary>
-     public float MissKMonster => _data.MissKMonster;
-    /// <summary>
-    /// 暴击率基数: Crit/(Crit+K)
-    /// </summary>
-     public float CritK => _data.CritK;
     /// <summary>
     /// 英雄攻击时暴击倍率幸运K
     /// </summary>
@@ -76,22 +64,6 @@ public partial class TbBattleConfig
     /// </summary>
      public float CritBase => _data.CritBase;
     /// <summary>
-    /// 等级压制-英雄防守闪避系数
-    /// </summary>
-     public float LvMissCoefHeroDef => _data.LvMissCoefHeroDef;
-    /// <summary>
-    /// 等级压制-英雄防守暴击系数
-    /// </summary>
-     public float LvCritCoefHeroDef => _data.LvCritCoefHeroDef;
-    /// <summary>
-    /// 等级压制-怪物防守闪避系数
-    /// </summary>
-     public float LvMissCoefMonsterDef => _data.LvMissCoefMonsterDef;
-    /// <summary>
-    /// 等级压制-怪物防守暴击系数
-    /// </summary>
-     public float LvCritCoefMonsterDef => _data.LvCritCoefMonsterDef;
-    /// <summary>
     /// 等级压制-幸运系数
     /// </summary>
      public float LvLuckyCoef => _data.LvLuckyCoef;
@@ -99,18 +71,6 @@ public partial class TbBattleConfig
     /// 等级压制-每级伤害系数
     /// </summary>
      public float LvDamageCoef => _data.LvDamageCoef;
-    /// <summary>
-    /// 等级压制-英雄防守闪避系数封顶
-    /// </summary>
-     public float LvMissCapHeroDef => _data.LvMissCapHeroDef;
-    /// <summary>
-    /// 等级压制-怪物防守闪避系数封顶
-    /// </summary>
-     public float LvMissCapMonsterDef => _data.LvMissCapMonsterDef;
-    /// <summary>
-    /// 等级压制-暴击系数封顶(人怪两侧一致)
-    /// </summary>
-     public float LvCritCap => _data.LvCritCap;
     /// <summary>
     /// 等级压制-幸运系数封顶(人怪两侧一致)
     /// </summary>

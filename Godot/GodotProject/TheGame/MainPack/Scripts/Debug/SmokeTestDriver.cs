@@ -14,7 +14,7 @@ using GameFramework;
 using GameFramework.Event;
 using GameLogic;
 using GameLogic.Heroes;
-using GameLogic.Monsters;
+using GameLogic.Enemies;
 using GameLogic.UI;
 using Godot;
 using GodotGameFramework;
@@ -90,12 +90,13 @@ public partial class SmokeTestDriver : Node
 
     // ---- M4 命中链路观测（悟空连打面前的猴子）----
 
-    private AbstractMonsterEntity m_Monster; // 沙包猴子（场上第一只怪物）。
+    private AbstractEnemyEntity m_Monster; // 沙包猴子（场上第一只怪物）。
 
     private readonly List<(int Damage, bool Crit, bool Miss)> m_MonsterHits = new(); // 按事件记录猴子每次受击结果。
 
     private int m_MaxPopCount; // 场上飘字节点的可见峰值数量。
     private SmokeMode m_Mode; // 命令行选择的唯一冒烟模式。
+    private int m_RequestedLevel = 1; // 真实地图点击的关卡，第二、第三关仍走完整菜单流程。
     private double m_WaitTime; // 等待英雄出现的累计时间（秒）。
     private double m_Time; // 烟测当前时间（秒）。
     private int m_NextStep; // 下一条输入计划索引。
@@ -115,8 +116,9 @@ public partial class SmokeTestDriver : Node
     private LevelCancellationSmokeScenario m_CancelScenario; // 真实在途显示的取消回归。
     private UiSmokeScenario m_UiScenario; // HUD 与存档的真实引擎回归。
     private FrontendSmokeScenario m_FrontendScenario; // 菜单、音乐与进出关卡回归。
+    private MapProgressSmokeScenario m_ProgressScenario; // 三关实际通关和退出重读后的地图解锁验证。
 
-    private MonsterAiSmokeScenario m_AiScenario; // ai 模式下驱动英雄与猴子的场景。
+    private EnemyAiSmokeScenario m_AiScenario; // ai 模式下驱动英雄与猴子的场景。
 
     private double m_AiStartTime; // AI 烟测场景的开始时间。
 
@@ -136,13 +138,21 @@ public partial class SmokeTestDriver : Node
             m_Mode = arg switch
             {
                 "--smoketest" => SmokeMode.Hero,
-                "--smoketest=ai" => SmokeMode.MonsterAi,
+                "--smoketest=ai" => SmokeMode.EnemyAi,
                 "--smoketest=level" => SmokeMode.Level,
+                "--smoketest=level2" => SmokeMode.Level,
+                "--smoketest=level3" => SmokeMode.Level,
                 "--smoketest=level-cancel" => SmokeMode.Cancellation,
                 "--smoketest=ui" => SmokeMode.Ui,
+                "--smoketest=bosses" => SmokeMode.Bosses,
                 "--smoketest=frontend" => SmokeMode.Frontend,
+                "--smoketest=progress" => SmokeMode.Progress,
                 _ => m_Mode,
             };
+            if (arg == "--smoketest=level2")
+                m_RequestedLevel = 2;
+            if (arg == "--smoketest=level3")
+                m_RequestedLevel = 3;
         }
 
         // 引擎参数里带了 --quit-after 时，通过流程交给引擎自己退出（见 StopDriving 注释）
@@ -175,6 +185,22 @@ public partial class SmokeTestDriver : Node
     /// <param name="delta">上一帧到当前帧的秒数。</param>
     public override void _PhysicsProcess(double delta)
     {
+        if (m_Mode == SmokeMode.Progress)
+        {
+            m_ProgressScenario ??= new MapProgressSmokeScenario(this);
+            m_ProgressScenario.Update(delta);
+            if (m_ProgressScenario.IsDone)
+            {
+                if (m_ProgressScenario.Failure != null)
+                    Fail(m_ProgressScenario.Failure);
+                else
+                {
+                    GD.Print("SMOKE-PROGRESS PASS: three real clears, disk saves, title reload, only latest hint and locked input rejection.");
+                    StopDriving(false);
+                }
+            }
+            return;
+        }
         if (m_Mode == SmokeMode.Frontend)
         {
             m_FrontendScenario ??= new FrontendSmokeScenario(this);
@@ -196,9 +222,9 @@ public partial class SmokeTestDriver : Node
             return;
         }
         // 既有战斗回归也从真实菜单进入，不给生产流程增加测试专用跳转。
-        if (!FrontendSmokeScenario.AdvanceToLevel())
+        if (!FrontendSmokeScenario.AdvanceToLevel(m_RequestedLevel))
             return;
-        if (m_Mode == SmokeMode.Ui)
+        if (m_Mode is SmokeMode.Ui or SmokeMode.Bosses)
         {
             DriveUiScenario(delta);
             return;
@@ -250,7 +276,7 @@ public partial class SmokeTestDriver : Node
         }
 
         m_Time += delta;
-        if (m_Mode == SmokeMode.MonsterAi)
+        if (m_Mode == SmokeMode.EnemyAi)
         {
             DriveAiScenario();
             return;
@@ -273,7 +299,7 @@ public partial class SmokeTestDriver : Node
         if (m_UiScenario == null)
         {
             // 场景自行等待关卡流程装配完成。
-            m_UiScenario = new UiSmokeScenario(this);
+            m_UiScenario = new UiSmokeScenario(this, m_Mode == SmokeMode.Bosses);
             return;
         }
 
@@ -281,7 +307,9 @@ public partial class SmokeTestDriver : Node
         {
             if (m_UiScenario.Failure == null)
             {
-                GD.Print("SMOKE PASS：UI 数值、解绑复用、实体复用、加载取消、失败清理与存档重入全部通过");
+                GD.Print(m_Mode == SmokeMode.Bosses
+                    ? "SMOKE PASS：两位 BOSS 的原生招式、实际命中、无敌、独立风刃与回池复用全部通过"
+                    : "SMOKE PASS：UI 数值、解绑复用、实体复用、加载取消、失败清理与存档重入全部通过");
                 StopDriving(false);
             }
             else
@@ -352,7 +380,7 @@ public partial class SmokeTestDriver : Node
     private void HurtHeroOnce() // 经真实战斗结算链路对英雄造成一次 1 点伤害。
     {
         // 临时攻击数据只在结算期间持有，并在调用后归还对象池。
-        AttackData data = AttackData.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0, SoundId.None);
+        AttackData data = AttackData.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0);
         m_Hero.ReceiveHit(data, 0);
         ReferencePool.Release(data);
     }
@@ -388,7 +416,7 @@ public partial class SmokeTestDriver : Node
                 return;
             }
 
-            m_AiScenario = new MonsterAiSmokeScenario(m_Hero, m_Monster);
+            m_AiScenario = new EnemyAiSmokeScenario(m_Hero, m_Monster);
             m_AiStartTime = m_Time;
             GD.Print("SMOKE-AI: 开始怪物 AI 场景");
         }
@@ -674,7 +702,7 @@ public partial class SmokeTestDriver : Node
         // 避免活怪攻击英雄带来不确定的受击/击退时序（AI 行为由 ai 场景单独覆盖）。
         foreach (Node node in GetTree().Root.FindChildren("*", "CharacterBody2D", true, false))
         {
-            if (node is not AbstractMonsterEntity { IsShown: true } monster)
+            if (node is not AbstractEnemyEntity { IsShown: true } monster)
             {
                 continue;
             }
@@ -682,7 +710,7 @@ public partial class SmokeTestDriver : Node
             if (m_Monster == null)
             {
                 m_Monster = monster;
-                if (m_Mode == SmokeMode.MonsterAi)
+                if (m_Mode == SmokeMode.EnemyAi)
                 {
                     // 受测猴子在相机抵达后生成时会索敌到英雄；
                     // 先挪到视野外让目标按 LoseTargetTime 自然丢失，AI 场景才能从干净的巡逻开始。
@@ -700,7 +728,7 @@ public partial class SmokeTestDriver : Node
             }
 
             // ai 模式保留受测怪物的 AI；M4 模式连同沙包一起全部冻结。
-            if (!m_FrozenMonsters.Add(monster.Id) || (m_Mode == SmokeMode.MonsterAi && m_Monster == monster))
+            if (!m_FrozenMonsters.Add(monster.Id) || (m_Mode == SmokeMode.EnemyAi && m_Monster == monster))
             {
                 continue;
             }
@@ -827,10 +855,12 @@ public partial class SmokeTestDriver : Node
     {
         Disabled,
         Hero,
-        MonsterAi,
+        EnemyAi,
         Level,
         Cancellation,
         Ui,
+        Bosses,
         Frontend,
+        Progress,
     }
 }

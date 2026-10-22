@@ -13,9 +13,9 @@ namespace GameLogic.Battle.Tests
 {
     /// <summary>
     /// DamageResult 回归：常数取自真实表产物（battle_tbbattleconfig.bytes），期望值为手算。
-    /// 手算前提（当前表值）：DefK 英雄250/怪物100，MissK 英雄100/怪物70，CritK 100，
-    /// LuckyK 英雄攻击100/怪物攻击50，CritBase 2，等级系数 闪避0.03/0.04、暴击0.07/0.11、幸运0.07、伤害0.05，
-    /// 封顶 闪避1/0.9、暴击1、幸运0.7、伤害级数5/2。表值变更导致失败时，先确认是改表而非改坏公式。
+    /// 手算前提（当前表值）：DefK 英雄250/怪物100，暴击与闪避直接使用 0..1 概率，
+    /// LuckyK 英雄攻击100/怪物攻击50，CritBase 2，等级系数 幸运0.07、伤害0.05，
+    /// 封顶 幸运0.7、伤害级数5/2。表值变更导致失败时，先确认是改表而非改坏公式。
     /// </summary>
     public class DamageCalculatorTests
     {
@@ -29,15 +29,15 @@ namespace GameLogic.Battle.Tests
             return new TbBattleConfig(new ByteBuf(File.ReadAllBytes(path))).Data;
         }
 
-        private static CombatantAttributes Hero(int level = 1, int power = 8, int def = 10, int mdef = 10, int crit = 0,
-            int miss = 0, int lucky = 0, int toughness = 0, int htarget = 0, int critReduce = 0, int ar = 0, int sp = 0) // 创建指定属性的英雄战斗数据。
+        private static CombatantAttributes Hero(int level = 1, int power = 8, int def = 10, int mdef = 10, float crit = 0,
+            float miss = 0, int lucky = 0, int toughness = 0, float htarget = 0, float critReduce = 0, int ar = 0, int sp = 0) // 创建指定属性的英雄战斗数据。
         {
             return new CombatantAttributes(CombatSide.Hero, level, power, def, mdef, crit, miss, lucky, toughness, htarget,
                 critReduce, ar, sp);
         }
 
-        private static CombatantAttributes Monster(int level = 5, int power = 0, int def = 50, int mdef = 80, int crit = 0,
-            int miss = 0, int lucky = 0, int toughness = 0, int htarget = 0, int critReduce = 0, int ar = 0, int sp = 0) // 创建指定属性的怪物战斗数据。
+        private static CombatantAttributes Monster(int level = 5, int power = 0, int def = 50, int mdef = 80, float crit = 0,
+            float miss = 0, int lucky = 0, int toughness = 0, float htarget = 0, float critReduce = 0, int ar = 0, int sp = 0) // 创建指定属性的怪物战斗数据。
         {
             return new CombatantAttributes(CombatSide.Monster, level, power, def, mdef, crit, miss, lucky, toughness,
                 htarget, critReduce, ar, sp);
@@ -47,7 +47,7 @@ namespace GameLogic.Battle.Tests
             in CombatantAttributes defender, float missRoll, float critRoll) // 结算并立即归还攻击包。
         {
             // 从对象池创建一次性攻击包，确保测试覆盖与游戏内相同的生命周期。
-            AttackData data = AttackData.Create(0, attacker, power, kind, Vector2.Zero, 1, 0, SoundId.None);
+            AttackData data = AttackData.Create(0, attacker, power, kind, Vector2.Zero, 1, 0);
             try
             {
                 return new CombatSystem(BattleArchitecture.Instance).Calculate(data, defender, missRoll, critRoll);
@@ -65,7 +65,6 @@ namespace GameLogic.Battle.Tests
         {
             Assert.Equal(250f, Config.DefKHero);
             Assert.Equal(100f, Config.DefKMonster);
-            Assert.Equal(0.9f, Config.LvMissCapMonsterDef, 4);
             Assert.Equal(5, Config.LvDamageCapLvHeroDef);
             Assert.Equal(2, Config.LvDamageCapLvMonsterDef);
         }
@@ -123,8 +122,8 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void Miss_ReturnsZeroAndFlag()
         {
-            // 同级，怪物闪避 70：70/(70+70) = 0.5；roll 0.49 < 0.5 → 闪避
-            DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Physics, Monster(miss: 70),
+            // 怪物闪避为 0.5；roll 0.49 < 0.5 → 闪避
+            DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Physics, Monster(miss: .5f),
                 0.49f, 0f);
             Assert.True(r.IsMiss);
             Assert.Equal(0, r.Damage);
@@ -134,7 +133,7 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void Miss_RollAtRate_DoesNotMiss()
         {
-            DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Real, Monster(miss: 70), 0.5f, 0.9999f);
+            DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Real, Monster(miss: .5f), 0.5f, 0.9999f);
             Assert.False(r.IsMiss);
         }
 
@@ -153,8 +152,8 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void Htarget_OffsetsMiss()
         {
-            // 闪避 70 − 命中 70 = 0 → 闪避率 0
-            DamageResult r = Hit(Hero(level: 5, htarget: 70), 100f, DamageKind.Real, Monster(miss: 70),
+            // 闪避 50% − 命中 50% = 0 → 闪避率 0
+            DamageResult r = Hit(Hero(level: 5, htarget: .5f), 100f, DamageKind.Real, Monster(miss: .5f),
                 0f, 0.9999f);
             Assert.False(r.IsMiss);
         }
@@ -163,9 +162,9 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void Crit_HeroAttacks_UsesHeroLuckyK()
         {
-            // 同级，暴击 100 → 率 0.5；幸运 100、英雄攻击幸运K 100 → 倍率 2 + 0.5 = 2.5
+            // 同级，暴击率 50%；幸运 100、英雄攻击幸运K 100 → 倍率 2 + 0.5 = 2.5
             // 真实伤害：100 × 2.5 = 250
-            DamageResult r = Hit(Hero(level: 5, crit: 100, lucky: 100), 100f, DamageKind.Real, Monster(),
+            DamageResult r = Hit(Hero(level: 5, crit: .5f, lucky: 100), 100f, DamageKind.Real, Monster(),
                 0.9999f, 0.49f);
             Assert.True(r.IsCrit);
             Assert.Equal(250, r.Damage);
@@ -176,7 +175,7 @@ namespace GameLogic.Battle.Tests
         public void Crit_MonsterAttacks_UsesMonsterLuckyK()
         {
             // 同级，幸运 50、怪物攻击幸运K 50 → 倍率 2.5；真实 100 → 250
-            DamageResult r = Hit(Monster(level: 1, crit: 100, lucky: 50), 100f, DamageKind.Real, Hero(level: 1),
+            DamageResult r = Hit(Monster(level: 1, crit: .5f, lucky: 50), 100f, DamageKind.Real, Hero(level: 1),
                 0.9999f, 0.49f);
             Assert.True(r.IsCrit);
             Assert.Equal(250, r.Damage);
@@ -186,13 +185,13 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void Crit_ToughnessOffsetsLucky_CritReduceOffsetsCrit()
         {
-            // 暴击 100 − 暴抗 100 = 0 → 不暴击
-            DamageResult none = Hit(Hero(level: 5, crit: 100), 100f, DamageKind.Real, Monster(critReduce: 100),
+            // 暴击 50% − 暴抗 50% = 0 → 不暴击
+            DamageResult none = Hit(Hero(level: 5, crit: .5f), 100f, DamageKind.Real, Monster(critReduce: .5f),
                 0.9999f, 0f);
             Assert.False(none.IsCrit);
 
             // 幸运 100 − 韧性 100 = 0 → 倍率仅基数 2
-            DamageResult plain = Hit(Hero(level: 5, crit: 100, lucky: 100), 100f, DamageKind.Real,
+            DamageResult plain = Hit(Hero(level: 5, crit: .5f, lucky: 100), 100f, DamageKind.Real,
                 Monster(toughness: 100), 0.9999f, 0f);
             Assert.True(plain.IsCrit);
             Assert.Equal(200, plain.Damage);
@@ -203,7 +202,7 @@ namespace GameLogic.Battle.Tests
         public void Crit_ThenDefense_OrderMatchesLegacy()
         {
             // 同级 威力 100，暴击倍率 2（幸运 0），物防 50 → 200 × 0.667 = 133.4 → 133
-            DamageResult r = Hit(Hero(level: 5, crit: 100), 100f, DamageKind.Physics, Monster(),
+            DamageResult r = Hit(Hero(level: 5, crit: .5f), 100f, DamageKind.Physics, Monster(),
                 0.9999f, 0f);
             Assert.Equal(133, r.Damage);
         }
@@ -231,33 +230,26 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(75, down.Damage);
         }
 
-        /// <summary>验证等级差会缩放闪避率并应用上限。</summary>
-        [Fact]
-        public void LevelSuppression_MissScalesAndCaps()
+        /// <summary>装备的 3% 直接参与判定，等级差不改变概率；边界值不触发。</summary>
+        /// <param name="attackerLevel">攻击方等级。</param>
+        /// <param name="defenderLevel">防守方等级。</param>
+        [Theory]
+        [InlineData(1, 30)]
+        [InlineData(10, 10)]
+        [InlineData(30, 1)]
+        public void DirectProbabilities_KeepThreePercentAcrossLevelDifferences(int attackerLevel, int defenderLevel)
         {
-            // 防守方(怪物)等级高 10 级：闪避系数 min(10×0.04, 0.9) = 0.4 → 闪避 70 × 1.4 = 98
-            // 率 98/(98+70) = 0.583；roll 0.58 → 闪避，0.59 → 不闪避
-            CombatantAttributes hero = Hero(level: 1);
-            CombatantAttributes monkey = Monster(level: 11, miss: 70);
-            Assert.True(Hit(hero, 100f, DamageKind.Real, monkey, 0.58f, 0.9999f).IsMiss);
-            Assert.False(Hit(hero, 100f, DamageKind.Real, monkey, 0.59f, 0.9999f).IsMiss);
-
-            // 攻击方(英雄)等级高 30 级：闪避系数封顶 0.9 → 70 × 0.1 = 7 → 7/77 = 0.091
-            CombatantAttributes strongHero = Hero(level: 31);
-            CombatantAttributes weakMonkey = Monster(level: 1, miss: 70);
-            Assert.True(Hit(strongHero, 100f, DamageKind.Real, weakMonkey, 0.09f, 0.9999f).IsMiss);
-            Assert.False(Hit(strongHero, 100f, DamageKind.Real, weakMonkey, 0.092f, 0.9999f).IsMiss);
-        }
-
-        /// <summary>验证高等级攻击方获得等级差暴击修正。</summary>
-        [Fact]
-        public void LevelSuppression_CritScalesUpForHigherAttacker()
-        {
-            // 英雄高 5 级打怪：暴击系数 min(5×0.11, 1) = 0.55 → 暴击 50 × 1.55 = 77.5 → 率 77.5/177.5 = 0.437
-            CombatantAttributes hero = Hero(level: 10, crit: 50);
-            CombatantAttributes monkey = Monster(level: 5);
-            Assert.True(Hit(hero, 100f, DamageKind.Real, monkey, 0.9999f, 0.436f).IsCrit);
-            Assert.False(Hit(hero, 100f, DamageKind.Real, monkey, 0.9999f, 0.438f).IsCrit);
+            var hero = Hero(level: attackerLevel, crit: .03f);
+            var monster = Monster(level: defenderLevel, miss: .03f);
+            Assert.True(Hit(hero, 100f, DamageKind.Real, monster, .029f, NoProc).IsMiss);
+            Assert.False(Hit(hero, 100f, DamageKind.Real, monster, .03f, NoProc).IsMiss);
+            Assert.True(Hit(hero, 100f, DamageKind.Real, monster, NoProc, .029f).IsCrit);
+            Assert.False(Hit(hero, 100f, DamageKind.Real, monster, NoProc, .03f).IsCrit);
+            // 人怪结算方向相反时也不引入另一条概率曲线。
+            Assert.True(Hit(Monster(level: attackerLevel, crit: .03f), 100f, DamageKind.Real,
+                Hero(level: defenderLevel), NoProc, .029f).IsCrit);
+            Assert.True(Hit(Monster(level: attackerLevel), 100f, DamageKind.Real,
+                Hero(level: defenderLevel, miss: .03f), .029f, NoProc).IsMiss);
         }
 
         /// <summary>验证伤害结算结果不会为负数。</summary>
@@ -272,8 +264,7 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void Knockback_AppliesDirectionWithoutRescaling()
         {
-            AttackData data = AttackData.Create(1004, Hero(), 10f, DamageKind.Physics, new Vector2(144, -120), -1, 0,
-                SoundId.None);
+            AttackData data = AttackData.Create(1004, Hero(), 10f, DamageKind.Physics, new Vector2(144, -120), -1, 0);
             try
             {
                 Assert.Equal(new Vector2(-144, -120), new CombatSystem(BattleArchitecture.Instance).KnockbackVelocity(data));
@@ -293,8 +284,7 @@ namespace GameLogic.Battle.Tests
         [InlineData(250, 480)]
         public void Knockback_FromCenter(float targetX, float expectedX)
         {
-            var data = AttackData.Create(0, Hero(), 10f, DamageKind.Magic, new Vector2(480, -48), -1, 0,
-                SoundId.None, 200f);
+            var data = AttackData.Create(0, Hero(), 10f, DamageKind.Magic, new Vector2(480, -48), -1, 0, 200f);
             try
             {
                 Assert.Equal(new Vector2(expectedX, -48), new CombatSystem(BattleArchitecture.Instance)
@@ -311,16 +301,14 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void AttackData_OneHitPerTarget_AndClearedOnRelease()
         {
-            AttackData attackData = AttackData.Create(1001, Hero(), 8f, DamageKind.Physics, Vector2.Zero, 1, 0,
-                SoundId.None);
+            AttackData attackData = AttackData.Create(1001, Hero(), 8f, DamageKind.Physics, Vector2.Zero, 1, 0);
             Assert.True(attackData.TryRegisterHit(42));
             Assert.False(attackData.TryRegisterHit(42));
             Assert.True(attackData.TryRegisterHit(43));
             ReferencePool.Release(attackData);
 
             // 同类型复用池内对象：必须是干净的
-            AttackData reusedData = AttackData.Create(1002, Hero(), 9f, DamageKind.Magic, Vector2.Zero, 1, 0,
-                SoundId.None);
+            AttackData reusedData = AttackData.Create(1002, Hero(), 9f, DamageKind.Magic, Vector2.Zero, 1, 0);
             Assert.True(reusedData.TryRegisterHit(42));
             Assert.Equal(1002, reusedData.AttackId);
             Assert.Equal(DamageKind.Magic, reusedData.Kind);

@@ -1,6 +1,7 @@
 using GameConfig.Equipment;
 using GameConfig.Attributes;
 using GameLogic.Equipment;
+using GameLogic.Battle.Attributes;
 using Godot;
 using GameLogic.UI.Widgets;
 
@@ -21,13 +22,30 @@ public partial class EquipmentTooltip : PanelContainer
     /// <param name="definition">装备名称、类型、品质与售价。</param>
     public void Bind(EquipmentData data, EquipmentConfig definition)
     {
+        // Tooltip 在入树前测量；先给换行文本真实列宽，避免按 1px 计算出多行高度后被弹窗保留。
+        float contentWidth = m_Description.CustomMinimumSize.X;
+        m_Name.Size = new Vector2(contentWidth, 0);
+        m_Description.Size = new Vector2(contentWidth, 0);
         Color qualityColor = definition.Quality.DisplayColor();
         m_Name.Text = definition.NameCn;
         m_Name.AddThemeColorOverride("font_color", qualityColor);
         m_Quality.Text = string.Join(" ", definition.Quality.DisplayName().ToCharArray());
         m_Quality.AddThemeColorOverride("font_color", qualityColor);
-        m_Type.Text = (definition.Slot == EquipmentSlot.Weapon ? "武器" : "防具") + "·" +
-            (definition.Owner == EquipmentOwner.Wukong ? "悟空" : "唐僧");
+        string slotName = definition.Slot switch
+        {
+            EquipmentSlot.Weapon => "武器",
+            EquipmentSlot.Armor => "防具",
+            EquipmentSlot.Accessory => "饰品",
+            _ => throw new System.ArgumentOutOfRangeException(nameof(definition.Slot))
+        };
+        string ownerName = definition.Owner switch
+        {
+            EquipmentOwner.Universal => "通用",
+            EquipmentOwner.Wukong => "悟空",
+            EquipmentOwner.Tangseng => "唐僧",
+            _ => throw new System.ArgumentOutOfRangeException(nameof(definition.Owner))
+        };
+        m_Type.Text = $"{slotName}·{ownerName}";
         foreach (Node child in m_Attributes.GetChildren())
         {
             m_Attributes.RemoveChild(child);
@@ -35,7 +53,8 @@ public partial class EquipmentTooltip : PanelContainer
         }
         foreach (var modifier in data.Attributes.EnumerateModifiers())
         {
-            Label line = new() { Text = $"{AttributeName(modifier.Attribute)}： {modifier.Value:0.##}", CustomMinimumSize = new Vector2(0, 25), MouseFilter = MouseFilterEnum.Ignore };
+            string value = modifier.Attribute.IsProbability ? $"{modifier.Value * 100:0.##}%" : $"{modifier.Value:0.##}";
+            Label line = new() { Text = $"{AttributeName(modifier.Attribute)}： {value}", CustomMinimumSize = new Vector2(0, 25), MouseFilter = MouseFilterEnum.Ignore };
             line.AddThemeColorOverride("font_color", new Color("ff9933"));
             m_Attributes.AddChild(line);
         }

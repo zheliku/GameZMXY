@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://bmm87kfrr6bcv"]
 
 [ext_resource type="Script" uid="uid://d4b5dtv7bca62" path="res://TheGame/MainPack/Scripts/Debug/TestArenaController.cs" id="1_controller"]
-[ext_resource type="PackedScene" path="res://Framework/GameFramework.tscn" id="2_framework"]
-[ext_resource type="Texture2D" uid="uid://bo4uw8k2ajk8o" path="res://TheGame/Sprites/Levels/huaguoshan/level_1_floor.png" id="3_floor"]
-[ext_resource type="PackedScene" uid="uid://y6q3h5fly83h" path="res://TheGame/Entitys/demon_monkey_entity.tscn" id="4_demon"]
-[ext_resource type="PackedScene" uid="uid://cc7r187g26xr8" path="res://TheGame/Entitys/huaguoshan_monkey_entity.tscn" id="5_monkey"]
+[ext_resource type="PackedScene" uid="uid://bggentry001" path="res://Framework/GameFramework.tscn" id="2_framework"]
+[ext_resource type="Texture2D" uid="uid://bo4uw8k2ajk8o" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_floor.png" id="3_floor"]
+[ext_resource type="PackedScene" uid="uid://y6q3h5fly83h" path="res://TheGame/Entitys/Enemies/Monsters/demon_monkey_entity.tscn" id="4_demon"]
+[ext_resource type="PackedScene" uid="uid://cc7r187g26xr8" path="res://TheGame/Entitys/Enemies/Monsters/huaguoshan_monkey_entity.tscn" id="5_monkey"]
 [ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/FloatingText/FloatingTextPresenter.cs" id="floating_text"]
 
 [sub_resource type="RectangleShape2D" id="GroundShape"]

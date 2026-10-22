@@ -1,88 +1,90 @@
 [gd_resource type="SpriteFrames" format=3 uid="uid://b6uuw7l55srf"]
 
-[ext_resource type="Texture2D" uid="uid://8llf3vqlqy7j" path="res://TheGame/Sprites/Effects/level_exit/level_exit_sheet.png" id="tex0"]
-
-[sub_resource type="AtlasTexture" id="Atlas_0"]
-atlas = ExtResource("tex0")
-region = Rect2(1030, 0, 206, 186)
-
-[sub_resource type="AtlasTexture" id="Atlas_1"]
-atlas = ExtResource("tex0")
-region = Rect2(1236, 0, 206, 186)
-
-[sub_resource type="AtlasTexture" id="Atlas_2"]
-atlas = ExtResource("tex0")
-region = Rect2(1442, 0, 206, 186)
-
-[sub_resource type="AtlasTexture" id="Atlas_3"]
-atlas = ExtResource("tex0")
-region = Rect2(1648, 0, 206, 186)
-
-[sub_resource type="AtlasTexture" id="Atlas_4"]
-atlas = ExtResource("tex0")
-region = Rect2(0, 186, 206, 186)
-
-[sub_resource type="AtlasTexture" id="Atlas_5"]
-atlas = ExtResource("tex0")
-region = Rect2(206, 186, 206, 186)
-
-[sub_resource type="AtlasTexture" id="Atlas_6"]
-atlas = ExtResource("tex0")
-region = Rect2(0, 0, 206, 186)
-
-[sub_resource type="AtlasTexture" id="Atlas_7"]
-atlas = ExtResource("tex0")
-region = Rect2(206, 0, 206, 186)
-
-[sub_resource type="AtlasTexture" id="Atlas_8"]
-atlas = ExtResource("tex0")
-region = Rect2(412, 0, 206, 186)
-
-[sub_resource type="AtlasTexture" id="Atlas_9"]
-atlas = ExtResource("tex0")
-region = Rect2(618, 0, 206, 186)
-
-[sub_resource type="AtlasTexture" id="Atlas_10"]
-atlas = ExtResource("tex0")
-region = Rect2(824, 0, 206, 186)
+[ext_resource type="Texture2D" uid="uid://c05k3bg2l1jko" path="res://TheGame/Sprites/Effects/level_exit/level_exit_00.png" id="1_r1jem"]
+[ext_resource type="Texture2D" uid="uid://xln16mn78g7r" path="res://TheGame/Sprites/Effects/level_exit/level_exit_01.png" id="2_21ml2"]
+[ext_resource type="Texture2D" uid="uid://dpcr72u76hwm2" path="res://TheGame/Sprites/Effects/level_exit/level_exit_02.png" id="3_2fa75"]
+[ext_resource type="Texture2D" uid="uid://dwjlij1la6d4a" path="res://TheGame/Sprites/Effects/level_exit/level_exit_03.png" id="4_8pled"]
+[ext_resource type="Texture2D" uid="uid://hbqbeaycquvc" path="res://TheGame/Sprites/Effects/level_exit/level_exit_04.png" id="5_hrqoo"]
+[ext_resource type="Texture2D" uid="uid://prcvvvuf083g" path="res://TheGame/Sprites/Effects/level_exit/level_exit_05.png" id="6_xgoi4"]
+[ext_resource type="Texture2D" uid="uid://xdibgy06mx1l" path="res://TheGame/Sprites/Effects/level_exit/level_exit_06.png" id="7_0m254"]
+[ext_resource type="Texture2D" uid="uid://bbw4euok3uf4f" path="res://TheGame/Sprites/Effects/level_exit/level_exit_07.png" id="8_shxpx"]
+[ext_resource type="Texture2D" uid="uid://bfwew6bxtcdfn" path="res://TheGame/Sprites/Effects/level_exit/level_exit_08.png" id="9_8d7wp"]
+[ext_resource type="Texture2D" uid="uid://xw5cknl7orft" path="res://TheGame/Sprites/Effects/level_exit/level_exit_09.png" id="10_oiifj"]
+[ext_resource type="Texture2D" uid="uid://iecymowh3lur" path="res://TheGame/Sprites/Effects/level_exit/level_exit_10.png" id="11_51iy2"]
+[ext_resource type="Texture2D" uid="uid://c2jubcu4a5bso" path="res://TheGame/Sprites/Effects/level_exit/level_exit_11.png" id="12_ckg05"]
+[ext_resource type="Texture2D" uid="uid://vtpapuqvmlor" path="res://TheGame/Sprites/Effects/level_exit/level_exit_12.png" id="13_a0buy"]
+[ext_resource type="Texture2D" uid="uid://0oedj8jveob1" path="res://TheGame/Sprites/Effects/level_exit/level_exit_13.png" id="14_nnxen"]
+[ext_resource type="Texture2D" uid="uid://b0gpdc4f2cyoi" path="res://TheGame/Sprites/Effects/level_exit/level_exit_14.png" id="15_wxffr"]
+[ext_resource type="Texture2D" uid="uid://ckyu5istmjklw" path="res://TheGame/Sprites/Effects/level_exit/level_exit_15.png" id="16_bi3dp"]
+[ext_resource type="Texture2D" uid="uid://vx7pya3457ch" path="res://TheGame/Sprites/Effects/level_exit/level_exit_16.png" id="17_35cdc"]
+[ext_resource type="Texture2D" uid="uid://c1cld3a7cm55u" path="res://TheGame/Sprites/Effects/level_exit/level_exit_17.png" id="18_e726t"]
+[ext_resource type="Texture2D" uid="uid://ehe01r1do38m" path="res://TheGame/Sprites/Effects/level_exit/level_exit_18.png" id="19_dlspx"]
+[ext_resource type="Texture2D" uid="uid://c28roghp20vmf" path="res://TheGame/Sprites/Effects/level_exit/level_exit_19.png" id="20_b4l6p"]
 
 [resource]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("Atlas_0")
+"texture": ExtResource("1_r1jem")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_1")
+"texture": ExtResource("2_21ml2")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_2")
+"texture": ExtResource("3_2fa75")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_3")
+"texture": ExtResource("4_8pled")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_4")
+"texture": ExtResource("5_hrqoo")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_5")
+"texture": ExtResource("6_xgoi4")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_6")
+"texture": ExtResource("7_0m254")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_7")
+"texture": ExtResource("8_shxpx")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_8")
+"texture": ExtResource("9_8d7wp")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_9")
+"texture": ExtResource("10_oiifj")
 }, {
 "duration": 1.0,
-"texture": SubResource("Atlas_10")
+"texture": ExtResource("11_51iy2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_ckg05")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_a0buy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_nnxen")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_wxffr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_bi3dp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_35cdc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_e726t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_dlspx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_b4l6p")
 }],
 "loop": 1,
 "name": &"exit",
-"speed": 25.0
+"speed": 24.0
 }]

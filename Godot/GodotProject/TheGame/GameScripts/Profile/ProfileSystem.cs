@@ -16,6 +16,28 @@ public sealed class ProfileSystem : AbstractSystem
     /// <param name="architecture">所属档案架构。</param>
     public ProfileSystem(IArchitecture architecture) : base(architecture) { }
 
+    /// <summary>最新已开放关卡；完成当前内容后仍指向最后一关，不开放尚未实现的地点。</summary>
+    public int LatestLevelId => this.GetModel<ConfigurationModel>().Tables.TbLevelConfig.DataList
+        .Where(level => level.LevelId <= this.GetModel<ProfileModel>().HighestClearedLevelId.Value + 1)
+        .Max(level => level.LevelId);
+
+    /// <summary>地图与流程共用的进入资格；历史关卡可重玩，未开放或不存在的关卡拒绝。</summary>
+    /// <param name="levelId">关卡配置主键。</param>
+    /// <returns>本档案是否允许进入。</returns>
+    public bool CanEnterLevel(int levelId) => levelId <= LatestLevelId &&
+        this.GetModel<ConfigurationModel>().Tables.TbLevelConfig.GetOrDefault(levelId) != null;
+
+    /// <summary>成功通关时推进最远记录；重玩旧关不退回，不允许跳过锁定关卡。</summary>
+    /// <param name="levelId">实际完成的关卡。</param>
+    /// <exception cref="InvalidOperationException">关卡不存在或尚未开放。</exception>
+    public void RecordLevelClear(int levelId)
+    {
+        if (!CanEnterLevel(levelId))
+            throw new InvalidOperationException($"不能完成尚未开放的关卡：{levelId}");
+        var progress = this.GetModel<ProfileModel>().HighestClearedLevelId;
+        progress.Value = Math.Max(progress.Value, levelId);
+    }
+
     /// <summary>奖励出战英雄经验，按共享曲线求值后一次提交完整成长进度。</summary>
     /// <param name="amount">非负经验。</param>
     /// <returns>提升等级数。</returns>
@@ -61,7 +83,8 @@ public sealed class ProfileSystem : AbstractSystem
         foreach (int heroId in profile.HeroIds)
         {
             var slots = profile.GetSlots(heroId).Value;
-            if (slots.Weapon?.InstanceId == data.InstanceId || slots.Armor?.InstanceId == data.InstanceId)
+            if (slots.Weapon?.InstanceId == data.InstanceId || slots.Armor?.InstanceId == data.InstanceId ||
+                slots.Accessory?.InstanceId == data.InstanceId)
                 return false;
         }
 
@@ -80,6 +103,7 @@ public sealed class ProfileSystem : AbstractSystem
         var profile = this.GetModel<ProfileModel>();
         SaveDataUtility.ValidateEnvelope(data);
         SaveDataUtility.ValidateSkills(data, this.GetModel<ConfigurationModel>().Tables.TbSkillConfig);
+        SaveDataUtility.ValidateLevelProgress(data, this.GetModel<ConfigurationModel>().Tables.TbLevelConfig);
         if (data.ActiveHeroId != profile.ActiveHeroId || data.Heroes.Count != profile.HeroIds.Count ||
             data.Heroes.Select(x => x.HeroId).Distinct().Count() != data.Heroes.Count ||
             data.Heroes.Any(x => !profile.HeroIds.Contains(x.HeroId) || x.TotalExperience < 0) || data.Soul < 0)
@@ -89,10 +113,11 @@ public sealed class ProfileSystem : AbstractSystem
         foreach (var hero in data.Heroes)
         {
             this.GetModel<SkillModel>().GetLearnedSkills(hero.HeroId).ReplaceAll(hero.LearnedSkills);
-            profile.GetSlots(hero.HeroId).Value = new(slots[hero.HeroId].Weapon, slots[hero.HeroId].Armor);
+            profile.GetSlots(hero.HeroId).Value = slots[hero.HeroId];
             profile.GetProgress(hero.HeroId).Value = this.GetUtility<ExperienceCurve>().GetProgress(hero.TotalExperience);
         }
         profile.EquipmentDatas.ReplaceAll(bag);
         profile.Soul.Value = data.Soul;
+        profile.HighestClearedLevelId.Value = data.HighestClearedLevelId;
     }
 }

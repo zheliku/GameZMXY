@@ -34,9 +34,11 @@
 | 切场景、返回标题、重试 | 向所属 Procedure 提交具名导航请求 |
 | 动作、物理、AI、碰撞与已开始的业务推进 | 具体状态、Entity 与 System 直接协作 |
 
-Command/Query 在发送时绑定当前 Architecture，同步执行并返回 bool、件数或既有业务结果。Command 调用 System 的规则；System 按提交时的状态重新校验。Query 的组合逻辑放所属业务目录，简单读取直接使用已有属性或方法。
+Command/Query 在发送时绑定当前 Architecture，同步执行并返回 bool、件数或既有业务结果。只携带本次请求参数，不保存跨请求的业务状态，也不自带排队、自动回滚或持久化。Command 调用 System 的规则；System 按提交时的状态重新校验。
 
-Controller 对 Model/System 执行读取和订阅，System 执行业务写入。接口限定取用能力，读写边界按此职责遵守。绑定使用普通属性和集合；关联显示数据用完整的不可变值整体赋给 Value。
+Query 是可选的查询组织方式：组合多个来源、筛选或汇总的逻辑放所属业务目录；单个属性、现成的只读方法直接 GetModel/GetSystem。Query 返回执行这一刻的结果，不负责绑定，也不建立持续订阅。观察后续变化直接订阅 Model；组合显示需要更新时，由绑定回调重新执行查询。查询结果不预留物品或承诺成交，Command 提交时仍须重新校验。
+
+Controller 对 Model/System 执行读取和订阅，System 执行业务写入。与 QF 源码相同，ICanGetModel/ICanGetSystem 只限定取用能力，不会把返回对象自动变成只读对象；读写边界按职责遵守，不额外复制一套 UI Model。绑定使用普通属性和集合；关联显示数据用完整的不可变值整体赋给 Value。
 
 ## 状态与通信
 
@@ -74,7 +76,7 @@ Controller 对 Model/System 执行读取和订阅，System 执行业务写入。
 - Form 管绑定和请求，完整内部区域用 Panel，单个控件接收数据并报告交互；复杂程度达到独立职责时再拆脚本。
 - 目录按业务功能分组，所属节点、状态、规则和资源就近放置。小型配套类型随主要类型，入口较大时按职责使用 partial。
 - `MainPack/` 放启动流程、共享 UI、资源组和对象池；业务模块放 `GameScripts/{Architecture,Config,Battle,Profile,Skills,Equipment,Save,Entity,Level,UI,Input,Event,Utility}`。
-- 目录用于浏览，命名空间保持业务边界：Level 各子目录统一 GameLogic.Level，Save 的 Data/Slots 保留子空间；实体使用 GameLogic.Entity、Body、Heroes、Monsters；窗口用 GameLogic.UI，内部组件沿用 GameLogic.UI.Widgets。
+- 目录用于浏览，命名空间保持业务边界：Level 各子目录统一 GameLogic.Level，Save 的 Data/Slots 保留子空间；实体使用 GameLogic.Entity、Body、Heroes、Enemies；Enemy 下的小怪与首领共用 GameLogic.Enemies，AI 与身体契约分别用其 AI、Body 子空间。窗口用 GameLogic.UI，内部组件沿用 GameLogic.UI.Widgets。
 
 ## GGF 接入约定
 
@@ -83,4 +85,4 @@ Controller 对 Model/System 执行读取和订阅，System 执行业务写入。
 - 高频对象经 GF.ObjectPool / NodePool 回收；暂停用 GF.Base.PauseGame()，玩法计时由游戏帧推进。
 - 测试放 Tests、MainPack/Scripts/Debug 或 EditorScripts，使用隔离存档；通过现有状态和反射观测。
 
-实现入口、初始化位置和实际调用链见 [项目导览](../ProjectTour.md)。QF 契约参考 [官方源码](https://github.com/liangxiegame/QFramework/blob/master/QFramework.cs)。
+实现入口、初始化位置和实际调用链见 [项目导览](../ProjectTour.md)。QF 契约参考 [官方源码](https://github.com/liangxiegame/QFramework/blob/master/QFramework.cs)，职责与 Query 的可选用法参考 [官方教程第 09、10 节](https://github.com/liangxiegame/QFramework/wiki/%E5%BD%93%E5%89%8D%E7%89%88%E6%9C%AC)。本项目保留 GGF 的注册、流程、服务和事件体系，按上述实际用例采用 QF 的职责划分。

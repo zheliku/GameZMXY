@@ -21,6 +21,10 @@ namespace GameConfig.Equipment
         /// 唐僧
         /// </summary>
         Tangseng = 2,
+        /// <summary>
+        /// 通用
+        /// </summary>
+        Universal = 0,
     }
 
 } 

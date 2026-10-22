@@ -1,7 +1,6 @@
 using GameLogic.Battle.Damage;
 using System.Collections.Generic;
 using GameConfig.Battle;
-using GameConfig.Sound;
 using Godot;
 using GameFramework;
 
@@ -36,9 +35,6 @@ namespace GameLogic.Battle.Attacks
         /// <summary>命中给受击方累计的受击保护值（旧 HitProtect；0 = 按表默认）</summary>
         public int HitProtect { get; private set; }
 
-        /// <summary>命中音效（None = 无）</summary>
-        public SoundId HitSoundId { get; private set; }
-
         /// <summary>从引用池取一个攻击包并装填（各参数语义见同名属性）。</summary>
         /// <param name="attackId">来源攻击编号；动态攻击传 0。</param>
         /// <param name="attacker">出招时的攻击方属性快照。</param>
@@ -47,11 +43,10 @@ namespace GameLogic.Battle.Attacks
         /// <param name="knockback">击退参数。</param>
         /// <param name="direction">出招方向；非负视为向右，负数视为向左。</param>
         /// <param name="hitProtect">本次命中增加的受击保护值。</param>
-        /// <param name="hitSoundId">命中音效编号。</param>
         /// <param name="knockbackOriginX">可选的攻击中心世界横坐标；只用于向两侧击退的攻击。</param>
         /// <returns>已装填并由引用池管理的攻击数据包。</returns>
         public static AttackData Create(int attackId, in CombatantAttributes attacker, float power, DamageKind kind,
-            Vector2 knockback, int direction, int hitProtect, SoundId hitSoundId, float? knockbackOriginX = null)
+            Vector2 knockback, int direction, int hitProtect, float? knockbackOriginX = null)
         {
             AttackData data = ReferencePool.Acquire<AttackData>();
             data.AttackId = attackId;
@@ -62,7 +57,6 @@ namespace GameLogic.Battle.Attacks
             data.Direction = direction >= 0 ? 1 : -1;
             data.KnockbackOriginX = knockbackOriginX;
             data.HitProtect = hitProtect;
-            data.HitSoundId = hitSoundId;
             return data;
         }
 
@@ -85,7 +79,6 @@ namespace GameLogic.Battle.Attacks
             Direction = 1;
             KnockbackOriginX = null;
             HitProtect = 0;
-            HitSoundId = SoundId.None;
             m_HitTargets.Clear();
         }
     }

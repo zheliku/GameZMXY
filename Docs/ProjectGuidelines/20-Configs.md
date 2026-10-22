@@ -13,12 +13,15 @@
 ## 属性与成长
 
 - 属性种类只有一个定义：枚举 `Attributes.AttributeType`（`__enums__.xlsx`，值显式、只在末尾追加）。完整的一组属性值是 bean `Attributes.ActorBaseAttributes`（`__beans__.xlsx`），字段与枚举一一对应；新增属性时同时追加枚举项、bean 字段并更新 `HeroSystem` 的属性汇总。
+- 暴击、闪避采用造一的直接概率，`0.03` 表示 3%；命中、抗暴以相同单位抵消对手。上述四项用 `float`，汇总结果钳制至 0..1，不参与属性点曲线或等级差修正。生命、攻击、防御等仍用整数。装备随机范围兼容两种单位：概率按区间采样，其余属性按官方 round 分布取整数。
 - 修正方式是枚举 `Attributes.AttributeModifierKind`（`Flat` / `PercentAdd` / `PercentMult`）；装备、法宝、被动、丹药、Buff 表用它描述加成，不另造字段。
 - 经验曲线：`Hero.TbHeroLevelConfig`，全英雄共用（等级 → 升级所需经验）。
-- 英雄成长：`Hero.TbHeroGrowthConfig`（list，联合索引 `HeroId + Level`，`read_schema_from_file=false`），每行内嵌 `BaseAttributes: ActorBaseAttributes`；每名英雄覆盖经验表全部等级。`HeroConfig` 保留身份与基础移动参数，外观和声音由场景绑定。
+- 英雄成长：`Hero.TbHeroGrowthConfig` 按 `HeroId` 建立 map，每名英雄记录内嵌 `Levels` 列表；列表元素按 `Level=1..MaxLevel` 连续排列，并在每级保存完整 `BaseAttributes: ActorBaseAttributes`。`read_schema_from_file=false`；运行期先取英雄记录，再取等级元素，不再用平铺的联合键。`HeroConfig` 保留身份与基础移动参数，外观和声音由场景绑定。
 - 怪物没有成长：`MonsterConfig` 内嵌一个 `BaseAttributes: ActorBaseAttributes`，`Level` 只用于等级压制与经验门槛；怪物伤害由招式 `AttackConfig.FlatPower` 决定，`BaseAttributes.Power` 填 0。
+- `Enemy.xlsx` 按编辑职责分 `MonsterConfig`（小怪）与 `BossConfig`（BOSS）两个 Sheet，经同一个 `TbMonsterConfig` 输入合并，身份键全表唯一。专属技能由实体与状态实现，不因分类复制 Schema 或运行时系统。
 - 建档规则：单行表 `Profile.TbProfileConfig`（`StartHeroId`、`StartSoul`）。
 - 内嵌 bean 的数据表（`HeroGrowthConfig`、`MonsterConfig`、`LevelConfig`）用多级 `##var` 标题、没有 `##type` 行，记录 bean 定义在 `__beans__.xlsx`。
+- 被动配置按 `PassiveId` 建立 map；`PassiveConfig` 保存名称、效果类型和 `Levels` 列表，等级费用、数值与说明放在 `PassiveLevel`。只有同一稳定身份的等级记录才合并；独立技能、攻击、掉落条目仍保持各自主键记录。
 
 ## 启动校验
 

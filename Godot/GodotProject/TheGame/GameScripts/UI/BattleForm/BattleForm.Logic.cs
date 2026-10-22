@@ -8,7 +8,7 @@ using Godot;
 using GodotGameFramework;
 using GameLogic.Audio;
 using GameConfig.Sound;
-using GameLogic.Monsters;
+using GameLogic.Enemies;
 using GameConfig.Skills;
 using GameLogic.Skills;
 using GameLogic.Config;
@@ -23,7 +23,7 @@ namespace GameLogic.UI;
 public partial class BattleForm : IController
 {
     private BattleFormData m_FormData; // 本次打开的状态源引用，关闭后释放。
-    private AbstractMonsterEntity m_Opponent; // 本次观察的守关怪，实体所有权仍归关卡。
+    private AbstractEnemyEntity m_Opponent; // 本次观察的守关怪，实体所有权仍归关卡。
 
     /// <summary>由所属流程处理 SettingsRequested；参数为本次窗口编号。</summary>
     public event Action<int> SettingsRequested;
@@ -276,7 +276,7 @@ public partial class BattleForm : IController
 
     /// <summary>只在对手改变时重绑生命事件；控件本身只接收完整数值。</summary>
     /// <param name="opponent">关卡指定的怪物；空值解除显示。</param>
-    private void BindEncounter(AbstractMonsterEntity opponent)
+    private void BindEncounter(AbstractEnemyEntity opponent)
     {
         m_Opponent = opponent;
         RefreshEncounterHealth();

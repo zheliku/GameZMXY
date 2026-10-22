@@ -16,8 +16,10 @@ m_Marker = NodePath("Marker")
 m_Prompt = NodePath("Prompt")
 
 [node name="Marker" type="AnimatedSprite2D" parent="." unique_id=704925547]
+position = Vector2(-90.75, -110.7)
 sprite_frames = ExtResource("frames")
 animation = &"exit"
+centered = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=73147405]
 shape = SubResource("range")

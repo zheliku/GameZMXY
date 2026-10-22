@@ -49,15 +49,9 @@ public sealed class WukongFireDemonState : AbstractHeroSkillState
         base.Leave(fsm, body, isShutdown);
     }
 
-    /// <summary>前奏固定本体，偏移与镜像由效果场景表达。</summary>
+    /// <summary>前奏固定本体；原地视觉由悟空场景自身的动画节点播放。</summary>
     /// <param name="body">悟空身体。</param>
-    /// <param name="prelude">前奏场景。</param>
-    public void BeginPrelude(IHeroBody body, PackedScene prelude)
-    {
-        body.Velocity = Vector2.Zero;
-        var actor = (ISkillActor)body;
-        actor.SpawnSkillEffect(prelude, actor.SkillPosition);
-    }
+    public void BeginPrelude(IHeroBody body) => body.Velocity = Vector2.Zero;
 
     /// <summary>动画发起升空运动。</summary>
     /// <param name="body">悟空身体。</param>

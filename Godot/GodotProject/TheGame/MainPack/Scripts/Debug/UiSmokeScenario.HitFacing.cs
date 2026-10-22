@@ -14,7 +14,7 @@ using GameLogic;
 using GameLogic.Battle.Attacks;
 using GameLogic.Entity;
 using GameLogic.Heroes;
-using GameLogic.Monsters;
+using GameLogic.Enemies;
 using GameLogic.Profile;
 using Godot;
 using GodotGameFramework;
@@ -42,14 +42,14 @@ public sealed partial class UiSmokeScenario
         };
         foreach (int id in new[] { 1, 2, 3 })
         {
-            m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(tables.TbMonsterConfig.Get(id).EntityId,
-                new MonsterSpawn(new Vector2(600, 300), 100));
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(tables.TbMonsterConfig.Get(id).EntityId,
+                new EnemySpawn(new Vector2(600, 300), 100));
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             foreach (var (hit, expected) in stages)
             {
                 var definition = tables.TbAttackConfig.Get((int)hit);
-                var data = AttackData.Create((int)hit, default, 1, DamageKind.Real, definition.Knockback, 1, 0, SoundId.None);
+                var data = AttackData.Create((int)hit, default, 1, DamageKind.Real, definition.Knockback, 1, 0);
                 m_Monster.ReceiveHit(data, 0);
                 GameFramework.ReferencePool.Release(data);
                 Check(m_Monster.TakePendingHurt() == expected, $"{hit}/{id} 实际击退没有按造一24fps换算");
@@ -60,14 +60,14 @@ public sealed partial class UiSmokeScenario
             // 每条轨迹从新取池开始，避免上一招硬直、落地或追击意图影响下一条。
             foreach (var hit in new[] { SkillHitId.RisingDragon, SkillHitId.FlameThrust })
             {
-                m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(tables.TbMonsterConfig.Get(id).EntityId,
-                    new MonsterSpawn(new Vector2(600, 300), 100));
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(tables.TbMonsterConfig.Get(id).EntityId,
+                    new EnemySpawn(new Vector2(600, 300), 100));
                 SmokeInspection.FreezeAi(m_Monster);
                 m_Monster.SetPhysicsProcess(true);
                 await WaitUntilAsync(() => m_Monster.OnFloor, "击退采样目标没有落地");
                 Vector2 start = m_Monster.GlobalPosition;
                 var definition = tables.TbAttackConfig.Get((int)hit);
-                var data = AttackData.Create((int)hit, default, 1, DamageKind.Real, definition.Knockback, 1, 0, SoundId.None);
+                var data = AttackData.Create((int)hit, default, 1, DamageKind.Real, definition.Knockback, 1, 0);
                 m_Monster.ReceiveHit(data, 0);
                 GameFramework.ReferencePool.Release(data);
                 await WaitUntilAsync(() => !m_Monster.HasPendingHurt, "身体状态没有消费技能击退");
@@ -90,7 +90,7 @@ public sealed partial class UiSmokeScenario
                         Vy = m_Monster.Velocity.Y
                     });
                 }
-                var parameters = ((GameLogic.Monsters.Body.IMonsterBody)m_Monster).Params;
+                var parameters = ((GameLogic.Enemies.Body.IEnemyBody)m_Monster).Params;
                 Check(parameters.Gravity == 864 && Math.Abs(parameters.HurtTime - .5) < .001,
                     "怪物重力或受击时长仍为旧项目值");
                 if (hit == SkillHitId.RisingDragon)
@@ -120,8 +120,8 @@ public sealed partial class UiSmokeScenario
         m_ExtraHero = null;
         foreach (int id in new[] { 1, 2, 3 })
         {
-            m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(
-                ConfigSystem.Instance.Tables.TbMonsterConfig.Get(id).EntityId, new MonsterSpawn(new Vector2(200, 100)));
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(
+                ConfigSystem.Instance.Tables.TbMonsterConfig.Get(id).EntityId, new EnemySpawn(new Vector2(200, 100)));
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             CheckActor(m_Monster);
@@ -137,7 +137,7 @@ public sealed partial class UiSmokeScenario
                 {
                     actor.SetFacing(facing);
                     var data = AttackData.Create(0, default, 1, DamageKind.Real,
-                        new Vector2(2, -5), direction, 0, SoundId.None);
+                        new Vector2(2, -5), direction, 0);
                     var result = actor.ReceiveHit(data, 0);
                     GameFramework.ReferencePool.Release(data);
                     Check(!result.IsMiss && actor.Facing == facing && actor.HasPendingHurt,

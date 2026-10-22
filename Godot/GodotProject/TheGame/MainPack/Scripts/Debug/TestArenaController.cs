@@ -6,7 +6,7 @@ using GameLogic.Equipment;
 using GameLogic.Battle.Damage;
 using GameLogic.Drops;
 using GameLogic.Input;
-using GameLogic.Monsters.AI;
+using GameLogic.Enemies.AI;
 using GameLogic.Save;
 using GameLogic.Utility;
 using GameLogic;
@@ -21,7 +21,7 @@ using GameConfig.Entity;
 using GameFramework;
 using GameFramework.Entity;
 using GameLogic.Config;
-using GameLogic.Monsters;
+using GameLogic.Enemies;
 using GameLogic.Profile;
 using GameLogic.Skills;
 using GameLogic.FloatingText;
@@ -48,7 +48,7 @@ public partial class TestArenaController : Node2D
 
     [Export] private Node2D m_PlayerStart; // 玩家出生点（Marker2D）。
 
-    [Export] private Node2D m_Monsters; // 怪物占位容器：拖入怪物实体场景即可测试。
+    [Export] private Node2D m_Enemies; // 怪物占位容器：拖入怪物实体场景即可测试。
 
     [Export] private Camera2D m_Camera; // 跟随玩家的测试相机；限位由场景 Camera2D 设置。
     [Export] private FloatingTextPresenter m_FloatingText; // 与正式关卡共用的飘字组件。
@@ -171,7 +171,7 @@ public partial class TestArenaController : Node2D
                 m_TestFlow.RegisterSystem(new ConfigurationSystem(architecture));
                 m_TestFlow.RegisterSystem(new CombatSystem(architecture));
                 m_TestFlow.RegisterSystem(new InputSystem(architecture));
-                m_TestFlow.RegisterSystem(new MonsterAiSystem(architecture));
+                m_TestFlow.RegisterSystem(new EnemyAiSystem(architecture));
                 m_TestFlow.RegisterSystem(new LootSystem(architecture));
                 m_TestFlow.RegisterSystem(new ProfileSystem(architecture));
                 m_TestFlow.RegisterSystem(new EquipmentSystem(architecture));
@@ -183,7 +183,7 @@ public partial class TestArenaController : Node2D
             await SpawnHeroAsync(entities, cancellationToken);
             foreach ((EntityId id, Vector2 position) in monsters)
             {
-                await ShowOwnedEntityAsync(entities, id, new MonsterSpawn(position), cancellationToken);
+                await ShowOwnedEntityAsync(entities, id, new EnemySpawn(position), cancellationToken);
                 Log.Info("[TestArena] 显示怪物 {0} @ {1}", id, position);
             }
 
@@ -246,15 +246,15 @@ public partial class TestArenaController : Node2D
     private List<(EntityId Id, Vector2 Position)> TakeMonsterPlaceholders()
     {
         List<(EntityId Id, Vector2 Position)> monsters = new();
-        foreach (Node child in m_Monsters.GetChildren())
+        foreach (Node child in m_Enemies.GetChildren())
         {
-            if (child is not AbstractMonsterEntity placeholder)
+            if (child is not AbstractEnemyEntity placeholder)
             {
                 continue;
             }
 
-            monsters.Add((SmokeInspection.ReadField<EntityId>(placeholder, "m_MonsterEntityId"), placeholder.GlobalPosition));
-            m_Monsters.RemoveChild(placeholder);
+            monsters.Add((SmokeInspection.ReadField<EntityId>(placeholder, "m_EnemyEntityId"), placeholder.GlobalPosition));
+            m_Enemies.RemoveChild(placeholder);
             placeholder.QueueFree();
         }
 

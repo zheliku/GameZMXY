@@ -6,6 +6,7 @@ using GameLogic.Audio;
 using GameLogic;
 using GameLogic.Level;
 using GameLogic.Save;
+using GameLogic.Profile;
 using GameConfig.Sound;
 using Godot;
 using GodotGameFramework;
@@ -51,8 +52,14 @@ public partial class MapForm : IController
             m_Back.Pressed += OnBackClicked;
             m_Save.Pressed += OnSaveClicked;
             m_Huaguoshan.Pressed += OnHuaguoshanClicked;
+            m_Shuiliandong.Pressed += OnShuiliandongClicked;
+            m_Taohuayuan.Pressed += OnTaohuayuanClicked;
             m_Huaguoshan.MouseEntered += OnLocationMouseEntered;
             m_Huaguoshan.MouseExited += OnLocationMouseExited;
+            m_Shuiliandong.MouseEntered += OnShuiliandongMouseEntered;
+            m_Shuiliandong.MouseExited += OnLocationMouseExited;
+            m_Taohuayuan.MouseEntered += OnTaohuayuanMouseEntered;
+            m_Taohuayuan.MouseExited += OnLocationMouseExited;
         }
     }
 
@@ -65,6 +72,7 @@ public partial class MapForm : IController
         try
         {
             this.GetModel<SaveModel>().ManualSave.RegisterWithInitValue(RefreshManualSave);
+            this.GetModel<ProfileModel>().HighestClearedLevelId.RegisterWithInitValue(RefreshLevelProgress);
         }
         catch
         {
@@ -146,6 +154,7 @@ public partial class MapForm : IController
             return;
         m_IsBound = false;
         this.GetModel<SaveModel>().ManualSave.UnRegister(RefreshManualSave);
+        this.GetModel<ProfileModel>().HighestClearedLevelId.UnRegister(RefreshLevelProgress);
     }
 
     /// <summary>重新绑定显式传入的状态源。</summary>
@@ -203,44 +212,91 @@ public partial class MapForm : IController
     }
 
     /// <summary>提交花果山的配置主键。</summary>
-    private void OnHuaguoshanClicked()
+    private void OnHuaguoshanClicked() => SelectLevel(1);
+
+    /// <summary>提交水帘洞的配置主键。</summary>
+    private void OnShuiliandongClicked() => SelectLevel(2);
+
+    /// <summary>提交桃花源的配置主键。</summary>
+    private void OnTaohuayuanClicked() => SelectLevel(3);
+
+    /// <summary>由地图流程处理已有配置的关卡请求。</summary>
+    /// <param name="levelId">地图地点对应的关卡编号。</param>
+    private void SelectLevel(int levelId)
     {
-        if (!GF.UI.HasUIForm(SerialId))
+        if (!GF.UI.HasUIForm(SerialId) || !this.GetSystem<ProfileSystem>().CanEnterLevel(levelId))
             return;
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        LevelSelected?.Invoke(SerialId, 1);
+        LevelSelected?.Invoke(SerialId, levelId);
     }
 
     /// <summary>悬停时轻微放大，并循环闪烁原图中的黄色光晕。</summary>
-    private void OnLocationMouseEntered()
+    private void OnLocationMouseEntered() => PlayLocationHover(1, "location/hover");
+
+    /// <summary>播放水帘洞的原图轮廓悬停。</summary>
+    private void OnShuiliandongMouseEntered() => PlayLocationHover(2, "shuiliandong/hover");
+
+    /// <summary>播放桃花源的原图轮廓悬停。</summary>
+    private void OnTaohuayuanMouseEntered() => PlayLocationHover(3, "taohuayuan/hover");
+
+    /// <summary>只有当前地点放大，其他地点恢复原来的尺寸和命中轮廓。</summary>
+    /// <param name="animation">原生地点悬停动画。</param>
+    /// <param name="levelId">地点对应的关卡，锁定时忽略迟到信号。</param>
+    private void PlayLocationHover(int levelId, string animation)
     {
-        if (!GF.UI.HasUIForm(SerialId))
+        if (!GF.UI.HasUIForm(SerialId) || !this.GetSystem<ProfileSystem>().CanEnterLevel(levelId))
             return;
-        m_LocationAnimation.Play("location/hover");
+        ResetLocationHover();
+        m_LocationAnimation.Play(animation);
         m_LocationAnimation.Advance(0);
     }
 
     /// <summary>鼠标离开后继续显示最新开放关卡的边缘闪烁。</summary>
     private void OnLocationMouseExited()
     {
+        ResetLocationHover();
         if (GF.UI.HasUIForm(SerialId))
             PlayCurrentLocationHint();
         else
             ResetLocationHover();
     }
 
-    /// <summary>当前仅花果山开放，以普通尺寸持续提示最新进度；关闭后不保留动画。</summary>
+    /// <summary>只闪烁本档案最新开放且已实现的地点，历史关卡仍可悬停和重玩。</summary>
     private void PlayCurrentLocationHint()
     {
-        m_LocationAnimation.Play("location/current");
+        string animation = this.GetSystem<ProfileSystem>().LatestLevelId switch
+        {
+            1 => "location/current",
+            2 => "shuiliandong/current",
+            3 => "taohuayuan/current",
+            _ => throw new InvalidOperationException("最新开放关卡缺少地图动画。")
+        };
+        m_LocationAnimation.Play(animation);
         m_LocationAnimation.Advance(0);
+    }
+
+    /// <summary>进度改变或窗口重开时同步可交互地点，并清除旧提示。</summary>
+    /// <param name="highestClearedLevelId">本次通知的最远通关记录。</param>
+    private void RefreshLevelProgress(int highestClearedLevelId)
+    {
+        foreach (var (button, id) in new[] { (m_Huaguoshan, 1), (m_Shuiliandong, 2), (m_Taohuayuan, 3) })
+        {
+            button.Disabled = !this.GetSystem<ProfileSystem>().CanEnterLevel(id);
+            button.MouseDefaultCursorShape = button.Disabled ? CursorShape.Arrow : CursorShape.PointingHand;
+            button.TooltipText = button.Disabled ? "通关前一关后开放" : string.Empty;
+        }
+        ResetLocationHover();
+        PlayCurrentLocationHint();
     }
 
     /// <summary>清除悬停参数，窗口复用时从普通图像开始。</summary>
     private void ResetLocationHover()
     {
-        m_LocationAnimation.Play("location/RESET");
-        m_LocationAnimation.Advance(0);
+        foreach (string animation in new[] { "location/RESET", "shuiliandong/RESET", "taohuayuan/RESET" })
+        {
+            m_LocationAnimation.Play(animation);
+            m_LocationAnimation.Advance(0);
+        }
         m_LocationAnimation.Stop();
     }
 }

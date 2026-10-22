@@ -13,15 +13,14 @@ using Luban;
 namespace GameConfig.Hero
 {
 /// <summary>
-/// 英雄逐级属性（HeroId + Level 联合主键）
+/// 每名英雄一条记录，Levels 按等级保存完整成长属性
 /// </summary>
 public sealed partial class HeroGrowthConfig : Luban.BeanBase
 {
     public HeroGrowthConfig(ByteBuf _buf) 
     {
         HeroId = _buf.ReadInt();
-        Level = _buf.ReadInt();
-        BaseAttributes = global::GameConfig.Attributes.ActorBaseAttributes.DeserializeActorBaseAttributes(_buf);
+        {int n0 = _buf.ReadSize(); Levels = new System.Collections.Generic.List<Hero.HeroGrowthLevel>(n0);for(var i0 = 0 ; i0 < n0 ; i0++) { Hero.HeroGrowthLevel _e0;  _e0 = global::GameConfig.Hero.HeroGrowthLevel.DeserializeHeroGrowthLevel(_buf); Levels.Add(_e0);}}
     }
 
     public static HeroGrowthConfig DeserializeHeroGrowthConfig(ByteBuf _buf)
@@ -34,28 +33,23 @@ public sealed partial class HeroGrowthConfig : Luban.BeanBase
     /// </summary>
     public readonly int HeroId;
     /// <summary>
-    /// 等级(1 起连续，覆盖经验表全部等级)
+    /// 按等级从1连续排列，覆盖经验表全部等级
     /// </summary>
-    public readonly int Level;
-    /// <summary>
-    /// 该等级的成长属性
-    /// </summary>
-    public readonly Attributes.ActorBaseAttributes BaseAttributes;
+    public readonly System.Collections.Generic.List<Hero.HeroGrowthLevel> Levels;
    
     public const int __ID__ = 1906899063;
     public override int GetTypeId() => __ID__;
 
     public  void ResolveRef(Tables tables)
     {
-        BaseAttributes?.ResolveRef(tables);
+        foreach (var _e in Levels) { _e?.ResolveRef(tables); }
     }
 
     public override string ToString()
     {
         return "{ "
         + "HeroId:" + HeroId + ","
-        + "Level:" + Level + ","
-        + "BaseAttributes:" + BaseAttributes + ","
+        + "Levels:" + Luban.StringUtil.CollectionToString(Levels) + ","
         + "}";
     }
 }

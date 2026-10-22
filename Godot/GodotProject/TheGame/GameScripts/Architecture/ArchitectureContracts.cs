@@ -48,10 +48,10 @@ public interface ICanInit
     void Deinit();
 }
 
-/// <summary>允许读取 Model；模型和工具不具有此能力。</summary>
+/// <summary>允许取得 Model；Controller 只读和订阅，接口不限制所取对象自身的写入 API。</summary>
 public interface ICanGetModel : IBelongToArchitecture { }
 
-/// <summary>允许调用 System；模型和工具不具有此能力。</summary>
+/// <summary>允许取得 System；Controller 调用查询方法，玩家业务修改通过 Command 提交。</summary>
 public interface ICanGetSystem : IBelongToArchitecture { }
 
 /// <summary>允许使用第三方 Utility；工具自身不具有此能力。</summary>
@@ -92,5 +92,5 @@ public interface ISystem : IBelongToArchitecture, ICanSetArchitecture, ICanGetMo
 /// <summary>纯转换或平台适配器；不持有 Architecture、Model 或 System，可按显式调用参数临时读取数据。</summary>
 public interface IUtility { }
 
-/// <summary>表现入口的访问能力；Godot 节点与 GGF 窗口保留各自继承链。</summary>
+/// <summary>表现入口读取、订阅状态并提交业务请求；节点局部交互仍自行处理，保留 Godot/GGF 继承链。</summary>
 public interface IController : ICanGetModel, ICanGetSystem, ICanGetUtility, ICanSendCommand, ICanSendQuery { }

@@ -112,6 +112,7 @@ func _initialize() -> void:
         for frame in range(int(attack.count)):
             var base = '%s/%d_' % [manifest.effects_input[str(int(attack.sprite))], frame + 1]
             var image = Image.create_empty(400, 300, false, Image.FORMAT_RGBA8)
+            var native: Dictionary = manifest.get("native_effects", {}).get(str(int(attack.sprite)), {})
             var part_index = 0
             while FileAccess.file_exists(base + 'effect_%d.svg' % part_index):
                 var part = Image.new()
@@ -119,6 +120,10 @@ func _initialize() -> void:
                 if part.load_svg_from_string(FileAccess.get_file_as_string(base + 'effect_%d.svg' % part_index)) != OK or occluder.load_svg_from_string(FileAccess.get_file_as_string(base + 'effect_occluder_%d.svg' % part_index)) != OK:
                     quit(1)
                     return
+                if not native.is_empty():
+                    # FFDec 原生滤镜保留完整弧光，仍用原始父级矩阵和后景遮挡对齐。
+                    part = Image.load_from_file(native.input.path_join("%d.png" % (frame + 1)))
+                    assert(part.get_size() == Vector2i(400, 300))
                 for y in range(300):
                     for x in range(400):
                         var pixel = part.get_pixel(x, y)

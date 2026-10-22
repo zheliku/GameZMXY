@@ -13,7 +13,7 @@ internal sealed class BattleArchitecture : IArchitecture
     private readonly ConfigurationModel m_Configuration = new(new Tables(name =>
         new ByteBuf(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Data", name + ".bytes"))))); // 读取真实表产物。
     private readonly GameLogic.Input.InputSystem m_Input; // 所有测试宿主借用同一无状态规则入口。
-    private readonly GameLogic.Monsters.AI.MonsterAiSystem m_Ai; // 共享规则；每个测试怪物的数据独立。
+    private readonly GameLogic.Enemies.AI.EnemyAiSystem m_Ai; // 共享规则；每个测试怪物的数据独立。
 
     /// <summary>本测试程序集共享的只读配置来源。</summary>
     public static BattleArchitecture Instance { get; } = new();
@@ -33,7 +33,7 @@ internal sealed class BattleArchitecture : IArchitecture
     /// <inheritdoc />
     public TSystem GetSystem<TSystem>() where TSystem : class, ISystem =>
         typeof(TSystem) == typeof(GameLogic.Input.InputSystem) ? (TSystem)(object)m_Input
-        : typeof(TSystem) == typeof(GameLogic.Monsters.AI.MonsterAiSystem) ? (TSystem)(object)m_Ai
+        : typeof(TSystem) == typeof(GameLogic.Enemies.AI.EnemyAiSystem) ? (TSystem)(object)m_Ai
         : null;
     /// <inheritdoc />
     public TUtility GetUtility<TUtility>() where TUtility : class, IUtility => null;

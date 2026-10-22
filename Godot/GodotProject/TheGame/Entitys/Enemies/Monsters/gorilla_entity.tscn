@@ -1,0 +1,109 @@
+[gd_scene format=3 uid="uid://b4y52vyqesuj"]
+
+[ext_resource type="Script" uid="uid://h1dkqkclokk7" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/GorillaEntity.cs" id="1_script"]
+[ext_resource type="SpriteFrames" uid="uid://diu3220cfgtnn" path="res://TheGame/Sprites/Characters/Enemies/Monsters/gorilla/gorilla_animations.tres" id="2_frames"]
+[ext_resource type="AnimationLibrary" uid="uid://bim4bq3hsde4g" path="res://TheGame/Entitys/Animations/Enemies/Monsters/gorilla_anim_library.tres" id="3_lib"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="5_hurtbox"]
+[ext_resource type="PackedScene" uid="uid://caauui8brtx47" path="res://TheGame/UIs/Battle/monster_health_bar.tscn" id="6_health_bar"]
+[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/BattleForm/Components/ResourceBar.cs" id="6_ox13x"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_6fkcx"]
+radius = 54.998016
+height = 109.99786
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_a7kxf"]
+size = Vector2(109.99603, 109.99786)
+
+[sub_resource type="RectangleShape2D" id="hitbox_rest"]
+size = Vector2(144.75, 39)
+
+[sub_resource type="RectangleShape2D" id="detector_sight"]
+size = Vector2(600, 200)
+
+[sub_resource type="Gradient" id="Gradient_fill"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fill"]
+gradient = SubResource("Gradient_fill")
+width = 50
+height = 5
+
+[node name="GorillaEntity" type="CharacterBody2D" unique_id=802693107 node_paths=PackedStringArray("m_Detector", "m_HealthBar", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+collision_layer = 4
+collision_mask = 9
+floor_constant_speed = true
+floor_max_angle = 0.87266463
+floor_snap_length = 12.0
+script = ExtResource("1_script")
+m_Detector = NodePath("m_Detector")
+m_EnemyEntityId = 3
+m_HealthBar = NodePath("m_HealthBar")
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AttackAnimations = PackedStringArray("attack_1")
+m_DamageSoundId = 6
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
+
+[node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1821930133]
+sprite_frames = ExtResource("2_frames")
+animation = &"idle"
+offset = Vector2(-8.5, 0)
+
+[node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1617060818]
+position = Vector2(0.5, -0.05)
+shape = SubResource("CapsuleShape2D_6fkcx")
+debug_color = Color(0, 1, 0, 0.41960785)
+
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=1243224820 node_paths=PackedStringArray("m_Owner")]
+position = Vector2(4, 6)
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("5_hurtbox")
+m_Owner = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1986919316]
+position = Vector2(-3.5, -6.05)
+shape = SubResource("RectangleShape2D_a7kxf")
+debug_color = Color(1, 0, 0, 0.41960785)
+
+[node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=13340964]
+
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=253164820]
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1115183691]
+position = Vector2(-63.375, -4)
+shape = SubResource("hitbox_rest")
+disabled = true
+
+[node name="m_Detector" type="Area2D" parent="." unique_id=73551405]
+collision_layer = 4096
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=1927869245]
+position = Vector2(0, -21)
+shape = SubResource("detector_sight")
+debug_color = Color(1, 1, 0, 0.1)
+
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=920080462]
+libraries/ = ExtResource("3_lib")
+
+[node name="m_HealthBar" type="TextureProgressBar" parent="." unique_id=827430786 instance=ExtResource("6_health_bar")]
+z_index = 10
+offset_left = -24.0
+offset_top = -71.0
+offset_right = 26.0
+offset_bottom = -66.0
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+value = 1.0
+texture_progress = SubResource("GradientTexture2D_fill")
+tint_progress = Color(1, 0, 0, 1)
+script = ExtResource("6_ox13x")

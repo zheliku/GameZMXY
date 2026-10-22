@@ -15,6 +15,7 @@ using GameConfig.Hero;
 using GameFramework.Entity;
 using GameFramework.Fsm;
 using GameLogic.Body;
+using GameLogic.Effects;
 using GameLogic.Heroes.Effects;
 using GameLogic.Equipment;
 using GameLogic.Profile;
@@ -234,17 +235,13 @@ namespace GameLogic.Heroes
         public void RefreshAppearance()
         {
             var equipment = this.GetModel<ProfileModel>();
-            ApplyAppearance(equipment.Weapon != null, equipment.Armor != null);
+            m_Appearance.ApplyToSprites((Sprite2D)Body, m_Weapon,
+                equipment.Weapon?.EquipmentId ?? GameConfig.Equipment.EquipmentId.None,
+                equipment.Armor?.EquipmentId ?? GameConfig.Equipment.EquipmentId.None);
         }
 
         /// <inheritdoc />
         protected override CombatantAttributes CaptureCombatAttributes() => Attributes.CaptureCombatAttributes(Id);
-
-        /// <summary>按装配独立选择身体与武器外观。</summary>
-        /// <param name="hasWeapon">是否穿戴武器。</param>
-        /// <param name="hasArmor">是否穿戴防具。</param>
-        private void ApplyAppearance(bool hasWeapon, bool hasArmor) =>
-            m_Appearance.ApplyToSprites((Sprite2D)Body, m_Weapon, hasWeapon, hasArmor);
 
         // ---- 内部方法与扩展点 ----
 

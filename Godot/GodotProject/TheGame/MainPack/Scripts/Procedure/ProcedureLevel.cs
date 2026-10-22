@@ -7,11 +7,13 @@ using GameLogic.Save;
 using GameLogic.Battle.Attributes;
 using GameLogic.Procedure.FlowData;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GameConfig;
 using GameConfig.Constant;
 using GameConfig.Level;
+using GameConfig.Sound;
 using GameFramework.Event;
 using GameFramework.Procedure;
 using Godot;
@@ -59,12 +61,13 @@ public class ProcedureLevel : ProcedureBase
     private string m_LevelScenePath; // 从 Luban LevelConfig 读取的场景路径。
 
     private int m_BattleFormSerialId; // 本会话打开的战斗 HUD 编号；0 表示未打开。
+    private TaskCompletionSource m_BattleFormReady; // 本周期 HUD 完成装配后才开放关卡。
 
     private int m_MusicSerial; // 本关 GGF 音乐请求，清理时连在途加载一起取消。
     private int m_SettingsSerialId; // 本周期的设置窗口，含正在加载的请求。
 
     /// <summary>
-    /// 进入流程：读取档案作用域 → 加载关卡场景 → 显示英雄 → 关闭加载界面 → 开始关卡系统 → 打开 HUD。
+    /// 进入流程：并行准备场景和 HUD 资源 → 显示英雄并装配 HUD → 关闭加载界面 → 开始关卡。
     /// </summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal override async void OnEnter(ProcedureOwner procedureOwner)
@@ -104,7 +107,21 @@ public class ProcedureLevel : ProcedureBase
             Log.Info("[ProcedureLevel] 加载关卡场景：{0}", m_LevelScenePath);
 
             // 场景加载本身不取消：若流程在加载中离开，继续等待成功事件后由 entrySerial 分支卸载，避免 additive 场景泄漏。
-            Node2D levelNode = await LoadLevelSceneAsync(scenePath, CancellationToken.None);
+            string battleFormPath = tables.TbUIFormConfig.DataList.Single(form => form.UIFormId == UIFormId.BattleForm).AssetPath;
+            var battleFormAsset = GF.Resource.LoadAssetAsync(battleFormPath);
+            Task<Node2D> levelScene = LoadLevelSceneAsync(scenePath, CancellationToken.None);
+            try
+            {
+                await Task.WhenAll(levelScene, battleFormAsset);
+            }
+            catch
+            {
+                // 任一并行加载失败，仍回收已经成功挂树且未交给新周期的场景。
+                if (levelScene.IsCompletedSuccessfully && m_LevelOwnerEntry == 0 && GF.Scene.IsSceneLoaded(scenePath))
+                    GF.Scene.UnloadScene(scenePath);
+                throw;
+            }
+            Node2D levelNode = levelScene.Result;
             if (entrySerial != m_EntrySerial)
             {
                 if (m_LevelOwnerEntry == 0 && GF.Scene.IsSceneLoaded(scenePath))
@@ -147,7 +164,21 @@ public class ProcedureLevel : ProcedureBase
 
             m_Hero.GlobalPosition = m_LevelViewController.PlayerSpawnPosition;
 
-            // 先关闭加载界面，再开放相机与阶段事件，首波等待相机抵达首阶段右界。
+            // HUD 依赖与场景并行加载；先装配并绑定窗口，避免开战后再等首帧 UI 加载。
+            var battleFormReady = new TaskCompletionSource();
+            m_BattleFormReady = battleFormReady;
+            GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
+            GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnBattleFormOpenFailed);
+            m_BattleFormSerialId = GF.UI.OpenUIForm(UIFormId.BattleForm, new BattleFormData(m_Hero, m_LevelViewController));
+            var battleForm = GF.UI.GetUIForm(m_BattleFormSerialId);
+            SetFormCallbacks(battleForm, bind: true);
+            if (battleForm != null)
+                battleFormReady.TrySetResult();
+            await battleFormReady.Task.WaitAsync(cancellationToken);
+            // 保持预载资源存活到 GGF 窗口取得自己的资源引用，不另建常驻缓存。
+            GC.KeepAlive(battleFormAsset.Result);
+
+            // 首波与相机在 HUD 就绪后再开放；加载页覆盖期间不推进关卡。
             if (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) is LoadingForm loading)
             {
                 await loading.CloseLoadingAsync(cancellationToken);
@@ -161,12 +192,7 @@ public class ProcedureLevel : ProcedureBase
             m_LevelModel.Outcome.Register(OnLevelEnded);
             m_LevelViewController.StartSession(entities, m_Hero, cancellationToken);
 
-            // 先订阅结果再提交请求，缓存命中也能处理；失败参数只在事件分发期间使用。
-            GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
-            GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnBattleFormOpenFailed);
-            m_BattleFormSerialId = GF.UI.OpenUIForm(UIFormId.BattleForm, new BattleFormData(m_Hero, m_LevelViewController));
-            SetFormCallbacks(GF.UI.GetUIForm(m_BattleFormSerialId), bind: true);
-            Log.Info("[ProcedureLevel] 已提交战斗 HUD 请求：{0}", m_BattleFormSerialId);
+            Log.Info("[ProcedureLevel] 战斗 HUD 已就绪，开始关卡：{0}", m_BattleFormSerialId);
         }
         catch (Exception ex)
         {
@@ -205,6 +231,7 @@ public class ProcedureLevel : ProcedureBase
         m_SessionCancellation?.Cancel();
         m_SessionCancellation?.Dispose();
         m_SessionCancellation = null;
+        m_BattleFormReady = null;
 
         if (!isShutdown)
         {
@@ -234,6 +261,11 @@ public class ProcedureLevel : ProcedureBase
         if (!m_PendingSettlement)
             return;
         m_PendingSettlement = false;
+        // 结算属于本关流程：停止旧音乐（包括在途请求），成功和失败曲仍由同一个 GGF 请求拥有者清理。
+        if (m_MusicSerial != 0)
+            GF.Sound.StopSound(m_MusicSerial);
+        m_MusicSerial = GF.Sound.PlayConfigured(m_LevelModel.Outcome.Value == LevelOutcome.Cleared
+            ? SoundId.SettlementVictory : SoundId.SettlementDefeat, 0.1f);
         m_SettlementSerialId = GF.UI.OpenUIForm(UIFormId.SettlementForm, new SettlementFormData(m_LevelModel.Result));
         SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: true);
     }
@@ -386,6 +418,7 @@ public class ProcedureLevel : ProcedureBase
         m_SessionCancellation?.Cancel();
         m_SessionCancellation?.Dispose();
         m_SessionCancellation = null;
+        m_BattleFormReady = null;
         if (GF.Event.Check(OpenUIFormSuccessEventArgs.EventId, OnFormOpened))
             GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         // 模态窗口先解除暂停和运行订阅，再清理 HUD、实体及关卡事务。
@@ -548,7 +581,11 @@ public class ProcedureLevel : ProcedureBase
     private void OnFormOpened(object sender, GameEventArgs args)
     {
         if (args is OpenUIFormSuccessEventArgs opened)
+        {
             SetFormCallbacks(opened.UIForm, bind: true);
+            if (opened.UIForm.SerialId == m_BattleFormSerialId)
+                m_BattleFormReady?.TrySetResult();
+        }
     }
 
     /// <summary>按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。</summary>

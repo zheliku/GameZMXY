@@ -1,14 +1,13 @@
 using System;
 using System.Linq;
 using GameConfig.Skills;
-using GameConfig.Sound;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Battle.Attacks;
 using GameLogic.Config;
 using GameLogic.Heroes.Body;
-using GameLogic.Heroes.Effects;
-using GameLogic.Monsters;
+using GameLogic.Effects;
+using GameLogic.Enemies;
 using GameLogic.Skills;
 using Godot;
 using GodotGameFramework;
@@ -87,8 +86,7 @@ public abstract partial class AbstractHeroEntity : ISkillActor
         var definition = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
         SetAttack(AttackData.Create((int)hit, CaptureCombatAttributes(),
             (int)(power * this.GetSystem<HeroSystem>().AttackPowerMultiplier),
-            definition.DamageKind, definition.Knockback, Facing, definition.HitProtect,
-            SoundId.None, knockbackOriginX));
+            definition.DamageKind, definition.Knockback, Facing, definition.HitProtect, knockbackOriginX));
     }
 
     /// <summary>从框架当前怪物组查找首个可见目标，不穿透场景树。</summary>
@@ -100,7 +98,7 @@ public abstract partial class AbstractHeroEntity : ISkillActor
         Transform2D canvas = GetViewport().GetCanvasTransform();
         float width = GetViewportRect().Size.X;
         foreach (var group in GF.Entity.GetAllEntityGroups())
-            foreach (var monster in group.GetAllEntities().OfType<AbstractMonsterEntity>())
+            foreach (var monster in group.GetAllEntities().OfType<AbstractEnemyEntity>())
             {
                 if (!monster.IsAlive || GlobalPosition.DistanceTo(monster.GlobalPosition) > range)
                     continue;

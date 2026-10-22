@@ -2,8 +2,8 @@ using GodotGameFramework;
 using System.Linq;
 using GameLogic.Architecture;
 using GameLogic.Level;
-using GameLogic.Monsters.Body;
-using GameLogic.Monsters.AI;
+using GameLogic.Enemies.Body;
+using GameLogic.Enemies.AI;
 using GameLogic.Heroes.Body;
 using System;
 using GameLogic.Battle;
@@ -13,7 +13,7 @@ using GameFramework.Procedure;
 using GameLogic.Procedure.FlowData;
 using GameLogic.Entity;
 using GameLogic.Heroes;
-using GameLogic.Monsters;
+using GameLogic.Enemies;
 using GameLogic;
 
 /// <summary>开发测试侧读取内部事实与设置沙包，不要求玩法代码提供测试接口。</summary>
@@ -63,14 +63,14 @@ internal static class SmokeInspection
     /// <summary>测试侧直接调用怪物的实际扣血入口，避免血条断言受到随机闪避影响。</summary>
     /// <param name="monster">受测怪物。</param>
     /// <param name="amount">伤害量。</param>
-    public static void DamageMonster(AbstractMonsterEntity monster, int amount) =>
-        typeof(AbstractMonsterEntity).GetMethod("ApplyDamage", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(monster, [amount]);
+    public static void DamageMonster(AbstractEnemyEntity monster, int amount) =>
+        typeof(AbstractEnemyEntity).GetMethod("ApplyDamage", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(monster, [amount]);
 
     /// <summary>只在隐藏状态测试中准备生命，正式代码不增加测试写入接口。</summary>
     /// <param name="monster">隐藏的池实例。</param>
     /// <param name="hp">准备值。</param>
-    public static void SetMonsterHp(AbstractMonsterEntity monster, int hp) =>
-        typeof(AbstractMonsterEntity).GetField("m_Hp", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(monster, hp);
+    public static void SetMonsterHp(AbstractEnemyEntity monster, int hp) =>
+        typeof(AbstractEnemyEntity).GetField("m_Hp", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(monster, hp);
 
     /// <summary>读取英雄或怪物状态机的真实当前状态，并格式化日志名称。</summary>
     /// <param name="actor">受测英雄或怪物。</param>
@@ -79,21 +79,21 @@ internal static class SmokeInspection
     {
         object state = actor is AbstractHeroEntity
             ? ReadField<IFsm<IHeroBody>>(actor, "m_BodyFsm")?.CurrentState
-            : ReadField<IFsm<IMonsterBody>>(actor, "m_BodyFsm")?.CurrentState;
+            : ReadField<IFsm<IEnemyBody>>(actor, "m_BodyFsm")?.CurrentState;
         return StateName(state);
     }
 
     /// <summary>读取怪物 AI 状态机的真实当前状态。</summary>
     /// <param name="monster">受测怪物。</param>
     /// <returns>AI 状态名；状态机未运行时为空。</returns>
-    public static string AiStateName(AbstractMonsterEntity monster) =>
-        StateName(ReadField<IFsm<IMonsterAiAgent>>(monster, "m_AiFsm")?.CurrentState);
+    public static string AiStateName(AbstractEnemyEntity monster) =>
+        StateName(ReadField<IFsm<IEnemyAiAgent>>(monster, "m_AiFsm")?.CurrentState);
 
     /// <summary>读取怪物是否处于收招状态。</summary>
     /// <param name="monster">受测怪物。</param>
     /// <returns>身体状态机是否正在收招。</returns>
-    public static bool InRecovery(AbstractMonsterEntity monster) =>
-        ReadField<IFsm<IMonsterBody>>(monster, "m_BodyFsm")?.CurrentState is MonsterRecoveryState;
+    public static bool InRecovery(AbstractEnemyEntity monster) =>
+        ReadField<IFsm<IEnemyBody>>(monster, "m_BodyFsm")?.CurrentState is EnemyRecoveryState;
 
     /// <summary>读取关卡阶段所有者，未找到关卡时返回空。</summary>
     /// <param name="level">受测关卡。</param>
@@ -131,7 +131,7 @@ internal static class SmokeInspection
     /// <summary>仅在测试中停止怪物 AI 并清除待消费意图，身体动作仍按正式逻辑执行。</summary>
     /// <param name="monster">作为沙包的怪物；允许为空。</param>
     /// <exception cref="MissingMethodException">正式 AI 清理方法已更名或删除。</exception>
-    public static void FreezeAi(AbstractMonsterEntity monster)
+    public static void FreezeAi(AbstractEnemyEntity monster)
     {
         if (monster == null)
         {
@@ -139,10 +139,10 @@ internal static class SmokeInspection
         }
 
         // 复用正式隐藏时的 AI 清理，不在实体中保留测试开关与额外状态。
-        MethodInfo destroy = typeof(AbstractMonsterEntity).GetMethod("DestroyAiStateMachine", BindingFlags.Instance | BindingFlags.NonPublic)
-            ?? throw new MissingMethodException(typeof(AbstractMonsterEntity).FullName, "DestroyAiStateMachine");
+        MethodInfo destroy = typeof(AbstractEnemyEntity).GetMethod("DestroyAiStateMachine", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(typeof(AbstractEnemyEntity).FullName, "DestroyAiStateMachine");
         destroy.Invoke(monster, [false]);
-        IMonsterBody body = monster;
+        IEnemyBody body = monster;
         body.MoveIntent = 0;
         body.TakeAttackRequest();
     }
@@ -157,9 +157,9 @@ internal static class SmokeInspection
         {
             name = name["Hero".Length..];
         }
-        else if (name.StartsWith("Monster", StringComparison.Ordinal))
+        else if (name.StartsWith("Enemy", StringComparison.Ordinal))
         {
-            name = name["Monster".Length..];
+            name = name["Enemy".Length..];
         }
 
         return name.EndsWith("State", StringComparison.Ordinal) ? name[..^"State".Length] : name;

@@ -82,11 +82,13 @@ def main():
 
     if args.compare_staged_geometry:
         # Opt-in only: intentional terrain work should not fail normal reference checks.
-        scene = "Godot/GodotProject/TheGame/Scenes/level_1.tscn"
+        scene = "Godot/GodotProject/TheGame/Scenes/Levels/zm1_01_huaguoshan/level_1.tscn"
         tracked = subprocess.check_output(["git", "ls-files", "--", str(Path(scene).parent)],
                                           cwd=ROOT, text=True, encoding="utf-8").splitlines()
-        # The user owns the index; a Windows case-only rename may still use its old casing there.
-        staged_scene = next((path for path in tracked if path.casefold() == scene.casefold()), scene)
+        # The user owns the index; before staging the directory move its scene stays at the old flat path.
+        staged_scene = next((path for path in tracked if path.casefold() == scene.casefold()), None)
+        if staged_scene is None:
+            staged_scene = "Godot/GodotProject/TheGame/Scenes/level_1.tscn"
         staged = subprocess.check_output(["git", "show", ":" + staged_scene], cwd=ROOT, text=True, encoding="utf-8")
         current = (ROOT / scene).read_text(encoding="utf-8")
         pattern = r'(?ms)^\[node[^\n]*parent="World/Geometry[^\n]*\n.*?(?=^\[|\Z)'

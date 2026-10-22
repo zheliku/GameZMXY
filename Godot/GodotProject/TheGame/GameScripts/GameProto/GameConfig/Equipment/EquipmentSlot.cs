@@ -21,6 +21,10 @@ namespace GameConfig.Equipment
         /// 防具
         /// </summary>
         Armor = 1,
+        /// <summary>
+        /// 饰品
+        /// </summary>
+        Accessory = 2,
     }
 
 } 

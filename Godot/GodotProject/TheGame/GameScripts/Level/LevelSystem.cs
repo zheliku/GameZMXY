@@ -33,6 +33,8 @@ public sealed class LevelSystem : AbstractSystem
     public void Prepare(int levelId)
     {
         var config = this.GetModel<ConfigurationModel>().Tables.TbLevelConfig.Get(levelId);
+        if (!this.GetSystem<ProfileSystem>().CanEnterLevel(levelId))
+            throw new InvalidOperationException($"关卡尚未开放：{levelId}");
         LevelModel.LevelId = config.LevelId;
         LevelModel.Sequence = new LevelStageSequence(config.Stages);
     }
@@ -51,7 +53,7 @@ public sealed class LevelSystem : AbstractSystem
         LevelModel.EntrySnapshot = this.GetUtility<SaveDataUtility>().Capture(profile, this.GetModel<SkillModel>());
         CheckpointWrite = null;
         LevelModel.ElapsedSeconds = 0;
-        LevelModel.DefeatedMonsterCount = LevelModel.AwardedExperience = 0;
+        LevelModel.DefeatedEnemyCount = LevelModel.AwardedExperience = 0;
         LevelModel.Result = null;
         LevelModel.SessionActive = true;
         LevelModel.TravelAvailable.Value = false;
@@ -67,7 +69,7 @@ public sealed class LevelSystem : AbstractSystem
         if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running)
             return false;
         int experience = Math.Max(0, experienceReward);
-        LevelModel.DefeatedMonsterCount++;
+        LevelModel.DefeatedEnemyCount++;
         LevelModel.AwardedExperience += experience;
         return experience > 0 && this.GetSystem<ProfileSystem>().AddExperience(experience) > 0;
     }
@@ -163,11 +165,14 @@ public sealed class LevelSystem : AbstractSystem
         if (outcome != LevelOutcome.Cleared && outcome != LevelOutcome.Defeated)
             throw new ArgumentOutOfRangeException(nameof(outcome));
         if (outcome == LevelOutcome.Cleared)
+        {
             LevelModel.Sequence.Complete();
+            this.GetSystem<ProfileSystem>().RecordLevelClear(LevelModel.LevelId);
+        }
         CheckpointWrite = this.GetSystem<SaveSystem>().SaveCheckpointAsync(this.GetModel<ProfileModel>());
         // 先冻结结果并释放回滚副本，再让结局订阅者读取完整状态。
         LevelModel.Result = new LevelResult(outcome, LevelModel.ElapsedSeconds, healthPercent,
-            LevelModel.DefeatedMonsterCount, LevelModel.AwardedExperience);
+            LevelModel.DefeatedEnemyCount, LevelModel.AwardedExperience);
         LevelModel.EntrySnapshot = null;
         LevelModel.TravelAvailable.Value = false;
         LevelModel.Outcome.Value = outcome;

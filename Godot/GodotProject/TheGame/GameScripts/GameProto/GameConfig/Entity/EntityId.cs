@@ -33,6 +33,14 @@ namespace GameConfig.Entity
         /// 无
         /// </summary>
         None = -1,
+        /// <summary>
+        /// 猕猴王
+        /// </summary>
+        MacaqueKing = 4,
+        /// <summary>
+        /// 禺狨王
+        /// </summary>
+        TamarinKing = 6,
     }
 
 } 

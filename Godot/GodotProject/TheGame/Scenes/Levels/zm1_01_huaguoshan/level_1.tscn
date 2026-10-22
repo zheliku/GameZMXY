@@ -1,0 +1,505 @@
+[gd_scene format=3 uid="uid://c3hjf7dekvbrg"]
+
+[ext_resource type="Script" uid="uid://d2x72rm6l5oeq" path="res://TheGame/GameScripts/Level/LevelViewController.cs" id="1_controller"]
+[ext_resource type="Script" uid="uid://dkuuiel88m4ep" path="res://TheGame/GameScripts/Level/Camera/LevelCameraNode.cs" id="2_camera"]
+[ext_resource type="Texture2D" uid="uid://cpk7ttkaom0hn" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_bg_end.png" id="3_bg_end"]
+[ext_resource type="Texture2D" uid="uid://dsa76w2xxiq0b" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_front.png" id="4_front"]
+[ext_resource type="Texture2D" uid="uid://dw2plrsd3g8u5" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/huaguoshan_ground.png" id="5_ngj7n"]
+[ext_resource type="Script" uid="uid://dd28ay4bkp1fl" path="res://TheGame/GameScripts/Level/Markers/LevelMarkerResource.cs" id="6_marker_entry"]
+[ext_resource type="Script" uid="uid://bkq4g0l6t4k15" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnPointsNode.cs" id="9_spawn_manager"]
+[ext_resource type="Script" uid="uid://b7abdk6hcrmws" path="res://TheGame/GameScripts/Level/Stages/LevelTriggersNode.cs" id="10_trigger_manager"]
+[ext_resource type="Script" uid="uid://b6ai16cs6v6de" path="res://TheGame/GameScripts/Level/Stages/LevelGatesNode.cs" id="11_gate_manager"]
+[ext_resource type="Script" uid="uid://dc4putintok3g" path="res://TheGame/GameScripts/Level/Exit/LevelExitNode.cs" id="11_j4hmm"]
+[ext_resource type="Texture2D" uid="uid://djhqx8rvkfutu" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/huaguoshan_platform.png" id="12_jbsfk"]
+[ext_resource type="Script" uid="uid://ccjmic0fgxfrv" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnerNode.cs" id="12_monster_manager"]
+[ext_resource type="PackedScene" uid="uid://qk7b0ixfs2in" path="res://TheGame/Scenes/Widgets/level_exit.tscn" id="exit_scene"]
+[ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/FloatingText/FloatingTextPresenter.cs" id="floating_text"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6mcui"]
+size = Vector2(4895.351, 19.999634)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_778lq"]
+size = Vector2(60.02564, 999.99927)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_selaq"]
+size = Vector2(115.34961, 999.99927)
+
+[sub_resource type="Resource" id="Entry_spawn_player_start"]
+script = ExtResource("6_marker_entry")
+m_Id = "player_start"
+m_Node = NodePath("PlayerStart")
+m_DrawColor = Color(0.2, 0.85, 1, 0.9)
+
+[sub_resource type="Resource" id="Entry_spawn_stage_1_a"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_1_a"
+m_Node = NodePath("Stage1A")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_2_a"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_2_a"
+m_Node = NodePath("Stage2A")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_2_b"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_2_b"
+m_Node = NodePath("Stage2B")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_2_c"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_2_c"
+m_Node = NodePath("Stage2C")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_3_a"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_a"
+m_Node = NodePath("Stage3A")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_3_b"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_b"
+m_Node = NodePath("Stage3B")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_3_c"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_c"
+m_Node = NodePath("Stage3C")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_3_d"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_d"
+m_Node = NodePath("Stage3D")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_4_a"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_4_a"
+m_Node = NodePath("Stage4A")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_4_b"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_4_b"
+m_Node = NodePath("Stage4B")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_4_c"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_4_c"
+m_Node = NodePath("Stage4C")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_5_a"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_5_a"
+m_Node = NodePath("Stage5A")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_5_b"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_5_b"
+m_Node = NodePath("Stage5B")
+
+[sub_resource type="Resource" id="Entry_spawn_stage_5_c"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_5_c"
+m_Node = NodePath("Stage5C")
+
+[sub_resource type="Resource" id="Entry_gate_stage_1_gate"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_1_gate"
+m_Node = NodePath("Stage1Gate")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_stage_2_left"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_2_left"
+m_Node = NodePath("Stage2Left")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_stage_2_gate"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_2_gate"
+m_Node = NodePath("Stage2Gate")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_stage_3_left"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_left"
+m_Node = NodePath("Stage3Left")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_stage_3_gate"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_3_gate"
+m_Node = NodePath("Stage3Gate")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_stage_4_left"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_4_left"
+m_Node = NodePath("Stage4Left")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_stage_4_gate"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_4_gate"
+m_Node = NodePath("Stage4Gate")
+m_DrawColor = Color(0.6, 1, 0.2, 0.9)
+
+[sub_resource type="Resource" id="Entry_gate_stage_5_left"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_5_left"
+m_Node = NodePath("Stage5Left")
+
+[sub_resource type="Resource" id="Entry_gate_stage_5_gate"]
+script = ExtResource("6_marker_entry")
+m_Id = "stage_5_gate"
+m_Node = NodePath("Stage5Gate")
+
+[sub_resource type="RectangleShape2D" id="GateShape"]
+size = Vector2(20, 700)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8lfnx"]
+size = Vector2(242.03015, 19.999603)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_r5twg"]
+size = Vector2(242.03027, 19.999573)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_38aqt"]
+size = Vector2(242.03003, 19.999603)
+
+[sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
+size = Vector2(8, 4000)
+
+[node name="Level_1" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText")]
+script = ExtResource("1_controller")
+m_MusicId = 102
+m_SpawnPoints = NodePath("World/SpawnPoints")
+m_Triggers = NodePath("World/StageTriggers")
+m_Gates = NodePath("World/StageGates")
+m_Spawner = NodePath("Spawner")
+m_Camera = NodePath("Camera2D")
+m_Exit = NodePath("World/Exit")
+m_FloatingText = NodePath("World/FloatingText")
+m_FeaturedOpponentSpawnPointIds = PackedStringArray("stage_5_a")
+
+[node name="World" type="Node2D" parent="." unique_id=219105317]
+
+[node name="FloatingText" type="Node2D" parent="World" unique_id=660000079]
+script = ExtResource("floating_text")
+
+[node name="Background" type="Node2D" parent="World" unique_id=415239467]
+z_index = -20
+
+[node name="Sky" type="Parallax2D" parent="World/Background" unique_id=1864955233]
+scroll_scale = Vector2(0.13, 1)
+
+[node name="End" type="Sprite2D" parent="World/Background/Sky" unique_id=1691568439]
+texture = ExtResource("3_bg_end")
+centered = false
+
+[node name="Front" type="Sprite2D" parent="World/Background" unique_id=902719802]
+position = Vector2(-30, 70)
+texture = ExtResource("4_front")
+centered = false
+
+[node name="Geometry" type="Node2D" parent="World" unique_id=930087367]
+
+[node name="Ground" type="Node2D" parent="World/Geometry" unique_id=231405270]
+
+[node name="Surface03" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=1972869856]
+position = Vector2(-17.67506, 518.5502)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Ground/Surface03" unique_id=1940230761]
+position = Vector2(2447.6755, 9.999817)
+shape = SubResource("RectangleShape2D_6mcui")
+
+[node name="Artwork71" type="Sprite2D" parent="World/Geometry/Ground" unique_id=2097763155]
+z_index = -12
+position = Vector2(-8.35, 431.65)
+texture = ExtResource("5_ngj7n")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 4708.35, 170)
+
+[node name="Slopes" type="Node2D" parent="World/Geometry" unique_id=910163684]
+
+[node name="Hill06" type="StaticBody2D" parent="World/Geometry/Slopes" unique_id=486468569]
+position = Vector2(992.8929, 518.6938)
+collision_mask = 0
+
+[node name="Surface" type="CollisionPolygon2D" parent="World/Geometry/Slopes/Hill06" unique_id=1085352825]
+polygon = PackedVector2Array(0, 0, 74.25433, -74.25424, 281.61298, -74.40057, 355.86725, -0.14630127, 341.726, 13.994934, 14.141907, 14.141907)
+
+[node name="Hill11" type="StaticBody2D" parent="World/Geometry/Slopes" unique_id=125984050]
+position = Vector2(4421.143, 521.7938)
+collision_mask = 0
+
+[node name="Surface" type="CollisionPolygon2D" parent="World/Geometry/Slopes/Hill11" unique_id=1157639636]
+polygon = PackedVector2Array(0, 0, 74.25391, -74.25427, 280.6128, -74.400635, 354.8672, -0.1463623, 340.7256, 13.994873, 14.141602, 14.141846)
+
+[node name="Hill12" type="StaticBody2D" parent="World/Geometry/Slopes" unique_id=843477387]
+position = Vector2(1476.4429, 518.9438)
+collision_mask = 0
+
+[node name="Surface" type="CollisionPolygon2D" parent="World/Geometry/Slopes/Hill12" unique_id=137983234]
+polygon = PackedVector2Array(0, 0, 74.25427, -74.25424, 281.61304, -74.40057, 355.8673, -0.14630127, 341.72607, 13.994934, 14.141846, 14.141907)
+
+[node name="Walls" type="Node2D" parent="World/Geometry" unique_id=1820375897]
+
+[node name="Surface04" type="StaticBody2D" parent="World/Geometry/Walls" unique_id=340645660]
+position = Vector2(5.88718, -468.29965)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Walls/Surface04" unique_id=1833036065]
+position = Vector2(30.012817, 499.99963)
+shape = SubResource("RectangleShape2D_778lq")
+
+[node name="Surface05" type="StaticBody2D" parent="World/Geometry/Walls" unique_id=1026067637]
+position = Vector2(4700, -411.49966)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Walls/Surface05" unique_id=1005097998]
+position = Vector2(57.674805, 499.99963)
+shape = SubResource("RectangleShape2D_selaq")
+
+[node name="Water" type="Node2D" parent="World/Geometry" unique_id=2093645546]
+z_index = -16
+
+[node name="SpawnPoints" type="Node2D" parent="World" unique_id=773829097]
+z_index = 200
+script = ExtResource("9_spawn_manager")
+m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_spawn_player_start"), SubResource("Entry_spawn_stage_1_a"), SubResource("Entry_spawn_stage_2_a"), SubResource("Entry_spawn_stage_2_b"), SubResource("Entry_spawn_stage_2_c"), SubResource("Entry_spawn_stage_3_a"), SubResource("Entry_spawn_stage_3_b"), SubResource("Entry_spawn_stage_3_c"), SubResource("Entry_spawn_stage_3_d"), SubResource("Entry_spawn_stage_4_a"), SubResource("Entry_spawn_stage_4_b"), SubResource("Entry_spawn_stage_4_c"), SubResource("Entry_spawn_stage_5_a"), SubResource("Entry_spawn_stage_5_b"), SubResource("Entry_spawn_stage_5_c")])
+
+[node name="PlayerStart" type="Marker2D" parent="World/SpawnPoints" unique_id=360899411]
+position = Vector2(300, 300)
+gizmo_extents = 0.0
+
+[node name="Stage1A" type="Marker2D" parent="World/SpawnPoints" unique_id=1116009773]
+position = Vector2(1256.4, 377.3)
+gizmo_extents = 0.0
+
+[node name="Stage2A" type="Marker2D" parent="World/SpawnPoints" unique_id=1503505124]
+position = Vector2(1863, 428.65)
+gizmo_extents = 0.0
+
+[node name="Stage2B" type="Marker2D" parent="World/SpawnPoints" unique_id=365902626]
+position = Vector2(806.35, 359.4)
+gizmo_extents = 0.0
+
+[node name="Stage2C" type="Marker2D" parent="World/SpawnPoints" unique_id=44875261]
+position = Vector2(1863, 377.25)
+gizmo_extents = 0.0
+
+[node name="Stage3A" type="Marker2D" parent="World/SpawnPoints" unique_id=1783320900]
+position = Vector2(2059.65, 284.45)
+gizmo_extents = 0.0
+
+[node name="Stage3B" type="Marker2D" parent="World/SpawnPoints" unique_id=1425818339]
+position = Vector2(2349.75, 116.75)
+gizmo_extents = 0.0
+
+[node name="Stage3C" type="Marker2D" parent="World/SpawnPoints" unique_id=1747650293]
+position = Vector2(2633.45, 291.55)
+gizmo_extents = 0.0
+
+[node name="Stage3D" type="Marker2D" parent="World/SpawnPoints" unique_id=690474589]
+position = Vector2(1705.35, 369.35)
+gizmo_extents = 0.0
+
+[node name="Stage4A" type="Marker2D" parent="World/SpawnPoints" unique_id=1431881783]
+position = Vector2(3485.2, 383.3)
+gizmo_extents = 0.0
+
+[node name="Stage4B" type="Marker2D" parent="World/SpawnPoints" unique_id=778499969]
+position = Vector2(3570.8, 383.3)
+gizmo_extents = 0.0
+
+[node name="Stage4C" type="Marker2D" parent="World/SpawnPoints" unique_id=253026832]
+position = Vector2(3520.15, 383.3)
+gizmo_extents = 0.0
+
+[node name="Stage5A" type="Marker2D" parent="World/SpawnPoints" unique_id=544163813]
+position = Vector2(4295.65, 376.4)
+gizmo_extents = 0.0
+
+[node name="Stage5B" type="Marker2D" parent="World/SpawnPoints" unique_id=482246098]
+position = Vector2(4590.05, 354.4)
+gizmo_extents = 0.0
+
+[node name="Stage5C" type="Marker2D" parent="World/SpawnPoints" unique_id=1494873070]
+position = Vector2(3772.85, 382.2)
+gizmo_extents = 0.0
+
+[node name="StageTriggers" type="Node2D" parent="World" unique_id=1024511872]
+z_index = 200
+script = ExtResource("10_trigger_manager")
+
+[node name="StageGates" type="Node2D" parent="World" unique_id=429529906]
+z_index = 200
+script = ExtResource("11_gate_manager")
+m_Entries = Array[ExtResource("6_marker_entry")]([SubResource("Entry_gate_stage_1_gate"), SubResource("Entry_gate_stage_2_left"), SubResource("Entry_gate_stage_2_gate"), SubResource("Entry_gate_stage_3_left"), SubResource("Entry_gate_stage_3_gate"), SubResource("Entry_gate_stage_4_left"), SubResource("Entry_gate_stage_4_gate"), SubResource("Entry_gate_stage_5_left"), SubResource("Entry_gate_stage_5_gate")])
+m_MarkerSize = 350.0
+
+[node name="Stage1Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1840719894]
+position = Vector2(1139.9, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage1Gate" unique_id=554240454]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage2Left" type="StaticBody2D" parent="World/StageGates" unique_id=1232338915]
+position = Vector2(359.95, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage2Left" unique_id=1348093690]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage2Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1450318154]
+position = Vector2(1809.95, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage2Gate" unique_id=1827783362]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage3Left" type="StaticBody2D" parent="World/StageGates" unique_id=788252788]
+position = Vector2(1520.15, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage3Left" unique_id=1006671442]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage3Gate" type="StaticBody2D" parent="World/StageGates" unique_id=980683750]
+position = Vector2(2970.15, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage3Gate" unique_id=1070901165]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage4Left" type="StaticBody2D" parent="World/StageGates" unique_id=1939255478]
+position = Vector2(1963.5, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage4Left" unique_id=1368238747]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage4Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1852681135]
+position = Vector2(3413.5, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage4Gate" unique_id=1588096687]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage5Left" type="StaticBody2D" parent="World/StageGates" unique_id=72959893]
+position = Vector2(2752.85, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage5Left" unique_id=117895468]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Stage5Gate" type="StaticBody2D" parent="World/StageGates" unique_id=77400846]
+position = Vector2(4202.85, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/StageGates/Stage5Gate" unique_id=1697678960]
+shape = SubResource("GateShape")
+disabled = true
+
+[node name="Exit" type="Area2D" parent="World" unique_id=720884043 node_paths=PackedStringArray("m_Marker", "m_Prompt") instance=ExtResource("exit_scene")]
+visible = false
+position = Vector2(4099.05, 459.35)
+collision_layer = 2048
+collision_mask = 2
+script = ExtResource("11_j4hmm")
+m_Marker = NodePath("Marker")
+m_Prompt = NodePath("Prompt")
+
+[node name="Platforms" type="Node2D" parent="World" unique_id=860227771]
+
+[node name="Platform00" type="StaticBody2D" parent="World/Platforms" unique_id=556077136]
+position = Vector2(1943.4904, 359.23505)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Platform00" unique_id=731790504]
+position = Vector2(121.015015, 9.999817)
+shape = SubResource("RectangleShape2D_8lfnx")
+one_way_collision = true
+
+[node name="Artwork3" type="Sprite2D" parent="World/Platforms/Platform00" unique_id=1712120326]
+z_index = -15
+position = Vector2(-11.9904785, -10.935043)
+texture = ExtResource("12_jbsfk")
+centered = false
+
+[node name="Platform01" type="StaticBody2D" parent="World/Platforms" unique_id=2080577292]
+position = Vector2(2512.5403, 358.78506)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Platform01" unique_id=1581265872]
+position = Vector2(121.01514, 9.999786)
+shape = SubResource("RectangleShape2D_r5twg")
+one_way_collision = true
+
+[node name="Artwork7" type="Sprite2D" parent="World/Platforms/Platform01" unique_id=494659890]
+z_index = -14
+position = Vector2(-9.040283, -8.985062)
+texture = ExtResource("12_jbsfk")
+centered = false
+
+[node name="Platform02" type="StaticBody2D" parent="World/Platforms" unique_id=1884965124]
+position = Vector2(2220.6904, 202.78505)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Platform02" unique_id=231475523]
+position = Vector2(121.01514, 9.999802)
+shape = SubResource("RectangleShape2D_38aqt")
+one_way_collision = true
+
+[node name="Artwork45" type="Sprite2D" parent="World/Platforms/Platform02" unique_id=1814568328]
+z_index = -13
+position = Vector2(-10.2404785, -10.285049)
+texture = ExtResource("12_jbsfk")
+centered = false
+
+[node name="Spawner" type="Node" parent="." unique_id=605185327]
+script = ExtResource("12_monster_manager")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=958629535 node_paths=PackedStringArray("m_LeftPlayerWall", "m_RightPlayerWall")]
+z_index = 200
+position = Vector2(470, 295)
+limit_left = 0
+limit_top = 0
+limit_right = 4700
+limit_bottom = 590
+script = ExtResource("2_camera")
+m_LeftPlayerWall = NodePath("PlayerScreenWalls/Left")
+m_RightPlayerWall = NodePath("PlayerScreenWalls/Right")
+
+[node name="PlayerScreenWalls" type="StaticBody2D" parent="Camera2D" unique_id=2023691008]
+collision_layer = 8192
+collision_mask = 0
+
+[node name="Left" type="CollisionShape2D" parent="Camera2D/PlayerScreenWalls" unique_id=2001885480]
+position = Vector2(-454, 0)
+shape = SubResource("PlayerScreenWallShape")
+
+[node name="Right" type="CollisionShape2D" parent="Camera2D/PlayerScreenWalls" unique_id=1618567286]
+position = Vector2(454, 0)
+shape = SubResource("PlayerScreenWallShape")

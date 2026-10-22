@@ -1,11 +1,11 @@
 using GameLogic.Architecture;
-using GameLogic.Monsters.Body;
+using GameLogic.Enemies.Body;
 using System.Collections.Generic;
 using GameLogic.Utility;
 using GameConfig.Monster;
 using System.Runtime.CompilerServices;
 using Godot;
-using GameLogic.Monsters.AI;
+using GameLogic.Enemies.AI;
 using System;
 using GameFramework.Fsm;
 using Xunit;
@@ -25,11 +25,11 @@ namespace GameLogic.Battle.Tests
         private const float Dt = 1f / 60f; // 单个物理帧的时长。
 
         private static readonly Rect2 MonkeyReach = new Rect2(-49f, -48f, 50f, 50f); // 猴子 attack_1 判定盒范围（原生朝左）。
-        private static MonsterAiSystem Ai => BattleArchitecture.Instance.GetSystem<MonsterAiSystem>();
+        private static EnemyAiSystem Ai => BattleArchitecture.Instance.GetSystem<EnemyAiSystem>();
 
         /// <summary>可组合的状态集合，直接作为参数传入真实 FSM 测试。</summary>
         public static System.Collections.Generic.IEnumerable<object[]> Presets =>
-            [new object[] { MonsterAiPreset.Patrol }, new object[] { MonsterAiPreset.Guard }, new object[] { MonsterAiPreset.Pursuer }];
+            [new object[] { MonsterAiPresets.Patrol }, new object[] { MonsterAiPresets.Guard }, new object[] { MonsterAiPresets.Pursuer }];
 
         private static MonsterConfig MonkeyParams(int desire = 70, float calm = 0f, float pace = 60f) // 猴子同款参数：欲望 70、判定 1s、首次延迟 0.35~1.0s、巡逻 2s/10%/半径 200、僵直 0、滞回 25、踱步半幅 60。
         {
@@ -51,19 +51,19 @@ namespace GameLogic.Battle.Tests
             return config;
         }
 
-        private static MonsterAttackParams Basic(int index, int weight = 100) // 创建带判定盒范围的近身普攻。
+        private static EnemyAttackParams Basic(int index, int weight = 100) // 创建带判定盒范围的近身普攻。
         {
-            return new MonsterAttackParams { Index = index, Weight = weight, Reach = MonkeyReach };
+            return new EnemyAttackParams { Index = index, Weight = weight, Reach = MonkeyReach };
         }
 
-        private static MonsterAttackParams RangedBasic(int index, float max, int weight = 100) // 创建按水平距离选取的远程普攻。
+        private static EnemyAttackParams RangedBasic(int index, float max, int weight = 100) // 创建按水平距离选取的远程普攻。
         {
-            return new MonsterAttackParams { Index = index, Weight = weight, Range = (0f, max) };
+            return new EnemyAttackParams { Index = index, Weight = weight, Range = (0f, max) };
         }
 
-        private static MonsterAttackParams Priority(int index, int priority, float min, float max, float cooldown, int weight = 100) // 创建带优先级、距离范围及固定冷却的招式。
+        private static EnemyAttackParams Priority(int index, int priority, float min, float max, float cooldown, int weight = 100) // 创建带优先级、距离范围及固定冷却的招式。
         {
-            return new MonsterAttackParams
+            return new EnemyAttackParams
             {
                 Index = index,
                 Priority = priority,
@@ -143,7 +143,7 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void AttackBook_MissingReach_IsNotAnAiAttack()
         {
-            AttackHarness book = new AttackHarness(new[] { new MonsterAttackParams { Index = 0, Weight = 100 } });
+            AttackHarness book = new AttackHarness(new[] { new EnemyAttackParams { Index = 0, Weight = 100 } });
             Assert.Equal(float.PositiveInfinity, book.GetBasicAttackHorizontalGap(Hero(-40f), -1));
             Assert.False(book.IsBasicAttackInReach(Hero(-40f), -1));
             Assert.Equal(-1, book.SelectBasicAttack(Hero(-40f), -1, () => 0f));
@@ -191,7 +191,7 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void AttackBook_Reset_RollsInitialCooldown()
         {
-            MonsterAttackParams spec = Priority(0, 1, 0, 400, 10) with { InitCooldown = (3f, 5f) };
+            EnemyAttackParams spec = Priority(0, 1, 0, 400, 10) with { InitCooldown = (3f, 5f) };
             AttackHarness book = new AttackHarness(new[] { spec });
             book.Reset(() => 0.5f);
             Assert.Equal(-1, book.GetHighestUsableAttackPriority(Hero(-100f), -1));
@@ -536,28 +536,28 @@ namespace GameLogic.Battle.Tests
         /// <summary>三个预设分别巡逻、守卫和等待；恢复或丢失目标后仍遵守各自移动策略。</summary>
         [Theory]
         [MemberData(nameof(Presets))]
-        public void Preset_MovementPolicySurvivesTargetLossAndControl(MonsterAiPreset preset)
+        public void Preset_MovementPolicySurvivesTargetLossAndControl(EnemyAiPreset preset)
         {
             using AiHarness h = new(preset, MonkeyParams(desire: 0), [Basic(0)], 0.9f);
             h.Run(3);
-            Assert.Equal(preset == MonsterAiPreset.Patrol ? "Wander" : "Pause", h.State);
-            Assert.Equal(preset == MonsterAiPreset.Patrol ? 1 : 0, h.Agent.MoveDir);
+            Assert.Equal(preset == MonsterAiPresets.Patrol ? "Wander" : "Pause", h.State);
+            Assert.Equal(preset == MonsterAiPresets.Patrol ? 1 : 0, h.Agent.MoveDir);
 
             h.Agent.Target(Hero(200));
             h.Step(2);
-            Assert.Equal(preset == MonsterAiPreset.Guard ? "GuardTarget" : "WalkToTarget", h.State);
-            Assert.Equal(preset == MonsterAiPreset.Guard ? 0 : 1, h.Agent.MoveDir);
+            Assert.Equal(preset == MonsterAiPresets.Guard ? "GuardTarget" : "WalkToTarget", h.State);
+            Assert.Equal(preset == MonsterAiPresets.Guard ? 0 : 1, h.Agent.MoveDir);
             h.Agent.IsCcLocked = true;
             h.Step(1);
             Assert.Equal("CcLocked", h.State);
             h.Agent.IsCcLocked = false;
             h.Step(2);
-            Assert.Equal(preset == MonsterAiPreset.Guard ? "GuardTarget" : "WalkToTarget", h.State);
+            Assert.Equal(preset == MonsterAiPresets.Guard ? "GuardTarget" : "WalkToTarget", h.State);
 
             h.Agent.LoseTarget();
             h.Step(2);
-            Assert.Equal(preset == MonsterAiPreset.Patrol ? "Wander" : "Pause", h.State);
-            if (preset != MonsterAiPreset.Patrol)
+            Assert.Equal(preset == MonsterAiPresets.Patrol ? "Wander" : "Pause", h.State);
+            if (preset != MonsterAiPresets.Patrol)
                 Assert.Equal(0, h.Agent.MoveDir);
         }
 
@@ -565,7 +565,7 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void Guard_AttacksOnlyInReachWithoutMoving()
         {
-            using AiHarness h = new(MonsterAiPreset.Guard, MonkeyParams(desire: 100), [Basic(0)], 0.9f);
+            using AiHarness h = new(MonsterAiPresets.Guard, MonkeyParams(desire: 100), [Basic(0)], 0.9f);
             h.Agent.Target(Hero(200));
             h.Run(2);
             Assert.Equal(0, h.Agent.MoveDir);
@@ -581,8 +581,8 @@ namespace GameLogic.Battle.Tests
         public void SharedSystem_LeavesMonsterCooldownsIndependent()
         {
             var system = Ai;
-            MonsterBodyParams parameters = new() { Attacks = [Priority(0, 1, 0, 400, 10)] };
-            MonsterAiData firstData = new(1), secondData = new(1);
+            EnemyBodyParams parameters = new() { Attacks = [Priority(0, 1, 0, 400, 10)] };
+            EnemyAiData firstData = new(1), secondData = new(1);
             system.Reset(firstData, parameters, () => 0);
             system.Reset(secondData, parameters, () => 0);
             system.MarkUsed(firstData, parameters, 0, () => 0);
@@ -592,16 +592,16 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(-1, system.GetHighestUsableAttackPriority(firstData, parameters, Hero(100), 1));
             system.AdvanceCooldowns(firstData, 10);
             Assert.Equal(1, system.GetHighestUsableAttackPriority(firstData, parameters, Hero(100), 1));
-            Assert.NotSame(MonsterAiPreset.Patrol.CreateStates()[0], MonsterAiPreset.Patrol.CreateStates()[0]);
+            Assert.NotSame(MonsterAiPresets.Patrol.CreateStates()[0], MonsterAiPresets.Patrol.CreateStates()[0]);
         }
 
         /// <summary>新增状态可以直接组成新预设，无须修改系统的枚举分支。</summary>
         [Fact]
         public void CustomPreset_UsesItsOwnEntryStatesAndCopiesFactoryCollection()
         {
-            Func<AbstractMonsterAiState>[] factories = [() => new CustomIdleState(), () => new GuardTargetState(),
+            Func<AbstractEnemyAiState>[] factories = [() => new CustomIdleState(), () => new GuardTargetState(),
                 () => new CcLockedState(), () => new DeathState()];
-            MonsterAiPreset preset = new(typeof(CustomIdleState), typeof(GuardTargetState), factories);
+            EnemyAiPreset preset = new(typeof(CustomIdleState), typeof(GuardTargetState), factories);
             factories[0] = () => new WanderState();
             using AiHarness h = new(preset, MonkeyParams(desire: 0), [Basic(0)], .9f);
             Assert.Equal("CustomIdle", h.State);
@@ -621,10 +621,10 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void InvalidPreset_RejectsMissingEntriesAndDuplicateTypes()
         {
-            MonsterAiPreset missing = new(typeof(WanderState), typeof(GuardTargetState),
+            EnemyAiPreset missing = new(typeof(WanderState), typeof(GuardTargetState),
                 () => new WanderState(), () => new CcLockedState(), () => new DeathState());
             Assert.Throws<InvalidOperationException>(() => missing.CreateStates());
-            MonsterAiPreset duplicate = new(typeof(PauseState), typeof(GuardTargetState),
+            EnemyAiPreset duplicate = new(typeof(PauseState), typeof(GuardTargetState),
                 () => new PauseState(), () => new PauseState(), () => new GuardTargetState(),
                 () => new CcLockedState(), () => new DeathState());
             Assert.Throws<InvalidOperationException>(() => duplicate.CreateStates());
@@ -633,18 +633,105 @@ namespace GameLogic.Battle.Tests
         /// <summary>用于验证预设能够组合普通集合之外的状态类型。</summary>
         private sealed class CustomIdleState : PauseState { }
 
+        /// <summary>猕猴王远处发风刃，风刃冷却时追击；不受小怪出手概率影响。</summary>
+        [Fact]
+        public void MacaqueKing_FarTarget_UsesWindThenChasesDuringCooldown()
+        {
+            using var h = BossHarness(false);
+            h.Agent.Target(new Rect2(499, -1, 2, 2));
+            h.Step(1);
+            Assert.Equal(2, h.Agent.RequestedAttack);
+            h.Agent.IsAttacking = false;
+            h.Step(1);
+            Assert.Equal(1, h.Agent.MoveDir);
+            Assert.False(h.Agent.IsAttacking);
+        }
+
+        /// <summary>近身选招使用一秒节拍，并在专属技能冷却时回退棍击。</summary>
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Boss_NearTarget_PrefersSkillOnSecondBeat(bool tamarin)
+        {
+            using var h = BossHarness(tamarin);
+            h.Agent.Target(new Rect2(99, -1, 2, 2));
+            h.Step(50);
+            Assert.Equal(-1, h.Agent.RequestedAttack);
+            h.Step(11);
+            Assert.Equal(1, h.Agent.RequestedAttack);
+            h.Agent.IsAttacking = false;
+            h.Step(60);
+            Assert.Equal(0, h.Agent.RequestedAttack);
+        }
+
+        /// <summary>禺狨王在 250 像素以外追击，不在远处直接放落雷。</summary>
+        [Fact]
+        public void TamarinKing_FarTarget_ChasesWithoutCasting()
+        {
+            using var h = BossHarness(true);
+            h.Agent.Target(new Rect2(299, -1, 2, 2));
+            h.Run(1.2f);
+            Assert.Equal(1, h.Agent.MoveDir);
+            Assert.Equal(-1, h.Agent.RequestedAttack);
+        }
+
+        /// <summary>越过各自原版高度范围时游荡，不能隔着垂直距离强行出招。</summary>
+        [Theory]
+        [InlineData(false, 301)]
+        [InlineData(true, 901)]
+        public void Boss_TargetBeyondHeight_Patrols(bool tamarin, int height)
+        {
+            using var h = BossHarness(tamarin);
+            h.Agent.Target(new Rect2(99, height - 1, 2, 2));
+            h.Run(1.2f);
+            Assert.Equal(-1, h.Agent.RequestedAttack);
+        }
+
+        /// <summary>受控恢复后沿用原有行为时钟，死亡优先于全部选招。</summary>
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Boss_ControlAndDeath_OverrideSkillSelection(bool tamarin)
+        {
+            using var h = BossHarness(tamarin);
+            h.Agent.Target(new Rect2(99, -1, 2, 2));
+            h.Agent.IsCcLocked = true;
+            h.Step(50);
+            Assert.Equal("CcLocked", h.State);
+            Assert.Equal(-1, h.Agent.RequestedAttack);
+            h.Agent.IsCcLocked = false;
+            h.Step(11);
+            Assert.Equal(1, h.Agent.RequestedAttack);
+            h.Agent.IsDead = true;
+            h.Step(1);
+            Assert.Equal("Death", h.State);
+        }
+
+        /// <summary>以真实专属状态及原版冷却创建 BOSS 规则夹具。</summary>
+        /// <param name="tamarin">是否使用禺狨王。</param>
+        /// <returns>拥有独立真实 GGF 状态机的测试宿主。</returns>
+        private static AiHarness BossHarness(bool tamarin)
+        {
+            var type = tamarin ? typeof(TamarinKingEngageState) : typeof(MacaqueKingEngageState);
+            var preset = new EnemyAiPreset(type, type,
+                () => tamarin ? new TamarinKingEngageState() : new MacaqueKingEngageState(),
+                () => new CcLockedState(), () => new DeathState());
+            EnemyAttackParams[] attacks = [Basic(0), Priority(1, 1, 0, 250, 10), Priority(2, 1, 150, 1000, 7.5f)];
+            return new AiHarness(preset, MonkeyParams(desire: 0), attacks, .5f);
+        }
+
         // ---------------------------------------------------------------- 测试替身
 
         private sealed class AttackHarness
         {
-            public MonsterBodyParams Parameters { get; }
-            public MonsterAiData Data { get; }
-            public MonsterAiPreset Preset { get; }
-            public AttackHarness(IReadOnlyList<MonsterAttackParams> specs, MonsterAiPreset preset = null)
+            public EnemyBodyParams Parameters { get; }
+            public EnemyAiData Data { get; }
+            public EnemyAiPreset Preset { get; }
+            public AttackHarness(IReadOnlyList<EnemyAttackParams> specs, EnemyAiPreset preset = null)
             {
-                Parameters = new MonsterBodyParams { Attacks = specs };
-                Data = new MonsterAiData(specs.Count);
-                Preset = preset ?? MonsterAiPreset.Patrol;
+                Parameters = new EnemyBodyParams { Attacks = specs };
+                Data = new EnemyAiData(specs.Count);
+                Preset = preset ?? MonsterAiPresets.Patrol;
             }
             public void Reset(Func<float> random) => Ai.Reset(Data, Parameters, random);
             public void Tick(float dt) => Ai.AdvanceCooldowns(Data, dt);
@@ -656,7 +743,7 @@ namespace GameLogic.Battle.Tests
             public int SelectBasicAttack(Rect2 target, int dir, Func<float> random) => Ai.SelectBasicAttack(Data, Parameters, target, dir, random);
         }
 
-        private sealed class FakeAgent : IMonsterAiAgent // 可控感知和确定性随机序列的 AI 测试宿主。
+        private sealed class FakeAgent : IEnemyAiAgent // 可控感知和确定性随机序列的 AI 测试宿主。
         {
             private readonly float[] m_Randoms; // 测试提供的确定性随机序列。
             private int m_RandomIndex; // 下一随机值的读取索引。
@@ -673,6 +760,9 @@ namespace GameLogic.Battle.Tests
             /// <summary>测试直接设置的目标判定盒；默认值表示无目标。</summary>
             public Rect2 TargetBox { get; set; }
 
+            /// <summary>普通怪测试以目标盒中心表示原点。</summary>
+            public Vector2 TargetOffset => TargetBox.GetCenter();
+
             /// <summary>宿主相对出生点的水平偏移。</summary>
             public float PatrolOffsetX { get; set; }
 
@@ -680,9 +770,9 @@ namespace GameLogic.Battle.Tests
             public MonsterConfig Config { get; }
 
             /// <summary>怪物可用招式及冷却状态。</summary>
-            public MonsterBodyParams Params { get; }
-            public MonsterAiData AiData { get; }
-            public MonsterAiPreset AiPreset { get; }
+            public EnemyBodyParams Params { get; }
+            public EnemyAiData AiData { get; }
+            public EnemyAiPreset AiPreset { get; }
 
             /// <summary>最近一次移动意图，右为 1、左为 -1、停止为 0。</summary>
             public int MoveDir { get; private set; }
@@ -751,30 +841,30 @@ namespace GameLogic.Battle.Tests
         private sealed class AiHarness : IDisposable // 用真实 FsmManager 驱动一台 AI 状态机。
         {
             private readonly FsmManager m_Manager = new FsmManager(); // 驱动测试 AI 状态机的框架管理器。
-            private readonly IFsm<IMonsterAiAgent> m_Fsm; // 当前测试使用的 AI 状态机。
+            private readonly IFsm<IEnemyAiAgent> m_Fsm; // 当前测试使用的 AI 状态机。
 
             /// <summary>状态机绑定的可控测试宿主。</summary>
             public FakeAgent Agent { get; }
 
             /// <summary>当前 AI 状态实例。</summary>
-            public AbstractMonsterAiState CurrentState => (AbstractMonsterAiState)m_Fsm.CurrentState;
+            public AbstractEnemyAiState CurrentState => (AbstractEnemyAiState)m_Fsm.CurrentState;
 
             /// <summary>当前 AI 状态名称。</summary>
             public string State => CurrentState.GetType().Name[..^"State".Length];
 
             /// <summary>创建 AI 状态机并以游荡状态启动。</summary>
-            public AiHarness(MonsterConfig p, MonsterAttackParams[] specs, params float[] randoms)
+            public AiHarness(MonsterConfig p, EnemyAttackParams[] specs, params float[] randoms)
             {
                 Agent = new FakeAgent(p, new AttackHarness(specs), randoms);
-                m_Fsm = m_Manager.CreateFsm<IMonsterAiAgent>(Guid.NewGuid().ToString(), Agent,
+                m_Fsm = m_Manager.CreateFsm<IEnemyAiAgent>(Guid.NewGuid().ToString(), Agent,
                     Agent.AiPreset.CreateStates());
                 m_Fsm.Start(Agent.AiPreset.IdleStateType);
             }
 
-            public AiHarness(MonsterAiPreset preset, MonsterConfig p, MonsterAttackParams[] specs, params float[] randoms)
+            public AiHarness(EnemyAiPreset preset, MonsterConfig p, EnemyAttackParams[] specs, params float[] randoms)
             {
                 Agent = new FakeAgent(p, new AttackHarness(specs, preset), randoms);
-                m_Fsm = m_Manager.CreateFsm<IMonsterAiAgent>(Guid.NewGuid().ToString(), Agent, preset.CreateStates());
+                m_Fsm = m_Manager.CreateFsm<IEnemyAiAgent>(Guid.NewGuid().ToString(), Agent, preset.CreateStates());
                 m_Fsm.Start(preset.IdleStateType);
             }
 

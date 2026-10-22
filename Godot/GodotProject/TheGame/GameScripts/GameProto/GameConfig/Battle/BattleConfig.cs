@@ -20,23 +20,13 @@ public sealed partial class BattleConfig : Luban.BeanBase
         Desc = _buf.ReadString();
         DefKHero = _buf.ReadFloat();
         MdefKHero = _buf.ReadFloat();
-        MissKHero = _buf.ReadFloat();
         DefKMonster = _buf.ReadFloat();
         MdefKMonster = _buf.ReadFloat();
-        MissKMonster = _buf.ReadFloat();
-        CritK = _buf.ReadFloat();
         LuckyKHeroAtk = _buf.ReadFloat();
         LuckyKMonsterAtk = _buf.ReadFloat();
         CritBase = _buf.ReadFloat();
-        LvMissCoefHeroDef = _buf.ReadFloat();
-        LvCritCoefHeroDef = _buf.ReadFloat();
-        LvMissCoefMonsterDef = _buf.ReadFloat();
-        LvCritCoefMonsterDef = _buf.ReadFloat();
         LvLuckyCoef = _buf.ReadFloat();
         LvDamageCoef = _buf.ReadFloat();
-        LvMissCapHeroDef = _buf.ReadFloat();
-        LvMissCapMonsterDef = _buf.ReadFloat();
-        LvCritCap = _buf.ReadFloat();
         LvLuckyCap = _buf.ReadFloat();
         LvDamageCapLvHeroDef = _buf.ReadInt();
         LvDamageCapLvMonsterDef = _buf.ReadInt();
@@ -77,10 +67,6 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// </summary>
     public readonly float MdefKHero;
     /// <summary>
-    /// 英雄作防守方时被命中K: Miss/(Miss+K)
-    /// </summary>
-    public readonly float MissKHero;
-    /// <summary>
     /// 怪物作防守方时物防减伤K
     /// </summary>
     public readonly float DefKMonster;
@@ -88,14 +74,6 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// 怪物作防守方时魔防减伤K
     /// </summary>
     public readonly float MdefKMonster;
-    /// <summary>
-    /// 怪物作防守方时被命中K
-    /// </summary>
-    public readonly float MissKMonster;
-    /// <summary>
-    /// 暴击率基数: Crit/(Crit+K)
-    /// </summary>
-    public readonly float CritK;
     /// <summary>
     /// 英雄攻击时暴击倍率幸运K
     /// </summary>
@@ -109,22 +87,6 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// </summary>
     public readonly float CritBase;
     /// <summary>
-    /// 等级压制-英雄防守闪避系数
-    /// </summary>
-    public readonly float LvMissCoefHeroDef;
-    /// <summary>
-    /// 等级压制-英雄防守暴击系数
-    /// </summary>
-    public readonly float LvCritCoefHeroDef;
-    /// <summary>
-    /// 等级压制-怪物防守闪避系数
-    /// </summary>
-    public readonly float LvMissCoefMonsterDef;
-    /// <summary>
-    /// 等级压制-怪物防守暴击系数
-    /// </summary>
-    public readonly float LvCritCoefMonsterDef;
-    /// <summary>
     /// 等级压制-幸运系数
     /// </summary>
     public readonly float LvLuckyCoef;
@@ -132,18 +94,6 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// 等级压制-每级伤害系数
     /// </summary>
     public readonly float LvDamageCoef;
-    /// <summary>
-    /// 等级压制-英雄防守闪避系数封顶
-    /// </summary>
-    public readonly float LvMissCapHeroDef;
-    /// <summary>
-    /// 等级压制-怪物防守闪避系数封顶
-    /// </summary>
-    public readonly float LvMissCapMonsterDef;
-    /// <summary>
-    /// 等级压制-暴击系数封顶(人怪两侧一致)
-    /// </summary>
-    public readonly float LvCritCap;
     /// <summary>
     /// 等级压制-幸运系数封顶(人怪两侧一致)
     /// </summary>
@@ -223,23 +173,13 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "Desc:" + Desc + ","
         + "DefKHero:" + DefKHero + ","
         + "MdefKHero:" + MdefKHero + ","
-        + "MissKHero:" + MissKHero + ","
         + "DefKMonster:" + DefKMonster + ","
         + "MdefKMonster:" + MdefKMonster + ","
-        + "MissKMonster:" + MissKMonster + ","
-        + "CritK:" + CritK + ","
         + "LuckyKHeroAtk:" + LuckyKHeroAtk + ","
         + "LuckyKMonsterAtk:" + LuckyKMonsterAtk + ","
         + "CritBase:" + CritBase + ","
-        + "LvMissCoefHeroDef:" + LvMissCoefHeroDef + ","
-        + "LvCritCoefHeroDef:" + LvCritCoefHeroDef + ","
-        + "LvMissCoefMonsterDef:" + LvMissCoefMonsterDef + ","
-        + "LvCritCoefMonsterDef:" + LvCritCoefMonsterDef + ","
         + "LvLuckyCoef:" + LvLuckyCoef + ","
         + "LvDamageCoef:" + LvDamageCoef + ","
-        + "LvMissCapHeroDef:" + LvMissCapHeroDef + ","
-        + "LvMissCapMonsterDef:" + LvMissCapMonsterDef + ","
-        + "LvCritCap:" + LvCritCap + ","
         + "LvLuckyCap:" + LvLuckyCap + ","
         + "LvDamageCapLvHeroDef:" + LvDamageCapLvHeroDef + ","
         + "LvDamageCapLvMonsterDef:" + LvDamageCapLvMonsterDef + ","

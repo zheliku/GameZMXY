@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://2hs5catcqds2"]
+
+[ext_resource type="Script" uid="uid://bx0447o7u7wmq" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="1_imeaf"]
+[ext_resource type="SpriteFrames" uid="uid://dinnyc6r716d6" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_wind_blade_frames.tres" id="2_oxet1"]
+[ext_resource type="AnimationLibrary" uid="uid://ljjp8ta6sc0v" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_02_macaque_king/macaque_wind_blade_library.tres" id="3_fy6qw"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ub8kb"]
+size = Vector2(98, 126)
+
+[node name="MacaqueWindBlade" type="Node2D" unique_id=1539196503 node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]
+script = ExtResource("1_imeaf")
+m_Player = NodePath("AnimationPlayer")
+m_HitBox = NodePath("HitBox")
+m_Shape = NodePath("HitBox/CollisionShape2D")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=151489019]
+sprite_frames = ExtResource("2_oxet1")
+animation = &"play"
+frame = 49
+offset = Vector2(-241.5, 6.5)
+
+[node name="HitBox" type="Area2D" parent="." unique_id=1927090132]
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox" unique_id=1233222012]
+position = Vector2(-9, 18)
+shape = SubResource("RectangleShape2D_ub8kb")
+disabled = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1849686102]
+libraries/ = ExtResource("3_fy6qw")

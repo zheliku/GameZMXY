@@ -29,6 +29,8 @@ namespace GameLogic.Heroes
     /// </summary>
     public partial class WukongEntity : AbstractHeroEntity
     {
+        [Export] private AnimatedSprite2D m_FireDemonPrelude; // 出招原地播放的纯视觉，不参与技能判定和节点池。
+
         private const double SourceFrameSeconds = 1d / 24; // 造一悟空源动画一帧的秒数，仅用于取消窗口换算。
         private static readonly SkillDefinition[] m_Skills =
         [
@@ -48,6 +50,19 @@ namespace GameLogic.Heroes
         {
             base.OnShow(userData);
             this.GetSystem<SkillSystem>().SelectSkills(1, m_Skills);
+        }
+
+        /// <summary>回池前停止本角色内的离身前奏，避免复用时残留。</summary>
+        /// <param name="isShutdown">框架是否正在关闭。</param>
+        /// <param name="userData">框架隐藏参数。</param>
+        public override void OnHide(bool isShutdown, object userData)
+        {
+            if (!isShutdown)
+            {
+                m_FireDemonPrelude.Stop();
+                m_FireDemonPrelude.Hide();
+            }
+            base.OnHide(isShutdown, userData);
         }
 
         /// <summary>悟空匹配直接技能、升龙取消、缺蓝普攻与奔跑突刺；身体接口不承担这些规则。</summary>

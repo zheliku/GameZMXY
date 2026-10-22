@@ -1,7 +1,13 @@
 [gd_scene format=3 uid="uid://bcur4jvgd48dm"]
 
-[ext_resource type="Resource" path="res://TheGame/Sprites/Items/item_appearances.tres" id="appearances"]
-[ext_resource type="PackedScene" path="res://TheGame/UIs/Widgets/equipment_actions_menu.tscn" id="actions"]
+[ext_resource type="Script" uid="uid://c7ajyr1tfamcx" path="res://TheGame/GameScripts/UI/InventoryForm/Components/EquipmentCell.cs" id="18_7toqf"]
+[ext_resource type="PackedScene" uid="uid://boy8tad4y4d68" path="res://TheGame/UIs/Inventory/equipment_tooltip.tscn" id="19_lla6n"]
+[ext_resource type="Script" uid="uid://b7c4mucar2g2x" path="res://TheGame/GameScripts/UI/InventoryForm/Components/HeroPreviewNode.cs" id="24_3klhq"]
+[ext_resource type="Resource" uid="uid://xk36fcf4y640" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_appearance.tres" id="25_46cyk"]
+[ext_resource type="Texture2D" uid="uid://co0l2xrbfngd" path="res://TheGame/Sprites/UI/inventory/inventory_cell.png" id="33_41ypg"]
+[ext_resource type="Script" uid="uid://dth4j24dnuge" path="res://TheGame/GameScripts/UI/InventoryForm/Components/EquipmentActionsMenu.cs" id="40_hnjlc"]
+[ext_resource type="PackedScene" path="res://TheGame/UIs/Inventory/equipment_actions_menu.tscn" id="actions"]
+[ext_resource type="Resource" uid="uid://b0cqamjcontb4" path="res://TheGame/Sprites/Items/item_appearances.tres" id="appearances"]
 [ext_resource type="Texture2D" uid="uid://bmpaf7wdvtwnd" path="res://TheGame/Sprites/UI/inventory/inventory_attributes.png" id="attributes"]
 [ext_resource type="FontFile" uid="uid://c5eah8rqotkno" path="res://TheGame/MainPack/Fonts/df_poster_w12.ttc" id="badge_font"]
 [ext_resource type="Texture2D" uid="uid://cp42ocwlfjgvb" path="res://TheGame/Sprites/UI/frontend/menu_close.png" id="close"]
@@ -11,7 +17,7 @@
 [ext_resource type="Script" uid="uid://mxfrxwlrtoie" path="res://TheGame/GameScripts/UI/InventoryForm/Components/InventorySaleConfirmation.cs" id="component_InventorySaleConfirmation"]
 [ext_resource type="Theme" uid="uid://s48yl51sqo68" path="res://TheGame/MainPack/Themes/brown_gold_theme.tres" id="controls_theme"]
 [ext_resource type="StyleBox" uid="uid://c5cno7vj11g4b" path="res://TheGame/MainPack/Themes/Styles/brown_dialog_panel.tres" id="dialog_panel_style"]
-[ext_resource type="PackedScene" uid="uid://b538mvhe6ldua" path="res://TheGame/UIs/Widgets/equipment_cell.tscn" id="equipment_cell"]
+[ext_resource type="PackedScene" uid="uid://b538mvhe6ldua" path="res://TheGame/UIs/Inventory/equipment_cell.tscn" id="equipment_cell"]
 [ext_resource type="Texture2D" uid="uid://bad1w8e05nqgs" path="res://TheGame/Sprites/UI/inventory/inventory_exp_fill.png" id="exp_fill"]
 [ext_resource type="Texture2D" uid="uid://bcc837l6er4ae" path="res://TheGame/Sprites/UI/inventory/inventory_exp_frame.png" id="exp_frame"]
 [ext_resource type="FontFile" uid="uid://d3bh5a3jtbsib" path="res://TheGame/MainPack/Fonts/fz_cu_yuan.ttf" id="font"]
@@ -22,7 +28,7 @@
 [ext_resource type="Texture2D" uid="uid://xhgpmn5gjtct" path="res://TheGame/Sprites/UI/inventory/inventory_next_page_hover.png" id="next_page_hover"]
 [ext_resource type="FontFile" uid="uid://p78hartfg67e" path="res://TheGame/MainPack/Fonts/fz_cu_yuan_hud.ttf" id="number_font"]
 [ext_resource type="Texture2D" uid="uid://0mc1vobh4od0" path="res://TheGame/Sprites/UI/inventory/inventory_panels.png" id="panels"]
-[ext_resource type="PackedScene" uid="uid://dc18lorsjswmc" path="res://TheGame/UIs/Widgets/hero_preview.tscn" id="preview"]
+[ext_resource type="PackedScene" uid="uid://dc18lorsjswmc" path="res://TheGame/UIs/Inventory/hero_preview.tscn" id="preview"]
 [ext_resource type="Texture2D" uid="uid://i8wq6ylpji8h" path="res://TheGame/Sprites/UI/inventory/inventory_previous_page.png" id="previous_page"]
 [ext_resource type="Texture2D" uid="uid://d3eslk08tsqld" path="res://TheGame/Sprites/UI/inventory/inventory_previous_page_hover.png" id="previous_page_hover"]
 [ext_resource type="Script" uid="uid://2d05nqjfoajs" path="res://TheGame/GameScripts/UI/InventoryForm/InventoryForm.cs" id="script"]
@@ -42,17 +48,27 @@ atlas = ExtResource("name_plate")
 region = Rect2(0, 0, 213, 25)
 filter_clip = true
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_46cyk"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pem3t"]
 resource_local_to_scene = true
 shader = ExtResource("slot_background")
 shader_parameter/occupied = false
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_41ypg"]
+[sub_resource type="StyleBoxEmpty" id="tooltip_wrapper"]
+
+[sub_resource type="Theme" id="tooltip_theme"]
+TooltipPanel/styles/panel = SubResource("tooltip_wrapper")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cb1wv"]
 resource_local_to_scene = true
 shader = ExtResource("slot_background")
 shader_parameter/occupied = false
 
-[sub_resource type="ButtonGroup" id="bag_tabs"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3ngdj"]
+resource_local_to_scene = true
+shader = ExtResource("slot_background")
+shader_parameter/occupied = false
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_lmrfl"]
 
 [node name="InventoryForm" type="Control" unique_id=1552540174 node_paths=PackedStringArray("m_Actions", "m_Close", "m_Character", "m_Bag", "m_SaleConfirmation")]
 layout_mode = 3
@@ -121,7 +137,7 @@ texture_hover = ExtResource("close_hover")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="CharacterPanel" type="Control" parent="Window" unique_id=2061646098 node_paths=PackedStringArray("m_Name", "m_Level", "m_Preview", "m_WeaponSlot", "m_ArmorSlot", "m_Hp", "m_Mp", "m_Power", "m_Def", "m_Lucky", "m_Mdef", "m_Crit", "m_Miss", "m_HpRegen", "m_MpRegen", "m_Experience", "m_ExperienceText")]
+[node name="CharacterPanel" type="Control" parent="Window" unique_id=2061646098 node_paths=PackedStringArray("m_Name", "m_Level", "m_Preview", "m_WeaponSlot", "m_ArmorSlot", "m_AccessorySlot", "m_Hp", "m_Mp", "m_Power", "m_Def", "m_Lucky", "m_Mdef", "m_Crit", "m_Miss", "m_HpRegen", "m_MpRegen", "m_Experience", "m_ExperienceText")]
 anchors_preset = 0
 offset_left = 140.0
 offset_top = 104.0
@@ -135,6 +151,7 @@ m_Level = NodePath("Identity/m_Level")
 m_Preview = NodePath("m_Preview")
 m_WeaponSlot = NodePath("EquipmentSlots/m_WeaponSlot")
 m_ArmorSlot = NodePath("EquipmentSlots/m_ArmorSlot")
+m_AccessorySlot = NodePath("EquipmentSlots/m_AccessorySlot")
 m_Hp = NodePath("Attributes/Left/Hp/m_Hp")
 m_Mp = NodePath("Attributes/Right/Mp/m_Mp")
 m_Power = NodePath("Attributes/Left/Attack/m_Attack")
@@ -230,33 +247,53 @@ mouse_filter = 2
 texture = ExtResource("slot_title")
 expand_mode = 1
 
-[node name="m_WeaponSlot" parent="Window/CharacterPanel/EquipmentSlots" unique_id=943635423 instance=ExtResource("equipment_cell")]
-material = SubResource("ShaderMaterial_46cyk")
+[node name="m_WeaponSlot" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=943635423 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+material = SubResource("ShaderMaterial_pem3t")
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 0
 offset_left = 223.0
 offset_top = 74.0
 offset_right = 270.0
 offset_bottom = 121.0
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
 texture = ExtResource("slot_weapon")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="m_ArmorSlot" parent="Window/CharacterPanel/EquipmentSlots" unique_id=1110672857 instance=ExtResource("equipment_cell")]
-material = SubResource("ShaderMaterial_41ypg")
+[node name="m_ArmorSlot" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=1110672857 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+material = SubResource("ShaderMaterial_cb1wv")
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 0
 offset_left = 223.0
 offset_top = 139.0
 offset_right = 270.0
 offset_bottom = 186.0
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
 texture = ExtResource("slot_armor")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Slotaccessory" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=1698131076]
+[node name="m_AccessorySlot" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=1855060501 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+material = SubResource("ShaderMaterial_3ngdj")
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 0
 offset_left = 293.0
 offset_top = 74.0
 offset_right = 340.0
 offset_bottom = 121.0
-mouse_filter = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
 texture = ExtResource("slot_accessory")
 expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
 [node name="Slottreasure" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=433319451]
 layout_mode = 0
@@ -268,9 +305,14 @@ mouse_filter = 2
 texture = ExtResource("slot_treasure")
 expand_mode = 1
 
-[node name="m_Preview" parent="Window/CharacterPanel" unique_id=1036937726 instance=ExtResource("preview")]
+[node name="m_Preview" type="Node2D" parent="Window/CharacterPanel" unique_id=1036937726 node_paths=PackedStringArray("m_Player", "m_Body", "m_Weapon") instance=ExtResource("preview")]
 position = Vector2(149.00002, 128)
 scale = Vector2(0.95, 0.95)
+script = ExtResource("24_3klhq")
+m_Player = NodePath("AnimationPlayer")
+m_Body = NodePath("Body")
+m_Weapon = NodePath("Weapon")
+m_Appearance = ExtResource("25_46cyk")
 
 [node name="Attributes" type="Control" parent="Window/CharacterPanel" unique_id=90866621]
 anchors_preset = 0
@@ -735,7 +777,7 @@ focus_mode = 0
 mouse_default_cursor_shape = 2
 toggle_mode = true
 button_pressed = true
-button_group = SubResource("bag_tabs")
+button_group = SubResource("ButtonGroup_lmrfl")
 texture_normal = ExtResource("tab_normal")
 texture_pressed = ExtResource("tab_selected")
 texture_hover = ExtResource("tab_selected")
@@ -765,7 +807,7 @@ offset_bottom = 25.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 toggle_mode = true
-button_group = SubResource("bag_tabs")
+button_group = SubResource("ButtonGroup_lmrfl")
 texture_normal = ExtResource("tab_normal")
 texture_pressed = ExtResource("tab_selected")
 texture_hover = ExtResource("tab_selected")
@@ -795,7 +837,7 @@ offset_bottom = 25.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 toggle_mode = true
-button_group = SubResource("bag_tabs")
+button_group = SubResource("ButtonGroup_lmrfl")
 texture_normal = ExtResource("tab_normal")
 texture_pressed = ExtResource("tab_selected")
 texture_hover = ExtResource("tab_selected")
@@ -825,7 +867,7 @@ offset_bottom = 25.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 toggle_mode = true
-button_group = SubResource("bag_tabs")
+button_group = SubResource("ButtonGroup_lmrfl")
 texture_normal = ExtResource("tab_normal")
 texture_pressed = ExtResource("tab_selected")
 texture_hover = ExtResource("tab_selected")
@@ -858,80 +900,280 @@ theme_override_constants/h_separation = 11
 theme_override_constants/v_separation = 12
 columns = 5
 
-[node name="Cell1" parent="Window/BagPanel/m_BagGrid" unique_id=1439311619 instance=ExtResource("equipment_cell")]
+[node name="Cell1" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=1439311619 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell2" parent="Window/BagPanel/m_BagGrid" unique_id=1001795294 instance=ExtResource("equipment_cell")]
+[node name="Cell2" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=1001795294 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell3" parent="Window/BagPanel/m_BagGrid" unique_id=624061470 instance=ExtResource("equipment_cell")]
+[node name="Cell3" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=624061470 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell4" parent="Window/BagPanel/m_BagGrid" unique_id=1827907235 instance=ExtResource("equipment_cell")]
+[node name="Cell4" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=1827907235 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell5" parent="Window/BagPanel/m_BagGrid" unique_id=809351043 instance=ExtResource("equipment_cell")]
+[node name="Cell5" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=809351043 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell6" parent="Window/BagPanel/m_BagGrid" unique_id=2138496342 instance=ExtResource("equipment_cell")]
+[node name="Cell6" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=2138496342 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell7" parent="Window/BagPanel/m_BagGrid" unique_id=297673307 instance=ExtResource("equipment_cell")]
+[node name="Cell7" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=297673307 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell8" parent="Window/BagPanel/m_BagGrid" unique_id=7216454 instance=ExtResource("equipment_cell")]
+[node name="Cell8" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=7216454 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell9" parent="Window/BagPanel/m_BagGrid" unique_id=1988497800 instance=ExtResource("equipment_cell")]
+[node name="Cell9" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=1988497800 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell10" parent="Window/BagPanel/m_BagGrid" unique_id=1098712073 instance=ExtResource("equipment_cell")]
+[node name="Cell10" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=1098712073 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell11" parent="Window/BagPanel/m_BagGrid" unique_id=1506944962 instance=ExtResource("equipment_cell")]
+[node name="Cell11" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=1506944962 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell12" parent="Window/BagPanel/m_BagGrid" unique_id=725789489 instance=ExtResource("equipment_cell")]
+[node name="Cell12" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=725789489 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell13" parent="Window/BagPanel/m_BagGrid" unique_id=142709965 instance=ExtResource("equipment_cell")]
+[node name="Cell13" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=142709965 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell14" parent="Window/BagPanel/m_BagGrid" unique_id=312929843 instance=ExtResource("equipment_cell")]
+[node name="Cell14" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=312929843 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell15" parent="Window/BagPanel/m_BagGrid" unique_id=669252098 instance=ExtResource("equipment_cell")]
+[node name="Cell15" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=669252098 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell16" parent="Window/BagPanel/m_BagGrid" unique_id=469752703 instance=ExtResource("equipment_cell")]
+[node name="Cell16" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=469752703 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell17" parent="Window/BagPanel/m_BagGrid" unique_id=1390680024 instance=ExtResource("equipment_cell")]
+[node name="Cell17" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=1390680024 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell18" parent="Window/BagPanel/m_BagGrid" unique_id=1263990978 instance=ExtResource("equipment_cell")]
+[node name="Cell18" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=1263990978 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell19" parent="Window/BagPanel/m_BagGrid" unique_id=1644450839 instance=ExtResource("equipment_cell")]
+[node name="Cell19" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=1644450839 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell20" parent="Window/BagPanel/m_BagGrid" unique_id=373819632 instance=ExtResource("equipment_cell")]
+[node name="Cell20" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=373819632 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell21" parent="Window/BagPanel/m_BagGrid" unique_id=103564913 instance=ExtResource("equipment_cell")]
+[node name="Cell21" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=103564913 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell22" parent="Window/BagPanel/m_BagGrid" unique_id=989505517 instance=ExtResource("equipment_cell")]
+[node name="Cell22" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=989505517 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell23" parent="Window/BagPanel/m_BagGrid" unique_id=2061881365 instance=ExtResource("equipment_cell")]
+[node name="Cell23" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=2061881365 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell24" parent="Window/BagPanel/m_BagGrid" unique_id=120851492 instance=ExtResource("equipment_cell")]
+[node name="Cell24" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=120851492 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="Cell25" parent="Window/BagPanel/m_BagGrid" unique_id=1552982885 instance=ExtResource("equipment_cell")]
+[node name="Cell25" type="TextureRect" parent="Window/BagPanel/m_BagGrid" unique_id=1552982885 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+texture = ExtResource("33_41ypg")
+expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
 [node name="Footer" type="Control" parent="Window/BagPanel" unique_id=2029022878]
 anchors_preset = 0
@@ -1029,8 +1271,18 @@ texture_disabled = ExtResource("next_page")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="m_Actions" parent="." unique_id=1107248748 instance=ExtResource("actions")]
+[node name="m_Actions" type="Control" parent="." unique_id=1107248748 node_paths=PackedStringArray("m_Panel", "m_Equip", "m_Sell") instance=ExtResource("actions")]
 layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("40_hnjlc")
+m_Panel = NodePath("Panel")
+m_Equip = NodePath("Panel/Equip")
+m_Sell = NodePath("Panel/Sell")
 
 [node name="m_SaleConfirmation" type="Control" parent="." unique_id=541932993 node_paths=PackedStringArray("m_SaleSummary", "m_SaleCancel", "m_SaleConfirm")]
 visible = false

@@ -41,7 +41,7 @@ def apply(manifest_path):
         raise ValueError('Invalid original wait timeline or atlas grid')
     duration = len(frames) / fps
     for relative, name in [
-        ('TheGame/Entitys/Animations/wukong_anim_library.tres', 'idle1'),
+        ('TheGame/Entitys/Animations/Heroes/Wukong/wukong_anim_library.tres', 'idle1'),
         ('TheGame/Sprites/UI/inventory/inventory_preview_animation.tres', 'idle'),
     ]:
         path = PROJECT / relative
@@ -62,7 +62,7 @@ def apply(manifest_path):
             text = re.sub(r'\[sub_resource type="Animation" id="idle2"\].*?(?=\n\[)', '', text, flags=re.S)
             text = text.replace('&"idle2": SubResource("idle2"),\n', '')
         path.write_text(text, encoding='utf-8')
-    for relative in ('TheGame/Entitys/wukong_entity.tscn', 'TheGame/UIs/Widgets/hero_preview.tscn'):
+    for relative in ('TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn', 'TheGame/UIs/Inventory/hero_preview.tscn'):
         path = PROJECT / relative
         text = re.sub(r'hframes = 6\nvframes = \d+', f'hframes = 6\nvframes = {rows}', path.read_text(encoding='utf-8'))
         path.write_text(text, encoding='utf-8')

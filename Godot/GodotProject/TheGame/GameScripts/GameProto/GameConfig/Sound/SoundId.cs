@@ -85,6 +85,14 @@ namespace GameConfig.Sound
         /// 悟空火魔斩落地
         /// </summary>
         WukongFireDemonLanding = 13,
+        /// <summary>
+        /// 挑战成功音乐
+        /// </summary>
+        SettlementVictory = 104,
+        /// <summary>
+        /// 挑战失败音乐
+        /// </summary>
+        SettlementDefeat = 105,
     }
 
 } 

@@ -1,8 +1,187 @@
 # 验证
 
+## HUD 预载、攻击 3 裁切与嵌套配置（2026-10-22，当前）
+
+本轮只修改业务流程、官方攻击 3 特效图集、两张配置源表及其 Luban 产物；Framework、addons、Tools/Luban、BOSS 编辑器改动和正式存档均未覆盖。下冲特效场景通过 Godot 打包 API 仅恢复 `CollisionShape2D.disabled=true`，保留已有位置和旋转。
+
+| 命令 / 检查 | 结果 |
+| --- | --- |
+| Luban 直接 CLI（`Configs/GameConfig`，`cs-bin`） | 退出 0；`PassiveConfig` 为 5 个父记录 × 5 级，`HeroGrowthConfig` 为 1 个英雄记录 × 55 级；源表、生成 C# 与 bytes 同步 |
+| `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet` | 退出 0、0 错误；框架既有弃用警告不由本轮引入 |
+| `dotnet test Tests/{BattleTests,ProfileTests,LevelTests}/... --no-restore -v quiet` | 205 / 179 / 18 项通过 |
+| OpenGL `--smoketest=ui --entry-only` | PASS、退出 0；HUD 与关卡并行准备，HUD 就绪后才开始会话 |
+| OpenGL `--smoketest=ui` | PASS、退出 0；预期 HUD 缺绑定失败注入完成清理，随后 UI、存档重入、装备外观、技能、平台和怪物回归通过 |
+| OpenGL `--smoketest=level-cancel` / `frontend` / `level` | 均 PASS、退出 0；在途取消、菜单/地图、五波关卡、守关血条、出口和检查点通过 |
+| `validate_wukong_attack_effect.gd -- renders/wukong_attack_effects.png` | PASS、退出 0；88 个实际姿态、9 个原生滤镜帧、2 个空帧、四种穿戴和双朝向，根坐标稳定 |
+| `validate_game_references.py --compare-staged-geometry` | PASS；598 条序列化路径、293 个 UID、17 个 staged 几何节点 |
+
+入口对照日志中角色就绪到 HUD 可见从约 416ms 降到 22ms；完整结果位于 `.godot/validation/hud_entry_attack_crop/`。正式工程的 `--headless --editor --import --quit` 已完成资源扫描但在只读 ComponentInsoector 插件退出阶段以 `0xC0000005` 结束；隔离工程的实际运行和攻击像素验证均退出 0，因此没有扩大插件修改范围。所有 OpenGL 日志仍可能包含系统根证书读取失败、故意注入的 HUD/存档错误和框架关停 `WebRequest`/ObjectDB 诊断；这些与业务断言分开，未修改只读框架。
+
+## 基础判定与关卡编号目录（2026-10-22，当前）
+
+按用户最新要求及第 10/30/40/50 章实施：攻击采用少量基础形状，土坡保留简单整体六点凸形；专属 BOSS 与三关资源使用 `zm<作品>_<两位关卡>_<名称>`。`zm` 前缀避免 GGF 将纯数字目录名生成为非法 C# 标识符。上轮精细多边形方案及两个专用工具已删除。原生资源经 Godot 保存和移动，生成物经既有工具生成；Framework、addons、旧工程、正式存档和 Git 索引未修改。
+
+日志位于 `.godot/validation/simple_collisions/`，运行使用 `skills_runtime/project` 隔离工程，每个进程独立 APPDATA 与 Validation 存档。Resources.xlsx 只改 EntityConfig 的 D10/D11，LevelConfig.xlsx 只改 F5/F19/F37；表格工具验证后保留原 ZIP 结构，其余内容和格式不变。
+
+| 命令 / 检查 | 结果 |
+| --- | --- |
+| Godot `--headless --editor --script res://EditorScripts/simplify_collision_geometry.gd -- <baseline目录>` | 禺狨王 74 个多边形节点改为一个分阶段矩形；猕猴王至多两个基础体；普通地形转矩形，五座整体坡保留；final_authoring.log |
+| Godot `--headless --script res://EditorScripts/validate_collision_geometry.gd -- <baseline目录>` | PASS、退出 0；40 个场景、111 个基础体节点、5 座简单整体坡、213 个动画形状键，36 个地形覆盖均与修改前快照一致；audit_zm.log |
+| 正式工程同上巡检 / `--headless --script res://EditorScripts/validate_anim_libraries.gd` | 均退出 0；正式 40 个场景与 36 个地形对照、六类角色动画轨道与方法绑定通过；audit_actual_complete.log、animations_actual_complete.log |
+| OpenGL `--script res://EditorScripts/validate_boss_attack_areas.gd -- --snapshots` | PASS、退出 0；左右朝向 22 个命中 / 38 个排除点，闪电间隙命中、云层与外侧空气排除、中断 RESET 关闭；areas_render.log。五张碰撞叠图已查看 |
+| `move_game_resources.gd` / Collection Res / NodePool / Luban 直接 CLI | 原生迁移与标准生成通过；safe_moves.log、collection_final.log、pools_final.log、luban_final.log |
+| `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet` | 退出 0，0 错误、5 项既有框架警告；build_actual_complete.log，正式编辑器已关闭 |
+| 同方式构建隔离工程 | 退出 0，0 错误；最终平台观测适配后也通过 |
+| OpenGL `--smoketest=ui`（完整流程） | PASS、退出 0；ui_complete.log。16 条两关坡面路线覆盖 60/120Hz、双向走跑；三块单向平台与 S+K 下穿、英雄五招、三类小怪、装备提示框、绑定/池复用、失败清理与存档重入通过 |
+| OpenGL `--smoketest=bosses` | PASS、退出 0；两位 BOSS 五招实际伤害，旋风 12 次、雷云 6 次，风刃、无敌及回池；bosses_final.log |
+| OpenGL `--smoketest=progress` | PASS、退出 0；三关实际通关、胜利音乐、出口、检查点、标题/磁盘重读与连续解锁；progress_final.log |
+| `dotnet test Tests/{BattleTests,ProfileTests,LevelTests}/…csproj --no-restore -v quiet` | 205 / 179 / 18 项通过，合计 402 项；battle_tests.log、profile_tests.log、level_tests.log |
+| `python Tools/ProjectMaintenance/validate_game_references.py` / 迁移清单审计 | PASS；598 个序列化路径、291 个脚本 UID；60 个最终文件、37 个已有 UID 保留；495 份原生资源与隔离工程相同，96 个根资源 UID 无重复 |
+| `dotnet format whitespace . --folder --include <本轮手写C#> --verify-no-changes` | 退出 0；平台测试等手写修改按 CRLF 复核 |
+| Godot `--headless --check-only --script <import_official_levels.gd / align_official_level_art.gd>` | 两者退出 0，已同步基础形状读取；import_parse.log、align_parse.log |
+
+完整官方数据检查仍明确报告桃花源 Surface02/03 与源文件不同（levels_final2.log）；这两处在修改前 Git 索引中已手调，不能把本轮简化变成还原用户地形。当前矩形保留其原覆盖，全部 36 个修改前地形对照通过；47 条刷怪配方和其余官方空间检查通过，不宣称官方精确地形检查全 PASS。
+
+早期 ui_final 在普通平台的旧 CollisionPolygon2D 测试强转处失败，已改为读取 CollisionShape2D 的世界边界，完整 ui_complete 重跑通过；更早的 progress 运行被中途路径迁移影响，最终 progress_final 重跑通过。ui_complete 中 BattleForm 绑定缺失错误和损坏主档回退警告来自既有故障注入，用于验证失败清理与备份恢复，不是正常启动失败。用户关闭旧编辑器时重建的三份平铺关卡已先备份到 editor_recreated 再移除，最终仅保留新路径。日志中的既有证书读取错误、WebRequest 关停 ObjectDisposedException 和编辑器 ObjectDB/RID 泄漏分别记录，未扩大框架修改。
+
+## Tooltip、BOSS 雷电与角色资源归属（2026-10-21）
+
+以下为历史验证；其中精细雷电多边形和旧目录方案已由上方 2026-10-22 方案替代，历史 PASS 不代表当前判定规则。
+
+依据第 10/30/40/50 章的职责、原生动画和验证边界，以及用户本轮的多边形命中和角色目录要求。第 30 章对单形状范围读取的旧限制、第 40 章旧目录描述保留，差异已在 WorkingNotes 报告。Framework、addons、旧工程、正式存档和 Git 索引未改。
+
+日志与对照图在 `.godot/validation/boss_review/`。资源通过隔离 Godot 编辑器原生保存/移动；资源常量、池条目和表产物由既有生成器生成。Resources.xlsx 只更新 EntityConfig 的 D6/D10/D11：先经表格工具编辑导出核对，再将这三个字符串值写回原 ZIP，其他 ZIP 成员、单元格类型与格式保持，避免破坏 XLSX diff。
+
+| 命令 / 检查 | 结果 |
+| --- | --- |
+| Luban 直接 CLI（现有 cs-bin/bin 参数） | 退出 0；3 条实体路径指向角色目录，luban.log |
+| Godot `--headless --editor --script res://EditorScripts/move_game_resources.gd -- <moves.json>` | 17 项移动通过，保留已有 UID；moves.log。没有根 UID 的四个效果不伪称有原 UID |
+| Godot `--headless --editor --script res://EditorScripts/repair_tamarin_lightning.gd -- <runtime.json>` | 退出 0；74 个按需启用的多边形节点，连续相同关键帧合并；原矩形删除，geometry_holes_fixed.log |
+| OpenGL `--script res://EditorScripts/validate_boss_lightning.gd -- <runtime.json> --snapshots` | PASS、退出 0；两招 106 个源帧、交替左右朝向，163 个雷电点、5,223 个透明区域点、581 个云层点；lightning_render_final.log。三张真实碰撞叠图已查看 |
+| 原 sprite485 完整 76 帧 vs 已注册身体/效果图层合成 | 第 35～76 帧预乘 RGBA 完全一致；1～34 帧分层栅格化边缘有余差（最大单通道差 137/255），不能声称全帧像素一致。第 30/32/34/35/36/40 帧对照已看，源文件本身第 35 帧换大龙卷；tornado_pixels.log、tornado_comparison.png |
+| `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet` | 退出 0，0 错误、5 项既有框架警告；build_actual.log。编辑器已关闭 |
+| `dotnet build <隔离工程>/GodotProject.csproj --no-restore -v quiet` | 退出 0、0 错误；build_isolated_final.log |
+| 正式工程 `--headless --script res://EditorScripts/validate_anim_libraries.gd` | 退出 0；六类角色完整轨道、方法绑定与迁移路径通过；actual_animation.log |
+| OpenGL `--smoketest=ui` | 完整回归 PASS、退出 0；ui.log。首次并行共享 APPDATA 出现 hotupdate 标记占用，另以独立 APPDATA 重跑相关范围 |
+| OpenGL `--smoketest=ui --inventory-skills-only` | PASS、退出 0；ui_final.log。原生 PopupPanel 的戒指/猿甲/短武器均按内容收缩、底距 6px；前奏固定原地且结束隐藏、五招输入与火魔两分支命中通过 |
+| OpenGL `--smoketest=bosses`（最终独立 APPDATA） | PASS、退出 0；bosses_final.log。五招实际伤害，旋风 12 次、雷云 6 次，原版无敌、风刃与池复用通过 |
+| `dotnet test Tests/BattleTests/BattleTests.csproj --no-restore -v quiet` / ProfileTests | 205 / 179 项通过、各退出 0；battle_tests.log / profile_tests.log |
+| `python Tools/ProjectMaintenance/validate_game_references.py` | PASS：597 个序列化路径、291 个脚本 UID；根资源 UID 无重复，17 个旧路径均已移除 |
+| `dotnet format whitespace . --folder --include <本轮手写 C#> --verify-no-changes` / `git diff --check` | 均退出 0；先修正本轮补丁的 CRLF，再完成格式复核，format_final.log |
+
+密集透明点检查先揭示闭合电弧孔洞被 BitMap 外轮廓填实，修成按需递归分片后通过；物理点用像素中心，避免以分片公共边界测试像素内部。编辑器关闭时写回过一份旧路径禺狨王动画库，已备份为 `tamarin_library_saved_by_old_editor.tres` 后移除；随后核对正式文件、所有移动路径及根 UID，并完成正式编译与动画验证。
+
+既有证书读取失败、WebRequest 关停 ObjectDisposedException 和部分编辑器 ObjectDB/RID 泄漏仍在日志，未扩大框架或插件修改。最终独立运行没有 hotupdate 文件占用，BOSS 烟测先清理生成任务，未再出现首次关停时的 TaskCanceledException。
+
 在仓库根执行。实际引擎：`S:/Godot4/Godot4CSharp_console.exe`；可换成本机对应路径。
 
+## 官方三关画面与两种 HUD 填充对齐（2026-10-20，后续复核）
+
+按本轮用户要求重新核对；不把之前只查碰撞/坐标的 PASS 扩称为完整视觉一致。修复三关远山 -100Y、花果山旧前景/0.92 调淡与历史手调出怪点。桃花源背景图、四块石墙的完整变换、15 条出怪流及五个阶段右界与官方文件相同，保留这些正确坐标。无双黄条左移 5px，BOSS 红色填充上移 3px，保留整体控件位置。
+
+遵循第 40/50 章：场景经隔离 Godot 原生保存，路径/资源 UID 保留；原文件只读，框架/插件和 Git 索引未修改。检测到正式编辑器打开，本轮构建与运行只在 `skills_runtime/project` 完成；现有悟空场景的用户编辑保留。日志目录 `.godot/validation/official_alignment/`，烟测只写唯一 Validation 存档。
+
+| 命令 / 范围 | 结果 |
+| --- | --- |
+| `extract_official_levels.py --xml <main.xml> --script <GameSence.as> --output <official_levels.json>` | 三关 14/18/15 条生成流；新增绘制深度、矩阵、裁图原点及稳定节点映射 |
+| `render_official_level_reference.py --xml <main.xml> --java <java> --ffdec <ffdec.jar> --work <忽略目录>` | PASS、退出 0；直接读取原 GameSence/bgClips 显示列表，未读取 Godot 场景或提取清单，生成三张独立官方整幅对照 |
+| OpenGL `--script res://EditorScripts/validate_level_art_render.gd -- <独立对照 png 目录>` | PASS、退出 0；每关 2,737,600 像素覆盖全高、所有石墙。预乘颜色/alpha 平均差 0.3884% / 0.2467% / 0.2140%，严重差异像素 0.01286% / 0.00153% / 0.00011%，均在原生 Flash/Godot 亚像素渲染余差内；independent_pixels.log |
+| OpenGL `--script res://EditorScripts/validate_official_levels.gd -- <official_levels.json> --snapshots` | PASS、退出 0；三关全部贴图矩阵/原点、完整地形、47 条真实 Luban 配方的敌人/数量/首次等待/重复间隔、生成点、阶段与导出绑定通过。单次配方无后续间隔，不因无效值制造差异；scene_final.log，15 张取景图已抽查两组桃花源石墙 |
+| OpenGL `--script res://EditorScripts/validate_hud_bar_alignment.gd` | PASS、退出 0；真实 BattleForm 中 10%/50%/100% × 1/1.25/2 倍缩放，共九组，黄条与红条露出底框的像素数均为 0；bars_fixed.log，满/半值及实际守关截图已查看 |
+| `dotnet build <隔离工程>/GodotProject.csproj --no-restore -v quiet` | 0 错误、5 项既有框架警告；build_final.log。新增 C# 仅为编辑器只读配方审计，不增加玩法观测 API |
+| `dotnet test Tests/LevelTests/LevelTests.csproj --no-restore -v quiet` | 18 项通过，level_tests.log；本轮未改规则或数值表 |
+| OpenGL `--smoketest=progress` | 三关实际通关、胜利音乐、出口、检查点、标题重读与连续解锁 PASS、退出 0；progress.log |
+| 最终花果山 `--smoketest=level` | 恢复并按配方配对官方坐标后再次 PASS、退出 0；五波、物理门、守关血条、出口与地图重读通过，level1_final.log |
+
+早期配方审计发现花果山第二波稳定 ID 的显示顺序与怪物配方顺序不同，已按猴子五只/妖猴单只配对恢复，最终 47 条审计通过。独立画面比对首次还发现前景 0.92 透明度，恢复后通过；不以放宽断言覆盖问题。一次原生保存完成打印 PASS 后在 Godot Array.Finalize 关停崩溃（-1073741819，save_recipes.log），最后原生保存退出 0（save_local_registration.log）；运行回归无该崩溃。既有证书读取、WebRequest 关停 ObjectDisposedException、ObjectDB/RID 泄漏继续单列，未扩大插件修改。
+
+## 结算音乐、光晕、提示框与三关地形（2026-10-20）
+
+依据第 10/30/40/50 章及本轮视觉、碰撞校正要求实施。三关场景经隔离 Godot 编辑器原生保存，保留 13 份现有场景/资源 UID；未修改 Framework、addons 或 Git 索引。第 40 章关于正式花果山旧地板路径的描述与本轮替换不符，实际资源与原点登记在 OfficialReference，规范正文保留。
+
+日志集中在 `.godot/validation/terrain_presentation/`。引擎使用 `skills_runtime/project` 隔离工程、隔离 APPDATA 和每次唯一的 Validation 存档；正式开发档本轮没有再次转存。
+
+| 命令 / 验证范围 | 结果 |
+| --- | --- |
+| `dotnet test Tests/BattleTests/BattleTests.csproj --no-restore -v quiet` | 205 项通过；新增 60/120Hz 上坡速度不累计为起跳的回归，battle_final.log |
+| 同方式 `Tests/ProfileTests` / `Tests/LevelTests` | 179 / 18 项通过，合计 402 项 |
+| `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet` | 0 错误，6 项既有依赖/联网警告；formal_build_final.log。隔离工程构建同样通过 |
+| OpenGL `--smoketest=ui` | PASS、退出 0，ui_convex.log。两关 × 60/120Hz × 双向 × 走跑共 16 条实际英雄 FSM 路线通过；全程贴地、不切 Air，停步、主动跳跃、三块单向平台及 S+K 下穿正常。长装备说明实际换行、穿脱/技能/绑定/池复用/失败清理通过；失败结算唯一 GGF Music 代理播放失败曲 |
+| OpenGL `--smoketest=progress` | PASS、退出 0，progress_convex.log。新版连续地形下实际通关三关，出口、唯一胜利音乐、结算暂停、自动保存、返回地图及标题重读后进度 1/2/3 全部通过 |
+| OpenGL `--smoketest=bosses` | PASS、退出 0，bosses_snap.log；两 BOSS 五招、实际伤害、无敌、独立风刃及回池通过 |
+| `--script res://EditorScripts/validate_official_levels.gd -- <official_levels.json> --snapshots` | PASS、退出 0；三关源几何/连续土坡、局部顶点、平台、水体、导出绑定与出生流核对；levels_convex.log，截图已查看 |
+| 编辑器 `--script res://EditorScripts/validate_level_scene.gd` | PASS、退出 0；Tool 条目、保留的项目出生点、相机、门及新连续地形通过，level_slots_final.log |
+| `--script res://EditorScripts/audit_actor_registration.gd` | PASS、退出 0；六类角色的身体/受击范围符合源 colipse，312 个待机/走跑姿态记录在 actor_audit_final.log |
+| OpenGL `validate_musou_flash.gd` / `validate_skill_layout.gd` | PASS、退出 0；19 帧全部像素 alpha 与 GPU 一致，158×158 每条边完全透明；最亮帧光晕、造三五入口、无双黑底板和技能位置已看图核对 |
+| `export_official_level_art.py --xml <main.xml> --java <java> --ffdec <ffdec.jar> --work <忽略目录> --output <忽略目录>` | 重跑退出 0，22 张地形/出口 PNG 与正式资源逐字节相同；repro.log |
+| Luban / Collection Res | 源表经直接 Luban 导出成功；原生 Collection Res 生成 518 项资源。旧 11 帧出口及旧导入入口删除 |
+| 已安装 XLSX Diff worker，值/公式两模式 | Resources.xlsx 均识别 14 格、__enums__.xlsx 均识别 6 格；默认命名空间检查通过 |
+| `validate_game_references.py` / C# whitespace verify / `git diff --check` | 604 条资源路径、291 个脚本 UID 通过；C# 格式与差异空白检查通过 |
+| 正式编辑器 `--headless --editor --path Godot/GodotProject --quit-after 120 --no-window` | 冷启动退出 0，formal_cold.log；既有 ComponentInsoector 的 RefCounted/free 关停错误仍在 |
+
+最初分离的坡面/平台会卡侧边；仅焊顶点、额外 ApplyFloorSnap 均未消除完整回归中的偶发失去接触，最终改为每座土坡一个连续凸轮廓，并撤掉额外运行时贴地代码。最终 UI 和三关回归以上表完整结果为准，不计之前失败日志为通过。
+
+正式编辑器“构建完成后立即 --quit”有一次在关停时出现 Godot Array.Finalize 原生崩溃（退出 -1073741819，formal_editor.log），隔离保存中也曾出现；最终原生保存退出 0，常规冷启动退出 0。未将其当作正常退出，也未扩改插件。根证书读取、WebRequest 关停 ObjectDisposedException 和 ObjectDB/RID 泄漏仍单列；UI 的坏档/缺绑定是既有预期故障注入。PASS 不表示依赖日志零错误。
+
+## 敌人继承、进关外观、关卡进度与受击音效（2026-10-20）
+
+依据第 00/10/30/40/50/70 章及本轮用户明确的 Enemy → Monster/Boss 继承要求整理。公共身体与 AI 契约归 Enemy；小怪概率决策、首领共同时钟各归实际分支，具体 BOSS 保留专属招式。编辑器移动代码/场景/动作/贴图并保留 UID，引用同步到源表、生成配置、资源常量和节点池。未修改 Framework/addons 或 Git 索引。
+
+当前日志集中于 `.godot/validation/progress_audio/`；真实引擎使用隔离工程和隔离 APPDATA，烟测存档为 `user://Validation/<模式>/<唯一编号>`。
+
+| 验证命令 / 范围 | 结果 |
+| --- | --- |
+| `dotnet test Tests/BattleTests --no-restore -v quiet` | 203 通过；共同身体状态、AI 预设及首领决策 |
+| 同方式 `Tests/ProfileTests` / `Tests/LevelTests` | 179 / 18 通过，合计 400 项；新增连续解锁、历史重玩不倒退、失败/放弃不推进、进度存盘/同绑定恢复及缺字段拒绝 |
+| `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet` | 0 错误、5 项既有依赖警告；actual_build.log |
+| 正式工程 `Godot4CSharp_console.exe --headless --editor --path Godot/GodotProject --build-solutions --quit --no-window` | 扫描/构建完成，退出 0；没有 GCHandle 或资源丢失，关停仍有既有 ComponentInsoector 的 RefCounted/free 错误；actual_editor.log |
+| 隔离工程 `--rendering-method gl_compatibility -- --smoketest=ui` | PASS、退出 0；complete_ui.log。六类实体零击退/致死受击均发声、hurt 动画不重复；粗糙行者服穿戴后保存并重新进关的 OnShow 通过，既有技能、穿脱、交易、UI 绑定、暂停、结算及失败清理通过 |
+| 同方式 `--smoketest=bosses` | PASS、退出 0；两位 BOSS 五招实际命中、旋风 12 次/雷云 6 次、无敌、风刃寿命及池复用；complete_bosses.log |
+| 同方式 `--smoketest=progress` | PASS、退出 0；实际通关三关并分别退出标题重读，进度 1/2/3、最新地点 2/3/3，逐个检查仅最新光效可见、未来地点直接信号也被拒绝；complete_progress.log |
+| 同方式 `--smoketest=frontend` | PASS、退出 0；开始/六格档案/选角/地图/返回、保存提示和 GGF 声音；complete_frontend.log |
+| `--headless --path <隔离工程> --script res://EditorScripts/validate_anim_libraries.gd` | 六类角色通过、退出 0；BOSS 非特效动作补齐 animation/frame 默认轨道，原招式时点不变；final_animations.log |
+| `--headless --editor --path <隔离工程> --script res://EditorScripts/validate_hero_appearance.gd` | PASS、退出 0；冷加载→原生保存→重载保留 3 件防具、2 件武器映射；appearance_roundtrip.log |
+| Collection Res / 既有 NodePool 扫描器 | 495 项资源和现有池配置重新生成；删除两份无引用的同名旧动作库，避免收集被 basename 冲突中断 |
+| 已安装 XLSX Diff worker（普通/公式模式） | 两模式准确识别 Resources.xlsx 的 5 格场景路径变更，其余表值不变；Luban 直接运行退出 0；luban.log |
+| `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry` | 582 条路径、290 个 UID、23 个原有关卡几何节点通过；额外与索引核对的 72 个迁移标识不变 |
+| 变更手写 C# `dotnet format whitespace . --folder --include <文件> --verify-no-changes`；`git diff --check` | 67 个变更手写文件通过；77 条文档本地链接存在 |
+
+正式第 1 格按用户本轮确认“备份转存，从花果山解锁”处理：完整备份位于 `%APPDATA%/Godot/app_userdata/GameZMXY/GameData.backup-before-v9-20261020-132525`。主档与 .bak 同步为 v9、HighestClearedLevelId=0，原累计经验 2040、灵魂 131、5 件装备、4 个已学技能及原穿戴 Guid 保留；正式 SaveDataUtility 只读校验两份均通过。转存前 SHA256 与已审原件一致，除此两新增/更新字段外 JSON 数据相同，无正式运行时兼容分支。证据 save_v9/applied.json、actual_validation.log、backup_validation.log。
+
+额外将这份已转存的正式档复制到隔离 APPDATA，走真实标题→已有第 1 格→地图→花果山冷启动：只开放花果山，8 级悟空已有行者服与武器正确显示，HUD 正常打开，RESUME PASS、退出 0；resume_actual.log / migrated_profile_ingame.png。原件不由烟测写入。
+
+回归初次失败曾来自测试仍按 Monster 前缀识别状态、夹具在关卡回滚前准备装备，以及致死伤害夹具未计等级减伤；已修正测试的真实前提并重新完成上述完整回归，未添加生产测试 API。既有根证书读取错误、WebRequest 关停 ObjectDisposedException 和 ObjectDB/RID 泄漏仍单列保留；UI 的损坏档与缺绑定为预期故障注入，PASS 不等于无错误关停。
+
+## 第二、第三关、换装与目录（2026-10-19）
+
+以下引擎命令均使用隔离工程 `Godot/GodotProject/.godot/validation/skills_runtime/project`（以 `<隔离工程>` 代称）与隔离 APPDATA/Validation 存档，未触发正式编辑器热重载。日志集中在正式工程 `.godot/validation/stages_2_3/`。
+
+| 验证命令 / 范围 | 结果 |
+| --- | --- |
+| `dotnet test Tests/BattleTests --no-restore -v quiet` | 203 通过；新增两 BOSS 原版距离、秒制选招、冷却、受控恢复和死亡优先级 |
+| 同方式 `Tests/ProfileTests` / `Tests/LevelTests` | 174 / 18 通过；装备随机范围、3% 直接概率、饰品所有权与存档、配方及阶段规则 |
+| `dotnet build <隔离工程>/GodotProject.csproj --no-restore -v quiet` | 0 错误；NU1900 和框架声音弃用共 6 项既有警告 |
+| `Godot4CSharp_console.exe --headless --editor --path <隔离工程> --build-solutions --quit --no-window` | 扫描和构建完成，退出 0；编辑器关停仍有既有 RID/ObjectDB 泄漏 |
+| `Godot4CSharp_console.exe --path <隔离工程> --rendering-method gl_compatibility -- --smoketest=level2` | PASS、退出 0；水帘洞五波、48 只、312 经验、猕猴王血条、门与相机、W 出口、成功结算、检查点保存与地图重读 |
+| 同方式 `--smoketest=level3` | PASS、退出 0；桃花源五波、49 只、361 经验、禺狨王血条及相同完整保存返回链路 |
+| 同方式 `--smoketest=level` / `frontend` | 均 PASS、退出 0；花果山五波与入口导航回归 |
+| 同方式 `--smoketest=bosses` | PASS、退出 0；两 BOSS 共五招均造成实际伤害，旋风 12 次、雷云 6 次；无敌、50 帧独立风刃寿命和池复用通过 |
+| 同方式 `--smoketest=ui` | PASS、退出 0；技能身体/独立效果命中音经过 GGF；通用饰品的 3% 标签和 tooltip、卸下清理；猿甲战斗与背包纹理同步、全部基础动作逐帧、交易、暂停、重入和失败清理通过 |
+| `validate_official_levels.gd` 与官方提取数据 | PASS；水帘洞 18 条出生流 / 25 个碰撞面，桃花源 15 条 / 6 个碰撞面；出生坐标与重叠战斗边界相符 |
+| `python Tools/ProjectMaintenance/validate_game_references.py --compare-staged-geometry` | 577 路径、285 UID、23 个既有几何节点通过；原生编辑器迁移脚本/场景，UID 保持 |
+| 已安装 XLSX Diff 的 diff-load-worker，普通/公式两种模式 | 8 份变更工作簿均通过，含 Enemy 两张 Sheet 与 __tables__ 合并输入；中文、字段和单元格变化可读 |
+| Collection Res / 既有 NodePool 扫描器 | 495 个资源；共享效果、风刃、掉落节点正确登记，仅经生成器更新 |
+| 52 份变更手写 C# 的 `dotnet format whitespace . --folder --include <文件> --verify-no-changes` / `git diff --check` | 通过；生成的 MapForm.cs 保留 Ge 输出格式，不手动排版 |
+
+已检查原生游戏截图：水帘洞与桃花源、顶部居中 BOSS 条、两 BOSS 的动作特效、地煞猿甲背包预览。图集检查修复烈焰闪残影误入身体层造成的矩形，保留独立特效；原点和既有帧号未改变。最初水帘洞烟测把低洼旧 Y 传送进较高地面导致掉落，另有出口斜坡缺少跳跃；修正测试摆放与输入后完整流程通过，未改官方碰撞面来迁就测试。桃花源无渲染器模式在成功结算暂停后未结束，已停止该次运行；上述通过结果来自实际 OpenGL 渲染模式。
+
+经本轮用户明确授权，第 1 格 `1791793987.sav` 从 v7 一次性转存 v8：2040 经验、131 灵魂、5 件装备、4 个技能和穿戴保持，原有四项概率全为 0，无单位歧义。原目录完整备份到 `user://GameData.backup-before-v8-20261019-233717`；主档与 `.bak` 均经正式 `SaveDataUtility.Validate` 校验通过，目录摘要未改变，正式代码没有迁移分支。
+
+运行日志仍报告既有根证书错误和框架 WebRequest 关停 ObjectDisposedException，预期 HUD/存档失败注入也保留记录；PASS 不表示零错误日志。唐僧尚未可玩，地煞权杖仅有官方图标、掉落和数值，唐僧换装随其实体实现；地图解锁进度、被动购买本轮未接入。
+
 ## GGF + QF 架构巡检（2026-10-19）
+
+QF 使用准则复核：对照官方源码及教程第 09、10 节，确认 Query 可选、返回一次结果，持续绑定由 Model 提供；现有五类界面业务修改入口均走 Command。此次仅补清第 00 章、ProjectTour 和架构类型的说明，未改运行逻辑；重新执行 `dotnet test Tests/ProfileTests --no-restore -v quiet`，170 项通过，仍有 NuGet 离线审计及测试替身未赋值警告。本次未重跑下列既有引擎验证。
 
 规范集中在第 00 章，命名、配置、实体、场景和存档章节同步当前契约；ProjectTour 记录六个 Model 的所有者、注册点及实际调用链，WorkingNotes 提炼设计判断。职责检查覆盖业务 Architecture、Model/System、UI、输入/身体/AI/技能、关卡/掉落、存档/流程及资源生成工具入口。
 
@@ -591,13 +770,17 @@ python Tools/LegacyMigration/import_official_wukong_idle.py `
 
 ## 已知限制
 
+第二、第三关最新结果及开发档处理见本文开头；下列为仍存在的依赖和未实现范围。
+
+饰品原生导入脚本完成保存并输出 PASS 后，编辑器关停触发 `godotsharp_array_destroy` 的 GC `0xC0000005`，该次进程退出 1，不能计作无错误导入。保存后的资源已在独立真实游戏中完整加载、点击和复用通过，UI 进程退出 0；未修改引擎或插件来掩盖关停异常。
+
 - 构建有框架既有的弃用警告；测试 NU1900 表示无法连接 NuGet 漏洞服务，与断言失败分开记录。
 - AI 烟测曾在落地等待 6 秒内未出手而失败；复测中的范围与落地读数正常、行为恢复并通过。现测试夹具临时固定出手概率，只验证恢复能力，概率规则由确定性单测验证。
 - 当前隔离环境的 Godot 进程会报告系统根证书存储读取失败；独立攻击渲染断言仍 PASS、退出 0，该错误不作为无错误运行忽略。
 - UI 回归故意注入 HUD 缺绑定以检查失败清理，该段错误日志是预期夹具；必须继续到 SMOKE PASS 才算通过。
-- frontend 回归故意注入跨槽写盘和损坏档案；拒绝写入与读取失败日志为预期。烟测使用隔离目录，不改正式档；用户授权的正式开发档一次性维护单独登记在上表。当前格式 v7，无旧格式运行时兼容。
+- frontend 回归故意注入跨槽写盘和损坏档案；拒绝写入与读取失败日志为预期。烟测使用隔离目录；获准的正式开发档一次性维护另行登记，不由烟测写入。当前格式 v9，无旧格式运行时兼容。
 - 引擎关停的 `DefaultWebRequestAgentHelper.Reset` 仍抛 ObjectDisposedException，并报告 ObjectDB 实例未释放。业务断言 PASS、进程退出 0，不能称为无错误退出；独立升级渲染检查无此异常。
 - 历史关停还出现过 GC `0xC0000005` 与编辑器 `ComponentInsoector._ExitTree` 释放错误；依赖只读，未在业务层绕过或修改。
-- 当前悟空实战含造一五段普攻与五项主动技能；唐僧技能和被动购买尚未实现，造三攻击未迁入。规范第 20/30/50/60/70 章仍有旧属性名、存档版本和装配描述，规范正文未自行改写；本轮资源遵循第 40 章既有美术规则。
+- 当前悟空实战含造一五段普攻与五项主动技能；唐僧技能和被动购买尚未实现，造三攻击未迁入。本轮按获准的表格与目录分类同步第 20/40 章，存档 v8 契约见第 70 章；其余未实现范围按实际进度记录。
 
 规范依据和依赖修改授权仅在 [第 50 章](ProjectGuidelines/50-FrameworkAndTools.md) 维护；本页只保留可执行命令、当前结果和限制。

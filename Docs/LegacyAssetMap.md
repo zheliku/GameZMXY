@@ -4,21 +4,39 @@
 
 ## 角色、关卡与 HUD
 
+### 第二、第三关及守关装备
+
+以下从 OfficialReference 登记的同版官方包提取，未使用旧工程重做数值或重绘 BOSS：
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| `Scenes/Levels/zm1_02_shuiliandong/level_2.tscn`、`Sprites/Levels/zm1_02_shuiliandong/` | 主程序 GameSence 的 1-2 显示列表；`extract_official_levels.py` 记录出生点、边界和碰撞面，`import_official_levels.gd` 原生建场景 |
+| `Scenes/Levels/zm1_03_taohuayuan/level_3.tscn`、`Sprites/Levels/zm1_03_taohuayuan/` | GameSence 的 1-3；同上，不覆盖已编辑场景 |
+| `Entitys/Animations/shuiliandong_river_animation.tres` | 水波元件 94 的完整 325 帧，24fps；保留原生位置关键帧与矩形裁切 |
+| `Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/` | Monster_v1 的 export.monster.Monster4；完整 209 帧，身体与攻击特效独立图集 |
+| `Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/` | Monster_v1 的 export.monster.Monster6；完整 176 帧，身体与落雷独立图集 |
+| `Entitys/Enemies/Bosses/zm1_02_macaque_king/macaque_wind_blade_effect.tscn` | Monster_v1 的 Boss2Bullet1，50 帧；`export_official_bosses.py` → `import_official_bosses.gd` → `import_official_boss_scenes.gd`，保留原点、判定与新攻击编号时点 |
+| `Sprites/Items/equipment/*earth_fiend*` | OtherMat_v9 的灵戒 44/21、猿甲 114/113、权杖 112/111（背包/掉落元件）；`export_official_equipment.py`、`import_official_boss_equipment.gd`；使用透明装备前景，避免烘焙格底 |
+
+BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7cec8d1790747869641c11fe553910b10fe2a264a`。源中间件不入正式资源目录，原生动画按源 24fps 换成秒，运行物理不绑定渲染帧率。代码、场景与表格分类见 ProjectTour。
+
+### 既有角色与界面
+
 | 旧路径 | 新路径 | 规格 / 说明 |
 | --- | --- | --- |
-| `Art/Monster/Monster1/Wait.png` | `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_idle.png` | 43×63，1 帧 |
-| `Art/Monster/Monster1/Walk.png` | `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_run.png` | 64×88 × 4 帧 |
-| `Art/Monster/Monster1/Hit.png` | `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_attack.png` | 91×83 × 6 帧 |
-| `Art/Monster/Monster1/Hurt.png` | `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_hurt.png` | 68×86 × 2 帧 |
-| `Art/Monster/Monster1/Death.png` | `Sprites/Characters/Monsters/huaguoshan_monkey/huaguoshan_monkey_death.png` | 91×88 × 6 帧 |
-| `Art/Monster/Monster2/Wait.png` | `Sprites/Characters/Monsters/demon_monkey/demon_monkey_idle.png` | 74×114 × 5 帧 |
-| `Art/Monster/Monster2/Walk.png` | `Sprites/Characters/Monsters/demon_monkey/demon_monkey_run.png` | 116×105 × 4 帧 |
-| `Art/Monster/Monster2/Hit.png` | `Sprites/Characters/Monsters/demon_monkey/demon_monkey_attack.png` | 130×134 × 4 帧 |
-| `Art/Monster/Monster2/Hurt.png` | `Sprites/Characters/Monsters/demon_monkey/demon_monkey_hurt.png` | 89×87 × 1 帧 |
-| `Art/Monster/Monster2/Death.png` | `Sprites/Characters/Monsters/demon_monkey/demon_monkey_death.png` | 124×108 × 5 帧 |
-| `Art/Level/Level_1/19_1.png` | `Sprites/Levels/huaguoshan/level_1_bg_end.png` | 1440×690；旧 `BackGround/End/end2` 背景端块 |
-| `Art/Level/Level_1/48.png` | `Sprites/Levels/huaguoshan/level_1_front.png` | 4957×633；旧 `BackGround/front` 前景视差层 |
-| `Art/Level/Level_1/183.png` | `Sprites/Levels/huaguoshan/level_1_floor.png` | 原 4812×170；旧 `BackGround/floor3/floor2` 地板视差层。**已裁至 4700×170**：右侧 112px 圆角收尾（x≥4716 顶面下坠、右下透明）会露出背景，相机右界随之定在 4700 |
+| `Art/Monster/Monster1/Wait.png` | `Sprites/Characters/Enemies/Monsters/huaguoshan_monkey/huaguoshan_monkey_idle.png` | 43×63，1 帧 |
+| `Art/Monster/Monster1/Walk.png` | `Sprites/Characters/Enemies/Monsters/huaguoshan_monkey/huaguoshan_monkey_run.png` | 64×88 × 4 帧 |
+| `Art/Monster/Monster1/Hit.png` | `Sprites/Characters/Enemies/Monsters/huaguoshan_monkey/huaguoshan_monkey_attack.png` | 91×83 × 6 帧 |
+| `Art/Monster/Monster1/Hurt.png` | `Sprites/Characters/Enemies/Monsters/huaguoshan_monkey/huaguoshan_monkey_hurt.png` | 68×86 × 2 帧 |
+| `Art/Monster/Monster1/Death.png` | `Sprites/Characters/Enemies/Monsters/huaguoshan_monkey/huaguoshan_monkey_death.png` | 91×88 × 6 帧 |
+| `Art/Monster/Monster2/Wait.png` | `Sprites/Characters/Enemies/Monsters/demon_monkey/demon_monkey_idle.png` | 74×114 × 5 帧 |
+| `Art/Monster/Monster2/Walk.png` | `Sprites/Characters/Enemies/Monsters/demon_monkey/demon_monkey_run.png` | 116×105 × 4 帧 |
+| `Art/Monster/Monster2/Hit.png` | `Sprites/Characters/Enemies/Monsters/demon_monkey/demon_monkey_attack.png` | 130×134 × 4 帧 |
+| `Art/Monster/Monster2/Hurt.png` | `Sprites/Characters/Enemies/Monsters/demon_monkey/demon_monkey_hurt.png` | 89×87 × 1 帧 |
+| `Art/Monster/Monster2/Death.png` | `Sprites/Characters/Enemies/Monsters/demon_monkey/demon_monkey_death.png` | 124×108 × 5 帧 |
+| `Art/Level/Level_1/19_1.png` | `Sprites/Levels/zm1_01_huaguoshan/level_1_bg_end.png` | 1440×690；旧 `BackGround/End/end2` 背景端块 |
+| `Art/Level/Level_1/48.png` | `Sprites/Levels/zm1_01_huaguoshan/level_1_front.png` | 4957×633；旧 `BackGround/front` 前景视差层 |
+| `Art/Level/Level_1/183.png` | `Sprites/Levels/zm1_01_huaguoshan/level_1_floor.png` | 原 4812×170；旧 `BackGround/floor3/floor2` 地板视差层。**已裁至 4700×170**：右侧 112px 圆角收尾（x≥4716 顶面下坠、右下透明）会露出背景，相机右界随之定在 4700 |
 | `Art/Level/Gogo/1..67.png` | `Sprites/UI/gogo/gogo_sheet.png` + `gogo_animations.tres` | 67 帧 213×92 打包为 8×9 图集；旧 `Role_information` 的 `Gogo`（`AnimatedSprite2D`，speed 25、循环） |
 | `Art/HeroPicture/RoleProperiesBox/408.png` | `Sprites/UI/hud/hud_status_panel.png` | 227×87，状态面板底图 |
 | `Art/HeroPicture/RoleProperiesBox/345.png` | `Sprites/UI/hud/hud_hp_fill.png` | 144×12，血条填充 |
@@ -162,16 +180,21 @@
 
 | 旧项目相对路径 | 新项目 TheGame 相对路径 |
 | --- | --- |
-| `Art/Monster/Monster3/Wait.png` | `Sprites/Characters/Monsters/gorilla/gorilla_idle.png` |
-| `Art/Monster/Monster3/Walk.png` | `Sprites/Characters/Monsters/gorilla/gorilla_run.png` |
-| `Art/Monster/Monster3/Hit.png` | `Sprites/Characters/Monsters/gorilla/gorilla_attack_1.png` |
-| `Art/Monster/Monster3/Hurt.png` | `Sprites/Characters/Monsters/gorilla/gorilla_hurt.png` |
-| `Art/Monster/Monster3/Death.png` | `Sprites/Characters/Monsters/gorilla/gorilla_death.png` |
-| `Art/Level/Export.png` | `Sprites/Effects/level_exit/level_exit_sheet.png` |
+| `Art/Monster/Monster3/Wait.png` | `Sprites/Characters/Enemies/Monsters/gorilla/gorilla_idle.png` |
+| `Art/Monster/Monster3/Walk.png` | `Sprites/Characters/Enemies/Monsters/gorilla/gorilla_run.png` |
+| `Art/Monster/Monster3/Hit.png` | `Sprites/Characters/Enemies/Monsters/gorilla/gorilla_attack_1.png` |
+| `Art/Monster/Monster3/Hurt.png` | `Sprites/Characters/Enemies/Monsters/gorilla/gorilla_hurt.png` |
+| `Art/Monster/Monster3/Death.png` | `Sprites/Characters/Enemies/Monsters/gorilla/gorilla_death.png` |
 | `Art/HeroPicture/RoleProperiesBox/128.png` | `Sprites/UI/hud/boss_health_fill.png` |
 | `Art/HeroPicture/RoleProperiesBox/124.png` | `Sprites/UI/hud/boss_health_under.png` |
 
-平台来源：旧 `Art/Level/level_2/177.png` → `Sprites/Levels/huaguoshan/level_1_platform.png`。
+平台来源：旧 `Art/Level/level_2/177.png` → `Sprites/Levels/zm1_01_huaguoshan/level_1_platform.png`。
+
+正式花果山地形和出口现改用主程序 v25928 原文件：shape 60 → `huaguoshan_ground.png`，shape 56 → `huaguoshan_platform.png`；sprite 85 → `Sprites/Effects/level_exit/level_exit_00..19.png`。导出工具为 `export_official_level_art.py`，原点写入 layout.json；Godot 用 `repair_terrain_registration.gd` 保存原生资源。旧 11 帧出口已删除，旧导入器不再生成它。`level_1_floor.png` 仍供独立调试场地使用。
+
+同一导出工具现覆盖前三关全部可见地形与前景：161/163/168 为三关前景，88/97 为水帘洞平台/地面，101/103 为桃花源地面/石墙。花果山 `level_1_front.png` 已替换为官方原生输出，保持路径和 UID；源矩阵及图像左上来自 `extract_official_levels.py`，`align_official_level_art.gd` 负责原生保存。隐藏的碰撞、转向、副本等调试元件不导入为可见图像。
+
+结算配乐取旧工程 `Music/level/13_Game_Victory.mp3`、`12_over.mp3`，原样迁为 `Audios/Music/settlement_victory.mp3`、`settlement_defeat.mp3`；SHA-256 分别为 `c7bf53f7ac759efdd04defed2f1a8e61b11d5c57745220ded7bed6cd4ba4ab35`、`88a4ef5d27ff38bd9c9964e9b3864eb8940ef261bd9fcb110ce39880f10abc0d`。两曲由 GGF Music 播放，Godot 导入开启循环；ProcedureLevel 拥有关卡和结算音乐的唯一请求。
 
 ## 官方升级、掉落球与无双演出
 
@@ -233,7 +256,7 @@
 | `Art/BackPack/sz.png` | `Sprites/UI/inventory/inventory_slot_costume.png` |
 | `Art/BackPack/tx.png` | `Sprites/UI/inventory/inventory_slot_title.png` |
 
-`UIs/Widgets/hero_preview.tscn` 与战斗实体共用下述官方身体、武器图集及 `wukong_appearance.tres`。外置 `inventory_preview_animation.tres` 使用原版完整待机 100 帧（24 fps，约 4.167 秒循环）；金光取旧背包 BackPackLight 的第 3..8 格（192×192，15 fps，竖直翻转）。动画只改变显示帧，不带攻击或碰撞轨道。
+`UIs/Inventory/hero_preview.tscn` 与战斗实体共用下述官方身体、武器图集及 `wukong_appearance.tres`。外置 `inventory_preview_animation.tres` 使用原版完整待机 100 帧（24 fps，约 4.167 秒循环）；金光取旧背包 BackPackLight 的第 3..8 格（192×192，15 fps，竖直翻转）。动画只改变显示帧，不带攻击或碰撞轨道。
 
 ## 装备与地面恢复品
 
@@ -260,16 +283,19 @@
 
 ## 悟空独立身体与武器
 
-当前战斗和背包使用官方 `Role_v7.swf` 的 `export.hero.Role1`（sprite 575）动作。四张图均为 1200×4000、6×20、每格 200×200；保留基础与技能的前 108 格（含原填充格），追加完整待机缺少的 8 个姿势，末行余 4 格：
+当前战斗和背包使用官方 `Role_v7.swf` 的 `export.hero.Role1`（sprite 575）动作。五张图均为 1200×4000、6×20、每格 200×200；保留基础与技能的前 108 格（含原填充格），追加完整待机缺少的 8 个姿势，末行余 4 格：
 
 | 新文件（`Sprites/Characters/Heroes/wukong/`） | 源选择帧 | 用途 |
 | --- | --- | --- |
 | `wukong_body_bare.png` | 衣服元件 143/152/160/186 的第 1 帧 | 未穿防具的身体 |
 | `wukong_body_pilgrim.png` | 同上第 2 帧 | 粗糙/普通行者服共用外观 |
+| `wukong_body_earth_fiend.png` | 同上第 4 帧，AllEquipment 的 dsyj.showid=4 | 地煞猿甲的完整动作外观 |
 | `wukong_weapon_default.png` | 武器元件 177 第 1 帧 | 默认木棍 |
 | `wukong_weapon_pilgrim.png` | 同上第 2 帧 | 粗糙/普通行者棍共用外观 |
 
-沿用旧 `Scene/Hero/Role_1/Role1.tscn` 的两层结构：完整身体在后，武器在前；源绘制深度位于武器前方的头部、手臂等作为导出遮罩，裁掉武器被遮挡的部分。遮罩只在导出时使用，不创建第三个运行时层，也不导出武器和防具的组合图集。两种防具须保持相同的前景遮挡轮廓，便于武器独立替换。
+沿用旧 `Scene/Hero/Role_1/Role1.tscn` 的两层结构：完整身体在后，武器在前；源绘制深度位于武器前方的头部、手臂等作为导出遮罩，裁掉武器被遮挡的部分。遮罩只在导出时使用，不创建第三个运行时层，也不导出武器和防具的组合图集。各套防具须保持相同的前景遮挡轮廓，便于武器独立替换。
+
+`HeroAppearanceResource` 的防具/武器字典按 EquipmentId 绑定具体纹理，战斗与背包预览共用 `wukong_appearance.tres`。猿甲经 `export_official_wukong_equipment.py` → `import_official_wukong_equipment.gd` 导出，`register_official_wukong_equipment.gd` 原生保存绑定；沿用现有帧号及原点，不覆盖人工动画。338/371/416/568 等技能能量继续使用独立特效，不能混入身体 SVG，否则模糊滤镜会成为矩形。唐僧尚未可玩，地煞权杖当前只有官方图标、掉落图和数值，没有虚构可用的唐僧换装动作。
 
 所有动作保留 Role1 父级中的完整矩阵，统一 SVG viewBox `(-100,-128,200,200)`，原 Flash 原点位于格内 `(100,128)`。例如待机平移 `(1.45,0.8)`、慢走 `(-6.85,0.85)`、跑步 `(3.75,0.2)`、受击 `(-17.95,2.6)`；漏掉这些矩阵会造成动作切换跳位。不能按各帧可见边界重新居中，也不能在运行时移动角色根节点补偿。
 
@@ -331,6 +357,6 @@
 
 烈焰闪不把模糊光效当作超宽命中区：保留原透明探针 205 的几何，只在验证/拟合时转为不透明。其他有 stick 的技能按源窗口及可见能量拟合两种武器共同的矩形，沿用 3px 余量、最小厚度 14px；透明能量阶段关闭判定。火魔斩主体没有 stick，70 帧内的大段透明是原文件事实，伤害与表现由独立特效承担。
 
-独立特效位于 `Sprites/Effects/wukong/skills/`、外置库 `Entitys/Animations/Skills/`、场景 `Entitys/Effects/Skills/`；图片用 `_atlas`、场景用 `_effect`、序列用 `_frames`、库用 `_library` 后缀，保证全树 basename 唯一：烈焰闪拖尾 66（10 帧）、火魔起手 129（40 帧）、九连斩 112（44 帧）、下冲 133（2 帧）、落地斩 123（13 帧）。后三项带独立 HitBox；现已通过 SkillEffectNode 接入实战。Visual 下同时放图像与判定，原生方法轨道更新攻击包、播放 GGF 声音及请求回池；默认不自动播放。图像、原点和原值轨道保留，偏移/大小/镜像直接编辑场景与动画，详见 ProjectTour。
+技能特效图在 `Sprites/Effects/wukong/skills/`、外置库在 `Entitys/Animations/Heroes/Wukong/`、角色与独立效果在 `Entitys/Heroes/Wukong/`。源元件为烈焰闪拖尾 66（10 帧）、火魔起手 129（40 帧）、九连斩 112（44 帧）、下冲 133（2 帧）、落地斩 123（13 帧）。起手只有视觉，现并入悟空的 TopLevel AnimatedSprite2D，保留出招位置与完成隐藏；不再生成空 HitBox、独立场景或节点池条目。其他四项仍由 SkillEffectNode 独立播放，后三项拥有独立 HitBox；Visual 同时放图像与判定，原生方法轨道更新攻击包、播放 GGF 声音及请求回池。图片、原点、源帧与场景内的镜像和偏移保留，详见 ProjectTour。
 
 七段声音取自[官方 Music.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/Music.swf)，恢复后 SHA-256 `5cad2f1ef3ce592c2e9e44c631748e042d8cacae2c7571e57b1a0546998a7578`。`export_official_skill_audio.py` 原样导出 MP3：6/8/11/1 分别为升龙斩/火炎突击/烈焰闪/烈焰风暴，13/14/15 为火魔起手/九连斩/落地。正式路径 `Audios/SFX/wukong/skills/`，SoundId 7..13，全部登记到 GGF SFX，无循环。

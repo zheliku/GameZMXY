@@ -16,6 +16,7 @@ public sealed class HeroSystem : AbstractSystem
     private static readonly int m_AttributeCount = Enum.GetValues<AttributeType>().Length; // 配置属性的连续数量。
     private static readonly AttributeSourceId m_WeaponSource = new("EquipmentWeapon", 0); // 当前武器的来源键。
     private static readonly AttributeSourceId m_ArmorSource = new("EquipmentArmor", 0); // 当前防具的来源键。
+    private static readonly AttributeSourceId m_AccessorySource = new("EquipmentAccessory", 0); // 当前饰品的来源键。
     private const double TickTolerance = 1e-5; // 秒数累计的浮点点数容差。
 
     /// <summary>即时借用本局英雄数值，不缓存模型引用。</summary>
@@ -54,8 +55,8 @@ public sealed class HeroSystem : AbstractSystem
         var profile = this.GetModel<ProfileModel>();
         var tables = this.GetModel<ConfigurationModel>().Tables;
         Reset(profile.ActiveHeroId, profile.Level,
-            tables.TbHeroGrowthConfig.Get(profile.ActiveHeroId, profile.Level).BaseAttributes,
-            profile.Weapon, profile.Armor);
+            tables.TbHeroGrowthConfig.Get(profile.ActiveHeroId).Levels[profile.Level - 1].BaseAttributes,
+            profile.Weapon, profile.Armor, profile.Accessory);
         var battle = tables.TbBattleConfig.Data;
         ResetWs(battle.WsMax, battle.WsDecayPerSecond, battle.WsDrainPerSecond);
         profile.Progress.Register(OnProgressChanged, priority: 100);
@@ -119,12 +120,13 @@ public sealed class HeroSystem : AbstractSystem
     /// <param name="baseAttributes">对应基础值。</param>
     /// <param name="weaponData">当前武器。</param>
     /// <param name="armorData">当前防具。</param>
+    /// <param name="accessoryData">当前饰品。</param>
     internal void Reset(int heroId, int level, ActorBaseAttributes baseAttributes,
-        EquipmentData weaponData = null, EquipmentData armorData = null)
+        EquipmentData weaponData = null, EquipmentData armorData = null, EquipmentData accessoryData = null)
     {
         ArgumentNullException.ThrowIfNull(baseAttributes);
         Hero.Sources.Clear();
-        SetGrowth(baseAttributes, heroId, level, weaponData, armorData, refill: true);
+        SetGrowth(baseAttributes, heroId, level, weaponData, armorData, refill: true, accessoryData);
     }
 
     /// <summary>同步当前成长与穿戴并重算属性，保留技能/Buff 来源。</summary>
@@ -133,13 +135,14 @@ public sealed class HeroSystem : AbstractSystem
     /// <param name="level">当前等级。</param>
     /// <param name="weaponData">武器。</param>
     /// <param name="armorData">防具。</param>
+    /// <param name="accessoryData">饰品。</param>
     /// <param name="refill">升级是否补满资源。</param>
     internal void SetGrowth(ActorBaseAttributes baseAttributes, int heroId, int level,
-        EquipmentData weaponData, EquipmentData armorData, bool refill)
+        EquipmentData weaponData, EquipmentData armorData, bool refill, EquipmentData accessoryData = null)
     {
         ArgumentNullException.ThrowIfNull(baseAttributes);
         Hero.BaseAttributes = baseAttributes;
-        ReplaceEquipmentSources(weaponData, armorData);
+        ReplaceEquipmentSources(weaponData, armorData, accessoryData);
         Recalculate(heroId, level, refill);
     }
 
@@ -173,31 +176,35 @@ public sealed class HeroSystem : AbstractSystem
     {
         if (progress.Level == Hero.Level.Value)
             return;
-        var row = this.GetModel<ConfigurationModel>().Tables.TbHeroGrowthConfig.Get(Hero.HeroId, progress.Level);
+        var row = this.GetModel<ConfigurationModel>().Tables.TbHeroGrowthConfig.Get(Hero.HeroId).Levels[progress.Level - 1];
         var profile = this.GetModel<ProfileModel>();
         SetGrowth(row.BaseAttributes, Hero.HeroId, progress.Level, profile.Weapon, profile.Armor,
-            refill: progress.Level > Hero.Level.Value);
+            refill: progress.Level > Hero.Level.Value, profile.Accessory);
     }
 
     /// <summary>装备事务完成后重算，保留其余来源且不补血。</summary>
     /// <param name="slots">已经提交的穿戴。</param>
     private void OnEquipmentChanged(EquippedItems slots)
     {
-        ReplaceEquipmentSources(slots.Weapon, slots.Armor);
+        ReplaceEquipmentSources(slots.Weapon, slots.Armor, slots.Accessory);
         Recalculate(Hero.HeroId, Hero.Level.Value, refill: false);
     }
 
-    /// <summary>整体替换两个装备来源。</summary>
+    /// <summary>整体替换当前三个穿戴部位的属性来源。</summary>
     /// <param name="weaponData">当前武器。</param>
     /// <param name="armorData">当前防具。</param>
-    private void ReplaceEquipmentSources(EquipmentData weaponData, EquipmentData armorData)
+    /// <param name="accessoryData">当前饰品。</param>
+    private void ReplaceEquipmentSources(EquipmentData weaponData, EquipmentData armorData, EquipmentData accessoryData)
     {
         Hero.Sources.Remove(m_WeaponSource);
         Hero.Sources.Remove(m_ArmorSource);
+        Hero.Sources.Remove(m_AccessorySource);
         if (weaponData != null)
             Hero.Sources[m_WeaponSource] = weaponData.Attributes.EnumerateModifiers().ToArray();
         if (armorData != null)
             Hero.Sources[m_ArmorSource] = armorData.Attributes.EnumerateModifiers().ToArray();
+        if (accessoryData != null)
+            Hero.Sources[m_AccessorySource] = accessoryData.Attributes.EnumerateModifiers().ToArray();
     }
 
     /// <summary>按固定、加算百分比、乘算百分比顺序汇总，再更新模型；各绑定值同步通知。</summary>
@@ -229,11 +236,15 @@ public sealed class HeroSystem : AbstractSystem
                 }
             }
 
-        Span<int> final = stackalloc int[count];
+        Span<float> final = stackalloc float[count];
         for (int i = 0; i < count; i++)
-            final[i] = (int)MathF.Round(MathF.Max(0, ((Hero.BaseAttributes?.Get((AttributeType)i) ?? 0) + flat[i])
-                                                     * (1 + percentAdd[i]) * percentMult[i]),
-                MidpointRounding.AwayFromZero);
+        {
+            var attribute = (AttributeType)i;
+            float value = MathF.Max(0, ((Hero.BaseAttributes?.Get(attribute) ?? 0) + flat[i])
+                                       * (1 + percentAdd[i]) * percentMult[i]);
+            final[i] = attribute.IsProbability ? Math.Clamp(value, 0f, 1f)
+                : MathF.Round(value, MidpointRounding.AwayFromZero);
+        }
         final[(int)AttributeType.MaxHp] = Math.Max(1, final[(int)AttributeType.MaxHp]);
         ApplyFinalAttributes(final, heroId, level, refill);
     }
@@ -350,11 +361,25 @@ public sealed class HeroSystem : AbstractSystem
     /// <param name="heroId">本局英雄身份。</param>
     /// <param name="level">对应等级。</param>
     /// <param name="refill">是否补满生命魔法。</param>
-    private void ApplyFinalAttributes(ReadOnlySpan<int> final, int heroId, int level, bool refill)
+    private void ApplyFinalAttributes(ReadOnlySpan<float> final, int heroId, int level, bool refill)
     {
         Hero.HeroId = heroId;
-        for (int i = 0; i < final.Length; i++)
-            Hero.GetAttribute((AttributeType)i).Value = final[i];
+        Hero.MaxHp.Value = (int)final[(int)AttributeType.MaxHp];
+        Hero.MaxMp.Value = (int)final[(int)AttributeType.MaxMp];
+        Hero.Power.Value = (int)final[(int)AttributeType.Power];
+        Hero.Def.Value = (int)final[(int)AttributeType.Def];
+        Hero.Mdef.Value = (int)final[(int)AttributeType.Mdef];
+        Hero.Crit.Value = final[(int)AttributeType.Crit];
+        Hero.Miss.Value = final[(int)AttributeType.Miss];
+        Hero.Lucky.Value = (int)final[(int)AttributeType.Lucky];
+        Hero.Toughness.Value = (int)final[(int)AttributeType.Toughness];
+        Hero.Htarget.Value = final[(int)AttributeType.Htarget];
+        Hero.CritReduce.Value = final[(int)AttributeType.CritReduce];
+        Hero.Ar.Value = (int)final[(int)AttributeType.Ar];
+        Hero.Sp.Value = (int)final[(int)AttributeType.Sp];
+        Hero.Vampirism.Value = (int)final[(int)AttributeType.Vampirism];
+        Hero.HpRegen.Value = (int)final[(int)AttributeType.HpRegen];
+        Hero.MpRegen.Value = (int)final[(int)AttributeType.MpRegen];
         Hero.Hp.Value = refill ? Hero.MaxHp.Value : Math.Min(Hero.Hp.Value, Hero.MaxHp.Value);
         Hero.Mp.Value = refill ? Hero.MaxMp.Value : Math.Min(Hero.Mp.Value, Hero.MaxMp.Value);
         Hero.Level.Value = level;

@@ -15,27 +15,39 @@ extends SceneTree
 ## 角色差异表：新角色加一行必需动画。
 const CHARACTERS := [
 	{
-		"lib": "res://TheGame/Entitys/Animations/wukong_anim_library.tres",
+		"lib": "res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_anim_library.tres",
 		"name": "悟空",
-		"scene": "res://TheGame/Entitys/wukong_entity.tscn",
+		"scene": "res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn",
 		"required": ["RESET", "idle1", "walk", "run", "jump", "jump_2", "fall", "hurt", "death"],
 	},
 	{
-		"lib": "res://TheGame/Entitys/Animations/huaguoshan_monkey_anim_library.tres",
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/huaguoshan_monkey_anim_library.tres",
 		"name": "花果山猴子",
-		"scene": "res://TheGame/Entitys/huaguoshan_monkey_entity.tscn",
+		"scene": "res://TheGame/Entitys/Enemies/Monsters/huaguoshan_monkey_entity.tscn",
 		"required": ["idle", "run", "hurt", "death"],
 	},
 	{
-		"lib": "res://TheGame/Entitys/Animations/demon_monkey_anim_library.tres",
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/demon_monkey_anim_library.tres",
 		"name": "妖猴",
-		"scene": "res://TheGame/Entitys/demon_monkey_entity.tscn",
+		"scene": "res://TheGame/Entitys/Enemies/Monsters/demon_monkey_entity.tscn",
 		"required": ["idle", "run", "hurt", "death"],
 	},
 	{
-		"lib": "res://TheGame/Entitys/Animations/gorilla_anim_library.tres",
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/gorilla_anim_library.tres",
 		"name": "大猩猩",
-		"scene": "res://TheGame/Entitys/gorilla_entity.tscn",
+		"scene": "res://TheGame/Entitys/Enemies/Monsters/gorilla_entity.tscn",
+		"required": ["idle", "run", "hurt", "death"],
+	},
+	{
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_02_macaque_king/macaque_king_library.tres",
+		"name": "猕猴王",
+		"scene": "res://TheGame/Entitys/Enemies/Bosses/zm1_02_macaque_king/macaque_king_entity.tscn",
+		"required": ["idle", "run", "hurt", "death"],
+	},
+	{
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_library.tres",
+		"name": "禺狨王",
+		"scene": "res://TheGame/Entitys/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_entity.tscn",
 		"required": ["idle", "run", "hurt", "death"],
 	},
 ]

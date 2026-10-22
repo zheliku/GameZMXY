@@ -120,7 +120,7 @@ internal sealed class TestGameScope : IArchitecture
         GameConfig.Equipment.TbEquipmentConfig definitions, int capacity)
     {
         var utility = new SaveDataUtility();
-        utility.Validate(data, definitions, capacity, TestTables.Tables.TbSkillConfig);
+        utility.Validate(data, definitions, capacity, TestTables.Tables.TbSkillConfig, TestTables.Tables.TbLevelConfig);
         var scope = new TestGameScope(data.ActiveHeroId,
             data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), data.Soul, capacity);
         scope.RestoreCheckpoint(data);

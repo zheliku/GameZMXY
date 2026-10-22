@@ -22,6 +22,7 @@ public partial class InventoryCharacterPanel : Control, IController
     [Export] private HeroPreviewNode m_Preview; // 独立角色预览。
     [Export] private EquipmentCell m_WeaponSlot; // 当前武器槽。
     [Export] private EquipmentCell m_ArmorSlot; // 当前防具槽。
+    [Export] private EquipmentCell m_AccessorySlot; // 当前饰品槽。
     [Export] private Label m_Hp; // 当前生命与上限。
     [Export] private Label m_Mp; // 当前魔法与上限。
     [Export] private Label m_Power; // 最终攻击。
@@ -43,6 +44,7 @@ public partial class InventoryCharacterPanel : Control, IController
     {
         m_WeaponSlot.Clicked += OnWeaponClicked;
         m_ArmorSlot.Clicked += OnArmorClicked;
+        m_AccessorySlot.Clicked += OnAccessoryClicked;
     }
 
     /// <summary>借用所属主流程的共享数据访问入口。</summary>
@@ -70,15 +72,16 @@ public partial class InventoryCharacterPanel : Control, IController
         m_Def.Text = heroModel.Def.Value.ToString();
         m_Lucky.Text = heroModel.Lucky.Value.ToString();
         m_Mdef.Text = Percent(heroModel.Mdef.Value, battle.MdefKHero);
-        m_Crit.Text = Percent(heroModel.Crit.Value, battle.CritK);
-        m_Miss.Text = Percent(heroModel.Miss.Value, battle.MissKHero);
+        m_Crit.Text = $"{heroModel.Crit.Value * 100:0.#}%";
+        m_Miss.Text = $"{heroModel.Miss.Value * 100:0.#}%";
         m_HpRegen.Text = heroModel.HpRegen.Value.ToString();
         m_MpRegen.Text = heroModel.MpRegen.Value.ToString();
         m_Experience.Value = profile.MaxExperience == 0 ? 100 : 100.0 * profile.Experience / profile.MaxExperience;
         m_ExperienceText.Text = profile.MaxExperience == 0 ? "MAX" : $"{profile.Experience}/{profile.MaxExperience}";
         BindSlot(m_WeaponSlot, profile.Weapon);
         BindSlot(m_ArmorSlot, profile.Armor);
-        m_Preview.ApplyAppearance(profile.Weapon != null, profile.Armor != null);
+        BindSlot(m_AccessorySlot, profile.Accessory);
+        m_Preview.ApplyAppearance(profile.Weapon?.EquipmentId ?? EquipmentId.None, profile.Armor?.EquipmentId ?? EquipmentId.None);
     }
 
     /// <summary>装配穿戴槽的图标及详情输入。</summary>
@@ -103,4 +106,9 @@ public partial class InventoryCharacterPanel : Control, IController
     /// <summary>提交防具卸装请求。</summary>
     /// <param name="instanceId">当前槽的装备实例编号。</param>
     private void OnArmorClicked(Guid instanceId) => UnequipRequested?.Invoke(EquipmentSlot.Armor);
+
+    /// <summary>提交饰品卸装请求。</summary>
+    /// <param name="instanceId">当前槽的装备实例编号。</param>
+    private void OnAccessoryClicked(Guid instanceId) => UnequipRequested?.Invoke(EquipmentSlot.Accessory);
+
 }

@@ -24,7 +24,7 @@ func _run() -> void:
     var count := frames.get_frame_count(animation)
     assert(count == 19, "官方无双动画帧数错误")
     var viewport := SubViewport.new()
-    viewport.size = Vector2i(count * 84, 84)
+    viewport.size = Vector2i(count * 164, 164)
     viewport.transparent_bg = true
     viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
     root.add_child(viewport)
@@ -33,7 +33,7 @@ func _run() -> void:
         sprite.centered = false
         sprite.texture = frames.get_frame_texture(animation, index)
         sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-        sprite.position = Vector2(index * 84, 0)
+        sprite.position = Vector2(index * 164, 0)
         viewport.add_child(sprite)
     await process_frame
     await RenderingServer.frame_post_draw
@@ -41,14 +41,15 @@ func _run() -> void:
     var pixels := 0
     for index in range(count):
         var before: Image = frames.get_frame_texture(animation, index).get_image()
-        assert(before.get_size() == Vector2i(78, 78))
-        # 原版最亮帧的柔光会延伸到角落（最高 32/255），不能把低 alpha 柔光误判为底色。
-        for corner in [Vector2i(0, 0), Vector2i(77, 0), Vector2i(0, 77), Vector2i(77, 77)]:
-            assert(before.get_pixelv(corner).a < 0.15, "源动画带不透明方形背景")
-        for y in range(78):
-            for x in range(78):
+        assert(before.get_size() == Vector2i(158, 158))
+        # 全部边缘应透明，不能只检查四角而漏掉被裁成方框的高亮边。
+        for edge in 158:
+            for point in [Vector2i(edge, 0), Vector2i(edge, 157), Vector2i(0, edge), Vector2i(157, edge)]:
+                assert(before.get_pixelv(point).a == 0, "原版模糊滤镜仍被导出边界截断")
+        for y in range(158):
+            for x in range(158):
                 var alpha := before.get_pixel(x, y).a
-                assert(absf(result.get_pixel(index * 84 + x, y).a - alpha) < 0.015, "GPU 改变原版透明轮廓")
+                assert(absf(result.get_pixel(index * 164 + x, y).a - alpha) < 0.015, "GPU 改变原版透明轮廓")
                 if alpha > 0.5:
                     pixels += 1
     assert(pixels > 10000, "无双动画不可见")

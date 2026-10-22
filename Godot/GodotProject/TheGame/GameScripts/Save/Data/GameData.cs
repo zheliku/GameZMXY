@@ -13,7 +13,7 @@ using GameConfig.Skills;
 public class GameData : ArchiveData
 {
     /// <summary>当前存档格式；格式改变时递增，不保留迁移分支。</summary>
-    public const int CurrentVersion = 7;
+    public const int CurrentVersion = 9;
 
     /// <summary>必需的格式版本；框架创建的新空槽使用当前版本。</summary>
     [JsonProperty(Required = Required.Always)]
@@ -30,6 +30,10 @@ public class GameData : ArchiveData
     /// <summary>钱包灵魂总数。</summary>
     [JsonProperty(Required = Required.Always)]
     public int Soul;
+
+    /// <summary>已通关的最远关卡主键；0 表示尚未通关，进入或失败不推进。</summary>
+    [JsonProperty(Required = Required.Always)]
+    public int HighestClearedLevelId;
 
     /// <summary>已拾取的装备实例；随机属性作为实例状态保存，配置范围不写盘。</summary>
     [JsonProperty(Required = Required.Always)]
@@ -78,5 +82,9 @@ namespace GameLogic.Save.Data
         /// <summary>已穿戴防具的实例编号；空编号表示未穿戴。</summary>
         [JsonProperty(Required = Required.Always)]
         public Guid ArmorInstanceId { get; set; }
+
+        /// <summary>已穿戴饰品的实例编号；空编号表示未穿戴。</summary>
+        [JsonProperty(Required = Required.Always)]
+        public Guid AccessoryInstanceId { get; set; }
     }
 }

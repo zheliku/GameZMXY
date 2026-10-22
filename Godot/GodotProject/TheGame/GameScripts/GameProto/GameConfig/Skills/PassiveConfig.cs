@@ -18,12 +18,9 @@ public sealed partial class PassiveConfig : Luban.BeanBase
     {
         PassiveId = (Skills.PassiveId)_buf.ReadInt();
         LegacyId = _buf.ReadString();
-        Level = _buf.ReadInt();
         NameCn = _buf.ReadString();
-        LearnSoul = _buf.ReadInt();
         Effect = (Skills.PassiveEffect)_buf.ReadInt();
-        Value = _buf.ReadFloat();
-        Description = _buf.ReadString();
+        {int n0 = _buf.ReadSize(); Levels = new System.Collections.Generic.List<Skills.PassiveLevel>(n0);for(var i0 = 0 ; i0 < n0 ; i0++) { Skills.PassiveLevel _e0;  _e0 = global::GameConfig.Skills.PassiveLevel.DeserializePassiveLevel(_buf); Levels.Add(_e0);}}
     }
 
     public static PassiveConfig DeserializePassiveConfig(ByteBuf _buf)
@@ -32,7 +29,7 @@ public sealed partial class PassiveConfig : Luban.BeanBase
     }
 
     /// <summary>
-    /// 被动技能；两名角色共用规则
+    /// 被动技能编号
     /// </summary>
     public readonly Skills.PassiveId PassiveId;
     /// <summary>
@@ -40,35 +37,24 @@ public sealed partial class PassiveConfig : Luban.BeanBase
     /// </summary>
     public readonly string LegacyId;
     /// <summary>
-    /// 购买后的等级：1..5
-    /// </summary>
-    public readonly int Level;
-    /// <summary>
     /// 官方技能名
     /// </summary>
     public readonly string NameCn;
     /// <summary>
-    /// 购买本级的灵魂费用
-    /// </summary>
-    public readonly int LearnSoul;
-    /// <summary>
-    /// 官方效果；狂暴是概率而非现有Crit等级
+    /// 各等级共用的效果类型
     /// </summary>
     public readonly Skills.PassiveEffect Effect;
     /// <summary>
-    /// 本级总加成；暴击率用0..1，其余为属性点/每秒值
+    /// 等级列表；每级一行，按1..5排列
     /// </summary>
-    public readonly float Value;
-    /// <summary>
-    /// 官方本级效果说明
-    /// </summary>
-    public readonly string Description;
+    public readonly System.Collections.Generic.List<Skills.PassiveLevel> Levels;
    
     public const int __ID__ = -260757347;
     public override int GetTypeId() => __ID__;
 
     public  void ResolveRef(Tables tables)
     {
+        foreach (var _e in Levels) { _e?.ResolveRef(tables); }
     }
 
     public override string ToString()
@@ -76,12 +62,9 @@ public sealed partial class PassiveConfig : Luban.BeanBase
         return "{ "
         + "PassiveId:" + PassiveId + ","
         + "LegacyId:" + LegacyId + ","
-        + "Level:" + Level + ","
         + "NameCn:" + NameCn + ","
-        + "LearnSoul:" + LearnSoul + ","
         + "Effect:" + Effect + ","
-        + "Value:" + Value + ","
-        + "Description:" + Description + ","
+        + "Levels:" + Luban.StringUtil.CollectionToString(Levels) + ","
         + "}";
     }
 }

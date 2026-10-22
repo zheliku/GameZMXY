@@ -115,7 +115,7 @@ public sealed class ProcedureMap : ProcedureBase
     {
         if (formSerialId != m_FormSerialId || m_IsReturningToTitle)
             return;
-        if (GF.Fsm.GetModel<ConfigurationModel>().Tables.TbLevelConfig.GetOrDefault(selectionId) == null)
+        if (!m_Owner.GetSystem<ProfileSystem>().CanEnterLevel(selectionId))
         {
             Log.Error("[ProcedureMap] 地图请求了不存在的关卡：{0}", selectionId);
             return;

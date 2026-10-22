@@ -13,9 +13,10 @@ public partial class HeroPreviewNode : Node2D
     private ulong m_LastTick; // 真实时间原点，不依赖 GGF 暂停后的零 delta。
 
     /// <summary>同步当前穿戴状态，保持预览动画继续播放。</summary>
-    /// <param name="armed">是否穿戴武器。</param>
-    /// <param name="armored">是否穿戴防具。</param>
-    public void ApplyAppearance(bool armed, bool armored) => m_Appearance.ApplyToSprites(m_Body, m_Weapon, armed, armored);
+    /// <param name="weaponId">当前武器身份。</param>
+    /// <param name="armorId">当前防具身份。</param>
+    public void ApplyAppearance(GameConfig.Equipment.EquipmentId weaponId, GameConfig.Equipment.EquipmentId armorId) =>
+        m_Appearance.ApplyToSprites(m_Body, m_Weapon, weaponId, armorId);
 
     /// <summary>每次打开从待机第一帧开始。</summary>
     public void Reset()

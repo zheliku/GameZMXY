@@ -25,6 +25,14 @@ namespace GameConfig.Loot
         /// 普通装备
         /// </summary>
         Common = 2,
+        /// <summary>
+        /// 猕猴王装备
+        /// </summary>
+        MacaqueKing = 3,
+        /// <summary>
+        /// 禺狨王装备
+        /// </summary>
+        TamarinKing = 4,
     }
 
 } 

@@ -72,6 +72,8 @@ func _run() -> void:
 	assert(glow.material == null, "官方无双图片仍叠加旧裁剪材质")
 	glow.show()
 	glow.play()
+	glow.frame = 9
+	glow.pause() # 满值截图取最亮帧，避免只拍到首帧的弱光而漏看截边。
 	ws_bar.value = 1.0
 	await _capture(viewport, "skills_layout_hud_full")
 	print("SKILL LAYOUT PASS: 造一技能页/45px图标、造三五入口、无双黑底板与空/半满/满值渲染通过。")

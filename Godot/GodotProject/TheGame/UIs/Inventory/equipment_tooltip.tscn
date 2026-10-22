@@ -1,0 +1,128 @@
+[gd_scene format=3 uid="uid://boy8tad4y4d68"]
+
+[ext_resource type="Script" uid="uid://coi0omcu83h4" path="res://TheGame/GameScripts/UI/InventoryForm/Components/EquipmentTooltip.cs" id="script"]
+
+[sub_resource type="StyleBoxFlat" id="panel"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 15.0
+content_margin_bottom = 6.0
+bg_color = Color(0, 0, 0, 0.7)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="Gradient" id="line_gradient"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="caption_line"]
+gradient = SubResource("line_gradient")
+width = 80
+height = 2
+
+[node name="EquipmentTooltip" type="PanelContainer" unique_id=393154271 node_paths=PackedStringArray("m_Name", "m_Quality", "m_Type", "m_Attributes", "m_Description", "m_Value")]
+custom_minimum_size = Vector2(170, 0)
+mouse_filter = 2
+theme_override_styles/panel = SubResource("panel")
+script = ExtResource("script")
+m_Name = NodePath("Content/Header/Name")
+m_Quality = NodePath("Content/Header/Quality/Value")
+m_Type = NodePath("Content/Header/Type/Value")
+m_Attributes = NodePath("Content/Attributes")
+m_Description = NodePath("Content/Footer/Description")
+m_Value = NodePath("Content/Footer/Price")
+
+[node name="Content" type="VBoxContainer" parent="." unique_id=1445574142]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="Header" type="VBoxContainer" parent="Content" unique_id=2136238584]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="Name" type="Label" parent="Content/Header" unique_id=508726496]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="Quality" type="HBoxContainer" parent="Content/Header" unique_id=1847833297]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Caption" type="Label" parent="Content/Header/Quality" unique_id=49517884]
+custom_minimum_size = Vector2(36, 25)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 2
+text = "品质"
+
+[node name="Underline" type="TextureRect" parent="Content/Header/Quality/Caption" unique_id=1397408095]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 19.0
+offset_right = 116.0
+offset_bottom = 21.0
+mouse_filter = 2
+texture = SubResource("caption_line")
+
+[node name="Value" type="Label" parent="Content/Header/Quality" unique_id=618145050]
+layout_mode = 2
+
+[node name="Type" type="HBoxContainer" parent="Content/Header" unique_id=2017295296]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Caption" type="Label" parent="Content/Header/Type" unique_id=948229664]
+custom_minimum_size = Vector2(36, 25)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 2
+text = "类型"
+
+[node name="Underline" type="TextureRect" parent="Content/Header/Type/Caption" unique_id=549156168]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 19.0
+offset_right = 116.0
+offset_bottom = 21.0
+mouse_filter = 2
+texture = SubResource("caption_line")
+
+[node name="Value" type="Label" parent="Content/Header/Type" unique_id=1157337727]
+layout_mode = 2
+
+[node name="Attributes" type="VBoxContainer" parent="Content" unique_id=57150812]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="Footer" type="VBoxContainer" parent="Content" unique_id=1751114729]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Description" type="Label" parent="Content/Footer" unique_id=405314857]
+custom_minimum_size = Vector2(135, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3
+
+[node name="Price" type="Label" parent="Content/Footer" unique_id=1845902853]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 0.6, 0.2, 1)

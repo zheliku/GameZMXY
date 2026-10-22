@@ -16,8 +16,8 @@ using GameFramework.Fsm;
 using GameLogic.Drops;
 using GameLogic.Heroes;
 using GameLogic.Level;
-using GameLogic.Monsters;
-using GameLogic.Monsters.AI;
+using GameLogic.Enemies;
+using GameLogic.Enemies.AI;
 using GameLogic;
 using GameLogic.Input;
 using Godot;
@@ -123,7 +123,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>真实池实例。</returns>
     private static LootOrbNode SpawnOrb(LevelViewController level, Vector2 position, LootReward reward)
     {
-        var orb = GodotGameFramework.NodePool.NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Entitys_loot_orb, SmokeInspection.Scene(level));
+        var orb = GodotGameFramework.NodePool.NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, SmokeInspection.Scene(level));
         SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "m_LootOrbs").Add(orb);
         MethodInfo finish = typeof(LevelViewController).GetMethod("OnLootFinished", BindingFlags.Instance | BindingFlags.NonPublic)!;
         orb.Show(position + new Vector2(180, -30), reward,
@@ -136,11 +136,11 @@ public sealed partial class UiSmokeScenario
     /// <returns>两次追击进入的引擎回归。</returns>
     private async Task CheckDemonChaseAsync(AbstractHeroEntity hero)
     {
-        m_Monster = (AbstractMonsterEntity)await GF.Entity.ShowEntityAsync(EntityId.DemonMonkey,
-            new MonsterSpawn(hero.GlobalPosition + new Vector2(300, -40)));
+        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DemonMonkey,
+            new EnemySpawn(hero.GlobalPosition + new Vector2(300, -40)));
         await WaitUntilAsync(() => m_Monster.OnFloor, "妖猴追击夹具没有落地");
-        typeof(AbstractMonsterEntity).GetField("m_Target", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(m_Monster, hero);
-        var fsm = SmokeInspection.ReadField<IFsm<IMonsterAiAgent>>(m_Monster, "m_AiFsm");
+        typeof(AbstractEnemyEntity).GetField("m_Target", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(m_Monster, hero);
+        var fsm = SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(m_Monster, "m_AiFsm");
         MethodInfo change = fsm.GetType().GetMethod("ChangeState", BindingFlags.Instance | BindingFlags.NonPublic,
             null, [typeof(Type)], null)!;
         foreach (float direction in new[] { -1f, 1f })
@@ -201,7 +201,11 @@ public sealed partial class UiSmokeScenario
             SmokeInspection.Scene(level).AddChild(probe);
             try
             {
-                probe.GlobalPosition = platform.GlobalPosition + new Vector2(0, 60);
+                var surface = platform.GetNode<CollisionShape2D>("Surface");
+                Rect2 bounds = surface.GlobalTransform * surface.Shape.GetRect();
+                float centerX = bounds.GetCenter().X;
+                float surfaceTop = bounds.Position.Y;
+                probe.GlobalPosition = new Vector2(centerX, surfaceTop + 60);
                 probe.Velocity = new Vector2(0, -500);
                 bool above = false;
                 for (int frame = 0; frame < 150; frame++)
@@ -209,12 +213,11 @@ public sealed partial class UiSmokeScenario
                     await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                     probe.Velocity += new Vector2(0, 900f / Engine.PhysicsTicksPerSecond);
                     probe.MoveAndSlide();
-                    above |= probe.GlobalPosition.Y < platform.GlobalPosition.Y - 20;
+                    above |= probe.GlobalPosition.Y < surfaceTop - 20;
                     if (above && probe.IsOnFloor())
                         break;
                 }
-                CollisionShape2D surface = platform.GetNode<CollisionShape2D>("Surface");
-                float landingY = surface.GlobalPosition.Y - ((RectangleShape2D)surface.Shape).Size.Y / 2f - 10f;
+                float landingY = surfaceTop - 10f;
                 Check(above && probe.IsOnFloor() && Math.Abs(probe.GlobalPosition.Y - landingY) < 1.1f,
                     $"平台 {platform.Name} 无法从下方穿过并落到上方：{probe.GlobalPosition}");
             }
@@ -229,10 +232,12 @@ public sealed partial class UiSmokeScenario
         {
             StaticBody2D platform = SmokeInspection.Scene(level).GetNode("World/Platforms").GetChildren().OfType<StaticBody2D>().First();
             CollisionShape2D bodyShape = hero.GetNode<CollisionShape2D>("CollisionShape2D");
-            CollisionShape2D platformSurface = platform.GetNode<CollisionShape2D>("Surface");
+            var platformSurface = platform.GetNode<CollisionShape2D>("Surface");
+            Rect2 platformBounds = platformSurface.GlobalTransform * platformSurface.Shape.GetRect();
             float feetOffset = bodyShape.Position.Y + bodyShape.Shape.GetRect().End.Y;
-            float surfaceTop = platformSurface.GlobalPosition.Y + platformSurface.Shape.GetRect().Position.Y;
-            hero.GlobalPosition = new Vector2(platform.GlobalPosition.X, surfaceTop - feetOffset - 40f);
+            float surfaceTop = platformBounds.Position.Y;
+            float centerX = platformBounds.GetCenter().X;
+            hero.GlobalPosition = new Vector2(centerX, surfaceTop - feetOffset - 40f);
             hero.Velocity = Vector2.Zero;
             hero.SetPhysicsProcess(true);
             // 等两次帧信号，确保至少完成一次移位后的物理更新。
@@ -285,7 +290,7 @@ public sealed partial class UiSmokeScenario
 
         // 跟踪目标换位置，后续调用方等待真正接触后的档案变化。
         hero.GlobalPosition += new Vector2(-40, 0);
-        foreach (AbstractMonsterEntity monster in m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false).OfType<AbstractMonsterEntity>())
+        foreach (AbstractEnemyEntity monster in m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false).OfType<AbstractEnemyEntity>())
             SmokeInspection.FreezeAi(monster);
         await CaptureCombatAsync("flying_loot");
     }

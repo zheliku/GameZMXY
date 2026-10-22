@@ -30,7 +30,7 @@ public partial class LevelViewController
     /// <param name="monster">基础掉落配置。</param>
     /// <param name="position">怪物死亡位置。</param>
     /// <param name="experienceReward">本次配方确定的经验。</param>
-    private void OnMonsterDefeated(MonsterConfig monster, Vector2 position, int experienceReward)
+    private void OnEnemyDefeated(MonsterConfig monster, Vector2 position, int experienceReward)
     {
         if (LevelModel.Outcome.Value != LevelOutcome.Running || !m_Player.IsAlive)
             return;
@@ -50,7 +50,7 @@ public partial class LevelViewController
                     this.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), selection.Equipment, m_LootRandom.Randf));
             foreach (LootReward reward in this.GetSystem<LootSystem>().Roll(monster, m_LootRandom.Randf))
             {
-                var orb = NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Entitys_loot_orb, this)
+                var orb = NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, this)
                           ?? throw new InvalidOperationException("飞行掉落节点池未注册或资源无法显示。");
                 m_LootOrbs.Add(orb);
                 orb.Show(position, reward, OnLootFinished);
@@ -68,7 +68,7 @@ public partial class LevelViewController
     /// <param name="data">装备或空。</param>
     private void ShowGroundItem(Vector2 position, PickupId pickupId, EquipmentData data)
     {
-        var item = NodePool.Instance.Get<GroundItemNode>(ResourcesCollectionConstant.Entitys_ground_item, this)
+        var item = NodePool.Instance.Get<GroundItemNode>(ResourcesCollectionConstant.Drops_ground_item, this)
                    ?? throw new InvalidOperationException("地面物品节点池未注册。");
         m_GroundItems.Add(item);
         item.Show(position, pickupId, data,

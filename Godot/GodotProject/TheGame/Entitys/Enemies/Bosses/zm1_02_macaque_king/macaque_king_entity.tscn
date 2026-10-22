@@ -1,0 +1,94 @@
+[gd_scene format=3 uid="uid://1edu0x6dkhcp"]
+
+[ext_resource type="Script" uid="uid://ci128bai3ekac" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_02_macaque_king/MacaqueKingEntity.cs" id="1_sugud"]
+[ext_resource type="SpriteFrames" uid="uid://kx5tee40bwuc" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_body_frames.tres" id="2_kh4cb"]
+[ext_resource type="SpriteFrames" uid="uid://uckdf15nmw0f" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_effect_frames.tres" id="3_8hkrt"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="4_rtb5i"]
+[ext_resource type="AnimationLibrary" uid="uid://b8j1avmu4lhp5" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_02_macaque_king/macaque_king_library.tres" id="5_tc1dr"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_no56x"]
+radius = 29.997253
+height = 119.99817
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ah8rk"]
+size = Vector2(59.994507, 119.99817)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_y4l4n"]
+size = Vector2(1, 1)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jqfmb"]
+size = Vector2(600, 600)
+
+[node name="MacaqueKingEntity" type="CharacterBody2D" unique_id=802693107 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+collision_layer = 4
+collision_mask = 9
+floor_constant_speed = true
+floor_max_angle = 0.87266463
+floor_snap_length = 12.0
+script = ExtResource("1_sugud")
+m_Detector = NodePath("m_Detector")
+m_EnemyEntityId = 4
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AttackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3")
+m_DamageSoundId = 6
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
+
+[node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1821930133]
+sprite_frames = ExtResource("2_kh4cb")
+animation = &"idle"
+offset = Vector2(4.5, -0.5)
+
+[node name="Effect" type="AnimatedSprite2D" parent="m_Body" unique_id=1073097982]
+visible = false
+sprite_frames = ExtResource("3_8hkrt")
+animation = &"attack_2"
+offset = Vector2(0, -68)
+
+[node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1617060818]
+position = Vector2(0.70000076, -0.049999237)
+shape = SubResource("CapsuleShape2D_no56x")
+debug_color = Color(0, 1, 0, 0.41960785)
+
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=1243224820 node_paths=PackedStringArray("m_Owner")]
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("4_rtb5i")
+m_Owner = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1986919316]
+position = Vector2(0.70000076, -0.049999237)
+shape = SubResource("RectangleShape2D_ah8rk")
+debug_color = Color(1, 0, 0, 0.41960785)
+
+[node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=13340964]
+
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=253164820]
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1115183691]
+shape = SubResource("RectangleShape2D_y4l4n")
+disabled = true
+
+[node name="WindCrown" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1469700312]
+shape = SubResource("RectangleShape2D_y4l4n")
+disabled = true
+
+[node name="m_Detector" type="Area2D" parent="." unique_id=73551405]
+collision_layer = 4096
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=1927869245]
+shape = SubResource("RectangleShape2D_jqfmb")
+debug_color = Color(1, 1, 0, 0.1)
+
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=920080462]
+callback_mode_process = 0
+callback_mode_method = 1
+libraries/ = ExtResource("5_tc1dr")

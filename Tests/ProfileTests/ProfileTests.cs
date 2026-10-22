@@ -152,7 +152,7 @@ namespace GameLogic.Profile.Tests
         {
             for (int level = 1; level <= TestTables.Curve.MaxLevel; level++)
             {
-                HeroGrowthConfig row = TestTables.Tables.TbHeroGrowthConfig.Get(1, level);
+                HeroGrowthLevel row = TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[level - 1];
                 Assert.NotNull(row);
                 int g = level - 1;
                 int defense = level < 15 ? 2 + 2 * g : 28 + (level - 14) * 5;
@@ -165,7 +165,8 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void MonsterTable_MatchesOfficialStatsAndHasOneConfigPerEntity()
         {
-            (int Id, int Hp, int Defense, int Xp)[] values = [(1, 50, 0, 5), (2, 100, 1, 6), (3, 300, 5, 7)];
+            (int Id, int Hp, int Defense, int Xp)[] values = [(1, 50, 0, 5), (2, 100, 1, 6), (3, 300, 5, 7),
+                (4, 1500, 5, 25), (6, 3000, 6, 35)];
             foreach (var expected in values)
             {
                 var monster = TestTables.Tables.TbMonsterConfig.Get(expected.Id);
@@ -173,7 +174,7 @@ namespace GameLogic.Profile.Tests
                     (monster.BaseAttributes.MaxHp, monster.BaseAttributes.Def, monster.AddExp));
             }
             Assert.All(TestTables.Tables.TbMonsterConfig.DataList.GroupBy(x => x.EntityId), group => Assert.Single(group));
-            Assert.Null(TestTables.Tables.TbMonsterConfig.GetOrDefault(4));
+            Assert.Equal(5, TestTables.Tables.TbMonsterConfig.DataList.Count);
         }
 
         /// <summary>真实配置通过启动校验。</summary>

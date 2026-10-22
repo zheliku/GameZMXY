@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://b5gc20phhdixl"]
+
+[ext_resource type="AnimationLibrary" uid="uid://5r0ol2eua5if" path="res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_fire_demon_descent_library.tres" id="animation"]
+[ext_resource type="SpriteFrames" uid="uid://m37gnpf25xav" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_descent_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://bx0447o7u7wmq" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="script"]
+
+[sub_resource type="RectangleShape2D" id="play_hit_0"]
+size = Vector2(206.94356, 89.04926)
+
+[node name="FireDemonDescent" type="Node2D" unique_id=934513500 node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]
+scale = Vector2(-1, 1)
+script = ExtResource("script")
+m_Player = NodePath("AnimationPlayer")
+m_HitBox = NodePath("Visual/HitBox")
+m_Shape = NodePath("Visual/HitBox/CollisionShape2D")
+
+[node name="Visual" type="Node2D" parent="." unique_id=410670840]
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Visual" unique_id=1731375138]
+sprite_frames = ExtResource("frames")
+animation = &"play"
+offset = Vector2(95, 83.95)
+
+[node name="HitBox" type="Area2D" parent="Visual" unique_id=689664152]
+collision_layer = 16
+collision_mask = 32
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Visual/HitBox" unique_id=1060005776]
+position = Vector2(72.6472, 83.45002)
+rotation = 0.71183914
+shape = SubResource("play_hit_0")
+disabled = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=455282318]
+libraries/ = ExtResource("animation")

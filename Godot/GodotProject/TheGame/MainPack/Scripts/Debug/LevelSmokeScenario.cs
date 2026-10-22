@@ -19,7 +19,7 @@ using GameConfig.Sound;
 using GameConfig.Constant;
 using GameFramework;
 using GameLogic.Heroes;
-using GameLogic.Monsters;
+using GameLogic.Enemies;
 using GameLogic;
 using Godot;
 using GodotGameFramework;
@@ -27,6 +27,7 @@ using GodotGameFramework;
 /// <summary>通过真实移动、碰撞、守关怪和出口输入验证五波清场、自动保存与返回地图。</summary>
 public sealed class LevelSmokeScenario
 {
+    private readonly int m_LevelId; // 实际关卡编号，期望配方与总收益均读取同一配置。
     private readonly AbstractHeroEntity m_Hero; // 通过游戏流程实际显示的玩家。
     private readonly LevelViewController m_Level; // 受测关卡会话。
     private readonly LevelCameraNode m_Camera; // 受测实际取景。
@@ -75,6 +76,7 @@ public sealed class LevelSmokeScenario
     {
         m_Hero = hero;
         m_Level = level;
+        m_LevelId = SmokeInspection.ReadField<int>(level, "m_LevelId");
         m_Flow = SmokeInspection.Flow(GF.Procedure.CurrentProcedure as ProcedureLevel);
         m_StartExperience = m_Flow.GetModel<ProfileModel>().TotalExperience;
         m_StartSoul = m_Flow.GetModel<ProfileModel>().Soul.Value;
@@ -111,9 +113,9 @@ public sealed class LevelSmokeScenario
         }
 
         m_LastCenter = center;
-        AbstractMonsterEntity[] monsters = m_Hero.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
-            .OfType<AbstractMonsterEntity>().Where(x => x.IsShown && !x.Dead).ToArray();
-        foreach (AbstractMonsterEntity monster in monsters)
+        AbstractEnemyEntity[] monsters = m_Hero.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+            .OfType<AbstractEnemyEntity>().Where(x => x.IsShown && !x.Dead).ToArray();
+        foreach (AbstractEnemyEntity monster in monsters)
         {
             if (!m_FirstSpawnEntered && SmokeInspection.Sequence(m_Level).Current.StageOrder == 1 &&
                 monster.GlobalPosition.X < m_Camera.ViewRight - 20f)
@@ -125,19 +127,19 @@ public sealed class LevelSmokeScenario
                 SmokeInspection.FreezeAi(monster);
             if (m_Seen.Add(monster.Id))
             {
-                if (monster is GorillaEntity)
+                if (ReferenceEquals(m_Level.FeaturedOpponent, monster))
                 {
                     m_SawFeatured = true;
                     var banner = SmokeInspection.ReadField<EncounterHealthBar>(
                         GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_battle_form), "m_EncounterHealthBar");
-                    if (!ReferenceEquals(m_Level.FeaturedOpponent, monster) || monster.MaxHp != 900 ||
+                    if (monster.MaxHp != (m_LevelId == 1 ? 900 : monster.Config.BaseAttributes.MaxHp) ||
                           !banner.Visible || banner.HasNode("Entrance") ||
                           !Mathf.IsEqualApprox(banner.GetGlobalRect().GetCenter().X,
                               banner.GetParent<Control>().GetGlobalRect().GetCenter().X) ||
                           !Mathf.IsEqualApprox(banner.GetNode<Control>("Health").GlobalPosition.Y, 36f) ||
                           banner.FindChildren("*", "Label", true, false).Count != 1 ||
                         SmokeInspection.ReadField<Label>(banner, "m_Name").Text != monster.Config.NameCn)
-                        Fail("大猩猩配置或守关血条未绑定，或仍残留入场弹窗");
+                        Fail("守关对手配置或血条未绑定，或仍残留入场弹窗");
                     m_FeaturedCapture = CaptureFeaturedAsync();
                 }
                 // 在地形上方横穿当前右门，验证怪物可进入，玩家仍被同一道边界阻挡。
@@ -209,14 +211,14 @@ public sealed class LevelSmokeScenario
                 return;
             if (m_ExitStep != 5)
                 Fail("出口尚未完成远处拒绝与靠近交互验证，就提前通关");
-            int expected = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages.Sum(x => x.Recipes.Sum(r => r.Count));
+            int expected = ConfigSystem.Instance.Tables.TbLevelConfig.Get(m_LevelId).Stages.Sum(x => x.Recipes.Sum(r => r.Count));
             if (m_Seen.Count != expected)
             {
                 Fail($"怪物总数错误：实际 {m_Seen.Count}，配置 {expected}");
             }
 
             // 收益进档案：本关获得经验 = 档案累计经验 - 进关时的累计经验（新档进关为 0）。
-            int expectedExperience = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages
+            int expectedExperience = ConfigSystem.Instance.Tables.TbLevelConfig.Get(m_LevelId).Stages
                 .Sum(x => x.Recipes.Sum(r => r.Count * (r.ExperienceOverride >= 0 ? r.ExperienceOverride :
                     ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Single(m => m.EntityId == r.MonsterEntityId).AddExp)));
             LevelViewController run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
@@ -229,7 +231,7 @@ public sealed class LevelSmokeScenario
             }
             GD.Print($"SMOKE-LEVEL: experience={gained}, expected={expectedExperience}");
             int minimumSoul = 0, maximumSoul = 0;
-            foreach (var recipe in ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages.SelectMany(x => x.Recipes))
+            foreach (var recipe in ConfigSystem.Instance.Tables.TbLevelConfig.Get(m_LevelId).Stages.SelectMany(x => x.Recipes))
             {
                 var monster = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Single(x => x.EntityId == recipe.MonsterEntityId);
                 minimumSoul += recipe.Count * monster.SoulCount.X * monster.SoulPerOrb;
@@ -253,7 +255,7 @@ public sealed class LevelSmokeScenario
             }
 
             if (!m_SawFeatured)
-                Fail("第五波未展示大猩猩守关对手");
+                Fail("第五波未展示守关对手");
             m_ExpectedTotalExperience = m_StartExperience + expectedExperience;
             m_WaitingForMap = true;
             Move(null);
@@ -308,9 +310,14 @@ public sealed class LevelSmokeScenario
                 return;
             }
             Move(InputSystem.MoveRight);
+            if (m_Hero.IsOnWall() && m_Hero.OnFloor)
+                Input.ActionPress(InputSystem.Jump);
+            else
+                Input.ActionRelease(InputSystem.Jump);
             if (exit.GetOverlappingBodies().Contains(m_Hero) && m_Hero.OnFloor)
             {
                 Move(null);
+                Input.ActionRelease(InputSystem.Jump);
                 m_ExitCapture = CaptureExitAsync();
                 m_ExitStep = 4;
             }
@@ -368,6 +375,14 @@ public sealed class LevelSmokeScenario
     /// <returns>画面保存完成的任务。</returns>
     private async Task CaptureSettlementAsync()
     {
+        // 成功页必须实际播放胜利曲，暂停不应让音乐代理停止或保留关卡 BGM。
+        for (int frame = 0; frame < 30; frame++)
+            await m_Hero.ToSignal(m_Hero.GetTree(), SceneTree.SignalName.ProcessFrame);
+        var music = m_Hero.GetTree().Root.FindChildren("*", "AudioStreamPlayer", true, false)
+            .OfType<AudioStreamPlayer>().Where(player => player.Bus == "Music" && player.Playing).ToArray();
+        if (music.Length != 1 || !music[0].Stream.ResourcePath.EndsWith("settlement_victory.mp3", StringComparison.Ordinal))
+            throw new InvalidOperationException("成功结算未唯一播放 GGF 胜利音乐");
+        GD.Print("SMOKE-MUSIC PASS: unique paused victory Music agent");
         if (DisplayServer.GetName() == "headless")
             return;
         await m_Hero.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
@@ -431,7 +446,8 @@ public sealed class LevelSmokeScenario
         if (!m_Reload.IsCompleted)
             return;
         if (m_Reload.IsFaulted || m_Reload.Result.Data.Heroes.Single(x => x.HeroId == m_Reload.Result.Data.ActiveHeroId).TotalExperience != m_ExpectedTotalExperience ||
-            m_Reload.Result.Data.Soul != m_ExpectedSoul)
+            m_Reload.Result.Data.Soul != m_ExpectedSoul ||
+            m_Reload.Result.Data.HighestClearedLevelId < m_LevelId)
             Fail("返回地图后重新读取存档，经验或灵魂与通关收益不一致");
         else
         {
@@ -446,9 +462,9 @@ public sealed class LevelSmokeScenario
         }
     }
 
-    private void DriveBattle(double delta, AbstractMonsterEntity[] monsters) // 先验证抵达时取景和配置延迟，再验证墙体与真实清波。
+    private void DriveBattle(double delta, AbstractEnemyEntity[] monsters) // 先验证抵达时取景和配置延迟，再验证墙体与真实清波。
     {
-        var stage = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages[SmokeInspection.Sequence(m_Level).Current.StageOrder - 1];
+        var stage = ConfigSystem.Instance.Tables.TbLevelConfig.Get(m_LevelId).Stages[SmokeInspection.Sequence(m_Level).Current.StageOrder - 1];
         var region = m_Gates.BoundsOf(stage.StageOrder);
         if (m_StageOrder != stage.StageOrder)
         {
@@ -476,7 +492,7 @@ public sealed class LevelSmokeScenario
 
         if (m_Hero.GlobalPosition.X < region.Left || m_Hero.GlobalPosition.X > region.Right)
         {
-            Fail("玩家越过战斗区域的物理边界");
+            Fail($"玩家越过战斗区域的物理边界：关卡 {m_LevelId} 阶段 {stage.StageOrder}，步骤 {m_Step}，玩家 {m_Hero.GlobalPosition}，区域 {region.Left}..{region.Right}，计时 {m_BattleTime:0.000}");
         }
 
         if (m_Step == Step.Kill)
@@ -496,14 +512,14 @@ public sealed class LevelSmokeScenario
                     Fail("首波场外怪物未通过真实 AI 进入画面");
                 return;
             }
-            foreach (AbstractMonsterEntity monster in monsters)
+            foreach (AbstractEnemyEntity monster in monsters)
             {
                 AttackData data = AttackData.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero,
-                    m_Hero.Id, 0, SoundId.None);
+                    m_Hero.Id, 0);
                 monster.ReceiveHit(data, m_Hero.Id);
                 ReferencePool.Release(data);
                 // 同一死亡再发一次普通事件，刷怪服务必须只发一次奖励和清波名额。
-                GF.Event.Fire(this, MonsterDiedEventArgs.Create(monster.Id,
+                GF.Event.Fire(this, EnemyDiedEventArgs.Create(monster.Id,
                     SmokeInspection.ReadField<int>(monster, "m_ExperienceReward"), monster.Config, monster.GlobalPosition));
             }
 
@@ -512,6 +528,12 @@ public sealed class LevelSmokeScenario
 
         bool right = m_Step == Step.RightWall;
         Move(right ? "move_right" : "move_left");
+        // 水帘洞地面有原版台阶和斜坡端面，验证边界前同样用真实跳跃通过地形。
+        if (m_Hero.IsOnWall() && m_Hero.OnFloor &&
+            (right ? m_Hero.GlobalPosition.X < region.Right - 70f : m_Hero.GlobalPosition.X > region.Left + 70f))
+            Input.ActionPress(InputSystem.Jump);
+        else
+            Input.ActionRelease(InputSystem.Jump);
         bool nearWall = right ? m_Hero.GlobalPosition.X > region.Right - 60f : m_Hero.GlobalPosition.X < region.Left + 60f;
         m_BlockedFrames = nearWall && Math.Abs(m_Hero.GlobalPosition.X - m_LastPlayerX) < 0.1f ? m_BlockedFrames + 1 : 0;
         if (m_BlockedFrames >= 20)
@@ -568,7 +590,9 @@ public sealed class LevelSmokeScenario
 
     private void PlaceForWallTest(float x) // 把玩家放到待测墙边，避免中途被地形或怪物的身体卡住。
     {
-        m_Hero.GlobalPosition = new Vector2(x, m_Hero.GlobalPosition.Y);
+        // 新关卡地面高低不同，不能把低洼处的旧 Y 带入较高地面内部。
+        // 从场景上方落地，仍由真实物理决定脚底高度和墙体阻挡。
+        m_Hero.GlobalPosition = new Vector2(x, 100f);
         m_Hero.Velocity = Vector2.Zero;
         m_LastPlayerX = x;
     }

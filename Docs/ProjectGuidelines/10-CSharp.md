@@ -33,12 +33,12 @@
 | 实体与窗口/控件 | 保留能说明节点职责的 Entity/Form/Hud/Bar/Button 后缀 | `GorillaEntity`、`SettingsForm`、`EncounterHealthBar` |
 | Godot 资源 | `XxxResource` | `LevelMarkerResource` |
 | 附属于现有类型的无状态操作 | `XxxExtensions`，使用 C# 14 extension 块 | `BodyFsmExtensions`、`SoundExtensions`、`AttributeExtensions` |
-| 运行时状态/有状态规则 | 领域名词，不滥用 Helper | `HeroActionData`、`MonsterAiData`、`ExperienceCurve`、`LevelStageSequence`、`LevelSpawnSchedule` |
-| 不可变输入/输出 | 能表达方向的名词 | `EquippedItems`、`CombatantAttributes`、`DamageResult`、`MonsterSpawn` |
+| 运行时状态/有状态规则 | 领域名词，不滥用 Helper | `HeroActionData`、`EnemyAiData`、`ExperienceCurve`、`LevelStageSequence`、`LevelSpawnSchedule` |
+| 不可变输入/输出 | 能表达方向的名词 | `EquippedItems`、`CombatantAttributes`、`DamageResult`、`EnemySpawn` |
 | 存档 DTO / 配置 | `XxxSaveData` / 生成的 `XxxConfig` | `HeroSaveData`、`MonsterConfig`；框架 GameData 保留 |
 | 界面参数 / 表现协调对象 | `<界面>Data` / `XxxPresenter` | `BattleFormData`、`FloatingTextPresenter` |
 
-只有常量的 InputActions、HeroAnims、MonsterAnims 保留集合名称。Luban 外部构造契约 `ExternalTypeUtil`、生成的 ConfigSystem、GameData/GameCatalogue、全局流程名与 Ge 窗口类名不机械改名。
+只有常量的 InputActions、HeroAnims、EnemyAnims 保留集合名称。Luban 外部构造契约 `ExternalTypeUtil`、生成的 ConfigSystem、GameData/GameCatalogue、全局流程名与 Ge 窗口类名不机械改名。
 
 模块目录按功能分类，所属节点、纯规则、资源和 `Helper` 放在同一功能目录，通过类型后缀辨别职责。例如 `Level/Camera/` 同时放 `LevelCameraNode` 与 `LevelCameraHelper`，`Level/Spawning/` 放刷怪节点、生成点与调度规则。跨功能共享的空间条目放 `Level/Markers/`。小模块不机械拆空目录；模块入口的 partial 留在根目录。
 

@@ -9,9 +9,9 @@
 | Heroes[].LearnedSkills | 已学习主动技能 ID；未学习不记录 |
 | Soul | 灵魂余额 |
 | EquipmentItems[].InstanceId / EquipmentId / Attributes | 装备唯一编号、定义与实际随机属性，每件只保存一次 |
-| Heroes[].WeaponInstanceId / ArmorInstanceId | 穿戴引用，空 Guid 表示空槽 |
+| Heroes[].WeaponInstanceId / ArmorInstanceId / AccessoryInstanceId | 武器、防具、饰品的穿戴引用，空 Guid 表示空槽 |
 
-当前格式为 v7，没有历史兼容。等级、本级经验、属性上限从配置与累计经验重算；当前 HP/MP/WS、位置、波次、未拾取掉落不保存，关卡解锁尚未接入。
+当前格式为 v8，没有历史兼容；暴击、闪避、命中、抗暴保存 0..1 的概率。等级、本级经验、属性上限从配置与累计经验重算；当前 HP/MP/WS、位置、波次、未拾取掉落不保存，关卡解锁尚未接入。
 
 ## 三个入口
 
@@ -28,8 +28,8 @@ PendingWrite 是最近一次写入任务。流程离开或重新读档前等待�
 | 对象 | 内容与生命周期 |
 | --- | --- |
 | ProfileModel | 英雄身份、累计经验、穿戴、背包和灵魂；读档 → 回标题 |
-| SkillModel | 各英雄已学技能、当前施放与秒制无敌时限；读档 → 回标题，只有学习记录写盘 |
-| HeroModel | 本局最终属性、生命、魔法、无双；进关 → 离关，不写盘 |
+| SkillModel | 各英雄已学技能；读档 → 回标题 |
+| HeroModel | 本局最终属性、生命、魔法、无双、当前施放与秒制无敌时限；进关 → 离关，不写盘 |
 | SaveModel | 当前文件 ID、目录与手动保存显示状态；应用期 |
 | LevelModel | 进关快照、阶段、统计和结局；本局 |
 | SaveDataUtility | 无状态校验与捕获；同步调用期间借用 ProfileModel 与 SkillModel，不保存引用，不改模型、不读写文件 |

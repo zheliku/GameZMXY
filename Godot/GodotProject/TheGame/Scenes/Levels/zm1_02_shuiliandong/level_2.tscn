@@ -1,0 +1,770 @@
+[gd_scene format=3 uid="uid://8j4pdehkojf2"]
+
+[ext_resource type="Script" uid="uid://d2x72rm6l5oeq" path="res://TheGame/GameScripts/Level/LevelViewController.cs" id="1_0i2t0"]
+[ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/FloatingText/FloatingTextPresenter.cs" id="2_1ormc"]
+[ext_resource type="Texture2D" uid="uid://cpk7ttkaom0hn" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_bg_end.png" id="3_npois"]
+[ext_resource type="Texture2D" uid="uid://dq47mbjneqpbi" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_front.png" id="4_5piw8"]
+[ext_resource type="Texture2D" uid="uid://dr7yjbgnknw45" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_ground.png" id="5_dmtn2"]
+[ext_resource type="Texture2D" uid="uid://0ydcxtjvgsbj" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_platform.png" id="6_bh6t7"]
+[ext_resource type="Texture2D" uid="uid://c7rqjbmrivf0" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_water.png" id="7_v3h78"]
+[ext_resource type="Texture2D" uid="uid://ck5dont8dcdmo" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_waves.png" id="8_dsb7p"]
+[ext_resource type="Script" uid="uid://bkq4g0l6t4k15" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnPointsNode.cs" id="9_m6fs8"]
+[ext_resource type="Script" uid="uid://dd28ay4bkp1fl" path="res://TheGame/GameScripts/Level/Markers/LevelMarkerResource.cs" id="10_v8tj1"]
+[ext_resource type="Script" uid="uid://b7abdk6hcrmws" path="res://TheGame/GameScripts/Level/Stages/LevelTriggersNode.cs" id="11_2ggsk"]
+[ext_resource type="Script" uid="uid://b6ai16cs6v6de" path="res://TheGame/GameScripts/Level/Stages/LevelGatesNode.cs" id="12_jp8yd"]
+[ext_resource type="Script" uid="uid://dc4putintok3g" path="res://TheGame/GameScripts/Level/Exit/LevelExitNode.cs" id="13_0i2t0"]
+[ext_resource type="PackedScene" uid="uid://qk7b0ixfs2in" path="res://TheGame/Scenes/Widgets/level_exit.tscn" id="13_dirjj"]
+[ext_resource type="Script" uid="uid://ccjmic0fgxfrv" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnerNode.cs" id="15_xx51u"]
+[ext_resource type="Script" uid="uid://dkuuiel88m4ep" path="res://TheGame/GameScripts/Level/Camera/LevelCameraNode.cs" id="16_fwr6c"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_08t10"]
+size = Vector2(1711.7198, 19.999573)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_w3n6t"]
+size = Vector2(708.9619, 19.999634)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_r67cw"]
+size = Vector2(1346.322, 19.999634)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_n3kb6"]
+size = Vector2(577.9984, 66)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_krptn"]
+size = Vector2(168.1034, 206.00024)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_18wci"]
+size = Vector2(46.00171, 140.99927)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_da1j8"]
+size = Vector2(310.99512, 66)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0boky"]
+size = Vector2(24.000977, 66)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g4iar"]
+size = Vector2(24.000977, 66)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_brhx5"]
+size = Vector2(24.00122, 66)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jftx0"]
+size = Vector2(60.03016, 999.99927)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ufgs7"]
+size = Vector2(60.029785, 999.99927)
+
+[sub_resource type="Animation" id="Animation_h5w55"]
+length = 13.541666666666666
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("River0/Waves:position")
+tracks/0/interp = 0
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334, 0.5, 0.5416667, 0.5833333, 0.625, 0.6666667, 0.7083333, 0.75, 0.7916667, 0.8333333, 0.875, 0.9166667, 0.9583333, 1, 1.0416666, 1.0833334, 1.125, 1.1666666, 1.2083334, 1.25, 1.2916666, 1.3333334, 1.375, 1.4166666, 1.4583334, 1.5, 1.5416666, 1.5833334, 1.625, 1.6666666, 1.7083334, 1.75, 1.7916666, 1.8333334, 1.875, 1.9166666, 1.9583334, 2, 2.0416667, 2.0833333, 2.125, 2.1666667, 2.2083333, 2.25, 2.2916667, 2.3333333, 2.375, 2.4166667, 2.4583333, 2.5, 2.5416667, 2.5833333, 2.625, 2.6666667, 2.7083333, 2.75, 2.7916667, 2.8333333, 2.875, 2.9166667, 2.9583333, 3, 3.0416667, 3.0833333, 3.125, 3.1666667, 3.2083333, 3.25, 3.2916667, 3.3333333, 3.375, 3.4166667, 3.4583333, 3.5, 3.5416667, 3.5833333, 3.625, 3.6666667, 3.7083333, 3.75, 3.7916667, 3.8333333, 3.875, 3.9166667, 3.9583333, 4, 4.0416665, 4.0833335, 4.125, 4.1666665, 4.2083335, 4.25, 4.2916665, 4.3333335, 4.375, 4.4166665, 4.4583335, 4.5, 4.5416665, 4.5833335, 4.625, 4.6666665, 4.7083335, 4.75, 4.7916665, 4.8333335, 4.875, 4.9166665, 4.9583335, 5, 5.0416665, 5.0833335, 5.125, 5.1666665, 5.2083335, 5.25, 5.2916665, 5.3333335, 5.375, 5.4166665, 5.4583335, 5.5, 5.5416665, 5.5833335, 5.625, 5.6666665, 5.7083335, 5.75, 5.7916665, 5.8333335, 5.875, 5.9166665, 5.9583335, 6, 6.0416665, 6.0833335, 6.125, 6.1666665, 6.2083335, 6.25, 6.2916665, 6.3333335, 6.375, 6.4166665, 6.4583335, 6.5, 6.5416665, 6.5833335, 6.625, 6.6666665, 6.7083335, 6.75, 6.7916665, 6.8333335, 6.875, 6.9166665, 6.9583335, 7, 7.0416665, 7.0833335, 7.125, 7.1666665, 7.2083335, 7.25, 7.2916665, 7.3333335, 7.375, 7.4166665, 7.4583335, 7.5, 7.5416665, 7.5833335, 7.625, 7.6666665, 7.7083335, 7.75, 7.7916665, 7.8333335, 7.875, 7.9166665, 7.9583335, 8, 8.041667, 8.083333, 8.125, 8.166667, 8.208333, 8.25, 8.291667, 8.333333, 8.375, 8.416667, 8.458333, 8.5, 8.541667, 8.583333, 8.625, 8.666667, 8.708333, 8.75, 8.791667, 8.833333, 8.875, 8.916667, 8.958333, 9, 9.041667, 9.083333, 9.125, 9.166667, 9.208333, 9.25, 9.291667, 9.333333, 9.375, 9.416667, 9.458333, 9.5, 9.541667, 9.583333, 9.625, 9.666667, 9.708333, 9.75, 9.791667, 9.833333, 9.875, 9.916667, 9.958333, 10, 10.041667, 10.083333, 10.125, 10.166667, 10.208333, 10.25, 10.291667, 10.333333, 10.375, 10.416667, 10.458333, 10.5, 10.541667, 10.583333, 10.625, 10.666667, 10.708333, 10.75, 10.791667, 10.833333, 10.875, 10.916667, 10.958333, 11, 11.041667, 11.083333, 11.125, 11.166667, 11.208333, 11.25, 11.291667, 11.333333, 11.375, 11.416667, 11.458333, 11.5, 11.541667, 11.583333, 11.625, 11.666667, 11.708333, 11.75, 11.791667, 11.833333, 11.875, 11.916667, 11.958333, 12, 12.041667, 12.083333, 12.125, 12.166667, 12.208333, 12.25, 12.291667, 12.333333, 12.375, 12.416667, 12.458333, 12.5, 12.541667, 12.583333, 12.625, 12.666667, 12.708333, 12.75, 12.791667, 12.833333, 12.875, 12.916667, 12.958333, 13, 13.041667, 13.083333, 13.125, 13.166667, 13.208333, 13.25, 13.291667, 13.333333, 13.375, 13.416667, 13.458333, 13.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(-29.8, -0.5), Vector2(-32.949997, -0.5), Vector2(-36.1, -0.5), Vector2(-39.25, -0.5), Vector2(-42.4, -0.5), Vector2(-45.55, -0.5), Vector2(-48.7, -0.5), Vector2(-51.85, -0.5), Vector2(-55, -0.5), Vector2(-58.149998, -0.5), Vector2(-61.3, -0.5), Vector2(-64.45, -0.5), Vector2(-67.6, -0.5), Vector2(-70.8, -0.5), Vector2(-73.9, -0.5), Vector2(-77.1, -0.5), Vector2(-80.2, -0.5), Vector2(-83.4, -0.5), Vector2(-86.55, -0.5), Vector2(-89.649994, -0.5), Vector2(-92.85, -0.5), Vector2(-96, -0.5), Vector2(-99.149994, -0.5), Vector2(-102.3, -0.5), Vector2(-105.45, -0.5), Vector2(-108.6, -0.5), Vector2(-111.75, -0.5), Vector2(-114.899994, -0.5), Vector2(-118.05, -0.5), Vector2(-121.2, -0.5), Vector2(-124.350006, -0.5), Vector2(-127.5, -0.5), Vector2(-130.65, -0.5), Vector2(-133.8, -0.5), Vector2(-136.95, -0.5), Vector2(-140.1, -0.5), Vector2(-143.25, -0.5), Vector2(-146.4, -0.5), Vector2(-149.55, -0.5), Vector2(-152.7, -0.5), Vector2(-155.85, -0.5), Vector2(-159, -0.5), Vector2(-162.15, -0.5), Vector2(-165.3, -0.5), Vector2(-168.45, -0.5), Vector2(-171.6, -0.5), Vector2(-174.75, -0.5), Vector2(-177.9, -0.5), Vector2(-181.05, -0.5), Vector2(-184.2, -0.5), Vector2(-187.40001, -0.5), Vector2(-190.55, -0.5), Vector2(-193.65001, -0.5), Vector2(-196.8, -0.5), Vector2(-200, -0.5), Vector2(-203.15001, -0.5), Vector2(-206.25, -0.5), Vector2(-209.45, -0.5), Vector2(-212.6, -0.5), Vector2(-215.75, -0.5), Vector2(-218.90001, -0.5), Vector2(-222.05, -0.5), Vector2(-225.2, -0.5), Vector2(-228.35, -0.5), Vector2(-231.5, -0.5), Vector2(-234.65001, -0.5), Vector2(-237.8, -0.5), Vector2(-240.95, -0.5), Vector2(-244.1, -0.5), Vector2(-247.25, -0.5), Vector2(-250.40001, -0.5), Vector2(-253.55, -0.5), Vector2(-256.69998, -0.5), Vector2(-259.85, -0.5), Vector2(-263, -0.5), Vector2(-266.15, -0.5), Vector2(-269.3, -0.5), Vector2(-272.44998, -0.5), Vector2(-275.6, -0.5), Vector2(-278.75, -0.5), Vector2(-281.9, -0.5), Vector2(-285.05, -0.5), Vector2(-288.19998, -0.5), Vector2(-291.35, -0.5), Vector2(-294.5, -0.5), Vector2(-297.65, -0.5), Vector2(-300.8, -0.5), Vector2(-303.94998, -0.5), Vector2(-307.15, -0.5), Vector2(-310.25, -0.5), Vector2(-313.4, -0.5), Vector2(-316.59998, -0.5), Vector2(-319.69998, -0.5), Vector2(-322.9, -0.5), Vector2(-326.05, -0.5), Vector2(-329.19998, -0.5), Vector2(-332.34998, -0.5), Vector2(-335.5, -0.5), Vector2(-338.65, -0.5), Vector2(-341.8, -0.5), Vector2(-344.94998, -0.5), Vector2(-348.09998, -0.5), Vector2(-351.25, -0.5), Vector2(-354.4, -0.5), Vector2(-357.55, -0.5), Vector2(-360.69998, -0.5), Vector2(-363.84998, -0.5), Vector2(-367, -0.5), Vector2(-370.15, -0.5), Vector2(-373.3, -0.5), Vector2(-376.44998, -0.5), Vector2(-379.59998, -0.5), Vector2(-382.75, -0.5), Vector2(-385.9, -0.5), Vector2(-389.05, -0.5), Vector2(-392.19998, -0.5), Vector2(-395.34998, -0.5), Vector2(-398.5, -0.5), Vector2(-401.65, -0.5), Vector2(-404.8, -0.5), Vector2(-408, -0.5), Vector2(-411.09998, -0.5), Vector2(-414.25, -0.5), Vector2(-417.4, -0.5), Vector2(-420.59998, -0.5), Vector2(-423.69998, -0.5), Vector2(-426.84998, -0.5), Vector2(-430, -0.5), Vector2(-433.19998, -0.5), Vector2(-436.34998, -0.5), Vector2(-439.44998, -0.5), Vector2(-442.65, -0.5), Vector2(-445.8, -0.5), Vector2(-448.94998, -0.5), Vector2(-452.09998, -0.5), Vector2(-455.25, -0.5), Vector2(-458.4, -0.5), Vector2(-461.55, -0.5), Vector2(-464.69998, -0.5), Vector2(-467.84998, -0.5), Vector2(-471, -0.5), Vector2(-474.15, -0.5), Vector2(-477.3, -0.5), Vector2(-480.44998, -0.5), Vector2(-483.59998, -0.5), Vector2(-486.75, -0.5), Vector2(-489.9, -0.5), Vector2(-493.05, -0.5), Vector2(-496.19998, -0.5), Vector2(-499.34998, -0.5), Vector2(-502.5, -0.5), Vector2(-505.65, -0.5), Vector2(-508.8, -0.5), Vector2(-511.94998, -0.5), Vector2(-515.1, -0.5), Vector2(-518.25, -0.5), Vector2(-521.4, -0.5), Vector2(-524.6, -0.5), Vector2(-527.7, -0.5), Vector2(-530.85, -0.5), Vector2(-534, -0.5), Vector2(-537.15, -0.5), Vector2(-540.3, -0.5), Vector2(-543.45, -0.5), Vector2(-546.65, -0.5), Vector2(-549.8, -0.5), Vector2(-552.95, -0.5), Vector2(-556.05, -0.5), Vector2(-559.25, -0.5), Vector2(-562.4, -0.5), Vector2(-565.55, -0.5), Vector2(-568.7, -0.5), Vector2(-571.85, -0.5), Vector2(-575, -0.5), Vector2(-578.14996, -0.5), Vector2(-581.3, -0.5), Vector2(-584.45, -0.5), Vector2(-587.6, -0.5), Vector2(-590.75, -0.5), Vector2(-593.89996, -0.5), Vector2(-597.05, -0.5), Vector2(-600.2, -0.5), Vector2(-603.35, -0.5), Vector2(-606.5, -0.5), Vector2(-609.64996, -0.5), Vector2(-612.8, -0.5), Vector2(-615.95, -0.5), Vector2(-619.1, -0.5), Vector2(-622.25, -0.5), Vector2(-625.39996, -0.5), Vector2(-628.55, -0.5), Vector2(-631.7, -0.5), Vector2(-634.85, -0.5), Vector2(-638, -0.5), Vector2(-641.14996, -0.5), Vector2(-644.3, -0.5), Vector2(-647.45, -0.5), Vector2(-650.64996, -0.5), Vector2(-653.8, -0.5), Vector2(-656.89996, -0.5), Vector2(-660.05, -0.5), Vector2(-663.25, -0.5), Vector2(-666.39996, -0.5), Vector2(-669.55, -0.5), Vector2(-672.7, -0.5), Vector2(-675.85, -0.5), Vector2(-679, -0.5), Vector2(-682.14996, -0.5), Vector2(-685.3, -0.5), Vector2(-688.45, -0.5), Vector2(-691.6, -0.5), Vector2(-694.75, -0.5), Vector2(-697.89996, -0.5), Vector2(-701.05, -0.5), Vector2(-704.2, -0.5), Vector2(-707.35, -0.5), Vector2(-710.5, -0.5), Vector2(-713.64996, -0.5), Vector2(-716.8, -0.5), Vector2(-719.95, -0.5), Vector2(-723.1, -0.5), Vector2(-726.25, -0.5), Vector2(-729.39996, -0.5), Vector2(-732.55, -0.5), Vector2(-735.7, -0.5), Vector2(-738.85, -0.5), Vector2(-742, -0.5), Vector2(-745.14996, -0.5), Vector2(-748.3, -0.5), Vector2(-751.45, -0.5), Vector2(-754.6, -0.5), Vector2(-757.75, -0.5), Vector2(-760.89996, -0.5), Vector2(-764.05, -0.5), Vector2(-767.25, -0.5), Vector2(-770.39996, -0.5), Vector2(-773.55, -0.5), Vector2(-776.7, -0.5), Vector2(-779.85, -0.5), Vector2(-783, -0.5), Vector2(-786.14996, -0.5), Vector2(-789.3, -0.5), Vector2(-792.45, -0.5), Vector2(-795.6, -0.5), Vector2(-798.75, -0.5), Vector2(-801.89996, -0.5), Vector2(-805.05, -0.5), Vector2(-808.2, -0.5), Vector2(-811.35, -0.5), Vector2(-814.5, -0.5), Vector2(-817.64996, -0.5), Vector2(-820.8, -0.5), Vector2(-823.95, -0.5), Vector2(-827.1, -0.5), Vector2(-830.25, -0.5), Vector2(-833.39996, -0.5), Vector2(-836.55, -0.5), Vector2(-839.7, -0.5), Vector2(-842.85, -0.5), Vector2(-846, -0.5), Vector2(-849.14996, -0.5), Vector2(-852.3, -0.5), Vector2(-855.45, -0.5), Vector2(-858.6, -0.5), Vector2(-861.75, -0.5), Vector2(-864.89996, -0.5), Vector2(-868.05, -0.5), Vector2(-871.25, -0.5), Vector2(-874.39996, -0.5), Vector2(-877.5, -0.5), Vector2(-880.64996, -0.5), Vector2(-883.85, -0.5), Vector2(-887, -0.5), Vector2(-890.14996, -0.5), Vector2(-893.25, -0.5), Vector2(-896.45, -0.5), Vector2(-899.6, -0.5), Vector2(-902.75, -0.5), Vector2(-905.89996, -0.5), Vector2(-909.05, -0.5), Vector2(-912.2, -0.5), Vector2(-915.35, -0.5), Vector2(-918.5, -0.5), Vector2(-921.64996, -0.5), Vector2(-924.8, -0.5), Vector2(-927.95, -0.5), Vector2(-931.1, -0.5), Vector2(-934.25, -0.5), Vector2(-937.39996, -0.5), Vector2(-940.55, -0.5), Vector2(-943.7, -0.5), Vector2(-946.85, -0.5), Vector2(-950, -0.5), Vector2(-953.14996, -0.5), Vector2(-956.3, -0.5), Vector2(-959.45, -0.5), Vector2(-962.6, -0.5), Vector2(-965.75, -0.5), Vector2(-968.89996, -0.5), Vector2(-972.05, -0.5), Vector2(-975.2, -0.5), Vector2(-978.35, -0.5), Vector2(-981.5, -0.5), Vector2(-984.64996, -0.5), Vector2(-987.85, -0.5), Vector2(-991, -0.5), Vector2(-994.1, -0.5), Vector2(-997.25, -0.5), Vector2(-1000.45, -0.5), Vector2(-1003.6, -0.5), Vector2(-1006.75, -0.5), Vector2(-1009.85, -0.5), Vector2(-1013.05, -0.5), Vector2(-1016.2, -0.5), Vector2(-1019.35, -0.5), Vector2(-1022.5, -0.5), Vector2(-1025.65, -0.5), Vector2(-1028.8, -0.5), Vector2(-1031.9501, -0.5), Vector2(-1035.1, -0.5), Vector2(-1038.25, -0.5), Vector2(-1041.4, -0.5), Vector2(-1044.55, -0.5), Vector2(-1047.7001, -0.5), Vector2(-1050.85, -0.5)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("River1/Waves:position")
+tracks/1/interp = 0
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334, 0.5, 0.5416667, 0.5833333, 0.625, 0.6666667, 0.7083333, 0.75, 0.7916667, 0.8333333, 0.875, 0.9166667, 0.9583333, 1, 1.0416666, 1.0833334, 1.125, 1.1666666, 1.2083334, 1.25, 1.2916666, 1.3333334, 1.375, 1.4166666, 1.4583334, 1.5, 1.5416666, 1.5833334, 1.625, 1.6666666, 1.7083334, 1.75, 1.7916666, 1.8333334, 1.875, 1.9166666, 1.9583334, 2, 2.0416667, 2.0833333, 2.125, 2.1666667, 2.2083333, 2.25, 2.2916667, 2.3333333, 2.375, 2.4166667, 2.4583333, 2.5, 2.5416667, 2.5833333, 2.625, 2.6666667, 2.7083333, 2.75, 2.7916667, 2.8333333, 2.875, 2.9166667, 2.9583333, 3, 3.0416667, 3.0833333, 3.125, 3.1666667, 3.2083333, 3.25, 3.2916667, 3.3333333, 3.375, 3.4166667, 3.4583333, 3.5, 3.5416667, 3.5833333, 3.625, 3.6666667, 3.7083333, 3.75, 3.7916667, 3.8333333, 3.875, 3.9166667, 3.9583333, 4, 4.0416665, 4.0833335, 4.125, 4.1666665, 4.2083335, 4.25, 4.2916665, 4.3333335, 4.375, 4.4166665, 4.4583335, 4.5, 4.5416665, 4.5833335, 4.625, 4.6666665, 4.7083335, 4.75, 4.7916665, 4.8333335, 4.875, 4.9166665, 4.9583335, 5, 5.0416665, 5.0833335, 5.125, 5.1666665, 5.2083335, 5.25, 5.2916665, 5.3333335, 5.375, 5.4166665, 5.4583335, 5.5, 5.5416665, 5.5833335, 5.625, 5.6666665, 5.7083335, 5.75, 5.7916665, 5.8333335, 5.875, 5.9166665, 5.9583335, 6, 6.0416665, 6.0833335, 6.125, 6.1666665, 6.2083335, 6.25, 6.2916665, 6.3333335, 6.375, 6.4166665, 6.4583335, 6.5, 6.5416665, 6.5833335, 6.625, 6.6666665, 6.7083335, 6.75, 6.7916665, 6.8333335, 6.875, 6.9166665, 6.9583335, 7, 7.0416665, 7.0833335, 7.125, 7.1666665, 7.2083335, 7.25, 7.2916665, 7.3333335, 7.375, 7.4166665, 7.4583335, 7.5, 7.5416665, 7.5833335, 7.625, 7.6666665, 7.7083335, 7.75, 7.7916665, 7.8333335, 7.875, 7.9166665, 7.9583335, 8, 8.041667, 8.083333, 8.125, 8.166667, 8.208333, 8.25, 8.291667, 8.333333, 8.375, 8.416667, 8.458333, 8.5, 8.541667, 8.583333, 8.625, 8.666667, 8.708333, 8.75, 8.791667, 8.833333, 8.875, 8.916667, 8.958333, 9, 9.041667, 9.083333, 9.125, 9.166667, 9.208333, 9.25, 9.291667, 9.333333, 9.375, 9.416667, 9.458333, 9.5, 9.541667, 9.583333, 9.625, 9.666667, 9.708333, 9.75, 9.791667, 9.833333, 9.875, 9.916667, 9.958333, 10, 10.041667, 10.083333, 10.125, 10.166667, 10.208333, 10.25, 10.291667, 10.333333, 10.375, 10.416667, 10.458333, 10.5, 10.541667, 10.583333, 10.625, 10.666667, 10.708333, 10.75, 10.791667, 10.833333, 10.875, 10.916667, 10.958333, 11, 11.041667, 11.083333, 11.125, 11.166667, 11.208333, 11.25, 11.291667, 11.333333, 11.375, 11.416667, 11.458333, 11.5, 11.541667, 11.583333, 11.625, 11.666667, 11.708333, 11.75, 11.791667, 11.833333, 11.875, 11.916667, 11.958333, 12, 12.041667, 12.083333, 12.125, 12.166667, 12.208333, 12.25, 12.291667, 12.333333, 12.375, 12.416667, 12.458333, 12.5, 12.541667, 12.583333, 12.625, 12.666667, 12.708333, 12.75, 12.791667, 12.833333, 12.875, 12.916667, 12.958333, 13, 13.041667, 13.083333, 13.125, 13.166667, 13.208333, 13.25, 13.291667, 13.333333, 13.375, 13.416667, 13.458333, 13.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(-29.8, -0.5), Vector2(-32.949997, -0.5), Vector2(-36.1, -0.5), Vector2(-39.25, -0.5), Vector2(-42.4, -0.5), Vector2(-45.55, -0.5), Vector2(-48.7, -0.5), Vector2(-51.85, -0.5), Vector2(-55, -0.5), Vector2(-58.149998, -0.5), Vector2(-61.3, -0.5), Vector2(-64.45, -0.5), Vector2(-67.6, -0.5), Vector2(-70.8, -0.5), Vector2(-73.9, -0.5), Vector2(-77.1, -0.5), Vector2(-80.2, -0.5), Vector2(-83.4, -0.5), Vector2(-86.55, -0.5), Vector2(-89.649994, -0.5), Vector2(-92.85, -0.5), Vector2(-96, -0.5), Vector2(-99.149994, -0.5), Vector2(-102.3, -0.5), Vector2(-105.45, -0.5), Vector2(-108.6, -0.5), Vector2(-111.75, -0.5), Vector2(-114.899994, -0.5), Vector2(-118.05, -0.5), Vector2(-121.2, -0.5), Vector2(-124.350006, -0.5), Vector2(-127.5, -0.5), Vector2(-130.65, -0.5), Vector2(-133.8, -0.5), Vector2(-136.95, -0.5), Vector2(-140.1, -0.5), Vector2(-143.25, -0.5), Vector2(-146.4, -0.5), Vector2(-149.55, -0.5), Vector2(-152.7, -0.5), Vector2(-155.85, -0.5), Vector2(-159, -0.5), Vector2(-162.15, -0.5), Vector2(-165.3, -0.5), Vector2(-168.45, -0.5), Vector2(-171.6, -0.5), Vector2(-174.75, -0.5), Vector2(-177.9, -0.5), Vector2(-181.05, -0.5), Vector2(-184.2, -0.5), Vector2(-187.40001, -0.5), Vector2(-190.55, -0.5), Vector2(-193.65001, -0.5), Vector2(-196.8, -0.5), Vector2(-200, -0.5), Vector2(-203.15001, -0.5), Vector2(-206.25, -0.5), Vector2(-209.45, -0.5), Vector2(-212.6, -0.5), Vector2(-215.75, -0.5), Vector2(-218.90001, -0.5), Vector2(-222.05, -0.5), Vector2(-225.2, -0.5), Vector2(-228.35, -0.5), Vector2(-231.5, -0.5), Vector2(-234.65001, -0.5), Vector2(-237.8, -0.5), Vector2(-240.95, -0.5), Vector2(-244.1, -0.5), Vector2(-247.25, -0.5), Vector2(-250.40001, -0.5), Vector2(-253.55, -0.5), Vector2(-256.69998, -0.5), Vector2(-259.85, -0.5), Vector2(-263, -0.5), Vector2(-266.15, -0.5), Vector2(-269.3, -0.5), Vector2(-272.44998, -0.5), Vector2(-275.6, -0.5), Vector2(-278.75, -0.5), Vector2(-281.9, -0.5), Vector2(-285.05, -0.5), Vector2(-288.19998, -0.5), Vector2(-291.35, -0.5), Vector2(-294.5, -0.5), Vector2(-297.65, -0.5), Vector2(-300.8, -0.5), Vector2(-303.94998, -0.5), Vector2(-307.15, -0.5), Vector2(-310.25, -0.5), Vector2(-313.4, -0.5), Vector2(-316.59998, -0.5), Vector2(-319.69998, -0.5), Vector2(-322.9, -0.5), Vector2(-326.05, -0.5), Vector2(-329.19998, -0.5), Vector2(-332.34998, -0.5), Vector2(-335.5, -0.5), Vector2(-338.65, -0.5), Vector2(-341.8, -0.5), Vector2(-344.94998, -0.5), Vector2(-348.09998, -0.5), Vector2(-351.25, -0.5), Vector2(-354.4, -0.5), Vector2(-357.55, -0.5), Vector2(-360.69998, -0.5), Vector2(-363.84998, -0.5), Vector2(-367, -0.5), Vector2(-370.15, -0.5), Vector2(-373.3, -0.5), Vector2(-376.44998, -0.5), Vector2(-379.59998, -0.5), Vector2(-382.75, -0.5), Vector2(-385.9, -0.5), Vector2(-389.05, -0.5), Vector2(-392.19998, -0.5), Vector2(-395.34998, -0.5), Vector2(-398.5, -0.5), Vector2(-401.65, -0.5), Vector2(-404.8, -0.5), Vector2(-408, -0.5), Vector2(-411.09998, -0.5), Vector2(-414.25, -0.5), Vector2(-417.4, -0.5), Vector2(-420.59998, -0.5), Vector2(-423.69998, -0.5), Vector2(-426.84998, -0.5), Vector2(-430, -0.5), Vector2(-433.19998, -0.5), Vector2(-436.34998, -0.5), Vector2(-439.44998, -0.5), Vector2(-442.65, -0.5), Vector2(-445.8, -0.5), Vector2(-448.94998, -0.5), Vector2(-452.09998, -0.5), Vector2(-455.25, -0.5), Vector2(-458.4, -0.5), Vector2(-461.55, -0.5), Vector2(-464.69998, -0.5), Vector2(-467.84998, -0.5), Vector2(-471, -0.5), Vector2(-474.15, -0.5), Vector2(-477.3, -0.5), Vector2(-480.44998, -0.5), Vector2(-483.59998, -0.5), Vector2(-486.75, -0.5), Vector2(-489.9, -0.5), Vector2(-493.05, -0.5), Vector2(-496.19998, -0.5), Vector2(-499.34998, -0.5), Vector2(-502.5, -0.5), Vector2(-505.65, -0.5), Vector2(-508.8, -0.5), Vector2(-511.94998, -0.5), Vector2(-515.1, -0.5), Vector2(-518.25, -0.5), Vector2(-521.4, -0.5), Vector2(-524.6, -0.5), Vector2(-527.7, -0.5), Vector2(-530.85, -0.5), Vector2(-534, -0.5), Vector2(-537.15, -0.5), Vector2(-540.3, -0.5), Vector2(-543.45, -0.5), Vector2(-546.65, -0.5), Vector2(-549.8, -0.5), Vector2(-552.95, -0.5), Vector2(-556.05, -0.5), Vector2(-559.25, -0.5), Vector2(-562.4, -0.5), Vector2(-565.55, -0.5), Vector2(-568.7, -0.5), Vector2(-571.85, -0.5), Vector2(-575, -0.5), Vector2(-578.14996, -0.5), Vector2(-581.3, -0.5), Vector2(-584.45, -0.5), Vector2(-587.6, -0.5), Vector2(-590.75, -0.5), Vector2(-593.89996, -0.5), Vector2(-597.05, -0.5), Vector2(-600.2, -0.5), Vector2(-603.35, -0.5), Vector2(-606.5, -0.5), Vector2(-609.64996, -0.5), Vector2(-612.8, -0.5), Vector2(-615.95, -0.5), Vector2(-619.1, -0.5), Vector2(-622.25, -0.5), Vector2(-625.39996, -0.5), Vector2(-628.55, -0.5), Vector2(-631.7, -0.5), Vector2(-634.85, -0.5), Vector2(-638, -0.5), Vector2(-641.14996, -0.5), Vector2(-644.3, -0.5), Vector2(-647.45, -0.5), Vector2(-650.64996, -0.5), Vector2(-653.8, -0.5), Vector2(-656.89996, -0.5), Vector2(-660.05, -0.5), Vector2(-663.25, -0.5), Vector2(-666.39996, -0.5), Vector2(-669.55, -0.5), Vector2(-672.7, -0.5), Vector2(-675.85, -0.5), Vector2(-679, -0.5), Vector2(-682.14996, -0.5), Vector2(-685.3, -0.5), Vector2(-688.45, -0.5), Vector2(-691.6, -0.5), Vector2(-694.75, -0.5), Vector2(-697.89996, -0.5), Vector2(-701.05, -0.5), Vector2(-704.2, -0.5), Vector2(-707.35, -0.5), Vector2(-710.5, -0.5), Vector2(-713.64996, -0.5), Vector2(-716.8, -0.5), Vector2(-719.95, -0.5), Vector2(-723.1, -0.5), Vector2(-726.25, -0.5), Vector2(-729.39996, -0.5), Vector2(-732.55, -0.5), Vector2(-735.7, -0.5), Vector2(-738.85, -0.5), Vector2(-742, -0.5), Vector2(-745.14996, -0.5), Vector2(-748.3, -0.5), Vector2(-751.45, -0.5), Vector2(-754.6, -0.5), Vector2(-757.75, -0.5), Vector2(-760.89996, -0.5), Vector2(-764.05, -0.5), Vector2(-767.25, -0.5), Vector2(-770.39996, -0.5), Vector2(-773.55, -0.5), Vector2(-776.7, -0.5), Vector2(-779.85, -0.5), Vector2(-783, -0.5), Vector2(-786.14996, -0.5), Vector2(-789.3, -0.5), Vector2(-792.45, -0.5), Vector2(-795.6, -0.5), Vector2(-798.75, -0.5), Vector2(-801.89996, -0.5), Vector2(-805.05, -0.5), Vector2(-808.2, -0.5), Vector2(-811.35, -0.5), Vector2(-814.5, -0.5), Vector2(-817.64996, -0.5), Vector2(-820.8, -0.5), Vector2(-823.95, -0.5), Vector2(-827.1, -0.5), Vector2(-830.25, -0.5), Vector2(-833.39996, -0.5), Vector2(-836.55, -0.5), Vector2(-839.7, -0.5), Vector2(-842.85, -0.5), Vector2(-846, -0.5), Vector2(-849.14996, -0.5), Vector2(-852.3, -0.5), Vector2(-855.45, -0.5), Vector2(-858.6, -0.5), Vector2(-861.75, -0.5), Vector2(-864.89996, -0.5), Vector2(-868.05, -0.5), Vector2(-871.25, -0.5), Vector2(-874.39996, -0.5), Vector2(-877.5, -0.5), Vector2(-880.64996, -0.5), Vector2(-883.85, -0.5), Vector2(-887, -0.5), Vector2(-890.14996, -0.5), Vector2(-893.25, -0.5), Vector2(-896.45, -0.5), Vector2(-899.6, -0.5), Vector2(-902.75, -0.5), Vector2(-905.89996, -0.5), Vector2(-909.05, -0.5), Vector2(-912.2, -0.5), Vector2(-915.35, -0.5), Vector2(-918.5, -0.5), Vector2(-921.64996, -0.5), Vector2(-924.8, -0.5), Vector2(-927.95, -0.5), Vector2(-931.1, -0.5), Vector2(-934.25, -0.5), Vector2(-937.39996, -0.5), Vector2(-940.55, -0.5), Vector2(-943.7, -0.5), Vector2(-946.85, -0.5), Vector2(-950, -0.5), Vector2(-953.14996, -0.5), Vector2(-956.3, -0.5), Vector2(-959.45, -0.5), Vector2(-962.6, -0.5), Vector2(-965.75, -0.5), Vector2(-968.89996, -0.5), Vector2(-972.05, -0.5), Vector2(-975.2, -0.5), Vector2(-978.35, -0.5), Vector2(-981.5, -0.5), Vector2(-984.64996, -0.5), Vector2(-987.85, -0.5), Vector2(-991, -0.5), Vector2(-994.1, -0.5), Vector2(-997.25, -0.5), Vector2(-1000.45, -0.5), Vector2(-1003.6, -0.5), Vector2(-1006.75, -0.5), Vector2(-1009.85, -0.5), Vector2(-1013.05, -0.5), Vector2(-1016.2, -0.5), Vector2(-1019.35, -0.5), Vector2(-1022.5, -0.5), Vector2(-1025.65, -0.5), Vector2(-1028.8, -0.5), Vector2(-1031.9501, -0.5), Vector2(-1035.1, -0.5), Vector2(-1038.25, -0.5), Vector2(-1041.4, -0.5), Vector2(-1044.55, -0.5), Vector2(-1047.7001, -0.5), Vector2(-1050.85, -0.5)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_02unp"]
+_data = {
+&"flow": SubResource("Animation_h5w55")
+}
+
+[sub_resource type="Resource" id="Resource_v77um"]
+script = ExtResource("10_v8tj1")
+m_Id = "player_start"
+m_Node = NodePath("PlayerStart")
+
+[sub_resource type="Resource" id="Resource_h2fqv"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_1_a"
+m_Node = NodePath("Stage1A")
+
+[sub_resource type="Resource" id="Resource_0ivns"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_2_a"
+m_Node = NodePath("Stage2A")
+
+[sub_resource type="Resource" id="Resource_emnlr"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_4_a"
+m_Node = NodePath("Stage4A")
+
+[sub_resource type="Resource" id="Resource_4qkxi"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_5_a"
+m_Node = NodePath("Stage5A")
+
+[sub_resource type="Resource" id="Resource_p0hfg"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_4_b"
+m_Node = NodePath("Stage4B")
+
+[sub_resource type="Resource" id="Resource_aykyt"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_4_c"
+m_Node = NodePath("Stage4C")
+
+[sub_resource type="Resource" id="Resource_d1535"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_2_b"
+m_Node = NodePath("Stage2B")
+
+[sub_resource type="Resource" id="Resource_ojb35"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_3_a"
+m_Node = NodePath("Stage3A")
+
+[sub_resource type="Resource" id="Resource_h1jmf"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_3_b"
+m_Node = NodePath("Stage3B")
+
+[sub_resource type="Resource" id="Resource_k5f75"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_3_c"
+m_Node = NodePath("Stage3C")
+
+[sub_resource type="Resource" id="Resource_wbwwp"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_1_b"
+m_Node = NodePath("Stage1B")
+
+[sub_resource type="Resource" id="Resource_mj1i1"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_2_c"
+m_Node = NodePath("Stage2C")
+
+[sub_resource type="Resource" id="Resource_vkt06"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_2_d"
+m_Node = NodePath("Stage2D")
+
+[sub_resource type="Resource" id="Resource_qs00p"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_2_e"
+m_Node = NodePath("Stage2E")
+
+[sub_resource type="Resource" id="Resource_mrr0x"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_3_d"
+m_Node = NodePath("Stage3D")
+
+[sub_resource type="Resource" id="Resource_cwk62"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_3_e"
+m_Node = NodePath("Stage3E")
+
+[sub_resource type="Resource" id="Resource_55j6u"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_4_d"
+m_Node = NodePath("Stage4D")
+
+[sub_resource type="Resource" id="Resource_vnnkc"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_4_e"
+m_Node = NodePath("Stage4E")
+
+[sub_resource type="Resource" id="Resource_fi0vh"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_1_gate"
+m_Node = NodePath("Stage1Gate")
+
+[sub_resource type="Resource" id="Resource_l26k6"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_4_left"
+m_Node = NodePath("Stage4Left")
+
+[sub_resource type="Resource" id="Resource_geft0"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_4_gate"
+m_Node = NodePath("Stage4Gate")
+
+[sub_resource type="Resource" id="Resource_o3d0r"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_5_left"
+m_Node = NodePath("Stage5Left")
+
+[sub_resource type="Resource" id="Resource_pt40o"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_5_gate"
+m_Node = NodePath("Stage5Gate")
+
+[sub_resource type="Resource" id="Resource_peyc0"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_2_left"
+m_Node = NodePath("Stage2Left")
+
+[sub_resource type="Resource" id="Resource_6ov3j"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_2_gate"
+m_Node = NodePath("Stage2Gate")
+
+[sub_resource type="Resource" id="Resource_aang1"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_3_left"
+m_Node = NodePath("Stage3Left")
+
+[sub_resource type="Resource" id="Resource_xbwtq"]
+script = ExtResource("10_v8tj1")
+m_Id = "stage_3_gate"
+m_Node = NodePath("Stage3Gate")
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1w3sd"]
+size = Vector2(20, 1800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xwdn0"]
+size = Vector2(20, 1800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bka1w"]
+size = Vector2(20, 1800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_66rm5"]
+size = Vector2(20, 1800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_deqnm"]
+size = Vector2(20, 1800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sk1wx"]
+size = Vector2(20, 1800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_letwg"]
+size = Vector2(20, 1800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tdpmq"]
+size = Vector2(20, 1800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lrq17"]
+size = Vector2(20, 1800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_i0b0g"]
+size = Vector2(161.05591, 19.999603)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ritax"]
+size = Vector2(163.0564, 19.999603)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bkaha"]
+size = Vector2(163.0564, 19.999603)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7rre8"]
+size = Vector2(163.0564, 19.999603)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6ype8"]
+size = Vector2(163.0564, 19.999603)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_katjw"]
+size = Vector2(163.0564, 19.999603)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xtilj"]
+size = Vector2(525.9551, 19.999634)
+
+[sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
+size = Vector2(8, 4000)
+
+[node name="Level_2" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText")]
+script = ExtResource("1_0i2t0")
+m_MusicId = 102
+m_LevelId = 2
+m_SpawnPoints = NodePath("World/SpawnPoints")
+m_Triggers = NodePath("World/StageTriggers")
+m_Gates = NodePath("World/StageGates")
+m_Spawner = NodePath("Spawner")
+m_Camera = NodePath("Camera2D")
+m_Exit = NodePath("World/Exit")
+m_FloatingText = NodePath("World/FloatingText")
+m_FeaturedOpponentSpawnPointIds = PackedStringArray("stage_5_a")
+
+[node name="World" type="Node2D" parent="." unique_id=219105317]
+
+[node name="FloatingText" type="Node2D" parent="World" unique_id=660000079]
+script = ExtResource("2_1ormc")
+
+[node name="Background" type="Node2D" parent="World" unique_id=415239467]
+z_index = -20
+
+[node name="Sky" type="Parallax2D" parent="World/Background" unique_id=1864955233]
+scroll_scale = Vector2(0.13297872, 1)
+
+[node name="End" type="Sprite2D" parent="World/Background/Sky" unique_id=1691568439]
+texture = ExtResource("3_npois")
+centered = false
+
+[node name="Front" type="Sprite2D" parent="World/Background" unique_id=1940509269]
+position = Vector2(-245, 71)
+texture = ExtResource("4_5piw8")
+centered = false
+
+[node name="Geometry" type="Node2D" parent="World" unique_id=930087367]
+
+[node name="Ground" type="Node2D" parent="World/Geometry" unique_id=1647888136]
+
+[node name="Surface03" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=539976909]
+position = Vector2(0.34012, 517.4002)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Ground/Surface03" unique_id=673077196]
+position = Vector2(855.8599, 9.999817)
+shape = SubResource("RectangleShape2D_08t10")
+
+[node name="Surface05" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=876743266]
+position = Vector2(2412.819, 517.2502)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Ground/Surface05" unique_id=202923501]
+position = Vector2(354.48096, 9.999817)
+shape = SubResource("RectangleShape2D_w3n6t")
+
+[node name="Surface06" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=782382124]
+position = Vector2(3438.389, 517.2502)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Ground/Surface06" unique_id=1333831718]
+position = Vector2(673.1609, 9.999817)
+shape = SubResource("RectangleShape2D_r67cw")
+
+[node name="Surface08" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=1485538721]
+position = Vector2(1870.1508, 631)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Ground/Surface08" unique_id=1661913851]
+position = Vector2(288.99915, 33)
+shape = SubResource("RectangleShape2D_n3kb6")
+
+[node name="Surface15" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=459558610]
+position = Vector2(1716.0483, 405.54987)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Ground/Surface15" unique_id=213453450]
+position = Vector2(84.05176, 103.00012)
+shape = SubResource("RectangleShape2D_krptn")
+
+[node name="Surface17" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=1253009502]
+position = Vector2(2410.849, 531.55035)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Ground/Surface17" unique_id=528020519]
+position = Vector2(23.000977, 70.49963)
+shape = SubResource("RectangleShape2D_18wci")
+
+[node name="Surface18" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=628746371]
+position = Vector2(3123.2524, 578.6)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Ground/Surface18" unique_id=1232749823]
+position = Vector2(155.49756, 33)
+shape = SubResource("RectangleShape2D_da1j8")
+
+[node name="Surface19" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=1059599091]
+position = Vector2(3099.2495, 531.55)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Ground/Surface19" unique_id=1173014309]
+position = Vector2(12.000488, 33)
+shape = SubResource("RectangleShape2D_0boky")
+
+[node name="Surface20" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=1057513023]
+position = Vector2(3434.2495, 534.95)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Ground/Surface20" unique_id=1151010422]
+position = Vector2(12.000488, 33)
+shape = SubResource("RectangleShape2D_g4iar")
+
+[node name="Surface21" type="StaticBody2D" parent="World/Geometry/Ground" unique_id=711133810]
+position = Vector2(1858.1494, 600.95)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Ground/Surface21" unique_id=1357170477]
+position = Vector2(12.00061, 33)
+shape = SubResource("RectangleShape2D_brhx5")
+
+[node name="Artwork41" type="Sprite2D" parent="World/Geometry/Ground" unique_id=1846921572]
+z_index = -14
+position = Vector2(-18, 346.6)
+texture = ExtResource("5_dmtn2")
+centered = false
+
+[node name="Slopes" type="Node2D" parent="World/Geometry" unique_id=1000764320]
+
+[node name="Hill12" type="StaticBody2D" parent="World/Geometry/Slopes" unique_id=911467757]
+position = Vector2(337.97208, 517.4148)
+collision_mask = 0
+
+[node name="Surface" type="CollisionPolygon2D" parent="World/Geometry/Slopes/Hill12" unique_id=785378206]
+polygon = PackedVector2Array(0, 0, 71.79608, -71.79608, 283.66318, -71.792694, 355.4592, 0.0033569336, 341.31735, 14.144897, 14.141571, 14.141846)
+
+[node name="Hill22" type="StaticBody2D" parent="World/Geometry/Slopes" unique_id=1024065825]
+position = Vector2(4060.522, 517.4148)
+collision_mask = 0
+
+[node name="Surface" type="CollisionPolygon2D" parent="World/Geometry/Slopes/Hill22" unique_id=1579628522]
+polygon = PackedVector2Array(0, 0, 71.79639, -71.79608, 283.6631, -71.792694, 355.45947, 0.0033569336, 341.31738, 14.144897, 14.141602, 14.141846)
+
+[node name="Walls" type="Node2D" parent="World/Geometry" unique_id=1689660527]
+
+[node name="Surface04" type="StaticBody2D" parent="World/Geometry/Walls" unique_id=359815433]
+position = Vector2(-2.01508, -485.44965)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Walls/Surface04" unique_id=282936796]
+position = Vector2(30.01508, 499.99963)
+shape = SubResource("RectangleShape2D_jftx0")
+
+[node name="Surface07" type="StaticBody2D" parent="World/Geometry/Walls" unique_id=1831066905]
+position = Vector2(4678.285, -481.99966)
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Geometry/Walls/Surface07" unique_id=467373302]
+position = Vector2(30.014648, 499.99963)
+shape = SubResource("RectangleShape2D_ufgs7")
+
+[node name="Water" type="Node2D" parent="World/Geometry" unique_id=2067342079]
+z_index = -16
+
+[node name="River0" type="Control" parent="World/Geometry/Water" unique_id=573049964]
+clip_contents = true
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3004.2
+offset_top = 547.65
+offset_right = 3553.2
+offset_bottom = 630.65
+mouse_filter = 2
+
+[node name="Water" type="Sprite2D" parent="World/Geometry/Water/River0" unique_id=940231861]
+texture = ExtResource("7_v3h78")
+centered = false
+
+[node name="Waves" type="Sprite2D" parent="World/Geometry/Water/River0" unique_id=379547317]
+position = Vector2(-29.8, -0.5)
+texture = ExtResource("8_dsb7p")
+centered = false
+
+[node name="River1" type="Control" parent="World/Geometry/Water" unique_id=260961719]
+clip_contents = true
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1876.8501
+offset_top = 548.0
+offset_right = 2425.85
+offset_bottom = 631.0
+mouse_filter = 2
+
+[node name="Water" type="Sprite2D" parent="World/Geometry/Water/River1" unique_id=1243058567]
+texture = ExtResource("7_v3h78")
+centered = false
+
+[node name="Waves" type="Sprite2D" parent="World/Geometry/Water/River1" unique_id=1826543272]
+position = Vector2(-29.8, -0.5)
+texture = ExtResource("8_dsb7p")
+centered = false
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="World/Geometry/Water" unique_id=251352460]
+libraries/ = SubResource("AnimationLibrary_02unp")
+autoplay = &"flow"
+
+[node name="SpawnPoints" type="Node2D" parent="World" unique_id=773829097]
+z_index = 200
+script = ExtResource("9_m6fs8")
+m_Entries = Array[ExtResource("10_v8tj1")]([SubResource("Resource_v77um"), SubResource("Resource_h2fqv"), SubResource("Resource_0ivns"), SubResource("Resource_emnlr"), SubResource("Resource_4qkxi"), SubResource("Resource_p0hfg"), SubResource("Resource_aykyt"), SubResource("Resource_d1535"), SubResource("Resource_ojb35"), SubResource("Resource_h1jmf"), SubResource("Resource_k5f75"), SubResource("Resource_wbwwp"), SubResource("Resource_mj1i1"), SubResource("Resource_vkt06"), SubResource("Resource_qs00p"), SubResource("Resource_mrr0x"), SubResource("Resource_cwk62"), SubResource("Resource_55j6u"), SubResource("Resource_vnnkc")])
+
+[node name="PlayerStart" type="Marker2D" parent="World/SpawnPoints" unique_id=1301574526]
+position = Vector2(300, 300)
+
+[node name="Stage1A" type="Marker2D" parent="World/SpawnPoints" unique_id=1383180825]
+position = Vector2(1028.95, 437.55)
+
+[node name="Stage2A" type="Marker2D" parent="World/SpawnPoints" unique_id=586891235]
+position = Vector2(1109.9, 18.1)
+
+[node name="Stage4A" type="Marker2D" parent="World/SpawnPoints" unique_id=819252089]
+position = Vector2(2641.65, 391.1)
+
+[node name="Stage5A" type="Marker2D" parent="World/SpawnPoints" unique_id=1418081044]
+position = Vector2(4578.35, 334.8)
+
+[node name="Stage4B" type="Marker2D" parent="World/SpawnPoints" unique_id=1733516855]
+position = Vector2(3812.1, 305.4)
+
+[node name="Stage4C" type="Marker2D" parent="World/SpawnPoints" unique_id=200708418]
+position = Vector2(3260.5, 302)
+
+[node name="Stage2B" type="Marker2D" parent="World/SpawnPoints" unique_id=400499573]
+position = Vector2(1321.55, 460.95)
+
+[node name="Stage3A" type="Marker2D" parent="World/SpawnPoints" unique_id=1109171463]
+position = Vector2(1997.05, 11.4)
+
+[node name="Stage3B" type="Marker2D" parent="World/SpawnPoints" unique_id=1240217157]
+position = Vector2(2400.1, 15.3)
+
+[node name="Stage3C" type="Marker2D" parent="World/SpawnPoints" unique_id=921055167]
+position = Vector2(2829.9, 442.1)
+
+[node name="Stage1B" type="Marker2D" parent="World/SpawnPoints" unique_id=1025357766]
+position = Vector2(1066.65, 437.55)
+
+[node name="Stage2C" type="Marker2D" parent="World/SpawnPoints" unique_id=1989437500]
+position = Vector2(1506.25, 20.95)
+
+[node name="Stage2D" type="Marker2D" parent="World/SpawnPoints" unique_id=434998589]
+position = Vector2(698.35, 305.4)
+
+[node name="Stage2E" type="Marker2D" parent="World/SpawnPoints" unique_id=172100265]
+position = Vector2(1811.65, 285.15)
+
+[node name="Stage3D" type="Marker2D" parent="World/SpawnPoints" unique_id=1948932050]
+position = Vector2(2188.2, -68.05)
+
+[node name="Stage3E" type="Marker2D" parent="World/SpawnPoints" unique_id=1154325623]
+position = Vector2(2848.15, 332.1)
+
+[node name="Stage4D" type="Marker2D" parent="World/SpawnPoints" unique_id=762955239]
+position = Vector2(3805.15, 391.1)
+
+[node name="Stage4E" type="Marker2D" parent="World/SpawnPoints" unique_id=1112633574]
+position = Vector2(2629.3, 328.9)
+
+[node name="StageTriggers" type="Node2D" parent="World" unique_id=1024511872]
+z_index = 200
+script = ExtResource("11_2ggsk")
+
+[node name="StageGates" type="Node2D" parent="World" unique_id=429529906]
+z_index = 200
+script = ExtResource("12_jp8yd")
+m_Entries = Array[ExtResource("10_v8tj1")]([SubResource("Resource_fi0vh"), SubResource("Resource_l26k6"), SubResource("Resource_geft0"), SubResource("Resource_o3d0r"), SubResource("Resource_pt40o"), SubResource("Resource_peyc0"), SubResource("Resource_6ov3j"), SubResource("Resource_aang1"), SubResource("Resource_xbwtq")])
+m_MarkerSize = 350.0
+
+[node name="Stage1Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1947586231]
+position = Vector2(1004.4, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/StageGates/Stage1Gate" unique_id=1447182082]
+shape = SubResource("RectangleShape2D_1w3sd")
+disabled = true
+
+[node name="Stage4Left" type="StaticBody2D" parent="World/StageGates" unique_id=1212352102]
+position = Vector2(2256.2, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/StageGates/Stage4Left" unique_id=757885702]
+shape = SubResource("RectangleShape2D_xwdn0")
+disabled = true
+
+[node name="Stage4Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1760814930]
+position = Vector2(3706.2, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/StageGates/Stage4Gate" unique_id=1952395085]
+shape = SubResource("RectangleShape2D_bka1w")
+disabled = true
+
+[node name="Stage5Left" type="StaticBody2D" parent="World/StageGates" unique_id=689601446]
+position = Vector2(3037.3, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/StageGates/Stage5Left" unique_id=1378003790]
+shape = SubResource("RectangleShape2D_66rm5")
+disabled = true
+
+[node name="Stage5Gate" type="StaticBody2D" parent="World/StageGates" unique_id=2036551126]
+position = Vector2(4487.3, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/StageGates/Stage5Gate" unique_id=1550920634]
+shape = SubResource("RectangleShape2D_deqnm")
+disabled = true
+
+[node name="Stage2Left" type="StaticBody2D" parent="World/StageGates" unique_id=637094698]
+position = Vector2(544.65, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/StageGates/Stage2Left" unique_id=341445180]
+shape = SubResource("RectangleShape2D_sk1wx")
+disabled = true
+
+[node name="Stage2Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1757823153]
+position = Vector2(1994.65, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/StageGates/Stage2Gate" unique_id=189306239]
+shape = SubResource("RectangleShape2D_letwg")
+disabled = true
+
+[node name="Stage3Left" type="StaticBody2D" parent="World/StageGates" unique_id=2100316508]
+position = Vector2(1318.85, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/StageGates/Stage3Left" unique_id=1552150011]
+shape = SubResource("RectangleShape2D_tdpmq")
+disabled = true
+
+[node name="Stage3Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1130021324]
+position = Vector2(2768.85, 295)
+collision_layer = 8192
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/StageGates/Stage3Gate" unique_id=191387043]
+shape = SubResource("RectangleShape2D_lrq17")
+disabled = true
+
+[node name="Exit" type="Area2D" parent="World" unique_id=720884043 node_paths=PackedStringArray("m_Marker", "m_Prompt") instance=ExtResource("13_dirjj")]
+visible = false
+position = Vector2(4230.2, 387.85)
+collision_layer = 2048
+collision_mask = 2
+script = ExtResource("13_0i2t0")
+m_Marker = NodePath("Marker")
+m_Prompt = NodePath("Prompt")
+
+[node name="Platforms" type="Node2D" parent="World" unique_id=860227771]
+
+[node name="Platform00" type="StaticBody2D" parent="World/Platforms" unique_id=103253633]
+position = Vector2(1040.3257, 352.08505)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Platform00" unique_id=1586362106]
+position = Vector2(80.527954, 9.999786)
+shape = SubResource("RectangleShape2D_i0b0g")
+one_way_collision = true
+
+[node name="Artwork3" type="Sprite2D" parent="World/Platforms/Platform00" unique_id=883991608]
+z_index = -15
+position = Vector2(-8.975586, -5.4850464)
+texture = ExtResource("6_bh6t7")
+centered = false
+
+[node name="Platform01" type="StaticBody2D" parent="World/Platforms" unique_id=1319980437]
+position = Vector2(1388.2755, 352.08505)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Platform01" unique_id=731403890]
+position = Vector2(81.5282, 9.999786)
+shape = SubResource("RectangleShape2D_ritax")
+one_way_collision = true
+
+[node name="Platform02" type="StaticBody2D" parent="World/Platforms" unique_id=1266202793]
+position = Vector2(1919.1755, 300.48505)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Platform02" unique_id=2025472326]
+position = Vector2(81.5282, 9.999817)
+shape = SubResource("RectangleShape2D_bkaha")
+one_way_collision = true
+
+[node name="Artwork45" type="Sprite2D" parent="World/Platforms/Platform02" unique_id=1804939913]
+z_index = -13
+position = Vector2(-7.975586, -5.4850464)
+texture = ExtResource("6_bh6t7")
+centered = false
+
+[node name="Platform09" type="StaticBody2D" parent="World/Platforms" unique_id=1623190791]
+position = Vector2(2117.8254, 176.28505)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Platform09" unique_id=214435519]
+position = Vector2(81.528076, 9.999802)
+shape = SubResource("RectangleShape2D_7rre8")
+one_way_collision = true
+
+[node name="Artwork49" type="Sprite2D" parent="World/Platforms/Platform09" unique_id=662251311]
+z_index = -12
+position = Vector2(-7.975342, -5.4850464)
+texture = ExtResource("6_bh6t7")
+centered = false
+
+[node name="Platform10" type="StaticBody2D" parent="World/Platforms" unique_id=367840423]
+position = Vector2(2318.2754, 347.48505)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Platform10" unique_id=1452505107]
+position = Vector2(81.52832, 9.999817)
+shape = SubResource("RectangleShape2D_6ype8")
+one_way_collision = true
+
+[node name="Artwork53" type="Sprite2D" parent="World/Platforms/Platform10" unique_id=2117077777]
+z_index = -11
+position = Vector2(-7.975342, -5.4850464)
+texture = ExtResource("6_bh6t7")
+centered = false
+
+[node name="Platform11" type="StaticBody2D" parent="World/Platforms" unique_id=418327699]
+position = Vector2(3177.3254, 364.58505)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Platform11" unique_id=604930596]
+position = Vector2(81.528076, 9.999786)
+shape = SubResource("RectangleShape2D_katjw")
+one_way_collision = true
+
+[node name="Artwork57" type="Sprite2D" parent="World/Platforms/Platform11" unique_id=642946073]
+z_index = -10
+position = Vector2(-7.975342, -5.4850464)
+texture = ExtResource("6_bh6t7")
+centered = false
+
+[node name="Platform16" type="StaticBody2D" parent="World/Platforms" unique_id=1240619226]
+position = Vector2(1884.8843, 569.98505)
+collision_layer = 8
+collision_mask = 0
+
+[node name="Surface" type="CollisionShape2D" parent="World/Platforms/Platform16" unique_id=518076770]
+position = Vector2(262.97754, 9.999817)
+shape = SubResource("RectangleShape2D_xtilj")
+one_way_collision = true
+
+[node name="Spawner" type="Node" parent="." unique_id=605185327]
+script = ExtResource("15_xx51u")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=958629535 node_paths=PackedStringArray("m_LeftPlayerWall", "m_RightPlayerWall")]
+z_index = 200
+position = Vector2(470, 295)
+limit_left = 0
+limit_top = 0
+limit_right = 4700
+limit_bottom = 590
+script = ExtResource("16_fwr6c")
+m_LeftPlayerWall = NodePath("PlayerScreenWalls/Left")
+m_RightPlayerWall = NodePath("PlayerScreenWalls/Right")
+
+[node name="PlayerScreenWalls" type="StaticBody2D" parent="Camera2D" unique_id=2023691008]
+collision_layer = 8192
+collision_mask = 0
+
+[node name="Left" type="CollisionShape2D" parent="Camera2D/PlayerScreenWalls" unique_id=2001885480]
+position = Vector2(-454, 0)
+shape = SubResource("PlayerScreenWallShape")
+
+[node name="Right" type="CollisionShape2D" parent="Camera2D/PlayerScreenWalls" unique_id=1618567286]
+position = Vector2(454, 0)
+shape = SubResource("PlayerScreenWallShape")

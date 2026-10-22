@@ -53,7 +53,7 @@
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.Text.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.Text.ITextHelper.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Monsters\Body\Core\MonsterBodyParams.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Body\Core\EnemyBodyParams.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\LevelModel.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\LevelSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\LevelResult.cs" />

@@ -30,7 +30,7 @@ public sealed class LevelModel : AbstractModel
     internal double ElapsedSeconds { get; set; }
 
     /// <summary>本局击败数量。</summary>
-    internal int DefeatedMonsterCount { get; set; }
+    internal int DefeatedEnemyCount { get; set; }
 
     /// <summary>本局实际发放经验。</summary>
     internal int AwardedExperience { get; set; }

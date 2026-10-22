@@ -78,7 +78,7 @@ public sealed class ModelTransactionTests
         Assert.Equal(20, scope.Profile.Soul.Value);
         Assert.Equal(staff.InstanceId, Assert.Single(items).InstanceId);
         Assert.Null(slots.Value.Weapon);
-        Assert.Equal(TestTables.Tables.TbHeroGrowthConfig.Get(1, 1).BaseAttributes.Power, scope.Hero.Power.Value);
+        Assert.Equal(TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.Power, scope.Hero.Power.Value);
         Assert.Equal(1, scope.Hero.Level.Value);
         Assert.Same(progress, scope.Profile.Progress);
         Assert.Same(items, scope.Profile.EquipmentDatas);

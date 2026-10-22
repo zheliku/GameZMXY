@@ -29,6 +29,8 @@ namespace GameLogic.Heroes.Body
                 return;
             }
 
+            // MoveAndSlide 留下的上坡分量不是起跳速度；地面下一步重新施加向下重力，允许贴地跨过坡顶。
+            body.Velocity = new Godot.Vector2(body.Velocity.X, 0f);
             ApplyGravity(body, dt);
             ApplyHorizontalMovement(body);
             // 包括立棍张望的时序归动画，不另设随机小动作计时。

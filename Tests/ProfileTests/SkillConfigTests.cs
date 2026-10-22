@@ -35,12 +35,13 @@ public sealed class SkillConfigTests
     public void Passives_PreserveFiveLevelsAndAbsoluteChance()
     {
         var table = TestTables.Tables.TbPassiveConfig;
-        Assert.Equal(25, table.DataList.Count);
+        Assert.Equal(5, table.DataList.Count);
         foreach (PassiveId id in Enum.GetValues<PassiveId>())
         {
-            var levels = table.DataList.Where(x => x.PassiveId == id).OrderBy(x => x.Level).ToArray();
+            var levels = table.Get(id).Levels;
+            Assert.Equal(Enumerable.Range(1, 5), levels.Select(level => level.Level));
             Assert.Equal(new[] { 5000, 10000, 15000, 20000, 25000 }, levels.Select(x => x.LearnSoul));
-            for (int i = 0; i < levels.Length; i++)
+            for (int i = 0; i < levels.Count; i++)
             {
                 float expected = id switch
                 {
@@ -51,8 +52,7 @@ public sealed class SkillConfigTests
                 Assert.Equal(expected, levels[i].Value);
             }
         }
-        Assert.All(table.DataList.Where(x => x.PassiveId == PassiveId.Frenzy),
-            level => Assert.Equal(PassiveEffect.CriticalChance, level.Effect));
+        Assert.Equal(PassiveEffect.CriticalChance, table.Get(PassiveId.Frenzy).Effect);
     }
 
     /// <summary>完整正式目录通过同一套启动校验。</summary>

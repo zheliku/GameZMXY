@@ -4,6 +4,10 @@
 
 `TheGame/` 下资源使用既有目录：`Entitys/`、`Scenes/`、`UIs/`、`Sprites/`、`Audios/`、`DataTables/`；不另建平行 `Assets/`。`MainPack/` 放随应用打包的启动和共享资源，游戏逻辑放 `GameScripts/`。
 
+敌人代码以 `GameScripts/Entity/Enemies/` 为公共根，`Monsters/` 与 `Bosses/<作品与关卡编号_名称>/` 对应两条实体和 AI 继承分支；公共 Body 与 AI 契约留在根下。实体场景、动作库和贴图分别在 `Entitys/Enemies/`、`Entitys/Animations/Enemies/`、`Sprites/Characters/Enemies/` 下按 Monsters / Bosses 分类。BOSS 专属实体和效果放在同一角色目录，不另建 Effects/Bosses。UI 子场景按 Inventory、Battle 等功能归类，不恢复横跨业务的 Widgets 文件夹。
+
+关卡专属目录统一为 `zm<作品号>_<两位关卡号>_<snake_case 名称>`，如 `zm1_02_macaque_king`、`zm1_03_tamarin_king`；代码、实体、动画和贴图保持相同目录名。关卡场景位于 `Scenes/Levels/zm1_01_huaguoshan/` 等目录，关卡贴图在 `Sprites/Levels/` 下使用同名目录。`zm` 避免 GGF 将末级目录拼成数字开头的非法 C# 资源常量；不为纯数字目录修改框架生成器。类名和命名空间保持原有语义，不附加关卡号。跨关复用的英雄、小怪与公共系统按职责/角色命名，不强制归属某一关；花果山守关大猩猩仍复用 Gorilla 和配方倍率。
+
 业务场景与资源文件使用英文小写 `snake_case`（如 `battle_form.tscn`），C# 类型、脚本文件和场景根节点仍用 PascalCase；basename 全树唯一。框架只读资源及其直接绑定的主包 `LoadingForm.tscn`、`QuestionTips.tscn` 保留既有名称，不能为改名修改框架；`.import` 与 `.uid` 随资源提交。移动或重命名资源在 Godot 编辑器内完成。旧项目迁入的素材登记在 `Docs/LegacyAssetMap.md`。
 
 从旧项目迁入 PNG/WAV 时不带旧 `.import`；普通文件名保留并记录映射，战斗图集按 `<entity>_<state>` 命名以避免全树重名。动画从旧场景提取为 `.tres` 或按登记规格用一次性脚本生成；无源 TexturePacker 图集保留原 `.tres`，不重新导入。旧场景及脚本逻辑不直接复制。
@@ -18,7 +22,7 @@
 - 新增或替换美术时，检查待机与走/跑起停、左右转向、起跳/下落/落地、受击/攻击/死亡衔接；同时检查四种武器与防具穿戴组合和背包预览。用固定世界坐标与原点参考线比对，区分正常姿态变化和整幅素材跳位。确认武器与手臂遮挡、脚底高度、特效位置及裁切；构建通过不能替代视觉检查。
 
 - 实体场景与实体表 `AssetPath` 一致；节点引用由实体脚本 `[Export]` 字段绑定。
-- 怪物实体场景用 `[Export] Entity.EntityId` 枚举字段（如 `m_MonsterEntityId`）绑定 `MonsterConfig`，编辑器显示为可读枚举下拉框；禁止导出需要反查的裸数字 ID。运行时按 `MonsterConfig.EntityId` 一对一查找，零条或多条命中在实体初始化时失败并交由会话拥有者报告。
+- 怪物实体场景用 `[Export] Entity.EntityId` 枚举字段（如 `m_EnemyEntityId`）绑定 `MonsterConfig`，编辑器显示为可读枚举下拉框；禁止导出需要反查的裸数字 ID。运行时按 `MonsterConfig.EntityId` 一对一查找，零条或多条命中在实体初始化时失败并交由会话拥有者报告。
 - `.tscn` 的外部节点路径在场景头部 `node_paths` 声明，否则 Godot 可能忽略 `NodePath` 导出赋值。
 - 动画库位于 `Entitys/Animations/`，资源边界与判定约定见 [30-EntitiesAndCombat.md](30-EntitiesAndCombat.md)。
 - `Scenes/test_arena.tscn` 是战斗验证场景；正式关卡使用 LevelViewController 和组合式子节点，契约见 [60-GameplayModules.md](60-GameplayModules.md)。
@@ -54,7 +58,7 @@
 - 菜单脚本按既有 Ge 半类约定生成绑定，业务写在 `.Logic.cs`。打开参数携带窗口所需引用或不可变结果，无状态源的开始页、静态选角和地图不创建空 Data。按钮通过携带窗口编号的具名回调提交导航，所属 Procedure 校验并执行。
 - 地图地点使用旧项目普通/悬停配对图片。`MapLocationButton._HasPoint` 按当前显示图片的 alpha 轮廓判断：普通状态按居中普通图，悬停状态逆转 LocationGlow 的缩放、Pivot、KeepAspect 和 shader 变换，包含可见黄色轮廓；不设置固定 `TextureClickMask`。`LocationGlow` 子节点不接收鼠标。动画库外置在 `map_location_hover.tres`，RESET 同时恢复显示与参数；放大后在可见悬停图轮廓内仍保持悬停，离开其轮廓才复位。用户要求放大光效：只改 LocationGlow 的 Scale，当前为 (1.15, 1.15)，Pivot Offset 固定 (80, 87)，动画不会覆盖该尺寸；按钮本身不缩放。HUD 保留旧项目左下角技能、背包、设置、法宝与宠物图片；设置打开 `SettingsForm`，其中的“返回地图”由关卡流程执行。未实现图标明确禁用，不加右上角返回入口。设置窗口用 `GF.Base.PauseGame/ResumeGame` 对称管理暂停，池复用时按 `OnDepthChanged` 设置 `ZIndex`。
 - 菜单背景与肖像位于 `Sprites/UI/frontend/`，音乐位于 `Audios/Music/`，确认音位于 `Audios/UI/`；来源登记在 [LegacyAssetMap.md](../LegacyAssetMap.md)。音乐循环由资源导入设置控制，加载、音量、代理池、淡入淡出及取消归 GGF。
-- 当前只有悟空可出战、花果山五波可进入；未实现角色与地图地点明确显示未开放。菜单视觉参考原项目素材与官方竖幅肖像选择布局，不把预览素材冒充已实现玩法。
+- 当前只有悟空可出战，花果山、水帘洞、桃花源已实现；新档逐关通关解锁，只有最新可挑战地点默认闪烁，历史地点可重玩和悬停，后续地点禁用。窗口重开与读取存档均从档案进度恢复提示。未实现角色与地图地点明确显示未开放。
 
 ## Bundle
 
@@ -72,6 +76,6 @@
 
 ### 守关生命条
 
-`UIs/Widgets/encounter_health_bar.tscn` 是被动控件，HUD 提供名称与生命值。按用户要求将“名称＋条体”作为整体顶部居中，根节点用 Top Center 锚点，HUD 实例不覆盖位置；内部间距和高度参考 [官方组件](../OfficialReference.md)。名称白字黑边，字体沿用旧项目 BossBlood 的华康海报体 W12（MainPack/Fonts/df_poster_w12.ttc），条使用 boss_health_under/fill 原图。无进场弹窗、无生命数字、无额外背景面板。
+`UIs/Battle/encounter_health_bar.tscn` 是被动控件，HUD 提供名称与生命值。按用户要求将“名称＋条体”作为整体顶部居中，根节点用 Top Center 锚点，HUD 实例不覆盖位置；内部间距和高度参考 [官方组件](../OfficialReference.md)。名称白字黑边，字体沿用旧项目 BossBlood 的华康海报体 W12（MainPack/Fonts/df_poster_w12.ttc），条使用 boss_health_under/fill 原图。无进场弹窗、无生命数字、无额外背景面板。
 
 关卡的 World/Exit 只保留一个出口子场景实例，不再同时建立同名占位节点；NodePath 与 node_paths 同步。资源检查同时覆盖重复节点路径、导出路径和资源字符串常量。

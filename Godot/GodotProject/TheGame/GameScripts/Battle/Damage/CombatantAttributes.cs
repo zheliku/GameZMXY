@@ -36,10 +36,10 @@ namespace GameLogic.Battle.Damage
         public readonly int Mdef;
 
         /// <summary>暴击</summary>
-        public readonly int Crit;
+        public readonly float Crit;
 
         /// <summary>闪避</summary>
-        public readonly int Miss;
+        public readonly float Miss;
 
         /// <summary>幸运（加暴击倍率）</summary>
         public readonly int Lucky;
@@ -48,10 +48,10 @@ namespace GameLogic.Battle.Damage
         public readonly int Toughness;
 
         /// <summary>命中（减对方闪避）</summary>
-        public readonly int Htarget;
+        public readonly float Htarget;
 
         /// <summary>暴击抵抗（减对方暴击）</summary>
-        public readonly int CritReduce;
+        public readonly float CritReduce;
 
         /// <summary>破甲（减对方物防）</summary>
         public readonly int Ar;
@@ -74,8 +74,8 @@ namespace GameLogic.Battle.Damage
         /// <param name="ar">破甲。</param>
         /// <param name="sp">破魔。</param>
         /// <param name="actorId">来源运行实体编号；场景外计算可为空。</param>
-        public CombatantAttributes(CombatSide side, int level, int power, int def, int mdef, int crit, int miss,
-            int lucky, int toughness, int htarget, int critReduce, int ar, int sp, int? actorId = null)
+        public CombatantAttributes(CombatSide side, int level, int power, int def, int mdef, float crit, float miss,
+            int lucky, int toughness, float htarget, float critReduce, int ar, int sp, int? actorId = null)
         {
             ActorId = actorId;
             Side = side;

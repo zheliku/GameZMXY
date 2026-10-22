@@ -54,6 +54,16 @@ def export(java, ffdec, source, output, work):
     run('-swf2xml', str(readable), str(work / 'other.xml'))
     tree = ET.parse(work / 'other.xml')
     tags = tree.getroot().find('tags')
+    # FFDec sizes the sprite from its first 5px glow, although the timeline later reaches 33px.
+    # Enlarge only the bitmap shape's declared canvas; drawing commands and source filters stay unchanged.
+    glow_padding = 40
+    glow_shape = next(tag for tag in tags if tag.get('shapeId') == '338')
+    bounds = glow_shape.find('shapeBounds')
+    for axis in ('Xmin', 'Ymin'):
+        bounds.set(axis, str(int(bounds.get(axis)) - glow_padding * 20))
+    for axis in ('Xmax', 'Ymax'):
+        bounds.set(axis, str(int(bounds.get(axis)) + glow_padding * 20))
+    bounds.set('nbits', '12')
     sprites = {t.get('spriteId'): t for t in tags if t.get('type') == 'DefineSpriteTag'}
     buttons = {t.get('buttonId'): t for t in tags if t.get('type') == 'DefineButton2Tag'}
     wrappers = {}
@@ -109,10 +119,11 @@ def export(java, ffdec, source, output, work):
                   for line in result.stdout.splitlines() if len(values := line.split()) == 5}
     manifest = {'bounds': {name: rectangles[sid] for name, sid in wrappers.items()},
                 'full_glow_bounds': rectangles[340],
+                'glow_filter_padding': glow_padding,
                 'placements': {tag.get('name'): matrix(tag)
                                for tag in next(timeline_frames(sprites['374'])).values() if tag.get('name')}}
     (work / 'layout.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
-    # Source glow already has a true alpha channel; no rectangular-sheet mask is necessary.
+    # Native filter overscan keeps the full halo and transparent border; no runtime mask is needed.
     glow_frames = sorted(frame(340).parent.glob('*.png'), key=lambda p: int(p.stem))
     glow = '[gd_resource type="SpriteFrames" format=3]\n\n'
     for i, picture in enumerate(glow_frames):

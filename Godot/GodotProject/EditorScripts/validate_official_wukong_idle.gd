@@ -54,14 +54,14 @@ func _run() -> void:
     var source: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(args[0]))
     var manifest: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(args[1]))
     _check(source.source_sha256 == manifest.source_sha256 and source.fps == 24 and manifest.frames.size() == 100, "Unexpected original source or timing")
-    var hero = load("res://TheGame/Entitys/wukong_entity.tscn").instantiate()
+    var hero = load("res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn").instantiate()
     hero.process_mode = Node.PROCESS_MODE_DISABLED
     root.add_child(hero)
     var player: AnimationPlayer = hero.get_node("m_AnimPlayer")
     var body: Sprite2D = hero.get_node("m_Body")
     var weapon: Sprite2D = hero.get_node("m_Weapon")
     var hit: CollisionShape2D = hero.get_node("m_HitBoxRoot/m_HitBox/CollisionShape2D")
-    var preview = load("res://TheGame/UIs/Widgets/hero_preview.tscn").instantiate()
+    var preview = load("res://TheGame/UIs/Inventory/hero_preview.tscn").instantiate()
     preview.process_mode = Node.PROCESS_MODE_DISABLED
     root.add_child(preview)
     var preview_player: AnimationPlayer = preview.get_node("AnimationPlayer")
@@ -111,7 +111,7 @@ func _run() -> void:
     var actors := []
     # Two directions for every independently replaceable weapon/body pairing.
     for i in range(8):
-        var actor = load("res://TheGame/Entitys/wukong_entity.tscn").instantiate()
+        var actor = load("res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn").instantiate()
         actor.process_mode = Node.PROCESS_MODE_DISABLED
         actor.position = Vector2(100 + i * 200, 72)
         var actor_body: Sprite2D = actor.get_node("m_Body")

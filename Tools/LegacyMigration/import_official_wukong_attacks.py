@@ -85,7 +85,7 @@ def method_tracks(text, name, first_index):
 
 def apply(manifest):
     """Replace only the named attack blocks; update the shared effect resource."""
-    path = PROJECT / 'TheGame/Entitys/Animations/wukong_anim_library.tres'
+    path = PROJECT / 'TheGame/Entitys/Animations/Heroes/Wukong/wukong_anim_library.tres'
     # The anchored boundary avoids treating key arrays as resource boundaries.
     original = path.read_text(encoding='utf-8')
     text = re.sub(r'^\[sub_resource type="(?:Animation|RectangleShape2D|ConvexPolygonShape2D)" id="(?:hitbox_)?attack_\d+(?:_\d+)?"\]\n.*?(?=^\[|\Z)', '', original, flags=re.M | re.S)
@@ -146,7 +146,7 @@ def apply(manifest):
     animations.append('{"name": &"empty", "loop": false, "speed": 1.0, "frames": [{"duration": 1.0, "texture": null}]}')
     effects.append('[resource]\nanimations = [' + ',\n'.join(animations) + ']\n')
     (PROJECT / 'TheGame/Sprites/Effects/wukong/wukong_effect_animations.tres').write_text('\n'.join(effects), encoding='utf-8', newline='\n')
-    for relative in ['TheGame/Entitys/wukong_entity.tscn', 'TheGame/UIs/Widgets/hero_preview.tscn']:
+    for relative in ['TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn', 'TheGame/UIs/Inventory/hero_preview.tscn']:
         scene = PROJECT / relative
         scene_text = scene.read_text(encoding='utf-8')
         scene_text = re.sub(r'(hframes = 6\nvframes = )\d+', lambda match: match[1] + str(int(manifest['rows'])), scene_text)

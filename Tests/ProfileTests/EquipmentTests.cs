@@ -303,7 +303,7 @@ public sealed class EquipmentTests
         var frozen = playerModel.Hero.CaptureCombatAttributes();
         Assert.True(equipmentSystem.TryUnequip(EquipmentSlot.Armor));
         Assert.Null(playerModel.Profile.Armor);
-        Assert.Equal(TestTables.Tables.TbHeroGrowthConfig.Get(1, 1).BaseAttributes.Def + armor.Attributes.Def, frozen.Def);
+        Assert.Equal(TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.Def + armor.Attributes.Def, frozen.Def);
     }
 
     /// <summary>错误部位、跨角色引用和一物多穿都被正式读档拒绝。</summary>

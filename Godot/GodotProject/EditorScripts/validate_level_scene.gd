@@ -8,7 +8,7 @@ func _init() -> void:
 	call_deferred("validate")
 
 func validate() -> void:
-	var packed := load("res://TheGame/Scenes/level_1.tscn") as PackedScene
+	var packed := load("res://TheGame/Scenes/Levels/zm1_01_huaguoshan/level_1.tscn") as PackedScene
 	if packed == null:
 		push_error("LEVEL SCENE FAIL: 无法加载正式关卡")
 		quit(1)
@@ -41,26 +41,26 @@ func validate() -> void:
 		manager.queue_redraw()
 	check(level.get_node("World/SpawnPoints").get("m_Entries").size() == 15, "五波十四处生成点与玩家出生点必须登记")
 	check(level.get_node("World/StageGates").get("m_Entries").size() == 9, "五个出口与四个独立左界必须登记")
-	var points := {"Stage1A": Vector2(891, 359), "Stage2A": Vector2(1550, 325),
-		"Stage2B": Vector2(1365, 355), "Stage2C": Vector2(1705, 297),
+	var points := {"Stage1A": Vector2(1256.4, 377.3), "Stage2A": Vector2(1863, 428.65),
+		"Stage2B": Vector2(806.35, 359.4), "Stage2C": Vector2(1863, 377.25),
 		"Stage3A": Vector2(2059.65, 284.45), "Stage3B": Vector2(2349.75, 116.75),
-		"Stage3C": Vector2(2633.45, 291.55), "Stage3D": Vector2(1890, 363),
-		"Stage4A": Vector2(3305, 373), "Stage4B": Vector2(3170, 371), "Stage4C": Vector2(3029, 371),
+		"Stage3C": Vector2(2633.45, 291.55), "Stage3D": Vector2(1705.35, 369.35),
+		"Stage4A": Vector2(3485.2, 383.3), "Stage4B": Vector2(3570.8, 383.3), "Stage4C": Vector2(3520.15, 383.3),
 		"Stage5A": Vector2(4295.65, 376.4), "Stage5B": Vector2(4590.05, 354.4), "Stage5C": Vector2(3772.85, 382.2)}
 	for point: String in points:
-		check(level.get_node("World/SpawnPoints/" + point).position.is_equal_approx(points[point]), "保留的项目生成点或新增第五波坐标不符：" + point)
+		check(level.get_node("World/SpawnPoints/" + point).position.is_equal_approx(points[point]), "官方生成点坐标不符：" + point)
 	for gate in level.get_node("World/StageGates").get_children():
 		check(gate.collision_layer == 1 << 13 and gate.collision_mask == 0, "战斗边界只在 PlayerBarrier 层，怪物可从场外进入")
 	check(level.get_node("World/StageTriggers").get_child_count() == 0, "普通关卡不需要刷怪触发区")
-	var platforms := {"Left": Vector2(2064.5, 369.25), "Middle": Vector2(2341.7, 212.8), "Right": Vector2(2633.55, 368.8)}
+	var platforms := {"Platform00": Vector2(1943.487, 359.23505), "Platform01": Vector2(2512.537, 358.78505), "Platform02": Vector2(2220.687, 202.78505)}
 	check(level.get_node("World/Platforms").get_child_count() == 3, "第三阶段应有三块平台")
 	for platform: String in platforms:
 		var body := level.get_node("World/Platforms/" + platform) as StaticBody2D
-		check(body.position.is_equal_approx(platforms[platform]), "平台偏离官方坐标：" + platform)
+		check(body.position.distance_to(platforms[platform]) < 0.02, "平台偏离官方坐标：" + platform)
 		check(body.collision_layer == 8 and body.collision_mask == 0, "平台应只在 Platform 层")
 		check(body.get_node("Surface").one_way_collision, "平台必须能从下方跳过")
-	check(level.get_node("World/Geometry/Ground/Slope1").get_child_count() == 4, "用户添加的四个斜坡碰撞必须保留")
-	check(level.get_node("World/Geometry/Ground/FloorGround").position == Vector2(2406, 545), "用户调整的地面位置必须保留")
+	check(level.get_node("World/Geometry/Slopes").get_child_count() == 3, "原版三座土坡必须使用连续碰撞轮廓")
+	check(absf(level.get_node("World/Geometry/Ground/Surface03").position.y - 518.5502) < 0.02, "地面必须与原版贴图保持同一原点")
 	check(level.get_node("Camera2D").get_script().is_tool(), "相机必须支持编辑器引导绘制")
 	await process_frame
 	if snapshot:

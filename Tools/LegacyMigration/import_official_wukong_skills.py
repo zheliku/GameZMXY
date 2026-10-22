@@ -21,8 +21,8 @@ from import_official_wukong_attacks import number, track
 PROJECT = Path(__file__).resolve().parents[2] / 'Godot/GodotProject'
 HERO = PROJECT / 'TheGame/Sprites/Characters/Heroes/wukong'
 EFFECT = PROJECT / 'TheGame/Sprites/Effects/wukong/skills'
-ANIMATION = PROJECT / 'TheGame/Entitys/Animations/Skills'
-SCENE = PROJECT / 'TheGame/Entitys/Effects/Skills'
+ANIMATION = PROJECT / 'TheGame/Entitys/Animations/Heroes/Wukong'
+SCENE = PROJECT / 'TheGame/Entitys/Heroes/Wukong'
 
 
 def registered_native(source, bounds, transform):
@@ -254,12 +254,12 @@ def apply(path):
     blocks.append('[resource]\n_data = {\n' + ',\n'.join(f'&"{action["name"]}": SubResource("{action["name"]}")' for action in manifest['skills']) + '\n}\n')
     library = ANIMATION / 'wukong_skill_library.tres'
     library.write_text(''.join(blocks), encoding='utf-8')
-    for relative in ('TheGame/Entitys/wukong_entity.tscn', 'TheGame/UIs/Widgets/hero_preview.tscn'):
+    for relative in ('TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn', 'TheGame/UIs/Inventory/hero_preview.tscn'):
         scene = PROJECT / relative
         text = re.sub(r'(hframes = 6\nvframes = )\d+', lambda m: m[1]+str(rows), scene.read_text(encoding='utf-8'))
         if relative.endswith('wukong_entity.tscn'):
             if 'id="skills"' not in text:
-                text = text.replace('[sub_resource', '[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Skills/wukong_skill_library.tres" id="skills"]\n\n[sub_resource', 1)
+                text = text.replace('[sub_resource', '[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_skill_library.tres" id="skills"]\n\n[sub_resource', 1)
             if 'libraries/skills' not in text:
                 text = text.replace('libraries/ = ExtResource("5_lib")', 'libraries/ = ExtResource("5_lib")\nlibraries/skills = ExtResource("skills")')
         scene.write_text(text, encoding='utf-8')
@@ -287,6 +287,10 @@ def apply(path):
         atlas.save(atlas_path)
         frames = EFFECT / f'wukong_{name}_frames.tres'
         sprite_frames(frames, 'res://' + atlas_path.relative_to(PROJECT).as_posix(), [('play', cells)], (width, height), columns)
+        if name == 'fire_demon_prelude':
+            # Pure animation lives on Wukong; no empty attack area or pooled scene.
+            effect['hitboxes'], effect['offset'], effect['effect_cells'] = hitboxes, offset, cells
+            continue
         effect_library = ANIMATION / f'wukong_{name}_library.tres'
         effect_library.write_text('[gd_resource type="AnimationLibrary" format=3]\n\n[sub_resource type="RectangleShape2D" id="rest"]\nsize = Vector2(1, 1)\n\n' + animation('play', count, hitboxes=hitboxes) + '[resource]\n_data = {&"play": SubResource("play")}\n', encoding='utf-8')
         effect_scene = SCENE / f'wukong_{name}_effect.tscn'

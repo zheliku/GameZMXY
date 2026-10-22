@@ -1,0 +1,90 @@
+[gd_scene format=3 uid="uid://b3aug1ti4qw4a"]
+
+[ext_resource type="Script" uid="uid://x5xloglae6cu" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_03_tamarin_king/TamarinKingEntity.cs" id="1_np6ac"]
+[ext_resource type="SpriteFrames" uid="uid://boandhtxjydk5" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_body_frames.tres" id="2_exky5"]
+[ext_resource type="SpriteFrames" uid="uid://bqk4sdmih2cem" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_effect_frames.tres" id="3_yavfw"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="4_bfkbl"]
+[ext_resource type="AnimationLibrary" uid="uid://u24qwo132sgt" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_library.tres" id="5_6unwe"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_aw30p"]
+radius = 22.498322
+height = 79.999695
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lfcs4"]
+size = Vector2(44.996643, 79.999695)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_t82im"]
+size = Vector2(1, 1)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ra7d5"]
+size = Vector2(600, 1800)
+
+[node name="TamarinKingEntity" type="CharacterBody2D" unique_id=802693107 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+collision_layer = 4
+collision_mask = 9
+floor_constant_speed = true
+floor_max_angle = 0.87266463
+floor_snap_length = 12.0
+script = ExtResource("1_np6ac")
+m_Detector = NodePath("m_Detector")
+m_EnemyEntityId = 6
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AttackAnimations = PackedStringArray("attack_1", "attack_2")
+m_DamageSoundId = 6
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
+
+[node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1821930133]
+sprite_frames = ExtResource("2_exky5")
+animation = &"idle"
+offset = Vector2(-29.5, -13)
+
+[node name="Effect" type="AnimatedSprite2D" parent="m_Body" unique_id=1351951106]
+visible = false
+sprite_frames = ExtResource("3_yavfw")
+animation = &"attack_1"
+offset = Vector2(29.5, -145)
+
+[node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1617060818]
+position = Vector2(0.5, -0.049999237)
+shape = SubResource("CapsuleShape2D_aw30p")
+debug_color = Color(0, 1, 0, 0.41960785)
+
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=1243224820 node_paths=PackedStringArray("m_Owner")]
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("4_bfkbl")
+m_Owner = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1986919316]
+position = Vector2(0.5, -0.049999237)
+shape = SubResource("RectangleShape2D_lfcs4")
+debug_color = Color(1, 0, 0, 0.41960785)
+
+[node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=13340964]
+
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=253164820]
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=874464676]
+shape = SubResource("RectangleShape2D_t82im")
+disabled = true
+
+[node name="m_Detector" type="Area2D" parent="." unique_id=73551405]
+collision_layer = 4096
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=1927869245]
+shape = SubResource("RectangleShape2D_ra7d5")
+debug_color = Color(1, 1, 0, 0.1)
+
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=920080462]
+callback_mode_process = 0
+callback_mode_method = 1
+libraries/ = ExtResource("5_6unwe")

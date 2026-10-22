@@ -2,7 +2,7 @@ using GameLogic.Battle;
 using GameLogic.Config;
 using GameLogic.Architecture;
 using GameLogic.Entity;
-using GameLogic.Monsters;
+using GameLogic.Enemies;
 using System;
 using System.Linq;
 using System.Threading;
@@ -51,7 +51,7 @@ public partial class LevelViewController : Node2D, IController
     private LevelConfig Config => this.GetModel<ConfigurationModel>().Tables.TbLevelConfig.Get(m_LevelId);
 
     /// <summary>本阶段指定展示的普通怪物；死亡或离开会话后为空。</summary>
-    public AbstractMonsterEntity FeaturedOpponent { get; private set; }
+    public AbstractEnemyEntity FeaturedOpponent { get; private set; }
 
     /// <summary>玩家出生点的世界坐标，注册初始化完成后可读。</summary>
     public Vector2 PlayerSpawnPosition => m_SpawnPoints.PositionOf(Config.PlayerSpawnPointId);
@@ -127,7 +127,7 @@ public partial class LevelViewController : Node2D, IController
         m_Spawner.StartSession(entities, m_Camera, cancellationToken);
         m_FloatingText.StartSession(OwnsActor);
         m_Spawner.StageCleared += OnStageCleared;
-        m_Spawner.MonsterDefeated += OnMonsterDefeated;
+        m_Spawner.EnemyDefeated += OnEnemyDefeated;
         m_Spawner.MonsterShown += OnMonsterShown;
         m_Exit.Entered += OnExitContact;
         m_Spawner.SpawnFailed += OnSpawnFailed;
@@ -172,7 +172,7 @@ public partial class LevelViewController : Node2D, IController
         if (m_Spawner != null)
         {
             m_Spawner.StageCleared -= OnStageCleared;
-            m_Spawner.MonsterDefeated -= OnMonsterDefeated;
+            m_Spawner.EnemyDefeated -= OnEnemyDefeated;
             m_Spawner.MonsterShown -= OnMonsterShown;
             m_Spawner.SpawnFailed -= OnSpawnFailed;
             m_Spawner.StopSession();
@@ -266,7 +266,7 @@ public partial class LevelViewController : Node2D, IController
     /// <summary>按场景生成点绑定需展示的怪物，不改变它的战斗行为。</summary>
     /// <param name="monster">已经归属本关的怪物。</param>
     /// <param name="spawnPointId">本次配方使用的生成点。</param>
-    private void OnMonsterShown(AbstractMonsterEntity monster, string spawnPointId)
+    private void OnMonsterShown(AbstractEnemyEntity monster, string spawnPointId)
     {
         if (!m_FeaturedOpponentSpawnPointIds.Contains(spawnPointId))
             return;

@@ -1,5 +1,5 @@
 using GameLogic.Heroes.Body;
-using GameLogic.Monsters.Body;
+using GameLogic.Enemies.Body;
 using GameConfig.Battle;
 using GameConfig.Monster;
 using GameConfig.Entity;
@@ -18,14 +18,13 @@ public sealed class ConfigurationModel : AbstractModel
 {
     private readonly Dictionary<EntityId, IReadOnlyList<AttackConfig>> m_Attacks; // 同类实体共用的有序招式定义。
     private readonly Dictionary<SkillHero, IReadOnlyList<SkillConfig>> m_ActiveSkills; // 按角色和官方行序建立一次的技能目录。
-    private readonly Dictionary<int, IReadOnlyList<PassiveConfig>> m_Passives; // 按等级建立一次的被动目录。
-    private readonly Dictionary<EntityId, MonsterConfig> m_Monsters; // 同一实体到唯一基础定义的只读索引。
+    private readonly Dictionary<EntityId, MonsterConfig> m_Enemies; // 同一实体到唯一基础定义的只读索引。
 
     /// <summary>同类英雄共享的身体参数，由配置系统首次建立。</summary>
     internal Dictionary<int, HeroBodyParams> HeroBodies { get; } = new();
 
     /// <summary>同类怪物共享的身体参数，由配置系统首次建立。</summary>
-    internal Dictionary<EntityId, MonsterBodyParams> MonsterBodies { get; } = new();
+    internal Dictionary<EntityId, EnemyBodyParams> EnemyBodies { get; } = new();
 
     /// <summary>借用 ConfigSystem 已加载的同一总表，运行期只读。</summary>
     public Tables Tables { get; }
@@ -36,13 +35,11 @@ public sealed class ConfigurationModel : AbstractModel
     public ConfigurationModel(Tables tables)
     {
         Tables = tables ?? throw new ArgumentNullException(nameof(tables));
-        m_Monsters = tables.TbMonsterConfig.DataList.GroupBy(x => x.EntityId).ToDictionary(x => x.Key, x => x.First());
+        m_Enemies = tables.TbMonsterConfig.DataList.GroupBy(x => x.EntityId).ToDictionary(x => x.Key, x => x.First());
         m_Attacks = tables.TbAttackConfig.DataList.Where(x => x.ComboIndex >= 0).GroupBy(x => x.OwnerId).ToDictionary(x => x.Key,
             x => (IReadOnlyList<AttackConfig>)Array.AsReadOnly(x.OrderBy(a => a.ComboIndex).ToArray()));
         m_ActiveSkills = tables.TbSkillConfig.DataList.GroupBy(x => x.Hero).ToDictionary(x => x.Key,
             x => (IReadOnlyList<SkillConfig>)Array.AsReadOnly(x.OrderBy(a => a.Order).ToArray()));
-        m_Passives = tables.TbPassiveConfig.DataList.GroupBy(x => x.Level).ToDictionary(x => x.Key,
-            x => (IReadOnlyList<PassiveConfig>)Array.AsReadOnly(x.OrderBy(a => a.PassiveId).ToArray()));
     }
 
     /// <summary>按官方面板行序读取一名角色的主动技能。</summary>
@@ -51,16 +48,10 @@ public sealed class ConfigurationModel : AbstractModel
     public IReadOnlyList<SkillConfig> GetActive(SkillHero hero) =>
         m_ActiveSkills.GetValueOrDefault(hero, Array.Empty<SkillConfig>());
 
-    /// <summary>读取五项被动的指定等级，面板初期以第一级作为下一级效果。</summary>
-    /// <param name="level">配置等级，从 1 开始。</param>
-    /// <returns>按官方被动顺序排列的定义。</returns>
-    public IReadOnlyList<PassiveConfig> GetPassives(int level) =>
-        m_Passives.GetValueOrDefault(level, Array.Empty<PassiveConfig>());
-
     /// <summary>按实体类型读取唯一的基础怪物定义，不为实体复制 AI 参数。</summary>
     /// <param name="entityId">怪物实体类型。</param>
     /// <returns>共享只读定义。</returns>
-    public MonsterConfig GetMonster(EntityId entityId) => m_Monsters[entityId];
+    public MonsterConfig GetEnemy(EntityId entityId) => m_Enemies[entityId];
 
     /// <summary>借用同类实体共用的有序招式，不在每个实体重新复制和排序。</summary>
     /// <param name="entityId">拥有招式的实体类型。</param>
@@ -77,5 +68,5 @@ public sealed class ConfigurationModel : AbstractModel
     /// <summary>借用已构建的共享怪物参数。</summary>
     /// <param name="entityId">怪物实体类型。</param>
     /// <returns>共享参数。</returns>
-    public MonsterBodyParams GetMonsterBodyParams(EntityId entityId) => MonsterBodies[entityId];
+    public EnemyBodyParams GetEnemyBodyParams(EntityId entityId) => EnemyBodies[entityId];
 }

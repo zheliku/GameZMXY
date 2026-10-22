@@ -17,31 +17,30 @@ namespace GameConfig.Skills
 /// </summary>
 public partial class TbPassiveConfig
 {
+    private readonly System.Collections.Generic.Dictionary<Skills.PassiveId, Skills.PassiveConfig> _dataMap;
     private readonly System.Collections.Generic.List<Skills.PassiveConfig> _dataList;
-
-    private System.Collections.Generic.Dictionary<(Skills.PassiveId, int), Skills.PassiveConfig> _dataMapUnion;
-
+    
     public TbPassiveConfig(ByteBuf _buf)
     {
         int n = _buf.ReadSize();
+        _dataMap = new System.Collections.Generic.Dictionary<Skills.PassiveId, Skills.PassiveConfig>(n);
         _dataList = new System.Collections.Generic.List<Skills.PassiveConfig>(n);
         for(int i = n ; i > 0 ; --i)
         {
             Skills.PassiveConfig _v;
             _v = global::GameConfig.Skills.PassiveConfig.DeserializePassiveConfig(_buf);
             _dataList.Add(_v);
-        }
-        _dataMapUnion = new System.Collections.Generic.Dictionary<(Skills.PassiveId, int), Skills.PassiveConfig>(n);
-        foreach(var _v in _dataList)
-        {
-            _dataMapUnion.Add((_v.PassiveId, _v.Level), _v);
+            _dataMap.Add(_v.PassiveId, _v);
         }
     }
 
+    public System.Collections.Generic.IReadOnlyDictionary<Skills.PassiveId, Skills.PassiveConfig> DataMap => _dataMap;
     public System.Collections.Generic.IReadOnlyList<Skills.PassiveConfig> DataList => _dataList;
 
-    public Skills.PassiveConfig Get(Skills.PassiveId PassiveId, int Level) => _dataMapUnion.TryGetValue((PassiveId, Level), out Skills.PassiveConfig __v) ? __v : default;
-    
+    public Skills.PassiveConfig GetOrDefault(Skills.PassiveId key) => _dataMap.TryGetValue(key, out var v) ? v : default;
+    public Skills.PassiveConfig Get(Skills.PassiveId key) => _dataMap[key];
+    public Skills.PassiveConfig this[Skills.PassiveId key] => _dataMap[key];
+
     public void ResolveRef(Tables tables)
     {
         foreach(var _v in _dataList)
@@ -49,6 +48,7 @@ public partial class TbPassiveConfig
             _v.ResolveRef(tables);
         }
     }
+
 }
 
 }

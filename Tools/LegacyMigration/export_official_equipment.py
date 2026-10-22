@@ -12,6 +12,8 @@ EQUIPMENT = {
     'rough_cassock': (48, 25), 'rough_pine_staff': (55, 14),
     'common_pilgrim_clothes': (51, 28), 'common_pilgrim_staff': (59, 15),
     'common_cassock': (47, 24), 'common_pine_staff': (54, 13),
+    'earth_fiend_ring': (44, 21), 'earth_fiend_ape_armor': (114, 113),
+    'earth_fiend_scepter': (112, 111),
 }
 
 

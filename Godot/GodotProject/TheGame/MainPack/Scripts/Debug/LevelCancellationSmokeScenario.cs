@@ -3,7 +3,7 @@ using GameLogic.Input;
 using System.Collections.Generic;
 using System.Linq;
 using GameLogic.Heroes;
-using GameLogic.Monsters;
+using GameLogic.Enemies;
 using Godot;
 using GodotGameFramework;
 
@@ -74,7 +74,7 @@ public sealed class LevelCancellationSmokeScenario
             if (m_StopTime >= 3.0 && GF.Entity.GetAllLoadingEntityIds().Length == 0)
             {
                 bool shown = m_Hero.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
-                    .OfType<AbstractMonsterEntity>().Any(x => x.IsShown);
+                    .OfType<AbstractEnemyEntity>().Any(x => x.IsShown);
                 if (shown || SmokeInspection.Sequence(m_Level).Phase != LevelStagePhase.Stopped)
                 {
                     m_Failures.Add("停止之后仍有怪物显示或关卡继续推进");

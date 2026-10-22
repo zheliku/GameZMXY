@@ -15,6 +15,8 @@ from pathlib import Path
 import subprocess
 import xml.etree.ElementTree as ET
 
+from PIL import Image
+
 SVG = 'http://www.w3.org/2000/svg'
 XLINK = 'http://www.w3.org/1999/xlink'
 FFDEC = 'https://www.free-decompiler.com/flash'
@@ -178,6 +180,40 @@ def freeze(sprite, frame):
     sprite.set('frameCount', '1')
 
 
+def export_filtered_attack(original, work, run, java, ffdec, env, transform):
+    """Render attack three's filtered energy natively; SVG use filters clip its left edge."""
+    tree = ET.parse(original)
+    sprite = next(tag for tag in tree.getroot().find('tags') if tag.get('spriteId') == '272')
+    depths = {depth for display in timeline_frames(sprite) for depth, tag in display.items()
+              if tag.get('characterId') in EFFECT_IDS}
+    tags = sprite.find('subTags')
+    for tag in list(tags):
+        if tag.get('type', '').startswith(('PlaceObject', 'RemoveObject')) and tag.get('depth') not in depths:
+            tags.remove(tag)
+    xml, swf = work / 'attack_effect.xml', work / 'attack_effect.swf'
+    tree.write(xml, encoding='utf-8', xml_declaration=True)
+    run('-xml2swf', str(xml), str(swf))
+    output = work / 'attack_effect_png'
+    run('-format', 'sprite:png', '-selectid', '272', '-ignorebackground', '-export', 'sprite', str(output), str(swf))
+    command = [str(java), f'-Duser.home={work}', '--class-path', str(ffdec),
+               str(Path(__file__).with_name('FlashSpriteBounds.java')), str(swf), '272']
+    bounds_output = subprocess.check_output(command, env=env, text=True)
+    bounds = next([int(value) / 20 for value in line.split()[1:]] for line in bounds_output.splitlines()
+                  if len(line.split()) == 5 and line.split()[0] == '272')
+    registered = work / 'attack_effect_registered'
+    registered.mkdir(exist_ok=True)
+    a, b, c, d, tx, ty = transform
+    determinant = a * d - b * c
+    inverse = [d / determinant, -c / determinant, -b / determinant, a / determinant]
+    coefficients = (inverse[0], inverse[1], inverse[0] * (-200 - tx) + inverse[1] * (-178 - ty) - bounds[0],
+                    inverse[2], inverse[3], inverse[2] * (-200 - tx) + inverse[3] * (-178 - ty) - bounds[1])
+    for source in next(output.glob('DefineSprite_272_*')).glob('*.png'):
+        image = Image.open(source).convert('RGBA')
+        image = image.transform((400, 300), Image.Transform.AFFINE, coefficients, Image.Resampling.BICUBIC)
+        image.save(registered / source.name)
+    return {'272': {'input': str(registered), 'bounds': bounds}}
+
+
 def main(args):
     """Build two body choices and two independently replaceable weapon choices."""
     work = args.work.resolve()
@@ -265,6 +301,7 @@ def main(args):
     manifest['variants'] = layers
     manifest['effects_output'] = str((args.effects_output or args.output / 'wukong_attack_effects.png').resolve())
     manifest['effects_input'] = split_directories['unarmed']
+    manifest['native_effects'] = export_filtered_attack(original, work, run, args.java, args.ffdec, env, transforms['272'])
     path.write_text(json.dumps(manifest, indent=2), encoding='utf-8')
     subprocess.run([str(args.godot), '--headless', '--path', str(project), '--script',
         'res://EditorScripts/import_official_wukong.gd', '--', str(path)], env=env, check=True)

@@ -32,11 +32,11 @@ public sealed record EquipmentAttributes
 
     /// <summary>暴击。</summary>
     [DataMember(IsRequired = true)]
-    public int Crit { get; init; }
+    public float Crit { get; init; }
 
     /// <summary>闪避。</summary>
     [DataMember(IsRequired = true)]
-    public int Miss { get; init; }
+    public float Miss { get; init; }
 
     /// <summary>幸运。</summary>
     [DataMember(IsRequired = true)]
@@ -48,11 +48,11 @@ public sealed record EquipmentAttributes
 
     /// <summary>命中。</summary>
     [DataMember(IsRequired = true)]
-    public int Htarget { get; init; }
+    public float Htarget { get; init; }
 
     /// <summary>抗暴。</summary>
     [DataMember(IsRequired = true)]
-    public int CritReduce { get; init; }
+    public float CritReduce { get; init; }
 
     /// <summary>破甲。</summary>
     [DataMember(IsRequired = true)]
@@ -76,9 +76,9 @@ public sealed record EquipmentAttributes
 
     /// <summary>按属性类型读取具名字段；不使用列表下标。</summary>
     /// <param name="attribute">统一的战斗属性类型。</param>
-    /// <returns>该字段的实际整数值。</returns>
+    /// <returns>该字段的实际值；概率使用 0..1。</returns>
     /// <exception cref="ArgumentOutOfRangeException">类型未定义。</exception>
-    public int Get(AttributeType attribute) => attribute switch
+    public float Get(AttributeType attribute) => attribute switch
     {
         AttributeType.MaxHp => MaxHp,
         AttributeType.MaxMp => MaxMp,
@@ -104,24 +104,24 @@ public sealed record EquipmentAttributes
     /// <param name="value">实际抽取值。</param>
     /// <returns>不修改原对象的新属性。</returns>
     /// <exception cref="ArgumentOutOfRangeException">类型未定义。</exception>
-    internal EquipmentAttributes WithValue(AttributeType attribute, int value) => attribute switch
+    internal EquipmentAttributes WithValue(AttributeType attribute, float value) => attribute switch
     {
-        AttributeType.MaxHp => this with { MaxHp = value },
-        AttributeType.MaxMp => this with { MaxMp = value },
-        AttributeType.Power => this with { Power = value },
-        AttributeType.Def => this with { Def = value },
-        AttributeType.Mdef => this with { Mdef = value },
+        AttributeType.MaxHp => this with { MaxHp = (int)value },
+        AttributeType.MaxMp => this with { MaxMp = (int)value },
+        AttributeType.Power => this with { Power = (int)value },
+        AttributeType.Def => this with { Def = (int)value },
+        AttributeType.Mdef => this with { Mdef = (int)value },
         AttributeType.Crit => this with { Crit = value },
         AttributeType.Miss => this with { Miss = value },
-        AttributeType.Lucky => this with { Lucky = value },
-        AttributeType.Toughness => this with { Toughness = value },
+        AttributeType.Lucky => this with { Lucky = (int)value },
+        AttributeType.Toughness => this with { Toughness = (int)value },
         AttributeType.Htarget => this with { Htarget = value },
         AttributeType.CritReduce => this with { CritReduce = value },
-        AttributeType.Ar => this with { Ar = value },
-        AttributeType.Sp => this with { Sp = value },
-        AttributeType.Vampirism => this with { Vampirism = value },
-        AttributeType.HpRegen => this with { HpRegen = value },
-        AttributeType.MpRegen => this with { MpRegen = value },
+        AttributeType.Ar => this with { Ar = (int)value },
+        AttributeType.Sp => this with { Sp = (int)value },
+        AttributeType.Vampirism => this with { Vampirism = (int)value },
+        AttributeType.HpRegen => this with { HpRegen = (int)value },
+        AttributeType.MpRegen => this with { MpRegen = (int)value },
         _ => throw new ArgumentOutOfRangeException(nameof(attribute))
     };
 
@@ -131,7 +131,7 @@ public sealed record EquipmentAttributes
     {
         foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
         {
-            int value = Get(attribute);
+            float value = Get(attribute);
             if (value != 0)
                 yield return new AttributeModifier(attribute, AttributeModifierKind.Flat, value);
         }

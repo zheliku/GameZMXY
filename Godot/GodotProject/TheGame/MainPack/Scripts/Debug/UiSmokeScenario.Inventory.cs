@@ -71,6 +71,29 @@ public sealed partial class UiSmokeScenario
         await CaptureCombatAsync("inventory_form");
         await CheckTooltipLayoutAsync(form, flow);
         await CheckBagNavigationAsync(form, flow);
+        // 通用饰品同样走真实格子、菜单和命令，概率文字不使用属性点曲线。
+        ClickBagEquipment(form, flow, EquipmentId.EarthFiendRing);
+        var accessory = form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_AccessorySlot");
+        var accessoryBackground = (ShaderMaterial)accessory.Material;
+        Check(flow.GetModel<ProfileModel>().Accessory?.EquipmentId == EquipmentId.EarthFiendRing &&
+            accessoryBackground.GetShaderParameter("occupied").AsBool() &&
+            accessory.GetNode<TextureRect>("Icon").Texture != null &&
+            form.GetNode<Label>("Window/CharacterPanel/Attributes/Left/Crit/m_Crit").Text == "3%" &&
+            form.GetNode<Label>("Window/CharacterPanel/Attributes/Right/Dodge/m_Dodge").Text == "3%",
+            "通用饰品无法穿戴、图标缺失或 3% 概率显示错误");
+        using (var tooltip = accessory._MakeCustomTooltip(accessory.TooltipText))
+        {
+            var lines = tooltip.GetNode<VBoxContainer>("Content/Attributes").GetChildren().OfType<Label>().Select(x => x.Text).ToArray();
+            Check(tooltip.GetNode<Label>("Content/Header/Type/Value").Text == "饰品·通用" &&
+                lines.Contains("暴击： 3%") && lines.Contains("闪避： 3%"), "饰品 tooltip 概率单位或通用归属错误");
+            tooltip.Free();
+        }
+        await CaptureCombatAsync("inventory_earth_fiend_ring");
+        accessory._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        Check(flow.GetModel<ProfileModel>().Accessory == null &&
+            GF.Fsm.GetModel<HeroModel>().Crit.Value == 0f && GF.Fsm.GetModel<HeroModel>().Miss.Value == 0f &&
+            !accessoryBackground.GetShaderParameter("occupied").AsBool(), "饰品卸下后仍保留图标背景或概率加成");
+        GD.Print("SMOKE-ACCESSORY PASS: shared ring slot, GUI commands, direct 3% labels and tooltip, unequip cleanup.");
         // 从真实装备格的 GUI 输入走窗口请求、关卡协调、档案事务、装配刷新整条链路。
         int basePower = GF.Fsm.GetModel<HeroModel>().Power.Value;
         int baseDefense = GF.Fsm.GetModel<HeroModel>().Def.Value;
@@ -87,6 +110,15 @@ public sealed partial class UiSmokeScenario
             GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense + 3 && GF.Fsm.GetModel<HeroModel>().MaxHp.Value == baseMaxHp + 27 && GF.Fsm.GetModel<HeroModel>().Hp.Value == currentHp,
             "防具未刷新具名属性，或换装意外补血");
         CheckHeroAnimationLayers(hero);
+        // 地煞猿甲必须按具体装备换整套动作纹理，战斗与预览读取同一资源。
+        ClickBagEquipment(form, flow, EquipmentId.EarthFiendApeArmor);
+        var earthFiendTexture = GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_earth_fiend.png");
+        Check(flow.GetModel<ProfileModel>().Armor?.EquipmentId == EquipmentId.EarthFiendApeArmor &&
+            hero.GetNode<Sprite2D>("m_Body").Texture == earthFiendTexture && body.Texture == earthFiendTexture,
+            "地煞猿甲未同步替换战斗和预览的完整动作图集");
+        CheckHeroAnimationLayers(hero);
+        await CaptureCombatAsync("inventory_earth_fiend_armor");
+        ClickBagEquipment(form, flow, EquipmentId.CommonPilgrimClothes);
         Check(weaponBackground.GetShaderParameter("occupied").AsBool() && armorBackground.GetShaderParameter("occupied").AsBool(),
             "两件穿戴后仍显示空槽题签");
         Check(form.GetNode<Label>("Window/CharacterPanel/Attributes/Left/Attack/m_Attack").Text == GF.Fsm.GetModel<HeroModel>().Power.Value.ToString(),
@@ -197,7 +229,28 @@ public sealed partial class UiSmokeScenario
         grid.Hide(); // 清掉前一张截图的原生悬停框，避免与本测试的布局夹具重叠。
         await WaitFramesAsync(1);
         grid.Show();
-        var scene = GD.Load<PackedScene>("res://TheGame/UIs/Widgets/equipment_tooltip.tscn");
+        var scene = GD.Load<PackedScene>("res://TheGame/UIs/Inventory/equipment_tooltip.tscn");
+        // PopupPanel 与实际 tooltip 使用相同的首次最小尺寸测量；覆盖长说明和随后的短内容。
+        foreach (var id in new[] { EquipmentId.EarthFiendRing, EquipmentId.EarthFiendApeArmor, EquipmentId.RoughPilgrimStaff })
+        {
+            var tooltip = scene.Instantiate<EquipmentTooltip>();
+            tooltip.Theme = form.Theme;
+            tooltip.Bind(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), id, () => .37f),
+                ConfigSystem.Instance.Tables.TbEquipmentConfig.Get(id));
+            var popup = new PopupPanel();
+            form.AddChild(popup);
+            popup.AddChild(tooltip);
+            popup.Popup(new Rect2I(650, 200, 0, 0));
+            await WaitFramesAsync(4);
+            var price = tooltip.GetNode<Label>("Content/Footer/Price");
+            float bottom = tooltip.GetGlobalRect().End.Y - price.GetGlobalRect().End.Y;
+            Check(Math.Abs(tooltip.Size.Y - tooltip.GetCombinedMinimumSize().Y) < 1 && Math.Abs(bottom - 6) < 1,
+                $"{id} 原生弹窗底部留白：size={tooltip.Size}, minimum={tooltip.GetCombinedMinimumSize()}, bottom={bottom}");
+            if (id == EquipmentId.EarthFiendApeArmor)
+                await CaptureCombatAsync("inventory_tooltip_fitted");
+            popup.Free();
+        }
+        GD.Print("SMOKE-TOOLTIP PASS: native popup first measure, ring/armor/staff content heights and 6px bottom margin.");
         Vector2? headerPosition = null;
         float previousPrice = 0;
         int previousCount = 0;
@@ -231,6 +284,19 @@ public sealed partial class UiSmokeScenario
         }
         Check(form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid").GetChild<EquipmentCell>(0)
             .GetThemeStylebox("panel", "TooltipPanel") is StyleBoxEmpty, "Godot 外层提示仍绘制第二个背景");
+        var ring = scene.Instantiate<EquipmentTooltip>();
+        ring.Theme = form.Theme;
+        ring.Position = new Vector2(650, 180);
+        ring.Bind(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => .37f),
+            ConfigSystem.Instance.Tables.TbEquipmentConfig.Get(EquipmentId.EarthFiendRing));
+        form.AddChild(ring);
+        await WaitFramesAsync(4);
+        Label description = ring.GetNode<Label>("Content/Footer/Description");
+        Check(ring.Size.X <= 200 && description.Size.X <= 165 && description.GetLineCount() > 1 &&
+            description.GetGlobalRect().End.Y <= ring.GetNode<Label>("Content/Footer/Price").GlobalPosition.Y,
+            $"长装备说明未按原版宽度换行：panel={ring.Size}, description={description.Size}, lines={description.GetLineCount()}");
+        await CaptureCombatAsync("inventory_tooltip_wrapped");
+        ring.Free();
     }
 
     /// <summary>从正式按钮验证分类、三页边界、第三页选择与整包出售，结束后还原夹具。</summary>
@@ -429,10 +495,25 @@ public sealed partial class UiSmokeScenario
         var form = GF.UI.GetAllLoadedUIForms().OfType<SettlementForm>().Single(x => x.Visible);
         Check(SmokeInspection.Model(run).Result.Outcome == LevelOutcome.Defeated && SmokeInspection.Model(run).Result.HealthPercent == 0, "失败成绩未冻结死亡状态");
         Check(form.GetNode<TextureButton>("Content/Actions/m_Retry").Visible && GF.Base.IsGamePaused, "失败结算缺少重试或未暂停");
+        await CheckSettlementMusicAsync("settlement_defeat.mp3");
         await WaitFramesAsync(12);
         Check(ReferenceEquals(SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel), run), "失败结算自动重开了关卡");
         await CaptureCombatAsync("settlement_failure");
         form.GetNode<TextureButton>("Content/Actions/m_Retry").EmitSignal(BaseButton.SignalName.Pressed);
+    }
+
+    /// <summary>检查实际 GGF 音乐代理，结算不能残留关卡音乐。</summary>
+    /// <param name="file">结算曲资源文件名。</param>
+    /// <returns>唯一代理就绪的验证任务。</returns>
+    private async Task CheckSettlementMusicAsync(string file)
+    {
+        await WaitUntilAsync(() => m_Driver.GetTree().Root.FindChildren("*", "AudioStreamPlayer", true, false)
+            .OfType<AudioStreamPlayer>().Any(player => player.Bus == "Music" && player.Playing &&
+                player.Stream.ResourcePath.EndsWith(file, StringComparison.Ordinal)), "结算音乐没有经过 GGF 播放");
+        var music = m_Driver.GetTree().Root.FindChildren("*", "AudioStreamPlayer", true, false)
+            .OfType<AudioStreamPlayer>().Where(player => player.Bus == "Music" && player.Playing).ToArray();
+        Check(music.Length == 1, "结算音乐与关卡背景音乐叠加");
+        GD.Print($"SMOKE-MUSIC PASS: unique paused settlement Music agent {file}");
     }
 
     /// <summary>失败页池复用后仍可选择返回地图，再次进关不残留暂停或成绩。</summary>

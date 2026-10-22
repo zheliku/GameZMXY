@@ -18,8 +18,8 @@ public sealed partial class EquipmentAttributeRange : Luban.BeanBase
     {
         Attribute = (Attributes.AttributeType)_buf.ReadInt();
         Kind = (Attributes.AttributeModifierKind)_buf.ReadInt();
-        Minimum = _buf.ReadInt();
-        Maximum = _buf.ReadInt();
+        Minimum = _buf.ReadFloat();
+        Maximum = _buf.ReadFloat();
     }
 
     public static EquipmentAttributeRange DeserializeEquipmentAttributeRange(ByteBuf _buf)
@@ -36,13 +36,13 @@ public sealed partial class EquipmentAttributeRange : Luban.BeanBase
     /// </summary>
     public readonly Attributes.AttributeModifierKind Kind;
     /// <summary>
-    /// 最小值（包含）
+    /// 最小值；概率用 0..1，其余属性用整数
     /// </summary>
-    public readonly int Minimum;
+    public readonly float Minimum;
     /// <summary>
-    /// 最大值（包含）；采用官方 round 随机分布
+    /// 最大值；整数按官方 round 分布，概率在区间内抽取
     /// </summary>
-    public readonly int Maximum;
+    public readonly float Maximum;
    
     public const int __ID__ = -1506320241;
     public override int GetTypeId() => __ID__;

@@ -1,4 +1,4 @@
-"""Import Gorilla and the clear marker from read-only legacy assets.
+"""Import Gorilla and the boss font from read-only legacy assets.
 
 Only missing outputs are written. Animation tracks contain values, never methods.
 Run with the same Python environment as gen_animations.py.
@@ -22,7 +22,7 @@ def import_gorilla():
               'attack_1': ('Hit', 4, 1 / 15, (-35, -17)),
               'hurt': ('Hurt', 1, .28, (0, -10)),
               'death': ('Death', 4, 1 / 12, (-14, 4))}
-    folder = GAME / 'Sprites/Characters/Monsters/gorilla'
+    folder = GAME / 'Sprites/Characters/Enemies/Monsters/gorilla'
     folder.mkdir(parents=True, exist_ok=True)
     sprite_anims, library_anims, shapes = [], [], {}
     for name, (old_name, count, duration, offset) in sheets.items():
@@ -56,19 +56,7 @@ def import_gorilla():
     reset['tracks'] = [(path, kind, [values[0]]) for path, kind, values in reset['tracks']]
     library_anims.append(reset)
     anim.emit_spriteframes(str(folder / 'gorilla_animations.tres'), sprite_anims)
-    anim.emit_anim_library(str(GAME / 'Entitys/Animations/gorilla_anim_library.tres'), library_anims, shapes)
-
-
-def import_exit():
-    """Preserve the legacy clear marker's eleven-frame loop and sheet order."""
-    folder = GAME / 'Sprites/Effects/level_exit'
-    folder.mkdir(parents=True, exist_ok=True)
-    destination = folder / 'level_exit_sheet.png'
-    if not destination.exists():
-        shutil.copyfile(OLD / 'Art/Level/Export.png', destination)
-    anim.emit_spriteframes(str(folder / 'level_exit_frames.tres'), [dict(
-        name='exit', loop=True, tex='res://TheGame/Sprites/Effects/level_exit/level_exit_sheet.png',
-        fw=206, fh=186, cols=9, frames=[(i, 1) for i in (5, 6, 7, 8, 9, 10, 0, 1, 2, 3, 4)], speed=25)])
+    anim.emit_anim_library(str(GAME / 'Entitys/Animations/Enemies/Monsters/gorilla_anim_library.tres'), library_anims, shapes)
 
 
 def import_boss_name_font():
@@ -84,5 +72,4 @@ def import_boss_name_font():
 
 if __name__ == '__main__':
     import_gorilla()
-    import_exit()
     import_boss_name_font()

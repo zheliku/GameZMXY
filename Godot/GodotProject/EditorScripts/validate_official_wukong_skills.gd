@@ -61,7 +61,7 @@ func _run() -> void:
     background.size = viewport.size
     background.color = Color(0.18, 0.24, 0.27)
     viewport.add_child(background)
-    var hero = load("res://TheGame/Entitys/wukong_entity.tscn").instantiate()
+    var hero = load("res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn").instantiate()
     hero.process_mode = Node.PROCESS_MODE_DISABLED
     hero.position = Vector2(400, 210)
     viewport.add_child(hero)
@@ -158,7 +158,9 @@ func _run() -> void:
     viewport.size = Vector2i(800, 600)
     background.size = viewport.size
     for entry in manifest.detached:
-        var scene = load("res://TheGame/Entitys/Effects/Skills/wukong_%s_effect.tscn" % entry.name).instantiate()
+        if entry.name == "fire_demon_prelude":
+            continue # 纯视觉已由角色内的 TopLevel AnimatedSprite2D 播放，真实技能回归覆盖原地播放和完成隐藏。
+        var scene = load("res://TheGame/Entitys/Heroes/Wukong/wukong_%s_effect.tscn" % entry.name).instantiate()
         scene.process_mode = Node.PROCESS_MODE_DISABLED
         scene.position = Vector2(400, 270)
         viewport.add_child(scene)

@@ -111,8 +111,10 @@ public partial class InventoryForm : IController
         {
             this.GetModel<HeroModel>().Hp.Register(RefreshResources);
             this.GetModel<HeroModel>().Mp.Register(RefreshResources);
-            foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
-                this.GetModel<HeroModel>().GetAttribute(attribute).Register(RefreshResources);
+            foreach (var property in new[] { this.GetModel<HeroModel>().MaxHp, this.GetModel<HeroModel>().MaxMp, this.GetModel<HeroModel>().Power, this.GetModel<HeroModel>().Def, this.GetModel<HeroModel>().Mdef, this.GetModel<HeroModel>().Lucky, this.GetModel<HeroModel>().HpRegen, this.GetModel<HeroModel>().MpRegen })
+                property.Register(RefreshResources);
+            this.GetModel<HeroModel>().Crit.Register(RefreshProbability);
+            this.GetModel<HeroModel>().Miss.Register(RefreshProbability);
             this.GetModel<HeroModel>().Level.Register(RefreshResources);
             profile.Progress.Register(RefreshProgression);
             this.GetModel<ProfileModel>().Soul.Register(RefreshSoul);
@@ -196,8 +198,10 @@ public partial class InventoryForm : IController
             var profile = this.GetModel<ProfileModel>();
             this.GetModel<HeroModel>().Hp.UnRegister(RefreshResources);
             this.GetModel<HeroModel>().Mp.UnRegister(RefreshResources);
-            foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
-                this.GetModel<HeroModel>().GetAttribute(attribute).UnRegister(RefreshResources);
+            foreach (var property in new[] { this.GetModel<HeroModel>().MaxHp, this.GetModel<HeroModel>().MaxMp, this.GetModel<HeroModel>().Power, this.GetModel<HeroModel>().Def, this.GetModel<HeroModel>().Mdef, this.GetModel<HeroModel>().Lucky, this.GetModel<HeroModel>().HpRegen, this.GetModel<HeroModel>().MpRegen })
+                property.UnRegister(RefreshResources);
+            this.GetModel<HeroModel>().Crit.UnRegister(RefreshProbability);
+            this.GetModel<HeroModel>().Miss.UnRegister(RefreshProbability);
             this.GetModel<HeroModel>().Level.UnRegister(RefreshResources);
             profile.Progress.UnRegister(RefreshProgression);
             this.GetModel<ProfileModel>().Soul.UnRegister(RefreshSoul);
@@ -240,6 +244,10 @@ public partial class InventoryForm : IController
     /// <param name="value">已提交的资源值。</param>
     private void RefreshResources(int value) => m_Character.Refresh(m_InventoryData.Hero);
 
+    /// <summary>概率变化时读取同一模型，保留小数概率而不转成属性点。</summary>
+    /// <param name="value">已提交的 0..1 概率。</param>
+    private void RefreshProbability(float value) => m_Character.Refresh(m_InventoryData.Hero);
+
     /// <summary>成长变化只刷新个人资料。</summary>
     /// <param name="progress">已经提交的成长快照。</param>
     private void RefreshProgression(HeroProgressionState progress) => m_Character.Refresh(m_InventoryData.Hero);
@@ -276,7 +284,8 @@ public partial class InventoryForm : IController
         if (m_InventoryData == null || m_SaleConfirmation.Visible)
             return;
         var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(data.EquipmentId);
-        m_Actions.Open(data.InstanceId, anchor, (int)definition.Owner == this.GetModel<ProfileModel>().ActiveHeroId);
+        m_Actions.Open(data.InstanceId, anchor, definition.Owner == EquipmentOwner.Universal ||
+            (int)definition.Owner == this.GetModel<ProfileModel>().ActiveHeroId);
     }
 
     /// <summary>所选菜单确认后提交穿戴请求。</summary>

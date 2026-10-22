@@ -86,7 +86,7 @@ namespace GameLogic.Save
                 Heroes = [new HeroSaveData { HeroId = tables.TbProfileConfig.StartHeroId }]
             } : data;
             mapper.Validate(source, tables.TbEquipmentConfig,
-                tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig);
+                tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig);
             saveModel.ActiveSlotUnitId = data.UnitId;
             if (created)
             {
@@ -141,7 +141,7 @@ namespace GameLogic.Save
                             throw new InvalidOperationException("已有档案缺少稳定格号或检查点时间。");
                         var data = archive.CurrentData;
                         mapper.Validate(data,
-                            tables.TbEquipmentConfig, tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig);
+                            tables.TbEquipmentConfig, tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig);
                         string name = tables.TbHeroConfig.Get(data.ActiveHeroId).NameCn;
                         int level = curve.Evaluate(data.Heroes.Single(x => x.HeroId == data.ActiveHeroId).TotalExperience).Level;
                         slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Occupied,
@@ -168,7 +168,7 @@ namespace GameLogic.Save
         /// <returns>仅当前版本、无档案且无业务目录元数据时为 true。</returns>
         private static bool IsUnclaimedSlot(GameCatalogue catalogue, GameData data) =>
             data != null && data.UnitId == catalogue.UnitId && data.SaveVersion == GameData.CurrentVersion &&
-            data.ActiveHeroId == 0 && data.Heroes is { Count: 0 } && data.Soul == 0 &&
+            data.ActiveHeroId == 0 && data.Heroes is { Count: 0 } && data.Soul == 0 && data.HighestClearedLevelId == 0 &&
             data.EquipmentItems is { Count: 0 } &&
             catalogue.SlotNumber == 0 && catalogue.SavedAtUtc == 0 && string.IsNullOrEmpty(catalogue.Name);
 
@@ -240,6 +240,7 @@ namespace GameLogic.Save
             data.ActiveHeroId = snapshotData.ActiveHeroId;
             data.Heroes = snapshotData.Heroes;
             data.Soul = snapshotData.Soul;
+            data.HighestClearedLevelId = snapshotData.HighestClearedLevelId;
             data.EquipmentItems = snapshotData.EquipmentItems;
             m_PendingWrite = NotifyWriteAsync(archive.OverWriteAsync());
             return m_PendingWrite;

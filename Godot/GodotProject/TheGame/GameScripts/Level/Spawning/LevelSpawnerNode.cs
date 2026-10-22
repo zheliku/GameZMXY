@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GameConfig.Level;
-using GameLogic.Monsters;
+using GameLogic.Enemies;
 using GameConfig.Monster;
 using GameFramework.Entity;
 using GameFramework.Event;
@@ -36,10 +36,10 @@ public partial class LevelSpawnerNode : Node
     public event Action StageCleared;
 
     /// <summary>本会话怪物死亡且首次归还名额时报告一次，携带只读配置、死亡位置和配方经验。</summary>
-    public event Action<MonsterConfig, Vector2, int> MonsterDefeated;
+    public event Action<MonsterConfig, Vector2, int> EnemyDefeated;
 
     /// <summary>本会话怪物已显示并登记所有权，供关卡绑定守关展示。</summary>
-    public event Action<AbstractMonsterEntity, string> MonsterShown;
+    public event Action<AbstractEnemyEntity, string> MonsterShown;
 
     /// <summary>当前会话显示实体失败；控制器负责结束会话。</summary>
     public event Action<Exception> SpawnFailed;
@@ -113,7 +113,7 @@ public partial class LevelSpawnerNode : Node
         m_PatrolAnchor = patrolAnchor;
         m_Cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         m_SessionActive = true;
-        GF.Event.Subscribe(MonsterDiedEventArgs.EventId, OnMonsterDied);
+        GF.Event.Subscribe(EnemyDiedEventArgs.EventId, OnEnemyDied);
     }
 
     /// <summary>启动当前阶段的生成计划，延迟按游戏帧计时。</summary>
@@ -138,7 +138,7 @@ public partial class LevelSpawnerNode : Node
         m_Cancellation.Cancel();
         m_Cancellation.Dispose();
         m_Cancellation = null;
-        GF.Event.Unsubscribe(MonsterDiedEventArgs.EventId, OnMonsterDied);
+        GF.Event.Unsubscribe(EnemyDiedEventArgs.EventId, OnEnemyDied);
         foreach (int id in m_OwnedIds)
         {
             m_Entities.HideEntitySafe(id);
@@ -166,7 +166,7 @@ public partial class LevelSpawnerNode : Node
             Vector2 spawnPosition = m_SpawnPoints.PositionOf(recipe.SpawnPointId);
             Node2D patrolAnchor = m_PatrolAnchor;
             // 显示 API 可能从池中同步返回，名额已由调度器提前预约。
-            MonsterSpawn spawn = new(spawnPosition, recipe.HealthMultiplier, recipe.DefenseMultiplier,
+            EnemySpawn spawn = new(spawnPosition, recipe.HealthMultiplier, recipe.DefenseMultiplier,
                 recipe.AttackMultiplier, recipe.ExperienceOverride);
             IEntity entity = await entities.ShowEntityAsync(recipe.MonsterEntityId, spawn);
             if (entity == null)
@@ -182,8 +182,8 @@ public partial class LevelSpawnerNode : Node
 
             m_OwnedIds.Add(entity.Id);
             m_ActiveMonsters.Add(entity.Id);
-            ((AbstractMonsterEntity)entity).SetPatrolAnchor(patrolAnchor);
-            MonsterShown?.Invoke((AbstractMonsterEntity)entity, recipe.SpawnPointId);
+            ((AbstractEnemyEntity)entity).SetPatrolAnchor(patrolAnchor);
+            MonsterShown?.Invoke((AbstractEnemyEntity)entity, recipe.SpawnPointId);
         }
         catch (Exception error)
         {
@@ -198,12 +198,12 @@ public partial class LevelSpawnerNode : Node
     /// <summary>存活实体死亡时归还名额；配方与名额都清空后报告本阶段清波。</summary>
     /// <param name="sender">事件源，不使用。</param>
     /// <param name="args">死亡事件参数，只在回调生命周期内读取运行 ID。</param>
-    private void OnMonsterDied(object sender, GameEventArgs args)
+    private void OnEnemyDied(object sender, GameEventArgs args)
     {
-        if (args is MonsterDiedEventArgs died && m_ActiveMonsters.Remove(died.EntityId))
+        if (args is EnemyDiedEventArgs died && m_ActiveMonsters.Remove(died.EntityId))
         {
             m_Schedule.Release();
-            MonsterDefeated?.Invoke(died.Config, died.Position, died.ExperienceReward);
+            EnemyDefeated?.Invoke(died.Config, died.Position, died.ExperienceReward);
             if (!m_SessionActive)
                 return; // 掉落显示失败可能已让模块同步结束会话。
             if (m_Schedule.IsCleared)

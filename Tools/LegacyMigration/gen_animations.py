@@ -399,7 +399,7 @@ def gen_wukong_weapons():
 # --------------------------------------------------------------------------
 # huaguoshan_monkey: fixed-grid sheets, one file per action
 # --------------------------------------------------------------------------
-MONKEY_DIR = "res://TheGame/Sprites/Characters/Monsters/huaguoshan_monkey/"
+MONKEY_DIR = "res://TheGame/Sprites/Characters/Enemies/Monsters/huaguoshan_monkey/"
 MONKEY_SHEETS = [
     # (animation, file, frame_w, frame_h, count, loop)
     ("idle", "huaguoshan_monkey_idle.png", 43, 63, 1, True),
@@ -502,7 +502,7 @@ def gen_monkey_library():
 # 身体层与判定盒同原点（本怪不额外下移身体层），故 Y 直接取旧值。
 # 判定盒尺寸经编辑器调校定为 80×80（旧外接矩形 92.0218 略大），攻击与静止同值。
 # --------------------------------------------------------------------------
-DEMON_MONKEY_DIR = "res://TheGame/Sprites/Characters/Monsters/demon_monkey/"
+DEMON_MONKEY_DIR = "res://TheGame/Sprites/Characters/Enemies/Monsters/demon_monkey/"
 DEMON_MONKEY_SHEETS = [
     # (animation, file, frame_w, frame_h, count, loop)
     ("idle", "demon_monkey_idle.png", 74, 114, 5, True),
@@ -1066,7 +1066,7 @@ def gen_wukong_effect():
 #   - 消费方：Entitys/wukong_entity.tscn 的 m_AnimPlayer（libraries/=本文件）。
 # --------------------------------------------------------------------------
 
-WUKONG_LIB_OUT = "res://TheGame/Entitys/Animations/wukong_anim_library.tres"
+WUKONG_LIB_OUT = "res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_anim_library.tres"
 
 BODY_NODE = "m_Body"
 WEAPON_NODE = "m_Weapon"

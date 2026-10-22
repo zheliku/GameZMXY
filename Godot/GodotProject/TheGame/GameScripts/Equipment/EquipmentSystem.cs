@@ -27,9 +27,12 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         EquipmentAttributes attributes = new();
         foreach (var roll in definition.AttributeRanges)
         {
-            int value = roll.Minimum == roll.Maximum
-                ? roll.Minimum
-                : roll.Minimum + (int)Math.Floor(random() * (roll.Maximum - roll.Minimum) + .5);
+            float value = roll.Minimum;
+            if (roll.Minimum != roll.Maximum)
+            {
+                float offset = random() * (roll.Maximum - roll.Minimum);
+                value += roll.Attribute.IsProbability ? offset : (int)Math.Floor(offset + .5);
+            }
             attributes = attributes.WithValue(roll.Attribute, value);
         }
 
@@ -46,14 +49,15 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         if (item == null)
             return false;
         var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
-        if ((int)definition.Owner != profile.ActiveHeroId)
+        if (definition.Owner != EquipmentOwner.Universal && (int)definition.Owner != profile.ActiveHeroId)
             return false;
         if (!TryExchange(instanceId, profile.GetEquippedItem(definition.Slot)))
             return false;
         profile.Slots.Value = definition.Slot switch
         {
-            EquipmentSlot.Weapon => new(item, profile.Armor),
-            EquipmentSlot.Armor => new(profile.Weapon, item),
+            EquipmentSlot.Weapon => new(item, profile.Armor, profile.Accessory),
+            EquipmentSlot.Armor => new(profile.Weapon, item, profile.Accessory),
+            EquipmentSlot.Accessory => new(profile.Weapon, profile.Armor, item),
             _ => throw new ArgumentOutOfRangeException(nameof(definition.Slot))
         };
         return true;
@@ -70,8 +74,9 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
             return false;
         profile.Slots.Value = slot switch
         {
-            EquipmentSlot.Weapon => new(null, profile.Armor),
-            EquipmentSlot.Armor => new(profile.Weapon, null),
+            EquipmentSlot.Weapon => new(null, profile.Armor, profile.Accessory),
+            EquipmentSlot.Armor => new(profile.Weapon, null, profile.Accessory),
+            EquipmentSlot.Accessory => new(profile.Weapon, profile.Armor, null),
             _ => throw new ArgumentOutOfRangeException(nameof(slot))
         };
         return true;

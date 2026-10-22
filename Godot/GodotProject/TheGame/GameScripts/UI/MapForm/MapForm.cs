@@ -86,6 +86,10 @@ namespace GameLogic.UI
 		[Export]
 		private MapLocationButton m_Huaguoshan;
 		[Export]
+		private MapLocationButton m_Shuiliandong;
+		[Export]
+		private MapLocationButton m_Taohuayuan;
+		[Export]
 		private TextureButton m_Save;
 		[Export]
 		private AnimationPlayer m_LocationAnimation;

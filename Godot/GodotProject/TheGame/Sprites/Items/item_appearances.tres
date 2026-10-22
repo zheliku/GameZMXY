@@ -1,5 +1,11 @@
 [gd_resource type="Resource" script_class="ItemAppearancesResource" format=3 uid="uid://b0cqamjcontb4"]
 
+[ext_resource type="Texture2D" uid="uid://lly7jlivb21b" path="res://TheGame/Sprites/Items/equipment/ground_earth_fiend_ring.png" id="21_3dokt"]
+[ext_resource type="Texture2D" uid="uid://qnw5a55hbmmv" path="res://TheGame/Sprites/Items/equipment/equipment_earth_fiend_ring.png" id="22_tm68k"]
+[ext_resource type="Texture2D" uid="uid://dw6orlrkgqtbw" path="res://TheGame/Sprites/Items/equipment/ground_earth_fiend_ape_armor.png" id="23_6rtwy"]
+[ext_resource type="Texture2D" uid="uid://0au685w41v30" path="res://TheGame/Sprites/Items/equipment/equipment_earth_fiend_ape_armor.png" id="24_q2vte"]
+[ext_resource type="Texture2D" uid="uid://bh224g3sfx6ha" path="res://TheGame/Sprites/Items/equipment/ground_earth_fiend_scepter.png" id="25_ylv31"]
+[ext_resource type="Texture2D" uid="uid://dkjyr1udatlxt" path="res://TheGame/Sprites/Items/equipment/equipment_earth_fiend_scepter.png" id="26_5xb6t"]
 [ext_resource type="Texture2D" uid="uid://cotpgi3ud157x" path="res://TheGame/Sprites/Items/equipment/ground_rough_pilgrim_clothes.png" id="ground_0"]
 [ext_resource type="Texture2D" uid="uid://csc7r3af0gfjd" path="res://TheGame/Sprites/Items/equipment/ground_rough_pilgrim_staff.png" id="ground_1"]
 [ext_resource type="Texture2D" uid="uid://cwgrqabwos3xx" path="res://TheGame/Sprites/Items/equipment/ground_rough_cassock.png" id="ground_2"]
@@ -89,6 +95,24 @@ m_PickupId = 3
 m_InventoryIcon = ExtResource("icon_10")
 m_GroundIcon = ExtResource("icon_10")
 
+[sub_resource type="Resource" id="Resource_nffhv"]
+script = ExtResource("item")
+m_EquipmentId = 9
+m_InventoryIcon = ExtResource("22_tm68k")
+m_GroundIcon = ExtResource("21_3dokt")
+
+[sub_resource type="Resource" id="Resource_lsvhc"]
+script = ExtResource("item")
+m_EquipmentId = 10
+m_InventoryIcon = ExtResource("24_q2vte")
+m_GroundIcon = ExtResource("23_6rtwy")
+
+[sub_resource type="Resource" id="Resource_2w53e"]
+script = ExtResource("item")
+m_EquipmentId = 11
+m_InventoryIcon = ExtResource("26_5xb6t")
+m_GroundIcon = ExtResource("25_ylv31")
+
 [resource]
 script = ExtResource("library")
-m_Items = Array[ExtResource("item")]([SubResource("item_0"), SubResource("item_1"), SubResource("item_2"), SubResource("item_3"), SubResource("item_4"), SubResource("item_5"), SubResource("item_6"), SubResource("item_7"), SubResource("item_8"), SubResource("item_9"), SubResource("item_10")])
+m_Items = Array[ExtResource("item")]([SubResource("item_0"), SubResource("item_1"), SubResource("item_2"), SubResource("item_3"), SubResource("item_4"), SubResource("item_5"), SubResource("item_6"), SubResource("item_7"), SubResource("item_8"), SubResource("item_9"), SubResource("item_10"), SubResource("Resource_nffhv"), SubResource("Resource_lsvhc"), SubResource("Resource_2w53e")])

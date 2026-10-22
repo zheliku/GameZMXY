@@ -1,14 +1,22 @@
 [gd_resource type="Resource" script_class="HeroAppearanceResource" format=3 uid="uid://xk36fcf4y640"]
 
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Heroes/HeroAppearanceResource.cs" id="script"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_bare.png" id="body_bare"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_pilgrim.png" id="body_pilgrim"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_default.png" id="weapon_default"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_pilgrim.png" id="weapon_pilgrim"]
+[ext_resource type="Texture2D" uid="uid://c6hv7cwxee5x2" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_pilgrim.png" id="1_rju3e"]
+[ext_resource type="Texture2D" uid="uid://nu4jcg6l3quh" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_earth_fiend.png" id="2_psys0"]
+[ext_resource type="Texture2D" uid="uid://d26st7cqjh5oh" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_pilgrim.png" id="5_48jhp"]
+[ext_resource type="Texture2D" uid="uid://cvhrf247evpd6" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_bare.png" id="body_bare"]
+[ext_resource type="Script" uid="uid://b2rdmr41g6mt6" path="res://TheGame/GameScripts/Entity/Heroes/HeroAppearanceResource.cs" id="script"]
+[ext_resource type="Texture2D" uid="uid://di26s8wme22dn" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_default.png" id="weapon_default"]
 
 [resource]
 script = ExtResource("script")
 m_BaseBody = ExtResource("body_bare")
-m_ArmoredBody = ExtResource("body_pilgrim")
+m_ArmorTextures = Dictionary[int, Texture2D]({
+1: ExtResource("1_rju3e"),
+5: ExtResource("1_rju3e"),
+10: ExtResource("2_psys0")
+})
 m_BaseWeapon = ExtResource("weapon_default")
-m_EquippedWeapon = ExtResource("weapon_pilgrim")
+m_WeaponTextures = Dictionary[int, Texture2D]({
+2: ExtResource("5_48jhp"),
+6: ExtResource("5_48jhp")
+})
