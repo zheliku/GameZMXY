@@ -9,25 +9,44 @@ using GameLogic.Config;
 
 namespace GameLogic.Profile;
 
-/// <summary>档案业务入口：协调成长、背包资产、穿戴与检查点回滚，不持有节点。</summary>
+/// <summary>
+/// 档案业务入口：协调成长、背包资产、穿戴与检查点回滚，不持有节点。
+/// </summary>
 public sealed class ProfileSystem : AbstractSystem
 {
-    /// <summary>绑定已注册档案模型的架构。</summary>
+    /// <summary>
+    /// 绑定已注册档案模型的架构。
+    /// </summary>
     /// <param name="architecture">所属档案架构。</param>
     public ProfileSystem(IArchitecture architecture) : base(architecture) { }
 
-    /// <summary>最新已开放关卡；完成当前内容后仍指向最后一关，不开放尚未实现的地点。</summary>
-    public int LatestLevelId => this.GetModel<ConfigurationModel>().Tables.TbLevelConfig.DataList
+    /// <summary>
+    /// 最新已开放关卡；完成当前内容后仍指向最后一关，不开放尚未实现的地点。
+    /// </summary>
+    public int LatestLevelId
+    {
+        get
+        {
+            return this.GetModel<ConfigurationModel>().Tables.TbLevelConfig.DataList
         .Where(level => level.LevelId <= this.GetModel<ProfileModel>().HighestClearedLevelId.Value + 1)
         .Max(level => level.LevelId);
+        }
+    }
 
-    /// <summary>地图与流程共用的进入资格；历史关卡可重玩，未开放或不存在的关卡拒绝。</summary>
+    /// <summary>
+    /// 地图与流程共用的进入资格；历史关卡可重玩，未开放或不存在的关卡拒绝。
+    /// </summary>
     /// <param name="levelId">关卡配置主键。</param>
     /// <returns>本档案是否允许进入。</returns>
-    public bool CanEnterLevel(int levelId) => levelId <= LatestLevelId &&
+    public bool CanEnterLevel(int levelId)
+    {
+        return levelId <= LatestLevelId &&
         this.GetModel<ConfigurationModel>().Tables.TbLevelConfig.GetOrDefault(levelId) != null;
+    }
 
-    /// <summary>成功通关时推进最远记录；重玩旧关不退回，不允许跳过锁定关卡。</summary>
+    /// <summary>
+    /// 成功通关时推进最远记录；重玩旧关不退回，不允许跳过锁定关卡。
+    /// </summary>
     /// <param name="levelId">实际完成的关卡。</param>
     /// <exception cref="InvalidOperationException">关卡不存在或尚未开放。</exception>
     public void RecordLevelClear(int levelId)
@@ -38,7 +57,9 @@ public sealed class ProfileSystem : AbstractSystem
         progress.Value = Math.Max(progress.Value, levelId);
     }
 
-    /// <summary>奖励出战英雄经验，按共享曲线求值后一次提交完整成长进度。</summary>
+    /// <summary>
+    /// 奖励出战英雄经验，按共享曲线求值后一次提交完整成长进度。
+    /// </summary>
     /// <param name="amount">非负经验。</param>
     /// <returns>提升等级数。</returns>
     public int AddExperience(int amount)
@@ -51,7 +72,9 @@ public sealed class ProfileSystem : AbstractSystem
         return profile.Level - previousLevel;
     }
 
-    /// <summary>增加档案灵魂，保持余额整数上限。</summary>
+    /// <summary>
+    /// 增加档案灵魂，保持余额整数上限。
+    /// </summary>
     /// <param name="amount">非负奖励。</param>
     public void AddSoul(int amount)
     {
@@ -60,7 +83,9 @@ public sealed class ProfileSystem : AbstractSystem
         soul.Value = (int)Math.Min((long)soul.Value + amount, int.MaxValue);
     }
 
-    /// <summary>在余额足够时支付灵魂。</summary>
+    /// <summary>
+    /// 在余额足够时支付灵魂。
+    /// </summary>
     /// <param name="amount">非负价格。</param>
     /// <returns>是否完成支付。</returns>
     public bool TrySpendSoul(int amount)
@@ -73,7 +98,9 @@ public sealed class ProfileSystem : AbstractSystem
         return true;
     }
 
-    /// <summary>领取已确定属性的装备；满包、背包或穿戴中已拥有此实例时拒绝。</summary>
+    /// <summary>
+    /// 领取已确定属性的装备；满包、背包或穿戴中已拥有此实例时拒绝。
+    /// </summary>
     /// <param name="data">掉落实例。</param>
     /// <returns>是否完成领取。</returns>
     public bool TryCollectEquipment(EquipmentData data)
@@ -94,7 +121,9 @@ public sealed class ProfileSystem : AbstractSystem
         return true;
     }
 
-    /// <summary>先验证关卡快照，再原地恢复档案数据，保留绑定身份。</summary>
+    /// <summary>
+    /// 先验证关卡快照，再原地恢复档案数据，保留绑定身份。
+    /// </summary>
     /// <param name="data">同一档案的进关快照。</param>
     /// <exception cref="ArgumentException">快照内容无效。</exception>
     /// <exception cref="InvalidOperationException">快照不属于当前英雄集合。</exception>

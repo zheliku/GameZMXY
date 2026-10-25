@@ -3,7 +3,9 @@ using Godot;
 
 namespace GameLogic.Heroes.Effects;
 
-/// <summary>英雄拥有的无双表现：采样指定精灵层并在原世界位置淡出，不复制动画、判定或玩法节点。</summary>
+/// <summary>
+/// 英雄拥有的无双表现：采样指定精灵层并在原世界位置淡出，不复制动画、判定或玩法节点。
+/// </summary>
 public partial class MusouAfterimageNode : Node2D
 {
     [Export] private Godot.Collections.Array<Sprite2D> m_Layers = new(); // 场景显式绑定的身体、武器等表现层。
@@ -22,7 +24,9 @@ public partial class MusouAfterimageNode : Node2D
     private float m_SampleTime; // 距离上次采样的累计秒数。
     private bool m_Emitting; // 是否继续采样；结束后仅让已有残影自然淡出。
 
-    /// <summary>创建固定表现缓存，顶层变换保证残影留在采样位置。</summary>
+    /// <summary>
+    /// 创建固定表现缓存，顶层变换保证残影留在采样位置。
+    /// </summary>
     public override void _Ready()
     {
         TopLevel = true;
@@ -45,7 +49,9 @@ public partial class MusouAfterimageNode : Node2D
         Reset();
     }
 
-    /// <summary>淡出已有残影，并按间隔截取动画的当前身体和武器帧。</summary>
+    /// <summary>
+    /// 淡出已有残影，并按间隔截取动画的当前身体和武器帧。
+    /// </summary>
     /// <param name="delta">本次渲染步长秒数。</param>
     public override void _Process(double delta)
     {
@@ -77,7 +83,9 @@ public partial class MusouAfterimageNode : Node2D
             SetProcess(false);
     }
 
-    /// <summary>开启或结束采样；结束时已有残影自然淡出。</summary>
+    /// <summary>
+    /// 开启或结束采样；结束时已有残影自然淡出。
+    /// </summary>
     /// <param name="emitting">是否处于无双状态。</param>
     public void SetEmitting(bool emitting)
     {
@@ -89,7 +97,9 @@ public partial class MusouAfterimageNode : Node2D
             SetProcess(true);
     }
 
-    /// <summary>隐藏全部残影并停止采样（实体隐藏或池复用）。</summary>
+    /// <summary>
+    /// 隐藏全部残影并停止采样（实体隐藏或池复用）。
+    /// </summary>
     public void Reset()
     {
         m_Emitting = false;
@@ -102,7 +112,9 @@ public partial class MusouAfterimageNode : Node2D
         SetProcess(false);
     }
 
-    /// <summary>只复制显示数据；每个槽位保留独立的世界变换和朝向。</summary>
+    /// <summary>
+    /// 只复制显示数据；每个槽位保留独立的世界变换和朝向。
+    /// </summary>
     private void Capture()
     {
         for (int j = 0; j < m_Layers.Count; j++)

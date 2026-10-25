@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://mkt51coh4f15" path="res://TheGame/Sprites/UI/frontend/save_slot_normal.png" id="normal"]
 [ext_resource type="Script" uid="uid://qer77g8x3nwt" path="res://TheGame/GameScripts/UI/SaveForm/SaveForm.cs" id="script"]
 
-[node name="SaveForm" type="Control" unique_id=462654616 node_paths=PackedStringArray("m_Close", "m_Status", "m_Slots")]
+[node name="SaveForm" type="Control" unique_id=462654616 node_paths=PackedStringArray("m_Close", "m_Status", "m_Slot1", "m_Name1", "m_Date1", "m_Slot2", "m_Name2", "m_Date2", "m_Slot3", "m_Name3", "m_Date3", "m_Slot4", "m_Name4", "m_Date4", "m_Slot5", "m_Name5", "m_Date5", "m_Slot6", "m_Name6", "m_Date6")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,8 +18,24 @@ grow_vertical = 2
 script = ExtResource("script")
 m_Close = NodePath("m_Close")
 m_Status = NodePath("m_Status")
-m_Slots = NodePath("Slots")
-
+m_Slot1 = NodePath("Slots/m_Slot1")
+m_Name1 = NodePath("Slots/m_Slot1/m_Name1")
+m_Date1 = NodePath("Slots/m_Slot1/m_Date1")
+m_Slot2 = NodePath("Slots/m_Slot2")
+m_Name2 = NodePath("Slots/m_Slot2/m_Name2")
+m_Date2 = NodePath("Slots/m_Slot2/m_Date2")
+m_Slot3 = NodePath("Slots/m_Slot3")
+m_Name3 = NodePath("Slots/m_Slot3/m_Name3")
+m_Date3 = NodePath("Slots/m_Slot3/m_Date3")
+m_Slot4 = NodePath("Slots/m_Slot4")
+m_Name4 = NodePath("Slots/m_Slot4/m_Name4")
+m_Date4 = NodePath("Slots/m_Slot4/m_Date4")
+m_Slot5 = NodePath("Slots/m_Slot5")
+m_Name5 = NodePath("Slots/m_Slot5/m_Name5")
+m_Date5 = NodePath("Slots/m_Slot5/m_Date5")
+m_Slot6 = NodePath("Slots/m_Slot6")
+m_Name6 = NodePath("Slots/m_Slot6/m_Name6")
+m_Date6 = NodePath("Slots/m_Slot6/m_Date6")
 
 [node name="Shade" type="ColorRect" parent="." unique_id=2101302214]
 layout_mode = 0

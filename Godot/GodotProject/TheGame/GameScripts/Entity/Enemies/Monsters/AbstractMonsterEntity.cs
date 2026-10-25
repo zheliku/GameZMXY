@@ -1,10 +1,8 @@
-using GameLogic.Enemies.AI;
-
 namespace GameLogic.Enemies;
 
-/// <summary>普通敌人分支：采用巡逻、感知和按配置概率选招；身体、生命和受击机制继承 Enemy。</summary>
+/// <summary>
+/// 小怪分支承载普通怪物的身份；每个具体物种必须明确选择自己的 AI 预设，运动分支决定地面或飞行身体。
+/// </summary>
 public abstract partial class AbstractMonsterEntity : AbstractEnemyEntity
 {
-    /// <summary>普通地面怪默认巡逻预设，特殊小怪可替换为守卫或追击集合。</summary>
-    protected override EnemyAiPreset AiPreset => MonsterAiPresets.Patrol;
 }

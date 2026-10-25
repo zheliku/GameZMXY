@@ -7,6 +7,8 @@ using GameLogic.Battle.Attributes;
 using GameLogic.Battle.Damage;
 using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
+using GameLogic.Effects;
+using System.Collections.Generic;
 using System.Linq;
 using System;
 using GameConfig.Battle;
@@ -23,7 +25,9 @@ using GodotGameFramework;
 
 namespace GameLogic.Enemies
 {
-    /// <summary>敌方单位公共层：生命、感知、身体与 AI 生命周期；小怪和首领分别提供特殊行为。</summary>
+    /// <summary>
+    /// 敌方单位公共层：生命、感知、身体与 AI 生命周期；小怪和首领分别提供特殊行为。
+    /// </summary>
     public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyAiAgent, IEnemyBody
     {
         // ---- 字段 ----
@@ -45,10 +49,14 @@ namespace GameLogic.Enemies
 
         [Export] private Vector2 m_HealthBarOffset = new(0f, -8f); // 血条底边中心相对受击盒顶边中心的像素偏移。
 
-        /// <summary>按框架帧驱动的怪物 AI 状态机（行为类别按自己的状态类型查询）。</summary>
+        /// <summary>
+        /// 按框架帧驱动的怪物 AI 状态机（行为类别按自己的状态类型查询）。
+        /// </summary>
         protected IFsm<IEnemyAiAgent> m_AiFsm;
 
-        /// <summary>按物理帧推进的怪物身体状态机（行为类别按自己的状态类型查询受击/收招硬直）。</summary>
+        /// <summary>
+        /// 按物理帧推进的怪物身体状态机（行为类别按自己的状态类型查询受击/收招硬直）。
+        /// </summary>
         protected IFsm<IEnemyBody> m_BodyFsm;
 
         private AbstractActorEntity m_Target; // 当前索敌目标；失效或超时后清除。
@@ -66,58 +74,188 @@ namespace GameLogic.Enemies
         private int m_MaxHp; // 配方生命倍率应用后的上限。
         private int m_Defense; // 配方防御倍率应用后的物防。
 
+        private readonly HashSet<SkillEffectNode> m_SkillEffects = new(); // 本敌人拥有的离身攻击；小怪飞刀与首领技能使用同一生命周期。
+
         // ---- 属性 ----
 
-        /// <summary>借用模型中同类敌人共享的身体参数。</summary>
-        private EnemyBodyParams BodyParams => this.GetModel<ConfigurationModel>().GetEnemyBodyParams(m_EnemyEntityId);
+        /// <summary>
+        /// 借用模型中同类敌人共享的身体参数。
+        /// </summary>
+        private EnemyBodyParams BodyParams
+        {
+            get
+            {
+                return this.GetModel<ConfigurationModel>().GetEnemyBodyParams(m_EnemyEntityId);
+            }
+        }
 
         /// <inheritdoc />
-        public override int Hp => m_Hp;
-        /// <inheritdoc />
-        public override int MaxHp => m_MaxHp;
-        /// <inheritdoc />
-        public override int Level => m_Level;
+        public override int Hp
+        {
+            get
+            {
+                return m_Hp;
+            }
+        }
 
         /// <inheritdoc />
-        protected override EntityId EntityType => m_EnemyEntityId;
-
-        /// <summary>怪物配置</summary>
-        public MonsterConfig Config => this.GetModel<ConfigurationModel>().GetEnemy(m_EnemyEntityId);
-
-        /// <summary>本次配方的攻击倍率，独立招式效果与身体攻击使用同一来源。</summary>
-        protected float AttackMultiplier => m_AttackMultiplier;
+        public override int MaxHp
+        {
+            get
+            {
+                return m_MaxHp;
+            }
+        }
 
         /// <inheritdoc />
-        public override CombatSide Side => CombatSide.Monster;
+        public override int Level
+        {
+            get
+            {
+                return m_Level;
+            }
+        }
+
+        /// <inheritdoc />
+        protected override EntityId EntityType
+        {
+            get
+            {
+                return m_EnemyEntityId;
+            }
+        }
+
+        /// <summary>
+        /// 怪物配置
+        /// </summary>
+        public MonsterConfig Config
+        {
+            get
+            {
+                return this.GetModel<ConfigurationModel>().GetEnemy(m_EnemyEntityId);
+            }
+        }
+
+        /// <summary>
+        /// 本次配方的攻击倍率，独立招式效果与身体攻击使用同一来源。
+        /// </summary>
+        protected float AttackMultiplier
+        {
+            get
+            {
+                return m_AttackMultiplier;
+            }
+        }
+
+        /// <inheritdoc />
+        public override CombatSide Side
+        {
+            get
+            {
+                return CombatSide.Monster;
+            }
+        }
 
         /// <summary>
         /// 霸体：受击照常扣血飘字，但不硬直、不击退、不打断出招（MonsterConfig.SuperArmor）。
         /// 子类可覆写做条件霸体（Boss 出招期间、低血量……）。
         /// </summary>
-        protected virtual bool IsSuperArmor => Config is { SuperArmor: true };
+        protected virtual bool IsSuperArmor
+        {
+            get
+            {
+                return Config is { SuperArmor: true };
+            }
+        }
 
-        /// <summary>本怪物独立拥有的 AI 数据，不与同类池实例共享。</summary>
+        /// <summary>
+        /// 本怪物独立拥有的 AI 数据，不与同类池实例共享。
+        /// </summary>
         public EnemyAiData AiData { get; private set; }
 
-        /// <summary>具体怪物声明共享状态配方；基类不预设具体行为。</summary>
+        /// <summary>
+        /// 具体怪物声明共享状态配方；基类不预设具体行为。
+        /// </summary>
         protected abstract EnemyAiPreset AiPreset { get; }
 
+        /// <summary>
+        /// 是否允许无目标时主动感知；已有目标的维护与受击锁定不受影响。
+        /// </summary>
+        protected virtual bool CanAcquireTarget
+        {
+            get
+            {
+                return true;
+            }
+        }
+
         /// <inheritdoc />
-        EnemyAiPreset IEnemyAiAgent.AiPreset => AiPreset;
+        EnemyAiPreset IEnemyAiAgent.AiPreset
+        {
+            get
+            {
+                return AiPreset;
+            }
+        }
 
-        /// <summary>共同收招状态中；特殊敌人可改用自己的收招状态。</summary>
-        protected virtual bool InRecovery => m_BodyFsm?.CurrentState is EnemyRecoveryState;
+        /// <summary>
+        /// 共同收招状态中；特殊敌人可改用自己的收招状态。
+        /// </summary>
+        protected virtual bool InRecovery
+        {
+            get
+            {
+                return m_BodyFsm?.CurrentState is EnemyRecoveryState;
+            }
+        }
 
-        /// <summary>受击硬直中（由行为类别提供；AI 的受控判定同源）</summary>
-        protected virtual bool InHurt => m_BodyFsm?.CurrentState is EnemyHurtState;
+        /// <summary>
+        /// 受击硬直中（由行为类别提供；AI 的受控判定同源）
+        /// </summary>
+        protected virtual bool InHurt
+        {
+            get
+            {
+                return m_BodyFsm?.CurrentState is EnemyHurtState;
+            }
+        }
 
-        /// <summary>已请求攻击、出招或处于收招硬直。</summary>
-        private bool IsBusy => AttackSegment >= 0 || AiData.AttackRequest >= 0 || InRecovery;
+        /// <summary>
+        /// 已请求攻击、出招或处于收招硬直。
+        /// </summary>
+        private bool IsBusy
+        {
+            get
+            {
+                return AttackSegment >= 0 || AiData.AttackRequest >= 0 || InRecovery;
+            }
+        }
 
-        /// <summary>当前是否允许 AI 自主行动。</summary>
-        private bool CanAct => !Dead && !InHurt && !HasPendingHurt;
+        /// <summary>
+        /// 当前是否允许 AI 自主行动。
+        /// </summary>
+        private bool CanAct
+        {
+            get
+            {
+                return !Dead && !InHurt && !HasPendingHurt;
+            }
+        }
 
-        /// <summary>目标受击盒相对本实体原点的范围。</summary>
+        /// <summary>
+        /// 死亡动作期间是否保留受击体；普通怪物保留原版鞭尸碰撞，首领由父类关闭。
+        /// </summary>
+        protected virtual bool KeepHurtBoxDuringDeath
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// 目标受击盒相对本实体原点的范围。
+        /// </summary>
         private Rect2 TargetBox
         {
             get
@@ -138,56 +276,168 @@ namespace GameLogic.Enemies
             }
         }
 
-        /// <summary>默认从共同地面移动状态开始；特殊身体类型可替换入口。</summary>
-        protected virtual Type InitialBodyStateType => typeof(EnemyMoveState);
+        /// <summary>
+        /// 由具体运动分支选择身体入口，Enemy不假定所有敌人站在地面。
+        /// </summary>
+        protected abstract Type InitialBodyStateType { get; }
 
-        /// <summary>AI 初始状态；默认由预设选择，Boss 可覆写。</summary>
-        protected virtual Type InitialAiStateType => AiPreset.IdleStateType;
+        /// <summary>
+        /// AI 初始状态；默认由预设选择，Boss 可覆写。
+        /// </summary>
+        protected virtual Type InitialAiStateType
+        {
+            get
+            {
+                return AiPreset.IdleStateType;
+            }
+        }
 
         // ---- 接口实现 ----
 
-        /// <summary>向身体状态机提供怪物共享身体参数。</summary>
-        EnemyBodyParams IEnemyBody.Params => BodyParams;
-
-        /// <summary>向 AI 提供同一份共享身体及攻击参数。</summary>
-        EnemyBodyParams IEnemyAiAgent.Params => BodyParams;
-
-        /// <summary>转发 AI 写入的移动意图读写。</summary>
-        int IEnemyBody.MoveIntent
+        /// <summary>
+        /// 向身体状态机提供怪物共享身体参数。
+        /// </summary>
+        EnemyBodyParams IEnemyBody.Params
         {
-            get => AiData.MoveIntent;
-            set => AiData.MoveIntent = value;
+            get
+            {
+                return BodyParams;
+            }
         }
 
-        /// <summary>提供怪物身体状态使用的重力参数。</summary>
-        float IActorBody.Gravity => BodyParams.Gravity;
+        /// <summary>
+        /// 受击和收招后使用与首次显示相同的行动入口。
+        /// </summary>
+        Type IEnemyBody.MoveStateType
+        {
+            get
+            {
+                return InitialBodyStateType;
+            }
+        }
 
-        /// <summary>向 AI 提供实体死亡事实。</summary>
-        bool IEnemyAiAgent.IsDead => Dead;
+        /// <summary>
+        /// 向 AI 提供同一份共享身体及攻击参数。
+        /// </summary>
+        EnemyBodyParams IEnemyAiAgent.Params
+        {
+            get
+            {
+                return BodyParams;
+            }
+        }
 
-        /// <summary>向 AI 提供当前受击受控事实。</summary>
-        bool IEnemyAiAgent.IsCcLocked => InHurt;
+        /// <summary>
+        /// 转发 AI 写入的移动意图读写。
+        /// </summary>
+        int IEnemyBody.MoveIntent
+        {
+            get
+            {
+                return AiData.MoveIntent;
+            }
 
-        /// <summary>向 AI 提供攻击或收招忙碌事实。</summary>
-        bool IEnemyAiAgent.IsAttacking => IsBusy;
+            set
+            {
+                AiData.MoveIntent = value;
+            }
+        }
 
-        /// <summary>提供目标受击盒相对怪物原点的范围。</summary>
-        Rect2 IEnemyAiAgent.TargetBox => TargetBox;
+        /// <summary>
+        /// 提供怪物身体状态使用的重力参数。
+        /// </summary>
+        float IActorBody.Gravity
+        {
+            get
+            {
+                return BodyParams.Gravity;
+            }
+        }
 
-        /// <summary>提供怪物相对出生点的水平偏移。</summary>
-        float IEnemyAiAgent.PatrolOffsetX => GlobalPosition.X -
+        /// <summary>
+        /// 向 AI 提供实体死亡事实。
+        /// </summary>
+        bool IEnemyAiAgent.IsDead
+        {
+            get
+            {
+                return Dead;
+            }
+        }
+
+        /// <summary>
+        /// 向 AI 提供当前受击受控事实。
+        /// </summary>
+        bool IEnemyAiAgent.IsCcLocked
+        {
+            get
+            {
+                return InHurt;
+            }
+        }
+
+        /// <summary>
+        /// 向 AI 提供攻击或收招忙碌事实。
+        /// </summary>
+        bool IEnemyAiAgent.IsAttacking
+        {
+            get
+            {
+                return IsBusy;
+            }
+        }
+
+        /// <summary>
+        /// 提供目标受击盒相对怪物原点的范围。
+        /// </summary>
+        Rect2 IEnemyAiAgent.TargetBox
+        {
+            get
+            {
+                return TargetBox;
+            }
+        }
+
+        /// <summary>
+        /// 提供怪物相对出生点的水平偏移。
+        /// </summary>
+        float IEnemyAiAgent.PatrolOffsetX
+        {
+            get
+            {
+                return GlobalPosition.X -
             (IsInstanceValid(m_PatrolAnchor) ? m_PatrolAnchor.GlobalPosition.X : m_SpawnPosition.X);
+            }
+        }
 
-        /// <summary>向 AI 提供怪物共享定义。</summary>
-        MonsterConfig IEnemyAiAgent.Config => Config;
+        /// <summary>
+        /// 向 AI 提供怪物共享定义。
+        /// </summary>
+        MonsterConfig IEnemyAiAgent.Config
+        {
+            get
+            {
+                return Config;
+            }
+        }
 
-        /// <summary>目标原点位移，不受受击盒美术偏移影响。</summary>
-        Vector2 IEnemyAiAgent.TargetOffset => m_Target is { IsAlive: true }
+        /// <summary>
+        /// 目标原点位移，不受受击盒美术偏移影响。
+        /// </summary>
+        Vector2 IEnemyAiAgent.TargetOffset
+        {
+            get
+            {
+                return m_Target is { IsAlive: true }
             ? m_Target.GlobalPosition - GlobalPosition : Vector2.Zero;
+            }
+        }
 
         // ---- 生命周期 ----
 
-        /// <summary>读取基础实体信息与怪物配置，并初始化攻击和身体参数。</summary>
+        /// <summary>
+        /// 读取基础实体信息与怪物配置，并初始化攻击和身体参数。
+        /// </summary>
         /// <param name="entityId">本次运行实体编号。</param>
         /// <param name="entityAssetName">实体资源路径。</param>
         /// <param name="entityGroup">所属实体组。</param>
@@ -205,7 +455,9 @@ namespace GameLogic.Enemies
             ConfigureDetector();
         }
 
-        /// <summary>显示时复位池化状态并重建身体与 AI 状态机。</summary>
+        /// <summary>
+        /// 显示时复位池化状态并重建身体与 AI 状态机。
+        /// </summary>
         /// <param name="userData">本次显示参数，由具体实体解释。</param>
         public override void OnShow(object userData)
         {
@@ -248,12 +500,19 @@ namespace GameLogic.Enemies
             }
         }
 
-        /// <summary>隐藏时销毁状态机、清空目标并执行基类清理。</summary>
+        /// <summary>
+        /// 隐藏时销毁状态机、清空目标并执行基类清理。
+        /// </summary>
         /// <param name="isShutdown">是否框架关停；此时节点可能已释放。</param>
         /// <param name="userData">本次隐藏参数。</param>
         public override void OnHide(bool isShutdown, object userData)
         {
             m_PatrolAnchor = null;
+            // 身体和独立攻击均由同一个敌人拥有；隐藏后不遗留飞刀、风刃或毒雾。
+            if (!isShutdown)
+                foreach (var effect in m_SkillEffects.ToArray())
+                    ReleaseSkillEffect(effect);
+            m_SkillEffects.Clear();
             // 关停时子节点可能已释放，不再访问表现对象。
             if (!isShutdown && IsInstanceValid(m_HealthBar))
             {
@@ -266,7 +525,9 @@ namespace GameLogic.Enemies
             base.OnHide(isShutdown, userData);
         }
 
-        /// <summary>AI 计时与感知跟随框架帧；身体状态机和物理按固定物理帧推进。</summary>
+        /// <summary>
+        /// AI 计时与感知跟随框架帧；身体状态机和物理按固定物理帧推进。
+        /// </summary>
         /// <param name="elapseSeconds">本帧游戏秒数。</param>
         /// <param name="realElapseSeconds">本帧实际秒数。</param>
         public override void OnUpdate(float elapseSeconds, float realElapseSeconds)
@@ -282,7 +543,9 @@ namespace GameLogic.Enemies
             UpdateHealthBarFade(elapseSeconds);
         }
 
-        /// <summary>物理步长：身体状态机 → 物理 →（死亡时长走完）回收；本帧消费 AI 意图。</summary>
+        /// <summary>
+        /// 物理步长：身体状态机 → 物理 →（死亡时长走完）回收；本帧消费 AI 意图。
+        /// </summary>
         /// <param name="delta">本次物理帧秒数。</param>
         public override void _PhysicsProcess(double delta)
         {
@@ -338,7 +601,9 @@ namespace GameLogic.Enemies
 
         // ---- 内部方法与扩展点 ----
 
-        /// <summary>生命变化时重新读取当前值与上限，刷新被动血条。</summary>
+        /// <summary>
+        /// 生命变化时重新读取当前值与上限，刷新被动血条。
+        /// </summary>
         private void RefreshHealthBar()
         {
             if (!IsShown || m_HealthBar == null)
@@ -353,7 +618,9 @@ namespace GameLogic.Enemies
             UpdateHealthBarPosition();
         }
 
-        /// <summary>按官方两秒淡出行为隐藏小血条；继续受伤会从不透明重新计时。</summary>
+        /// <summary>
+        /// 按官方两秒淡出行为隐藏小血条；继续受伤会从不透明重新计时。
+        /// </summary>
         /// <param name="elapseSeconds">本帧游戏秒数；暂停时为零。</param>
         private void UpdateHealthBarFade(float elapseSeconds)
         {
@@ -367,7 +634,9 @@ namespace GameLogic.Enemies
                 m_HealthBar.Visible = false;
         }
 
-        /// <summary>按受击盒头顶定位血条，独立于身体和攻击盒的朝向镜像。</summary>
+        /// <summary>
+        /// 按受击盒头顶定位血条，独立于身体和攻击盒的朝向镜像。
+        /// </summary>
         private void UpdateHealthBarPosition()
         {
             m_HealthBar.GlobalPosition = HeadPosition + m_HealthBarOffset -
@@ -408,15 +677,19 @@ namespace GameLogic.Enemies
             m_PendingHurt = knockback;
         }
 
-        /// <summary>延迟切换受击盒可监测性，允许在物理回调中安全调用。</summary>
+        /// <summary>
+        /// 在实体显示和死亡状态边界切换受击盒可监测性。
+        /// </summary>
         /// <param name="enabled">是否允许受击盒被检测。</param>
         private void SetHurtBoxEnabled(bool enabled)
         {
-            // deferred：可能在物理回调内调用
-            HurtBox?.SetDeferred(Area2D.PropertyName.Monitorable, enabled);
+            if (HurtBox != null)
+                HurtBox.Monitorable = enabled;
         }
 
-        /// <summary>构建身体状态机所需的配置与动画时长定义（扩展点：飞行/远程怪在子类替换参数）。</summary>
+        /// <summary>
+        /// 构建身体状态机所需的配置与动画时长定义（扩展点：飞行/远程怪在子类替换参数）。
+        /// </summary>
         /// <returns>身体状态机使用的共享定义。</returns>
         protected virtual EnemyBodyParams BuildBodyParams()
         {
@@ -447,7 +720,9 @@ namespace GameLogic.Enemies
             };
         }
 
-        /// <summary>让巡逻以当前取景为中心，确保场外出生的怪物会走进战斗视野。</summary>
+        /// <summary>
+        /// 让巡逻以当前取景为中心，确保场外出生的怪物会走进战斗视野。
+        /// </summary>
         /// <param name="anchor">关卡会话注入的相机中心。</param>
         /// <exception cref="ArgumentNullException">中心节点为空。</exception>
         public void SetPatrolAnchor(Node2D anchor)
@@ -455,7 +730,9 @@ namespace GameLogic.Enemies
             m_PatrolAnchor = anchor ?? throw new ArgumentNullException(nameof(anchor));
         }
 
-        /// <summary>维护目标有效性、视野超时和索敌区发现。</summary>
+        /// <summary>
+        /// 维护目标有效性、视野超时和索敌区发现。
+        /// </summary>
         /// <param name="dt">本帧游戏秒数。</param>
         private void UpdateTarget(float dt)
         {
@@ -474,14 +751,14 @@ namespace GameLogic.Enemies
 
             // 当前目标失效后清除，再从索敌区选择第一个有效角色。
             SetTarget(null);
-            if (Dead || m_Detector == null)
+            if (Dead || !CanAcquireTarget || m_Detector == null)
             {
                 return;
             }
 
             foreach (Node2D body in m_Detector.GetOverlappingBodies())
             {
-                if (body is AbstractActorEntity { IsAlive: true } actor && actor != this)
+                if (body is AbstractActorEntity actor && CanSelectTarget(actor))
                 {
                     SetTarget(actor);
                     Log.Debug("[Enemy] {0} 发现目标 {1}", Id, actor.Id);
@@ -490,7 +767,19 @@ namespace GameLogic.Enemies
             }
         }
 
-        /// <summary>设置当前目标并清零视野外计时。</summary>
+        /// <summary>
+        /// 筛选索敌区中的有效敌方角色；具体敌人可收紧原点距离等发现条件。
+        /// </summary>
+        /// <param name="actor">索敌区报告的候选角色。</param>
+        /// <returns>是否允许将该角色设为新目标。</returns>
+        protected virtual bool CanSelectTarget(AbstractActorEntity actor)
+        {
+            return actor != this && actor.IsAlive && actor.Side != Side;
+        }
+
+        /// <summary>
+        /// 设置当前目标并清零视野外计时。
+        /// </summary>
         /// <param name="target">本次目标；空值清除索敌。</param>
         private void SetTarget(AbstractActorEntity target)
         {
@@ -498,7 +787,9 @@ namespace GameLogic.Enemies
             m_OutOfSightTime = 0f;
         }
 
-        /// <summary>按视野范围复制并调整索敌区矩形，避免共享资源互改。</summary>
+        /// <summary>
+        /// 按视野范围复制并调整索敌区矩形，避免共享资源互改。
+        /// </summary>
         private void ConfigureDetector()
         {
             if (m_Detector == null)
@@ -521,12 +812,18 @@ namespace GameLogic.Enemies
             Log.Warning("[AbstractEnemyEntity] m_Detector 缺少 RectangleShape2D 形状，索敌失效：{0}", Name);
         }
 
-        /// <summary>默认地面身体状态集合；飞行、远程等实际新行为可在对应分支替换。</summary>
-        /// <returns>本怪物使用的全部身体状态。</returns>
-        protected virtual FsmState<IEnemyBody>[] CreateBodyStates() =>
-        [new EnemyMoveState(), new EnemyAttackState(), new EnemyRecoveryState(), new EnemyHurtState(), new EnemyDeathState()];
+        /// <summary>
+        /// 人形与飞行敌人共用的攻击、收招、受击和死亡；运动分支追加自己的移动状态。
+        /// </summary>
+        /// <returns>Boss与Monster共用的身体状态。</returns>
+        protected virtual FsmState<IEnemyBody>[] CreateBodyStates()
+        {
+            return [new EnemyAttackState(), new EnemyRecoveryState(), new EnemyHurtState(), new EnemyDeathState()];
+        }
 
-        /// <summary>创建并启动怪物身体状态机；已有状态机时保持复用。</summary>
+        /// <summary>
+        /// 创建并启动怪物身体状态机；已有状态机时保持复用。
+        /// </summary>
         private void CreateBodyStateMachine()
         {
             if (Config == null || m_BodyFsm != null)
@@ -538,7 +835,9 @@ namespace GameLogic.Enemies
             m_BodyFsm.Start(InitialBodyStateType);
         }
 
-        /// <summary>销毁身体状态机，关停阶段仅清除本地引用。</summary>
+        /// <summary>
+        /// 销毁身体状态机，关停阶段仅清除本地引用。
+        /// </summary>
         /// <param name="isShutdown">是否框架关停，关停时不访问状态机服务。</param>
         private void DestroyBodyStateMachine(bool isShutdown)
         {
@@ -550,7 +849,9 @@ namespace GameLogic.Enemies
             m_BodyFsm = null;
         }
 
-        /// <summary>创建并启动怪物 AI 状态机。</summary>
+        /// <summary>
+        /// 创建并启动怪物 AI 状态机。
+        /// </summary>
         private void CreateAiStateMachine()
         {
             if (m_AiFsm != null || Config == null || !IsShown)
@@ -562,7 +863,9 @@ namespace GameLogic.Enemies
             m_AiFsm.Start(InitialAiStateType);
         }
 
-        /// <summary>销毁 AI 状态机，关停阶段仅清除本地引用。</summary>
+        /// <summary>
+        /// 销毁 AI 状态机，关停阶段仅清除本地引用。
+        /// </summary>
         /// <param name="isShutdown">是否框架关停，关停时不访问状态机服务。</param>
         private void DestroyAiStateMachine(bool isShutdown)
         {
@@ -574,7 +877,9 @@ namespace GameLogic.Enemies
             m_AiFsm = null;
         }
 
-        /// <summary>取出并清除待提交的攻击请求。</summary>
+        /// <summary>
+        /// 取出并清除待提交的攻击请求。
+        /// </summary>
         /// <returns>待提交下标；没有请求时为 -1。</returns>
         int IEnemyBody.TakeAttackRequest()
         {
@@ -583,33 +888,62 @@ namespace GameLogic.Enemies
             return request;
         }
 
-        /// <summary>提交怪物招式并装填攻击包。</summary>
+        /// <summary>
+        /// 提交怪物招式并装填攻击包。
+        /// </summary>
         /// <param name="index">要提交的怪物攻击下标。</param>
-        void IActorBody.BeginAttack(int index) => BeginConfiguredAttack(index);
+        void IActorBody.BeginAttack(int index)
+        {
+            BeginConfiguredAttack(index);
+        }
 
-        /// <summary>结束怪物招式并归还攻击包。</summary>
-        void IActorBody.EndAttack() => EndCurrentAttack();
+        /// <summary>
+        /// 结束怪物招式并归还攻击包。
+        /// </summary>
+        void IActorBody.EndAttack()
+        {
+            EndCurrentAttack();
+        }
 
-        /// <summary>死亡状态进入时关闭受击盒并广播一次击败事件；声音由动画负责。</summary>
+        /// <summary>
+        /// 死亡状态进入时按敌人类别处理受击盒并广播一次击败事件；声音由动画负责。
+        /// </summary>
         void IEnemyBody.BeginDeath()
         {
-            SetHurtBoxEnabled(false);
+            SetHurtBoxEnabled(KeepHurtBoxDuringDeath);
             GF.Event.Fire(this,
                 EnemyDiedEventArgs.Create(Id, m_ExperienceReward, Config, HurtBox.GetGlobalBounds().GetCenter()));
         }
 
-        /// <summary>请求在当前物理帧完成后安全回收实体。</summary>
-        void IEnemyBody.RequestRecycle() => m_RecycleRequested = true;
+        /// <summary>
+        /// 请求在当前物理帧完成后安全回收实体。
+        /// </summary>
+        void IEnemyBody.RequestRecycle()
+        {
+            m_RecycleRequested = true;
+        }
 
-        /// <summary>由 Godot 随机源提供 AI 随机值。</summary>
+        /// <summary>
+        /// 由 Godot 随机源提供 AI 随机值。
+        /// </summary>
         /// <returns>零到一之间的随机值。</returns>
-        float IEnemyAiAgent.NextRandom() => GD.Randf();
+        float IEnemyAiAgent.NextRandom()
+        {
+            return GD.Randf();
+        }
 
-        /// <summary>设置并限制怪物的水平移动意图。</summary>
+        /// <summary>
+        /// 设置并限制怪物的水平移动意图。
+        /// </summary>
         /// <param name="dir">水平意图：负值左，正值右，零停。</param>
-        void IEnemyAiAgent.Move(int dir) => AiData.MoveIntent = Mathf.Clamp(dir, -1, 1);
+        void IEnemyAiAgent.Move(int dir)
+        {
+            AiData.MoveIntent = Mathf.Clamp(dir, -1, 1);
+        }
 
-        /// <summary>仅在可行动且未忙碌时按目标方向调整朝向。</summary>
+        /// <summary>
+        /// 仅在可行动且未忙碌时按目标方向调整朝向。
+        /// </summary>
         /// <param name="dir">期望朝向：正值右，负值左。</param>
         void IEnemyAiAgent.Face(int dir)
         {
@@ -619,17 +953,24 @@ namespace GameLogic.Enemies
             }
         }
 
-        /// <summary>校验攻击请求并登记供身体状态机下一物理帧消费。</summary>
+        /// <summary>
+        /// 校验攻击请求并登记供身体状态机下一物理帧消费。
+        /// </summary>
         /// <param name="index">希望提交的攻击配置下标。</param>
         /// <returns>下标和当前状态是否允许该请求。</returns>
-        bool IEnemyAiAgent.RequestAttack(int index) => TryRequestAttack(index);
+        bool IEnemyAiAgent.RequestAttack(int index)
+        {
+            return TryRequestAttack(index);
+        }
 
-        /// <summary>校验并登记攻击请求；Boss 可覆写特殊出招条件，身体状态机统一提交。</summary>
+        /// <summary>
+        /// 校验并登记攻击请求；Boss 可覆写特殊出招条件，身体状态机统一提交。
+        /// </summary>
         /// <param name="index">攻击配置下标。</param>
         /// <returns>当前状态是否接受请求。</returns>
         protected virtual bool TryRequestAttack(int index)
         {
-            if (index < 0 || index >= OwnAttacks.Count || IsBusy || !CanAct || !OnFloor)
+            if (index < 0 || index >= OwnAttacks.Count || IsBusy || !CanAct)
             {
                 return false;
             }
@@ -640,7 +981,9 @@ namespace GameLogic.Enemies
         }
     }
 
-    /// <summary>一次怪物显示的出生位置与基础属性倍率；默认倍率 1，池复用时整体重置。</summary>
+    /// <summary>
+    /// 一次怪物显示的出生位置与基础属性倍率；默认倍率 1，池复用时整体重置。
+    /// </summary>
     /// <param name="Position">世界出生位置。</param>
     /// <param name="HealthMultiplier">生命倍率，必须为正。</param>
     /// <param name="DefenseMultiplier">物理防御倍率，不能为负。</param>

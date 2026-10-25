@@ -42,68 +42,186 @@ namespace GameLogic.Heroes
 
         [Export] private MusouAfterimageNode m_MusouAfterimage; // 英雄自有的残影表现，可按角色场景选配。
         [Export] private HeroLevelUpNode m_LevelUp; // 独立升级动画层，不随身体朝向镜像。
+        [Export] private AnimatedSprite2D m_PoisonHead; // 持续中毒的头顶官方标记。
+        [Export] private AnimatedSprite2D m_PoisonPulse; // 每跳中毒扣血的短暂官方效果。
 
         private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
         private readonly HashSet<SkillEffectNode> m_SkillEffects = new(); // 本英雄生成的活动特效，隐藏时统一归还。
 
         // ---- 属性 ----
 
-        /// <summary>借用模型中同类英雄共享的身体参数。</summary>
-        private HeroBodyParams BodyParams => this.GetModel<ConfigurationModel>().GetHeroBodyParams(HeroId);
+        /// <summary>
+        /// 借用模型中同类英雄共享的身体参数。
+        /// </summary>
+        private HeroBodyParams BodyParams
+        {
+            get
+            {
+                return this.GetModel<ConfigurationModel>().GetHeroBodyParams(HeroId);
+            }
+        }
 
-        /// <summary>按游戏时间查询技能无敌。</summary>
-        protected override bool Invulnerable => this.GetSystem<SkillSystem>().IsInvulnerable(ActionData.Time);
+        /// <summary>
+        /// 按游戏时间查询技能无敌。
+        /// </summary>
+        protected override bool Invulnerable
+        {
+            get
+            {
+                return this.GetSystem<SkillSystem>().IsInvulnerable(ActionData.Time);
+            }
+        }
 
-        /// <summary>英雄配置 Id（对应 HeroConfig.Id）。每个英雄场景必须显式填写，缺失时本实体停用。</summary>
-        public int HeroId => m_HeroId;
+        /// <summary>
+        /// 英雄配置 Id（对应 HeroConfig.Id）。每个英雄场景必须显式填写，缺失时本实体停用。
+        /// </summary>
+        public int HeroId
+        {
+            get
+            {
+                return m_HeroId;
+            }
+        }
 
         /// <inheritdoc />
-        protected override GameConfig.Entity.EntityId EntityType => Config.EntityId;
+        protected override GameConfig.Entity.EntityId EntityType
+        {
+            get
+            {
+                return Config.EntityId;
+            }
+        }
 
-        /// <summary>英雄配置</summary>
-        public HeroConfig Config => this.GetModel<ConfigurationModel>().Tables.TbHeroConfig.Get(HeroId);
+        /// <summary>
+        /// 英雄配置
+        /// </summary>
+        public HeroConfig Config
+        {
+            get
+            {
+                return this.GetModel<ConfigurationModel>().Tables.TbHeroConfig.Get(HeroId);
+            }
+        }
 
-        /// <summary>本英雄独占的输入、跳跃与连段数据，由共享 InputSystem 和身体状态推进。</summary>
+        /// <summary>
+        /// 本英雄独占的输入、跳跃与连段数据，由共享 InputSystem 和身体状态推进。
+        /// </summary>
         public HeroActionData ActionData { get; } = new();
 
         /// <inheritdoc />
-        public override CombatSide Side => CombatSide.Hero;
+        public override CombatSide Side
+        {
+            get
+            {
+                return CombatSide.Hero;
+            }
+        }
 
-        /// <summary>直接读取本局已注册属性模型，实体不缓存、创建或销毁模型。</summary>
-        private HeroModel Attributes => this.GetModel<HeroModel>();
+        /// <summary>
+        /// 直接读取本局已注册属性模型，实体不缓存、创建或销毁模型。
+        /// </summary>
+        private HeroModel Attributes
+        {
+            get
+            {
+                return this.GetModel<HeroModel>();
+            }
+        }
 
         /// <inheritdoc />
-        public override int Hp => Attributes.Hp.Value;
+        public override int Hp
+        {
+            get
+            {
+                return Attributes.Hp.Value;
+            }
+        }
 
         /// <inheritdoc />
-        public override int MaxHp => Attributes.MaxHp.Value;
+        public override int MaxHp
+        {
+            get
+            {
+                return Attributes.MaxHp.Value;
+            }
+        }
 
         /// <inheritdoc />
-        public override int Level => Attributes.Level.Value;
+        public override int Level
+        {
+            get
+            {
+                return Attributes.Level.Value;
+            }
+        }
 
-        /// <summary>由具体英雄给出身体初始状态类型。</summary>
+        /// <summary>
+        /// 由具体英雄给出身体初始状态类型。
+        /// </summary>
         protected abstract Type InitialBodyStateType { get; }
 
         // ---- 接口实现 ----
 
-        /// <summary>提供身体状态机使用的共享身体参数。</summary>
-        HeroBodyParams IHeroBody.Params => BodyParams;
+        /// <summary>
+        /// 提供身体状态机使用的共享身体参数。
+        /// </summary>
+        HeroBodyParams IHeroBody.Params
+        {
+            get
+            {
+                return BodyParams;
+            }
+        }
 
-        /// <summary>无双提高横向走跑速度。</summary>
-        float IHeroBody.MoveSpeedMultiplier => this.GetSystem<HeroSystem>().MoveSpeedMultiplier;
+        /// <summary>
+        /// 无双提高横向走跑速度。
+        /// </summary>
+        float IHeroBody.MoveSpeedMultiplier
+        {
+            get
+            {
+                return this.GetSystem<HeroSystem>().MoveSpeedMultiplier;
+            }
+        }
 
-        /// <summary>无双提高起跳速度；读取时生效，不改写配置快照。</summary>
-        float IHeroBody.JumpSpeedMultiplier => this.GetSystem<HeroSystem>().JumpSpeedMultiplier;
+        /// <summary>
+        /// 无双提高起跳速度；读取时生效，不改写配置快照。
+        /// </summary>
+        float IHeroBody.JumpSpeedMultiplier
+        {
+            get
+            {
+                return this.GetSystem<HeroSystem>().JumpSpeedMultiplier;
+            }
+        }
 
-        /// <summary>无双期间免受击硬直与击退，仍正常结算伤害。</summary>
-        bool IHeroBody.SuperArmor => this.GetSystem<HeroSystem>().SuperArmor;
+        /// <summary>
+        /// 无双期间免受击硬直与击退，仍正常结算伤害。
+        /// </summary>
+        bool IHeroBody.SuperArmor
+        {
+            get
+            {
+                return this.GetSystem<HeroSystem>().SuperArmor;
+            }
+        }
 
-        /// <summary>提供当前重力，无双时应用官方倍率。</summary>
-        float IActorBody.Gravity => BodyParams.Gravity * this.GetSystem<HeroSystem>().GravityMultiplier;
+        /// <summary>
+        /// 提供当前重力，无双时应用官方倍率。
+        /// </summary>
+        float IActorBody.Gravity
+        {
+            get
+            {
+                return BodyParams.Gravity * this.GetSystem<HeroSystem>().GravityMultiplier;
+            }
+        }
 
         // ---- 生命周期 ----
 
-        /// <summary>读取英雄配置、招式和输入参数，并初始化实体状态。</summary>
+        /// <summary>
+        /// 读取英雄配置、招式和输入参数，并初始化实体状态。
+        /// </summary>
         /// <param name="entityId">本次运行实体编号。</param>
         /// <param name="entityAssetName">实体资源路径。</param>
         /// <param name="entityGroup">所属实体组。</param>
@@ -127,7 +245,9 @@ namespace GameLogic.Heroes
             this.GetSystem<ConfigurationSystem>().EnsureHeroBodyParams(HeroId, BuildBodyParams);
         }
 
-        /// <summary>显示时绑定流程已经准备好的数据，复位动作表现并创建身体状态机。</summary>
+        /// <summary>
+        /// 显示时绑定流程已经准备好的数据，复位动作表现并创建身体状态机。
+        /// </summary>
         /// <param name="userData">不传递英雄数据；属性从本局模型读取。</param>
         /// <exception cref="InvalidOperationException">本局属性模型未准备，或不是当前英雄。</exception>
         public override void OnShow(object userData)
@@ -137,6 +257,8 @@ namespace GameLogic.Heroes
                 throw new InvalidOperationException($"英雄 {HeroId} 显示前必须准备本局属性模型。");
             base.OnShow(userData);
             RefreshAppearance();
+            Body.Visible = true;
+            m_Weapon.Visible = true;
             m_MusouAfterimage?.Reset();
             m_LevelUp?.Reset();
 
@@ -148,7 +270,9 @@ namespace GameLogic.Heroes
             CreateBodyStateMachine();
         }
 
-        /// <summary>隐藏时销毁身体状态机并执行基类清理。</summary>
+        /// <summary>
+        /// 隐藏时销毁身体状态机并执行基类清理。
+        /// </summary>
         /// <param name="isShutdown">是否框架关停；此时节点可能已释放。</param>
         /// <param name="userData">本次隐藏参数。</param>
         public override void OnHide(bool isShutdown, object userData)
@@ -157,12 +281,21 @@ namespace GameLogic.Heroes
                 m_MusouAfterimage.Reset();
             if (!isShutdown && IsInstanceValid(m_LevelUp))
                 m_LevelUp.Reset();
+            if (!isShutdown)
+            {
+                if (m_PoisonHead != null)
+                    m_PoisonHead.Hide();
+                if (m_PoisonPulse != null)
+                    m_PoisonPulse.Hide();
+            }
             DestroyBodyStateMachine(isShutdown);
             ClearSkillEffects(isShutdown);
             base.OnHide(isShutdown, userData);
         }
 
-        /// <summary>物理步长：采样输入 → 身体状态机 → 物理。AnimationPlayer（子节点）同帧稍后消费播放请求。</summary>
+        /// <summary>
+        /// 物理步长：采样输入 → 身体状态机 → 物理。AnimationPlayer（子节点）同帧稍后消费播放请求。
+        /// </summary>
         /// <param name="delta">本次物理帧秒数。</param>
         public override void _PhysicsProcess(double delta)
         {
@@ -172,6 +305,21 @@ namespace GameLogic.Heroes
             }
 
             float dt = (float)delta;
+            int poisonDamage = this.GetSystem<HeroSystem>().AdvancePoison(dt);
+            ReceivePeriodicDamage(poisonDamage);
+            if (m_PoisonHead != null)
+                m_PoisonHead.Visible = !Dead && this.GetModel<HeroModel>().PoisonAttack != null;
+            if (m_PoisonPulse != null)
+            {
+                if (poisonDamage > 0 && !Dead)
+                {
+                    m_PoisonPulse.Frame = 0;
+                    m_PoisonPulse.Play();
+                    m_PoisonPulse.Show();
+                }
+                else if (!m_PoisonPulse.IsPlaying() || Dead)
+                    m_PoisonPulse.Hide();
+            }
             bool wasActive = this.GetModel<HeroModel>().WsActive.Value;
             this.GetSystem<HeroSystem>().AdvanceWs(dt);
             if (wasActive && !this.GetModel<HeroModel>().WsActive.Value)
@@ -203,17 +351,30 @@ namespace GameLogic.Heroes
         }
 
         /// <inheritdoc />
-        protected override bool ApplyDamage(int amount) => this.GetSystem<HeroSystem>().Damage(amount);
+        protected override bool ApplyDamage(int amount)
+        {
+            return this.GetSystem<HeroSystem>().Damage(amount);
+        }
 
         /// <inheritdoc />
-        protected override void RestoreHealth(int amount) => this.GetSystem<HeroSystem>().Heal(amount);
+        protected override void RestoreHealth(int amount)
+        {
+            this.GetSystem<HeroSystem>().Heal(amount);
+        }
 
-        /// <summary>在成长模型确认升级并更新属性后显示提示；普通进关不触发。</summary>
-        public void PlayLevelUp() => m_LevelUp?.ShowLevelUp();
+        /// <summary>
+        /// 在成长模型确认升级并更新属性后显示提示；普通进关不触发。
+        /// </summary>
+        public void PlayLevelUp()
+        {
+            m_LevelUp?.ShowLevelUp();
+        }
 
         // ---- 业务入口 ----
 
-        /// <summary>存活且蓄满时开启无双，使出招与运动读取加成并开始角色残影。</summary>
+        /// <summary>
+        /// 存活且蓄满时开启无双，使出招与运动读取加成并开始角色残影。
+        /// </summary>
         /// <returns>本次是否成功开启；按住按键、未满值、已开启或已死亡均不重复开启。</returns>
         public bool TryActivateMusou()
         {
@@ -224,14 +385,18 @@ namespace GameLogic.Heroes
             return true;
         }
 
-        /// <summary>移除局内加成并结束残影采样，不影响成长或装备来源。</summary>
+        /// <summary>
+        /// 移除局内加成并结束残影采样，不影响成长或装备来源。
+        /// </summary>
         private void EndMusou()
         {
             this.GetSystem<HeroSystem>().ClearWs();
             m_MusouAfterimage?.SetEmitting(false);
         }
 
-        /// <summary>读取当前穿戴，仅刷新身体和武器视觉，不修改属性。</summary>
+        /// <summary>
+        /// 读取当前穿戴，仅刷新身体和武器视觉，不修改属性。
+        /// </summary>
         public void RefreshAppearance()
         {
             var equipment = this.GetModel<ProfileModel>();
@@ -241,11 +406,16 @@ namespace GameLogic.Heroes
         }
 
         /// <inheritdoc />
-        protected override CombatantAttributes CaptureCombatAttributes() => Attributes.CaptureCombatAttributes(Id);
+        protected override CombatantAttributes CaptureCombatAttributes()
+        {
+            return Attributes.CaptureCombatAttributes(Id);
+        }
 
         // ---- 内部方法与扩展点 ----
 
-        /// <summary>同步镜像英雄武器及特效，身体层由公共实体镜像。</summary>
+        /// <summary>
+        /// 同步镜像英雄武器及特效，身体层由公共实体镜像。
+        /// </summary>
         /// <param name="dir">朝向：1 右，-1 左。</param>
         protected override void OnFacingChanged(int dir)
         {
@@ -291,11 +461,15 @@ namespace GameLogic.Heroes
             }
         }
 
-        /// <summary>由具体英雄给出自己的身体状态集合。</summary>
+        /// <summary>
+        /// 由具体英雄给出自己的身体状态集合。
+        /// </summary>
         /// <returns>本英雄使用的全部身体状态。</returns>
         protected abstract FsmState<IHeroBody>[] CreateBodyStates();
 
-        /// <summary>每次显示重建身体状态机，从初始状态起步。</summary>
+        /// <summary>
+        /// 每次显示重建身体状态机，从初始状态起步。
+        /// </summary>
         private void CreateBodyStateMachine()
         {
             // 已有配置或状态机时不重复创建。
@@ -308,7 +482,9 @@ namespace GameLogic.Heroes
             m_BodyFsm.Start(InitialBodyStateType);
         }
 
-        /// <summary>销毁身体状态机，关停阶段仅清除本地引用。</summary>
+        /// <summary>
+        /// 销毁身体状态机，关停阶段仅清除本地引用。
+        /// </summary>
         /// <param name="isShutdown">是否框架关停，关停时不再次访问状态机服务。</param>
         private void DestroyBodyStateMachine(bool isShutdown)
         {
@@ -320,7 +496,9 @@ namespace GameLogic.Heroes
             m_BodyFsm = null;
         }
 
-        /// <summary>构建身体状态机所需的配置、动画名和时长定义（扩展点：远程角色可改写移动/攻击参数）。</summary>
+        /// <summary>
+        /// 构建身体状态机所需的配置、动画名和时长定义（扩展点：远程角色可改写移动/攻击参数）。
+        /// </summary>
         /// <returns>身体状态机使用的共享身体参数。</returns>
         protected virtual HeroBodyParams BuildBodyParams()
         {
@@ -351,7 +529,9 @@ namespace GameLogic.Heroes
             };
         }
 
-        /// <summary>S＋K 仅从单向平台向下离开，不穿越普通地面。</summary>
+        /// <summary>
+        /// S＋K 仅从单向平台向下离开，不穿越普通地面。
+        /// </summary>
         /// <returns>是否执行平台下落。</returns>
         bool IHeroBody.TryDropThroughPlatform()
         {
@@ -374,7 +554,9 @@ namespace GameLogic.Heroes
             return false;
         }
 
-        /// <summary>提交攻击段并装填攻击数据；起手音效由动画方法轨道播放。</summary>
+        /// <summary>
+        /// 提交攻击段并装填攻击数据；起手音效由动画方法轨道播放。
+        /// </summary>
         /// <param name="segment">英雄连段下标。</param>
         void IActorBody.BeginAttack(int segment)
         {
@@ -383,7 +565,9 @@ namespace GameLogic.Heroes
             PrepareAttack(OwnAttacks[segment], this.GetSystem<HeroSystem>().AttackPowerMultiplier);
         }
 
-        /// <summary>结束攻击段并归还攻击数据。</summary>
+        /// <summary>
+        /// 结束攻击段并归还攻击数据。
+        /// </summary>
         void IActorBody.EndAttack()
         {
             AttackSegment = -1;

@@ -28,10 +28,14 @@ using GameLogic.Enemies.Body;
 using GameLogic.Effects;
 using GodotGameFramework.Entity;
 
-/// <summary>真实技能窗口导航、配置展示、钱包观察及复用回归。</summary>
+/// <summary>
+/// 真实技能窗口导航、配置展示、钱包观察及复用回归。
+/// </summary>
 public sealed partial class UiSmokeScenario
 {
-    /// <summary>通过正式 HUD 打开技能页，确认准备阶段没有学习或扣费行为。</summary>
+    /// <summary>
+    /// 通过正式 HUD 打开技能页，确认准备阶段没有学习或扣费行为。
+    /// </summary>
     /// <param name="battleForm">正式 HUD。</param>
     /// <param name="flow">隔离测试档案。</param>
     /// <param name="level">当前关卡。</param>
@@ -125,7 +129,9 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: 技能限当前出战角色、禁用角色无交互、被动目录、暂停、钱包观察及窗口复用通过");
     }
 
-    /// <summary>通过当前技能开关映射向真实视口注入键盘事件。</summary>
+    /// <summary>
+    /// 通过当前技能开关映射向真实视口注入键盘事件。
+    /// </summary>
     /// <param name="pressed">按下或释放。</param>
     /// <param name="echo">是否模拟长按重复事件。</param>
     private void PushSkillKey(bool pressed, bool echo = false)
@@ -137,7 +143,9 @@ public sealed partial class UiSmokeScenario
         m_Driver.GetViewport().PushInput(input, true);
     }
 
-    /// <summary>替换编辑器占位内容后重新绑定，确认所有主动/被动行的数据仍来自正式目录。</summary>
+    /// <summary>
+    /// 替换编辑器占位内容后重新绑定，确认所有主动/被动行的数据仍来自正式目录。
+    /// </summary>
     /// <param name="form">已打开的正式技能窗口。</param>
     private static void CheckSkillPreviewReplacement(SkillForm form)
     {
@@ -187,7 +195,9 @@ public sealed partial class UiSmokeScenario
         }
     }
 
-    /// <summary>确认行属于主场景，并在实际布局后检查所有列一致、不重叠且说明未溢出。</summary>
+    /// <summary>
+    /// 确认行属于主场景，并在实际布局后检查所有列一致、不重叠且说明未溢出。
+    /// </summary>
     /// <param name="form">拥有全部可编辑节点的窗口。</param>
     /// <param name="path">当前可见的五行容器。</param>
     private static void CheckInlineSkillGrid(SkillForm form, string path)
@@ -214,7 +224,9 @@ public sealed partial class UiSmokeScenario
         GD.Print($"SMOKE-UI: {path} 主场景网格归属、五行列对齐与长文本范围通过");
     }
 
-    /// <summary>验证实际原生动画与场景，不再验证已删除的表格指令。</summary>
+    /// <summary>
+    /// 验证实际原生动画与场景，不再验证已删除的表格指令。
+    /// </summary>
     private void CheckSkillCombatResources()
     {
         var fixtures = new Node();
@@ -264,7 +276,9 @@ public sealed partial class UiSmokeScenario
         }
     }
 
-    /// <summary>真实点击学习、提示、HUD 同步及五招输入与火魔斩分支回归。</summary>
+    /// <summary>
+    /// 真实点击学习、提示、HUD 同步及五招输入与火魔斩分支回归。
+    /// </summary>
     /// <param name="battleForm">正式 HUD。</param>
     /// <param name="form">池化技能窗口。</param>
     /// <param name="flow">测试作用域。</param>
@@ -404,12 +418,23 @@ public sealed partial class UiSmokeScenario
             foreach (string action in inputs)
                 Input.ActionPress(action);
             await WaitUntilAsync(() => attributes.ActiveSkillId == id, $"输入没有释放 {id}", 2000);
+            double castAt = hero.ActionData.Time;
             foreach (string action in inputs)
                 Input.ActionRelease(action);
             Check(attributes.Mp.Value == mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(id).ManaCost, $"{id} 扣蓝不正确");
             if (expectedEffect != SkillHitId.None)
+            {
                 await WaitUntilAsync(() => SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects")
                     .Any(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)expectedEffect), "火魔斩没有创建九连特效");
+                var combo = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects")
+                    .Single(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)expectedEffect);
+                Check(hero.GlobalPosition.DistanceTo(combo.GlobalPosition) < 1,
+                    "命中目标后身体与九连斩没有定位到同一位置");
+                double comboStart = hero.AnimPlayer.CurrentAnimationPosition;
+                await WaitFramesAsync(12);
+                Check(hero.AnimPlayer.CurrentAnimationPosition > comboStart + .1,
+                    "九连斩期间角色时间轴没有并行推进");
+            }
             else
                 await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(.15), SceneTreeTimer.SignalName.Timeout);
             await CaptureCombatAsync(capture);
@@ -420,6 +445,28 @@ public sealed partial class UiSmokeScenario
                     "火魔前奏没有在出招原地继续播放，而是跟随升空或瞬移");
                 Input.ActionPress(InputSystem.Attack);
                 Input.ActionPress(InputSystem.Skill1);
+                await WaitUntilAsync(() => hero.AnimPlayer.CurrentAnimationPosition >= 46d / 24d,
+                    "火魔斩未进入第 47 帧下冲", 5000);
+                Check(hero.ActionData.Time - castAt < (expectedEffect == SkillHitId.None ? .4 : 2.0),
+                    "火魔斩第 47 帧超过原版时间轴；独立效果不得延迟角色下冲");
+
+                if (expectedEffect != SkillHitId.None)
+                {
+                    var fireEffects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
+                    await WaitUntilAsync(() => fireEffects.Any(x =>
+                        SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)SkillHitId.FireDemonLanding),
+                        "火魔斩在落地窗口内没有创建落地斩", 5000);
+                    var landing = fireEffects.Single(x =>
+                        SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)SkillHitId.FireDemonLanding);
+                    var landingPlayer = SmokeInspection.ReadField<AnimationPlayer>(landing, "m_Player");
+                    double bodyAtLanding = hero.AnimPlayer.CurrentAnimationPosition;
+                    double effectAtLanding = landingPlayer.CurrentAnimationPosition;
+                    await WaitFramesAsync(6);
+                    Check(!hero.AnimPlayer.IsPlaying() && Math.Abs(hero.AnimPlayer.CurrentAnimationPosition - bodyAtLanding) < .001,
+                        "提前落地后本体没有按官方停住姿态");
+                    Check(landingPlayer.CurrentAnimationPosition > effectAtLanding + .05,
+                        "身体停住时落地斩独立动画未继续播放");
+                }
             }
             try
             {
@@ -450,7 +497,9 @@ public sealed partial class UiSmokeScenario
         }
     }
 
-    /// <summary>通过正式 GGF 声音入口加载七段技能音效，检查分组、解码与停止。</summary>
+    /// <summary>
+    /// 通过正式 GGF 声音入口加载七段技能音效，检查分组、解码与停止。
+    /// </summary>
     /// <returns>所有音效代理检查完成的任务。</returns>
     private async Task CheckSkillSoundsAsync()
     {
@@ -479,7 +528,9 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: 七段原版技能音效经 GGF SFX 代理播放与停止通过");
     }
 
-    /// <summary>成功受击发声，纯受伤动画不发声；死亡仍由原生方法键播放，不增加生产观测接口。</summary>
+    /// <summary>
+    /// 成功受击发声，纯受伤动画不发声；死亡仍由原生方法键播放，不增加生产观测接口。
+    /// </summary>
     /// <returns>声音已实际加载且复位断言完成的任务。</returns>
     private async Task CheckActorAnimationEventsAsync()
     {
@@ -536,9 +587,11 @@ public sealed partial class UiSmokeScenario
                 "RESET 后普通动画请求仍被旧缓存吞掉");
             Check(sounds.GetValueOrDefault(hurt) == 2 && sounds.GetValueOrDefault(death) == 1 && !hero.Dead,
                 "动画声音重复，或单独播放死亡视觉改变了业务事实");
-            // 普通敌人与首领均从成功受击入口发声；无击退、霸体与致死也不依赖 hurt 动画。
+            // 无攻击来源的直接伤害不能凭空播放悟空打击声；hurt动画也不承担攻击者反馈。
             foreach (var id in new[] { GameConfig.Entity.EntityId.HuaguoshanMonkey, GameConfig.Entity.EntityId.DemonMonkey,
-                         GameConfig.Entity.EntityId.Gorilla, GameConfig.Entity.EntityId.MacaqueKing, GameConfig.Entity.EntityId.TamarinKing })
+                         GameConfig.Entity.EntityId.Gorilla, GameConfig.Entity.EntityId.MacaqueKing, GameConfig.Entity.EntityId.TamarinKing,
+                         GameConfig.Entity.EntityId.CaveBrute, GameConfig.Entity.EntityId.KnifeDemon, GameConfig.Entity.EntityId.LionCamelKing,
+                         GameConfig.Entity.EntityId.Bat, GameConfig.Entity.EntityId.BatCaveStatue })
             {
                 var enemy = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(10000, 100)));
                 try
@@ -556,11 +609,13 @@ public sealed partial class UiSmokeScenario
                         try
                         { enemy.ReceiveHit(data, 0); }
                         finally { GameFramework.ReferencePool.Release(data); }
-                        int expected = ++before;
-                        await WaitUntilAsync(() => sounds.GetValueOrDefault(impact) == expected, $"{id} 成功受击没有反馈");
-                        enemy.RestartAnim(EnemyAnims.Hurt);
-                        animation.Advance(0);
-                        animation.Advance(.1);
+                        int expected = before;
+                        if (animation.HasAnimation(EnemyAnims.Hurt))
+                        {
+                            enemy.RestartAnim(EnemyAnims.Hurt);
+                            animation.Advance(0);
+                            animation.Advance(.1);
+                        }
                         await WaitFramesAsync(3);
                         Check(sounds.GetValueOrDefault(impact) == expected, $"{id} hurt 动画重复反馈");
                     }
@@ -579,7 +634,7 @@ public sealed partial class UiSmokeScenario
                     GF.Entity.HideEntitySafe(enemy);
                 }
             }
-            GD.Print("SMOKE-ANIMATION-EVENTS PASS: damage feedback independent of hurt animation, death method, interrupted RESET and resume.");
+            GD.Print("SMOKE-ANIMATION-EVENTS PASS: impact belongs to attacker, victim voice/death, interrupted RESET and resume.");
         }
         finally
         {

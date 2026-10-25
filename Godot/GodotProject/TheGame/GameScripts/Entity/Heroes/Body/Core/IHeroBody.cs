@@ -13,22 +13,52 @@ namespace GameLogic.Heroes.Body
     /// </summary>
     public interface IHeroBody : IActorBody, Architecture.ICanGetSystem, Architecture.ICanGetModel
     {
-        /// <summary>同类英雄共享的只读身体参数，动作时长来自动画资源。</summary>
+        /// <summary>
+        /// 同类英雄共享的只读身体参数，动作时长来自动画资源。
+        /// </summary>
         HeroBodyParams Params { get; }
 
-        /// <summary>局内效果对横向移动的倍率，默认不加成。</summary>
-        float MoveSpeedMultiplier => 1f;
+        /// <summary>
+        /// 局内效果对横向移动的倍率，默认不加成。
+        /// </summary>
+        float MoveSpeedMultiplier
+        {
+            get
+            {
+                return 1f;
+            }
+        }
 
-        /// <summary>局内效果对起跳速度的倍率，默认不加成。</summary>
-        float JumpSpeedMultiplier => 1f;
+        /// <summary>
+        /// 局内效果对起跳速度的倍率，默认不加成。
+        /// </summary>
+        float JumpSpeedMultiplier
+        {
+            get
+            {
+                return 1f;
+            }
+        }
 
-        /// <summary>是否免受击硬直与击退；不代表免伤。</summary>
-        bool SuperArmor => false;
+        /// <summary>
+        /// 是否免受击硬直与击退；不代表免伤。
+        /// </summary>
+        bool SuperArmor
+        {
+            get
+            {
+                return false;
+            }
+        }
 
-        /// <summary>本英雄独占的输入、跳跃和连段数据；与共享 Params 分离。</summary>
+        /// <summary>
+        /// 本英雄独占的输入、跳跃和连段数据；与共享 Params 分离。
+        /// </summary>
         HeroActionData ActionData { get; }
 
-        /// <summary>在单向平台上执行向下穿越；普通地面与空中不执行。</summary>
+        /// <summary>
+        /// 在单向平台上执行向下穿越；普通地面与空中不执行。
+        /// </summary>
         /// <returns>是否从可穿平台向下离开。</returns>
         bool TryDropThroughPlatform();
     }

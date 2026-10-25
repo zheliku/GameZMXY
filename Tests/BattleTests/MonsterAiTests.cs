@@ -6,6 +6,7 @@ using GameConfig.Monster;
 using System.Runtime.CompilerServices;
 using Godot;
 using GameLogic.Enemies.AI;
+using GameLogic.Enemies;
 using System;
 using GameFramework.Fsm;
 using Xunit;
@@ -24,12 +25,24 @@ namespace GameLogic.Battle.Tests
     {
         private const float Dt = 1f / 60f; // 单个物理帧的时长。
 
-        private static readonly Rect2 MonkeyReach = new Rect2(-49f, -48f, 50f, 50f); // 猴子 attack_1 判定盒范围（原生朝左）。
-        private static EnemyAiSystem Ai => BattleArchitecture.Instance.GetSystem<EnemyAiSystem>();
-
-        /// <summary>可组合的状态集合，直接作为参数传入真实 FSM 测试。</summary>
-        public static System.Collections.Generic.IEnumerable<object[]> Presets =>
-            [new object[] { MonsterAiPresets.Patrol }, new object[] { MonsterAiPresets.Guard }, new object[] { MonsterAiPresets.Pursuer }];
+        private static readonly Rect2 MonkeyReach = new Rect2(-49f, -48f, 50f, 50f); // 固定的合成朝左范围；正式动画几何由引擎烟测独立核对。
+        private static EnemyAiSystem Ai
+        {
+            get
+            {
+                return BattleArchitecture.Instance.GetSystem<EnemyAiSystem>();
+            }
+        }
+        /// <summary>
+        /// 可组合的状态集合，直接作为参数传入真实 FSM 测试。
+        /// </summary>
+        public static System.Collections.Generic.IEnumerable<object[]> Presets
+        {
+            get
+            {
+                return [new object[] { MonsterAiPresets.Patrol }, new object[] { MonsterAiPresets.Guard }, new object[] { MonsterAiPresets.Pursuer }];
+            }
+        }
 
         private static MonsterConfig MonkeyParams(int desire = 70, float calm = 0f, float pace = 60f) // 猴子同款参数：欲望 70、判定 1s、首次延迟 0.35~1.0s、巡逻 2s/10%/半径 200、僵直 0、滞回 25、踱步半幅 60。
         {
@@ -79,8 +92,9 @@ namespace GameLogic.Battle.Tests
         }
 
         // ---------------------------------------------------------------- 规则（几何）
-
-        /// <summary>验证攻击判定盒仅在朝右时镜像。</summary>
+        /// <summary>
+        /// 验证攻击判定盒仅在朝右时镜像。
+        /// </summary>
         [Fact]
         public void Box_Facing_MirrorsOnlyWhenFacingRight()
         {
@@ -93,8 +107,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(-49f, left.Position.X, 3);
             Assert.Equal(1f, left.End.X, 3);
         }
-
-        /// <summary>验证朝左攻击判定盒与英雄受击盒的水平间距。</summary>
+        /// <summary>
+        /// 验证朝左攻击判定盒与英雄受击盒的水平间距。
+        /// </summary>
         [Theory]
         [InlineData(-40f, -29f)]   // 吃进 29px
         [InlineData(-69f, 0f)]     // 恰好擦边
@@ -105,8 +120,9 @@ namespace GameLogic.Battle.Tests
         {
             Assert.Equal(expected, MonkeyReach.GapX(Hero(dx)), 3);
         }
-
-        /// <summary>验证目标在同一高度时范围重叠、位于头顶时超出攻击范围。</summary>
+        /// <summary>
+        /// 验证目标在同一高度时范围重叠、位于头顶时超出攻击范围。
+        /// </summary>
         [Fact]
         public void Box_GapY_HeroAboveHeadIsOutOfReach()
         {
@@ -115,8 +131,9 @@ namespace GameLogic.Battle.Tests
         }
 
         // ---------------------------------------------------------------- 招式书
-
-        /// <summary>验证近战招式选取同时检查水平与垂直范围及朝向。</summary>
+        /// <summary>
+        /// 验证近战招式选取同时检查水平与垂直范围及朝向。
+        /// </summary>
         [Fact]
         public void AttackBook_MeleeReach_UsesBothAxes()
         {
@@ -127,8 +144,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(-1, book.SelectBasicAttack(Hero(40f), -1, () => 0f));          // 在身后（朝向传错不算够得着）
             Assert.Equal(0, book.SelectBasicAttack(Hero(40f), 1, () => 0f));            // 转过去就够得着
         }
-
-        /// <summary>验证最近水平间距不受高度影响，而有效范围会检查高度。</summary>
+        /// <summary>
+        /// 验证最近水平间距不受高度影响，而有效范围会检查高度。
+        /// </summary>
         [Fact]
         public void AttackBook_ClosestGapX_IgnoresHeight_HasAttackInReachDoesNot()
         {
@@ -138,8 +156,9 @@ namespace GameLogic.Battle.Tests
             Assert.True(book.IsBasicAttackInReach(Hero(-40f), -1));
             Assert.Equal(float.PositiveInfinity, book.GetBasicAttackHorizontalGap(default, -1));   // 无目标
         }
-
-        /// <summary>验证缺少范围定义的普攻不会被 AI 选中。</summary>
+        /// <summary>
+        /// 验证缺少范围定义的普攻不会被 AI 选中。
+        /// </summary>
         [Fact]
         public void AttackBook_MissingReach_IsNotAnAiAttack()
         {
@@ -148,8 +167,9 @@ namespace GameLogic.Battle.Tests
             Assert.False(book.IsBasicAttackInReach(Hero(-40f), -1));
             Assert.Equal(-1, book.SelectBasicAttack(Hero(-40f), -1, () => 0f));
         }
-
-        /// <summary>验证远程普攻按水平距离选取且忽略目标高度。</summary>
+        /// <summary>
+        /// 验证远程普攻按水平距离选取且忽略目标高度。
+        /// </summary>
         [Fact]
         public void AttackBook_RangedAttack_UsesHorizontalRange()
         {
@@ -158,8 +178,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(-1, book.SelectBasicAttack(Hero(-350f), -1, () => 0f));
             Assert.Equal(50f, book.GetBasicAttackHorizontalGap(Hero(-350f), -1), 3);
         }
-
-        /// <summary>验证可用优先招式中选择优先级最高者。</summary>
+        /// <summary>
+        /// 验证可用优先招式中选择优先级最高者。
+        /// </summary>
         [Fact]
         public void AttackBook_HighestReadyPriorityWins()
         {
@@ -172,8 +193,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(-1, book.GetHighestUsableAttackPriority(Hero(-500f), -1));
             Assert.Equal(2, book.SelectAttackByPriority(Hero(-150f), -1, 2, 0f));
         }
-
-        /// <summary>验证招式冷却期间不可选，冷却结束后恢复可用。</summary>
+        /// <summary>
+        /// 验证招式冷却期间不可选，冷却结束后恢复可用。
+        /// </summary>
         [Fact]
         public void AttackBook_Cooldown_BlocksUntilTickedDown()
         {
@@ -186,8 +208,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(1, book.GetHighestUsableAttackPriority(Hero(-100f), -1));
             Assert.Equal(0, book.SelectAttackByPriority(Hero(-100f), -1, 1, 0f));
         }
-
-        /// <summary>验证重置时按随机值设置初始冷却。</summary>
+        /// <summary>
+        /// 验证重置时按随机值设置初始冷却。
+        /// </summary>
         [Fact]
         public void AttackBook_Reset_RollsInitialCooldown()
         {
@@ -200,8 +223,9 @@ namespace GameLogic.Battle.Tests
             book.Tick(0.2f);
             Assert.Equal(1, book.GetHighestUsableAttackPriority(Hero(-100f), -1));
         }
-
-        /// <summary>验证普攻按权重区间选择。</summary>
+        /// <summary>
+        /// 验证普攻按权重区间选择。
+        /// </summary>
         [Fact]
         public void AttackBook_SelectBasic_Weighted()
         {
@@ -210,8 +234,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(1, book.SelectBasicAttack(Hero(-40f), -1, () => 0.31f));
             Assert.Equal(1, book.SelectBasicAttack(Hero(-40f), -1, () => 0.9999f));
         }
-
-        /// <summary>验证权重为零的普攻不可选。</summary>
+        /// <summary>
+        /// 验证权重为零的普攻不可选。
+        /// </summary>
         [Fact]
         public void AttackBook_ZeroWeight_NeverSelected()
         {
@@ -219,8 +244,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(-1, book.SelectBasicAttack(Hero(-40f), -1, () => 0f));
             Assert.Equal(float.PositiveInfinity, book.GetBasicAttackHorizontalGap(Hero(-40f), -1));
         }
-
-        /// <summary>验证没有可选招式时不会消耗随机值。</summary>
+        /// <summary>
+        /// 验证没有可选招式时不会消耗随机值。
+        /// </summary>
         [Fact]
         public void AttackBook_DoesNotConsumeRandomnessWithoutAChoice()
         {
@@ -236,8 +262,9 @@ namespace GameLogic.Battle.Tests
         }
 
         // ---------------------------------------------------------------- 状态流转（真实 GF.Fsm）
-
-        /// <summary>验证无目标时怪物游荡并可进入暂停状态。</summary>
+        /// <summary>
+        /// 验证无目标时怪物游荡并可进入暂停状态。
+        /// </summary>
         [Fact]
         public void Fsm_NoTarget_WandersAndPauses()
         {
@@ -251,8 +278,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal("Pause", h.State);
             Assert.Equal(0, h.Agent.MoveDir);
         }
-
-        /// <summary>验证游荡超出巡逻半径后转向出生点。</summary>
+        /// <summary>
+        /// 验证游荡超出巡逻半径后转向出生点。
+        /// </summary>
         [Fact]
         public void Fsm_Wander_OutsidePatrolRadiusTurnsBackTowardHome()
         {
@@ -263,8 +291,9 @@ namespace GameLogic.Battle.Tests
             h.Step(1);
             Assert.Equal(-1, h.Agent.MoveDir);
         }
-
-        /// <summary>验证发现目标后追击并在攻击范围内发起攻击。</summary>
+        /// <summary>
+        /// 验证发现目标后追击并在攻击范围内发起攻击。
+        /// </summary>
         [Fact]
         public void Fsm_TargetSeen_ChasesThenAttacks()
         {
@@ -286,8 +315,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(0, h.Agent.RequestedAttack);
             Assert.Equal(-1, h.Agent.FaceDir);
         }
-
-        /// <summary>验证站定攻击状态在滞回距离内贴近，超出后转为追击。</summary>
+        /// <summary>
+        /// 验证站定攻击状态在滞回距离内贴近，超出后转为追击。
+        /// </summary>
         [Fact]
         public void Fsm_StandAndStrike_HysteresisCreepsWithinSlack_ThenChasesBeyond()
         {
@@ -306,8 +336,9 @@ namespace GameLogic.Battle.Tests
             h.Step(1);
             Assert.Equal("WalkToTarget", h.State);
         }
-
-        /// <summary>验证刚进入攻击范围不会立刻出手，而是先随机停一拍再判定。</summary>
+        /// <summary>
+        /// 验证刚进入攻击范围不会立刻出手，而是先随机停一拍再判定。
+        /// </summary>
         [Fact]
         public void Fsm_StandAndStrike_DoesNotStrikeImmediatelyOnEntry()
         {
@@ -324,8 +355,9 @@ namespace GameLogic.Battle.Tests
             h.Run(0.5f);   // 越过首掷延迟后按欲望 100 出招
             Assert.Equal(0, h.Agent.RequestedAttack);
         }
-
-        /// <summary>验证目标位于头顶时先踱步，落地后再进入攻击决策。</summary>
+        /// <summary>
+        /// 验证目标位于头顶时先踱步，落地后再进入攻击决策。
+        /// </summary>
         [Fact]
         public void Fsm_TargetAboveHead_PacesBelowWithoutAttacking_ThenStrikesWhenLanded()
         {
@@ -344,8 +376,9 @@ namespace GameLogic.Battle.Tests
             h.Run(1f);                           // 随机首掷延迟结束后按欲望 100 出招
             Assert.Equal(0, h.Agent.RequestedAttack);
         }
-
-        /// <summary>验证怪物围绕高处目标往返踱步并在目标远离时追击。</summary>
+        /// <summary>
+        /// 验证怪物围绕高处目标往返踱步并在目标远离时追击。
+        /// </summary>
         [Fact]
         public void Fsm_PaceBelowTarget_PacesBackAndForthAroundTargetX()
         {
@@ -368,8 +401,9 @@ namespace GameLogic.Battle.Tests
             h.Step(1);
             Assert.Equal("WalkToTarget", h.State);
         }
-
-        /// <summary>验证目标丢失后怪物返回巡逻范围。</summary>
+        /// <summary>
+        /// 验证目标丢失后怪物返回巡逻范围。
+        /// </summary>
         [Fact]
         public void Fsm_TargetLost_WandersBackIntoPatrolRadius()
         {
@@ -385,8 +419,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal("Wander", h.State);
             Assert.Equal(1, h.Agent.MoveDir);    // 游荡先折返回巡逻范围
         }
-
-        /// <summary>验证追击途中会优先发动已就绪的优先招式。</summary>
+        /// <summary>
+        /// 验证追击途中会优先发动已就绪的优先招式。
+        /// </summary>
         [Fact]
         public void Fsm_Chase_FiresReadyPriorityAttackOnTheWay()
         {
@@ -399,8 +434,9 @@ namespace GameLogic.Battle.Tests
             h.Run(1f);
             Assert.Equal(1, h.Agent.RequestedAttack);
         }
-
-        /// <summary>验证攻击及收招硬直期间不重新决策，恢复后才转向。</summary>
+        /// <summary>
+        /// 验证攻击及收招硬直期间不重新决策，恢复后才转向。
+        /// </summary>
         [Fact]
         public void Fsm_Attacking_DoesNotDecideUntilRecovered()
         {
@@ -422,8 +458,9 @@ namespace GameLogic.Battle.Tests
             h.Step(1);
             Assert.Equal(1, h.Agent.FaceDir);   // 这时才转身
         }
-
-        /// <summary>验证僵直状态可打断其他状态并在计时结束后返回。</summary>
+        /// <summary>
+        /// 验证僵直状态可打断其他状态并在计时结束后返回。
+        /// </summary>
         [Fact]
         public void Fsm_CcLocked_InterruptsAnyState_ThenReturnsAfterCalmTime()
         {
@@ -444,8 +481,9 @@ namespace GameLogic.Battle.Tests
             h.Run(0.2f);
             Assert.Equal("WalkToTarget", h.State);
         }
-
-        /// <summary>验证死亡状态为终止状态。</summary>
+        /// <summary>
+        /// 验证死亡状态为终止状态。
+        /// </summary>
         [Fact]
         public void Fsm_Death_IsTerminal()
         {
@@ -460,8 +498,9 @@ namespace GameLogic.Battle.Tests
             h.Step(5);
             Assert.Equal("Death", h.State);
         }
-
-        /// <summary>发现远处目标或重新追击时，当帧继续移动，不插入一帧举棒待机。</summary>
+        /// <summary>
+        /// 发现远处目标或重新追击时，当帧继续移动，不插入一帧举棒待机。
+        /// </summary>
         [Fact]
         public void Fsm_EnteringChase_DoesNotInsertIdleFrame()
         {
@@ -479,8 +518,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal("WalkToTarget", h.State);
             Assert.Equal(-1, h.Agent.MoveDir);
         }
-
-        /// <summary>目标高度不可达时，接近后直接踱步，不经过停步一帧的站定状态。</summary>
+        /// <summary>
+        /// 目标高度不可达时，接近后直接踱步，不经过停步一帧的站定状态。
+        /// </summary>
         /// <param name="direction">目标位于左侧或右侧。</param>
         /// <param name="height">目标相对怪物的高度。</param>
         [Theory]
@@ -502,8 +542,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(direction, h.Agent.MoveDir);
             Assert.Equal(-1, h.Agent.RequestedAttack);
         }
-
-        /// <summary>目标刚进入范围又走远时持续追近；目标稳定停留后仍正常站定。</summary>
+        /// <summary>
+        /// 目标刚进入范围又走远时持续追近；目标稳定停留后仍正常站定。
+        /// </summary>
         /// <param name="direction">目标位于左侧或右侧。</param>
         [Theory]
         [InlineData(-1)]
@@ -532,8 +573,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(0, h.Agent.MoveDir);
             Assert.Equal(-1, h.Agent.RequestedAttack);
         }
-
-        /// <summary>三个预设分别巡逻、守卫和等待；恢复或丢失目标后仍遵守各自移动策略。</summary>
+        /// <summary>
+        /// 三个预设分别巡逻、守卫和等待；恢复或丢失目标后仍遵守各自移动策略。
+        /// </summary>
         [Theory]
         [MemberData(nameof(Presets))]
         public void Preset_MovementPolicySurvivesTargetLossAndControl(EnemyAiPreset preset)
@@ -560,8 +602,9 @@ namespace GameLogic.Battle.Tests
             if (preset != MonsterAiPresets.Patrol)
                 Assert.Equal(0, h.Agent.MoveDir);
         }
-
-        /// <summary>守卫不会追击远处目标，但目标进入范围后照常按延迟和概率出招。</summary>
+        /// <summary>
+        /// 守卫不会追击远处目标，但目标进入范围后照常按延迟和概率出招。
+        /// </summary>
         [Fact]
         public void Guard_AttacksOnlyInReachWithoutMoving()
         {
@@ -575,8 +618,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(0, h.Agent.MoveDir);
             Assert.Equal(0, h.Agent.RequestedAttack);
         }
-
-        /// <summary>同一系统及同一攻击参数下，不同怪物的冷却和重置互不影响。</summary>
+        /// <summary>
+        /// 同一系统及同一攻击参数下，不同怪物的冷却和重置互不影响。
+        /// </summary>
         [Fact]
         public void SharedSystem_LeavesMonsterCooldownsIndependent()
         {
@@ -594,8 +638,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(1, system.GetHighestUsableAttackPriority(firstData, parameters, Hero(100), 1));
             Assert.NotSame(MonsterAiPresets.Patrol.CreateStates()[0], MonsterAiPresets.Patrol.CreateStates()[0]);
         }
-
-        /// <summary>新增状态可以直接组成新预设，无须修改系统的枚举分支。</summary>
+        /// <summary>
+        /// 新增状态可以直接组成新预设，无须修改系统的枚举分支。
+        /// </summary>
         [Fact]
         public void CustomPreset_UsesItsOwnEntryStatesAndCopiesFactoryCollection()
         {
@@ -616,8 +661,9 @@ namespace GameLogic.Battle.Tests
             for (int i = 0; i < first.Length; i++)
                 Assert.NotSame(first[i], second[i]);
         }
-
-        /// <summary>缺少转移目标或重复状态在建 FSM 之前失败。</summary>
+        /// <summary>
+        /// 缺少转移目标或重复状态在建 FSM 之前失败。
+        /// </summary>
         [Fact]
         public void InvalidPreset_RejectsMissingEntriesAndDuplicateTypes()
         {
@@ -629,11 +675,13 @@ namespace GameLogic.Battle.Tests
                 () => new CcLockedState(), () => new DeathState());
             Assert.Throws<InvalidOperationException>(() => duplicate.CreateStates());
         }
-
-        /// <summary>用于验证预设能够组合普通集合之外的状态类型。</summary>
+        /// <summary>
+        /// 用于验证预设能够组合普通集合之外的状态类型。
+        /// </summary>
         private sealed class CustomIdleState : PauseState { }
-
-        /// <summary>猕猴王远处发风刃，风刃冷却时追击；不受小怪出手概率影响。</summary>
+        /// <summary>
+        /// 猕猴王远处发风刃，风刃冷却时追击；不受小怪出手概率影响。
+        /// </summary>
         [Fact]
         public void MacaqueKing_FarTarget_UsesWindThenChasesDuringCooldown()
         {
@@ -646,8 +694,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(1, h.Agent.MoveDir);
             Assert.False(h.Agent.IsAttacking);
         }
-
-        /// <summary>近身选招使用一秒节拍，并在专属技能冷却时回退棍击。</summary>
+        /// <summary>
+        /// 近身选招使用一秒节拍，并在专属技能冷却时回退棍击。
+        /// </summary>
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
@@ -663,8 +712,9 @@ namespace GameLogic.Battle.Tests
             h.Step(60);
             Assert.Equal(0, h.Agent.RequestedAttack);
         }
-
-        /// <summary>禺狨王在 250 像素以外追击，不在远处直接放落雷。</summary>
+        /// <summary>
+        /// 禺狨王在 250 像素以外追击，不在远处直接放落雷。
+        /// </summary>
         [Fact]
         public void TamarinKing_FarTarget_ChasesWithoutCasting()
         {
@@ -674,8 +724,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(1, h.Agent.MoveDir);
             Assert.Equal(-1, h.Agent.RequestedAttack);
         }
-
-        /// <summary>越过各自原版高度范围时游荡，不能隔着垂直距离强行出招。</summary>
+        /// <summary>
+        /// 越过各自原版高度范围时游荡，不能隔着垂直距离强行出招。
+        /// </summary>
         [Theory]
         [InlineData(false, 301)]
         [InlineData(true, 901)]
@@ -686,8 +737,9 @@ namespace GameLogic.Battle.Tests
             h.Run(1.2f);
             Assert.Equal(-1, h.Agent.RequestedAttack);
         }
-
-        /// <summary>受控恢复后沿用原有行为时钟，死亡优先于全部选招。</summary>
+        /// <summary>
+        /// 受控恢复后沿用原有行为时钟，死亡优先于全部选招。
+        /// </summary>
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
@@ -706,8 +758,9 @@ namespace GameLogic.Battle.Tests
             h.Step(1);
             Assert.Equal("Death", h.State);
         }
-
-        /// <summary>以真实专属状态及原版冷却创建 BOSS 规则夹具。</summary>
+        /// <summary>
+        /// 以真实专属状态及原版冷却创建 BOSS 规则夹具。
+        /// </summary>
         /// <param name="tamarin">是否使用禺狨王。</param>
         /// <returns>拥有独立真实 GGF 状态机的测试宿主。</returns>
         private static AiHarness BossHarness(bool tamarin)
@@ -721,6 +774,39 @@ namespace GameLogic.Battle.Tests
         }
 
         // ---------------------------------------------------------------- 测试替身
+        /// <summary>
+        /// 狮驼王保留追击直到整秒出招，远处毒雾冷却独立于近身旋风。
+        /// </summary>
+        [Fact]
+        public void LionCamelKing_FollowsUntilBeat_AndKeepsIndependentSkillCooldowns()
+        {
+            var type = typeof(LionCamelKingEngageState);
+            var preset = new EnemyAiPreset(type, type, () => new LionCamelKingEngageState(),
+                () => new CcLockedState(), () => new DeathState());
+            using var h = new AiHarness(preset, MonkeyParams(desire: 0),
+                [Basic(0), Priority(1, 1, 0, 150, 100f / 24f), Priority(2, 1, 150, 10000, 11)], .5f);
+            h.Agent.Target(new Rect2(199, -1, 2, 2));
+            h.Step(1);
+            Assert.Equal(2, h.Agent.RequestedAttack);
+            h.Agent.IsAttacking = false;
+            h.Step(1);
+            Assert.Equal(1, h.Agent.MoveDir);
+            h.Agent.Target(new Rect2(99, -1, 2, 2));
+            h.Step(30);
+            Assert.False(h.Agent.IsAttacking);
+            Assert.Equal(1, h.Agent.MoveDir);
+            Assert.Equal(0, h.Agent.FaceDir);
+            h.Step(29);
+            Assert.Equal(1, h.Agent.RequestedAttack);
+            h.Agent.IsAttacking = false;
+            h.Step(60);
+            Assert.Equal(0, h.Agent.RequestedAttack);
+            Assert.True(h.Agent.AiData.Cooldowns[1] > 0 && h.Agent.AiData.Cooldowns[2] > 0);
+            h.Agent.IsAttacking = false;
+            h.Agent.Target(new Rect2(99, 300, 2, 2));
+            h.Step(60);
+            Assert.False(h.Agent.IsAttacking);
+        }
 
         private sealed class AttackHarness
         {
@@ -733,57 +819,99 @@ namespace GameLogic.Battle.Tests
                 Data = new EnemyAiData(specs.Count);
                 Preset = preset ?? MonsterAiPresets.Patrol;
             }
-            public void Reset(Func<float> random) => Ai.Reset(Data, Parameters, random);
-            public void Tick(float dt) => Ai.AdvanceCooldowns(Data, dt);
-            public void MarkUsed(int index, Func<float> random) => Ai.MarkUsed(Data, Parameters, index, random);
-            public float GetBasicAttackHorizontalGap(Rect2 target, int dir) => Ai.GetBasicAttackHorizontalGap(Parameters, target, dir);
-            public bool IsBasicAttackInReach(Rect2 target, int dir) => Ai.IsBasicAttackInReach(Parameters, target, dir);
-            public int GetHighestUsableAttackPriority(Rect2 target, int dir) => Ai.GetHighestUsableAttackPriority(Data, Parameters, target, dir);
-            public int SelectAttackByPriority(Rect2 target, int dir, int priority, float roll) => Ai.SelectAttackByPriority(Data, Parameters, target, dir, priority, roll);
-            public int SelectBasicAttack(Rect2 target, int dir, Func<float> random) => Ai.SelectBasicAttack(Data, Parameters, target, dir, random);
+            public void Reset(Func<float> random)
+            {
+                Ai.Reset(Data, Parameters, random);
+            }
+            public void Tick(float dt)
+            {
+                Ai.AdvanceCooldowns(Data, dt);
+            }
+            public void MarkUsed(int index, Func<float> random)
+            {
+                Ai.MarkUsed(Data, Parameters, index, random);
+            }
+            public float GetBasicAttackHorizontalGap(Rect2 target, int dir)
+            {
+                return Ai.GetBasicAttackHorizontalGap(Parameters, target, dir);
+            }
+            public bool IsBasicAttackInReach(Rect2 target, int dir)
+            {
+                return Ai.IsBasicAttackInReach(Parameters, target, dir);
+            }
+            public int GetHighestUsableAttackPriority(Rect2 target, int dir)
+            {
+                return Ai.GetHighestUsableAttackPriority(Data, Parameters, target, dir);
+            }
+            public int SelectAttackByPriority(Rect2 target, int dir, int priority, float roll)
+            {
+                return Ai.SelectAttackByPriority(Data, Parameters, target, dir, priority, roll);
+            }
+            public int SelectBasicAttack(Rect2 target, int dir, Func<float> random)
+            {
+                return Ai.SelectBasicAttack(Data, Parameters, target, dir, random);
+            }
         }
 
         private sealed class FakeAgent : IEnemyAiAgent // 可控感知和确定性随机序列的 AI 测试宿主。
         {
             private readonly float[] m_Randoms; // 测试提供的确定性随机序列。
             private int m_RandomIndex; // 下一随机值的读取索引。
-
-            /// <summary>宿主是否已死亡。</summary>
+            /// <summary>
+            /// 宿主是否已死亡。
+            /// </summary>
             public bool IsDead { get; set; }
-
-            /// <summary>宿主是否处于受控僵直。</summary>
+            /// <summary>
+            /// 宿主是否处于受控僵直。
+            /// </summary>
             public bool IsCcLocked { get; set; }
-
-            /// <summary>宿主是否正在攻击或收招硬直。</summary>
+            /// <summary>
+            /// 宿主是否正在攻击或收招硬直。
+            /// </summary>
             public bool IsAttacking { get; set; }
-
-            /// <summary>测试直接设置的目标判定盒；默认值表示无目标。</summary>
+            /// <summary>
+            /// 测试直接设置的目标判定盒；默认值表示无目标。
+            /// </summary>
             public Rect2 TargetBox { get; set; }
-
-            /// <summary>普通怪测试以目标盒中心表示原点。</summary>
-            public Vector2 TargetOffset => TargetBox.GetCenter();
-
-            /// <summary>宿主相对出生点的水平偏移。</summary>
+            /// <summary>
+            /// 普通怪测试以目标盒中心表示原点。
+            /// </summary>
+            public Vector2 TargetOffset
+            {
+                get
+                {
+                    return TargetBox.GetCenter();
+                }
+            }
+            /// <summary>
+            /// 宿主相对出生点的水平偏移。
+            /// </summary>
             public float PatrolOffsetX { get; set; }
-
-            /// <summary>怪物 AI 参数。</summary>
+            /// <summary>
+            /// 怪物 AI 参数。
+            /// </summary>
             public MonsterConfig Config { get; }
-
-            /// <summary>怪物可用招式及冷却状态。</summary>
+            /// <summary>
+            /// 怪物可用招式及冷却状态。
+            /// </summary>
             public EnemyBodyParams Params { get; }
             public EnemyAiData AiData { get; }
             public EnemyAiPreset AiPreset { get; }
-
-            /// <summary>最近一次移动意图，右为 1、左为 -1、停止为 0。</summary>
+            /// <summary>
+            /// 最近一次移动意图，右为 1、左为 -1、停止为 0。
+            /// </summary>
             public int MoveDir { get; private set; }
-
-            /// <summary>最近一次朝向意图，右为 1、左为 -1。</summary>
+            /// <summary>
+            /// 最近一次朝向意图，右为 1、左为 -1。
+            /// </summary>
             public int FaceDir { get; private set; }
-
-            /// <summary>最近一次攻击请求索引；尚无请求时为 -1。</summary>
+            /// <summary>
+            /// 最近一次攻击请求索引；尚无请求时为 -1。
+            /// </summary>
             public int RequestedAttack { get; private set; } = -1;
-
-            /// <summary>初始化可控感知、招式簿和随机序列。</summary>
+            /// <summary>
+            /// 初始化可控感知、招式簿和随机序列。
+            /// </summary>
             public FakeAgent(MonsterConfig p, AttackHarness attacks, float[] randoms)
             {
                 Config = p;
@@ -792,15 +920,27 @@ namespace GameLogic.Battle.Tests
                 AiPreset = attacks.Preset;
                 m_Randoms = randoms.Length == 0 ? new[] { 0.5f } : randoms;
             }
-            IArchitecture IBelongToArchitecture.GetArchitecture() => BattleArchitecture.Instance;
-
-            /// <summary>设置测试目标判定盒。</summary>
-            public void Target(Rect2 box) => TargetBox = box;
-
-            /// <summary>清除当前测试目标。</summary>
-            public void LoseTarget() => TargetBox = default;
-
-            /// <summary>读取随机序列中的下一值，用尽后重复末值。</summary>
+            IArchitecture IBelongToArchitecture.GetArchitecture()
+            {
+                return BattleArchitecture.Instance;
+            }
+            /// <summary>
+            /// 设置测试目标判定盒。
+            /// </summary>
+            public void Target(Rect2 box)
+            {
+                TargetBox = box;
+            }
+            /// <summary>
+            /// 清除当前测试目标。
+            /// </summary>
+            public void LoseTarget()
+            {
+                TargetBox = default;
+            }
+            /// <summary>
+            /// 读取随机序列中的下一值，用尽后重复末值。
+            /// </summary>
             /// <returns>范围为 0 到 1 的确定性随机值。</returns>
             public float NextRandom()
             {
@@ -808,11 +948,16 @@ namespace GameLogic.Battle.Tests
                 m_RandomIndex++;
                 return v;
             }
-
-            /// <summary>记录 AI 的移动方向意图。</summary>
-            public void Move(int dir) => MoveDir = dir;
-
-            /// <summary>未处于攻击期间时记录 AI 的朝向意图。</summary>
+            /// <summary>
+            /// 记录 AI 的移动方向意图。
+            /// </summary>
+            public void Move(int dir)
+            {
+                MoveDir = dir;
+            }
+            /// <summary>
+            /// 未处于攻击期间时记录 AI 的朝向意图。
+            /// </summary>
             public void Face(int dir)
             {
                 if (!IsAttacking)
@@ -820,8 +965,9 @@ namespace GameLogic.Battle.Tests
                     FaceDir = dir;
                 }
             }
-
-            /// <summary>宿主可攻击时记录请求并标记招式已使用。</summary>
+            /// <summary>
+            /// 宿主可攻击时记录请求并标记招式已使用。
+            /// </summary>
             /// <param name="index">请求的攻击段索引。</param>
             /// <returns>请求被接受时返回 <see langword="true"/>。</returns>
             public bool RequestAttack(int index)
@@ -842,17 +988,33 @@ namespace GameLogic.Battle.Tests
         {
             private readonly FsmManager m_Manager = new FsmManager(); // 驱动测试 AI 状态机的框架管理器。
             private readonly IFsm<IEnemyAiAgent> m_Fsm; // 当前测试使用的 AI 状态机。
-
-            /// <summary>状态机绑定的可控测试宿主。</summary>
+            /// <summary>
+            /// 状态机绑定的可控测试宿主。
+            /// </summary>
             public FakeAgent Agent { get; }
-
-            /// <summary>当前 AI 状态实例。</summary>
-            public AbstractEnemyAiState CurrentState => (AbstractEnemyAiState)m_Fsm.CurrentState;
-
-            /// <summary>当前 AI 状态名称。</summary>
-            public string State => CurrentState.GetType().Name[..^"State".Length];
-
-            /// <summary>创建 AI 状态机并以游荡状态启动。</summary>
+            /// <summary>
+            /// 当前 AI 状态实例。
+            /// </summary>
+            public AbstractEnemyAiState CurrentState
+            {
+                get
+                {
+                    return (AbstractEnemyAiState)m_Fsm.CurrentState;
+                }
+            }
+            /// <summary>
+            /// 当前 AI 状态名称。
+            /// </summary>
+            public string State
+            {
+                get
+                {
+                    return CurrentState.GetType().Name[..^"State".Length];
+                }
+            }
+            /// <summary>
+            /// 创建 AI 状态机并以游荡状态启动。
+            /// </summary>
             public AiHarness(MonsterConfig p, EnemyAttackParams[] specs, params float[] randoms)
             {
                 Agent = new FakeAgent(p, new AttackHarness(specs), randoms);
@@ -867,8 +1029,9 @@ namespace GameLogic.Battle.Tests
                 m_Fsm = m_Manager.CreateFsm<IEnemyAiAgent>(Guid.NewGuid().ToString(), Agent, preset.CreateStates());
                 m_Fsm.Start(preset.IdleStateType);
             }
-
-            /// <summary>按物理帧推进招式冷却和 AI 状态机。</summary>
+            /// <summary>
+            /// 按物理帧推进招式冷却和 AI 状态机。
+            /// </summary>
             /// <param name="frames">推进的物理帧数。</param>
             public void Step(int frames)
             {
@@ -878,15 +1041,17 @@ namespace GameLogic.Battle.Tests
                     m_Manager.Update(Dt, Dt);
                 }
             }
-
-            /// <summary>按秒数换算帧数并推进 AI 状态机。</summary>
+            /// <summary>
+            /// 按秒数换算帧数并推进 AI 状态机。
+            /// </summary>
             /// <param name="seconds">推进时长（秒）。</param>
             public void Run(float seconds)
             {
                 Step((int)Math.Ceiling(seconds / Dt));
             }
-
-            /// <summary>关闭框架状态机管理器。</summary>
+            /// <summary>
+            /// 关闭框架状态机管理器。
+            /// </summary>
             public void Dispose()
             {
                 m_Manager.Shutdown();

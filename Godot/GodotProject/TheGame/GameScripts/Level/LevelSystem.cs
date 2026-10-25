@@ -12,23 +12,44 @@ using GameLogic.Drops;
 
 namespace GameLogic.Level;
 
-/// <summary>关卡业务系统：借用独立注册的 LevelModel 和档案，执行奖励、提交与回滚；不持有节点。</summary>
+/// <summary>
+/// 关卡业务系统：借用独立注册的 LevelModel 和档案，执行奖励、提交与回滚；不持有节点。
+/// </summary>
 public sealed class LevelSystem : AbstractSystem
 {
-    /// <summary>借用 Architecture 拥有的本局状态。</summary>
-    private LevelModel LevelModel => this.GetModel<LevelModel>();
+    /// <summary>
+    /// 借用 Architecture 拥有的本局状态。
+    /// </summary>
+    private LevelModel LevelModel
+    {
+        get
+        {
+            return this.GetModel<LevelModel>();
+        }
+    }
 
-    /// <summary>本次结局提交的检查点写盘任务。</summary>
+    /// <summary>
+    /// 本次结局提交的检查点写盘任务。
+    /// </summary>
     public Task<bool> CheckpointWrite { get; private set; }
 
-    /// <summary>绑定系统归属；模型由流程先行注册。</summary>
+    /// <summary>
+    /// 绑定系统归属；模型由流程先行注册。
+    /// </summary>
     /// <param name="architecture">所属游戏入口。</param>
     public LevelSystem(IArchitecture architecture) : base(architecture) { }
 
-    /// <summary>系统移除时兜底结束未清理的业务事务。</summary>
-    protected override void OnDeinit() => EndSession();
+    /// <summary>
+    /// 系统移除时兜底结束未清理的业务事务。
+    /// </summary>
+    protected override void OnDeinit()
+    {
+        EndSession();
+    }
 
-    /// <summary>按定义初始化本局阶段。</summary>
+    /// <summary>
+    /// 按定义初始化本局阶段。
+    /// </summary>
     /// <param name="levelId">关卡主键。</param>
     public void Prepare(int levelId)
     {
@@ -39,7 +60,9 @@ public sealed class LevelSystem : AbstractSystem
         LevelModel.Sequence = new LevelStageSequence(config.Stages);
     }
 
-    /// <summary>验证出战身份并捕获进关回滚副本。</summary>
+    /// <summary>
+    /// 验证出战身份并捕获进关回滚副本。
+    /// </summary>
     /// <param name="heroId">实际显示的英雄身份。</param>
     public void StartSession(int heroId)
     {
@@ -61,7 +84,9 @@ public sealed class LevelSystem : AbstractSystem
         LevelModel.Outcome.Value = LevelOutcome.Running;
     }
 
-    /// <summary>记录击败并奖励经验，返回表现层是否需要播放升级。</summary>
+    /// <summary>
+    /// 记录击败并奖励经验，返回表现层是否需要播放升级。
+    /// </summary>
     /// <param name="experienceReward">本次配方经验。</param>
     /// <returns>是否至少升了一级。</returns>
     public bool RecordDefeat(int experienceReward)
@@ -74,14 +99,20 @@ public sealed class LevelSystem : AbstractSystem
         return experience > 0 && this.GetSystem<ProfileSystem>().AddExperience(experience) > 0;
     }
 
-    /// <summary>实际拾取时将装备加入本槽背包；结局后拒绝领取，满包不消耗地面物品。</summary>
+    /// <summary>
+    /// 实际拾取时将装备加入本槽背包；结局后拒绝领取，满包不消耗地面物品。
+    /// </summary>
     /// <param name="data">掉落时已抽定属性的装备实例。</param>
     /// <returns>是否完成领取。</returns>
-    public bool TryCollectEquipment(EquipmentData data) =>
-        LevelModel.SessionActive && LevelModel.Outcome.Value == LevelOutcome.Running
+    public bool TryCollectEquipment(EquipmentData data)
+    {
+        return LevelModel.SessionActive && LevelModel.Outcome.Value == LevelOutcome.Running
                             && this.GetSystem<ProfileSystem>().TryCollectEquipment(data);
+    }
 
-    /// <summary>接触地面恢复品时执行其配置效果；满值仍消耗，未开始、死亡及结局后拒绝。</summary>
+    /// <summary>
+    /// 接触地面恢复品时执行其配置效果；满值仍消耗，未开始、死亡及结局后拒绝。
+    /// </summary>
     /// <param name="id">恢复品定义。</param>
     /// <returns>本次已消费恢复品时为真，场景据此回收节点并播放反馈。</returns>
     public bool TryCollectPickup(PickupId id)
@@ -108,7 +139,9 @@ public sealed class LevelSystem : AbstractSystem
         return true;
     }
 
-    /// <summary>本关球体接触后发放收益；场景只确认接触和实例所有权，不执行奖励规则。</summary>
+    /// <summary>
+    /// 本关球体接触后发放收益；场景只确认接触和实例所有权，不执行奖励规则。
+    /// </summary>
     /// <param name="reward">球体在生成时确定的收益，蓝球按接触时的魔法上限计算。</param>
     public void CollectLoot(LootReward reward)
     {
@@ -132,7 +165,9 @@ public sealed class LevelSystem : AbstractSystem
         }
     }
 
-    /// <summary>接收有效游戏帧时间；暂停、结局和未开始的会话不累计。</summary>
+    /// <summary>
+    /// 接收有效游戏帧时间；暂停、结局和未开始的会话不累计。
+    /// </summary>
     /// <param name="delta">本帧游戏秒数。</param>
     public void AdvanceTime(double delta)
     {
@@ -141,21 +176,45 @@ public sealed class LevelSystem : AbstractSystem
             LevelModel.ElapsedSeconds += delta;
     }
 
-    /// <summary>接收场景抵达或触发事实，迁移到战斗并关闭前进窗口。</summary>
+    /// <summary>
+    /// 接收场景抵达或触发事实，迁移到战斗并关闭前进窗口。
+    /// </summary>
     public void StartBattle()
     {
         LevelModel.Sequence.StartBattle();
         LevelModel.TravelAvailable.Value = false;
     }
 
-    /// <summary>接收本波清除事实，推进阶段并更新前进窗口。</summary>
+    /// <summary>
+    /// 接收本波清除事实，推进阶段并更新前进窗口。
+    /// </summary>
     public void ClearBattle()
     {
         LevelModel.Sequence.ClearBattle();
         LevelModel.TravelAvailable.Value = LevelModel.Sequence.Phase == LevelStagePhase.Travelling;
     }
 
-    /// <summary>接受第一个结局；先捕获检查点，再发布冻结成绩。</summary>
+    /// <summary>
+    /// 接收已完成掉落的生成点击败事实；匹配本关出口目标时开放出口。
+    /// </summary>
+    /// <param name="spawnPointId">被击败实体归属的配方生成点。</param>
+    /// <returns>本次是否开放了出口。</returns>
+    public bool TryOpenExit(string spawnPointId)
+    {
+        var config = this.GetModel<ConfigurationModel>().Tables.TbLevelConfig.Get(LevelModel.LevelId);
+        if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
+            LevelModel.Sequence.Phase != LevelStagePhase.Fighting ||
+            LevelModel.Sequence.Current.StageOrder != config.Stages.Count ||
+            string.IsNullOrEmpty(config.ExitTargetSpawnPointId) || config.ExitTargetSpawnPointId != spawnPointId)
+            return false;
+        LevelModel.Sequence.OpenExit();
+        LevelModel.TravelAvailable.Value = false;
+        return true;
+    }
+
+    /// <summary>
+    /// 接受第一个结局；先捕获检查点，再发布冻结成绩。
+    /// </summary>
     /// <param name="outcome">通关或失败。</param>
     /// <param name="healthPercent">结局时生命百分比。</param>
     public void Complete(LevelOutcome outcome, int healthPercent)
@@ -178,7 +237,9 @@ public sealed class LevelSystem : AbstractSystem
         LevelModel.Outcome.Value = outcome;
     }
 
-    /// <summary>未提交时恢复档案，然后结束本局状态；重复结束安全。</summary>
+    /// <summary>
+    /// 未提交时恢复档案，然后结束本局状态；重复结束安全。
+    /// </summary>
     public void EndSession()
     {
         bool abandoned = LevelModel.EntrySnapshot != null;

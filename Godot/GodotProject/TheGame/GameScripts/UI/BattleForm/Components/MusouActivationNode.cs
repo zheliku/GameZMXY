@@ -3,22 +3,29 @@ using GodotGameFramework;
 
 namespace GameLogic.UI.Widgets;
 
-/// <summary>屏幕空间无双演出；原生动画完成时释放自己拥有的暂停，不另配表现秒数。</summary>
+/// <summary>
+/// 屏幕空间无双演出；原生动画完成时释放自己拥有的暂停，不另配表现秒数。
+/// </summary>
 public partial class MusouActivationNode : Control
 {
+    private static readonly StringName m_ActivationAnimation = "activation"; // 播放与完成信号共用的外置动画键。
     [Export] private AnimatedSprite2D m_Animation; // 官方完整画面帧，帧号由外置动画轨道编辑。
     [Export] private AnimationPlayer m_Player; // 原生动画轨道是唯一演出时钟。
     private ulong m_PreviousTick; // 真实时间上次采样点，游戏暂停时仍能推进。
     private bool m_OwnsPause; // 只恢复本演出自己申请的 GGF 暂停。
 
-    /// <summary>连接原生完成信号，默认隐藏并停止。</summary>
+    /// <summary>
+    /// 连接原生完成信号，默认隐藏并停止。
+    /// </summary>
     public override void _Ready()
     {
         m_Player.AnimationFinished += OnAnimationFinished;
         Reset();
     }
 
-    /// <summary>用真实秒推进原生动画，绕过游戏暂停产生的零 delta。</summary>
+    /// <summary>
+    /// 用真实秒推进原生动画，绕过游戏暂停产生的零 delta。
+    /// </summary>
     /// <param name="delta">游戏帧秒数；演出时钟由单调真实时间提供。</param>
     public override void _Process(double delta)
     {
@@ -28,7 +35,9 @@ public partial class MusouActivationNode : Control
         m_Player.Advance(elapsed);
     }
 
-    /// <summary>从首帧播放，暂停时间完全由这段动画的实际长度决定。</summary>
+    /// <summary>
+    /// 从首帧播放，暂停时间完全由这段动画的实际长度决定。
+    /// </summary>
     public void ShowActivation()
     {
         Reset();
@@ -37,13 +46,15 @@ public partial class MusouActivationNode : Control
             GF.Base.PauseGame();
         m_PreviousTick = Time.GetTicksMsec();
         m_Animation.Stop();
-        m_Player.Play("activation");
+        m_Player.Play(m_ActivationAnimation);
         m_Player.Advance(0);
         Visible = true;
         SetProcess(true);
     }
 
-    /// <summary>关闭、改绑、完成或复用时停止演出并对称释放暂停。</summary>
+    /// <summary>
+    /// 关闭、改绑、完成或复用时停止演出并对称释放暂停。
+    /// </summary>
     public void Reset()
     {
         SetProcess(false);
@@ -59,11 +70,13 @@ public partial class MusouActivationNode : Control
             GF.Base.ResumeGame();
     }
 
-    /// <summary>完整演出结束后隐藏并恢复游戏。</summary>
+    /// <summary>
+    /// 完整演出结束后隐藏并恢复游戏。
+    /// </summary>
     /// <param name="animation">原生播放器实际完成的动画名。</param>
     private void OnAnimationFinished(StringName animation)
     {
-        if (animation == "activation")
+        if (animation == m_ActivationAnimation)
             Reset();
     }
 }

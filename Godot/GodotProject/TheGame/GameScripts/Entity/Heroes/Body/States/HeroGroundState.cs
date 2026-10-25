@@ -4,10 +4,14 @@ using GameFramework.Fsm;
 
 namespace GameLogic.Heroes.Body
 {
-    /// <summary>地面走、跑与完整待机循环；攻击、跳跃和离地立即打断。</summary>
+    /// <summary>
+    /// 地面走、跑与完整待机循环；攻击、跳跃和离地立即打断。
+    /// </summary>
     public sealed class HeroGroundState : AbstractHeroBodyState
     {
-        /// <summary>处理地面攻击、跳跃、移动和待机动画。</summary>
+        /// <summary>
+        /// 处理地面攻击、跳跃、移动和待机动画。
+        /// </summary>
         /// <param name="fsm">所属身体状态机。</param>
         /// <param name="body">英雄宿主。</param>
         /// <param name="dt">游戏物理帧秒数。</param>
@@ -23,7 +27,7 @@ namespace GameLogic.Heroes.Body
                 return;
             }
 
-            if (TryJump(body) || IsAirborne(body))
+            if (TryJump(body, dt) || IsAirborne(body))
             {
                 ChangeState<HeroAirState>(fsm);
                 return;

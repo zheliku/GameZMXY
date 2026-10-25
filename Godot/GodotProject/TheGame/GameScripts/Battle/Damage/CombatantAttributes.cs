@@ -7,59 +7,95 @@ namespace GameLogic.Battle.Damage
     /// </summary>
     public enum CombatSide
     {
-        /// <summary>英雄</summary>
+        /// <summary>
+        /// 英雄
+        /// </summary>
         Hero = 0,
 
-        /// <summary>怪物</summary>
+        /// <summary>
+        /// 怪物
+        /// </summary>
         Monster = 1,
     }
 
-    /// <summary>命中结算使用的一方属性快照；攻击方在出招时冻结，防守方在受击时冻结，按值复制。</summary>
+    /// <summary>
+    /// 命中结算使用的一方属性快照；攻击方在出招时冻结，防守方在受击时冻结，按值复制。
+    /// </summary>
     public readonly struct CombatantAttributes
     {
-        /// <summary>来源运行实体编号；场景外的公式计算可为空，不持有节点引用。</summary>
+        /// <summary>
+        /// 来源运行实体编号；场景外的公式计算可为空，不持有节点引用。
+        /// </summary>
         public readonly int? ActorId;
 
-        /// <summary>结算侧别（选常数组用）</summary>
+        /// <summary>
+        /// 结算侧别（选常数组用）
+        /// </summary>
         public readonly CombatSide Side;
 
-        /// <summary>等级（参与等级压制）</summary>
+        /// <summary>
+        /// 等级（参与等级压制）
+        /// </summary>
         public readonly int Level;
 
-        /// <summary>攻击力（乘攻击倍率得到本招威力）</summary>
+        /// <summary>
+        /// 攻击力（乘攻击倍率得到本招威力）
+        /// </summary>
         public readonly int Power;
 
-        /// <summary>物防</summary>
+        /// <summary>
+        /// 物防
+        /// </summary>
         public readonly int Def;
 
-        /// <summary>魔防</summary>
+        /// <summary>
+        /// 魔防
+        /// </summary>
         public readonly int Mdef;
 
-        /// <summary>暴击</summary>
+        /// <summary>
+        /// 暴击
+        /// </summary>
         public readonly float Crit;
 
-        /// <summary>闪避</summary>
+        /// <summary>
+        /// 闪避
+        /// </summary>
         public readonly float Miss;
 
-        /// <summary>幸运（加暴击倍率）</summary>
+        /// <summary>
+        /// 幸运（加暴击倍率）
+        /// </summary>
         public readonly int Lucky;
 
-        /// <summary>韧性（减对方幸运）</summary>
+        /// <summary>
+        /// 韧性（减对方幸运）
+        /// </summary>
         public readonly int Toughness;
 
-        /// <summary>命中（减对方闪避）</summary>
+        /// <summary>
+        /// 命中（减对方闪避）
+        /// </summary>
         public readonly float Htarget;
 
-        /// <summary>暴击抵抗（减对方暴击）</summary>
+        /// <summary>
+        /// 暴击抵抗（减对方暴击）
+        /// </summary>
         public readonly float CritReduce;
 
-        /// <summary>破甲（减对方物防）</summary>
+        /// <summary>
+        /// 破甲（减对方物防）
+        /// </summary>
         public readonly int Ar;
 
-        /// <summary>破魔（减对方魔防）</summary>
+        /// <summary>
+        /// 破魔（减对方魔防）
+        /// </summary>
         public readonly int Sp;
 
-        /// <summary>初始化战斗属性快照。</summary>
+        /// <summary>
+        /// 初始化战斗属性快照。
+        /// </summary>
         /// <param name="side">参与结算的一方。</param>
         /// <param name="level">等级。</param>
         /// <param name="power">攻击力。</param>

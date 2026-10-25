@@ -16,7 +16,9 @@ namespace GameLogic.Enemies.Body
 
         private float m_Left; // 当前招式剩余时长（秒）。
 
-        /// <summary>提交招式、锁定移动并播放对应攻击动画。</summary>
+        /// <summary>
+        /// 提交招式、锁定移动并播放对应攻击动画。
+        /// </summary>
         protected override void Enter(IFsm<IEnemyBody> fsm, IEnemyBody body)
         {
             // 读取后归还池化切换参数，本状态自己初始化动作。
@@ -28,7 +30,9 @@ namespace GameLogic.Enemies.Body
             body.RestartAnim(body.Params.AttackAnims[m_Index]);
         }
 
-        /// <summary>离开攻击状态时清除移动意图并归还攻击包。</summary>
+        /// <summary>
+        /// 离开攻击状态时清除移动意图并归还攻击包。
+        /// </summary>
         protected override void Leave(IFsm<IEnemyBody> fsm, IEnemyBody body, bool isShutdown)
         {
             // 收招、受击打断、死亡、实体隐藏都走这里：动画被切走，攻击包在此归还
@@ -36,7 +40,9 @@ namespace GameLogic.Enemies.Body
             body.EndAttack();
         }
 
-        /// <summary>推进招式计时，到点后进入收招或移动状态。</summary>
+        /// <summary>
+        /// 推进招式计时，到点后进入收招或移动状态。
+        /// </summary>
         protected override void Tick(IFsm<IEnemyBody> fsm, IEnemyBody body, float dt)
         {
             ApplyGravity(body, dt);
@@ -53,7 +59,7 @@ namespace GameLogic.Enemies.Body
                     return;
                 }
 
-                ChangeState<EnemyMoveState>(fsm);
+                ChangeState(fsm, body.MoveStateType);
                 return;
             }
 

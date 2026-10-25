@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 
 
-def generate(scene_path: Path, namespace: str) -> None:
+def generate(scene_path: Path, namespace: str, add_bindings: list[str]) -> None:
     """Keep business partials untouched and derive field types from scene scripts."""
     project = Path(__file__).resolve().parents[2] / "Godot/GodotProject"
     scene = scene_path.read_text(encoding="utf-8")
@@ -18,8 +18,15 @@ def generate(scene_path: Path, namespace: str) -> None:
     binding_header = re.search(r'node_paths=PackedStringArray\((.*?)\)', root_header)[1]
     fields = []
     imported_namespaces = set()
-    for field_name in re.findall(r'"([^"]+)"', binding_header):
-        node_path = re.search(rf'^{re.escape(field_name)} = NodePath\("([^"]+)"\)', root_body, re.M)[1]
+    bindings = {field_name: re.search(rf'^{re.escape(field_name)} = NodePath\("([^"]+)"\)', root_body, re.M)[1]
+                for field_name in re.findall(r'"([^"]+)"', binding_header)}
+    # Bootstrap new exports before Godot can serialize fields from the next C# build.
+    for binding in add_bindings:
+        field_name, node_path = binding.split('=', 1)
+        if field_name in bindings:
+            raise ValueError(f"Binding already exists: {field_name}")
+        bindings[field_name] = node_path
+    for field_name, node_path in bindings.items():
         for header, body in nodes[1:]:
             node_name = re.search(r'name="([^"]+)"', header)[1]
             parent_path = re.search(r'parent="([^"]+)"', header)[1]
@@ -71,5 +78,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("scene", type=Path)
     parser.add_argument("--namespace", default="GameLogic")
+    parser.add_argument("--add-binding", action="append", default=[], metavar="FIELD=NODE_PATH",
+                        help="Generate a new export before the next build; bind and save it in Godot afterwards.")
     args = parser.parse_args()
-    generate(args.scene, args.namespace)
+    generate(args.scene, args.namespace, args.add_binding)

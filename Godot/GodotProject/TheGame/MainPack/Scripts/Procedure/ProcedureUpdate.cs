@@ -36,11 +36,21 @@ public class ProcedureUpdate : ProcedureBase
     private const float VersionFetchTimeoutSeconds = 10f; // 单次版本清单请求超时（秒）。
     private LoadingForm m_LoadingForm; // 当前热更流程使用的加载界面。
 
-    /// <summary>按配置与安装目录可写性选择并创建热更目录。</summary>
-    private string SubpackDir => GetOrCreateHotUpdateDir();
+    /// <summary>
+    /// 按配置与安装目录可写性选择并创建热更目录。
+    /// </summary>
+    private string SubpackDir
+    {
+        get
+        {
+            return GetOrCreateHotUpdateDir();
+        }
+    }
 
 
-    /// <summary>执行版本检查、完整性校验、下载和子包加载。</summary>
+    /// <summary>
+    /// 执行版本检查、完整性校验、下载和子包加载。
+    /// </summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal override async void OnEnter(ProcedureOwner procedureOwner)
     {
@@ -73,7 +83,9 @@ public class ProcedureUpdate : ProcedureBase
         }
     }
 
-    /// <summary>选择并确保存在热更子包目录。</summary>
+    /// <summary>
+    /// 选择并确保存在热更子包目录。
+    /// </summary>
     /// <returns>已创建且可写的子包目录。</returns>
     private string GetOrCreateHotUpdateDir()
     {
@@ -104,7 +116,9 @@ public class ProcedureUpdate : ProcedureBase
         return userSubpackDir;
     }
 
-    /// <summary>通过临时文件检查目录是否可写。</summary>
+    /// <summary>
+    /// 通过临时文件检查目录是否可写。
+    /// </summary>
     /// <param name="path">要检测的目录。</param>
     /// <returns>临时文件创建和删除均成功时返回 true。</returns>
     private bool IsDirectoryWritable(string path)
@@ -125,7 +139,9 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 主流程 ──
 
-    /// <summary>执行版本检查、完整性校验、下载和子包加载。</summary>
+    /// <summary>
+    /// 执行版本检查、完整性校验、下载和子包加载。
+    /// </summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     /// <returns>更新或转入预加载的任务。</returns>
     private async Task RunUpdateFlowAsync(ProcedureOwner procedureOwner)
@@ -358,7 +374,9 @@ public class ProcedureUpdate : ProcedureBase
         }
     }
 
-    /// <summary>显示强制更新对话框并等待用户选择。</summary>
+    /// <summary>
+    /// 显示强制更新对话框并等待用户选择。
+    /// </summary>
     /// <param name="message">必须更新的原因。</param>
     /// <returns>选择重试时为 true，选择退出时为 false。</returns>
     private async Task<bool> ShowForceUpdateDialogAsync(string message)
@@ -382,7 +400,9 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 版本比对 ──
 
-    /// <summary>校验本地子包并移除损坏或缺失的清单项。</summary>
+    /// <summary>
+    /// 校验本地子包并移除损坏或缺失的清单项。
+    /// </summary>
     /// <param name="localVersion">待校验并更新的本地包清单。</param>
     /// <returns>损坏或缺失的包数量。</returns>
     private async Task<int> VerifyLocalPackIntegrityAsync(PackVersionList localVersion)
@@ -460,7 +480,9 @@ public class ProcedureUpdate : ProcedureBase
         return damaged;
     }
 
-    /// <summary>比对本机与服务器版本并生成待下载包列表。</summary>
+    /// <summary>
+    /// 比对本机与服务器版本并生成待下载包列表。
+    /// </summary>
     /// <param name="server">服务器包清单。</param>
     /// <param name="local">本地包清单。</param>
     /// <returns>需要下载的包与 URL 列表。</returns>
@@ -514,7 +536,9 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 下载逻辑 ──
 
-    /// <summary>并发下载并校验所有待更新包，汇总进度。</summary>
+    /// <summary>
+    /// 并发下载并校验所有待更新包，汇总进度。
+    /// </summary>
     /// <param name="packs">待下载的包与 URL。</param>
     /// <returns>成功下载的包数量。</returns>
     private async Task<int> DownloadPacksWithProgressAsync(
@@ -602,7 +626,9 @@ public class ProcedureUpdate : ProcedureBase
         return downloaded;
     }
 
-    /// <summary>下载单个包并在失败时按策略重试。</summary>
+    /// <summary>
+    /// 下载单个包并在失败时按策略重试。
+    /// </summary>
     /// <param name="pack">下载配置与预期哈希。</param>
     /// <param name="url">下载地址。</param>
     /// <param name="savePath">本地输出路径。</param>
@@ -655,7 +681,9 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 版本文件请求 ──
 
-    /// <summary>请求并校验服务器版本清单，失败时退避重试。</summary>
+    /// <summary>
+    /// 请求并校验服务器版本清单，失败时退避重试。
+    /// </summary>
     /// <param name="versionUrl">版本清单地址。</param>
     /// <returns>已通过基础校验的清单；重试耗尽时为空。</returns>
     private async Task<PackVersionList> FetchVersionWithRetryAsync(string versionUrl)
@@ -710,7 +738,9 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 子包加载 ──
 
-    /// <summary>校验并按 Config 到 Resource 顺序加载已下载子包。</summary>
+    /// <summary>
+    /// 校验并按 Config 到 Resource 顺序加载已下载子包。
+    /// </summary>
     /// <param name="version">确定加载顺序的版本清单。</param>
     /// <returns>子包加载任务。</returns>
     private async Task LoadDownloadedPacksAsync(PackVersionList version)
@@ -802,7 +832,9 @@ public class ProcedureUpdate : ProcedureBase
             loaded, version.Packs.Length, failed);
     }
 
-    /// <summary>删除热更目录中不属于当前清单的旧子包。</summary>
+    /// <summary>
+    /// 删除热更目录中不属于当前清单的旧子包。
+    /// </summary>
     /// <param name="version">仍需保留的包清单。</param>
     private void CleanStalePacks(PackVersionList version)
     {
@@ -832,7 +864,9 @@ public class ProcedureUpdate : ProcedureBase
         }
     }
 
-    /// <summary>使用版本备份文件回退当前版本清单。</summary>
+    /// <summary>
+    /// 使用版本备份文件回退当前版本清单。
+    /// </summary>
     private void RollbackVersionFile()
     {
         try
@@ -856,7 +890,9 @@ public class ProcedureUpdate : ProcedureBase
 
     // ── 工具方法 ──
 
-    /// <summary>在 Package 模式加载安装目录中的本地子包清单。</summary>
+    /// <summary>
+    /// 在 Package 模式加载安装目录中的本地子包清单。
+    /// </summary>
     /// <returns>安装目录中本地子包加载任务。</returns>
     private async Task TryLoadLocalSubpackagesAsync()
     {
@@ -896,7 +932,9 @@ public class ProcedureUpdate : ProcedureBase
         }
     }
 
-    /// <summary>判断版本请求是否返回可解析的成功响应。</summary>
+    /// <summary>
+    /// 判断版本请求是否返回可解析的成功响应。
+    /// </summary>
     /// <param name="result">框架 HTTP 请求结果。</param>
     /// <returns>请求成功且响应内容非空时为 true。</returns>
     private bool IsHttpSuccess(WebRequestCompleteEventArgs result)
@@ -912,7 +950,9 @@ public class ProcedureUpdate : ProcedureBase
         return true;
     }
 
-    /// <summary>加载可用本地子包后进入预加载流程。</summary>
+    /// <summary>
+    /// 加载可用本地子包后进入预加载流程。
+    /// </summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     /// <returns>加载本地子包并切入预加载的任务。</returns>
     private async Task SkipToNextAsync(ProcedureOwner procedureOwner)

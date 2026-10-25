@@ -3,7 +3,9 @@ using GameConfig.Equipment;
 
 namespace GameLogic.Heroes;
 
-/// <summary>共用定位网格的独立身体、武器图集；武器透明区保留每帧原始遮挡。</summary>
+/// <summary>
+/// 共用定位网格的独立身体、武器图集；武器透明区保留每帧原始遮挡。
+/// </summary>
 [Tool, GlobalClass]
 public partial class HeroAppearanceResource : Resource
 {
@@ -12,7 +14,9 @@ public partial class HeroAppearanceResource : Resource
     [Export] private Texture2D m_BaseWeapon; // 默认木棍，已裁掉被身体前景遮挡的部分。
     [Export] private Godot.Collections.Dictionary<EquipmentId, Texture2D> m_WeaponTextures = new(); // 武器独立图集，保留身体遮挡的透明区。
 
-    /// <summary>按穿戴状态替换纹理，保留帧号、朝向及动画播放位置。</summary>
+    /// <summary>
+    /// 按穿戴状态替换纹理，保留帧号、朝向及动画播放位置。
+    /// </summary>
     /// <param name="body">身体表现层。</param>
     /// <param name="weapon">武器表现层，绘制在身体层上方。</param>
     /// <param name="weaponId">当前武器身份，None 使用默认木棍。</param>

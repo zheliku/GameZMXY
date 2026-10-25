@@ -1,0 +1,114 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://cdhjjyiuyd10b"]
+
+[ext_resource type="Texture2D" uid="uid://48q8lotx0xbt" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_04_bat_cave/bat_cave_statue_body.png" id="1_jjjo0"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_63clg"]
+atlas = ExtResource("1_jjjo0")
+region = Rect2(265, 0, 265, 222)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1qc3i"]
+atlas = ExtResource("1_jjjo0")
+region = Rect2(530, 0, 265, 222)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_oncat"]
+atlas = ExtResource("1_jjjo0")
+region = Rect2(0, 0, 265, 222)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63clg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1qc3i")
+}],
+"loop": 0,
+"name": &"death",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_oncat")
+}],
+"loop": 0,
+"name": &"hurt",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_oncat")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 24.0
+}]

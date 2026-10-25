@@ -8,7 +8,9 @@ namespace GameLogic.Enemies.AI
     /// </summary>
     public abstract class AbstractEnemyAiState : FsmState<IEnemyAiAgent>
     {
-        /// <summary>进入时执行框架流程并调用 AI 状态进入钩子。</summary>
+        /// <summary>
+        /// 进入时执行框架流程并调用 AI 状态进入钩子。
+        /// </summary>
         /// <param name="fsm">本敌人实例拥有的 AI 状态机。</param>
         protected internal sealed override void OnEnter(IFsm<IEnemyAiAgent> fsm)
         {
@@ -16,7 +18,9 @@ namespace GameLogic.Enemies.AI
             Enter(fsm.Owner);
         }
 
-        /// <summary>按死亡、受控优先级处理打断，再推进 AI 状态决策。</summary>
+        /// <summary>
+        /// 按死亡、受控优先级处理打断，再推进 AI 状态决策。
+        /// </summary>
         /// <param name="fsm">本敌人实例拥有的 AI 状态机。</param>
         /// <param name="elapseSeconds">本帧游戏秒数。</param>
         /// <param name="realElapseSeconds">本帧实际秒数。</param>
@@ -44,7 +48,9 @@ namespace GameLogic.Enemies.AI
             Tick(fsm, agent, elapseSeconds);
         }
 
-        /// <summary>进入本状态（默认停步）。</summary>
+        /// <summary>
+        /// 进入本状态（默认停步）。
+        /// </summary>
         /// <param name="agent">提供感知与意图的敌人实例。</param>
         protected virtual void Enter(IEnemyAiAgent agent)
         {
@@ -52,7 +58,9 @@ namespace GameLogic.Enemies.AI
         }
 
 
-        /// <summary>未被打断时的本状态决策（elapseSeconds 为逻辑时间）。</summary>
+        /// <summary>
+        /// 未被打断时的本状态决策（elapseSeconds 为逻辑时间）。
+        /// </summary>
         /// <param name="fsm">本敌人实例拥有的 AI 状态机。</param>
         /// <param name="agent">提供感知与意图的敌人实例。</param>
         /// <param name="elapseSeconds">本帧游戏秒数。</param>

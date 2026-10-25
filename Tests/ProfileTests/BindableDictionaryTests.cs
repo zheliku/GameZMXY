@@ -4,11 +4,14 @@ using GameLogic.Architecture;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>泛型字典各写入路径的通知、比较规则与订阅优先级。</summary>
+/// <summary>
+/// 泛型字典各写入路径的通知、比较规则与订阅优先级。
+/// </summary>
 public sealed class BindableDictionaryTests
 {
-    /// <summary>索引新增、替换、接口新增、条件删除和清空都经过通知。</summary>
+    /// <summary>
+    /// 索引新增、替换、接口新增、条件删除和清空都经过通知。
+    /// </summary>
     [Fact]
     public void Dictionary_AllGenericWritePathsNotify()
     {
@@ -31,8 +34,9 @@ public sealed class BindableDictionaryTests
         writable.Clear();
         Assert.Equal(new[] { "add:a:1", "count:1", "replace:a:1", "add:b:2", "count:2", "remove:a:1", "count:1", "clear", "count:0", "clear" }, events);
     }
-
-    /// <summary>构造和转换复制输入，同时保留键比较器。</summary>
+    /// <summary>
+    /// 构造和转换复制输入，同时保留键比较器。
+    /// </summary>
     [Fact]
     public void Dictionary_CopiesInputAndPreservesComparer()
     {
@@ -50,8 +54,9 @@ public sealed class BindableDictionaryTests
         Assert.Single(dictionary.Values);
         Assert.False(dictionary.IsReadOnly);
     }
-
-    /// <summary>整表绑定为单参数、实时只读视图，优先级默认零。</summary>
+    /// <summary>
+    /// 整表绑定为单参数、实时只读视图，优先级默认零。
+    /// </summary>
     [Fact]
     public void Dictionary_BindingOrdersPrioritiesAndProtectsView()
     {
@@ -75,8 +80,9 @@ public sealed class BindableDictionaryTests
         dictionary.Remove(1);
         Assert.Equal(new[] { "system", "ui2" }, calls);
     }
-
-    /// <summary>失败的初始化不会遗留订阅。</summary>
+    /// <summary>
+    /// 失败的初始化不会遗留订阅。
+    /// </summary>
     [Fact]
     public void Dictionary_FailedInitializationRemovesCallback()
     {

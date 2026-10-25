@@ -1,0 +1,18 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://57holtaij20o"]
+
+[ext_resource type="Texture2D" uid="uid://c85m6j6dljbdg" path="res://TheGame/Sprites/Characters/Heroes/Status/poison_head.png" id="1_2t7xr"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mqy2c"]
+atlas = ExtResource("1_2t7xr")
+region = Rect2(0, 0, 41, 53)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mqy2c")
+}],
+"loop": 1,
+"name": &"play",
+"speed": 24.0
+}]

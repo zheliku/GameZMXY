@@ -18,7 +18,9 @@ namespace GameLogic.Enemies.AI
         /// </summary>
         public const float ReachMargin = 4f;
 
-        /// <summary>重置本怪物的意图、请求及招式初始冷却。</summary>
+        /// <summary>
+        /// 重置本怪物的意图、请求及招式初始冷却。
+        /// </summary>
         /// <param name="data">本怪物拥有的 AI 数据。</param>
         /// <param name="parameters">同类怪物共享的攻击参数。</param>
         /// <param name="random">本怪物的随机源。</param>
@@ -33,7 +35,9 @@ namespace GameLogic.Enemies.AI
             }
         }
 
-        /// <summary>推进本怪物招式冷却并截断到零。</summary>
+        /// <summary>
+        /// 推进本怪物招式冷却并截断到零。
+        /// </summary>
         /// <param name="data">本怪物拥有的 AI 数据。</param>
         /// <param name="elapseSeconds">本帧游戏秒数。</param>
         public void AdvanceCooldowns(EnemyAiData data, float elapseSeconds)
@@ -45,7 +49,9 @@ namespace GameLogic.Enemies.AI
             }
         }
 
-        /// <summary>标记招式已使用，并按其冷却区间重新计时。</summary>
+        /// <summary>
+        /// 标记招式已使用，并按其冷却区间重新计时。
+        /// </summary>
         /// <param name="data">本怪物拥有的 AI 数据。</param>
         /// <param name="parameters">共享攻击参数。</param>
         /// <param name="index">已使用的攻击下标。</param>
@@ -80,7 +86,9 @@ namespace GameLogic.Enemies.AI
             return best;
         }
 
-        /// <summary>检查是否有有效普攻够得着目标，包含高度，不检查冷却。</summary>
+        /// <summary>
+        /// 检查是否有有效普攻够得着目标，包含高度，不检查冷却。
+        /// </summary>
         /// <param name="parameters">同类怪物共享的攻击参数。</param>
         /// <param name="target">相对怪物原点的目标受击盒。</param>
         /// <param name="dir">面向目标的方向，左为 -1，右为 1。</param>
@@ -98,7 +106,9 @@ namespace GameLogic.Enemies.AI
             return false;
         }
 
-        /// <summary>返回当前目标可用的最高优先级，没招可用时返回 -1。</summary>
+        /// <summary>
+        /// 返回当前目标可用的最高优先级，没招可用时返回 -1。
+        /// </summary>
         /// <param name="data">本怪物独占的冷却数据。</param>
         /// <param name="parameters">同类怪物共享的攻击参数。</param>
         /// <param name="target">相对怪物原点的目标受击盒。</param>
@@ -118,7 +128,9 @@ namespace GameLogic.Enemies.AI
             return best == 0 ? -1 : best;
         }
 
-        /// <summary>按给定优先级和随机值加权选择招式。</summary>
+        /// <summary>
+        /// 按给定优先级和随机值加权选择招式。
+        /// </summary>
         /// <param name="data">本怪物独占的冷却数据。</param>
         /// <param name="parameters">同类怪物共享的攻击参数。</param>
         /// <param name="target">相对怪物原点的目标受击盒。</param>
@@ -131,7 +143,9 @@ namespace GameLogic.Enemies.AI
             return priority <= 0 ? -1 : PickWeighted(data, parameters, target, dir, roll, priority);
         }
 
-        /// <summary>从可用普攻按权重抽取；无候选不取随机值。</summary>
+        /// <summary>
+        /// 从可用普攻按权重抽取；无候选不取随机值。
+        /// </summary>
         /// <param name="data">本怪物独占的冷却数据。</param>
         /// <param name="parameters">同类怪物共享的攻击参数。</param>
         /// <param name="target">相对怪物原点的目标受击盒。</param>
@@ -143,7 +157,9 @@ namespace GameLogic.Enemies.AI
             return PickWeighted(data, parameters, target, dir, random, 0);
         }
 
-        /// <summary>从指定优先级的可用招式中按权重选择。</summary>
+        /// <summary>
+        /// 从指定优先级的可用招式中按权重选择。
+        /// </summary>
         /// <param name="data">本怪物独占的冷却数据。</param>
         /// <param name="parameters">同类怪物共享的攻击参数。</param>
         /// <param name="target">目标相对怪物的受击盒。</param>
@@ -188,7 +204,9 @@ namespace GameLogic.Enemies.AI
             return last; // roll 恰为 1 的浮点边界落到最后一个候选
         }
 
-        /// <summary>确认有候选后取一次随机值并执行加权选择。</summary>
+        /// <summary>
+        /// 确认有候选后取一次随机值并执行加权选择。
+        /// </summary>
         /// <param name="data">本怪物独占的冷却数据。</param>
         /// <param name="parameters">同类怪物共享的攻击参数。</param>
         /// <param name="target">目标相对怪物的受击盒。</param>
@@ -210,7 +228,9 @@ namespace GameLogic.Enemies.AI
             return -1;
         }
 
-        /// <summary>判断招式是否有权重、冷却结束且当前可命中。</summary>
+        /// <summary>
+        /// 判断招式是否有权重、冷却结束且当前可命中。
+        /// </summary>
         /// <param name="data">本怪物独占的冷却数据。</param>
         /// <param name="parameters">同类怪物共享的攻击参数。</param>
         /// <param name="i">攻击参数列表下标。</param>
@@ -223,7 +243,9 @@ namespace GameLogic.Enemies.AI
                    InReach(parameters.Attacks[i], target, dir);
         }
 
-        /// <summary>判断招式是否配置了判定盒或远程范围。</summary>
+        /// <summary>
+        /// 判断招式是否配置了判定盒或远程范围。
+        /// </summary>
         /// <param name="spec">一招的共享攻击参数。</param>
         /// <returns>是否满足攻击条件。</returns>
         private static bool HasReachOrRange(EnemyAttackParams spec)
@@ -231,7 +253,9 @@ namespace GameLogic.Enemies.AI
             return spec.Reach.HasArea() || spec.Range.Max > 0f;
         }
 
-        /// <summary>判断目标是否同时满足水平重叠和近战高度条件。</summary>
+        /// <summary>
+        /// 判断目标是否同时满足水平重叠和近战高度条件。
+        /// </summary>
         /// <param name="spec">一招的共享攻击参数。</param>
         /// <param name="target">目标相对怪物的受击盒。</param>
         /// <param name="dir">面向目标的方向，左 -1、右 1。</param>
@@ -242,7 +266,9 @@ namespace GameLogic.Enemies.AI
                    (!spec.Reach.HasArea() || spec.Reach.Facing(dir).GapY(target) < 0f);
         }
 
-        /// <summary>计算近战盒间隙或远程范围距离。</summary>
+        /// <summary>
+        /// 计算近战盒间隙或远程范围距离。
+        /// </summary>
         /// <param name="spec">一招的共享攻击参数。</param>
         /// <param name="target">目标相对怪物的受击盒。</param>
         /// <param name="dir">面向目标的方向，左 -1、右 1。</param>
@@ -259,7 +285,9 @@ namespace GameLogic.Enemies.AI
                 distance > spec.Range.Max ? distance - spec.Range.Max : float.NegativeInfinity;
         }
 
-        /// <summary>按外部攻击下标查找规格数组位置。</summary>
+        /// <summary>
+        /// 按外部攻击下标查找规格数组位置。
+        /// </summary>
         /// <param name="parameters">同类怪物共享的攻击参数。</param>
         /// <param name="index">实体攻击下标。</param>
         /// <returns>攻击参数下标或选定的招式下标；没有候选时为 -1。</returns>
@@ -271,7 +299,9 @@ namespace GameLogic.Enemies.AI
             return -1;
         }
 
-        /// <summary>按区间配置采样冷却，定值区间不消费随机源。</summary>
+        /// <summary>
+        /// 按区间配置采样冷却，定值区间不消费随机源。
+        /// </summary>
         /// <param name="range">以秒表示的区间。</param>
         /// <param name="random">本怪物的随机源。</param>
         /// <returns>水平间隙像素，或按区间采样的冷却秒数。</returns>

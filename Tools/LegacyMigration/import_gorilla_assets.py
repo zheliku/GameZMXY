@@ -22,7 +22,7 @@ def import_gorilla():
               'attack_1': ('Hit', 4, 1 / 15, (-35, -17)),
               'hurt': ('Hurt', 1, .28, (0, -10)),
               'death': ('Death', 4, 1 / 12, (-14, 4))}
-    folder = GAME / 'Sprites/Characters/Enemies/Monsters/gorilla'
+    folder = GAME / 'Sprites/Characters/Enemies/Monsters/Ground/gorilla'
     folder.mkdir(parents=True, exist_ok=True)
     sprite_anims, library_anims, shapes = [], [], {}
     for name, (old_name, count, duration, offset) in sheets.items():
@@ -56,7 +56,7 @@ def import_gorilla():
     reset['tracks'] = [(path, kind, [values[0]]) for path, kind, values in reset['tracks']]
     library_anims.append(reset)
     anim.emit_spriteframes(str(folder / 'gorilla_animations.tres'), sprite_anims)
-    anim.emit_anim_library(str(GAME / 'Entitys/Animations/Enemies/Monsters/gorilla_anim_library.tres'), library_anims, shapes)
+    anim.emit_anim_library(str(GAME / 'Entitys/Animations/Enemies/Monsters/Ground/gorilla/gorilla_anim_library.tres'), library_anims, shapes)
 
 
 def import_boss_name_font():

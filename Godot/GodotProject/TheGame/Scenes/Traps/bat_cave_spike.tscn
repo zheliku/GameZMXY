@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://dre7wlc12sutg"]
+
+[ext_resource type="Script" uid="uid://p13m3k2re1id" path="res://TheGame/GameScripts/Level/Traps/BatCaveSpikeNode.cs" id="1_dngwx"]
+[ext_resource type="SpriteFrames" uid="uid://bb13e6pcj34y4" path="res://TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_spike_frames.tres" id="2_q2nwm"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mjv3q"]
+size = Vector2(30, 58)
+
+[node name="BatCaveSpike" type="Area2D" unique_id=845648522 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay")]
+collision_layer = 0
+collision_mask = 128
+monitorable = false
+script = ExtResource("1_dngwx")
+m_Sprite = NodePath("Sprite")
+m_Shape = NodePath("CollisionShape2D")
+m_TriggerRay = NodePath("Trigger")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=2008937349]
+sprite_frames = ExtResource("2_q2nwm")
+animation = &"spike"
+offset = Vector2(1.45, 0.925)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=662963244]
+position = Vector2(1.45, 0.925)
+shape = SubResource("RectangleShape2D_mjv3q")
+
+[node name="Trigger" type="RayCast2D" parent="." unique_id=403902747]
+position = Vector2(1.45, 0)
+target_position = Vector2(0, 1000)
+collision_mask = 128
+collide_with_areas = true
+collide_with_bodies = false

@@ -21,21 +21,21 @@ const CHARACTERS := [
 		"required": ["RESET", "idle1", "walk", "run", "jump", "jump_2", "fall", "hurt", "death"],
 	},
 	{
-		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/huaguoshan_monkey_anim_library.tres",
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_anim_library.tres",
 		"name": "花果山猴子",
-		"scene": "res://TheGame/Entitys/Enemies/Monsters/huaguoshan_monkey_entity.tscn",
+		"scene": "res://TheGame/Entitys/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_entity.tscn",
 		"required": ["idle", "run", "hurt", "death"],
 	},
 	{
-		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/demon_monkey_anim_library.tres",
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/demon_monkey/demon_monkey_anim_library.tres",
 		"name": "妖猴",
-		"scene": "res://TheGame/Entitys/Enemies/Monsters/demon_monkey_entity.tscn",
+		"scene": "res://TheGame/Entitys/Enemies/Monsters/Ground/demon_monkey/demon_monkey_entity.tscn",
 		"required": ["idle", "run", "hurt", "death"],
 	},
 	{
-		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/gorilla_anim_library.tres",
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/gorilla/gorilla_anim_library.tres",
 		"name": "大猩猩",
-		"scene": "res://TheGame/Entitys/Enemies/Monsters/gorilla_entity.tscn",
+		"scene": "res://TheGame/Entitys/Enemies/Monsters/Ground/gorilla/gorilla_entity.tscn",
 		"required": ["idle", "run", "hurt", "death"],
 	},
 	{
@@ -48,6 +48,37 @@ const CHARACTERS := [
 		"lib": "res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_library.tres",
 		"name": "禺狨王",
 		"scene": "res://TheGame/Entitys/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_entity.tscn",
+		"required": ["idle", "run", "hurt", "death"],
+	},
+	{
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/Sky/bat/bat_library.tres",
+		"name": "蝙蝠",
+		"scene": "res://TheGame/Entitys/Enemies/Monsters/Sky/bat/bat_entity.tscn",
+		"required": ["idle", "run", "hurt", "death"],
+	},
+	{
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/cave_brute/cave_brute_library.tres",
+		"name": "蛮力怪",
+		"scene": "res://TheGame/Entitys/Enemies/Monsters/Ground/cave_brute/cave_brute_entity.tscn",
+		"required": ["idle", "run", "hurt", "death"],
+	},
+	{
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/knife_demon/knife_demon_library.tres",
+		"name": "飞刀魔",
+		"scene": "res://TheGame/Entitys/Enemies/Monsters/Ground/knife_demon/knife_demon_entity.tscn",
+		"required": ["idle", "run", "hurt", "death"],
+	},
+	{
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_04_bat_cave/bat_cave_statue_library.tres",
+		"name": "蝙蝠石像",
+		"scene": "res://TheGame/Entitys/Enemies/Bosses/zm1_04_bat_cave/bat_cave_statue_entity.tscn",
+		"required": ["idle", "hurt", "death"],
+		"has_attacks": false,
+	},
+	{
+		"lib": "res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_library.tres",
+		"name": "狮驼王",
+		"scene": "res://TheGame/Entitys/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_entity.tscn",
 		"required": ["idle", "run", "hurt", "death"],
 	},
 ]
@@ -82,7 +113,7 @@ func _validate(ch: Dictionary, lib: AnimationLibrary) -> bool:
 	for anim in anims:
 		if String(anim).begins_with("attack_"):
 			max_index = maxi(max_index, int(String(anim).substr(7)))
-	if max_index == 0:
+	if max_index == 0 and ch.get("has_attacks", true):
 		push_error("%s 动画库没有 attack_<i> 动画" % String(ch.name))
 		ok = false
 	for i in range(1, max_index + 1):

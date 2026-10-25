@@ -3,13 +3,16 @@
 [ext_resource type="PackedScene" path="res://TheGame/Entitys/Heroes/Wukong/wukong_blazing_flash_trail_effect.tscn" id="1_q64rm"]
 [ext_resource type="PackedScene" path="res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_combo_effect.tscn" id="2_g0iia"]
 [ext_resource type="PackedScene" uid="uid://b5gc20phhdixl" path="res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_descent_effect.tscn" id="3_f7yt5"]
-[ext_resource type="PackedScene" path="res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_landing_effect.tscn" id="4_ib4tm"]
+[ext_resource type="PackedScene" uid="uid://cyi8c6prwk4x5" path="res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_landing_effect.tscn" id="4_ib4tm"]
 
-[sub_resource type="RectangleShape2D" id="rest"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_opxlh"]
 size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="blazing_flash_hit_2"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fi5d0"]
 size = Vector2(165, 105)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mdwh2"]
+size = Vector2(186, 105)
 
 [sub_resource type="Animation" id="blazing_flash"]
 resource_name = "blazing_flash"
@@ -21,10 +24,10 @@ tracks/0/path = NodePath("m_Body:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.083333336, 0.375, 0.45833334),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 1,
-"values": [90, 90, 91, 91, 91, 91, 91, 91, 91, 92, 92, 93]
+"values": [90, 91, 92, 93]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -33,10 +36,10 @@ tracks/1/path = NodePath("m_Weapon:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.083333336, 0.375, 0.45833334),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 1,
-"values": [90, 90, 91, 91, 91, 91, 91, 91, 91, 92, 92, 93]
+"values": [90, 91, 92, 93]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -105,10 +108,10 @@ tracks/7/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:shape")
 tracks/7/interp = 1
 tracks/7/loop_wrap = true
 tracks/7/keys = {
-"times": PackedFloat32Array(0, 0.083333336),
-"transitions": PackedFloat32Array(1, 1),
+"times": PackedFloat32Array(0, 0.083333336, 0.375),
+"transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
-"values": [SubResource("rest"), SubResource("blazing_flash_hit_2")]
+"values": [SubResource("RectangleShape2D_opxlh"), SubResource("RectangleShape2D_fi5d0"), SubResource("RectangleShape2D_mdwh2")]
 }
 tracks/8/type = "value"
 tracks/8/imported = false
@@ -117,10 +120,10 @@ tracks/8/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:position")
 tracks/8/interp = 1
 tracks/8/loop_wrap = true
 tracks/8/keys = {
-"times": PackedFloat32Array(0, 0.083333336),
-"transitions": PackedFloat32Array(1, 1),
+"times": PackedFloat32Array(0, 0.083333336, 0.375),
+"transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
-"values": [Vector2(0, 0), Vector2(1, 28)]
+"values": [Vector2(0, 0), Vector2(1, 28), Vector2(-9.5, 28)]
 }
 tracks/9/type = "value"
 tracks/9/imported = false
@@ -132,7 +135,7 @@ tracks/9/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [0]
+"values": [0.0]
 }
 tracks/10/type = "method"
 tracks/10/imported = false
@@ -172,13 +175,16 @@ tracks/11/keys = {
 }]
 }
 
+[sub_resource type="RectangleShape2D" id="rest"]
+size = Vector2(1, 1)
+
 [sub_resource type="Animation" id="fire_demon_slash"]
 resource_name = "fire_demon_slash"
 length = 2.916666667
 markers = [{
 "color": Color(1, 1, 1, 1),
 "name": &"descent",
-"time": 1.9166666666666667
+"time": 1.9166666
 }, {
 "color": Color(1, 1, 1, 1),
 "name": &"recovery",
@@ -191,10 +197,10 @@ tracks/0/path = NodePath("m_Body:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334, 0.5, 0.5416667, 0.5833333, 0.625, 0.6666667, 0.7083333, 0.75, 0.7916667, 0.8333333, 0.875, 0.9166667, 0.9583333, 1, 1.0416666, 1.0833334, 1.125, 1.1666666, 1.2083334, 1.25, 1.2916666, 1.3333334, 1.375, 1.4166666, 1.4583334, 1.5, 1.5416666, 1.5833334, 1.625, 1.6666666, 1.7083334, 1.75, 1.7916666, 1.8333334, 1.875, 1.9166666, 1.9583334, 2, 2.0416667, 2.0833333, 2.125, 2.1666667, 2.2083333, 2.25, 2.2916667, 2.3333333, 2.375, 2.4166667, 2.4583333, 2.5, 2.5416667, 2.5833333, 2.625, 2.6666667, 2.7083333, 2.75, 2.7916667, 2.8333333, 2.875),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.083333336),
+"transitions": PackedFloat32Array(1, 1),
 "update": 1,
-"values": [100, 100, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91]
+"values": [100, 91]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -203,10 +209,10 @@ tracks/1/path = NodePath("m_Weapon:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334, 0.5, 0.5416667, 0.5833333, 0.625, 0.6666667, 0.7083333, 0.75, 0.7916667, 0.8333333, 0.875, 0.9166667, 0.9583333, 1, 1.0416666, 1.0833334, 1.125, 1.1666666, 1.2083334, 1.25, 1.2916666, 1.3333334, 1.375, 1.4166666, 1.4583334, 1.5, 1.5416666, 1.5833334, 1.625, 1.6666666, 1.7083334, 1.75, 1.7916666, 1.8333334, 1.875, 1.9166666, 1.9583334, 2, 2.0416667, 2.0833333, 2.125, 2.1666667, 2.2083333, 2.25, 2.2916667, 2.3333333, 2.375, 2.4166667, 2.4583333, 2.5, 2.5416667, 2.5833333, 2.625, 2.6666667, 2.7083333, 2.75, 2.7916667, 2.8333333, 2.875),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.083333336),
+"transitions": PackedFloat32Array(1, 1),
 "update": 1,
-"values": [100, 100, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91]
+"values": [100, 91]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -320,7 +326,7 @@ tracks/10/keys = {
 "args": [Vector2(480, -1200)],
 "method": &"LaunchFireDemonAnimEvent"
 }, {
-"args": [ExtResource("2_g0iia"), 130.0, 20.0, 1.6666666666666667],
+"args": [ExtResource("2_g0iia"), 130.0, 20.0],
 "method": &"SearchFireDemonTargetAnimEvent"
 }, {
 "args": [ExtResource("3_f7yt5"), Vector2(720, 480)],
@@ -351,35 +357,35 @@ tracks/11/keys = {
 }]
 }
 
-[sub_resource type="RectangleShape2D" id="flame_storm_hit_0"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ftco7"]
 size = Vector2(205, 63)
 
-[sub_resource type="RectangleShape2D" id="flame_storm_hit_1"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0m3kd"]
 size = Vector2(217.17065, 102.93371)
 
-[sub_resource type="RectangleShape2D" id="flame_storm_hit_2"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_k30ba"]
 size = Vector2(263, 105)
 
-[sub_resource type="RectangleShape2D" id="flame_storm_hit_3"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xntps"]
 size = Vector2(332, 144)
 
-[sub_resource type="RectangleShape2D" id="flame_storm_hit_4"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hn51a"]
 size = Vector2(334, 133)
 
-[sub_resource type="RectangleShape2D" id="flame_storm_hit_5"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_q3ddw"]
 size = Vector2(345, 132)
 
-[sub_resource type="RectangleShape2D" id="flame_storm_hit_6"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tmmn1"]
 size = Vector2(333.31488, 133.1335)
 
-[sub_resource type="RectangleShape2D" id="flame_storm_hit_7"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2d1bf"]
 size = Vector2(353.58157, 101.9753)
 
-[sub_resource type="RectangleShape2D" id="flame_storm_hit_8"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_shg6u"]
 size = Vector2(204.63484, 86.454865)
 
-[sub_resource type="RectangleShape2D" id="flame_storm_hit_9"]
-size = Vector2(164, 100)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_he7uc"]
+size = Vector2(164, 108)
 
 [sub_resource type="Animation" id="flame_storm"]
 resource_name = "flame_storm"
@@ -478,7 +484,7 @@ tracks/7/keys = {
 "times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [SubResource("flame_storm_hit_0"), SubResource("flame_storm_hit_1"), SubResource("flame_storm_hit_2"), SubResource("flame_storm_hit_3"), SubResource("flame_storm_hit_4"), SubResource("flame_storm_hit_5"), SubResource("flame_storm_hit_6"), SubResource("flame_storm_hit_7"), SubResource("flame_storm_hit_8"), SubResource("flame_storm_hit_9")]
+"values": [SubResource("RectangleShape2D_ftco7"), SubResource("RectangleShape2D_0m3kd"), SubResource("RectangleShape2D_k30ba"), SubResource("RectangleShape2D_xntps"), SubResource("RectangleShape2D_hn51a"), SubResource("RectangleShape2D_q3ddw"), SubResource("RectangleShape2D_tmmn1"), SubResource("RectangleShape2D_2d1bf"), SubResource("RectangleShape2D_shg6u"), SubResource("RectangleShape2D_he7uc")]
 }
 tracks/8/type = "value"
 tracks/8/imported = false
@@ -490,7 +496,7 @@ tracks/8/keys = {
 "times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [Vector2(9, 54), Vector2(1.0065776, 37.528053), Vector2(4, 38), Vector2(10.5, 18.5), Vector2(20.5, 16), Vector2(4, 24.5), Vector2(-0.61546385, 21.543535), Vector2(25.158348, 14.326606), Vector2(95.099724, 43.200558), Vector2(24.5, 53.5)]
+"values": [Vector2(9, 54), Vector2(1.0065776, 37.528053), Vector2(4, 38), Vector2(10.5, 18.5), Vector2(20.5, 16), Vector2(4, 24.5), Vector2(-0.61546385, 21.543535), Vector2(25.158348, 14.326606), Vector2(95.099724, 43.200558), Vector2(24.5, 49.5)]
 }
 tracks/9/type = "value"
 tracks/9/imported = false
@@ -502,7 +508,7 @@ tracks/9/keys = {
 "times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.25, 0.29166666, 0.33333334, 0.375),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [0, -0.05679699, 0, -0.143437858, 0.089049981, 0.1385944, 0]
+"values": [0.0, -0.05679699, 0.0, -0.14343786, 0.08904998, 0.1385944, 0.0]
 }
 tracks/10/type = "method"
 tracks/10/imported = false
@@ -556,10 +562,10 @@ tracks/0/path = NodePath("m_Body:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334, 0.5, 0.5416667, 0.5833333),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [89, 89, 89, 89, 89, 89, 89, 89, 89, 89, 89, 89, 89, 89, 89]
+"values": [89]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -568,10 +574,10 @@ tracks/1/path = NodePath("m_Weapon:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334, 0.5, 0.5416667, 0.5833333),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [89, 89, 89, 89, 89, 89, 89, 89, 89, 89, 89, 89, 89, 89, 89]
+"values": [89]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -710,26 +716,29 @@ tracks/11/keys = {
 }]
 }
 
-[sub_resource type="RectangleShape2D" id="rising_dragon_hit_4"]
-size = Vector2(74, 79)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_a58ht"]
+size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="rising_dragon_hit_5"]
-size = Vector2(164.87007, 93.26058)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_uc6ay"]
+size = Vector2(74, 83)
 
-[sub_resource type="RectangleShape2D" id="rising_dragon_hit_6"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wfpqt"]
+size = Vector2(168.9429, 93.2606)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1nf4g"]
 size = Vector2(156.35225, 126.45795)
 
-[sub_resource type="RectangleShape2D" id="rising_dragon_hit_7"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_aslps"]
 size = Vector2(126, 142)
 
-[sub_resource type="RectangleShape2D" id="rising_dragon_hit_8"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ep57l"]
 size = Vector2(109, 138)
 
-[sub_resource type="RectangleShape2D" id="rising_dragon_hit_9"]
-size = Vector2(95.83625, 69.665695)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_annve"]
+size = Vector2(97.1475, 86.2783)
 
-[sub_resource type="RectangleShape2D" id="rising_dragon_hit_14"]
-size = Vector2(147.01851, 77.894775)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trh2d"]
+size = Vector2(155.3434, 88.1485)
 
 [sub_resource type="Animation" id="rising_dragon"]
 resource_name = "rising_dragon"
@@ -741,10 +750,10 @@ tracks/0/path = NodePath("m_Body:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334, 0.5, 0.5416667, 0.5833333),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.083333336, 0.125, 0.16666667, 0.25, 0.33333334, 0.41666666, 0.5833333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [101, 101, 102, 103, 104, 104, 105, 105, 106, 106, 87, 87, 87, 87, 88]
+"values": [101, 102, 103, 104, 105, 106, 87, 88]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -753,10 +762,10 @@ tracks/1/path = NodePath("m_Weapon:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334, 0.5, 0.5416667, 0.5833333),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.083333336, 0.125, 0.16666667, 0.25, 0.33333334, 0.41666666, 0.5833333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [101, 101, 102, 103, 104, 104, 105, 105, 106, 106, 87, 87, 87, 87, 88]
+"values": [101, 102, 103, 104, 105, 106, 87, 88]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -828,7 +837,7 @@ tracks/7/keys = {
 "times": PackedFloat32Array(0, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.5833333),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [SubResource("rest"), SubResource("rising_dragon_hit_4"), SubResource("rising_dragon_hit_5"), SubResource("rising_dragon_hit_6"), SubResource("rising_dragon_hit_7"), SubResource("rising_dragon_hit_8"), SubResource("rising_dragon_hit_9"), SubResource("rest"), SubResource("rising_dragon_hit_14")]
+"values": [SubResource("RectangleShape2D_a58ht"), SubResource("RectangleShape2D_uc6ay"), SubResource("RectangleShape2D_wfpqt"), SubResource("RectangleShape2D_1nf4g"), SubResource("RectangleShape2D_aslps"), SubResource("RectangleShape2D_ep57l"), SubResource("RectangleShape2D_annve"), SubResource("RectangleShape2D_a58ht"), SubResource("RectangleShape2D_trh2d")]
 }
 tracks/8/type = "value"
 tracks/8/imported = false
@@ -840,7 +849,7 @@ tracks/8/keys = {
 "times": PackedFloat32Array(0, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.5833333),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [Vector2(0, 0), Vector2(-50.5, 59), Vector2(-65.05958, 21.752586), Vector2(-46.28641, 6.3931417), Vector2(-41.5, 10.5), Vector2(-47, 8.5), Vector2(-34.658985, -15.19809), Vector2(0, 0), Vector2(-17.368109, 41.013653)]
+"values": [Vector2(0, 0), Vector2(-50.5, 61), Vector2(-64.2643, 23.6273), Vector2(-46.28641, 6.3931417), Vector2(-41.5, 10.5), Vector2(-47, 8.5), Vector2(-32.9584, -21.5007), Vector2(0, 0), Vector2(-12.564099, 45.5449)]
 }
 tracks/9/type = "value"
 tracks/9/imported = false
@@ -852,7 +861,7 @@ tracks/9/keys = {
 "times": PackedFloat32Array(0, 0.20833333, 0.25, 0.29166666, 0.375, 0.41666666, 0.5833333),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [0, 1.169578172, 1.409331551, 0, 0.162946742, 0, -0.132662078]
+"values": [0.0, 1.1695782, 1.4093316, 0.0, 0.16294675, 0.0, -0.13266207]
 }
 tracks/10/type = "method"
 tracks/10/imported = false

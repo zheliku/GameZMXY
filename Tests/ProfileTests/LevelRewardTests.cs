@@ -6,11 +6,14 @@ using GameLogic.Level;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>关卡系统直接验证拾取效果和会话资格，场景不再拥有这部分规则。</summary>
+/// <summary>
+/// 关卡系统直接验证拾取效果和会话资格，场景不再拥有这部分规则。
+/// </summary>
 public sealed class LevelRewardTests
 {
-    /// <summary>三种恢复品按真实配置恢复并钳制上限，满值仍可拾取。</summary>
+    /// <summary>
+    /// 三种恢复品按真实配置恢复并钳制上限，满值仍可拾取。
+    /// </summary>
     /// <param name="id">恢复品定义。</param>
     [Theory]
     [InlineData(PickupId.SmallPeach)]
@@ -34,8 +37,9 @@ public sealed class LevelRewardTests
         Assert.False(system.TryCollectPickup(PickupId.None));
         Assert.False(system.TryCollectPickup((PickupId)999));
     }
-
-    /// <summary>球体发放灵魂和无双，蓝球以接触时的魔法上限而非生成时数据计算。</summary>
+    /// <summary>
+    /// 球体发放灵魂和无双，蓝球以接触时的魔法上限而非生成时数据计算。
+    /// </summary>
     [Fact]
     public void Orb_UsesCurrentHeroStateAndConfiguredManaFormula()
     {
@@ -53,8 +57,9 @@ public sealed class LevelRewardTests
         Assert.Equal(expected, scope.Hero.Mp.Value);
         Assert.Throws<ArgumentOutOfRangeException>(() => system.CollectLoot(new((LootKind)999, 1)));
     }
-
-    /// <summary>未开始、已结束、已停止或死亡时，恢复品与所有球体都不得修改数据。</summary>
+    /// <summary>
+    /// 未开始、已结束、已停止或死亡时，恢复品与所有球体都不得修改数据。
+    /// </summary>
     /// <param name="state">0 未开始、1 结局、2 停止、3 已死亡但尚未发布结局。</param>
     [Theory]
     [InlineData(0)]
@@ -82,8 +87,9 @@ public sealed class LevelRewardTests
         Assert.Equal(0, scope.Hero.Ws.Value);
         Assert.Equal(0, scope.Profile.Soul.Value);
     }
-
-    /// <summary>灵魂属于关卡事务，放弃回滚；不把未领取奖励保存到档案。</summary>
+    /// <summary>
+    /// 灵魂属于关卡事务，放弃回滚；不把未领取奖励保存到档案。
+    /// </summary>
     [Fact]
     public void Abandon_RollsBackCollectedSoul()
     {
@@ -94,8 +100,9 @@ public sealed class LevelRewardTests
         system.EndSession();
         Assert.Equal(0, scope.Profile.Soul.Value);
     }
-
-    /// <summary>建立真实系统的已开始关卡。</summary>
+    /// <summary>
+    /// 建立真实系统的已开始关卡。
+    /// </summary>
     /// <returns>独立测试作用域。</returns>
     private static TestGameScope Ready()
     {

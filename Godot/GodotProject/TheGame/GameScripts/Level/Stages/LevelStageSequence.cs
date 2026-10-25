@@ -4,19 +4,33 @@ using GameConfig.Level;
 
 namespace GameLogic.Level;
 
-/// <summary>维护唯一当前阶段和合法迁移，不承担相机、节点或实体职责。</summary>
+/// <summary>
+/// 维护唯一当前阶段和合法迁移，不承担相机、节点或实体职责。
+/// </summary>
 public sealed class LevelStageSequence
 {
     private readonly IReadOnlyList<LevelStage> m_Stages; // 初始化时校验过的阶段列表。
     private int m_Index; // 唯一当前阶段的列表索引。
 
-    /// <summary>当前阶段；完成后仍保留最后阶段供结算读取。</summary>
-    public LevelStage Current => m_Stages[m_Index];
+    /// <summary>
+    /// 当前阶段；完成后仍保留最后阶段供结算读取。
+    /// </summary>
+    public LevelStage Current
+    {
+        get
+        {
+            return m_Stages[m_Index];
+        }
+    }
 
-    /// <summary>当前会话阶段状态。</summary>
+    /// <summary>
+    /// 当前会话阶段状态。
+    /// </summary>
     public LevelStagePhase Phase { get; private set; } = LevelStagePhase.Ready;
 
-    /// <summary>校验阶段编排并创建尚未开始的会话。</summary>
+    /// <summary>
+    /// 校验阶段编排并创建尚未开始的会话。
+    /// </summary>
     /// <param name="stages">关卡配置中按顺序排列的阶段列表。</param>
     /// <exception cref="InvalidOperationException">阶段为空，或顺序、并存上限、延迟、激活方式非法时抛出。</exception>
     public LevelStageSequence(IReadOnlyList<LevelStage> stages)
@@ -52,15 +66,27 @@ public sealed class LevelStageSequence
         m_Stages = stages;
     }
 
-    /// <summary>在加载界面关闭之后开放阶段推进。</summary>
+    /// <summary>
+    /// 在加载界面关闭之后开放阶段推进。
+    /// </summary>
     /// <exception cref="InvalidOperationException">会话不处于 Ready 状态时抛出。</exception>
-    public void Begin() => ChangePhase(LevelStagePhase.Ready, LevelStagePhase.Travelling);
+    public void Begin()
+    {
+        ChangePhase(LevelStagePhase.Ready, LevelStagePhase.Travelling);
+    }
 
-    /// <summary>当前阶段满足启动条件，进入战斗。</summary>
+    /// <summary>
+    /// 当前阶段满足启动条件，进入战斗。
+    /// </summary>
     /// <exception cref="InvalidOperationException">会话不处于 Travelling 状态时抛出。</exception>
-    public void StartBattle() => ChangePhase(LevelStagePhase.Travelling, LevelStagePhase.Fighting);
+    public void StartBattle()
+    {
+        ChangePhase(LevelStagePhase.Travelling, LevelStagePhase.Fighting);
+    }
 
-    /// <summary>清波后推进一个阶段；最后阶段清除则完成关卡。</summary>
+    /// <summary>
+    /// 清波后推进一个阶段；最后阶段清除则完成关卡。
+    /// </summary>
     /// <exception cref="InvalidOperationException">会话不处于 Fighting 状态时抛出。</exception>
     public void ClearBattle()
     {
@@ -72,14 +98,37 @@ public sealed class LevelStageSequence
         }
     }
 
-    /// <summary>玩家使用清场出口后完成关卡。</summary>
+    /// <summary>
+    /// 末阶段目标被击败后开放出口，不要求其余生成流清空。
+    /// </summary>
+    /// <exception cref="InvalidOperationException">当前不是末阶段战斗时抛出。</exception>
+    public void OpenExit()
+    {
+        if (m_Index != m_Stages.Count - 1)
+            throw new InvalidOperationException("只有最后阶段的目标可以开放出口。");
+        ChangePhase(LevelStagePhase.Fighting, LevelStagePhase.AwaitingExit);
+    }
+
+    /// <summary>
+    /// 玩家使用清场出口后完成关卡。
+    /// </summary>
     /// <exception cref="InvalidOperationException">尚未清除最后阶段时抛出。</exception>
-    public void Complete() => ChangePhase(LevelStagePhase.AwaitingExit, LevelStagePhase.Completed);
+    public void Complete()
+    {
+        ChangePhase(LevelStagePhase.AwaitingExit, LevelStagePhase.Completed);
+    }
 
-    /// <summary>停止会话，禁止继续推进。</summary>
-    public void Stop() => Phase = LevelStagePhase.Stopped;
+    /// <summary>
+    /// 停止会话，禁止继续推进。
+    /// </summary>
+    public void Stop()
+    {
+        Phase = LevelStagePhase.Stopped;
+    }
 
-    /// <summary>执行一次显式状态迁移。</summary>
+    /// <summary>
+    /// 执行一次显式状态迁移。
+    /// </summary>
     /// <param name="expected">调用方必须处于的状态。</param>
     /// <param name="next">迁移后的状态。</param>
     /// <exception cref="InvalidOperationException">当前状态与 expected 不符时抛出。</exception>
@@ -95,24 +144,38 @@ public sealed class LevelStageSequence
     }
 }
 
-/// <summary>关卡会话的互斥阶段状态。</summary>
+/// <summary>
+/// 关卡会话的互斥阶段状态。
+/// </summary>
 public enum LevelStagePhase
 {
-    /// <summary>已初始化，尚未开放玩法事件。</summary>
+    /// <summary>
+    /// 已初始化，尚未开放玩法事件。
+    /// </summary>
     Ready,
 
-    /// <summary>通路已开放，等待当前阶段的启动条件。</summary>
+    /// <summary>
+    /// 通路已开放，等待当前阶段的启动条件。
+    /// </summary>
     Travelling,
 
-    /// <summary>区域已锁定，等待配方发完和敌人清空。</summary>
+    /// <summary>
+    /// 区域已锁定，等待配方发完和敌人清空。
+    /// </summary>
     Fighting,
 
-    /// <summary>最后一波已清除，等待玩家使用出口。</summary>
+    /// <summary>
+    /// 最后一波已清除，等待玩家使用出口。
+    /// </summary>
     AwaitingExit,
 
-    /// <summary>玩家已使用出口，提交通关。</summary>
+    /// <summary>
+    /// 玩家已使用出口，提交通关。
+    /// </summary>
     Completed,
 
-    /// <summary>会话已停止。</summary>
+    /// <summary>
+    /// 会话已停止。
+    /// </summary>
     Stopped,
 }

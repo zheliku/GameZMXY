@@ -18,20 +18,28 @@ using GameLogic.Architecture;
 
 namespace GameLogic.Config;
 
-/// <summary>启动期的配置业务检查；集中校验跨表引用和玩法约束，失败阻止进入菜单。</summary>
+/// <summary>
+/// 启动期的配置业务检查；集中校验跨表引用和玩法约束，失败阻止进入菜单。
+/// </summary>
 public sealed class ConfigurationSystem : AbstractSystem
 {
-    /// <summary>绑定所属架构。</summary>
+    /// <summary>
+    /// 绑定所属架构。
+    /// </summary>
     /// <param name="architecture">所属游戏入口。</param>
     public ConfigurationSystem(IArchitecture architecture) : base(architecture) { }
 
-    /// <summary>配置模型先注册，随后执行一次跨表校验。</summary>
+    /// <summary>
+    /// 配置模型先注册，随后执行一次跨表校验。
+    /// </summary>
     protected override void OnInit()
     {
         ValidateTables(this.GetModel<ConfigurationModel>().Tables, this.GetUtility<ExperienceCurve>());
     }
 
-    /// <summary>校验全部启动约束，汇总所有错误后一次抛出。</summary>
+    /// <summary>
+    /// 校验全部启动约束，汇总所有错误后一次抛出。
+    /// </summary>
     /// <param name="tables">已加载的配置总表。</param>
     /// <param name="curve">已注册的共享曲线；独立校验未提供时才构建。</param>
     /// <returns>经过校验的共享经验曲线（供档案与存档使用，避免重复构建）。</returns>
@@ -146,7 +154,9 @@ public sealed class ConfigurationSystem : AbstractSystem
         return curve;
     }
 
-    /// <summary>在预加载边界校验掉落数量、概率与奖励，运行时直接消费。</summary>
+    /// <summary>
+    /// 在预加载边界校验掉落数量、概率与奖励，运行时直接消费。
+    /// </summary>
     /// <param name="tables">只读配置总表。</param>
     /// <param name="errors">集中错误列表。</param>
     private static void ValidateDrops(Tables tables, List<string> errors)
@@ -183,7 +193,9 @@ public sealed class ConfigurationSystem : AbstractSystem
         }
     }
 
-    /// <summary>校验装备定义、实例随机范围和掉落池外键，不等到实际掉落时才报错。</summary>
+    /// <summary>
+    /// 校验装备定义、实例随机范围和掉落池外键，不等到实际掉落时才报错。
+    /// </summary>
     /// <param name="tables">只读配置总表。</param>
     /// <param name="errors">集中错误列表。</param>
     private static void ValidateEquipment(Tables tables, List<string> errors)
@@ -226,7 +238,9 @@ public sealed class ConfigurationSystem : AbstractSystem
         }
     }
 
-    /// <summary>校验每名英雄的成长行覆盖经验表全部等级且属性生命上限为正。</summary>
+    /// <summary>
+    /// 校验每名英雄的成长行覆盖经验表全部等级且属性生命上限为正。
+    /// </summary>
     /// <param name="tables">配置总表。</param>
     /// <param name="maxLevel">经验表最高等级。</param>
     /// <param name="errors">错误汇总。</param>
@@ -270,7 +284,9 @@ public sealed class ConfigurationSystem : AbstractSystem
         }
     }
 
-    /// <summary>校验统一攻击数值与技能平衡参数，不解释动画或场景。</summary>
+    /// <summary>
+    /// 校验统一攻击数值与技能平衡参数，不解释动画或场景。
+    /// </summary>
     /// <param name="tables">正式配置总表。</param>
     /// <param name="errors">启动错误集合。</param>
     internal static void ValidateSkillCombat(Tables tables, ICollection<string> errors)
@@ -294,7 +310,9 @@ public sealed class ConfigurationSystem : AbstractSystem
                 errors.Add($"技能 {skill.Id}：无敌、普攻冷却或取消比例无效。");
     }
 
-    /// <summary>集中检查面板身份、行序、费用和被动等级覆盖。</summary>
+    /// <summary>
+    /// 集中检查面板身份、行序、费用和被动等级覆盖。
+    /// </summary>
     /// <param name="active">主动技能表。</param>
     /// <param name="passive">被动技能等级表。</param>
     /// <param name="errors">启动校验汇总错误。</param>
@@ -337,7 +355,9 @@ public sealed class ConfigurationSystem : AbstractSystem
         }
     }
 
-    /// <summary>首次加载同类英雄时建立参数，后续池实例复用。</summary>
+    /// <summary>
+    /// 首次加载同类英雄时建立参数，后续池实例复用。
+    /// </summary>
     /// <param name="heroId">英雄配置主键。</param>
     /// <param name="create">从当前场景动画读取纯数据的工厂；模型不保留委托。</param>
     public void EnsureHeroBodyParams(int heroId, Func<HeroBodyParams> create)
@@ -346,7 +366,9 @@ public sealed class ConfigurationSystem : AbstractSystem
             this.GetModel<ConfigurationModel>().HeroBodies.Add(heroId, create());
     }
 
-    /// <summary>首次加载同类怪物时建立参数，后续池实例复用。</summary>
+    /// <summary>
+    /// 首次加载同类怪物时建立参数，后续池实例复用。
+    /// </summary>
     /// <param name="entityId">怪物实体类型。</param>
     /// <param name="create">从当前场景动画读取纯数据的工厂；模型不保留委托。</param>
     public void EnsureEnemyBodyParams(EntityId entityId, Func<EnemyBodyParams> create)

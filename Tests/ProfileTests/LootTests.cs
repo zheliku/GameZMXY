@@ -3,11 +3,14 @@ using GameLogic.Drops;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>真实配置驱动的官方灵魂、蓝球与无双球掉落边界回归。</summary>
+/// <summary>
+/// 真实配置驱动的官方灵魂、蓝球与无双球掉落边界回归。
+/// </summary>
 public sealed class LootTests
 {
-    /// <summary>直接核对游戏使用的导表产物，没有在代码中复制另一套正式配置。</summary>
+    /// <summary>
+    /// 直接核对游戏使用的导表产物，没有在代码中复制另一套正式配置。
+    /// </summary>
     [Fact]
     public void OfficialMusouTable_UsesDamageRatioAndTimedDecay()
     {
@@ -22,8 +25,9 @@ public sealed class LootTests
         Assert.Equal(2.5f, battle.WsGravityMultiplier);
         Assert.Equal(5, TestTables.Tables.TbBattleConfig.Data.MusouPerOrb);
     }
-
-    /// <summary>灵魂数量落在官方区间；奖励只含三种球，数量与经验规模无关。</summary>
+    /// <summary>
+    /// 灵魂数量落在官方区间；奖励只含三种球，数量与经验规模无关。
+    /// </summary>
     [Fact]
     public void Rewards_RespectOfficialRanges_AndHaveBoundedCount()
     {
@@ -38,8 +42,9 @@ public sealed class LootTests
                 Assert.All(loot.Where(x => x.Kind == LootKind.Soul), x => Assert.Equal(monster.SoulPerOrb, x.Amount));
             }
     }
-
-    /// <summary>12% 概率边界不多发蓝球，触发时数量可覆盖区间两端。</summary>
+    /// <summary>
+    /// 12% 概率边界不多发蓝球，触发时数量可覆盖区间两端。
+    /// </summary>
     [Theory]
     [InlineData(.11999f, 1f, 3)]
     [InlineData(.12f, 0f, 0)]
@@ -52,8 +57,9 @@ public sealed class LootTests
         var loot = new LootSystem(TestTables.Architecture).Roll(monster, Random);
         Assert.Equal(expected, loot.Count(x => x.Kind == LootKind.Mana));
     }
-
-    /// <summary>黄球独立采用 12% 掉落概率，每颗加 5 无双，蓝球未触发也可触发黄球。</summary>
+    /// <summary>
+    /// 黄球独立采用 12% 掉落概率，每颗加 5 无双，蓝球未触发也可触发黄球。
+    /// </summary>
     [Theory]
     [InlineData(.11999f, 0f, 1)]
     [InlineData(.11999f, .99999f, 3)]
@@ -67,12 +73,15 @@ public sealed class LootTests
         Assert.Equal(expected, loot.Count(x => x.Kind == LootKind.Musou));
         Assert.All(loot.Where(x => x.Kind == LootKind.Musou), x => Assert.Equal(5, x.Amount));
     }
-
-    /// <summary>蓝球最低恢复 10，超过最低量后按魔法上限 5% 向下取整。</summary>
+    /// <summary>
+    /// 蓝球最低恢复 10，超过最低量后按魔法上限 5% 向下取整。
+    /// </summary>
     [Theory]
     [InlineData(50, 10)]
     [InlineData(1000, 50)]
     [InlineData(1039, 51)]
-    public void Mana_UsesCurrentMaximum(int maximum, int expected) =>
+    public void Mana_UsesCurrentMaximum(int maximum, int expected)
+    {
         Assert.Equal(expected, new LootSystem(TestTables.Architecture).ManaAmount(maximum));
+    }
 }

@@ -10,10 +10,14 @@ using Luban;
 
 namespace GameLogic.Debug;
 
-/// <summary>用真实 Area2D 物理重叠验证可选触发器的启用、玩家过滤和停止契约。</summary>
+/// <summary>
+/// 用真实 Area2D 物理重叠验证可选触发器的启用、玩家过滤和停止契约。
+/// </summary>
 public partial class LevelTriggerValidation : Node2D
 {
-    /// <summary>运行独立引擎回归，并以明确的 PASS/FAIL 协议结束。</summary>
+    /// <summary>
+    /// 运行独立引擎回归，并以明确的 PASS/FAIL 协议结束。
+    /// </summary>
     public override async void _Ready()
     {
         try
@@ -29,7 +33,9 @@ public partial class LevelTriggerValidation : Node2D
         }
     }
 
-    /// <summary>使用真实节点和物理信号验证类型、会话归属、监听周期及回调重入。</summary>
+    /// <summary>
+    /// 使用真实节点和物理信号验证类型、会话归属、监听周期及回调重入。
+    /// </summary>
     /// <returns>全部物理断言完成的任务。</returns>
     private async Task ValidateAsync()
     {
@@ -127,7 +133,9 @@ public partial class LevelTriggerValidation : Node2D
         manager.EndWatching();
     }
 
-    /// <summary>等待监测开关与 PhysicsServer 重叠列表完整更新。</summary>
+    /// <summary>
+    /// 等待监测开关与 PhysicsServer 重叠列表完整更新。
+    /// </summary>
     /// <returns>物理状态稳定后的任务。</returns>
     private async Task SettlePhysicsAsync()
     {
@@ -139,7 +147,9 @@ public partial class LevelTriggerValidation : Node2D
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
     }
 
-    /// <summary>建立与正式关卡相同结构的区域夹具。</summary>
+    /// <summary>
+    /// 建立与正式关卡相同结构的区域夹具。
+    /// </summary>
     /// <param name="name">区域节点名。</param>
     /// <param name="position">测试位置。</param>
     /// <param name="mask">检测层。</param>
@@ -151,7 +161,9 @@ public partial class LevelTriggerValidation : Node2D
         return area;
     }
 
-    /// <summary>建立与英雄同层的非英雄，验证类型过滤。</summary>
+    /// <summary>
+    /// 建立与英雄同层的非英雄，验证类型过滤。
+    /// </summary>
     /// <param name="position">测试位置。</param>
     /// <param name="layer">玩家身体层。</param>
     /// <returns>非英雄碰撞体。</returns>
@@ -162,7 +174,9 @@ public partial class LevelTriggerValidation : Node2D
         return body;
     }
 
-    /// <summary>创建最小真实英雄类型；只在测试反射打开显示标志，不启动战斗和框架流程。</summary>
+    /// <summary>
+    /// 创建最小真实英雄类型；只在测试反射打开显示标志，不启动战斗和框架流程。
+    /// </summary>
     /// <param name="position">物理位置。</param>
     /// <param name="layer">玩家身体层。</param>
     /// <returns>用于真实 Area2D 检测的英雄。</returns>
@@ -175,7 +189,9 @@ public partial class LevelTriggerValidation : Node2D
         return hero;
     }
 
-    /// <summary>独立验证没有框架初始化，从项目配置按名称解析玩家层。</summary>
+    /// <summary>
+    /// 独立验证没有框架初始化，从项目配置按名称解析玩家层。
+    /// </summary>
     /// <returns>玩家身体层掩码。</returns>
     /// <exception cref="InvalidOperationException">项目缺少玩家层。</exception>
     private static uint PlayerLayer()
@@ -191,7 +207,9 @@ public partial class LevelTriggerValidation : Node2D
         throw new InvalidOperationException("项目没有 PlayerBody 物理层");
     }
 
-    /// <summary>契约失败时终止独立验证，不影响正式玩法。</summary>
+    /// <summary>
+    /// 契约失败时终止独立验证，不影响正式玩法。
+    /// </summary>
     /// <param name="condition">必须满足的条件。</param>
     /// <param name="message">失败原因。</param>
     /// <exception cref="InvalidOperationException">断言不成立。</exception>

@@ -5,28 +5,48 @@ using Godot;
 
 namespace GameLogic.Event.Combat;
 
-/// <summary>怪物死亡后的池化通知；刷怪服务归还名额，关卡按只读配置、死亡位置和配方经验生成掉落。</summary>
+/// <summary>
+/// 怪物死亡后的池化通知；刷怪服务归还名额，关卡按只读配置、死亡位置和配方经验生成掉落。
+/// </summary>
 public sealed class EnemyDiedEventArgs : GameEventArgs
 {
-    /// <summary>GGF 事件编号。</summary>
+    /// <summary>
+    /// GGF 事件编号。
+    /// </summary>
     public static readonly int EventId = typeof(EnemyDiedEventArgs).GetHashCode();
 
     /// <inheritdoc />
-    public override int Id => EventId;
+    public override int Id
+    {
+        get
+        {
+            return EventId;
+        }
+    }
 
-    /// <summary>本次死亡的运行实体编号。</summary>
+    /// <summary>
+    /// 本次死亡的运行实体编号。
+    /// </summary>
     public int EntityId { get; private set; }
 
-    /// <summary>本次击败经验，已应用配方覆盖，不包含节点或配置引用。</summary>
+    /// <summary>
+    /// 本次击败经验，已应用配方覆盖，不包含节点或配置引用。
+    /// </summary>
     public int ExperienceReward { get; private set; }
 
-    /// <summary>只读掉落配置；不携带即将回池的怪物节点。</summary>
+    /// <summary>
+    /// 只读掉落配置；不携带即将回池的怪物节点。
+    /// </summary>
     public MonsterConfig Config { get; private set; }
 
-    /// <summary>死亡时的世界坐标，不随尸体动画改变。</summary>
+    /// <summary>
+    /// 死亡时的世界坐标，不随尸体动画改变。
+    /// </summary>
     public Vector2 Position { get; private set; }
 
-    /// <summary>从引用池创建通知，分发结束后由事件池归还。</summary>
+    /// <summary>
+    /// 从引用池创建通知，分发结束后由事件池归还。
+    /// </summary>
     /// <param name="entityId">运行实体编号。</param>
     /// <param name="experienceReward">本次生成确定的击败经验。</param>
     /// <param name="config">怪物只读配置。</param>
@@ -43,7 +63,9 @@ public sealed class EnemyDiedEventArgs : GameEventArgs
         return args;
     }
 
-    /// <summary>回池前清除本次通知。</summary>
+    /// <summary>
+    /// 回池前清除本次通知。
+    /// </summary>
     public override void Clear()
     {
         EntityId = 0;

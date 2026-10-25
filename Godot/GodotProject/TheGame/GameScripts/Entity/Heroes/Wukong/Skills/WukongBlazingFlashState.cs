@@ -9,7 +9,9 @@ using Godot;
 
 namespace GameLogic.Heroes.Wukong;
 
-/// <summary>烈焰闪：起手保留移动，闪身阶段生成拖尾并开启无敌，末段停止移动。</summary>
+/// <summary>
+/// 烈焰闪：起手保留移动，闪身阶段生成拖尾并开启无敌，末段停止移动。
+/// </summary>
 public sealed class WukongBlazingFlashState : AbstractHeroSkillState
 {
     private const string AnimationName = "skills/blazing_flash"; // 本招的原生动画资源名。
@@ -27,12 +29,19 @@ public sealed class WukongBlazingFlashState : AbstractHeroSkillState
         BeginAnimation(body, AnimationName);
     }
 
-    /// <summary>起手生成本招攻击包，固定威力仍由数值表提供。</summary>
+    /// <summary>
+    /// 起手生成本招攻击包，固定威力仍由数值表提供。
+    /// </summary>
     /// <param name="body">悟空身体。</param>
-    public void BeginHit(IHeroBody body) => ((ISkillActor)body).NewSkillAttack(
+    public void BeginHit(IHeroBody body)
+    {
+        ((ISkillActor)body).NewSkillAttack(
         SkillHitId.BlazingFlash, AttackPower(body, SkillHitId.BlazingFlash));
+    }
 
-    /// <summary>在动画标出的闪身点开启拖尾、无敌与定向速度。</summary>
+    /// <summary>
+    /// 在动画标出的闪身点开启拖尾、无敌与定向速度。
+    /// </summary>
     /// <param name="body">悟空身体。</param>
     /// <param name="trail">动画直接引用的拖尾场景。</param>
     /// <param name="speed">闪身速度，px/s。</param>
@@ -46,9 +55,14 @@ public sealed class WukongBlazingFlashState : AbstractHeroSkillState
         body.Velocity = new Vector2(actor.Facing * speed, body.Velocity.Y);
     }
 
-    /// <summary>收招点停止身体移动。</summary>
+    /// <summary>
+    /// 收招点停止身体移动。
+    /// </summary>
     /// <param name="body">悟空身体。</param>
-    public void StopDash(IHeroBody body) => body.Velocity = Vector2.Zero;
+    public void StopDash(IHeroBody body)
+    {
+        body.Velocity = Vector2.Zero;
+    }
 
     /// <inheritdoc />
     protected override void UpdateSkill(IHeroBody body, float dt)

@@ -11,8 +11,9 @@ using GameLogic.Input;
 using GameLogic.Drops;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>测试专用作用域；正式代码的档案和本局英雄模型分别持有与初始化。</summary>
+/// <summary>
+/// 测试专用作用域；正式代码的档案和本局英雄模型分别持有与初始化。
+/// </summary>
 internal sealed class TestGameScope : IArchitecture
 {
     private readonly LevelSystem m_LevelSystem; // 正式关卡业务规则。
@@ -24,23 +25,29 @@ internal sealed class TestGameScope : IArchitecture
     private readonly InputSystem m_InputSystem; // 正式输入组合与方向规则。
     private readonly LootSystem m_LootSystem; // 正式球体回蓝与掉落规则。
     private readonly SaveDataUtility m_Save = new(); // 与游戏注册的相同纯转换工具。
-
-    /// <summary>测试提供的任意动作事实，走正式输入采样与消费。</summary>
+    /// <summary>
+    /// 测试提供的任意动作事实，走正式输入采样与消费。
+    /// </summary>
     public TestInputSource Input { get; } = new();
-
-    /// <summary>档案的唯一权威数据。</summary>
+    /// <summary>
+    /// 档案的唯一权威数据。
+    /// </summary>
     public ProfileModel Profile { get; }
-
-    /// <summary>当前档案独占的技能学习记录。</summary>
+    /// <summary>
+    /// 当前档案独占的技能学习记录。
+    /// </summary>
     public SkillModel Skills { get; }
-
-    /// <summary>本局英雄的全部数值。</summary>
+    /// <summary>
+    /// 本局英雄的全部数值。
+    /// </summary>
     public HeroModel Hero { get; private set; } = new();
-
-    /// <summary>本局模型，由正式关卡系统修改。</summary>
+    /// <summary>
+    /// 本局模型，由正式关卡系统修改。
+    /// </summary>
     public LevelModel Level { get; } = new();
-
-    /// <summary>建立独立测试作用域，不复制正式规则。</summary>
+    /// <summary>
+    /// 建立独立测试作用域，不复制正式规则。
+    /// </summary>
     /// <param name="activeHeroId">出战身份。</param>
     /// <param name="heroes">累计经验。</param>
     /// <param name="soul">灵魂余额。</param>
@@ -70,17 +77,19 @@ internal sealed class TestGameScope : IArchitecture
         if (activeHeroId == 1)
             m_SkillSystem.SelectSkills(1, GameLogic.SkillTests.SkillTestDefinitions.Wukong());
     }
-
     /// <inheritdoc />
-    public TModel GetModel<TModel>() where TModel : class, IModel =>
-        (typeof(TModel) == typeof(ConfigurationModel) ? TestTables.Configuration :
+    public TModel GetModel<TModel>() where TModel : class, IModel
+    {
+        return (typeof(TModel) == typeof(ConfigurationModel) ? TestTables.Configuration :
             typeof(TModel) == typeof(ProfileModel) ? (IModel)Profile :
             typeof(TModel) == typeof(SkillModel) ? Skills :
             typeof(TModel) == typeof(HeroModel) ? Hero :
             typeof(TModel) == typeof(LevelModel) ? Level : null) as TModel;
+    }
     /// <inheritdoc />
-    public TSystem GetSystem<TSystem>() where TSystem : class, ISystem =>
-        (typeof(TSystem) == typeof(ProfileSystem) ? (ISystem)m_ProfileSystem :
+    public TSystem GetSystem<TSystem>() where TSystem : class, ISystem
+    {
+        return (typeof(TSystem) == typeof(ProfileSystem) ? (ISystem)m_ProfileSystem :
             typeof(TSystem) == typeof(HeroSystem) ? m_HeroSystem :
             typeof(TSystem) == typeof(LevelSystem) ? m_LevelSystem :
             typeof(TSystem) == typeof(EquipmentSystem) ? m_EquipmentSystem :
@@ -88,14 +97,23 @@ internal sealed class TestGameScope : IArchitecture
             typeof(TSystem) == typeof(InputSystem) ? m_InputSystem :
             typeof(TSystem) == typeof(LootSystem) ? m_LootSystem :
             typeof(TSystem) == typeof(SaveSystem) ? m_SaveSystem : null) as TSystem;
+    }
     /// <inheritdoc />
-    public TUtility GetUtility<TUtility>() where TUtility : class, IUtility => (typeof(TUtility) == typeof(ExperienceCurve) ? (IUtility)TestTables.Curve : m_Save) as TUtility;
-
-    /// <summary>调用正式转换。</summary>
+    public TUtility GetUtility<TUtility>() where TUtility : class, IUtility
+    {
+        return (typeof(TUtility) == typeof(ExperienceCurve) ? (IUtility)TestTables.Curve : m_Save) as TUtility;
+    }
+    /// <summary>
+    /// 调用正式转换。
+    /// </summary>
     /// <returns>独立快照。</returns>
-    public GameData CaptureSaveData() => m_Save.Capture(Profile, Skills);
-
-    /// <summary>模拟正式流程的离关/重试：结束数值系统与旧本局模型，再建立新模型，保留档案及技能系统。</summary>
+    public GameData CaptureSaveData()
+    {
+        return m_Save.Capture(Profile, Skills);
+    }
+    /// <summary>
+    /// 模拟正式流程的离关/重试：结束数值系统与旧本局模型，再建立新模型，保留档案及技能系统。
+    /// </summary>
     public void RestartHero()
     {
         ((ICanInit)m_HeroSystem).Deinit();
@@ -105,12 +123,17 @@ internal sealed class TestGameScope : IArchitecture
         ((ICanInit)Hero).Init();
         ((ICanInit)m_HeroSystem).Init();
     }
-
-    /// <summary>调用正式回滚。</summary>
+    /// <summary>
+    /// 调用正式回滚。
+    /// </summary>
     /// <param name="data">进关快照。</param>
-    public void RestoreCheckpoint(GameData data) => m_ProfileSystem.RestoreCheckpoint(data);
-
-    /// <summary>验证后建立测试作用域，映射算法使用正式工具。</summary>
+    public void RestoreCheckpoint(GameData data)
+    {
+        m_ProfileSystem.RestoreCheckpoint(data);
+    }
+    /// <summary>
+    /// 验证后建立测试作用域，映射算法使用正式工具。
+    /// </summary>
     /// <param name="data">当前格式数据。</param>
     /// <param name="curve">经验规则。</param>
     /// <param name="definitions">装备定义。</param>
@@ -127,16 +150,28 @@ internal sealed class TestGameScope : IArchitecture
         return scope;
     }
 }
-
-/// <summary>测试替代输入源，不在生产代码添加注入状态或观测接口。</summary>
+/// <summary>
+/// 测试替代输入源，不在生产代码添加注入状态或观测接口。
+/// </summary>
 internal sealed class TestInputSource : IInputSource
 {
-    /// <summary>本帧每个任意动作的事实。</summary>
+    /// <summary>
+    /// 本帧每个任意动作的事实。
+    /// </summary>
     public Dictionary<string, (bool JustPressed, bool IsPressed, bool JustReleased)> Actions { get; } = new();
     /// <inheritdoc />
-    public bool IsPressed(string action) => Actions.GetValueOrDefault(action).IsPressed;
+    public bool IsPressed(string action)
+    {
+        return Actions.GetValueOrDefault(action).IsPressed;
+    }
     /// <inheritdoc />
-    public bool IsJustPressed(string action) => Actions.GetValueOrDefault(action).JustPressed;
+    public bool IsJustPressed(string action)
+    {
+        return Actions.GetValueOrDefault(action).JustPressed;
+    }
     /// <inheritdoc />
-    public bool IsJustReleased(string action) => Actions.GetValueOrDefault(action).JustReleased;
+    public bool IsJustReleased(string action)
+    {
+        return Actions.GetValueOrDefault(action).JustReleased;
+    }
 }

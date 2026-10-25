@@ -40,9 +40,9 @@ func _build() -> void:
 	# 造一 colipse 经过完整变换后的范围；美术网格原点为悟空 +28Y、小猴 -13Y。
 	var registrations := [
 		["res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn", Vector2(0.4, 27.95), Vector2(45.00122, 90.01099)],
-		["res://TheGame/Entitys/Enemies/Monsters/huaguoshan_monkey_entity.tscn", Vector2(-0.05, -12.55), Vector2(39.997864, 59.999085)],
-		["res://TheGame/Entitys/Enemies/Monsters/demon_monkey_entity.tscn", Vector2(0.55, -0.45), Vector2(41.999817, 82.00058)],
-		["res://TheGame/Entitys/Enemies/Monsters/gorilla_entity.tscn", Vector2(0.5, -0.05), Vector2(109.99603, 109.99786)]
+		["res://TheGame/Entitys/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_entity.tscn", Vector2(-0.05, -12.55), Vector2(39.997864, 59.999085)],
+		["res://TheGame/Entitys/Enemies/Monsters/Ground/demon_monkey/demon_monkey_entity.tscn", Vector2(0.55, -0.45), Vector2(41.999817, 82.00058)],
+		["res://TheGame/Entitys/Enemies/Monsters/Ground/gorilla/gorilla_entity.tscn", Vector2(0.5, -0.05), Vector2(109.99603, 109.99786)]
 	]
 	for item in registrations:
 		var actor: CharacterBody2D = load(item[0]).instantiate()

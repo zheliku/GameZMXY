@@ -12,7 +12,9 @@ namespace GameLogic.Heroes.Body
     /// </summary>
     public sealed class HeroAirState : AbstractHeroBodyState
     {
-        /// <summary>处理空中攻击、二段跳、转向与跳跃/下落动画。</summary>
+        /// <summary>
+        /// 处理空中攻击、二段跳、转向与跳跃/下落动画。
+        /// </summary>
         /// <param name="fsm">所属身体状态机。</param>
         /// <param name="body">英雄宿主。</param>
         /// <param name="dt">游戏物理帧秒数。</param>
@@ -28,7 +30,7 @@ namespace GameLogic.Heroes.Body
                 return;
             }
 
-            TryJump(body);
+            TryJump(body, dt);
             if (!IsAirborne(body))
             {
                 ChangeState<HeroGroundState>(fsm);

@@ -22,7 +22,7 @@ using GodotGameFramework;
 ///
 /// 阶段（事件驱动，时间只作超时兜底）：
 ///  0 视野外   猴子挪到英雄右侧 600px → 应当巡逻（Patrol/Idle），不追击；
-///  1 进视野   3s 时挪到右侧 150px → Chase → Attack，出招 attack_1 并打中英雄；
+///  1 受击激怒 3s 时挪到右侧 150px 并由英雄打一下 → Chase → Attack，出招 attack_1 并打中英雄；
 ///  2 转身     打中英雄后，下一次出招的当帧把英雄瞬移到猴子身后 → 出招与收招硬直期间朝向不变、出招中身体/动画一直是
 ///             Attack/attack_1；硬直结束后 1s 内转向英雄；
 ///  3 平台     英雄钉在猴子前方高 120px 的固定点 AirDuration 秒 → 不出招、AI 进 Hold、在英雄 x 两侧来回踱步；
@@ -48,7 +48,7 @@ public sealed class EnemyAiSmokeScenario
     private const float OutOfSightOffset = 600f; // 初始视野外偏移（像素）。
     private const float InSightOffset = 150f; // 进入怪物视野时的水平偏移（像素）。
     private const float BehindOffset = 60f; // 转身测试中英雄位于怪物身后的水平偏移（像素）。
-    private static readonly Rect2 ExpectedReach = new Rect2(-49f, -48f, 50f, 50f); // attack_1 判定盒期望范围。
+    private static readonly Rect2 ExpectedReach = new Rect2(-46.3997f, -47.8496f, 34.9994f, 61.9992f); // Monster1 源探针，加上角色共用的 -13Y 原点。
     private const float ReachTolerance = 0.5f; // 判定盒边界允许误差（像素）。
 
     private readonly AbstractHeroEntity m_Hero; // 受测英雄实体。
@@ -86,10 +86,20 @@ public sealed class EnemyAiSmokeScenario
     // 丢失目标阶段
     private bool m_LostTarget; // 是否观察到怪物丢失目标并恢复巡逻。
 
-    /// <summary>场景已结束（通过或超时），驱动器据此调用 <see cref="Finish"/>。</summary>
-    public bool IsDone => m_Phase == Phase.Done;
+    /// <summary>
+    /// 场景已结束（通过或超时），驱动器据此调用 <see cref="Finish"/>。
+    /// </summary>
+    public bool IsDone
+    {
+        get
+        {
+            return m_Phase == Phase.Done;
+        }
+    }
 
-    /// <summary>创建 AI 烟测场景并订阅战斗事件。</summary>
+    /// <summary>
+    /// 创建 AI 烟测场景并订阅战斗事件。
+    /// </summary>
     /// <param name="hero">受测英雄实体。</param>
     /// <param name="monster">受测怪物实体。</param>
     public EnemyAiSmokeScenario(AbstractHeroEntity hero, AbstractEnemyEntity monster)
@@ -105,7 +115,9 @@ public sealed class EnemyAiSmokeScenario
         CheckReach();
     }
 
-    /// <summary>每物理帧推进（t = 相对开始的秒数）。</summary>
+    /// <summary>
+    /// 每物理帧推进（t = 相对开始的秒数）。
+    /// </summary>
     /// <param name="t">相对场景开始时间（秒）。</param>
     public void Update(double t)
     {
@@ -132,6 +144,7 @@ public sealed class EnemyAiSmokeScenario
                 if (t >= InSightAt)
                 {
                     Teleport(InSightOffset);
+                    HitMonster(1, Vector2.Zero);
                     Enter(Phase.WaitFirstHit, t);
                 }
 
@@ -209,7 +222,9 @@ public sealed class EnemyAiSmokeScenario
         Sample(t);
     }
 
-    /// <summary>收尾断言，返回失败原因列表（空 = 通过）。</summary>
+    /// <summary>
+    /// 收尾断言，返回失败原因列表（空 = 通过）。
+    /// </summary>
     /// <returns>断言失败原因；全部通过时为空列表。</returns>
     public List<string> Finish()
     {
@@ -497,34 +512,54 @@ public sealed class EnemyAiSmokeScenario
 
     private enum Phase // AI 烟测的阶段状态。
     {
-        /// <summary>怪物位于英雄视野外。</summary>
+        /// <summary>
+        /// 怪物位于英雄视野外。
+        /// </summary>
         OutOfSight,
 
-        /// <summary>等待怪物首次命中英雄。</summary>
+        /// <summary>
+        /// 等待怪物首次命中英雄。
+        /// </summary>
         WaitFirstHit,
 
-        /// <summary>等待下一次攻击开始。</summary>
+        /// <summary>
+        /// 等待下一次攻击开始。
+        /// </summary>
         WaitSecondAttack,
 
-        /// <summary>验证出招和收招期间的朝向锁定。</summary>
+        /// <summary>
+        /// 验证出招和收招期间的朝向锁定。
+        /// </summary>
         TurnAround,
 
-        /// <summary>验证英雄处于空中时的守候行为。</summary>
+        /// <summary>
+        /// 验证英雄处于空中时的守候行为。
+        /// </summary>
         Air,
 
-        /// <summary>等待英雄落地并验证恢复攻击。</summary>
+        /// <summary>
+        /// 等待英雄落地并验证恢复攻击。
+        /// </summary>
         WaitLanded,
 
-        /// <summary>验证目标丢失后的巡逻恢复。</summary>
+        /// <summary>
+        /// 验证目标丢失后的巡逻恢复。
+        /// </summary>
         Lose,
 
-        /// <summary>等待致命攻击。</summary>
+        /// <summary>
+        /// 等待致命攻击。
+        /// </summary>
         WaitKill,
 
-        /// <summary>等待死亡动画和实体回收。</summary>
+        /// <summary>
+        /// 等待死亡动画和实体回收。
+        /// </summary>
         WaitEnd,
 
-        /// <summary>场景已完成。</summary>
+        /// <summary>
+        /// 场景已完成。
+        /// </summary>
         Done,
     }
 }

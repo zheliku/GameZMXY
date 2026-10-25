@@ -7,7 +7,9 @@ using GameLogic.UI.Widgets;
 
 namespace GameLogic.UI;
 
-/// <summary>按造梦三 AttributeCon 排列名称、品质、类型、实际属性与灵魂价值。</summary>
+/// <summary>
+/// 按造梦三 AttributeCon 排列名称、品质、类型、实际属性与灵魂价值。
+/// </summary>
 public partial class EquipmentTooltip : PanelContainer
 {
     [Export] private Label m_Name; // 品质色的装备名称。
@@ -17,7 +19,9 @@ public partial class EquipmentTooltip : PanelContainer
     [Export] private Label m_Description; // 官方说明，空说明不占行。
     [Export] private Label m_Value; // 出售获得的灵魂。
 
-    /// <summary>注入装备并立即建立可测量的文本布局，避免首次悬停出现空白细条。</summary>
+    /// <summary>
+    /// 注入装备并立即建立可测量的文本布局，避免首次悬停出现空白细条。
+    /// </summary>
     /// <param name="data">不可变的实际装备。</param>
     /// <param name="definition">装备名称、类型、品质与售价。</param>
     public void Bind(EquipmentData data, EquipmentConfig definition)
@@ -63,27 +67,32 @@ public partial class EquipmentTooltip : PanelContainer
         m_Value.Text = $"价值 : {definition.SellPrice} 灵魂";
     }
 
-    /// <summary>把战斗属性映射为玩家使用的中文名称。</summary>
+    /// <summary>
+    /// 把战斗属性映射为玩家使用的中文名称。
+    /// </summary>
     /// <param name="attribute">属性类型。</param>
     /// <returns>界面名称。</returns>
-    private static string AttributeName(AttributeType attribute) => attribute switch
+    private static string AttributeName(AttributeType attribute)
     {
-        AttributeType.MaxHp => "生命",
-        AttributeType.MaxMp => "魔法",
-        AttributeType.Power => "攻击",
-        AttributeType.Def => "防御",
-        AttributeType.Mdef => "魔抗",
-        AttributeType.Crit => "暴击",
-        AttributeType.Miss => "闪避",
-        AttributeType.Lucky => "幸运",
-        AttributeType.Toughness => "韧性",
-        AttributeType.Htarget => "命中",
-        AttributeType.CritReduce => "抗暴",
-        AttributeType.Ar => "破甲",
-        AttributeType.Sp => "破魔",
-        AttributeType.Vampirism => "吸血",
-        AttributeType.HpRegen => "回血",
-        AttributeType.MpRegen => "回蓝",
-        _ => attribute.ToString()
-    };
+        return attribute switch
+        {
+            AttributeType.MaxHp => "生命",
+            AttributeType.MaxMp => "魔法",
+            AttributeType.Power => "攻击",
+            AttributeType.Def => "防御",
+            AttributeType.Mdef => "魔抗",
+            AttributeType.Crit => "暴击",
+            AttributeType.Miss => "闪避",
+            AttributeType.Lucky => "幸运",
+            AttributeType.Toughness => "韧性",
+            AttributeType.Htarget => "命中",
+            AttributeType.CritReduce => "抗暴",
+            AttributeType.Ar => "破甲",
+            AttributeType.Sp => "破魔",
+            AttributeType.Vampirism => "吸血",
+            AttributeType.HpRegen => "回血",
+            AttributeType.MpRegen => "回蓝",
+            _ => attribute.ToString()
+        };
+    }
 }

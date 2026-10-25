@@ -49,13 +49,25 @@ public sealed partial class UiSmokeScenario
     private AbstractEnemyEntity m_Monster; // 复用验证创建的怪物，结束时归还。
     private BattleForm m_TestBattleForm; // 当前由测试打开的 HUD，结束时关闭。
 
-    /// <summary>回归是否已结束。</summary>
-    public bool IsDone => m_RunTask.IsCompleted;
+    /// <summary>
+    /// 回归是否已结束。
+    /// </summary>
+    public bool IsDone
+    {
+        get
+        {
+            return m_RunTask.IsCompleted;
+        }
+    }
 
-    /// <summary>首个失败原因，成功时为 null。</summary>
+    /// <summary>
+    /// 首个失败原因，成功时为 null。
+    /// </summary>
     public string Failure { get; private set; }
 
-    /// <summary>开始一次 UI 与存档回归，原流程与测试使用同一套框架服务。</summary>
+    /// <summary>
+    /// 开始一次 UI 与存档回归，原流程与测试使用同一套框架服务。
+    /// </summary>
     /// <param name="driver">烟测帧驱动节点。</param>
     /// <param name="bossesOnly">只验证新增 BOSS，不重复全部既有窗口回归。</param>
     public UiSmokeScenario(Node driver, bool bossesOnly = false)
@@ -64,7 +76,9 @@ public sealed partial class UiSmokeScenario
         m_RunTask = RunAsync(bossesOnly);
     }
 
-    /// <summary>依次验证显示、解绑、复用、升级、关卡事务、存档与重入。</summary>
+    /// <summary>
+    /// 依次验证显示、解绑、复用、升级、关卡事务、存档与重入。
+    /// </summary>
     /// <returns>整个回归完成的任务，异常被转换为 Failure。</returns>
     /// <param name="bossesOnly">是否运行独立 BOSS 回归。</param>
     private async Task RunAsync(bool bossesOnly)
@@ -84,6 +98,54 @@ public sealed partial class UiSmokeScenario
             Check(data?.SaveVersion == GameData.CurrentVersion && data.Heroes.Count == 1, "首次启动未按当前版本写回新档");
             CheckDisplay(battleForm, hero, flow.GetModel<ProfileModel>(), level);
 
+            if (OS.GetCmdlineUserArgs().Contains("--fire-motion-only"))
+            {
+                level.Cleanup();
+                await CheckFireDemonMotionAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--enemy-hierarchy-only"))
+            {
+                await CheckMonsterResponsibilitiesAsync(hero);
+                await CheckActorAnimationEventsAsync();
+                level.Cleanup();
+                await WaitFramesAsync(3);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--qixing-only"))
+            {
+                // 保留正式场景与伤害显示，停止既有关卡流，避免其他小怪混入每招伤害证据。
+                level.Cleanup();
+                await CheckQixingEnemiesAsync(hero, flow);
+                level.Cleanup();
+                await WaitFramesAsync(3);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--lion-ai-only"))
+            {
+                level.Cleanup();
+                await CheckLionCamelKingAiAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--bat-cave-only"))
+            {
+                await CheckBatCaveAsync(hero, flow);
+                level.Cleanup();
+                await WaitFramesAsync(3);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--bat-sonic-only"))
+            {
+                level.Cleanup();
+                await CheckBatSonicTimingAsync(hero, flow);
+                return;
+            }
+
             if (OS.GetCmdlineUserArgs().Contains("--entry-only"))
             {
                 level.Cleanup();
@@ -94,6 +156,20 @@ public sealed partial class UiSmokeScenario
             if (OS.GetCmdlineUserArgs().Contains("--terrain-only"))
             {
                 await CheckSlopeMovementAsync(flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--qixing-platform-only"))
+            {
+                level.Cleanup();
+                await CheckQixingPlatformAsync(flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--floating-only"))
+            {
+                level.Cleanup();
+                await CheckFloatingTextAsync();
                 return;
             }
 
@@ -184,6 +260,8 @@ public sealed partial class UiSmokeScenario
             KillHero(FindHero());
             Check(pendingOrbs.Count == 0 && flow.GetModel<ProfileModel>().Soul.Value == soulAfterKill,
                 "死亡没有回收在途球，或错误领取了未接触奖励");
+            await WaitUntilAsync(() => SmokeInspection.Model(deathRun).Outcome.Value == LevelOutcome.Defeated,
+                "英雄死亡后的墓碑演出没有完成失败结算");
             Check(SmokeInspection.Model(deathRun).Outcome.Value == LevelOutcome.Defeated, $"英雄死亡没有结束关卡运行：{SmokeInspection.Model(deathRun).Outcome.Value}");
             Check(await SmokeInspection.GetLevelSystem(deathRun).CheckpointWrite, "死亡检查点写入失败");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == afterKill, "死亡没有保存本关收益");
@@ -217,7 +295,9 @@ public sealed partial class UiSmokeScenario
         }
     }
 
-    /// <summary>真实落地、前摇和打断；同一大猩猩使用不同倍率后回到基础值，验证池复用完整复位。</summary>
+    /// <summary>
+    /// 真实落地、前摇和打断；同一大猩猩使用不同倍率后回到基础值，验证池复用完整复位。
+    /// </summary>
     /// <param name="hero">正式流程英雄。</param>
     /// <param name="battleForm">正式 HUD。</param>
     /// <returns>全部怪物行为验证完成的任务。</returns>
@@ -323,7 +403,9 @@ public sealed partial class UiSmokeScenario
 
     }
 
-    /// <summary>有渲染器时保存实际游戏画面，便于核对入场提示与大猩猩素材。</summary>
+    /// <summary>
+    /// 有渲染器时保存实际游戏画面，便于核对入场提示与大猩猩素材。
+    /// </summary>
     /// <param name="name">忽略目录中的预览文件名。</param>
     /// <returns>本帧渲染与保存完成的任务。</returns>
     private async Task CaptureEncounterAsync(string name)
@@ -336,7 +418,9 @@ public sealed partial class UiSmokeScenario
         m_Driver.GetViewport().GetTexture().GetImage().SavePng(Path.Combine(directory, name));
     }
 
-    /// <summary>HUD 打开时拉取一致快照、变化时刷新、关闭后不再响应、窗口池复用、改绑到其他状态源。</summary>
+    /// <summary>
+    /// HUD 打开时拉取一致快照、变化时刷新、关闭后不再响应、窗口池复用、改绑到其他状态源。
+    /// </summary>
     /// <param name="battleForm">正式流程已打开的 HUD。</param>
     /// <param name="hero">正式英雄。</param>
     /// <param name="flow">档案作用域。</param>
@@ -394,7 +478,9 @@ public sealed partial class UiSmokeScenario
         await WaitFramesAsync(2);
     }
 
-    /// <summary>验证无双只有蓄满才连续循环，消耗和零上限会停止，经验变化不触发播放。</summary>
+    /// <summary>
+    /// 验证无双只有蓄满才连续循环，消耗和零上限会停止，经验变化不触发播放。
+    /// </summary>
     /// <param name="battleForm">当前打开的真实 HUD。</param>
     /// <param name="hero">HUD 绑定的英雄，验证后保持蓄满以继续检查关闭与复用。</param>
     /// <param name="progression">HUD 绑定的成长，经验验证后恢复原值。</param>
@@ -443,7 +529,9 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: 无双未满/经验变化不闪烁、满值连续循环、消耗与零上限复位验证完成");
     }
 
-    /// <summary>池化实体复用时按装配/配置重建属性，不残留上次的数值或修正来源。</summary>
+    /// <summary>
+    /// 池化实体复用时按装配/配置重建属性，不残留上次的数值或修正来源。
+    /// </summary>
     /// <param name="flow">档案作用域。</param>
     /// <returns>验证完成的任务。</returns>
     private async Task CheckEntityReuseAsync(ProcedureOwner flow)
@@ -489,7 +577,9 @@ public sealed partial class UiSmokeScenario
         await WaitFramesAsync(2);
     }
 
-    /// <summary>验证空格真实输入、无双战斗效果、残影世界位置与耗尽还原。</summary>
+    /// <summary>
+    /// 验证空格真实输入、无双战斗效果、残影世界位置与耗尽还原。
+    /// </summary>
     /// <param name="hero">由实体池显示的额外英雄，不影响正式关卡档案。</param>
     /// <returns>引擎输入和残影淡出验证完成的任务。</returns>
     private async Task CheckMusouActivationAsync(AbstractHeroEntity hero)
@@ -568,7 +658,9 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: 空格开启无双、整招攻击/移速/跳跃/重力/霸体、残影定位与耗尽还原验证完成");
     }
 
-    /// <summary>验证两种小怪的共享血条、生命通知、定位、死亡隐藏与真实实体池复用。</summary>
+    /// <summary>
+    /// 验证两种小怪的共享血条、生命通知、定位、死亡隐藏与真实实体池复用。
+    /// </summary>
     /// <returns>血条生命周期回归完成的任务。</returns>
     private async Task CheckMonsterHealthBarsAsync()
     {
@@ -679,7 +771,9 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: 两种小怪血条即时受伤/治疗/转向/死亡隐藏/退订与实体池复用验证完成");
     }
 
-    /// <summary>升级：档案成长变化后由装配重建注入实体并补满；HUD 跟随刷新；满级显示 MAX。</summary>
+    /// <summary>
+    /// 升级：档案成长变化后由装配重建注入实体并补满；HUD 跟随刷新；满级显示 MAX。
+    /// </summary>
     /// <param name="flow">档案作用域。</param>
     /// <param name="level">正式关卡。</param>
     /// <returns>验证完成的任务。</returns>
@@ -717,7 +811,9 @@ public sealed partial class UiSmokeScenario
         await WaitFramesAsync(2);
     }
 
-    /// <summary>主数据文件损坏时读档回退 .bak（覆盖写时由原子替换保留）。</summary>
+    /// <summary>
+    /// 主数据文件损坏时读档回退 .bak（覆盖写时由原子替换保留）。
+    /// </summary>
     /// <param name="flow">档案作用域。</param>
     /// <returns>验证完成的任务。</returns>
     private async Task CheckBackupRecoveryAsync(ProcedureOwner flow)
@@ -736,7 +832,9 @@ public sealed partial class UiSmokeScenario
         Check(await flow.GetSystem<SaveSystem>().SaveCheckpointAsync(flow.GetModel<ProfileModel>()), "备份回退后重写失败");
     }
 
-    /// <summary>非当前格式被拒绝且不被自动改写，随后恢复测试检查点。</summary>
+    /// <summary>
+    /// 非当前格式被拒绝且不被自动改写，随后恢复测试检查点。
+    /// </summary>
     /// <returns>格式拒绝与恢复任务。</returns>
     private async Task CheckUnsupportedFormatAsync()
     {
@@ -768,7 +866,9 @@ public sealed partial class UiSmokeScenario
         }
     }
 
-    /// <summary>冷加载中的 HUD 请求由正式流程离开时取消，晚到结果不会打开。</summary>
+    /// <summary>
+    /// 冷加载中的 HUD 请求由正式流程离开时取消，晚到结果不会打开。
+    /// </summary>
     /// <returns>验证完成的任务。</returns>
     private async Task CheckLoadingCancellationAsync()
     {
@@ -810,7 +910,9 @@ public sealed partial class UiSmokeScenario
         }
     }
 
-    /// <summary>真实 OnOpen 失败（必需绑定缺失）由流程完整清理，修复后重入恢复。</summary>
+    /// <summary>
+    /// 真实 OnOpen 失败（必需绑定缺失）由流程完整清理，修复后重入恢复。
+    /// </summary>
     /// <returns>验证完成的任务。</returns>
     private async Task CheckHudOpenFailureAsync()
     {
@@ -847,7 +949,9 @@ public sealed partial class UiSmokeScenario
         CheckDisplay(CurrentBattleForm(), FindHero(), SmokeInspection.Flow(procedure).GetModel<ProfileModel>(), FindLevel());
     }
 
-    /// <summary>经真实结算链路击败一只本关怪物，等待关卡运行结算经验。</summary>
+    /// <summary>
+    /// 经真实结算链路击败一只本关怪物，等待关卡运行结算经验。
+    /// </summary>
     /// <param name="level">正式关卡。</param>
     /// <param name="procedure">关卡流程。</param>
     /// <returns>结算完成的任务。</returns>
@@ -921,17 +1025,23 @@ public sealed partial class UiSmokeScenario
         hero.SetPhysicsProcess(false);
     }
 
-    /// <summary>诊断：怪物与关卡运行的当前状态（仅失败消息使用）。</summary>
+    /// <summary>
+    /// 诊断：怪物与关卡运行的当前状态（仅失败消息使用）。
+    /// </summary>
     /// <param name="monster">受测怪物。</param>
     /// <param name="run">关卡运行。</param>
     /// <param name="level">关卡。</param>
     /// <returns>可读的状态描述。</returns>
-    private static string Describe(AbstractEnemyEntity monster, LevelViewController run, LevelViewController level) =>
-        $"monster shown={monster.IsShown} dead={monster.Dead} hp={monster.Hp}/{monster.MaxHp} " +
+    private static string Describe(AbstractEnemyEntity monster, LevelViewController run, LevelViewController level)
+    {
+        return $"monster shown={monster.IsShown} dead={monster.Dead} hp={monster.Hp}/{monster.MaxHp} " +
         $"id={monster.Id}; run={SmokeInspection.Model(run).Outcome.Value} kills={SmokeInspection.Model(run).DefeatedEnemyCount}; level={SmokeInspection.Sequence(level).Phase}/{SmokeInspection.Sequence(level).Current.StageOrder}; " +
         $"procedure={GF.Procedure.CurrentProcedure?.GetType().Name}";
+    }
 
-    /// <summary>经真实结算链路击杀英雄（闪避按真实概率结算，重复攻击直到死亡）。</summary>
+    /// <summary>
+    /// 经真实结算链路击杀英雄（闪避按真实概率结算，重复攻击直到死亡）。
+    /// </summary>
     /// <param name="hero">正式英雄。</param>
     /// <exception cref="InvalidOperationException">多次攻击仍未致死。</exception>
     private static void KillHero(AbstractHeroEntity hero)
@@ -972,7 +1082,9 @@ public sealed partial class UiSmokeScenario
         }
     }
 
-    /// <summary>探针复用同一已注册模型；不向正式代码增加测试装配入口。</summary>
+    /// <summary>
+    /// 探针复用同一已注册模型；不向正式代码增加测试装配入口。
+    /// </summary>
     /// <param name="heroId">英雄编号。</param>
     /// <param name="level">目标等级。</param>
     private static void ResetHeroAttributes(int heroId, int level)
@@ -983,7 +1095,9 @@ public sealed partial class UiSmokeScenario
             equipment.Weapon, equipment.Armor);
     }
 
-    /// <summary>按出战装配显示一名额外英雄（关闭物理，测试只观测数值；归还经 <see cref="ReleaseTestEntity"/>）。</summary>
+    /// <summary>
+    /// 按出战装配显示一名额外英雄（关闭物理，测试只观测数值；归还经 <see cref="ReleaseTestEntity"/>）。
+    /// </summary>
     /// <param name="flow">档案作用域。</param>
     /// <param name="totalExperience">本次探针的累计经验。</param>
     /// <returns>已显示的英雄。</returns>
@@ -998,7 +1112,9 @@ public sealed partial class UiSmokeScenario
         return hero;
     }
 
-    /// <summary>通过正式窗口 API 打开 HUD，等待实际完成。</summary>
+    /// <summary>
+    /// 通过正式窗口 API 打开 HUD，等待实际完成。
+    /// </summary>
     /// <param name="data">打开参数。</param>
     /// <returns>本次请求打开的 HUD。</returns>
     private async Task<BattleForm> OpenBattleFormAsync(BattleFormData data)
@@ -1008,7 +1124,9 @@ public sealed partial class UiSmokeScenario
         return (BattleForm)GF.UI.GetUIForm(serial);
     }
 
-    /// <summary>等待关卡流程装配完成（运行、英雄与 HUD 就绪）。</summary>
+    /// <summary>
+    /// 等待关卡流程装配完成（运行、英雄与 HUD 就绪）。
+    /// </summary>
     /// <returns>当前关卡流程。</returns>
     private async Task<ProcedureLevel> WaitForLevelAsync()
     {
@@ -1024,22 +1142,36 @@ public sealed partial class UiSmokeScenario
         return FindLevelProcedure();
     }
 
-    /// <summary>读取当前流程（只在处于关卡流程时返回）。</summary>
+    /// <summary>
+    /// 读取当前流程（只在处于关卡流程时返回）。
+    /// </summary>
     /// <returns>关卡流程或 null。</returns>
-    private static ProcedureLevel FindLevelProcedure() => GF.Procedure.CurrentProcedure as ProcedureLevel;
+    private static ProcedureLevel FindLevelProcedure()
+    {
+        return GF.Procedure.CurrentProcedure as ProcedureLevel;
+    }
 
-    /// <summary>使用真实流程状态机触发一次普通离开与再次进入。</summary>
+    /// <summary>
+    /// 使用真实流程状态机触发一次普通离开与再次进入。
+    /// </summary>
     private static void ReenterLevel()
     {
         ((Fsm<IProcedureManager>)GF.Fsm.GetFsm<IProcedureManager>()).ChangeState<ProcedureLevel>();
     }
 
-    /// <summary>当前存档槽数据文件的绝对路径（与 ArchiveSystem 布局一致，只用于测试注入损坏与不支持的格式）。</summary>
+    /// <summary>
+    /// 当前存档槽数据文件的绝对路径（与 ArchiveSystem 布局一致，只用于测试注入损坏与不支持的格式）。
+    /// </summary>
     /// <returns>数据文件路径。</returns>
-    private static string DataFilePath() => ProjectSettings.GlobalizePath(
+    private static string DataFilePath()
+    {
+        return ProjectSettings.GlobalizePath(
         $"user://{GF.Archive.Setting.Folder}/Data/{GF.Archive.CurrentCatalogue.UnitId}.sav");
+    }
 
-    /// <summary>直接读取磁盘上的当前槽数据（不经 ArchiveSystem，证明写盘真实发生）。</summary>
+    /// <summary>
+    /// 直接读取磁盘上的当前槽数据（不经 ArchiveSystem，证明写盘真实发生）。
+    /// </summary>
     /// <returns>磁盘数据。</returns>
     private static async Task<GameData> ReadDiskAsync()
     {
@@ -1049,25 +1181,47 @@ public sealed partial class UiSmokeScenario
             setting.EnableAesEncryption, setting.KEY, setting.Salt);
     }
 
-    /// <summary>查找当前已显示的英雄，场景树查询只用于调试断言。</summary>
+    /// <summary>
+    /// 查找当前已显示的英雄，场景树查询只用于调试断言。
+    /// </summary>
     /// <returns>当前英雄或 null。</returns>
-    private AbstractHeroEntity FindHero() => m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+    private AbstractHeroEntity FindHero()
+    {
+        return m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
         .OfType<AbstractHeroEntity>().FirstOrDefault(x => x.IsShown && x != m_ExtraHero);
+    }
 
-    /// <summary>查找当前已显示且存活的怪物。</summary>
+    /// <summary>
+    /// 查找当前已显示且存活的怪物。
+    /// </summary>
     /// <returns>怪物或 null。</returns>
-    private AbstractEnemyEntity FindMonster() => m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+    private AbstractEnemyEntity FindMonster()
+    {
+        return m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
         .OfType<AbstractEnemyEntity>().FirstOrDefault(x => x.IsShown && !x.Dead && x != m_Monster);
+    }
 
-    /// <summary>查找当前正式关卡，排除已经等待释放的旧节点。</summary>
+    /// <summary>
+    /// 查找当前正式关卡，排除已经等待释放的旧节点。
+    /// </summary>
     /// <returns>当前关卡或 null。</returns>
-    private static LevelViewController FindLevel() => SmokeInspection.Level(FindLevelProcedure());
+    private static LevelViewController FindLevel()
+    {
+        return SmokeInspection.Level(FindLevelProcedure());
+    }
 
-    /// <summary>读取当前正式 HUD。</summary>
+    /// <summary>
+    /// 读取当前正式 HUD。
+    /// </summary>
     /// <returns>当前窗口或 null。</returns>
-    private static BattleForm CurrentBattleForm() => GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_battle_form) as BattleForm;
+    private static BattleForm CurrentBattleForm()
+    {
+        return GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_battle_form) as BattleForm;
+    }
 
-    /// <summary>关闭仍由框架管理的窗口，重复调用安全。</summary>
+    /// <summary>
+    /// 关闭仍由框架管理的窗口，重复调用安全。
+    /// </summary>
     /// <param name="battleForm">待关闭窗口，可为空。</param>
     private static void CloseBattleForm(BattleForm battleForm)
     {
@@ -1077,7 +1231,9 @@ public sealed partial class UiSmokeScenario
         }
     }
 
-    /// <summary>比对实际控件与状态源，而不是只检查通知次数。</summary>
+    /// <summary>
+    /// 比对实际控件与状态源，而不是只检查通知次数。
+    /// </summary>
     /// <param name="battleForm">实际窗口。</param>
     /// <param name="hero">预期绑定英雄。</param>
     /// <param name="progression">预期绑定成长。</param>
@@ -1115,13 +1271,20 @@ public sealed partial class UiSmokeScenario
         Check(battleForm.GetNode<AnimatedSprite2D>("m_Go").Visible == SmokeInspection.Model(level).TravelAvailable.Value, "Go 显示与关卡状态不一致");
     }
 
-    /// <summary>比较控件比例，容纳浮点显示误差。</summary>
+    /// <summary>
+    /// 比较控件比例，容纳浮点显示误差。
+    /// </summary>
     /// <param name="actual">控件值。</param>
     /// <param name="expected">预期值。</param>
     /// <returns>误差是否足够小。</returns>
-    private static bool Near(double actual, double expected) => Math.Abs(actual - expected) < 0.0001;
+    private static bool Near(double actual, double expected)
+    {
+        return Math.Abs(actual - expected) < 0.0001;
+    }
 
-    /// <summary>断言失败时终止当前回归并保留具体原因。</summary>
+    /// <summary>
+    /// 断言失败时终止当前回归并保留具体原因。
+    /// </summary>
     /// <param name="condition">断言条件。</param>
     /// <param name="message">失败原因。</param>
     /// <exception cref="InvalidOperationException">条件不成立。</exception>
@@ -1133,7 +1296,9 @@ public sealed partial class UiSmokeScenario
         }
     }
 
-    /// <summary>按真实引擎帧等待，不创建后台轮询任务。</summary>
+    /// <summary>
+    /// 按真实引擎帧等待，不创建后台轮询任务。
+    /// </summary>
     /// <param name="frames">帧数。</param>
     /// <returns>指定帧数完成的任务。</returns>
     private async Task WaitFramesAsync(int frames)
@@ -1144,10 +1309,13 @@ public sealed partial class UiSmokeScenario
         }
     }
 
-    /// <summary>等待实际引擎条件，超时报告失败。</summary>
+    /// <summary>
+    /// 等待实际引擎条件，超时报告失败。
+    /// </summary>
     /// <param name="condition">完成条件。</param>
     /// <param name="message">超时原因。</param>
     /// <param name="timeoutMs">超时毫秒数。</param>
+    /// <param name="describe">超时时补充当前状态的说明工厂。</param>
     /// <returns>条件成立的任务。</returns>
     /// <exception cref="InvalidOperationException">等待超时。</exception>
     private async Task WaitUntilAsync(Func<bool> condition, string message, ulong timeoutMs = 10000,

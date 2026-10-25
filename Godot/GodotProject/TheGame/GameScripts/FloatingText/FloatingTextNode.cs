@@ -1,22 +1,29 @@
 using System;
 using System.Collections.Generic;
-using GameConfig.Battle;
 using Godot;
 using GodotGameFramework.NodePool;
 
 namespace GameLogic.FloatingText;
 
-/// <summary>恢复提示的颜色样式；调用方负责实际生命或魔法结算。</summary>
+/// <summary>
+/// 恢复提示的颜色样式；调用方负责实际生命或魔法结算。
+/// </summary>
 public enum RecoveryKind
 {
-    /// <summary>绿色生命恢复。</summary>
+    /// <summary>
+    /// 绿色生命恢复。
+    /// </summary>
     Health,
 
-    /// <summary>蓝色魔法恢复。</summary>
+    /// <summary>
+    /// 蓝色魔法恢复。
+    /// </summary>
     Mana
 }
 
-/// <summary>共用位图数字与秒制动画的飘字节点；伤害、闪避和恢复只选择不同显示样式。</summary>
+/// <summary>
+/// 共用位图数字与秒制动画的飘字节点；伤害、闪避和恢复只选择不同显示样式。
+/// </summary>
 public partial class FloatingTextNode : Node2D, IPoolable
 {
     private const int MaxDigits = 10; // 覆盖 int 正数的全部数位。
@@ -33,13 +40,9 @@ public partial class FloatingTextNode : Node2D, IPoolable
     private const float DamagePulseSeconds = .1f; // 普通伤害放大、缩回各用的秒数。
     private const float CriticalPulseSeconds = .2f; // 暴击伤害放大、缩回各用的秒数。
 
-    [Export] private Texture2D m_MonsterPhysics; // 怪物受物理伤害的数字图集。
-    [Export] private Texture2D m_MonsterPhysicsCrit; // 怪物受物理暴击的数字图集。
-    [Export] private Texture2D m_MonsterMagic; // 怪物受魔法伤害的数字图集。
-    [Export] private Texture2D m_MonsterMagicCrit; // 怪物受魔法暴击的数字图集。
-    [Export] private Texture2D m_HeroPhysics; // 英雄受物理伤害的数字图集。
-    [Export] private Texture2D m_HeroMagic; // 英雄受魔法伤害的数字图集。
-    [Export] private Texture2D m_Real; // 真实伤害数字图集。
+    [Export] private Texture2D m_EnemyDamage; // 官方 hurtnum：敌人普通受伤，物理与魔法共用。
+    [Export] private Texture2D m_EnemyCritical; // 官方 bnum：敌人暴击受伤。
+    [Export] private Texture2D m_HeroDamage; // 官方 pnum：英雄受伤，所有伤害类型共用。
     [Export] private Texture2D m_Health; // 绿色生命恢复数字。
     [Export] private Texture2D m_Mana; // 蓝色魔法恢复数字。
     [Export] private Sprite2D m_Miss; // 闪避提示贴图。
@@ -56,7 +59,9 @@ public partial class FloatingTextNode : Node2D, IPoolable
     private float m_Age; // 本次已经显示的游戏秒数。
     private Vector2 m_Start; // 本次世界锚点，显示后不跟随角色移动。
 
-    /// <summary>所有样式共用游戏秒数推进；暂停时 delta 为零，完成后只通知一次。</summary>
+    /// <summary>
+    /// 所有样式共用游戏秒数推进；暂停时 delta 为零，完成后只通知一次。
+    /// </summary>
     /// <param name="delta">本帧游戏秒数。</param>
     public override void _Process(double delta)
     {
@@ -86,7 +91,9 @@ public partial class FloatingTextNode : Node2D, IPoolable
         finished?.Invoke(this);
     }
 
-    /// <summary>首次取出创建数字子节点；后续取出只复位显示状态。</summary>
+    /// <summary>
+    /// 首次取出创建数字子节点；后续取出只复位显示状态。
+    /// </summary>
     public void OnGet()
     {
         // 相同池实例可以在伤害、闪避和恢复间切换，不重新分配数字节点。
@@ -110,7 +117,9 @@ public partial class FloatingTextNode : Node2D, IPoolable
         SetProcess(false);
     }
 
-    /// <summary>回池时停止计时、清除完成回调和全部内容，避免复用残留旧样式。</summary>
+    /// <summary>
+    /// 回池时停止计时、清除完成回调和全部内容，避免复用残留旧样式。
+    /// </summary>
     public void OnRelease()
     {
         SetProcess(false);
@@ -121,22 +130,25 @@ public partial class FloatingTextNode : Node2D, IPoolable
         m_Miss.Visible = false;
     }
 
-    /// <summary>显示一次已结算伤害；普通与暴击使用各自位图和放大节奏。</summary>
+    /// <summary>
+    /// 显示一次已结算伤害；普通与暴击使用各自位图和放大节奏。
+    /// </summary>
     /// <param name="position">受击头顶的世界锚点。</param>
     /// <param name="damage">正数显示量。</param>
-    /// <param name="kind">物理、魔法或真实伤害。</param>
     /// <param name="isCrit">是否暴击。</param>
     /// <param name="targetIsHero">是否使用英雄受击样式。</param>
     /// <param name="finished">显示结束后由模块归还节点。</param>
-    public void ShowDamage(Vector2 position, int damage, DamageKind kind, bool isCrit, bool targetIsHero,
+    public void ShowDamage(Vector2 position, int damage, bool isCrit, bool targetIsHero,
         Action<FloatingTextNode> finished)
     {
-        var sheet = PickDamageSheet(kind, isCrit, targetIsHero);
+        var sheet = targetIsHero ? m_HeroDamage : isCrit ? m_EnemyCritical : m_EnemyDamage;
         LayoutDigits(damage, sheet, true);
         Begin(position, DisplayKind.Damage, isCrit, finished);
     }
 
-    /// <summary>显示一次闪避贴图，沿用上升后淡出的节奏。</summary>
+    /// <summary>
+    /// 显示一次闪避贴图，沿用上升后淡出的节奏。
+    /// </summary>
     /// <param name="position">受击头顶的世界锚点。</param>
     /// <param name="finished">显示结束后由模块归还节点。</param>
     public void ShowMiss(Vector2 position, Action<FloatingTextNode> finished)
@@ -146,7 +158,9 @@ public partial class FloatingTextNode : Node2D, IPoolable
         Begin(position, DisplayKind.Miss, false, finished);
     }
 
-    /// <summary>显示绿色生命或蓝色魔法恢复，左起按字宽排布并保留官方一秒匀速上升。</summary>
+    /// <summary>
+    /// 显示绿色生命或蓝色魔法恢复，左起按字宽排布并保留官方一秒匀速上升。
+    /// </summary>
     /// <param name="position">目标角色的世界原点。</param>
     /// <param name="amount">正数显示量，不改变实际属性。</param>
     /// <param name="kind">生命或魔法的位图样式。</param>
@@ -157,7 +171,9 @@ public partial class FloatingTextNode : Node2D, IPoolable
         Begin(position + new Vector2(-20, -60), DisplayKind.Recovery, false, finished);
     }
 
-    /// <summary>为所有样式建立同一计时和结束回调；节点不访问全局事件或节点池。</summary>
+    /// <summary>
+    /// 为所有样式建立同一计时和结束回调；节点不访问全局事件或节点池。
+    /// </summary>
     /// <param name="position">已经按样式修正的世界锚点。</param>
     /// <param name="kind">动画节奏。</param>
     /// <param name="isCrit">是否使用暴击放大。</param>
@@ -176,23 +192,9 @@ public partial class FloatingTextNode : Node2D, IPoolable
         SetProcess(true);
     }
 
-    /// <summary>按伤害类型、暴击和受击方选择数字位图。</summary>
-    /// <param name="kind">伤害类型。</param>
-    /// <param name="isCrit">是否暴击。</param>
-    /// <param name="targetIsHero">是否英雄受击。</param>
-    /// <returns>对应样式的十格数字图集。</returns>
-    private Texture2D PickDamageSheet(DamageKind kind, bool isCrit, bool targetIsHero)
-    {
-        if (kind == DamageKind.Real)
-            return m_Real;
-        if (targetIsHero)
-            return kind == DamageKind.Magic ? m_HeroMagic : m_HeroPhysics;
-        if (kind == DamageKind.Magic)
-            return isCrit ? m_MonsterMagicCrit : m_MonsterMagic;
-        return isCrit ? m_MonsterPhysicsCrit : m_MonsterPhysics;
-    }
-
-    /// <summary>按可见宽度排布并给窄字补充适量侧留白；仅横向去透明空列，保留纵向注册位置。</summary>
+    /// <summary>
+    /// 按可见宽度排布并给窄字补充适量侧留白；仅横向去透明空列，保留纵向注册位置。
+    /// </summary>
     /// <param name="value">非负显示量。</param>
     /// <param name="sheet">十格数字图集。</param>
     /// <param name="centered">伤害居中，恢复按官方左起排列。</param>
@@ -240,7 +242,9 @@ public partial class FloatingTextNode : Node2D, IPoolable
         }
     }
 
-    /// <summary>首次使用图集时缓存十个数字的横向轮廓，包含所有非透明描边；不会在帧更新时读图。</summary>
+    /// <summary>
+    /// 首次使用图集时缓存十个数字的横向轮廓，包含所有非透明描边；不会在帧更新时读图。
+    /// </summary>
     /// <param name="sheet">等宽十格仅用于存储的数字图集。</param>
     /// <returns>横向去留白、完整保留原图高度的十个字符区域。</returns>
     /// <exception cref="InvalidOperationException">图集尺寸、图像或数字轮廓无效。</exception>
@@ -280,6 +284,8 @@ public partial class FloatingTextNode : Node2D, IPoolable
         return regions;
     }
 
-    /// <summary>决定本次动画节奏，不影响玩法结算。</summary>
+    /// <summary>
+    /// 决定本次动画节奏，不影响玩法结算。
+    /// </summary>
     private enum DisplayKind { Damage, Miss, Recovery }
 }

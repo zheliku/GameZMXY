@@ -8,7 +8,9 @@ namespace GameLogic.Enemies.AI
     /// </summary>
     public class DeathState : AbstractEnemyAiState
     {
-        /// <summary>死亡 AI 状态不再产生意图。</summary>
+        /// <summary>
+        /// 死亡 AI 状态不再产生意图。
+        /// </summary>
         protected override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds)
         {
         }

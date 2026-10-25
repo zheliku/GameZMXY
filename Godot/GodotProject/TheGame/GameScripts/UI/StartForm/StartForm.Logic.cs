@@ -13,17 +13,25 @@ using GodotGameFramework.UI;
 
 namespace GameLogic.UI;
 
-/// <summary>开始界面：沿用旧项目字体与分隔图片，通过具名点击事件通知流程。</summary>
+/// <summary>
+/// 开始界面：沿用旧项目字体与分隔图片，通过具名点击事件通知流程。
+/// </summary>
 public partial class StartForm : IController
 {
-    /// <summary>由所属流程处理 StartGameRequested；参数为本次窗口编号。</summary>
+    /// <summary>
+    /// 由所属流程处理 StartGameRequested；参数为本次窗口编号。
+    /// </summary>
     public event Action<int> StartGameRequested;
 
-    /// <summary>由所属流程处理 SettingsRequested；参数为本次窗口编号。</summary>
+    /// <summary>
+    /// 由所属流程处理 SettingsRequested；参数为本次窗口编号。
+    /// </summary>
     public event Action<int> SettingsRequested;
 
 
-    /// <summary>设置框架字段；按钮事件只在新建实例时绑定一次。</summary>
+    /// <summary>
+    /// 设置框架字段；按钮事件只在新建实例时绑定一次。
+    /// </summary>
     /// <param name="serialId">窗口打开编号。</param>
     /// <param name="uiFormAssetName">窗口资源路径。</param>
     /// <param name="uiGroup">所属界面组。</param>
@@ -48,7 +56,9 @@ public partial class StartForm : IController
         }
     }
 
-    /// <summary>显示开始页并清除上次的帮助说明。</summary>
+    /// <summary>
+    /// 显示开始页并清除上次的帮助说明。
+    /// </summary>
     /// <param name="userData">不使用，无需空的 Data 包装。</param>
     public void OnOpen(object userData)
     {
@@ -56,7 +66,9 @@ public partial class StartForm : IController
         Visible = true;
     }
 
-    /// <summary>释放本次状态源引用，保留可复用的窗口节点。</summary>
+    /// <summary>
+    /// 释放本次状态源引用，保留可复用的窗口节点。
+    /// </summary>
     /// <param name="isShutdown">是否框架关停。</param>
     /// <param name="userData">关闭参数，不保存。</param>
     public void OnClose(bool isShutdown, object userData)
@@ -67,7 +79,9 @@ public partial class StartForm : IController
             Visible = false;
     }
 
-    /// <summary>回池时清除本次打开的引用和框架编号。</summary>
+    /// <summary>
+    /// 回池时清除本次打开的引用和框架编号。
+    /// </summary>
     public void OnRecycle()
     {
         m_SerialId = 0;
@@ -77,28 +91,45 @@ public partial class StartForm : IController
             Visible = false;
     }
 
-    /// <summary>界面暂停；点击导航不依赖轮询。</summary>
+    /// <summary>
+    /// 界面暂停；点击导航不依赖轮询。
+    /// </summary>
     public void OnPause() { }
 
-    /// <summary>恢复界面暂停。</summary>
+    /// <summary>
+    /// 恢复界面暂停。
+    /// </summary>
     public void OnResume() { }
 
-    /// <summary>窗口被覆盖。</summary>
+    /// <summary>
+    /// 窗口被覆盖。
+    /// </summary>
     public void OnCover() { }
 
-    /// <summary>窗口恢复显示。</summary>
+    /// <summary>
+    /// 窗口恢复显示。
+    /// </summary>
     public void OnReveal() { }
 
-    /// <summary>框架要求的更新入口；数值和导航通过事件更新。</summary>
+    /// <summary>
+    /// 框架要求的更新入口；数值和导航通过事件更新。
+    /// </summary>
     /// <param name="elapseSeconds">游戏帧间隔秒数。</param>
     /// <param name="realElapseSeconds">真实帧间隔秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
 
-    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <summary>
+    /// 读取所属游戏流程的架构入口。
+    /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
-    /// <summary>重新绑定显式传入的状态源。</summary>
+    /// <summary>
+    /// 重新绑定显式传入的状态源。
+    /// </summary>
     /// <param name="userData">新打开参数；null 保持当前绑定。</param>
     public void OnRefocus(object userData)
     {
@@ -106,7 +137,9 @@ public partial class StartForm : IController
             OnOpen(userData);
     }
 
-    /// <summary>记录框架分配的窗口层级。</summary>
+    /// <summary>
+    /// 记录框架分配的窗口层级。
+    /// </summary>
     /// <param name="uiGroupDepth">界面组深度。</param>
     /// <param name="depthInUIGroup">窗口在组内的深度。</param>
     public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
@@ -115,7 +148,9 @@ public partial class StartForm : IController
         ZIndex = depthInUIGroup;
     }
 
-    /// <summary>请求进入读档与选角流程。</summary>
+    /// <summary>
+    /// 请求进入读档与选角流程。
+    /// </summary>
     private void OnStartClicked()
     {
         if (!GF.UI.HasUIForm(SerialId))
@@ -124,7 +159,9 @@ public partial class StartForm : IController
         StartGameRequested?.Invoke(SerialId);
     }
 
-    /// <summary>请当前流程打开声音设置。</summary>
+    /// <summary>
+    /// 请当前流程打开声音设置。
+    /// </summary>
     private void OnSettingsClicked()
     {
         if (!GF.UI.HasUIForm(SerialId))
@@ -133,7 +170,9 @@ public partial class StartForm : IController
         SettingsRequested?.Invoke(SerialId);
     }
 
-    /// <summary>显示本项目已经实现的操作说明。</summary>
+    /// <summary>
+    /// 显示本项目已经实现的操作说明。
+    /// </summary>
     private void OnHelpClicked()
     {
         if (!GF.UI.HasUIForm(SerialId))
@@ -142,7 +181,9 @@ public partial class StartForm : IController
         m_Status.Text = "A / D 移动 · 连按奔跑\nJ 攻击 · K 跳跃 · 空格 无双\n左下角设置中返回地图";
     }
 
-    /// <summary>说明目前可玩的内容。</summary>
+    /// <summary>
+    /// 说明目前可玩的内容。
+    /// </summary>
     private void OnNoticeClicked()
     {
         if (!GF.UI.HasUIForm(SerialId))

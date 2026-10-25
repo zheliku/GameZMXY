@@ -8,13 +8,19 @@ namespace GameLogic.Battle.Attributes;
 /// </summary>
 public readonly record struct AttributeSourceId
 {
-    /// <summary>来源类别，如 Equipment、Buff；为空表示无效来源。</summary>
+    /// <summary>
+    /// 来源类别，如 Equipment、Buff；为空表示无效来源。
+    /// </summary>
     public readonly string Category;
 
-    /// <summary>同类来源中的实例编号，如装备实例 ID、Buff 实例 ID。</summary>
+    /// <summary>
+    /// 同类来源中的实例编号，如装备实例 ID、Buff 实例 ID。
+    /// </summary>
     public readonly long Id;
 
-    /// <summary>创建来源标识。</summary>
+    /// <summary>
+    /// 创建来源标识。
+    /// </summary>
     /// <param name="category">来源类别，不能为空。</param>
     /// <param name="id">同类来源中的实例编号。</param>
     /// <exception cref="ArgumentException">类别为空。</exception>
@@ -30,5 +36,8 @@ public readonly record struct AttributeSourceId
     }
 
     /// <inheritdoc />
-    public override string ToString() => $"{Category}#{Id}";
+    public override string ToString()
+    {
+        return $"{Category}#{Id}";
+    }
 }

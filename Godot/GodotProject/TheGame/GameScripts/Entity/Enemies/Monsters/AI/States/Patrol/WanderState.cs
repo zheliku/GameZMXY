@@ -13,7 +13,9 @@ namespace GameLogic.Enemies.AI
 
         private int m_Dir; // 当前游荡方向；-1 向左，1 向右。
 
-        /// <summary>初始化巡逻决策计时，并选择初始方向。</summary>
+        /// <summary>
+        /// 初始化巡逻决策计时，并选择初始方向。
+        /// </summary>
         protected override void Enter(IEnemyAiAgent agent)
         {
             // 进入时只选方向，不掷停留（避免进入即切走）
@@ -23,7 +25,9 @@ namespace GameLogic.Enemies.AI
             agent.Move(m_Dir);
         }
 
-        /// <summary>按巡逻范围与停留概率更新方向或切换暂停状态。</summary>
+        /// <summary>
+        /// 按巡逻范围与停留概率更新方向或切换暂停状态。
+        /// </summary>
         protected override void Roam(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds)
         {
             m_DecideTimer -= elapseSeconds;
@@ -47,7 +51,9 @@ namespace GameLogic.Enemies.AI
             agent.Move(m_Dir);
         }
 
-        /// <summary>计算超出巡逻半径后的折返方向。</summary>
+        /// <summary>
+        /// 计算超出巡逻半径后的折返方向。
+        /// </summary>
         /// <param name="agent">提供巡逻中心偏移与半径的怪物。</param>
         /// <returns>左为 -1，右为 1；仍在范围内或未限制半径时为 0。</returns>
         private static int GetPatrolReturnDirection(IEnemyAiAgent agent)
@@ -57,7 +63,9 @@ namespace GameLogic.Enemies.AI
             return radius > 0f && Math.Abs(home) > radius ? -Math.Sign(home) : 0;
         }
 
-        /// <summary>使用怪物随机源等概率选择左右巡逻方向。</summary>
+        /// <summary>
+        /// 使用怪物随机源等概率选择左右巡逻方向。
+        /// </summary>
         /// <param name="agent">提供本怪物随机源的 AI 宿主。</param>
         /// <returns>左为 -1，右为 1。</returns>
         private static int ChooseWanderDirection(IEnemyAiAgent agent)

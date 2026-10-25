@@ -58,8 +58,9 @@ namespace GameLogic.Battle.Tests
                 ReferencePool.Release(data);
             }
         }
-
-        /// <summary>验证测试配置来自真实表数据。</summary>
+        /// <summary>
+        /// 验证测试配置来自真实表数据。
+        /// </summary>
         [Fact]
         public void Config_LoadsFromTableBytes()
         {
@@ -68,8 +69,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(5, Config.LvDamageCapLvHeroDef);
             Assert.Equal(2, Config.LvDamageCapLvMonsterDef);
         }
-
-        /// <summary>验证英雄攻击低等级怪物时的物理伤害。</summary>
+        /// <summary>
+        /// 验证英雄攻击低等级怪物时的物理伤害。
+        /// </summary>
         [Fact]
         public void M4Case_Wukong1_HitsMonkey5_PhysicsNoCrit()
         {
@@ -81,8 +83,9 @@ namespace GameLogic.Battle.Tests
             Assert.False(r.IsCrit);
             Assert.Equal(4, r.Damage);
         }
-
-        /// <summary>验证低等级英雄承受高等级怪物物理攻击时的伤害。</summary>
+        /// <summary>
+        /// 验证低等级英雄承受高等级怪物物理攻击时的伤害。
+        /// </summary>
         [Fact]
         public void M4Case_Monkey5_HitsWukong1_PhysicsNoCrit()
         {
@@ -91,16 +94,18 @@ namespace GameLogic.Battle.Tests
             DamageResult r = Hit(Monster(), 10f, DamageKind.Physics, Hero(), NoProc, NoProc);
             Assert.Equal(11, r.Damage);
         }
-
-        /// <summary>验证真实伤害不受防御影响。</summary>
+        /// <summary>
+        /// 验证真实伤害不受防御影响。
+        /// </summary>
         [Fact]
         public void SameLevel_RealDamage_IgnoresDefense()
         {
             DamageResult r = Hit(Hero(level: 5), 37.9f, DamageKind.Real, Monster(def: 999, mdef: 999), NoProc, NoProc);
             Assert.Equal(37, r.Damage);
         }
-
-        /// <summary>验证魔法伤害使用魔法防御结算。</summary>
+        /// <summary>
+        /// 验证魔法伤害使用魔法防御结算。
+        /// </summary>
         [Fact]
         public void Magic_UsesMdef()
         {
@@ -108,8 +113,9 @@ namespace GameLogic.Battle.Tests
             DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Magic, Monster(), NoProc, NoProc);
             Assert.Equal(55, r.Damage);
         }
-
-        /// <summary>验证破甲降低防御且净防御不会小于零。</summary>
+        /// <summary>
+        /// 验证破甲降低防御且净防御不会小于零。
+        /// </summary>
         [Fact]
         public void Penetration_ReducesDefense_ClampedAtZero()
         {
@@ -117,8 +123,9 @@ namespace GameLogic.Battle.Tests
             DamageResult r = Hit(Hero(level: 5, ar: 60), 100f, DamageKind.Physics, Monster(), NoProc, NoProc);
             Assert.Equal(100, r.Damage);
         }
-
-        /// <summary>验证闪避时伤害为零并设置闪避标记。</summary>
+        /// <summary>
+        /// 验证闪避时伤害为零并设置闪避标记。
+        /// </summary>
         [Fact]
         public void Miss_ReturnsZeroAndFlag()
         {
@@ -128,16 +135,18 @@ namespace GameLogic.Battle.Tests
             Assert.True(r.IsMiss);
             Assert.Equal(0, r.Damage);
         }
-
-        /// <summary>验证随机值恰等于闪避率时不会闪避。</summary>
+        /// <summary>
+        /// 验证随机值恰等于闪避率时不会闪避。
+        /// </summary>
         [Fact]
         public void Miss_RollAtRate_DoesNotMiss()
         {
             DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Real, Monster(miss: .5f), 0.5f, 0.9999f);
             Assert.False(r.IsMiss);
         }
-
-        /// <summary>验证零概率在随机值为零时也不会触发。</summary>
+        /// <summary>
+        /// 验证零概率在随机值为零时也不会触发。
+        /// </summary>
         [Fact]
         public void ZeroRates_NeverProc_EvenWithZeroRolls()
         {
@@ -147,8 +156,9 @@ namespace GameLogic.Battle.Tests
             Assert.False(r.IsCrit);
             Assert.Equal(100, r.Damage);
         }
-
-        /// <summary>验证命中属性抵消目标闪避值。</summary>
+        /// <summary>
+        /// 验证命中属性抵消目标闪避值。
+        /// </summary>
         [Fact]
         public void Htarget_OffsetsMiss()
         {
@@ -157,8 +167,9 @@ namespace GameLogic.Battle.Tests
                 0f, 0.9999f);
             Assert.False(r.IsMiss);
         }
-
-        /// <summary>验证英雄攻击使用英雄幸运系数计算暴击伤害。</summary>
+        /// <summary>
+        /// 验证英雄攻击使用英雄幸运系数计算暴击伤害。
+        /// </summary>
         [Fact]
         public void Crit_HeroAttacks_UsesHeroLuckyK()
         {
@@ -169,8 +180,9 @@ namespace GameLogic.Battle.Tests
             Assert.True(r.IsCrit);
             Assert.Equal(250, r.Damage);
         }
-
-        /// <summary>验证怪物攻击使用怪物幸运系数计算暴击伤害。</summary>
+        /// <summary>
+        /// 验证怪物攻击使用怪物幸运系数计算暴击伤害。
+        /// </summary>
         [Fact]
         public void Crit_MonsterAttacks_UsesMonsterLuckyK()
         {
@@ -180,8 +192,9 @@ namespace GameLogic.Battle.Tests
             Assert.True(r.IsCrit);
             Assert.Equal(250, r.Damage);
         }
-
-        /// <summary>验证韧性抵消幸运且暴抗抵消暴击值。</summary>
+        /// <summary>
+        /// 验证韧性抵消幸运且暴抗抵消暴击值。
+        /// </summary>
         [Fact]
         public void Crit_ToughnessOffsetsLucky_CritReduceOffsetsCrit()
         {
@@ -196,8 +209,9 @@ namespace GameLogic.Battle.Tests
             Assert.True(plain.IsCrit);
             Assert.Equal(200, plain.Damage);
         }
-
-        /// <summary>验证暴击先于防御减伤结算。</summary>
+        /// <summary>
+        /// 验证暴击先于防御减伤结算。
+        /// </summary>
         [Fact]
         public void Crit_ThenDefense_OrderMatchesLegacy()
         {
@@ -206,8 +220,9 @@ namespace GameLogic.Battle.Tests
                 0.9999f, 0f);
             Assert.Equal(133, r.Damage);
         }
-
-        /// <summary>验证怪物防守时等级伤害修正最多计两级。</summary>
+        /// <summary>
+        /// 验证怪物防守时等级伤害修正最多计两级。
+        /// </summary>
         [Fact]
         public void LevelSuppression_MonsterDefends_CapsAtTwoLevels()
         {
@@ -215,8 +230,9 @@ namespace GameLogic.Battle.Tests
             DamageResult r = Hit(Hero(level: 10), 100f, DamageKind.Real, Monster(level: 1), NoProc, NoProc);
             Assert.Equal(110, r.Damage);
         }
-
-        /// <summary>验证英雄防守时等级伤害修正最多计五级。</summary>
+        /// <summary>
+        /// 验证英雄防守时等级伤害修正最多计五级。
+        /// </summary>
         [Fact]
         public void LevelSuppression_HeroDefends_CapsAtFiveLevels()
         {
@@ -229,8 +245,9 @@ namespace GameLogic.Battle.Tests
             DamageResult down = Hit(Monster(level: 1), 100f, DamageKind.Real, Hero(level: 10), NoProc, NoProc);
             Assert.Equal(75, down.Damage);
         }
-
-        /// <summary>装备的 3% 直接参与判定，等级差不改变概率；边界值不触发。</summary>
+        /// <summary>
+        /// 装备的 3% 直接参与判定，等级差不改变概率；边界值不触发。
+        /// </summary>
         /// <param name="attackerLevel">攻击方等级。</param>
         /// <param name="defenderLevel">防守方等级。</param>
         [Theory]
@@ -251,16 +268,18 @@ namespace GameLogic.Battle.Tests
             Assert.True(Hit(Monster(level: attackerLevel), 100f, DamageKind.Real,
                 Hero(level: defenderLevel, miss: .03f), .029f, NoProc).IsMiss);
         }
-
-        /// <summary>验证伤害结算结果不会为负数。</summary>
+        /// <summary>
+        /// 验证伤害结算结果不会为负数。
+        /// </summary>
         [Fact]
         public void Damage_NeverNegative()
         {
             DamageResult r = Hit(Hero(level: 5), 0f, DamageKind.Physics, Monster(), NoProc, NoProc);
             Assert.Equal(0, r.Damage);
         }
-
-        /// <summary>击退数值已经使用 px/s，结算只处理朝向，不重复乘源帧率。</summary>
+        /// <summary>
+        /// 击退数值已经使用 px/s，结算只处理朝向，不重复乘源帧率。
+        /// </summary>
         [Fact]
         public void Knockback_AppliesDirectionWithoutRescaling()
         {
@@ -274,8 +293,9 @@ namespace GameLogic.Battle.Tests
                 ReferencePool.Release(data);
             }
         }
-
-        /// <summary>中心型攻击按目标所在一侧击退，不受角色朝向影响；中心相等时向右。</summary>
+        /// <summary>
+        /// 中心型攻击按目标所在一侧击退，不受角色朝向影响；中心相等时向右。
+        /// </summary>
         /// <param name="targetX">受击方世界横坐标。</param>
         /// <param name="expectedX">应得到的世界横向速度。</param>
         [Theory]
@@ -296,8 +316,9 @@ namespace GameLogic.Battle.Tests
             }
             Assert.Null(data.KnockbackOriginX);
         }
-
-        /// <summary>验证攻击包每目标只命中一次且归还后清除命中记录。</summary>
+        /// <summary>
+        /// 验证攻击包每目标只命中一次且归还后清除命中记录。
+        /// </summary>
         [Fact]
         public void AttackData_OneHitPerTarget_AndClearedOnRelease()
         {

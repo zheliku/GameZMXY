@@ -12,7 +12,9 @@ public partial class ResourceBar : TextureProgressBar
     [Export] private bool m_FullAtZeroMaximum; // 零上限时是否显示满条，用于经验满级。
     [Export] private string m_ZeroMaximumText = "MAX"; // 零上限的特殊文字，仅满条模式使用。
 
-    /// <summary>立即显示一组新数值及可选文字。</summary>
+    /// <summary>
+    /// 立即显示一组新数值及可选文字。
+    /// </summary>
     /// <param name="current">当前值，显示前钳到 [0, 上限]。</param>
     /// <param name="maximum">上限；零或负数按"空条"或"满条 + 特殊文字"显示。</param>
     public void SetValue(int current, int maximum)

@@ -11,12 +11,16 @@ namespace GameLogic.Body
     {
         private const int MaxHopsPerFrame = 4; // 同一物理帧的连续状态切换上限，防止状态互相切换形成死循环。
 
-        /// <summary>为身体宿主的状态机补充物理帧驱动。</summary>
+        /// <summary>
+        /// 为身体宿主的状态机补充物理帧驱动。
+        /// </summary>
         /// <typeparam name="TBody">英雄或怪物的身体宿主接口。</typeparam>
         /// <param name="fsm">身体状态机；允许为空、尚未运行或已销毁。</param>
         extension<TBody>(IFsm<TBody> fsm) where TBody : class, IActorBody
         {
-            /// <summary>物理帧推进；切换后的状态在同帧执行决策，最多连续切换四次。</summary>
+            /// <summary>
+            /// 物理帧推进；切换后的状态在同帧执行决策，最多连续切换四次。
+            /// </summary>
             /// <param name="dt">物理帧间隔，单位秒；在实体 MoveAndSlide 前调用。</param>
             public void Tick(float dt)
             {

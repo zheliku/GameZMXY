@@ -6,7 +6,9 @@ using GodotGameFramework.NodePool;
 
 namespace GameLogic.Drops;
 
-/// <summary>GGF 节点池中的飞行奖励：短暂停留、上浮、加速追踪，接触后交给关卡结算。</summary>
+/// <summary>
+/// GGF 节点池中的飞行奖励：短暂停留、上浮、加速追踪，接触后交给关卡结算。
+/// </summary>
 public partial class LootOrbNode : AnimatedSprite2D, IPoolable
 {
     [Export] private float m_ScatterRadius = 15f; // 出生位置的可见散布半径，像素。
@@ -25,7 +27,9 @@ public partial class LootOrbNode : AnimatedSprite2D, IPoolable
     private float m_Rise; // 本颗球的随机上升高度。
     private float m_Speed; // 当前追踪速度，像素/秒。
 
-    /// <summary>池取出时停止上次驱动，等待所属关卡提供本次参数。</summary>
+    /// <summary>
+    /// 池取出时停止上次驱动，等待所属关卡提供本次参数。
+    /// </summary>
     public void OnGet()
     {
         SetProcess(false);
@@ -33,7 +37,9 @@ public partial class LootOrbNode : AnimatedSprite2D, IPoolable
         Modulate = Colors.White;
     }
 
-    /// <summary>池归还时清除奖励和回调，不让复用实例向旧会话入账。</summary>
+    /// <summary>
+    /// 池归还时清除奖励和回调，不让复用实例向旧会话入账。
+    /// </summary>
     public void OnRelease()
     {
         SetProcess(false);
@@ -42,7 +48,9 @@ public partial class LootOrbNode : AnimatedSprite2D, IPoolable
         m_Reward = default;
     }
 
-    /// <summary>开始一次飞行；回调负责回池，只有接触当前存活英雄才通知领取。</summary>
+    /// <summary>
+    /// 开始一次飞行；回调负责回池，只有接触当前存活英雄才通知领取。
+    /// </summary>
     /// <param name="position">怪物死亡位置附近的出生点。</param>
     /// <param name="reward">尚未领取的奖励。</param>
     /// <param name="finished">完成回调；只在当前显示期间调用一次。</param>
@@ -69,7 +77,9 @@ public partial class LootOrbNode : AnimatedSprite2D, IPoolable
         SetProcess(false);
     }
 
-    /// <summary>由本关控制器提供当前目标坐标并推进飞行；节点不持有英雄。</summary>
+    /// <summary>
+    /// 由本关控制器提供当前目标坐标并推进飞行；节点不持有英雄。
+    /// </summary>
     /// <param name="delta">本帧游戏秒数；暂停时不推进或结算。</param>
     /// <param name="target">本帧存活英雄的受击盒中心。</param>
     public void Tick(float delta, Vector2 target)
@@ -99,7 +109,9 @@ public partial class LootOrbNode : AnimatedSprite2D, IPoolable
         GlobalPosition = GlobalPosition.MoveToward(target, step);
     }
 
-    /// <summary>先停止和清除完成回调，再通知关卡，防止结算重入与重复回收。</summary>
+    /// <summary>
+    /// 先停止和清除完成回调，再通知关卡，防止结算重入与重复回收。
+    /// </summary>
     private void Finish()
     {
         SetProcess(false);

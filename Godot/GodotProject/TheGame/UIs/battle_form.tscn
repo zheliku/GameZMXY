@@ -160,7 +160,7 @@ texture = ExtResource("6_head")
 position = Vector2(-19, -5)
 texture = ExtResource("3_label")
 
-[node name="MenuPanel" type="Sprite2D" parent="." unique_id=1301947710 node_paths=PackedStringArray("m_WsBar", "m_WsMax", "m_SettingsButton", "m_InventoryButton", "m_SkillsButton", "m_SkillBar")]
+[node name="MenuPanel" type="Sprite2D" parent="." unique_id=1301947710 node_paths=PackedStringArray("m_WsBar", "m_WsMax", "m_SettingsButton", "m_InventoryButton", "m_SkillsButton", "m_Icons")]
 position = Vector2(90, 531)
 texture = ExtResource("7_menu")
 script = ExtResource("menu_panel")
@@ -169,8 +169,8 @@ m_WsMax = NodePath("m_WsMax")
 m_SettingsButton = NodePath("m_SettingsButton")
 m_InventoryButton = NodePath("m_InventoryButton")
 m_SkillsButton = NodePath("m_SkillsButton")
-m_SkillBar = NodePath("SkillBar")
 m_SkillIcons = ExtResource("official_skills")
+m_Icons = [NodePath("SkillBar/Skill1/Icon"), NodePath("SkillBar/Skill2/Icon"), NodePath("SkillBar/Skill3/Icon"), NodePath("SkillBar/Skill4/Icon"), NodePath("SkillBar/Skill5/Icon")]
 
 [node name="WsFrame" type="Sprite2D" parent="MenuPanel" unique_id=129619926]
 position = Vector2(113, 25)

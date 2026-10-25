@@ -8,11 +8,14 @@ using GameLogic.Skills;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>通过正式命令验证玩家请求的作用域、会话资格、重复点击及检查点边界。</summary>
+/// <summary>
+/// 通过正式命令验证玩家请求的作用域、会话资格、重复点击及检查点边界。
+/// </summary>
 public sealed class CommandTests
 {
-    /// <summary>控制器在返回前已修改自己的档案，另一架构完全隔离；命令不注册为系统。</summary>
+    /// <summary>
+    /// 控制器在返回前已修改自己的档案，另一架构完全隔离；命令不注册为系统。
+    /// </summary>
     [Fact]
     public void ControllerCommand_ExecutesSynchronouslyInItsOwnScope()
     {
@@ -30,8 +33,9 @@ public sealed class CommandTests
         Assert.True(controller.SendCommand(new UnequipEquipmentCommand(EquipmentSlot.Weapon)));
         Assert.Same(firstItem, Assert.Single(first.Profile.EquipmentDatas));
     }
-
-    /// <summary>出生前、结局后或停止后的请求不修改装备、余额及技能。</summary>
+    /// <summary>
+    /// 出生前、结局后或停止后的请求不修改装备、余额及技能。
+    /// </summary>
     /// <param name="state">0 未开始、1 已失败、2 已停止。</param>
     [Theory]
     [InlineData(0)]
@@ -58,8 +62,9 @@ public sealed class CommandTests
         Assert.Equal(soul, scope.Profile.Soul.Value);
         Assert.Empty(scope.Skills.GetLearnedSkills(1));
     }
-
-    /// <summary>不存在关卡模型时命令返回拒绝结果，不尝试创建作用域或访问玩法系统。</summary>
+    /// <summary>
+    /// 不存在关卡模型时命令返回拒绝结果，不尝试创建作用域或访问玩法系统。
+    /// </summary>
     [Fact]
     public void MissingLevel_RejectsWithoutAutoCreatingState()
     {
@@ -70,8 +75,9 @@ public sealed class CommandTests
         Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
         Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
     }
-
-    /// <summary>重复出售只入账一次，批量出售排除已穿戴物；放弃沿用原有检查点回滚。</summary>
+    /// <summary>
+    /// 重复出售只入账一次，批量出售排除已穿戴物；放弃沿用原有检查点回滚。
+    /// </summary>
     [Fact]
     public void SaleCommands_PreserveDeduplicationAndCheckpointRollback()
     {
@@ -92,8 +98,9 @@ public sealed class CommandTests
         Assert.Null(scope.Profile.Weapon);
         Assert.Empty(scope.Profile.EquipmentDatas);
     }
-
-    /// <summary>穿戴资格、满包和学习费用继续由正式系统判定，命令不会复制这些规则。</summary>
+    /// <summary>
+    /// 穿戴资格、满包和学习费用继续由正式系统判定，命令不会复制这些规则。
+    /// </summary>
     [Fact]
     public void PlayerCommands_KeepEquipmentAndLearningRules()
     {
@@ -110,8 +117,9 @@ public sealed class CommandTests
         Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(SkillId.IceDragonWave)));
         Assert.Equal(SkillId.RisingDragon, Assert.Single(scope.Skills.GetLearnedSkills(1)));
     }
-
-    /// <summary>命令没有生命周期依赖，使用当前绑定的架构；空请求在执行前拒绝。</summary>
+    /// <summary>
+    /// 命令没有生命周期依赖，使用当前绑定的架构；空请求在执行前拒绝。
+    /// </summary>
     [Fact]
     public void Dispatch_BindsCurrentArchitectureAndRejectsNull()
     {
@@ -125,8 +133,9 @@ public sealed class CommandTests
         Assert.Same(item, second.Profile.Weapon);
         Assert.Throws<ArgumentNullException>(() => first.SendCommand<bool>(null));
     }
-
-    /// <summary>在正式规则上建立已开始的测试会话。</summary>
+    /// <summary>
+    /// 在正式规则上建立已开始的测试会话。
+    /// </summary>
     /// <param name="capacity">本测试背包容量。</param>
     /// <returns>独立测试架构。</returns>
     private static TestGameScope Ready(int capacity = 25)
@@ -136,8 +145,9 @@ public sealed class CommandTests
         scope.GetSystem<LevelSystem>().StartSession(1);
         return scope;
     }
-
-    /// <summary>测试准备使用正式装备抽取与领取入口。</summary>
+    /// <summary>
+    /// 测试准备使用正式装备抽取与领取入口。
+    /// </summary>
     /// <param name="scope">所属测试架构。</param>
     /// <param name="id">实际装备定义。</param>
     /// <returns>本次加入的同一实例。</returns>
@@ -147,23 +157,38 @@ public sealed class CommandTests
         Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(item));
         return item;
     }
-
-    /// <summary>以正式控制器能力发送，避免只测试直接调用命令方法。</summary>
+    /// <summary>
+    /// 以正式控制器能力发送，避免只测试直接调用命令方法。
+    /// </summary>
     private sealed class Controller(IArchitecture architecture) : IController
     {
         /// <inheritdoc />
-        IArchitecture IBelongToArchitecture.GetArchitecture() => architecture;
+        IArchitecture IBelongToArchitecture.GetArchitecture()
+        {
+            return architecture;
+        }
     }
-
-    /// <summary>无关卡的作用域，任何越过资格校验的访问都会使测试失败。</summary>
+    /// <summary>
+    /// 无关卡的作用域，任何越过资格校验的访问都会使测试失败。
+    /// </summary>
     private sealed class EmptyArchitecture : IArchitecture
     {
         /// <inheritdoc />
-        public TModel GetModel<TModel>() where TModel : class, IModel =>
-            typeof(TModel) == typeof(LevelModel) ? null : throw new InvalidOperationException();
+        public TModel GetModel<TModel>() where TModel : class, IModel
+        {
+            if (typeof(TModel) == typeof(LevelModel))
+                return null;
+            throw new InvalidOperationException();
+        }
         /// <inheritdoc />
-        public TSystem GetSystem<TSystem>() where TSystem : class, ISystem => throw new InvalidOperationException();
+        public TSystem GetSystem<TSystem>() where TSystem : class, ISystem
+        {
+            throw new InvalidOperationException();
+        }
         /// <inheritdoc />
-        public TUtility GetUtility<TUtility>() where TUtility : class, IUtility => throw new InvalidOperationException();
+        public TUtility GetUtility<TUtility>() where TUtility : class, IUtility
+        {
+            throw new InvalidOperationException();
+        }
     }
 }

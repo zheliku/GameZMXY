@@ -6,7 +6,9 @@ using GameLogic.Skills;
 
 namespace GameLogic.Heroes.Wukong;
 
-/// <summary>烈焰风暴：地面定身、占用空中跳跃，三段旋转攻击向悟空两侧击退。</summary>
+/// <summary>
+/// 烈焰风暴：地面定身、占用空中跳跃，三段旋转攻击向悟空两侧击退。
+/// </summary>
 public sealed class WukongFlameStormState : AbstractHeroSkillState
 {
     private const string AnimationName = "skills/flame_storm"; // 本招的原生动画资源名。
@@ -21,7 +23,9 @@ public sealed class WukongFlameStormState : AbstractHeroSkillState
         BeginAnimation(body, AnimationName);
     }
 
-    /// <summary>动画每段创建独立判定；中心击退与取整是本招规则。</summary>
+    /// <summary>
+    /// 动画每段创建独立判定；中心击退与取整是本招规则。
+    /// </summary>
     /// <param name="body">悟空身体。</param>
     public void BeginHit(IHeroBody body)
     {

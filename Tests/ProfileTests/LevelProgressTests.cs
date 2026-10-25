@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using GameLogic.Architecture;
 using GameLogic.Level;
 using GameLogic.Save;
@@ -6,11 +7,43 @@ using Newtonsoft.Json;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>关卡开放、重玩、失败、回滚和存档往返使用同一份档案进度。</summary>
+/// <summary>
+/// 关卡开放、重玩、失败、回滚和存档往返使用同一份档案进度。
+/// </summary>
 public sealed class LevelProgressTests
 {
-    /// <summary>新档只开放首关，逐关通关开放下一关，重玩不倒退。</summary>
+    /// <summary>
+    /// 目标出口只接受当前末段的指定生成点，重复事件及普通关卡不能提前通关。
+    /// </summary>
+    [Fact]
+    public void TargetExit_RejectsWrongStageAndRepeatedDefeat()
+    {
+        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var profile = scope.GetSystem<ProfileSystem>();
+        for (int id = 1; id <= 3; id++)
+            profile.RecordLevelClear(id);
+        var system = scope.GetSystem<LevelSystem>();
+        system.Prepare(4);
+        Assert.False(system.TryOpenExit("stage_5_d"));
+        system.StartSession(1);
+        system.StartBattle();
+        Assert.False(system.TryOpenExit("stage_5_d"));
+        for (int stage = 1; stage < 5; stage++)
+        {
+            system.ClearBattle();
+            system.StartBattle();
+        }
+        Assert.False(system.TryOpenExit("stage_5_a"));
+        Assert.True(system.TryOpenExit("stage_5_d"));
+        Assert.False(system.TryOpenExit("stage_5_d"));
+        Assert.Equal(LevelOutcome.Running, scope.Level.Outcome.Value);
+        Assert.Null(system.CheckpointWrite);
+        system.Complete(LevelOutcome.Cleared, 100);
+        Assert.Equal(4, scope.Profile.HighestClearedLevelId.Value);
+    }
+    /// <summary>
+    /// 新档只开放首关，逐关通关开放下一关，重玩不倒退。
+    /// </summary>
     [Fact]
     public void Clear_UnlocksNextLevel_WithoutSkippingOrRegressing()
     {
@@ -20,20 +53,22 @@ public sealed class LevelProgressTests
         Assert.True(system.CanEnterLevel(1));
         Assert.False(system.CanEnterLevel(2));
         Assert.Throws<InvalidOperationException>(() => system.RecordLevelClear(2));
-        for (int id = 1; id <= 3; id++)
+        int lastLevelId = TestTables.Tables.TbLevelConfig.DataList.Max(level => level.LevelId);
+        for (int id = 1; id <= lastLevelId; id++)
         {
             system.RecordLevelClear(id);
-            Assert.Equal(Math.Min(id + 1, 3), system.LatestLevelId);
+            Assert.Equal(Math.Min(id + 1, lastLevelId), system.LatestLevelId);
             Assert.True(system.CanEnterLevel(id));
         }
         system.RecordLevelClear(1);
-        Assert.Equal(3, scope.Profile.HighestClearedLevelId.Value);
-        Assert.False(system.CanEnterLevel(4));
+        Assert.Equal(lastLevelId, scope.Profile.HighestClearedLevelId.Value);
+        Assert.False(system.CanEnterLevel(lastLevelId + 1));
         Assert.False(system.CanEnterLevel(0));
         Assert.False(system.CanEnterLevel(-1));
     }
-
-    /// <summary>失败、进入或放弃不开放下一关，锁定关卡在关卡系统边界也被拒绝。</summary>
+    /// <summary>
+    /// 失败、进入或放弃不开放下一关，锁定关卡在关卡系统边界也被拒绝。
+    /// </summary>
     [Fact]
     public void FailureAndAbandon_DoNotUnlock()
     {
@@ -51,8 +86,9 @@ public sealed class LevelProgressTests
         level.EndSession();
         Assert.Equal(0, scope.Profile.HighestClearedLevelId.Value);
     }
-
-    /// <summary>进度随正式 DTO 往返并支持原地回滚，不另造进度模型。</summary>
+    /// <summary>
+    /// 进度随正式 DTO 往返并支持原地回滚，不另造进度模型。
+    /// </summary>
     [Fact]
     public void SaveRoundTripAndRollback_PreserveProgressAndBindingIdentity()
     {
@@ -68,11 +104,12 @@ public sealed class LevelProgressTests
         Assert.Same(binding, scope.Profile.HighestClearedLevelId);
         Assert.Equal(1, binding.Value);
     }
-
-    /// <summary>不存在的关卡或缺失必需进度字段不能被当作新档接受。</summary>
+    /// <summary>
+    /// 不存在的关卡或缺失必需进度字段不能被当作新档接受。
+    /// </summary>
     [Theory]
     [InlineData(-1)]
-    [InlineData(4)]
+    [InlineData(999)]
     public void InvalidProgress_IsRejected(int id)
     {
         var scope = new TestGameScope(1, [(1, 0)], 0, 25);

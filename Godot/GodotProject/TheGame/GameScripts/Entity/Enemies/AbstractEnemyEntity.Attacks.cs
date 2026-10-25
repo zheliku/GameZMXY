@@ -1,17 +1,47 @@
 using GameLogic.Architecture;
 using GameLogic.Enemies.Body;
 using GameLogic.Enemies.AI;
+using GameLogic.Effects;
 using System;
 using GameConfig.Battle;
 using Godot;
 using GodotGameFramework;
+using GodotGameFramework.NodePool;
 
 namespace GameLogic.Enemies
 {
-    /// <summary>怪物攻击装配、范围推导与出招生命周期；具体招式仍可重写。</summary>
+    /// <summary>
+    /// 怪物攻击装配、范围推导与出招生命周期；具体招式仍可重写。
+    /// </summary>
     public abstract partial class AbstractEnemyEntity
     {
-        /// <summary>把一条 AttackConfig 转成 AI 用法快照（默认读取动画判定；远程等特殊招式可重写）。</summary>
+        /// <summary>
+        /// 取得并登记本敌人的离身攻击；具体敌人决定招式、位置和表现。
+        /// </summary>
+        /// <param name="scene">已登记到 GGF 节点池的场景。</param>
+        /// <returns>由本敌人负责归还的效果。</returns>
+        /// <exception cref="InvalidOperationException">场景未登记到节点池。</exception>
+        protected SkillEffectNode CreateSkillEffect(PackedScene scene)
+        {
+            var effect = NodePool.Instance.Get<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
+                throw new InvalidOperationException($"敌人技能未登记到节点池：{scene.ResourcePath}");
+            m_SkillEffects.Add(effect);
+            return effect;
+        }
+
+        /// <summary>
+        /// 效果完成后解除所有权并归还，只处理本敌人仍拥有的实例。
+        /// </summary>
+        /// <param name="effect">已完成的效果。</param>
+        protected void ReleaseSkillEffect(SkillEffectNode effect)
+        {
+            if (m_SkillEffects.Remove(effect))
+                NodePool.Instance.Release(effect);
+        }
+
+        /// <summary>
+        /// 把一条 AttackConfig 转成 AI 用法快照（默认读取动画判定；远程等特殊招式可重写）。
+        /// </summary>
         /// <param name="index">招式下标（= AttackSegment）。</param>
         /// <param name="attack">该招的配置行。</param>
         /// <returns>AI 抽选与释放判定使用的规格。</returns>
@@ -37,33 +67,50 @@ namespace GameLogic.Enemies
             };
         }
 
-        /// <summary>提交出招：转向目标并装填攻击包，声音时点由动画方法轨道控制。</summary>
+        /// <summary>
+        /// 提交出招：转向目标并装填攻击包，声音时点由动画方法轨道控制。
+        /// </summary>
         /// <param name="index">本怪物攻击配置数组中的下标。</param>
         private void BeginConfiguredAttack(int index)
         {
             // 出招开始时固定朝向并记录冷却，随后装填本段结算数据。
-            SetFacing(Math.Sign(TargetBox.GetCenter().X));
+            FaceAttackTarget(index);
             this.GetSystem<EnemyAiSystem>().MarkUsed(AiData, BodyParams, index, GD.Randf);
             AttackSegment = index;
             PrepareAttack(OwnAttacks[index], m_AttackMultiplier);
             Log.Debug("[Enemy] {0} 出招 段{1}", Id, index + 1);
         }
 
-        /// <summary>结束或打断出招并归还攻击包。</summary>
+        /// <summary>
+        /// 通常朝目标原点出招；保持原朝向的特殊招式由具体敌人决定。
+        /// </summary>
+        /// <param name="index">即将开始的招式下标。</param>
+        protected virtual void FaceAttackTarget(int index)
+        {
+            SetFacing(Math.Sign(((IEnemyAiAgent)this).TargetOffset.X));
+        }
+
+        /// <summary>
+        /// 结束或打断出招并归还攻击包。
+        /// </summary>
         private void EndCurrentAttack()
         {
             AttackSegment = -1;
             ReleaseAttack();
         }
 
-        /// <summary>原生动画多段时点更新当前招式的攻击编号，不重新计算冷却或切换身体状态。</summary>
+        /// <summary>
+        /// 原生动画多段时点更新当前招式的攻击编号，不重新计算冷却或切换身体状态。
+        /// </summary>
         protected void NewAttackAnimEvent()
         {
             if (AttackSegment >= 0)
                 PrepareAttack(OwnAttacks[AttackSegment], m_AttackMultiplier);
         }
 
-        /// <summary>合并攻击区域中少量基础形状的有效窗口，供 AI 估算出手距离。</summary>
+        /// <summary>
+        /// 合并攻击区域中少量基础形状的有效窗口，供 AI 估算出手距离。
+        /// </summary>
         /// <param name="animName">攻击动画名；原生判定坐标朝左。</param>
         /// <returns>相对实体原点的范围；缺少有效判定窗口时为空。</returns>
         private Rect2 ReadAttackReach(string animName)
@@ -87,7 +134,9 @@ namespace GameLogic.Enemies
             return reach;
         }
 
-        /// <summary>从同一节点的离散几何和启闭轨道计算范围；实际命中仍交给物理引擎。</summary>
+        /// <summary>
+        /// 从同一节点的离散几何和启闭轨道计算范围；实际命中仍交给物理引擎。
+        /// </summary>
         /// <param name="anim">攻击动画。</param>
         /// <param name="node">直接碰撞子节点。</param>
         /// <returns>动画中所有启用几何的并集。</returns>
@@ -152,7 +201,9 @@ namespace GameLogic.Enemies
             return reach;
         }
 
-        /// <summary>读取不晚于采样时刻的最后一个离散关键帧。</summary>
+        /// <summary>
+        /// 读取不晚于采样时刻的最后一个离散关键帧。
+        /// </summary>
         /// <param name="anim">攻击动画。</param>
         /// <param name="track">值轨道下标；负数表示缺失。</param>
         /// <param name="t">采样时刻，秒。</param>

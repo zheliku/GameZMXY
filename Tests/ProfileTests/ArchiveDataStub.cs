@@ -6,14 +6,19 @@ namespace GodotGameFramework.Archive
     /// </summary>
     public class ArchiveData
     {
-        /// <summary>存档槽单位 ID。</summary>
+        /// <summary>
+        /// 存档槽单位 ID。
+        /// </summary>
         public long UnitId;
     }
-
-    /// <summary>测试侧替身：框架存档目录基类（只有 UnitId）。</summary>
+    /// <summary>
+    /// 测试侧替身：框架存档目录基类（只有 UnitId）。
+    /// </summary>
     public class ArchiveCatalogue
     {
-        /// <summary>存档槽单位 ID。</summary>
+        /// <summary>
+        /// 存档槽单位 ID。
+        /// </summary>
         public long UnitId;
     }
 }

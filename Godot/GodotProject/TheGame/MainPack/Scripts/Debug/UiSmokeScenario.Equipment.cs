@@ -19,10 +19,14 @@ using GameLogic.UI;
 using Godot;
 using GodotGameFramework;
 
-/// <summary>真实地面物品、接触恢复、满包与背包详情验证；只在测试侧使用反射。</summary>
+/// <summary>
+/// 真实地面物品、接触恢复、满包与背包详情验证；只在测试侧使用反射。
+/// </summary>
 public sealed partial class UiSmokeScenario
 {
-    /// <summary>验证实际物理落地、暂停、恢复量、满包保留和池复用。</summary>
+    /// <summary>
+    /// 验证实际物理落地、暂停、恢复量、满包保留和池复用。
+    /// </summary>
     /// <param name="flow">受测档案。</param>
     /// <param name="hero">受测英雄。</param>
     /// <param name="level">地面物品所有者。</param>
@@ -190,16 +194,22 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: all pickup/equipment opaque bottoms aligned to ground shape, no shadow, pickup rise/fade, single transaction, pause, full inventory, expiration and pool reuse passed");
     }
 
-    /// <summary>用关卡正式创建方法生成受控夹具，不增加生产测试 API。</summary>
+    /// <summary>
+    /// 用关卡正式创建方法生成受控夹具，不增加生产测试 API。
+    /// </summary>
     /// <param name="level">真实所有者。</param>
     /// <param name="position">世界位置。</param>
     /// <param name="pickup">恢复品或空。</param>
     /// <param name="data">装备或空。</param>
-    private static void SpawnGround(LevelViewController level, Vector2 position, PickupConfig pickup, EquipmentData data) =>
+    private static void SpawnGround(LevelViewController level, Vector2 position, PickupConfig pickup, EquipmentData data)
+    {
         typeof(LevelViewController).GetMethod("ShowGroundItem", BindingFlags.NonPublic | BindingFlags.Instance)
             .Invoke(level, [position, pickup?.Id ?? PickupId.None, data]);
+    }
 
-    /// <summary>测试侧用实际唯一形状查询接触，不为生产代码增加观测接口。</summary>
+    /// <summary>
+    /// 测试侧用实际唯一形状查询接触，不为生产代码增加观测接口。
+    /// </summary>
     /// <param name="node">地面物品。</param>
     /// <param name="body">接触的身体。</param>
     /// <returns>物品形状是否与身体重叠。</returns>
@@ -216,7 +226,9 @@ public sealed partial class UiSmokeScenario
             .Any(hit => ReferenceEquals(hit["collider"].AsGodotObject(), body));
     }
 
-    /// <summary>逐像素独立检查可见底边与碰撞底边对齐，碰撞尺寸保持统一且没有第二范围或阴影。</summary>
+    /// <summary>
+    /// 逐像素独立检查可见底边与碰撞底边对齐，碰撞尺寸保持统一且没有第二范围或阴影。
+    /// </summary>
     /// <param name="node">已经显示的物品，尚未播放领取动画。</param>
     private static void CheckGroundShape(GroundItemNode node)
     {

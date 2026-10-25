@@ -15,7 +15,9 @@ namespace GameLogic.Enemies.AI
     {
         private float m_ReactionLeft; // 每次进入交战状态的优先招反应时间，避免突进绕过起手等待。
 
-        /// <summary>保留移动意图，并按配置安排优先招的首次反应时间。</summary>
+        /// <summary>
+        /// 保留移动意图，并按配置安排优先招的首次反应时间。
+        /// </summary>
         /// <param name="agent">本状态的怪物宿主。</param>
         protected override void Enter(IEnemyAiAgent agent)
         {
@@ -23,7 +25,9 @@ namespace GameLogic.Enemies.AI
             m_ReactionLeft = (agent.Config.AttackFirstDelay.X, agent.Config.AttackFirstDelay.Y).Sample(agent.NextRandom());
         }
 
-        /// <summary>处理忙碌与目标失效，再处理优先招和当前交战行为。</summary>
+        /// <summary>
+        /// 处理忙碌与目标失效，再处理优先招和当前交战行为。
+        /// </summary>
         protected sealed override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds)
         {
             if (agent.IsAttacking)
@@ -49,7 +53,9 @@ namespace GameLogic.Enemies.AI
             Engage(fsm, agent, dir, elapseSeconds);
         }
 
-        /// <summary>有目标且不在出招时的决策。dir = 面向目标的方向（-1/0/1）。</summary>
+        /// <summary>
+        /// 有目标且不在出招时的决策。dir = 面向目标的方向（-1/0/1）。
+        /// </summary>
         protected abstract void Engage(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, int dir, float elapseSeconds);
     }
 }

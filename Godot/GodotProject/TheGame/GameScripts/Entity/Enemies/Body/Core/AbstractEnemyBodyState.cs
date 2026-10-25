@@ -15,16 +15,30 @@ namespace GameLogic.Enemies.Body
     /// </summary>
     public abstract class AbstractEnemyBodyState : AbstractBodyState<IEnemyBody>
     {
-        /// <summary>Move 向 Attack 传递的招式下标；目标状态进入后立即消费。</summary>
+        /// <summary>
+        /// Move 向 Attack 传递的招式下标；目标状态进入后立即消费。
+        /// </summary>
         protected const string AttackIndexKey = "Enemy.AttackIndex";
 
-        /// <summary>Attack 向 Recovery 传递的收招秒数；目标状态进入后立即消费。</summary>
+        /// <summary>
+        /// Attack 向 Recovery 传递的收招秒数；目标状态进入后立即消费。
+        /// </summary>
         protected const string RecoveryDurationKey = "Enemy.RecoveryDuration";
 
-        /// <summary>受击是否立即打断本状态（Hurt 自己处理连续受击；Death 不再受击）。</summary>
-        protected virtual bool HurtInterrupts => true;
+        /// <summary>
+        /// 受击是否立即打断本状态（Hurt 自己处理连续受击；Death 不再受击）。
+        /// </summary>
+        protected virtual bool HurtInterrupts
+        {
+            get
+            {
+                return true;
+            }
+        }
 
-        /// <summary>死亡优先于受击，受击是否打断由当前状态声明。</summary>
+        /// <summary>
+        /// 死亡优先于受击，受击是否打断由当前状态声明。
+        /// </summary>
         protected sealed override bool Interrupt(IFsm<IEnemyBody> fsm, IEnemyBody body)
         {
             if (body.Dead)

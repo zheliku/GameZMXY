@@ -12,13 +12,18 @@ using Newtonsoft.Json;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>真实配置的装备随机、拾取容量与存档实例回归。</summary>
+/// <summary>
+/// 真实配置的装备随机、拾取容量与存档实例回归。
+/// </summary>
 public sealed class EquipmentTests
 {
-    private static EquipmentSystem CreateEquipmentSystem(TestGameScope playerModel = null) => new(playerModel == null ? TestTables.Architecture : TestTables.ForPlayer(playerModel));
-
-    /// <summary>系统只修改所属架构注册的玩家模型，装配快照不借用或替换模型。</summary>
+    private static EquipmentSystem CreateEquipmentSystem(TestGameScope playerModel = null)
+    {
+        return new(playerModel == null ? TestTables.Architecture : TestTables.ForPlayer(playerModel));
+    }
+    /// <summary>
+    /// 系统只修改所属架构注册的玩家模型，装配快照不借用或替换模型。
+    /// </summary>
     [Fact]
     public void RegisteredModel_EquipmentOperationsStayInTheirOwnScope()
     {
@@ -38,8 +43,9 @@ public sealed class EquipmentTests
         Assert.Empty(second.Profile.EquipmentDatas);
         Assert.Null(second.Profile.Weapon);
     }
-
-    /// <summary>跨三页按品质出售，穿戴物和其他品质不参与，各数据源只通知一次。</summary>
+    /// <summary>
+    /// 跨三页按品质出售，穿戴物和其他品质不参与，各数据源只通知一次。
+    /// </summary>
     [Fact]
     public void BulkSale_SellsAllPagesAndNotWornEquipment_WithOneNotification()
     {
@@ -82,8 +88,9 @@ public sealed class EquipmentTests
             Assert.Equal(507, playerModel.Profile.Soul.Value);
         }
     }
-
-    /// <summary>整批价格超过灵魂余额上限时，一件也不卖且不发送变更。</summary>
+    /// <summary>
+    /// 整批价格超过灵魂余额上限时，一件也不卖且不发送变更。
+    /// </summary>
     [Fact]
     public void BulkSale_OverflowLeavesEntireTransactionUnchanged()
     {
@@ -101,8 +108,9 @@ public sealed class EquipmentTests
         Assert.Equal(int.MaxValue - 15, playerModel.Profile.Soul.Value);
         Assert.Equal(0, notifications);
     }
-
-    /// <summary>出售只消费背包实例一次，入账表内价格，溢出或已穿戴时保持完整状态。</summary>
+    /// <summary>
+    /// 出售只消费背包实例一次，入账表内价格，溢出或已穿戴时保持完整状态。
+    /// </summary>
     [Fact]
     public void Selling_UsesConfiguredPriceAndRejectsStaleWornOrOverflow()
     {
@@ -127,8 +135,9 @@ public sealed class EquipmentTests
         Assert.Equal(10, playerModel.Profile.Soul.Value);
         Assert.Empty(playerModel.Profile.EquipmentDatas);
     }
-
-    /// <summary>八件初级装备的每条实际属性在两端精确匹配原版范围。</summary>
+    /// <summary>
+    /// 八件初级装备的每条实际属性在两端精确匹配原版范围。
+    /// </summary>
     [Theory]
     [InlineData(EquipmentId.RoughPilgrimClothes, 1, 1)]
     [InlineData(EquipmentId.RoughPilgrimStaff, 2, 5)]
@@ -149,8 +158,9 @@ public sealed class EquipmentTests
         Assert.Equal(definition.AttributeRanges.Select(x => (float)x.Maximum), definition.AttributeRanges.Select(x => (float)high.Attributes.Get(x.Attribute)));
         Assert.Equal(0, low.Attributes.Mdef);
     }
-
-    /// <summary>保留 round 随机的端点半权重，生命与魔法分别抽取。</summary>
+    /// <summary>
+    /// 保留 round 随机的端点半权重，生命与魔法分别抽取。
+    /// </summary>
     [Fact]
     public void RandomAttributes_UseRoundDistributionAndIndependentRolls()
     {
@@ -162,8 +172,9 @@ public sealed class EquipmentTests
         Assert.Equal((20, 40, 3), (armor.Attributes.MaxHp, armor.Attributes.MaxMp, armor.Attributes.Def));
         Assert.Empty(random);
     }
-
-    /// <summary>一万组分层采样精确锁定恢复品概率、互斥关系与装备独立判定。</summary>
+    /// <summary>
+    /// 一万组分层采样精确锁定恢复品概率、互斥关系与装备独立判定。
+    /// </summary>
     [Fact]
     public void GroundSelection_MatchesOfficialProbabilitiesAndPoolWeights()
     {
@@ -194,8 +205,9 @@ public sealed class EquipmentTests
             new LootSystem(TestTables.Architecture).RollGround(monster.EquipmentDropChance,
                 monster.EquipmentDropPoolId, () => 0f).Equipment);
     }
-
-    /// <summary>满包和重复领取没有副作用，坏快照不能覆盖现有背包。</summary>
+    /// <summary>
+    /// 满包和重复领取没有副作用，坏快照不能覆盖现有背包。
+    /// </summary>
     [Fact]
     public void Inventory_IsAtomicAndRejectsDuplicateOrFullPickup()
     {
@@ -221,8 +233,9 @@ public sealed class EquipmentTests
         Assert.Same(item, Assert.Single(bag.EquipmentDatas));
         Assert.Equal(1, changes);
     }
-
-    /// <summary>保存实际属性及稳定顺序，JSON 读回和关卡回滚都不重抽。</summary>
+    /// <summary>
+    /// 保存实际属性及稳定顺序，JSON 读回和关卡回滚都不重抽。
+    /// </summary>
     [Fact]
     public void Equipment_RoundTripsAndRollsBackWithoutRerolling()
     {
@@ -248,8 +261,9 @@ public sealed class EquipmentTests
         ((Newtonsoft.Json.Linq.JObject)missing["EquipmentItems"][0]["Attributes"]).Remove("MaxHp");
         Assert.Throws<JsonSerializationException>(() => missing.ToObject<GameData>());
     }
-
-    /// <summary>穿戴交换保持实例所有权，异角色和满包卸装均不改变状态。</summary>
+    /// <summary>
+    /// 穿戴交换保持实例所有权，异角色和满包卸装均不改变状态。
+    /// </summary>
     [Fact]
     public void Wearing_ExchangesItemsAtomicallyAndRejectsWrongHeroOrFullBag()
     {
@@ -277,8 +291,9 @@ public sealed class EquipmentTests
         Assert.Null(playerModel.Profile.Weapon);
         Assert.Same(common, Assert.Single(playerModel.Profile.EquipmentDatas));
     }
-
-    /// <summary>具名属性和穿戴引用经过 JSON、检查点回滚后完全保留，字段顺序不影响读档。</summary>
+    /// <summary>
+    /// 具名属性和穿戴引用经过 JSON、检查点回滚后完全保留，字段顺序不影响读档。
+    /// </summary>
     [Fact]
     public void Wearing_RoundTripsNamedAttributesAndRestoresCheckpoint()
     {
@@ -305,8 +320,9 @@ public sealed class EquipmentTests
         Assert.Null(playerModel.Profile.Armor);
         Assert.Equal(TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.Def + armor.Attributes.Def, frozen.Def);
     }
-
-    /// <summary>错误部位、跨角色引用和一物多穿都被正式读档拒绝。</summary>
+    /// <summary>
+    /// 错误部位、跨角色引用和一物多穿都被正式读档拒绝。
+    /// </summary>
     [Fact]
     public void Wearing_RejectsInvalidSavedReferences()
     {

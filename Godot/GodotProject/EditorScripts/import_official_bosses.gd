@@ -4,7 +4,7 @@ extends SceneTree
 func _initialize() -> void:
 	var path := OS.get_cmdline_user_args()[0]
 	var manifest: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
-	for actor in manifest.actors:
+	for actor in manifest.actors + manifest.get("effects", []):
 		for layer in actor.layers:
 			if not _pack_layer(actor.name, layer):
 				quit(1)

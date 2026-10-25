@@ -9,13 +9,45 @@ using Xunit;
 using System;
 
 namespace GameLogic.Battle.Tests;
-
-/// <summary>使用真实框架状态机验证造一普攻时序、按键组合及动作打断。</summary>
+/// <summary>
+/// 使用真实框架状态机验证造一普攻时序、按键组合及动作打断。
+/// </summary>
 public sealed class HeroBodyTests
 {
-    private static InputSystem Inputs => BattleArchitecture.Instance.GetSystem<InputSystem>();
-
-    /// <summary>上一物理步的上坡负速度不是起跳，不应累积成坡顶飞离。</summary>
+    private static InputSystem Inputs
+    {
+        get
+        {
+            return BattleArchitecture.Instance.GetSystem<InputSystem>();
+        }
+    }
+    /// <summary>
+    /// 各物理频率在共同采样时刻吻合原版先移动后加重力的独立离散轨迹。
+    /// </summary>
+    /// <param name="hz">物理更新频率。</param>
+    [Theory, InlineData(24), InlineData(60), InlineData(120)]
+    public void Jump_MatchesOfficialTrajectory_AtSourceSampleTimes(int hz)
+    {
+        using Harness h = new(hz);
+        h.Body.OnFloor = false;
+        double y = 0, sourceY = 0, sourceSpeed = -20;
+        for (int frame = 1; frame <= hz; frame++)
+        {
+            h.Frame(jump: frame == 1);
+            y += h.Body.Velocity.Y / hz;
+            if (frame % (hz / 12) != 0)
+                continue;
+            for (int sourceFrame = 0; sourceFrame < 2; sourceFrame++)
+            {
+                sourceY += sourceSpeed;
+                sourceSpeed += 1.5;
+            }
+            Assert.InRange(Math.Abs(y - sourceY), 0, .001);
+        }
+    }
+    /// <summary>
+    /// 上一物理步的上坡负速度不是起跳，不应累积成坡顶飞离。
+    /// </summary>
     /// <param name="hz">物理更新频率。</param>
     [Theory, InlineData(60), InlineData(120)]
     public void Ground_UphillVelocity_IsResetBeforeGravity(int hz)
@@ -26,26 +58,31 @@ public sealed class HeroBodyTests
         Assert.Equal("Ground", h.State);
         Assert.True(h.Body.Velocity.Y >= 0);
     }
-
-    /// <summary>原版动画长度与按上一段号选取的输入冷却，均转换为秒。</summary>
-    private static HeroBodyParams CreateWukongParameters() => new()
+    /// <summary>
+    /// 原版动画长度与按上一段号选取的输入冷却，均转换为秒。
+    /// </summary>
+    private static HeroBodyParams CreateWukongParameters()
     {
-        WalkSpeed = 144,
-        RunSpeed = 240,
-        RunDoubleTapWindow = .5f,
-        JumpSpeed = 480,
-        Gravity = 864,
-        JumpCountMax = 2,
-        HurtTime = 0.2f,
-        AttackAnims = ["attack_1", "attack_2", "attack_3", "attack_4", "attack_5"],
-        AttackTimes = [8f / 24, 8f / 24, 11f / 24, 20f / 24, 15f / 24],
-        AttackInputCooldowns = [8f / 24, 8f / 24, 15f / 24, 18f / 24, 8f / 24],
-        AirAttackIndex = 2,
-        AirAttackCooldown = 15f / 24,
-        ComboResetTime = 1,
-    };
-
-    /// <summary>复现连打到第四段松手：过早输入丢弃，收招后不补第五段。</summary>
+        return new()
+        {
+            WalkSpeed = 144,
+            RunSpeed = 240,
+            RunDoubleTapWindow = .5f,
+            JumpSpeed = 480,
+            Gravity = 864,
+            JumpCountMax = 2,
+            HurtTime = 0.2f,
+            AttackAnims = ["attack_1", "attack_2", "attack_3", "attack_4", "attack_5"],
+            AttackTimes = [8f / 24, 8f / 24, 11f / 24, 20f / 24, 15f / 24],
+            AttackInputCooldowns = [8f / 24, 8f / 24, 15f / 24, 18f / 24, 8f / 24],
+            AirAttackIndex = 2,
+            AirAttackCooldown = 15f / 24,
+            ComboResetTime = 1,
+        };
+    }
+    /// <summary>
+    /// 复现连打到第四段松手：过早输入丢弃，收招后不补第五段。
+    /// </summary>
     [Theory, InlineData(60), InlineData(120)]
     public void FourthHit_EarlyPressThenRelease_DoesNotQueueFifth(int hz)
     {
@@ -56,8 +93,9 @@ public sealed class HeroBodyTests
         Assert.Equal(4, h.Body.BeginCount);
         Assert.Equal("Ground", h.State);
     }
-
-    /// <summary>第四段冷却结束后再次按下立即出第五段，无需等完整动画收招。</summary>
+    /// <summary>
+    /// 第四段冷却结束后再次按下立即出第五段，无需等完整动画收招。
+    /// </summary>
     [Theory, InlineData(60), InlineData(120)]
     public void FourthHit_FreshAllowedPress_StartsFifthBeforeAnimationEnds(int hz)
     {
@@ -69,8 +107,9 @@ public sealed class HeroBodyTests
         Assert.Equal("attack_5", h.Body.LastAnim);
         Assert.Equal(5, h.Body.BeginCount);
     }
-
-    /// <summary>长按或在冷却期按下并继续按住都不会自动连击。</summary>
+    /// <summary>
+    /// 长按或在冷却期按下并继续按住都不会自动连击。
+    /// </summary>
     [Theory, InlineData(60), InlineData(120)]
     public void Attack_HoldOrRejectedHold_NeverAutoRepeats(int hz)
     {
@@ -84,8 +123,9 @@ public sealed class HeroBodyTests
         h.Run(1, attack: true);
         Assert.Equal(2, h.Body.BeginCount);
     }
-
-    /// <summary>第五段之后在冷却结束且超时前可重新接首段。</summary>
+    /// <summary>
+    /// 第五段之后在冷却结束且超时前可重新接首段。
+    /// </summary>
     [Theory, InlineData(60), InlineData(120)]
     public void Combo_FiveThenOne_UsesIndependentCooldown(int hz)
     {
@@ -98,8 +138,9 @@ public sealed class HeroBodyTests
         Assert.Equal("attack_1", h.Body.LastAnim);
         Assert.Equal(6, h.Body.BeginCount);
     }
-
-    /// <summary>短间隔继续下一段，超过一秒重置到首段。</summary>
+    /// <summary>
+    /// 短间隔继续下一段，超过一秒重置到首段。
+    /// </summary>
     [Theory, InlineData(60), InlineData(120)]
     public void Combo_ContinuesWithinTimeout_ResetsAfterTimeout(int hz)
     {
@@ -112,8 +153,9 @@ public sealed class HeroBodyTests
         h.Tap(attack: true);
         Assert.Equal("attack_1", h.Body.LastAnim);
     }
-
-    /// <summary>一秒边界仍继续连段，不被物理时间的浮点误差误判为超时。</summary>
+    /// <summary>
+    /// 一秒边界仍继续连段，不被物理时间的浮点误差误判为超时。
+    /// </summary>
     [Theory, InlineData(60), InlineData(120)]
     public void Combo_ExactlyOneSecond_DoesNotReset(int hz)
     {
@@ -123,8 +165,9 @@ public sealed class HeroBodyTests
         h.Tap(attack: true);
         Assert.Equal("attack_2", h.Body.LastAnim);
     }
-
-    /// <summary>冷却拒绝的尝试也刷新超时起点；仅成功出招推进段号。</summary>
+    /// <summary>
+    /// 冷却拒绝的尝试也刷新超时起点；仅成功出招推进段号。
+    /// </summary>
     [Theory, InlineData(60), InlineData(120)]
     public void Combo_RejectedAttemptRefreshesTimeoutWithoutAdvancing(int hz)
     {
@@ -137,8 +180,9 @@ public sealed class HeroBodyTests
         h.Tap(attack: true);
         Assert.Equal("attack_5", h.Body.LastAnim);
     }
-
-    /// <summary>受击立即终止普攻并归还攻击包，无双霸体保留攻击。</summary>
+    /// <summary>
+    /// 受击立即终止普攻并归还攻击包，无双霸体保留攻击。
+    /// </summary>
     [Theory, InlineData(false), InlineData(true)]
     public void Hurt_InterruptsAttackUnlessSuperArmor(bool armor)
     {
@@ -154,8 +198,9 @@ public sealed class HeroBodyTests
             Assert.Equal(-150, h.Body.Velocity.X);
         }
     }
-
-    /// <summary>硬直期间保持击退，连续受击重新播放并更新速度。</summary>
+    /// <summary>
+    /// 硬直期间保持击退，连续受击重新播放并更新速度。
+    /// </summary>
     [Fact]
     public void Hurt_RehitRestartsAndMovementDoesNotOverwriteKnockback()
     {
@@ -172,8 +217,9 @@ public sealed class HeroBodyTests
         h.Run(0.25f);
         Assert.Equal("Ground", h.State);
     }
-
-    /// <summary>普攻序列跨受击状态保留，硬直结束后的新输入继续下一段。</summary>
+    /// <summary>
+    /// 普攻序列跨受击状态保留，硬直结束后的新输入继续下一段。
+    /// </summary>
     [Theory, InlineData(60), InlineData(120)]
     public void Combo_SurvivesHurtStateTransition(int hz)
     {
@@ -187,8 +233,9 @@ public sealed class HeroBodyTests
         h.Tap(attack: true);
         Assert.Equal("attack_2", h.Body.LastAnim);
     }
-
-    /// <summary>不同英雄分别拥有普攻序列，互不共享段号或冷却。</summary>
+    /// <summary>
+    /// 不同英雄分别拥有普攻序列，互不共享段号或冷却。
+    /// </summary>
     [Fact]
     public void Combo_IsOwnedIndependentlyByEachHero()
     {
@@ -202,8 +249,9 @@ public sealed class HeroBodyTests
         Assert.Equal("attack_1", second.Body.LastAnim);
         Assert.Equal("attack_2", first.Body.LastAnim);
     }
-
-    /// <summary>同一组共享身体状态支持不同普攻段数、动画名及空中攻击下标。</summary>
+    /// <summary>
+    /// 同一组共享身体状态支持不同普攻段数、动画名及空中攻击下标。
+    /// </summary>
     /// <param name="segmentCount">测试英雄配置的普攻段数。</param>
     /// <param name="airAttackIndex">测试英雄指定的空中攻击下标。</param>
     /// <param name="hz">物理帧率。</param>
@@ -245,8 +293,9 @@ public sealed class HeroBodyTests
         Assert.Equal(animations[airAttackIndex], h.Body.LastAnim);
         Assert.Equal(segmentCount + 2, h.Body.BeginCount);
     }
-
-    /// <summary>无双解除硬直，横向和起跳倍率即时生效。</summary>
+    /// <summary>
+    /// 无双解除硬直，横向和起跳倍率即时生效。
+    /// </summary>
     [Fact]
     public void Musou_ReleasesHurtAndAppliesMotionMultipliers()
     {
@@ -264,8 +313,9 @@ public sealed class HeroBodyTests
         h.Tap(jump: true);
         Assert.True(h.Body.Velocity.Y < -680);
     }
-
-    /// <summary>攻击和方向同帧按下时朝向先更新，起手后地面定身。</summary>
+    /// <summary>
+    /// 攻击和方向同帧按下时朝向先更新，起手后地面定身。
+    /// </summary>
     [Fact]
     public void Attack_InitialDirectionUpdatesFacing()
     {
@@ -274,8 +324,9 @@ public sealed class HeroBodyTests
         Assert.Equal(-1, h.Body.Facing);
         Assert.Equal(0, h.Body.Velocity.X);
     }
-
-    /// <summary>死亡始终优先于输入和受击，且终态不再出招。</summary>
+    /// <summary>
+    /// 死亡始终优先于输入和受击，且终态不再出招。
+    /// </summary>
     [Fact]
     public void Death_AlwaysInterruptsAndRemainsTerminal()
     {
@@ -291,8 +342,9 @@ public sealed class HeroBodyTests
         Assert.Equal("Death", h.State);
         Assert.Equal(1, h.Body.BeginCount);
     }
-
-    /// <summary>J＋K 原版不出招也不起跳；未学习 W＋J 时同样不回退普攻。</summary>
+    /// <summary>
+    /// J＋K 原版不出招也不起跳；未学习 W＋J 时同样不回退普攻。
+    /// </summary>
     [Theory, InlineData(false), InlineData(true)]
     public void KeyCombinations_DoNotFallThroughToNormalAttack(bool up)
     {
@@ -302,8 +354,9 @@ public sealed class HeroBodyTests
         Assert.Equal(0, h.Body.BeginCount);
         Assert.Equal(0, h.Body.ActionData.JumpCount);
     }
-
-    /// <summary>S＋J 可以普攻，S＋K 仅在单向平台执行下落，不变成跳跃。</summary>
+    /// <summary>
+    /// S＋J 可以普攻，S＋K 仅在单向平台执行下落，不变成跳跃。
+    /// </summary>
     [Theory, InlineData(false), InlineData(true)]
     public void DownKeyCombinations_AttackOrPlatformDrop(bool platform)
     {
@@ -316,8 +369,9 @@ public sealed class HeroBodyTests
         h.Frame(down: true, attack: true);
         Assert.Equal(platform ? "attack_3" : "attack_1", h.Body.LastAnim);
     }
-
-    /// <summary>跳跃次数耗尽的输入被消费，不会在落地时补跳。</summary>
+    /// <summary>
+    /// 跳跃次数耗尽的输入被消费，不会在落地时补跳。
+    /// </summary>
     [Fact]
     public void Jump_ExhaustedRequestDoesNotSurviveLanding()
     {
@@ -333,8 +387,9 @@ public sealed class HeroBodyTests
         Assert.Equal("Ground", h.State);
         Assert.Equal(0, h.Body.ActionData.JumpCount);
     }
-
-    /// <summary>跳跃需松开再按才使用第二次；第三次不会起跳。</summary>
+    /// <summary>
+    /// 跳跃需松开再按才使用第二次；第三次不会起跳。
+    /// </summary>
     [Fact]
     public void Jump_HoldDoesNotDoubleJump_ReleaseRearms()
     {
@@ -348,8 +403,9 @@ public sealed class HeroBodyTests
         h.Tap(jump: true);
         Assert.Equal(2, h.Body.ActionData.JumpCount);
     }
-
-    /// <summary>攻击中按跳并松开会取消；持续按住则在收招后起跳一次。</summary>
+    /// <summary>
+    /// 攻击中按跳并松开会取消；持续按住则在收招后起跳一次。
+    /// </summary>
     [Theory, InlineData(false), InlineData(true)]
     public void Jump_DuringAttack_RequiresStillHeldAtRecovery(bool held)
     {
@@ -359,8 +415,9 @@ public sealed class HeroBodyTests
         h.Run(0.4f, jump: held);
         Assert.Equal(held ? 1 : 0, h.Body.ActionData.JumpCount);
     }
-
-    /// <summary>受击期间未消费的普攻只在仍按住时等待硬直结束，松开便取消。</summary>
+    /// <summary>
+    /// 受击期间未消费的普攻只在仍按住时等待硬直结束，松开便取消。
+    /// </summary>
     [Theory, InlineData(false), InlineData(true)]
     public void Attack_DuringHurt_RequiresStillHeldAtRecovery(bool held)
     {
@@ -370,8 +427,9 @@ public sealed class HeroBodyTests
         h.Run(0.4f, attack: held);
         Assert.Equal(held ? 1 : 0, h.Body.BeginCount);
     }
-
-    /// <summary>纯跳跃不清空连段；空中下劈清空地面序列。</summary>
+    /// <summary>
+    /// 纯跳跃不清空连段；空中下劈清空地面序列。
+    /// </summary>
     [Theory, InlineData(false), InlineData(true)]
     public void Air_OnlyAttackResetsGroundCombo(bool attack)
     {
@@ -392,8 +450,9 @@ public sealed class HeroBodyTests
         h.Tap(attack: true);
         Assert.Equal(attack ? "attack_1" : "attack_2", h.Body.LastAnim);
     }
-
-    /// <summary>空中普攻保留起手方向，反向键不转身，松开起手方向即停。</summary>
+    /// <summary>
+    /// 空中普攻保留起手方向，反向键不转身，松开起手方向即停。
+    /// </summary>
     [Fact]
     public void AirAttack_LocksFacingAndExistingDirection_ReleaseStops()
     {
@@ -408,8 +467,9 @@ public sealed class HeroBodyTests
         Assert.Equal(0, h.Body.Velocity.X);
         Assert.Equal(1, h.Body.Facing);
     }
-
-    /// <summary>空中攻击中松开起手方向后再按回也不能恢复移动，收招后方向输入才接管。</summary>
+    /// <summary>
+    /// 空中攻击中松开起手方向后再按回也不能恢复移动，收招后方向输入才接管。
+    /// </summary>
     [Theory, InlineData(60), InlineData(120)]
     public void AirAttack_ReleaseThenRepressWaitsUntilRecovery(int hz)
     {
@@ -425,8 +485,9 @@ public sealed class HeroBodyTests
         Assert.Equal("Air", h.State);
         Assert.Equal(144, h.Body.Velocity.X);
     }
-
-    /// <summary>一帧内松开并按回方向仍停止空中攻击横移，不能因最终按住状态漏掉松键。</summary>
+    /// <summary>
+    /// 一帧内松开并按回方向仍停止空中攻击横移，不能因最终按住状态漏掉松键。
+    /// </summary>
     [Theory, InlineData(60), InlineData(120)]
     public void AirAttack_ReleaseAndRepressWithinFrameStopsMovement(int hz)
     {
@@ -439,8 +500,9 @@ public sealed class HeroBodyTests
         h.Frame(move: 1);
         Assert.Equal(0, h.Body.Velocity.X);
     }
-
-    /// <summary>双击窗口为半秒，松方向、受击和地面普攻取消奔跑。</summary>
+    /// <summary>
+    /// 双击窗口为半秒，松方向、受击和地面普攻取消奔跑。
+    /// </summary>
     [Fact]
     public void Run_HalfSecondWindow_ReleaseAndNormalAttackStop()
     {
@@ -454,8 +516,9 @@ public sealed class HeroBodyTests
         Assert.False(h.Input.Running);
         Assert.Equal(0, h.Body.Velocity.X);
     }
-
-    /// <summary>方向点击间插入动作键会打断双击识别；相反方向同时按住采用最后按下者。</summary>
+    /// <summary>
+    /// 方向点击间插入动作键会打断双击识别；相反方向同时按住采用最后按下者。
+    /// </summary>
     [Fact]
     public void Direction_OtherKeyBreaksDoubleTap_LastPressedWins()
     {
@@ -467,8 +530,9 @@ public sealed class HeroBodyTests
         Sample(data, 0.5f, 0.01f, true, true, true, false, false, false);
         Assert.Equal(-1, data.MoveAxis);
     }
-
-    /// <summary>半秒边界不奔跑；松开 S 能重新允许仍按住的 J，符合原版共享闩锁。</summary>
+    /// <summary>
+    /// 半秒边界不奔跑；松开 S 能重新允许仍按住的 J，符合原版共享闩锁。
+    /// </summary>
     [Fact]
     public void Input_StrictDoubleTapBoundary_AndSharedActionLatch()
     {
@@ -484,8 +548,9 @@ public sealed class HeroBodyTests
         Sample(data, 0.5f, 0.01f, false, false, false, false, false, true);
         Assert.True(Inputs.ConsumeAttack(data));
     }
-
-    /// <summary>动作键一帧内松开并重按会重置共享闩锁，之后继续长按不重复消费。</summary>
+    /// <summary>
+    /// 动作键一帧内松开并重按会重置共享闩锁，之后继续长按不重复消费。
+    /// </summary>
     [Fact]
     public void Input_ReleaseAndRepressWithinFrameRearmsAction()
     {
@@ -497,8 +562,9 @@ public sealed class HeroBodyTests
         Sample(data, 0.5f, 0.01f, false, false, false, false, false, true);
         Assert.False(Inputs.ConsumeAttack(data));
     }
-
-    /// <summary>完整待机循环能被移动和起跳立即打断。</summary>
+    /// <summary>
+    /// 完整待机循环能被移动和起跳立即打断。
+    /// </summary>
     [Fact]
     public void Idle_WalkAndJumpInterruptImmediately()
     {
@@ -513,8 +579,9 @@ public sealed class HeroBodyTests
         h.Tap(jump: true);
         Assert.Equal("jump", h.Body.LastAnim);
     }
-
-    /// <summary>共用输入系统时，英雄各自的闩锁、连段、跳数与重置互不影响。</summary>
+    /// <summary>
+    /// 共用输入系统时，英雄各自的闩锁、连段、跳数与重置互不影响。
+    /// </summary>
     [Fact]
     public void SharedInputSystem_KeepsHeroActionDataIndependent()
     {
@@ -537,8 +604,9 @@ public sealed class HeroBodyTests
         Assert.False(system.ConsumeAttack(firstData));
         Assert.Equal(-1, secondData.AttackSegment);
     }
-
-    /// <summary>把测试用的帧事实装入输入源，再调用与游戏相同的二参数采样入口。</summary>
+    /// <summary>
+    /// 把测试用的帧事实装入输入源，再调用与游戏相同的二参数采样入口。
+    /// </summary>
     private static void Sample(HeroActionData data, float doubleTapWindow, float dt,
         bool leftHeld, bool rightHeld, bool leftPressed, bool rightPressed, bool jumpHeld, bool attackHeld,
         bool musouPressed = false, bool downHeld = false, bool upHeld = false, bool jumpPressed = false,
@@ -576,61 +644,96 @@ public sealed class HeroBodyTests
         InputSystem system = new(BattleArchitecture.Instance, source);
         system.Sample(new Hero(CreateWukongParameters() with { RunDoubleTapWindow = doubleTapWindow }, data), dt);
     }
-
-    /// <summary>脚本输入源使测试走实际 Sample 入口，不暴露生产测试接口。</summary>
+    /// <summary>
+    /// 脚本输入源使测试走实际 Sample 入口，不暴露生产测试接口。
+    /// </summary>
     private sealed class FrameInput : IInputSource
     {
-        /// <summary>当前按住的动作集合。</summary>
+        /// <summary>
+        /// 当前按住的动作集合。
+        /// </summary>
         public System.Collections.Generic.HashSet<string> Held { get; } = new();
-
-        /// <summary>本帧按下边沿。</summary>
+        /// <summary>
+        /// 本帧按下边沿。
+        /// </summary>
         public System.Collections.Generic.HashSet<string> Pressed { get; } = new();
-
-        /// <summary>本帧松开边沿。</summary>
+        /// <summary>
+        /// 本帧松开边沿。
+        /// </summary>
         public System.Collections.Generic.HashSet<string> Released { get; } = new();
         /// <inheritdoc />
-        public bool IsPressed(string action) => Held.Contains(action);
+        public bool IsPressed(string action)
+        {
+            return Held.Contains(action);
+        }
         /// <inheritdoc />
-        public bool IsJustPressed(string action) => Pressed.Contains(action);
+        public bool IsJustPressed(string action)
+        {
+            return Pressed.Contains(action);
+        }
         /// <inheritdoc />
-        public bool IsJustReleased(string action) => Released.Contains(action);
+        public bool IsJustReleased(string action)
+        {
+            return Released.Contains(action);
+        }
     }
-
-    /// <summary>为真实状态机提供可控的物理宿主。</summary>
+    /// <summary>
+    /// 为真实状态机提供可控的物理宿主。
+    /// </summary>
     private sealed class Hero : AbstractFakeActorBody, IHeroBody
     {
-
-        /// <summary>是否站在单向平台。</summary>
+        /// <inheritdoc />
+        float IActorBody.Gravity
+        {
+            get
+            {
+                return Params.Gravity;
+            }
+        }
+        /// <summary>
+        /// 是否站在单向平台。
+        /// </summary>
         public bool CanDrop;
-
-        /// <summary>实际穿平台次数。</summary>
+        /// <summary>
+        /// 实际穿平台次数。
+        /// </summary>
         public int DropCount;
-
-        /// <summary>身体动作参数。</summary>
+        /// <summary>
+        /// 身体动作参数。
+        /// </summary>
         public HeroBodyParams Params { get; }
-
-        /// <summary>输入采样器。</summary>
+        /// <summary>
+        /// 输入采样器。
+        /// </summary>
         public HeroActionData ActionData { get; }
-
-        /// <summary>测试注入的无双霸体。</summary>
+        /// <summary>
+        /// 测试注入的无双霸体。
+        /// </summary>
         public bool SuperArmor { get; set; }
-
-        /// <summary>测试注入的横向速度倍率。</summary>
+        /// <summary>
+        /// 测试注入的横向速度倍率。
+        /// </summary>
         public float MoveSpeedMultiplier { get; set; } = 1f;
-
-        /// <summary>测试注入的起跳速度倍率。</summary>
+        /// <summary>
+        /// 测试注入的起跳速度倍率。
+        /// </summary>
         public float JumpSpeedMultiplier { get; set; } = 1f;
-
-        /// <summary>使用同一共享身体定义创建本英雄拥有的普攻序列。</summary>
+        /// <summary>
+        /// 使用同一共享身体定义创建本英雄拥有的普攻序列。
+        /// </summary>
         /// <param name="parameters">本测试英雄的身体参数。</param>
         public Hero(HeroBodyParams parameters, HeroActionData data = null)
         {
             Params = parameters;
             ActionData = data ?? new();
         }
-        IArchitecture IBelongToArchitecture.GetArchitecture() => BattleArchitecture.Instance;
-
-        /// <summary>仅可穿平台允许 S＋K。</summary>
+        IArchitecture IBelongToArchitecture.GetArchitecture()
+        {
+            return BattleArchitecture.Instance;
+        }
+        /// <summary>
+        /// 仅可穿平台允许 S＋K。
+        /// </summary>
         /// <returns>是否执行平台下落。</returns>
         public bool TryDropThroughPlatform()
         {
@@ -642,25 +745,42 @@ public sealed class HeroBodyTests
             return true;
         }
     }
-
-    /// <summary>按指定物理频率采样并推进真实 GF 状态机。</summary>
+    /// <summary>
+    /// 按指定物理频率采样并推进真实 GF 状态机。
+    /// </summary>
     private sealed class Harness : IDisposable
     {
         private readonly FsmManager m_Manager = new(); // 测试独占的框架管理器。
         private readonly IFsm<IHeroBody> m_Fsm; // 真实英雄身体状态机。
         private readonly float m_Dt; // 每物理帧秒数。
         private bool m_Left, m_Right; // 上次方向采样，用于边沿。
-
-        /// <summary>测试身体。</summary>
+        /// <summary>
+        /// 测试身体。
+        /// </summary>
         public Hero Body { get; }
-
-        /// <summary>身体使用的输入。</summary>
-        public HeroActionData Input => Body.ActionData;
-
-        /// <summary>直接观测现有 IFsm，不新增生产 API。</summary>
-        public string State => m_Fsm.CurrentState.GetType().Name[4..^5];
-
-        /// <summary>创建测试状态机。</summary>
+        /// <summary>
+        /// 身体使用的输入。
+        /// </summary>
+        public HeroActionData Input
+        {
+            get
+            {
+                return Body.ActionData;
+            }
+        }
+        /// <summary>
+        /// 直接观测现有 IFsm，不新增生产 API。
+        /// </summary>
+        public string State
+        {
+            get
+            {
+                return m_Fsm.CurrentState.GetType().Name[4..^5];
+            }
+        }
+        /// <summary>
+        /// 创建测试状态机。
+        /// </summary>
         /// <param name="hz">物理频率。</param>
         /// <param name="parameters">可选的其他英雄参数；省略时使用悟空参数。</param>
         public Harness(int hz = 60, HeroBodyParams? parameters = null)
@@ -671,8 +791,9 @@ public sealed class HeroBodyTests
                 new HeroGroundState(), new HeroAirState(), new HeroAttackState(), new HeroHurtState(), new HeroDeathState());
             m_Fsm.Start<HeroGroundState>();
         }
-
-        /// <summary>采样并推进一帧。</summary>
+        /// <summary>
+        /// 采样并推进一帧。
+        /// </summary>
         /// <param name="move">方向。</param>
         /// <param name="attack">按住普攻。</param>
         /// <param name="jump">按住跳跃。</param>
@@ -695,8 +816,9 @@ public sealed class HeroBodyTests
             if (Body.OnFloor && Body.Velocity.Y > 0)
                 Body.Velocity = new(Body.Velocity.X, 0);
         }
-
-        /// <summary>先释放再按下，确保物理边沿与松键闩锁。</summary>
+        /// <summary>
+        /// 先释放再按下，确保物理边沿与松键闩锁。
+        /// </summary>
         /// <param name="attack">普攻。</param>
         /// <param name="jump">跳跃。</param>
         public void Tap(bool attack = false, bool jump = false)
@@ -704,8 +826,9 @@ public sealed class HeroBodyTests
             Frame();
             Frame(attack: attack, jump: jump);
         }
-
-        /// <summary>按秒数推进，并可保持动作键。</summary>
+        /// <summary>
+        /// 按秒数推进，并可保持动作键。
+        /// </summary>
         /// <param name="seconds">推进秒数。</param>
         /// <param name="attack">是否保持普攻。</param>
         /// <param name="jump">是否保持跳跃。</param>
@@ -714,8 +837,9 @@ public sealed class HeroBodyTests
             for (int i = 0; i < (int)MathF.Ceiling(seconds / m_Dt); i++)
                 Frame(attack: attack, jump: jump);
         }
-
-        /// <summary>按原版前三级冷却进入第四段。</summary>
+        /// <summary>
+        /// 按原版前三级冷却进入第四段。
+        /// </summary>
         public void ReachFourth()
         {
             Tap(attack: true);
@@ -726,8 +850,12 @@ public sealed class HeroBodyTests
             }
             Assert.Equal("attack_4", Body.LastAnim);
         }
-
-        /// <summary>释放测试独占状态机。</summary>
-        public void Dispose() => m_Manager.Shutdown();
+        /// <summary>
+        /// 释放测试独占状态机。
+        /// </summary>
+        public void Dispose()
+        {
+            m_Manager.Shutdown();
+        }
     }
 }

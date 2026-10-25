@@ -13,7 +13,9 @@ using GodotGameFramework;
 
 namespace GameLogic.UI.Widgets;
 
-/// <summary>个人资料面板统一显示身份、穿戴、最终属性和经验，不修改角色状态。</summary>
+/// <summary>
+/// 个人资料面板统一显示身份、穿戴、最终属性和经验，不修改角色状态。
+/// </summary>
 public partial class InventoryCharacterPanel : Control, IController
 {
     [Export] private ItemAppearancesResource m_Appearances; // 与地面掉落共用的物品图标资源。
@@ -36,10 +38,14 @@ public partial class InventoryCharacterPanel : Control, IController
     [Export] private TextureProgressBar m_Experience; // 当前等级经验比例。
     [Export] private Label m_ExperienceText; // 当前经验与升级需求。
 
-    /// <summary>玩家请求卸下当前穿戴部位，由窗口执行事务。</summary>
+    /// <summary>
+    /// 玩家请求卸下当前穿戴部位，由窗口执行事务。
+    /// </summary>
     public event Action<EquipmentSlot> UnequipRequested;
 
-    /// <summary>穿戴槽直接向所属面板提交卸装请求。</summary>
+    /// <summary>
+    /// 穿戴槽直接向所属面板提交卸装请求。
+    /// </summary>
     public override void _Ready()
     {
         m_WeaponSlot.Clicked += OnWeaponClicked;
@@ -47,17 +53,34 @@ public partial class InventoryCharacterPanel : Control, IController
         m_AccessorySlot.Clicked += OnAccessoryClicked;
     }
 
-    /// <summary>借用所属主流程的共享数据访问入口。</summary>
+    /// <summary>
+    /// 借用所属主流程的共享数据访问入口。
+    /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
-    /// <summary>每次窗口打开从预览待机起点开始。</summary>
-    public void ResetPreview() => m_Preview.Reset();
+    /// <summary>
+    /// 每次窗口打开从预览待机起点开始。
+    /// </summary>
+    public void ResetPreview()
+    {
+        m_Preview.Reset();
+    }
 
-    /// <summary>战斗暂停时由窗口驱动真实时间预览。</summary>
-    public void AdvancePreview() => m_Preview.Advance();
+    /// <summary>
+    /// 战斗暂停时由窗口驱动真实时间预览。
+    /// </summary>
+    public void AdvancePreview()
+    {
+        m_Preview.Advance();
+    }
 
-    /// <summary>从同一组状态刷新个人资料与预览，不拥有或修改状态。</summary>
+    /// <summary>
+    /// 从同一组状态刷新个人资料与预览，不拥有或修改状态。
+    /// </summary>
     /// <param name="hero">当前存活的出战角色。</param>
     public void Refresh(AbstractHeroEntity hero)
     {
@@ -84,7 +107,9 @@ public partial class InventoryCharacterPanel : Control, IController
         m_Preview.ApplyAppearance(profile.Weapon?.EquipmentId ?? EquipmentId.None, profile.Armor?.EquipmentId ?? EquipmentId.None);
     }
 
-    /// <summary>装配穿戴槽的图标及详情输入。</summary>
+    /// <summary>
+    /// 装配穿戴槽的图标及详情输入。
+    /// </summary>
     /// <param name="cell">本面板的穿戴槽。</param>
     /// <param name="data">当前装备；null 恢复为空槽。</param>
     private void BindSlot(EquipmentCell cell, EquipmentData data)
@@ -92,23 +117,41 @@ public partial class InventoryCharacterPanel : Control, IController
         cell.Bind(data, data == null ? null : m_Appearances.Get(data.EquipmentId).InventoryIcon);
     }
 
-    /// <summary>格式化战斗系统计算的百分比，不在界面维护第二份属性公式。</summary>
+    /// <summary>
+    /// 格式化战斗系统计算的百分比，不在界面维护第二份属性公式。
+    /// </summary>
     /// <param name="value">已汇总属性点。</param>
     /// <param name="coefficient">对应战斗系数。</param>
     /// <returns>同等级、无穿透对手下的概率或减伤文字。</returns>
-    private static string Percent(float value, float coefficient) =>
-        $"{CombatSystem.CalculateAttributeRatio(value, coefficient) * 100:0.#}%";
+    private static string Percent(float value, float coefficient)
+    {
+        return $"{CombatSystem.CalculateAttributeRatio(value, coefficient) * 100:0.#}%";
+    }
 
-    /// <summary>提交武器卸装请求。</summary>
+    /// <summary>
+    /// 提交武器卸装请求。
+    /// </summary>
     /// <param name="instanceId">当前槽的装备实例编号。</param>
-    private void OnWeaponClicked(Guid instanceId) => UnequipRequested?.Invoke(EquipmentSlot.Weapon);
+    private void OnWeaponClicked(Guid instanceId)
+    {
+        UnequipRequested?.Invoke(EquipmentSlot.Weapon);
+    }
 
-    /// <summary>提交防具卸装请求。</summary>
+    /// <summary>
+    /// 提交防具卸装请求。
+    /// </summary>
     /// <param name="instanceId">当前槽的装备实例编号。</param>
-    private void OnArmorClicked(Guid instanceId) => UnequipRequested?.Invoke(EquipmentSlot.Armor);
+    private void OnArmorClicked(Guid instanceId)
+    {
+        UnequipRequested?.Invoke(EquipmentSlot.Armor);
+    }
 
-    /// <summary>提交饰品卸装请求。</summary>
+    /// <summary>
+    /// 提交饰品卸装请求。
+    /// </summary>
     /// <param name="instanceId">当前槽的装备实例编号。</param>
-    private void OnAccessoryClicked(Guid instanceId) => UnequipRequested?.Invoke(EquipmentSlot.Accessory);
-
+    private void OnAccessoryClicked(Guid instanceId)
+    {
+        UnequipRequested?.Invoke(EquipmentSlot.Accessory);
+    }
 }

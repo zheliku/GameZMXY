@@ -12,14 +12,18 @@ namespace GameLogic.Enemies.AI
     {
         private float m_CalmElapsed; // 解除控制后已累计的平静时间（秒）。
 
-        /// <summary>进入受控状态时清零解除后的恢复计时。</summary>
+        /// <summary>
+        /// 进入受控状态时清零解除后的恢复计时。
+        /// </summary>
         protected override void Enter(IEnemyAiAgent agent)
         {
             base.Enter(agent);
             m_CalmElapsed = 0f;
         }
 
-        /// <summary>等待控制与平静计时结束，再按目标是否存在恢复 AI。</summary>
+        /// <summary>
+        /// 等待控制与平静计时结束，再按目标是否存在恢复 AI。
+        /// </summary>
         protected override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds)
         {
             if (agent.IsCcLocked)

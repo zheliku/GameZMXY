@@ -4,11 +4,14 @@ using GameLogic.Save;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>通过正式关卡系统验证计时、结算与回滚，只隔离存档磁盘写入。</summary>
+/// <summary>
+/// 通过正式关卡系统验证计时、结算与回滚，只隔离存档磁盘写入。
+/// </summary>
 public sealed class LevelModelTests
 {
-    /// <summary>只有开始后累计时间，结局成绩在后续帧和清理期间保持冻结。</summary>
+    /// <summary>
+    /// 只有开始后累计时间，结局成绩在后续帧和清理期间保持冻结。
+    /// </summary>
     [Fact]
     public void Result_FreezesRunStatistics_AndStopDoesNotPublishAbandonment()
     {
@@ -41,8 +44,9 @@ public sealed class LevelModelTests
         Assert.Equal(1, ended);
         Assert.Equal(levelModel.Result == null ? 0 : 1, scope.GetSystem<SaveSystem>().CheckpointCount);
     }
-
-    /// <summary>未提交的本局保留进关副本供模块回滚，停止只发布一次放弃。</summary>
+    /// <summary>
+    /// 未提交的本局保留进关副本供模块回滚，停止只发布一次放弃。
+    /// </summary>
     [Fact]
     public void Stop_ReleasesUnsubmittedSnapshot_AndPublishesAbandonmentOnce()
     {
@@ -69,8 +73,9 @@ public sealed class LevelModelTests
         Assert.Null(levelModel.Result);
         Assert.Equal(80, scope.Profile.Soul.Value);
     }
-
-    /// <summary>重复开始不得替换已经存在的回滚时间边界。</summary>
+    /// <summary>
+    /// 重复开始不得替换已经存在的回滚时间边界。
+    /// </summary>
     [Fact]
     public void Begin_RejectsDuplicateSession_WithoutReplacingSnapshot()
     {

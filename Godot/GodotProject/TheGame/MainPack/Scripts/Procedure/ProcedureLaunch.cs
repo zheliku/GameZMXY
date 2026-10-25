@@ -15,7 +15,9 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public class ProcedureLaunch : ProcedureBase
 {
-    /// <summary>验证框架门面组件，并在全部可用时进入更新流程。</summary>
+    /// <summary>
+    /// 验证框架门面组件，并在全部可用时进入更新流程。
+    /// </summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal override void OnEnter(ProcedureOwner procedureOwner)
     {

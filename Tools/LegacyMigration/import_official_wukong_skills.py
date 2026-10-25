@@ -276,8 +276,14 @@ def apply(path):
             cells.append(len(visible_images) if image.getbbox() else None)
             if image.getbbox():
                 visible_images.append(image)
-            rectangle = fit([(image, .1)]) if name in ('fire_demon_combo', 'fire_demon_descent', 'fire_demon_landing') else None
-            if rectangle is not None:
+            rectangle = fit([(image, .1)]) if name in ('fire_demon_descent', 'fire_demon_landing') else None
+            if name == 'fire_demon_combo' and frame < 42:
+                # Use source bitmap-fill bounds. The old Godot circle and the
+                # full atlas canvas are not the official attack geometry.
+                x, y, width_, height_ = manifest['fire_demon_combo_bounds'][frame]
+                rectangle = {'position': [x + width_/2, y + height_/2],
+                             'size': [width_, height_], 'rotation': 0}
+            elif rectangle is not None:
                 rectangle['position'] = [rectangle['position'][i]+offset[i] for i in range(2)]
             hitboxes.append(rectangle)
         atlas = Image.new('RGBA', (columns*width, math.ceil(len(visible_images)/columns)*height))

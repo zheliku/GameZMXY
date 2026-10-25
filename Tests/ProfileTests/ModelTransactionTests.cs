@@ -5,11 +5,14 @@ using GameLogic.Equipment;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>验证集合绑定和跨模型事务的外部可观察行为。</summary>
+/// <summary>
+/// 验证集合绑定和跨模型事务的外部可观察行为。
+/// </summary>
 public sealed class ModelTransactionTests
 {
-    /// <summary>档案系统检查背包和全部穿戴，不能再次领取已穿戴的同一实例。</summary>
+    /// <summary>
+    /// 档案系统检查背包和全部穿戴，不能再次领取已穿戴的同一实例。
+    /// </summary>
     [Fact]
     public void ProfileCollection_RejectsAlreadyEquippedInstance()
     {
@@ -23,8 +26,9 @@ public sealed class ModelTransactionTests
         Assert.Empty(scope.Profile.EquipmentDatas);
         Assert.Same(item, scope.Profile.Weapon);
     }
-
-    /// <summary>数量不变的换装仍通知，观察者始终持有同一个实时只读集合。</summary>
+    /// <summary>
+    /// 数量不变的换装仍通知，观察者始终持有同一个实时只读集合。
+    /// </summary>
     [Fact]
     public void EquipmentSwap_PublishesReplacementWithoutReplacingBindableList()
     {
@@ -49,8 +53,9 @@ public sealed class ModelTransactionTests
         Assert.Same(items, scope.Profile.EquipmentDatas);
         Assert.Equal(1, notifications);
     }
-
-    /// <summary>回滚通过正常属性与集合入口恢复全部数据，绑定身份保持不变。</summary>
+    /// <summary>
+    /// 回滚通过正常属性与集合入口恢复全部数据，绑定身份保持不变。
+    /// </summary>
     [Fact]
     public void CheckpointRestore_RestoresModelsAndKeepsBindings()
     {

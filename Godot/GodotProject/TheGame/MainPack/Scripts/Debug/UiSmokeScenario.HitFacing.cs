@@ -20,10 +20,14 @@ using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
 
-/// <summary>用真实伤害入口验证受击保留朝向，击退仍沿攻击方向。</summary>
+/// <summary>
+/// 用真实伤害入口验证受击保留朝向，击退仍沿攻击方向。
+/// </summary>
 public sealed partial class UiSmokeScenario
 {
-    /// <summary>核对七段悟空技能的实际击退入口，并采样三种怪物的升龙与突刺轨迹。</summary>
+    /// <summary>
+    /// 核对七段悟空技能的实际击退入口，并采样三种怪物的升龙与突刺轨迹。
+    /// </summary>
     /// <returns>真实物理采样与对象池回收任务。</returns>
     private async Task CheckSkillImpactsAsync()
     {
@@ -109,7 +113,9 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-SKILL-IMPACTS PASS: seven Wukong impact stages, three monster types, live launch and thrust trajectories.");
     }
 
-    /// <summary>验证悟空及三种怪物的两种朝向、两种受击方向，不增加生产观测接口。</summary>
+    /// <summary>
+    /// 验证悟空及三种怪物的两种朝向、两种受击方向，不增加生产观测接口。
+    /// </summary>
     /// <param name="flow">创建受测英雄所需的档案作用域。</param>
     /// <returns>实体创建、检查与归还完成的任务。</returns>
     private async Task CheckHitFacingAsync(ProcedureOwner flow)

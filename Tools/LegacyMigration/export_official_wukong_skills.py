@@ -8,6 +8,7 @@ import argparse
 from copy import deepcopy
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -22,6 +23,94 @@ SKILLS = [('rising_dragon', 384), ('flame_thrust', 569),
 DETACHED = [('blazing_flash_trail', 66), ('fire_demon_prelude', 129),
             ('fire_demon_combo', 112), ('fire_demon_descent', 133),
             ('fire_demon_landing', 123)]
+
+
+def fire_demon_combo_bounds(root):
+    """Read Hit10And1's actual bitmap-fill rectangles, never the legacy Godot circle.
+
+    BaseMonster.beMagicAttack first tests colipse bounds, then HitTest draws the
+    whole effect with alpha offset 255. Retain its source shape bounds as the
+    project's simple rectangle approximation, including the shared +28Y origin.
+    """
+    tags = root.find('tags')
+    sprites = {int(tag.get('spriteId')): tag for tag in tags if tag.get('spriteId')}
+    shapes = {int(tag.get('shapeId')): tag for tag in tags if tag.get('shapeId')}
+    outer = base.timeline_frames(sprites[112])
+    inner = base.timeline_frames(sprites[111])
+    rectangles = []
+    for display, content in zip(outer, inner, strict=True):
+        parent = next(iter(display.values()))
+        child = next(iter(content.values()))
+        assert parent.get('characterId') == '111'
+        a, b, c, d, x, y = base.matrix(parent)
+        ia, ib, ic, id_, ix, iy = base.matrix(child)
+        assert (a, b, c, d, ia, ib, ic, id_) == (1, 0, 0, 1, 1, 0, 0, 1)
+        bounds = shapes[int(child.get('characterId'))].find('shapeBounds')
+        left, top, right, bottom = (float(bounds.get(key)) / 20
+                                    for key in ('Xmin', 'Ymin', 'Xmax', 'Ymax'))
+        rectangles.append([left + x + ix, top + y + iy + 28, right-left, bottom-top])
+    return rectangles
+
+
+def hero_hit_probes(root):
+    """Keep the actual transparent rectangular probes, including their orientation.
+
+    A named animated energy clip is already handled by its visible effect frames;
+    do not mistake the first frame of that clip for a fixed invisible probe.
+    """
+    tags = root.find('tags')
+    sprites = {int(tag.get('spriteId')): tag for tag in tags if tag.get('spriteId')}
+    shapes = {int(tag.get('shapeId')): tag for tag in tags if tag.get('shapeId')}
+    parents = {int(tag.get('characterId')): base.matrix(tag)
+               for tag in sprites[575].find('subTags')
+               if tag.get('name') == 'body' and tag.get('characterId')}
+
+    def compose(first, second):
+        a, b, c, d, x, y = first
+        i, j, k, l, tx, ty = second
+        return [a*i+c*j, b*i+d*j, a*k+c*l, b*k+d*l, a*tx+c*ty+x, b*tx+d*ty+y]
+
+    def rectangle(sid, transform):
+        while sid in sprites:
+            sprite = sprites[sid]
+            if int(sprite.get('frameCount')) != 1:
+                return None
+            display = next(base.timeline_frames(sprite))
+            if len(display) != 1:
+                return None
+            child = next(iter(display.values()))
+            transform = compose(transform, base.matrix(child))
+            sid = int(child.get('characterId'))
+        if sid not in shapes:
+            return None
+        shape = shapes[sid]
+        colors = list(shape.iter('color'))
+        if not colors or any(color.get('alpha') != '0' for color in colors):
+            return None
+        if any(tag.get('type') == 'CurvedEdgeRecord' for tag in shape.iter('item')):
+            return None
+        bounds = shape.find('shapeBounds')
+        left, top, right, bottom = (float(bounds.get(key)) / 20
+                                    for key in ('Xmin', 'Ymin', 'Xmax', 'Ymax'))
+        a, b, c, d, x, y = transform
+        axis_x, axis_y = math.hypot(a, b), math.hypot(c, d)
+        if abs(a*c+b*d) > axis_x*axis_y*.0001:
+            raise ValueError('Probe has a non-orthogonal source matrix')
+        cx, cy = (left+right)/2, (top+bottom)/2
+        return {'position': [a*cx+c*cy+x, b*cx+d*cy+y+28],
+                'size': [(right-left)*axis_x, (bottom-top)*axis_y],
+                'rotation': math.atan2(b, a)}
+
+    result = {}
+    actions = [(f'attack_{index+1}', sid) for index, sid in enumerate(base.ATTACK_SPRITES)] + SKILLS
+    for name, sid in actions:
+        frames = []
+        for display in base.timeline_frames(sprites[sid]):
+            stick = next((tag for tag in display.values() if tag.get('name') == 'stick'), None)
+            frames.append(None if stick is None else rectangle(int(stick.get('characterId')),
+                                                               compose(parents[sid], base.matrix(stick))))
+        result[name] = frames
+    return result
 
 
 def resize_svg(path, width=800, height=800):
@@ -199,6 +288,8 @@ def prepare(args):
             'input': str(png), 'svg_transform': sample[0].get('transform'),
             'width': sample.get('width'), 'height': sample.get('height')})
     manifest['detached_bounds'] = bounds(readable, [sprite for _, sprite in DETACHED])
+    manifest['fire_demon_combo_bounds'] = fire_demon_combo_bounds(root)
+    manifest['hero_hit_probes'] = hero_hit_probes(root)
     path = work / 'manifest.json'
     path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
     print(f'Prepared {start-87} skill poses and 5 detached effects: {path}')

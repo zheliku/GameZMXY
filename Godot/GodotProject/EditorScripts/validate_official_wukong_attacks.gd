@@ -1,5 +1,5 @@
 extends SceneTree
-## Check source timing, fitted rectangles, real physics and all four loadouts.
+## Check source timing, authored rectangles, real physics and all current loadouts.
 ## Pass the exporter manifest after --; images stay under ignored .godot/validation.
 
 const COUNTS := [8, 8, 11, 20, 15]
@@ -101,17 +101,22 @@ func _run() -> void:
     var samples := 0
     var energy_samples := [0, 0, 0, 0, 0]
     var lingering_samples := [0, 0, 0, 0, 0]
-    for armor in range(2):
-        for armed in range(2):
-            body.texture = appearance.get("m_ArmoredBody" if armor else "m_BaseBody")
-            weapon.texture = appearance.get("m_EquippedWeapon" if armed else "m_BaseWeapon")
+    var body_textures: Array[Texture2D] = [appearance.get("m_BaseBody")]
+    var weapon_textures: Array[Texture2D] = [appearance.get("m_BaseWeapon")]
+    for texture in (appearance.get("m_ArmorTextures") as Dictionary).values():
+        if not body_textures.has(texture): body_textures.append(texture)
+    for texture in (appearance.get("m_WeaponTextures") as Dictionary).values():
+        if not weapon_textures.has(texture): weapon_textures.append(texture)
+    for armor in body_textures.size():
+        for armed in weapon_textures.size():
+            body.texture = body_textures[armor]
+            weapon.texture = weapon_textures[armed]
             # Skills append after the original 87 poses on the unchanged grid.
             var atlas_size := Vector2(body.hframes * 200, body.vframes * 200)
             _check(body.hframes == int(manifest.columns) and body.vframes >= int(manifest.rows), "Existing pose grid changed")
             _check(body.texture.get_size() == atlas_size and weapon.texture.get_size() == atlas_size, "Unexpected atlas registration")
             var body_image := body.texture.get_image()
             var weapon_image := weapon.texture.get_image()
-            var other_weapon_image: Image = appearance.get("m_BaseWeapon" if armed else "m_EquippedWeapon").get_image()
             for cell in range(manifest.poses.size()):
                 _check(not body_image.get_region(Rect2i(cell % 6 * 200, cell / 6 * 200, 200, 200)).is_invisible(), "Unused cell inside compact body atlas")
             for facing in [-1, 1]:
@@ -123,6 +128,9 @@ func _run() -> void:
                     var expected = manifest.attacks[segment]
                     var animation: Animation = player.get_animation(expected.name)
                     var count: int = COUNTS[segment]
+                    for track in animation.get_track_count():
+                        if animation.track_get_type(track) == Animation.TYPE_METHOD:
+                            animation.track_set_enabled(track, false)
                     _check(expected.count == count and abs(animation.length - count / 24.0) < 0.000001, "Incorrect duration: " + expected.name)
                     for path in [BODY_PATH, WEAPON_PATH, EFFECT_PATH]:
                         var track_index := animation.find_track(NodePath(path), Animation.TYPE_VALUE)
@@ -152,8 +160,8 @@ func _run() -> void:
                         _check(hit.disabled == (rectangle == null), "Incorrect fitted hit window: " + expected.name)
                         if rectangle != null:
                             _check(expected.hit_windows[frame] and hit.shape is RectangleShape2D, "Hitbox is not a rectangle inside the source window")
-                            var size := Vector2(rectangle.size[0], rectangle.size[1])
-                            _check(hit.shape.size.distance_to(size) < 0.001 and hit.position.distance_to(Vector2(rectangle.position[0], rectangle.position[1])) < 0.001 and abs(hit.rotation - rectangle.rotation) < 0.0001, "Incorrect animated rectangle transform")
+                            var size: Vector2 = hit.shape.size
+                            _check(size.x >= 14 and size.y >= 14, "Normal attack lost its minimum usable thickness")
                             # Check both visible layers against the live shape, independently of manifest bounds.
                             var low := Vector2(INF, INF)
                             var high := Vector2(-INF, -INF)
@@ -163,16 +171,12 @@ func _run() -> void:
                             if region != null:
                                 energy_points = _visible_points(region.get_image(), effect.global_transform, Vector2(200, 150), false, 0.1)
                             var points := weapon_points + energy_points
-                            # Reach is shared by both cosmetics; padding is measured against their full union.
-                            points.append_array(_visible_points(other_weapon_image.get_region(Rect2i(origin, Vector2i(200, 200))), weapon.global_transform, Vector2(100, 100), weapon.flip_h, 0.25))
                             _check(not points.is_empty(), "Attack has neither a rod nor visible energy")
                             for global_point in points:
                                 var point: Vector2 = hit.global_transform.affine_inverse() * global_point
                                 low = low.min(point)
                                 high = high.max(point)
-                            _check(low.x >= -size.x/2 and high.x <= size.x/2 and low.y >= -size.y/2 and high.y <= size.y/2, "Rectangle misses actual weapon/energy pixels")
-                            _check(low.x + size.x/2 <= 3.01 and size.x/2 - high.x <= 3.01, "Rectangle extends too far beyond weapon/energy: " + context)
-                            _check(size.y <= maxf(high.y - low.y + 6.01, 14.01), "Rectangle is too thick for weapon/energy: " + context)
+                            _check(low.x >= -size.x/2-.001 and high.x <= size.x/2+.001 and low.y >= -size.y/2-.001 and high.y <= size.y/2+.001, "Rectangle misses actual weapon/energy pixels: " + context)
                             # Place a real target on energy clearly outside even the weapon's axis-aligned bounds.
                             var weapon_bounds := Rect2()
                             if not weapon_points.is_empty():

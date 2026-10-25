@@ -9,7 +9,9 @@ using Godot;
 
 namespace GameLogic.Heroes.Wukong;
 
-/// <summary>火焰突刺：奔跑转突刺，四次独立命中与逐段减速，结束后衔接地面连段。</summary>
+/// <summary>
+/// 火焰突刺：奔跑转突刺，四次独立命中与逐段减速，结束后衔接地面连段。
+/// </summary>
 public sealed class WukongFlameThrustState : AbstractHeroSkillState
 {
     private const string AnimationName = "skills/flame_thrust"; // 本招的原生动画资源名。
@@ -23,7 +25,9 @@ public sealed class WukongFlameThrustState : AbstractHeroSkillState
         BeginAnimation(body, AnimationName);
     }
 
-    /// <summary>起手沿奔跑方向突刺；速度在动作轨道中编辑。</summary>
+    /// <summary>
+    /// 起手沿奔跑方向突刺；速度在动作轨道中编辑。
+    /// </summary>
     /// <param name="body">悟空身体。</param>
     /// <param name="speed">普通突刺速度，px/s。</param>
     /// <param name="musouSpeed">无双突刺速度，px/s。</param>
@@ -35,7 +39,9 @@ public sealed class WukongFlameThrustState : AbstractHeroSkillState
         BeginHit(body);
     }
 
-    /// <summary>每个段点更换攻击包并衰减横向速度；倍率由动画键提供。</summary>
+    /// <summary>
+    /// 每个段点更换攻击包并衰减横向速度；倍率由动画键提供。
+    /// </summary>
     /// <param name="body">悟空身体。</param>
     /// <param name="multiplier">本次横速倍率。</param>
     public void ContinueThrust(IHeroBody body, float multiplier)
@@ -44,8 +50,13 @@ public sealed class WukongFlameThrustState : AbstractHeroSkillState
         BeginHit(body);
     }
 
-    /// <summary>先按原版四舍五入基础威力，再由实体应用无双倍率。</summary>
+    /// <summary>
+    /// 先按原版四舍五入基础威力，再由实体应用无双倍率。
+    /// </summary>
     /// <param name="body">悟空身体。</param>
-    private static void BeginHit(IHeroBody body) => ((ISkillActor)body).NewSkillAttack(
+    private static void BeginHit(IHeroBody body)
+    {
+        ((ISkillActor)body).NewSkillAttack(
         SkillHitId.FlameThrust, Math.Round(AttackPower(body, SkillHitId.FlameThrust), MidpointRounding.AwayFromZero));
+    }
 }

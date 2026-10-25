@@ -17,9 +17,13 @@ using GodotGameFramework.Entity;
 
 namespace GameLogic.Level;
 
-/// <summary>关卡场景 ViewController：拥有节点协作、掉落表现和英雄订阅；业务数据与结算归 Model/System。</summary>
+/// <summary>
+/// 关卡场景 ViewController：拥有节点协作、掉落表现和英雄订阅；业务数据与结算归 Model/System。
+/// </summary>
 public partial class LevelViewController : Node2D, IController
 {
+    private const double HeroDeathPresentationSeconds = 78d / 24d; // 官方 deadmb 轨道的 78 个源帧。
+
     [Export] private SoundId m_MusicId; // 关卡场景绑定的背景音乐，播放请求由流程拥有。
     [Export] private int m_LevelId = 1; // 关卡配置主键。
     [Export] private LevelSpawnPointsNode m_SpawnPoints; // 生成点目录。
@@ -34,29 +38,70 @@ public partial class LevelViewController : Node2D, IController
     private IArchitecture m_Architecture; // 借用流程 FSM 的入口，初始化绑定后不跨作用域转移。
     private AbstractHeroEntity m_Player; // 借用流程显示并隐藏的英雄。
     private bool m_SessionActive; // 当前节点订阅是否已建立。
+    private bool m_HeroDeathPresentationStarted; // 防止死亡事件重复启动墓碑结算等待。
 
-    /// <summary>守关对手显示、死亡或解除绑定，HUD 据此刷新生命条。</summary>
+    /// <summary>
+    /// 守关对手显示、死亡或解除绑定，HUD 据此刷新生命条。
+    /// </summary>
     public event Action FeaturedOpponentChanged;
 
-    /// <summary>实体显示失败，交给会话拥有者结束关卡并报告错误。</summary>
+    /// <summary>
+    /// 实体显示失败，交给会话拥有者结束关卡并报告错误。
+    /// </summary>
     public event Action<Exception> Failed;
 
-    /// <summary>交给关卡流程播放的音乐绑定。</summary>
-    public SoundId MusicId => m_MusicId;
+    /// <summary>
+    /// 交给关卡流程播放的音乐绑定。
+    /// </summary>
+    public SoundId MusicId
+    {
+        get
+        {
+            return m_MusicId;
+        }
+    }
 
-    /// <summary>本局唯一状态源。</summary>
-    private LevelModel LevelModel => this.GetModel<LevelModel>();
+    /// <summary>
+    /// 本局唯一状态源。
+    /// </summary>
+    private LevelModel LevelModel
+    {
+        get
+        {
+            return this.GetModel<LevelModel>();
+        }
+    }
 
-    /// <summary>按主键借用共享定义。</summary>
-    private LevelConfig Config => this.GetModel<ConfigurationModel>().Tables.TbLevelConfig.Get(m_LevelId);
+    /// <summary>
+    /// 按主键借用共享定义。
+    /// </summary>
+    private LevelConfig Config
+    {
+        get
+        {
+            return this.GetModel<ConfigurationModel>().Tables.TbLevelConfig.Get(m_LevelId);
+        }
+    }
 
-    /// <summary>本阶段指定展示的普通怪物；死亡或离开会话后为空。</summary>
+    /// <summary>
+    /// 本阶段指定展示的普通怪物；死亡或离开会话后为空。
+    /// </summary>
     public AbstractEnemyEntity FeaturedOpponent { get; private set; }
 
-    /// <summary>玩家出生点的世界坐标，注册初始化完成后可读。</summary>
-    public Vector2 PlayerSpawnPosition => m_SpawnPoints.PositionOf(Config.PlayerSpawnPointId);
+    /// <summary>
+    /// 玩家出生点的世界坐标，注册初始化完成后可读。
+    /// </summary>
+    public Vector2 PlayerSpawnPosition
+    {
+        get
+        {
+            return m_SpawnPoints.PositionOf(Config.PlayerSpawnPointId);
+        }
+    }
 
-    /// <summary>把游戏帧交给本局状态；暂停时 delta 为零。</summary>
+    /// <summary>
+    /// 把游戏帧交给本局状态；暂停时 delta 为零。
+    /// </summary>
     /// <param name="delta">游戏秒数。</param>
     public override void _Process(double delta)
     {
@@ -67,12 +112,18 @@ public partial class LevelViewController : Node2D, IController
         }
     }
 
-    /// <summary>返回本场景装配时绑定的入口。</summary>
+    /// <summary>
+    /// 返回本场景装配时绑定的入口。
+    /// </summary>
     /// <returns>所属游戏架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() =>
-        m_Architecture ?? throw new InvalidOperationException("关卡 ViewController 尚未初始化。");
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return m_Architecture ?? throw new InvalidOperationException("关卡 ViewController 尚未初始化。");
+    }
 
-    /// <summary>绑定游戏入口，校验场景身份并初始化场景节点。</summary>
+    /// <summary>
+    /// 绑定游戏入口，校验场景身份并初始化场景节点。
+    /// </summary>
     /// <param name="architecture">所属游戏入口。</param>
     /// <exception cref="InvalidOperationException">绑定缺失、配置不存在、场景不匹配或管理器校验失败时抛出。</exception>
     public void Initialize(IArchitecture architecture)
@@ -98,6 +149,12 @@ public partial class LevelViewController : Node2D, IController
         m_Triggers?.Initialize(Config);
         m_Spawner.Initialize(Config, m_SpawnPoints);
         var recipes = Config.Stages.SelectMany(stage => stage.Recipes).ToArray();
+        // 出口目标必须是末阶段唯一的一只实体，避免重复流误开放出口。
+        string exitTarget = Config.ExitTargetSpawnPointId;
+        if (!string.IsNullOrEmpty(exitTarget) &&
+            (recipes.Count(recipe => recipe.SpawnPointId == exitTarget) != 1 ||
+             !Config.Stages[^1].Recipes.Exists(recipe => recipe.SpawnPointId == exitTarget && recipe.Count == 1)))
+            throw new InvalidOperationException($"出口目标必须引用末阶段唯一、数量为一的配方：{exitTarget}");
         foreach (string id in m_FeaturedOpponentSpawnPointIds)
         {
             if (string.IsNullOrWhiteSpace(id) || m_FeaturedOpponentSpawnPointIds.Count(value => value == id) != 1 ||
@@ -107,7 +164,9 @@ public partial class LevelViewController : Node2D, IController
         }
     }
 
-    /// <summary>在玩家显示、加载界面关闭后开放玩法事件与相机跟随。</summary>
+    /// <summary>
+    /// 在玩家显示、加载界面关闭后开放玩法事件与相机跟随。
+    /// </summary>
     /// <param name="entities">关卡流程注入的实体服务。</param>
     /// <param name="player">本会话的玩家节点。</param>
     /// <param name="cancellationToken">流程离开时取消在途实体显示。</param>
@@ -117,6 +176,7 @@ public partial class LevelViewController : Node2D, IController
         if (m_SessionActive)
             throw new InvalidOperationException("关卡会话已经开始。");
         m_Player = player;
+        m_HeroDeathPresentationStarted = false;
         this.GetSystem<LevelSystem>().StartSession(player.HeroId);
         m_ExitRequested = false;
         m_LootRandom.Randomize();
@@ -141,7 +201,9 @@ public partial class LevelViewController : Node2D, IController
         BeginTravel();
     }
 
-    /// <summary>停止信号、调度和跟随并清理本关实体；初始化失败与流程离开时可重复调用。</summary>
+    /// <summary>
+    /// 停止信号、调度和跟随并清理本关实体；初始化失败与流程离开时可重复调用。
+    /// </summary>
     public void Cleanup()
     {
         m_FloatingText?.StopSession();
@@ -169,6 +231,7 @@ public partial class LevelViewController : Node2D, IController
             m_Exit.Disable();
         }
         ClearFeaturedOpponent();
+        m_HeroDeathPresentationStarted = false;
         if (m_Spawner != null)
         {
             m_Spawner.StageCleared -= OnStageCleared;
@@ -180,12 +243,19 @@ public partial class LevelViewController : Node2D, IController
         m_Player = null;
     }
 
-    /// <summary>飘字只接收本场玩家及本关刷怪服务拥有的运行实体。</summary>
+    /// <summary>
+    /// 飘字只接收本场玩家及本关刷怪服务拥有的运行实体。
+    /// </summary>
     /// <param name="entityId">伤害发生时复制的受击实体编号。</param>
     /// <returns>是否归属本会话。</returns>
-    private bool OwnsActor(int entityId) => m_Player?.Id == entityId || m_Spawner.OwnsEntity(entityId);
+    private bool OwnsActor(int entityId)
+    {
+        return m_Player?.Id == entityId || m_Spawner.OwnsEntity(entityId);
+    }
 
-    /// <summary>清波后开放当前阶段通路并设置相机右界，特殊阶段同时启用触发区监听。</summary>
+    /// <summary>
+    /// 清波后开放当前阶段通路并设置相机右界，特殊阶段同时启用触发区监听。
+    /// </summary>
     private void BeginTravel()
     {
         LevelStage stage = LevelModel.Sequence.Current;
@@ -197,7 +267,9 @@ public partial class LevelViewController : Node2D, IController
         }
     }
 
-    /// <summary>普通阶段由实际相机右缘抵达启动；特殊阶段继续等待区域事件。</summary>
+    /// <summary>
+    /// 普通阶段由实际相机右缘抵达启动；特殊阶段继续等待区域事件。
+    /// </summary>
     private void OnCameraArrived()
     {
         if (LevelModel.Sequence.Current.Activation == StageActivation.CameraArrived)
@@ -206,7 +278,9 @@ public partial class LevelViewController : Node2D, IController
         }
     }
 
-    /// <summary>先迁移阶段状态并锁定物理区域，再提交当前阶段的并行配方调度。</summary>
+    /// <summary>
+    /// 先迁移阶段状态并锁定物理区域，再提交当前阶段的并行配方调度。
+    /// </summary>
     private void StartBattle()
     {
         this.GetSystem<LevelSystem>().StartBattle();
@@ -216,9 +290,13 @@ public partial class LevelViewController : Node2D, IController
         m_Spawner.StartStage(stage);
     }
 
-    /// <summary>清波后推进阶段；最终清波仅开放出口，使用出口才结算。</summary>
+    /// <summary>
+    /// 清波后推进阶段；最终清波仅开放出口，使用出口才结算。
+    /// </summary>
     private void OnStageCleared()
     {
+        if (LevelModel.Sequence.Phase != LevelStagePhase.Fighting)
+            return; // 目标死亡可能已开放出口，清波不能再次推进。
         m_Gates.ReleaseRegion(LevelModel.Sequence.Current.StageOrder);
         this.GetSystem<LevelSystem>().ClearBattle();
         if (LevelModel.Sequence.Phase == LevelStagePhase.Travelling)
@@ -231,7 +309,9 @@ public partial class LevelViewController : Node2D, IController
         }
     }
 
-    /// <summary>出口交互才提交通关；清场本身不保存、不导航。</summary>
+    /// <summary>
+    /// 出口交互才提交通关；清场本身不保存、不导航。
+    /// </summary>
     private void OnExitEntered()
     {
         if (LevelModel.Sequence.Phase != LevelStagePhase.AwaitingExit || !m_Player.IsAlive)
@@ -243,7 +323,9 @@ public partial class LevelViewController : Node2D, IController
         Complete(LevelOutcome.Cleared);
     }
 
-    /// <summary>只接受本会话英雄的区域接触，先停止监听再开始战斗。</summary>
+    /// <summary>
+    /// 只接受本会话英雄的区域接触，先停止监听再开始战斗。
+    /// </summary>
     /// <param name="hero">触发区检测到的英雄。</param>
     private void OnTriggerContact(AbstractHeroEntity hero)
     {
@@ -253,7 +335,9 @@ public partial class LevelViewController : Node2D, IController
         StartBattle();
     }
 
-    /// <summary>只接受本会话英雄的出口交互，拒绝的接触不消耗出口。</summary>
+    /// <summary>
+    /// 只接受本会话英雄的出口交互，拒绝的接触不消耗出口。
+    /// </summary>
     /// <param name="hero">出口检测到的英雄。</param>
     private void OnExitContact(AbstractHeroEntity hero)
     {
@@ -263,7 +347,9 @@ public partial class LevelViewController : Node2D, IController
         OnExitEntered();
     }
 
-    /// <summary>按场景生成点绑定需展示的怪物，不改变它的战斗行为。</summary>
+    /// <summary>
+    /// 按场景生成点绑定需展示的怪物，不改变它的战斗行为。
+    /// </summary>
     /// <param name="monster">已经归属本关的怪物。</param>
     /// <param name="spawnPointId">本次配方使用的生成点。</param>
     private void OnMonsterShown(AbstractEnemyEntity monster, string spawnPointId)
@@ -276,11 +362,18 @@ public partial class LevelViewController : Node2D, IController
         FeaturedOpponentChanged?.Invoke();
     }
 
-    /// <summary>守关对手死亡后撤销展示；其余怪物仍由调度器判定清场。</summary>
+    /// <summary>
+    /// 守关对手死亡后撤销展示；其余怪物仍由调度器判定清场。
+    /// </summary>
     /// <param name="actor">已死亡的守关对手。</param>
-    private void OnFeaturedOpponentDied(AbstractActorEntity actor) => ClearFeaturedOpponent();
+    private void OnFeaturedOpponentDied(AbstractActorEntity actor)
+    {
+        ClearFeaturedOpponent();
+    }
 
-    /// <summary>解除对手事件，避免池复用或关卡离开后残留旧生命条。</summary>
+    /// <summary>
+    /// 解除对手事件，避免池复用或关卡离开后残留旧生命条。
+    /// </summary>
     private void ClearFeaturedOpponent()
     {
         if (FeaturedOpponent == null)
@@ -290,7 +383,9 @@ public partial class LevelViewController : Node2D, IController
         FeaturedOpponentChanged?.Invoke();
     }
 
-    /// <summary>显示失败属于会话所有者，先清理再上报，不留下锁死的战斗区域。</summary>
+    /// <summary>
+    /// 显示失败属于会话所有者，先清理再上报，不留下锁死的战斗区域。
+    /// </summary>
     /// <param name="error">实体显示抛出的异常。</param>
     private void OnSpawnFailed(Exception error)
     {
@@ -298,16 +393,48 @@ public partial class LevelViewController : Node2D, IController
         Failed?.Invoke(error);
     }
 
-    /// <summary>英雄死亡属于表现事实，结算由模块执行。</summary>
+    /// <summary>
+    /// 英雄死亡立即回收未领取奖励，墓碑演出结束后提交失败结算。
+    /// </summary>
     /// <param name="actor">本关英雄。</param>
-    private void OnHeroDied(AbstractActorEntity actor) => Complete(LevelOutcome.Defeated);
+    private void OnHeroDied(AbstractActorEntity actor)
+    {
+        if (!m_SessionActive || !ReferenceEquals(actor, m_Player) || m_HeroDeathPresentationStarted)
+            return;
 
-    /// <summary>传递结局时生命比例，不把实体传入业务模块。</summary>
+        m_HeroDeathPresentationStarted = true;
+        ClearLoot(); // 未领取奖励在死亡时回收，失败界面仍等待墓碑演出。
+        CompleteHeroDeathAfterTombstoneAsync(actor);
+    }
+
+    /// <summary>
+    /// 等待墓碑 78 个官方源帧；离开关卡或重开后丢弃迟到的结算。
+    /// </summary>
+    /// <param name="actor">触发本次死亡演出的英雄。</param>
+    private async void CompleteHeroDeathAfterTombstoneAsync(AbstractActorEntity actor)
+    {
+        SceneTree tree = GetTree();
+        await ToSignal(tree.CreateTimer(HeroDeathPresentationSeconds), SceneTreeTimer.SignalName.Timeout);
+        if (!IsInstanceValid(this) || !m_SessionActive || !ReferenceEquals(actor, m_Player) ||
+            LevelModel.Outcome.Value != LevelOutcome.Running)
+            return;
+
+        Complete(LevelOutcome.Defeated);
+    }
+
+    /// <summary>
+    /// 传递结局时生命比例，不把实体传入业务模块。
+    /// </summary>
     /// <param name="outcome">本局结局。</param>
-    private void Complete(LevelOutcome outcome) => this.GetSystem<LevelSystem>().Complete(outcome,
+    private void Complete(LevelOutcome outcome)
+    {
+        this.GetSystem<LevelSystem>().Complete(outcome,
         (int)Math.Round(100.0 * this.GetModel<HeroModel>().Hp.Value / this.GetModel<HeroModel>().MaxHp.Value));
+    }
 
-    /// <summary>模型结局确定后停止奖励表现和订阅。</summary>
+    /// <summary>
+    /// 模型结局确定后停止奖励表现和订阅。
+    /// </summary>
     /// <param name="outcome">已确定的结局。</param>
     private void OnSessionEnded(LevelOutcome outcome)
     {
@@ -317,11 +444,18 @@ public partial class LevelViewController : Node2D, IController
         UnsubscribeProgressEvents();
     }
 
-    /// <summary>装备变化后刷新节点属性；业务模块不持有英雄。</summary>
+    /// <summary>
+    /// 装备变化后刷新节点属性；业务模块不持有英雄。
+    /// </summary>
     /// <param name="slots">已经提交的穿戴快照。</param>
-    private void OnEquipmentChanged(EquippedItems slots) => m_Player.RefreshAppearance();
+    private void OnEquipmentChanged(EquippedItems slots)
+    {
+        m_Player.RefreshAppearance();
+    }
 
-    /// <summary>解除本局纯 C# 订阅；关停时不访问已释放的节点。</summary>
+    /// <summary>
+    /// 解除本局纯 C# 订阅；关停时不访问已释放的节点。
+    /// </summary>
     public void UnsubscribeProgressEvents()
     {
         if (!m_SessionActive)

@@ -9,10 +9,14 @@ using GameLogic.FloatingText;
 using Godot;
 using GodotGameFramework;
 
-/// <summary>通过真实 GGF 事件、节点池及引擎时间验证通用飘字的会话所有权。</summary>
+/// <summary>
+/// 通过真实 GGF 事件、节点池及引擎时间验证通用飘字的会话所有权。
+/// </summary>
 public sealed partial class UiSmokeScenario
 {
-    /// <summary>验证被动挂树、样式、暂停、自然结束、场景隔离、延迟事件与节点复用。</summary>
+    /// <summary>
+    /// 验证被动挂树、样式、暂停、自然结束、场景隔离、延迟事件与节点复用。
+    /// </summary>
     /// <returns>真实引擎回归任务。</returns>
     private async Task CheckFloatingTextAsync()
     {
@@ -90,16 +94,16 @@ public sealed partial class UiSmokeScenario
                 SmokeInspection.ReadField<Sprite2D>(reused, "m_Miss").Visible, "闪避复用没有隐藏数字");
             reused._Process(1);
 
-            // 七种真实数字样式和闪避分别走正式事件回调；零伤害和其他场景不应创建提示。
+            // 各伤害类型走正式事件，统一选三套官方伤害图；蓝色只用于恢复魔法。
             foreach (var (kind, crit, hero, sheet) in new[]
             {
-                (DamageKind.Physics, false, false, "m_MonsterPhysics"),
-                (DamageKind.Physics, true, false, "m_MonsterPhysicsCrit"),
-                (DamageKind.Magic, false, false, "m_MonsterMagic"),
-                (DamageKind.Magic, true, false, "m_MonsterMagicCrit"),
-                (DamageKind.Physics, false, true, "m_HeroPhysics"),
-                (DamageKind.Magic, false, true, "m_HeroMagic"),
-                (DamageKind.Real, false, true, "m_Real")
+                (DamageKind.Physics, false, false, "m_EnemyDamage"),
+                (DamageKind.Physics, true, false, "m_EnemyCritical"),
+                (DamageKind.Magic, false, false, "m_EnemyDamage"),
+                (DamageKind.Magic, true, false, "m_EnemyCritical"),
+                (DamageKind.Physics, false, true, "m_HeroDamage"),
+                (DamageKind.Magic, false, true, "m_HeroDamage"),
+                (DamageKind.Real, false, true, "m_HeroDamage")
             })
             {
                 var before = firstTexts.ToHashSet();
@@ -234,7 +238,9 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: 通用飘字九种样式×100组数字比例字距/描边/纵向注册位置、伤害/闪避/生命/魔法、暂停、作用域隔离及跨样式回池复用通过");
     }
 
-    /// <summary>从真实贴图的透明轮廓检查比例字宽、窄字侧留白与整串居中，不依赖生产字宽缓存。</summary>
+    /// <summary>
+    /// 从真实贴图的透明轮廓检查比例字宽、窄字侧留白与整串居中，不依赖生产字宽缓存。
+    /// </summary>
     /// <param name="node">实际池化飘字节点。</param>
     /// <param name="expectedCount">应显示的数位数量。</param>
     /// <param name="centered">伤害应整串居中，恢复应从原点左起。</param>

@@ -138,7 +138,7 @@ texture_normal = ExtResource("back_normal")
 texture_pressed = ExtResource("back_hover")
 texture_hover = ExtResource("back_hover")
 
-[node name="m_ActivePage" type="Control" parent="Content" unique_id=1979918179 node_paths=PackedStringArray("m_WukongRows", "m_TangsengRows")]
+[node name="m_ActivePage" type="Control" parent="Content" unique_id=1979918179 node_paths=PackedStringArray("m_WukongRows", "m_TangsengRows", "m_Names", "m_Icons", "m_Souls", "m_Descriptions")]
 anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 535.0
@@ -146,6 +146,10 @@ mouse_filter = 2
 script = ExtResource("active_page")
 m_WukongRows = NodePath("m_WukongRows")
 m_TangsengRows = NodePath("m_TangsengRows")
+m_Names = [NodePath("m_WukongRows/Skill1/Name"), NodePath("m_WukongRows/Skill2/Name"), NodePath("m_WukongRows/Skill3/Name"), NodePath("m_WukongRows/Skill4/Name"), NodePath("m_WukongRows/Skill5/Name"), NodePath("m_TangsengRows/Skill1/Name"), NodePath("m_TangsengRows/Skill2/Name"), NodePath("m_TangsengRows/Skill3/Name"), NodePath("m_TangsengRows/Skill4/Name"), NodePath("m_TangsengRows/Skill5/Name")]
+m_Icons = [NodePath("m_WukongRows/Skill1/IconCell/Icon"), NodePath("m_WukongRows/Skill2/IconCell/Icon"), NodePath("m_WukongRows/Skill3/IconCell/Icon"), NodePath("m_WukongRows/Skill4/IconCell/Icon"), NodePath("m_WukongRows/Skill5/IconCell/Icon"), NodePath("m_TangsengRows/Skill1/IconCell/Icon"), NodePath("m_TangsengRows/Skill2/IconCell/Icon"), NodePath("m_TangsengRows/Skill3/IconCell/Icon"), NodePath("m_TangsengRows/Skill4/IconCell/Icon"), NodePath("m_TangsengRows/Skill5/IconCell/Icon")]
+m_Souls = [NodePath("m_WukongRows/Skill1/Soul"), NodePath("m_WukongRows/Skill2/Soul"), NodePath("m_WukongRows/Skill3/Soul"), NodePath("m_WukongRows/Skill4/Soul"), NodePath("m_WukongRows/Skill5/Soul"), NodePath("m_TangsengRows/Skill1/Soul"), NodePath("m_TangsengRows/Skill2/Soul"), NodePath("m_TangsengRows/Skill3/Soul"), NodePath("m_TangsengRows/Skill4/Soul"), NodePath("m_TangsengRows/Skill5/Soul")]
+m_Descriptions = [NodePath("m_WukongRows/Skill1/DescriptionCell/Description"), NodePath("m_WukongRows/Skill2/DescriptionCell/Description"), NodePath("m_WukongRows/Skill3/DescriptionCell/Description"), NodePath("m_WukongRows/Skill4/DescriptionCell/Description"), NodePath("m_WukongRows/Skill5/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill1/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill2/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill3/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill4/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill5/DescriptionCell/Description")]
 
 [node name="TableBackground" type="TextureRect" parent="Content/m_ActivePage" unique_id=1479476789]
 layout_mode = 0
@@ -923,14 +927,16 @@ text = "召唤出魔法阵，向空中引出一道光柱，对目标造成较大
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="m_PassivePage" type="Control" parent="Content" unique_id=1676550797 node_paths=PackedStringArray("m_Rows")]
+[node name="m_PassivePage" type="Control" parent="Content" unique_id=1676550797 node_paths=PackedStringArray("m_Names", "m_NextEffects", "m_Souls")]
 visible = false
 anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 535.0
 mouse_filter = 2
 script = ExtResource("passive_page")
-m_Rows = NodePath("m_PassiveRows")
+m_Names = [NodePath("m_PassiveRows/Passive1/Name"), NodePath("m_PassiveRows/Passive2/Name"), NodePath("m_PassiveRows/Passive3/Name"), NodePath("m_PassiveRows/Passive4/Name"), NodePath("m_PassiveRows/Passive5/Name")]
+m_NextEffects = [NodePath("m_PassiveRows/Passive1/NextEffect"), NodePath("m_PassiveRows/Passive2/NextEffect"), NodePath("m_PassiveRows/Passive3/NextEffect"), NodePath("m_PassiveRows/Passive4/NextEffect"), NodePath("m_PassiveRows/Passive5/NextEffect")]
+m_Souls = [NodePath("m_PassiveRows/Passive1/Soul"), NodePath("m_PassiveRows/Passive2/Soul"), NodePath("m_PassiveRows/Passive3/Soul"), NodePath("m_PassiveRows/Passive4/Soul"), NodePath("m_PassiveRows/Passive5/Soul")]
 
 [node name="TableBackground" type="TextureRect" parent="Content/m_PassivePage" unique_id=1582481764]
 layout_mode = 0

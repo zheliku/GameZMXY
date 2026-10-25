@@ -22,11 +22,22 @@ namespace GameLogic.Heroes.Body
     public abstract class AbstractHeroBodyState : AbstractBodyState<IHeroBody>
     {
         private const int SecondJumpCount = 2; // 双跳触发所需的跳跃计数。
+        private const float SourceStepSeconds = 1f / 24f; // 原版先移动再加重力的源物理步长，仅用于转换起跳速度。
 
-        /// <summary>受击是否立即打断本状态；Hurt 自己处理连续受击，Death 不再受击。</summary>
-        protected virtual bool HurtInterrupts => true;
+        /// <summary>
+        /// 受击是否立即打断本状态；Hurt 自己处理连续受击，Death 不再受击。
+        /// </summary>
+        protected virtual bool HurtInterrupts
+        {
+            get
+            {
+                return true;
+            }
+        }
 
-        /// <summary>集中处理死亡与可打断受击的状态转换。</summary>
+        /// <summary>
+        /// 集中处理死亡与可打断受击的状态转换。
+        /// </summary>
         protected sealed override bool Interrupt(IFsm<IHeroBody> fsm, IHeroBody body)
         {
             if (body.Dead)
@@ -49,7 +60,9 @@ namespace GameLogic.Heroes.Body
             return false;
         }
 
-        /// <summary>由当前状态开放动作输入窗口并提供匹配所需事实；具体组合归角色。</summary>
+        /// <summary>
+        /// 由当前状态开放动作输入窗口并提供匹配所需事实；具体组合归角色。
+        /// </summary>
         /// <param name="body">当前英雄身体事实。</param>
         /// <param name="attacking">是否处于普通攻击。</param>
         /// <param name="normalProgress">当前普攻从零开始的播放比例。</param>
@@ -63,13 +76,17 @@ namespace GameLogic.Heroes.Body
             return false;
         }
 
-        /// <summary>在空中：离地，或已起跳且仍在上升（含起跳那一帧还没离地）。</summary>
+        /// <summary>
+        /// 在空中：离地，或已起跳且仍在上升（含起跳那一帧还没离地）。
+        /// </summary>
         protected static bool IsAirborne(IHeroBody body)
         {
             return !body.OnFloor || (body.ActionData.JumpCount > 0 && body.Velocity.Y < 0f);
         }
 
-        /// <summary>根据已经激活的身体占用切换 GGF 状态，不解析角色输入。</summary>
+        /// <summary>
+        /// 根据已经激活的身体占用切换 GGF 状态，不解析角色输入。
+        /// </summary>
         /// <param name="fsm">身体状态机。</param>
         /// <param name="body">英雄宿主。</param>
         /// <returns>已经切换到技能状态时为真。</returns>
@@ -85,7 +102,9 @@ namespace GameLogic.Heroes.Body
             return true;
         }
 
-        /// <summary>回到地面/空中（按当前是否在空中选）。</summary>
+        /// <summary>
+        /// 回到地面/空中（按当前是否在空中选）。
+        /// </summary>
         protected void ChangeToLocomotion(IFsm<IHeroBody> fsm, IHeroBody body)
         {
             if (IsAirborne(body))
@@ -98,10 +117,13 @@ namespace GameLogic.Heroes.Body
             }
         }
 
-        /// <summary>消费起跳组合，次数用尽时也耗掉本次输入；跳跃本身不重置地面连段。</summary>
+        /// <summary>
+        /// 消费起跳组合，次数用尽时也耗掉本次输入；跳跃本身不重置地面连段。
+        /// </summary>
         /// <param name="body">英雄身体。</param>
+        /// <param name="dt">本次物理步秒数。</param>
         /// <returns>本次是否执行起跳。</returns>
-        protected static bool TryJump(IHeroBody body)
+        protected static bool TryJump(IHeroBody body, float dt)
         {
             if (!body.GetSystem<InputSystem>().ConsumeJump(body.ActionData) ||
                 body.ActionData.JumpCount >= body.Params.JumpCountMax)
@@ -110,11 +132,16 @@ namespace GameLogic.Heroes.Body
             }
 
             body.ActionData.JumpCount++;
-            body.Velocity = new Godot.Vector2(body.Velocity.X, -body.Params.JumpSpeed * body.JumpSpeedMultiplier);
+            // 源轨迹 y(t)=(-JumpSpeed-g*源步长/2)*t+g*t²/2。
+            // 本帧先加重力再移动，再补半个当前步长，使60/120Hz保持源轨迹而非损失二跳高度。
+            float speed = body.Params.JumpSpeed * body.JumpSpeedMultiplier + body.Gravity * (SourceStepSeconds + dt) / 2f;
+            body.Velocity = new Godot.Vector2(body.Velocity.X, -speed);
             return true;
         }
 
-        /// <summary>消费 J＋K 无效组合，并尝试执行 S＋K 的单向平台下落。</summary>
+        /// <summary>
+        /// 消费 J＋K 无效组合，并尝试执行 S＋K 的单向平台下落。
+        /// </summary>
         /// <param name="body">英雄身体。</param>
         protected static void HandleJumpKeyCombinations(IHeroBody body)
         {
@@ -123,7 +150,9 @@ namespace GameLogic.Heroes.Body
                 body.TryDropThroughPlatform();
         }
 
-        /// <summary>按输入走/跑并随之转向（地面与空中同一套横向控制）。</summary>
+        /// <summary>
+        /// 按输入走/跑并随之转向（地面与空中同一套横向控制）。
+        /// </summary>
         /// <param name="body">提供方向输入和移动参数的英雄身体。</param>
         protected static void ApplyHorizontalMovement(IHeroBody body)
         {
@@ -133,7 +162,9 @@ namespace GameLogic.Heroes.Body
             body.SetFacing(axis);
         }
 
-        /// <summary>空中动画：上升按跳跃次数选 jump / jump_2，下落播 fall。</summary>
+        /// <summary>
+        /// 空中动画：上升按跳跃次数选 jump / jump_2，下落播 fall。
+        /// </summary>
         /// <param name="body">提供竖直速度和跳跃次数的英雄身体。</param>
         /// <returns>上升、二段跳或下落动画名。</returns>
         protected static string SelectAirAnimation(IHeroBody body)

@@ -24,10 +24,14 @@ using GodotGameFramework;
 using GodotGameFramework.Entity;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
-/// <summary>实际 BOSS 实体、原生招式、无敌窗口、独立风刃和实体池复用；不增加生产测试 API。</summary>
+/// <summary>
+/// 实际 BOSS 实体、原生招式、无敌窗口、独立风刃和实体池复用；不增加生产测试 API。
+/// </summary>
 public sealed partial class UiSmokeScenario
 {
-    /// <summary>以真实物理落地和身体 FSM 出招，分别覆盖两位 BOSS 的每项攻击。</summary>
+    /// <summary>
+    /// 以真实物理落地和身体 FSM 出招，分别覆盖两位 BOSS 的每项攻击。
+    /// </summary>
     /// <param name="hero">本关正式英雄。</param>
     /// <param name="flow">已装配规则与配置的主流程。</param>
     /// <param name="level">正式场景，用于截图。</param>

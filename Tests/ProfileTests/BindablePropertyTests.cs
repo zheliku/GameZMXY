@@ -7,11 +7,14 @@ using GameLogic.Save;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>单值绑定、整数优先级与真实业务依赖顺序。</summary>
+/// <summary>
+/// 单值绑定、整数优先级与真实业务依赖顺序。
+/// </summary>
 public sealed class BindablePropertyTests
 {
-    /// <summary>初始化、新值、相等抑制与退订。</summary>
+    /// <summary>
+    /// 初始化、新值、相等抑制与退订。
+    /// </summary>
     [Fact]
     public void Binding_InitializesAndPublishesOnlyNewValues()
     {
@@ -28,8 +31,9 @@ public sealed class BindablePropertyTests
         view.RegisterWithInitValue(Observe);
         Assert.Equal(new[] { 3, 5, 6 }, values);
     }
-
-    /// <summary>引用值支持 null；明确静默设置不会补发通知。</summary>
+    /// <summary>
+    /// 引用值支持 null；明确静默设置不会补发通知。
+    /// </summary>
     [Fact]
     public void Binding_HandlesEqualityNullAndSilentInitialization()
     {
@@ -44,8 +48,9 @@ public sealed class BindablePropertyTests
         property.Value = null;
         Assert.Equal(new[] { "hello", null }, values);
     }
-
-    /// <summary>数值越大越先执行，同优先级保持注册次序，默认优先级为零。</summary>
+    /// <summary>
+    /// 数值越大越先执行，同优先级保持注册次序，默认优先级为零。
+    /// </summary>
     [Fact]
     public void Binding_OrdersIntegerPrioritiesStably()
     {
@@ -60,8 +65,9 @@ public sealed class BindablePropertyTests
         property.Value = 1;
         Assert.Equal(new[] { "highest", "high1", "high2", "default1", "default2", "low" }, calls);
     }
-
-    /// <summary>重复委托按最后注册项退订，即使其优先级不同。</summary>
+    /// <summary>
+    /// 重复委托按最后注册项退订，即使其优先级不同。
+    /// </summary>
     [Fact]
     public void Binding_UnregistersMostRecentlyRegisteredDuplicate()
     {
@@ -75,8 +81,9 @@ public sealed class BindablePropertyTests
         property.Value = 1;
         Assert.Equal(new[] { "observe", "middle" }, calls);
     }
-
-    /// <summary>本轮使用订阅快照；回调中注册、退订从下一轮生效。</summary>
+    /// <summary>
+    /// 本轮使用订阅快照；回调中注册、退订从下一轮生效。
+    /// </summary>
     [Fact]
     public void Binding_SubscriptionChangesApplyOnNextDispatch()
     {
@@ -98,8 +105,9 @@ public sealed class BindablePropertyTests
         property.Value = 2;
         Assert.Equal(new[] { "first", "removed", "later", "first" }, calls);
     }
-
-    /// <summary>初始化先注册，期间的新变化不遗漏；失败时清理订阅。</summary>
+    /// <summary>
+    /// 初始化先注册，期间的新变化不遗漏；失败时清理订阅。
+    /// </summary>
     [Fact]
     public void Binding_InitializationHandlesReentryAndFailure()
     {
@@ -119,8 +127,9 @@ public sealed class BindablePropertyTests
         property.Value = 2;
         Assert.Equal(1, calls);
     }
-
-    /// <summary>同步嵌套赋值保留各轮的新值，不将后一次的新值混入前一轮参数。</summary>
+    /// <summary>
+    /// 同步嵌套赋值保留各轮的新值，不将后一次的新值混入前一轮参数。
+    /// </summary>
     [Fact]
     public void Binding_ReentrantAssignmentKeepsEachDispatchValue()
     {
@@ -132,8 +141,9 @@ public sealed class BindablePropertyTests
         Assert.Equal(new[] { 2, 1 }, values);
         Assert.Equal(2, property.Value);
     }
-
-    /// <summary>即使 UI 先注册，升级的系统同步仍先执行，无需依赖装配时偶然的订阅顺序。</summary>
+    /// <summary>
+    /// 即使 UI 先注册，升级的系统同步仍先执行，无需依赖装配时偶然的订阅顺序。
+    /// </summary>
     [Fact]
     public void ProgressBinding_SynchronizesHeroBeforeEarlierUiSubscriber()
     {
@@ -151,8 +161,9 @@ public sealed class BindablePropertyTests
         scope.GetSystem<ProfileSystem>().AddExperience(281);
         Assert.Equal(1, calls);
     }
-
-    /// <summary>单个目录状态始终携带完整的阶段、格子与错误信息。</summary>
+    /// <summary>
+    /// 单个目录状态始终携带完整的阶段、格子与错误信息。
+    /// </summary>
     [Fact]
     public void SaveDirectory_BindsOneCompleteState()
     {
@@ -168,8 +179,9 @@ public sealed class BindablePropertyTests
         model.Directory.Value = new(SaveListState.Failed, Array.Empty<GameLogic.Save.Slots.SaveSlotInfo>(), "failure");
         Assert.Equal(1, calls);
     }
-
-    /// <summary>结局本身依旧在成绩冻结后发布，不依赖手动通知 API。</summary>
+    /// <summary>
+    /// 结局本身依旧在成绩冻结后发布，不依赖手动通知 API。
+    /// </summary>
     [Fact]
     public void LevelOutcome_PublishesAfterResultIsFrozen()
     {

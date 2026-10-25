@@ -15,17 +15,29 @@ namespace GameLogic.Heroes.Body
     {
         private float m_Left; // 受击硬直剩余时长（秒）。
 
-        /// <summary>连续受击由本状态自己处理（见 Tick）</summary>
-        protected override bool HurtInterrupts => false;
+        /// <summary>
+        /// 连续受击由本状态自己处理（见 Tick）
+        /// </summary>
+        protected override bool HurtInterrupts
+        {
+            get
+            {
+                return false;
+            }
+        }
 
-        /// <summary>进入受击状态时取消奔跑并立即应用击退，不制造跨松键的输入缓冲。</summary>
+        /// <summary>
+        /// 进入受击状态时取消奔跑并立即应用击退，不制造跨松键的输入缓冲。
+        /// </summary>
         protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
         {
             body.GetSystem<InputSystem>().StopRunning(body.ActionData);
             ApplyHurt(body);
         }
 
-        /// <summary>处理连续受击、硬直计时和受击动画。</summary>
+        /// <summary>
+        /// 处理连续受击、硬直计时和受击动画。
+        /// </summary>
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
             if (body.SuperArmor)
@@ -50,7 +62,9 @@ namespace GameLogic.Heroes.Body
             ApplyGravity(body, dt);
         }
 
-        /// <summary>消费待生效击退并重置受击动画计时。</summary>
+        /// <summary>
+        /// 消费待生效击退并重置受击动画计时。
+        /// </summary>
         /// <param name="body">英雄宿主。</param>
         private void ApplyHurt(IHeroBody body)
         {

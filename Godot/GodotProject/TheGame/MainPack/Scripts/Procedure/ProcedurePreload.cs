@@ -19,7 +19,9 @@ public class ProcedurePreload : ProcedureBase
 {
     private int m_EntrySerial; // 离开后忽略旧加载结果及取消异常。
 
-    /// <summary>加载语言和常驻提示界面，再进入标题流程。</summary>
+    /// <summary>
+    /// 加载语言和常驻提示界面，再进入标题流程。
+    /// </summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal async override void OnEnter(ProcedureOwner procedureOwner)
     {
@@ -79,7 +81,9 @@ public class ProcedurePreload : ProcedureBase
         ChangeState<ProcedureTitle>(procedureOwner);
     }
 
-    /// <summary>使在途加载结果失效，不让旧周期继续启动游戏。</summary>
+    /// <summary>
+    /// 使在途加载结果失效，不让旧周期继续启动游戏。
+    /// </summary>
     /// <param name="procedureOwner">流程状态机。</param>
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)

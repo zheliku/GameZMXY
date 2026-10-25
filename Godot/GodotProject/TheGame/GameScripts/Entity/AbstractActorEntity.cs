@@ -22,7 +22,9 @@ using GodotGameFramework;
 
 namespace GameLogic.Entity
 {
-    /// <summary>提供战斗实体的生命周期、生命、动画、判定与受击结算，具体行为由英雄和怪物声明。</summary>
+    /// <summary>
+    /// 提供战斗实体的生命周期、生命、动画、判定与受击结算，具体行为由英雄和怪物声明。
+    /// </summary>
     public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IController
     {
         // ---- 字段 ----
@@ -33,7 +35,9 @@ namespace GameLogic.Entity
 
         [Export] private string[] m_AttackAnimations = Array.Empty<string>(); // 普通招式动画，顺序与本实体的 ComboIndex 一致。
 
-        [Export] private SoundId m_DamageSoundId; // 本实体成功受击时的反馈，霸体和无击退同样生效；动画不重复播放。
+        [Export] private SoundId m_HurtSoundId; // 本实体受击语音，与攻击者的打击声音分开；霸体和零击退也播放。
+
+        [Export] private SoundId m_HitSoundId; // 本角色攻击成功的打击声音，身体攻击和离身效果共用。
 
         [Export] private HurtBoxNode m_HurtBox; // 受击判定区，可为空；HurtBox 持有本实体引用。
 
@@ -49,60 +53,161 @@ namespace GameLogic.Entity
         private readonly Dictionary<string, StringName> m_AnimNames = new(); // 动画名到 StringName 的缓存，避免重复转换。
         private bool m_PhysicsInitialized; // 本次显示已完成真实移动；池化 CharacterBody2D 的旧落地缓存此前无效。
 
-        /// <summary>待生效的受击（值 = 击退速度；null = 无）：OnHurt 登记（子类按门槛），身体状态生效</summary>
+        /// <summary>
+        /// 待生效的受击（值 = 击退速度；null = 无）：OnHurt 登记（子类按门槛），身体状态生效
+        /// </summary>
         protected Vector2? m_PendingHurt;
 
-        /// <summary>死亡事实置位的那一刻触发一次（作用域内订阅：关卡运行据此结算英雄死亡）。</summary>
+        /// <summary>
+        /// 死亡事实置位的那一刻触发一次（作用域内订阅：关卡运行据此结算英雄死亡）。
+        /// </summary>
         public event Action<AbstractActorEntity> Died;
 
-        /// <summary>本次显示的物理移动得到的落地事实；首次移动前不沿用上次池实例的缓存。</summary>
-        public bool OnFloor => IsShown && m_PhysicsInitialized && IsOnFloor();
+        /// <summary>
+        /// 本次显示的物理移动得到的落地事实；首次移动前不沿用上次池实例的缓存。
+        /// </summary>
+        public bool OnFloor
+        {
+            get
+            {
+                return IsShown && m_PhysicsInitialized && IsOnFloor();
+            }
+        }
 
-        /// <summary>本角色的招式（AttackConfig 里 OwnerId==自己，按 ComboIndex 排序；子类 OnInit 装填）</summary>
-        protected IReadOnlyList<AttackConfig> OwnAttacks => this.GetModel<ConfigurationModel>().GetAttacks(EntityType);
+        /// <summary>
+        /// 本角色的招式（AttackConfig 里 OwnerId==自己，按 ComboIndex 排序；子类 OnInit 装填）
+        /// </summary>
+        protected IReadOnlyList<AttackConfig> OwnAttacks
+        {
+            get
+            {
+                return this.GetModel<ConfigurationModel>().GetAttacks(EntityType);
+            }
+        }
 
-        /// <summary>场景装配的普通攻击动画，顺序对应本实体的数值招式。</summary>
-        protected IReadOnlyList<string> AttackAnimations => m_AttackAnimations;
+        /// <summary>
+        /// 场景装配的普通攻击动画，顺序对应本实体的数值招式。
+        /// </summary>
+        protected IReadOnlyList<string> AttackAnimations
+        {
+            get
+            {
+                return m_AttackAnimations;
+            }
+        }
 
-        /// <summary>实体的基础配置类型；运行实例编号另由 GGF 管理。</summary>
+        /// <summary>
+        /// 实体的基础配置类型；运行实例编号另由 GGF 管理。
+        /// </summary>
         protected abstract EntityId EntityType { get; }
 
         // ---- 属性 ----
 
-        /// <summary>供英雄外观装配使用的身体表现节点。</summary>
-        protected Node2D Body => m_Body;
+        /// <summary>
+        /// 供英雄外观装配使用的身体表现节点。
+        /// </summary>
+        protected Node2D Body
+        {
+            get
+            {
+                return m_Body;
+            }
+        }
 
-        /// <summary>实体编号</summary>
+        /// <summary>
+        /// 本角色攻击命中时的默认声音；独立效果在生成时借用此值。
+        /// </summary>
+        protected SoundId HitSoundId
+        {
+            get
+            {
+                return m_HitSoundId;
+            }
+        }
+
+        /// <summary>
+        /// 实体编号
+        /// </summary>
         public int Id { get; private set; }
 
-        /// <summary>实体资源名称（PackedScene 路径）</summary>
+        /// <summary>
+        /// 实体资源名称（PackedScene 路径）
+        /// </summary>
         public string EntityAssetName { get; private set; }
 
-        /// <summary>实体实例</summary>
-        public object Handle => this;
+        /// <summary>
+        /// 实体实例
+        /// </summary>
+        public object Handle
+        {
+            get
+            {
+                return this;
+            }
+        }
 
-        /// <summary>实体所属的实体组</summary>
+        /// <summary>
+        /// 实体所属的实体组
+        /// </summary>
         public IEntityGroup EntityGroup { get; private set; }
 
-        /// <summary>动画播放器</summary>
-        public AnimationPlayer AnimPlayer => m_AnimPlayer;
+        /// <summary>
+        /// 动画播放器
+        /// </summary>
+        public AnimationPlayer AnimPlayer
+        {
+            get
+            {
+                return m_AnimPlayer;
+            }
+        }
 
-        /// <summary>受击判定区</summary>
-        public HurtBoxNode HurtBox => m_HurtBox;
+        /// <summary>
+        /// 受击判定区
+        /// </summary>
+        public HurtBoxNode HurtBox
+        {
+            get
+            {
+                return m_HurtBox;
+            }
+        }
 
-        /// <summary>攻击判定区</summary>
-        public Area2D HitBox => m_HitBox;
+        /// <summary>
+        /// 攻击判定区
+        /// </summary>
+        public Area2D HitBox
+        {
+            get
+            {
+                return m_HitBox;
+            }
+        }
 
-        /// <summary>攻击判定区容器（朝向镜像；怪物 AI 推导判定盒范围时要加上它的本地位置）</summary>
-        public Node2D HitBoxRoot => m_HitBoxRoot;
+        /// <summary>
+        /// 攻击判定区容器（朝向镜像；怪物 AI 推导判定盒范围时要加上它的本地位置）
+        /// </summary>
+        public Node2D HitBoxRoot
+        {
+            get
+            {
+                return m_HitBoxRoot;
+            }
+        }
 
-        /// <summary>实际生命值；英雄从注册模型读取，怪物使用实体独有的普通状态。</summary>
+        /// <summary>
+        /// 实际生命值；英雄从注册模型读取，怪物使用实体独有的普通状态。
+        /// </summary>
         public abstract int Hp { get; }
 
-        /// <summary>当前生命上限。</summary>
+        /// <summary>
+        /// 当前生命上限。
+        /// </summary>
         public abstract int MaxHp { get; }
 
-        /// <summary>等级（参与等级压制）；子类在 OnShow 写入。</summary>
+        /// <summary>
+        /// 等级（参与等级压制）；子类在 OnShow 写入。
+        /// </summary>
         public abstract int Level { get; }
 
         /// <summary>
@@ -111,13 +216,25 @@ namespace GameLogic.Entity
         /// </summary>
         public bool Dead { get; private set; }
 
-        /// <summary>技能等临时无敌可拒绝受击；无双霸体不等于无敌。</summary>
-        protected virtual bool Invulnerable => false;
+        /// <summary>
+        /// 技能等临时无敌可拒绝受击；无双霸体不等于无敌。
+        /// </summary>
+        protected virtual bool Invulnerable
+        {
+            get
+            {
+                return false;
+            }
+        }
 
-        /// <summary>朝向：1 右 / -1 左。素材原始朝左，见 SetFacing 注释。</summary>
+        /// <summary>
+        /// 朝向：1 右 / -1 左。素材原始朝左，见 SetFacing 注释。
+        /// </summary>
         public int Facing { get; private set; } = 1;
 
-        /// <summary>结算侧别（选 BattleConfig 常数组；子类必须固定返回）</summary>
+        /// <summary>
+        /// 结算侧别（选 BattleConfig 常数组；子类必须固定返回）
+        /// </summary>
         public abstract CombatSide Side { get; }
 
         /// <summary>
@@ -127,8 +244,16 @@ namespace GameLogic.Entity
         /// </summary>
         public bool IsShown { get; private set; }
 
-        /// <summary>可作为目标/可交互：节点有效、已显示、未死亡（外部持有引用时用它判断是否还能用）。</summary>
-        public bool IsAlive => IsInstanceValid(this) && IsShown && !Dead;
+        /// <summary>
+        /// 可作为目标/可交互：节点有效、已显示、未死亡（外部持有引用时用它判断是否还能用）。
+        /// </summary>
+        public bool IsAlive
+        {
+            get
+            {
+                return IsInstanceValid(this) && IsShown && !Dead;
+            }
+        }
 
         /// <summary>
         /// 飘字锚点（世界坐标）：受击盒顶边中点——受击盒本来就按素材身形摆放，头顶位置随之而来，
@@ -148,15 +273,27 @@ namespace GameLogic.Entity
             }
         }
 
-        /// <summary>正在播的攻击段（0 起；-1 = 不在出招）：BeginAttack/EndAttack 维护，身体状态机与 AI 读取。</summary>
+        /// <summary>
+        /// 正在播的攻击段（0 起；-1 = 不在出招）：BeginAttack/EndAttack 维护，身体状态机与 AI 读取。
+        /// </summary>
         public int AttackSegment { get; protected set; } = -1;
 
-        /// <summary>有待生效的受击</summary>
-        public bool HasPendingHurt => m_PendingHurt.HasValue;
+        /// <summary>
+        /// 有待生效的受击
+        /// </summary>
+        public bool HasPendingHurt
+        {
+            get
+            {
+                return m_PendingHurt.HasValue;
+            }
+        }
 
         // ---- 生命周期 ----
 
-        /// <summary>实体初始化。isNewInstance 为 true 时做一次性初始化（见 Entity/AGENTS.md 生命周期）。</summary>
+        /// <summary>
+        /// 实体初始化。isNewInstance 为 true 时做一次性初始化（见 Entity/AGENTS.md 生命周期）。
+        /// </summary>
         /// <param name="entityId">本次运行实体编号。</param>
         /// <param name="entityAssetName">实体资源路径。</param>
         /// <param name="entityGroup">所属实体组。</param>
@@ -242,7 +379,9 @@ namespace GameLogic.Entity
             Visible = false;
         }
 
-        /// <summary>实体回收（下一帧执行，节点不销毁）。</summary>
+        /// <summary>
+        /// 实体回收（下一帧执行，节点不销毁）。
+        /// </summary>
         public virtual void OnRecycle()
         {
             Id = 0;
@@ -252,40 +391,57 @@ namespace GameLogic.Entity
             Velocity = Vector2.Zero;
         }
 
-        /// <summary>实体轮询。角色行为不走这里——由子类 _PhysicsProcess 里的身体状态机驱动。</summary>
+        /// <summary>
+        /// 实体轮询。角色行为不走这里——由子类 _PhysicsProcess 里的身体状态机驱动。
+        /// </summary>
         /// <param name="elapseSeconds">本帧游戏秒数。</param>
         /// <param name="realElapseSeconds">本帧实际秒数。</param>
         public virtual void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
         }
 
-        /// <summary>附加子实体。</summary>
+        /// <summary>
+        /// 附加子实体。
+        /// </summary>
         public virtual void OnAttached(IEntity childEntity, object userData)
         {
         }
 
-        /// <summary>解除子实体。</summary>
+        /// <summary>
+        /// 解除子实体。
+        /// </summary>
         public virtual void OnDetached(IEntity childEntity, object userData)
         {
         }
 
-        /// <summary>被附加到父实体。</summary>
+        /// <summary>
+        /// 被附加到父实体。
+        /// </summary>
         public virtual void OnAttachTo(IEntity parentEntity, object userData)
         {
         }
 
-        /// <summary>从父实体解除。</summary>
+        /// <summary>
+        /// 从父实体解除。
+        /// </summary>
         public virtual void OnDetachFrom(IEntity parentEntity, object userData)
         {
         }
 
-        /// <summary>借用当前游戏流程的架构入口。</summary>
+        /// <summary>
+        /// 借用当前游戏流程的架构入口。
+        /// </summary>
         /// <returns>所属流程 FSM 的架构。</returns>
-        IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+        IArchitecture IBelongToArchitecture.GetArchitecture()
+        {
+            return GF.Fsm.GetArchitecture();
+        }
 
         // ---- 业务入口 ----
 
-        /// <summary>取出待生效受击的击退速度（取出即清除）。</summary>
+        /// <summary>
+        /// 取出待生效受击的击退速度（取出即清除）。
+        /// </summary>
         /// <returns>本次取出的击退速度，无待处理受击时为零。</returns>
         public Vector2 TakePendingHurt()
         {
@@ -316,7 +472,9 @@ namespace GameLogic.Entity
             m_AnimPlayer.Play(AnimName(anim));
         }
 
-        /// <summary>从第 0 帧重播动画（攻击段、受击、死亡等必须从头播、即使同名也要重来的动作）。</summary>
+        /// <summary>
+        /// 从第 0 帧重播动画（攻击段、受击、死亡等必须从头播、即使同名也要重来的动作）。
+        /// </summary>
         /// <param name="anim">需要从起点播放的动画名称。</param>
         public void RestartAnim(string anim)
         {
@@ -330,11 +488,18 @@ namespace GameLogic.Entity
             m_AnimPlayer.Play(AnimName(anim));
         }
 
-        /// <summary>动画方法轨道按编号播放音效，资源与声音组仍由 GGF 管理。</summary>
+        /// <summary>
+        /// 动画方法轨道按编号播放音效，资源与声音组仍由 GGF 管理。
+        /// </summary>
         /// <param name="id">声音配置编号；None 不播放。</param>
-        public void PlaySoundAnimEvent(SoundId id) => GF.Sound.PlayConfigured(id);
+        public void PlaySoundAnimEvent(SoundId id)
+        {
+            GF.Sound.PlayConfigured(id);
+        }
 
-        /// <summary>设置朝向（0 表示不变）。翻转通用表现层（身体/判定盒容器），最后调钩子（子类镜像自己的附加层）。</summary>
+        /// <summary>
+        /// 设置朝向（0 表示不变）。翻转通用表现层（身体/判定盒容器），最后调钩子（子类镜像自己的附加层）。
+        /// </summary>
         /// <param name="dir">朝向：正值右，负值左，零不变。</param>
         public void SetFacing(int dir)
         {
@@ -411,7 +576,7 @@ namespace GameLogic.Entity
                 died = ApplyDamage(result.Damage);
                 Dead |= died;
                 OnHurt(data, result, this.GetSystem<CombatSystem>().KnockbackVelocity(data, GlobalPosition.X), attackerEntityId);
-                GF.Sound.PlayConfigured(m_DamageSoundId);
+                GF.Sound.PlayConfigured(m_HurtSoundId);
             }
 
             GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == CombatSide.Hero, HeadPosition));
@@ -423,7 +588,25 @@ namespace GameLogic.Entity
             return result;
         }
 
-        /// <summary>恢复生命；已死亡时不复活。</summary>
+        /// <summary>
+        /// 结算已经确定的持续伤害；不再次闪避、减防、击退或播放受击声音。
+        /// </summary>
+        /// <param name="amount">本步到期的固定伤害。</param>
+        protected void ReceivePeriodicDamage(int amount)
+        {
+            if (Dead || amount <= 0)
+                return;
+            bool died = ApplyDamage(amount);
+            Dead |= died;
+            GF.Event.Fire(this, DamageDealtEventArgs.Create(new DamageResult(amount, false, false, DamageKind.Real),
+                Id, Side == CombatSide.Hero, HeadPosition));
+            if (died)
+                Died?.Invoke(this);
+        }
+
+        /// <summary>
+        /// 恢复生命；已死亡时不复活。
+        /// </summary>
         /// <param name="value">恢复量；非正数不处理。</param>
         public void Heal(int value)
         {
@@ -433,16 +616,22 @@ namespace GameLogic.Entity
             }
         }
 
-        /// <summary>扣除实际生命；只在本次扣减首次归零时返回真。</summary>
+        /// <summary>
+        /// 扣除实际生命；只在本次扣减首次归零时返回真。
+        /// </summary>
         /// <param name="amount">实际伤害。</param>
         /// <returns>本次是否导致死亡。</returns>
         protected abstract bool ApplyDamage(int amount);
 
-        /// <summary>恢复实际生命，调用前已排除死亡。</summary>
+        /// <summary>
+        /// 恢复实际生命，调用前已排除死亡。
+        /// </summary>
         /// <param name="amount">恢复量。</param>
         protected abstract void RestoreHealth(int amount);
 
-        /// <summary>提交一次真实物理移动，再开放本次显示的碰撞结果；避免池复用读取旧落地缓存。</summary>
+        /// <summary>
+        /// 提交一次真实物理移动，再开放本次显示的碰撞结果；避免池复用读取旧落地缓存。
+        /// </summary>
         protected void MoveBody()
         {
             MoveAndSlide();
@@ -451,7 +640,9 @@ namespace GameLogic.Entity
 
         // ---- 内部方法与扩展点 ----
 
-        /// <summary>将动画名转换为缓存的 StringName，避免播放请求分配。</summary>
+        /// <summary>
+        /// 将动画名转换为缓存的 StringName，避免播放请求分配。
+        /// </summary>
         /// <param name="anim">动画名称。</param>
         /// <returns>由实体拥有的缓存名称。</returns>
         private StringName AnimName(string anim)
@@ -466,7 +657,9 @@ namespace GameLogic.Entity
             return name;
         }
 
-        /// <summary>动画库是否有该动画。</summary>
+        /// <summary>
+        /// 动画库是否有该动画。
+        /// </summary>
         /// <param name="anim">需要查询的动画名称。</param>
         /// <returns>动画是否存在。</returns>
         protected bool HasAnim(string anim)
@@ -497,7 +690,9 @@ namespace GameLogic.Entity
                 attack.HitProtect);
         }
 
-        /// <summary>接管一个已经由技能规则计算好的池化攻击包。</summary>
+        /// <summary>
+        /// 接管一个已经由技能规则计算好的池化攻击包。
+        /// </summary>
         /// <param name="data">所有权转交给本实体的攻击包。</param>
         protected void SetAttack(AttackData data)
         {
@@ -505,7 +700,9 @@ namespace GameLogic.Entity
             m_ActiveAttackData = data;
         }
 
-        /// <summary>处理持续重叠的受击盒；新技能攻击编号不依赖再次进入信号。</summary>
+        /// <summary>
+        /// 处理持续重叠的受击盒；新技能攻击编号不依赖再次进入信号。
+        /// </summary>
         protected void PollAttackOverlaps()
         {
             foreach (var child in m_HitBox.GetChildren())
@@ -517,7 +714,9 @@ namespace GameLogic.Entity
                 }
         }
 
-        /// <summary>将攻击判定交给受击方，并保证同一招不重复命中目标。</summary>
+        /// <summary>
+        /// 将攻击判定交给受击方，并保证同一招不重复命中目标。
+        /// </summary>
         /// <param name="area">进入攻击判定区的区域。</param>
         private void OnHitBoxAreaEntered(Area2D area)
         {
@@ -544,11 +743,14 @@ namespace GameLogic.Entity
             DamageResult result = target.ReceiveHit(m_ActiveAttackData, Id);
             if (!result.IsMiss)
             {
+                GF.Sound.PlayConfigured(m_HitSoundId);
                 OnHitLanded(m_ActiveAttackData, result);
             }
         }
 
-        /// <summary>结算用属性快照：取属性汇总当前最终值（出招与受击各取一次）。</summary>
+        /// <summary>
+        /// 结算用属性快照：取属性汇总当前最终值（出招与受击各取一次）。
+        /// </summary>
         /// <returns>当前属性与等级对应的结算快照。</returns>
         protected abstract CombatantAttributes CaptureCombatAttributes();
 

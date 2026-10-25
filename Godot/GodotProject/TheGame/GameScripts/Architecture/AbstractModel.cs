@@ -2,7 +2,9 @@ using System;
 
 namespace GameLogic.Architecture;
 
-/// <summary>数据模型基类；分别实现归属与初始化契约，具体类型只处理自身职责。</summary>
+/// <summary>
+/// 数据模型基类；分别实现归属与初始化契约，具体类型只处理自身职责。
+/// </summary>
 public abstract class AbstractModel : IModel
 {
     private IArchitecture m_Architecture; // 借用：绑定后不能转移到其他作用域。
@@ -10,15 +12,22 @@ public abstract class AbstractModel : IModel
     /// <inheritdoc />
     public bool Initialized { get; private set; }
 
-    /// <summary>注册时执行；构造已完整建立数据的类型可沿用空实现。</summary>
+    /// <summary>
+    /// 注册时执行；构造已完整建立数据的类型可沿用空实现。
+    /// </summary>
     protected virtual void OnInit() { }
 
-    /// <summary>移除注册时执行；异步写盘和场景清理由流程先完成。</summary>
+    /// <summary>
+    /// 移除注册时执行；异步写盘和场景清理由流程先完成。
+    /// </summary>
     protected virtual void OnDeinit() { }
 
     /// <inheritdoc />
-    IArchitecture IBelongToArchitecture.GetArchitecture() => m_Architecture
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return m_Architecture
         ?? throw new InvalidOperationException($"{GetType().Name} 尚未绑定 Architecture。");
+    }
 
     /// <inheritdoc />
     void ICanSetArchitecture.SetArchitecture(IArchitecture architecture)

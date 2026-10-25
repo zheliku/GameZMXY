@@ -6,10 +6,14 @@ using GameConfig.Level;
 using Godot;
 using Luban;
 
-/// <summary>只读审计真实二进制配方与官方元件，防止恢复坐标时将猴子和妖猴的生成点串位。</summary>
+/// <summary>
+/// 只读审计真实二进制配方与官方元件，防止恢复坐标时将猴子和妖猴的生成点串位。
+/// </summary>
 public partial class ValidateOfficialLevelRecipes : RefCounted
 {
-    /// <summary>比较全部三关的稳定生成点、敌人、数量、首次等待和间隔。</summary>
+    /// <summary>
+    /// 比较全部三关的稳定生成点、敌人、数量、首次等待和间隔。
+    /// </summary>
     /// <param name="metadataPath">由官方主文件及 GameSence.as 直接提取的 JSON 文件。</param>
     /// <returns>已核对的生成流数量。</returns>
     /// <exception cref="InvalidOperationException">任何配方与官方源元件不一致。</exception>

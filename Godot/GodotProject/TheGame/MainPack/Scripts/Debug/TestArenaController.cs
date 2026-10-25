@@ -60,7 +60,9 @@ public partial class TestArenaController : Node2D
     private ProcedureOwner m_TestFlow; // 独立 F6 场地拥有的原生 FSM；正常游戏内运行时借用现有主 FSM。
     private EntityComponent m_Entities; // 本次启动捕获的实体服务。
 
-    /// <summary>离开场景树时取消显示任务、停止飘字并清理本场地实体。</summary>
+    /// <summary>
+    /// 离开场景树时取消显示任务、停止飘字并清理本场地实体。
+    /// </summary>
     public override void _ExitTree()
     {
         m_Cancellation?.Cancel();
@@ -80,7 +82,9 @@ public partial class TestArenaController : Node2D
         m_TestFlow = null;
     }
 
-    /// <summary>准备框架、取走怪物占位节点，然后异步启动测试场地。</summary>
+    /// <summary>
+    /// 准备框架、取走怪物占位节点，然后异步启动测试场地。
+    /// </summary>
     public override void _Ready()
     {
         m_CameraY = m_Camera.GlobalPosition.Y;
@@ -128,7 +132,9 @@ public partial class TestArenaController : Node2D
         _ = StartAsync(monsters, m_Entities, m_Cancellation.Token);
     }
 
-    /// <summary>相机水平跟随玩家；纵向保持场景初始高度，限位交给场景 Camera2D。</summary>
+    /// <summary>
+    /// 相机水平跟随玩家；纵向保持场景初始高度，限位交给场景 Camera2D。
+    /// </summary>
     /// <param name="delta">距上一帧的秒数，不使用。</param>
     public override void _Process(double delta)
     {
@@ -140,7 +146,9 @@ public partial class TestArenaController : Node2D
         m_Camera.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X, m_CameraY);
     }
 
-    /// <summary>等框架组件就绪后显示玩家与全部占位怪物。</summary>
+    /// <summary>
+    /// 等框架组件就绪后显示玩家与全部占位怪物。
+    /// </summary>
     /// <param name="monsters">占位节点提供的怪物枚举与出生坐标。</param>
     /// <param name="entities">本场地捕获的实体服务。</param>
     /// <param name="cancellationToken">场地退出时取消。</param>
@@ -217,7 +225,9 @@ public partial class TestArenaController : Node2D
         Log.Info("[TestArena] 显示玩家 {0} @ {1}", m_HeroEntityId, hero.GlobalPosition);
     }
 
-    /// <summary>登记本场地的实体；退出后才返回的显示结果由捕获的旧服务回收。</summary>
+    /// <summary>
+    /// 登记本场地的实体；退出后才返回的显示结果由捕获的旧服务回收。
+    /// </summary>
     /// <param name="entities">发起显示的实体服务。</param>
     /// <param name="id">实体配置编号。</param>
     /// <param name="data">本次显示参数。</param>
@@ -241,7 +251,9 @@ public partial class TestArenaController : Node2D
         return entity;
     }
 
-    /// <summary>取出并移除 Monsters 容器中的怪物占位节点，返回它们提供的枚举与坐标。</summary>
+    /// <summary>
+    /// 取出并移除 Monsters 容器中的怪物占位节点，返回它们提供的枚举与坐标。
+    /// </summary>
     /// <returns>每只待生成怪物的枚举与出生坐标。</returns>
     private List<(EntityId Id, Vector2 Position)> TakeMonsterPlaceholders()
     {
@@ -261,6 +273,8 @@ public partial class TestArenaController : Node2D
         return monsters;
     }
 
-    /// <summary>只提供原生 FSM 宿主，不启动正式流程导航。</summary>
+    /// <summary>
+    /// 只提供原生 FSM 宿主，不启动正式流程导航。
+    /// </summary>
     private sealed class ArenaState : GameFramework.Fsm.FsmState<IProcedureManager> { }
 }

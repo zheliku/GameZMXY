@@ -24,15 +24,21 @@ namespace GameLogic.Body
         /// </summary>
         protected const float TimeEpsilon = 1e-4f;
 
-        /// <summary>进入次数（BodyFsmExtensions 据此识别"切回自己"的重新进入）。</summary>
+        /// <summary>
+        /// 进入次数（BodyFsmExtensions 据此识别"切回自己"的重新进入）。
+        /// </summary>
         internal int EnterSerial { get; private set; }
 
-        /// <summary>框架帧轮询：身体状态不在渲染帧做任何事（见类注释）。</summary>
+        /// <summary>
+        /// 框架帧轮询：身体状态不在渲染帧做任何事（见类注释）。
+        /// </summary>
         protected internal sealed override void OnUpdate(IFsm<TBody> fsm, float elapseSeconds, float realElapseSeconds)
         {
         }
 
-        /// <summary>进入时递增进入序号并调用身体状态钩子。</summary>
+        /// <summary>
+        /// 进入时递增进入序号并调用身体状态钩子。
+        /// </summary>
         protected internal sealed override void OnEnter(IFsm<TBody> fsm)
         {
             base.OnEnter(fsm);
@@ -40,20 +46,26 @@ namespace GameLogic.Body
             Enter(fsm, fsm.Owner);
         }
 
-        /// <summary>调用身体状态离开钩子并完成框架离开流程。</summary>
+        /// <summary>
+        /// 调用身体状态离开钩子并完成框架离开流程。
+        /// </summary>
         protected internal sealed override void OnLeave(IFsm<TBody> fsm, bool isShutdown)
         {
             Leave(fsm, fsm.Owner, isShutdown);
             base.OnLeave(fsm, isShutdown);
         }
 
-        /// <summary>剩余时间是否已到点（含浮点容差）。</summary>
+        /// <summary>
+        /// 剩余时间是否已到点（含浮点容差）。
+        /// </summary>
         protected static bool Elapsed(float left)
         {
             return left <= TimeEpsilon;
         }
 
-        /// <summary>物理帧推进（由状态机扩展 Tick 调用）：先过打断规则，未被打断才跑本状态决策。</summary>
+        /// <summary>
+        /// 物理帧推进（由状态机扩展 Tick 调用）：先过打断规则，未被打断才跑本状态决策。
+        /// </summary>
         internal void PhysicsTick(IFsm<TBody> fsm, float dt)
         {
             TBody body = fsm.Owner;
@@ -65,23 +77,31 @@ namespace GameLogic.Body
             Tick(fsm, body, dt);
         }
 
-        /// <summary>进入本状态（通常在这里请求本状态的动画）。</summary>
+        /// <summary>
+        /// 进入本状态（通常在这里请求本状态的动画）。
+        /// </summary>
         protected virtual void Enter(IFsm<TBody> fsm, TBody body)
         {
         }
 
-        /// <summary>离开本状态。isShutdown = 状态机被销毁（实体隐藏/关停），此时只能清理纯 C# 事实。</summary>
+        /// <summary>
+        /// 离开本状态。isShutdown = 状态机被销毁（实体隐藏/关停），此时只能清理纯 C# 事实。
+        /// </summary>
         protected virtual void Leave(IFsm<TBody> fsm, TBody body, bool isShutdown)
         {
         }
 
-        /// <summary>打断规则（死亡 / 受击……）：已切换状态时返回 true，本状态这一帧不再跑 <see cref="Tick"/>。</summary>
+        /// <summary>
+        /// 打断规则（死亡 / 受击……）：已切换状态时返回 true，本状态这一帧不再跑 <see cref="Tick"/>。
+        /// </summary>
         protected virtual bool Interrupt(IFsm<TBody> fsm, TBody body)
         {
             return false;
         }
 
-        /// <summary>本状态的物理帧决策。</summary>
+        /// <summary>
+        /// 本状态的物理帧决策。
+        /// </summary>
         protected abstract void Tick(IFsm<TBody> fsm, TBody body, float dt);
 
         /// <summary>
@@ -93,7 +113,9 @@ namespace GameLogic.Body
             body.Velocity += new Vector2(0f, body.Gravity * dt);
         }
 
-        /// <summary>原地站定（横向速度归零，保留纵向）。</summary>
+        /// <summary>
+        /// 原地站定（横向速度归零，保留纵向）。
+        /// </summary>
         protected static void Stand(TBody body)
         {
             body.Velocity = new Vector2(0f, body.Velocity.Y);

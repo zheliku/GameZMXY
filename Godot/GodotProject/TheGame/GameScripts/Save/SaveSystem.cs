@@ -32,10 +32,20 @@ namespace GameLogic.Save
 
         private Task m_DirectoryRead = Task.CompletedTask; // 跨标题周期串行的目录读取任务。
 
-        /// <summary>最近一次提交的写入（完成值为是否成功）；流程切换前等待它，避免读到旧档。</summary>
-        public Task<bool> PendingWrite => m_PendingWrite;
+        /// <summary>
+        /// 最近一次提交的写入（完成值为是否成功）；流程切换前等待它，避免读到旧档。
+        /// </summary>
+        public Task<bool> PendingWrite
+        {
+            get
+            {
+                return m_PendingWrite;
+            }
+        }
 
-        /// <summary>读取选中的存档格；新格按配置建档并立即写入，已有格只接受当前格式。</summary>
+        /// <summary>
+        /// 读取选中的存档格；新格按配置建档并立即写入，已有格只接受当前格式。
+        /// </summary>
         /// <param name="slotNumber">从 1 开始的存档格号。</param>
         /// <param name="unitId">GGF 存档编号；新格为 0。</param>
         /// <param name="cancellationToken">流程周期；取消后停止发布迟到结果，已提交的框架读写仍会完成。</param>
@@ -99,7 +109,9 @@ namespace GameLogic.Save
             return (source, created ? SaveOrigin.Created : SaveOrigin.Loaded);
         }
 
-        /// <summary>读取六格显示信息；损坏槽明确禁用，不作为空档重新创建。</summary>
+        /// <summary>
+        /// 读取六格显示信息；损坏槽明确禁用，不作为空档重新创建。
+        /// </summary>
         /// <param name="cancellationToken">所属标题周期的取消令牌。</param>
         /// <returns>按稳定格号排列的只读目录。</returns>
         /// <exception cref="InvalidOperationException">目录不可读或超出六格容量。</exception>
@@ -162,17 +174,23 @@ namespace GameLogic.Save
             return Array.AsReadOnly(slots);
         }
 
-        /// <summary>识别框架刚创建且尚未建立角色的当前格式空槽。</summary>
+        /// <summary>
+        /// 识别框架刚创建且尚未建立角色的当前格式空槽。
+        /// </summary>
         /// <param name="catalogue">框架目录条目。</param>
         /// <param name="data">同一编号的存档信封。</param>
         /// <returns>仅当前版本、无档案且无业务目录元数据时为 true。</returns>
-        private static bool IsUnclaimedSlot(GameCatalogue catalogue, GameData data) =>
-            data != null && data.UnitId == catalogue.UnitId && data.SaveVersion == GameData.CurrentVersion &&
+        private static bool IsUnclaimedSlot(GameCatalogue catalogue, GameData data)
+        {
+            return data != null && data.UnitId == catalogue.UnitId && data.SaveVersion == GameData.CurrentVersion &&
             data.ActiveHeroId == 0 && data.Heroes is { Count: 0 } && data.Soul == 0 && data.HighestClearedLevelId == 0 &&
             data.EquipmentItems is { Count: 0 } &&
             catalogue.SlotNumber == 0 && catalogue.SavedAtUtc == 0 && string.IsNullOrEmpty(catalogue.Name);
+        }
 
-        /// <summary>把档案当前状态写成一个检查点（调用时刻捕获快照，之后的修改不影响本次写入）。</summary>
+        /// <summary>
+        /// 把档案当前状态写成一个检查点（调用时刻捕获快照，之后的修改不影响本次写入）。
+        /// </summary>
         /// <param name="profile">要保存的档案。</param>
         /// <returns>是否写入成功；失败已记录日志，档案状态不受影响。</returns>
         /// <exception cref="ArgumentNullException">档案为空。</exception>
@@ -188,7 +206,9 @@ namespace GameLogic.Save
             return WriteSnapshotAsync(this.GetUtility<SaveDataUtility>().Capture(profile, this.GetModel<SkillModel>()));
         }
 
-        /// <summary>保存地图当前档案，并在请求周期仍有效时发布按钮结果。</summary>
+        /// <summary>
+        /// 保存地图当前档案，并在请求周期仍有效时发布按钮结果。
+        /// </summary>
         /// <param name="formSerialId">发起保存的窗口编号。</param>
         /// <param name="cancellationToken">窗口所属流程周期；取消只停止反馈，不取消已排队写盘。</param>
         /// <returns>实际保存结果；过期或重复请求返回 false。</returns>
@@ -218,7 +238,9 @@ namespace GameLogic.Save
             return succeeded;
         }
 
-        /// <summary>把快照写入框架当前存档并提交；返回值即最近一次写入任务。</summary>
+        /// <summary>
+        /// 把快照写入框架当前存档并提交；返回值即最近一次写入任务。
+        /// </summary>
         /// <param name="snapshotData">当前版本的档案快照。</param>
         /// <returns>是否写入成功。</returns>
         private Task<bool> WriteSnapshotAsync(GameData snapshotData)
@@ -246,7 +268,9 @@ namespace GameLogic.Save
             return m_PendingWrite;
         }
 
-        /// <summary>统一处理实际写盘结果，新建与所有检查点成功后都通知应用级提示。</summary>
+        /// <summary>
+        /// 统一处理实际写盘结果，新建与所有检查点成功后都通知应用级提示。
+        /// </summary>
         /// <param name="write">框架已经排队的写盘任务。</param>
         /// <returns>原始写盘结果；失败不发成功事件。</returns>
         private async Task<bool> NotifyWriteAsync(Task<bool> write)
@@ -258,7 +282,9 @@ namespace GameLogic.Save
             return succeeded;
         }
 
-        /// <summary>等待上次目录任务结束，再读取本周期摘要；取消后不发布旧周期结果。</summary>
+        /// <summary>
+        /// 等待上次目录任务结束，再读取本周期摘要；取消后不发布旧周期结果。
+        /// </summary>
         /// <param name="cancellationToken">所属标题周期的取消令牌。</param>
         /// <returns>目录刷新任务。</returns>
         public async Task RefreshDirectoryAsync(CancellationToken cancellationToken)
@@ -270,7 +296,9 @@ namespace GameLogic.Save
             await m_DirectoryRead;
         }
 
-        /// <summary>读取六格摘要并发布完整状态；取消后不再发布旧周期结果。</summary>
+        /// <summary>
+        /// 读取六格摘要并发布完整状态；取消后不再发布旧周期结果。
+        /// </summary>
         /// <param name="cancellationToken">所属标题周期的取消令牌。</param>
         /// <returns>读取任务；文件错误转换为目录失败提示。</returns>
         private async Task ReadDirectoryAsync(CancellationToken cancellationToken)
@@ -295,7 +323,9 @@ namespace GameLogic.Save
             }
         }
 
-        /// <summary>由 SaveSystem 一次提交完整阶段和显示数据，再通知观察者。</summary>
+        /// <summary>
+        /// 由 SaveSystem 一次提交完整阶段和显示数据，再通知观察者。
+        /// </summary>
         /// <param name="model">本次读取开始时借用的目录状态。</param>
         /// <param name="phase">目录读取阶段。</param>
         /// <param name="slots">完整格子摘要；省略时保留上次结果。</param>

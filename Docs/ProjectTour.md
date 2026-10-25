@@ -6,7 +6,7 @@
 
 `Launch → Update → Prepare → Preload → Title（开始、六格存档）→ LoadGame → 新档 Character / 已有档 Map → 选择关卡 → Level`。
 
-当前开放悟空及花果山、水帘洞、桃花源。未解锁角色没有交互。通关和死亡保留收益并保存，中途放弃恢复进关快照；返回地图或重试前等待检查点写盘。
+当前开放悟空及花果山、水帘洞、桃花源、蝙蝠窟、七星洞。未解锁角色没有交互。通关和死亡保留收益并保存，中途放弃恢复进关快照；返回地图或重试前等待检查点写盘。
 
 ## GGF + QF 阅读入口
 
@@ -18,7 +18,7 @@
 | --- | --- | --- |
 | Architecture、Model/System | 单一 FSM 注册与普通绑定；SkillModel 保存技能书，HeroModel 保存本局施放状态 | 归属隔离、销毁/复用、重复注册、部分档案装配失败后的清理与重读 |
 | UI 与装备 | 五类业务修改走 Command，出售汇总走 Query；属性概率复用 CombatSystem；装备格去除重复 ID，技能栏缓存固定节点并清空旧格 | 完整 UI、前端导航、订退、窗口复用、穿脱与出售 |
-| Entity、身体与技能 | 具体状态负责招式；OnFloor 拒绝复用旧缓存；原生标记起点显式求值 | 四类演员的动画/回调校验，五招、两分支、打断和状态复用 |
+| Entity、身体与技能 | 具体状态负责招式；OnFloor 拒绝复用旧缓存；原生分段精确起播 | 四类演员的动画/回调校验，五招、两分支、打断和状态复用 |
 | Level 与掉落 | LevelSystem 发放收益，场景确认接触/所有权并显示反馈；未初始化及部分初始化均可清理 | 五波关卡、出口保存、结算/放弃/重入、在途取消与晚到回收 |
 | 配置、存档、启动和工具 | 核对注册点、共享引用、配置/表现边界及生成入口；异步读档捕获周期引用并检查取消，必需英雄字段严格读取 | 382 项规则测试、隔离构建、取消读档、损坏档/备份和资源引用检查 |
 
@@ -221,7 +221,7 @@ flowchart LR
 
 HeroModel 直接拥有本局登记字典、ActiveSkillId 与无敌区间，SkillModel 只拥有档案技能书。SkillDefinition 随 SkillSystem 定义，只登记技能编号、GGF 状态类型、可选动作名及起手条件；不提供工厂或创建另一套技能行为对象。SelectSkills 在替换旧数据前验证角色、编号、具体状态与重复绑定，然后复制登记。三个默认动作 Skill1/2/3 只是 U/I/O 的映射，增加其他动作不需要扩容共享输入。
 
-ActiveSkillId 是可空 SkillId，不为编号创建施放包装。各招状态拥有阶段与等待条件，AbstractHeroSkillState 共用重力、单次原生动画推进及安全退出；火魔斩直接执行寻敌、连斩、下冲和落地等待。旧落地通知同时核对捕获的 FSM、当前状态、进入序号及当前技能；独立效果只通知接收方，不决定施放身份。SkillSystem 负责学习、校验、扣费、登记、收招与取消，状态退出释放表现。从原生标记跳阶段时显式 Seek 求值起点，避免该位置的方法键被分段播放跳过。
+ActiveSkillId 是可空 SkillId，不为编号创建施放包装。各招状态拥有阶段与等待条件，AbstractHeroSkillState 共用重力、单次原生动画推进及安全退出；火魔斩直接执行寻敌、连斩、下冲和落地等待。旧落地通知同时核对捕获的 FSM、当前状态、进入序号及当前技能；独立效果只通知接收方，不决定施放身份。SkillSystem 负责学习、校验、扣费、登记、收招与取消，状态退出释放表现。标记跳转使用 Pause → AssignedAnimation → SetSection / PlaySection → Advance(0)，精确调用起点键；标记按方法键的float32精度对齐。不能用外部Seek，它会重放其他轨道最近的旧键。正常起手与收招先ResetSection，避免沿用上次分段起点。
 
 IHeroBody 不再声明技能匹配或普攻选择。状态消费角色已经选定的攻击请求，并完成身体转换；输入匹配始终在旧状态 Leave 之前，技能动画在新状态 Enter 才开始。TryDropThroughPlatform 保留为真实碰撞检测与位移能力，S+K 识别仍在 InputSystem，身体接口不接收按键名称。
 
@@ -245,15 +245,17 @@ IHeroBody 不再声明技能匹配或普攻选择。状态消费角色已经选�
 | Guard | 原地等待 | 原地转向，仅攻击进入范围的目标 |
 | Pursuer | 原地等待 | 追击、站定攻击或在平台下踱步 |
 
-敌人层级为 `AbstractEnemyEntity → AbstractMonsterEntity / AbstractBossEntity → 具体敌人`。Enemy 拥有共同生命、感知、攻击和 FSM 生命周期；Monster 默认选择 Patrol，Boss 负责独立效果的归还。AI 对应 `AbstractEnemyAiState → AbstractMonsterAiState / AbstractBossAiState → 具体状态`：前者处理小怪概率决策，后者处理两位首领的共同行为时钟。死亡和受控入口以及身体状态共同复用，不添加只有继承而无职责的包装。
+敌人层级为 `AbstractEnemyEntity → AbstractMonsterEntity → AbstractGroundMonsterEntity / AbstractSkyMonsterEntity → 具体小怪`，Boss从Enemy独立派生。Enemy拥有共同生命、感知、攻击、离身效果和FSM生命周期；Monster定义普通怪物分支，Ground装配重力行走、落地出招，Sky装配飞行移动、垂直意图和空中出招。每个具体小怪必须在自己的类中明确选择AI预设或实现专属规则：猴子独有受击激怒，飞刀魔决定投刀，蝙蝠决定折返、追踪和升空退避。妖猴、洞窟壮汉、大猩猩的官方算法相同，因此各自类明确选择Patrol，而不是复制一份共同算法或伪造差异；具体类仍是角色装配和后续扩展入口。AI对应 `AbstractEnemyAiState → AbstractMonsterAiState / AbstractBossAiState → 具体状态`：前者处理小怪概率，后者处理首领共同时钟。
 
-代码在 `Entity/Enemies/` 下按 `Monsters/`、`Bosses/<名称>/` 分支组织；共同 `AI/` 放契约、数据、系统和公共状态，共同 `Body/` 放移动、攻击、收招、受击、死亡。具体小怪的巡逻/交战状态在 `Monsters/AI/States/`，首领专属状态随其实体放置。实体场景、动作库、贴图分别在 `Entitys/Enemies/`、`Entitys/Animations/Enemies/`、`Sprites/Characters/Enemies/` 下使用相同分类。共享独立技能效果在 `Entity/Effects/SkillEffectNode.cs`，攻击者提供阵营与属性；受击反馈由接收实体统一播放，BOSS 基类回收本次显示产生的独立效果。
+代码在 `Entity/Enemies/` 下按 `Monsters/Ground/<角色>/`、`Monsters/Sky/<角色>/` 和 `Bosses/<编号_名称>/` 组织；共用AI契约、系统和打断状态留在 `AI/`，共用身体状态留在 `Body/`。小怪巡逻/交战状态在 `Monsters/AI/States/`；飞行身体在 `Monsters/Sky/Body/`，蝙蝠决策随蝙蝠。场景、动作库、贴图采用相同分类。`SkillEffectNode`拥有每次独立攻击的命中预算，创建者Enemy登记并负责隐藏时归还，具体小怪和BOSS不重复实现回收。
 
 怪物的 `Move → Attack → Recovery` 切换通过 GGF 的 `SetData/GetData/RemoveData` 传递招式下标和收招时长；目标状态在 Enter 时消费参数并自行初始化。状态之间不直接调用 `Arm` 或改写彼此字段。
 
 共享英雄状态按各英雄的参数读取普攻段数、动画名、冷却与空中段号；已用一段、三段配置在 60/120Hz 验证循环和空中出招。悟空的第三段下劈由 `WukongEntity.BuildBodyParams` 指定。新增角色仍由具体实体提供状态集，唐僧的弹道、专属技能及不同攻击移动规则需要各自实现。
 
-当前怪物支持配置多招、独立冷却、选招优先级与收招硬直。`AbstractEnemyEntity` 接受攻击请求和 `EnemyMoveState` 消费请求都要求落地；未来飞行怪可覆写 TryRequestAttack，并使用配套身体状态处理空中出招。
+当前怪物支持多招、独立冷却、选招优先级与收招硬直。Enemy只检查招式下标、死亡、受击与忙碌；Ground在请求处和地面身体消费处检查真实落地，Sky使用飞行身体消费空中请求。受击与收招结束返回本分支的MoveStateType，不把飞行怪送回地面移动。
+
+继承分工参考SuperTux的 [WalkingBadguy](https://github.com/SuperTux/supertux/blob/master/src/badguy/walking_badguy.cpp)、[SnowBall](https://github.com/SuperTux/supertux/blob/master/src/badguy/snowball.cpp) 和 [KamikazeSnowball](https://github.com/SuperTux/supertux/blob/master/src/badguy/kamikazesnowball.cpp)：父类实现移动/碰撞机制，具体类型选择能力并实现特殊反应。本项目仍用GGF双FSM和原生动画，不移植其玩法代码。
 
 背包显示悟空、唐僧的粗糙/普通装备共八种；详情显示实例的具名实际属性。点击格子打开装备、赠送、出售菜单，单人赠送禁用，异角色不能穿戴。武器与防具独立换装；替换时旧装备回包，满包不能卸下，换装不补血。售价来自装备表（粗糙 10、普通 20 灵魂）。C 对应 inventory_toggle 输入动作，打开暂停、关闭恢复；分类可切换，装备 75 格分三页，其余分类尚无物品内容；底部两行分别放灵魂/一键出售、上一页/页数/下一页，出售向上展开各品质，选择后确认件数和收益，再提交整包交易，排除穿戴物。数值沿用造梦一，提示及操作菜单按造梦三公开原资源实现。
 
@@ -291,11 +293,11 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 
 `WukongEntity.AnimationEvents.cs` 是动画节点入口，只把具名方法交给当前具体技能状态。属性轨道编辑身体/武器帧、特效帧和判定启闭；方法轨道调用具体出手、冲刺、寻敌、生成效果及收招方法。方法键直接引用 PackedScene，不再通过 EffectId/ScenePath 表间接拼装。声音键仍调用 GGF。
 
-实体先执行 `m_BodyFsm.Tick(dt)`，再推进当前技能的 `AnimationPlayer.Advance(dt)`，最后 `MoveAndSlide`。GGF 同帧跳状态不会重复推进动画；起手 `Advance(0)` 应用零时点。回调采用 Immediate，但只登记收招或下一阶段，切动画/退出状态/回池在 Advance 返回后执行。无逐帧 Seek、事件枚举或另一个时间游标。一个原生方法轨道同一时刻只能有一个键，同时播放声音与起手使用分开的方法轨道。
+实体先执行 `m_BodyFsm.Tick(dt)`，再推进仍在播放的技能 `AnimationPlayer.Advance(dt)`，最后 `MoveAndSlide`。暂停身体时独立效果继续推进。GGF 同帧跳状态不会重复推进动画；起手 `Advance(0)` 应用零时点。回调采用 Immediate，但只登记收招或下一阶段，切动画/退出状态/回池在 Advance 返回后执行。无逐帧 Seek、事件枚举或另一个时间游标。一个原生方法轨道同一时刻只能有一个键，同时播放声音与起手使用分开的方法轨道。
 
-火魔斩用原生 `descent`、`recovery` 标记选择阶段；状态拥有寻敌结果、九连斩等待与落地条件。具体状态决定伤害取整、方向和击退中心，实体最后应用无双倍率。技能行的 OwnerId=None、ComboIndex=-1，不进入普通攻击索引。
+火魔斩用原生 `descent`、`recovery` 标记选择阶段；状态拥有寻敌结果与落地等待，九连斩和本体并行。提前落地暂停本体，落地效果完成后请求recovery；未提前落地时直接在第70源帧兜底恢复。具体状态决定伤害取整、方向和击退中心，实体最后应用无双倍率。技能行的 OwnerId=None、ComboIndex=-1，不进入普通攻击索引。
 
-模型只保留 ActiveSkillId；重力、等待、完成属于状态，输入锁属于该英雄的 HeroActionData 并由火魔状态成对设置/解除。独立效果拥有攻击包、总预算和原生 AnimationPlayer；角色收招后效果可以继续播放，旧通知由接收状态拒绝。死亡、受伤、取消和隐藏必须清理，不等待动画末尾。技能退出统一经 RESET 恢复特效和判定值。动画方法使用 AnimEvent 后缀，受击和死亡语音直接使用 PlaySoundAnimEvent(SoundId)。
+模型只保留 ActiveSkillId；重力、等待、完成属于状态，输入锁属于该英雄的 HeroActionData 并由火魔状态成对设置/解除。独立效果拥有攻击包、总预算和原生 AnimationPlayer；角色收招后效果可以继续播放，旧通知由接收状态拒绝。死亡、受伤、取消和隐藏必须清理，不等待动画末尾。技能退出统一经 RESET 恢复特效和判定值。动画方法使用 AnimEvent 后缀，死亡语音使用 PlaySoundAnimEvent(SoundId)；受击语音由ReceiveHit读取m_HurtSoundId播放，hurt动画不重复发声。
 
 ### 资源编辑位置
 
@@ -303,7 +305,7 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 - 四个独立效果：`Entitys/Heroes/Wukong/` 的 `Visual` 同时包含 Sprite 与 HitBox；偏移、镜像在场景，落地斩的普通/无双大小在外置动画 `play` / `musou` 的 `Visual:scale` 编辑。
 - 火魔前奏：`wukong_entity.tscn/m_FireDemonPrelude`，原生 AnimatedSprite2D，TopLevel 保持出招原地，40 帧结束后信号隐藏。纯视觉不经过 SkillEffectNode 或节点池。
 - BOSS：`Entitys/Enemies/Bosses/zm1_02_macaque_king/` 与 `zm1_03_tamarin_king/` 各自包含实体和专属效果；代码、动画和贴图使用相同目录名。禺狨王 HitBox 只用一个矩形；猕猴王大旋风用风冠、风柱两个胶囊。几何在动画中按阶段编辑，云层不伤害，允许闪电内部间隙；AI 只合并基础形状边界估距，实际命中由物理引擎处理。
-- 普攻动画列表、命中声：实体场景；普攻起手、受伤和死亡语音：对应动画的 PlaySoundAnimEvent 方法键。
+- 普攻动画列表和攻击命中声 m_HitSoundId：攻击者实体场景；独立效果生成时借用本次攻击者的声音。受击语音 m_HurtSoundId：接收者实体场景，成功ReceiveHit时播放，hurt动画不重复发声。挥击、技能和死亡语音：原生动画的PlaySoundAnimEvent方法键。
 - 物品外观：`Sprites/Items/item_appearances.tres` 同时供背包、穿戴与地面掉落引用。轨迹在 LootOrb 场景，地面物理在 GroundItem 场景；奖励量和存在时长留 BattleConfig。
 - 关卡音乐：LevelRoot 的 MusicId，由 ProcedureLevel 通过 GGF 播放和停止。血条淡出在怪物场景。
 - 无双大立绘按原生动画结束恢复自己申请的暂停；失败结算直接等待英雄 death 的 AnimationFinished，不再另配等待秒数。
@@ -323,7 +325,7 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 - 左下布局：保留造三五入口；`MenuPanel/WsFrame` 是 260×22 黑色长底板，子节点 `m_WsBar` 是细灰底和橙色填充；`SkillBar` 位于其上方。整体位置调父节点，条的尺寸调 `m_WsBar` 的偏移和缩放，不删除装饰层来调整进度。
 - 开启大立绘：`Sprites/UI/hud/musou_activation/musou_activation_frames.tres`，独立于满值闪烁。
 - BOSS 条：`UIs/Battle/encounter_health_bar.tscn`；姓名和笔刷条构成顶部组件，无生命数字。
-- 地图悬停：LocationGlow.Scale 调尺寸，AnimationPlayer.SpeedScale 调速度；命中跟随可见轮廓。
+- 地图悬停：LocationGlow.Scale 调尺寸，AnimationPlayer.SpeedScale 调速度；蝙蝠窟使用KeepAspectCentered保持普通图与悬停图中心一致，命中同步反转居中偏移及缩放，跟随可见轮廓。
 - 新持久字段：领域状态 → GameData → ProfileModel → SaveDataUtility 捕获/校验、ProfileSystem 回滚 → 格式版本与验证。
 - 悟空动作：先看 [官方五段攻击](OfficialReference.md#悟空五段普攻)，再看 [独立图集及原点](LegacyAssetMap.md#悟空独立身体与武器)；AnimationLibrary 管帧/特效/判定，AttackConfig 管威力/击退，声音由动画和实体场景装配，身体状态负责动作规则。
 
@@ -337,7 +339,7 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 
 保存格式以 GameData.CurrentVersion 为准（当前 v9）：GameData 平铺英雄经验、灵魂、装备及具名属性、最远通关编号 HighestClearedLevelId；Heroes 中以实例 Guid 引用武器、防具、饰品，并保存已学习技能 ID。概率属性用 0..1。ProfileSystem 根据通关进度计算最新可挑战关卡，地图读同一字段控制锁定与默认闪烁；通关先推进再保存，失败和放弃不推进。ProfileModel.EquipmentDatas 只含未穿戴物，Slots 保存穿戴；HeroSystem 将成长、穿戴变化同步到 HeroModel，实体即时读取同一模型。旧格式不做运行时兼容，已有开发档的处理见 Validation。
 
-地图打开和鼠标离开后按最新可挑战关卡播放 `location/current`、`shuiliandong/current` 或 `taohuayuan/current`，悬停可进入的地点播放对应 hover；关闭时 RESET 并停止，复用根据档案进度重新启动。未解锁地点不响应悬停和点击，历史地点可重玩。
+地图打开和鼠标离开后按最新可挑战关卡播放 `location/current`、`shuiliandong/current`、`taohuayuan/current`、`bianfuku/current` 或 `qixingdong/current`，悬停可进入的地点播放对应 hover；关闭时 RESET 并停止，复用根据档案进度重新启动。未解锁地点不响应悬停和点击，历史地点可重玩。
 
 地面恢复品实际领取后，调用本场 `FloatingTextPresenter.ShowRecovery(position, amount, RecoveryKind.Health/Mana)`：生命数字绿色，魔法数字蓝色；显示配置恢复量（即使已达上限），一秒上移 75px，暂停停止。蓝量灵魂只回蓝，不显示数字。模块只显示反馈，实际恢复仍由拾取业务结算；后续技能恢复可复用该入口。
 

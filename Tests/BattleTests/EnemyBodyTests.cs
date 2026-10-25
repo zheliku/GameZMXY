@@ -32,8 +32,9 @@ namespace GameLogic.Battle.Tests
                 AttackRecovery = [recovery],
             };
         }
-
-        /// <summary>验证移动意图控制怪物速度、动画和朝向。</summary>
+        /// <summary>
+        /// 验证移动意图控制怪物速度、动画和朝向。
+        /// </summary>
         [Fact]
         public void Move_FollowsIntent_AndPicksAnim()
         {
@@ -48,8 +49,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(80f, h.Body.Velocity.X, 3);
             Assert.Equal(1, h.Body.Facing);
         }
-
-        /// <summary>空中请求作废，落地只执行新的请求。</summary>
+        /// <summary>
+        /// 空中请求作废，落地只执行新的请求。
+        /// </summary>
         [Fact]
         public void Airborne_DropsAttackRequest_UntilGrounded()
         {
@@ -67,8 +69,9 @@ namespace GameLogic.Battle.Tests
             h.Step(1);
             Assert.Equal("Attack", h.State);
         }
-
-        /// <summary>验证怪物攻击、收招硬直及其后的移动状态。</summary>
+        /// <summary>
+        /// 验证怪物攻击、收招硬直及其后的移动状态。
+        /// </summary>
         [Fact]
         public void Attack_Request_Recovery_ThenMove()
         {
@@ -93,8 +96,9 @@ namespace GameLogic.Battle.Tests
             h.StepUntil(s => s == "Attack");               // 硬直结束当帧 Move 消费请求
             Assert.Equal("Attack", h.State);
         }
-
-        /// <summary>验证零收招时长的攻击直接返回移动状态。</summary>
+        /// <summary>
+        /// 验证零收招时长的攻击直接返回移动状态。
+        /// </summary>
         [Fact]
         public void Attack_ZeroRecovery_ReturnsToMove()
         {
@@ -104,8 +108,9 @@ namespace GameLogic.Battle.Tests
             h.StepUntil(s => s == "Move");
             Assert.Equal("Move", h.State);
         }
-
-        /// <summary>切换数据传递实际请求的招式和收招时间，不能固定使用第一招。</summary>
+        /// <summary>
+        /// 切换数据传递实际请求的招式和收招时间，不能固定使用第一招。
+        /// </summary>
         [Fact]
         public void Attack_SecondRequestUsesItsAnimationAndRecovery()
         {
@@ -127,8 +132,9 @@ namespace GameLogic.Battle.Tests
             h.StepUntil(state => state == "Move");
             Assert.Equal("Move", h.State);
         }
-
-        /// <summary>验证受击会中断攻击并清除未处理的攻击请求。</summary>
+        /// <summary>
+        /// 验证受击会中断攻击并清除未处理的攻击请求。
+        /// </summary>
         [Fact]
         public void Hurt_InterruptsAttack_AndDropsRequest()
         {
@@ -152,8 +158,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal("Move", h.State);
             Assert.Equal(-1, h.Body.AttackRequest);        // 硬直中的请求已作废
         }
-
-        /// <summary>验证受击会中断收招硬直。</summary>
+        /// <summary>
+        /// 验证受击会中断收招硬直。
+        /// </summary>
         [Fact]
         public void Hurt_InterruptsRecovery()
         {
@@ -167,8 +174,9 @@ namespace GameLogic.Battle.Tests
             h.Step(1);
             Assert.Equal("Hurt", h.State);
         }
-
-        /// <summary>官方受击横速按秒指数衰减，不能因物理帧率或怪物体型改变。</summary>
+        /// <summary>
+        /// 官方受击横速按秒指数衰减，不能因物理帧率或怪物体型改变。
+        /// </summary>
         /// <param name="frequency">物理帧率。</param>
         [Theory]
         [InlineData(24)]
@@ -193,8 +201,9 @@ namespace GameLogic.Battle.Tests
             h.Step(1, 1f / frequency);
             Assert.Equal(-48f, h.Body.Velocity.X);
         }
-
-        /// <summary>官方先位移后加重力；秒制物理在各帧率重现同一升龙抛物线。</summary>
+        /// <summary>
+        /// 官方先位移后加重力；秒制物理在各帧率重现同一升龙抛物线。
+        /// </summary>
         /// <param name="frequency">物理帧率。</param>
         [Theory]
         [InlineData(24)]
@@ -217,8 +226,9 @@ namespace GameLogic.Battle.Tests
             }
             Assert.InRange(-minimumY, 172.4, 172.6);
         }
-
-        /// <summary>验证宿主不登记受击时霸体攻击不会被中断。</summary>
+        /// <summary>
+        /// 验证宿主不登记受击时霸体攻击不会被中断。
+        /// </summary>
         [Fact]
         public void SuperArmor_HostNotRegisteringHurt_KeepsAttack()
         {
@@ -229,8 +239,9 @@ namespace GameLogic.Battle.Tests
             h.Step(10);
             Assert.Equal("Recovery", h.State);   // 没被打断，正常收招
         }
-
-        /// <summary>验证死亡优先处理、一次性副作用及延时回收。</summary>
+        /// <summary>
+        /// 验证死亡优先处理、一次性副作用及延时回收。
+        /// </summary>
         [Fact]
         public void Death_Priority_SideEffectsOnce_RecycleAfterDeathTime()
         {
@@ -254,8 +265,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(1, h.Body.RecycleCount);          // 只请求一次
             Assert.Equal(1, h.Body.DiedCount);
         }
-
-        /// <summary>验证状态机关闭时会结束进行中的攻击。</summary>
+        /// <summary>
+        /// 验证状态机关闭时会结束进行中的攻击。
+        /// </summary>
         [Fact]
         public void Shutdown_DuringAttack_ReleasesAttack()
         {
@@ -271,35 +283,60 @@ namespace GameLogic.Battle.Tests
         private sealed class FakeMonster : AbstractFakeActorBody, IEnemyBody // 为怪物身体状态机提供可控的测试宿主。
         {
             /// <inheritdoc />
-            float IActorBody.Gravity => Params.Gravity;
-            /// <summary>待身体状态机消费的攻击段索引。</summary>
+            float IActorBody.Gravity
+            {
+                get
+                {
+                    return Params.Gravity;
+                }
+            }
+            /// <summary>
+            /// 待身体状态机消费的攻击段索引。
+            /// </summary>
             public int AttackRequest = -1;
-
-            /// <summary>请求回收的次数。</summary>
+            /// <summary>
+            /// 请求回收的次数。
+            /// </summary>
             public int RecycleCount;
-
-            /// <summary>怪物身体状态参数。</summary>
+            /// <summary>
+            /// 怪物身体状态参数。
+            /// </summary>
             public EnemyBodyParams Params { get; }
-
-            /// <summary>AI 写入的移动方向意图。</summary>
+            /// <inheritdoc />
+            public Type MoveStateType
+            {
+                get
+                {
+                    return typeof(EnemyMoveState);
+                }
+            }
+            /// <summary>
+            /// AI 写入的移动方向意图。
+            /// </summary>
             public int MoveIntent { get; set; }
-
-            /// <summary>初始化怪物身体状态参数。</summary>
+            /// <summary>
+            /// 初始化怪物身体状态参数。
+            /// </summary>
             public FakeMonster(EnemyBodyParams p)
             {
                 Params = p;
             }
-
-            /// <summary>取出并清除待处理的攻击请求。</summary>
+            /// <summary>
+            /// 取出并清除待处理的攻击请求。
+            /// </summary>
             public int TakeAttackRequest()
             {
                 int r = AttackRequest;
                 AttackRequest = -1;
                 return r;
             }
-
-            /// <summary>记录一次实体回收请求。</summary>
-            public void RequestRecycle() => RecycleCount++;
+            /// <summary>
+            /// 记录一次实体回收请求。
+            /// </summary>
+            public void RequestRecycle()
+            {
+                RecycleCount++;
+            }
         }
 
         private sealed class MonsterHarness : IDisposable // 用真实框架状态机驱动怪物身体测试。
@@ -307,14 +344,23 @@ namespace GameLogic.Battle.Tests
             private readonly FsmManager m_Manager = new FsmManager(); // 驱动测试状态机的管理器。
             private readonly IFsm<IEnemyBody> m_Fsm; // 当前测试使用的怪物身体状态机。
             private bool m_Disposed; // 记录驱动器是否已关闭。
-
-            /// <summary>状态机绑定的假怪物宿主。</summary>
+            /// <summary>
+            /// 状态机绑定的假怪物宿主。
+            /// </summary>
             public FakeMonster Body { get; }
-
-            /// <summary>当前身体状态名称。</summary>
-            public string State => m_Fsm.CurrentState.GetType().Name["Enemy".Length..^"State".Length];
-
-            /// <summary>创建假宿主并启动怪物身体状态机。</summary>
+            /// <summary>
+            /// 当前身体状态名称。
+            /// </summary>
+            public string State
+            {
+                get
+                {
+                    return m_Fsm.CurrentState.GetType().Name["Enemy".Length..^"State".Length];
+                }
+            }
+            /// <summary>
+            /// 创建假宿主并启动怪物身体状态机。
+            /// </summary>
             public MonsterHarness(EnemyBodyParams p)
             {
                 Body = new FakeMonster(p);
@@ -323,8 +369,9 @@ namespace GameLogic.Battle.Tests
                     new EnemyDeathState());
                 m_Fsm.Start<EnemyMoveState>();
             }
-
-            /// <summary>推进指定数量的物理帧，并固定宿主在地面上。</summary>
+            /// <summary>
+            /// 推进指定数量的物理帧，并固定宿主在地面上。
+            /// </summary>
             /// <param name="frames">推进的物理帧数。</param>
             /// <param name="dt">每步游戏秒数。</param>
             public void Step(int frames, float dt = Dt)
@@ -336,8 +383,9 @@ namespace GameLogic.Battle.Tests
                         Body.Velocity = new Vector2(Body.Velocity.X, 0f);
                 }
             }
-
-            /// <summary>逐帧推进至条件成立，最多检查 600 帧。</summary>
+            /// <summary>
+            /// 逐帧推进至条件成立，最多检查 600 帧。
+            /// </summary>
             /// <param name="until">返回是否停止推进的状态条件。</param>
             /// <returns>满足条件前推进的帧数；超时返回 -1。</returns>
             public int StepUntil(Func<string, bool> until)
@@ -355,8 +403,9 @@ namespace GameLogic.Battle.Tests
 
                 return -1;
             }
-
-            /// <summary>关闭状态机管理器；重复调用不会重复关闭。</summary>
+            /// <summary>
+            /// 关闭状态机管理器；重复调用不会重复关闭。
+            /// </summary>
             public void Dispose()
             {
                 if (m_Disposed)

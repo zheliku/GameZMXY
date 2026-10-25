@@ -19,7 +19,9 @@ using GodotGameFramework;
 using GodotGameFramework.UI;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
-/// <summary>开始界面：点击开始后选择存档，设置作为本流程拥有的独立 GGF 窗口。</summary>
+/// <summary>
+/// 开始界面：点击开始后选择存档，设置作为本流程拥有的独立 GGF 窗口。
+/// </summary>
 public sealed class ProcedureTitle : ProcedureBase
 {
     private int m_FormSerialId; // 本周期窗口，含在途加载请求。
@@ -30,7 +32,9 @@ public sealed class ProcedureTitle : ProcedureBase
     private int m_SaveSerialId; // 本流程打开的六格存档窗口。
     private int m_SettingsSerialId; // 本流程打开的设置窗口，包括在途加载。
 
-    /// <summary>订阅本页面的点击事件后打开窗口。</summary>
+    /// <summary>
+    /// 订阅本页面的点击事件后打开窗口。
+    /// </summary>
     /// <param name="procedureOwner">流程状态机。</param>
     protected internal override void OnEnter(ProcedureOwner procedureOwner)
     {
@@ -53,7 +57,9 @@ public sealed class ProcedureTitle : ProcedureBase
         m_MusicSerialId = GF.Sound.PlayConfigured(SoundId.MenuTheme, 0.3f);
     }
 
-    /// <summary>退出时解除点击事件和本周期窗口。</summary>
+    /// <summary>
+    /// 退出时解除点击事件和本周期窗口。
+    /// </summary>
     /// <param name="procedureOwner">流程状态机。</param>
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
@@ -84,7 +90,9 @@ public sealed class ProcedureTitle : ProcedureBase
         base.OnLeave(procedureOwner, isShutdown);
     }
 
-    /// <summary>开始按钮打开存档选择页，读取目录期间显示加载反馈。</summary>
+    /// <summary>
+    /// 开始按钮打开存档选择页，读取目录期间显示加载反馈。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private async void OnStartGameRequested(int formSerialId)
     {
@@ -99,7 +107,9 @@ public sealed class ProcedureTitle : ProcedureBase
         await saveSystem.RefreshDirectoryAsync(token);
     }
 
-    /// <summary>只接受当前窗口中可读的格号，把稳定编号交给读档流程。</summary>
+    /// <summary>
+    /// 只接受当前窗口中可读的格号，把稳定编号交给读档流程。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     /// <param name="selectionId">选中的存档格或关卡编号。</param>
     private void OnSaveSlotSelected(int formSerialId, int selectionId)
@@ -115,7 +125,9 @@ public sealed class ProcedureTitle : ProcedureBase
         ChangeState<ProcedureLoadGame>(m_Owner);
     }
 
-    /// <summary>打开声音设置；加载中和已打开时不重复请求。</summary>
+    /// <summary>
+    /// 打开声音设置；加载中和已打开时不重复请求。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnSettingsRequested(int formSerialId)
     {
@@ -127,7 +139,9 @@ public sealed class ProcedureTitle : ProcedureBase
         SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
     }
 
-    /// <summary>本周期界面可见后关闭加载页。</summary>
+    /// <summary>
+    /// 本周期界面可见后关闭加载页。
+    /// </summary>
     /// <param name="sender">事件发送者。</param>
     /// <param name="args">只在本次分发内读取的池化参数。</param>
     private void OnFormOpened(object sender, GameEventArgs args)
@@ -140,7 +154,9 @@ public sealed class ProcedureTitle : ProcedureBase
         (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
     }
 
-    /// <summary>报告当前窗口请求的装配错误。</summary>
+    /// <summary>
+    /// 报告当前窗口请求的装配错误。
+    /// </summary>
     /// <param name="sender">事件发送者。</param>
     /// <param name="args">只在本次分发内读取的池化参数。</param>
     private void OnFormFailed(object sender, GameEventArgs args)
@@ -149,7 +165,9 @@ public sealed class ProcedureTitle : ProcedureBase
             Log.Error("[ProcedureTitle] 界面加载失败：{0}", failure.ErrorMessage);
     }
 
-    /// <summary>按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。</summary>
+    /// <summary>
+    /// 按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。
+    /// </summary>
     /// <param name="form">已打开窗口；在途时为空。</param>
     /// <param name="bind">绑定或解除。</param>
     private void SetFormCallbacks(IUIForm form, bool bind)

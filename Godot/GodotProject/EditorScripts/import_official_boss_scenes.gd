@@ -196,7 +196,7 @@ func _boss(actor: Dictionary, wind_scene: PackedScene) -> void:
 	var folder := "zm1_02_macaque_king" if macaque else "zm1_03_tamarin_king"
 	var destination := "res://TheGame/Entitys/Enemies/Bosses/%s/%s_entity.tscn" % [folder,name]
 	assert(not FileAccess.file_exists(destination), "Refusing to overwrite boss scene")
-	var root: CharacterBody2D = load("res://TheGame/Entitys/Enemies/Monsters/gorilla_entity.tscn").instantiate()
+	var root: CharacterBody2D = load("res://TheGame/Entitys/Enemies/Monsters/Ground/gorilla/gorilla_entity.tscn").instantiate()
 	root.name = "MacaqueKingEntity" if macaque else "TamarinKingEntity"
 	root.set_script(load("res://TheGame/GameScripts/Entity/Enemies/Bosses/%s/%s.cs" % [folder, root.name]))
 	for pair in [["m_Detector","m_Detector"],["m_Body","m_Body"],["m_AnimPlayer","m_AnimPlayer"],["m_HurtBox","m_HurtBox"],["m_HitBox","m_HitBoxRoot/m_HitBox"],["m_HitBoxRoot","m_HitBoxRoot"]]:

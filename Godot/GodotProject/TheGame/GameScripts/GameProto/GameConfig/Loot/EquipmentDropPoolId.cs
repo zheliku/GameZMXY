@@ -33,6 +33,14 @@ namespace GameConfig.Loot
         /// 禺狨王装备
         /// </summary>
         TamarinKing = 4,
+        /// <summary>
+        /// 蝙蝠窟石像装备
+        /// </summary>
+        BatCaveStatue = 5,
+        /// <summary>
+        /// 狮驼王装备
+        /// </summary>
+        LionCamelKing = 6,
     }
 
 } 

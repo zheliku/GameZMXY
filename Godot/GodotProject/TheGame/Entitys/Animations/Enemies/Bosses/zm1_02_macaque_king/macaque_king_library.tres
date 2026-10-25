@@ -176,10 +176,13 @@ tracks/13/keys = {
 "values": [0.0]
 }
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hj2no"]
-size = Vector2(180.69122, 130.92508)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4ak5r"]
+size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_4vpr2"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ctl76"]
+size = Vector2(69.50988, 166.8281)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_asb4x"]
 size = Vector2(172.03833, 48.967026)
 
 [sub_resource type="Animation" id="Animation_7a5bs"]
@@ -254,7 +257,7 @@ tracks/5/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.16666667),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
-"values": [SubResource("RectangleShape2D_y4l4n"), SubResource("RectangleShape2D_hj2no"), SubResource("RectangleShape2D_4vpr2")]
+"values": [SubResource("RectangleShape2D_4ak5r"), SubResource("RectangleShape2D_ctl76"), SubResource("RectangleShape2D_asb4x")]
 }
 tracks/6/type = "value"
 tracks/6/imported = false
@@ -266,7 +269,7 @@ tracks/6/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.16666667),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
-"values": [Vector2(0, 0), Vector2(-35.35, -3.8499985), Vector2(-41.300003, 20.95)]
+"values": [Vector2(0, 0), Vector2(-35.349995, -3.8499985), Vector2(-41.300003, 20.95)]
 }
 tracks/7/type = "value"
 tracks/7/imported = false
@@ -299,10 +302,10 @@ tracks/9/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:rotation")
 tracks/9/interp = 1
 tracks/9/loop_wrap = true
 tracks/9/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
+"times": PackedFloat32Array(0, 0.083333336, 0.16666667),
+"transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
-"values": [0.0]
+"values": [0.0, -1.1553792, 0.0]
 }
 tracks/10/type = "value"
 tracks/10/imported = false
@@ -353,28 +356,32 @@ tracks/13/keys = {
 "values": [0.0]
 }
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_nyheq"]
-radius = 45.0
-height = 250.0
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nyheq"]
+size = Vector2(1, 1)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5s3ys"]
+size = Vector2(280, 140)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ipf25"]
-size = Vector2(155, 85)
+size = Vector2(1, 1)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_77mpw"]
-size = Vector2(155, 120)
+size = Vector2(167, 79)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_owpkf"]
-size = Vector2(155, 135)
+size = Vector2(162, 114)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_j1gs7"]
-size = Vector2(155, 155)
+size = Vector2(162, 131)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_e426o"]
-size = Vector2(155, 200)
+size = Vector2(162, 151)
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_eqym0"]
-radius = 50.0
-height = 245.0
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_eqym0"]
+size = Vector2(162, 198)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bhwun"]
+size = Vector2(120, 145)
 
 [sub_resource type="Animation" id="Animation_fu8nh"]
 length = 3.1666666666666665
@@ -519,7 +526,7 @@ tracks/8/keys = {
 "times": PackedFloat32Array(0, 0.16666667, 0.625, 0.7916667, 1, 1.2083334, 1.4166666),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [SubResource("RectangleShape2D_y4l4n"), SubResource("RectangleShape2D_ipf25"), SubResource("RectangleShape2D_77mpw"), SubResource("RectangleShape2D_owpkf"), SubResource("RectangleShape2D_j1gs7"), SubResource("RectangleShape2D_e426o"), SubResource("CapsuleShape2D_eqym0")]
+"values": [SubResource("RectangleShape2D_ipf25"), SubResource("RectangleShape2D_77mpw"), SubResource("RectangleShape2D_owpkf"), SubResource("RectangleShape2D_j1gs7"), SubResource("RectangleShape2D_e426o"), SubResource("RectangleShape2D_eqym0"), SubResource("RectangleShape2D_bhwun")]
 }
 tracks/9/type = "value"
 tracks/9/imported = false
@@ -531,7 +538,7 @@ tracks/9/keys = {
 "times": PackedFloat32Array(0, 0.16666667, 0.625, 0.7916667, 1, 1.2083334, 1.4166666),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [Vector2(0, 0), Vector2(32.5, 32.5), Vector2(27.5, 15), Vector2(32.5, 7.5), Vector2(32.5, -2.5), Vector2(32.5, -20), Vector2(5, -57.5)]
+"values": [Vector2(0, 0), Vector2(32.5, 29.5), Vector2(30, 14), Vector2(30, 6.5), Vector2(30, -2.5), Vector2(30, -21), Vector2(6, -2.5)]
 }
 tracks/10/type = "value"
 tracks/10/imported = false
@@ -567,7 +574,7 @@ tracks/12/keys = {
 "times": PackedFloat32Array(0, 1.4166666),
 "transitions": PackedFloat32Array(1, 1),
 "update": 1,
-"values": [SubResource("RectangleShape2D_y4l4n"), SubResource("CapsuleShape2D_nyheq")]
+"values": [SubResource("RectangleShape2D_nyheq"), SubResource("RectangleShape2D_5s3ys")]
 }
 tracks/13/type = "value"
 tracks/13/imported = false
@@ -579,7 +586,7 @@ tracks/13/keys = {
 "times": PackedFloat32Array(0, 1.4166666),
 "transitions": PackedFloat32Array(1, 1),
 "update": 1,
-"values": [Vector2(0, 0), Vector2(0, -170)]
+"values": [Vector2(0, 0), Vector2(3, -145)]
 }
 tracks/14/type = "value"
 tracks/14/imported = false
@@ -588,10 +595,10 @@ tracks/14/path = NodePath("m_HitBoxRoot/m_HitBox/WindCrown:rotation")
 tracks/14/interp = 1
 tracks/14/loop_wrap = true
 tracks/14/keys = {
-"times": PackedFloat32Array(0, 1.4166666),
-"transitions": PackedFloat32Array(1, 1),
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [0.0, 1.5707963267948966]
+"values": [0.0]
 }
 
 [sub_resource type="Animation" id="Animation_sd1oc"]

@@ -7,11 +7,14 @@ using Newtonsoft.Json;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>通过正式系统验证学习资格、扣费、可绑定通知、快照和严格存档校验。</summary>
+/// <summary>
+/// 通过正式系统验证学习资格、扣费、可绑定通知、快照和严格存档校验。
+/// </summary>
 public sealed class SkillLearningTests
 {
-    /// <summary>初始未学；余额不足不变，刚好足够成功一次，重复点击不重复扣费。</summary>
+    /// <summary>
+    /// 初始未学；余额不足不变，刚好足够成功一次，重复点击不重复扣费。
+    /// </summary>
     [Fact]
     public void Learning_ChargesOnceAndPublishesTheSharedSkillBook()
     {
@@ -33,8 +36,9 @@ public sealed class SkillLearningTests
         Assert.Equal(0, scope.Profile.Soul.Value);
         Assert.Equal(1, notifications);
     }
-
-    /// <summary>其他角色、未知编号和未实现的角色动作不能购买。</summary>
+    /// <summary>
+    /// 其他角色、未知编号和未实现的角色动作不能购买。
+    /// </summary>
     [Theory]
     [InlineData(SkillId.IceDragonWave)]
     [InlineData((SkillId)999)]
@@ -45,8 +49,9 @@ public sealed class SkillLearningTests
         Assert.Equal(9999, scope.Profile.Soul.Value);
         Assert.Empty(scope.Skills.GetLearnedSkills(1));
     }
-
-    /// <summary>技能书按英雄保存、快照独立；放弃关卡同时回滚扣费和学习，保留绑定身份。</summary>
+    /// <summary>
+    /// 技能书按英雄保存、快照独立；放弃关卡同时回滚扣费和学习，保留绑定身份。
+    /// </summary>
     [Fact]
     public void SaveAndRollback_PreserveHeroOwnershipAndBindingIdentity()
     {
@@ -66,8 +71,9 @@ public sealed class SkillLearningTests
         Assert.Equal(new[] { SkillId.FlameThrust }, learned);
         Assert.Equal(2800, scope.Profile.Soul.Value);
     }
-
-    /// <summary>坏学习记录在恢复前失败，原档案数据不变。</summary>
+    /// <summary>
+    /// 坏学习记录在恢复前失败，原档案数据不变。
+    /// </summary>
     /// <param name="invalid">重复、其他英雄或未知技能。</param>
     [Theory]
     [InlineData(SkillId.RisingDragon)]
@@ -83,8 +89,9 @@ public sealed class SkillLearningTests
         Assert.Equal(3000, scope.Profile.Soul.Value);
         Assert.Empty(scope.Skills.GetLearnedSkills(1));
     }
-
-    /// <summary>当前格式必须显式提供学习记录，缺字段不能被空列表默认值掩盖。</summary>
+    /// <summary>
+    /// 当前格式必须显式提供学习记录，缺字段不能被空列表默认值掩盖。
+    /// </summary>
     [Fact]
     public void Save_RequiresAnExplicitSkillBook()
     {

@@ -1,4 +1,4 @@
-"""Extract the first three original stages from FFDec XML and GameSence.as.
+"""Extract selected original stages from FFDec XML and GameSence.as.
 
 The source is the decoded v25928.swf documented in OfficialReference.md.
 This reads native display-list placement and component properties; it does not
@@ -10,6 +10,18 @@ from pathlib import Path
 import re
 import xml.etree.ElementTree as E
 from export_official_wukong import matrix, timeline_frames
+
+
+def labeled_frames(sprite):
+    """Resolve labels from the source timeline, rather than assuming frame offsets."""
+    labels, frame = {}, 0
+    for item in sprite.find('subTags'):
+        if item.get('type') == 'FrameLabelTag':
+            labels[item.get('name')] = frame
+        elif item.get('type') == 'ShowFrameTag':
+            frame += 1
+    displays = list(timeline_frames(sprite))
+    return {label: displays[index] for label, index in labels.items()}
 
 
 def component_properties(source, frame):
@@ -42,6 +54,11 @@ def extract(args):
     scene = next(t for t in tags if t.get('type') == 'DefineSpriteTag' and int(t.get('spriteId')) == scene_id)
     shapes = {int(t.get('shapeId')): t for t in tags if t.get('shapeId')}
     sprites = {int(t.get('spriteId')): t for t in tags if t.get('type') == 'DefineSpriteTag'}
+    backgrounds = labeled_frames(sprites[symbols['bgClips']])
+    selected = set(args.levels)
+    missing = selected - backgrounds.keys()
+    if missing:
+        raise ValueError(f'Unknown background labels: {sorted(missing)}')
     source = args.script.read_text(encoding='utf-8-sig')
     objects, frames, frame, label = {}, {}, 1, None
     for item in scene.find('subTags'):
@@ -64,15 +81,18 @@ def extract(args):
         elif kind == 'FrameLabelTag':
             label = item.get('name')
         elif kind == 'ShowFrameTag':
-            if label in ('1-1', '1-2', '1-3') and label not in frames:
+            if label in selected and label not in frames:
                 properties = component_properties(source, frame)
                 entries = [{**value, 'properties': properties.get(value.get('name'), {})} for value in objects.values()]
                 spawns = [x for x in entries if x['characterId'] == symbols['base.MonsterAppearPoint']]
                 gates = [x for x in entries if x['characterId'] == symbols['export.StopPoint']]
                 for gate in gates:
-                    # StopPoint constructor sets a 1450px region for stage 1.
+                    # StopPoint overrides the inspector width only in maps 1, 4 and 9.
+                    map_number = int(label.split('-')[0])
+                    width = 1450 if map_number == 1 else (940 if map_number in (4, 9)
+                                                         else gate['properties']['betweenRandL'])
                     right = gate['position'][0]
-                    gate['battleBounds'] = [round(max(0, right - 1450), 2), round(right, 2)]
+                    gate['battleBounds'] = [round(max(0, right - width), 2), round(right, 2)]
                 for spawn in spawns:
                     p = spawn['properties']
                     spawn['firstSpawnSeconds'] = p['delay'] + p['interval']
@@ -107,8 +127,7 @@ def extract(args):
                         corners.append([round(outer[0]*lx + outer[2]*ly + outer[4], 5),
                                         round(outer[1]*lx + outer[3]*ly + outer[5], 5)])
                     geometry.append({'sourceCharacter': sid, 'oneWay': sid == 57, 'corners': corners})
-                backgrounds = list(timeline_frames(sprites[symbols['bgClips']]))
-                background = next(iter(backgrounds[{'1-1': 0, '1-2': 5, '1-3': 10}[label]].values()))
+                background = next(iter(backgrounds[label].values()))
                 child = next(x for x in sprites[int(background.get('characterId'))].find('subTags')
                              if x.get('characterId'))
                 bg_shape = shapes[int(child.get('characterId'))].find('shapeBounds')
@@ -121,7 +140,8 @@ def extract(args):
                 artwork = []
                 visible = {56: 'huaguoshan_platform', 60: 'huaguoshan_ground',
                            88: 'shuiliandong_platform', 97: 'shuiliandong_ground',
-                           101: 'taohuayuan_ground', 103: 'taohuayuan_rock'}
+                           101: 'taohuayuan_ground', 103: 'taohuayuan_rock',
+                           107: 'bat_cave_ground'}
                 for entry in entries:
                     sid = entry['characterId']
                     if sid not in visible:
@@ -145,8 +165,8 @@ def extract(args):
                         'fps': float(root.get('frameRate')),
                         'positions': [matrix(next(iter(display.values())))[4:] for display in timeline_frames(sprites[94])]}
             frame += 1
-    if len(frames) != 3:
-        raise ValueError('Expected all three original stages')
+    if frames.keys() != selected:
+        raise ValueError(f'Missing scene labels: {sorted(selected - frames.keys())}')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(frames, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     for label, data in frames.items():
@@ -159,4 +179,6 @@ if __name__ == '__main__':
     parser.add_argument('--xml', required=True, type=Path)
     parser.add_argument('--script', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--levels', nargs='+', default=['1-1', '1-2', '1-3'],
+                        help='Original map-stage labels, for example 2-1 or 4-1; defaults to the first three levels.')
     extract(parser.parse_args())

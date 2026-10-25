@@ -7,7 +7,9 @@ using Godot;
 
 namespace GameLogic.Battle.Damage
 {
-    /// <summary>战斗结算系统：查询共享配置，确定性计算伤害、击退和命中无双增量；不持有实体。</summary>
+    /// <summary>
+    /// 战斗结算系统：查询共享配置，确定性计算伤害、击退和命中无双增量；不持有实体。
+    /// </summary>
     public sealed class CombatSystem : AbstractSystem
     {
         private const double RatioStep = 0.001; // 比率按旧项目规则保留三位小数。
@@ -18,7 +20,9 @@ namespace GameLogic.Battle.Damage
         /// </summary>
         private const double TruncateEpsilon = 1e-6; // 抵消 float 配置转 double 后在取整边界产生的微小误差。
 
-        /// <summary>绑定业务系统的所属架构。</summary>
+        /// <summary>
+        /// 绑定业务系统的所属架构。
+        /// </summary>
         /// <param name="architecture">所属游戏入口。</param>
         public CombatSystem(IArchitecture architecture) : base(architecture) { }
 
@@ -106,7 +110,9 @@ namespace GameLogic.Battle.Damage
             return new Vector2(direction * data.Knockback.X, data.Knockback.Y);
         }
 
-        /// <summary>向零取整（旧 int()），带 float 系数容差（见 <see cref="TruncateEpsilon"/>）。</summary>
+        /// <summary>
+        /// 向零取整（旧 int()），带 float 系数容差（见 <see cref="TruncateEpsilon"/>）。
+        /// </summary>
         /// <param name="value">待取整数值。</param>
         /// <returns>向零截断后的值。</returns>
         private static double Truncate(double value) // 带浮点容差地向零取整，保持旧伤害公式顺序。

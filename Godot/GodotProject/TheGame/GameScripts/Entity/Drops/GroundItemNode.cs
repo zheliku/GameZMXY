@@ -10,9 +10,13 @@ using GodotGameFramework.NodePool;
 
 namespace GameLogic.Drops;
 
-/// <summary>地面恢复品或装备：落地、接触入账、上移淡出与按秒过期；关卡拥有回收与收益。</summary>
+/// <summary>
+/// 地面恢复品或装备：落地、接触入账、上移淡出与按秒过期；关卡拥有回收与收益。
+/// </summary>
 public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
 {
+    private static readonly StringName m_PickupAnimationName = "pickup"; // 领取成功后的上移淡出轨道。
+    private static readonly StringName m_ResetAnimation = "RESET"; // 池复用时恢复表现的原生复位轨道。
     [Export] private Sprite2D m_Icon; // 按本次恢复品或装备定义显示的图标。
     [Export] private AnimationPlayer m_PickupAnimation; // 外置上移淡出动画，按物理游戏秒手动推进。
     [Export] private CollisionShape2D m_Shape; // 场景预设的唯一矩形，落地与接触共用。
@@ -25,7 +29,9 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
     private float m_Age; // 已存在的游戏秒数，暂停时不增加。
     private bool m_Collected; // 已成功入账，只完成淡出，不再检测接触或过期。
 
-    /// <summary>以秒推进落地和过期；只有接触英雄才请求入账，满包不会销毁或重抽。</summary>
+    /// <summary>
+    /// 以秒推进落地和过期；只有接触英雄才请求入账，满包不会销毁或重抽。
+    /// </summary>
     /// <param name="delta">游戏秒数。</param>
     public override void _PhysicsProcess(double delta)
     {
@@ -53,11 +59,18 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
         MoveAndSlide();
     }
 
-    /// <summary>借用当前游戏流程的架构入口。</summary>
+    /// <summary>
+    /// 借用当前游戏流程的架构入口。
+    /// </summary>
     /// <returns>所属流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
-    /// <summary>取池时等待本次关卡参数。</summary>
+    /// <summary>
+    /// 取池时等待本次关卡参数。
+    /// </summary>
     public void OnGet()
     {
         SetPhysicsProcess(false);
@@ -67,7 +80,9 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
         ResetPresentation();
     }
 
-    /// <summary>归还时清除全部借用引用与视觉，防止复用重复入账。</summary>
+    /// <summary>
+    /// 归还时清除全部借用引用与视觉，防止复用重复入账。
+    /// </summary>
     public void OnRelease()
     {
         SetPhysicsProcess(false);
@@ -81,7 +96,9 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
         ResetPresentation();
     }
 
-    /// <summary>显示已确定的恢复品或装备，并启用自身接触检测。</summary>
+    /// <summary>
+    /// 显示已确定的恢复品或装备，并启用自身接触检测。
+    /// </summary>
     /// <param name="position">死亡位置附近。</param>
     /// <param name="pickupId">恢复品主键，装备使用 None。</param>
     /// <param name="data">实际装备，恢复品时为空。</param>
@@ -120,7 +137,9 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
         SetPhysicsProcess(true);
     }
 
-    /// <summary>关卡传入当前英雄，按预设矩形检查接触；满包时下一物理步仍可重试。</summary>
+    /// <summary>
+    /// 关卡传入当前英雄，按预设矩形检查接触；满包时下一物理步仍可重试。
+    /// </summary>
     /// <param name="hero">当前关卡的存活英雄，只在本次调用借用。</param>
     /// <returns>本次是否完成领取。</returns>
     public bool TryCollect(AbstractHeroEntity hero)
@@ -134,20 +153,24 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
         m_PickupId = PickupId.None;
         m_EquipmentData = null;
         m_Collect = null;
-        m_PickupAnimation.Play("pickup");
+        m_PickupAnimation.Play(m_PickupAnimationName);
         m_PickupAnimation.Advance(0);
         return true;
     }
 
-    /// <summary>恢复图标原点与透明度，清除上一轮领取表现。</summary>
+    /// <summary>
+    /// 恢复图标原点与透明度，清除上一轮领取表现。
+    /// </summary>
     private void ResetPresentation()
     {
-        m_PickupAnimation.Play("RESET");
+        m_PickupAnimation.Play(m_ResetAnimation);
         m_PickupAnimation.Advance(0);
         m_PickupAnimation.Stop();
     }
 
-    /// <summary>先停处理和回调，再交给关卡回收，保证只回收一次。</summary>
+    /// <summary>
+    /// 先停处理和回调，再交给关卡回收，保证只回收一次。
+    /// </summary>
     private void Finish()
     {
         SetPhysicsProcess(false);

@@ -1,33 +1,35 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cyi8c6prwk4x5"]
 
-[ext_resource type="SpriteFrames" uid="uid://ic816w8q7u51" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_landing_frames.tres" id="frames"]
 [ext_resource type="AnimationLibrary" uid="uid://dxvxswkcyk5kx" path="res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_fire_demon_landing_library.tres" id="animation"]
+[ext_resource type="SpriteFrames" uid="uid://ic816w8q7u51" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_landing_frames.tres" id="frames"]
 [ext_resource type="Script" uid="uid://bx0447o7u7wmq" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="script"]
 
-[sub_resource type="RectangleShape2D" id="rest"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_txy77"]
 size = Vector2(1, 1)
 
-[node name="FireDemonLanding" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]
+[node name="FireDemonLanding" type="Node2D" unique_id=870908912 node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]
 script = ExtResource("script")
 m_Player = NodePath("AnimationPlayer")
 m_HitBox = NodePath("Visual/HitBox")
 m_Shape = NodePath("Visual/HitBox/CollisionShape2D")
 
-[node name="Visual" type="Node2D" parent="."]
+[node name="Visual" type="Node2D" parent="." unique_id=531969873]
+scale = Vector2(2.1, 3)
 
-[node name="Sprite" type="AnimatedSprite2D" parent="Visual"]
+[node name="Sprite" type="AnimatedSprite2D" parent="Visual" unique_id=1448239086]
 sprite_frames = ExtResource("frames")
 animation = &"play"
+frame = 11
 offset = Vector2(0.3, 25.65)
 
-[node name="HitBox" type="Area2D" parent="Visual"]
+[node name="HitBox" type="Area2D" parent="Visual" unique_id=1490913945]
 collision_layer = 16
 collision_mask = 32
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Visual/HitBox"]
-shape = SubResource("rest")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Visual/HitBox" unique_id=215427860]
+shape = SubResource("RectangleShape2D_txy77")
 disabled = true
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=458483370]
 libraries/ = ExtResource("animation")

@@ -4,7 +4,9 @@ using Godot;
 
 namespace GameLogic.Equipment;
 
-/// <summary>一种物品的编辑器外观，供背包和地面掉落共同引用，不保存交易或属性数值。</summary>
+/// <summary>
+/// 一种物品的编辑器外观，供背包和地面掉落共同引用，不保存交易或属性数值。
+/// </summary>
 [Tool, GlobalClass]
 public partial class ItemAppearanceResource : Resource
 {
@@ -14,18 +16,58 @@ public partial class ItemAppearanceResource : Resource
     [Export] private Texture2D m_GroundIcon; // 地面图标，保留原始透明留白。
     [Export] private Vector2 m_GroundScale = new(.7f, .7f); // 地面显示缩放，不改变碰撞体。
 
-    /// <summary>对应的装备主键。</summary>
-    public EquipmentId EquipmentId => m_EquipmentId;
+    /// <summary>
+    /// 对应的装备主键。
+    /// </summary>
+    public EquipmentId EquipmentId
+    {
+        get
+        {
+            return m_EquipmentId;
+        }
+    }
 
-    /// <summary>对应的恢复品主键。</summary>
-    public PickupId PickupId => m_PickupId;
+    /// <summary>
+    /// 对应的恢复品主键。
+    /// </summary>
+    public PickupId PickupId
+    {
+        get
+        {
+            return m_PickupId;
+        }
+    }
 
-    /// <summary>背包和穿戴槽共用的图标。</summary>
-    public Texture2D InventoryIcon => m_InventoryIcon;
+    /// <summary>
+    /// 背包和穿戴槽共用的图标。
+    /// </summary>
+    public Texture2D InventoryIcon
+    {
+        get
+        {
+            return m_InventoryIcon;
+        }
+    }
 
-    /// <summary>地面节点使用的图标。</summary>
-    public Texture2D GroundIcon => m_GroundIcon;
+    /// <summary>
+    /// 地面节点使用的图标。
+    /// </summary>
+    public Texture2D GroundIcon
+    {
+        get
+        {
+            return m_GroundIcon;
+        }
+    }
 
-    /// <summary>地面图标的实际显示缩放。</summary>
-    public Vector2 GroundScale => m_GroundScale;
+    /// <summary>
+    /// 地面图标的实际显示缩放。
+    /// </summary>
+    public Vector2 GroundScale
+    {
+        get
+        {
+            return m_GroundScale;
+        }
+    }
 }

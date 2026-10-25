@@ -9,7 +9,9 @@ namespace GameLogic.Enemies.AI
     /// </summary>
     public class WalkToTargetState : AbstractEngageState
     {
-        /// <summary>进入追击当帧就给出方向，避免沿用上个状态的停步意图。</summary>
+        /// <summary>
+        /// 进入追击当帧就给出方向，避免沿用上个状态的停步意图。
+        /// </summary>
         /// <param name="agent">提供当前目标与移动意图的怪物。</param>
         protected override void Enter(IEnemyAiAgent agent)
         {
@@ -18,7 +20,9 @@ namespace GameLogic.Enemies.AI
                 agent.Move(Math.Sign(agent.TargetBox.GetCenter().X));
         }
 
-        /// <summary>未进入普通攻击水平范围时追向目标。</summary>
+        /// <summary>
+        /// 未进入普通攻击水平范围时追向目标。
+        /// </summary>
         protected override void Engage(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, int dir, float elapseSeconds)
         {
             if (agent.GetSystem<EnemyAiSystem>().GetBasicAttackHorizontalGap(agent.Params, agent.TargetBox, dir) <= -EnemyAiSystem.ReachMargin)

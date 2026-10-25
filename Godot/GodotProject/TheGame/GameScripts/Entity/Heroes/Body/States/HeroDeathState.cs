@@ -11,16 +11,28 @@ namespace GameLogic.Heroes.Body
     /// </summary>
     public sealed class HeroDeathState : AbstractHeroBodyState
     {
-        /// <summary>死亡状态不接受受击打断。</summary>
-        protected override bool HurtInterrupts => false;
+        /// <summary>
+        /// 死亡状态不接受受击打断。
+        /// </summary>
+        protected override bool HurtInterrupts
+        {
+            get
+            {
+                return false;
+            }
+        }
 
-        /// <summary>进入死亡状态时从头播放死亡动画。</summary>
+        /// <summary>
+        /// 进入死亡状态时从头播放死亡动画。
+        /// </summary>
         protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
         {
             body.RestartAnim(HeroAnims.Death);
         }
 
-        /// <summary>死亡期间施加重力并保持水平定身。</summary>
+        /// <summary>
+        /// 死亡期间施加重力并保持水平定身。
+        /// </summary>
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
             ApplyGravity(body, dt);

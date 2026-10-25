@@ -1,10 +1,14 @@
 using Godot;
 
-/// <summary>远程热更新地址与补丁存储目录设置。</summary>
+/// <summary>
+/// 远程热更新地址与补丁存储目录设置。
+/// </summary>
 [GlobalClass]
 public partial class UpdateSettingRes : Resource
 {
-    /// <summary>远程更新服务器地址</summary>
+    /// <summary>
+    /// 远程更新服务器地址
+    /// </summary>
     [Export]
     public string RemoteUrl = "http://127.0.0.1:8080";
 
@@ -15,13 +19,19 @@ public partial class UpdateSettingRes : Resource
     [Export]
     public string HotUpdatePath = "";
 
-    /// <summary>资源文件中更新设置字段的键名。</summary>
+    /// <summary>
+    /// 资源文件中更新设置字段的键名。
+    /// </summary>
     public static class Parameters
     {
-        /// <summary>远程服务器地址字段键名。</summary>
+        /// <summary>
+        /// 远程服务器地址字段键名。
+        /// </summary>
         public static string RemoteUrl = "RemoteUrl";
 
-        /// <summary>补丁存储目录字段键名。</summary>
+        /// <summary>
+        /// 补丁存储目录字段键名。
+        /// </summary>
         public static string HotUpdatePath = "HotUpdatePath";
     }
 }

@@ -6,16 +6,24 @@ namespace GameLogic.Enemies.Body
     /// </summary>
     public static class EnemyAnims
     {
-        /// <summary>待机动画名。</summary>
+        /// <summary>
+        /// 待机动画名。
+        /// </summary>
         public const string Idle = "idle";
 
-        /// <summary>奔跑动画名。</summary>
+        /// <summary>
+        /// 奔跑动画名。
+        /// </summary>
         public const string Run = "run";
 
-        /// <summary>受击动画名。</summary>
+        /// <summary>
+        /// 受击动画名。
+        /// </summary>
         public const string Hurt = "hurt";
 
-        /// <summary>死亡动画名。</summary>
+        /// <summary>
+        /// 死亡动画名。
+        /// </summary>
         public const string Death = "death";
     }
 }

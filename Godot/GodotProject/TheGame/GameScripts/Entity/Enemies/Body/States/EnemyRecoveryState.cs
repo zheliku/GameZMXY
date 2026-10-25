@@ -13,7 +13,9 @@ namespace GameLogic.Enemies.Body
     {
         private float m_Left; // 当前收招硬直剩余时间（秒）。
 
-        /// <summary>装载本次收招硬直计时并播放待机动画。</summary>
+        /// <summary>
+        /// 装载本次收招硬直计时并播放待机动画。
+        /// </summary>
         protected override void Enter(IFsm<IEnemyBody> fsm, IEnemyBody body)
         {
             // 进入时消费 FSM 传入的时长，不接受其他状态直接改写内部字段。
@@ -22,12 +24,14 @@ namespace GameLogic.Enemies.Body
             body.PlayAnim(EnemyAnims.Idle);
         }
 
-        /// <summary>计时结束后返回移动状态，否则原地站立并施加重力。</summary>
+        /// <summary>
+        /// 计时结束后返回移动状态，否则原地站立并施加重力。
+        /// </summary>
         protected override void Tick(IFsm<IEnemyBody> fsm, IEnemyBody body, float dt)
         {
             if (Elapsed(m_Left))
             {
-                ChangeState<EnemyMoveState>(fsm);
+                ChangeState(fsm, body.MoveStateType);
                 return;
             }
 

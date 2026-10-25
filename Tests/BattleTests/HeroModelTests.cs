@@ -7,10 +7,14 @@ using Xunit;
 
 namespace GameLogic.Battle.Tests
 {
-    /// <summary>属性汇总、生命魔法资源与无双进度的领域规则。</summary>
+    /// <summary>
+    /// 属性汇总、生命魔法资源与无双进度的领域规则。
+    /// </summary>
     public sealed class HeroModelTests
     {
-        /// <summary>结算快照冻结来源和属性；后续 Buff 变更不影响已发出的攻击。</summary>
+        /// <summary>
+        /// 结算快照冻结来源和属性；后续 Buff 变更不影响已发出的攻击。
+        /// </summary>
         [Fact]
         public void Combatant_FreezesActorIdentityAndFinalAttributes()
         {
@@ -24,8 +28,9 @@ namespace GameLogic.Battle.Tests
                 (snapshot.ActorId, snapshot.Side, snapshot.Level, snapshot.Power));
             Assert.Equal(99, attributes.Power.Value);
         }
-
-        /// <summary>最终值 = (基础 + Σ固定) × (1 + Σ同类百分比) × Π(1 + 独立百分比)。</summary>
+        /// <summary>
+        /// 最终值 = (基础 + Σ固定) × (1 + Σ同类百分比) × Π(1 + 独立百分比)。
+        /// </summary>
         [Fact]
         public void Attributes_AppliesModifierOrder()
         {
@@ -46,8 +51,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(18, sheet.Power.Value);
             Assert.Equal(0, sheet.Def.Value);
         }
-
-        /// <summary>按来源整体移除，同一来源再次登记时整体替换。</summary>
+        /// <summary>
+        /// 按来源整体移除，同一来源再次登记时整体替换。
+        /// </summary>
         [Fact]
         public void Attributes_RemovesAndReplacesWholeSources()
         {
@@ -62,8 +68,9 @@ namespace GameLogic.Battle.Tests
             Assert.False(scope.System.RemoveSource(sword));
             Assert.Equal(0, sheet.Power.Value);
         }
-
-        /// <summary>最终值下限为 0，整数读取四舍五入（远离零）。</summary>
+        /// <summary>
+        /// 最终值下限为 0，整数读取四舍五入（远离零）。
+        /// </summary>
         [Fact]
         public void Attributes_ClampsAndRounds()
         {
@@ -75,8 +82,9 @@ namespace GameLogic.Battle.Tests
             scope.System.SetSource(new AttributeSourceId("Buff", 2), new[] { AttributeModifier.Flat(AttributeType.Mdef, 2.5f) });
             Assert.Equal(3, sheet.Mdef.Value);
         }
-
-        /// <summary>调用方集合被修改不影响已登记修正，无效来源被拒绝。</summary>
+        /// <summary>
+        /// 调用方集合被修改不影响已登记修正，无效来源被拒绝。
+        /// </summary>
         [Fact]
         public void Attributes_CopiesModifiersAndRejectsInvalidSources()
         {
@@ -91,8 +99,9 @@ namespace GameLogic.Battle.Tests
             Assert.Throws<ArgumentException>(() => new AttributeSourceId("", 1));
             Assert.Throws<ArgumentException>(() => scope.System.SetSource(default, modifiers));
         }
-
-        /// <summary>生命归零只报告一次死亡；归零后不再扣血、也不能治疗复活。</summary>
+        /// <summary>
+        /// 生命归零只报告一次死亡；归零后不再扣血、也不能治疗复活。
+        /// </summary>
         [Fact]
         public void Vitals_ReportsDeathExactlyOnce()
         {
@@ -111,8 +120,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(0, vitals.Hp.Value);
             Assert.Equal(3, notifications);
         }
-
-        /// <summary>上限变化：补满或钳到新上限；魔法不足时拒绝消耗。</summary>
+        /// <summary>
+        /// 上限变化：补满或钳到新上限；魔法不足时拒绝消耗。
+        /// </summary>
         [Fact]
         public void Vitals_ClampsOnMaximumChangeAndGuardsMp()
         {
@@ -132,8 +142,9 @@ namespace GameLogic.Battle.Tests
             scope.System.SetGrowth(BaseAttributes(0, -1), 1, 1, null, null, refill: true);
             Assert.Equal((1, 0), (vitals.MaxHp.Value, vitals.MaxMp.Value));
         }
-
-        /// <summary>无双进度封顶并在蓄满时才能消耗。</summary>
+        /// <summary>
+        /// 无双进度封顶并在蓄满时才能消耗。
+        /// </summary>
         [Fact]
         public void Musou_CapsAndConsumesWhenFull()
         {
@@ -153,8 +164,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(0, gauge.Ws.Value);
             Assert.Equal(3, notifications);
         }
-
-        /// <summary>用生成类型的真实读取契约建立资源测试基础值，不增加生产测试 API。</summary>
+        /// <summary>
+        /// 用生成类型的真实读取契约建立资源测试基础值，不增加生产测试 API。
+        /// </summary>
         private static ActorBaseAttributes BaseAttributes(int hp, int mp)
         {
             var buffer = new Luban.ByteBuf();
@@ -167,8 +179,9 @@ namespace GameLogic.Battle.Tests
                     buffer.WriteInt(0);
             return new ActorBaseAttributes(buffer);
         }
-
-        /// <summary>整数来源修正均立即发布对应属性；相等最终值不重复通知，移除恢复原值。</summary>
+        /// <summary>
+        /// 整数来源修正均立即发布对应属性；相等最终值不重复通知，移除恢复原值。
+        /// </summary>
         [Theory]
         [InlineData(AttributeType.MaxHp)]
         [InlineData(AttributeType.MaxMp)]
@@ -214,8 +227,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(original, property.Value);
             Assert.Equal(2, count);
         }
-
-        /// <summary>概率修正保留小数、限制在 0..1；重复相同值不通知，移除后恢复。</summary>
+        /// <summary>
+        /// 概率修正保留小数、限制在 0..1；重复相同值不通知，移除后恢复。
+        /// </summary>
         /// <param name="attribute">暴击、闪避及其抵消属性。</param>
         [Theory]
         [InlineData(AttributeType.Crit)]
@@ -248,8 +262,9 @@ namespace GameLogic.Battle.Tests
             scope.System.RemoveSource(source);
             Assert.Equal(3, notifications);
         }
-
-        /// <summary>重算后钳制资源到新上限，各绑定只传对应的新值。</summary>
+        /// <summary>
+        /// 重算后钳制资源到新上限，各绑定只传对应的新值。
+        /// </summary>
         [Fact]
         public void AttributeRecalculation_ClampsResourcesAndPublishesNewValue()
         {
@@ -267,8 +282,9 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(1, observed);
             Assert.Equal((50, 10, 10, 50), (model.MaxHp.Value, model.MaxMp.Value, model.Mp.Value, model.Hp.Value));
         }
-
-        /// <summary>致命伤害直接更新生命并关闭无双，重复伤害不再次发布生命变化。</summary>
+        /// <summary>
+        /// 致命伤害直接更新生命并关闭无双，重复伤害不再次发布生命变化。
+        /// </summary>
         [Fact]
         public void Death_DirectDamageClearsMusouAndNotifiesHealthOnce()
         {
@@ -292,8 +308,9 @@ namespace GameLogic.Battle.Tests
             Assert.False(scope.System.TryActivateWs());
             Assert.Equal(1, notifications);
         }
-
-        /// <summary>无双重置通过正常赋值通知各自的新值，相同重置不会重复通知。</summary>
+        /// <summary>
+        /// 无双重置通过正常赋值通知各自的新值，相同重置不会重复通知。
+        /// </summary>
         [Fact]
         public void MusouReset_PublishesEachNewValueAndSuppressesEqualReset()
         {
@@ -311,8 +328,9 @@ namespace GameLogic.Battle.Tests
             scope.System.ResetWs(200, 1f, 6f);
             Assert.Equal(3, notifications);
         }
-
-        /// <summary>系统统一提供无双的伤害和运动查询，结束后恢复普通倍率。</summary>
+        /// <summary>
+        /// 系统统一提供无双的伤害和运动查询，结束后恢复普通倍率。
+        /// </summary>
         [Fact]
         public void MusouBonusQueries_FollowActivationAndEnd()
         {

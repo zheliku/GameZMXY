@@ -15,7 +15,9 @@ using GodotGameFramework.UI;
 
 namespace GameLogic.UI;
 
-/// <summary>造一技能面板：观察当前角色的技能书与钱包，提交主动技能购买请求；被动页暂为目录。</summary>
+/// <summary>
+/// 造一技能面板：观察当前角色的技能书与钱包，提交主动技能购买请求；被动页暂为目录。
+/// </summary>
 public partial class SkillForm : IController
 {
     // ---- 字段 ----
@@ -26,7 +28,9 @@ public partial class SkillForm : IController
 
     // ---- 窗口生命周期 ----
 
-    /// <summary>初始化框架字段；按钮只在实例创建时绑定一次。</summary>
+    /// <summary>
+    /// 初始化框架字段；按钮只在实例创建时绑定一次。
+    /// </summary>
     /// <param name="serialId">本次窗口编号。</param>
     /// <param name="uiFormAssetName">窗口资源路径。</param>
     /// <param name="uiGroup">所属界面组。</param>
@@ -52,7 +56,9 @@ public partial class SkillForm : IController
         m_ActivePage.LearnRequested += OnLearnRequested;
     }
 
-    /// <summary>绑定目录、观察灵魂并暂停本关，初始技能均展示为尚未学习。</summary>
+    /// <summary>
+    /// 绑定目录、观察灵魂并暂停本关，初始技能均展示为尚未学习。
+    /// </summary>
     /// <param name="userData">未使用；状态从所属 Model 读取。</param>
     /// <exception cref="InvalidOperationException">所属关卡或出战角色无效。</exception>
     public void OnOpen(object userData)
@@ -87,7 +93,9 @@ public partial class SkillForm : IController
         }
     }
 
-    /// <summary>关闭后退订并恢复本窗口拥有的暂停。</summary>
+    /// <summary>
+    /// 关闭后退订并恢复本窗口拥有的暂停。
+    /// </summary>
     /// <param name="isShutdown">是否框架关停。</param>
     /// <param name="userData">关闭参数。</param>
     public void OnClose(bool isShutdown, object userData)
@@ -97,7 +105,9 @@ public partial class SkillForm : IController
             Visible = false;
     }
 
-    /// <summary>池复用时清除编号与本周期引用。</summary>
+    /// <summary>
+    /// 池复用时清除编号与本周期引用。
+    /// </summary>
     public void OnRecycle()
     {
         ReleaseBindingsAndPause();
@@ -108,7 +118,9 @@ public partial class SkillForm : IController
             Visible = false;
     }
 
-    /// <summary>暂停期间接受技能开关键或 Escape 返回关卡；忽略按住产生的重复事件。</summary>
+    /// <summary>
+    /// 暂停期间接受技能开关键或 Escape 返回关卡；忽略按住产生的重复事件。
+    /// </summary>
     /// <param name="inputEvent">Godot 分发的输入。</param>
     public override void _Input(InputEvent inputEvent)
     {
@@ -120,28 +132,45 @@ public partial class SkillForm : IController
         OnBackClicked();
     }
 
-    /// <summary>窗口暂停回调。</summary>
+    /// <summary>
+    /// 窗口暂停回调。
+    /// </summary>
     public void OnPause() { }
 
-    /// <summary>窗口恢复回调。</summary>
+    /// <summary>
+    /// 窗口恢复回调。
+    /// </summary>
     public void OnResume() { }
 
-    /// <summary>窗口被覆盖回调。</summary>
+    /// <summary>
+    /// 窗口被覆盖回调。
+    /// </summary>
     public void OnCover() { }
 
-    /// <summary>窗口重新露出回调。</summary>
+    /// <summary>
+    /// 窗口重新露出回调。
+    /// </summary>
     public void OnReveal() { }
 
-    /// <summary>静态目录不需要逐帧刷新。</summary>
+    /// <summary>
+    /// 静态目录不需要逐帧刷新。
+    /// </summary>
     /// <param name="elapseSeconds">游戏秒数。</param>
     /// <param name="realElapseSeconds">真实秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
 
-    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <summary>
+    /// 读取所属游戏流程的架构入口。
+    /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
-    /// <summary>重绑、关闭或装配失败时退订并恢复暂停；调用时 Model 尚未移除。</summary>
+    /// <summary>
+    /// 重绑、关闭或装配失败时退订并恢复暂停；调用时 Model 尚未移除。
+    /// </summary>
     private void ReleaseBindingsAndPause()
     {
         if (m_IsBound)
@@ -158,15 +187,27 @@ public partial class SkillForm : IController
         m_ResumeGame = false;
     }
 
-    /// <summary>显示当前钱包余额；切页不会消费灵魂。</summary>
+    /// <summary>
+    /// 显示当前钱包余额；切页不会消费灵魂。
+    /// </summary>
     /// <param name="soul">已经提交的余额。</param>
-    private void RefreshSoul(int soul) => m_Soul.Text = soul.ToString();
+    private void RefreshSoul(int soul)
+    {
+        m_Soul.Text = soul.ToString();
+    }
 
-    /// <summary>学习、读档或关卡回滚后重绘同一份技能记录。</summary>
+    /// <summary>
+    /// 学习、读档或关卡回滚后重绘同一份技能记录。
+    /// </summary>
     /// <param name="skills">当前英雄的权威学习列表。</param>
-    private void RefreshLearnedSkills(IReadOnlyList<SkillId> skills) => m_ActivePage.Refresh();
+    private void RefreshLearnedSkills(IReadOnlyList<SkillId> skills)
+    {
+        m_ActivePage.Refresh();
+    }
 
-    /// <summary>只在本窗口有效周期内提交购买，余额不足复用已有提示动画。</summary>
+    /// <summary>
+    /// 只在本窗口有效周期内提交购买，余额不足复用已有提示动画。
+    /// </summary>
     /// <param name="skill">点击的技能。</param>
     private void OnLearnRequested(SkillId skill)
     {
@@ -179,7 +220,9 @@ public partial class SkillForm : IController
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
-    /// <summary>只显示出战角色的目录，其他角色页签没有交互。</summary>
+    /// <summary>
+    /// 只显示出战角色的目录，其他角色页签没有交互。
+    /// </summary>
     private void RefreshPage()
     {
         SkillHero hero = (SkillHero)this.GetModel<ProfileModel>().ActiveHeroId;
@@ -190,7 +233,9 @@ public partial class SkillForm : IController
         m_ActivePage.SetHero(hero);
     }
 
-    /// <summary>同步角色页签的选择、禁用和鼠标状态。</summary>
+    /// <summary>
+    /// 同步角色页签的选择、禁用和鼠标状态。
+    /// </summary>
     /// <param name="button">角色页签。</param>
     /// <param name="active">是否为当前出战角色。</param>
     private static void SetHeroButton(TextureButton button, bool active)
@@ -200,27 +245,43 @@ public partial class SkillForm : IController
         button.MouseDefaultCursorShape = active ? CursorShape.PointingHand : CursorShape.Arrow;
     }
 
-    /// <summary>切换到悟空主动目录。</summary>
-    private void OnWukongClicked() => SelectPage(SkillHero.Wukong, false);
+    /// <summary>
+    /// 切换到悟空主动目录。
+    /// </summary>
+    private void OnWukongClicked()
+    {
+        SelectPage(SkillHero.Wukong, false);
+    }
 
-    /// <summary>切换到唐僧主动目录。</summary>
-    private void OnTangsengClicked() => SelectPage(SkillHero.Tangseng, false);
+    /// <summary>
+    /// 切换到唐僧主动目录。
+    /// </summary>
+    private void OnTangsengClicked()
+    {
+        SelectPage(SkillHero.Tangseng, false);
+    }
 
-    /// <summary>切换当前角色的主动目录。</summary>
+    /// <summary>
+    /// 切换当前角色的主动目录。
+    /// </summary>
     private void OnActiveClicked()
     {
         if (GF.UI.HasUIForm(SerialId) && Visible)
             SelectPage((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId, false);
     }
 
-    /// <summary>切换共用被动目录。</summary>
+    /// <summary>
+    /// 切换共用被动目录。
+    /// </summary>
     private void OnPassiveClicked()
     {
         if (GF.UI.HasUIForm(SerialId) && Visible)
             SelectPage((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId, true);
     }
 
-    /// <summary>提交一次仅改变显示的切页。</summary>
+    /// <summary>
+    /// 提交一次仅改变显示的切页。
+    /// </summary>
     /// <param name="hero">当前查看角色。</param>
     /// <param name="passive">是否查看被动。</param>
     private void SelectPage(SkillHero hero, bool passive)
@@ -232,7 +293,9 @@ public partial class SkillForm : IController
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
-    /// <summary>返回关卡并对称恢复暂停。</summary>
+    /// <summary>
+    /// 返回关卡并对称恢复暂停。
+    /// </summary>
     private void OnBackClicked()
     {
         if (!GF.UI.HasUIForm(SerialId) || !Visible)
@@ -241,7 +304,9 @@ public partial class SkillForm : IController
         GF.UI.CloseUIForm(SerialId);
     }
 
-    /// <summary>所属关卡结束时关闭窗口。</summary>
+    /// <summary>
+    /// 所属关卡结束时关闭窗口。
+    /// </summary>
     /// <param name="outcome">已经提交的关卡结局。</param>
     private void OnLevelEnded(LevelOutcome outcome)
     {
@@ -249,7 +314,9 @@ public partial class SkillForm : IController
             GF.UI.CloseUIForm(SerialId);
     }
 
-    /// <summary>显式参数重新绑定窗口。</summary>
+    /// <summary>
+    /// 显式参数重新绑定窗口。
+    /// </summary>
     /// <param name="userData">新的打开参数。</param>
     public void OnRefocus(object userData)
     {
@@ -257,7 +324,9 @@ public partial class SkillForm : IController
             OnOpen(userData);
     }
 
-    /// <summary>同步 GGF 分配的组内层级。</summary>
+    /// <summary>
+    /// 同步 GGF 分配的组内层级。
+    /// </summary>
     /// <param name="uiGroupDepth">界面组层级。</param>
     /// <param name="depthInUIGroup">组内深度。</param>
     public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)

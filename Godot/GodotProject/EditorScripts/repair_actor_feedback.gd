@@ -1,23 +1,30 @@
 extends SceneTree
-## Apply damage feedback ownership and remove its duplicate hurt animation key.
+## Assign attacker impact/victim voice and remove duplicate hurt animation sound keys.
 
 func _initialize() -> void:
 	call_deferred("_repair")
 
 func _repair() -> void:
 	var scenes := ["res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn"]
-	for name in ["huaguoshan_monkey", "demon_monkey", "gorilla"]:
-		scenes.append("res://TheGame/Entitys/Enemies/Monsters/%s_entity.tscn" % name)
+	for name in ["huaguoshan_monkey", "demon_monkey", "gorilla", "cave_brute", "knife_demon"]:
+		scenes.append("res://TheGame/Entitys/Enemies/Monsters/Ground/%s/%s_entity.tscn" % [name, name])
+	scenes.append("res://TheGame/Entitys/Enemies/Monsters/Sky/bat/bat_entity.tscn")
 	for name in ["macaque_king", "tamarin_king"]:
-        scenes.append("res://TheGame/Entitys/Enemies/Bosses/%s/%s_entity.tscn" % ["zm1_02_macaque_king" if name == "macaque_king" else "zm1_03_tamarin_king", name])
+		scenes.append("res://TheGame/Entitys/Enemies/Bosses/%s/%s_entity.tscn" % ["zm1_02_macaque_king" if name == "macaque_king" else "zm1_03_tamarin_king", name])
 	for path in scenes:
-		var actor: Node = load(path).instantiate()
-		actor.set("m_DamageSoundId", 4 if path.contains("wukong") else 6)
+		var original_uid := ResourceLoader.get_resource_uid(path)
+		var actor: Node = load(path).instantiate(PackedScene.GEN_EDIT_STATE_MAIN)
+		var hero := path.contains("wukong")
+		actor.set("m_HurtSoundId", 4 if hero else 0)
+		actor.set("m_HitSoundId", 6 if hero else 0)
+		if hero: actor.z_index = 1
 		var packed := PackedScene.new()
 		assert(packed.pack(actor) == OK)
 		assert(ResourceSaver.save(packed, path) == OK)
+		assert(ResourceSaver.set_uid(path, original_uid) == OK)
 		actor.free()
 	var path := "res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_anim_library.tres"
+	var original_uid := ResourceLoader.get_resource_uid(path)
 	var library: AnimationLibrary = load(path)
 	var hurt := library.get_animation("hurt")
 	for track in range(hurt.get_track_count() - 1, -1, -1):
@@ -29,5 +36,6 @@ func _repair() -> void:
 		if hurt.track_get_key_count(track) == 0:
 			hurt.remove_track(track)
 	assert(ResourceSaver.save(library, path) == OK)
-	print("FEEDBACK RESOURCES PASS: six receivers; hurt audio belongs to successful damage, death/attack methods retained.")
+	assert(ResourceSaver.set_uid(path, original_uid) == OK)
+	print("FEEDBACK RESOURCES PASS: impact belongs to attacker; victim voice/death retained; hero draws in front.")
 	quit()

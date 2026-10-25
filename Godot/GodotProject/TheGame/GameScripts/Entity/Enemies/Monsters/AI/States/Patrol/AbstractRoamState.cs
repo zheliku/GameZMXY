@@ -8,7 +8,9 @@ namespace GameLogic.Enemies.AI
     /// </summary>
     public abstract class AbstractRoamState : AbstractMonsterAiState
     {
-        /// <summary>发现目标时转入追击，否则执行当前无目标决策。</summary>
+        /// <summary>
+        /// 发现目标时转入追击，否则执行当前无目标决策。
+        /// </summary>
         protected sealed override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds)
         {
             if (agent.TargetBox.HasArea())
@@ -20,7 +22,9 @@ namespace GameLogic.Enemies.AI
             Roam(fsm, agent, elapseSeconds);
         }
 
-        /// <summary>无目标时的决策。</summary>
+        /// <summary>
+        /// 无目标时的决策。
+        /// </summary>
         protected abstract void Roam(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds);
     }
 }

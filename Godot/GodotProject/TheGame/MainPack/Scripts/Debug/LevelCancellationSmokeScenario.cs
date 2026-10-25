@@ -7,7 +7,9 @@ using GameLogic.Enemies;
 using Godot;
 using GodotGameFramework;
 
-/// <summary>在怪物异步显示尚未完成时停止关卡，验证旧结果被原会话回收。</summary>
+/// <summary>
+/// 在怪物异步显示尚未完成时停止关卡，验证旧结果被原会话回收。
+/// </summary>
 public sealed class LevelCancellationSmokeScenario
 {
     private readonly AbstractHeroEntity m_Hero; // 驱动实际移动的玩家。
@@ -17,13 +19,25 @@ public sealed class LevelCancellationSmokeScenario
     private double m_StopTime; // 停止会话之后经过的游戏秒数。
     private bool m_Stopped; // 已主动停止会话，正在等待在途资源完成。
 
-    /// <summary>回归已经完成。</summary>
+    /// <summary>
+    /// 回归已经完成。
+    /// </summary>
     public bool IsDone { get; private set; }
 
-    /// <summary>失败原因。</summary>
-    public IReadOnlyList<string> Failures => m_Failures;
+    /// <summary>
+    /// 失败原因。
+    /// </summary>
+    public IReadOnlyList<string> Failures
+    {
+        get
+        {
+            return m_Failures;
+        }
+    }
 
-    /// <summary>创建取消回归场景。</summary>
+    /// <summary>
+    /// 创建取消回归场景。
+    /// </summary>
     public LevelCancellationSmokeScenario(AbstractHeroEntity hero, LevelViewController level)
     {
         m_Hero = hero;
@@ -46,7 +60,9 @@ public sealed class LevelCancellationSmokeScenario
         }
     }
 
-    /// <summary>驱动相机抵达，提交真实异步显示，随后停止并观测晚到结果。</summary>
+    /// <summary>
+    /// 驱动相机抵达，提交真实异步显示，随后停止并观测晚到结果。
+    /// </summary>
     public void Update(double delta)
     {
         m_Time += delta;

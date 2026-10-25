@@ -127,20 +127,72 @@ tracks/9/keys = {
 "values": [0]
 }
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_1_2"]
-size = Vector2(111.16395, 14.493088)
+tracks/10/type = "value"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath("m_Body:visible")
+tracks/10/interp = 1
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/11/type = "value"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath("m_Weapon:visible")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/12/type = "value"
+tracks/12/imported = false
+tracks/12/enabled = true
+tracks/12/path = NodePath("m_DeathTombstone:visible")
+tracks/12/interp = 1
+tracks/12/loop_wrap = true
+tracks/12/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/13/type = "value"
+tracks/13/imported = false
+tracks/13/enabled = true
+tracks/13/path = NodePath("m_DeathTombstone:frame")
+tracks/13/interp = 1
+tracks/13/loop_wrap = true
+tracks/13/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_1_3"]
-size = Vector2(123, 24)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yn5un"]
+size = Vector2(90, 90)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_1_4"]
-size = Vector2(128, 26)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_buiea"]
+size = Vector2(130.8427, 34.0253)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_1_5"]
-size = Vector2(119.18659, 14.537621)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rpcwd"]
+size = Vector2(130.15019, 33.5)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_1_6"]
-size = Vector2(111.07616, 14.521442)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1p8af"]
+size = Vector2(130.65019, 33)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4y7ys"]
+size = Vector2(129.2614, 33.600098)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_uu5wo"]
+size = Vector2(129.2455, 33.5216)
 
 [sub_resource type="Animation" id="attack_1"]
 resource_name = "attack_1"
@@ -239,7 +291,7 @@ tracks/7/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [SubResource("hitbox_rest"), SubResource("hitbox_attack_1_2"), SubResource("hitbox_attack_1_3"), SubResource("hitbox_attack_1_4"), SubResource("hitbox_attack_1_5"), SubResource("hitbox_attack_1_6")]
+"values": [SubResource("RectangleShape2D_yn5un"), SubResource("RectangleShape2D_buiea"), SubResource("RectangleShape2D_rpcwd"), SubResource("RectangleShape2D_1p8af"), SubResource("RectangleShape2D_4y7ys"), SubResource("RectangleShape2D_uu5wo")]
 }
 tracks/8/type = "value"
 tracks/8/imported = false
@@ -251,7 +303,7 @@ tracks/8/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [Vector2(0, 0), Vector2(-14.999762, 45.494637), Vector2(-21, 44.5), Vector2(-42.5, 43.5), Vector2(-38.03865, 46.99468), Vector2(-33.985, 47.101875)]
+"values": [Vector2(0, 0), Vector2(-24.7101, 42.423), Vector2(-24.5751, 42.6), Vector2(-43.8251, 42.85), Vector2(-42.9348, 43.261898), Vector2(-42.930397, 43.2343)]
 }
 tracks/9/type = "value"
 tracks/9/imported = false
@@ -263,7 +315,7 @@ tracks/9/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.125, 0.20833333, 0.25),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1),
 "update": 1,
-"values": [0, 0.045260701, 0, 0.038842444, 0.037660077]
+"values": [0.0, 0.0452607, 0.0, 0.038842443, 0.037660077]
 }
 tracks/10/type = "method"
 tracks/10/imported = false
@@ -280,20 +332,23 @@ tracks/10/keys = {
 }]
 }
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_2_2"]
-size = Vector2(111.11843, 14.725105)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6my16"]
+size = Vector2(90, 90)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_2_3"]
-size = Vector2(123, 25)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g5lf4"]
+size = Vector2(130.0967, 34.1442)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_2_4"]
-size = Vector2(128, 25)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_804mk"]
+size = Vector2(129.5002, 34)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_2_5"]
-size = Vector2(119.190125, 14.550209)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_uidh1"]
+size = Vector2(130.6752, 32.5)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_2_6"]
-size = Vector2(110.1548, 14.564621)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_d1616"]
+size = Vector2(129.2233, 33.6927)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_f4qew"]
+size = Vector2(129.209, 33.608498)
 
 [sub_resource type="Animation" id="attack_2"]
 resource_name = "attack_2"
@@ -392,7 +447,7 @@ tracks/7/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [SubResource("hitbox_rest"), SubResource("hitbox_attack_2_2"), SubResource("hitbox_attack_2_3"), SubResource("hitbox_attack_2_4"), SubResource("hitbox_attack_2_5"), SubResource("hitbox_attack_2_6")]
+"values": [SubResource("RectangleShape2D_6my16"), SubResource("RectangleShape2D_g5lf4"), SubResource("RectangleShape2D_804mk"), SubResource("RectangleShape2D_uidh1"), SubResource("RectangleShape2D_d1616"), SubResource("RectangleShape2D_f4qew")]
 }
 tracks/8/type = "value"
 tracks/8/imported = false
@@ -404,7 +459,7 @@ tracks/8/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [Vector2(0, 0), Vector2(-13.985134, 46.665085), Vector2(-20, 46), Vector2(-41.5, 45), Vector2(-37.006737, 48.167282), Vector2(-32.492455, 48.306416)]
+"values": [Vector2(0, 0), Vector2(-23.4063, 44.9227), Vector2(-23.2501, 45.274998), Vector2(-42.8376, 47.125), Vector2(-41.994, 47.338497), Vector2(-41.988, 47.3083)]
 }
 tracks/9/type = "value"
 tracks/9/imported = false
@@ -416,7 +471,7 @@ tracks/9/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.125, 0.20833333, 0.25),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1),
 "update": 1,
-"values": [0, 0.04435554, 0, 0.040238827, 0.038968874]
+"values": [0.0, 0.04435554, 0.0, 0.040238827, 0.038968872]
 }
 tracks/10/type = "method"
 tracks/10/imported = false
@@ -433,29 +488,32 @@ tracks/10/keys = {
 }]
 }
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_3_0"]
-size = Vector2(135.48653, 48.90066)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_l02tg"]
+size = Vector2(143.3297, 89.5721)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_3_1"]
-size = Vector2(153.38492, 107.027626)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p06xv"]
+size = Vector2(166.2348, 147.9988)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_3_2"]
-size = Vector2(119, 155)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6w6ff"]
+size = Vector2(131.95369, 159)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_3_3"]
-size = Vector2(129, 187)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_m14md"]
+size = Vector2(153.66, 189)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_3_4"]
-size = Vector2(187, 125)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_83wmy"]
+size = Vector2(198, 138)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_3_6"]
-size = Vector2(199, 101)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_o01tb"]
+size = Vector2(210, 106)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_3_8"]
-size = Vector2(188, 75)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_k0ky3"]
+size = Vector2(211, 81.0516)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_3_9"]
-size = Vector2(92.3904, 14.819714)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wxwo0"]
+size = Vector2(139.1888, 73.0517)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_x686d"]
+size = Vector2(90, 90)
 
 [sub_resource type="Animation" id="attack_3"]
 resource_name = "attack_3"
@@ -554,7 +612,7 @@ tracks/7/keys = {
 "times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.25, 0.33333334, 0.375, 0.41666666),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [SubResource("hitbox_attack_3_0"), SubResource("hitbox_attack_3_1"), SubResource("hitbox_attack_3_2"), SubResource("hitbox_attack_3_3"), SubResource("hitbox_attack_3_4"), SubResource("hitbox_attack_3_6"), SubResource("hitbox_attack_3_8"), SubResource("hitbox_attack_3_9"), SubResource("hitbox_rest")]
+"values": [SubResource("RectangleShape2D_l02tg"), SubResource("RectangleShape2D_p06xv"), SubResource("RectangleShape2D_6w6ff"), SubResource("RectangleShape2D_m14md"), SubResource("RectangleShape2D_83wmy"), SubResource("RectangleShape2D_o01tb"), SubResource("RectangleShape2D_k0ky3"), SubResource("RectangleShape2D_wxwo0"), SubResource("RectangleShape2D_x686d")]
 }
 tracks/8/type = "value"
 tracks/8/imported = false
@@ -566,7 +624,7 @@ tracks/8/keys = {
 "times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.25, 0.33333334, 0.375, 0.41666666),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [Vector2(1.9524984, -20.507423), Vector2(5.1344085, -7.196331), Vector2(-29, -7), Vector2(-24, 9), Vector2(-18, 18), Vector2(-24, 43), Vector2(-18.5, 57), Vector2(37.17707, 49.626934), Vector2(0, 0)]
+"values": [Vector2(-0.19659999, -27.0173), Vector2(-19.497599, -18.1729), Vector2(-35.4769, -7), Vector2(-20.9, 8), Vector2(-13.5, 20.5), Vector2(-19.5, 43.5), Vector2(-20, 56.9741), Vector2(15.9056, 52.974197), Vector2(0, 0)]
 }
 tracks/9/type = "value"
 tracks/9/imported = false
@@ -575,10 +633,10 @@ tracks/9/path = NodePath("m_HitBoxRoot/m_HitBox/CollisionShape2D:rotation")
 tracks/9/interp = 1
 tracks/9/loop_wrap = true
 tracks/9/keys = {
-"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.375, 0.41666666),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.041666668, 0.083333336),
+"transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
-"values": [-0.9404132, -0.867411737, 0, 0.630730359, 0]
+"values": [-0.9336516, -1.0040079, 0.0]
 }
 tracks/10/type = "method"
 tracks/10/imported = false
@@ -595,26 +653,29 @@ tracks/10/keys = {
 }]
 }
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_4_0"]
-size = Vector2(120.96451, 57.484062)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_phjrw"]
+size = Vector2(123.8079, 82.0684)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_4_1"]
-size = Vector2(139, 26)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lq844"]
+size = Vector2(146.3322, 55.6666)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_4_2"]
-size = Vector2(31, 14)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_en52f"]
+size = Vector2(70.657196, 48.1666)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_4_3"]
-size = Vector2(110.69461, 14.895763)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3qcas"]
+size = Vector2(139.8914, 65.3854)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_4_4"]
-size = Vector2(111, 65)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3nt4c"]
+size = Vector2(129.6089, 76.2314)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_4_5"]
-size = Vector2(111.232704, 15.047611)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mtkk4"]
+size = Vector2(131.1322, 47.740997)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_4_6"]
-size = Vector2(111.075966, 14.832771)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_aitpm"]
+size = Vector2(130.4701, 45.799297)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_m40hf"]
+size = Vector2(90, 90)
 
 [sub_resource type="Animation" id="attack_4"]
 resource_name = "attack_4"
@@ -713,7 +774,7 @@ tracks/7/keys = {
 "times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.5),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [SubResource("hitbox_attack_4_0"), SubResource("hitbox_attack_4_1"), SubResource("hitbox_attack_4_2"), SubResource("hitbox_attack_4_3"), SubResource("hitbox_attack_4_4"), SubResource("hitbox_attack_4_5"), SubResource("hitbox_attack_4_6"), SubResource("hitbox_rest")]
+"values": [SubResource("RectangleShape2D_phjrw"), SubResource("RectangleShape2D_lq844"), SubResource("RectangleShape2D_en52f"), SubResource("RectangleShape2D_3qcas"), SubResource("RectangleShape2D_3nt4c"), SubResource("RectangleShape2D_mtkk4"), SubResource("RectangleShape2D_aitpm"), SubResource("RectangleShape2D_m40hf")]
 }
 tracks/8/type = "value"
 tracks/8/imported = false
@@ -725,7 +786,7 @@ tracks/8/keys = {
 "times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.5),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [Vector2(-33.70413, 31.8137), Vector2(27, 35.5), Vector2(73, 15), Vector2(-35.41616, 31.727705), Vector2(-38, 24), Vector2(-37.958397, 47.399864), Vector2(-37.966484, 48.662918), Vector2(0, 0)]
+"values": [Vector2(-34.1591, 27.1843), Vector2(23.333899, 31.375), Vector2(53.1714, 21.25), Vector2(-45.6492, 24.766499), Vector2(-47.3045, 29.6157), Vector2(-47.7575, 45.7087), Vector2(-47.583797, 46.4772), Vector2(0, 0)]
 }
 tracks/9/type = "value"
 tracks/9/imported = false
@@ -737,7 +798,7 @@ tracks/9/keys = {
 "times": PackedFloat32Array(0, 0.041666668, 0.125, 0.16666667, 0.20833333, 0.25, 0.5),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [0.21263708, 0, 0.298695622, 0, 0.069215505, 0.040016617, 0]
+"values": [0.21263708, 0.0, 0.29869562, 0.0, 0.06921551, 0.040016618, 0.0]
 }
 tracks/10/type = "method"
 tracks/10/imported = false
@@ -754,14 +815,17 @@ tracks/10/keys = {
 }]
 }
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_5_2"]
-size = Vector2(110.67521, 14.869019)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_q7wba"]
+size = Vector2(90, 90)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_5_3"]
-size = Vector2(111, 14)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6ey7g"]
+size = Vector2(137.68199, 35.944798)
 
-[sub_resource type="RectangleShape2D" id="hitbox_attack_5_4"]
-size = Vector2(111.21654, 14.576302)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_535u6"]
+size = Vector2(145.46739, 25.328)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_uys62"]
+size = Vector2(145.8236, 29.4039)
 
 [sub_resource type="Animation" id="attack_5"]
 resource_name = "attack_5"
@@ -860,7 +924,7 @@ tracks/7/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.375),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [SubResource("hitbox_rest"), SubResource("hitbox_attack_5_2"), SubResource("hitbox_attack_5_3"), SubResource("hitbox_attack_5_4"), SubResource("hitbox_attack_5_3"), SubResource("hitbox_rest")]
+"values": [SubResource("RectangleShape2D_q7wba"), SubResource("RectangleShape2D_6ey7g"), SubResource("RectangleShape2D_535u6"), SubResource("RectangleShape2D_uys62"), SubResource("RectangleShape2D_535u6"), SubResource("RectangleShape2D_q7wba")]
 }
 tracks/8/type = "value"
 tracks/8/imported = false
@@ -872,7 +936,7 @@ tracks/8/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.375),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [Vector2(0, 0), Vector2(-24.919432, 40.267696), Vector2(-20, 49.5), Vector2(-19.981771, 49.372902), Vector2(-20, 49.5), Vector2(0, 0)]
+"values": [Vector2(0, 0), Vector2(-36.3332, 31.967499), Vector2(-37.2337, 47.074997), Vector2(-37.4036, 47.3752), Vector2(-37.2337, 47.074997), Vector2(0, 0)]
 }
 tracks/9/type = "value"
 tracks/9/imported = false
@@ -884,7 +948,7 @@ tracks/9/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.125, 0.16666667, 0.20833333),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1),
 "update": 1,
-"values": [0, 0.333837121, 0, -0.048839454, 0]
+"values": [0.0, 0.33383712, 0.0, -0.048839454, 0.0]
 }
 tracks/10/type = "method"
 tracks/10/imported = false
@@ -903,7 +967,7 @@ tracks/10/keys = {
 
 [sub_resource type="Animation" id="death"]
 resource_name = "death"
-length = 1.1
+length = 3.25
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -1037,6 +1101,55 @@ tracks/10/keys = {
 "args": [5],
 "method": &"PlaySoundAnimEvent"
 }]
+}
+
+tracks/11/type = "value"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath("m_Body:visible")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/12/type = "value"
+tracks/12/imported = false
+tracks/12/enabled = true
+tracks/12/path = NodePath("m_Weapon:visible")
+tracks/12/interp = 1
+tracks/12/loop_wrap = true
+tracks/12/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/13/type = "value"
+tracks/13/imported = false
+tracks/13/enabled = true
+tracks/13/path = NodePath("m_DeathTombstone:visible")
+tracks/13/interp = 1
+tracks/13/loop_wrap = true
+tracks/13/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/14/type = "value"
+tracks/14.imported = false
+tracks/14/enabled = true
+tracks/14/path = NodePath("m_DeathTombstone:frame")
+tracks/14.interp = 1
+tracks/14/loop_wrap = true
+tracks/14/keys = {
+"times": PackedFloat32Array(0.00000000, 0.04166667, 0.08333333, 0.12500000, 0.16666667, 0.20833333, 0.25000000, 0.29166667, 0.33333333, 0.37500000, 0.41666667, 0.45833333, 0.50000000, 0.54166667, 0.58333333, 0.62500000, 0.66666667, 0.70833333, 0.75000000, 0.79166667, 0.83333333, 0.87500000, 0.91666667, 0.95833333, 1.00000000, 1.04166667, 1.08333333, 1.12500000, 1.16666667, 1.20833333, 1.25000000, 1.29166667, 1.33333333, 1.37500000, 1.41666667, 1.45833333, 1.50000000, 1.54166667, 1.58333333, 1.62500000, 1.66666667, 1.70833333, 1.75000000, 1.79166667, 1.83333333, 1.87500000, 1.91666667, 1.95833333, 2.00000000, 2.04166667, 2.08333333, 2.12500000, 2.16666667, 2.20833333, 2.25000000, 2.29166667, 2.33333333, 2.37500000, 2.41666667, 2.45833333, 2.50000000, 2.54166667, 2.58333333, 2.62500000, 2.66666667, 2.70833333, 2.75000000, 2.79166667, 2.83333333, 2.87500000, 2.91666667, 2.95833333, 3.00000000, 3.04166667, 3.08333333, 3.12500000, 3.16666667, 3.20833333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39]
 }
 
 [sub_resource type="Animation" id="fall"]
@@ -1298,10 +1411,10 @@ tracks/0/path = NodePath("m_Body:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334, 0.5, 0.5416667, 0.5833333, 0.625, 0.6666667, 0.7083333, 0.75, 0.7916667, 0.8333333, 0.875, 0.9166667, 0.9583333, 1, 1.0416666, 1.0833334, 1.125, 1.1666666, 1.2083334, 1.25, 1.2916666, 1.3333334, 1.375, 1.4166666, 1.4583334, 1.5, 1.5416666, 1.5833334, 1.625, 1.6666666, 1.7083334, 1.75, 1.7916666, 1.8333334, 1.875, 1.9166666, 1.9583334, 2, 2.0416667, 2.0833333, 2.125, 2.1666667, 2.2083333, 2.25, 2.2916667, 2.3333333, 2.375, 2.4166667, 2.4583333, 2.5, 2.5416667, 2.5833333, 2.625, 2.6666667, 2.7083333, 2.75, 2.7916667, 2.8333333, 2.875, 2.9166667, 2.9583333, 3, 3.0416667, 3.0833333, 3.125, 3.1666667, 3.2083333, 3.25, 3.2916667, 3.3333333, 3.375, 3.4166667, 3.4583333, 3.5, 3.5416667, 3.5833333, 3.625, 3.6666667, 3.7083333, 3.75, 3.7916667, 3.8333333, 3.875, 3.9166667, 3.9583333, 4, 4.0416665, 4.0833335, 4.125),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.25, 0.375, 0.5, 0.625, 0.875, 1, 1.125, 1.25, 1.5, 1.625, 1.75, 1.875, 2.125, 2.25, 2.375, 2.5, 2.5833333, 2.6666667, 2.7083333, 2.75, 3.0833333, 3.125, 3.5, 3.5416667, 4.125),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [5, 5, 5, 5, 5, 5, 2, 2, 2, 4, 4, 4, 2, 2, 2, 5, 5, 5, 5, 5, 5, 2, 2, 2, 4, 4, 4, 2, 2, 2, 5, 5, 5, 5, 5, 5, 2, 2, 2, 4, 4, 4, 2, 2, 2, 5, 5, 5, 5, 5, 5, 2, 2, 2, 4, 4, 4, 2, 2, 2, 108, 108, 109, 109, 110, 111, 112, 112, 112, 112, 112, 112, 112, 112, 113, 114, 114, 114, 114, 114, 114, 114, 114, 114, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 115]
+"values": [5, 2, 4, 2, 5, 2, 4, 2, 5, 2, 4, 2, 5, 2, 4, 2, 108, 109, 110, 111, 112, 113, 114, 6, 7, 115]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -1310,10 +1423,10 @@ tracks/1/path = NodePath("m_Weapon:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.041666668, 0.083333336, 0.125, 0.16666667, 0.20833333, 0.25, 0.29166666, 0.33333334, 0.375, 0.41666666, 0.45833334, 0.5, 0.5416667, 0.5833333, 0.625, 0.6666667, 0.7083333, 0.75, 0.7916667, 0.8333333, 0.875, 0.9166667, 0.9583333, 1, 1.0416666, 1.0833334, 1.125, 1.1666666, 1.2083334, 1.25, 1.2916666, 1.3333334, 1.375, 1.4166666, 1.4583334, 1.5, 1.5416666, 1.5833334, 1.625, 1.6666666, 1.7083334, 1.75, 1.7916666, 1.8333334, 1.875, 1.9166666, 1.9583334, 2, 2.0416667, 2.0833333, 2.125, 2.1666667, 2.2083333, 2.25, 2.2916667, 2.3333333, 2.375, 2.4166667, 2.4583333, 2.5, 2.5416667, 2.5833333, 2.625, 2.6666667, 2.7083333, 2.75, 2.7916667, 2.8333333, 2.875, 2.9166667, 2.9583333, 3, 3.0416667, 3.0833333, 3.125, 3.1666667, 3.2083333, 3.25, 3.2916667, 3.3333333, 3.375, 3.4166667, 3.4583333, 3.5, 3.5416667, 3.5833333, 3.625, 3.6666667, 3.7083333, 3.75, 3.7916667, 3.8333333, 3.875, 3.9166667, 3.9583333, 4, 4.0416665, 4.0833335, 4.125),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.25, 0.375, 0.5, 0.625, 0.875, 1, 1.125, 1.25, 1.5, 1.625, 1.75, 1.875, 2.125, 2.25, 2.375, 2.5, 2.5833333, 2.6666667, 2.7083333, 2.75, 3.0833333, 3.125, 3.5, 3.5416667, 4.125),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [5, 5, 5, 5, 5, 5, 2, 2, 2, 4, 4, 4, 2, 2, 2, 5, 5, 5, 5, 5, 5, 2, 2, 2, 4, 4, 4, 2, 2, 2, 5, 5, 5, 5, 5, 5, 2, 2, 2, 4, 4, 4, 2, 2, 2, 5, 5, 5, 5, 5, 5, 2, 2, 2, 4, 4, 4, 2, 2, 2, 108, 108, 109, 109, 110, 111, 112, 112, 112, 112, 112, 112, 112, 112, 113, 114, 114, 114, 114, 114, 114, 114, 114, 114, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 115]
+"values": [5, 2, 4, 2, 5, 2, 4, 2, 5, 2, 4, 2, 5, 2, 4, 2, 108, 109, 110, 111, 112, 113, 114, 6, 7, 115]
 }
 tracks/2/type = "value"
 tracks/2/imported = false

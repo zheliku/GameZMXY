@@ -6,6 +6,14 @@
 [ext_resource type="Texture2D" uid="uid://0au685w41v30" path="res://TheGame/Sprites/Items/equipment/equipment_earth_fiend_ape_armor.png" id="24_q2vte"]
 [ext_resource type="Texture2D" uid="uid://bh224g3sfx6ha" path="res://TheGame/Sprites/Items/equipment/ground_earth_fiend_scepter.png" id="25_ylv31"]
 [ext_resource type="Texture2D" uid="uid://dkjyr1udatlxt" path="res://TheGame/Sprites/Items/equipment/equipment_earth_fiend_scepter.png" id="26_5xb6t"]
+[ext_resource type="Texture2D" uid="uid://djvys5qs41opi" path="res://TheGame/Sprites/Items/equipment/ground_heirloom_bracelet.png" id="27_nffhv"]
+[ext_resource type="Texture2D" uid="uid://o7w0rjh8h3iy" path="res://TheGame/Sprites/Items/equipment/equipment_heirloom_bracelet.png" id="28_lsvhc"]
+[ext_resource type="Texture2D" uid="uid://c8oviyy8np28k" path="res://TheGame/Sprites/Items/equipment/ground_heirloom_sword.png" id="29_2w53e"]
+[ext_resource type="Texture2D" uid="uid://dt25hmf1g7cxs" path="res://TheGame/Sprites/Items/equipment/equipment_heirloom_sword.png" id="30_g60o7"]
+[ext_resource type="Texture2D" uid="uid://y6dbmvnq0mm6" path="res://TheGame/Sprites/Items/equipment/ground_heirloom_clothes.png" id="31_hncxc"]
+[ext_resource type="Texture2D" uid="uid://ct2b2essxxkt2" path="res://TheGame/Sprites/Items/equipment/equipment_heirloom_clothes.png" id="32_gpnwk"]
+[ext_resource type="Texture2D" uid="uid://70wfsknxnql2" path="res://TheGame/Sprites/Items/equipment/ground_heavenly_fiend_necklace.png" id="33_2w53e"]
+[ext_resource type="Texture2D" uid="uid://cohmmcxc6nu4c" path="res://TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_necklace.png" id="34_g60o7"]
 [ext_resource type="Texture2D" uid="uid://cotpgi3ud157x" path="res://TheGame/Sprites/Items/equipment/ground_rough_pilgrim_clothes.png" id="ground_0"]
 [ext_resource type="Texture2D" uid="uid://csc7r3af0gfjd" path="res://TheGame/Sprites/Items/equipment/ground_rough_pilgrim_staff.png" id="ground_1"]
 [ext_resource type="Texture2D" uid="uid://cwgrqabwos3xx" path="res://TheGame/Sprites/Items/equipment/ground_rough_cassock.png" id="ground_2"]
@@ -113,6 +121,30 @@ m_EquipmentId = 11
 m_InventoryIcon = ExtResource("26_5xb6t")
 m_GroundIcon = ExtResource("25_ylv31")
 
+[sub_resource type="Resource" id="Resource_qso1b"]
+script = ExtResource("item")
+m_EquipmentId = 12
+m_InventoryIcon = ExtResource("28_lsvhc")
+m_GroundIcon = ExtResource("27_nffhv")
+
+[sub_resource type="Resource" id="Resource_sl8he"]
+script = ExtResource("item")
+m_EquipmentId = 13
+m_InventoryIcon = ExtResource("30_g60o7")
+m_GroundIcon = ExtResource("29_2w53e")
+
+[sub_resource type="Resource" id="Resource_0o6xw"]
+script = ExtResource("item")
+m_EquipmentId = 14
+m_InventoryIcon = ExtResource("32_gpnwk")
+m_GroundIcon = ExtResource("31_hncxc")
+
+[sub_resource type="Resource" id="Resource_hncxc"]
+script = ExtResource("item")
+m_EquipmentId = 15
+m_InventoryIcon = ExtResource("34_g60o7")
+m_GroundIcon = ExtResource("33_2w53e")
+
 [resource]
 script = ExtResource("library")
-m_Items = Array[ExtResource("item")]([SubResource("item_0"), SubResource("item_1"), SubResource("item_2"), SubResource("item_3"), SubResource("item_4"), SubResource("item_5"), SubResource("item_6"), SubResource("item_7"), SubResource("item_8"), SubResource("item_9"), SubResource("item_10"), SubResource("Resource_nffhv"), SubResource("Resource_lsvhc"), SubResource("Resource_2w53e")])
+m_Items = Array[ExtResource("item")]([SubResource("item_0"), SubResource("item_1"), SubResource("item_2"), SubResource("item_3"), SubResource("item_4"), SubResource("item_5"), SubResource("item_6"), SubResource("item_7"), SubResource("item_8"), SubResource("item_9"), SubResource("item_10"), SubResource("Resource_nffhv"), SubResource("Resource_lsvhc"), SubResource("Resource_2w53e"), SubResource("Resource_qso1b"), SubResource("Resource_sl8he"), SubResource("Resource_0o6xw"), SubResource("Resource_hncxc")])

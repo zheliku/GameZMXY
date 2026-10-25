@@ -15,11 +15,14 @@ using Godot;
 using Xunit;
 
 namespace GameLogic.Battle.Tests;
-
-/// <summary>验证输入槽、施放锁和共享身体状态不依赖悟空的具体招式规则。</summary>
+/// <summary>
+/// 验证输入槽、施放锁和共享身体状态不依赖悟空的具体招式规则。
+/// </summary>
 public sealed class SkillReuseTests
 {
-    /// <summary>同一个输入槽可以由不同宿主映射到不同招式，共用状态不能替宿主选择悟空技能。</summary>
+    /// <summary>
+    /// 同一个输入槽可以由不同宿主映射到不同招式，共用状态不能替宿主选择悟空技能。
+    /// </summary>
     /// <param name="skill">测试宿主为槽 1 选择的招式。</param>
     [Theory]
     [InlineData(SkillId.BlazingFlash)]
@@ -45,8 +48,9 @@ public sealed class SkillReuseTests
             scope.GetModel<HeroModel>().Mp.Value);
         Assert.False(scope.GetSystem<InputSystem>().ConsumePress(hero.ActionData, InputSystem.Skill1));
     }
-
-    /// <summary>任意动作名使用相同采样与消费，不受三个默认快捷键限制，按住不伪造再次按下。</summary>
+    /// <summary>
+    /// 任意动作名使用相同采样与消费，不受三个默认快捷键限制，按住不伪造再次按下。
+    /// </summary>
     /// <param name="action">任意动作名。</param>
     [Theory]
     [InlineData(InputSystem.Skill1)]
@@ -73,8 +77,9 @@ public sealed class SkillReuseTests
         Assert.True(input.IsActionPressed(action));
         Assert.False(input.ConsumePress(hero.ActionData, action));
     }
-
-    /// <summary>完整登记五个直接动作，第五个可以经正式激活规则进入真实 GGF 技能状态。</summary>
+    /// <summary>
+    /// 完整登记五个直接动作，第五个可以经正式激活规则进入真实 GGF 技能状态。
+    /// </summary>
     [Fact]
     public void FifthBinding_ActivatesWithoutChangingSharedInputCode()
     {
@@ -103,8 +108,9 @@ public sealed class SkillReuseTests
         Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(SkillId.FireDemonSlash).ManaCost,
             scope.GetModel<HeroModel>().Mp.Value);
     }
-
-    /// <summary>输入系统不持有全局消费标记，采样第二个角色不会清除第一个角色的消费记录。</summary>
+    /// <summary>
+    /// 输入系统不持有全局消费标记，采样第二个角色不会清除第一个角色的消费记录。
+    /// </summary>
     [Fact]
     public void ButtonConsumption_IsIsolatedBetweenHeroes()
     {
@@ -119,8 +125,9 @@ public sealed class SkillReuseTests
         Assert.False(input.ConsumePress(first.ActionData, "custom_action"));
         Assert.True(input.ConsumePress(second.ActionData, "custom_action"));
     }
-
-    /// <summary>暂停重力不隐含输入锁，输入锁也不依赖重力；锁内输入不排队。</summary>
+    /// <summary>
+    /// 暂停重力不隐含输入锁，输入锁也不依赖重力；锁内输入不排队。
+    /// </summary>
     /// <param name="inputLocked">是否锁定输入。</param>
     [Theory]
     [InlineData(false)]
@@ -153,8 +160,9 @@ public sealed class SkillReuseTests
         input.Sample(hero, .1f);
         Assert.True(input.ConsumeAttack(hero.ActionData));
     }
-
-    /// <summary>即使复用升龙动作数据，共用状态也只执行宿主自己的移动与起手规则。</summary>
+    /// <summary>
+    /// 即使复用升龙动作数据，共用状态也只执行宿主自己的移动与起手规则。
+    /// </summary>
     [Fact]
     public void SharedSkillState_UsesHostMovementAndReleasesInterruptedExecution()
     {
@@ -179,8 +187,9 @@ public sealed class SkillReuseTests
         Assert.Equal(1, hero.SkillEnds);
         Assert.Null(scope.Hero.ActiveSkillId);
     }
-
-    /// <summary>真实 GGF 先执行普攻离开，再开始技能动画；避免旧攻击清理掉新技能判定。</summary>
+    /// <summary>
+    /// 真实 GGF 先执行普攻离开，再开始技能动画；避免旧攻击清理掉新技能判定。
+    /// </summary>
     [Fact]
     public void AttackToSkill_EndsNormalAttackBeforeStartingSkill()
     {
@@ -202,8 +211,9 @@ public sealed class SkillReuseTests
         Assert.Equal(new[] { "end_normal", "begin_skill" }, hero.Operations);
         Assert.Equal(1, hero.SkillBegins);
     }
-
-    /// <summary>五招分别进入自己登记的 GGF 状态，完成后回移动状态，模型执行和表现各清理一次。</summary>
+    /// <summary>
+    /// 五招分别进入自己登记的 GGF 状态，完成后回移动状态，模型执行和表现各清理一次。
+    /// </summary>
     /// <param name="id">悟空招式。</param>
     /// <param name="stateType">招式自己的状态类型。</param>
     [Theory]
@@ -240,8 +250,9 @@ public sealed class SkillReuseTests
         Assert.Null(scope.Hero.ActiveSkillId);
         Assert.Equal(1, hero.SkillEnds);
     }
-
-    /// <summary>升龙自己的状态保留起手方向，松开再按也不会在本次招式内恢复横移。</summary>
+    /// <summary>
+    /// 升龙自己的状态保留起手方向，松开再按也不会在本次招式内恢复横移。
+    /// </summary>
     [Fact]
     public void RisingDragon_StopsStartingMovementOnRelease()
     {
@@ -270,8 +281,9 @@ public sealed class SkillReuseTests
         Tick(fsm, .01f);
         Assert.Equal(0, hero.Velocity.X);
     }
-
-    /// <summary>多阶段技能可以用自己的 GGF 状态转换，转交同一次执行，最终退出才释放身体。</summary>
+    /// <summary>
+    /// 多阶段技能可以用自己的 GGF 状态转换，转交同一次执行，最终退出才释放身体。
+    /// </summary>
     [Fact]
     public void SkillPhaseTransition_PreservesExecutionAndChargesOnlyOnce()
     {
@@ -307,8 +319,9 @@ public sealed class SkillReuseTests
         Assert.Null(scope.Hero.ActiveSkillId);
         Assert.Equal(1, hero.SkillEnds);
     }
-
-    /// <summary>按正式实体的顺序匹配角色输入，再推进真实 GGF 状态。</summary>
+    /// <summary>
+    /// 按正式实体的顺序匹配角色输入，再推进真实 GGF 状态。
+    /// </summary>
     /// <param name="fsm">本测试状态机。</param>
     /// <param name="dt">游戏秒数。</param>
     private static void Tick(IFsm<IHeroBody> fsm, float dt)
@@ -320,8 +333,9 @@ public sealed class SkillReuseTests
         if (fsm.CurrentState is AbstractHeroSkillState state)
             state.AdvanceAnimation(fsm, fsm.Owner, dt);
     }
-
-    /// <summary>本组测试只提供推进时间轴必需的模型与系统。</summary>
+    /// <summary>
+    /// 本组测试只提供推进时间轴必需的模型与系统。
+    /// </summary>
     private sealed class SkillScope : IArchitecture
     {
         private readonly HeroModel m_Hero = new(); // 本测试的数值来源。
@@ -330,19 +344,37 @@ public sealed class SkillReuseTests
         private readonly InputSystem m_Input; // 共用的正式输入规则。
         private readonly SkillSystem m_System; // 共用的正式时间轴规则。
         private readonly HeroSystem m_HeroSystem; // 扣蓝使用正式业务入口。
-
-        /// <summary>当前测试的输入来源。</summary>
+        /// <summary>
+        /// 当前测试的输入来源。
+        /// </summary>
         public FrameInput Source { get; } = new();
-
-        /// <summary>借用正式配置，测试不复制数值。</summary>
-        public ConfigurationModel Configuration => BattleArchitecture.Instance.GetModel<ConfigurationModel>();
-        /// <summary>本测试的独立施放。</summary>
+        /// <summary>
+        /// 借用正式配置，测试不复制数值。
+        /// </summary>
+        public ConfigurationModel Configuration
+        {
+            get
+            {
+                return BattleArchitecture.Instance.GetModel<ConfigurationModel>();
+            }
+        }
+        /// <summary>
+        /// 本测试的独立施放。
+        /// </summary>
         public SkillModel Skills { get; } = new([1]);
-
-        /// <summary>本次关卡的施放与数值状态。</summary>
-        public HeroModel Hero => m_Hero;
-
-        /// <summary>装配规则系统。</summary>
+        /// <summary>
+        /// 本次关卡的施放与数值状态。
+        /// </summary>
+        public HeroModel Hero
+        {
+            get
+            {
+                return m_Hero;
+            }
+        }
+        /// <summary>
+        /// 装配规则系统。
+        /// </summary>
         public SkillScope()
         {
             m_Input = new(this, Source);
@@ -350,21 +382,28 @@ public sealed class SkillReuseTests
             m_HeroSystem = new(this);
             m_Hero.Mp.Value = 100;
         }
-
         /// <inheritdoc />
-        public TModel GetModel<TModel>() where TModel : class, IModel =>
-            (typeof(TModel) == typeof(ConfigurationModel) ? (IModel)Configuration :
+        public TModel GetModel<TModel>() where TModel : class, IModel
+        {
+            return (typeof(TModel) == typeof(ConfigurationModel) ? (IModel)Configuration :
                 typeof(TModel) == typeof(SkillModel) ? Skills :
                 typeof(TModel) == typeof(ProfileModel) ? m_Profile : m_Hero) as TModel;
+        }
         /// <inheritdoc />
-        public TSystem GetSystem<TSystem>() where TSystem : class, ISystem =>
-            (typeof(TSystem) == typeof(InputSystem) ? (ISystem)m_Input :
+        public TSystem GetSystem<TSystem>() where TSystem : class, ISystem
+        {
+            return (typeof(TSystem) == typeof(InputSystem) ? (ISystem)m_Input :
                 typeof(TSystem) == typeof(HeroSystem) ? m_HeroSystem : m_System) as TSystem;
+        }
         /// <inheritdoc />
-        public TUtility GetUtility<TUtility>() where TUtility : class, IUtility => null;
+        public TUtility GetUtility<TUtility>() where TUtility : class, IUtility
+        {
+            return null;
+        }
     }
-
-    /// <summary>独立角色策略替身，刻意使用不同于悟空的技能移动。</summary>
+    /// <summary>
+    /// 独立角色策略替身，刻意使用不同于悟空的技能移动。
+    /// </summary>
     private sealed class SkillHero(SkillScope scope) : AbstractFakeActorBody, IHeroBody, ISkillActor
     {
         /// <inheritdoc />
@@ -381,22 +420,46 @@ public sealed class SkillReuseTests
         /// <inheritdoc />
         public Vector2 SkillPosition { get; set; }
         /// <inheritdoc />
-        int ISkillActor.Facing => Facing;
-        /// <summary>技能起手次数。</summary>
+        int ISkillActor.Facing
+        {
+            get
+            {
+                return Facing;
+            }
+        }
+        /// <summary>
+        /// 技能起手次数。
+        /// </summary>
         public int SkillBegins { get; private set; }
-        /// <summary>技能表现释放次数。</summary>
+        /// <summary>
+        /// 技能表现释放次数。
+        /// </summary>
         public int SkillEnds { get; private set; }
-        /// <summary>测试专用的普攻取消策略。</summary>
+        /// <summary>
+        /// 测试专用的普攻取消策略。
+        /// </summary>
         public bool AllowSkillDuringAttack { get; init; }
-        /// <summary>测试是否自动完成落地特效回调。</summary>
+        /// <summary>
+        /// 测试是否自动完成落地特效回调。
+        /// </summary>
         public bool FinishLandingEffect { get; init; }
-        /// <summary>记录生命周期顺序。</summary>
+        /// <summary>
+        /// 记录生命周期顺序。
+        /// </summary>
         public List<string> Operations { get; } = new();
         /// <inheritdoc />
-        IArchitecture IBelongToArchitecture.GetArchitecture() => scope;
+        IArchitecture IBelongToArchitecture.GetArchitecture()
+        {
+            return scope;
+        }
         /// <inheritdoc />
-        public bool TryDropThroughPlatform() => false;
-        /// <summary>测试角色使用当前状态给出的窗口和模型里的绑定，身体接口不承担输入匹配。</summary>
+        public bool TryDropThroughPlatform()
+        {
+            return false;
+        }
+        /// <summary>
+        /// 测试角色使用当前状态给出的窗口和模型里的绑定，身体接口不承担输入匹配。
+        /// </summary>
         /// <param name="attacking">是否处于普攻。</param>
         /// <param name="normalProgress">普攻播放比例。</param>
         /// <param name="airborne">是否处于空中。</param>
@@ -419,10 +482,20 @@ public sealed class SkillReuseTests
         }
         /// <inheritdoc />
         public void AdvanceSkillAnimation(float dt) { }
+        /// <summary>
+        /// 夹具保留本体暂停事实，不创建引擎播放器。
+        /// </summary>
+        public void PauseSkillAnimation() { }
         /// <inheritdoc />
-        public void EndSkillAnimation() => SkillEnds++;
+        public void EndSkillAnimation()
+        {
+            SkillEnds++;
+        }
         /// <inheritdoc />
-        public Vector2? FindSkillTarget(float range, float inset) => null;
+        public Vector2? FindSkillTarget(float range, float inset)
+        {
+            return null;
+        }
         /// <inheritdoc />
         public void NewSkillAttack(SkillHitId hit, double power, float? knockbackOriginX = null) { }
         /// <inheritdoc />
@@ -433,8 +506,9 @@ public sealed class SkillReuseTests
                 completed?.Invoke();
         }
     }
-
-    /// <summary>由测试宿主登记的具名技能状态，复用公共身体驱动。</summary>
+    /// <summary>
+    /// 由测试宿主登记的具名技能状态，复用公共身体驱动。
+    /// </summary>
     private sealed class TestSkillState : AbstractHeroSkillState
     {
         /// <inheritdoc />
@@ -443,13 +517,15 @@ public sealed class SkillReuseTests
             base.Enter(fsm, body);
             ((ISkillActor)body).BeginSkillAnimation(null);
         }
-
         /// <inheritdoc />
-        protected override void UpdateSkill(IHeroBody body, float dt) =>
+        protected override void UpdateSkill(IHeroBody body, float dt)
+        {
             body.Velocity = new Vector2(321, body.Velocity.Y);
+        }
     }
-
-    /// <summary>示例起手阶段，第二次按下后转交执行给本技能的释放阶段。</summary>
+    /// <summary>
+    /// 示例起手阶段，第二次按下后转交执行给本技能的释放阶段。
+    /// </summary>
     private sealed class TestPreparationState : AbstractHeroSkillState
     {
         private bool m_Transferring; // 是否正向同一技能的下一阶段转交身体。
@@ -480,8 +556,9 @@ public sealed class SkillReuseTests
                 base.Leave(fsm, body, isShutdown);
         }
     }
-
-    /// <summary>示例释放阶段，使用原执行身份，完成后按公共生命周期退出。</summary>
+    /// <summary>
+    /// 示例释放阶段，使用原执行身份，完成后按公共生命周期退出。
+    /// </summary>
     private sealed class TestReleaseState : AbstractHeroSkillState
     {
         private float m_Age; // 本阶段已经推进的游戏秒数。
@@ -499,28 +576,48 @@ public sealed class SkillReuseTests
                 CompleteAnimation();
         }
     }
-
-    /// <summary>提供可重复的按键事实。</summary>
+    /// <summary>
+    /// 提供可重复的按键事实。
+    /// </summary>
     private sealed class FrameInput : IInputSource
     {
-        /// <summary>当前按住的动作。</summary>
+        /// <summary>
+        /// 当前按住的动作。
+        /// </summary>
         public HashSet<string> Held { get; } = new();
-        /// <summary>本帧按下的动作。</summary>
+        /// <summary>
+        /// 本帧按下的动作。
+        /// </summary>
         public HashSet<string> Pressed { get; } = new();
         /// <inheritdoc />
-        public bool IsPressed(string action) => Held.Contains(action);
+        public bool IsPressed(string action)
+        {
+            return Held.Contains(action);
+        }
         /// <inheritdoc />
-        public bool IsJustPressed(string action) => Pressed.Contains(action);
+        public bool IsJustPressed(string action)
+        {
+            return Pressed.Contains(action);
+        }
         /// <inheritdoc />
-        public bool IsJustReleased(string action) => false;
+        public bool IsJustReleased(string action)
+        {
+            return false;
+        }
     }
-
-    /// <summary>即使断言失败也归还真实框架状态。</summary>
+    /// <summary>
+    /// 即使断言失败也归还真实框架状态。
+    /// </summary>
     private sealed class FsmLifetime : IDisposable
     {
-        /// <summary>本测试独占的状态机管理器。</summary>
+        /// <summary>
+        /// 本测试独占的状态机管理器。
+        /// </summary>
         public FsmManager Value { get; } = new();
         /// <inheritdoc />
-        public void Dispose() => Value.Shutdown();
+        public void Dispose()
+        {
+            Value.Shutdown();
+        }
     }
 }

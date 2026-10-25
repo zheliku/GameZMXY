@@ -6,25 +6,44 @@ using Godot;
 
 namespace GameLogic.Level;
 
-/// <summary>为特殊阶段提供可选区域激活，只监听当前会话明确启用的一个触发区。</summary>
+/// <summary>
+/// 为特殊阶段提供可选区域激活，只监听当前会话明确启用的一个触发区。
+/// </summary>
 [Tool]
 public partial class LevelTriggersNode : AbstractLevelMarkersNode
 {
     private Dictionary<string, Area2D> m_Triggers; // 初始化校验后的稳定 ID 到触发区索引。
     private Area2D m_Watched; // 当前阶段唯一启用的触发区。
 
-    /// <summary>报告进入当前区域的存活英雄；关卡接受后调用 EndWatching 结束监听。</summary>
+    /// <summary>
+    /// 报告进入当前区域的存活英雄；关卡接受后调用 EndWatching 结束监听。
+    /// </summary>
     public event Action<AbstractHeroEntity> Activated;
 
-    /// <summary>触发区使用品红色标注，与生成点、门区分。</summary>
-    protected override Color DefaultColor => new(0.95f, 0.2f, 0.85f, 0.9f);
+    /// <summary>
+    /// 触发区使用品红色标注，与生成点、门区分。
+    /// </summary>
+    protected override Color DefaultColor
+    {
+        get
+        {
+            return new(0.95f, 0.2f, 0.85f, 0.9f);
+        }
+    }
 
-    /// <summary>只支持 Area2D 作为触发区节点。</summary>
+    /// <summary>
+    /// 只支持 Area2D 作为触发区节点。
+    /// </summary>
     /// <param name="node">待检查的直接子节点。</param>
     /// <returns>节点是 Area2D 时返回 true。</returns>
-    protected override bool Supports(Node node) => node is Area2D;
+    protected override bool Supports(Node node)
+    {
+        return node is Area2D;
+    }
 
-    /// <summary>校验特殊阶段使用的外键，并停用所有触发区；加载期间不连接玩法信号。</summary>
+    /// <summary>
+    /// 校验特殊阶段使用的外键，并停用所有触发区；加载期间不连接玩法信号。
+    /// </summary>
     /// <param name="config">本场景对应的关卡配置。</param>
     /// <exception cref="InvalidOperationException">阶段的触发区缺失或重复时抛出。</exception>
     public void Initialize(LevelConfig config)
@@ -47,7 +66,9 @@ public partial class LevelTriggersNode : AbstractLevelMarkersNode
         }
     }
 
-    /// <summary>在会话开始后监听一个特殊阶段的触发区，并先解除上一个监听。</summary>
+    /// <summary>
+    /// 在会话开始后监听一个特殊阶段的触发区，并先解除上一个监听。
+    /// </summary>
     /// <param name="id">特殊阶段配置引用的触发区稳定 ID。</param>
     public void BeginWatching(string id)
     {
@@ -57,7 +78,9 @@ public partial class LevelTriggersNode : AbstractLevelMarkersNode
         m_Watched.SetDeferred(Area2D.PropertyName.Monitoring, true);
     }
 
-    /// <summary>解除信号并停用当前触发区；没有监听时直接返回。</summary>
+    /// <summary>
+    /// 解除信号并停用当前触发区；没有监听时直接返回。
+    /// </summary>
     public void EndWatching()
     {
         if (m_Watched == null)
@@ -70,7 +93,9 @@ public partial class LevelTriggersNode : AbstractLevelMarkersNode
         m_Watched = null;
     }
 
-    /// <summary>从物理接触识别存活英雄，不保存接触者引用。</summary>
+    /// <summary>
+    /// 从物理接触识别存活英雄，不保存接触者引用。
+    /// </summary>
     /// <param name="body">进入触发区的物理实体。</param>
     private void OnBodyEntered(Node2D body)
     {

@@ -14,10 +14,14 @@ using Xunit;
 
 namespace GameLogic.Profile.Tests
 {
-    /// <summary>档案领域规则：成长派生、钱包、出战装配、存档格式与映射。</summary>
+    /// <summary>
+    /// 档案领域规则：成长派生、钱包、出战装配、存档格式与映射。
+    /// </summary>
     public sealed class ProfileTests
     {
-        /// <summary>累计经验是唯一事实，升级与跨级都从曲线派生，并只通知一次。</summary>
+        /// <summary>
+        /// 累计经验是唯一事实，升级与跨级都从曲线派生，并只通知一次。
+        /// </summary>
         [Fact]
         public void Progression_DerivesLevelAndNotifiesOncePerChange()
         {
@@ -41,8 +45,9 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(3, notifications);
             Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(progression).AddExperience(-1));
         }
-
-        /// <summary>满级后不再增长，也不发通知。</summary>
+        /// <summary>
+        /// 满级后不再增长，也不发通知。
+        /// </summary>
         [Fact]
         public void Progression_StopsAtMaxLevel()
         {
@@ -55,8 +60,9 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(0, notifications);
             Assert.Equal((55, 0, 0), (progression.Level, progression.Experience, progression.MaxExperience));
         }
-
-        /// <summary>钱包不出现负数，不足时拒绝扣除。</summary>
+        /// <summary>
+        /// 钱包不出现负数，不足时拒绝扣除。
+        /// </summary>
         [Fact]
         public void Wallet_RejectsOverspendAndNegativeAmounts()
         {
@@ -72,8 +78,9 @@ namespace GameLogic.Profile.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(wallet).AddSoul(-1));
             Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(wallet).TrySpendSoul(-1));
         }
-
-        /// <summary>零额、扣款失败、封顶和回滚都保持有效余额。</summary>
+        /// <summary>
+        /// 零额、扣款失败、封顶和回滚都保持有效余额。
+        /// </summary>
         [Fact]
         public void Wallet_PreservesBalanceAcrossNoOpsAndRestore()
         {
@@ -92,8 +99,9 @@ namespace GameLogic.Profile.Tests
             wallet.RestoreSoul(-1);
             Assert.Equal(0, wallet.Soul.Value);
         }
-
-        /// <summary>档案拒绝重复英雄与未拥有的出战英雄。</summary>
+        /// <summary>
+        /// 档案拒绝重复英雄与未拥有的出战英雄。
+        /// </summary>
         [Fact]
         public void Profile_RejectsInvalidHeroSets()
         {
@@ -103,8 +111,9 @@ namespace GameLogic.Profile.Tests
             Assert.Throws<ArgumentException>(() => new TestGameScope(2, new[] { (1, 0) }, 0, 25));
             Assert.Equal(1, new TestGameScope(1, new[] { (1, 0) }, 0, 25).Profile.ActiveHeroId);
         }
-
-        /// <summary>钱包只在余额实际提交后通知，失败消费、零增量和封顶不重复通知。</summary>
+        /// <summary>
+        /// 钱包只在余额实际提交后通知，失败消费、零增量和封顶不重复通知。
+        /// </summary>
         [Fact]
         public void Wallet_NotifiesOnlyCommittedBalanceChanges()
         {
@@ -129,8 +138,9 @@ namespace GameLogic.Profile.Tests
             TestTables.ForProfile(wallet).AddSoul(1);
             Assert.Equal((3, int.MaxValue), (notifications, observed));
         }
-
-        /// <summary>成长改变自动重算绑定属性，局内 Buff 来源保持，升级补满资源。</summary>
+        /// <summary>
+        /// 成长改变自动重算绑定属性，局内 Buff 来源保持，升级补满资源。
+        /// </summary>
         [Fact]
         public void HeroAttributes_FollowsProgressionAndKeepsBuff()
         {
@@ -145,8 +155,9 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(130, model.MaxHp.Value);
             Assert.Equal(model.MaxHp.Value, model.Hp.Value);
         }
-
-        /// <summary>成长表与官方 Role1.upGrade 公式逐级一致（防止迁移脚本或手工改表引入偏差）。</summary>
+        /// <summary>
+        /// 成长表与官方 Role1.upGrade 公式逐级一致（防止迁移脚本或手工改表引入偏差）。
+        /// </summary>
         [Fact]
         public void GrowthTable_MatchesOfficialWukongGrowth()
         {
@@ -160,13 +171,15 @@ namespace GameLogic.Profile.Tests
                     (row.BaseAttributes.MaxHp, row.BaseAttributes.MaxMp, row.BaseAttributes.Power, row.BaseAttributes.Def, row.BaseAttributes.Mdef));
             }
         }
-
-        /// <summary>怪物基础值符合官方数据，同一种实体只配置一条基础数值。</summary>
+        /// <summary>
+        /// 怪物基础值符合官方数据，同一种实体只配置一条基础数值。
+        /// </summary>
         [Fact]
         public void MonsterTable_MatchesOfficialStatsAndHasOneConfigPerEntity()
         {
             (int Id, int Hp, int Defense, int Xp)[] values = [(1, 50, 0, 5), (2, 100, 1, 6), (3, 300, 5, 7),
-                (4, 1500, 5, 25), (6, 3000, 6, 35)];
+                (4, 1500, 5, 25), (6, 3000, 6, 35), (7, 600, 8, 22), (8, 500, 7, 18),
+                (11, 6000, 18, 100), (13, 700, 9, 26), (21, 6000, 25, 0)];
             foreach (var expected in values)
             {
                 var monster = TestTables.Tables.TbMonsterConfig.Get(expected.Id);
@@ -174,26 +187,29 @@ namespace GameLogic.Profile.Tests
                     (monster.BaseAttributes.MaxHp, monster.BaseAttributes.Def, monster.AddExp));
             }
             Assert.All(TestTables.Tables.TbMonsterConfig.DataList.GroupBy(x => x.EntityId), group => Assert.Single(group));
-            Assert.Equal(5, TestTables.Tables.TbMonsterConfig.DataList.Count);
+            Assert.Equal(values.Length, TestTables.Tables.TbMonsterConfig.DataList.Count);
         }
-
-        /// <summary>真实配置通过启动校验。</summary>
+        /// <summary>
+        /// 真实配置通过启动校验。
+        /// </summary>
         [Fact]
         public void ConfigurationModel_AcceptsShippedTables()
         {
             ExperienceCurve curve = GameLogic.Config.ConfigurationSystem.ValidateTables(TestTables.Tables);
             Assert.Equal(55, curve.MaxLevel);
         }
-
-        /// <summary>缺少版本或进度字段的 JSON 不得被初始值误判为当前格式。</summary>
+        /// <summary>
+        /// 缺少版本或进度字段的 JSON 不得被初始值误判为当前格式。
+        /// </summary>
         [Fact]
         public void Archive_RejectsMissingRequiredFields()
         {
             Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<GameData>("{\"UnitId\":7}"));
             Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<GameData>("{\"SaveVersion\":2,\"UnitId\":7}"));
         }
-
-        /// <summary>当前格式的英雄记录必须明确保存身份与累计经验，缺字段不能被零值掩盖。</summary>
+        /// <summary>
+        /// 当前格式的英雄记录必须明确保存身份与累计经验，缺字段不能被零值掩盖。
+        /// </summary>
         /// <param name="field">要模拟丢失的字段。</param>
         [Theory]
         [InlineData("HeroId")]
@@ -209,8 +225,9 @@ namespace GameLogic.Profile.Tests
             hero.Remove(field);
             Assert.Throws<JsonSerializationException>(() => data.ToObject<GameData>());
         }
-
-        /// <summary>框架创建的当前格式空槽可以序列化回读，仍未建立角色。</summary>
+        /// <summary>
+        /// 框架创建的当前格式空槽可以序列化回读，仍未建立角色。
+        /// </summary>
         [Fact]
         public void Archive_RoundTripsUnclaimedCurrentSlot()
         {
@@ -221,8 +238,9 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(0, data.Soul);
             Assert.Equal(7, data.UnitId);
         }
-
-        /// <summary>仅接受当前格式的完整档案；不转换其他版本。</summary>
+        /// <summary>
+        /// 仅接受当前格式的完整档案；不转换其他版本。
+        /// </summary>
         [Fact]
         public void Mapper_RejectsOtherVersionsAndEmptyHeroes()
         {
@@ -230,8 +248,9 @@ namespace GameLogic.Profile.Tests
                 Assert.Throws<NotSupportedException>(() => TestGameScope.FromSaveData(new GameData { SaveVersion = version, ActiveHeroId = 1, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
             Assert.Throws<ArgumentException>(() => TestGameScope.FromSaveData(new GameData(), TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
         }
-
-        /// <summary>档案 → 快照 → JSON → 快照 → 档案往返不丢状态，快照与运行时不共享引用。</summary>
+        /// <summary>
+        /// 档案 → 快照 → JSON → 快照 → 档案往返不丢状态，快照与运行时不共享引用。
+        /// </summary>
         [Fact]
         public void Mapper_RoundTripsThroughJson()
         {
@@ -249,8 +268,9 @@ namespace GameLogic.Profile.Tests
             Assert.DoesNotContain("\"Profile\"", json);
             Assert.Contains("\"TotalExperience\"", json);
         }
-
-        /// <summary>回滚把档案恢复到进关快照，保留原对象并通知订阅者。</summary>
+        /// <summary>
+        /// 回滚把档案恢复到进关快照，保留原对象并通知订阅者。
+        /// </summary>
         [Fact]
         public void Mapper_RollsBackToSnapshot()
         {

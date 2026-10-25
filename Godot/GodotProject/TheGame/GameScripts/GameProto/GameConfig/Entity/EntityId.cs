@@ -41,6 +41,26 @@ namespace GameConfig.Entity
         /// 禺狨王
         /// </summary>
         TamarinKing = 6,
+        /// <summary>
+        /// 蝙蝠
+        /// </summary>
+        Bat = 8,
+        /// <summary>
+        /// 蝙蝠洞石像
+        /// </summary>
+        BatCaveStatue = 21,
+        /// <summary>
+        /// 蛮力怪
+        /// </summary>
+        CaveBrute = 7,
+        /// <summary>
+        /// 飞刀魔
+        /// </summary>
+        KnifeDemon = 13,
+        /// <summary>
+        /// 狮驼王
+        /// </summary>
+        LionCamelKing = 11,
     }
 
 } 

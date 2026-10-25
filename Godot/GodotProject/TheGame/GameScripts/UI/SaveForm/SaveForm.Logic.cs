@@ -11,17 +11,23 @@ using GodotGameFramework;
 
 namespace GameLogic.UI;
 
-/// <summary>六格存档窗口，订阅目录变化并以具名事件请求读档。</summary>
+/// <summary>
+/// 六格存档窗口，订阅目录变化并以具名事件请求读档。
+/// </summary>
 public partial class SaveForm : IController
 {
     private bool m_IsBound; // 本周期拥有目录订阅，关闭或失败后不得在回池时重取模型。
 
     private (TextureButton Button, Label Name, Label Date)[] m_SlotViews; // 六个存档格的控件引用，不另建格子脚本。
 
-    /// <summary>由所属流程处理 SaveSlotSelected；参数为本次窗口编号及选择编号。</summary>
+    /// <summary>
+    /// 由所属流程处理 SaveSlotSelected；参数为本次窗口编号及选择编号。
+    /// </summary>
     public event Action<int, int> SaveSlotSelected;
 
-    /// <summary>绑定 GGF 字段与一次性的按钮订阅。</summary>
+    /// <summary>
+    /// 绑定 GGF 字段与一次性的按钮订阅。
+    /// </summary>
     /// <param name="serialId">窗口编号。</param>
     /// <param name="uiFormAssetName">资源路径。</param>
     /// <param name="uiGroup">界面组。</param>
@@ -40,22 +46,26 @@ public partial class SaveForm : IController
         if (!isNewInstance)
             return;
         m_Close.Pressed += OnCloseClicked;
-        var buttons = m_Slots.GetChildren().Cast<TextureButton>().ToArray();
-        if (buttons.Length != SaveModel.SlotCount)
+        m_SlotViews =
+        [
+            (m_Slot1, m_Name1, m_Date1), (m_Slot2, m_Name2, m_Date2),
+            (m_Slot3, m_Name3, m_Date3), (m_Slot4, m_Name4, m_Date4),
+            (m_Slot5, m_Name5, m_Date5), (m_Slot6, m_Name6, m_Date6)
+        ];
+        if (m_SlotViews.Length != SaveModel.SlotCount ||
+            m_SlotViews.Any(slot => slot.Button == null || slot.Name == null || slot.Date == null))
             throw new InvalidOperationException("存档页必须为六格。");
-        m_SlotViews = new (TextureButton, Label, Label)[buttons.Length];
         // 只在新建实例时收集本表单的固定格子，复用期间沿用引用与订阅。
-        for (int i = 0; i < buttons.Length; i++)
+        for (int i = 0; i < m_SlotViews.Length; i++)
         {
             int number = i + 1;
-            var button = buttons[i];
-            m_SlotViews[i] = (button, button.GetNode<Label>($"m_Name{number}"),
-                button.GetNode<Label>($"m_Date{number}"));
-            button.Pressed += () => SelectSlot(number);
+            m_SlotViews[i].Button.Pressed += () => SelectSlot(number);
         }
     }
 
-    /// <summary>订阅目录并立即绘制当前状态。</summary>
+    /// <summary>
+    /// 订阅目录并立即绘制当前状态。
+    /// </summary>
     /// <param name="userData">未使用；目录由共享 SaveModel 提供。</param>
     public void OnOpen(object userData)
     {
@@ -73,7 +83,9 @@ public partial class SaveForm : IController
         }
     }
 
-    /// <summary>解绑目录，关闭实例不保留本周期数据。</summary>
+    /// <summary>
+    /// 解绑目录，关闭实例不保留本周期数据。
+    /// </summary>
     /// <param name="isShutdown">是否框架关停。</param>
     /// <param name="userData">关闭参数。</param>
     public void OnClose(bool isShutdown, object userData)
@@ -84,7 +96,9 @@ public partial class SaveForm : IController
             Visible = false;
     }
 
-    /// <summary>清除回池窗口编号。</summary>
+    /// <summary>
+    /// 清除回池窗口编号。
+    /// </summary>
     public void OnRecycle()
     {
         Unbind();
@@ -95,38 +109,55 @@ public partial class SaveForm : IController
             Visible = false;
     }
 
-    /// <summary>界面暂停；点击导航不依赖轮询。</summary>
+    /// <summary>
+    /// 界面暂停；点击导航不依赖轮询。
+    /// </summary>
     public void OnPause()
     {
     }
 
-    /// <summary>恢复界面暂停。</summary>
+    /// <summary>
+    /// 恢复界面暂停。
+    /// </summary>
     public void OnResume()
     {
     }
 
-    /// <summary>窗口被覆盖。</summary>
+    /// <summary>
+    /// 窗口被覆盖。
+    /// </summary>
     public void OnCover()
     {
     }
 
-    /// <summary>窗口恢复显示。</summary>
+    /// <summary>
+    /// 窗口恢复显示。
+    /// </summary>
     public void OnReveal()
     {
     }
 
-    /// <summary>框架要求的更新入口；数值和导航通过事件更新。</summary>
+    /// <summary>
+    /// 框架要求的更新入口；数值和导航通过事件更新。
+    /// </summary>
     /// <param name="elapseSeconds">游戏帧间隔秒数。</param>
     /// <param name="realElapseSeconds">真实帧间隔秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds)
     {
     }
 
-    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <summary>
+    /// 读取所属游戏流程的架构入口。
+    /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
-    /// <summary>结束当前目录订阅，允许关闭后回池再次清理而不访问旧作用域。</summary>
+    /// <summary>
+    /// 结束当前目录订阅，允许关闭后回池再次清理而不访问旧作用域。
+    /// </summary>
     private void Unbind()
     {
         if (!m_IsBound)
@@ -135,7 +166,9 @@ public partial class SaveForm : IController
         this.GetModel<SaveModel>().Directory.UnRegister(RefreshDirectory);
     }
 
-    /// <summary>重新绑定显式传入的状态源。</summary>
+    /// <summary>
+    /// 重新绑定显式传入的状态源。
+    /// </summary>
     /// <param name="userData">新打开参数；null 保持当前绑定。</param>
     public void OnRefocus(object userData)
     {
@@ -143,7 +176,9 @@ public partial class SaveForm : IController
             OnOpen(userData);
     }
 
-    /// <summary>记录框架分配的窗口层级。</summary>
+    /// <summary>
+    /// 记录框架分配的窗口层级。
+    /// </summary>
     /// <param name="uiGroupDepth">界面组深度。</param>
     /// <param name="depthInUIGroup">窗口在组内的深度。</param>
     public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
@@ -152,7 +187,9 @@ public partial class SaveForm : IController
         ZIndex = depthInUIGroup;
     }
 
-    /// <summary>完整刷新六个格及加载反馈。</summary>
+    /// <summary>
+    /// 完整刷新六个格及加载反馈。
+    /// </summary>
     /// <param name="directory">已原子提交的目录快照。</param>
     private void RefreshDirectory(SaveDirectoryState directory)
     {
@@ -179,7 +216,9 @@ public partial class SaveForm : IController
         }
     }
 
-    /// <summary>请求读取指定格，读取期间与损坏格拒绝点击。</summary>
+    /// <summary>
+    /// 请求读取指定格，读取期间与损坏格拒绝点击。
+    /// </summary>
     /// <param name="number">从 1 开始的格号。</param>
     private void SelectSlot(int number)
     {
@@ -190,7 +229,9 @@ public partial class SaveForm : IController
         SaveSlotSelected?.Invoke(SerialId, number);
     }
 
-    /// <summary>关闭存档页，返回开始界面。</summary>
+    /// <summary>
+    /// 关闭存档页，返回开始界面。
+    /// </summary>
     private void OnCloseClicked()
     {
         if (!GF.UI.HasUIForm(SerialId))

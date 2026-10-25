@@ -1,7 +1,14 @@
 [gd_scene format=3 uid="uid://bit3xlive37sg"]
 
+[ext_resource type="Texture2D" uid="uid://6hjhxfwqedra" path="res://TheGame/Sprites/UI/frontend/map_huaguoshan_current.png" id="8_3fexe"]
+[ext_resource type="Texture2D" uid="uid://ccd6vrijbdaog" path="res://TheGame/Sprites/UI/frontend/map_shuiliandong_current.png" id="11_lyiep"]
+[ext_resource type="Texture2D" uid="uid://dg7mlq8i07wa" path="res://TheGame/Sprites/UI/frontend/map_taohuayuan_current.png" id="14_jo74s"]
+[ext_resource type="Texture2D" uid="uid://dvl205jrly7j7" path="res://TheGame/Sprites/UI/frontend/map_bianfuku_current.png" id="17_6v2in"]
+[ext_resource type="Texture2D" uid="uid://b1rrhotetqt0" path="res://TheGame/Sprites/UI/frontend/map_qixingdong_current.png" id="20_eqj77"]
+[ext_resource type="AnimationLibrary" uid="uid://b0vovxtt83iah" path="res://TheGame/Sprites/UI/frontend/map_bianfuku_hover_animation.tres" id="29_0mcer"]
 [ext_resource type="AnimationLibrary" uid="uid://bow0vvy2d1eda" path="res://TheGame/Sprites/UI/frontend/map_shuiliandong_hover_animation.tres" id="30_s3lwo"]
 [ext_resource type="AnimationLibrary" uid="uid://biuuhf4tut753" path="res://TheGame/Sprites/UI/frontend/map_taohuayuan_hover_animation.tres" id="31_0mcer"]
+[ext_resource type="AnimationLibrary" uid="uid://c5h6nx7v5557o" path="res://TheGame/Sprites/UI/frontend/map_qixingdong_hover_animation.tres" id="31_pfyxb"]
 [ext_resource type="Texture2D" uid="uid://cnv7if405wliu" path="res://TheGame/Sprites/UI/frontend/journey_map.png" id="bg"]
 [ext_resource type="Texture2D" uid="uid://c2nkhug1jwjro" path="res://TheGame/Sprites/UI/frontend/map_bianfuku_hover.png" id="bianfuku_hover"]
 [ext_resource type="Texture2D" uid="uid://drn4ba5li0m2q" path="res://TheGame/Sprites/UI/frontend/map_bianfuku_normal.png" id="bianfuku_normal"]
@@ -32,25 +39,37 @@
 [ext_resource type="Texture2D" uid="uid://batx133n5ba8m" path="res://TheGame/Sprites/UI/frontend/map_taohuayuan_normal.png" id="taohuayuan_normal"]
 [ext_resource type="Theme" path="res://TheGame/MainPack/Themes/legacy_menu_theme.tres" id="theme"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_pfyxb"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mc7li"]
 resource_local_to_scene = true
 shader = ExtResource("outline")
-shader_parameter/image_scale = 0.9
-shader_parameter/line_thickness = 1.0
+shader_parameter/image_scale = 1.0
+shader_parameter/line_thickness = 0.0
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_2vs2o"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_omjdr"]
 resource_local_to_scene = true
 shader = ExtResource("outline")
-shader_parameter/image_scale = 0.9
-shader_parameter/line_thickness = 1.0
+shader_parameter/image_scale = 1.0
+shader_parameter/line_thickness = 0.0
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_v6s56"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8k1cn"]
 resource_local_to_scene = true
 shader = ExtResource("outline")
-shader_parameter/image_scale = 0.9
-shader_parameter/line_thickness = 1.0
+shader_parameter/image_scale = 1.0
+shader_parameter/line_thickness = 0.0
 
-[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Back", "m_Huaguoshan", "m_Shuiliandong", "m_Taohuayuan", "m_Save", "m_LocationAnimation")]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hxmi1"]
+resource_local_to_scene = true
+shader = ExtResource("outline")
+shader_parameter/image_scale = 1.0
+shader_parameter/line_thickness = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nkmx7"]
+resource_local_to_scene = true
+shader = ExtResource("outline")
+shader_parameter/image_scale = 1.0
+shader_parameter/line_thickness = 0.0
+
+[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Back", "m_Huaguoshan", "m_Shuiliandong", "m_Taohuayuan", "m_Save", "m_LocationAnimation", "m_Bianfuku", "m_Qixingdong")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -65,6 +84,8 @@ m_Shuiliandong = NodePath("m_Shuiliandong")
 m_Taohuayuan = NodePath("m_Taohuayuan")
 m_Save = NodePath("m_Save")
 m_LocationAnimation = NodePath("m_LocationAnimation")
+m_Bianfuku = NodePath("m_Bianfuku")
+m_Qixingdong = NodePath("m_Qixingdong")
 
 [node name="Background" type="TextureRect" parent="." unique_id=1431881532]
 layout_mode = 0
@@ -76,7 +97,6 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="m_Huaguoshan" type="TextureButton" parent="." unique_id=1050552217 node_paths=PackedStringArray("m_HoverImage")]
-self_modulate = Color(1, 1, 1, 0)
 layout_mode = 0
 offset_left = 128.0
 offset_top = 85.0
@@ -93,7 +113,8 @@ script = ExtResource("location_button")
 m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Huaguoshan" unique_id=619886601]
-material = SubResource("ShaderMaterial_pfyxb")
+visible = false
+material = SubResource("ShaderMaterial_mc7li")
 layout_mode = 0
 offset_right = 160.0
 offset_bottom = 174.0
@@ -102,6 +123,13 @@ mouse_filter = 2
 texture = ExtResource("huaguoshan_hover")
 expand_mode = 1
 stretch_mode = 4
+
+[node name="CurrentHint" type="Sprite2D" parent="m_Huaguoshan" unique_id=1475129330]
+visible = false
+position = Vector2(80, 87)
+texture = ExtResource("8_3fexe")
+hframes = 5
+vframes = 4
 
 [node name="m_Shuiliandong" type="TextureButton" parent="." unique_id=1715632211 node_paths=PackedStringArray("m_HoverImage")]
 layout_mode = 0
@@ -122,7 +150,7 @@ m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Shuiliandong" unique_id=764583511]
 visible = false
-material = SubResource("ShaderMaterial_2vs2o")
+material = SubResource("ShaderMaterial_omjdr")
 layout_mode = 0
 offset_right = 160.0
 offset_bottom = 174.0
@@ -131,6 +159,13 @@ mouse_filter = 2
 texture = ExtResource("shuiliandong_hover")
 expand_mode = 1
 stretch_mode = 4
+
+[node name="CurrentHint" type="Sprite2D" parent="m_Shuiliandong" unique_id=22581705]
+visible = false
+position = Vector2(80, 87)
+texture = ExtResource("11_lyiep")
+hframes = 5
+vframes = 4
 
 [node name="m_Taohuayuan" type="TextureButton" parent="." unique_id=558010661 node_paths=PackedStringArray("m_HoverImage")]
 layout_mode = 0
@@ -151,7 +186,7 @@ m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Taohuayuan" unique_id=1039934994]
 visible = false
-material = SubResource("ShaderMaterial_v6s56")
+material = SubResource("ShaderMaterial_8k1cn")
 layout_mode = 0
 offset_right = 160.0
 offset_bottom = 174.0
@@ -161,40 +196,85 @@ texture = ExtResource("taohuayuan_hover")
 expand_mode = 1
 stretch_mode = 4
 
-[node name="Location4" type="TextureButton" parent="." unique_id=433813825]
+[node name="CurrentHint" type="Sprite2D" parent="m_Taohuayuan" unique_id=578157159]
 visible = false
+position = Vector2(80, 87)
+texture = ExtResource("14_jo74s")
+hframes = 5
+vframes = 4
+
+[node name="m_Bianfuku" type="TextureButton" parent="." unique_id=433813825 node_paths=PackedStringArray("m_HoverImage")]
 layout_mode = 0
 offset_left = 611.0
 offset_top = -11.0
 offset_right = 771.0
 offset_bottom = 163.0
 pivot_offset = Vector2(80, 87)
-tooltip_text = "蝙蝠窟 · 尚未开放"
+tooltip_text = "蝙蝠窟"
 focus_mode = 0
-disabled = true
+mouse_default_cursor_shape = 2
 texture_normal = ExtResource("bianfuku_normal")
-texture_pressed = ExtResource("bianfuku_hover")
-texture_hover = ExtResource("bianfuku_hover")
 texture_disabled = ExtResource("bianfuku_normal")
 ignore_texture_size = true
 stretch_mode = 3
+script = ExtResource("location_button")
+m_HoverImage = NodePath("LocationGlow")
 
-[node name="Location5" type="TextureButton" parent="." unique_id=1287385966]
+[node name="LocationGlow" type="TextureRect" parent="m_Bianfuku" unique_id=1932379832]
+visible = false
+material = SubResource("ShaderMaterial_hxmi1")
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 174.0
+pivot_offset = Vector2(80, 87)
+mouse_filter = 2
+texture = ExtResource("bianfuku_hover")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CurrentHint" type="Sprite2D" parent="m_Bianfuku" unique_id=330771447]
+visible = false
+position = Vector2(80, 87)
+texture = ExtResource("17_6v2in")
+hframes = 5
+vframes = 4
+
+[node name="m_Qixingdong" type="TextureButton" parent="." unique_id=1287385966 node_paths=PackedStringArray("m_HoverImage")]
 layout_mode = 0
 offset_left = 547.0
 offset_top = 169.0
 offset_right = 707.0
 offset_bottom = 343.0
 pivot_offset = Vector2(80, 87)
-tooltip_text = "七星洞 · 尚未开放"
+tooltip_text = "七星洞"
 focus_mode = 0
+mouse_default_cursor_shape = 2
 disabled = true
 texture_normal = ExtResource("qixingdong_normal")
-texture_pressed = ExtResource("qixingdong_hover")
-texture_hover = ExtResource("qixingdong_hover")
 texture_disabled = ExtResource("qixingdong_normal")
 ignore_texture_size = true
 stretch_mode = 3
+script = ExtResource("location_button")
+m_HoverImage = NodePath("LocationGlow")
+
+[node name="LocationGlow" type="TextureRect" parent="m_Qixingdong" unique_id=789348238]
+visible = false
+material = SubResource("ShaderMaterial_nkmx7")
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 174.0
+pivot_offset = Vector2(80, 87)
+mouse_filter = 2
+texture = ExtResource("qixingdong_hover")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="CurrentHint" type="Sprite2D" parent="m_Qixingdong" unique_id=1818321493]
+visible = false
+position = Vector2(80, 87)
+texture = ExtResource("20_eqj77")
+hframes = 5
+vframes = 4
 
 [node name="Location6" type="TextureButton" parent="." unique_id=932026306]
 layout_mode = 0
@@ -320,7 +400,9 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="m_LocationAnimation" type="AnimationPlayer" parent="." unique_id=328441174]
+libraries/bianfuku = ExtResource("29_0mcer")
 libraries/location = ExtResource("hover")
+libraries/qixingdong = ExtResource("31_pfyxb")
 libraries/shuiliandong = ExtResource("30_s3lwo")
 libraries/taohuayuan = ExtResource("31_0mcer")
 speed_scale = 0.4

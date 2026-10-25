@@ -13,10 +13,14 @@ namespace GodotGameFramework.NodePool;
 /// </summary>
 public interface IPoolable
 {
-    /// <summary>对象从池中取出时重置其运行状态。</summary>
+    /// <summary>
+    /// 对象从池中取出时重置其运行状态。
+    /// </summary>
     void OnGet();
 
-    /// <summary>对象归还到池中前清理其运行状态。</summary>
+    /// <summary>
+    /// 对象归还到池中前清理其运行状态。
+    /// </summary>
     void OnRelease();
 }
 
@@ -31,10 +35,14 @@ public partial class NodePool : SingletonNode<NodePool>
 
     private readonly Dictionary<string, PackedScene> m_PoolScenes = new(); // 池名到场景资源的映射，取用时用于懒实例化。
 
-    /// <summary>当前节点池配置；加载失败时为空。</summary>
+    /// <summary>
+    /// 当前节点池配置；加载失败时为空。
+    /// </summary>
     public NodePoolConfig Config { get; private set; }
 
-    /// <summary>加载池配置并注册场景池。</summary>
+    /// <summary>
+    /// 加载池配置并注册场景池。
+    /// </summary>
     protected override void OnLoad()
     {
         base.OnLoad();
@@ -147,7 +155,9 @@ public partial class NodePool : SingletonNode<NodePool>
         return GetInternal(scenePath, parent);
     }
 
-    /// <summary>取出池对象，必要时实例化节点并绑定请求的父节点。</summary>
+    /// <summary>
+    /// 取出池对象，必要时实例化节点并绑定请求的父节点。
+    /// </summary>
     /// <param name="scenePath">场景资源路径及池名称。</param>
     /// <param name="parent">可选的新父节点。</param>
     /// <returns>节点包装对象；无法取得对象时返回 null。</returns>
@@ -381,7 +391,9 @@ public partial class NodePool : SingletonNode<NodePool>
 
     // ── 容器查找 ──
 
-    /// <summary>按场景路径查找对应的场景树容器。</summary>
+    /// <summary>
+    /// 按场景路径查找对应的场景树容器。
+    /// </summary>
     /// <param name="scenePath">池名称。</param>
     /// <param name="container">找到时返回对应容器。</param>
     /// <returns>找到容器时为 true。</returns>

@@ -7,11 +7,14 @@ using GameConfig.Sound;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>读取正式技能表，锁定造一的目录、学习费用与被动总加成语义。</summary>
+/// <summary>
+/// 读取正式技能表，锁定造一的目录、学习费用与被动总加成语义。
+/// </summary>
 public sealed class SkillConfigTests
 {
-    /// <summary>两个角色各五项主动，费用和耗蓝直接对应原版 Role1/Role2。</summary>
+    /// <summary>
+    /// 两个角色各五项主动，费用和耗蓝直接对应原版 Role1/Role2。
+    /// </summary>
     [Fact]
     public void ActiveSkills_PreserveOfficialOrderCostAndMana()
     {
@@ -29,8 +32,9 @@ public sealed class SkillConfigTests
         Assert.Equal(new[] { 10, 20, 30, 40, 50 }, wukong.Select(x => x.ManaCost));
         Assert.Equal(new[] { 20, 40, 30, 60, 100 }, tangseng.Select(x => x.ManaCost));
     }
-
-    /// <summary>被动各级记录总加成；暴击为直接概率，不能误作项目中的属性值。</summary>
+    /// <summary>
+    /// 被动各级记录总加成；暴击为直接概率，不能误作项目中的属性值。
+    /// </summary>
     [Fact]
     public void Passives_PreserveFiveLevelsAndAbsoluteChance()
     {
@@ -54,8 +58,9 @@ public sealed class SkillConfigTests
         }
         Assert.Equal(PassiveEffect.CriticalChance, table.Get(PassiveId.Frenzy).Effect);
     }
-
-    /// <summary>完整正式目录通过同一套启动校验。</summary>
+    /// <summary>
+    /// 完整正式目录通过同一套启动校验。
+    /// </summary>
     [Fact]
     public void PreparedCatalog_PassesStartupValidation()
     {
@@ -63,8 +68,9 @@ public sealed class SkillConfigTests
         ConfigurationSystem.ValidateSkillCatalog(TestTables.Tables.TbSkillConfig, TestTables.Tables.TbPassiveConfig, errors);
         Assert.Empty(errors);
     }
-
-    /// <summary>原版七段技能音效都登记到 GGF SFX，保留来源并使用独立文件。</summary>
+    /// <summary>
+    /// 原版七段技能音效都登记到 GGF SFX，保留来源并使用独立文件。
+    /// </summary>
     [Fact]
     public void SkillSounds_UseGgfSfxGroupAndDistinctOriginalFiles()
     {

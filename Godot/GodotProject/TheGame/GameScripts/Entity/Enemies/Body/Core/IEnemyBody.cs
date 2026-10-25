@@ -2,6 +2,7 @@ using GameLogic.Enemies.AI;
 using GameLogic.Enemies;
 using Godot;
 using GameLogic.Body;
+using System;
 
 namespace GameLogic.Enemies.Body
 {
@@ -16,19 +17,34 @@ namespace GameLogic.Enemies.Body
     /// </summary>
     public interface IEnemyBody : IActorBody
     {
-        /// <summary>同类怪物共享的只读身体定义，动作时长来自动画资源。</summary>
+        /// <summary>
+        /// 同类怪物共享的只读身体定义，动作时长来自动画资源。
+        /// </summary>
         EnemyBodyParams Params { get; }
 
-        /// <summary>移动意图：-1 左 / 0 停 / 1 右（AI 写入；身体在可移动状态下执行）</summary>
+        /// <summary>
+        /// 普通行动状态；受击和收招结束后回到本敌人的移动方式。
+        /// </summary>
+        Type MoveStateType { get; }
+
+        /// <summary>
+        /// 移动意图：-1 左 / 0 停 / 1 右（AI 写入；身体在可移动状态下执行）
+        /// </summary>
         int MoveIntent { get; set; }
 
-        /// <summary>取走 AI 的出招请求（招式序号；-1 = 没有）。受击/死亡时取走即作废。</summary>
+        /// <summary>
+        /// 取走 AI 的出招请求（招式序号；-1 = 没有）。受击/死亡时取走即作废。
+        /// </summary>
         int TakeAttackRequest();
 
-        /// <summary>死亡进入时关闭受击判定并报告击败收益，不依赖动画是否播放。</summary>
+        /// <summary>
+        /// 死亡进入时关闭受击判定并报告击败收益，不依赖动画是否播放。
+        /// </summary>
         void BeginDeath();
 
-        /// <summary>请求回收（宿主在本帧物理结束后 HideEntity，不在状态机推进中途销毁自己）</summary>
+        /// <summary>
+        /// 请求回收（宿主在本帧物理结束后 HideEntity，不在状态机推进中途销毁自己）
+        /// </summary>
         void RequestRecycle();
     }
 }

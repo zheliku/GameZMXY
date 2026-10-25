@@ -4,11 +4,14 @@ using System;
 using Xunit;
 
 namespace GameLogic.Battle.Tests;
-
-/// <summary>验证蓄力、激活、计时耗尽和复位的运行期无双契约。</summary>
+/// <summary>
+/// 验证蓄力、激活、计时耗尽和复位的运行期无双契约。
+/// </summary>
 public sealed class MusouTests
 {
-    /// <summary>原版伤害比例四舍五入，暴击伤害可增加蓄力，零威力不产生无穷奖励。</summary>
+    /// <summary>
+    /// 原版伤害比例四舍五入，暴击伤害可增加蓄力，零威力不产生无穷奖励。
+    /// </summary>
     [Theory]
     [InlineData(10, 10, 2)]
     [InlineData(20, 10, 4)]
@@ -23,8 +26,9 @@ public sealed class MusouTests
         scope.System.RecordHit(damage, power);
         Assert.Equal(expected, scope.Hero.Ws.Value);
     }
-
-    /// <summary>自然衰减不随命中重置，满值冻结相位，暂停与长帧保持一致。</summary>
+    /// <summary>
+    /// 自然衰减不随命中重置，满值冻结相位，暂停与长帧保持一致。
+    /// </summary>
     [Fact]
     public void NaturalDecay_PreservesFullGaugeAndDoesNotResetOnHit()
     {
@@ -49,8 +53,9 @@ public sealed class MusouTests
         scope.System.AdvanceWs(8);
         Assert.Equal(0, gauge.Ws.Value);
     }
-
-    /// <summary>命中在开启时不积累，黄球仍可补充；超过上限的整颗黄球不增加。</summary>
+    /// <summary>
+    /// 命中在开启时不积累，黄球仍可补充；超过上限的整颗黄球不增加。
+    /// </summary>
     [Fact]
     public void Pickup_CanRefillActiveGauge_WithoutOverflow()
     {
@@ -69,8 +74,9 @@ public sealed class MusouTests
         Assert.Equal(value + 5, gauge.Ws.Value);
         Assert.True(gauge.WsActive.Value);
     }
-
-    /// <summary>开启后六次/秒扣点与自然扣点叠加，分帧和长帧得到相同结果。</summary>
+    /// <summary>
+    /// 开启后六次/秒扣点与自然扣点叠加，分帧和长帧得到相同结果。
+    /// </summary>
     [Theory]
     [InlineData(24)]
     [InlineData(60)]
@@ -99,8 +105,9 @@ public sealed class MusouTests
         Assert.False(whole.WsActive.Value);
         Assert.False(split.WsActive.Value);
     }
-
-    /// <summary>未满不能开启；开启后失去满值提示且命中不续充、不能重开。</summary>
+    /// <summary>
+    /// 未满不能开启；开启后失去满值提示且命中不续充、不能重开。
+    /// </summary>
     [Fact]
     public void Activation_RequiresFullGaugeAndLocksGains()
     {
@@ -119,8 +126,9 @@ public sealed class MusouTests
         scope.System.AddWs(40);
         Assert.Equal(83, gauge.Ws.Value);
     }
-
-    /// <summary>观察者能读到完整激活/耗尽快照；不同步长不改变持续时间，清零后可再次蓄力。</summary>
+    /// <summary>
+    /// 观察者能读到完整激活/耗尽快照；不同步长不改变持续时间，清零后可再次蓄力。
+    /// </summary>
     [Fact]
     public void TimeAndReset_NotifyCommittedStateAndAllowReuse()
     {

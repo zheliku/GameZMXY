@@ -21,23 +21,31 @@ Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_02_macaque_king/macaque_wind_b
 
 [sub_resource type="Resource" id="Resource_b654q"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_blazing_flash_trail_effect.tscn"
+Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_poison_cloud_effect.tscn"
 
 [sub_resource type="Resource" id="Resource_xn77p"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_combo_effect.tscn"
+Scene = "res://TheGame/Entitys/Enemies/Monsters/Ground/knife_demon/knife_demon_blade_effect.tscn"
 
 [sub_resource type="Resource" id="Resource_aiojc"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_descent_effect.tscn"
+Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_blazing_flash_trail_effect.tscn"
 
 [sub_resource type="Resource" id="Resource_72mqi"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_combo_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_f0hw8"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_descent_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_o8u2q"]
 script = ExtResource("1_j1vs4")
 Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_landing_effect.tscn"
 
 [resource]
 script = ExtResource("1_8jdg")
-Entries = Array[Object]([SubResource("Resource_lqe6w"), SubResource("Resource_kq84q"), SubResource("Resource_3vwbs"), SubResource("Resource_e1wg2"), SubResource("Resource_b654q"), SubResource("Resource_xn77p"), SubResource("Resource_aiojc"), SubResource("Resource_72mqi")])
+Entries = Array[Object]([SubResource("Resource_lqe6w"), SubResource("Resource_kq84q"), SubResource("Resource_3vwbs"), SubResource("Resource_e1wg2"), SubResource("Resource_b654q"), SubResource("Resource_xn77p"), SubResource("Resource_aiojc"), SubResource("Resource_72mqi"), SubResource("Resource_f0hw8"), SubResource("Resource_o8u2q")])
 DefaultExpireTime = 300.0
 DefaultAutoReleaseInterval = 300.0
 metadata/_custom_type_script = "uid://yiewfnn1gx67"

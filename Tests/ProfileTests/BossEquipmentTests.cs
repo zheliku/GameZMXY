@@ -8,11 +8,14 @@ using Newtonsoft.Json;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>造一第二、第三关装备的原始数值、通用饰品所有权和直接概率存档回归。</summary>
+/// <summary>
+/// 造一第二、第三关装备的原始数值、通用饰品所有权和直接概率存档回归。
+/// </summary>
 public sealed class BossEquipmentTests
 {
-    /// <summary>灵戒经穿戴、其他部位交换、升级、保存、读档和重开本局仍保持同一件及 3% 概率。</summary>
+    /// <summary>
+    /// 灵戒经穿戴、其他部位交换、升级、保存、读档和重开本局仍保持同一件及 3% 概率。
+    /// </summary>
     [Fact]
     public void Ring_StaysEquippedAcrossOtherSlotsAndPersistsDirectProbabilities()
     {
@@ -52,8 +55,9 @@ public sealed class BossEquipmentTests
         Assert.Null(restored.Profile.Accessory);
         Assert.Equal((0f, 0f), (restored.Hero.Crit.Value, restored.Hero.Miss.Value));
     }
-
-    /// <summary>通用灵戒允许唐僧穿戴；悟空专属猿甲拒绝交换，已有饰品不会丢失。</summary>
+    /// <summary>
+    /// 通用灵戒允许唐僧穿戴；悟空专属猿甲拒绝交换，已有饰品不会丢失。
+    /// </summary>
     [Fact]
     public void UniversalAccessory_DoesNotRequireAPlayableHeroOrChangeOtherOwners()
     {
@@ -68,8 +72,9 @@ public sealed class BossEquipmentTests
         Assert.Same(ring, scope.Profile.Accessory);
         Assert.Null(scope.Profile.Armor);
     }
-
-    /// <summary>猿甲保持原版整数随机端点；权杖固定加魔法 100、攻击 20，优秀品质售价 40。</summary>
+    /// <summary>
+    /// 猿甲保持原版整数随机端点；权杖固定加魔法 100、攻击 20，优秀品质售价 40。
+    /// </summary>
     [Fact]
     public void OriginalEquipment_RetainsRollRangesAndSalePrices()
     {
@@ -93,8 +98,9 @@ public sealed class BossEquipmentTests
         Assert.Equal((.35f, EquipmentDropPoolId.TamarinKing),
             (TestTables.Tables.TbMonsterConfig.Get(6).EquipmentDropChance, TestTables.Tables.TbMonsterConfig.Get(6).EquipmentDropPoolId));
     }
-
-    /// <summary>读档不把概率重抽、取整或接受非有限值，跨部位和重复所有权也必须拒绝。</summary>
+    /// <summary>
+    /// 读档不把概率重抽、取整或接受非有限值，跨部位和重复所有权也必须拒绝。
+    /// </summary>
     [Fact]
     public void Save_RejectsAlteredProbabilitiesAndInvalidAccessoryOwnership()
     {

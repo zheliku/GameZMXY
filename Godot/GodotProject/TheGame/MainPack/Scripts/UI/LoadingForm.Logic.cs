@@ -136,7 +136,9 @@ namespace GameLogic
             ZIndex = depthInUIGroup;
         }
 
-        /// <summary>更新加载状态文本和进度值。</summary>
+        /// <summary>
+        /// 更新加载状态文本和进度值。
+        /// </summary>
         /// <param name="logState">要显示的状态文本。</param>
         /// <param name="progress">进度百分比，范围会限制为 0 到 100。</param>
         public void SetLogState(string logState, float progress)
@@ -190,7 +192,9 @@ namespace GameLogic
             }));
         }
 
-        /// <summary>请求关闭加载界面，并等待实际关闭；取消只终止等待，不保存跨周期回调。</summary>
+        /// <summary>
+        /// 请求关闭加载界面，并等待实际关闭；取消只终止等待，不保存跨周期回调。
+        /// </summary>
         /// <param name="cancellationToken">所属流程的取消令牌。</param>
         /// <returns>窗口实际关闭后的任务。</returns>
         public Task CloseLoadingAsync(CancellationToken cancellationToken)
@@ -200,7 +204,9 @@ namespace GameLogic
             return closed.WaitAsync(cancellationToken);
         }
 
-        /// <summary>接收界面或场景加载事件并更新进度。</summary>
+        /// <summary>
+        /// 接收界面或场景加载事件并更新进度。
+        /// </summary>
         /// <param name="sender">事件发送者。</param>
         /// <param name="e">加载进度事件参数。</param>
         private void OnLoadingUpdate(object sender, GameEventArgs e)

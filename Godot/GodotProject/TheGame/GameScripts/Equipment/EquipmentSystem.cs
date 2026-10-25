@@ -10,11 +10,15 @@ using System.Linq;
 
 namespace GameLogic.Equipment;
 
-/// <summary>装备定义与随机实例规则、英雄装配入口；纯 C#，不持有节点或玩家档案。</summary>
+/// <summary>
+/// 装备定义与随机实例规则、英雄装配入口；纯 C#，不持有节点或玩家档案。
+/// </summary>
 /// <remarks>ProcedureLoadGame 装配后注册到流程 FSM；配置和当前档案经 GetModel 读取。英雄属性由本局 HeroSystem 观察成长和穿戴后更新。</remarks>
 public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem(architecture)
 {
-    /// <summary>为一次掉落抽取实际属性；复现造一 round(random × 范围) 的端点半权重分布。</summary>
+    /// <summary>
+    /// 为一次掉落抽取实际属性；复现造一 round(random × 范围) 的端点半权重分布。
+    /// </summary>
     /// <param name="instanceId">本次掉落的唯一编号。</param>
     /// <param name="equipmentId">已校验的装备定义编号。</param>
     /// <param name="random">返回 [0,1) 的随机采样器。</param>
@@ -39,7 +43,9 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         return new EquipmentData(instanceId, equipmentId, attributes);
     }
 
-    /// <summary>把背包中的装备穿到出战英雄；替换件原位放回，异角色装备没有副作用。</summary>
+    /// <summary>
+    /// 把背包中的装备穿到出战英雄；替换件原位放回，异角色装备没有副作用。
+    /// </summary>
     /// <param name="instanceId">背包中要穿上的实例。</param>
     /// <returns>成功完成一次交换时为 true。</returns>
     public bool TryEquip(Guid instanceId)
@@ -63,7 +69,9 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         return true;
     }
 
-    /// <summary>卸下指定部位；背包满时保留当前装备，不丢弃物品。</summary>
+    /// <summary>
+    /// 卸下指定部位；背包满时保留当前装备，不丢弃物品。
+    /// </summary>
     /// <param name="slot">要卸下的部位。</param>
     /// <returns>实际卸下时为 true。</returns>
     public bool TryUnequip(EquipmentSlot slot)
@@ -82,7 +90,9 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         return true;
     }
 
-    /// <summary>出售背包中的一件装备；过期选择、已穿戴物或余额溢出时不修改档案。</summary>
+    /// <summary>
+    /// 出售背包中的一件装备；过期选择、已穿戴物或余额溢出时不修改档案。
+    /// </summary>
     /// <param name="instanceId">要出售的背包实例。</param>
     /// <returns>移除装备并入账配置售价时为 true。</returns>
     public bool TrySell(Guid instanceId)
@@ -101,7 +111,9 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         return true;
     }
 
-    /// <summary>一次出售背包内指定品质的全部装备；穿戴物不在背包内，余额溢出时整批不变。</summary>
+    /// <summary>
+    /// 一次出售背包内指定品质的全部装备；穿戴物不在背包内，余额溢出时整批不变。
+    /// </summary>
     /// <param name="quality">要出售的品质。</param>
     /// <returns>本次实际出售件数；没有匹配物或无法入账时为零。</returns>
     public int SellByQuality(EquipmentQuality quality)
@@ -128,7 +140,9 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         return ids.Count;
     }
 
-    /// <summary>交换背包中的一件物品；先验证，再经正常集合入口修改。</summary>
+    /// <summary>
+    /// 交换背包中的一件物品；先验证，再经正常集合入口修改。
+    /// </summary>
     /// <param name="removeId">移出背包的实例；空编号表示只放回。</param>
     /// <param name="data">放回背包的实例；空表示只移出。</param>
     /// <returns>容量、编号均有效时完成交换。</returns>

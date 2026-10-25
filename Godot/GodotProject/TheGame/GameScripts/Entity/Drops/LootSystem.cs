@@ -9,14 +9,20 @@ using Godot;
 
 namespace GameLogic.Drops;
 
-/// <summary>掉落规则系统；查询共享定义、抽取奖励，不创建节点或修改档案。</summary>
+/// <summary>
+/// 掉落规则系统；查询共享定义、抽取奖励，不创建节点或修改档案。
+/// </summary>
 public sealed class LootSystem : AbstractSystem
 {
-    /// <summary>绑定所属架构。</summary>
+    /// <summary>
+    /// 绑定所属架构。
+    /// </summary>
     /// <param name="architecture">所属游戏入口。</param>
     public LootSystem(IArchitecture architecture) : base(architecture) { }
 
-    /// <summary>恢复品互斥抽取；装备另外独立判定，按原版 round 索引对应的权重选一件。</summary>
+    /// <summary>
+    /// 恢复品互斥抽取；装备另外独立判定，按原版 round 索引对应的权重选一件。
+    /// </summary>
     /// <param name="equipmentPoolId">本次配方的装备池主键。</param>
     /// <param name="equipmentChance">怪物装备概率。</param>
     /// <param name="random">返回 [0,1] 的采样器，允许 Godot 的闭区间端点。</param>
@@ -60,7 +66,9 @@ public sealed class LootSystem : AbstractSystem
         return new GroundLootSelection(pickup, equipment);
     }
 
-    /// <summary>按原版规则生成灵魂、魔法与无双球；经验独立在击败时结算。</summary>
+    /// <summary>
+    /// 按原版规则生成灵魂、魔法与无双球；经验独立在击败时结算。
+    /// </summary>
     /// <param name="monster">怪物基础掉落配置。</param>
     /// <param name="random">返回 [0,1) 随机值的函数。</param>
     /// <returns>每颗球的类型和奖励；魔法在拾取时按角色上限计算。</returns>
@@ -91,7 +99,9 @@ public sealed class LootSystem : AbstractSystem
         return rewards;
     }
 
-    /// <summary>计算每颗蓝球实际回蓝量，拾取时读取当前等级的魔法上限。</summary>
+    /// <summary>
+    /// 计算每颗蓝球实际回蓝量，拾取时读取当前等级的魔法上限。
+    /// </summary>
     /// <param name="maximum">当前魔法上限。</param>
     /// <returns>向下取整后的回蓝量。</returns>
     public int ManaAmount(int maximum)
@@ -100,10 +110,14 @@ public sealed class LootSystem : AbstractSystem
         return Math.Max(drops.ManaMinimum, (int)(maximum * drops.ManaMaxFraction));
     }
 
-    /// <summary>在包含两端的整数区间中均匀采样。</summary>
+    /// <summary>
+    /// 在包含两端的整数区间中均匀采样。
+    /// </summary>
     /// <param name="range">已通过启动校验的区间。</param>
     /// <param name="random">[0,1) 随机值。</param>
     /// <returns>区间中的整数。</returns>
-    private static int Count(Vector2I range, float random) =>
-        Math.Min(range.Y, range.X + (int)(random * (range.Y - range.X + 1)));
+    private static int Count(Vector2I range, float random)
+    {
+        return Math.Min(range.Y, range.X + (int)(random * (range.Y - range.X + 1)));
+    }
 }

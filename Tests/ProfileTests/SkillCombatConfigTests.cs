@@ -12,11 +12,14 @@ using Luban;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>从正式 Luban 产物核对统一伤害数据与技能平衡参数。</summary>
+/// <summary>
+/// 从正式 Luban 产物核对统一伤害数据与技能平衡参数。
+/// </summary>
 public sealed class SkillCombatConfigTests
 {
-    /// <summary>原版每个伤害键的威力、伤害类型、秒制击退与重复命中参数分别保留。</summary>
+    /// <summary>
+    /// 原版每个伤害键的威力、伤害类型、秒制击退与重复命中参数分别保留。
+    /// </summary>
     /// <param name="id">阶段标识。</param>
     /// <param name="scale">原版攻击倍率。</param>
     /// <param name="flat">原版固定威力。</param>
@@ -48,8 +51,9 @@ public sealed class SkillCombatConfigTests
         Assert.Equal(budget, hit.HitBudget);
         Assert.Equal(sourceInterval / 24f, hit.RepeatIntervalSeconds, .000001f);
     }
-
-    /// <summary>技能伤害不能混进实体的普通攻击段列表。</summary>
+    /// <summary>
+    /// 技能伤害不能混进实体的普通攻击段列表。
+    /// </summary>
     [Fact]
     public void NormalAttackIndex_ExcludesSkillDamageStages()
     {
@@ -57,8 +61,9 @@ public sealed class SkillCombatConfigTests
         foreach (var owner in TestTables.Tables.TbAttackConfig.DataList.Where(x => x.ComboIndex >= 0).Select(x => x.OwnerId).Distinct())
             Assert.All(TestTables.Configuration.GetAttacks(owner), attack => Assert.True(attack.ComboIndex >= 0));
     }
-
-    /// <summary>保留实际平衡参数；无敌开始时点归原生动画。</summary>
+    /// <summary>
+    /// 保留实际平衡参数；无敌开始时点归原生动画。
+    /// </summary>
     [Fact]
     public void SkillBalance_ContainsDurationsAndCancelRatio()
     {
@@ -67,8 +72,9 @@ public sealed class SkillCombatConfigTests
         Assert.Equal(70f / 24, table.Get(SkillId.FireDemonSlash).InvincibleDurationSeconds, .000001f);
         Assert.Equal(.7f, table.Get(SkillId.RisingDragon).CancelNormalAttackFrameRatio);
     }
-
-    /// <summary>正式表通过同一套启动校验。</summary>
+    /// <summary>
+    /// 正式表通过同一套启动校验。
+    /// </summary>
     [Fact]
     public void PreparedCombatTables_PassStartupValidation()
     {
@@ -76,8 +82,9 @@ public sealed class SkillCombatConfigTests
         ConfigurationSystem.ValidateSkillCombat(TestTables.Tables, errors);
         Assert.Empty(errors);
     }
-
-    /// <summary>无效攻击数值与技能平衡参数须在预加载拒绝。</summary>
+    /// <summary>
+    /// 无效攻击数值与技能平衡参数须在预加载拒绝。
+    /// </summary>
     [Fact]
     public void StartupValidation_RejectsInvalidHitAndDuration()
     {

@@ -11,11 +11,21 @@ namespace GameLogic.Entity
     [GlobalClass]
     public partial class HurtBoxNode : Area2D
     {
-        /// <summary>宿主实体（场景里绑定到实体根节点）</summary>
+        /// <summary>
+        /// 宿主实体（场景里绑定到实体根节点）
+        /// </summary>
         [Export] private AbstractActorEntity m_Owner;
 
-        /// <summary>宿主实体</summary>
-        public AbstractActorEntity OwnerEntity => m_Owner;
+        /// <summary>
+        /// 宿主实体
+        /// </summary>
+        public AbstractActorEntity OwnerEntity
+        {
+            get
+            {
+                return m_Owner;
+            }
+        }
 
         /// <summary>
         /// 受击区的世界包围盒：全部启用的碰撞形状 GetRect() 经各自全局变换后的并集（怪物 AI 判断"够不够得着"用）。

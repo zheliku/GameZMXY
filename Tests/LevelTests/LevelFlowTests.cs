@@ -9,17 +9,51 @@ using Luban;
 using Xunit;
 
 namespace GameLogic.Level.Tests;
-
-/// <summary>从真实 Luban 产物验证阶段、并行配方和实际相机中心的回归契约。</summary>
+/// <summary>
+/// 从真实 Luban 产物验证阶段、并行配方和实际相机中心的回归契约。
+/// </summary>
 public sealed class LevelFlowTests
 {
+    /// <summary>
+    /// 第四关保留39只有限蝙蝠与三条持续流；只有末波目标可提前开放出口。
+    /// </summary>
+    [Fact]
+    public void BatCave_TargetExitDoesNotRequireExhaustingContinuousSpawns()
+    {
+        var table = new TbLevelConfig(new ByteBuf(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory,
+            "Data", "level_tblevelconfig.bytes"))));
+        var level = table.Get(4);
+        Assert.Equal("stage_5_d", level.ExitTargetSpawnPointId);
+        Assert.Equal(new[] { 7, 10, 5, 17 }, level.Stages.Take(4).Select(stage => stage.Recipes.Sum(recipe => recipe.Count)));
+        Assert.Equal(new[] { 999, 999, 999 }, level.Stages[^1].Recipes
+            .Where(recipe => recipe.MonsterEntityId == EntityId.Bat).Select(recipe => recipe.Count));
+        var statue = Assert.Single(level.Stages[^1].Recipes, recipe => recipe.MonsterEntityId == EntityId.BatCaveStatue);
+        Assert.Equal(("stage_5_d", 1), (statue.SpawnPointId, statue.Count));
+        var sequence = new LevelStageSequence(level.Stages);
+        sequence.Begin();
+        sequence.StartBattle();
+        Assert.Throws<InvalidOperationException>(sequence.OpenExit);
+        for (int stage = 1; stage < 5; stage++)
+        {
+            sequence.ClearBattle();
+            sequence.StartBattle();
+        }
+        sequence.OpenExit();
+        Assert.Equal(LevelStagePhase.AwaitingExit, sequence.Phase);
+        Assert.Throws<InvalidOperationException>(sequence.OpenExit);
+        sequence.Complete();
+        Assert.Equal(LevelStagePhase.Completed, sequence.Phase);
+        Assert.All(table.DataList.Where(config => config.LevelId < 4), config => Assert.True(string.IsNullOrEmpty(config.ExitTargetSpawnPointId)));
+    }
+
     private static LevelConfig LoadLevel() // 与游戏读取相同二进制，覆盖嵌套列表布局而非复制配置对象。
     {
         string path = Path.Combine(AppContext.BaseDirectory, "Data", "level_tblevelconfig.bytes");
         return new TbLevelConfig(new ByteBuf(File.ReadAllBytes(path))).Get(1);
     }
-
-    /// <summary>花果山保留官方五波并行配方，末波大猩猩作为普通怪物参与守关。</summary>
+    /// <summary>
+    /// 花果山保留官方五波并行配方，末波大猩猩作为普通怪物参与守关。
+    /// </summary>
     [Fact]
     public void NestedConfigKeepsParallelRecipesAndCameraActivation()
     {
@@ -30,8 +64,9 @@ public sealed class LevelFlowTests
         Assert.All(level.Stages, x => Assert.Equal(StageActivation.CameraArrived, x.Activation));
         Assert.All(level.Stages, x => Assert.True(x.SpawnDelay >= 0));
     }
-
-    /// <summary>守关差异只配置在本条生成流，其他小怪保留基础值；经验覆盖保持原有收益。</summary>
+    /// <summary>
+    /// 守关差异只配置在本条生成流，其他小怪保留基础值；经验覆盖保持原有收益。
+    /// </summary>
     [Fact]
     public void SpawnRecipeScalesOnlyTheFeaturedGorilla()
     {
@@ -43,8 +78,9 @@ public sealed class LevelFlowTests
             Assert.Equal((1f, 1f, 1f, -1),
                 (recipe.HealthMultiplier, recipe.DefenseMultiplier, recipe.AttackMultiplier, recipe.ExperienceOverride)));
     }
-
-    /// <summary>官方第二波左右出怪，第三波三个高低分散点与一条延迟生成流不能再合并。</summary>
+    /// <summary>
+    /// 官方第二波左右出怪，第三波三个高低分散点与一条延迟生成流不能再合并。
+    /// </summary>
     [Fact]
     public void OfficialSpawnStreamsKeepSeparateLocationsAndFirstSpawnTimes()
     {
@@ -59,8 +95,9 @@ public sealed class LevelFlowTests
             level.Stages.Select(x => x.LeftGateId));
         Assert.Equal("stage_4_gate", level.Stages[3].GateId);
     }
-
-    /// <summary>加载期不开始战斗，清除只能推进紧邻下一阶段，末段清除等待出口交互后完成会话。</summary>
+    /// <summary>
+    /// 加载期不开始战斗，清除只能推进紧邻下一阶段，末段清除等待出口交互后完成会话。
+    /// </summary>
     [Fact]
     public void SequenceWaitsForArrivalAfterEveryClear()
     {
@@ -82,8 +119,9 @@ public sealed class LevelFlowTests
         Assert.Throws<InvalidOperationException>(sequence.Complete);
         Assert.Throws<InvalidOperationException>(sequence.StartBattle);
     }
-
-    /// <summary>重复抵达或清除不能让同一阶段启动两次或跳过阶段。</summary>
+    /// <summary>
+    /// 重复抵达或清除不能让同一阶段启动两次或跳过阶段。
+    /// </summary>
     [Fact]
     public void SequenceRejectsDuplicateBattleTransitions()
     {
@@ -96,8 +134,9 @@ public sealed class LevelFlowTests
         sequence.Stop();
         Assert.Throws<InvalidOperationException>(sequence.StartBattle);
     }
-
-    /// <summary>特殊触发阶段必须有可读触发区 ID，相机阶段不能携带无消费者的触发区外键。</summary>
+    /// <summary>
+    /// 特殊触发阶段必须有可读触发区 ID，相机阶段不能携带无消费者的触发区外键。
+    /// </summary>
     [Theory]
     [InlineData(StageActivation.Trigger, "special_area", true)]
     [InlineData(StageActivation.Trigger, "", false)]
@@ -117,8 +156,9 @@ public sealed class LevelFlowTests
             Assert.Throws<InvalidOperationException>(() => new LevelStageSequence(new[] { stage }));
         }
     }
-
-    /// <summary>阶段延迟之前不刷怪，到期后同帧取出 a 与 b 的首只怪物。</summary>
+    /// <summary>
+    /// 阶段延迟之前不刷怪，到期后同帧取出 a 与 b 的首只怪物。
+    /// </summary>
     [Fact]
     public void StageDelayThenBothRecipesBecomeReadyTogether()
     {
@@ -133,8 +173,9 @@ public sealed class LevelFlowTests
         Assert.Equal("b", b.SpawnPointId);
         Assert.False(schedule.TryTake(out _));
     }
-
-    /// <summary>全部配方发完仍等待存活名额，清空后才允许清波。</summary>
+    /// <summary>
+    /// 全部配方发完仍等待存活名额，清空后才允许清波。
+    /// </summary>
     [Fact]
     public void ClearRequiresRecipesFinishedAndAllEntitiesReleased()
     {
@@ -160,8 +201,9 @@ public sealed class LevelFlowTests
         Assert.True(schedule.IsCleared);
         Assert.False(schedule.TryTake(out _));
     }
-
-    /// <summary>预约名额计入上限，只有释放后下一条配方才能继续。</summary>
+    /// <summary>
+    /// 预约名额计入上限，只有释放后下一条配方才能继续。
+    /// </summary>
     [Fact]
     public void PendingShowsRespectCapacityAndRoundRobinFairness()
     {
@@ -174,8 +216,9 @@ public sealed class LevelFlowTests
         Assert.NotEqual(a.SpawnPointId, b.SpawnPointId);
         Assert.Equal(1, schedule.ActiveCount);
     }
-
-    /// <summary>角色在中央死区内移动时相机保持不动。</summary>
+    /// <summary>
+    /// 角色在中央死区内移动时相机保持不动。
+    /// </summary>
     [Theory]
     [InlineData(470f)]
     [InlineData(500f)]
@@ -184,8 +227,9 @@ public sealed class LevelFlowTests
     {
         Assert.Equal(470f, new SpatialUtility().StepCameraCenter(470f, target, 40f, 470f, 1210f, 10f));
     }
-
-    /// <summary>相机停止在墙前时，角色可继续移动，脚本中心仍等于实际显示中心。</summary>
+    /// <summary>
+    /// 相机停止在墙前时，角色可继续移动，脚本中心仍等于实际显示中心。
+    /// </summary>
     [Fact]
     public void LockedCameraNeverAccumulatesPositionBehindLimit()
     {
@@ -196,8 +240,9 @@ public sealed class LevelFlowTests
             Assert.Equal(1210f, center);
         }
     }
-
-    /// <summary>角色已走到右墙时开放下一段，相机首帧只移动允许的距离。</summary>
+    /// <summary>
+    /// 角色已走到右墙时开放下一段，相机首帧只移动允许的距离。
+    /// </summary>
     [Fact]
     public void OpeningGateDoesNotSnapToPlayerAtRightWall()
     {
@@ -212,8 +257,9 @@ public sealed class LevelFlowTests
 
         Assert.Equal(1620f, center);
     }
-
-    /// <summary>正常行进抵达右界时，角色仍位于屏幕中央的小死区附近。</summary>
+    /// <summary>
+    /// 正常行进抵达右界时，角色仍位于屏幕中央的小死区附近。
+    /// </summary>
     [Fact]
     public void CameraRightEdgeArrivesBeforePlayerReachesWall()
     {

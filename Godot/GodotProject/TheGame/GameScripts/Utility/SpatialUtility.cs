@@ -3,10 +3,14 @@ using GameLogic.Architecture;
 
 namespace GameLogic.Utility;
 
-/// <summary>纯相机窗口计算；不持有节点或可变状态。</summary>
+/// <summary>
+/// 纯相机窗口计算；不持有节点或可变状态。
+/// </summary>
 public sealed class SpatialUtility : IUtility
 {
-    /// <summary>按死区、可显示边界和单帧位移上限推进相机中心。</summary>
+    /// <summary>
+    /// 按死区、可显示边界和单帧位移上限推进相机中心。
+    /// </summary>
     /// <param name="current">当前相机中心的世界横坐标。</param>
     /// <param name="target">跟随目标的世界横坐标。</param>
     /// <param name="halfDeadZone">中央死区半宽，单位为世界像素。</param>

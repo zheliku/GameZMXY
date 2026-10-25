@@ -1,5 +1,6 @@
 using GameLogic.FloatingText;
 using GameLogic.Battle;
+using GameLogic.Battle.Attacks;
 using GameLogic.Architecture;
 using GameLogic.Equipment;
 using GameLogic.Save;
@@ -19,17 +20,87 @@ using GameLogic.Level;
 using GameLogic.Enemies;
 using GameLogic.Enemies.AI;
 using GameLogic;
+using GameConfig.Battle;
+using GameFramework;
 using GameLogic.Input;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
 
-/// <summary>真实引擎中的单向平台、飞行拾取、暂停和升级画面回归。</summary>
+/// <summary>
+/// 真实引擎中的单向平台、飞行拾取、暂停和升级画面回归。
+/// </summary>
 public sealed partial class UiSmokeScenario
 {
     private LootOrbNode m_PreviousOrb; // 已回池实例，供下一次击败检查 GGF 实际复用。
 
-    /// <summary>强制构造稀有蓝球夹具，验证实际拾取回蓝、上限、池复用与失效目标取消。</summary>
+    /// <summary>
+    /// 验证地面分支的落地门槛、具体怪物的索敌选择和猴子的受击激怒与复用。
+    /// </summary>
+    /// <param name="hero">本关实际英雄，测试结束恢复其位置。</param>
+    /// <returns>真实地面身体和感知检查完成的任务。</returns>
+    private async Task CheckMonsterResponsibilitiesAsync(AbstractHeroEntity hero)
+    {
+        Vector2 origin = hero.GlobalPosition;
+        hero.GlobalPosition = new Vector2(600, 400);
+        try
+        {
+            foreach (var id in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey, EntityId.Gorilla,
+                         EntityId.CaveBrute, EntityId.KnifeDemon })
+            {
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
+                    new EnemySpawn(new Vector2(720, 100)));
+                var enemy = m_Monster;
+                SmokeInspection.FreezeAi(enemy);
+                var agent = (IEnemyAiAgent)enemy;
+                Check(enemy is AbstractGroundMonsterEntity && !agent.RequestAttack(0),
+                    $"{id} 没有使用地面分支的空中出招限制");
+                await WaitUntilAsync(() => enemy.OnFloor, $"{id} 未通过地面身体落地");
+                await WaitFramesAsync(3);
+                Check(agent.TargetBox.HasArea() == (id != EntityId.HuaguoshanMonkey),
+                    $"{id} 的主动索敌规则错误");
+                if (id == EntityId.HuaguoshanMonkey)
+                {
+                    var data = AttackData.Create(0, default, 1, DamageKind.Real, Vector2.Zero, hero.Id, 0);
+                    try
+                    { enemy.ReceiveHit(data, hero.Id); }
+                    finally { ReferencePool.Release(data); }
+                    Check(agent.TargetBox.HasArea(), "猴子受击后没有锁定攻击者");
+                    typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic)!
+                        .Invoke(enemy, [null]);
+                    await WaitFramesAsync(3);
+                    Check(agent.TargetBox.HasArea(), "猴子被激怒后不能重新发现目标");
+                }
+                Check(agent.RequestAttack(0), $"{id} 落地后拒绝合法攻击");
+                await WaitUntilAsync(() => enemy.AttackSegment == 0, $"{id} 未消费攻击请求");
+                await WaitUntilAsync(() => SmokeInspection.BodyStateName(enemy) == "Move", $"{id} 收招未返回地面移动");
+                ReleaseTestEntity(enemy);
+                m_Monster = null;
+                await WaitFramesAsync(2); // GGF 在帧末完成隐藏并归还可复用池。
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
+                    new EnemySpawn(new Vector2(720, 100)));
+                Check(ReferenceEquals(enemy, m_Monster), $"{id} 未复用实体");
+                SmokeInspection.FreezeAi(m_Monster);
+                await WaitFramesAsync(3);
+                if (id == EntityId.HuaguoshanMonkey)
+                    Check(!((IEnemyAiAgent)m_Monster).TargetBox.HasArea(), "猴子复用后遗留激怒和目标");
+                ReleaseTestEntity(m_Monster);
+                m_Monster = null;
+            }
+            GD.Print("SMOKE-ENEMY-HIERARCHY PASS: five ground species, airborne attack rejection, grounded attack/recovery, monkey provocation/reacquisition and reuse.");
+        }
+        finally
+        {
+            if (m_Monster != null)
+                ReleaseTestEntity(m_Monster);
+            m_Monster = null;
+            hero.GlobalPosition = origin;
+        }
+    }
+
+    /// <summary>
+    /// 强制构造稀有蓝球夹具，验证实际拾取回蓝、上限、池复用与失效目标取消。
+    /// </summary>
     /// <param name="flow">测试档案作用域。</param>
     /// <param name="level">正式奖励所有者。</param>
     /// <param name="hero">正式出战英雄。</param>
@@ -109,14 +180,20 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: mana pickup/clamp/pool reuse/scene-owned target selection passed");
     }
 
-    /// <summary>只在测试侧通过反射把蓝球挂入正式所有权，避免为随机测试增加生产接口。</summary>
+    /// <summary>
+    /// 只在测试侧通过反射把蓝球挂入正式所有权，避免为随机测试增加生产接口。
+    /// </summary>
     /// <param name="level">实际结算所有者。</param>
     /// <param name="position">出生位置；不绑定目标英雄。</param>
     /// <returns>正在飞行的池实例。</returns>
     private static LootOrbNode SpawnManaOrb(LevelViewController level, Vector2 position)
-        => SpawnOrb(level, position, new(LootKind.Mana, 0));
+    {
+        return SpawnOrb(level, position, new(LootKind.Mana, 0));
+    }
 
-    /// <summary>在测试中生成指定球并接入当前关卡实际的拾取回调。</summary>
+    /// <summary>
+    /// 在测试中生成指定球并接入当前关卡实际的拾取回调。
+    /// </summary>
     /// <param name="level">实际奖励所有者。</param>
     /// <param name="position">出生位置；实际目标由关卡所有者决定。</param>
     /// <param name="reward">受测奖励，不向生产代码增加观测入口。</param>
@@ -131,7 +208,9 @@ public sealed partial class UiSmokeScenario
         return orb;
     }
 
-    /// <summary>在真实妖猴身体和播放器上验证重新进入追击不会插入持棒待机帧。</summary>
+    /// <summary>
+    /// 在真实妖猴身体和播放器上验证重新进入追击不会插入持棒待机帧。
+    /// </summary>
     /// <param name="hero">静止的真实目标。</param>
     /// <returns>两次追击进入的引擎回归。</returns>
     private async Task CheckDemonChaseAsync(AbstractHeroEntity hero)
@@ -188,7 +267,9 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: 妖猴左右追击、平台踱步及范围边缘切换逐渲染帧保持 run，无瞬间举棒");
     }
 
-    /// <summary>用真实 CharacterBody2D 分别穿过平台底部并落在平台上。</summary>
+    /// <summary>
+    /// 用真实 CharacterBody2D 分别穿过平台底部并落在平台上。
+    /// </summary>
     /// <param name="level">平台所在关卡。</param>
     /// <param name="flow">用于创建独立测试英雄的档案作用域。</param>
     /// <returns>三个物理探针及英雄下穿完成的任务。</returns>
@@ -265,7 +346,9 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: three official one-way platforms and hero S+K drop passed real physics");
     }
 
-    /// <summary>观测真正的在场球：未接触不入账，暂停不前进，恢复后追踪移动中的英雄。</summary>
+    /// <summary>
+    /// 观测真正的在场球：未接触不入账，暂停不前进，恢复后追踪移动中的英雄。
+    /// </summary>
     /// <param name="level">奖励所有者。</param>
     /// <param name="hero">本关英雄。</param>
     /// <returns>飞行中行为检查任务。</returns>
@@ -295,7 +378,9 @@ public sealed partial class UiSmokeScenario
         await CaptureCombatAsync("flying_loot");
     }
 
-    /// <summary>有渲染器时保留实际游戏截图，headless 时只执行状态与物理断言。</summary>
+    /// <summary>
+    /// 有渲染器时保留实际游戏截图，headless 时只执行状态与物理断言。
+    /// </summary>
     /// <param name="name">证据文件名称。</param>
     /// <returns>渲染帧保存任务。</returns>
     private async Task CaptureCombatAsync(string name)

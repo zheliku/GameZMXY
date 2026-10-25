@@ -15,10 +15,14 @@ using GodotGameFramework.NodePool;
 using GodotGameFramework.Sound;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
-/// <summary>更新完成后的准备边界：建立资源组、工具、共享模型及系统，成功后才允许预加载界面。</summary>
+/// <summary>
+/// 更新完成后的准备边界：建立资源组、工具、共享模型及系统，成功后才允许预加载界面。
+/// </summary>
 public sealed class ProcedurePrepare : ProcedureBase
 {
-    /// <summary>按工具、模型、系统的依赖顺序注册应用对象。</summary>
+    /// <summary>
+    /// 按工具、模型、系统的依赖顺序注册应用对象。
+    /// </summary>
     /// <param name="procedureOwner">拥有应用共享对象的主流程 FSM。</param>
     protected internal override void OnEnter(ProcedureOwner procedureOwner)
     {

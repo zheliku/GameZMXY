@@ -6,14 +6,16 @@ namespace GameLogic.Enemies.AI
 {
     /// <summary>
     /// 在目标下方守候：攻击重新够得着（目标落回判定高度）→ 站定出招，水平走远 → 继续追击；
-    /// 否则以目标 x 为中心、<see cref="PaceRange"/> 为半幅左右往返（到一端掉头；半幅 0 = 原地面向目标等）。
+    /// 否则以目标 x 为中心、<see cref="GameConfig.Monster.MonsterConfig.PaceRange"/> 为半幅左右往返（到一端掉头；半幅 0 = 原地面向目标等）。
     /// 半幅取 MonsterConfig.PaceRange。
     /// </summary>
     public class PaceBelowTargetState : AbstractEngageState
     {
         private int m_Dir; // 当前平台下踱步方向；0 表示尚未选向。
 
-        /// <summary>踱步半幅 px</summary>
+        /// <summary>
+        /// 踱步半幅 px
+        /// </summary>
         protected override void Enter(IEnemyAiAgent agent)
         {
             base.Enter(agent);
@@ -24,7 +26,9 @@ namespace GameLogic.Enemies.AI
             agent.Move(m_Dir);
         }
 
-        /// <summary>目标高度暂不可达时在其下方踱步或转入追击。</summary>
+        /// <summary>
+        /// 目标高度暂不可达时在其下方踱步或转入追击。
+        /// </summary>
         protected override void Engage(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, int dir, float elapseSeconds)
         {
             if (agent.GetSystem<EnemyAiSystem>().IsBasicAttackInReach(agent.Params, agent.TargetBox, dir))

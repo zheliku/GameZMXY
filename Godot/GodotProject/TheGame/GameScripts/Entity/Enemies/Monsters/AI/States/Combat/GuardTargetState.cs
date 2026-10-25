@@ -4,7 +4,9 @@ using GameFramework.Fsm;
 
 namespace GameLogic.Enemies.AI;
 
-/// <summary>原地守卫：不追击或踱步，按配置节奏攻击进入范围的目标。</summary>
+/// <summary>
+/// 原地守卫：不追击或踱步，按配置节奏攻击进入范围的目标。
+/// </summary>
 public sealed class GuardTargetState : AbstractEngageState
 {
     private float m_RollTimer; // 距下次普通攻击意愿判定的游戏秒数。

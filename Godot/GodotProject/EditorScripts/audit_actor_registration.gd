@@ -6,7 +6,7 @@ func _initialize() -> void:
     call_deferred("_audit")
 
 func _audit() -> void:
-    var paths := ["res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn", "res://TheGame/Entitys/Enemies/Monsters/huaguoshan_monkey_entity.tscn", "res://TheGame/Entitys/Enemies/Monsters/demon_monkey_entity.tscn", "res://TheGame/Entitys/Enemies/Monsters/gorilla_entity.tscn", "res://TheGame/Entitys/Enemies/Bosses/zm1_02_macaque_king/macaque_king_entity.tscn", "res://TheGame/Entitys/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_entity.tscn"]
+    var paths := ["res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn", "res://TheGame/Entitys/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_entity.tscn", "res://TheGame/Entitys/Enemies/Monsters/Ground/demon_monkey/demon_monkey_entity.tscn", "res://TheGame/Entitys/Enemies/Monsters/Ground/gorilla/gorilla_entity.tscn", "res://TheGame/Entitys/Enemies/Bosses/zm1_02_macaque_king/macaque_king_entity.tscn", "res://TheGame/Entitys/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_entity.tscn"]
     # 来自完整 colipse 变换；两个网格原点的 Y 平移也必须应用于身体和受击盒。
     var registrations := [
         Rect2(-22.10061, -17.055495, 45.00122, 90.01099),

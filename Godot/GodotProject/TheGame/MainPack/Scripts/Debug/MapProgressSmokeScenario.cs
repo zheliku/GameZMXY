@@ -10,7 +10,9 @@ using GameConfig.Constant;
 using Godot;
 using GodotGameFramework;
 
-/// <summary>真实新档依次通关三关，每次退出到标题再读取同一槽，检查最新提示和锁定输入。</summary>
+/// <summary>
+/// 真实新档依次通关三关，每次退出到标题再读取同一槽，检查最新提示和锁定输入。
+/// </summary>
 public sealed class MapProgressSmokeScenario(Node driver)
 {
     private int m_LevelId = 1; // 下一次实际挑战的关卡。
@@ -19,13 +21,19 @@ public sealed class MapProgressSmokeScenario(Node driver)
     private LevelSmokeScenario m_Run; // 本次真实五波、出口与检查点回归。
     private double m_Time; // 等待导航的总秒数。
 
-    /// <summary>回归已经完成或失败。</summary>
+    /// <summary>
+    /// 回归已经完成或失败。
+    /// </summary>
     public bool IsDone { get; private set; }
 
-    /// <summary>首个失败原因。</summary>
+    /// <summary>
+    /// 首个失败原因。
+    /// </summary>
     public string Failure { get; private set; }
 
-    /// <summary>在真实物理帧之后推进菜单与关卡操作。</summary>
+    /// <summary>
+    /// 在真实物理帧之后推进菜单与关卡操作。
+    /// </summary>
     /// <param name="delta">本次游戏秒数。</param>
     public void Update(double delta)
     {
@@ -114,11 +122,18 @@ public sealed class MapProgressSmokeScenario(Node driver)
         }
     }
 
-    /// <summary>返回当前真实地图实例。</summary>
+    /// <summary>
+    /// 返回当前真实地图实例。
+    /// </summary>
     /// <returns>可见的地图窗口，加载中为空。</returns>
-    private static MapForm VisibleMap() => GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_map_form) as MapForm is { Visible: true } map ? map : null;
+    private static MapForm VisibleMap()
+    {
+        return GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_map_form) as MapForm is { Visible: true } map ? map : null;
+    }
 
-    /// <summary>逐个地点核对解锁、原生提示以及直接发送锁定信号的拒绝。</summary>
+    /// <summary>
+    /// 逐个地点核对解锁、原生提示以及直接发送锁定信号的拒绝。
+    /// </summary>
     /// <param name="map">当前地图。</param>
     /// <param name="cleared">应已通关的最远编号。</param>
     private static void CheckMap(MapForm map, int cleared)

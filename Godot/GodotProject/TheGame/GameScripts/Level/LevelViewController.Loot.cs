@@ -16,7 +16,9 @@ using GameLogic.FloatingText;
 
 namespace GameLogic.Level;
 
-/// <summary>关卡拥有的飞行球和地面物品；拾取才入账，死亡、放弃和卸载时回收未领取物。</summary>
+/// <summary>
+/// 关卡拥有的飞行球和地面物品；拾取才入账，死亡、放弃和卸载时回收未领取物。
+/// </summary>
 public partial class LevelViewController
 {
     private readonly HashSet<GroundItemNode> m_GroundItems = new(); // 本关地面物品；未拾取不会阻止出口。
@@ -26,11 +28,14 @@ public partial class LevelViewController
     private readonly RandomNumberGenerator m_LootRandom = new(); // 本关掉落采样器；纯规则通过委托取值。
     private bool m_ExitRequested; // W 已确认，等待尚在飞行的球接触后提交检查点。
 
-    /// <summary>复制后的死亡数据在当前关卡生成奖励，不保留池化事件参数。</summary>
+    /// <summary>
+    /// 复制后的死亡数据在当前关卡生成奖励，不保留池化事件参数。
+    /// </summary>
     /// <param name="monster">基础掉落配置。</param>
     /// <param name="position">怪物死亡位置。</param>
     /// <param name="experienceReward">本次配方确定的经验。</param>
-    private void OnEnemyDefeated(MonsterConfig monster, Vector2 position, int experienceReward)
+    /// <param name="spawnPointId">实际死亡实体归属的配方生成点。</param>
+    private void OnEnemyDefeated(MonsterConfig monster, Vector2 position, int experienceReward, string spawnPointId)
     {
         if (LevelModel.Outcome.Value != LevelOutcome.Running || !m_Player.IsAlive)
             return;
@@ -55,6 +60,12 @@ public partial class LevelViewController
                 m_LootOrbs.Add(orb);
                 orb.Show(position, reward, OnLootFinished);
             }
+            // 先完成掉落登记，再允许玩家使用目标出口。
+            if (this.GetSystem<LevelSystem>().TryOpenExit(spawnPointId))
+            {
+                m_Gates.ReleaseRegion(LevelModel.Sequence.Current.StageOrder);
+                m_Exit.Enable();
+            }
         }
         catch (Exception error)
         {
@@ -62,7 +73,9 @@ public partial class LevelViewController
         }
     }
 
-    /// <summary>创建关卡拥有的地面物品，实例属性在落地之前已经确定。</summary>
+    /// <summary>
+    /// 创建关卡拥有的地面物品，实例属性在落地之前已经确定。
+    /// </summary>
     /// <param name="position">死亡位置附近。</param>
     /// <param name="pickupId">恢复品或空。</param>
     /// <param name="data">装备或空。</param>
@@ -75,7 +88,9 @@ public partial class LevelViewController
             TryCollectGroundItem, OnGroundItemFinished);
     }
 
-    /// <summary>接触时立即恢复或领取装备；满包保留地面物品，结局后拒绝入账。</summary>
+    /// <summary>
+    /// 接触时立即恢复或领取装备；满包保留地面物品，结局后拒绝入账。
+    /// </summary>
     /// <param name="hero">物品检测到的实际接触者；必须属于本会话。</param>
     /// <param name="pickupId">接触的恢复品。</param>
     /// <param name="data">接触的实际装备。</param>
@@ -94,7 +109,9 @@ public partial class LevelViewController
         return true;
     }
 
-    /// <summary>拾取或过期后只回收本关拥有的实例。</summary>
+    /// <summary>
+    /// 拾取或过期后只回收本关拥有的实例。
+    /// </summary>
     /// <param name="item">已经停止处理的节点。</param>
     private void OnGroundItemFinished(GroundItemNode item)
     {
@@ -102,7 +119,9 @@ public partial class LevelViewController
             NodePool.Instance.Release(item);
     }
 
-    /// <summary>只接受本关仍拥有的球，先归还实例，再在一次接触中发放对应奖励。</summary>
+    /// <summary>
+    /// 只接受本关仍拥有的球，先归还实例，再在一次接触中发放对应奖励。
+    /// </summary>
     /// <param name="orb">结束飞行的池实例。</param>
     /// <param name="reward">本次收益快照。</param>
     private void OnLootFinished(LootOrbNode orb, LootReward reward)
@@ -116,7 +135,9 @@ public partial class LevelViewController
             OnExitEntered();
     }
 
-    /// <summary>仅由本关所有者取英雄坐标，逐球推进；接触回调可以清空集合。</summary>
+    /// <summary>
+    /// 仅由本关所有者取英雄坐标，逐球推进；接触回调可以清空集合。
+    /// </summary>
     /// <param name="delta">本帧游戏秒数。</param>
     private void TickLoot(float delta)
     {
@@ -151,7 +172,9 @@ public partial class LevelViewController
         }
     }
 
-    /// <summary>逆序结束关卡时清除本关在场奖励；回收不触发拾取，不写档案。</summary>
+    /// <summary>
+    /// 逆序结束关卡时清除本关在场奖励；回收不触发拾取，不写档案。
+    /// </summary>
     private void ClearLoot()
     {
         foreach (LootOrbNode orb in m_LootOrbs)

@@ -61,6 +61,22 @@ namespace GameConfig.Equipment
         /// 地煞权杖
         /// </summary>
         EarthFiendScepter = 11,
+        /// <summary>
+        /// 家传手镯
+        /// </summary>
+        HeirloomBracelet = 12,
+        /// <summary>
+        /// 家传宝剑
+        /// </summary>
+        HeirloomSword = 13,
+        /// <summary>
+        /// 家传衣裳
+        /// </summary>
+        HeirloomClothes = 14,
+        /// <summary>
+        /// 天煞骨链
+        /// </summary>
+        HeavenlyFiendNecklace = 15,
     }
 
 } 

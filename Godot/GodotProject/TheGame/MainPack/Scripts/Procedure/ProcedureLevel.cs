@@ -250,7 +250,9 @@ public class ProcedureLevel : ProcedureBase
         m_Owner = null;
     }
 
-    /// <summary>在事件栈退出后的流程帧打开结算，死亡先等待真实动作完成。</summary>
+    /// <summary>
+    /// 在事件栈退出后的流程帧打开结算，死亡先等待真实动作完成。
+    /// </summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     /// <param name="elapseSeconds">本帧游戏秒数。</param>
     /// <param name="realElapseSeconds">本帧实际秒数。</param>
@@ -270,7 +272,9 @@ public class ProcedureLevel : ProcedureBase
         SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: true);
     }
 
-    /// <summary>收到左下角设置点击后打开暂停菜单。</summary>
+    /// <summary>
+    /// 收到左下角设置点击后打开暂停菜单。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnSettingsRequested(int formSerialId)
     {
@@ -283,7 +287,9 @@ public class ProcedureLevel : ProcedureBase
         SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
     }
 
-    /// <summary>在同一关卡中互斥打开背包与设置。</summary>
+    /// <summary>
+    /// 在同一关卡中互斥打开背包与设置。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnInventoryRequested(int formSerialId)
     {
@@ -296,7 +302,9 @@ public class ProcedureLevel : ProcedureBase
             GF.UI.OpenUIForm(UIFormId.InventoryForm, new InventoryFormData(m_Hero));
     }
 
-    /// <summary>互斥打开本关技能目录；展示当前出战角色。</summary>
+    /// <summary>
+    /// 互斥打开本关技能目录；展示当前出战角色。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnSkillsRequested(int formSerialId)
     {
@@ -309,7 +317,9 @@ public class ProcedureLevel : ProcedureBase
         m_SkillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm);
     }
 
-    /// <summary>设置的放弃与结算的返回地图使用各自的窗口编号校验。</summary>
+    /// <summary>
+    /// 设置的放弃与结算的返回地图使用各自的窗口编号校验。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnMapRequested(int formSerialId)
     {
@@ -320,7 +330,9 @@ public class ProcedureLevel : ProcedureBase
             ChangeState<ProcedureMap>(m_Owner);
     }
 
-    /// <summary>只有当前失败结算窗口可以重新挑战。</summary>
+    /// <summary>
+    /// 只有当前失败结算窗口可以重新挑战。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnRetryRequested(int formSerialId)
     {
@@ -329,13 +341,19 @@ public class ProcedureLevel : ProcedureBase
             NavigateAfterCheckpointAsync(m_Owner, m_EntrySerial, retry: true);
     }
 
-    /// <summary>检查窗口是否仍打开或正在加载。</summary>
+    /// <summary>
+    /// 检查窗口是否仍打开或正在加载。
+    /// </summary>
     /// <param name="serial">窗口请求编号；零表示无请求。</param>
     /// <returns>窗口仍属于本周期时为 true。</returns>
-    private static bool HasWindow(int serial) =>
-        serial != 0 && (GF.UI.HasUIForm(serial) || GF.UI.IsLoadingUIForm(serial));
+    private static bool HasWindow(int serial)
+    {
+        return serial != 0 && (GF.UI.HasUIForm(serial) || GF.UI.IsLoadingUIForm(serial));
+    }
 
-    /// <summary>从设置返回标题，离开边界负责回滚未完成的关卡。</summary>
+    /// <summary>
+    /// 从设置返回标题，离开边界负责回滚未完成的关卡。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnTitleRequested(int formSerialId)
     {
@@ -344,7 +362,9 @@ public class ProcedureLevel : ProcedureBase
             ChangeState<ProcedureTitle>(m_Owner);
     }
 
-    /// <summary>订阅场景结果并等待加载，命中已加载场景时直接返回。</summary>
+    /// <summary>
+    /// 订阅场景结果并等待加载，命中已加载场景时直接返回。
+    /// </summary>
     /// <param name="scenePath">关卡场景路径。</param>
     /// <param name="cancellationToken">等待取消令牌；流程退出后的卸载由进入周期校验负责。</param>
     /// <returns>加载后的关卡根节点。</returns>
@@ -490,7 +510,9 @@ public class ProcedureLevel : ProcedureBase
         }
     }
 
-    /// <summary>出口直接登记结算；失败等待原生死亡动画结束，离开流程取消旧周期等待。</summary>
+    /// <summary>
+    /// 出口直接登记结算；失败等待原生死亡动画结束，离开流程取消旧周期等待。
+    /// </summary>
     /// <param name="outcome">本次关卡结局。</param>
     private async void OnLevelEnded(LevelOutcome outcome)
     {
@@ -530,7 +552,9 @@ public class ProcedureLevel : ProcedureBase
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
     }
 
-    /// <summary>等待检查点后执行玩家选择；旧周期异步结果不触发导航。</summary>
+    /// <summary>
+    /// 等待检查点后执行玩家选择；旧周期异步结果不触发导航。
+    /// </summary>
     /// <param name="owner">流程状态机。</param>
     /// <param name="entrySerial">发起重开时的进入周期。</param>
     /// <param name="retry">失败后重试为 true，否则返回地图。</param>
@@ -552,7 +576,9 @@ public class ProcedureLevel : ProcedureBase
             ChangeState<ProcedureMap>(owner);
     }
 
-    /// <summary>战斗窗口打开失败时只处理本流程拥有的请求，统一结束关卡。</summary>
+    /// <summary>
+    /// 战斗窗口打开失败时只处理本流程拥有的请求，统一结束关卡。
+    /// </summary>
     /// <param name="sender">事件发送者。</param>
     /// <param name="args">池化事件参数，只在本次分发内读取。</param>
     private void OnBattleFormOpenFailed(object sender, GameEventArgs args)
@@ -567,7 +593,9 @@ public class ProcedureLevel : ProcedureBase
         }
     }
 
-    /// <summary>关卡异步显示失败时统一清理（运行回滚），不留下锁死的战斗区域。</summary>
+    /// <summary>
+    /// 关卡异步显示失败时统一清理（运行回滚），不留下锁死的战斗区域。
+    /// </summary>
     /// <param name="error">关卡运行错误。</param>
     private void OnLevelFailed(Exception error)
     {
@@ -575,7 +603,9 @@ public class ProcedureLevel : ProcedureBase
         CleanupSession(m_EntrySerial);
     }
 
-    /// <summary>异步窗口打开后接上本流程拥有的回调。</summary>
+    /// <summary>
+    /// 异步窗口打开后接上本流程拥有的回调。
+    /// </summary>
     /// <param name="sender">框架 UI。</param>
     /// <param name="args">当次打开结果。</param>
     private void OnFormOpened(object sender, GameEventArgs args)
@@ -588,7 +618,9 @@ public class ProcedureLevel : ProcedureBase
         }
     }
 
-    /// <summary>按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。</summary>
+    /// <summary>
+    /// 按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。
+    /// </summary>
     /// <param name="form">已打开窗口；在途时为空。</param>
     /// <param name="bind">绑定或解除。</param>
     private void SetFormCallbacks(IUIForm form, bool bind)

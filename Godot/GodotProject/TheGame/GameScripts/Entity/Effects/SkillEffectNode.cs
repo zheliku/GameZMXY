@@ -14,7 +14,9 @@ using GodotGameFramework.NodePool;
 
 namespace GameLogic.Effects;
 
-/// <summary>独立池化技能效果：原生动画拥有表现及方法键，节点拥有攻击包和命中预算。</summary>
+/// <summary>
+/// 独立池化技能效果：原生动画拥有表现及方法键，节点拥有攻击包和命中预算。
+/// </summary>
 public partial class SkillEffectNode : Node2D, IPoolable, IController
 {
     private const string DefaultAnimation = "play"; // 独立特效场景的普通动画约定。
@@ -25,6 +27,7 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     [Export] private CollisionShape2D m_Shape; // 几何及启闭均由动画驱动。
     private AttackConfig m_Hit; // 只借用统一数值表；纯视觉效果为空。
     private CombatantAttributes m_Attacker; // 效果生成时冻结的攻击者属性和阵营。
+    private SoundId m_HitSoundId; // 施放者提供的成功打击声音，不由受击怪物指定。
     private AttackData m_AttackData; // 节点拥有并按段更新的攻击包。
     private Action m_Completed; // 本次效果完成通知。
     private Action<SkillEffectNode> m_Finished; // 所属实体负责归还节点池。
@@ -34,7 +37,9 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     private double m_RepeatAt; // 依原生动画位置计算的下一次重复判定时刻。
     private bool m_Active, m_FinishRequested; // 防止方法轨道中回池或重复完成。
 
-    /// <summary>使用场景导出绑定，声音与结束回调只连接一次。</summary>
+    /// <summary>
+    /// 使用场景导出绑定，声音与结束回调只连接一次。
+    /// </summary>
     public override void _Ready()
     {
         m_SourceScale = Scale;
@@ -45,7 +50,9 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
         SetPhysicsProcess(false);
     }
 
-    /// <summary>推进原生动画，结束后再回池；暂停不推进。</summary>
+    /// <summary>
+    /// 推进原生动画，结束后再回池；暂停不推进。
+    /// </summary>
     /// <param name="delta">游戏秒数。</param>
     public override void _PhysicsProcess(double delta)
     {
@@ -69,14 +76,26 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
                 OnAreaEntered(area);
     }
 
-    /// <summary>借用当前 GGF 流程拥有的架构。</summary>
+    /// <summary>
+    /// 借用当前 GGF 流程拥有的架构。
+    /// </summary>
     /// <returns>当前架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
-    /// <summary>取池后等待本次参数。</summary>
-    public void OnGet() => SetPhysicsProcess(false);
+    /// <summary>
+    /// 取池后等待本次参数。
+    /// </summary>
+    public void OnGet()
+    {
+        SetPhysicsProcess(false);
+    }
 
-    /// <summary>回收攻击包并清除本次引用，复用不串技能或回调。</summary>
+    /// <summary>
+    /// 回收攻击包并清除本次引用，复用不串技能或回调。
+    /// </summary>
     public void OnRelease()
     {
         SetPhysicsProcess(false);
@@ -87,13 +106,16 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
         m_Finished = null;
         m_Completed = null;
         m_KnockbackOriginX = null;
+        m_HitSoundId = SoundId.None;
         m_Active = m_FinishRequested = false;
         m_Player.Stop();
         m_Shape.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
         Visible = false;
     }
 
-    /// <summary>显示效果，位置固定；大小、偏移与正反朝向留在场景和动画。</summary>
+    /// <summary>
+    /// 显示效果，位置固定；大小、偏移与正反朝向留在场景和动画。
+    /// </summary>
     /// <param name="hit">可选伤害数值。</param>
     /// <param name="position">世界位置。</param>
     /// <param name="direction">出招朝向。</param>
@@ -103,9 +125,10 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     /// <param name="finished">回收通知。</param>
     /// <param name="completed">效果完成通知。</param>
     /// <param name="knockbackOriginX">具体招式指定的击退中心。</param>
+    /// <param name="hitSoundId">本次效果成功命中的声音；与目标自身的受击语音分别播放。</param>
     public void Show(AttackConfig hit, Vector2 position, int direction,
         CombatantAttributes attacker, int power, bool musou, Action<SkillEffectNode> finished,
-        Action completed = null, float? knockbackOriginX = null)
+        Action completed = null, float? knockbackOriginX = null, SoundId hitSoundId = SoundId.None)
     {
         m_Hit = hit;
         m_Attacker = attacker;
@@ -114,6 +137,7 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
         m_Finished = finished;
         m_Completed = completed;
         m_KnockbackOriginX = knockbackOriginX;
+        m_HitSoundId = hitSoundId;
         m_RemainingHits = hit?.HitBudget ?? 0;
         m_RepeatAt = double.PositiveInfinity;
         m_FinishRequested = false;
@@ -129,7 +153,9 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
         SetPhysicsProcess(true);
     }
 
-    /// <summary>动画方法键创建新攻击包，不重置整段效果的预算。</summary>
+    /// <summary>
+    /// 动画方法键创建新攻击包，不重置整段效果的预算。
+    /// </summary>
     private void NewAttackAnimEvent()
     {
         if (m_AttackData != null)
@@ -139,18 +165,35 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
         m_RepeatAt = double.PositiveInfinity;
     }
 
-    /// <summary>原生声音键仍经过 GGF 的统一音频管理。</summary>
+    /// <summary>
+    /// 原生声音键仍经过 GGF 的统一音频管理。
+    /// </summary>
     /// <param name="id">已登记的声音编号。</param>
-    private void PlaySoundAnimEvent(SoundId id) => GF.Sound.PlayConfigured(id);
+    private void PlaySoundAnimEvent(SoundId id)
+    {
+        GF.Sound.PlayConfigured(id);
+    }
 
-    /// <summary>原生方法键请求结束，待播放器返回后回池。</summary>
-    private void FinishAnimationAnimEvent() => m_FinishRequested = true;
+    /// <summary>
+    /// 原生方法键请求结束，待播放器返回后回池。
+    /// </summary>
+    private void FinishAnimationAnimEvent()
+    {
+        m_FinishRequested = true;
+    }
 
-    /// <summary>纯视觉效果在真实动画结束时请求回池。</summary>
+    /// <summary>
+    /// 纯视觉效果在真实动画结束时请求回池。
+    /// </summary>
     /// <param name="animation">刚结束的动画。</param>
-    private void OnAnimationFinished(StringName animation) => m_FinishRequested = true;
+    private void OnAnimationFinished(StringName animation)
+    {
+        m_FinishRequested = true;
+    }
 
-    /// <summary>同一攻击包对同一目标去重，成功命中才消耗总预算。</summary>
+    /// <summary>
+    /// 同一攻击包对同一目标去重，成功命中才消耗总预算。
+    /// </summary>
     /// <param name="area">进入或持续重叠的区域。</param>
     private void OnAreaEntered(Area2D area)
     {
@@ -161,6 +204,8 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
         var result = target.ReceiveHit(m_AttackData, m_Attacker.ActorId.Value);
         if (result.IsMiss)
             return;
+        GF.Sound.PlayConfigured(m_HitSoundId);
+        OnHitLanded(target, result);
         m_RemainingHits--;
         if (m_Hit.RepeatIntervalSeconds > 0)
             m_RepeatAt = Math.Min(m_RepeatAt, m_Player.CurrentAnimationPosition + m_Hit.RepeatIntervalSeconds);
@@ -168,7 +213,16 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
             this.GetSystem<HeroSystem>().RecordHit(result.Damage, m_Attacker.Power);
     }
 
-    /// <summary>效果完成后通知所属状态并回池；是否仍能改变状态由接收方判断。</summary>
+    /// <summary>
+    /// 成功命中后的效果扩展点，具体效果可施加状态；不得保存池化攻击包。
+    /// </summary>
+    /// <param name="target">本次真实命中的目标。</param>
+    /// <param name="result">已经结算的结果。</param>
+    protected virtual void OnHitLanded(AbstractActorEntity target, DamageResult result) { }
+
+    /// <summary>
+    /// 效果完成后通知所属状态并回池；是否仍能改变状态由接收方判断。
+    /// </summary>
     private void Finish()
     {
         m_Active = false;

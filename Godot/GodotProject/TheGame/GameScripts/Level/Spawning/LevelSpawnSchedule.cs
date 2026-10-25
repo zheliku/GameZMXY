@@ -2,7 +2,9 @@ using GameConfig.Level;
 
 namespace GameLogic.Level;
 
-/// <summary>按游戏时间并行调度配方，统一预约并存名额，不创建实体或等待异步计时器。</summary>
+/// <summary>
+/// 按游戏时间并行调度配方，统一预约并存名额，不创建实体或等待异步计时器。
+/// </summary>
 public sealed class LevelSpawnSchedule
 {
     private const double TimeTolerance = 0.000001; // 浮点游戏时钟的比较容差，单位为秒。
@@ -13,13 +15,25 @@ public sealed class LevelSpawnSchedule
     private int m_Cursor; // 轮转取配方的起始下标，避免前一配方占满并存名额。
     private int m_Pending; // 尚未提交的实体总数。
 
-    /// <summary>已预约、正在显示或仍存活的实体数量。</summary>
+    /// <summary>
+    /// 已预约、正在显示或仍存活的实体数量。
+    /// </summary>
     public int ActiveCount { get; private set; }
 
-    /// <summary>配方全部提交且所有预约名额已归还。</summary>
-    public bool IsCleared => m_Pending == 0 && ActiveCount == 0;
+    /// <summary>
+    /// 配方全部提交且所有预约名额已归还。
+    /// </summary>
+    public bool IsCleared
+    {
+        get
+        {
+            return m_Pending == 0 && ActiveCount == 0;
+        }
+    }
 
-    /// <summary>创建阶段调度；首只怪物的等待时间为阶段延迟加配方延迟。</summary>
+    /// <summary>
+    /// 创建阶段调度；首只怪物的等待时间为阶段延迟加配方延迟。
+    /// </summary>
     /// <param name="stage">当前阶段的生成规则。</param>
     public LevelSpawnSchedule(LevelStage stage)
     {
@@ -34,11 +48,18 @@ public sealed class LevelSpawnSchedule
         }
     }
 
-    /// <summary>推进游戏时间；暂停时调用方停止推进。</summary>
+    /// <summary>
+    /// 推进游戏时间；暂停时调用方停止推进。
+    /// </summary>
     /// <param name="delta">本帧经过的游戏秒数。</param>
-    public void Advance(double delta) => m_Time += delta;
+    public void Advance(double delta)
+    {
+        m_Time += delta;
+    }
 
-    /// <summary>为一条到期配方预约名额；同一帧可连续调用，让各配方并行提交。</summary>
+    /// <summary>
+    /// 为一条到期配方预约名额；同一帧可连续调用，让各配方并行提交。
+    /// </summary>
     /// <param name="recipe">取出的到期配方；没有可提交配方时为 null。</param>
     /// <returns>取出配方时返回 true；并存已满或没有到期配方时返回 false。</returns>
     public bool TryTake(out LevelSpawnRecipe recipe)
@@ -70,6 +91,11 @@ public sealed class LevelSpawnSchedule
         return false;
     }
 
-    /// <summary>实体死亡或显示失败时归还一次名额。</summary>
-    public void Release() => ActiveCount--;
+    /// <summary>
+    /// 实体死亡或显示失败时归还一次名额。
+    /// </summary>
+    public void Release()
+    {
+        ActiveCount--;
+    }
 }

@@ -8,17 +8,17 @@ extends SceneTree
 const LEGACY := "P:/Godot-Project/ZMXY_BHYH/Art/AllNumber/"
 const OUT := "P:/Godot-Project/GameZMXY/Godot/GodotProject/TheGame/Sprites/Number/"
 
-## 新文件名 ← 旧（目录/前缀）。选型对应旧 DamageNumber.gd 的贴图选择（见 LegacyAssetMap.md）。
+## 新文件名 ← 旧（目录/前缀）。文件名保留迁入稳定键，运行时样式由 FloatingTextNode 按官方接收方规则选择。
 const SHEETS := {
     "recovery_number_health.png": "cure/cure_",
     "recovery_number_mana.png": "CureMp/CureMp_",
-	"damage_number_monster_physics.png": "magic/physics_",        # 怪物受物理伤害（旧放在 magic 目录）
-	"damage_number_monster_physics_crit.png": "physicscrit/physics_",
-	"damage_number_monster_magic.png": "magic/magic_",
-	"damage_number_monster_magic_crit.png": "magiccrit/magic_",
-	"damage_number_real.png": "real/real_",                       # 真实伤害（人怪共用）
-	"damage_number_hero_physics.png": "monster/physics/physics_", # 英雄受物理伤害（旧放在 monster 目录）
-	"damage_number_hero_magic.png": "monster/magic/magic_",
+	"damage_number_monster_physics.png": "magic/physics_",        # 当前对应官方 hurtnum，旧源目录名为 magic
+	"damage_number_monster_physics_crit.png": "physicscrit/physics_", # 当前对应官方 bnum
+	"damage_number_monster_magic.png": "magic/magic_",             # 旧迁入样式，运行时不再使用
+	"damage_number_monster_magic_crit.png": "magiccrit/magic_",    # 旧迁入样式，运行时不再使用
+	"damage_number_real.png": "real/real_",                        # 旧迁入样式，运行时不再按伤害类型选图
+	"damage_number_hero_physics.png": "monster/physics/physics_",  # 旧迁入样式，运行时不再使用
+	"damage_number_hero_magic.png": "monster/magic/magic_",        # 当前对应官方 pnum，文件名保留迁入键
 }
 
 

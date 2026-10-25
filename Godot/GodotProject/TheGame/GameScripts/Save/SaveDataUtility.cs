@@ -12,10 +12,14 @@ using GameLogic.Save.Data;
 
 namespace GameLogic.Save;
 
-/// <summary>独立运行时模型与存档 DTO 的纯转换；不持有状态，不访问文件或节点。</summary>
+/// <summary>
+/// 独立运行时模型与存档 DTO 的纯转换；不持有状态，不访问文件或节点。
+/// </summary>
 public sealed class SaveDataUtility : IUtility
 {
-    /// <summary>捕获完整档案快照，所有可变集合独立于运行时。</summary>
+    /// <summary>
+    /// 捕获完整档案快照，所有可变集合独立于运行时。
+    /// </summary>
     /// <param name="profile">本次要捕获的档案，只在同步转换期间读取。</param>
     /// <param name="skills">同一档案唯一的技能书。</param>
     /// <returns>当前格式的独立存档数据。</returns>
@@ -25,7 +29,8 @@ public sealed class SaveDataUtility : IUtility
         ArgumentNullException.ThrowIfNull(skills);
         GameData data = new()
         {
-            ActiveHeroId = profile.ActiveHeroId, Soul = profile.Soul.Value,
+            ActiveHeroId = profile.ActiveHeroId,
+            Soul = profile.Soul.Value,
             HighestClearedLevelId = profile.HighestClearedLevelId.Value
         };
         List<EquipmentData> datas = new(profile.EquipmentDatas);
@@ -54,7 +59,9 @@ public sealed class SaveDataUtility : IUtility
         return data;
     }
 
-    /// <summary>读档时完整验证 DTO；不创建或拥有任何运行时 Model。</summary>
+    /// <summary>
+    /// 读档时完整验证 DTO；不创建或拥有任何运行时 Model。
+    /// </summary>
     /// <param name="data">当前格式数据。</param>
     /// <param name="definitions">装备定义。</param>
     /// <param name="capacity">背包容量。</param>
@@ -83,7 +90,9 @@ public sealed class SaveDataUtility : IUtility
         }
     }
 
-    /// <summary>验证格式和必要记录；缺字段不补默认数据。</summary>
+    /// <summary>
+    /// 验证格式和必要记录；缺字段不补默认数据。
+    /// </summary>
     /// <param name="data">待校验的快照。</param>
     /// <exception cref="NotSupportedException">格式不是当前版本。</exception>
     /// <exception cref="ArgumentException">必要集合为空或含空记录。</exception>
@@ -97,7 +106,9 @@ public sealed class SaveDataUtility : IUtility
             throw new ArgumentException("存档缺少英雄或装备记录。");
     }
 
-    /// <summary>最远通关记录必须为空进度或指向已实现关卡，拒绝越界档案。</summary>
+    /// <summary>
+    /// 最远通关记录必须为空进度或指向已实现关卡，拒绝越界档案。
+    /// </summary>
     /// <param name="data">已校验版本的档案。</param>
     /// <param name="levels">当前关卡定义。</param>
     /// <exception cref="ArgumentException">通关主键无效。</exception>
@@ -108,7 +119,9 @@ public sealed class SaveDataUtility : IUtility
             throw new ArgumentException("最远通关记录不存在。");
     }
 
-    /// <summary>校验技能书的唯一性、定义存在及英雄归属；不静默丢弃坏记录。</summary>
+    /// <summary>
+    /// 校验技能书的唯一性、定义存在及英雄归属；不静默丢弃坏记录。
+    /// </summary>
     /// <param name="data">必要字段已通过校验的档案快照。</param>
     /// <param name="definitions">主动技能定义。</param>
     /// <exception cref="ArgumentException">技能重复、不存在或不属于该英雄。</exception>
@@ -121,7 +134,9 @@ public sealed class SaveDataUtility : IUtility
                 throw new ArgumentException($"英雄 {hero.HeroId} 的技能记录无效。");
     }
 
-    /// <summary>建立实例索引和穿戴引用，验证唯一所有权与背包容量。</summary>
+    /// <summary>
+    /// 建立实例索引和穿戴引用，验证唯一所有权与背包容量。
+    /// </summary>
     /// <param name="data">已验证必要集合的快照。</param>
     /// <param name="capacity">背包容量。</param>
     /// <returns>背包实例及每名英雄的完整穿戴。</returns>
@@ -158,7 +173,9 @@ public sealed class SaveDataUtility : IUtility
         }
     }
 
-    /// <summary>校验装备实际属性符合当前定义；读档不重抽或悄悄更换装备。</summary>
+    /// <summary>
+    /// 校验装备实际属性符合当前定义；读档不重抽或悄悄更换装备。
+    /// </summary>
     /// <param name="data">已检查编号与必要字段的装备记录。</param>
     /// <param name="definition">当前装备定义。</param>
     /// <exception cref="ArgumentException">定义不存在或属性不符合定义。</exception>
@@ -177,7 +194,9 @@ public sealed class SaveDataUtility : IUtility
         }
     }
 
-    /// <summary>校验装备定义与保存的英雄、部位一致。</summary>
+    /// <summary>
+    /// 校验装备定义与保存的英雄、部位一致。
+    /// </summary>
     /// <param name="data">已穿戴的实例或空。</param>
     /// <param name="heroId">穿戴者编号。</param>
     /// <param name="slot">保存的部位。</param>

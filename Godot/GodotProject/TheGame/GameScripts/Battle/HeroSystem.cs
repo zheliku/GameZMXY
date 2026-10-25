@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GameConfig.Attributes;
+using GameConfig.Battle;
 using GameLogic.Architecture;
 using GameLogic.Battle.Attributes;
 using GameLogic.Config;
@@ -10,7 +11,9 @@ using GameLogic.Profile;
 
 namespace GameLogic.Battle;
 
-/// <summary>英雄玩法数据入口：协调成长、穿戴、最终属性、生命魔法和无双；不持有表现节点。</summary>
+/// <summary>
+/// 英雄玩法数据入口：协调成长、穿戴、最终属性、生命魔法和无双；不持有表现节点。
+/// </summary>
 public sealed class HeroSystem : AbstractSystem
 {
     private static readonly int m_AttributeCount = Enum.GetValues<AttributeType>().Length; // 配置属性的连续数量。
@@ -19,37 +22,89 @@ public sealed class HeroSystem : AbstractSystem
     private static readonly AttributeSourceId m_AccessorySource = new("EquipmentAccessory", 0); // 当前饰品的来源键。
     private const double TickTolerance = 1e-5; // 秒数累计的浮点点数容差。
 
-    /// <summary>即时借用本局英雄数值，不缓存模型引用。</summary>
-    private HeroModel Hero => this.GetModel<HeroModel>();
+    /// <summary>
+    /// 即时借用本局英雄数值，不缓存模型引用。
+    /// </summary>
+    private HeroModel Hero
+    {
+        get
+        {
+            return this.GetModel<HeroModel>();
+        }
+    }
 
-    /// <summary>无双当前是否提供霸体，供身体状态机查询。</summary>
-    public bool SuperArmor => this.GetModel<HeroModel>().WsActive.Value;
+    /// <summary>
+    /// 无双当前是否提供霸体，供身体状态机查询。
+    /// </summary>
+    public bool SuperArmor
+    {
+        get
+        {
+            return this.GetModel<HeroModel>().WsActive.Value;
+        }
+    }
 
-    /// <summary>当前横向移动倍率，不改写共享角色参数。</summary>
-    public float MoveSpeedMultiplier => SuperArmor
+    /// <summary>
+    /// 当前横向移动倍率，不改写共享角色参数。
+    /// </summary>
+    public float MoveSpeedMultiplier
+    {
+        get
+        {
+            return SuperArmor
         ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.WsMoveSpeedMultiplier
         : 1f;
+        }
+    }
 
-    /// <summary>当前起跳倍率。</summary>
-    public float JumpSpeedMultiplier => SuperArmor
+    /// <summary>
+    /// 当前起跳倍率。
+    /// </summary>
+    public float JumpSpeedMultiplier
+    {
+        get
+        {
+            return SuperArmor
         ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.WsJumpSpeedMultiplier
         : 1f;
+        }
+    }
 
-    /// <summary>当前重力倍率。</summary>
-    public float GravityMultiplier => SuperArmor
+    /// <summary>
+    /// 当前重力倍率。
+    /// </summary>
+    public float GravityMultiplier
+    {
+        get
+        {
+            return SuperArmor
         ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.WsGravityMultiplier
         : 1f;
+        }
+    }
 
-    /// <summary>整招攻击威力倍率，包含招式固定加值。</summary>
-    public float AttackPowerMultiplier => SuperArmor
+    /// <summary>
+    /// 整招攻击威力倍率，包含招式固定加值。
+    /// </summary>
+    public float AttackPowerMultiplier
+    {
+        get
+        {
+            return SuperArmor
         ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.WsAttackMultiplier
         : 1f;
+        }
+    }
 
-    /// <summary>绑定所属流程架构；所需模型须先注册。</summary>
+    /// <summary>
+    /// 绑定所属流程架构；所需模型须先注册。
+    /// </summary>
     /// <param name="architecture">所属架构。</param>
     public HeroSystem(IArchitecture architecture) : base(architecture) { }
 
-    /// <summary>从完整档案建立本局数值，随后监听成长与穿戴。</summary>
+    /// <summary>
+    /// 从完整档案建立本局数值，随后监听成长与穿戴。
+    /// </summary>
     protected override void OnInit()
     {
         var profile = this.GetModel<ProfileModel>();
@@ -63,15 +118,20 @@ public sealed class HeroSystem : AbstractSystem
         profile.Slots.Register(OnEquipmentChanged, priority: 100);
     }
 
-    /// <summary>移除系统时退订持久来源并结束无双；模型稍后由流程移除。</summary>
+    /// <summary>
+    /// 移除系统时退订持久来源并结束无双；模型稍后由流程移除。
+    /// </summary>
     protected override void OnDeinit()
     {
         this.GetModel<ProfileModel>().Progress.UnRegister(OnProgressChanged);
         this.GetModel<ProfileModel>().Slots.UnRegister(OnEquipmentChanged);
         ClearWs();
+        ClearPoison();
     }
 
-    /// <summary>应用伤害；首次归零时结束无双，死亡动作交给实体。</summary>
+    /// <summary>
+    /// 应用伤害；首次归零时结束无双，死亡动作交给实体。
+    /// </summary>
     /// <param name="amount">伤害值。</param>
     /// <returns>本次是否首次归零。</returns>
     public bool Damage(int amount)
@@ -81,11 +141,16 @@ public sealed class HeroSystem : AbstractSystem
         Hero.Hp.Value = Math.Max(0, Hero.Hp.Value - amount);
         bool died = Hero.IsDepleted;
         if (died)
+        {
             ClearWs();
+            ClearPoison();
+        }
         return died;
     }
 
-    /// <summary>恢复存活英雄生命，不超过最终上限。</summary>
+    /// <summary>
+    /// 恢复存活英雄生命，不超过最终上限。
+    /// </summary>
     /// <param name="amount">恢复量。</param>
     public void Heal(int amount)
     {
@@ -93,7 +158,63 @@ public sealed class HeroSystem : AbstractSystem
             Hero.Hp.Value = (int)Math.Min(Hero.MaxHp.Value, (long)Hero.Hp.Value + amount);
     }
 
-    /// <summary>消耗魔法；不足时保持状态。</summary>
+    /// <summary>
+    /// 施加中毒；配置给出固定每跳伤害、秒间隔和总跳数，重复命中只刷新。
+    /// </summary>
+    /// <param name="attack">固定伤害记录；生命尚存才生效。</param>
+    /// <exception cref="ArgumentException">中毒记录不是有限正数值。</exception>
+    public void ApplyPoison(AttackConfig attack)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        if (attack.FlatPower.X <= 0 || attack.FlatPower.X != attack.FlatPower.Y ||
+            !float.IsFinite(attack.FlatPower.X) || attack.HitBudget <= 0 ||
+            !float.IsFinite(attack.RepeatIntervalSeconds) || attack.RepeatIntervalSeconds <= 0)
+            throw new ArgumentException("中毒需要固定正伤害、正跳数和正秒间隔。", nameof(attack));
+        if (Hero.IsDepleted)
+            return;
+        bool alreadyPoisoned = Hero.PoisonAttack != null;
+        Hero.PoisonAttack = attack;
+        Hero.PoisonTicks = attack.HitBudget;
+        if (!alreadyPoisoned)
+            Hero.PoisonTickLeft = attack.RepeatIntervalSeconds;
+    }
+
+    /// <summary>
+    /// 推进中毒时钟并返回本步固定扣血量；实体提交死亡与飘字，不触发受击动作。
+    /// </summary>
+    /// <param name="delta">游戏秒数；暂停不调用。</param>
+    /// <returns>本步到期的总伤害；无到期或无状态时为零。</returns>
+    public int AdvancePoison(float delta)
+    {
+        if (!float.IsFinite(delta) || delta <= 0 || Hero.PoisonAttack == null || Hero.IsDepleted)
+            return 0;
+        var attack = Hero.PoisonAttack;
+        Hero.PoisonTickLeft -= delta;
+        int damage = 0;
+        while (Hero.PoisonTickLeft <= TickTolerance && Hero.PoisonTicks > 0)
+        {
+            damage += (int)attack.FlatPower.X;
+            Hero.PoisonTicks--;
+            Hero.PoisonTickLeft += attack.RepeatIntervalSeconds;
+        }
+        if (Hero.PoisonTicks == 0)
+            ClearPoison();
+        return damage;
+    }
+
+    /// <summary>
+    /// 死亡、离关或重新初始化时移除中毒，不保留上一局时钟。
+    /// </summary>
+    private void ClearPoison()
+    {
+        Hero.PoisonAttack = null;
+        Hero.PoisonTicks = 0;
+        Hero.PoisonTickLeft = 0;
+    }
+
+    /// <summary>
+    /// 消耗魔法；不足时保持状态。
+    /// </summary>
     /// <param name="amount">消耗量。</param>
     /// <returns>是否成功。</returns>
     public bool TrySpendMp(int amount)
@@ -106,7 +227,9 @@ public sealed class HeroSystem : AbstractSystem
         return true;
     }
 
-    /// <summary>恢复魔法，不超过最终上限。</summary>
+    /// <summary>
+    /// 恢复魔法，不超过最终上限。
+    /// </summary>
     /// <param name="amount">恢复量。</param>
     public void RestoreMp(int amount)
     {
@@ -114,7 +237,9 @@ public sealed class HeroSystem : AbstractSystem
             Hero.Mp.Value = (int)Math.Min(Hero.MaxMp.Value, (long)Hero.Mp.Value + amount);
     }
 
-    /// <summary>开始本局时清除旧来源，整体应用成长与穿戴。</summary>
+    /// <summary>
+    /// 开始本局时清除旧来源，整体应用成长与穿戴。
+    /// </summary>
     /// <param name="heroId">英雄身份。</param>
     /// <param name="level">成长等级。</param>
     /// <param name="baseAttributes">对应基础值。</param>
@@ -126,10 +251,13 @@ public sealed class HeroSystem : AbstractSystem
     {
         ArgumentNullException.ThrowIfNull(baseAttributes);
         Hero.Sources.Clear();
+        ClearPoison();
         SetGrowth(baseAttributes, heroId, level, weaponData, armorData, refill: true, accessoryData);
     }
 
-    /// <summary>同步当前成长与穿戴并重算属性，保留技能/Buff 来源。</summary>
+    /// <summary>
+    /// 同步当前成长与穿戴并重算属性，保留技能/Buff 来源。
+    /// </summary>
     /// <param name="baseAttributes">当前基础值。</param>
     /// <param name="heroId">当前英雄。</param>
     /// <param name="level">当前等级。</param>
@@ -146,7 +274,9 @@ public sealed class HeroSystem : AbstractSystem
         Recalculate(heroId, level, refill);
     }
 
-    /// <summary>登记技能/Buff 等独立来源，替换同来源修正并立即重算。</summary>
+    /// <summary>
+    /// 登记技能/Buff 等独立来源，替换同来源修正并立即重算。
+    /// </summary>
     /// <param name="source">有效来源键。</param>
     /// <param name="modifiers">完整修正集合。</param>
     /// <exception cref="ArgumentException">来源无效。</exception>
@@ -159,7 +289,9 @@ public sealed class HeroSystem : AbstractSystem
         Recalculate(Hero.HeroId, Hero.Level.Value, refill: false);
     }
 
-    /// <summary>结束独立来源并重新发布最终值。</summary>
+    /// <summary>
+    /// 结束独立来源并重新发布最终值。
+    /// </summary>
     /// <param name="source">来源键。</param>
     /// <returns>是否存在该来源。</returns>
     public bool RemoveSource(AttributeSourceId source)
@@ -170,7 +302,9 @@ public sealed class HeroSystem : AbstractSystem
         return true;
     }
 
-    /// <summary>等级变化时使用已提交的成长和装备重算，升级补满、回滚不补满。</summary>
+    /// <summary>
+    /// 等级变化时使用已提交的成长和装备重算，升级补满、回滚不补满。
+    /// </summary>
     /// <param name="progress">完整成长状态。</param>
     private void OnProgressChanged(HeroProgressionState progress)
     {
@@ -182,7 +316,9 @@ public sealed class HeroSystem : AbstractSystem
             refill: progress.Level > Hero.Level.Value, profile.Accessory);
     }
 
-    /// <summary>装备事务完成后重算，保留其余来源且不补血。</summary>
+    /// <summary>
+    /// 装备事务完成后重算，保留其余来源且不补血。
+    /// </summary>
     /// <param name="slots">已经提交的穿戴。</param>
     private void OnEquipmentChanged(EquippedItems slots)
     {
@@ -190,7 +326,9 @@ public sealed class HeroSystem : AbstractSystem
         Recalculate(Hero.HeroId, Hero.Level.Value, refill: false);
     }
 
-    /// <summary>整体替换当前三个穿戴部位的属性来源。</summary>
+    /// <summary>
+    /// 整体替换当前三个穿戴部位的属性来源。
+    /// </summary>
     /// <param name="weaponData">当前武器。</param>
     /// <param name="armorData">当前防具。</param>
     /// <param name="accessoryData">当前饰品。</param>
@@ -207,7 +345,9 @@ public sealed class HeroSystem : AbstractSystem
             Hero.Sources[m_AccessorySource] = accessoryData.Attributes.EnumerateModifiers().ToArray();
     }
 
-    /// <summary>按固定、加算百分比、乘算百分比顺序汇总，再更新模型；各绑定值同步通知。</summary>
+    /// <summary>
+    /// 按固定、加算百分比、乘算百分比顺序汇总，再更新模型；各绑定值同步通知。
+    /// </summary>
     /// <param name="heroId">当前英雄。</param>
     /// <param name="level">当前等级。</param>
     /// <param name="refill">是否补满生命魔法。</param>
@@ -249,7 +389,9 @@ public sealed class HeroSystem : AbstractSystem
         ApplyFinalAttributes(final, heroId, level, refill);
     }
 
-    /// <summary>按实际伤害与出招时攻击力结算命中无双；开启期间不增长。</summary>
+    /// <summary>
+    /// 按实际伤害与出招时攻击力结算命中无双；开启期间不增长。
+    /// </summary>
     /// <param name="damage">实际伤害。</param>
     /// <param name="basePower">出招时基础攻击力。</param>
     public void RecordHit(int damage, int basePower)
@@ -262,7 +404,9 @@ public sealed class HeroSystem : AbstractSystem
         AddWs((int)Math.Min(int.MaxValue, Math.Floor((double)damage / basePower * coefficient + .5)));
     }
 
-    /// <summary>系统初始化时设置本局无双参数并清零。</summary>
+    /// <summary>
+    /// 系统初始化时设置本局无双参数并清零。
+    /// </summary>
     /// <param name="max">无双上限，下限 0。</param>
     /// <param name="decayPerSecond">自然衰减速度，有限正点数/秒。</param>
     /// <param name="drainPerSecond">开启后额外消耗速度，有限正点数/秒。</param>
@@ -280,7 +424,9 @@ public sealed class HeroSystem : AbstractSystem
         SetWsState(0, Math.Max(0, max), false);
     }
 
-    /// <summary>按官方规则累计：正在开启或本次加值会超过上限时整次不增加。</summary>
+    /// <summary>
+    /// 按官方规则累计：正在开启或本次加值会超过上限时整次不增加。
+    /// </summary>
     /// <param name="amount">增加量；非正数不处理，满值保持。</param>
     internal void AddWs(int amount)
     {
@@ -289,7 +435,9 @@ public sealed class HeroSystem : AbstractSystem
             AddWsFromPickup(amount);
     }
 
-    /// <summary>黄球增加无双；开启期间也可补充，超过上限仍整次忽略。</summary>
+    /// <summary>
+    /// 黄球增加无双；开启期间也可补充，超过上限仍整次忽略。
+    /// </summary>
     /// <param name="amount">本颗黄球的配置值，通常为 5。</param>
     public void AddWsFromPickup(int amount)
     {
@@ -299,7 +447,9 @@ public sealed class HeroSystem : AbstractSystem
         SetWsState(model.Ws.Value + amount, model.MaxWs.Value, model.WsActive.Value);
     }
 
-    /// <summary>蓄满时开启无双；激活期间不再次开启，也不累计命中收益。</summary>
+    /// <summary>
+    /// 蓄满时开启无双；激活期间不再次开启，也不累计命中收益。
+    /// </summary>
     /// <returns>是否已进入无双状态。</returns>
     public bool TryActivateWs()
     {
@@ -314,7 +464,9 @@ public sealed class HeroSystem : AbstractSystem
         return true;
     }
 
-    /// <summary>推进未满时的自然衰减或开启后的耗尽；满值保留，暂停时宿主不推进。</summary>
+    /// <summary>
+    /// 推进未满时的自然衰减或开启后的耗尽；满值保留，暂停时宿主不推进。
+    /// </summary>
     /// <param name="delta">本次物理步长秒数。</param>
     public void AdvanceWs(float delta)
     {
@@ -347,7 +499,9 @@ public sealed class HeroSystem : AbstractSystem
         SetWsState(value, model.MaxWs.Value, value > 0 && wasActive);
     }
 
-    /// <summary>立即结束并清空进度（死亡或模型移除），不影响无双上限。</summary>
+    /// <summary>
+    /// 立即结束并清空进度（死亡或模型移除），不影响无双上限。
+    /// </summary>
     public void ClearWs()
     {
         var model = this.GetModel<HeroModel>();
@@ -356,7 +510,9 @@ public sealed class HeroSystem : AbstractSystem
         SetWsState(0, model.MaxWs.Value, false);
     }
 
-    /// <summary>更新最终属性与资源；各属性由 Value 自动通知。</summary>
+    /// <summary>
+    /// 更新最终属性与资源；各属性由 Value 自动通知。
+    /// </summary>
     /// <param name="final">按 AttributeType 排列的最终数值。</param>
     /// <param name="heroId">本局英雄身份。</param>
     /// <param name="level">对应等级。</param>
@@ -385,7 +541,9 @@ public sealed class HeroSystem : AbstractSystem
         Hero.Level.Value = level;
     }
 
-    /// <summary>按上限、当前值、开启状态的业务顺序更新无双。</summary>
+    /// <summary>
+    /// 按上限、当前值、开启状态的业务顺序更新无双。
+    /// </summary>
     /// <param name="value">当前值。</param>
     /// <param name="max">当前上限。</param>
     /// <param name="active">是否开启。</param>

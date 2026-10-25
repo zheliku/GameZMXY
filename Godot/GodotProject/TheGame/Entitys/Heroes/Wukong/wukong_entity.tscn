@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b4ysr6hgrk40s"]
 
-[ext_resource type="Script" uid="uid://bvsl2fblhl02l" path="res://TheGame/GameScripts/Entity/Heroes/WukongEntity.cs" id="1_lcmpv"]
+[ext_resource type="Script" uid="uid://bvsl2fblhl02l" path="res://TheGame/GameScripts/Entity/Heroes/Wukong/WukongEntity.cs" id="1_lcmpv"]
 [ext_resource type="Resource" uid="uid://xk36fcf4y640" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_appearance.tres" id="2_p32r7"]
 [ext_resource type="Texture2D" uid="uid://cvhrf247evpd6" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_bare.png" id="3_v2bpf"]
 [ext_resource type="Texture2D" uid="uid://di26s8wme22dn" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_default.png" id="4_yi3k4"]
@@ -11,6 +11,9 @@
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="9_8wyf5"]
 [ext_resource type="PackedScene" uid="uid://cqio6ihe2xbfn" path="res://TheGame/Entitys/Effects/level_up.tscn" id="10_wse2p"]
 [ext_resource type="SpriteFrames" uid="uid://wtiw24jpg53n" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_prelude_frames.tres" id="11_l7ihn"]
+[ext_resource type="SpriteFrames" uid="uid://57holtaij20o" path="res://TheGame/Sprites/Characters/Heroes/Status/poison_head_frames.tres" id="14_lj6ud"]
+[ext_resource type="SpriteFrames" uid="uid://8mwlugsruvxh" path="res://TheGame/Sprites/Characters/Heroes/Status/poison_up_frames.tres" id="15_23xmk"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/wukong_death_tombstone.png" id="16_death"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_2pdac"]
 radius = 22.50061
@@ -22,7 +25,8 @@ size = Vector2(45.00122, 90.01099)
 [sub_resource type="RectangleShape2D" id="hitbox_rest"]
 size = Vector2(90, 90)
 
-[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_FireDemonPrelude", "m_Weapon", "m_EffectRoot", "m_MusouAfterimage", "m_LevelUp", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_FireDemonPrelude", "m_DeathTombstone", "m_Weapon", "m_EffectRoot", "m_MusouAfterimage", "m_LevelUp", "m_PoisonHead", "m_PoisonPulse", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+z_index = 1
 collision_layer = 2
 collision_mask = 8201
 floor_constant_speed = true
@@ -30,16 +34,20 @@ floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("1_lcmpv")
 m_FireDemonPrelude = NodePath("m_FireDemonPrelude")
+m_DeathTombstone = NodePath("m_DeathTombstone")
 m_Weapon = NodePath("m_Weapon")
 m_Appearance = ExtResource("2_p32r7")
 m_EffectRoot = NodePath("m_EffectRoot")
 m_HeroId = 1
 m_MusouAfterimage = NodePath("m_MusouAfterimage")
 m_LevelUp = NodePath("m_LevelUp")
+m_PoisonHead = NodePath("m_StatusEffects/m_PoisonHead")
+m_PoisonPulse = NodePath("m_StatusEffects/m_PoisonPulse")
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
 m_AttackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3", "attack_4", "attack_5")
-m_DamageSoundId = 4
+m_HurtSoundId = 4
+m_HitSoundId = 6
 m_HurtBox = NodePath("m_HurtBox")
 m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
 m_HitBoxRoot = NodePath("m_HitBoxRoot")
@@ -54,6 +62,16 @@ metadata/_edit_lock_ = true
 texture = ExtResource("4_yi3k4")
 hframes = 6
 vframes = 20
+
+[node name="m_DeathTombstone" type="Sprite2D" parent="." unique_id=2065418101]
+visible = false
+z_index = 2
+position = Vector2(0, -10)
+texture = ExtResource("16_death")
+offset = Vector2(-40, 40)
+scale = Vector2(0.4, 0.4)
+hframes = 8
+vframes = 5
 
 [node name="m_EffectRoot" type="Node2D" parent="." unique_id=605119054]
 
@@ -108,5 +126,21 @@ top_level = true
 sprite_frames = ExtResource("11_l7ihn")
 animation = &"play"
 offset = Vector2(52.15, -89.6)
+
+[node name="m_StatusEffects" type="Node2D" parent="." unique_id=2100677362]
+
+[node name="m_PoisonHead" type="AnimatedSprite2D" parent="m_StatusEffects" unique_id=447775283]
+visible = false
+position = Vector2(0, -70)
+sprite_frames = ExtResource("14_lj6ud")
+animation = &"play"
+offset = Vector2(0.5, -13.5)
+
+[node name="m_PoisonPulse" type="AnimatedSprite2D" parent="m_StatusEffects" unique_id=1878919791]
+visible = false
+position = Vector2(0, -50)
+sprite_frames = ExtResource("15_23xmk")
+animation = &"play"
+offset = Vector2(-22, -26.5)
 
 [connection signal="animation_finished" from="m_FireDemonPrelude" to="m_FireDemonPrelude" method="hide"]

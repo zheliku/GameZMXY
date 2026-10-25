@@ -31,7 +31,6 @@ m_EnemyEntityId = 4
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
 m_AttackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3")
-m_DamageSoundId = 6
 m_HurtBox = NodePath("m_HurtBox")
 m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
 m_HitBoxRoot = NodePath("m_HitBoxRoot")

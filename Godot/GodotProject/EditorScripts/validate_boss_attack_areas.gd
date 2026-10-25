@@ -25,16 +25,20 @@ func _validate() -> void:
 			if entry[1] == "tamarin_king":
 				samples = [
 					["attack_1",11,[Vector2(-110,-80)],[Vector2(-300,-80),Vector2(80,-80)]],
+					["attack_1",14,[Vector2(-200,-120)],[Vector2(-220,-120)]],
 					["attack_2",38,[],[Vector2(-100,-240),Vector2.ZERO]],
 					["attack_2",43,[Vector2(-160,-80),Vector2.ZERO,Vector2(100,-80)],[Vector2(-100,-240),Vector2(-350,-60),Vector2(350,-60)]],
+					["attack_2",47,[Vector2(180,-100)],[Vector2(-200,-100),Vector2(0,-180)]],
+					["attack_2",51,[Vector2(-190,-80)],[Vector2(-220,-80),Vector2(0,-180)]],
 					["attack_2",56,[],[Vector2.ZERO,Vector2(-100,-240)]],
+					["attack_2",61,[Vector2(-200,-80)],[Vector2(180,-80),Vector2(0,0)]],
 					["attack_2",63,[Vector2(-180,-60),Vector2(0,-60),Vector2(240,-60)],[Vector2(-100,-240),Vector2(-350,-60),Vector2(350,-60)]],
 					["attack_2",77,[],[Vector2.ZERO]]]
 			else:
 				samples = [
 					["attack_2",2,[],[Vector2.ZERO]],
 					["attack_2",8,[Vector2(10,20)],[Vector2(-100,20),Vector2(150,20)]],
-					["attack_2",38,[Vector2(0,-50),Vector2(-100,-170),Vector2(100,-170)],[Vector2(-120,40),Vector2(120,40),Vector2(200,-170)]]]
+					["attack_2",38,[Vector2(0,-50),Vector2(-100,-170),Vector2(100,-170),Vector2(-145,-170),Vector2(145,-170),Vector2(80,-60),Vector2(0,69)],[Vector2(-120,40),Vector2(120,40),Vector2(190,-170),Vector2(105,-60)]]]
 			for sample in samples:
 				player.play(sample[0])
 				player.seek((sample[1]-1) / 24.0 + 0.00001,true)

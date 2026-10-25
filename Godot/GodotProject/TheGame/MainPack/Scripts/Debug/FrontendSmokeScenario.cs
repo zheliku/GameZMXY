@@ -23,20 +23,40 @@ using GodotGameFramework;
 using GodotGameFramework.UI;
 using GodotGameFramework.Sound;
 
-/// <summary>在真实框架内验证菜单导航、关卡选择、退出回滚、音乐代理和菜单复用；不增加正式观测 API。</summary>
+/// <summary>
+/// 在真实框架内验证菜单导航、关卡选择、退出回滚、音乐代理和菜单复用；不增加正式观测 API。
+/// </summary>
 public sealed class FrontendSmokeScenario
 {
     private readonly Node m_Driver; // 引擎帧与窗口服务来源。
     private readonly Task m_Task; // 回归任务，故障也必须报告失败。
     private string m_Failure; // 已捕获的首个失败证据。
 
-    /// <summary>回归任务是否结束。</summary>
-    public bool IsDone => m_Task.IsCompleted;
+    /// <summary>
+    /// 回归任务是否结束。
+    /// </summary>
+    public bool IsDone
+    {
+        get
+        {
+            return m_Task.IsCompleted;
+        }
+    }
 
-    /// <summary>首个失败原因；成功时为空。</summary>
-    public string Failure => m_Failure ?? m_Task.Exception?.ToString();
+    /// <summary>
+    /// 首个失败原因；成功时为空。
+    /// </summary>
+    public string Failure
+    {
+        get
+        {
+            return m_Failure ?? m_Task.Exception?.ToString();
+        }
+    }
 
-    /// <summary>启动一次完整入口回归。</summary>
+    /// <summary>
+    /// 启动一次完整入口回归。
+    /// </summary>
     /// <param name="driver">真实场景树中的测试驱动节点。</param>
     public FrontendSmokeScenario(Node driver)
     {
@@ -44,7 +64,9 @@ public sealed class FrontendSmokeScenario
         m_Task = RunAsync();
     }
 
-    /// <summary>其他战斗回归通过真实菜单进入关卡，生产流程不读取烟测参数。</summary>
+    /// <summary>
+    /// 其他战斗回归通过真实菜单进入关卡，生产流程不读取烟测参数。
+    /// </summary>
     /// <param name="levelId">实际点击的地图地点，默认花果山。</param>
     /// <returns>已进入关卡流程时返回 true，否则继续等待菜单资源加载。</returns>
     public static bool AdvanceToLevel(int levelId = 1)
@@ -62,7 +84,7 @@ public sealed class FrontendSmokeScenario
             StartForm => "m_Start",
             SaveForm save when GF.Fsm.GetModel<SaveModel>().Phase == SaveListState.Ready => "Slots/m_Slot1",
             CharacterForm => "Roles/m_Wukong",
-            MapForm => levelId switch { 2 => "m_Shuiliandong", 3 => "m_Taohuayuan", _ => "m_Huaguoshan" },
+            MapForm => levelId switch { 2 => "m_Shuiliandong", 3 => "m_Taohuayuan", 4 => "m_Bianfuku", 5 => "m_Qixingdong", _ => "m_Huaguoshan" },
             _ => null,
         };
         if (form?.Visible == true && button != null)
@@ -76,7 +98,9 @@ public sealed class FrontendSmokeScenario
         return false;
     }
 
-    /// <summary>验证三个界面、返回链路、隔离档案和真实战斗开关。</summary>
+    /// <summary>
+    /// 验证三个界面、返回链路、隔离档案和真实战斗开关。
+    /// </summary>
     /// <returns>回归任务，异常转换为 Failure。</returns>
     private async Task RunAsync()
     {
@@ -179,13 +203,15 @@ public sealed class FrontendSmokeScenario
             Check(currentHint.IsPlaying() && currentHint.CurrentAnimation == "location/current", "最新关卡没有默认闪烁提示");
             currentHint.Seek(0, true);
             currentHint.Pause();
-            float currentLow = ((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("line_thickness").AsSingle();
+            var hintSprite = location.GetNode<Sprite2D>("CurrentHint");
+            int currentLow = hintSprite.Frame;
             await CaptureAsync("map_current_low");
             currentHint.Play("location/current");
             currentHint.Seek(.5, true);
             currentHint.Pause();
-            Check(((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("line_thickness").AsSingle() > currentLow, "最新关卡边缘没有闪烁");
-            Check(Mathf.IsEqualApprox(((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("image_scale").AsSingle(), .9f), "默认提示错误放大了地点");
+            Check(hintSprite.Visible && hintSprite.Frame != currentLow && !location.GetNode<TextureRect>("LocationGlow").Visible,
+                "最新关卡未使用原版图序列，或仍叠加悬停轮廓");
+            Check(hintSprite.Scale == Vector2.One, "默认提示错误放大了地点");
             await CaptureAsync("map_current");
             currentHint.Play("location/current");
             await CheckLocationHitRegionAsync(map, location);
@@ -215,7 +241,8 @@ public sealed class FrontendSmokeScenario
                 Check(changed > 100, "黄色光晕两次采样没有产生实际像素变化");
             }
             await MoveMouseAsync(new Vector2(30, 30));
-            Check(hover.IsPlaying() && hover.CurrentAnimation == "location/current" && Mathf.IsEqualApprox(((ShaderMaterial)location.GetNode<TextureRect>("LocationGlow").Material).GetShaderParameter("image_scale").AsSingle(), .9f), "离开地点后动画没有复位");
+            Check(hover.IsPlaying() && hover.CurrentAnimation == "location/current" && hintSprite.Visible &&
+                !location.GetNode<TextureRect>("LocationGlow").Visible, "离开地点后动画没有复位");
             await CheckMusicAsync("map_theme.mp3");
 
             // 保存图标写入第二格；第六格建档后再读第二格，不能误读最新档。
@@ -386,7 +413,9 @@ public sealed class FrontendSmokeScenario
         }
     }
 
-    /// <summary>在原生 FSM 验证归属、初始化、权限、缺失依赖、移除与池复用隔离。</summary>
+    /// <summary>
+    /// 在原生 FSM 验证归属、初始化、权限、缺失依赖、移除与池复用隔离。
+    /// </summary>
     /// <param name="flow">正式流程提供的测试宿主。</param>
     private static void CheckTypedFsmData(ProcedureOwner flow)
     {
@@ -475,7 +504,9 @@ public sealed class FrontendSmokeScenario
         Check(destroyedArchitectureRejected, "FSM 销毁后仍能访问模型");
     }
 
-    /// <summary>通过重复注册制造真实装配失败，验证档案回收和下一次读档。</summary>
+    /// <summary>
+    /// 通过重复注册制造真实装配失败，验证档案回收和下一次读档。
+    /// </summary>
     /// <param name="flow">正式应用作用域。</param>
     /// <param name="start">本周期标题窗口。</param>
     /// <returns>失败清理及重新读档验证任务。</returns>
@@ -511,7 +542,9 @@ public sealed class FrontendSmokeScenario
         GD.Print("SMOKE-LOAD-ROLLBACK PASS: partial profile registration is cleared and reload succeeds.");
     }
 
-    /// <summary>读档在等待检查点期间取消后，不创建空槽或发布当前槽身份。</summary>
+    /// <summary>
+    /// 读档在等待检查点期间取消后，不创建空槽或发布当前槽身份。
+    /// </summary>
     /// <param name="flow">正式应用作用域，使用反射控制等待，不增加生产测试入口。</param>
     /// <returns>取消及旧任务观察完成的任务。</returns>
     private static async Task CheckCancelledLoadAsync(ProcedureOwner flow)
@@ -548,7 +581,9 @@ public sealed class FrontendSmokeScenario
         GD.Print("SMOKE-LOAD-CANCEL PASS: cancelled load leaves catalogue and active slot unchanged.");
     }
 
-    /// <summary>确认提示关闭释放回调，复用后只执行本次回调。</summary>
+    /// <summary>
+    /// 确认提示关闭释放回调，复用后只执行本次回调。
+    /// </summary>
     /// <returns>真实框架提示验证任务。</returns>
     private async Task CheckQuestionTipsAsync()
     {
@@ -573,7 +608,9 @@ public sealed class FrontendSmokeScenario
         Check(callbacks == 1 && SmokeInspection.ReadField<Action>(second, "m_Confirm") == null, "关闭清理吞掉了本次回调或重复执行旧回调");
     }
 
-    /// <summary>等待六格目录可供选择。</summary>
+    /// <summary>
+    /// 等待六格目录可供选择。
+    /// </summary>
     /// <returns>已就绪的存档窗口。</returns>
     private async Task<SaveForm> WaitForSaveAsync()
     {
@@ -582,7 +619,9 @@ public sealed class FrontendSmokeScenario
         return form;
     }
 
-    /// <summary>等待异步目录或写入，超时记录业务失败。</summary>
+    /// <summary>
+    /// 等待异步目录或写入，超时记录业务失败。
+    /// </summary>
     /// <param name="ready">目标完成条件。</param>
     /// <param name="failure">超时证据。</param>
     /// <returns>完成条件等待任务。</returns>
@@ -594,7 +633,9 @@ public sealed class FrontendSmokeScenario
         Check(ready(), failure);
     }
 
-    /// <summary>等待实际 GGF 窗口打开，给资源加载最多 15 秒。</summary>
+    /// <summary>
+    /// 等待实际 GGF 窗口打开，给资源加载最多 15 秒。
+    /// </summary>
     /// <typeparam name="T">窗口类型。</typeparam>
     /// <returns>已显示窗口。</returns>
     private async Task<T> WaitForAsync<T>() where T : Control
@@ -610,7 +651,9 @@ public sealed class FrontendSmokeScenario
         throw new InvalidOperationException($"等待 {typeof(T).Name} 超时。");
     }
 
-    /// <summary>等待淡出结束后检查 GGF 的 AudioStreamPlayer 代理，循环取决于正式导入设置。</summary>
+    /// <summary>
+    /// 等待淡出结束后检查 GGF 的 AudioStreamPlayer 代理，循环取决于正式导入设置。
+    /// </summary>
     /// <param name="file">期望的音乐资源文件名。</param>
     /// <returns>音乐检查任务。</returns>
     private async Task CheckMusicAsync(string file)
@@ -625,7 +668,9 @@ public sealed class FrontendSmokeScenario
         Check(!Find<AudioStreamPlayer>().Any(player => player.Bus == "UI" && player.Playing), "确认音播放超过淡出等待时间仍未停止");
     }
 
-    /// <summary>真实 GPU 运行时保存正式界面截图；headless 模式只验证行为。</summary>
+    /// <summary>
+    /// 真实 GPU 运行时保存正式界面截图；headless 模式只验证行为。
+    /// </summary>
     /// <param name="name">截图 basename。</param>
     /// <returns>截图任务。</returns>
     private async Task CaptureAsync(string name)
@@ -639,13 +684,19 @@ public sealed class FrontendSmokeScenario
         m_Driver.GetViewport().GetTexture().GetImage().SavePng($"res://.godot/validation/frontend/{name}.png");
     }
 
-    /// <summary>从真实场景树读取测试所需节点，正式模块不遍历其他模块。</summary>
+    /// <summary>
+    /// 从真实场景树读取测试所需节点，正式模块不遍历其他模块。
+    /// </summary>
     /// <typeparam name="T">节点脚本类型。</typeparam>
     /// <returns>匹配的节点序列。</returns>
-    private System.Collections.Generic.IEnumerable<T> Find<T>() where T : Node =>
-        m_Driver.GetTree().Root.FindChildren("*", "", true, false).OfType<T>();
+    private System.Collections.Generic.IEnumerable<T> Find<T>() where T : Node
+    {
+        return m_Driver.GetTree().Root.FindChildren("*", "", true, false).OfType<T>();
+    }
 
-    /// <summary>激活真实已绑定的按钮，禁止对隐藏或禁用控件伪造成功。</summary>
+    /// <summary>
+    /// 激活真实已绑定的按钮，禁止对隐藏或禁用控件伪造成功。
+    /// </summary>
     /// <param name="form">所属 GGF 窗口。</param>
     /// <param name="path">窗口内按钮路径。</param>
     private static void Press(Control form, string path)
@@ -655,7 +706,9 @@ public sealed class FrontendSmokeScenario
         button.EmitSignal(BaseButton.SignalName.Pressed);
     }
 
-    /// <summary>使用视口局部坐标分发鼠标移动，避免窗口缩放改变测试命中位置。</summary>
+    /// <summary>
+    /// 使用视口局部坐标分发鼠标移动，避免窗口缩放改变测试命中位置。
+    /// </summary>
     /// <param name="position">视口内鼠标坐标。</param>
     /// <returns>输入分发和布局更新任务。</returns>
     private async Task MoveMouseAsync(Vector2 position)
@@ -666,7 +719,9 @@ public sealed class FrontendSmokeScenario
         m_Driver.GetViewport().PushInput(new InputEventMouseMotion { Position = position, GlobalPosition = position }, true);
     }
 
-    /// <summary>用真实鼠标验证已开放角色预览、未开放角色无交互及窗口复用复位。</summary>
+    /// <summary>
+    /// 用真实鼠标验证已开放角色预览、未开放角色无交互及窗口复用复位。
+    /// </summary>
     /// <param name="character">当前正式选角窗口。</param>
     /// <returns>四栏交互检查任务。</returns>
     private async Task CheckCharacterHoverAsync(CharacterForm character)
@@ -708,7 +763,9 @@ public sealed class FrontendSmokeScenario
         Check(!marker.Visible, "离开角色后 1P 仍显示");
     }
 
-    /// <summary>验证真实写入后的提示、自动消失、错误结果及再次保存时的动画复位。</summary>
+    /// <summary>
+    /// 验证真实写入后的提示、自动消失、错误结果及再次保存时的动画复位。
+    /// </summary>
     /// <param name="map">已经完成一次实际保存的地图窗口。</param>
     /// <returns>保存提示交互检查任务。</returns>
     private async Task CheckSaveFeedbackAsync(MapForm map)
@@ -735,7 +792,9 @@ public sealed class FrontendSmokeScenario
         Check(feedback.Text == "保存成功！" && Mathf.IsEqualApprox(feedback.Modulate.A, 1f), "再次实际保存未刷新提示或沿用旧透明度");
     }
 
-    /// <summary>验证普通图透明区拒绝输入，悬停图扩展区保持悬停且跟随节点缩放。</summary>
+    /// <summary>
+    /// 验证普通图透明区拒绝输入，悬停图扩展区保持悬停且跟随节点缩放。
+    /// </summary>
     /// <param name="map">当前地图窗口。</param>
     /// <param name="location">按当前显示图像进行透明轮廓命中的按钮。</param>
     /// <returns>真实鼠标输入回归任务。</returns>
@@ -794,12 +853,15 @@ public sealed class FrontendSmokeScenario
             glow.Scale = originalScale;
         }
         await MoveMouseAsync(new Vector2(30, 30));
-        Check(hover.IsPlaying() && hover.CurrentAnimation == "location/current" && glow.Visible, "离开放大图后未恢复最新进度提示");
+        Check(hover.IsPlaying() && hover.CurrentAnimation == "location/current" && !glow.Visible &&
+            location.GetNode<Sprite2D>("CurrentHint").Visible, "离开放大图后未恢复最新进度提示");
         await MoveMouseAsync(location.GlobalPosition + new Vector2(3, 3));
         Check(hover.CurrentAnimation == "location/current" && m_Driver.GetViewport().GuiGetHoveredControl() != location, "默认提示的透明区域错误接收输入");
     }
 
-    /// <summary>通过真实鼠标按下和松开验证点击、遮挡、坐标与按钮绑定。</summary>
+    /// <summary>
+    /// 通过真实鼠标按下和松开验证点击、遮挡、坐标与按钮绑定。
+    /// </summary>
     /// <param name="form">窗口。</param>
     /// <param name="path">按钮路径。</param>
     /// <param name="positionOverride">可选的视口点击位置；默认按钮中心。</param>
@@ -825,7 +887,9 @@ public sealed class FrontendSmokeScenario
         Check(pressed, $"真实鼠标未触发按钮：{path} @ {position}，窗口 {form.Name} Z={form.ZIndex}，悬停节点 {m_Driver.GetViewport().GuiGetHoveredControl()?.GetPath()}");
     }
 
-    /// <summary>失败立即结束回归并保留首个证据。</summary>
+    /// <summary>
+    /// 失败立即结束回归并保留首个证据。
+    /// </summary>
     /// <param name="condition">期望条件。</param>
     /// <param name="message">失败原因。</param>
     private static void Check(bool condition, string message)
@@ -834,24 +898,41 @@ public sealed class FrontendSmokeScenario
             throw new InvalidOperationException(message);
     }
 
-    /// <summary>仅供原生 FSM 作用域验证的空状态。</summary>
+    /// <summary>
+    /// 仅供原生 FSM 作用域验证的空状态。
+    /// </summary>
     private sealed class ArchitectureProbeState : GameFramework.Fsm.FsmState<GameFramework.Procedure.IProcedureManager> { }
 
-    /// <summary>仅供测试验证注册生命周期，不让正式钱包为测试继承 Model。</summary>
+    /// <summary>
+    /// 仅供测试验证注册生命周期，不让正式钱包为测试继承 Model。
+    /// </summary>
     /// <param name="value">测试值。</param>
     private sealed class ArchitectureProbeModel(int value) : AbstractModel
     {
-        /// <summary>只读测试值。</summary>
+        /// <summary>
+        /// 只读测试值。
+        /// </summary>
         public int Value { get; } = value;
 
-        /// <summary>实际初始化次数。</summary>
+        /// <summary>
+        /// 实际初始化次数。
+        /// </summary>
         public int InitCount { get; private set; }
 
-        /// <summary>实际解除次数。</summary>
+        /// <summary>
+        /// 实际解除次数。
+        /// </summary>
         public int DeinitCount { get; private set; }
         /// <inheritdoc />
-        protected override void OnInit() => InitCount++;
+        protected override void OnInit()
+        {
+            InitCount++;
+        }
+
         /// <inheritdoc />
-        protected override void OnDeinit() => DeinitCount++;
+        protected override void OnDeinit()
+        {
+            DeinitCount++;
+        }
     }
 }

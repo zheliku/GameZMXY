@@ -8,11 +8,14 @@ using GameLogic.Level;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
-
-/// <summary>通过正式背包查询验证跨页汇总、作用域和一次性结果与持续绑定的区别。</summary>
+/// <summary>
+/// 通过正式背包查询验证跨页汇总、作用域和一次性结果与持续绑定的区别。
+/// </summary>
 public sealed class QueryTests
 {
-    /// <summary>查询覆盖整个背包并排除穿戴物，按品质统计的售价与正式出售结果一致。</summary>
+    /// <summary>
+    /// 查询覆盖整个背包并排除穿戴物，按品质统计的售价与正式出售结果一致。
+    /// </summary>
     [Fact]
     public void SaleSummary_CoversAllPagesAndMatchesActualSale()
     {
@@ -36,8 +39,9 @@ public sealed class QueryTests
         Assert.Equal((0, 0L), scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Rough)));
         Assert.Equal(common, scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Common)));
     }
-
-    /// <summary>查询不发变更通知、不订阅变化；查询值保持不变，正常绑定继续观察后来的领取。</summary>
+    /// <summary>
+    /// 查询不发变更通知、不订阅变化；查询值保持不变，正常绑定继续观察后来的领取。
+    /// </summary>
     [Fact]
     public void Query_IsOneShotWhileBindingsObserveLaterChanges()
     {
@@ -68,8 +72,9 @@ public sealed class QueryTests
             scope.Profile.Soul.UnRegister(onSoulChanged);
         }
     }
-
-    /// <summary>控制器的查询只读自己的作用域；同一查询重发时使用新发送者，空请求明确拒绝。</summary>
+    /// <summary>
+    /// 控制器的查询只读自己的作用域；同一查询重发时使用新发送者，空请求明确拒绝。
+    /// </summary>
     [Fact]
     public void ControllerQuery_UsesCurrentScopeWithoutCachingModels()
     {
@@ -87,8 +92,9 @@ public sealed class QueryTests
         Assert.Throws<ArgumentNullException>(() => first.SendQuery<(int, long)>(null));
         Assert.Throws<ArgumentNullException>(() => ((IArchitecture)null).SendQuery(query));
     }
-
-    /// <summary>展示摘要不预留装备或承诺成交；余额溢出和摘要之后的穿戴仍由出售系统校验。</summary>
+    /// <summary>
+    /// 展示摘要不预留装备或承诺成交；余额溢出和摘要之后的穿戴仍由出售系统校验。
+    /// </summary>
     [Fact]
     public void SaleSummary_DoesNotAuthorizeOrReserveTheSale()
     {
@@ -106,8 +112,9 @@ public sealed class QueryTests
         Assert.Equal(int.MaxValue - 5, scope.Profile.Soul.Value);
         Assert.Equal((2, 20L), summary);
     }
-
-    /// <summary>无匹配品质或无效枚举得到空摘要，不改变背包。</summary>
+    /// <summary>
+    /// 无匹配品质或无效枚举得到空摘要，不改变背包。
+    /// </summary>
     /// <param name="quality">无匹配物的品质。</param>
     [Theory]
     [InlineData(EquipmentQuality.Excellent)]
@@ -120,8 +127,9 @@ public sealed class QueryTests
         Assert.Equal((0, 0L), scope.SendQuery(new EquipmentSaleSummaryQuery(quality)));
         Assert.Same(item, Assert.Single(scope.Profile.EquipmentDatas));
     }
-
-    /// <summary>建立使用正式系统的独立关卡。</summary>
+    /// <summary>
+    /// 建立使用正式系统的独立关卡。
+    /// </summary>
     /// <param name="soul">初始灵魂。</param>
     /// <returns>已开始的独立测试作用域。</returns>
     private static TestGameScope Ready(int soul = 0)
@@ -131,8 +139,9 @@ public sealed class QueryTests
         scope.GetSystem<LevelSystem>().StartSession(1);
         return scope;
     }
-
-    /// <summary>经正式装备抽取与领取准备背包，不复制生产计算。</summary>
+    /// <summary>
+    /// 经正式装备抽取与领取准备背包，不复制生产计算。
+    /// </summary>
     /// <param name="scope">所属作用域。</param>
     /// <param name="id">装备定义。</param>
     /// <returns>加入的同一装备。</returns>
@@ -142,11 +151,15 @@ public sealed class QueryTests
         Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(data));
         return data;
     }
-
-    /// <summary>使用正式控制器查询能力，不增加生产观测入口。</summary>
+    /// <summary>
+    /// 使用正式控制器查询能力，不增加生产观测入口。
+    /// </summary>
     private sealed class Controller(IArchitecture architecture) : IController
     {
         /// <inheritdoc />
-        IArchitecture IBelongToArchitecture.GetArchitecture() => architecture;
+        IArchitecture IBelongToArchitecture.GetArchitecture()
+        {
+            return architecture;
+        }
     }
 }

@@ -1,4 +1,4 @@
-"""Build independent native Flash panoramas for the first three ZMXY1 levels.
+"""Build independent native Flash panoramas for selected ZMXY1 levels.
 
 Reads original GameSence/bgClips display lists directly. Excludes debug markers,
 the dynamic river and exit animation; no Godot scene or extracted manifest is read.
@@ -31,25 +31,35 @@ def render(args):
     sprites = {int(tag.get('spriteId')): tag for tag in tags if tag.get('type') == 'DefineSpriteTag'}
     scenes = labeled_frames(sprites[128])
     backgrounds = labeled_frames(sprites[253])
-    for number in [1, 2, 3]:
-        label = f'1-{number}'
-        sprite = E.Element('item', type='DefineSpriteTag', spriteId=str(32000+number), frameCount='1')
+    exported = []
+    next_id = max(32000, max(sprites)) + 1
+    for label in args.levels:
+        if label not in scenes or label not in backgrounds:
+            raise ValueError(f'Unknown original stage label: {label}')
+        exported.append((label, next_id))
+        sprite = E.Element('item', type='DefineSpriteTag', spriteId=str(next_id), frameCount='1')
+        next_id += 1
         children = E.SubElement(sprite, 'subTags')
         container = next(tag for tag in scenes[label].values() if tag.get('name') == 'bgContainer')
         background = deepcopy(next(iter(backgrounds[label].values())))
         background.set('depth', '1')
         background.set('placeFlagMove', 'false')
+        background.set('placeFlagHasCharacter', 'true')
         matrix = background.find('matrix')
         offset = container.find('matrix')
         matrix.set('translateX', str(int(matrix.get('translateX')) + int(offset.get('translateX'))))
         matrix.set('translateY', str(int(matrix.get('translateY')) + int(offset.get('translateY')) + 65*20))
         children.append(background)
         for depth, tag in sorted(scenes[label].items(), key=lambda item: int(item[0])):
-            if int(tag.get('characterId')) not in [56, 60, 88, 97, 101, 103]:
+            if int(tag.get('characterId')) not in [56, 60, 88, 97, 101, 103, 107, 113,
+                                                  115, 116, 117, 118, 121, 122, 123, 125, 127]:
                 continue
             placed = deepcopy(tag)
             placed.set('depth', str(int(depth)+2))
             placed.set('placeFlagMove', 'false')
+            # The resolved frame may come from a move-only tag. In this new
+            # one-frame sprite it must place the resolved character explicitly.
+            placed.set('placeFlagHasCharacter', 'true')
             children.append(placed)
         E.SubElement(children, 'item', type='ShowFrameTag')
         tags.insert(len(tags)-1, sprite)
@@ -62,14 +72,18 @@ def render(args):
     with (args.work / 'export.log').open('w', encoding='utf-8') as log:
         subprocess.run(command + ['-xml2swf', str(args.work/'reference.xml'), str(args.work/'reference.swf')],
                        env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
-        subprocess.run(command + ['-selectid', '32001,32002,32003', '-ignorebackground', '-export',
+        selected = ','.join(str(sprite_id) for _, sprite_id in exported)
+        subprocess.run(command + ['-selectid', selected, '-ignorebackground', '-export',
                                   'sprite', str(args.work/'png'), str(args.work/'reference.swf')],
                        env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
-    print('OFFICIAL REFERENCE EXPORT PASS: direct GameSence/bgClips, original frame labels and placements.')
+    print('OFFICIAL REFERENCE EXPORT PASS:', ', '.join(f'{label} = sprite {sid}' for label, sid in exported),
+          '(direct GameSence/bgClips, original labels and placements).')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ['xml', 'java', 'ffdec', 'work']:
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--levels', nargs='+', default=['1-1', '1-2', '1-3'],
+                        help='Original map-stage labels; defaults to the first three levels.')
     render(parser.parse_args())

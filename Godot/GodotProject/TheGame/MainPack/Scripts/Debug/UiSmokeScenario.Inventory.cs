@@ -15,10 +15,14 @@ using GameConfig.Equipment;
 using Godot;
 using GodotGameFramework;
 
-/// <summary>背包与失败结算的真实窗口回归，直接检查节点和既有状态源。</summary>
+/// <summary>
+/// 背包与失败结算的真实窗口回归，直接检查节点和既有状态源。
+/// </summary>
 public sealed partial class UiSmokeScenario
 {
-    /// <summary>验证 HUD 点击、暂停、属性/钱包刷新、退订及池复用。</summary>
+    /// <summary>
+    /// 验证 HUD 点击、暂停、属性/钱包刷新、退订及池复用。
+    /// </summary>
     /// <param name="battleForm">正式战斗窗口。</param>
     /// <param name="hero">本关英雄。</param>
     /// <param name="flow">本槽档案。</param>
@@ -150,6 +154,47 @@ public sealed partial class UiSmokeScenario
         Check(flow.GetModel<ProfileModel>().Weapon == null && flow.GetModel<ProfileModel>().Armor == null &&
             GF.Fsm.GetModel<HeroModel>().Power.Value == basePower && GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense && GF.Fsm.GetModel<HeroModel>().MaxHp.Value == baseMaxHp,
             "卸装后装备栏或属性来源残留");
+        ClickBagEquipment(form, flow, EquipmentId.HeirloomSword);
+        var heirloomTexture = GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_heirloom.png");
+        Check(hero.GetNode<Sprite2D>("m_Weapon").Texture == heirloomTexture &&
+            form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Weapon").Texture == heirloomTexture &&
+            GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + 15 &&
+            Mathf.IsEqualApprox(GF.Fsm.GetModel<HeroModel>().Crit.Value, .03f),
+            "家传宝剑未同步替换战斗/背包动作图集或属性错误");
+        CheckHeroAnimationLayers(hero);
+        ClickBagEquipment(form, flow, EquipmentId.HeirloomBracelet);
+        Check(GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + 30 &&
+            GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense + 4, "家传手镯属性未加入饰品槽");
+        await CaptureCombatAsync("inventory_heirloom_sword");
+        ClickBagEquipment(form, flow, EquipmentId.HeirloomClothes);
+        Check(actions.GetNode<TextureButton>("Panel/Equip").Disabled && flow.GetModel<ProfileModel>().Armor == null,
+            "悟空错误穿上唐僧家传衣裳");
+        actions.Hide();
+        foreach (string path in new[] { "m_WeaponSlot", "m_AccessorySlot" })
+            form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/" + path)
+                ._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        Check(GF.Fsm.GetModel<HeroModel>().Power.Value == basePower &&
+            GF.Fsm.GetModel<HeroModel>().Crit.Value == 0, "家传装备卸下仍残留属性");
+        GD.Print("SMOKE-HEIRLOOM PASS: sword GUI equip, battle/preview texture, both-facing full actions, bracelet stats and Tang ownership.");
+        ClickBagEquipment(form, flow, EquipmentId.HeavenlyFiendNecklace);
+        Check(flow.GetModel<ProfileModel>().Accessory?.EquipmentId == EquipmentId.HeavenlyFiendNecklace &&
+            accessory.GetNode<TextureRect>("Icon").Texture != null &&
+            GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + 34 &&
+            GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense + 11 &&
+            form.GetNode<Label>("Window/CharacterPanel/Attributes/Left/Crit/m_Crit").Text == "3%" &&
+            form.GetNode<Label>("Window/CharacterPanel/Attributes/Right/Dodge/m_Dodge").Text == "3%",
+            "天煞骨链 GUI 穿戴、图标或官方属性不正确");
+        using (var tooltip = accessory._MakeCustomTooltip(accessory.TooltipText))
+        {
+            Check(tooltip.GetNode<VBoxContainer>("Content/Attributes").GetChildCount() == 4 &&
+                tooltip.GetNode<Label>("Content/Footer/Price").Text == "价值 : 80 灵魂", "天煞骨链提示属性或售价错误");
+            tooltip.Free();
+        }
+        await CaptureCombatAsync("inventory_heavenly_fiend_necklace");
+        accessory._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        Check(GF.Fsm.GetModel<HeroModel>().Power.Value == basePower &&
+            GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense, "天煞骨链卸下后仍有属性残留");
+        GD.Print("SMOKE-QIXING-NECKLACE PASS: transparent icon, GUI equip/unequip, four attributes and sell price 80");
         form.GetNode<Button>("Window/BagPanel/Footer/m_SellQuality").EmitSignal(BaseButton.SignalName.Pressed);
         form.GetNode<PopupMenu>("Window/BagPanel/Footer/m_SellQuality/m_QualityOptions")
             .EmitSignal(PopupMenu.SignalName.IdPressed, (long)EquipmentQuality.Rough);
@@ -197,7 +242,9 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: inventory actual attributes, 25 cells, live soul, pause, animated preview, key remap/echo, unsubscribe and reuse passed");
     }
 
-    /// <summary>由当前背包格提交一次鼠标穿戴输入，不绕过窗口业务。</summary>
+    /// <summary>
+    /// 由当前背包格提交一次鼠标穿戴输入，不绕过窗口业务。
+    /// </summary>
     /// <param name="form">已打开的真实窗口。</param>
     /// <param name="flow">受测档案。</param>
     /// <param name="id">要点击的装备定义。</param>
@@ -219,7 +266,9 @@ public sealed partial class UiSmokeScenario
             equip.EmitSignal(BaseButton.SignalName.Pressed);
     }
 
-    /// <summary>比较一项和三项属性的实际布局，头部固定、价格只随中间属性下移。</summary>
+    /// <summary>
+    /// 比较一项和三项属性的实际布局，头部固定、价格只随中间属性下移。
+    /// </summary>
     /// <param name="form">提供正式字体主题的背包。</param>
     /// <param name="flow">提供真实装备定义和实际属性的档案。</param>
     /// <returns>布局完成并清理夹具后的任务。</returns>
@@ -299,7 +348,9 @@ public sealed partial class UiSmokeScenario
         ring.Free();
     }
 
-    /// <summary>从正式按钮验证分类、三页边界、第三页选择与整包出售，结束后还原夹具。</summary>
+    /// <summary>
+    /// 从正式按钮验证分类、三页边界、第三页选择与整包出售，结束后还原夹具。
+    /// </summary>
     /// <param name="form">正式背包窗口。</param>
     /// <param name="flow">受测档案。</param>
     /// <returns>包含实际窗口截图的回归任务。</returns>
@@ -417,7 +468,9 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-UI: four tabs, 75 slots, three-page bounds; quality sale confirmation, cancel/Esc, modal input, stale/duplicate rejection and bulk transaction passed");
     }
 
-    /// <summary>通过真实视口鼠标事件点击控件，验证弹层输入阻挡与按钮响应。</summary>
+    /// <summary>
+    /// 通过真实视口鼠标事件点击控件，验证弹层输入阻挡与按钮响应。
+    /// </summary>
     /// <param name="control">鼠标目标控件。</param>
     private static void PushMouseClick(Control control)
     {
@@ -437,7 +490,9 @@ public sealed partial class UiSmokeScenario
         }
     }
 
-    /// <summary>从项目输入映射取得真实按键，避免烟测绕开动作映射。</summary>
+    /// <summary>
+    /// 从项目输入映射取得真实按键，避免烟测绕开动作映射。
+    /// </summary>
     /// <param name="pressed">按下或释放。</param>
     /// <param name="echo">是否模拟长按产生的重复按下。</param>
     private void PushInventoryKey(bool pressed, bool echo = false)
@@ -449,7 +504,9 @@ public sealed partial class UiSmokeScenario
         input.Dispose();
     }
 
-    /// <summary>在暂停中的真实实体上逐帧采样全部已接入动作，验证两层同步、有效素材与固定根原点。</summary>
+    /// <summary>
+    /// 在暂停中的真实实体上逐帧采样全部已接入动作，验证两层同步、有效素材与固定根原点。
+    /// </summary>
     /// <param name="hero">当前暂停中的英雄。</param>
     private static void CheckHeroAnimationLayers(AbstractHeroEntity hero)
     {
@@ -471,7 +528,8 @@ public sealed partial class UiSmokeScenario
                 player.Play(name);
                 for (double time = 0; time < animation.Length; time += 1d / 60)
                 {
-                    player.Seek(time, true);
+                    // 此处只采样画面；不重放每个采样点之前的音效和战斗方法轨道。
+                    player.Seek(time, update: true, updateOnly: true);
                     Check(body.Frame == weapon.Frame && body.FlipH == weapon.FlipH && hero.Position == root,
                         $"动作 {name} 身体/武器帧、朝向不同步或修改了角色根坐标");
                     Rect2I frame = new(body.Frame % 6 * 200, body.Frame / 6 * 200, 200, 200);
@@ -482,11 +540,13 @@ public sealed partial class UiSmokeScenario
         }
         hero.SetFacing(facing);
         player.Play(string.IsNullOrEmpty(previous) ? "idle1" : previous);
-        player.Seek(position, true);
+        player.Seek(position, update: true, updateOnly: true);
         player.Active = active;
     }
 
-    /// <summary>等待失败结算并检查成绩、按钮和暂停，然后按重试。</summary>
+    /// <summary>
+    /// 等待失败结算并检查成绩、按钮和暂停，然后按重试。
+    /// </summary>
     /// <param name="run">已提交死亡检查点的关卡。</param>
     /// <returns>已提交重试请求的任务。</returns>
     private async Task CheckFailureSettlementAsync(LevelViewController run)
@@ -502,7 +562,9 @@ public sealed partial class UiSmokeScenario
         form.GetNode<TextureButton>("Content/Actions/m_Retry").EmitSignal(BaseButton.SignalName.Pressed);
     }
 
-    /// <summary>检查实际 GGF 音乐代理，结算不能残留关卡音乐。</summary>
+    /// <summary>
+    /// 检查实际 GGF 音乐代理，结算不能残留关卡音乐。
+    /// </summary>
     /// <param name="file">结算曲资源文件名。</param>
     /// <returns>唯一代理就绪的验证任务。</returns>
     private async Task CheckSettlementMusicAsync(string file)
@@ -516,7 +578,9 @@ public sealed partial class UiSmokeScenario
         GD.Print($"SMOKE-MUSIC PASS: unique paused settlement Music agent {file}");
     }
 
-    /// <summary>失败页池复用后仍可选择返回地图，再次进关不残留暂停或成绩。</summary>
+    /// <summary>
+    /// 失败页池复用后仍可选择返回地图，再次进关不残留暂停或成绩。
+    /// </summary>
     /// <returns>返回地图并重新进关的任务。</returns>
     private async Task CheckFailureReturnMapAsync()
     {

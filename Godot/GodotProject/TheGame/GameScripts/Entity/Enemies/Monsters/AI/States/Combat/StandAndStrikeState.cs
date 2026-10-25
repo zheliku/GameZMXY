@@ -14,7 +14,9 @@ namespace GameLogic.Enemies.AI
     {
         private float m_RollTimer; // 距下一次普攻意愿判定的剩余时间（秒）。
 
-        /// <summary>进入站定攻击状态时按配置随机安排首次判定延迟。</summary>
+        /// <summary>
+        /// 进入站定攻击状态时按配置随机安排首次判定延迟。
+        /// </summary>
         protected override void Enter(IEnemyAiAgent agent)
         {
             base.Enter(agent);
@@ -22,7 +24,9 @@ namespace GameLogic.Enemies.AI
             m_RollTimer = (agent.Config.AttackFirstDelay.X, agent.Config.AttackFirstDelay.Y).Sample(agent.NextRandom());
         }
 
-        /// <summary>处理范围滞回、高度踱步和普攻请求。</summary>
+        /// <summary>
+        /// 处理范围滞回、高度踱步和普攻请求。
+        /// </summary>
         protected override void Engage(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, int dir, float elapseSeconds)
         {
             float gap = agent.GetSystem<EnemyAiSystem>().GetBasicAttackHorizontalGap(agent.Params, agent.TargetBox, dir);

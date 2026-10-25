@@ -25,16 +25,24 @@ public partial class BattleForm : IController
     private BattleFormData m_FormData; // 本次打开的状态源引用，关闭后释放。
     private AbstractEnemyEntity m_Opponent; // 本次观察的守关怪，实体所有权仍归关卡。
 
-    /// <summary>由所属流程处理 SettingsRequested；参数为本次窗口编号。</summary>
+    /// <summary>
+    /// 由所属流程处理 SettingsRequested；参数为本次窗口编号。
+    /// </summary>
     public event Action<int> SettingsRequested;
 
-    /// <summary>由所属流程处理 InventoryRequested；参数为本次窗口编号。</summary>
+    /// <summary>
+    /// 由所属流程处理 InventoryRequested；参数为本次窗口编号。
+    /// </summary>
     public event Action<int> InventoryRequested;
 
-    /// <summary>由所属流程处理 SkillsRequested；参数为本次窗口编号。</summary>
+    /// <summary>
+    /// 由所属流程处理 SkillsRequested；参数为本次窗口编号。
+    /// </summary>
     public event Action<int> SkillsRequested;
 
-    /// <summary>战斗界面通过输入映射请求背包或技能，暂停或覆盖时不响应。</summary>
+    /// <summary>
+    /// 战斗界面通过输入映射请求背包或技能，暂停或覆盖时不响应。
+    /// </summary>
     /// <param name="inputEvent">输入映射处理的事件。</param>
     public override void _UnhandledInput(InputEvent inputEvent)
     {
@@ -51,7 +59,9 @@ public partial class BattleForm : IController
             OnSkillsClicked();
     }
 
-    /// <summary>初始化框架字段；业务订阅只在 OnOpen 建立。</summary>
+    /// <summary>
+    /// 初始化框架字段；业务订阅只在 OnOpen 建立。
+    /// </summary>
     /// <param name="serialId">界面请求编号。</param>
     /// <param name="uiFormAssetName">界面资源路径。</param>
     /// <param name="uiGroup">所属界面组。</param>
@@ -75,7 +85,9 @@ public partial class BattleForm : IController
         }
     }
 
-    /// <summary>回池时重复执行本地解绑，清空框架字段。</summary>
+    /// <summary>
+    /// 回池时重复执行本地解绑，清空框架字段。
+    /// </summary>
     public void OnRecycle()
     {
         Unbind();
@@ -88,7 +100,9 @@ public partial class BattleForm : IController
         }
     }
 
-    /// <summary>验证装配，订阅各状态源的变更事件，并用当前值一次性初始化显示。</summary>
+    /// <summary>
+    /// 验证装配，订阅各状态源的变更事件，并用当前值一次性初始化显示。
+    /// </summary>
     /// <param name="userData">携带本次英雄与场景的 <see cref="BattleFormData"/>。</param>
     /// <exception cref="ArgumentException">打开参数类型错误。</exception>
     /// <exception cref="InvalidOperationException">必需节点未绑定或英雄未显示。</exception>
@@ -139,7 +153,9 @@ public partial class BattleForm : IController
         }
     }
 
-    /// <summary>关闭时退订，即使窗口仍在场景树内也不再观察旧对象。</summary>
+    /// <summary>
+    /// 关闭时退订，即使窗口仍在场景树内也不再观察旧对象。
+    /// </summary>
     /// <param name="isShutdown">是否框架关停；此时节点可能已经释放。</param>
     /// <param name="userData">关闭参数，不使用。</param>
     public void OnClose(bool isShutdown, object userData)
@@ -154,19 +170,29 @@ public partial class BattleForm : IController
         }
     }
 
-    /// <summary>界面暂停，数据仍保持订阅。</summary>
+    /// <summary>
+    /// 界面暂停，数据仍保持订阅。
+    /// </summary>
     public void OnPause() { }
 
-    /// <summary>恢复界面暂停。</summary>
+    /// <summary>
+    /// 恢复界面暂停。
+    /// </summary>
     public void OnResume() { }
 
-    /// <summary>界面被覆盖。</summary>
+    /// <summary>
+    /// 界面被覆盖。
+    /// </summary>
     public void OnCover() { }
 
-    /// <summary>恢复被覆盖界面。</summary>
+    /// <summary>
+    /// 恢复被覆盖界面。
+    /// </summary>
     public void OnReveal() { }
 
-    /// <summary>界面轮询；数值显示由状态源变更事件驱动，计时类显示（冷却、Buff 剩余）以后在这里读取。</summary>
+    /// <summary>
+    /// 界面轮询；数值显示由状态源变更事件驱动，计时类显示（冷却、Buff 剩余）以后在这里读取。
+    /// </summary>
     /// <param name="elapseSeconds">游戏帧间隔秒数。</param>
     /// <param name="realElapseSeconds">实际帧间隔秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds)
@@ -175,11 +201,18 @@ public partial class BattleForm : IController
             RefreshEncounterHealth();
     }
 
-    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <summary>
+    /// 读取所属游戏流程的架构入口。
+    /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
-    /// <summary>重新绑定显式传入的打开参数。</summary>
+    /// <summary>
+    /// 重新绑定显式传入的打开参数。
+    /// </summary>
     /// <param name="userData">新绑定参数；null 保持当前绑定。</param>
     public void OnRefocus(object userData)
     {
@@ -189,7 +222,9 @@ public partial class BattleForm : IController
         }
     }
 
-    /// <summary>记录框架分配的界面深度。</summary>
+    /// <summary>
+    /// 记录框架分配的界面深度。
+    /// </summary>
     /// <param name="uiGroupDepth">界面组深度。</param>
     /// <param name="depthInGroup">界面在组内的深度。</param>
     public void OnDepthChanged(int uiGroupDepth, int depthInGroup)
@@ -198,7 +233,9 @@ public partial class BattleForm : IController
         ZIndex = depthInGroup;
     }
 
-    /// <summary>请关卡流程打开左下角设置菜单。</summary>
+    /// <summary>
+    /// 请关卡流程打开左下角设置菜单。
+    /// </summary>
     private void OnSettingsClicked()
     {
         if (m_FormData == null)
@@ -207,7 +244,9 @@ public partial class BattleForm : IController
         SettingsRequested?.Invoke(SerialId);
     }
 
-    /// <summary>请关卡流程打开战斗背包。</summary>
+    /// <summary>
+    /// 请关卡流程打开战斗背包。
+    /// </summary>
     private void OnInventoryClicked()
     {
         if (m_FormData == null)
@@ -216,7 +255,9 @@ public partial class BattleForm : IController
         InventoryRequested?.Invoke(SerialId);
     }
 
-    /// <summary>请关卡流程打开技能目录。</summary>
+    /// <summary>
+    /// 请关卡流程打开技能目录。
+    /// </summary>
     private void OnSkillsClicked()
     {
         if (m_FormData == null)
@@ -225,7 +266,9 @@ public partial class BattleForm : IController
         SkillsRequested?.Invoke(SerialId);
     }
 
-    /// <summary>释放本次订阅与表现任务，重复调用安全。</summary>
+    /// <summary>
+    /// 释放本次订阅与表现任务，重复调用安全。
+    /// </summary>
     private void Unbind()
     {
         var data = m_FormData;
@@ -258,7 +301,9 @@ public partial class BattleForm : IController
         }
     }
 
-    /// <summary>按当前状态立即刷新全部显示。</summary>
+    /// <summary>
+    /// 按当前状态立即刷新全部显示。
+    /// </summary>
     private void RefreshAll()
     {
         RefreshResources();
@@ -266,15 +311,27 @@ public partial class BattleForm : IController
         RefreshEncounter();
     }
 
-    /// <summary>技能学习或关卡回滚后同步战斗栏颜色。</summary>
+    /// <summary>
+    /// 技能学习或关卡回滚后同步战斗栏颜色。
+    /// </summary>
     /// <param name="learned">当前英雄的权威学习记录。</param>
-    private void RefreshSkills(IReadOnlyList<SkillId> learned) => m_Menu.SetSkills(
+    private void RefreshSkills(IReadOnlyList<SkillId> learned)
+    {
+        m_Menu.SetSkills(
         this.GetModel<ConfigurationModel>().GetActive((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId), learned);
+    }
 
-    /// <summary>在 HUD 绑定关卡指定的守关对手；该怪物仍由实体系统管理。</summary>
-    private void RefreshEncounter() => BindEncounter(m_FormData.ViewController.FeaturedOpponent);
+    /// <summary>
+    /// 在 HUD 绑定关卡指定的守关对手；该怪物仍由实体系统管理。
+    /// </summary>
+    private void RefreshEncounter()
+    {
+        BindEncounter(m_FormData.ViewController.FeaturedOpponent);
+    }
 
-    /// <summary>只在对手改变时重绑生命事件；控件本身只接收完整数值。</summary>
+    /// <summary>
+    /// 只在对手改变时重绑生命事件；控件本身只接收完整数值。
+    /// </summary>
     /// <param name="opponent">关卡指定的怪物；空值解除显示。</param>
     private void BindEncounter(AbstractEnemyEntity opponent)
     {
@@ -282,7 +339,9 @@ public partial class BattleForm : IController
         RefreshEncounterHealth();
     }
 
-    /// <summary>从唯一生命状态源读取并更新左名右条；关闭或死亡后隐藏。</summary>
+    /// <summary>
+    /// 从唯一生命状态源读取并更新左名右条；关闭或死亡后隐藏。
+    /// </summary>
     /// <param name="value">已提交的属性值；同时读取关联上限。</param>
     private void RefreshEncounterHealth(int value = 0)
     {
@@ -294,7 +353,9 @@ public partial class BattleForm : IController
             m_EncounterHealthBar.SetValue(m_Opponent.Config.NameCn, m_Opponent.Hp, m_Opponent.MaxHp);
     }
 
-    /// <summary>生命与魔法变化：读取当前值与上限刷新显示。</summary>
+    /// <summary>
+    /// 生命与魔法变化：读取当前值与上限刷新显示。
+    /// </summary>
     /// <param name="value">已提交的属性值；同时读取关联上限。</param>
     private void RefreshResources(int value = 0)
     {
@@ -302,7 +363,9 @@ public partial class BattleForm : IController
         m_Status.SetResources(vitals.Hp.Value, vitals.MaxHp.Value, vitals.Mp.Value, vitals.MaxMp.Value);
     }
 
-    /// <summary>刷新无双条，并按蓄满状态控制 HUD 专属提示；重复满值通知保持动画进度。</summary>
+    /// <summary>
+    /// 刷新无双条，并按蓄满状态控制 HUD 专属提示；重复满值通知保持动画进度。
+    /// </summary>
     /// <param name="value">已提交的属性值；同时读取关联上限。</param>
     private void RefreshMusou(int value = 0)
     {
@@ -310,7 +373,9 @@ public partial class BattleForm : IController
         m_Menu.SetMusou(musou.Ws.Value, musou.MaxWs.Value, musou.IsWsFull);
     }
 
-    /// <summary>开启状态改变时刷新无双表现。</summary>
+    /// <summary>
+    /// 开启状态改变时刷新无双表现。
+    /// </summary>
     /// <param name="active">已经提交的开启状态。</param>
     private void RefreshMusouActive(bool active)
     {
@@ -321,14 +386,18 @@ public partial class BattleForm : IController
         RefreshMusou();
     }
 
-    /// <summary>刷新等级与经验条（等级、本级经验、上限来自同一次派生）。</summary>
+    /// <summary>
+    /// 刷新等级与经验条（等级、本级经验、上限来自同一次派生）。
+    /// </summary>
     /// <param name="progression">完整的成长快照。</param>
     private void RefreshProgression(HeroProgressionState progression)
     {
         m_Status.SetProgression(progression.Level, progression.Experience, progression.MaxExperience);
     }
 
-    /// <summary>显示或隐藏前进提示，并同步控制动画。</summary>
+    /// <summary>
+    /// 显示或隐藏前进提示，并同步控制动画。
+    /// </summary>
     /// <param name="visible">本局已提交的前进窗口。</param>
     private void RefreshTravel(bool visible)
     {

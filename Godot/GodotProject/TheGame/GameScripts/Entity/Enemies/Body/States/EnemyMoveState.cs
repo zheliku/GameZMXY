@@ -11,7 +11,9 @@ namespace GameLogic.Enemies.Body
     /// </summary>
     public sealed class EnemyMoveState : AbstractEnemyBodyState
     {
-        /// <summary>优先提交待攻击请求，否则按 AI 意图移动或待机。</summary>
+        /// <summary>
+        /// 优先提交待攻击请求，否则按 AI 意图移动或待机。
+        /// </summary>
         protected override void Tick(IFsm<IEnemyBody> fsm, IEnemyBody body, float dt)
         {
             int request = body.TakeAttackRequest();

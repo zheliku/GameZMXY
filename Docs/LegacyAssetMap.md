@@ -4,6 +4,31 @@
 
 ## 角色、关卡与 HUD
 
+### 第五关七星洞（官方 2-2）
+
+以下资源来自同一 v25928 的 `GameSence` 2-2 与 `Monster_v1`/`Monster2_v4`，不使用旧工程替代素材。
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| `Scenes/Levels/zm1_05_qixing_cave/level_5.tscn`、`Sprites/Levels/zm1_05_qixing_cave/` | `later_levels.json` 的20条出生流、五阶段/九门登记及35尖刺；源八个几何体中的三段坡合成一个连续六点坡体，其余五个矩形保留。背景sprite190、FloorBg位图18，shape115/116/117为三层地形；`export_official_qixing_level_art.py` → `import_official_qixing_level.gd`（参数为出生清单与地形layout.json） |
+| `Sprites/Characters/Enemies/Monsters/Ground/{cave_brute,knife_demon}/`、对应实体与动画目录 | Monster_v1 的Monster7、Monster2_v4 的Monster13；`export_official_qixing_cave.py`、`import_official_qixing_art.gd`、`create_qixing_actor_scenes.gd`；飞刀使用独立场景与节点池 |
+| `Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/`、对应实体与动画目录 | Monster2_v4 的 Monster11；身体三段招式、毒雾独立 SpriteFrames，来源同上 |
+| `Sprites/Characters/Heroes/Status/`、悟空场景的 `m_StatusEffects` | 官方poison_head/poison_up；`register_qixing_poison.gd` 登记状态播放器及外置动画，不展开已有升级子场景 |
+| `Sprites/Items/equipment/{equipment,ground}_heavenly_fiend_necklace.png` | OtherMat_v9 的背包符号43、透明地面符号20；`export_official_equipment.py` → `register_qixing_equipment.gd`，两种用途均用透明前景 |
+| `Sprites/UI/frontend/map_qixingdong_hover_animation.tres` | 原地图七星洞普通/悬停图；`enable_qixing_map.gd` 外置悬停动画 |
+
+### 第四关蝙蝠窟与家传装备
+
+以下均来自同一 v25928 及其加载器指定资源包，未采用旧项目的石像召唤规则。
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| `Scenes/Levels/zm1_04_bat_cave/level_4.tscn`、`Sprites/Levels/zm1_04_bat_cave/` | GameSence 2-1；FloorBg 第2帧位图18、背景185、地形107及35个113尖刺；`export_official_bat_cave.py` → `import_official_bat_cave_level.gd`。尖刺20帧打包为190×256图集与外置SpriteFrames |
+| `Sprites/Characters/Enemies/Monsters/Sky/bat/`、`Entitys/Enemies/Monsters/Sky/bat/` | Monster_v1 / Monster8；原生攻击时点和矩形判定，经 `import_official_bat_cave_actors.gd` 保存 |
+| `Sprites/Characters/Enemies/Bosses/zm1_04_bat_cave/`、对应实体与动画目录 | Monster2_v4 / Monster21；固定石像与死亡动画，同上；出生流和出口归关卡 |
+| `Sprites/Items/equipment/{equipment,ground}_heirloom_{bracelet,sword,clothes}.png` | OtherMat_v9 对应家传手镯、宝剑、衣裳；透明背包/地面图，经 `register_heirloom_equipment.gd` 登记 |
+| `Sprites/Characters/Heroes/wukong/wukong_weapon_heirloom.png` | Role_v7 selector7，115姿态；既有 `export_official_wukong_equipment.py`，原点、帧映射和遮挡沿用双层规则；不重生成旧装备 |
+
 ### 第二、第三关及守关装备
 
 以下从 OfficialReference 登记的同版官方包提取，未使用旧工程重做数值或重绘 BOSS：
@@ -24,16 +49,16 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 | 旧路径 | 新路径 | 规格 / 说明 |
 | --- | --- | --- |
-| `Art/Monster/Monster1/Wait.png` | `Sprites/Characters/Enemies/Monsters/huaguoshan_monkey/huaguoshan_monkey_idle.png` | 43×63，1 帧 |
-| `Art/Monster/Monster1/Walk.png` | `Sprites/Characters/Enemies/Monsters/huaguoshan_monkey/huaguoshan_monkey_run.png` | 64×88 × 4 帧 |
-| `Art/Monster/Monster1/Hit.png` | `Sprites/Characters/Enemies/Monsters/huaguoshan_monkey/huaguoshan_monkey_attack.png` | 91×83 × 6 帧 |
-| `Art/Monster/Monster1/Hurt.png` | `Sprites/Characters/Enemies/Monsters/huaguoshan_monkey/huaguoshan_monkey_hurt.png` | 68×86 × 2 帧 |
-| `Art/Monster/Monster1/Death.png` | `Sprites/Characters/Enemies/Monsters/huaguoshan_monkey/huaguoshan_monkey_death.png` | 91×88 × 6 帧 |
-| `Art/Monster/Monster2/Wait.png` | `Sprites/Characters/Enemies/Monsters/demon_monkey/demon_monkey_idle.png` | 74×114 × 5 帧 |
-| `Art/Monster/Monster2/Walk.png` | `Sprites/Characters/Enemies/Monsters/demon_monkey/demon_monkey_run.png` | 116×105 × 4 帧 |
-| `Art/Monster/Monster2/Hit.png` | `Sprites/Characters/Enemies/Monsters/demon_monkey/demon_monkey_attack.png` | 130×134 × 4 帧 |
-| `Art/Monster/Monster2/Hurt.png` | `Sprites/Characters/Enemies/Monsters/demon_monkey/demon_monkey_hurt.png` | 89×87 × 1 帧 |
-| `Art/Monster/Monster2/Death.png` | `Sprites/Characters/Enemies/Monsters/demon_monkey/demon_monkey_death.png` | 124×108 × 5 帧 |
+| `Art/Monster/Monster1/Wait.png` | `Sprites/Characters/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_idle.png` | 43×63，1 帧 |
+| `Art/Monster/Monster1/Walk.png` | `Sprites/Characters/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_run.png` | 64×88 × 4 帧 |
+| `Art/Monster/Monster1/Hit.png` | `Sprites/Characters/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_attack.png` | 91×83 × 6 帧 |
+| `Art/Monster/Monster1/Hurt.png` | `Sprites/Characters/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_hurt.png` | 68×86 × 2 帧 |
+| `Art/Monster/Monster1/Death.png` | `Sprites/Characters/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_death.png` | 91×88 × 6 帧 |
+| `Art/Monster/Monster2/Wait.png` | `Sprites/Characters/Enemies/Monsters/Ground/demon_monkey/demon_monkey_idle.png` | 74×114 × 5 帧 |
+| `Art/Monster/Monster2/Walk.png` | `Sprites/Characters/Enemies/Monsters/Ground/demon_monkey/demon_monkey_run.png` | 116×105 × 4 帧 |
+| `Art/Monster/Monster2/Hit.png` | `Sprites/Characters/Enemies/Monsters/Ground/demon_monkey/demon_monkey_attack.png` | 130×134 × 4 帧 |
+| `Art/Monster/Monster2/Hurt.png` | `Sprites/Characters/Enemies/Monsters/Ground/demon_monkey/demon_monkey_hurt.png` | 89×87 × 1 帧 |
+| `Art/Monster/Monster2/Death.png` | `Sprites/Characters/Enemies/Monsters/Ground/demon_monkey/demon_monkey_death.png` | 124×108 × 5 帧 |
 | `Art/Level/Level_1/19_1.png` | `Sprites/Levels/zm1_01_huaguoshan/level_1_bg_end.png` | 1440×690；旧 `BackGround/End/end2` 背景端块 |
 | `Art/Level/Level_1/48.png` | `Sprites/Levels/zm1_01_huaguoshan/level_1_front.png` | 4957×633；旧 `BackGround/front` 前景视差层 |
 | `Art/Level/Level_1/183.png` | `Sprites/Levels/zm1_01_huaguoshan/level_1_floor.png` | 原 4812×170；旧 `BackGround/floor3/floor2` 地板视差层。**已裁至 4700×170**：右侧 112px 圆角收尾（x≥4716 顶面下坠、右下透明）会露出背景，相机右界随之定在 4700 |
@@ -44,6 +69,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | `Art/HeroPicture/RoleProperiesBox/718.png` | `Sprites/UI/hud/hud_ws_frame.png` | 260×22，无双条黑色长底板，原样恢复；由 `import_frontend_assets.py` 登记 |
 | `Art/HeroPicture/RoleProperiesBox/swk.png` | `Sprites/UI/hud/hud_head_wukong.png` | 83×76，悟空头像 |
 | `Art/HeroPicture/RoleProperiesBox/748.png` | `Sprites/UI/hud/hud_status_label.png` | 17×46，状态标签装饰 |
+| `Art/HeroPicture/RoleDeath.png` | `Sprites/Effects/wukong/wukong_death_tombstone.png` | 1832×1830，8×5 墓碑图集；死亡轨道按官方 78 源帧播放并保持末帧 |
 
 地板从 4812×170 裁至 4700×170，去掉右侧透明圆角；该裁剪不覆盖用户后续地形编辑。
 
@@ -74,13 +100,13 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 | 新文件 | 旧来源 | 格尺寸 | 用途 |
 | --- | --- | --- | --- |
-| `damage_number_monster_physics.png` | `magic/physics_N`（旧放在 magic 目录） | 30×30 | 怪物受物理伤害 |
-| `damage_number_monster_physics_crit.png` | `physicscrit/physics_N` | 42×42 | 怪物受物理暴击 |
-| `damage_number_monster_magic.png` | `magic/magic_N` | 30×30 | 怪物受魔法伤害 |
-| `damage_number_monster_magic_crit.png` | `magiccrit/magic_N` | 32×32 | 怪物受魔法暴击 |
-| `damage_number_hero_physics.png` | `monster/physics/physics_N`（旧放在 monster 目录） | 30×30 | 英雄受物理伤害 |
-| `damage_number_hero_magic.png` | `monster/magic/magic_N` | 30×30 | 英雄受魔法伤害 |
-| `damage_number_real.png` | `real/real_N` | 30×30 | 真实伤害（人怪共用） |
+| `damage_number_monster_physics.png` | `hurtnum/hurtnum_N`（源目录名仍沿用旧迁入名） | 30×30 | 怪物普通受伤；物理与魔法共用官方 `hurtnum` |
+| `damage_number_monster_physics_crit.png` | `bnum/bnum_N` | 42×42 | 怪物暴击受伤；伤害类型不再分物理/魔法 |
+| `damage_number_monster_magic.png` | `magic/magic_N` | 30×30 | 旧迁入样式，当前战斗飘字不再使用 |
+| `damage_number_monster_magic_crit.png` | `magiccrit/magic_N` | 32×32 | 旧迁入样式，当前战斗飘字不再使用 |
+| `damage_number_hero_physics.png` | `monster/physics/physics_N`（旧放在 monster 目录） | 30×30 | 旧迁入样式，当前英雄受伤统一使用官方 `pnum` |
+| `damage_number_hero_magic.png` | `pnum/pnum_N`（文件名保留迁入兼容名） | 30×30 | 英雄受伤；物理与魔法共用官方 `pnum` |
+| `damage_number_real.png` | `real/real_N` | 30×30 | 旧迁入样式，当前通用伤害不按真实伤害另选图集 |
 | `damage_number_miss.png` | `miss.png` | 55×24 | 闪避 |
 
 ## HUD 补充与字体
@@ -180,11 +206,11 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 | 旧项目相对路径 | 新项目 TheGame 相对路径 |
 | --- | --- |
-| `Art/Monster/Monster3/Wait.png` | `Sprites/Characters/Enemies/Monsters/gorilla/gorilla_idle.png` |
-| `Art/Monster/Monster3/Walk.png` | `Sprites/Characters/Enemies/Monsters/gorilla/gorilla_run.png` |
-| `Art/Monster/Monster3/Hit.png` | `Sprites/Characters/Enemies/Monsters/gorilla/gorilla_attack_1.png` |
-| `Art/Monster/Monster3/Hurt.png` | `Sprites/Characters/Enemies/Monsters/gorilla/gorilla_hurt.png` |
-| `Art/Monster/Monster3/Death.png` | `Sprites/Characters/Enemies/Monsters/gorilla/gorilla_death.png` |
+| `Art/Monster/Monster3/Wait.png` | `Sprites/Characters/Enemies/Monsters/Ground/gorilla/gorilla_idle.png` |
+| `Art/Monster/Monster3/Walk.png` | `Sprites/Characters/Enemies/Monsters/Ground/gorilla/gorilla_run.png` |
+| `Art/Monster/Monster3/Hit.png` | `Sprites/Characters/Enemies/Monsters/Ground/gorilla/gorilla_attack_1.png` |
+| `Art/Monster/Monster3/Hurt.png` | `Sprites/Characters/Enemies/Monsters/Ground/gorilla/gorilla_hurt.png` |
+| `Art/Monster/Monster3/Death.png` | `Sprites/Characters/Enemies/Monsters/Ground/gorilla/gorilla_death.png` |
 | `Art/HeroPicture/RoleProperiesBox/128.png` | `Sprites/UI/hud/boss_health_fill.png` |
 | `Art/HeroPicture/RoleProperiesBox/124.png` | `Sprites/UI/hud/boss_health_under.png` |
 
@@ -193,6 +219,8 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 正式花果山地形和出口现改用主程序 v25928 原文件：shape 60 → `huaguoshan_ground.png`，shape 56 → `huaguoshan_platform.png`；sprite 85 → `Sprites/Effects/level_exit/level_exit_00..19.png`。导出工具为 `export_official_level_art.py`，原点写入 layout.json；Godot 用 `repair_terrain_registration.gd` 保存原生资源。旧 11 帧出口已删除，旧导入器不再生成它。`level_1_floor.png` 仍供独立调试场地使用。
 
 同一导出工具现覆盖前三关全部可见地形与前景：161/163/168 为三关前景，88/97 为水帘洞平台/地面，101/103 为桃花源地面/石墙。花果山 `level_1_front.png` 已替换为官方原生输出，保持路径和 UID；源矩阵及图像左上来自 `extract_official_levels.py`，`align_official_level_art.gd` 负责原生保存。隐藏的碰撞、转向、副本等调试元件不导入为可见图像。
+
+前三关地面的原生栅格输出在图内x=3779各有92个透明像素，形成透背景的单像素竖缝。`export_official_level_art.py` 在导出地面后修补两侧均为不透明地面的长单列裂缝；只插值该列，不改变尺寸、原点或其他像素。蝙蝠窟/七星洞相机右界按各自地面图右端向下取整为4696/4681，远景视差跟随相机行程计算。
 
 结算配乐取旧工程 `Music/level/13_Game_Victory.mp3`、`12_over.mp3`，原样迁为 `Audios/Music/settlement_victory.mp3`、`settlement_defeat.mp3`；SHA-256 分别为 `c7bf53f7ac759efdd04defed2f1a8e61b11d5c57745220ded7bed6cd4ba4ab35`、`88a4ef5d27ff38bd9c9964e9b3864eb8940ef261bd9fcb110ce39880f10abc0d`。两曲由 GGF Music 播放，Godot 导入开启循环；ProcedureLevel 拥有关卡和结算音乐的唯一请求。
 

@@ -8,7 +8,9 @@ using Godot;
 
 namespace GameLogic.Heroes.Wukong;
 
-/// <summary>升龙斩：占用空中跳跃，保留起手方向；判定与收招时点由本招动画调用。</summary>
+/// <summary>
+/// 升龙斩：占用空中跳跃，保留起手方向；判定与收招时点由本招动画调用。
+/// </summary>
 public sealed class WukongRisingDragonState : AbstractHeroSkillState
 {
     private const string AnimationName = "skills/rising_dragon"; // 本招的原生动画资源名。
@@ -26,10 +28,15 @@ public sealed class WukongRisingDragonState : AbstractHeroSkillState
         BeginAnimation(body, AnimationName);
     }
 
-    /// <summary>原生方法轨道开启本招的新判定，保留原版不预先取整的威力。</summary>
+    /// <summary>
+    /// 原生方法轨道开启本招的新判定，保留原版不预先取整的威力。
+    /// </summary>
     /// <param name="body">悟空身体。</param>
-    public void BeginHit(IHeroBody body) => ((ISkillActor)body).NewSkillAttack(
+    public void BeginHit(IHeroBody body)
+    {
+        ((ISkillActor)body).NewSkillAttack(
         SkillHitId.RisingDragon, AttackPower(body, SkillHitId.RisingDragon));
+    }
 
     /// <inheritdoc />
     protected override void UpdateSkill(IHeroBody body, float dt)

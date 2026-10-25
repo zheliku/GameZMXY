@@ -3,19 +3,29 @@ using GameConfig.Equipment;
 
 namespace GameLogic.Equipment;
 
-/// <summary>一件已经抽取属性的装备；编号和实际修正不随读档、查看或拾取重抽。</summary>
+/// <summary>
+/// 一件已经抽取属性的装备；编号和实际修正不随读档、查看或拾取重抽。
+/// </summary>
 public sealed class EquipmentData
 {
-    /// <summary>唯一实例编号，不同的同名装备也各占一个格子。</summary>
+    /// <summary>
+    /// 唯一实例编号，不同的同名装备也各占一个格子。
+    /// </summary>
     public Guid InstanceId { get; }
 
-    /// <summary>只读装备定义的编号。</summary>
+    /// <summary>
+    /// 只读装备定义的编号。
+    /// </summary>
     public EquipmentId EquipmentId { get; }
 
-    /// <summary>本件装备已确定的实际属性；配置范围不进入运行时数据。</summary>
+    /// <summary>
+    /// 本件装备已确定的实际属性；配置范围不进入运行时数据。
+    /// </summary>
     public EquipmentAttributes Attributes { get; }
 
-    /// <summary>创建一件装备的数据；配置范围由抽取或读档边界校验。</summary>
+    /// <summary>
+    /// 创建一件装备的数据；配置范围由抽取或读档边界校验。
+    /// </summary>
     /// <param name="instanceId">非空实例编号。</param>
     /// <param name="equipmentId">装备定义编号。</param>
     /// <param name="attributes">本件已抽出的不可变具名属性。</param>

@@ -16,13 +16,17 @@ using System.Collections.Generic;
 
 namespace GameLogic.UI;
 
-/// <summary>观察战斗个人资料与背包，通过命令提交穿戴与出售请求。</summary>
+/// <summary>
+/// 观察战斗个人资料与背包，通过命令提交穿戴与出售请求。
+/// </summary>
 public partial class InventoryForm : IController
 {
     private InventoryFormData m_InventoryData; // 本次打开借用的状态源。
     private bool m_ResumeGame; // 只对称恢复本窗口发起的暂停。
 
-    /// <summary>初始化框架字段；新实例的按钮只绑定一次。</summary>
+    /// <summary>
+    /// 初始化框架字段；新实例的按钮只绑定一次。
+    /// </summary>
     /// <param name="serialId">本次窗口编号。</param>
     /// <param name="uiFormAssetName">窗口资源路径。</param>
     /// <param name="uiGroup">所属窗口组。</param>
@@ -51,7 +55,9 @@ public partial class InventoryForm : IController
         }
     }
 
-    /// <summary>关闭时释放状态源与本窗口拥有的暂停。</summary>
+    /// <summary>
+    /// 关闭时释放状态源与本窗口拥有的暂停。
+    /// </summary>
     /// <param name="isShutdown">是否框架关停。</param>
     /// <param name="userData">关闭参数，不使用。</param>
     public void OnClose(bool isShutdown, object userData)
@@ -61,7 +67,9 @@ public partial class InventoryForm : IController
             Visible = false;
     }
 
-    /// <summary>回池后清除引用与打开编号，重复释放安全。</summary>
+    /// <summary>
+    /// 回池后清除引用与打开编号，重复释放安全。
+    /// </summary>
     public void OnRecycle()
     {
         ReleaseBindingsAndPause();
@@ -72,27 +80,37 @@ public partial class InventoryForm : IController
             Visible = false;
     }
 
-    /// <summary>界面暂停。</summary>
+    /// <summary>
+    /// 界面暂停。
+    /// </summary>
     public void OnPause()
     {
     }
 
-    /// <summary>恢复界面。</summary>
+    /// <summary>
+    /// 恢复界面。
+    /// </summary>
     public void OnResume()
     {
     }
 
-    /// <summary>被其他窗口覆盖。</summary>
+    /// <summary>
+    /// 被其他窗口覆盖。
+    /// </summary>
     public void OnCover()
     {
     }
 
-    /// <summary>重新露出窗口。</summary>
+    /// <summary>
+    /// 重新露出窗口。
+    /// </summary>
     public void OnReveal()
     {
     }
 
-    /// <summary>绑定当前角色、成长和灵魂，并暂停战斗。</summary>
+    /// <summary>
+    /// 绑定当前角色、成长和灵魂，并暂停战斗。
+    /// </summary>
     /// <param name="userData">当前关卡的背包打开参数。</param>
     /// <exception cref="ArgumentException">参数类型错误或不是当前出战角色。</exception>
     public void OnOpen(object userData)
@@ -136,7 +154,9 @@ public partial class InventoryForm : IController
         }
     }
 
-    /// <summary>暂停战斗时，角色预览仍按真实时间播放。</summary>
+    /// <summary>
+    /// 暂停战斗时，角色预览仍按真实时间播放。
+    /// </summary>
     /// <param name="elapseSeconds">游戏秒数。</param>
     /// <param name="realElapseSeconds">真实秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds)
@@ -145,7 +165,9 @@ public partial class InventoryForm : IController
             m_Character.AdvancePreview();
     }
 
-    /// <summary>背包暂停期间仍接收关闭动作，拒绝按键自动重复。</summary>
+    /// <summary>
+    /// 背包暂停期间仍接收关闭动作，拒绝按键自动重复。
+    /// </summary>
     /// <param name="inputEvent">已映射的输入事件。</param>
     public override void _Input(InputEvent inputEvent)
     {
@@ -163,11 +185,18 @@ public partial class InventoryForm : IController
         OnCloseClicked();
     }
 
-    /// <summary>读取所属游戏流程的架构入口。</summary>
+    /// <summary>
+    /// 读取所属游戏流程的架构入口。
+    /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
-    /// <summary>显式参数可重新绑定本窗口。</summary>
+    /// <summary>
+    /// 显式参数可重新绑定本窗口。
+    /// </summary>
     /// <param name="userData">新的打开参数；null 保持当前内容。</param>
     public void OnRefocus(object userData)
     {
@@ -175,7 +204,9 @@ public partial class InventoryForm : IController
             OnOpen(userData);
     }
 
-    /// <summary>同步框架分配的窗口层级。</summary>
+    /// <summary>
+    /// 同步框架分配的窗口层级。
+    /// </summary>
     /// <param name="uiGroupDepth">窗口组层级。</param>
     /// <param name="depthInUIGroup">窗口在组内的层级。</param>
     public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
@@ -184,7 +215,9 @@ public partial class InventoryForm : IController
         ZIndex = depthInUIGroup;
     }
 
-    /// <summary>关闭后解除全部借用与订阅。</summary>
+    /// <summary>
+    /// 关闭后解除全部借用与订阅。
+    /// </summary>
     private void ReleaseBindingsAndPause()
     {
         m_Actions.Close();
@@ -215,7 +248,9 @@ public partial class InventoryForm : IController
         m_ResumeGame = false;
     }
 
-    /// <summary>关卡结局后不保留旧英雄窗口。</summary>
+    /// <summary>
+    /// 关卡结局后不保留旧英雄窗口。
+    /// </summary>
     /// <param name="outcome">已提交的结局。</param>
     private void OnLevelEnded(LevelOutcome outcome)
     {
@@ -223,7 +258,9 @@ public partial class InventoryForm : IController
             GF.UI.CloseUIForm(SerialId);
     }
 
-    /// <summary>关闭个人资料，继续本关。</summary>
+    /// <summary>
+    /// 关闭个人资料，继续本关。
+    /// </summary>
     private void OnCloseClicked()
     {
         if (m_InventoryData == null)
@@ -232,7 +269,9 @@ public partial class InventoryForm : IController
         GF.UI.CloseUIForm(SerialId);
     }
 
-    /// <summary>拉取一致状态；百分比按同等级、无穿透对手显示基础概率和减伤。</summary>
+    /// <summary>
+    /// 拉取一致状态；百分比按同等级、无穿透对手显示基础概率和减伤。
+    /// </summary>
     private void RefreshInventoryPanels()
     {
         CloseTransientSelection();
@@ -240,19 +279,36 @@ public partial class InventoryForm : IController
         m_Bag.Refresh();
     }
 
-    /// <summary>生命、魔法变化只刷新个人资料。</summary>
+    /// <summary>
+    /// 生命、魔法变化只刷新个人资料。
+    /// </summary>
     /// <param name="value">已提交的资源值。</param>
-    private void RefreshResources(int value) => m_Character.Refresh(m_InventoryData.Hero);
+    private void RefreshResources(int value)
+    {
+        m_Character.Refresh(m_InventoryData.Hero);
+    }
 
-    /// <summary>概率变化时读取同一模型，保留小数概率而不转成属性点。</summary>
+    /// <summary>
+    /// 概率变化时读取同一模型，保留小数概率而不转成属性点。
+    /// </summary>
     /// <param name="value">已提交的 0..1 概率。</param>
-    private void RefreshProbability(float value) => m_Character.Refresh(m_InventoryData.Hero);
+    private void RefreshProbability(float value)
+    {
+        m_Character.Refresh(m_InventoryData.Hero);
+    }
 
-    /// <summary>成长变化只刷新个人资料。</summary>
+    /// <summary>
+    /// 成长变化只刷新个人资料。
+    /// </summary>
     /// <param name="progress">已经提交的成长快照。</param>
-    private void RefreshProgression(HeroProgressionState progress) => m_Character.Refresh(m_InventoryData.Hero);
+    private void RefreshProgression(HeroProgressionState progress)
+    {
+        m_Character.Refresh(m_InventoryData.Hero);
+    }
 
-    /// <summary>余额变化刷新背包与出售选项，清除已过期的确认。</summary>
+    /// <summary>
+    /// 余额变化刷新背包与出售选项，清除已过期的确认。
+    /// </summary>
     /// <param name="soul">已经提交的余额。</param>
     private void RefreshSoul(int soul)
     {
@@ -260,7 +316,9 @@ public partial class InventoryForm : IController
         m_Bag.Refresh();
     }
 
-    /// <summary>背包集合变化后重新分页和绘制格子。</summary>
+    /// <summary>
+    /// 背包集合变化后重新分页和绘制格子。
+    /// </summary>
     /// <param name="datas">已领取装备的实时只读视图。</param>
     private void RefreshItems(IReadOnlyList<EquipmentData> datas)
     {
@@ -268,7 +326,9 @@ public partial class InventoryForm : IController
         m_Bag.Refresh();
     }
 
-    /// <summary>穿戴提交后刷新槽位、预览与角色属性。</summary>
+    /// <summary>
+    /// 穿戴提交后刷新槽位、预览与角色属性。
+    /// </summary>
     /// <param name="slots">完整的穿戴快照。</param>
     private void RefreshEquipment(EquippedItems slots)
     {
@@ -276,7 +336,9 @@ public partial class InventoryForm : IController
         m_Character.Refresh(m_InventoryData.Hero);
     }
 
-    /// <summary>打开所选背包格的操作菜单；点击本身不改变穿戴。</summary>
+    /// <summary>
+    /// 打开所选背包格的操作菜单；点击本身不改变穿戴。
+    /// </summary>
     /// <param name="data">当前可见格提交的装备实例。</param>
     /// <param name="anchor">当前可见格的全局区域。</param>
     private void OnBagClicked(EquipmentData data, Rect2 anchor)
@@ -288,7 +350,9 @@ public partial class InventoryForm : IController
             (int)definition.Owner == this.GetModel<ProfileModel>().ActiveHeroId);
     }
 
-    /// <summary>所选菜单确认后提交穿戴请求。</summary>
+    /// <summary>
+    /// 所选菜单确认后提交穿戴请求。
+    /// </summary>
     /// <param name="instanceId">菜单捕获的背包实例。</param>
     private void OnEquipRequested(Guid instanceId)
     {
@@ -296,7 +360,9 @@ public partial class InventoryForm : IController
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
-    /// <summary>按配置售价出售背包装备，过期选择不会重复入账。</summary>
+    /// <summary>
+    /// 按配置售价出售背包装备，过期选择不会重复入账。
+    /// </summary>
     /// <param name="instanceId">菜单捕获的背包实例。</param>
     private void OnSellRequested(Guid instanceId)
     {
@@ -304,7 +370,9 @@ public partial class InventoryForm : IController
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
-    /// <summary>请求卸下当前部位；背包满时保持原状态。</summary>
+    /// <summary>
+    /// 请求卸下当前部位；背包满时保持原状态。
+    /// </summary>
     /// <param name="slot">被点击的穿戴部位。</param>
     private void OnSlotClicked(EquipmentSlot slot)
     {
@@ -312,14 +380,18 @@ public partial class InventoryForm : IController
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
     }
 
-    /// <summary>状态刷新或页面切换时使旧操作和待确认交易失效。</summary>
+    /// <summary>
+    /// 状态刷新或页面切换时使旧操作和待确认交易失效。
+    /// </summary>
     private void CloseTransientSelection()
     {
         m_Actions.Close();
         m_SaleConfirmation.Cancel();
     }
 
-    /// <summary>品质选择只打开确认层，不改变物品和钱包。</summary>
+    /// <summary>
+    /// 品质选择只打开确认层，不改变物品和钱包。
+    /// </summary>
     /// <param name="quality">子组件当前选择的品质。</param>
     /// <param name="count">完整未穿戴背包中的件数。</param>
     /// <param name="price">未截断收益。</param>
@@ -331,7 +403,9 @@ public partial class InventoryForm : IController
         m_SaleConfirmation.Open(quality, count, price);
     }
 
-    /// <summary>确认层已清除一次性意图，窗口通过命令提交已确认的交易请求。</summary>
+    /// <summary>
+    /// 确认层已清除一次性意图，窗口通过命令提交已确认的交易请求。
+    /// </summary>
     /// <param name="quality">本次明确确认的品质。</param>
     private void OnQualitySaleConfirmed(EquipmentQuality quality)
     {

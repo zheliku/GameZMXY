@@ -47,6 +47,9 @@ func _inspect(node: Node, root: Node, path: String) -> void:
 		_check(shapes.size() <= maximum, path + ": redundant shapes under " + String(root.get_path_to(node)))
 		for a in shapes.size():
 			for b in range(a + 1, shapes.size()):
+				# Disabled animation placeholders may share a shape; they are not active duplicate areas.
+				if shapes[a].disabled or shapes[b].disabled:
+					continue
 				_check(not (shapes[a].transform == shapes[b].transform and shapes[a].shape == shapes[b].shape), path + ": duplicate collision nodes")
 	if node is AnimationPlayer:
 		for library_name in node.get_animation_library_list():

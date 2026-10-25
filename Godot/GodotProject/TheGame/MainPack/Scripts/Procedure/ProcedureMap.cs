@@ -18,7 +18,9 @@ using GodotGameFramework;
 using GodotGameFramework.UI;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
-/// <summary>地图流程：通过地点点击事件验证配置并创建关卡作用域。</summary>
+/// <summary>
+/// 地图流程：通过地点点击事件验证配置并创建关卡作用域。
+/// </summary>
 public sealed class ProcedureMap : ProcedureBase
 {
     private int m_FormSerialId; // 本周期窗口，含在途加载请求。
@@ -27,7 +29,9 @@ public sealed class ProcedureMap : ProcedureBase
     private CancellationTokenSource m_Cancellation; // 离开时使旧异步结果失效。
     private bool m_IsReturningToTitle; // 等待写盘期间拒绝重复导航。
 
-    /// <summary>订阅本页面的点击事件后打开窗口。</summary>
+    /// <summary>
+    /// 订阅本页面的点击事件后打开窗口。
+    /// </summary>
     /// <param name="procedureOwner">流程状态机。</param>
     protected internal override void OnEnter(ProcedureOwner procedureOwner)
     {
@@ -42,7 +46,9 @@ public sealed class ProcedureMap : ProcedureBase
         m_MusicSerialId = GF.Sound.PlayConfigured(SoundId.MapTheme, 0.3f);
     }
 
-    /// <summary>退出时解除点击事件和本周期窗口。</summary>
+    /// <summary>
+    /// 退出时解除点击事件和本周期窗口。
+    /// </summary>
     /// <param name="procedureOwner">流程状态机。</param>
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
@@ -67,7 +73,9 @@ public sealed class ProcedureMap : ProcedureBase
         base.OnLeave(procedureOwner, isShutdown);
     }
 
-    /// <summary>返回标题前等待当前检查点。</summary>
+    /// <summary>
+    /// 返回标题前等待当前检查点。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private async void OnTitleRequested(int formSerialId)
     {
@@ -99,7 +107,9 @@ public sealed class ProcedureMap : ProcedureBase
         }
     }
 
-    /// <summary>手动保存当前档案，等待后只反馈给本周期窗口。</summary>
+    /// <summary>
+    /// 手动保存当前档案，等待后只反馈给本周期窗口。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private async void OnSaveRequested(int formSerialId)
     {
@@ -108,7 +118,9 @@ public sealed class ProcedureMap : ProcedureBase
         await m_Owner.GetSystem<SaveSystem>().SaveManuallyAsync(formSerialId, m_Cancellation.Token);
     }
 
-    /// <summary>验证所选关卡并进入战斗流程。</summary>
+    /// <summary>
+    /// 验证所选关卡并进入战斗流程。
+    /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     /// <param name="selectionId">选中的存档格或关卡编号。</param>
     private void OnLevelSelected(int formSerialId, int selectionId)
@@ -124,7 +136,9 @@ public sealed class ProcedureMap : ProcedureBase
         ChangeState<ProcedureLevel>(m_Owner);
     }
 
-    /// <summary>本周期界面可见后关闭加载页。</summary>
+    /// <summary>
+    /// 本周期界面可见后关闭加载页。
+    /// </summary>
     /// <param name="sender">事件发送者。</param>
     /// <param name="args">只在本次分发内读取的池化参数。</param>
     private void OnFormOpened(object sender, GameEventArgs args)
@@ -136,7 +150,9 @@ public sealed class ProcedureMap : ProcedureBase
         (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
     }
 
-    /// <summary>报告当前窗口请求的装配错误。</summary>
+    /// <summary>
+    /// 报告当前窗口请求的装配错误。
+    /// </summary>
     /// <param name="sender">事件发送者。</param>
     /// <param name="args">只在本次分发内读取的池化参数。</param>
     private void OnFormFailed(object sender, GameEventArgs args)
@@ -146,7 +162,9 @@ public sealed class ProcedureMap : ProcedureBase
     }
 
 
-    /// <summary>按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。</summary>
+    /// <summary>
+    /// 按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。
+    /// </summary>
     /// <param name="form">已打开窗口；在途时为空。</param>
     /// <param name="bind">绑定或解除。</param>
     private void SetFormCallbacks(IUIForm form, bool bind)

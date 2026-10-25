@@ -31,6 +31,7 @@ using GodotGameFramework;
 ///   `--smoketest`     英雄控制器 + M4 命中（猴子 AI 冻结为沙包，断言确定；N = 1800）
 ///   `--smoketest=ai`  怪物 AI（巡逻/追击/出招/转身/平台守候/丢失目标/受控/死亡）。
 ///   `--smoketest=level` 正式关卡四段移动、锁屏、刷怪与清波。
+///   `--smoketest=level5` 运行官方 2-2 七星洞配置与场景。
 ///   `--smoketest=level-cancel` 在途显示取消与晚到结果回收。
 ///   `--smoketest=ui` HUD 属性更新、退订复用、实体复用、失败清理与隔离存档重入。
 ///
@@ -96,7 +97,7 @@ public partial class SmokeTestDriver : Node
 
     private int m_MaxPopCount; // 场上飘字节点的可见峰值数量。
     private SmokeMode m_Mode; // 命令行选择的唯一冒烟模式。
-    private int m_RequestedLevel = 1; // 真实地图点击的关卡，第二、第三关仍走完整菜单流程。
+    private int m_RequestedLevel = 1; // 真实地图点击的关卡，后续关卡仍走完整菜单流程。
     private double m_WaitTime; // 等待英雄出现的累计时间（秒）。
     private double m_Time; // 烟测当前时间（秒）。
     private int m_NextStep; // 下一条输入计划索引。
@@ -130,7 +131,9 @@ public partial class SmokeTestDriver : Node
 
     private readonly HashSet<int> m_FrozenMonsters = new(); // 已冻结为沙包的怪物 runtime ID。
 
-    /// <summary>读取烟测参数并设置物理处理优先级。</summary>
+    /// <summary>
+    /// 读取烟测参数并设置物理处理优先级。
+    /// </summary>
     public override void _Ready()
     {
         foreach (string arg in OS.GetCmdlineUserArgs())
@@ -142,6 +145,8 @@ public partial class SmokeTestDriver : Node
                 "--smoketest=level" => SmokeMode.Level,
                 "--smoketest=level2" => SmokeMode.Level,
                 "--smoketest=level3" => SmokeMode.Level,
+                "--smoketest=level4" => SmokeMode.Level,
+                "--smoketest=level5" => SmokeMode.Level,
                 "--smoketest=level-cancel" => SmokeMode.Cancellation,
                 "--smoketest=ui" => SmokeMode.Ui,
                 "--smoketest=bosses" => SmokeMode.Bosses,
@@ -153,6 +158,10 @@ public partial class SmokeTestDriver : Node
                 m_RequestedLevel = 2;
             if (arg == "--smoketest=level3")
                 m_RequestedLevel = 3;
+            if (arg == "--smoketest=level4")
+                m_RequestedLevel = 4;
+            if (arg == "--smoketest=level5")
+                m_RequestedLevel = 5;
         }
 
         // 引擎参数里带了 --quit-after 时，通过流程交给引擎自己退出（见 StopDriving 注释）
@@ -181,7 +190,9 @@ public partial class SmokeTestDriver : Node
         ProcessPhysicsPriority = 1000;
     }
 
-    /// <summary>每物理帧驱动输入、实体采样及烟测断言。</summary>
+    /// <summary>
+    /// 每物理帧驱动输入、实体采样及烟测断言。
+    /// </summary>
     /// <param name="delta">上一帧到当前帧的秒数。</param>
     public override void _PhysicsProcess(double delta)
     {
@@ -292,7 +303,9 @@ public partial class SmokeTestDriver : Node
         }
     }
 
-    /// <summary>等待正式 HUD 就绪，再驱动真实 UI 生命周期与存档回归。</summary>
+    /// <summary>
+    /// 等待正式 HUD 就绪，再驱动真实 UI 生命周期与存档回归。
+    /// </summary>
     /// <param name="delta">物理帧间隔秒数。</param>
     private void DriveUiScenario(double delta)
     {
@@ -506,7 +519,7 @@ public partial class SmokeTestDriver : Node
         {
             if (m_LevelScenario.Failures.Count == 0)
             {
-                GD.Print("SMOKE PASS：五波关卡、相机、物理门、大猩猩守关血条、W 出口、自动存档与地图重读全部通过");
+                GD.Print($"SMOKE PASS：关卡 {m_RequestedLevel} 的阶段、相机、物理门、守关目标、W 出口、自动存档与地图重读全部通过");
                 StopDriving(false);
             }
             else
@@ -850,7 +863,9 @@ public partial class SmokeTestDriver : Node
         return m_Observed.FindLastIndex(o => o.Path == path);
     }
 
-    /// <summary>互斥的自动回归模式。</summary>
+    /// <summary>
+    /// 互斥的自动回归模式。
+    /// </summary>
     private enum SmokeMode
     {
         Disabled,

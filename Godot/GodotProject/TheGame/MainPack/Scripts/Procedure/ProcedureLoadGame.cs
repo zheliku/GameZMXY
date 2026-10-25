@@ -28,7 +28,9 @@ public class ProcedureLoadGame : ProcedureBase
     private int m_EntrySerial; // 每次进出使旧异步结果失效，不让离开后的读档覆盖新作用域。
     private CancellationTokenSource m_Cancellation; // 离开时停止迟到读档结果的校验与发布，已提交的磁盘操作仍由框架完成。
 
-    /// <summary>读档并创建档案作用域。</summary>
+    /// <summary>
+    /// 读档并创建档案作用域。
+    /// </summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     protected internal override async void OnEnter(ProcedureOwner procedureOwner)
     {
@@ -91,7 +93,9 @@ public class ProcedureLoadGame : ProcedureBase
         }
     }
 
-    /// <summary>使尚未完成的加载结果失效；磁盘读写仍由 SaveSystem 串行完成。</summary>
+    /// <summary>
+    /// 使尚未完成的加载结果失效；磁盘读写仍由 SaveSystem 串行完成。
+    /// </summary>
     /// <param name="procedureOwner">当前流程状态机。</param>
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)

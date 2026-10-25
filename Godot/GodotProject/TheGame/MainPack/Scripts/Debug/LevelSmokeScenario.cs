@@ -24,7 +24,9 @@ using GameLogic;
 using Godot;
 using GodotGameFramework;
 
-/// <summary>通过真实移动、碰撞、守关怪和出口输入验证五波清场、自动保存与返回地图。</summary>
+/// <summary>
+/// 通过真实移动、碰撞、守关怪和出口输入验证五波清场、自动保存与返回地图。
+/// </summary>
 public sealed class LevelSmokeScenario
 {
     private readonly int m_LevelId; // 实际关卡编号，期望配方与总收益均读取同一配置。
@@ -33,6 +35,11 @@ public sealed class LevelSmokeScenario
     private readonly LevelCameraNode m_Camera; // 受测实际取景。
     private readonly LevelGatesNode m_Gates; // 受测阶段区域。
     private readonly HashSet<int> m_Seen = new(); // 所有实际显示过的运行实体 ID。
+    private readonly HashSet<int> m_Killed = new(); // 实际死亡的实体，测试预期只累计一次。
+    private readonly List<GameConfig.Monster.MonsterConfig> m_Defeated = new(); // 实际击败种类，用于核对掉落上下界。
+    private int m_ExpectedExperience; // 本次实际死亡配方应发放的经验。
+    private bool m_ExitSurvivorsChecked; // 目标出口必须在持续流仍有活怪时可用。
+    private bool m_InitialLanding; // 出生下落完成后再执行地面路线，避免边落边走进第一组地刺。
     private readonly List<string> m_Failures = new(); // 累计回归失败信息。
     private float m_LastCenter; // 上一帧实际相机中心。
     private float m_LastPlayerX; // 上一帧玩家横坐标。
@@ -63,13 +70,25 @@ public sealed class LevelSmokeScenario
     private int m_ExpectedTotalExperience; // 通关保存应保留的累计经验。
     private int m_ExpectedSoul; // 已实际拾取、应由当前检查点保存的灵魂。
 
-    /// <summary>物理回归已完成或遇到失败。</summary>
+    /// <summary>
+    /// 物理回归已完成或遇到失败。
+    /// </summary>
     public bool IsDone { get; private set; }
 
-    /// <summary>完成时的失败原因列表。</summary>
-    public IReadOnlyList<string> Failures => m_Failures;
+    /// <summary>
+    /// 完成时的失败原因列表。
+    /// </summary>
+    public IReadOnlyList<string> Failures
+    {
+        get
+        {
+            return m_Failures;
+        }
+    }
 
-    /// <summary>创建正式关卡的物理回归场景。</summary>
+    /// <summary>
+    /// 创建正式关卡的物理回归场景。
+    /// </summary>
     /// <param name="hero">正式流程显示的英雄。</param>
     /// <param name="level">受测关卡。</param>
     public LevelSmokeScenario(AbstractHeroEntity hero, LevelViewController level)
@@ -86,7 +105,9 @@ public sealed class LevelSmokeScenario
         m_LastPlayerX = hero.GlobalPosition.X;
     }
 
-    /// <summary>在相机和实体物理更新之后观测，驱动真实输入和测试攻击；完成后不再访问已可能被重开流程卸载的关卡。</summary>
+    /// <summary>
+    /// 在相机和实体物理更新之后观测，驱动真实输入和测试攻击；完成后不再访问已可能被重开流程卸载的关卡。
+    /// </summary>
     /// <param name="delta">物理帧间隔秒数。</param>
     public void Update(double delta)
     {
@@ -100,6 +121,26 @@ public sealed class LevelSmokeScenario
         {
             CheckReturnAndReload();
             return;
+        }
+        LevelModel model = SmokeInspection.Model(m_Level);
+        if (model == null)
+        {
+            Fail($"关卡运行已结束或模型已释放：关卡 {m_LevelId}，经过 {m_Time:F1}s");
+            return;
+        }
+        if (model.Outcome.Value == LevelOutcome.Defeated)
+        {
+            Fail($"英雄死亡：阶段 {SmokeInspection.Sequence(m_Level).Current.StageOrder}，位置 {m_Hero.GlobalPosition}");
+            return;
+        }
+        if (!m_InitialLanding)
+        {
+            if (!m_Hero.OnFloor)
+            {
+                Move(null);
+                return;
+            }
+            m_InitialLanding = true;
         }
         float center = m_Camera.GlobalPosition.X;
         if (Math.Abs(center - m_LastCenter) > 600f * delta + 0.1f)
@@ -142,11 +183,14 @@ public sealed class LevelSmokeScenario
                         Fail("守关对手配置或血条未绑定，或仍残留入场弹窗");
                     m_FeaturedCapture = CaptureFeaturedAsync();
                 }
-                // 在地形上方横穿当前右门，验证怪物可进入，玩家仍被同一道边界阻挡。
-                float right = m_Gates.BoundsOf(SmokeInspection.Sequence(m_Level).Current.StageOrder).Right;
-                Transform2D from = new(0f, new Vector2(right + 60f, 100f));
-                if (monster.TestMove(from, new Vector2(-120f, 0f)) || !m_Hero.TestMove(from, new Vector2(-120f, 0f)))
-                    Fail("阶段门未正确区分玩家阻挡与怪物场外入场");
+                // 只让可移动敌人横穿阶段门；石像的宽身体会同时碰到关卡外墙，不能用作入场探针。
+                if (monster is not BatCaveStatueEntity)
+                {
+                    float right = m_Gates.BoundsOf(SmokeInspection.Sequence(m_Level).Current.StageOrder).Right;
+                    Transform2D from = new(0f, new Vector2(right - 30f, 100f));
+                    if (monster.TestMove(from, new Vector2(60f, 0f)) || !m_Hero.TestMove(from, new Vector2(60f, 0f)))
+                        Fail($"阶段门未正确区分玩家阻挡与怪物场外入场：{monster.GetType().Name}，阶段 {m_StageOrder}");
+                }
             }
         }
 
@@ -173,7 +217,13 @@ public sealed class LevelSmokeScenario
 
             Move("move_right");
             // 用户保留的斜坡含竖直端面，烟测用真实跳跃跨越，不修改场景地形。
-            if (m_Hero.IsOnWall() && m_Hero.IsOnFloor())
+            bool groundSpikeAhead = m_Level.GetNodeOrNull("World/Traps")?.GetChildren()
+                .OfType<GameLogic.Level.Traps.BatCaveSpikeNode>().Any(spike =>
+                    !SmokeInspection.ReadField<bool>(spike, "m_Suspended") &&
+                    spike.GlobalPosition.X > m_Hero.GlobalPosition.X &&
+                    spike.GlobalPosition.X - m_Hero.GlobalPosition.X < 110f) == true;
+            if (m_Hero.OnFloor && (m_Hero.IsOnWall() || groundSpikeAhead) ||
+                groundSpikeAhead && m_Hero.ActionData.JumpCount == 1 && m_Hero.Velocity.Y >= 0)
             {
                 Input.ActionPress(InputSystem.Jump);
             }
@@ -193,6 +243,13 @@ public sealed class LevelSmokeScenario
         }
         else if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.AwaitingExit)
         {
+            if (m_LevelId == 4 && !m_ExitSurvivorsChecked)
+            {
+                if (monsters.Length == 0 || m_Seen.Count <= m_Killed.Count)
+                    Fail("目标出口未在持续蝙蝠流仍有活怪时开放。");
+                m_ExitSurvivorsChecked = true;
+                GD.Print($"SMOKE-LEVEL: statue exit available with {monsters.Length} surviving bats");
+            }
             DriveExit();
         }
         else if (SmokeInspection.Sequence(m_Level).Phase == LevelStagePhase.Completed)
@@ -212,15 +269,17 @@ public sealed class LevelSmokeScenario
             if (m_ExitStep != 5)
                 Fail("出口尚未完成远处拒绝与靠近交互验证，就提前通关");
             int expected = ConfigSystem.Instance.Tables.TbLevelConfig.Get(m_LevelId).Stages.Sum(x => x.Recipes.Sum(r => r.Count));
-            if (m_Seen.Count != expected)
+            if (m_LevelId != 4 && m_Seen.Count != expected)
             {
                 Fail($"怪物总数错误：实际 {m_Seen.Count}，配置 {expected}");
             }
 
             // 收益进档案：本关获得经验 = 档案累计经验 - 进关时的累计经验（新档进关为 0）。
-            int expectedExperience = ConfigSystem.Instance.Tables.TbLevelConfig.Get(m_LevelId).Stages
-                .Sum(x => x.Recipes.Sum(r => r.Count * (r.ExperienceOverride >= 0 ? r.ExperienceOverride :
-                    ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Single(m => m.EntityId == r.MonsterEntityId).AddExp)));
+            int expectedExperience = m_ExpectedExperience;
+            int expectedDefeats = m_LevelId == 4 ? ConfigSystem.Instance.Tables.TbLevelConfig.Get(4).Stages
+                .Take(4).Sum(stage => stage.Recipes.Sum(recipe => recipe.Count)) + 1 : expected;
+            if (m_Killed.Count != expectedDefeats || SmokeInspection.Model(m_Level).DefeatedEnemyCount != expectedDefeats)
+                Fail($"击败数错误：实际 {m_Killed.Count}，应为 {expectedDefeats}");
             LevelViewController run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
             int gained = SmokeInspection.Flow(GF.Procedure.CurrentProcedure as ProcedureLevel)?.GetModel<ProfileModel>()
                 .TotalExperience - m_StartExperience ?? -1;
@@ -231,11 +290,10 @@ public sealed class LevelSmokeScenario
             }
             GD.Print($"SMOKE-LEVEL: experience={gained}, expected={expectedExperience}");
             int minimumSoul = 0, maximumSoul = 0;
-            foreach (var recipe in ConfigSystem.Instance.Tables.TbLevelConfig.Get(m_LevelId).Stages.SelectMany(x => x.Recipes))
+            foreach (var monster in m_Defeated)
             {
-                var monster = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Single(x => x.EntityId == recipe.MonsterEntityId);
-                minimumSoul += recipe.Count * monster.SoulCount.X * monster.SoulPerOrb;
-                maximumSoul += recipe.Count * monster.SoulCount.Y * monster.SoulPerOrb;
+                minimumSoul += monster.SoulCount.X * monster.SoulPerOrb;
+                maximumSoul += monster.SoulCount.Y * monster.SoulPerOrb;
             }
             m_ExpectedSoul = m_Flow.GetModel<ProfileModel>().Soul.Value;
             int gainedSoul = m_ExpectedSoul - m_StartSoul;
@@ -273,7 +331,9 @@ public sealed class LevelSmokeScenario
         }
     }
 
-    /// <summary>远处按键不通关；清场后靠近出口，再发送真实 W 按键。</summary>
+    /// <summary>
+    /// 远处按键不通关；清场后靠近出口，再发送真实 W 按键。
+    /// </summary>
     private void DriveExit()
     {
         LevelExitNode exit = SmokeInspection.Scene(m_Level).GetNode<LevelExitNode>("World/Exit");
@@ -355,7 +415,9 @@ public sealed class LevelSmokeScenario
         }
     }
 
-    /// <summary>有渲染器时记录真实出口和靠近提示，截图完成后再触发关卡卸载。</summary>
+    /// <summary>
+    /// 有渲染器时记录真实出口和靠近提示，截图完成后再触发关卡卸载。
+    /// </summary>
     /// <returns>本帧画面保存完成的任务。</returns>
     private async Task CaptureExitAsync()
     {
@@ -371,7 +433,9 @@ public sealed class LevelSmokeScenario
         GD.Print($"SMOKE-LEVEL: exit preview={path}");
     }
 
-    /// <summary>记录正式成功结算画面。</summary>
+    /// <summary>
+    /// 记录正式成功结算画面。
+    /// </summary>
     /// <returns>画面保存完成的任务。</returns>
     private async Task CaptureSettlementAsync()
     {
@@ -393,14 +457,18 @@ public sealed class LevelSmokeScenario
             throw new IOException($"成功结算截图失败：{result}");
     }
 
-    /// <summary>从视口发送完整按下与释放，覆盖 W 绑定和未处理输入路径。</summary>
+    /// <summary>
+    /// 从视口发送完整按下与释放，覆盖 W 绑定和未处理输入路径。
+    /// </summary>
     private void PressW()
     {
         m_Hero.GetViewport().PushInput(new InputEventKey { PhysicalKeycode = Key.W, Pressed = true });
         m_Hero.GetViewport().PushInput(new InputEventKey { PhysicalKeycode = Key.W, Pressed = false });
     }
 
-    /// <summary>流程实际返回地图后重新读盘，避免只检查内存中的框架数据。</summary>
+    /// <summary>
+    /// 流程实际返回地图后重新读盘，避免只检查内存中的框架数据。
+    /// </summary>
     private void CheckReturnAndReload()
     {
         if (m_Time > 180)
@@ -512,12 +580,22 @@ public sealed class LevelSmokeScenario
                     Fail("首波场外怪物未通过真实 AI 进入画面");
                 return;
             }
+            if (m_LevelId == 4 && stage.StageOrder == 5 &&
+                !monsters.Any(monster => !ReferenceEquals(monster, m_Level.FeaturedOpponent)))
+                return; // 先等持续蝙蝠出现，再验证石像死亡即可开出口。
             foreach (AbstractEnemyEntity monster in monsters)
             {
+                if (m_LevelId == 4 && stage.StageOrder == 5 && !ReferenceEquals(monster, m_Level.FeaturedOpponent))
+                    continue; // 官方石像是末段出口目标，持续蝙蝠流不参与清波。
                 AttackData data = AttackData.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero,
                     m_Hero.Id, 0);
                 monster.ReceiveHit(data, m_Hero.Id);
                 ReferencePool.Release(data);
+                if (monster.Dead && m_Killed.Add(monster.Id))
+                {
+                    m_Defeated.Add(monster.Config);
+                    m_ExpectedExperience += SmokeInspection.ReadField<int>(monster, "m_ExperienceReward");
+                }
                 // 同一死亡再发一次普通事件，刷怪服务必须只发一次奖励和清波名额。
                 GF.Event.Fire(this, EnemyDiedEventArgs.Create(monster.Id,
                     SmokeInspection.ReadField<int>(monster, "m_ExperienceReward"), monster.Config, monster.GlobalPosition));
@@ -561,7 +639,9 @@ public sealed class LevelSmokeScenario
         }
     }
 
-    /// <summary>记录第三阶段真实取景中的三个平台。</summary>
+    /// <summary>
+    /// 记录第三阶段真实取景中的三个平台。
+    /// </summary>
     /// <returns>画面保存任务。</returns>
     private async Task CapturePlatformsAsync()
     {
@@ -573,7 +653,9 @@ public sealed class LevelSmokeScenario
             throw new IOException("第三阶段平台截图失败。");
     }
 
-    /// <summary>记录守关对手出现时的真实 HUD，覆盖血条位置及名称与数字显示。</summary>
+    /// <summary>
+    /// 记录守关对手出现时的真实 HUD，覆盖血条位置及名称与数字显示。
+    /// </summary>
     /// <returns>画面保存任务；无渲染器时直接完成。</returns>
     private async Task CaptureFeaturedAsync()
     {
