@@ -38,6 +38,9 @@ namespace GameLogic.Heroes.Body
         /// <summary>
         /// 集中处理死亡与可打断受击的状态转换。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
+        /// <returns>是否已经处理打断，本帧无需继续执行当前状态决策。</returns>
         protected sealed override bool Interrupt(IFsm<IHeroBody> fsm, IHeroBody body)
         {
             if (body.Dead)
@@ -51,7 +54,13 @@ namespace GameLogic.Heroes.Body
                 return true;
             }
 
-            if (HurtInterrupts && !body.SuperArmor && body.HasPendingHurt)
+            if (body.ActionData.Captured && this is not HeroCapturedState)
+            {
+                ChangeState<HeroCapturedState>(fsm);
+                return true;
+            }
+
+            if (!body.ActionData.Captured && HurtInterrupts && !body.SuperArmor && body.HasPendingHurt)
             {
                 ChangeState<HeroHurtState>(fsm);
                 return true;
@@ -65,13 +74,11 @@ namespace GameLogic.Heroes.Body
         /// </summary>
         /// <param name="body">当前英雄身体事实。</param>
         /// <param name="attacking">是否处于普通攻击。</param>
-        /// <param name="normalProgress">当前普攻从零开始的播放比例。</param>
         /// <param name="airborne">是否处于空中，包括起跳尚未离地的那一帧。</param>
         /// <returns>当前状态允许匹配新动作时为真；否则输出值不参与匹配。</returns>
-        public virtual bool TryGetActionInput(IHeroBody body, out bool attacking, out float normalProgress, out bool airborne)
+        public virtual bool TryGetActionInput(IHeroBody body, out bool attacking, out bool airborne)
         {
             attacking = false;
-            normalProgress = 0;
             airborne = false;
             return false;
         }
@@ -79,6 +86,8 @@ namespace GameLogic.Heroes.Body
         /// <summary>
         /// 在空中：离地，或已起跳且仍在上升（含起跳那一帧还没离地）。
         /// </summary>
+        /// <param name="body">当前状态借用的身体宿主。</param>
+        /// <returns>身体是否已离地或刚起跳且仍在上升。</returns>
         protected static bool IsAirborne(IHeroBody body)
         {
             return !body.OnFloor || (body.ActionData.JumpCount > 0 && body.Velocity.Y < 0f);
@@ -93,10 +102,16 @@ namespace GameLogic.Heroes.Body
         protected bool TryStartSkill(IFsm<IHeroBody> fsm, IHeroBody body)
         {
             if (body is not ISkillActor)
+            {
                 return false;
+            }
+
             var skills = body.GetSystem<SkillSystem>();
             if (body.GetModel<HeroModel>().ActiveSkillId == null)
+            {
                 return false;
+            }
+
             body.SetFacing(body.ActionData.MoveAxis);
             ChangeState(fsm, skills.BodyStateType);
             return true;
@@ -105,6 +120,8 @@ namespace GameLogic.Heroes.Body
         /// <summary>
         /// 回到地面/空中（按当前是否在空中选）。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
         protected void ChangeToLocomotion(IFsm<IHeroBody> fsm, IHeroBody body)
         {
             if (IsAirborne(body))
@@ -147,7 +164,9 @@ namespace GameLogic.Heroes.Body
         {
             body.GetSystem<InputSystem>().ConsumeJumpAttackCombination(body.ActionData);
             if (body.GetSystem<InputSystem>().ConsumePlatformDrop(body.ActionData))
+            {
                 body.TryDropThroughPlatform();
+            }
         }
 
         /// <summary>

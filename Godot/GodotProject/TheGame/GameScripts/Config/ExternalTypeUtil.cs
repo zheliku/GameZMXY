@@ -11,6 +11,8 @@ namespace GameLogic.Config
         /// <summary>
         /// 配置 vector2 → Godot.Vector2
         /// </summary>
+        /// <param name="v">从Luban数据中读取的二维向量。</param>
+        /// <returns>保留原分量值的Godot二维浮点向量。</returns>
         public static Vector2 NewVector2(GameConfig.vector2 v)
         {
             return new Vector2(v.X, v.Y);
@@ -19,6 +21,8 @@ namespace GameLogic.Config
         /// <summary>
         /// 配置 vector2i → Godot.Vector2I
         /// </summary>
+        /// <param name="v">从Luban数据中读取的二维向量。</param>
+        /// <returns>保留原分量值的Godot二维整数向量。</returns>
         public static Vector2I NewVector2I(GameConfig.vector2i v)
         {
             return new Vector2I(v.X, v.Y);

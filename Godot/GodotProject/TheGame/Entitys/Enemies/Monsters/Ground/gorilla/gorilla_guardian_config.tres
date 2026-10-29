@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="GorillaGuardianConfigResource" format=3]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Ground/gorilla/GorillaGuardianConfigResource.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+MaxHp = 900
+Experience = 25

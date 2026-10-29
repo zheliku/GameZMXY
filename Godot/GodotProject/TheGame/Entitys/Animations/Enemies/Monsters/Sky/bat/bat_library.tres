@@ -113,6 +113,11 @@ size = Vector2(50, 57)
 
 [sub_resource type="Animation" id="Animation_hd5bq"]
 length = 0.8333333333333334
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 0.7916666666666666
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -191,6 +196,11 @@ size = Vector2(1, 1)
 
 [sub_resource type="Animation" id="Animation_exf4l"]
 length = 1.0833333333333333
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 1.0416666666666667
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -265,7 +275,12 @@ tracks/5/keys = {
 }
 
 [sub_resource type="Animation" id="Animation_06ejw"]
-length = 0.5
+length = 0.5416666666666666
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 0.5
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -337,6 +352,20 @@ tracks/5/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 1,
 "values": [SubResource("RectangleShape2D_dpwub")]
+}
+tracks/6/type = "method"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath(".")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0.5),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"StopMotionAnimEvent"
+}]
 }
 
 [sub_resource type="Animation" id="Animation_foqip"]

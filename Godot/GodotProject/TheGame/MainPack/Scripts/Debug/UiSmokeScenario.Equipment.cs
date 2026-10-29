@@ -25,6 +25,47 @@ using GodotGameFramework;
 public sealed partial class UiSmokeScenario
 {
     /// <summary>
+    /// 从源表枚举全部悟空武器、防具，经过真实分页菜单穿卸并核对战斗和背包的独立动作层。
+    /// </summary>
+    /// <param name="form">已经打开的正式背包。</param>
+    /// <param name="hero">本局实际英雄。</param>
+    /// <param name="flow">共享档案和装备规则的作用域。</param>
+    private static void CheckAllWearableEquipment(InventoryForm form, AbstractHeroEntity hero, ProcedureOwner flow)
+    {
+        var appearance = SmokeInspection.ReadField<HeroAppearanceResource>(hero, "m_Appearance");
+        int count = 0;
+        foreach (var definition in ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList)
+        {
+            if (definition.Owner != EquipmentOwner.Wukong || definition.Slot == EquipmentSlot.Accessory)
+            {
+                continue;
+            }
+
+            bool armor = definition.Slot == EquipmentSlot.Armor;
+            var textures = appearance.Get(armor ? "m_ArmorTextures" : "m_WeaponTextures").AsGodotDictionary();
+            var expected = textures[(int)definition.Id].AsGodotObject() as Texture2D;
+            var actorSprite = hero.GetNode<Sprite2D>(armor ? "m_Body" : "m_Weapon");
+            var previewSprite = form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/" + (armor ? "Body" : "Weapon"));
+            var slot = form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/" + (armor ? "m_ArmorSlot" : "m_WeaponSlot"));
+            ClickBagEquipment(form, flow, definition.Id);
+            var equipped = armor ? flow.GetModel<ProfileModel>().Armor : flow.GetModel<ProfileModel>().Weapon;
+            Check(equipped?.EquipmentId == definition.Id && expected != null &&
+                actorSprite.Texture == expected && previewSprite.Texture == expected &&
+                actorSprite.Hframes == previewSprite.Hframes && actorSprite.Vframes == previewSprite.Vframes,
+                $"{definition.NameCn} 穿戴身份、战斗和预览图集或网格不同步");
+            CheckHeroAnimationLayers(hero);
+            // 卸装同样走正式控件事件，校验原图恢复，不能只验证资源字典存在。
+            slot._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+            var baseTexture = appearance.Get(armor ? "m_BaseBody" : "m_BaseWeapon").AsGodotObject() as Texture2D;
+            Check((armor ? flow.GetModel<ProfileModel>().Armor : flow.GetModel<ProfileModel>().Weapon) == null &&
+                actorSprite.Texture == baseTexture && previewSprite.Texture == baseTexture,
+                $"{definition.NameCn} 卸下后保留了穿戴外观");
+            count++;
+        }
+        GD.Print($"SMOKE-WARDROBE GUI PASS: {count} source-table wearables, native pagination, battle/preview layers, full motions and unequip reset");
+    }
+
+    /// <summary>
     /// 验证实际物理落地、暂停、恢复量、满包保留和池复用。
     /// </summary>
     /// <param name="flow">受测档案。</param>
@@ -149,12 +190,18 @@ public sealed partial class UiSmokeScenario
         Check(Math.Abs(manaNumber.GlobalPosition.Y - (recoveryStart.Y - 75 * (recoveryAge + .4))) < .01,
             "恢复数字没有按秒上升");
         foreach (var number in numbers.ToArray())
+        {
             number._Process(1);
+        }
+
         Check(numbers.Count == 0, "恢复数字没有按一秒生命周期回池");
 
         var item = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.CommonPineStaff, () => .75f);
         while (flow.GetModel<ProfileModel>().EquipmentDatas.Count < flow.GetModel<ProfileModel>().Capacity)
+        {
             flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.RoughCassock, () => 0));
+        }
+
         SpawnGround(level, hero.HurtBox.GetGlobalBounds().GetCenter(), null, item);
         var gear = owned.Single();
         await WaitFramesAsync(6);
@@ -179,18 +226,30 @@ public sealed partial class UiSmokeScenario
 
         int groundIndex = 0;
         foreach (var pickup in tables.TbPickupConfig.DataList)
-            SpawnGround(level, hero.GlobalPosition + new Vector2(110 + groundIndex++ * 45, -80), pickup, null);
+        {
+            int index = groundIndex++;
+            SpawnGround(level, hero.GlobalPosition + new Vector2(110 + index % 12 * 45, -80 - index / 12 * 50), pickup, null);
+        }
         // 覆盖所有装备，尤其是画布下方有透明留白的唐僧武器与防具。
         foreach (var equipment in tables.TbEquipmentConfig.DataList)
-            SpawnGround(level, hero.GlobalPosition + new Vector2(110 + groundIndex++ * 45, -80), null,
+        {
+            int index = groundIndex++;
+            SpawnGround(level, hero.GlobalPosition + new Vector2(110 + index % 12 * 45, -80 - index / 12 * 50), null,
                 flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), equipment.Id, () => 0));
+        }
         await WaitUntilAsync(() => owned.Count == tables.TbPickupConfig.DataList.Count + tables.TbEquipmentConfig.DataList.Count &&
             owned.All(x => x.IsOnFloor()), "地面物品画面夹具没有全部落地", 5000);
         foreach (var node in owned)
+        {
             CheckGroundShape(node);
+        }
+
         await CaptureCombatAsync("ground_pickups");
         foreach (var node in owned.ToArray())
+        {
             typeof(LevelViewController).GetMethod("OnGroundItemFinished", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(level, [node]);
+        }
+
         GD.Print("SMOKE-UI: all pickup/equipment opaque bottoms aligned to ground shape, no shadow, pickup rise/fade, single transaction, pause, full inventory, expiration and pool reuse passed");
     }
 
@@ -243,14 +302,19 @@ public sealed partial class UiSmokeScenario
         Check(image != null && (!image.IsCompressed() || image.Decompress() == Error.Ok), "掉落物图标不可读取");
         int opaqueBottom = 0;
         for (int y = image.GetHeight() - 1; y >= 0 && opaqueBottom == 0; y--)
+        {
             for (int x = 0; x < image.GetWidth(); x++)
+            {
                 if (image.GetPixel(x, y).A > 0)
                 {
                     opaqueBottom = y + 1;
                     break;
                 }
+            }
+        }
+
         float visibleBottom = icon.ToGlobal(icon.Offset + new Vector2(0,
-            opaqueBottom - icon.Texture.GetHeight() * .5f)).Y;
+                        opaqueBottom - icon.Texture.GetHeight() * .5f)).Y;
         float collisionBottom = (shapeNode.GlobalTransform * shape.GetRect()).End.Y;
         Check(icon.Centered && opaqueBottom > 0 && Math.Abs(visibleBottom - collisionBottom) < .01f,
             $"图标非透明底边没有对齐碰撞底边：{icon.Texture.ResourcePath}，可见底边 {visibleBottom}，碰撞底边 {collisionBottom}");

@@ -47,7 +47,6 @@ public class ProcedureUpdate : ProcedureBase
         }
     }
 
-
     /// <summary>
     /// 执行版本检查、完整性校验、下载和子包加载。
     /// </summary>
@@ -106,7 +105,9 @@ public class ProcedureUpdate : ProcedureBase
         {
             string gameSubpackDir = Path.Combine(exeDir, "subpackages");
             if (IsDirectoryWritable(gameSubpackDir))
+            {
                 return gameSubpackDir;
+            }
         }
 
         // 3. 回退 user://（一定能写，但在 C 盘）
@@ -179,7 +180,10 @@ public class ProcedureUpdate : ProcedureBase
             {
                 int damaged = await VerifyLocalPackIntegrityAsync(localVersion);
                 if (damaged > 0)
+                {
                     Log.Warning("[ProcedureUpdate] 本地 {0} 个文件损坏，但无法连接服务器修复。", damaged);
+                }
+
                 await LoadDownloadedPacksAsync(localVersion);
             }
             ChangeState<ProcedurePrepare>(procedureOwner);
@@ -202,7 +206,10 @@ public class ProcedureUpdate : ProcedureBase
             var localVersionPre = ResourceManager.LocalPackVersionList
                 ?? NodeUtility.LoadAndValidateVersionList(ResourceManager.GameFrameworkVersionData);
             if (localVersionPre != null)
+            {
                 ResourceManager.LocalPackVersionList = localVersionPre;
+            }
+
             isForceUpdate = localVersionPre?.ForceUpdate == true;
 
             serverVersion = await FetchVersionWithRetryAsync(versionUrl);
@@ -397,7 +404,6 @@ public class ProcedureUpdate : ProcedureBase
         return await tcs.Task;
     }
 
-
     // ── 版本比对 ──
 
     /// <summary>
@@ -410,7 +416,9 @@ public class ProcedureUpdate : ProcedureBase
         // 按存在性、大小和大文件哈希逐级校验，只有完整文件才进入有效列表。
         Log.Info("[ProcedureUpdate] 开始校验本地文件完整性...");
         if (localVersion?.Packs == null || localVersion.Packs.Length == 0)
+        {
             return 0;
+        }
 
         var validPacks = new List<Pack>();
         int damaged = 0;
@@ -418,7 +426,9 @@ public class ProcedureUpdate : ProcedureBase
         foreach (var pack in localVersion.Packs)
         {
             if (!pack.IsValid())
+            {
                 continue;
+            }
 
             string packPath = Path.Combine(SubpackDir, pack.Name + ".pck");
             string damageReason = null;
@@ -459,7 +469,10 @@ public class ProcedureUpdate : ProcedureBase
             {
                 Log.Warning("[ProcedureUpdate] 本地文件损坏: {0} — {1}", pack.Name, damageReason);
                 if (!EasySave.TryDelete(packPath))
+                {
                     Log.Warning("[ProcedureUpdate] 无法删除损坏文件（可能被占用）: {0}", packPath);
+                }
+
                 damaged++;
             }
             else
@@ -492,7 +505,9 @@ public class ProcedureUpdate : ProcedureBase
         var toDownload = new List<(Pack, string)>();
 
         if (server?.Packs == null || server.Packs.Length == 0)
+        {
             return toDownload;
+        }
 
         // 先建立本地包名索引，后续服务器清单按名称做一次比对。
         var localDict = new Dictionary<string, Pack>();
@@ -501,7 +516,9 @@ public class ProcedureUpdate : ProcedureBase
             foreach (var lp in local.Packs)
             {
                 if (!string.IsNullOrEmpty(lp.Name))
+                {
                     localDict[lp.Name] = lp;
+                }
             }
         }
 
@@ -571,7 +588,9 @@ public class ProcedureUpdate : ProcedureBase
         {
             long sum = 0;
             for (int i = 0; i < perPackBytes.Length; i++)
+            {
                 sum += perPackBytes[i];
+            }
 
             // 进度按字节加权
             int pct = totalBytes > 0
@@ -677,8 +696,6 @@ public class ProcedureUpdate : ProcedureBase
         return false;
     }
 
-
-
     // ── 版本文件请求 ──
 
     /// <summary>
@@ -747,7 +764,9 @@ public class ProcedureUpdate : ProcedureBase
     {
         // 先按资源类型排序，保证配置和本地化数据在场景资源之前可用。
         if (version?.Packs == null || version.Packs.Length == 0)
+        {
             return;
+        }
 
         // 先 Config 后 Resource，确保场景加载时配置已就绪
         var ordered = version.Packs
@@ -760,7 +779,9 @@ public class ProcedureUpdate : ProcedureBase
         foreach (var pack in ordered)
         {
             if (!pack.IsValid())
+            {
                 continue;
+            }
 
             string packPath = Path.Combine(SubpackDir, pack.Name + ".pck");
             if (!File.Exists(packPath))
@@ -777,7 +798,10 @@ public class ProcedureUpdate : ProcedureBase
                 Log.Warning("[ProcedureUpdate] 子包大小不匹配({0})，可能已损坏，跳过: {1}",
                     pack.Name, fileInfo.Length);
                 if (!EasySave.TryDelete(packPath))
+                {
                     Log.Warning("[ProcedureUpdate] 无法删除损坏文件（可能被占用）: {0}", packPath);
+                }
+
                 failed++;
                 continue;
             }
@@ -792,7 +816,10 @@ public class ProcedureUpdate : ProcedureBase
                     {
                         Log.Warning("[ProcedureUpdate] SHA256 重校验失败，文件可能损坏: {0}", pack.Name);
                         if (!EasySave.TryDelete(packPath))
+                        {
                             Log.Warning("[ProcedureUpdate] 无法删除损坏文件（可能被占用）: {0}", packPath);
+                        }
+
                         failed++;
                         continue;
                     }
@@ -840,7 +867,9 @@ public class ProcedureUpdate : ProcedureBase
     {
         // 以当前清单建立白名单，只清理目录中的过期 .pck 文件。
         if (!Directory.Exists(SubpackDir))
+        {
             return;
+        }
 
         var validNames = new HashSet<string>(
             version.Packs.Where(p => p.IsValid()).Select(p => p.Name + ".pck"));
@@ -854,7 +883,9 @@ public class ProcedureUpdate : ProcedureBase
                 {
                     Log.Info("[ProcedureUpdate] 清理废弃子包: {0}", fileName);
                     if (!EasySave.TryDelete(file))
+                    {
                         Log.Warning("[ProcedureUpdate] 无法删除废弃包（可能被占用）: {0}", file);
+                    }
                 }
             }
         }
@@ -940,13 +971,25 @@ public class ProcedureUpdate : ProcedureBase
     private bool IsHttpSuccess(WebRequestCompleteEventArgs result)
     {
         if (result == null)
+        {
             return false;
+        }
+
         if (result.Result == -1 && result.ResponseCode == 0)
+        {
             return false; // timeout
+        }
+
         if (result.ResponseCode != 200 || result.Result != (long)Error.Ok)
+        {
             return false;
+        }
+
         if (result.Body == null || result.Body.Length == 0)
+        {
             return false;
+        }
+
         return true;
     }
 

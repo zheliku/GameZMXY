@@ -44,11 +44,19 @@ namespace GameLogic.Heroes
         [Export] private HeroLevelUpNode m_LevelUp; // 独立升级动画层，不随身体朝向镜像。
         [Export] private AnimatedSprite2D m_PoisonHead; // 持续中毒的头顶官方标记。
         [Export] private AnimatedSprite2D m_PoisonPulse; // 每跳中毒扣血的短暂官方效果。
+        [Export] private AnimatedSprite2D m_FrozenEffect; // 原版35帧冰块，末帧保持到控制状态结束。
+        [Export] private ShaderMaterial m_InvulnerabilityMaterial; // 身体和武器共用本实例的无敌光晕材质。
+        [Export] private HeroTombstoneNode m_Tombstone; // 独立场景的共用死亡表现，自己拥有下落与落地碰撞。
 
         private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
         private readonly HashSet<SkillEffectNode> m_SkillEffects = new(); // 本英雄生成的活动特效，隐藏时统一归还。
 
         // ---- 属性 ----
+
+        /// <summary>
+        /// 本英雄触发的共用墓碑已完整播放，关卡据此结束失败流程。
+        /// </summary>
+        public event Action DeathPresentationFinished;
 
         /// <summary>
         /// 借用模型中同类英雄共享的身体参数。
@@ -62,13 +70,13 @@ namespace GameLogic.Heroes
         }
 
         /// <summary>
-        /// 按游戏时间查询技能无敌。
+        /// 技能无敌与连续受击保护任一有效时拒绝直接命中。
         /// </summary>
         protected override bool Invulnerable
         {
             get
             {
-                return this.GetSystem<SkillSystem>().IsInvulnerable(ActionData.Time);
+                return Attributes.HurtInvulnerabilitySeconds > 0 || this.GetSystem<SkillSystem>().IsInvulnerable(ActionData.Time);
             }
         }
 
@@ -231,6 +239,15 @@ namespace GameLogic.Heroes
             object userData)
         {
             base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
+            if (m_Tombstone == null)
+            {
+                throw new InvalidOperationException($"{entityAssetName} 缺少共用墓碑场景绑定。");
+            }
+            if (isNewInstance)
+            {
+                Died += OnDied;
+                m_Tombstone.Finished += OnDeathPresentationFinished;
+            }
 
             if (Config == null)
             {
@@ -239,8 +256,20 @@ namespace GameLogic.Heroes
                 return;
             }
 
+            if (m_Weapon == null)
+            {
+                throw new InvalidOperationException($"{entityAssetName} 缺少英雄武器 Sprite2D 的场景绑定。");
+            }
+
+            if (m_Appearance == null)
+            {
+                throw new InvalidOperationException($"{entityAssetName} 缺少英雄外观资源绑定。");
+            }
+
             if (!HasAnim(HeroAnims.Reset))
+            {
                 throw new InvalidOperationException($"{entityAssetName} 缺少用于技能退出的 RESET 动画。");
+            }
 
             this.GetSystem<ConfigurationSystem>().EnsureHeroBodyParams(HeroId, BuildBodyParams);
         }
@@ -254,20 +283,35 @@ namespace GameLogic.Heroes
         {
             // 显示只装配表现；即使异步迟到，也不重置或修改当前模型。
             if (Attributes == null || Attributes.HeroId != HeroId)
+            {
                 throw new InvalidOperationException($"英雄 {HeroId} 显示前必须准备本局属性模型。");
+            }
+
             base.OnShow(userData);
+            // 先复位上次动作写入的可见性/效果轨道，不能让死亡动画在本次显示后继续写回墓碑。
+            RestartAnim(HeroAnims.Reset);
             RefreshAppearance();
             Body.Visible = true;
             m_Weapon.Visible = true;
             m_MusouAfterimage?.Reset();
             m_LevelUp?.Reset();
+            m_Tombstone.Reset();
+            if (m_FrozenEffect != null)
+            {
+                m_FrozenEffect.Stop();
+                m_FrozenEffect.Hide();
+            }
 
             // 池复用的实例带着上次的脏事实回来，一律在 OnShow 复位（见 Entity/AGENTS.md 生命周期）
             m_PendingHurt = null;
+            m_CaptorId = 0;
+            ActionData.Captured = false;
             Velocity = Vector2.Zero;
             this.GetSystem<InputSystem>().Reset(ActionData);
             SetFacing(1);
+            PlayAnim(HeroAnims.Idle);
             CreateBodyStateMachine();
+            RefreshInvulnerabilityGlow();
         }
 
         /// <summary>
@@ -277,16 +321,37 @@ namespace GameLogic.Heroes
         /// <param name="userData">本次隐藏参数。</param>
         public override void OnHide(bool isShutdown, object userData)
         {
+            m_CaptorId = 0;
+            ActionData.Captured = false;
             if (!isShutdown && IsInstanceValid(m_MusouAfterimage))
+            {
                 m_MusouAfterimage.Reset();
+            }
+
             if (!isShutdown && IsInstanceValid(m_LevelUp))
+            {
                 m_LevelUp.Reset();
+            }
+
             if (!isShutdown)
             {
+                m_Tombstone.Reset();
+                m_InvulnerabilityMaterial?.SetShaderParameter("glow_radius", 0f);
                 if (m_PoisonHead != null)
+                {
                     m_PoisonHead.Hide();
+                }
+
                 if (m_PoisonPulse != null)
+                {
                     m_PoisonPulse.Hide();
+                }
+
+                if (m_FrozenEffect != null)
+                {
+                    m_FrozenEffect.Stop();
+                    m_FrozenEffect.Hide();
+                }
             }
             DestroyBodyStateMachine(isShutdown);
             ClearSkillEffects(isShutdown);
@@ -305,10 +370,31 @@ namespace GameLogic.Heroes
             }
 
             float dt = (float)delta;
+            this.GetSystem<HeroSystem>().AdvanceHurtProtection(dt);
+            this.GetSystem<HeroSystem>().AdvanceFreeze(dt);
+            if (m_FrozenEffect != null)
+            {
+                bool frozen = !Dead && this.GetModel<HeroModel>().FreezeSeconds > 0;
+                if (frozen && !m_FrozenEffect.Visible)
+                {
+                    m_FrozenEffect.Frame = 0;
+                    m_FrozenEffect.Play();
+                    m_FrozenEffect.Show();
+                }
+                else if (!frozen)
+                {
+                    m_FrozenEffect.Stop();
+                    m_FrozenEffect.Hide();
+                }
+            }
+            ReceivePeriodicDamage(this.GetSystem<HeroSystem>().AdvanceRecovery(dt), showNumber: false);
             int poisonDamage = this.GetSystem<HeroSystem>().AdvancePoison(dt);
             ReceivePeriodicDamage(poisonDamage);
             if (m_PoisonHead != null)
+            {
                 m_PoisonHead.Visible = !Dead && this.GetModel<HeroModel>().PoisonAttack != null;
+            }
+
             if (m_PoisonPulse != null)
             {
                 if (poisonDamage > 0 && !Dead)
@@ -318,29 +404,54 @@ namespace GameLogic.Heroes
                     m_PoisonPulse.Show();
                 }
                 else if (!m_PoisonPulse.IsPlaying() || Dead)
+                {
                     m_PoisonPulse.Hide();
+                }
             }
+            if (Dead && ActionData.Captured)
+            {
+                ReleaseCapture(m_CaptorId);
+            }
+
             bool wasActive = this.GetModel<HeroModel>().WsActive.Value;
             this.GetSystem<HeroSystem>().AdvanceWs(dt);
             if (wasActive && !this.GetModel<HeroModel>().WsActive.Value)
+            {
                 EndMusou();
+            }
             // 引擎采样保留按住及短按边沿，组合闩锁在输入层，连段与冷却由共享 InputSystem 根据本英雄动作数据裁定。
-            this.GetSystem<InputSystem>().Sample(this, dt);
-            if (ActionData.MusouRequested)
+            var heroModel = this.GetModel<HeroModel>();
+            bool controlsEnabled = heroModel.ControlsEnabled && heroModel.FreezeSeconds <= 0;
+            this.GetSystem<InputSystem>().Sample(this, dt, controlsEnabled);
+            if (!ActionData.Captured && ActionData.MusouRequested)
+            {
                 TryActivateMusou();
+            }
 
             if (this.GetModel<HeroModel>().IsDepleted)
+            {
                 this.GetSystem<SkillSystem>().CancelSkill();
+            }
             // 当前状态声明输入窗口；角色匹配具体组合，状态随后消费请求并决定转换。
-            if (!Dead && (!HasPendingHurt || ((IHeroBody)this).SuperArmor) &&
+            if (!Dead && controlsEnabled && !ActionData.Captured && (!HasPendingHurt || ((IHeroBody)this).SuperArmor) &&
                 this.GetModel<HeroModel>().ActiveSkillId == null &&
                 m_BodyFsm.CurrentState is AbstractHeroBodyState bodyState &&
-                bodyState.TryGetActionInput(this, out bool attacking, out float normalProgress, out bool airborne))
-                MatchActionInput(attacking, normalProgress, airborne);
+                bodyState.TryGetActionInput(this, out bool attacking, out bool airborne))
+            {
+                MatchActionInput(attacking, airborne);
+            }
+
             m_BodyFsm.Tick(dt);
             if (m_BodyFsm.CurrentState is AbstractHeroSkillState skillState)
+            {
                 skillState.AdvanceAnimation(m_BodyFsm, this, dt);
-            MoveBody();
+            }
+
+            if (!Dead)
+            {
+                MoveBody();
+            }
+            RefreshInvulnerabilityGlow();
 
             // 落地归零跳跃次数。必须带 "Velocity.Y >= 0"：起跳那一帧角色可能还没离开地面，
             // 只判 IsOnFloor() 会把刚用掉的次数立刻清零，变成无限跳。
@@ -373,13 +484,27 @@ namespace GameLogic.Heroes
         // ---- 业务入口 ----
 
         /// <summary>
+        /// 当前英雄是否接受命中附带的中毒、冰冻；具体英雄声明自己的免疫规则。
+        /// </summary>
+        public virtual bool CanReceiveStatusEffect
+        {
+            get
+            {
+                return IsAlive;
+            }
+        }
+
+        /// <summary>
         /// 存活且蓄满时开启无双，使出招与运动读取加成并开始角色残影。
         /// </summary>
         /// <returns>本次是否成功开启；按住按键、未满值、已开启或已死亡均不重复开启。</returns>
         public bool TryActivateMusou()
         {
             if (!IsShown || Dead || GF.Base.IsGamePaused || !this.GetSystem<HeroSystem>().TryActivateWs())
+            {
                 return false;
+            }
+
             m_PendingHurt = null;
             m_MusouAfterimage?.SetEmitting(true);
             return true;
@@ -400,7 +525,8 @@ namespace GameLogic.Heroes
         public void RefreshAppearance()
         {
             var equipment = this.GetModel<ProfileModel>();
-            m_Appearance.ApplyToSprites((Sprite2D)Body, m_Weapon,
+            var body = (Sprite2D)Body;
+            m_Appearance.ApplyToSprites(body, m_Weapon,
                 equipment.Weapon?.EquipmentId ?? GameConfig.Equipment.EquipmentId.None,
                 equipment.Armor?.EquipmentId ?? GameConfig.Equipment.EquipmentId.None);
         }
@@ -435,7 +561,8 @@ namespace GameLogic.Heroes
         /// </summary>
         /// <param name="data">本次攻击快照，仅在回调内使用。</param>
         /// <param name="result">目标已完成的伤害结算结果。</param>
-        protected override void OnHitLanded(AttackData data, DamageResult result)
+        /// <param name="target">本次真实命中的目标。</param>
+        protected override void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result)
         {
             this.GetSystem<HeroSystem>().RecordHit(result.Damage, data.Attacker.Power);
         }
@@ -453,12 +580,55 @@ namespace GameLogic.Heroes
         protected override void OnHurt(AttackData data, DamageResult result, Vector2 knockback,
             int attackerEntityId)
         {
+            this.GetSystem<HeroSystem>().RecordHurt();
+            RefreshInvulnerabilityGlow();
             if (Dead)
+            {
                 EndMusou();
+            }
+
             if (!Dead && !this.GetModel<HeroModel>().WsActive.Value && BodyParams.HurtTime > 0f)
             {
                 m_PendingHurt = knockback;
             }
+        }
+
+        /// <summary>
+        /// 以官方6..15像素的光晕节拍显示本角色无敌；颜色由角色场景决定。
+        /// </summary>
+        private void RefreshInvulnerabilityGlow()
+        {
+            if (m_InvulnerabilityMaterial == null)
+            {
+                return;
+            }
+
+            bool glowing = !Dead && Invulnerable && !Attributes.WsActive.Value;
+            double phase = ActionData.Time * 24d % 18d;
+            float radius = (float)(6 + Math.Abs(9 - phase));
+            m_InvulnerabilityMaterial.SetShaderParameter("glow_radius", glowing ? radius : 0f);
+            m_InvulnerabilityMaterial.SetShaderParameter("glow_alpha", phase < 9 ? 1f : .8f);
+            m_InvulnerabilityMaterial.SetShaderParameter("mirrored", Facing > 0);
+            var sprite = (Sprite2D)Body;
+            m_InvulnerabilityMaterial.SetShaderParameter("frame_grid", new Vector2(sprite.Hframes, sprite.Vframes));
+        }
+
+        /// <summary>
+        /// 死亡时启动独立墓碑；身体状态只关闭英雄自身动作和碰撞。
+        /// </summary>
+        /// <param name="actor">本次死亡的英雄实例。</param>
+        private void OnDied(AbstractActorEntity actor)
+        {
+            Velocity = Vector2.Zero;
+            m_Tombstone.ShowAt(GlobalPosition);
+        }
+
+        /// <summary>
+        /// 将本英雄拥有的墓碑完成事实交给关卡，不以身体动画长度代替演出结束。
+        /// </summary>
+        private void OnDeathPresentationFinished()
+        {
+            DeathPresentationFinished?.Invoke();
         }
 
         /// <summary>
@@ -508,7 +678,7 @@ namespace GameLogic.Heroes
             for (int i = 0; i < OwnAttacks.Count; i++)
             {
                 attackAnims[i] = AttackAnimations[i];
-                attackTimes[i] = GetAnimLength(attackAnims[i]);
+                attackTimes[i] = GetActionDuration(attackAnims[i]);
             }
 
             // 汇总移动、跳跃与受击参数；待机时序由完整循环动画负责。
@@ -520,7 +690,7 @@ namespace GameLogic.Heroes
                 JumpSpeed = Config.JumpSpeed,
                 Gravity = Config.Gravity,
                 JumpCountMax = Config.JumpCountMax,
-                HurtTime = GetAnimLength(HeroAnims.Hurt),
+                HurtTime = GetActionDuration(HeroAnims.Hurt),
                 AttackAnims = Array.AsReadOnly(attackAnims),
                 AttackTimes = Array.AsReadOnly(attackTimes),
                 AttackInputCooldowns = Array.AsReadOnly(Config.AttackInputCooldowns),
@@ -536,7 +706,10 @@ namespace GameLogic.Heroes
         bool IHeroBody.TryDropThroughPlatform()
         {
             if (!OnFloor)
+            {
                 return false;
+            }
+
             uint platformMask = LayerMask.LayerToMask2D("Platform");
             for (int i = 0; i < GetSlideCollisionCount(); i++)
             {
@@ -544,7 +717,9 @@ namespace GameLogic.Heroes
                 if (collision.GetNormal().Dot(Vector2.Up) < Mathf.Cos(FloorMaxAngle) ||
                     collision.GetCollider() is not CollisionObject2D collider ||
                     (collider.CollisionLayer & platformMask) == 0)
+                {
                     continue;
+                }
                 // 原版从平台向下移 10px；单向碰撞不再阻挡已位于平台下方的脚底。
                 Position += Vector2.Down * Config.PlatformDropDistance;
                 ActionData.JumpCount = 1;

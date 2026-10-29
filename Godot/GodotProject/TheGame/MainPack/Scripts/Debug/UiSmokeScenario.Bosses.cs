@@ -110,12 +110,18 @@ public sealed partial class UiSmokeScenario
                         await WaitFramesAsync(1);
                     }
                     if (index != 2)
+                    {
                         Check(enabled, $"{id} 第 {index + 1} 招没有启用碰撞判定");
+                    }
+
                     if (id == EntityId.MacaqueKing && index == 2)
+                    {
                         await WaitUntilAsync(() => !actor.GetParent().GetChildren().OfType<SkillEffectNode>().Any(x => x.Visible),
-                            "风刃完整 50 帧后没有回池");
+                                                "风刃完整 50 帧后没有回池");
+                    }
+
                     Check(actor.HitBox.GetChildren().OfType<CollisionShape2D>().All(x => x.Disabled) &&
-                        !effect.Visible, $"{id} 收招后仍保留判定或特效");
+                                            !effect.Visible, $"{id} 收招后仍保留判定或特效");
                     Check(hero.Hp < beforeHp && (index != 1 || hitFrames > 1), $"{id} 第 {index + 1} 招未造成实际伤害，或多段招式只结算一次");
                     GD.Print($"SMOKE-BOSS ATTACK: {id}/{index + 1}, hero damage={beforeHp - hero.Hp}, hit frames={hitFrames}");
                 }

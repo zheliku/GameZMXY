@@ -20,6 +20,7 @@ namespace GameLogic.Save
     /// <summary>
     /// 项目存档入口：读取六格摘要、读取或新建档案、保存检查点。
     /// </summary>
+    /// <param name="architecture">借用的所属作用域；模型和服务由作用域持有。</param>
     /// <remarks>
     /// 全部写盘字段见 <see cref="GameData"/>；运行时档案与快照的转换见 <see cref="SaveDataUtility"/>。
     /// 文件读写只调用 ArchiveUtility，原子写、备份与串行队列由框架负责；数据流见 Docs/ProjectTour.md。
@@ -58,7 +59,10 @@ namespace GameLogic.Save
             cancellationToken.ThrowIfCancellationRequested();
             var archive = this.GetUtility<GameArchiveUtility>();
             if (slotNumber < 1 || slotNumber > SaveModel.SlotCount)
+            {
                 throw new ArgumentOutOfRangeException(nameof(slotNumber));
+            }
+
             var tables = this.GetModel<ConfigurationModel>().Tables;
             var mapper = this.GetUtility<SaveDataUtility>();
             var saveModel = this.GetModel<SaveModel>();
@@ -71,22 +75,31 @@ namespace GameLogic.Save
             if (unitId == 0)
             {
                 if (archive.Catalogues.Any(x => x.SlotNumber == slotNumber))
+                {
                     throw new InvalidOperationException("该存档格已有文件，拒绝覆盖。");
+                }
+
                 loaded = await archive.SaveAsync();
             }
             else
+            {
                 loaded = await archive.LoadAsync(unitId);
+            }
 
             cancellationToken.ThrowIfCancellationRequested();
             if (!loaded || archive.CurrentData == null || archive.CurrentCatalogue == null ||
                 archive.CurrentData.UnitId != archive.CurrentCatalogue.UnitId)
+            {
                 throw new InvalidOperationException("没有成功读取有效存档，已拒绝覆盖。");
+            }
 
             var catalogue = archive.CurrentCatalogue;
             GameData data = archive.CurrentData;
             bool created = unitId == 0 || IsUnclaimedSlot(catalogue, data);
             if (!created && (catalogue.SlotNumber != slotNumber || catalogue.SavedAtUtc <= 0))
+            {
                 throw new InvalidOperationException("存档目录与所选格不一致或缺少检查点时间。");
+            }
 
             // 只有明确的新槽或框架新建的空槽才按建档规则创建，不转换历史文件。
             var source = created ? new GameData
@@ -96,13 +109,16 @@ namespace GameLogic.Save
                 Heroes = [new HeroSaveData { HeroId = tables.TbProfileConfig.StartHeroId }]
             } : data;
             mapper.Validate(source, tables.TbEquipmentConfig,
-                tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig);
+                tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig, tables.TbPassiveConfig);
             saveModel.ActiveSlotUnitId = data.UnitId;
             if (created)
             {
                 catalogue.SlotNumber = slotNumber;
                 if (!await WriteSnapshotAsync(source))
+                {
                     throw new InvalidOperationException("新档案写入失败。");
+                }
+
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
@@ -125,13 +141,19 @@ namespace GameLogic.Save
             cancellationToken.ThrowIfCancellationRequested();
             // GGF 首次初始化可能建立一个空文件；它不创建角色，在界面仍显示为空格。
             if (archive.Catalogues.Count == 0 && !await archive.LoadAsync() && archive.Catalogues.Count == 0)
+            {
                 throw new InvalidOperationException("存档目录不可读，已保留原文件。");
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
             var catalogues = archive.Catalogues.ToArray();
             if (catalogues.Length > SaveModel.SlotCount)
+            {
                 throw new InvalidOperationException("已有存档超过六格，当前界面不会覆盖任何存档。");
+            }
+
             var slots = Enumerable.Range(1, SaveModel.SlotCount)
-                .Select(number => new SaveSlotInfo(number, 0, SaveSlotState.Empty)).ToArray();
+                            .Select(number => new SaveSlotInfo(number, 0, SaveSlotState.Empty)).ToArray();
             var used = new HashSet<int>();
             foreach (var catalogue in catalogues)
             {
@@ -139,21 +161,32 @@ namespace GameLogic.Save
                 // GGF 首次启动的唯一空槽认领为第一格；已有档案必须已经具有稳定格号。
                 int number = catalogue.SlotNumber == 0 ? 1 : catalogue.SlotNumber;
                 if (number < 1 || number > SaveModel.SlotCount || !used.Add(number))
+                {
                     throw new InvalidOperationException("目录中存在重复或无效的存档格号。");
+                }
+
                 try
                 {
                     if (!await archive.LoadAsync(catalogue.UnitId))
+                    {
                         throw new InvalidOperationException("存档文件及备份都不可读。");
+                    }
+
                     cancellationToken.ThrowIfCancellationRequested();
                     if (IsUnclaimedSlot(catalogue, archive.CurrentData))
+                    {
                         slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Empty);
+                    }
                     else
                     {
                         if (catalogue.SlotNumber != number || catalogue.SavedAtUtc <= 0)
+                        {
                             throw new InvalidOperationException("已有档案缺少稳定格号或检查点时间。");
+                        }
+
                         var data = archive.CurrentData;
                         mapper.Validate(data,
-                            tables.TbEquipmentConfig, tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig);
+                            tables.TbEquipmentConfig, tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig, tables.TbPassiveConfig);
                         string name = tables.TbHeroConfig.Get(data.ActiveHeroId).NameCn;
                         int level = curve.Evaluate(data.Heroes.Single(x => x.HeroId == data.ActiveHeroId).TotalExperience).Level;
                         slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Occupied,
@@ -215,11 +248,17 @@ namespace GameLogic.Save
         public async Task<bool> SaveManuallyAsync(int formSerialId, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
+            {
                 return false;
+            }
+
             var saveModel = this.GetModel<SaveModel>();
             if (saveModel.ManualSave.Value is { Phase: SaveWritePhase.Writing, FormSerialId: var serial } &&
                 serial == formSerialId)
+            {
                 return false;
+            }
+
             var profile = this.GetModel<ProfileModel>();
             saveModel.ManualSave.Value = new(formSerialId, SaveWritePhase.Writing);
             bool succeeded;
@@ -234,7 +273,10 @@ namespace GameLogic.Save
             if (!cancellationToken.IsCancellationRequested &&
                 ReferenceEquals(profile, this.GetModel<ProfileModel>()) &&
                 saveModel.ManualSave.Value.FormSerialId == formSerialId)
+            {
                 saveModel.ManualSave.Value = new(formSerialId, succeeded ? SaveWritePhase.Succeeded : SaveWritePhase.Failed);
+            }
+
             return succeeded;
         }
 
@@ -263,6 +305,7 @@ namespace GameLogic.Save
             data.Heroes = snapshotData.Heroes;
             data.Soul = snapshotData.Soul;
             data.HighestClearedLevelId = snapshotData.HighestClearedLevelId;
+            data.EastSeaBannerAvailable = snapshotData.EastSeaBannerAvailable;
             data.EquipmentItems = snapshotData.EquipmentItems;
             m_PendingWrite = NotifyWriteAsync(archive.OverWriteAsync());
             return m_PendingWrite;
@@ -278,7 +321,10 @@ namespace GameLogic.Save
             var events = GF.Event;
             bool succeeded = await write;
             if (succeeded && Godot.GodotObject.IsInstanceValid(events))
+            {
                 events.Fire(this, SaveSucceededEventArgs.Create());
+            }
+
             return succeeded;
         }
 
@@ -291,7 +337,10 @@ namespace GameLogic.Save
         {
             await m_DirectoryRead;
             if (cancellationToken.IsCancellationRequested)
+            {
                 return;
+            }
+
             m_DirectoryRead = ReadDirectoryAsync(cancellationToken);
             await m_DirectoryRead;
         }

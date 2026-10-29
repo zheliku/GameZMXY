@@ -16,6 +16,8 @@ namespace GameLogic.Enemies.Body
         /// <summary>
         /// 装载本次收招硬直计时并播放待机动画。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
         protected override void Enter(IFsm<IEnemyBody> fsm, IEnemyBody body)
         {
             // 进入时消费 FSM 传入的时长，不接受其他状态直接改写内部字段。
@@ -27,11 +29,14 @@ namespace GameLogic.Enemies.Body
         /// <summary>
         /// 计时结束后返回移动状态，否则原地站立并施加重力。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
+        /// <param name="dt">本次物理推进的秒数。</param>
         protected override void Tick(IFsm<IEnemyBody> fsm, IEnemyBody body, float dt)
         {
             if (Elapsed(m_Left))
             {
-                ChangeState(fsm, body.MoveStateType);
+                ChangeState(fsm, body.MovementStateType);
                 return;
             }
 

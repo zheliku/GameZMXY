@@ -38,6 +38,8 @@ public sealed class LevelCancellationSmokeScenario
     /// <summary>
     /// 创建取消回归场景。
     /// </summary>
+    /// <param name="hero">当前测试借用的英雄实体。</param>
+    /// <param name="level">当前测试借用的关卡控制器。</param>
     public LevelCancellationSmokeScenario(AbstractHeroEntity hero, LevelViewController level)
     {
         m_Hero = hero;
@@ -63,6 +65,7 @@ public sealed class LevelCancellationSmokeScenario
     /// <summary>
     /// 驱动相机抵达，提交真实异步显示，随后停止并观测晚到结果。
     /// </summary>
+    /// <param name="delta">本次逻辑推进的秒数。</param>
     public void Update(double delta)
     {
         m_Time += delta;

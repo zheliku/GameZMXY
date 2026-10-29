@@ -30,7 +30,9 @@ public sealed partial class UiSmokeScenario
         {
             var failures = new System.Collections.Generic.List<string>();
             foreach (int ticks in new[] { 60, 120 })
+            {
                 foreach (bool running in new[] { false, true })
+                {
                     foreach (int direction in new[] { 1, -1 })
                     {
                         Engine.PhysicsTicksPerSecond = ticks;
@@ -56,7 +58,9 @@ public sealed partial class UiSmokeScenario
                         {
                             await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                             if (frame == 2)
+                            {
                                 Input.ActionRelease(InputSystem.Jump);
+                            }
                             // 接近一段跳顶点再二跳；不瞬移、不直接改速度。
                             if (!jumpedAgain && actor.ActionData.JumpCount == 1 && actor.Velocity.Y >= -10)
                             {
@@ -64,7 +68,10 @@ public sealed partial class UiSmokeScenario
                                 jumpedAgain = true;
                             }
                             else if (actor.ActionData.JumpCount == 2)
+                            {
                                 Input.ActionRelease(InputSystem.Jump);
+                            }
+
                             minimum = Math.Min(minimum, actor.GlobalPosition.Y);
                             // 身体先在平台外侧升高，脚底越过台面才横移，避免从下方顶头。
                             if (!moving && floor - actor.GlobalPosition.Y > 264)
@@ -81,13 +88,19 @@ public sealed partial class UiSmokeScenario
                         string label = $"{ticks}Hz, run={running}, dir={direction}, rise={floor - minimum:0.00}, pos={actor.GlobalPosition - terrain.Position}";
                         GD.Print($"SMOKE-QIXING-PLATFORM: landed={landed}, {label}");
                         if (!landed)
+                        {
                             failures.Add(label);
+                        }
+
                         Input.ActionRelease(action);
                         Input.ActionRelease(InputSystem.Jump);
                         ReleaseTestEntity(actor);
                         m_ExtraHero = null;
                         await WaitFramesAsync(3);
                     }
+                }
+            }
+
             Check(failures.Count == 0, "倒T平台无法二段跳登台：" + string.Join("; ", failures));
             GD.Print("SMOKE-QIXING-PLATFORM PASS: official geometry, real double jumps, both edges, walk/run, 60/120Hz");
         }
@@ -98,7 +111,10 @@ public sealed partial class UiSmokeScenario
             Input.ActionRelease(InputSystem.Jump);
             Engine.PhysicsTicksPerSecond = originalTicks;
             if (m_ExtraHero != null)
+            {
                 ReleaseTestEntity(m_ExtraHero);
+            }
+
             m_ExtraHero = null;
             terrain.Free();
         }
@@ -117,9 +133,15 @@ public sealed partial class UiSmokeScenario
             foreach (int number in new[] { 1, 2, 5 })
             {
                 if (OS.GetCmdlineUserArgs().Contains("--terrain-level2") && number != 2)
+                {
                     continue;
+                }
+
                 if (OS.GetCmdlineUserArgs().Contains("--terrain-level5") && number != 5)
+                {
                     continue;
+                }
+
                 var terrain = GD.Load<PackedScene>(flow.GetModel<ConfigurationModel>().Tables.TbLevelConfig.Get(number).ScenePath).Instantiate<Node2D>();
                 terrain.Position = new Vector2(10000, 5000);
                 terrain.SetProcess(false);
@@ -130,8 +152,11 @@ public sealed partial class UiSmokeScenario
                 try
                 {
                     foreach (StaticBody2D hill in terrain.GetNode("World/Geometry/Slopes").GetChildren().OfType<StaticBody2D>())
+                    {
                         foreach (int ticks in new[] { 60, 120 })
+                        {
                             foreach (bool running in new[] { false, true })
+                            {
                                 foreach (int direction in new[] { 1, -1 })
                                 {
                                     Engine.PhysicsTicksPerSecond = ticks;
@@ -147,7 +172,10 @@ public sealed partial class UiSmokeScenario
                                     actor.GlobalPosition = terrain.Position + new Vector2(direction > 0 ? start : end, top - 100);
                                     actor.SetPhysicsProcess(true);
                                     for (int frame = 0; frame < ticks; frame++)
+                                    {
                                         await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                                    }
+
                                     Check(actor.OnFloor, $"坡面夹具未落地：level={number}, pos={actor.GlobalPosition - terrain.Position}, v={actor.Velocity}");
                                     string action = direction > 0 ? InputSystem.MoveRight : InputSystem.MoveLeft;
                                     if (running)
@@ -174,9 +202,12 @@ public sealed partial class UiSmokeScenario
                                             Input.ActionRelease(action);
                                             Vector2 stopPosition = actor.GlobalPosition;
                                             for (int pause = 0; pause < ticks * 3 / 5; pause++)
+                                            {
                                                 await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                                            }
+
                                             Check(actor.OnFloor && actor.GlobalPosition.DistanceTo(stopPosition) < 1,
-                                                $"坡中停步滑动或离地：level={number}, hill={hill.Name}, dir={direction}");
+                                                                                            $"坡中停步滑动或离地：level={number}, hill={hill.Name}, dir={direction}");
                                             if (running)
                                             {
                                                 Input.ActionPress(action);
@@ -188,7 +219,9 @@ public sealed partial class UiSmokeScenario
                                             stoppedOnSlope = true;
                                         }
                                         if (direction > 0 ? actor.GlobalPosition.X >= terrain.Position.X + end : actor.GlobalPosition.X <= terrain.Position.X + start)
+                                        {
                                             break;
+                                        }
                                     }
                                     string animation = actor.GetNode<AnimationPlayer>("m_AnimPlayer").CurrentAnimation;
                                     var collisionNames = Enumerable.Range(0, actor.GetSlideCollisionCount())
@@ -198,17 +231,26 @@ public sealed partial class UiSmokeScenario
                                         $"pos={actor.GlobalPosition - terrain.Position}, v={actor.Velocity}, collisions={string.Join(',', collisionNames)}");
                                     Input.ActionRelease(action);
                                     for (int frame = 0; frame < 5; frame++)
+                                    {
                                         await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                                    }
+
                                     Check(actor.OnFloor && actor.GetNode<AnimationPlayer>("m_AnimPlayer").CurrentAnimation == "idle1", "坡后停步错误进入下落");
                                     Input.ActionPress(InputSystem.Jump);
                                     for (int frame = 0; frame < 4; frame++)
+                                    {
                                         await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                                    }
+
                                     Check(!actor.OnFloor && actor.Velocity.Y < 0, "贴地修复阻止了主动跳跃");
                                     Input.ActionRelease(InputSystem.Jump);
                                     ReleaseTestEntity(m_ExtraHero);
                                     m_ExtraHero = null;
                                     GD.Print($"SMOKE-SLOPE PASS: level={number}, hill={hill.Name}, {ticks}Hz, running={running}, direction={direction}, samples={samples}; stop/resume/jump");
                                 }
+                            }
+                        }
+                    }
                 }
                 finally
                 {

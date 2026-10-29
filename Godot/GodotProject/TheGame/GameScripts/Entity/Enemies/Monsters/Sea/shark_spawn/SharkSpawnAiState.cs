@@ -1,0 +1,104 @@
+using System;
+using GameFramework.Fsm;
+using GameLogic.Enemies.AI;
+
+namespace GameLogic.Enemies
+{
+    /// <summary>
+    /// 鲨鱼按原点追踪、固定折返间隔和一秒决策节拍选择撞击或旋风；撞击后退避三秒。
+    /// </summary>
+    internal sealed class SharkSpawnAiState : AbstractEnemyAiState
+    {
+        private float m_TurnInterval; // 本次显示固定的1～3秒折返间隔。
+        private double m_TurnAt; // 下一次允许改变水平追踪方向的游戏时点。
+        private double m_RetreatUntil; // 从普通撞击起手开始的三秒退避截止时点。
+        private double m_PatrolAt; // 无目标时选择游荡方向的下次时点。
+        private int m_TravelDirection; // 折返节流期间保留的水平移动方向。
+
+        /// <inheritdoc />
+        protected internal override void OnInit(IFsm<IEnemyAiAgent> fsm)
+        {
+            base.OnInit(fsm);
+            m_TurnInterval = 1f + 2f * fsm.Owner.NextRandom();
+        }
+
+        /// <inheritdoc />
+        protected override void Enter(IEnemyAiAgent agent)
+        {
+            base.Enter(agent);
+            var flight = (SharkSpawnEntity)agent;
+            flight.VerticalIntent = 0;
+            flight.DirectVerticalMovement = false;
+        }
+
+        /// <inheritdoc />
+        protected override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds)
+        {
+            var flight = (SharkSpawnEntity)agent;
+            double now = agent.AiData.ElapsedSeconds;
+            if (agent.IsAttacking)
+            {
+                return;
+            }
+
+            // 退避与招式、受击共用游戏时钟；只升至150px，不继续飞出画面。
+            flight.DirectVerticalMovement = now < m_RetreatUntil;
+            if (flight.DirectVerticalMovement)
+            {
+                int direction = Math.Sign(flight.Velocity.X);
+                agent.Move(direction == 0 ? m_TravelDirection : direction);
+                flight.VerticalIntent = flight.Altitude > 150f ? -1 : 0;
+                return;
+            }
+
+            if (!agent.TargetBox.HasArea())
+            {
+                flight.VerticalIntent = 0;
+                if (now >= m_PatrolAt)
+                {
+                    m_TravelDirection = Math.Abs(agent.PatrolOffsetX) > 400f
+                        ? -Math.Sign(agent.PatrolOffsetX) : agent.NextRandom() < .5f ? -1 : 1;
+                    m_PatrolAt = now + (agent.NextRandom() < .5f ? 3f : 4f);
+                }
+                agent.Move(m_TravelDirection);
+                return;
+            }
+
+            // 追踪条件与450px攻击定义分开：超过250px或高差50px时追向目标上方60px。
+            var offset = agent.TargetOffset;
+            if (Math.Abs(offset.X) > 250f || Math.Abs(offset.Y) > 50f)
+            {
+                if (now >= m_TurnAt)
+                {
+                    m_TravelDirection = offset.X < 0f ? -1 : 1;
+                    m_TurnAt = now + m_TurnInterval;
+                }
+                agent.Move(m_TravelDirection);
+                flight.VerticalIntent = offset.Y > 60f ? 1 : -1;
+                return;
+            }
+
+            flight.VerticalIntent = 0;
+            agent.Move(m_TravelDirection);
+            double previous = Math.Max(0d, now - elapseSeconds);
+            if ((int)(now + 1e-6) == (int)(previous + 1e-6))
+            {
+                return;
+            }
+
+            // 普攻不受旋风冷却限制；旋风只在未抽中普攻且自身冷却结束时触发。
+            if (Chance(agent, agent.Config.AttackDesire))
+            {
+                if (agent.RequestAttack(0))
+                {
+                    m_TravelDirection = offset.X < 0f ? -1 : 1;
+                    m_RetreatUntil = now + 3f;
+                }
+            }
+            else if (agent.AiData.Cooldowns[1] <= 0f)
+            {
+                agent.RequestAttack(1);
+            }
+        }
+    }
+}

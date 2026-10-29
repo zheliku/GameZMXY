@@ -1,0 +1,9 @@
+[gd_resource type="SpriteFrames" format=3]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_official_body.png" id="atlas"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_0000"]
+atlas = ExtResource("atlas")
+region = Rect2(16, 16, 89, 29)
+margin = Rect2(0, 0, 0, 0)
+
+[resource]
+animations = [{"frames": [{"duration": 1.0, "texture": SubResource("AtlasTexture_0000")}], "loop": 1, "name": &"idle", "speed": 24.0}, {"frames": [{"duration": 1.0, "texture": SubResource("AtlasTexture_0000")}], "loop": 0, "name": &"death", "speed": 24.0}]

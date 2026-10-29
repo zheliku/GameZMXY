@@ -61,7 +61,10 @@ public sealed partial class UiSmokeScenario
                 {
                     hero.GlobalPosition = actor.GlobalPosition + new Vector2(targetDistance, 0);
                     if (actor.AttackSegment >= 0 && actor.AttackSegment != previous)
+                    {
                         casts.Add((actor.AiData.ElapsedSeconds, actor.AttackSegment, agent.TargetOffset.X));
+                    }
+
                     previous = actor.AttackSegment;
                 }
 
@@ -77,9 +80,12 @@ public sealed partial class UiSmokeScenario
                         {
                             var cast = casts[observed++];
                             if (cast.Index == index)
+                            {
                                 return cast;
+                            }
+
                             Check(allowBasic && cast.Index == 0,
-                                $"狮驼王选招错误：期望{index}，实际{cast.Index}，距离{distance}，时间{cast.Time:0.000}");
+                                                            $"狮驼王选招错误：期望{index}，实际{cast.Index}，距离{distance}，时间{cast.Time:0.000}");
                         }
                         await WaitFramesAsync(1);
                     }
@@ -137,7 +143,10 @@ public sealed partial class UiSmokeScenario
         finally
         {
             if (GF.Base.IsGamePaused)
+            {
                 GF.Base.ResumeGame();
+            }
+
             ReleaseTestEntity(m_Monster);
             m_Monster = null;
             Engine.PhysicsTicksPerSecond = originalTicks;
@@ -178,12 +187,18 @@ public sealed partial class UiSmokeScenario
                         hero.Velocity = Vector2.Zero;
                         int beforeHp = hero.Hp;
                         if (id == EntityId.LionCamelKing && index == 1)
+                        {
                             actor.SetFacing(-direction); // 双侧旋风应保留旧朝向，即使目标在身后。
+                        }
+
                         int oldFacing = actor.Facing;
                         Check(((IEnemyAiAgent)actor).RequestAttack(index), $"{id} 未接受第 {index + 1} 招");
                         await WaitUntilAsync(() => actor.AttackSegment == index, $"{id} 身体 FSM 没有提交招式");
                         if (id == EntityId.LionCamelKing)
+                        {
                             Check(actor.Facing == (index == 1 ? oldFacing : direction), "狮驼王的招式转向与原版不同");
+                        }
+
                         bool sawEffect = false;
                         bool captured = false;
                         double elapsed = 0;
@@ -191,7 +206,10 @@ public sealed partial class UiSmokeScenario
                         {
                             var effects = actor.GetParent().GetChildren().OfType<SkillEffectNode>().Where(x => x.Visible).ToArray();
                             if (actor.AttackSegment != index && effects.Length == 0)
+                            {
                                 break;
+                            }
+
                             Check(elapsed < 13, $"{id}/{index + 1} 的动画或独立效果没有完成");
                             sawEffect |= effects.Length > 0;
                             var active = effects.Length > 0 ? effects[0].GetNode<CollisionShape2D>("HitBox/CollisionShape2D") : shape;
@@ -215,7 +233,10 @@ public sealed partial class UiSmokeScenario
                         }
                         Check(hero.Hp < beforeHp, $"{id}/{index + 1}/{direction} 没有造成实际伤害");
                         if (id == EntityId.KnifeDemon && index == 1 || id == EntityId.LionCamelKing && index == 2)
+                        {
                             Check(sawEffect, $"{id} 的离身招式没有生成效果");
+                        }
+
                         Check(shape.Disabled, $"{id} 收招后判定未关闭");
                         GD.Print($"SMOKE-QIXING ATTACK: {id}/{index + 1}, direction={direction}, damage={beforeHp - hero.Hp}, independent={sawEffect}");
                         if (id == EntityId.LionCamelKing && index == 2)
@@ -245,14 +266,20 @@ public sealed partial class UiSmokeScenario
                     setTarget.Invoke(actor, [null]);
                     hero.GlobalPosition = actor.GlobalPosition + new Vector2(50, 200);
                     for (int frame = 0; frame < 6; frame++)
+                    {
                         await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                    }
+
                     Check(!((IEnemyAiAgent)actor).TargetBox.HasArea(), "狮驼王首次发现超出了官方150高度");
                     hero.GlobalPosition = actor.GlobalPosition + new Vector2(50, 100);
                     await WaitUntilAsync(() => ((IEnemyAiAgent)actor).TargetBox.HasArea(), "狮驼王未在官方首次发现范围内锁定目标");
                     hero.GlobalPosition = actor.GlobalPosition + new Vector2(500, 0);
                     double started = actor.AiData.ElapsedSeconds;
                     while (actor.AiData.ElapsedSeconds - started < 3.2)
+                    {
                         await WaitFramesAsync(1);
+                    }
+
                     Check(((IEnemyAiAgent)actor).TargetBox.HasArea(), "狮驼王错误地在三秒后丢失官方持续追踪的目标");
                     GD.Print("SMOKE-LION-AI PASS: 150px acquisition height, target retained beyond sight, spin facing preserved");
                 }
@@ -292,7 +319,10 @@ public sealed partial class UiSmokeScenario
         finally
         {
             if (GF.Base.IsGamePaused)
+            {
                 GF.Base.ResumeGame();
+            }
+
             heroSystem.RemoveSource(source);
             heroSystem.Heal(int.MaxValue);
         }

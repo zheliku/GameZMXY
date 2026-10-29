@@ -41,6 +41,38 @@ namespace GameConfig.Loot
         /// 狮驼王装备
         /// </summary>
         LionCamelKing = 6,
+        /// <summary>
+        /// 迦楼罗之穴装备
+        /// </summary>
+        GarudaCave = 7,
+        /// <summary>
+        /// 优秀装备
+        /// </summary>
+        Excellent = 8,
+        /// <summary>
+        /// 鲛魔王装备
+        /// </summary>
+        JiaoDemonKing = 9,
+        /// <summary>
+        /// 鲨魔王装备
+        /// </summary>
+        SharkDemonKing = 10,
+        /// <summary>
+        /// 精良装备
+        /// </summary>
+        Fine = 11,
+        /// <summary>
+        /// 东海旗幡首次奖励
+        /// </summary>
+        EastSeaBanner = 12,
+        /// <summary>
+        /// 龙王普通装备
+        /// </summary>
+        DragonKing = 13,
+        /// <summary>
+        /// 龙王高等级装备
+        /// </summary>
+        DragonKingHigh = 14,
     }
 
 } 

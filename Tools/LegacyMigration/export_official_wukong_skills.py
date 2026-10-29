@@ -30,7 +30,7 @@ def fire_demon_combo_bounds(root):
 
     BaseMonster.beMagicAttack first tests colipse bounds, then HitTest draws the
     whole effect with alpha offset 255. Retain its source shape bounds as the
-    project's simple rectangle approximation, including the shared +28Y origin.
+    project's simple rectangle approximation in the original effect coordinates.
     """
     tags = root.find('tags')
     sprites = {int(tag.get('spriteId')): tag for tag in tags if tag.get('spriteId')}
@@ -48,7 +48,7 @@ def fire_demon_combo_bounds(root):
         bounds = shapes[int(child.get('characterId'))].find('shapeBounds')
         left, top, right, bottom = (float(bounds.get(key)) / 20
                                     for key in ('Xmin', 'Ymin', 'Xmax', 'Ymax'))
-        rectangles.append([left + x + ix, top + y + iy + 28, right-left, bottom-top])
+        rectangles.append([left + x + ix, top + y + iy, right-left, bottom-top])
     return rectangles
 
 
@@ -206,7 +206,7 @@ def prepare(args):
                         'start': start, 'hit_windows': windows})
         poses.update({str(start + i): [sprite_id, i + 1] for i in range(count)})
         start += count
-    manifest = {'source_sha256': ROLE_HASH, 'fps': float(root.get('frameRate')),
+    manifest = {'source_sha256': ROLE_HASH, 'fps': float(root.get('frameRate')), 'actor_origin': [0, 28],
                 'base_count': 87, 'count': start, 'transforms': transforms,
                 'skills': actions, 'poses': poses, 'variants': [], 'detached': []}
     # 338 is the original blurred dash silhouette, not a giant body rectangle.

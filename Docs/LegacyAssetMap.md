@@ -4,6 +4,82 @@
 
 ## 角色、关卡与 HUD
 
+### 隐藏龙宫（官方9-1）
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| `Scenes/Levels/zm1_11_hidden_dragon_palace/level_11.tscn`及同名贴图目录 | 同版GameSence 9-1；`export_official_remaining_level_layers.py`暂存，`import_official_dragon_level.gd`原生保存；天空共用官方海底图，音乐bg4 |
+| 龙王身体、冰光、水波、水柱 | Monster3_v3的Monster26及两个Bullet类；`export_official_final_actors.py --group dragon`→`audit_official_dragon_geometry.py`→`import_official_dragon_art.py`→`prepare_official_dragon_scenes.py`→`register_dragon_art.gd`。保留父矩阵、ADD分层和clipDepth；重导需提供裁切几何报告 |
+| `Sprites/Characters/Heroes/Status/hero_frozen{.png,_frames.tres}` | Monster3_v3官方35帧冰冻ADD层，`export_official_frozen_effect.py`；位置(-90,-115)，末帧保持至解冻 |
+| 水帘洞隐藏入口与`hidden_entrance_fade.tres` | 主程序PhysicsWorld/MainGame的水下矩形与一秒淡出；`register_dragon_entrance.gd`，淡出期间动作/重力保留，暂停冻结 |
+
+### 牛魔谷（官方4-1）
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| `Scenes/Levels/zm1_10_bull_demon_valley/level_10.tscn` 与同名贴图目录 | GameSence 4-1 的两阶段、3条官方出生流、3道独立区域门、前景246、地形31125、天空16；`import_official_bull_level.gd -- <all_levels.json>`。原版最终形态无传送门，流程由完整死亡/奖励结束自动结算 |
+| 牛魔王三形态、牛妖、心脏/双手/火柱/背景 | Monster2_v4 的Monster22/23/24及Monster23Child，Monster_v1 的Monster25；`export_official_final_actors.py --group bull/guard` → `import_official_bull_actors.py` → `register_bull_actor_resources.gd`。吞噬五次源帧、心脏84px紫色Glow和各部分独立生命周期均保留 |
+| `map_niumogu_current.png` 与19帧地图动画 | OtherMat_v9 `SelectPlace.s4_1`（wrapper445/current444，base441）；`export_official_map_hints.py --only niumogu` → `register_official_map_location.gd -- niumogu Location10 m_Niumogu 牛魔谷 19` |
+
+### 牛魔谷精良装备（官方4-1）
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| `Sprites/Items/equipment/{equipment,ground}_fine_{pilgrim_clothes,pilgrim_staff,cassock,pine_staff}.png` | OtherMat_v9的SymbolClass对应jlxzf/jlxzg/jljs/jlsmz；`export_official_equipment.py --only fine_pilgrim_clothes fine_pilgrim_staff fine_cassock fine_pine_staff` → `--headless --editor --script res://EditorScripts/register_bull_equipment.gd`。四件分别保留透明背包/地面图，悟空与唐僧归属不混用 |
+| 悟空精良行者服、行者棍动作绑定 | AllEquipment明确使用身体/武器selector3，与优秀品质共用现有完整`wukong_body_excellent.png`、`wukong_weapon_excellent.png`，不复制相同图集；按各件EquipmentId绑定，完整动作、双向组合、真实分页穿卸和关内拾取均通过 |
+
+### 龙宫装备与法宝
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| 玄武甲、青龙刀、如意金箍棒、白虎杖、麒麟袍、朱雀戒、七星守护、九环禅杖及两件法宝的透明背包/地面图 | OtherMat_v9 的对应 SymbolClass；`export_official_equipment.py --only <对应英文资源名>` → `register_dragon_equipment.gd`。身份对应关系由导出器集中维护 |
+| `wukong_body_black_tortoise.png`、`wukong_weapon_azure_dragon.png`、`wukong_weapon_ruyi.png` | Role_v7 身体selector5、武器selector6/5，各166格；使用已有`export_official_wukong_equipment.py`与`import_official_wukong_equipment.gd`作者化，`register_dragon_equipment.gd`分别绑定EquipmentId29/30/31，身体与武器仍为两层 |
+| 金钢琢/东海旗幡的正式数据与背包表现 | AllEquipment的jgz/dhqf均为zbfb；仅获取/存档，界面标明功能待开放并禁止穿戴。金钢琢由最终形态直接赠送；东海旗幡在首次龙王出生消费资格后保证地面掉落，后续普通/高级池按Monster26脚本 |
+
+### 第九关鲨之涡流（官方 3-3）
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| `Scenes/Levels/zm1_09_shark_whirlpool/level_9.tscn`、同名贴图目录 | GameSence 3-3：前景/地形、16条生成流、5个重叠战斗区域、9道独立门；`export_official_remaining_level_layers.py` → `import_official_sea_level.gd -- <all_levels.json> 3-3 9 zm1_09_shark_whirlpool shark_whirlpool` |
+| 鲨魔王、召唤鲨鱼、鲨波/水牢/旋风/斩击 | Monster2_v4 的 Monster18/19 及五组嵌套效果；`export_official_sea_monsters.py --only 18 19` → `import_official_sea_monsters.py` → `register_shark_actor_resources.gd`。鲨魔王高低生命动作、一次性召唤、效果所有权与召唤失败出口由本关实体分支负责 |
+| `Sprites/UI/frontend/map_shazhiwoliu_current.png` 与外置地点动画 | OtherMat_v9 元件477，48帧原版旋转时间轴；`export_official_map_hints.py --only shazhiwoliu` → `register_official_map_location.gd -- shazhiwoliu Location9 m_Shazhiwoliu 鲨之涡流 48`，不能套用19帧地点提示 |
+
+### 第九关鲨之涡流（官方 3-3）装备
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| `Sprites/Items/equipment/{equipment,ground}_blood_sea_{demon_armor,evil_staff}.png` | OtherMat_v9 图元90/89、88/87；`export_official_equipment.py --only blood_sea_demon_armor blood_sea_evil_staff` → `register_shark_equipment.gd`。血海魔甲归悟空，血海邪皇归唐僧，不跨角色复用动作 |
+| `Sprites/Characters/Heroes/wukong/wukong_body_blood_sea.png` | Role_v7 官方 selector6；`export_official_wukong_equipment.py --kind body --selector 6` → `import_official_wukong_equipment.gd`。六列200px格、166姿态，含完整基础动作和战斗引用帧 |
+
+### 第八关东海（官方3-2）
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| `Scenes/Levels/zm1_08_east_sea/level_8.tscn`、同名关卡贴图目录 | GameSence 3-2：前景239、地形122（导出31122）、海域天空17，五阶段24流、七矩形含四平台；`export_official_remaining_level_layers.py` → `import_official_sea_level.gd -- <all_levels.json> 3-2 8 zm1_08_east_sea east_sea` |
+| 鲛魔王、龙波、背击反馈与灯笼鱼 | Monster2_v4的Monster10/20及Boss5Bullet1(sprite1194)、Monster10BeAttack(sprite1165)，共280源帧；`export_official_sea_monsters.py --only 10 20` → `import_official_sea_monsters.py` → `register_east_sea_resources.gd`。鲛魔王图集以region/margin压紧存储，保留统一虚拟画布；死亡复用同一官方BossDead |
+| `Sprites/Items/equipment/{equipment,ground}_blood_sea_shell.png` | OtherMat_v9图元38/37；`export_official_equipment.py --only blood_sea_shell` → `register_east_sea_resources.gd`，通用饰品无悟空穿戴动作层 |
+| `Sprites/UI/frontend/map_donghai_current.png`与外置地点动画 | OtherMat_v9元件467、19帧；`export_official_map_hints.py --only donghai` → `register_official_map_location.gd -- donghai Location8 m_Donghai 东海`。透明扩边模板排除所有位图填充，避免夹带无关UI |
+
+### 第七关浅岸（官方 3-1）
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| `Scenes/Levels/zm1_07_shore/level_7.tscn`、同名贴图目录 | GameSence 3-1：前景233原点(-30,97)、地形121原点(-11.6,195.2)、天空位图17；`export_official_remaining_level_layers.py` → `import_official_sea_level.gd`。16流、5重叠区域、9矩形含6平台，GGF SeaTheme |
+| 海怪 `Monsters/Sea/<物种>/` 场景、动画与贴图 | Monster2_v4 的Monster14/16/17；`export_official_sea_monsters.py` → `import_official_sea_monsters.py` → `register_sea_actor_resources.gd`。272帧保留父级矩阵和统一注册点；虾兵弹体来自sprite39，潮汐妖不生成未调用的飞刀；鲨鱼召唤物也归Sea，保留独立垂直运动 |
+| `Sprites/Items/equipment/{equipment,ground}_excellent_{pilgrim_clothes,pilgrim_staff,cassock,pine_staff}.png` | OtherMat_v9 背包/地面图元50/27、58/32、46/23、53/62；`export_official_equipment.py` → `register_sea_equipment.gd`，使用独立透明前景 |
+| `Sprites/Characters/Heroes/wukong/wukong_{body,weapon}_excellent.png` | Role_v7 身体/武器selector3，每层166姿态，含51个完整基础动作帧；既有装备导出/导入流程，独立层和统一原点 |
+| `Sprites/UI/frontend/map_qianan_current.png`与外置地点动画 | OtherMat_v9 元件459，19帧完整官方光晕；`export_official_map_hints.py --only qianan` → `register_official_map_location.gd`，按原地点尺寸适配，不把原生图集大画布直接叠到按钮上 |
+
+### 第六关迦楼罗之穴（官方 2-3）
+
+| 正式资源 | 官方来源与复现入口 |
+| --- | --- |
+| `Scenes/Levels/zm1_06_garuda_cave/level_6.tscn`、同名关卡贴图目录 | GameSence 2-3：前景197、地形118（导出31118）、22条出生流、5个重叠区域、7个矩形和39个尖刺；`export_official_remaining_level_layers.py` → `import_official_garuda_level.gd`。天空复用第二章位图18，音乐为GGF CaveTheme |
+| 彭魔王、飞行魔及彭魔王火焰/死亡旋涡场景与动作库 | Monster2_v4 的 Monster9/15、Boss4Bullet1，Monster_v1 的 BossDead；`export_official_garuda_cave.py` → `prepare_official_garuda_level.py` → `import_garuda_actor_assets.py`。335源帧保留注册点；火焰使用三条基础矩形排除中间空气，0.6秒淡入期间保持判定 |
+| `Sprites/Items/equipment/{equipment,ground}_heavenly_fiend_{moon_halberd,robe}.png` | OtherMat_v9：月戟126/125、羽袍124/123；`export_official_equipment.py` → `register_garuda_equipment.gd`，使用完整透明前景 |
+| `Sprites/Characters/Heroes/wukong/wukong_weapon_heavenly_fiend.png` | Role_v7 武器selector4，166姿态含全部51个基础动作帧；`export_official_wukong_equipment.py` → `import_official_wukong_equipment.gd`。与身体独立，保持既有原点和遮挡裁切 |
+| `Sprites/UI/frontend/map_jialuoluo_current.png` 及外置地点动画 | OtherMat_v9 元件420/423，19帧原始光晕；`export_official_map_hints.py --only jialuoluo` → `enable_garuda_map.gd` |
+
 ### 第五关七星洞（官方 2-2）
 
 以下资源来自同一 v25928 的 `GameSence` 2-2 与 `Monster_v1`/`Monster2_v4`，不使用旧工程替代素材。
@@ -17,6 +93,15 @@
 | `Sprites/Items/equipment/{equipment,ground}_heavenly_fiend_necklace.png` | OtherMat_v9 的背包符号43、透明地面符号20；`export_official_equipment.py` → `register_qixing_equipment.gd`，两种用途均用透明前景 |
 | `Sprites/UI/frontend/map_qixingdong_hover_animation.tres` | 原地图七星洞普通/悬停图；`enable_qixing_map.gd` 外置悬停动画 |
 
+### 后续关卡共享音乐与作者化暂存
+
+| 暂存资源 | 官方来源与用途 |
+| --- | --- |
+| `.godot/validation/remaining_levels/art/layers/bg2.mp3` → `Audios/Music/cave_theme.mp3` | Music.swf 的 bg2；蝙蝠窟、七星洞、迦楼罗之穴；通过 `register_official_chapter_music.gd` 配置循环 |
+| `.godot/validation/remaining_levels/art/layers/bg3.mp3` → `Audios/Music/sea_theme.mp3` | Music.swf 的 bg3；浅岸、东海、鲨之涡流 |
+| `.godot/validation/remaining_levels/art/layers/bg4.mp3` → `Audios/Music/bull_demon_valley_theme.mp3` | Music.swf 的 bg4；牛魔谷、隐藏龙宫 |
+| `remaining_levels/garuda_art/` | 第六关的源帧、探针、帧事件和装备selector清单；忽略目录保留复现证据，正式资源见上表 |
+
 ### 第四关蝙蝠窟与家传装备
 
 以下均来自同一 v25928 及其加载器指定资源包，未采用旧项目的石像召唤规则。
@@ -27,7 +112,7 @@
 | `Sprites/Characters/Enemies/Monsters/Sky/bat/`、`Entitys/Enemies/Monsters/Sky/bat/` | Monster_v1 / Monster8；原生攻击时点和矩形判定，经 `import_official_bat_cave_actors.gd` 保存 |
 | `Sprites/Characters/Enemies/Bosses/zm1_04_bat_cave/`、对应实体与动画目录 | Monster2_v4 / Monster21；固定石像与死亡动画，同上；出生流和出口归关卡 |
 | `Sprites/Items/equipment/{equipment,ground}_heirloom_{bracelet,sword,clothes}.png` | OtherMat_v9 对应家传手镯、宝剑、衣裳；透明背包/地面图，经 `register_heirloom_equipment.gd` 登记 |
-| `Sprites/Characters/Heroes/wukong/wukong_weapon_heirloom.png` | Role_v7 selector7，115姿态；既有 `export_official_wukong_equipment.py`，原点、帧映射和遮挡沿用双层规则；不重生成旧装备 |
+| `Sprites/Characters/Heroes/wukong/wukong_weapon_heirloom.png` | Role_v7 selector7，包含完整基础动作、普攻、技能与待机；`export_official_wukong_equipment.py`，原点、帧映射和遮挡沿用双层规则 |
 
 ### 第二、第三关及守关装备
 
@@ -69,7 +154,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | `Art/HeroPicture/RoleProperiesBox/718.png` | `Sprites/UI/hud/hud_ws_frame.png` | 260×22，无双条黑色长底板，原样恢复；由 `import_frontend_assets.py` 登记 |
 | `Art/HeroPicture/RoleProperiesBox/swk.png` | `Sprites/UI/hud/hud_head_wukong.png` | 83×76，悟空头像 |
 | `Art/HeroPicture/RoleProperiesBox/748.png` | `Sprites/UI/hud/hud_status_label.png` | 17×46，状态标签装饰 |
-| `Art/HeroPicture/RoleDeath.png` | `Sprites/Effects/wukong/wukong_death_tombstone.png` | 1832×1830，8×5 墓碑图集；死亡轨道按官方 78 源帧播放并保持末帧 |
+| `Art/HeroPicture/RoleDeath.png` | `Sprites/Effects/hero_death/hero_tombstone_atlas.png` | 原图片与UID保留，1832×1830、8×5；共用 `Entitys/Effects/hero_tombstone.tscn` 自有落地碰撞和78源帧动画；提取入口 `extract_shared_hero_tombstone.gd`，英雄只触发，不再由悟空身体轨道播放 |
 
 地板从 4812×170 裁至 4700×170，去掉右侧透明圆角；该裁剪不覆盖用户后续地形编辑。
 
@@ -290,7 +375,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 `Tools/LegacyMigration/import_equipment_assets.py` 逐字节复制旧项目 `Art/ItemIcon/peach.png` 为 `Sprites/Items/consumables/pickup_small_peach.png` 与 `pickup_large_peach.png`（大桃子通过显示比例区分），`Bble.png` 为 `pickup_mana_bottle.png`。
 
-旧工程的粗糙装备图标缺失，曾暂用普通图；现已删除这组临时替代图。八件装备的图片均直接导出自官方 [OtherMat_v9.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/OtherMat_v9.swf)，恢复后 SHA-256 见 OfficialReference。原背包位图带黑色底板；按用户要求，背包和地面现在均使用对应的透明前景位图，保留原始 alpha，未重绘或调色。
+旧工程的粗糙装备图标缺失，曾暂用普通图；现已删除这组临时替代图。目前登记的十五件装备图片均直接导出自官方 [OtherMat_v9.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/OtherMat_v9.swf)，恢复后 SHA-256 见 OfficialReference。原背包位图带黑色底板；按用户要求，背包和地面现在均使用对应的透明前景位图，保留原始 alpha，未重绘或调色。
 
 | 装备 | 背包位图 ID | 地面位图 ID | TheGame/Sprites/Items/equipment 文件名后缀 |
 | --- | ---: | ---: | --- |
@@ -305,13 +390,15 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 背包文件为 `equipment_<后缀>.png`，地面文件为 `ground_<后缀>.png`。复现：`python Tools/LegacyMigration/export_official_equipment.py --java <java.exe> --ffdec <ffdec.jar> --source <OtherMat_v9.swf>`；源包、解包 XML 与工具留在临时目录，不提交旧项目脚本。
 
+所有装备外观的身份与文件绑定可用 `python Tools/LegacyMigration/audit_equipment_appearances.py --repo . --output Godot/GodotProject/.godot/validation/equipment_appearance_audit.json` 检查。它从 `Items.xlsx` 和 `__enums__.xlsx` 读取稳定 ID，再核对 `item_appearances.tres` 的唯一条目、背包/地面两张贴图、文件存在性和可见 alpha；新关卡增加装备时必须先通过此检查。悟空动作图集仍需另外按官方 selector 做逐帧审计，不能用图标检查替代。
+
 地面图保留原始透明画布。`GroundItemNode.Show` 每次显示时读取非透明区域，将其底边按显示缩放对齐场景碰撞体底边；通过 Sprite2D.Offset 定位，Position 留给领取时的上移淡出动画。更换图标或池复用时重新计算，不按整张图片底边定位，也不改碰撞尺寸。此规则仅用于静态掉落图标，角色动作仍保留统一原点。
 
 粗糙与普通的原背包位图不同，但同款装备的两个透明前景位图在原文件中内容相同；目前保留原样，品质由名称和详情区分，不人为改色。
 
 ## 悟空独立身体与武器
 
-当前战斗和背包使用官方 `Role_v7.swf` 的 `export.hero.Role1`（sprite 575）动作。五张图均为 1200×4000、6×20、每格 200×200；保留基础与技能的前 108 格（含原填充格），追加完整待机缺少的 8 个姿势，末行余 4 格：
+当前战斗和背包使用官方 `Role_v7.swf` 的 `export.hero.Role1`（sprite 575）动作。六张图均为 1200×5800、6×29、每格 200×200；0..119 保留既有普攻、技能与完整待机映射，120..170 为完整基础动作，171..173 为空：
 
 | 新文件（`Sprites/Characters/Heroes/wukong/`） | 源选择帧 | 用途 |
 | --- | --- | --- |
@@ -320,10 +407,15 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | `wukong_body_earth_fiend.png` | 同上第 4 帧，AllEquipment 的 dsyj.showid=4 | 地煞猿甲的完整动作外观 |
 | `wukong_weapon_default.png` | 武器元件 177 第 1 帧 | 默认木棍 |
 | `wukong_weapon_pilgrim.png` | 同上第 2 帧 | 粗糙/普通行者棍共用外观 |
+| `wukong_weapon_heirloom.png` | 同上第 7 帧，AllEquipment 的 jcbj.showid=7 | 家传宝剑的完整动作外观 |
 
 沿用旧 `Scene/Hero/Role_1/Role1.tscn` 的两层结构：完整身体在后，武器在前；源绘制深度位于武器前方的头部、手臂等作为导出遮罩，裁掉武器被遮挡的部分。遮罩只在导出时使用，不创建第三个运行时层，也不导出武器和防具的组合图集。各套防具须保持相同的前景遮挡轮廓，便于武器独立替换。
 
 `HeroAppearanceResource` 的防具/武器字典按 EquipmentId 绑定具体纹理，战斗与背包预览共用 `wukong_appearance.tres`。猿甲经 `export_official_wukong_equipment.py` → `import_official_wukong_equipment.gd` 导出，`register_official_wukong_equipment.gd` 原生保存绑定；沿用现有帧号及原点，不覆盖人工动画。338/371/416/568 等技能能量继续使用独立特效，不能混入身体 SVG，否则模糊滤镜会成为矩形。唐僧尚未可玩，地煞权杖当前只有官方图标、掉落图和数值，没有虚构可用的唐僧换装动作。
+
+基础动作使用 walk 440（16帧）、run 452（8帧）、jump 533（1帧）、jump_2 539（10帧）、fall 543（1帧）、hurt 553（15帧）。每套装备都必须按自身选择帧导出这51帧，不能拿相近装备的动作补齐。装备导出器读取正式动画库的帧映射，自动覆盖完整基础动作并计算图集行数；`validate_wukong_wardrobe_motion.gd` 将六张图逐帧与各自源图层比较，再验证九种独立穿戴组合的双向播放。2026-10-26 修复了猿甲与宝剑新增51格被误填为行者服/棍的问题，既有0..119格逐字节不变。
+
+每关新增悟空装备的验收沿用 `audit_official_wukong_wardrobe.py` → `validate_wukong_wardrobe_motion.gd`：前者读源表、稳定枚举、官方AllEquipment选择帧与原生绑定，不维护另一份装备清单；后者核对整张图的有效格、实际导入纹理和所有原生动作帧键。粗糙/普通行者服及行者棍的共享选择帧2为官方规则，允许共用完整图集。不能只检查图集非空、文件路径或站立截图。现有四张早期图集的少数技能格保留800px源画布的栅格结果，新装备使用200px画布；两者只在抗锯齿边缘有微差，验证采用各自源画布的精确结果，不人为重绘。
 
 所有动作保留 Role1 父级中的完整矩阵，统一 SVG viewBox `(-100,-128,200,200)`，原 Flash 原点位于格内 `(100,128)`。例如待机平移 `(1.45,0.8)`、慢走 `(-6.85,0.85)`、跑步 `(3.75,0.2)`、受击 `(-17.95,2.6)`；漏掉这些矩阵会造成动作切换跳位。不能按各帧可见边界重新居中，也不能在运行时移动角色根节点补偿。
 
@@ -381,10 +473,12 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | flame_storm 烈焰风暴 | 417 | 10 / 0.416667 秒 | 平移 (-17.55,2.3) |
 | fire_demon_slash 火魔斩 | 574 | 70 / 2.916667 秒 | X 镜像、平移 (4.75,26) |
 
-统一角色原点仍为格内 `(100,128)`、Sprite 本地 `(0,28)`；技能只改变帧和判定，不移动角色根节点。源元件 338 是烈焰闪的模糊轮廓，Godot SVG 滤镜会画成矩形色块，因此与 371/416/568 的弧光改用 FFDec 原生 PNG。`FlashSpriteBounds.java` 读取 `Timeline.getDisplayRectWithFilters` 的精确导出矩形后再应用父级变换，不能按可见像素重新居中或猜测滤镜留白。41 个可见帧存于 `wukong_skill_inline_effects.png`（800×400 格，4 列）；无光效帧保留 null。
+身体/武器图集沿用历史格内原点 `(100,128)`，场景四个对应层用 `(0,-28)` 抵消画布平移，使物理根对应官方角色 `x/y`；独立特效不加28，详见 OfficialReference。源元件 338 是烈焰闪的模糊轮廓，Godot SVG 滤镜会画成矩形色块，因此与 371/416/568 的弧光改用 FFDec 原生 PNG。`FlashSpriteBounds.java` 读取 `Timeline.getDisplayRectWithFilters` 的精确导出矩形后再应用父级变换，不能按可见像素重新居中或猜测滤镜留白。41 个可见帧存于 `wukong_skill_inline_effects.png`（800×400 格，4 列）；无光效帧保留 null。
 
 烈焰闪不把模糊光效当作超宽命中区：保留原透明探针 205 的几何，只在验证/拟合时转为不透明。其他有 stick 的技能按源窗口及可见能量拟合两种武器共同的矩形，沿用 3px 余量、最小厚度 14px；透明能量阶段关闭判定。火魔斩主体没有 stick，70 帧内的大段透明是原文件事实，伤害与表现由独立特效承担。
 
 技能特效图在 `Sprites/Effects/wukong/skills/`、外置库在 `Entitys/Animations/Heroes/Wukong/`、角色与独立效果在 `Entitys/Heroes/Wukong/`。源元件为烈焰闪拖尾 66（10 帧）、火魔起手 129（40 帧）、九连斩 112（44 帧）、下冲 133（2 帧）、落地斩 123（13 帧）。起手只有视觉，现并入悟空的 TopLevel AnimatedSprite2D，保留出招位置与完成隐藏；不再生成空 HitBox、独立场景或节点池条目。其他四项仍由 SkillEffectNode 独立播放，后三项拥有独立 HitBox；Visual 同时放图像与判定，原生方法轨道更新攻击包、播放 GGF 声音及请求回池。图片、原点、源帧与场景内的镜像和偏移保留，详见 ProjectTour。
 
 七段声音取自[官方 Music.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/Music.swf)，恢复后 SHA-256 `5cad2f1ef3ce592c2e9e44c631748e042d8cacae2c7571e57b1a0546998a7578`。`export_official_skill_audio.py` 原样导出 MP3：6/8/11/1 分别为升龙斩/火炎突击/烈焰闪/烈焰风暴，13/14/15 为火魔起手/九连斩/落地。正式路径 `Audios/SFX/wukong/skills/`，SoundId 7..13，全部登记到 GGF SFX，无循环。
+
+2026-10-26 补齐同一 Role_v7 的走、跑、起跳、二段跳、下落与受伤51个源帧，六套身体/武器图集共306层帧，沿用原格尺寸、两层和穿戴映射。三类初期地面怪从 v25928 `Monster1`（SHA-256 `5bd88da4211870f2ca2354b7cec8d1790747869641c11fe553910b10fe2a264a`）重新导入完整动作：猴子69、妖猴88、大猩猩92帧，含后两者的 `after_hurt`。资源位于各自角色贴图目录的 `<角色>_official_body.png` / `<角色>_official_frames.tres`，外置动画库保持原路径。导出入口 `export_official_ground_monsters.py`，原生导入入口 `import_official_ground_monsters.gd`；后者共享相同形状并压缩重复值键，不改声音和动作方法轨道。

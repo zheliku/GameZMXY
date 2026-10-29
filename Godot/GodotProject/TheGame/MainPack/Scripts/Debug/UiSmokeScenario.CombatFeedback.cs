@@ -83,7 +83,10 @@ public sealed partial class UiSmokeScenario
                 SmokeInspection.FreezeAi(m_Monster);
                 await WaitFramesAsync(3);
                 if (id == EntityId.HuaguoshanMonkey)
+                {
                     Check(!((IEnemyAiAgent)m_Monster).TargetBox.HasArea(), "猴子复用后遗留激怒和目标");
+                }
+
                 ReleaseTestEntity(m_Monster);
                 m_Monster = null;
             }
@@ -92,7 +95,10 @@ public sealed partial class UiSmokeScenario
         finally
         {
             if (m_Monster != null)
+            {
                 ReleaseTestEntity(m_Monster);
+            }
+
             m_Monster = null;
             hero.GlobalPosition = origin;
         }
@@ -166,7 +172,10 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() =>
         {
             if (owned.Contains(targetProbe))
+            {
                 lastPosition = targetProbe.GlobalPosition;
+            }
+
             return owned.Count == 0;
         }, "飞行球没有跟随关卡所有者的实际英雄", 10000);
         Check(lastPosition.DistanceTo(hero.GlobalPosition) < lastPosition.DistanceTo(m_ExtraHero.GlobalPosition),
@@ -296,7 +305,9 @@ public sealed partial class UiSmokeScenario
                     probe.MoveAndSlide();
                     above |= probe.GlobalPosition.Y < surfaceTop - 20;
                     if (above && probe.IsOnFloor())
+                    {
                         break;
+                    }
                 }
                 float landingY = surfaceTop - 10f;
                 Check(above && probe.IsOnFloor() && Math.Abs(probe.GlobalPosition.Y - landingY) < 1.1f,
@@ -323,18 +334,27 @@ public sealed partial class UiSmokeScenario
             hero.SetPhysicsProcess(true);
             // 等两次帧信号，确保至少完成一次移位后的物理更新。
             for (int frame = 0; frame < 2; frame++)
+            {
                 await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+            }
+
             for (int frame = 0; frame < 120 && !hero.IsOnFloor(); frame++)
+            {
                 await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+            }
+
             Check(hero.IsOnFloor() && Enumerable.Range(0, hero.GetSlideCollisionCount()).Any(index =>
-                ReferenceEquals(hero.GetSlideCollision(index).GetCollider(), platform)), "英雄未落在可穿平台");
+                            ReferenceEquals(hero.GetSlideCollision(index).GetCollider(), platform)), "英雄未落在可穿平台");
             float before = hero.GlobalPosition.Y;
             Input.ActionPress(InputSystem.MoveDown);
             Input.ActionPress(InputSystem.Jump);
             for (int frame = 0; frame < 20; frame++)
+            {
                 await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+            }
+
             Check(hero.GlobalPosition.Y > before + hero.Config.PlatformDropDistance && hero.Velocity.Y >= 0,
-                $"S+K 未从单向平台向下离开，或误触起跳：before={before}, after={hero.GlobalPosition.Y}, vy={hero.Velocity.Y}, floor={hero.IsOnFloor()}");
+                            $"S+K 未从单向平台向下离开，或误触起跳：before={before}, after={hero.GlobalPosition.Y}, vy={hero.Velocity.Y}, floor={hero.IsOnFloor()}");
         }
         finally
         {
@@ -357,7 +377,10 @@ public sealed partial class UiSmokeScenario
         var orbs = SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "m_LootOrbs");
         Check(orbs.Count is >= 2 and <= 10, "怪物死亡掉落数量超出官方范围");
         if (m_PreviousOrb != null)
+        {
             Check(orbs.Contains(m_PreviousOrb), "下一次击败未复用已归还的飞行球");
+        }
+
         m_PreviousOrb = orbs.First();
         var positions = orbs.ToDictionary(x => x, x => x.GlobalPosition);
         GF.Base.PauseGame();
@@ -374,7 +397,10 @@ public sealed partial class UiSmokeScenario
         // 跟踪目标换位置，后续调用方等待真正接触后的档案变化。
         hero.GlobalPosition += new Vector2(-40, 0);
         foreach (AbstractEnemyEntity monster in m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false).OfType<AbstractEnemyEntity>())
+        {
             SmokeInspection.FreezeAi(monster);
+        }
+
         await CaptureCombatAsync("flying_loot");
     }
 
@@ -386,7 +412,10 @@ public sealed partial class UiSmokeScenario
     private async Task CaptureCombatAsync(string name)
     {
         if (DisplayServer.GetName() == "headless")
+        {
             return;
+        }
+
         await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         DirAccess.MakeDirRecursiveAbsolute("res://.godot/validation");
         Check(m_Driver.GetViewport().GetTexture().GetImage().SavePng($"res://.godot/validation/{name}.png") == Error.Ok,

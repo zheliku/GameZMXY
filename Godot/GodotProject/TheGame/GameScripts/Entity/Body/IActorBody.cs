@@ -43,6 +43,7 @@ namespace GameLogic.Body
         /// 提交出招：设攻击段并装填攻击包；起手音由动画方法轨道控制。
         /// 怪物宿主另做转向目标、计入冷却、清移动意图。
         /// </summary>
+        /// <param name="index">当前宿主攻击参数中的招式编号。</param>
         void BeginAttack(int index);
 
         /// <summary>
@@ -53,22 +54,27 @@ namespace GameLogic.Body
         /// <summary>
         /// 取出待生效受击的击退速度（取出即清除）
         /// </summary>
+        /// <returns>本次待消费的击退速度；无待处理受击时为零向量。</returns>
         Vector2 TakePendingHurt();
 
         /// <summary>
         /// 设置朝向（0 = 不变）
         /// </summary>
+        /// <param name="dir">方向符号：-1向左、0保持或停止、1向右。</param>
         void SetFacing(int dir);
 
         /// <summary>
         /// 请求播放动画（同名不打断）
         /// </summary>
+        /// <param name="anim">已登记的动画名称；同名请求不重播。</param>
         void PlayAnim(string anim);
 
         /// <summary>
-        /// 从第 0 帧重播动画
+        /// 从起点或指定原生标记重播动画。
         /// </summary>
-        void RestartAnim(string anim);
+        /// <param name="anim">动作名称。</param>
+        /// <param name="startMarker">可选原生起播标记。</param>
+        void RestartAnim(string anim, string startMarker = null);
 
     }
 }

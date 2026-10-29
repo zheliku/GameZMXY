@@ -927,7 +927,7 @@ text = "召唤出魔法阵，向空中引出一道光柱，对目标造成较大
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="m_PassivePage" type="Control" parent="Content" unique_id=1676550797 node_paths=PackedStringArray("m_Names", "m_NextEffects", "m_Souls")]
+[node name="m_PassivePage" type="Control" parent="Content" unique_id=1676550797 node_paths=PackedStringArray("m_Names", "m_Levels", "m_CurrentEffects", "m_NextEffects", "m_Souls", "m_UpgradeButtons")]
 visible = false
 anchors_preset = 0
 offset_right = 940.0
@@ -937,6 +937,10 @@ script = ExtResource("passive_page")
 m_Names = [NodePath("m_PassiveRows/Passive1/Name"), NodePath("m_PassiveRows/Passive2/Name"), NodePath("m_PassiveRows/Passive3/Name"), NodePath("m_PassiveRows/Passive4/Name"), NodePath("m_PassiveRows/Passive5/Name")]
 m_NextEffects = [NodePath("m_PassiveRows/Passive1/NextEffect"), NodePath("m_PassiveRows/Passive2/NextEffect"), NodePath("m_PassiveRows/Passive3/NextEffect"), NodePath("m_PassiveRows/Passive4/NextEffect"), NodePath("m_PassiveRows/Passive5/NextEffect")]
 m_Souls = [NodePath("m_PassiveRows/Passive1/Soul"), NodePath("m_PassiveRows/Passive2/Soul"), NodePath("m_PassiveRows/Passive3/Soul"), NodePath("m_PassiveRows/Passive4/Soul"), NodePath("m_PassiveRows/Passive5/Soul")]
+
+m_Levels = [NodePath("m_PassiveRows/Passive1/Level"), NodePath("m_PassiveRows/Passive2/Level"), NodePath("m_PassiveRows/Passive3/Level"), NodePath("m_PassiveRows/Passive4/Level"), NodePath("m_PassiveRows/Passive5/Level")]
+m_CurrentEffects = [NodePath("m_PassiveRows/Passive1/CurrentEffect"), NodePath("m_PassiveRows/Passive2/CurrentEffect"), NodePath("m_PassiveRows/Passive3/CurrentEffect"), NodePath("m_PassiveRows/Passive4/CurrentEffect"), NodePath("m_PassiveRows/Passive5/CurrentEffect")]
+m_UpgradeButtons = [NodePath("m_PassiveRows/Passive1/Upgrade"), NodePath("m_PassiveRows/Passive2/Upgrade"), NodePath("m_PassiveRows/Passive3/Upgrade"), NodePath("m_PassiveRows/Passive4/Upgrade"), NodePath("m_PassiveRows/Passive5/Upgrade")]
 
 [node name="TableBackground" type="TextureRect" parent="Content/m_PassivePage" unique_id=1582481764]
 layout_mode = 0
@@ -1067,15 +1071,14 @@ horizontal_alignment = 1
 vertical_alignment = 1
 clip_text = true
 
-[node name="Upgrade" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive1" unique_id=169404380]
+[node name="Upgrade" type="Button" parent="Content/m_PassivePage/m_PassiveRows/Passive1" unique_id=169404380]
 custom_minimum_size = Vector2(107, 79)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 0, 1)
 theme_override_font_sizes/font_size = 22
 text = "升级"
-horizontal_alignment = 1
-vertical_alignment = 1
-clip_text = true
+flat = true
+mouse_default_cursor_shape = 2
 
 [node name="Soul" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive1" unique_id=913271586]
 custom_minimum_size = Vector2(103, 79)
@@ -1132,15 +1135,14 @@ horizontal_alignment = 1
 vertical_alignment = 1
 clip_text = true
 
-[node name="Upgrade" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive2" unique_id=572383161]
+[node name="Upgrade" type="Button" parent="Content/m_PassivePage/m_PassiveRows/Passive2" unique_id=572383161]
 custom_minimum_size = Vector2(107, 79)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 0, 1)
 theme_override_font_sizes/font_size = 22
 text = "升级"
-horizontal_alignment = 1
-vertical_alignment = 1
-clip_text = true
+flat = true
+mouse_default_cursor_shape = 2
 
 [node name="Soul" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive2" unique_id=1547520621]
 custom_minimum_size = Vector2(103, 79)
@@ -1197,15 +1199,14 @@ horizontal_alignment = 1
 vertical_alignment = 1
 clip_text = true
 
-[node name="Upgrade" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive3" unique_id=1071111691]
+[node name="Upgrade" type="Button" parent="Content/m_PassivePage/m_PassiveRows/Passive3" unique_id=1071111691]
 custom_minimum_size = Vector2(107, 79)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 0, 1)
 theme_override_font_sizes/font_size = 22
 text = "升级"
-horizontal_alignment = 1
-vertical_alignment = 1
-clip_text = true
+flat = true
+mouse_default_cursor_shape = 2
 
 [node name="Soul" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive3" unique_id=834047613]
 custom_minimum_size = Vector2(103, 79)
@@ -1262,15 +1263,14 @@ horizontal_alignment = 1
 vertical_alignment = 1
 clip_text = true
 
-[node name="Upgrade" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive4" unique_id=682032894]
+[node name="Upgrade" type="Button" parent="Content/m_PassivePage/m_PassiveRows/Passive4" unique_id=682032894]
 custom_minimum_size = Vector2(107, 79)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 0, 1)
 theme_override_font_sizes/font_size = 22
 text = "升级"
-horizontal_alignment = 1
-vertical_alignment = 1
-clip_text = true
+flat = true
+mouse_default_cursor_shape = 2
 
 [node name="Soul" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive4" unique_id=311610422]
 custom_minimum_size = Vector2(103, 79)
@@ -1327,15 +1327,14 @@ horizontal_alignment = 1
 vertical_alignment = 1
 clip_text = true
 
-[node name="Upgrade" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive5" unique_id=264161649]
+[node name="Upgrade" type="Button" parent="Content/m_PassivePage/m_PassiveRows/Passive5" unique_id=264161649]
 custom_minimum_size = Vector2(107, 79)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 0, 1)
 theme_override_font_sizes/font_size = 22
 text = "升级"
-horizontal_alignment = 1
-vertical_alignment = 1
-clip_text = true
+flat = true
+mouse_default_cursor_shape = 2
 
 [node name="Soul" type="Label" parent="Content/m_PassivePage/m_PassiveRows/Passive5" unique_id=1945180880]
 custom_minimum_size = Vector2(103, 79)

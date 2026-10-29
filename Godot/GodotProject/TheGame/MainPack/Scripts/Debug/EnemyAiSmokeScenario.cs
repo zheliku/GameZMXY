@@ -29,7 +29,7 @@ using GodotGameFramework;
 ///  4 落地     放英雄落地 → 猴子回 Attack 并出招；
 ///  5 丢失     英雄始终保持在猴子视野外（模拟跑得比它快）→ LoseTargetTime 后 AI 回 Patrol/Idle；随后以英雄身份打一下（带击退）→ 重新锁定、CcLocked/Hurt；
 ///  6 击杀     致命伤 → AI 进 Death、广播 EnemyDiedEventArgs、死亡动画后回收。
-/// 另断言：攻击范围由 attack_1 判定盒推导 = 50×50 @(-24,-23) → X[-49,1] Y[-48,2]。
+/// 另断言：攻击范围来自 Monster1 官方 stick 轨道，并按实体根坐标推导。
 /// </summary>
 public sealed class EnemyAiSmokeScenario
 {
@@ -48,7 +48,7 @@ public sealed class EnemyAiSmokeScenario
     private const float OutOfSightOffset = 600f; // 初始视野外偏移（像素）。
     private const float InSightOffset = 150f; // 进入怪物视野时的水平偏移（像素）。
     private const float BehindOffset = 60f; // 转身测试中英雄位于怪物身后的水平偏移（像素）。
-    private static readonly Rect2 ExpectedReach = new Rect2(-46.3997f, -47.8496f, 34.9994f, 61.9992f); // Monster1 源探针，加上角色共用的 -13Y 原点。
+    private static readonly Rect2 ExpectedReach = new Rect2(-46.3997f, -34.8496f, 34.9994f, 61.9992f); // Monster1 官方源探针，实体根坐标。
     private const float ReachTolerance = 0.5f; // 判定盒边界允许误差（像素）。
 
     private readonly AbstractHeroEntity m_Hero; // 受测英雄实体。
@@ -109,7 +109,7 @@ public sealed class EnemyAiSmokeScenario
         m_MonsterId = monster.Id;
         m_OriginalAttackDesire = monster.Config.AttackDesire;
         // 本场验证行为能否恢复，不验证随机出手概率；只在测试侧固定，避免把连续未出手误判为卡死。
-        typeof(GameConfig.Monster.MonsterConfig).GetField("AttackDesire").SetValue(monster.Config, 100);
+        typeof(GameConfig.Enemy.EnemyConfig).GetField("AttackDesire").SetValue(monster.Config, 100);
         GF.Event.Subscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
         GF.Event.Subscribe(EnemyDiedEventArgs.EventId, OnEnemyDied);
         CheckReach();
@@ -228,7 +228,7 @@ public sealed class EnemyAiSmokeScenario
     /// <returns>断言失败原因；全部通过时为空列表。</returns>
     public List<string> Finish()
     {
-        typeof(GameConfig.Monster.MonsterConfig).GetField("AttackDesire").SetValue(m_Monster.Config, m_OriginalAttackDesire);
+        typeof(GameConfig.Enemy.EnemyConfig).GetField("AttackDesire").SetValue(m_Monster.Config, m_OriginalAttackDesire);
         GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
         GF.Event.Unsubscribe(EnemyDiedEventArgs.EventId, OnEnemyDied);
 
@@ -289,14 +289,23 @@ public sealed class EnemyAiSmokeScenario
         return failures;
     }
 
-    private void Enter(Phase phase, double t) // 切换场景阶段并记录阶段开始时间。
+    /// <summary>
+    /// 切换场景阶段并记录阶段开始时间。
+    /// </summary>
+    /// <param name="phase">下一烟测阶段。</param>
+    /// <param name="t">当前烟测累计时间，单位为秒。</param>
+    private void Enter(Phase phase, double t)
     {
         m_Phase = phase;
         m_PhaseStart = t;
         GD.Print($"SMOKE-AI[{t:F2}] 阶段 → {phase}");
     }
 
-    private void UpdateTurnAround(double t) // 校验出招和收招硬直期间锁定朝向，结束后恢复追踪。
+    /// <summary>
+    /// 校验出招和收招硬直期间锁定朝向，结束后恢复追踪。
+    /// </summary>
+    /// <param name="t">当前烟测累计时间，单位为秒。</param>
+    private void UpdateTurnAround(double t)
     {
         // 忙碌期间只允许攻击动画和原朝向；恢复后等待 AI 转向英雄。
         bool busy = m_Monster.AttackSegment >= 0 || SmokeInspection.InRecovery(m_Monster);
@@ -336,7 +345,11 @@ public sealed class EnemyAiSmokeScenario
         }
     }
 
-    private void StartAir(double t) // 将英雄固定到怪物前方的空中测试点并开始平台阶段。
+    /// <summary>
+    /// 将英雄固定到怪物前方的空中测试点并开始平台阶段。
+    /// </summary>
+    /// <param name="t">当前烟测累计时间，单位为秒。</param>
+    private void StartAir(double t)
     {
         m_HeroFloorY = m_Hero.GlobalPosition.Y;
         m_AirX = m_Monster.GlobalPosition.X - m_Monster.Facing * AirOffsetX;
@@ -345,7 +358,12 @@ public sealed class EnemyAiSmokeScenario
         Enter(Phase.Air, t);
     }
 
-    private void UpdateAir(double t, bool attackStarted) // 校验目标在空中时的守候与踱步，结束后恢复攻击。
+    /// <summary>
+    /// 校验目标在空中时的守候与踱步，结束后恢复攻击。
+    /// </summary>
+    /// <param name="t">当前烟测累计时间，单位为秒。</param>
+    /// <param name="attackStarted">本帧是否观测到怪物开始攻击。</param>
+    private void UpdateAir(double t, bool attackStarted)
     {
         // 每帧锁定英雄位置并收集怪物在目标两侧的移动证据。
         // 每帧重设位置（本驱动器在实体物理之后处理：猴子下一帧读到的就是这个位置）
@@ -382,7 +400,11 @@ public sealed class EnemyAiSmokeScenario
         Enter(Phase.WaitLanded, t);
     }
 
-    private void UpdateLose(double t) // 将英雄保持在视野外，校验怪物放弃目标并恢复巡逻。
+    /// <summary>
+    /// 将英雄保持在视野外，校验怪物放弃目标并恢复巡逻。
+    /// </summary>
+    /// <param name="t">当前烟测累计时间，单位为秒。</param>
+    private void UpdateLose(double t)
     {
         // 持续保持目标超出视野，直到 AI 恢复巡逻或超过配置的等待上限。
         m_Hero.GlobalPosition = new Vector2(m_Monster.GlobalPosition.X + LoseOffset, m_HeroFloorY);
@@ -404,7 +426,10 @@ public sealed class EnemyAiSmokeScenario
         }
     }
 
-    private void CheckReach() // 校验 attack_1 判定盒推导出的范围。
+    /// <summary>
+    /// 校验 attack_1 判定盒推导出的范围。
+    /// </summary>
+    private void CheckReach()
     {
         Rect2 reach = ((GameLogic.Enemies.AI.IEnemyAiAgent)m_Monster).Params.Attacks[0].Reach;
         GD.Print($"SMOKE-AI: attack_1 判定盒推导范围 {reach}");
@@ -418,12 +443,20 @@ public sealed class EnemyAiSmokeScenario
         }
     }
 
-    private string CurrentMonsterAnim() // 返回猴子身体状态与当前动画树节点的组合路径。
+    /// <summary>
+    /// 返回猴子身体状态与当前动画树节点的组合路径。
+    /// </summary>
+    /// <returns>当前身体状态与动画树节点的组合路径。</returns>
+    private string CurrentMonsterAnim()
     {
         return SmokeTestDriver.ObservePath(SmokeInspection.BodyStateName(m_Monster), m_Monster.AnimPlayer.AssignedAnimation.ToString());
     }
 
-    private void Sample(double t) // 记录 AI、动画变化及死亡后的实体回收。
+    /// <summary>
+    /// 记录 AI、动画变化及死亡后的实体回收。
+    /// </summary>
+    /// <param name="t">当前烟测累计时间，单位为秒。</param>
+    private void Sample(double t)
     {
         // 先捕获死亡回收，再在实体仍可见时采样状态序列。
         if (!m_HiddenAfterDeath && m_DiedEvents > 0 && !m_Monster.IsShown)
@@ -460,7 +493,11 @@ public sealed class EnemyAiSmokeScenario
         }
     }
 
-    private void Teleport(float offset) // 将怪物传送到英雄水平位置的指定偏移处。
+    /// <summary>
+    /// 将怪物传送到英雄水平位置的指定偏移处。
+    /// </summary>
+    /// <param name="offset">怪物相对英雄的水平偏移，单位为像素。</param>
+    private void Teleport(float offset)
     {
         Vector2 pos = new Vector2(m_Hero.GlobalPosition.X + offset, m_Monster.GlobalPosition.Y);
         m_Monster.GlobalPosition = pos;
@@ -468,7 +505,12 @@ public sealed class EnemyAiSmokeScenario
         GD.Print($"SMOKE-AI: 猴子挪到 x={pos.X:F0}（英雄 x={m_Hero.GlobalPosition.X:F0}）");
     }
 
-    private void HitMonster(float power, Vector2 knockback) // 以英雄为攻击方对怪物执行一次真实伤害结算。
+    /// <summary>
+    /// 以英雄为攻击方对怪物执行一次真实伤害结算。
+    /// </summary>
+    /// <param name="power">本次攻击使用的威力值。</param>
+    /// <param name="knockback">施加给怪物的击退速度，单位为像素/秒。</param>
+    private void HitMonster(float power, Vector2 knockback)
     {
         // 攻击数据只在结算期间持有，完成后立即归还引用池。
         AttackData data = AttackData.Create(0, default, power, DamageKind.Real, knockback, 1, 0);
@@ -476,7 +518,12 @@ public sealed class EnemyAiSmokeScenario
         ReferencePool.Release(data);
     }
 
-    private void OnDamageDealt(object sender, GameEventArgs args) // 记录受测怪物命中英雄的伤害事件。
+    /// <summary>
+    /// 记录受测怪物命中英雄的伤害事件。
+    /// </summary>
+    /// <param name="sender">框架事件发送者。</param>
+    /// <param name="args">当前同步回调借用的事件参数。</param>
+    private void OnDamageDealt(object sender, GameEventArgs args)
     {
         if (args is DamageDealtEventArgs e && ReferenceEquals(sender, m_Hero) &&
             !e.Result.IsMiss)
@@ -485,7 +532,12 @@ public sealed class EnemyAiSmokeScenario
         }
     }
 
-    private void OnEnemyDied(object sender, GameEventArgs args) // 记录受测怪物死亡事件。
+    /// <summary>
+    /// 记录受测怪物死亡事件。
+    /// </summary>
+    /// <param name="sender">框架事件发送者。</param>
+    /// <param name="args">当前同步回调借用的事件参数。</param>
+    private void OnEnemyDied(object sender, GameEventArgs args)
     {
         if (args is EnemyDiedEventArgs e && e.EntityId == m_MonsterId)
         {
@@ -493,7 +545,14 @@ public sealed class EnemyAiSmokeScenario
         }
     }
 
-    private static void RequireInOrder(List<string> failures, List<string> seq, string label, params string[] expected) // 校验观测序列按期望顺序包含所有状态。
+    /// <summary>
+    /// 校验观测序列按期望顺序包含所有状态。
+    /// </summary>
+    /// <param name="failures">本次验证累积的失败说明。</param>
+    /// <param name="seq">按观察顺序记录的状态路径。</param>
+    /// <param name="label">失败日志中用于定位本组序列的名称。</param>
+    /// <param name="expected">本次参数组合对应的预期结果。</param>
+    private static void RequireInOrder(List<string> failures, List<string> seq, string label, params string[] expected)
     {
         // 每个期望项只能从上一个匹配位置之后查找，保证顺序约束有效。
         int from = 0;
@@ -510,7 +569,10 @@ public sealed class EnemyAiSmokeScenario
         }
     }
 
-    private enum Phase // AI 烟测的阶段状态。
+    /// <summary>
+    /// AI 烟测的阶段状态。
+    /// </summary>
+    private enum Phase
     {
         /// <summary>
         /// 怪物位于英雄视野外。

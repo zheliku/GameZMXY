@@ -144,7 +144,7 @@ func _ground_monsters() -> void:
 
 ## Normal attacks retain visible weapons/energy plus a modest allowance from the source probe.
 ## Skills retain the official probe minimum. Author native keys only; never fit at runtime.
-func _hero_attack_geometry(probes: Dictionary, normal_only: bool = false) -> void:
+func _hero_attack_geometry(probes: Dictionary, normal_only: bool = false, new_equipment_only: bool = false) -> void:
 	var actor: Node2D = load("res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn").instantiate()
 	actor.set_script(null)
 	var player: AnimationPlayer = actor.get_node("m_AnimPlayer")
@@ -223,7 +223,17 @@ func _hero_attack_geometry(probes: Dictionary, normal_only: bool = false) -> voi
 								point = transform * (point + weapon.offset)
 								low = low.min(point)
 								high = high.max(point)
-					if library_name == "":
+					if new_equipment_only:
+						# Extend only where registered equipment art exceeds the current rectangle.
+						# Preserve the reviewed reach; never rerun the historical whole-tree authoring.
+						if low.x < -size.x / 2 - .01 or low.y < -size.y / 2 - .01 or high.x > size.x / 2 + .01 or high.y > size.y / 2 + .01:
+							low = (low - Vector2.ONE * 3).min(-size * .5)
+							high = (high + Vector2.ONE * 3).max(size * .5)
+							position = (hit.transform * ((low + high) * .5)).snapped(Vector2.ONE * .0001)
+							size = (high - low).snapped(Vector2.ONE * .0001)
+							changed = true
+							expanded += 1
+					elif library_name == "":
 						var texture := effect.sprite_frames.get_frame_texture(effect.animation, effect.frame)
 						if texture != null:
 							var image := texture.get_image()
@@ -284,7 +294,8 @@ func _hero_attack_geometry(probes: Dictionary, normal_only: bool = false) -> voi
 		assert(ResourceSaver.save(target, path) == OK)
 		assert(ResourceSaver.set_uid(path, uid) == OK)
 	actor.free()
-	print("HERO REACH: ", textures.size(), " appearances; ", expanded, " active pose samples authored; normals use reduced probe allowance; gameplay windows/events retained")
+	print("HERO REACH: ", textures.size(), " appearances; ", expanded, " active pose samples authored; ",
+		"new equipment coverage only" if new_equipment_only else "reviewed probe allowance", "; gameplay windows/events retained")
 
 func _set_shape_keys(animation: Animation, values: Dictionary) -> void:
 	var track := animation.find_track(NodePath(HIT_PATH), Animation.TYPE_VALUE)
@@ -304,6 +315,10 @@ func _initialize() -> void:
 	assert(source.source_sha256 == "11cae2f4f4e63dbb1e7199b9d1a8ed432036138b72e2d04d1da974329133fbe7")
 	assert(source.fire_demon_combo_bounds.size() == 44)
 	assert(source.has("hero_hit_probes") and source.hero_hit_probes.size() == 10)
+	if args.has("--new-equipment-only"):
+		_hero_attack_geometry(source.hero_hit_probes, true, true)
+		quit()
+		return
 	if args.has("--normal-attacks-only"):
 		_hero_attack_geometry(source.hero_hit_probes, true)
 		quit()
@@ -322,7 +337,7 @@ func _initialize() -> void:
 		if frame == 0 or bounds != previous:
 			phases.append([frame / 24.0, bounds])
 		previous = bounds
-	_replace_bounds(combo.get_animation(&"play"), "Visual/HitBox/CollisionShape2D", phases)
+	_replace_bounds(combo.get_animation(&"play"), "Origin/Visual/HitBox/CollisionShape2D", phases)
 	assert(ResourceSaver.save(combo, COMBO_LIBRARY) == OK)
 	assert(ResourceSaver.set_uid(COMBO_LIBRARY, combo_uid) == OK)
 

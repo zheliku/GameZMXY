@@ -46,11 +46,11 @@ public partial class TbBattleConfig
     /// <summary>
     /// 怪物作防守方时物防减伤K
     /// </summary>
-     public float DefKMonster => _data.DefKMonster;
+     public float DefKEnemy => _data.DefKEnemy;
     /// <summary>
     /// 怪物作防守方时魔防减伤K
     /// </summary>
-     public float MdefKMonster => _data.MdefKMonster;
+     public float MdefKEnemy => _data.MdefKEnemy;
     /// <summary>
     /// 英雄攻击时暴击倍率幸运K
     /// </summary>
@@ -58,7 +58,7 @@ public partial class TbBattleConfig
     /// <summary>
     /// 怪物攻击时暴击倍率幸运K
     /// </summary>
-     public float LuckyKMonsterAtk => _data.LuckyKMonsterAtk;
+     public float LuckyKEnemyAtk => _data.LuckyKEnemyAtk;
     /// <summary>
     /// 暴击倍率基数: CritBase + Lucky/(Lucky+K)
     /// </summary>
@@ -82,7 +82,7 @@ public partial class TbBattleConfig
     /// <summary>
     /// 等级压制-怪物防守时伤害最多按几级算
     /// </summary>
-     public int LvDamageCapLvMonsterDef => _data.LvDamageCapLvMonsterDef;
+     public int LvDamageCapLvEnemyDef => _data.LvDamageCapLvEnemyDef;
     /// <summary>
     /// 无双值上限(旧项目 BaseRoleProperies.gd:20)
     /// </summary>
@@ -118,7 +118,7 @@ public partial class TbBattleConfig
     /// <summary>
     /// 怪物受击横速每秒保留比例；官方每1/24秒乘0.8，降至移动速度后不再减速
     /// </summary>
-     public float MonsterKnockbackRetentionPerSecond => _data.MonsterKnockbackRetentionPerSecond;
+     public float EnemyKnockbackRetentionPerSecond => _data.EnemyKnockbackRetentionPerSecond;
     /// <summary>
     /// 每颗黄色无双球恢复的无双值
     /// </summary>

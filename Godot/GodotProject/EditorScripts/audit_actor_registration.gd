@@ -1,21 +1,18 @@
 extends SceneTree
-## 只读核对六类角色待机/移动的透明像素脚底、身体盒和受击盒，保留坐标证据。
+## Read matched official source_inventory.json; check all actor roots and timeline durations.
 var records: Array = []
+var failed := false
 func _initialize() -> void:
     create_timer(20).timeout.connect(func(): quit(1))
     call_deferred("_audit")
 
 func _audit() -> void:
-    var paths := ["res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn", "res://TheGame/Entitys/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_entity.tscn", "res://TheGame/Entitys/Enemies/Monsters/Ground/demon_monkey/demon_monkey_entity.tscn", "res://TheGame/Entitys/Enemies/Monsters/Ground/gorilla/gorilla_entity.tscn", "res://TheGame/Entitys/Enemies/Bosses/zm1_02_macaque_king/macaque_king_entity.tscn", "res://TheGame/Entitys/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_entity.tscn"]
-    # 来自完整 colipse 变换；两个网格原点的 Y 平移也必须应用于身体和受击盒。
-    var registrations := [
-        Rect2(-22.10061, -17.055495, 45.00122, 90.01099),
-        Rect2(-20.048932, -42.549543, 39.997864, 59.999085),
-        Rect2(-20.449909, -41.45029, 41.999817, 82.00058),
-        Rect2(-54.498015, -55.04893, 109.99603, 109.99786),
-        Rect2(-29.2972535, -60.049085, 59.994507, 119.99817),
-        Rect2(-21.9983215, -40.0498475, 44.996643, 79.999695)
-    ]
+    var args := OS.get_cmdline_user_args()
+    assert(args.size() == 1, "Pass the matched official source_inventory.json")
+    var source: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(args[0]))
+    var paths: Array[String] = []
+    _collect("res://TheGame/Entitys", source, paths)
+    _check(paths.size() == source.size(), "Missing actor scenes from official inventory")
     for path in paths:
         var actor: CharacterBody2D = load(path).instantiate()
         root.add_child(actor)
@@ -23,20 +20,33 @@ func _audit() -> void:
         var sprite: Node2D = actor.get_node("m_Body")
         var body: CollisionShape2D = actor.get_node("CollisionShape2D" if actor.has_node("CollisionShape2D") else "m_BodyShape")
         var foot := body.position.y + body.shape.get_rect().end.y
-        var expected: Rect2 = registrations[paths.find(path)]
+        var reference: Dictionary = source[path.get_file().get_basename()]
+        var bounds: Array = reference.hurt_bounds
+        var expected := Rect2(bounds[0], bounds[1], bounds[2], bounds[3])
         var actual := Rect2(body.position + body.shape.get_rect().position, body.shape.get_rect().size)
         var hurt: CollisionShape2D = actor.get_node("m_HurtBox/CollisionShape2D")
         var hurt_bounds := Rect2(hurt.position + hurt.get_parent().position + hurt.shape.get_rect().position, hurt.shape.get_rect().size)
-        assert(actual.position.distance_to(expected.position) < 0.02 and actual.size.distance_to(expected.size) < 0.02, "身体范围不符原版 " + path)
-        assert(hurt_bounds.position.distance_to(expected.position) < 0.02 and hurt_bounds.size.distance_to(expected.size) < 0.02, "受击范围不符原版 " + path)
+        _check(actual.position.distance_to(expected.position) < 0.02 and actual.size.distance_to(expected.size) < 0.02, "身体范围不符原版 " + path + " actual=" + str(actual) + " expected=" + str(expected))
+        _check(hurt_bounds.position.distance_to(expected.position) < 0.02 and hurt_bounds.size.distance_to(expected.size) < 0.02, "受击范围不符原版 " + path)
         var player: AnimationPlayer = actor.get_node("m_AnimPlayer")
         player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+        for source_action in reference.actions:
+            # Source frame scripts return to wait directly; an unused label must not force a runtime state.
+            if source_action.label == "afterHurt":
+                continue
+            var action_name := _animation_name(source_action.label, path.contains("wukong"))
+            _check(player.has_animation(action_name), path + " missing " + action_name)
+            if player.has_animation(action_name):
+                _check(absf(player.get_animation(action_name).length - float(source_action.frames) / 24) < 0.00001,
+                    path + " duration mismatch " + action_name + " actual=" + str(player.get_animation(action_name).length) + " source frames=" + str(source_action.frames))
         for action in ["idle1", "walk", "run"] if path.contains("wukong") else ["idle", "run"]:
+            if not player.has_animation(action):
+                continue
             var animation := player.get_animation(action)
             var bottoms: Array = []
             for i in 24:
                 player.play(action)
-                player.seek(animation.length * i / 24.0, true)
+                player.seek(animation.length * i / 24.0, true, true)
                 var texture: Texture2D
                 var picture: Image
                 var rectangle: Rect2
@@ -57,5 +67,25 @@ func _audit() -> void:
         actor.free()
     var file := FileAccess.open("res://.godot/validation/actor_registration_audit.json", FileAccess.WRITE)
     file.store_string(JSON.stringify(records, "\t"))
-    print("ACTOR REGISTRATION PASS: six source body/hurt bounds, 312 idle/movement samples; original foot overlap retained.")
-    quit()
+    print("ACTOR REGISTRATION ", "FAIL" if failed else "PASS", ": ", paths.size(), " source body/hurt bounds and complete timeline durations.")
+    quit(1 if failed else 0)
+
+func _collect(folder: String, source: Dictionary, paths: Array[String]) -> void:
+    for file in DirAccess.get_files_at(folder):
+        if file.ends_with(".tscn") and source.has(file.get_basename()):
+            paths.append(folder.path_join(file))
+    for child in DirAccess.get_directories_at(folder):
+        _collect(folder.path_join(child), source, paths)
+
+func _animation_name(label: String, hero: bool) -> String:
+    if hero:
+        var skills := {"hit6": "flame_thrust", "hit7": "blazing_flash", "hit8": "rising_dragon", "hit9": "flame_storm", "hit10": "fire_demon_slash"}
+        if skills.has(label):
+            return "skills/" + skills[label]
+        return {"wait": "idle1", "jump1": "jump", "jump2": "jump_2", "jump3": "fall"}.get(label, label.replace("hit", "attack_"))
+    return {"walk": "run", "wait": "idle", "dead": "death", "afterHurt": "after_hurt"}.get(label, label.replace("hit", "attack_"))
+
+func _check(condition: bool, message: String) -> void:
+    if not condition:
+        failed = true
+        push_error(message)

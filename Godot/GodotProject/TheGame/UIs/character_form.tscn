@@ -79,7 +79,6 @@ material = SubResource("wukong_material")
 layout_mode = 0
 offset_right = 235.0
 offset_bottom = 590.0
-tooltip_text = "点击孙悟空，进入花果山地图"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 texture_normal = SubResource("wukong_card")

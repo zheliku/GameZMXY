@@ -1,0 +1,69 @@
+[gd_scene format=3]
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Sea/shark_spawn/SharkSpawnEntity.cs" id="script"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/shark_spawn/shark_spawn_official_frames.tres" id="frames"]
+[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Sea/shark_spawn/shark_spawn_library.tres" id="library"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Monsters/Sea/shark_spawn/shark_spawn_slash_effect.tscn" id="slash"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Monsters/Sea/shark_spawn/shark_spawn_warning_effect.tscn" id="warning"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Monsters/Sea/shark_spawn/shark_spawn_tornado_effect.tscn" id="tornado"]
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
+[sub_resource type="CapsuleShape2D" id="body"]
+radius = 23.496124
+height = 124.961400
+[sub_resource type="RectangleShape2D" id="hurt_shape"]
+size = Vector2(124.961400, 46.992249)
+[sub_resource type="RectangleShape2D" id="hit_shape"]
+size = Vector2(1, 1)
+[sub_resource type="RectangleShape2D" id="detector"]
+size = Vector2(600, 1000)
+
+[node name="SharkSpawnEntity" type="CharacterBody2D" node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+collision_layer = 4
+collision_mask = 9
+floor_constant_speed = true
+floor_max_angle = 0.87266463
+floor_snap_length = 12.0
+script = ExtResource("script")
+m_EnemyEntityId = 18
+m_Detector = NodePath("m_Detector")
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
+m_SlashScene = ExtResource("slash")
+m_WarningScene = ExtResource("warning")
+m_TornadoScene = ExtResource("tornado")
+m_AttackAnimations = PackedStringArray("attack_1", "attack_2")
+
+[node name="m_Body" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("frames")
+animation = &"idle"
+[node name="m_BodyShape" type="CollisionShape2D" parent="."]
+shape = SubResource("body")
+rotation = 1.57079632679
+position = Vector2(-0.025000, -1.500000)
+[node name="m_HurtBox" type="Area2D" parent="." node_paths=PackedStringArray("m_Owner")]
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("hurt")
+m_Owner = NodePath("..")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox"]
+shape = SubResource("hurt_shape")
+position = Vector2(-0.025000, -1.500000)
+[node name="m_HitBoxRoot" type="Node2D" parent="."]
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot"]
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox"]
+shape = SubResource("hit_shape")
+disabled = true
+[node name="m_Detector" type="Area2D" parent="."]
+collision_layer = 4096
+collision_mask = 2
+monitorable = false
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector"]
+shape = SubResource("detector")
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="."]
+libraries/ = ExtResource("library")

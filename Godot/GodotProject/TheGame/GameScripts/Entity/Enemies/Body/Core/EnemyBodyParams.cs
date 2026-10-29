@@ -4,22 +4,22 @@ using System.Collections.Generic;
 namespace GameLogic.Enemies.Body
 {
     /// <summary>
-    /// 同类实体共享的只读身体参数；配置和动画派生数据由 ConfigurationModel 集中持有。
+    /// 敌人状态使用的只读身体参数；基础参数归 ConfigurationModel，专属参数由具体实体持有。
     /// </summary>
     public sealed record EnemyBodyParams
     {
         /// <summary>
-        /// 移动速度 px/s（MonsterConfig.MoveSpeed）
+        /// 移动速度 px/s（EnemyConfig.MoveSpeed）
         /// </summary>
         public float MoveSpeed { get; init; }
 
         /// <summary>
-        /// 重力 px/s²（MonsterConfig.Gravity）
+        /// 重力 px/s²（EnemyConfig.Gravity）
         /// </summary>
         public float Gravity { get; init; }
 
         /// <summary>
-        /// 受击硬直秒（= hurt 动画长度）
+        /// 受击硬直秒，取hurt的complete标记；没有标记时使用片段长度。
         /// </summary>
         public float HurtTime { get; init; }
 
@@ -29,9 +29,14 @@ namespace GameLogic.Enemies.Body
         public float KnockbackRetentionPerSecond { get; init; } = 1f;
 
         /// <summary>
-        /// 死亡到回收的秒数（= death 动画长度）
+        /// 死亡片段的完成检查时点，取complete标记或片段长度。
         /// </summary>
         public float DeathTime { get; init; }
+
+        /// <summary>
+        /// 空中尸体循环起点秒数；没有该源分支时为空，按完成时点回收。
+        /// </summary>
+        public float? DeathAirLoopTime { get; init; }
 
         /// <summary>
         /// 实体声明的攻击动画名，下标与攻击配置数组的招式序号一致。
@@ -39,7 +44,7 @@ namespace GameLogic.Enemies.Body
         public IReadOnlyList<string> AttackAnims { get; init; }
 
         /// <summary>
-        /// 每招的时长秒（= 招式动画长度，OnInit 读动画资源；状态计时）
+        /// 每招实际收招秒数，OnInit读取complete标记或片段长度。
         /// </summary>
         public IReadOnlyList<float> AttackTimes { get; init; }
 

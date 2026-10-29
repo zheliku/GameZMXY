@@ -83,6 +83,11 @@ size = Vector2(1, 1)
 
 [sub_resource type="Animation" id="Animation_cyueb"]
 length = 1.0416666666666667
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 1.0
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true

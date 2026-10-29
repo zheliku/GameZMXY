@@ -59,9 +59,14 @@ public sealed class ProcedureCharacter : ProcedureBase
         if (!isShutdown)
         {
             if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
+            {
                 GF.UI.CloseUIForm(m_FormSerialId);
+            }
+
             if (m_MusicSerialId != 0)
+            {
                 GF.Sound.StopSound(m_MusicSerialId, 0.2f);
+            }
         }
         m_FormSerialId = m_MusicSerialId = 0;
         m_Owner = null;
@@ -75,7 +80,9 @@ public sealed class ProcedureCharacter : ProcedureBase
     private void OnCharacterConfirmed(int formSerialId)
     {
         if (formSerialId == m_FormSerialId)
+        {
             ChangeState<ProcedureMap>(m_Owner);
+        }
     }
 
     /// <summary>
@@ -86,9 +93,15 @@ public sealed class ProcedureCharacter : ProcedureBase
     private void OnFormOpened(object sender, GameEventArgs args)
     {
         if (args is OpenUIFormSuccessEventArgs opened)
+        {
             SetFormCallbacks(opened.UIForm, bind: true);
+        }
+
         if (args is not OpenUIFormSuccessEventArgs success || success.UIForm.SerialId != m_FormSerialId)
+        {
             return;
+        }
+
         (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
     }
 
@@ -100,9 +113,10 @@ public sealed class ProcedureCharacter : ProcedureBase
     private void OnFormFailed(object sender, GameEventArgs args)
     {
         if (args is OpenUIFormFailureEventArgs failure && failure.SerialId == m_FormSerialId)
+        {
             Log.Error("[ProcedureCharacter] 界面加载失败：{0}", failure.ErrorMessage);
+        }
     }
-
 
     /// <summary>
     /// 按实际窗口类型绑定本流程回调；窗口编号拒绝旧作用域和无关实例。
@@ -112,13 +126,19 @@ public sealed class ProcedureCharacter : ProcedureBase
     private void SetFormCallbacks(IUIForm form, bool bind)
     {
         if (bind && (form == null || !GF.UI.IsValidUIForm(form)))
+        {
             return;
+        }
+
         switch (form)
         {
             case CharacterForm characterForm when characterForm.SerialId == m_FormSerialId:
                 characterForm.CharacterConfirmed -= OnCharacterConfirmed;
                 if (bind)
+                {
                     characterForm.CharacterConfirmed += OnCharacterConfirmed;
+                }
+
                 break;
         }
     }

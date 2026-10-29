@@ -77,6 +77,98 @@ namespace GameConfig.Equipment
         /// 天煞骨链
         /// </summary>
         HeavenlyFiendNecklace = 15,
+        /// <summary>
+        /// 天煞月戟
+        /// </summary>
+        HeavenlyFiendMoonHalberd = 16,
+        /// <summary>
+        /// 天煞羽袍
+        /// </summary>
+        HeavenlyFiendRobe = 17,
+        /// <summary>
+        /// 优秀的行者服
+        /// </summary>
+        ExcellentPilgrimClothes = 18,
+        /// <summary>
+        /// 优秀的行者棍
+        /// </summary>
+        ExcellentPilgrimStaff = 19,
+        /// <summary>
+        /// 优秀的袈裟
+        /// </summary>
+        ExcellentCassock = 20,
+        /// <summary>
+        /// 优秀的松木杖
+        /// </summary>
+        ExcellentPineStaff = 21,
+        /// <summary>
+        /// 血海妖壳
+        /// </summary>
+        BloodSeaShell = 22,
+        /// <summary>
+        /// 血海魔甲
+        /// </summary>
+        BloodSeaDemonArmor = 23,
+        /// <summary>
+        /// 血海邪皇
+        /// </summary>
+        BloodSeaEvilStaff = 24,
+        /// <summary>
+        /// 精良的行者服
+        /// </summary>
+        FinePilgrimClothes = 25,
+        /// <summary>
+        /// 精良的行者棍
+        /// </summary>
+        FinePilgrimStaff = 26,
+        /// <summary>
+        /// 精良的袈裟
+        /// </summary>
+        FineCassock = 27,
+        /// <summary>
+        /// 精良的松木杖
+        /// </summary>
+        FinePineStaff = 28,
+        /// <summary>
+        /// 玄武甲
+        /// </summary>
+        BlackTortoiseArmor = 29,
+        /// <summary>
+        /// 青龙刀
+        /// </summary>
+        AzureDragonBlade = 30,
+        /// <summary>
+        /// 如意金箍棒
+        /// </summary>
+        RuyiGoldenStaff = 31,
+        /// <summary>
+        /// 白虎杖
+        /// </summary>
+        WhiteTigerStaff = 32,
+        /// <summary>
+        /// 麒麟袍
+        /// </summary>
+        KirinRobe = 33,
+        /// <summary>
+        /// 朱雀戒
+        /// </summary>
+        VermilionBirdRing = 34,
+        /// <summary>
+        /// 七星守护
+        /// </summary>
+        SevenStarGuard = 35,
+        /// <summary>
+        /// 九环禅杖
+        /// </summary>
+        NineRingMonkStaff = 36,
+        /// <summary>
+        /// 东海旗幡
+        /// </summary>
+        EastSeaBanner = 37,
+        /// <summary>
+        /// 金钢琢
+        /// </summary>
+        DiamondSnare = 38,
     }
 
 } 

@@ -25,6 +25,10 @@ namespace GameConfig.Equipment
         /// 饰品
         /// </summary>
         Accessory = 2,
+        /// <summary>
+        /// 法宝
+        /// </summary>
+        Treasure = 3,
     }
 
 } 

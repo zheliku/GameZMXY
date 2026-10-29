@@ -70,8 +70,13 @@ public partial class TestArenaController : Node2D
         m_Cancellation = null;
         m_FloatingText.StopSession();
         if (IsInstanceValid(m_Entities))
+        {
             foreach (int id in m_OwnedIds)
+            {
                 m_Entities.HideEntitySafe(id);
+            }
+        }
+
         m_OwnedIds.Clear();
         m_Entities = null;
         if (m_TestFlow != null)
@@ -107,18 +112,24 @@ public partial class TestArenaController : Node2D
         {
             if (!GF.Entity.HasEntityGroup(group.Name) && !GF.Entity.AddEntityGroup(group.Name, group.ReleaseInterval,
                     group.Capacity, group.ExpireTime, group.Priority))
+            {
                 throw new InvalidOperationException($"实体组 {group.Name} 创建失败。");
+            }
         }
         foreach (var group in GF.UI.UIGroupRes.Groups)
         {
             if (!GF.UI.HasUIGroup(group.Name) && !GF.UI.AddUIGroup(group.Name, group.Depth))
+            {
                 throw new InvalidOperationException($"UI 组 {group.Name} 创建失败。");
+            }
         }
         foreach (var group in GF.Sound.SoundGroupRes.SoundGroups)
         {
             if (!GF.Sound.HasSoundGroup(group.Name) && !GF.Sound.AddSoundGroup(group.Name, group.AgentCounts,
                     group.AvoidBeingReplacedBySamePriority))
+            {
                 throw new InvalidOperationException($"声音组 {group.Name} 创建失败。");
+            }
         }
         GF.Sound.SetVolume(SoundComponent.DefaultMusicGroup, GF.Setting.GetFloat(SoundComponent.DefaultMusicGroup, 1));
         GF.Sound.SetVolume(SoundComponent.DefaultSfxGroup, GF.Setting.GetFloat(SoundComponent.DefaultSfxGroup, 1));
@@ -208,9 +219,9 @@ public partial class TestArenaController : Node2D
     /// <summary>
     /// 显示测试玩家并放到出生点。属性只来自出战装配：用建档规则创建一份仅内存的临时档案，不读写存档。
     /// </summary>
-    /// <returns>显示完成的异步任务。</returns>
     /// <param name="entities">本场地捕获的实体服务。</param>
     /// <param name="cancellationToken">场地退出时取消。</param>
+    /// <returns>显示完成的异步任务。</returns>
     private async Task SpawnHeroAsync(EntityComponent entities, CancellationToken cancellationToken)
     {
         IEntity entity = await ShowOwnedEntityAsync(entities, m_HeroEntityId, null, cancellationToken);
@@ -239,12 +250,27 @@ public partial class TestArenaController : Node2D
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (data is EnemySpawn spawn)
+        {
+            // 独立场地也拥有连续形态，后继不能成为离场后无人清理的实体。
+            data = spawn with
+            {
+                SpawnFailed = error => GD.PushError($"[TestArena] 敌人行为失败：{error}"),
+                ContinueEncounterAsync = async (previousId, nextId, nextSpawn) =>
+                {
+                    await ShowOwnedEntityAsync(entities, nextId, nextSpawn, cancellationToken);
+                },
+            };
+        }
         IEntity entity = await entities.ShowEntityAsync(id, data)
             ?? throw new InvalidOperationException($"测试场地实体显示失败：{id}");
         if (cancellationToken.IsCancellationRequested)
         {
             if (IsInstanceValid(entities))
+            {
                 entities.HideEntitySafe(entity.Id);
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
         }
         m_OwnedIds.Add(entity.Id);

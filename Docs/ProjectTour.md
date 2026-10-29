@@ -6,7 +6,7 @@
 
 `Launch → Update → Prepare → Preload → Title（开始、六格存档）→ LoadGame → 新档 Character / 已有档 Map → 选择关卡 → Level`。
 
-当前开放悟空及花果山、水帘洞、桃花源、蝙蝠窟、七星洞。未解锁角色没有交互。通关和死亡保留收益并保存，中途放弃恢复进关快照；返回地图或重试前等待检查点写盘。
+当前仅悟空可出战。十个主线关卡及水帘洞下水进入的隐藏龙宫均已接入；新档从花果山逐关解锁，隐藏关不推进主线。最终验收范围与未完成项见 [Validation](Validation.md)，官方关卡清单与制作流程见 [OfficialReference](OfficialReference.md#全关卡范围与当前接入2026-10-28)。未解锁角色没有交互。通关和死亡保留收益并保存，中途放弃恢复进关快照；返回地图或重试前等待检查点写盘。
 
 ## GGF + QF 阅读入口
 
@@ -74,6 +74,8 @@ flowchart TD
 ```
 
 怪物各自拥有普通生命、防御和 AI 数据，其余数值读配置；不借用玩家 HeroModel。英雄动作输入和身体 FSM、怪物 AI/FSM、节点与运动状态仍由各 Entity 管理。
+
+敌人按 `AbstractEnemyEntity → AbstractBossEntity / AbstractMonsterEntity` 分工；小怪再分 `Ground / Sky / Sea`。Monster 共享移动状态装配与致死抛飞，Ground 约束落地出招，Sky 拥有垂直意图及空中运动。Sea 内的海底物种沿用重力与落地出招，鲨鱼用自己的游动/攻击状态，保留垂直加速与退避。虾兵的远距弹体、潮汐妖的选招、灯笼鱼的追击、龟丞相的守关规则分别留在本物种实体/状态目录；代码、场景、动作库和贴图均按 `Monsters/Sea/<物种>/` 查找。
 
 ## Model 的属性绑定
 
@@ -143,7 +145,11 @@ HeroLoadout、PlayerModel、SaveLoadResult 这类只转交可直接获取对象�
 
 保存：SaveSystem → SaveDataUtility.Capture(profile, skills) → GameData → ArchiveUtility。回滚：LevelSystem → ProfileSystem.RestoreCheckpoint(snapshot)，先完整校验快照，再通过正常属性与集合入口恢复 ProfileModel。SaveDataUtility 仅校验和转换，不写 Model 或文件；ExperienceCurve 同样经 GetUtility 借用，不缓存共享引用。地图流程调用 SaveSystem.SaveManuallyAsync，系统统一管理等待、结果与旧请求校验。
 
-掉落奖励统一在 `Enemy.xlsx / MonsterConfig、BossConfig` 的概率和装备池中配置；关卡配方不再覆盖装备池，死亡通知也不重复传池编号。当前大猩猩设为“不掉落”，猴子和妖猴仍使用粗糙装备池。配方继续保存属性倍率与经验覆盖。顶部血条是场景展示：在 `level_1.tscn` 根节点的 `m_FeaturedOpponentSpawnPointIds` 绑定 `stage_5_a`；初始化要求该生成点唯一且只生成一只怪物，其他关卡可留空。它不改变怪物数值、AI 或掉落。
+基础掉落配置在 `Enemy.xlsx / MonsterConfig、BossConfig`。具体敌人的特殊奖励使用可空 `SoulPerOrbOverride / EquipmentDropChanceOverride / EquipmentDropPoolIdOverride`，死亡通知携带这些覆盖值，收益消费者用 `覆盖值 ?? 基础配置`；null 表示没有覆盖，0 概率和 None 池表示明确不掉落。每次入场重置，普通敌人不复制基础值。
+
+`LevelConfig.xlsx` 的通用页只保存关卡、阶段和出怪配方；配方字段为怪物、生成点、数量、延迟与间隔。另有花果山、浅岸、蝙蝠洞、隐藏龙宫四个具名专属页：大猩猩900生命/25经验、龟丞相4800生命/200经验及特殊掉落、石像出口目标、水帘洞到隐藏龙宫的入口。具体敌人从自身 `ApplyConfigOverrides` 消费守关数值，出口/转场由 LevelSystem 消费；没有通用倍率或入口解释器。
+
+顶部血条属于场景展示：在花果山场景根节点的 `m_FeaturedOpponentSpawnPointIds` 绑定 `stage_5_a`；初始化要求该生成点唯一且只生成一只怪物，其他关卡可留空。它不改变怪物数值、AI 或掉落。第20章“仅单一关卡表”和第30/40章“配方倍率”的旧描述与用户本轮要求存在差异，本轮按用户要求实现，未自行改写规范。
 
 完整文件契约和检查点见 [存档规范](ProjectGuidelines/70-ProfileAndSave.md)，地面显示和飘字见本页末尾。
 
@@ -188,7 +194,7 @@ GGF 管理的界面统一采用 `XxxForm`：战斗根窗口为 `BattleForm`，�
 
 | 源表 | 内容 |
 | --- | --- |
-| Skills.xlsx：SkillConfig / PassiveConfig | 角色目录、学习费用、蓝耗、无敌持续、普攻冷却及被动数值 |
+| Skills.xlsx：SkillConfig / PassiveConfig | 角色目录、学习费用、蓝耗及被动数值；悟空无敌、普攻阻塞与取消窗口归具体状态/实体 |
 | Combat.xlsx：AttackConfig | 普攻与 11 个技能伤害阶段共用威力、伤害类型、px/s 击退、命中预算与间隔 |
 | AnimationLibrary / 特效场景 | 动作帧、判定几何、声音时点、效果引用、缩放、偏移与镜像；没有动作/特效/时间线表 |
 
@@ -245,15 +251,15 @@ IHeroBody 不再声明技能匹配或普攻选择。状态消费角色已经选�
 | Guard | 原地等待 | 原地转向，仅攻击进入范围的目标 |
 | Pursuer | 原地等待 | 追击、站定攻击或在平台下踱步 |
 
-敌人层级为 `AbstractEnemyEntity → AbstractMonsterEntity → AbstractGroundMonsterEntity / AbstractSkyMonsterEntity → 具体小怪`，Boss从Enemy独立派生。Enemy拥有共同生命、感知、攻击、离身效果和FSM生命周期；Monster定义普通怪物分支，Ground装配重力行走、落地出招，Sky装配飞行移动、垂直意图和空中出招。每个具体小怪必须在自己的类中明确选择AI预设或实现专属规则：猴子独有受击激怒，飞刀魔决定投刀，蝙蝠决定折返、追踪和升空退避。妖猴、洞窟壮汉、大猩猩的官方算法相同，因此各自类明确选择Patrol，而不是复制一份共同算法或伪造差异；具体类仍是角色装配和后续扩展入口。AI对应 `AbstractEnemyAiState → AbstractMonsterAiState / AbstractBossAiState → 具体状态`：前者处理小怪概率，后者处理首领共同时钟。
+敌人层级为 `AbstractEnemyEntity → AbstractMonsterEntity → AbstractGroundMonsterEntity / AbstractSkyMonsterEntity / AbstractSeaMonsterEntity → 具体小怪`，Boss从Enemy独立派生。Enemy拥有共同生命、感知、攻击、离身效果和FSM生命周期；Monster负责普通小怪预设与致死抛飞共性，Ground、Sky、Sea保留物种职责；实际移动由同级 Walk/Fly/Swim 状态和 EnemyBodyPreset 选择。每个具体小怪必须在自己的类中明确选择AI预设或实现专属规则：猴子独有受击激怒，飞刀魔决定投刀，蝙蝠决定折返、追踪和升空退避。妖猴、洞窟壮汉、大猩猩的官方算法相同，因此各自类明确选择Patrol，而不是复制一份共同算法或伪造差异；具体类仍是角色装配和后续扩展入口。公共巡逻/交战状态与物种专属 AI 均继承 AbstractEnemyAiState；首领需要共同节拍时继承 AbstractBossAiState，不保留空的 AbstractMonsterAiState。
 
-代码在 `Entity/Enemies/` 下按 `Monsters/Ground/<角色>/`、`Monsters/Sky/<角色>/` 和 `Bosses/<编号_名称>/` 组织；共用AI契约、系统和打断状态留在 `AI/`，共用身体状态留在 `Body/`。小怪巡逻/交战状态在 `Monsters/AI/States/`；飞行身体在 `Monsters/Sky/Body/`，蝙蝠决策随蝙蝠。场景、动作库、贴图采用相同分类。`SkillEffectNode`拥有每次独立攻击的命中预算，创建者Enemy登记并负责隐藏时归还，具体小怪和BOSS不重复实现回收。
+代码在 `Entity/Enemies/` 下按 `Monsters/Ground/<角色>/`、`Monsters/Sky/<角色>/`、`Monsters/Sea/<角色>/` 和 `Bosses/<编号_名称>/` 组织；共用AI契约、系统和打断状态留在 `AI/`，共用身体状态留在 `Body/`。通用巡逻/交战状态在 `Enemies/AI/States/`；Walk、Fly、Swim 身体状态同级位于 `Enemies/Body/States/`，由 EnemyBodyPreset 组合，物种专属决策随各角色。场景、动作库、贴图采用相同分类。`SkillEffectNode`拥有每次独立攻击的命中预算，创建者Enemy登记并负责隐藏时归还，具体小怪和BOSS不重复实现回收。
 
 怪物的 `Move → Attack → Recovery` 切换通过 GGF 的 `SetData/GetData/RemoveData` 传递招式下标和收招时长；目标状态在 Enter 时消费参数并自行初始化。状态之间不直接调用 `Arm` 或改写彼此字段。
 
 共享英雄状态按各英雄的参数读取普攻段数、动画名、冷却与空中段号；已用一段、三段配置在 60/120Hz 验证循环和空中出招。悟空的第三段下劈由 `WukongEntity.BuildBodyParams` 指定。新增角色仍由具体实体提供状态集，唐僧的弹道、专属技能及不同攻击移动规则需要各自实现。
 
-当前怪物支持多招、独立冷却、选招优先级与收招硬直。Enemy只检查招式下标、死亡、受击与忙碌；Ground在请求处和地面身体消费处检查真实落地，Sky使用飞行身体消费空中请求。受击与收招结束返回本分支的MoveStateType，不把飞行怪送回地面移动。
+当前怪物支持多招、独立冷却、选招优先级与收招硬直。Enemy只检查招式下标、死亡、受击与忙碌；Ground在请求处和地面身体消费处检查真实落地，Sky使用飞行身体消费空中请求。受击与收招结束返回当前身体预设的 MovementStateType，不把飞行怪送回地面移动。
 
 继承分工参考SuperTux的 [WalkingBadguy](https://github.com/SuperTux/supertux/blob/master/src/badguy/walking_badguy.cpp)、[SnowBall](https://github.com/SuperTux/supertux/blob/master/src/badguy/snowball.cpp) 和 [KamikazeSnowball](https://github.com/SuperTux/supertux/blob/master/src/badguy/kamikazesnowball.cpp)：父类实现移动/碰撞机制，具体类型选择能力并实现特殊反应。本项目仍用GGF双FSM和原生动画，不移植其玩法代码。
 
@@ -280,14 +286,14 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 | 工作簿 | Sheet |
 | --- | --- |
 | `Hero.xlsx` | HeroConfig、HeroGrowthConfig、HeroLevelConfig |
-| `Enemy.xlsx` | MonsterConfig（小怪）、BossConfig（BOSS）；合并生成同一个 TbMonsterConfig |
+| `Enemy.xlsx` | MonsterConfig（小怪）、BossConfig（BOSS）；合并生成同一个 TbEnemyConfig |
 | `Skills.xlsx` | SkillConfig、PassiveConfig |
 | `Combat.xlsx` | BattleConfig、AttackConfig |
 | `Items.xlsx` | EquipmentConfig、EquipmentDropPoolConfig、PickupConfig |
 | `Resources.xlsx` | EntityConfig、UIFormConfig、SoundConfig，保留 GGF 实际资源登记 |
 | 单表与 Schema | LevelConfig.xlsx、ProfileConfig.xlsx、__tables__.xlsx、__beans__.xlsx、__enums__.xlsx |
 
-共 11 个工作簿、17 张业务 Sheet；`__tables__` 用 `HeroConfig@Hero.xlsx` 等明确绑定，怪物表输入为 `MonsterConfig@Enemy.xlsx,BossConfig@Enemy.xlsx`。成长表按英雄记录嵌套 `Levels`，被动表按被动身份嵌套等级列表；生成类型、稳定 ID 与资源键保持原名。改表仍走原 Luban 入口，不能手改生成代码。`dump_table.py Hero.xlsx HeroGrowthConfig` 可以只读指定 Sheet。
+共 11 个工作簿、17 张业务 Sheet；`__tables__` 用 `HeroConfig@Hero.xlsx` 等明确绑定，怪物表输入为 `MonsterConfig@Enemy.xlsx,BossConfig@Enemy.xlsx`。成长表按英雄记录嵌套 `Levels`，被动表按被动身份嵌套等级列表；小怪 EnemyId 从 1 起，BOSS 从 10001 起；EntityId 与 LegacyId 保持原资源身份和官方编号。改表仍走原 Luban 入口，不能手改生成代码。`dump_table.py Hero.xlsx HeroGrowthConfig` 可以只读指定 Sheet。
 
 ### 动画如何连接技能
 
@@ -301,10 +307,10 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 
 ### 资源编辑位置
 
-- 五招本体：`Entitys/Animations/Heroes/Wukong/wukong_skill_library.tres`。身体/武器两层与原点不变。
-- 四个独立效果：`Entitys/Heroes/Wukong/` 的 `Visual` 同时包含 Sprite 与 HitBox；偏移、镜像在场景，落地斩的普通/无双大小在外置动画 `play` / `musou` 的 `Visual:scale` 编辑。
+- 五招本体：`Entitys/Animations/Heroes/Wukong/wukong_skill_library.tres`。身体/武器仍分两层，历史图集的28px平移由场景层位置统一抵消。
+- 四个独立效果：`Entitys/Heroes/Wukong/` 的 `Origin/Visual` 同时包含 Sprite 与 HitBox；Origin 与 Visual 的位置为零，Sprite 保留源偏移。落地斩的普通/无双大小在外置动画 `play` / `musou` 的 `Origin/Visual:scale` 编辑；不要给它再加身体图集的28px平移。
 - 火魔前奏：`wukong_entity.tscn/m_FireDemonPrelude`，原生 AnimatedSprite2D，TopLevel 保持出招原地，40 帧结束后信号隐藏。纯视觉不经过 SkillEffectNode 或节点池。
-- BOSS：`Entitys/Enemies/Bosses/zm1_02_macaque_king/` 与 `zm1_03_tamarin_king/` 各自包含实体和专属效果；代码、动画和贴图使用相同目录名。禺狨王 HitBox 只用一个矩形；猕猴王大旋风用风冠、风柱两个胶囊。几何在动画中按阶段编辑，云层不伤害，允许闪电内部间隙；AI 只合并基础形状边界估距，实际命中由物理引擎处理。
+- BOSS：`Entitys/Enemies/Bosses/zm1_02_macaque_king/` 与 `zm1_03_tamarin_king/` 各自包含实体和专属效果；代码、动画和贴图使用相同目录名。禺狨王 HitBox 只用一个矩形；猕猴王大旋风用风冠、风柱两个矩形。几何在动画中按阶段编辑，云层不伤害，允许闪电内部间隙；AI 只合并基础形状边界估距，实际命中由物理引擎处理。
 - 普攻动画列表和攻击命中声 m_HitSoundId：攻击者实体场景；独立效果生成时借用本次攻击者的声音。受击语音 m_HurtSoundId：接收者实体场景，成功ReceiveHit时播放，hurt动画不重复发声。挥击、技能和死亡语音：原生动画的PlaySoundAnimEvent方法键。
 - 物品外观：`Sprites/Items/item_appearances.tres` 同时供背包、穿戴与地面掉落引用。轨迹在 LootOrb 场景，地面物理在 GroundItem 场景；奖励量和存在时长留 BattleConfig。
 - 关卡音乐：LevelRoot 的 MusicId，由 ProcedureLevel 通过 GGF 播放和停止。血条淡出在怪物场景。
@@ -337,12 +343,16 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 
 地面物品只有一个固定 32×40 的 `CollisionShape2D` 矩形，底部中心对齐节点原点。身体用它落地，拾取以这个预设盒与本关英雄受击盒相交判断；图标显示时读取非透明底部并对齐碰撞盒，拾取检测使用固定盒。`GroundPickupRadius` 已从 DropConfig 源表删除，尺寸直接在场景中调整。领取时只上移图标，0.8 秒后回池。
 
-保存格式以 GameData.CurrentVersion 为准（当前 v9）：GameData 平铺英雄经验、灵魂、装备及具名属性、最远通关编号 HighestClearedLevelId；Heroes 中以实例 Guid 引用武器、防具、饰品，并保存已学习技能 ID。概率属性用 0..1。ProfileSystem 根据通关进度计算最新可挑战关卡，地图读同一字段控制锁定与默认闪烁；通关先推进再保存，失败和放弃不推进。ProfileModel.EquipmentDatas 只含未穿戴物，Slots 保存穿戴；HeroSystem 将成长、穿戴变化同步到 HeroModel，实体即时读取同一模型。旧格式不做运行时兼容，已有开发档的处理见 Validation。
+保存格式以 GameData.CurrentVersion 为准（当前 v10）：GameData 保存灵魂、装备及具名属性、主线最远通关编号 HighestClearedLevelId、东海旗幡首次资格 EastSeaBannerAvailable；Heroes 保存累计经验、已学技能ID及武器/防具/饰品的实例Guid。概率属性用0..1。ProfileSystem 根据主线进度计算最新可挑战关卡，隐藏龙宫只跟随水帘洞资格；通关先推进再保存，失败和放弃不推进。旗幡资格在龙王出生时消费，死亡/通关提交，放弃按进关快照恢复。ProfileModel.EquipmentDatas 只含未穿戴物，Slots 保存穿戴；HeroSystem 将成长、穿戴变化同步到 HeroModel，实体读取同一模型。正式代码只支持当前格式，指定旧档的备份转存记录见Validation；规范第70章仍记v9，差异已报告，未擅自修改。
 
-地图打开和鼠标离开后按最新可挑战关卡播放 `location/current`、`shuiliandong/current`、`taohuayuan/current`、`bianfuku/current` 或 `qixingdong/current`，悬停可进入的地点播放对应 hover；关闭时 RESET 并停止，复用根据档案进度重新启动。未解锁地点不响应悬停和点击，历史地点可重玩。
+地图打开和鼠标离开后按最新可挑战主线播放对应地点的current动画，悬停可进入的地点播放hover；鲨之涡流使用自己的48帧旋转提示，其余地点使用各自官方时间轴，播放器保持默认1倍速/24fps。关闭时RESET并停止，复用根据档案进度重新启动。未解锁地点不响应悬停和点击，历史地点可重玩；隐藏龙宫从关卡内进入，不新增地图主线入口。
+
+连续受击保护的命中数与游戏秒数由HeroModel/HeroSystem维护，普通无敌光晕材质由英雄场景配置；第五次命中后保护2秒，间隔达到1秒断链。死亡演出使用共用 [hero_tombstone.tscn](../Godot/GodotProject/TheGame/Entitys/Effects/hero_tombstone.tscn)：`HeroTombstoneNode`拥有自己的物理、碰撞与78源帧时间轴，英雄只在Died时触发；LevelViewController等待DeathPresentationFinished后提交失败。角色的death动作仅保留身体隐藏、碰撞关闭和专属声音，普通胶囊不再影响墓碑。
 
 地面恢复品实际领取后，调用本场 `FloatingTextPresenter.ShowRecovery(position, amount, RecoveryKind.Health/Mana)`：生命数字绿色，魔法数字蓝色；显示配置恢复量（即使已达上限），一秒上移 75px，暂停停止。蓝量灵魂只回蓝，不显示数字。模块只显示反馈，实际恢复仍由拾取业务结算；后续技能恢复可复用该入口。
 
 `level_1` 和 `test_arena` 均在 `World/FloatingText` 绑定同一个组件。组件在 `StartSession/StopSession` 成对订阅 GGF 伤害事件；参数携带受击时的运行实体编号，拒绝其他场景和旧实体的排队事件。所有样式共用 `FloatingTextNode` 与 `Entitys/Effects/floating_text.tscn` 的一个池：伤害居中、放大后淡出，恢复左起匀速上升，闪避使用贴图；共用数字布局、秒制计时、完成回调和回池复位。数字按实际可见轮廓宽度排布，间隙由场景根脚本的 `m_DigitGap` 控制，默认 0px，窄字另按 `m_NarrowGlyphPadding`（默认 1/6）补充侧留白；字宽按图集首次使用缓存，帧更新不读图。模块只逐个归还本会话取出的节点，不使用全池清空；表现节点不订阅业务事件、不自行访问全局池。
 
 怪物 AI 的范围与目标盒直接使用 `Godot.Rect2`（纯 C# 值类型，不依赖场景树），合并/中心/空矩形采用原生 API。`SpatialExtensions` 只补朝向镜像与有符号间隙；不再维护重复的 AiBox 结构。
+
+当前配置按用户明确决定执行：业务 Sheet 保留可见类型行，布尔值使用原生 Excel bool；内嵌表类型仍由 __beans__ 定义。装备随机范围不再配置恒为固定值的 Kind 列；无敌、普攻阻塞和取消窗口留具体技能状态/实体。关卡专属数值用物种持有的独立 .tres，特殊流程写专属代码，不留专属 Luban Sheet。第20章的无类型行/通用数值及第30/40章的配方倍率、旧公共名称与这些新要求有差异；按工作区入口保留规范正文，未自行改写。

@@ -24,7 +24,7 @@ namespace GameLogic.Battle.Attacks
         public CombatantAttributes Attacker { get; private set; }
 
         /// <summary>
-        /// 本招威力（属性威力与固定威力之和，再乘生成攻击倍率；最终取整由伤害结算负责）。
+        /// 本招威力（属性威力与固定威力之和，再应用无双等出招加成；最终取整由伤害结算负责）。
         /// </summary>
         public float Power { get; private set; }
 
@@ -42,6 +42,11 @@ namespace GameLogic.Battle.Attacks
         /// 出招方向：1 右 / -1 左（击退方向 = 本值 × Knockback.X）
         /// </summary>
         public int Direction { get; private set; }
+
+        /// <summary>
+        /// 来自独立效果而非身体判定；具体敌人据此执行不同的背击反应。
+        /// </summary>
+        public bool IsEffect { get; private set; }
 
         /// <summary>
         /// 按攻击中心向两侧击退时使用的世界横坐标；为空时按出招朝向。
@@ -64,9 +69,10 @@ namespace GameLogic.Battle.Attacks
         /// <param name="direction">出招方向；非负视为向右，负数视为向左。</param>
         /// <param name="hitProtect">本次命中增加的受击保护值。</param>
         /// <param name="knockbackOriginX">可选的攻击中心世界横坐标；只用于向两侧击退的攻击。</param>
+        /// <param name="isEffect">是否由独立效果创建本次攻击。</param>
         /// <returns>已装填并由引用池管理的攻击数据包。</returns>
         public static AttackData Create(int attackId, in CombatantAttributes attacker, float power, DamageKind kind,
-            Vector2 knockback, int direction, int hitProtect, float? knockbackOriginX = null)
+            Vector2 knockback, int direction, int hitProtect, float? knockbackOriginX = null, bool isEffect = false)
         {
             AttackData data = ReferencePool.Acquire<AttackData>();
             data.AttackId = attackId;
@@ -75,6 +81,7 @@ namespace GameLogic.Battle.Attacks
             data.Kind = kind;
             data.Knockback = knockback;
             data.Direction = direction >= 0 ? 1 : -1;
+            data.IsEffect = isEffect;
             data.KnockbackOriginX = knockbackOriginX;
             data.HitProtect = hitProtect;
             return data;
@@ -101,6 +108,7 @@ namespace GameLogic.Battle.Attacks
             Kind = DamageKind.Physics;
             Knockback = Vector2.Zero;
             Direction = 1;
+            IsEffect = false;
             KnockbackOriginX = null;
             HitProtect = 0;
             m_HitTargets.Clear();

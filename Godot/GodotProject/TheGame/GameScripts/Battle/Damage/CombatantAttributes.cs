@@ -15,7 +15,7 @@ namespace GameLogic.Battle.Damage
         /// <summary>
         /// 怪物
         /// </summary>
-        Monster = 1,
+        Enemy = 1,
     }
 
     /// <summary>

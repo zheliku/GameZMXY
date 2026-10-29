@@ -2,8 +2,15 @@
 
 [ext_resource type="Texture2D" uid="uid://c6hv7cwxee5x2" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_pilgrim.png" id="1_rju3e"]
 [ext_resource type="Texture2D" uid="uid://nu4jcg6l3quh" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_earth_fiend.png" id="2_psys0"]
+[ext_resource type="Texture2D" uid="uid://c1bveocf22gb2" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_excellent.png" id="3_pego7"]
+[ext_resource type="Texture2D" uid="uid://ckgc761yl3lr" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_blood_sea.png" id="4_dobcu"]
 [ext_resource type="Texture2D" uid="uid://d26st7cqjh5oh" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_pilgrim.png" id="5_48jhp"]
+[ext_resource type="Texture2D" uid="uid://sfrc0b0hisxg" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_black_tortoise.png" id="5_unm2t"]
 [ext_resource type="Texture2D" uid="uid://bht42d7gvnox0" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_heirloom.png" id="6_psys0"]
+[ext_resource type="Texture2D" uid="uid://bjmesieqsc23s" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_heavenly_fiend.png" id="7_48jhp"]
+[ext_resource type="Texture2D" uid="uid://d0c5218ncbcct" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_excellent.png" id="9_dobcu"]
+[ext_resource type="Texture2D" uid="uid://d4edb63xi6adm" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_azure_dragon.png" id="12_hg0pu"]
+[ext_resource type="Texture2D" uid="uid://dxunp5hkc3ncf" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_ruyi.png" id="13_g40w5"]
 [ext_resource type="Texture2D" uid="uid://cvhrf247evpd6" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_bare.png" id="body_bare"]
 [ext_resource type="Script" uid="uid://b2rdmr41g6mt6" path="res://TheGame/GameScripts/Entity/Heroes/HeroAppearanceResource.cs" id="script"]
 [ext_resource type="Texture2D" uid="uid://di26s8wme22dn" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_default.png" id="weapon_default"]
@@ -14,11 +21,20 @@ m_BaseBody = ExtResource("body_bare")
 m_ArmorTextures = Dictionary[int, Texture2D]({
 1: ExtResource("1_rju3e"),
 5: ExtResource("1_rju3e"),
-10: ExtResource("2_psys0")
+10: ExtResource("2_psys0"),
+18: ExtResource("3_pego7"),
+23: ExtResource("4_dobcu"),
+25: ExtResource("3_pego7"),
+29: ExtResource("5_unm2t")
 })
 m_BaseWeapon = ExtResource("weapon_default")
 m_WeaponTextures = Dictionary[int, Texture2D]({
 2: ExtResource("5_48jhp"),
 6: ExtResource("5_48jhp"),
-13: ExtResource("6_psys0")
+13: ExtResource("6_psys0"),
+16: ExtResource("7_48jhp"),
+19: ExtResource("9_dobcu"),
+26: ExtResource("9_dobcu"),
+30: ExtResource("12_hg0pu"),
+31: ExtResource("13_g40w5")
 })

@@ -69,9 +69,15 @@ public sealed class ProcedureTitle : ProcedureBase
 
 
         if (!isShutdown && m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
+        {
             GF.UI.CloseUIForm(m_SettingsSerialId);
+        }
+
         if (!isShutdown && m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId)))
+        {
             GF.UI.CloseUIForm(m_SaveSerialId);
+        }
+
         m_SettingsSerialId = m_SaveSerialId = 0;
         m_Cancellation?.Cancel();
         m_Cancellation?.Dispose();
@@ -81,9 +87,14 @@ public sealed class ProcedureTitle : ProcedureBase
         if (!isShutdown)
         {
             if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
+            {
                 GF.UI.CloseUIForm(m_FormSerialId);
+            }
+
             if (m_MusicSerialId != 0)
+            {
                 GF.Sound.StopSound(m_MusicSerialId, 0.2f);
+            }
         }
         m_FormSerialId = m_MusicSerialId = 0;
         m_Owner = null;
@@ -97,9 +108,15 @@ public sealed class ProcedureTitle : ProcedureBase
     private async void OnStartGameRequested(int formSerialId)
     {
         if (formSerialId != m_FormSerialId)
+        {
             return;
+        }
+
         if (m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId)))
+        {
             return;
+        }
+
         var saveSystem = m_Owner.GetSystem<SaveSystem>();
         var token = m_Cancellation.Token;
         m_SaveSerialId = GF.UI.OpenUIForm(UIFormId.SaveForm);
@@ -115,12 +132,21 @@ public sealed class ProcedureTitle : ProcedureBase
     private void OnSaveSlotSelected(int formSerialId, int selectionId)
     {
         if (formSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) || GF.Fsm.GetModel<SaveModel>().Phase != SaveListState.Ready)
+        {
             return;
+        }
+
         if (selectionId < 1 || selectionId > GF.Fsm.GetModel<SaveModel>().Slots.Count)
+        {
             return;
+        }
+
         var slot = GF.Fsm.GetModel<SaveModel>().Slots[selectionId - 1];
         if (slot.State == SaveSlotState.Unreadable)
+        {
             return;
+        }
+
         m_Owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(slot.SlotNumber, slot.UnitId));
         ChangeState<ProcedureLoadGame>(m_Owner);
     }
@@ -132,9 +158,15 @@ public sealed class ProcedureTitle : ProcedureBase
     private void OnSettingsRequested(int formSerialId)
     {
         if (formSerialId != m_FormSerialId)
+        {
             return;
+        }
+
         if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
+        {
             return;
+        }
+
         m_SettingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
         SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
     }
@@ -147,9 +179,15 @@ public sealed class ProcedureTitle : ProcedureBase
     private void OnFormOpened(object sender, GameEventArgs args)
     {
         if (args is OpenUIFormSuccessEventArgs opened)
+        {
             SetFormCallbacks(opened.UIForm, bind: true);
+        }
+
         if (args is not OpenUIFormSuccessEventArgs success || success.UIForm.SerialId != m_FormSerialId)
+        {
             return;
+        }
+
         GodotGameFramework.HotUpdate.HotUpdateSafetyGuard.MarkStartupSuccess();
         (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
     }
@@ -162,7 +200,9 @@ public sealed class ProcedureTitle : ProcedureBase
     private void OnFormFailed(object sender, GameEventArgs args)
     {
         if (args is OpenUIFormFailureEventArgs failure && failure.SerialId == m_FormSerialId)
+        {
             Log.Error("[ProcedureTitle] 界面加载失败：{0}", failure.ErrorMessage);
+        }
     }
 
     /// <summary>
@@ -173,21 +213,33 @@ public sealed class ProcedureTitle : ProcedureBase
     private void SetFormCallbacks(IUIForm form, bool bind)
     {
         if (bind && (form == null || !GF.UI.IsValidUIForm(form)))
+        {
             return;
+        }
+
         switch (form)
         {
             case StartForm startForm when startForm.SerialId == m_FormSerialId:
                 startForm.StartGameRequested -= OnStartGameRequested;
                 if (bind)
+                {
                     startForm.StartGameRequested += OnStartGameRequested;
+                }
+
                 startForm.SettingsRequested -= OnSettingsRequested;
                 if (bind)
+                {
                     startForm.SettingsRequested += OnSettingsRequested;
+                }
+
                 break;
             case SaveForm saveForm when saveForm.SerialId == m_SaveSerialId:
                 saveForm.SaveSlotSelected -= OnSaveSlotSelected;
                 if (bind)
+                {
                     saveForm.SaveSlotSelected += OnSaveSlotSelected;
+                }
+
                 break;
         }
     }

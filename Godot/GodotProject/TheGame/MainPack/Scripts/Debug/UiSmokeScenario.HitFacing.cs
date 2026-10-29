@@ -16,6 +16,8 @@ using GameLogic.Entity;
 using GameLogic.Heroes;
 using GameLogic.Enemies;
 using GameLogic.Profile;
+using GameLogic.Event.Combat;
+using GameConfig.Entity;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
@@ -25,6 +27,87 @@ using GodotGameFramework.Entity;
 /// </summary>
 public sealed partial class UiSmokeScenario
 {
+    /// <summary>
+    /// 用真实致死伤害检查三类地面小怪的抛飞、空中死亡循环、落地回收与一次性收益。
+    /// </summary>
+    /// <returns>六组60/120Hz物理验证完成的任务。</returns>
+    private async Task CheckEnemyDeathMotionAsync()
+    {
+        int originalTicks = Engine.PhysicsTicksPerSecond;
+        try
+        {
+            foreach (int ticks in new[] { 60, 120 })
+            {
+                foreach (EntityId id in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey, EntityId.Gorilla })
+                {
+                    Engine.PhysicsTicksPerSecond = ticks;
+                    m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
+                        new EnemySpawn(new Vector2(650, 200)));
+                    SmokeInspection.FreezeAi(m_Monster);
+                    await WaitUntilAsync(() => m_Monster.OnFloor, "死亡运动目标没有落地");
+                    float floorY = m_Monster.GlobalPosition.Y;
+                    var parameters = ((GameLogic.Enemies.Body.IEnemyBody)m_Monster).Params;
+                    Check(parameters.DeathAirLoopTime.HasValue && Math.Abs(parameters.DeathAirLoopTime.Value - 8d / 24) < .001,
+                        $"{id} 缺少第9源帧死亡循环起点");
+                    int entityId = m_Monster.Id, deaths = 0;
+                    void OnDeath(object sender, GameFramework.Event.GameEventArgs args)
+                    {
+                        if (args is EnemyDiedEventArgs death && death.EntityId == entityId)
+                        {
+                            deaths++;
+                        }
+                    }
+                    GF.Event.Subscribe(EnemyDiedEventArgs.EventId, OnDeath);
+                    try
+                    {
+                        var data = AttackData.Create(0, default, 100000, DamageKind.Real, new Vector2(240, -720), 1, 0);
+                        try
+                        {
+                            Check(!m_Monster.ReceiveHit(data, 0).IsMiss && m_Monster.Dead, $"{id} 没有进入致死流程");
+                        }
+                        finally
+                        {
+                            GameFramework.ReferencePool.Release(data);
+                        }
+                        double previousTime = 0;
+                        float rise = 0, speed = 0;
+                        int loops = 0, frames = 0;
+                        while (m_Monster.IsShown && frames++ < ticks * 4)
+                        {
+                            double time = m_Monster.AnimPlayer.CurrentAnimationPosition;
+                            if (time + .02 < previousTime)
+                            {
+                                loops++;
+                            }
+
+                            previousTime = time;
+                            rise = Math.Max(rise, floorY - m_Monster.GlobalPosition.Y);
+                            speed = Math.Max(speed, Math.Abs(m_Monster.Velocity.X));
+                            await WaitFramesAsync(1);
+                        }
+                        Check(!m_Monster.IsShown && loops > 0 && rise > 250 && speed > 100 && deaths == 1,
+                            $"{id}/{ticks} 死亡运动或循环错误：shown={m_Monster.IsShown}, loops={loops}, rise={rise}, speed={speed}, deaths={deaths}");
+                        GD.Print($"SMOKE-ENEMY-DEATH: {id}/{ticks}Hz, loops={loops}, rise={rise:0.00}, lethal speed={speed:0.00}, death events={deaths}");
+                    }
+                    finally
+                    {
+                        GF.Event.Unsubscribe(EnemyDiedEventArgs.EventId, OnDeath);
+                        ReleaseTestEntity(m_Monster);
+                        m_Monster = null;
+                    }
+                }
+            }
+
+            GD.Print("SMOKE-ENEMY-DEATH PASS: six lethal launch/air-loop/landing recycle cases; one death reward event each.");
+        }
+        finally
+        {
+            Engine.PhysicsTicksPerSecond = originalTicks;
+            ReleaseTestEntity(m_Monster);
+            m_Monster = null;
+        }
+    }
+
     /// <summary>
     /// 核对七段悟空技能的实际击退入口，并采样三种怪物的升龙与突刺轨迹。
     /// </summary>
@@ -46,8 +129,9 @@ public sealed partial class UiSmokeScenario
         };
         foreach (int id in new[] { 1, 2, 3 })
         {
-            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(tables.TbMonsterConfig.Get(id).EntityId,
-                new EnemySpawn(new Vector2(600, 300), 100));
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(tables.TbEnemyConfig.Get(id).EntityId,
+                new EnemySpawn(new Vector2(600, 300)));
+            SmokeInspection.StrengthenTrainingTarget(m_Monster);
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             foreach (var (hit, expected) in stages)
@@ -64,8 +148,9 @@ public sealed partial class UiSmokeScenario
             // 每条轨迹从新取池开始，避免上一招硬直、落地或追击意图影响下一条。
             foreach (var hit in new[] { SkillHitId.RisingDragon, SkillHitId.FlameThrust })
             {
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(tables.TbMonsterConfig.Get(id).EntityId,
-                    new EnemySpawn(new Vector2(600, 300), 100));
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(tables.TbEnemyConfig.Get(id).EntityId,
+                    new EnemySpawn(new Vector2(600, 300)));
+                SmokeInspection.StrengthenTrainingTarget(m_Monster);
                 SmokeInspection.FreezeAi(m_Monster);
                 m_Monster.SetPhysicsProcess(true);
                 await WaitUntilAsync(() => m_Monster.OnFloor, "击退采样目标没有落地");
@@ -95,13 +180,19 @@ public sealed partial class UiSmokeScenario
                     });
                 }
                 var parameters = ((GameLogic.Enemies.Body.IEnemyBody)m_Monster).Params;
-                Check(parameters.Gravity == 864 && Math.Abs(parameters.HurtTime - .5) < .001,
-                    "怪物重力或受击时长仍为旧项目值");
+                // 第13帧一进入就返回wait，实际硬直是12/24秒，不能把终止帧再停留一帧。
+                Check(parameters.Gravity == 864 && Math.Abs(parameters.HurtTime - .5d) < .001,
+                    $"怪物重力或受击时长与官方源不符：{id}, gravity={parameters.Gravity}, hurt={parameters.HurtTime}");
                 if (hit == SkillHitId.RisingDragon)
+                {
                     Check(maximumRise > 170 && maximumRise < 175, $"升龙挑起高度异常：{id}/{maximumRise}");
+                }
                 else
+                {
                     Check(Math.Abs(m_Monster.Velocity.X) <= 72.1f && maximumXSpeed < 841,
-                        "突刺击退没有衰减或被怪物体型放大");
+                                        "突刺击退没有衰减或被怪物体型放大");
+                }
+
                 traces.Add(new { Monster = id, Skill = hit.ToString(), MaximumRise = maximumRise, Samples = samples });
                 ReleaseTestEntity(m_Monster);
                 m_Monster = null;
@@ -127,7 +218,7 @@ public sealed partial class UiSmokeScenario
         foreach (int id in new[] { 1, 2, 3 })
         {
             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(
-                ConfigSystem.Instance.Tables.TbMonsterConfig.Get(id).EntityId, new EnemySpawn(new Vector2(200, 100)));
+                ConfigSystem.Instance.Tables.TbEnemyConfig.Get(id).EntityId, new EnemySpawn(new Vector2(200, 100)));
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             CheckActor(m_Monster);
@@ -139,6 +230,7 @@ public sealed partial class UiSmokeScenario
         void CheckActor(AbstractActorEntity actor)
         {
             foreach (int facing in new[] { -1, 1 })
+            {
                 foreach (int direction in new[] { -1, 1 })
                 {
                     actor.SetFacing(facing);
@@ -155,6 +247,7 @@ public sealed partial class UiSmokeScenario
                     player.Seek(1d / 24, true);
                     Check(actor.Facing == facing, "受击动画修改了角色朝向");
                 }
+            }
         }
     }
 }

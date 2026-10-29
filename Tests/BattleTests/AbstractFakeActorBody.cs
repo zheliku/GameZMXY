@@ -22,6 +22,10 @@ namespace GameLogic.Battle.Tests
         /// </summary>
         public string LastAnim = "";
         /// <summary>
+        /// 最近一次重播使用的原生起点标记。
+        /// </summary>
+        public string LastStartMarker;
+        /// <summary>
         /// 按播放顺序记录的动画名称。
         /// </summary>
         public readonly List<string> Anims = new();
@@ -37,18 +41,22 @@ namespace GameLogic.Battle.Tests
         /// 死亡回调次数。
         /// </summary>
         public int DiedCount;
+
         /// <summary>
         /// 当前水平和垂直速度。
         /// </summary>
         public Vector2 Velocity { get; set; }
+
         /// <summary>
         /// 测试可控的公共落地事实。
         /// </summary>
         public bool OnFloor { get; set; } = true;
+
         /// <summary>
         /// 宿主是否已死亡。
         /// </summary>
         public bool Dead { get; set; }
+
         /// <summary>
         /// 测试使用的重力常量。
         /// </summary>
@@ -59,10 +67,12 @@ namespace GameLogic.Battle.Tests
                 return 980f;
             }
         }
+
         /// <summary>
         /// 当前攻击段索引，未攻击时为 -1。
         /// </summary>
         public int AttackSegment { get; set; } = -1;
+
         /// <summary>
         /// 是否存在待处理受击。
         /// </summary>
@@ -74,15 +84,21 @@ namespace GameLogic.Battle.Tests
             }
         }
 
+        /// <summary>
+        /// 取出并清空测试身体本帧待消费的击退。
+        /// </summary>
+        /// <returns>本次待消费的击退速度；无待处理受击时为零向量。</returns>
         public Vector2 TakePendingHurt()
         {
             Vector2 v = PendingHurt ?? Vector2.Zero;
             PendingHurt = null;
             return v;
         }
+
         /// <summary>
         /// 按方向输入更新朝向。
         /// </summary>
+        /// <param name="dir">方向符号：-1向左、0保持或停止、1向右。</param>
         public void SetFacing(int dir)
         {
             if (dir != 0)
@@ -90,9 +106,11 @@ namespace GameLogic.Battle.Tests
                 Facing = dir > 0 ? 1 : -1;
             }
         }
+
         /// <summary>
         /// 仅在动画改变时播放动画。
         /// </summary>
+        /// <param name="anim">已登记的动画名称；同名请求不重播。</param>
         public void PlayAnim(string anim)
         {
             if (anim != LastAnim)
@@ -100,22 +118,29 @@ namespace GameLogic.Battle.Tests
                 RestartAnim(anim);
             }
         }
+
         /// <summary>
         /// 强制重新播放指定动画。
         /// </summary>
-        public void RestartAnim(string anim)
+        /// <param name="anim">动作名称。</param>
+        /// <param name="startMarker">可选原生起点标记。</param>
+        public void RestartAnim(string anim, string startMarker = null)
         {
             LastAnim = anim;
+            LastStartMarker = startMarker;
             Anims.Add(anim);
         }
+
         /// <summary>
         /// 记录攻击段开始。
         /// </summary>
+        /// <param name="index">当前宿主攻击参数中的招式编号。</param>
         public void BeginAttack(int index)
         {
             BeginCount++;
             AttackSegment = index;
         }
+
         /// <summary>
         /// 记录攻击段结束并清除当前段。
         /// </summary>
@@ -124,6 +149,7 @@ namespace GameLogic.Battle.Tests
             EndCount++;
             AttackSegment = -1;
         }
+
         /// <summary>
         /// 记录一次死亡回调。
         /// </summary>

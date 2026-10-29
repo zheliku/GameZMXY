@@ -87,22 +87,22 @@ public partial class Tables
             m_TbHeroLevelConfig.ResolveRef(this);
         }
     }
-    private Monster.TbMonsterConfig m_TbMonsterConfig;
-    public Monster.TbMonsterConfig TbMonsterConfig
+    private Enemy.TbEnemyConfig m_TbEnemyConfig;
+    public Enemy.TbEnemyConfig TbEnemyConfig
     {
         get
         {
-            if (m_TbMonsterConfig == null)
+            if (m_TbEnemyConfig == null)
             {
-                m_TbMonsterConfig = new Monster.TbMonsterConfig(defaultLoader("monster_tbmonsterconfig"));
-                m_TbMonsterConfig.ResolveRef(this);
+                m_TbEnemyConfig = new Enemy.TbEnemyConfig(defaultLoader("enemy_tbenemyconfig"));
+                m_TbEnemyConfig.ResolveRef(this);
             }
-            return m_TbMonsterConfig;
+            return m_TbEnemyConfig;
         }
         set
         {
-            m_TbMonsterConfig = value;
-            m_TbMonsterConfig.ResolveRef(this);
+            m_TbEnemyConfig = value;
+            m_TbEnemyConfig.ResolveRef(this);
         }
     }
     private Battle.TbAttackConfig m_TbAttackConfig;

@@ -44,7 +44,9 @@ def main():
     failures = []
     path_count = 0
     for source in GAME.rglob("*"):
-        if source.suffix not in {".tscn", ".tres", ".cs"} or "GameProto" in source.parts:
+        if source.suffix not in {".tscn", ".tres", ".cs"}:
+            continue
+        if "GameProto" in source.parts and source.name != "ResourcesCollectionConstant.cs":
             continue
         content = source.read_text(encoding="utf-8-sig")
         # Scene properties and C# constants may contain paths without an ext_resource declaration.

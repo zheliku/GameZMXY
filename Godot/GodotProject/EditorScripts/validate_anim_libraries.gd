@@ -7,8 +7,8 @@ extends SceneTree
 ##      RESET 不含方法键；声音和动作时点归原生动画，分支及安全清理归 GGF 状态；
 ##   3. 身体状态要计时的动画（attack_*、hurt、death）不得循环
 ##      ——时长 = 长度是隐含契约，循环动画语义不符；
-##   4. 值轨道完备：库里**任一**动画写过的值轨道路径，**每个**动画（含 RESET）都必须带
-##      ——AnimationPlayer 直驱不回卷轨道，缺轨的属性会残留上一个动画写入的值。
+##   4. 普通动作共享的值轨道必须完备，避免切换时残留；死亡专用轨道由 death/RESET 管理。
+##      死亡为终态，不能从死亡直切普通动作；池复用的可见性另由 OnShow 和真实生命周期回归检查。
 ##
 ## 运行：S:\Godot4\Godot4CSharp_console.exe --headless --path Godot/GodotProject --script res://EditorScripts/validate_anim_libraries.gd
 
@@ -123,11 +123,14 @@ func _validate(ch: Dictionary, lib: AnimationLibrary) -> bool:
 
 	# 3-5. 逐动画检查
 	var value_paths := {}
+	var ordinary_paths := {}
 	for anim in anims:
 		var a := lib.get_animation(String(anim))
 		for t in a.get_track_count():
 			if a.track_get_type(t) == Animation.TYPE_VALUE:
 				value_paths[String(a.track_get_path(t))] = true
+				if String(anim) not in ["RESET", "death"]:
+					ordinary_paths[String(a.track_get_path(t))] = true
 
 	for anim in anims:
 		var a := lib.get_animation(String(anim))
@@ -145,6 +148,8 @@ func _validate(ch: Dictionary, lib: AnimationLibrary) -> bool:
 			if a.track_get_type(t) == Animation.TYPE_VALUE:
 				own[String(a.track_get_path(t))] = true
 		for path in value_paths:
+			if anim_name not in ["RESET", "death"] and not ordinary_paths.has(path):
+				continue
 			if not own.has(path):
 				push_error("%s/%s 缺少值轨道 %s（轨道完备性：直驱播放不回卷，会残留上一个动画的值）"
 					% [String(ch.name), anim_name, path])

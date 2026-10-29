@@ -144,7 +144,7 @@ tracks/10/path = NodePath(".")
 tracks/10/interp = 1
 tracks/10/loop_wrap = true
 tracks/10/keys = {
-"times": PackedFloat32Array(0, 0.083333336, 0.375, 0.45833334),
+"times": PackedFloat32Array(0, 0.083333336, 0.375, 0.5),
 "transitions": PackedFloat32Array(1, 1, 1, 1),
 "values": [{
 "args": [9],
@@ -517,8 +517,8 @@ tracks/10/path = NodePath(".")
 tracks/10/interp = 1
 tracks/10/loop_wrap = true
 tracks/10/keys = {
-"times": PackedFloat32Array(0, 0.083333336, 0.16666667, 0.25, 0.375),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.083333336, 0.16666667, 0.25, 0.33333334, 0.41666666),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
 "values": [{
 "args": [10],
 "method": &"PlaySoundAnimEvent"
@@ -533,7 +533,24 @@ tracks/10/keys = {
 "method": &"BeginFlameStormHitAnimEvent"
 }, {
 "args": [],
+"method": &"BeginFlameStormHitAnimEvent"
+}, {
+"args": [],
 "method": &"CompleteSkillAnimationAnimEvent"
+}]
+}
+tracks/11/type = "method"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath(".")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"BeginFlameStormHitAnimEvent"
 }]
 }
 
@@ -682,7 +699,7 @@ tracks/10/path = NodePath(".")
 tracks/10/interp = 1
 tracks/10/loop_wrap = true
 tracks/10/keys = {
-"times": PackedFloat32Array(0, 0.16666667, 0.29166666, 0.41666666, 0.5833333),
+"times": PackedFloat32Array(0, 0.16666667, 0.29166666, 0.41666666, 0.625),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1),
 "values": [{
 "args": [8],
@@ -870,7 +887,7 @@ tracks/10/path = NodePath(".")
 tracks/10/interp = 1
 tracks/10/loop_wrap = true
 tracks/10/keys = {
-"times": PackedFloat32Array(0, 0.5833333),
+"times": PackedFloat32Array(0, 0.625),
 "transitions": PackedFloat32Array(1, 1),
 "values": [{
 "args": [7],

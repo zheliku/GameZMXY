@@ -107,10 +107,16 @@ func _run() -> void:
         if not body_textures.has(texture): body_textures.append(texture)
     for texture in (appearance.get("m_WeaponTextures") as Dictionary).values():
         if not weapon_textures.has(texture): weapon_textures.append(texture)
+    # Weapon/energy geometry is independent of armor; full motion/GUI audits cover all body pairings.
+    # Keep the default full-combination audit available for art changes that affect those pairings.
+    if args.has("--weapon-coverage-only"):
+        body_textures.resize(1)
     for armor in body_textures.size():
         for armed in weapon_textures.size():
             body.texture = body_textures[armor]
             weapon.texture = weapon_textures[armed]
+            body.vframes = body.texture.get_height() / 200
+            weapon.vframes = weapon.texture.get_height() / 200
             # Skills append after the original 87 poses on the unchanged grid.
             var atlas_size := Vector2(body.hframes * 200, body.vframes * 200)
             _check(body.hframes == int(manifest.columns) and body.vframes >= int(manifest.rows), "Existing pose grid changed")

@@ -11,6 +11,7 @@ namespace GameLogic.Enemies.AI
     /// 敌人 AI 共用规则：处理攻击范围、加权选招与独立冷却；小怪和首领状态按需调用。
     /// 普攻站位由判定盒决定；优先招可使用远程区间与逐招冷却。
     /// </summary>
+    /// <param name="architecture">借用的所属作用域；模型和服务由作用域持有。</param>
     public sealed class EnemyAiSystem(IArchitecture architecture) : AbstractSystem(architecture)
     {
         /// <summary>
@@ -294,8 +295,13 @@ namespace GameLogic.Enemies.AI
         private int Find(EnemyBodyParams parameters, int index)
         {
             for (int i = 0; i < parameters.Attacks.Count; i++)
+            {
                 if (parameters.Attacks[i].Index == index)
+                {
                     return i;
+                }
+            }
+
             return -1;
         }
 

@@ -36,7 +36,9 @@ namespace GameLogic.Enemies
         protected void ReleaseSkillEffect(SkillEffectNode effect)
         {
             if (m_SkillEffects.Remove(effect))
+            {
                 NodePool.Instance.Release(effect);
+            }
         }
 
         /// <summary>
@@ -77,7 +79,7 @@ namespace GameLogic.Enemies
             FaceAttackTarget(index);
             this.GetSystem<EnemyAiSystem>().MarkUsed(AiData, BodyParams, index, GD.Randf);
             AttackSegment = index;
-            PrepareAttack(OwnAttacks[index], m_AttackMultiplier);
+            PrepareAttack(OwnAttacks[index]);
             Log.Debug("[Enemy] {0} 出招 段{1}", Id, index + 1);
         }
 
@@ -105,7 +107,9 @@ namespace GameLogic.Enemies
         protected void NewAttackAnimEvent()
         {
             if (AttackSegment >= 0)
-                PrepareAttack(OwnAttacks[AttackSegment], m_AttackMultiplier);
+            {
+                PrepareAttack(OwnAttacks[AttackSegment]);
+            }
         }
 
         /// <summary>
@@ -126,10 +130,15 @@ namespace GameLogic.Enemies
             foreach (Node child in HitBox.GetChildren())
             {
                 if (child is not CollisionShape2D shape)
+                {
                     continue;
+                }
+
                 Rect2 sample = ReadShapeReach(anim, shape);
                 if (sample.HasArea())
+                {
                     reach = reach.HasArea() ? reach.Merge(sample) : sample;
+                }
             }
             return reach;
         }
@@ -155,7 +164,10 @@ namespace GameLogic.Enemies
             {
                 Shape2D s = ReadAnimationValueAtTime(anim, shape, t)?.As<Shape2D>() ?? node.Shape;
                 if (s == null)
+                {
                     return default;
+                }
+
                 Vector2 p = (ReadAnimationValueAtTime(anim, position, t)?.AsVector2() ?? node.Position) + offset;
                 float angle = ReadAnimationValueAtTime(anim, rotation, t)?.AsSingle() ?? node.Rotation;
                 return new Transform2D(angle, p) * s.GetRect();
@@ -166,7 +178,9 @@ namespace GameLogic.Enemies
             void IncludeReachBounds(Rect2 sample)
             {
                 if (sample.HasArea())
+                {
                     reach = reach.HasArea() ? reach.Merge(sample) : sample;
+                }
             }
             float length = (float)anim.Length;
             int keys = disabled < 0 ? 0 : anim.TrackGetKeyCount(disabled);

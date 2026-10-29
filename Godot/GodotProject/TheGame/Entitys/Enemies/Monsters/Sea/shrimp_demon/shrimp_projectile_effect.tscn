@@ -1,0 +1,39 @@
+[gd_scene format=3]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/Enemies/sea/shrimp_projectile.png" id="texture"]
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Sea/shrimp_demon/ShrimpProjectileEffectNode.cs" id="script"]
+[sub_resource type="Animation" id="play"]
+length = 1.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/path = NodePath("HitBox/CollisionShape2D:disabled")
+tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [false]}
+[sub_resource type="AnimationLibrary" id="library"]
+_data = {&"play": SubResource("play")}
+[sub_resource type="RectangleShape2D" id="shape"]
+size = Vector2(18.450000, 12.300000)
+[node name="ShrimpProjectileEffect" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape", "m_CancelArea")]
+script = ExtResource("script")
+m_Player = NodePath("AnimationPlayer")
+m_HitBox = NodePath("HitBox")
+m_Shape = NodePath("HitBox/CollisionShape2D")
+m_CancelArea = NodePath("CancelArea")
+[node name="Sprite" type="Sprite2D" parent="."]
+texture = ExtResource("texture")
+offset = Vector2(-0.500000, -0.500000)
+[node name="HitBox" type="Area2D" parent="."]
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox"]
+position = Vector2(0.025000, 0.000000)
+shape = SubResource("shape")
+disabled = true
+[node name="CancelArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 16
+monitorable = false
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CancelArea"]
+position = Vector2(0.025000, 0.000000)
+shape = SubResource("shape")
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries/ = SubResource("library")

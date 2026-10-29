@@ -18,6 +18,19 @@ EQUIPMENT = {
     'earth_fiend_scepter': (112, 111),
     'heirloom_bracelet': (42, 19), 'heirloom_sword': (56, 30), 'heirloom_clothes': (6, 5),
     'heavenly_fiend_necklace': (43, 20),
+    'heavenly_fiend_moon_halberd': (126, 125),
+    'heavenly_fiend_robe': (124, 123),
+    'excellent_pilgrim_clothes': (50, 27), 'excellent_pilgrim_staff': (58, 32),
+    'excellent_cassock': (46, 23), 'excellent_pine_staff': (53, 62),
+    'blood_sea_shell': (38, 37),
+    'blood_sea_demon_armor': (90, 89), 'blood_sea_evil_staff': (88, 87),
+    'fine_pilgrim_clothes': (49, 26), 'fine_pilgrim_staff': (57, 31),
+    'fine_cassock': (45, 22), 'fine_pine_staff': (39, 34),
+    'diamond_snare': (12, 10), 'east_sea_banner': (11, 9),
+    'ruyi_golden_staff': (8, 7), 'black_tortoise_armor': (4, 3),
+    'kirin_robe': (2, 1), 'white_tiger_staff': (65, 64),
+    'azure_dragon_blade': (61, 33), 'seven_star_guard': (41, 18),
+    'vermilion_bird_ring': (40, 17), 'nine_ring_monk_staff': (36, 35),
 }
 
 

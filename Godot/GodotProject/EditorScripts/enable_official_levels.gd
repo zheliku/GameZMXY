@@ -15,7 +15,6 @@ func _build() -> void:
 		var button: TextureButton = form.get_node("Location%d" % entry[0])
 		button.name = entry[1]
 		button.disabled = false
-		button.tooltip_text = entry[3]
 		button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		button.texture_hover = null
 		button.texture_pressed = null

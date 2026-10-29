@@ -24,7 +24,7 @@ using Newtonsoft.Json;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
-/// 按真实输入记录火魔斩完整轨迹；覆盖无目标、命中、左右朝向、复用与60/120Hz。
+/// 按真实输入记录火魔斩完整轨迹；覆盖源原点边界、命中、左右朝向、复用与60/120Hz。
 /// </summary>
 public sealed partial class UiSmokeScenario
 {
@@ -54,8 +54,17 @@ public sealed partial class UiSmokeScenario
             skills.Learn(SkillId.FireDemonSlash);
             hero.SetPhysicsProcess(true);
             foreach (int ticks in new[] { 60, 120 })
+            {
                 foreach (int direction in new[] { 1, -1 })
-                    foreach (bool target in new[] { false, true })
+                {
+                    foreach (var targetCase in new[]
+                                    {
+                        (Name: "none", OffsetY: (float?)null, Combo: false, Enemy: EntityId.Gorilla),
+                        (Name: "center", OffsetY: (float?)-190, Combo: true, Enemy: EntityId.Gorilla),
+                        (Name: "lower_edge", OffsetY: (float?)-43, Combo: false, Enemy: EntityId.Gorilla),
+                        (Name: "upper_outside", OffsetY: (float?)-329, Combo: true, Enemy: EntityId.Gorilla),
+                        (Name: "monkey_lower_edge", OffsetY: (float?)-30, Combo: false, Enemy: EntityId.HuaguoshanMonkey)
+                    })
                     {
                         Engine.PhysicsTicksPerSecond = ticks;
                         hero.GlobalPosition = new Vector2(direction > 0 ? 400 : 750, 280);
@@ -67,10 +76,11 @@ public sealed partial class UiSmokeScenario
                         Check(hero.OnFloor, "火魔轨迹夹具未从稳定地面起手");
                         hero.SetFacing(direction);
                         float floorY = hero.GlobalPosition.Y;
-                        if (target)
+                        if (targetCase.OffsetY.HasValue)
                         {
-                            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
-                                new EnemySpawn(hero.GlobalPosition + new Vector2(direction * 80, -190), 100));
+                            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(targetCase.Enemy,
+                                new EnemySpawn(hero.GlobalPosition + new Vector2(direction * 80, targetCase.OffsetY.Value)));
+                            SmokeInspection.StrengthenTrainingTarget(m_Monster);
                             SmokeInspection.FreezeAi(m_Monster);
                             m_Monster.SetPhysicsProcess(false);
                         }
@@ -79,10 +89,16 @@ public sealed partial class UiSmokeScenario
                         int mana = vitals.Mp.Value;
                         var rows = new List<object>();
                         var effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
-                        string label = $"{ticks}_{direction}_{target}";
+                        string label = $"{ticks}_{direction}_{targetCase.Name}";
                         double start = hero.ActionData.Time, previous = -1, ended = double.PositiveInfinity, captureAt = 0;
                         bool descended = false, movedDown = false, contacted = false, roseAgain = false, combo = false, landing = false;
                         bool invalidEffect = false; // 对照原版九连/落地保留角色镜像、下冲反向和目标原点，不能只验证招式结束。
+                        var invalidReasons = new HashSet<string>(StringComparer.Ordinal);
+                        void MarkInvalid(string reason)
+                        {
+                            invalidEffect = true;
+                            invalidReasons.Add(reason);
+                        }
                         int frame = 0;
                         Input.ActionPress(InputSystem.Skill3);
                         await WaitUntilAsync(() => vitals.ActiveSkillId == SkillId.FireDemonSlash, "实际O输入未释放火魔斩");
@@ -95,7 +111,10 @@ public sealed partial class UiSmokeScenario
                         {
                             double time = hero.ActionData.Time - start;
                             if (hero.ActionData.Time == previous)
+                            {
                                 return;
+                            }
+
                             previous = hero.ActionData.Time;
                             bool active = vitals.ActiveSkillId == SkillId.FireDemonSlash;
                             double position = active ? hero.AnimPlayer.CurrentAnimationPosition : -1;
@@ -109,21 +128,52 @@ public sealed partial class UiSmokeScenario
                             {
                                 int hit = SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(effect, "m_Hit")?.Id ?? 0;
                                 if (hit == (int)SkillHitId.FireDemonCombo || hit == (int)SkillHitId.FireDemonLanding)
-                                    invalidEffect |= Math.Sign(effect.Scale.X) != -direction || !Near(Math.Abs(effect.Scale.X), 1) ||
-                                        !Near(effect.Scale.Y, 1);
+                                {
+                                    if (Math.Sign(effect.Scale.X) != -direction || !Near(Math.Abs(effect.Scale.X), 1) ||
+                                        !Near(effect.Scale.Y, 1))
+                                    {
+                                        MarkInvalid($"scale/{hit}");
+                                    }
+                                }
                                 if (hit == (int)SkillHitId.FireDemonCombo)
-                                    invalidEffect |= m_Monster == null || effect.GlobalPosition.DistanceTo(m_Monster.GlobalPosition) > .1f;
+                                {
+                                    if (m_Monster == null || effect.GlobalPosition.DistanceTo(m_Monster.GlobalPosition) > .1f)
+                                    {
+                                        MarkInvalid("combo_target");
+                                    }
+                                }
                                 if (hit == (int)SkillHitId.FireDemonLanding)
                                 {
-                                    invalidEffect |= !effect.GetNode<Node2D>("Visual").Scale.IsEqualApprox(new Vector2(1.4f, 2));
-                                    invalidEffect |= effect.GlobalPosition.DistanceTo(hero.GlobalPosition) > .1f;
+                                    if (!effect.GetNode<Node2D>("Origin/Visual").Scale.IsEqualApprox(new Vector2(1.4f, 2)))
+                                    {
+                                        MarkInvalid("landing_scale");
+                                    }
+
+                                    if (!effect.GetNode<Node2D>("Origin").Position.IsZeroApprox())
+                                    {
+                                        MarkInvalid("landing_source_origin");
+                                    }
+                                    // 效果固定在创建点；之后的 MoveAndSlide 可在两侧 SafeMargin 内恢复胶囊接触。
+                                    float anchorGap = effect.GlobalPosition.DistanceTo(((ISkillActor)hero).SkillPosition);
+                                    if (anchorGap > hero.SafeMargin * 2 + .001f)
+                                    {
+                                        MarkInvalid($"landing_anchor/{anchorGap:0.000}/{effect.GlobalPosition}/{hero.GlobalPosition}");
+                                    }
                                 }
                                 if (hit == (int)SkillHitId.FireDemonDescent)
-                                    invalidEffect |= Math.Sign(effect.Scale.X) != direction;
+                                {
+                                    if (Math.Sign(effect.Scale.X) != direction)
+                                    {
+                                        MarkInvalid("descent_scale");
+                                    }
+                                }
                             }
                             if (time > .15 && prelude.Visible &&
                                 (!previousPreludeVisible || prelude.Frame < previousPreludeFrame))
+                            {
                                 preludeRestarts++;
+                            }
+
                             previousPreludeFrame = prelude.Frame;
                             previousPreludeVisible = prelude.Visible;
                             rows.Add(new
@@ -131,6 +181,10 @@ public sealed partial class UiSmokeScenario
                                 time,
                                 x = hero.GlobalPosition.X,
                                 y = hero.GlobalPosition.Y,
+                                actionX = hero.GlobalPosition.X,
+                                actionY = hero.GlobalPosition.Y,
+                                targetX = m_Monster?.GlobalPosition.X,
+                                targetY = m_Monster?.GlobalPosition.Y,
                                 vx = hero.Velocity.X,
                                 vy = hero.Velocity.Y,
                                 active,
@@ -141,7 +195,9 @@ public sealed partial class UiSmokeScenario
                                 preludeVisible = prelude.Visible
                             });
                             if (!active)
+                            {
                                 ended = Math.Min(ended, time);
+                            }
                         }
                         m_Driver.GetTree().PhysicsFrame += SamplePhysics;
                         try
@@ -158,7 +214,9 @@ public sealed partial class UiSmokeScenario
                                     captureAt = time + .1;
                                 }
                                 if (time > ended + .75 && hero.OnFloor)
+                                {
                                     break;
+                                }
                             }
                         }
                         finally
@@ -166,19 +224,35 @@ public sealed partial class UiSmokeScenario
                             m_Driver.GetTree().PhysicsFrame -= SamplePhysics;
                         }
                         File.WriteAllText(Path.Combine(folder, label + ".json"), JsonConvert.SerializeObject(rows, Formatting.Indented));
-                        if (!descended || !movedDown || roseAgain || invalidEffect || preludeRestarts != 0 || vitals.ActiveSkillId != null || !hero.OnFloor || !landing || combo != target ||
-                            vitals.Mp.Value != mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(SkillId.FireDemonSlash).ManaCost ||
-                            target && m_Monster.Hp >= hp)
-                            failures.Add($"{label}: descent={descended}, movedDown={movedDown}, rebound={roseAgain}, invalidEffect={invalidEffect}, preludeRestarts={preludeRestarts}, active={vitals.ActiveSkillId}, floor={hero.OnFloor}, combo={combo}, landing={landing}");
+                        int expectedMana = mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(SkillId.FireDemonSlash).ManaCost;
+                        bool manaMismatch = vitals.Mp.Value != expectedMana;
+                        bool damageMismatch = targetCase.Combo && m_Monster.Hp >= hp;
+                        string effectSummary = string.Join(" | ", effects.Select(effect =>
+                        {
+                            int hit = SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(effect, "m_Hit")?.Id ?? 0;
+                            Vector2 visualScale = effect.GetNodeOrNull<Node2D>("Origin/Visual")?.Scale ?? Vector2.Zero;
+                            return $"hit={hit},pos={effect.GlobalPosition},scale={effect.Scale},visual={visualScale},targetGap={(m_Monster == null ? 0 : effect.GlobalPosition.DistanceTo(m_Monster.GlobalPosition)):0.###},heroGap={effect.GlobalPosition.DistanceTo(((ISkillActor)hero).SkillPosition):0.###}";
+                        }));
+                        if (!descended || !movedDown || roseAgain || invalidEffect || preludeRestarts != 0 || vitals.ActiveSkillId != null || !hero.OnFloor || !landing || combo != targetCase.Combo || manaMismatch || damageMismatch)
+                        {
+                            failures.Add($"{label}: descent={descended}, movedDown={movedDown}, rebound={roseAgain}, invalidEffect={invalidEffect}, reasons={string.Join(',', invalidReasons)}, preludeRestarts={preludeRestarts}, active={vitals.ActiveSkillId}, floor={hero.OnFloor}, combo={combo}/{targetCase.Combo}, landing={landing}, mana={vitals.Mp.Value}/{expectedMana}, hp={m_Monster?.Hp}/{hp}, effects=[{effectSummary}]");
+                        }
+
                         GD.Print($"SMOKE-FIRE-MOTION: {label}, descended={descended}, movedDown={movedDown}, rebound={roseAgain}, preludeRestarts={preludeRestarts}, ended={ended:0.000}, samples={rows.Count}");
                         if (m_Monster != null)
+                        {
                             ReleaseTestEntity(m_Monster);
+                        }
+
                         m_Monster = null;
                         skills.CancelSkill();
                         await WaitFramesAsync(3);
                     }
+                }
+            }
+
             Check(failures.Count == 0, string.Join("; ", failures));
-            GD.Print("SMOKE-FIRE-MOTION PASS: grounded starts, 60/120Hz, both directions, hit/miss, repeated casts, no second rise, one mana cost, landing damage and recovery.");
+            GD.Print("SMOKE-FIRE-MOTION PASS: 20 source-origin/target-boundary casts, 60/120Hz, both directions, no second rise, one mana cost, landing damage and recovery.");
         }
         finally
         {
@@ -199,6 +273,7 @@ public sealed partial class UiSmokeScenario
     /// 以有限物理帧等待火魔夹具落地，避免地面绑定异常时烟测永久等待。
     /// </summary>
     /// <param name="hero">本次火魔测试英雄。</param>
+    /// <returns>英雄落地后完成的任务；超出有限帧预算时验证失败。</returns>
     private async Task WaitForFireHeroLandingAsync(AbstractHeroEntity hero)
     {
         for (int frame = 0; frame < 240 && !hero.OnFloor; frame++)

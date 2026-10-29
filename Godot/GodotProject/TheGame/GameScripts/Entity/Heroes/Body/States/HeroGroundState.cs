@@ -18,7 +18,10 @@ namespace GameLogic.Heroes.Body
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
             if (TryStartSkill(fsm, body))
+            {
                 return;
+            }
+
             HandleJumpKeyCombinations(body);
             if (body.ActionData.AttackRequested)
             {
@@ -43,10 +46,9 @@ namespace GameLogic.Heroes.Body
         }
 
         /// <inheritdoc />
-        public override bool TryGetActionInput(IHeroBody body, out bool attacking, out float normalProgress, out bool airborne)
+        public override bool TryGetActionInput(IHeroBody body, out bool attacking, out bool airborne)
         {
             attacking = false;
-            normalProgress = 0;
             airborne = IsAirborne(body);
             return true;
         }

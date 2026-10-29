@@ -1,0 +1,100 @@
+[gd_scene format=3 uid="uid://bghsdeiq8tqbs"]
+
+[ext_resource type="Script" uid="uid://cs05dfrswx6sg" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_06_garuda_cave/PengDemonKingEntity.cs" id="1_peng"]
+[ext_resource type="SpriteFrames" uid="uid://dukl1vc4iu8gp" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_06_garuda_cave/peng_demon_king_frames.tres" id="2_frames"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="3_hurt"]
+[ext_resource type="AnimationLibrary" uid="uid://or4h7kylt6vy" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_06_garuda_cave/peng_demon_king_library.tres" id="4_library"]
+[ext_resource type="PackedScene" uid="uid://caauui8brtx47" path="res://TheGame/UIs/Battle/monster_health_bar.tscn" id="5_health"]
+[ext_resource type="PackedScene" uid="uid://my32pn7nob8g" path="res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/peng_fire_effect.tscn" id="6_fire"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn" id="7_death"]
+
+[sub_resource type="CapsuleShape2D" id="body_shape"]
+radius = 22.99881
+height = 81.98685
+
+[sub_resource type="RectangleShape2D" id="hurt_shape"]
+size = Vector2(45.99762, 81.98685)
+
+[sub_resource type="RectangleShape2D" id="shape_empty"]
+size = Vector2(1, 1)
+
+[sub_resource type="RectangleShape2D" id="detector_shape"]
+size = Vector2(600, 600)
+
+[sub_resource type="Gradient" id="health_gradient"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="health_texture"]
+gradient = SubResource("health_gradient")
+width = 50
+height = 5
+
+[node name="Peng_demon_kingEntity" type="CharacterBody2D" unique_id=918354222 node_paths=PackedStringArray("m_Detector", "m_HealthBar", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+collision_layer = 4
+collision_mask = 9
+floor_constant_speed = true
+floor_max_angle = 0.87266463
+floor_snap_length = 12.0
+script = ExtResource("1_peng")
+m_FireScene = ExtResource("6_fire")
+m_DeathScene = ExtResource("7_death")
+m_Detector = NodePath("m_Detector")
+m_EnemyEntityId = 9
+m_HealthBar = NodePath("m_HealthBar")
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AttackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3", "attack_4")
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
+
+[node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=348587508]
+sprite_frames = ExtResource("2_frames")
+animation = &"idle"
+offset = Vector2(-30.5, -9.5)
+
+[node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=140483437]
+position = Vector2(1, 2)
+shape = SubResource("body_shape")
+
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=1158780124 node_paths=PackedStringArray("m_Owner")]
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("3_hurt")
+m_Owner = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=274992584]
+position = Vector2(1, 2)
+shape = SubResource("hurt_shape")
+
+[node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=377076823]
+
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=1134894772]
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=588773507]
+shape = SubResource("shape_empty")
+disabled = true
+
+[node name="m_Detector" type="Area2D" parent="." unique_id=1016231501]
+collision_layer = 4096
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=876067950]
+position = Vector2(0, -21)
+shape = SubResource("detector_shape")
+
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=1959617712]
+callback_mode_method = 1
+libraries/ = ExtResource("4_library")
+
+[node name="m_HealthBar" parent="." unique_id=708167078 instance=ExtResource("5_health")]
+offset_left = -24.0
+offset_top = -71.0
+offset_right = 26.0
+offset_bottom = -66.0
+texture_progress = SubResource("health_texture")

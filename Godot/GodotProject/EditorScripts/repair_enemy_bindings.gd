@@ -1,5 +1,5 @@
 extends SceneTree
-## Preserve serialized entity identities while renaming the shared enemy export.
+## Historical one-time migration: read the former export name, then save the new binding.
 
 func _initialize() -> void:
 	assert(Engine.is_editor_hint(), "Run with --editor to preserve resource UIDs")

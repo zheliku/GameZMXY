@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://butnv34uliogm"]
+
+[ext_resource type="AnimationLibrary" uid="uid://cn7o1pe6ocpx5" path="res://TheGame/Entitys/Animations/Heroes/hero_tombstone_library.tres" id="animation"]
+[ext_resource type="Script" uid="uid://dhwq24nj2vr8s" path="res://TheGame/GameScripts/Entity/Heroes/Effects/HeroTombstoneNode.cs" id="script"]
+[ext_resource type="Texture2D" uid="uid://baqeue3j6frh0" path="res://TheGame/Sprites/Effects/hero_death/hero_tombstone_atlas.png" id="texture"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_c57rn"]
+size = Vector2(128, 14)
+
+[node name="HeroTombstone" type="CharacterBody2D" unique_id=219745939 node_paths=PackedStringArray("m_AnimationPlayer")]
+top_level = true
+z_index = 2
+collision_layer = 0
+collision_mask = 9
+floor_max_angle = 0.87266463
+floor_snap_length = 12.0
+script = ExtResource("script")
+m_AnimationPlayer = NodePath("m_AnimationPlayer")
+
+[node name="m_Sprite" type="Sprite2D" parent="." unique_id=439503372]
+scale = Vector2(0.85, 0.85)
+texture = ExtResource("texture")
+offset = Vector2(-8.5, -116)
+hframes = 8
+vframes = 5
+frame = 39
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=42424592]
+position = Vector2(-1, 27.000002)
+shape = SubResource("RectangleShape2D_c57rn")
+
+[node name="m_AnimationPlayer" type="AnimationPlayer" parent="." unique_id=111630259]
+libraries/ = ExtResource("animation")

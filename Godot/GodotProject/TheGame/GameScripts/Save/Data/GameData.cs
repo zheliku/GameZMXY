@@ -17,7 +17,7 @@ public class GameData : ArchiveData
     /// <summary>
     /// 当前存档格式；格式改变时递增，不保留迁移分支。
     /// </summary>
-    public const int CurrentVersion = 9;
+    public const int CurrentVersion = 11;
 
     /// <summary>
     /// 必需的格式版本；框架创建的新空槽使用当前版本。
@@ -48,6 +48,12 @@ public class GameData : ArchiveData
     /// </summary>
     [JsonProperty(Required = Required.Always)]
     public int HighestClearedLevelId;
+
+    /// <summary>
+    /// 东海旗幡的首次保证掉落资格，按原版在龙王入场时消耗。
+    /// </summary>
+    [JsonProperty(Required = Required.Always)]
+    public bool EastSeaBannerAvailable = true;
 
     /// <summary>
     /// 已拾取的装备实例；随机属性作为实例状态保存，配置范围不写盘。
@@ -106,6 +112,13 @@ namespace GameLogic.Save.Data
         /// </summary>
         [JsonProperty(Required = Required.Always)]
         public List<SkillId> LearnedSkills { get; set; } = new();
+
+        /// <summary>
+        /// 各被动的已学等级；0表示未学习，效果与费用仍读取当前配置。
+        /// </summary>
+        [JsonProperty(Required = Required.Always)]
+        public Dictionary<PassiveId, int> PassiveLevels { get; set; } =
+            System.Linq.Enumerable.ToDictionary(Enum.GetValues<PassiveId>(), id => id, _ => 0);
 
         /// <summary>
         /// 已穿戴武器的实例编号；空编号表示未穿戴。

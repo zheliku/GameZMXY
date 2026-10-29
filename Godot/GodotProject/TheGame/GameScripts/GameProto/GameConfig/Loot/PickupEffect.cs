@@ -13,7 +13,13 @@ namespace GameConfig.Loot
 { 
     public enum PickupEffect
     {
+        /// <summary>
+        /// 恢复生命
+        /// </summary>
         Health = 0,
+        /// <summary>
+        /// 恢复魔法
+        /// </summary>
         Mana = 1,
     }
 

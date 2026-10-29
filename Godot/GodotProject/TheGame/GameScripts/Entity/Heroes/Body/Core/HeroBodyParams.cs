@@ -38,7 +38,7 @@ namespace GameLogic.Heroes.Body
         public int JumpCountMax { get; init; }
 
         /// <summary>
-        /// 受击硬直秒（= hurt 动画长度；0 = 不硬直）
+        /// 受击硬直秒，取hurt的complete标记或片段长度；0表示不进入硬直。
         /// </summary>
         public float HurtTime { get; init; }
 
@@ -48,7 +48,7 @@ namespace GameLogic.Heroes.Body
         public IReadOnlyList<string> AttackAnims { get; init; }
 
         /// <summary>
-        /// 普攻连段每段的时长秒（= 段动画长度，OnInit 读动画资源；状态计时）
+        /// 普攻各段实际收招秒数，OnInit读取原生complete标记或片段长度。
         /// </summary>
         public IReadOnlyList<float> AttackTimes { get; init; }
 

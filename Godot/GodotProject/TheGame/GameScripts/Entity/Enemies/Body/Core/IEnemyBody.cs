@@ -25,7 +25,12 @@ namespace GameLogic.Enemies.Body
         /// <summary>
         /// 普通行动状态；受击和收招结束后回到本敌人的移动方式。
         /// </summary>
-        Type MoveStateType { get; }
+        Type MovementStateType { get; }
+
+        /// <summary>
+        /// 本敌人的死亡状态；普通尸体与首领完整死亡演出使用各自状态。
+        /// </summary>
+        Type DeathStateType { get; }
 
         /// <summary>
         /// 移动意图：-1 左 / 0 停 / 1 右（AI 写入；身体在可移动状态下执行）
@@ -35,10 +40,11 @@ namespace GameLogic.Enemies.Body
         /// <summary>
         /// 取走 AI 的出招请求（招式序号；-1 = 没有）。受击/死亡时取走即作废。
         /// </summary>
+        /// <returns>待处理的招式编号；没有请求时为-1。</returns>
         int TakeAttackRequest();
 
         /// <summary>
-        /// 死亡进入时关闭受击判定并报告击败收益，不依赖动画是否播放。
+        /// 死亡进入时按敌人职责保留或关闭受击判定，并报告一次击败收益。
         /// </summary>
         void BeginDeath();
 
@@ -46,5 +52,21 @@ namespace GameLogic.Enemies.Body
         /// 请求回收（宿主在本帧物理结束后 HideEntity，不在状态机推进中途销毁自己）
         /// </summary>
         void RequestRecycle();
+    }
+
+    /// <summary>
+    /// 飞行与游动身体共享的垂直运动意图；地面行走无需实现。
+    /// </summary>
+    public interface IEnemyFreeMoveBody : IEnemyBody
+    {
+        /// <summary>
+        /// -1上行、0保持高度、1下行。
+        /// </summary>
+        int VerticalIntent { get; }
+
+        /// <summary>
+        /// 当前阶段直接使用速度，不经过垂直加速。
+        /// </summary>
+        bool DirectVerticalMovement { get; }
     }
 }

@@ -45,6 +45,7 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(3, notifications);
             Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(progression).AddExperience(-1));
         }
+
         /// <summary>
         /// 满级后不再增长，也不发通知。
         /// </summary>
@@ -60,6 +61,7 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(0, notifications);
             Assert.Equal((55, 0, 0), (progression.Level, progression.Experience, progression.MaxExperience));
         }
+
         /// <summary>
         /// 钱包不出现负数，不足时拒绝扣除。
         /// </summary>
@@ -78,6 +80,7 @@ namespace GameLogic.Profile.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(wallet).AddSoul(-1));
             Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(wallet).TrySpendSoul(-1));
         }
+
         /// <summary>
         /// 零额、扣款失败、封顶和回滚都保持有效余额。
         /// </summary>
@@ -99,6 +102,7 @@ namespace GameLogic.Profile.Tests
             wallet.RestoreSoul(-1);
             Assert.Equal(0, wallet.Soul.Value);
         }
+
         /// <summary>
         /// 档案拒绝重复英雄与未拥有的出战英雄。
         /// </summary>
@@ -111,6 +115,7 @@ namespace GameLogic.Profile.Tests
             Assert.Throws<ArgumentException>(() => new TestGameScope(2, new[] { (1, 0) }, 0, 25));
             Assert.Equal(1, new TestGameScope(1, new[] { (1, 0) }, 0, 25).Profile.ActiveHeroId);
         }
+
         /// <summary>
         /// 钱包只在余额实际提交后通知，失败消费、零增量和封顶不重复通知。
         /// </summary>
@@ -138,6 +143,7 @@ namespace GameLogic.Profile.Tests
             TestTables.ForProfile(wallet).AddSoul(1);
             Assert.Equal((3, int.MaxValue), (notifications, observed));
         }
+
         /// <summary>
         /// 成长改变自动重算绑定属性，局内 Buff 来源保持，升级补满资源。
         /// </summary>
@@ -155,6 +161,7 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(130, model.MaxHp.Value);
             Assert.Equal(model.MaxHp.Value, model.Hp.Value);
         }
+
         /// <summary>
         /// 成长表与官方 Role1.upGrade 公式逐级一致（防止迁移脚本或手工改表引入偏差）。
         /// </summary>
@@ -171,24 +178,30 @@ namespace GameLogic.Profile.Tests
                     (row.BaseAttributes.MaxHp, row.BaseAttributes.MaxMp, row.BaseAttributes.Power, row.BaseAttributes.Def, row.BaseAttributes.Mdef));
             }
         }
+
         /// <summary>
         /// 怪物基础值符合官方数据，同一种实体只配置一条基础数值。
         /// </summary>
         [Fact]
-        public void MonsterTable_MatchesOfficialStatsAndHasOneConfigPerEntity()
+        public void EnemyTable_MatchesOfficialStatsAndHasOneConfigPerEntity()
         {
             (int Id, int Hp, int Defense, int Xp)[] values = [(1, 50, 0, 5), (2, 100, 1, 6), (3, 300, 5, 7),
                 (4, 1500, 5, 25), (6, 3000, 6, 35), (7, 600, 8, 22), (8, 500, 7, 18),
-                (11, 6000, 18, 100), (13, 700, 9, 26), (21, 6000, 25, 0)];
+                (9, 10000, 20, 130), (10, 24000, 80, 225), (11, 6000, 18, 100), (13, 700, 9, 26), (14, 1000, 25, 48),
+                (15, 800, 10, 30), (16, 1200, 50, 57), (17, 1600, 70, 75), (18, 999999, 25, 500),
+                (19, 48000, 90, 300), (20, 1400, 30, 65), (21, 6000, 25, 0),
+                // BaseMonster.__added覆盖兽形、人形的构造血量；其余值来自各自官方构造。
+                (22, 20000, 100, 48), (23, 40000, 100, 100), (24, 200000, 0, 100), (25, 5000, 120, 45), (26,12000,50,150)];
             foreach (var expected in values)
             {
-                var monster = TestTables.Tables.TbMonsterConfig.Get(expected.Id);
+                var monster = TestTables.Tables.TbEnemyConfig.DataList.Single(config => config.LegacyId == expected.Id);
                 Assert.Equal((expected.Hp, expected.Defense, expected.Xp),
                     (monster.BaseAttributes.MaxHp, monster.BaseAttributes.Def, monster.AddExp));
             }
-            Assert.All(TestTables.Tables.TbMonsterConfig.DataList.GroupBy(x => x.EntityId), group => Assert.Single(group));
-            Assert.Equal(values.Length, TestTables.Tables.TbMonsterConfig.DataList.Count);
+            Assert.All(TestTables.Tables.TbEnemyConfig.DataList.GroupBy(x => x.EntityId), group => Assert.Single(group));
+            Assert.Equal(values.Length, TestTables.Tables.TbEnemyConfig.DataList.Count);
         }
+
         /// <summary>
         /// 真实配置通过启动校验。
         /// </summary>
@@ -198,6 +211,7 @@ namespace GameLogic.Profile.Tests
             ExperienceCurve curve = GameLogic.Config.ConfigurationSystem.ValidateTables(TestTables.Tables);
             Assert.Equal(55, curve.MaxLevel);
         }
+
         /// <summary>
         /// 缺少版本或进度字段的 JSON 不得被初始值误判为当前格式。
         /// </summary>
@@ -207,6 +221,7 @@ namespace GameLogic.Profile.Tests
             Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<GameData>("{\"UnitId\":7}"));
             Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<GameData>("{\"SaveVersion\":2,\"UnitId\":7}"));
         }
+
         /// <summary>
         /// 当前格式的英雄记录必须明确保存身份与累计经验，缺字段不能被零值掩盖。
         /// </summary>
@@ -225,6 +240,7 @@ namespace GameLogic.Profile.Tests
             hero.Remove(field);
             Assert.Throws<JsonSerializationException>(() => data.ToObject<GameData>());
         }
+
         /// <summary>
         /// 框架创建的当前格式空槽可以序列化回读，仍未建立角色。
         /// </summary>
@@ -238,6 +254,7 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(0, data.Soul);
             Assert.Equal(7, data.UnitId);
         }
+
         /// <summary>
         /// 仅接受当前格式的完整档案；不转换其他版本。
         /// </summary>
@@ -245,9 +262,13 @@ namespace GameLogic.Profile.Tests
         public void Mapper_RejectsOtherVersionsAndEmptyHeroes()
         {
             foreach (int version in Enumerable.Range(0, GameData.CurrentVersion).Append(GameData.CurrentVersion + 1))
+            {
                 Assert.Throws<NotSupportedException>(() => TestGameScope.FromSaveData(new GameData { SaveVersion = version, ActiveHeroId = 1, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
+            }
+
             Assert.Throws<ArgumentException>(() => TestGameScope.FromSaveData(new GameData(), TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
         }
+
         /// <summary>
         /// 档案 → 快照 → JSON → 快照 → 档案往返不丢状态，快照与运行时不共享引用。
         /// </summary>
@@ -268,6 +289,7 @@ namespace GameLogic.Profile.Tests
             Assert.DoesNotContain("\"Profile\"", json);
             Assert.Contains("\"TotalExperience\"", json);
         }
+
         /// <summary>
         /// 回滚把档案恢复到进关快照，保留原对象并通知订阅者。
         /// </summary>

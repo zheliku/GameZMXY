@@ -1,8 +1,28 @@
-namespace GameLogic.Enemies;
+using GameLogic.Battle.Attacks;
+using GameLogic.Battle.Damage;
+using Godot;
 
-/// <summary>
-/// 小怪分支承载普通怪物的身份；每个具体物种必须明确选择自己的 AI 预设，运动分支决定地面或飞行身体。
-/// </summary>
-public abstract partial class AbstractMonsterEntity : AbstractEnemyEntity
+namespace GameLogic.Enemies
 {
+    /// <summary>
+    /// 小怪保留致死一击的抛飞运动；活体受击机制共享Enemy，具体物种选择自己的AI与运动方式。
+    /// </summary>
+    public abstract partial class AbstractMonsterEntity : AbstractEnemyEntity
+    {
+        /// <inheritdoc />
+        protected override void OnHurt(AttackData data, DamageResult result, Vector2 knockback, int attackerEntityId)
+        {
+            if (Dead)
+            {
+                // 死亡事实先于本回调置位，仍须把致死一击交给死亡状态，不能在这里丢掉击退。
+                if (knockback != Vector2.Zero)
+                {
+                    m_PendingHurt = knockback;
+                }
+
+                return;
+            }
+            base.OnHurt(data, result, knockback, attackerEntityId);
+        }
+    }
 }

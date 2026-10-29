@@ -1,0 +1,93 @@
+[gd_scene format=3 uid="uid://bveujbgi173xo"]
+
+[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_library.tres" id="anim"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_official_frames.tres" id="body"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_ice_aura_frames.tres" id="ice"]
+[ext_resource type="Script" uid="uid://bcn7kcww8e2xw" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_11_hidden_dragon_palace/DragonKingEntity.cs" id="script"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent_effect.tscn" id="torrent"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_wave_effect.tscn" id="wave"]
+
+[sub_resource type="CapsuleShape2D" id="body_shape"]
+radius = 22.498322
+height = 99.99756
+
+[sub_resource type="RectangleShape2D" id="hurt_shape"]
+size = Vector2(44.996643, 99.99756)
+
+[sub_resource type="RectangleShape2D" id="rest"]
+size = Vector2(1, 1)
+
+[sub_resource type="CanvasItemMaterial" id="add"]
+blend_mode = 1
+
+[sub_resource type="RectangleShape2D" id="detector"]
+size = Vector2(600, 600)
+
+[node name="DragonKingEntity" type="CharacterBody2D" unique_id=1898073822 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+collision_layer = 4
+collision_mask = 9
+floor_constant_speed = true
+floor_max_angle = 0.87266463
+floor_snap_length = 12.0
+script = ExtResource("script")
+m_WaveScene = ExtResource("wave")
+m_TorrentScene = ExtResource("torrent")
+m_Detector = NodePath("m_Detector")
+m_EnemyEntityId = 26
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AttackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3", "attack_4")
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
+
+[node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=969898759]
+sprite_frames = ExtResource("body")
+animation = &"idle"
+offset = Vector2(11, -11)
+
+[node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1690240551]
+position = Vector2(0, 9.95)
+shape = SubResource("body_shape")
+
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=4670533 node_paths=PackedStringArray("m_Owner")]
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("hurt")
+m_Owner = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1691991325]
+position = Vector2(0, 9.95)
+shape = SubResource("hurt_shape")
+
+[node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=271119111]
+
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=325970525]
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1166435124]
+shape = SubResource("rest")
+disabled = true
+
+[node name="m_IceAura" type="AnimatedSprite2D" parent="m_HitBoxRoot" unique_id=946390693]
+visible = false
+material = SubResource("add")
+sprite_frames = ExtResource("ice")
+animation = &"play"
+offset = Vector2(1, -4)
+
+[node name="m_Detector" type="Area2D" parent="." unique_id=1126338568]
+collision_layer = 4096
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=1960554260]
+shape = SubResource("detector")
+
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=1267223663]
+callback_mode_method = 1
+libraries/ = ExtResource("anim")

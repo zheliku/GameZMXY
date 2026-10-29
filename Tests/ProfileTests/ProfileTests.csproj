@@ -24,6 +24,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\ChapterRules.cs" />
     <Compile Include="*.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\MainPack\Scripts\Debug\ProfileTestData.cs" Link="ProfileTestData.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Architecture\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Architecture\FsmArchitectureExtensions.cs;$(GodotProjectDir)TheGame\GameScripts\Architecture\GgfArchitectureExtensions.cs" Link="Linked\Architecture\%(Filename)%(Extension)" />

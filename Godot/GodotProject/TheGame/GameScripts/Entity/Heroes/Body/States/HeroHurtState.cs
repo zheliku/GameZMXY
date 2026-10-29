@@ -6,10 +6,8 @@ using GameFramework.Fsm;
 namespace GameLogic.Heroes.Body
 {
     /// <summary>
-    /// 受击硬直：生效时施加击退速度、从头播 hurt 动画、播受击语音；**硬直时长 = hurt 动画长度**
-    ///（OnInit 读进 Params，状态计时）。期间保持击退速度，未消费的动作仅在仍按住时等待硬直结束。
-    /// 硬直中再受击：重新生效（重置击退、计时，从头重播动画）。结束回 Ground/Air，移动逻辑接管
-    ///（与旧项目一致：击退只在 hurt 动画期间生效）。
+    /// 受击状态维护击退、重力与原生结束标记计时；动画方法键可以按角色源帧停止运动，声音归ReceiveHit。
+    /// 连续受击覆盖本次击退并重播，结束回Ground/Air；未消费动作仅在仍按住时等待硬直结束。
     /// </summary>
     public sealed class HeroHurtState : AbstractHeroBodyState
     {
@@ -29,6 +27,8 @@ namespace GameLogic.Heroes.Body
         /// <summary>
         /// 进入受击状态时取消奔跑并立即应用击退，不制造跨松键的输入缓冲。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
         protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
         {
             body.GetSystem<InputSystem>().StopRunning(body.ActionData);
@@ -38,6 +38,9 @@ namespace GameLogic.Heroes.Body
         /// <summary>
         /// 处理连续受击、硬直计时和受击动画。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
+        /// <param name="dt">本次物理推进的秒数。</param>
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
             if (body.SuperArmor)

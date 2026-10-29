@@ -11,6 +11,7 @@
     <GodotProjectDir>$(MSBuildThisFileDirectory)..\..\Godot\GodotProject\</GodotProjectDir>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\ChapterRules.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Architecture\ArchitectureContracts.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utility\SpatialUtility.cs" Link="Linked\SpatialUtility.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Stages\LevelStageSequence.cs" Link="Linked\LevelStageSequence.cs" />
@@ -20,7 +21,7 @@
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Sound\SoundId.cs" Link="Linked\Config\SoundId.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Loot\EquipmentDropPoolId.cs" Link="Linked\Config\EquipmentDropPoolId.cs" />
     <Compile Include="$(GodotProjectDir)Framework\GodotGameFrameworkCore\Lib\LubanLib\*.cs" Link="Linked\Luban\%(Filename)%(Extension)" />
-    <None Include="$(GodotProjectDir)TheGame\DataTables\GameConfigs\level_tblevelconfig.bytes" Link="Data\level_tblevelconfig.bytes" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(GodotProjectDir)TheGame\DataTables\GameConfigs\level_*.bytes" Link="Data\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />

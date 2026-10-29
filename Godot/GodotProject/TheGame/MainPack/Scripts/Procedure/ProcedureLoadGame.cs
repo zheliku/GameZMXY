@@ -44,7 +44,9 @@ public class ProcedureLoadGame : ProcedureBase
             // 标题界面已关闭加载页；读档期间重新显示框架共享加载界面。
             await GF.UI.OpenLoadingUIFormAsync();
             if (entrySerial != m_EntrySerial)
+            {
                 return;
+            }
             // 准备流程已建立 Architecture 并注册 ConfigurationModel。
             var architecture = procedureOwner.GetArchitecture();
             var selection = procedureOwner.GetData<SaveSelectionVariable>(FlowKeys.SaveSelection)?.Value
@@ -53,7 +55,9 @@ public class ProcedureLoadGame : ProcedureBase
             SaveSystem saveSystem = procedureOwner.GetSystem<SaveSystem>();
             var loaded = await saveSystem.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId, token);
             if (entrySerial != m_EntrySerial)
+            {
                 return;
+            }
             // 校验成功后由流程创建、发布档案模型；不把 Model 再包装成 LoadResult。
             var data = loaded.Data;
             var config = procedureOwner.GetModel<GameLogic.Config.ConfigurationModel>();
@@ -71,14 +75,21 @@ public class ProcedureLoadGame : ProcedureBase
                 profile.ActiveHeroId, profile.Level);
             // 新建档案才需要确认角色；已有档案直接恢复地图入口。
             if (loaded.Origin == SaveOrigin.Created)
+            {
                 ChangeState<ProcedureCharacter>(procedureOwner);
+            }
             else
+            {
                 ChangeState<ProcedureMap>(procedureOwner);
+            }
         }
         catch (Exception ex)
         {
             if (entrySerial != m_EntrySerial)
+            {
                 return;
+            }
+
             if (ownsProfile)
             {
                 // 只清理本次已经开始装配的档案，保留应用对象与磁盘文件供下次读取。

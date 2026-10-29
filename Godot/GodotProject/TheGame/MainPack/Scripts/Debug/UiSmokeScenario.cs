@@ -50,6 +50,17 @@ public sealed partial class UiSmokeScenario
     private BattleForm m_TestBattleForm; // 当前由测试打开的 HUD，结束时关闭。
 
     /// <summary>
+    /// 开始一次 UI 与存档回归，原流程与测试使用同一套框架服务。
+    /// </summary>
+    /// <param name="driver">烟测帧驱动节点。</param>
+    /// <param name="bossesOnly">只验证新增 BOSS，不重复全部既有窗口回归。</param>
+    public UiSmokeScenario(Node driver, bool bossesOnly = false)
+    {
+        m_Driver = driver;
+        m_RunTask = RunAsync(bossesOnly);
+    }
+
+    /// <summary>
     /// 回归是否已结束。
     /// </summary>
     public bool IsDone
@@ -66,21 +77,10 @@ public sealed partial class UiSmokeScenario
     public string Failure { get; private set; }
 
     /// <summary>
-    /// 开始一次 UI 与存档回归，原流程与测试使用同一套框架服务。
-    /// </summary>
-    /// <param name="driver">烟测帧驱动节点。</param>
-    /// <param name="bossesOnly">只验证新增 BOSS，不重复全部既有窗口回归。</param>
-    public UiSmokeScenario(Node driver, bool bossesOnly = false)
-    {
-        m_Driver = driver;
-        m_RunTask = RunAsync(bossesOnly);
-    }
-
-    /// <summary>
     /// 依次验证显示、解绑、复用、升级、关卡事务、存档与重入。
     /// </summary>
-    /// <returns>整个回归完成的任务，异常被转换为 Failure。</returns>
     /// <param name="bossesOnly">是否运行独立 BOSS 回归。</param>
+    /// <returns>整个回归完成的任务，异常被转换为 Failure。</returns>
     private async Task RunAsync(bool bossesOnly)
     {
         try
@@ -91,12 +91,102 @@ public sealed partial class UiSmokeScenario
             AbstractHeroEntity hero = FindHero();
             LevelViewController level = FindLevel();
             BattleForm battleForm = CurrentBattleForm();
+            SmokeInspection.CheckTooltips(battleForm);
             hero.SetPhysicsProcess(false);
 
             // 首次启动按建档规则新建并立即写回为当前版本。
             GameData data = await ReadDiskAsync();
             Check(data?.SaveVersion == GameData.CurrentVersion && data.Heroes.Count == 1, "首次启动未按当前版本写回新档");
             CheckDisplay(battleForm, hero, flow.GetModel<ProfileModel>(), level);
+
+            if (OS.GetCmdlineUserArgs().Contains("--passive-only"))
+            {
+                await CheckPassiveUpgradesAsync(battleForm, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--dragon-flow-only"))
+            {
+                await CheckDragonEntranceFlowAsync(flow, level);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--dragon-only"))
+            {
+                level.Cleanup();
+                await CheckDragonAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--dragon-equipment-only"))
+            {
+                level.Cleanup();
+                flow.GetSystem<ProfileSystem>().RecordLevelClear(1);
+                flow.SetData(GameLogic.Procedure.FlowData.FlowKeys.SelectedLevelId, (VarInt32)11);
+                ReenterLevel();
+                await WaitForLevelAsync();
+                level = FindLevel();
+                hero = FindHero();
+                hero.SetPhysicsProcess(false);
+                battleForm = CurrentBattleForm();
+                await CheckEquipmentFlowAsync(hero, flow, level, battleForm, 11,
+                    [GameConfig.Equipment.EquipmentId.BlackTortoiseArmor, GameConfig.Equipment.EquipmentId.AzureDragonBlade,
+                        GameConfig.Equipment.EquipmentId.RuyiGoldenStaff, GameConfig.Equipment.EquipmentId.WhiteTigerStaff,
+                        GameConfig.Equipment.EquipmentId.KirinRobe, GameConfig.Equipment.EquipmentId.VermilionBirdRing,
+                        GameConfig.Equipment.EquipmentId.SevenStarGuard, GameConfig.Equipment.EquipmentId.NineRingMonkStaff], "9-1");
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--bull-only"))
+            {
+                level.Cleanup();
+                var camera = SmokeInspection.Scene(level).GetNode<LevelCameraNode>("Camera2D");
+                camera.LimitLeft = 875;
+                camera.LimitRight = 1815;
+                camera.GlobalPosition = new Vector2(1350, camera.GlobalPosition.Y);
+                camera.ForceUpdateScroll();
+                await CheckBullEnemiesAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--bull-flow-only"))
+            {
+                await CheckEquipmentFlowAsync(hero, flow, level, battleForm, 10,
+                    [GameConfig.Equipment.EquipmentId.FinePilgrimClothes, GameConfig.Equipment.EquipmentId.FinePilgrimStaff,
+                        GameConfig.Equipment.EquipmentId.FineCassock, GameConfig.Equipment.EquipmentId.FinePineStaff], "4-1");
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--equipment-only"))
+            {
+                await CheckGroundItemsAsync(flow, hero, level);
+                await CheckInventoryAsync(battleForm, hero, flow, level);
+                level.Cleanup();
+                await WaitFramesAsync(3);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--chapter-music-only"))
+            {
+                await CheckChapterMusicAsync();
+                level.Cleanup();
+                await WaitFramesAsync(3);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--recovery-only"))
+            {
+                level.Cleanup();
+                await CheckNaturalRecoveryAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--freeze-only"))
+            {
+                level.Cleanup();
+                await CheckFreezeAsync(hero, flow);
+                return;
+            }
 
             if (OS.GetCmdlineUserArgs().Contains("--fire-motion-only"))
             {
@@ -114,6 +204,26 @@ public sealed partial class UiSmokeScenario
                 return;
             }
 
+            if (OS.GetCmdlineUserArgs().Contains("--enemy-death-only"))
+            {
+                level.Cleanup();
+                await CheckEnemyDeathMotionAsync();
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--hero-death-only"))
+            {
+                await CheckHeroDeathReentryAsync();
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--hurt-protection-only"))
+            {
+                level.Cleanup();
+                await CheckHurtProtectionAsync(hero, flow);
+                return;
+            }
+
             if (OS.GetCmdlineUserArgs().Contains("--qixing-only"))
             {
                 // 保留正式场景与伤害显示，停止既有关卡流，避免其他小怪混入每招伤害证据。
@@ -121,6 +231,97 @@ public sealed partial class UiSmokeScenario
                 await CheckQixingEnemiesAsync(hero, flow);
                 level.Cleanup();
                 await WaitFramesAsync(3);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--sea-only"))
+            {
+                level.Cleanup();
+                await CheckSeaRewardsAsync(hero, flow);
+                await CheckSeaEnemiesAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--east-sea-only"))
+            {
+                level.Cleanup();
+                await CheckEastSeaEnemiesAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--shark-only") || OS.GetCmdlineUserArgs().Contains("--shark-lifecycle-only"))
+            {
+                level.Cleanup();
+                await CheckSharkEnemiesAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--shark-ai-only"))
+            {
+                level.Cleanup();
+                await CheckSharkAiAsync(hero);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--shark-flow-only"))
+            {
+                await CheckEquipmentFlowAsync(hero, flow, level, battleForm, 9,
+                    [GameConfig.Equipment.EquipmentId.BloodSeaDemonArmor,
+                        GameConfig.Equipment.EquipmentId.BloodSeaEvilStaff,
+                        GameConfig.Equipment.EquipmentId.ExcellentPilgrimClothes,
+                        GameConfig.Equipment.EquipmentId.ExcellentPilgrimStaff,
+                        GameConfig.Equipment.EquipmentId.ExcellentCassock,
+                        GameConfig.Equipment.EquipmentId.ExcellentPineStaff], "3-3");
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--east-sea-ai-only"))
+            {
+                level.Cleanup();
+                await CheckEastSeaAiAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--east-sea-flow-only"))
+            {
+                await CheckEquipmentFlowAsync(hero, flow, level, battleForm, 8,
+                    [GameConfig.Equipment.EquipmentId.BloodSeaShell], "3-2");
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--sea-ai-only"))
+            {
+                level.Cleanup();
+                await CheckSeaAiAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--garuda-only"))
+            {
+                level.Cleanup();
+                await CheckGarudaEnemiesAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--garuda-ai-only"))
+            {
+                level.Cleanup();
+                await CheckGarudaAiAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--garuda-flow-only"))
+            {
+                await CheckEquipmentFlowAsync(hero, flow, level, battleForm, 6,
+                    [GameConfig.Equipment.EquipmentId.HeavenlyFiendMoonHalberd, GameConfig.Equipment.EquipmentId.HeavenlyFiendRobe], "2-3");
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--sea-flow-only"))
+            {
+                await CheckEquipmentFlowAsync(hero, flow, level, battleForm, 7,
+                    [GameConfig.Equipment.EquipmentId.ExcellentPilgrimClothes, GameConfig.Equipment.EquipmentId.ExcellentPilgrimStaff,
+                        GameConfig.Equipment.EquipmentId.ExcellentCassock, GameConfig.Equipment.EquipmentId.ExcellentPineStaff], "3-1");
                 return;
             }
 
@@ -260,6 +461,15 @@ public sealed partial class UiSmokeScenario
             KillHero(FindHero());
             Check(pendingOrbs.Count == 0 && flow.GetModel<ProfileModel>().Soul.Value == soulAfterKill,
                 "死亡没有回收在途球，或错误领取了未接触奖励");
+            var deathPlayer = FindHero().GetNode<AnimationPlayer>("m_Tombstone/m_AnimationPlayer");
+            await WaitUntilAsync(() => deathPlayer.CurrentAnimation == "play" && deathPlayer.IsPlaying(),
+                "死亡后没有开始原生墓碑动画");
+            deathPlayer.Pause();
+            await WaitFramesAsync(Engine.PhysicsTicksPerSecond * 4);
+            Check(SmokeInspection.Model(deathRun).Outcome.Value == LevelOutcome.Running &&
+                !GF.UI.GetAllLoadedUIForms().OfType<SettlementForm>().Any(x => x.Visible),
+                "暂停墓碑仍按固定秒数结算，没有等待实际动画完成");
+            deathPlayer.Play();
             await WaitUntilAsync(() => SmokeInspection.Model(deathRun).Outcome.Value == LevelOutcome.Defeated,
                 "英雄死亡后的墓碑演出没有完成失败结算");
             Check(SmokeInspection.Model(deathRun).Outcome.Value == LevelOutcome.Defeated, $"英雄死亡没有结束关卡运行：{SmokeInspection.Model(deathRun).Outcome.Value}");
@@ -288,7 +498,10 @@ public sealed partial class UiSmokeScenario
         finally
         {
             foreach (var form in GF.UI.GetAllLoadedUIForms().OfType<Control>().Where(x => x.Visible && x is InventoryForm or SkillForm or SettlementForm).ToArray())
+            {
                 GF.UI.CloseUIForm(((GameFramework.UI.IUIForm)form).SerialId);
+            }
+
             CloseBattleForm(m_TestBattleForm);
             ReleaseTestEntity(m_ExtraHero);
             ReleaseTestEntity(m_Monster);
@@ -296,7 +509,7 @@ public sealed partial class UiSmokeScenario
     }
 
     /// <summary>
-    /// 真实落地、前摇和打断；同一大猩猩使用不同倍率后回到基础值，验证池复用完整复位。
+    /// 真实落地、前摇和打断；同一大猩猩使用守关数值后回到基础值，验证池复用完整复位。
     /// </summary>
     /// <param name="hero">正式流程英雄。</param>
     /// <param name="battleForm">正式 HUD。</param>
@@ -323,53 +536,91 @@ public sealed partial class UiSmokeScenario
             hero.SetPhysicsProcess(false);
             var banner = SmokeInspection.ReadField<EncounterHealthBar>(battleForm, "m_EncounterHealthBar");
             AbstractEnemyEntity previousGorilla = null;
-            (int Id, float Health, float Defense, float Attack)[] cases =
-                [(1, 1, 1, 1), (2, 1, 1, 1), (3, 1, 1, 1), (3, 3, 2, 3), (3, 1, 1, 1)];
-            foreach (var (id, health, defense, attack) in cases)
+            var levelModel = GF.Fsm.GetModel<LevelModel>();
+            int originalLevel = levelModel.LevelId;
+            (int Id, int LevelId)[] cases = [(1, 2), (2, 2), (3, 2), (3, 1), (3, 2)];
+            foreach (var (id, levelId) in cases)
             {
-                var config = ConfigSystem.Instance.Tables.TbMonsterConfig.Get(id);
-                bool boosted = health > 1f;
+                var config = ConfigSystem.Instance.Tables.TbEnemyConfig.Get(id);
+                bool boosted = id == 3 && levelId == 1;
+                levelModel.LevelId = levelId;
                 m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(config.EntityId,
-                    new EnemySpawn(new Vector2(hero.GlobalPosition.X + 40, 100), health, defense, attack,
-                        boosted ? 25 : -1));
+                    new EnemySpawn(new Vector2(hero.GlobalPosition.X + 40, 100)));
+                levelModel.LevelId = originalLevel;
                 SmokeInspection.FreezeAi(m_Monster);
                 IEnemyAiAgent ai = m_Monster;
                 Check(!m_Monster.OnFloor && !ai.RequestAttack(0), $"怪物 {id} 出生下落时允许出招");
                 await WaitUntilAsync(() => m_Monster.OnFloor, $"怪物 {id} 没有真实落地");
-                Check(m_Monster.MaxHp == config.BaseAttributes.MaxHp * health &&
-                      SmokeInspection.CombatAttributes(m_Monster).Def == config.BaseAttributes.Def * defense &&
+                Check(m_Monster.MaxHp == (boosted ? 900 : config.BaseAttributes.MaxHp) &&
+                      SmokeInspection.CombatAttributes(m_Monster).Def == config.BaseAttributes.Def &&
                       SmokeInspection.CombatAttributes(m_Monster).Mdef == config.BaseAttributes.Mdef &&
                       SmokeInspection.CombatAttributes(m_Monster).Crit == config.BaseAttributes.Crit,
-                    $"怪物 {id} 的生命/物防倍率错误，或误改了高级属性");
+                    $"怪物 {id} 的入场生命/物防错误，或误改了高级属性");
                 Check(SmokeInspection.ReadField<int>(m_Monster, "m_ExperienceReward") == (boosted ? 25 : config.AddExp),
                     $"怪物 {id} 的经验覆盖没有复位");
                 if (id == 3)
                 {
                     Check(m_Monster is GorillaEntity && config.BaseAttributes.MaxHp == 300, "大猩猩的共享基础配置被改动");
                     if (previousGorilla != null)
+                    {
                         Check(ReferenceEquals(previousGorilla, m_Monster), "大猩猩未复用同一实体实例");
+                    }
+
                     previousGorilla = m_Monster;
                 }
                 hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
                 int hp = GF.Fsm.GetModel<HeroModel>().Hp.Value;
-                Check(ai.RequestAttack(0), $"怪物 {id} 落地后拒绝有效出招");
-                await WaitUntilAsync(() => m_Monster.AttackSegment >= 0, $"怪物 {id} 身体未消费出招请求");
-                if (id == 3)
-                    Check(Near(SmokeInspection.ReadField<AttackData>(m_Monster, "m_ActiveAttackData").Power, 20f * attack),
-                        "大猩猩招式固定威力未应用倍率，或池复用残留了旧倍率");
                 var shape = m_Monster.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
-                ulong started = Time.GetTicksMsec();
-                await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.15), SceneTreeTimer.SignalName.Timeout);
-                Check(shape.Disabled && GF.Fsm.GetModel<HeroModel>().Hp.Value == hp, $"怪物 {id} 前摇阶段已启用判定或伤害");
-                if (boosted)
+                // Monster1 源探针分别从第 14/3/5 帧启用，不能沿用旧移植的统一 0.25 秒前摇。
+                double windup = (id == 1 ? 13 : id == 2 ? 2 : 4) / 24d;
+                bool observedWindup = false, prematureHit = false;
+                double firstHitAt = double.PositiveInfinity;
+                void SampleAttackPhysics()
                 {
-                    banner.SetValue(m_Monster.Config.NameCn, m_Monster.Hp, m_Monster.MaxHp);
-                    await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
-                    await CaptureEncounterAsync("gorilla_attack.png");
+                    if (m_Monster.AttackSegment < 0)
+                    {
+                        return;
+                    }
+
+                    double time = m_Monster.AnimPlayer.CurrentAnimationPosition;
+                    bool damaged = GF.Fsm.GetModel<HeroModel>().Hp.Value < hp;
+                    if (time < windup - .0001)
+                    {
+                        observedWindup = true;
+                        prematureHit |= !shape.Disabled || damaged;
+                    }
+                    if (damaged)
+                    {
+                        firstHitAt = Math.Min(firstHitAt, time);
+                    }
                 }
-                await WaitUntilAsync(() => GF.Fsm.GetModel<HeroModel>().Hp.Value < hp, $"怪物 {id} 攻击动画未造成实际命中",
-                    describe: () => $"hero={hero.GlobalPosition}, monster={m_Monster.GlobalPosition}, facing={m_Monster.Facing}");
-                Check(Time.GetTicksMsec() - started >= 250, $"怪物 {id} 命中过快，缺少前摇");
+                m_Driver.GetTree().PhysicsFrame += SampleAttackPhysics;
+                try
+                {
+                    Check(ai.RequestAttack(0), $"怪物 {id} 落地后拒绝有效出招");
+                    await WaitUntilAsync(() => m_Monster.AttackSegment >= 0, $"怪物 {id} 身体未消费出招请求");
+                    if (id == 3)
+                    {
+                        Check(Near(SmokeInspection.ReadField<AttackData>(m_Monster, "m_ActiveAttackData").Power, 20f),
+                                                "大猩猩守关特殊生命不应改变基础招式威力");
+                    }
+
+                    if (boosted)
+                    {
+                        banner.SetValue(m_Monster.Config.NameCn, m_Monster.Hp, m_Monster.MaxHp);
+                        await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
+                        await CaptureEncounterAsync("gorilla_attack.png");
+                    }
+                    await WaitUntilAsync(() => GF.Fsm.GetModel<HeroModel>().Hp.Value < hp, $"怪物 {id} 攻击动画未造成实际命中",
+                        describe: () => $"hero={hero.GlobalPosition}, monster={m_Monster.GlobalPosition}, facing={m_Monster.Facing}");
+                    SampleAttackPhysics();
+                    Check(observedWindup && !prematureHit && firstHitAt + .0001 >= windup,
+                        $"怪物 {id} 前摇或命中时点不符官方源帧：windup={windup:0.000}, firstHit={firstHitAt:0.000}, premature={prematureHit}");
+                }
+                finally
+                {
+                    m_Driver.GetTree().PhysicsFrame -= SampleAttackPhysics;
+                }
                 await WaitUntilAsync(() => m_Monster.AttackSegment < 0 && !SmokeInspection.InRecovery(m_Monster),
                     $"怪物 {id} 未正常收招");
                 hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
@@ -388,17 +639,19 @@ public sealed partial class UiSmokeScenario
                 m_Monster = null;
                 await WaitFramesAsync(2);
             }
-            GD.Print("SMOKE-UI: 三类怪物空中禁招、前摇与打断；大猩猩生命/物防/攻击倍率、经验覆盖及池复用复位通过");
+            GD.Print("SMOKE-UI: 三类怪物空中禁招、前摇与打断；大猩猩守关生命/经验、基础攻防及池复用复位通过");
         }
         finally
         {
             foreach (var (actor, wasProcessing, position, velocity) in bystanders)
+            {
                 if (GodotObject.IsInstanceValid(actor))
                 {
                     actor.GlobalPosition = position;
                     actor.Velocity = velocity;
                     actor.SetPhysicsProcess(wasProcessing);
                 }
+            }
         }
 
     }
@@ -411,7 +664,10 @@ public sealed partial class UiSmokeScenario
     private async Task CaptureEncounterAsync(string name)
     {
         if (DisplayServer.GetName() == "headless")
+        {
             return;
+        }
+
         await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         string directory = ProjectSettings.GlobalizePath("res://.godot/validation/encounter");
         Directory.CreateDirectory(directory);
@@ -666,7 +922,7 @@ public sealed partial class UiSmokeScenario
     {
         foreach (EntityId entityId in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey })
         {
-            var config = ConfigSystem.Instance.Tables.TbMonsterConfig.DataList.Single(x => x.EntityId == entityId);
+            var config = ConfigSystem.Instance.Tables.TbEnemyConfig.DataList.Single(x => x.EntityId == entityId);
             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(entityId, new EnemySpawn(new Vector2(200, 200)));
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
@@ -1135,9 +1391,12 @@ public sealed partial class UiSmokeScenario
             LevelModel model = SmokeInspection.Model(SmokeInspection.Level(FindLevelProcedure()));
             BattleForm hud = CurrentBattleForm();
             if (model?.SessionActive == true)
+            {
                 Check(hud?.Visible == true, "关卡已经开始，但 BattleForm 尚未显示");
+            }
+
             return model is { SessionActive: true } && model.Outcome.Value == LevelOutcome.Running &&
-                hud?.Visible == true && FindHero() != null;
+                            hud?.Visible == true && FindHero() != null;
         }, "关卡流程未就绪", 15000);
         return FindLevelProcedure();
     }

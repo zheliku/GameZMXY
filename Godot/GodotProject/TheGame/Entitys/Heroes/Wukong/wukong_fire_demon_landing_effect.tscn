@@ -10,24 +10,27 @@ size = Vector2(1, 1)
 [node name="FireDemonLanding" type="Node2D" unique_id=870908912 node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]
 script = ExtResource("script")
 m_Player = NodePath("AnimationPlayer")
-m_HitBox = NodePath("Visual/HitBox")
-m_Shape = NodePath("Visual/HitBox/CollisionShape2D")
+m_HitBox = NodePath("Origin/Visual/HitBox")
+m_Shape = NodePath("Origin/Visual/HitBox/CollisionShape2D")
 
-[node name="Visual" type="Node2D" parent="." unique_id=531969873]
-scale = Vector2(2.1, 3)
+[node name="Origin" type="Node2D" parent="." unique_id=531969873]
+position = Vector2(0, 0)
 
-[node name="Sprite" type="AnimatedSprite2D" parent="Visual" unique_id=1448239086]
+[node name="Visual" type="Node2D" parent="Origin"]
+scale = Vector2(1.4, 2)
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Origin/Visual" unique_id=1448239086]
 sprite_frames = ExtResource("frames")
 animation = &"play"
 frame = 11
-offset = Vector2(0.3, 25.65)
+offset = Vector2(0.3, -2.35)
 
-[node name="HitBox" type="Area2D" parent="Visual" unique_id=1490913945]
+[node name="HitBox" type="Area2D" parent="Origin/Visual" unique_id=1490913945]
 collision_layer = 16
 collision_mask = 32
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Visual/HitBox" unique_id=215427860]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=215427860]
 shape = SubResource("RectangleShape2D_txy77")
 disabled = true
 

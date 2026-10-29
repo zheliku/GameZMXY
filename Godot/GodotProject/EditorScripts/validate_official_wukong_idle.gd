@@ -75,14 +75,17 @@ func _run() -> void:
         textures[name] = load("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_" + name + ".png")
         var image: Image = textures[name].get_image()
         image.convert(Image.FORMAT_RGBA8)
-        var raw := Image.load_from_file("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_" + name + ".png")
+        var raw := Image.load_from_file(ProjectSettings.globalize_path("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_" + name + ".png"))
         raw.convert(Image.FORMAT_RGBA8)
-        _check(image.get_size() == Vector2i(1200, int(manifest.rows) * 200), "Unexpected atlas grid")
+        _check(image.get_width() == 1200 and image.get_height() >= int(manifest.rows) * 200, "Unexpected atlas grid")
+        body.vframes = image.get_height() / 200
+        weapon.vframes = image.get_height() / 200
         var variant: Dictionary = source.variants.filter(func(item): return item.name == name)[0]
+        player.stop()
         # Every source frame is compared to the cell actually used by the live player.
         for frame in range(1, 101):
             player.play("idle1")
-            player.seek((frame - 1) / 24.0 + .00001, true)
+            player.seek((frame - 1 + .01) / 24.0, true, true)
             var index := body.frame if variant.kind == "body" else weapon.frame
             var crop := image.get_region(Rect2i(index % 6 * 200, index / 6 * 200, 200, 200))
             var expected := _source_frame(variant, frame)
@@ -90,11 +93,13 @@ func _run() -> void:
                 "%s source pixels differ at frame %d" % [name, frame])
             expected.fix_alpha_edges()
             _check(_same_visible_pixels(crop, expected), "%s imported pixels differ at frame %d" % [name, frame])
+    player.stop()
+    preview_player.stop()
     for frame in range(100):
         preview_player.play("idle")
-        preview_player.seek(frame / 24.0 + .00001, true)
+        preview_player.seek((frame + .01) / 24.0, true, true)
         player.play("idle1")
-        player.seek(frame / 24.0 + .00001, true)
+        player.seek((frame + .01) / 24.0, true, true)
         _check(body.frame == weapon.frame and body.frame == preview_body.frame and body.frame == preview_weapon.frame and hit.disabled,
             "Wait layers/preview differ or attack collision enabled at frame %d" % (frame + 1))
     hero.queue_free()
@@ -118,6 +123,8 @@ func _run() -> void:
         var actor_weapon: Sprite2D = actor.get_node("m_Weapon")
         actor_body.texture = textures["body_pilgrim" if i % 4 >= 2 else "body_bare"]
         actor_weapon.texture = textures["weapon_pilgrim" if i % 2 else "weapon_default"]
+        actor_body.vframes = actor_body.texture.get_height() / 200
+        actor_weapon.vframes = actor_weapon.texture.get_height() / 200
         actor_body.flip_h = i >= 4
         actor_weapon.flip_h = i >= 4
         viewport.add_child(actor)
@@ -128,7 +135,7 @@ func _run() -> void:
         for actor in actors:
             var animation: AnimationPlayer = actor.get_node("m_AnimPlayer")
             animation.play("idle1")
-            animation.seek((frame - 1) / 24.0 + .00001, true)
+            animation.seek((frame - 1 + .01) / 24.0, true, true)
             _check(actor.position == Vector2(100 + actors.find(actor) * 200, 72), "Wait moves the physics root")
         await process_frame
         await RenderingServer.frame_post_draw

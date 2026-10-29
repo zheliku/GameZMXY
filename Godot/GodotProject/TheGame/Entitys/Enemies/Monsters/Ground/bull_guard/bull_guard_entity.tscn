@@ -1,0 +1,77 @@
+[gd_scene format=3 uid="uid://b3s5gqxf64m3h"]
+
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/bull_guard/bull_guard_official_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
+[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/bull_guard/bull_guard_library.tres" id="library"]
+[ext_resource type="Script" uid="uid://pjkptl5fdqjw" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Ground/bull_guard/BullGuardEntity.cs" id="script"]
+
+[sub_resource type="CapsuleShape2D" id="body_shape"]
+radius = 23.009491
+height = 86.017456
+
+[sub_resource type="RectangleShape2D" id="hurt_shape"]
+size = Vector2(46.018982, 86.017456)
+
+[sub_resource type="RectangleShape2D" id="empty"]
+size = Vector2(1, 1)
+
+[sub_resource type="RectangleShape2D" id="detector"]
+size = Vector2(600, 1000)
+
+[node name="BullGuardEntity" type="CharacterBody2D" unique_id=1158451545 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+collision_layer = 4
+collision_mask = 9
+floor_constant_speed = true
+floor_max_angle = 0.87266463
+floor_snap_length = 12.0
+script = ExtResource("script")
+m_Detector = NodePath("m_Detector")
+m_EnemyEntityId = 25
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AttackAnimations = PackedStringArray("attack_1")
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
+
+[node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=431147628]
+sprite_frames = ExtResource("frames")
+animation = &"idle"
+offset = Vector2(-7, -14.5)
+
+[node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=4852277]
+position = Vector2(0.2, 3.35)
+shape = SubResource("body_shape")
+
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=1681643317 node_paths=PackedStringArray("m_Owner")]
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("hurt")
+m_Owner = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=960489563]
+position = Vector2(0.2, 3.35)
+shape = SubResource("hurt_shape")
+
+[node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=1732109452]
+
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=720740368]
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1538684941]
+shape = SubResource("empty")
+disabled = true
+
+[node name="m_Detector" type="Area2D" parent="." unique_id=729028976]
+collision_layer = 4096
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=2107263289]
+shape = SubResource("detector")
+
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=2064546278]
+libraries/ = ExtResource("library")

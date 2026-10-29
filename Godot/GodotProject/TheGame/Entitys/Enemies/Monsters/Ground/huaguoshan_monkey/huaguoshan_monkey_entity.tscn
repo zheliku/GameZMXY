@@ -1,16 +1,17 @@
 [gd_scene format=3 uid="uid://cc7r187g26xr8"]
 
 [ext_resource type="Script" uid="uid://bhpujkcrdsfwg" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Ground/huaguoshan_monkey/HuaguoshanMonkeyEntity.cs" id="1_8ci30"]
-[ext_resource type="SpriteFrames" uid="uid://di0jrkwb1ad8p" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_animations.tres" id="2_d3b4i"]
+[ext_resource type="SpriteFrames" uid="uid://dsjfyh1o0sr4w" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_official_frames.tres" id="2_8ci30"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="3_jbrgt"]
-[ext_resource type="AnimationLibrary" uid="uid://o8gq56k2o2gr" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_anim_library.tres" id="4_8ci30"]
+[ext_resource type="AnimationLibrary" uid="uid://o8gq56k2o2gr" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_anim_library.tres" id="4_d3b4i"]
+[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/BattleForm/Components/ResourceBar.cs" id="5_d3b4i"]
 [ext_resource type="PackedScene" uid="uid://caauui8brtx47" path="res://TheGame/UIs/Battle/monster_health_bar.tscn" id="5_wljm8"]
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_ma3ht"]
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_d3b4i"]
 radius = 19.998932
 height = 59.999084
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_wehi0"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jbrgt"]
 size = Vector2(39.997864, 59.999084)
 
 [sub_resource type="RectangleShape2D" id="hitbox_rest"]
@@ -34,29 +35,27 @@ floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("1_8ci30")
-m_EnemyEntityId = 1
-m_AttackAnimations = PackedStringArray("attack_1")
 m_Detector = NodePath("m_Detector")
+m_EnemyEntityId = 1
 m_HealthBar = NodePath("m_HealthBar")
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AttackAnimations = PackedStringArray("attack_1")
 m_HurtBox = NodePath("m_HurtBox")
 m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
 m_HitBoxRoot = NodePath("m_HitBoxRoot")
 
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1937697229]
-position = Vector2(0, -13)
-sprite_frames = ExtResource("2_d3b4i")
+sprite_frames = ExtResource("2_8ci30")
 animation = &"idle"
-offset = Vector2(1.5, -0.5)
+offset = Vector2(-4.5, -1)
 
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1842145312]
-position = Vector2(-0.05, -12.55)
-shape = SubResource("CapsuleShape2D_ma3ht")
+position = Vector2(-0.049999237, 0.44999886)
+shape = SubResource("CapsuleShape2D_d3b4i")
 debug_color = Color(0, 1, 0, 0.41960785)
 
 [node name="m_HurtBox" type="Area2D" parent="." unique_id=1266355803 node_paths=PackedStringArray("m_Owner")]
-position = Vector2(-2, -13)
 collision_layer = 32
 collision_mask = 0
 monitoring = false
@@ -64,8 +63,8 @@ script = ExtResource("3_jbrgt")
 m_Owner = NodePath("..")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=59413662]
-position = Vector2(1.95, 0.4499998)
-shape = SubResource("RectangleShape2D_wehi0")
+position = Vector2(-0.049999237, 0.44999886)
+shape = SubResource("RectangleShape2D_jbrgt")
 debug_color = Color(1, 0, 0, 0.41960785)
 
 [node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=378598904]
@@ -91,11 +90,20 @@ shape = SubResource("detector_sight")
 debug_color = Color(1, 1, 0, 0.1)
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=733591014]
-libraries/ = ExtResource("4_8ci30")
+callback_mode_process = 0
+callback_mode_method = 1
+libraries/ = ExtResource("4_d3b4i")
 
-[node name="m_HealthBar" parent="." unique_id=1447511410 instance=ExtResource("5_wljm8")]
+[node name="m_HealthBar" type="TextureProgressBar" parent="." unique_id=1447511410 instance=ExtResource("5_wljm8")]
+z_index = 10
 offset_left = -26.0
 offset_top = -57.0
 offset_right = 24.0
 offset_bottom = -52.0
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+value = 1.0
 texture_progress = SubResource("GradientTexture2D_fill")
+tint_progress = Color(1, 0, 0, 1)
+script = ExtResource("5_d3b4i")

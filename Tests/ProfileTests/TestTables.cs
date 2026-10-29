@@ -29,6 +29,7 @@ namespace GameLogic.Profile.Tests
         /// 纯 C# 测试使用明确的配置来源，不启动全局游戏或 Godot 节点。
         /// </summary>
         public static readonly IArchitecture Architecture = new TestArchitecture();
+
         /// <summary>
         /// 纯规则测试也执行模型归属与初始化。
         /// </summary>
@@ -38,6 +39,7 @@ namespace GameLogic.Profile.Tests
             model.SetArchitecture(new TestArchitecture(model as ProfileModel));
             model.Init();
         }
+
         /// <summary>
         /// 为独立档案提供正式档案系统，避免在夹具中重复业务规则。
         /// </summary>
@@ -47,19 +49,24 @@ namespace GameLogic.Profile.Tests
         {
             return new(new TestArchitecture(profile));
         }
+
         /// <summary>
         /// 为一个测试档案建立独立模型作用域。
         /// </summary>
+        /// <param name="playerModel">借用的测试档案作用域；允许为空的方法会新建作用域。</param>
+        /// <returns>持有指定档案模型的同一架构引用。</returns>
         public static IArchitecture ForPlayer(TestGameScope playerModel)
         {
             return playerModel;
         }
+
         /// <summary>
         /// 提供测试装配的配置和档案；未注册的类型返回 null。
         /// </summary>
         private sealed class TestArchitecture : IArchitecture
         {
             private readonly ProfileModel m_Profile; // 本测试拥有的独立档案。
+
             /// <summary>
             /// 建立测试模型来源。
             /// </summary>
@@ -68,16 +75,19 @@ namespace GameLogic.Profile.Tests
             {
                 m_Profile = profile;
             }
+
             /// <inheritdoc />
             public TModel GetModel<TModel>() where TModel : class, IModel
             {
                 return typeof(TModel) == typeof(ConfigurationModel) ? (TModel)(object)Configuration : m_Profile as TModel;
             }
+
             /// <inheritdoc />
             public TSystem GetSystem<TSystem>() where TSystem : class, ISystem
             {
                 return null;
             }
+
             /// <inheritdoc />
             public TUtility GetUtility<TUtility>() where TUtility : class, IUtility
             {

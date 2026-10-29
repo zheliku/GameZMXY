@@ -25,5 +25,10 @@ namespace GameLogic.Enemies.Body
         /// 死亡动画名。
         /// </summary>
         public const string Death = "death";
+
+        /// <summary>
+        /// 死亡动作仍在空中时的原生循环起点。
+        /// </summary>
+        public const string DeathAirLoopMarker = "air_loop";
     }
 }

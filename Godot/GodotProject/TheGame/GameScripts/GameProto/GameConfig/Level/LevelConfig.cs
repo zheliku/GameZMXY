@@ -23,7 +23,6 @@ public sealed partial class LevelConfig : Luban.BeanBase
         ScenePath = _buf.ReadString();
         PlayerSpawnPointId = _buf.ReadString();
         {int n0 = _buf.ReadSize(); Stages = new System.Collections.Generic.List<Level.LevelStage>(n0);for(var i0 = 0 ; i0 < n0 ; i0++) { Level.LevelStage _e0;  _e0 = global::GameConfig.Level.LevelStage.DeserializeLevelStage(_buf); Stages.Add(_e0);}}
-        ExitTargetSpawnPointId = _buf.ReadString();
     }
 
     public static LevelConfig DeserializeLevelConfig(ByteBuf _buf)
@@ -59,10 +58,6 @@ public sealed partial class LevelConfig : Luban.BeanBase
     /// 阶段列表（多行：每行一个阶段；配方续行阶段列留空）
     /// </summary>
     public readonly System.Collections.Generic.List<Level.LevelStage> Stages;
-    /// <summary>
-    /// 末阶段击败后开放出口的生成点；空值保持清场开出口
-    /// </summary>
-    public readonly string ExitTargetSpawnPointId;
    
     public const int __ID__ = 735472700;
     public override int GetTypeId() => __ID__;
@@ -82,7 +77,6 @@ public sealed partial class LevelConfig : Luban.BeanBase
         + "ScenePath:" + ScenePath + ","
         + "PlayerSpawnPointId:" + PlayerSpawnPointId + ","
         + "Stages:" + Luban.StringUtil.CollectionToString(Stages) + ","
-        + "ExitTargetSpawnPointId:" + ExitTargetSpawnPointId + ","
         + "}";
     }
 }

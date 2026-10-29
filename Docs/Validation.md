@@ -1,4 +1,426 @@
-# 验证
+﻿# 验证
+
+## 官方反馈与共用墓碑（2026-10-29）
+
+依据第 10/30/40/50 章与用户最新要求：墓碑作为所有英雄共用的独立场景，自有动画、下落和贴地碰撞；英雄身体胶囊在死亡时停用，复活恢复。关卡等待实际墓碑动画结束后结算。第 40 章仍记载地图播放器 0.4 倍速，与本轮恢复官方速度的要求冲突；按用户要求恢复默认 1 倍，规范正文未自行修改。正式玩家存档、Git 索引、框架和插件未改动。
+
+以下引擎日志位于 `Godot/GodotProject/.godot/validation/movement_presets/`，经 `run_godot.py <用例名> <Godot 参数>` 在隔离 APPDATA 中运行；实机使用 OpenGL 与 Dummy 音频。
+
+| 命令 / 检查 | 结果 |
+| --- | --- |
+| 官方调用链核对 | `Role1.__added` 与 `Role2.__added` 均登记 father 保护，非悟空独有；`BaseAddEffect.updateFather` 在第五次有效直接命中后保护 48 源帧，即 2 秒；命中间隔达到 1 秒重置计数，第五次仍受伤。悟空红光、唐僧蓝光，无双白光优先。共享计时归 HeroModel/HeroSystem，颜色归角色场景，未增加存档字段或未来角色空实现。来源与限定见 OfficialReference。 |
+| `--smoketest=frontend` | `feedback_frontend_map_speed` PASS、退出 0；地图恢复 1 倍后按原动画 24fps 播放，普通地点 19/24 秒、鲨之涡流 48/24 秒一轮。悬停、建档/读档、保存、进入关卡及返回回滚通过。 |
+| `--smoketest=ui --hurt-protection-only` | 最终 `shared_feedback_hurt_final` PASS、退出 0；60/120Hz 均覆盖第五击触发、第六击无伤、技能无敌重叠、身体/武器两层红光、暂停与到期。最新截图已查看；shader 对图集单格采样，防止相邻姿态串入。 |
+| `--headless --editor --script res://EditorScripts/extract_shared_hero_tombstone.gd --quit` | `shared_tombstone_extract` 退出 0；以原生作者工具抽离 78 个时间键、3.25 秒动画，角色库仅保留隐藏/停用身体与死亡声音。图片迁至 `hero_death/hero_tombstone_atlas.png`，与原件 Git blob 散列均为 `c6d6ae9236e2764c5f4bda364e6ea17b92663400`，导入 UID `uid://baqeue3j6frh0` 保留。 |
+| `--smoketest=ui --hero-death-only` | `shared_tombstone_runtime` PASS、退出 0；实际花果山平地 x=200、45°坡面 x=1035，各以 60/120Hz 验证贴地、清除上升速度、动画末帧与暂停、死亡音播放、失败结算、重试及返回地图再入。复活恢复英雄胶囊，墓碑隐藏且停止物理推进。坡面截图已查看。 |
+| `--script res://.godot/validation/hero_feedback_20261029/probe_tombstone.gd` | 最终 `shared_tombstone_geometry_final` 退出 0；独立墓碑在 0/15/30/40/45°坡面非透明底边与地面的间隙分别为 -0.83/-0.77/-0.52/-0.20/-0.01px，均无悬空；小于 1px 的负值表示轻微压入地面。 |
+| `--smoketest=ui` | 最终 `shared_tombstone_full_ui` PASS、退出 0；完整 UI、技能、暂停墓碑、失败重试、模型/实体复用与磁盘重入通过。 |
+| `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet`；`dotnet test Tests/ProfileTests --no-restore -v quiet`；BattleTests；LevelTests | 构建 0 错误、5 个既有框架警告；211/225/19 项全部通过。新增规则覆盖断链、无效命中、两英雄共用规则及 24/60/120Hz 计时；测试可反射观察，未增加生产测试 API。NU1900 与测试链接字段/nullable 警告单列。 |
+| `--headless --editor --script res://EditorScripts/regenerate_collection.gd --quit`；`python Tools/ProjectMaintenance/validate_game_references.py` | `shared_tombstone_collection_final` 退出 0，经既有生成器收集 798 资源；最终引用检查 1796 路径、381 UID 通过。墓碑图片用 atlas 后缀避免 Collection basename 冲突；旧生产节点/图片路径与临时胶囊锚点已移除。 |
+| `dotnet run --project Tools/ProjectMaintenance/CSharpStyle --no-restore -- <仓库> <审计JSON>`；定向 `git diff --check` | `hero_feedback_20261029/style_final.json`：352 个手写文件，0 格式变化、0 缺失文档；本轮文件空白检查通过。只读目录与规范正文无工作树改动，既有索引保留。 |
+
+失败与修正保留：最初依附英雄胶囊的小锚点方案在 120Hz 实际坡面仍会卡住，已整体替换为独立 CharacterBody2D；shader 首版向函数传内置采样器导致诊断，改为单格内直接采样后通过；唐僧测试夹具曾读取尚未实现的成长表，已仅在夹具中提供共享基础数据；直接命中夹具的默认等级造成取整零伤害，已改为同级出招快照。没有为通过测试放宽生产规则。
+
+引擎关停仍有既有只读依赖诊断：编辑器 ComponentInsoector.Free 与 RID/ObjectDB，游戏 WebRequest ObjectDisposedException；最终完整 UI 另报 93 个 ObjectDB、38 个 CanvasItem、3 个资源及纹理存活。业务断言 PASS 和退出 0 不代表无异常日志；本轮没有修改依赖处理这些问题。Dummy 音频验证代理及播放推进，不声明扬声器听感验收。
+
+## 存档、Tooltip 与代码风格收尾（2026-10-29）
+
+| 检查 | 当前结果 |
+| --- | --- |
+| 第 1 格旧档一次性转存 | 正式 `GameData` 目录 6 个原文件已备份到 `%APPDATA%/Godot/app_userdata/GameZMXY/GameData.backup-before-v11-20261029_114704`，逐文件散列核对通过；只更新 `Data/1791793987.sav` 与 `.bak`，目录摘要和第 2 格保持原字节。正式模型校验输出 `SAVE V11 VALIDATION PASS: version=11, soul=7563, equipment=13, heroes=1, progress=5`；保留经验 8871、灵魂 7563、13 件装备、5 项技能与关卡进度，无兼容代码。 |
+| 辅助 Tooltip | 删除 17 处场景文本及地图、存档、战斗菜单、技能页、出售菜单运行时赋值，同步删除作者工具的旧赋值。保留 `EquipmentCell` / `EquipmentTooltip` 自定义详情、样式和原有测试。最终 `style_frontend_final_20261029` 与 `style_ui_final_20261029` 均 PASS、退出 0；递归 Tooltip 断言、保存成功提示、动态装备属性/价格详情和技能页均通过，装备详情与主档背包截图已查看。 |
+| C# 风格与文档 | `dotnet run --project Tools/ProjectMaintenance/CSharpStyle --no-restore -- <仓库> <审计JSON>`：覆盖 350 个手写项目文件，排除 Framework、addons、Tools/Luban、生成代码与 `.godot`。Roslyn 验证 token、注释与初始化顺序保持；统一 4 空格、独占大括号、块命名空间和成员顺序。`formal_delivery_audit.json` / `formal_delivery_contracts.json`：0 格式变化、0 XML 参数/返回/泛型契约缺项。23 文件的多行字段缩进已在隔离副本复查并修正，工具重复执行不再累加缩进。 |
+| 构建与纯规则 | `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet`：0 错误、5 个既有框架警告；ProfileTests 206、BattleTests 225、LevelTests 19 全部通过；`python -m unittest discover -s Tests/ToolTests -q` 23 项通过。 |
+| Godot 扫描 | `python .../movement_presets/run_godot.py style_scan_20261029 --headless --editor --build-solutions --quit --no-window`：退出 0，完成脚本扫描。 |
+| 正式主档引擎读入 | 把正式 `GameData` 复制到隔离 APPDATA 后由 GGF 真实启动、读第 1 格、进入花果山并打开背包：`MIGRATED SAVE ENGINE PASS: slot=1; highest=5; soul=7563; level=14`，退出 0。原档未被烟测写入；关停 WebRequest 诊断仍按依赖问题记录。 |
+| 引用与 Git | `python Tools/ProjectMaintenance/validate_game_references.py`：1789 路径、379 UID 通过。`git diff --check` / `git diff --cached --check` 的现有空白警告涉及生成 `GameProto` 文件，生成代码与 Git 索引保留。 |
+
+格式与文档审计在 `.godot/validation/code_style_20261029/`；离线转存校验器在 `config_review_20261028/save_v11/`，正式备份的 `manifest.json` / `applied.json` 记录原件及写入结果；OpenGL 回归使用 `movement_presets/style_*_20261029/` 隔离 APPDATA。第 70 章的 v9 描述与当前 v11 实现差异已报告，未自行修改规范。
+
+Godot 编辑器关停仍有只读 `ComponentInsoector` 的 `free` 调用错误；游戏仍有既有 WebRequest `ObjectDisposedException` 与 ObjectDB 存活诊断，最终 UI 为 93 个 ObjectDB、38 个 CanvasItem 和 3 个资源，前端为 5 个 ObjectDB 和 1 个资源；不能称为无异常退出。新增 Tooltip 测试的首次构建因测试命名空间误写失败，已修正为实际 `GameLogic.UI.EquipmentCell`，后续构建通过。主档引擎夹具首次在窗口初始化完成前发出按钮事件而超时，增加信号绑定/初始化等待后通过；失败日志保留，未改正式导航逻辑。
+
+## 配置整理、移动预设与新敌人判定（2026-10-29）
+
+按用户最新决定执行：Enemy公共命名、Walk/Fly/Swim同级身体预设、小怪/BOSS编号区间、原生Excel布尔与可见类型行、关卡专属数值迁为物种`.tres`，以及技能特殊规则归具体状态。第20/30/40章仍有旧表名、无类型行、配方倍率等描述；遵循入口约束，只在ProjectTour/WorkingNotes报告差异，规范正文保留本轮开始时内容。正式存档与Git索引未写入；框架、插件、Luban本体未改。
+
+以下日志与审阅产物位于`.godot/validation/movement_presets/`，实机在隔离APPDATA中运行。
+
+| 命令 / 检查 | 当前结果 |
+| --- | --- |
+| `Configs/GameConfig/gen_code_bin_to_project_lazyload.bat`（`AI_MODE=1`） | 源表和生成物同步；删除专属Luban类型及装备固定Kind字段。两处生成注释从源表修正后生成，未直接修改生成代码 |
+| `dotnet build Godot/GodotProject --no-restore -v quiet` | 0错误、5个框架既有弃用警告 |
+| `dotnet test Tests/ProfileTests --no-restore -v quiet`；BattleTests；LevelTests | 206/206、225/225、19/19通过；NU1900与测试链接字段/nullable警告单列 |
+| `python -m unittest discover -s Tests/ToolTests -v` | 23项通过，含clipDepth遮罩与作用范围到期的回归 |
+| `audit_config_schema.py`；`audit_config_readability.py` | 17张业务Sheet所有列类型/中文说明/原生bool存储0错误；11本表24枚举列0英文值、0缺失别名 |
+| `node .../movement_presets/verify_all_xlsx.mjs` | 用户已安装XLSX Diff1.6.4实际worker对11本表的普通/公式22次读取全部通过；只从原ZIP局部转存授权单元格及结构 |
+| `regenerate_collection.gd`；`validate_game_references.py` | 既有生成器登记Enemy bytes和专属Resource，清理8个已删生成脚本的孤立UID；最终收集795资源；引用审计1789路径/379UID通过 |
+| `prepare_enemy_attack_geometry.py --output .../attack_geometry_review.json`；`repair_new_enemy_attack_geometry.gd` | 核对同版Flash探针曲线、透明位图与遮罩；5个库136源帧的基础形状原生作者化。飞行妖改窄斜矩形，潮妖排除未遮罩960×576画布，灯笼鱼用圆排除矩形外角，彭魔王两招/三团火收紧空白；未改帧图、声音、攻击编号或威力 |
+| `validate_new_enemy_attack_geometry.gd -- .../attack_geometry_review.json` | `geometry_native_final`退出0；166帧/区域、536次双朝向形状物理查询及普通动作旋转复位通过；火焰0时刻仍有效 |
+| `repair_map_location_alignment.gd`；`validate_map_location_alignment.gd` | 10地点普通/悬停画布中心、透明命中及OpenGL截图通过；截图已查看。鲨之涡流源图另有非对称画布，保留源像素在透明画布左侧补15px、上侧补37px对齐涡流原点 |
+| `run_runtime_final.ps1` | `final/runtime_results.json`的8项全部退出0并有各自业务PASS：garuda、shark-ai、shark、east-sea、bull、dragon、hero-death、passive；含两频率、双朝向、死亡/回池与25次被动购买/磁盘重入 |
+| `run_flows_final.ps1` | `flows/runtime_results.json`的4项全部退出0并有业务PASS：Sea守关/基础数值池复用、花果山、蝙蝠洞、浅岸完整波次/守关/W出口/成功音乐/保存及地图重读 |
+| `--smoketest=frontend` | `frontend_delivery`退出0，真实地图悬停/放大轮廓点击、选角、建档/读档、保存提示、关卡导航和放弃回滚通过 |
+| `git diff --check`；`git diff --cached --check` | 工作树通过；索引仍有此前已暂存、当前工作树已删除的8个生成文件空白，未修改Git索引或只读生成器模板 |
+
+首次garuda回归失败确实检出作者脚本把火焰首键误放到0.558秒；修正为0时刻后完整8项重跑通过，失败日志保留在`current/garuda/`。生成注释直改和整文件规范还原均被自动审批拦截；随后分别走源表生成与明确的逐处反向补丁，已完成纠正。Godot编辑器关停仍有既有ComponentInsoector.Free/RID诊断，游戏仍有既有WebRequest ObjectDisposedException及ObjectDB存活诊断；AtlasTexture方案曾因GetImage不保留margin导致命中掩码断言失败，现改为透明PNG画布注册并通过；原图可见RGB和全部alpha逐像素不变，失败日志保留。业务PASS与退出0不等于无异常日志。Dummy音频验证GGF代理与播放推进，不声明扬声器听感验收。
+
+## 配置中文化、专属配置与Sea分类（2026-10-28）
+
+依据第10/20/30/50章及用户“所有海怪归Sea，保留原行为”的确认。源表由Artifact Tool作者化，仅转存已审阅单元格/结构并保留其余ZIP部件；生成物经既有Luban/Collection Res入口更新。以下日志位于`.godot/validation/config_review_20261028/`。
+
+| 命令 / 检查 | 当前结果 |
+| --- | --- |
+| `python Tools/ProjectMaintenance/audit_config_readability.py --report .../readability.after.json` | 11本源表、25个枚举引用列，0英文枚举值、0缺失中文别名、0缺失中文列说明。代码标识、资源路径、框架组名、LegacyId仍保留原技术含义 |
+| `author_readability.mjs`；`apply_readability.py`；`check_readability_diff.mjs` | 8本源表726格、3处必要列宽；改前/改后预览已检查，逐格变化与计划一致。XLSX Diff1.6.4实际worker普通/公式模式共16次通过，分别35/1/46/142/214/252/30/6格差异。首次空单元格匹配导致enum校验失败，已从原包重新转存6个别名并复核全部编号未改 |
+| `Configs/GameConfig/gen_code_bin_to_project_lazyload.bat`（`AI_MODE=1`） | `readability.luban.log`完成schema、数据校验及导出；仅PickupId/PickupEffect的生成注释变化，所有正式bytes与编辑前SHA一致 |
+| `author_level_specials.mjs`；`preserve_level_specials.py`；`check_specials_diff.mjs` | 正式删除通用关卡末6列及bean字段，新增花果山/浅岸/蝙蝠洞/隐藏龙宫4个中文专属Sheet与注册。普通/公式模式均通过：LevelConfig763格、beans18格、tables24格；已查看五页目标预览 |
+| `author_skill_controls.mjs`；`preserve_skill_controls.py`；`check_final_diff.mjs` | SkillConfig删除J:L三项悟空专属动作规则，其他单元格/Sheet/ZIP部件保留；实际XLSX Diff普通/公式模式均只有39格目标删除，已查看预览。Resources五条Sea路径、Enemy一条旧说明分别只有5/1格变化，两种模式均通过 |
+| Luban既有批处理；`--headless --editor --script res://EditorScripts/regenerate_collection.gd` | `level_specials/luban.formal.log`及`sea_resources/luban.log`完成生成；4个具名专属表、Level/Skill/Monster/Entity产物与源表一致。Sea移动57文件携UID，`sea_resources/collection.log`重扫退出0、收集796资源；不手改生成常量 |
+| `dotnet build Godot/GodotProject --no-restore -v quiet` | `sea_resources/build.final.log`退出0，0错误/5个既有框架警告。技能字段删除后的首轮失败来自烟测残留诊断引用，已删除，不恢复生产API |
+| `dotnet test Tests/ProfileTests --no-restore -v quiet`；BattleTests；LevelTests | 最新203/223/19项全部通过；删除旧倍率/技能表字段镜像测试，保留具体官方时点、专属配置、主线与隐藏进度边界。NU1900和测试链接字段/nullable警告单列 |
+| `python -m unittest discover -s Tests/ToolTests -q` | 22项全部通过；包括全源表中文引用、同名枚举别名隔离，以及原有装备/关卡审计 |
+| `run_runtime.ps1`，隔离APPDATA，OpenGL、Dummy音频 | 下列9个最终场景全部退出0且有对应业务PASS；日志为`level_specials/*_final.log`、stderr和exit文件，不以通用末尾文案替代专项覆盖 |
+| `--smoketest=ui --enemy-hierarchy-only`；`--sea-only` | `hierarchy_final`五地面物种/空中禁招/受击/复用通过；`sea_final`实际覆盖奖励、60/120Hz、双向四招/弹体/暂停/回池通过 |
+| `--smoketest=ui --shark-ai-only`；`--shark-only` | `shark_ai_final`垂直追踪、固定转向节拍与速度上限、60/120Hz自主出招通过；`shark_final`首领/召唤物双向两频率招式、无敌/暂停/隐藏警示取消/回池通过 |
+| `--smoketest=ui` | `ui_final`完整UI/数值绑定/技能/输入/受击/升级/事务/存档重入通过；包括124个整数源帧取消窗口取样、五招及无双专项 |
+| `--smoketest=level`；`--smoketest=level4`；`--smoketest=level7` | `huaguoshan_final`204经验、`bat_cave_final`702经验、`shore_final`3638经验；真实阶段、相机/门、守关目标、W出口、成功结算、自动保存与地图/磁盘重读通过 |
+| `--smoketest=ui --dragon-flow-only` | `dragon_flow_final`真实下水、一秒淡出及暂停、GGF转关保留已得收益、首次旗幡拾取、原生死亡/W出口/磁盘检查点/地图通过；另有`dragon_current`两档四招专项通过 |
+| `python Tools/ProjectMaintenance/validate_game_references.py`；工作树/索引`diff --check` | 1782路径、382UID及两项空白检查通过；正式资源/导入元数据/工具无旧Ground/sea或Sky/shark_spawn路径引用 |
+
+引擎专项stderr仍有既有WebRequest关停ObjectDisposedException、ObjectDB/RID/资源存活诊断；Collection Res仍出现ComponentInsoector的RefCounted/free关停错误，断言通过和退出0不等于无异常日志。可空奖励Override在死亡事件中保留特殊值，消费时回退基础配置；0概率和None池不作为缺省处理。正式玩家存档、Git索引、框架与插件未修改。
+
+本轮用户要求优先于第20章“仅单一关卡表”及第30/40章“配方倍率”的旧描述，差异已在ProjectTour/WorkingNotes记录，未自行改写规范。以下剩余关卡历史集中收据对应旧指纹，本轮只声明上述受影响范围回归，不刷新历史收据冒充重跑。
+
+## 剩余造一关卡统一交付（2026-10-28）
+
+依据第00/20/30/40/50/60章，按官方v25928资料完成六关当前指纹验收。全部测试使用隔离APPDATA和存档；正式玩家档、Git索引、框架/插件/旧工程源码与Luban本体未改。日志相对`.godot/validation/remaining_levels/current_final/`。
+
+| 命令 / 检查 | 当前结果 |
+| --- | --- |
+| `python .../current_suite.py --resume`；`record_current_suite.py` | `final_20261028.log`、`imagery_20261028.log`及`commands_levels.json`记录79项当前成功命令；六关每道门引用实际命令、退出码、日志SHA和工程指纹，不刷新历史收据冒充重跑 |
+| 官方依赖清单；`audit_source_recipes.py` | 11个官方标签、24种动态敌人；82条出生流身份/数量/首只等待/后续间隔一致。独立核对发现浅岸16条首只等待少2秒，已按`delay+interval`修正LevelConfig的S111:S126，后续间隔不变 |
+| Artifact作者化、原ZIP局部转存、XLSX Diff、Luban | `shore_timing/`保留前后工作簿/预览；普通与公式模式均只有16格差异，其他ZIP部件保持。既有入口重建关卡bytes；`build_after_generation.log`0错误 |
+| `validate_wukong_wardrobe_motion.gd`；`validate_official_wukong_attacks.gd`；`--equipment-only` | 38件外观、15件悟空装备、2158源格、23904原生播放样本、5208普攻样本及真实跨页穿卸通过。像素审计改为无图形阶段，全部组合播放/截图另在OpenGL执行；覆盖不减 |
+| 原生图像与六关全景 | 32组敌人/效果检查通过：31组原生动画绘制对照及虾兵19×13单帧弹体。前景/地形全幅像素对照通过；动态天空、陷阱、出口由场景和实机检查。两张ADD预览首次因目录缺失未写入，创建隔离输出目录后重跑对应两项通过，PNG已查看 |
+| 2-3、3-1、3-2、3-3、4-1、9-1场景与实机专项 | 全部BOSS/AI/判定/掉落/暂停/结算/失败重试/地图返回/磁盘重读通过；五主线完整通关。隐藏龙宫覆盖真实下水、1秒淡出、两档龙王四招、首次旗幡、死亡后出口与主线进度隔离 |
+| `--chapter-music-only`及各关Music断言 | Cave/Sea/Bull三首章节曲的GGF代理、循环、播放推进、暂停策略和停止通过。官方无专属招式音的敌人不虚构事件，保留真实英雄命中反馈。测试使用Dummy音频驱动，不声明做过扬声器听感验收 |
+| Profile/Battle/Level；ToolTests | 208/223/19/20项通过，合计470。工具新增拒绝漏算首次interval、错误怪物/流集合、旧清单缺逐流证据；关卡就绪审计持久集成同一校验 |
+| `python Tools/LegacyMigration/audit_remaining_level_readiness.py --inventory Godot/GodotProject/.godot/validation/remaining_levels/dependency_inventory.json --work Godot/GodotProject/.godot/validation/remaining_levels --output Godot/GodotProject/.godot/validation/remaining_levels/readiness_final_20261028.json --strict` | 退出0，**6/6 complete、每关0 open gates**；源SHA和82条配方均无错误 |
+| `git diff --check`；`git diff --cached --check` | 通过，Git索引未改 |
+
+当前工程指纹为`4eaccece3f58372dbfa6aab022204b9f8fe3f67c572dc1d640acb781b2045ef5`；官方清单SHA为`f9b841f512fb0a551cc4c484fd0d85389bd4b810118484025c2958732d48048e`。首次GPU纹理读回发生内存分配崩溃的日志、配方对比首次失败日志均保留。最终游戏进程仍有既有WebRequest关停ObjectDisposedException、ObjectDB/RID/资源存活诊断，退出码和玩法断言通过；没有修改只读依赖来消除这些诊断。法宝按用户已定范围仅获取/背包/存档，主动玩法未开放；唐僧等未开放角色不属于本次关卡制作。
+
+## 龙王特例归位与通用变体清理（2026-10-28）
+
+依据第00/10/20/30/50章，将仅龙王使用的入场等级选择留在具体实体与状态中。正式存档、Git索引和只读依赖源码未改；生成物只经既有Luban入口更新。下列日志相对`.godot/validation/remaining_levels/`。
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| Artifact作者化`remove_enemy_variants.mjs`；`preserve_removed_variants.py`；`check_removed_variant_package.py` | 移除Enemy两Sheet的AU:BC变体列及bean对应10行；保留其他单元格值、公式、样式和所有非工作表ZIP部件。已检查前后预览；未扩大到其他源表 |
+| `Configs/GameConfig/gen_code_bin_to_project_lazyload.bat`（`AI_MODE=1`） | `remove_enemy_variants_luban.log`退出0；重建怪物bytes、MonsterConfig，并由生成器删除EnemyLevelVariant；随后清除孤立UID。无手改生成C#或bytes |
+| `node .../check_removed_variants.mjs` | `remove_enemy_variants_diff.log`退出0；已安装XLSX Diff1.6.4普通/公式模式共4次通过，Enemy47格、bean31格差异；通用变体标签消失，龙王身份保留 |
+| `dotnet build Godot/GodotProject --no-restore -v quiet` | `remove_enemy_variants_build_final.log`退出0，0错误、5个既有框架警告 |
+| `dotnet test Tests/ProfileTests --no-restore -v quiet`；`dotnet test Tests/BattleTests --no-restore -v quiet` | `remove_enemy_variants_profile.log`208/208；`remove_enemy_variants_battle_final.log`223/223。新增4个龙王入场概率边界用例，宿主基础概率保持100以拒绝错误地读取通用配置；既有NU1900与测试编译警告单列 |
+| `S:/Godot4/Godot4CSharp_console.exe --path Godot/GodotProject --rendering-method gl_compatibility -- --smoketest=ui --dragon-only`，隔离APPDATA | `remove_enemy_variants_dragon_final.log`退出0；实际32组两档×60/120Hz×双向四招、七次冰环命中、2/5秒冰冻、无双免疫、暂停与活动效果回池通过。末尾泛化UI文案不代表运行完整UI生命周期套件 |
+| `python Tools/ProjectMaintenance/validate_game_references.py`；`git diff --check`；`git diff --cached --check` | 1782条路径、373个UID通过，两项空白检查通过；生产源码/测试不再引用VariantAttacks、LevelVariants、EnemyLevelVariant或agent.AttackDesire |
+
+最终引擎stderr仍有既有WebRequest关停ObjectDisposedException和5个ObjectDB存活诊断，进程退出0；不把玩法PASS称为无错误日志。此次只完成特殊机制清理，之前的剩余关卡集中验收和历史失败原因不在本次通过范围内。
+
+## 隐藏龙宫接入（2026-10-27，集中重跑前）
+
+依据第10/20/30/40/50/70章；使用隔离APPDATA与Validation存档。正式玩家档案尚未转存，Git索引与只读依赖源码未改。日志相对`.godot/validation/remaining_levels/`。
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| `validate_dragon_art.gd -- <dragon actors manifest> <source_rules.json>` | `dragon_art_timing_verified.log`退出0；315身体帧、六次攻击刷新、三段无敌、独立效果创建时点与冰块绑定通过 |
+| `validate_registered_actor_atlas.gd`，正式龙王/冰光/水波/水柱/冰块五组 | `dragon_registered_*.log`均退出0，合计549帧；ADD在有色背景上合成，未烘入黑色底板 |
+| `validate_dragon_resources.gd -- <clipped_geometry.json>` | `dragon_native_geometry.log`退出0，424源碰撞帧、关卡/出口/音乐/水下入口绑定通过；clipDepth交集后才求基础矩形，排除隐藏画布 |
+| OpenGL `-- --smoketest=ui --dragon-only` | `dragon_verified_runtime.log`退出0；两档×60/120Hz×双向四招32组、冰环七次命中、2/5秒冰冻、无双免疫、暂停与活动水波回池通过 |
+| OpenGL `-- --smoketest=ui --dragon-flow-only` | `dragon_flow_final_runtime.log`退出0；真实水面不误触发、S+K下水、一秒淡出可暂停、GGF重入11、保留17魂、首次旗幡拾取、完整死亡后出口、W结算、磁盘与地图通过 |
+| OpenGL `-- --smoketest=ui` | `dragon_final_ui.log`已轮询确认PASS、退出0；完整UI生命周期回归。此次新增的死亡盒断言和龙宫全部装备专项仍待集中复跑 |
+| Profile/Battle/LevelTests；ToolTests | `dragon_final_profile_tests.log`208/208、`dragon_ai_pure_verified.log`219/219、`dragon_level_tests.log`19/19、工具17/17，合计463 |
+| Collection Res；构建；引用/空白；XLSX Diff | `dragon_collection_verified.log`退出0、792资源；`dragon_final_build.log`0错误/5个既有框架警告；1782路径/372UID通过，工作树/索引空白检查通过。7本源表在已安装XLSX Diff普通/公式模式共14次读取通过；部分.before已被作者步骤覆盖，不把0差异当成与改动前相同 |
+| 准备的第1格v9→v10档案 | `dragon_save_v10/validation.log`通过正式SaveDataUtility校验、TestGameScope装配和完整集合往返；只改版本与旗幡资格，7847经验、5621魂、37装备、5技能、通关5保留。正式档尚未写入，按第70章等待本份档案授权 |
+
+先前两次隐藏流程失败分别是未指定播放器动画名、夹具早于导航订阅点击结算；失败日志保留，修正后完整重跑通过。既有编辑器插件free调用、游戏关停WebRequest ObjectDisposed与ObjectDB/RID诊断仍存在，不以玩法PASS掩盖。第70章的v9说明与当前v10实现差异已报告，未擅自修改规范。六关当前指纹收据与修复后全组合攻击仍待集中完成。
+
+用户随后明确授权指定第1格的备份转存。`dragon_save_v10/backup_20261027_204823/GameData/`完整保留原目录4个文件，`manifest.json`逐文件SHA校验通过；仅指定主档及其`.bak`更新为准备文件。`applied.json`登记路径/散列，`formal_validation.log`使用旧备份和正式新档运行离线校验器，`SAVE V10 VALIDATION PASS`、退出0，7847经验/5621魂/37装备/5技能/通关5全部保留。首次PowerShell调用File.Replace的空备份路径被拒绝，主档未变；改用同目录覆盖移动成功，未扩大写入范围。
+
+## 全装备补齐与法宝获取（2026-10-27，较早检查点）
+
+依据第00/10/20/30/40/50/70章；正式存档、Git索引和只读依赖源码未改。下述日志均在`.godot/validation/remaining_levels/`。
+
+| 命令 / 检查 | 实际结果与范围 |
+| --- | --- |
+| Artifact作者化Items/__enums__，原ZIP目标范围转存，既有Luban入口 | 十件官方装备/法宝及Treasure生成成功；原样式和其他ZIP部件保留。`check_final_xlsx.mjs`使用XLSX Diff1.6.4，普通/公式模式分别识别Items226格、枚举33格；命名空间0项需修复 |
+| `audit_equipment_appearances.py`、`audit_official_wukong_wardrobe.py` | 38件/38条唯一透明外观；15件悟空装备、13张独立图集身份通过。新三图集各166格，唐僧仍只登记自己的图标/数据 |
+| OpenGL `validate_wukong_wardrobe_motion.gd`，输入`final_wardrobe_identity.json` | `final_wardrobe_motion.log`退出0：2158源格、867基础动作层帧、23904全组合播放，0失败；run_01组合图已查看 |
+| `repair_official_attack_geometry.gd -- <wukong-skills-export/manifest.json> --new-equipment-only`；`validate_official_wukong_attacks.gd -- <hud_entry_attack_crop/export/manifest.json> --weapon-coverage-only` | 全组合初测5208帧检出新武器漏判定；仅扩展10个有效姿态，时点/事件不变。修正后`final_weapon_coverage.log`退出0，全部7套独立武器双向868帧及刀尖/弧光/远端物理查询通过。修正后的全防具×武器攻击复跑曾误停，不计通过；完整组合动作另由上一行验证 |
+| OpenGL `--smoketest=ui --equipment-only` | `final_equipment_runtime.log`退出0：38件地面图/恢复品透明底边贴合、15件跨页穿卸、战斗/预览及动作、两法宝类型/提示/禁用穿戴通过。非末尾泛化文案所列全部UI生命周期 |
+| `dotnet run --project Tests/{ProfileTests,BattleTests,LevelTests} --no-restore -- -parallel none`；ToolTests | 199、214、19、17项通过；法宝保存/重建保留实例和属性且不加成，金钢琢整百分比随机、如意金箍棒15%闪避核对 |
+| `validate_bull_resources.gd`、`audit_registered_actor_packing.py`、八组`validate_registered_actor_atlas.gd` | `bull_suite_native.log`1324源帧/朝向通过；打包644+83源帧通过；八组正式图集实际渲染均退出0，画布与根坐标一致。心脏光晕/双掌/火柱截图已查看 |
+| OpenGL `--smoketest=ui --bull-only` | `bull_suite_runtime.log`退出0：兽形冲撞/停步/反向/暂停、牛妖110px双向攻击、五招60/120Hz、吞噬五次伤害、心脏显隐/火柱清理，金钢琢首次/重复/满包/复用通过 |
+| OpenGL `--smoketest=ui --bull-flow-only`、`--smoketest=level10` | `bull_suite_equipment_flow.log`、`bull_suite_level.log`退出0：四件精良实际拾取、穿卸、失败保存、重试/地图；30护卫/三形态、1598经验、自动胜利、唯一音乐、金钢琢检查点与磁盘重读通过。全物品夹具曾排到短关卡外，仅修改测试摆放后重跑 |
+| OpenGL `--smoketest=level2` | 首次`bull_suite_portal_regression.log`末波180秒超时；未改生产行为，增加测试诊断后`portal_diagnostic_runtime.log`退出0，五波/312经验、W组合拒绝、出口、胜利和重读通过。原因未确认，保留失败证据 |
+| Collection Res、C#构建、引用与空白检查 | 既有生成器退出0；构建0错误/5个既有框架警告；最终1725路径/365UID通过；工作树/索引空白检查通过 |
+
+一次Godot`--headless --editor --build-solutions --quit --no-window`完成扫描后关停挂起，终止自建验证进程，退出-1，不记为冷启动通过。常规生成器和游戏测试正常结束，仍有既有ComponentInsoector释放、游戏退出WebRequest ObjectDisposedException及资源存活诊断，未修改依赖。第40章默认要求出口，本轮官方终关确实无出口，差异在此报告，未自行改规范。9-1龙宫实际场景、资格标记、掉落和返回仍未完成；全关卡最终就绪收据待集中重跑。
+
+## 新增精良装备与全装备实机检查（2026-10-27）
+
+按第10/30/40/50章，正式存档、Git索引、Framework和addons未改。日志相对`Godot/GodotProject/.godot/validation/remaining_levels/`；引擎为`S:/Godot4/Godot4CSharp_console.exe --path Godot/GodotProject`，实机使用OpenGL、隔离APPDATA与Validation存档。
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| `audit_equipment_appearances.py --output <remaining_levels>/equipment_appearances_20261027.json` | 初次正确拒绝4件精良装备缺外观，以及悟空服/棍缺动作绑定；补齐后28件/28条唯一外观通过。透明度检查新增拒绝全不透明背景，未接入龙宫的装备不计在此数量内 |
+| `--headless --editor --script res://EditorScripts/register_bull_equipment.gd` | 退出0，`BULL EQUIPMENT PASS`；4套透明图登记，服/棍按AllEquipment共用selector3。`bull_equipment_registration_20261027.log`保留编辑器既有UID/插件关停诊断。首次误用非editor模式已纠正，脚本现明确拒绝该模式 |
+| `audit_official_wukong_wardrobe.py`，输入上一轮10份源manifest与当前源表，输出`bull_art/wardrobe_inventory.json` | 12件悟空穿戴身份、10张独立图集（含默认层）通过；12件尚未可玩唐僧装备单列 |
+| OpenGL `validate_wukong_wardrobe_motion.gd`，使用`bull_art/wardrobe_inventory.json` | `bull_wardrobe_motion_20261027.log`退出0：1660源格、714基础动作源层样本、49组合双向16268原生播放样本、0失败；跑步组合图已查看。其余参数与下方换装复现命令一致 |
+| OpenGL `validate_official_wukong_attacks.gd -- <hud_entry_attack_crop/export/manifest.json>` | `bull_equipment_attacks_20261027.log`退出0，3100普攻样本与真实物理覆盖通过；相同selector不重复图像组合 |
+| OpenGL `-- --smoketest=ui --equipment-only` | `all_equipment_runtime_20261027.log`退出0；所有28件装备/恢复品地面贴合、满包/领取/池复用、12件悟空跨页GUI穿卸、战斗/预览/完整动作同步通过。包含原背包分页、tooltip和出售回归，不能据末尾泛化UI汇总文案声称运行了完整UI生命周期套件。仍有既有WebRequest关停异常、59个ObjectDB与6资源存活诊断 |
+| `python -m unittest discover -s Tests/ToolTests -v`；`git diff --check` | 17项通过、空白检查通过；就绪收据现在要求`--equipment-only`实际专项，缺少它即拒绝装备完成声明 |
+| `--headless --editor --script res://EditorScripts/regenerate_collection.gd` | 退出0，既有生成器收集715项资源，新装备资源常量同步；没有手改生成物 |
+| 最终`dotnet build Godot/GodotProject --no-restore -v quiet`；ProfileTests/BattleTests；`validate_game_references.py`；工作树/索引`diff --check` | 构建0错误、5个既有框架警告；Profile 195/195、Battle 214/214；1596条路径、364个UID通过；两项空白检查通过。日志`equipment_build_20261027.log`、`equipment_profile_tests_20261027.log`、`equipment_battle_tests_20261027.log`、`equipment_tools_20261027.log` |
+
+牛魔谷当前实体骨架构建0错误；4-1/9-1没有当前就绪收据，仍需场景/三形态/龙王/完整关卡流程及法宝范围处理。旧3-3等收据已被后续正式代码/工具改动失效，最终全关卡需重新集中验证，不改写历史指纹。
+
+## 牛魔谷正式关卡与地图入口（2026-10-27）
+
+依据第10/30/40/50章，正式存档、Framework、addons、Luban本体未改；运行使用隔离APPDATA和Validation存档。
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| `import_official_bull_actors.py` + `register_bull_actor_resources.gd` | 牛魔王兽形/人形/心脏、牛妖及心脏、双手、火柱、背景分别写入正式角色目录；四场景和火柱池绑定通过。官方角色图集打包审计`REGISTERED PACKING PASS`分别为644、83源帧 |
+| `validate_bull_resources.gd -- <bull actors> <bull monsters> <all_levels.json>` | `BULL RESOURCE 4-1 PASS`：1324源帧/双向样本，attack_1/2/3/4/5的原生事件、attack_5五次吞噬、心脏淡入/淡出、3条出生流、2个战斗区域/3道门、无出口和地图19帧绑定通过 |
+| OpenGL `-- --smoketest=ui --bull-only` | `SMOKE-BULL ATTACKS 4-1`在60/120Hz均通过；五招双向、五次固定250伤害、英雄捕获/释放、暂停、心脏显隐、双手/火柱独立池清理通过。末尾GGF WebRequest关停异常单列，未计为玩法失败 |
+| OpenGL `-- --smoketest=level10` | `SMOKE PASS：关卡 10`；30只牛妖、兽形→人形→心脏完整交接、阶段相机/门、顶部生命条、1598经验、唯一牛魔谷音乐、自动结算、胜利音乐、地图与存档重读通过。正式终关无`World/Exit`，测试不伪造W出口 |
+| `export_official_map_hints.py --only niumogu` + `register_official_map_location.gd` + UI生成/构建 | 按`SelectPlace.s4_1`字段确认来源；19帧透明提示、m_Niumogu节点、Ge绑定、动画库和入口构建通过。导出器修复RGB透明扩边模板；10个地点隔离对照显示东海/鲨之涡流重导出，其余图集逐像素保持 |
+
+4-1仍未通过严格就绪门，因为官方直接奖励金钢琢 `jgz` 尚未进入正式法宝数据/存档/表现系统；不把法宝塞入饰品槽。9-1隐藏龙宫仍待正式场景和龙王流程，当前不宣称剩余关卡全部完成。
+
+## 全量装备与鲨之涡流最终检查（2026-10-27）
+
+按第20/30/40/50章使用隔离APPDATA和存档，正式存档、Git索引、Framework、addons与Luban本体未改。日志均相对 `Godot/GodotProject/.godot/validation/remaining_levels/`。3-3在集中检查点通过严格就绪；后续导出工具变化使旧收据不再代表当前指纹，最终六关仍需统一重跑。
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| `run_shark_final.ps1` | 实际进程退出0，`shark_suite.log`包含`SHARK 3-3 FINAL SUITE PASS`；扫描/构建、全部规则测试、场景、动作/特效、装备、真实AI/拾取/流程及引用/表格检查依次通过 |
+| `dotnet build Godot/GodotProject --no-restore -v quiet`；Profile/Battle/LevelTests；ToolTests | 集中套件195/214/19/14项通过，构建0错误、5个既有警告；本次依赖工具补充后16项工具测试通过 |
+| `validate_sea_level.gd -- all_levels.json 3-3` | 16条流、五个战斗区域、9道门、3个地面、音乐、出口与地图48帧旋转提示通过 |
+| `validate_sea_actor_animations.gd`、`audit_registered_actor_packing.py`、OpenGL `validate_registered_actor_atlas.gd` | 754身体动作/朝向样本、569身体/特效源帧打包通过；两类身体与六种独立效果均经过原生绘制比较 |
+| OpenGL `--smoketest=ui --shark-only`、`--shark-ai-only`、`--shark-flow-only` | 双频率/双向、高低生命、一次召唤、六类独立效果、死亡/暂停/警示取消/池复用、六件实际掉落拾取/穿卸/失败保存/重试通过；没有新增物理查询回调修改形状错误 |
+| OpenGL `--smoketest=level9` | 五波73只、GGF海域音乐、守关血条、真实出口/成功结算、检查点、地图与磁盘重读通过 |
+| 全量外观与换装再次复跑 | `equipment_recheck/appearances.log`、`identity.log`、`motion.log`、`attacks.log`均退出0：24件身份/外观、10件悟空装备绑定、10张独立图集（含默认层）、1660源格、11952原生播放样本、3100普攻物理样本通过；跑步和二段跳组合截图已查看 |
+| 严格就绪 `audit_remaining_level_readiness.py --level 3-3 --strict` | 集中套件结束时退出0、0个开放门；历史输出`readiness_3-3_verified.json`，之后工具修改已使该指纹失效，没有改写旧收据冒充重跑 |
+
+ProfileTests完整并行运行曾偶发在`LevelProgressTests.InvalidProgress_IsRejected(-1)`的JSON必需字段断言失败；独立类与串行全套通过。测试现用JObject删除字段，仍未消除并行偶发，根因未确认。集中套件使用`dotnet run --project Tests/ProfileTests --no-restore -- -parallel none`，其他C#套件同法，不声称修复了并行问题。完整UI之前对官方负防御/负回血的错误拒绝已修复，`shark_equipment_ui.log`含最终SMOKE PASS；启动时保留固定非概率负属性，概率仍限0..1。GGF关停WebRequest ObjectDisposedException、ObjectDB/资源存活及编辑器既有释放诊断仍单独保留。
+
+## 牛魔谷与隐藏龙宫素材作者化（2026-10-27）
+
+此节只表示隔离素材与作者工具验证，正式Level10/11、实体状态、表格、结算和入口仍待完成。
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| `audit_official_level_dependencies.py --work <remaining_levels>` | 11个官方标签、24类敌人；新增直接构造的Fire与直接赠送jgz依赖，不把工具类Point等当素材。16项工具回归通过 |
+| `export_official_final_actors.py ... --group all` | 三形态、牛妖、龙王及独立心脏/手/火/背景/波/冰龙/加法冰光已暂存；心脏保留父级Glow和矩阵，吞噬角色帧选择当前悟空；正式资产未替换 |
+| `audit_registered_actor_packing.py --manifest <bull/dragon manifest> ...` | 牛魔王644、牛妖83、龙王514源帧像素与注册点通过；联系图已查看，黑底加法图在预览中按ADD合成 |
+| OpenGL `validate_registered_actor_atlas.gd -- <manifest> <name> --staged <review>` | 心脏23、龙王身体315、冰龙68、冰光90实际绘制帧通过，ADD在有色背景上的截图已查看、无黑色矩形。`--staged`验证原始纹理与打包，不替代正式导入/场景/攻击验证 |
+| 海怪默认导出回归 | 3类、272源帧与此前`sea_art/actors_registered`的PNG字节、身份、几何、帧事件和结束标记一致；`sea_export_regression_check.log`含PASS |
+| `export_official_equipment.py --only <14件新装备> --output <final_equipment>` | 28张透明背包/地面图已暂存，依原文件SymbolClass登记；法宝不误归饰品，悟空新selector仍需完整动作及正式绑定验收 |
+| `stage_dragon_wardrobe.ps1`、`review_final_equipment.py` | 玄武甲身体selector5、青龙刀武器selector6、如意金箍棒武器selector5分别完成166格原点保留的素材，共498层格；14件装备图与SymbolClass身份对应且透明，走跑跳/攻击组合联系图已查看。仅暂存，尚未计入正式24件装备审计或关卡就绪 |
+| `validate_registered_actor_atlas.gd -- <shark manifest> shark_king_shark_wave <正式frames> <output>` | 新增暂存读取与ADD预览之后，既有正式资源入口51帧绘制比较通过，退出0，日志`final_native_validator_regression.log` |
+
+首次临时原生夹具把JSON数值格号读为`0.0`字符串导致失败，已转为整数后重跑通过；失败日志`dragon_native_torrent.log`保留，不作PASS证据。后续实际通过日志为`dragon_native_dragon_king*.log`。4-1/9-1没有就绪收据，当前未宣称可玩或完成。
+
+## 东海与全部装备续检（2026-10-27）
+
+依据第20/30/40/50章，经正式源表、Luban、Ge、Collection Res和Godot ResourceSaver接入；Framework、addons、正式存档和Git索引未改。日志位于 `.godot/validation/remaining_levels/`，游戏使用隔离APPDATA与Validation存档。
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| 六本源表Artifact作者化、目标范围转存原ZIP，直接Luban命令 | `east_sea_luban.log`退出0；Enemy、Resources、Combat、Items、LevelConfig、枚举与生成物同步，保留非目标内容、样式和默认XML命名空间。血海妖壳为饰品，不增加虚假角色穿戴层 |
+| `export_official_sea_monsters.py --only 10 20` → `import_official_sea_monsters.py` → `register_east_sea_resources.gd` | 两类身体245帧、龙波25帧、背击10帧；280帧源像素与注册点比对0失败。鲛魔王图集由5032×7502压为2048×3863，region/margin保持相同虚拟画布与固定原点，16px透明隔离避免边缘污染 |
+| OpenGL `validate_registered_actor_atlas.gd`、`validate_sea_actor_animations.gd` | `east_suite_registered_render.log`：158个实际渲染帧与完整源画布精确一致；`east_suite_actor_native.log`：490个动作/朝向样本通过秒制时序、结束标记、矩形判定窗口及嵌套攻击刷新检查 |
+| `import_official_sea_level.gd -- <all_levels.json> 3-2 8 zm1_08_east_sea east_sea`、`validate_sea_level.gd -- <all_levels.json> 3-2` | 正式第八关五段24流、69只、九门、七矩形含四单向平台、原图原点/天空/出口与地图绑定通过。地点467为19帧官方光晕；修复透明扩边模板误选位图的问题，避免东海光晕夹带其他UI |
+| OpenGL `--smoketest=ui --east-sea-only` | 四招60/120Hz双向实际命中：旋转四段、灯笼鱼两段，龙波生成方向及位置、身体收招、背击1伤害与正面正常规则、身体/独立效果硬直差异、十帧反馈、暂停、完整死亡旋涡及池复用通过。旋转收招标记早于45源帧无敌结束，夹具必须等待实际无敌结束再验背击 |
+| OpenGL `--smoketest=ui --east-sea-ai-only` | 双频率自主追击/扑击、远距旋转、近距优先龙波与冷却中普攻、十秒/六秒冷却、45源帧无敌及暂停通过 |
+| `audit_equipment_appearances.py`、`audit_official_wukong_wardrobe.py`、OpenGL换装与普攻验证 | 22件装备图标/地面图、9件悟空身份与9张独立图集、1494源格、9960原生动作样本、2480普攻实际判定样本通过；跑步组合、血海妖壳背包、守关条与出口截图已查看 |
+| OpenGL `--smoketest=ui --east-sea-flow-only` | 22件物品非透明底部贴地、血海妖壳真实接触拾取、GUI穿卸、生命/防御/回血三项与售价80、失败保存实际实例属性、同关重试、返回地图通过 |
+| OpenGL `--smoketest=level8` | 正式地图进入、五波69只、3930经验、灵魂范围3698～7396、GGF海域音乐代理、24000生命守关条、W出口、成功结算、检查点、保存提示与磁盘重读通过；`east_sea_level_flow.log`退出0 |
+| `dotnet build`；Profile/Battle/LevelTests；工具测试 | 构建0错误，188/214/19项C#规则与11项工具测试通过；测试使用原生FSM、节点和反射，无新增生产观测API |
+| `run_east_sea_final.ps1` → `audit_remaining_level_readiness.py ... --level 3-2 --strict` | 集中套件全部退出0，`east_sea_suite.log`含`EAST SEA 3-2 FINAL SUITE PASS`；当前指纹的东海10项门全部通过，六本XLSX均无需命名空间修复 |
+
+最终集中脚本全部结束后才登记当前指纹的严格就绪收据。早期龙波绑定缺失、夹具未计等级压制、未等完整无敌和实体下一帧回收的失败日志保留，不作PASS证据。退出仍有已登记插件/框架释放与ObjectDB诊断，业务断言和实际退出码分别记录。3-3、4-1、9-1尚未制作完成；历史关卡收据随最终全关卡复跑重新生成。
+
+## 浅岸与全部装备续检（2026-10-27）
+
+依据第20/30/40/50章，使用官方导出、原生ResourceSaver、既有Luban/Ge/Collection流程；Framework、addons、正式存档与Git索引未改。日志位于 `.godot/validation/remaining_levels/`，以下专项的泛化UI汇总文案不代表完整UI套件。
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| `export_official_sea_monsters.py` → `import_official_sea_monsters.py` → `register_sea_actor_resources.gd` | 三物种272动作帧，父级矩阵、嵌套探针、完整注册点及像素比对0失败，联系图已查看。潮汐妖未调用的throwKnife不接入；虾兵独立弹体保留击散语义 |
+| 源表Artifact作者化、直接Luban命令（配置目录工作路径） | 四件优秀装备、优秀掉落池、海怪池引用和单人并存6接入；原ZIP的样式、合并与非目标区域保留，默认SpreadsheetML命名空间检查通过；`sea_final_luban.log`退出0。售价40及数值来自AllEquipment/MyEquipObj |
+| `register_sea_equipment.gd`、`audit_equipment_appearances.py`、`audit_official_wukong_wardrobe.py` | 21件装备各有独立外观条目、透明背包/地面图，9件悟空身份与9张独立官方selector图集通过；唐僧9件不套用悟空动作 |
+| OpenGL `validate_wukong_wardrobe_motion.gd` | `sea_wardrobe_final.log`退出0：1494个源姿态格、561基础动作层样本、全部30组合双向9960原生播放样本，0失败；包含裸身与默认武器。跑步及背包优秀套装截图已查看 |
+| OpenGL `validate_official_wukong_attacks.gd`、`repair_official_attack_geometry.gd -- <技能manifest> --new-equipment-only` | 月戟20个有效帧缺少戟刃覆盖，原生几何已局部扩展；最终2480帧/装备/双向真实物理样本通过（`sea_all_weapon_attacks_final.log`，退出0）。差异检查确认113条非几何轨道、收招标记、时长和判定窗口未变；不运行历史全树重建 |
+| `import_official_sea_level.gd`、`register_official_map_location.gd -- qianan Location7 m_Qianan 浅岸`、`validate_sea_level.gd -- <all_levels.json>` | 16生成流、9门、9个官方矩形（含6单向平台）、前景/地形原点、出口与地图绑定通过；天空修为官方海域位图17，非七星洞天空。浅岸当前提示保留19个原始光晕帧 |
+| OpenGL `--smoketest=ui --sea-only` | `sea_rewards_combat.log`退出0：守关/普通龟丞相交替复用、4800/1600生命、200/75经验、60/30每球灵魂与0/15%装备概率，死亡只通知一次且共享配置不变；四招在60/120Hz双向命中、收招、虾兵实际攻击碰撞击散、淡出、暂停和回池通过 |
+| OpenGL `--smoketest=ui --sea-ai-only` | `sea_ai_height.log`退出0：三物种两频率自主追退、选招、决策间隔、潮汐妖10秒冷却、暂停；潮汐妖/龟丞相不攻击高度不可达的目标。龟丞相使用36源帧即1.5秒决策，非统一1秒 |
+| OpenGL `--smoketest=ui --sea-flow-only` | `sea_equipment_flow_validated.log`退出0：21件地面图贴地、优秀四件实际接触拾取、GUI穿卸、战斗/预览同步、唐僧限制、失败保存全部实际装备属性、同关重试、返回地图通过。驱动停止在专项期间重复自动导航；随机装备按实际实例属性断言 |
+| OpenGL `--smoketest=level7` | `sea_level_flow.log`退出0：正式地图进关、五波67只、3638经验、灵魂范围3468～6936、GGF海域音乐代理、守关4800生命条、W出口及组合拒绝、成功结算、检查点、保存提示和磁盘重读通过。出口画面已查看；规则夹具提高英雄生命但保留真实受伤/击退 |
+| `dotnet build Godot/GodotProject --no-restore -v quiet`；Profile/Battle/LevelTests；工具测试 | 构建0错误；188/214/19项C#规则及11项工具测试通过。新增海怪与每实例掉落没有增加测试专用生产API |
+| Collection Res、`validate_game_references.py`、`normalize_xlsx_namespaces.py`、`git diff --check` | 644资源重新登记；引用检查开始覆盖生成资源常量，不再漏过GameProto中的旧断链；四本表无需命名空间修复，空白检查通过 |
+| `run_sea_final.ps1` → `audit_remaining_level_readiness.py ... --level 3-1 --strict` | 全套集中复跑退出0，`sea_suite.log`包含`SEA 3-1 FINAL SUITE PASS`；当前指纹下浅岸10门全部通过。装备门同时要求身份、完整动作和普攻实际判定覆盖，缺任一命令的收据会被拒绝；不以本关通过代替其余关卡 |
+
+早期`sea_all_weapon_attacks.log`的月戟漏判、`sea_equipment_flow*.log`的测试导航/随机值断言以及`sea_native_validation.log`的“无陷阱组却要求存在”均保留为失败记录，不作通过证据。插件退出仍有已知RefCounted释放、GGF WebRequest ObjectDisposedException与ObjectDB资源诊断；成功退出码与业务断言分别核对。其余3-2、3-3、4-1、9-1未完成；历史2-3收据因全项目指纹变化须在最终统一复跑，不能直接沿用旧严格通过数。
+
+## 第六关与全量装备（2026-10-26）
+
+依据第10/20/30/40/50章，新增内容经源表、既有Luban/节点池/Collection入口及原生资源作者工具接入；没有修改Framework、addons、正式存档或Git索引。日志位于 `.godot/validation/remaining_levels/`，游戏使用隔离APPDATA与 `user://Validation`。
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| 直接 `dotnet Tools/Luban/Luban.dll -t client -c cs-bin -d bin ...`，配置目录工作路径 | 真实退出0、load/validation结束；六本源表和对应产物同步。源表沿用原ZIP样式、列宽、合并及非目标工作表；原有单元格值对照保留。唐僧四个SkillHitId均保留，SpreadsheetML默认命名空间可解析 |
+| `dotnet build Godot/GodotProject --no-restore -v quiet` | 0错误；既有5个框架弃用警告及离线NuGet漏洞查询警告 |
+| `dotnet test Tests/BattleTests --no-restore -v quiet`（ProfileTests、LevelTests同法）；`python -m unittest discover -s Tests/ToolTests -v` | 分别214、188、19、11项通过；表格断言加入两种新敌人，不在生产代码增加测试接口 |
+| `validate_garuda_level.gd -- <all_levels.json>` | 原生装配通过：22个出生点加玩家点、九个门、七个矩形/平台、39尖刺、官方坐标与出口、两类实体、火焰阵营层和三条分离矩形、地图19帧提示 |
+| `audit_equipment_appearances.py`、`audit_official_wukong_wardrobe.py`、OpenGL `validate_wukong_wardrobe_motion.gd` | 17件装备各有唯一透明背包/地面图；7件悟空穿戴身份、7张独立图集、1162源格、357基础动作源帧、3984原生播放器样本通过。跑步组合及月戟背包画面已查看；唐僧7件只登记本角色图标，不借用悟空动作 |
+| OpenGL `--smoketest=ui --garuda-only` | 五个动作在60/120Hz、双方向均实际命中；火焰淡入期间有伤害、三条火焰独立区域；化卵保留受击体、五次破蛋、七秒复生、暂停、完整死亡旋涡与池复用通过 |
+| OpenGL `--smoketest=ui --garuda-ai-only` | 两频率自主选择冲刺/生火/近刺、地空共享冷却、起飞无敌和150px下落、飞行魔自主攻击/三秒退避通过。飞行魔按本实例固定折返间隔，受伤重入不重抽、不重置退避截止时间，超出视野后继续追踪 |
+| OpenGL `--smoketest=level6` | 正式地图进入、第六关五波61只、1718经验、灵魂区间、GGF CaveTheme实际代理、守关血条、W组合拒绝、出口、成功结算、检查点、地图保存提示及磁盘重读通过。边界夹具提高本局生命但保留真实受伤/击退，连续地刺用真实双击跑跳通过；短过渡按实际追近距离判定可否居中，未修改相机实现。此前慢走夹具会被连续地刺反复击退并超时，失败日志不计入通过证据 |
+| OpenGL `--smoketest=ui --garuda-flow-only` | 正式第六关17件地面图贴地、两件天煞实际接触拾取、背包命令穿卸、战斗/预览同步、官方属性、角色限制、失败保存两件装备及实际属性、重试同关与返回地图通过 |
+| `validate_game_references.py`、`git diff --check`、关卡就绪 `--level 2-3 --strict` | 742条路径、321个UID与空白检查通过；最终整套复跑全部退出0，`garuda_suite.log` 含 `GARUDA 2-3 FINAL SUITE PASS`。当前指纹下2-3严格就绪通过，本批六关为1/6；其余五关不具备完整证据 |
+
+原生编辑器扫描仍出现既有ComponentInsoector的RefCounted释放错误；正常游戏退出仍有GGF WebRequest的ObjectDisposedException、ObjectDB诊断，根证书读取错误也保留。上述业务断言与进程退出码分别检查，没有为其扩大插件修改。重复天空贴图的清理被自动审批拒绝（生成资源常量仍引用），当前保留该图。其余五个待接入关卡仍未完成，不能用本关PASS代替。
+
+## 剩余关卡统一就绪审计（2026-10-26）
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| `audit_official_level_dependencies.py` | 复核 v25928 的 11 个场景标签、六关待接入的 22/16/24/16/3/1 条出生流、阶段数量、几何和 24 种直接/脚本敌人依赖；源包 SHA 已核对 |
+| `export_official_remaining_level_layers.py` | 六关前景/地形、天空和 bg2/bg3/bg4 已在 `.godot/validation/remaining_levels/art` 暂存；未直接写入正式场景 |
+| `audit_remaining_level_readiness.py` | 复核5份当前源包SHA；六关按官方掉落核对正式装备。报告还输出9项 `production_requirements`，并逐关列出官方动作帧数、动态子对象和源声音调用。新增 `playable_equipment_identity_and_motion` 门：2-3当前配方掉落普通行者服和行者棍，必须有当前源表下的悟空 selector 与完整动作播放器证据；未知可穿戴角色无法跳过此门。2-3另缺tsyj/tsyp装备登记，不能用17件现有装备的全局PASS代替新关完整性 |
+| `Tests/ToolTests/test_level_readiness.py` | 7项关卡就绪工具测试通过，含可穿戴所有者筛选、未知角色拒绝及动作/selector收据检查。全套 `Tests/ToolTests` 还需 Pillow；当前环境缺该依赖，联系图/图集像素测试未重跑 |
+| `audit_remaining_level_readiness.py ... --level 2-3 --strict` | 预期退出1；新关未接入，不能交付。无 `--strict` 的退出0只代表报告生成成功 |
+| `python -m py_compile ...`、`python Tools/ProjectMaintenance/validate_game_references.py`、`git diff --check` | 语法、695条序列化路径/309个UID和空白检查通过；工具规则变更会使旧收据失效。本轮不声称新关实机已通过 |
+
+审计输出将 `prerequisites_present`（文件、登记与素材可读取）和 `checks`（对应关卡已验证）分开。音乐文件存在不代表招式声音完成，实体登记不代表动画/判定完成，场景目录存在不代表几何与相机完成。装备从当前源表及资源实时读取，不沿用旧全局报告；原版怪物号通过Enemy.LegacyId关联项目EntityId，不假定两者数值永远相同。可穿戴证据随关卡验证收据检查，收据命令必须同时包含角色身份映射审计和完整动作验证；关卡指纹覆盖 `Tools/LegacyMigration`，工具规则变更会使旧收据失效。
+
+除源包散列外，各门要求 `work/validation/<官方标签>/evidence.json` 中的关卡专属命令记录：顶层 `official_label`、`project_sha256`、`inventory_sha256` 必须匹配本次报告；`checks` 下每门记录 `command`、`exit_code=0`、相对 `log`、`log_sha256` 及包含本关标签和PASS的 `pass_marker`。正式表、脚本、场景或资源改变即使旧记录失效。该记录只防止串关、过期与失败日志被误用，仍须人工核对命令实际覆盖范围；不能用一个泛用PASS证明整关完成。当前六关没有这样的完整记录。`--level` 可重复指定逐关检查，完整交付仍需全六关 `--strict`。
+
+## 装备外观身份与贴图完整性（2026-10-26）
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| `python Tools/LegacyMigration/audit_equipment_appearances.py --repo . --output Godot/GodotProject/.godot/validation/current_equipment_audit/equipment_appearances.json` | `EQUIPMENT APPEARANCE PASS`：17 个 `EquipmentId` 与17个唯一外观条目一一对应；每件装备的背包图、地面图均存在且可读取，透明区域均有可见 alpha；同时检查悟空身体/武器图集在普通动画和技能动画引用的148个帧，当前4套身体与5套武器绑定的有效 alpha 覆盖均与基础层一致 |
+| 30 张装备贴图联系图 `equipment_asset_audit_contact.png` | 逐项查看粗糙/普通装备、饰品和家传装备；没有发现黑底、错图或破碎图集。粗糙/普通的四组地面前景像素相同是官方素材事实，背包图仍分别保留，不人为染色 |
+| `audit_official_wukong_wardrobe.py` + `validate_wukong_wardrobe_motion.gd` | 7件悟空装备按官方selector、1162个有效姿态与3984个组合双向播放器样本通过。动作校验现从正式外观资源动态枚举全部身份，并按各自manifest核对基础动作、所有组合双朝向；未来新增绑定会自动加入。唐僧装备保持未接入，不借用悟空图集 |
+| 本轮最终动态换装检查 | 关卡工具测试7/7，退出0；现有OpenGL原生校验 receipt 覆盖1162完整格、3984真实播放器组合样本且0失败。重看跑步组合图与月戟背包图通过；仍有系统根证书读取错误 |
+
+以后每个新增关卡在登记掉落池前都要先通过装备外观审计；若装备归已可玩角色，再追加该角色的官方动作图集审计。只提取图标或把普通装备图复制到新身份都不能视为完成。
+
+## 章节音乐整理与迦楼罗之穴素材准备（2026-10-26）
+
+| 检查 | 结果与边界 |
+| --- | --- |
+| `Resources.xlsx` / `__enums__.xlsx` 组织性编辑、源值对照、`normalize_xlsx_namespaces.py --write` | SoundConfig 22个固定ID按菜单地图、第一至第四章、结算、UI、战斗音效集中排列；名称/描述统一，SoundId同序；原有键、路径、分组及其他工作表保持不变。XLSX Diff命名空间可读 |
+| Luban `gen_code_bin_to_project_lazyload.bat` | 退出0；SoundId和SoundConfig bytes重新生成 |
+| `register_official_chapter_music.gd` | 三首官方MP3循环导入通过；第四、第五关只改 `m_MusicId 102→106`，逐节点/属性对照确认无场景补丁扩散 |
+| OpenGL `--smoketest=ui --chapter-music-only` | `SMOKE-CHAPTER-MUSIC PASS`：Cave/Sea/BullDemon三首实际GGF Music代理起播、唯一代理、播放推进、战斗暂停继续和请求停止；`SMOKE-CHAPTER-SCENES PASS`：两座洞窟选择CaveTheme。退出时仍有既知框架ObjectDisposedException/ObjectDB诊断，业务断言通过 |
+| `export_official_garuda_cave.py` | 退出0；Monster2_v4：Monster9彭魔王11动作223帧、Monster15飞刀魔5动作85帧、Boss4Bullet1嵌套火焰15帧、Monster1共享BossDead 12帧；源矩阵、探针和帧脚本保留，输出只在 `.godot/validation/remaining_levels/garuda_art` |
+| `garuda_art/source_contact.png` | 已查看联系图，角色、火焰和首领死亡旋涡素材完整；BossDead并非英雄墓碑，没有把未作者化素材写入正式Entity或场景 |
+| `prepare_official_garuda_level.py` | 退出0；生成22流/5阶段/4种敌人的 `level_plan.json`，纠正实体表外键读取后确认仅 Monster9 与 Monster15 的 EntityId/EntityConfig/场景仍缺；不修改正式表 |
+| 扩展后的同一准备工具、`garuda_art/check_packing.py` | 均退出0；`native_manifest.json` 保留各动作受击盒、父级完整变换、嵌套探针帧、刷新/生火/结束源帧，并打包四张隔离图集。335个源帧可见像素及注册点逐项一致，`packing_report.json`；联系图 `native_contact.png` 已查看。死亡旋涡的空白末帧不再扩大所有格，格宽从945降至167，未删可见像素；最终玩法判定仍待作者化 |
+
+本轮源码确认：飞行魔攻击第10帧重建攻击编号，第20帧收招；彭魔王火焰的0.6秒淡入只暂停子动画，BaseBullet仍每帧调用checkAttack，不能自行改成无伤害预警。天煞月戟为战士武器selector4，天煞羽袍为法师防具selector6，完整构造数据及源SHA已加入level_plan。正式实体、装备表、关卡和新关实机验证仍未完成。
+
+
+## 换装基础动作修复与剩余关卡准备（2026-10-26）
+
+依据第10/30/40/50章：身体/武器继续独立，保留统一原点、网格、动画及UID。猿甲与宝剑的120..170格此前误用了行者服/棍；本次各自按官方selector4/7导出，0..119格及末尾空格与修复前逐字节相同，其余四张图不变。旧“306源层帧通过”使用了错误的装备来源映射，由本节校验替代。
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| `export_official_wukong_equipment.py --kind body --selector 4 ...`、`--kind weapon --selector 7 ...` → `import_official_wukong_equipment.gd` | 两次均退出0；各166个有效姿态含51个完整基础动作，6×29网格；既有115姿态不变。输出与manifest在 `.godot/validation/wardrobe_motion_fix/{earth_fiend,heirloom}/` |
+| 新 `validate_wukong_wardrobe_motion.gd` 修复前运行 | 退出1；306源层帧中准确检出猿甲与宝剑的102格错误，其他204格与各自原文件一致。未沿用旧的跨装备来源别名 |
+| 同脚本OpenGL修复后运行 | 退出0，306个源层帧及其实际导入纹理、918个真实播放器样本通过；3身体×3武器×双向×51帧，另输出5张组合截图。跑步、二段跳对照已查看；`motion_after.log`、`captures/report.json` |
+| `audit_official_wukong_wardrobe.py` + 扩展后的同一OpenGL校验 | 退出0；从Items、枚举、AllEquipment和原生外观资源核对全部6件悟空武器/防具、六张独立图集的996个有效格与导入纹理；遍历基础、待机、五段普攻、五技能和死亡/RESET的实际帧键，九种组合双向共2988样本通过。6件尚未可玩唐僧的装备单列，不冒充已完成换装；`.godot/validation/wardrobe_complete_audit/{inventory.json,complete.log,captures/report.json}` |
+| OpenGL `--smoketest=ui --inventory-skills-only` | 业务断言及退出码通过，捕获正常离关注销未订阅死亡动画信号的错误；已按现有Playing阶段修复，未新增订阅包装或观测接口。`inventory_skills.log` |
+| `dotnet build Godot/GodotProject --no-restore -v quiet` | 退出0、0错误、5个既有框架弃用警告；`build.log` |
+| OpenGL `--smoketest=ui --terrain-level5` 修复后 | 退出0、SMOKE PASS；含真实背包穿卸、全部动作采样、技能、复用、死亡墓碑暂停/完成、结算、重试、返回、失败清理和读档。原注销错误为0；坡面限第五关。HUD缺绑定错误为主动失败注入；`ui_final.log` |
+| `python Tools/ProjectMaintenance/validate_game_references.py`、`git diff --check`、三个本轮Python工具的 `py_compile` | 693路径、308UID及语法/空白检查通过 |
+| `audit_official_level_dependencies.py --work Godot/GodotProject/.godot/validation/remaining_levels` | 退出0；全11个场景标签、24种直接及脚本召唤敌人、六类源表快照；本轮重跑包含可达链接脚本。动态对象与活动条件仍需人工复核 |
+| `render_official_level_reference.py --levels 2-3 3-1 3-2 3-3 4-1 9-1`、`export_official_remaining_level_layers.py ...` | 先前隔离导出均退出0；本轮查看六关整幅缩略，前景/地形无主体破碎缺块。12张分层PNG、3张天空、3首MP3仍只在staging；新关卡未接入、未声称可玩验证通过 |
+
+换装专项可重跑（需已生成的官方源向量目录）：
+
+```powershell
+$wardrobeWork = (Resolve-Path 'Godot/GodotProject/.godot/validation/wardrobe_motion_fix').Path
+$wardrobeSource = (Resolve-Path 'Godot/GodotProject/.godot/validation/action_origin_review/full_wukong_export').Path
+$wardrobeAll = (Resolve-Path 'Godot/GodotProject/.godot/validation/wardrobe_complete_audit').Path
+$env:APPDATA = "$wardrobeWork/earth_fiend/profile"
+& 'S:/Godot4/Godot4CSharp_console.exe' --path Godot/GodotProject --rendering-method gl_compatibility `
+  --script res://EditorScripts/validate_wukong_wardrobe_motion.gd -- $wardrobeSource `
+  "$wardrobeWork/earth_fiend/manifest.json" "$wardrobeWork/heirloom/manifest.json" "$wardrobeAll/captures" `
+  "$wardrobeAll/inventory.json"
+```
+
+全量检查没有再发现串用、空格或未覆盖动作。四张早期图集的10个技能格来自原800px画布；200px重新栅格化时仅有1～5/255的抗锯齿差异。校验分别从同一官方SVG精确重建两种既有画布，并要求其中一种逐像素相等，没有放宽颜色容差、重写这些素材或把差异当成装备缺失。后续新增悟空装备须将其独立导出manifest传给身份审计器；缺少正式表绑定、官方selector、源格或动画帧覆盖时直接失败。
+
+日志默认位于 `.godot/validation/wardrobe_motion_fix/`。原生重导入已完成两张贴图及新脚本扫描，但编辑器关停触发既有ComponentInsoector释放错误及GC `0xC0000005`，该次导入命令退出非0（`import.log`），不能算无错误扫描；后续独立加载、像素/渲染及完整UI均退出0。系统根证书读取、GGF WebRequest关停ObjectDisposedException与8个ObjectDB泄漏仍存在，未修改只读依赖。正式玩家存档和Git索引未动。
+
+## 当前动作核对结果（2026-10-26，最终注册点）
+
+本节替代下方早期火魔原点与地面怪帧数结果。依据第10/30/40/50章；没有修改Framework、插件、正式存档或Git索引。日志除节点装配外均在 `.godot/validation/current_actor_fidelity/`，运行使用隔离APPDATA和Validation存档。
+
+### 本轮追加：源帧结束、死亡运动与结算同步
+
+| 检查 | 结果 |
+| --- | --- |
+| `export_official_body_events.py` + `repair_official_body_events.gd` | 从 Role/Monster1/Monster2 的帧脚本核出42个动作，40个实际结束点和6个源帧停止运动点；原生动画库写入 `complete` / `air_loop` 标记，未重写贴图、声音或判定轨道。`body_events.json`、`body_events_author_final.log` |
+| `validate_official_body_events.gd` | PASS、退出0；40个真实播放器结束标记、6个 C# `StopMotionAnimEvent`、3个第9帧尸体循环及下一动作分段复位 |
+| `dotnet test Tests/BattleTests` | 214/214；新增致死击退轨迹和空中死亡循环，保持24/60/120Hz受击轨迹 |
+| OpenGL `--smoketest=ui --enemy-death-only` | PASS、退出0；三类小怪×60/120Hz致死抛飞、上升约315px、空中循环、落地回收与一次死亡收益事件 |
+| OpenGL `--smoketest=ui --inventory-skills-only` | PASS、退出0；124个悟空整数源帧取消样本、突刺四段独立命中、五招、音效、技能窗口与复用 |
+| OpenGL `--smoketest=bosses` / `--smoketest=ui --qixing-only` | PASS、退出0；BOSS/七星洞招式和受击行为未受结束点改动影响 |
+| OpenGL `--smoketest=ui --terrain-level5` | PASS、退出0；完整 UI 生命周期、暂停墓碑不提前结算、实际死亡动画结束后失败页、重试/返回地图及六座坡面路线 |
+
+这批源脚本核对还确认：妖猴/大猩猩的 `afterHurt` 只是时间轴标签，没有实际调用方；运行时不建立该额外状态。地面怪死亡在空中会保留致死击退并循环官方死亡后半段，避免固定动画时长提前消失。失败结算由 `LevelViewController` 订阅悟空 `AnimationFinished`，不再使用独立的78/24秒计时器；旧日志中的死亡结算超时已由这项竞态修复覆盖。
+
+最后一轮复核：`--fire-motion-only` 20组仍PASS，`--inventory-skills-only` 在新增整数帧窗口检查下PASS，敌人1239层源像素与注册点PASS；C#构建0错误，Battle214、Profile188、Level19通过。系统根证书、GGF WebRequest关停、插件RefCounted/ObjectDB泄漏仍是环境诊断，业务断言与退出码已分开记录。
+
+| 命令 / 检查 | 结果与边界 |
+| --- | --- |
+| `dotnet build Godot/GodotProject --no-restore -v quiet` | 0错误、5个既有框架弃用警告；`build_collection_final.log` |
+| 三组 `dotnet test Tests/<项目> --no-restore -v quiet` | Battle210、Profile188、Level19通过；本轮Profile包含突刺四段独立攻击，Level19通过 |
+| 生产节点查询扫描、实际场景绑定 | 固定节点字面量查询为0；关卡标记NodePath和动画根推导保留。48场景409处绑定通过，`bindings_final.log` |
+| OpenGL `--smoketest=ui --fire-motion-only` | 20组PASS、退出0；60/120Hz×双向×五种目标边界，起手、搜敌、自然推进/无目标跳段、下冲、真实根落点、无反弹、扣蓝、命中及收招；`fire_motion_final.log`。锚点容差只允许两侧SafeMargin内约0.135px的物理接触恢复，另独立要求Origin为零 |
+| OpenGL `validate_official_wukong_attacks.gd` | 1116样本PASS、退出0；三身体×三武器×双向×62源帧，弧光/残留帧、近端和范围外实际Area检查；`attacks_final.log` |
+| OpenGL `validate_official_wukong_skills.gd` | 976样本PASS、退出0；五招本体和四个独立效果的源帧、注册、实际Area检查；`skills_render_after.log`。前奏已并入角色，不计为第五个池化效果 |
+| OpenGL `validate_official_wukong_idle.gd` | 400源层帧、100背包帧和四组合双向绘制PASS、退出0；`idle_final3.log`。最初只有每轮首帧失败，原因是夹具重复Seek同一循环未Stop，修复夹具后通过，未重写图集 |
+| `validate_official_enemy_frames.gd` 加四份源manifest | 1239完整身体/特效层帧PASS、退出0；涵盖当前全部10种敌人和BOSS，精确比较原始RGBA及真实AnimationPlayer取样原点；`body_enemy_pixels.log`。移除没有运行时调用方的after_hurt后重新核对，没有放宽像素比较 |
+| `audit_actor_registration.gd` 加 `action_origin_review/source_inventory.json` | 11实体身体/受击盒源坐标、完整动作时长PASS、退出0；`actor_roots_final.log` |
+| `validate_anim_libraries.gd` / `validate_collision_geometry.gd` | PASS、退出0；11角色库方法绑定与状态轨道、50场景239基础形状节点及六座整体坡体；死亡终态专用轨道由death/RESET及OnShow复用检查负责。`libraries_final2.log`、`collision_final.log` |
+| `validate_official_attack_geometry.gd` 加技能manifest | PASS、退出0；40技能源探针角、42九连有效帧、下冲/落地源偏移、588九连点查询及2260毒雾点查询。禺狨王/飞刀魔的既有人工矩形作为回归基线，未称为官方像素判定、未重写正式几何；`geometry_final2.log` |
+| OpenGL `--smoketest` / `--smoketest=ai` | PASS、退出0；33次英雄动作切换、第四段松手不补第五段，以及敌人完整AI/受控/死亡回收；`hero_final.log`、`ai_final.log` |
+| OpenGL `--smoketest=bosses` / `--smoketest=ui --qixing-only` | PASS、退出0；两位BOSS五招、七星洞六招双向、风刃/毒雾、无敌、AI与回池；`bosses_final.log`、`qixing_final.log` |
+| OpenGL `--smoketest=ui`，未加子集参数 | 完整PASS、退出0；真实学习/施放、突刺同一沙包四次独立命中、三类怪各自官方前摇、妖猴走攻切换、无双/换装/受击/死亡/复用/存档与结算，全六座坡体48条60/120Hz双向走跑停跳路线；`ui_full_final2.log`。首轮旧前摇断言失败保留在 `ui_full_final.log`，未修改生产时序去迎合测试 |
+| 既有 `regenerate_collection.gd` / 资源引用 / 空白检查 | 原生成器收集584项，含六个新增地面怪图集/帧资源，退出0；未手改生成常量。`validate_game_references.py` 的693路径、308UID与 `git diff --check` 通过 |
+
+重跑源帧比较：
+
+```powershell
+& 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject `
+  --script res://EditorScripts/validate_official_enemy_frames.gd -- `
+  res://.godot/validation/action_origin_review/ground_monsters_export/manifest.json `
+  res://.godot/validation/stages_2_3/bosses/manifest.json `
+  res://.godot/validation/official_continuation/assets/manifest.json `
+  res://.godot/validation/official_continuation/qixing/manifest.json
+```
+
+实际起手/升空/下冲/落地截图及汇总 `fire_contact_final.png` 已查看。源帧一致、游戏命中与视觉近似是不同证据；本轮没有宣称Godot矩形与Flash像素相交算法完全等同。`repair_official_attack_geometry.gd` 的全量历史重建段仍含旧敌人近似，不用于覆盖当前人工资源；三种新地面怪由自己的原生导入器管理。
+
+已知诊断仍单独保留：系统根证书读取失败、GGF WebRequest关停ObjectDisposedException、插件Free/RefCounted与RID/ObjectDB泄漏。地面怪重导入保存成功后曾在编辑器关停出现GC `0xC0000005`（`ground_reimport.log`），退出非0；后续独立1239帧加载和完整UI均退出0，不能把该导入过程写成无错误退出。HUD缺绑定为UI主动失败注入。迁移到忽略目录的 `misplaced_appdata_20261026` 仅是之前相对APPDATA误落进资源树的测试档与日志，没有删除存档。
 
 ## C# 代码风格规范化（2026-10-25）
 
@@ -12,6 +434,22 @@
 | `dotnet build Godot/GodotProject --no-restore -v quiet` | PASS；0 错误、0 警告 |
 | 三组 `dotnet test ... --no-restore -v quiet` | PASS；Battle 209、Profile 188、Level 19，共 416 项 |
 | `git diff --check` | PASS |
+
+## 火魔斩根坐标与地面怪官方动作（2026-10-26）
+
+本批先修复官方坐标语义，再迁移三类地面小怪的完整源时间轴。官方 Role1 的火魔前奏、搜敌、下冲和落地都直接使用角色根 `x/y`；移除此前悟空 `(0,28)` 技能动作原点后，独立特效与实体根重合，目标边界也按官方 130px 距离重新核对。
+
+| 检查 | 结果与证据 |
+| --- | --- |
+| OpenGL `--smoketest=ui --fire-motion-only` | `SMOKE-FIRE-MOTION PASS`、退出 0；60/120Hz、左右方向、无目标/中心/上下边界/猴子目标共 20 组，升空、下冲、落地、无二次上升、一次耗蓝、命中与收招通过；`action_origin_review/fire_root_coordinate_diagnose2.log` |
+| `dotnet build Godot/GodotProject --no-restore -v quiet` | 0 错误、5 个框架既有弃用警告；`action_origin_review/ground_monsters_build2.log` |
+| 官方地面怪导出/导入 | `Monster1` SHA 校验通过；花果山猴、妖猴、大猩猩分别导入 69/78/85 个源帧，攻击 stick 判定随官方帧轨道写入原生动画资源；`ground_monsters_export/manifest.json`、`ground_monsters_import5.log` |
+| OpenGL `--smoketest=ai` | `SMOKE PASS`、退出 0；猴子巡逻、追击、攻击、受击、死亡回池及官方攻击范围通过；`ground_monsters_ai3.log` |
+| OpenGL `--smoketest=ui --qixing-only` / `--smoketest=bosses` | `SMOKE-QIXING PASS`、`SMOKE-BOSSES PASS`；七星洞六招双向、两位 BOSS 原生招式/无敌/独立效果/回池通过；`ground_monsters_qixing.log`、`ground_monsters_bosses.log` |
+
+补充修正：蝙蝠官方受击动作是 13 帧，正式动画长度已从错误的 `0.5s` 改为 `13/24s`；其余当前蝙蝠动作长度与 v25928 资源清单一致。完整蝙蝠逐帧像素叠合仍待单独补做。
+
+编辑器导入过程仍有已知 ComponentInsoector 释放诊断，未修改只读插件；蝙蝠及所有已接入演员的完整源帧逐像素比对仍未完成。
 
 ## 固定节点引用与场景装配（2026-10-25）
 
@@ -30,7 +468,28 @@
 
 本轮复核了 `TheGame/GameScripts` 与 `MainPack/Scripts/UI` 的全部 C#：悟空的武器和墓碑均由 `[Export]` 字段绑定，`WukongEntity.OnInit` 会在初始化边界检查两项专属表现绑定；未发现正式代码中按字符串查找固定节点。`AbstractLevelMarkersNode` 读取的是场景资源中的 `NodePath`，`AbstractEnemyEntity.Attacks` 读取的是 `AnimationPlayer.RootNode` 计算动画轨道路径，两者都不是业务节点名硬编码。
 
+最新只读复查：业务与主包流程/UI 的固定节点字面量扫描仍为0；`python Tools/ProjectMaintenance/validate_game_references.py` 退出0，693条路径、308个UID通过；`git diff --check` 与 `git diff --cached --check` 均退出0。本次没有补改节点逻辑、重新构建或运行游戏，以下构建与场景实例化结果属于此前验证。
+
+2026-10-26 节点复查（节点逻辑无需补改）：业务、主包与作者工具的固定节点字符串查询无遗漏。`dotnet build Godot/GodotProject --no-restore -v quiet` 退出 0、0 错误、5 个既有框架弃用警告；`python Tools/ProjectMaintenance/validate_game_references.py` 通过 687 条资源路径和 308 个 UID；`git diff --check` 通过。以隔离 APPDATA 运行 `S:/Godot4/Godot4CSharp_console.exe --headless --path Godot/GodotProject --script res://.godot/validation/node_reference_audit_20261026/check_bindings.gd`，实际实例化全部 48 个业务实体/UI/关卡场景，逐项比较序列化路径与 C# 节点字段及数组，409 处引用通过，悟空武器与墓碑另核对为 `Sprite2D`，退出 0；火魔原点修正后同样通过，日志为同目录 `bindings.log` / `bindings_after.log`。仍报告既有系统根证书读取错误，不称为无错误运行。
+
 ## 节点绑定与火魔斩朝向复核（2026-10-25）
+
+2026-10-26 补查火魔落地注册点：按官方 Role1、BaseBullet 与导出源坐标，修正共同+28Y原点被二次缩放的问题；普通/无双播放映射本来正确，没有互换。下列新日志位于 `.godot/validation/node_reference_audit_20261026/`；没有改动用户已有的悟空主动画库。
+
+| 命令 / 检查 | 新结果 |
+| --- | --- |
+| Godot `--headless --script res://EditorScripts/repair_fire_demon_registration.gd -- res://.godot/validation/wukong-skills-export/manifest.json` | 原生资源修正成功，位置与判定一起调整；根、依赖UID和源PNG不变；10个非空落地源帧与正式图集逐像素一致；`fire_registration.log` |
+| OpenGL `--script res://.godot/validation/node_reference_audit_20261026/render_fire_landing.gd` | PASS、退出0；13源帧×双朝向×普通/无双，共52组独立源坐标与判定中心断言，8张渲染；`fire_landing_after.log`、`fire_landing.png` 已查看。单独渲染只在内存副本禁用方法轨道，声音/结束仍由真实游戏专项执行 |
+| OpenGL `-- --smoketest=ui --fire-motion-only` | 修正前后各8组PASS、退出0；60/120Hz、双向、有/无目标、落地锚点、命中、单次耗蓝及收招通过；实测升空速度±480/-1200、下冲±720/480px/s，与24fps源值换算一致。`fire_motion_after.log` / `.exit`、`fire_motion_summary.json`；不是完整UI回归 |
+| Godot `--headless --script res://EditorScripts/validate_anim_libraries.gd` | 退出1：悟空普通动作缺少墓碑专属的4个值轨道；这些轨道当前只在death/RESET，复用由OnShow复位。本次未修改该主动画库，未将此项计作PASS；`animation_libraries.log` |
+
+独立渲染最初的夹具未屏蔽声音方法，因没有启动框架而报空引用；已仅在夹具的动画副本禁用方法轨道后重跑。编辑器作者化的一次运行退出0但扫描被中止，并报告已知ComponentInsoector释放与RID/ObjectDB关停诊断，不作为无错误扫描。正式实机仍报告已知根证书读取、WebRequest关停异常与6个ObjectDB泄漏；未改只读依赖。
+
+继续核对时发现旋转落地矩形放在 `(1.4,2)/(2.1,3)` 不等比缩放层下会产生剪切，导致视觉框外额外命中；已按每个源阶段改为轴对齐矩形、关闭该效果的旋转轨道。40 个双朝向/普通无双边缘查询通过，`landing_edges_after.log`。技能完整 OpenGL 复核通过：976 个身体/武器源帧、五个独立效果双向、实际 Area2D 命中与范围外排除，退出 0，`all_skills_render_after.log`。这一修复保留官方时序和贴图，仅改变适用于 Godot 不等比缩放的基础判定表达。
+
+11 个当前角色/怪物场景按三份 SHA 校验后的 Role/Monster SWF 重新解码，源受击盒尺寸和动作注册逐一比对；技能定位使用实体根坐标，与官方直接使用角色 x/y 的语义一致。原始数据和当前值在 `.godot/validation/action_origin_review/source_inventory.json`、`current_actors.json`、`origin_comparison.json`；`SOURCE INVENTORY` 与 `FRESH SOURCE ORIGIN PASS` 通过。悟空移动动画同时恢复官方 24fps 的走/跑周期：run=8/24秒、walk=16/24秒；以前分别是0.291667和0.8秒，造成慢走/停步手感偏差。构建 0错误，BattleTests 209/209；ProfileTests 188/188、LevelTests 19/19 仍通过此前结果。其余怪物的动作图像逐帧内容和专属攻击还需要继续按同一源清单核对，不能由本节的原点/时长检查替代。
+
+2026-10-26 又从同一 Role_v7 的完整子时间轴导出悟空基础动作：walk 440/16帧、run 452/8帧、jump 533/1帧、jump_2 539/10帧、fall 543/1帧、hurt 553/15帧。追加 51 个正式 200px 图集格到身体/武器六套外观，更新 AnimationLibrary 的帧轨道和 24fps 时长；身体、武器、装备预览的 vframes 同步到 29 行。306 个源层样本逐像素比较通过，`validate_full_base_actions.gd`；悟空基础动作实时烟测 33 次状态切换通过，`normal_input_after_full_base3.log`。这次修复消除了此前用压缩动作格替代完整源时间轴的问题。攻击五段和五项技能继续使用原有已核验源格，分别由 `OFFICIAL-ATTACKS` 和 `OFFICIAL-SKILLS` 检查。
 
 | 命令 / 检查 | 结果与证据 |
 | --- | --- |

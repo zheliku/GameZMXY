@@ -1,0 +1,13 @@
+[gd_resource type="AnimationLibrary" format=3]
+[sub_resource type="Animation" id="show"]
+length = 2.0
+tracks/0/type = "bezier"
+tracks/0/path = NodePath("m_Heart:modulate:a")
+tracks/0/keys = {"times": PackedFloat32Array(0, 2), "points": PackedFloat32Array(0, 0, 0, 0.6666667, 0.6666666666666666, 1, -0.6666667, 0, 0, 0)}
+[sub_resource type="Animation" id="hide"]
+length = 2.0
+tracks/0/type = "bezier"
+tracks/0/path = NodePath("m_Heart:modulate:a")
+tracks/0/keys = {"times": PackedFloat32Array(0, 2), "points": PackedFloat32Array(1, 0, 0, 0.6666667, -0.6666666666666666, 0, -0.6666667, 0, 0, 0)}
+[resource]
+_data = {&"show": SubResource("show"), &"hide": SubResource("hide")}

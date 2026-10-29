@@ -64,6 +64,7 @@ namespace GameLogic
         /// <summary>
         /// 界面打开。
         /// </summary>
+        /// <param name="userData">本次框架调用的附加数据。</param>
         public void OnOpen(object userData)
         {
             m_IsCloseRequested = false;
@@ -82,6 +83,8 @@ namespace GameLogic
         /// <summary>
         /// 界面关闭。
         /// </summary>
+        /// <param name="isShutdown">是否因所属服务或状态机关闭而离开。</param>
+        /// <param name="userData">本次框架调用的附加数据。</param>
         public void OnClose(bool isShutdown, object userData)
         {
             Visible = false;
@@ -120,16 +123,21 @@ namespace GameLogic
         /// <summary>
         /// 界面轮询。
         /// </summary>
+        /// <param name="elapseSeconds">逻辑流逝时间，单位为秒。</param>
+        /// <param name="realElapseSeconds">真实流逝时间，单位为秒。</param>
         public void OnUpdate(float elapseSeconds, float realElapseSeconds) { }
 
         /// <summary>
         /// 界面重新获得焦点。
         /// </summary>
+        /// <param name="userData">本次框架调用的附加数据。</param>
         public void OnRefocus(object userData) { }
 
         /// <summary>
         /// 界面深度改变。
         /// </summary>
+        /// <param name="uiGroupDepth">窗口所属界面组的深度。</param>
+        /// <param name="depthInUIGroup">窗口在所属组内的深度。</param>
         public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
         {
             m_DepthInUIGroup = depthInUIGroup;

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using GameLogic;
 using GameLogic.Heroes;
+using GameLogic.Heroes.Body;
 using GameLogic.Level;
 using GameLogic.UI;
 using GameConfig.Equipment;
@@ -32,11 +33,15 @@ public sealed partial class UiSmokeScenario
     {
         var originalEquipment = flow.GetModel<ProfileModel>().EquipmentDatas.ToArray();
         foreach (var definition in ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList)
+        {
             flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), definition.Id, () => .37f));
+        }
+
         PushInventoryKey(true);
         PushInventoryKey(false);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Any(x => x.Visible), "HUD 没有打开背包");
         InventoryForm form = GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Single(x => x.Visible);
+        SmokeInspection.CheckTooltips(form);
         Check(GF.Base.IsGamePaused, "背包打开后战斗未暂停");
         PushInventoryKey(true, echo: true);
         await WaitFramesAsync(2);
@@ -58,7 +63,8 @@ public sealed partial class UiSmokeScenario
         Check(form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text == (originalSoul + 17).ToString(), "背包未响应钱包变化");
         await WaitUntilAsync(() => !GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().GetNode<Label>("SaveFeedback/m_SaveFeedback").Visible,
             "保存成功提示在背包暂停时没有结束", 5000);
-        var cell = form.GetNode<EquipmentCell>("Window/BagPanel/m_BagGrid/Cell8");
+        int tooltipIndex = flow.GetModel<ProfileModel>().EquipmentDatas.ToList().FindIndex(data => data.EquipmentId == EquipmentId.CommonPineStaff);
+        var cell = form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid").GetChild<EquipmentCell>(tooltipIndex);
         using (var tooltip = cell._MakeCustomTooltip(cell.TooltipText))
         {
             Check(cell.GetNode<TextureRect>("Icon").Texture != null &&
@@ -75,6 +81,23 @@ public sealed partial class UiSmokeScenario
         await CaptureCombatAsync("inventory_form");
         await CheckTooltipLayoutAsync(form, flow);
         await CheckBagNavigationAsync(form, flow);
+        foreach (var id in new[] { EquipmentId.DiamondSnare, EquipmentId.EastSeaBanner })
+        {
+            var previousSlots = flow.GetModel<ProfileModel>().Slots.Value;
+            int previousPower = flow.GetModel<HeroModel>().Power.Value;
+            ClickBagEquipment(form, flow, id);
+            var menu = form.GetNode<EquipmentActionsMenu>("m_Actions");
+            Check(menu.GetNode<TextureButton>("Panel/Equip").Disabled &&
+                flow.GetModel<ProfileModel>().Slots.Value == previousSlots &&
+                flow.GetModel<HeroModel>().Power.Value == previousPower, "法宝尚未开放却可穿戴或生效");
+            var treasureCell = form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid").GetChildren()
+                .OfType<EquipmentCell>().Single(value =>
+                    SmokeInspection.ReadField<EquipmentData>(value, "m_EquipmentData")?.EquipmentId == id);
+            using var tooltip = treasureCell._MakeCustomTooltip(treasureCell.TooltipText);
+            Check(tooltip.GetNode<Label>("Content/Header/Type/Value").Text == "法宝·通用" &&
+                tooltip.GetNode<Label>("Content/Footer/Description").Text == "功能待开放", "法宝类型或待开放说明错误");
+        }
+        GD.Print("SMOKE-TREASURE GUI PASS: native second-page selection, visible icons, treasure tooltip and disabled equip");
         // 通用饰品同样走真实格子、菜单和命令，概率文字不使用属性点曲线。
         ClickBagEquipment(form, flow, EquipmentId.EarthFiendRing);
         var accessory = form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_AccessorySlot");
@@ -171,11 +194,66 @@ public sealed partial class UiSmokeScenario
             "悟空错误穿上唐僧家传衣裳");
         actions.Hide();
         foreach (string path in new[] { "m_WeaponSlot", "m_AccessorySlot" })
+        {
             form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/" + path)
-                ._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+                        ._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        }
+
         Check(GF.Fsm.GetModel<HeroModel>().Power.Value == basePower &&
-            GF.Fsm.GetModel<HeroModel>().Crit.Value == 0, "家传装备卸下仍残留属性");
+                    GF.Fsm.GetModel<HeroModel>().Crit.Value == 0, "家传装备卸下仍残留属性");
         GD.Print("SMOKE-HEIRLOOM PASS: sword GUI equip, battle/preview texture, both-facing full actions, bracelet stats and Tang ownership.");
+        ClickBagEquipment(form, flow, EquipmentId.HeavenlyFiendMoonHalberd);
+        var halberd = GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_heavenly_fiend.png");
+        Check(hero.GetNode<Sprite2D>("m_Weapon").Texture == halberd &&
+            form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Weapon").Texture == halberd &&
+            GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + 50 &&
+            Mathf.IsEqualApprox(GF.Fsm.GetModel<HeroModel>().Crit.Value, .03f),
+            "天煞月戟未同步战斗/预览动作图集或50攻击、3%暴击");
+        CheckHeroAnimationLayers(hero);
+        await CaptureCombatAsync("inventory_heavenly_fiend_moon_halberd");
+        ClickBagEquipment(form, flow, EquipmentId.HeavenlyFiendRobe);
+        Check(actions.GetNode<TextureButton>("Panel/Equip").Disabled && flow.GetModel<ProfileModel>().Armor == null,
+            "悟空错误穿上唐僧天煞羽袍");
+        actions.Hide();
+        form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_WeaponSlot")
+            ._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        Check(GF.Fsm.GetModel<HeroModel>().Power.Value == basePower && GF.Fsm.GetModel<HeroModel>().Crit.Value == 0,
+            "天煞月戟卸下后仍残留属性");
+        GD.Print("SMOKE-GARUDA EQUIPMENT 2-3 PASS: GUI commands, battle/preview animation, official attributes and Tang ownership");
+        ClickBagEquipment(form, flow, EquipmentId.ExcellentPilgrimStaff);
+        ClickBagEquipment(form, flow, EquipmentId.ExcellentPilgrimClothes);
+        var excellentWeapon = GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_excellent.png");
+        var excellentArmor = GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_excellent.png");
+        var wornWeapon = flow.GetModel<ProfileModel>().Weapon;
+        var wornArmor = flow.GetModel<ProfileModel>().Armor;
+        Check(hero.GetNode<Sprite2D>("m_Weapon").Texture == excellentWeapon &&
+            form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Weapon").Texture == excellentWeapon &&
+            hero.GetNode<Sprite2D>("m_Body").Texture == excellentArmor && body.Texture == excellentArmor &&
+            wornWeapon?.EquipmentId == EquipmentId.ExcellentPilgrimStaff && wornArmor?.EquipmentId == EquipmentId.ExcellentPilgrimClothes &&
+            GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + wornWeapon.Attributes.Power &&
+            GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense + 6 &&
+            GF.Fsm.GetModel<HeroModel>().MaxHp.Value == baseMaxHp + wornArmor.Attributes.MaxHp,
+            "优秀武器/防具未同步战斗、预览和独立属性");
+        CheckHeroAnimationLayers(hero);
+        await CaptureCombatAsync("inventory_excellent_wardrobe");
+        foreach (var id in new[] { EquipmentId.ExcellentCassock, EquipmentId.ExcellentPineStaff })
+        {
+            ClickBagEquipment(form, flow, id);
+            Check(actions.GetNode<TextureButton>("Panel/Equip").Disabled &&
+                flow.GetModel<ProfileModel>().Weapon.EquipmentId == EquipmentId.ExcellentPilgrimStaff &&
+                flow.GetModel<ProfileModel>().Armor.EquipmentId == EquipmentId.ExcellentPilgrimClothes,
+                "优秀唐僧装备错误替换悟空外观");
+            actions.Hide();
+        }
+        foreach (string path in new[] { "m_WeaponSlot", "m_ArmorSlot" })
+        {
+            form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/" + path)
+                        ._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        }
+
+        Check(GF.Fsm.GetModel<HeroModel>().Power.Value == basePower && GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense &&
+                    GF.Fsm.GetModel<HeroModel>().MaxHp.Value == baseMaxHp, "优秀装备卸下后仍残留属性");
+        GD.Print("SMOKE-SEA EQUIPMENT 3-1 PASS: independent selector-3 layers, GUI equip/unequip, stats and owner rejection");
         ClickBagEquipment(form, flow, EquipmentId.HeavenlyFiendNecklace);
         Check(flow.GetModel<ProfileModel>().Accessory?.EquipmentId == EquipmentId.HeavenlyFiendNecklace &&
             accessory.GetNode<TextureRect>("Icon").Texture != null &&
@@ -195,6 +273,58 @@ public sealed partial class UiSmokeScenario
         Check(GF.Fsm.GetModel<HeroModel>().Power.Value == basePower &&
             GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense, "天煞骨链卸下后仍有属性残留");
         GD.Print("SMOKE-QIXING-NECKLACE PASS: transparent icon, GUI equip/unequip, four attributes and sell price 80");
+        int baseRegen = GF.Fsm.GetModel<HeroModel>().HpRegen.Value;
+        ClickBagEquipment(form, flow, EquipmentId.BloodSeaShell);
+        var shell = flow.GetModel<ProfileModel>().Accessory;
+        Check(shell?.EquipmentId == EquipmentId.BloodSeaShell && accessory.GetNode<TextureRect>("Icon").Texture != null &&
+            GF.Fsm.GetModel<HeroModel>().MaxHp.Value == baseMaxHp + shell.Attributes.MaxHp &&
+            GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense + 20 &&
+            GF.Fsm.GetModel<HeroModel>().HpRegen.Value == baseRegen + 2, "血海妖壳未同步饰品属性与图标");
+        using (var tooltip = accessory._MakeCustomTooltip(accessory.TooltipText))
+        {
+            Check(tooltip.GetNode<VBoxContainer>("Content/Attributes").GetChildCount() == 3 &&
+                tooltip.GetNode<Label>("Content/Header/Type/Value").Text == "饰品·通用" &&
+                tooltip.GetNode<Label>("Content/Footer/Price").Text == "价值 : 80 灵魂", "血海妖壳属性说明或售价错误");
+            tooltip.Free();
+        }
+        await CaptureCombatAsync("inventory_blood_sea_shell");
+        accessory._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        Check(GF.Fsm.GetModel<HeroModel>().MaxHp.Value == baseMaxHp &&
+            GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense &&
+            GF.Fsm.GetModel<HeroModel>().HpRegen.Value == baseRegen, "血海妖壳卸下后仍残留属性");
+        GD.Print("SMOKE-EAST SEA EQUIPMENT 3-2 PASS: transparent accessory, GUI equip/unequip, three attributes and price 80");
+
+        // 鲨之涡流的悟空防具必须使用自己的完整动作图集，且负面属性不能被汇总层吞掉。
+        ClickBagEquipment(form, flow, EquipmentId.BloodSeaDemonArmor);
+        var bloodSeaArmorTexture = GD.Load<Texture2D>(
+            "res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_blood_sea.png");
+        Check(flow.GetModel<ProfileModel>().Armor?.EquipmentId == EquipmentId.BloodSeaDemonArmor &&
+            hero.GetNode<Sprite2D>("m_Body").Texture == bloodSeaArmorTexture &&
+            body.Texture == bloodSeaArmorTexture &&
+            GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + 80 &&
+            GF.Fsm.GetModel<HeroModel>().Def.Value == Math.Max(0, baseDefense - 10) &&
+            Mathf.IsEqualApprox(GF.Fsm.GetModel<HeroModel>().Crit.Value, .05f) &&
+            Mathf.IsEqualApprox(GF.Fsm.GetModel<HeroModel>().Miss.Value, .05f) &&
+            GF.Fsm.GetModel<HeroModel>().HpRegen.Value == baseRegen - 2,
+            "血海魔甲未同步战斗、预览独立图集或负面属性");
+        CheckHeroAnimationLayers(hero);
+        await CaptureCombatAsync("inventory_blood_sea_armor");
+        form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_ArmorSlot")
+            ._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        Check(flow.GetModel<ProfileModel>().Armor == null &&
+            GF.Fsm.GetModel<HeroModel>().Power.Value == basePower &&
+            GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense &&
+            GF.Fsm.GetModel<HeroModel>().HpRegen.Value == baseRegen,
+            "血海魔甲卸下后仍残留属性或外观");
+        ClickBagEquipment(form, flow, EquipmentId.BloodSeaEvilStaff);
+        Check(actions.GetNode<TextureButton>("Panel/Equip").Disabled &&
+            flow.GetModel<ProfileModel>().Weapon == null,
+            "血海邪皇错误替换悟空武器");
+        actions.Hide();
+        GD.Print("SMOKE-SHARK EQUIPMENT 3-3 PASS: official selector-6 armor, negative stats, full motion and Tang ownership rejection");
+
+        CheckAllWearableEquipment(form, hero, flow);
+
         form.GetNode<Button>("Window/BagPanel/Footer/m_SellQuality").EmitSignal(BaseButton.SignalName.Pressed);
         form.GetNode<PopupMenu>("Window/BagPanel/Footer/m_SellQuality/m_QualityOptions")
             .EmitSignal(PopupMenu.SignalName.IdPressed, (long)EquipmentQuality.Rough);
@@ -236,7 +366,9 @@ public sealed partial class UiSmokeScenario
         {
             InputMap.ActionEraseEvents(GameLogic.Input.InputSystem.InventoryToggle);
             foreach (var input in originalKeys)
+            {
                 InputMap.ActionAddEvent(GameLogic.Input.InputSystem.InventoryToggle, input);
+            }
         }
         flow.GetModel<ProfileModel>().RestoreItems(originalEquipment);
         GD.Print("SMOKE-UI: inventory actual attributes, 25 cells, live soul, pause, animated preview, key remap/echo, unsubscribe and reuse passed");
@@ -252,7 +384,20 @@ public sealed partial class UiSmokeScenario
     {
         int index = flow.GetModel<ProfileModel>().EquipmentDatas.ToList().FindIndex(x => x.EquipmentId == id);
         Check(index >= 0, "受测装备不在背包中");
-        var cell = form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid").GetChild<EquipmentCell>(index);
+        // 新关装备超过一页后仍从真实分类、翻页按钮选择，不能把全包索引当格子索引。
+        form.GetNode<Control>("Window/BagPanel/m_Tabs").GetChild<TextureButton>(0)
+            .EmitSignal(BaseButton.SignalName.Pressed);
+        var grid = form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid");
+        var next = form.GetNode<TextureButton>("Window/BagPanel/Footer/Pages/m_NextPage");
+        int pageSize = grid.GetChildCount();
+        for (int page = 0; page < index / pageSize; page++)
+        {
+            Check(!next.Disabled, "受测装备所在页不可访问");
+            next.EmitSignal(BaseButton.SignalName.Pressed);
+        }
+        var cell = grid.GetChild<EquipmentCell>(index % pageSize);
+        Check(SmokeInspection.ReadField<EquipmentData>(cell, "m_EquipmentData").EquipmentId == id,
+            "跨页点击选择了其他装备");
         form.GetViewport().PushInput(new InputEventMouseMotion { Position = cell.GetGlobalRect().GetCenter(), GlobalPosition = cell.GetGlobalRect().GetCenter() }, true);
         Guid weapon = flow.GetModel<ProfileModel>().Weapon?.InstanceId ?? Guid.Empty;
         Guid armor = flow.GetModel<ProfileModel>().Armor?.InstanceId ?? Guid.Empty;
@@ -263,7 +408,9 @@ public sealed partial class UiSmokeScenario
         Check(menu.Visible, "装备格没有打开操作菜单");
         var equip = menu.GetNode<TextureButton>("Panel/Equip");
         if (!equip.Disabled)
+        {
             equip.EmitSignal(BaseButton.SignalName.Pressed);
+        }
     }
 
     /// <summary>
@@ -296,7 +443,10 @@ public sealed partial class UiSmokeScenario
             Check(Math.Abs(tooltip.Size.Y - tooltip.GetCombinedMinimumSize().Y) < 1 && Math.Abs(bottom - 6) < 1,
                 $"{id} 原生弹窗底部留白：size={tooltip.Size}, minimum={tooltip.GetCombinedMinimumSize()}, bottom={bottom}");
             if (id == EquipmentId.EarthFiendApeArmor)
+            {
                 await CaptureCombatAsync("inventory_tooltip_fitted");
+            }
+
             popup.Free();
         }
         GD.Print("SMOKE-TOOLTIP PASS: native popup first measure, ring/armor/staff content heights and 6px bottom margin.");
@@ -327,7 +477,10 @@ public sealed partial class UiSmokeScenario
             Check(quality.Position == type.Position && quality.Size == new Vector2(80, 2) &&
                 type.Size == quality.Size, "品质/类型下划线未对齐");
             if (id == EquipmentId.CommonPilgrimClothes)
+            {
                 await CaptureCombatAsync("inventory_tooltip_attributes");
+            }
+
             form.RemoveChild(tooltip);
             tooltip.Free();
         }
@@ -539,6 +692,9 @@ public sealed partial class UiSmokeScenario
             }
         }
         hero.SetFacing(facing);
+        // 死亡采样写过专属可见性；普通动作不负责恢复它，夹具必须先应用正式RESET。
+        player.Play(HeroAnims.Reset);
+        player.Seek(0, update: true, updateOnly: true);
         player.Play(string.IsNullOrEmpty(previous) ? "idle1" : previous);
         player.Seek(position, update: true, updateOnly: true);
         player.Active = active;
@@ -575,7 +731,9 @@ public sealed partial class UiSmokeScenario
         var music = m_Driver.GetTree().Root.FindChildren("*", "AudioStreamPlayer", true, false)
             .OfType<AudioStreamPlayer>().Where(player => player.Bus == "Music" && player.Playing).ToArray();
         Check(music.Length == 1, "结算音乐与关卡背景音乐叠加");
-        GD.Print($"SMOKE-MUSIC PASS: unique paused settlement Music agent {file}");
+        Check(music[0].VolumeDb > -1f && !AudioServer.IsBusMute(AudioServer.GetBusIndex("Music")),
+            $"结算代理虽在播放，但暂停使淡入卡在静音：{music[0].VolumeDb}dB");
+        GD.Print($"SMOKE-MUSIC PASS: unique paused settlement Music agent {file}, volume={music[0].VolumeDb}dB");
     }
 
     /// <summary>
@@ -589,7 +747,7 @@ public sealed partial class UiSmokeScenario
         KillHero(hero);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SettlementForm>().Any(x => x.Visible), "第二次死亡没有显示结算");
         var form = GF.UI.GetAllLoadedUIForms().OfType<SettlementForm>().Single(x => x.Visible);
-        Check(SmokeInspection.Model(level).Result.DefeatedMonsters == 0 && form.GetNode<Label>("Content/Results/Kills/m_Kills").Text == "0", "结算池复用遗留上局成绩");
+        Check(SmokeInspection.Model(level).Result.DefeatedEnemies == 0 && form.GetNode<Label>("Content/Results/Kills/m_Kills").Text == "0", "结算池复用遗留上局成绩");
         form.GetNode<TextureButton>("Content/Actions/m_ReturnMap").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.Procedure.CurrentProcedure is ProcedureMap && GF.UI.GetAllLoadedUIForms().OfType<MapForm>().Any(x => x.Visible), "失败结算没有返回地图");
         Check(!GF.Base.IsGamePaused && !form.Visible, "失败返回地图残留结算或暂停");

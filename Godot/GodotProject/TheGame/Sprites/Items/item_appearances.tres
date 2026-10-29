@@ -14,6 +14,52 @@
 [ext_resource type="Texture2D" uid="uid://ct2b2essxxkt2" path="res://TheGame/Sprites/Items/equipment/equipment_heirloom_clothes.png" id="32_gpnwk"]
 [ext_resource type="Texture2D" uid="uid://70wfsknxnql2" path="res://TheGame/Sprites/Items/equipment/ground_heavenly_fiend_necklace.png" id="33_2w53e"]
 [ext_resource type="Texture2D" uid="uid://cohmmcxc6nu4c" path="res://TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_necklace.png" id="34_g60o7"]
+[ext_resource type="Texture2D" uid="uid://dykogx1pys8b2" path="res://TheGame/Sprites/Items/equipment/ground_heavenly_fiend_moon_halberd.png" id="35_qso1b"]
+[ext_resource type="Texture2D" uid="uid://cswiikoarjrbe" path="res://TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_moon_halberd.png" id="36_sl8he"]
+[ext_resource type="Texture2D" uid="uid://c4nbwcr03adpe" path="res://TheGame/Sprites/Items/equipment/ground_heavenly_fiend_robe.png" id="37_0o6xw"]
+[ext_resource type="Texture2D" uid="uid://bdjbdi3j5j3k8" path="res://TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_robe.png" id="38_ntvsi"]
+[ext_resource type="Texture2D" uid="uid://d2tbo8lmdutm7" path="res://TheGame/Sprites/Items/equipment/ground_excellent_pilgrim_clothes.png" id="39_u318k"]
+[ext_resource type="Texture2D" uid="uid://b8ceqjk05yq46" path="res://TheGame/Sprites/Items/equipment/equipment_excellent_pilgrim_clothes.png" id="40_xlus6"]
+[ext_resource type="Texture2D" uid="uid://nfchmf866gq" path="res://TheGame/Sprites/Items/equipment/ground_excellent_pilgrim_staff.png" id="41_fcca0"]
+[ext_resource type="Texture2D" uid="uid://ckklbvu045onj" path="res://TheGame/Sprites/Items/equipment/equipment_excellent_pilgrim_staff.png" id="42_7jjev"]
+[ext_resource type="Texture2D" uid="uid://dymfrly85b4mf" path="res://TheGame/Sprites/Items/equipment/ground_excellent_cassock.png" id="43_byts6"]
+[ext_resource type="Texture2D" uid="uid://do7pt5q7be7nn" path="res://TheGame/Sprites/Items/equipment/equipment_excellent_cassock.png" id="44_ltrpw"]
+[ext_resource type="Texture2D" uid="uid://baht0ajj8vsdt" path="res://TheGame/Sprites/Items/equipment/ground_excellent_pine_staff.png" id="45_2wnw5"]
+[ext_resource type="Texture2D" uid="uid://c5xyfaakwc8b6" path="res://TheGame/Sprites/Items/equipment/equipment_excellent_pine_staff.png" id="46_i16ca"]
+[ext_resource type="Texture2D" uid="uid://1ulfj177vh6e" path="res://TheGame/Sprites/Items/equipment/ground_blood_sea_shell.png" id="47_fcca0"]
+[ext_resource type="Texture2D" uid="uid://c5ytjo50iljfc" path="res://TheGame/Sprites/Items/equipment/equipment_blood_sea_shell.png" id="48_7jjev"]
+[ext_resource type="Texture2D" uid="uid://bytteu08awkqa" path="res://TheGame/Sprites/Items/equipment/ground_blood_sea_demon_armor.png" id="49_2wnw5"]
+[ext_resource type="Texture2D" uid="uid://bwab60rg3a7dy" path="res://TheGame/Sprites/Items/equipment/equipment_blood_sea_demon_armor.png" id="50_i16ca"]
+[ext_resource type="Texture2D" uid="uid://b1ypt3476juip" path="res://TheGame/Sprites/Items/equipment/ground_blood_sea_evil_staff.png" id="51_0wvu8"]
+[ext_resource type="Texture2D" uid="uid://db1sitauhawx0" path="res://TheGame/Sprites/Items/equipment/equipment_blood_sea_evil_staff.png" id="52_tj18l"]
+[ext_resource type="Texture2D" uid="uid://cvwt4tjnapyth" path="res://TheGame/Sprites/Items/equipment/ground_fine_pilgrim_clothes.png" id="53_5ee6d"]
+[ext_resource type="Texture2D" uid="uid://bqa4soryqqsd5" path="res://TheGame/Sprites/Items/equipment/equipment_fine_pilgrim_clothes.png" id="54_l8ecr"]
+[ext_resource type="Texture2D" uid="uid://b0rdfgb52au5l" path="res://TheGame/Sprites/Items/equipment/ground_fine_pilgrim_staff.png" id="55_fwqh5"]
+[ext_resource type="Texture2D" uid="uid://cxecdscbwct74" path="res://TheGame/Sprites/Items/equipment/equipment_fine_pilgrim_staff.png" id="56_thg6h"]
+[ext_resource type="Texture2D" uid="uid://qpy18vb4vl43" path="res://TheGame/Sprites/Items/equipment/ground_fine_cassock.png" id="57_71ovh"]
+[ext_resource type="Texture2D" uid="uid://pphlvkqp2lv5" path="res://TheGame/Sprites/Items/equipment/equipment_fine_cassock.png" id="58_l3bkn"]
+[ext_resource type="Texture2D" uid="uid://cmsheubouap5h" path="res://TheGame/Sprites/Items/equipment/ground_fine_pine_staff.png" id="59_hq5fu"]
+[ext_resource type="Texture2D" uid="uid://d0d8u6o4or72k" path="res://TheGame/Sprites/Items/equipment/equipment_fine_pine_staff.png" id="60_pun65"]
+[ext_resource type="Texture2D" uid="uid://b7ldu2ww35wro" path="res://TheGame/Sprites/Items/equipment/ground_black_tortoise_armor.png" id="61_52w4g"]
+[ext_resource type="Texture2D" uid="uid://7rr6pfg4v55k" path="res://TheGame/Sprites/Items/equipment/equipment_black_tortoise_armor.png" id="62_s06j1"]
+[ext_resource type="Texture2D" uid="uid://dpgnuh1xhwyjj" path="res://TheGame/Sprites/Items/equipment/ground_azure_dragon_blade.png" id="63_duw5r"]
+[ext_resource type="Texture2D" uid="uid://clsnumxajif8d" path="res://TheGame/Sprites/Items/equipment/equipment_azure_dragon_blade.png" id="64_ggyxv"]
+[ext_resource type="Texture2D" uid="uid://bmbyalv5o2xmw" path="res://TheGame/Sprites/Items/equipment/ground_ruyi_golden_staff.png" id="65_3kqec"]
+[ext_resource type="Texture2D" uid="uid://b8dtvxenkmgd0" path="res://TheGame/Sprites/Items/equipment/equipment_ruyi_golden_staff.png" id="66_d3r6k"]
+[ext_resource type="Texture2D" uid="uid://dkmtvw0ltxrn3" path="res://TheGame/Sprites/Items/equipment/ground_white_tiger_staff.png" id="67_utpa2"]
+[ext_resource type="Texture2D" uid="uid://60secfryqlm4" path="res://TheGame/Sprites/Items/equipment/equipment_white_tiger_staff.png" id="68_x2unm"]
+[ext_resource type="Texture2D" uid="uid://dwtk2y41ogjee" path="res://TheGame/Sprites/Items/equipment/ground_kirin_robe.png" id="69_vuxb4"]
+[ext_resource type="Texture2D" uid="uid://cehomi7nnflnc" path="res://TheGame/Sprites/Items/equipment/equipment_kirin_robe.png" id="70_ubkm2"]
+[ext_resource type="Texture2D" uid="uid://bpdiasmxmfoms" path="res://TheGame/Sprites/Items/equipment/ground_vermilion_bird_ring.png" id="71_dntbv"]
+[ext_resource type="Texture2D" uid="uid://c2kil0begvc60" path="res://TheGame/Sprites/Items/equipment/equipment_vermilion_bird_ring.png" id="72_ltui6"]
+[ext_resource type="Texture2D" uid="uid://ctpnmaek5k5c7" path="res://TheGame/Sprites/Items/equipment/ground_seven_star_guard.png" id="73_xux81"]
+[ext_resource type="Texture2D" uid="uid://4x0l6upha2fm" path="res://TheGame/Sprites/Items/equipment/equipment_seven_star_guard.png" id="74_if8hb"]
+[ext_resource type="Texture2D" uid="uid://lqkor6a7r3un" path="res://TheGame/Sprites/Items/equipment/ground_nine_ring_monk_staff.png" id="75_i6q24"]
+[ext_resource type="Texture2D" uid="uid://f0mws8owu0yj" path="res://TheGame/Sprites/Items/equipment/equipment_nine_ring_monk_staff.png" id="76_5xu1j"]
+[ext_resource type="Texture2D" uid="uid://cmtmyi8p0xvtd" path="res://TheGame/Sprites/Items/equipment/ground_east_sea_banner.png" id="77_p22el"]
+[ext_resource type="Texture2D" uid="uid://d3mak2aundy5s" path="res://TheGame/Sprites/Items/equipment/equipment_east_sea_banner.png" id="78_qglo8"]
+[ext_resource type="Texture2D" uid="uid://buxedt0fn75v4" path="res://TheGame/Sprites/Items/equipment/ground_diamond_snare.png" id="79_lvx4v"]
+[ext_resource type="Texture2D" uid="uid://bx2uc530cd0py" path="res://TheGame/Sprites/Items/equipment/equipment_diamond_snare.png" id="80_3hjtd"]
 [ext_resource type="Texture2D" uid="uid://cotpgi3ud157x" path="res://TheGame/Sprites/Items/equipment/ground_rough_pilgrim_clothes.png" id="ground_0"]
 [ext_resource type="Texture2D" uid="uid://csc7r3af0gfjd" path="res://TheGame/Sprites/Items/equipment/ground_rough_pilgrim_staff.png" id="ground_1"]
 [ext_resource type="Texture2D" uid="uid://cwgrqabwos3xx" path="res://TheGame/Sprites/Items/equipment/ground_rough_cassock.png" id="ground_2"]
@@ -145,6 +191,144 @@ m_EquipmentId = 15
 m_InventoryIcon = ExtResource("34_g60o7")
 m_GroundIcon = ExtResource("33_2w53e")
 
+[sub_resource type="Resource" id="Resource_eisir"]
+script = ExtResource("item")
+m_EquipmentId = 16
+m_InventoryIcon = ExtResource("36_sl8he")
+m_GroundIcon = ExtResource("35_qso1b")
+
+[sub_resource type="Resource" id="Resource_f1vab"]
+script = ExtResource("item")
+m_EquipmentId = 17
+m_InventoryIcon = ExtResource("38_ntvsi")
+m_GroundIcon = ExtResource("37_0o6xw")
+
+[sub_resource type="Resource" id="Resource_0wvu8"]
+script = ExtResource("item")
+m_EquipmentId = 18
+m_InventoryIcon = ExtResource("40_xlus6")
+m_GroundIcon = ExtResource("39_u318k")
+
+[sub_resource type="Resource" id="Resource_tj18l"]
+script = ExtResource("item")
+m_EquipmentId = 19
+m_InventoryIcon = ExtResource("42_7jjev")
+m_GroundIcon = ExtResource("41_fcca0")
+
+[sub_resource type="Resource" id="Resource_yd3qi"]
+script = ExtResource("item")
+m_EquipmentId = 20
+m_InventoryIcon = ExtResource("44_ltrpw")
+m_GroundIcon = ExtResource("43_byts6")
+
+[sub_resource type="Resource" id="Resource_ujqmv"]
+script = ExtResource("item")
+m_EquipmentId = 21
+m_InventoryIcon = ExtResource("46_i16ca")
+m_GroundIcon = ExtResource("45_2wnw5")
+
+[sub_resource type="Resource" id="Resource_byts6"]
+script = ExtResource("item")
+m_EquipmentId = 22
+m_InventoryIcon = ExtResource("48_7jjev")
+m_GroundIcon = ExtResource("47_fcca0")
+
+[sub_resource type="Resource" id="Resource_us0jl"]
+script = ExtResource("item")
+m_EquipmentId = 23
+m_InventoryIcon = ExtResource("50_i16ca")
+m_GroundIcon = ExtResource("49_2wnw5")
+
+[sub_resource type="Resource" id="Resource_v2wlt"]
+script = ExtResource("item")
+m_EquipmentId = 24
+m_InventoryIcon = ExtResource("52_tj18l")
+m_GroundIcon = ExtResource("51_0wvu8")
+
+[sub_resource type="Resource" id="Resource_x2rw0"]
+script = ExtResource("item")
+m_EquipmentId = 25
+m_InventoryIcon = ExtResource("54_l8ecr")
+m_GroundIcon = ExtResource("53_5ee6d")
+
+[sub_resource type="Resource" id="Resource_4hy15"]
+script = ExtResource("item")
+m_EquipmentId = 26
+m_InventoryIcon = ExtResource("56_thg6h")
+m_GroundIcon = ExtResource("55_fwqh5")
+
+[sub_resource type="Resource" id="Resource_d0lab"]
+script = ExtResource("item")
+m_EquipmentId = 27
+m_InventoryIcon = ExtResource("58_l3bkn")
+m_GroundIcon = ExtResource("57_71ovh")
+
+[sub_resource type="Resource" id="Resource_7ns5v"]
+script = ExtResource("item")
+m_EquipmentId = 28
+m_InventoryIcon = ExtResource("60_pun65")
+m_GroundIcon = ExtResource("59_hq5fu")
+
+[sub_resource type="Resource" id="Resource_txl0m"]
+script = ExtResource("item")
+m_EquipmentId = 29
+m_InventoryIcon = ExtResource("62_s06j1")
+m_GroundIcon = ExtResource("61_52w4g")
+
+[sub_resource type="Resource" id="Resource_j62qw"]
+script = ExtResource("item")
+m_EquipmentId = 30
+m_InventoryIcon = ExtResource("64_ggyxv")
+m_GroundIcon = ExtResource("63_duw5r")
+
+[sub_resource type="Resource" id="Resource_8ya2x"]
+script = ExtResource("item")
+m_EquipmentId = 31
+m_InventoryIcon = ExtResource("66_d3r6k")
+m_GroundIcon = ExtResource("65_3kqec")
+
+[sub_resource type="Resource" id="Resource_x5qkd"]
+script = ExtResource("item")
+m_EquipmentId = 32
+m_InventoryIcon = ExtResource("68_x2unm")
+m_GroundIcon = ExtResource("67_utpa2")
+
+[sub_resource type="Resource" id="Resource_ojaey"]
+script = ExtResource("item")
+m_EquipmentId = 33
+m_InventoryIcon = ExtResource("70_ubkm2")
+m_GroundIcon = ExtResource("69_vuxb4")
+
+[sub_resource type="Resource" id="Resource_51i05"]
+script = ExtResource("item")
+m_EquipmentId = 34
+m_InventoryIcon = ExtResource("72_ltui6")
+m_GroundIcon = ExtResource("71_dntbv")
+
+[sub_resource type="Resource" id="Resource_27doa"]
+script = ExtResource("item")
+m_EquipmentId = 35
+m_InventoryIcon = ExtResource("74_if8hb")
+m_GroundIcon = ExtResource("73_xux81")
+
+[sub_resource type="Resource" id="Resource_40po5"]
+script = ExtResource("item")
+m_EquipmentId = 36
+m_InventoryIcon = ExtResource("76_5xu1j")
+m_GroundIcon = ExtResource("75_i6q24")
+
+[sub_resource type="Resource" id="Resource_eaqwb"]
+script = ExtResource("item")
+m_EquipmentId = 37
+m_InventoryIcon = ExtResource("78_qglo8")
+m_GroundIcon = ExtResource("77_p22el")
+
+[sub_resource type="Resource" id="Resource_jla7x"]
+script = ExtResource("item")
+m_EquipmentId = 38
+m_InventoryIcon = ExtResource("80_3hjtd")
+m_GroundIcon = ExtResource("79_lvx4v")
+
 [resource]
 script = ExtResource("library")
-m_Items = Array[ExtResource("item")]([SubResource("item_0"), SubResource("item_1"), SubResource("item_2"), SubResource("item_3"), SubResource("item_4"), SubResource("item_5"), SubResource("item_6"), SubResource("item_7"), SubResource("item_8"), SubResource("item_9"), SubResource("item_10"), SubResource("Resource_nffhv"), SubResource("Resource_lsvhc"), SubResource("Resource_2w53e"), SubResource("Resource_qso1b"), SubResource("Resource_sl8he"), SubResource("Resource_0o6xw"), SubResource("Resource_hncxc")])
+m_Items = Array[ExtResource("item")]([SubResource("item_0"), SubResource("item_1"), SubResource("item_2"), SubResource("item_3"), SubResource("item_4"), SubResource("item_5"), SubResource("item_6"), SubResource("item_7"), SubResource("item_8"), SubResource("item_9"), SubResource("item_10"), SubResource("Resource_nffhv"), SubResource("Resource_lsvhc"), SubResource("Resource_2w53e"), SubResource("Resource_qso1b"), SubResource("Resource_sl8he"), SubResource("Resource_0o6xw"), SubResource("Resource_hncxc"), SubResource("Resource_eisir"), SubResource("Resource_f1vab"), SubResource("Resource_0wvu8"), SubResource("Resource_tj18l"), SubResource("Resource_yd3qi"), SubResource("Resource_ujqmv"), SubResource("Resource_byts6"), SubResource("Resource_us0jl"), SubResource("Resource_v2wlt"), SubResource("Resource_x2rw0"), SubResource("Resource_4hy15"), SubResource("Resource_d0lab"), SubResource("Resource_7ns5v"), SubResource("Resource_txl0m"), SubResource("Resource_j62qw"), SubResource("Resource_8ya2x"), SubResource("Resource_x5qkd"), SubResource("Resource_ojaey"), SubResource("Resource_51i05"), SubResource("Resource_27doa"), SubResource("Resource_40po5"), SubResource("Resource_eaqwb"), SubResource("Resource_jla7x")])

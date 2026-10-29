@@ -26,12 +26,12 @@ frame = 3
 [node name="Body" type="Sprite2D" parent="." unique_id=1513800798]
 texture = ExtResource("body")
 hframes = 6
-vframes = 20
+vframes = 29
 
 [node name="Weapon" type="Sprite2D" parent="." unique_id=922135903]
 texture = ExtResource("weapon")
 hframes = 6
-vframes = 20
+vframes = 29
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1083198312]
 callback_mode_process = 2

@@ -49,7 +49,7 @@ namespace GameLogic.Enemies.AI
         /// <summary>
         /// 决策参数
         /// </summary>
-        GameConfig.Monster.MonsterConfig Config { get; }
+        GameConfig.Enemy.EnemyConfig Config { get; }
 
         /// <summary>
         /// 本怪物独占的冷却和意图。
@@ -69,22 +69,27 @@ namespace GameLogic.Enemies.AI
         /// <summary>
         /// 均匀随机数 [0,1)。随机源由宿主提供，单测可注入确定序列。
         /// </summary>
+        /// <returns>均匀分布在[0,1)内的下一随机样本。</returns>
         float NextRandom();
 
         /// <summary>
         /// 写移动意图：-1 左 / 0 停 / 1 右（移动时朝向随之翻转）
         /// </summary>
+        /// <param name="dir">方向符号：-1向左、0保持或停止、1向右。</param>
         void Move(int dir);
 
         /// <summary>
         /// 原地转向：-1 左 / 1 右（0 不变；出招/受控中忽略）
         /// </summary>
+        /// <param name="dir">方向符号：-1向左、0保持或停止、1向右。</param>
         void Face(int dir);
 
         /// <summary>
         /// 请求出招（招式下标）。身体状态机在下一物理帧提交（进入出招状态并转向目标）；
         /// 当前不可出招（受控/死亡/已在出招）时返回 false。
         /// </summary>
+        /// <param name="index">当前宿主攻击参数中的招式编号。</param>
+        /// <returns>请求是否被接纳；实际动作由下一物理帧提交。</returns>
         bool RequestAttack(int index);
     }
 }

@@ -1,0 +1,660 @@
+{
+  "equipment_count": 17,
+  "appearance_count": 17,
+  "items": [
+    {
+      "id": 1,
+      "enum": "粗糙的行者服",
+      "legacy_id": "ccxzf",
+      "name": "粗糙的行者服",
+      "owner": "悟空",
+      "slot": "防具",
+      "quality": "粗糙",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_rough_pilgrim_clothes.png",
+          "size": [
+            60,
+            62
+          ],
+          "alpha_bounds": [
+            13,
+            10,
+            48,
+            51
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_rough_pilgrim_clothes.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            9,
+            6,
+            44,
+            47
+          ]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "enum": "粗糙的行者棍",
+      "legacy_id": "ccxzg",
+      "name": "粗糙的行者棍",
+      "owner": "悟空",
+      "slot": "武器",
+      "quality": "粗糙",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_rough_pilgrim_staff.png",
+          "size": [
+            60,
+            62
+          ],
+          "alpha_bounds": [
+            5,
+            8,
+            55,
+            56
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_rough_pilgrim_staff.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            1,
+            4,
+            51,
+            52
+          ]
+        }
+      }
+    },
+    {
+      "id": 3,
+      "enum": "粗糙的袈裟",
+      "legacy_id": "ccjs",
+      "name": "粗糙的袈裟",
+      "owner": "唐僧",
+      "slot": "防具",
+      "quality": "粗糙",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_rough_cassock.png",
+          "size": [
+            60,
+            62
+          ],
+          "alpha_bounds": [
+            17,
+            10,
+            46,
+            51
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_rough_cassock.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            13,
+            6,
+            42,
+            47
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "enum": "粗糙的松木杖",
+      "legacy_id": "ccsmz",
+      "name": "粗糙的松木杖",
+      "owner": "唐僧",
+      "slot": "武器",
+      "quality": "粗糙",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_rough_pine_staff.png",
+          "size": [
+            60,
+            62
+          ],
+          "alpha_bounds": [
+            7,
+            7,
+            55,
+            57
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_rough_pine_staff.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            3,
+            3,
+            51,
+            53
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "enum": "普通的行者服",
+      "legacy_id": "ptxzf",
+      "name": "普通的行者服",
+      "owner": "悟空",
+      "slot": "防具",
+      "quality": "普通",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_common_pilgrim_clothes.png",
+          "size": [
+            60,
+            62
+          ],
+          "alpha_bounds": [
+            11,
+            7,
+            50,
+            53
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_common_pilgrim_clothes.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            9,
+            6,
+            44,
+            47
+          ]
+        }
+      }
+    },
+    {
+      "id": 6,
+      "enum": "普通的行者棍",
+      "legacy_id": "ptxzg",
+      "name": "普通的行者棍",
+      "owner": "悟空",
+      "slot": "武器",
+      "quality": "普通",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_common_pilgrim_staff.png",
+          "size": [
+            60,
+            62
+          ],
+          "alpha_bounds": [
+            2,
+            5,
+            57,
+            59
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_common_pilgrim_staff.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            1,
+            4,
+            51,
+            52
+          ]
+        }
+      }
+    },
+    {
+      "id": 7,
+      "enum": "普通的袈裟",
+      "legacy_id": "ptjs",
+      "name": "普通的袈裟",
+      "owner": "唐僧",
+      "slot": "防具",
+      "quality": "普通",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_common_cassock.png",
+          "size": [
+            60,
+            62
+          ],
+          "alpha_bounds": [
+            15,
+            8,
+            48,
+            53
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_common_cassock.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            13,
+            6,
+            42,
+            47
+          ]
+        }
+      }
+    },
+    {
+      "id": 8,
+      "enum": "普通的松木杖",
+      "legacy_id": "ptsmz",
+      "name": "普通的松木杖",
+      "owner": "唐僧",
+      "slot": "武器",
+      "quality": "普通",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_common_pine_staff.png",
+          "size": [
+            60,
+            62
+          ],
+          "alpha_bounds": [
+            4,
+            4,
+            58,
+            60
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_common_pine_staff.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            3,
+            3,
+            51,
+            53
+          ]
+        }
+      }
+    },
+    {
+      "id": 9,
+      "enum": "地煞灵戒",
+      "legacy_id": "dslj",
+      "name": "地煞灵戒",
+      "owner": "通用",
+      "slot": "饰品",
+      "quality": "优秀",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_earth_fiend_ring.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            15,
+            17,
+            36,
+            36
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_earth_fiend_ring.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            15,
+            17,
+            36,
+            36
+          ]
+        }
+      }
+    },
+    {
+      "id": 10,
+      "enum": "地煞猿甲",
+      "legacy_id": "dsyj",
+      "name": "地煞猿甲",
+      "owner": "悟空",
+      "slot": "防具",
+      "quality": "优秀",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_earth_fiend_ape_armor.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            13,
+            8,
+            39,
+            46
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_earth_fiend_ape_armor.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            13,
+            8,
+            39,
+            46
+          ]
+        }
+      }
+    },
+    {
+      "id": 11,
+      "enum": "地煞权杖",
+      "legacy_id": "dsqz",
+      "name": "地煞权杖",
+      "owner": "唐僧",
+      "slot": "武器",
+      "quality": "优秀",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_earth_fiend_scepter.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            2,
+            1,
+            49,
+            51
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_earth_fiend_scepter.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            2,
+            1,
+            49,
+            51
+          ]
+        }
+      }
+    },
+    {
+      "id": 12,
+      "enum": "家传手镯",
+      "legacy_id": "jcsz",
+      "name": "家传手镯",
+      "owner": "通用",
+      "slot": "饰品",
+      "quality": "优秀",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_heirloom_bracelet.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            12,
+            14,
+            40,
+            40
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_heirloom_bracelet.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            12,
+            14,
+            40,
+            40
+          ]
+        }
+      }
+    },
+    {
+      "id": 13,
+      "enum": "家传宝剑",
+      "legacy_id": "jcbj",
+      "name": "家传宝剑",
+      "owner": "悟空",
+      "slot": "武器",
+      "quality": "优秀",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_heirloom_sword.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            1,
+            2,
+            51,
+            52
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_heirloom_sword.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            1,
+            2,
+            51,
+            52
+          ]
+        }
+      }
+    },
+    {
+      "id": 14,
+      "enum": "家传衣裳",
+      "legacy_id": "jcys",
+      "name": "家传衣裳",
+      "owner": "唐僧",
+      "slot": "防具",
+      "quality": "优秀",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_heirloom_clothes.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            10,
+            10,
+            42,
+            46
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_heirloom_clothes.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            10,
+            10,
+            42,
+            46
+          ]
+        }
+      }
+    },
+    {
+      "id": 15,
+      "enum": "天煞骨链",
+      "legacy_id": "tsgl",
+      "name": "天煞骨链",
+      "owner": "通用",
+      "slot": "饰品",
+      "quality": "精良",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_necklace.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            5,
+            14,
+            44,
+            38
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_heavenly_fiend_necklace.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            5,
+            14,
+            44,
+            38
+          ]
+        }
+      }
+    },
+    {
+      "id": 16,
+      "enum": "天煞月戟",
+      "legacy_id": "tsyj",
+      "name": "天煞月戟",
+      "owner": "悟空",
+      "slot": "武器",
+      "quality": "精良",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_moon_halberd.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            0,
+            4,
+            51,
+            51
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_heavenly_fiend_moon_halberd.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            0,
+            4,
+            51,
+            51
+          ]
+        }
+      }
+    },
+    {
+      "id": 17,
+      "enum": "天煞羽袍",
+      "legacy_id": "tsyp",
+      "name": "天煞羽袍",
+      "owner": "唐僧",
+      "slot": "防具",
+      "quality": "精良",
+      "appearance": {
+        "m_InventoryIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_robe.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            15,
+            6,
+            36,
+            48
+          ]
+        },
+        "m_GroundIcon": {
+          "path": "res://TheGame/Sprites/Items/equipment/ground_heavenly_fiend_robe.png",
+          "size": [
+            52,
+            54
+          ],
+          "alpha_bounds": [
+            15,
+            6,
+            36,
+            48
+          ]
+        }
+      }
+    }
+  ],
+  "unconfigured_appearance_ids": [],
+  "hero_atlas_motion": [
+    {
+      "kind": "body",
+      "equipment_ids": [
+        0,
+        1,
+        5,
+        10
+      ],
+      "frame_count": 148
+    },
+    {
+      "kind": "weapon",
+      "equipment_ids": [
+        0,
+        2,
+        6,
+        13,
+        16
+      ],
+      "frame_count": 148
+    }
+  ],
+  "errors": []
+}

@@ -69,7 +69,7 @@ length = 1.833333333
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visual/Sprite:frame")
+tracks/0/path = NodePath("Origin/Visual/Sprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -81,7 +81,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visual/HitBox/CollisionShape2D:disabled")
+tracks/1/path = NodePath("Origin/Visual/HitBox/CollisionShape2D:disabled")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -93,7 +93,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visual/HitBox/CollisionShape2D:shape")
+tracks/2/path = NodePath("Origin/Visual/HitBox/CollisionShape2D:shape")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -105,19 +105,19 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visual/HitBox/CollisionShape2D:position")
+tracks/3/path = NodePath("Origin/Visual/HitBox/CollisionShape2D:position")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.16666667, 0.25, 0.33333334, 0.41666666, 0.5, 0.5833333, 0.6666667, 0.75, 0.8333333, 0.9166667, 1, 1.0833334, 1.1666666, 1.25, 1.3333334, 1.4166666, 1.5, 1.5833334, 1.6666666),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [Vector2(-2.5, 54.475002), Vector2(-28.350006, 99.425), Vector2(-106.55, 59.15), Vector2(-133.15, 50.949997), Vector2(-108.899994, 36.449997), Vector2(-78.4, 12.200001), Vector2(-76, 52.15), Vector2(-42, 54.475), Vector2(-72.899994, 91.225006), Vector2(-67.8, 66.95), Vector2(-130.4, 93.55), Vector2(-98.7, 80.675), Vector2(-56.850006, 45.050003), Vector2(-77.2, 62.25), Vector2(-73.7, 85.375), Vector2(-78.75, 48.225), Vector2(-74.850006, 61.85), Vector2(-44.75, 36.875), Vector2(-22.050003, 45.075), Vector2(-2.5, 54.449997), Vector2(-12.699997, 49.4)]
+"values": [Vector2(-2.5, 26.475), Vector2(-28.35, 71.425), Vector2(-106.55, 31.15), Vector2(-133.15, 22.95), Vector2(-108.9, 8.45), Vector2(-78.4, -15.8), Vector2(-76, 24.15), Vector2(-42, 26.475), Vector2(-72.9, 63.225), Vector2(-67.8, 38.95), Vector2(-130.4, 65.55), Vector2(-98.7, 52.675), Vector2(-56.85, 17.05), Vector2(-77.2, 34.25), Vector2(-73.7, 57.375), Vector2(-78.75, 20.225), Vector2(-74.85, 33.85), Vector2(-44.75, 8.875), Vector2(-22.05, 17.075), Vector2(-2.5, 26.45), Vector2(-12.7, 21.4)]
 }
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("Visual/HitBox/CollisionShape2D:rotation")
+tracks/4/path = NodePath("Origin/Visual/HitBox/CollisionShape2D:rotation")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {

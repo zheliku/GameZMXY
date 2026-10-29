@@ -28,6 +28,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\ChapterRules.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Wukong\Skills\*.cs" />
     <!-- 窗口学习命令在 ProfileTests 验证；本项目只链接战斗执行规则。 -->
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Skills\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Skills\LearnSkillCommand.cs" />
@@ -58,7 +59,8 @@
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Utility\Utility.Text.ITextHelper.cs" Link="Linked\Framework\Utility.Text.ITextHelper.cs" />
     <!-- M5 怪物 AI：Monsters/AI 目录使用 GF.Fsm 纯 C# 层与 Godot.Rect2 值类型，不依赖引擎节点，状态机用框架真实实现驱动 -->
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\AI\**\*.cs" Link="Linked\AI\%(Filename)%(Extension)" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\**\*State.cs" Link="Linked\AI\%(Filename)%(Extension)" />
+    <!-- 专属身体状态直接操作实体节点，由引擎专项验证；纯规则项目只链接不依赖实体的状态。 -->
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\**\*State.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_06_garuda_cave\*State.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_09_shark_whirlpool\SharkDemonKingAttackState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_09_shark_whirlpool\SharkDemonKingMoveState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonTransformState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonKingMoveState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonKingAttackState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonHeartState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonHeartDeathState.cs" Link="Linked\AI\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Monsters\AI\**\*.cs" />
     <!-- 2026-10-01 身体状态机：Entity/Body + Heroes/Body + Monsters/Body 是纯 C#（GF.Fsm 纯 C# 层 + Godot 值类型），物理帧由测试按 BodyFsmExtensions.Tick 驱动 -->
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Body\*.cs" Link="Linked\Body\%(Filename)%(Extension)" />
@@ -84,6 +86,11 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 龙王死亡状态关闭真实Godot受击节点并延后掉落，由龙宫实机流程专项覆盖。 -->
+    <Compile Remove="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_11_hidden_dragon_palace\DragonKingDeathState.cs" />
   </ItemGroup>
 
 </Project>

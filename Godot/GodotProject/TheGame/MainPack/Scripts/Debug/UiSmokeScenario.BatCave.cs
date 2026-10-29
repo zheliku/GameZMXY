@@ -26,6 +26,9 @@ public sealed partial class UiSmokeScenario
     /// <summary>
     /// 独立验证尖刺伤害周期、预警下落、暂停清理与两种敌方身体。
     /// </summary>
+    /// <param name="hero">当前测试借用的英雄实体。</param>
+    /// <param name="flow">持有本次模型与系统的GGF主流程状态机。</param>
+    /// <returns>完成尖刺与敌人专项验证的任务。</returns>
     private async Task CheckBatCaveAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         var heroSystem = flow.GetSystem<HeroSystem>();
@@ -176,7 +179,9 @@ public sealed partial class UiSmokeScenario
         try
         {
             foreach (int ticks in new[] { 60, 120 })
+            {
                 foreach (int direction in new[] { -1, 1 })
+                {
                     foreach (string sample in new[] { "edge", "above", "below" })
                     {
                         Engine.PhysicsTicksPerSecond = ticks;
@@ -198,7 +203,10 @@ public sealed partial class UiSmokeScenario
                         void OnHpChanged(int current)
                         {
                             if (current >= previousHp)
+                            {
                                 return;
+                            }
+
                             previousHp = current;
                             hits++;
                             firstHit = Math.Min(firstHit, m_Monster.AnimPlayer.CurrentAnimationPosition);
@@ -221,6 +229,9 @@ public sealed partial class UiSmokeScenario
                             m_Monster = null;
                         }
                     }
+                }
+            }
+
             GD.Print("SMOKE-BAT-SONIC PASS: both directions, 60/120Hz, early wave edge hits once within two physics steps; above/below air excluded; pool reuse.");
         }
         finally

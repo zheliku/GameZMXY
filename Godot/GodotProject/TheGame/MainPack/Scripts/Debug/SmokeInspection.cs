@@ -22,6 +22,49 @@ using GameLogic;
 internal static class SmokeInspection
 {
     /// <summary>
+    /// 检查真实窗口及弹出菜单仅保留装备格的自定义详情提示。
+    /// </summary>
+    /// <param name="root">已经完成打开和数据绑定的窗口或组件。</param>
+    /// <exception cref="InvalidOperationException">普通控件或菜单条目仍配置了悬停提示。</exception>
+    public static void CheckTooltips(Godot.Node root)
+    {
+        if (root is Godot.Control control && control is not GameLogic.UI.EquipmentCell &&
+            !string.IsNullOrEmpty(control.TooltipText))
+        {
+            throw new InvalidOperationException($"普通控件仍有悬停提示：{control.GetPath()}");
+        }
+
+        if (root is Godot.PopupMenu menu)
+        {
+            for (int index = 0; index < menu.ItemCount; index++)
+            {
+                if (!string.IsNullOrEmpty(menu.GetItemTooltip(index)))
+                {
+                    throw new InvalidOperationException($"菜单条目仍有悬停提示：{menu.GetPath()}[{index}]");
+                }
+            }
+        }
+
+        // 弹出菜单不一定是Control的直接子级，遍历完整窗口节点树。
+        foreach (Godot.Node child in root.GetChildren())
+        {
+            CheckTooltips(child);
+        }
+    }
+
+    /// <summary>
+    /// 只在烟测侧扩充沙包生命，避免正式出生参数为验证用途保留属性倍率。
+    /// </summary>
+    /// <param name="enemy">真实创建的测试敌人。</param>
+    public static void StrengthenTrainingTarget(AbstractEnemyEntity enemy)
+    {
+        typeof(AbstractEnemyEntity).GetField("m_MaxHp", BindingFlags.Instance | BindingFlags.NonPublic)
+            .SetValue(enemy, 100000);
+        typeof(AbstractEnemyEntity).GetField("m_Hp", BindingFlags.Instance | BindingFlags.NonPublic)
+            .SetValue(enemy, 100000);
+    }
+
+    /// <summary>
     /// 沿继承链读取字段；字段变更时直接让测试失败。
     /// </summary>
     /// <typeparam name="T">字段的实际类型。</typeparam>
@@ -60,9 +103,16 @@ internal static class SmokeInspection
             .GetProperty("Snapshot", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(callbacks);
         int count = 0;
         if (handlers != null)
+        {
             foreach (var handler in handlers)
+            {
                 if (ReferenceEquals(handler.Target, listener))
+                {
                     count++;
+                }
+            }
+        }
+
         return count;
     }
 

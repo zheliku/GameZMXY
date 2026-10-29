@@ -26,6 +26,7 @@ using GameLogic.Heroes;
 using GameLogic.Enemies;
 using GameLogic.Enemies.Body;
 using GameLogic.Effects;
+using GameLogic.Event.Combat;
 using GodotGameFramework.Entity;
 
 /// <summary>
@@ -51,6 +52,7 @@ public sealed partial class UiSmokeScenario
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(x => x.Visible), "技能入口没有打开面板");
         var form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(x => x.Visible);
+        SmokeInspection.CheckTooltips(form);
         Check(GF.Base.IsGamePaused, "技能窗口没有暂停本关");
         PushSkillKey(true, echo: true);
         PushSkillKey(false);
@@ -118,7 +120,9 @@ public sealed partial class UiSmokeScenario
         {
             InputMap.ActionEraseEvents(GameLogic.Input.InputSystem.SkillToggle);
             foreach (var input in originalKeys)
+            {
                 InputMap.ActionAddEvent(GameLogic.Input.InputSystem.SkillToggle, input);
+            }
         }
         GD.Print("SMOKE-SKILL-TOGGLE PASS: V open/close, pause, echo suppression, no reopen and remapped action.");
         await CheckSkillLearningAndCastingAsync(battleForm, form, flow);
@@ -152,12 +156,18 @@ public sealed partial class UiSmokeScenario
         var configuration = GF.Fsm.GetModel<ConfigurationModel>();
         var activePage = form.GetNode<ActiveSkillsPage>("Content/m_ActivePage");
         foreach (var group in new[] { "m_WukongRows", "m_TangsengRows" })
+        {
             foreach (var row in activePage.GetNode<Control>(group).GetChildren().Cast<GridContainer>())
             {
                 foreach (var field in new[] { "Name", "Soul", "DescriptionCell/Description" })
+                {
                     row.GetNode<Label>(field).Text = "编辑器预览";
+                }
+
                 row.GetNode<TextureButton>("IconCell/Icon").TextureNormal = null;
             }
+        }
+
         activePage.Refresh();
         foreach (var (group, hero) in new[]
         {
@@ -182,8 +192,13 @@ public sealed partial class UiSmokeScenario
         var passivePage = form.GetNode<PassiveSkillsPage>("Content/m_PassivePage");
         var passives = configuration.Tables.TbPassiveConfig.DataList;
         foreach (var row in passivePage.GetNode<Control>("m_PassiveRows").GetChildren().Cast<GridContainer>())
+        {
             foreach (var field in new[] { "Name", "NextEffect", "Soul" })
+            {
                 row.GetNode<Label>(field).Text = "编辑器预览";
+            }
+        }
+
         passivePage.Refresh();
         for (int i = 0; i < passives.Count; i++)
         {
@@ -244,7 +259,10 @@ public sealed partial class UiSmokeScenario
                 for (int track = 0; track < clip.GetTrackCount(); track++)
                 {
                     if (clip.TrackGetType(track) != Animation.TrackType.Method)
+                    {
                         continue;
+                    }
+
                     methods = true;
                     for (int key = 0; key < clip.TrackGetKeyCount(track); key++)
                     {
@@ -265,7 +283,7 @@ public sealed partial class UiSmokeScenario
                 var animation = node.GetNode<AnimationPlayer>("AnimationPlayer");
                 Check(animation.HasAnimation("play") && animation.Autoplay.ToString() == "",
                     $"特效原生动画缺失或提前播放：{name}");
-                Check(node.GetNode<CollisionShape2D>("Visual/HitBox/CollisionShape2D").Disabled,
+                Check(node.GetNode<CollisionShape2D>("Origin/Visual/HitBox/CollisionShape2D").Disabled,
                     $"特效初始判定未关闭：{name}");
             }
             GD.Print("SMOKE-UI: 五招原生方法绑定、角色内前奏与四个独立特效场景通过");
@@ -296,13 +314,16 @@ public sealed partial class UiSmokeScenario
         void OnImpactPlayed(object sender, GameFramework.Event.GameEventArgs args)
         {
             if (args is GodotGameFramework.Sound.PlaySoundSuccessEventArgs sound && sound.SoundAssetName == impactPath)
+            {
                 impactSounds++;
+            }
         }
         GF.Event.Subscribe(GodotGameFramework.Sound.PlaySoundSuccessEventArgs.EventId, OnImpactPlayed);
         string[] skillInputs = [InputSystem.Skill1, InputSystem.Skill2, InputSystem.Skill3,
             InputSystem.Interact, InputSystem.Attack, InputSystem.MoveRight];
         try
         {
+            CheckWukongBodyTiming(hero);
             battleForm.GetNode<TextureButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
             await WaitUntilAsync(() => form.Visible, "学习时没有打开技能窗口");
             var first = form.GetNode<TextureButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon");
@@ -336,7 +357,8 @@ public sealed partial class UiSmokeScenario
             await WaitUntilAsync(() => hero.OnFloor, "技能测试英雄没有落地");
             hero.SetFacing(1);
             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
-                new EnemySpawn(hero.GlobalPosition + new Vector2(60, 0), 100));
+                new EnemySpawn(hero.GlobalPosition + new Vector2(60, 0)));
+            SmokeInspection.StrengthenTrainingTarget(m_Monster);
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             int bodyTargetHp = m_Monster.Hp;
@@ -372,7 +394,37 @@ public sealed partial class UiSmokeScenario
             Input.ActionPress(InputSystem.MoveRight);
             await WaitFramesAsync(2);
             Check(hero.ActionData.Running, "技能测试没有进入奔跑");
-            await CastAsync(SkillId.FlameThrust, [InputSystem.Attack], "skill_thrust");
+            // 宽沙包始终与突刺重叠，隔离移动脱离，验证每段只命中一次且段点确实重建攻击包。
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+                new EnemySpawn(hero.GlobalPosition + new Vector2(100, 0)));
+            SmokeInspection.StrengthenTrainingTarget(m_Monster);
+            SmokeInspection.FreezeAi(m_Monster);
+            m_Monster.SetPhysicsProcess(false);
+            var thrustShape = m_Monster.HurtBox.GetNode<CollisionShape2D>("CollisionShape2D");
+            Shape2D originalShape = thrustShape.Shape;
+            thrustShape.Shape = new RectangleShape2D { Size = new Vector2(1000, 300) };
+            int thrustHits = 0;
+            void OnThrustDamage(object sender, GameFramework.Event.GameEventArgs args)
+            {
+                if (args is DamageDealtEventArgs damage && damage.TargetEntityId == m_Monster.Id && !damage.Result.IsMiss)
+                {
+                    thrustHits++;
+                }
+            }
+            GF.Event.Subscribe(DamageDealtEventArgs.EventId, OnThrustDamage);
+            try
+            {
+                await CastAsync(SkillId.FlameThrust, [InputSystem.Attack], "skill_thrust");
+                Check(thrustHits == 4, $"突刺没有按第 1/5/8/11 源帧形成四个独立命中，实际 {thrustHits}");
+                GD.Print("SMOKE-THRUST PASS: four native attack stages hit the same overlapping target once each.");
+            }
+            finally
+            {
+                GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnThrustDamage);
+                thrustShape.Shape = originalShape;
+                ReleaseTestEntity(m_Monster);
+                m_Monster = null;
+            }
             Input.ActionRelease(InputSystem.MoveRight);
             await CastAsync(SkillId.BlazingFlash, [InputSystem.Skill1], "skill_flash");
             await CastAsync(SkillId.FlameStorm, [InputSystem.Skill2], "skill_storm");
@@ -383,7 +435,8 @@ public sealed partial class UiSmokeScenario
             hero.Velocity = Vector2.Zero;
             await WaitFramesAsync(2);
             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
-                new EnemySpawn(hero.GlobalPosition + new Vector2(80, -190), 100));
+                new EnemySpawn(hero.GlobalPosition + new Vector2(80, -190)));
+            SmokeInspection.StrengthenTrainingTarget(m_Monster);
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             int hp = m_Monster.Hp;
@@ -400,14 +453,20 @@ public sealed partial class UiSmokeScenario
         {
             GF.Event.Unsubscribe(GodotGameFramework.Sound.PlaySoundSuccessEventArgs.EventId, OnImpactPlayed);
             foreach (string action in skillInputs)
+            {
                 Input.ActionRelease(action);
+            }
+
             hero.SetPhysicsProcess(false);
             system.CancelSkill();
             hero.GlobalPosition = originalPosition;
             hero.Velocity = Vector2.Zero;
             attributes.Mp.Value = originalMp;
             if (form.Visible)
+            {
                 GF.UI.CloseUIForm(form.SerialId);
+            }
+
             flow.GetSystem<ProfileSystem>().RestoreCheckpoint(snapshot);
         }
 
@@ -416,11 +475,17 @@ public sealed partial class UiSmokeScenario
             attributes.Mp.Value = attributes.MaxMp.Value;
             int mana = attributes.Mp.Value;
             foreach (string action in inputs)
+            {
                 Input.ActionPress(action);
+            }
+
             await WaitUntilAsync(() => attributes.ActiveSkillId == id, $"输入没有释放 {id}", 2000);
             double castAt = hero.ActionData.Time;
             foreach (string action in inputs)
+            {
                 Input.ActionRelease(action);
+            }
+
             Check(attributes.Mp.Value == mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(id).ManaCost, $"{id} 扣蓝不正确");
             if (expectedEffect != SkillHitId.None)
             {
@@ -429,14 +494,17 @@ public sealed partial class UiSmokeScenario
                 var combo = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects")
                     .Single(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)expectedEffect);
                 Check(hero.GlobalPosition.DistanceTo(combo.GlobalPosition) < 1,
-                    "命中目标后身体与九连斩没有定位到同一位置");
+                    $"命中目标后身体与九连斩没有定位到同一位置：hero={hero.GlobalPosition}, combo={combo.GlobalPosition}, target={m_Monster?.GlobalPosition}, velocity={hero.Velocity}, frame={hero.AnimPlayer.CurrentAnimationPosition:0.000}");
                 double comboStart = hero.AnimPlayer.CurrentAnimationPosition;
                 await WaitFramesAsync(12);
                 Check(hero.AnimPlayer.CurrentAnimationPosition > comboStart + .1,
                     "九连斩期间角色时间轴没有并行推进");
             }
             else
+            {
                 await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(.15), SceneTreeTimer.SignalName.Timeout);
+            }
+
             await CaptureCombatAsync(capture);
             if (id == SkillId.FireDemonSlash)
             {
@@ -498,6 +566,53 @@ public sealed partial class UiSmokeScenario
     }
 
     /// <summary>
+    /// 用真实身体参数和原生播放器检查收招时点及悟空整数源帧取消窗口。
+    /// </summary>
+    /// <param name="hero">本轮已经初始化的悟空。</param>
+    private void CheckWukongBodyTiming(AbstractHeroEntity hero)
+    {
+        var parameters = ((IHeroBody)hero).Params;
+        int[] counts = [8, 8, 11, 20, 15];
+        int[] terminalFrames = [8, 8, 10, 19, 14];
+        var cancel = hero.GetType().GetMethod("CanCancelNormalAttack",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Check(cancel != null && Math.Abs(parameters.HurtTime - 14d / 24) < .001,
+            "悟空受击不是第15源帧收招，或角色输入入口缺失");
+        var body = (GameLogic.Body.IActorBody)hero;
+        int originalSegment = hero.ActionData.AttackSegment;
+        try
+        {
+            for (int segment = 0; segment < counts.Length; segment++)
+            {
+                Check(Math.Abs(parameters.AttackTimes[segment] - (terminalFrames[segment] - 1d) / 24) < .001,
+                    $"悟空第{segment + 1}段收招不符源帧脚本");
+                body.BeginAttack(segment);
+                hero.ActionData.AttackSegment = segment;
+                hero.AnimPlayer.Stop();
+                hero.AnimPlayer.Play(parameters.AttackAnims[segment]);
+                for (int frame = 0; frame < counts[segment]; frame++)
+                {
+                    foreach (double fraction in new[] { .01, .99 })
+                    {
+                        hero.AnimPlayer.Seek((frame + fraction) / 24d, true, updateOnly: true);
+                        bool expected = segment < 4 && (frame + 1d) / counts[segment] >= .7;
+                        bool actual = (bool)cancel.Invoke(hero, [true]);
+                        Check(actual == expected,
+                            $"悟空取消窗口没有使用整数源帧：attack={segment + 1}, segment={hero.ActionData.AttackSegment}, frame={frame + 1}, fraction={fraction}, actual={actual}, time={hero.AnimPlayer.CurrentAnimationPosition}, length={hero.AnimPlayer.CurrentAnimationLength}, expectedRatio=0.7");
+                    }
+                }
+            }
+        }
+        finally
+        {
+            body.EndAttack();
+            hero.ActionData.AttackSegment = originalSegment;
+            hero.RestartAnim(HeroAnims.Idle);
+        }
+        GD.Print("SMOKE-BODY-TIMING PASS: five native terminal frame times and 124 integer-frame cancellation samples.");
+    }
+
+    /// <summary>
     /// 通过正式 GGF 声音入口加载七段技能音效，检查分组、解码与停止。
     /// </summary>
     /// <returns>所有音效代理检查完成的任务。</returns>
@@ -546,7 +661,10 @@ public sealed partial class UiSmokeScenario
         {
             var sound = (GodotGameFramework.Sound.PlaySoundSuccessEventArgs)args;
             if (sound.SoundAssetName != hurt && sound.SoundAssetName != death && sound.SoundAssetName != impact)
+            {
                 return;
+            }
+
             sounds[sound.SoundAssetName] = sounds.GetValueOrDefault(sound.SoundAssetName) + 1;
             serials.Add(sound.SerialId);
         }
@@ -640,7 +758,10 @@ public sealed partial class UiSmokeScenario
         {
             GF.Event.Unsubscribe(GodotGameFramework.Sound.PlaySoundSuccessEventArgs.EventId, OnSoundPlayed);
             foreach (int serial in serials)
+            {
                 GF.Sound.StopSound(serial);
+            }
+
             player.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Physics;
             hero.RestartAnim(HeroAnims.Idle);
         }

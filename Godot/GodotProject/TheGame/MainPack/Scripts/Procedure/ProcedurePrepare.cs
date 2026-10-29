@@ -34,18 +34,24 @@ public sealed class ProcedurePrepare : ProcedureBase
             {
                 if (!GF.Entity.HasEntityGroup(group.Name) && !GF.Entity.AddEntityGroup(group.Name, group.ReleaseInterval,
                         group.Capacity, group.ExpireTime, group.Priority))
+                {
                     throw new InvalidOperationException($"实体组 {group.Name} 创建失败。");
+                }
             }
             foreach (var group in GF.UI.UIGroupRes.Groups)
             {
                 if (!GF.UI.HasUIGroup(group.Name) && !GF.UI.AddUIGroup(group.Name, group.Depth))
+                {
                     throw new InvalidOperationException($"UI 组 {group.Name} 创建失败。");
+                }
             }
             foreach (var group in GF.Sound.SoundGroupRes.SoundGroups)
             {
                 if (!GF.Sound.HasSoundGroup(group.Name) && !GF.Sound.AddSoundGroup(group.Name, group.AgentCounts,
                         group.AvoidBeingReplacedBySamePriority))
+                {
                     throw new InvalidOperationException($"声音组 {group.Name} 创建失败。");
+                }
             }
 
             // 恢复用户音量并启用表现层工具。

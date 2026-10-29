@@ -13,9 +13,21 @@ namespace GameConfig.Loot
 { 
     public enum PickupId
     {
+        /// <summary>
+        /// 无恢复品
+        /// </summary>
         None = 0,
+        /// <summary>
+        /// 小桃子
+        /// </summary>
         SmallPeach = 1,
+        /// <summary>
+        /// 大桃子
+        /// </summary>
         LargePeach = 2,
+        /// <summary>
+        /// 蓝瓶
+        /// </summary>
         ManaBottle = 3,
     }
 

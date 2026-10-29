@@ -61,6 +61,62 @@ namespace GameConfig.Entity
         /// 狮驼王
         /// </summary>
         LionCamelKing = 11,
+        /// <summary>
+        /// 彭魔王
+        /// </summary>
+        PengDemonKing = 9,
+        /// <summary>
+        /// 飞行魔
+        /// </summary>
+        FlyingDemon = 15,
+        /// <summary>
+        /// 虾兵
+        /// </summary>
+        ShrimpDemon = 14,
+        /// <summary>
+        /// 潮汐妖
+        /// </summary>
+        TideDemon = 16,
+        /// <summary>
+        /// 龟丞相
+        /// </summary>
+        TurtleMinister = 17,
+        /// <summary>
+        /// 鲛魔王
+        /// </summary>
+        JiaoDemonKing = 10,
+        /// <summary>
+        /// 灯笼鱼
+        /// </summary>
+        LanternFish = 20,
+        /// <summary>
+        /// 鲨鱼
+        /// </summary>
+        SharkSpawn = 18,
+        /// <summary>
+        /// 鲨魔王
+        /// </summary>
+        SharkDemonKing = 19,
+        /// <summary>
+        /// 牛魔王兽形
+        /// </summary>
+        BullDemonBeast = 22,
+        /// <summary>
+        /// 牛魔王人形
+        /// </summary>
+        BullDemonKing = 23,
+        /// <summary>
+        /// 牛魔王最终形态
+        /// </summary>
+        BullDemonHeart = 24,
+        /// <summary>
+        /// 牛妖
+        /// </summary>
+        BullGuard = 25,
+        /// <summary>
+        /// 龙王
+        /// </summary>
+        DragonKing = 26,
     }
 
 } 

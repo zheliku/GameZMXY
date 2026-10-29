@@ -1,20 +1,21 @@
 using GameLogic.Enemies.AI;
 
-namespace GameLogic.Enemies;
-
-/// <summary>
-/// 妖猴：采用普通敌人的巡逻和拳击，攻击前摇由原生动画提供。
-/// </summary>
-public partial class DemonMonkeyEntity : AbstractGroundMonsterEntity
+namespace GameLogic.Enemies
 {
     /// <summary>
-    /// Monster2 主动索敌并追近出拳，不使用猴子的受击激怒规则。
+    /// 妖猴：采用普通敌人的巡逻和拳击，攻击前摇由原生动画提供。
     /// </summary>
-    protected override EnemyAiPreset AiPreset
+    public partial class DemonMonkeyEntity : AbstractGroundMonsterEntity
     {
-        get
+        /// <summary>
+        /// Monster2 主动索敌并追近出拳，不使用猴子的受击激怒规则。
+        /// </summary>
+        protected override EnemyAiPreset AiPreset
         {
-            return MonsterAiPresets.Patrol;
+            get
+            {
+                return EnemyAiPresets.Patrol;
+            }
         }
     }
 }

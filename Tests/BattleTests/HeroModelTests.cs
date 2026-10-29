@@ -28,6 +28,7 @@ namespace GameLogic.Battle.Tests
                 (snapshot.ActorId, snapshot.Side, snapshot.Level, snapshot.Power));
             Assert.Equal(99, attributes.Power.Value);
         }
+
         /// <summary>
         /// 最终值 = (基础 + Σ固定) × (1 + Σ同类百分比) × Π(1 + 独立百分比)。
         /// </summary>
@@ -51,6 +52,7 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(18, sheet.Power.Value);
             Assert.Equal(0, sheet.Def.Value);
         }
+
         /// <summary>
         /// 按来源整体移除，同一来源再次登记时整体替换。
         /// </summary>
@@ -68,6 +70,7 @@ namespace GameLogic.Battle.Tests
             Assert.False(scope.System.RemoveSource(sword));
             Assert.Equal(0, sheet.Power.Value);
         }
+
         /// <summary>
         /// 最终值下限为 0，整数读取四舍五入（远离零）。
         /// </summary>
@@ -82,6 +85,7 @@ namespace GameLogic.Battle.Tests
             scope.System.SetSource(new AttributeSourceId("Buff", 2), new[] { AttributeModifier.Flat(AttributeType.Mdef, 2.5f) });
             Assert.Equal(3, sheet.Mdef.Value);
         }
+
         /// <summary>
         /// 调用方集合被修改不影响已登记修正，无效来源被拒绝。
         /// </summary>
@@ -99,6 +103,7 @@ namespace GameLogic.Battle.Tests
             Assert.Throws<ArgumentException>(() => new AttributeSourceId("", 1));
             Assert.Throws<ArgumentException>(() => scope.System.SetSource(default, modifiers));
         }
+
         /// <summary>
         /// 生命归零只报告一次死亡；归零后不再扣血、也不能治疗复活。
         /// </summary>
@@ -120,6 +125,7 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(0, vitals.Hp.Value);
             Assert.Equal(3, notifications);
         }
+
         /// <summary>
         /// 上限变化：补满或钳到新上限；魔法不足时拒绝消耗。
         /// </summary>
@@ -142,6 +148,7 @@ namespace GameLogic.Battle.Tests
             scope.System.SetGrowth(BaseAttributes(0, -1), 1, 1, null, null, refill: true);
             Assert.Equal((1, 0), (vitals.MaxHp.Value, vitals.MaxMp.Value));
         }
+
         /// <summary>
         /// 无双进度封顶并在蓄满时才能消耗。
         /// </summary>
@@ -164,24 +171,37 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(0, gauge.Ws.Value);
             Assert.Equal(3, notifications);
         }
+
         /// <summary>
         /// 用生成类型的真实读取契约建立资源测试基础值，不增加生产测试 API。
         /// </summary>
+        /// <param name="hp">基础生命上限。</param>
+        /// <param name="mp">基础魔法上限。</param>
+        /// <returns>按生成类型协议读取的基础属性对象。</returns>
         private static ActorBaseAttributes BaseAttributes(int hp, int mp)
         {
             var buffer = new Luban.ByteBuf();
             buffer.WriteInt(hp);
             buffer.WriteInt(mp);
             for (int i = 2; i < 16; i++)
+            {
                 if (i is 5 or 6 or 9 or 10)
+                {
                     buffer.WriteFloat(0);
+                }
                 else
+                {
                     buffer.WriteInt(0);
+                }
+            }
+
             return new ActorBaseAttributes(buffer);
         }
+
         /// <summary>
         /// 整数来源修正均立即发布对应属性；相等最终值不重复通知，移除恢复原值。
         /// </summary>
+        /// <param name="attribute">本次验证的整数属性种类。</param>
         [Theory]
         [InlineData(AttributeType.MaxHp)]
         [InlineData(AttributeType.MaxMp)]
@@ -227,6 +247,7 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(original, property.Value);
             Assert.Equal(2, count);
         }
+
         /// <summary>
         /// 概率修正保留小数、限制在 0..1；重复相同值不通知，移除后恢复。
         /// </summary>
@@ -262,6 +283,7 @@ namespace GameLogic.Battle.Tests
             scope.System.RemoveSource(source);
             Assert.Equal(3, notifications);
         }
+
         /// <summary>
         /// 重算后钳制资源到新上限，各绑定只传对应的新值。
         /// </summary>
@@ -282,6 +304,7 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(1, observed);
             Assert.Equal((50, 10, 10, 50), (model.MaxHp.Value, model.MaxMp.Value, model.Mp.Value, model.Hp.Value));
         }
+
         /// <summary>
         /// 致命伤害直接更新生命并关闭无双，重复伤害不再次发布生命变化。
         /// </summary>
@@ -308,6 +331,7 @@ namespace GameLogic.Battle.Tests
             Assert.False(scope.System.TryActivateWs());
             Assert.Equal(1, notifications);
         }
+
         /// <summary>
         /// 无双重置通过正常赋值通知各自的新值，相同重置不会重复通知。
         /// </summary>
@@ -328,6 +352,7 @@ namespace GameLogic.Battle.Tests
             scope.System.ResetWs(200, 1f, 6f);
             Assert.Equal(3, notifications);
         }
+
         /// <summary>
         /// 系统统一提供无双的伤害和运动查询，结束后恢复普通倍率。
         /// </summary>

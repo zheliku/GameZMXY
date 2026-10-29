@@ -12,7 +12,6 @@ namespace GameLogic.Heroes.Body
     {
         private int m_MoveAxis; // 起手时已有的移动方向，攻击中不接受新的方向。
         private double m_EndsAt; // 本段动画收招的游戏时刻，单位秒。
-        private double m_StartedAt; // 当前段开始时刻，用于官方逐帧取消比例换算。
 
         /// <summary>
         /// 开始已裁定的攻击段。
@@ -46,7 +45,9 @@ namespace GameLogic.Heroes.Body
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
             if (TryStartSkill(fsm, body))
+            {
                 return;
+            }
             // 原版松键清除 isLeft/isRight；攻击中再按方向不会重新置位，须等收招。
             if (!body.GetSystem<InputSystem>().IsDirectionHeld(body.ActionData, m_MoveAxis) ||
                 body.GetSystem<InputSystem>().WasDirectionReleased(body.ActionData, m_MoveAxis))
@@ -71,11 +72,9 @@ namespace GameLogic.Heroes.Body
         }
 
         /// <inheritdoc />
-        public override bool TryGetActionInput(IHeroBody body, out bool attacking, out float normalProgress, out bool airborne)
+        public override bool TryGetActionInput(IHeroBody body, out bool attacking, out bool airborne)
         {
             attacking = true;
-            normalProgress = (float)(body.ActionData.Time - m_StartedAt) /
-                body.Params.AttackTimes[body.ActionData.AttackSegment];
             airborne = IsAirborne(body);
             return true;
         }
@@ -87,7 +86,6 @@ namespace GameLogic.Heroes.Body
         private void StartSegment(IHeroBody body)
         {
             int segment = body.ActionData.AttackSegment;
-            m_StartedAt = body.ActionData.Time;
             m_EndsAt = body.ActionData.Time + body.Params.AttackTimes[segment];
             body.BeginAttack(segment);
             body.RestartAnim(body.Params.AttackAnims[segment]);

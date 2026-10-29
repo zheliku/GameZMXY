@@ -11,22 +11,25 @@ size = Vector2(206.94356, 89.04926)
 scale = Vector2(-1, 1)
 script = ExtResource("script")
 m_Player = NodePath("AnimationPlayer")
-m_HitBox = NodePath("Visual/HitBox")
-m_Shape = NodePath("Visual/HitBox/CollisionShape2D")
+m_HitBox = NodePath("Origin/Visual/HitBox")
+m_Shape = NodePath("Origin/Visual/HitBox/CollisionShape2D")
 
-[node name="Visual" type="Node2D" parent="." unique_id=410670840]
+[node name="Origin" type="Node2D" parent="." unique_id=410670840]
+position = Vector2(0, 0)
 
-[node name="Sprite" type="AnimatedSprite2D" parent="Visual" unique_id=1731375138]
+[node name="Visual" type="Node2D" parent="Origin"]
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Origin/Visual" unique_id=1731375138]
 sprite_frames = ExtResource("frames")
 animation = &"play"
-offset = Vector2(95, 83.95)
+offset = Vector2(95, 55.95)
 
-[node name="HitBox" type="Area2D" parent="Visual" unique_id=689664152]
+[node name="HitBox" type="Area2D" parent="Origin/Visual" unique_id=689664152]
 collision_layer = 16
 collision_mask = 32
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Visual/HitBox" unique_id=1060005776]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=1060005776]
 position = Vector2(72.6472, 83.45002)
 rotation = 0.71183914
 shape = SubResource("play_hit_0")

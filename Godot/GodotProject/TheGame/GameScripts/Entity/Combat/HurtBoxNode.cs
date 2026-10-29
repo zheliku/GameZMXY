@@ -31,6 +31,7 @@ namespace GameLogic.Entity
         /// 受击区的世界包围盒：全部启用的碰撞形状 GetRect() 经各自全局变换后的并集（怪物 AI 判断"够不够得着"用）。
         /// 没有可用形状时返回以本节点为中心的零尺寸矩形。
         /// </summary>
+        /// <returns>全部启用受击形状的世界包围盒；无形状时为节点位置的零尺寸矩形。</returns>
         public Rect2 GetGlobalBounds()
         {
             Rect2 bounds = new Rect2(GlobalPosition, Vector2.Zero);

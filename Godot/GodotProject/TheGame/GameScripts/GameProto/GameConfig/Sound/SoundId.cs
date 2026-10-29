@@ -18,30 +18,6 @@ namespace GameConfig.Sound
         /// </summary>
         None = 0,
         /// <summary>
-        /// 悟空挥棍1/2
-        /// </summary>
-        WukongAttack1And2 = 1,
-        /// <summary>
-        /// 悟空挥棍3/4
-        /// </summary>
-        WukongAttack3And4 = 2,
-        /// <summary>
-        /// 悟空挥棍5
-        /// </summary>
-        WukongAttack5 = 3,
-        /// <summary>
-        /// 悟空受击语音
-        /// </summary>
-        WukongHurt = 4,
-        /// <summary>
-        /// 悟空死亡语音
-        /// </summary>
-        WukongDeath = 5,
-        /// <summary>
-        /// 悟空命中音(棍打中东西)
-        /// </summary>
-        WukongImpact = 6,
-        /// <summary>
         /// 开始与选角音乐
         /// </summary>
         MenuTheme = 100,
@@ -54,15 +30,47 @@ namespace GameConfig.Sound
         /// </summary>
         HuaguoshanTheme = 102,
         /// <summary>
+        /// 洞窟音乐
+        /// </summary>
+        CaveTheme = 106,
+        /// <summary>
+        /// 海底音乐
+        /// </summary>
+        SeaTheme = 107,
+        /// <summary>
+        /// 牛魔谷音乐
+        /// </summary>
+        BullDemonValleyTheme = 108,
+        /// <summary>
+        /// 挑战成功音乐
+        /// </summary>
+        SettlementVictory = 104,
+        /// <summary>
+        /// 挑战失败音乐
+        /// </summary>
+        SettlementDefeat = 105,
+        /// <summary>
         /// 菜单确认音
         /// </summary>
         MenuConfirm = 103,
+        /// <summary>
+        /// 悟空挥棍1/2
+        /// </summary>
+        WukongAttack1And2 = 1,
+        /// <summary>
+        /// 悟空挥棍3/4
+        /// </summary>
+        WukongAttack3And4 = 2,
+        /// <summary>
+        /// 悟空挥棍5
+        /// </summary>
+        WukongAttack5 = 3,
         /// <summary>
         /// 悟空升龙斩
         /// </summary>
         WukongRisingDragon = 7,
         /// <summary>
-        /// 悟空火炎突击
+        /// 悟空火焰突击
         /// </summary>
         WukongFlameThrust = 8,
         /// <summary>
@@ -86,13 +94,17 @@ namespace GameConfig.Sound
         /// </summary>
         WukongFireDemonLanding = 13,
         /// <summary>
-        /// 挑战成功音乐
+        /// 悟空命中音
         /// </summary>
-        SettlementVictory = 104,
+        WukongImpact = 6,
         /// <summary>
-        /// 挑战失败音乐
+        /// 悟空受击语音
         /// </summary>
-        SettlementDefeat = 105,
+        WukongHurt = 4,
+        /// <summary>
+        /// 悟空死亡语音
+        /// </summary>
+        WukongDeath = 5,
     }
 
 } 

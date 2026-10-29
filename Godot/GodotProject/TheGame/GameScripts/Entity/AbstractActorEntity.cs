@@ -29,6 +29,8 @@ namespace GameLogic.Entity
     {
         // ---- 字段 ----
 
+        private const string ActionEndMarker = "complete"; // 原生动画中实际收招/受击结束的标记，不包含终止帧的额外停留。
+
         [Export] private Node2D m_Body; // 身体表现层，帧由动画轨道驱动。
 
         [Export] private AnimationPlayer m_AnimPlayer; // 角色专属动画库，由本类直接驱动。
@@ -44,7 +46,6 @@ namespace GameLogic.Entity
         [Export] private Area2D m_HitBox; // 攻击判定区，几何和开关完全由动画值轨道驱动。
 
         [Export] private Node2D m_HitBoxRoot; // 攻击判定区镜像容器，随朝向翻转动画写入的位置。
-
 
         private AttackData m_ActiveAttackData; // 当前招式的攻击包；出招装填、收招归还，null 表示未出招。
 
@@ -75,9 +76,9 @@ namespace GameLogic.Entity
         }
 
         /// <summary>
-        /// 本角色的招式（AttackConfig 里 OwnerId==自己，按 ComboIndex 排序；子类 OnInit 装填）
+        /// 本角色的有序招式定义；默认借用共享配置，特殊选择由具体角色决定。
         /// </summary>
-        protected IReadOnlyList<AttackConfig> OwnAttacks
+        protected virtual IReadOnlyList<AttackConfig> OwnAttacks
         {
             get
             {
@@ -322,6 +323,7 @@ namespace GameLogic.Entity
             {
                 // 与实体物理同频推进：父节点先提出播放请求，子播放器同帧消费。
                 m_AnimPlayer.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Physics;
+                m_AnimPlayer.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
             }
             else
             {
@@ -330,10 +332,17 @@ namespace GameLogic.Entity
 
             // 动画由场景装配，数值按稳定连段顺序关联；装配不完整时在初始化边界停止。
             if (m_AttackAnimations.Length != OwnAttacks.Count)
+            {
                 throw new InvalidOperationException($"{entityAssetName} 的普通攻击动画数与数值招式数不一致。");
+            }
+
             foreach (string animation in m_AttackAnimations)
+            {
                 if (!HasAnim(animation))
+                {
                     throw new InvalidOperationException($"{entityAssetName} 缺少普通攻击动画 {animation}。");
+                }
+            }
         }
 
         /// <summary>
@@ -344,6 +353,7 @@ namespace GameLogic.Entity
         public virtual void OnShow(object userData)
         {
             Visible = true;
+            Modulate = Colors.White;
             IsShown = true;
             Dead = false;
             m_PhysicsInitialized = false;
@@ -373,6 +383,7 @@ namespace GameLogic.Entity
 
             if (m_AnimPlayer != null && IsInstanceValid(m_AnimPlayer))
             {
+                m_AnimPlayer.Stop();
                 m_AnimPlayer.Active = false;
             }
 
@@ -403,6 +414,8 @@ namespace GameLogic.Entity
         /// <summary>
         /// 附加子实体。
         /// </summary>
+        /// <param name="childEntity">被附加或移除的子实体。</param>
+        /// <param name="userData">本次框架调用的附加数据。</param>
         public virtual void OnAttached(IEntity childEntity, object userData)
         {
         }
@@ -410,6 +423,8 @@ namespace GameLogic.Entity
         /// <summary>
         /// 解除子实体。
         /// </summary>
+        /// <param name="childEntity">被附加或移除的子实体。</param>
+        /// <param name="userData">本次框架调用的附加数据。</param>
         public virtual void OnDetached(IEntity childEntity, object userData)
         {
         }
@@ -417,6 +432,8 @@ namespace GameLogic.Entity
         /// <summary>
         /// 被附加到父实体。
         /// </summary>
+        /// <param name="parentEntity">当前附加关系中的父实体。</param>
+        /// <param name="userData">本次框架调用的附加数据。</param>
         public virtual void OnAttachTo(IEntity parentEntity, object userData)
         {
         }
@@ -424,6 +441,8 @@ namespace GameLogic.Entity
         /// <summary>
         /// 从父实体解除。
         /// </summary>
+        /// <param name="parentEntity">当前附加关系中的父实体。</param>
+        /// <param name="userData">本次框架调用的附加数据。</param>
         public virtual void OnDetachFrom(IEntity parentEntity, object userData)
         {
         }
@@ -468,15 +487,15 @@ namespace GameLogic.Entity
                 return;
             }
 
-            m_RequestedAnim = anim;
-            m_AnimPlayer.Play(AnimName(anim));
+            RestartAnim(anim);
         }
 
         /// <summary>
-        /// 从第 0 帧重播动画（攻击段、受击、死亡等必须从头播、即使同名也要重来的动作）。
+        /// 重播动作或其原生分段；强制应用起点值和方法，即使同名也重新开始。
         /// </summary>
         /// <param name="anim">需要从起点播放的动画名称。</param>
-        public void RestartAnim(string anim)
+        /// <param name="startMarker">可选原生起播标记，例如未落地尸体的循环段。</param>
+        public void RestartAnim(string anim, string startMarker = null)
         {
             if (m_AnimPlayer == null || string.IsNullOrEmpty(anim))
             {
@@ -484,8 +503,23 @@ namespace GameLogic.Entity
             }
 
             m_RequestedAnim = anim;
+            m_AnimPlayer.ResetSection();
             m_AnimPlayer.Stop();
-            m_AnimPlayer.Play(AnimName(anim));
+            if (string.IsNullOrEmpty(startMarker))
+            {
+                m_AnimPlayer.Play(AnimName(anim));
+            }
+            else
+            {
+                StringName name = AnimName(anim);
+                double start = (float)m_AnimPlayer.GetAnimation(name).GetMarkerTime(startMarker);
+                m_AnimPlayer.AssignedAnimation = name;
+                // 分段不补播此前的离散值键；仅取样值才能同时切换SpriteFrames动作，且不误触发旧音效。
+                m_AnimPlayer.Seek(start, true, updateOnly: true);
+                m_AnimPlayer.PlaySection(name, start);
+            }
+            // 起点值和方法必须在本帧MoveAndSlide前生效，不把上一动作姿态或速度多保留一物理步。
+            m_AnimPlayer.Advance(0);
         }
 
         /// <summary>
@@ -495,6 +529,14 @@ namespace GameLogic.Entity
         public void PlaySoundAnimEvent(SoundId id)
         {
             GF.Sound.PlayConfigured(id);
+        }
+
+        /// <summary>
+        /// 原生动作帧停止当前运动；例如悟空受击第7帧与首领受击收尾。
+        /// </summary>
+        public void StopMotionAnimEvent()
+        {
+            Velocity = Vector2.Zero;
         }
 
         /// <summary>
@@ -564,10 +606,7 @@ namespace GameLogic.Entity
                 return DamageResult.Missed(data.Kind);
             }
 
-            CombatantAttributes defender = CaptureCombatAttributes();
-            float missRoll = GD.Randf();
-            float critRoll = GD.Randf();
-            DamageResult result = this.GetSystem<CombatSystem>().Calculate(data, defender, missRoll, critRoll);
+            DamageResult result = CalculateIncomingHit(data);
 
             bool died = false;
             if (!result.IsMiss)
@@ -592,16 +631,26 @@ namespace GameLogic.Entity
         /// 结算已经确定的持续伤害；不再次闪避、减防、击退或播放受击声音。
         /// </summary>
         /// <param name="amount">本步到期的固定伤害。</param>
-        protected void ReceivePeriodicDamage(int amount)
+        /// <param name="showNumber">是否发布伤害飘字；装备生命流失不属于受击表现。</param>
+        protected void ReceivePeriodicDamage(int amount, bool showNumber = true)
         {
             if (Dead || amount <= 0)
+            {
                 return;
+            }
+
             bool died = ApplyDamage(amount);
             Dead |= died;
-            GF.Event.Fire(this, DamageDealtEventArgs.Create(new DamageResult(amount, false, false, DamageKind.Real),
-                Id, Side == CombatSide.Hero, HeadPosition));
+            if (showNumber)
+            {
+                GF.Event.Fire(this, DamageDealtEventArgs.Create(new DamageResult(amount, false, false, DamageKind.Real),
+                                Id, Side == CombatSide.Hero, HeadPosition));
+            }
+
             if (died)
+            {
                 Died?.Invoke(this);
+            }
         }
 
         /// <summary>
@@ -614,6 +663,19 @@ namespace GameLogic.Entity
             {
                 RestoreHealth(value);
             }
+        }
+
+        /// <summary>
+        /// 按当前防守属性计算本次受击；具体敌人的非生命命中规则可在此调整结果。
+        /// </summary>
+        /// <param name="data">调用方拥有的攻击快照。</param>
+        /// <returns>本次生命伤害、闪避和暴击结果。</returns>
+        protected virtual DamageResult CalculateIncomingHit(AttackData data)
+        {
+            CombatantAttributes defender = CaptureCombatAttributes();
+            float missRoll = GD.Randf();
+            float critRoll = GD.Randf();
+            return this.GetSystem<CombatSystem>().Calculate(data, defender, missRoll, critRoll);
         }
 
         /// <summary>
@@ -674,7 +736,7 @@ namespace GameLogic.Entity
         /// shape/position/disabled）——C# 只负责"这一招的数值事实"。
         /// </summary>
         /// <param name="attack">本次攻击配置；空值仅清除旧攻击。</param>
-        /// <param name="powerMultiplier">本次显示的招式威力倍率，作用于属性威力和固定威力之和。</param>
+        /// <param name="powerMultiplier">本次出招的威力倍率，作用于属性威力和固定威力之和。</param>
         protected void PrepareAttack(AttackConfig attack, float powerMultiplier = 1f)
         {
             ReleaseAttack();
@@ -706,12 +768,17 @@ namespace GameLogic.Entity
         protected void PollAttackOverlaps()
         {
             foreach (var child in m_HitBox.GetChildren())
+            {
                 if (child is CollisionShape2D { Disabled: false })
                 {
                     foreach (var area in m_HitBox.GetOverlappingAreas())
+                    {
                         OnHitBoxAreaEntered(area);
+                    }
+
                     break;
                 }
+            }
         }
 
         /// <summary>
@@ -744,7 +811,7 @@ namespace GameLogic.Entity
             if (!result.IsMiss)
             {
                 GF.Sound.PlayConfigured(m_HitSoundId);
-                OnHitLanded(m_ActiveAttackData, result);
+                OnHitLanded(target, m_ActiveAttackData, result);
             }
         }
 
@@ -770,7 +837,8 @@ namespace GameLogic.Entity
         /// </summary>
         /// <param name="data">本次攻击快照，仅在回调内使用。</param>
         /// <param name="result">目标已完成的伤害结算结果。</param>
-        protected virtual void OnHitLanded(AttackData data, DamageResult result)
+        /// <param name="target">本次真实命中的目标，仅在回调内借用。</param>
+        protected virtual void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result)
         {
         }
 
@@ -783,11 +851,12 @@ namespace GameLogic.Entity
         {
         }
 
-        /// <summary>动画长度（秒）：动作时长的数据源（OnInit 读进参数快照，状态计时）；
-        /// 动画库缺少该动画时告警并按 0 处理（状态会立即结束，问题可见）。</summary>
+        /// <summary>
+        /// 读取原生动作的实际结束时点；有complete标记时以帧脚本收招为准，否则使用片段长度。
+        /// </summary>
         /// <param name="animName">动画库中的动画名称。</param>
         /// <returns>动画秒数，缺失时为零并记录警告。</returns>
-        protected float GetAnimLength(string animName)
+        protected float GetActionDuration(string animName)
         {
             if (m_AnimPlayer == null || string.IsNullOrEmpty(animName) || !m_AnimPlayer.HasAnimation(animName))
             {
@@ -795,7 +864,10 @@ namespace GameLogic.Entity
                 return 0f;
             }
 
-            return (float)m_AnimPlayer.GetAnimation(animName).Length;
+            Animation animation = m_AnimPlayer.GetAnimation(animName);
+            return (float)(animation.HasMarker(ActionEndMarker)
+                ? animation.GetMarkerTime(ActionEndMarker)
+                : animation.Length);
         }
     }
 }

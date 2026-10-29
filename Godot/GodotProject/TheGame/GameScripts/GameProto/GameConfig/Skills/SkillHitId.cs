@@ -46,14 +46,6 @@ namespace GameConfig.Skills
         /// </summary>
         FireDemonLanding = 107,
         /// <summary>
-        /// 冰龙波
-        /// </summary>
-        IceDragonWave = 201,
-        /// <summary>
-        /// 玄冰阵
-        /// </summary>
-        DarkIceFormation = 202,
-        /// <summary>
         /// 水魔光柱
         /// </summary>
         WaterDemonPillar = 203,
@@ -61,6 +53,14 @@ namespace GameConfig.Skills
         /// 水魔追加下落
         /// </summary>
         WaterDemonFall = 204,
+        /// <summary>
+        /// 冰龙波
+        /// </summary>
+        IceDragonWave = 201,
+        /// <summary>
+        /// 玄冰阵
+        /// </summary>
+        DarkIceFormation = 202,
     }
 
 } 

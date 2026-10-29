@@ -11,9 +11,11 @@ using GameLogic.Effects;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Threading.Tasks;
 using GameConfig.Battle;
 using GameConfig.Entity;
-using GameConfig.Monster;
+using GameConfig.Enemy;
+using GameConfig.Loot;
 using GameConfig.Attributes;
 using GameFramework.Entity;
 using GameFramework.Fsm;
@@ -32,13 +34,16 @@ namespace GameLogic.Enemies
     {
         // ---- 字段 ----
 
+        private static readonly EnemyBodyPreset m_DefaultBodyPreset = EnemyBodyPresets.Walk(); // 共享只读配方；状态实例不共享。
+
         [Export] private Area2D m_Detector; // 索敌区；为空时只会在受击后反击。
 
         [Export] private EntityId m_EnemyEntityId; // 场景声明实体种类，与基础怪物配置一一对应。
 
-        private float m_AttackMultiplier = 1f; // 本次显示的招式威力倍率，每次从刷怪参数重置。
-
-        private int m_ExperienceReward; // 本次显示的击败经验；配方可覆盖基础配置奖励。
+        /// <summary>
+        /// 本次显示的击败经验；具体敌人在初始化时应用自身守关规则。
+        /// </summary>
+        protected int m_ExperienceReward;
 
         [Export] private ResourceBar m_HealthBar; // 可选头顶小血条，作为实体子场景随 GGF 实体池复用。
 
@@ -71,17 +76,45 @@ namespace GameLogic.Enemies
 
         private int m_Level; // 本次显示的配置等级。
         private int m_Hp; // 本怪物的普通生命状态，不注册 Model 或绑定观察者。
-        private int m_MaxHp; // 配方生命倍率应用后的上限。
-        private int m_Defense; // 配方防御倍率应用后的物防。
+        /// <summary>
+        /// 本次显示的生命上限，由具体敌人的初始化规则确定。
+        /// </summary>
+        protected int m_MaxHp;
+
+        /// <summary>
+        /// 本次显示的物理防御，由具体敌人的初始化规则确定。
+        /// </summary>
+        protected int m_Defense;
 
         private readonly HashSet<SkillEffectNode> m_SkillEffects = new(); // 本敌人拥有的离身攻击；小怪飞刀与首领技能使用同一生命周期。
 
         // ---- 属性 ----
 
         /// <summary>
-        /// 借用模型中同类敌人共享的身体参数。
+        /// 本次显示的每球灵魂覆盖值；普通敌人为空，直接使用基础配置。
         /// </summary>
-        private EnemyBodyParams BodyParams
+        protected int? SoulPerOrbOverride { get; set; }
+
+        /// <summary>
+        /// 本次显示的装备掉落概率覆盖值；普通敌人为空，池复用时清除。
+        /// </summary>
+        protected float? EquipmentDropChanceOverride { get; set; }
+
+        /// <summary>
+        /// 特殊敌人按自身奖励规则选择的装备池；为空时使用基础配置。
+        /// </summary>
+        protected virtual EquipmentDropPoolId? EquipmentDropPoolIdOverride
+        {
+            get
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 默认借用同类敌人的共享身体参数；具体敌人可提供自身专属参数。
+        /// </summary>
+        protected virtual EnemyBodyParams BodyParams
         {
             get
             {
@@ -128,22 +161,11 @@ namespace GameLogic.Enemies
         /// <summary>
         /// 怪物配置
         /// </summary>
-        public MonsterConfig Config
+        public EnemyConfig Config
         {
             get
             {
                 return this.GetModel<ConfigurationModel>().GetEnemy(m_EnemyEntityId);
-            }
-        }
-
-        /// <summary>
-        /// 本次配方的攻击倍率，独立招式效果与身体攻击使用同一来源。
-        /// </summary>
-        protected float AttackMultiplier
-        {
-            get
-            {
-                return m_AttackMultiplier;
             }
         }
 
@@ -152,12 +174,12 @@ namespace GameLogic.Enemies
         {
             get
             {
-                return CombatSide.Monster;
+                return CombatSide.Enemy;
             }
         }
 
         /// <summary>
-        /// 霸体：受击照常扣血飘字，但不硬直、不击退、不打断出招（MonsterConfig.SuperArmor）。
+        /// 霸体：受击照常扣血飘字，但不硬直、不击退、不打断出招（EnemyConfig.SuperArmor）。
         /// 子类可覆写做条件霸体（Boss 出招期间、低血量……）。
         /// </summary>
         protected virtual bool IsSuperArmor
@@ -174,7 +196,7 @@ namespace GameLogic.Enemies
         public EnemyAiData AiData { get; private set; }
 
         /// <summary>
-        /// 具体怪物声明共享状态配方；基类不预设具体行为。
+        /// 具体怪物声明共享AI配方；完全由身体机制驱动的固定首领可以不创建AI。
         /// </summary>
         protected abstract EnemyAiPreset AiPreset { get; }
 
@@ -254,6 +276,17 @@ namespace GameLogic.Enemies
         }
 
         /// <summary>
+        /// 本形态死亡是否结束配方；只有实际需要后继形态的具体敌人覆写。
+        /// </summary>
+        protected virtual bool EncounterComplete
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        /// <summary>
         /// 目标受击盒相对本实体原点的范围。
         /// </summary>
         private Rect2 TargetBox
@@ -277,9 +310,15 @@ namespace GameLogic.Enemies
         }
 
         /// <summary>
-        /// 由具体运动分支选择身体入口，Enemy不假定所有敌人站在地面。
+        /// 默认行走配方；具体敌人按实际动作组合替换，不由Monster类别决定身体能力。
         /// </summary>
-        protected abstract Type InitialBodyStateType { get; }
+        protected virtual EnemyBodyPreset BodyPreset
+        {
+            get
+            {
+                return m_DefaultBodyPreset;
+            }
+        }
 
         /// <summary>
         /// AI 初始状态；默认由预设选择，Boss 可覆写。
@@ -308,11 +347,20 @@ namespace GameLogic.Enemies
         /// <summary>
         /// 受击和收招后使用与首次显示相同的行动入口。
         /// </summary>
-        Type IEnemyBody.MoveStateType
+        Type IEnemyBody.MovementStateType
         {
             get
             {
-                return InitialBodyStateType;
+                return BodyPreset.MovementStateType;
+            }
+        }
+
+        /// <inheritdoc />
+        Type IEnemyBody.DeathStateType
+        {
+            get
+            {
+                return BodyPreset.DeathStateType;
             }
         }
 
@@ -413,7 +461,7 @@ namespace GameLogic.Enemies
         /// <summary>
         /// 向 AI 提供怪物共享定义。
         /// </summary>
-        MonsterConfig IEnemyAiAgent.Config
+        EnemyConfig IEnemyAiAgent.Config
         {
             get
             {
@@ -449,7 +497,10 @@ namespace GameLogic.Enemies
             base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
 
             if (!isNewInstance)
+            {
                 return;
+            }
+
             this.GetSystem<ConfigurationSystem>().EnsureEnemyBodyParams(m_EnemyEntityId, BuildBodyParams);
             AiData = new EnemyAiData(BodyParams.Attacks.Count);
             ConfigureDetector();
@@ -463,14 +514,12 @@ namespace GameLogic.Enemies
         {
             base.OnShow(userData);
             if (userData is not EnemySpawn spawn)
-                throw new ArgumentException("怪物显示参数必须包含出生位置与基础属性倍率。", nameof(userData));
+            {
+                throw new ArgumentException("怪物显示参数必须包含出生位置与本次会话回调。", nameof(userData));
+            }
 
-            // 每次从基础配置装配倍率，随后补满生命；不修改共享表，也不沿用上次显示的修正。
-            // 怪物不建立通用属性容器，出生时应用本配方需要的基础倍率。
-            m_MaxHp = Math.Max(1, (int)MathF.Round(Config.BaseAttributes.MaxHp * spawn.HealthMultiplier, MidpointRounding.AwayFromZero));
-            m_Defense = Math.Max(0, (int)MathF.Round(Config.BaseAttributes.Def * spawn.DefenseMultiplier, MidpointRounding.AwayFromZero));
-            m_AttackMultiplier = spawn.AttackMultiplier;
-            m_ExperienceReward = spawn.ExperienceOverride < 0 ? Config.AddExp : spawn.ExperienceOverride;
+            // 从基础配置重置，再由具体敌人补充自身规则；不改写共享表或继承上次显示的值。
+            ApplyConfigOverrides();
             m_Level = Config.Level;
             m_Hp = MaxHp;
             AttackSegment = -1;
@@ -501,6 +550,18 @@ namespace GameLogic.Enemies
         }
 
         /// <summary>
+        /// 每次入场应用基础配置及实例覆盖；子类可覆写本实例数值，不改写共享配置表。
+        /// </summary>
+        protected virtual void ApplyConfigOverrides()
+        {
+            m_MaxHp = Config.BaseAttributes.MaxHp;
+            m_Defense = Config.BaseAttributes.Def;
+            m_ExperienceReward = Config.AddExp;
+            SoulPerOrbOverride = null;
+            EquipmentDropChanceOverride = null;
+        }
+
+        /// <summary>
         /// 隐藏时销毁状态机、清空目标并执行基类清理。
         /// </summary>
         /// <param name="isShutdown">是否框架关停；此时节点可能已释放。</param>
@@ -510,8 +571,13 @@ namespace GameLogic.Enemies
             m_PatrolAnchor = null;
             // 身体和独立攻击均由同一个敌人拥有；隐藏后不遗留飞刀、风刃或毒雾。
             if (!isShutdown)
+            {
                 foreach (var effect in m_SkillEffects.ToArray())
+                {
                     ReleaseSkillEffect(effect);
+                }
+            }
+
             m_SkillEffects.Clear();
             // 关停时子节点可能已释放，不再访问表现对象。
             if (!isShutdown && IsInstanceValid(m_HealthBar))
@@ -574,7 +640,10 @@ namespace GameLogic.Enemies
         protected override bool ApplyDamage(int amount)
         {
             if (amount <= 0 || m_Hp <= 0)
+            {
                 return false;
+            }
+
             m_Hp = Math.Max(0, m_Hp - amount);
             RefreshHealthBar();
             return m_Hp == 0;
@@ -584,11 +653,13 @@ namespace GameLogic.Enemies
         protected override void RestoreHealth(int amount)
         {
             if (amount <= 0)
+            {
                 return;
+            }
+
             m_Hp = (int)Math.Min(MaxHp, (long)m_Hp + amount);
             RefreshHealthBar();
         }
-
 
         /// <inheritdoc />
         protected override CombatantAttributes CaptureCombatAttributes()
@@ -607,9 +678,15 @@ namespace GameLogic.Enemies
         private void RefreshHealthBar()
         {
             if (!IsShown || m_HealthBar == null)
+            {
                 return;
+            }
+
             if (Hp < m_LastHealthBarHp)
+            {
                 m_HealthBarTimeLeft = m_HealthBarFadeDuration;
+            }
+
             m_LastHealthBarHp = Hp;
             // 扣血先刷新血条，再由受击入口确定死亡事实。
             m_HealthBar.SetValue(Hp, MaxHp);
@@ -625,13 +702,18 @@ namespace GameLogic.Enemies
         private void UpdateHealthBarFade(float elapseSeconds)
         {
             if (m_HealthBar is not { Visible: true })
+            {
                 return;
+            }
+
             m_HealthBarTimeLeft = Mathf.Max(0f, m_HealthBarTimeLeft - elapseSeconds);
             float remaining = m_HealthBarTimeLeft / m_HealthBarFadeDuration;
             // TweenMax 默认 Quad.easeOut 的 alpha 从 1 到 0，等价于剩余比例的平方。
             m_HealthBar.Modulate = new Color(1f, 1f, 1f, remaining * remaining);
             if (m_HealthBarTimeLeft <= 0f)
+            {
                 m_HealthBar.Visible = false;
+            }
         }
 
         /// <summary>
@@ -681,10 +763,12 @@ namespace GameLogic.Enemies
         /// 在实体显示和死亡状态边界切换受击盒可监测性。
         /// </summary>
         /// <param name="enabled">是否允许受击盒被检测。</param>
-        private void SetHurtBoxEnabled(bool enabled)
+        protected void SetHurtBoxEnabled(bool enabled)
         {
             if (HurtBox != null)
+            {
                 HurtBox.Monitorable = enabled;
+            }
         }
 
         /// <summary>
@@ -702,7 +786,7 @@ namespace GameLogic.Enemies
             {
                 attacks[i] = BuildAttackParams(i, OwnAttacks[i]);
                 anims[i] = AttackAnimations[i];
-                times[i] = GetAnimLength(anims[i]);
+                times[i] = GetActionDuration(anims[i]);
                 recovery[i] = Mathf.Max(0f, OwnAttacks[i].AiRecovery);
             }
 
@@ -710,9 +794,13 @@ namespace GameLogic.Enemies
             {
                 MoveSpeed = Config.MoveSpeed,
                 Gravity = Config.Gravity,
-                HurtTime = GetAnimLength(EnemyAnims.Hurt),
-                KnockbackRetentionPerSecond = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data.MonsterKnockbackRetentionPerSecond,
-                DeathTime = GetAnimLength(EnemyAnims.Death),
+                // 兽形、固定心脏等源角色没有受击动作，不把合法缺省当资源丢失告警。
+                HurtTime = HasAnim(EnemyAnims.Hurt) ? GetActionDuration(EnemyAnims.Hurt) : 0f,
+                KnockbackRetentionPerSecond = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data.EnemyKnockbackRetentionPerSecond,
+                DeathTime = GetActionDuration(EnemyAnims.Death),
+                DeathAirLoopTime = AnimPlayer.GetAnimation(EnemyAnims.Death).HasMarker(EnemyAnims.DeathAirLoopMarker)
+                    ? (float)AnimPlayer.GetAnimation(EnemyAnims.Death).GetMarkerTime(EnemyAnims.DeathAirLoopMarker)
+                    : null,
                 AttackAnims = Array.AsReadOnly(anims),
                 AttackTimes = Array.AsReadOnly(times),
                 AttackRecovery = Array.AsReadOnly(recovery),
@@ -813,15 +901,6 @@ namespace GameLogic.Enemies
         }
 
         /// <summary>
-        /// 人形与飞行敌人共用的攻击、收招、受击和死亡；运动分支追加自己的移动状态。
-        /// </summary>
-        /// <returns>Boss与Monster共用的身体状态。</returns>
-        protected virtual FsmState<IEnemyBody>[] CreateBodyStates()
-        {
-            return [new EnemyAttackState(), new EnemyRecoveryState(), new EnemyHurtState(), new EnemyDeathState()];
-        }
-
-        /// <summary>
         /// 创建并启动怪物身体状态机；已有状态机时保持复用。
         /// </summary>
         private void CreateBodyStateMachine()
@@ -831,8 +910,8 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            m_BodyFsm = GF.Fsm.CreateFsm<IEnemyBody>($"EnemyBody_{Id}", this, CreateBodyStates());
-            m_BodyFsm.Start(InitialBodyStateType);
+            m_BodyFsm = GF.Fsm.CreateFsm<IEnemyBody>($"EnemyBody_{Id}", this, BodyPreset.CreateStates());
+            m_BodyFsm.Start(BodyPreset.MovementStateType);
         }
 
         /// <summary>
@@ -854,7 +933,7 @@ namespace GameLogic.Enemies
         /// </summary>
         private void CreateAiStateMachine()
         {
-            if (m_AiFsm != null || Config == null || !IsShown)
+            if (m_AiFsm != null || Config == null || !IsShown || AiPreset == null)
             {
                 return;
             }
@@ -912,7 +991,8 @@ namespace GameLogic.Enemies
         {
             SetHurtBoxEnabled(KeepHurtBoxDuringDeath);
             GF.Event.Fire(this,
-                EnemyDiedEventArgs.Create(Id, m_ExperienceReward, Config, HurtBox.GetGlobalBounds().GetCenter()));
+                EnemyDiedEventArgs.Create(Id, m_ExperienceReward, Config, HurtBox.GetGlobalBounds().GetCenter(),
+                    SoulPerOrbOverride, EquipmentDropChanceOverride, EncounterComplete, EquipmentDropPoolIdOverride));
         }
 
         /// <summary>
@@ -982,13 +1062,12 @@ namespace GameLogic.Enemies
     }
 
     /// <summary>
-    /// 一次怪物显示的出生位置与基础属性倍率；默认倍率 1，池复用时整体重置。
+    /// 一次怪物显示的位置与会话回调；特殊属性和奖励由具体敌人初始化，不由生成配方解释。
     /// </summary>
     /// <param name="Position">世界出生位置。</param>
-    /// <param name="HealthMultiplier">生命倍率，必须为正。</param>
-    /// <param name="DefenseMultiplier">物理防御倍率，不能为负。</param>
-    /// <param name="AttackMultiplier">全部招式威力倍率，不能为负。</param>
-    /// <param name="ExperienceOverride">击败经验覆盖；-1 使用基础配置，0 表示不给经验。</param>
-    public readonly record struct EnemySpawn(Vector2 Position, float HealthMultiplier = 1f,
-        float DefenseMultiplier = 1f, float AttackMultiplier = 1f, int ExperienceOverride = -1);
+    /// <param name="SpawnFailed">子实体异步显示失败时通知本次会话；独立场地允许为空。</param>
+    /// <param name="ContinueEncounterAsync">交接到后继形态，沿用本次配方名额及会话所有权；普通怪物不使用。</param>
+    public readonly record struct EnemySpawn(Vector2 Position,
+        Action<Exception> SpawnFailed = null,
+        Func<int, EntityId, EnemySpawn, Task> ContinueEncounterAsync = null);
 }

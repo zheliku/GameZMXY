@@ -32,7 +32,9 @@ public class ProcedurePreload : ProcedureBase
         {
             // 运行时恢复保存语言，编辑器资源模式跟随编辑器或系统语言。
             if (!GF.Base.EnableEditorResLoad)
+            {
                 GF.Localization.Language = (Language)GF.Setting.GetInt("Language", (int)Language.English);
+            }
             else
             {
                 GF.Localization.Language = GF.Base.EditorLanguage != Language.Unspecified
@@ -53,13 +55,18 @@ public class ProcedurePreload : ProcedureBase
         catch (Exception ex)
         {
             if (entrySerial != m_EntrySerial)
+            {
                 return;
+            }
+
             Log.Fatal("[ProcedurePreload] 打开加载界面失败: {0}", ex);
             return;
         }
 
         if (entrySerial != m_EntrySerial)
+        {
             return;
+        }
         // 主流程 FSM 是唯一共享存储；业务系统绑定明确的 Architecture，不接管注册和移除能力。
         // 先建立应用级提示监听，再允许标题流程新建档案；切页不会关闭这张非交互窗口。
         try
@@ -74,7 +81,10 @@ public class ProcedurePreload : ProcedureBase
         catch (Exception ex)
         {
             if (entrySerial != m_EntrySerial)
+            {
                 return;
+            }
+
             Log.Fatal("[ProcedurePreload] 保存提示初始化失败：{0}", ex);
             return;
         }

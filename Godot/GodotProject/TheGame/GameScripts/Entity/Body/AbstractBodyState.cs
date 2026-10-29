@@ -16,6 +16,7 @@ namespace GameLogic.Body
     /// 普通身体状态按物理 dt 计时，技能由原生播放器推进；禁止使用按渲染帧累计的 fsm.CurrentStateTime。
     /// Interrupt 集中处理死亡、受击优先级；同帧迁移由 fsm.Tick 协调。
     /// </summary>
+    /// <typeparam name="TBody">由实体拥有、供当前身体状态借用的宿主类型。</typeparam>
     public abstract class AbstractBodyState<TBody> : FsmState<TBody> where TBody : class, IActorBody
     {
         /// <summary>
@@ -32,6 +33,9 @@ namespace GameLogic.Body
         /// <summary>
         /// 框架帧轮询：身体状态不在渲染帧做任何事（见类注释）。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="elapseSeconds">逻辑流逝时间，单位为秒。</param>
+        /// <param name="realElapseSeconds">真实流逝时间，单位为秒。</param>
         protected internal sealed override void OnUpdate(IFsm<TBody> fsm, float elapseSeconds, float realElapseSeconds)
         {
         }
@@ -39,6 +43,7 @@ namespace GameLogic.Body
         /// <summary>
         /// 进入时递增进入序号并调用身体状态钩子。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
         protected internal sealed override void OnEnter(IFsm<TBody> fsm)
         {
             base.OnEnter(fsm);
@@ -49,6 +54,8 @@ namespace GameLogic.Body
         /// <summary>
         /// 调用身体状态离开钩子并完成框架离开流程。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="isShutdown">是否因所属服务或状态机关闭而离开。</param>
         protected internal sealed override void OnLeave(IFsm<TBody> fsm, bool isShutdown)
         {
             Leave(fsm, fsm.Owner, isShutdown);
@@ -58,6 +65,8 @@ namespace GameLogic.Body
         /// <summary>
         /// 剩余时间是否已到点（含浮点容差）。
         /// </summary>
+        /// <param name="left">待检查的剩余秒数。</param>
+        /// <returns>剩余秒数是否小于或等于计时容差。</returns>
         protected static bool Elapsed(float left)
         {
             return left <= TimeEpsilon;
@@ -66,6 +75,8 @@ namespace GameLogic.Body
         /// <summary>
         /// 物理帧推进（由状态机扩展 Tick 调用）：先过打断规则，未被打断才跑本状态决策。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="dt">本次物理推进的秒数。</param>
         internal void PhysicsTick(IFsm<TBody> fsm, float dt)
         {
             TBody body = fsm.Owner;
@@ -80,6 +91,8 @@ namespace GameLogic.Body
         /// <summary>
         /// 进入本状态（通常在这里请求本状态的动画）。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
         protected virtual void Enter(IFsm<TBody> fsm, TBody body)
         {
         }
@@ -87,6 +100,9 @@ namespace GameLogic.Body
         /// <summary>
         /// 离开本状态。isShutdown = 状态机被销毁（实体隐藏/关停），此时只能清理纯 C# 事实。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
+        /// <param name="isShutdown">是否因所属服务或状态机关闭而离开。</param>
         protected virtual void Leave(IFsm<TBody> fsm, TBody body, bool isShutdown)
         {
         }
@@ -94,6 +110,9 @@ namespace GameLogic.Body
         /// <summary>
         /// 打断规则（死亡 / 受击……）：已切换状态时返回 true，本状态这一帧不再跑 <see cref="Tick"/>。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
+        /// <returns>是否已经处理打断，本帧无需继续执行当前状态决策。</returns>
         protected virtual bool Interrupt(IFsm<TBody> fsm, TBody body)
         {
             return false;
@@ -102,12 +121,17 @@ namespace GameLogic.Body
         /// <summary>
         /// 本状态的物理帧决策。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
+        /// <param name="dt">本次物理推进的秒数。</param>
         protected abstract void Tick(IFsm<TBody> fsm, TBody body, float dt);
 
         /// <summary>
         /// 重力每帧施加（英雄与怪物共用）：速度为 0 时 MoveAndSlide 不做运动检测，IsOnFloor 会闪断，
         /// 始终向下压住地面才稳定。
         /// </summary>
+        /// <param name="body">当前状态借用的身体宿主。</param>
+        /// <param name="dt">本次物理推进的秒数。</param>
         protected static void ApplyGravity(TBody body, float dt)
         {
             body.Velocity += new Vector2(0f, body.Gravity * dt);
@@ -116,6 +140,7 @@ namespace GameLogic.Body
         /// <summary>
         /// 原地站定（横向速度归零，保留纵向）。
         /// </summary>
+        /// <param name="body">当前状态借用的身体宿主。</param>
         protected static void Stand(TBody body)
         {
             body.Velocity = new Vector2(0f, body.Velocity.Y);

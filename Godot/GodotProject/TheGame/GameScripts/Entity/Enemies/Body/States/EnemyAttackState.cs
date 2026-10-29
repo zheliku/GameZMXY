@@ -19,6 +19,8 @@ namespace GameLogic.Enemies.Body
         /// <summary>
         /// 提交招式、锁定移动并播放对应攻击动画。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
         protected override void Enter(IFsm<IEnemyBody> fsm, IEnemyBody body)
         {
             // 读取后归还池化切换参数，本状态自己初始化动作。
@@ -33,6 +35,9 @@ namespace GameLogic.Enemies.Body
         /// <summary>
         /// 离开攻击状态时清除移动意图并归还攻击包。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
+        /// <param name="isShutdown">是否因所属服务或状态机关闭而离开。</param>
         protected override void Leave(IFsm<IEnemyBody> fsm, IEnemyBody body, bool isShutdown)
         {
             // 收招、受击打断、死亡、实体隐藏都走这里：动画被切走，攻击包在此归还
@@ -43,6 +48,9 @@ namespace GameLogic.Enemies.Body
         /// <summary>
         /// 推进招式计时，到点后进入收招或移动状态。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="body">当前状态借用的身体宿主。</param>
+        /// <param name="dt">本次物理推进的秒数。</param>
         protected override void Tick(IFsm<IEnemyBody> fsm, IEnemyBody body, float dt)
         {
             ApplyGravity(body, dt);
@@ -59,7 +67,7 @@ namespace GameLogic.Enemies.Body
                     return;
                 }
 
-                ChangeState(fsm, body.MoveStateType);
+                ChangeState(fsm, body.MovementStateType);
                 return;
             }
 

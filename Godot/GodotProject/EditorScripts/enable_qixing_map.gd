@@ -15,7 +15,6 @@ func _build() -> void:
 	button.set_script(template.get_script())
 	button.disabled = true
 	button.visible = true
-	button.tooltip_text = "七星洞"
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.texture_hover = null
 	button.texture_pressed = null

@@ -15,6 +15,7 @@ namespace GameLogic.Enemies.AI
         /// <summary>
         /// 进入受控状态时清零解除后的恢复计时。
         /// </summary>
+        /// <param name="agent">当前状态借用的敌人AI宿主。</param>
         protected override void Enter(IEnemyAiAgent agent)
         {
             base.Enter(agent);
@@ -24,6 +25,9 @@ namespace GameLogic.Enemies.AI
         /// <summary>
         /// 等待控制与平静计时结束，再按目标是否存在恢复 AI。
         /// </summary>
+        /// <param name="fsm">当前宿主拥有的状态机。</param>
+        /// <param name="agent">当前状态借用的敌人AI宿主。</param>
+        /// <param name="elapseSeconds">逻辑流逝时间，单位为秒。</param>
         protected override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds)
         {
             if (agent.IsCcLocked)

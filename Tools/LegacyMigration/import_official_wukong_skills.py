@@ -43,7 +43,7 @@ def points(image, alpha):
     return np.column_stack((xs + .5 - image.width / 2, ys + .5 - image.height / 2))
 
 
-def fit(images):
+def fit(images, *, rotate=True):
     """Fit the smaller of axis-aligned and principal-axis padded rectangles."""
     sets = [points(image, alpha) for image, alpha in images]
     sets = [array for array in sets if len(array)]
@@ -53,7 +53,7 @@ def fit(images):
     covariance = np.cov(pixels, rowvar=False)
     angle = .5 * math.atan2(2 * covariance[0, 1], covariance[0, 0] - covariance[1, 1])
     rectangles = []
-    for rotation in (0, angle):
+    for rotation in ((0, angle) if rotate else (0,)):
         axes = np.array([[math.cos(rotation), -math.sin(rotation)],
                          [math.sin(rotation), math.cos(rotation)]])
         projected = pixels @ axes
@@ -78,8 +78,8 @@ def animation(name, count, body_frames=None, hitboxes=None, frames_path='Sprite:
             ('m_EffectRoot/m_Effect:scale', [0], ['Vector2(1, 1)'])]
         hit_path = 'm_HitBoxRoot/m_HitBox/CollisionShape2D'
     else:
-        tracks = [(frames_path, times, list(map(str, range(count))))]
-        hit_path = 'HitBox/CollisionShape2D'
+        tracks = [(f'Origin/Visual/{frames_path}', times, list(map(str, range(count))))]
+        hit_path = 'Origin/Visual/HitBox/CollisionShape2D'
     shapes, positions, rotations, disabled = [], [], [], []
     for index, rectangle in enumerate(hitboxes or [None]*count):
         disabled.append('true' if rectangle is None else 'false')
@@ -270,13 +270,18 @@ def apply(path):
         width, height = sample.size
         columns = min(6, count)
         cells, hitboxes, visible_images = [], [], []
-        offset = [width/2+bounds[0], height/2+bounds[1]+28]
+        # Detached effects use the original actor coordinates. The exported
+        # bounds already include the source transform; do not add the hero
+        # body's (0, 28) art origin a second time.
+        offset = [width/2+bounds[0], height/2+bounds[1]]
         for frame in range(count):
             image = Image.open(Path(effect['input']) / f'{frame+1}.png').convert('RGBA')
             cells.append(len(visible_images) if image.getbbox() else None)
             if image.getbbox():
                 visible_images.append(image)
-            rectangle = fit([(image, .1)]) if name in ('fire_demon_descent', 'fire_demon_landing') else None
+            # A rotated rectangle under landing's nonuniform scale shears its
+            # transform, which Godot physics does not preserve. Keep it aligned.
+            rectangle = fit([(image, .1)], rotate=name != 'fire_demon_landing') if name in ('fire_demon_descent', 'fire_demon_landing') else None
             if name == 'fire_demon_combo' and frame < 42:
                 # Use source bitmap-fill bounds. The old Godot circle and the
                 # full atlas canvas are not the official attack geometry.
@@ -310,17 +315,22 @@ size = Vector2(1, 1)
 
 [node name="{name.title().replace('_', '')}" type="Node2D"]
 
-[node name="Sprite" type="AnimatedSprite2D" parent="."]
+[node name="Origin" type="Node2D" parent="."]
+position = Vector2(0, 0)
+
+[node name="Visual" type="Node2D" parent="Origin"]
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Origin/Visual"]
 sprite_frames = ExtResource("frames")
 animation = &"play"
-offset = Vector2({', '.join(map(number, offset))})
+offset = Vector2({number(offset[0])}, {number(offset[1])})
 
-[node name="HitBox" type="Area2D" parent="."]
+[node name="HitBox" type="Area2D" parent="Origin/Visual"]
 collision_layer = 16
 collision_mask = 32
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox"]
 shape = SubResource("rest")
 disabled = true
 

@@ -45,15 +45,20 @@ public partial class ValidateOfficialLevelRecipes : RefCounted
                     _ => throw new InvalidOperationException("未知官方敌人编号")
                 };
                 float first = item.GetProperty("firstSpawnSeconds").GetSingle();
-                if (recipe.MonsterEntityId != enemy || recipe.Count != properties.GetProperty("totalNum").GetInt32() ||
+                if (recipe.EnemyEntityId != enemy || recipe.Count != properties.GetProperty("totalNum").GetInt32() ||
                     Math.Abs(stageConfig.SpawnDelay + recipe.Delay - first) > 0.001 ||
                     recipe.Count > 1 && Math.Abs(recipe.Interval - properties.GetProperty("interval").GetSingle()) > 0.001)
+                {
                     throw new InvalidOperationException($"关卡 {number} {id} 与官方元件 {item.GetProperty("name").GetString()} 不符：" +
-                        $"actual={recipe}, sourceEnemy={enemy}, first={first}, source={properties}");
+                                        $"actual={recipe}, sourceEnemy={enemy}, first={first}, source={properties}");
+                }
+
                 count++;
             }
             if (config.Stages.Sum(stage => stage.Recipes.Count) != level.GetProperty("spawns").GetArrayLength())
+            {
                 throw new InvalidOperationException($"关卡 {number} 存在多余配方");
+            }
         }
         GD.Print($"OFFICIAL RECIPES PASS: {count} streams, enemy/count/first delay/repeated interval and stable point identities.");
         return count;

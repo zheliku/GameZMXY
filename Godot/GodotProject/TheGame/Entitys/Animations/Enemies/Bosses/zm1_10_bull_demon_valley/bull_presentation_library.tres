@@ -1,0 +1,87 @@
+[gd_resource type="AnimationLibrary" format=3]
+[sub_resource type="Animation" id="RESET"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("m_Body:modulate:a")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [1]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("m_LeftHand:modulate:a")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [1]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("m_RightHand:modulate:a")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [1]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("m_Background:modulate:a")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("m_Heart:modulate:a")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+[sub_resource type="Animation" id="intro"]
+length = 2.0
+tracks/0/type = "bezier"
+tracks/0/path = NodePath("m_Background:modulate:a")
+tracks/0/keys = {"times": PackedFloat32Array(0, 2), "points": PackedFloat32Array(0, 0, 0, 0.6666667, 0.6666666666666666, 1, -0.6666667, 0, 0, 0)}
+[sub_resource type="Animation" id="death"]
+length = 2.0
+tracks/0/type = "bezier"
+tracks/0/path = NodePath("m_Body:modulate:a")
+tracks/0/keys = {"times": PackedFloat32Array(0, 2), "points": PackedFloat32Array(1, 0, 0, 0.6666667, -0.6666666666666666, 0, -0.6666667, 0, 0, 0)}
+tracks/1/type = "bezier"
+tracks/1/path = NodePath("m_LeftHand:modulate:a")
+tracks/1/keys = {"times": PackedFloat32Array(0, 2), "points": PackedFloat32Array(1, 0, 0, 0.6666667, -0.6666666666666666, 0, -0.6666667, 0, 0, 0)}
+tracks/2/type = "bezier"
+tracks/2/path = NodePath("m_RightHand:modulate:a")
+tracks/2/keys = {"times": PackedFloat32Array(0, 2), "points": PackedFloat32Array(1, 0, 0, 0.6666667, -0.6666666666666666, 0, -0.6666667, 0, 0, 0)}
+tracks/3/type = "bezier"
+tracks/3/path = NodePath("m_Background:modulate:a")
+tracks/3/keys = {"times": PackedFloat32Array(0, 2), "points": PackedFloat32Array(1, 0, 0, 0.6666667, -0.6666666666666666, 0, -0.6666667, 0, 0, 0)}
+tracks/4/type = "bezier"
+tracks/4/path = NodePath("m_Heart:modulate:a")
+tracks/4/keys = {"times": PackedFloat32Array(0, 2), "points": PackedFloat32Array(1, 0, 0, 0.6666667, -0.6666666666666666, 0, -0.6666667, 0, 0, 0)}
+[resource]
+_data = {&"RESET": SubResource("RESET"), &"intro": SubResource("intro"), &"death": SubResource("death")}

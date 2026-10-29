@@ -7,6 +7,7 @@ using GameFramework.Fsm;
 using GameConfig.Skills;
 using GameLogic.Architecture;
 using GameLogic.Config;
+using GameLogic.Battle;
 using GameLogic.Input;
 using GameLogic.Skills;
 using Godot;
@@ -31,9 +32,9 @@ namespace GameLogic.Heroes
     public partial class WukongEntity : AbstractHeroEntity
     {
         [Export] private AnimatedSprite2D m_FireDemonPrelude; // 出招原地播放的纯视觉，不参与技能判定和节点池。
-        [Export] private Sprite2D m_DeathTombstone; // 死亡时使用的官方墓碑表现。
 
         private const double SourceFrameSeconds = 1d / 24; // 造一悟空源动画一帧的秒数，仅用于取消窗口换算。
+        private const double NormalAttackCancelRatio = .7d; // 前四段普攻进入最后30%源帧后允许升龙取消。
         private static readonly SkillDefinition[] m_Skills =
         [
             new(SkillId.RisingDragon, typeof(WukongRisingDragonState)),
@@ -42,6 +43,17 @@ namespace GameLogic.Heroes
             new(SkillId.FlameStorm, typeof(WukongFlameStormState), InputSystem.Skill2),
             new(SkillId.FireDemonSlash, typeof(WukongFireDemonState), InputSystem.Skill3)
         ]; // 悟空只提供不可变登记项，本局登记容器归 HeroModel。
+
+        /// <summary>
+        /// 造一悟空无双期间免疫新附加的中毒、冰冻；普通状态仍接受命中附带效果。
+        /// </summary>
+        public override bool CanReceiveStatusEffect
+        {
+            get
+            {
+                return base.CanReceiveStatusEffect && !this.GetModel<HeroModel>().WsActive.Value;
+            }
+        }
 
         /// <summary>
         /// 悟空从地面状态起步。
@@ -66,8 +78,10 @@ namespace GameLogic.Heroes
             object userData)
         {
             base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
-            if (m_FireDemonPrelude == null || m_DeathTombstone == null)
+            if (m_FireDemonPrelude == null)
+            {
                 throw new InvalidOperationException($"{entityAssetName} 缺少悟空专属表现节点绑定。");
+            }
         }
 
         /// <summary>
@@ -77,7 +91,6 @@ namespace GameLogic.Heroes
         public override void OnShow(object userData)
         {
             base.OnShow(userData);
-            m_DeathTombstone.Visible = false;
             this.GetSystem<SkillSystem>().SelectSkills(1, m_Skills);
         }
 
@@ -100,24 +113,34 @@ namespace GameLogic.Heroes
         /// 悟空匹配直接技能、升龙取消、缺蓝普攻与奔跑突刺；身体接口不承担这些规则。
         /// </summary>
         /// <param name="attacking">当前是否处于普攻。</param>
-        /// <param name="normalProgress">本段普攻的播放比例。</param>
         /// <param name="airborne">当前是否处于空中。</param>
-        protected override void MatchActionInput(bool attacking, float normalProgress, bool airborne)
+        protected override void MatchActionInput(bool attacking, bool airborne)
         {
             var input = this.GetSystem<InputSystem>();
             var skills = this.GetSystem<SkillSystem>();
             var body = (IHeroBody)this;
             if (!attacking && skills.TryActivateInput(this, ActionData))
+            {
                 return;
+            }
+
             if (IsUpAttackRequested())
             {
-                if (!CanCancelNormalAttack(attacking, normalProgress))
+                if (!CanCancelNormalAttack(attacking))
+                {
                     return;
+                }
+
                 if (skills.IsLearned(SkillId.RisingDragon) && !skills.CanAfford(SkillId.RisingDragon))
+                {
                     ActionData.AttackRequested = input.ConsumeAction(ActionData, true) &&
-                        input.TrySelectAttack(ActionData, body.Params, airborne, attacking);
+                                        input.TrySelectAttack(ActionData, body.Params, airborne, attacking);
+                }
                 else
+                {
                     skills.TryActivate(SkillId.RisingDragon, this);
+                }
+
                 return;
             }
 
@@ -154,7 +177,7 @@ namespace GameLogic.Heroes
             return
             [
                 new HeroGroundState(), new HeroAirState(), new HeroAttackState(), new HeroHurtState(),
-                new HeroDeathState(), new WukongRisingDragonState(), new WukongFlameThrustState(),
+                new HeroDeathState(), new HeroCapturedState(), new WukongRisingDragonState(), new WukongFlameThrustState(),
                 new WukongBlazingFlashState(), new WukongFlameStormState(), new WukongFireDemonState()
             ];
         }
@@ -173,15 +196,26 @@ namespace GameLogic.Heroes
         /// 只允许前四段普攻后 30% 取消；不在普攻时直接允许。
         /// </summary>
         /// <param name="attacking">是否正在普攻。</param>
-        /// <param name="normalRatio">当前帧比例。</param>
         /// <returns>允许升龙或缺蓝回退时为真。</returns>
-        private bool CanCancelNormalAttack(bool attacking, float normalRatio)
+        private bool CanCancelNormalAttack(bool attacking)
         {
-            return !attacking ||
-            (ActionData.AttackSegment >= 0 && ActionData.AttackSegment < ((IHeroBody)this).Params.ComboLength - 1 &&
-             (normalRatio + SourceFrameSeconds / ((IHeroBody)this).Params.AttackTimes[ActionData.AttackSegment]) >=
-             this.GetModel<ConfigurationModel>().Tables.TbSkillConfig
-                 .Get(SkillId.RisingDragon).CancelNormalAttackFrameRatio);
+            if (!attacking)
+            {
+                return true;
+            }
+
+            var parameters = ((IHeroBody)this).Params;
+            int segment = ActionData.AttackSegment;
+            if (segment < 0 || segment >= parameters.ComboLength - 1)
+            {
+                return false;
+            }
+
+            // 直接读原生播放器的源帧，不能用身体状态的计时比例替代Flash的整数帧比例。
+            double frame = Math.Floor(AnimPlayer.CurrentAnimationPosition / SourceFrameSeconds + .0001d) + 1;
+            double frames = Math.Round(AnimPlayer.CurrentAnimationLength / SourceFrameSeconds);
+            double sourceRatio = frame / frames;
+            return sourceRatio >= NormalAttackCancelRatio;
         }
     }
 }

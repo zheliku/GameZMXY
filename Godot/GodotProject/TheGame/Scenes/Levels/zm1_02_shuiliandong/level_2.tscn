@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://qk7b0ixfs2in" path="res://TheGame/Scenes/Widgets/level_exit.tscn" id="13_dirjj"]
 [ext_resource type="Script" uid="uid://ccjmic0fgxfrv" path="res://TheGame/GameScripts/Level/Spawning/LevelSpawnerNode.cs" id="15_xx51u"]
 [ext_resource type="Script" uid="uid://dkuuiel88m4ep" path="res://TheGame/GameScripts/Level/Camera/LevelCameraNode.cs" id="16_fwr6c"]
+[ext_resource type="AnimationLibrary" uid="uid://ci7juwuri7m6p" path="res://TheGame/Scenes/Levels/zm1_02_shuiliandong/hidden_entrance_fade.tres" id="17_w3n6t"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_08t10"]
 size = Vector2(1711.7198, 19.999573)
@@ -274,10 +275,13 @@ size = Vector2(163.0564, 19.999603)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_xtilj"]
 size = Vector2(525.9551, 19.999634)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ytfb2"]
+size = Vector2(499.9512, 50.000328)
+
 [sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
 size = Vector2(8, 4000)
 
-[node name="Level_2" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText")]
+[node name="Level_2" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText", "m_HiddenEntrance", "m_EntranceFade")]
 script = ExtResource("1_0i2t0")
 m_MusicId = 102
 m_LevelId = 2
@@ -289,6 +293,8 @@ m_Camera = NodePath("Camera2D")
 m_Exit = NodePath("World/Exit")
 m_FloatingText = NodePath("World/FloatingText")
 m_FeaturedOpponentSpawnPointIds = PackedStringArray("stage_5_a")
+m_HiddenEntrance = NodePath("World/DragonPalaceEntrance")
+m_EntranceFade = NodePath("EntranceFade")
 
 [node name="World" type="Node2D" parent="." unique_id=219105317]
 
@@ -743,6 +749,16 @@ position = Vector2(262.97754, 9.999817)
 shape = SubResource("RectangleShape2D_xtilj")
 one_way_collision = true
 
+[node name="DragonPalaceEntrance" type="Area2D" parent="World" unique_id=1122293551]
+position = Vector2(2151.0247, 615.01013)
+collision_layer = 0
+collision_mask = 2
+monitoring = false
+monitorable = false
+
+[node name="Contact" type="CollisionShape2D" parent="World/DragonPalaceEntrance" unique_id=356236475]
+shape = SubResource("RectangleShape2D_ytfb2")
+
 [node name="Spawner" type="Node" parent="." unique_id=605185327]
 script = ExtResource("15_xx51u")
 
@@ -768,3 +784,6 @@ shape = SubResource("PlayerScreenWallShape")
 [node name="Right" type="CollisionShape2D" parent="Camera2D/PlayerScreenWalls" unique_id=1618567286]
 position = Vector2(454, 0)
 shape = SubResource("PlayerScreenWallShape")
+
+[node name="EntranceFade" type="AnimationPlayer" parent="." unique_id=638591721]
+libraries/ = ExtResource("17_w3n6t")

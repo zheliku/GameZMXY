@@ -187,6 +187,11 @@ size = Vector2(172.03833, 48.967026)
 
 [sub_resource type="Animation" id="Animation_7a5bs"]
 length = 0.7083333333333334
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 0.6666666666666666
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -385,6 +390,11 @@ size = Vector2(120, 145)
 
 [sub_resource type="Animation" id="Animation_fu8nh"]
 length = 3.1666666666666665
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 3.125
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -603,6 +613,11 @@ tracks/14/keys = {
 
 [sub_resource type="Animation" id="Animation_sd1oc"]
 length = 2.2083333333333335
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 2.1666666666666665
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -788,6 +803,11 @@ tracks/14/keys = {
 
 [sub_resource type="Animation" id="Animation_38hmr"]
 length = 1.0416666666666667
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 1.0
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -956,9 +976,28 @@ tracks/13/keys = {
 "update": 1,
 "values": [0.0]
 }
+tracks/14/type = "method"
+tracks/14/imported = false
+tracks/14/enabled = true
+tracks/14/path = NodePath(".")
+tracks/14/interp = 1
+tracks/14/loop_wrap = true
+tracks/14/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"StopMotionAnimEvent"
+}]
+}
 
 [sub_resource type="Animation" id="Animation_or1pf"]
 length = 0.4583333333333333
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 0.4166666666666667
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -1126,6 +1165,20 @@ tracks/13/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 1,
 "values": [0.0]
+}
+tracks/14/type = "method"
+tracks/14/imported = false
+tracks/14/enabled = true
+tracks/14/path = NodePath(".")
+tracks/14/interp = 1
+tracks/14/loop_wrap = true
+tracks/14/keys = {
+"times": PackedFloat32Array(0.41666666),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"StopMotionAnimEvent"
+}]
 }
 
 [sub_resource type="Animation" id="Animation_xj101"]

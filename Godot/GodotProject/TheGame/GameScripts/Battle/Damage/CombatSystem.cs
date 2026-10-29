@@ -60,7 +60,7 @@ namespace GameLogic.Battle.Damage
             int d = Math.Abs(levelGap);
             int sign = Math.Sign(levelGap);
 
-            int damageCapLv = heroDefends ? config.LvDamageCapLvHeroDef : config.LvDamageCapLvMonsterDef;
+            int damageCapLv = heroDefends ? config.LvDamageCapLvHeroDef : config.LvDamageCapLvEnemyDef;
 
             double luckyBl = Math.Min(d * (double)config.LvLuckyCoef, config.LvLuckyCap);
             double damageBl = Math.Min(d, damageCapLv) * (double)config.LvDamageCoef;
@@ -78,7 +78,7 @@ namespace GameLogic.Battle.Damage
             bool isCrit = critRoll < crit;
             if (isCrit)
             {
-                double luckyK = heroDefends ? config.LuckyKMonsterAtk : config.LuckyKHeroAtk;
+                double luckyK = heroDefends ? config.LuckyKEnemyAtk : config.LuckyKHeroAtk;
                 hurt *= config.CritBase + CalculateAttributeRatio(lucky, luckyK);
             }
 
@@ -86,10 +86,10 @@ namespace GameLogic.Battle.Damage
             switch (data.Kind)
             {
                 case DamageKind.Physics:
-                    hurt *= 1 - CalculateAttributeRatio(def, heroDefends ? config.DefKHero : config.DefKMonster);
+                    hurt *= 1 - CalculateAttributeRatio(def, heroDefends ? config.DefKHero : config.DefKEnemy);
                     break;
                 case DamageKind.Magic:
-                    hurt *= 1 - CalculateAttributeRatio(mdef, heroDefends ? config.MdefKHero : config.MdefKMonster);
+                    hurt *= 1 - CalculateAttributeRatio(mdef, heroDefends ? config.MdefKHero : config.MdefKEnemy);
                     break;
             }
 

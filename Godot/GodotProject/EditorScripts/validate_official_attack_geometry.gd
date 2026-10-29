@@ -1,14 +1,9 @@
 extends SceneTree
-## Check selected actor hit boxes against the matched official source shapes.
+## Check source Wukong shapes and preserve the separately authored enemy approximations.
 
 const CASES := [
-	["res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/knife_demon/knife_demon_library.tres", "attack_1", [0.0833, 0.1667], [Vector2(151.75, 136.1), Vector2(110.85, 77.4)]],
+	["res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/knife_demon/knife_demon_library.tres", "attack_1", [0.0833, 0.1667], [Vector2(110, 120), Vector2(95, 60)]],
 	["res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_library.tres", "attack_1", [0.0833, 0.1667], [Vector2(171.5, 164.0), Vector2(109.41666498, 108.113640705)]],
-]
-
-const FIRE_DEMON_CASES := [
-	["res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_fire_demon_descent_library.tres", Vector2(206.94356, 89.04926)],
-	["res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_fire_demon_landing_library.tres", Vector2(142.65411, 117.37369)],
 ]
 
 func _value_at(animation: Animation, property: String, time: float):
@@ -23,9 +18,45 @@ func _value_at(animation: Animation, property: String, time: float):
 
 func _check_bounds(animation: Animation, path: String, time: float, expected: Rect2) -> void:
 	var shape: Shape2D = _value_at(animation, path + ":shape", time)
-	assert(shape is RectangleShape2D and (shape as RectangleShape2D).size.is_equal_approx(expected.size), "Source shape mismatch at %.4fs" % time)
-	assert((_value_at(animation, path + ":position", time) as Vector2).is_equal_approx(expected.get_center()), "Source position mismatch at %.4fs" % time)
+	assert(shape is RectangleShape2D and (shape as RectangleShape2D).size.is_equal_approx(expected.size), "Geometry shape mismatch at %.4fs" % time)
+	assert((_value_at(animation, path + ":position", time) as Vector2).is_equal_approx(expected.get_center()), "Geometry position mismatch at %.4fs" % time)
 	assert(is_zero_approx(float(_value_at(animation, path + ":rotation", time))))
+
+func _check_detached_source(source: Dictionary, name: String) -> void:
+	var entry: Dictionary
+	for candidate in source.detached:
+		if candidate.name == name:
+			entry = candidate
+			break
+	assert(not entry.is_empty(), "Missing detached source entry: " + name)
+	var scene: Node = load("res://TheGame/Entitys/Heroes/Wukong/wukong_%s_effect.tscn" % name).instantiate()
+	var library: AnimationLibrary = scene.get_node("AnimationPlayer").get_animation_library(&"")
+	var animation := library.get_animation(&"play")
+	var path := "Origin/Visual/HitBox/CollisionShape2D"
+	var origin: Node2D = scene.get_node("Origin")
+	var sprite: AnimatedSprite2D = scene.get_node("Origin/Visual/Sprite")
+	assert(origin.position.is_zero_approx(), "%s effect origin must stay at the actor root" % name)
+	assert(sprite.offset.is_equal_approx(Vector2(entry.offset[0], entry.offset[1])),
+		"%s sprite offset no longer matches the exported source origin" % name)
+	for frame in int(entry.count):
+		var time := frame / 24.0
+		var reference = entry.hitboxes[frame]
+		var disabled := bool(_value_at(animation, path + ":disabled", time))
+		if reference == null:
+			assert(disabled, "%s blank frame remains active: %d" % [name, frame + 1])
+			continue
+		assert(not disabled, "%s active frame is disabled: %d" % [name, frame + 1])
+		var shape: Shape2D = _value_at(animation, path + ":shape", time)
+		var position: Vector2 = _value_at(animation, path + ":position", time)
+		var rotation: float = _value_at(animation, path + ":rotation", time)
+		var expected_size := Vector2(reference.size[0], reference.size[1])
+		var expected_position := Vector2(reference.position[0], reference.position[1])
+		assert(shape is RectangleShape2D and (shape as RectangleShape2D).size.is_equal_approx(expected_size), "%s shape mismatch at frame %d" % [name, frame + 1])
+		assert(position.is_equal_approx(expected_position), "%s position mismatch at frame %d" % [name, frame + 1])
+		# Landing uses the source image rectangle without child rotation, avoiding shear under its nonuniform scale.
+		var expected_rotation := 0.0 if name == "fire_demon_landing" else float(reference.rotation)
+		assert(is_equal_approx(rotation, expected_rotation), "%s rotation mismatch at frame %d" % [name, frame + 1])
+	scene.free()
 
 func _initialize() -> void:
 	create_timer(60).timeout.connect(func(): quit(1))
@@ -64,21 +95,27 @@ func _initialize() -> void:
 					probe_checks += 1
 	print("HERO SKILL PROBE PASS: ", probe_checks, " official source corners; normal attack active windows retained")
 	var combo: AnimationLibrary = load("res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_fire_demon_combo_library.tres")
+	if args.has("--normal-attacks-only"):
+		print("NORMAL-ATTACK SOURCE PASS: official probe corners and active windows retained")
+		quit()
+		return
 	for frame in 42:
 		var bounds: Array = source.fire_demon_combo_bounds[frame]
-		_check_bounds(combo.get_animation(&"play"), "Visual/HitBox/CollisionShape2D", frame / 24.0, Rect2(bounds[0], bounds[1], bounds[2], bounds[3]))
+		_check_bounds(combo.get_animation(&"play"), "Origin/Visual/HitBox/CollisionShape2D", frame / 24.0, Rect2(bounds[0], bounds[1], bounds[2], bounds[3]))
 	if args.has("--fire-demon-only"):
+		_check_detached_source(source, "fire_demon_descent")
+		_check_detached_source(source, "fire_demon_landing")
 		print("FIRE-DEMON SOURCE PASS: all 42 active combo frames retain official bounds")
 		_validate_combo_physics.call_deferred(source)
 		return
 	var tamarin: AnimationLibrary = load("res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_library.tres")
 	# Project-authored lightning approximations exclude clouds; these are not Flash probe bounds.
 	for phase in [
-		[41, Rect2(-265, -135, 510, 185)],
-		[47, Rect2(-150, -135, 340, 185)],
-		[51, Rect2(-205, -135, 410, 185)],
-		[61, Rect2(-220, -135, 380, 110)],
-		[62, Rect2(-245, -135, 530, 190)]]:
+		[41, Rect2(-210, -147.5, 400, 210)],
+		[47, Rect2(-140, -135, 280, 185)],
+		[51, Rect2(-140, -135, 280, 185)],
+		[61, Rect2(-220, -195, 380, 150)],
+		[62, Rect2(-240, -220, 520, 280)]]:
 		_check_bounds(tamarin.get_animation(&"attack_2"), "m_HitBoxRoot/m_HitBox/CollisionShape2D", (phase[0] - 1) / 24.0, phase[1])
 	for item in CASES:
 		var library: AnimationLibrary = load(item[0])
@@ -94,18 +131,9 @@ func _initialize() -> void:
 			assert(key >= 0)
 			var shape: Shape2D = animation.track_get_key_value(track, key)
 			assert(shape is RectangleShape2D)
-			assert((shape as RectangleShape2D).size.is_equal_approx(item[3][index]))
-	for item in FIRE_DEMON_CASES:
-		var library: AnimationLibrary = load(item[0])
-		var animation: Animation = library.get_animation(&"play")
-		var track := animation.find_track(NodePath("Visual/HitBox/CollisionShape2D:shape"), Animation.TYPE_VALUE)
-		assert(track >= 0)
-		var found := false
-		for key in animation.track_get_key_count(track):
-			var shape: Shape2D = animation.track_get_key_value(track, key)
-			if shape is RectangleShape2D and (shape as RectangleShape2D).size.is_equal_approx(item[1]):
-				found = true
-		assert(found, "Fire Demon effect hit box does not cover its official source range")
+			assert((shape as RectangleShape2D).size.is_equal_approx(item[3][index]), "Authored enemy size changed")
+	_check_detached_source(source, "fire_demon_descent")
+	_check_detached_source(source, "fire_demon_landing")
 	print("OFFICIAL ATTACK VALIDATION PASS: hero active windows, 42 combo source frames, descent/landing, knife/lion; five authored thunder phases")
 	_validate_combo_physics.call_deferred(source)
 
@@ -127,7 +155,7 @@ func _validate_combo_physics(source: Dictionary) -> void:
 	root.add_child(effect)
 	effect.position = Vector2(340, 180)
 	effect.set_physics_process(false)
-	var visual: Node2D = effect.get_node("Visual")
+	var visual: Node2D = effect.get_node("Origin/Visual")
 	player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	var area: Area2D = visual.get_node("HitBox")
 	var hit: CollisionShape2D = area.get_node("CollisionShape2D")

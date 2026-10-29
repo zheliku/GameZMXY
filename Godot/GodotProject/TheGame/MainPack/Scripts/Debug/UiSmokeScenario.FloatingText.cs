@@ -62,6 +62,7 @@ public sealed partial class UiSmokeScenario
                 (DamageKind.Physics, false, true), (DamageKind.Magic, false, true),
                 (DamageKind.Real, false, true)
             })
+            {
                 for (int value = 0; value < 100; value++)
                 {
                     GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(value + 100, false, crit, kind), -101,
@@ -69,6 +70,8 @@ public sealed partial class UiSmokeScenario
                     CheckDigitSpacing(firstTexts.Single(), 3, true);
                     firstTexts.Single()._Process(1);
                 }
+            }
+
             Check(firstTexts.Count == 0, "恢复样式没有自然回池");
             GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(int.MaxValue, false, true, DamageKind.Magic),
                 -101, false, Vector2.Zero));
@@ -133,7 +136,9 @@ public sealed partial class UiSmokeScenario
                 SmokeInspection.ReadField<Sprite2D[]>(x, "m_Digits")[0].Texture.ResourcePath)
                 .Distinct().Count() == 2, "通用恢复入口没有区分加血和加蓝，或显示了零量提示");
             foreach (var recovery in recoveryTexts)
+            {
                 CheckDigitSpacing(recovery, SmokeInspection.ReadField<Sprite2D[]>(recovery, "m_Digits").Count(x => x.Visible), false);
+            }
 
             // 所有反馈使用同一游戏秒数计时，暂停应同时冻结位置、脉冲和淡出。
             await WaitFramesAsync(2);
@@ -250,7 +255,10 @@ public sealed partial class UiSmokeScenario
         Check(digits.Length == expectedCount, "数字字距检查的数位数量错误");
         using var image = digits[0].Texture.GetImage();
         if (image.IsCompressed())
+        {
             image.Decompress();
+        }
+
         int cellWidth = image.GetWidth() / 10;
         int widest = 0;
         for (int number = 0; number < 10; number++)
@@ -271,7 +279,9 @@ public sealed partial class UiSmokeScenario
                 region.Position.Y == 0 && region.Size.Y == image.GetHeight(), "数字裁切丢失描边或改变纵向注册位置");
             float left = digit.Position.X - (digit.Centered ? region.Size.X * .5f : 0);
             if (i == 0)
+            {
                 firstLeft = left;
+            }
             else
             {
                 float expectedGap = (2 * widest - digits[i - 1].RegionRect.Size.X - region.Size.X) / 6f;

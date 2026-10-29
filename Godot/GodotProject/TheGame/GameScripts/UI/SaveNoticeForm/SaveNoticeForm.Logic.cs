@@ -4,164 +4,180 @@ using GameLogic.Event.Save;
 using Godot;
 using GodotGameFramework;
 
-namespace GameLogic.UI;
-
-/// <summary>
-/// 应用级非交互保存提示，跨地图与关卡流程保持，由真实写盘成功事件触发。
-/// </summary>
-public partial class SaveNoticeForm
+namespace GameLogic.UI
 {
-    private static readonly StringName m_ShowAnimation = "feedback/show"; // 外置保存提示的播放轨道。
-    private static readonly StringName m_ResetAnimation = "feedback/RESET"; // 外置提示的初始位置与透明度。
-    private ulong m_LastTick; // 提示按真实时间结束，背包暂停时也不滞留。
-
     /// <summary>
-    /// 初始化框架身份与一次性动画回调。
+    /// 应用级非交互保存提示，跨地图与关卡流程保持，由真实写盘成功事件触发。
     /// </summary>
-    /// <param name="serialId">窗口编号。</param>
-    /// <param name="uiFormAssetName">场景路径。</param>
-    /// <param name="uiGroup">提示组。</param>
-    /// <param name="pauseCoveredUIForm">不暂停下层窗口。</param>
-    /// <param name="isNewInstance">是否首次创建。</param>
-    /// <param name="userData">没有打开参数。</param>
-    public void OnInit(int serialId, string uiFormAssetName, IUIGroup uiGroup, bool pauseCoveredUIForm,
-        bool isNewInstance, object userData)
+    public partial class SaveNoticeForm
     {
-        m_SerialId = serialId;
-        m_UIFormAssetName = uiFormAssetName;
-        m_UIGroup = uiGroup;
-        m_PauseCoveredUIForm = pauseCoveredUIForm;
-        if (isNewInstance)
-            m_SaveFeedbackAnimation.AnimationFinished += OnAnimationFinished;
-    }
+        private static readonly StringName m_ShowAnimation = "feedback/show"; // 外置保存提示的播放轨道。
+        private static readonly StringName m_ResetAnimation = "feedback/RESET"; // 外置提示的初始位置与透明度。
+        private ulong m_LastTick; // 提示按真实时间结束，背包暂停时也不滞留。
 
-    /// <summary>
-    /// 在应用预加载后开放监听，文字默认隐藏。
-    /// </summary>
-    /// <param name="userData">没有打开参数。</param>
-    public void OnOpen(object userData)
-    {
-        if (GF.Event.Check(SaveSucceededEventArgs.EventId, OnSaveSucceeded))
-            GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
-        GF.Event.Subscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
-        Visible = true;
-        ResetFeedback();
-    }
+        /// <summary>
+        /// 初始化框架身份与一次性动画回调。
+        /// </summary>
+        /// <param name="serialId">窗口编号。</param>
+        /// <param name="uiFormAssetName">场景路径。</param>
+        /// <param name="uiGroup">提示组。</param>
+        /// <param name="pauseCoveredUIForm">不暂停下层窗口。</param>
+        /// <param name="isNewInstance">是否首次创建。</param>
+        /// <param name="userData">没有打开参数。</param>
+        public void OnInit(int serialId, string uiFormAssetName, IUIGroup uiGroup, bool pauseCoveredUIForm,
+            bool isNewInstance, object userData)
+        {
+            m_SerialId = serialId;
+            m_UIFormAssetName = uiFormAssetName;
+            m_UIGroup = uiGroup;
+            m_PauseCoveredUIForm = pauseCoveredUIForm;
+            if (isNewInstance)
+            {
+                m_SaveFeedbackAnimation.AnimationFinished += OnAnimationFinished;
+            }
+        }
 
-    /// <summary>
-    /// 关闭时对称解除监听，框架关停不再访问节点。
-    /// </summary>
-    /// <param name="isShutdown">是否框架关停。</param>
-    /// <param name="userData">关闭参数。</param>
-    public void OnClose(bool isShutdown, object userData)
-    {
-        if (GF.Event.Check(SaveSucceededEventArgs.EventId, OnSaveSucceeded))
-            GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
-        if (!isShutdown)
+        /// <summary>
+        /// 在应用预加载后开放监听，文字默认隐藏。
+        /// </summary>
+        /// <param name="userData">没有打开参数。</param>
+        public void OnOpen(object userData)
+        {
+            if (GF.Event.Check(SaveSucceededEventArgs.EventId, OnSaveSucceeded))
+            {
+                GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
+            }
+
+            GF.Event.Subscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
+            Visible = true;
             ResetFeedback();
-    }
+        }
 
-    /// <summary>
-    /// 回池清除框架编号与订阅。
-    /// </summary>
-    public void OnRecycle()
-    {
-        m_SerialId = m_DepthInUIGroup = 0;
-    }
+        /// <summary>
+        /// 关闭时对称解除监听，框架关停不再访问节点。
+        /// </summary>
+        /// <param name="isShutdown">是否框架关停。</param>
+        /// <param name="userData">关闭参数。</param>
+        public void OnClose(bool isShutdown, object userData)
+        {
+            if (GF.Event.Check(SaveSucceededEventArgs.EventId, OnSaveSucceeded))
+            {
+                GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
+            }
 
-    /// <summary>
-    /// 手动按真实时间推进提示，不随战斗暂停冻结在其他窗口上。
-    /// </summary>
-    /// <param name="elapseSeconds">游戏秒数。</param>
-    /// <param name="realElapseSeconds">真实秒数。</param>
-    public void OnUpdate(float elapseSeconds, float realElapseSeconds)
-    {
-        if (!GF.UI.HasUIForm(SerialId) || !m_SaveFeedbackAnimation.IsPlaying())
-            return;
-        ulong now = Time.GetTicksUsec();
-        m_SaveFeedbackAnimation.Advance((now - m_LastTick) / 1_000_000d);
-        m_LastTick = now;
-    }
+            if (!isShutdown)
+            {
+                ResetFeedback();
+            }
+        }
 
-    /// <summary>
-    /// 提示不会主动暂停。
-    /// </summary>
-    public void OnPause() { }
+        /// <summary>
+        /// 回池清除框架编号与订阅。
+        /// </summary>
+        public void OnRecycle()
+        {
+            m_SerialId = m_DepthInUIGroup = 0;
+        }
 
-    /// <summary>
-    /// 恢复时没有额外状态。
-    /// </summary>
-    public void OnResume() { }
+        /// <summary>
+        /// 手动按真实时间推进提示，不随战斗暂停冻结在其他窗口上。
+        /// </summary>
+        /// <param name="elapseSeconds">游戏秒数。</param>
+        /// <param name="realElapseSeconds">真实秒数。</param>
+        public void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        {
+            if (!GF.UI.HasUIForm(SerialId) || !m_SaveFeedbackAnimation.IsPlaying())
+            {
+                return;
+            }
 
-    /// <summary>
-    /// 覆盖不改变正在播放的提示。
-    /// </summary>
-    public void OnCover() { }
+            ulong now = Time.GetTicksUsec();
+            m_SaveFeedbackAnimation.Advance((now - m_LastTick) / 1_000_000d);
+            m_LastTick = now;
+        }
 
-    /// <summary>
-    /// 重新显示不重播。
-    /// </summary>
-    public void OnReveal() { }
+        /// <summary>
+        /// 提示不会主动暂停。
+        /// </summary>
+        public void OnPause() { }
 
-    /// <summary>
-    /// 写盘成功立即重播提示，重复保存从完整透明度开始。
-    /// </summary>
-    /// <param name="sender">保存系统。</param>
-    /// <param name="args">当帧有效的成功事实。</param>
-    private void OnSaveSucceeded(object sender, GameEventArgs args)
-    {
-        ShowMessage("保存成功！");
-    }
+        /// <summary>
+        /// 恢复时没有额外状态。
+        /// </summary>
+        public void OnResume() { }
 
-    /// <summary>
-    /// 复用居中淡出提示；暂停中的技能窗口也按真实时间播放。
-    /// </summary>
-    /// <param name="message">本次提示文本。</param>
-    public void ShowMessage(string message)
-    {
-        m_SaveFeedback.Text = message;
-        m_SaveFeedback.Visible = true;
-        m_SaveFeedbackAnimation.Stop();
-        m_SaveFeedbackAnimation.Play(m_ShowAnimation);
-        m_SaveFeedbackAnimation.Advance(0);
-        m_LastTick = Time.GetTicksUsec();
-    }
+        /// <summary>
+        /// 覆盖不改变正在播放的提示。
+        /// </summary>
+        public void OnCover() { }
 
-    /// <summary>
-    /// 提示结束后恢复位置、透明度并隐藏。
-    /// </summary>
-    /// <param name="name">结束的动画名称。</param>
-    private void OnAnimationFinished(StringName name)
-    {
-        if (name == m_ShowAnimation)
-            ResetFeedback();
-    }
+        /// <summary>
+        /// 重新显示不重播。
+        /// </summary>
+        public void OnReveal() { }
 
-    /// <summary>
-    /// 复位外置动画，避免下一次提示继承淡出状态。
-    /// </summary>
-    private void ResetFeedback()
-    {
-        m_SaveFeedbackAnimation.Play(m_ResetAnimation);
-        m_SaveFeedbackAnimation.Advance(0);
-        m_SaveFeedbackAnimation.Stop();
-        m_SaveFeedback.Visible = false;
-    }
+        /// <summary>
+        /// 写盘成功立即重播提示，重复保存从完整透明度开始。
+        /// </summary>
+        /// <param name="sender">保存系统。</param>
+        /// <param name="args">当帧有效的成功事实。</param>
+        private void OnSaveSucceeded(object sender, GameEventArgs args)
+        {
+            ShowMessage("保存成功！");
+        }
 
-    /// <summary>
-    /// 复用同一应用级监听。
-    /// </summary>
-    /// <param name="userData">没有打开参数。</param>
-    public void OnRefocus(object userData) { }
+        /// <summary>
+        /// 复用居中淡出提示；暂停中的技能窗口也按真实时间播放。
+        /// </summary>
+        /// <param name="message">本次提示文本。</param>
+        public void ShowMessage(string message)
+        {
+            m_SaveFeedback.Text = message;
+            m_SaveFeedback.Visible = true;
+            m_SaveFeedbackAnimation.Stop();
+            m_SaveFeedbackAnimation.Play(m_ShowAnimation);
+            m_SaveFeedbackAnimation.Advance(0);
+            m_LastTick = Time.GetTicksUsec();
+        }
 
-    /// <summary>
-    /// 应用提示组拥有层级，窗口记录组内深度。
-    /// </summary>
-    /// <param name="uiGroupDepth">组层级。</param>
-    /// <param name="depthInUIGroup">组内深度。</param>
-    public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
-    {
-        m_DepthInUIGroup = depthInUIGroup;
-        ZIndex = depthInUIGroup;
+        /// <summary>
+        /// 提示结束后恢复位置、透明度并隐藏。
+        /// </summary>
+        /// <param name="name">结束的动画名称。</param>
+        private void OnAnimationFinished(StringName name)
+        {
+            if (name == m_ShowAnimation)
+            {
+                ResetFeedback();
+            }
+        }
+
+        /// <summary>
+        /// 复位外置动画，避免下一次提示继承淡出状态。
+        /// </summary>
+        private void ResetFeedback()
+        {
+            m_SaveFeedbackAnimation.Play(m_ResetAnimation);
+            m_SaveFeedbackAnimation.Advance(0);
+            m_SaveFeedbackAnimation.Stop();
+            m_SaveFeedback.Visible = false;
+        }
+
+        /// <summary>
+        /// 复用同一应用级监听。
+        /// </summary>
+        /// <param name="userData">没有打开参数。</param>
+        public void OnRefocus(object userData) { }
+
+        /// <summary>
+        /// 应用提示组拥有层级，窗口记录组内深度。
+        /// </summary>
+        /// <param name="uiGroupDepth">组层级。</param>
+        /// <param name="depthInUIGroup">组内深度。</param>
+        public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
+        {
+            m_DepthInUIGroup = depthInUIGroup;
+            ZIndex = depthInUIGroup;
+        }
     }
 }

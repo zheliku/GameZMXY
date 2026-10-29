@@ -13,6 +13,7 @@ using GodotGameFramework;
 /// <summary>
 /// 真实新档依次通关三关，每次退出到标题再读取同一槽，检查最新提示和锁定输入。
 /// </summary>
+/// <param name="driver">提供真实引擎帧和场景树的烟测驱动。</param>
 public sealed class MapProgressSmokeScenario(Node driver)
 {
     private int m_LevelId = 1; // 下一次实际挑战的关卡。
@@ -38,12 +39,18 @@ public sealed class MapProgressSmokeScenario(Node driver)
     public void Update(double delta)
     {
         if (IsDone)
+        {
             return;
+        }
+
         try
         {
             m_Time += delta;
             if (m_Time > 600)
+            {
                 throw new InvalidOperationException("三关解锁回归超时。");
+            }
+
             if (m_Step == 4)
             {
                 if (GF.Procedure.CurrentProcedure is not ProcedureLevel procedure)
@@ -71,9 +78,15 @@ public sealed class MapProgressSmokeScenario(Node driver)
             {
                 m_Run.Update(delta);
                 if (!m_Run.IsDone)
+                {
                     return;
+                }
+
                 if (m_Run.Failures.Count != 0)
+                {
                     throw new InvalidOperationException(string.Join("; ", m_Run.Failures));
+                }
+
                 var map = VisibleMap();
                 CheckMap(map, m_LevelId);
                 m_ClosedMapSerial = map.SerialId;
@@ -84,7 +97,10 @@ public sealed class MapProgressSmokeScenario(Node driver)
             if (m_Step == 2)
             {
                 if (GF.Procedure.CurrentProcedure is ProcedureMap)
+                {
                     return;
+                }
+
                 m_Step = 3;
             }
             var current = VisibleMap();
@@ -95,7 +111,10 @@ public sealed class MapProgressSmokeScenario(Node driver)
                 var form = forms.FirstOrDefault(value => value is SaveForm) ?? forms.FirstOrDefault(value => value is StartForm or CharacterForm);
                 string path = form switch { StartForm => "m_Start", SaveForm => "Slots/m_Slot1", CharacterForm => "Roles/m_Wukong", _ => null };
                 if (path != null && !form.GetNode<BaseButton>(path).Disabled)
+                {
                     form.GetNode<BaseButton>(path).EmitSignal(BaseButton.SignalName.Pressed);
+                }
+
                 return;
             }
             if (m_Step == 3)
@@ -139,25 +158,42 @@ public sealed class MapProgressSmokeScenario(Node driver)
     private static void CheckMap(MapForm map, int cleared)
     {
         if (map == null || GF.Fsm.GetModel<ProfileModel>().HighestClearedLevelId.Value != cleared)
+        {
             throw new InvalidOperationException("重读或通关返回后地图进度错误。");
+        }
+
         int latest = Math.Min(3, cleared + 1);
         var player = map.GetNode<AnimationPlayer>("m_LocationAnimation");
         string animation = latest switch { 1 => "location/current", 2 => "shuiliandong/current", _ => "taohuayuan/current" };
         if (player.CurrentAnimation != animation)
+        {
             throw new InvalidOperationException($"最新提示错误：{player.CurrentAnimation}，期望 {animation}");
+        }
+
         foreach (var (name, id) in new[] { ("m_Huaguoshan", 1), ("m_Shuiliandong", 2), ("m_Taohuayuan", 3) })
         {
             var button = map.GetNode<BaseButton>(name);
             if (button.Disabled != (id > latest))
+            {
                 throw new InvalidOperationException("地图解锁状态错误。");
+            }
+
             if (button.GetNode<CanvasItem>("LocationGlow").Visible != (id == latest))
+            {
                 throw new InvalidOperationException("默认地图同时显示了多个关卡提示。");
+            }
+
             if (id <= latest)
+            {
                 continue;
+            }
+
             button.EmitSignal(Control.SignalName.MouseEntered);
             button.EmitSignal(BaseButton.SignalName.Pressed);
             if (player.CurrentAnimation != animation || GF.Procedure.CurrentProcedure is not ProcedureMap)
+            {
                 throw new InvalidOperationException("锁定地点仍然响应悬停或点击。");
+            }
         }
     }
 }

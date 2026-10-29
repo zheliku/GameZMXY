@@ -24,9 +24,6 @@ public sealed partial class SkillConfig : Luban.BeanBase
         Description = _buf.ReadString();
         LearnSoul = _buf.ReadInt();
         ManaCost = _buf.ReadInt();
-        InvincibleDurationSeconds = _buf.ReadFloat();
-        NormalAttackBlockSeconds = _buf.ReadFloat();
-        CancelNormalAttackFrameRatio = _buf.ReadFloat();
     }
 
     public static SkillConfig DeserializeSkillConfig(ByteBuf _buf)
@@ -59,25 +56,13 @@ public sealed partial class SkillConfig : Luban.BeanBase
     /// </summary>
     public readonly string Description;
     /// <summary>
-    /// 学习所需灵魂；当前仅展示
+    /// 学习所需灵魂
     /// </summary>
     public readonly int LearnSoul;
     /// <summary>
     /// 释放耗蓝；冰龙波仅蓄满扣20
     /// </summary>
     public readonly int ManaCost;
-    /// <summary>
-    /// 技能无敌持续秒数；开始时点由具体动画调用
-    /// </summary>
-    public readonly float InvincibleDurationSeconds;
-    /// <summary>
-    /// 激活后阻止普攻的秒数；0 不重设
-    /// </summary>
-    public readonly float NormalAttackBlockSeconds;
-    /// <summary>
-    /// 允许取消普攻的进度下限；0 不允许
-    /// </summary>
-    public readonly float CancelNormalAttackFrameRatio;
    
     public const int __ID__ = 2109194567;
     public override int GetTypeId() => __ID__;
@@ -97,9 +82,6 @@ public sealed partial class SkillConfig : Luban.BeanBase
         + "Description:" + Description + ","
         + "LearnSoul:" + LearnSoul + ","
         + "ManaCost:" + ManaCost + ","
-        + "InvincibleDurationSeconds:" + InvincibleDurationSeconds + ","
-        + "NormalAttackBlockSeconds:" + NormalAttackBlockSeconds + ","
-        + "CancelNormalAttackFrameRatio:" + CancelNormalAttackFrameRatio + ","
         + "}";
     }
 }

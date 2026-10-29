@@ -25,27 +25,79 @@ Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_pois
 
 [sub_resource type="Resource" id="Resource_xn77p"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Enemies/Monsters/Ground/knife_demon/knife_demon_blade_effect.tscn"
+Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn"
 
 [sub_resource type="Resource" id="Resource_aiojc"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_blazing_flash_trail_effect.tscn"
+Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/peng_fire_effect.tscn"
 
 [sub_resource type="Resource" id="Resource_72mqi"]
 script = ExtResource("1_j1vs4")
-Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_combo_effect.tscn"
+Scene = "res://TheGame/Entitys/Enemies/Monsters/Ground/knife_demon/knife_demon_blade_effect.tscn"
 
 [sub_resource type="Resource" id="Resource_f0hw8"]
 script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Enemies/Monsters/Sea/shrimp_demon/shrimp_projectile_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_jh0q2"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_blazing_flash_trail_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_h6vnx"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_combo_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_h4sb3"]
+script = ExtResource("1_j1vs4")
 Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_descent_effect.tscn"
 
-[sub_resource type="Resource" id="Resource_o8u2q"]
+[sub_resource type="Resource" id="Resource_58aov"]
 script = ExtResource("1_j1vs4")
 Scene = "res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_landing_effect.tscn"
 
+[sub_resource type="Resource" id="Resource_o8u2q"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_08_east_sea/jiao_dragon_wave_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_jfhug"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Enemies/Monsters/Sea/shark_spawn/shark_spawn_slash_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_sgbnv"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Enemies/Monsters/Sea/shark_spawn/shark_spawn_warning_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_da8bg"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Enemies/Monsters/Sea/shark_spawn/shark_spawn_tornado_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_ugyu0"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_shark_wave_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_vu7nd"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_warning_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_3xy6a"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_cwny0"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_387mn"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_wave_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_avcub"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent_effect.tscn"
+
 [resource]
 script = ExtResource("1_8jdg")
-Entries = Array[Object]([SubResource("Resource_lqe6w"), SubResource("Resource_kq84q"), SubResource("Resource_3vwbs"), SubResource("Resource_e1wg2"), SubResource("Resource_b654q"), SubResource("Resource_xn77p"), SubResource("Resource_aiojc"), SubResource("Resource_72mqi"), SubResource("Resource_f0hw8"), SubResource("Resource_o8u2q")])
+Entries = Array[ExtResource("1_j1vs4")]([SubResource("Resource_lqe6w"), SubResource("Resource_kq84q"), SubResource("Resource_3vwbs"), SubResource("Resource_e1wg2"), SubResource("Resource_b654q"), SubResource("Resource_xn77p"), SubResource("Resource_aiojc"), SubResource("Resource_72mqi"), SubResource("Resource_f0hw8"), SubResource("Resource_jh0q2"), SubResource("Resource_h6vnx"), SubResource("Resource_h4sb3"), SubResource("Resource_58aov"), SubResource("Resource_o8u2q"), SubResource("Resource_jfhug"), SubResource("Resource_sgbnv"), SubResource("Resource_da8bg"), SubResource("Resource_ugyu0"), SubResource("Resource_vu7nd"), SubResource("Resource_3xy6a"), SubResource("Resource_cwny0"), SubResource("Resource_387mn"), SubResource("Resource_avcub")])
 DefaultExpireTime = 300.0
 DefaultAutoReleaseInterval = 300.0
 metadata/_custom_type_script = "uid://yiewfnn1gx67"

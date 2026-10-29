@@ -11,9 +11,13 @@
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="9_8wyf5"]
 [ext_resource type="PackedScene" uid="uid://cqio6ihe2xbfn" path="res://TheGame/Entitys/Effects/level_up.tscn" id="10_wse2p"]
 [ext_resource type="SpriteFrames" uid="uid://wtiw24jpg53n" path="res://TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_prelude_frames.tres" id="11_l7ihn"]
+[ext_resource type="SpriteFrames" uid="uid://bxl6nbctngbl" path="res://TheGame/Sprites/Effects/level_up/level_up_frames.tres" id="12_lj6ud"]
+[ext_resource type="Script" uid="uid://ielvhd8u1n6i" path="res://TheGame/GameScripts/Entity/Heroes/Effects/HeroLevelUpNode.cs" id="13_23xmk"]
 [ext_resource type="SpriteFrames" uid="uid://57holtaij20o" path="res://TheGame/Sprites/Characters/Heroes/Status/poison_head_frames.tres" id="14_lj6ud"]
 [ext_resource type="SpriteFrames" uid="uid://8mwlugsruvxh" path="res://TheGame/Sprites/Characters/Heroes/Status/poison_up_frames.tres" id="15_23xmk"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/wukong/wukong_death_tombstone.png" id="16_death"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Effects/hero_tombstone.tscn" id="16_death"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Heroes/Status/hero_frozen_frames.tres" id="17_8wyf5"]
+[ext_resource type="Shader" path="res://TheGame/Sprites/Characters/Heroes/Status/hero_invulnerability.gdshader" id="18_invulnerability"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_2pdac"]
 radius = 22.50061
@@ -25,7 +29,19 @@ size = Vector2(45.00122, 90.01099)
 [sub_resource type="RectangleShape2D" id="hitbox_rest"]
 size = Vector2(90, 90)
 
-[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_FireDemonPrelude", "m_DeathTombstone", "m_Weapon", "m_EffectRoot", "m_MusouAfterimage", "m_LevelUp", "m_PoisonHead", "m_PoisonPulse", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_wse2p"]
+blend_mode = 1
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_invulnerability"]
+resource_local_to_scene = true
+shader = ExtResource("18_invulnerability")
+shader_parameter/glow_color = Color(1, 0, 0, 1)
+shader_parameter/glow_radius = 0.0
+shader_parameter/glow_alpha = 1.0
+shader_parameter/frame_grid = Vector2(6, 29)
+shader_parameter/mirrored = false
+
+[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_FireDemonPrelude", "m_Tombstone", "m_Weapon", "m_EffectRoot", "m_MusouAfterimage", "m_LevelUp", "m_PoisonHead", "m_PoisonPulse", "m_FrozenEffect", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 z_index = 1
 collision_layer = 2
 collision_mask = 8201
@@ -34,7 +50,7 @@ floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("1_lcmpv")
 m_FireDemonPrelude = NodePath("m_FireDemonPrelude")
-m_DeathTombstone = NodePath("m_DeathTombstone")
+m_Tombstone = NodePath("m_Tombstone")
 m_Weapon = NodePath("m_Weapon")
 m_Appearance = ExtResource("2_p32r7")
 m_EffectRoot = NodePath("m_EffectRoot")
@@ -43,6 +59,8 @@ m_MusouAfterimage = NodePath("m_MusouAfterimage")
 m_LevelUp = NodePath("m_LevelUp")
 m_PoisonHead = NodePath("m_StatusEffects/m_PoisonHead")
 m_PoisonPulse = NodePath("m_StatusEffects/m_PoisonPulse")
+m_FrozenEffect = NodePath("m_StatusEffects/m_FrozenEffect")
+m_InvulnerabilityMaterial = SubResource("ShaderMaterial_invulnerability")
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
 m_AttackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3", "attack_4", "attack_5")
@@ -53,27 +71,24 @@ m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
 m_HitBoxRoot = NodePath("m_HitBoxRoot")
 
 [node name="m_Body" type="Sprite2D" parent="." unique_id=803944199]
+material = SubResource("ShaderMaterial_invulnerability")
+position = Vector2(0, -28)
 texture = ExtResource("3_v2bpf")
 hframes = 6
-vframes = 20
+vframes = 29
 metadata/_edit_lock_ = true
 
 [node name="m_Weapon" type="Sprite2D" parent="." unique_id=1122322079]
+material = SubResource("ShaderMaterial_invulnerability")
+position = Vector2(0, -28)
 texture = ExtResource("4_yi3k4")
 hframes = 6
-vframes = 20
+vframes = 29
 
-[node name="m_DeathTombstone" type="Sprite2D" parent="." unique_id=2065418101]
-visible = false
-z_index = 2
-position = Vector2(0, -10)
-texture = ExtResource("16_death")
-offset = Vector2(-40, 40)
-scale = Vector2(0.4, 0.4)
-hframes = 8
-vframes = 5
+[node name="m_Tombstone" parent="." instance=ExtResource("16_death")]
 
 [node name="m_EffectRoot" type="Node2D" parent="." unique_id=605119054]
+position = Vector2(0, -28)
 
 [node name="m_Effect" type="AnimatedSprite2D" parent="m_EffectRoot" unique_id=1116269950]
 sprite_frames = ExtResource("5_da4kq")
@@ -88,7 +103,7 @@ script = ExtResource("8_23xmk")
 m_Layers = [NodePath("../m_Body"), NodePath("../m_Weapon")]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=889744088]
-position = Vector2(0.4, 27.95)
+position = Vector2(0.4, -0.05)
 shape = SubResource("CapsuleShape2D_2pdac")
 debug_color = Color(0, 1, 0, 0.41960785)
 
@@ -100,11 +115,12 @@ script = ExtResource("9_8wyf5")
 m_Owner = NodePath("..")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1046093583]
-position = Vector2(0.4, 27.95)
+position = Vector2(0.4, -0.05)
 shape = SubResource("RectangleShape2D_mmwcb")
 debug_color = Color(1, 0, 0, 0.41960785)
 
 [node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=1171906735]
+position = Vector2(0, -28)
 
 [node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=1293463805]
 collision_layer = 16
@@ -116,16 +132,22 @@ position = Vector2(-55, 0)
 shape = SubResource("hitbox_rest")
 disabled = true
 
-[node name="m_LevelUp" parent="." unique_id=1277663518 instance=ExtResource("10_wse2p")]
+[node name="m_LevelUp" type="AnimatedSprite2D" parent="." unique_id=1277663518 instance=ExtResource("10_wse2p")]
+visible = false
+z_index = 6
+position = Vector2(0, 2)
+sprite_frames = ExtResource("12_lj6ud")
+animation = &"level_up"
 frame = 27
 frame_progress = 1.0
+script = ExtResource("13_23xmk")
 
 [node name="m_FireDemonPrelude" type="AnimatedSprite2D" parent="." unique_id=1320486072]
 visible = false
 top_level = true
 sprite_frames = ExtResource("11_l7ihn")
 animation = &"play"
-offset = Vector2(52.15, -89.6)
+offset = Vector2(52.15, -117.6)
 
 [node name="m_StatusEffects" type="Node2D" parent="." unique_id=2100677362]
 
@@ -142,5 +164,13 @@ position = Vector2(0, -50)
 sprite_frames = ExtResource("15_23xmk")
 animation = &"play"
 offset = Vector2(-22, -26.5)
+
+[node name="m_FrozenEffect" type="AnimatedSprite2D" parent="m_StatusEffects" unique_id=370092717]
+visible = false
+material = SubResource("CanvasItemMaterial_wse2p")
+position = Vector2(-90, -115)
+sprite_frames = ExtResource("17_8wyf5")
+animation = &"play"
+offset = Vector2(96, 96)
 
 [connection signal="animation_finished" from="m_FireDemonPrelude" to="m_FireDemonPrelude" method="hide"]

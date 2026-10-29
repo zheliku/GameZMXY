@@ -20,16 +20,16 @@ public sealed partial class BattleConfig : Luban.BeanBase
         Desc = _buf.ReadString();
         DefKHero = _buf.ReadFloat();
         MdefKHero = _buf.ReadFloat();
-        DefKMonster = _buf.ReadFloat();
-        MdefKMonster = _buf.ReadFloat();
+        DefKEnemy = _buf.ReadFloat();
+        MdefKEnemy = _buf.ReadFloat();
         LuckyKHeroAtk = _buf.ReadFloat();
-        LuckyKMonsterAtk = _buf.ReadFloat();
+        LuckyKEnemyAtk = _buf.ReadFloat();
         CritBase = _buf.ReadFloat();
         LvLuckyCoef = _buf.ReadFloat();
         LvDamageCoef = _buf.ReadFloat();
         LvLuckyCap = _buf.ReadFloat();
         LvDamageCapLvHeroDef = _buf.ReadInt();
-        LvDamageCapLvMonsterDef = _buf.ReadInt();
+        LvDamageCapLvEnemyDef = _buf.ReadInt();
         WsMax = _buf.ReadInt();
         WsGainPerDamageRatio = _buf.ReadFloat();
         WsAttackMultiplier = _buf.ReadFloat();
@@ -38,7 +38,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
         WsGravityMultiplier = _buf.ReadFloat();
         WsDecayPerSecond = _buf.ReadFloat();
         WsDrainPerSecond = _buf.ReadFloat();
-        MonsterKnockbackRetentionPerSecond = _buf.ReadFloat();
+        EnemyKnockbackRetentionPerSecond = _buf.ReadFloat();
         MusouPerOrb = _buf.ReadInt();
         ManaMinimum = _buf.ReadInt();
         ManaMaxFraction = _buf.ReadFloat();
@@ -69,11 +69,11 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// <summary>
     /// 怪物作防守方时物防减伤K
     /// </summary>
-    public readonly float DefKMonster;
+    public readonly float DefKEnemy;
     /// <summary>
     /// 怪物作防守方时魔防减伤K
     /// </summary>
-    public readonly float MdefKMonster;
+    public readonly float MdefKEnemy;
     /// <summary>
     /// 英雄攻击时暴击倍率幸运K
     /// </summary>
@@ -81,7 +81,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// <summary>
     /// 怪物攻击时暴击倍率幸运K
     /// </summary>
-    public readonly float LuckyKMonsterAtk;
+    public readonly float LuckyKEnemyAtk;
     /// <summary>
     /// 暴击倍率基数: CritBase + Lucky/(Lucky+K)
     /// </summary>
@@ -105,7 +105,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// <summary>
     /// 等级压制-怪物防守时伤害最多按几级算
     /// </summary>
-    public readonly int LvDamageCapLvMonsterDef;
+    public readonly int LvDamageCapLvEnemyDef;
     /// <summary>
     /// 无双值上限(旧项目 BaseRoleProperies.gd:20)
     /// </summary>
@@ -141,7 +141,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// <summary>
     /// 怪物受击横速每秒保留比例；官方每1/24秒乘0.8，降至移动速度后不再减速
     /// </summary>
-    public readonly float MonsterKnockbackRetentionPerSecond;
+    public readonly float EnemyKnockbackRetentionPerSecond;
     /// <summary>
     /// 每颗黄色无双球恢复的无双值
     /// </summary>
@@ -173,16 +173,16 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "Desc:" + Desc + ","
         + "DefKHero:" + DefKHero + ","
         + "MdefKHero:" + MdefKHero + ","
-        + "DefKMonster:" + DefKMonster + ","
-        + "MdefKMonster:" + MdefKMonster + ","
+        + "DefKEnemy:" + DefKEnemy + ","
+        + "MdefKEnemy:" + MdefKEnemy + ","
         + "LuckyKHeroAtk:" + LuckyKHeroAtk + ","
-        + "LuckyKMonsterAtk:" + LuckyKMonsterAtk + ","
+        + "LuckyKEnemyAtk:" + LuckyKEnemyAtk + ","
         + "CritBase:" + CritBase + ","
         + "LvLuckyCoef:" + LvLuckyCoef + ","
         + "LvDamageCoef:" + LvDamageCoef + ","
         + "LvLuckyCap:" + LvLuckyCap + ","
         + "LvDamageCapLvHeroDef:" + LvDamageCapLvHeroDef + ","
-        + "LvDamageCapLvMonsterDef:" + LvDamageCapLvMonsterDef + ","
+        + "LvDamageCapLvEnemyDef:" + LvDamageCapLvEnemyDef + ","
         + "WsMax:" + WsMax + ","
         + "WsGainPerDamageRatio:" + WsGainPerDamageRatio + ","
         + "WsAttackMultiplier:" + WsAttackMultiplier + ","
@@ -191,7 +191,7 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "WsGravityMultiplier:" + WsGravityMultiplier + ","
         + "WsDecayPerSecond:" + WsDecayPerSecond + ","
         + "WsDrainPerSecond:" + WsDrainPerSecond + ","
-        + "MonsterKnockbackRetentionPerSecond:" + MonsterKnockbackRetentionPerSecond + ","
+        + "EnemyKnockbackRetentionPerSecond:" + EnemyKnockbackRetentionPerSecond + ","
         + "MusouPerOrb:" + MusouPerOrb + ","
         + "ManaMinimum:" + ManaMinimum + ","
         + "ManaMaxFraction:" + ManaMaxFraction + ","

@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://bfojcoo10lev7"]
+
+[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent_library.tres" id="animation"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://bx0447o7u7wmq" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="script"]
+
+[sub_resource type="CanvasItemMaterial" id="add"]
+blend_mode = 1
+
+[sub_resource type="RectangleShape2D" id="rest"]
+size = Vector2(1, 1)
+
+[node name="dragon_king_torrent" type="Node2D" unique_id=955802986 node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]
+script = ExtResource("script")
+m_Player = NodePath("AnimationPlayer")
+m_HitBox = NodePath("Origin/Visual/HitBox")
+m_Shape = NodePath("Origin/Visual/HitBox/CollisionShape2D")
+
+[node name="Origin" type="Node2D" parent="." unique_id=1580467109]
+
+[node name="Visual" type="Node2D" parent="Origin" unique_id=1184838414]
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Origin/Visual" unique_id=960816681]
+material = SubResource("add")
+sprite_frames = ExtResource("frames")
+animation = &"play"
+
+[node name="HitBox" type="Area2D" parent="Origin/Visual" unique_id=834828921]
+collision_layer = 64
+collision_mask = 128
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=839790531]
+shape = SubResource("rest")
+disabled = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1561112281]
+libraries/ = ExtResource("animation")

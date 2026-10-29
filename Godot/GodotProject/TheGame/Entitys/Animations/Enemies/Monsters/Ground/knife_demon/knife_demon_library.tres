@@ -97,6 +97,11 @@ size = Vector2(1, 1)
 
 [sub_resource type="Animation" id="Animation_xanky"]
 length = 0.625
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 0.5833333333333334
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -175,6 +180,11 @@ size = Vector2(1, 1)
 
 [sub_resource type="Animation" id="Animation_rx6kp"]
 length = 0.625
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 0.5833333333333334
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -267,6 +277,11 @@ size = Vector2(1, 1)
 
 [sub_resource type="Animation" id="Animation_1u40u"]
 length = 0.8333333333333334
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 0.7916666666666666
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -345,6 +360,11 @@ size = Vector2(1, 1)
 
 [sub_resource type="Animation" id="Animation_3j1ec"]
 length = 0.3333333333333333
+markers = [{
+"color": Color(1, 1, 1, 1),
+"name": &"complete",
+"time": 0.2916666666666667
+}]
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true

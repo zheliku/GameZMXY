@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TurtleGuardianConfigResource" format=3]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Sea/turtle_minister/TurtleGuardianConfigResource.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+MaxHp = 4800
+Experience = 200
+SoulPerOrb = 60
+EquipmentDropChance = 0.0
