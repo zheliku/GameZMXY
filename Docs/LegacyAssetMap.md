@@ -2,6 +2,12 @@
 
 旧项目 `P:/Godot-Project/ZMXY_BHYH` 只读。下表旧路径相对旧工程，新路径相对 `Godot/GodotProject/TheGame/`；PNG/音频/字体原样复制，不迁入旧脚本或 `.import`。官方包、散列与玩法依据见 [OfficialReference](OfficialReference.md)。
 
+## 造一英雄受击闪光（2026-10-31）
+
+官方Role_v7（散列见OfficialReference）的HeroBeHurt/sprite9共8源帧、24fps。经既有`export_official_combat_effects.py --group hero_hurt`原生导出到`Sprites/Effects/hero_hurt/`，PNG原样保留；SpriteFrames单次播放，实体结束/回池隐藏。FFDec共用画布100×122，源全范围x=-48.1..51.55、y=-60.95..60.95，精灵offset=(1.9,0.05)，节点放在colipse原点(0.4,-0.05)，不按帧居中。身体/武器图集、伤害几何与动作库不重导。此动画在悟空无双霸体受击时也要播放。
+
+设置滑条抓手是本项目新建的10×18白色/橙色SVG，非官方提取图；使用现有笔刷面板、字体与菜单交互色。样式和Theme位于MainPack/Themes，最终应用状态见Validation。
+
 ## 敌人注册与判定修复的重导顺序
 
 源文件散列先经`audit_official_enemy_fidelity.py`核对。旧导入器只负责源素材初始装配，已有人工调整的动画不能无差别覆盖。确需重导时，先暂存并审阅差异，再执行以下作者流程；完整命令及结果集中在Validation。

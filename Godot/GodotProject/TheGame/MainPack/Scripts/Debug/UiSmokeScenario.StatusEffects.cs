@@ -14,6 +14,92 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 public sealed partial class UiSmokeScenario
 {
     /// <summary>
+    /// 无双承伤保留当前动作与运动，播放白色外光、官方命中动画，并保留五击保护。
+    /// </summary>
+    /// <param name="hero">真实悟空实体。</param>
+    /// <param name="flow">本局数据与规则所有者。</param>
+    /// <returns>双向、60/120Hz受击及收尾验证。</returns>
+    private async Task CheckMusouHurtAsync(AbstractHeroEntity hero, ProcedureOwner flow)
+    {
+        var model = flow.GetModel<HeroModel>();
+        var system = flow.GetSystem<HeroSystem>();
+        int originalTicks = Engine.PhysicsTicksPerSecond;
+        try
+        {
+            foreach (int ticks in new[] { 60, 120 })
+            {
+                Engine.PhysicsTicksPerSecond = ticks;
+                hero.SetPhysicsProcess(true);
+                hero.GlobalPosition = new Vector2(440, 200);
+                hero.Velocity = Vector2.Zero;
+                model.Miss.Value = 0;
+                system.AdvanceHurtProtection(100);
+                await WaitUntilAsync(() => hero.OnFloor, "无双夹具未落地");
+                system.AddWsFromPickup(model.MaxWs.Value - model.Ws.Value);
+                Check(hero.TryActivateMusou(), "无双夹具无法激活");
+                await WaitFramesAsync(2);
+                await WaitUntilAsync(() => !GF.Base.IsGamePaused, "无双开场没有结束");
+                await WaitFramesAsync(2);
+                var body = hero.GetNode<Sprite2D>("m_Body");
+                var material = (ShaderMaterial)body.Material;
+                var feedback = hero.GetNode<AnimatedSprite2D>("m_StatusEffects/m_HurtFeedback");
+                int initialHp = hero.Hp;
+                string state = SmokeInspection.BodyStateName(hero);
+                Vector2 velocity = hero.Velocity;
+                for (int hit = 0; hit < 5; hit++)
+                {
+                    Check(!HitHeroForProtection(hero, new Vector2(20, -4)), "无双被错误当成全程免伤");
+                    Check(!hero.HasPendingHurt && hero.Velocity == velocity && SmokeInspection.BodyStateName(hero) == state,
+                        "无双受击打断动作或产生击退");
+                    Check(feedback.Visible && feedback.IsPlaying() && feedback.Frame == 0, "无双受击缺少官方闪光");
+                }
+                Check(hero.Hp == initialHp - 5 && HitHeroForProtection(hero), "无双期间连续受击保护不符合第五次规则");
+                Check(material.GetShaderParameter("glow_color").AsColor() == Colors.White && material.GetShaderParameter("glow_radius").AsSingle() > 0,
+                    "无双没有优先显示白色光晕");
+                foreach (int direction in new[] { -1, 1 })
+                {
+                    hero.SetFacing(direction);
+                    await WaitFramesAsync(2);
+                    await CaptureCombatAsync($"musou_hurt_{ticks}_{direction}");
+                }
+                await WaitUntilAsync(() => !feedback.Visible, "受击闪光没有播完自动隐藏");
+                system.AdvanceHurtProtection(100);
+                Input.ActionPress(InputSystem.Attack);
+                await WaitFramesAsync(2);
+                Input.ActionRelease(InputSystem.Attack);
+                await WaitFramesAsync(1);
+                Check(SmokeInspection.BodyStateName(hero) == "Attack", "无双攻击夹具没有起手");
+                int segment = hero.AttackSegment;
+                double animationTime = hero.AnimPlayer.CurrentAnimationPosition;
+                Check(!HitHeroForProtection(hero, new Vector2(20, -4)) && !hero.HasPendingHurt &&
+                    hero.AttackSegment == segment && hero.AnimPlayer.CurrentAnimationPosition == animationTime,
+                    "无双受击重启或打断正在播放的普攻");
+                await WaitFramesAsync(2);
+                Check(hero.AnimPlayer.CurrentAnimationPosition > animationTime && feedback.Visible, "无双受击没有继续推进原攻击和命中反馈");
+                // 用普通受击保护覆盖最后的白光切换，验证恢复本角色颜色。
+                for (int hit = 0; hit < 4; hit++)
+                {
+                    HitHeroForProtection(hero);
+                }
+
+                system.ClearWs();
+                await WaitFramesAsync(2);
+                Check(material.GetShaderParameter("glow_color").AsColor() == Colors.Red && material.GetShaderParameter("glow_radius").AsSingle() > 0,
+                    "无双结束未恢复本角色受击保护颜色");
+                system.AdvanceHurtProtection(100);
+                await WaitFramesAsync(2);
+                Check(material.GetShaderParameter("glow_radius").AsSingle() == 0, "无双/保护结束仍残留光晕");
+                GD.Print($"SMOKE-MUSOU HURT {ticks}Hz PASS: damage, armor, white glow, 8 source frames, fifth-hit protection and color restore");
+            }
+        }
+        finally
+        {
+            system.ClearWs();
+            Engine.PhysicsTicksPerSecond = originalTicks;
+        }
+    }
+
+    /// <summary>
     /// 用真实受击入口验证五次触发、后续免伤、技能区间互不覆盖和红色光晕的暂停清理。
     /// </summary>
     /// <param name="hero">本局英雄。</param>
@@ -85,13 +171,14 @@ public sealed partial class UiSmokeScenario
     /// 创建一次真实伤害命中；攻击包由夹具立即归池，不增加生产故障注入接口。
     /// </summary>
     /// <param name="hero">受测英雄。</param>
+    /// <param name="knockback">可选击退系数，用于确认霸体不会消费位移。</param>
     /// <returns>本次是否被无敌拦截。</returns>
-    private static bool HitHeroForProtection(AbstractHeroEntity hero)
+    private static bool HitHeroForProtection(AbstractHeroEntity hero, Vector2? knockback = null)
     {
         var attacker = new GameLogic.Battle.Damage.CombatantAttributes(GameLogic.Battle.Damage.CombatSide.Enemy,
             hero.Level, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         var data = GameLogic.Battle.Attacks.AttackData.Create(0, attacker, 1, GameConfig.Battle.DamageKind.Real,
-            Vector2.Zero, 1, 0);
+            knockback ?? Vector2.Zero, 1, 0);
         try
         {
             return hero.ReceiveHit(data, 0).IsMiss;

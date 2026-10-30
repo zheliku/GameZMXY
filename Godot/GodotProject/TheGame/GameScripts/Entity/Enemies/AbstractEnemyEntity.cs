@@ -55,8 +55,6 @@ namespace GameLogic.Enemies
         private float m_HealthBarTimeLeft; // 最近一次受伤后的剩余淡出秒数，按游戏帧推进。
         private int m_LastHealthBarHp; // 上次生命值，用于区分受伤与治疗，治疗不延长显示。
 
-        [Export] private Vector2 m_HealthBarOffset = new(0f, -8f); // 血条底边中心相对受击盒顶边中心的像素偏移。
-
         /// <summary>
         /// 按框架帧驱动的怪物 AI 状态机（行为类别按自己的状态类型查询）。
         /// </summary>
@@ -611,10 +609,6 @@ namespace GameLogic.Enemies
             m_BodyFsm.Tick(dt);
             MoveBody();
             PollAttackOverlaps();
-            if (m_HealthBar is { Visible: true })
-            {
-                UpdateHealthBarPosition();
-            }
 
             if (m_RecycleRequested)
             {
@@ -679,7 +673,6 @@ namespace GameLogic.Enemies
             m_HealthBar.SetValue(Hp, MaxHp);
             m_HealthBar.Visible = m_HealthBarTimeLeft > 0f && Hp > 0 && Hp < MaxHp;
             UpdateHealthBarFade(0f);
-            UpdateHealthBarPosition();
         }
 
         /// <summary>
@@ -701,15 +694,6 @@ namespace GameLogic.Enemies
             {
                 m_HealthBar.Visible = false;
             }
-        }
-
-        /// <summary>
-        /// 按受击盒头顶定位血条，独立于身体和攻击盒的朝向镜像。
-        /// </summary>
-        private void UpdateHealthBarPosition()
-        {
-            m_HealthBar.GlobalPosition = HeadPosition + m_HealthBarOffset -
-                new Vector2(m_HealthBar.Size.X * 0.5f, m_HealthBar.Size.Y);
         }
 
         /// <summary>

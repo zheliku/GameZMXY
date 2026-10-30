@@ -24,6 +24,7 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 public sealed class ProcedureMap : ProcedureBase
 {
     private int m_FormSerialId; // 本周期窗口，含在途加载请求。
+    private int m_SettingsSerialId; // 当前地图拥有的设置窗口，包括在途请求。
     private int m_MusicSerialId; // 本周期 GGF 音乐请求。
     private ProcedureOwner m_Owner; // 仅当前流程周期借用主 FSM。
     private CancellationTokenSource m_Cancellation; // 离开时使旧异步结果失效。
@@ -61,19 +62,22 @@ public sealed class ProcedureMap : ProcedureBase
         m_Cancellation = null;
         GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Unsubscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
-        if (!isShutdown)
+        // 地图绑定的模型归流程FSM所有，关停时同样先关窗再销毁流程。
+        if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
         {
-            if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
-            {
-                GF.UI.CloseUIForm(m_FormSerialId);
-            }
-
-            if (m_MusicSerialId != 0)
-            {
-                GF.Sound.StopSound(m_MusicSerialId, 0.2f);
-            }
+            GF.UI.CloseUIForm(m_SettingsSerialId);
         }
-        m_FormSerialId = m_MusicSerialId = 0;
+
+        if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
+        {
+            GF.UI.CloseUIForm(m_FormSerialId);
+        }
+
+        if (m_MusicSerialId != 0)
+        {
+            GF.Sound.StopSound(m_MusicSerialId, isShutdown ? 0f : 0.2f);
+        }
+        m_SettingsSerialId = m_FormSerialId = m_MusicSerialId = 0;
         m_Owner = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
@@ -157,6 +161,23 @@ public sealed class ProcedureMap : ProcedureBase
     }
 
     /// <summary>
+    /// 地图使用现有设置窗口；已打开或加载中不重复提交。
+    /// </summary>
+    /// <param name="formSerialId">发起操作的地图窗口编号。</param>
+    private void OnSettingsRequested(int formSerialId)
+    {
+        if (formSerialId != m_FormSerialId || m_IsReturningToTitle)
+        {
+            return;
+        }
+        if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
+        {
+            return;
+        }
+        m_SettingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
+    }
+
+    /// <summary>
     /// 本周期界面可见后关闭加载页。
     /// </summary>
     /// <param name="sender">事件发送者。</param>
@@ -183,7 +204,7 @@ public sealed class ProcedureMap : ProcedureBase
     /// <param name="args">只在本次分发内读取的池化参数。</param>
     private void OnFormFailed(object sender, GameEventArgs args)
     {
-        if (args is OpenUIFormFailureEventArgs failure && failure.SerialId == m_FormSerialId)
+        if (args is OpenUIFormFailureEventArgs failure && (failure.SerialId == m_FormSerialId || failure.SerialId == m_SettingsSerialId))
         {
             Log.Error("[ProcedureMap] 界面加载失败：{0}", failure.ErrorMessage);
         }
@@ -208,6 +229,12 @@ public sealed class ProcedureMap : ProcedureBase
                 if (bind)
                 {
                     mapForm.TitleRequested += OnTitleRequested;
+                }
+
+                mapForm.SettingsRequested -= OnSettingsRequested;
+                if (bind)
+                {
+                    mapForm.SettingsRequested += OnSettingsRequested;
                 }
 
                 mapForm.SaveRequested -= OnSaveRequested;

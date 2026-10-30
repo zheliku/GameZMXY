@@ -29,6 +29,148 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 public sealed partial class UiSmokeScenario
 {
     /// <summary>
+    /// 保留敌人真实身体运动，检查左右火魔九连击退与下冲、落地命中，不冻结受击位置。
+    /// </summary>
+    /// <param name="hero">本关实际悟空。</param>
+    /// <param name="flow">本局模型与系统所属作用域。</param>
+    /// <returns>八组真实输入和物理采样完成的任务。</returns>
+    private async Task CheckFireDemonKnockbackAsync(AbstractHeroEntity hero, ProcedureOwner flow)
+    {
+        string folder = ProjectSettings.GlobalizePath("res://.godot/validation/fire_demon_knockback_20261031/traces");
+        Directory.CreateDirectory(folder);
+        int oldTicks = Engine.PhysicsTicksPerSecond;
+        Vector2 origin = hero.GlobalPosition;
+        var source = new AttributeSourceId("FireKnockbackSmoke", 1);
+        var profile = flow.GetModel<ProfileModel>();
+        var skills = flow.GetSystem<SkillSystem>();
+        var vitals = flow.GetModel<HeroModel>();
+        var heroSystem = flow.GetSystem<HeroSystem>();
+        var snapshot = flow.GetUtility<SaveDataUtility>().Capture(profile, flow.GetModel<SkillModel>());
+        var failures = new List<string>();
+        try
+        {
+            // 只排除随机闪避和致死干扰，保留真实重力、硬直、位移、动画和判定。
+            heroSystem.SetSource(source,
+                [AttributeModifier.Flat(AttributeType.MaxMp, 1000), AttributeModifier.Flat(AttributeType.Htarget, 1)]);
+            flow.GetSystem<ProfileSystem>().AddSoul(4000);
+            skills.Learn(SkillId.FireDemonSlash);
+            hero.SetPhysicsProcess(true);
+            foreach (int ticks in new[] { 60, 120 })
+            {
+                Engine.PhysicsTicksPerSecond = ticks;
+                foreach (int direction in new[] { 1, -1 })
+                {
+                    foreach (EntityId enemy in new[] { EntityId.Gorilla, EntityId.HuaguoshanMonkey })
+                    {
+                        hero.GlobalPosition = new Vector2(direction > 0 ? 400 : 750, 280);
+                        hero.Velocity = Vector2.Zero;
+                        await WaitFramesAsync(3);
+                        await WaitForFireHeroLandingAsync(hero);
+                        hero.SetFacing(direction);
+                        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(enemy,
+                            new EnemySpawn(hero.GlobalPosition + new Vector2(direction * 80, -160)));
+                        SmokeInspection.StrengthenTrainingTarget(m_Monster);
+                        SmokeInspection.FreezeAi(m_Monster);
+                        m_Monster.SetPhysicsProcess(true);
+                        heroSystem.RestoreMp(int.MaxValue);
+                        var effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
+                        var rows = new List<object>();
+                        bool comboHit = false, descentHit = false, landingHit = false, wrongDirection = false;
+                        int firstDirection = 0, previousHp = m_Monster.Hp;
+                        double start = hero.ActionData.Time;
+                        string label = $"{ticks}_{direction}_{enemy}";
+                        void SamplePhysics()
+                        {
+                            Vector2? pending = SmokeInspection.ReadField<Vector2?>(m_Monster, "m_PendingHurt");
+                            bool damaged = previousHp != m_Monster.Hp;
+                            if (damaged && firstDirection == 0)
+                            {
+                                firstDirection = Math.Sign(pending?.X ?? m_Monster.Velocity.X);
+                            }
+
+                            if (damaged && Math.Sign(pending?.X ?? m_Monster.Velocity.X) != direction)
+                            {
+                                wrongDirection = true;
+                            }
+
+                            foreach (var effect in effects)
+                            {
+                                var data = SmokeInspection.ReadField<GameLogic.Battle.Attacks.AttackData>(effect, "m_AttackData");
+                                if (data == null || !SmokeInspection.ReadField<HashSet<ulong>>(data, "m_HitTargets")
+                                    .Contains(m_Monster.GetInstanceId()))
+                                {
+                                    continue;
+                                }
+
+                                comboHit |= data.AttackId == (int)SkillHitId.FireDemonCombo;
+                                descentHit |= data.AttackId == (int)SkillHitId.FireDemonDescent;
+                                landingHit |= data.AttackId == (int)SkillHitId.FireDemonLanding;
+                            }
+
+                            rows.Add(new
+                            {
+                                time = hero.ActionData.Time - start,
+                                hero = hero.GlobalPosition,
+                                target = m_Monster.GlobalPosition,
+                                velocity = m_Monster.Velocity,
+                                pending,
+                                hp = m_Monster.Hp,
+                                damaged,
+                                comboHit,
+                                descentHit,
+                                landingHit
+                            });
+                            previousHp = m_Monster.Hp;
+                        }
+
+                        // 按每个物理步采样，渲染帧率不能影响命中或漏掉短时击退请求。
+                        m_Driver.GetTree().PhysicsFrame += SamplePhysics;
+                        try
+                        {
+                            Input.ActionPress(InputSystem.Skill3);
+                            await WaitUntilAsync(() => vitals.ActiveSkillId == SkillId.FireDemonSlash, "火魔击退专项未响应真实O输入");
+                            Input.ActionRelease(InputSystem.Skill3);
+                            await WaitUntilAsync(() => vitals.ActiveSkillId == null, "火魔击退专项未完成收招");
+                            await WaitFramesAsync(4);
+                        }
+                        finally
+                        {
+                            m_Driver.GetTree().PhysicsFrame -= SamplePhysics;
+                        }
+
+                        File.WriteAllText(Path.Combine(folder, label + ".json"), JsonConvert.SerializeObject(rows, Formatting.Indented));
+                        GD.Print($"SMOKE-FIRE-KNOCKBACK: {label}, first={firstDirection}, combo={comboHit}, descent={descentHit}, landing={landingHit}, target={m_Monster.GlobalPosition}, hero={hero.GlobalPosition}");
+                        if (!comboHit || !descentHit || !landingHit || firstDirection != direction || wrongDirection)
+                        {
+                            failures.Add($"{label}: first={firstDirection}/{direction}, wrongDirection={wrongDirection}, combo={comboHit}, descent={descentHit}, landing={landingHit}");
+                        }
+
+                        ReleaseTestEntity(m_Monster);
+                        m_Monster = null;
+                        await WaitFramesAsync(3);
+                    }
+                }
+            }
+
+            Check(failures.Count == 0, string.Join("; ", failures));
+            GD.Print("SMOKE-FIRE-KNOCKBACK PASS: eight live casts, both directions, 60/120Hz, two enemy sizes, facing knockback and actual descent/landing hits.");
+        }
+        finally
+        {
+            Input.ActionRelease(InputSystem.Skill3);
+            Engine.PhysicsTicksPerSecond = oldTicks;
+            ReleaseTestEntity(m_Monster);
+            m_Monster = null;
+            skills.CancelSkill();
+            hero.SetPhysicsProcess(false);
+            hero.GlobalPosition = origin;
+            hero.Velocity = Vector2.Zero;
+            heroSystem.RemoveSource(source);
+            flow.GetSystem<ProfileSystem>().RestoreCheckpoint(snapshot);
+        }
+    }
+
+    /// <summary>
     /// 每物理时刻读取位置和速度；测试不修改招式时序或生产动画资源。
     /// </summary>
     /// <param name="hero">本关实际悟空。</param>

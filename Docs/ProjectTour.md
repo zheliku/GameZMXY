@@ -8,6 +8,49 @@
 
 当前仅悟空可出战。十个主线关卡及水帘洞下水进入的隐藏龙宫均已接入；新档从花果山逐关解锁，隐藏关不推进主线。最终验收范围与未完成项见 [Validation](Validation.md)，官方关卡清单与制作流程见 [OfficialReference](OfficialReference.md#全关卡范围与当前接入2026-10-28)。未解锁角色没有交互。通关和死亡保留收益并保存，中途放弃恢复进关快照；返回地图或重试前等待检查点写盘。
 
+## 设置与音量（2026-10-31）
+
+标题、地图与战斗均复用 `SettingsForm`。地图入口发出 `SettingsRequested`，由 `ProcedureMap` 拥有窗口请求、拒绝重复打开并在离开时关闭；战斗设置仍对称暂停/恢复。菜单按 `Scroll / Content / Options（继续、AudioPanel、Navigation）` 分组，帮助复用同一面板；原生容器负责行距，固定326px宽度，按可见内容增高并居中，不逐项写 Position。
+
+音乐滑条控制 GGF Music 组；音效滑条同时控制 SFX/UI。`GF.Sound.SetVolume` 即时作用于声音组，并通过 `GF.Setting` 保存到应用级 `user://Settings.cfg`，不放进角色存档。原声音开关保留各组静音前的音量，关闭和重开窗口从声音组重新读取；滑条刷新用 SetValueNoSignal 防止重入。
+
+沿用原黑色笔刷底图、粗圆24px白字与橙色交互色，两条原生 HSlider 同为160px并与菜单中心线对齐；没有独立百分比列或金色装饰。样式入口为 `MainPack/Themes/settings_theme.tres`，轨道/填充/抓手资源在 `Themes/Styles/settings_slider_*`，均有实际消费者。音乐/音效声音参数归GGF，不新增声音Model/System。布局参考[SuperTux设置源码](https://github.com/SuperTux/supertux/blob/master/src/supertux/menu/options_menu.cpp)中音乐、音效作为同类菜单项的组织方式，视觉保留本项目造一菜单语言；交互使用[Godot原生HSlider](https://docs.godotengine.org/en/stable/classes/class_hslider.html)。
+
+## 造一待实现清单（2026-10-31）
+
+以已校验的造一 v25928、Role_v7 及配套怪物包为基线。十个主线关卡和隐藏龙宫已经接入，不把旧选关图的占位点当作缺关；当前只有悟空可玩。以下是功能待办，不代表本轮承诺全部实现。完成后在此勾选，并把实机验收记入 Validation。
+
+优先补齐单人闭环：
+
+- [ ] **唐僧角色实战**：选角开放、角色场景、普攻与移动、五项主动技能、受击/无双/死亡及已有装备换装。目前仅有技能目录/伤害定义和装备图标，不能算可玩。入口：`Entity/Heroes/`、`Skills/`、`CharacterForm`。验收：新建唐僧档、学技、穿卸、完整通关与重读。
+- [ ] **法宝穿戴与属性**：东海旗幡、金钢琢已经能获得、背包显示并存档，当前 Treasure 槽仍禁止穿戴；补槽位、穿卸、属性汇总与保存。入口：`EquipmentSystem`、`ProfileModel`、`InventoryForm`。造一源码把法宝列为 `zbfb` 装备，不预设二三代的主动施放系统。
+- [ ] **地图购买技能入口**：官方 SelectPLace.showBuySkill 可在地图打开技能购买；当前仅战斗 V 键及战斗按钮可进入。入口：`ProcedureMap`、`MapForm`、`SkillForm`。验收：地图学技、余额/被动同步、保存、进关生效，不在地图创建战斗英雄。
+- [ ] **连击计数与显示**：官方 BaseMonster 增加 User.batterNum，GameInfo/Batter 负责显示与超时清零；当前普攻连段已实现，但没有这套连击统计 UI。入口：命中事件、`LevelModel`/所属规则、`BattleForm`。验收：连续命中累计、断连清零、暂停及退出清理，不能把普攻段号当连击数。
+
+随后补齐造一双人模式：
+
+- [ ] **双人合作**：双人选角、两套输入、本局数据所有权、各自 HUD/技能/装备、共同关卡与死亡规则、双人存档。当前单个 HeroModel 的本局作用域尚未支持双英雄，不能只多生成一个实体。入口：流程装配、`ProfileModel`、`HeroModel`、`InputSystem` 和具体英雄；先明确所有权再接入。
+- [ ] **双人装备赠送**：官方背包存在另一玩家交互；当前赠送项禁用。依赖双人档案，补合法接收者、背包容量、穿戴物限制与保存；入口：`EquipmentSystem`、`EquipmentActionsMenu`。
+- [ ] **双人竞技场**：官方 SelectPLace.arena 在双人模式启用，切换 MODE3；当前没有该模式的地图入口、双方敌对判定及胜负流程。依赖双人合作基础，单独验收玩家互击和结算，不复用小怪敌我规则硬凑。
+
+源文件已定义但当前装备表未登记的条目，逐件补齐前先核验获得途径与版本：
+
+- [ ] 大圣战铠（dszk）。
+- [ ] 锦襕袈裟（zljs）。
+- [ ] 黄金赦令（hjsl，活动法宝）。
+- [ ] 童年的拨浪鼓（tndblg，活动装备）。
+- [ ] 童年的冰糖葫芦（tndbthl，活动装备）。
+- [ ] 招财铃铛（zcld，活动法宝）。
+
+依据为同版 AllEquipment 的定义与当前 EquipmentId/Items 表比对；声明存在不等于现有服务器还能发放。活动物品需确定本项目离线获取方式，不为补表伪造官方掉落。
+
+平台功能单列，是否接入本项目另定：
+
+- [ ] 4399 在线账号/云存档和活动服务；当前提供本地多格存档，尚无原平台服务。原地图 submitScore 当前跳转 showActivity，是否另接排行榜须继续核验，不能仅凭方法名认定。
+- [ ] 活动装备的功勋兑换/活动发放；源 MyEquipObj 及 AllEquipment 包含相关字段和条目，当前没有对应入口与交易流程。
+
+不列作造一缺项：八戒/沙僧、宠物、炼丹/强化等后续作品系统。该版 GameMenu.shoping/sroom 明确显示“暂未开放”，因此不把商城/房间占位当作已实现的官方玩法；家传装备描述也不能单独证明存在套装被动，须找到可达规则后再立项。
+
 ## GGF + QF 阅读入口
 
 职责、访问能力、Command/Query、绑定和生命周期统一见 [架构规范](ProjectGuidelines/00-Architecture.md)。实现契约集中在 [ArchitectureContracts.cs](../Godot/GodotProject/TheGame/GameScripts/Architecture/ArchitectureContracts.cs)，GGF FSM 适配见 FsmArchitectureExtensions；具体请求随 Equipment/Skills 放置。
@@ -348,6 +391,8 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 - 普攻动画列表和攻击命中声 m_HitSoundId：攻击者实体场景；独立效果生成时借用本次攻击者的声音。受击语音 m_HurtSoundId：接收者实体场景，成功ReceiveHit时播放，hurt动画不重复发声。挥击、技能和死亡语音：原生动画的PlaySoundAnimEvent方法键。
 - 物品外观：`Sprites/Items/item_appearances.tres` 同时供背包、穿戴与地面掉落引用。轨迹在 LootOrb 场景，地面物理在 GroundItem 场景；奖励量和存在时长留 BattleConfig。
 - 关卡音乐：LevelRoot 的 MusicId，由 ProcedureLevel 通过 GGF 播放和停止。血条淡出在怪物场景。
+
+小怪血条已实例在各自实体场景中，位置直接编辑根下 `m_HealthBar` 的 Layout/Transform；它是角色根的直接子节点，靠父节点移动跟随，无需每帧重算。共享 `UIs/Battle/monster_health_bar.tscn` 决定50×5大小、填充和底色，各角色场景的offset决定位置；生命值、显隐与两秒淡出仍由实体更新。首次作者化把原“受击盒顶边中心向上8px、再扣半宽和高度”的结果写入场景，运行时已删除该公式及偏移字段，手调后不会被覆盖。顶部BOSS条独立在BattleForm内，位置由encounter_health_bar.tscn的Top Center锚点与offset决定；数据配置表不决定这两类血条的位置。
 - 无双大立绘按原生动画结束恢复自己申请的暂停；失败结算直接等待英雄 death 的 AnimationFinished，不再另配等待秒数。
 
 `import_official_wukong_skills.py` 是一次性初始导入；发现已有人工作业的方法轨道时会在写入前拒绝，避免覆盖上述编排。后续直接维护正式原生资源，不批量重导美术。

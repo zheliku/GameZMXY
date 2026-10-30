@@ -1,0 +1,22 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/hero_hurt/hero_hurt_01.png" id="hero_hurt_1"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/hero_hurt/hero_hurt_02.png" id="hero_hurt_2"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/hero_hurt/hero_hurt_03.png" id="hero_hurt_3"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/hero_hurt/hero_hurt_04.png" id="hero_hurt_4"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/hero_hurt/hero_hurt_05.png" id="hero_hurt_5"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/hero_hurt/hero_hurt_06.png" id="hero_hurt_6"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/hero_hurt/hero_hurt_07.png" id="hero_hurt_7"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/hero_hurt/hero_hurt_08.png" id="hero_hurt_8"]
+
+
+
+[resource]
+animations = [{"frames": [{"duration": 1.0, "texture": ExtResource("hero_hurt_1")},
+{"duration": 1.0, "texture": ExtResource("hero_hurt_2")},
+{"duration": 1.0, "texture": ExtResource("hero_hurt_3")},
+{"duration": 1.0, "texture": ExtResource("hero_hurt_4")},
+{"duration": 1.0, "texture": ExtResource("hero_hurt_5")},
+{"duration": 1.0, "texture": ExtResource("hero_hurt_6")},
+{"duration": 1.0, "texture": ExtResource("hero_hurt_7")},
+{"duration": 1.0, "texture": ExtResource("hero_hurt_8")}], "loop": false, "name": &"hero_hurt", "speed": 24.0}]

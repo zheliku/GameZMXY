@@ -41,11 +41,13 @@ namespace GameLogic.Heroes
         [Export] private int m_HeroId; // 场景绑定的 HeroConfig 主键。
 
         [Export] private MusouAfterimageNode m_MusouAfterimage; // 英雄自有的残影表现，可按角色场景选配。
+        [Export] private AnimatedSprite2D m_HurtFeedback; // 官方8帧命中反馈；霸体也播放，不占身体动作。
         [Export] private HeroLevelUpNode m_LevelUp; // 独立升级动画层，不随身体朝向镜像。
         [Export] private AnimatedSprite2D m_PoisonHead; // 持续中毒的头顶官方标记。
         [Export] private AnimatedSprite2D m_PoisonPulse; // 每跳中毒扣血的短暂官方效果。
         [Export] private AnimatedSprite2D m_FrozenEffect; // 原版35帧冰块，末帧保持到控制状态结束。
-        [Export] private ShaderMaterial m_InvulnerabilityMaterial; // 身体和武器共用本实例的无敌光晕材质。
+        [Export] private ShaderMaterial m_InvulnerabilityMaterial; // 身体和武器共用本实例的无双/无敌光晕材质。
+        private Color m_ProtectionGlowColor; // 借用本角色材质原配色；无双结束后恢复，不把悟空颜色写进共享层。
         [Export] private HeroTombstoneNode m_Tombstone; // 独立场景的共用死亡表现，自己拥有下落与落地碰撞。
 
         private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
@@ -204,13 +206,13 @@ namespace GameLogic.Heroes
         }
 
         /// <summary>
-        /// 无双期间免受击硬直与击退，仍正常结算伤害。
+        /// 本英雄当前是否免受击硬直与击退；具体角色声明自己的霸体规则。
         /// </summary>
-        bool IHeroBody.SuperArmor
+        public virtual bool SuperArmor
         {
             get
             {
-                return this.GetSystem<HeroSystem>().SuperArmor;
+                return false;
             }
         }
 
@@ -239,6 +241,10 @@ namespace GameLogic.Heroes
             object userData)
         {
             base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
+            if (isNewInstance && m_InvulnerabilityMaterial != null)
+            {
+                m_ProtectionGlowColor = m_InvulnerabilityMaterial.GetShaderParameter("glow_color").AsColor();
+            }
             if (m_Tombstone == null)
             {
                 throw new InvalidOperationException($"{entityAssetName} 缺少共用墓碑场景绑定。");
@@ -246,6 +252,10 @@ namespace GameLogic.Heroes
             if (isNewInstance)
             {
                 Died += OnDied;
+                if (m_HurtFeedback != null)
+                {
+                    m_HurtFeedback.AnimationFinished += OnHurtFeedbackFinished;
+                }
                 m_Tombstone.Finished += OnDeathPresentationFinished;
             }
 
@@ -294,6 +304,7 @@ namespace GameLogic.Heroes
             Body.Visible = true;
             m_Weapon.Visible = true;
             m_MusouAfterimage?.Reset();
+            OnHurtFeedbackFinished();
             m_LevelUp?.Reset();
             m_Tombstone.Reset();
             if (m_FrozenEffect != null)
@@ -336,6 +347,7 @@ namespace GameLogic.Heroes
             if (!isShutdown)
             {
                 m_Tombstone.Reset();
+                OnHurtFeedbackFinished();
                 m_InvulnerabilityMaterial?.SetShaderParameter("glow_radius", 0f);
                 if (m_PoisonHead != null)
                 {
@@ -581,15 +593,34 @@ namespace GameLogic.Heroes
             int attackerEntityId)
         {
             this.GetSystem<HeroSystem>().RecordHurt();
+            if (m_HurtFeedback != null && !Dead)
+            {
+                m_HurtFeedback.Stop();
+                m_HurtFeedback.Frame = 0;
+                m_HurtFeedback.Show();
+                m_HurtFeedback.Play(HeroAnims.HurtFeedback);
+            }
             RefreshInvulnerabilityGlow();
             if (Dead)
             {
                 EndMusou();
             }
 
-            if (!Dead && !this.GetModel<HeroModel>().WsActive.Value && BodyParams.HurtTime > 0f)
+            if (!Dead && !SuperArmor && BodyParams.HurtTime > 0f)
             {
                 m_PendingHurt = knockback;
+            }
+        }
+
+        /// <summary>
+        /// 命中动画结束或实体回池后停播并隐藏，不残留到下一次入场。
+        /// </summary>
+        private void OnHurtFeedbackFinished()
+        {
+            if (IsInstanceValid(m_HurtFeedback))
+            {
+                m_HurtFeedback.Stop();
+                m_HurtFeedback.Hide();
             }
         }
 
@@ -603,7 +634,9 @@ namespace GameLogic.Heroes
                 return;
             }
 
-            bool glowing = !Dead && Invulnerable && !Attributes.WsActive.Value;
+            bool musou = Attributes.WsActive.Value;
+            bool glowing = !Dead && (musou || Invulnerable);
+            m_InvulnerabilityMaterial.SetShaderParameter("glow_color", musou ? Colors.White : m_ProtectionGlowColor);
             double phase = ActionData.Time * 24d % 18d;
             float radius = (float)(6 + Math.Abs(9 - phase));
             m_InvulnerabilityMaterial.SetShaderParameter("glow_radius", glowing ? radius : 0f);

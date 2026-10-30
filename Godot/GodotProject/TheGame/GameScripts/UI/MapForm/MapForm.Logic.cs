@@ -34,6 +34,11 @@ namespace GameLogic.UI
         public event Action<int> SaveRequested;
 
         /// <summary>
+        /// 请求地图流程打开设置；窗口编号拒绝旧界面的迟到交互。
+        /// </summary>
+        public event Action<int> SettingsRequested;
+
+        /// <summary>
         /// 由所属流程处理 LevelSelected；参数为本次窗口编号及选择编号。
         /// </summary>
         public event Action<int, int> LevelSelected;
@@ -59,6 +64,7 @@ namespace GameLogic.UI
             if (isNewInstance)
             {
                 m_Back.Pressed += OnBackClicked;
+                m_Settings.Pressed += OnSettingsClicked;
                 m_Save.Pressed += OnSaveClicked;
                 m_Huaguoshan.Pressed += OnHuaguoshanClicked;
                 m_Shuiliandong.Pressed += OnShuiliandongClicked;
@@ -127,6 +133,7 @@ namespace GameLogic.UI
         public void OnClose(bool isShutdown, object userData)
         {
             TitleRequested = null;
+            SettingsRequested = null;
             SaveRequested = null;
             LevelSelected = null;
             Unbind();
@@ -565,6 +572,19 @@ namespace GameLogic.UI
                 m_LocationAnimation.Advance(0);
             }
             m_LocationAnimation.Stop();
+        }
+
+        /// <summary>
+        /// 打开地图设置，导航和窗口请求生命周期交给所属流程。
+        /// </summary>
+        private void OnSettingsClicked()
+        {
+            if (!GF.UI.HasUIForm(SerialId))
+            {
+                return;
+            }
+            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            SettingsRequested?.Invoke(SerialId);
         }
 
         /// <summary>

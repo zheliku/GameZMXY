@@ -56,17 +56,14 @@ public sealed class ProcedureCharacter : ProcedureBase
         m_Cancellation = null;
         GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Unsubscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
-        if (!isShutdown)
+        if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
         {
-            if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
-            {
-                GF.UI.CloseUIForm(m_FormSerialId);
-            }
+            GF.UI.CloseUIForm(m_FormSerialId);
+        }
 
-            if (m_MusicSerialId != 0)
-            {
-                GF.Sound.StopSound(m_MusicSerialId, 0.2f);
-            }
+        if (m_MusicSerialId != 0)
+        {
+            GF.Sound.StopSound(m_MusicSerialId, isShutdown ? 0f : 0.2f);
         }
         m_FormSerialId = m_MusicSerialId = 0;
         m_Owner = null;

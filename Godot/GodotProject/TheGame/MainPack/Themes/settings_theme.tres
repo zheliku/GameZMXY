@@ -1,0 +1,26 @@
+[gd_resource type="Theme" format=3]
+
+[ext_resource type="FontFile" path="res://TheGame/MainPack/Fonts/fz_cu_yuan.ttf" id="font"]
+[ext_resource type="StyleBox" path="res://TheGame/MainPack/Themes/Styles/settings_slider_track.tres" id="track"]
+[ext_resource type="StyleBox" path="res://TheGame/MainPack/Themes/Styles/settings_slider_fill.tres" id="fill"]
+[ext_resource type="Texture2D" path="res://TheGame/MainPack/Themes/Styles/settings_slider_grabber.svg" id="knob"]
+[ext_resource type="Texture2D" path="res://TheGame/MainPack/Themes/Styles/settings_slider_grabber_active.svg" id="active"]
+[sub_resource type="StyleBoxEmpty" id="empty"]
+
+[resource]
+default_font = ExtResource("font")
+default_font_size = 24
+Button/colors/font_color = Color(1, 1, 1, 1)
+Button/colors/font_hover_color = Color(1, 0.466667, 0, 1)
+Button/colors/font_pressed_color = Color(1, 0.72, 0.12, 1)
+Button/styles/normal = SubResource("empty")
+Button/styles/hover = SubResource("empty")
+Button/styles/pressed = SubResource("empty")
+Button/styles/focus = SubResource("empty")
+Button/styles/disabled = SubResource("empty")
+Label/colors/font_color = Color(1, 1, 1, 1)
+HSlider/styles/slider = ExtResource("track")
+HSlider/styles/grabber_area = ExtResource("fill")
+HSlider/styles/grabber_area_highlight = ExtResource("fill")
+HSlider/icons/grabber = ExtResource("knob")
+HSlider/icons/grabber_highlight = ExtResource("active")

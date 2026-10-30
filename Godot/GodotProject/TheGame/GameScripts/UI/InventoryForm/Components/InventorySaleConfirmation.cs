@@ -50,8 +50,12 @@ namespace GameLogic.UI.Widgets
         {
             m_PendingQuality = null;
             Hide();
-            m_SaleCancel.ReleaseFocus();
-            m_SaleConfirm.ReleaseFocus();
+            // 关停时节点仍有效但已离树；原生焦点接口只允许在树内调用。
+            if (IsInsideTree())
+            {
+                m_SaleCancel.ReleaseFocus();
+                m_SaleConfirm.ReleaseFocus();
+            }
         }
 
         /// <summary>

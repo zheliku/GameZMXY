@@ -114,9 +114,11 @@ debug_color = Color(0.45, 0.62, 0.48, 0.03)
 libraries/ = ExtResource("library")
 
 [node name="m_HealthBar" type="TextureProgressBar" parent="." unique_id=1080627049 instance=ExtResource("5_35xga")]
+offset_left = -24.8
+offset_top = -52.65873
+offset_right = 25.2
+offset_bottom = -47.65873
 z_index = 10
-offset_right = 50.0
-offset_bottom = 5.0
 mouse_filter = 2
 max_value = 1.0
 step = 0.0

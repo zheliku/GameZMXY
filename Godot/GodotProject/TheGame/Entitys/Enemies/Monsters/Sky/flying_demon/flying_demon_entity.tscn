@@ -124,8 +124,8 @@ callback_mode_method = 1
 libraries/ = ExtResource("4_library")
 
 [node name="m_HealthBar" parent="." unique_id=706231398 instance=ExtResource("5_health")]
-offset_left = -24.0
-offset_top = -71.0
-offset_right = 26.0
-offset_bottom = -66.0
+offset_left = -26.55
+offset_top = -37.49608
+offset_right = 23.45
+offset_bottom = -32.49608
 texture_progress = SubResource("health_texture")

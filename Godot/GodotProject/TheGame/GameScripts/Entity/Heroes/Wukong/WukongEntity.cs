@@ -56,6 +56,11 @@ namespace GameLogic.Heroes
         }
 
         /// <summary>
+        /// 造一悟空无双免受击动作和击退，仍扣血；唐僧不继承此专属规则。
+        /// </summary>
+        public override bool SuperArmor => this.GetModel<HeroModel>().WsActive.Value;
+
+        /// <summary>
         /// 悟空从地面状态起步。
         /// </summary>
         protected override Type InitialBodyStateType

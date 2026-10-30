@@ -6,6 +6,11 @@ namespace GameLogic.Heroes.Body
     public static class HeroAnims
     {
         /// <summary>
+        /// 独立于身体动作的官方受击闪光。
+        /// </summary>
+        public const string HurtFeedback = "hero_hurt";
+
+        /// <summary>
         /// 原生动画复位轨道；中断也恢复特效和判定默认值。
         /// </summary>
         public const string Reset = "RESET";

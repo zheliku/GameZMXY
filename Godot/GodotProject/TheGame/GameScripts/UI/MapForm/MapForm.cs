@@ -82,6 +82,8 @@ namespace GameLogic.UI
 		#endregion
 
 		[Export]
+		private Button m_Settings;
+		[Export]
 		private TextureButton m_Back;
 		[Export]
 		private MapLocationButton m_Huaguoshan;

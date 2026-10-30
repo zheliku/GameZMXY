@@ -117,11 +117,11 @@ callback_mode_method = 1
 libraries/ = ExtResource("4_vo7ck")
 
 [node name="m_HealthBar" type="TextureProgressBar" parent="." unique_id=508518114 instance=ExtResource("5_j374r")]
+offset_left = -24.45
+offset_top = -54.45029
+offset_right = 25.55
+offset_bottom = -49.45029
 z_index = 10
-offset_left = -24.0
-offset_top = -52.0
-offset_right = 26.0
-offset_bottom = -47.0
 mouse_filter = 2
 max_value = 1.0
 step = 0.0

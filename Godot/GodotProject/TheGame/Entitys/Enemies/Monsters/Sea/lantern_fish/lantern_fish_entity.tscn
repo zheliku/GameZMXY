@@ -113,4 +113,8 @@ debug_color = Color(0.45, 0.62, 0.48, 0.03)
 libraries/ = ExtResource("library")
 
 [node name="m_HealthBar" parent="." unique_id=1080627049 instance=ExtResource("5_50bl2")]
+offset_left = -24.425
+offset_top = -51.2933
+offset_right = 25.575
+offset_bottom = -46.2933
 texture_progress = SubResource("GradientTexture2D_fill")

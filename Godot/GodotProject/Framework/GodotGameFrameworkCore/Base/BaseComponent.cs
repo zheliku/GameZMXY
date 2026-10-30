@@ -160,13 +160,12 @@ namespace GodotGameFramework
 
 
         /// <summary>
-        /// 节点被销毁时调用。
-        /// 触发核心框架的 Shutdown 流程。
+        /// 退出场景树时关闭核心模块，此时其他组件的原生辅助节点尚未被销毁。
         /// </summary>
-        public override void OnPreDestroy()
+        public override void OnExitTree()
         {
-            base.OnPreDestroy();
-            Shutdown();
+            base.OnExitTree();
+            GameEntry.Shutdown(ShutdownType.None);
         }
 
 

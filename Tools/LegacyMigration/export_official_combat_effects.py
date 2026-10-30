@@ -1,6 +1,7 @@
 """Render only official visual clips; no Flash program is copied into the game.
 
-Role_v7.swf sprite 240 is BaseHero.levelupmc. Monster_v1.swf sprites
+Role_v7.swf sprite 240 is BaseHero.levelupmc; sprite 9 is its eight-frame
+HeroBeHurt feedback (also played during Wukong Musou). Monster_v1.swf sprites
 5/7/9 are yellow/blue/purple auras. Yellow restores Musou; AS class names
 "auraWhile" and "auraRed" do not describe the rendered colors accurately.
 Input SWFs stay outside the repository. Requires FFDec 26.3.0 and Java.
@@ -41,6 +42,8 @@ def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "al
     groups = [
         (role, "11cae2f4f4e63dbb1e7199b9d1a8ed432036138b72e2d04d1da974329133fbe7",
          [(240, "level_up", 28, False)], "level_up"),
+        (role, "11cae2f4f4e63dbb1e7199b9d1a8ed432036138b72e2d04d1da974329133fbe7",
+         [(9, "hero_hurt", 8, False)], "hero_hurt"),
         (monsters, "5bd88da4211870f2ca2354b7cec8d1790747869641c11fe553910b10fe2a264a",
          [(9, "Soul", 19, True), (5, "Musou", 19, True), (7, "Mana", 19, True)], "loot"),
     ]
@@ -101,6 +104,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("java", "ffdec", "role", "monsters"):
         parser.add_argument(f"--{name}", type=Path, required=True)
-    parser.add_argument("--group", choices=("all", "level_up", "loot"), default="all")
+    parser.add_argument("--group", choices=("all", "level_up", "loot", "hero_hurt"), default="all")
     args = parser.parse_args()
     export(args.java, args.ffdec, args.role, args.monsters, args.group)

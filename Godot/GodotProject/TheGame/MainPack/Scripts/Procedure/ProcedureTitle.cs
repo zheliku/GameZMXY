@@ -68,12 +68,12 @@ public sealed class ProcedureTitle : ProcedureBase
         SetFormCallbacks(GF.UI.GetUIForm(m_SaveSerialId), bind: false);
 
 
-        if (!isShutdown && m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
+        if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
         {
             GF.UI.CloseUIForm(m_SettingsSerialId);
         }
 
-        if (!isShutdown && m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId)))
+        if (m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId)))
         {
             GF.UI.CloseUIForm(m_SaveSerialId);
         }
@@ -84,17 +84,15 @@ public sealed class ProcedureTitle : ProcedureBase
         m_Cancellation = null;
         GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Unsubscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
-        if (!isShutdown)
+        // 窗口在关停时也须先于流程销毁，解除档案和设置绑定。
+        if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
         {
-            if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
-            {
-                GF.UI.CloseUIForm(m_FormSerialId);
-            }
+            GF.UI.CloseUIForm(m_FormSerialId);
+        }
 
-            if (m_MusicSerialId != 0)
-            {
-                GF.Sound.StopSound(m_MusicSerialId, 0.2f);
-            }
+        if (m_MusicSerialId != 0)
+        {
+            GF.Sound.StopSound(m_MusicSerialId, isShutdown ? 0f : 0.2f);
         }
         m_FormSerialId = m_MusicSerialId = 0;
         m_Owner = null;

@@ -103,6 +103,9 @@ func _actor(actor: Dictionary) -> bool:
 	root.get_node("m_BodyShape").shape = rectangle
 	root.get_node("m_BodyShape").position = hurt.get_center()
 	root.get_node("m_HurtBox").position = Vector2.ZERO
+	# Initial local layout only; later hand-authored positions remain in the scene.
+	root.get_node("m_HealthBar").size = Vector2(50, 5)
+	root.get_node("m_HealthBar").position = Vector2(hurt.get_center().x - 25, hurt.position.y - 13)
 	root.get_node("m_HurtBox/CollisionShape2D").shape = rectangle
 	root.get_node("m_HurtBox/CollisionShape2D").position = hurt.get_center()
 	var detector := RectangleShape2D.new()

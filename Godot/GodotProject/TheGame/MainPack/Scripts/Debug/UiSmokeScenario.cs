@@ -83,6 +83,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>整个回归完成的任务，异常被转换为 Failure。</returns>
     private async Task RunAsync(bool bossesOnly)
     {
+        bool preserveForShutdown = false;
         try
         {
             ProcedureLevel procedure = await WaitForLevelAsync();
@@ -98,6 +99,30 @@ public sealed partial class UiSmokeScenario
             GameData data = await ReadDiskAsync();
             Check(data?.SaveVersion == GameData.CurrentVersion && data.Heroes.Count == 1, "首次启动未按当前版本写回新档");
             CheckDisplay(battleForm, hero, flow.GetModel<ProfileModel>(), level);
+
+            string shutdownWindow = OS.GetCmdlineUserArgs().FirstOrDefault(argument => argument.StartsWith("--shutdown-window="));
+            if (shutdownWindow != null)
+            {
+                string window = shutdownWindow.Split('=')[1];
+                string request = window switch
+                {
+                    "inventory" => "OnInventoryRequested",
+                    "skills" => "OnSkillsRequested",
+                    "settings" => "OnSettingsRequested",
+                    _ => throw new InvalidOperationException("未知关停测试窗口：" + window)
+                };
+                typeof(ProcedureLevel).GetMethod(request, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                    .Invoke(procedure, [battleForm.SerialId]);
+                await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<Control>()
+                    .Any(form => form.Visible && (window == "inventory" && form is InventoryForm ||
+                        window == "skills" && form is SkillForm || window == "settings" && form is SettingsForm)),
+                    "关停测试窗口未实际打开");
+                Check(GF.Base.IsGamePaused, "关停测试窗口未进入真实暂停状态");
+                preserveForShutdown = true;
+                GD.Print("SHUTDOWN-UI READY: " + window + "; retain actual paused form and HUD for native quit.");
+                m_Driver.GetTree().Quit();
+                return;
+            }
 
             if (OS.GetCmdlineUserArgs().Contains("--enemy-knockback-only"))
             {
@@ -223,6 +248,13 @@ public sealed partial class UiSmokeScenario
                 return;
             }
 
+            if (OS.GetCmdlineUserArgs().Contains("--fire-knockback-only"))
+            {
+                level.Cleanup();
+                await CheckFireDemonKnockbackAsync(hero, flow);
+                return;
+            }
+
             if (OS.GetCmdlineUserArgs().Contains("--enemy-hierarchy-only"))
             {
                 await CheckMonsterResponsibilitiesAsync(hero);
@@ -247,6 +279,13 @@ public sealed partial class UiSmokeScenario
             if (OS.GetCmdlineUserArgs().Contains("--hero-death-only"))
             {
                 await CheckHeroDeathReentryAsync();
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--musou-hurt-only"))
+            {
+                level.Cleanup();
+                await CheckMusouHurtAsync(hero, flow);
                 return;
             }
 
@@ -538,14 +577,17 @@ public sealed partial class UiSmokeScenario
         }
         finally
         {
-            foreach (var form in GF.UI.GetAllLoadedUIForms().OfType<Control>().Where(x => x.Visible && x is InventoryForm or SkillForm or SettlementForm).ToArray())
+            if (!preserveForShutdown)
             {
-                GF.UI.CloseUIForm(((GameFramework.UI.IUIForm)form).SerialId);
-            }
+                foreach (var form in GF.UI.GetAllLoadedUIForms().OfType<Control>().Where(x => x.Visible && x is InventoryForm or SkillForm or SettlementForm).ToArray())
+                {
+                    GF.UI.CloseUIForm(((GameFramework.UI.IUIForm)form).SerialId);
+                }
 
-            CloseBattleForm(m_TestBattleForm);
-            ReleaseTestEntity(m_ExtraHero);
-            ReleaseTestEntity(m_Monster);
+                CloseBattleForm(m_TestBattleForm);
+                ReleaseTestEntity(m_ExtraHero);
+                ReleaseTestEntity(m_Monster);
+            }
         }
     }
 
@@ -979,6 +1021,10 @@ public sealed partial class UiSmokeScenario
             SmokeInspection.DamageMonster(m_Monster, 1);
             Check(bar.Visible && Near(bar.Value, (double)m_Monster.Hp / m_Monster.MaxHp),
                 $"{entityId} 初次受伤未立即显示正确比例");
+            if (entityId is EntityId.DemonMonkey or EntityId.Bat or EntityId.ShrimpDemon)
+            {
+                await CaptureCombatAsync($"static_health_bar_{entityId}");
+            }
             SmokeInspection.DamageMonster(m_Monster, 1);
             Check(Near(bar.Value, (double)m_Monster.Hp / m_Monster.MaxHp),
                 $"{entityId} 连续受伤未立即更新血条");
@@ -1018,6 +1064,16 @@ public sealed partial class UiSmokeScenario
             Check(bar.GetGlobalTransform().X.X > 0 &&
                 Near(bar.GlobalPosition.X + bar.TextureProgress.GetWidth() * 0.5, m_Monster.HeadPosition.X),
                 $"{entityId} 向左转身后可见血条未保持头顶居中");
+            // 人工场景布局不能被生命刷新或物理帧覆盖；位置由父节点变换自然继承。
+            Vector2 authoredPosition = bar.Position;
+            Vector2 editedPosition = authoredPosition + new Vector2(7, -11);
+            bar.Position = editedPosition;
+            SmokeInspection.DamageMonster(m_Monster, 1);
+            m_Monster.SetPhysicsProcess(true);
+            await WaitFramesAsync(3);
+            m_Monster.SetPhysicsProcess(false);
+            Check(bar.Position.IsEqualApprox(editedPosition), $"{entityId} 血条的场景位置被运行时代码覆盖");
+            bar.Position = authoredPosition;
             m_Monster.Heal(m_Monster.MaxHp);
             Check(!bar.Visible && Near(bar.Value, 1), $"{entityId} 满血后血条未隐藏或未补满");
 

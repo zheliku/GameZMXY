@@ -10,7 +10,7 @@ func _run() -> void:
         "register_bull_actor_resources", "import_official_dragon_level", "create_qixing_actor_scenes",
         "import_official_bat_cave_actors", "import_official_boss_scenes", "validate_garuda_level",
         "validate_qixing_level", "validate_enemy_fidelity", "apply_enemy_detection_ranges", "enemy_collision_authoring", "review_enemy_ranges",
-        "validate_enemy_spatial_rules", "render_enemy_collision_styles"]
+        "validate_enemy_spatial_rules", "render_enemy_collision_styles", "repair_monster_health_bars"]
     for file in files:
         var script: GDScript = load("res://EditorScripts/" + file + ".gd")
         if script == null or script.reload() != OK:

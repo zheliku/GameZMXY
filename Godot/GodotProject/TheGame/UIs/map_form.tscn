@@ -112,7 +112,7 @@ shader = ExtResource("outline")
 shader_parameter/image_scale = 1.0
 shader_parameter/line_thickness = 0.0
 
-[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Back", "m_Huaguoshan", "m_Shuiliandong", "m_Taohuayuan", "m_Save", "m_LocationAnimation", "m_Bianfuku", "m_Qixingdong", "m_Jialuoluo", "m_Qianan", "m_Donghai", "m_Shazhiwoliu", "m_Niumogu")]
+[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Settings", "m_Back", "m_Huaguoshan", "m_Shuiliandong", "m_Taohuayuan", "m_Save", "m_LocationAnimation", "m_Bianfuku", "m_Qixingdong", "m_Jialuoluo", "m_Qianan", "m_Donghai", "m_Shazhiwoliu", "m_Niumogu")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -121,6 +121,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("theme")
 script = ExtResource("script")
+m_Settings = NodePath("m_Settings")
 m_Back = NodePath("m_Back")
 m_Huaguoshan = NodePath("m_Huaguoshan")
 m_Shuiliandong = NodePath("m_Shuiliandong")
@@ -564,3 +565,18 @@ libraries/qixingdong = ExtResource("31_pfyxb")
 libraries/shazhiwoliu = ExtResource("44_nkmx7")
 libraries/shuiliandong = ExtResource("30_s3lwo")
 libraries/taohuayuan = ExtResource("31_0mcer")
+
+[node name="m_Settings" type="Button" parent="."]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 444.0
+offset_right = 132.0
+offset_bottom = 486.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.93, 0.65, 0.1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("caption_font")
+theme_override_font_sizes/font_size = 23
+text = "游戏设置"

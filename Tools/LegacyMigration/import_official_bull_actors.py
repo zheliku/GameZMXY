@@ -153,7 +153,8 @@ def actor_scene(actor, frames, library):
         lines += heart_nodes()
     if name == "bull_guard":
         lines += ['[node name="m_HealthBar" parent="." instance=ExtResource("health")]',
-                  f'offset_top = {fmt_float(hurt[1] - 14)}', f'offset_bottom = {fmt_float(hurt[1] - 6)}']
+                  f'offset_left = {fmt_float(center[0] - 25)}', f'offset_right = {fmt_float(center[0] + 25)}',
+                  f'offset_top = {fmt_float(hurt[1] - 13)}', f'offset_bottom = {fmt_float(hurt[1] - 8)}']
     lines.append('')
     return '\n'.join(lines)
 

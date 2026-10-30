@@ -19,6 +19,8 @@
 [ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Heroes/Status/hero_frozen_frames.tres" id="17_8wyf5"]
 [ext_resource type="Shader" path="res://TheGame/Sprites/Characters/Heroes/Status/hero_invulnerability.gdshader" id="18_invulnerability"]
 
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/hero_hurt/hero_hurt_frames.tres" id="hurt_feedback"]
+
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_2pdac"]
 radius = 22.50061
 height = 90.01099
@@ -41,7 +43,7 @@ shader_parameter/glow_alpha = 1.0
 shader_parameter/frame_grid = Vector2(6, 29)
 shader_parameter/mirrored = false
 
-[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_FireDemonPrelude", "m_Tombstone", "m_Weapon", "m_EffectRoot", "m_MusouAfterimage", "m_LevelUp", "m_PoisonHead", "m_PoisonPulse", "m_FrozenEffect", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_HurtFeedback", "m_FireDemonPrelude", "m_Tombstone", "m_Weapon", "m_EffectRoot", "m_MusouAfterimage", "m_LevelUp", "m_PoisonHead", "m_PoisonPulse", "m_FrozenEffect", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 z_index = 1
 collision_layer = 2
 collision_mask = 8201
@@ -56,6 +58,7 @@ m_Appearance = ExtResource("2_p32r7")
 m_EffectRoot = NodePath("m_EffectRoot")
 m_HeroId = 1
 m_MusouAfterimage = NodePath("m_MusouAfterimage")
+m_HurtFeedback = NodePath("m_StatusEffects/m_HurtFeedback")
 m_LevelUp = NodePath("m_LevelUp")
 m_PoisonHead = NodePath("m_StatusEffects/m_PoisonHead")
 m_PoisonPulse = NodePath("m_StatusEffects/m_PoisonPulse")
@@ -174,3 +177,11 @@ animation = &"play"
 offset = Vector2(96, 96)
 
 [connection signal="animation_finished" from="m_FireDemonPrelude" to="m_FireDemonPrelude" method="hide"]
+
+[node name="m_HurtFeedback" type="AnimatedSprite2D" parent="m_StatusEffects"]
+visible = false
+z_index = 5
+position = Vector2(0.4, -0.05)
+sprite_frames = ExtResource("hurt_feedback")
+animation = &"hero_hurt"
+offset = Vector2(1.9, 0.05)

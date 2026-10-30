@@ -65,6 +65,66 @@ public sealed class FrontendSmokeScenario
     }
 
     /// <summary>
+    /// 实际拖动原生滑条，检查两组独立控制、静音恢复、界面音与持久设置一致。
+    /// </summary>
+    /// <param name="settings">当前真实设置窗口。</param>
+    /// <returns>交互完成的任务。</returns>
+    private async Task CheckVolumeSlidersAsync(SettingsForm settings)
+    {
+        var music = settings.GetNode<HSlider>("Scroll/Content/Options/m_AudioPanel/Music/m_MusicVolume");
+        var effect = settings.GetNode<HSlider>("Scroll/Content/Options/m_AudioPanel/Effect/m_EffectVolume");
+        float effectBefore = GF.Sound.GetSoundGroup("SFX").Volume;
+        await DragVolumeAsync(music, .43f);
+        float musicValue = (float)music.Value / 100;
+        Check(Math.Abs(musicValue - .43f) < .03 && GF.Sound.GetSoundGroup("Music").Volume == musicValue &&
+            GF.Sound.GetSoundGroup("SFX").Volume == effectBefore && GF.Setting.GetFloat("Music") == musicValue,
+            $"音乐滑条没有独立修改GGF音乐或持久化：slider={music.Value}, group={GF.Sound.GetSoundGroup("Music").Volume}, sfx={GF.Sound.GetSoundGroup("SFX").Volume}, before={effectBefore}");
+        await DragVolumeAsync(effect, .67f);
+        float effectValue = (float)effect.Value / 100;
+        Check(Math.Abs(effectValue - .67f) < .03 && GF.Sound.GetSoundGroup("SFX").Volume == effectValue &&
+            GF.Sound.GetSoundGroup("UI").Volume == effectValue && GF.Sound.GetSoundGroup("Music").Volume == musicValue &&
+            GF.Setting.GetFloat("SFX") == effectValue && GF.Setting.GetFloat("UI") == effectValue,
+            "音效滑条未同步SFX/UI或影响音乐");
+        using (var saved = new ConfigFile())
+        {
+            Check(saved.Load("user://Settings.cfg") == Error.Ok &&
+                Math.Abs(saved.GetValue("Settings", "Music").AsDouble() - musicValue) < .001 &&
+                Math.Abs(saved.GetValue("Settings", "SFX").AsDouble() - effectValue) < .001 &&
+                Math.Abs(saved.GetValue("Settings", "UI").AsDouble() - effectValue) < .001,
+                "GGF音量只改了内存，没有写入设置文件");
+        }
+        await ClickAsync(settings, "Scroll/Content/Options/m_AudioPanel/m_Sound");
+        Check(music.Value == 0 && effect.Value == 0, "静音后滑条没有同步");
+        await ClickAsync(settings, "Scroll/Content/Options/m_AudioPanel/m_Sound");
+        Check(GF.Sound.GetSoundGroup("Music").Volume == musicValue && GF.Sound.GetSoundGroup("SFX").Volume == effectValue,
+            "静音开关没有恢复用户拖动后的音量");
+        await DragVolumeAsync(music, 0);
+        Check(GF.Sound.GetSoundGroup("Music").Volume == 0 && GF.Sound.GetSoundGroup("SFX").Volume == effectValue,
+            "音乐零点错误关闭全部声音");
+        await DragVolumeAsync(music, 1);
+        Check(GF.Sound.GetSoundGroup("Music").Volume == 1, "音乐满量程无法到达100%");
+        GD.Print("SMOKE-SETTINGS VOLUME PASS: map entry, native dragging, independent music, SFX/UI, mute restore and persisted values");
+    }
+
+    /// <summary>
+    /// 通过原生鼠标事件拖动滑条，按抓手宽度换算有效轨道位置。
+    /// </summary>
+    /// <param name="slider">可见原生滑条。</param>
+    /// <param name="ratio">目标百分比比例。</param>
+    /// <returns>真实输入完成的任务。</returns>
+    private async Task DragVolumeAsync(HSlider slider, float ratio)
+    {
+        Rect2 rect = slider.GetGlobalRect();
+        Vector2 start = rect.Position + new Vector2(5 + (rect.Size.X - 10) * (float)(slider.Value / 100), rect.Size.Y / 2);
+        Vector2 end = rect.Position + new Vector2(5 + (rect.Size.X - 10) * ratio, rect.Size.Y / 2);
+        await MoveMouseAsync(start);
+        m_Driver.GetViewport().PushInput(new InputEventMouseButton { Position = start, GlobalPosition = start, ButtonIndex = MouseButton.Left, Pressed = true }, true);
+        await MoveMouseAsync(end);
+        m_Driver.GetViewport().PushInput(new InputEventMouseButton { Position = end, GlobalPosition = end, ButtonIndex = MouseButton.Left, Pressed = false }, true);
+        await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+    }
+
+    /// <summary>
     /// 其他战斗回归通过真实菜单进入关卡，生产流程不读取烟测参数。
     /// </summary>
     /// <param name="levelId">实际点击的地图地点，默认花果山。</param>
@@ -131,25 +191,25 @@ public sealed class FrontendSmokeScenario
             await ClickAsync(start, "m_Settings");
             var titleSettings = await WaitForAsync<SettingsForm>();
             Check(!GF.Base.IsGamePaused, "标题设置不应暂停关卡时钟");
-            Check(!titleSettings.GetNode<BaseButton>("Scroll/m_ReturnMap").Visible, "标题设置错误显示返回地图");
+            Check(!titleSettings.GetNode<BaseButton>("Scroll/Content/Options/Navigation/m_ReturnMap").Visible, "标题设置错误显示返回地图");
             await CaptureAsync("title_settings");
             // 官方面板的一项开关同时控制三组声音，关闭后设置持久化。
             if (GF.Sound.GetSoundGroup("Music").Volume == 0 && GF.Sound.GetSoundGroup("SFX").Volume == 0 && GF.Sound.GetSoundGroup("UI").Volume == 0)
             {
-                await ClickAsync(titleSettings, "Scroll/m_Sound");
+                await ClickAsync(titleSettings, "Scroll/Content/Options/m_AudioPanel/m_Sound");
             }
 
-            await ClickAsync(titleSettings, "Scroll/m_Sound");
+            await ClickAsync(titleSettings, "Scroll/Content/Options/m_AudioPanel/m_Sound");
             Check(new[] { "Music", "SFX", "UI" }.All(group => GF.Sound.GetSoundGroup(group).Volume == 0 && GF.Setting.GetFloat(group) == 0), "统一声音关闭未生效或未持久化");
-            await ClickAsync(titleSettings, "Scroll/m_Sound");
+            await ClickAsync(titleSettings, "Scroll/Content/Options/m_AudioPanel/m_Sound");
             Check(new[] { "Music", "SFX", "UI" }.All(group => GF.Sound.GetSoundGroup(group).Volume > 0), "统一声音恢复未生效");
             var close = titleSettings.GetNode<TextureButton>("Scroll/m_Close");
             Check(close.Size.IsEqualApprox(new Vector2(41, 41)) && close.TextureHover.ResourcePath.EndsWith("menu_close_hover.png"), "关闭按钮未使用原生尺寸及悬停图");
             await MoveMouseAsync(close.GetGlobalRect().GetCenter());
             await CaptureAsync("settings_close_hover");
-            await ClickAsync(titleSettings, "Scroll/m_Help");
-            Check(titleSettings.GetNode<Label>("Scroll/m_HelpText").Visible, "设置帮助未显示");
-            await ClickAsync(titleSettings, "Scroll/m_Continue");
+            await ClickAsync(titleSettings, "Scroll/Content/Options/Navigation/m_Help");
+            Check(titleSettings.GetNode<Label>("Scroll/Content/m_HelpText").Visible, "设置帮助未显示");
+            await ClickAsync(titleSettings, "Scroll/Content/Options/m_Continue");
             await ClickAsync(titleSettings, "Scroll/m_Close");
             Check(!GF.UI.HasUIForm(titleSettings.SerialId), "标题设置关闭后仍接收交互");
             await ClickAsync(start, "m_Start");
@@ -211,6 +271,20 @@ public sealed class FrontendSmokeScenario
                 "选角到地图更换了档案作用域");
             Check(!Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "点击花果山之前已创建关卡");
             await CaptureAsync("map_form");
+            await ClickAsync(map, "m_Settings");
+            var mapSettings = await WaitForAsync<SettingsForm>();
+            Check(!GF.Base.IsGamePaused && ReferenceEquals(mapSettings, titleSettings), "地图设置错误暂停或未复用窗口");
+            Check(!mapSettings.GetNode<Control>("Scroll/Content/Options/Navigation/m_ReturnMap").Visible, "地图设置多出返回地图");
+            await CheckVolumeSlidersAsync(mapSettings);
+            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(2.0), SceneTreeTimer.SignalName.Timeout);
+            await CaptureAsync("map_settings_volume");
+            await ClickAsync(mapSettings, "Scroll/m_Close");
+            await ClickAsync(map, "m_Settings");
+            mapSettings = await WaitForAsync<SettingsForm>();
+            Check(Math.Abs(mapSettings.GetNode<HSlider>("Scroll/Content/Options/m_AudioPanel/Music/m_MusicVolume").Value / 100 - GF.Sound.GetSoundGroup("Music").Volume) < .001,
+                "地图重新打开设置没有恢复音量");
+            await ClickAsync(mapSettings, "Scroll/m_Close");
+
             if (OS.GetCmdlineUserArgs().Contains("--map-coast-only"))
             {
                 await CheckCoastalMapAsync(map);
@@ -353,6 +427,17 @@ public sealed class FrontendSmokeScenario
                 SmokeInspection.CallbackCount(settings, "TitleRequested") == 1,
                 "复用设置未绑定当前战斗导航或重复绑定");
             Check(settings.ZIndex > battleForm.ZIndex, "复用设置的显示层级低于 HUD");
+            var scroll = settings.GetNode<Control>("Scroll");
+            var musicSlider = settings.GetNode<HSlider>("Scroll/Content/Options/m_AudioPanel/Music/m_MusicVolume");
+            var effectSlider = settings.GetNode<HSlider>("Scroll/Content/Options/m_AudioPanel/Effect/m_EffectVolume");
+            var caption = settings.GetNode<Label>("Scroll/Content/Options/m_AudioPanel/Music/Caption");
+            var menuItem = settings.GetNode<Button>("Scroll/Content/Options/m_Continue");
+            Check(scroll.Size.X == 326 && musicSlider.Size.X == 160 && effectSlider.Size.X == 160 &&
+                Math.Abs(musicSlider.GetGlobalRect().GetCenter().X - menuItem.GetGlobalRect().GetCenter().X) < .1 &&
+                Math.Abs(effectSlider.GetGlobalRect().GetCenter().X - musicSlider.GetGlobalRect().GetCenter().X) < .1 &&
+                caption.GetThemeFontSize("font_size") == menuItem.GetThemeFontSize("font_size") &&
+                caption.GetThemeColor("font_color") == Colors.White && menuItem.GetThemeColor("font_color") == Colors.White,
+                $"设置布局：panel={scroll.Size}, music={musicSlider.Size}, effect={effectSlider.Size}, centers={musicSlider.GetGlobalRect().GetCenter().X}/{menuItem.GetGlobalRect().GetCenter().X}, fonts={caption.GetThemeFontSize("font_size")}/{menuItem.GetThemeFontSize("font_size")}, colors={caption.GetThemeColor("font_color")}/{menuItem.GetThemeColor("font_color")}");
             await CaptureAsync("battle_settings");
             Vector2 pausedPosition = hero.Position;
             Input.ActionPress(GameLogic.Input.InputSystem.MoveRight);
@@ -363,7 +448,7 @@ public sealed class FrontendSmokeScenario
 
             Input.ActionRelease(GameLogic.Input.InputSystem.MoveRight);
             Check(hero.Position.IsEqualApprox(pausedPosition), "设置暂停时英雄仍在移动");
-            await ClickAsync(settings, "Scroll/m_Continue");
+            await ClickAsync(settings, "Scroll/Content/Options/m_Continue");
             Check(!GF.Base.IsGamePaused && battleForm.Visible &&
                 SmokeInspection.CountBindingHandlers(levelModel.Outcome, settings) == 0 &&
                 SmokeInspection.CallbackCount(settings, "MapRequested") == 0 &&
@@ -371,7 +456,7 @@ public sealed class FrontendSmokeScenario
                 "继续游戏未恢复战斗或设置仍订阅关卡");
             await ClickAsync(battleForm, "MenuPanel/m_SettingsButton");
             settings = await WaitForAsync<SettingsForm>();
-            await ClickAsync(settings, "Scroll/m_ReturnMap");
+            await ClickAsync(settings, "Scroll/Content/Options/Navigation/m_ReturnMap");
             map = await WaitForAsync<MapForm>();
             Check(!hero.IsShown && !Find<LevelViewController>().Any(), "返回地图未清理英雄与关卡");
             Check(playerModel.TotalExperience == experience, "中途返回地图未回滚关内收益");
@@ -403,7 +488,7 @@ public sealed class FrontendSmokeScenario
             flow.GetSystem<ProfileSystem>().AddSoul(9);
             await ClickAsync(battleForm, "MenuPanel/m_SettingsButton");
             settings = await WaitForAsync<SettingsForm>();
-            await ClickAsync(settings, "Scroll/m_ReturnTitle");
+            await ClickAsync(settings, "Scroll/Content/Options/Navigation/m_ReturnTitle");
             start = await WaitForAsync<StartForm>();
             Check(previousInventory.Soul.Value == savedSoul && !previousInventory.Initialized && flow.GetModel<ProfileModel>() == null && !GF.Base.IsGamePaused && !Find<LevelViewController>().Any(), "返回标题未回滚收益、恢复时钟或清理关卡");
             Check(flow.GetModel<ProfileModel>() == null && ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) && flow.GetSystem<EquipmentSystem>() == null, "战斗返回标题仍持有档案作用域");
@@ -435,6 +520,10 @@ public sealed class FrontendSmokeScenario
         }
         catch (Exception error)
         {
+            if (GF.Base.IsGamePaused)
+            {
+                GF.Base.ResumeGame();
+            }
             m_Failure = error.ToString();
             await CaptureAsync("smoke_failure");
         }
@@ -897,7 +986,7 @@ public sealed class FrontendSmokeScenario
             await CaptureAsync("entered_" + name.ToLowerInvariant());
             await ClickAsync(battle, "MenuPanel/m_SettingsButton");
             var settings = await WaitForAsync<SettingsForm>();
-            await ClickAsync(settings, "Scroll/m_ReturnMap");
+            await ClickAsync(settings, "Scroll/Content/Options/Navigation/m_ReturnMap");
             map = await WaitForAsync<MapForm>();
             profile.RecordLevelClear(id);
             GD.Print($"SMOKE-COAST-MAP PASS: {name}, transparent center, hover cycle, actual click, level={id}, return map");

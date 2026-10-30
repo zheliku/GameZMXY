@@ -184,7 +184,9 @@ def scene_for(actor, atlas_path, frames_path, library_path):
              '[node name="m_AnimPlayer" type="AnimationPlayer" parent="."]', 'libraries/ = ExtResource("library")', '']
     if not is_boss:
         lines += ['[node name="m_HealthBar" parent="." instance=ExtResource("health")]',
-                  f'offset_top = {hurt[1] - 14:.6f}', f'offset_bottom = {hurt[1] - 6:.6f}']
+                  f'offset_left = {hurt[0] + hurt[2] / 2 - 25:.6f}',
+                  f'offset_right = {hurt[0] + hurt[2] / 2 + 25:.6f}',
+                  f'offset_top = {hurt[1] - 13:.6f}', f'offset_bottom = {hurt[1] - 8:.6f}']
     if name == 'jiao_demon_king':
         lines += ['[node name="m_BackHit" type="AnimatedSprite2D" parent="."]',
                   'visible = false', 'sprite_frames = ExtResource("back_hit")',

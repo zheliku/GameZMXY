@@ -121,7 +121,7 @@ namespace GameLogic.Profile.Tests
         }
 
         /// <summary>
-        /// 九连斩与本体时钟并行，击退中心取瞬移目标。
+        /// 九连斩与本体时钟并行，火魔三个阶段都沿施放朝向击退。
         /// </summary>
         [Fact]
         public void FireDemon_TargetOwnsTeleportAndParallelCombo()
@@ -136,9 +136,14 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(new Vector2(80, 100), skill.Actor.SkillPosition);
             Assert.Equal(2, skill.Actor.Advances);
             Assert.Equal(SkillHitId.FireDemonCombo, Assert.Single(skill.Actor.Effects));
-            Assert.Equal(80f, Assert.Single(skill.Actor.EffectOrigins));
+            Assert.Null(Assert.Single(skill.Actor.EffectOrigins));
             skill.Advance(1f);
             Assert.Equal(3, skill.Actor.Advances);
+            state.Descend(skill.Actor, null, new Vector2(720, 480));
+            state.Recover(skill.Actor, null);
+            Assert.Equal(new[] { SkillHitId.FireDemonCombo, SkillHitId.FireDemonDescent, SkillHitId.FireDemonLanding },
+                skill.Actor.Effects);
+            Assert.All(skill.Actor.EffectOrigins, origin => Assert.Null(origin));
         }
 
         /// <summary>

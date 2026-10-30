@@ -1,5 +1,56 @@
 # 验证
 
+## 框架关停生命周期（2026-10-31）
+
+根因是 `BaseComponent` 在 `OnPreDestroy` 才调用框架 Shutdown，此时 Godot 已先释放 `HttpRequest`、声音辅助器和部分 UI 节点；任务池随后访问已释放对象，分别产生 WebRequest `ObjectDisposedException`、声音代理异常和窗口模型空引用。修复将既有 `GameEntry.Shutdown(ShutdownType.None)` 移到 `BaseComponent.OnExitTree`，并让标题、选角、地图、关卡流程在关停时先关闭自己拥有的窗口；普通导航继续使用原淡出，关停立即停止音乐。背包确认框只在仍在场景树内时释放焦点。框架授权登记在第50章。
+
+- `validate_framework_shutdown.py`：本地回环 GET/POST、超时后复用、4条在途+2条排队请求、显式重复关闭、同进程重建，`FRAMEWORK SHUTDOWN PASS`；无 `ObjectDisposedException`、无对象/资源泄漏诊断。
+- `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet`：0错误、5个既有生成代码弃用警告。
+- `--smoketest=frontend`：退出0，开始/存档/选角/地图流程通过；存档损坏、旧作用域和预期失败注入仍按测试设计输出错误日志。
+- `--shutdown-window=inventory|skills|settings`：三种真实暂停窗口均能在退出前完成退订；背包焦点错误不再出现。
+- `dotnet test`：Battle 178/178，Profile 211/211；C# 风格346文件通过，引用1852路径/374 UID通过，`git diff --check`通过。
+
+剩余限制：Godot 原生 `AudioStreamPlayer` 在独立、无 GGF 的 MP3 播放脚本中也会报告退出时 `AudioStreamPlaybackMP3`/资源仍在使用，属于引擎退出行为；本轮没有用业务层强行释放或修改只读插件。编辑器 `ComponentInsoector` 的 `Free()` 错误是另一个插件生命周期问题，不属于本次运行时框架修复，仍按既有插件记录保留。
+
+## 火魔斩左右击退与末段命中（2026-10-31）
+
+按第10/30/50章将具体招式规则留在悟空状态，不增加通用开关、表字段或生产观测API。官方依据为同版 `Role1.addHit10And1`、`BaseMonster.beMagicAttack`、`BaseObject.beAttackBack`：九连中心与目标重合时默认右推，下冲跟随角色朝向。用户明确选择修正该原版偏置；仅删除火魔九连、下冲、落地的中心参数，沿已有出招方向击退，伤害、几何、速度大小、时序和其他招式均不改。证据与源文件备份在 `.godot/validation/fire_demon_knockback_20261031/`。
+
+- 修改前真实输入复现 `baseline`：60/120Hz×左右×猴子/大猩猩共8组，目标仅关闭AI、保留完整物理。朝左四组首击仍为右推，落地末段四组均漏打；朝右四组末段均命中。旧轨迹测试冻结目标身体，不能证明连招运动正确。该次诊断运行完成记录，关停发生原生GC `0xC0000005`，退出3221225477，不计为通过。
+- `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet`：0错误、5个既有框架警告。
+- `dotnet test Tests/BattleTests/BattleTests.csproj --no-restore -v quiet`：178/178；`dotnet test Tests/ProfileTests/ProfileTests.csproj --no-restore -v quiet -- xUnit.ParallelizeTestCollections=false`：211/211。技能状态断言覆盖三阶段不再提供中心参数，原并行时钟、取消及落地复用测试保留。
+- `python Godot/GodotProject/.godot/validation/fire_demon_knockback_20261031/run_formal.py final --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --fire-knockback-only`：退出0、8组PASS；逐物理步检查每次受击横向与施放朝向一致，九连/下冲/落地实际命中，使用隔离APPDATA。`traces/`保留逐步位置、速度、待消费击退及生命变化，`baseline/traces/`保留修复前对照。
+- `dotnet run --project Tools/ProjectMaintenance/CSharpStyle --no-restore -- <仓库根> <证据目录>/style_audit.json`：345文件、0格式差异/0缺失文档；`python Tools/ProjectMaintenance/validate_game_references.py`：1852路径/374UID通过；`git diff --check`通过，Git索引SHA不变。
+
+范围限制：本次8组是有目标的普通火魔连招，不宣称所有地形或全部技能均已重跑。最终运行仍有既有GGF WebRequest关停 `ObjectDisposedException`、12个ObjectDB实例和3个资源在退出时未释放，业务断言与进程退出0单独记录，未修改只读依赖。
+
+## 小怪血条静态布局（2026-10-31）
+
+依据第10/30/40章的表现布局、节点装配及原生场景约定，将13种小怪已在场景中实例化的血条改为本地位置，不再运行时覆盖。证据和修改前备份在`.godot/validation/static_health_bars_20261031/`；Git索引SHA保持。
+
+- `repair_monster_health_bars.gd -- --author-positions`：Godot原生作者化13场景，保留有效UID；随后只保留4个offset差异，删除重存附加的继承默认值，未改其他节点、碰撞或动画。
+- `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet`：0错误/5个既有框架警告；CSharpStyle覆盖345文件。
+- `python <证据目录>/run_formal.py monster_health --rendering-method gl_compatibility --audio-driver Dummy --max-fps 60 -- --smoketest=ui --monster-health-only`：退出0，13种小怪的比例/治疗/淡出/暂停/死亡/实体池复用通过；新增人工移动血条后再扣血及推进真实物理帧，确认本地位置不被覆盖。妖猴、蝙蝠、虾兵真实截图已查看。
+- `native_final`运行原生布局检查：13场景均50×5、直接父节点跟随、位置与原运行时公式一致；资源差异归一检查确认只变血条offset。`validate_enemy_ai_tools.gd`：20脚本解析通过；3个Python导入器AST解析通过。
+- `python Tools/ProjectMaintenance/validate_game_references.py`：最终1852路径/374UID通过；`git diff --check`通过。未改BOSS顶部HUD锚点、表、存档或只读依赖；原有编辑器释放和运行关停诊断仍单列保留。
+
+## 造一无双受击、设置音量与功能清单（2026-10-31）
+
+证据目录：`Godot/GodotProject/.godot/validation/musou_settings_20261031/`。按第00/10/30/40/50章分工，官方Role1/BaseHero/BaseAddEffect为行为依据。隔离完成后，用户明确授权应用41个已备份的项目自有文件；`delivery.json`与`backup/`记录前后SHA和回滚来源，表格、正式存档、Framework/addons及Git索引保持。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 官方素材 | 既有`export_official_combat_effects.py --java <Java> --ffdec <FFDec> --role <Role_v7> --monsters <Monster_v1> --group hero_hurt`：散列校验后原生导出8帧HeroBeHurt，保留源画布/注册点；没有重导身体、武器和伤害库。 |
+| 无双真实受击 | `python <证据目录>/run_formal.py formal_musou --rendering-method gl_compatibility --audio-driver Dummy --max-fps 60 -- --smoketest=ui --musou-hurt-only`：正式退出0、60/120Hz业务PASS。开场结束后检查仍扣血、非零击退不生效、普攻继续原进度、8帧闪光、白光优先、第五击保护及无双结束恢复角色配色；两向截图已查看。霸体规则从共享HeroSystem移到WukongEntity，普通英雄不自动继承。 |
+| 原受击保护 | 隔离同运行器`ordinary_hurt --headless --audio-driver Dummy --max-fps 60 -- --smoketest=ui --hurt-protection-only`：退出0、60/120Hz第五击、技能无敌重叠、暂停和红光到期清理通过。 |
+| 设置与前端 | 隔离`frontend_disk_final`及正式`formal_frontend`使用`--rendering-method gl_compatibility --audio-driver Dummy --max-fps 60 -- --smoketest=frontend`。覆盖地图入口、原生鼠标拖动、音乐独立、SFX/UI联动、静音恢复、零/满量程、ConfigFile实际读盘、重开恢复、战斗暂停/继续/导航、池复用。正式退出0且全部业务PASS，标题/地图/战斗截图已按最终版本查看。用户最后要求滑条收窄后，正式narrow_frontend再验证退出0/全部PASS，最终两条均为160px。 |
+| 视觉约束 | 实机断言面板326px、两条滑条160px、共同中心线、同字体尺寸与白色；帮助/导航按可见内容自适应。最初奇数内容宽度产生0.5px中心差异，修为272px后通过；不扩大断言容差掩盖对齐问题。金色初版已撤掉，最终资源为白/灰轨道与白/橙抓手。 |
+| 纯规则 | 隔离`dotnet test Tests/BattleTests/BattleTests.csproj -v quiet`：178/178；`dotnet test Tests/ProfileTests/ProfileTests.csproj -v quiet -- xUnit.ParallelizeTestCollections=false`：211/211。仅调整已迁出System的霸体断言，原倍率测试保留；没有增加生产观测API。 |
+| 构建及引用 | 正式Godot`--headless --editor --import --build-solutions --quit --no-window`：退出0、完成扫描；隔离build_delivery.log为0错误/5个既有依赖警告。`python Tools/ProjectMaintenance/validate_game_references.py`：1852路径/374UID通过；CSharpStyle覆盖345文件，0格式差异、0缺失文档；`git diff --check`通过。 |
+| 玩法缺项 | `Docs/ProjectTour.md`为唯一可勾选清单：以同版SelectRole/SelectPLace、User、Role2、GameInfo/Batter、PackThings、AllEquipment对照当前角色/技能/穿戴/装备登记，不将后续作品系统或未开放占位算成造一现成玩法。 |
+
+限制与失败记录：第40章仍记原固定高度341px，本轮依用户新增两行及适配高度的要求实现，规范正文未改。早期无双夹具未恢复身体物理导致未落地，已修测试；早期滑条缺少最小宽度、内容尺寸被缩到最小值，截图发现后修正，不将首轮失败计为通过。前端布局失败时游戏已暂停，测试驱动无法结束；只终止已确认失败的隔离进程，测试catch补对称恢复暂停后最终重跑。自动审批曾两次拒绝正式写入，用户明确批准后才应用。前端的旧作用域检查点错误为既有故障注入预期；运行关停仍有GGF WebRequest ObjectDisposedException、编辑器退出仍有ComponentInsoector释放错误及RID/ObjectDB诊断，未修只读依赖，不把业务PASS称为无错误日志。
+
 ## 敌人行为命名、原版空间与碰撞显示（2026-10-30）
 
 本轮证据目录：`Godot/GodotProject/.godot/validation/enemy_ai_review_20261030/`。隔离工程先完成修改与回归，再经正式Godot编辑器应用；`delivery_manifest.json`、`formal_backup/`保留本轮100条文件操作及修改前内容。Git索引SHA与起点相同。

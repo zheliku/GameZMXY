@@ -361,17 +361,17 @@ namespace GameLogic.Battle.Tests
         {
             var scope = new HeroTestScope();
             var config = BattleArchitecture.Instance.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbBattleConfig.Data;
-            Assert.Equal((1f, 1f, 1f, 1f, false), (scope.System.MoveSpeedMultiplier,
-                scope.System.JumpSpeedMultiplier, scope.System.GravityMultiplier, scope.System.AttackPowerMultiplier, scope.System.SuperArmor));
+            Assert.Equal((1f, 1f, 1f, 1f), (scope.System.MoveSpeedMultiplier,
+                scope.System.JumpSpeedMultiplier, scope.System.GravityMultiplier, scope.System.AttackPowerMultiplier));
             scope.System.ResetWs(100, 1f, 6f);
             scope.System.AddWs(100);
             Assert.True(scope.System.TryActivateWs());
             Assert.Equal((config.WsMoveSpeedMultiplier, config.WsJumpSpeedMultiplier, config.WsGravityMultiplier,
-                config.WsAttackMultiplier, true), (scope.System.MoveSpeedMultiplier, scope.System.JumpSpeedMultiplier,
-                scope.System.GravityMultiplier, scope.System.AttackPowerMultiplier, scope.System.SuperArmor));
+                config.WsAttackMultiplier), (scope.System.MoveSpeedMultiplier, scope.System.JumpSpeedMultiplier,
+                scope.System.GravityMultiplier, scope.System.AttackPowerMultiplier));
             scope.System.ClearWs();
-            Assert.Equal((1f, 1f, 1f, 1f, false), (scope.System.MoveSpeedMultiplier,
-                scope.System.JumpSpeedMultiplier, scope.System.GravityMultiplier, scope.System.AttackPowerMultiplier, scope.System.SuperArmor));
+            Assert.Equal((1f, 1f, 1f, 1f), (scope.System.MoveSpeedMultiplier,
+                scope.System.JumpSpeedMultiplier, scope.System.GravityMultiplier, scope.System.AttackPowerMultiplier));
         }
     }
 }

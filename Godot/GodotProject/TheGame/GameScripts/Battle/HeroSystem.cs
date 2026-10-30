@@ -41,24 +41,13 @@ namespace GameLogic.Battle
         }
 
         /// <summary>
-        /// 无双当前是否提供霸体，供身体状态机查询。
-        /// </summary>
-        public bool SuperArmor
-        {
-            get
-            {
-                return this.GetModel<HeroModel>().WsActive.Value;
-            }
-        }
-
-        /// <summary>
         /// 当前横向移动倍率，不改写共享角色参数。
         /// </summary>
         public float MoveSpeedMultiplier
         {
             get
             {
-                return SuperArmor
+                return Hero.WsActive.Value
             ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.WsMoveSpeedMultiplier
             : 1f;
             }
@@ -71,7 +60,7 @@ namespace GameLogic.Battle
         {
             get
             {
-                return SuperArmor
+                return Hero.WsActive.Value
             ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.WsJumpSpeedMultiplier
             : 1f;
             }
@@ -84,7 +73,7 @@ namespace GameLogic.Battle
         {
             get
             {
-                return SuperArmor
+                return Hero.WsActive.Value
             ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.WsGravityMultiplier
             : 1f;
             }
@@ -97,7 +86,7 @@ namespace GameLogic.Battle
         {
             get
             {
-                return SuperArmor
+                return Hero.WsActive.Value
             ? this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.WsAttackMultiplier
             : 1f;
             }

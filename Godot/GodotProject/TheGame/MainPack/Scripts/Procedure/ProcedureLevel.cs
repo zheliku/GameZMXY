@@ -249,7 +249,14 @@ public class ProcedureLevel : ProcedureBase
         }
         else
         {
-            // 关停：进程即将结束，只解除本作用域订阅；磁盘上仍是上一个检查点。
+            // 窗口退订仍需访问本流程模型，必须在流程FSM被销毁前关闭；不提交存档或回滚。
+            CloseForms();
+            if (m_MusicSerial != 0)
+            {
+                GF.Sound.StopSound(m_MusicSerial, 0f);
+                m_MusicSerial = 0;
+            }
+
             m_LevelViewController?.UnsubscribeProgressEvents();
         }
 
@@ -499,47 +506,13 @@ public class ProcedureLevel : ProcedureBase
             GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         }
         // 模态窗口先解除暂停和运行订阅，再清理 HUD、实体及关卡事务。
-        if (HasWindow(m_InventorySerialId))
-        {
-            GF.UI.CloseUIForm(m_InventorySerialId);
-        }
-
-        if (HasWindow(m_SkillSerialId))
-        {
-            GF.UI.CloseUIForm(m_SkillSerialId);
-        }
-
-        if (HasWindow(m_SettlementSerialId))
-        {
-            GF.UI.CloseUIForm(m_SettlementSerialId);
-        }
-
-        m_InventorySerialId = m_SkillSerialId = m_SettlementSerialId = 0;
-        if (m_SettingsSerialId != 0 &&
-            (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
-        {
-            GF.UI.CloseUIForm(m_SettingsSerialId);
-        }
-
-        m_SettingsSerialId = 0;
+        CloseForms();
         if (m_MusicSerial != 0)
         {
             GF.Sound.StopSound(m_MusicSerial, 0.2f);
         }
 
         m_MusicSerial = 0;
-
-        // 先关 HUD（退订英雄/成长/关卡）再拆会话，避免界面在已清理的引用上刷新。
-        if (m_BattleFormSerialId != 0)
-        {
-            if (GF.UI.HasUIForm(m_BattleFormSerialId) || GF.UI.IsLoadingUIForm(m_BattleFormSerialId))
-            {
-                GF.UI.CloseUIForm(m_BattleFormSerialId);
-                Log.Info("[ProcedureLevel] 战斗 HUD 关闭：{0}", m_BattleFormSerialId);
-            }
-
-            m_BattleFormSerialId = 0;
-        }
 
         if (GF.Event.Check(OpenUIFormFailureEventArgs.EventId, OnBattleFormOpenFailed))
         {
@@ -586,6 +559,23 @@ public class ProcedureLevel : ProcedureBase
         {
             m_LevelScenePath = null;
         }
+    }
+
+    /// <summary>
+    /// 在模型和流程仍有效时关闭本关拥有的窗口与在途请求；关停与普通离关共用相同顺序。
+    /// </summary>
+    private void CloseForms()
+    {
+        foreach (int serialId in new[]
+                 { m_InventorySerialId, m_SkillSerialId, m_SettlementSerialId, m_SettingsSerialId, m_BattleFormSerialId })
+        {
+            if (HasWindow(serialId))
+            {
+                GF.UI.CloseUIForm(serialId);
+            }
+        }
+
+        m_InventorySerialId = m_SkillSerialId = m_SettlementSerialId = m_SettingsSerialId = m_BattleFormSerialId = 0;
     }
 
     /// <summary>

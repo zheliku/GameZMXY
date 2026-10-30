@@ -54,6 +54,9 @@ namespace GameLogic.UI
                 m_Continue.Pressed += OnContinueClicked;
                 m_Close.Pressed += OnCloseClicked;
                 m_Sound.Pressed += OnSoundClicked;
+                m_MusicVolume.ValueChanged += OnMusicVolumeChanged;
+                m_EffectVolume.ValueChanged += OnEffectVolumeChanged;
+                m_EffectVolume.DragEnded += OnEffectDragEnded;
                 m_ReturnMap.Pressed += OnReturnMapClicked;
                 m_ReturnTitle.Pressed += OnReturnTitleClicked;
                 m_Help.Pressed += OnHelpClicked;
@@ -245,12 +248,15 @@ namespace GameLogic.UI
         {
             bool battle = m_InBattle;
             m_HelpText.Visible = m_ShowingHelp;
-            m_Sound.Visible = m_Help.Visible = !m_ShowingHelp;
+            m_AudioPanel.Visible = m_Help.Visible = !m_ShowingHelp;
             m_ReturnMap.Visible = m_ReturnTitle.Visible = battle && !m_ShowingHelp;
             m_Continue.Text = m_ShowingHelp ? "返回设置" : battle ? "继续游戏" : "返回游戏";
-            m_Continue.Position = new Vector2(19, battle || m_ShowingHelp ? 62 : 96);
-            m_Sound.Position = new Vector2(19, battle ? 114 : 156);
-            m_Help.Position = new Vector2(19, battle ? 218 : 216);
+            // 容器按可见行计算高度，九宫格保留原笔刷边缘，不拉伸字体与关闭图。
+            m_Content.Size = new Vector2(272, m_Content.GetCombinedMinimumSize().Y);
+            m_Scroll.Size = new Vector2(326, m_Content.Size.Y + 84);
+            m_Scroll.Position = (Size - m_Scroll.Size) / 2;
+
+
         }
 
         /// <summary>
@@ -259,6 +265,10 @@ namespace GameLogic.UI
         private void RefreshSoundSettings()
         {
             m_Sound.Text = SoundEnabled() ? "关闭声音" : "打开声音";
+            float music = GF.Sound.GetSoundGroup(SoundComponent.DefaultMusicGroup).Volume;
+            float effect = GF.Sound.GetSoundGroup(SoundComponent.DefaultSfxGroup).Volume;
+            m_MusicVolume.SetValueNoSignal(Math.Round(music * 100));
+            m_EffectVolume.SetValueNoSignal(Math.Round(effect * 100));
         }
 
         /// <summary>
@@ -267,7 +277,7 @@ namespace GameLogic.UI
         /// <returns>任一声音组音量大于零时为 true。</returns>
         private static bool SoundEnabled()
         {
-            return GF.Sound.GetSoundGroup("Music").Volume > 0 || GF.Sound.GetSoundGroup("SFX").Volume > 0 || GF.Sound.GetSoundGroup("UI").Volume > 0;
+            return GF.Sound.GetSoundGroup(SoundComponent.DefaultMusicGroup).Volume > 0 || GF.Sound.GetSoundGroup(SoundComponent.DefaultSfxGroup).Volume > 0 || GF.Sound.GetSoundGroup(SoundComponent.DefaultUiGroup).Volume > 0;
         }
 
         /// <summary>
@@ -281,9 +291,9 @@ namespace GameLogic.UI
             }
 
             bool mute = SoundEnabled();
-            SetMuted("Music", mute, 0.7f);
-            SetMuted("SFX", mute, 1f);
-            SetMuted("UI", mute, 1f);
+            SetMuted(SoundComponent.DefaultMusicGroup, mute, 0.7f);
+            SetMuted(SoundComponent.DefaultSfxGroup, mute, 1f);
+            SetMuted(SoundComponent.DefaultUiGroup, mute, 1f);
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
             RefreshSoundSettings();
         }
@@ -304,6 +314,62 @@ namespace GameLogic.UI
             }
 
             GF.Sound.SetVolume(group, mute ? 0 : GF.Setting.GetFloat(key, defaultVolume));
+        }
+
+        /// <summary>
+        /// 原生滑条即时调整背景音乐，设置存储和在播代理由GGF同步。
+        /// </summary>
+        /// <param name="value">0～100的百分比。</param>
+        private void OnMusicVolumeChanged(double value)
+        {
+            if (!GF.UI.HasUIForm(SerialId))
+            {
+                return;
+            }
+            SetGroupVolume(SoundComponent.DefaultMusicGroup, value);
+            RefreshSoundSettings();
+        }
+
+        /// <summary>
+        /// 游戏效果与界面反馈共用一条音效滑条，两组仍由GGF分别管理。
+        /// </summary>
+        /// <param name="value">0～100的百分比。</param>
+        private void OnEffectVolumeChanged(double value)
+        {
+            if (!GF.UI.HasUIForm(SerialId))
+            {
+                return;
+            }
+            SetGroupVolume(SoundComponent.DefaultSfxGroup, value);
+            SetGroupVolume(SoundComponent.DefaultUiGroup, value);
+            RefreshSoundSettings();
+        }
+
+        /// <summary>
+        /// 拖动结束试听一次菜单反馈，避免移动中反复叠加音效。
+        /// </summary>
+        /// <param name="changed">本次拖动是否改变数值。</param>
+        private void OnEffectDragEnded(bool changed)
+        {
+            if (changed && GF.UI.HasUIForm(SerialId))
+            {
+                GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            }
+        }
+
+        /// <summary>
+        /// 保存当前音量及有效恢复值，关闭声音后可恢复用户最后选定的响度。
+        /// </summary>
+        /// <param name="group">GGF声音组。</param>
+        /// <param name="percent">0～100的百分比，越界钳制。</param>
+        private static void SetGroupVolume(string group, double percent)
+        {
+            float volume = (float)Math.Clamp(percent / 100d, 0d, 1d);
+            if (volume > 0)
+            {
+                GF.Setting.SetFloat($"{group}.VolumeBeforeMute", volume);
+            }
+            GF.Sound.SetVolume(group, volume);
         }
 
         /// <summary>
