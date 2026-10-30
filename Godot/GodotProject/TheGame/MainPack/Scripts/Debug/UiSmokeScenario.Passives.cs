@@ -33,10 +33,27 @@ public sealed partial class UiSmokeScenario
         var form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(form => form.Visible);
         form.GetNode<TextureButton>("Content/Footer/m_Passive").EmitSignal(BaseButton.SignalName.Pressed);
         const string rows = "Content/m_PassivePage/m_PassiveRows/";
-        var firstButton = form.GetNode<Button>(rows + "Passive1/Upgrade");
+        var firstButton = form.GetNode<TextureButton>(rows + "Passive1/Upgrade");
         Check(!firstButton.Disabled && firstButton.MouseDefaultCursorShape == Control.CursorShape.PointingHand,
             "被动升级仍没有真实可点击按钮");
-        firstButton.EmitSignal(BaseButton.SignalName.Pressed);
+        // 原生鼠标事件检查普通、悬停、按下三态；松开后执行真实余额不足请求。
+        var viewport = m_Driver.GetViewport();
+        Vector2 outside = new(900, 570);
+        viewport.PushInput(new InputEventMouseMotion { Position = outside, GlobalPosition = outside }, true);
+        await WaitFramesAsync(3);
+        Check(!firstButton.IsHovered(), "升级按钮普通态仍然悬停");
+        await CaptureCombatAsync("passive_upgrade_normal");
+        Vector2 pointer = firstButton.GetGlobalRect().GetCenter();
+        viewport.PushInput(new InputEventMouseMotion { Position = pointer, GlobalPosition = pointer }, true);
+        await WaitFramesAsync(3);
+        Check(firstButton.IsHovered() && !firstButton.ButtonPressed, "升级按钮未切到悬停状态");
+        await CaptureCombatAsync("passive_upgrade_hover");
+        viewport.PushInput(new InputEventMouseButton { Position = pointer, GlobalPosition = pointer, ButtonIndex = MouseButton.Left, Pressed = true }, true);
+        await WaitFramesAsync(3);
+        Check(firstButton.ButtonPressed, "升级按钮原生按下状态没有生效");
+        await CaptureCombatAsync("passive_upgrade_pressed");
+        viewport.PushInput(new InputEventMouseButton { Position = pointer, GlobalPosition = pointer, ButtonIndex = MouseButton.Left, Pressed = false }, true);
+        await WaitFramesAsync(3);
         Check(profile.Soul.Value == 4999 && levels[PassiveId.Vitality] == 0 &&
             GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().Visible,
             "被动余额不足仍然扣费，或没有显示提示");
@@ -45,7 +62,7 @@ public sealed partial class UiSmokeScenario
         foreach (var definition in flow.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbPassiveConfig.DataList)
         {
             int row = (int)definition.PassiveId;
-            var button = form.GetNode<Button>($"{rows}Passive{row}/Upgrade");
+            var button = form.GetNode<TextureButton>($"{rows}Passive{row}/Upgrade");
             foreach (var definitionLevel in definition.Levels)
             {
                 button.EmitSignal(BaseButton.SignalName.Pressed);
@@ -56,7 +73,7 @@ public sealed partial class UiSmokeScenario
                     form.GetNode<Label>($"{rows}Passive{row}/CurrentEffect").Text == definitionLevel.Description,
                     "被动升级后当前等级/总效果没有同步刷新");
             }
-            Check(button.Disabled && button.Text == "已满级", "被动满级后仍然可升级");
+            Check(button.Disabled && !button.Visible, "被动满级后仍然显示升级按钮或可升级");
             button.EmitSignal(BaseButton.SignalName.Pressed);
             Check(profile.Soul.Value == expectedSoul, "直接发送满级按钮信号仍然扣费");
         }

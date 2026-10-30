@@ -1,5 +1,5 @@
 extends SceneTree
-## Every location uses the same normal/hover canvas center; capture real drawing.
+## Validate registered origins, full alpha margins and real drawing across the map.
 
 const LOCATIONS := {
     "Huaguoshan": "location", "Shuiliandong": "shuiliandong", "Taohuayuan": "taohuayuan",
@@ -24,12 +24,21 @@ func _validate() -> void:
         button.disabled = false
         var glow: TextureRect = button.get_node("LocationGlow")
         assert(glow.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_CENTERED)
-        assert(glow.size.is_equal_approx(button.size) and glow.pivot_offset.is_equal_approx(button.size * .5))
-        if name == "Shazhiwoliu":
-            var texture: Texture2D = glow.texture
-            var vortex := Vector2(180.5, 112) + Vector2(15, 37)
-            assert(vortex.distance_to(texture.get_size() * .5) < .01, "Shark vortex source origin shifted")
-            assert(texture.get_image().get_size() == Vector2i(texture.get_size()), "Registered alpha mask must retain its transparent margins")
+        var image: Image = glow.texture.get_image()
+        var used := image.get_used_rect()
+        assert(used.position.x >= 6 and used.position.y >= 6 and used.end.x <= image.get_width() - 6 and used.end.y <= image.get_height() - 6,
+            "Hover filter reaches a canvas edge: " + name)
+        if name in ["Qianan", "Donghai", "Shazhiwoliu"]:
+            var official: Vector2 = {"Qianan": Vector2(460, 373.15), "Donghai": Vector2(612.7, 418.85), "Shazhiwoliu": Vector2(766.55, 500.15)}[name]
+            assert((button.position + button.pivot_offset).distance_to(official) < .01, "Official coast origin shifted: " + name)
+            assert(glow.size.is_equal_approx(glow.texture.get_size()) and glow.scale == Vector2.ONE,
+                "Coastal image must retain official pixel scale")
+            assert(button.texture_click_mask != null)
+            var hint: Sprite2D = button.get_node("CurrentHint")
+            assert(hint.position.distance_to(button.size * .5) < .01 and hint.scale.is_equal_approx(Vector2.ONE),
+                "Current registration mismatch %s: hint=%s size=%s scale=%s" % [name, hint.position, button.size, hint.scale])
+        else:
+            assert((glow.position + glow.size * .5).distance_to(button.size * .5) < .01)
         player.play(LOCATIONS[name] + "/RESET")
         player.advance(0)
     await process_frame
@@ -57,5 +66,5 @@ func _validate() -> void:
         player.play(LOCATIONS[name] + "/RESET")
         player.advance(0)
     form.free()
-    print("MAP ALIGNMENT VALIDATION PASS: 10 normal/hover centers, native alpha hit regions, all location captures")
+    print("MAP ALIGNMENT VALIDATION PASS: 10 registered origins, padded filter margins, native hit regions, all location captures")
     quit()

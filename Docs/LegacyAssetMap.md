@@ -2,6 +2,18 @@
 
 旧项目 `P:/Godot-Project/ZMXY_BHYH` 只读。下表旧路径相对旧工程，新路径相对 `Godot/GodotProject/TheGame/`；PNG/音频/字体原样复制，不迁入旧脚本或 `.import`。官方包、散列与玩法依据见 [OfficialReference](OfficialReference.md)。
 
+## 敌人注册与判定修复的重导顺序
+
+源文件散列先经`audit_official_enemy_fidelity.py`核对。旧导入器只负责源素材初始装配，已有人工调整的动画不能无差别覆盖。确需重导时，先暂存并审阅差异，再执行以下作者流程；完整命令及结果集中在Validation。
+
+- 海怪/地面怪从原始动作manifest导出后，用`prepare_grounded_enemy_art.py`读取海怪注册manifest并以`--extra-manifest`加入地面怪manifest；它只修正虾兵、龟、蟹、猴子、大猩猩的已核实注册，保留稳定SpriteFrames UID。`apply_grounded_enemy_art.gd`只绑定图集和偏移，保留原生方法轨道。
+- 用`prepare_enemy_fidelity_geometry.py`读取Monster2完整XML和海怪注册manifest生成四冰柱计划，再由`repair_enemy_fidelity.gd`原生保存45帧四形状及复位轨道；不能重新使用旧union框。
+- `repair_monster_health_bars.gd`检查全部13个小怪；原始敌人草稿生成后运行`register_enemy_perception.gd`，经共用作者工具装配Detection/Engage/Patrol及物种专属范围。已有Perception不重写几何；跨工程作者化后可加`-- --refresh-bindings`，仅原生重存外部UID绑定。各海怪/首领注册工具已接入同一装配；旧Python原始草稿不能作为最终资源直接运行。
+- `apply_enemy_detection_ranges.gd`只在明确重导时按源码报告的`sight_range/attack_range`写入24个首次发现矩形；宽度不再从Enemy表读取。运行时场景是唯一空间来源，实际命中轨道仍独立。末尾补跑`validate_enemy_perception.gd`和`validate_enemy_ai_tools.gd`检查24场景与受影响作者工具。
+- 最后完整`--headless --editor --import`，等导入扫描结束后再跑`validate_enemy_fidelity.gd`、`render_enemy_grounding.gd`和真实烟测。PNG紧凑重排后若沿用旧导入纹理尺寸会出现破碎图，不能据该缓存预览再裁源素材。
+
+动作修正不移动物理根：虾兵待机+8px；死亡保留前三帧，再在7帧内过渡到最终修正：虾+8、龟壳+22、猴+8、大猩猩−8、蟹−16。原版抬脚/腾空/翻转保留，不能按每帧非透明边缘强行贴地。
+
 ## 角色、关卡与 HUD
 
 ### 隐藏龙宫（官方9-1）
@@ -42,7 +54,7 @@
 | --- | --- |
 | `Scenes/Levels/zm1_09_shark_whirlpool/level_9.tscn`、同名贴图目录 | GameSence 3-3：前景/地形、16条生成流、5个重叠战斗区域、9道独立门；`export_official_remaining_level_layers.py` → `import_official_sea_level.gd -- <all_levels.json> 3-3 9 zm1_09_shark_whirlpool shark_whirlpool` |
 | 鲨魔王、召唤鲨鱼、鲨波/水牢/旋风/斩击 | Monster2_v4 的 Monster18/19 及五组嵌套效果；`export_official_sea_monsters.py --only 18 19` → `import_official_sea_monsters.py` → `register_shark_actor_resources.gd`。鲨魔王高低生命动作、一次性召唤、效果所有权与召唤失败出口由本关实体分支负责 |
-| `Sprites/UI/frontend/map_shazhiwoliu_current.png` 与外置地点动画 | OtherMat_v9 元件477，48帧原版旋转时间轴；`export_official_map_hints.py --only shazhiwoliu` → `register_official_map_location.gd -- shazhiwoliu Location9 m_Shazhiwoliu 鲨之涡流 48`，不能套用19帧地点提示 |
+| `Sprites/UI/frontend/map_shazhiwoliu_*` 与外置地点动画 | OtherMat_v9元件478的三状态及477的48帧旋转；走export_official_coastal_map.py与apply_official_coastal_map.gd。SelectPlace父(766.55,500.15)、Y缩放0.5322113必须烘入图片，恢复源字图比例；不得再套普通居中缩小或19帧提示。旧hover_registered图已删除 |
 
 ### 第九关鲨之涡流（官方 3-3）装备
 
@@ -58,7 +70,7 @@
 | `Scenes/Levels/zm1_08_east_sea/level_8.tscn`、同名关卡贴图目录 | GameSence 3-2：前景239、地形122（导出31122）、海域天空17，五阶段24流、七矩形含四平台；`export_official_remaining_level_layers.py` → `import_official_sea_level.gd -- <all_levels.json> 3-2 8 zm1_08_east_sea east_sea` |
 | 鲛魔王、龙波、背击反馈与灯笼鱼 | Monster2_v4的Monster10/20及Boss5Bullet1(sprite1194)、Monster10BeAttack(sprite1165)，共280源帧；`export_official_sea_monsters.py --only 10 20` → `import_official_sea_monsters.py` → `register_east_sea_resources.gd`。鲛魔王图集以region/margin压紧存储，保留统一虚拟画布；死亡复用同一官方BossDead |
 | `Sprites/Items/equipment/{equipment,ground}_blood_sea_shell.png` | OtherMat_v9图元38/37；`export_official_equipment.py --only blood_sea_shell` → `register_east_sea_resources.gd`，通用饰品无悟空穿戴动作层 |
-| `Sprites/UI/frontend/map_donghai_current.png`与外置地点动画 | OtherMat_v9元件467、19帧；`export_official_map_hints.py --only donghai` → `register_official_map_location.gd -- donghai Location8 m_Donghai 东海`。透明扩边模板排除所有位图填充，避免夹带无关UI |
+| `Sprites/UI/frontend/map_donghai_*`与外置地点动画 | OtherMat_v9的SelectPlace.s3_2：父(612.7,418.85)、三状态原始矩阵、元件467的19帧；`export_official_coastal_map.py` → `apply_official_coastal_map.gd`。普通画面透明，点击mask来自形状453经本状态变换后的区域；hover/current共用注册画布，不套居中缩小 |
 
 ### 第七关浅岸（官方 3-1）
 
@@ -68,7 +80,7 @@
 | 海怪 `Monsters/Sea/<物种>/` 场景、动画与贴图 | Monster2_v4 的Monster14/16/17；`export_official_sea_monsters.py` → `import_official_sea_monsters.py` → `register_sea_actor_resources.gd`。272帧保留父级矩阵和统一注册点；虾兵弹体来自sprite39，潮汐妖不生成未调用的飞刀；鲨鱼召唤物也归Sea，保留独立垂直运动 |
 | `Sprites/Items/equipment/{equipment,ground}_excellent_{pilgrim_clothes,pilgrim_staff,cassock,pine_staff}.png` | OtherMat_v9 背包/地面图元50/27、58/32、46/23、53/62；`export_official_equipment.py` → `register_sea_equipment.gd`，使用独立透明前景 |
 | `Sprites/Characters/Heroes/wukong/wukong_{body,weapon}_excellent.png` | Role_v7 身体/武器selector3，每层166姿态，含51个完整基础动作帧；既有装备导出/导入流程，独立层和统一原点 |
-| `Sprites/UI/frontend/map_qianan_current.png`与外置地点动画 | OtherMat_v9 元件459，19帧完整官方光晕；`export_official_map_hints.py --only qianan` → `register_official_map_location.gd`，按原地点尺寸适配，不把原生图集大画布直接叠到按钮上 |
+| `Sprites/UI/frontend/map_qianan_*`与外置地点动画 | OtherMat_v9的SelectPlace.s3_1：父(460,373.15)、三状态原始矩阵、元件459的19帧；与东海同一沿海导出/作者流程，保留完整20px悬停光晕和透明输入形状，图集1:1显示 |
 
 ### 第六关迦楼罗之穴（官方 2-3）
 
@@ -448,7 +460,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 ## 造一技能面板
 
-`Sprites/UI/skills/` 的 34 张图片由 `Tools/LegacyMigration/export_official_skill_ui.py` 直接从上述官方 `OtherMat_v9.swf` 导出，没有截图、重绘或迁入旧逻辑。脚本检查恢复后的 SHA-256，使用 FFDec 原生 PNG 渲染保留位图图案和透明度；简单按钮按原始 Up/Over 显示列表导出。
+`Sprites/UI/skills/` 的 37 张图片由 `Tools/LegacyMigration/export_official_skill_ui.py` 直接从上述官方 `OtherMat_v9.swf` 导出，没有截图、重绘或迁入旧逻辑。脚本检查恢复后的 SHA-256，使用 FFDec 原生 PNG 渲染保留位图图案和透明度；简单按钮按原始 Up/Over 显示列表导出，升级字图保留原始像素。
 
 | 原元件 | 新资源 | 状态 / 尺寸 |
 | --- | --- | --- |
@@ -456,10 +468,11 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | sprite 585 | `skills_table_active.png` / `skills_table_passive.png` | 第 1/2 帧，746×429 表格 |
 | sprite 382 / 386 | `skills_wukong_*` / `skills_sanzang_*` | 第 3 帧灰色未选中、第 2 帧彩色选中；两页均可查看 |
 | button 295 / 657 / 653 | `skills_back_*` / `skills_active_*` / `skills_passive_*` | 普通与悬停 |
+| bitmap 569 / button 571 | `skills_upgrade_normal/hover/pressed.png` | 原始48×26彩色文字；共用48×31画布，悬停向下5px、按下回原位，与官方三态一致 |
 | sprite 594/599/604/609/614 | 五项悟空 `skill_*_unlearned/learned.png` | 第 1 帧灰色含“学习”、第 2 帧彩色，65×65 |
 | sprite 624/629/634/639/644 | 五项唐僧 `skill_*_unlearned/learned.png` | 同上；629 对应玄冰阵 |
 
-原点取 `BuySkill`、`SkillControl` 和子元件矩阵：角色页签 `(89.35,6.85)` / `(228.35,5.85)`、返回 `(854,15.05)`、表格左上 `(100,85)`。十行主动与五行被动直接位于技能主场景，以 GridContainer 对齐，不使用行子场景；唐僧长说明在行内 MarginContainer + Label 控制留白和换行。预填文本和图标仅供编辑预览，运行时读取正式技能表覆盖。当前全部技能展示未学习状态，图标和升级字样不提交购买。
+原点取 `BuySkill`、`SkillControl` 和子元件矩阵：角色页签 `(89.35,6.85)` / `(228.35,5.85)`、返回 `(854,15.05)`、表格左上 `(100,85)`。十行主动与五行被动直接位于技能主场景，以 GridContainer 对齐，不使用行子场景；唐僧长说明在行内 MarginContainer + Label 控制留白和换行。预填文本和图标仅供编辑预览，运行时读取正式技能表覆盖。悟空主动学习和共用被动购买已接入Command/System；被动满级按原版隐藏升级按钮。
 
 ## 悟空造一技能动作与声音
 

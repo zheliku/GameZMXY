@@ -1,5 +1,8 @@
 [gd_scene format=3 uid="uid://b3s5gqxf64m3h"]
 
+[ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="4_3ey84"]
+[ext_resource type="PackedScene" uid="uid://caauui8brtx47" path="res://TheGame/UIs/Battle/monster_health_bar.tscn" id="5_35xga"]
+[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/BattleForm/Components/ResourceBar.cs" id="6_3ey84"]
 [ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/bull_guard/bull_guard_official_frames.tres" id="frames"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
 [ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/bull_guard/bull_guard_library.tres" id="library"]
@@ -15,18 +18,34 @@ size = Vector2(46.018982, 86.017456)
 [sub_resource type="RectangleShape2D" id="empty"]
 size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="detector"]
-size = Vector2(600, 1000)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_35xga"]
+size = Vector2(600, 220)
 
-[node name="BullGuardEntity" type="CharacterBody2D" unique_id=1158451545 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_oa36x"]
+size = Vector2(220, 440)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_3ey84"]
+a = Vector2(-400, 0)
+b = Vector2(400, 0)
+
+[sub_resource type="Gradient" id="Gradient_fill"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fill"]
+gradient = SubResource("Gradient_fill")
+width = 50
+height = 5
+
+[node name="BullGuardEntity" type="CharacterBody2D" unique_id=1158451545 node_paths=PackedStringArray("m_Perception", "m_HealthBar", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("script")
-m_Detector = NodePath("m_Detector")
+m_Perception = NodePath("Perception")
 m_EnemyEntityId = 25
+m_HealthBar = NodePath("m_HealthBar")
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
 m_AttackAnimations = PackedStringArray("attack_1")
@@ -42,6 +61,7 @@ offset = Vector2(-7, -14.5)
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=4852277]
 position = Vector2(0.2, 3.35)
 shape = SubResource("body_shape")
+debug_color = Color(0.58, 0.64, 0.72, 0.12)
 
 [node name="m_HurtBox" type="Area2D" parent="." unique_id=1681643317 node_paths=PackedStringArray("m_Owner")]
 collision_layer = 32
@@ -53,6 +73,7 @@ m_Owner = NodePath("..")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=960489563]
 position = Vector2(0.2, 3.35)
 shape = SubResource("hurt_shape")
+debug_color = Color(0.3, 0.66, 0.62, 0.14)
 
 [node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=1732109452]
 
@@ -64,14 +85,42 @@ monitorable = false
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1538684941]
 shape = SubResource("empty")
 disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="m_Detector" type="Area2D" parent="." unique_id=729028976]
+[node name="Perception" type="Area2D" parent="." unique_id=729028976 node_paths=PackedStringArray("m_DetectionShape", "m_EngageShape", "m_PatrolShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
+script = ExtResource("4_3ey84")
+m_DetectionShape = NodePath("Detection")
+m_EngageShape = NodePath("Engage")
+m_PatrolShape = NodePath("Patrol")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=2107263289]
-shape = SubResource("detector")
+[node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=2107263289]
+shape = SubResource("RectangleShape2D_35xga")
+debug_color = Color(0.36, 0.58, 0.8, 0.035)
+
+[node name="Engage" type="CollisionShape2D" parent="Perception" unique_id=1915271308]
+shape = SubResource("RectangleShape2D_oa36x")
+disabled = true
+debug_color = Color(0.85, 0.65, 0.35, 0.045)
+
+[node name="Patrol" type="CollisionShape2D" parent="Perception" unique_id=466569239]
+shape = SubResource("SegmentShape2D_3ey84")
+disabled = true
+debug_color = Color(0.45, 0.62, 0.48, 0.03)
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=2064546278]
 libraries/ = ExtResource("library")
+
+[node name="m_HealthBar" type="TextureProgressBar" parent="." unique_id=1080627049 instance=ExtResource("5_35xga")]
+z_index = 10
+offset_right = 50.0
+offset_bottom = 5.0
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+value = 1.0
+texture_progress = SubResource("GradientTexture2D_fill")
+tint_progress = Color(1, 0, 0, 1)
+script = ExtResource("6_3ey84")

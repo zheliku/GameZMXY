@@ -10,8 +10,7 @@ namespace GameLogic.Enemies
     public partial class MacaqueKingEntity : AbstractBossEntity
     {
         private static readonly EnemyAiPreset m_Preset = new(typeof(MacaqueKingEngageState), typeof(MacaqueKingEngageState),
-            () => new MacaqueKingEngageState(),
-            () => new CcLockedState(), () => new DeathState()); // 每只猕猴王建立独立 AI 状态。
+            () => new MacaqueKingEngageState()); // 每只猕猴王建立独立 AI 状态。
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset

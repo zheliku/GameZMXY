@@ -211,6 +211,11 @@ public sealed class FrontendSmokeScenario
                 "选角到地图更换了档案作用域");
             Check(!Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "点击花果山之前已创建关卡");
             await CaptureAsync("map_form");
+            if (OS.GetCmdlineUserArgs().Contains("--map-coast-only"))
+            {
+                await CheckCoastalMapAsync(map);
+                return;
+            }
             TextureButton location = map.GetNode<TextureButton>("m_Huaguoshan");
             Check(location.TextureNormal.ResourcePath.EndsWith("map_huaguoshan_normal.png", StringComparison.Ordinal), "花果山未使用原项目地点图片");
             Check(location is MapLocationButton, "花果山未使用随显示图像变化的命中控件");
@@ -849,6 +854,54 @@ public sealed class FrontendSmokeScenario
         // 绑定结果同步提交，GGF 的一次性保存成功事件在下一轮分发。
         await WaitUntilAsync(() => feedback.Visible && animation.IsPlaying(), "再次保存成功事件未显示提示");
         Check(feedback.Text == "保存成功！" && Mathf.IsEqualApprox(feedback.Modulate.A, 1f), "再次实际保存未刷新提示或沿用旧透明度");
+    }
+
+    /// <summary>
+    /// 以真实鼠标从透明输入区进入浅岸、东海及鲨之涡流，并经设置返回地图验证重入。
+    /// </summary>
+    /// <param name="map">本轮地图窗口。</param>
+    /// <returns>三处海域地点的点击与真实关卡进入任务。</returns>
+    private async Task CheckCoastalMapAsync(MapForm map)
+    {
+        var profile = GF.Fsm.GetSystem<ProfileSystem>();
+        for (int id = 1; id <= 6; id++)
+        {
+            profile.RecordLevelClear(id);
+        }
+        foreach (var (name, id) in new[] { ("Qianan", 7), ("Donghai", 8), ("Shazhiwoliu", 9) })
+        {
+            var button = map.GetNode<TextureButton>("m_" + name);
+            Check(!button.Disabled && button.TextureClickMask != null, "沿海地点未开放或缺少官方透明点击区");
+            await MoveMouseAsync(new Vector2(30, 30));
+            // 官方透明输入形状经过各自的缩放和平移，中心不等于沿海大画布中心。
+            Vector2 point = name switch
+            {
+                "Qianan" => new Vector2(450, 329.1f),
+                "Donghai" => new Vector2(556.7f, 435.5f),
+                _ => new Vector2(766.55f, 500.15f),
+            };
+            await MoveMouseAsync(point);
+            var animation = map.GetNode<AnimationPlayer>("m_LocationAnimation");
+            for (int sample = 0; sample <= 4; sample++)
+            {
+                animation.Seek(sample / 4d, true);
+                await MoveMouseAsync(point);
+                Check(m_Driver.GetViewport().GuiGetHoveredControl() == button &&
+                    button.GetNode<TextureRect>("LocationGlow").Visible, "透明岸内不能稳定保持悬停：" + name);
+            }
+            await CaptureAsync("map_" + name.ToLowerInvariant() + "_hover");
+            await ClickAsync(map, "m_" + name, point);
+            await WaitUntilAsync(() => Find<LevelViewController>().Any() && Find<AbstractHeroEntity>().Any(hero => hero.IsShown), "沿海点击没有进入关卡：" + name);
+            var battle = await WaitForAsync<BattleForm>();
+            Check(GF.Fsm.GetModel<LevelModel>().LevelId == id, "沿海点击进入了错误关卡");
+            await CaptureAsync("entered_" + name.ToLowerInvariant());
+            await ClickAsync(battle, "MenuPanel/m_SettingsButton");
+            var settings = await WaitForAsync<SettingsForm>();
+            await ClickAsync(settings, "Scroll/m_ReturnMap");
+            map = await WaitForAsync<MapForm>();
+            profile.RecordLevelClear(id);
+            GD.Print($"SMOKE-COAST-MAP PASS: {name}, transparent center, hover cycle, actual click, level={id}, return map");
+        }
     }
 
     /// <summary>

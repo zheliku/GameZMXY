@@ -321,11 +321,10 @@ def effect_scene(atlas_path, frames_path, library_path, name):
         '[sub_resource type="RectangleShape2D" id="rest"]',
         "size = Vector2(1, 1)",
         "",
-        f'[node name="{name}" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]',
+        f'[node name="{name}" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox")]',
         'script = ExtResource("script")',
         'm_Player = NodePath("AnimationPlayer")',
         'm_HitBox = NodePath("Origin/Visual/HitBox")',
-        'm_Shape = NodePath("Origin/Visual/HitBox/CollisionShape2D")',
         '',
         '[node name="Origin" type="Node2D" parent="."]',
         '[node name="Visual" type="Node2D" parent="Origin"]',
@@ -380,7 +379,7 @@ def actor_scene(repo, actor, kind):
     radius = max(1.0, hw * 0.5)
     capsule_height = max(hh, radius * 2.0)
     collision_mask = 9
-    detector_y = -21 if kind == "boss" else 0
+    detector_y = 0
     body_offset = vec2(layer["sprite_offset"])
     lines = [
         '[gd_scene format=3]',
@@ -399,7 +398,7 @@ def actor_scene(repo, actor, kind):
         '[sub_resource type="RectangleShape2D" id="hit_shape"]',
         'size = Vector2(1, 1)',
         '[sub_resource type="RectangleShape2D" id="detector_shape"]',
-        'size = Vector2(600, 600)',
+        f'size = Vector2(600, {800 if kind == "boss" else 900})',
         '[sub_resource type="Gradient" id="health_gradient"]',
         'colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)',
         '[sub_resource type="GradientTexture2D" id="health_texture"]',

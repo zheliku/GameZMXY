@@ -20,7 +20,7 @@ namespace GameLogic.UI.Widgets
         [Export] private Label[] m_CurrentEffects = []; // 当前等级总效果。
         [Export] private Label[] m_NextEffects = []; // 与名称同序的下一级效果。
         [Export] private Label[] m_Souls = []; // 与名称同序的学习费用。
-        [Export] private Button[] m_UpgradeButtons = []; // 保留原黄色文字布局的升级按钮。
+        [Export] private TextureButton[] m_UpgradeButtons = []; // 原版彩色升级字图及三态，满级隐藏。
 
         /// <summary>
         /// 玩家请求购买下一级，表单负责提交Command。
@@ -77,8 +77,8 @@ namespace GameLogic.UI.Widgets
                 m_NextEffects[i].Text = maximum ? "----" : definition.Levels[level].Description;
                 m_Souls[i].Text = maximum ? "----" : definition.Levels[level].LearnSoul.ToString();
                 var button = m_UpgradeButtons[i];
-                button.Text = maximum ? "已满级" : "升级";
                 button.Disabled = maximum;
+                button.Visible = !maximum;
                 button.MouseDefaultCursorShape = maximum ? CursorShape.Arrow : CursorShape.PointingHand;
             }
         }

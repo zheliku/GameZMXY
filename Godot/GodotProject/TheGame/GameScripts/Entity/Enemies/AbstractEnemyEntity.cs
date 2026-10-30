@@ -36,7 +36,7 @@ namespace GameLogic.Enemies
 
         private static readonly EnemyBodyPreset m_DefaultBodyPreset = EnemyBodyPresets.Walk(); // 共享只读配方；状态实例不共享。
 
-        [Export] private Area2D m_Detector; // 索敌区；为空时只会在受击后反击。
+        [Export] private EnemyPerceptionNode m_Perception; // 本场景唯一的发现、交战与巡逻空间配置。
 
         [Export] private EntityId m_EnemyEntityId; // 场景声明实体种类，与基础怪物配置一一对应。
 
@@ -45,9 +45,12 @@ namespace GameLogic.Enemies
         /// </summary>
         protected int m_ExperienceReward;
 
-        [Export] private ResourceBar m_HealthBar; // 可选头顶小血条，作为实体子场景随 GGF 实体池复用。
+        /// <summary>
+        /// 小怪必需的头顶生命条；首领可由关卡统一生命条展示。
+        /// </summary>
+        [Export] protected ResourceBar m_HealthBar;
 
-        [Export(PropertyHint.Range, "0.01,30,0.01,or_greater")] private float m_HealthBarFadeDuration = 4f; // 受伤血条淡出的游戏秒数。
+        [Export(PropertyHint.Range, "0.01,30,0.01,or_greater")] private float m_HealthBarFadeDuration = 2f; // 官方showHpSlip的两秒淡出，暂停冻结。
 
         private float m_HealthBarTimeLeft; // 最近一次受伤后的剩余淡出秒数，按游戏帧推进。
         private int m_LastHealthBarHp; // 上次生命值，用于区分受伤与治疗，治疗不延长显示。
@@ -64,15 +67,13 @@ namespace GameLogic.Enemies
         /// </summary>
         protected IFsm<IEnemyBody> m_BodyFsm;
 
-        private AbstractActorEntity m_Target; // 当前索敌目标；失效或超时后清除。
+        private AbstractActorEntity m_Target; // 当前索敌目标；只在失效或本次显示结束后清除。
 
         private Vector2 m_SpawnPosition; // 未绑定关卡视野时使用的巡逻中心。
 
         private Node2D m_PatrolAnchor; // 关卡注入的取景中心；没有关卡时以出生点巡逻。
 
         private bool m_RecycleRequested; // 死亡动画结束后等待物理帧回收的标记。
-
-        private float m_OutOfSightTime; // 目标持续在视野外的秒数。
 
         private int m_Level; // 本次显示的配置等级。
         private int m_Hp; // 本怪物的普通生命状态，不注册 Model 或绑定观察者。
@@ -287,29 +288,6 @@ namespace GameLogic.Enemies
         }
 
         /// <summary>
-        /// 目标受击盒相对本实体原点的范围。
-        /// </summary>
-        private Rect2 TargetBox
-        {
-            get
-            {
-                if (m_Target is not { IsAlive: true } target)
-                {
-                    return default;
-                }
-
-                Vector2 o = GlobalPosition;
-                if (target.HurtBox == null)
-                {
-                    return new Rect2(target.GlobalPosition - o - Vector2.One * 0.5f, Vector2.One);
-                }
-
-                Rect2 r = target.HurtBox.GetGlobalBounds();
-                return new Rect2(r.Position - o, r.Size);
-            }
-        }
-
-        /// <summary>
         /// 默认行走配方；具体敌人按实际动作组合替换，不由Monster类别决定身体能力。
         /// </summary>
         protected virtual EnemyBodyPreset BodyPreset
@@ -317,17 +295,6 @@ namespace GameLogic.Enemies
             get
             {
                 return m_DefaultBodyPreset;
-            }
-        }
-
-        /// <summary>
-        /// AI 初始状态；默认由预设选择，Boss 可覆写。
-        /// </summary>
-        protected virtual Type InitialAiStateType
-        {
-            get
-            {
-                return AiPreset.IdleStateType;
             }
         }
 
@@ -361,17 +328,6 @@ namespace GameLogic.Enemies
             get
             {
                 return BodyPreset.DeathStateType;
-            }
-        }
-
-        /// <summary>
-        /// 向 AI 提供同一份共享身体及攻击参数。
-        /// </summary>
-        EnemyBodyParams IEnemyAiAgent.Params
-        {
-            get
-            {
-                return BodyParams;
             }
         }
 
@@ -436,13 +392,41 @@ namespace GameLogic.Enemies
         }
 
         /// <summary>
-        /// 提供目标受击盒相对怪物原点的范围。
+        /// 目标是否仍存活；受击盒尺寸不参与AI原点距离判断。
         /// </summary>
-        Rect2 IEnemyAiAgent.TargetBox
+        bool IEnemyAiAgent.HasTarget
         {
             get
             {
-                return TargetBox;
+                return m_Target is { IsAlive: true };
+            }
+        }
+
+        /// <inheritdoc />
+        Vector2 IEnemyAiAgent.PatrolBounds
+        {
+            get
+            {
+                return m_Perception.PatrolBounds;
+            }
+        }
+
+        /// <inheritdoc />
+        Rect2 IEnemyAiAgent.EngageBounds
+        {
+            get
+            {
+                return m_Perception.EngageBounds;
+            }
+        }
+
+        /// <inheritdoc />
+        bool IEnemyAiAgent.IsInEngageRange
+        {
+            get
+            {
+                return m_Target is { IsAlive: true } &&
+                    m_Perception.ContainsEngage(((IEnemyAiAgent)this).TargetOffset);
             }
         }
 
@@ -502,8 +486,8 @@ namespace GameLogic.Enemies
             }
 
             this.GetSystem<ConfigurationSystem>().EnsureEnemyBodyParams(m_EnemyEntityId, BuildBodyParams);
-            AiData = new EnemyAiData(BodyParams.Attacks.Count);
-            ConfigureDetector();
+            AiData = new EnemyAiData(OwnAttacks.Count);
+            m_Perception.Validate();
         }
 
         /// <summary>
@@ -527,7 +511,7 @@ namespace GameLogic.Enemies
             m_RecycleRequested = false;
             SetTarget(null);
             Velocity = Vector2.Zero;
-            this.GetSystem<EnemyAiSystem>().Reset(AiData, BodyParams, GD.Randf);
+            this.GetSystem<EnemyAiSystem>().Reset(AiData, OwnAttacks, GD.Randf);
 
             GlobalPosition = spawn.Position;
 
@@ -604,8 +588,11 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            this.GetSystem<EnemyAiSystem>().AdvanceCooldowns(AiData, elapseSeconds);
-            UpdateTarget(elapseSeconds);
+            if (!Dead)
+            {
+                this.GetSystem<EnemyAiSystem>().AdvanceCooldowns(AiData, elapseSeconds);
+                UpdateTarget();
+            }
             UpdateHealthBarFade(elapseSeconds);
         }
 
@@ -781,10 +768,8 @@ namespace GameLogic.Enemies
             string[] anims = new string[OwnAttacks.Count];
             float[] times = new float[OwnAttacks.Count];
             float[] recovery = new float[OwnAttacks.Count];
-            var attacks = new EnemyAttackParams[OwnAttacks.Count];
             for (int i = 0; i < OwnAttacks.Count; i++)
             {
-                attacks[i] = BuildAttackParams(i, OwnAttacks[i]);
                 anims[i] = AttackAnimations[i];
                 times[i] = GetActionDuration(anims[i]);
                 recovery[i] = Mathf.Max(0f, OwnAttacks[i].AiRecovery);
@@ -804,7 +789,6 @@ namespace GameLogic.Enemies
                 AttackAnims = Array.AsReadOnly(anims),
                 AttackTimes = Array.AsReadOnly(times),
                 AttackRecovery = Array.AsReadOnly(recovery),
-                Attacks = Array.AsReadOnly(attacks),
             };
         }
 
@@ -819,32 +803,22 @@ namespace GameLogic.Enemies
         }
 
         /// <summary>
-        /// 维护目标有效性、视野超时和索敌区发现。
+        /// 保留存活目标；失效后才从场景索敌区选择新目标，不存在另一份视野时限。
         /// </summary>
-        /// <param name="dt">本帧游戏秒数。</param>
-        private void UpdateTarget(float dt)
+        private void UpdateTarget()
         {
-            // 已有目标先检查存活与视野超时，保留仍在范围内的目标。
             if (m_Target is { IsAlive: true })
-            {
-                bool outOfSight = Mathf.Abs(m_Target.GlobalPosition.X - GlobalPosition.X) > Config.SightRange;
-                m_OutOfSightTime = outOfSight ? m_OutOfSightTime + dt : 0f;
-                if (Config.LoseTargetTime <= 0f || m_OutOfSightTime < Config.LoseTargetTime)
-                {
-                    return;
-                }
-
-                Log.Debug("[Enemy] {0} 丢失目标 {1}", Id, m_Target.Id);
-            }
-
-            // 当前目标失效后清除，再从索敌区选择第一个有效角色。
-            SetTarget(null);
-            if (Dead || !CanAcquireTarget || m_Detector == null)
             {
                 return;
             }
 
-            foreach (Node2D body in m_Detector.GetOverlappingBodies())
+            SetTarget(null);
+            if (Dead || !CanAcquireTarget)
+            {
+                return;
+            }
+
+            foreach (Node2D body in m_Perception.GetOverlappingBodies())
             {
                 if (body is AbstractActorEntity actor && CanSelectTarget(actor))
                 {
@@ -856,13 +830,21 @@ namespace GameLogic.Enemies
         }
 
         /// <summary>
-        /// 筛选索敌区中的有效敌方角色；具体敌人可收紧原点距离等发现条件。
+        /// 按场景首次索敌范围筛选存活敌方角色，横界严格、纵界包含。
         /// </summary>
         /// <param name="actor">索敌区报告的候选角色。</param>
         /// <returns>是否允许将该角色设为新目标。</returns>
-        protected virtual bool CanSelectTarget(AbstractActorEntity actor)
+        private bool CanSelectTarget(AbstractActorEntity actor)
         {
-            return actor != this && actor.IsAlive && actor.Side != Side;
+            if (actor == this || !actor.IsAlive || actor.Side == Side)
+            {
+                return false;
+            }
+
+            Vector2 offset = m_Perception.ToLocal(actor.GlobalPosition);
+            Rect2 bounds = m_Perception.DetectionBounds;
+            return offset.X > bounds.Position.X && offset.X < bounds.End.X &&
+                offset.Y >= bounds.Position.Y && offset.Y <= bounds.End.Y;
         }
 
         /// <summary>
@@ -872,32 +854,6 @@ namespace GameLogic.Enemies
         private void SetTarget(AbstractActorEntity target)
         {
             m_Target = target;
-            m_OutOfSightTime = 0f;
-        }
-
-        /// <summary>
-        /// 按视野范围复制并调整索敌区矩形，避免共享资源互改。
-        /// </summary>
-        private void ConfigureDetector()
-        {
-            if (m_Detector == null)
-            {
-                return;
-            }
-
-            // 只调整本实体私有的 Shape 副本，避免改动 PackedScene 共享资源影响其他实例。
-            foreach (Node child in m_Detector.GetChildren())
-            {
-                if (child is CollisionShape2D { Shape: RectangleShape2D rect } shapeNode)
-                {
-                    RectangleShape2D own = (RectangleShape2D)rect.Duplicate();
-                    own.Size = new Vector2(Config.SightRange * 2f, rect.Size.Y);
-                    shapeNode.Shape = own;
-                    return;
-                }
-            }
-
-            Log.Warning("[AbstractEnemyEntity] m_Detector 缺少 RectangleShape2D 形状，索敌失效：{0}", Name);
         }
 
         /// <summary>
@@ -939,7 +895,7 @@ namespace GameLogic.Enemies
             }
 
             m_AiFsm = GF.Fsm.CreateFsm($"EnemyAI_{Id}", this, AiPreset.CreateStates());
-            m_AiFsm.Start(InitialAiStateType);
+            m_AiFsm.Start(AiPreset.IdleStateType);
         }
 
         /// <summary>
@@ -989,6 +945,11 @@ namespace GameLogic.Enemies
         /// </summary>
         void IEnemyBody.BeginDeath()
         {
+            // AI生命周期结束；身体死亡状态继续负责尸体、奖励与回收。
+            AiData.AttackRequest = -1;
+            AiData.MoveIntent = 0;
+            SetTarget(null);
+            DestroyAiStateMachine(false);
             SetHurtBoxEnabled(KeepHurtBoxDuringDeath);
             GF.Event.Fire(this,
                 EnemyDiedEventArgs.Create(Id, m_ExperienceReward, Config, HurtBox.GetGlobalBounds().GetCenter(),
@@ -1057,6 +1018,7 @@ namespace GameLogic.Enemies
 
             AiData.AttackRequest = index;
             AiData.MoveIntent = 0;
+            this.GetSystem<EnemyAiSystem>().MarkUsed(AiData, OwnAttacks, index, GD.Randf);
             return true;
         }
     }

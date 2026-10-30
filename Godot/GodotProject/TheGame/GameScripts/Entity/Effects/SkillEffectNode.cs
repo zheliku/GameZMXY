@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using GameConfig.Battle;
 using GameConfig.Sound;
 using GameFramework;
@@ -24,7 +25,7 @@ namespace GameLogic.Effects
 
         [Export] private AnimationPlayer m_Player; // 原生动画是唯一的局部播放时钟。
         [Export] private Area2D m_HitBox; // 本效果独立判定区。
-        [Export] private CollisionShape2D m_Shape; // 几何及启闭均由动画驱动。
+        private CollisionShape2D[] m_Shapes; // 同一判定区的全部基础形状，几何及启闭均由动画驱动。
         private AttackConfig m_Hit; // 只借用统一数值表；纯视觉效果为空。
         private CombatantAttributes m_Attacker; // 效果生成时冻结的攻击者属性和阵营。
         private SoundId m_HitSoundId; // 施放者提供的成功打击声音，不由受击怪物指定。
@@ -42,6 +43,12 @@ namespace GameLogic.Effects
         /// </summary>
         public override void _Ready()
         {
+            // Area 是判定区的所有者；多个形状仍共享一个攻击包、去重集合和命中预算。
+            m_Shapes = m_HitBox.GetChildren().OfType<CollisionShape2D>().ToArray();
+            if (m_Shapes.Length == 0)
+            {
+                throw new InvalidOperationException($"技能效果的判定区缺少基础形状：{SceneFilePath}");
+            }
             m_SourceScale = Scale;
             m_Player.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual;
             m_Player.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
@@ -77,7 +84,7 @@ namespace GameLogic.Effects
                 NewAttackAnimEvent();
             }
 
-            if (!m_Shape.Disabled && m_RemainingHits > 0)
+            if (m_Shapes.Any(shape => !shape.Disabled) && m_RemainingHits > 0)
             {
                 foreach (var area in m_HitBox.GetOverlappingAreas())
                 {
@@ -122,7 +129,10 @@ namespace GameLogic.Effects
             m_HitSoundId = SoundId.None;
             m_Active = m_FinishRequested = false;
             m_Player.Stop();
-            m_Shape.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
+            foreach (var shape in m_Shapes)
+            {
+                shape.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
+            }
             Visible = false;
         }
 
@@ -213,7 +223,10 @@ namespace GameLogic.Effects
 
             m_AttackData = null;
             m_Hit = null;
-            m_Shape.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
+            foreach (var shape in m_Shapes)
+            {
+                shape.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
+            }
         }
 
         /// <summary>
@@ -231,7 +244,7 @@ namespace GameLogic.Effects
         /// <param name="area">进入或持续重叠的区域。</param>
         private void OnAreaEntered(Area2D area)
         {
-            if (!m_Active || m_AttackData == null || m_RemainingHits <= 0 || m_Shape.Disabled ||
+            if (!m_Active || m_AttackData == null || m_RemainingHits <= 0 || !m_Shapes.Any(shape => !shape.Disabled) ||
                 area is not HurtBoxNode { OwnerEntity: { IsAlive: true } target } || target.Side == m_Attacker.Side ||
                 !m_AttackData.TryRegisterHit(target.GetInstanceId()))
             {

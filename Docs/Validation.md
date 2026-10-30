@@ -1,4 +1,148 @@
-﻿# 验证
+# 验证
+
+## 敌人行为命名、原版空间与碰撞显示（2026-10-30）
+
+本轮证据目录：`Godot/GodotProject/.godot/validation/enemy_ai_review_20261030/`。隔离工程先完成修改与回归，再经正式Godot编辑器应用；`delivery_manifest.json`、`formal_backup/`保留本轮100条文件操作及修改前内容。Git索引SHA与起点相同。
+
+| 验证 | 命令与结果 |
+| --- | --- |
+| 独立源码依据 | `python Tools/LegacyMigration/audit_official_enemy_ranges.py --output <证据目录>/official_ranges_recheck.json`：24物种，校验原SWF哈希、BaseMonster共同表达式、物种独立分支和源文件路径。正式重跑与隔离参考逐字节相同；不从Godot当前形状反推期望值。 |
+| 原生范围与装配 | Godot `--headless --script res://EditorScripts/validate_enemy_spatial_rules.gd -- <official_ranges_recheck.json>`、`validate_enemy_perception.gd`：正式`formal_spatial/`、`formal_perception/`均退出0，24场景、178边界/语义检查通过；没有invalid UID警告。 |
+| 作者工具 | `--headless --script res://EditorScripts/validate_enemy_ai_tools.gd`：`formal_tools/`退出0，19个导入/验证/显示工具解析通过；重导默认值复用同一原生颜色作者工具。 |
+| 纯规则 | 隔离`dotnet test Tests/BattleTests/BattleTests.csproj --no-restore -v quiet`：178/178；`dotnet test Tests/ProfileTests/ProfileTests.csproj -v quiet -- xUnit.ParallelizeTestCollections=false`：211/211；`dotnet test Tests/LevelTests/LevelTests.csproj -v quiet`：19/19。新增检查当前攻击档的初始/释放冷却分别采样、配置不被改写、实例冷却独立。测试反射仅在夹具。 |
+| 迁移与构建 | `python <证据目录>/run_formal.py formal_build_scan --headless --editor --import --build-solutions --quit --no-window`：退出0，完成扫描；`dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet`：正式增量构建0错误/0警告，隔离完整编译0错误/5个既有依赖警告。6个脚本与UID一同移动；有效场景UID保持。 |
+| 几何及动画保持 | 原生场景文本按形状内容与节点路径归一比对：98个非AI身体/受击/攻击形状相同；55份动画库逐字节不变。范围修改只涉及AI空间，颜色重存没有扩大实际伤害盒。 |
+| 原生视口 | Godot `--editor --rendering-method gl_compatibility --script res://EditorScripts/render_enemy_collision_styles.gd -- <visuals目录>`：妖猴、蝙蝠、虾兵、彭魔王、牛魔王人形、龙王六图已查看。低透明度轮廓保留身体可见性；这是引擎原生编辑器视口渲染，非自画示意图。本机桌面控制工具初始化失败，未冒称完成UI操控。 |
+| 资源与风格 | `python Tools/ProjectMaintenance/validate_game_references.py`：1844路径/374UID通过；`dotnet run --project Tools/ProjectMaintenance/CSharpStyle --no-restore -- <仓库> <证据目录>/style_formal.json`：345个手写文件，0格式差异、0缺失XML文档；`git diff --check`通过。 |
+
+正式引擎专项使用`python <证据目录>/run_formal.py <case> --headless --audio-driver Dummy --max-fps 60 -- --smoketest=ui --<专项>-only`，AI入口为`--smoketest=ai`。结果见`formal_regression_results.json`，隔离追加覆盖见`regression_results.json`：范围边界60/120Hz、24物种双侧索敌/保留目标、六种普通近战自主追击/出招、海怪、彭魔王、狮驼王、鲨鱼、牛魔王三形态及龙王两档双向攻击均有业务PASS。正式7组（enemy-ranges、ai、enemy-fidelity、enemy-hierarchy、sea-ai、dragon、bull）全部退出0且业务PASS；隔离8组也全部通过。不将旧未import而失败的批次算作通过。
+
+日志限制：Godot编辑器退出仍报既有ComponentInsoector对RefCounted调用Free及部分RID/ObjectDB泄漏；实际游戏退出仍有GGF WebRequest的ObjectDisposedException。这些与业务断言及退出码分别记录，本轮未改Framework/addons；启动和资源验证未见新的GCHandle或无效UID错误。早期未import批次因主场景UID未解析退出1，完成导入后重新运行通过，不冒称所有尝试均成功。第30章旧AI/首掷延迟/BuildAttackParams文字仍过时，仅按本轮明确要求补颜色规范。
+
+## 敌人 AI 职责与配置收敛（2026-10-30）
+
+删除空AI死亡/控制状态、旧追击—站定—守候链及巡逻抽象层；普通敌人使用Patrol/Engage，物种只实现实际选招和特殊运动。死亡停止AI时钟、清目标并销毁AI FSM，身体继续负责尸体、奖励和回池。依据第00/10/20/30/40/50章；第30章仍描述旧状态、首次延迟和伤害盒并集估距，与本轮明确要求冲突，未擅改规范。
+
+24个场景的Perception原生形状拥有Detection首次索敌、Engage交战和Patrol左右折返；专属退避/近身/水柱/吞噬/践踏留在各物种。彭魔王保留800px追踪高度，与400px圆形选招、150px近身半径分开；牛魔王人形无限高度的规则留具体状态。预设只组合状态类型，运行时不读表覆写范围，也不合并动画伤害盒估距。
+
+Enemy两页删除SightRange、BehitCalmTime、PatrolInterval、PatrolIdleChance、PatrolRadius、AttackFirstDelay、AttackRangeSlack、LoseTargetTime、PaceRange；Combat删除AiWeight、AiPriority、AiRange；__beans__同步。AttackInterval、AttackDesire、AiCooldown/AiInitCooldown/AiRecovery仍有实际消费者。Artifact作者化后保留原ZIP其他部件和样式；已安装XLSX Diff数值/公式模式三表均PASS（270/222/27差异格）。仅经既有Luban入口更新两个配置类型及两份bytes。
+
+| 验证 | 命令与结果 |
+| --- | --- |
+| 导表、构建 | `$env:AI_MODE='1'; & Configs/GameConfig/gen_code_bin_to_project_lazyload.bat`；`dotnet build Godot/GodotProject/GodotProject.csproj --no-restore`：退出0，0错误、5条既有依赖警告 |
+| 纯规则 | `dotnet test Tests/BattleTests/BattleTests.csproj`：177/177；`dotnet test Tests/LevelTests/LevelTests.csproj`：19/19；`dotnet test Tests/ProfileTests/ProfileTests.csproj -- xUnit.ParallelizeTestCollections=false`：211/211 |
+| 原生装配 | `Godot --path Godot/GodotProject --headless --script res://EditorScripts/validate_enemy_perception.gd`：24场景绑定、矩形/圆边界及专属范围PASS；`validate_enemy_ai_tools.gd`：15个作者/校验脚本解析PASS，退出0且日志无错误 |
+| 表格审计 | `python Tools/ProjectMaintenance/audit_config_schema.py`：17页、0错误；`python Tools/LegacyMigration/audit_official_enemy_fidelity.py --output <报告>`：24物种、850格、71攻击，0数值差异、0待修正格 |
+| 官方行为与血条 | 隔离工程`--headless --audio-driver Dummy --max-fps 60 -- --smoketest=ui --enemy-fidelity-only / --monster-health-only`：24种双侧索敌/保留目标、6种近战60/120Hz、飞刀1→5秒、13种血条暂停/死亡/复用PASS |
+| 物种自主AI | 同上`--sea-ai-only / --garuda-ai-only / --lion-ai-only / --east-sea-ai-only / --shark-ai-only`：距离、选招、冷却、暂停、受击连续性、形态和复用PASS |
+| 身体与效果 | `--dragon-only / --bull-only / --enemy-death-only / --effect-shapes-only`：龙王32次左右/难度/频率组合、牛魔王五招/三形态、6种死亡抛飞回收、多形状命中与取消复用PASS |
+| 正式整合 | 正式工程隔离APPDATA运行`--smoketest=ai`与`--smoketest=ui --enemy-fidelity-only`：PASS/退出0；AI另查死亡后FSM释放、时钟停止，`--enemy-death-only`检查死亡奖励和尸体回收 |
+| 正常窗口 | 正式OpenGL `--smoketest=ui --enemy-hierarchy-only`：落地资格、出招/受击、复用、声音轨道及妖猴左右追击逐渲染帧无举棒闪帧PASS；最终彭魔王60/120Hz自主AI再验证PASS |
+
+证据和应用前备份在`.godot/validation/enemy_ai_design_20261030/`，包括日志、表格预览、Diff、源码审计及逐文件应用清单。导入器经共用作者工具装配新草稿，不自动重写已有场景；跨工程Perception脚本UID经原生重存绑定，最终装配无无效UID警告。现有有效根UID保留，两份鲨鱼场景原来的`uid://<invalid>`由Godot生成有效UID。正式存档未触及，应用前后72项暂存内容的二进制补丁哈希一致，未操作Git索引。
+
+夹具修正：牛妖旧测试在RequestAttack重复检查距离，现检查场景范围，真实动画命中仍保留；狮驼王日志目录补建。首次双引擎并行运行狮驼王冷却断言失败，独立复跑通过，未扩大容差。Profile默认并行有既有Json全局设置竞争，缺字段断言偶发不抛异常；该用例单独及全套串行均通过，未改存档正式逻辑或无关测试。
+
+依赖诊断单列：编辑器退出仍有ComponentInsoector的RefCounted.Free/Invalid call与RID释放报告；运行退出仍有WebRequest对已释放HttpRequest的ObjectDisposed及少量资源泄漏。业务PASS不表示依赖日志已解决。Framework/addons/Tools/Luban未修改；部分dotnet还报告网络受限导致NuGet漏洞元数据无法读取，不影响构建/测试。
+
+## 全敌人完整性与官方行为（2026-10-30）
+
+本轮使用v25928官方主程序及Monster1/2/3缓存，散列见OfficialReference。只修改项目自有代码、源表及经既有作者工具保存的资源；玩家正式存档和Git索引保留。规范依据为第10/20/30/40/50章；第30章的旧首掷延迟/通常1～2形状与用户本轮官方行为、四冰柱要求有差异，本轮以用户要求为准，规范未改。
+
+在仓库根执行，Godot的脚本参数是资源路径，末尾`--`后为用户参数：
+
+```powershell
+$project = 'P:/Godot-Project/GameZMXY/Godot/GodotProject'
+$work = "$project/.godot/validation/enemy_fidelity_20261030"
+$runner = "$project/.godot/validation/movement_presets/run_godot.py"
+$env:AI_MODE = '1'
+cmd /c Configs\GameConfig\gen_code_bin_to_project_lazyload.bat
+dotnet build Godot/GodotProject/GodotProject.csproj --no-restore
+dotnet test Tests/BattleTests/BattleTests.csproj --no-restore
+dotnet test Tests/ProfileTests/ProfileTests.csproj --no-restore
+dotnet test Tests/LevelTests/LevelTests.csproj --no-restore
+python Tools/ProjectMaintenance/audit_config_schema.py
+python Tools/LegacyMigration/audit_official_enemy_fidelity.py --output "$work/source_audit_final.json"
+python $runner enemy_final_import --headless --editor --import --build-solutions --quit
+python $runner enemy_final_geometry --headless --script res://EditorScripts/validate_enemy_fidelity.gd -- "$work/ice_regions.json"
+python $runner enemy_boundaries --headless --script res://EditorScripts/validate_enemy_boundaries_and_knife.gd -- "$work/knife_source_frames.json"
+python $runner enemy_final_visual --rendering-method gl_compatibility --audio-driver Dummy --script res://EditorScripts/render_enemy_grounding.gd -- "$work/native_final"
+```
+
+Luban成功只覆写`enemy_tbenemyconfig.bytes`；构建0错误，5条既有依赖弃用警告。Battle232、Profile211、Level19项均通过，配置17张映射表0错误。源码报告24种、1066格、71条攻击；可映射的数值无差异，扩展/旧预设列有明确分类，不把它们计为官方已证实值。Enemy.xlsx共39格变化（11丢失时限、飞刀间隔、灯笼鱼视野、24受伤后延迟、2基础魔抗），原ZIP其余部分/样式保留，已安装XLSX Diff 1.6.4 worker在数值和公式模式均读到39格。
+
+原生检查：13个小怪装配完整；四冰柱360个形状样本、102个真实shape间隙排除，左右与idle复位通过。11关86处玩家门允许敌人穿过、22处外墙仍阻挡，飞刀27源帧几何/位移与官方逐帧一致。24种敌人429个原生动作截图含死亡全部生成并人工查看；最终形态牛魔王另外查看`bull_heart_visible.png`的完整实机背景、心脏、双手。最后完整导入后的几何和渲染stderr为空，原先SpriteFrames缓存UID/旧纹理尺寸问题已消除。
+
+真实回归入口如下，均使用隔离APPDATA和Validation存档。可用上面的runner替换Godot启动命令；`--enemy-hierarchy-only`、`--bat-cave-only`、`--dragon-only`需要普通OpenGL窗口观察画面，其余可headless。每次指定唯一case目录，不与玩家档混用。
+
+```powershell
+python $runner <case> --headless --audio-driver Dummy --max-fps 60 -- --smoketest=ui <专项参数>
+python $runner enemy_ai_official_ready --headless --audio-driver Dummy --max-fps 60 -- --smoketest=ai
+python $runner enemy_bosses_final --headless --audio-driver Dummy --max-fps 60 -- --smoketest=bosses
+```
+
+| 专项参数 / 实际case | 验证内容与结果 |
+| --- | --- |
+| `--enemy-fidelity-only` / enemy_fidelity_ready | 24种原点索敌两侧严格横界/含纵界、视野外保留目标；6种近战60/120Hz自主追击/节拍，飞刀实测1→5秒投刀；PASS、退出0 |
+| `--enemy-knockback-only` / enemy_knockback_live | 首中末战斗门、两朝向、60/120Hz实际ReceiveHit/身体推进穿越；PASS、退出0 |
+| `--effect-shapes-only` / enemy_effect_shapes | 仅第二形状命中、共享去重/预算、暂停、取消、复用、自然回收；PASS、退出0 |
+| `--monster-health-only` / enemy_health_final | 全13小怪实际生命上限（含大猩猩守关900）、两秒淡出、治疗、暂停、连续受伤、头顶位置、死亡、隐藏及池复用；PASS、退出0 |
+| `--sea-ai-only` / enemy_sea_ai_clock | 虾兵追退/40%出招，蟹150px/十秒重击，龟400px/60%出招，高处/暂停，60/120Hz；PASS、退出0 |
+| `--east-sea-ai-only` / enemy_east_ai_clock | 鲛魔王远近分支与灯笼鱼自主行为，两频率；PASS、退出0 |
+| `--shark-ai-only` / enemy_shark_ai_clock | 召唤鲨鱼自主追踪、折返节流、速度上限与近身选招，两频率；PASS、退出0 |
+| `--garuda-ai-only` / enemy_garuda_ai_ready | 自主出招、共享冷却、起飞/落下、退避及受击连续性，两频率；PASS、退出0 |
+| `--qixing-only` / enemy_knife_regression_fix | 六招双向、刀/云实际命中、毒、旋转无敌、暂停与复用；PASS、退出0 |
+| `--shark-only` / enemy_shark_shapes | 两档生命、两频率、双向，水牢预警、独立效果、召唤死亡/隐藏取消及复用；PASS、退出0 |
+| `--garuda-only` / enemy_garuda_shapes | 两频率双向五招、淡出时持续命中、蛋/复生/死亡与复用；业务PASS、退出0；有两条资源加载GCHandle异常，单列在下方 |
+| `--bull-only` / enemy_bull_shapes | 冲撞/休息、牛妖双向、两频率五招、五次吞噬、心脏/双手/火柱、直接奖励、满包与复用；PASS、退出0；实机截图已查看 |
+| `--dragon-only` / enemy_dragon_shapes_fix | 两等级、两频率、双向四招、水波/水柱位置、七段冰环及英雄第五次后保护、冰冻/无双免疫、暂停和弹体取消；PASS、退出0 |
+| `--smoketest=ai` / enemy_ai_official_ready | 猴子受击激怒、追击、出招锁向、恢复、高处不可达、重新落地、视野外保留、受击/死亡/回池；PASS、退出0 |
+| `--smoketest=bosses` / enemy_bosses_final | 前两位首领五招实际命中、无敌、风刃独立时钟、隐藏和复用；PASS、退出0 |
+
+补充最终整合：`enemy_bat_complete`（蝙蝠追踪/空中攻击/受击/收招/死亡、石像与落刺）、`enemy_sea_complete`（浅岸三物种四招双向两频率、弹体击散/淡出/暂停/复用）、`enemy_east_complete`（东海四招双向两频率、背防、死亡/复用，冰柱真实四次命中）均PASS、退出0。层级/声音回归及妖猴逐绘制帧检查在`enemy_hierarchy_verified`全部PASS、退出0。此前声音夹具将池实例的物理推进冻结，现测试侧恢复，左右自主追击与高处目标均无一帧举棒；没有给生产代码添加测试兜底。
+
+复现作者化：
+
+```powershell
+python Tools/LegacyMigration/prepare_grounded_enemy_art.py --manifest "$project/.godot/validation/remaining_levels/sea_art/actors_registered/manifest.json" --extra-manifest "$project/.godot/validation/action_origin_review/ground_monsters_export/manifest.json" --output "$work/grounded"
+python $runner enemy_ground_author --headless --editor --script res://EditorScripts/apply_grounded_enemy_art.gd -- "$work/grounded/manifest.json"
+python Tools/LegacyMigration/prepare_enemy_fidelity_geometry.py --xml "$project/.godot/validation/official_continuation/monster2_full.xml" --manifest "$project/.godot/validation/remaining_levels/sea_art/actors_registered/manifest.json" --output "$work/ice_regions.json"
+python $runner enemy_shapes_author --headless --editor --script res://EditorScripts/repair_enemy_fidelity.gd -- "$work/ice_regions.json"
+python $runner enemy_bars_author --headless --editor --script res://EditorScripts/repair_monster_health_bars.gd
+python $runner enemy_detection_author --headless --editor --script res://EditorScripts/apply_enemy_detection_ranges.gd -- "$work/source_audit_final.json"
+# 之后必须完整import，再执行原生几何、渲染与真实命中回归。
+```
+
+初次回归的失败与修正：海怪右向第二招因冻结英雄身体连带冻结五连击保护，夹具改为每次独立施放前清零保护；正式受击规则不改。龙王冰环测试此前错误期待冻结英雄连吃7次，现同时检查6次原生刷新与5次真实扣血，最后两段被官方保护免疫。血条夹具最初忽略大猩猩守关900；索敌夹具暴露旧21px偏移，实际场景修正；多项旧测试的Move/SkyMonsterMove旧名和旧站位已改用当前Walk/Fly及明确落地条件。飞刀1→6秒投刀失败促成冷却请求起点与源步末扣减修正，最终1→5秒通过。
+
+依赖诊断独立记录：编辑器退出仍有ComponentInsoector的RefCounted.Free/Invalid call和RID清理；运行退出仍有WebRequest已释放HttpRequest的ObjectDisposed及少量ObjectDB/resource泄漏。enemy_garuda_shapes在GGF的LoadThreadedGet链路出现两次`SwapGCHandleForType: Handle is not initialized`，但各招断言及退出0；这是仍存在的引擎/依赖资源桥接异常，不能称运行日志全净，本轮未修改addons/Framework。专项业务结果与这些诊断分别报告。
+
+## 结算声音、被动按钮与沿海地图（2026-10-30）
+
+依据第10/40/50章及用户要求，修正透明点击与完整原点/滤镜，而非用图片包围盒替代官方坐标。第40章“地图不使用固定TextureClickMask”的默认规则与原版透明输入形状不同：浅岸/东海/鲨之涡流使用原生mask并合并当前悬停可见范围，其余地点保留动态alpha命中；规范正文未自行修改。技能图标按用户本轮视觉对齐要求由历史源坐标微调为格内居中，未改字号或字形缩放。正式存档、Git索引、Framework、addons与Luban未改动，生成常量仅经既有Collection入口更新。
+
+引擎用例由 `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <用例名> <Godot参数>` 启动，日志位于同目录各用例文件夹；每次使用隔离APPDATA。
+
+| 命令 / 检查 | 当前结果 |
+| --- | --- |
+| `--rendering-method gl_compatibility --audio-driver WASAPI -- --smoketest=level` | `victory_wasapi_final` PASS、退出0。真实通关后暂停的结算只有一个GGF胜利音乐代理，播放位置0.534→1.033秒；AudioEffectCapture实际采到24064帧、峰值0.586172、RMS 0.134725，Music/Master均0dB。源MP3也经FFmpeg解码确认非静音；Dummy驱动同类采样通过。未发现漏播，不新增第二个播放请求或抬高游戏音量。 |
+| Windows CoreAudio只读检查 | 临时 `ui_feedback_20261029/AudioVolumeProbe.cs` 检查默认输出与运行中的Godot会话：系统音量0.120000206、Godot应用音量1，均未静音。12%的系统总音量是已确认的衰减来源；未修改系统设置，不声明完成扬声器听感验收。Computer Use因Node runtime不可启动而未能读取UI，改用只读CoreAudio接口。 |
+| 官方被动按钮来源 | `OtherMat_v9.swf`位图569、按钮571。FFDec原生导出的48×26字图与正式normal有效区域逐像素完全一致；共用48×31画布，hover仅向下5px，pressed与normal一致。没有手工调色；满级隐藏按钮与官方PassiveSkill一致。 |
+| `--rendering-method gl_compatibility --audio-driver Dummy -- --smoketest=ui --passive-only` | `passive_button_visual_final` PASS、退出0；原生鼠标普通/悬停/按下状态、三张截图、余额不足、25次购买、满级拒绝、属性更新、暂停、磁盘与重入通过。截图已查看。 |
+| `python Tools/LegacyMigration/export_official_coastal_map.py --source .../skills-source/official_othermat.swf --java <既有Java> --ffdec <既有FFDec> --work .../ui_feedback_20261029/coastal --output .../Sprites/UI/frontend` | 源SHA-256核对为 `fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e`；按SelectPlace.s3_1/s3_2及三状态矩阵导出。manifest登记浅岸根(460,373.15)、画布337×312、偏移(-141,-151)；东海根(612.7,418.85)、画布742×265、偏移(-378,-115)。两处19帧逐帧检查可见像素距画布边界至少12px，完整20px悬停光晕保留。 |
+| `--headless --editor --script res://EditorScripts/apply_official_coastal_map.gd -- res://.godot/validation/ui_feedback_20261029/coastal/manifest.json` | `coastal_apply_complete`退出0且有AUTHOR PASS；普通状态透明，mask由形状453经原始状态矩阵渲染，hover/current共用注册画布并保持1:1。旧通用导出与登记工具拒绝沿海键，整理工具跳过两处，避免再覆盖原点。 |
+| `--rendering-method gl_compatibility --audio-driver Dummy -- --smoketest=frontend --map-coast-only` | `coastal_registered_runtime` PASS、退出0；从官方透明输入区真实移动鼠标，覆盖整轮hover，点击实际进入浅岸7/东海8，再经设置返回地图。两个地点的完整岸线截图已查看，无此前居中缩小与直线截边。 |
+| `--rendering-method gl_compatibility --audio-driver Dummy --script res://EditorScripts/validate_map_location_alignment.gd` | `map_origins_visual_checked` PASS、退出0且stderr为空；十地点原点、透明留白、alpha命中、图集尺寸与实际GPU画面通过。普通八地点原像素仅增加12px透明外边，源显示比例保持；shader不把画布外采样钳成边缘线。花果山、鲨之涡流与沿海画面已查看。 |
+| `--rendering-method gl_compatibility --audio-driver Dummy -- --smoketest=frontend` | `frontend_feedback_final` PASS、退出0；原有花果山放大区域保持悬停、透明角拒绝输入、地图提示、选角、保存、取消加载与返回回滚通过。 |
+| 鲨之涡流完整父变换 | 用户进一步指出字形仍横窄，旧中心/留白审计不足。`coastal_full/manifest.json`现登记原版s3_3父(766.55,500.15)及Y缩放0.5322113，烘入子状态后恢复源图伸长的文字比例；hover画布386×164、偏移(-193,-73)，current保留48帧。旧hover_registered图片及其导入已移除；三个海域共86帧逐帧留白至少12px。 |
+| `--smoketest=frontend --map-coast-only`；`validate_map_location_alignment.gd` | 当前 `coastal_all_three_final` 与 `map_shark_visual` 均PASS、退出0；覆盖浅岸、东海、鲨之涡流9的真实点击/悬停/返回，十地点完整画面与原点。鲨之涡流恢复后的文字、椭圆旋涡及两条鲨鱼截图已查看；不再把原生伸长字图整体缩进小按钮。 |
+| `align_skill_table_cells.gd`；`capture_skill_table_layout.gd` | `skill_table_icons_centered` / `skill_table_capture_centered`退出0。按原表PNG实际两像素线定位：表头34px、五行内高76/78/79/78/76px，列宽排除分隔线。悟空、唐僧主动与被动三页原生940×590截图已逐页查看；55个文字区域的可见白色墨迹中心最大横偏差1px、纵偏差2px，记录于 `ui_feedback_20261029/skill_layout/ink_alignment.json`。字形保持1:1，无非等比字体拉伸。 |
+| `--smoketest=ui --passive-only`；`--smoketest=ui` | 布局修正后的 `skill_grid_passive_runtime`、`skill_grid_full_ui` 均PASS、退出0；实际主动/被动绑定、图标学习、V开关、暂停、钱包、池复用、25次被动购买及完整战斗/UI/磁盘重入通过。 |
+| `--headless --editor --script res://EditorScripts/regenerate_collection.gd`；`python Tools/ProjectMaintenance/validate_game_references.py` | 最终 `feedback_all_collection`退出0，既有生成器收集803资源；1801路径、381UID通过。不能只用进程退出0代替Collection完成输出。 |
+| `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet`；`python -m unittest discover -s Tests/ToolTests -q` | 最终构建0错误、5个既有框架警告；23项工具测试通过。本轮正式修改为UI与资源，未用未运行的纯规则测试计数充数。 |
+| `dotnet run --project Tools/ProjectMaintenance/CSharpStyle --no-restore -- <仓库> .../ui_feedback_20261029/style_final.json`；定向 `git diff --check` | 352手写文件，0格式变化、0缺失文档；本轮修改空白检查通过，只读依赖与规范正文无工作树改动，Git索引保持。 |
+
+失败与边界：首次沿用普通居中缩放虽然点击通过，但截图与用户反馈证实东海位置/大小仍错，已整体替换为官方矩阵导出；FFDec首次导出各状态带不同滤镜边距，先归一到共同原点后才拼图。作者工具带`--quit`会在异步扫描完成前退出，已去掉并确认AUTHOR/Collection完成输出。原点验证初次对浮点数精确比较失败，改为0.01px容差后通过，未放宽定位范围。文字墨迹测量首次把最后一行外叠加的灵魂徽章计入价格，限定到文字实际所在中心区域后修正；三页截图仍逐页人工查看，不以数值审计替代。中途自动审批断连的命令均未计作运行证据。初次成功结算采样与WASAPI回归的玩法PASS后曾在Godot Array终结时0xC0000005退出，最终同一WASAPI回归退出0；保留失败日志。最终完整UI关停仍有既有WebRequest异常、96个ObjectDB/38个CanvasItem/4个资源及纹理存活诊断，编辑器仍有只读ComponentInsoector.Free/RID诊断；本轮不宣称无异常关停。
 
 ## 官方反馈与共用墓碑（2026-10-29）
 

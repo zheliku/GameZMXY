@@ -4,7 +4,7 @@ using Godot;
 namespace GameLogic.UI.Widgets
 {
     /// <summary>
-    /// 地图地点按钮：普通图居中命中，悬停时按放大图的变换、透明轮廓和 shader 参数命中。
+    /// 地图地点按钮：普通图或官方透明点击区命中，悬停时补充放大图的可见轮廓。
     /// </summary>
     public partial class MapLocationButton : TextureButton
     {
@@ -26,13 +26,13 @@ namespace GameLogic.UI.Widgets
             if (TextureNormal == null || m_HoverImage?.Texture == null || m_HoverImage.Material is not ShaderMaterial ||
                 m_HoverImage.GetParent() != this ||
                 StretchMode is not (StretchModeEnum.KeepCentered or StretchModeEnum.KeepAspectCentered) ||
-                m_HoverImage.StretchMode is not (TextureRect.StretchModeEnum.KeepAspect or TextureRect.StretchModeEnum.KeepAspectCentered) || TextureClickMask != null)
+                m_HoverImage.StretchMode is not (TextureRect.StretchModeEnum.KeepAspect or TextureRect.StretchModeEnum.KeepAspectCentered))
             {
-                throw new InvalidOperationException("地图地点需要居中的普通图、保持比例的悬停子图和轮廓材质，不使用固定 TextureClickMask。");
+                throw new InvalidOperationException("地图地点需要居中的普通图、保持比例的悬停子图和轮廓材质。");
             }
 
             // 只缓存源图片轮廓，不缓存尺寸、缩放和动画状态。
-            m_NormalMask = CreateMask(TextureNormal);
+            m_NormalMask = TextureClickMask ?? CreateMask(TextureNormal);
             m_HoverMask = CreateMask(m_HoverImage.Texture);
         }
 
@@ -48,12 +48,14 @@ namespace GameLogic.UI.Widgets
                 return false;
             }
 
-            if (!m_HoverImage.Visible || Disabled)
+            Vector2 normalSize = m_NormalMask.GetSize();
+            float normalFit = StretchMode == StretchModeEnum.KeepAspectCentered
+                ? Mathf.Min(Size.X / normalSize.X, Size.Y / normalSize.Y) : 1f;
+            bool normalHit = HasOpaquePixel(m_NormalMask, (point - (Size - normalSize * normalFit) / 2) / normalFit);
+            if (!m_HoverImage.Visible || Disabled || (TextureClickMask != null && normalHit))
             {
-                Vector2 normalSize = m_NormalMask.GetSize();
-                float normalFit = StretchMode == StretchModeEnum.KeepAspectCentered
-                    ? Mathf.Min(Size.X / normalSize.X, Size.Y / normalSize.Y) : 1f;
-                return HasOpaquePixel(m_NormalMask, (point - (Size - normalSize * normalFit) / 2) / normalFit);
+                // 浅岸、东海原版用透明形状接收输入，不能因中心无图像而反复退出悬停。
+                return normalHit;
             }
 
             // 先逆转子节点的 Scale/Pivot，再按 KeepAspect 和 shader 的 UV 缩放还原源像素。

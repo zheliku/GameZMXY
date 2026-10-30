@@ -46,12 +46,13 @@ public sealed partial class UiSmokeScenario
                     new EnemySpawn(new Vector2(580, 100)));
                 var actor = m_Monster;
                 var agent = (IEnemyAiAgent)actor;
+                var attacks = (System.Collections.Generic.IReadOnlyList<GameConfig.Battle.AttackConfig>)typeof(AbstractActorEntity)
+                    .GetProperty("OwnAttacks", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(actor)!;
                 await WaitUntilAsync(() => actor.OnFloor, "狮驼王 AI 夹具未落地");
                 Check(agent.AiPreset.IdleStateType == typeof(LionCamelKingEngageState), "狮驼王没有使用专属选招状态");
-                Check(Near(agent.Params.Attacks[1].Cooldown.Min, 100f / 24f) &&
-                    Near(agent.Params.Attacks[1].Cooldown.Max, 100f / 24f) &&
-                    Near(agent.Params.Attacks[2].Cooldown.Min, 11) && Near(agent.Params.Attacks[2].Cooldown.Max, 11) &&
-                    actor.Config.LoseTargetTime <= 0, "狮驼王正式配置的冷却或持续追踪规则不符原版");
+                Check(Near(attacks[1].AiCooldown.X, 100f / 24f) &&
+                    Near(attacks[1].AiCooldown.Y, 100f / 24f) &&
+                    Near(attacks[2].AiCooldown.X, 11) && Near(attacks[2].AiCooldown.Y, 11), "狮驼王正式配置的冷却或持续追踪规则不符原版");
 
                 var casts = new System.Collections.Generic.List<(double Time, int Index, float Distance)>();
                 float targetDistance = 200;
@@ -113,7 +114,8 @@ public sealed partial class UiSmokeScenario
                         "狮驼王近身出招没有遵守原版整秒决策节拍");
                     var nextCloud = await WaitForCast(2, 600);
                     Check(nextCloud.Time - cloud.Time >= 10.95 && nextCloud.Time - cloud.Time <= 11.15 &&
-                        agent.TargetBox.HasArea(), "毒雾11秒独立冷却或超出初始视野后的追击不符原版");
+                        agent.HasTarget, $"毒雾11秒独立冷却或追击不符原版：cloud={cloud.Time:F4}, next={nextCloud.Time:F4}, retained={agent.HasTarget}");
+                    System.IO.Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://.godot/validation/qixing_combat_alignment"));
                     System.IO.File.WriteAllText(ProjectSettings.GlobalizePath($"res://.godot/validation/qixing_combat_alignment/lion_ai_{ticks}.json"),
                         Newtonsoft.Json.JsonConvert.SerializeObject(casts.Select(cast => new { cast.Time, cast.Index, cast.Distance }),
                             Newtonsoft.Json.Formatting.Indented));
@@ -133,7 +135,7 @@ public sealed partial class UiSmokeScenario
                     m_Monster.AiData.ElapsedSeconds < .1 && m_Monster.AiData.Cooldowns[1] == 0,
                     $"狮驼王池复用残留：same={ReferenceEquals(actor, m_Monster)}, attack={m_Monster.AttackSegment}, " +
                     $"age={m_Monster.AiData.ElapsedSeconds}, spinCd={m_Monster.AiData.Cooldowns[1]}, " +
-                    $"spinInitial={agent.Params.Attacks[1].InitCooldown}");
+                    $"spinInitial={attacks[1].AiInitCooldown}");
                 ReleaseTestEntity(m_Monster);
                 m_Monster = null;
                 await WaitFramesAsync(2);
@@ -185,6 +187,7 @@ public sealed partial class UiSmokeScenario
                     {
                         hero.GlobalPosition = actor.GlobalPosition + new Vector2(direction * 120, 0);
                         hero.Velocity = Vector2.Zero;
+                        heroSystem.AdvanceHurtProtection(float.MaxValue);
                         int beforeHp = hero.Hp;
                         if (id == EntityId.LionCamelKing && index == 1)
                         {
@@ -270,9 +273,9 @@ public sealed partial class UiSmokeScenario
                         await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                     }
 
-                    Check(!((IEnemyAiAgent)actor).TargetBox.HasArea(), "狮驼王首次发现超出了官方150高度");
+                    Check(!((IEnemyAiAgent)actor).HasTarget, "狮驼王首次发现超出了官方150高度");
                     hero.GlobalPosition = actor.GlobalPosition + new Vector2(50, 100);
-                    await WaitUntilAsync(() => ((IEnemyAiAgent)actor).TargetBox.HasArea(), "狮驼王未在官方首次发现范围内锁定目标");
+                    await WaitUntilAsync(() => ((IEnemyAiAgent)actor).HasTarget, "狮驼王未在官方首次发现范围内锁定目标");
                     hero.GlobalPosition = actor.GlobalPosition + new Vector2(500, 0);
                     double started = actor.AiData.ElapsedSeconds;
                     while (actor.AiData.ElapsedSeconds - started < 3.2)
@@ -280,7 +283,7 @@ public sealed partial class UiSmokeScenario
                         await WaitFramesAsync(1);
                     }
 
-                    Check(((IEnemyAiAgent)actor).TargetBox.HasArea(), "狮驼王错误地在三秒后丢失官方持续追踪的目标");
+                    Check(((IEnemyAiAgent)actor).HasTarget, "狮驼王错误地在三秒后丢失官方持续追踪的目标");
                     GD.Print("SMOKE-LION-AI PASS: 150px acquisition height, target retained beyond sight, spin facing preserved");
                 }
                 ReleaseTestEntity(actor);

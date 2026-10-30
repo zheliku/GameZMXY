@@ -99,6 +99,34 @@ public sealed partial class UiSmokeScenario
             Check(data?.SaveVersion == GameData.CurrentVersion && data.Heroes.Count == 1, "首次启动未按当前版本写回新档");
             CheckDisplay(battleForm, hero, flow.GetModel<ProfileModel>(), level);
 
+            if (OS.GetCmdlineUserArgs().Contains("--enemy-knockback-only"))
+            {
+                level.Cleanup();
+                await CheckEnemyKnockbackAsync(level, hero);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--effect-shapes-only"))
+            {
+                level.Cleanup();
+                await CheckEffectShapesAsync(hero);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--enemy-ranges-only"))
+            {
+                level.Cleanup();
+                await CheckEnemyRangesAsync(hero);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--enemy-fidelity-only"))
+            {
+                level.Cleanup();
+                await CheckEnemyFidelityAsync(hero);
+                return;
+            }
+
             if (OS.GetCmdlineUserArgs().Contains("--passive-only"))
             {
                 await CheckPassiveUpgradesAsync(battleForm, flow);
@@ -199,6 +227,11 @@ public sealed partial class UiSmokeScenario
             {
                 await CheckMonsterResponsibilitiesAsync(hero);
                 await CheckActorAnimationEventsAsync();
+                if (DisplayServer.GetName() != "headless")
+                {
+                    await CheckDemonChaseAsync(hero);
+                }
+
                 level.Cleanup();
                 await WaitFramesAsync(3);
                 return;
@@ -231,6 +264,14 @@ public sealed partial class UiSmokeScenario
                 await CheckQixingEnemiesAsync(hero, flow);
                 level.Cleanup();
                 await WaitFramesAsync(3);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--monster-health-only"))
+            {
+                level.Cleanup();
+                hero.GlobalPosition = new Vector2(100000, 100000);
+                await CheckMonsterHealthBarsAsync();
                 return;
             }
 
@@ -915,18 +956,20 @@ public sealed partial class UiSmokeScenario
     }
 
     /// <summary>
-    /// 验证两种小怪的共享血条、生命通知、定位、死亡隐藏与真实实体池复用。
+    /// 枚举正式表的全部小怪，验证共享血条、生命通知、定位、死亡隐藏与真实实体池复用。
     /// </summary>
     /// <returns>血条生命周期回归完成的任务。</returns>
     private async Task CheckMonsterHealthBarsAsync()
     {
-        foreach (EntityId entityId in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey })
+        foreach (EntityId entityId in ConfigSystem.Instance.Tables.TbEnemyConfig.DataList
+                     .Where(config => config.EnemyId < 10000).Select(config => config.EntityId))
         {
             var config = ConfigSystem.Instance.Tables.TbEnemyConfig.DataList.Single(x => x.EntityId == entityId);
             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(entityId, new EnemySpawn(new Vector2(200, 200)));
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             AbstractEnemyEntity previous = m_Monster;
+            int expectedMaxHp = m_Monster.MaxHp; // 真实入场规则可能使用本关守关覆盖值。
             ResourceBar bar = m_Monster.GetNode<ResourceBar>("m_HealthBar");
             Check(bar.Size.IsEqualApprox(bar.TextureProgress.GetSize()) && bar.Size.IsEqualApprox(new Vector2(50, 5)),
                 $"{entityId} 实例尺寸覆盖了官方 50×5 填充，导致可见血条偏心");
@@ -1013,7 +1056,7 @@ public sealed partial class UiSmokeScenario
             m_Monster.SetPhysicsProcess(false);
             Check(ReferenceEquals(previous, m_Monster) && ReferenceEquals(bar, m_Monster.GetNode<ResourceBar>("m_HealthBar")),
                 $"{entityId} 怪物和血条未从同一实体池实例复用");
-            Check(m_Monster.Hp == config.BaseAttributes.MaxHp && m_Monster.MaxHp == config.BaseAttributes.MaxHp &&
+            Check(m_Monster.Hp == expectedMaxHp && m_Monster.MaxHp == expectedMaxHp &&
                 !m_Monster.Dead && !bar.Visible && Near(bar.Value, 1),
                 $"{entityId} 复用残留上次生命、死亡事实或血条表现");
             SmokeInspection.DamageMonster(m_Monster, 1);
@@ -1022,9 +1065,10 @@ public sealed partial class UiSmokeScenario
             ReleaseTestEntity(m_Monster);
             m_Monster = null;
             await WaitFramesAsync(2);
+            GD.Print($"SMOKE-MONSTER HEALTH PASS: {entityId}, fade/pause/death/reuse, hp={expectedMaxHp}");
         }
 
-        GD.Print("SMOKE-UI: 两种小怪血条即时受伤/治疗/转向/死亡隐藏/退订与实体池复用验证完成");
+        GD.Print("SMOKE-UI: 全部正式小怪血条即时受伤/治疗/转向/死亡隐藏/退订与实体池复用验证完成");
     }
 
     /// <summary>

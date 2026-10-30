@@ -1,39 +1,61 @@
-[gd_scene format=3]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/Enemies/sea/shrimp_projectile.png" id="texture"]
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Sea/shrimp_demon/ShrimpProjectileEffectNode.cs" id="script"]
+[gd_scene format=3 uid="uid://r0wekl00kt68"]
+
+[ext_resource type="Script" uid="uid://ewcvpg6f0vdb" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Sea/shrimp_demon/ShrimpProjectileEffectNode.cs" id="script"]
+[ext_resource type="Texture2D" uid="uid://cxd1gdwbwn123" path="res://TheGame/Sprites/Effects/Enemies/sea/shrimp_projectile.png" id="texture"]
+
+[sub_resource type="RectangleShape2D" id="shape"]
+size = Vector2(18.45, 12.3)
+
 [sub_resource type="Animation" id="play"]
-length = 1.0
 loop_mode = 1
 tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
 tracks/0/path = NodePath("HitBox/CollisionShape2D:disabled")
-tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [false]}
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
 [sub_resource type="AnimationLibrary" id="library"]
-_data = {&"play": SubResource("play")}
-[sub_resource type="RectangleShape2D" id="shape"]
-size = Vector2(18.450000, 12.300000)
-[node name="ShrimpProjectileEffect" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape", "m_CancelArea")]
+_data = {
+&"play": SubResource("play")
+}
+
+[node name="ShrimpProjectileEffect" type="Node2D" unique_id=1962973242 node_paths=PackedStringArray("m_CancelArea", "m_Player", "m_HitBox")]
 script = ExtResource("script")
+m_CancelArea = NodePath("CancelArea")
 m_Player = NodePath("AnimationPlayer")
 m_HitBox = NodePath("HitBox")
-m_Shape = NodePath("HitBox/CollisionShape2D")
-m_CancelArea = NodePath("CancelArea")
-[node name="Sprite" type="Sprite2D" parent="."]
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=1712902609]
 texture = ExtResource("texture")
-offset = Vector2(-0.500000, -0.500000)
-[node name="HitBox" type="Area2D" parent="."]
+offset = Vector2(-0.5, -0.5)
+
+[node name="HitBox" type="Area2D" parent="." unique_id=815343014]
 collision_layer = 64
 collision_mask = 128
 monitorable = false
-[node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(0.025000, 0.000000)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox" unique_id=1306080316]
+position = Vector2(0.025, 0)
 shape = SubResource("shape")
 disabled = true
-[node name="CancelArea" type="Area2D" parent="."]
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="CancelArea" type="Area2D" parent="." unique_id=2052291526]
 collision_layer = 0
 collision_mask = 16
 monitorable = false
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CancelArea"]
-position = Vector2(0.025000, 0.000000)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CancelArea" unique_id=1716537742]
+position = Vector2(0.025, 0)
 shape = SubResource("shape")
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1288596176]
 libraries/ = SubResource("library")

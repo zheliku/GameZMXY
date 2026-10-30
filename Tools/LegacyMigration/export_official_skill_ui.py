@@ -14,6 +14,9 @@ import shutil
 import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
+import zlib
+
+from PIL import Image
 
 SOURCE_SHA256 = 'fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e'
 ICONS = {
@@ -71,6 +74,15 @@ def export(java, ffdec, source, destination):
         tree = ET.parse(xml)
         tags = tree.getroot().find('tags')
         buttons = {t.get('buttonId'): t for t in tags if t.get('type') == 'DefineButton2Tag'}
+        # PassiveSkill.btn is button 571, bitmap 569; over moves down 100 twips,
+        # while up/down share the original placement. Keep one stable canvas.
+        upgrade = next(t for t in tags if t.get('characterID') == '569')
+        pixels = zlib.decompress(bytes.fromhex(upgrade.get('zlibBitmapData')))
+        original = Image.frombytes('RGBA', (48, 26), pixels, 'raw', 'ARGB')
+        for state, y in [('normal', 0), ('hover', 5), ('pressed', 0)]:
+            canvas = Image.new('RGBA', (48, 31))
+            canvas.paste(original, (0, y))
+            canvas.save(destination / f'skills_upgrade_{state}.png')
         wrappers = {}
         for index, (name, original) in enumerate([('back', '295'), ('active', '657'), ('passive', '653')]):
             for state in range(2):
@@ -105,7 +117,7 @@ def export(java, ffdec, source, destination):
         for sid, name in [(375, 'skills_background'), (586, 'skills_soul_badge')]:
             original = next((work / 'images').glob(f'{sid}.*'))
             shutil.copyfile(original, destination / (name + original.suffix.lower()))
-    print(f'Exported 34 original skill UI images; source SHA-256 {SOURCE_SHA256}')
+    print(f'Exported 37 original skill UI images; source SHA-256 {SOURCE_SHA256}')
 
 
 if __name__ == '__main__':

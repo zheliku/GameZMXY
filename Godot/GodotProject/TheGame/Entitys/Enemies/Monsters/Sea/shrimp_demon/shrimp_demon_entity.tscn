@@ -1,9 +1,11 @@
 [gd_scene format=3 uid="uid://b4p4ig2peq8ys"]
 
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/shrimp_demon/shrimp_demon_official_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="5_dtdwk"]
+[ext_resource type="PackedScene" uid="uid://caauui8brtx47" path="res://TheGame/UIs/Battle/monster_health_bar.tscn" id="6_y0s5w"]
+[ext_resource type="SpriteFrames" uid="uid://bmeuhxsdvc2tj" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/shrimp_demon/shrimp_demon_official_frames.tres" id="frames"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Sea/shrimp_demon/shrimp_demon_library.tres" id="library"]
-[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Monsters/Sea/shrimp_demon/shrimp_projectile_effect.tscn" id="projectile"]
+[ext_resource type="AnimationLibrary" uid="uid://cualn88hl118k" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Sea/shrimp_demon/shrimp_demon_library.tres" id="library"]
+[ext_resource type="PackedScene" uid="uid://r0wekl00kt68" path="res://TheGame/Entitys/Enemies/Monsters/Sea/shrimp_demon/shrimp_projectile_effect.tscn" id="projectile"]
 [ext_resource type="Script" uid="uid://dkm2knydim5al" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Sea/shrimp_demon/ShrimpDemonEntity.cs" id="script"]
 
 [sub_resource type="CapsuleShape2D" id="body"]
@@ -13,22 +15,44 @@ height = 101.98334
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
 size = Vector2(39.99642, 101.98334)
 
-[sub_resource type="RectangleShape2D" id="hit_shape"]
+[sub_resource type="RectangleShape2D" id="shape_empty"]
 size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="detector"]
-size = Vector2(600, 1000)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_y0s5w"]
+size = Vector2(600, 900)
 
-[node name="ShrimpDemonEntity" type="CharacterBody2D" unique_id=1178142798 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_dtdwk"]
+a = Vector2(-350, 0)
+b = Vector2(350, 0)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_ojip6"]
+a = Vector2(-400, 0)
+b = Vector2(400, 0)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_68u0c"]
+a = Vector2(-200, 0)
+b = Vector2(200, 0)
+
+[sub_resource type="Gradient" id="Gradient_fill"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fill"]
+gradient = SubResource("Gradient_fill")
+width = 50
+height = 5
+
+[node name="ShrimpDemonEntity" type="CharacterBody2D" unique_id=1178142798 node_paths=PackedStringArray("m_RetreatRange", "m_Perception", "m_HealthBar", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("script")
+m_RetreatRange = NodePath("Perception/Retreat")
 m_ProjectileScene = ExtResource("projectile")
-m_Detector = NodePath("m_Detector")
+m_Perception = NodePath("Perception")
 m_EnemyEntityId = 14
+m_HealthBar = NodePath("m_HealthBar")
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
 m_AttackAnimations = PackedStringArray("attack_1")
@@ -39,10 +63,12 @@ m_HitBoxRoot = NodePath("m_HitBoxRoot")
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1463955476]
 sprite_frames = ExtResource("frames")
 animation = &"idle"
+offset = Vector2(44.5, -6.5)
 
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1627671974]
 position = Vector2(1.525, -1.75)
 shape = SubResource("body")
+debug_color = Color(0.58, 0.64, 0.72, 0.12)
 
 [node name="m_HurtBox" type="Area2D" parent="." unique_id=1405536494 node_paths=PackedStringArray("m_Owner")]
 collision_layer = 32
@@ -54,6 +80,7 @@ m_Owner = NodePath("..")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1664304045]
 position = Vector2(1.525, -1.75)
 shape = SubResource("hurt_shape")
+debug_color = Color(0.3, 0.66, 0.62, 0.14)
 
 [node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=1771580747]
 
@@ -63,16 +90,40 @@ collision_mask = 128
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1610229734]
-shape = SubResource("hit_shape")
+shape = SubResource("shape_empty")
 disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="m_Detector" type="Area2D" parent="." unique_id=1322032363]
+[node name="Perception" type="Area2D" parent="." unique_id=1322032363 node_paths=PackedStringArray("m_DetectionShape", "m_EngageShape", "m_PatrolShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
+script = ExtResource("5_dtdwk")
+m_DetectionShape = NodePath("Detection")
+m_EngageShape = NodePath("Engage")
+m_PatrolShape = NodePath("Patrol")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=156615240]
-shape = SubResource("detector")
+[node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=156615240]
+shape = SubResource("RectangleShape2D_y0s5w")
+debug_color = Color(0.36, 0.58, 0.8, 0.035)
+
+[node name="Engage" type="CollisionShape2D" parent="Perception" unique_id=165065718]
+shape = SubResource("SegmentShape2D_dtdwk")
+disabled = true
+debug_color = Color(0.85, 0.65, 0.35, 0.045)
+
+[node name="Patrol" type="CollisionShape2D" parent="Perception" unique_id=1661959616]
+shape = SubResource("SegmentShape2D_ojip6")
+disabled = true
+debug_color = Color(0.45, 0.62, 0.48, 0.03)
+
+[node name="Retreat" type="CollisionShape2D" parent="Perception" unique_id=680926418]
+shape = SubResource("SegmentShape2D_68u0c")
+disabled = true
+debug_color = Color(0.85, 0.65, 0.35, 0.045)
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=407455706]
 libraries/ = ExtResource("library")
+
+[node name="m_HealthBar" parent="." unique_id=1080627049 instance=ExtResource("6_y0s5w")]
+texture_progress = SubResource("GradientTexture2D_fill")

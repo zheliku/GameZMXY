@@ -14,6 +14,7 @@ func _register() -> void:
     var args := OS.get_cmdline_user_args()
     assert(args.size() in [4, 5], "Expected key, old button name, export field, caption and optional source frame count")
     var key: String = args[0]
+    assert(key not in ["qianan", "donghai", "shazhiwoliu"], "Coastal locations require apply_official_coastal_map.gd with the registered export manifest")
     var field: String = args[2]
     var frame_count := int(args[4]) if args.size() > 4 else 19
     var path := "res://TheGame/UIs/map_form.tscn"
@@ -33,8 +34,6 @@ func _register() -> void:
         child.free()
     var glow: TextureRect = template.get_node("LocationGlow").duplicate()
     glow.texture = load("res://TheGame/Sprites/UI/frontend/map_%s_hover.png" % key)
-    if key == "shazhiwoliu":
-        glow.texture = load("res://TheGame/Sprites/UI/frontend/map_shazhiwoliu_hover_registered.png")
     glow.material = glow.material.duplicate()
     glow.position = Vector2.ZERO
     glow.size = button.size

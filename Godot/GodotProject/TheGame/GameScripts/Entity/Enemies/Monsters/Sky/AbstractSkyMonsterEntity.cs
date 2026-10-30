@@ -1,4 +1,6 @@
 using System;
+using Godot;
+using GameFramework.Entity;
 using GameFramework.Fsm;
 using GameLogic.Enemies.Body;
 
@@ -9,7 +11,20 @@ namespace GameLogic.Enemies
     /// </summary>
     public abstract partial class AbstractSkyMonsterEntity : AbstractMonsterEntity, IEnemyFreeMoveBody
     {
+        [Export] private CollisionShape2D m_TrackingRange; // 空中物种的追踪高度上限，独立于近身选招范围。
+
         private EnemyBodyPreset m_BodyPreset; // 本物种的只读飞行配方，状态实例由每次显示创建。
+
+        /// <summary>
+        /// 目标高差允许追踪的半幅，像素；来自本物种原生场景。
+        /// </summary>
+        internal float TrackingHeight
+        {
+            get
+            {
+                return m_TrackingRange.Shape.GetRect().End.Y;
+            }
+        }
 
         /// <summary>
         /// AI写入、身体消费的垂直意图：-1上升、0悬停、1下降。
@@ -48,6 +63,16 @@ namespace GameLogic.Enemies
             get
             {
                 return m_BodyPreset ??= EnemyBodyPresets.Fly(VerticalAcceleration, VerticalSpeed);
+            }
+        }
+
+        /// <inheritdoc />
+        public override void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance, object userData)
+        {
+            base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
+            if (isNewInstance && (m_TrackingRange?.Shape is not SegmentShape2D || !m_TrackingRange.Disabled))
+            {
+                throw new InvalidOperationException("飞行怪物必须绑定独立的追踪高度范围。");
             }
         }
 

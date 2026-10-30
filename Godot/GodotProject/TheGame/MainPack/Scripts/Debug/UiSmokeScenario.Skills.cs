@@ -749,6 +749,7 @@ public sealed partial class UiSmokeScenario
                 }
                 finally
                 {
+                    enemy.SetPhysicsProcess(true); // 归还前恢复声音夹具关闭的身体推进，避免污染后续池复用测试。
                     GF.Entity.HideEntitySafe(enemy);
                 }
             }

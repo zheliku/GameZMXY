@@ -9,19 +9,10 @@ namespace GameLogic.Enemies
     internal sealed class LionCamelKingEngageState : AbstractBossAiState
     {
         /// <inheritdoc />
-        protected override float HeightRange
-        {
-            get
-            {
-                return 300f;
-            }
-        }
-
-        /// <inheritdoc />
         protected override void Engage(IEnemyAiAgent agent, bool decision, float delta)
         {
             float distance = Math.Abs(agent.TargetOffset.X);
-            if (distance > 150f)
+            if (distance > agent.EngageBounds.End.X)
             {
                 if (agent.AiData.Cooldowns[2] <= 0f)
                 {

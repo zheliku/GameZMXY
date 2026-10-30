@@ -73,6 +73,7 @@ public sealed partial class UiSmokeScenario
                 for (int index = 0; index < (id == EntityId.MacaqueKing ? 3 : 2); index++)
                 {
                     heroSystem.Heal(100000);
+                    heroSystem.AdvanceHurtProtection(float.MaxValue);
                     int beforeHp = hero.Hp;
                     Check(((IEnemyAiAgent)actor).RequestAttack(index), $"{id} 拒绝第 {index + 1} 招");
                     await WaitUntilAsync(() => actor.AttackSegment == index, $"{id} 身体 FSM 没有开始第 {index + 1} 招");

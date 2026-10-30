@@ -16,9 +16,7 @@ namespace GameLogic.Enemies
         private const int ShoreLevelId = 7; // 守关变体只属于浅岸，其他海域继续使用基础值。
         [Export] private TurtleGuardianConfigResource m_GuardianConfig; // 浅岸专属生命与掉落数值。
 
-        private static readonly EnemyAiPreset m_Preset = new(typeof(WanderState), typeof(TurtleMinisterEngageState),
-            () => new WanderState(), () => new PauseState(), () => new TurtleMinisterEngageState(),
-            () => new CcLockedState(), () => new DeathState()); // 巡逻和本物种交战共用实例时钟。
+        private static readonly EnemyAiPreset m_Preset = EnemyAiPresets.Patrol; // 巡逻和本物种交战共用实例时钟。
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset

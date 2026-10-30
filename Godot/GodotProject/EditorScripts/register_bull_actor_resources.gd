@@ -24,7 +24,8 @@ func _register() -> void:
         var scene: PackedScene = load(path)
         assert(scene != null, "Missing bull actor " + path)
         var actor := scene.instantiate()
-        for field in ["m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"]:
+        load("res://EditorScripts/enemy_perception_authoring.gd").configure(actor)
+        for field in ["m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"]:
             assert(actor.get(field) != null, path + " missing " + field)
         if path.ends_with("bull_demon_heart_entity.tscn"):
             for field in ["m_Heart", "m_HeartFade", "m_Presentation", "m_LeftHand", "m_RightHand", "m_FireScene"]:

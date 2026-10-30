@@ -85,7 +85,7 @@ func _actor(actor: Dictionary) -> bool:
 	root.name = "BatEntity" if bat else "BatCaveStatueEntity"
 	root.set_script(load("res://TheGame/GameScripts/Entity/Enemies/%s/%s.cs" %
 		["Monsters/Bat" if bat else "Bosses/zm1_04_bat_cave", root.name]))
-	for pair in [["m_Detector", "m_Detector"], ["m_Body", "m_Body"], ["m_AnimPlayer", "m_AnimPlayer"],
+	for pair in [["m_Perception", "Perception"], ["m_Body", "m_Body"], ["m_AnimPlayer", "m_AnimPlayer"],
 		["m_HurtBox", "m_HurtBox"], ["m_HitBox", "m_HitBoxRoot/m_HitBox"], ["m_HitBoxRoot", "m_HitBoxRoot"],
 		["m_HealthBar", "m_HealthBar"]]:
 		root.set(pair[0], root.get_node(pair[1]))
@@ -107,8 +107,8 @@ func _actor(actor: Dictionary) -> bool:
 	root.get_node("m_HurtBox/CollisionShape2D").position = hurt.get_center()
 	var detector := RectangleShape2D.new()
 	detector.size = Vector2(600, 1000)
-	root.get_node("m_Detector/CollisionShape2D").shape = detector
-	root.get_node("m_Detector/CollisionShape2D").position = Vector2.ZERO
+	root.get_node("Perception/Detection").shape = detector
+	root.get_node("Perception/Detection").position = Vector2.ZERO
 	var library := AnimationLibrary.new()
 	var shapes := {}
 	for action in actor.actions:
@@ -157,6 +157,8 @@ func _actor(actor: Dictionary) -> bool:
 	player.add_animation_library("", library)
 	player.callback_mode_method = AnimationMixer.ANIMATION_CALLBACK_MODE_METHOD_IMMEDIATE
 	var packed := PackedScene.new()
+	if root.get("m_EnemyEntityId") != null:
+		load("res://EditorScripts/enemy_perception_authoring.gd").configure(root)
 	assert(packed.pack(root) == OK)
 	assert(ResourceSaver.save(packed, destination) == OK)
 	root.free()

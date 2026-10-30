@@ -8,19 +8,6 @@ namespace GameLogic.Enemies.AI
     /// </summary>
     public sealed class TamarinKingEngageState : AbstractBossAiState
     {
-        private const float AttackDistance = 250f; // Monster6.hasAttackTarget 的原版水平阈值。
-
-        /// <summary>
-        /// 原版 attackRange 450 × 2 的纵向范围。
-        /// </summary>
-        protected override float HeightRange
-        {
-            get
-            {
-                return 900f;
-            }
-        }
-
         /// <summary>
         /// 按距离追击或停步选招，不套用小怪的出手概率和攻击盒追击距离。
         /// </summary>
@@ -30,7 +17,7 @@ namespace GameLogic.Enemies.AI
         protected override void Engage(IEnemyAiAgent agent, bool decision, float delta)
         {
             var offset = agent.TargetOffset;
-            if (Math.Abs(offset.X) > AttackDistance)
+            if (Math.Abs(offset.X) > agent.EngageBounds.End.X)
             {
                 agent.Move(Math.Sign(offset.X));
                 return;

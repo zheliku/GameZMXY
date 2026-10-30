@@ -9,19 +9,10 @@ namespace GameLogic.Enemies
     internal sealed class JiaoDemonKingEngageState : AbstractBossAiState
     {
         /// <inheritdoc />
-        protected override float HeightRange
-        {
-            get
-            {
-                return 500f;
-            }
-        }
-
-        /// <inheritdoc />
         protected override void Engage(IEnemyAiAgent agent, bool decision, float delta)
         {
             int direction = Math.Sign(agent.TargetOffset.X);
-            if (MathF.Abs(agent.TargetOffset.X) > 250f)
+            if (MathF.Abs(agent.TargetOffset.X) > agent.EngageBounds.End.X)
             {
                 if (agent.AiData.Cooldowns[2] <= 0f && agent.RequestAttack(2))
                 {

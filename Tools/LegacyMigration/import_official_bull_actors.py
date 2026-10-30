@@ -91,12 +91,16 @@ def actor_scene(actor, frames, library):
     hurt = actor["hurt_bounds"]
     center = [hurt[0] + hurt[2] / 2, hurt[1] + hurt[3] / 2]
     bindings = ["m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"]
+    if name == "bull_guard":
+        bindings.append("m_HealthBar")
     extra = (["m_Heart", "m_HeartFade", "m_Presentation", "m_LeftHand", "m_RightHand"] if heart else [])
     lines = ['[gd_scene format=3]',
              f'[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Enemies/{relative}/{class_name}.cs" id="script"]',
              f'[ext_resource type="SpriteFrames" path="{uri(frames)}" id="frames"]',
              f'[ext_resource type="AnimationLibrary" path="{uri(library)}" id="library"]',
              '[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]']
+    if name == "bull_guard":
+        lines.append('[ext_resource type="PackedScene" path="res://TheGame/UIs/Battle/monster_health_bar.tscn" id="health"]')
     if name == "bull_demon_king":
         lines.append('[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn" id="death"]')
     if heart:
@@ -112,7 +116,8 @@ def actor_scene(actor, frames, library):
               f'radius = {fmt_float(min(hurt[2], hurt[3]) / 2)}', f'height = {fmt_float(max(hurt[2], hurt[3]))}',
               '[sub_resource type="RectangleShape2D" id="hurt_shape"]', f'size = {vec2(hurt[2:])}',
               '[sub_resource type="RectangleShape2D" id="empty"]', 'size = Vector2(1, 1)',
-              '[sub_resource type="RectangleShape2D" id="detector"]', 'size = Vector2(600, 1000)',
+              '[sub_resource type="RectangleShape2D" id="detector"]',
+              f'size = Vector2(600, {2 * (110 if name == "bull_guard" else 450 if name == "bull_demon_beast" else 400)})',
               f'[node name="{class_name}" type="CharacterBody2D" node_paths=PackedStringArray(' + ', '.join('"' + key + '"' for key in bindings + extra) + ')]',
               'collision_layer = 4', f'collision_mask = {0 if heart else 9}', 'floor_constant_speed = true',
               'floor_max_angle = 0.87266463', 'floor_snap_length = 12.0', 'script = ExtResource("script")',
@@ -122,6 +127,8 @@ def actor_scene(actor, frames, library):
               'm_AttackAnimations = PackedStringArray(' + ', '.join('"' + value + '"' for value in attacks) + ')']
     if name == "bull_demon_king":
         lines.append('m_DeathScene = ExtResource("death")')
+    if name == "bull_guard":
+        lines.append('m_HealthBar = NodePath("m_HealthBar")')
     if heart:
         lines += [f'{key} = NodePath("{key}")' for key in extra]
         lines.append('m_FireScene = ExtResource("fire")')
@@ -144,6 +151,9 @@ def actor_scene(actor, frames, library):
               '[node name="m_AnimPlayer" type="AnimationPlayer" parent="."]', 'libraries/ = ExtResource("library")']
     if heart:
         lines += heart_nodes()
+    if name == "bull_guard":
+        lines += ['[node name="m_HealthBar" parent="." instance=ExtResource("health")]',
+                  f'offset_top = {fmt_float(hurt[1] - 14)}', f'offset_bottom = {fmt_float(hurt[1] - 6)}']
     lines.append('')
     return '\n'.join(lines)
 

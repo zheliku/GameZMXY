@@ -107,7 +107,7 @@ public sealed partial class UiSmokeScenario
                 var flyer = m_Monster;
                 var flyerAgent = (IEnemyAiAgent)flyer;
                 var fsm = SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(flyer, "m_AiFsm");
-                var state = fsm.GetState<FlyingDemonAiState>();
+                var state = fsm.GetState<FlyingDemonEngageState>();
                 float turn = SmokeInspection.ReadField<float>(state, "m_TurnInterval");
                 void FollowFlyer()
                 {
@@ -145,7 +145,7 @@ public sealed partial class UiSmokeScenario
                 hero.GlobalPosition = new Vector2(100000, 100000);
                 double age = flyer.AiData.ElapsedSeconds;
                 await WaitUntilAsync(() => flyer.AiData.ElapsedSeconds - age > 3.2, "飞行魔时钟未推进");
-                Check(flyerAgent.TargetBox.HasArea(), "飞行魔错误地在超出视野三秒后丢失原版持续目标");
+                Check(flyerAgent.HasTarget, "飞行魔错误地在超出视野三秒后丢失原版持续目标");
                 ReleaseTestEntity(flyer);
                 m_Monster = null;
                 GD.Print($"SMOKE-GARUDA AI 2-3 {ticks}Hz PASS: autonomous casts, shared cooldown, takeoff/fall, retreat and hurt continuity");
@@ -264,6 +264,7 @@ public sealed partial class UiSmokeScenario
                                 }
                             }
                             hero.GlobalPosition = actor.GlobalPosition + new Vector2(direction * 100, 0);
+                            flow.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
                             int hp = hero.Hp;
                             var agent = (IEnemyAiAgent)actor;
                             Check(agent.RequestAttack(index), $"{id}/{index + 1} 拒绝出招");

@@ -27,6 +27,12 @@
 - **事件边界**：跨模块结果通过 `GF.Event` 发布池化事件参数。事件只携带值，不持有攻击包或实体；订阅者在分发期间读取，不保存事件对象。转发时创建新参数实例。
 - **物理层**：代码使用层名，不写位掩码数字：`World`、`PlayerBody`、`EnemyBody`、`Platform`、`PlayerHitBox`、`EnemyHurtBox`、`EnemyHitBox`、`PlayerHurtBox`、`MagicWeapon`、`Trap`、`Item`、`Exit`、`Detector`、`PlayerBarrier`。层序由 `project.godot` 定义。
 
+## 敌人原生碰撞显示（2026-10-30）
+
+按用户本轮要求，敌人及其效果的原生 CollisionShape2D 统一语义颜色：身体灰蓝 `(0.58,0.64,0.72,0.12)`、受击青绿 `(0.30,0.66,0.62,0.14)`、攻击砖红 `(0.88,0.36,0.30,0.18)`、首次索敌淡蓝 `(0.36,0.58,0.80,0.035)`、巡逻灰绿 `(0.45,0.62,0.48,0.03)`、交战/追踪/专属选招淡金 `(0.85,0.65,0.35,0.045)`。仅身体和攻击区填色，其他范围显示轮廓或单维线段；不为显示颜色启用禁用的物理形状。Godot 会将禁用形状显示为灰白，这是原生编辑器行为。
+
+作者工具共用 `EditorScripts/enemy_collision_authoring.gd`，只写原生 debug_color/debug_fill；运行时不增加绘图器。调整后检查代表物种的实际原生视口，保持大范围低存在感、身体与动作可见。
+
 ## 旧项目参考
 
 - `ZMXY_BHYH/Script/Base/BaseHero.gd`、`BaseMonster.gd` 可查角色、怪物的旧玩法和数值表现；旧实现含集中式行为和状态标志，不沿用其代码结构。

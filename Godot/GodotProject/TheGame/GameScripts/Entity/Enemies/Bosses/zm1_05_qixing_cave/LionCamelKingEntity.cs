@@ -11,7 +11,7 @@ namespace GameLogic.Enemies
     public partial class LionCamelKingEntity : AbstractBossEntity
     {
         private static readonly EnemyAiPreset m_Preset = new(typeof(LionCamelKingEngageState), typeof(LionCamelKingEngageState),
-            () => new LionCamelKingEngageState(), () => new CcLockedState(), () => new DeathState()); // 各实例独立持有选招时钟。
+            () => new LionCamelKingEngageState()); // 各实例独立持有选招时钟。
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset
@@ -31,18 +31,6 @@ namespace GameLogic.Enemies
             {
                 return AttackSegment == 1;
             }
-        }
-
-        /// <summary>
-        /// 首次发现按官方原点矩形：横向视野内且高度差不超过150；发现后使用300的交战高度。
-        /// </summary>
-        /// <param name="actor">索敌区中的候选角色。</param>
-        /// <returns>是否满足狮驼王的首次发现条件。</returns>
-        protected override bool CanSelectTarget(AbstractActorEntity actor)
-        {
-            return base.CanSelectTarget(actor) &&
-            Mathf.Abs(actor.GlobalPosition.X - GlobalPosition.X) < Config.SightRange &&
-            Mathf.Abs(actor.GlobalPosition.Y - GlobalPosition.Y) <= 150f;
         }
 
         /// <summary>

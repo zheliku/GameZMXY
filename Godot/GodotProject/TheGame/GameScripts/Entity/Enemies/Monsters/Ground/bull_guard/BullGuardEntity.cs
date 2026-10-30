@@ -8,7 +8,7 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class BullGuardEntity : AbstractGroundMonsterEntity
     {
-        private static readonly EnemyAiPreset m_Preset = EnemyAiPresets.Patrol; // 普通巡逻、追击与80%出手欲望由共享小怪状态负责。
+        private static readonly EnemyAiPreset m_Preset = EnemyAiPresets.Patrol; // Monster25 的原点距离与80%出手欲望。
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset
@@ -19,10 +19,5 @@ namespace GameLogic.Enemies
             }
         }
 
-        /// <inheritdoc />
-        protected override bool TryRequestAttack(int index)
-        {
-            return MathF.Abs(((IEnemyAiAgent)this).TargetOffset.X) <= 110f && base.TryRequestAttack(index);
-        }
     }
 }

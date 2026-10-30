@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://ya5aeuk5jcqm"]
 
+[ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="4_51hm8"]
 [ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_beast_official_frames.tres" id="frames"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
 [ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_beast_library.tres" id="library"]
@@ -15,17 +16,21 @@ size = Vector2(84.97601, 56.990204)
 [sub_resource type="RectangleShape2D" id="empty"]
 size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="detector"]
-size = Vector2(600, 1000)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2twc0"]
+size = Vector2(600, 900)
 
-[node name="BullDemonBeastEntity" type="CharacterBody2D" unique_id=536585682 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_51hm8"]
+a = Vector2(-360, 0)
+b = Vector2(400, 0)
+
+[node name="BullDemonBeastEntity" type="CharacterBody2D" unique_id=536585682 node_paths=PackedStringArray("m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("script")
-m_Detector = NodePath("m_Detector")
+m_Perception = NodePath("Perception")
 m_EnemyEntityId = 22
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
@@ -43,6 +48,7 @@ offset = Vector2(3, -13.5)
 position = Vector2(0.925, -3.3)
 rotation = 1.5707964
 shape = SubResource("body_shape")
+debug_color = Color(0.58, 0.64, 0.72, 0.12)
 
 [node name="m_HurtBox" type="Area2D" parent="." unique_id=637304660 node_paths=PackedStringArray("m_Owner")]
 collision_layer = 32
@@ -54,6 +60,7 @@ m_Owner = NodePath("..")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1221319116]
 position = Vector2(0.925, -3.3)
 shape = SubResource("hurt_shape")
+debug_color = Color(0.3, 0.66, 0.62, 0.14)
 
 [node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=1776782396]
 
@@ -65,14 +72,24 @@ monitorable = false
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1802891251]
 shape = SubResource("empty")
 disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="m_Detector" type="Area2D" parent="." unique_id=1060539364]
+[node name="Perception" type="Area2D" parent="." unique_id=1060539364 node_paths=PackedStringArray("m_DetectionShape", "m_PatrolShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
+script = ExtResource("4_51hm8")
+m_DetectionShape = NodePath("Detection")
+m_PatrolShape = NodePath("Patrol")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=534761432]
-shape = SubResource("detector")
+[node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=534761432]
+shape = SubResource("RectangleShape2D_2twc0")
+debug_color = Color(0.36, 0.58, 0.8, 0.035)
+
+[node name="Patrol" type="CollisionShape2D" parent="Perception" unique_id=1347308574]
+shape = SubResource("SegmentShape2D_51hm8")
+disabled = true
+debug_color = Color(0.45, 0.62, 0.48, 0.03)
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=361113274]
 libraries/ = ExtResource("library")

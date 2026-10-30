@@ -23,7 +23,6 @@ texture = ExtResource("texture")
 offset = Vector2(-8.5, -116)
 hframes = 8
 vframes = 5
-frame = 39
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=42424592]
 position = Vector2(-1, 27.000002)

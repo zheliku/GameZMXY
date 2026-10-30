@@ -6,14 +6,17 @@
 [ext_resource type="Texture2D" uid="uid://dvl205jrly7j7" path="res://TheGame/Sprites/UI/frontend/map_bianfuku_current.png" id="17_6v2in"]
 [ext_resource type="Texture2D" uid="uid://b1rrhotetqt0" path="res://TheGame/Sprites/UI/frontend/map_qixingdong_current.png" id="20_eqj77"]
 [ext_resource type="Texture2D" uid="uid://bsl0ejwc65puc" path="res://TheGame/Sprites/UI/frontend/map_jialuoluo_current.png" id="23_jo74s"]
+[ext_resource type="BitMap" uid="uid://b6v2k53tu4oiq" path="res://TheGame/Sprites/UI/frontend/map_qianan_hit_mask.res" id="25_aeh7o"]
 [ext_resource type="Texture2D" uid="uid://c0r4ea708k4y8" path="res://TheGame/Sprites/UI/frontend/map_qianan_current.png" id="26_eqj77"]
 [ext_resource type="AnimationLibrary" uid="uid://b0vovxtt83iah" path="res://TheGame/Sprites/UI/frontend/map_bianfuku_hover_animation.tres" id="29_0mcer"]
+[ext_resource type="BitMap" uid="uid://cd4p5nretygkx" path="res://TheGame/Sprites/UI/frontend/map_donghai_hit_mask.res" id="29_3018y"]
 [ext_resource type="Texture2D" uid="uid://br6fhog55fedu" path="res://TheGame/Sprites/UI/frontend/map_donghai_current.png" id="29_omjdr"]
 [ext_resource type="AnimationLibrary" uid="uid://bow0vvy2d1eda" path="res://TheGame/Sprites/UI/frontend/map_shuiliandong_hover_animation.tres" id="30_s3lwo"]
 [ext_resource type="AnimationLibrary" uid="uid://biuuhf4tut753" path="res://TheGame/Sprites/UI/frontend/map_taohuayuan_hover_animation.tres" id="31_0mcer"]
-[ext_resource type="Texture2D" uid="uid://cve8potexl3tk" path="res://TheGame/Sprites/UI/frontend/map_shazhiwoliu_hover_registered.png" id="31_gcevj"]
 [ext_resource type="AnimationLibrary" uid="uid://c5h6nx7v5557o" path="res://TheGame/Sprites/UI/frontend/map_qixingdong_hover_animation.tres" id="31_pfyxb"]
 [ext_resource type="Texture2D" uid="uid://dnaoh55uqvbay" path="res://TheGame/Sprites/UI/frontend/map_shazhiwoliu_current.png" id="32_hxmi1"]
+[ext_resource type="BitMap" uid="uid://dwa81wd00n0f1" path="res://TheGame/Sprites/UI/frontend/map_shazhiwoliu_hit_mask.res" id="33_3018y"]
+[ext_resource type="Texture2D" uid="uid://b6lb8t8q0g7jx" path="res://TheGame/Sprites/UI/frontend/map_shazhiwoliu_hover.png" id="34_ltgcs"]
 [ext_resource type="Texture2D" uid="uid://ln5u77s7n1r8" path="res://TheGame/Sprites/UI/frontend/map_niumogu_current.png" id="35_gcevj"]
 [ext_resource type="AnimationLibrary" uid="uid://i2clfrnqovyr" path="res://TheGame/Sprites/UI/frontend/map_jialuoluo_hover_animation.tres" id="36_6v2in"]
 [ext_resource type="AnimationLibrary" uid="uid://rgurnt1o0q" path="res://TheGame/Sprites/UI/frontend/map_donghai_hover_animation.tres" id="38_8k1cn"]
@@ -49,30 +52,6 @@
 [ext_resource type="Texture2D" uid="uid://batx133n5ba8m" path="res://TheGame/Sprites/UI/frontend/map_taohuayuan_normal.png" id="taohuayuan_normal"]
 [ext_resource type="Theme" path="res://TheGame/MainPack/Themes/legacy_menu_theme.tres" id="theme"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_sbwqa"]
-resource_local_to_scene = true
-shader = ExtResource("outline")
-shader_parameter/image_scale = 1.0
-shader_parameter/line_thickness = 0.0
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_aeh7o"]
-resource_local_to_scene = true
-shader = ExtResource("outline")
-shader_parameter/image_scale = 1.0
-shader_parameter/line_thickness = 0.0
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_3018y"]
-resource_local_to_scene = true
-shader = ExtResource("outline")
-shader_parameter/image_scale = 1.0
-shader_parameter/line_thickness = 0.0
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ltgcs"]
-resource_local_to_scene = true
-shader = ExtResource("outline")
-shader_parameter/image_scale = 1.0
-shader_parameter/line_thickness = 0.0
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_478qf"]
 resource_local_to_scene = true
 shader = ExtResource("outline")
@@ -104,6 +83,30 @@ shader_parameter/image_scale = 1.0
 shader_parameter/line_thickness = 0.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_06mda"]
+resource_local_to_scene = true
+shader = ExtResource("outline")
+shader_parameter/image_scale = 1.0
+shader_parameter/line_thickness = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_txcfq"]
+resource_local_to_scene = true
+shader = ExtResource("outline")
+shader_parameter/image_scale = 1.0
+shader_parameter/line_thickness = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rdgo2"]
+resource_local_to_scene = true
+shader = ExtResource("outline")
+shader_parameter/image_scale = 1.0
+shader_parameter/line_thickness = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_eok71"]
+resource_local_to_scene = true
+shader = ExtResource("outline")
+shader_parameter/image_scale = 1.0
+shader_parameter/line_thickness = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_6425h"]
 resource_local_to_scene = true
 shader = ExtResource("outline")
 shader_parameter/image_scale = 1.0
@@ -158,11 +161,13 @@ m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Huaguoshan" unique_id=619886601]
 visible = false
-material = SubResource("ShaderMaterial_sbwqa")
+material = SubResource("ShaderMaterial_478qf")
 layout_mode = 0
-offset_right = 160.0
-offset_bottom = 174.0
-pivot_offset = Vector2(80, 87)
+offset_left = -12.0
+offset_top = -12.0
+offset_right = 172.0
+offset_bottom = 186.0
+pivot_offset = Vector2(92, 99)
 mouse_filter = 2
 texture = ExtResource("huaguoshan_hover")
 expand_mode = 1
@@ -193,11 +198,13 @@ m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Shuiliandong" unique_id=764583511]
 visible = false
-material = SubResource("ShaderMaterial_aeh7o")
+material = SubResource("ShaderMaterial_vsk28")
 layout_mode = 0
-offset_right = 160.0
-offset_bottom = 174.0
-pivot_offset = Vector2(80, 87)
+offset_left = -10.847458
+offset_top = -10.847458
+offset_right = 170.84746
+offset_bottom = 184.84746
+pivot_offset = Vector2(90.84746, 97.84746)
 mouse_filter = 2
 texture = ExtResource("shuiliandong_hover")
 expand_mode = 1
@@ -228,11 +235,13 @@ m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Taohuayuan" unique_id=1039934994]
 visible = false
-material = SubResource("ShaderMaterial_3018y")
+material = SubResource("ShaderMaterial_jodg4")
 layout_mode = 0
-offset_right = 160.0
-offset_bottom = 174.0
-pivot_offset = Vector2(80, 87)
+offset_left = -11.851852
+offset_top = -11.851852
+offset_right = 171.85185
+offset_bottom = 185.85185
+pivot_offset = Vector2(91.85185, 98.85185)
 mouse_filter = 2
 texture = ExtResource("taohuayuan_hover")
 expand_mode = 1
@@ -263,11 +272,13 @@ m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Bianfuku" unique_id=1932379832]
 visible = false
-material = SubResource("ShaderMaterial_ltgcs")
+material = SubResource("ShaderMaterial_bll2i")
 layout_mode = 0
-offset_right = 160.0
-offset_bottom = 174.0
-pivot_offset = Vector2(80, 87)
+offset_left = -12.800001
+offset_top = -12.800001
+offset_right = 172.8
+offset_bottom = 186.8
+pivot_offset = Vector2(92.8, 99.8)
 mouse_filter = 2
 texture = ExtResource("bianfuku_hover")
 expand_mode = 1
@@ -299,11 +310,13 @@ m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Qixingdong" unique_id=789348238]
 visible = false
-material = SubResource("ShaderMaterial_478qf")
+material = SubResource("ShaderMaterial_1einl")
 layout_mode = 0
-offset_right = 160.0
-offset_bottom = 174.0
-pivot_offset = Vector2(80, 87)
+offset_left = -12.549021
+offset_top = -12.549021
+offset_right = 172.54901
+offset_bottom = 186.54901
+pivot_offset = Vector2(92.54902, 99.54902)
 mouse_filter = 2
 texture = ExtResource("qixingdong_hover")
 expand_mode = 1
@@ -335,11 +348,13 @@ m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Jialuoluo" unique_id=1571004914]
 visible = false
-material = SubResource("ShaderMaterial_vsk28")
+material = SubResource("ShaderMaterial_06mda")
 layout_mode = 0
-offset_right = 160.0
-offset_bottom = 174.0
-pivot_offset = Vector2(80, 87)
+offset_left = -8.648648
+offset_top = -8.648648
+offset_right = 168.64865
+offset_bottom = 182.64865
+pivot_offset = Vector2(88.64865, 95.64865)
 mouse_filter = 2
 texture = ExtResource("jialuoluo_hover")
 expand_mode = 1
@@ -354,16 +369,17 @@ vframes = 4
 
 [node name="m_Qianan" type="TextureButton" parent="." unique_id=1061604071 node_paths=PackedStringArray("m_HoverImage")]
 layout_mode = 0
-offset_left = 345.0
-offset_top = 238.0
-offset_right = 569.0
-offset_bottom = 396.0
-pivot_offset = Vector2(112, 79)
+offset_left = 319.0
+offset_top = 222.15
+offset_right = 656.0
+offset_bottom = 534.15
+pivot_offset = Vector2(141, 151)
 focus_mode = 0
 mouse_default_cursor_shape = 2
 disabled = true
 texture_normal = ExtResource("qianan_normal")
 texture_disabled = ExtResource("qianan_normal")
+texture_click_mask = ExtResource("25_aeh7o")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
@@ -371,11 +387,11 @@ m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Qianan" unique_id=1948823058]
 visible = false
-material = SubResource("ShaderMaterial_jodg4")
+material = SubResource("ShaderMaterial_txcfq")
 layout_mode = 0
-offset_right = 224.0
-offset_bottom = 158.0
-pivot_offset = Vector2(112, 79)
+offset_right = 337.0
+offset_bottom = 312.0
+pivot_offset = Vector2(141, 151)
 mouse_filter = 2
 texture = ExtResource("qianan_hover")
 expand_mode = 1
@@ -383,24 +399,24 @@ stretch_mode = 5
 
 [node name="CurrentHint" type="Sprite2D" parent="m_Qianan" unique_id=523078127]
 visible = false
-position = Vector2(112, 79)
-scale = Vector2(0.5917603, 0.5917603)
+position = Vector2(168.5, 156)
 texture = ExtResource("26_eqj77")
 hframes = 5
 vframes = 4
 
 [node name="m_Donghai" type="TextureButton" parent="." unique_id=638111445 node_paths=PackedStringArray("m_HoverImage")]
 layout_mode = 0
-offset_left = 270.0
-offset_top = 318.0
-offset_right = 920.0
-offset_bottom = 452.0
-pivot_offset = Vector2(325, 67)
+offset_left = 234.70001
+offset_top = 303.85
+offset_right = 976.7
+offset_bottom = 568.85
+pivot_offset = Vector2(378, 115)
 focus_mode = 0
 mouse_default_cursor_shape = 2
 disabled = true
 texture_normal = ExtResource("donghai_normal")
 texture_disabled = ExtResource("donghai_normal")
+texture_click_mask = ExtResource("29_3018y")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
@@ -408,11 +424,11 @@ m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Donghai" unique_id=1259693091]
 visible = false
-material = SubResource("ShaderMaterial_bll2i")
+material = SubResource("ShaderMaterial_rdgo2")
 layout_mode = 0
-offset_right = 650.0
-offset_bottom = 134.0
-pivot_offset = Vector2(325, 67)
+offset_right = 742.0
+offset_bottom = 265.0
+pivot_offset = Vector2(378, 115)
 mouse_filter = 2
 texture = ExtResource("donghai_hover")
 expand_mode = 1
@@ -420,45 +436,44 @@ stretch_mode = 5
 
 [node name="CurrentHint" type="Sprite2D" parent="m_Donghai" unique_id=1680120049]
 visible = false
-position = Vector2(325, 67)
-scale = Vector2(0.6036036, 0.6036036)
+position = Vector2(371, 132.5)
 texture = ExtResource("29_omjdr")
 hframes = 5
 vframes = 4
 
 [node name="m_Shazhiwoliu" type="TextureButton" parent="." unique_id=246093014 node_paths=PackedStringArray("m_HoverImage")]
 layout_mode = 0
-offset_left = 710.0
-offset_top = 466.0
-offset_right = 850.0
-offset_bottom = 570.0
-pivot_offset = Vector2(70, 52)
+offset_left = 573.55
+offset_top = 427.15
+offset_right = 959.55
+offset_bottom = 591.15
+pivot_offset = Vector2(193, 73)
 focus_mode = 0
 mouse_default_cursor_shape = 2
 disabled = true
 texture_normal = ExtResource("shazhiwoliu_normal")
 texture_disabled = ExtResource("shazhiwoliu_normal")
+texture_click_mask = ExtResource("33_3018y")
 ignore_texture_size = true
-stretch_mode = 5
+stretch_mode = 3
 script = ExtResource("location_button")
 m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Shazhiwoliu" unique_id=177963621]
 visible = false
-material = SubResource("ShaderMaterial_1einl")
+material = SubResource("ShaderMaterial_eok71")
 layout_mode = 0
-offset_right = 140.0
-offset_bottom = 104.0
-pivot_offset = Vector2(70, 52)
+offset_right = 386.0
+offset_bottom = 164.0
+pivot_offset = Vector2(193, 73)
 mouse_filter = 2
-texture = ExtResource("31_gcevj")
+texture = ExtResource("34_ltgcs")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="CurrentHint" type="Sprite2D" parent="m_Shazhiwoliu" unique_id=831005079]
 visible = false
-position = Vector2(70, 52)
-scale = Vector2(0.5, 0.5)
+position = Vector2(193, 82)
 texture = ExtResource("32_hxmi1")
 hframes = 5
 vframes = 10
@@ -482,11 +497,13 @@ m_HoverImage = NodePath("LocationGlow")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Niumogu" unique_id=2062773213]
 visible = false
-material = SubResource("ShaderMaterial_06mda")
+material = SubResource("ShaderMaterial_6425h")
 layout_mode = 0
-offset_right = 160.0
-offset_bottom = 174.0
-pivot_offset = Vector2(80, 87)
+offset_left = -12.631579
+offset_top = -12.631579
+offset_right = 172.63158
+offset_bottom = 186.63158
+pivot_offset = Vector2(92.63158, 99.63158)
 mouse_filter = 2
 texture = ExtResource("niumogu_hover")
 expand_mode = 1

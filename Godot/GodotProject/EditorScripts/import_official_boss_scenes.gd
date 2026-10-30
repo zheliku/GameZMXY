@@ -181,8 +181,9 @@ func _wind() -> PackedScene:
 	_add(root, root, player)
 	root.set("m_Player", player)
 	root.set("m_HitBox", area)
-	root.set("m_Shape", shape)
 	var packed := PackedScene.new()
+	if root.get("m_EnemyEntityId") != null:
+		load("res://EditorScripts/enemy_perception_authoring.gd").configure(root)
 	assert(packed.pack(root) == OK)
 	assert(ResourceSaver.save(packed, destination) == OK)
 	packed.take_over_path(destination)
@@ -199,7 +200,7 @@ func _boss(actor: Dictionary, wind_scene: PackedScene) -> void:
 	var root: CharacterBody2D = load("res://TheGame/Entitys/Enemies/Monsters/Ground/gorilla/gorilla_entity.tscn").instantiate()
 	root.name = "MacaqueKingEntity" if macaque else "TamarinKingEntity"
 	root.set_script(load("res://TheGame/GameScripts/Entity/Enemies/Bosses/%s/%s.cs" % [folder, root.name]))
-	for pair in [["m_Detector","m_Detector"],["m_Body","m_Body"],["m_AnimPlayer","m_AnimPlayer"],["m_HurtBox","m_HurtBox"],["m_HitBox","m_HitBoxRoot/m_HitBox"],["m_HitBoxRoot","m_HitBoxRoot"]]:
+	for pair in [["m_Perception","Perception"],["m_Body","m_Body"],["m_AnimPlayer","m_AnimPlayer"],["m_HurtBox","m_HurtBox"],["m_HitBox","m_HitBoxRoot/m_HitBox"],["m_HitBoxRoot","m_HitBoxRoot"]]:
 		root.set(pair[0], root.get_node(pair[1]))
 	root.set("m_EnemyEntityId", 4 if macaque else 6)
 	root.set("m_AttackAnimations", PackedStringArray(["attack_1","attack_2","attack_3"] if macaque else ["attack_1","attack_2"]))
@@ -232,9 +233,9 @@ func _boss(actor: Dictionary, wind_scene: PackedScene) -> void:
 	rectangle.size = hurt.size
 	hurt_shape.shape = rectangle
 	hurt_shape.position = hurt.get_center()
-	var detector: CollisionShape2D = root.get_node("m_Detector/CollisionShape2D")
+	var detector: CollisionShape2D = root.get_node("Perception/Detection")
 	var sight := RectangleShape2D.new()
-	sight.size = Vector2(600,1800 if not macaque else 600)
+	sight.size = Vector2(600,900 if not macaque else 300)
 	detector.shape = sight
 	detector.position = Vector2.ZERO
 	var library := AnimationLibrary.new()
@@ -293,6 +294,8 @@ func _boss(actor: Dictionary, wind_scene: PackedScene) -> void:
 	player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
 	player.callback_mode_method = AnimationMixer.ANIMATION_CALLBACK_MODE_METHOD_IMMEDIATE
 	var packed := PackedScene.new()
+	if root.get("m_EnemyEntityId") != null:
+		load("res://EditorScripts/enemy_perception_authoring.gd").configure(root)
 	assert(packed.pack(root)==OK)
 	assert(ResourceSaver.save(packed,destination)==OK)
 	root.free()

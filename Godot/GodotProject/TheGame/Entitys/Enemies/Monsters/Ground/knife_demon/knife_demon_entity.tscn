@@ -1,10 +1,12 @@
 [gd_scene format=3 uid="uid://dykm7ochxnrw"]
 
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Ground/knife_demon/KnifeDemonEntity.cs" id="1_h2v4w"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/knife_demon/knife_demon_frames.tres" id="2_bksfl"]
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="3_2upg4"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/knife_demon/knife_demon_library.tres" id="4_h2v4w"]
-[ext_resource type="PackedScene" path="res://TheGame/UIs/Battle/monster_health_bar.tscn" id="5_urwr0"]
+[ext_resource type="Script" uid="uid://bvy1wrrq0esht" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Ground/knife_demon/KnifeDemonEntity.cs" id="1_h2v4w"]
+[ext_resource type="SpriteFrames" uid="uid://cj7g3acd2vdmr" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/knife_demon/knife_demon_frames.tres" id="2_bksfl"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="3_2upg4"]
+[ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="4_2upg4"]
+[ext_resource type="AnimationLibrary" uid="uid://gik7p12w86pg" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Ground/knife_demon/knife_demon_library.tres" id="4_h2v4w"]
+[ext_resource type="PackedScene" uid="uid://caauui8brtx47" path="res://TheGame/UIs/Battle/monster_health_bar.tscn" id="5_urwr0"]
+[ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/BattleForm/Components/ResourceBar.cs" id="6_bksfl"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_gh3w2"]
 radius = 21.855164
@@ -16,8 +18,15 @@ size = Vector2(43.710327, 75.52826)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dn5rx"]
 size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_75oso"]
-size = Vector2(600, 1000)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bksfl"]
+size = Vector2(600, 300)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jxhv2"]
+size = Vector2(300, 600)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_2upg4"]
+a = Vector2(-400, 0)
+b = Vector2(400, 0)
 
 [sub_resource type="Gradient" id="Gradient_fill"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
@@ -27,19 +36,19 @@ gradient = SubResource("Gradient_fill")
 width = 50
 height = 5
 
-[node name="KnifeDemonEntity" type="CharacterBody2D" unique_id=802693107 node_paths=PackedStringArray("m_Detector", "m_HealthBar", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[node name="KnifeDemonEntity" type="CharacterBody2D" unique_id=802693107 node_paths=PackedStringArray("m_Perception", "m_HealthBar", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("1_h2v4w")
+m_Perception = NodePath("Perception")
 m_EnemyEntityId = 13
-m_AttackAnimations = PackedStringArray("attack_1", "attack_2")
-m_Detector = NodePath("m_Detector")
 m_HealthBar = NodePath("m_HealthBar")
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AttackAnimations = PackedStringArray("attack_1", "attack_2")
 m_HurtBox = NodePath("m_HurtBox")
 m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
 m_HitBoxRoot = NodePath("m_HitBoxRoot")
@@ -52,7 +61,7 @@ offset = Vector2(-17.5, -3.5)
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1617060818]
 position = Vector2(1.3999996, -6)
 shape = SubResource("CapsuleShape2D_gh3w2")
-debug_color = Color(0, 1, 0, 0.41960785)
+debug_color = Color(0.58, 0.64, 0.72, 0.12)
 
 [node name="m_HurtBox" type="Area2D" parent="." unique_id=1243224820 node_paths=PackedStringArray("m_Owner")]
 collision_layer = 32
@@ -64,7 +73,7 @@ m_Owner = NodePath("..")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1986919316]
 position = Vector2(1.3999996, -6)
 shape = SubResource("RectangleShape2D_2ccub")
-debug_color = Color(1, 0, 0, 0.41960785)
+debug_color = Color(0.3, 0.66, 0.62, 0.14)
 
 [node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=13340964]
 
@@ -76,24 +85,45 @@ monitorable = false
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1115183691]
 shape = SubResource("RectangleShape2D_dn5rx")
 disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="m_Detector" type="Area2D" parent="." unique_id=73551405]
+[node name="Perception" type="Area2D" parent="." unique_id=73551405 node_paths=PackedStringArray("m_DetectionShape", "m_EngageShape", "m_PatrolShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
+script = ExtResource("4_2upg4")
+m_DetectionShape = NodePath("Detection")
+m_EngageShape = NodePath("Engage")
+m_PatrolShape = NodePath("Patrol")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=1927869245]
-position = Vector2(0, -21)
-shape = SubResource("RectangleShape2D_75oso")
-debug_color = Color(1, 1, 0, 0.1)
+[node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=1927869245]
+shape = SubResource("RectangleShape2D_bksfl")
+debug_color = Color(0.36, 0.58, 0.8, 0.035)
+
+[node name="Engage" type="CollisionShape2D" parent="Perception" unique_id=2101137112]
+shape = SubResource("RectangleShape2D_jxhv2")
+disabled = true
+debug_color = Color(0.85, 0.65, 0.35, 0.045)
+
+[node name="Patrol" type="CollisionShape2D" parent="Perception" unique_id=880026838]
+shape = SubResource("SegmentShape2D_2upg4")
+disabled = true
+debug_color = Color(0.45, 0.62, 0.48, 0.03)
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=920080462]
 callback_mode_method = 1
 libraries/ = ExtResource("4_h2v4w")
 
-[node name="m_HealthBar" parent="." unique_id=827430786 instance=ExtResource("5_urwr0")]
+[node name="m_HealthBar" type="TextureProgressBar" parent="." unique_id=827430786 instance=ExtResource("5_urwr0")]
+z_index = 10
 offset_left = -24.0
 offset_top = -71.0
 offset_right = 26.0
 offset_bottom = -66.0
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+value = 1.0
 texture_progress = SubResource("GradientTexture2D_fill")
+tint_progress = Color(1, 0, 0, 1)
+script = ExtResource("6_bksfl")

@@ -19,7 +19,7 @@ namespace GameLogic.Enemies
             () => new EnemyRecoveryState(), () => new EnemyHurtState(),
             () => new JiaoDemonKingDeathState()); // 本首领的状态组合；运行实例由每次入场独立创建。
         private static readonly EnemyAiPreset m_Preset = new(typeof(JiaoDemonKingEngageState), typeof(JiaoDemonKingEngageState),
-            () => new JiaoDemonKingEngageState(), () => new CcLockedState(), () => new DeathState()); // 本首领独立的距离与冷却选择。
+            () => new JiaoDemonKingEngageState()); // 本首领独立的距离与冷却选择。
 
         [Export] private PackedScene m_DragonWaveScene; // 原生第五源帧生成的龙波。
         [Export] private PackedScene m_DeathScene; // 共享官方BossDead旋涡。

@@ -1,71 +1,110 @@
-[gd_scene format=3]
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_09_shark_whirlpool/SharkDemonKingEntity.cs" id="script"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_frames.tres" id="frames"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_library.tres" id="library"]
-[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_shark_wave_effect.tscn" id="shark_wave"]
-[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_warning_effect.tscn" id="bubble_warning"]
-[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_effect.tscn" id="bubble"]
-[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn" id="death"]
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
+[gd_scene format=3 uid="uid://nv34644phjmm"]
+
+[ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="8_ctibm"]
+[ext_resource type="PackedScene" uid="uid://b6ic3cq1h5mpf" path="res://TheGame/Entitys/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_effect.tscn" id="bubble"]
+[ext_resource type="PackedScene" uid="uid://4ec0wxjexka8" path="res://TheGame/Entitys/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_warning_effect.tscn" id="bubble_warning"]
+[ext_resource type="PackedScene" uid="uid://bp24tcpfb0ty5" path="res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn" id="death"]
+[ext_resource type="SpriteFrames" uid="uid://b4rf46utrs46l" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
+[ext_resource type="AnimationLibrary" uid="uid://c6oj0u3rd8615" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_library.tres" id="library"]
+[ext_resource type="Script" uid="uid://d2fcs33eghnnl" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_09_shark_whirlpool/SharkDemonKingEntity.cs" id="script"]
+[ext_resource type="PackedScene" uid="uid://dsri50urcngdl" path="res://TheGame/Entitys/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_shark_wave_effect.tscn" id="shark_wave"]
+
 [sub_resource type="CapsuleShape2D" id="body"]
-radius = 33.510797
-height = 152.976375
+radius = 33.510796
+height = 152.97638
+
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
-size = Vector2(67.021594, 152.976375)
+size = Vector2(67.02159, 152.97638)
+
 [sub_resource type="RectangleShape2D" id="hit_shape"]
 size = Vector2(1, 1)
-[sub_resource type="RectangleShape2D" id="detector"]
-size = Vector2(600, 1000)
 
-[node name="SharkDemonKingEntity" type="CharacterBody2D" node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_d8i6e"]
+size = Vector2(600, 300)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_raai7"]
+size = Vector2(300, 600)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_ctibm"]
+a = Vector2(-400, 0)
+b = Vector2(400, 0)
+
+[node name="SharkDemonKingEntity" type="CharacterBody2D" unique_id=590853252 node_paths=PackedStringArray("m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("script")
-m_EnemyEntityId = 19
-m_Detector = NodePath("m_Detector")
-m_Body = NodePath("m_Body")
-m_AnimPlayer = NodePath("m_AnimPlayer")
-m_HurtBox = NodePath("m_HurtBox")
-m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
-m_HitBoxRoot = NodePath("m_HitBoxRoot")
 m_SharkWaveScene = ExtResource("shark_wave")
 m_BubbleWarningScene = ExtResource("bubble_warning")
 m_BubbleScene = ExtResource("bubble")
 m_DeathScene = ExtResource("death")
+m_Perception = NodePath("Perception")
+m_EnemyEntityId = 19
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
 m_AttackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3")
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
 
-[node name="m_Body" type="AnimatedSprite2D" parent="."]
+[node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=629700646]
 sprite_frames = ExtResource("frames")
 animation = &"idle"
-[node name="m_BodyShape" type="CollisionShape2D" parent="."]
+
+[node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=800866219]
+position = Vector2(0.975, 1.5)
 shape = SubResource("body")
-rotation = 0
-position = Vector2(0.975000, 1.500000)
-[node name="m_HurtBox" type="Area2D" parent="." node_paths=PackedStringArray("m_Owner")]
+debug_color = Color(0.58, 0.64, 0.72, 0.12)
+
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=1342726377 node_paths=PackedStringArray("m_Owner")]
 collision_layer = 32
 collision_mask = 0
 monitoring = false
 script = ExtResource("hurt")
 m_Owner = NodePath("..")
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=28209978]
+position = Vector2(0.975, 1.5)
 shape = SubResource("hurt_shape")
-position = Vector2(0.975000, 1.500000)
-[node name="m_HitBoxRoot" type="Node2D" parent="."]
-[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot"]
+debug_color = Color(0.3, 0.66, 0.62, 0.14)
+
+[node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=1570410936]
+
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=107401627]
 collision_layer = 64
 collision_mask = 128
 monitorable = false
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=535238345]
 shape = SubResource("hit_shape")
 disabled = true
-[node name="m_Detector" type="Area2D" parent="."]
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="Perception" type="Area2D" parent="." unique_id=1893388938 node_paths=PackedStringArray("m_DetectionShape", "m_EngageShape", "m_PatrolShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector"]
-shape = SubResource("detector")
-[node name="m_AnimPlayer" type="AnimationPlayer" parent="."]
+script = ExtResource("8_ctibm")
+m_DetectionShape = NodePath("Detection")
+m_EngageShape = NodePath("Engage")
+m_PatrolShape = NodePath("Patrol")
+
+[node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=795087875]
+shape = SubResource("RectangleShape2D_d8i6e")
+debug_color = Color(0.36, 0.58, 0.8, 0.035)
+
+[node name="Engage" type="CollisionShape2D" parent="Perception" unique_id=398717509]
+shape = SubResource("RectangleShape2D_raai7")
+disabled = true
+debug_color = Color(0.85, 0.65, 0.35, 0.045)
+
+[node name="Patrol" type="CollisionShape2D" parent="Perception" unique_id=366314871]
+shape = SubResource("SegmentShape2D_ctibm")
+disabled = true
+debug_color = Color(0.45, 0.62, 0.48, 0.03)
+
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=998355323]
 libraries/ = ExtResource("library")

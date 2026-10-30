@@ -7,8 +7,8 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class BatEntity : AbstractSkyMonsterEntity
     {
-        private static readonly EnemyAiPreset m_Preset = new(typeof(BatAiState), typeof(BatAiState),
-            () => new BatAiState(), () => new CcLockedState(), () => new DeathState()); // 蝙蝠专属决策与敌方公共打断。
+        private static readonly EnemyAiPreset m_Preset = new(typeof(BatEngageState), typeof(BatEngageState),
+            () => new BatEngageState()); // 蝙蝠专属决策与敌方公共打断。
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset

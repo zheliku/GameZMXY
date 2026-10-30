@@ -46,7 +46,8 @@ func _register() -> void:
             actor.set("m_BackHit", actor.get_node("m_BackHit"))
             for field in ["m_DragonWaveScene", "m_DeathScene", "m_BackHit"]:
                 assert(actor.get(field) != null, scene_path + " missing " + field)
-        for field in ["m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"]:
+        load("res://EditorScripts/enemy_perception_authoring.gd").configure(actor)
+        for field in ["m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"]:
             assert(actor.get(field) != null, scene_path + " missing " + field)
         assert(packed.pack(actor) == OK)
         assert(ResourceSaver.save(packed, scene_path) == OK)

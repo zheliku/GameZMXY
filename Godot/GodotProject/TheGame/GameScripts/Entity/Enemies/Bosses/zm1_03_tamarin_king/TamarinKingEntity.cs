@@ -9,8 +9,7 @@ namespace GameLogic.Enemies
     {
         private const double InvulnerabilitySeconds = 48.0 / 24.0; // Monster6.setYourFather(48)，按源 24fps 换算。
         private static readonly EnemyAiPreset m_Preset = new(typeof(TamarinKingEngageState), typeof(TamarinKingEngageState),
-            () => new TamarinKingEngageState(),
-            () => new CcLockedState(), () => new DeathState()); // 各实例独立的选择和受控状态。
+            () => new TamarinKingEngageState()); // 各实例独立的选择和受控状态。
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset

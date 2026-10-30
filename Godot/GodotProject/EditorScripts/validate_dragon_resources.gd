@@ -46,7 +46,7 @@ func _check() -> void:
         for frame in boxes.size():
             effect_player.play("play")
             effect_player.seek(frame / 24.0, true, true)
-            _check_box(effect.get("m_Shape"), boxes[frame], name + "/" + str(frame))
+            _check_box(effect.get("m_HitBox").get_child(0), boxes[frame], name + "/" + str(frame))
             count += 1
         effect.free()
     var room: Node = load("res://TheGame/Scenes/Levels/zm1_11_hidden_dragon_palace/level_11.tscn").instantiate()

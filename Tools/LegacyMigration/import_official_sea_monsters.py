@@ -151,17 +151,21 @@ def scene_for(actor, atlas_path, frames_path, library_path):
     if name == 'shark_spawn':
         for key in ('slash', 'warning', 'tornado'):
             lines.append(f'[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Monsters/Sea/shark_spawn/shark_spawn_{key}_effect.tscn" id="{key}"]')
+    if not is_boss:
+        lines.append('[ext_resource type="PackedScene" path="res://TheGame/UIs/Battle/monster_health_bar.tscn" id="health"]')
     lines += [
              '[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]',
              '[sub_resource type="CapsuleShape2D" id="body"]', f'radius = {min(hurt[2], hurt[3]) / 2:.6f}', f'height = {max(hurt[3], hurt[2]):.6f}',
              '[sub_resource type="RectangleShape2D" id="hurt_shape"]', f'size = {godot_vec([hurt[2], hurt[3]])}',
              '[sub_resource type="RectangleShape2D" id="hit_shape"]', 'size = Vector2(1, 1)',
-             '[sub_resource type="RectangleShape2D" id="detector"]', 'size = Vector2(600, 1000)',
-             '', f'[node name="{class_name}" type="CharacterBody2D" node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"' + (', "m_BackHit"' if name == 'jiao_demon_king' else '') + ')]',
+             '[sub_resource type="RectangleShape2D" id="detector"]',
+             f'size = Vector2({800 if entity_id == 20 else 600}, {2 * {10: 250, 14: 450, 16: 150, 17: 400, 18: 450, 19: 150, 20: 200}[entity_id]})',
+             '', f'[node name="{class_name}" type="CharacterBody2D" node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"' + (', "m_BackHit"' if name == 'jiao_demon_king' else '') + (', "m_HealthBar"' if not is_boss else '') + ')]',
              'collision_layer = 4', 'collision_mask = 9', 'floor_constant_speed = true', 'floor_max_angle = 0.87266463', 'floor_snap_length = 12.0',
              f'script = ExtResource("script")', f'm_EnemyEntityId = {entity_id}',
              'm_Detector = NodePath("m_Detector")', 'm_Body = NodePath("m_Body")', 'm_AnimPlayer = NodePath("m_AnimPlayer")',
              'm_HurtBox = NodePath("m_HurtBox")', 'm_HitBox = NodePath("m_HitBoxRoot/m_HitBox")', 'm_HitBoxRoot = NodePath("m_HitBoxRoot")',
+             *(['m_HealthBar = NodePath("m_HealthBar")'] if not is_boss else []),
              *(['m_ProjectileScene = ExtResource("projectile")'] if name == 'shrimp_demon' else []),
              *(['m_SharkWaveScene = ExtResource("shark_wave")', 'm_BubbleWarningScene = ExtResource("bubble_warning")',
                 'm_BubbleScene = ExtResource("bubble")', 'm_DeathScene = ExtResource("death")'] if name == 'shark_demon_king' else []),
@@ -178,6 +182,9 @@ def scene_for(actor, atlas_path, frames_path, library_path):
              '[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox"]', 'shape = SubResource("hit_shape")', 'disabled = true',
              '[node name="m_Detector" type="Area2D" parent="."]', 'collision_layer = 4096', 'collision_mask = 2', 'monitorable = false', '[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector"]', 'shape = SubResource("detector")',
              '[node name="m_AnimPlayer" type="AnimationPlayer" parent="."]', 'libraries/ = ExtResource("library")', '']
+    if not is_boss:
+        lines += ['[node name="m_HealthBar" parent="." instance=ExtResource("health")]',
+                  f'offset_top = {hurt[1] - 14:.6f}', f'offset_bottom = {hurt[1] - 6:.6f}']
     if name == 'jiao_demon_king':
         lines += ['[node name="m_BackHit" type="AnimatedSprite2D" parent="."]',
                   'visible = false', 'sprite_frames = ExtResource("back_hit")',
@@ -338,9 +345,9 @@ def main(args):
             'tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [false]}',
             '[sub_resource type="AnimationLibrary" id="library"]', '_data = {&"play": SubResource("play")}',
             '[sub_resource type="RectangleShape2D" id="shape"]', f'size = {godot_vec(bounds[2:])}',
-            '[node name="ShrimpProjectileEffect" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape", "m_CancelArea")]',
+            '[node name="ShrimpProjectileEffect" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox", "m_CancelArea")]',
             'script = ExtResource("script")', 'm_Player = NodePath("AnimationPlayer")',
-            'm_HitBox = NodePath("HitBox")', 'm_Shape = NodePath("HitBox/CollisionShape2D")',
+            'm_HitBox = NodePath("HitBox")',
             'm_CancelArea = NodePath("CancelArea")',
             '[node name="Sprite" type="Sprite2D" parent="."]', 'texture = ExtResource("texture")',
             f'offset = {godot_vec(layer["sprite_offset"])}',

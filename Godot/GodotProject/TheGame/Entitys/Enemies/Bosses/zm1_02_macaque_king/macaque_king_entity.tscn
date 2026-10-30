@@ -5,6 +5,7 @@
 [ext_resource type="SpriteFrames" uid="uid://uckdf15nmw0f" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_effect_frames.tres" id="3_8hkrt"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="4_rtb5i"]
 [ext_resource type="AnimationLibrary" uid="uid://b8j1avmu4lhp5" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_02_macaque_king/macaque_king_library.tres" id="5_tc1dr"]
+[ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="5_ui1pu"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_no56x"]
 radius = 29.997253
@@ -16,17 +17,24 @@ size = Vector2(59.994507, 119.99817)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_y4l4n"]
 size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_jqfmb"]
-size = Vector2(600, 600)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1vwbg"]
+size = Vector2(600, 300)
 
-[node name="MacaqueKingEntity" type="CharacterBody2D" unique_id=802693107 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_u18f7"]
+size = Vector2(300, 600)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_ui1pu"]
+a = Vector2(-400, 0)
+b = Vector2(400, 0)
+
+[node name="MacaqueKingEntity" type="CharacterBody2D" unique_id=802693107 node_paths=PackedStringArray("m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("1_sugud")
-m_Detector = NodePath("m_Detector")
+m_Perception = NodePath("Perception")
 m_EnemyEntityId = 4
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
@@ -49,7 +57,7 @@ offset = Vector2(0, -68)
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1617060818]
 position = Vector2(0.70000076, -0.049999237)
 shape = SubResource("CapsuleShape2D_no56x")
-debug_color = Color(0, 1, 0, 0.41960785)
+debug_color = Color(0.58, 0.64, 0.72, 0.12)
 
 [node name="m_HurtBox" type="Area2D" parent="." unique_id=1243224820 node_paths=PackedStringArray("m_Owner")]
 collision_layer = 32
@@ -61,7 +69,7 @@ m_Owner = NodePath("..")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1986919316]
 position = Vector2(0.70000076, -0.049999237)
 shape = SubResource("RectangleShape2D_ah8rk")
-debug_color = Color(1, 0, 0, 0.41960785)
+debug_color = Color(0.3, 0.66, 0.62, 0.14)
 
 [node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=13340964]
 
@@ -73,19 +81,35 @@ monitorable = false
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1115183691]
 shape = SubResource("RectangleShape2D_y4l4n")
 disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
 [node name="WindCrown" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1469700312]
 shape = SubResource("RectangleShape2D_y4l4n")
 disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="m_Detector" type="Area2D" parent="." unique_id=73551405]
+[node name="Perception" type="Area2D" parent="." unique_id=73551405 node_paths=PackedStringArray("m_DetectionShape", "m_EngageShape", "m_PatrolShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
+script = ExtResource("5_ui1pu")
+m_DetectionShape = NodePath("Detection")
+m_EngageShape = NodePath("Engage")
+m_PatrolShape = NodePath("Patrol")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=1927869245]
-shape = SubResource("RectangleShape2D_jqfmb")
-debug_color = Color(1, 1, 0, 0.1)
+[node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=1927869245]
+shape = SubResource("RectangleShape2D_1vwbg")
+debug_color = Color(0.36, 0.58, 0.8, 0.035)
+
+[node name="Engage" type="CollisionShape2D" parent="Perception" unique_id=141165254]
+shape = SubResource("RectangleShape2D_u18f7")
+disabled = true
+debug_color = Color(0.85, 0.65, 0.35, 0.045)
+
+[node name="Patrol" type="CollisionShape2D" parent="Perception" unique_id=2140054630]
+shape = SubResource("SegmentShape2D_ui1pu")
+disabled = true
+debug_color = Color(0.45, 0.62, 0.48, 0.03)
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=920080462]
 callback_mode_process = 0

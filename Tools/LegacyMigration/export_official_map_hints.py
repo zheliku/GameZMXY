@@ -41,7 +41,9 @@ def export(args):
     run('-swf2xml', str(readable), str(xml))
     tree = E.parse(xml)
     tags = tree.getroot().find('tags')
-    icons = [icon for icon in ICONS if not args.only or icon[0] in args.only]
+    if args.only and any(name in ('qianan', 'donghai', 'shazhiwoliu') for name in args.only):
+        raise ValueError('Coastal states require export_official_coastal_map.py to preserve their parent matrices')
+    icons = [icon for icon in ICONS if icon[0] not in ('qianan', 'donghai', 'shazhiwoliu') and (not args.only or icon[0] in args.only)]
     sprites = {int(t.get('spriteId')): t for t in tags if t.get('type') == 'DefineSpriteTag'}
     # Source menu field names establish identity; neighboring sprite numbers can
     # instead point at unrelated UI (e.g. BuySkill) with the same frame count.

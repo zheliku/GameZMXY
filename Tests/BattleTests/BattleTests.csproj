@@ -93,4 +93,9 @@
     <Compile Remove="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_11_hidden_dragon_palace\DragonKingDeathState.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 具体首领读取自己的原生范围，由引擎战斗专项验证，不在纯规则程序集伪造实体。 -->
+    <Compile Remove="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_11_hidden_dragon_palace\DragonKingEngageState.cs" />
+    <Compile Remove="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonKingEngageState.cs" />
+  </ItemGroup>
 </Project>

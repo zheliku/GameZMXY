@@ -1,4 +1,4 @@
-# 项目导览
+﻿# 项目导览
 
 唯一规范是 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md)。本页记录当前实现；数值看 [OfficialReference](OfficialReference.md)，素材看 [LegacyAssetMap](LegacyAssetMap.md)，验证命令和结果看 [Validation](Validation.md)。修改前先读 [沟通理解与当前方向](WorkingNotes.md)，其中保存最新意图及设计判断。
 
@@ -75,7 +75,37 @@ flowchart TD
 
 怪物各自拥有普通生命、防御和 AI 数据，其余数值读配置；不借用玩家 HeroModel。英雄动作输入和身体 FSM、怪物 AI/FSM、节点与运动状态仍由各 Entity 管理。
 
-敌人按 `AbstractEnemyEntity → AbstractBossEntity / AbstractMonsterEntity` 分工；小怪再分 `Ground / Sky / Sea`。Monster 共享移动状态装配与致死抛飞，Ground 约束落地出招，Sky 拥有垂直意图及空中运动。Sea 内的海底物种沿用重力与落地出招，鲨鱼用自己的游动/攻击状态，保留垂直加速与退避。虾兵的远距弹体、潮汐妖的选招、灯笼鱼的追击、龟丞相的守关规则分别留在本物种实体/状态目录；代码、场景、动作库和贴图均按 `Monsters/Sea/<物种>/` 查找。
+敌人按 `AbstractEnemyEntity → AbstractBossEntity / AbstractMonsterEntity` 分工；小怪再分 `Ground / Sky / Sea`。Monster 共享移动状态装配与致死抛飞，Ground 约束落地出招，Sky 拥有垂直意图及空中运动。Sea 内的海底物种沿用重力与落地出招，鲨鱼用自己的游动/攻击状态，保留垂直加速与退避。虾兵的远距弹体和退避、潮汐妖的优先选招、龟丞相的守关规则分别留在本物种目录；灯笼鱼与龟丞相的普通追击共用交战状态，不各建一份相同实现。
+
+### 敌人 AI 阅读入口
+
+先看 `Enemies/AI/IEnemyAiAgent.cs` 的事实与意图契约，再看 `AbstractEnemyEntity.cs` 的两个 FSM 生命周期。AI 按框架游戏帧决定移动/朝向/出招，身体按物理帧消费请求并执行动画和碰撞。
+
+```mermaid
+flowchart LR
+    Scene[实体场景：Perception 原生形状] -->|发现目标、交战和巡逻范围| Entity[AbstractEnemyEntity]
+    Entity -->|读事实| AI[AI FSM：Patrol / Engage / 物种专属状态]
+    Rules[EnemyAiSystem：共同时钟、巡逻和冷却] --- AI
+    AI -->|移动意图、攻击请求| Body[身体 FSM：Walk / Fly / Swim、Attack、Hurt、Death]
+    Body -->|动画与物理| Entity
+    Body -->|进入死亡时销毁| AI
+```
+
+| 所有者 | 唯一职责与配置来源 |
+| --- | --- |
+| 实体场景 `Perception/Detection` | 首次索敌矩形；横界严格、纵界包含。发现后保留存活目标，不再配置视野外超时 |
+| `Perception/Engage` | 按角色原点判断追击/出手区间；普通怪用矩形，彭魔王用圆。它与伤害盒相互独立 |
+| `Perception/Patrol` | 相对当前相机中心或出生点的左右折返界；兽形牛魔王保留不对称边界 |
+| 具体实体的范围绑定 | 虾兵退避、彭魔王近身、龙王水柱、牛魔王吞噬/践踏；只在本物种使用，不扩展通用接口 |
+| `PatrolState` / `EngageState` | 无目标时巡逻和停步；有目标时高度超限游荡、范围外追击、范围内按节拍和欲望出招 |
+| 物种交战状态 | 飞刀魔/潮汐妖覆写实际选招；首领保留各自冷却、距离分支与特殊机制 |
+| `EnemyAiData` / `EnemyAiSystem` | 数据由每个实体独占；系统共享游戏秒时钟、官方巡逻节拍和逐招冷却，不拥有节点 |
+| 身体 FSM | 受伤、出招、尸体、奖励和回收。受控只暂停 AI；死亡销毁 AI，无空 `DeathState` / `CcLockedState` |
+| Luban 表 | 移速、伤害、冷却、攻击间隔、出手概率与奖励；删除旧预设参数及 `AiWeight/AiPriority/AiRange` |
+
+在 Godot 打开某个敌人场景，展开 `Perception`，直接选中上述 `CollisionShape2D` 调整 Shape 的尺寸。Detection 参与发现；Engage、Patrol 和物种专属范围必须保持 Disabled，只给 AI 读取。实际伤害仍在 AnimationLibrary 的 HitBox 轨道编辑。`EnemyAiPresets.Patrol` 只组合状态，不再接受 `MeleePatrol(110f)` 之类距离参数。
+
+旧追击/站定/守候链与 `AbstractRoamState/PauseState` 已移除。原先 `MeleeEngageState` 表达的是恢复官方普通近战行为，现统一为 `EngageState`；没有引入新玩法。第 30 章仍描述旧状态、首次延迟与动画并集估距，与本轮用户要求存在差异；保留规范正文，实际实现与验证见本文和 Validation。
 
 ## Model 的属性绑定
 
@@ -243,17 +273,21 @@ IHeroBody 不再声明技能匹配或普攻选择。状态消费角色已经选�
 
 角色先选定普攻请求，Ground/Air 消费后进入 Attack；Attack 管理当前动画、移动与收招，并消费新的换段请求。普攻仍不排队：过早输入丢弃，有效输入立即换段；参数在 HeroConfig，具体源规则见 [官方输入依据](OfficialReference.md#普攻输入与移动2026-10-14)。调用方只执行 `InputSystem.Sample(this, delta)`；系统内部读取默认 Godot 输入源、英雄独占的 ActionData 与共享 Params，不再外传十几个按键布尔值。引擎采样与规则合在 InputSystem.cs；确需替代控制源时通过同文件的 IInputSource 提供按住/按下/松开事实，使用同一套采样与组合规则。
 
-怪物 AI 按 `AbstractEnemyEntity → EnemyAiPreset / EnemyAiSystem → EnemyAiData / AI 状态` 阅读。[EnemyAiPreset](../Godot/GodotProject/TheGame/GameScripts/Entity/Enemies/AI/EnemyAiPreset.cs) 是状态工厂集合与入口类型的只读配方，包含无目标和交战入口，不是枚举。预设每次创建独立状态，并在建 FSM 前检查重复类型、缺少入口、受控或死亡状态。EnemyAiSystem 集中范围检查、加权选招及冷却规则，EnemyBodyParams.Attacks 保存同类共享的 EnemyAttackParams；每只怪物的剩余冷却、移动意图和待提交攻击放在自己的 EnemyAiData。
+怪物 AI 按 `AbstractEnemyEntity → EnemyAiPreset / EnemyAiSystem → EnemyAiData / AI 状态` 阅读。[EnemyAiPreset](../Godot/GodotProject/TheGame/GameScripts/Entity/Enemies/AI/EnemyAiPreset.cs) 是状态工厂集合与入口类型的只读配方。每次创建独立状态，建 FSM 前检查重复类型和缺少入口。EnemyAiSystem 负责共同游戏时钟、游荡和冷却，直接借用实体当前的 AttackConfig；不再复制 EnemyAttackParams。每只敌人的剩余冷却、移动意图和待提交攻击归自己的 EnemyAiData，身体的动画名、时长与收招参数仍归 EnemyBodyParams。死亡释放 AI FSM，受控暂停决策而保留时钟；静止石像和最终心脏不创建空 AI 状态。
 
-| AI 预设 | 无目标 | 有目标 |
+| 实际组合及归属 | 无目标 | 有目标 |
 | --- | --- | --- |
-| Patrol | 巡逻、随机停留 | 追击、站定攻击或在平台下踱步 |
-| Guard | 原地等待 | 原地转向，仅攻击进入范围的目标 |
-| Pursuer | 原地等待 | 追击、站定攻击或在平台下踱步 |
+| EnemyAiPresets.Patrol，共用 | PatrolState 内完成移动与停步 | EngageState 追击、概率出招，高度不可达时游荡 |
+| 具体实体的 m_Preset | 共用 PatrolState 或自身常驻状态 | 飞刀魔、蝙蝠、飞行魔、海怪和各首领的具名专属状态 |
+| 牛魔王兽形 | BullDemonChargePatrolState | 同一状态执行冲撞与边界停步，不按目标切交战 |
+
+Guard/Pursuer 旧组合及额外站定、受击、死亡 AI 状态已删除；它们没有当前消费者，不按预设数量恢复。组合能力仍由状态工厂保留，新增实际行为时在所属角色声明；Walk/Fly/Swim 属于独立的身体预设，不混入 AI 预设目录。公共 AI/States 仅保留同级 PatrolState.cs、EngageState.cs，不再每个文件单建子目录；专属类用 BatEngageState 等行为名称。
+
+首次发现由 Perception/Detection 判断角色原点，横界严格、纵界包含；交战距离与动画 HitBox 分开。巡逻边界用水平 SegmentShape2D，追踪高度用垂直线段；只有 X 条件的首领/虾兵选招也用水平线段，避免用巨大矩形暗示不存在的高度限制。蝙蝠、飞行魔和鲨鱼的外层追踪高度为900px，内部近身范围独立；彭魔王保留圆形选招和800px外层高度；龙王只判断水平距离；牛魔王人形按80/100/200px互斥选招，捕获距离200px另有自身绑定。逐物种依据由 audit_official_enemy_ranges.py 从原版源码生成，验证命令见 Validation。
 
 敌人层级为 `AbstractEnemyEntity → AbstractMonsterEntity → AbstractGroundMonsterEntity / AbstractSkyMonsterEntity / AbstractSeaMonsterEntity → 具体小怪`，Boss从Enemy独立派生。Enemy拥有共同生命、感知、攻击、离身效果和FSM生命周期；Monster负责普通小怪预设与致死抛飞共性，Ground、Sky、Sea保留物种职责；实际移动由同级 Walk/Fly/Swim 状态和 EnemyBodyPreset 选择。每个具体小怪必须在自己的类中明确选择AI预设或实现专属规则：猴子独有受击激怒，飞刀魔决定投刀，蝙蝠决定折返、追踪和升空退避。妖猴、洞窟壮汉、大猩猩的官方算法相同，因此各自类明确选择Patrol，而不是复制一份共同算法或伪造差异；具体类仍是角色装配和后续扩展入口。公共巡逻/交战状态与物种专属 AI 均继承 AbstractEnemyAiState；首领需要共同节拍时继承 AbstractBossAiState，不保留空的 AbstractMonsterAiState。
 
-代码在 `Entity/Enemies/` 下按 `Monsters/Ground/<角色>/`、`Monsters/Sky/<角色>/`、`Monsters/Sea/<角色>/` 和 `Bosses/<编号_名称>/` 组织；共用AI契约、系统和打断状态留在 `AI/`，共用身体状态留在 `Body/`。通用巡逻/交战状态在 `Enemies/AI/States/`；Walk、Fly、Swim 身体状态同级位于 `Enemies/Body/States/`，由 EnemyBodyPreset 组合，物种专属决策随各角色。场景、动作库、贴图采用相同分类。`SkillEffectNode`拥有每次独立攻击的命中预算，创建者Enemy登记并负责隐藏时归还，具体小怪和BOSS不重复实现回收。
+代码在 `Entity/Enemies/` 下按 `Monsters/Ground/<角色>/`、`Monsters/Sky/<角色>/`、`Monsters/Sea/<角色>/` 和 `Bosses/<编号_名称>/` 组织；共用AI契约、系统和状态留在 `AI/`，共用身体状态留在 `Body/`。通用巡逻/交战状态在 `Enemies/AI/States/`；Walk、Fly、Swim 身体状态同级位于 `Enemies/Body/States/`，由 EnemyBodyPreset 组合，物种专属决策随各角色。场景、动作库、贴图采用相同分类。`SkillEffectNode`拥有每次独立攻击的命中预算，创建者Enemy登记并负责隐藏时归还，具体小怪和BOSS不重复实现回收。
 
 怪物的 `Move → Attack → Recovery` 切换通过 GGF 的 `SetData/GetData/RemoveData` 传递招式下标和收招时长；目标状态在 Enter 时消费参数并自行初始化。状态之间不直接调用 `Arm` 或改写彼此字段。
 
@@ -347,12 +381,14 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 
 地图打开和鼠标离开后按最新可挑战主线播放对应地点的current动画，悬停可进入的地点播放hover；鲨之涡流使用自己的48帧旋转提示，其余地点使用各自官方时间轴，播放器保持默认1倍速/24fps。关闭时RESET并停止，复用根据档案进度重新启动。未解锁地点不响应悬停和点击，历史地点可重玩；隐藏龙宫从关卡内进入，不新增地图主线入口。
 
+浅岸、东海、鲨之涡流以官方父坐标及三状态完整矩阵作者化，普通状态使用透明点击mask，hover/current共用同一注册画布并以1:1显示。定位修改走export_official_coastal_map.py与apply_official_coastal_map.gd，不用按钮矩形居中缩放；其他七地点的hover图有12px透明留白，轮廓shader不采样画布外像素。被动页升级使用官方三态字图，满级隐藏。成功结算仍由ProcedureLevel唯一拥有GGF音乐请求，暂停时直接起播，不增加UI重复播放。
+
 连续受击保护的命中数与游戏秒数由HeroModel/HeroSystem维护，普通无敌光晕材质由英雄场景配置；第五次命中后保护2秒，间隔达到1秒断链。死亡演出使用共用 [hero_tombstone.tscn](../Godot/GodotProject/TheGame/Entitys/Effects/hero_tombstone.tscn)：`HeroTombstoneNode`拥有自己的物理、碰撞与78源帧时间轴，英雄只在Died时触发；LevelViewController等待DeathPresentationFinished后提交失败。角色的death动作仅保留身体隐藏、碰撞关闭和专属声音，普通胶囊不再影响墓碑。
 
 地面恢复品实际领取后，调用本场 `FloatingTextPresenter.ShowRecovery(position, amount, RecoveryKind.Health/Mana)`：生命数字绿色，魔法数字蓝色；显示配置恢复量（即使已达上限），一秒上移 75px，暂停停止。蓝量灵魂只回蓝，不显示数字。模块只显示反馈，实际恢复仍由拾取业务结算；后续技能恢复可复用该入口。
 
 `level_1` 和 `test_arena` 均在 `World/FloatingText` 绑定同一个组件。组件在 `StartSession/StopSession` 成对订阅 GGF 伤害事件；参数携带受击时的运行实体编号，拒绝其他场景和旧实体的排队事件。所有样式共用 `FloatingTextNode` 与 `Entitys/Effects/floating_text.tscn` 的一个池：伤害居中、放大后淡出，恢复左起匀速上升，闪避使用贴图；共用数字布局、秒制计时、完成回调和回池复位。数字按实际可见轮廓宽度排布，间隙由场景根脚本的 `m_DigitGap` 控制，默认 0px，窄字另按 `m_NarrowGlyphPadding`（默认 1/6）补充侧留白；字宽按图集首次使用缓存，帧更新不读图。模块只逐个归还本会话取出的节点，不使用全池清空；表现节点不订阅业务事件、不自行访问全局池。
 
-怪物 AI 的范围与目标盒直接使用 `Godot.Rect2`（纯 C# 值类型，不依赖场景树），合并/中心/空矩形采用原生 API。`SpatialExtensions` 只补朝向镜像与有符号间隙；不再维护重复的 AiBox 结构。
+怪物 AI 读取场景给出的 `Godot.Rect2` / 巡逻左右界及原点相对位移；不再读取目标受击盒或从攻击动画合并 AI 估距，也不维护重复的 AiBox 结构。原生形状与实际命中各有自己的职责。
 
 当前配置按用户明确决定执行：业务 Sheet 保留可见类型行，布尔值使用原生 Excel bool；内嵌表类型仍由 __beans__ 定义。装备随机范围不再配置恒为固定值的 Kind 列；无敌、普攻阻塞和取消窗口留具体技能状态/实体。关卡专属数值用物种持有的独立 .tres，特殊流程写专属代码，不留专属 Luban Sheet。第20章的无类型行/通用数值及第30/40章的配方倍率、旧公共名称与这些新要求有差异；按工作区入口保留规范正文，未自行改写。

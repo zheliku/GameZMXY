@@ -1,4 +1,5 @@
 using System;
+using GameLogic.Architecture;
 using GameFramework.Entity;
 using GameLogic.Battle.Attacks;
 using GameLogic.Battle.Damage;
@@ -20,7 +21,10 @@ namespace GameLogic.Enemies
             () => new PengDemonKingHurtState(), () => new PengDemonKingEggState(),
             () => new PengDemonKingRebirthState(), () => new PengDemonKingDeathState()); // 本首领的状态组合；运行实例由每次入场独立创建。
         private static readonly EnemyAiPreset m_Preset = new(typeof(PengDemonKingEngageState), typeof(PengDemonKingEngageState),
-            () => new PengDemonKingEngageState(), () => new CcLockedState(), () => new DeathState()); // 每只首领独立选招。
+            () => new PengDemonKingEngageState()); // 每只首领独立选招。
+
+        [Export] private CollisionShape2D m_TrackingRange; // 本首领允许追踪的高度，独立于圆形选招半径。
+        [Export] private CollisionShape2D m_MeleeRange; // 近身刺击半径，仅参与AI原点距离判断。
 
         [Export] private PackedScene m_FireScene; // 攻击和化卵期间使用的同一池化火焰场景。
         [Export] private PackedScene m_DeathScene; // 官方首领死亡旋涡，由死亡动画末帧创建。
@@ -28,6 +32,28 @@ namespace GameLogic.Enemies
         private float m_FlightLeft; // 飞行阶段剩余秒数。
         private float m_InvulnerableLeft; // 起飞和冲刺共用的本实例无敌时钟。
         private int m_EggHitsLeft; // 凤凰蛋还需成功命中的次数，不是生命值。
+
+        /// <summary>
+        /// 原版追踪高度，像素；不随圆形选招半径改变。
+        /// </summary>
+        internal float TrackingHeight
+        {
+            get
+            {
+                return m_TrackingRange.Shape.GetRect().End.Y;
+            }
+        }
+
+        /// <summary>
+        /// 近身刺击半径，像素；唯一来源是本角色场景的原生形状。
+        /// </summary>
+        internal float MeleeDistance
+        {
+            get
+            {
+                return m_MeleeRange.Shape.GetRect().End.X;
+            }
+        }
 
         /// <inheritdoc />
         protected override EnemyBodyPreset BodyPreset
@@ -114,7 +140,7 @@ namespace GameLogic.Enemies
             bool isNewInstance, object userData)
         {
             base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
-            if (isNewInstance && (m_FireScene == null || m_DeathScene == null))
+            if (isNewInstance && (m_MeleeRange?.Shape is not CircleShape2D || !m_MeleeRange.Disabled || m_TrackingRange?.Shape is not SegmentShape2D || !m_TrackingRange.Disabled || m_FireScene == null || m_DeathScene == null))
             {
                 throw new InvalidOperationException("彭魔王必须绑定火焰与死亡效果场景。");
             }
@@ -236,6 +262,7 @@ namespace GameLogic.Enemies
 
             AiData.AttackRequest = index;
             AiData.MoveIntent = 0;
+            this.GetSystem<EnemyAiSystem>().MarkUsed(AiData, OwnAttacks, index, GD.Randf);
             return true;
         }
 

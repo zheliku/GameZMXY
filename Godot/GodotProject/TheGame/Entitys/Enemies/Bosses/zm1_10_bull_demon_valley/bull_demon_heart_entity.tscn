@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://ddxg1g4fqepto"]
 
+[ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="5_cswe7"]
 [ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_background_frames.tres" id="background"]
 [ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_heart_fade_library.tres" id="fade"]
-[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire_effect.tscn" id="fire"]
+[ext_resource type="PackedScene" uid="uid://ne3h4plirwud" path="res://TheGame/Entitys/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire_effect.tscn" id="fire"]
 [ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_official_frames.tres" id="frames"]
 [ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_hands_frames.tres" id="hands"]
 [ext_resource type="Script" uid="uid://dhh6c7r3fqbt7" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_10_bull_demon_valley/BullDemonHandNode.cs" id="hand_script"]
@@ -22,13 +23,13 @@ size = Vector2(90.22601, 159.97145)
 [sub_resource type="RectangleShape2D" id="empty"]
 size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="detector"]
-size = Vector2(600, 1000)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7n3c3"]
+size = Vector2(600, 800)
 
 [sub_resource type="RectangleShape2D" id="hand_shape"]
 size = Vector2(280, 153)
 
-[node name="BullDemonHeartEntity" type="CharacterBody2D" unique_id=1579089503 node_paths=PackedStringArray("m_Heart", "m_HeartFade", "m_Presentation", "m_LeftHand", "m_RightHand", "m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[node name="BullDemonHeartEntity" type="CharacterBody2D" unique_id=1579089503 node_paths=PackedStringArray("m_Heart", "m_HeartFade", "m_Presentation", "m_LeftHand", "m_RightHand", "m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 0
 floor_constant_speed = true
@@ -41,7 +42,7 @@ m_Presentation = NodePath("m_Presentation")
 m_LeftHand = NodePath("m_LeftHand")
 m_RightHand = NodePath("m_RightHand")
 m_FireScene = ExtResource("fire")
-m_Detector = NodePath("m_Detector")
+m_Perception = NodePath("Perception")
 m_EnemyEntityId = 24
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
@@ -58,6 +59,7 @@ offset = Vector2(11.5, -77.5)
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=687010905]
 position = Vector2(14.65, 141.00938)
 shape = SubResource("body_shape")
+debug_color = Color(0.58, 0.64, 0.72, 0.12)
 
 [node name="m_HurtBox" type="Area2D" parent="." unique_id=769256545 node_paths=PackedStringArray("m_Owner")]
 collision_layer = 32
@@ -69,6 +71,7 @@ m_Owner = NodePath("..")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1108676797]
 position = Vector2(14.65, 141.00938)
 shape = SubResource("hurt_shape")
+debug_color = Color(0.3, 0.66, 0.62, 0.14)
 
 [node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=1387226102]
 
@@ -80,14 +83,18 @@ monitorable = false
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1795427967]
 shape = SubResource("empty")
 disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="m_Detector" type="Area2D" parent="." unique_id=1332371529]
+[node name="Perception" type="Area2D" parent="." unique_id=1332371529 node_paths=PackedStringArray("m_DetectionShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
+script = ExtResource("5_cswe7")
+m_DetectionShape = NodePath("Detection")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=1764500039]
-shape = SubResource("detector")
+[node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=1764500039]
+shape = SubResource("RectangleShape2D_7n3c3")
+debug_color = Color(0.36, 0.58, 0.8, 0.035)
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=791121852]
 libraries/ = ExtResource("library")
@@ -126,6 +133,7 @@ monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_LeftHand/HitBox" unique_id=1418320144]
 shape = SubResource("hand_shape")
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
 [node name="m_RightHand" type="Node2D" parent="." unique_id=294928614 node_paths=PackedStringArray("m_HitBox")]
 visible = false
@@ -145,3 +153,4 @@ monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_RightHand/HitBox" unique_id=166183378]
 shape = SubResource("hand_shape")
+debug_color = Color(0.88, 0.36, 0.3, 0.18)

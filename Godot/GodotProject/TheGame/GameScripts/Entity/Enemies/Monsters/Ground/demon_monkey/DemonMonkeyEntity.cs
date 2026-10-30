@@ -7,6 +7,8 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class DemonMonkeyEntity : AbstractGroundMonsterEntity
     {
+        private static readonly EnemyAiPreset m_Preset = EnemyAiPresets.Patrol; // Monster2 的原点出招距离。
+
         /// <summary>
         /// Monster2 主动索敌并追近出拳，不使用猴子的受击激怒规则。
         /// </summary>
@@ -14,7 +16,7 @@ namespace GameLogic.Enemies
         {
             get
             {
-                return EnemyAiPresets.Patrol;
+                return m_Preset;
             }
         }
     }

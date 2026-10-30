@@ -1,27 +1,34 @@
-[gd_scene format=3]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/shark_spawn/shark_spawn_warning_frames.tres" id="frames"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Sea/shark_spawn/shark_spawn_warning_library.tres" id="animation"]
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="script"]
+[gd_scene format=3 uid="uid://8t1ynq7otofr"]
+
+[ext_resource type="AnimationLibrary" uid="uid://7d27rkomn8mc" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Sea/shark_spawn/shark_spawn_warning_library.tres" id="animation"]
+[ext_resource type="SpriteFrames" uid="uid://du88otyfmay7j" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/shark_spawn/shark_spawn_warning_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://bx0447o7u7wmq" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="script"]
+
 [sub_resource type="RectangleShape2D" id="rest"]
 size = Vector2(1, 1)
 
-[node name="shark_spawn_warning" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]
+[node name="shark_spawn_warning" type="Node2D" unique_id=888829190 node_paths=PackedStringArray("m_Player", "m_HitBox")]
 script = ExtResource("script")
 m_Player = NodePath("AnimationPlayer")
 m_HitBox = NodePath("Origin/Visual/HitBox")
-m_Shape = NodePath("Origin/Visual/HitBox/CollisionShape2D")
 
-[node name="Origin" type="Node2D" parent="."]
-[node name="Visual" type="Node2D" parent="Origin"]
-[node name="Sprite" type="AnimatedSprite2D" parent="Origin/Visual"]
+[node name="Origin" type="Node2D" parent="." unique_id=1591042090]
+
+[node name="Visual" type="Node2D" parent="Origin" unique_id=1211607256]
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Origin/Visual" unique_id=1231054491]
 sprite_frames = ExtResource("frames")
 animation = &"play"
-[node name="HitBox" type="Area2D" parent="Origin/Visual"]
+
+[node name="HitBox" type="Area2D" parent="Origin/Visual" unique_id=1634779792]
 collision_layer = 64
 collision_mask = 128
 monitorable = false
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=1981649487]
 shape = SubResource("rest")
 disabled = true
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=576979068]
 libraries/ = ExtResource("animation")

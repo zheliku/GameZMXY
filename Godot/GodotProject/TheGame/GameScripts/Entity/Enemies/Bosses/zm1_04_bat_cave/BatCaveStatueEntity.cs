@@ -1,4 +1,3 @@
-using GameFramework.Fsm;
 using GameLogic.Enemies.AI;
 
 namespace GameLogic.Enemies
@@ -8,15 +7,12 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class BatCaveStatueEntity : AbstractBossEntity
     {
-        private static readonly EnemyAiPreset m_Preset = new(typeof(BatCaveStatueIdleState), typeof(BatCaveStatueIdleState),
-            () => new BatCaveStatueIdleState(), () => new CcLockedState(), () => new DeathState()); // 石像不移动、不出招。
-
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset
         {
             get
             {
-                return m_Preset;
+                return null;
             }
         }
 
@@ -32,12 +28,4 @@ namespace GameLogic.Enemies
         }
     }
 
-    /// <summary>
-    /// 石像只保留可受伤、可死亡的敌方生命周期，不执行攻击决策。
-    /// </summary>
-    internal sealed class BatCaveStatueIdleState : AbstractEnemyAiState
-    {
-        /// <inheritdoc />
-        protected override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds) { }
-    }
 }

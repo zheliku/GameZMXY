@@ -108,6 +108,8 @@ def _pack_layer(layer):
                 visible = rgba.getchannel('A').getbbox()
                 placement = (math.floor(action['bounds'][0] + action['matrix'][4]),
                              math.floor(action['bounds'][1] + action['matrix'][5]))
+                correction = action.get('frame_registration_offsets', {}).get(str(frame), [0, 0])
+                placement = (placement[0] + correction[0], placement[1] + correction[1])
                 if visible:
                     placement = (placement[0] + visible[0], placement[1] + visible[1])
                     rgba = rgba.crop(visible)

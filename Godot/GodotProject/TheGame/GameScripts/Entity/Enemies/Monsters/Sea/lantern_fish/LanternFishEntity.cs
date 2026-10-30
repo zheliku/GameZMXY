@@ -7,9 +7,7 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class LanternFishEntity : AbstractSeaMonsterEntity
     {
-        private static readonly EnemyAiPreset m_Preset = new(typeof(WanderState), typeof(LanternFishEngageState),
-            () => new WanderState(), () => new PauseState(), () => new LanternFishEngageState(),
-            () => new CcLockedState(), () => new DeathState()); // 每只灯笼鱼独立决策与受控。
+        private static readonly EnemyAiPreset m_Preset = EnemyAiPresets.Patrol; // 每只灯笼鱼独立决策与受控。
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset

@@ -1,8 +1,10 @@
 [gd_scene format=3 uid="uid://catxhoa1v7aup"]
 
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/lantern_fish/lantern_fish_official_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="4_4x1gw"]
+[ext_resource type="PackedScene" uid="uid://caauui8brtx47" path="res://TheGame/UIs/Battle/monster_health_bar.tscn" id="5_50bl2"]
+[ext_resource type="SpriteFrames" uid="uid://bekaet78bxc4r" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/lantern_fish/lantern_fish_official_frames.tres" id="frames"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Sea/lantern_fish/lantern_fish_library.tres" id="library"]
+[ext_resource type="AnimationLibrary" uid="uid://co7l0p2wvu1xf" path="res://TheGame/Entitys/Animations/Enemies/Monsters/Sea/lantern_fish/lantern_fish_library.tres" id="library"]
 [ext_resource type="Script" uid="uid://bwlicudkoxysi" path="res://TheGame/GameScripts/Entity/Enemies/Monsters/Sea/lantern_fish/LanternFishEntity.cs" id="script"]
 
 [sub_resource type="CapsuleShape2D" id="body"]
@@ -15,18 +17,34 @@ size = Vector2(59.03656, 82.9866)
 [sub_resource type="RectangleShape2D" id="shape_empty"]
 size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="detector"]
-size = Vector2(600, 1000)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_50bl2"]
+size = Vector2(800, 400)
 
-[node name="LanternFishEntity" type="CharacterBody2D" unique_id=1012105148 node_paths=PackedStringArray("m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_88hxh"]
+size = Vector2(400, 800)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_4x1gw"]
+a = Vector2(-400, 0)
+b = Vector2(400, 0)
+
+[sub_resource type="Gradient" id="Gradient_fill"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fill"]
+gradient = SubResource("Gradient_fill")
+width = 50
+height = 5
+
+[node name="LanternFishEntity" type="CharacterBody2D" unique_id=1012105148 node_paths=PackedStringArray("m_Perception", "m_HealthBar", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("script")
-m_Detector = NodePath("m_Detector")
+m_Perception = NodePath("Perception")
 m_EnemyEntityId = 20
+m_HealthBar = NodePath("m_HealthBar")
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
 m_AttackAnimations = PackedStringArray("attack_1")
@@ -42,6 +60,7 @@ offset = Vector2(-92, -37)
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=221194508]
 position = Vector2(0.575, 3.2)
 shape = SubResource("body")
+debug_color = Color(0.58, 0.64, 0.72, 0.12)
 
 [node name="m_HurtBox" type="Area2D" parent="." unique_id=795313024 node_paths=PackedStringArray("m_Owner")]
 collision_layer = 32
@@ -53,6 +72,7 @@ m_Owner = NodePath("..")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=967825158]
 position = Vector2(0.575, 3.2)
 shape = SubResource("hurt_shape")
+debug_color = Color(0.3, 0.66, 0.62, 0.14)
 
 [node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=1037127666]
 
@@ -64,14 +84,33 @@ monitorable = false
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=974210935]
 shape = SubResource("shape_empty")
 disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="m_Detector" type="Area2D" parent="." unique_id=526636965]
+[node name="Perception" type="Area2D" parent="." unique_id=526636965 node_paths=PackedStringArray("m_DetectionShape", "m_EngageShape", "m_PatrolShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
+script = ExtResource("4_4x1gw")
+m_DetectionShape = NodePath("Detection")
+m_EngageShape = NodePath("Engage")
+m_PatrolShape = NodePath("Patrol")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=1909880333]
-shape = SubResource("detector")
+[node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=1909880333]
+shape = SubResource("RectangleShape2D_50bl2")
+debug_color = Color(0.36, 0.58, 0.8, 0.035)
+
+[node name="Engage" type="CollisionShape2D" parent="Perception" unique_id=1987595980]
+shape = SubResource("RectangleShape2D_88hxh")
+disabled = true
+debug_color = Color(0.85, 0.65, 0.35, 0.045)
+
+[node name="Patrol" type="CollisionShape2D" parent="Perception" unique_id=1453855471]
+shape = SubResource("SegmentShape2D_4x1gw")
+disabled = true
+debug_color = Color(0.45, 0.62, 0.48, 0.03)
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=131642107]
 libraries/ = ExtResource("library")
+
+[node name="m_HealthBar" parent="." unique_id=1080627049 instance=ExtResource("5_50bl2")]
+texture_progress = SubResource("GradientTexture2D_fill")

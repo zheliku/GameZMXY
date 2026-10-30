@@ -56,8 +56,9 @@ public sealed partial class UiSmokeScenario
                 Check(enemy is AbstractGroundMonsterEntity && !agent.RequestAttack(0),
                     $"{id} 没有使用地面分支的空中出招限制");
                 await WaitUntilAsync(() => enemy.OnFloor, $"{id} 未通过地面身体落地");
+                hero.GlobalPosition = enemy.GlobalPosition - new Vector2(120, 0);
                 await WaitFramesAsync(3);
-                Check(agent.TargetBox.HasArea() == (id != EntityId.HuaguoshanMonkey),
+                Check(agent.HasTarget == (id != EntityId.HuaguoshanMonkey),
                     $"{id} 的主动索敌规则错误");
                 if (id == EntityId.HuaguoshanMonkey)
                 {
@@ -65,15 +66,15 @@ public sealed partial class UiSmokeScenario
                     try
                     { enemy.ReceiveHit(data, hero.Id); }
                     finally { ReferencePool.Release(data); }
-                    Check(agent.TargetBox.HasArea(), "猴子受击后没有锁定攻击者");
+                    Check(agent.HasTarget, "猴子受击后没有锁定攻击者");
                     typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic)!
                         .Invoke(enemy, [null]);
                     await WaitFramesAsync(3);
-                    Check(agent.TargetBox.HasArea(), "猴子被激怒后不能重新发现目标");
+                    Check(agent.HasTarget, "猴子被激怒后不能重新发现目标");
                 }
                 Check(agent.RequestAttack(0), $"{id} 落地后拒绝合法攻击");
                 await WaitUntilAsync(() => enemy.AttackSegment == 0, $"{id} 未消费攻击请求");
-                await WaitUntilAsync(() => SmokeInspection.BodyStateName(enemy) == "Move", $"{id} 收招未返回地面移动");
+                await WaitUntilAsync(() => SmokeInspection.BodyStateName(enemy) == "Walk", $"{id} 收招未返回地面移动");
                 ReleaseTestEntity(enemy);
                 m_Monster = null;
                 await WaitFramesAsync(2); // GGF 在帧末完成隐藏并归还可复用池。
@@ -84,7 +85,7 @@ public sealed partial class UiSmokeScenario
                 await WaitFramesAsync(3);
                 if (id == EntityId.HuaguoshanMonkey)
                 {
-                    Check(!((IEnemyAiAgent)m_Monster).TargetBox.HasArea(), "猴子复用后遗留激怒和目标");
+                    Check(!((IEnemyAiAgent)m_Monster).HasTarget, "猴子复用后遗留激怒和目标");
                 }
 
                 ReleaseTestEntity(m_Monster);
@@ -224,56 +225,50 @@ public sealed partial class UiSmokeScenario
     /// <returns>两次追击进入的引擎回归。</returns>
     private async Task CheckDemonChaseAsync(AbstractHeroEntity hero)
     {
+        Vector2 origin = hero.GlobalPosition;
+        hero.GlobalPosition = new Vector2(300, 100);
         m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DemonMonkey,
-            new EnemySpawn(hero.GlobalPosition + new Vector2(300, -40)));
+            new EnemySpawn(new Vector2(600, 100)));
+        m_Monster.SetPhysicsProcess(true); // 前一声音夹具使用同一池实例时冻结过身体，测试侧显式恢复。
         await WaitUntilAsync(() => m_Monster.OnFloor, "妖猴追击夹具没有落地");
+        hero.GlobalPosition = m_Monster.GlobalPosition - new Vector2(300, 0);
         typeof(AbstractEnemyEntity).GetField("m_Target", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(m_Monster, hero);
         var fsm = SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(m_Monster, "m_AiFsm");
-        MethodInfo change = fsm.GetType().GetMethod("ChangeState", BindingFlags.Instance | BindingFlags.NonPublic,
-            null, [typeof(Type)], null)!;
-        foreach (float direction in new[] { -1f, 1f })
-        {
-            hero.GlobalPosition = m_Monster.GlobalPosition + new Vector2(direction * 300, 0);
-            change.Invoke(fsm, [typeof(StandAndStrikeState)]);
-            change.Invoke(fsm, [typeof(WalkToTargetState)]);
-            Check(m_Monster.AiData.MoveIntent == (int)direction,
-                "进入追击当帧仍写入零移动意图");
-            await WaitFramesAsync(2);
-            Check(m_Monster.AnimPlayer.CurrentAnimation == "run" && Math.Sign(m_Monster.Velocity.X) == (int)direction,
-                $"追击进入后播放了持棒待机姿势：{m_Monster.AnimPlayer.CurrentAnimation}");
-        }
-
         var body = m_Monster.GetNode<AnimatedSprite2D>("m_Body");
-        foreach (float direction in new[] { -1f, 1f })
+        FieldInfo desire = m_Monster.Config.GetType().GetField("AttackDesire")!;
+        int originalDesire = m_Monster.Config.AttackDesire;
+        desire.SetValue(m_Monster.Config, 0); // 只检查实际追击渲染，不让随机合法出招混入夹具。
+        try
         {
-            // 平台目标：每个实际绘制帧都必须继续移动，不能短暂进入站定攻击。
-            hero.GlobalPosition = m_Monster.GlobalPosition + new Vector2(direction * 30, -160);
-            change.Invoke(fsm, [typeof(WalkToTargetState)]);
-            for (int frame = 0; frame < 8; frame++)
+            foreach (float direction in new[] { -1f, 1f })
             {
-                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
-                await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                Check(fsm.CurrentState is PaceBelowTargetState && m_Monster.AttackSegment < 0 &&
-                    m_Monster.AiData.MoveIntent != 0 && body.Animation == "run",
-                    $"平台下移动闪出待机帧：AI={fsm.CurrentState.GetType().Name}，身体={body.Animation}");
+                hero.GlobalPosition = m_Monster.GlobalPosition + new Vector2(direction * 300, 0);
+                await WaitUntilAsync(() => m_Monster.AiData.MoveIntent == (int)direction, "妖猴没有自主转向追击");
+                await WaitFramesAsync(2);
+                for (int frame = 0; frame < 16; frame++)
+                {
+                    hero.GlobalPosition = m_Monster.GlobalPosition + new Vector2(direction * (frame % 2 == 0 ? 140 : 300), 0);
+                    await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                    Check(fsm.CurrentState is EngageState && body.Animation == "run" && m_Monster.AttackSegment < 0,
+                        $"合法追击中闪出举棒：AI={fsm.CurrentState.GetType().Name}，身体={body.Animation}");
+                }
+                // 原版妖猴交战高度为220px；超限后游荡可以停步，但不能提前进入攻击动作。
+                for (int frame = 0; frame < 30; frame++)
+                {
+                    hero.GlobalPosition = m_Monster.GlobalPosition + new Vector2(direction * 30, -240);
+                    await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                    Check(m_Monster.AttackSegment < 0 && body.Animation != "attack_1", "高处不可达目标引起一帧举棒");
+                }
             }
-
-            // 移动目标：在追击/站定的边缘连续往返，逐渲染帧观测真实 Sprite，而非等两帧后才检查。
-            change.Invoke(fsm, [typeof(WalkToTargetState)]);
-            for (int frame = 0; frame < 16; frame++)
-            {
-                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
-                float distance = fsm.CurrentState is WalkToTargetState ? 40f : 140f;
-                hero.GlobalPosition = m_Monster.GlobalPosition + new Vector2(direction * distance, 0);
-                await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                Check(m_Monster.AiData.MoveIntent == (int)direction &&
-                    body.Animation == "run" && m_Monster.AttackSegment < 0,
-                    $"范围边缘追击闪出待机帧：AI={fsm.CurrentState.GetType().Name}，身体={body.Animation}");
-            }
+        }
+        finally
+        {
+            desire.SetValue(m_Monster.Config, originalDesire);
+            hero.GlobalPosition = origin;
         }
         ReleaseTestEntity(m_Monster);
         m_Monster = null;
-        GD.Print("SMOKE-UI: 妖猴左右追击、平台踱步及范围边缘切换逐渲染帧保持 run，无瞬间举棒");
+        GD.Print("SMOKE-UI: 妖猴自主左右追击与高处不可达目标逐渲染帧检查通过，无瞬间举棒");
     }
 
     /// <summary>

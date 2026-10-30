@@ -19,11 +19,37 @@ namespace GameLogic.Enemies
             () => new EnemyHurtState(), () => new EnemyRecoveryState(),
             () => new BullDemonTransformState()); // 本首领的状态组合；运行实例由每次入场独立创建。
         private static readonly EnemyAiPreset m_Preset = new(typeof(BullDemonKingEngageState), typeof(BullDemonKingEngageState),
-            () => new BullDemonKingEngageState(), () => new CcLockedState(), () => new DeathState()); // 人形专属距离分支和冷却。
+            () => new BullDemonKingEngageState()); // 人形专属距离分支和冷却。
+        [Export] private CollisionShape2D m_CaptureRange; // 吞噬动作命中时的水平捕获范围，与80px选招距离分开。
+        [Export] private CollisionShape2D m_SwallowRange; // 吞噬水平距离，仅参与AI原点距离判断。
+        [Export] private CollisionShape2D m_StompRange; // 践踏水平距离，仅参与AI原点距离判断。
+
         [Export] private PackedScene m_DeathScene; // 人形闪烁后继续播放官方BossDead。
         private float m_InvulnerabilityLeft; // 原生方法键启动的无敌秒数。
         private AbstractHeroEntity m_Captive; // 当前吞噬目标，只在本次招式中借用。
         private int m_CaptiveId; // 捕获时的运行编号，防止对象回池后误恢复另一具英雄。
+
+        /// <summary>
+        /// 吞噬水平距离，像素；唯一来源是本角色场景的原生形状。
+        /// </summary>
+        internal float SwallowDistance
+        {
+            get
+            {
+                return m_SwallowRange.Shape.GetRect().End.X;
+            }
+        }
+
+        /// <summary>
+        /// 践踏水平距离，像素；唯一来源是本角色场景的原生形状。
+        /// </summary>
+        internal float StompDistance
+        {
+            get
+            {
+                return m_StompRange.Shape.GetRect().End.X;
+            }
+        }
 
         /// <inheritdoc />
         protected override EnemyBodyPreset BodyPreset
@@ -31,6 +57,17 @@ namespace GameLogic.Enemies
             get
             {
                 return m_BodyPreset;
+            }
+        }
+
+        /// <inheritdoc />
+        public override void OnInit(int entityId, string entityAssetName, GameFramework.Entity.IEntityGroup entityGroup,
+            bool isNewInstance, object userData)
+        {
+            base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
+            if (isNewInstance && (m_CaptureRange?.Shape is not SegmentShape2D || !m_CaptureRange.Disabled || m_SwallowRange?.Shape is not SegmentShape2D || !m_SwallowRange.Disabled || m_StompRange?.Shape is not SegmentShape2D || !m_StompRange.Disabled))
+            {
+                throw new System.InvalidOperationException("本物种必须绑定禁用物理碰撞的原生选招范围。");
             }
         }
 
@@ -142,7 +179,7 @@ namespace GameLogic.Enemies
             foreach (var entity in GF.Entity.GetAllLoadedEntities())
             {
                 if (entity is not AbstractHeroEntity hero || !hero.IsAlive ||
-                    MathF.Abs(hero.GlobalPosition.X - GlobalPosition.X) > 200f || !hero.TryCapture(Id))
+                    MathF.Abs(hero.GlobalPosition.X - GlobalPosition.X) > m_CaptureRange.Shape.GetRect().End.X || !hero.TryCapture(Id))
                 {
                     continue;
                 }

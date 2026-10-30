@@ -1,4 +1,6 @@
 using System;
+using GameFramework.Fsm;
+using GameLogic.Architecture;
 using GameLogic.Enemies.AI;
 
 namespace GameLogic.Enemies
@@ -6,7 +8,7 @@ namespace GameLogic.Enemies
     /// <summary>
     /// 龙王近身优先水柱，中距离在冰环与冰冻中选招，冷却中按原版节拍尝试水波。
     /// </summary>
-    internal sealed class DragonKingEngageState : AbstractBossAiState
+    internal sealed class DragonKingEngageState : AbstractEnemyAiState
     {
         private readonly int m_AttackDesire; // 本次入场选定的普通水波出手欲望，战斗内升级不改变。
 
@@ -20,25 +22,31 @@ namespace GameLogic.Enemies
         }
 
         /// <inheritdoc />
-        protected override float HeightRange
+        protected override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float delta)
         {
-            get
+            if (agent.IsAttacking)
             {
-                return 300;
+                return;
             }
+            if (!agent.HasTarget)
+            {
+                agent.GetSystem<EnemyAiSystem>().Patrol(agent, delta);
+                return;
+            }
+            double period = Math.Abs(agent.TargetOffset.X) <= ((DragonKingEntity)agent).WaterColumnDistance ? 1.5 : 1;
+            Engage(agent, agent.GetSystem<EnemyAiSystem>().IsDecisionDue(agent.AiData, period), delta);
         }
 
-        /// <inheritdoc />
-        protected override double GetDecisionPeriod(IEnemyAiAgent agent)
-        {
-            return Math.Abs(agent.TargetOffset.X) <= 100 ? 1.5 : 1;
-        }
-
-        /// <inheritdoc />
-        protected override void Engage(IEnemyAiAgent agent, bool decision, float delta)
+        /// <summary>
+        /// 官方按水平距离选水柱或冰系招式，不限制目标高度。
+        /// </summary>
+        /// <param name="agent">本首领实例。</param>
+        /// <param name="decision">是否跨过当前区间的普攻节拍。</param>
+        /// <param name="delta">本次游戏秒数。</param>
+        private void Engage(IEnemyAiAgent agent, bool decision, float delta)
         {
             float distance = Math.Abs(agent.TargetOffset.X);
-            if (distance <= 100)
+            if (distance <= ((DragonKingEntity)agent).WaterColumnDistance)
             {
                 if (agent.AiData.Cooldowns[3] <= 0)
                 {
@@ -46,7 +54,7 @@ namespace GameLogic.Enemies
                     return;
                 }
             }
-            else if (distance <= 450)
+            else if (distance <= agent.EngageBounds.End.X)
             {
                 bool ice = agent.AiData.Cooldowns[1] <= 0;
                 bool freeze = agent.AiData.Cooldowns[2] <= 0;
@@ -71,16 +79,16 @@ namespace GameLogic.Enemies
                 }
                 else
                 {
-                    Patrol(agent, delta);
+                    agent.GetSystem<EnemyAiSystem>().Patrol(agent, delta);
                 }
             }
-            else if (distance > 100)
+            else if (distance > ((DragonKingEntity)agent).WaterColumnDistance)
             {
                 agent.Move(Math.Sign(agent.TargetOffset.X));
             }
             else
             {
-                Patrol(agent, delta);
+                agent.GetSystem<EnemyAiSystem>().Patrol(agent, delta);
             }
         }
     }

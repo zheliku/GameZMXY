@@ -7,8 +7,8 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class FlyingDemonEntity : AbstractSkyMonsterEntity
     {
-        private static readonly EnemyAiPreset m_Preset = new(typeof(FlyingDemonAiState), typeof(FlyingDemonAiState),
-            () => new FlyingDemonAiState(), () => new CcLockedState(), () => new DeathState()); // 每次显示创建独立的追踪状态。
+        private static readonly EnemyAiPreset m_Preset = new(typeof(FlyingDemonEngageState), typeof(FlyingDemonEngageState),
+            () => new FlyingDemonEngageState()); // 每次显示创建独立的追踪状态。
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset

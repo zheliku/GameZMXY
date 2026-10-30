@@ -1,38 +1,34 @@
-using GameLogic.Utility;
 using Godot;
 using GameLogic.Architecture;
-using GameLogic.Enemies.Body;
-using GameFramework.Fsm;
+using GameConfig.Battle;
+using System.Collections.Generic;
 using System;
 
 namespace GameLogic.Enemies.AI
 {
     /// <summary>
-    /// 敌人 AI 共用规则：处理攻击范围、加权选招与独立冷却；小怪和首领状态按需调用。
-    /// 普攻站位由判定盒决定；优先招可使用远程区间与逐招冷却。
+    /// 敌人 AI 共用时钟、官方游荡与独立冷却；各物种状态拥有原点距离和选招规则。
     /// </summary>
     /// <param name="architecture">借用的所属作用域；模型和服务由作用域持有。</param>
     public sealed class EnemyAiSystem(IArchitecture architecture) : AbstractSystem(architecture)
     {
         /// <summary>
-        /// 近身招"够得着"所需的最小水平重叠深度 px（工程常数）：判定盒只擦边时物理重叠不稳定，吃进几像素再出招。
-        /// </summary>
-        public const float ReachMargin = 4f;
-
-        /// <summary>
         /// 重置本怪物的意图、请求及招式初始冷却。
         /// </summary>
         /// <param name="data">本怪物拥有的 AI 数据。</param>
-        /// <param name="parameters">同类怪物共享的攻击参数。</param>
+        /// <param name="attacks">借用实体当前的招式配置，不复制冷却区间。</param>
         /// <param name="random">本怪物的随机源。</param>
-        public void Reset(EnemyAiData data, EnemyBodyParams parameters, Func<float> random)
+        public void Reset(EnemyAiData data, IReadOnlyList<AttackConfig> attacks, Func<float> random)
         {
             data.ElapsedSeconds = 0;
+            data.PreviousElapsedSeconds = 0;
+            data.ClockOrigin = 0;
+            data.PatrolStopTime = 3;
             data.MoveIntent = 0;
             data.AttackRequest = -1;
-            for (int i = 0; i < parameters.Attacks.Count; i++)
+            for (int i = 0; i < attacks.Count; i++)
             {
-                data.Cooldowns[i] = Roll(parameters.Attacks[i].InitCooldown, random);
+                data.Cooldowns[i] = Roll(attacks[i].AiInitCooldown, random);
             }
         }
 
@@ -43,10 +39,60 @@ namespace GameLogic.Enemies.AI
         /// <param name="elapseSeconds">本帧游戏秒数。</param>
         public void AdvanceCooldowns(EnemyAiData data, float elapseSeconds)
         {
+            data.PreviousElapsedSeconds = data.ElapsedSeconds;
             data.ElapsedSeconds += elapseSeconds;
             for (int i = 0; i < data.Cooldowns.Length; i++)
             {
-                data.Cooldowns[i] = Math.Max(0f, data.Cooldowns[i] - elapseSeconds);
+                float remaining = data.Cooldowns[i] - elapseSeconds;
+                data.Cooldowns[i] = remaining <= .00001f ? 0f : remaining;
+            }
+        }
+
+        /// <summary>
+        /// 检测官方共用计数周期中的决策节拍；242个源帧只在此换算成游戏秒数。
+        /// </summary>
+        /// <param name="data">本实例持续推进的时钟。</param>
+        /// <param name="period">该物种的决策间隔，游戏秒。</param>
+        /// <returns>本次更新是否跨过决策时点。</returns>
+        public bool IsDecisionDue(EnemyAiData data, double period)
+        {
+            const double clockPeriod = 242d / 24d;
+            double age = (data.ElapsedSeconds - data.ClockOrigin) % clockPeriod;
+            double previous = Math.Max(0, data.PreviousElapsedSeconds - data.ClockOrigin) % clockPeriod;
+            return age + 1e-6 < previous ||
+                (int)((age + 1e-6) / period) != (int)((previous + 1e-6) / period);
+        }
+
+        /// <summary>
+        /// BaseMonster.normalWalk 的共同游荡：半秒起步、按场景巡逻边界选择折返、三或四秒停步并重启周期。
+        /// </summary>
+        /// <param name="agent">本实例的时钟、随机源和移动意图。</param>
+        /// <param name="elapseSeconds">本次游戏秒数，概率按源24Hz换算，不随渲染帧率变化。</param>
+        public void Patrol(IEnemyAiAgent agent, float elapseSeconds)
+        {
+            const double clockPeriod = 242d / 24d;
+            EnemyAiData data = agent.AiData;
+            double age = (data.ElapsedSeconds - data.ClockOrigin) % clockPeriod;
+            double previous = Math.Max(0, data.PreviousElapsedSeconds - data.ClockOrigin) % clockPeriod;
+            if (previous < .5 && age + 1e-6 >= .5)
+            {
+                agent.Move(agent.PatrolOffsetX < agent.PatrolBounds.X ? 1 : agent.PatrolOffsetX > agent.PatrolBounds.Y ? -1 :
+                    agent.NextRandom() < .5f ? -1 : 1);
+                data.PatrolStopTime = agent.NextRandom() < .5f ? 3 : 4;
+            }
+            if (age < data.PatrolStopTime)
+            {
+                return;
+            }
+            if (agent.NextRandom() < 1 - Math.Pow(.5, elapseSeconds * 24))
+            {
+                agent.Move(0);
+            }
+
+            double resetChance = Math.Clamp((age - data.PatrolStopTime) / 1.25, 0, 1);
+            if (agent.NextRandom() < 1 - Math.Pow(1 - resetChance, elapseSeconds * 24))
+            {
+                data.ClockOrigin = data.ElapsedSeconds;
             }
         }
 
@@ -54,255 +100,18 @@ namespace GameLogic.Enemies.AI
         /// 标记招式已使用，并按其冷却区间重新计时。
         /// </summary>
         /// <param name="data">本怪物拥有的 AI 数据。</param>
-        /// <param name="parameters">共享攻击参数。</param>
+        /// <param name="attacks">借用实体当前的招式配置，包含具体难度选档。</param>
         /// <param name="index">已使用的攻击下标。</param>
         /// <param name="random">随机源。</param>
-        public void MarkUsed(EnemyAiData data, EnemyBodyParams parameters, int index, Func<float> random)
+        public void MarkUsed(EnemyAiData data, IReadOnlyList<AttackConfig> attacks, int index, Func<float> random)
         {
-            int i = Find(parameters, index);
-            if (i >= 0)
+            int i = index;
+            if ((uint)i < attacks.Count)
             {
-                data.Cooldowns[i] = Roll(parameters.Attacks[i].Cooldown, random);
+                // 官方先在决策中赋值skillCD，再在同一源步末执行countCD；保留这一次24Hz扣减。
+                // 否则渲染帧的相位差会让刚好四秒的冷却错过下一决策点，多等待整整一秒。
+                data.Cooldowns[i] = Math.Max(0f, Roll(attacks[i].AiCooldown, random) - 1f / 24f);
             }
-        }
-
-        /// <summary>
-        /// 有效普攻中最近一招的水平间隙，不检查高度和冷却。
-        /// </summary>
-        /// <param name="parameters">同类怪物共享的攻击参数。</param>
-        /// <param name="target">相对怪物原点的目标受击盒。</param>
-        /// <param name="dir">面向目标的方向，左为 -1，右为 1。</param>
-        /// <returns>水平间隙（像素）；不大于 -ReachMargin 时够得着，无攻击或目标时为正无穷。</returns>
-        public float GetBasicAttackHorizontalGap(EnemyBodyParams parameters, Rect2 target, int dir)
-        {
-            float best = float.PositiveInfinity;
-            for (int i = 0; i < parameters.Attacks.Count && target.HasArea(); i++)
-            {
-                if (parameters.Attacks[i].IsBasic && parameters.Attacks[i].Weight > 0 && HasReachOrRange(parameters.Attacks[i]))
-                {
-                    best = Math.Min(best, GapX(parameters.Attacks[i], target, dir));
-                }
-            }
-
-            return best;
-        }
-
-        /// <summary>
-        /// 检查是否有有效普攻够得着目标，包含高度，不检查冷却。
-        /// </summary>
-        /// <param name="parameters">同类怪物共享的攻击参数。</param>
-        /// <param name="target">相对怪物原点的目标受击盒。</param>
-        /// <param name="dir">面向目标的方向，左为 -1，右为 1。</param>
-        /// <returns>存在满足范围的普攻时为 true。</returns>
-        public bool IsBasicAttackInReach(EnemyBodyParams parameters, Rect2 target, int dir)
-        {
-            foreach (EnemyAttackParams spec in parameters.Attacks)
-            {
-                if (spec.IsBasic && spec.Weight > 0 && HasReachOrRange(spec) && InReach(spec, target, dir))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 返回当前目标可用的最高优先级，没招可用时返回 -1。
-        /// </summary>
-        /// <param name="data">本怪物独占的冷却数据。</param>
-        /// <param name="parameters">同类怪物共享的攻击参数。</param>
-        /// <param name="target">相对怪物原点的目标受击盒。</param>
-        /// <param name="dir">面向目标的方向，左为 -1，右为 1。</param>
-        /// <returns>冷却结束且满足范围的最高正优先级；没有候选时为 -1。</returns>
-        public int GetHighestUsableAttackPriority(EnemyAiData data, EnemyBodyParams parameters, Rect2 target, int dir)
-        {
-            int best = 0;
-            for (int i = 0; i < parameters.Attacks.Count; i++)
-            {
-                if (parameters.Attacks[i].Priority > best && IsUsable(data, parameters, i, target, dir))
-                {
-                    best = parameters.Attacks[i].Priority;
-                }
-            }
-
-            return best == 0 ? -1 : best;
-        }
-
-        /// <summary>
-        /// 按给定优先级和随机值加权选择招式。
-        /// </summary>
-        /// <param name="data">本怪物独占的冷却数据。</param>
-        /// <param name="parameters">同类怪物共享的攻击参数。</param>
-        /// <param name="target">相对怪物原点的目标受击盒。</param>
-        /// <param name="dir">面向目标的方向，左为 -1，右为 1。</param>
-        /// <param name="priority">大于零的特殊招式优先级。</param>
-        /// <param name="roll">零到一之间的随机落点。</param>
-        /// <returns>可用招式下标；优先级无效或没有候选时为 -1。</returns>
-        public int SelectAttackByPriority(EnemyAiData data, EnemyBodyParams parameters, Rect2 target, int dir, int priority, float roll)
-        {
-            return priority <= 0 ? -1 : PickWeighted(data, parameters, target, dir, roll, priority);
-        }
-
-        /// <summary>
-        /// 从可用普攻按权重抽取；无候选不取随机值。
-        /// </summary>
-        /// <param name="data">本怪物独占的冷却数据。</param>
-        /// <param name="parameters">同类怪物共享的攻击参数。</param>
-        /// <param name="target">相对怪物原点的目标受击盒。</param>
-        /// <param name="dir">面向目标的方向，左为 -1，右为 1。</param>
-        /// <param name="random">返回零到一之间数值的随机源。</param>
-        /// <returns>可用普攻下标；没有候选时为 -1。</returns>
-        public int SelectBasicAttack(EnemyAiData data, EnemyBodyParams parameters, Rect2 target, int dir, Func<float> random)
-        {
-            return PickWeighted(data, parameters, target, dir, random, 0);
-        }
-
-        /// <summary>
-        /// 从指定优先级的可用招式中按权重选择。
-        /// </summary>
-        /// <param name="data">本怪物独占的冷却数据。</param>
-        /// <param name="parameters">同类怪物共享的攻击参数。</param>
-        /// <param name="target">目标相对怪物的受击盒。</param>
-        /// <param name="dir">面向目标的方向，左 -1、右 1。</param>
-        /// <param name="roll">零到一的随机值。</param>
-        /// <param name="priority">要选择的招式优先级。</param>
-        /// <returns>攻击参数下标或选定的招式下标；没有候选时为 -1。</returns>
-        private int PickWeighted(EnemyAiData data, EnemyBodyParams parameters, Rect2 target, int dir, float roll, int priority)
-        {
-            // 先计算候选总权重，避免没有候选时消费随机值。
-            int total = 0;
-            for (int i = 0; i < parameters.Attacks.Count; i++)
-            {
-                total += parameters.Attacks[i].Priority == priority && IsUsable(data, parameters, i, target, dir)
-                    ? parameters.Attacks[i].Weight
-                    : 0;
-            }
-
-            if (total == 0)
-            {
-                return -1;
-            }
-
-            // 按随机落点扣减权重，落入的最后一个候选即为选择结果。
-            float pick = roll * total;
-            int last = -1;
-            for (int i = 0; i < parameters.Attacks.Count; i++)
-            {
-                if (parameters.Attacks[i].Priority != priority || !IsUsable(data, parameters, i, target, dir))
-                {
-                    continue;
-                }
-
-                last = parameters.Attacks[i].Index;
-                pick -= parameters.Attacks[i].Weight;
-                if (pick < 0f)
-                {
-                    break;
-                }
-            }
-
-            return last; // roll 恰为 1 的浮点边界落到最后一个候选
-        }
-
-        /// <summary>
-        /// 确认有候选后取一次随机值并执行加权选择。
-        /// </summary>
-        /// <param name="data">本怪物独占的冷却数据。</param>
-        /// <param name="parameters">同类怪物共享的攻击参数。</param>
-        /// <param name="target">目标相对怪物的受击盒。</param>
-        /// <param name="dir">面向目标的方向，左 -1、右 1。</param>
-        /// <param name="random">本怪物的随机源。</param>
-        /// <param name="priority">要选择的招式优先级。</param>
-        /// <returns>攻击参数下标或选定的招式下标；没有候选时为 -1。</returns>
-        private int PickWeighted(EnemyAiData data, EnemyBodyParams parameters, Rect2 target, int dir, Func<float> random, int priority)
-        {
-            // 先确认候选存在，保证空候选不调用随机源。
-            for (int i = 0; i < parameters.Attacks.Count; i++)
-            {
-                if (parameters.Attacks[i].Priority == priority && IsUsable(data, parameters, i, target, dir))
-                {
-                    return PickWeighted(data, parameters, target, dir, random(), priority);
-                }
-            }
-
-            return -1;
-        }
-
-        /// <summary>
-        /// 判断招式是否有权重、冷却结束且当前可命中。
-        /// </summary>
-        /// <param name="data">本怪物独占的冷却数据。</param>
-        /// <param name="parameters">同类怪物共享的攻击参数。</param>
-        /// <param name="i">攻击参数列表下标。</param>
-        /// <param name="target">目标相对怪物的受击盒。</param>
-        /// <param name="dir">面向目标的方向，左 -1、右 1。</param>
-        /// <returns>是否满足攻击条件。</returns>
-        private bool IsUsable(EnemyAiData data, EnemyBodyParams parameters, int i, Rect2 target, int dir)
-        {
-            return parameters.Attacks[i].Weight > 0 && data.Cooldowns[i] <= 0f && HasReachOrRange(parameters.Attacks[i]) &&
-                   InReach(parameters.Attacks[i], target, dir);
-        }
-
-        /// <summary>
-        /// 判断招式是否配置了判定盒或远程范围。
-        /// </summary>
-        /// <param name="spec">一招的共享攻击参数。</param>
-        /// <returns>是否满足攻击条件。</returns>
-        private static bool HasReachOrRange(EnemyAttackParams spec)
-        {
-            return spec.Reach.HasArea() || spec.Range.Max > 0f;
-        }
-
-        /// <summary>
-        /// 判断目标是否同时满足水平重叠和近战高度条件。
-        /// </summary>
-        /// <param name="spec">一招的共享攻击参数。</param>
-        /// <param name="target">目标相对怪物的受击盒。</param>
-        /// <param name="dir">面向目标的方向，左 -1、右 1。</param>
-        /// <returns>是否满足攻击条件。</returns>
-        private static bool InReach(EnemyAttackParams spec, Rect2 target, int dir)
-        {
-            return target.HasArea() && GapX(spec, target, dir) <= -ReachMargin &&
-                   (!spec.Reach.HasArea() || spec.Reach.Facing(dir).GapY(target) < 0f);
-        }
-
-        /// <summary>
-        /// 计算近战盒间隙或远程范围距离。
-        /// </summary>
-        /// <param name="spec">一招的共享攻击参数。</param>
-        /// <param name="target">目标相对怪物的受击盒。</param>
-        /// <param name="dir">面向目标的方向，左 -1、右 1。</param>
-        /// <returns>攻击参数下标或选定的招式下标；没有候选时为 -1。</returns>
-        private static float GapX(EnemyAttackParams spec, Rect2 target, int dir)
-        {
-            if (spec.Reach.HasArea())
-            {
-                return spec.Reach.Facing(dir).GapX(target);
-            }
-
-            float distance = Math.Abs(target.GetCenter().X);
-            return distance < spec.Range.Min ? spec.Range.Min - distance :
-                distance > spec.Range.Max ? distance - spec.Range.Max : float.NegativeInfinity;
-        }
-
-        /// <summary>
-        /// 按外部攻击下标查找规格数组位置。
-        /// </summary>
-        /// <param name="parameters">同类怪物共享的攻击参数。</param>
-        /// <param name="index">实体攻击下标。</param>
-        /// <returns>攻击参数下标或选定的招式下标；没有候选时为 -1。</returns>
-        private int Find(EnemyBodyParams parameters, int index)
-        {
-            for (int i = 0; i < parameters.Attacks.Count; i++)
-            {
-                if (parameters.Attacks[i].Index == index)
-                {
-                    return i;
-                }
-            }
-
-            return -1;
         }
 
         /// <summary>
@@ -310,10 +119,10 @@ namespace GameLogic.Enemies.AI
         /// </summary>
         /// <param name="range">以秒表示的区间。</param>
         /// <param name="random">本怪物的随机源。</param>
-        /// <returns>水平间隙像素，或按区间采样的冷却秒数。</returns>
-        private static float Roll((float Min, float Max) range, Func<float> random)
+        /// <returns>按区间采样的冷却秒数。</returns>
+        private static float Roll(Vector2 range, Func<float> random)
         {
-            return range.Sample(range.Max > range.Min ? random() : 0f);
+            return Mathf.Lerp(range.X, range.Y, range.Y > range.X ? random() : 0f);
         }
     }
 }

@@ -59,7 +59,8 @@ func _build() -> void:
         var actor := scene.instantiate()
         assert(actor != null)
         if actor is CharacterBody2D:
-            for field in ["m_Body", "m_AnimPlayer", "m_HitBox", "m_HurtBox", "m_Detector", "m_WaveScene", "m_TorrentScene"]:
+            load("res://EditorScripts/enemy_perception_authoring.gd").configure(actor)
+            for field in ["m_Body", "m_AnimPlayer", "m_HitBox", "m_HurtBox", "m_Perception", "m_WaveScene", "m_TorrentScene"]:
                 assert(actor.get(field) != null, path + " missing " + field)
         packed = PackedScene.new()
         assert(packed.pack(actor) == OK)

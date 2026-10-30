@@ -32,6 +32,8 @@ namespace GameLogic.Enemies
         private const int HighLevelDefense = 150; // 龙王高难度物防。
         private const int HighLevelExperience = 300; // 龙王高难度击败经验。
         private const int HighLevelSoulPerOrb = 100; // 龙王高难度每球灵魂。
+        [Export] private CollisionShape2D m_WaterColumnRange; // 近身水柱水平距离，仅参与AI原点距离判断。
+
         private EnemyAiPreset m_Preset; // 本首领的状态工厂，创建状态时传入本次入场的出手欲望。
         [Export] private PackedScene m_WaveScene; // 普攻第11源帧创建的定点水波。
         [Export] private PackedScene m_TorrentScene; // 起手在目标左侧65px创建的独立水柱。
@@ -40,6 +42,17 @@ namespace GameLogic.Enemies
         private bool m_HighLevel; // 本次入场的龙王难度，不随战斗内升级改变。
         private IReadOnlyList<AttackConfig> m_HighLevelAttacks; // 本首领的四条高难度攻击数值，不进入公共配置索引。
         private EnemyBodyParams m_HighLevelBodyParams; // 本首领共享动画对应的高难度冷却与攻击参数。
+
+        /// <summary>
+        /// 近身水柱水平距离，像素；唯一来源是本角色场景的原生形状。
+        /// </summary>
+        internal float WaterColumnDistance
+        {
+            get
+            {
+                return m_WaterColumnRange.Shape.GetRect().End.X;
+            }
+        }
 
         /// <inheritdoc />
         protected override EnemyBodyPreset BodyPreset
@@ -101,7 +114,7 @@ namespace GameLogic.Enemies
             bool isNewInstance, object userData)
         {
             base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
-            if (isNewInstance && (m_WaveScene == null || m_TorrentScene == null))
+            if (isNewInstance && (m_WaterColumnRange?.Shape is not SegmentShape2D || !m_WaterColumnRange.Disabled || m_WaveScene == null || m_TorrentScene == null))
             {
                 throw new InvalidOperationException("龙王必须绑定独立水波和水柱场景。");
             }
@@ -113,8 +126,7 @@ namespace GameLogic.Enemies
 
             // 状态只持有已选择的数值，不向公共AI接口增加龙王专属的难度查询。
             m_Preset = new EnemyAiPreset(typeof(DragonKingEngageState), typeof(DragonKingEngageState),
-                () => new DragonKingEngageState(m_HighLevel ? 20 : Config.AttackDesire),
-                () => new CcLockedState(), () => new DeathState());
+                () => new DragonKingEngageState(m_HighLevel ? 20 : Config.AttackDesire));
 
             // 攻击伤害与冷却仍使用原有攻击表，龙王自行选择，不要求所有敌人支持等级档。
             var attacks = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig;
@@ -123,17 +135,14 @@ namespace GameLogic.Enemies
             attacks.Get(2049), attacks.Get(2050), attacks.Get(2051), attacks.Get(2052),
         });
             // 两档共用动画与运动，只为本首领替换攻击冷却和收招数值。
-            var attackParams = new EnemyAttackParams[m_HighLevelAttacks.Count];
             var recovery = new float[m_HighLevelAttacks.Count];
             for (int index = 0; index < m_HighLevelAttacks.Count; index++)
             {
                 AttackConfig data = m_HighLevelAttacks[index];
-                attackParams[index] = BuildAttackParams(index, data);
                 recovery[index] = Math.Max(0, data.AiRecovery);
             }
             m_HighLevelBodyParams = base.BodyParams with
             {
-                Attacks = Array.AsReadOnly(attackParams),
                 AttackRecovery = Array.AsReadOnly(recovery),
             };
         }

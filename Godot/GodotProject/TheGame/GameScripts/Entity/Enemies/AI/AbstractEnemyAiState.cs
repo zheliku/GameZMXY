@@ -39,20 +39,10 @@ namespace GameLogic.Enemies.AI
             float realElapseSeconds)
         {
             IEnemyAiAgent agent = fsm.Owner;
-            AbstractEnemyAiState current = fsm.CurrentState as AbstractEnemyAiState;
-            if (agent.IsDead)
+            if (agent.IsDead || agent.IsCcLocked)
             {
-                if (current is not DeathState)
-                {
-                    ChangeState<DeathState>(fsm);
-                }
-
-                return;
-            }
-
-            if (agent.IsCcLocked && current is not CcLockedState)
-            {
-                ChangeState<CcLockedState>(fsm);
+                agent.AiData.AttackRequest = -1;
+                agent.Move(0);
                 return;
             }
 

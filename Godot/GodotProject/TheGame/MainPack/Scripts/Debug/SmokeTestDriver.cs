@@ -482,22 +482,8 @@ public partial class SmokeTestDriver : Node
                 return;
             }
 
-            // 等受测猴子在视野外丢失生成时锁定的目标（LoseTargetTime），AI 场景的阶段 0 才是干净巡逻。
-            if (SmokeInspection.AiStateName(m_Monster) is not ("Wander" or "Pause"))
-            {
-                if (m_MonsterFoundAt < 0.0)
-                {
-                    m_MonsterFoundAt = m_Time;
-                }
-
-                if (m_Time > m_MonsterFoundAt + 7.0)
-                {
-                    Fail($"受测猴子未在视野外丢失目标（当前 AI：{SmokeInspection.AiStateName(m_Monster)}）");
-                }
-
-                return;
-            }
-
+            // 清除夹具生成前继承的目标，让首次索敌从真正无目标状态开始。
+            typeof(AbstractEnemyEntity).GetField("m_Target", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(m_Monster, null);
             m_AiScenario = new EnemyAiSmokeScenario(m_Hero, m_Monster);
             m_AiStartTime = m_Time;
             GD.Print("SMOKE-AI: 开始怪物 AI 场景");
@@ -834,7 +820,7 @@ public partial class SmokeTestDriver : Node
                 if (m_Mode == SmokeMode.EnemyAi)
                 {
                     // 受测猴子在相机抵达后生成时会索敌到英雄；
-                    // 先挪到视野外让目标按 LoseTargetTime 自然丢失，AI 场景才能从干净的巡逻开始。
+                    // 先把夹具挪到视野外，AI专项开始时显式清除旧目标。
                     monster.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X + 900f, monster.GlobalPosition.Y);
                     monster.Velocity = Vector2.Zero;
                     m_MonsterFoundAt = m_Time;

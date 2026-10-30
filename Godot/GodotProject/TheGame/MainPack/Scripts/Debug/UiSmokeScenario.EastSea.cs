@@ -57,6 +57,7 @@ public sealed partial class UiSmokeScenario
                             SmokeInspection.FreezeAi(actor);
                             hero.GlobalPosition = actor.GlobalPosition + new Vector2(direction * 120, 0);
                             typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(actor, [hero]);
+                            system.AdvanceHurtProtection(float.MaxValue);
                             int hp = hero.Hp;
                             Check(((IEnemyAiAgent)actor).RequestAttack(index), "东海拒绝出招：" + id);
                             await WaitUntilAsync(() => actor.AttackSegment == index, "东海身体未消费攻击请求");
@@ -76,9 +77,9 @@ public sealed partial class UiSmokeScenario
                                     Check(effect.GlobalPosition.IsEqualApprox(castPosition + new Vector2(direction * 30, direction * 30)),
                                         "龙波没有保留官方双向位置");
                                 }
-                                var shape = effect?.GetNode<CollisionShape2D>("Origin/Visual/HitBox/CollisionShape2D") ??
-                                    actor.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
-                                if (!shape.Disabled)
+                                var hitbox = effect?.GetNode<Area2D>("Origin/Visual/HitBox") ?? actor.HitBox;
+                                var shape = hitbox.GetChildren().OfType<CollisionShape2D>().FirstOrDefault(value => !value.Disabled);
+                                if (shape != null)
                                 {
                                     hero.GlobalPosition = shape.GlobalPosition - (hero.HurtBox.GetGlobalBounds().GetCenter() - hero.GlobalPosition);
                                     if (!captured)

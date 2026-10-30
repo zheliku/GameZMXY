@@ -42,17 +42,5 @@ namespace GameLogic.Utility
             }
         }
 
-        extension((float Min, float Max) range)
-        {
-            /// <summary>
-            /// 在闭区间内按归一化随机值插值，反向区间按最小值收拢。
-            /// </summary>
-            /// <param name="sample">归一化采样值。</param>
-            /// <returns>区间内的值。</returns>
-            public float Sample(float sample)
-            {
-                return range.Min + (Math.Max(range.Min, range.Max) - range.Min) * sample;
-            }
-        }
     }
 }

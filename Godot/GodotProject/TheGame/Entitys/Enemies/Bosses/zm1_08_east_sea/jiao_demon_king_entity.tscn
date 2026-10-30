@@ -1,11 +1,12 @@
 [gd_scene format=3 uid="uid://bymx7kke3esrv"]
 
-[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_08_east_sea/jiao_dragon_wave_effect.tscn" id="2_d5eq7"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_back_hit_frames.tres" id="back_hit"]
-[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn" id="death"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_official_frames.tres" id="frames"]
+[ext_resource type="PackedScene" uid="uid://bgjli7qagrnft" path="res://TheGame/Entitys/Enemies/Bosses/zm1_08_east_sea/jiao_dragon_wave_effect.tscn" id="2_d5eq7"]
+[ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="6_xqabg"]
+[ext_resource type="SpriteFrames" uid="uid://cgvqad2mxyj3p" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_back_hit_frames.tres" id="back_hit"]
+[ext_resource type="PackedScene" uid="uid://bp24tcpfb0ty5" path="res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn" id="death"]
+[ext_resource type="SpriteFrames" uid="uid://duhobikgheh32" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_official_frames.tres" id="frames"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_library.tres" id="library"]
+[ext_resource type="AnimationLibrary" uid="uid://bcq4bxlv434au" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_library.tres" id="library"]
 [ext_resource type="Script" uid="uid://csrm332fhuxap" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_08_east_sea/JiaoDemonKingEntity.cs" id="script"]
 
 [sub_resource type="CapsuleShape2D" id="body"]
@@ -15,13 +16,28 @@ height = 88.98651
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
 size = Vector2(46.99762, 88.98651)
 
-[sub_resource type="RectangleShape2D" id="hit_shape"]
+[sub_resource type="RectangleShape2D" id="shape_empty"]
 size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="detector"]
-size = Vector2(600, 1000)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_d5eq7"]
 
-[node name="JiaoDemonKingEntity" type="CharacterBody2D" unique_id=1248862834 node_paths=PackedStringArray("m_BackHit", "m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xqabg"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6wgq8"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_m4hnr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_k8q52"]
+size = Vector2(600, 500)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2cina"]
+size = Vector2(500, 1000)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_xqabg"]
+a = Vector2(-400, 0)
+b = Vector2(400, 0)
+
+[node name="JiaoDemonKingEntity" type="CharacterBody2D" unique_id=1248862834 node_paths=PackedStringArray("m_BackHit", "m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 floor_constant_speed = true
@@ -31,7 +47,7 @@ script = ExtResource("script")
 m_DragonWaveScene = ExtResource("2_d5eq7")
 m_DeathScene = ExtResource("death")
 m_BackHit = NodePath("m_BackHit")
-m_Detector = NodePath("m_Detector")
+m_Perception = NodePath("Perception")
 m_EnemyEntityId = 10
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
@@ -43,10 +59,12 @@ m_HitBoxRoot = NodePath("m_HitBoxRoot")
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1759394789]
 sprite_frames = ExtResource("frames")
 animation = &"idle"
+offset = Vector2(-239.5, -278)
 
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1409350236]
 position = Vector2(-1, 7.5)
 shape = SubResource("body")
+debug_color = Color(0.58, 0.64, 0.72, 0.12)
 
 [node name="m_HurtBox" type="Area2D" parent="." unique_id=1110404177 node_paths=PackedStringArray("m_Owner")]
 collision_layer = 32
@@ -58,6 +76,7 @@ m_Owner = NodePath("..")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=106572000]
 position = Vector2(-1, 7.5)
 shape = SubResource("hurt_shape")
+debug_color = Color(0.3, 0.66, 0.62, 0.14)
 
 [node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=1000206178]
 
@@ -67,16 +86,52 @@ collision_mask = 128
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1276597393]
-shape = SubResource("hit_shape")
+shape = SubResource("shape_empty")
 disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="m_Detector" type="Area2D" parent="." unique_id=961184155]
+[node name="Ice1" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=2065827274]
+shape = SubResource("RectangleShape2D_d5eq7")
+disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="Ice2" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=477244569]
+shape = SubResource("RectangleShape2D_xqabg")
+disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="Ice3" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1330291624]
+shape = SubResource("RectangleShape2D_6wgq8")
+disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="Ice4" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=265896292]
+shape = SubResource("RectangleShape2D_m4hnr")
+disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="Perception" type="Area2D" parent="." unique_id=961184155 node_paths=PackedStringArray("m_DetectionShape", "m_EngageShape", "m_PatrolShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
+script = ExtResource("6_xqabg")
+m_DetectionShape = NodePath("Detection")
+m_EngageShape = NodePath("Engage")
+m_PatrolShape = NodePath("Patrol")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="m_Detector" unique_id=525999489]
-shape = SubResource("detector")
+[node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=525999489]
+shape = SubResource("RectangleShape2D_k8q52")
+debug_color = Color(0.36, 0.58, 0.8, 0.035)
+
+[node name="Engage" type="CollisionShape2D" parent="Perception" unique_id=2018307796]
+shape = SubResource("RectangleShape2D_2cina")
+disabled = true
+debug_color = Color(0.85, 0.65, 0.35, 0.045)
+
+[node name="Patrol" type="CollisionShape2D" parent="Perception" unique_id=1491488418]
+shape = SubResource("SegmentShape2D_xqabg")
+disabled = true
+debug_color = Color(0.45, 0.62, 0.48, 0.03)
 
 [node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=294315727]
 libraries/ = ExtResource("library")

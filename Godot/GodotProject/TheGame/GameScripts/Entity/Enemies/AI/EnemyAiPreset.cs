@@ -17,7 +17,7 @@ namespace GameLogic.Enemies.AI
         /// </summary>
         /// <param name="idleStateType">集合中的无目标入口。</param>
         /// <param name="engageStateType">集合中的交战入口。</param>
-        /// <param name="stateFactories">每次调用都创建新状态实例的工厂；包括死亡和受控状态。</param>
+        /// <param name="stateFactories">每次调用都创建新状态实例；身体死亡和受控不另建AI状态。</param>
         /// <exception cref="ArgumentNullException">入口或集合为空。</exception>
         public EnemyAiPreset(Type idleStateType, Type engageStateType,
             params Func<AbstractEnemyAiState>[] stateFactories)
@@ -36,7 +36,7 @@ namespace GameLogic.Enemies.AI
         public Type IdleStateType { get; }
 
         /// <summary>
-        /// 发现目标或解除控制后进入的交战状态。
+        /// 发现目标时进入的交战状态；受控暂停后继续原状态。
         /// </summary>
         public Type EngageStateType { get; }
 
@@ -44,7 +44,7 @@ namespace GameLogic.Enemies.AI
         /// 为一个怪物创建完整状态集合，创建前不保存任何运行时状态。
         /// </summary>
         /// <returns>由该怪物状态机独占的状态实例。</returns>
-        /// <exception cref="InvalidOperationException">状态为空、类型重复或缺少入口及公共打断状态。</exception>
+        /// <exception cref="InvalidOperationException">状态为空、类型重复或缺少巡逻/交战入口。</exception>
         public FsmState<IEnemyAiAgent>[] CreateStates()
         {
             HashSet<Type> types = new();
@@ -59,11 +59,10 @@ namespace GameLogic.Enemies.AI
 
                 states[i] = state;
             }
-            // 通用打断与预设入口都必须存在，避免运行中才因切换失败。
-            if (!types.Contains(IdleStateType) || !types.Contains(EngageStateType) ||
-                !types.Contains(typeof(CcLockedState)) || !types.Contains(typeof(DeathState)))
+            // 只验证真正会进入的状态，不为死亡/受控标记建立空状态。
+            if (!types.Contains(IdleStateType) || !types.Contains(EngageStateType))
             {
-                throw new InvalidOperationException("AI 预设缺少入口、受控或死亡状态。");
+                throw new InvalidOperationException("AI 预设缺少巡逻或交战入口。");
             }
 
             return states;

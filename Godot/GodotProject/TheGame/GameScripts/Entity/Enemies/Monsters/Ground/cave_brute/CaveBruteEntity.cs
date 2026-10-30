@@ -7,6 +7,8 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class CaveBruteEntity : AbstractGroundMonsterEntity
     {
+        private static readonly EnemyAiPreset m_Preset = EnemyAiPresets.Patrol; // Monster7 的原点出招距离。
+
         /// <summary>
         /// Monster7 使用近战巡逻与追击；攻击前摇和出拳窗口由本角色动画提供。
         /// </summary>
@@ -14,7 +16,7 @@ namespace GameLogic.Enemies
         {
             get
             {
-                return EnemyAiPresets.Patrol;
+                return m_Preset;
             }
         }
     }

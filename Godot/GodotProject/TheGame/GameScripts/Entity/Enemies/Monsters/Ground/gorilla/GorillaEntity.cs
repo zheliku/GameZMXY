@@ -13,6 +13,7 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class GorillaEntity : AbstractGroundMonsterEntity
     {
+        private static readonly EnemyAiPreset m_Preset = EnemyAiPresets.Patrol; // Monster3 的原点出招距离，守关倍率不改变AI。
         private const int HuaguoshanLevelId = 1; // 本物种守关规则只适用于花果山。
         [Export] private GorillaGuardianConfigResource m_GuardianConfig; // 独立守关数值；基础配置仍来自敌人表。
 
@@ -35,7 +36,7 @@ namespace GameLogic.Enemies
         {
             get
             {
-                return EnemyAiPresets.Patrol;
+                return m_Preset;
             }
         }
 

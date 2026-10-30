@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://my32pn7nob8g"]
 
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_06_garuda_cave/peng_fire_library.tres" id="animation"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/Enemies/zm1_06_garuda_cave/peng_fire_frames.tres" id="frames"]
+[ext_resource type="AnimationLibrary" uid="uid://c1y13nrk8yc8n" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_06_garuda_cave/peng_fire_library.tres" id="animation"]
+[ext_resource type="SpriteFrames" uid="uid://3gvufadifwik" path="res://TheGame/Sprites/Effects/Enemies/zm1_06_garuda_cave/peng_fire_frames.tres" id="frames"]
 [ext_resource type="Script" uid="uid://bx0447o7u7wmq" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="script"]
 
 [sub_resource type="RectangleShape2D" id="flame_0"]
@@ -13,11 +13,10 @@ size = Vector2(82.26846, 55.263683)
 [sub_resource type="RectangleShape2D" id="flame_2"]
 size = Vector2(53.364902, 82.27006)
 
-[node name="peng_fire" type="Node2D" unique_id=356471770 node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]
+[node name="peng_fire" type="Node2D" unique_id=356471770 node_paths=PackedStringArray("m_Player", "m_HitBox")]
 script = ExtResource("script")
 m_Player = NodePath("AnimationPlayer")
 m_HitBox = NodePath("Origin/Visual/HitBox")
-m_Shape = NodePath("Origin/Visual/HitBox/CollisionShape2D")
 
 [node name="Origin" type="Node2D" parent="." unique_id=25720714]
 
@@ -37,14 +36,17 @@ monitorable = false
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=1096209474]
 position = Vector2(-395.77353, 447.08002)
 shape = SubResource("flame_0")
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=810255886]
 position = Vector2(-556.2866, 242.35469)
 shape = SubResource("flame_1")
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
 [node name="CollisionShape2D3" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=1985944517]
 position = Vector2(-155.08006, 583.36035)
 shape = SubResource("flame_2")
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=561258793]
 libraries/ = ExtResource("animation")

@@ -131,13 +131,13 @@ public sealed partial class UiSmokeScenario
         Check(((IEnemyAiAgent)m_Monster).RequestAttack(0), "空中蝙蝠拒绝出招");
         await WaitUntilAsync(() => m_Monster.AttackSegment == 0, "蝙蝠身体没有进入攻击");
         await WaitUntilAsync(() => hero.Hp < previousHp, "蝙蝠空中攻击没有造成真实伤害");
-        await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "SkyMonsterMove", "蝙蝠收招没有返回飞行");
+        await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "Fly", "蝙蝠收招没有返回飞行");
         var data = AttackData.Create(0, default, 1, DamageKind.Real, new Vector2(48, -72), hero.Id, 0);
         try
         { m_Monster.ReceiveHit(data, hero.Id); }
         finally { ReferencePool.Release(data); }
         await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "Hurt", "蝙蝠未进入受击");
-        await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "SkyMonsterMove", "蝙蝠受击结束没有返回飞行");
+        await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "Fly", "蝙蝠受击结束没有返回飞行");
         var bat = m_Monster;
         data = AttackData.Create(0, default, 10000, DamageKind.Real, Vector2.Zero, hero.Id, 0);
         try

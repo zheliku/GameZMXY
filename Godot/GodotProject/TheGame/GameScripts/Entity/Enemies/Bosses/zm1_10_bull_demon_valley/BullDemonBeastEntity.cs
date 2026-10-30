@@ -14,8 +14,8 @@ namespace GameLogic.Enemies
         private static readonly EnemyBodyPreset m_BodyPreset = new(typeof(BullDemonChargeState),
             typeof(BullDemonTransformState),
             () => new BullDemonChargeState(), () => new BullDemonTransformState()); // 本首领的状态组合；运行实例由每次入场独立创建。
-        private static readonly EnemyAiPreset m_Preset = new(typeof(BullDemonChargeAiState), typeof(BullDemonChargeAiState),
-            () => new BullDemonChargeAiState(), () => new CcLockedState(), () => new DeathState()); // 独立冲撞和边界停步时钟。
+        private static readonly EnemyAiPreset m_Preset = new(typeof(BullDemonChargePatrolState), typeof(BullDemonChargePatrolState),
+            () => new BullDemonChargePatrolState()); // 独立冲撞和边界停步时钟。
 
         /// <inheritdoc />
         protected override EnemyBodyPreset BodyPreset

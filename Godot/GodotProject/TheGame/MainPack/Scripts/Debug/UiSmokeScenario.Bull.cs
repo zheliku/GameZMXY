@@ -58,6 +58,7 @@ public sealed partial class UiSmokeScenario
                         await WaitUntilAsync(() => king.OnFloor, "牛魔王人形未落地");
                         hero.GlobalPosition = king.GlobalPosition + new Vector2(direction * 70, 0);
                         typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(king, [hero]);
+                        flow.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
                         int hp = hero.Hp;
                         Check(((IEnemyAiAgent)king).RequestAttack(index), "牛魔王拒绝原生招式" + index);
                         await WaitUntilAsync(() => king.AttackSegment == index, "牛魔王身体没有消费招式");
@@ -169,9 +170,10 @@ public sealed partial class UiSmokeScenario
             await WaitUntilAsync(() => guard.OnFloor, "牛妖护卫未落地");
             hero.GlobalPosition = guard.GlobalPosition + new Vector2(direction * 120, 0);
             typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(guard, [hero]);
-            Check(!((IEnemyAiAgent)guard).RequestAttack(0), "牛妖越过110px仍然出招");
+            Check(!((IEnemyAiAgent)guard).IsInEngageRange, "牛妖场景交战范围错误包含110px以外的目标");
             hero.GlobalPosition = guard.GlobalPosition + new Vector2(direction * 70, 0);
             Check(((IEnemyAiAgent)guard).RequestAttack(0), "牛妖近身没有出招");
+            GF.Fsm.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
             int hp = hero.Hp;
             await WaitUntilAsync(() => hero.Hp < hp, "牛妖原生重斩未命中", 4000);
             ReleaseTestEntity(guard);

@@ -305,6 +305,11 @@ public sealed partial class UiSmokeScenario
                             hero.GlobalPosition = actor.GlobalPosition + new Vector2(direction * 120f, 0);
                             typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance)
                                 .Invoke(actor, [hero]);
+                            // 本夹具固定英雄位置并冻结身体物理；上一招留下的保护时间不会自行流逝。
+                            // 每招都使用未受保护的沙包，保护持续时间另有真实物理专项验证。
+                            double protection = flow.GetModel<HeroModel>().HurtInvulnerabilitySeconds;
+                            system.AdvanceHurtProtection(float.MaxValue);
+                            GD.Print($"SMOKE-SEA TARGET: {id}/{index}/{direction}/{ticks}, previousProtection={protection:F3}");
                             int before = hero.Hp;
                             Check(((IEnemyAiAgent)actor).RequestAttack(index), "海怪拒绝正式出招：" + id);
                             await WaitUntilAsync(() => actor.AttackSegment == index, "海怪身体未消费请求：" + id);

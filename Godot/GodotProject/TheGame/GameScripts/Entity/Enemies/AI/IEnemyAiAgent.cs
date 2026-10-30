@@ -1,5 +1,4 @@
 using GameLogic.Architecture;
-using GameLogic.Enemies.Body;
 using Godot;
 namespace GameLogic.Enemies.AI
 {
@@ -29,15 +28,29 @@ namespace GameLogic.Enemies.AI
         /// </summary>
         bool IsAttacking { get; }
 
-        /// <summary>
-        /// 目标受击盒相对自己原点的矩形（世界轴向，Y 向下；目标无受击盒时退化为其原点的点盒）。
-        /// **空盒 = 没有目标**（未发现 / 已死亡回收 / 已丢失）。与招式判定盒（<see cref="EnemyAttackParams.Reach"/>）
-        /// 求交决定"够不够得着"——含高度；中心 X 即目标的水平方位。
-        /// </summary>
-        Rect2 TargetBox { get; }
 
         /// <summary>
-        /// 目标实体原点相对自身的位移；原版按角色原点判断 BOSS 追击和选招距离。
+        /// 当前是否持有存活目标；目标受击盒不参与AI距离决策。
+        /// </summary>
+        bool HasTarget { get; }
+
+        /// <summary>
+        /// 场景配置的巡逻折返边界，相对相机或出生点，像素。
+        /// </summary>
+        Vector2 PatrolBounds { get; }
+
+        /// <summary>
+        /// 场景的交战范围；矩形包含出招水平距离与允许追击高度。
+        /// </summary>
+        Rect2 EngageBounds { get; }
+
+        /// <summary>
+        /// 当前目标原点是否处于场景交战形状内。
+        /// </summary>
+        bool IsInEngageRange { get; }
+
+        /// <summary>
+        /// 目标实体原点相对自身的位移；原版小怪和BOSS均按角色原点判断追击和选招距离。
         /// </summary>
         Vector2 TargetOffset { get; }
 
@@ -60,11 +73,6 @@ namespace GameLogic.Enemies.AI
         /// 同类怪物共享的只读状态配方，不包含状态实例。
         /// </summary>
         EnemyAiPreset AiPreset { get; }
-
-        /// <summary>
-        /// 同类怪物共享的只读身体和攻击参数。
-        /// </summary>
-        EnemyBodyParams Params { get; }
 
         /// <summary>
         /// 均匀随机数 [0,1)。随机源由宿主提供，单测可注入确定序列。

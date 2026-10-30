@@ -170,6 +170,7 @@ public sealed partial class UiSmokeScenario
                             await WaitUntilAsync(() => actor.AttackSegment == index, "鲨鱼身体未消费请求");
                             string expectedAnimation = "attack_" + (index + 1) + (low ? "_low" : string.Empty);
                             Check(actor.AnimPlayer.CurrentAnimation == expectedAnimation, "鲨魔王没有选择对应生命阶段动作");
+                            flow.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
                             int hp = hero.Hp;
                             bool sawEffect = false;
                             bool sawWarning = false;

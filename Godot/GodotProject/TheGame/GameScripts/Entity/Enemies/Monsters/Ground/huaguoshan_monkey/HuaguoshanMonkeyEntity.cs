@@ -10,6 +10,7 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class HuaguoshanMonkeyEntity : AbstractGroundMonsterEntity
     {
+        private static readonly EnemyAiPreset m_Preset = EnemyAiPresets.Patrol; // Monster1 的原点出招距离。
         private bool m_Provoked; // 本次显示是否已被攻击，对应原版 Monster1 的 isattack。
 
         /// <inheritdoc />
@@ -17,7 +18,7 @@ namespace GameLogic.Enemies
         {
             get
             {
-                return EnemyAiPresets.Patrol;
+                return m_Preset;
             }
         }
 

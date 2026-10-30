@@ -25,7 +25,7 @@ namespace GameLogic.Enemies
             () => new EnemyRecoveryState(), () => new EnemyHurtState(),
             () => new SharkDemonKingDeathState()); // 本首领的状态组合；运行实例由每次入场独立创建。
         private static readonly EnemyAiPreset m_Preset = new(typeof(SharkDemonKingEngageState), typeof(SharkDemonKingEngageState),
-            () => new SharkDemonKingEngageState(), () => new CcLockedState(), () => new DeathState()); // 近远距离共用首领时钟。
+            () => new SharkDemonKingEngageState()); // 近远距离共用首领时钟。
         private const int SharkWaveAttackId = 2034; // 独立鲨波的魔法伤害，不复用身体物理攻击。
         private const int BubbleAttackId = 2035; // 水牢独立伤害与身体施法伤害区分。
 

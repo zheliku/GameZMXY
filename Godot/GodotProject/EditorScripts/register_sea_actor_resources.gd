@@ -20,8 +20,9 @@ func _run() -> void:
         var scene_path := "res://TheGame/Entitys/Enemies/Monsters/Sea/%s/%s_entity.tscn" % [name, name]
         var packed: PackedScene = load(scene_path)
         var instance: Node = packed.instantiate()
+        load("res://EditorScripts/enemy_perception_authoring.gd").configure(instance)
         assert(instance.get("m_EnemyEntityId") in [14, 16, 17])
-        for field in ["m_Detector", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"]:
+        for field in ["m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"]:
             assert(instance.get(field) != null, name + " missing " + field)
         var player: AnimationPlayer = instance.get("m_AnimPlayer")
         for action in ["attack_1", "hurt", "death"]:

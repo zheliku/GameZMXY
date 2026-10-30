@@ -41,7 +41,7 @@ func _build_actor(actor: Dictionary) -> bool:
 	var root: CharacterBody2D = load("res://TheGame/Entitys/Enemies/Monsters/Ground/gorilla/gorilla_entity.tscn").instantiate()
 	root.name = info.script
 	root.set_script(load("res://TheGame/GameScripts/Entity/Enemies/%s/%s.cs" % [folder, info.script]))
-	root.set("m_Detector", root.get_node("m_Detector"))
+	root.set("m_Perception", root.get_node("Perception"))
 	root.set("m_EnemyEntityId", info.id)
 	root.set("m_HealthBar", root.get_node("m_HealthBar"))
 	root.set("m_Body", root.get_node("m_Body"))
@@ -74,8 +74,9 @@ func _build_actor(actor: Dictionary) -> bool:
 	root.get_node("m_HurtBox/CollisionShape2D").position = hurt.get_center()
 	root.get_node("m_HurtBox").position = Vector2.ZERO
 	var detector := RectangleShape2D.new()
-	detector.size = Vector2(600, 1000 if not info.boss else 600)
-	root.get_node("m_Detector/CollisionShape2D").shape = detector
+	detector.size = Vector2(600, 300)
+	root.get_node("Perception/Detection").shape = detector
+	root.get_node("Perception/Detection").position = Vector2.ZERO
 	detector = null
 	var library := AnimationLibrary.new()
 	for action in actor.actions:
@@ -130,6 +131,8 @@ func _build_actor(actor: Dictionary) -> bool:
 	root.get_node("m_AnimPlayer").add_animation_library("", library)
 	root.get_node("m_AnimPlayer").callback_mode_method = AnimationMixer.ANIMATION_CALLBACK_MODE_METHOD_IMMEDIATE
 	var packed := PackedScene.new()
+	if root.get("m_EnemyEntityId") != null:
+		load("res://EditorScripts/enemy_perception_authoring.gd").configure(root)
 	assert(packed.pack(root) == OK and ResourceSaver.save(packed, entity_path) == OK)
 	root.free()
 	return true
@@ -185,7 +188,6 @@ func _build_effect(effect: Dictionary) -> bool:
 	player.owner = root
 	root.set("m_Player", player)
 	root.set("m_HitBox", hitbox)
-	root.set("m_Shape", shape)
 
 	var action: Dictionary = effect.actions[0]
 	var animation := Animation.new()
@@ -218,6 +220,8 @@ func _build_effect(effect: Dictionary) -> bool:
 	var scene_path: String = "res://TheGame/Entitys/Enemies/" + folder + "/" + String(effect.name) + "_effect.tscn"
 	DirAccess.make_dir_recursive_absolute(scene_path.get_base_dir())
 	var packed := PackedScene.new()
+	if root.get("m_EnemyEntityId") != null:
+		load("res://EditorScripts/enemy_perception_authoring.gd").configure(root)
 	assert(packed.pack(root) == OK and ResourceSaver.save(packed, scene_path) == OK)
 	root.free()
 	return true

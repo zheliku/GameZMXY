@@ -25,7 +25,7 @@ func _validate() -> void:
 		"res://TheGame/Entitys/Enemies/Monsters/Ground/knife_demon/knife_demon_entity.tscn",
 		"res://TheGame/Entitys/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_entity.tscn"]:
 		var actor: Node = load(scene).instantiate()
-		for binding in ["m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot", "m_Detector"]:
+		for binding in ["m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot", "m_Perception"]:
 			assert(actor.get(binding) != null, scene + " missing " + binding)
 		assert(actor.get_node("m_HurtBox").position == Vector2.ZERO)
 		var player: AnimationPlayer = actor.get("m_AnimPlayer")

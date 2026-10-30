@@ -173,6 +173,7 @@ public sealed partial class UiSmokeScenario
                             typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(actor, [hero]);
                             Vector2 castPosition = actor.GlobalPosition;
                             float targetX = hero.GlobalPosition.X;
+                            flow.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
                             int hp = hero.Hp;
                             Check(((IEnemyAiAgent)actor).RequestAttack(index), "龙王拒绝正式攻击" + index);
                             await WaitUntilAsync(() => actor.AttackSegment == index, "龙王身体没有消费请求");
@@ -216,7 +217,29 @@ public sealed partial class UiSmokeScenario
                                 previousHp = hero.Hp;
                             }
                             Check(hero.Hp < hp && captured, $"龙王攻击未实际命中：{tier}/{index}/{ticks}/{direction}");
-                            Check(actualHits == (index == 1 ? 7 : 1), $"龙王命中编号次数错误：{tier}/{index} hits={actualHits}");
+                            // 目标身体被冻结，五次受击后两秒保护不会衰减；七个攻击段中的后两段应被免疫。
+                            Check(actualHits == (index == 1 ? 5 : 1), $"龙王命中/英雄连击保护错误：{tier}/{index} hits={actualHits}");
+                            if (index == 1)
+                            {
+                                Animation ice = actor.AnimPlayer.GetAnimation("attack_2");
+                                int refreshes = 0;
+                                for (int track = 0; track < ice.GetTrackCount(); track++)
+                                {
+                                    if (ice.TrackGetType(track) != Animation.TrackType.Method)
+                                    {
+                                        continue;
+                                    }
+
+                                    for (int key = 0; key < ice.TrackGetKeyCount(track); key++)
+                                    {
+                                        if (ice.MethodTrackGetName(track, key) == "NewAttackAnimEvent")
+                                        {
+                                            refreshes++;
+                                        }
+                                    }
+                                }
+                                Check(refreshes == 6, "龙王冰环未保留起手加六次刷新");
+                            }
                             Check(sawEffect == (index is 0 or 3), "龙王离身攻击的所属招式错误");
                             if (index == 2)
                             {
@@ -282,6 +305,7 @@ public sealed partial class UiSmokeScenario
             SmokeInspection.ReadField<float>(actor, "m_InvulnerabilityLeft") == invulnerable,
             "游戏暂停仍推进龙王动作或无敌");
         GF.Base.ResumeGame();
+        flow.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
         int hp = hero.Hp;
         while (actor.AttackSegment >= 0)
         {

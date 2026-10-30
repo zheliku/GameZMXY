@@ -2,6 +2,8 @@
 
 核对对象为第一代“七魔王篇”的 4399 公开版本，画布 940×590、动画 24 fps。不能混用造梦二、三的攻略或本地旧工程数值。以下秒数已从该版本时间轴换算，运行时不按游戏帧数计时。
 
+敌人运行时空间参数由场景Perception原生形状持有；索敌宽度、高度仍可在源码审计报告的`sight_range/attack_range`追溯。它们不再是Enemy表字段，AI交战距离也不从伤害盒并集推导。共同计数、巡逻和冷却归EnemyAiSystem，具体首领的选招分支留在各自状态；当前架构入口见[ProjectTour](ProjectTour.md#敌人-ai-阅读入口)，重导顺序见[LegacyAssetMap](LegacyAssetMap.md#敌人注册与判定修复的重导顺序)。
+
 ## 原文件与复核入口
 
 [4399 系列入口](https://www.4399.com/flash/zmhj.htm) → [游戏容器](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/v25928.htm)。只读解包、脚本和 XML 留在临时目录；工程只迁入登记的美术资源。
@@ -17,6 +19,20 @@
 | [OtherMat_v9.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/OtherMat_v9.swf) | SelectRole 完整选角卡片 | `ef03008e68d64f613a2f7b3abfeec4cba3d4bd579c67e0f4703d8f15d3e115c9`（下载文件）；`fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e`（恢复后） |
 
 加载器对 Role、Monster_v1、OtherMat 等包恢复为 `bytes[100:110] + bytes[0:100] + bytes[110:]`；`Monster2_v4`、`Monster3_v3` 直接加载，不换头。主程序另从外层 CWS/DefineBinaryData 读取。JPEXS FFDec 26.3 导出脚本和 XML，坐标 TWIPS ÷ 20。素材编号及复现脚本见 [LegacyAssetMap](LegacyAssetMap.md)。
+
+## 全敌人行为复核（2026-10-30）
+
+同版BaseMonster的`count++ > 240`产生242/24秒周期，游荡在0.5秒选择方向，距相机中心400px外朝内，3或4秒后按源概率停步/重启；用游戏秒推进，暂停冻结，受击/状态切换不重置时钟。普通近战按原点距离而非武器外框选招，通用间隔1.5秒；Monster13/14/16/18为1秒。具体BOSS保留各自分支。skillCD赋值后同一源步末执行countCD，换算不能再延迟一物理帧，否则四秒技能会错过下一整秒决策。
+
+首次索敌为`abs(dx) < mysee && abs(dy) <= attackRange`，发现后只在目标失效时放弃；Monster1未受击时不主动索敌。横纵范围及注册原点均由原生场景持有，原版mysee/attackRange可在源码审计追溯。BaseMonster没有额外0.25秒受击后AI停顿；身体hurt动作已拥有硬直。魔法受伤分支无独立基础魔抗，当前所有敌人基础Mdef归零。生命条showHpSlip按两秒淡出。
+
+空间复核直接读取24物种及BaseMonster源码：普通交战高度为attackRange×2，普通巡逻相对相机中心左右400px，兽形牛魔王左界360px。蝙蝠140×90、飞行魔150×100、鲨鱼250×50为近身半幅，不能代替三者900px的外层追踪高度；彭魔王外层高度800px、选招半径400px、近身半径150px分别保留。龙王选招不限制目标高度，水柱100px、中距450px；牛魔王人形的80/100/200px为互斥选招分支，>200px游荡，不能合并为追击。吞噬实际捕获200px与选招80px分工不同。工具audit_official_enemy_ranges.py保留各物种源路径、表达式依据与边界参考；伤害形状仍由原生动画拥有，本次不以AI距离覆写伤害盒。
+
+BaseObject.move限制普通移动/击退在整关`[100, gameSence.width-150]`，另有强制位移；不等同于相机战区边界。项目保留关卡源地形外墙，敌人不碰PlayerBarrier；实测首中末战斗门均可被击退穿越，首末处整关外墙仍阻挡。没有把敌人限制到当前屏幕的额外代码。
+
+Monster13飞刀symbol509的27源帧保留约13px/帧位移、尾段保持；调整的是一秒决策与四秒优先投刀，未人为加速素材。Monster14的hit1只有魔法30与击退[2,-5]，没有addEffect眩晕。潮汐妖按150px原点距离、十秒优先重击；实际攻击范围仍由源stick动画形状决定。
+
+鲛魔王hit3的嵌套stick1113有四个1112子项，分别错时推进；四个基础矩形独立覆盖各柱，禁止再将柱间大块空白合为攻击框。身体绑定招式留在actor，独立飞刀、风刃、云、龙波等拥有自己的动画/形状/攻击包，actor负责池归还；多形状共享一次攻击的去重及预算。最终牛魔王的手掌/火柱按源码共享父攻击编号，由专属父实体结算。
 
 ## 隐藏龙宫（官方9-1）
 

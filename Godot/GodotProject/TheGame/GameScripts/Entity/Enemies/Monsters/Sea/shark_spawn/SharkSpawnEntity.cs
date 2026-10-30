@@ -18,17 +18,29 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class SharkSpawnEntity : AbstractSeaMonsterEntity, IEnemyFreeMoveBody
     {
-        private static readonly EnemyAiPreset m_Preset = new(typeof(SharkSpawnAiState), typeof(SharkSpawnAiState),
-            () => new SharkSpawnAiState(), () => new CcLockedState(), () => new DeathState()); // 追踪与近身决策保持同一时钟。
+        private static readonly EnemyAiPreset m_Preset = new(typeof(SharkSpawnEngageState), typeof(SharkSpawnEngageState),
+            () => new SharkSpawnEngageState()); // 追踪与近身决策保持同一时钟。
         private const int SlashAttackId = 2033; // 接触后独立斩击，不复用身体攻击包。
         private static readonly EnemyBodyPreset m_BodyPreset = EnemyBodyPresets.Swim<SharkSpawnAttackState>(
             288f, 96f, 72f); // 游动保持原加速度/退避速度，仅替换为鲨鱼专属攻击。
 
+        [Export] private CollisionShape2D m_TrackingRange; // 本鲨鱼追踪高度，与250×50px近身条件分开。
         [Export] private PackedScene m_SlashScene; // 接触目标后原地创建的连续斩击。
         [Export] private PackedScene m_WarningScene; // 隐藏阶段目标地面的纯视觉警示。
         [Export] private PackedScene m_TornadoScene; // 起手与警示结束时分别创建的旋风。
         private int m_EffectGeneration; // 显示周期编号，阻止旧警示完成回调污染池复用。
         private float m_InvulnerabilityLeft; // 旋风起手的剩余无敌秒数。
+
+        /// <summary>
+        /// 官方外层追踪高度半幅，像素。
+        /// </summary>
+        internal float TrackingHeight
+        {
+            get
+            {
+                return m_TrackingRange.Shape.GetRect().End.Y;
+            }
+        }
 
         /// <summary>
         /// 本鲨鱼 AI 请求的垂直游动方向；0 为悬停。
@@ -82,7 +94,7 @@ namespace GameLogic.Enemies
         public override void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance, object userData)
         {
             base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
-            if (isNewInstance && (m_SlashScene == null || m_WarningScene == null || m_TornadoScene == null))
+            if (isNewInstance && (m_TrackingRange?.Shape is not SegmentShape2D || !m_TrackingRange.Disabled || m_SlashScene == null || m_WarningScene == null || m_TornadoScene == null))
             {
                 throw new InvalidOperationException("鲨鱼必须绑定斩击、警示和旋风效果。");
             }

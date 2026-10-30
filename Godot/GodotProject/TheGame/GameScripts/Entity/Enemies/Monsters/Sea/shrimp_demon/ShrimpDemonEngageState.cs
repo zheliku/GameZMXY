@@ -1,17 +1,29 @@
 using System;
+using GameFramework.Fsm;
+using GameLogic.Architecture;
 using GameLogic.Enemies.AI;
 
 namespace GameLogic.Enemies
 {
     /// <summary>
-    /// 虾兵保持200～350px距离，在源一秒节拍按40%欲望发射魔法弹。
+    /// 虾兵在场景的交战外界与退避内界之间保持距离，按自身欲望发射可击散魔法弹。
     /// </summary>
-    internal sealed class ShrimpDemonEngageState : AbstractSeaMonsterEngageState
+    internal sealed class ShrimpDemonEngageState : AbstractEnemyAiState
     {
         /// <inheritdoc />
-        protected override void Engage(IEnemyAiAgent agent, int direction, bool decide)
+        protected override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds)
         {
-            if (decide)
+            if (agent.IsAttacking)
+            {
+                return;
+            }
+
+            if (!agent.HasTarget)
+            {
+                ChangeState<PatrolState>(fsm);
+                return;
+            }
+            if (agent.GetSystem<EnemyAiSystem>().IsDecisionDue(agent.AiData, agent.Config.AttackInterval))
             {
                 if (Chance(agent, agent.Config.AttackDesire))
                 {
@@ -24,13 +36,12 @@ namespace GameLogic.Enemies
 
                 return;
             }
-
-            float distance = MathF.Abs(agent.TargetOffset.X);
-            if (distance <= 200f)
+            int direction = Math.Sign(agent.TargetOffset.X);
+            if (Math.Abs(agent.TargetOffset.X) <= ((ShrimpDemonEntity)agent).RetreatDistance)
             {
                 agent.Move(-direction);
             }
-            else if (distance >= 350f)
+            else if (Math.Abs(agent.TargetOffset.X) >= agent.EngageBounds.End.X)
             {
                 agent.Move(direction);
             }

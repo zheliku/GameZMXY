@@ -11,9 +11,14 @@ const vec2 OFFSETS[8] = {vec2(-1,-1), vec2(-1,0), vec2(-1,1), vec2(0,-1),
 void fragment() {
     vec2 uv = (UV - vec2(0.5)) / image_scale + vec2(0.5);
     vec4 color = texture(TEXTURE, uv);
+    color *= step(vec2(0.0), uv).x * step(vec2(0.0), uv).y
+        * step(uv, vec2(1.0)).x * step(uv, vec2(1.0)).y;
     float outline = 0.0;
     for (int i = 0; i < 8; i++) {
-        outline = max(outline, texture(TEXTURE, uv + TEXTURE_PIXEL_SIZE * line_thickness * OFFSETS[i]).a);
+        vec2 sample_uv = uv + TEXTURE_PIXEL_SIZE * line_thickness * OFFSETS[i];
+        float inside = step(0.0, sample_uv.x) * step(0.0, sample_uv.y)
+            * step(sample_uv.x, 1.0) * step(sample_uv.y, 1.0);
+        outline = max(outline, texture(TEXTURE, sample_uv).a * inside);
     }
     float ring = max(outline - color.a, 0.0);
     float alpha = color.a + ring;

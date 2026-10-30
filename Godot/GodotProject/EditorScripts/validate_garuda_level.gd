@@ -26,7 +26,7 @@ func _validate() -> void:
     for path in ["Bosses/zm1_06_garuda_cave/peng_demon_king_entity", "Monsters/Sky/flying_demon/flying_demon_entity"]:
         var actor: CharacterBody2D = load("res://TheGame/Entitys/Enemies/" + path + ".tscn").instantiate()
         assert(actor.collision_mask == 9)
-        for binding in ["m_Body", "m_AnimPlayer", "m_HitBox", "m_HurtBox", "m_HitBoxRoot", "m_Detector"]:
+        for binding in ["m_Body", "m_AnimPlayer", "m_HitBox", "m_HurtBox", "m_HitBoxRoot", "m_Perception"]:
             assert(actor.get(binding) != null)
         var player: AnimationPlayer = actor.get("m_AnimPlayer")
         for key in player.get_animation_list():

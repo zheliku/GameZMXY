@@ -27,9 +27,6 @@ public sealed partial class AttackConfig : Luban.BeanBase
         HitProtect = _buf.ReadInt();
         OwnerId = (Entity.EntityId)_buf.ReadInt();
         ComboIndex = _buf.ReadInt();
-        AiWeight = _buf.ReadInt();
-        AiPriority = _buf.ReadInt();
-        AiRange = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         AiCooldown = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         AiInitCooldown = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         AiRecovery = _buf.ReadFloat();
@@ -87,18 +84,6 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly int ComboIndex;
     /// <summary>
-    /// AI 选招权重(怪物 AI 用;英雄普攻填 0)
-    /// </summary>
-    public readonly int AiWeight;
-    /// <summary>
-    /// AI 优先级:0=普攻(按攻击欲望掷骰+权重抽);&gt;0=优先招(冷却就绪且够得着即先放,大者优先,接近途中也会放)
-    /// </summary>
-    public readonly int AiPriority;
-    /// <summary>
-    /// AI 释放距离 px(仅远程/无身体判定盒的招式;X=最小,Y=最大,只比水平距离;0,0=按攻击动画判定盒推导)
-    /// </summary>
-    public readonly Godot.Vector2 AiRange;
-    /// <summary>
     /// AI 释放后冷却秒(X=下限,Y=上限随机;普攻池填 0,0)
     /// </summary>
     public readonly Godot.Vector2 AiCooldown;
@@ -140,9 +125,6 @@ public sealed partial class AttackConfig : Luban.BeanBase
         + "HitProtect:" + HitProtect + ","
         + "OwnerId:" + OwnerId + ","
         + "ComboIndex:" + ComboIndex + ","
-        + "AiWeight:" + AiWeight + ","
-        + "AiPriority:" + AiPriority + ","
-        + "AiRange:" + AiRange + ","
         + "AiCooldown:" + AiCooldown + ","
         + "AiInitCooldown:" + AiInitCooldown + ","
         + "AiRecovery:" + AiRecovery + ","

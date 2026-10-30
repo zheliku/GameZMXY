@@ -581,7 +581,28 @@ public sealed class LevelSmokeScenario
             throw new InvalidOperationException($"成功结算音乐仍处于静音：{music[0].VolumeDb}dB");
         }
 
-        GD.Print("SMOKE-MUSIC PASS: unique paused victory Music agent");
+        int bus = AudioServer.GetBusIndex("Music");
+        using var capture = new AudioEffectCapture { BufferLength = 1f };
+        int effect = AudioServer.GetBusEffectCount(bus);
+        AudioServer.AddBusEffect(bus, capture);
+        try
+        {
+            double position = music[0].GetPlaybackPosition();
+            await m_Hero.ToSignal(m_Hero.GetTree().CreateTimer(.5, true, false, true), SceneTreeTimer.SignalName.Timeout);
+            Vector2[] samples = capture.GetBuffer(capture.GetFramesAvailable());
+            float peak = samples.Length == 0 ? 0 : samples.Max(sample => Math.Max(Math.Abs(sample.X), Math.Abs(sample.Y)));
+            double rms = samples.Length == 0 ? 0 : Math.Sqrt(samples.Average(sample => (sample.X * sample.X + sample.Y * sample.Y) * .5));
+            GD.Print($"SMOKE-VICTORY-AUDIO: driver={AudioServer.GetDriverName()}, position={position:F3}->{music[0].GetPlaybackPosition():F3}, samples={samples.Length}, peak={peak:F6}, rms={rms:F6}, busVolume={AudioServer.GetBusVolumeDb(bus)}, masterVolume={AudioServer.GetBusVolumeDb(0)}");
+            if (peak < .01f || rms < .001 || music[0].StreamPaused)
+            {
+                throw new InvalidOperationException("成功结算代理存在，但实际混音没有可听信号");
+            }
+        }
+        finally
+        {
+            AudioServer.RemoveBusEffect(bus, effect);
+        }
+        GD.Print("SMOKE-MUSIC PASS: unique paused victory Music agent with non-silent mixed output");
         if (DisplayServer.GetName() == "headless")
         {
             return;

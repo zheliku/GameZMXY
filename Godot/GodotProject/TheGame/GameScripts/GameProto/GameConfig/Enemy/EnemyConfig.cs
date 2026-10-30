@@ -27,20 +27,11 @@ public sealed partial class EnemyConfig : Luban.BeanBase
         Level = _buf.ReadInt();
         BaseAttributes = global::GameConfig.Attributes.ActorBaseAttributes.DeserializeActorBaseAttributes(_buf);
         MoveSpeed = _buf.ReadFloat();
-        SightRange = _buf.ReadInt();
         AttackDesire = _buf.ReadInt();
-        BehitCalmTime = _buf.ReadFloat();
         AddExp = _buf.ReadInt();
         Gravity = _buf.ReadFloat();
-        PatrolInterval = _buf.ReadFloat();
-        PatrolIdleChance = _buf.ReadInt();
-        PatrolRadius = _buf.ReadInt();
         AttackInterval = _buf.ReadFloat();
-        AttackFirstDelay = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         SuperArmor = _buf.ReadBool();
-        AttackRangeSlack = _buf.ReadInt();
-        LoseTargetTime = _buf.ReadFloat();
-        PaceRange = _buf.ReadInt();
         SoulPerOrb = _buf.ReadInt();
         SoulCount = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
         ManaDropChance = _buf.ReadFloat();
@@ -89,17 +80,9 @@ public sealed partial class EnemyConfig : Luban.BeanBase
     /// </summary>
     public readonly float MoveSpeed;
     /// <summary>
-    /// 索敌距离(旧 mysee)
-    /// </summary>
-    public readonly int SightRange;
-    /// <summary>
     /// 攻击欲望 0-100(旧 attackDesire)
     /// </summary>
     public readonly int AttackDesire;
-    /// <summary>
-    /// 受击后僵直秒数(旧 behit_calmtime)
-    /// </summary>
-    public readonly float BehitCalmTime;
     /// <summary>
     /// 击杀给英雄的经验(旧 add_exp)
     /// </summary>
@@ -109,41 +92,13 @@ public sealed partial class EnemyConfig : Luban.BeanBase
     /// </summary>
     public readonly float Gravity;
     /// <summary>
-    /// 巡逻重新决策间隔秒(旧 change_state 计时器 3s)
-    /// </summary>
-    public readonly float PatrolInterval;
-    /// <summary>
-    /// 巡逻决策时原地停留概率 0-100(旧 ran_num&lt;10),其余左右各半
-    /// </summary>
-    public readonly int PatrolIdleChance;
-    /// <summary>
-    /// 巡逻半径 px:离出生点超出即折返(新增,旧项目无,防走出场地)
-    /// </summary>
-    public readonly int PatrolRadius;
-    /// <summary>
     /// 近身后普攻判定间隔秒(旧 count%60≈1s,每次按 AttackDesire 掷骰)
     /// </summary>
     public readonly float AttackInterval;
     /// <summary>
-    /// 进入攻击范围后首次出手判定的随机延迟秒(x=最短,y=最长);出手是概率判定,这里只是反应时间
-    /// </summary>
-    public readonly Godot.Vector2 AttackFirstDelay;
-    /// <summary>
     /// 霸体:受击不硬直不击退、不打断出招(旧 IsSuperArmor/Monster_18 类保护)
     /// </summary>
     public readonly bool SuperArmor;
-    /// <summary>
-    /// 站定滞回 px:目标离开普攻判定盒水平范围超过本值才重新追击(防目标被击退几像素就来回切换)
-    /// </summary>
-    public readonly int AttackRangeSlack;
-    /// <summary>
-    /// 丢失目标秒:目标水平距离持续超出 SightRange 这么久即放弃、回去巡逻(0=永不丢失)
-    /// </summary>
-    public readonly float LoseTargetTime;
-    /// <summary>
-    /// 踱步半幅 px:目标在头顶/平台上够不着时,以目标 x 为中心左右来回走的距离(0=原地等)
-    /// </summary>
-    public readonly int PaceRange;
     /// <summary>
     /// 每颗灵魂值（官方 gxp）
     /// </summary>
@@ -196,20 +151,11 @@ public sealed partial class EnemyConfig : Luban.BeanBase
         + "Level:" + Level + ","
         + "BaseAttributes:" + BaseAttributes + ","
         + "MoveSpeed:" + MoveSpeed + ","
-        + "SightRange:" + SightRange + ","
         + "AttackDesire:" + AttackDesire + ","
-        + "BehitCalmTime:" + BehitCalmTime + ","
         + "AddExp:" + AddExp + ","
         + "Gravity:" + Gravity + ","
-        + "PatrolInterval:" + PatrolInterval + ","
-        + "PatrolIdleChance:" + PatrolIdleChance + ","
-        + "PatrolRadius:" + PatrolRadius + ","
         + "AttackInterval:" + AttackInterval + ","
-        + "AttackFirstDelay:" + AttackFirstDelay + ","
         + "SuperArmor:" + SuperArmor + ","
-        + "AttackRangeSlack:" + AttackRangeSlack + ","
-        + "LoseTargetTime:" + LoseTargetTime + ","
-        + "PaceRange:" + PaceRange + ","
         + "SoulPerOrb:" + SoulPerOrb + ","
         + "SoulCount:" + SoulCount + ","
         + "ManaDropChance:" + ManaDropChance + ","
