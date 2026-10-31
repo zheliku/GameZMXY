@@ -15,11 +15,12 @@ namespace GameLogic.Profile.Tests
         [Theory]
         [InlineData(24)]
         [InlineData(60)]
+        [InlineData(120)]
         [InlineData(144)]
         public void Poison_UsesTenSecondsAtEveryFrameRate(int fps)
         {
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
-            var system = scope.GetSystem<HeroSystem>();
+            var system = scope.GetSystem<HeroStatusSystem>();
             system.ApplyPoison(TestTables.Tables.TbAttackConfig.Get(11004));
             int damage = 0;
             for (int i = 0; i < 10 * fps; i++)
@@ -28,7 +29,7 @@ namespace GameLogic.Profile.Tests
             }
 
             Assert.Equal(200, damage);
-            Assert.Null(scope.Hero.PoisonAttack);
+            Assert.False(system.IsPoisoned);
             Assert.Equal(0, system.AdvancePoison(20));
         }
 
@@ -39,7 +40,8 @@ namespace GameLogic.Profile.Tests
         public void Refresh_KeepsTickPhaseAndDeathClearsPoison()
         {
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
-            var system = scope.GetSystem<HeroSystem>();
+            var system = scope.GetSystem<HeroStatusSystem>();
+            var heroSystem = scope.GetSystem<HeroSystem>();
             var attack = TestTables.Tables.TbAttackConfig.Get(11004);
             system.ApplyPoison(attack);
             Assert.Equal(0, system.AdvancePoison(.75f));
@@ -47,10 +49,10 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(20, system.AdvancePoison(.25f));
             Assert.Equal(0, system.AdvancePoison(0));
             Assert.Equal(40, system.AdvancePoison(2));
-            Assert.True(system.Damage(int.MaxValue));
-            Assert.Null(scope.Hero.PoisonAttack);
+            Assert.True(heroSystem.Damage(int.MaxValue));
+            Assert.False(system.IsPoisoned);
             system.ApplyPoison(attack);
-            Assert.Null(scope.Hero.PoisonAttack);
+            Assert.False(system.IsPoisoned);
             Assert.Equal(0, system.AdvancePoison(100));
         }
     }

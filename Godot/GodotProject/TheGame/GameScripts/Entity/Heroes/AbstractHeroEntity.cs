@@ -367,6 +367,11 @@ namespace GameLogic.Heroes
             }
             DestroyBodyStateMachine(isShutdown);
             ClearSkillEffects(isShutdown);
+            if (!isShutdown)
+            {
+                this.GetSystem<SkillSystem>().ClearSkillDefinitions();
+            }
+
             base.OnHide(isShutdown, userData);
         }
 
@@ -383,10 +388,11 @@ namespace GameLogic.Heroes
 
             float dt = (float)delta;
             this.GetSystem<HeroSystem>().AdvanceHurtProtection(dt);
-            this.GetSystem<HeroSystem>().AdvanceFreeze(dt);
+            HeroStatusSystem statusEffects = this.GetSystem<HeroStatusSystem>();
+            statusEffects.AdvanceFreeze(dt);
             if (m_FrozenEffect != null)
             {
-                bool frozen = !Dead && this.GetModel<HeroModel>().FreezeSeconds > 0;
+                bool frozen = !Dead && statusEffects.IsFrozen;
                 if (frozen && !m_FrozenEffect.Visible)
                 {
                     m_FrozenEffect.Frame = 0;
@@ -400,11 +406,11 @@ namespace GameLogic.Heroes
                 }
             }
             ReceivePeriodicDamage(this.GetSystem<HeroSystem>().AdvanceRecovery(dt), showNumber: false);
-            int poisonDamage = this.GetSystem<HeroSystem>().AdvancePoison(dt);
+            int poisonDamage = statusEffects.AdvancePoison(dt);
             ReceivePeriodicDamage(poisonDamage);
             if (m_PoisonHead != null)
             {
-                m_PoisonHead.Visible = !Dead && this.GetModel<HeroModel>().PoisonAttack != null;
+                m_PoisonHead.Visible = !Dead && statusEffects.IsPoisoned;
             }
 
             if (m_PoisonPulse != null)
@@ -433,7 +439,7 @@ namespace GameLogic.Heroes
             }
             // 引擎采样保留按住及短按边沿，组合闩锁在输入层，连段与冷却由共享 InputSystem 根据本英雄动作数据裁定。
             var heroModel = this.GetModel<HeroModel>();
-            bool controlsEnabled = heroModel.ControlsEnabled && heroModel.FreezeSeconds <= 0;
+            bool controlsEnabled = heroModel.ControlsEnabled && !this.GetSystem<HeroStatusSystem>().IsFrozen;
             this.GetSystem<InputSystem>().Sample(this, dt, controlsEnabled);
             if (!ActionData.Captured && ActionData.MusouRequested)
             {

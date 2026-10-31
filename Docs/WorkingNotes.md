@@ -1,5 +1,42 @@
 # 沟通理解与当前方向
 
+## 本轮：第1格全装备与法宝穿戴（2026-10-31）
+
+用户要求第1格拥有全部当前装备并解锁法宝装备功能。本轮将法宝从“仅获取/背包/存档”扩展为正式独立穿戴部位：`ProfileModel`/`EquippedItems` 增加 Treasure，`HeroSaveData` 增加 `TreasureInstanceId`，存档格式升至 v12；`EquipmentSystem` 支持穿卸，`HeroSystem` 汇总法宝属性，背包角色面板把原法宝占位图替换为可交互 `EquipmentCell`。第1格保留原经验、灵魂、被动和穿戴，补齐装备定义 1～38（现有重复实例保留），并将金钢琢写入法宝槽；第2/3格只补空法宝引用并升到 v12。所有正式存档由 `SaveDataUtility.Validate` 读回通过。
+
+## 本轮：龙王全装备低等级测试档（2026-10-31）
+
+按用户要求在正式 `GameData` 新建第 3 格测试档，未覆盖第 1、2 格。测试档 UnitId 为 `1793449001`，当前格式 v11，悟空累计经验 0、灵魂 100000、主线最远通关 10（龙宫为 11，入口规则仍由正式代码校验），包含当前配置表 1～38 的每件装备各一件并保留悟空五项技能。`SaveDataUtility.Validate` 读回通过。原目录和数据文件已备份到 `GameData.backup-before-test-save-20261031_202000`；测试档主文件与 `.bak` 同步。
+
+## 本轮：设置返回是保存后的正常导航（2026-10-31）
+
+用户指出 `CommitEarlyExit` 会把普通的“保存后返回”误写成一条特殊事务。本轮统一为流程层的 `SaveAndNavigateAsync`：设置点击返回时复用已有 `SaveSystem.SaveManuallyAsync`，成功后调用现有关卡事务 `EndSession(rollback: false)` 清除进关快照，最后沿原 FSM 切换地图或标题。未保存的直接离开仍保留默认回滚。这里没有新增提交 API、第二套存档系统或测试专用路径；烟测只验证两种返回确实保留新增经验/灵魂。
+
+## 本轮：QF 官方 Godot 版与 GPT 补丁感的对策（2026-10-31）
+
+用户不满意 GPT 风格“补丁式”融合，要求经网络调研 QF/GGF 文档与实际使用 QF 的开源项目后再借鉴，并明确要求调研产出写成新的独立审查文件，不并入 ArchitectureReview。本轮核对：QF 官方 Godot4.5+ 版（GDScript）及其作者亲写的架构规范、官方 counter_app 示例、GitHub 全库 QFramework 搜索（167 结果按 star 排）、CrazyCar 的 README_Dev 规范与 HomepageUI/CrazyCar.cs/Game 目录实际代码。关键结论：QF 作者明确声明其四层规则是“理想态，实际项目可修改”；官方与 CrazyCar 的 Controller 都直接 GetModel 读数据、也有直接写 Model 的实例；“查询必须走 Query”是 CrazyCar 的设计目标而非 QF 硬规则。星标排序确认不存在比 CrazyCar 更大的可溯源开源 QF 项目。这为既有结论（本项目采用更严格的 Controller 只读、写必经 Command→System 的纪律，但把其定位为项目取舍而非 QF 强制）提供了官方背书。GPT 补丁感的根因不是规则不够多，而是缺少“先定数据所有者和生命周期，再写代码”的判断门——已有规范的第 00 章拆分门就是对策，坚持“新增先回答所有者/写入口/生命周期/表现边界”，并优先删除转发层而不是叠加。完整调研与对标见 [ArchitectureResearch](ArchitectureResearch.md)；ArchitectureReview 保持原状。
+
+## 本轮：框架核心与业务目录收敛（2026-10-31）
+
+用户确认 `Arch` 只保留 QF/GGF 核心契约和 Bindable；业务层回到 `GameScripts/Models`、`Systems`、`Utilities`、`Commands`、`Queries`。单文件领域直接扁平，多文件且职责紧密的领域才保留目录；战斗数据与 `CombatSystem` 统一在 `Systems/Combat`，存档 DTO 与 `SaveModel` 在 `Models/Save`，关卡节点在 `Entity/Level`，飘字在 `Entity/FloatingText`，装备值对象和外观资源随 `ProfileModel` 在 `Models/Profile`。
+
+流程一次性参数 `MainPack/Scripts/Procedure/FlowData` 归流程 FSM 所有，不强行提升为 Model/System/Utility。Utilities 只保留 `*Utility` 或 `*Extensions`；关卡专属 `ChapterRules` 归 Entity/Level，Luban 要求的 `ExternalTypeUtil` 留在 GameProto 边界，`ExperienceCurve` 统一为 `ExperienceCurveUtility`。
+
+## 本轮：Model/System 最终拆分门（2026-10-31）
+
+当前采用一个根 Architecture，按应用、档案、本局注册和移除成员；不通过多个 Architecture 表达层级。Model 只在数据所有权、生命周期、观察者或持久化边界独立时提升；普通子状态留在父 Model 内。`ProfileModel` 统一拥有档案成长、背包、穿戴和灵魂，`SkillModel` 独立拥有技能书，`HeroModel` 统一拥有本局属性和效果状态，`LevelModel` 统一拥有关卡会话，`SaveModel` 与 `ConfigurationModel` 属于应用生命周期。
+
+System 不要求有对应 Model：多个 System 可以共享一个 Model，但每个事实只能有一个明确写入者。`HeroStatusSystem` 是 HeroModel 上独立可测试的状态规则，不能再退回无上下文的 `StatusEffectSystem`；也不新增 `EquipmentModel` 或 `StatusEffectModel` 作为转发容器。后续新增类型必须先说明所有者、写入者、生命周期和观察边界，再决定是否注册。
+
+## 本轮：一份领域数据，多项明确规则（2026-10-31）
+
+用户核心诉求是避免过细注册，也避免把所有英雄功能堆进一个大类型；必须先核对真实 QF 项目，不能凭类名推导规范。补查 CrazyCar 注册入口/用户与装备 Model、UnityRpgGame 玩家 Model、MMORPG 客户端 GameApp，以及 Survivor 的 Global 后，确认 Model/System 数量不应一一对应，普通子数据不等于子 Model，QF 项目也有不适合照搬的静态状态或节点持有方式。具体来源、差异和适用限制归 ArchitectureReview。
+
+本次采用 HeroModel 保存本局唯一状态（含 StatusEffects 普通集合），HeroSystem 与 HeroStatusSystem 分别管理数值/资源和效果规则，SkillSystem 保留技能业务；删除独立效果 Model 而保留有实际规则的效果 System，并明确英雄宿主名称。没有给 HeroModel 增加转发属性或子 Architecture，也不把档案资产、学习记录、Godot节点塞进去。目录按功能领域组织，英雄三类归 Models + Systems/Hero；普通配套数据随所属模型，不为减少行数再拆脚本。
+
+集中规范立住新增/拆分门：先说明状态所有者、写规则、注册/退出和表现边界；Model 按状态所有权/生命周期，System 按业务规则，不按数量或行数。主游戏仍由主 FSM 的同一个 Architecture 持有，档案/本局只是成员生命周期，独立 F6 世界才另建 FSM。后续工作沿完整行为链迁移和验证，不留下两份数据或旧名转发。
+
+
 ## 关停异常应定位到生命周期（2026-10-31）
 
 用户要求解决日志中真实存在的异常，而非长期以“框架既有问题”跳过。本轮已确认自动Shutdown位于Base节点销毁阶段，后于网络和声音辅助节点释放；只给HttpRequest加有效性判断会继续暴露声音节点异常，故撤回该尝试，将既有GameEntry.Shutdown(None)移至Base.OnExitTree，仍用原模块清理顺序并清空组件注册。随后暴露的HUD空引用归业务所有权：关卡流程须在其FSM销毁前关闭本周期窗口，普通离关与关停复用同一关窗顺序。背包取消只在树内释放焦点。正式存档不参与验证，不新增生产测试接口。原生AudioStreamPlayer退出的MP3播放流泄漏已在无GGF的独立脚本中复现，正常窗口/真实音频驱动同样存在；声音代理额外Reset未改善该现象，已撤回，保留最小修复和独立证据。具体命令与剩余引擎诊断见Validation。
@@ -287,6 +324,16 @@ Enemy集中生命、目标、共同身体状态、FSM和离身攻击所有权；
 
 本轮把“动作结束”从整段贴图长度中分离出来：源帧脚本的收招帧写入Animation marker，状态计时读取marker；悟空升龙取消读取播放器整数源帧，不再使用会漂移的物理时间比例。死亡同样分成战斗事实、尸体运动和结算：小怪保留致死抛飞并按源分段循环，悟空死亡由实际动画完成信号提交失败；暂停不会提前结算。完整火魔、技能、AI、BOSS、死亡和UI专项均重新验证，源像素证据与矩形判定证据继续分开记录。
 
+## GGF 与 QFramework 架构审查（2026-10-31）
+
+用户要求先看真实项目再设计，核心是以实际代码校正边界、兼顾严谨与少封装。已联网核对 QF 官方源码、官方收录的 CrazyCar、UnityRpgGame、社区 Unity Game Foundation，以及 UGF StarForce 的流程/UI 实现。CrazyCar 文档主张查询走 Query，但实际购买 Command 会直接写 Model；因此不能把“System 独占写入”说成 QF 的硬性要求。闭源产品和开源 Demo 也不能冒称大型团队的架构证据，源码位置与限制见 ArchitectureReview。
+
+本项目按现行规范保留 GGF 的装配、流程、实体、UI、资源和事件，QF 提供业务职责划分，Godot 场景/动画管表现。Controller 可读取/订阅，业务修改经 Command 调用负责不变量的 System；Query 仅组织组合读取，局部交互/运动不命令化。保持 QF 风格的 Value 赋值；撤回了没有实际隔离作用的 internal SetValue 尝试，不再新增通知或事务包装。
+
+中毒/冻结最初迁入独立效果 Model/System，随后按真实 QF 项目和当前宿主盘点收敛：效果数据归 HeroModel.StatusEffects，HeroStatusSystem 单独维护效果规则，HeroSystem 维护属性/资源规则；两个 System 共用同一英雄 Model。这样保留规则隔离而不注册冗余 Model。状态 Type/起手委托仍由 SkillSystem 持有，在英雄隐藏时清理；效果当前只服务本局英雄，不预造多目标 Buff 框架。装备/学习 Command 复用 LevelSystem.IsRunning 判断当前战斗会话；未来地图学技须另定入口条件。
+
+Architecture 初始化失败清理一次，退出失败仍解除 FSM 持有，已用真实 GGF FSM 注入初始化/清理失败验证。Inventory、Skill、Battle 的绑定/请求与生命周期已审查，不给简单读取加 Query，也不批量重命名已有 Utility。F6 验证进一步修正旧场景字段绑定和测试作用域晚于框架退出的问题，清理仍由所属场地承担，没有给正式飘字或框架添加容错层。具体测试、引擎运行和退出诊断只维护在 Validation。
+
 ## 剩余关卡与换装完整性（2026-10-27）
 
 用户补充的核心是把换装完整性纳入每关交付，覆盖所有实际装备和所有动作。之前猿甲、宝剑各51个基础动作格串用了行者服/棍，已按各自官方selector4/7重导出；既有0..119格保持不变。身体/防具和武器仍是两套独立层，共用源原点、帧映射和遮挡规则，不以组合图集或相似装备占位。
@@ -351,6 +398,6 @@ LevelConfig末尾6列已从源表、schema、生成物和消费链删除，4处�
 
 ## 配置与具体招式职责收尾（2026-10-29）
 
-用户认可删除 InvincibleDurationSeconds 等列，核心是让策划表只承载有意义的平衡输入，具体角色机制由自身状态表达。烈焰闪/火魔的无敌和普攻阻塞留各自状态，升龙取消留悟空；装备 Kind 恒为固定值已从源 schema 与数据删除，运行属性仍是完整具名属性，百分比修正管线保留实际用途。Enemy 公共能力、表/字段和测试命名同步；小怪/BOSS 编辑 Sheet 保留分类，EnemyId 按首次出场排序为 1 起/10001 起，资源 EntityId 和官方 LegacyId 不动。关卡专属数值按用户选择迁为物种独立 .tres，特殊流程留专属代码，不再夹在通用 Luban 表。
+用户认可删除 InvincibleDurationSeconds 等列，核心是让策划表只承载有意义的平衡输入，具体角色机制由自身状态表达。烈焰闪的冲刺无敌和普攻阻塞留在自身状态；火魔斩只保留官方的输入锁、动画阶段和普攻阻塞，不额外赋予无敌，升龙取消留悟空；装备 Kind 恒为固定值已从源 schema 与数据删除，运行属性仍是完整具名属性，百分比修正管线保留实际用途。Enemy 公共能力、表/字段和测试命名同步；小怪/BOSS 编辑 Sheet 保留分类，EnemyId 按首次出场排序为 1 起/10001 起，资源 EntityId 和官方 LegacyId 不动。关卡专属数值按用户选择迁为物种独立 .tres，特殊流程留专属代码，不再夹在通用 Luban 表。
 
 判定审阅发现源读取器漏掉 Flash clipDepth，导致潮妖把 960×576 贴图画布纳入判定；现先求遮罩交集。飞行妖窄斜线由源二次曲线测量为旋转矩形，彭魔王两招与三团火按源透明位图测量少量基础形状，灯笼鱼和潮妖使用圆排除外接方形角。测量只在离线作者工具，游戏只加载原生形状/值轨道；保持源动画/声音/攻击编号。真实回归发现火焰淡入首键误写在0.558秒，已恢复0时刻有效并增加边界断言，保留首次失败日志。地图9个非居中悬停画布统一居中，十地点实际渲染与命中检查通过，普通布局不变。最新8项实机和Sea/花果山/蝙蝠洞/浅岸4项受影响流程全部退出0通过。鲨之涡流悬停源图还含非对称鱼鳍与文字，已保留可见像素并补透明画布对齐涡流原点；AtlasTexture读图缺margin的尝试未通过已撤去，当前PNG注册及最终frontend真实输入/导航回归通过。规范正文的本轮自行编辑已逐处撤回，旧描述差异在导览报告。

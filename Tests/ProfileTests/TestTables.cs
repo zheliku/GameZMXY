@@ -24,7 +24,7 @@ namespace GameLogic.Profile.Tests
         /// <summary>
         /// 与配置模型共享的经验曲线。
         /// </summary>
-        public static readonly ExperienceCurve Curve = new(Tables.TbHeroLevelConfig.DataList);
+        public static readonly ExperienceCurveUtility Curve = new(Tables.TbHeroLevelConfig.DataList);
         /// <summary>
         /// 纯 C# 测试使用明确的配置来源，不启动全局游戏或 Godot 节点。
         /// </summary>

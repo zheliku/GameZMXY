@@ -63,9 +63,7 @@ namespace GameLogic.UI
                 line.AddThemeColorOverride("font_color", new Color("ff9933"));
                 m_Attributes.AddChild(line);
             }
-            m_Description.Text = definition.Slot == EquipmentSlot.Treasure
-                ? "功能待开放"
-                : definition.Description;
+            m_Description.Text = definition.Description;
             m_Description.Visible = !string.IsNullOrEmpty(m_Description.Text);
             m_Value.Text = $"价值 : {definition.SellPrice} 灵魂";
         }

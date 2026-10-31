@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://qk7b0ixfs2in"]
 
 [ext_resource type="SpriteFrames" uid="uid://b6uuw7l55srf" path="res://TheGame/Sprites/Effects/level_exit/level_exit_frames.tres" id="frames"]
-[ext_resource type="Script" uid="uid://dc4putintok3g" path="res://TheGame/GameScripts/Level/Exit/LevelExitNode.cs" id="script"]
+[ext_resource type="Script" uid="uid://dc4putintok3g" path="res://TheGame/GameScripts/Entity/Level/Exit/LevelExitNode.cs" id="script"]
 [ext_resource type="Theme" uid="uid://2gwbh6otun6r" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="theme"]
 
 [sub_resource type="CircleShape2D" id="range"]

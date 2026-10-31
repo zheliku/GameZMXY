@@ -1158,7 +1158,7 @@ public sealed partial class UiSmokeScenario
         CheckDisplay(m_TestBattleForm, m_ExtraHero, record, level);
 
         flow.GetSystem<ProfileSystem>().AddExperience(int.MaxValue);
-        Check(record.Level == flow.GetUtility<ExperienceCurve>().MaxLevel && record.MaxExperience == 0, "满级没有封顶");
+        Check(record.Level == flow.GetUtility<ExperienceCurveUtility>().MaxLevel && record.MaxExperience == 0, "满级没有封顶");
         CheckDisplay(m_TestBattleForm, m_ExtraHero, record, level);
         CloseBattleForm(m_TestBattleForm);
         ReleaseTestEntity(m_ExtraHero);
@@ -1460,7 +1460,7 @@ public sealed partial class UiSmokeScenario
     private static async Task<AbstractHeroEntity> ShowHeroAsync(ProcedureOwner flow, int totalExperience)
     {
         var heroSystem = flow.GetSystem<HeroSystem>();
-        ResetHeroAttributes(flow.GetModel<ProfileModel>().ActiveHeroId, flow.GetUtility<ExperienceCurve>().Evaluate(totalExperience).Level);
+        ResetHeroAttributes(flow.GetModel<ProfileModel>().ActiveHeroId, flow.GetUtility<ExperienceCurveUtility>().Evaluate(totalExperience).Level);
         var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
         heroSystem.ResetWs(battle.WsMax, battle.WsDecayPerSecond, battle.WsDrainPerSecond);
         WukongEntity hero = await GF.Entity.ShowEntityAsync<WukongEntity>(EntityId.Wukong);

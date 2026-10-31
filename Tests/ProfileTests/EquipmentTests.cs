@@ -19,31 +19,35 @@ namespace GameLogic.Profile.Tests
     public sealed class EquipmentTests
     {
         /// <summary>
-        /// 法宝保留实例与属性存档，但穿戴请求不能改变装备槽或本局属性。
+        /// 法宝作为独立部位穿戴，属性和实例引用均可保存、重建与卸下。
         /// </summary>
-        /// <param name="id">当前可获取但玩法尚未开放的法宝。</param>
+        /// <param name="id">当前可穿戴的法宝。</param>
         [Theory]
         [InlineData(EquipmentId.DiamondSnare)]
         [InlineData(EquipmentId.EastSeaBanner)]
-        public void Treasure_CollectsAndSavesWithoutEquipping(EquipmentId id)
+        public void Treasure_CollectsEquipsAndSaves(EquipmentId id)
         {
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var system = CreateEquipmentSystem(scope);
             var data = system.Roll(Guid.NewGuid(), id, () => .37f);
-            var original = scope.Hero.CaptureCombatAttributes();
             Assert.Equal(EquipmentSlot.Treasure, TestTables.Tables.TbEquipmentConfig.Get(id).Slot);
             Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(data));
             Assert.True(scope.Profile.HasEquipment(id));
-            Assert.False(system.TryEquip(data.InstanceId));
-            Assert.Equal(original, scope.Hero.CaptureCombatAttributes());
-            Assert.Equal(default, scope.Profile.Slots.Value);
+            var original = scope.Hero.CaptureCombatAttributes();
+            Assert.True(system.TryEquip(data.InstanceId));
+            Assert.Same(data, scope.Profile.Treasure);
+            Assert.NotEqual(original, scope.Hero.CaptureCombatAttributes());
             var saved = JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(scope.CaptureSaveData()));
             var restored = TestGameScope.FromSaveData(saved, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
-            var actual = Assert.Single(restored.Profile.EquipmentDatas);
+            Assert.Empty(restored.Profile.EquipmentDatas);
+            var actual = restored.Profile.Treasure;
+            Assert.NotNull(actual);
             Assert.Equal(data.InstanceId, actual.InstanceId);
             Assert.Equal(data.Attributes, actual.Attributes);
             Assert.True(restored.Profile.HasEquipment(id));
-            Assert.False(restored.GetSystem<EquipmentSystem>().TryEquip(actual.InstanceId));
+            Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(EquipmentSlot.Treasure));
+            Assert.Null(restored.Profile.Treasure);
+            Assert.Single(restored.Profile.EquipmentDatas);
         }
 
         /// <summary>

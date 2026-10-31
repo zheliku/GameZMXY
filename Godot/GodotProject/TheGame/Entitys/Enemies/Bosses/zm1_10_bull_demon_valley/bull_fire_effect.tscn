@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://ne3h4plirwud"]
 
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire_frames.tres" id="frames"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire_library.tres" id="library"]
+[ext_resource type="SpriteFrames" uid="uid://opyflhyqkhht" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire_frames.tres" id="frames"]
+[ext_resource type="AnimationLibrary" uid="uid://hql35yvtbhwp" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire_library.tres" id="library"]
 [ext_resource type="Script" uid="uid://bsi3fi1mm4l2p" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_10_bull_demon_valley/BullDemonFireNode.cs" id="script"]
 
 [sub_resource type="RectangleShape2D" id="shape"]
@@ -16,6 +16,7 @@ m_Shape = NodePath("HitBox/Shape")
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1738584259]
 sprite_frames = ExtResource("frames")
 animation = &"play"
+frame = 35
 offset = Vector2(-0.5, -138)
 
 [node name="HitBox" type="Area2D" parent="." unique_id=2037257556]

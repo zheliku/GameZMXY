@@ -33,7 +33,7 @@ namespace GameLogic.Heroes.Wukong
         /// <param name="musouSpeed">无双突刺速度，px/s。</param>
         public void BeginThrust(IHeroBody body, float speed, float musouSpeed)
         {
-            int direction = body.Velocity.X > 0 ? 1 : -1;
+            int direction = ((ISkillActor)body).Facing;
             body.Velocity = new Vector2(direction *
                 (body.GetModel<HeroModel>().WsActive.Value ? musouSpeed : speed), body.Velocity.Y);
             BeginHit(body);

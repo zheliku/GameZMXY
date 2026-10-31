@@ -59,12 +59,26 @@ public partial class TestArenaController : Node2D
     private CancellationTokenSource m_Cancellation; // 场地退出后不再登记晚到的显示结果。
     private ProcedureOwner m_TestFlow; // 独立 F6 场地拥有的原生 FSM；正常游戏内运行时借用现有主 FSM。
     private EntityComponent m_Entities; // 本次启动捕获的实体服务。
+    private EventComponent m_Events; // 独立场地退出时，在框架关闭前触发所属会话清理。
 
     /// <summary>
-    /// 离开场景树时取消显示任务、停止飘字并清理本场地实体。
+    /// 场景单独卸载时结束本场地会话；整体关停时事件组件已提前触发同一清理。
     /// </summary>
     public override void _ExitTree()
     {
+        StopSession();
+    }
+
+    /// <summary>
+    /// 结束场地拥有的实体、订阅与业务作用域；服务先退出或场景单独卸载时均可调用。
+    /// </summary>
+    private void StopSession()
+    {
+        if (IsInstanceValid(m_Events))
+        {
+            m_Events.TreeExiting -= StopSession;
+        }
+        m_Events = null;
         m_Cancellation?.Cancel();
         m_Cancellation?.Dispose();
         m_Cancellation = null;
@@ -82,6 +96,8 @@ public partial class TestArenaController : Node2D
         if (m_TestFlow != null)
         {
             m_TestFlow.RemoveSystem<HeroSystem>();
+            m_TestFlow.RemoveSystem<HeroStatusSystem>();
+            m_TestFlow.RemoveModel<HeroModel>();
             GF.Fsm.DestroyFsm(m_TestFlow);
         }
         m_TestFlow = null;
@@ -138,6 +154,9 @@ public partial class TestArenaController : Node2D
         NodePool.Instance.Active();
         LayerMask.Instance.Active();
         m_Entities = GF.Entity;
+        // F6 不运行 Procedure；由场地自己在 Event 退出、Base 关闭模块前释放业务作用域。
+        m_Events = GF.Event;
+        m_Events.TreeExiting += StopSession;
         m_Cancellation = new CancellationTokenSource();
         List<(EntityId Id, Vector2 Position)> monsters = TakeMonsterPlaceholders();
         _ = StartAsync(monsters, m_Entities, m_Cancellation.Token);
@@ -180,10 +199,10 @@ public partial class TestArenaController : Node2D
                 m_TestFlow.RegisterUtility(new SpatialUtility());
                 m_TestFlow.RegisterUtility(new SaveDataUtility());
                 m_TestFlow.RegisterModel(new ConfigurationModel(ConfigSystem.Instance.Tables));
-                m_TestFlow.RegisterUtility(new ExperienceCurve(m_TestFlow.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList));
+                m_TestFlow.RegisterUtility(new ExperienceCurveUtility(m_TestFlow.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList));
                 m_TestFlow.RegisterModel(new SaveModel());
                 int heroId = ConfigSystem.Instance.Tables.TbHeroConfig.DataList.First(x => x.EntityId == m_HeroEntityId).Id;
-                m_TestFlow.RegisterModel(new ProfileModel(heroId, [(heroId, 0)], m_TestFlow.GetUtility<ExperienceCurve>(),
+                m_TestFlow.RegisterModel(new ProfileModel(heroId, [(heroId, 0)], m_TestFlow.GetUtility<ExperienceCurveUtility>(),
                     ConfigSystem.Instance.Tables.TbProfileConfig.EquipmentCapacity));
                 m_TestFlow.RegisterModel(new HeroModel());
                 m_TestFlow.RegisterModel(new SkillModel(m_TestFlow.GetModel<ProfileModel>().HeroIds));
@@ -195,6 +214,7 @@ public partial class TestArenaController : Node2D
                 m_TestFlow.RegisterSystem(new ProfileSystem(architecture));
                 m_TestFlow.RegisterSystem(new EquipmentSystem(architecture));
                 m_TestFlow.RegisterSystem(new SkillSystem(architecture));
+                m_TestFlow.RegisterSystem(new HeroStatusSystem(architecture));
                 m_TestFlow.RegisterSystem(new HeroSystem(architecture));
                 m_TestFlow.RegisterSystem(new SaveSystem(architecture));
             }

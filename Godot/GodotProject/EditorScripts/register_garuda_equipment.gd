@@ -14,7 +14,7 @@ func _register() -> void:
     var path := "res://TheGame/Sprites/Items/item_appearances.tres"
     var library: Resource = load(path)
     var items: Array = library.get("m_Items")
-    var script: Script = load("res://TheGame/GameScripts/Equipment/ItemAppearanceResource.cs")
+    var script: Script = load("res://TheGame/GameScripts/Models/Profile/ItemAppearanceResource.cs")
     for entry in [[16, "moon_halberd"], [17, "robe"]]:
         if items.any(func(item): return int(item.get("m_EquipmentId")) == entry[0]):
             continue

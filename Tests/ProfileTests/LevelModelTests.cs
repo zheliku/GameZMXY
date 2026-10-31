@@ -77,6 +77,23 @@ namespace GameLogic.Profile.Tests
         }
 
         /// <summary>
+        /// 设置菜单先保存再离开时，已写入的当前档案不得被进关快照回滚。
+        /// </summary>
+        [Fact]
+        public void EndSessionWithoutRollback_PreservesSavedProgress()
+        {
+            var scope = new TestGameScope(1, [(1, 0)], 80, 25);
+            var system = scope.GetSystem<LevelSystem>();
+            system.Prepare(1);
+            system.StartSession(1);
+            scope.GetSystem<ProfileSystem>().AddSoul(20);
+
+            system.EndSession(rollback: false);
+            Assert.Null(scope.Level.EntrySnapshot);
+            Assert.Equal(100, scope.Profile.Soul.Value);
+        }
+
+        /// <summary>
         /// 重复开始不得替换已经存在的回滚时间边界。
         /// </summary>
         [Fact]

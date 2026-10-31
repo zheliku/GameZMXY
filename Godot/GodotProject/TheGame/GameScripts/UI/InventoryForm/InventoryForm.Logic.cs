@@ -380,9 +380,9 @@ namespace GameLogic.UI
             }
 
             var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(data.EquipmentId);
-            m_Actions.Open(data.InstanceId, anchor, definition.Slot != EquipmentSlot.Treasure &&
-                (definition.Owner == EquipmentOwner.Universal ||
-                 (int)definition.Owner == this.GetModel<ProfileModel>().ActiveHeroId));
+            m_Actions.Open(data.InstanceId, anchor,
+                definition.Owner == EquipmentOwner.Universal ||
+                 (int)definition.Owner == this.GetModel<ProfileModel>().ActiveHeroId);
         }
 
         /// <summary>

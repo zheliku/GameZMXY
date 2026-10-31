@@ -24,7 +24,7 @@ using GodotGameFramework.UI;
 using GodotGameFramework.Sound;
 
 /// <summary>
-/// 在真实框架内验证菜单导航、关卡选择、退出回滚、音乐代理和菜单复用；不增加正式观测 API。
+/// 在真实框架内验证菜单导航、关卡选择、设置保存后返回、普通离开回滚、音乐代理和菜单复用；不增加正式观测 API。
 /// </summary>
 public sealed class FrontendSmokeScenario
 {
@@ -255,7 +255,7 @@ public sealed class FrontendSmokeScenario
             Check(ReferenceEquals(flow.GetArchitecture(), ((IBelongToArchitecture)firstSaveSystem).GetArchitecture()) &&
                 ReferenceEquals(((IBelongToArchitecture)firstSaveSystem).GetArchitecture(), ((IBelongToArchitecture)firstEquipmentSystem).GetArchitecture()) &&
                 ReferenceEquals(ConfigSystem.Instance.Tables, firstSaveSystem.GetModel<ConfigurationModel>().Tables) &&
-                ReferenceEquals(flow.GetUtility<ExperienceCurve>(), firstSaveSystem.GetUtility<ExperienceCurve>()),
+                ReferenceEquals(flow.GetUtility<ExperienceCurveUtility>(), firstSaveSystem.GetUtility<ExperienceCurveUtility>()),
                 "共享配置、经验曲线或模块没有使用主流程唯一的数据来源");
             Check(firstPlayerModel.HeroIds.Count == 1, "选角未使用读档作用域");
             await CheckCharacterHoverAsync(character);
@@ -459,7 +459,7 @@ public sealed class FrontendSmokeScenario
             await ClickAsync(settings, "Scroll/Content/Options/Navigation/m_ReturnMap");
             map = await WaitForAsync<MapForm>();
             Check(!hero.IsShown && !Find<LevelViewController>().Any(), "返回地图未清理英雄与关卡");
-            Check(playerModel.TotalExperience == experience, "中途返回地图未回滚关内收益");
+            Check(flow.GetModel<ProfileModel>().TotalExperience == experience + 1, "设置返回地图未保存关内经验");
             Check(ReferenceEquals(reloadedPlayerModel, flow.GetModel<ProfileModel>()) &&
                 !levelModel.SessionActive && !levelSystem.Initialized && !levelModel.Initialized, "返回地图未保留档案或未解除关卡借用");
             Check(SmokeInspection.ReadField<BattleFormData>(battleForm, "m_FormData") == null, "HUD 关闭后仍观察旧关卡");
@@ -478,7 +478,7 @@ public sealed class FrontendSmokeScenario
                 "战斗设置未解除关卡订阅");
             Check(SmokeInspection.CallbackCount(map, "SaveRequested") == 1, "地图保存回调重复绑定");
 
-            // 再入关后从官方第五项返回标题，也必须回滚并恢复时钟。
+            // 再入关后从官方第五项返回标题，也必须保存收益并恢复时钟。
             await ClickAsync(map, "m_Huaguoshan");
             battleForm = await WaitForAsync<BattleForm>();
             Check(Find<AbstractHeroEntity>().Count(x => x.IsShown) == 1, "重入生成了重复英雄");
@@ -490,7 +490,7 @@ public sealed class FrontendSmokeScenario
             settings = await WaitForAsync<SettingsForm>();
             await ClickAsync(settings, "Scroll/Content/Options/Navigation/m_ReturnTitle");
             start = await WaitForAsync<StartForm>();
-            Check(previousInventory.Soul.Value == savedSoul && !previousInventory.Initialized && flow.GetModel<ProfileModel>() == null && !GF.Base.IsGamePaused && !Find<LevelViewController>().Any(), "返回标题未回滚收益、恢复时钟或清理关卡");
+            Check(previousInventory.Soul.Value == savedSoul + 9 && !previousInventory.Initialized && flow.GetModel<ProfileModel>() == null && !GF.Base.IsGamePaused && !Find<LevelViewController>().Any(), "返回标题未保存收益、恢复时钟或清理关卡");
             Check(flow.GetModel<ProfileModel>() == null && ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) && flow.GetSystem<EquipmentSystem>() == null, "战斗返回标题仍持有档案作用域");
             Check(!GF.UI.HasUIForm(character.SerialId), "关闭后选角仍接收请求");
             // 损坏槽不能被当成空格；读取目录也不能使旧档案向其他槽写入。
@@ -594,6 +594,7 @@ public sealed class FrontendSmokeScenario
                 "移除未结束生命周期或影响其他作用域");
             Check(firstArchitecture.GetModel<ArchitectureProbeModel>() == null && firstEquipmentSystem.GetModel<ArchitectureProbeModel>() == null,
                 "移除后的模型仍能经架构或系统访问");
+            CheckFailedMemberLifecycle(first);
             Check(!typeof(ICanGetModel).IsAssignableFrom(typeof(IModel)) && !typeof(ICanGetSystem).IsAssignableFrom(typeof(IModel)) &&
                 !typeof(IBelongToArchitecture).IsAssignableFrom(typeof(IUtility)) && !typeof(Godot.Node).IsAssignableFrom(typeof(LevelSystem)),
                 "Model/Utility 权限或普通 System 边界不正确");
@@ -628,6 +629,63 @@ public sealed class FrontendSmokeScenario
             destroyedArchitectureRejected = true;
         }
         Check(destroyedArchitectureRejected, "FSM 销毁后仍能访问模型");
+        GD.Print("SMOKE-ARCHITECTURE PASS: identity, isolation, duplicate registration, partial init cleanup, failed removal and FSM reuse");
+    }
+
+    /// <summary>
+    /// 在真实 FSM 注入模型与系统的初始化、退出及双重失败，检查旧注册已经解除且能重新装配。
+    /// </summary>
+    /// <param name="flow">只持有测试成员的局部 FSM。</param>
+    private static void CheckFailedMemberLifecycle(ProcedureOwner flow)
+    {
+        foreach (var (failInit, failDeinit) in new[] { (true, false), (false, true), (true, true) })
+        {
+            var model = new ArchitectureProbeModel(5, failInit, failDeinit);
+            Check(ExpectLifecycleFailure(() =>
+            {
+                flow.RegisterModel(model);
+                flow.RemoveModel<ArchitectureProbeModel>();
+            }, failInit && failDeinit), "模型生命周期故障没有原样传递");
+            Check(!model.Initialized && model.InitCount == 1 && model.DeinitCount == 1 &&
+                flow.GetModel<ArchitectureProbeModel>() == null, "失败模型残留注册或重复清理");
+            flow.RegisterModel(new ArchitectureProbeModel(6));
+            Check(flow.RemoveModel<ArchitectureProbeModel>(), "失败模型阻止后续重新注册");
+
+            var system = new ArchitectureProbeSystem(flow.GetArchitecture(), failInit, failDeinit);
+            Check(ExpectLifecycleFailure(() =>
+            {
+                flow.RegisterSystem(system);
+                flow.RemoveSystem<ArchitectureProbeSystem>();
+            }, failInit && failDeinit), "系统生命周期故障没有原样传递");
+            Check(!system.Initialized && system.InitCount == 1 && system.DeinitCount == 1 &&
+                flow.GetSystem<ArchitectureProbeSystem>() == null, "失败系统残留注册或重复清理");
+            flow.RegisterSystem(new ArchitectureProbeSystem(flow.GetArchitecture(), false, false));
+            Check(flow.RemoveSystem<ArchitectureProbeSystem>(), "失败系统阻止后续重新注册");
+        }
+    }
+
+    /// <summary>
+    /// 只接受夹具主动抛出的生命周期错误；双重失败须保留两个异常。
+    /// </summary>
+    /// <param name="action">注册或移除操作。</param>
+    /// <param name="dualFailure">是否预期初始化与退出均失败。</param>
+    /// <returns>捕获到预期故障时为 true。</returns>
+    private static bool ExpectLifecycleFailure(Action action, bool dualFailure)
+    {
+        try
+        {
+            action();
+            return false;
+        }
+        catch (AggregateException error) when (dualFailure)
+        {
+            return error.InnerExceptions.Count == 2 && error.InnerExceptions.All(item =>
+                item is InvalidOperationException && item.Message.StartsWith("Architecture probe"));
+        }
+        catch (InvalidOperationException error) when (!dualFailure)
+        {
+            return error.Message.StartsWith("Architecture probe");
+        }
     }
 
     /// <summary>
@@ -1119,7 +1177,9 @@ public sealed class FrontendSmokeScenario
     /// 仅供测试验证注册生命周期，不让正式钱包为测试继承 Model。
     /// </summary>
     /// <param name="value">测试值。</param>
-    private sealed class ArchitectureProbeModel(int value) : AbstractModel
+    /// <param name="failInit">是否在初始化时模拟故障。</param>
+    /// <param name="failDeinit">是否在退出时模拟故障。</param>
+    private sealed class ArchitectureProbeModel(int value, bool failInit = false, bool failDeinit = false) : AbstractModel
     {
         /// <summary>
         /// 只读测试值。
@@ -1140,12 +1200,56 @@ public sealed class FrontendSmokeScenario
         protected override void OnInit()
         {
             InitCount++;
+            if (failInit)
+            {
+                throw new InvalidOperationException("Architecture probe init");
+            }
         }
 
         /// <inheritdoc />
         protected override void OnDeinit()
         {
             DeinitCount++;
+            if (failDeinit)
+            {
+                throw new InvalidOperationException("Architecture probe deinit");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 只供测试验证真实 System 注册事务；不访问游戏模型或节点。
+    /// </summary>
+    /// <param name="architecture">所属测试作用域。</param>
+    /// <param name="failInit">是否在初始化时模拟故障。</param>
+    /// <param name="failDeinit">是否在退出时模拟故障。</param>
+    private sealed class ArchitectureProbeSystem(IArchitecture architecture, bool failInit, bool failDeinit)
+        : AbstractSystem(architecture)
+    {
+        /// <summary>实际初始化次数。</summary>
+        public int InitCount { get; private set; }
+
+        /// <summary>实际解除次数。</summary>
+        public int DeinitCount { get; private set; }
+
+        /// <inheritdoc />
+        protected override void OnInit()
+        {
+            InitCount++;
+            if (failInit)
+            {
+                throw new InvalidOperationException("Architecture probe init");
+            }
+        }
+
+        /// <inheritdoc />
+        protected override void OnDeinit()
+        {
+            DeinitCount++;
+            if (failDeinit)
+            {
+                throw new InvalidOperationException("Architecture probe deinit");
+            }
         }
     }
 }

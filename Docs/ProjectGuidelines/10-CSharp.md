@@ -33,7 +33,7 @@
 | 实体与窗口/控件 | 保留能说明节点职责的 Entity/Form/Hud/Bar/Button 后缀 | `GorillaEntity`、`SettingsForm`、`EncounterHealthBar` |
 | Godot 资源 | `XxxResource` | `LevelMarkerResource` |
 | 附属于现有类型的无状态操作 | `XxxExtensions`，使用 C# 14 extension 块 | `BodyFsmExtensions`、`SoundExtensions`、`AttributeExtensions` |
-| 运行时状态/有状态规则 | 领域名词，不滥用 Helper | `HeroActionData`、`EnemyAiData`、`ExperienceCurve`、`LevelStageSequence`、`LevelSpawnSchedule` |
+| 运行时状态/有状态规则 | 领域名词，不滥用 Helper | `HeroActionData`、`EnemyAiData`、`LevelStageSequence`、`LevelSpawnSchedule` |
 | 不可变输入/输出 | 能表达方向的名词 | `EquippedItems`、`CombatantAttributes`、`DamageResult`、`EnemySpawn` |
 | 存档 DTO / 配置 | `XxxSaveData` / 生成的 `XxxConfig` | `HeroSaveData`、`MonsterConfig`；框架 GameData 保留 |
 | 界面参数 / 表现协调对象 | `<界面>Data` / `XxxPresenter` | `BattleFormData`、`FloatingTextPresenter` |

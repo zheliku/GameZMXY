@@ -22,7 +22,7 @@ internal static class ProfileTestData
         /// <param name="totalExperience">累计经验。</param>
         internal void RestoreExperience(int heroId, int totalExperience)
         {
-            var curve = profile.GetUtility<ExperienceCurve>();
+            var curve = profile.GetUtility<ExperienceCurveUtility>();
             profile.GetProgress(heroId).Value = curve.GetProgress(totalExperience);
         }
 

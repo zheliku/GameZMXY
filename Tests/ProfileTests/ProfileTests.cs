@@ -208,7 +208,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void ConfigurationModel_AcceptsShippedTables()
         {
-            ExperienceCurve curve = GameLogic.Config.ConfigurationSystem.ValidateTables(TestTables.Tables);
+            ExperienceCurveUtility curve = GameLogic.Config.ConfigurationSystem.ValidateTables(TestTables.Tables);
             Assert.Equal(55, curve.MaxLevel);
         }
 

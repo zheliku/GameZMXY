@@ -9,7 +9,7 @@ using GameLogic.Heroes;
 namespace GameLogic.Enemies
 {
     /// <summary>
-    /// 狮驼王毒雾：命中主体后施加十秒中毒；持续状态由本局英雄模型拥有。
+    /// 狮驼王毒雾：命中主体后施加十秒中毒；持续状态由本局状态效果系统拥有。
     /// </summary>
     public partial class LionCamelPoisonCloudNode : SkillEffectNode
     {
@@ -20,7 +20,7 @@ namespace GameLogic.Enemies
         {
             if (target is AbstractHeroEntity { CanReceiveStatusEffect: true })
             {
-                this.GetSystem<HeroSystem>().ApplyPoison(this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(PoisonAttackId));
+                this.GetSystem<HeroStatusSystem>().ApplyPoison(this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(PoisonAttackId));
             }
         }
     }

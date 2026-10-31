@@ -38,9 +38,8 @@ using GodotGameFramework;
 /// 关卡首波怪物由相机抵达首阶段右界激活（Level_1 的相机右缘），因此两种模式都先注入移动输入
 /// 推动相机抵达后才启动既有战斗时间轴；M4 连打验证沙包，AI 模式验证怪物行为。
 ///
-/// 注意：**判定看 stdout 的 SMOKE PASS/FAIL，别只看退出码**——框架关闭流程有一个既有 bug
-/// （WebRequestAgentHelper.Reset 访问已释放的 HttpRequest，见 Framework/…/DefaultWebRequestAgentHelper.cs:90），
-/// 偶发在退出时升级成 0xC0000005 段错误，把退出码冲掉；这是框架问题，与本测试无关，已上报。
+/// 判定同时检查 stdout 的 SMOKE PASS/FAIL 和进程退出码；预期失败注入、超时和引擎退出诊断
+/// 分别记录在 Docs/Validation.md，不能仅凭通用尾句断言全部专项通过。
 /// </summary>
 public partial class SmokeTestDriver : Node
 {
@@ -272,7 +271,7 @@ public partial class SmokeTestDriver : Node
                 }
                 else
                 {
-                    GD.Print("SMOKE PASS：开始、六格存档、选角、地图、花果山、返回回滚、提示复用与 GGF 声音全部通过");
+                    GD.Print("SMOKE PASS：开始、六格存档、选角、地图、花果山、设置保存后返回、提示复用与 GGF 声音全部通过");
                     StopDriving(false);
                 }
             }
@@ -963,7 +962,8 @@ public partial class SmokeTestDriver : Node
             return;
         }
 
-        SceneTreeTimer timer = GetTree().CreateTimer(0.05);
+        // 失败可能发生在暂停断言中；退出等待必须使用真实时间。
+        SceneTreeTimer timer = GetTree().CreateTimer(0.05, ignoreTimeScale: true);
         timer.Timeout += () => GetTree().Quit(failed ? 1 : 0);
     }
 

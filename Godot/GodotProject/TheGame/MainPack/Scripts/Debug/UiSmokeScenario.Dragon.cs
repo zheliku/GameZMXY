@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -8,6 +9,7 @@ using GameConfig.Equipment;
 using GameConfig.Loot;
 using GameLogic.Architecture;
 using GameLogic.Battle;
+using static GameLogic.Battle.HeroModel;
 using GameLogic.Battle.Attributes;
 using GameLogic.Effects;
 using GameLogic.Enemies;
@@ -160,7 +162,7 @@ public sealed partial class UiSmokeScenario
                     {
                         for (int index = 0; index < 4; index++)
                         {
-                            system.AdvanceFreeze(100);
+                            flow.GetSystem<HeroStatusSystem>().AdvanceFreeze(100);
                             system.Heal(int.MaxValue);
                             hero.GlobalPosition = new Vector2(100000, 100000);
                             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DragonKing,
@@ -243,7 +245,7 @@ public sealed partial class UiSmokeScenario
                             Check(sawEffect == (index is 0 or 3), "龙王离身攻击的所属招式错误");
                             if (index == 2)
                             {
-                                Check(flow.GetModel<HeroModel>().FreezeSeconds == (tier == 1 ? 2 : 5), "冰冻持续时间不符等级档");
+                                Check((flow.GetModel<HeroModel>().StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0) == (tier == 1 ? 2 : 5), "冰冻持续时间不符等级档");
                             }
 
                             Check(actor.HitBox.GetChildren().OfType<CollisionShape2D>().All(item => item.Disabled), "龙王收招残留身体判定");
@@ -267,7 +269,7 @@ public sealed partial class UiSmokeScenario
             }
 
             m_Monster = null;
-            system.AdvanceFreeze(100);
+            flow.GetSystem<HeroStatusSystem>().AdvanceFreeze(100);
             system.RemoveSource(source);
             system.Heal(int.MaxValue);
             Engine.PhysicsTicksPerSecond = originalTicks;
@@ -284,7 +286,7 @@ public sealed partial class UiSmokeScenario
     {
         var model = flow.GetModel<HeroModel>();
         var system = flow.GetSystem<HeroSystem>();
-        system.AdvanceFreeze(100);
+        flow.GetSystem<HeroStatusSystem>().AdvanceFreeze(100);
         model.Ws.Value = model.MaxWs.Value;
         Check(hero.TryActivateMusou() && !hero.CanReceiveStatusEffect, "悟空无双没有禁止附加控制状态");
         hero.GlobalPosition = new Vector2(100000, 100000);
@@ -317,7 +319,7 @@ public sealed partial class UiSmokeScenario
 
             await WaitFramesAsync(1);
         }
-        Check(hero.Hp < hp && model.FreezeSeconds == 0, "无双悟空没有实际受击，或被错误施加冰冻");
+        Check(hero.Hp < hp && !flow.GetSystem<HeroStatusSystem>().IsFrozen, "无双悟空没有实际受击，或被错误施加冰冻");
         system.ClearWs();
         await WaitUntilAsync(() => !((IEnemyAiAgent)actor).IsAttacking, "龙王冰冻收招未结束");
         Check(((IEnemyAiAgent)actor).RequestAttack(0), "取消夹具未释放水波");

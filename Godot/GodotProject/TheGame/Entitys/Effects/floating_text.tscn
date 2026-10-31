@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dqmpdpnnduin"]
 
-[ext_resource type="Script" uid="uid://f44cnwj7i81c" path="res://TheGame/GameScripts/FloatingText/FloatingTextNode.cs" id="1_script"]
+[ext_resource type="Script" uid="uid://f44cnwj7i81c" path="res://TheGame/GameScripts/Entity/FloatingText/FloatingTextNode.cs" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://dutecoh772684" path="res://TheGame/Sprites/Number/damage_number_monster_physics.png" id="2_mp"]
 [ext_resource type="Texture2D" uid="uid://2ckurw34noqu" path="res://TheGame/Sprites/Number/damage_number_monster_physics_crit.png" id="3_mpc"]
 [ext_resource type="Texture2D" uid="uid://j3ptsyipmna0" path="res://TheGame/Sprites/Number/damage_number_hero_magic.png" id="7_hm"]

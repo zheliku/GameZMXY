@@ -15,7 +15,7 @@ func _build() -> void:
 	var library_path := "res://TheGame/Sprites/Items/item_appearances.tres"
 	var library := load(library_path)
 	var items: Array = library.get("m_Items")
-	var item_script := load("res://TheGame/GameScripts/Equipment/ItemAppearanceResource.cs")
+	var item_script := load("res://TheGame/GameScripts/Models/Profile/ItemAppearanceResource.cs")
 	for entry in [[9, "earth_fiend_ring"], [10, "earth_fiend_ape_armor"], [11, "earth_fiend_scepter"]]:
 		for item in items:
 			if int(item.get("m_EquipmentId")) == entry[0]:

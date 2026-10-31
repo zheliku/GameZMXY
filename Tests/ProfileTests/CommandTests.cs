@@ -203,6 +203,11 @@ namespace GameLogic.Profile.Tests
             /// <inheritdoc />
             public TSystem GetSystem<TSystem>() where TSystem : class, ISystem
             {
+                if (typeof(TSystem) == typeof(LevelSystem))
+                {
+                    return null;
+                }
+
                 throw new InvalidOperationException();
             }
 

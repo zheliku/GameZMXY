@@ -1,16 +1,16 @@
 [gd_scene format=3 uid="uid://ddxg1g4fqepto"]
 
 [ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="5_cswe7"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_background_frames.tres" id="background"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_heart_fade_library.tres" id="fade"]
+[ext_resource type="SpriteFrames" uid="uid://g6sgmp0n52yc" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_background_frames.tres" id="background"]
+[ext_resource type="AnimationLibrary" uid="uid://box0c77ae3crx" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_heart_fade_library.tres" id="fade"]
 [ext_resource type="PackedScene" uid="uid://ne3h4plirwud" path="res://TheGame/Entitys/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire_effect.tscn" id="fire"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_official_frames.tres" id="frames"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_hands_frames.tres" id="hands"]
+[ext_resource type="SpriteFrames" uid="uid://jawlbb6gfn33" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_official_frames.tres" id="frames"]
+[ext_resource type="SpriteFrames" uid="uid://djep4tr0cdhc0" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_hands_frames.tres" id="hands"]
 [ext_resource type="Script" uid="uid://dhh6c7r3fqbt7" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_10_bull_demon_valley/BullDemonHandNode.cs" id="hand_script"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_heart_frames.tres" id="heart"]
+[ext_resource type="SpriteFrames" uid="uid://belgj1uqmark2" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_heart_frames.tres" id="heart"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_library.tres" id="library"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_presentation_library.tres" id="presentation"]
+[ext_resource type="AnimationLibrary" uid="uid://brex7ulk7nwwg" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_library.tres" id="library"]
+[ext_resource type="AnimationLibrary" uid="uid://b01fwcvmbtaqn" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_presentation_library.tres" id="presentation"]
 [ext_resource type="Script" uid="uid://c5hvxlacj76gu" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_10_bull_demon_valley/BullDemonHeartEntity.cs" id="script"]
 
 [sub_resource type="CapsuleShape2D" id="body_shape"]
@@ -20,7 +20,7 @@ height = 159.97145
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
 size = Vector2(90.22601, 159.97145)
 
-[sub_resource type="RectangleShape2D" id="empty"]
+[sub_resource type="RectangleShape2D" id="shape_empty"]
 size = Vector2(1, 1)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7n3c3"]
@@ -81,7 +81,7 @@ collision_mask = 128
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1795427967]
-shape = SubResource("empty")
+shape = SubResource("shape_empty")
 disabled = true
 debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
@@ -100,14 +100,18 @@ debug_color = Color(0.36, 0.58, 0.8, 0.035)
 libraries/ = ExtResource("library")
 
 [node name="m_Background" type="AnimatedSprite2D" parent="." unique_id=2032096380]
+modulate = Color(1, 1, 1, 0)
 z_index = -1
 sprite_frames = ExtResource("background")
 animation = &"play"
 offset = Vector2(2.5, 2)
 
 [node name="m_Heart" type="AnimatedSprite2D" parent="." unique_id=1603945918]
+modulate = Color(1, 1, 1, 0)
 sprite_frames = ExtResource("heart")
 animation = &"play"
+frame = 22
+frame_progress = 1.0
 offset = Vector2(18.5, 118.5)
 
 [node name="m_HeartFade" type="AnimationPlayer" parent="." unique_id=1648213257]
@@ -124,6 +128,7 @@ m_HitBox = NodePath("HitBox")
 [node name="Visual" type="AnimatedSprite2D" parent="m_LeftHand" unique_id=1683876973]
 sprite_frames = ExtResource("hands")
 animation = &"play"
+frame_progress = 1.0
 offset = Vector2(0, -0.5)
 
 [node name="HitBox" type="Area2D" parent="m_LeftHand" unique_id=1033585987]

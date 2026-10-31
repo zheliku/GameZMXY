@@ -145,7 +145,7 @@ func _traps() -> void:
         _add(group, spike)
 
 func _entry(id: String, title: String) -> Resource:
-    var resource: Resource = load("res://TheGame/GameScripts/Level/Markers/LevelMarkerResource.cs").new()
+    var resource: Resource = load("res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs").new()
     resource.set("m_Id", id)
     resource.set("m_Node", NodePath(title))
     return resource

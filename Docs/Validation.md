@@ -1,5 +1,52 @@
 # 验证
 
+## 全装备与法宝穿戴（2026-10-31）
+
+第1格已备份后更新为 v12：保留原有进度，装备集合补齐当前配置 1～38（40 个实例，原有重复实例保留），金钢琢写入悟空独立法宝槽。第2/3格补齐 `TreasureInstanceId` 空字段并升到 v12。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 正式构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误，5条既有 Framework/生成代码弃用警告。 |
+| 纯规则测试 | Profile `222/222`、Battle `178/178`、Level `19/19` 通过；法宝测试覆盖穿戴、属性变化、保存、重建与卸下。 |
+| 存档读回 | 正式 `SaveDataUtility.Validate` 验证第1/2/3格全部通过；第1格 `equipment=40`、金钢琢 `TreasureInstanceId` 非空。备份目录为 `GameData.backup-before-treasure-slot-20261031_214739`。 |
+| UI 烟测 | `--smoketest=ui --equipment-only`：`SMOKE-TREASURE GUI PASS`，跨页选择、独立法宝槽、tooltip、穿戴、属性替换和法宝替换通过；退出业务码0。 |
+
+
+## 设置保存后返回与技能回归（2026-10-31）
+
+设置界面的返回地图/标题沿正常流程处理：先调用已有 `SaveSystem.SaveManuallyAsync`，保存成功后由现有 `LevelSystem.EndSession(rollback: false)` 结束本局事务，再切换到 `ProcedureMap` 或 `ProcedureTitle`。没有新增 `CommitEarlyExit` 或第二套存档提交接口；未保存的普通离开仍按既有关卡规则回滚进关快照。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 正式构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误；5条 Framework/生成代码既有弃用警告。 |
+| 纯规则测试 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：222/222；`dotnet test Tests/BattleTests --no-restore -v quiet`：178/178；`dotnet test Tests/LevelTests --no-restore -v quiet`：19/19。三组均只有既有 NU1900 审计服务警告。 |
+| 前端烟测 | `S:/Godot4/Godot4CSharp_console.exe --headless --path Godot/GodotProject --quit-after 2400 -- --smoketest=frontend`：退出0，设置返回地图保留关内经验，返回标题保留新增灵魂，菜单、六格存档、选角、地图、提示复用和 GGF 声音全部通过。跨槽/坏档日志是烟测预期注入；退出仍有3个 ObjectDB 泄漏诊断。 |
+
+
+## GGF + QF 架构边界与状态效果（2026-10-31）
+
+依据第00/10/50/60章和用户要求先调研再重构。公开源码与适用限制集中于 [ArchitectureReview](ArchitectureReview.md)，实际所有权/初始化入口见 [ProjectTour](ProjectTour.md)。本轮将冻结、中毒数据聚合到 HeroModel.StatusEffects，由 HeroStatusSystem 维护效果规则；技能状态类型和起手委托归 SkillSystem；装备/学习 Command 复用 LevelSystem.IsRunning。保留现有 QF 取用能力、Value 赋值、GGF 服务和 Godot 表现，不增加通知事务包装，不更改存档格式。
+
+证据目录为 `Godot/GodotProject/.godot/validation/architecture_20261031/`。引擎入口为实际存在的 `S:/Godot4/Godot4CSharp_console.exe`；以下 `run.py` 为忽略目录中的隔离 APPDATA 启动器，不接触正式档案。代码和本轮工具输出没有修改 Framework/addons/Luban，也未操作 Git 索引。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 正式构建 | `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet`：0错误、5条已有框架/生成代码弃用警告。 |
+| 档案/业务测试 | `dotnet test Tests/ProfileTests/ProfileTests.csproj --no-restore -v quiet -- xUnit.ParallelizeTestCollections=false`：216/216。包含初始化/清理失败、Command 会话、技能登记、冻结/中毒24/60/120/144Hz、并存、死亡/重建清理和跨作用域隔离；保留原保存/交易测试。NU1900为无法读取NuGet审计服务，另有测试替身Export字段未赋值警告。 |
+| 战斗/关卡规则 | `dotnet test Tests/BattleTests/BattleTests.csproj --no-restore -v quiet`：178/178；`dotnet test Tests/LevelTests/LevelTests.csproj --no-restore -v quiet`：19/19。仍有NU1900与既有CS8632警告。 |
+| 原生扫描 | `python <证据目录>/run.py scan --headless --editor --import --build-solutions --quit --no-window`：退出0，完成脚本扫描和UID登记；编辑器仍输出ComponentInsoector的RefCounted.Free错误，不能称为无错误日志。 |
+| 真实FSM与前端 | `python <证据目录>/run.py frontend --headless --audio-driver Dummy --max-fps 120 -- --smoketest=frontend`：退出0、`SMOKE-ARCHITECTURE PASS`及前端PASS。真实GGF FSM验证同一引用、作用域隔离、重复注册拒绝、初始化失败/退出失败仍移除、后续重新注册。跨槽/坏档/加载失败为预期注入；退出报告3个ObjectDB实例。 |
+| 冻结 | 同一启动器 `freeze --headless --audio-driver Dummy --max-fps 120 -- --smoketest=ui --freeze-only`：退出0，60/120Hz、键盘/UI无双门禁、解冻无排队、暂停、死亡清理PASS；退出报告3个ObjectDB实例。仅覆盖该专项，通用UI尾句不代表全套。 |
+| 中毒 | 同一启动器 `qixing --headless --audio-driver Dummy --max-fps 120 -- --smoketest=ui --qixing-only`：退出0，六招双方向、刀/毒雾实际命中、中毒十跳、暂停和复用PASS；退出报告9个ObjectDB实例及1个资源仍使用。 |
+| 龙王 | 同一启动器 `dragon --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --dragon-only`：退出0，两档×60/120Hz×左右×四招共32组PASS；无双状态免疫、暂停、离身攻击取消PASS；退出报告5个ObjectDB实例。 |
+| 完整UI | `python <证据目录>/run.py ui_opengl_final --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui`：退出0，技能面板、五招真实输入、飘字/暂停、装备/背包、坡面与平台、换装重入、失败结算重试/回地图、音乐和存档回归全部业务PASS；HUD 缺绑定是预期失败注入。退出仍报告 Godot RID/ObjectDB/资源泄漏，不能称为零诊断。 |
+| F6 独立场地 | `python <证据目录>/run.py arena_final3 --headless --audio-driver Dummy --quit-after 360 --scene res://TheGame/Scenes/test_arena.tscn`：退出0，修正 `m_Enemies` 场景绑定后玩家与两只怪物正常显示；场地在 `EventComponent.TreeExiting` 回调中先停止飘字/实体/本地FSM，再由框架关停，已消除“事件473不存在”的退出异常。仍有8个ObjectDB、3个RID和3个资源泄漏诊断，具体来源待定位；本轮未改只读框架。 |
+| 引用与风格 | `python Tools/ProjectMaintenance/validate_game_references.py`：1852路径/376UID通过；`dotnet run --project Tools/ProjectMaintenance/CSharpStyle --no-restore -- <仓库根> <证据目录>/style_final.json`：349手写文件通过，格式修正均经token保持校验，无缺失XML文档；`git diff --check`通过。Bindable、Equipment/Profile/Save System没有语义差异。 |
+
+未通过的尝试保留：`ui` headless 首轮在恢复飘字暂停取样处失败，且失败退出定时器被零时间缩放冻结，启动器240秒超时（124）；测试现先等待本帧已计算 delta 消费完，并使退出定时器忽略时间缩放，正式飘字逻辑未改。`ui_final` headless 已通过该断言、背包/技能/实体复用和怪物血条，但停在妖猴 `FramePostDraw` 等待；该套含真实绘制检查，headless 不适用，已终止确切进程，不能计为 PASS。`ui_opengl` 首轮正常推进到坡面却被240秒总时限截断（124）；最终改为900秒上限的 OpenGL 完整执行，不删坡面或渲染断言来凑通过。F6 首轮的 `m_Monsters`/`m_Enemies` 序列化名称不一致及飘字退出顺序也已保留在 `arena_final` 日志，`arena_final3` 为修复后结果。各次原日志和退出结果均保留。
+
+剩余限制：新状态效果当前只服务本局英雄，没有宣称实现多目标/叠层/通用Buff编辑器。当前UI属于直接Controller绑定Model的实现，没有额外MVVM框架。编辑器插件释放、MP3/资源/ObjectDB退出诊断与业务断言分别记录；本轮不扩大只读依赖修补。
+
 ## 框架关停生命周期（2026-10-31）
 
 根因是 `BaseComponent` 在 `OnPreDestroy` 才调用框架 Shutdown，此时 Godot 已先释放 `HttpRequest`、声音辅助器和部分 UI 节点；任务池随后访问已释放对象，分别产生 WebRequest `ObjectDisposedException`、声音代理异常和窗口模型空引用。修复将既有 `GameEntry.Shutdown(ShutdownType.None)` 移到 `BaseComponent.OnExitTree`，并让标题、选角、地图、关卡流程在关停时先关闭自己拥有的窗口；普通导航继续使用原淡出，关停立即停止音乐。背包确认框只在仍在场景树内时释放焦点。框架授权登记在第50章。
@@ -1284,7 +1331,7 @@ XLSX Diff 1.6.4 的解析器无法读取带 `x:` 前缀的 SpreadsheetML 标签�
 
 对照 QFramework 官方核心和 BindableKit 源码恢复列表标准操作、Move 和逐项通知，补充泛型 BindableDictionary、键比较器、转换方法及实时只读回调视图。集合不再为每次通知复制前后快照；字典输入复制，避免外部写入绕过通知。不移植 Unity/EasyEvent、旧格式化序列化或 QFramework IOC。Model/System/Utility 仍由 GGF 主流程 FSM GetData/SetData 持有与访问。
 
-HeroSystem 成长/穿戴同步的优先级为 100，UI 默认 0；新增 UI 先注册的实测，证明派生属性先同步。删空 AbstractUtility，工具直接实现 IUtility；SaveDataUtility.Capture 显式接收 ProfileModel，不查询 Architecture；ExperienceCurve 独立注册，不在 ConfigurationModel 重复持有。扫描 195 份手写游戏 C#，核对 5 个 Model、10 个 System、4 个 Utility 及流程注册/移除：未发现 Model 查询 Model/System 或 Utility 反向查询架构。
+HeroSystem 成长/穿戴同步的优先级为 100，UI 默认 0；新增 UI 先注册的实测，证明派生属性先同步。删空 AbstractUtility，工具直接实现 IUtility；SaveDataUtility.Capture 显式接收 ProfileModel，不查询 Architecture；ExperienceCurveUtility 独立注册，不在 ConfigurationModel 重复持有。扫描 195 份手写游戏 C#，核对 5 个 Model、10 个 System、4 个 Utility 及流程注册/移除：未发现 Model 查询 Model/System 或 Utility 反向查询架构。
 
 | 验证 | 结果 |
 | --- | --- |
@@ -1383,7 +1430,7 @@ F6 初次验证发现合并注册块时漏掉配置、输入、战斗、AI、掉
 
 按用户最新要求将英雄最终属性、等级、HP/MP/WS 合并为关卡注册的 HeroRuntimeModel，删除 Vitals、MusouGauge 和私有 ActorModel。档案分别注册 HeroProgressionModel、InventoryModel、HeroEquipmentModel；灵魂并入背包资产，不再保留 PlayerModel 聚合层或 Wallet。怪物保留普通实例状态，扣血直接刷新自身血条。初始化与借用边界见 [ProjectTour](ProjectTour.md#所有者与初始化位置)。
 
-集合采用 BindableList，换装、出售和回滚先提交全部状态再通知；新增数量不变的装备替换和跨模型回滚一致性测试。SaveDataUtility 与 ExperienceCurve 为共享 Utility；加载只返回 DTO 与来源，删除 SaveLoadResult。十二个导航/保存结果事件归并，持续状态走绑定，一次性跨职责请求/事实走 GGF Event。地面物品改为场景预设 32×40 盒；蓝球只回蓝，地面恢复品继续显示数字。
+集合采用 BindableList，换装、出售和回滚先提交全部状态再通知；新增数量不变的装备替换和跨模型回滚一致性测试。SaveDataUtility 与 ExperienceCurveUtility 为共享 Utility；加载只返回 DTO 与来源，删除 SaveLoadResult。十二个导航/保存结果事件归并，持续状态走绑定，一次性跨职责请求/事实走 GGF Event。地面物品改为场景预设 32×40 盒；蓝球只回蓝，地面恢复品继续显示数字。
 
 | 验证命令 | 结果 |
 | --- | --- |

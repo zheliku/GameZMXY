@@ -46,6 +46,20 @@ namespace GameLogic.Profile.Tests
         }
 
         /// <summary>
+        /// 静止释放火炎突击时仍按角色朝向前冲，不能把零水平速度误判为向左。
+        /// </summary>
+        [Fact]
+        public void Thrust_UsesFacingWhenReleasedFromStandstill()
+        {
+            using var skill = new SkillFixture(SkillId.FlameThrust, velocity: Vector2.Zero);
+            var state = Assert.IsType<WukongFlameThrustState>(skill.Fsm.CurrentState);
+
+            state.BeginThrust(skill.Actor, 360, 720);
+
+            Assert.Equal(360, skill.Actor.Velocity.X);
+        }
+
+        /// <summary>
         /// 取消后旧状态不再推进原生动画。
         /// </summary>
         [Fact]
@@ -104,6 +118,21 @@ namespace GameLogic.Profile.Tests
         }
 
         /// <summary>
+        /// 官方悟空技能中只有烈焰闪的冲刺阶段提供无敌；其他技能不能继承上一招的无敌语义。
+        /// </summary>
+        [Theory]
+        [InlineData(SkillId.RisingDragon)]
+        [InlineData(SkillId.FlameThrust)]
+        [InlineData(SkillId.FlameStorm)]
+        [InlineData(SkillId.FireDemonSlash)]
+        public void OtherWukongSkills_DoNotStartInvulnerability(SkillId id)
+        {
+            using var skill = new SkillFixture(id);
+
+            Assert.False(skill.System.IsInvulnerable(skill.Actor.ActionData.Time));
+        }
+
+        /// <summary>
         /// 无目标时请求原生下降标记；中断必须解除输入锁。
         /// </summary>
         [Fact]
@@ -112,6 +141,7 @@ namespace GameLogic.Profile.Tests
             using var skill = new SkillFixture(SkillId.FireDemonSlash);
             var state = Assert.IsType<WukongFireDemonState>(skill.Fsm.CurrentState);
             Assert.True(skill.Actor.ActionData.InputLocked);
+            Assert.False(skill.System.IsInvulnerable(skill.Actor.ActionData.Time));
             state.SearchTarget(skill.Actor, null, 130, 20);
             skill.Advance(.01f);
             Assert.Equal("descent", skill.Actor.LastMarker);

@@ -1,6 +1,6 @@
-﻿# 项目导览
+# 项目导览
 
-唯一规范是 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md)。本页记录当前实现；数值看 [OfficialReference](OfficialReference.md)，素材看 [LegacyAssetMap](LegacyAssetMap.md)，验证命令和结果看 [Validation](Validation.md)。修改前先读 [沟通理解与当前方向](WorkingNotes.md)，其中保存最新意图及设计判断。
+唯一规范是 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md)。本页记录当前实现；数值看 [OfficialReference](OfficialReference.md)，素材看 [LegacyAssetMap](LegacyAssetMap.md)，架构研究依据看 [ArchitectureReview](ArchitectureReview.md)，验证命令和结果看 [Validation](Validation.md)。修改前先读 [沟通理解与当前方向](WorkingNotes.md)，其中保存最新意图及设计判断。
 
 ## 启动与返回
 
@@ -23,7 +23,7 @@
 优先补齐单人闭环：
 
 - [ ] **唐僧角色实战**：选角开放、角色场景、普攻与移动、五项主动技能、受击/无双/死亡及已有装备换装。目前仅有技能目录/伤害定义和装备图标，不能算可玩。入口：`Entity/Heroes/`、`Skills/`、`CharacterForm`。验收：新建唐僧档、学技、穿卸、完整通关与重读。
-- [ ] **法宝穿戴与属性**：东海旗幡、金钢琢已经能获得、背包显示并存档，当前 Treasure 槽仍禁止穿戴；补槽位、穿卸、属性汇总与保存。入口：`EquipmentSystem`、`ProfileModel`、`InventoryForm`。造一源码把法宝列为 `zbfb` 装备，不预设二三代的主动施放系统。
+- [x] **法宝穿戴与属性**：东海旗幡、金钢琢已经能获得、背包显示、独立 Treasure 槽穿卸、属性汇总并存档。入口：`EquipmentSystem`、`ProfileModel`、`InventoryForm`。造一源码把法宝列为 `zbfb` 装备，主动施放系统仍单独规划。
 - [ ] **地图购买技能入口**：官方 SelectPLace.showBuySkill 可在地图打开技能购买；当前仅战斗 V 键及战斗按钮可进入。入口：`ProcedureMap`、`MapForm`、`SkillForm`。验收：地图学技、余额/被动同步、保存、进关生效，不在地图创建战斗英雄。
 - [ ] **连击计数与显示**：官方 BaseMonster 增加 User.batterNum，GameInfo/Batter 负责显示与超时清零；当前普攻连段已实现，但没有这套连击统计 UI。入口：命中事件、`LevelModel`/所属规则、`BattleForm`。验收：连续命中累计、断连清零、暂停及退出清理，不能把普攻段号当连击数。
 
@@ -53,7 +53,7 @@
 
 ## GGF + QF 阅读入口
 
-职责、访问能力、Command/Query、绑定和生命周期统一见 [架构规范](ProjectGuidelines/00-Architecture.md)。实现契约集中在 [ArchitectureContracts.cs](../Godot/GodotProject/TheGame/GameScripts/Architecture/ArchitectureContracts.cs)，GGF FSM 适配见 FsmArchitectureExtensions；具体请求随 Equipment/Skills 放置。
+职责、访问能力、Command/Query、绑定和生命周期统一见 [架构规范](ProjectGuidelines/00-Architecture.md)。实现契约集中在 [ArchitectureContracts.cs](../Godot/GodotProject/TheGame/GameScripts/Arch/ArchitectureContracts.cs)，GGF FSM 适配见 FsmArchitectureExtensions；业务修改请求放在 `Commands`，组合读取放在 `Queries`。
 
 ### 架构检查范围（2026-10-19）
 
@@ -68,43 +68,46 @@
 
 ## 所有者与初始化位置
 
-**FSM 持有 Model 和 System，其他对象借用。** Model 不持有节点；Entity 不创建私有 Model。按生命周期和数据归属合并，共六个 Model：
+**FSM 持有 Model 和 System，其他对象借用。** Model 不持有节点；Entity 不创建私有 Model。按生命周期和数据归属聚合，共六个顶层 Model；Model 与 System 不要求一一对应：
 
 | Model | 唯一拥有的数据 | 注册位置 / 生命周期 |
 | --- | --- | --- |
 | ConfigurationModel | Tables、只读查询索引、共享身体参数 | ProcedurePrepare / 应用期 |
 | SaveModel | 当前文件编号、六格摘要、目录与手动保存状态 | ProcedurePrepare / 应用期 |
-| [ProfileModel](../Godot/GodotProject/TheGame/GameScripts/Profile/ProfileModel.cs) | 英雄身份、累计经验和派生进度、各英雄穿戴、背包、灵魂 | ProcedureLoadGame 校验读档后 / 读档 → 回标题 |
-| [SkillModel](../Godot/GodotProject/TheGame/GameScripts/Skills/SkillModel.cs) | 每名英雄唯一的技能学习记录 | ProcedureLoadGame / 读档 → 回标题 |
-| [HeroModel](../Godot/GodotProject/TheGame/GameScripts/Battle/HeroModel.cs) | 本局最终属性、HP/MP/WS、来源、当前技能组、ActiveSkillId 和无敌区间 | ProcedureLevel 场景加载后 / 进关 → 离关 |
+| [ProfileModel](../Godot/GodotProject/TheGame/GameScripts/Models/Profile/ProfileModel.cs) | 英雄身份、累计经验和派生进度、各英雄穿戴、背包、灵魂 | ProcedureLoadGame 校验读档后 / 读档 → 回标题 |
+| [SkillModel](../Godot/GodotProject/TheGame/GameScripts/Models/SkillModel.cs) | 每名英雄唯一的技能学习记录 | ProcedureLoadGame / 读档 → 回标题 |
+| [HeroModel](../Godot/GodotProject/TheGame/GameScripts/Models/HeroModel.cs) | 本局最终属性、HP/MP/WS、来源、ActiveSkillId、技能无敌区间和伤害节拍 | ProcedureLevel 场景加载后 / 进关 → 离关 |
 | LevelModel | 阶段、计时、统计、结局、成绩、进关快照和前进窗口 | ProcedureLevel / 本局 |
 
-成长、穿戴、背包和灵魂直接存入 ProfileModel，没有内层子 Model。生命、蓝量、无双、攻击、暴击等统一存入 HeroModel。两者分别代表持久档案和本局数值，退出关卡只移除后者。配置、存档操作状态、关卡流程各自保留，避免混淆应用和本局的清理范围。
+成长、穿戴、背包和灵魂直接存入 ProfileModel，没有内层子 Model。生命、蓝量、无双、攻击、暴击等本局战斗资源和最终属性存入 HeroModel；冻结、中毒等状态效果存入 HeroModel.StatusEffects（普通集合）。离关移除本局模型，保留档案和学习记录；配置、存档操作状态、关卡流程各自保留，避免混淆应用和本局的清理范围。
 
 | System | 业务职责与涉及数据 |
 | --- | --- |
-| HeroSystem | 读取 ProfileModel 与配置，汇总成长/装备/Buff、管理生命魔法、无双增长与秒制消耗、查询无双倍率，提交 HeroModel |
+| HeroSystem | 读取 ProfileModel 与配置，汇总成长/装备/被动、管理生命魔法、无双增长与秒制消耗、查询无双倍率，提交 HeroModel |
+| HeroStatusSystem | 施加、刷新、推进和清理 HeroModel.StatusEffects；与 HeroSystem 共用同一模型，不持有节点 |
 | ProfileSystem | 经验与灵魂奖励、领取装备的唯一归属校验、完整检查点回滚，提交 ProfileModel |
 | EquipmentSystem | 随机装备、穿戴交换、卸下、出售和批量出售；配置 + ProfileModel 的事务 |
-| SkillSystem | 学习/扣费、激活检查/扣蓝、活动执行登记/推进/结束、后续输入和换组清理；SkillModel + HeroModel + ProfileModel |
+| SkillSystem | 学习/扣费、激活检查/扣蓝、当前英雄状态类型登记、执行占用/无敌区间和换组清理；SkillModel + HeroModel + ProfileModel |
 | SaveSystem | 目录、读档、建档、检查点写盘、手动保存结果与旧请求校验；SaveModel + ProfileModel + SkillModel + ArchiveUtility |
 | LevelSystem | 阶段迁移、有效游戏时间、恢复品/球体/装备与经验收益、结局提交与放弃回滚；LevelModel + 上述业务系统 |
 | ConfigurationSystem | 启动配置校验、首次建立共享身体参数并存入 ConfigurationModel |
 | Combat / Input / EnemyAi / Loot Systems | 共用伤害、输入、AI 决策和掉落规则；各实体自己的动作/FSM 数据不强行注册成全局 Model |
 
-Prepare 注册应用模型与系统；LoadGame 注册 ProfileModel、SkillModel → ProfileSystem（恢复检查点）→ EquipmentSystem、SkillSystem；Level 注册 LevelModel、HeroModel → HeroSystem → LevelSystem。HeroSystem 初始化全部数值并订阅档案成长与穿戴，之后才显示 Entity、打开 HUD。F6 TestArena 在独立 FSM 注册内存 ProfileModel、HeroModel 和相应系统，不读正式存档。
+Prepare 注册应用模型与系统；LoadGame 注册 ProfileModel、SkillModel → ProfileSystem（恢复检查点）→ EquipmentSystem、SkillSystem；Level 注册 LevelModel、HeroModel → HeroStatusSystem → HeroSystem → LevelSystem。HeroSystem 初始化全部数值并订阅档案成长与穿戴，之后才显示 Entity、打开 HUD；HeroStatusSystem 先于 HeroSystem，使技能和实体可以读取控制锁。F6 TestArena 在独立 FSM 注册内存 ProfileModel、HeroModel 和相应系统，不读正式存档。
 
-离关：关窗退订 → 停止场景协作 → 移除 LevelSystem/LevelModel → 隐藏英雄 → 移除 HeroSystem/HeroModel → 卸载场景。回标题先等待写盘、完成回滚和离关，再移除 EquipmentSystem、SkillSystem、SkillModel、ProfileSystem、ProfileModel。应用模型保留。
+离关：关窗退订 → 停止场景协作 → 移除 LevelSystem/LevelModel → 隐藏英雄（清除技能登记）→ 移除 HeroSystem、HeroStatusSystem → 移除 HeroModel → 卸载场景。回标题先等待写盘、完成回滚和离关，再移除 EquipmentSystem、SkillSystem、SkillModel、ProfileSystem、ProfileModel。应用模型保留。
 
 ```mermaid
 flowchart TD
     Procedure[Procedure：装配、导航、释放] --> FSM[GGF 主流程 FSM：唯一持有者]
     FSM --> Profile[ProfileModel：持久档案]
     FSM --> Hero[HeroModel：本局英雄数值]
+    Hero --> Effects[StatusEffects：模型内的普通效果数据]
     FSM --> Other[Configuration / Save / Level Models]
-    FSM --> Systems[Hero / Profile / Equipment / Save / Level 等 Systems]
+    FSM --> Systems[Hero / HeroStatus / Profile / Equipment / Save / Level 等 Systems]
     Systems -->|业务提交| Profile
     Systems -->|业务提交| Hero
+    Systems -->|效果生命周期| Effects
     Systems -->|业务提交| Other
     UI[Entity / UI：动作、交互、视觉] -.读取与绑定.-> Profile
     UI -.读取与绑定.-> Hero
@@ -152,11 +155,11 @@ flowchart LR
 
 ## Model 的属性绑定
 
-[BindableProperty](../Godot/GodotProject/TheGame/GameScripts/Architecture/BindableProperty.cs) 保存单值，成长、穿戴、目录等关联字段用不可变状态值承载。[BindableList](../Godot/GodotProject/TheGame/GameScripts/Architecture/BindableList.cs) 基于 `Collection<T>`，直接拥有列表；[BindableDictionary](../Godot/GodotProject/TheGame/GameScripts/Architecture/BindableDictionary.cs) 实现泛型 `IDictionary<TKey, TValue>`。Model 持有同一个容器，System 使用正常赋值和集合操作，UI 只读并订阅。
+[BindableProperty](../Godot/GodotProject/TheGame/GameScripts/Arch/BindableProperty.cs) 保存单值，成长、穿戴、目录等关联字段用不可变状态值承载。[BindableList](../Godot/GodotProject/TheGame/GameScripts/Arch/BindableList.cs) 基于 `Collection<T>`，直接拥有列表；[BindableDictionary](../Godot/GodotProject/TheGame/GameScripts/Arch/BindableDictionary.cs) 实现泛型 `IDictionary<TKey, TValue>`。Model 持有同一个容器，System 使用正常赋值和集合操作，UI 只读并订阅。
 
 | 状态源 | 观察入口 |
 | --- | --- |
-| HeroModel | Level、Hp / Mp / Ws / MaxWs / WsActive、全部 16 项最终属性 |
+| HeroModel | Bindable 的 Level、Hp / Mp / Ws / MaxWs / WsActive、全部 16 项最终属性；ActiveSkillId 和 StatusEffects 是普通运行时状态 |
 | ProfileModel | Progress、Slots、Soul、EquipmentDatas；GetProgress/GetSlots(heroId) 返回指定英雄的同一绑定 |
 | SaveModel | Directory、ManualSave |
 | LevelModel | Outcome、TravelAvailable |
@@ -212,11 +215,11 @@ Event 目录只保留 Combat、Save：DamageDealt 用于伤害/闪避反馈，En
 
 HeroLoadout、PlayerModel、SaveLoadResult 这类只转交可直接获取对象的包装已删除。保留 CombatantAttributes（冻结已发攻击）、GameData（检查点 DTO）、LevelResult（冻结成绩）。BattleFormData 组合英雄与场景表现上下文，不传共享 Model；InventoryFormData 保留英雄引用，作为背包自己的打开参数；需要打开参数的 Form 均使用各自 Data，不直接传裸英雄或关卡结果；HeroProgressionState / EquippedItems 是模型内关联字段的一次提交值，防止观察者看到半次更新；HeroActionData 和 EnemyAiData 归各实体自己的输入/FSM。这些对象有独立职责，不按名字含 Data 就机械合并。
 
-[AttackData](../Godot/GodotProject/TheGame/GameScripts/Battle/Attacks/AttackData.cs) 保存一次出招的属性快照、威力、击退与命中去重记录，由出招实体或独立特效创建并归还 GGF 引用池，受击方只在结算期间借用。[EquipmentData](../Godot/GodotProject/TheGame/GameScripts/Equipment/EquipmentData.cs) 保存一件装备的 InstanceId、定义编号和已抽取属性，由 ProfileModel 持有，掉落未拾取前由地面节点持有；UI 借用同一份数据。InstanceId 区分同名的不同装备；存档仍使用独立 EquipmentSaveData，配置范围校验归 SaveDataUtility。DamageResult、EnemySpawn、SkillDefinition 等名称已经表达结果、出生参数和登记职责，保留原名。
+[AttackData](../Godot/GodotProject/TheGame/GameScripts/Systems/Combat/AttackData.cs) 保存一次出招的属性快照、威力、击退与命中去重记录，由出招实体或独立特效创建并归还 GGF 引用池，受击方只在结算期间借用。[EquipmentData](../Godot/GodotProject/TheGame/GameScripts/Models/Profile/EquipmentData.cs) 保存一件装备的 InstanceId、定义编号和已抽取属性，由 ProfileModel 持有，掉落未拾取前由地面节点持有；UI 借用同一份数据。InstanceId 区分同名的不同装备；存档仍使用独立 EquipmentSaveData，配置范围校验归 SaveDataUtility。DamageResult、EnemySpawn、SkillDefinition 等名称已经表达结果、出生参数和登记职责，保留原名。
 
 读档：SaveSystem → ArchiveUtility → GameData → SaveDataUtility.Validate → ProcedureLoadGame 创建并注册 ProfileModel、ProfileSystem、EquipmentSystem。加载仅返回 DTO 与 Loaded/Created 来源，后续访问直接 GetModel。
 
-保存：SaveSystem → SaveDataUtility.Capture(profile, skills) → GameData → ArchiveUtility。回滚：LevelSystem → ProfileSystem.RestoreCheckpoint(snapshot)，先完整校验快照，再通过正常属性与集合入口恢复 ProfileModel。SaveDataUtility 仅校验和转换，不写 Model 或文件；ExperienceCurve 同样经 GetUtility 借用，不缓存共享引用。地图流程调用 SaveSystem.SaveManuallyAsync，系统统一管理等待、结果与旧请求校验。
+保存：SaveSystem → SaveDataUtility.Capture(profile, skills) → GameData → ArchiveUtility。回滚：LevelSystem → ProfileSystem.RestoreCheckpoint(snapshot)，先完整校验快照，再通过正常属性与集合入口恢复 ProfileModel。SaveDataUtility 仅校验和转换，不写 Model 或文件；ExperienceCurveUtility 同样经 GetUtility 借用，不缓存共享引用。地图流程调用 SaveSystem.SaveManuallyAsync，系统统一管理等待、结果与旧请求校验。
 
 基础掉落配置在 `Enemy.xlsx / MonsterConfig、BossConfig`。具体敌人的特殊奖励使用可空 `SoulPerOrbOverride / EquipmentDropChanceOverride / EquipmentDropPoolIdOverride`，死亡通知携带这些覆盖值，收益消费者用 `覆盖值 ?? 基础配置`；null 表示没有覆盖，0 概率和 None 池表示明确不掉落。每次入场重置，普通敌人不复制基础值。
 
@@ -282,7 +285,7 @@ GGF 管理的界面统一采用 `XxxForm`：战斗根窗口为 `BattleForm`，�
 | 输入采样与匹配 | InputSystem.IsActionPressed / IsActionJustPressed / IsActionJustReleased 直接查询任意动作名，ConsumePress 按角色消费边沿。HeroActionData 属于实体，只保留常规动作事实、消费记录、闩锁、连段与时钟。当前状态 TryGetActionInput 提供输入窗口，WukongEntity.MatchActionInput 匹配悟空组合 |
 | 技能激活 | SkillSystem.TryActivate 校验当前组、已学、费用及登记中的 CanStart；成功后只登记一次施放数据、扣一次蓝。占身体的技能等 GGF 旧状态退出后才开始动画 |
 | 身体转换 | AbstractHeroBodyState 根据 SkillDefinition.BodyState 调用 GGF ChangeState。悟空五招分别进入 WukongRisingDragonState、WukongFlameThrustState、WukongBlazingFlashState、WukongFlameStormState、WukongFireDemonState；状态位于 `Entity/Heroes/Wukong/Skills/` |
-| 执行与表现 | SkillModel 记录当前激活编号；状态拥有招式生命周期，实体拥有动画/物理节点与池化特效。AbstractHeroSkillState 统一重力与结束清理，具体状态拥有并执行自己的起手、运动、判定、特效和阶段结束规则 |
+| 执行与表现 | HeroModel 记录当前激活编号，SkillModel 只保存学习记录；状态拥有招式生命周期，实体拥有动画/物理节点与池化特效。AbstractHeroSkillState 统一重力与结束清理，具体状态拥有并执行自己的起手、运动、判定、特效和阶段结束规则 |
 
 输入直接查询 [Godot Input](https://docs.godotengine.org/en/stable/classes/class_input.html)，不再构造输入快照。按下、按住、松开分别保留原生帧含义，短按或同帧重新按住都能查询到边沿；ConsumePress 只影响当前角色的消费记录。[InputEventAction](https://docs.godotengine.org/en/stable/classes/class_inputeventaction.html) 是 Godot 的动作事件，需要事件输入或虚拟动作注入时直接使用；当前按帧采样不需要再把查询结果转成事件。原 HeroInputContext 已移除，状态返回窗口是否开放并直接提供三个匹配参数，实体再传给角色规则。
 
@@ -298,7 +301,7 @@ flowchart LR
     Advance --> Locomotion[完成后返回 Ground / Air]
 ```
 
-HeroModel 直接拥有本局登记字典、ActiveSkillId 与无敌区间，SkillModel 只拥有档案技能书。SkillDefinition 随 SkillSystem 定义，只登记技能编号、GGF 状态类型、可选动作名及起手条件；不提供工厂或创建另一套技能行为对象。SelectSkills 在替换旧数据前验证角色、编号、具体状态与重复绑定，然后复制登记。三个默认动作 Skill1/2/3 只是 U/I/O 的映射，增加其他动作不需要扩容共享输入。
+SkillSystem 拥有当前英雄登记字典；HeroModel 保存 ActiveSkillId 与无敌区间，SkillModel 只拥有档案技能书。SkillDefinition 随 SkillSystem 定义，只登记技能编号、GGF 状态类型、可选动作名及起手条件；不提供工厂或创建另一套技能行为对象。SelectSkills 在替换旧数据前验证角色、编号、具体状态与重复绑定，然后复制登记；实体隐藏或系统结束时清空登记。三个默认动作 Skill1/2/3 只是 U/I/O 的映射，增加其他动作不需要扩容共享输入。
 
 ActiveSkillId 是可空 SkillId，不为编号创建施放包装。各招状态拥有阶段与等待条件，AbstractHeroSkillState 共用重力、单次原生动画推进及安全退出；火魔斩直接执行寻敌、连斩、下冲和落地等待。旧落地通知同时核对捕获的 FSM、当前状态、进入序号及当前技能；独立效果只通知接收方，不决定施放身份。SkillSystem 负责学习、校验、扣费、登记、收招与取消，状态退出释放表现。标记跳转使用 Pause → AssignedAnimation → SetSection / PlaySection → Advance(0)，精确调用起点键；标记按方法键的float32精度对齐。不能用外部Seek，它会重放其他轨道最近的旧键。正常起手与收招先ResetSection，避免沿用上次分段起点。
 
@@ -378,7 +381,7 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 
 实体先执行 `m_BodyFsm.Tick(dt)`，再推进仍在播放的技能 `AnimationPlayer.Advance(dt)`，最后 `MoveAndSlide`。暂停身体时独立效果继续推进。GGF 同帧跳状态不会重复推进动画；起手 `Advance(0)` 应用零时点。回调采用 Immediate，但只登记收招或下一阶段，切动画/退出状态/回池在 Advance 返回后执行。无逐帧 Seek、事件枚举或另一个时间游标。一个原生方法轨道同一时刻只能有一个键，同时播放声音与起手使用分开的方法轨道。
 
-火魔斩用原生 `descent`、`recovery` 标记选择阶段；状态拥有寻敌结果与落地等待，九连斩和本体并行。提前落地暂停本体，落地效果完成后请求recovery；未提前落地时直接在第70源帧兜底恢复。具体状态决定伤害取整、方向和击退中心，实体最后应用无双倍率。技能行的 OwnerId=None、ComboIndex=-1，不进入普通攻击索引。
+火魔斩用原生 `descent`、`recovery` 标记选择阶段；状态拥有寻敌结果与落地等待，九连斩和本体并行。提前落地暂停本体，落地效果完成后请求recovery；未提前落地时直接在第70源帧兜底恢复。官方火魔斩不提供技能无敌，状态只负责输入锁、普攻阻塞、阶段和命中表现；具体状态决定伤害取整、方向和击退中心，实体最后应用无双倍率。技能行的 OwnerId=None、ComboIndex=-1，不进入普通攻击索引。
 
 模型只保留 ActiveSkillId；重力、等待、完成属于状态，输入锁属于该英雄的 HeroActionData 并由火魔状态成对设置/解除。独立效果拥有攻击包、总预算和原生 AnimationPlayer；角色收招后效果可以继续播放，旧通知由接收状态拒绝。死亡、受伤、取消和隐藏必须清理，不等待动画末尾。技能退出统一经 RESET 恢复特效和判定值。动画方法使用 AnimEvent 后缀，死亡语音使用 PlaySoundAnimEvent(SoundId)；受击语音由ReceiveHit读取m_HurtSoundId播放，hurt动画不重复发声。
 

@@ -13,7 +13,7 @@ func _register() -> void:
 	var library: Resource = load(path)
 	var items: Array = library.get("m_Items")
 	if not items.any(func(item): return int(item.get("m_EquipmentId")) == 15):
-		var item: Resource = load("res://TheGame/GameScripts/Equipment/ItemAppearanceResource.cs").new()
+		var item: Resource = load("res://TheGame/GameScripts/Models/Profile/ItemAppearanceResource.cs").new()
 		item.set("m_EquipmentId", 15)
 		item.set("m_InventoryIcon", load("res://TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_necklace.png"))
 		item.set("m_GroundIcon", load("res://TheGame/Sprites/Items/equipment/ground_heavenly_fiend_necklace.png"))

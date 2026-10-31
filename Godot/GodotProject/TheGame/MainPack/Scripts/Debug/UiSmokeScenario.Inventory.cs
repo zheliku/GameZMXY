@@ -83,21 +83,20 @@ public sealed partial class UiSmokeScenario
         await CheckBagNavigationAsync(form, flow);
         foreach (var id in new[] { EquipmentId.DiamondSnare, EquipmentId.EastSeaBanner })
         {
-            var previousSlots = flow.GetModel<ProfileModel>().Slots.Value;
-            int previousPower = flow.GetModel<HeroModel>().Power.Value;
+            var previousTreasure = flow.GetModel<ProfileModel>().Treasure;
+            var newTreasure = flow.GetModel<ProfileModel>().EquipmentDatas.Single(value => value.EquipmentId == id);
+            var previousPower = flow.GetModel<HeroModel>().Power.Value;
             ClickBagEquipment(form, flow, id);
-            var menu = form.GetNode<EquipmentActionsMenu>("m_Actions");
-            Check(menu.GetNode<TextureButton>("Panel/Equip").Disabled &&
-                flow.GetModel<ProfileModel>().Slots.Value == previousSlots &&
-                flow.GetModel<HeroModel>().Power.Value == previousPower, "法宝尚未开放却可穿戴或生效");
-            var treasureCell = form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid").GetChildren()
-                .OfType<EquipmentCell>().Single(value =>
-                    SmokeInspection.ReadField<EquipmentData>(value, "m_EquipmentData")?.EquipmentId == id);
+            Check(flow.GetModel<ProfileModel>().Treasure?.EquipmentId == id &&
+                flow.GetModel<HeroModel>().Power.Value == previousPower - (previousTreasure?.Attributes.Power ?? 0) + newTreasure.Attributes.Power,
+                "法宝没有进入独立槽位或属性未生效");
+            var treasureCell = form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_TreasureSlot");
             using var tooltip = treasureCell._MakeCustomTooltip(treasureCell.TooltipText);
             Check(tooltip.GetNode<Label>("Content/Header/Type/Value").Text == "法宝·通用" &&
-                tooltip.GetNode<Label>("Content/Footer/Description").Text == "功能待开放", "法宝类型或待开放说明错误");
+                tooltip.GetNode<Label>("Content/Footer/Description").Text != "功能待开放" &&
+                treasureCell.GetNode<TextureRect>("Icon").Texture != null, "法宝槽、类型、图标或说明错误");
         }
-        GD.Print("SMOKE-TREASURE GUI PASS: native second-page selection, visible icons, treasure tooltip and disabled equip");
+        GD.Print("SMOKE-TREASURE GUI PASS: native second-page selection, visible icons, tooltip and equip");
         // 通用饰品同样走真实格子、菜单和命令，概率文字不使用属性点曲线。
         ClickBagEquipment(form, flow, EquipmentId.EarthFiendRing);
         var accessory = form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_AccessorySlot");

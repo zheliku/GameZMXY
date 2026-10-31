@@ -1,7 +1,7 @@
 # 30 实体与战斗
 
 > 状态：已实现部分按当前代码约束；旧项目只提供玩法参考；未实现内容不预设方案。  
-> 证据：`Godot/GodotProject/TheGame/GameScripts/Entity/`、`GameScripts/Battle/`（含 `Attributes/`）、`TheGame/Entitys/`、`project.godot`、旧项目 `ZMXY_BHYH/Script/Base/BaseHero.gd` 与 `BaseMonster.gd`。
+> 证据：`Godot/GodotProject/TheGame/GameScripts/Entity/`、`GameScripts/Systems/Combat/`（含 `Attributes/`）、`TheGame/Entitys/`、`project.godot`、旧项目 `ZMXY_BHYH/Script/Base/BaseHero.gd` 与 `BaseMonster.gd`。
 
 ## 已实现
 

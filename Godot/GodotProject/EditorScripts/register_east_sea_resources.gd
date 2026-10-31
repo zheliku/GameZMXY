@@ -26,7 +26,7 @@ func _register() -> void:
     var items: Array = library.get("m_Items")
     var matches := items.filter(func(item): return int(item.get("m_EquipmentId")) == 22)
     assert(matches.size() <= 1, "Duplicate BloodSeaShell appearance")
-    var item: Resource = load("res://TheGame/GameScripts/Equipment/ItemAppearanceResource.cs").new() if matches.is_empty() else matches[0]
+    var item: Resource = load("res://TheGame/GameScripts/Models/Profile/ItemAppearanceResource.cs").new() if matches.is_empty() else matches[0]
     item.set("m_EquipmentId", 22)
     item.set("m_InventoryIcon", load("res://TheGame/Sprites/Items/equipment/equipment_blood_sea_shell.png"))
     item.set("m_GroundIcon", load("res://TheGame/Sprites/Items/equipment/ground_blood_sea_shell.png"))

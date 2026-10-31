@@ -11,11 +11,11 @@
     <GodotProjectDir>$(MSBuildThisFileDirectory)..\..\Godot\GodotProject\</GodotProjectDir>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\ChapterRules.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Architecture\ArchitectureContracts.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utility\SpatialUtility.cs" Link="Linked\SpatialUtility.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Stages\LevelStageSequence.cs" Link="Linked\LevelStageSequence.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\Spawning\LevelSpawnSchedule.cs" Link="Linked\LevelSpawnSchedule.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Level\ChapterRules.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Arch\ArchitectureContracts.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utilities\Utility\SpatialUtility.cs" Link="Linked\SpatialUtility.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Level\Stages\LevelStageSequence.cs" Link="Linked\LevelStageSequence.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Level\Spawning\LevelSpawnSchedule.cs" Link="Linked\LevelSpawnSchedule.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Level\*.cs" Link="Linked\Config\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Entity\EntityId.cs" Link="Linked\Config\EntityId.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\Sound\SoundId.cs" Link="Linked\Config\SoundId.cs" />

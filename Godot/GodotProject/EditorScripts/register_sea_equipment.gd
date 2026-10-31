@@ -14,7 +14,7 @@ func _register() -> void:
     var path := "res://TheGame/Sprites/Items/item_appearances.tres"
     var library: Resource = load(path)
     var items: Array = library.get("m_Items")
-    var script: Script = load("res://TheGame/GameScripts/Equipment/ItemAppearanceResource.cs")
+    var script: Script = load("res://TheGame/GameScripts/Models/Profile/ItemAppearanceResource.cs")
     for entry in [[18, "pilgrim_clothes"], [19, "pilgrim_staff"], [20, "cassock"], [21, "pine_staff"]]:
         var matches := items.filter(func(item): return int(item.get("m_EquipmentId")) == entry[0])
         assert(matches.size() <= 1, "Duplicate equipment appearance")

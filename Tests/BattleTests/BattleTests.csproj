@@ -5,7 +5,7 @@
     2026-09-30 裁决后 Battle/ 允许引用 Godot 纯值类型（Vector2/Mathf，GodotSharp 内为纯 C# 实现，
     不需要引擎进程），所以这里引用 GodotSharp NuGet 包（版本与 Godot.NET.Sdk 4.7.2 一致）
     就能在纯控制台跑：链编源文件：
-      * TheGame/GameScripts/Battle/*.cs           —— 被测代码
+      * TheGame/GameScripts/Systems/Combat/*.cs           —— 被测代码
       * GameProto/GameConfig/Battle/BattleConfig.cs 等 —— Luban 生成的战斗常数类
       * Framework/.../Lib/LubanLib/*.cs           —— Luban 运行时（ByteBuf，反序列化 .bytes）
       * Framework/GameFramework/Base/ReferencePool —— AttackData 的池（GF 纯 C# 层）
@@ -28,28 +28,28 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Level\ChapterRules.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Level\ChapterRules.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utilities\Utility\ExperienceCurveUtility.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\ExternalTypeUtil.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Wukong\Skills\*.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Skills\ISkillActor.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Drops\LootReward.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Level\Stages\LevelStageSequence.cs" />
     <!-- 窗口学习命令在 ProfileTests 验证；本项目只链接战斗执行规则。 -->
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Skills\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Skills\LearnSkillCommand.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Profile\ProfileSystem.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Save\SaveDataUtility.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Save\Data\GameData.cs" />
     <Compile Include="..\ProfileTests\ArchiveDataStub.cs" />
     <Compile Include="..\ProfileTests\SkillTestDefinitions.cs" />
     <Compile Include="*.cs" Exclude="TablesStub.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Architecture\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Architecture\FsmArchitectureExtensions.cs;$(GodotProjectDir)TheGame\GameScripts\Architecture\GgfArchitectureExtensions.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ConfigurationModel.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ConfigurationSystem.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Config\ExternalTypeUtil.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Profile\ExperienceCurve.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Profile\*Model.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Arch\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Arch\FsmArchitectureExtensions.cs;$(GodotProjectDir)TheGame\GameScripts\Arch\GgfArchitectureExtensions.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\**\*.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utility\SpatialExtensions.cs" />
-
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Battle\**\*.cs" Link="Linked\Battle\%(Filename)%(Extension)" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Equipment\EquipmentData.cs" Link="Linked\EquipmentData.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Equipment\EquipmentAttributes.cs" Link="Linked\EquipmentAttributes.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utilities\Extension\SpatialExtensions.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Models\**\*.cs" Link="Linked\Models\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\Combat\*.cs" Link="Linked\Systems\Combat\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\EnemyAiSystem.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\Hero\*.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\Input\*.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\ProfileSystem.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\SkillSystem.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utilities\Utility\SaveDataUtility.cs" />
     <!-- 属性汇总、生命魔法资源、无双进度：纯 C#，按 AttributeType 枚举与 ActorBaseAttributes 生成类工作 -->
     <Compile Include="$(GodotProjectDir)Framework\GodotGameFrameworkCore\Lib\LubanLib\*.cs" Link="Linked\Luban\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Base\ReferencePool\*.cs" Link="Linked\ReferencePool\%(Filename)%(Extension)" />
@@ -65,8 +65,6 @@
     <!-- 2026-10-01 身体状态机：Entity/Body + Heroes/Body + Monsters/Body 是纯 C#（GF.Fsm 纯 C# 层 + Godot 值类型），物理帧由测试按 BodyFsmExtensions.Tick 驱动 -->
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Body\*.cs" Link="Linked\Body\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Body\**\*.cs" Link="Linked\HeroBody\%(Filename)%(Extension)" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Input\InputSystem.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Input\HeroActionData.cs" Link="Linked\HeroInput.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Body\**\*.cs" Link="Linked\EnemyBody\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Fsm\*.cs" Link="Linked\Fsm\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)Framework\GameFramework\Base\Variable\*.cs" Link="Linked\Framework\Variable\%(Filename)%(Extension)" />

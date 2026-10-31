@@ -22,11 +22,11 @@ func validate() -> void:
 	root.add_child(level)
 	await process_frame
 	var exit := level.get_node_or_null("World/Exit")
-	check(exit is Area2D and exit.get_script() == load("res://TheGame/GameScripts/Level/Exit/LevelExitNode.cs"), "World/Exit 必须是真正的出口子场景，不能绑定旧占位节点")
+	check(exit is Area2D and exit.get_script() == load("res://TheGame/GameScripts/Entity/Level/Exit/LevelExitNode.cs"), "World/Exit 必须是真正的出口子场景，不能绑定旧占位节点")
 	check(level.get("m_Exit") == exit, "关卡控制器必须绑定 World/Exit")
 	check(level.get_node_or_null("World/Exit2") == null, "不应残留因重名而自动改名的 Exit2")
 	var floating_text := level.get_node_or_null("World/FloatingText")
-	check(floating_text != null and floating_text.get_script() == load("res://TheGame/GameScripts/FloatingText/FloatingTextPresenter.cs"), "世界飘字必须绑定通用 FloatingTextPresenter")
+	check(floating_text != null and floating_text.get_script() == load("res://TheGame/GameScripts/Entity/FloatingText/FloatingTextPresenter.cs"), "世界飘字必须绑定通用 FloatingTextPresenter")
 	check(level.get("m_FloatingText") == floating_text, "关卡必须通过导出字段绑定本场飘字入口")
 	check(level.get("m_FeaturedOpponentSpawnPointIds") == PackedStringArray(["stage_5_a"]), "守关顶部生命条应由场景绑定第五波生成点")
 	for path in ["World/SpawnPoints", "World/StageGates", "World/StageTriggers"]:

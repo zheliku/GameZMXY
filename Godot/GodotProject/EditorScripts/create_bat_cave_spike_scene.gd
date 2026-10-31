@@ -24,7 +24,7 @@ func _build() -> void:
 	filesystem.reimport_files(PackedStringArray([atlas_path]))
 	var root := Area2D.new()
 	root.name = "BatCaveSpike"
-	root.set_script(load("res://TheGame/GameScripts/Level/Traps/BatCaveSpikeNode.cs"))
+	root.set_script(load("res://TheGame/GameScripts/Entity/Level/Traps/BatCaveSpikeNode.cs"))
 	root.collision_layer = 0
 	root.collision_mask = 128
 	root.monitorable = false

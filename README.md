@@ -32,12 +32,12 @@ dotnet build Godot/GodotProject/GodotProject.csproj
 | 目录 | 内容 |
 | --- | --- |
 | `TheGame/MainPack/` | 启动流程、共享 UI、资源组与通用节点池 |
-| `TheGame/GameScripts/Battle/` | 确定性战斗规则与战斗运行时 |
-| `TheGame/GameScripts/Profile/`、`Save/` | 玩家档案、成长、SaveSystem、存档格式与映射 |
-| `TheGame/GameScripts/Architecture/` | Model、System、Utility、Controller 契约与 GGF FSM 适配 |
+| `TheGame/GameScripts/Systems/Combat/` | CombatSystem 及其 AttackData、DamageResult、CombatantAttributes |
+| `TheGame/GameScripts/Models/`、`Systems/`、`Utilities/`、`Commands/`、`Queries/` | QF 业务层；存档、档案、技能和配置按职责归入对应层 |
+| `TheGame/GameScripts/Arch/` | QF/GGF 核心契约、Bindable 与 FSM 适配扩展 |
 | `TheGame/MainPack/Scripts/Procedure/FlowData/` | 流程数据键与 GGF 池化包装 |
 | `TheGame/GameScripts/Entity/` | 英雄、怪物、身体/AI 状态机、判定与动画适配 |
-| `TheGame/GameScripts/Level/`、`UI/` | LevelModel、LevelSystem、LevelViewController 及功能组件；HUD 与控件 |
+| `TheGame/GameScripts/Entity/Level/`、`UI/` | LevelViewController、关卡节点与状态；HUD 与控件 |
 | `TheGame/Scenes/`、`Entitys/`、`UIs/` | 正式场景、实体场景与 GGF 窗口 |
 | `Configs/GameConfig/` | Luban 源表和生成入口 |
 | `Tests/`、`MainPack/Scripts/Debug/`、`EditorScripts/` | 纯 C# 单测、真实引擎回归、场景与资源验证 |

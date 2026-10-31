@@ -360,10 +360,11 @@ namespace GameLogic.Battle.Tests
         {
             private readonly HeroModel m_Hero = new(); // 本测试的数值来源。
             private readonly ProfileModel m_Profile = new(1, [(1, 0)],
-                new ExperienceCurve(BattleArchitecture.Instance.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList), 20); // 独立出战身份。
+                new ExperienceCurveUtility(BattleArchitecture.Instance.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList), 20); // 独立出战身份。
             private readonly InputSystem m_Input; // 共用的正式输入规则。
             private readonly SkillSystem m_System; // 共用的正式时间轴规则。
             private readonly HeroSystem m_HeroSystem; // 扣蓝使用正式业务入口。
+            private readonly HeroStatusSystem m_HeroStatusSystem; // 技能激活需要读取控制状态。
 
             /// <summary>
             /// 当前测试的输入来源。
@@ -404,6 +405,8 @@ namespace GameLogic.Battle.Tests
             {
                 m_Input = new(this, Source);
                 m_System = new(this);
+                m_HeroStatusSystem = new(this);
+                ((ICanInit)m_HeroStatusSystem).Init();
                 m_HeroSystem = new(this);
                 m_Hero.Mp.Value = 100;
             }
@@ -413,14 +416,16 @@ namespace GameLogic.Battle.Tests
             {
                 return (typeof(TModel) == typeof(ConfigurationModel) ? (IModel)Configuration :
                     typeof(TModel) == typeof(SkillModel) ? Skills :
-                    typeof(TModel) == typeof(ProfileModel) ? m_Profile : m_Hero) as TModel;
+                    typeof(TModel) == typeof(ProfileModel) ? m_Profile :
+                    m_Hero) as TModel;
             }
 
             /// <inheritdoc />
             public TSystem GetSystem<TSystem>() where TSystem : class, ISystem
             {
                 return (typeof(TSystem) == typeof(InputSystem) ? (ISystem)m_Input :
-                    typeof(TSystem) == typeof(HeroSystem) ? m_HeroSystem : m_System) as TSystem;
+                    typeof(TSystem) == typeof(HeroSystem) ? m_HeroSystem :
+                    typeof(TSystem) == typeof(HeroStatusSystem) ? m_HeroStatusSystem : m_System) as TSystem;
             }
 
             /// <inheritdoc />

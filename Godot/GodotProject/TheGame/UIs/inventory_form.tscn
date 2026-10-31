@@ -68,6 +68,11 @@ resource_local_to_scene = true
 shader = ExtResource("slot_background")
 shader_parameter/occupied = false
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_treasure"]
+resource_local_to_scene = true
+shader = ExtResource("slot_background")
+shader_parameter/occupied = false
+
 [sub_resource type="ButtonGroup" id="ButtonGroup_lmrfl"]
 
 [node name="InventoryForm" type="Control" unique_id=1552540174 node_paths=PackedStringArray("m_Actions", "m_Close", "m_Character", "m_Bag", "m_SaleConfirmation")]
@@ -137,7 +142,7 @@ texture_hover = ExtResource("close_hover")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="CharacterPanel" type="Control" parent="Window" unique_id=2061646098 node_paths=PackedStringArray("m_Name", "m_Level", "m_Preview", "m_WeaponSlot", "m_ArmorSlot", "m_AccessorySlot", "m_Hp", "m_Mp", "m_Power", "m_Def", "m_Lucky", "m_Mdef", "m_Crit", "m_Miss", "m_HpRegen", "m_MpRegen", "m_Experience", "m_ExperienceText")]
+[node name="CharacterPanel" type="Control" parent="Window" unique_id=2061646098 node_paths=PackedStringArray("m_Name", "m_Level", "m_Preview", "m_WeaponSlot", "m_ArmorSlot", "m_AccessorySlot", "m_TreasureSlot", "m_Hp", "m_Mp", "m_Power", "m_Def", "m_Lucky", "m_Mdef", "m_Crit", "m_Miss", "m_HpRegen", "m_MpRegen", "m_Experience", "m_ExperienceText")]
 anchors_preset = 0
 offset_left = 140.0
 offset_top = 104.0
@@ -152,6 +157,7 @@ m_Preview = NodePath("m_Preview")
 m_WeaponSlot = NodePath("EquipmentSlots/m_WeaponSlot")
 m_ArmorSlot = NodePath("EquipmentSlots/m_ArmorSlot")
 m_AccessorySlot = NodePath("EquipmentSlots/m_AccessorySlot")
+m_TreasureSlot = NodePath("EquipmentSlots/m_TreasureSlot")
 m_Hp = NodePath("Attributes/Left/Hp/m_Hp")
 m_Mp = NodePath("Attributes/Right/Mp/m_Mp")
 m_Power = NodePath("Attributes/Left/Attack/m_Attack")
@@ -296,14 +302,21 @@ m_Icon = NodePath("Icon")
 m_TooltipScene = ExtResource("19_lla6n")
 
 [node name="Slottreasure" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=433319451]
+[node name="m_TreasureSlot" type="TextureRect" parent="Window/CharacterPanel/EquipmentSlots" unique_id=433319451 node_paths=PackedStringArray("m_Icon") instance=ExtResource("equipment_cell")]
+material = SubResource("ShaderMaterial_treasure")
+custom_minimum_size = Vector2(47, 47)
 layout_mode = 0
 offset_left = 293.0
 offset_top = 140.0
 offset_right = 340.0
 offset_bottom = 187.0
-mouse_filter = 2
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
 texture = ExtResource("slot_treasure")
 expand_mode = 1
+script = ExtResource("18_7toqf")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("19_lla6n")
 
 [node name="m_Preview" type="Node2D" parent="Window/CharacterPanel" unique_id=1036937726 node_paths=PackedStringArray("m_Player", "m_Body", "m_Weapon") instance=ExtResource("preview")]
 position = Vector2(149.00002, 128)

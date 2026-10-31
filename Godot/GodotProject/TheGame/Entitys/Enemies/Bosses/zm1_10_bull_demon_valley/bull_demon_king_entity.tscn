@@ -14,7 +14,7 @@ height = 89.98489
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
 size = Vector2(50.966076, 89.98489)
 
-[sub_resource type="RectangleShape2D" id="empty"]
+[sub_resource type="RectangleShape2D" id="shape_empty"]
 size = Vector2(1, 1)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yf7to"]
@@ -90,7 +90,7 @@ collision_mask = 128
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1203205933]
-shape = SubResource("empty")
+shape = SubResource("shape_empty")
 disabled = true
 debug_color = Color(0.88, 0.36, 0.3, 0.18)
 

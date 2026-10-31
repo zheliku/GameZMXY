@@ -14,7 +14,7 @@ namespace GameLogic.Profile.Tests
         /// 读取与游戏相同的等级表。
         /// </summary>
         /// <returns>经过业务初始化校验的经验曲线。</returns>
-        private static ExperienceCurve LoadCurve()
+        private static ExperienceCurveUtility LoadCurve()
         {
             return new(TestTables.Tables.TbHeroLevelConfig.DataList);
         }
@@ -45,7 +45,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void CapsLargeRewards()
         {
-            ExperienceCurve curve = LoadCurve();
+            ExperienceCurveUtility curve = LoadCurve();
             Assert.Equal(55, curve.MaxLevel);
             Assert.Equal((55, 0, 0), curve.Evaluate(curve.Add(139, int.MaxValue)));
             Assert.Equal(curve.MaxTotalExperience, curve.Add(curve.MaxTotalExperience, int.MaxValue));
@@ -59,13 +59,13 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void RejectsInvalidTables()
         {
-            Assert.Throws<ArgumentException>(() => new ExperienceCurve(Array.Empty<HeroLevelConfig>()));
-            Assert.Throws<ArgumentException>(() => new ExperienceCurve([Row(1, 10), Row(1, 0)]));
-            Assert.Throws<ArgumentException>(() => new ExperienceCurve([Row(1, 10), Row(3, 0)]));
-            Assert.Throws<ArgumentException>(() => new ExperienceCurve([Row(1, 0), Row(2, 0)]));
-            Assert.Throws<ArgumentException>(() => new ExperienceCurve([Row(1, 10), Row(2, 10)]));
-            Assert.Throws<ArgumentException>(() => new ExperienceCurve([Row(1, int.MaxValue), Row(2, 1), Row(3, 0)]));
-            Assert.Equal((2, 1, 20), new ExperienceCurve([Row(3, 0), Row(1, 10), Row(2, 20)]).Evaluate(11));
+            Assert.Throws<ArgumentException>(() => new ExperienceCurveUtility(Array.Empty<HeroLevelConfig>()));
+            Assert.Throws<ArgumentException>(() => new ExperienceCurveUtility([Row(1, 10), Row(1, 0)]));
+            Assert.Throws<ArgumentException>(() => new ExperienceCurveUtility([Row(1, 10), Row(3, 0)]));
+            Assert.Throws<ArgumentException>(() => new ExperienceCurveUtility([Row(1, 0), Row(2, 0)]));
+            Assert.Throws<ArgumentException>(() => new ExperienceCurveUtility([Row(1, 10), Row(2, 10)]));
+            Assert.Throws<ArgumentException>(() => new ExperienceCurveUtility([Row(1, int.MaxValue), Row(2, 1), Row(3, 0)]));
+            Assert.Equal((2, 1, 20), new ExperienceCurveUtility([Row(3, 0), Row(1, 10), Row(2, 20)]).Evaluate(11));
         }
 
         /// <summary>

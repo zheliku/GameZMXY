@@ -48,17 +48,29 @@ Controller 对 Model/System 执行读取和订阅，System 执行业务写入。
 - 订阅与退订放在同一生命周期的开始/结束处：OnOpen/OnClose、Init/Deinit、StartSession/StopSession。
 - 绑定同步通知；GF.Event.Fire 在下一轮框架轮询分发。绑定回调优先级用整数，较大值先执行。
 
+## Model 聚合与 System 粒度
+
+- Model 按业务数据的所有权和生命周期划分，System 按规则职责划分；二者不要求一一对应。多个 System 可以共享同一 Model，但每项状态的写入职责必须明确，禁止重复保存同一事实。
+- 领域内的集合、值对象和小型运行时状态是普通数据，不因有名字就实现 IModel 或独立注册；也不保留一个仅转发其他 Model 的父 Model。HeroModel.StatusEffects 属于这种子数据，HeroStatusSystem 负责刷新和计时，HeroSystem 通过它完成死亡清理。
+- 只有需要独立生命周期、独立状态所有权或独立消费契约时才拆 Model；System 则须实际承担可独立说明和验证的业务规则。不能仅因行数多就拆类型，也不能为减少类型而合并无关业务。
+- 大 Model 可以组合普通记录、字典和领域值对象，但不嵌套注册另一个 IModel；子数据跟随父 Model 的生命周期，使用父 Model 的不变量入口。只有子域需要独立注册、独立观察或独立持久化时，才提升为顶层 Model。当前 `HeroModel.StatusEffectState`、`ProfileModel.EquippedItems` 和 `LevelModel.LevelResult` 都属于普通组合数据。
+- 业务规则按“谁拥有事实、谁维护不变量”落位。`EquipmentSystem` 和 `LootSystem` 写入 `ProfileModel`，不创建 `EquipmentModel`；`HeroStatusSystem` 写入 `HeroModel.StatusEffects`，不创建 `StatusEffectModel`。名称应带宿主领域，使用 `HeroStatusSystem`、`HeroModel.StatusEffectState`，避免无上下文的 `StatusEffectSystem`。
+- 主流程只保留一个根 Architecture。应用、档案、本局是同一根 Architecture 内的成员生命周期；测试场景可以有独立根 FSM。禁止用多个 Architecture 表达 Model 层级，也禁止通过父子 Architecture 回退查找对象。只有未来确实并存的独立世界才考虑额外 Architecture。
+- 先按业务功能定位，再用后缀辨认职责：`Models`、`Systems`、`Utilities`、`Commands`、`Queries` 是 QF 入口层；同一领域有多个紧密类型时才在层内建子目录，例如 `Systems/Hero`、`Systems/Combat`、`Models/Profile`。单文件领域直接放层根目录。实体、UI、关卡节点和流程数据按运行时角色保留在 `Entity`、`UI`、`MainPack/Procedure`，不为了对齐 QF 目录而搬迁。
+
 ## 所有权与生命周期
 
 | 作用域 | 所有者 | 创建与结束 |
 | --- | --- | --- |
 | 应用 | ConfigurationModel、SaveModel、共享 Utility 与系统 | ProcedurePrepare → 应用退出 |
 | 档案 | ProfileModel、SkillModel、档案业务系统 | ProcedureLoadGame → 返回标题 |
-| 本局 | HeroModel、LevelModel、HeroSystem、LevelSystem | ProcedureLevel → 离关 |
+| 本局 | HeroModel（含英雄效果）、LevelModel、HeroSystem、HeroStatusSystem、LevelSystem | ProcedureLevel → 离关 |
 | 实体 | 节点、运动、输入消费记录、身体/AI FSM、局部计时 | GF.Entity 的 Show → Hide |
 | 窗口 | 页码、悬停、选择、动画及本次订阅 | OnOpen → OnClose |
 
 流程按依赖顺序注册；依赖先于消费者。离开时先取消任务、关窗退订，再停止场景、隐藏实体并逆序移除系统和模型。初始化失败清理已经取得的资源；池化节点每次显示重置局部状态。
+
+注册边界必须具备事务性：Model/System 的 `OnInit` 失败时先执行一次对称清理，再解除 FSM 持有；`Deinit` 报错也不能阻止注册项移除。这样旧作用域不会在下一次流程或池化复用中继续暴露半初始化对象。
 
 异步操作在等待前捕获本周期服务、引用、取消令牌和身份；等待后确认本周期仍有效。无法取消的框架显示结果由原服务回收。可能同步完成的 API 先订阅结果，再提交请求。
 
@@ -75,8 +87,9 @@ Controller 对 Model/System 执行读取和订阅，System 执行业务写入。
 - GGF 窗口统一 XxxForm；脚本放 `GameScripts/UI/<窗口>/`，场景放 `UIs/`。需要打开参数的窗口保留自己的 XxxFormData。
 - Form 管绑定和请求，完整内部区域用 Panel，单个控件接收数据并报告交互；复杂程度达到独立职责时再拆脚本。
 - 目录按业务功能分组，所属节点、状态、规则和资源就近放置。小型配套类型随主要类型，入口较大时按职责使用 partial。
-- `MainPack/` 放启动流程、共享 UI、资源组和对象池；业务模块放 `GameScripts/{Architecture,Config,Battle,Profile,Skills,Equipment,Save,Entity,Level,UI,Input,Event,Utility}`。
-- 目录用于浏览，命名空间保持业务边界：Level 各子目录统一 GameLogic.Level，Save 的 Data/Slots 保留子空间；实体使用 GameLogic.Entity、Body、Heroes、Enemies；Enemy 下的小怪与首领共用 GameLogic.Enemies，AI 与身体契约分别用其 AI、Body 子空间。窗口用 GameLogic.UI，内部组件沿用 GameLogic.UI.Widgets。
+- `MainPack/` 放启动流程、共享 UI、资源组和对象池；业务模块放 `GameScripts/{Arch,Models,Systems,Utilities,Commands,Queries,Entity,UI,Event}`，战斗结算归 `Systems/Combat`。
+- `Utilities/Utility` 只放实现 `IUtility` 的注册型工具；`Utilities/Extension` 只放纯扩展方法。纯静态规则应回到所属领域，流程一次性参数保留在 `MainPack/Scripts/Procedure/FlowData`，不伪装成 Utility。
+- 目录用于浏览，命名空间保持业务边界：英雄数据位于 `Models`、英雄规则位于 `Systems/Hero`，战斗结算及其配套值对象位于 `Systems/Combat`；存档 DTO 与 `SaveModel` 位于 `Models/Save`，关卡节点位于 `Entity/Level`。实体使用 GameLogic.Entity、Body、Heroes、Enemies；Enemy 下的小怪与首领共用 GameLogic.Enemies，AI 与身体契约分别用其 AI、Body 子空间。窗口用 GameLogic.UI，内部组件沿用 GameLogic.UI.Widgets。
 
 ## GGF 接入约定
 

@@ -9,12 +9,12 @@ using Xunit;
 namespace GameLogic.Profile.Tests
 {
     /// <summary>
-    /// 验证模型登记所有权、激活原子性、施放身份与原生输入查询；招式行为由真实 GGF 状态测试覆盖。
+    /// 验证技能系统登记、激活原子性、施放身份与原生输入查询；招式行为由真实 GGF 状态测试覆盖。
     /// </summary>
     public sealed class SkillSystemTests
     {
         /// <summary>
-        /// 角色提供的登记数组由模型复制；无效替换不能取消当前施放或修改旧登记。
+        /// 角色提供的登记数组由技能系统复制；无效替换不能取消当前施放或修改旧登记。
         /// </summary>
         [Fact]
         public void Registration_IsOwnedByModelAndInvalidReplacementIsAtomic()
@@ -27,7 +27,7 @@ namespace GameLogic.Profile.Tests
             Assert.True(system.TryActivate(SkillId.WaterClone, new Actor()));
             var data = scope.Hero.ActiveSkillId;
             definitions[0] = new SkillDefinition(SkillId.WaterDemonBurst, typeof(TestSkillState), "skill_5");
-            Assert.Same(first, scope.Hero.SkillDefinitions[SkillId.WaterClone]);
+            Assert.Equal(typeof(TestSkillState), system.BodyStateType);
 
             Assert.Throws<ArgumentException>(() => system.SelectSkills(2,
                 first, new SkillDefinition(SkillId.WaterDemonBurst, typeof(TestSkillState), "skill_5")));
@@ -35,7 +35,7 @@ namespace GameLogic.Profile.Tests
             Assert.Throws<ArgumentException>(() => system.SelectSkills(2,
                 new SkillDefinition(SkillId.RisingDragon, typeof(TestSkillState))));
             Assert.Equal(data, scope.Hero.ActiveSkillId);
-            Assert.Single(scope.Hero.SkillDefinitions);
+            Assert.True(system.IsAvailable(SkillId.WaterClone));
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace GameLogic.Profile.Tests
             Assert.Throws<ArgumentException>(() => system.SelectSkills(2,
                 new SkillDefinition(SkillId.WaterClone, state, InputSystem.Skill1)));
             Assert.Null(scope.Hero.ActiveSkillId);
-            Assert.Empty(scope.Hero.SkillDefinitions);
+            Assert.False(system.IsAvailable(SkillId.WaterClone));
             Assert.Equal(mana, scope.Hero.Mp.Value);
         }
 
@@ -121,7 +121,7 @@ namespace GameLogic.Profile.Tests
             Assert.Null(scope.Hero.ActiveSkillId);
             Assert.Null(system.BodyStateType);
             Assert.False(system.IsInvulnerable(1));
-            Assert.Empty(scope.Hero.SkillDefinitions);
+            Assert.False(system.IsAvailable(SkillId.RisingDragon));
             system.SelectSkills(1, GameLogic.SkillTests.SkillTestDefinitions.Wukong());
             Assert.True(system.TryActivate(SkillId.RisingDragon, new Actor()));
             Assert.Equal(SkillId.RisingDragon, scope.Hero.ActiveSkillId);

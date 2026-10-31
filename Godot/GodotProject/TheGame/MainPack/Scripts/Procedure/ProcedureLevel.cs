@@ -142,6 +142,7 @@ public class ProcedureLevel : ProcedureBase
             m_LevelModel = new LevelModel();
             procedureOwner.RegisterModel(m_LevelModel);
             procedureOwner.RegisterModel(new HeroModel());
+            procedureOwner.RegisterSystem(new HeroStatusSystem(procedureOwner.GetArchitecture()));
             procedureOwner.RegisterSystem(new HeroSystem(procedureOwner.GetArchitecture()));
             m_LevelSystem = new LevelSystem(procedureOwner.GetArchitecture());
             procedureOwner.RegisterSystem(m_LevelSystem);
@@ -369,7 +370,7 @@ public class ProcedureLevel : ProcedureBase
     /// 设置的放弃与结算的返回地图使用各自的窗口编号校验。
     /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
-    private void OnMapRequested(int formSerialId)
+    private async void OnMapRequested(int formSerialId)
     {
         int serial = formSerialId;
         if (serial != 0 && serial == m_SettlementSerialId && m_LevelModel?.Result != null)
@@ -378,7 +379,7 @@ public class ProcedureLevel : ProcedureBase
         }
         else if (serial != 0 && serial == m_SettingsSerialId && m_LevelModel?.Outcome.Value == LevelOutcome.Running)
         {
-            ChangeState<ProcedureMap>(m_Owner);
+            await SaveAndNavigateAsync(m_Owner, m_EntrySerial, serial, returnToTitle: false);
         }
     }
 
@@ -406,15 +407,63 @@ public class ProcedureLevel : ProcedureBase
     }
 
     /// <summary>
-    /// 从设置返回标题，离开边界负责回滚未完成的关卡。
+    /// 从设置返回标题，先保存当前档案再正常离开关卡。
     /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
-    private void OnTitleRequested(int formSerialId)
+    private async void OnTitleRequested(int formSerialId)
     {
         if (formSerialId == m_SettingsSerialId &&
             m_LevelModel?.Outcome.Value == LevelOutcome.Running)
         {
-            ChangeState<ProcedureTitle>(m_Owner);
+            await SaveAndNavigateAsync(m_Owner, m_EntrySerial, formSerialId, returnToTitle: true);
+        }
+    }
+
+    /// <summary>
+    /// 设置菜单离开未结束关卡前保存当前档案，再沿正常流程导航。
+    /// </summary>
+    /// <param name="owner">当前流程状态机。</param>
+    /// <param name="entrySerial">当前关卡进入周期。</param>
+    /// <param name="formSerialId">设置窗口编号。</param>
+    /// <param name="returnToTitle">是否返回标题；否则返回地图。</param>
+    private async Task SaveAndNavigateAsync(ProcedureOwner owner, int entrySerial,
+        int formSerialId, bool returnToTitle)
+    {
+        if (entrySerial != m_EntrySerial || owner.IsDestroyed || m_Navigating)
+        {
+            return;
+        }
+
+        m_Navigating = true;
+        CancellationToken token = m_SessionCancellation?.Token ?? CancellationToken.None;
+        try
+        {
+            SaveSystem saveSystem = owner.GetSystem<SaveSystem>();
+            bool saved = await saveSystem.SaveManuallyAsync(formSerialId, token);
+            token.ThrowIfCancellationRequested();
+            if (!saved || entrySerial != m_EntrySerial || owner.IsDestroyed)
+            {
+                Log.Error("[ProcedureLevel] 设置返回前存档失败，保留当前关卡。" );
+                m_Navigating = false;
+                return;
+            }
+
+            owner.GetSystem<LevelSystem>().EndSession(rollback: false);
+
+            if (returnToTitle)
+            {
+                ChangeState<ProcedureTitle>(owner);
+            }
+            else
+            {
+                ChangeState<ProcedureMap>(owner);
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception error)
+        {
+            Log.Error("[ProcedureLevel] 设置返回前保存失败：{0}", error);
+            m_Navigating = false;
         }
     }
 
@@ -539,6 +588,7 @@ public class ProcedureLevel : ProcedureBase
 
         GF.Entity.HideEntitySafe(m_Hero);
         m_Owner.RemoveSystem<HeroSystem>();
+        m_Owner.RemoveSystem<HeroStatusSystem>();
         m_Owner.RemoveModel<HeroModel>();
         bool ownsScene = m_LevelOwnerEntry == entrySerial;
         if (ownsScene)

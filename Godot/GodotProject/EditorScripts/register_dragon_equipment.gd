@@ -18,7 +18,7 @@ func _register() -> void:
     var path := "res://TheGame/Sprites/Items/item_appearances.tres"
     var library: Resource = load(path)
     var items: Array = library.get("m_Items")
-    var script: Script = load("res://TheGame/GameScripts/Equipment/ItemAppearanceResource.cs")
+    var script: Script = load("res://TheGame/GameScripts/Models/Profile/ItemAppearanceResource.cs")
     for entry in [[29, "black_tortoise_armor"], [30, "azure_dragon_blade"], [31, "ruyi_golden_staff"],
             [32, "white_tiger_staff"], [33, "kirin_robe"], [34, "vermilion_bird_ring"],
             [35, "seven_star_guard"], [36, "nine_ring_monk_staff"], [37, "east_sea_banner"], [38, "diamond_snare"]]:

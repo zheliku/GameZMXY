@@ -206,7 +206,7 @@ namespace GameLogic.Enemies
         {
             if (AttackSegment == 2 && target is AbstractHeroEntity { CanReceiveStatusEffect: true })
             {
-                this.GetSystem<HeroSystem>().ApplyFreeze(m_HighLevel ? 5 : 2);
+                this.GetSystem<HeroStatusSystem>().ApplyFreeze(m_HighLevel ? 5 : 2);
             }
         }
 

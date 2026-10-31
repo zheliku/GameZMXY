@@ -22,6 +22,7 @@ namespace GameLogic.Profile.Tests
         private readonly SaveSystem m_SaveSystem; // 仅隔离磁盘写入。
         private readonly ProfileSystem m_ProfileSystem; // 档案数据的业务协调。
         private readonly HeroSystem m_HeroSystem; // 与游戏使用同一来源协调逻辑。
+        private readonly HeroStatusSystem m_HeroStatusSystem; // 本局状态效果规则。
         private readonly SkillSystem m_SkillSystem; // 正式技能购买规则。
         private readonly InputSystem m_InputSystem; // 正式输入组合与方向规则。
         private readonly LootSystem m_LootSystem; // 正式球体回蓝与掉落规则。
@@ -72,6 +73,8 @@ namespace GameLogic.Profile.Tests
             }
             m_ProfileSystem = new ProfileSystem(this);
             ((ICanInit)m_ProfileSystem).Init();
+            m_HeroStatusSystem = new HeroStatusSystem(this);
+            ((ICanInit)m_HeroStatusSystem).Init();
             m_HeroSystem = new HeroSystem(this);
             if (initializeHero)
             {
@@ -105,6 +108,7 @@ namespace GameLogic.Profile.Tests
         {
             return (typeof(TSystem) == typeof(ProfileSystem) ? (ISystem)m_ProfileSystem :
                 typeof(TSystem) == typeof(HeroSystem) ? m_HeroSystem :
+                typeof(TSystem) == typeof(HeroStatusSystem) ? m_HeroStatusSystem :
                 typeof(TSystem) == typeof(LevelSystem) ? m_LevelSystem :
                 typeof(TSystem) == typeof(EquipmentSystem) ? m_EquipmentSystem :
                 typeof(TSystem) == typeof(SkillSystem) ? m_SkillSystem :
@@ -116,7 +120,7 @@ namespace GameLogic.Profile.Tests
         /// <inheritdoc />
         public TUtility GetUtility<TUtility>() where TUtility : class, IUtility
         {
-            return (typeof(TUtility) == typeof(ExperienceCurve) ? (IUtility)TestTables.Curve : m_Save) as TUtility;
+            return (typeof(TUtility) == typeof(ExperienceCurveUtility) ? (IUtility)TestTables.Curve : m_Save) as TUtility;
         }
 
         /// <summary>
@@ -133,11 +137,14 @@ namespace GameLogic.Profile.Tests
         /// </summary>
         public void RestartHero()
         {
+            m_SkillSystem.ClearSkillDefinitions();
             ((ICanInit)m_HeroSystem).Deinit();
+            ((ICanInit)m_HeroStatusSystem).Deinit();
             ((ICanInit)Hero).Deinit();
             Hero = new HeroModel();
             ((ICanSetArchitecture)Hero).SetArchitecture(this);
             ((ICanInit)Hero).Init();
+            ((ICanInit)m_HeroStatusSystem).Init();
             ((ICanInit)m_HeroSystem).Init();
         }
 
@@ -158,7 +165,7 @@ namespace GameLogic.Profile.Tests
         /// <param name="definitions">装备定义。</param>
         /// <param name="capacity">容量。</param>
         /// <returns>独立测试作用域。</returns>
-        public static TestGameScope FromSaveData(GameData data, ExperienceCurve curve,
+        public static TestGameScope FromSaveData(GameData data, ExperienceCurveUtility curve,
             GameConfig.Equipment.TbEquipmentConfig definitions, int capacity)
         {
             var utility = new SaveDataUtility();

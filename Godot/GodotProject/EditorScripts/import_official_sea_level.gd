@@ -152,7 +152,7 @@ func _gate(title: String, id: String, x: float) -> Resource:
 
 ## Keep marker identities readable without duplicating coordinates in tables.
 func _entry(id: String, title: String) -> Resource:
-    var entry: Resource = load("res://TheGame/GameScripts/Level/Markers/LevelMarkerResource.cs").new()
+    var entry: Resource = load("res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs").new()
     entry.set("m_Id", id)
     entry.set("m_Node", NodePath(title))
     return entry

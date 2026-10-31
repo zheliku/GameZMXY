@@ -118,13 +118,13 @@ func _build_traps() -> void:
 
 func _point(parent: Node, title: String, id: String, position: Vector2, entries: Array[Resource]) -> void:
 	var node := Marker2D.new(); node.name = title; node.position = position; _add(parent, node)
-	var entry: Resource = load("res://TheGame/GameScripts/Level/Markers/LevelMarkerResource.cs").new()
+	var entry: Resource = load("res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs").new()
 	entry.set("m_Id", id); entry.set("m_Node", NodePath(title)); entries.append(entry)
 
 func _gate(parent: Node, title: String, id: String, x: float, entries: Array[Resource]) -> void:
 	var body := StaticBody2D.new(); body.name = title; body.position = Vector2(x, 295); body.collision_layer = 8192; body.collision_mask = 0; _add(parent, body)
 	var shape := CollisionShape2D.new(); shape.name = "Surface"; var rectangle := RectangleShape2D.new(); rectangle.size = Vector2(20, 1800); shape.shape = rectangle; shape.disabled = true; body.add_child(shape); shape.owner = scene
-	var entry: Resource = load("res://TheGame/GameScripts/Level/Markers/LevelMarkerResource.cs").new(); entry.set("m_Id", id); entry.set("m_Node", NodePath(title)); entries.append(entry)
+	var entry: Resource = load("res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs").new(); entry.set("m_Id", id); entry.set("m_Node", NodePath(title)); entries.append(entry)
 
 func _add(parent: Node, child: Node) -> void:
 	parent.add_child(child); child.owner = scene

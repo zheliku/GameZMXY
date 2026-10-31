@@ -67,7 +67,7 @@ public sealed class ProcedurePrepare : ProcedureBase
             procedureOwner.RegisterUtility(new SpatialUtility());
             procedureOwner.RegisterUtility(new SaveDataUtility());
             procedureOwner.RegisterModel(new ConfigurationModel(ConfigSystem.Instance.Tables));
-            procedureOwner.RegisterUtility(new ExperienceCurve(procedureOwner.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList));
+            procedureOwner.RegisterUtility(new ExperienceCurveUtility(procedureOwner.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList));
             procedureOwner.RegisterModel(new SaveModel());
             procedureOwner.RegisterSystem(new ConfigurationSystem(architecture));
             procedureOwner.RegisterSystem(new CombatSystem(architecture));

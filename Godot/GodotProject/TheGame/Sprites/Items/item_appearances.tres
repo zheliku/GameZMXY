@@ -79,8 +79,8 @@
 [ext_resource type="Texture2D" uid="uid://5cawdjo4oucs" path="res://TheGame/Sprites/Items/consumables/pickup_small_peach.png" id="icon_8"]
 [ext_resource type="Texture2D" uid="uid://bmqafxeiu0v7x" path="res://TheGame/Sprites/Items/consumables/pickup_large_peach.png" id="icon_9"]
 [ext_resource type="Texture2D" uid="uid://cbjv0x7bftxam" path="res://TheGame/Sprites/Items/consumables/pickup_mana_bottle.png" id="icon_10"]
-[ext_resource type="Script" uid="uid://b5an6k4pog627" path="res://TheGame/GameScripts/Equipment/ItemAppearanceResource.cs" id="item"]
-[ext_resource type="Script" uid="uid://bmcyrwqjdgr1h" path="res://TheGame/GameScripts/Equipment/ItemAppearancesResource.cs" id="library"]
+[ext_resource type="Script" uid="uid://b5an6k4pog627" path="res://TheGame/GameScripts/Models/Profile/ItemAppearanceResource.cs" id="item"]
+[ext_resource type="Script" uid="uid://bmcyrwqjdgr1h" path="res://TheGame/GameScripts/Models/Profile/ItemAppearancesResource.cs" id="library"]
 
 [sub_resource type="Resource" id="item_0"]
 script = ExtResource("item")

@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 using GameLogic.Architecture;
 using GameLogic.Battle;
+using static GameLogic.Battle.HeroModel;
 using GameLogic.Heroes;
 using GameLogic.Input;
 using Godot;
@@ -199,7 +201,8 @@ public sealed partial class UiSmokeScenario
     {
         var system = flow.GetSystem<HeroSystem>();
         var model = flow.GetModel<HeroModel>();
-        int originalTicks = Engine.PhysicsTicksPerSecond;
+        var statusEffects = flow.GetSystem<HeroStatusSystem>();
+                int originalTicks = Engine.PhysicsTicksPerSecond;
         hero.SetPhysicsProcess(true);
         try
         {
@@ -214,7 +217,7 @@ public sealed partial class UiSmokeScenario
                 Input.ActionPress(InputSystem.MoveRight);
                 await WaitFramesAsync(10);
                 model.Ws.Value = model.MaxWs.Value;
-                system.ApplyFreeze(2);
+                statusEffects.ApplyFreeze(2);
                 Check(!hero.TryActivateMusou() && !model.WsActive.Value,
                     "冰冻期间鼠标调用的无双入口仍可激活");
                 Input.ActionPress(InputSystem.Attack);
@@ -235,18 +238,18 @@ public sealed partial class UiSmokeScenario
                 Check(hero.AnimPlayer.CurrentAnimationPosition != animationTime, "冰冻错误地暂停了原生动作");
                 GF.Base.PauseGame();
                 await WaitFramesAsync(3);
-                float paused = model.FreezeSeconds;
+                float paused = model.StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0;
                 await WaitFramesAsync(10);
-                Check(model.FreezeSeconds == paused, "游戏暂停仍推进冰冻时长");
+                Check((model.StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0) == paused, "游戏暂停仍推进冰冻时长");
                 GF.Base.ResumeGame();
                 await WaitUntilAsync(() => frozen.Frame == 34 && !frozen.IsPlaying(), "冰块原版最后一帧未完整播放", 2500);
-                Check(frozen.Visible && model.FreezeSeconds > 0 && !frozen.IsPlaying(), "冰块没有保持末帧到状态结束");
+                Check(frozen.Visible && (model.StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0) > 0 && !frozen.IsPlaying(), "冰块没有保持末帧到状态结束");
                 if (ticks == 60)
                 {
                     await CaptureCombatAsync("hero_frozen_official");
                 }
 
-                await WaitUntilAsync(() => model.FreezeSeconds == 0, "冰冻没有按游戏秒数结束", 4000);
+                await WaitUntilAsync(() => !statusEffects.IsFrozen, "冰冻没有按游戏秒数结束", 4000);
                 Check(hero.AttackSegment < 0 && hero.OnFloor && !frozen.Visible, "解冻后回放了期间的输入或保留冰块");
                 ReleaseFreezeInputs();
                 await WaitFramesAsync(3);
@@ -256,9 +259,9 @@ public sealed partial class UiSmokeScenario
                 ReleaseFreezeInputs();
                 GD.Print($"SMOKE-FREEZE {ticks}Hz PASS: keyboard and UI activation blocked, native animation, no queued actions, pause and thaw");
             }
-            system.ApplyFreeze(5);
+            statusEffects.ApplyFreeze(5);
             system.Damage(int.MaxValue);
-            Check(model.FreezeSeconds == 0, "死亡未清理冰冻");
+            Check(!statusEffects.IsFrozen, "死亡未清理冰冻");
             GD.Print("SMOKE-FREEZE DEATH PASS: no persistent freeze after hero depletion");
         }
         finally

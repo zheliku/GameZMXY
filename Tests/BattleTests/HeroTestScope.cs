@@ -19,12 +19,15 @@ namespace GameLogic.Battle.Tests
         /// 执行正式英雄业务规则。
         /// </summary>
         public HeroSystem System { get; }
+        private readonly HeroStatusSystem m_HeroStatusSystem;
 
         /// <summary>
         /// 建立最小存活英雄，规则测试不依赖场景。
         /// </summary>
         public HeroTestScope()
         {
+            m_HeroStatusSystem = new(this);
+            ((ICanInit)m_HeroStatusSystem).Init();
             System = new(this);
             var buffer = new Luban.ByteBuf();
             for (int i = 0; i < 16; i++)
@@ -53,7 +56,7 @@ namespace GameLogic.Battle.Tests
         /// <inheritdoc />
         public TSystem GetSystem<TSystem>() where TSystem : class, ISystem
         {
-            return System as TSystem;
+            return (typeof(TSystem) == typeof(HeroStatusSystem) ? (ISystem)m_HeroStatusSystem : System) as TSystem;
         }
 
         /// <inheritdoc />

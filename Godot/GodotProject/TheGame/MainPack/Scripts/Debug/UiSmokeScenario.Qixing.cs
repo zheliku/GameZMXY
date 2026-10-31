@@ -244,7 +244,7 @@ public sealed partial class UiSmokeScenario
                         GD.Print($"SMOKE-QIXING ATTACK: {id}/{index + 1}, direction={direction}, damage={beforeHp - hero.Hp}, independent={sawEffect}");
                         if (id == EntityId.LionCamelKing && index == 2)
                         {
-                            Check(flow.GetModel<HeroModel>().PoisonAttack != null, "毒雾命中没有施加中毒");
+                            Check(flow.GetSystem<HeroStatusSystem>().IsPoisoned, "毒雾命中没有施加中毒");
                             int hp = hero.Hp;
                             hero._PhysicsProcess(.5);
                             Check(hero.Hp == hp, "中毒未满一秒即扣血");
@@ -258,7 +258,7 @@ public sealed partial class UiSmokeScenario
                                 hero.GetNode<AnimatedSprite2D>("m_StatusEffects/m_PoisonPulse").Visible, "中毒头顶或扣血效果未显示");
                             await CaptureCombatAsync($"qixing_poison_{direction}");
                             hero._PhysicsProcess(9);
-                            Check(flow.GetModel<HeroModel>().PoisonAttack == null && hero.Hp == hp - 200, "中毒没有在十秒后结束");
+                            Check(!flow.GetSystem<HeroStatusSystem>().IsPoisoned && hero.Hp == hp - 200, "中毒没有在十秒后结束");
                         }
                         await WaitFramesAsync(2);
                     }

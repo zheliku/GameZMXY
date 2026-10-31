@@ -180,6 +180,8 @@ public sealed partial class UiSmokeScenario
             number.GlobalPosition += new Vector2(offset, 0);
         }
         GF.Base.PauseGame();
+        // ProcessFrame 在节点更新前发出；headless 截图不会让出当前帧，先等待已采样的 delta 消费完。
+        await WaitFramesAsync(2);
         await CaptureCombatAsync("recovery_numbers");
         float recoveryAge = SmokeInspection.ReadField<float>(manaNumber, "m_Age");
         await WaitFramesAsync(3);

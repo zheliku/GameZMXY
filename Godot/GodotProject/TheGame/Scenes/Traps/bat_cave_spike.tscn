@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dre7wlc12sutg"]
 
-[ext_resource type="Script" uid="uid://p13m3k2re1id" path="res://TheGame/GameScripts/Level/Traps/BatCaveSpikeNode.cs" id="1_dngwx"]
+[ext_resource type="Script" uid="uid://p13m3k2re1id" path="res://TheGame/GameScripts/Entity/Level/Traps/BatCaveSpikeNode.cs" id="1_dngwx"]
 [ext_resource type="SpriteFrames" uid="uid://bb13e6pcj34y4" path="res://TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_spike_frames.tres" id="2_q2nwm"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mjv3q"]

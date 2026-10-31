@@ -17,7 +17,6 @@ namespace GameLogic.Heroes.Wukong
     {
         private const string AnimationName = "skills/fire_demon_slash"; // 本招的原生动画资源名。
         private const double NormalAttackBlockSeconds = 7d / 24d; // 起手的普攻阻塞；搜敌与落地各自重设后续窗口。
-        private const float InvulnerabilitySeconds = 70f / 24f; // 原版火魔斩从起手覆盖至落地恢复的无敌秒数。
 
         private const string DescentMarker = "descent"; // 无目标时进入的动画标记。
         private const string RecoveryMarker = "recovery"; // 落地特效第13源帧将本体送至第70帧恢复。
@@ -38,7 +37,6 @@ namespace GameLogic.Heroes.Wukong
             GravitySuspended = true;
             body.ActionData.InputLocked = true;
             body.ActionData.AttackReadyAt = body.ActionData.Time + NormalAttackBlockSeconds;
-            body.GetSystem<SkillSystem>().GrantInvulnerability(body.ActionData.Time, InvulnerabilitySeconds);
             BeginAnimation(body, AnimationName);
         }
 

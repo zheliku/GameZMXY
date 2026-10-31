@@ -25,6 +25,7 @@ namespace GameLogic.UI.Widgets
         [Export] private EquipmentCell m_WeaponSlot; // 当前武器槽。
         [Export] private EquipmentCell m_ArmorSlot; // 当前防具槽。
         [Export] private EquipmentCell m_AccessorySlot; // 当前饰品槽。
+        [Export] private EquipmentCell m_TreasureSlot; // 当前法宝槽。
         [Export] private Label m_Hp; // 当前生命与上限。
         [Export] private Label m_Mp; // 当前魔法与上限。
         [Export] private Label m_Power; // 最终攻击。
@@ -51,6 +52,7 @@ namespace GameLogic.UI.Widgets
             m_WeaponSlot.Clicked += OnWeaponClicked;
             m_ArmorSlot.Clicked += OnArmorClicked;
             m_AccessorySlot.Clicked += OnAccessoryClicked;
+            m_TreasureSlot.Clicked += OnTreasureClicked;
         }
 
         /// <summary>
@@ -104,6 +106,7 @@ namespace GameLogic.UI.Widgets
             BindSlot(m_WeaponSlot, profile.Weapon);
             BindSlot(m_ArmorSlot, profile.Armor);
             BindSlot(m_AccessorySlot, profile.Accessory);
+            BindSlot(m_TreasureSlot, profile.Treasure);
             m_Preview.ApplyAppearance(profile.Weapon?.EquipmentId ?? EquipmentId.None, profile.Armor?.EquipmentId ?? EquipmentId.None);
         }
 
@@ -153,6 +156,15 @@ namespace GameLogic.UI.Widgets
         private void OnAccessoryClicked(Guid instanceId)
         {
             UnequipRequested?.Invoke(EquipmentSlot.Accessory);
+        }
+
+        /// <summary>
+        /// 提交法宝卸装请求。
+        /// </summary>
+        /// <param name="instanceId">当前槽的装备实例编号。</param>
+        private void OnTreasureClicked(Guid instanceId)
+        {
+            UnequipRequested?.Invoke(EquipmentSlot.Treasure);
         }
     }
 }
