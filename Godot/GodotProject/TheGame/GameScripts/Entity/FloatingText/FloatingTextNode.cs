@@ -66,9 +66,24 @@ namespace GameLogic.FloatingText
         public override void _Process(double delta)
         {
             m_Age += (float)delta;
-            float riseSeconds = m_Kind switch { DisplayKind.Damage => DamageRiseSeconds, DisplayKind.Miss => MissRiseSeconds, _ => RecoveryLifetime };
-            float riseDistance = m_Kind switch { DisplayKind.Damage => DamageRiseDistance, DisplayKind.Miss => MissRiseDistance, _ => RecoveryRiseDistance };
-            float fadeSeconds = m_Kind switch { DisplayKind.Damage => DamageFadeSeconds, DisplayKind.Miss => MissFadeSeconds, _ => 0f };
+            float riseSeconds = m_Kind switch
+            {
+                DisplayKind.Damage => DamageRiseSeconds,
+                DisplayKind.Miss => MissRiseSeconds,
+                _ => RecoveryLifetime
+            };
+            float riseDistance = m_Kind switch
+            {
+                DisplayKind.Damage => DamageRiseDistance,
+                DisplayKind.Miss => MissRiseDistance,
+                _ => RecoveryRiseDistance
+            };
+            float fadeSeconds = m_Kind switch
+            {
+                DisplayKind.Damage => DamageFadeSeconds,
+                DisplayKind.Miss => MissFadeSeconds,
+                _ => 0f
+            };
 
             // 上升、淡出与脉冲均根据同一年龄计算，不创建第二套动画或后台计时器。
             GlobalPosition = m_Start + Vector2.Up * (riseDistance * Math.Clamp(m_Age / riseSeconds, 0f, 1f));
@@ -151,7 +166,15 @@ namespace GameLogic.FloatingText
         public void ShowDamage(Vector2 position, int damage, bool isCrit, bool targetIsHero,
             Action<FloatingTextNode> finished)
         {
-            var sheet = targetIsHero ? m_HeroDamage : isCrit ? m_EnemyCritical : m_EnemyDamage;
+            Texture2D sheet;
+            if (targetIsHero)
+            {
+                sheet = m_HeroDamage;
+            }
+            else
+            {
+                sheet = isCrit ? m_EnemyCritical : m_EnemyDamage;
+            }
             LayoutDigits(damage, sheet, true);
             Begin(position, DisplayKind.Damage, isCrit, finished);
         }

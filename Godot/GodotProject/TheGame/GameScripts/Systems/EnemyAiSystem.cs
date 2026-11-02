@@ -25,6 +25,8 @@ namespace GameLogic.Enemies.AI
             data.ClockOrigin = 0;
             data.PatrolStopTime = 3;
             data.MoveIntent = 0;
+            data.VerticalIntent = 0;
+            data.DirectVerticalMovement = false;
             data.AttackRequest = -1;
             for (int i = 0; i < attacks.Count; i++)
             {
@@ -76,8 +78,21 @@ namespace GameLogic.Enemies.AI
             double previous = Math.Max(0, data.PreviousElapsedSeconds - data.ClockOrigin) % clockPeriod;
             if (previous < .5 && age + 1e-6 >= .5)
             {
-                agent.Move(agent.PatrolOffsetX < agent.PatrolBounds.X ? 1 : agent.PatrolOffsetX > agent.PatrolBounds.Y ? -1 :
-                    agent.NextRandom() < .5f ? -1 : 1);
+                int direction;
+                if (agent.PatrolOffsetX < agent.PatrolBounds.X)
+                {
+                    direction = 1;
+                }
+                else if (agent.PatrolOffsetX > agent.PatrolBounds.Y)
+                {
+                    direction = -1;
+                }
+                else
+                {
+                    // 只有巡逻范围内才随机选方向，边界折返不消耗这次抽样。
+                    direction = agent.NextRandom() < .5f ? -1 : 1;
+                }
+                agent.Move(direction);
                 data.PatrolStopTime = agent.NextRandom() < .5f ? 3 : 4;
             }
             if (age < data.PatrolStopTime)

@@ -6,6 +6,7 @@ using GameLogic.Architecture;
 using System;
 using GameConfig.Skills;
 using GameConfig.Sound;
+using GameConfig.Constant;
 using GameFramework.UI;
 using GameLogic.Audio;
 using GameLogic.Level;
@@ -250,7 +251,7 @@ namespace GameLogic.UI
             var result = this.SendCommand(new UpgradePassiveCommand(id));
             if (result == SkillLearnResult.InsufficientSoul)
             {
-                GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().ShowMessage("灵魂不足！");
+                (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_save_notice_form) as SaveNoticeForm)?.ShowMessage("灵魂不足！");
             }
             else if (result == SkillLearnResult.Learned)
             {
@@ -272,7 +273,7 @@ namespace GameLogic.UI
             var result = this.SendCommand(new LearnSkillCommand(skill));
             if (result == SkillLearnResult.InsufficientSoul)
             {
-                GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().ShowMessage("灵魂不足！");
+                (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_save_notice_form) as SaveNoticeForm)?.ShowMessage("灵魂不足！");
             }
             else if (result == SkillLearnResult.Learned)
             {

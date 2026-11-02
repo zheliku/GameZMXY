@@ -62,7 +62,12 @@ def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "al
             resource_file = destination / f"{folder}_frames.tres"
             previous_header = resource_file.read_text(encoding="utf-8").splitlines()[0] if resource_file.exists() else ""
             previous_uid = re.search(r'uid="([^"]+)"', previous_header)
-            resource_uid = previous_uid[1] if previous_uid else LEVEL_UP_RESOURCE_UID if folder == "level_up" else ""
+            if previous_uid:
+                resource_uid = previous_uid[1]
+            elif folder == "level_up":
+                resource_uid = LEVEL_UP_RESOURCE_UID
+            else:
+                resource_uid = ""
             uid_attribute = f' uid="{resource_uid}"' if resource_uid else ""
             # Remove only this generator's obsolete XP-named outputs.
             if folder == "loot":

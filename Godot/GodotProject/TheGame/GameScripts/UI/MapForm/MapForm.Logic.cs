@@ -1,5 +1,8 @@
 using GameLogic.Architecture;
 using System;
+using System.Collections.Generic;
+using GameLogic.UI.Widgets;
+using GameLogic.Config;
 using GameFramework.Event;
 using GameFramework.UI;
 using GameLogic.Audio;
@@ -21,6 +24,8 @@ namespace GameLogic.UI
     /// </summary>
     public partial class MapForm : IController
     {
+        private (MapLocationButton Button, StringName HoverAnimation,
+            StringName CurrentAnimation, StringName ResetAnimation)[] m_Locations; // 本窗口唯一地点绑定，关卡身份归按钮原生场景。
         private bool m_IsBound; // 当前打开周期拥有保存状态订阅，关闭后不再借用架构。
 
         /// <summary>
@@ -66,36 +71,9 @@ namespace GameLogic.UI
                 m_Back.Pressed += OnBackClicked;
                 m_Settings.Pressed += OnSettingsClicked;
                 m_Save.Pressed += OnSaveClicked;
-                m_Huaguoshan.Pressed += OnHuaguoshanClicked;
-                m_Shuiliandong.Pressed += OnShuiliandongClicked;
-                m_Taohuayuan.Pressed += OnTaohuayuanClicked;
-                m_Bianfuku.Pressed += OnBianfukuClicked;
-                m_Qixingdong.Pressed += OnQixingdongClicked;
-                m_Jialuoluo.Pressed += OnJialuoluoClicked;
-                m_Qianan.Pressed += OnQiananClicked;
-                m_Donghai.Pressed += OnDonghaiClicked;
-                m_Shazhiwoliu.Pressed += OnShazhiwoliuClicked;
-                m_Niumogu.Pressed += OnNiumoguClicked;
-                m_Huaguoshan.MouseEntered += OnLocationMouseEntered;
-                m_Huaguoshan.MouseExited += OnLocationMouseExited;
-                m_Shuiliandong.MouseEntered += OnShuiliandongMouseEntered;
-                m_Shuiliandong.MouseExited += OnLocationMouseExited;
-                m_Taohuayuan.MouseEntered += OnTaohuayuanMouseEntered;
-                m_Taohuayuan.MouseExited += OnLocationMouseExited;
-                m_Bianfuku.MouseEntered += OnBianfukuMouseEntered;
-                m_Bianfuku.MouseExited += OnLocationMouseExited;
-                m_Qixingdong.MouseEntered += OnQixingdongMouseEntered;
-                m_Qixingdong.MouseExited += OnLocationMouseExited;
-                m_Jialuoluo.MouseEntered += OnJialuoluoMouseEntered;
-                m_Jialuoluo.MouseExited += OnLocationMouseExited;
-                m_Qianan.MouseEntered += OnQiananMouseEntered;
-                m_Qianan.MouseExited += OnLocationMouseExited;
-                m_Donghai.MouseEntered += OnDonghaiMouseEntered;
-                m_Donghai.MouseExited += OnLocationMouseExited;
-                m_Shazhiwoliu.MouseEntered += OnShazhiwoliuMouseEntered;
-                m_Shazhiwoliu.MouseExited += OnLocationMouseExited;
-                m_Niumogu.MouseEntered += OnNiumoguMouseEntered;
-                m_Niumogu.MouseExited += OnLocationMouseExited;
+                InitializeLocations();
+                ValidateLocations();
+                BindLocationEvents();
             }
         }
 
@@ -304,86 +282,6 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 提交花果山的配置主键。
-        /// </summary>
-        private void OnHuaguoshanClicked()
-        {
-            SelectLevel(1);
-        }
-
-        /// <summary>
-        /// 提交水帘洞的配置主键。
-        /// </summary>
-        private void OnShuiliandongClicked()
-        {
-            SelectLevel(2);
-        }
-
-        /// <summary>
-        /// 提交桃花源的配置主键。
-        /// </summary>
-        private void OnTaohuayuanClicked()
-        {
-            SelectLevel(3);
-        }
-
-        /// <summary>
-        /// 提交蝙蝠窟的配置主键。
-        /// </summary>
-        private void OnBianfukuClicked()
-        {
-            SelectLevel(4);
-        }
-
-        /// <summary>
-        /// 提交七星洞的配置主键。
-        /// </summary>
-        private void OnQixingdongClicked()
-        {
-            SelectLevel(5);
-        }
-
-        /// <summary>
-        /// 提交迦楼罗之穴的配置主键。
-        /// </summary>
-        private void OnJialuoluoClicked()
-        {
-            SelectLevel(6);
-        }
-
-        /// <summary>
-        /// 提交浅岸的配置主键。
-        /// </summary>
-        private void OnQiananClicked()
-        {
-            SelectLevel(7);
-        }
-
-        /// <summary>
-        /// 提交东海的配置主键。
-        /// </summary>
-        private void OnDonghaiClicked()
-        {
-            SelectLevel(8);
-        }
-
-        /// <summary>
-        /// 提交鲨之涡流的配置主键。
-        /// </summary>
-        private void OnShazhiwoliuClicked()
-        {
-            SelectLevel(9);
-        }
-
-        /// <summary>
-        /// 请求进入牛魔谷。
-        /// </summary>
-        private void OnNiumoguClicked()
-        {
-            SelectLevel(10);
-        }
-
-        /// <summary>
         /// 由地图流程处理已有配置的关卡请求。
         /// </summary>
         /// <param name="levelId">地图地点对应的关卡编号。</param>
@@ -399,100 +297,31 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 悬停时轻微放大，并循环闪烁原图中的黄色光晕。
+        /// 播放指定按钮的悬停动画，其他地点恢复原来的尺寸和命中轮廓。
         /// </summary>
-        private void OnLocationMouseEntered()
+        /// <param name="button">发出悬停事件的地点按钮。</param>
+        /// <exception cref="InvalidOperationException">按钮没有登记地点动画。</exception>
+        private void PlayLocationHover(MapLocationButton button)
         {
-            PlayLocationHover(1, LocationAnimations.HuaguoshanHover);
-        }
-
-        /// <summary>
-        /// 播放水帘洞的原图轮廓悬停。
-        /// </summary>
-        private void OnShuiliandongMouseEntered()
-        {
-            PlayLocationHover(2, LocationAnimations.ShuiliandongHover);
-        }
-
-        /// <summary>
-        /// 播放桃花源的原图轮廓悬停。
-        /// </summary>
-        private void OnTaohuayuanMouseEntered()
-        {
-            PlayLocationHover(3, LocationAnimations.TaohuayuanHover);
-        }
-
-        /// <summary>
-        /// 播放蝙蝠窟的原图轮廓悬停。
-        /// </summary>
-        private void OnBianfukuMouseEntered()
-        {
-            PlayLocationHover(4, LocationAnimations.BianfukuHover);
-        }
-
-        /// <summary>
-        /// 播放七星洞的原图轮廓悬停。
-        /// </summary>
-        private void OnQixingdongMouseEntered()
-        {
-            PlayLocationHover(5, LocationAnimations.QixingdongHover);
-        }
-
-        /// <summary>
-        /// 播放迦楼罗之穴的原图轮廓悬停。
-        /// </summary>
-        private void OnJialuoluoMouseEntered()
-        {
-            PlayLocationHover(6, LocationAnimations.JialuoluoHover);
-        }
-
-        /// <summary>
-        /// 播放浅岸的原图轮廓悬停。
-        /// </summary>
-        private void OnQiananMouseEntered()
-        {
-            PlayLocationHover(7, LocationAnimations.QiananHover);
-        }
-
-        /// <summary>
-        /// 播放东海原图的悬停光晕。
-        /// </summary>
-        private void OnDonghaiMouseEntered()
-        {
-            PlayLocationHover(8, LocationAnimations.DonghaiHover);
-        }
-
-        /// <summary>
-        /// 播放鲨之涡流原图的悬停光晕。
-        /// </summary>
-        private void OnShazhiwoliuMouseEntered()
-        {
-            PlayLocationHover(9, LocationAnimations.ShazhiwoliuHover);
-        }
-
-        /// <summary>
-        /// 播放牛魔谷原图的悬停光晕。
-        /// </summary>
-        private void OnNiumoguMouseEntered()
-        {
-            PlayLocationHover(10, LocationAnimations.NiumoguHover);
-        }
-
-        /// <summary>
-        /// 只有当前地点放大，其他地点恢复原来的尺寸和命中轮廓。
-        /// </summary>
-        /// <param name="animation">原生地点悬停动画。</param>
-        /// <param name="levelId">地点对应的关卡，锁定时忽略迟到信号。</param>
-        private void PlayLocationHover(int levelId, StringName animation)
-        {
-            if (!GF.UI.HasUIForm(SerialId) || !this.GetSystem<ProfileSystem>().CanEnterLevel(levelId))
+            if (!GF.UI.HasUIForm(SerialId) || !this.GetSystem<ProfileSystem>().CanEnterLevel(button.LevelId))
             {
                 return;
             }
 
-            ResetLocationHover();
-            m_LocationAnimation.Play(animation);
-            m_LocationAnimation.Advance(0);
+            foreach (var location in m_Locations)
+            {
+                if (location.Button != button)
+                {
+                    continue;
+                }
+
+                ResetLocationHover();
+                m_LocationAnimation.Play(location.HoverAnimation);
+                m_LocationAnimation.Advance(0);
+                return;
+            }
+
+            throw new InvalidOperationException($"地图按钮未登记动画：{button.Name}");
         }
 
         /// <summary>
@@ -505,10 +334,6 @@ namespace GameLogic.UI
             {
                 PlayCurrentLocationHint();
             }
-            else
-            {
-                ResetLocationHover();
-            }
         }
 
         /// <summary>
@@ -516,22 +341,20 @@ namespace GameLogic.UI
         /// </summary>
         private void PlayCurrentLocationHint()
         {
-            StringName animation = this.GetSystem<ProfileSystem>().LatestLevelId switch
+            int latest = this.GetSystem<ProfileSystem>().LatestLevelId;
+            foreach (var location in m_Locations)
             {
-                1 => LocationAnimations.HuaguoshanCurrent,
-                2 => LocationAnimations.ShuiliandongCurrent,
-                3 => LocationAnimations.TaohuayuanCurrent,
-                4 => LocationAnimations.BianfukuCurrent,
-                5 => LocationAnimations.QixingdongCurrent,
-                6 => LocationAnimations.JialuoluoCurrent,
-                7 => LocationAnimations.QiananCurrent,
-                8 => LocationAnimations.DonghaiCurrent,
-                9 => LocationAnimations.ShazhiwoliuCurrent,
-                10 => LocationAnimations.NiumoguCurrent,
-                _ => throw new InvalidOperationException("最新开放关卡缺少地图动画。")
-            };
-            m_LocationAnimation.Play(animation);
-            m_LocationAnimation.Advance(0);
+                if (location.Button.LevelId != latest)
+                {
+                    continue;
+                }
+
+                m_LocationAnimation.Play(location.CurrentAnimation);
+                m_LocationAnimation.Advance(0);
+                return;
+            }
+
+            throw new InvalidOperationException($"最新开放关卡缺少地图地点：{latest}");
         }
 
         /// <summary>
@@ -540,9 +363,10 @@ namespace GameLogic.UI
         /// <param name="highestClearedLevelId">本次通知的最远通关记录。</param>
         private void RefreshLevelProgress(int highestClearedLevelId)
         {
-            foreach (var (button, id) in new[] { (m_Huaguoshan, 1), (m_Shuiliandong, 2), (m_Taohuayuan, 3), (m_Bianfuku, 4), (m_Qixingdong, 5), (m_Jialuoluo, 6), (m_Qianan, 7), (m_Donghai, 8), (m_Shazhiwoliu, 9), (m_Niumogu, 10) })
+            foreach (var location in m_Locations)
             {
-                button.Disabled = !this.GetSystem<ProfileSystem>().CanEnterLevel(id);
+                var button = location.Button;
+                button.Disabled = !this.GetSystem<ProfileSystem>().CanEnterLevel(button.LevelId);
                 button.MouseDefaultCursorShape = button.Disabled ? CursorShape.Arrow : CursorShape.PointingHand;
             }
             ResetLocationHover();
@@ -554,21 +378,9 @@ namespace GameLogic.UI
         /// </summary>
         private void ResetLocationHover()
         {
-            foreach (StringName animation in new[]
+            foreach (var location in m_Locations)
             {
-            LocationAnimations.HuaguoshanReset,
-            LocationAnimations.ShuiliandongReset,
-            LocationAnimations.TaohuayuanReset,
-            LocationAnimations.BianfukuReset,
-            LocationAnimations.QixingdongReset,
-            LocationAnimations.JialuoluoReset,
-            LocationAnimations.QiananReset,
-            LocationAnimations.DonghaiReset,
-            LocationAnimations.ShazhiwoliuReset,
-            LocationAnimations.NiumoguReset,
-        })
-            {
-                m_LocationAnimation.Play(animation);
+                m_LocationAnimation.Play(location.ResetAnimation);
                 m_LocationAnimation.Advance(0);
             }
             m_LocationAnimation.Stop();
@@ -588,42 +400,259 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 地图各地点普通、悬停与当前关卡提示的原生动画键。
+        /// 集中声明地点按钮及三种原生动画；导航和图鉴共用按钮场景中的关卡编号。
         /// </summary>
-        private static class LocationAnimations
+        private void InitializeLocations()
         {
-            public static readonly StringName HuaguoshanHover = "location/hover";
-            public static readonly StringName ShuiliandongHover = "shuiliandong/hover";
-            public static readonly StringName TaohuayuanHover = "taohuayuan/hover";
-            public static readonly StringName BianfukuHover = "bianfuku/hover";
-            public static readonly StringName QixingdongHover = "qixingdong/hover";
-            public static readonly StringName JialuoluoHover = "jialuoluo/hover";
-            public static readonly StringName QiananHover = "qianan/hover";
-            public static readonly StringName DonghaiHover = "donghai/hover";
-            public static readonly StringName ShazhiwoliuHover = "shazhiwoliu/hover";
-            public static readonly StringName NiumoguHover = "niumogu/hover";
-
-            public static readonly StringName HuaguoshanCurrent = "location/current";
-            public static readonly StringName ShuiliandongCurrent = "shuiliandong/current";
-            public static readonly StringName TaohuayuanCurrent = "taohuayuan/current";
-            public static readonly StringName BianfukuCurrent = "bianfuku/current";
-            public static readonly StringName QixingdongCurrent = "qixingdong/current";
-            public static readonly StringName JialuoluoCurrent = "jialuoluo/current";
-            public static readonly StringName QiananCurrent = "qianan/current";
-            public static readonly StringName DonghaiCurrent = "donghai/current";
-            public static readonly StringName ShazhiwoliuCurrent = "shazhiwoliu/current";
-            public static readonly StringName NiumoguCurrent = "niumogu/current";
-
-            public static readonly StringName HuaguoshanReset = "location/RESET";
-            public static readonly StringName ShuiliandongReset = "shuiliandong/RESET";
-            public static readonly StringName TaohuayuanReset = "taohuayuan/RESET";
-            public static readonly StringName BianfukuReset = "bianfuku/RESET";
-            public static readonly StringName QixingdongReset = "qixingdong/RESET";
-            public static readonly StringName JialuoluoReset = "jialuoluo/RESET";
-            public static readonly StringName QiananReset = "qianan/RESET";
-            public static readonly StringName DonghaiReset = "donghai/RESET";
-            public static readonly StringName ShazhiwoliuReset = "shazhiwoliu/RESET";
-            public static readonly StringName NiumoguReset = "niumogu/RESET";
+            m_Locations =
+            [
+                (m_Huaguoshan, "location/hover", "location/current", "location/RESET"),
+                (m_Shuiliandong, "shuiliandong/hover", "shuiliandong/current", "shuiliandong/RESET"),
+                (m_Taohuayuan, "taohuayuan/hover", "taohuayuan/current", "taohuayuan/RESET"),
+                (m_Bianfuku, "bianfuku/hover", "bianfuku/current", "bianfuku/RESET"),
+                (m_Qixingdong, "qixingdong/hover", "qixingdong/current", "qixingdong/RESET"),
+                (m_Jialuoluo, "jialuoluo/hover", "jialuoluo/current", "jialuoluo/RESET"),
+                (m_Qianan, "qianan/hover", "qianan/current", "qianan/RESET"),
+                (m_Donghai, "donghai/hover", "donghai/current", "donghai/RESET"),
+                (m_Shazhiwoliu, "shazhiwoliu/hover", "shazhiwoliu/current", "shazhiwoliu/RESET"),
+                (m_Niumogu, "niumogu/hover", "niumogu/current", "niumogu/RESET")
+            ];
         }
+
+        /// <summary>
+        /// 在窗口初始化时校验地点身份、动画和主线覆盖，不在运行期静默回退。
+        /// </summary>
+        /// <exception cref="InvalidOperationException">地点重复、身份无效、动画缺失或主线漏配。</exception>
+        private void ValidateLocations()
+        {
+            var levelDefinitions = this.GetModel<ConfigurationModel>().Tables.TbLevelConfig;
+            var registeredLevels = new HashSet<int>();
+            foreach (var location in m_Locations)
+            {
+                int levelId = location.Button.LevelId;
+                if (levelDefinitions.GetOrDefault(levelId) == null || levelId == DragonPalaceRules.LevelId)
+                {
+                    throw new InvalidOperationException($"地图地点必须对应可见主线关卡：{levelId}");
+                }
+                if (!registeredLevels.Add(levelId))
+                {
+                    throw new InvalidOperationException($"地图地点重复：{levelId}");
+                }
+                if (!m_LocationAnimation.HasAnimation(location.HoverAnimation) ||
+                    !m_LocationAnimation.HasAnimation(location.CurrentAnimation) ||
+                    !m_LocationAnimation.HasAnimation(location.ResetAnimation))
+                {
+                    throw new InvalidOperationException($"地图地点缺少原生动画：{levelId}");
+                }
+            }
+
+            // 隐藏龙宫仍从场景入口进入；其他已配置关卡都必须有地图地点。
+            foreach (var level in levelDefinitions.DataList)
+            {
+                if (level.LevelId != DragonPalaceRules.LevelId && !registeredLevels.Contains(level.LevelId))
+                {
+                    throw new InvalidOperationException($"主线关卡缺少地图地点：{level.LevelId}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 只在首次创建窗口时绑定具名事件，点击与悬停的调用路径可直接查找。
+        /// </summary>
+        private void BindLocationEvents()
+        {
+            m_Huaguoshan.Pressed += OnHuaguoshanClicked;
+            m_Shuiliandong.Pressed += OnShuiliandongClicked;
+            m_Taohuayuan.Pressed += OnTaohuayuanClicked;
+            m_Bianfuku.Pressed += OnBianfukuClicked;
+            m_Qixingdong.Pressed += OnQixingdongClicked;
+            m_Jialuoluo.Pressed += OnJialuoluoClicked;
+            m_Qianan.Pressed += OnQiananClicked;
+            m_Donghai.Pressed += OnDonghaiClicked;
+            m_Shazhiwoliu.Pressed += OnShazhiwoliuClicked;
+            m_Niumogu.Pressed += OnNiumoguClicked;
+
+            m_Huaguoshan.MouseEntered += OnHuaguoshanMouseEntered;
+            m_Huaguoshan.MouseExited += OnLocationMouseExited;
+            m_Shuiliandong.MouseEntered += OnShuiliandongMouseEntered;
+            m_Shuiliandong.MouseExited += OnLocationMouseExited;
+            m_Taohuayuan.MouseEntered += OnTaohuayuanMouseEntered;
+            m_Taohuayuan.MouseExited += OnLocationMouseExited;
+            m_Bianfuku.MouseEntered += OnBianfukuMouseEntered;
+            m_Bianfuku.MouseExited += OnLocationMouseExited;
+            m_Qixingdong.MouseEntered += OnQixingdongMouseEntered;
+            m_Qixingdong.MouseExited += OnLocationMouseExited;
+            m_Jialuoluo.MouseEntered += OnJialuoluoMouseEntered;
+            m_Jialuoluo.MouseExited += OnLocationMouseExited;
+            m_Qianan.MouseEntered += OnQiananMouseEntered;
+            m_Qianan.MouseExited += OnLocationMouseExited;
+            m_Donghai.MouseEntered += OnDonghaiMouseEntered;
+            m_Donghai.MouseExited += OnLocationMouseExited;
+            m_Shazhiwoliu.MouseEntered += OnShazhiwoliuMouseEntered;
+            m_Shazhiwoliu.MouseExited += OnLocationMouseExited;
+            m_Niumogu.MouseEntered += OnNiumoguMouseEntered;
+            m_Niumogu.MouseExited += OnLocationMouseExited;
+        }
+
+        /// <summary>
+        /// 请求进入花果山，关卡编号取自按钮场景。
+        /// </summary>
+        private void OnHuaguoshanClicked()
+        {
+            SelectLevel(m_Huaguoshan.LevelId);
+        }
+
+        /// <summary>
+        /// 显示花果山的悬停动画。
+        /// </summary>
+        private void OnHuaguoshanMouseEntered()
+        {
+            PlayLocationHover(m_Huaguoshan);
+        }
+
+        /// <summary>
+        /// 请求进入水帘洞，关卡编号取自按钮场景。
+        /// </summary>
+        private void OnShuiliandongClicked()
+        {
+            SelectLevel(m_Shuiliandong.LevelId);
+        }
+
+        /// <summary>
+        /// 显示水帘洞的悬停动画。
+        /// </summary>
+        private void OnShuiliandongMouseEntered()
+        {
+            PlayLocationHover(m_Shuiliandong);
+        }
+
+        /// <summary>
+        /// 请求进入桃花源，关卡编号取自按钮场景。
+        /// </summary>
+        private void OnTaohuayuanClicked()
+        {
+            SelectLevel(m_Taohuayuan.LevelId);
+        }
+
+        /// <summary>
+        /// 显示桃花源的悬停动画。
+        /// </summary>
+        private void OnTaohuayuanMouseEntered()
+        {
+            PlayLocationHover(m_Taohuayuan);
+        }
+
+        /// <summary>
+        /// 请求进入蝙蝠窟，关卡编号取自按钮场景。
+        /// </summary>
+        private void OnBianfukuClicked()
+        {
+            SelectLevel(m_Bianfuku.LevelId);
+        }
+
+        /// <summary>
+        /// 显示蝙蝠窟的悬停动画。
+        /// </summary>
+        private void OnBianfukuMouseEntered()
+        {
+            PlayLocationHover(m_Bianfuku);
+        }
+
+        /// <summary>
+        /// 请求进入七星洞，关卡编号取自按钮场景。
+        /// </summary>
+        private void OnQixingdongClicked()
+        {
+            SelectLevel(m_Qixingdong.LevelId);
+        }
+
+        /// <summary>
+        /// 显示七星洞的悬停动画。
+        /// </summary>
+        private void OnQixingdongMouseEntered()
+        {
+            PlayLocationHover(m_Qixingdong);
+        }
+
+        /// <summary>
+        /// 请求进入迦楼罗之穴，关卡编号取自按钮场景。
+        /// </summary>
+        private void OnJialuoluoClicked()
+        {
+            SelectLevel(m_Jialuoluo.LevelId);
+        }
+
+        /// <summary>
+        /// 显示迦楼罗之穴的悬停动画。
+        /// </summary>
+        private void OnJialuoluoMouseEntered()
+        {
+            PlayLocationHover(m_Jialuoluo);
+        }
+
+        /// <summary>
+        /// 请求进入浅岸，关卡编号取自按钮场景。
+        /// </summary>
+        private void OnQiananClicked()
+        {
+            SelectLevel(m_Qianan.LevelId);
+        }
+
+        /// <summary>
+        /// 显示浅岸的悬停动画。
+        /// </summary>
+        private void OnQiananMouseEntered()
+        {
+            PlayLocationHover(m_Qianan);
+        }
+
+        /// <summary>
+        /// 请求进入东海，关卡编号取自按钮场景。
+        /// </summary>
+        private void OnDonghaiClicked()
+        {
+            SelectLevel(m_Donghai.LevelId);
+        }
+
+        /// <summary>
+        /// 显示东海的悬停动画。
+        /// </summary>
+        private void OnDonghaiMouseEntered()
+        {
+            PlayLocationHover(m_Donghai);
+        }
+
+        /// <summary>
+        /// 请求进入鲨之涡流，关卡编号取自按钮场景。
+        /// </summary>
+        private void OnShazhiwoliuClicked()
+        {
+            SelectLevel(m_Shazhiwoliu.LevelId);
+        }
+
+        /// <summary>
+        /// 显示鲨之涡流的悬停动画。
+        /// </summary>
+        private void OnShazhiwoliuMouseEntered()
+        {
+            PlayLocationHover(m_Shazhiwoliu);
+        }
+
+        /// <summary>
+        /// 请求进入牛魔谷，关卡编号取自按钮场景。
+        /// </summary>
+        private void OnNiumoguClicked()
+        {
+            SelectLevel(m_Niumogu.LevelId);
+        }
+
+        /// <summary>
+        /// 显示牛魔谷的悬停动画。
+        /// </summary>
+        private void OnNiumoguMouseEntered()
+        {
+            PlayLocationHover(m_Niumogu);
+        }
+
     }
 }

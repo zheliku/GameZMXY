@@ -11,14 +11,17 @@ namespace GameLogic.Enemies
     internal sealed class DragonKingEngageState : AbstractEnemyAiState
     {
         private readonly int m_AttackDesire; // 本次入场选定的普通水波出手欲望，战斗内升级不改变。
+        private readonly float m_WaterColumnDistance; // 当前场景装配的近身水柱距离，不持有原生形状。
 
         /// <summary>
         /// 由龙王实体传入本次入场的出手欲望，状态不引用实体节点。
         /// </summary>
         /// <param name="attackDesire">0..100的普通水波出手概率。</param>
-        public DragonKingEngageState(int attackDesire)
+        /// <param name="waterColumnDistance">近身水柱水平距离，像素。</param>
+        public DragonKingEngageState(int attackDesire, float waterColumnDistance)
         {
             m_AttackDesire = attackDesire;
+            m_WaterColumnDistance = waterColumnDistance;
         }
 
         /// <inheritdoc />
@@ -33,7 +36,7 @@ namespace GameLogic.Enemies
                 agent.GetSystem<EnemyAiSystem>().Patrol(agent, delta);
                 return;
             }
-            double period = Math.Abs(agent.TargetOffset.X) <= ((DragonKingEntity)agent).WaterColumnDistance ? 1.5 : 1;
+            double period = Math.Abs(agent.TargetOffset.X) <= m_WaterColumnDistance ? 1.5 : 1;
             Engage(agent, agent.GetSystem<EnemyAiSystem>().IsDecisionDue(agent.AiData, period), delta);
         }
 
@@ -46,7 +49,7 @@ namespace GameLogic.Enemies
         private void Engage(IEnemyAiAgent agent, bool decision, float delta)
         {
             float distance = Math.Abs(agent.TargetOffset.X);
-            if (distance <= ((DragonKingEntity)agent).WaterColumnDistance)
+            if (distance <= m_WaterColumnDistance)
             {
                 if (agent.AiData.Cooldowns[3] <= 0)
                 {
@@ -56,11 +59,20 @@ namespace GameLogic.Enemies
             }
             else if (distance <= agent.EngageBounds.End.X)
             {
-                bool ice = agent.AiData.Cooldowns[1] <= 0;
-                bool freeze = agent.AiData.Cooldowns[2] <= 0;
-                if (ice || freeze)
+                bool iceRingReady = agent.AiData.Cooldowns[1] <= 0;
+                bool freezeReady = agent.AiData.Cooldowns[2] <= 0;
+                if (iceRingReady || freezeReady)
                 {
-                    agent.RequestAttack(ice && freeze ? agent.NextRandom() < .5f ? 1 : 2 : ice ? 1 : 2);
+                    int attackIndex;
+                    if (iceRingReady && freezeReady)
+                    {
+                        attackIndex = agent.NextRandom() < .5f ? 1 : 2;
+                    }
+                    else
+                    {
+                        attackIndex = iceRingReady ? 1 : 2;
+                    }
+                    agent.RequestAttack(attackIndex);
                     return;
                 }
             }
@@ -82,7 +94,7 @@ namespace GameLogic.Enemies
                     agent.GetSystem<EnemyAiSystem>().Patrol(agent, delta);
                 }
             }
-            else if (distance > ((DragonKingEntity)agent).WaterColumnDistance)
+            else if (distance > m_WaterColumnDistance)
             {
                 agent.Move(Math.Sign(agent.TargetOffset.X));
             }

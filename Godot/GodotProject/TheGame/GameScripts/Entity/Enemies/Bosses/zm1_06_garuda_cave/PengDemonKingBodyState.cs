@@ -13,12 +13,7 @@ namespace GameLogic.Enemies
         {
             if (body.Dead)
             {
-                if (this is PengDemonKingDeathState)
-                {
-                    return false;
-                }
-
-                ChangeState<PengDemonKingDeathState>(fsm);
+                ChangeState(fsm, body.DeathStateType);
                 return true;
             }
             if (((PengDemonKingEntity)body).IsEgg)

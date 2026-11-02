@@ -8,8 +8,11 @@ namespace GameLogic.Enemies.Body
     /// <summary>
     /// 行走身体：执行水平意图与重力，只在落地时接受出招请求。
     /// </summary>
-    public sealed class EnemyWalkState : AbstractEnemyBodyState
+    /// <param name="attackStateType">本配方的攻击状态；未指定时使用普通攻击。</param>
+    public sealed class EnemyWalkState(Type attackStateType = null) : AbstractEnemyBodyState
     {
+        private readonly Type m_AttackStateType = attackStateType ?? typeof(EnemyAttackState); // 出招目标由身体配方选择，运动规则保持唯一实现。
+
         /// <inheritdoc />
         protected override void Tick(IFsm<IEnemyBody> fsm, IEnemyBody body, float dt)
         {
@@ -18,7 +21,7 @@ namespace GameLogic.Enemies.Body
             {
                 // 切换参数归 FSM 拥有，不提前取得并修改另一个状态实例。
                 fsm.SetData(AttackIndexKey, (VarInt32)request);
-                ChangeState<EnemyAttackState>(fsm);
+                ChangeState(fsm, m_AttackStateType);
                 return;
             }
 

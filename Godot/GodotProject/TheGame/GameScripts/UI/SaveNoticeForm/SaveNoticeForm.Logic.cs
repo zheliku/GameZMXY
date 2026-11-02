@@ -1,13 +1,15 @@
 using GameFramework.Event;
 using GameFramework.UI;
 using GameLogic.Event.Save;
+using GameLogic.Event.Equipment;
+using GameLogic;
 using Godot;
 using GodotGameFramework;
 
 namespace GameLogic.UI
 {
     /// <summary>
-    /// 应用级非交互保存提示，跨地图与关卡流程保持，由真实写盘成功事件触发。
+    /// 应用级非交互提示，跨地图与关卡流程保持，消费保存成功和直接装备奖励结果。
     /// </summary>
     public partial class SaveNoticeForm
     {
@@ -49,6 +51,12 @@ namespace GameLogic.UI
             }
 
             GF.Event.Subscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
+            if (GF.Event.Check(EquipmentRewardEventArgs.EventId, OnEquipmentReward))
+            {
+                GF.Event.Unsubscribe(EquipmentRewardEventArgs.EventId, OnEquipmentReward);
+            }
+
+            GF.Event.Subscribe(EquipmentRewardEventArgs.EventId, OnEquipmentReward);
             Visible = true;
             ResetFeedback();
         }
@@ -63,6 +71,11 @@ namespace GameLogic.UI
             if (GF.Event.Check(SaveSucceededEventArgs.EventId, OnSaveSucceeded))
             {
                 GF.Event.Unsubscribe(SaveSucceededEventArgs.EventId, OnSaveSucceeded);
+            }
+
+            if (GF.Event.Check(EquipmentRewardEventArgs.EventId, OnEquipmentReward))
+            {
+                GF.Event.Unsubscribe(EquipmentRewardEventArgs.EventId, OnEquipmentReward);
             }
 
             if (!isShutdown)
@@ -124,6 +137,18 @@ namespace GameLogic.UI
         private void OnSaveSucceeded(object sender, GameEventArgs args)
         {
             ShowMessage("保存成功！");
+        }
+
+        /// <summary>
+        /// 以当前配置名称显示直接奖励结果，不持有池化事件或发奖实体。
+        /// </summary>
+        /// <param name="sender">提交奖励的实体。</param>
+        /// <param name="args">仅在本次分发期间有效的奖励结果。</param>
+        private void OnEquipmentReward(object sender, GameEventArgs args)
+        {
+            var reward = (EquipmentRewardEventArgs)args;
+            string name = ConfigSystem.Instance.Tables.TbEquipmentConfig.Get(reward.EquipmentId).NameCn;
+            ShowMessage(reward.Collected ? $"获得 {name}" : $"背包已满，无法获得 {name}");
         }
 
         /// <summary>

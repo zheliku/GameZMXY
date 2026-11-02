@@ -29,12 +29,20 @@ namespace GameLogic.Enemies
         /// <summary>
         /// AI写入、身体消费的垂直意图：-1上升、0悬停、1下降。
         /// </summary>
-        public int VerticalIntent { get; internal set; }
+        public int VerticalIntent
+        {
+            get => AiData.VerticalIntent;
+            internal set => AiData.VerticalIntent = value;
+        }
 
         /// <summary>
         /// 直接采用移动速度而不经过垂直加速，由具体AI按运动阶段选择。
         /// </summary>
-        public bool DirectVerticalMovement { get; internal set; }
+        public bool DirectVerticalMovement
+        {
+            get => AiData.DirectVerticalMovement;
+            internal set => AiData.DirectVerticalMovement = value;
+        }
 
         /// <summary>
         /// 供具体飞行AI读取的世界高度。
@@ -74,14 +82,6 @@ namespace GameLogic.Enemies
             {
                 throw new InvalidOperationException("飞行怪物必须绑定独立的追踪高度范围。");
             }
-        }
-
-        /// <inheritdoc />
-        public override void OnShow(object userData)
-        {
-            VerticalIntent = 0;
-            DirectVerticalMovement = false;
-            base.OnShow(userData);
         }
 
         /// <summary>

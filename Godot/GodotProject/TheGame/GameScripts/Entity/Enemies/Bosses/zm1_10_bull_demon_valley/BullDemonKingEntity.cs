@@ -13,13 +13,12 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class BullDemonKingEntity : AbstractBullDemonFormEntity
     {
-        private static readonly EnemyBodyPreset m_BodyPreset = new(typeof(BullDemonKingMoveState),
+        private static readonly EnemyBodyPreset m_BodyPreset = new(typeof(EnemyWalkState),
             typeof(BullDemonTransformState),
-            () => new BullDemonKingMoveState(), () => new BullDemonKingAttackState(),
+            () => new EnemyWalkState(typeof(BullDemonKingAttackState)), () => new BullDemonKingAttackState(),
             () => new EnemyHurtState(), () => new EnemyRecoveryState(),
             () => new BullDemonTransformState()); // 本首领的状态组合；运行实例由每次入场独立创建。
-        private static readonly EnemyAiPreset m_Preset = new(typeof(BullDemonKingEngageState), typeof(BullDemonKingEngageState),
-            () => new BullDemonKingEngageState()); // 人形专属距离分支和冷却。
+        private EnemyAiPreset m_Preset; // 状态工厂注入本实例的原生选招距离，每次显示仍创建独立状态。
         [Export] private CollisionShape2D m_CaptureRange; // 吞噬动作命中时的水平捕获范围，与80px选招距离分开。
         [Export] private CollisionShape2D m_SwallowRange; // 吞噬水平距离，仅参与AI原点距离判断。
         [Export] private CollisionShape2D m_StompRange; // 践踏水平距离，仅参与AI原点距离判断。
@@ -76,7 +75,8 @@ namespace GameLogic.Enemies
         {
             get
             {
-                return m_Preset;
+                return m_Preset ??= new(typeof(BullDemonKingEngageState), typeof(BullDemonKingEngageState),
+                    () => new BullDemonKingEngageState(SwallowDistance, StompDistance));
             }
         }
 

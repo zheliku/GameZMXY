@@ -22,9 +22,9 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class DragonKingEntity : AbstractBossEntity, IEnemyAiAgent
     {
-        private static readonly EnemyBodyPreset m_BodyPreset = new(typeof(DragonKingMoveState),
+        private static readonly EnemyBodyPreset m_BodyPreset = new(typeof(EnemyWalkState),
             typeof(DragonKingDeathState),
-            () => new DragonKingMoveState(), () => new DragonKingAttackState(),
+            () => new EnemyWalkState(typeof(DragonKingAttackState)), () => new DragonKingAttackState(),
             () => new EnemyHurtState(), () => new EnemyRecoveryState(),
             () => new DragonKingDeathState()); // 本首领的状态组合；运行实例由每次入场独立创建。
         private const int HighLevelMinimum = 21; // 原版仅龙王在入场角色达到21级时切换难度。
@@ -126,7 +126,7 @@ namespace GameLogic.Enemies
 
             // 状态只持有已选择的数值，不向公共AI接口增加龙王专属的难度查询。
             m_Preset = new EnemyAiPreset(typeof(DragonKingEngageState), typeof(DragonKingEngageState),
-                () => new DragonKingEngageState(m_HighLevel ? 20 : Config.AttackDesire));
+                () => new DragonKingEngageState(m_HighLevel ? 20 : Config.AttackDesire, WaterColumnDistance));
 
             // 攻击伤害与冷却仍使用原有攻击表，龙王自行选择，不要求所有敌人支持等级档。
             var attacks = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig;

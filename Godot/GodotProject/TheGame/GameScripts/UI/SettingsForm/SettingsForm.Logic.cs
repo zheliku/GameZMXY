@@ -250,7 +250,14 @@ namespace GameLogic.UI
             m_HelpText.Visible = m_ShowingHelp;
             m_AudioPanel.Visible = m_Help.Visible = !m_ShowingHelp;
             m_ReturnMap.Visible = m_ReturnTitle.Visible = battle && !m_ShowingHelp;
-            m_Continue.Text = m_ShowingHelp ? "返回设置" : battle ? "继续游戏" : "返回游戏";
+            if (m_ShowingHelp)
+            {
+                m_Continue.Text = "返回设置";
+            }
+            else
+            {
+                m_Continue.Text = battle ? "继续游戏" : "返回游戏";
+            }
             // 容器按可见行计算高度，九宫格保留原笔刷边缘，不拉伸字体与关闭图。
             m_Content.Size = new Vector2(272, m_Content.GetCombinedMinimumSize().Y);
             m_Scroll.Size = new Vector2(326, m_Content.Size.Y + 84);
@@ -277,7 +284,9 @@ namespace GameLogic.UI
         /// <returns>任一声音组音量大于零时为 true。</returns>
         private static bool SoundEnabled()
         {
-            return GF.Sound.GetSoundGroup(SoundComponent.DefaultMusicGroup).Volume > 0 || GF.Sound.GetSoundGroup(SoundComponent.DefaultSfxGroup).Volume > 0 || GF.Sound.GetSoundGroup(SoundComponent.DefaultUiGroup).Volume > 0;
+            return GF.Sound.GetSoundGroup(SoundComponent.DefaultMusicGroup).Volume > 0 ||
+                GF.Sound.GetSoundGroup(SoundComponent.DefaultSfxGroup).Volume > 0 ||
+                GF.Sound.GetSoundGroup(SoundComponent.DefaultUiGroup).Volume > 0;
         }
 
         /// <summary>

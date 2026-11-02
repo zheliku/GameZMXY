@@ -58,8 +58,12 @@ def export(args):
     records = []
     for scene, actor in inventory.items():
         hero = scene == "wukong_entity"
-        group = "role" if hero else "monster2" if actor["symbol"] in (
-            "export.monster.Monster11", "export.monster.Monster13", "export.monster.Monster21") else "monster1"
+        if hero:
+            group = "role"
+        elif actor["symbol"] in ("export.monster.Monster11", "export.monster.Monster13", "export.monster.Monster21"):
+            group = "monster2"
+        else:
+            group = "monster1"
         scripts, reachable = groups[group]
         for action in actor["actions"]:
             label = action["label"]

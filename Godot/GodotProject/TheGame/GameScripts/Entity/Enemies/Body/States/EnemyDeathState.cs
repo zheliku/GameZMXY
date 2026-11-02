@@ -1,15 +1,17 @@
 using GameLogic.Enemies.Body;
 using GameLogic.Body;
 using GameFramework.Fsm;
+using Godot;
 
 namespace GameLogic.Enemies.Body
 {
     /// <summary>
     /// 死亡（终态）：进入时由宿主做副作用（<see cref="IEnemyBody.BeginDeath"/>：普通怪物保留受击体、首领关闭受击盒、广播
-    /// EnemyDiedEventArgs），作废出招请求并保留致死抛飞；按原生complete标记检查回收，存在air_loop时等待落地。
+    /// EnemyDiedEventArgs），作废出招请求；普通尸体保留抛飞并等待动画/落地，效果死亡固定身体并等待独立效果完成。
     /// 池复用由OnShow重建整台状态机。
     /// </summary>
-    public sealed class EnemyDeathState : AbstractEnemyBodyState
+    /// <param name="waitForEffect">是否固定身体并等待独立死亡效果；默认使用普通尸体运动和动画时长。</param>
+    public sealed class EnemyDeathState(bool waitForEffect = false) : AbstractEnemyBodyState
     {
         private float m_Left; // 死亡动画结束前的剩余时间（秒）。
 
@@ -36,14 +38,19 @@ namespace GameLogic.Enemies.Body
         {
             body.MoveIntent = 0;
             body.TakeAttackRequest();
-            m_Starting = body.HasPendingHurt;
+            m_Starting = !waitForEffect && body.HasPendingHurt;
             if (m_Starting)
             {
                 body.Velocity = body.TakePendingHurt();
             }
+            if (waitForEffect)
+            {
+                body.TakePendingHurt();
+                body.Velocity = Vector2.Zero;
+            }
 
             body.BeginDeath();
-            m_Left = body.Params.DeathTime;
+            m_Left = waitForEffect ? float.PositiveInfinity : body.Params.DeathTime;
             m_Recycled = false;
             body.RestartAnim(EnemyAnims.Death);
         }
@@ -56,13 +63,20 @@ namespace GameLogic.Enemies.Body
         /// <param name="dt">本次物理推进的秒数。</param>
         protected override void Tick(IFsm<IEnemyBody> fsm, IEnemyBody body, float dt)
         {
-            if (body.HasPendingHurt)
+            if (waitForEffect)
             {
-                body.Velocity = body.TakePendingHurt();
-                m_Starting = true;
+                body.Velocity = Vector2.Zero;
             }
-            ApplyHitMotion(body, dt, m_Starting);
-            m_Starting = false;
+            else
+            {
+                if (body.HasPendingHurt)
+                {
+                    body.Velocity = body.TakePendingHurt();
+                    m_Starting = true;
+                }
+                ApplyHitMotion(body, dt, m_Starting);
+                m_Starting = false;
+            }
 
             if (m_Recycled)
             {
@@ -71,7 +85,7 @@ namespace GameLogic.Enemies.Body
 
             if (Elapsed(m_Left))
             {
-                if (!body.OnFloor && body.Params.DeathAirLoopTime.HasValue)
+                if (!waitForEffect && !body.OnFloor && body.Params.DeathAirLoopTime.HasValue)
                 {
                     // Flash keeps the corpse animation in its post-impact loop until the body lands.
                     body.RestartAnim(EnemyAnims.Death, EnemyAnims.DeathAirLoopMarker);
@@ -85,6 +99,14 @@ namespace GameLogic.Enemies.Body
             }
 
             m_Left -= dt;
+        }
+
+        /// <summary>
+        /// 独立死亡效果只登记完成；回收仍由下一身体帧提交，不能在动画回调中销毁状态机。
+        /// </summary>
+        public void CompleteEffect()
+        {
+            m_Left = 0;
         }
     }
 }

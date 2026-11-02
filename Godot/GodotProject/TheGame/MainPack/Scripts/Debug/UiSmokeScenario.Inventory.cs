@@ -32,6 +32,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckInventoryAsync(BattleForm battleForm, AbstractHeroEntity hero, ProcedureOwner flow, LevelViewController level)
     {
         var originalEquipment = flow.GetModel<ProfileModel>().EquipmentDatas.ToArray();
+        var originalSlots = flow.GetModel<ProfileModel>().Slots.Value;
         foreach (var definition in ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList)
         {
             flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), definition.Id, () => .37f));
@@ -369,6 +370,8 @@ public sealed partial class UiSmokeScenario
                 InputMap.ActionAddEvent(GameLogic.Input.InputSystem.InventoryToggle, input);
             }
         }
+        // 穿戴与背包一起还原，不能把本夹具的法宝加成带入后续裸身成长验证。
+        flow.GetModel<ProfileModel>().Slots.Value = originalSlots;
         flow.GetModel<ProfileModel>().RestoreItems(originalEquipment);
         GD.Print("SMOKE-UI: inventory actual attributes, 25 cells, live soul, pause, animated preview, key remap/echo, unsubscribe and reuse passed");
     }

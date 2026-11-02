@@ -37,7 +37,9 @@ namespace GameLogic.Profile.Tests
             Assert.False(system.IsFrozen);
         }
 
-        /// <summary>冻结和中毒可并存，离关重建清空两者，其他作用域不受影响。</summary>
+        /// <summary>
+        /// 冻结和中毒可并存，离关重建清空两者，其他作用域不受影响。
+        /// </summary>
         [Fact]
         public void Effects_CoexistAndClearWithoutCrossingScopes()
         {

@@ -147,8 +147,16 @@ namespace GameLogic.Skills
         public bool TryActivate(SkillId id, ISkillActor actor)
         {
             var model = this.GetModel<HeroModel>();
-            if (model == null || !model.ControlsEnabled || this.GetSystem<HeroStatusSystem>().IsFrozen || model.ActiveSkillId != null || !IsAvailable(id) || !IsLearned(id) ||
-                !m_SkillDefinitions.TryGetValue(id, out var definition) || definition.CanStart?.Invoke(actor) == false)
+            // 先检查本局控制权和当前动作，再检查该技能的学习与起手条件。
+            if (model == null || !model.ControlsEnabled || this.GetSystem<HeroStatusSystem>().IsFrozen || model.ActiveSkillId != null)
+            {
+                return false;
+            }
+            if (!IsAvailable(id) || !IsLearned(id))
+            {
+                return false;
+            }
+            if (!m_SkillDefinitions.TryGetValue(id, out var definition) || definition.CanStart?.Invoke(actor) == false)
             {
                 return false;
             }
@@ -175,15 +183,33 @@ namespace GameLogic.Skills
             ArgumentNullException.ThrowIfNull(definitions);
             var model = this.GetModel<HeroModel>() ?? throw new InvalidOperationException("登记技能前必须先创建本局英雄模型。");
             var tables = this.GetModel<ConfigurationModel>().Tables;
-            if (heroId != this.GetModel<ProfileModel>().ActiveHeroId || definitions.Length == 0 ||
-                definitions.Any(item => item == null || item.BodyState == null ||
-                    item.BodyState.IsAbstract || !typeof(AbstractHeroSkillState).IsAssignableFrom(item.BodyState) ||
-                    (item.InputAction != null && string.IsNullOrWhiteSpace(item.InputAction)) ||
-                    tables.TbSkillConfig.GetOrDefault(item.Id) is not { } skill || (int)skill.Hero != heroId) ||
-                definitions.Select(item => item.Id).Distinct().Count() != definitions.Length ||
-                definitions.Where(item => item.InputAction != null).GroupBy(item => item.InputAction).Any(group => group.Count() > 1))
+            if (heroId != this.GetModel<ProfileModel>().ActiveHeroId || definitions.Length == 0)
             {
                 throw new ArgumentException("技能登记须属于当前英雄，编号、状态和动作绑定须合法且不重复。", nameof(definitions));
+            }
+
+            // 完整校验后才取消旧技能：状态类型、配置归属和输入唯一性分别检查。
+            var skillIds = new HashSet<SkillId>();
+            var inputActions = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var definition in definitions)
+            {
+                if (definition == null || definition.BodyState == null || definition.BodyState.IsAbstract ||
+                    !typeof(AbstractHeroSkillState).IsAssignableFrom(definition.BodyState))
+                {
+                    throw new ArgumentException("技能登记必须提供具体的英雄技能状态。", nameof(definitions));
+                }
+
+                var skill = tables.TbSkillConfig.GetOrDefault(definition.Id);
+                if (skill == null || (int)skill.Hero != heroId || !skillIds.Add(definition.Id))
+                {
+                    throw new ArgumentException("技能编号必须属于当前英雄且不重复。", nameof(definitions));
+                }
+
+                if (definition.InputAction != null &&
+                    (string.IsNullOrWhiteSpace(definition.InputAction) || !inputActions.Add(definition.InputAction)))
+                {
+                    throw new ArgumentException("技能输入动作必须非空白且不重复。", nameof(definitions));
+                }
             }
 
             if (m_SkillDefinitions.Values.SequenceEqual(definitions))

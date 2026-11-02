@@ -77,7 +77,14 @@ func _apply() -> void:
             if fade > 0:
                 entries.push_front(entries[0])
             for index in entries.size():
-                var time := 0.0 if fade > 0 and index == 0 else fade + (index - (1 if fade > 0 else 0)) / 24.0
+                var time: float
+                if fade > 0 and index == 0:
+                    time = 0.0
+                else:
+                    var source_frame := index
+                    if fade > 0:
+                        source_frame -= 1
+                    time = fade + source_frame / 24.0
                 times.append(time)
                 var value: Dictionary = entries[index][slot] if entries[index].size() > slot and entries[index][slot] != null else {}
                 disabled.append(value.is_empty())

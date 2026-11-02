@@ -17,10 +17,14 @@ using GameLogic.Heroes.Body;
 using GameLogic.Equipment;
 using GameLogic.Profile;
 using GameLogic.UI;
+using GameLogic.Event.Equipment;
+using GameConfig;
+using GameConfig.Constant;
 using System.Collections.Generic;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
+using GodotGameFramework.UI;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -64,7 +68,10 @@ public sealed partial class UiSmokeScenario
                     clock += 1d / ticks;
                     float alpha = sprite.Modulate.A;
                     if (alpha > 0 && showingAt < 0)
+                    {
                         showingAt = clock;
+                    }
+
                     if (alpha == 1 && shownAt < 0)
                     {
                         shownAt = clock;
@@ -72,14 +79,26 @@ public sealed partial class UiSmokeScenario
                             "原生淡入完成后仍拒绝伤害");
                     }
                     if (shownAt >= 0 && hidingAt < 0 && previousAlpha == 1 && alpha < 1)
+                    {
                         hidingAt = clock;
+                    }
+
                     if (hidingAt >= 0 && alpha == 0 && hiddenAt < 0)
+                    {
                         hiddenAt = clock;
+                    }
+
                     if (SmokeInspection.ReadField<object>(state, "m_HeartPhase").ToString() == "Shown")
+                    {
                         shownDuration = Math.Max(shownDuration, SmokeInspection.ReadField<float>(state, "m_HeartLeft"));
+                    }
+
                     if (alpha < 1)
+                    {
                         Check(ApplyEastSeaHit(heart, hero.Id, 10, 1, false, Vector2.Zero) == 0,
-                            "未完全显现的心脏接受伤害");
+                                                "未完全显现的心脏接受伤害");
+                    }
+
                     previousAlpha = alpha;
                 }
                 m_Driver.GetTree().PhysicsFrame += Sample;
@@ -98,7 +117,7 @@ public sealed partial class UiSmokeScenario
                     float nextHidden = SmokeInspection.ReadField<float>(state, "m_HeartLeft");
                     Check(nextHidden >= 4.9f && nextHidden <= 11 && sprite.Modulate.A == 0f,
                         "后续隐藏不符合原版5..11秒或未完全隐藏");
-                    GD.Print($"SMOKE-BULL HEART TIMING {ticks}Hz PASS: hidden={hidden}, fadeIn={shownAt-showingAt:F3}, vulnerable={hidingAt-shownAt:F3}, fadeOut={hiddenAt-hidingAt:F3}; first-full-alpha hit accepted");
+                    GD.Print($"SMOKE-BULL HEART TIMING {ticks}Hz PASS: hidden={hidden}, fadeIn={shownAt - showingAt:F3}, vulnerable={hidingAt - shownAt:F3}, fadeOut={hiddenAt - hidingAt:F3}; first-full-alpha hit accepted");
                     await CheckBullFireRangeAsync(hero, heart, ticks);
                 }
                 finally
@@ -339,19 +358,28 @@ public sealed partial class UiSmokeScenario
     }
 
     /// <summary>
-    /// 用真实致死攻击检查直接赠送、重复击败与满包，复用不能遗留奖励资格。
+    /// 用真实致死攻击检查直接赠送、重复击败、满包与提示缺席，复用不能遗留奖励资格。
     /// </summary>
     /// <param name="hero">真实伤害来源。</param>
     /// <param name="flow">隔离档案和物品系统。</param>
-    /// <returns>三次实际死亡及背包事务完成。</returns>
+    /// <returns>实际死亡、窗口复用及背包事务完成。</returns>
     private async Task CheckBullTreasureRewardAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         var profile = flow.GetModel<ProfileModel>();
         var original = profile.EquipmentDatas.ToArray();
         try
         {
-            foreach (string scenario in new[] { "first", "duplicate", "full" })
+            foreach (string scenario in new[] { "first", "duplicate", "full", "without-notice" })
             {
+                if (scenario == "without-notice")
+                {
+                    profile.EquipmentDatas.Clear();
+                    var notice = (SaveNoticeForm)GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_save_notice_form);
+                    GF.UI.CloseUIForm(notice.SerialId);
+                    await WaitFramesAsync(3);
+                    Check(GF.Event.Count(EquipmentRewardEventArgs.EventId) == 0, "提示关闭后遗留奖励订阅");
+                }
+
                 if (scenario == "full")
                 {
                     profile.EquipmentDatas.Clear();
@@ -374,22 +402,38 @@ public sealed partial class UiSmokeScenario
                 await WaitUntilAsync(() => SmokeInspection.ReadField<IFsm<IEnemyBody>>(heart, "m_BodyFsm").CurrentState is BullDemonHeartDeathState,
                     "最终形态未进入实际死亡演出");
                 int treasures = profile.EquipmentDatas.Count(value => value.EquipmentId == EquipmentId.DiamondSnare);
-                Check(profile.EquipmentDatas.Count == before + (scenario == "first" ? 1 : 0) &&
+                Check(profile.EquipmentDatas.Count == before + (scenario is "first" or "without-notice" ? 1 : 0) &&
                     treasures == (scenario == "full" ? 0 : 1), "金钢琢重复赠送、满包丢弃或未直接入包：" + scenario);
-                if (scenario != "duplicate")
+                if (scenario is "first" or "full")
                 {
                     var notice = GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single();
-                    Check(notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Text.Contains(
+                    await WaitUntilAsync(() => notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Text.Contains(
                         scenario == "full" ? "背包已满" : "获得 金钢琢"), "金钢琢获得或满包提示缺失");
                 }
-                ReleaseTestEntity(heart);
+
+                if (scenario == "without-notice")
+                {
+                    await WaitUntilAsync(() => !heart.IsShown, "提示缺席阻止了心脏完成死亡回池");
+                    var notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(UIFormId.SaveNoticeForm);
+                    Check(GF.Event.Count(EquipmentRewardEventArgs.EventId) == 1, "提示池复用后奖励订阅不唯一");
+                    Check(!notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Visible, "提示重开播放了已过期奖励");
+                }
+                else
+                {
+                    ReleaseTestEntity(heart);
+                }
                 m_Monster = null;
                 await WaitFramesAsync(3);
             }
-            GD.Print("SMOKE-BULL TREASURE PASS: lethal hit, direct grant, duplicate defeat, full bag notice and pool reuse");
+            GD.Print("SMOKE-BULL TREASURE PASS: lethal hit, direct grant, duplicate defeat, full bag, absent notice, death completion and subscription reuse");
         }
         finally
         {
+            if (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_save_notice_form) == null)
+            {
+                await GF.UI.OpenUIFormAsync<SaveNoticeForm>(UIFormId.SaveNoticeForm);
+            }
+
             profile.EquipmentDatas.ReplaceAll(original);
         }
     }

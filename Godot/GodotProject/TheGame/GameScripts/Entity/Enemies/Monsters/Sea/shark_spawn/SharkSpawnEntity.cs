@@ -18,8 +18,7 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class SharkSpawnEntity : AbstractSeaMonsterEntity, IEnemyFreeMoveBody
     {
-        private static readonly EnemyAiPreset m_Preset = new(typeof(SharkSpawnEngageState), typeof(SharkSpawnEngageState),
-            () => new SharkSpawnEngageState()); // 追踪与近身决策保持同一时钟。
+        private EnemyAiPreset m_Preset; // 追踪与近身决策共用时钟，工厂只传入范围和实时运动事实。
         private const int SlashAttackId = 2033; // 接触后独立斩击，不复用身体攻击包。
         private static readonly EnemyBodyPreset m_BodyPreset = EnemyBodyPresets.Swim<SharkSpawnAttackState>(
             288f, 96f, 72f); // 游动保持原加速度/退避速度，仅替换为鲨鱼专属攻击。
@@ -45,12 +44,20 @@ namespace GameLogic.Enemies
         /// <summary>
         /// 本鲨鱼 AI 请求的垂直游动方向；0 为悬停。
         /// </summary>
-        public int VerticalIntent { get; internal set; }
+        public int VerticalIntent
+        {
+            get => AiData.VerticalIntent;
+            internal set => AiData.VerticalIntent = value;
+        }
 
         /// <summary>
         /// 退避时按原规则直接上游，其余阶段使用本鲨鱼的垂直加速度。
         /// </summary>
-        public bool DirectVerticalMovement { get; internal set; }
+        public bool DirectVerticalMovement
+        {
+            get => AiData.DirectVerticalMovement;
+            internal set => AiData.DirectVerticalMovement = value;
+        }
 
         /// <summary>
         /// 当前世界高度，用于保持原版退避时的垂直边界。
@@ -68,7 +75,9 @@ namespace GameLogic.Enemies
         {
             get
             {
-                return m_Preset;
+                return m_Preset ??= new(typeof(SharkSpawnEngageState), typeof(SharkSpawnEngageState),
+                    () => new SharkSpawnEngageState(trackingHeight: TrackingHeight,
+                        altitude: () => Altitude, horizontalSpeed: () => Velocity.X));
             }
         }
 
@@ -105,8 +114,6 @@ namespace GameLogic.Enemies
         {
             m_EffectGeneration++;
             m_InvulnerabilityLeft = 0f;
-            VerticalIntent = 0;
-            DirectVerticalMovement = false;
             base.OnShow(userData);
             Body.Visible = true;
         }

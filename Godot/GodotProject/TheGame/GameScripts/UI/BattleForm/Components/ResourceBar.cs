@@ -21,7 +21,15 @@ namespace GameLogic.UI.Widgets
         {
             int max = Math.Max(0, maximum);
             int value = Math.Clamp(current, 0, max);
-            double ratio = max <= 0 ? (m_FullAtZeroMaximum ? 1.0 : 0.0) : (double)value / max;
+            double ratio;
+            if (max > 0)
+            {
+                ratio = (double)value / max;
+            }
+            else
+            {
+                ratio = m_FullAtZeroMaximum ? 1.0 : 0.0;
+            }
 
             // 主填充与文字立即反映新值。
             MinValue = 0.0;

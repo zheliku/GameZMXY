@@ -251,7 +251,7 @@ namespace GameLogic.Effects
         {
             if (!m_Active || m_AttackData == null || m_RemainingHits <= 0 || !m_Shapes.Any(shape => !shape.Disabled) ||
                 area is not HurtBoxNode { OwnerEntity: { IsAlive: true } target } hurtBox || target.Side == m_Attacker.Side ||
-                !Intersects(hurtBox) ||
+                !hurtBox.Intersects(m_Shapes) ||
                 !m_AttackData.TryRegisterHit(target.GetInstanceId()))
             {
                 return;
@@ -275,31 +275,6 @@ namespace GameLogic.Effects
             {
                 this.GetSystem<HeroSystem>().RecordHit(result.Damage, m_Attacker.Power);
             }
-        }
-
-        /// <summary>
-        /// 用当前形状与变换确认命中，排除池化复用、瞬移或动画缩形后尚未刷新的Area重叠缓存。
-        /// </summary>
-        /// <param name="target">物理引擎报告的候选受击区。</param>
-        /// <returns>任一启用的攻受形状当前实际相交时为true。</returns>
-        private bool Intersects(HurtBoxNode target)
-        {
-            foreach (var child in target.GetChildren())
-            {
-                if (child is not CollisionShape2D { Disabled: false, Shape: { } targetShape } targetNode)
-                {
-                    continue;
-                }
-
-                foreach (var attack in m_Shapes)
-                {
-                    if (!attack.Disabled && attack.Shape.Collide(attack.GlobalTransform, targetShape, targetNode.GlobalTransform))
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
         }
 
         /// <summary>

@@ -107,7 +107,7 @@ public sealed partial class UiSmokeScenario
                 var flyer = m_Monster;
                 var flyerAgent = (IEnemyAiAgent)flyer;
                 var fsm = SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(flyer, "m_AiFsm");
-                var state = fsm.GetState<FlyingDemonEngageState>();
+                var state = fsm.GetState<FlyingPursuitState>();
                 float turn = SmokeInspection.ReadField<float>(state, "m_TurnInterval");
                 void FollowFlyer()
                 {

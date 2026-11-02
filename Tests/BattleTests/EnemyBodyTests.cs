@@ -5,6 +5,7 @@ using System.Linq;
 using GameFramework.Fsm;
 using GameLogic.Body;
 using GameLogic.Config;
+using GameLogic.Enemies;
 using Godot;
 using Xunit;
 
@@ -66,6 +67,80 @@ namespace GameLogic.Battle.Tests
                 () => new EnemyWalkState(), () => new EnemyWalkState(), () => new EnemyDeathState());
             Assert.Throws<InvalidOperationException>(() => missing.CreateStates());
             Assert.Throws<InvalidOperationException>(() => duplicate.CreateStates());
+        }
+
+        /// <summary>
+        /// 自定义攻击仍沿唯一行走实现消费落地请求，并在收招后返回配方入口。
+        /// </summary>
+        /// <param name="ticks">每秒物理步数。</param>
+        [Theory]
+        [InlineData(24)]
+        [InlineData(60)]
+        [InlineData(120)]
+        public void Walk_CustomAttackReturnsToSharedMovement(int ticks)
+        {
+            EnemyBodyPreset preset = new(typeof(EnemyWalkState), typeof(EnemyDeathState),
+                () => new EnemyWalkState(typeof(DragonKingAttackState)), () => new DragonKingAttackState(),
+                () => new EnemyHurtState(), () => new EnemyDeathState());
+            using EnemyHarness h = new(Params(), preset);
+            h.Body.OnFloor = false;
+            h.Body.AttackRequest = 0;
+            h.Step(1, 1f / ticks);
+            Assert.Equal(0, h.Body.BeginCount);
+            h.Body.OnFloor = true;
+            h.Body.AttackRequest = 0;
+            h.Step(1, 1f / ticks);
+            Assert.Equal(1, h.Body.BeginCount);
+            Assert.Equal("attack_1", h.Body.LastAnim);
+            Assert.Equal(0, h.Body.Velocity.X);
+            for (int i = 0; i < ticks && h.State != "Walk"; i++)
+            {
+                h.Step(1, 1f / ticks);
+            }
+
+            Assert.Equal("Walk", h.State);
+            Assert.Equal(1, h.Body.EndCount);
+        }
+
+        /// <summary>
+        /// 死亡效果只能在真实完成后请求回收，旧周期回调不能完成新实例的终态。
+        /// </summary>
+        [Fact]
+        public void EffectDeath_WaitsForCompletionAndIgnoresOldInstanceCallback()
+        {
+            EnemyDeathState death = null;
+            EnemyBodyPreset preset = new(typeof(EnemyWalkState), typeof(EnemyDeathState),
+                () => new EnemyWalkState(), () => death = new EnemyDeathState(waitForEffect: true));
+            EnemyDeathState oldDeath;
+            using (EnemyHarness first = new(Params(), preset))
+            {
+                first.Body.Dead = true;
+                first.Body.AttackRequest = 0;
+                first.Body.PendingHurt = new Vector2(200, -300);
+                first.Step(120);
+                Assert.Equal(1, first.Body.DiedCount);
+                Assert.Equal(0, first.Body.RecycleCount);
+                Assert.Equal(-1, first.Body.AttackRequest);
+                Assert.Null(first.Body.PendingHurt);
+                Assert.Equal(Vector2.Zero, first.Body.Velocity);
+                oldDeath = death;
+                death.CompleteEffect();
+                Assert.Equal(0, first.Body.RecycleCount);
+                first.Step(1);
+                Assert.Equal(1, first.Body.RecycleCount);
+            }
+
+            using EnemyHarness second = new(Params(), preset);
+            second.Body.Dead = true;
+            second.Step(1);
+            Assert.NotSame(oldDeath, death);
+            oldDeath.CompleteEffect();
+            second.Step(120);
+            Assert.Equal(0, second.Body.RecycleCount);
+            Assert.Equal(1, second.Body.DiedCount);
+            death.CompleteEffect();
+            second.Step(1);
+            Assert.Equal(1, second.Body.RecycleCount);
         }
 
         /// <summary>
@@ -453,13 +528,7 @@ namespace GameLogic.Battle.Tests
             public bool DirectVerticalMovement { get; set; }
 
             /// <inheritdoc />
-            public Type DeathStateType
-            {
-                get
-                {
-                    return typeof(EnemyDeathState);
-                }
-            }
+            public Type DeathStateType { get; }
 
             /// <summary>
             /// AI 写入的移动方向意图。
@@ -471,10 +540,12 @@ namespace GameLogic.Battle.Tests
             /// </summary>
             /// <param name="p">本夹具借用的敌人身体状态参数。</param>
             /// <param name="movementStateType">本测试使用的同级移动状态类型。</param>
-            public FakeEnemy(EnemyBodyParams p, Type movementStateType)
+            /// <param name="deathStateType">本测试使用的死亡终态类型。</param>
+            public FakeEnemy(EnemyBodyParams p, Type movementStateType, Type deathStateType)
             {
                 Params = p;
                 MovementStateType = movementStateType;
+                DeathStateType = deathStateType;
             }
 
             /// <summary>
@@ -530,7 +601,7 @@ namespace GameLogic.Battle.Tests
             public EnemyHarness(EnemyBodyParams p, EnemyBodyPreset preset = null)
             {
                 preset ??= EnemyBodyPresets.Walk();
-                Body = new FakeEnemy(p, preset.MovementStateType);
+                Body = new FakeEnemy(p, preset.MovementStateType, preset.DeathStateType);
                 m_Fsm = m_Manager.CreateFsm<IEnemyBody>(Guid.NewGuid().ToString(), Body, preset.CreateStates());
                 m_Fsm.Start(preset.MovementStateType);
             }

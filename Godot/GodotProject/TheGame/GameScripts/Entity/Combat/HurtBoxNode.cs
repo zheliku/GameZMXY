@@ -50,5 +50,31 @@ namespace GameLogic.Entity
 
             return bounds;
         }
+
+        /// <summary>
+        /// 以当前启用形状和全局变换复核攻击候选，排除池复用、瞬移或动画缩形后的旧物理重叠缓存。
+        /// </summary>
+        /// <param name="attacks">攻击方装配时取得的固定形状节点；几何与启闭仍由原生动画拥有。</param>
+        /// <returns>任一启用攻击形状与本受击区实际相交时为 true。</returns>
+        internal bool Intersects(CollisionShape2D[] attacks)
+        {
+            foreach (var child in GetChildren())
+            {
+                if (child is not CollisionShape2D { Disabled: false, Shape: { } targetShape } target)
+                {
+                    continue;
+                }
+
+                foreach (var attack in attacks)
+                {
+                    if (!attack.Disabled && attack.Shape.Collide(attack.GlobalTransform, targetShape, target.GlobalTransform))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
     }
 }

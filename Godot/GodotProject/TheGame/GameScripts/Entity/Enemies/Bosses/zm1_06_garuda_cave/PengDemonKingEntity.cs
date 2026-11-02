@@ -16,12 +16,11 @@ namespace GameLogic.Enemies
     public partial class PengDemonKingEntity : AbstractBossEntity, IActorBody
     {
         private static readonly EnemyBodyPreset m_BodyPreset = new(typeof(PengDemonKingMoveState),
-            typeof(PengDemonKingDeathState),
+            typeof(EnemyDeathState),
             () => new PengDemonKingMoveState(), () => new PengDemonKingAttackState(),
             () => new PengDemonKingHurtState(), () => new PengDemonKingEggState(),
-            () => new PengDemonKingRebirthState(), () => new PengDemonKingDeathState()); // 本首领的状态组合；运行实例由每次入场独立创建。
-        private static readonly EnemyAiPreset m_Preset = new(typeof(PengDemonKingEngageState), typeof(PengDemonKingEngageState),
-            () => new PengDemonKingEngageState()); // 每只首领独立选招。
+            () => new PengDemonKingRebirthState(), () => new EnemyDeathState(waitForEffect: true)); // 本首领的状态组合；运行实例由每次入场独立创建。
+        private EnemyAiPreset m_Preset; // 注入只读几何与动态事实，不让AI状态下转原生实体。
 
         [Export] private CollisionShape2D m_TrackingRange; // 本首领允许追踪的高度，独立于圆形选招半径。
         [Export] private CollisionShape2D m_MeleeRange; // 近身刺击半径，仅参与AI原点距离判断。
@@ -85,7 +84,9 @@ namespace GameLogic.Enemies
         {
             get
             {
-                return m_Preset;
+                return m_Preset ??= new(typeof(PengDemonKingEngageState), typeof(PengDemonKingEngageState),
+                    () => new PengDemonKingEngageState(trackingHeight: TrackingHeight, meleeDistance: MeleeDistance,
+                        flying: () => Flying, onFloor: () => OnFloor));
             }
         }
 
@@ -324,7 +325,7 @@ namespace GameLogic.Enemies
         /// </summary>
         private void SpawnBossDeathAnimEvent()
         {
-            if (m_BodyFsm.CurrentState is not PengDemonKingDeathState state)
+            if (m_BodyFsm.CurrentState is not EnemyDeathState state)
             {
                 return;
             }

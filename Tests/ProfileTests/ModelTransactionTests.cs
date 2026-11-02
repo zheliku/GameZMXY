@@ -14,18 +14,97 @@ namespace GameLogic.Profile.Tests
         /// <summary>
         /// 档案系统检查背包和全部穿戴，不能再次领取已穿戴的同一实例。
         /// </summary>
+        /// <param name="equipmentId">覆盖全部部位及两种法宝。</param>
+        /// <param name="slot">实际穿戴部位。</param>
+        /// <param name="otherHero">是否把物品放在非出战英雄的穿戴中。</param>
+        [Theory]
+        [InlineData(EquipmentId.RoughPilgrimStaff, EquipmentSlot.Weapon, false)]
+        [InlineData(EquipmentId.EarthFiendApeArmor, EquipmentSlot.Armor, false)]
+        [InlineData(EquipmentId.EarthFiendRing, EquipmentSlot.Accessory, false)]
+        [InlineData(EquipmentId.DiamondSnare, EquipmentSlot.Treasure, false)]
+        [InlineData(EquipmentId.EastSeaBanner, EquipmentSlot.Treasure, false)]
+        [InlineData(EquipmentId.DiamondSnare, EquipmentSlot.Treasure, true)]
+        [InlineData(EquipmentId.EastSeaBanner, EquipmentSlot.Treasure, true)]
+        public void ProfileCollection_RejectsAlreadyEquippedInstance(EquipmentId equipmentId,
+            EquipmentSlot slot, bool otherHero)
+        {
+            var scope = new TestGameScope(1, [(1, 0), (2, 0)], 0, 25);
+            var system = scope.GetSystem<ProfileSystem>();
+            var equipment = new EquipmentSystem(scope);
+            var item = equipment.Roll(Guid.NewGuid(), equipmentId, () => 0);
+            Assert.True(system.TryCollectEquipment(item));
+            Assert.True(equipment.TryEquip(item.InstanceId));
+            if (otherHero)
+            {
+                // 测试夹具把完整穿戴交给另一英雄，验证排重不局限于当前出战者。
+                scope.Profile.GetSlots(2).Value = scope.Profile.Slots.Value;
+                scope.Profile.Slots.Value = default;
+            }
+
+            Assert.False(system.TryCollectEquipment(item));
+            Assert.Empty(scope.Profile.EquipmentDatas);
+            if (otherHero)
+            {
+                Assert.Same(item, scope.Profile.GetSlots(2).Value.Treasure);
+            }
+            else
+            {
+                Assert.Same(item, scope.Profile.GetEquippedItem(slot));
+            }
+
+            // 被拒绝的请求不得破坏后续保存与重建的不变量。
+            var restored = TestGameScope.FromSaveData(scope.CaptureSaveData(), TestTables.Curve,
+                TestTables.Tables.TbEquipmentConfig, 25);
+            Assert.Empty(restored.Profile.EquipmentDatas);
+        }
+
+        /// <summary>
+        /// 唯一奖励以背包和穿戴为事实源，重复时不消耗随机数，回滚后可重新领取。
+        /// </summary>
         [Fact]
-        public void ProfileCollection_RejectsAlreadyEquippedInstance()
+        public void UniqueEquipmentReward_UsesOwnershipAndRollsBackWithProfile()
         {
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var system = scope.GetSystem<ProfileSystem>();
-            var equipment = new EquipmentSystem(scope);
+            var snapshot = scope.CaptureSaveData();
+            int samples = 0;
+            Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(EquipmentId.DiamondSnare,
+                () => { samples++; return .37f; }));
+            var item = Assert.Single(scope.Profile.EquipmentDatas);
+            Assert.True(samples > 0);
+            int rolled = samples;
+
+            Assert.True(scope.GetSystem<EquipmentSystem>().TryEquip(item.InstanceId));
+            Assert.Equal(EquipmentGrantResult.AlreadyOwned, system.GrantUniqueEquipment(EquipmentId.DiamondSnare,
+                () => { samples++; return .99f; }));
+            Assert.Equal(rolled, samples);
+            Assert.Same(item, scope.Profile.Treasure);
+            Assert.Empty(scope.Profile.EquipmentDatas);
+
+            scope.RestoreCheckpoint(snapshot);
+            Assert.False(scope.Profile.HasEquipment(EquipmentId.DiamondSnare));
+            Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(EquipmentId.DiamondSnare, () => .5f));
+            Assert.NotEqual(item.InstanceId, Assert.Single(scope.Profile.EquipmentDatas).InstanceId);
+        }
+
+        /// <summary>
+        /// 满包奖励不创建属性实例，失败不修改已有背包，也不留下独立领取标志。
+        /// </summary>
+        [Fact]
+        public void UniqueEquipmentReward_FullBagDoesNotRollOrConsumeEligibility()
+        {
+            var scope = new TestGameScope(1, [(1, 0)], 0, 1);
+            var system = scope.GetSystem<ProfileSystem>();
+            var equipment = scope.GetSystem<EquipmentSystem>();
             var item = equipment.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
             Assert.True(system.TryCollectEquipment(item));
+            Assert.Equal(EquipmentGrantResult.InventoryFull, system.GrantUniqueEquipment(EquipmentId.DiamondSnare,
+                () => throw new InvalidOperationException("满包不应抽取属性。")));
+            Assert.Same(item, Assert.Single(scope.Profile.EquipmentDatas));
+
             Assert.True(equipment.TryEquip(item.InstanceId));
-            Assert.False(system.TryCollectEquipment(item));
-            Assert.Empty(scope.Profile.EquipmentDatas);
-            Assert.Same(item, scope.Profile.Weapon);
+            Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(EquipmentId.DiamondSnare, () => .5f));
+            Assert.Equal(EquipmentId.DiamondSnare, Assert.Single(scope.Profile.EquipmentDatas).EquipmentId);
         }
 
         /// <summary>

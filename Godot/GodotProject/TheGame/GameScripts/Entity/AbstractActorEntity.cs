@@ -8,6 +8,7 @@ using GameLogic.Battle.Damage;
 using GameLogic.Battle.Attacks;
 using GameLogic.Event.Combat;
 using System.Collections.Generic;
+using System.Linq;
 using System;
 using GameConfig.Battle;
 using GameConfig.Entity;
@@ -44,6 +45,8 @@ namespace GameLogic.Entity
         [Export] private HurtBoxNode m_HurtBox; // 受击判定区，可为空；HurtBox 持有本实体引用。
 
         [Export] private Area2D m_HitBox; // 攻击判定区，几何和开关完全由动画值轨道驱动。
+
+        private CollisionShape2D[] m_HitShapes = Array.Empty<CollisionShape2D>(); // 场景装配的固定攻击形状；不复制可变几何或动画启闭状态。
 
         [Export] private Node2D m_HitBoxRoot; // 攻击判定区镜像容器，随朝向翻转动画写入的位置。
 
@@ -310,6 +313,7 @@ namespace GameLogic.Entity
 
             if (isNewInstance && m_HitBox != null)
             {
+                m_HitShapes = m_HitBox.GetChildren().OfType<CollisionShape2D>().ToArray();
                 // 命中回调只连一次（判定盒几何/开关全在动画轨道上，代码不再初始化形状）
                 m_HitBox.AreaEntered += OnHitBoxAreaEntered;
             }
@@ -767,9 +771,14 @@ namespace GameLogic.Entity
         /// </summary>
         protected void PollAttackOverlaps()
         {
-            foreach (var child in m_HitBox.GetChildren())
+            if (m_ActiveAttackData == null)
             {
-                if (child is CollisionShape2D { Disabled: false })
+                return;
+            }
+
+            foreach (var shape in m_HitShapes)
+            {
+                if (!shape.Disabled)
                 {
                     foreach (var area in m_HitBox.GetOverlappingAreas())
                     {
@@ -796,6 +805,12 @@ namespace GameLogic.Entity
             // 过滤自身、死亡目标和无效实体，避免产生无意义结算。
             AbstractActorEntity target = hurtBox.OwnerEntity;
             if (target == null || target == this || target.Dead)
+            {
+                return;
+            }
+
+            // 新招的物理候选可能仍来自上一物理步，先确认当前几何再消耗命中去重。
+            if (!hurtBox.Intersects(m_HitShapes))
             {
                 return;
             }

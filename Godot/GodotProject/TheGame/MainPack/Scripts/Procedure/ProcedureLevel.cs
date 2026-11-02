@@ -443,7 +443,7 @@ public class ProcedureLevel : ProcedureBase
             token.ThrowIfCancellationRequested();
             if (!saved || entrySerial != m_EntrySerial || owner.IsDestroyed)
             {
-                Log.Error("[ProcedureLevel] 设置返回前存档失败，保留当前关卡。" );
+                Log.Error("[ProcedureLevel] 设置返回前存档失败，保留当前关卡。");
                 m_Navigating = false;
                 return;
             }
@@ -684,9 +684,17 @@ public class ProcedureLevel : ProcedureBase
 
         // 返回地图前等待本次检查点完成；写入失败仍保留内存进度，地图可手动重试保存。
         Task<bool> write = m_LevelSystem?.CheckpointWrite;
-        if (write != null && !await write)
+        try
         {
-            Log.Error("[ProcedureLevel] 检查点写入失败，当前进度仍保留在内存中，请在地图重新保存。");
+            if (write != null && !await write)
+            {
+                Log.Error("[ProcedureLevel] 检查点写入失败，当前进度仍保留在内存中，请在地图重新保存。");
+            }
+        }
+        catch (Exception error)
+        {
+            // 框架正常IO失败返回false；真正faulted任务也沿相同的内存保留路径导航，不让async void异常逃逸。
+            Log.Error("[ProcedureLevel] 检查点任务异常，当前进度仍保留在内存中，请在地图重新保存：{0}", error);
         }
 
         if (entrySerial != m_EntrySerial || owner.IsDestroyed)

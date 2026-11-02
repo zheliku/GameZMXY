@@ -113,12 +113,18 @@ def actor_scene(actor, frames, library):
             lines.append(f'[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/{BOSS}/{filename}.tres" id="{key}"]')
         lines.append(f'[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/{BOSS}/bull_fire_effect.tscn" id="fire"]')
         lines += ['[sub_resource type="RectangleShape2D" id="hand_shape"]', 'size = Vector2(280, 153)']
+    if name == "bull_guard":
+        detection_half_height = 110
+    elif name == "bull_demon_beast":
+        detection_half_height = 450
+    else:
+        detection_half_height = 400
     lines += ['[sub_resource type="CapsuleShape2D" id="body_shape"]',
               f'radius = {fmt_float(min(hurt[2], hurt[3]) / 2)}', f'height = {fmt_float(max(hurt[2], hurt[3]))}',
               '[sub_resource type="RectangleShape2D" id="hurt_shape"]', f'size = {vec2(hurt[2:])}',
               '[sub_resource type="RectangleShape2D" id="empty"]', 'size = Vector2(1, 1)',
               '[sub_resource type="RectangleShape2D" id="detector"]',
-              f'size = Vector2(600, {2 * (110 if name == "bull_guard" else 450 if name == "bull_demon_beast" else 400)})',
+              f'size = Vector2(600, {2 * detection_half_height})',
               f'[node name="{class_name}" type="CharacterBody2D" node_paths=PackedStringArray(' + ', '.join('"' + key + '"' for key in bindings + extra) + ')]',
               'collision_layer = 4', f'collision_mask = {0 if heart else 9}', 'floor_constant_speed = true',
               'floor_max_angle = 0.87266463', 'floor_snap_length = 12.0', 'script = ExtResource("script")',

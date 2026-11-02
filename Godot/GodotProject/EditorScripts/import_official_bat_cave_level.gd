@@ -70,7 +70,13 @@ func _build_geometry(parent: Node) -> void:
 		body.position = corners[0]
 		body.collision_layer = 8 if item.oneWay else 1
 		body.collision_mask = 0
-		var surface_parent: Node = walls if not item.oneWay and (corners[3] - corners[0]).length() > 900 else slopes if not is_equal_approx(corners[0].y, corners[1].y) else ground
+		var surface_parent: Node
+		if not item.oneWay and (corners[3] - corners[0]).length() > 900:
+			surface_parent = walls
+		elif not is_equal_approx(corners[0].y, corners[1].y):
+			surface_parent = slopes
+		else:
+			surface_parent = ground
 		_add(surface_parent, body)
 		var shape := CollisionShape2D.new()
 		shape.name = "Surface"

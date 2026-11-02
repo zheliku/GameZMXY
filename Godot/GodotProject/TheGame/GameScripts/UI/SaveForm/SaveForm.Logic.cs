@@ -208,18 +208,28 @@ namespace GameLogic.UI
         private void RefreshDirectory(SaveDirectoryState directory)
         {
             bool ready = directory.Phase == SaveListState.Ready;
-            m_Status.Text = directory.Phase == SaveListState.Failed ? directory.ErrorMessage : ready ? "" : "正在读取存档…";
+            m_Status.Text = directory.Phase switch
+            {
+                SaveListState.Ready => "",
+                SaveListState.Failed => directory.ErrorMessage,
+                _ => "正在读取存档…"
+            };
             for (int i = 0; i < m_SlotViews.Length; i++)
             {
                 var (button, name, date) = m_SlotViews[i];
                 var slot = ready ? directory.Slots[i] : null;
                 button.Disabled = slot == null || slot.State == SaveSlotState.Unreadable;
                 button.MouseDefaultCursorShape = button.Disabled ? CursorShape.Arrow : CursorShape.PointingHand;
-                name.Text = slot?.State == SaveSlotState.Occupied ? $"{slot.HeroName} · Lv.{slot.Level}" :
-                    slot?.State == SaveSlotState.Unreadable ? "存档不可读" : "";
-                date.Text = slot?.State == SaveSlotState.Occupied
-                    ? slot.SavedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? ""
-                    : "";
+                if (slot?.State == SaveSlotState.Occupied)
+                {
+                    name.Text = $"{slot.HeroName} · Lv.{slot.Level}";
+                    date.Text = slot.SavedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "";
+                }
+                else
+                {
+                    name.Text = slot?.State == SaveSlotState.Unreadable ? "存档不可读" : "";
+                    date.Text = "";
+                }
             }
         }
 

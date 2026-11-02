@@ -67,9 +67,22 @@ static func normalize(level: Node2D, data: Dictionary, number: int) -> void:
 			points[3].x = 4700
 			points[1].x = 4700 + width
 			points[2].x = 4700 + width
-		var parent: Node = platforms if item.oneWay else walls if is_wall else slopes if is_slope else ground
+		var parent: Node
+		if item.oneWay:
+			parent = platforms
+		elif is_wall:
+			parent = walls
+		elif is_slope:
+			parent = slopes
+		else:
+			parent = ground
 		var body := StaticBody2D.new()
-		body.name = "Hill%02d" % index if is_hill else "Platform%02d" % index if item.oneWay else "Surface%02d" % index
+		if is_hill:
+			body.name = "Hill%02d" % index
+		elif item.oneWay:
+			body.name = "Platform%02d" % index
+		else:
+			body.name = "Surface%02d" % index
 		body.position = points[0]
 		body.collision_layer = 8 if item.oneWay else 1
 		body.collision_mask = 0

@@ -1,14 +1,17 @@
 using System;
-using GameLogic.Architecture;
 using GameFramework.Fsm;
-using GameLogic.Enemies.AI;
+using GameLogic.Architecture;
 
-namespace GameLogic.Enemies
+namespace GameLogic.Enemies.AI
 {
     /// <summary>
-    /// 蝙蝠追踪英雄上方90px，按共同决策节拍出招，并在起手后三秒退避。
+    /// 飞行小怪追踪目标上方指定高度，按共同节拍出招并退避三秒；节点只提供当前高度事实。
     /// </summary>
-    internal sealed class BatEngageState : AbstractEnemyAiState
+    /// <param name="pursuitHeight">追踪目标上方的距离，像素。</param>
+    /// <param name="trackingHeight">允许追踪的高差，像素。</param>
+    /// <param name="altitude">读取当前世界高度，不复制节点位置。</param>
+    public sealed class FlyingPursuitState(float pursuitHeight, float trackingHeight,
+        Func<float> altitude) : AbstractEnemyAiState
     {
         private float m_TurnInterval; // 本次显示保持不变的1～3秒折返间隔。
         private double m_TurnAt; // 全局AI游戏时钟中的下次折返时点，受击重入不重抽。
@@ -26,17 +29,16 @@ namespace GameLogic.Enemies
         protected override void Enter(IEnemyAiAgent agent)
         {
             base.Enter(agent);
-            var flight = (AbstractSkyMonsterEntity)agent;
-            flight.VerticalIntent = 0;
-            flight.DirectVerticalMovement = false;
+            agent.AiData.VerticalIntent = 0;
+            agent.AiData.DirectVerticalMovement = false;
         }
 
         /// <inheritdoc />
         protected override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds)
         {
-            var flight = (AbstractSkyMonsterEntity)agent;
-            double now = agent.AiData.ElapsedSeconds;
-            flight.DirectVerticalMovement = now < m_RetreatUntil;
+            var intent = agent.AiData;
+            double now = intent.ElapsedSeconds;
+            intent.DirectVerticalMovement = now < m_RetreatUntil;
             if (agent.IsAttacking)
             {
                 return;
@@ -46,23 +48,16 @@ namespace GameLogic.Enemies
             if (now < m_RetreatUntil)
             {
                 agent.Move(m_RetreatDirection);
-                flight.VerticalIntent = flight.Altitude > 150f ? -1 : 0;
+                intent.VerticalIntent = altitude() > 150f ? -1 : 0;
                 return;
             }
-            if (!agent.HasTarget)
+            if (!agent.HasTarget || Math.Abs(agent.TargetOffset.Y) > trackingHeight)
             {
-                flight.VerticalIntent = 0;
+                intent.VerticalIntent = 0;
                 agent.GetSystem<EnemyAiSystem>().Patrol(agent, elapseSeconds);
                 return;
             }
 
-            // BaseMonster先检查两倍attackRange高度，再执行物种自己的近身条件。
-            if (Math.Abs(agent.TargetOffset.Y) > flight.TrackingHeight)
-            {
-                flight.VerticalIntent = 0;
-                agent.GetSystem<EnemyAiSystem>().Patrol(agent, elapseSeconds);
-                return;
-            }
             var offset = agent.TargetOffset;
             if (!agent.IsInEngageRange)
             {
@@ -71,19 +66,17 @@ namespace GameLogic.Enemies
                     agent.Move(Math.Sign(offset.X));
                     m_TurnAt = now + m_TurnInterval;
                 }
-                flight.VerticalIntent = offset.Y > 90f ? 1 : -1;
+                intent.VerticalIntent = offset.Y > pursuitHeight ? 1 : -1;
                 return;
             }
 
             agent.Move(0);
-            flight.VerticalIntent = 0;
-            if (agent.GetSystem<EnemyAiSystem>().IsDecisionDue(agent.AiData, agent.Config.AttackInterval))
+            intent.VerticalIntent = 0;
+            if (agent.GetSystem<EnemyAiSystem>().IsDecisionDue(intent, agent.Config.AttackInterval) &&
+                Chance(agent, agent.Config.AttackDesire) && agent.RequestAttack(0))
             {
-                if (Chance(agent, agent.Config.AttackDesire) && agent.RequestAttack(0))
-                {
-                    m_RetreatUntil = now + 3f;
-                    m_RetreatDirection = Math.Sign(offset.X) is 0 ? 1 : Math.Sign(offset.X);
-                }
+                m_RetreatUntil = now + 3f;
+                m_RetreatDirection = Math.Sign(offset.X) is 0 ? 1 : Math.Sign(offset.X);
             }
         }
     }

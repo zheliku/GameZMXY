@@ -17,23 +17,33 @@ namespace GameLogic.Battle
         /// </summary>
         private readonly Dictionary<StatusEffectKind, StatusEffectState> m_StatusEffects = new(); // 英雄效果运行时数据，由 HeroStatusSystem 维护。
 
-        /// <summary>当前英雄的效果数据只读视图。</summary>
+        /// <summary>
+        /// 当前英雄的效果数据只读视图。
+        /// </summary>
         public IReadOnlyDictionary<StatusEffectKind, StatusEffectState> StatusEffects => m_StatusEffects;
 
-        /// <summary>读取一种当前英雄效果。</summary>
+        /// <summary>
+        /// 读取一种当前英雄效果。
+        /// </summary>
         /// <param name="kind">效果类别。</param>
         /// <returns>效果状态；未施加时为 null。</returns>
         public StatusEffectState GetStatusEffect(StatusEffectKind kind) => m_StatusEffects.GetValueOrDefault(kind);
 
-        /// <summary>写入已经由 HeroStatusSystem 校验的效果状态。</summary>
+        /// <summary>
+        /// 写入已经由 HeroStatusSystem 校验的效果状态。
+        /// </summary>
         /// <param name="state">效果状态。</param>
         internal void SetStatusEffect(StatusEffectState state) => m_StatusEffects[state.Kind] = state;
 
-        /// <summary>移除一种效果。</summary>
+        /// <summary>
+        /// 移除一种效果。
+        /// </summary>
         /// <param name="kind">效果类别。</param>
         internal void RemoveStatusEffect(StatusEffectKind kind) => m_StatusEffects.Remove(kind);
 
-        /// <summary>清空本局英雄效果。</summary>
+        /// <summary>
+        /// 清空本局英雄效果。
+        /// </summary>
         internal void ClearStatusEffects() => m_StatusEffects.Clear();
 
         /// <summary>
@@ -260,10 +270,14 @@ namespace GameLogic.Battle
         /// </summary>
         public enum StatusEffectKind
         {
-            /// <summary>按间隔结算固定伤害的中毒效果。</summary>
+            /// <summary>
+            /// 按间隔结算固定伤害的中毒效果。
+            /// </summary>
             Poison,
 
-            /// <summary>按剩余秒数限制角色控制的冻结效果。</summary>
+            /// <summary>
+            /// 按剩余秒数限制角色控制的冻结效果。
+            /// </summary>
             Freeze
         }
 
@@ -272,30 +286,44 @@ namespace GameLogic.Battle
         /// </summary>
         public sealed class StatusEffectState
         {
-            /// <summary>效果类别。</summary>
-            public StatusEffectKind Kind { get; }
-
-            /// <summary>固定每跳伤害；非持续伤害效果为零。</summary>
-            public int Damage { get; internal set; }
-
-            /// <summary>剩余触发次数。</summary>
-            public int RemainingTicks { get; internal set; }
-
-            /// <summary>两次触发之间的秒数。</summary>
-            public double TickIntervalSeconds { get; internal set; }
-
-            /// <summary>距离下一次触发的秒数。</summary>
-            public double TickLeftSeconds { get; internal set; }
-
-            /// <summary>控制效果剩余秒数。</summary>
-            public float RemainingSeconds { get; internal set; }
-
-            /// <summary>建立指定类别的效果状态。</summary>
+            /// <summary>
+            /// 建立指定类别的效果状态。
+            /// </summary>
             /// <param name="kind">效果类别。</param>
             public StatusEffectState(StatusEffectKind kind)
             {
                 Kind = kind;
             }
+
+            /// <summary>
+            /// 效果类别。
+            /// </summary>
+            public StatusEffectKind Kind { get; }
+
+            /// <summary>
+            /// 固定每跳伤害；非持续伤害效果为零。
+            /// </summary>
+            public int Damage { get; internal set; }
+
+            /// <summary>
+            /// 剩余触发次数。
+            /// </summary>
+            public int RemainingTicks { get; internal set; }
+
+            /// <summary>
+            /// 两次触发之间的秒数。
+            /// </summary>
+            public double TickIntervalSeconds { get; internal set; }
+
+            /// <summary>
+            /// 距离下一次触发的秒数。
+            /// </summary>
+            public double TickLeftSeconds { get; internal set; }
+
+            /// <summary>
+            /// 控制效果剩余秒数。
+            /// </summary>
+            public float RemainingSeconds { get; internal set; }
         }
     }
 }

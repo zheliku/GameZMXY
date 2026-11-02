@@ -31,6 +31,16 @@ namespace GameLogic.Enemies.AI
         public int MoveIntent { get; internal set; }
 
         /// <summary>
+        /// 飞行与游动AI写入的垂直意图：-1上升、0悬停、1下降；身体只消费同一事实。
+        /// </summary>
+        public int VerticalIntent { get; internal set; }
+
+        /// <summary>
+        /// 当前退避阶段直接采用垂直速度，其他阶段按身体参数加速。
+        /// </summary>
+        public bool DirectVerticalMovement { get; internal set; }
+
+        /// <summary>
         /// 等待身体状态机提交的攻击下标，-1 表示没有请求。
         /// </summary>
         public int AttackRequest { get; internal set; } = -1;

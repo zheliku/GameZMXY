@@ -60,8 +60,13 @@ namespace GameLogic.Profile.Tests
         /// </summary>
         private sealed class EmptyArchitecture : IArchitecture
         {
+            /// <inheritdoc />
             public TModel GetModel<TModel>() where TModel : class, IModel { return null; }
+
+            /// <inheritdoc />
             public TSystem GetSystem<TSystem>() where TSystem : class, ISystem { return null; }
+
+            /// <inheritdoc />
             public TUtility GetUtility<TUtility>() where TUtility : class, IUtility { return null; }
         }
 
@@ -70,9 +75,17 @@ namespace GameLogic.Profile.Tests
         /// </summary>
         private sealed class ProbeModel(bool throwOnInit, bool throwOnDeinit) : AbstractModel
         {
+            /// <summary>
+            /// 初始化钩子实际执行次数。
+            /// </summary>
             public int InitCount { get; private set; }
+
+            /// <summary>
+            /// 清理钩子实际执行次数。
+            /// </summary>
             public int DeinitCount { get; private set; }
 
+            /// <inheritdoc />
             protected override void OnInit()
             {
                 InitCount++;
@@ -82,6 +95,7 @@ namespace GameLogic.Profile.Tests
                 }
             }
 
+            /// <inheritdoc />
             protected override void OnDeinit()
             {
                 DeinitCount++;
@@ -98,9 +112,17 @@ namespace GameLogic.Profile.Tests
         private sealed class ProbeSystem(IArchitecture architecture, bool throwOnInit, bool throwOnDeinit)
             : AbstractSystem(architecture)
         {
+            /// <summary>
+            /// 初始化钩子实际执行次数。
+            /// </summary>
             public int InitCount { get; private set; }
+
+            /// <summary>
+            /// 清理钩子实际执行次数。
+            /// </summary>
             public int DeinitCount { get; private set; }
 
+            /// <inheritdoc />
             protected override void OnInit()
             {
                 InitCount++;
@@ -110,6 +132,7 @@ namespace GameLogic.Profile.Tests
                 }
             }
 
+            /// <inheritdoc />
             protected override void OnDeinit()
             {
                 DeinitCount++;

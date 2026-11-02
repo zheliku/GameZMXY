@@ -50,7 +50,7 @@ namespace GameLogic.Enemies
 
             if (Elapsed(m_Left))
             {
-                ChangeState<DragonKingMoveState>(fsm);
+                ChangeState(fsm, body.MovementStateType);
                 return;
             }
             m_Left -= dt;

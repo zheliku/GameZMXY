@@ -124,6 +124,37 @@ public sealed partial class UiSmokeScenario
                 return;
             }
 
+            if (OS.GetCmdlineUserArgs().Contains("--checkpoint-failure-only"))
+            {
+                await CheckCheckpointFailureAsync(flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--body-overlap-only"))
+            {
+                level.Cleanup();
+                await CheckBodyOverlapReuseAsync(hero);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--loot-pause-only"))
+            {
+                int originalTicks = Engine.PhysicsTicksPerSecond;
+                try
+                {
+                    foreach (int ticks in new[] { 60, 120 })
+                    {
+                        Engine.PhysicsTicksPerSecond = ticks;
+                        await DefeatMonsterAsync(level, procedure);
+                    }
+                }
+                finally
+                {
+                    Engine.PhysicsTicksPerSecond = originalTicks;
+                }
+                return;
+            }
+
             if (OS.GetCmdlineUserArgs().Contains("--enemy-knockback-only"))
             {
                 level.Cleanup();
@@ -1175,7 +1206,10 @@ public sealed partial class UiSmokeScenario
         Check(record.Level == 4 && record.Experience == 37 && record.MaxExperience == 165,
             "连升未保留余量或等级错误");
         Check(m_ExtraHero.Level == 4 && GF.Fsm.GetModel<HeroModel>().MaxHp.Value == row.MaxHp && GF.Fsm.GetModel<HeroModel>().Hp.Value == row.MaxHp &&
-            GF.Fsm.GetModel<HeroModel>().MaxMp.Value == row.MaxMp && GF.Fsm.GetModel<HeroModel>().Mp.Value == row.MaxMp, "升级未按成长表注入并补满");
+            GF.Fsm.GetModel<HeroModel>().MaxMp.Value == row.MaxMp && GF.Fsm.GetModel<HeroModel>().Mp.Value == row.MaxMp,
+            $"升级未按成长表注入并补满：level={m_ExtraHero.Level}, hp={GF.Fsm.GetModel<HeroModel>().Hp.Value}/{GF.Fsm.GetModel<HeroModel>().MaxHp.Value}, " +
+            $"mp={GF.Fsm.GetModel<HeroModel>().Mp.Value}/{GF.Fsm.GetModel<HeroModel>().MaxMp.Value}, expected={row.MaxHp}/{row.MaxMp}, " +
+            $"equipment={record.Weapon?.EquipmentId}/{record.Armor?.EquipmentId}/{record.Accessory?.EquipmentId}/{record.Treasure?.EquipmentId}");
         CheckDisplay(m_TestBattleForm, m_ExtraHero, record, level);
 
         flow.GetSystem<ProfileSystem>().AddExperience(int.MaxValue);
@@ -1186,6 +1220,7 @@ public sealed partial class UiSmokeScenario
         m_ExtraHero = null;
         record.RestoreExperience(record.ActiveHeroId, originalExperience);
         await WaitFramesAsync(2);
+        GD.Print("SMOKE-LEVEL UP PASS: threshold, multiple levels, growth refill, HUD and maximum level");
     }
 
     /// <summary>
@@ -1469,7 +1504,7 @@ public sealed partial class UiSmokeScenario
         var equipment = GF.Fsm.GetModel<ProfileModel>();
         GF.Fsm.GetSystem<HeroSystem>().Reset(heroId, level,
             ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(heroId).Levels[level - 1].BaseAttributes,
-            equipment.Weapon, equipment.Armor);
+            equipment.Weapon, equipment.Armor, equipment.Accessory, equipment.Treasure);
     }
 
     /// <summary>

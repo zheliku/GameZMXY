@@ -7,6 +7,7 @@ using GameLogic.Equipment;
 using GameLogic.Save;
 using GameLogic.Skills;
 using GameLogic.Config;
+using GameConfig.Equipment;
 
 namespace GameLogic.Profile
 {
@@ -125,7 +126,7 @@ namespace GameLogic.Profile
             {
                 var slots = profile.GetSlots(heroId).Value;
                 if (slots.Weapon?.InstanceId == data.InstanceId || slots.Armor?.InstanceId == data.InstanceId ||
-                    slots.Accessory?.InstanceId == data.InstanceId)
+                    slots.Accessory?.InstanceId == data.InstanceId || slots.Treasure?.InstanceId == data.InstanceId)
                 {
                     return false;
                 }
@@ -138,6 +139,31 @@ namespace GameLogic.Profile
 
             profile.EquipmentDatas.Add(data);
             return true;
+        }
+
+        /// <summary>
+        /// 直接赠送整个档案尚未拥有的装备；满包不抽属性，也不生成地面掉落。
+        /// </summary>
+        /// <param name="equipmentId">本次特殊奖励的装备定义。</param>
+        /// <param name="random">实例属性采样源，返回 [0,1) 内的数。</param>
+        /// <returns>已拥有、领取成功或背包已满；只在成功时创建新实例。</returns>
+        public EquipmentGrantResult GrantUniqueEquipment(EquipmentId equipmentId, Func<float> random)
+        {
+            var profile = this.GetModel<ProfileModel>();
+            if (profile.HasEquipment(equipmentId))
+            {
+                return EquipmentGrantResult.AlreadyOwned;
+            }
+
+            if (profile.EquipmentDatas.Count == profile.Capacity)
+            {
+                return EquipmentGrantResult.InventoryFull;
+            }
+
+            // 本入口已确认容量和定义唯一性；新编号与属性在写入背包前一次确定。
+            var data = this.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), equipmentId, random);
+            profile.EquipmentDatas.Add(data);
+            return EquipmentGrantResult.Collected;
         }
 
         /// <summary>
@@ -199,5 +225,24 @@ namespace GameLogic.Profile
             profile.EastSeaBannerAvailable = false;
             return true;
         }
+    }
+
+    /// <summary>
+    /// 一次直接赠送唯一装备的结果，不保存独立于背包与穿戴的领取标志。
+    /// </summary>
+    public enum EquipmentGrantResult
+    {
+        /// <summary>
+        /// 档案中已拥有该定义，不重复抽取或提示。
+        /// </summary>
+        AlreadyOwned,
+        /// <summary>
+        /// 新实例已加入背包。
+        /// </summary>
+        Collected,
+        /// <summary>
+        /// 背包已满，未创建实例。
+        /// </summary>
+        InventoryFull
     }
 }

@@ -45,11 +45,28 @@ namespace GameLogic.Config
         public ConfigurationModel(Tables tables)
         {
             Tables = tables ?? throw new ArgumentNullException(nameof(tables));
-            m_Enemies = tables.TbEnemyConfig.DataList.GroupBy(x => x.EntityId).ToDictionary(x => x.Key, x => x.First());
-            m_Attacks = tables.TbAttackConfig.DataList.Where(x => x.OwnerId != EntityId.None && x.ComboIndex >= 0).GroupBy(x => x.OwnerId).ToDictionary(x => x.Key,
-                x => (IReadOnlyList<AttackConfig>)Array.AsReadOnly(x.OrderBy(a => a.ComboIndex).ToArray()));
-            m_ActiveSkills = tables.TbSkillConfig.DataList.GroupBy(x => x.Hero).ToDictionary(x => x.Key,
-                x => (IReadOnlyList<SkillConfig>)Array.AsReadOnly(x.OrderBy(a => a.Order).ToArray()));
+            m_Enemies = new Dictionary<EntityId, EnemyConfig>();
+            foreach (var enemy in tables.TbEnemyConfig.DataList)
+            {
+                // 同实体的难度档共用基础定义，保持原表中首条记录的选择规则。
+                m_Enemies.TryAdd(enemy.EntityId, enemy);
+            }
+
+            m_Attacks = new Dictionary<EntityId, IReadOnlyList<AttackConfig>>();
+            var ownedAttacks = tables.TbAttackConfig.DataList
+                .Where(attack => attack.OwnerId != EntityId.None && attack.ComboIndex >= 0);
+            foreach (var attacksByOwner in ownedAttacks.GroupBy(attack => attack.OwnerId))
+            {
+                var orderedAttacks = attacksByOwner.OrderBy(attack => attack.ComboIndex).ToArray();
+                m_Attacks.Add(attacksByOwner.Key, Array.AsReadOnly(orderedAttacks));
+            }
+
+            m_ActiveSkills = new Dictionary<SkillHero, IReadOnlyList<SkillConfig>>();
+            foreach (var skillsByHero in tables.TbSkillConfig.DataList.GroupBy(skill => skill.Hero))
+            {
+                var orderedSkills = skillsByHero.OrderBy(skill => skill.Order).ToArray();
+                m_ActiveSkills.Add(skillsByHero.Key, Array.AsReadOnly(orderedSkills));
+            }
         }
 
         /// <summary>

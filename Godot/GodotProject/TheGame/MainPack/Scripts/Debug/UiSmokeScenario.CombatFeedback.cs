@@ -378,9 +378,13 @@ public sealed partial class UiSmokeScenario
 
         m_PreviousOrb = orbs.First();
         var positions = orbs.ToDictionary(x => x, x => x.GlobalPosition);
+        double elapsed = SmokeInspection.Model(level).ElapsedSeconds;
         GF.Base.PauseGame();
         try
         {
+            // 暂停可能发生在delta已经采样的物理/流程回调中，验证同帧旧delta也不能推进关卡。
+            level._Process(1.0 / 60.0);
+            Check(SmokeInspection.Model(level).ElapsedSeconds == elapsed, "暂停当帧仍推进关卡计时");
             await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(.3, true, false, true), SceneTreeTimer.SignalName.Timeout);
             Check(positions.All(x => x.Key.GlobalPosition.IsEqualApprox(x.Value)), "暂停时飞行球仍在运动");
         }
@@ -397,6 +401,7 @@ public sealed partial class UiSmokeScenario
         }
 
         await CaptureCombatAsync("flying_loot");
+        GD.Print($"SMOKE-LOOT PAUSE {Engine.PhysicsTicksPerSecond}Hz PASS: stale delta rejected, clock and native flying orbs frozen, resume tracks hero");
     }
 
     /// <summary>

@@ -72,7 +72,16 @@ namespace GameLogic.Enemies
 
             if (m_Motion == Motion.Wandering)
             {
-                Position += new Vector2(m_Direction == 0 ? -72 * dt : m_Direction == 1 ? 72 * dt : 0, 0);
+                float stepX = 0;
+                if (m_Direction == 0)
+                {
+                    stepX = -72 * dt;
+                }
+                else if (m_Direction == 1)
+                {
+                    stepX = 72 * dt;
+                }
+                Position += new Vector2(stepX, 0);
                 if (Position.X < -400)
                 {
                     m_Direction = 1;

@@ -31,7 +31,14 @@ namespace GameLogic.Enemies
             body.Velocity = new Vector2(move * body.Params.MoveSpeed, body.Velocity.Y);
             body.SetFacing(move);
             bool low = ((SharkDemonKingEntity)body).LowPhase;
-            body.PlayAnim(move == 0 ? low ? "idle_low" : "idle" : low ? "run_low" : "run");
+            if (move == 0)
+            {
+                body.PlayAnim(low ? "idle_low" : "idle");
+            }
+            else
+            {
+                body.PlayAnim(low ? "run_low" : "run");
+            }
         }
     }
 }

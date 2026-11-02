@@ -106,7 +106,11 @@ namespace GameLogic.Battle.Damage
         /// <returns>世界坐标系下的击退速度（px/s）。</returns>
         public Vector2 KnockbackVelocity(AttackData data, float targetX = 0f)
         {
-            int direction = data.KnockbackOriginX is float origin ? (origin > targetX ? -1 : 1) : data.Direction;
+            int direction = data.Direction;
+            if (data.KnockbackOriginX is float origin)
+            {
+                direction = origin > targetX ? -1 : 1;
+            }
             return new Vector2(direction * data.Knockback.X, data.Knockback.Y);
         }
 

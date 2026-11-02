@@ -280,7 +280,14 @@ func _hero_attack_geometry(probes: Dictionary, normal_only: bool = false, new_eq
 					animation.track_remove_key(track, 0)
 				var previous = null
 				for row in rows:
-					var value = row[1] if property == ":shape" else row[2] if property == ":position" else row[3]
+					var value: Variant
+					match property:
+						":shape":
+							value = row[1]
+						":position":
+							value = row[2]
+						_:
+							value = row[3]
 					if previous == null or previous != value:
 						if property == ":shape":
 							if not palette.has(value):

@@ -7,15 +7,16 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class BatEntity : AbstractSkyMonsterEntity
     {
-        private static readonly EnemyAiPreset m_Preset = new(typeof(BatEngageState), typeof(BatEngageState),
-            () => new BatEngageState()); // 蝙蝠专属决策与敌方公共打断。
+        private EnemyAiPreset m_Preset; // 共用追踪规则，注入蝙蝠的90px悬停高度和本场景追踪范围。
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset
         {
             get
             {
-                return m_Preset;
+                return m_Preset ??= new(typeof(FlyingPursuitState), typeof(FlyingPursuitState),
+                    () => new FlyingPursuitState(pursuitHeight: 90f, trackingHeight: TrackingHeight,
+                        altitude: () => Altitude));
             }
         }
 

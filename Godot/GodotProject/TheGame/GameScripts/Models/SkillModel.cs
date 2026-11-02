@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using GameConfig.Skills;
 using GameLogic.Architecture;
 
@@ -25,9 +24,20 @@ namespace GameLogic.Skills
         public SkillModel(IEnumerable<int> heroIds)
         {
             ArgumentNullException.ThrowIfNull(heroIds);
-            m_LearnedSkills = heroIds.ToDictionary(id => id, _ => new BindableList<SkillId>());
-            m_PassiveLevels = m_LearnedSkills.Keys.ToDictionary(id => id,
-                _ => new BindableDictionary<PassiveId, int>(Enum.GetValues<PassiveId>().ToDictionary(id => id, _ => 0)));
+            m_LearnedSkills = new Dictionary<int, BindableList<SkillId>>();
+            m_PassiveLevels = new Dictionary<int, BindableDictionary<PassiveId, int>>();
+            foreach (int heroId in heroIds)
+            {
+                m_LearnedSkills.Add(heroId, new BindableList<SkillId>());
+
+                // 每名英雄拥有独立的零级被动记录，不共享可变字典。
+                var passiveLevels = new Dictionary<PassiveId, int>();
+                foreach (PassiveId passiveId in Enum.GetValues<PassiveId>())
+                {
+                    passiveLevels.Add(passiveId, 0);
+                }
+                m_PassiveLevels.Add(heroId, new BindableDictionary<PassiveId, int>(passiveLevels));
+            }
         }
 
         // ---- 业务方法 ----

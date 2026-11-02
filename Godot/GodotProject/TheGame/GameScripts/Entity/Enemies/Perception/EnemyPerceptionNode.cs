@@ -73,18 +73,50 @@ namespace GameLogic.Enemies
         /// <exception cref="InvalidOperationException">形状绑定或坐标系无效。</exception>
         public void Validate()
         {
-            if (Position != Vector2.Zero || Scale != Vector2.One || Rotation != 0 ||
-                m_DetectionShape?.Shape is not RectangleShape2D || m_DetectionShape.Disabled || m_DetectionShape.GetParent() != this ||
-                m_PatrolShape != null && (m_PatrolShape.Shape is not SegmentShape2D || !m_PatrolShape.Disabled || m_PatrolShape.GetParent() != this) ||
-                m_EngageShape != null && (m_EngageShape.Shape is not (RectangleShape2D or CircleShape2D or SegmentShape2D) || !m_EngageShape.Disabled || m_EngageShape.GetParent() != this))
+            if (Position != Vector2.Zero || Scale != Vector2.One || Rotation != 0)
             {
-                throw new InvalidOperationException($"敌人场景感知范围装配无效：{GetPath()}");
+                throw new InvalidOperationException($"敌人感知节点必须使用角色本地坐标：{GetPath()}");
+            }
+            if (m_DetectionShape?.Shape is not RectangleShape2D || m_DetectionShape.Disabled ||
+                m_DetectionShape.GetParent() != this)
+            {
+                throw new InvalidOperationException($"敌人感知节点必须绑定启用的子矩形检测范围：{GetPath()}");
+            }
+            if (m_PatrolShape != null && (m_PatrolShape.Shape is not SegmentShape2D ||
+                !m_PatrolShape.Disabled || m_PatrolShape.GetParent() != this))
+            {
+                throw new InvalidOperationException($"敌人巡逻范围必须是禁用的子线段形状：{GetPath()}");
+            }
+            if (m_EngageShape != null &&
+                (m_EngageShape.Shape is not (RectangleShape2D or CircleShape2D or SegmentShape2D) ||
+                 !m_EngageShape.Disabled || m_EngageShape.GetParent() != this))
+            {
+                throw new InvalidOperationException($"敌人交战范围的形状、启用状态或父级无效：{GetPath()}");
             }
             // 形状坐标使用本地像素；避免编辑器缩放/旋转产生与AI距离含义不同的范围。
             foreach (Node child in GetChildren())
             {
-                if (child is CollisionShape2D shape && (shape.Shape == null ||
-                    !(shape.Shape is SegmentShape2D segment ? segment.A != segment.B && (segment.A.Y == 0 && segment.B.Y == 0 || segment.A.X == 0 && segment.B.X == 0) : shape.Shape.GetRect().HasArea()) || shape.Scale != Vector2.One || shape.Rotation != 0))
+                if (child is not CollisionShape2D shape)
+                {
+                    continue;
+                }
+                if (shape.Shape == null || shape.Scale != Vector2.One || shape.Rotation != 0)
+                {
+                    throw new InvalidOperationException($"敌人AI范围必须使用正尺寸、无缩放旋转的原生形状：{shape.Name}");
+                }
+
+                bool validSize;
+                if (shape.Shape is SegmentShape2D segment)
+                {
+                    bool horizontal = segment.A.Y == 0 && segment.B.Y == 0;
+                    bool vertical = segment.A.X == 0 && segment.B.X == 0;
+                    validSize = segment.A != segment.B && (horizontal || vertical);
+                }
+                else
+                {
+                    validSize = shape.Shape.GetRect().HasArea();
+                }
+                if (!validSize)
                 {
                     throw new InvalidOperationException($"敌人AI范围必须使用正尺寸、无缩放旋转的原生形状：{shape.Name}");
                 }

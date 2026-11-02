@@ -105,9 +105,12 @@ def audit(args):
             if column == 'SuperArmor':
                 status = 'body reaction policy; temporary source invulnerability belongs to concrete state/animation, not this flag'
             if column == 'AttackInterval':
-                status = ('source count % 24 / 24fps' if legacy in (13, 14, 16, 18) else
-                          'source count % 36 / 24fps' if legacy in (1, 2, 3, 7, 8, 15, 17, 20, 25) else
-                          'concrete boss state owns source decision branches; this generic field is not used')
+                if legacy in (13, 14, 16, 18):
+                    status = 'source count % 24 / 24fps'
+                elif legacy in (1, 2, 3, 7, 8, 15, 17, 20, 25):
+                    status = 'source count % 36 / 24fps'
+                else:
+                    status = 'concrete boss state owns source decision branches; this generic field is not used'
             if legacy == 13 and column == 'AttackInterval' and float(value) != 1:
                 edits.append({'book':'Enemy.xlsx','sheet':sheet,'cell':cells[column],'old':float(value),'value':1,
                               'reason':'Monster13.hasAttackTarget count % 24 at 24fps'})

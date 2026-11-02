@@ -202,7 +202,7 @@ public sealed partial class UiSmokeScenario
         var system = flow.GetSystem<HeroSystem>();
         var model = flow.GetModel<HeroModel>();
         var statusEffects = flow.GetSystem<HeroStatusSystem>();
-                int originalTicks = Engine.PhysicsTicksPerSecond;
+        int originalTicks = Engine.PhysicsTicksPerSecond;
         hero.SetPhysicsProcess(true);
         try
         {

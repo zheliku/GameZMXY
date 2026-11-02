@@ -103,7 +103,13 @@ func _build_geometry() -> void:
 		body.position = corners[0]
 		body.collision_layer = 8 if item.oneWay else 1
 		body.collision_mask = 0
-		var parent: Node = platforms if item.oneWay else walls if (corners[3] - corners[0]).length() > 900 else ground
+		var parent: Node
+		if item.oneWay:
+			parent = platforms
+		elif (corners[3] - corners[0]).length() > 900:
+			parent = walls
+		else:
+			parent = ground
 		_add(parent, body)
 		var shape := CollisionShape2D.new()
 		shape.name = "Surface"

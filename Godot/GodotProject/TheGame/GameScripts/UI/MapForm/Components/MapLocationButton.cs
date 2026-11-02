@@ -24,6 +24,11 @@ namespace GameLogic.UI.Widgets
         private bool m_OpenGuideOnMotion; // 进入地点后的首个GUI鼠标事件携带精确局部坐标。
 
         /// <summary>
+        /// 本地点场景绑定的关卡主键；导航和图鉴共用这一身份。
+        /// </summary>
+        internal int LevelId => m_LevelId;
+
+        /// <summary>
         /// 借用当前GGF流程的架构，只组合读取图鉴配置。
         /// </summary>
         /// <returns>当前流程共享架构。</returns>

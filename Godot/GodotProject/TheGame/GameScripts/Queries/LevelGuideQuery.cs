@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using GameConfig;
 using GameConfig.Entity;
 using GameConfig.Enemy;
 using GameConfig.Equipment;
@@ -26,6 +27,7 @@ namespace GameLogic.Level
     public sealed class LevelGuideQuery(int levelId) : AbstractQuery<LevelGuideData>
     {
         private const int FirstBossId = 10001; // 项目已约定的小怪/首领编号分界。
+
         /// <summary>
         /// 查询实际配方并合并装备身份，不创建运行时敌人或装备。
         /// </summary>
@@ -36,7 +38,9 @@ namespace GameLogic.Level
             var tables = configuration.Tables;
             var level = tables.TbLevelConfig.Get(levelId);
             var enemies = level.Stages.SelectMany(stage => stage.Recipes)
-                .Select(recipe => configuration.GetEnemy(recipe.EnemyEntityId)).DistinctBy(enemy => enemy.EnemyId).ToArray();
+                .Select(recipe => configuration.GetEnemy(recipe.EnemyEntityId))
+                .DistinctBy(enemy => enemy.EnemyId)
+                .ToArray();
             var guardians = enemies.Where(enemy => enemy.EnemyId >= FirstBossId).ToArray();
             if (guardians.Length == 0)
             {
@@ -53,9 +57,10 @@ namespace GameLogic.Level
             foreach (var enemy in enemies)
             {
                 // 浅岸守关龟丞相明确不掉装备，不能把后续海域的基础掉落放到这里。
-                if (enemy.EquipmentDropChance > 0 && !(levelId == 7 && enemy.EntityId == EntityId.TurtleMinister))
+                bool guardianWithoutEquipment = levelId == 7 && enemy.EntityId == EntityId.TurtleMinister;
+                if (enemy.EquipmentDropChance > 0 && !guardianWithoutEquipment)
                 {
-                    AddPool(enemy.EquipmentDropPoolId);
+                    AddEquipmentFromPool(tables, enemy.EquipmentDropPoolId, drops);
                 }
             }
             if (levelId == 10)
@@ -69,21 +74,33 @@ namespace GameLogic.Level
                 9 => new[] { configuration.GetEnemy(EntityId.SharkSpawn) },
                 _ => Array.Empty<EnemyConfig>()
             };
-            return new LevelGuideData(level,
-                Array.AsReadOnly(guardians.Concat(enemies).Concat(summoned).DistinctBy(enemy => enemy.NameCn).ToArray()),
-                Array.AsReadOnly(drops.Select(tables.TbEquipmentConfig.Get).OrderByDescending(item => item.Quality)
-                    .ThenBy(item => item.Id).ToArray()));
+            var displayEnemies = guardians.Concat(enemies).Concat(summoned)
+                .DistinctBy(enemy => enemy.NameCn)
+                .ToArray();
+            var displayEquipment = drops.Select(tables.TbEquipmentConfig.Get)
+                .OrderByDescending(item => item.Quality)
+                .ThenBy(item => item.Id)
+                .ToArray();
+            return new LevelGuideData(level, Array.AsReadOnly(displayEnemies), Array.AsReadOnly(displayEquipment));
+        }
 
-            // 池只贡献装备身份，概率与权重仍归正式掉落系统；不复制其随机结算。
-            void AddPool(EquipmentDropPoolId pool)
+        /// <summary>
+        /// 将掉落池中的装备身份加入图鉴；概率与权重仍由正式掉落系统处理。
+        /// </summary>
+        /// <param name="tables">本次查询借用的配置总表。</param>
+        /// <param name="poolId">敌人配置的掉落池；None不贡献装备。</param>
+        /// <param name="equipmentIds">本次查询拥有的去重集合。</param>
+        private static void AddEquipmentFromPool(Tables tables, EquipmentDropPoolId poolId,
+            HashSet<EquipmentId> equipmentIds)
+        {
+            if (poolId == EquipmentDropPoolId.None)
             {
-                if (pool != EquipmentDropPoolId.None)
-                {
-                    foreach (var entry in tables.TbEquipmentDropPoolConfig.Get(pool).Entries)
-                    {
-                        drops.Add(entry.EquipmentId);
-                    }
-                }
+                return;
+            }
+
+            foreach (var entry in tables.TbEquipmentDropPoolConfig.Get(poolId).Entries)
+            {
+                equipmentIds.Add(entry.EquipmentId);
             }
         }
     }

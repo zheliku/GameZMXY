@@ -134,20 +134,26 @@ namespace GameLogic.UI
             // 先记录借用引用，装配失败时也能完整解除订阅与暂停。
             try
             {
-                this.GetModel<HeroModel>().Hp.Register(RefreshResources);
-                this.GetModel<HeroModel>().Mp.Register(RefreshResources);
-                foreach (var property in new[] { this.GetModel<HeroModel>().MaxHp, this.GetModel<HeroModel>().MaxMp, this.GetModel<HeroModel>().Power, this.GetModel<HeroModel>().Def, this.GetModel<HeroModel>().Mdef, this.GetModel<HeroModel>().Lucky, this.GetModel<HeroModel>().HpRegen, this.GetModel<HeroModel>().MpRegen })
+                var heroModel = this.GetModel<HeroModel>();
+                heroModel.Hp.Register(RefreshResources);
+                heroModel.Mp.Register(RefreshResources);
+                foreach (var property in new[]
+                {
+                    heroModel.MaxHp, heroModel.MaxMp,
+                    heroModel.Power, heroModel.Def, heroModel.Mdef, heroModel.Lucky,
+                    heroModel.HpRegen, heroModel.MpRegen
+                })
                 {
                     property.Register(RefreshResources);
                 }
 
-                this.GetModel<HeroModel>().Crit.Register(RefreshProbability);
-                this.GetModel<HeroModel>().Miss.Register(RefreshProbability);
-                this.GetModel<HeroModel>().Level.Register(RefreshResources);
+                heroModel.Crit.Register(RefreshProbability);
+                heroModel.Miss.Register(RefreshProbability);
+                heroModel.Level.Register(RefreshResources);
                 profile.Progress.Register(RefreshProgression);
-                this.GetModel<ProfileModel>().Soul.Register(RefreshSoul);
-                this.GetModel<ProfileModel>().EquipmentDatas.Register(RefreshItems);
-                this.GetModel<ProfileModel>().Slots.Register(RefreshEquipment);
+                profile.Soul.Register(RefreshSoul);
+                profile.EquipmentDatas.Register(RefreshItems);
+                profile.Slots.Register(RefreshEquipment);
                 levelModel.Outcome.Register(OnLevelEnded);
                 m_ResumeGame = !GF.Base.IsGamePaused;
                 if (m_ResumeGame)
@@ -249,20 +255,26 @@ namespace GameLogic.UI
             {
                 // 流程先关闭窗口再移除 Model，本次订阅源在关闭前保持同一实例。
                 var profile = this.GetModel<ProfileModel>();
-                this.GetModel<HeroModel>().Hp.UnRegister(RefreshResources);
-                this.GetModel<HeroModel>().Mp.UnRegister(RefreshResources);
-                foreach (var property in new[] { this.GetModel<HeroModel>().MaxHp, this.GetModel<HeroModel>().MaxMp, this.GetModel<HeroModel>().Power, this.GetModel<HeroModel>().Def, this.GetModel<HeroModel>().Mdef, this.GetModel<HeroModel>().Lucky, this.GetModel<HeroModel>().HpRegen, this.GetModel<HeroModel>().MpRegen })
+                var heroModel = this.GetModel<HeroModel>();
+                heroModel.Hp.UnRegister(RefreshResources);
+                heroModel.Mp.UnRegister(RefreshResources);
+                foreach (var property in new[]
+                {
+                    heroModel.MaxHp, heroModel.MaxMp,
+                    heroModel.Power, heroModel.Def, heroModel.Mdef, heroModel.Lucky,
+                    heroModel.HpRegen, heroModel.MpRegen
+                })
                 {
                     property.UnRegister(RefreshResources);
                 }
 
-                this.GetModel<HeroModel>().Crit.UnRegister(RefreshProbability);
-                this.GetModel<HeroModel>().Miss.UnRegister(RefreshProbability);
-                this.GetModel<HeroModel>().Level.UnRegister(RefreshResources);
+                heroModel.Crit.UnRegister(RefreshProbability);
+                heroModel.Miss.UnRegister(RefreshProbability);
+                heroModel.Level.UnRegister(RefreshResources);
                 profile.Progress.UnRegister(RefreshProgression);
-                this.GetModel<ProfileModel>().Soul.UnRegister(RefreshSoul);
-                this.GetModel<ProfileModel>().EquipmentDatas.UnRegister(RefreshItems);
-                this.GetModel<ProfileModel>().Slots.UnRegister(RefreshEquipment);
+                profile.Soul.UnRegister(RefreshSoul);
+                profile.EquipmentDatas.UnRegister(RefreshItems);
+                profile.Slots.UnRegister(RefreshEquipment);
                 this.GetModel<LevelModel>().Outcome.UnRegister(OnLevelEnded);
             }
 

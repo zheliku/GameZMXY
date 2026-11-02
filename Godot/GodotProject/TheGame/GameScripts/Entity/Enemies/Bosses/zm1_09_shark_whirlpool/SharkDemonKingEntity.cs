@@ -20,12 +20,12 @@ namespace GameLogic.Enemies
     public partial class SharkDemonKingEntity : AbstractBossEntity
     {
         private static readonly EnemyBodyPreset m_BodyPreset = new(typeof(SharkDemonKingMoveState),
-            typeof(SharkDemonKingDeathState),
+            typeof(EnemyDeathState),
             () => new SharkDemonKingMoveState(), () => new SharkDemonKingAttackState(),
             () => new EnemyRecoveryState(), () => new EnemyHurtState(),
-            () => new SharkDemonKingDeathState()); // 本首领的状态组合；运行实例由每次入场独立创建。
-        private static readonly EnemyAiPreset m_Preset = new(typeof(SharkDemonKingEngageState), typeof(SharkDemonKingEngageState),
-            () => new SharkDemonKingEngageState()); // 近远距离共用首领时钟。
+            () => new EnemyDeathState(waitForEffect: true)); // 本首领的状态组合；运行实例由每次入场独立创建。
+        private static readonly EnemyAiPreset m_Preset = new(typeof(DistanceSkillEngageState), typeof(DistanceSkillEngageState),
+            () => new DistanceSkillEngageState()); // 近远距离共用首领时钟，原生范围与冷却保持本物种值。
         private const int SharkWaveAttackId = 2034; // 独立鲨波的魔法伤害，不复用身体物理攻击。
         private const int BubbleAttackId = 2035; // 水牢独立伤害与身体施法伤害区分。
 
@@ -212,7 +212,7 @@ namespace GameLogic.Enemies
         /// </summary>
         private void SpawnBossDeathAnimEvent()
         {
-            if (m_BodyFsm.CurrentState is not SharkDemonKingDeathState state)
+            if (m_BodyFsm.CurrentState is not EnemyDeathState state)
             {
                 return;
             }

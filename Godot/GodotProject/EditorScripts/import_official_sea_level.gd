@@ -90,7 +90,13 @@ func _geometry(ground_position: Vector2) -> void:
         body.position = start
         body.collision_layer = 8 if item.oneWay else 1
         body.collision_mask = 0
-        var parent: Node = m_Scene.get_node("World/Platforms") if item.oneWay else root.get_node("Walls" if vertical.length() > 900 else "Ground")
+        var parent: Node
+        if item.oneWay:
+            parent = m_Scene.get_node("World/Platforms")
+        elif vertical.length() > 900:
+            parent = root.get_node("Walls")
+        else:
+            parent = root.get_node("Ground")
         _add(parent, body)
         var shape := CollisionShape2D.new()
         shape.name = "Surface"

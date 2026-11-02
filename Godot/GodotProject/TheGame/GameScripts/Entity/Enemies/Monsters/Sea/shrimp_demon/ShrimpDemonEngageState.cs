@@ -8,7 +8,8 @@ namespace GameLogic.Enemies
     /// <summary>
     /// 虾兵在场景的交战外界与退避内界之间保持距离，按自身欲望发射可击散魔法弹。
     /// </summary>
-    internal sealed class ShrimpDemonEngageState : AbstractEnemyAiState
+    /// <param name="retreatDistance">场景退避内界的水平距离，像素。</param>
+    internal sealed class ShrimpDemonEngageState(float retreatDistance) : AbstractEnemyAiState
     {
         /// <inheritdoc />
         protected override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds)
@@ -37,7 +38,7 @@ namespace GameLogic.Enemies
                 return;
             }
             int direction = Math.Sign(agent.TargetOffset.X);
-            if (Math.Abs(agent.TargetOffset.X) <= ((ShrimpDemonEntity)agent).RetreatDistance)
+            if (Math.Abs(agent.TargetOffset.X) <= retreatDistance)
             {
                 agent.Move(-direction);
             }

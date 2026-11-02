@@ -12,17 +12,25 @@ namespace GameLogic.Battle
     {
         private const double StatusTickTolerance = 1e-5; // 秒制累计的浮点边界容差。
 
-        /// <summary>即时借用本局唯一英雄数据。</summary>
+        /// <summary>
+        /// 即时借用本局唯一英雄数据。
+        /// </summary>
         private HeroModel Hero => this.GetModel<HeroModel>();
 
-        /// <summary>绑定所属本局架构，英雄模型必须已注册。</summary>
+        /// <summary>
+        /// 绑定所属本局架构，英雄模型必须已注册。
+        /// </summary>
         /// <param name="architecture">所属本局架构。</param>
         public HeroStatusSystem(IArchitecture architecture) : base(architecture) { }
 
-        /// <summary>当前英雄是否被冻结。</summary>
+        /// <summary>
+        /// 当前英雄是否被冻结。
+        /// </summary>
         public bool IsFrozen => Hero.GetStatusEffect(HeroModel.StatusEffectKind.Freeze)?.RemainingSeconds > 0;
 
-        /// <summary>当前英雄是否中毒。</summary>
+        /// <summary>
+        /// 当前英雄是否中毒。
+        /// </summary>
         public bool IsPoisoned => Hero.GetStatusEffect(HeroModel.StatusEffectKind.Poison) != null;
 
         /// <summary>
@@ -47,7 +55,9 @@ namespace GameLogic.Battle
             Hero.SetStatusEffect(state);
         }
 
-        /// <summary>推进冻结计时；暂停传入零。</summary>
+        /// <summary>
+        /// 推进冻结计时；暂停传入零。
+        /// </summary>
         /// <param name="delta">非负游戏秒数。</param>
         public void AdvanceFreeze(float delta)
         {
@@ -102,7 +112,9 @@ namespace GameLogic.Battle
             Hero.SetStatusEffect(state);
         }
 
-        /// <summary>推进中毒并返回本步应结算的持续伤害。</summary>
+        /// <summary>
+        /// 推进中毒并返回本步应结算的持续伤害。
+        /// </summary>
         /// <param name="delta">游戏秒数；暂停不推进。</param>
         /// <returns>本步到期的固定伤害总和。</returns>
         public int AdvancePoison(float delta)
@@ -135,7 +147,9 @@ namespace GameLogic.Battle
             return damage;
         }
 
-        /// <summary>死亡、离关或重建时清空英雄效果。</summary>
+        /// <summary>
+        /// 死亡、离关或重建时清空英雄效果。
+        /// </summary>
         public void ClearAll()
         {
             Hero.ClearStatusEffects();

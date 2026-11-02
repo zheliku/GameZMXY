@@ -14,12 +14,12 @@ namespace GameLogic.Enemies
     public partial class JiaoDemonKingEntity : AbstractBossEntity
     {
         private static readonly EnemyBodyPreset m_BodyPreset = new(typeof(EnemyWalkState),
-            typeof(JiaoDemonKingDeathState),
+            typeof(EnemyDeathState),
             () => new EnemyWalkState(), () => new EnemyAttackState(),
             () => new EnemyRecoveryState(), () => new EnemyHurtState(),
-            () => new JiaoDemonKingDeathState()); // 本首领的状态组合；运行实例由每次入场独立创建。
-        private static readonly EnemyAiPreset m_Preset = new(typeof(JiaoDemonKingEngageState), typeof(JiaoDemonKingEngageState),
-            () => new JiaoDemonKingEngageState()); // 本首领独立的距离与冷却选择。
+            () => new EnemyDeathState(waitForEffect: true)); // 本首领的状态组合；运行实例由每次入场独立创建。
+        private static readonly EnemyAiPreset m_Preset = new(typeof(DistanceSkillEngageState), typeof(DistanceSkillEngageState),
+            () => new DistanceSkillEngageState()); // 本首领的原生范围与冷却仍由自身提供。
 
         [Export] private PackedScene m_DragonWaveScene; // 原生第五源帧生成的龙波。
         [Export] private PackedScene m_DeathScene; // 共享官方BossDead旋涡。
@@ -181,7 +181,7 @@ namespace GameLogic.Enemies
         /// </summary>
         private void SpawnBossDeathAnimEvent()
         {
-            if (m_BodyFsm.CurrentState is not JiaoDemonKingDeathState state)
+            if (m_BodyFsm.CurrentState is not EnemyDeathState state)
             {
                 return;
             }

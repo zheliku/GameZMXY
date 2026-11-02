@@ -7,6 +7,7 @@ using GameLogic.Profile;
 using GameLogic.Heroes.Body;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 using System;
+using GodotGameFramework.UI;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -328,8 +329,14 @@ public sealed partial class UiSmokeScenario
             await WaitUntilAsync(() => form.Visible, "学习时没有打开技能窗口");
             var first = form.GetNode<TextureButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon");
             flow.GetModel<ProfileModel>().Soul.Value = 0;
-            first.EmitSignal(BaseButton.SignalName.Pressed);
             var notice = GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single();
+            GF.UI.CloseUIForm(notice.SerialId);
+            await WaitFramesAsync(3);
+            first.EmitSignal(BaseButton.SignalName.Pressed);
+            Check(!system.IsLearned(SkillId.RisingDragon) && flow.GetModel<ProfileModel>().Soul.Value == 0,
+                "提示窗口缺席影响了技能学习拒绝结果");
+            notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(GameConfig.UIFormId.SaveNoticeForm);
+            first.EmitSignal(BaseButton.SignalName.Pressed);
             Check(!system.IsLearned(SkillId.RisingDragon) && notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Text == "灵魂不足！",
                 "灵魂不足没有拒绝学习并显示复用提示");
             flow.GetSystem<ProfileSystem>().AddSoul(4000);

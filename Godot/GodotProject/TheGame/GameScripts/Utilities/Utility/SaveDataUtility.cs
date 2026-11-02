@@ -134,10 +134,17 @@ namespace GameLogic.Save
                 throw new NotSupportedException($"只支持存档格式 v{GameData.CurrentVersion}，当前文件为 v{data.SaveVersion}。");
             }
 
-            if (data.HighestClearedLevelId < 0 || data.Heroes == null || data.Heroes.Count == 0 || data.Heroes.Any(x => x == null) ||
-                        data.EquipmentItems == null || data.Heroes.Any(x => x.LearnedSkills == null || x.PassiveLevels == null))
+            if (data.HighestClearedLevelId < 0 || data.Heroes == null || data.Heroes.Count == 0 || data.EquipmentItems == null)
             {
                 throw new ArgumentException("存档缺少英雄或装备记录。");
+            }
+
+            foreach (var hero in data.Heroes)
+            {
+                if (hero == null || hero.LearnedSkills == null || hero.PassiveLevels == null)
+                {
+                    throw new ArgumentException("存档缺少英雄或装备记录。");
+                }
             }
         }
 
@@ -194,50 +201,62 @@ namespace GameLogic.Save
         internal static (EquipmentData[] Bag, Dictionary<int, EquippedItems> Slots)
             ReadItems(GameData data, int capacity)
         {
-            Dictionary<Guid, EquipmentData> datas = new();
+            Dictionary<Guid, EquipmentData> equipmentById = new();
             foreach (var item in data.EquipmentItems)
             {
-                if (item?.Attributes == null || !datas.TryAdd(item.InstanceId,
+                if (item?.Attributes == null || !equipmentById.TryAdd(item.InstanceId,
                         new EquipmentData(item.InstanceId, item.EquipmentId, item.Attributes)))
                 {
                     throw new ArgumentException("装备记录为空或实例编号重复。");
                 }
             }
 
-            HashSet<Guid> equipped = new();
+            HashSet<Guid> equippedIds = new();
             Dictionary<int, EquippedItems> slots = new();
             foreach (var hero in data.Heroes)
             {
-                if (!slots.TryAdd(hero.HeroId, new(Resolve(hero.WeaponInstanceId), Resolve(hero.ArmorInstanceId),
-                    Resolve(hero.AccessoryInstanceId), Resolve(hero.TreasureInstanceId))))
+                var equipped = new EquippedItems(
+                    Weapon: ResolveEquippedItem(hero.WeaponInstanceId, equipmentById, equippedIds),
+                    Armor: ResolveEquippedItem(hero.ArmorInstanceId, equipmentById, equippedIds),
+                    Accessory: ResolveEquippedItem(hero.AccessoryInstanceId, equipmentById, equippedIds),
+                    Treasure: ResolveEquippedItem(hero.TreasureInstanceId, equipmentById, equippedIds));
+                if (!slots.TryAdd(hero.HeroId, equipped))
                 {
                     throw new ArgumentException("英雄编号重复。");
                 }
             }
 
-            var bag = datas.Values.Where(x => !equipped.Contains(x.InstanceId)).ToArray();
+            var bag = equipmentById.Values.Where(item => !equippedIds.Contains(item.InstanceId)).ToArray();
             if (bag.Length > capacity)
             {
                 throw new ArgumentException("装备背包超出容量。");
             }
 
             return (bag, slots);
+        }
 
-            // 同一实例只能归一个英雄、一个部位所有。
-            EquipmentData Resolve(Guid id)
+        /// <summary>
+        /// 解析一个穿戴引用并登记占用；同一实例只能属于一名英雄的一个部位。
+        /// </summary>
+        /// <param name="id">保存的实例编号；空编号表示未穿戴。</param>
+        /// <param name="equipmentById">本次读档已建立的装备实例索引。</param>
+        /// <param name="equippedIds">本次读档中已经被穿戴引用占用的实例。</param>
+        /// <returns>引用的装备实例；未穿戴时为空。</returns>
+        /// <exception cref="ArgumentException">引用不存在或实例已被其他部位占用。</exception>
+        private static EquipmentData ResolveEquippedItem(Guid id,
+            IReadOnlyDictionary<Guid, EquipmentData> equipmentById, HashSet<Guid> equippedIds)
+        {
+            if (id == Guid.Empty)
             {
-                if (id == Guid.Empty)
-                {
-                    return null;
-                }
-
-                if (!datas.TryGetValue(id, out var item) || !equipped.Add(id))
-                {
-                    throw new ArgumentException("穿戴引用不存在或重复占用实例。");
-                }
-
-                return item;
+                return null;
             }
+
+            if (!equipmentById.TryGetValue(id, out var item) || !equippedIds.Add(id))
+            {
+                throw new ArgumentException("穿戴引用不存在或重复占用实例。");
+            }
+
+            return item;
         }
 
         /// <summary>

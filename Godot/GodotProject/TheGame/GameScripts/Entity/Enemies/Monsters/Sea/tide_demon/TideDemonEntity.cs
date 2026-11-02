@@ -7,8 +7,8 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class TideDemonEntity : AbstractSeaMonsterEntity
     {
-        private static readonly EnemyAiPreset m_Preset = new(typeof(PatrolState), typeof(TideDemonEngageState),
-            () => new PatrolState(), () => new TideDemonEngageState()); // 巡逻和本物种交战共用实例时钟。
+        private static readonly EnemyAiPreset m_Preset = new(typeof(PatrolState), typeof(EngageState),
+            () => new PatrolState(), () => new EngageState(cooldownAttackIndex: 1)); // 巡逻和本物种交战共用实例时钟。
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset

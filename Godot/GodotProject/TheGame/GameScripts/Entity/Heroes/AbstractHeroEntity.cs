@@ -390,42 +390,11 @@ namespace GameLogic.Heroes
             this.GetSystem<HeroSystem>().AdvanceHurtProtection(dt);
             HeroStatusSystem statusEffects = this.GetSystem<HeroStatusSystem>();
             statusEffects.AdvanceFreeze(dt);
-            if (m_FrozenEffect != null)
-            {
-                bool frozen = !Dead && statusEffects.IsFrozen;
-                if (frozen && !m_FrozenEffect.Visible)
-                {
-                    m_FrozenEffect.Frame = 0;
-                    m_FrozenEffect.Play();
-                    m_FrozenEffect.Show();
-                }
-                else if (!frozen)
-                {
-                    m_FrozenEffect.Stop();
-                    m_FrozenEffect.Hide();
-                }
-            }
+            RefreshFreezePresentation(statusEffects.IsFrozen);
             ReceivePeriodicDamage(this.GetSystem<HeroSystem>().AdvanceRecovery(dt), showNumber: false);
             int poisonDamage = statusEffects.AdvancePoison(dt);
             ReceivePeriodicDamage(poisonDamage);
-            if (m_PoisonHead != null)
-            {
-                m_PoisonHead.Visible = !Dead && statusEffects.IsPoisoned;
-            }
-
-            if (m_PoisonPulse != null)
-            {
-                if (poisonDamage > 0 && !Dead)
-                {
-                    m_PoisonPulse.Frame = 0;
-                    m_PoisonPulse.Play();
-                    m_PoisonPulse.Show();
-                }
-                else if (!m_PoisonPulse.IsPlaying() || Dead)
-                {
-                    m_PoisonPulse.Hide();
-                }
-            }
+            RefreshPoisonPresentation(statusEffects.IsPoisoned, poisonDamage);
             if (Dead && ActionData.Captured)
             {
                 ReleaseCapture(m_CaptorId);
@@ -476,6 +445,57 @@ namespace GameLogic.Heroes
             if (OnFloor && Velocity.Y >= 0)
             {
                 ActionData.JumpCount = 0;
+            }
+        }
+
+        /// <summary>
+        /// 冻结规则推进后刷新原生效果，不改变本步恢复、持续伤害和输入的执行顺序。
+        /// </summary>
+        /// <param name="frozen">规则层当前是否冻结。</param>
+        private void RefreshFreezePresentation(bool frozen)
+        {
+            if (m_FrozenEffect == null)
+            {
+                return;
+            }
+
+            frozen &= !Dead;
+            if (frozen && !m_FrozenEffect.Visible)
+            {
+                m_FrozenEffect.Frame = 0;
+                m_FrozenEffect.Play();
+                m_FrozenEffect.Show();
+            }
+            else if (!frozen)
+            {
+                m_FrozenEffect.Stop();
+                m_FrozenEffect.Hide();
+            }
+        }
+
+        /// <summary>
+        /// 伤害结算后更新中毒常驻效果与本跳脉冲，死亡时隐藏表现。
+        /// </summary>
+        /// <param name="poisoned">规则层当前是否中毒。</param>
+        /// <param name="damage">本步实际结算前取得的中毒伤害。</param>
+        private void RefreshPoisonPresentation(bool poisoned, int damage)
+        {
+            if (m_PoisonHead != null)
+            {
+                m_PoisonHead.Visible = !Dead && poisoned;
+            }
+            if (m_PoisonPulse != null)
+            {
+                if (damage > 0 && !Dead)
+                {
+                    m_PoisonPulse.Frame = 0;
+                    m_PoisonPulse.Play();
+                    m_PoisonPulse.Show();
+                }
+                else if (!m_PoisonPulse.IsPlaying() || Dead)
+                {
+                    m_PoisonPulse.Hide();
+                }
             }
         }
 

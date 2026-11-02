@@ -1236,10 +1236,14 @@ public sealed partial class FrontendSmokeScenario
     private sealed class ArchitectureProbeSystem(IArchitecture architecture, bool failInit, bool failDeinit)
         : AbstractSystem(architecture)
     {
-        /// <summary>实际初始化次数。</summary>
+        /// <summary>
+        /// 实际初始化次数。
+        /// </summary>
         public int InitCount { get; private set; }
 
-        /// <summary>实际解除次数。</summary>
+        /// <summary>
+        /// 实际解除次数。
+        /// </summary>
         public int DeinitCount { get; private set; }
 
         /// <inheritdoc />

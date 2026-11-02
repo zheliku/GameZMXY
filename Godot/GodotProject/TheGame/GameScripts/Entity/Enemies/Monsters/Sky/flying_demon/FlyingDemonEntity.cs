@@ -7,15 +7,16 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class FlyingDemonEntity : AbstractSkyMonsterEntity
     {
-        private static readonly EnemyAiPreset m_Preset = new(typeof(FlyingDemonEngageState), typeof(FlyingDemonEngageState),
-            () => new FlyingDemonEngageState()); // 每次显示创建独立的追踪状态。
+        private EnemyAiPreset m_Preset; // 共用追踪规则，注入飞行魔的60px悬停高度和本场景追踪范围。
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset
         {
             get
             {
-                return m_Preset;
+                return m_Preset ??= new(typeof(FlyingPursuitState), typeof(FlyingPursuitState),
+                    () => new FlyingPursuitState(pursuitHeight: 60f, trackingHeight: TrackingHeight,
+                        altitude: () => Altitude));
             }
         }
 

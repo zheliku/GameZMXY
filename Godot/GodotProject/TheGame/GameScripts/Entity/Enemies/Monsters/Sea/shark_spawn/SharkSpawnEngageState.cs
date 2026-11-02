@@ -8,7 +8,11 @@ namespace GameLogic.Enemies
     /// <summary>
     /// 鲨鱼按原点追踪、固定折返间隔和一秒决策节拍选择撞击或旋风；撞击后退避三秒。
     /// </summary>
-    internal sealed class SharkSpawnEngageState : AbstractEnemyAiState
+    /// <param name="trackingHeight">场景允许追踪的高差，像素。</param>
+    /// <param name="altitude">读取当前世界高度。</param>
+    /// <param name="horizontalSpeed">读取当前身体水平速度，退避沿用实际运动方向。</param>
+    internal sealed class SharkSpawnEngageState(float trackingHeight, Func<float> altitude,
+        Func<float> horizontalSpeed) : AbstractEnemyAiState
     {
         private float m_TurnInterval; // 本次显示固定的1～3秒折返间隔。
         private double m_TurnAt; // 下一次允许改变水平追踪方向的游戏时点。
@@ -26,7 +30,7 @@ namespace GameLogic.Enemies
         protected override void Enter(IEnemyAiAgent agent)
         {
             base.Enter(agent);
-            var flight = (SharkSpawnEntity)agent;
+            var flight = agent.AiData;
             flight.VerticalIntent = 0;
             flight.DirectVerticalMovement = false;
         }
@@ -34,7 +38,7 @@ namespace GameLogic.Enemies
         /// <inheritdoc />
         protected override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float elapseSeconds)
         {
-            var flight = (SharkSpawnEntity)agent;
+            var flight = agent.AiData;
             double now = agent.AiData.ElapsedSeconds;
             if (agent.IsAttacking)
             {
@@ -45,9 +49,9 @@ namespace GameLogic.Enemies
             flight.DirectVerticalMovement = now < m_RetreatUntil;
             if (flight.DirectVerticalMovement)
             {
-                int direction = Math.Sign(flight.Velocity.X);
+                int direction = Math.Sign(horizontalSpeed());
                 agent.Move(direction == 0 ? m_TravelDirection : direction);
-                flight.VerticalIntent = flight.Altitude > 150f ? -1 : 0;
+                flight.VerticalIntent = altitude() > 150f ? -1 : 0;
                 return;
             }
 
@@ -59,7 +63,7 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            if (Math.Abs(agent.TargetOffset.Y) > flight.TrackingHeight)
+            if (Math.Abs(agent.TargetOffset.Y) > trackingHeight)
             {
                 flight.VerticalIntent = 0;
                 agent.GetSystem<EnemyAiSystem>().Patrol(agent, elapseSeconds);

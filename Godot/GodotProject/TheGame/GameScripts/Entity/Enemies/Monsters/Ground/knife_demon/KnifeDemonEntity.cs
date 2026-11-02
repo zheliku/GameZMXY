@@ -9,8 +9,8 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class KnifeDemonEntity : AbstractGroundMonsterEntity
     {
-        private static readonly EnemyAiPreset m_Preset = new(typeof(PatrolState), typeof(KnifeDemonEngageState),
-            () => new PatrolState(), () => new KnifeDemonEngageState()); // 原版一秒决策、四秒优先投刀，不参与通用随机选招。
+        private static readonly EnemyAiPreset m_Preset = new(typeof(PatrolState), typeof(EngageState),
+            () => new PatrolState(), () => new EngageState(cooldownAttackIndex: 1)); // 原版一秒决策、四秒优先投刀，不参与通用随机选招。
 
         /// <summary>
         /// 普通小怪巡逻/追击；目标靠近后由原生攻击2方法事件投出飞刀。

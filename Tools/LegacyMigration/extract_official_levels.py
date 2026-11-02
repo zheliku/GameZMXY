@@ -89,8 +89,12 @@ def extract(args):
                 for gate in gates:
                     # StopPoint overrides the inspector width only in maps 1, 4 and 9.
                     map_number = int(label.split('-')[0])
-                    width = 1450 if map_number == 1 else (940 if map_number in (4, 9)
-                                                         else gate['properties']['betweenRandL'])
+                    if map_number == 1:
+                        width = 1450
+                    elif map_number in (4, 9):
+                        width = 940
+                    else:
+                        width = gate['properties']['betweenRandL']
                     right = gate['position'][0]
                     gate['battleBounds'] = [round(max(0, right - width), 2), round(right, 2)]
                 for spawn in spawns:

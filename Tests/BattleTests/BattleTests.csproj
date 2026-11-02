@@ -48,6 +48,7 @@
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\Hero\*.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\Input\*.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\ProfileSystem.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\EquipmentSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\SkillSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utilities\Utility\SaveDataUtility.cs" />
     <!-- 属性汇总、生命魔法资源、无双进度：纯 C#，按 AttributeType 枚举与 ActorBaseAttributes 生成类工作 -->
@@ -60,8 +61,9 @@
     <!-- M5 怪物 AI：Monsters/AI 目录使用 GF.Fsm 纯 C# 层与 Godot.Rect2 值类型，不依赖引擎节点，状态机用框架真实实现驱动 -->
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\AI\**\*.cs" Link="Linked\AI\%(Filename)%(Extension)" />
     <!-- 专属身体状态直接操作实体节点，由引擎专项验证；纯规则项目只链接不依赖实体的状态。 -->
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\**\*State.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_06_garuda_cave\*State.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_09_shark_whirlpool\SharkDemonKingAttackState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_09_shark_whirlpool\SharkDemonKingMoveState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonTransformState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonKingMoveState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonKingAttackState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonHeartState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonHeartDeathState.cs" Link="Linked\AI\%(Filename)%(Extension)" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Monsters\AI\**\*.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\**\*State.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_06_garuda_cave\*State.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_09_shark_whirlpool\SharkDemonKingAttackState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_09_shark_whirlpool\SharkDemonKingMoveState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonTransformState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonKingAttackState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonHeartState.cs;$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonHeartDeathState.cs" Link="Linked\AI\%(Filename)%(Extension)" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Monsters\**\*EngageState.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_06_garuda_cave\PengDemonKingEngageState.cs" />
     <!-- 2026-10-01 身体状态机：Entity/Body + Heroes/Body + Monsters/Body 是纯 C#（GF.Fsm 纯 C# 层 + Godot 值类型），物理帧由测试按 BodyFsmExtensions.Tick 驱动 -->
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Body\*.cs" Link="Linked\Body\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Body\**\*.cs" Link="Linked\HeroBody\%(Filename)%(Extension)" />
@@ -91,9 +93,5 @@
     <Compile Remove="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_11_hidden_dragon_palace\DragonKingDeathState.cs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- 具体首领读取自己的原生范围，由引擎战斗专项验证，不在纯规则程序集伪造实体。 -->
-    <Compile Remove="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_11_hidden_dragon_palace\DragonKingEngageState.cs" />
-    <Compile Remove="$(GodotProjectDir)TheGame\GameScripts\Entity\Enemies\Bosses\zm1_10_bull_demon_valley\BullDemonKingEngageState.cs" />
-  </ItemGroup>
+
 </Project>

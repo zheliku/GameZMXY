@@ -9,29 +9,18 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class ShrimpDemonEntity : AbstractSeaMonsterEntity
     {
-        private static readonly EnemyAiPreset m_Preset = new(typeof(PatrolState), typeof(ShrimpDemonEngageState),
-            () => new PatrolState(), () => new ShrimpDemonEngageState()); // 巡逻和本物种交战共用实例时钟。
+        private EnemyAiPreset m_Preset; // 巡逻与交战共用实例时钟，状态工厂注入场景退避内界。
 
         [Export] private CollisionShape2D m_RetreatRange; // 本物种的退避内界，不扩展通用敌人接口。
         [Export] private PackedScene m_ProjectileScene; // 原生场景绑定的加速魔法弹。
-
-        /// <inheritdoc />
-        public override void OnInit(int entityId, string entityAssetName, GameFramework.Entity.IEntityGroup entityGroup,
-            bool isNewInstance, object userData)
-        {
-            base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
-            if (isNewInstance && (m_RetreatRange?.Shape is not SegmentShape2D || !m_RetreatRange.Disabled))
-            {
-                throw new System.InvalidOperationException("本物种必须绑定禁用物理碰撞的原生选招范围。");
-            }
-        }
 
         /// <inheritdoc />
         protected override EnemyAiPreset AiPreset
         {
             get
             {
-                return m_Preset;
+                return m_Preset ??= new(typeof(PatrolState), typeof(ShrimpDemonEngageState),
+                    () => new PatrolState(), () => new ShrimpDemonEngageState(RetreatDistance));
             }
         }
 
@@ -43,6 +32,17 @@ namespace GameLogic.Enemies
             get
             {
                 return m_RetreatRange.Shape.GetRect().End.X;
+            }
+        }
+
+        /// <inheritdoc />
+        public override void OnInit(int entityId, string entityAssetName, GameFramework.Entity.IEntityGroup entityGroup,
+            bool isNewInstance, object userData)
+        {
+            base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
+            if (isNewInstance && (m_RetreatRange?.Shape is not SegmentShape2D || !m_RetreatRange.Disabled))
+            {
+                throw new System.InvalidOperationException("本物种必须绑定禁用物理碰撞的原生选招范围。");
             }
         }
 

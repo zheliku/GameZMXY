@@ -8,7 +8,9 @@ namespace GameLogic.Enemies
     /// <summary>
     /// 人形按80/100/200px原点距离选择吞噬、践踏、冲刺和魔焰，四招各有十五秒冷却。
     /// </summary>
-    internal sealed class BullDemonKingEngageState : AbstractEnemyAiState
+    /// <param name="swallowDistance">吞噬区间的水平上限，像素。</param>
+    /// <param name="stompDistance">践踏区间的水平上限，像素。</param>
+    internal sealed class BullDemonKingEngageState(float swallowDistance, float stompDistance) : AbstractEnemyAiState
     {
         /// <inheritdoc />
         protected override void Tick(IFsm<IEnemyAiAgent> fsm, IEnemyAiAgent agent, float delta)
@@ -24,7 +26,7 @@ namespace GameLogic.Enemies
             }
             // Monster23按三个互斥水平区间选招，失败与范围外均执行自身普通游荡。
             float distance = MathF.Abs(agent.TargetOffset.X);
-            if (distance <= ((BullDemonKingEntity)agent).SwallowDistance)
+            if (distance <= swallowDistance)
             {
                 if (agent.AiData.Cooldowns[4] <= 0f)
                 {
@@ -32,7 +34,7 @@ namespace GameLogic.Enemies
                 }
                 return;
             }
-            if (distance <= ((BullDemonKingEntity)agent).StompDistance)
+            if (distance <= stompDistance)
             {
                 if (agent.AiData.Cooldowns[3] <= 0f)
                 {
@@ -44,8 +46,20 @@ namespace GameLogic.Enemies
             {
                 if (agent.AiData.Cooldowns[1] <= 0f || agent.AiData.Cooldowns[2] <= 0f)
                 {
-                    int index = agent.AiData.Cooldowns[1] > 0f ? 2 : agent.AiData.Cooldowns[2] > 0f ? 1
-                        : agent.NextRandom() < .5f ? 1 : 2;
+                    int index;
+                    if (agent.AiData.Cooldowns[1] > 0f)
+                    {
+                        index = 2;
+                    }
+                    else if (agent.AiData.Cooldowns[2] > 0f)
+                    {
+                        index = 1;
+                    }
+                    else
+                    {
+                        // 两招都就绪时才抽签，单招就绪时不消费随机源。
+                        index = agent.NextRandom() < .5f ? 1 : 2;
+                    }
                     agent.RequestAttack(index);
                     return;
                 }

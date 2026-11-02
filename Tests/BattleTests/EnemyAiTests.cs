@@ -1,10 +1,12 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Linq;
 using GameConfig.Enemy;
 using GameFramework.Fsm;
 using GameLogic.Architecture;
 using GameLogic.Enemies.AI;
 using GameLogic.Enemies.Body;
+using GameLogic.Enemies;
 using Godot;
 using Xunit;
 
@@ -15,6 +17,172 @@ namespace GameLogic.Battle.Tests
     /// </summary>
     public class EnemyAiTests
     {
+        /// <summary>
+        /// 双招小怪每次节拍优先冷却技能，首领近远三招共享规则；保持各自配置与冷却独立。
+        /// </summary>
+        [Fact]
+        public void SharedEngageRulesPreserveSkillPriority()
+        {
+            using (var dual = new Harness(0, _ => new(typeof(EngageState), typeof(EngageState),
+                () => new EngageState(cooldownAttackIndex: 1)), 2))
+            {
+                dual.Agent.HasTarget = true;
+                dual.Agent.TargetOffset = Vector2.Zero;
+                dual.Step(1);
+                Assert.Equal(1, dual.Agent.AiData.AttackRequest);
+                dual.Agent.IsAttacking = false;
+                dual.Agent.AiData.Cooldowns[1] = 5;
+                dual.Step(1);
+                Assert.Equal(0, dual.Agent.AiData.AttackRequest);
+            }
+            using var boss = new Harness(preset: _ => new(typeof(DistanceSkillEngageState), typeof(DistanceSkillEngageState),
+                () => new DistanceSkillEngageState()), attackCount: 3);
+            boss.Agent.HasTarget = true;
+            boss.Agent.TargetOffset = new(200, 0);
+            boss.Step(.01f);
+            Assert.Equal(2, boss.Agent.AiData.AttackRequest);
+            boss.Agent.IsAttacking = false;
+            boss.Agent.AiData.Cooldowns[2] = 10;
+            boss.Step(.01f);
+            Assert.Equal(1, boss.Agent.AiData.MoveIntent);
+            boss.Agent.TargetOffset = Vector2.Zero;
+            boss.Step(1);
+            Assert.Equal(1, boss.Agent.AiData.AttackRequest);
+            boss.Agent.IsAttacking = false;
+            boss.Agent.AiData.Cooldowns[1] = 10;
+            boss.Step(1);
+            Assert.Equal(0, boss.Agent.AiData.AttackRequest);
+        }
+
+        /// <summary>
+        /// 原生场景注入的两段距离决定牛魔选招，不需要构造具体实体。
+        /// </summary>
+        /// <param name="distance">目标水平距离。</param>
+        /// <param name="expected">期望的招式下标。</param>
+        [Theory]
+        [InlineData(70, 4)]
+        [InlineData(90, 3)]
+        [InlineData(150, 1)]
+        public void BullUsesInjectedDistanceBands(float distance, int expected)
+        {
+            using var h = new Harness(preset: _ => new(typeof(BullDemonKingEngageState), typeof(BullDemonKingEngageState),
+                () => new BullDemonKingEngageState(80, 100)), attackCount: 5);
+            h.Agent.HasTarget = true;
+            h.Agent.EngageBounds = new(-200, -200, 400, 400);
+            h.Agent.TargetOffset = new(distance, 0);
+            h.Step(.01f);
+            Assert.Equal(expected, h.Agent.AiData.AttackRequest);
+        }
+
+        /// <summary>
+        /// 龙王近身水柱与中距离冰系分支使用显式距离；同时可用时保留原随机选择。
+        /// </summary>
+        [Fact]
+        public void DragonUsesInjectedColumnDistanceAndIndependentCooldowns()
+        {
+            using var h = new Harness(preset: _ => new(typeof(DragonKingEngageState), typeof(DragonKingEngageState),
+                () => new DragonKingEngageState(100, 100)), attackCount: 4);
+            h.Agent.HasTarget = true;
+            h.Agent.EngageBounds = new(-450, -200, 900, 400);
+            h.Agent.TargetOffset = new(80, 0);
+            h.Step(.01f);
+            Assert.Equal(3, h.Agent.AiData.AttackRequest);
+            h.Agent.IsAttacking = false;
+            h.Agent.TargetOffset = new(200, 0);
+            h.Step(.01f);
+            Assert.Equal(1, h.Agent.AiData.AttackRequest);
+            h.Agent.IsAttacking = false;
+            h.Agent.AiData.Cooldowns[1] = 10;
+            h.Step(.01f);
+            Assert.Equal(2, h.Agent.AiData.AttackRequest);
+        }
+
+        /// <summary>
+        /// 凤凰飞行和落地事实必须实时读取；离地未转飞行时不误出招，阶段改变后按空中规则执行。
+        /// </summary>
+        [Fact]
+        public void GarudaReadsLivePhaseWithoutEntityReference()
+        {
+            bool flying = false;
+            bool onFloor = false;
+            using var h = new Harness(preset: _ => new(typeof(PengDemonKingEngageState), typeof(PengDemonKingEngageState),
+                () => new PengDemonKingEngageState(300, 100, () => flying, () => onFloor)), attackCount: 4);
+            h.Agent.HasTarget = true;
+            h.Agent.TargetOffset = new(200, 0);
+            h.Step(1);
+            Assert.Equal(0, h.Agent.RequestCount);
+            flying = true;
+            h.Step(1);
+            Assert.Equal(0, h.Agent.AiData.AttackRequest);
+            h.Agent.IsAttacking = false;
+            flying = false;
+            onFloor = true;
+            h.Agent.TargetOffset = new(50, 0);
+            h.Step(1);
+            Assert.Equal(3, h.Agent.AiData.AttackRequest);
+        }
+
+        /// <summary>
+        /// 两种飞行小怪仅悬停高度不同，退避沿同一时钟并读取当前高度，不复制节点状态。
+        /// </summary>
+        /// <param name="pursuitHeight">物种追踪高度。</param>
+        /// <param name="vertical">追踪阶段预期垂直意图。</param>
+        [Theory]
+        [InlineData(60, 1)]
+        [InlineData(90, -1)]
+        public void FlyingPursuitPreservesHeightAndRetreat(float pursuitHeight, int vertical)
+        {
+            float altitude = 300;
+            using var h = new Harness(preset: _ => new(typeof(FlyingPursuitState), typeof(FlyingPursuitState),
+                () => new FlyingPursuitState(pursuitHeight, 300, () => altitude)));
+            h.Agent.HasTarget = true;
+            h.Agent.TargetOffset = new(200, 75);
+            h.Step(.01f);
+            Assert.Equal(vertical, h.Agent.AiData.VerticalIntent);
+            h.Agent.TargetOffset = Vector2.Zero;
+            h.Step(1);
+            Assert.Equal(1, h.Agent.RequestCount);
+            h.Agent.IsAttacking = false;
+            h.Step(.01f);
+            Assert.True(h.Agent.AiData.DirectVerticalMovement);
+            Assert.Equal(-1, h.Agent.AiData.VerticalIntent);
+            altitude = 100;
+            h.Step(.01f);
+            Assert.Equal(0, h.Agent.AiData.VerticalIntent);
+            h.Agent.HasTarget = false;
+            h.Step(3);
+            Assert.False(h.Agent.AiData.DirectVerticalMovement);
+        }
+
+        /// <summary>
+        /// 飞行鲨鱼退避沿实际速度，虾兵沿注入的退避内界；两者均可纯规则验证。
+        /// </summary>
+        [Fact]
+        public void SeaMovementUsesInjectedMotionAndRetreatRange()
+        {
+            using (var shark = new Harness(preset: _ => new(typeof(SharkSpawnEngageState), typeof(SharkSpawnEngageState),
+                () => new SharkSpawnEngageState(300, () => 200, () => -480)), attackCount: 2))
+            {
+                shark.Agent.HasTarget = true;
+                shark.Agent.TargetOffset = Vector2.Zero;
+                shark.Step(1);
+                shark.Agent.IsAttacking = false;
+                shark.Step(.01f);
+                Assert.Equal(-1, shark.Agent.AiData.MoveIntent);
+                Assert.Equal(-1, shark.Agent.AiData.VerticalIntent);
+                Assert.True(shark.Agent.AiData.DirectVerticalMovement);
+            }
+            using var shrimp = new Harness(preset: _ => new(typeof(ShrimpDemonEngageState), typeof(ShrimpDemonEngageState),
+                () => new ShrimpDemonEngageState(150)));
+            shrimp.Agent.HasTarget = true;
+            shrimp.Agent.TargetOffset = new(100, 0);
+            shrimp.Step(.1f);
+            Assert.Equal(-1, shrimp.Agent.AiData.MoveIntent);
+            shrimp.Agent.TargetOffset = new(300, 0);
+            shrimp.Step(.1f);
+            Assert.Equal(1, shrimp.Agent.AiData.MoveIntent);
+        }
+
         /// <summary>
         /// 巡逻半秒起步，边界来自场景且允许左右不对称。
         /// </summary>
@@ -226,9 +394,13 @@ namespace GameLogic.Battle.Tests
             public EnemyAiSystem System => BattleArchitecture.Instance.GetSystem<EnemyAiSystem>();
 
             /// <inheritdoc />
-            public Harness(int desire = 100)
+            public Harness(int desire = 100, Func<FakeAgent, EnemyAiPreset> preset = null, int attackCount = 1)
             {
-                Agent = new(desire);
+                Agent = new(desire, attackCount);
+                if (preset != null)
+                {
+                    Agent.AiPreset = preset(Agent);
+                }
                 Fsm = m_Manager.CreateFsm<IEnemyAiAgent>(Guid.NewGuid().ToString(), Agent, Agent.AiPreset.CreateStates());
                 Fsm.Start(Agent.AiPreset.IdleStateType);
             }
@@ -280,10 +452,10 @@ namespace GameLogic.Battle.Tests
             public EnemyConfig Config { get; }
 
             /// <inheritdoc />
-            public EnemyAiData AiData { get; } = new(1);
+            public EnemyAiData AiData { get; }
 
             /// <inheritdoc />
-            public EnemyAiPreset AiPreset => EnemyAiPresets.Patrol;
+            public EnemyAiPreset AiPreset { get; set; } = EnemyAiPresets.Patrol;
 
             /// <inheritdoc />
             public System.Collections.Generic.IReadOnlyList<GameConfig.Battle.AttackConfig> Attacks { get; }
@@ -303,9 +475,10 @@ namespace GameLogic.Battle.Tests
             public int RequestCount { get; private set; }
 
             /// <inheritdoc />
-            public FakeAgent(int desire)
+            public FakeAgent(int desire, int attackCount)
             {
-                Attacks = [CreateAttack()];
+                AiData = new(attackCount);
+                Attacks = Enumerable.Range(0, attackCount).Select(_ => CreateAttack()).ToArray();
                 Config = (EnemyConfig)RuntimeHelpers.GetUninitializedObject(typeof(EnemyConfig));
                 typeof(EnemyConfig).GetField("AttackDesire")!.SetValue(Config, desire);
                 typeof(EnemyConfig).GetField("AttackInterval")!.SetValue(Config, 1f);

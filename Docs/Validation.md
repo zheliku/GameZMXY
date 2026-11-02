@@ -1,5 +1,79 @@
 # 验证
 
+## 可读性整理续轮（2026-11-02）
+
+本轮针对`MapForm.Logic.cs`按旧版阅读路径整理：地点声明、装配校验、事件绑定、点击/悬停具名处理分开；保留单份地点表、场景按钮`LevelId`身份来源和隐藏关入口契约。全项目同类检查覆盖346个手写C#、131份GDScript、70份Python；修改只涉及手写运行时代码、编辑器/迁移脚本和文档，不碰Framework、addons、Luban、生成物、配置或场景。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| C#构建 | `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet`：0错误，5条既有框架/生成代码弃用警告。 |
+| 纯规则测试 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：240/240；`BattleTests`：191/191；`LevelTests`：19/19。 |
+| 格式与XML | 既有CSharpStyle最终扫描346文件，0格式差异、0缺XML；唯一`LevelGuideQuery.cs`差异由工具token保持写回后清零。`git diff --check`及暂存差异检查通过。 |
+| Python/GDScript | `python -m compileall -q Tools/ProjectMaintenance Tools/LegacyMigration`通过；另外逐文件`compile`检查覆盖全部70份Python。Godot加载8份修改的作者GDScript的`parse-authors`退出0，没有实例化或运行导入器。 |
+| 引用/索引 | `validate_game_references.py`：1885路径/373UID；新旧Godot C# UID齐全，Git暂存条目与本轮开始快照一致，未执行add/commit。 |
+| 实机回归 | frontend、level-guide、ui三个游戏进程最终均退出0，含前端、十地点图鉴、完整UI（暂停掉落、失败结算、存档重读），无`SMOKE FAIL`。ai、bull、dragon-rules、shark、shark-ai、garuda-ai、sea-ai、bat-cave八个游戏进程也均退出0。首次编排器本身因摘要编码退出1，原因与补跑范围见后段，不将编排错误冒称原批次通过。 |
+
+可读性整理保留了有明确来源的复杂表达：作者脚本仍按源几何选择父节点，迁移脚本仍按源版本/资源身份处理；运行时代码的随机调用条件、配置校验和状态时序未改变。所有实机退出诊断与预期损坏档/HUD注入仍单独记录，不能视为零诊断。
+
+证据目录为`Godot/GodotProject/.godot/validation/readability_20261102/`。`source-coverage-final.json`登记547份手写源码及最终散列；实际检查范围为255份运行时代码、38份调试代码、134份编辑器代码、53份测试、7份维护工具、60份迁移脚本。初筛指标只用于定位，不据行长/语法命中机械改写；复核后整理23份C#、8份GDScript、5份Python：多层选择展开、索引构造分步、局部捕获改显式参数，校验/订退按职责写清。保留了状态工厂、实时只读事实委托、简短组合查询、测试观察断言及数据/正则字串，避免用额外类型或通用包装替换合理代码。
+
+可复现的实机命令为`python <证据>/batch.py frontend level-guide ui`，分别使用`--smoketest=frontend`、`--smoketest=frontend --level-guide-only`、`--smoketest=ui --terrain-level5`，均为OpenGL、Dummy音频和隔离APPDATA。UI为完整会话，坡面按既有参数只重复第五关8条路线；没有声称重跑全部地形。敌人命令`python <证据>/batch.py ai bull dragon-rules shark shark-ai garuda-ai sea-ai bat-cave`使用独立headless进程，覆盖巡逻、选招、手部运动、高低生命动画、自由运动和感知装配。一次性摘要最初误用控制台编码，导致编排器在输出结果时报错；已核对原生result.json/完成标记并仅补跑未启动模式，游戏失败数不因此伪记或重复验证。原始日志和每项`*.checked.json`均保留。
+
+前端与图鉴退出各5个ObjectDB/1资源；八项敌人专项退出5～8个ObjectDB。完整UI退出20纹理RID/8排版RID/2字体RID、38 CanvasItem、141 ObjectDB和11资源；它们作为既有退出期诊断保留。最新地图图鉴截图已查看。本轮没有触碰用户修改的根AGENTS.md或暂存条目。作者工具只做语法/真实加载验证，没有重跑会写正式资源的导入和几何修复。此限制不被描述成资源生成回归已通过。
+
+## 架构审计续轮：全部条目实施与裁决（2026-11-02）
+
+本节接续下方首批记录。A01—A14及GLM附加P3建议的最终处理见[审计报告第10节](ArchitectureAudit-20261102.md)。依据第00/10/30/50/70章，共享既有身体状态、注入AI事实、合并重复Engage、复核身体命中形状、集中地图绑定、提取英雄私有表现及处理faulted检查点任务；数值采样和物种无敌计时经核实后保留。不改集中规范、配置/场景、Framework/addons/Luban、玩家正式档案或用户暂存内容。
+
+证据为`Godot/GodotProject/.godot/validation/architecture_audit_20261102/`，下称`<证据>`。`run.py`每组使用新APPDATA及既有SmokeTestDriver唯一隔离目录，记录命令、stdout/stderr和result.json。`batch.py`只编排独立测试进程。以下专项以专用断言为准，通用`SMOKE PASS`尾句不能作为完整UI验收。
+
+| 检查 | 实际命令、结果与证据 |
+| --- | --- |
+| 正式编译 | `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet`：`build-checkpoint-fixed.log`、`build-final-fixture.log`均0错误/5条既有只读代码弃用警告。`build-final.log`为后续未改源码的增量构建0错误/0警告，不据此称全量无警告。 |
+| 三组纯规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`为240/240；`Tests/BattleTests`为191/191；`Tests/LevelTests`为19/19，均退出0。日志`ProfileTests-final.log`、`BattleTests-final.log`、`LevelTests-final.log`。新增覆盖自定义行走返回、死亡等待/一次回收/旧回调、注入距离/实时阶段/冷却/飞行高度及退避；NuGet审计源不可达和Export字段等既有警告保留。 |
+| 身体误命中修前/后 | `python <证据>/run.py body-before --headless --audio-driver Dummy --max-fps 120 --quit-after 12000 -- --smoketest=ui --body-overlap-only`修前退出1，真实新攻击仍误伤700px外旧候选。修后同参数`body-fixed`退出0，60/120Hz旧目标不伤、移回真实命中、同招去重通过；退出5个ObjectDB诊断。 |
+| 敌人集中回归 | `python <证据>/batch.py checkpoint-failure bull dragon dragon-rules east-sea east-sea-ai shark shark-ai garuda garuda-ai qixing sea sea-ai bat-cave enemy-death effect-shapes fire-overlap freeze`：18项均退出0，证据`continue-<模式>/`。实际参数`--headless --audio-driver Dummy --max-fps 120 --quit-after 36000 -- --smoketest=ui --<模式>-only`，各有专用完成断言。 |
+| 行走、死亡及家族特例 | bull覆盖60/120Hz双向五招、兽形/护卫、心脏/奖励/清理；dragon为两档×双频×双向四招32组及控制免疫；east-sea含双频双向四招/背击/原生死亡/复用；shark含高低生命/首领与召唤物/死亡与隐藏取消；garuda含双频双向五动作/化卵/复生/终态死亡/复用。enemy-death为六组致死抛飞、空中循环、落地回收及一次死亡收益。 |
+| AI与单份垂直意图 | east-sea-ai、shark-ai、garuda-ai、sea-ai覆盖双频自主选招/冷却/阶段连续/追踪退避；bat-cave覆盖飞行追踪/出招/受击回飞/死亡。整理冗余Reset后复跑bat-cave及shark-ai仍退出0。 |
+| 共用几何与英雄表现 | effect-shapes覆盖双频第二形状、去重/预算、暂停/取消/复用/完成；fire-overlap覆盖700px旧目标排除及真实本地命中。freeze覆盖双频键盘/UI门禁、原生冰块、无排队、暂停/解冻/死亡；qixing包含毒雾、中毒十跳、暂停/复用。 |
+| faulted检查点任务 | `continue-checkpoint-failure/`退出0：真实失败结算按钮等待faulted任务后返回地图，内存收益保留，手动保存并读盘一致；`checkpoint failure probe`错误日志是预期注入。首次`checkpoint-failure/`失败因窗口可见但流程尚未绑定回调；校正夹具等待MapRequested绑定，无生产测试API。 |
+| 前端与地图OpenGL | `python <证据>/batch.py frontend level-guide`：依次用`--rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 36000 -- --smoketest=frontend`（图鉴加`--level-guide-only`），两项退出0。前端含架构身份/故障清理/重注册、取消加载、音量/保存及损坏档回滚；故障日志属于预期。图鉴含十地点、漩涡普通透明/48帧当前/悬停三态、38装备详情、十次嵌套悬停退出、两窗口尺寸及真实点击进关；最新map_form与guide_hover_niumogu截图已查看。 |
+| 数值只读核实 | `python <证据>/audit_sampling.py`：71条攻击，55条敌方范围全为固定整数，非固定FlatPower仅悟空普攻1001—1005的0..4，无非固定PowerScale。完整表行、9处敌方显式Lerp及裁决存`sampling-audit.json`，表SHA256为`8227527771153a61a67ad3444b6e061203c25344dc0e8aff7b2c11f12a487433`。首次脚本未处理空vector而失败，按表默认0,0修正后断言通过，未写源表。保持调用次数/顺序，不声称排除了所有未来数值问题。 |
+| Godot脚本扫描 | `python <证据>/run.py scan-continuation --headless --build-solutions --quit --no-window`：退出0，四个新增C#的UID由原生扫描登记。仍有ComponentInsoector对RefCounted调用Free/不存在free的既有退出错误。较宽的`--editor --import`先被自动审批以“生成物只读”拒绝；核对第50章后，带明确依据的原文扫描命令获准执行，没有绕过审批改写生成物。 |
+| 格式/XML与引用 | 既有CSharpStyle对手写范围做token/注释保持整理，`style-continuation-write.json`为346文件/26个格式差异/无缺XML；补齐ArchitectureLifecycleTests。`style-final-continuation.json`为346文件/0格式差异/0缺XML。`python Tools/ProjectMaintenance/validate_game_references.py`为1885路径/373UID通过；相对首批380UID净减7，与删11份状态、加4份脚本一致。 |
+| 差异与索引 | `git diff --check`、`git diff --cached --check`通过；新Godot C#均有UID，没有修改只读源码/规范。未执行git add/commit，`git ls-files --stage`与`index-semantic-baseline.txt`一致；只读git status可能刷新索引stat元数据，核对后SHA256稳定为`D07311E1EAD1959C95C7DFCA1A516D96738DE46CA5D7CE3825F7AF083141755B`。 |
+| A15暂停当帧旧delta | 完整`continue-ui-opengl-fixed/`通过升级、48条坡面、平台/恢复球及换装重入后，在真实飞行球暂停断言失败。`python <证据>/run.py loot-pause-before --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 12000 -- --smoketest=ui --loot-pause-only`修前退出1，暂停后既有_Process(1/60)仍推进关卡计时。只在LevelViewController统一帧入口读取现有暂停事实，`loot-pause-fixed`用同模式/16000帧上限跑60/120Hz均PASS、退出0：计时和原生飞行球位置冻结、恢复跟随并真实拾取；退出6个ObjectDB。正式构建`build-pause-fixed.log`0错误/5条既有警告。 |
+| 最终完整UI会话 | `python <证据>/run.py continue-ui-final --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 90000 -- --smoketest=ui --terrain-level5`：全部业务断言通过、退出0。覆盖背包完整四槽恢复、技能/真实命中/声音、无双、全部小怪血条/回池、成长门槛/连升/补满、平台、恢复品、换装检查点重入、两次真实击杀飞行球暂停与领取、放弃回滚、死亡提交、结算重试/回地图、备份回退、格式拒绝、加载取消及HUD失败清理。坡面本次按既有参数限定第五关8条；此前`continue-ui-opengl-fixed/`已独立通过全部48条，未把局部套件泛称全地形重跑。备份损坏与HUD缺绑定为预期注入，仍记录20纹理RID/8排版RID/2字体RID、38 CanvasItem、138 ObjectDB及10资源的关停诊断。 |
+| 最后源码审计 | 新暂停修复与夹具修改后再执行既有CSharpStyle，`style-final-pause.json`仍为346文件/0格式差异/0缺XML；引用1885路径/373UID通过。所有已删除状态无C#/工程引用，无临时等级调试入口；保留的`--loot-pause-only`为真实缺陷的双频回归。没有继续扩大或重复无关测试。 |
+
+完整UI的失败尝试保留：`continue-ui-full/`误用headless，在妖猴截图等待FramePostDraw，核对自建进程身份后停止，不能计PASS。`continue-ui-opengl/`及加诊断的`continue-ui-levelup-probe/`均退出1，定位到背包夹具只恢复物品列表、却留下EastSeaBanner：4级实际280/160正确包含各50法宝加成，断言裸身预期230/110。已修复夹具同时恢复完整Slots，并让既有测试Reset传入四个真实穿戴部位；未改正式成长/装备规则或放宽断言。随后发现的暂停缺陷A15及最终完整结果见上表，失败日志没有覆盖或改写成PASS。
+
+退出诊断与业务断言分开：18专项有3～12个ObjectDB存活；fire-overlap另有2资源、freeze和sea-ai各1资源；前端/图鉴各5个ObjectDB/1资源。失败OpenGL完整尝试另有纹理/排版/字体RID、132～133个ObjectDB及10～11资源。只读插件和引擎退出期问题本轮不修，不能称零诊断；远程热更等可选建议没有冒称经过实机验证。
+
+## 全面架构审计与首批整改（2026-11-02）
+
+按目标文件先审计、对照GLM再实施；报告为[ArchitectureAudit-20261102](ArchitectureAudit-20261102.md)，规范依据第00/10/30/50/70章。首批修复全部穿戴的实例排重，将牛心唯一奖励规则移至现有ProfileSystem、由死亡状态按原时点提交，结果经GGF值事件给应用提示；技能提示改按资源路径取窗，无攻击包时跳过重叠枚举。奖励仍在两秒退场开始时直接入包，末尾死亡/清关事件时点保持。未改变存档v12、配置、场景几何、只读依赖或Git索引。
+
+证据目录：`Godot/GodotProject/.godot/validation/architecture_audit_20261102/`（以下简称`<证据>`）。该目录的`run.py`为一次性隔离启动器，每组使用新的APPDATA，另由SmokeTestDriver创建唯一`user://Validation/<模式>/<编号>`，不使用正式档案。源码改动只有业务、测试与本文档；新增事件的UID由Godot自动扫描生成。
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 引擎版本 | `S:/Godot4/Godot4CSharp_console.exe --version`：`4.7.2.stable.mono.official.ed1daf0bf`。SDK为4.7.2，net10.0；GGF未声明可信上游Tag/Commit，报告以当前仓库/Framework Git tree标识源码快照。 |
+| 资产缺陷修前复现 | `dotnet test Tests/ProfileTests --no-restore -v quiet --filter FullyQualifiedName~ProfileCollection_RejectsAlreadyEquippedInstance`：7项中4失败/3通过；两种法宝在出战及非出战英雄穿戴中均可被重复领入背包，原三部位通过。 |
+| 正式构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有框架/生成代码弃用警告。最终新增烟测脚本由下列Godot扫描再次构建成功；日志`build-final.log`、`scan-fixed/`。 |
+| 档案/战斗/关卡 | `dotnet test Tests/ProfileTests --no-restore -v quiet`为240/240；`dotnet test Tests/BattleTests --no-restore -v quiet`为178/178；`dotnet test Tests/LevelTests --no-restore -v quiet`为19/19，均退出0。新增覆盖全部穿戴排重、非出战法宝、拒绝后保存重建、唯一奖励重复不抽属性、满包不抽属性/不消耗资格、回滚重新领取。NU1900为NuGet审计服务不可达，Battle另有既有CS8632/Export字段警告。 |
+| Godot扫描与构建 | `python <证据>/run.py scan-fixed --headless --editor --import --build-solutions --quit --no-window`：退出0，完成新事件脚本/UID扫描与构建。stderr仍有ComponentInsoector对RefCounted调用Free/不存在free的既有退出错误，不能称为无错误扫描。 |
+| 牛魔真实专项 | `python <证据>/run.py bull --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 48000 -- --smoketest=ui --bull-only`：退出0。60/120Hz双向五招、兽形/护卫、吞噬、心脏显隐/暂停与拥有的手/火柱清理通过；`SMOKE-BULL TREASURE PASS`覆盖真实致死后首次/重复/满包、提示关闭仍完成死亡回池、重开订阅唯一且不播放过期奖励。退出10个ObjectDB和1个资源诊断。 |
+| 完整牛魔谷与磁盘 | `python <证据>/run.py level10 --headless --audio-driver Dummy --max-fps 120 --quit-after 24000 -- --smoketest=level10`：退出0。真实阶段、三形态、自动通关、地图与磁盘读回通过，经验1598；`SMOKE-BULL TREASURE DISK PASS`确认同一金钢琢实例和已抽属性写入实际检查点。含待飞行奖励的回地图耗时3942ms，符合该场景断言。退出9个ObjectDB。 |
+| 前端保存与导航 | `python <证据>/run.py frontend --headless --audio-driver Dummy --max-fps 120 --quit-after 12000 -- --smoketest=frontend`：退出0，六格/选角/地图/保存提示/保存后返回与部分档案装配失败后重读通过；坏档、跨槽和半初始化错误为既有预期注入。退出3个ObjectDB。 |
+| 背包与技能提示 | `python <证据>/run.py inventory-skills --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 60000 -- --smoketest=ui --inventory-skills-only`：退出0。背包、法宝及15种换装、技能提示窗关闭时拒绝学习且不扣费、重开后不足提示、五招真实输入与命中/声音/轨迹通过。该模式提前结束，不把通用尾句所称的加载取消等算成本次覆盖。退出有17纹理RID、8排版RID、2字体RID、GL纹理、131个ObjectDB与10资源诊断。 |
+| 被动第二提示入口 | `python <证据>/run.py passive --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 12000 -- --smoketest=ui --passive-only`：退出0；余额不足、25次购买、满级拒绝、五项属性、磁盘及重试重入全部通过。退出5个ObjectDB和1个资源。 |
+| 风格与引用 | `dotnet run --project Tools/ProjectMaintenance/CSharpStyle --no-restore -- P:/Godot-Project/GameZMXY <证据>/style-final.json`扫描353个手写文件；本轮10个C#文件无格式差异/缺XML。20个既有格式差异文件和ArchitectureLifecycleTests的既有XML缺项保留，不扩散格式化；只对本轮文件的副本用既有工具做token保持格式化。`python Tools/ProjectMaintenance/validate_game_references.py`为1885路径/380UID通过；`git diff --check`通过。 |
+
+未通过尝试也保留：第一次Battle构建因测试项目尚未链接ProfileSystem新依赖的正式EquipmentSystem而失败，补全链编后178项通过；首次`scan`因新增技能烟测缺少UI扩展命名空间导致编译失败，`build-after-smoke.log`记录CS0308，补using后`scan-fixed`退出0。未以旧程序集烟测替代最终构建。测试复现、失败的构建尝试与插件退出诊断分别记录，没有修改只读框架/插件来隐藏日志。
+
+未完成：报告第二至四阶段尚未实施；身体候选形状复核、数值舍入收敛等仍需新增实证，不宣称已修。插件释放及各模式ObjectDB/RID/资源退出问题继续列为待定位，既有日志不能证明本轮新增或已排除所有泄漏。集中规范未改，后续文档规范维护另按用户明确要求处理。
+
 ## 更小的怪物列表图鉴与漩涡三态（2026-11-02）
 
 依据第00/10/40/50章，继续使用地图拥有的单一浮层和只读Query；怪物直接由原生ItemList排布，不增加逐怪物脚本。最终208px宽、177～253px高，怪物28px图＋名称两列、守关对手浅金排首位，装备32px透明图；相对上一版面积减少约33%～56%。同名牛魔王形态去重，蝙蝠/鲨鱼召唤物补入名单，掉落规则不变。外置`brown_guide_panel.tres`沿用原棕金样式，仅收窄内边距。地图场景和三态素材保持用户暂存版本。

@@ -4,9 +4,9 @@ using GameLogic.Enemies.AI;
 namespace GameLogic.Enemies
 {
     /// <summary>
-    /// 鲛魔王远距优先十秒冷却旋转，近距按一秒节拍优先六秒冷却龙波，再使用普攻。
+    /// 远距优先第三招，近距按首领节拍优先第二招、否则普攻；鲛魔王和鲨魔王共用这一选招规则。
     /// </summary>
-    internal sealed class JiaoDemonKingEngageState : AbstractBossAiState
+    internal sealed class DistanceSkillEngageState : AbstractBossAiState
     {
         /// <inheritdoc />
         protected override void Engage(IEnemyAiAgent agent, bool decision, float delta)

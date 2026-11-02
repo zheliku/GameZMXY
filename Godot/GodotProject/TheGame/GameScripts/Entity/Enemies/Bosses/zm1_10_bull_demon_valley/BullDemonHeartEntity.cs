@@ -8,12 +8,6 @@ using GameLogic.Enemies.Body;
 using GameLogic.Entity;
 using Godot;
 using GodotGameFramework.NodePool;
-using GameConfig.Equipment;
-using GameLogic.Architecture;
-using GameLogic.Equipment;
-using GameLogic.Profile;
-using GameLogic.UI;
-using GodotGameFramework;
 
 namespace GameLogic.Enemies
 {
@@ -161,19 +155,6 @@ namespace GameLogic.Enemies
 
             m_HeartFade.Stop();
             m_Presentation.Play("death");
-            // 原版直接赠入背包，已有同名法宝时不重复生成；满包不丢到地上。
-            var profile = this.GetModel<ProfileModel>();
-            if (!profile.HasEquipment(EquipmentId.DiamondSnare))
-            {
-                bool collected = false;
-                if (profile.EquipmentDatas.Count < profile.Capacity)
-                {
-                    var data = this.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.DiamondSnare, GD.Randf);
-                    collected = this.GetSystem<ProfileSystem>().TryCollectEquipment(data);
-                }
-                GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().ShowMessage(
-                    collected ? "获得 金钢琢" : "背包已满，无法获得 金钢琢");
-            }
         }
 
         /// <inheritdoc />

@@ -1,6 +1,11 @@
 using GameFramework.Fsm;
+using GameConfig.Equipment;
+using GameLogic.Architecture;
 using GameLogic.Enemies.Body;
+using GameLogic.Event.Equipment;
+using GameLogic.Profile;
 using Godot;
+using GodotGameFramework;
 
 namespace GameLogic.Enemies
 {
@@ -30,6 +35,14 @@ namespace GameLogic.Enemies
             body.TakePendingHurt();
             body.Velocity = Vector2.Zero;
             owner.BeginDeathPresentation();
+            // 原版在退场开始时直接赠入背包；延迟的死亡事件仍留到两秒演出完成，不能提前清关。
+            var reward = owner.GetSystem<ProfileSystem>().GrantUniqueEquipment(EquipmentId.DiamondSnare, GD.Randf);
+            if (reward != EquipmentGrantResult.AlreadyOwned)
+            {
+                GF.Event.Fire(owner, EquipmentRewardEventArgs.Create(EquipmentId.DiamondSnare,
+                    reward == EquipmentGrantResult.Collected));
+            }
+
             m_Left = owner.DeathDuration;
             m_Reported = false;
         }

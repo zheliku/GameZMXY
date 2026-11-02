@@ -14,6 +14,7 @@ using GameLogic.FloatingText;
 using GameLogic.Profile;
 using GameLogic.Equipment;
 using Godot;
+using GodotGameFramework;
 using GodotGameFramework.Entity;
 
 namespace GameLogic.Level
@@ -99,12 +100,12 @@ namespace GameLogic.Level
         }
 
         /// <summary>
-        /// 把游戏帧交给本局状态；暂停时 delta 为零。
+        /// 把游戏帧交给本局状态；暂停后不消费本帧已经采样的旧delta。
         /// </summary>
         /// <param name="delta">游戏秒数。</param>
         public override void _Process(double delta)
         {
-            if (m_SessionActive)
+            if (m_SessionActive && !GF.Base.IsGamePaused)
             {
                 this.GetSystem<LevelSystem>().AdvanceTime(delta);
                 TickLoot((float)delta);

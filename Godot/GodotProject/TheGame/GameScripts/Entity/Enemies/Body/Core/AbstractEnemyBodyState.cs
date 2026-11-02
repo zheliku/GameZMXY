@@ -103,8 +103,18 @@ namespace GameLogic.Enemies.Body
             float acceleration, float speed, float directSpeed)
         {
             int vertical = body.VerticalIntent;
-            float speedY = vertical == 0 ? 0f : body.DirectVerticalMovement ? vertical * directSpeed :
-                Mathf.Clamp(body.Velocity.Y + vertical * acceleration * dt, -speed, speed);
+            float speedY = 0f;
+            if (vertical != 0)
+            {
+                if (body.DirectVerticalMovement)
+                {
+                    speedY = vertical * directSpeed;
+                }
+                else
+                {
+                    speedY = Mathf.Clamp(body.Velocity.Y + vertical * acceleration * dt, -speed, speed);
+                }
+            }
             body.Velocity = new Vector2(body.MoveIntent * body.Params.MoveSpeed, speedY);
             body.SetFacing(body.MoveIntent);
             body.PlayAnim(body.MoveIntent == 0 ? EnemyAnims.Idle : EnemyAnims.Run);
