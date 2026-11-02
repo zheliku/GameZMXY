@@ -171,6 +171,18 @@ namespace GameLogic.Enemies
             RestartAnim(EnemyAnims.Idle);
         }
 
+        /// <summary>
+        /// 官方技能沿用起手朝向，只有普通水波由attackTarget明确转向目标。
+        /// </summary>
+        /// <param name="index">本首领的招式下标。</param>
+        protected override void FaceAttackTarget(int index)
+        {
+            if (index == 0)
+            {
+                base.FaceAttackTarget(index);
+            }
+        }
+
         /// <inheritdoc />
         protected override void ApplyConfigOverrides()
         {

@@ -43,6 +43,8 @@ def _equipment_rows(config_dir):
     result = []
     for row in xlsx_rows(config_dir / "Items.xlsx")["EquipmentConfig"][3:]:
         cells = _cells(row)
+        if (cells.get("A") or "").startswith("##"):
+            continue
         if not cells.get("B") or not cells.get("C") or not cells.get("G"):
             continue
         try:

@@ -51,6 +51,53 @@ namespace GameLogic.Profile.Tests
         }
 
         /// <summary>
+        /// 其他部位穿戴、替换和卸下后，法宝及其存档引用仍保持原实例。
+        /// </summary>
+        /// <param name="treasureId">穿戴中的法宝定义。</param>
+        /// <param name="equipmentId">执行穿卸的其他部位装备。</param>
+        /// <param name="slot">本次变更的部位。</param>
+        [Theory]
+        [InlineData(EquipmentId.DiamondSnare, EquipmentId.CommonPilgrimStaff, EquipmentSlot.Weapon)]
+        [InlineData(EquipmentId.DiamondSnare, EquipmentId.EarthFiendApeArmor, EquipmentSlot.Armor)]
+        [InlineData(EquipmentId.DiamondSnare, EquipmentId.EarthFiendRing, EquipmentSlot.Accessory)]
+        [InlineData(EquipmentId.EastSeaBanner, EquipmentId.CommonPilgrimStaff, EquipmentSlot.Weapon)]
+        [InlineData(EquipmentId.EastSeaBanner, EquipmentId.EarthFiendApeArmor, EquipmentSlot.Armor)]
+        [InlineData(EquipmentId.EastSeaBanner, EquipmentId.EarthFiendRing, EquipmentSlot.Accessory)]
+        public void Treasure_PersistsAcrossOtherEquipmentChanges(EquipmentId treasureId,
+            EquipmentId equipmentId, EquipmentSlot slot)
+        {
+            var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+            var system = CreateEquipmentSystem(scope);
+            var profileSystem = scope.GetSystem<ProfileSystem>();
+            var treasure = system.Roll(Guid.NewGuid(), treasureId, () => .37f);
+            Assert.True(profileSystem.TryCollectEquipment(treasure));
+            Assert.True(system.TryEquip(treasure.InstanceId));
+            var equippedAttributes = scope.Hero.CaptureCombatAttributes();
+
+            // 首次穿戴、同部位替换和卸下均只改变请求的部位。
+            foreach (float sample in new[] { 0f, .99f })
+            {
+                var item = system.Roll(Guid.NewGuid(), equipmentId, () => sample);
+                Assert.True(profileSystem.TryCollectEquipment(item));
+                Assert.True(system.TryEquip(item.InstanceId));
+                Assert.Same(item, scope.Profile.GetEquippedItem(slot));
+                Assert.Same(treasure, scope.Profile.Treasure);
+            }
+            Assert.True(system.TryUnequip(slot));
+            Assert.Same(treasure, scope.Profile.Treasure);
+            Assert.Equal(equippedAttributes, scope.Hero.CaptureCombatAttributes());
+
+            // 保存及重建仍保留全部实例，不因其他部位交换丢失法宝。
+            var saved = JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(scope.CaptureSaveData()));
+            Assert.Equal(3, saved.EquipmentItems.Count);
+            Assert.Equal(treasure.InstanceId, saved.Heroes[0].TreasureInstanceId);
+            var restored = TestGameScope.FromSaveData(saved, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
+            Assert.Equal(treasure.InstanceId, restored.Profile.Treasure.InstanceId);
+            Assert.Equal(equippedAttributes, restored.Hero.CaptureCombatAttributes());
+            Assert.Equal(2, restored.Profile.EquipmentDatas.Count);
+        }
+
+        /// <summary>
         /// 金钢琢闪避按原文件保留整百分比阶梯，其他随机属性保留各自端点。
         /// </summary>
         [Fact]

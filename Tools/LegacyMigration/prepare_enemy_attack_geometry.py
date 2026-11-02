@@ -1,6 +1,7 @@
 """Review the new chapter attacks as a few native shapes, not bitmap canvases.
 
-Only the explicitly reviewed five attacks and Peng's three flames are emitted.
+The default reviews five attacks and Peng's three flames; --bull-only and
+--dragon-only author the reviewed boss-specific regions separately.
 Pixels and source vector curves are sampled offline to measure basic shapes;
 no pixel polygons, fitting code, or manifest interpreter enters the game.
 """
@@ -39,7 +40,8 @@ def rectangle(points, padding=2):
 def prepare(args):
     """Retain named probe time, complete parent transforms, and clip-depth masks."""
     root = Path(__file__).resolve().parents[2]
-    source = root / 'Godot/GodotProject/.godot/validation/official_continuation/monster2_full.xml'
+    source = root / ('Godot/GodotProject/.godot/validation/remaining_levels/monster3.xml' if args.dragon_only
+                     else 'Godot/GodotProject/.godot/validation/official_continuation/monster2_full.xml')
     tags = E.parse(source).getroot().find('tags')
     definitions = {int(t.get('shapeId') or t.get('spriteId')): t for t in tags if t.get('shapeId') or t.get('spriteId')}
     bitmaps = {int(t.get('characterID')): t for t in tags if t.get('characterID')}
@@ -50,9 +52,10 @@ def prepare(args):
         a, b, c, d, x, y = value
         return points @ np.array([[a, b], [c, d]]) + [x, y]
 
-    def shape_points(character):
-        if character in cache:
-            return cache[character]
+    def shape_points(character, additive=False):
+        cache_key = (character, additive)
+        if cache_key in cache:
+            return cache[cache_key]
         tag = definitions[character]
         fill = next((item for item in tag.iter('item') if item.get('bitmapId') not in (None, '65535')), None)
         if fill is not None:
@@ -60,11 +63,17 @@ def prepare(args):
             if bitmap.get('type') == 'DefineBitsLossless2Tag':
                 assert bitmap.get('bitmapFormat') == '5'
                 pixels = np.frombuffer(zlib.decompress(bytes.fromhex(bitmap.get('zlibBitmapData'))), np.uint8)
-                alpha = pixels.reshape(int(bitmap.get('bitmapHeight')), int(bitmap.get('bitmapWidth')), 4)[:, :, 0]
+                pixels = pixels.reshape(int(bitmap.get('bitmapHeight')), int(bitmap.get('bitmapWidth')), 4)
+                alpha = pixels[:, :, 0]
+                rgb = pixels[:, :, 1:]
             else:
                 image = Image.open(io.BytesIO(bytes.fromhex(bitmap.get('imageData'))))
                 alpha = np.frombuffer(zlib.decompress(bytes.fromhex(bitmap.get('bitmapAlphaData'))), np.uint8).reshape(image.height, image.width)
-            ys, xs = np.where(alpha >= 26)
+                rgb = np.asarray(image.convert('RGB'))
+            visible = alpha >= 26
+            if additive:
+                visible &= rgb.max(axis=2) >= 26
+            ys, xs = np.where(visible)
             item = fill.find('bitmapMatrix')
             value = [float(item.get(key, default)) for key, default in
                      [('scaleX', '1'), ('rotateSkew0', '0'), ('rotateSkew1', '0'),
@@ -94,12 +103,12 @@ def prepare(args):
                         values.append((1-t)**2 * current + 2*t*(1-t)*control + t*t*end)
                     current = end
             points = np.array(values)
-        cache[character] = points
+        cache[cache_key] = points
         return points
 
-    def probe_points(character, age, value):
+    def probe_points(character, age, value, additive=False):
         if definitions[character].get('type') != 'DefineSpriteTag':
-            return transform(shape_points(character), value)
+            return transform(shape_points(character, additive), value)
         history = frames(character)
         held = age if len(history) == 1 else 0
         output, masks = [], []
@@ -110,7 +119,7 @@ def prepare(args):
             if child.get('clipDepth'):
                 masks.append((int(child.get('clipDepth')), bounds(child_id, child_age + held, child_matrix)))
                 continue
-            points = probe_points(child_id, child_age + held, child_matrix)
+            points = probe_points(child_id, child_age + held, child_matrix, additive or child.get('blendMode') == '8')
             for _, box in masks:
                 points = points[(points[:, 0] >= box[0]) & (points[:, 0] <= box[0]+box[2]) &
                                 (points[:, 1] >= box[1]) & (points[:, 1] <= box[1]+box[3])] if box else np.empty((0, 2))
@@ -119,7 +128,65 @@ def prepare(args):
         return np.concatenate(output) if output else np.empty((0, 2))
 
     base = root / 'Godot/GodotProject/.godot/validation/remaining_levels'
-    specs = [('garuda_art/native_manifest.json', 'flying_demon', 'attack_1'),
+    if args.dragon_only:
+        data = json.loads((base/'dragon_art/actors/manifest.json').read_text(encoding='utf-8'))
+        actor = data['actors'][0]
+        report = {'source_xml_sha256': hashlib.sha256(source.read_bytes()).hexdigest(), 'attacks': []}
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        for action in actor['actions']:
+            if action['name'] not in ('attack_2', 'attack_3'):
+                continue
+            shapes = []
+            for frame_index, display in enumerate(frames(action['sprite'])):
+                sticks = [(child, age) for child, age in display if child.get('name') == 'stick']
+                if action.get('complete_frames') and frame_index >= action['complete_frames'][-1] - 1:
+                    shapes.append([None] * 7 if action['name'] == 'attack_2' else [])
+                    continue
+                if action['name'] == 'attack_2':
+                    # Seven independent source ice pillars must not become one
+                    # wide solid rectangle across the visible spaces between them.
+                    regions = [None] * 7
+                    for child, age in sticks:
+                        parent = _compose(action['matrix'], matrix(child))
+                        history = frames(int(child.get('characterId')))
+                        for pillar, child_age in history[age % len(history)]:
+                            slot = (int(pillar.get('depth')) - 1) // 2
+                            if slot >= len(regions):
+                                raise ValueError('Changed official ice-pillar depth')
+                            points = probe_points(int(pillar.get('characterId')), child_age,
+                                                  _compose(parent, matrix(pillar)))
+                            regions[slot] = rectangle(points, padding=1)
+                    shapes.append(regions)
+                else:
+                    sets = [probe_points(int(child.get('characterId')), age, _compose(action['matrix'], matrix(child)),
+                                         child.get('blendMode') == '8') for child, age in sticks]
+                    points = np.concatenate(sets) if sets else np.empty((0, 2))
+                    shape = rectangle(points, padding=1)
+                    shapes.append([shape] if shape else [])
+            report['attacks'].append(dict(actor='dragon_king', animation=action['name'], frames=action['frames'],
+                                         slots=7 if action['name'] == 'attack_2' else 1, shapes=shapes))
+            preview = dict(action)
+            preview['name'] = action['name']
+            _preview(args.output.parent, 'dragon_king', preview, shapes)
+            print('DRAGON', action['name'], 'max rectangle', max(s['size'][0] for values in shapes for s in values if s),
+                  max(s['size'][1] for values in shapes for s in values if s))
+        for effect in data['effects']:
+            if effect['name'] == 'dragon_king_ice_aura':
+                continue
+            action = effect['actions'][0]
+            shapes = []
+            for frame in range(action['frames']):
+                points = probe_points(effect['sprite'], frame, [1, 0, 0, 1, 0, 0])
+                shape = rectangle(points, padding=1) if frame < action['frames'] - 1 else None
+                shapes.append([shape] if shape else [])
+            report['attacks'].append(dict(actor=effect['name'], animation='play', frames=action['frames'], shapes=shapes))
+            _preview(args.output.parent, effect['name'], action, shapes)
+            print('DRAGON', effect['name'], 'max rectangle', max(s[0]['size'][0] for s in shapes if s),
+                  max(s[0]['size'][1] for s in shapes if s))
+        args.output.write_text(json.dumps(report, indent=2)+'\n', encoding='utf-8')
+        return
+    specs = [('bull_art/actors/manifest.json', 'bull_demon_king', 'attack_4')] if args.bull_only else [
+             ('garuda_art/native_manifest.json', 'flying_demon', 'attack_1'),
              ('garuda_art/native_manifest.json', 'peng_demon_king', 'attack_2'),
              ('garuda_art/native_manifest.json', 'peng_demon_king', 'attack_4'),
              ('sea_art/actors_registered/manifest.json', 'tide_demon', 'attack_2'),
@@ -144,10 +211,24 @@ def prepare(args):
                 radius = max(np.linalg.norm(points - center, axis=1).max(), 2) + 1
                 shape = dict(kind='circle', position=center.tolist(), radius=float(radius), rotation=0)
             shapes.append([shape] if shape else [])
+        if args.bull_only:
+            # One basic rectangle per visible phase: transformed body, expanding
+            # ground spikes, full spread, then the body remaining after the spikes.
+            # Keep six readable keys instead of following every minor source wobble.
+            for start, end in ((19, 29), (29, 32), (32, 36), (36, 40), (40, 52), (52, 54)):
+                points = np.concatenate([value for value in point_sets[start:end] if len(value)])
+                shape = rectangle(points)
+                for index in range(start, end):
+                    shapes[index] = [shape]
         report['attacks'].append(dict(actor=name, animation=action_name, frames=action['frames'], shapes=shapes))
         _preview(args.output.parent, name, action, shapes)
         print(name, action_name, 'active frames', sum(bool(x) for x in shapes),
               'max extent', max((max(s[0].get('size', [s[0].get('radius', 0)*2])) for s in shapes if s), default=0))
+
+    if args.bull_only:
+        args.output.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+        print('BULL ATTACK REVIEW: source hit4 masked visible regions; native basic-shape plan only')
+        return
 
     data = json.loads((base/'garuda_art/native_manifest.json').read_text(encoding='utf-8'))
     effect = next(item for item in data['effects'] if item['name'] == 'peng_fire')
@@ -163,7 +244,7 @@ def prepare(args):
 
 def _preview(output, name, action, frames):
     """Keep source registration while overlaying the proposed simple shapes."""
-    active = [i for i, shapes in enumerate(frames) if shapes]
+    active = [i for i, shapes in enumerate(frames) if any(shapes)]
     chosen = sorted(set(active[round(t * (len(active)-1) / 7)] for t in range(8)))
     result = Image.new('RGB', (1600, 740), (35, 38, 43))
     draw = ImageDraw.Draw(result)
@@ -196,4 +277,6 @@ def _preview(output, name, action, frames):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--bull-only', action='store_true')
+    parser.add_argument('--dragon-only', action='store_true')
     prepare(parser.parse_args())

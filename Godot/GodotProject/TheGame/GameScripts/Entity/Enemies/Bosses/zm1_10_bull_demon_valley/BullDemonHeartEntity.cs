@@ -106,9 +106,10 @@ namespace GameLogic.Enemies
             m_Presentation.Play("RESET");
             m_Presentation.Advance(0);
             m_Presentation.Stop();
+            // Stop会恢复旧淡出动画的起点alpha=1，须先停旧周期，再设置本次初始隐藏。
+            m_HeartFade.Stop();
             m_Heart.Modulate = new Color(1, 1, 1, 0);
             m_Heart.Play("play");
-            m_HeartFade.Stop();
             m_Presentation.Play("intro");
             RefreshSharedAttack();
         }
@@ -171,7 +172,7 @@ namespace GameLogic.Enemies
                     collected = this.GetSystem<ProfileSystem>().TryCollectEquipment(data);
                 }
                 GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().ShowMessage(
-                    collected ? "获得 金钢琢（功能待开放）" : "背包已满，无法获得 金钢琢");
+                    collected ? "获得 金钢琢" : "背包已满，无法获得 金钢琢");
             }
         }
 

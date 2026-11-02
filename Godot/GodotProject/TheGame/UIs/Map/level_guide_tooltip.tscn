@@ -1,0 +1,246 @@
+[gd_scene format=3 uid="uid://qupkrnnfnhjh"]
+
+[ext_resource type="Theme" uid="uid://s48yl51sqo68" path="res://TheGame/MainPack/Themes/brown_gold_theme.tres" id="1_3l2qw"]
+[ext_resource type="StyleBox" uid="uid://bb6obrgg6pv7m" path="res://TheGame/MainPack/Themes/Styles/brown_guide_panel.tres" id="2_vgndu"]
+[ext_resource type="Script" uid="uid://y705t8clygtu" path="res://TheGame/GameScripts/UI/MapForm/Components/LevelGuideTooltip.cs" id="3_5cxao"]
+[ext_resource type="Texture2D" uid="uid://u5ac8itnrlqb" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_official_body.png" id="4_ut8bj"]
+[ext_resource type="Texture2D" uid="uid://duybemtonqsd7" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/demon_monkey/demon_monkey_official_body.png" id="5_1f3i8"]
+[ext_resource type="Texture2D" uid="uid://ch157lpx54pki" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/gorilla/gorilla_official_body.png" id="6_qoyf6"]
+[ext_resource type="Texture2D" uid="uid://c32b7ynckb4qj" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_body.png" id="7_bcrpk"]
+[ext_resource type="Texture2D" uid="uid://d1m3ulls2uy2b" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_body.png" id="8_rkwav"]
+[ext_resource type="Texture2D" uid="uid://cj0q6t24o877t" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/cave_brute/cave_brute.png" id="9_bs3g6"]
+[ext_resource type="Texture2D" uid="uid://cdnhjjnymc2q5" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sky/bat/bat_body.png" id="10_o6pj3"]
+[ext_resource type="Texture2D" uid="uid://48q8lotx0xbt" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_04_bat_cave/bat_cave_statue_body.png" id="11_ne5g6"]
+[ext_resource type="Texture2D" uid="uid://c0p5bbibf3of7" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king.png" id="12_0bjey"]
+[ext_resource type="Texture2D" uid="uid://4y38ir3drgsa" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_06_garuda_cave/peng_demon_king_body.png" id="13_hrr30"]
+[ext_resource type="Texture2D" uid="uid://bciwx4ac37wqr" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/knife_demon/knife_demon.png" id="14_gjlrm"]
+[ext_resource type="Texture2D" uid="uid://ccygk4sqva52l" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/shrimp_demon/shrimp_demon_official_body.png" id="15_8jjnh"]
+[ext_resource type="Texture2D" uid="uid://dbhe1j8mi6qjv" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sky/flying_demon/flying_demon_body.png" id="16_w8snk"]
+[ext_resource type="Texture2D" uid="uid://bme814cgo0v6e" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/tide_demon/tide_demon_official_body.png" id="17_mo2eq"]
+[ext_resource type="Texture2D" uid="uid://d8xd6rhtwns2" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/turtle_minister/turtle_minister_official_body.png" id="18_4sy02"]
+[ext_resource type="Texture2D" uid="uid://6emkfnhe3pgy" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_official_body.png" id="19_1r0cs"]
+[ext_resource type="Texture2D" uid="uid://p1e4o675qtqx" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/shark_spawn/shark_spawn_official_body.png" id="20_fudko"]
+[ext_resource type="Texture2D" uid="uid://b8oef0jb1n8uo" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_body.png" id="21_brojh"]
+[ext_resource type="Texture2D" uid="uid://daboqx36kwmew" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/lantern_fish/lantern_fish_official_body.png" id="22_i8tww"]
+[ext_resource type="Texture2D" uid="uid://cj1faivhuysb1" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_beast_official_body.png" id="23_ybx6s"]
+[ext_resource type="Texture2D" uid="uid://cvdrlp2330e21" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/bull_guard/bull_guard_official_body.png" id="24_xmueb"]
+[ext_resource type="Resource" uid="uid://b0cqamjcontb4" path="res://TheGame/Sprites/Items/item_appearances.tres" id="25_qypc3"]
+[ext_resource type="PackedScene" uid="uid://chvobw0b1sdxo" path="res://TheGame/UIs/Map/guide_equipment_icon.tscn" id="26_rgniy"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vwih8"]
+atlas = ExtResource("4_ut8bj")
+region = Rect2(686, 16, 42, 62)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l8573"]
+atlas = ExtResource("5_1f3i8")
+region = Rect2(937, 136, 52, 92)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rrli0"]
+atlas = ExtResource("6_qoyf6")
+region = Rect2(603, 203, 108, 116)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bvjx3"]
+atlas = ExtResource("7_bcrpk")
+region = Rect2(783, 1001, 111, 135)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wjwuh"]
+atlas = ExtResource("8_rkwav")
+region = Rect2(1221, 367, 91, 98)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rdwx3"]
+atlas = ExtResource("9_bs3g6")
+region = Rect2(864, 241, 82, 83)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pk6x4"]
+atlas = ExtResource("10_o6pj3")
+region = Rect2(243, 1284, 57, 59)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m817n"]
+atlas = ExtResource("13_hrr30")
+region = Rect2(352, 2206, 132, 118)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i8ac5"]
+atlas = ExtResource("19_1r0cs")
+region = Rect2(1496, 3453, 97, 114)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_w6ol6"]
+atlas = ExtResource("12_0bjey")
+region = Rect2(2815, 2405, 135, 97)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jw1cf"]
+atlas = ExtResource("14_gjlrm")
+region = Rect2(873, 317, 58, 79)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6mg53"]
+atlas = ExtResource("15_8jjnh")
+region = Rect2(453, 16, 73, 119)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uwes8"]
+atlas = ExtResource("16_w8snk")
+region = Rect2(284, 42, 82, 70)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d75bf"]
+atlas = ExtResource("17_mo2eq")
+region = Rect2(866, 1377, 138, 51)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mexvv"]
+atlas = ExtResource("18_4sy02")
+region = Rect2(558, 706, 53, 83)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q6011"]
+atlas = ExtResource("20_fudko")
+region = Rect2(199, 1667, 151, 50)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c12ke"]
+atlas = ExtResource("21_brojh")
+region = Rect2(16, 2712, 261, 172)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t1gri"]
+atlas = ExtResource("22_i8tww")
+region = Rect2(1368, 122, 124, 102)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6akdi"]
+atlas = ExtResource("11_ne5g6")
+region = Rect2(0, 1, 265, 221)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sbwk4"]
+atlas = ExtResource("23_ybx6s")
+region = Rect2(16, 16, 122, 100)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l4oc6"]
+atlas = ExtResource("24_xmueb")
+region = Rect2(308, 457, 112, 92)
+filter_clip = true
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2tvns"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1nvid"]
+
+[node name="LevelGuideTooltip" type="PanelContainer" unique_id=2028420211 node_paths=PackedStringArray("m_Title", "m_Description", "m_Enemies", "m_Drops")]
+z_index = 100
+custom_minimum_size = Vector2(208, 0)
+theme = ExtResource("1_3l2qw")
+theme_override_styles/panel = ExtResource("2_vgndu")
+script = ExtResource("3_5cxao")
+m_Title = NodePath("Content/Header/Title")
+m_Description = NodePath("Content/Header/Description")
+m_Enemies = NodePath("Content/Encounter/Enemies")
+m_EnemyTextures = Dictionary[int, Texture2D]({
+1: SubResource("AtlasTexture_vwih8"),
+2: SubResource("AtlasTexture_l8573"),
+3: SubResource("AtlasTexture_rrli0"),
+4: SubResource("AtlasTexture_bvjx3"),
+6: SubResource("AtlasTexture_wjwuh"),
+7: SubResource("AtlasTexture_rdwx3"),
+8: SubResource("AtlasTexture_pk6x4"),
+9: SubResource("AtlasTexture_m817n"),
+10: SubResource("AtlasTexture_i8ac5"),
+11: SubResource("AtlasTexture_w6ol6"),
+13: SubResource("AtlasTexture_jw1cf"),
+14: SubResource("AtlasTexture_6mg53"),
+15: SubResource("AtlasTexture_uwes8"),
+16: SubResource("AtlasTexture_d75bf"),
+17: SubResource("AtlasTexture_mexvv"),
+18: SubResource("AtlasTexture_q6011"),
+19: SubResource("AtlasTexture_c12ke"),
+20: SubResource("AtlasTexture_t1gri"),
+21: SubResource("AtlasTexture_6akdi"),
+22: SubResource("AtlasTexture_sbwk4"),
+25: SubResource("AtlasTexture_l4oc6")
+})
+m_Drops = NodePath("Content/Loot/Drops")
+m_Appearances = ExtResource("25_qypc3")
+m_EquipmentCellScene = ExtResource("26_rgniy")
+
+[node name="Content" type="VBoxContainer" parent="." unique_id=1847406600]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Header" type="VBoxContainer" parent="Content" unique_id=973268496]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Title" type="Label" parent="Content/Header" unique_id=1306215621]
+custom_minimum_size = Vector2(188, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+autowrap_mode = 3
+
+[node name="Description" type="Label" parent="Content/Header" unique_id=2136344051]
+custom_minimum_size = Vector2(188, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 3
+
+[node name="Encounter" type="VBoxContainer" parent="Content" unique_id=668760946]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Caption" type="Label" parent="Content/Encounter" unique_id=1061532627]
+custom_minimum_size = Vector2(188, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8745098, 0.6156863, 1)
+theme_override_font_sizes/font_size = 12
+text = "出没妖怪"
+autowrap_mode = 3
+
+[node name="Enemies" type="ItemList" parent="Content/Encounter" unique_id=228416842]
+custom_minimum_size = Vector2(188, 0)
+layout_mode = 2
+focus_mode = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/guide_color = Color(1, 1, 1, 0)
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 2
+theme_override_constants/icon_margin = 4
+theme_override_font_sizes/font_size = 11
+theme_override_styles/panel = SubResource("StyleBoxEmpty_2tvns")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_1nvid")
+auto_height = true
+max_columns = 2
+fixed_column_width = 90
+fixed_icon_size = Vector2i(28, 28)
+
+[node name="Loot" type="VBoxContainer" parent="Content" unique_id=287559209]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Caption" type="Label" parent="Content/Loot" unique_id=1762942890]
+custom_minimum_size = Vector2(188, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8745098, 0.6156863, 1)
+theme_override_font_sizes/font_size = 12
+text = "可获装备"
+autowrap_mode = 3
+
+[node name="Drops" type="GridContainer" parent="Content/Loot" unique_id=1105711835]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 2
+columns = 5

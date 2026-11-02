@@ -34,6 +34,7 @@
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\EquipmentSystem.cs" Link="Linked\Systems\EquipmentSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Commands\EquipmentCommands.cs" Link="Linked\Commands\EquipmentCommands.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Queries\EquipmentSaleSummaryQuery.cs" Link="Linked\Queries\EquipmentSaleSummaryQuery.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Queries\LevelGuideQuery.cs" Link="Linked\Queries\LevelGuideQuery.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\Input\HeroActionData.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Wukong\Skills\*.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Skills\ISkillActor.cs" />

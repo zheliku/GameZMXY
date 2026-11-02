@@ -7,7 +7,7 @@ using GodotGameFramework;
 namespace GameLogic.Enemies
 {
     /// <summary>
-    /// 龙王保留地面行走速度，再把有效请求交给允许部分攻击继续运动的身体状态。
+    /// 龙王地面游荡和追击；有效请求交给负责停止落地施法位移的攻击状态。
     /// </summary>
     internal sealed class DragonKingMoveState : AbstractEnemyBodyState
     {

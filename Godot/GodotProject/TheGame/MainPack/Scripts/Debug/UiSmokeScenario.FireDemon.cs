@@ -29,6 +29,73 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 public sealed partial class UiSmokeScenario
 {
     /// <summary>
+    /// 池化九连在同一物理步移到新位置后，不得消费旧位置的Area重叠缓存。
+    /// </summary>
+    /// <param name="hero">本场实际攻击来源。</param>
+    /// <param name="flow">当前权威模型和系统。</param>
+    /// <returns>两种物理频率下的远距复用与本地命中验证。</returns>
+    private async Task CheckFireDemonOverlapReuseAsync(AbstractHeroEntity hero, ProcedureOwner flow)
+    {
+        int oldTicks = Engine.PhysicsTicksPerSecond;
+        var scene = GD.Load<PackedScene>("res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_combo_effect.tscn");
+        var hit = ConfigSystem.Instance.Tables.TbAttackConfig.Get((int)SkillHitId.FireDemonCombo);
+        try
+        {
+            foreach (int ticks in new[] { 60, 120 })
+            {
+                Engine.PhysicsTicksPerSecond = ticks;
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+                    new EnemySpawn(new Vector2(650, 150)));
+                SmokeInspection.FreezeAi(m_Monster);
+                m_Monster.SetPhysicsProcess(false);
+                SmokeInspection.StrengthenTrainingTarget(m_Monster);
+                var effect = scene.Instantiate<SkillEffectNode>();
+                hero.GetParent().AddChild(effect);
+                var area = effect.GetNode<Area2D>("Origin/Visual/HitBox");
+                var shape = area.GetChild<CollisionShape2D>(0);
+                try
+                {
+                    // 先以无伤害实例建立真实物理重叠，再模拟同物理步的归还和再取出。
+                    effect.Show(null, m_Monster.GlobalPosition, 1, flow.GetModel<HeroModel>().CaptureCombatAttributes(hero.Id), 10,
+                        false, node => node.OnRelease());
+                    await WaitUntilAsync(() => area.GetOverlappingAreas().Contains(m_Monster.HurtBox),
+                        "火魔复用夹具没有建立真实重叠");
+                    int hp = m_Monster.Hp;
+                    effect.OnRelease();
+                    effect.OnGet();
+                    effect.Show(hit, m_Monster.GlobalPosition + new Vector2(700, 0), 1,
+                        flow.GetModel<HeroModel>().CaptureCombatAttributes(hero.Id), 10, false, node => node.OnRelease());
+                    effect.SetPhysicsProcess(false);
+                    Check(area.GetOverlappingAreas().Contains(m_Monster.HurtBox), "未保留要复现的旧Area缓存");
+                    effect._PhysicsProcess(1d / ticks);
+                    Check(m_Monster.Hp == hp, $"{ticks}Hz池化九连误伤了700px以外的旧目标");
+
+                    // 再落回真实重叠位置，确认不是单纯禁用攻击来规避问题。
+                    effect.GlobalPosition = m_Monster.GlobalPosition;
+                    effect.SetPhysicsProcess(true);
+                    await WaitUntilAsync(() => m_Monster.Hp < hp, "本地重叠的火魔九连没有造成伤害");
+                    Check(!shape.Disabled, "真实命中不在有效帧");
+                    GD.Print($"SMOKE-FIRE OVERLAP {ticks}Hz PASS: stale 700px target rejected, local actual hit retained");
+                }
+                finally
+                {
+                    effect.OnRelease();
+                    effect.QueueFree();
+                    ReleaseTestEntity(m_Monster);
+                    m_Monster = null;
+                    await WaitFramesAsync(3);
+                }
+            }
+        }
+        finally
+        {
+            Engine.PhysicsTicksPerSecond = oldTicks;
+            ReleaseTestEntity(m_Monster);
+            m_Monster = null;
+        }
+    }
+
+    /// <summary>
     /// 保留敌人真实身体运动，检查左右火魔九连击退与下冲、落地命中，不冻结受击位置。
     /// </summary>
     /// <param name="hero">本关实际悟空。</param>

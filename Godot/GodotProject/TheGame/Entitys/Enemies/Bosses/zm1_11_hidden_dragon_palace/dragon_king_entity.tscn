@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://bveujbgi173xo"]
 
 [ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="7_j5ivj"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_library.tres" id="anim"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_official_frames.tres" id="body"]
+[ext_resource type="AnimationLibrary" uid="uid://koo7tyb7kskb" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_library.tres" id="anim"]
+[ext_resource type="SpriteFrames" uid="uid://cnm7xey4m10d5" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_official_frames.tres" id="body"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_ice_aura_frames.tres" id="ice"]
+[ext_resource type="SpriteFrames" uid="uid://cdu4u7ht0bmxh" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_ice_aura_frames.tres" id="ice"]
 [ext_resource type="Script" uid="uid://bcn7kcww8e2xw" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_11_hidden_dragon_palace/DragonKingEntity.cs" id="script"]
 [ext_resource type="PackedScene" uid="uid://bfojcoo10lev7" path="res://TheGame/Entitys/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent_effect.tscn" id="torrent"]
 [ext_resource type="PackedScene" uid="uid://ojbx80r8o1ad" path="res://TheGame/Entitys/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_wave_effect.tscn" id="wave"]
@@ -16,8 +16,11 @@ height = 99.99756
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
 size = Vector2(44.996643, 99.99756)
 
-[sub_resource type="RectangleShape2D" id="rest"]
+[sub_resource type="RectangleShape2D" id="shape_empty"]
 size = Vector2(1, 1)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4ak36"]
+size = Vector2(85.86263, 83.74906)
 
 [sub_resource type="CanvasItemMaterial" id="add"]
 blend_mode = 1
@@ -86,7 +89,43 @@ collision_mask = 128
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1166435124]
-shape = SubResource("rest")
+shape = SubResource("shape_empty")
+disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=2041613708]
+position = Vector2(-93.79436, 35.211754)
+shape = SubResource("RectangleShape2D_4ak36")
+disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1670695650]
+position = Vector2(98.60564, 35.211754)
+shape = SubResource("RectangleShape2D_4ak36")
+disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="CollisionShape2D4" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=738098596]
+position = Vector2(-191.04436, 37.161755)
+shape = SubResource("RectangleShape2D_4ak36")
+disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="CollisionShape2D5" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=394410273]
+position = Vector2(197.20564, 35.211754)
+shape = SubResource("RectangleShape2D_4ak36")
+disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="CollisionShape2D6" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1004000663]
+position = Vector2(-293.99435, 41.711754)
+shape = SubResource("RectangleShape2D_4ak36")
+disabled = true
+debug_color = Color(0.88, 0.36, 0.3, 0.18)
+
+[node name="CollisionShape2D7" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=1032343645]
+position = Vector2(296.10565, 35.211754)
+shape = SubResource("RectangleShape2D_4ak36")
 disabled = true
 debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
@@ -95,6 +134,7 @@ visible = false
 material = SubResource("add")
 sprite_frames = ExtResource("ice")
 animation = &"play"
+frame = 29
 offset = Vector2(1, -4)
 
 [node name="Perception" type="Area2D" parent="." unique_id=1126338568 node_paths=PackedStringArray("m_DetectionShape", "m_EngageShape", "m_PatrolShape")]

@@ -73,10 +73,10 @@ namespace GameLogic.Equipment
 
             profile.Slots.Value = definition.Slot switch
             {
-                EquipmentSlot.Weapon => new(item, profile.Armor, profile.Accessory),
-                EquipmentSlot.Armor => new(profile.Weapon, item, profile.Accessory),
-                EquipmentSlot.Accessory => new(profile.Weapon, profile.Armor, item),
-                EquipmentSlot.Treasure => new(profile.Weapon, profile.Armor, profile.Accessory, item),
+                EquipmentSlot.Weapon => profile.Slots.Value with { Weapon = item },
+                EquipmentSlot.Armor => profile.Slots.Value with { Armor = item },
+                EquipmentSlot.Accessory => profile.Slots.Value with { Accessory = item },
+                EquipmentSlot.Treasure => profile.Slots.Value with { Treasure = item },
                 _ => throw new ArgumentOutOfRangeException(nameof(definition.Slot))
             };
             return true;
@@ -98,10 +98,10 @@ namespace GameLogic.Equipment
 
             profile.Slots.Value = slot switch
             {
-                EquipmentSlot.Weapon => new(null, profile.Armor, profile.Accessory),
-                EquipmentSlot.Armor => new(profile.Weapon, null, profile.Accessory),
-                EquipmentSlot.Accessory => new(profile.Weapon, profile.Armor, null),
-                EquipmentSlot.Treasure => new(profile.Weapon, profile.Armor, profile.Accessory, null),
+                EquipmentSlot.Weapon => profile.Slots.Value with { Weapon = null },
+                EquipmentSlot.Armor => profile.Slots.Value with { Armor = null },
+                EquipmentSlot.Accessory => profile.Slots.Value with { Accessory = null },
+                EquipmentSlot.Treasure => profile.Slots.Value with { Treasure = null },
                 _ => throw new ArgumentOutOfRangeException(nameof(slot))
             };
             return true;

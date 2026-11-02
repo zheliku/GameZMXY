@@ -19,7 +19,9 @@ func _method_at(animation: Animation, method: String, frame: int) -> bool:
 
 func _validate() -> void:
     var args := OS.get_cmdline_user_args()
-    assert(args.size() == 3, "Expected bosses, monsters and all-level source JSON")
+    assert(args.size() == 4, "Expected bosses, monsters, all-level source and reviewed hit4 geometry JSON")
+    var reviewed: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(args[3]))
+    var stomp: Dictionary = reviewed.attacks.filter(func(value): return value.actor == "bull_demon_king" and value.animation == "attack_4")[0]
     var samples := 0
     for file in [args[0], args[1]]:
         var manifest: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(file))
@@ -45,10 +47,18 @@ func _validate() -> void:
                         assert(body.animation == action.name and body.frame == frame)
                         assert(body.offset.is_equal_approx(Vector2(actor.layers[0].sprite_offset[0], actor.layers[0].sprite_offset[1])))
                         var bounds = action.hit_bounds[frame]
+                        if actor.name == "bull_demon_king" and action.name == "attack_4":
+                            var shapes: Array = stomp.shapes[frame]
+                            bounds = null if shapes.is_empty() else [0, 0, shapes[0].size[0], shapes[0].size[1]]
                         assert(shape.disabled == (bounds == null), "%s/%s/%d hit window" % [actor.name, action.name, frame + 1])
                         if bounds != null:
                             assert(shape.shape is RectangleShape2D and shape.shape.size.is_equal_approx(Vector2(bounds[2], bounds[3])))
-                            assert(shape.position.is_equal_approx(Vector2(bounds[0] + bounds[2] / 2, bounds[1] + bounds[3] / 2)))
+                            if actor.name == "bull_demon_king" and action.name == "attack_4":
+                                var actual: Dictionary = stomp.shapes[frame][0]
+                                assert(shape.position.is_equal_approx(Vector2(actual.position[0], actual.position[1])))
+                                assert(is_equal_approx(shape.rotation, actual.rotation))
+                            else:
+                                assert(shape.position.is_equal_approx(Vector2(bounds[0] + bounds[2] / 2, bounds[1] + bounds[3] / 2)))
                         samples += 1
             if actor.name == "bull_demon_beast":
                 assert(_method_at(player.get_animation("death"), "CompleteTransformAnimEvent", 25))
@@ -89,6 +99,7 @@ func _validate() -> void:
     level.free()
     var form: Control = load("res://TheGame/UIs/map_form.tscn").instantiate()
     assert(form.get("m_Niumogu") == form.get_node("m_Niumogu"))
+    assert(form.get_node("m_Niumogu/CurrentHint").scale.is_equal_approx(Vector2.ONE))
     assert(is_equal_approx(form.get_node("m_LocationAnimation").get_animation("niumogu/current").length, 19 / 24.0))
     form.free()
     print("BULL RESOURCE 4-1 PASS: %d source-frame/direction samples, five drain methods, native fades, complete level/map bindings" % samples)

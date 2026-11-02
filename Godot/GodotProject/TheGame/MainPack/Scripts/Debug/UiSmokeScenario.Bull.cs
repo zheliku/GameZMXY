@@ -17,6 +17,7 @@ using GameLogic.Heroes.Body;
 using GameLogic.Equipment;
 using GameLogic.Profile;
 using GameLogic.UI;
+using System.Collections.Generic;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
@@ -27,6 +28,124 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public sealed partial class UiSmokeScenario
 {
+    /// <summary>
+    /// 用实际游戏秒记录完整显隐周期，检查淡入结束立即受伤、停留和淡出的原版边界。
+    /// </summary>
+    /// <param name="hero">真实攻击来源，身体冻结避免干扰时序。</param>
+    /// <returns>两种物理频率下的完整原生显隐验证。</returns>
+    private async Task CheckBullHeartTimingAsync(AbstractHeroEntity hero)
+    {
+        int originalTicks = Engine.PhysicsTicksPerSecond;
+        var heroSystem = GF.Fsm.GetSystem<HeroSystem>();
+        var source = new AttributeSourceId("BullHeartTiming", 1);
+        heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        heroSystem.Heal(int.MaxValue);
+        try
+        {
+            foreach (int ticks in new[] { 60, 120 })
+            {
+                Engine.PhysicsTicksPerSecond = ticks;
+                hero.GlobalPosition = new Vector2(100000, 100000);
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BullDemonHeart,
+                    new EnemySpawn(new Vector2(1350, 300)));
+                var heart = (BullDemonHeartEntity)m_Monster;
+                var sprite = heart.GetNode<AnimatedSprite2D>("m_Heart");
+                Check(sprite.Modulate.A == 0f, "心脏取池后没有立即恢复隐藏");
+                var fsm = SmokeInspection.ReadField<IFsm<IEnemyBody>>(heart, "m_BodyFsm");
+                var state = fsm.CurrentState;
+                float hidden = SmokeInspection.ReadField<float>(state, "m_HeartLeft");
+                Check(hidden >= 5 && hidden <= 9, "首次隐藏秒数不符合官方5..9");
+                double clock = 0;
+                double showingAt = -1, shownAt = -1, hidingAt = -1, hiddenAt = -1;
+                float shownDuration = 0;
+                float previousAlpha = 0;
+                void Sample()
+                {
+                    clock += 1d / ticks;
+                    float alpha = sprite.Modulate.A;
+                    if (alpha > 0 && showingAt < 0)
+                        showingAt = clock;
+                    if (alpha == 1 && shownAt < 0)
+                    {
+                        shownAt = clock;
+                        Check(ApplyEastSeaHit(heart, hero.Id, 10, 1, false, Vector2.Zero) > 0,
+                            "原生淡入完成后仍拒绝伤害");
+                    }
+                    if (shownAt >= 0 && hidingAt < 0 && previousAlpha == 1 && alpha < 1)
+                        hidingAt = clock;
+                    if (hidingAt >= 0 && alpha == 0 && hiddenAt < 0)
+                        hiddenAt = clock;
+                    if (SmokeInspection.ReadField<object>(state, "m_HeartPhase").ToString() == "Shown")
+                        shownDuration = Math.Max(shownDuration, SmokeInspection.ReadField<float>(state, "m_HeartLeft"));
+                    if (alpha < 1)
+                        Check(ApplyEastSeaHit(heart, hero.Id, 10, 1, false, Vector2.Zero) == 0,
+                            "未完全显现的心脏接受伤害");
+                    previousAlpha = alpha;
+                }
+                m_Driver.GetTree().PhysicsFrame += Sample;
+                try
+                {
+                    await WaitUntilAsync(() => hiddenAt >= 0, "心脏没有完成完整显隐周期", 22000);
+                    GD.Print($"BULL HEART TRACE {ticks}: expectedHidden={hidden}, showing={showingAt:F3}, shown={shownAt:F3}, hiding={hidingAt:F3}, hidden={hiddenAt:F3}, hold={shownDuration:F3}");
+                    Check(Math.Abs(showingAt - hidden) < .15, "首次显现开始时间与原版倒计时不符");
+                    Check(Math.Abs(shownAt - showingAt - 2) < .15, "原生淡入不是2秒");
+                    Check(shownDuration >= 1.9f && shownDuration <= 5.01f &&
+                        Math.Abs(hidingAt - shownAt - shownDuration) < .15, "完整可伤害停留不符合原版2..5秒");
+                    Check(Math.Abs(hiddenAt - hidingAt - 2) < .15, "原生淡出不是2秒");
+                    Check(ReferenceEquals(fsm.CurrentState, state), "心脏受伤重启了显隐状态");
+                    await WaitUntilAsync(() => SmokeInspection.ReadField<object>(state, "m_HeartPhase").ToString() == "Hidden",
+                        "淡出后没有进入下一隐藏周期");
+                    float nextHidden = SmokeInspection.ReadField<float>(state, "m_HeartLeft");
+                    Check(nextHidden >= 4.9f && nextHidden <= 11 && sprite.Modulate.A == 0f,
+                        "后续隐藏不符合原版5..11秒或未完全隐藏");
+                    GD.Print($"SMOKE-BULL HEART TIMING {ticks}Hz PASS: hidden={hidden}, fadeIn={shownAt-showingAt:F3}, vulnerable={hidingAt-shownAt:F3}, fadeOut={hiddenAt-hidingAt:F3}; first-full-alpha hit accepted");
+                    await CheckBullFireRangeAsync(hero, heart, ticks);
+                }
+                finally
+                {
+                    m_Driver.GetTree().PhysicsFrame -= Sample;
+                    ReleaseTestEntity(heart);
+                    m_Monster = null;
+                    await WaitFramesAsync(3);
+                }
+            }
+        }
+        finally
+        {
+            Engine.PhysicsTicksPerSecond = originalTicks;
+            heroSystem.RemoveSource(source);
+            heroSystem.Heal(int.MaxValue);
+        }
+    }
+
+    /// <summary>
+    /// 实际生成火柱，确认可见上部能伤人，火焰上方留白不能伤人。
+    /// </summary>
+    /// <param name="hero">已冻结运动的实际英雄。</param>
+    /// <param name="heart">持有本轮火柱及攻击编号的真实首领。</param>
+    /// <param name="ticks">当前物理频率。</param>
+    /// <returns>上边界排除与上部实际伤害检查。</returns>
+    private async Task CheckBullFireRangeAsync(AbstractHeroEntity hero, BullDemonHeartEntity heart, int ticks)
+    {
+        var owned = SmokeInspection.ReadField<HashSet<BullDemonFireNode>>(heart, "m_Fires");
+        var before = owned.ToArray();
+        typeof(BullDemonHeartEntity).GetMethod("SpawnFire", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(heart, [1]);
+        var fire = owned.Except(before).Single();
+        var player = fire.GetNode<AnimationPlayer>("AnimationPlayer");
+        Vector2 hurtOffset = hero.HurtBox.GetGlobalBounds().GetCenter() - hero.GlobalPosition;
+        hero.GlobalPosition = fire.GlobalPosition + new Vector2(0, -350) - hurtOffset;
+        var system = GF.Fsm.GetSystem<HeroSystem>();
+        system.AdvanceHurtProtection(float.MaxValue);
+        int hp = hero.Hp;
+        await WaitUntilAsync(() => player.CurrentAnimationPosition >= 1.05, "火柱未进入喷发帧");
+        Check(hero.Hp == hp, "火柱误伤了高于源火焰的留白区");
+        hero.GlobalPosition = fire.GlobalPosition + new Vector2(0, -220) - hurtOffset;
+        await WaitUntilAsync(() => hero.Hp < hp, "火柱可见上部没有实际伤害", 1000);
+        Check(player.CurrentAnimationPosition < 35d / 24d, "伤害落在火焰销毁窗口之后");
+        hero.GlobalPosition = new Vector2(100000, 100000);
+        GD.Print($"SMOKE-BULL FIRE RANGE {ticks}Hz PASS: above flame misses, visible upper flame at -220px deals damage");
+    }
+
     /// <summary>
     /// 逐招运行双朝向、两种物理频率，不以资源加载代替实机伤害证据。
     /// </summary>
@@ -261,7 +380,7 @@ public sealed partial class UiSmokeScenario
                 {
                     var notice = GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single();
                     Check(notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Text.Contains(
-                        scenario == "full" ? "背包已满" : "功能待开放"), "金钢琢获得或满包提示缺失");
+                        scenario == "full" ? "背包已满" : "获得 金钢琢"), "金钢琢获得或满包提示缺失");
                 }
                 ReleaseTestEntity(heart);
                 m_Monster = null;

@@ -12,7 +12,7 @@ namespace GameLogic.Enemies
     {
         [Export] private AnimationPlayer m_Player; // 40帧素材在原版第36帧销毁。
         [Export] private Area2D m_HitBox; // 原生动画控制启闭和阶段矩形。
-        [Export] private CollisionShape2D m_Shape; // 只在第25～35源帧启用。
+        [Export] private CollisionShape2D m_Shape; // 第25～36源帧命中，末帧判定后回池。
         private Action<AbstractActorEntity> m_Hit; // 本次首领共享命中入口，不创建独立攻击包。
         private Action<BullDemonFireNode> m_Finished; // 所有者归还本次节点。
         private bool m_Completed; // 方法轨道中只登记结束，正常物理帧再回池。
@@ -75,11 +75,6 @@ namespace GameLogic.Enemies
             }
 
             m_Player.Advance(delta);
-            if (m_Completed)
-            {
-                m_Finished(this);
-                return;
-            }
             if (!m_Shape.Disabled)
             {
                 foreach (Area2D area in m_HitBox.GetOverlappingAreas())
@@ -89,6 +84,11 @@ namespace GameLogic.Enemies
                         m_Hit(target);
                     }
                 }
+            }
+            // 原版第36帧先checkAttack再destroy，不能先回池漏掉末帧。
+            if (m_Completed)
+            {
+                m_Finished(this);
             }
         }
 

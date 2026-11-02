@@ -164,6 +164,13 @@ public sealed partial class UiSmokeScenario
                 return;
             }
 
+            if (OS.GetCmdlineUserArgs().Contains("--dragon-rules-only"))
+            {
+                level.Cleanup();
+                await CheckDragonRulesAsync(hero, flow);
+                return;
+            }
+
             if (OS.GetCmdlineUserArgs().Contains("--dragon-only"))
             {
                 level.Cleanup();
@@ -187,6 +194,13 @@ public sealed partial class UiSmokeScenario
                         GameConfig.Equipment.EquipmentId.RuyiGoldenStaff, GameConfig.Equipment.EquipmentId.WhiteTigerStaff,
                         GameConfig.Equipment.EquipmentId.KirinRobe, GameConfig.Equipment.EquipmentId.VermilionBirdRing,
                         GameConfig.Equipment.EquipmentId.SevenStarGuard, GameConfig.Equipment.EquipmentId.NineRingMonkStaff], "9-1");
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--bull-heart-timing-only"))
+            {
+                level.Cleanup();
+                await CheckBullHeartTimingAsync(hero);
                 return;
             }
 
@@ -238,6 +252,13 @@ public sealed partial class UiSmokeScenario
             {
                 level.Cleanup();
                 await CheckFreezeAsync(hero, flow);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--fire-overlap-only"))
+            {
+                level.Cleanup();
+                await CheckFireDemonOverlapReuseAsync(hero, flow);
                 return;
             }
 

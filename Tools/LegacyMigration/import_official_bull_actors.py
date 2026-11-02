@@ -11,6 +11,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 from export_official_wukong import timeline_frames
+from prepare_official_garuda_level import _probe_reader
 from import_garuda_actor_assets import (
     animation_resource, copy_atlas, fmt_float, sprite_frames_resource,
     track_value, vec2, write_text,
@@ -202,17 +203,37 @@ def fade_libraries():
     write_text(root / 'bull_presentation_library.tres', '\n'.join(presentation) + '\n')
 
 
-def fire_scene(effect, frames):
-    """The original fire checks its lower flame rectangle on source frames 25..35."""
+def fire_hit_bounds(xml):
+    """Fire.step checks frames 25..36, then destroys after the last check."""
+    tags = ET.parse(xml).getroot().find('tags')
+    _, bounds = _probe_reader(tags)
+    return [bounds(755, frame, [1, 0, 0, 1, 0, 0]) if 24 <= frame <= 35 else None
+            for frame in range(36)]
+
+
+def fire_scene(effect, frames, hit_bounds):
+    """Keep the warning harmless and follow the six actual erupting-flame sizes."""
     root = PROJECT / 'TheGame/Entitys/Animations/Enemies' / BOSS
     library = root / 'bull_fire_library.tres'
-    bounds = effect['hit_bounds']
-    lines = ['[gd_resource type="AnimationLibrary" format=3]', '[sub_resource type="Animation" id="play"]', 'length = 1.5',
+    bounds = hit_bounds[24]
+    stages = [(index / 24, value) for index, value in enumerate(hit_bounds) if value is not None
+              and (index == 24 or value != hit_bounds[index - 1])]
+    times = [0] + [time for time, _ in stages[1:]]
+    positions = [[value[0] + value[2] / 2, value[1] + value[3] / 2] for _, value in stages]
+    sizes = [value[2:] for _, value in stages]
+    shape_lines = []
+    for index, size in enumerate(sizes):
+        shape_lines += [f'[sub_resource type="RectangleShape2D" id="flame_{index}"]', f'size = {vec2(size)}']
+    shape_values = [f'SubResource("flame_{index}")' for index in range(len(sizes))]
+    lines = ['[gd_resource type="AnimationLibrary" format=3]', *shape_lines,
+             '[sub_resource type="Animation" id="play"]', 'length = 1.5',
              track_value(0, 'Sprite:frame', [i / 24 for i in range(36)], list(range(36)), 'int'),
-             track_value(1, 'HitBox/Shape:disabled', [0, 1, 35 / 24], [True, False, True], 'bool'),
+             track_value(1, 'HitBox/Shape:disabled', [0, 1], [True, False], 'bool'),
              'tracks/2/type = "method"', 'tracks/2/path = NodePath(".")',
              'tracks/2/keys = {"times": PackedFloat32Array(1.458333333), "transitions": PackedFloat32Array(1),',
              '"values": [{"args": [], "method": &"FinishAnimationAnimEvent"}]}',
+             track_value(3, 'HitBox/Shape:position', times, positions, 'vec2'),
+             track_value(4, 'HitBox/Shape:shape', times, shape_values),
              '[resource]', '_data = {&"play": SubResource("play")}']
     write_text(library, '\n'.join(lines) + '\n')
     scene = PROJECT / 'TheGame/Entitys/Enemies' / BOSS / 'bull_fire_effect.tscn'
@@ -240,7 +261,7 @@ def main(args):
     for effect in data['effects']:
         layer_frames = install_layer(effect, BOSS)
         if effect['name'] == 'bull_fire':
-            fire_scene(effect, layer_frames)
+            fire_scene(effect, layer_frames, fire_hit_bounds(args.xml))
     fade_libraries()
     for actor in data['actors'] + guards['actors']:
         relative = ACTORS[actor['name']][2]

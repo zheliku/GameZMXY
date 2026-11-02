@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://chvobw0b1sdxo"]
+
+[ext_resource type="Script" uid="uid://c7ajyr1tfamcx" path="res://TheGame/GameScripts/UI/InventoryForm/Components/EquipmentCell.cs" id="1_yr1se"]
+[ext_resource type="PackedScene" uid="uid://boy8tad4y4d68" path="res://TheGame/UIs/Inventory/equipment_tooltip.tscn" id="2_dtr7p"]
+
+[sub_resource type="StyleBoxEmpty" id="tooltip_wrapper"]
+
+[sub_resource type="Theme" id="tooltip_theme"]
+TooltipPanel/styles/panel = SubResource("tooltip_wrapper")
+
+[node name="GuideEquipmentIcon" type="TextureRect" unique_id=1855060501 node_paths=PackedStringArray("m_Icon")]
+custom_minimum_size = Vector2(32, 32)
+mouse_filter = 0
+theme = SubResource("tooltip_theme")
+expand_mode = 1
+script = ExtResource("1_yr1se")
+m_Icon = NodePath("Icon")
+m_TooltipScene = ExtResource("2_dtr7p")
+
+[node name="Icon" type="TextureRect" parent="." unique_id=2139787385]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = -3.0
+offset_bottom = -3.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5

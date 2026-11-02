@@ -26,7 +26,7 @@ using GodotGameFramework.Sound;
 /// <summary>
 /// 在真实框架内验证菜单导航、关卡选择、设置保存后返回、普通离开回滚、音乐代理和菜单复用；不增加正式观测 API。
 /// </summary>
-public sealed class FrontendSmokeScenario
+public sealed partial class FrontendSmokeScenario
 {
     private readonly Node m_Driver; // 引擎帧与窗口服务来源。
     private readonly Task m_Task; // 回归任务，故障也必须报告失败。
@@ -271,6 +271,11 @@ public sealed class FrontendSmokeScenario
                 "选角到地图更换了档案作用域");
             Check(!Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "点击花果山之前已创建关卡");
             await CaptureAsync("map_form");
+            if (OS.GetCmdlineUserArgs().Contains("--level-guide-only"))
+            {
+                await CheckLevelGuideAsync(map);
+                return;
+            }
             await ClickAsync(map, "m_Settings");
             var mapSettings = await WaitForAsync<SettingsForm>();
             Check(!GF.Base.IsGamePaused && ReferenceEquals(mapSettings, titleSettings), "地图设置错误暂停或未复用窗口");
@@ -1134,6 +1139,11 @@ public sealed class FrontendSmokeScenario
         Action observePress = () => pressed = true;
         button.Pressed += observePress;
         await MoveMouseAsync(position);
+        // 原生装备tooltip在下一帧关闭；移动与点击分帧，避免点击仍发给旧弹窗。
+        for (int frame = 0; frame < 3; frame++)
+        {
+            await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+        }
         Check(button.GetCursorShape() == Control.CursorShape.PointingHand, $"可点击按钮未显示手形光标：{form.Name}/{path}");
         m_Driver.GetViewport().PushInput(new InputEventMouseButton { Position = position, GlobalPosition = position, ButtonIndex = MouseButton.Left, Pressed = true }, true);
         m_Driver.GetViewport().PushInput(new InputEventMouseButton { Position = position, GlobalPosition = position, ButtonIndex = MouseButton.Left, Pressed = false }, true);

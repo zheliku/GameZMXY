@@ -1,0 +1,90 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using GameConfig.Entity;
+using GameConfig.Enemy;
+using GameConfig.Equipment;
+using GameConfig.Level;
+using GameConfig.Loot;
+using GameLogic.Architecture;
+using GameLogic.Config;
+
+namespace GameLogic.Level
+{
+    /// <summary>
+    /// 地图关卡图鉴的一次只读结果；定义借用配置，不拥有战斗或存档状态。
+    /// </summary>
+    /// <param name="Level">共享关卡定义。</param>
+    /// <param name="Enemies">守关敌人在前、普通小怪在后的共享定义，同名形态只显示一次。</param>
+    /// <param name="Drops">本关可能获得的装备，不表示本次一定掉落。</param>
+    public sealed record LevelGuideData(LevelConfig Level, IReadOnlyList<EnemyConfig> Enemies, IReadOnlyList<EquipmentConfig> Drops);
+
+    /// <summary>
+    /// 从关卡配方、敌人与掉落池组合关卡图鉴；不启动场景或修改档案。
+    /// </summary>
+    /// <param name="levelId">地图展示的主线关卡主键。</param>
+    public sealed class LevelGuideQuery(int levelId) : AbstractQuery<LevelGuideData>
+    {
+        private const int FirstBossId = 10001; // 项目已约定的小怪/首领编号分界。
+        /// <summary>
+        /// 查询实际配方并合并装备身份，不创建运行时敌人或装备。
+        /// </summary>
+        /// <returns>本次查询的独立集合与共享配置定义。</returns>
+        protected override LevelGuideData OnDo()
+        {
+            var configuration = this.GetModel<ConfigurationModel>();
+            var tables = configuration.Tables;
+            var level = tables.TbLevelConfig.Get(levelId);
+            var enemies = level.Stages.SelectMany(stage => stage.Recipes)
+                .Select(recipe => configuration.GetEnemy(recipe.EnemyEntityId)).DistinctBy(enemy => enemy.EnemyId).ToArray();
+            var guardians = enemies.Where(enemy => enemy.EnemyId >= FirstBossId).ToArray();
+            if (guardians.Length == 0)
+            {
+                // 末段可有多条并行流，末行不是守关身份；这两关复用具体普通物种。
+                EntityId guardian = levelId switch
+                {
+                    1 => EntityId.Gorilla,
+                    7 => EntityId.TurtleMinister,
+                    _ => throw new InvalidOperationException("关卡图鉴缺少守关身份。")
+                };
+                guardians = [configuration.GetEnemy(guardian)];
+            }
+            var drops = new HashSet<EquipmentId>();
+            foreach (var enemy in enemies)
+            {
+                // 浅岸守关龟丞相明确不掉装备，不能把后续海域的基础掉落放到这里。
+                if (enemy.EquipmentDropChance > 0 && !(levelId == 7 && enemy.EntityId == EntityId.TurtleMinister))
+                {
+                    AddPool(enemy.EquipmentDropPoolId);
+                }
+            }
+            if (levelId == 10)
+            {
+                drops.Add(EquipmentId.DiamondSnare);
+            }
+            // 召唤物不在刷怪配方里，但会在本关出现；仅补图鉴名单，不改变掉落合并规则。
+            var summoned = levelId switch
+            {
+                4 => new[] { configuration.GetEnemy(EntityId.Bat) },
+                9 => new[] { configuration.GetEnemy(EntityId.SharkSpawn) },
+                _ => Array.Empty<EnemyConfig>()
+            };
+            return new LevelGuideData(level,
+                Array.AsReadOnly(guardians.Concat(enemies).Concat(summoned).DistinctBy(enemy => enemy.NameCn).ToArray()),
+                Array.AsReadOnly(drops.Select(tables.TbEquipmentConfig.Get).OrderByDescending(item => item.Quality)
+                    .ThenBy(item => item.Id).ToArray()));
+
+            // 池只贡献装备身份，概率与权重仍归正式掉落系统；不复制其随机结算。
+            void AddPool(EquipmentDropPoolId pool)
+            {
+                if (pool != EquipmentDropPoolId.None)
+                {
+                    foreach (var entry in tables.TbEquipmentDropPoolConfig.Get(pool).Entries)
+                    {
+                        drops.Add(entry.EquipmentId);
+                    }
+                }
+            }
+        }
+    }
+}

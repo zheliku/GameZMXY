@@ -27,7 +27,7 @@
 | 正式资源 | 官方来源与复现入口 |
 | --- | --- |
 | `Scenes/Levels/zm1_11_hidden_dragon_palace/level_11.tscn`及同名贴图目录 | 同版GameSence 9-1；`export_official_remaining_level_layers.py`暂存，`import_official_dragon_level.gd`原生保存；天空共用官方海底图，音乐bg4 |
-| 龙王身体、冰光、水波、水柱 | Monster3_v3的Monster26及两个Bullet类；`export_official_final_actors.py --group dragon`→`audit_official_dragon_geometry.py`→`import_official_dragon_art.py`→`prepare_official_dragon_scenes.py`→`register_dragon_art.gd`。保留父矩阵、ADD分层和clipDepth；重导需提供裁切几何报告 |
+| 龙王身体、冰光、水波、水柱 | Monster3_v3的Monster26及两个Bullet类；初次导入经`export_official_final_actors.py --group dragon`→`audit_official_dragon_geometry.py`→`import_official_dragon_art.py`→`prepare_official_dragon_scenes.py`→`register_dragon_art.gd`。最新判定必须再经`prepare_enemy_attack_geometry.py --dragon-only`→`repair_dragon_hitbox_nodes.gd`→`repair_new_enemy_attack_geometry.gd`；保留父矩阵、ADD/clipDepth，七柱独立，水波/水柱按阶段排除留白。旧`--update-library/--update-effects`会重建基础库，不能跳过最新判定步骤；验证用新attack_geometry报告，不再用旧clipped_geometry单并集 |
 | `Sprites/Characters/Heroes/Status/hero_frozen{.png,_frames.tres}` | Monster3_v3官方35帧冰冻ADD层，`export_official_frozen_effect.py`；位置(-90,-115)，末帧保持至解冻 |
 | 水帘洞隐藏入口与`hidden_entrance_fade.tres` | 主程序PhysicsWorld/MainGame的水下矩形与一秒淡出；`register_dragon_entrance.gd`，淡出期间动作/重力保留，暂停冻结 |
 
@@ -38,6 +38,8 @@
 | `Scenes/Levels/zm1_10_bull_demon_valley/level_10.tscn` 与同名贴图目录 | GameSence 4-1 的两阶段、3条官方出生流、3道独立区域门、前景246、地形31125、天空16；`import_official_bull_level.gd -- <all_levels.json>`。原版最终形态无传送门，流程由完整死亡/奖励结束自动结算 |
 | 牛魔王三形态、牛妖、心脏/双手/火柱/背景 | Monster2_v4 的Monster22/23/24及Monster23Child，Monster_v1 的Monster25；`export_official_final_actors.py --group bull/guard` → `import_official_bull_actors.py` → `register_bull_actor_resources.gd`。吞噬五次源帧、心脏84px紫色Glow和各部分独立生命周期均保留 |
 | `map_niumogu_current.png` 与19帧地图动画 | OtherMat_v9 `SelectPlace.s4_1`（wrapper445/current444，base441）；`export_official_map_hints.py --only niumogu` → `register_official_map_location.gd -- niumogu Location10 m_Niumogu 牛魔谷 19` |
+
+牛魔谷资源重导后，再用`repair_bull_map_layout.gd`恢复s4_1原点(283.2,385.05)和current的1:1比例；不要沿用旧160px提示缩放。`import_official_bull_actors.py`的Fire读取755第25～36帧，原生动画使用六个独立形状。已有人工装配只更新`repair_bull_fire_geometry.gd`，不整场覆盖。人形hit4另经`prepare_enemy_attack_geometry.py --bull-only` → `repair_new_enemy_attack_geometry.gd`保存六阶段有效矩形；原始manifest保留官方union范围以便追溯，不能重导后直接覆盖已审范围。素材本身未重导，来源身份与UID保持。
 
 ### 牛魔谷精良装备（官方4-1）
 

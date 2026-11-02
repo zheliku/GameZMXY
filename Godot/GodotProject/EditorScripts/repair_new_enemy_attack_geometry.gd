@@ -6,8 +6,14 @@ const ACTOR_PATHS := {
     "peng_demon_king": "Bosses/zm1_06_garuda_cave/peng_demon_king",
     "tide_demon": "Monsters/Sea/tide_demon/tide_demon",
     "lantern_fish": "Monsters/Sea/lantern_fish/lantern_fish",
-    "peng_fire": "Bosses/zm1_06_garuda_cave/peng_fire"
+    "peng_fire": "Bosses/zm1_06_garuda_cave/peng_fire",
+    "bull_demon_king": "Bosses/zm1_10_bull_demon_valley/bull_demon_king",
+    "dragon_king": "Bosses/zm1_11_hidden_dragon_palace/dragon_king",
+    "dragon_king_wave": "Bosses/zm1_11_hidden_dragon_palace/dragon_king_wave",
+    "dragon_king_torrent": "Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent"
 }
+
+const EFFECTS := ["peng_fire", "dragon_king_wave", "dragon_king_torrent"]
 
 func _initialize() -> void:
     _apply.call_deferred()
@@ -47,6 +53,7 @@ func _apply() -> void:
     var libraries := {}
     var palettes := {}
     var counts := 0
+    var library_slots := {}
     for record in plan.attacks:
         var relative: String = ACTOR_PATHS[record.actor]
         var path := "res://TheGame/Entitys/Animations/Enemies/" + relative + "_library.tres"
@@ -55,8 +62,9 @@ func _apply() -> void:
             palettes[path] = {}
         var library: AnimationLibrary = libraries[path]
         var animation: Animation = library.get_animation(record.animation)
-        var base := "Origin/Visual/HitBox/CollisionShape2D" if record.actor == "peng_fire" else "m_HitBoxRoot/m_HitBox/CollisionShape2D"
-        var count := 3 if record.actor == "peng_fire" else 1
+        var base := "Origin/Visual/HitBox/CollisionShape2D" if record.actor in EFFECTS else "m_HitBoxRoot/m_HitBox/CollisionShape2D"
+        var count := int(record.get("slots", 3 if record.actor == "peng_fire" else 1))
+        library_slots[path] = maxi(library_slots.get(path, 1), count)
         for slot in count:
             var node_path := base + (str(slot + 1) if slot > 0 else "")
             var times: Array = []
@@ -73,7 +81,8 @@ func _apply() -> void:
                 times.append(time)
                 var value: Dictionary = entries[index][slot] if entries[index].size() > slot and entries[index][slot] != null else {}
                 disabled.append(value.is_empty())
-                shapes.append(_shape(value, palettes[path]) if not value.is_empty() else RectangleShape2D.new())
+                # Disabled frames share one immutable placeholder instead of hundreds of identical resources.
+                shapes.append(_shape(value, palettes[path]) if not value.is_empty() else _shape({"kind": "rectangle", "size": [1, 1]}, palettes[path]))
                 positions.append(Vector2(value.position[0], value.position[1]) if not value.is_empty() else Vector2.ZERO)
                 rotations.append(value.get("rotation", 0.0))
             _track(animation, NodePath(node_path + ":shape"), times, shapes)
@@ -84,14 +93,17 @@ func _apply() -> void:
     for path in libraries:
         var library: AnimationLibrary = libraries[path]
         # Rotation is newly authored: other actions must clear it after interruption or a later attack.
-        var base := "Origin/Visual/HitBox/CollisionShape2D" if path.contains("peng_fire") else "m_HitBoxRoot/m_HitBox/CollisionShape2D"
-        var slots := 3 if path.contains("peng_fire") else 1
+        var base := "Origin/Visual/HitBox/CollisionShape2D" if path.contains("peng_fire") or path.contains("dragon_king_wave") or path.contains("dragon_king_torrent") else "m_HitBoxRoot/m_HitBox/CollisionShape2D"
+        var slots: int = library_slots[path]
         for name in library.get_animation_list():
             var animation := library.get_animation(name)
             for slot in slots:
                 var target := NodePath(base + (str(slot + 1) if slot > 0 else "") + ":rotation")
                 if animation.find_track(target, Animation.TYPE_VALUE) < 0:
                     _track(animation, target, [0.0], [0.0])
+                var disabled := NodePath(base + (str(slot + 1) if slot > 0 else "") + ":disabled")
+                if slot > 0 and animation.find_track(disabled, Animation.TYPE_VALUE) < 0:
+                    _track(animation, disabled, [0.0], [true])
         var uid := ResourceLoader.get_resource_uid(path)
         assert(ResourceSaver.save(libraries[path], path) == OK)
         assert(ResourceSaver.set_uid(path, uid) == OK)

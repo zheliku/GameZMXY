@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="5_yy7h8"]
 [ext_resource type="PackedScene" uid="uid://bp24tcpfb0ty5" path="res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn" id="death"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_official_frames.tres" id="frames"]
+[ext_resource type="SpriteFrames" uid="uid://dqcjybaer1bm7" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_official_frames.tres" id="frames"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_library.tres" id="library"]
+[ext_resource type="AnimationLibrary" uid="uid://daxv5u3gtx8ub" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_library.tres" id="library"]
 [ext_resource type="Script" uid="uid://c0juhff8vvts2" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_10_bull_demon_valley/BullDemonKingEntity.cs" id="script"]
 
 [sub_resource type="CapsuleShape2D" id="body_shape"]

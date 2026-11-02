@@ -1,12 +1,15 @@
 using System;
 using Godot;
+using GameLogic.Architecture;
+using GameLogic.Level;
+using GodotGameFramework;
 
 namespace GameLogic.UI.Widgets
 {
     /// <summary>
     /// 地图地点按钮：普通图或官方透明点击区命中，悬停时补充放大图的可见轮廓。
     /// </summary>
-    public partial class MapLocationButton : TextureButton
+    public partial class MapLocationButton : TextureButton, IController
     {
         private static readonly Vector2[] m_OutlineOffsets =
         [
@@ -14,8 +17,42 @@ namespace GameLogic.UI.Widgets
         ]; // 与轮廓 shader 共用八个采样方向。
 
         [Export] private TextureRect m_HoverImage; // 直接子节点，保持比例绘制并持有地图轮廓材质。
+        [Export] private int m_LevelId; // 本地点对应的关卡配置主键。
+        [Export] private GameLogic.UI.LevelGuideTooltip m_Guide; // 地图共用的可停留关卡浮层。
         private Bitmap m_NormalMask; // 就绪时从普通图创建一次，池复用期间保留。
         private Bitmap m_HoverMask; // 悬停图的透明轮廓，不在鼠标移动时重新读取纹理。
+        private bool m_OpenGuideOnMotion; // 进入地点后的首个GUI鼠标事件携带精确局部坐标。
+
+        /// <summary>
+        /// 借用当前GGF流程的架构，只组合读取图鉴配置。
+        /// </summary>
+        /// <returns>当前流程共享架构。</returns>
+        IArchitecture IBelongToArchitecture.GetArchitecture()
+        {
+            return GF.Fsm.GetArchitecture();
+        }
+
+        /// <summary>
+        /// 悬停时更新地图共用浮层，保持原有放大命中逻辑。
+        /// </summary>
+        private void OnGuideMouseEntered()
+        {
+            m_OpenGuideOnMotion = true;
+        }
+
+        /// <summary>
+        /// 从原生GUI事件取得本次进入点，仅首次进入执行图鉴组合查询。
+        /// </summary>
+        /// <param name="inputEvent">按钮局部输入事件。</param>
+        public override void _GuiInput(InputEvent inputEvent)
+        {
+            if (!m_OpenGuideOnMotion || inputEvent is not InputEventMouseMotion motion || m_LevelId <= 0 || m_Guide == null)
+            {
+                return;
+            }
+            m_OpenGuideOnMotion = false;
+            m_Guide.ShowFor(this, this.SendQuery(new LevelGuideQuery(m_LevelId)), GetGlobalTransformWithCanvas() * motion.Position);
+        }
 
         /// <summary>
         /// 校验绘制约定并缓存两张图片的透明轮廓；几何和动画参数在命中时读取。
@@ -34,6 +71,7 @@ namespace GameLogic.UI.Widgets
             // 只缓存源图片轮廓，不缓存尺寸、缩放和动画状态。
             m_NormalMask = TextureClickMask ?? CreateMask(TextureNormal);
             m_HoverMask = CreateMask(m_HoverImage.Texture);
+            MouseEntered += OnGuideMouseEntered;
         }
 
         /// <summary>

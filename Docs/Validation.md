@@ -1,5 +1,107 @@
 # 验证
 
+## 更小的怪物列表图鉴与漩涡三态（2026-11-02）
+
+依据第00/10/40/50章，继续使用地图拥有的单一浮层和只读Query；怪物直接由原生ItemList排布，不增加逐怪物脚本。最终208px宽、177～253px高，怪物28px图＋名称两列、守关对手浅金排首位，装备32px透明图；相对上一版面积减少约33%～56%。同名牛魔王形态去重，蝙蝠/鲨鱼召唤物补入名单，掉落规则不变。外置`brown_guide_panel.tres`沿用原棕金样式，仅收窄内边距。地图场景和三态素材保持用户暂存版本。
+
+证据目录为`Godot/GodotProject/.godot/validation/guide_compact_20261102/`。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 官方漩涡 | 直接读取已核验OtherMat_v9源XML及元件37_109.frame1：wrapper478第1帧只有alpha=0的shape453并stop，第2帧474、第3帧477；直接提取JPEG388对比确认底图亦无漩涡。用户明确保留原版透明常态，未添加常驻图片。原图对比为`background_compare.png`，依据补入OfficialReference。 |
+| 原生作者/构建 | `Godot4CSharp_console.exe --headless --editor --path Godot/GodotProject --script res://EditorScripts/author_level_guide.gd`输出PASS并保留UID。`dotnet build Godot/GodotProject --no-restore -v quiet`为0错误、5条既有警告；`--headless --path Godot/GodotProject --build-solutions --quit --no-window`扫描/构建退出0。新样式初次未登记UID而产生路径回退，正式扫描后最终运行已无此警告。 |
+| 十关图鉴与名称 | `python <证据>/run_guide.py`退出0。十卡片尺寸、两列怪物、名称身份和实际文字宽度、21份图像裁切、透明装备图标通过；截图`cards/1..10.png`及`cards_montage.png`逐张查看。BOSS在前，牛魔谷只一项牛魔王；全部38件装备详情及六品质仍通过。 |
+| 原生鼠标与漩涡 | 同一专项通过十地点悬停→移入装备→嵌套详情→离开关闭、940×590和1175×738窗口边界、真实点击花果山及HUD就绪清理。另实测漩涡普通图透明、最新关48帧/24fps实际运动、悬停图、离开恢复及通关后透明，注册位置和画布大小保持；`frontend/guide_whirlpool_{normal,current,hover}.png`已查看。 |
+| 查询与引用 | `dotnet test Tests/ProfileTests --no-restore -v quiet`为232/232，覆盖名单包含实际配方、顺序/去重及召唤物；仅有既有NuGet漏洞源不可达警告。`python Tools/ProjectMaintenance/validate_game_references.py`为1885路径/379UID通过，`git diff --check`通过。 |
+
+验证不接触正式存档和Git索引。最终图鉴运行退出时仍有5个ObjectDB/1资源存活诊断；原生编辑器保留既有ComponentInsoector释放诊断，未修改只读插件。未复跑无改动的整套战斗和背包流程；共用装备详情已在本次图鉴专项逐件验证。
+
+## 图片图鉴与装备详情对齐（2026-11-02）
+
+依据第00/10/40/50章，地图仍拥有一份浮层；只读Query提供配置，图鉴和背包共用装备详情脚本。260px宽卡片改为短介绍、84px高的守关图像区域和48px透明装备格；删除尾句、隐藏关入口及查询字段，隐藏关战斗/掉落逻辑未改。装备详情显式使用共用字体，品质/类型行垂直居中，80×2渐隐线从19px上移至18px。原生作者保存已有场景UID，地图场景保持暂存版本，未新增生产测试接口或改正式档案。
+
+证据目录为`Godot/GodotProject/.godot/validation/guide_visual_20261102/`。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 原生作者与扫描 | `Godot4CSharp_console.exe --headless --editor --path Godot/GodotProject --script res://EditorScripts/author_level_guide.gd`、`repair_equipment_tooltip_layout.gd`均输出PASS；作者默认只更新子场景，首次绑定地图可加`-- --bind-map`。`--headless --path Godot/GodotProject --build-solutions --quit --no-window`退出0，完成UID扫描和构建；独立`dotnet build Godot/GodotProject --no-restore -v quiet`为0错误、5条既有警告。 |
+| 十关图片与交互 | `python <证据>/run_guide.py`退出0。十卡片宽260px、高252～323px；逐图验证atlas区域不越界、无透明留白，牛魔谷对应兽形身份。十地点真实进入→移入透明图标→原生嵌套详情→离开关闭通过；940×590和1175×738视口边界、实际点击花果山、HUD加载后浮层清理通过。无Footer、隐藏入口及概率尾句。`cards/1..10.png`和`cards_montage.png`已目视核对。 |
+| 全装备详情 | 同一专项逐件渲染38种正式装备、全部六品质；标题/数值共用字体并同排居中、两条线位置、背景包围文字、动态尾部6px余量均通过。图鉴普通防具保留20～40范围；`equipment/1..38.png`及`equipment_montage.png`已查看，长说明/负数/百分比均正常。初次断言错误要求两类Label外框等高，已改为检验Godot收缩布局后的同排中心并保留失败日志；未改生产布局去迎合错误判据。 |
+| 共用背包回归 | `python <证据>/run_ui.py equipment-only`退出0。15件悟空穿戴素材、真实分页/穿卸/预览、法宝保留及实际属性详情通过；头部固定、可变属性、长说明换行、首次原生弹窗底部6px余量通过。最终`inventory_tooltip_attributes.png`、`inventory_tooltip_fitted.png`及`inventory_tooltip_wrapped.png`已查看，修改前图另留`equipment_before.png`。 |
+| 查询与资源 | `dotnet test Tests/ProfileTests --no-restore -v quiet`为231/231；移除原隐藏关图鉴专项，保留十个主线守关/掉落查询测试。`python Tools/ProjectMaintenance/validate_game_references.py`为1874路径/379UID通过；`git diff --check`通过。NuGet漏洞源网络警告不影响测试执行。 |
+
+最终运行保留退出诊断：图鉴为5个ObjectDB/1资源；背包为162个ObjectDB/16资源及RID/GL纹理存活提示。编辑器仍报告只读ComponentInsoector对RefCounted调用Free的既有错误，未修改插件。以上PASS指具体断言与业务退出码，不代表无诊断退出，也不把烟测通用末尾文案当作完整前端/UI套件已运行。
+
+## 紧凑地图图鉴与装备集合审查（2026-11-01）
+
+依据第00/10/20/40/50章，图鉴按一次组合Query读取，地图拥有一份可停留浮层，装备详情共用现有控件。最终260px宽、32px图标，父卡短介绍/守关/掉落，子详情显示配置属性范围；没有新增交易或存档字段。用户明确授权11格玩家介绍和既有Luban生成。以下证据目录为`Godot/GodotProject/.godot/validation/level_catalog_20261101/`，正式档案及Git索引未改。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 官方与第一格装备 | 逐条读同版`remaining_levels/main_scripts/scripts/my/AllEquipment.as`，按fillName去重44种，与Items的38种对照；6种未接入详见ProjectTour。大圣战铠/锦襕袈裟为史诗且showid=1，OtherMat符号中无独立对应图；传说防具未发现。第一格只读核对59件/38种、防具23血海魔甲；不是存档漏塞已接入装备。证据`official_equipment_comparison.json`。 |
+| 现有装备外观 | `python Tools/LegacyMigration/audit_equipment_appearances.py --output <证据>/equipment_audit.json`：38种身份/38项唯一透明背包与地面图通过。修复作者审计未跳过`##`注释行而把“装备编号”当装备的问题，未修改源装备表。 |
+| 介绍与XLSX Diff | Artifact作者化11条介绍，保留原ZIP其他部件与所有非目标单元格；`check_diff.mjs`经已安装XLSX Diff插件worker，普通/公式模式均准确11格。`gen_code_bin_to_project_lazyload.bat`成功，仅LevelConfig.xlsx和level_tblevelconfig.bytes变化，配方/数值不变。 |
+| 正式构建与扫描 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有弃用警告；Godot `--headless --path Godot/GodotProject --build-solutions --quit --no-window`扫描新增脚本UID并构建、退出0，保留既有插件释放诊断。 |
+| 真实图鉴交互与画面 | `python <证据>/run_guide.py`（隔离APPDATA，OpenGL，`--smoketest=frontend --level-guide-only`）：11卡片渲染、10地点真实进入/移入图标/嵌套装备详情/离开关闭通过；水帘洞↔龙宫真实按钮切换、普通装备20～40范围、940×590及1175×738窗口边界、实际点击花果山及HUD加载后浮层清理全部通过，退出0。静态图`cards/1..11.png`与`frontend/guide_hover_*`、`guide_hidden_palace`、两种缩放图已目视核对。 |
+| 背包回归 | `python <证据>/run_ui.py equipment-only`：退出0，15件悟空装备穿卸、战斗/背包预览、法宝保留、分页及实例属性详情通过；图鉴没有随机抽取实际装备，也没有使装备格提交交易。 |
+| 纯规则/工具/引用 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：232/232，包括新增守关物种、三形态、隐藏入口与条件奖励查询。`python -m unittest discover -s Tests/ToolTests`：23/23。`validate_game_references.py`：1860路径/379UID；`git diff --check`通过。 |
+
+迭代失败保留在开发记录中：旧冒烟只允许装备tooltip、静态卡片夹具在布局前取坐标、末波末行误当守关、原生tooltip尚未关闭时同帧点击、进关加载中途退出。均分别修正测试时序或实际归属后完整重跑，未把旧PASS当新小浮层完成依据。最终图鉴退出仍报告5个ObjectDB/1资源；背包退出为107个ObjectDB/9资源及既有RID/GL纹理诊断。编辑器作者化仍有ComponentInsoector释放诊断，未修改只读插件。通用烟测末尾文案不代表执行了全部UI生命周期。
+
+## 龙王血条、施法规则与攻击范围（2026-11-01）
+
+依据第10/30/40/50章：专属规则留在龙王状态，范围归原生动画，测试侧观测不扩充生产API。源为[Monster3_v3.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/Monster3_v3.swf)，SHA256与OfficialReference一致。以下`<证据>`为`Godot/GodotProject/.godot/validation/dragon_review_20261101`，`<源>`为`.godot/validation/remaining_levels`；Godot脚本及参数路径使用`res://`。正式存档、用户Git索引和只读依赖未改。
+
+| 检查 | 命令与实际结果 |
+| --- | --- |
+| 源范围作者化 | `python Tools/LegacyMigration/prepare_enemy_attack_geometry.py --dragon-only --output <证据>/attack_geometry.json`→`repair_dragon_hitbox_nodes.gd`→编辑器`repair_new_enemy_attack_geometry.gd -- <报告>`。七根源冰柱独立，暴雪保持大范围，水波/水柱排除透明和ADD零光、保留遮罩。重复禁用占位资源合并，身体库517个矩形收敛到14个，波12个、柱40个；不改贴图、声音、攻击编号和时长。 |
+| 原生几何 | `Godot4CSharp_console.exe --headless --path Godot/GodotProject --script res://EditorScripts/validate_new_enemy_attack_geometry.gd -- <报告>`：840帧/区域样本、1224双向包含/排除查询、48柱间空隙查询及收招复位通过。`validate_dragon_resources.gd -- <报告>`另通过300源帧与房间/入口/出口/音乐绑定；旧clipped_geometry单并集报告不再作为此工具输入。 |
+| 源时序不变 | `validate_dragon_art.gd -- <源>/dragon_art/actors/manifest.json <源>/dragon_art/source_rules.json`：315身体帧、complete标记、六次新攻击编号、三段无敌、效果创建与冰块绑定通过，退出0。 |
+| 真实四招 | `python <证据>/run_ui.py dragon-only`：32组（普通/高级×60/120Hz×双向×四招）、五次受击后的英雄连击保护、无双状态免疫、暂停和活动水波取消全部通过，退出0。初次运行在第24组截图等待超时；测试截图改为ForceDraw当前姿势后完整重跑通过，未改变游戏逻辑来避过失败。 |
+| 实际规则与空隙 | `python <证据>/run_ui.py dragon-rules-only`：20/21级×60/120Hz×双向8组通过。真实AI覆盖99.9/100/100.1/450/450.1px、无高度门、单/双技能就绪、冷却、50%选招及冷却中1/1.5秒普攻欲望；四招以±96水平速度起手不滑行，技能保持原朝向。真实冻结约1.983～2.000/4.983～5.000秒、暂停不扣时。普通档四组另将完整悟空受击盒放入柱间，停留不扣血，再移入柱内真实扣血。 |
+| 共享名称 | OpenGL `validate_encounter_name_alignment.gd`：11个名称渲染通过，包括蝙蝠洞石像；名称固定右端、长名向左扩展、覆盖条左cap，整体控件顶部居中。已查看龙王/牛魔王/五字名称、冰环/暴雪/水波/水柱叠加图与实际战斗截图。 |
+| 隐藏关与共享效果 | `python <证据>/run_ui.py dragon-flow-only`：真实S+K下水、暂停淡出、GGF转场、收益保留、旗幡拾取、死亡后开门、W出口、磁盘检查点与返回地图通过；`effect-shapes-only`：60/120Hz第二形状单独命中、共用去重/预算、暂停、取消、复用通过，均退出0。 |
+| 构建/规则/引用 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有弃用警告；`dotnet test Tests/{ProfileTests,BattleTests,LevelTests} --no-restore -v quiet`：228/228、178/178、19/19；`python -m unittest discover -s Tests/ToolTests`：23/23。`validate_game_references.py`为1852路径/376UID通过，`git diff --check`通过。`Godot4CSharp_console.exe --headless --path Godot/GodotProject --build-solutions --quit --no-window`完成扫描/构建、退出0；保留下述既有插件释放诊断。 |
+
+范围是对官方像素命中的基础形状近似，矩形内部仍有少量留白，不称逐像素等价。`run_ui.py`隔离APPDATA；通用末尾汇总文案不代表运行了完整UI生命周期。dragon-only和rules退出各报告5个ObjectDB；flow为11个ObjectDB/3资源，effect-shapes为5个ObjectDB/1资源。编辑器作者化仍有ComponentInsoector的RefCounted.Free及RID诊断，原始日志`geometry_author_compact.log`保留；未扩大修改框架/插件。
+
+## 牛魔谷与火魔斩六项核对（2026-11-01）
+
+依据第30/40/50章：具体首领规则与生命周期归本角色，帧序、范围与启闭归原生动画；只用少量基础形状，不新增通用表开关、像素多边形或生产观测API。原文件为OtherMat_v9及Monster2_v4（实际SHA256 `42a301a5ae4222aec54dfdc4c14efced48b9ad4f979902471011ff226d8cd09b`）。原始XML/脚本、PNG及新的失败/通过证据位于`Godot/GodotProject/.godot/validation/bull_review_20261101/`及既有remaining_levels目录。Framework、addons、Luban和正式存档未改；之前补齐的第1格及法宝修复保留。
+
+六项结果：牛魔谷恢复1:1最新提示和官方原点；火魔池化复用700px误伤已复现并修复；人形438个正式渲染帧与官方源图相同，普通第二挥的黑斧风与hit2变牛冲锋保留；原版hit4确为变形震地，判定改为六阶段本体/地刺范围；心脏秒数保留官方规则，修复Stop恢复旧hide起点造成的错误提前显现；火柱改用喷火帧的240～286px高度，并按第36帧先命中后回收。
+
+以下`<证据>`为上述bull_review_20261101目录；`<源>`为`.godot/validation/remaining_levels`，路径传给Godot时使用`res://`。
+
+| 检查 | 命令与实际结果 |
+| --- | --- |
+| 地图实际画面和输入 | `Godot4CSharp_console.exe --path Godot/GodotProject --rendering-method gl_compatibility --audio-driver Dummy --script res://EditorScripts/validate_bull_map_layout.gd`：退出0，19帧原比例、原点、真实鼠标进入/扩展图内停留/点击/离开通过。已查看`map/current_09.png`与`hover_05.png`，无巨大牛角覆盖地图。 |
+| 火魔修复前后 | `python <证据>/run_ui.py fire-overlap-only`：修复前`fire-overlap-before.log`明确失败“60Hz池化九连误伤了700px以外的旧目标”；修复后60/120Hz均通过旧缓存拒绝与本地真实伤害。未降低寻敌130px或禁止近邻范围伤害。 |
+| 火魔真实连招 | `python <证据>/run_ui.py fire-knockback-only`：退出0，猴子/大猩猩×左右×60/120Hz共8次真实输入，九连、下冲、落地均实际命中，击退朝向正确。`effect-shapes-only`同样退出0，两频率的第二形状单独命中、共用去重/预算、暂停、取消和复用通过。 |
+| 正式贴图与源帧 | `audit_registered_actor_packing.py --manifest <源>/bull_art/actors/manifest.json --output <证据>/source_audit`：644源帧像素/注册点通过。OpenGL `validate_registered_actor_atlas.gd -- <同manifest> bull_demon_king res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_official_frames.tres <证据>`：438正式渲染帧通过，含两段挥斧、冲撞与震地；三份源动作联系图已查看，未发现缺帧、错绑或坐标移位。 |
+| hit4六阶段范围 | `prepare_enemy_attack_geometry.py --bull-only --output <证据>/attack_geometry.json` → 编辑器`repair_new_enemy_attack_geometry.gd` → `validate_new_enemy_attack_geometry.gd`：54帧、140项双向包含/排除及旋转复位通过。键位在20/30/33/37/41/53源帧，初段约153×166，地刺完全扩散约451px；叠加图`bull_demon_king_attack_4_review.jpg`已查看。这里是基础矩形近似，包含内部空隙。 |
+| 心脏修复前后 | `python <证据>/run_ui.py bull-heart-timing-only`：修复前复用时预期隐藏5秒，但0.008秒已alpha=1，证据`bull-heart-timing-before.log`。修复后60/120Hz均通过：首次隐藏5～9秒、两秒淡入、完整显现2～5秒、两秒淡出、下一隐藏5～11秒；首个完全显现物理步可受伤，半透明时拒绝伤害，受伤不重启周期。 |
+| 火柱高度与真实伤害 | `repair_bull_fire_geometry.gd -- <证据>/fire_bounds.json` → `validate_bull_fire_geometry.gd`：36源帧、预警无伤害、上部相交/上界外排除均通过。上述`bull-heart-timing-only`另实测两频率下-350px处不受伤、可见火柱-220px处真实扣血；六阶段叠加图`fire_geometry_review.jpg`已查看。阶段形状不可变，多根火柱不共享可变尺寸。 |
+| 全资源与实机首领 | `validate_bull_resources.gd -- <源>/bull_art/actors/manifest.json <源>/bull_art/monsters/manifest.json <源>/all_levels.json <证据>/attack_geometry.json`：1324源帧双向样本通过。最终`python <证据>/run_ui.py bull-only`退出0：兽形/护卫、60/120Hz双向五招、五次吞噬与释放、心脏暂停、手/火池清理、金钢琢首次/重复/满包及复用全部通过。 |
+| 构建、纯规则及引用 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有弃用警告。`dotnet test Tests/{ProfileTests,BattleTests,LevelTests} --no-restore -v quiet`分别228/228、178/178、19/19；仅NuGet审计服务不可达警告。`python Tools/ProjectMaintenance/validate_game_references.py`为1853路径/375UID通过；`git diff --check`通过。 |
+
+`run_ui.py`每个模式使用隔离APPDATA和`--smoketest=ui --<模式>`，测试范围以上表为准，不将通用末尾汇总文案当作完整UI生命周期验收。最终bull-only退出仍有10个ObjectDB和1个资源存活；心脏专项9个ObjectDB/2资源，火魔/多形状专项也有存活资源诊断。原生编辑器作者化退出另复现ComponentInsoector的`RefCounted.Free`/不存在free及RID泄漏，原始输出保存在`geometry_author.log`；没有修改只读插件或用业务PASS声称这些诊断已解决。
+
+## 第1格补装与法宝换装修复（2026-11-01）
+
+依据第00/10/70章，在现有装备System中只更新请求部位，不新增解锁字段、版本或生产测试接口。第1格`1791793987`补入当前缺少的定义1～8及38，现为38/38种、57件；保留原有48件实例、125462经验、2629812灵魂、最远通关9、全部英雄记录及穿戴。法宝槽仍为东海旗幡，新增金钢琢在背包。其他格及其备份散列与操作前一致。
+
+证据目录：`Godot/GodotProject/.godot/validation/slot1_equipment_20261101/`。一次性维护工具复用正式`Roll`及`SaveDataUtility.Validate`，只在忽略目录使用；正式代码不含维护入口。备份位于`%APPDATA%/Godot/app_userdata/GameZMXY/GameData.backup-before-slot1-all-equipment-20261101_194425`，8个原文件逐一校验散列，见`applied.json`。首次应用被自动审批以“未提供执行命令”拒绝，未执行；只读复核脚本及源指纹后，以明确的`pwsh -NoProfile -File .../apply_slot1.ps1`执行成功。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 缺陷复现及纯规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet --filter FullyQualifiedName~Treasure_PersistsAcrossOtherEquipmentChanges`：修复前6/6失败；修复后`dotnet test Tests/ProfileTests --no-restore -v quiet`为228/228通过，只有NuGet审计服务不可达警告。覆盖两种法宝、武器/防具/饰品的首次穿戴、替换、卸下、属性和保存重建。 |
+| 正式构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有Framework/生成代码弃用警告。 |
+| 正式档读回 | `dotnet run --no-build --project <证据目录>/SaveMaintenance.csproj -- validate <第一格.sav或.sav.bak> Godot/GodotProject/TheGame/DataTables/GameConfigs`：主档及.bak均输出`SAVE VALIDATION PASS`，38/38种、57件、容量75、东海旗幡引用有效，经验/灵魂/进度均保持。 |
+| 实机背包 | `python <证据目录>/run_ui.py`：隔离APPDATA，调用`S:/Godot4/Godot4CSharp_console.exe --path Godot/GodotProject --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 24000 -- --smoketest=ui --equipment-only`，退出0。`ui.log`含`SMOKE-TREASURE GUI PASS`、15件悟空武器防具真实穿卸及分页/详情/属性回归通过；未运行其汇总文案所称的全部UI生命周期场景。 |
+
+本次实机退出仍报告2个纹理RID、8个排版RID、1个字体RID、38个CanvasItem、111个ObjectDB和9个存活资源，并有两条GL纹理泄漏诊断。业务断言通过不代表这些退出诊断已解决；本轮未扩大修改框架或插件。
+
 ## 全装备与法宝穿戴（2026-10-31）
 
 第1格已备份后更新为 v12：保留原有进度，装备集合补齐当前配置 1～38（40 个实例，原有重复实例保留），金钢琢写入悟空独立法宝槽。第2/3格补齐 `TreasureInstanceId` 空字段并升到 v12。

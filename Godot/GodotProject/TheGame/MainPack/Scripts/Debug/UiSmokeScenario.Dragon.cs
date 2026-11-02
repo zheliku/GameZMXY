@@ -173,6 +173,7 @@ public sealed partial class UiSmokeScenario
                             Check(actor.MaxHp == (tier == 1 ? 12000 : 40000), "龙王没有使用本次入场等级档");
                             hero.GlobalPosition = actor.GlobalPosition + new Vector2(direction * 120, 0);
                             typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(actor, [hero]);
+                            actor.SetFacing(direction);
                             Vector2 castPosition = actor.GlobalPosition;
                             float targetX = hero.GlobalPosition.X;
                             flow.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
@@ -200,8 +201,8 @@ public sealed partial class UiSmokeScenario
                                         "龙王独立攻击原点不符原版");
                                 }
                                 var shape = effect?.GetNode<CollisionShape2D>("Origin/Visual/HitBox/CollisionShape2D") ??
-                                    actor.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
-                                if (!shape.Disabled)
+                                    actor.HitBox.GetChildren().OfType<CollisionShape2D>().FirstOrDefault(item => !item.Disabled);
+                                if (shape is { Disabled: false })
                                 {
                                     hero.GlobalPosition = shape.GlobalPosition - (hero.HurtBox.GetGlobalBounds().GetCenter() - hero.GlobalPosition);
                                     if (!captured)

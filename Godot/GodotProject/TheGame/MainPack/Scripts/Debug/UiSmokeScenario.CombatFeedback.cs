@@ -404,16 +404,18 @@ public sealed partial class UiSmokeScenario
     /// </summary>
     /// <param name="name">证据文件名称。</param>
     /// <returns>渲染帧保存任务。</returns>
-    private async Task CaptureCombatAsync(string name)
+    private Task CaptureCombatAsync(string name)
     {
         if (DisplayServer.GetName() == "headless")
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        // 主动渲染当前测试状态，避免窗口不再重绘时永远等不到FramePostDraw。
+        RenderingServer.ForceDraw(false);
         DirAccess.MakeDirRecursiveAbsolute("res://.godot/validation");
         Check(m_Driver.GetViewport().GetTexture().GetImage().SavePng($"res://.godot/validation/{name}.png") == Error.Ok,
             "战斗反馈截图保存失败");
+        return Task.CompletedTask;
     }
 }

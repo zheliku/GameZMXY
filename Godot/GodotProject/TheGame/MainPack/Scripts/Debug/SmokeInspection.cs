@@ -22,7 +22,7 @@ using GameLogic;
 internal static class SmokeInspection
 {
     /// <summary>
-    /// 检查真实窗口及弹出菜单仅保留装备格的自定义详情提示。
+    /// 检查真实窗口及弹出菜单仅保留装备详情和地图关卡图鉴的自定义提示。
     /// </summary>
     /// <param name="root">已经完成打开和数据绑定的窗口或组件。</param>
     /// <exception cref="InvalidOperationException">普通控件或菜单条目仍配置了悬停提示。</exception>

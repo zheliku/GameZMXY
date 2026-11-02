@@ -1,16 +1,124 @@
 [gd_resource type="AnimationLibrary" format=3 uid="uid://nlxuimfpcjpo"]
 
-[sub_resource type="RectangleShape2D" id="shape_0"]
-size = Vector2(192.5, 192.5)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4l352"]
+size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="shape_1"]
-size = Vector2(193, 192.5)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mgi3j"]
+size = Vector2(28.172058, 14.905382)
 
-[sub_resource type="RectangleShape2D" id="shape_2"]
-size = Vector2(192.5, 193)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_y2alm"]
+size = Vector2(50, 33)
 
-[sub_resource type="RectangleShape2D" id="shape_3"]
-size = Vector2(193, 193)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_j27pr"]
+size = Vector2(82.415375, 42.38412)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_uku2h"]
+size = Vector2(93.68356, 65.66882)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wivvu"]
+size = Vector2(108.7791, 84.499626)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2ngwy"]
+size = Vector2(119.85846, 67.60124)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5faf1"]
+size = Vector2(126.32165, 107.221436)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hth3e"]
+size = Vector2(121.62896, 95.036835)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_oivoh"]
+size = Vector2(175.05124, 99.30073)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bn64i"]
+size = Vector2(160.33522, 96.59699)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2mank"]
+size = Vector2(185.78328, 93.628654)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mjopd"]
+size = Vector2(95, 182)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6ld01"]
+size = Vector2(103, 180)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_w2a02"]
+size = Vector2(120, 170)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_aasjc"]
+size = Vector2(128, 169)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_l5fqq"]
+size = Vector2(123, 172)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_frhrk"]
+size = Vector2(171.99846, 123.96857)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pdack"]
+size = Vector2(171.83981, 125.3205)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jqdc0"]
+size = Vector2(173.0243, 133.9301)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vmwq5"]
+size = Vector2(145, 172)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6rqqi"]
+size = Vector2(157, 171)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_78a6r"]
+size = Vector2(177.75288, 166.57059)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_flsw7"]
+size = Vector2(182, 182)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6x550"]
+size = Vector2(171.87186, 153.81155)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_n6meg"]
+size = Vector2(154, 172)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_x4lhe"]
+size = Vector2(145, 171)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lnbpb"]
+size = Vector2(151, 168)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tib65"]
+size = Vector2(153, 173)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1n0vq"]
+size = Vector2(162, 165)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b4bpw"]
+size = Vector2(155, 162)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7ffko"]
+size = Vector2(158, 160)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p82si"]
+size = Vector2(134, 164)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b8mys"]
+size = Vector2(136, 161)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_afwri"]
+size = Vector2(68, 136)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lulsw"]
+size = Vector2(55, 78)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xkjf7"]
+size = Vector2(58.79666, 38.877857)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pyo3d"]
+size = Vector2(48, 47)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_61lrh"]
+size = Vector2(58, 39)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bvhaw"]
+size = Vector2(74, 42)
 
 [sub_resource type="Animation" id="play"]
 length = 2.83333333
@@ -57,10 +165,10 @@ tracks/3/path = NodePath("Origin/Visual/HitBox/CollisionShape2D:disabled")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
-"times": PackedFloat32Array(0, 1.1666666, 1.2083334, 1.3333334, 1.375, 1.4166666, 1.5416666, 1.5833334, 1.625, 1.75, 1.7916666, 1.8333334, 1.9583334, 2, 2.0416667, 2.1666667, 2.2083333, 2.25, 2.375, 2.4166667, 2.4583333, 2.5833333, 2.625, 2.6666667, 2.7916667),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 1.1666666, 2.7916667),
+"transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
-"values": [true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true]
+"values": [true, false, true]
 }
 tracks/4/type = "value"
 tracks/4/imported = false
@@ -69,10 +177,10 @@ tracks/4/path = NodePath("Origin/Visual/HitBox/CollisionShape2D:position")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
-"times": PackedFloat32Array(0, 1.1666666, 1.2083334, 1.3333334, 1.375, 1.4166666, 1.5416666, 1.5833334, 1.625, 1.75, 1.7916666, 1.8333334, 1.9583334, 2, 2.0416667, 2.1666667, 2.2083333, 2.25, 2.375, 2.4166667, 2.4583333, 2.5833333, 2.625, 2.6666667, 2.7916667),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 1.1666666, 1.2083334, 1.25, 1.2916666, 1.3333334, 1.375, 1.4166666, 1.4583334, 1.5, 1.5416666, 1.5833334, 1.625, 1.6666666, 1.7083334, 1.75, 1.7916666, 1.8333334, 1.875, 1.9166666, 1.9583334, 2, 2.0416667, 2.0833333, 2.125, 2.1666667, 2.2083333, 2.25, 2.2916667, 2.3333333, 2.375, 2.4166667, 2.4583333, 2.5, 2.5416667, 2.5833333, 2.625, 2.6666667, 2.7083333, 2.75, 2.7916667),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [Vector2(0, 0), Vector2(96.25, 96.25), Vector2(96, 96.25), Vector2(95.75, 96.25), Vector2(96.25, 96), Vector2(96, 96), Vector2(95.75, 96), Vector2(96.25, 96), Vector2(96, 96), Vector2(95.75, 96), Vector2(96.25, 96), Vector2(96, 96), Vector2(95.75, 96), Vector2(96.25, 96), Vector2(96, 96), Vector2(95.75, 96), Vector2(96.25, 96), Vector2(96, 96), Vector2(95.75, 96), Vector2(96.25, 96), Vector2(96, 96), Vector2(95.75, 96), Vector2(96.25, 95.75), Vector2(96, 95.75), Vector2(0, 0)]
+"values": [Vector2(0, 0), Vector2(104.503525, 169.97095), Vector2(108.5, 167), Vector2(120.61063, 148.26158), Vector2(115.454384, 143.10863), Vector2(122.59373, 138.79709), Vector2(113.65059, 121.27207), Vector2(117.42684, 118.589714), Vector2(127.5533, 126.09172), Vector2(124.46169, 96.14174), Vector2(122.21365, 104.36279), Vector2(123.25967, 97.34776), Vector2(124, 92.5), Vector2(121, 95.5), Vector2(119.5, 94.5), Vector2(119.5, 94), Vector2(114, 95.5), Vector2(114.5329, 95.49998), Vector2(117.32242, 95.46908), Vector2(116.420006, 96.01969), Vector2(107, 95.5), Vector2(103, 95), Vector2(97.19928, 87.10342), Vector2(93.5, 99.5), Vector2(101.51879, 85.68081), Vector2(98.5, 95.5), Vector2(103, 95), Vector2(105, 93.5), Vector2(99, 87), Vector2(93.5, 90), Vector2(95, 91.5), Vector2(94.5, 84.5), Vector2(106.5, 98.5), Vector2(97.5, 102), Vector2(102.5, 113.5), Vector2(107, 142.5), Vector2(109.94571, 162.3398), Vector2(104.5, 158), Vector2(107.5, 163), Vector2(106.5, 161.5), Vector2(0, 0)]
 }
 tracks/5/type = "value"
 tracks/5/imported = false
@@ -81,10 +189,22 @@ tracks/5/path = NodePath("Origin/Visual/HitBox/CollisionShape2D:shape")
 tracks/5/interp = 1
 tracks/5/loop_wrap = true
 tracks/5/keys = {
-"times": PackedFloat32Array(0, 1.1666666, 1.2083334, 1.3333334, 1.375, 1.4166666, 1.5416666, 1.5833334, 1.625, 1.75, 1.7916666, 1.8333334, 1.9583334, 2, 2.0416667, 2.1666667, 2.2083333, 2.25, 2.375, 2.4166667, 2.4583333, 2.5833333, 2.625, 2.6666667, 2.7916667),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 1.1666666, 1.2083334, 1.25, 1.2916666, 1.3333334, 1.375, 1.4166666, 1.4583334, 1.5, 1.5416666, 1.5833334, 1.625, 1.6666666, 1.7083334, 1.75, 1.7916666, 1.8333334, 1.875, 1.9166666, 1.9583334, 2, 2.0416667, 2.0833333, 2.125, 2.1666667, 2.2083333, 2.25, 2.2916667, 2.3333333, 2.375, 2.4166667, 2.4583333, 2.5, 2.5416667, 2.5833333, 2.625, 2.6666667, 2.7083333, 2.75, 2.7916667),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [SubResource("shape_0"), SubResource("shape_0"), SubResource("shape_1"), SubResource("shape_0"), SubResource("shape_2"), SubResource("shape_3"), SubResource("shape_2"), SubResource("shape_2"), SubResource("shape_3"), SubResource("shape_2"), SubResource("shape_2"), SubResource("shape_3"), SubResource("shape_2"), SubResource("shape_2"), SubResource("shape_3"), SubResource("shape_2"), SubResource("shape_2"), SubResource("shape_3"), SubResource("shape_2"), SubResource("shape_2"), SubResource("shape_3"), SubResource("shape_2"), SubResource("shape_0"), SubResource("shape_1"), SubResource("shape_0")]
+"values": [SubResource("RectangleShape2D_4l352"), SubResource("RectangleShape2D_mgi3j"), SubResource("RectangleShape2D_y2alm"), SubResource("RectangleShape2D_j27pr"), SubResource("RectangleShape2D_uku2h"), SubResource("RectangleShape2D_wivvu"), SubResource("RectangleShape2D_2ngwy"), SubResource("RectangleShape2D_5faf1"), SubResource("RectangleShape2D_hth3e"), SubResource("RectangleShape2D_oivoh"), SubResource("RectangleShape2D_bn64i"), SubResource("RectangleShape2D_2mank"), SubResource("RectangleShape2D_mjopd"), SubResource("RectangleShape2D_6ld01"), SubResource("RectangleShape2D_w2a02"), SubResource("RectangleShape2D_aasjc"), SubResource("RectangleShape2D_l5fqq"), SubResource("RectangleShape2D_frhrk"), SubResource("RectangleShape2D_pdack"), SubResource("RectangleShape2D_jqdc0"), SubResource("RectangleShape2D_vmwq5"), SubResource("RectangleShape2D_6rqqi"), SubResource("RectangleShape2D_78a6r"), SubResource("RectangleShape2D_flsw7"), SubResource("RectangleShape2D_6x550"), SubResource("RectangleShape2D_n6meg"), SubResource("RectangleShape2D_x4lhe"), SubResource("RectangleShape2D_lnbpb"), SubResource("RectangleShape2D_tib65"), SubResource("RectangleShape2D_1n0vq"), SubResource("RectangleShape2D_b4bpw"), SubResource("RectangleShape2D_7ffko"), SubResource("RectangleShape2D_p82si"), SubResource("RectangleShape2D_b8mys"), SubResource("RectangleShape2D_afwri"), SubResource("RectangleShape2D_lulsw"), SubResource("RectangleShape2D_xkjf7"), SubResource("RectangleShape2D_pyo3d"), SubResource("RectangleShape2D_61lrh"), SubResource("RectangleShape2D_bvhaw"), SubResource("RectangleShape2D_4l352")]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Origin/Visual/HitBox/CollisionShape2D:rotation")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0, 1.1666666, 1.2083334, 1.25, 1.2916666, 1.3333334, 1.375, 1.4166666, 1.4583334, 1.5, 1.5416666, 1.5833334, 1.625, 1.8333334, 1.875, 1.9166666, 1.9583334, 2.0416667, 2.0833333, 2.125, 2.1666667, 2.625, 2.6666667),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0.0, 0.1207242691965648, 0.0, -0.7218467629122354, -1.3824421771687272, 0.13884520146630255, -1.3050909649610247, -1.0315230261951749, -1.1925003545890456, -1.0428598459215022, -1.0395569820253503, -1.2748506271308448, 0.0, 1.5700486581672373, 1.553830097142827, -1.5671633596092054, 0.0, -1.107367838157205, 0.0, -1.084538777106958, 0.0, 0.2144876278137716, 0.0]
 }
 
 [resource]
