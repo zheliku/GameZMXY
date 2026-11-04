@@ -84,6 +84,8 @@ namespace GameLogic.UI
 		[Export]
 		private Button m_Settings;
 		[Export]
+		private Button m_Skills;
+		[Export]
 		private TextureButton m_Back;
 		[Export]
 		private MapLocationButton m_Huaguoshan;

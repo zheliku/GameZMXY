@@ -96,6 +96,8 @@ public partial class SmokeTestDriver : Node
     private readonly List<(int Damage, bool Crit, bool Miss)> m_MonsterHits = new(); // 按事件记录猴子每次受击结果。
 
     private int m_MaxPopCount; // 场上飘字节点的可见峰值数量。
+    private int m_MaxComboCount; // 烟测期间由真实命中累计到的连击峰值。
+    private bool m_ComboHudShown; // 实际连击数字曾在战斗HUD显示。
     private SmokeMode m_Mode; // 命令行选择的唯一冒烟模式。
     private int m_RequestedLevel = 1; // 真实地图点击的关卡，后续关卡仍走完整菜单流程。
     private double m_WaitTime; // 等待英雄出现的累计时间（秒）。
@@ -356,6 +358,7 @@ public partial class SmokeTestDriver : Node
         Sample();
         TrackBodyFrames();
         TrackPops();
+        TrackCombo();
         if (m_Time >= EndTime)
         {
             Finish();
@@ -879,6 +882,17 @@ public partial class SmokeTestDriver : Node
     }
 
     /// <summary>
+    /// 记录权威连击数与实际HUD显示，不直接写入任何战斗状态。
+    /// </summary>
+    private void TrackCombo()
+    {
+        int count = GF.Fsm.GetArchitecture().GetModel<LevelModel>()?.ComboCount.Value ?? 0;
+        m_MaxComboCount = Math.Max(m_MaxComboCount, count);
+        m_ComboHudShown |= GetTree().Root.FindChildren("m_Combo", "Label", true, false)
+            .OfType<Label>().Any(label => label.Visible && label.Text.Contains("连击", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// 校验猴子受击、伤害结果与飘字创建。
     /// </summary>
     /// <param name="failures">本次验证累积的失败说明。</param>
@@ -923,7 +937,16 @@ public partial class SmokeTestDriver : Node
             failures.Add("命中后场上没有出现过伤害飘字（NodePool 未取出 FloatingTextNode）");
         }
 
-        GD.Print($"SMOKE: 猴子共受击 {m_MonsterHits.Count} 次，累计伤害 {total}，HP {m_Monster.Hp}/{m_Monster.MaxHp}，同屏飘字峰值 {m_MaxPopCount}");
+        if (m_MaxComboCount < 2)
+        {
+            failures.Add($"真实命中只累计到 {m_MaxComboCount} 连击，未达到HUD显示阈值");
+        }
+        if (!m_ComboHudShown)
+        {
+            failures.Add("实际战斗HUD从未显示连击数字");
+        }
+
+        GD.Print($"SMOKE: 猴子共受击 {m_MonsterHits.Count} 次，累计伤害 {total}，连击峰值 {m_MaxComboCount}，HUD {m_ComboHudShown}，HP {m_Monster.Hp}/{m_Monster.MaxHp}，同屏飘字峰值 {m_MaxPopCount}");
     }
 
     /// <summary>

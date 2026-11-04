@@ -64,6 +64,7 @@ namespace GameLogic.Profile.Tests
             Assert.False(scope.SendCommand(new SellEquipmentCommand(item.InstanceId)));
             Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
             Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
+            Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
             Assert.Null(scope.Profile.Weapon);
             Assert.Equal(items, scope.Profile.EquipmentDatas.Count);
             Assert.Equal(soul, scope.Profile.Soul.Value);
@@ -71,10 +72,10 @@ namespace GameLogic.Profile.Tests
         }
 
         /// <summary>
-        /// 不存在关卡模型时命令返回拒绝结果，不尝试创建作用域或访问玩法系统。
+        /// 不存在任何玩法模型时命令返回拒绝结果，不创建作用域或访问玩法系统。
         /// </summary>
         [Fact]
-        public void MissingLevel_RejectsWithoutAutoCreatingState()
+        public void MissingModels_RejectWithoutAutoCreatingState()
         {
             var scope = new EmptyArchitecture();
             Assert.False(scope.SendCommand(new EquipEquipmentCommand(Guid.NewGuid())));
@@ -82,6 +83,7 @@ namespace GameLogic.Profile.Tests
             Assert.False(scope.SendCommand(new SellEquipmentCommand(Guid.NewGuid())));
             Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
             Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
+            Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
         }
 
         /// <summary>
@@ -185,19 +187,14 @@ namespace GameLogic.Profile.Tests
         }
 
         /// <summary>
-        /// 无关卡的作用域，任何越过资格校验的访问都会使测试失败。
+        /// 无模型的作用域；缺失模型返回 null，实际业务系统访问使测试失败。
         /// </summary>
         private sealed class EmptyArchitecture : IArchitecture
         {
             /// <inheritdoc />
             public TModel GetModel<TModel>() where TModel : class, IModel
             {
-                if (typeof(TModel) == typeof(LevelModel))
-                {
-                    return null;
-                }
-
-                throw new InvalidOperationException();
+                return null;
             }
 
             /// <inheritdoc />

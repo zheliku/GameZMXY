@@ -70,8 +70,8 @@ public sealed partial class UiSmokeScenario
         {
             Check(cell.GetNode<TextureRect>("Icon").Texture != null &&
                 tooltip.GetNode<Label>("Content/Header/Type/Value").Text == "武器·唐僧" &&
-                tooltip.GetNode<VBoxContainer>("Content/Attributes").GetChildren().OfType<Label>().Any(x => x.Text == "攻击： 11") &&
-                tooltip.GetNode<Label>("Content/Footer/Price").Text == "价值 : 20 灵魂" && tooltip.GetCombinedMinimumSize().Y > 100,
+                tooltip.GetNode<VBoxContainer>("Content/Attributes").GetChildren().OfType<Label>().Any(x => x.Text == "攻击：11") &&
+                tooltip.GetNode<Label>("Content/Footer/Price").Text == "价值：20 灵魂" && tooltip.GetCombinedMinimumSize().Y > 100,
                 "背包提示类型、实际属性、售价或首次布局错误");
             tooltip.Free();
         }
@@ -112,7 +112,7 @@ public sealed partial class UiSmokeScenario
         {
             var lines = tooltip.GetNode<VBoxContainer>("Content/Attributes").GetChildren().OfType<Label>().Select(x => x.Text).ToArray();
             Check(tooltip.GetNode<Label>("Content/Header/Type/Value").Text == "饰品·通用" &&
-                lines.Contains("暴击： 3%") && lines.Contains("闪避： 3%"), "饰品 tooltip 概率单位或通用归属错误");
+                lines.Contains("暴击：3%") && lines.Contains("闪避：3%"), "饰品 tooltip 概率单位或通用归属错误");
             tooltip.Free();
         }
         await CaptureCombatAsync("inventory_earth_fiend_ring");
@@ -265,7 +265,7 @@ public sealed partial class UiSmokeScenario
         using (var tooltip = accessory._MakeCustomTooltip(accessory.TooltipText))
         {
             Check(tooltip.GetNode<VBoxContainer>("Content/Attributes").GetChildCount() == 4 &&
-                tooltip.GetNode<Label>("Content/Footer/Price").Text == "价值 : 80 灵魂", "天煞骨链提示属性或售价错误");
+                tooltip.GetNode<Label>("Content/Footer/Price").Text == "价值：80 灵魂", "天煞骨链提示属性或售价错误");
             tooltip.Free();
         }
         await CaptureCombatAsync("inventory_heavenly_fiend_necklace");
@@ -284,7 +284,7 @@ public sealed partial class UiSmokeScenario
         {
             Check(tooltip.GetNode<VBoxContainer>("Content/Attributes").GetChildCount() == 3 &&
                 tooltip.GetNode<Label>("Content/Header/Type/Value").Text == "饰品·通用" &&
-                tooltip.GetNode<Label>("Content/Footer/Price").Text == "价值 : 80 灵魂", "血海妖壳属性说明或售价错误");
+                tooltip.GetNode<Label>("Content/Footer/Price").Text == "价值：80 灵魂", "血海妖壳属性说明或售价错误");
             tooltip.Free();
         }
         await CaptureCombatAsync("inventory_blood_sea_shell");

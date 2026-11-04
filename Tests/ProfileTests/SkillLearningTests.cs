@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using GameLogic.Battle;
+using GameLogic.Level;
 using GameConfig.Skills;
 using GameLogic.Architecture;
 using GameLogic.Skills;
@@ -36,6 +38,38 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(SkillLearnResult.AlreadyLearned, system.Learn(SkillId.RisingDragon));
             Assert.Equal(0, scope.Profile.Soul.Value);
             Assert.Equal(1, notifications);
+        }
+
+        /// <summary>
+        /// 地图没有英雄与关卡模型时仍可购买技能；档案保存后下一局读取主动和被动效果。
+        /// </summary>
+        [Fact]
+        public void MapPurchase_UsesProfileSkillsWithoutBattleModelsAndSurvivesReload()
+        {
+            var scope = new TestGameScope(1, [(1, 0)], 10000, 20, initializeHero: false);
+            scope.EnterMapContext();
+            Assert.Null(scope.GetModel<HeroModel>());
+            Assert.Null(scope.GetModel<LevelModel>());
+            var system = scope.GetSystem<SkillSystem>();
+            system.ClearSkillDefinitions();
+            int skillCost = TestTables.Tables.TbSkillConfig.Get(SkillId.RisingDragon).LearnSoul;
+            int passiveCost = TestTables.Tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
+
+            Assert.False(system.IsAvailable(SkillId.RisingDragon));
+            Assert.True(system.IsLearnable(SkillId.RisingDragon));
+            Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
+            Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
+            Assert.Equal(10000 - skillCost - passiveCost, scope.Profile.Soul.Value);
+
+            var save = scope.CaptureSaveData();
+            var heroData = save.Heroes.Single(hero => hero.HeroId == 1);
+            Assert.Contains(SkillId.RisingDragon, heroData.LearnedSkills);
+            Assert.Equal(1, heroData.PassiveLevels[PassiveId.Vitality]);
+
+            var reloaded = TestGameScope.FromSaveData(save, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 20);
+            Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(SkillId.RisingDragon));
+            Assert.True(reloaded.GetSystem<SkillSystem>().IsAvailable(SkillId.RisingDragon));
+            Assert.True(reloaded.Hero.MaxHp.Value > TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.MaxHp);
         }
 
         /// <summary>

@@ -26,6 +26,7 @@ namespace GameLogic.UI
         private bool m_ShowPassive; // 当前是否展示五项被动。
         private bool m_ResumeGame; // 只恢复本窗口发起的暂停。
         private bool m_IsBound; // 本周期已经开始订阅；关闭后回池不再访问已移除的关卡模型。
+        private LevelModel m_LevelModel; // 战斗模式下订阅的本局状态；地图购买不创建该模型。
 
         // ---- 窗口生命周期 ----
 
@@ -62,31 +63,32 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 绑定目录、观察灵魂并暂停本关，初始技能均展示为尚未学习。
+        /// 绑定技能目录；战斗模式订阅结局并暂停，地图模式只观察档案状态。
         /// </summary>
         /// <param name="userData">未使用；状态从所属 Model 读取。</param>
-        /// <exception cref="InvalidOperationException">所属关卡或出战角色无效。</exception>
+        /// <exception cref="InvalidOperationException">出战角色无效，或已有的关卡尚未运行。</exception>
         public void OnOpen(object userData)
         {
             ReleaseBindingsAndPause();
             Visible = false;
             var profile = this.GetModel<ProfileModel>();
             var levelModel = this.GetModel<LevelModel>();
-            if (levelModel is not { Initialized: true, SessionActive: true } || profile == null ||
-                levelModel.Outcome.Value != LevelOutcome.Running ||
-                !Enum.IsDefined((SkillHero)profile.ActiveHeroId))
+            if (profile == null || !Enum.IsDefined((SkillHero)profile.ActiveHeroId) ||
+                levelModel != null && (!levelModel.Initialized || !levelModel.SessionActive ||
+                                       levelModel.Outcome.Value != LevelOutcome.Running))
             {
-                throw new InvalidOperationException("技能面板需要正在运行的关卡与有效出战角色。");
+                throw new InvalidOperationException("技能面板需要有效出战角色；已创建的关卡必须处于运行状态。");
             }
 
             try
             {
+                m_LevelModel = levelModel;
                 m_IsBound = true;
                 this.GetModel<ProfileModel>().Soul.RegisterWithInitValue(RefreshSoul);
                 this.GetModel<SkillModel>().GetLearnedSkills(profile.ActiveHeroId).RegisterWithInitValue(RefreshLearnedSkills);
                 this.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId).RegisterWithInitValue(RefreshPassiveLevels);
-                levelModel.Outcome.Register(OnLevelEnded);
-                m_ResumeGame = !GF.Base.IsGamePaused;
+                levelModel?.Outcome.Register(OnLevelEnded);
+                m_ResumeGame = levelModel != null && !GF.Base.IsGamePaused;
                 if (m_ResumeGame)
                 {
                     GF.Base.PauseGame();
@@ -199,8 +201,10 @@ namespace GameLogic.UI
                 profile.Soul.UnRegister(RefreshSoul);
                 this.GetModel<SkillModel>().GetLearnedSkills(profile.ActiveHeroId).UnRegister(RefreshLearnedSkills);
                 this.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId).UnRegister(RefreshPassiveLevels);
-                this.GetModel<LevelModel>().Outcome.UnRegister(OnLevelEnded);
+                m_LevelModel?.Outcome.UnRegister(OnLevelEnded);
             }
+
+            m_LevelModel = null;
 
             if (m_ResumeGame && IsInstanceValid(GF.Base))
             {
@@ -362,7 +366,7 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 返回关卡并对称恢复暂停。
+        /// 关闭技能窗口，并对称恢复本窗口发起的战斗暂停。
         /// </summary>
         private void OnBackClicked()
         {

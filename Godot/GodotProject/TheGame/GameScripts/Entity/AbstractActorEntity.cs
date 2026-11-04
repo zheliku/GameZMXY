@@ -622,7 +622,7 @@ namespace GameLogic.Entity
                 GF.Sound.PlayConfigured(m_HurtSoundId);
             }
 
-            GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == CombatSide.Hero, HeadPosition));
+            GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == CombatSide.Hero, HeadPosition, attackerEntityId));
             if (died)
             {
                 Died?.Invoke(this);

@@ -89,7 +89,7 @@ namespace GameLogic.UI
             }
             m_Description.Text = definition.Description;
             m_Description.Visible = !string.IsNullOrEmpty(m_Description.Text);
-            m_Value.Text = $"价值 : {definition.SellPrice} 灵魂";
+            m_Value.Text = $"价值：{definition.SellPrice} 灵魂";
         }
 
         /// <summary>
@@ -110,7 +110,13 @@ namespace GameLogic.UI
         /// <param name="value">已格式化的显示值。</param>
         private void AddAttribute(AttributeType attribute, string value)
         {
-            Label line = new() { Text = $"{AttributeName(attribute)}： {value}", CustomMinimumSize = new Vector2(0, 25), MouseFilter = MouseFilterEnum.Ignore };
+            Label line = new()
+            {
+                Text = $"{AttributeName(attribute)}：{value}",
+                CustomMinimumSize = new Vector2(0, 25),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                MouseFilter = MouseFilterEnum.Ignore
+            };
             line.AddThemeColorOverride("font_color", new Color("ff9933"));
             m_Attributes.AddChild(line);
         }

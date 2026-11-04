@@ -44,6 +44,11 @@ namespace GameLogic.UI
         public event Action<int> SettingsRequested;
 
         /// <summary>
+        /// 请求地图流程打开技能目录；参数为本次地图窗口编号。
+        /// </summary>
+        public event Action<int> SkillsRequested;
+
+        /// <summary>
         /// 由所属流程处理 LevelSelected；参数为本次窗口编号及选择编号。
         /// </summary>
         public event Action<int, int> LevelSelected;
@@ -70,6 +75,7 @@ namespace GameLogic.UI
             {
                 m_Back.Pressed += OnBackClicked;
                 m_Settings.Pressed += OnSettingsClicked;
+                m_Skills.Pressed += OnSkillsClicked;
                 m_Save.Pressed += OnSaveClicked;
                 InitializeLocations();
                 ValidateLocations();
@@ -112,6 +118,7 @@ namespace GameLogic.UI
         {
             TitleRequested = null;
             SettingsRequested = null;
+            SkillsRequested = null;
             SaveRequested = null;
             LevelSelected = null;
             Unbind();
@@ -397,6 +404,20 @@ namespace GameLogic.UI
             }
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
             SettingsRequested?.Invoke(SerialId);
+        }
+
+        /// <summary>
+        /// 请求地图流程打开主动与被动技能购买窗口。
+        /// </summary>
+        private void OnSkillsClicked()
+        {
+            if (!GF.UI.HasUIForm(SerialId))
+            {
+                return;
+            }
+
+            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            SkillsRequested?.Invoke(SerialId);
         }
 
         /// <summary>

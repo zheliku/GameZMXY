@@ -1,5 +1,19 @@
 # 验证
 
+## 地图购技、tooltip 与连击闭环（2026-11-03）
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 纯规则测试 | `dotnet test Tests/ProfileTests/ProfileTests.csproj --no-restore --verbosity minimal`：242/242；`LevelTests`：19/19；`BattleTests`：191/191。各命令有既有 NU1900 网络源告警，无测试失败。 |
+| C# 构建 | `dotnet build Godot/GodotProject/GodotProject.csproj --no-restore --verbosity minimal`：0错误，5条既有框架/生成代码弃用警告。Godot headless build-solutions 编译阶段也报告 DONE；编辑器退出期 ComponentInspector 仍有只读插件释放诊断。 |
+| 只读结构检查 | `validate_game_references.py`：1885 serialized paths / 373 UIDs；MapForm 15/15、BattleForm 6/6 场景绑定与现有生成字段一致；CSharpStyle 346 owned files、0格式差异、0缺XML；`git diff --check`通过。UI生成器复跑被自动审批按生成物只读边界拒绝，改为只读比较现有字段与NodePath，未追加生成物写入。 |
+| 地图购技 OpenGL | `S:\Godot4\Godot4CSharp_console.exe --path Godot/GodotProject --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend`：退出0。`SMOKE-MAP-SKILLS PASS`；地图按钮进入技能窗、主动/被动购买、余额/按钮刷新、关闭重开、无英雄/关卡模型、保存重载和进关生效均通过。截图：`Godot/GodotProject/.godot/validation/frontend/map_skill_active.png`、`map_skill_passive.png`。 |
+| Tooltip OpenGL | 完整 UI 烟测的 `SMOKE-TOOLTIP PASS`、`SMOKE-ACCESSORY PASS` 通过；属性和价格均为同一主题16px、全角中文冒号、数值左贴齐；一项/三项属性、长说明换行及底部6px间距通过。截图：`Godot/GodotProject/.godot/validation/inventory_tooltip_attributes.png`、`inventory_tooltip_wrapped.png`。 |
+| 连击规则与真实命中 | 前端 OpenGL smoke 的 `SMOKE-COMBO-LIFECYCLE PASS` 通过：HUD同步、暂停不推进、恢复后超时清零、新连击、离关退订/清空、重入归零。英雄真实攻击 `--smoketest` 退出0：实际受击5次、连击峰值2、HUD=True；普攻段号独立变化。截图：`Godot/GodotProject/.godot/validation/frontend/frontend_combo.png`。 |
+| 完整 UI 回归 | 使用隔离 APPDATA：`--smoketest=ui --terrain-level5` 退出0，`SMOKE PASS：UI 数值、解绑复用、实体复用、加载取消、失败清理与存档重入全部通过`。无隔离用户设置时的同一回归曾在既有结算音乐音量前提失败（当前音量约68%，-3.35dB），未修改音乐逻辑；隔离运行通过。退出期仍有既有 RID/ObjectDB/资源泄漏诊断。 |
+
+证据日志集中于 `Godot/GodotProject/.godot/validation/map_skill_combo_20261102/`；Framework、addons、Tools/Luban源码未改。工作树中本需求已有的MapForm/BattleForm绑定字段变更已通过只读结构检查和实际装配验证，本轮未追加生成物写入。
+
 ## 可读性整理续轮（2026-11-02）
 
 本轮针对`MapForm.Logic.cs`按旧版阅读路径整理：地点声明、装配校验、事件绑定、点击/悬停具名处理分开；保留单份地点表、场景按钮`LevelId`身份来源和隐藏关入口契约。全项目同类检查覆盖346个手写C#、131份GDScript、70份Python；修改只涉及手写运行时代码、编辑器/迁移脚本和文档，不碰Framework、addons、Luban、生成物、配置或场景。

@@ -27,6 +27,7 @@ namespace GameLogic.Profile.Tests
         private readonly InputSystem m_InputSystem; // 正式输入组合与方向规则。
         private readonly LootSystem m_LootSystem; // 正式球体回蓝与掉落规则。
         private readonly SaveDataUtility m_Save = new(); // 与游戏注册的相同纯转换工具。
+        private bool m_IsMapContext; // 测试地图购技时隐藏本局英雄与关卡模型。
 
         /// <summary>
         /// 测试提供的任意动作事实，走正式输入采样与消费。
@@ -99,8 +100,24 @@ namespace GameLogic.Profile.Tests
             return (typeof(TModel) == typeof(ConfigurationModel) ? TestTables.Configuration :
                 typeof(TModel) == typeof(ProfileModel) ? (IModel)Profile :
                 typeof(TModel) == typeof(SkillModel) ? Skills :
-                typeof(TModel) == typeof(HeroModel) ? Hero :
-                typeof(TModel) == typeof(LevelModel) ? Level : null) as TModel;
+                typeof(TModel) == typeof(HeroModel) ? (m_IsMapContext ? null : (IModel)Hero) :
+                typeof(TModel) == typeof(LevelModel) ? (m_IsMapContext ? null : (IModel)Level) : null) as TModel;
+        }
+
+        /// <summary>
+        /// 让后续命令观察地图作用域中不存在的战斗模型。
+        /// </summary>
+        public void EnterMapContext()
+        {
+            m_IsMapContext = true;
+        }
+
+        /// <summary>
+        /// 让后续系统访问恢复为战斗作用域。
+        /// </summary>
+        public void EnterBattleContext()
+        {
+            m_IsMapContext = false;
         }
 
         /// <inheritdoc />

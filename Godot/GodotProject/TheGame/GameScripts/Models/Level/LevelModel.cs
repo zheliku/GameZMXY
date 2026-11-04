@@ -33,6 +33,11 @@ namespace GameLogic.Level
         public BindableProperty<bool> TravelAvailable { get; } = new();
 
         /// <summary>
+        /// 当前实际命中连击数；由关卡规则累计与超时清零，不等同于普攻段号。
+        /// </summary>
+        public BindableProperty<int> ComboCount { get; } = new();
+
+        /// <summary>
         /// 本模型拥有的阶段状态，仅供关卡系统与场景控制器协作。
         /// </summary>
         internal LevelStageSequence Sequence { get; set; }

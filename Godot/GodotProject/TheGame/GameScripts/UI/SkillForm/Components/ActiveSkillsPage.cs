@@ -121,7 +121,7 @@ namespace GameLogic.UI.Widgets
                 var row = rows[i];
                 var definition = definitions[i];
                 row.Name.Text = definition.NameCn;
-                bool available = this.GetSystem<SkillSystem>().IsAvailable(definition.Id);
+                bool available = this.GetSystem<SkillSystem>().IsLearnable(definition.Id);
                 bool learned = available && this.GetSystem<SkillSystem>().IsLearned(definition.Id);
                 row.Icon.TextureNormal = learned ? row.Learned : row.Unlearned;
                 row.Icon.TextureDisabled = row.Icon.TextureNormal;

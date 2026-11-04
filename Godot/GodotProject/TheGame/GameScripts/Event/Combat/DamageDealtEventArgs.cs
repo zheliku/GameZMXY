@@ -30,6 +30,11 @@ namespace GameLogic.Event.Combat
         public DamageResult Result { get; private set; }
 
         /// <summary>
+        /// 攻击方的运行实体编号；无实体来源或持续扣血时为零。
+        /// </summary>
+        public int AttackerEntityId { get; private set; }
+
+        /// <summary>
         /// 受击方的运行实体编号；用于过滤场景所有权，实体回收后仍保留本次编号。
         /// </summary>
         public int TargetEntityId { get; private set; }
@@ -51,11 +56,14 @@ namespace GameLogic.Event.Combat
         /// <param name="targetEntityId">受击方本次显示的运行实体编号。</param>
         /// <param name="targetIsHero">受击方是否为英雄。</param>
         /// <param name="popPosition">飘字的世界坐标。</param>
+        /// <param name="attackerEntityId">攻击方本次显示的运行实体编号；无实体来源时为零。</param>
         /// <returns>仅在本次分发期间有效的参数。</returns>
-        public static DamageDealtEventArgs Create(DamageResult result, int targetEntityId, bool targetIsHero, Vector2 popPosition)
+        public static DamageDealtEventArgs Create(DamageResult result, int targetEntityId, bool targetIsHero, Vector2 popPosition,
+            int attackerEntityId = 0)
         {
             var args = ReferencePool.Acquire<DamageDealtEventArgs>();
             args.Result = result;
+            args.AttackerEntityId = attackerEntityId;
             args.TargetEntityId = targetEntityId;
             args.TargetIsHero = targetIsHero;
             args.PopPosition = popPosition;
@@ -68,6 +76,7 @@ namespace GameLogic.Event.Combat
         public override void Clear()
         {
             Result = default;
+            AttackerEntityId = 0;
             TargetEntityId = 0;
             TargetIsHero = false;
             PopPosition = Vector2.Zero;

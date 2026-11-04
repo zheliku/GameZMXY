@@ -41,7 +41,7 @@
 [ext_resource type="Texture2D" uid="uid://c80du00fmxodl" path="res://TheGame/Sprites/UI/hud/menu_weapon_normal.png" id="weapon_normal"]
 [ext_resource type="Texture2D" uid="uid://6hpg33m2d84" path="res://TheGame/Sprites/UI/hud/hud_ws_frame.png" id="ws_frame"]
 
-[node name="BattleForm" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_Status", "m_Menu", "m_Go", "m_EncounterHealthBar", "m_MusouActivation")]
+[node name="BattleForm" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_Status", "m_Menu", "m_Go", "m_EncounterHealthBar", "m_MusouActivation", "m_Combo")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -56,6 +56,7 @@ m_Menu = NodePath("MenuPanel")
 m_Go = NodePath("m_Go")
 m_EncounterHealthBar = NodePath("m_EncounterHealthBar")
 m_MusouActivation = NodePath("m_MusouActivation")
+m_Combo = NodePath("m_Combo")
 
 [node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel")]
 position = Vector2(116, 44)
@@ -381,6 +382,23 @@ offset_bottom = 69.0
 grow_horizontal = 2
 mouse_filter = 2
 script = ExtResource("38_ogrj0")
+
+[node name="m_Combo" type="Label" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 545.0
+offset_top = 208.0
+offset_right = 845.0
+offset_bottom = 266.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.6, 0.2, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("20_hud_font")
+theme_override_font_sizes/font_size = 40
+text = "2 连击"
+horizontal_alignment = 1
+vertical_alignment = 1
 m_Health = NodePath("Health")
 m_Name = NodePath("Name")
 

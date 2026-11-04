@@ -17,6 +17,10 @@ namespace GameLogic.Level
     /// </summary>
     public sealed class LevelSystem : AbstractSystem
     {
+        private const double ComboCheckInterval = 20d / 24d; // 官方每20个24fps源帧比较一次连击计数。
+        private double m_ComboCheckElapsed; // 距上次连击检查的游戏秒数。
+        private int m_PreviousComboCount; // 上次检查所见的命中数，相邻检查相同即断连。
+
         /// <summary>
         /// 绑定系统归属；模型由流程先行注册。
         /// </summary>
@@ -97,6 +101,7 @@ namespace GameLogic.Level
             LevelModel.ElapsedSeconds = 0;
             LevelModel.DefeatedEnemyCount = LevelModel.AwardedExperience = 0;
             LevelModel.Result = null;
+            ResetCombo();
             LevelModel.SessionActive = true;
             LevelModel.TravelAvailable.Value = false;
             LevelModel.Sequence.Begin();
@@ -197,7 +202,7 @@ namespace GameLogic.Level
         }
 
         /// <summary>
-        /// 接收有效游戏帧时间；暂停、结局和未开始的会话不累计。
+        /// 接收有效游戏帧时间，推进成绩时钟与连击检查；暂停、结局和未开始的会话不累计。
         /// </summary>
         /// <param name="delta">本帧游戏秒数。</param>
         public void AdvanceTime(double delta)
@@ -206,6 +211,32 @@ namespace GameLogic.Level
                 LevelModel.Outcome.Value == LevelOutcome.Running)
             {
                 LevelModel.ElapsedSeconds += delta;
+                m_ComboCheckElapsed += delta;
+                while (m_ComboCheckElapsed >= ComboCheckInterval)
+                {
+                    m_ComboCheckElapsed -= ComboCheckInterval;
+                    int count = LevelModel.ComboCount.Value;
+                    if (m_PreviousComboCount == count)
+                    {
+                        LevelModel.ComboCount.Value = 0;
+                        m_PreviousComboCount = 0;
+                    }
+                    else
+                    {
+                        m_PreviousComboCount = count;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 接受本关玩家对敌人的一次非闪避命中；按命中目标累计，不读取普攻段号。
+        /// </summary>
+        public void RecordComboHit()
+        {
+            if (IsRunning)
+            {
+                LevelModel.ComboCount.Value++;
             }
         }
 
@@ -278,6 +309,7 @@ namespace GameLogic.Level
                 LevelModel.DefeatedEnemyCount, LevelModel.AwardedExperience);
             LevelModel.EntrySnapshot = null;
             LevelModel.TravelAvailable.Value = false;
+            ResetCombo();
             LevelModel.Outcome.Value = outcome;
         }
 
@@ -297,6 +329,7 @@ namespace GameLogic.Level
             LevelModel.SessionActive = false;
             LevelModel.Sequence?.Stop();
             LevelModel.TravelAvailable.Value = false;
+            ResetCombo();
             if (rollback && abandoned)
             {
                 LevelModel.Outcome.Value = LevelOutcome.Abandoned;
@@ -321,8 +354,19 @@ namespace GameLogic.Level
             LevelModel.SessionActive = false;
             LevelModel.TravelAvailable.Value = false;
             LevelModel.Sequence.Stop();
+            ResetCombo();
             LevelModel.Outcome.Value = LevelOutcome.Transferred;
             return true;
+        }
+
+        /// <summary>
+        /// 新会话、结局和离关同时清除连击计数与检查节拍。
+        /// </summary>
+        private void ResetCombo()
+        {
+            m_ComboCheckElapsed = 0;
+            m_PreviousComboCount = 0;
+            LevelModel.ComboCount.Value = 0;
         }
     }
 }

@@ -15,6 +15,41 @@ namespace GameLogic.Profile.Tests
     public sealed class LevelProgressTests
     {
         /// <summary>
+        /// 连续命中累计；计数连续两次检查未变化时断连，未推进游戏时钟则保持，离关后清零。
+        /// </summary>
+        [Fact]
+        public void Combo_UsesOfficialStablePollAndSessionClock()
+        {
+            var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+            var system = scope.GetSystem<LevelSystem>();
+            const double pollInterval = 20d / 24d;
+
+            system.RecordComboHit();
+            Assert.Equal(0, scope.Level.ComboCount.Value);
+            system.Prepare(1);
+            system.StartSession(1);
+            system.RecordComboHit();
+            system.RecordComboHit();
+            Assert.Equal(2, scope.Level.ComboCount.Value);
+
+            system.AdvanceTime(pollInterval);
+            Assert.Equal(2, scope.Level.ComboCount.Value);
+            // 暂停时关卡帧入口不向系统提供游戏时间，连击计数不会跨过断连检查点。
+            Assert.Equal(2, scope.Level.ComboCount.Value);
+            system.AdvanceTime(pollInterval);
+            Assert.Equal(0, scope.Level.ComboCount.Value);
+
+            system.RecordComboHit();
+            Assert.Equal(1, scope.Level.ComboCount.Value);
+            system.EndSession();
+            Assert.Equal(0, scope.Level.ComboCount.Value);
+            system.Prepare(1);
+            system.StartSession(1);
+            Assert.Equal(0, scope.Level.ComboCount.Value);
+            system.EndSession();
+        }
+
+        /// <summary>
         /// 目标出口只接受当前末段的指定生成点，重复事件及普通关卡不能提前通关。
         /// </summary>
         [Fact]

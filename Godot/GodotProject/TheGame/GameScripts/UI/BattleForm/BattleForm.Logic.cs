@@ -22,8 +22,11 @@ namespace GameLogic.UI
     /// </summary>
     public partial class BattleForm : IController
     {
+        private const double ComboDisplaySeconds = 3.5d; // 官方连击数字每次命中后渐隐的显示时长。
         private BattleFormData m_FormData; // 本次打开的状态源引用，关闭后释放。
         private AbstractEnemyEntity m_Opponent; // 本次观察的守关怪，实体所有权仍归关卡。
+        private LevelModel m_ComboModel; // 本次窗口订阅的关卡命中计数。
+        private double m_ComboElapsed; // 当前连击数字已显示的游戏秒数。
 
         /// <summary>
         /// 由所属流程处理 SettingsRequested；参数为本次窗口编号。
@@ -133,13 +136,15 @@ namespace GameLogic.UI
                 throw new InvalidOperationException("BattleForm 绑定的英雄或关卡已经失效。");
             }
 
-            if (m_Status == null || m_Menu == null || m_Go == null || m_EncounterHealthBar == null || m_MusouActivation == null)
+            if (m_Status == null || m_Menu == null || m_Go == null || m_EncounterHealthBar == null ||
+                m_MusouActivation == null || m_Combo == null)
             {
-                throw new InvalidOperationException("BattleForm 必须绑定状态区、菜单区、Go、守关生命条和无双开启表现。");
+                throw new InvalidOperationException("BattleForm 必须绑定状态区、菜单区、Go、守关生命条、无双提示和连击数字。");
             }
 
             // 先登记本次引用再订阅，部分订阅失败时也能完整退订。
             m_FormData = data;
+            m_ComboModel = levelModel;
             try
             {
                 this.GetModel<HeroModel>().Hp.Register(RefreshResources);
@@ -152,6 +157,7 @@ namespace GameLogic.UI
                 progression.Progress.RegisterWithInitValue(RefreshProgression);
                 this.GetModel<SkillModel>().GetLearnedSkills(progression.ActiveHeroId).RegisterWithInitValue(RefreshSkills);
                 levelModel.TravelAvailable.RegisterWithInitValue(RefreshTravel);
+                levelModel.ComboCount.RegisterWithInitValue(RefreshCombo);
                 data.ViewController.FeaturedOpponentChanged += RefreshEncounter;
                 RefreshAll();
                 Visible = true;
@@ -211,6 +217,7 @@ namespace GameLogic.UI
             if (m_FormData != null)
             {
                 RefreshEncounterHealth();
+                AdvanceComboDisplay(elapseSeconds);
             }
         }
 
@@ -295,6 +302,10 @@ namespace GameLogic.UI
         {
             var data = m_FormData;
             m_FormData = null;
+            var comboModel = m_ComboModel;
+            m_ComboModel = null;
+            comboModel?.ComboCount.UnRegister(RefreshCombo);
+            ResetComboDisplay();
             if (data != null)
             {
                 // 关窗先于模型移除和实体隐藏，直接解除本周期的对应订阅。
@@ -449,6 +460,59 @@ namespace GameLogic.UI
             else
             {
                 m_Go.Stop();
+            }
+        }
+
+        /// <summary>
+        /// 第二次及后续命中时更新数字，并重新开始原版渐隐时长。
+        /// </summary>
+        /// <param name="count">关卡规则累计的有效命中数。</param>
+        private void RefreshCombo(int count)
+        {
+            if (count < 2)
+            {
+                return;
+            }
+
+            m_Combo.Text = $"{count} 连击";
+            m_ComboElapsed = 0;
+            m_Combo.Modulate = Colors.White;
+            m_Combo.Visible = true;
+        }
+
+        /// <summary>
+        /// 按游戏时间推进数字渐隐，暂停时保留当前显示。
+        /// </summary>
+        /// <param name="delta">本次游戏帧秒数。</param>
+        private void AdvanceComboDisplay(float delta)
+        {
+            if (!m_Combo.Visible || GF.Base.IsGamePaused)
+            {
+                return;
+            }
+
+            m_ComboElapsed += delta;
+            if (m_ComboElapsed >= ComboDisplaySeconds)
+            {
+                ResetComboDisplay();
+                return;
+            }
+
+            float alpha = 1f - (float)(m_ComboElapsed / ComboDisplaySeconds);
+            m_Combo.Modulate = new Color(1f, 1f, 1f, alpha);
+        }
+
+        /// <summary>
+        /// 关闭或回池时清理旧数字和渐隐状态。
+        /// </summary>
+        private void ResetComboDisplay()
+        {
+            m_ComboElapsed = 0;
+            if (IsInstanceValid(m_Combo))
+            {
+                m_Combo.Text = string.Empty;
+                m_Combo.Modulate = Colors.White;
+                m_Combo.Visible = false;
             }
         }
     }

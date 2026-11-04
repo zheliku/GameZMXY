@@ -132,5 +132,6 @@ autowrap_mode = 3
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.6, 0.2, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 0
 vertical_alignment = 1

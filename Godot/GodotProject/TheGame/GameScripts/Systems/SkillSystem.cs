@@ -72,21 +72,19 @@ namespace GameLogic.Skills
         }
 
         /// <summary>
-        /// 一次性学习当前英雄的主动技能；重复学习、未实现角色和余额不足都不扣费。
+        /// 一次性学习当前英雄的主动技能；重复学习、其他角色和余额不足都不扣费。
         /// </summary>
         /// <param name="skillId">主动技能定义。</param>
         /// <returns>学习结果，界面据此展示反馈。</returns>
         public SkillLearnResult Learn(SkillId skillId)
         {
-            var tables = this.GetModel<ConfigurationModel>().Tables;
-            var definition = tables.TbSkillConfig.GetOrDefault(skillId);
-            var profile = this.GetModel<ProfileModel>();
-            if (definition == null || (int)definition.Hero != profile.ActiveHeroId ||
-                !IsAvailable(skillId))
+            if (!IsLearnable(skillId))
             {
                 return SkillLearnResult.Unavailable;
             }
 
+            var definition = this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(skillId);
+            var profile = this.GetModel<ProfileModel>();
             var learned = this.GetModel<SkillModel>().GetLearnedSkills(profile.ActiveHeroId);
             if (learned.Contains(skillId))
             {
@@ -114,7 +112,18 @@ namespace GameLogic.Skills
         }
 
         /// <summary>
-        /// 查询当前英雄与技能组是否支持此技能。
+        /// 查询当前出战英雄的配置目录是否允许购买该技能，不要求战斗实体已登记状态。
+        /// </summary>
+        /// <param name="id">技能编号。</param>
+        /// <returns>当前英雄的技能配置存在时为真。</returns>
+        public bool IsLearnable(SkillId id)
+        {
+            var definition = this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.GetOrDefault(id);
+            return definition != null && (int)definition.Hero == this.GetModel<ProfileModel>().ActiveHeroId;
+        }
+
+        /// <summary>
+        /// 查询当前战斗英雄实体是否已登记此技能状态。
         /// </summary>
         /// <param name="id">技能编号。</param>
         /// <returns>当前可用时为真。</returns>

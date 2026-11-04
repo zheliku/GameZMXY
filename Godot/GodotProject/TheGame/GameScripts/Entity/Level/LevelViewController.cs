@@ -13,6 +13,8 @@ using GameLogic.Heroes.Body;
 using GameLogic.FloatingText;
 using GameLogic.Profile;
 using GameLogic.Equipment;
+using GameLogic.Event.Combat;
+using GameFramework.Event;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
@@ -207,6 +209,7 @@ namespace GameLogic.Level
             this.GetModel<ProfileModel>().Slots.Register(OnEquipmentChanged);
             LevelModel.Outcome.Register(OnSessionEnded);
             m_SessionActive = true;
+            GF.Event.Subscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
             StartEntrance();
             m_Spawner.StartSession(entities, m_Camera, cancellationToken);
             m_FloatingText.StartSession(OwnsActor);
@@ -234,6 +237,11 @@ namespace GameLogic.Level
         /// </summary>
         public void Cleanup()
         {
+            if (m_SessionActive)
+            {
+                GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
+            }
+
             m_FloatingText?.StopSession();
             StopEntrance();
             UnsubscribeProgressEvents();
@@ -283,6 +291,23 @@ namespace GameLogic.Level
         private bool OwnsActor(int entityId)
         {
             return m_Player?.Id == entityId || m_Spawner.OwnsEntity(entityId);
+        }
+
+        /// <summary>
+        /// 只把当前玩家对本关敌人的有效命中交给连击规则；闪避和无攻击实体的持续扣血不累计。
+        /// </summary>
+        /// <param name="sender">本次伤害通知的发送者，不保存。</param>
+        /// <param name="args">只在分发期间读取的池化伤害结果。</param>
+        private void OnDamageDealt(object sender, GameEventArgs args)
+        {
+            if (!m_SessionActive || args is not DamageDealtEventArgs damage ||
+                damage.AttackerEntityId != m_Player?.Id || damage.TargetIsHero || damage.Result.IsMiss ||
+                !m_Spawner.OwnsEntity(damage.TargetEntityId))
+            {
+                return;
+            }
+
+            this.GetSystem<LevelSystem>().RecordComboHit();
         }
 
         /// <summary>

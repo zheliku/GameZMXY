@@ -4,6 +4,8 @@ using GameLogic.Architecture;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 using GameLogic.Equipment;
 using GameLogic.Profile;
+using GameLogic.Skills;
+using GameConfig.Skills;
 using GameLogic.Input;
 using GameLogic.Procedure.FlowData;
 using GameLogic.Save.Slots;
@@ -295,6 +297,7 @@ public sealed partial class FrontendSmokeScenario
                 await CheckCoastalMapAsync(map);
                 return;
             }
+            await CheckMapSkillPurchaseAsync(map, flow);
             TextureButton location = map.GetNode<TextureButton>("m_Huaguoshan");
             Check(location.TextureNormal.ResourcePath.EndsWith("map_huaguoshan_normal.png", StringComparison.Ordinal), "花果山未使用原项目地点图片");
             Check(location is MapLocationButton, "花果山未使用随显示图像变化的命中控件");
@@ -390,6 +393,9 @@ public sealed partial class FrontendSmokeScenario
                 ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) &&
                 !ReferenceEquals(firstEquipmentSystem, flow.GetSystem<EquipmentSystem>()), "重新读档复用了已结束的作用域");
             Check(flow.GetModel<ProfileModel>().Soul.Value == savedSoul, "重新读档没有从快照重建运行时状态");
+            Check(flow.GetSystem<SkillSystem>().IsLearned(SkillId.RisingDragon) &&
+                flow.GetModel<SkillModel>().GetPassiveLevels(1)[PassiveId.Vitality] == 1,
+                "地图购买的主动技能或被动等级没有从磁盘恢复");
             GF.Fsm.GetModel<SaveModel>().ManualSave.Value = new(savedMapSerialId, SaveWritePhase.Succeeded);
             await MoveMouseAsync(new Vector2(30, 30));
             Check(string.IsNullOrEmpty(map.GetNode<BaseButton>("m_Save").TooltipText), "保存按钮仍有多余悬停提示");
@@ -409,12 +415,25 @@ public sealed partial class FrontendSmokeScenario
             var heroSystem = flow.GetSystem<HeroSystem>();
             Check(heroModel.Initialized && ReferenceEquals(heroModel, SmokeInspection.HeroAttributes(hero)),
                 "英雄 Entity 没有借用 Architecture 注册的同一运行属性");
+            Check(flow.GetSystem<SkillSystem>().IsAvailable(SkillId.RisingDragon) &&
+                heroModel.MaxHp.Value > ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.MaxHp,
+                "地图学习的主动技能或被动属性未在进关后生效");
             Check(SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().Progress, heroSystem) == 1 &&
                 SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().Slots, heroSystem) == 1,
                 "英雄属性系统没有唯一订阅成长和穿戴来源");
             var levelSystem = flow.GetSystem<LevelSystem>();
             Check(ReferenceEquals(flow.GetArchitecture(), ((IBelongToArchitecture)level).GetArchitecture()),
                 "关卡没有借用流程持有的档案作用域");
+            // 此处从已有规则入口准备HUD状态；真实攻击到命中事件的计数由英雄烟测覆盖。
+            await WaitUntilAsync(() => levelModel.SessionActive && levelModel.Outcome.Value == LevelOutcome.Running,
+                "关卡会话尚未进入运行态，无法验证连击HUD");
+            levelSystem.RecordComboHit();
+            levelSystem.RecordComboHit();
+            await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+            var combo = battleForm.GetNode<Label>("m_Combo");
+            Check(levelModel.ComboCount.Value == 2 && combo.Visible && combo.Text == "2 连击",
+                "连击规则没有同步到战斗HUD");
+            await CaptureAsync("frontend_combo");
             Check(!GF.Debugger.ActiveWindow, "框架调试按钮遮挡头像");
             await CheckMusicAsync("huaguoshan_theme.mp3");
             await CaptureAsync("frontend_battle");
@@ -427,6 +446,8 @@ public sealed partial class FrontendSmokeScenario
             await ClickAsync(battleForm, "MenuPanel/m_SettingsButton");
             var settings = await WaitForAsync<SettingsForm>();
             Check(GF.Base.IsGamePaused, "战斗设置未暂停");
+            int pausedComboCount = levelModel.ComboCount.Value;
+            double pausedComboElapsed = SmokeInspection.ReadField<double>(battleForm, "m_ComboElapsed");
             Check(ReferenceEquals(settings, titleSettings), "设置未复用已经关闭的 GGF 池实例");
             Check(SmokeInspection.CallbackCount(settings, "MapRequested") == 1 &&
                 SmokeInspection.CallbackCount(settings, "TitleRequested") == 1,
@@ -453,12 +474,22 @@ public sealed partial class FrontendSmokeScenario
 
             Input.ActionRelease(GameLogic.Input.InputSystem.MoveRight);
             Check(hero.Position.IsEqualApprox(pausedPosition), "设置暂停时英雄仍在移动");
+            // 暂停后的同帧旧delta也不能推进规则或HUD渐隐。
+            level._Process(2);
+            battleForm.OnUpdate(2, 2);
+            Check(pausedComboCount == 2 && levelModel.ComboCount.Value == pausedComboCount &&
+                SmokeInspection.ReadField<double>(battleForm, "m_ComboElapsed") == pausedComboElapsed && combo.Visible,
+                "设置暂停期间连击计数或HUD渐隐继续推进");
             await ClickAsync(settings, "Scroll/Content/Options/m_Continue");
             Check(!GF.Base.IsGamePaused && battleForm.Visible &&
                 SmokeInspection.CountBindingHandlers(levelModel.Outcome, settings) == 0 &&
                 SmokeInspection.CallbackCount(settings, "MapRequested") == 0 &&
                 SmokeInspection.CallbackCount(settings, "TitleRequested") == 0,
                 "继续游戏未恢复战斗或设置仍订阅关卡");
+            await WaitUntilAsync(() => levelModel.ComboCount.Value == 0, "恢复后连击没有按超时规则断连清零");
+            levelSystem.RecordComboHit();
+            Check(levelModel.ComboCount.Value == 1, "断连后的首次命中仍接续旧计数");
+            levelSystem.RecordComboHit();
             await ClickAsync(battleForm, "MenuPanel/m_SettingsButton");
             settings = await WaitForAsync<SettingsForm>();
             await ClickAsync(settings, "Scroll/Content/Options/Navigation/m_ReturnMap");
@@ -468,6 +499,10 @@ public sealed partial class FrontendSmokeScenario
             Check(ReferenceEquals(reloadedPlayerModel, flow.GetModel<ProfileModel>()) &&
                 !levelModel.SessionActive && !levelSystem.Initialized && !levelModel.Initialized, "返回地图未保留档案或未解除关卡借用");
             Check(SmokeInspection.ReadField<BattleFormData>(battleForm, "m_FormData") == null, "HUD 关闭后仍观察旧关卡");
+            Check(levelModel.ComboCount.Value == 0 && !combo.Visible && string.IsNullOrEmpty(combo.Text) &&
+                SmokeInspection.CountBindingHandlers(levelModel.ComboCount, battleForm) == 0,
+                "离关没有清空连击、HUD数字或旧计数订阅");
+            GD.Print("SMOKE-COMBO-LIFECYCLE PASS: HUD sync, paused stale delta, resumed timeout, new chain and exit cleanup.");
             Check(!GF.Base.IsGamePaused, "返回地图后仍处于暂停");
             Check(!heroModel.Initialized && flow.GetModel<HeroModel>() == null &&
                 !heroSystem.Initialized && flow.GetSystem<HeroSystem>() == null &&
@@ -487,6 +522,8 @@ public sealed partial class FrontendSmokeScenario
             await ClickAsync(map, "m_Huaguoshan");
             battleForm = await WaitForAsync<BattleForm>();
             Check(Find<AbstractHeroEntity>().Count(x => x.IsShown) == 1, "重入生成了重复英雄");
+            Check(flow.GetModel<LevelModel>().ComboCount.Value == 0 && !battleForm.GetNode<Label>("m_Combo").Visible,
+                "重新进关沿用了旧连击或HUD数字");
             Check(flow.GetModel<HeroModel>().Initialized && !ReferenceEquals(heroModel, flow.GetModel<HeroModel>()),
                 "新关卡沿用了已结束的英雄运行模型");
             var previousInventory = flow.GetModel<ProfileModel>();
@@ -977,6 +1014,60 @@ public sealed partial class FrontendSmokeScenario
         await CaptureAsync("character_form");
         await MoveMouseAsync(new Vector2(-5, -5));
         Check(!marker.Visible, "离开角色后 1P 仍显示");
+    }
+
+    /// <summary>
+    /// 在没有战斗作用域的地图中通过真实控件学习主动和被动技能，再检查窗口复用与状态同步。
+    /// </summary>
+    /// <param name="map">本次地图窗口。</param>
+    /// <param name="flow">持有档案和技能的主流程作用域。</param>
+    /// <returns>地图学技交互检查任务；后续主流程继续验证磁盘重载和进关生效。</returns>
+    private async Task CheckMapSkillPurchaseAsync(MapForm map, ProcedureOwner flow)
+    {
+        var tables = ConfigSystem.Instance.Tables;
+        var skillSystem = flow.GetSystem<SkillSystem>();
+        var profile = flow.GetModel<ProfileModel>();
+        var skills = flow.GetModel<SkillModel>();
+        int activeCost = tables.TbSkillConfig.Get(SkillId.RisingDragon).LearnSoul;
+        int passiveCost = tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
+        flow.GetSystem<ProfileSystem>().AddSoul(activeCost + passiveCost);
+        int initialSoul = profile.Soul.Value;
+        Check(flow.GetModel<HeroModel>() == null && flow.GetModel<LevelModel>() == null &&
+            !Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "地图学技前已创建战斗英雄或关卡");
+
+        await ClickAsync(map, "m_Skills");
+        var form = await WaitForAsync<SkillForm>();
+        Check(GF.Procedure.CurrentProcedure is ProcedureMap && !GF.Base.IsGamePaused &&
+            flow.GetModel<HeroModel>() == null && flow.GetModel<LevelModel>() == null,
+            "地图技能窗改变流程、暂停或创建了战斗模型");
+        await CaptureAsync("map_skill_active");
+        await ClickAsync(form, "Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon");
+        Check(skillSystem.IsLearned(SkillId.RisingDragon) && profile.Soul.Value == initialSoul - activeCost &&
+            form.GetNode<BaseButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon").Disabled &&
+            form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.Soul.Value.ToString(),
+            "地图主动购买未同步学习、扣费、图标或余额");
+
+        await ClickAsync(form, "Content/Footer/m_Passive");
+        await ClickAsync(form, "Content/m_PassivePage/m_PassiveRows/Passive1/Upgrade");
+        Check(skills.GetPassiveLevels(1)[PassiveId.Vitality] == 1 &&
+            profile.Soul.Value == initialSoul - activeCost - passiveCost &&
+            form.GetNode<Label>("Content/m_PassivePage/m_PassiveRows/Passive1/Level").Text == "1" &&
+            form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.Soul.Value.ToString(),
+            "地图被动购买未同步等级、扣费或余额");
+        await CaptureAsync("map_skill_passive");
+        int firstSerial = form.SerialId;
+        await ClickAsync(form, "Content/Header/m_Back");
+        Check(!GF.UI.HasUIForm(firstSerial) && !GF.Base.IsGamePaused && map.Visible,
+            "地图技能窗关闭后仍保留交互、暂停或遮挡地图");
+        await ClickAsync(map, "m_Skills");
+        form = await WaitForAsync<SkillForm>();
+        Check(form.GetNode<BaseButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon").Disabled &&
+            form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.Soul.Value.ToString(),
+            "重开地图技能窗未显示已购买状态");
+        await ClickAsync(form, "Content/Header/m_Back");
+        Check(flow.GetModel<HeroModel>() == null && flow.GetModel<LevelModel>() == null &&
+            !Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "地图购买技能创建了战斗实体或模型");
+        GD.Print("SMOKE-MAP-SKILLS PASS: native map entry, active/passive purchase, wallet refresh, reopen and no battle scope.");
     }
 
     /// <summary>

@@ -25,6 +25,7 @@ public sealed class ProcedureMap : ProcedureBase
 {
     private int m_FormSerialId; // 本周期窗口，含在途加载请求。
     private int m_SettingsSerialId; // 当前地图拥有的设置窗口，包括在途请求。
+    private int m_SkillSerialId; // 当前地图拥有的技能窗口，包括在途请求。
     private int m_MusicSerialId; // 本周期 GGF 音乐请求。
     private ProcedureOwner m_Owner; // 仅当前流程周期借用主 FSM。
     private CancellationTokenSource m_Cancellation; // 离开时使旧异步结果失效。
@@ -68,6 +69,11 @@ public sealed class ProcedureMap : ProcedureBase
             GF.UI.CloseUIForm(m_SettingsSerialId);
         }
 
+        if (m_SkillSerialId != 0 && (GF.UI.HasUIForm(m_SkillSerialId) || GF.UI.IsLoadingUIForm(m_SkillSerialId)))
+        {
+            GF.UI.CloseUIForm(m_SkillSerialId);
+        }
+
         if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
         {
             GF.UI.CloseUIForm(m_FormSerialId);
@@ -77,7 +83,7 @@ public sealed class ProcedureMap : ProcedureBase
         {
             GF.Sound.StopSound(m_MusicSerialId, isShutdown ? 0f : 0.2f);
         }
-        m_SettingsSerialId = m_FormSerialId = m_MusicSerialId = 0;
+        m_SkillSerialId = m_SettingsSerialId = m_FormSerialId = m_MusicSerialId = 0;
         m_Owner = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
@@ -178,6 +184,25 @@ public sealed class ProcedureMap : ProcedureBase
     }
 
     /// <summary>
+    /// 地图复用现有技能窗；已打开或加载中的窗口不重复提交。
+    /// </summary>
+    /// <param name="formSerialId">发起操作的地图窗口编号。</param>
+    private void OnSkillsRequested(int formSerialId)
+    {
+        if (formSerialId != m_FormSerialId || m_IsReturningToTitle)
+        {
+            return;
+        }
+
+        if (m_SkillSerialId != 0 && (GF.UI.HasUIForm(m_SkillSerialId) || GF.UI.IsLoadingUIForm(m_SkillSerialId)))
+        {
+            return;
+        }
+
+        m_SkillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm);
+    }
+
+    /// <summary>
     /// 本周期界面可见后关闭加载页。
     /// </summary>
     /// <param name="sender">事件发送者。</param>
@@ -204,7 +229,8 @@ public sealed class ProcedureMap : ProcedureBase
     /// <param name="args">只在本次分发内读取的池化参数。</param>
     private void OnFormFailed(object sender, GameEventArgs args)
     {
-        if (args is OpenUIFormFailureEventArgs failure && (failure.SerialId == m_FormSerialId || failure.SerialId == m_SettingsSerialId))
+        if (args is OpenUIFormFailureEventArgs failure &&
+            (failure.SerialId == m_FormSerialId || failure.SerialId == m_SettingsSerialId || failure.SerialId == m_SkillSerialId))
         {
             Log.Error("[ProcedureMap] 界面加载失败：{0}", failure.ErrorMessage);
         }
@@ -235,6 +261,12 @@ public sealed class ProcedureMap : ProcedureBase
                 if (bind)
                 {
                     mapForm.SettingsRequested += OnSettingsRequested;
+                }
+
+                mapForm.SkillsRequested -= OnSkillsRequested;
+                if (bind)
+                {
+                    mapForm.SkillsRequested += OnSkillsRequested;
                 }
 
                 mapForm.SaveRequested -= OnSaveRequested;
