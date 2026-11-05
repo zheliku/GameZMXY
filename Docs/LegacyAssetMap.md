@@ -2,9 +2,27 @@
 
 旧项目 `P:/Godot-Project/ZMXY_BHYH` 只读。下表旧路径相对旧工程，新路径相对 `Godot/GodotProject/TheGame/`；PNG/音频/字体原样复制，不迁入旧脚本或 `.import`。官方包、散列与玩法依据见 [OfficialReference](OfficialReference.md)。
 
+## 唐僧官方声音（2026-11-05）
+
+复用`Tools/LegacyMigration/export_official_skill_audio.py --hero tangseng`，校验既有Music.swf固定版本后由FFDec导出原始MP3载荷。正式目录为`Audios/SFX/tangseng/`，五技能放在`skills/`。SymbolClass映射：23→tangseng_attack、24→skills/tangseng_ice_dragon、25→skills/tangseng_dark_ice、20→skills/tangseng_water_clone、22→skills/tangseng_heavenly_dew、5→skills/tangseng_water_demon、4→tangseng_hit_impact、27→tangseng_hurt。全部无循环、无重编码，资源表LegacyId保留official.Music符号名。
+
+Role2普通起手、满蓄/未满蓄、分身换位、甘露本体/分身双起手及水魔追加声音按TangsengImplementationStudy登记。Role2Shadow玄冰不自行发声；本版本无独立Role2死亡音。8段真实GGF播放及实际输入链已验证，精确命令、音频源散列基线和退出诊断见Validation/OfficialReference。
+
+## 官方地图技能入口与连击图元（2026-11-03）
+
+`Tools/LegacyMigration/export_official_map_combo_ui.py`校验OtherMat_v9恢复后散列，通过FFDec原生固定舞台渲染，保留原始矩阵、滤镜及注册点。外层三态选择器停帧不停止内部动画：idle为1帧，hover的488/487为15帧循环，available的491为19帧发光循环，均24fps。没有重画图案或用字体替代官方字图。
+
+| 正式资源 | 官方身份及注册 |
+| --- | --- |
+| `Sprites/UI/frontend/map_skills{.png,_frames.tres}` | SelectPLace505的showBuySkill492，三个状态原显示列表；统一256×160透明格，原点(128,80)，地图根坐标(81.8,103.95) |
+| `Sprites/UI/hud/combo_caption.png` | Batter567/shape566；224×80画布，注册原点(16,16)，节点逆偏移保留原图坐标 |
+| `Sprites/UI/hud/combo_digits{.png,_frames.tres}` | num0..9=564/560/556/552/548/544/539/535/531/527，每数字5帧一次播放后保持末帧；统一320×320格、原点(160,160) |
+
+`UIs/Battle/combo_hud.tscn`位于官方(694.95,234.95)，数字步长50。Batter的起点Number经ANumber的int参数截断，运行时一/二/三位分别为x=4/−44/−95，y=28。原SWF、XML和导出清单只保留在忽略的验证目录；可重跑命令及实机证据见Validation。
+
 ## 造一英雄受击闪光（2026-10-31）
 
-官方Role_v7（散列见OfficialReference）的HeroBeHurt/sprite9共8源帧、24fps。经既有`export_official_combat_effects.py --group hero_hurt`原生导出到`Sprites/Effects/hero_hurt/`，PNG原样保留；SpriteFrames单次播放，实体结束/回池隐藏。FFDec共用画布100×122，源全范围x=-48.1..51.55、y=-60.95..60.95，精灵offset=(1.9,0.05)，节点放在colipse原点(0.4,-0.05)，不按帧居中。身体/武器图集、伤害几何与动作库不重导。此动画在悟空无双霸体受击时也要播放。
+官方Role_v7（散列见OfficialReference）的HeroBeHurt/sprite9共8源帧、24fps。经既有`export_official_combat_effects.py --group hero_hurt --hero wukong|tangseng`导出到`Sprites/Effects/hero_hurt/{wukong,tangseng}/`；悟空保留原PNG，唐僧按BaseHero.addBeAttackEffect的`my.ColorMatrix.adjustColor(0,0,0,160)`矩阵调整RGB，alpha与注册点不变。SpriteFrames单次播放，实体结束/回池隐藏。FFDec共用画布100×122，源全范围x=-48.1..51.55、y=-60.95..60.95，精灵offset=(1.9,0.05)，节点放在colipse原点(0.4,-0.05)，不按帧居中。身体/武器图集、伤害几何与动作库不重导。此动画在悟空无双霸体受击时也要播放；唐僧无双仍保留官方受击硬直。
 
 设置滑条抓手是本项目新建的10×18白色/橙色SVG，非官方提取图；使用现有笔刷面板、字体与菜单交互色。样式和Theme位于MainPack/Themes，最终应用状态见Validation。
 
@@ -337,7 +355,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | `Sprites/Effects/loot/musou_01..19.png` | Monster_v1 sprite 5，黄球 | 同上 |
 | `Sprites/Effects/loot/soul_*.png` | Monster_v1 sprite 9，紫球 | 同上 |
 | `Sprites/Effects/loot/mana_*.png` | Monster_v1 sprite 7，蓝球 | 同上 |
-| `Sprites/UI/hud/musou_activation/` | Role_v7 WsEffect 59：背景 52、悟空 55 | `export_official_musou_activation.py` |
+| `Sprites/UI/hud/musou_activation/{wukong,tangseng,shared}/` | Role_v7 WsEffect 59：背景52、悟空55、唐僧58；按BaseHero.doWsEffect隐藏另一角色，共用24帧时钟 | `export_official_musou_activation.py --hero wukong|tangseng` |
 
 升级动画保留原始 PNG；后半段位图外的蓝色标记会被 FFDec 边缘采样带入，导出器通过 `AtlasTexture.region` 裁掉这一行，并用 `margin` 补回透明留白、启用 `filter_clip`。28 帧仍为 122×136，播放位置和时长不变；只重导升级动画可加 `--group level_up`。
 
@@ -389,7 +407,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | `Art/BackPack/sz.png` | `Sprites/UI/inventory/inventory_slot_costume.png` |
 | `Art/BackPack/tx.png` | `Sprites/UI/inventory/inventory_slot_title.png` |
 
-`UIs/Inventory/hero_preview.tscn` 与战斗实体共用下述官方身体、武器图集及 `wukong_appearance.tres`。外置 `inventory_preview_animation.tres` 使用原版完整待机 100 帧（24 fps，约 4.167 秒循环）；金光取旧背包 BackPackLight 的第 3..8 格（192×192，15 fps，竖直翻转）。动画只改变显示帧，不带攻击或碰撞轨道。
+`UIs/Inventory/hero_preview.tscn` 每次打开借用当前战斗英雄的 `HeroAppearanceResource`，共用该英雄的身体、武器与PreviewAnimations。悟空外置 `Entitys/Animations/Heroes/Wukong/wukong_preview_library.tres` 使用官方完整待机100帧，唐僧对应 `Heroes/Tangseng/tangseng_preview_library.tres` 使用自己的91帧及身体/武器独立映射；均24fps。金光取旧背包BackPackLight的第3..8格（192×192，15fps，竖直翻转），两角色共用。动画只改变显示，不带攻击或碰撞轨道。
 
 ## 装备与地面恢复品
 
@@ -481,6 +499,19 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | sprite 624/629/634/639/644 | 五项唐僧 `skill_*_unlearned/learned.png` | 同上；629 对应玄冰阵 |
 
 原点取 `BuySkill`、`SkillControl` 和子元件矩阵：角色页签 `(89.35,6.85)` / `(228.35,5.85)`、返回 `(854,15.05)`、表格左上 `(100,85)`。十行主动与五行被动直接位于技能主场景，以 GridContainer 对齐，不使用行子场景；唐僧长说明在行内 MarginContainer + Label 控制留白和换行。预填文本和图标仅供编辑预览，运行时读取正式技能表覆盖。悟空主动学习和共用被动购买已接入Command/System；被动满级按原版隐藏升级按钮。
+
+## 唐僧技能效果视觉复核（2026-11-04）
+
+源为同版Role_v7，导出入口`Tools/LegacyMigration/export_official_tangseng_effects.py`。正式效果为`Sprites/Effects/tangseng/`下的紧凑PNG与SpriteFrames，源原点和动画仍由角色目录的原生场景/AnimationLibrary保存。
+
+| 正式资源 | 官方符号与保留内容 |
+| --- | --- |
+| `tangseng_dark_ice_atlas.png` | 604/Role2Bullet3共46帧；593子冰柱按真实出生帧烘焙并在30帧stop。按用户2026-11-05要求排除第5–11帧595/597/599/601/603蓝色过渡形状；冰柱与滤镜保留。紧凑图集以margin恢复原画布。 |
+| `tangseng_cure_role_atlas.png` | 703外层的702内轴34帧，父偏移(-4.5,-24.5)、blendMode8对应原生加法材质。颜色强度转入alpha，黑底透明化；fix_alpha_border=false，深浅背景实渲染相对源帧最大差1/255。起手播放，末帧治疗。 |
+| `tangseng_water_demon_ball_atlas.png` | 身体965中的951/roundMc共20帧，保留父级Glow/Blur与0.18756纵缩放；位置与帧序由身体原生轨道驱动，素材源注册offset=(-0.85,-11.3)。正式Sprite叠加hit4/body父矩阵(12.45,-8.05)，抵消EffectRoot的y=-28后offset=(11.6,8.65)。margin恢复原196×83画布。 |
+| `tangseng_water_demon_fall_atlas.png` | 657/hit4FallDown共25帧，保持(-3.45,117.4)栅格注册；裁切存储并共享空白帧，margin恢复原267×432画布，末帧时长不变；二次输入在当前球位置上方300px创建独立效果。 |
+
+之前误用的580/Role2Bullet4光柱无官方showSkillL调用，已撤出正式池、场景、动画与素材。旧逐帧PNG目录及静态甘露占位均已清除，原始导出留在忽略的验证目录。命令和真实技能截图验证见Validation。
 
 ## 悟空造一技能动作与声音
 

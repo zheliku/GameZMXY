@@ -47,8 +47,10 @@ PLAYABLE_WARDROBE_AUDITS = {
              "validate_wukong_wardrobe_motion.gd",
              "validate_official_wukong_attacks.gd",
              "--equipment-only"),
+    "唐僧": ("audit_official_tangseng_wardrobe.py",
+             "validate_tangseng_wardrobe_motion.gd",
+             "--tangseng-equipment-only"),
 }
-NONPLAYABLE_EQUIPMENT_OWNERS = {"唐僧"}
 
 CHECKLIST = (
     "official_source_and_dependency_inventory",
@@ -295,7 +297,7 @@ def _playable_wardrobe_audit(required_ids, actors, equipment):
             wearables.append({"legacy_id": legacy, "equipment_id": item["id"],
                               "name": item.get("name"), "owner": owner,
                               "slot": item["slot"]})
-        elif owner not in NONPLAYABLE_EQUIPMENT_OWNERS:
+        else:
             errors.append(f"No playable wardrobe audit is registered for equipment owner {owner!r}: {legacy}")
     return {"required_equipment": wearables,
             "required_owners": sorted({item["owner"] for item in wearables}),

@@ -47,7 +47,7 @@ namespace GameLogic.Profile.Tests
             var otherScope = new TestGameScope(1, [(1, 0)], 0, 25);
             var system = scope.GetSystem<HeroStatusSystem>();
             var otherSystem = otherScope.GetSystem<HeroStatusSystem>();
-            var poison = TestTables.Tables.TbAttackConfig.Get(11004);
+            var poison = TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2));
 
             // 冻结限制动作但不停止中毒的游戏时钟，各作用域独立推进。
             system.ApplyFreeze(2);

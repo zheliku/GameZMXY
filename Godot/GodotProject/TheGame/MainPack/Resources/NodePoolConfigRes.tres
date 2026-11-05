@@ -3,6 +3,26 @@
 [ext_resource type="Script" uid="uid://yiewfnn1gx67" path="res://TheGame/MainPack/Scripts/Resources/Pooling/NodePoolConfig.cs" id="1_8jdg"]
 [ext_resource type="Script" uid="uid://cyfjle46grtw4" path="res://TheGame/MainPack/Scripts/Resources/Pooling/PoolEntry.cs" id="1_j1vs4"]
 
+[sub_resource type="Resource" id="Resource_tangseng_normal_bolt"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Heroes/Tangseng/tangseng_normal_bolt_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_tangseng_ice_dragon_bolt"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Heroes/Tangseng/tangseng_ice_dragon_bolt_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_tangseng_dark_ice"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Heroes/Tangseng/tangseng_dark_ice_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_tangseng_cure_role"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Heroes/Tangseng/tangseng_cure_role_effect.tscn"
+
+[sub_resource type="Resource" id="Resource_tangseng_water_demon_fall"]
+script = ExtResource("1_j1vs4")
+Scene = "res://TheGame/Entitys/Heroes/Tangseng/tangseng_water_demon_fall_effect.tscn"
+
 [sub_resource type="Resource" id="Resource_lqe6w"]
 script = ExtResource("1_j1vs4")
 Scene = "res://TheGame/Entitys/Drops/ground_item.tscn"
@@ -97,7 +117,7 @@ Scene = "res://TheGame/Entitys/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon
 
 [resource]
 script = ExtResource("1_8jdg")
-Entries = Array[ExtResource("1_j1vs4")]([SubResource("Resource_lqe6w"), SubResource("Resource_kq84q"), SubResource("Resource_3vwbs"), SubResource("Resource_e1wg2"), SubResource("Resource_b654q"), SubResource("Resource_xn77p"), SubResource("Resource_aiojc"), SubResource("Resource_72mqi"), SubResource("Resource_f0hw8"), SubResource("Resource_jh0q2"), SubResource("Resource_h6vnx"), SubResource("Resource_h4sb3"), SubResource("Resource_58aov"), SubResource("Resource_o8u2q"), SubResource("Resource_jfhug"), SubResource("Resource_sgbnv"), SubResource("Resource_da8bg"), SubResource("Resource_ugyu0"), SubResource("Resource_vu7nd"), SubResource("Resource_3xy6a"), SubResource("Resource_cwny0"), SubResource("Resource_387mn"), SubResource("Resource_avcub")])
+Entries = Array[ExtResource("1_j1vs4")]([SubResource("Resource_lqe6w"), SubResource("Resource_kq84q"), SubResource("Resource_3vwbs"), SubResource("Resource_e1wg2"), SubResource("Resource_b654q"), SubResource("Resource_xn77p"), SubResource("Resource_aiojc"), SubResource("Resource_72mqi"), SubResource("Resource_f0hw8"), SubResource("Resource_jh0q2"), SubResource("Resource_h6vnx"), SubResource("Resource_h4sb3"), SubResource("Resource_58aov"), SubResource("Resource_o8u2q"), SubResource("Resource_jfhug"), SubResource("Resource_sgbnv"), SubResource("Resource_da8bg"), SubResource("Resource_ugyu0"), SubResource("Resource_vu7nd"), SubResource("Resource_3xy6a"), SubResource("Resource_cwny0"), SubResource("Resource_387mn"), SubResource("Resource_avcub"), SubResource("Resource_tangseng_normal_bolt"), SubResource("Resource_tangseng_ice_dragon_bolt"), SubResource("Resource_tangseng_dark_ice"), SubResource("Resource_tangseng_cure_role"), SubResource("Resource_tangseng_water_demon_fall")])
 DefaultExpireTime = 300.0
 DefaultAutoReleaseInterval = 300.0
 metadata/_custom_type_script = "uid://yiewfnn1gx67"

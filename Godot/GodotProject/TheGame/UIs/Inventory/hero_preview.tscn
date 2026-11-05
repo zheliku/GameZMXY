@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://dc18lorsjswmc"]
 
-[ext_resource type="AnimationLibrary" uid="uid://ck0jpy5t7x5uk" path="res://TheGame/Sprites/UI/inventory/inventory_preview_animation.tres" id="animation"]
-[ext_resource type="Resource" uid="uid://xk36fcf4y640" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_appearance.tres" id="appearance"]
+[ext_resource type="AnimationLibrary" uid="uid://ck0jpy5t7x5uk" path="res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_preview_library.tres" id="animation"]
 [ext_resource type="Texture2D" uid="uid://cvhrf247evpd6" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_bare.png" id="body"]
 [ext_resource type="Texture2D" uid="uid://dqjvrx02l5bte" path="res://TheGame/Sprites/UI/inventory/inventory_preview_light.png" id="light"]
 [ext_resource type="Script" uid="uid://b7c4mucar2g2x" path="res://TheGame/GameScripts/UI/InventoryForm/Components/HeroPreviewNode.cs" id="script"]
@@ -12,7 +11,6 @@ script = ExtResource("script")
 m_Player = NodePath("AnimationPlayer")
 m_Body = NodePath("Body")
 m_Weapon = NodePath("Weapon")
-m_Appearance = ExtResource("appearance")
 
 [node name="Aura" type="Sprite2D" parent="." unique_id=53255081]
 position = Vector2(1.9999999, 13)

@@ -137,7 +137,8 @@ namespace GameLogic.Profile.Tests
         /// <inheritdoc />
         public TUtility GetUtility<TUtility>() where TUtility : class, IUtility
         {
-            return (typeof(TUtility) == typeof(ExperienceCurveUtility) ? (IUtility)TestTables.Curve : m_Save) as TUtility;
+            return (typeof(TUtility) == typeof(ExperienceCurveUtility) ? (IUtility)TestTables.Curve :
+                typeof(TUtility) == typeof(ConfigIdUtility) ? TestTables.ConfigIds : m_Save) as TUtility;
         }
 
         /// <summary>

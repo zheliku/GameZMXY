@@ -14,29 +14,29 @@ namespace GameConfig.Entity
 {
 public partial class TbEntityConfig
 {
-    private readonly System.Collections.Generic.Dictionary<int, Entity.EntityConfig> _dataMap;
+    private readonly System.Collections.Generic.Dictionary<Entity.EntityId, Entity.EntityConfig> _dataMap;
     private readonly System.Collections.Generic.List<Entity.EntityConfig> _dataList;
     
     public TbEntityConfig(ByteBuf _buf)
     {
         int n = _buf.ReadSize();
-        _dataMap = new System.Collections.Generic.Dictionary<int, Entity.EntityConfig>(n);
+        _dataMap = new System.Collections.Generic.Dictionary<Entity.EntityId, Entity.EntityConfig>(n);
         _dataList = new System.Collections.Generic.List<Entity.EntityConfig>(n);
         for(int i = n ; i > 0 ; --i)
         {
             Entity.EntityConfig _v;
             _v = global::GameConfig.Entity.EntityConfig.DeserializeEntityConfig(_buf);
             _dataList.Add(_v);
-            _dataMap.Add(_v.Id, _v);
+            _dataMap.Add(_v.EntityId, _v);
         }
     }
 
-    public System.Collections.Generic.IReadOnlyDictionary<int, Entity.EntityConfig> DataMap => _dataMap;
+    public System.Collections.Generic.IReadOnlyDictionary<Entity.EntityId, Entity.EntityConfig> DataMap => _dataMap;
     public System.Collections.Generic.IReadOnlyList<Entity.EntityConfig> DataList => _dataList;
 
-    public Entity.EntityConfig GetOrDefault(int key) => _dataMap.TryGetValue(key, out var v) ? v : default;
-    public Entity.EntityConfig Get(int key) => _dataMap[key];
-    public Entity.EntityConfig this[int key] => _dataMap[key];
+    public Entity.EntityConfig GetOrDefault(Entity.EntityId key) => _dataMap.TryGetValue(key, out var v) ? v : default;
+    public Entity.EntityConfig Get(Entity.EntityId key) => _dataMap[key];
+    public Entity.EntityConfig this[Entity.EntityId key] => _dataMap[key];
 
     public void ResolveRef(Tables tables)
     {

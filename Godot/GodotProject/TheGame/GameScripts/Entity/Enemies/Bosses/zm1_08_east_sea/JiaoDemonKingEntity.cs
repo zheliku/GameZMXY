@@ -170,7 +170,7 @@ namespace GameLogic.Enemies
             }
 
             var attack = OwnAttacks[1];
-            var effect = CreateSkillEffect(m_DragonWaveScene);
+            var effect = RentSkillEffect(m_DragonWaveScene);
             int power = (int)Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf());
             effect.Show(attack, GlobalPosition + new Vector2(Facing * 30f, Facing * 30f), Facing,
                 CaptureCombatAttributes(), power, false, ReleaseSkillEffect, hitSoundId: HitSoundId);
@@ -186,7 +186,7 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            var effect = CreateSkillEffect(m_DeathScene);
+            var effect = RentSkillEffect(m_DeathScene);
             effect.Show(null, GlobalPosition, Facing, CaptureCombatAttributes(), 0, false, ReleaseSkillEffect, state.CompleteEffect);
         }
     }

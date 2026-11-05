@@ -2,8 +2,6 @@
 
 [ext_resource type="Script" uid="uid://c7ajyr1tfamcx" path="res://TheGame/GameScripts/UI/InventoryForm/Components/EquipmentCell.cs" id="18_7toqf"]
 [ext_resource type="PackedScene" uid="uid://boy8tad4y4d68" path="res://TheGame/UIs/Inventory/equipment_tooltip.tscn" id="19_lla6n"]
-[ext_resource type="Script" uid="uid://b7c4mucar2g2x" path="res://TheGame/GameScripts/UI/InventoryForm/Components/HeroPreviewNode.cs" id="24_3klhq"]
-[ext_resource type="Resource" uid="uid://xk36fcf4y640" path="res://TheGame/Sprites/Characters/Heroes/wukong/wukong_appearance.tres" id="25_46cyk"]
 [ext_resource type="Texture2D" uid="uid://co0l2xrbfngd" path="res://TheGame/Sprites/UI/inventory/inventory_cell.png" id="33_41ypg"]
 [ext_resource type="Script" uid="uid://dth4j24dnuge" path="res://TheGame/GameScripts/UI/InventoryForm/Components/EquipmentActionsMenu.cs" id="40_hnjlc"]
 [ext_resource type="PackedScene" path="res://TheGame/UIs/Inventory/equipment_actions_menu.tscn" id="actions"]
@@ -318,14 +316,9 @@ script = ExtResource("18_7toqf")
 m_Icon = NodePath("Icon")
 m_TooltipScene = ExtResource("19_lla6n")
 
-[node name="m_Preview" type="Node2D" parent="Window/CharacterPanel" unique_id=1036937726 node_paths=PackedStringArray("m_Player", "m_Body", "m_Weapon") instance=ExtResource("preview")]
+[node name="m_Preview" type="Node2D" parent="Window/CharacterPanel" unique_id=1036937726 instance=ExtResource("preview")]
 position = Vector2(149.00002, 128)
 scale = Vector2(0.95, 0.95)
-script = ExtResource("24_3klhq")
-m_Player = NodePath("AnimationPlayer")
-m_Body = NodePath("Body")
-m_Weapon = NodePath("Weapon")
-m_Appearance = ExtResource("25_46cyk")
 
 [node name="Attributes" type="Control" parent="Window/CharacterPanel" unique_id=90866621]
 anchors_preset = 0

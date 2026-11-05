@@ -19,7 +19,6 @@ namespace GameLogic.Enemies
     public partial class SharkSpawnEntity : AbstractSeaMonsterEntity, IEnemyFreeMoveBody
     {
         private EnemyAiPreset m_Preset; // 追踪与近身决策共用时钟，工厂只传入范围和实时运动事实。
-        private const int SlashAttackId = 2033; // 接触后独立斩击，不复用身体攻击包。
         private static readonly EnemyBodyPreset m_BodyPreset = EnemyBodyPresets.Swim<SharkSpawnAttackState>(
             288f, 96f, 72f); // 游动保持原加速度/退避速度，仅替换为鲨鱼专属攻击。
 
@@ -166,8 +165,9 @@ namespace GameLogic.Enemies
         /// <param name="position">接触时已捕获的世界原点。</param>
         internal void SpawnContactSlash(Vector2 position)
         {
-            var slash = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(SlashAttackId);
-            var effect = CreateSkillEffect(m_SlashScene);
+            int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EntityId.SharkSpawn, 1, 2);
+            var slash = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId);
+            var effect = RentSkillEffect(m_SlashScene);
             effect.Show(slash, position, Facing, CaptureCombatAttributes(),
                 Mathf.RoundToInt(slash.FlatPower.X), false, ReleaseSkillEffect, hitSoundId: HitSoundId);
         }
@@ -213,7 +213,7 @@ namespace GameLogic.Enemies
             SetHurtBoxEnabled(false);
             Velocity = Vector2.Zero;
             state.WaitForReturn();
-            var warning = CreateSkillEffect(m_WarningScene);
+            var warning = RentSkillEffect(m_WarningScene);
             warning.Show(null, position, Facing, CaptureCombatAttributes(), 0, false, ReleaseSkillEffect,
                 () =>
                 {
@@ -244,7 +244,7 @@ namespace GameLogic.Enemies
         /// <param name="position">本次旋风的世界原点。</param>
         private void SpawnTornado(Vector2 position)
         {
-            var effect = CreateSkillEffect(m_TornadoScene);
+            var effect = RentSkillEffect(m_TornadoScene);
             effect.Show(OwnAttacks[1], position, Facing, CaptureCombatAttributes(),
                 Mathf.RoundToInt(OwnAttacks[1].FlatPower.X), false, ReleaseSkillEffect,
                 hitSoundId: HitSoundId);

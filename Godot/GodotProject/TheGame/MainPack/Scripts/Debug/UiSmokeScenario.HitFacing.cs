@@ -127,7 +127,7 @@ public sealed partial class UiSmokeScenario
             (SkillHitId.FireDemonDescent, new Vector2(960, 600)),
             (SkillHitId.FireDemonLanding, new Vector2(960, -360))
         };
-        foreach (int id in new[] { 1, 2, 3 })
+        foreach (int id in new[] { (int)EntityId.HuaguoshanMonkey, (int)EntityId.DemonMonkey, (int)EntityId.Gorilla })
         {
             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(tables.TbEnemyConfig.Get(id).EntityId,
                 new EnemySpawn(new Vector2(600, 300)));
@@ -215,7 +215,7 @@ public sealed partial class UiSmokeScenario
         CheckActor(m_ExtraHero);
         ReleaseTestEntity(m_ExtraHero);
         m_ExtraHero = null;
-        foreach (int id in new[] { 1, 2, 3 })
+        foreach (int id in new[] { (int)EntityId.HuaguoshanMonkey, (int)EntityId.DemonMonkey, (int)EntityId.Gorilla })
         {
             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(
                 ConfigSystem.Instance.Tables.TbEnemyConfig.Get(id).EntityId, new EnemySpawn(new Vector2(200, 100)));

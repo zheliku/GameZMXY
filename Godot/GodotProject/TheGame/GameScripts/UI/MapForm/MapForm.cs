@@ -86,6 +86,8 @@ namespace GameLogic.UI
 		[Export]
 		private Button m_Skills;
 		[Export]
+		private AnimatedSprite2D m_SkillsArtwork;
+		[Export]
 		private TextureButton m_Back;
 		[Export]
 		private MapLocationButton m_Huaguoshan;

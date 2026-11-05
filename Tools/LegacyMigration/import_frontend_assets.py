@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 LEGACY = Path('P:/Godot-Project/ZMXY_BHYH')
 GAME = ROOT / 'Godot/GodotProject/TheGame'
 MAPPING = {
+    'Art/HeroPicture/RoleProperiesBox/tsz.png': 'Sprites/UI/hud/hud_head_tangseng.png',
     'Art/MainGame/Bg1.png': 'Sprites/UI/frontend/title_backdrop.png',
     'Art/game_pic/183.png': 'Sprites/UI/frontend/journey_map.png',
     'Music/MainSceneMusic/zmxy_1BGM.mp3': 'Audios/Music/map_theme.mp3',

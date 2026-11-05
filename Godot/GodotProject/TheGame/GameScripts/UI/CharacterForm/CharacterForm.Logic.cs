@@ -16,10 +16,13 @@ namespace GameLogic.UI
     /// </summary>
     public partial class CharacterForm : IController
     {
+        private const int WukongHeroId = 1; // HeroConfig中已实现的悟空身份。
+        private const int TangsengHeroId = 2; // HeroConfig中唐僧身份，首次快照随选角确定。
+
         /// <summary>
-        /// 由所属流程处理 CharacterConfirmed；参数为本次窗口编号。
+        /// 由所属流程处理新档确认；参数为本次窗口编号及英雄配置编号。
         /// </summary>
-        public event Action<int> CharacterConfirmed;
+        public event Action<int, int> CharacterConfirmed;
 
         /// <summary>
         /// 设置框架字段；按钮事件只在新建实例时绑定一次。
@@ -41,9 +44,12 @@ namespace GameLogic.UI
             UIStringKeys.ForEach(key => key.SetLocalizationValue());
             if (isNewInstance)
             {
-                m_Wukong.Pressed += OnConfirmClicked;
+                m_Wukong.Pressed += OnWukongClicked;
                 m_Wukong.MouseEntered += OnWukongMouseEntered;
                 m_Wukong.MouseExited += ResetRoleHover;
+                m_Sanzang.Pressed += OnTangsengClicked;
+                m_Sanzang.MouseEntered += OnTangsengMouseEntered;
+                m_Sanzang.MouseExited += ResetRoleHover;
             }
         }
 
@@ -161,9 +167,26 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 确认出战角色，进入地图。
+        /// 确认悟空作为新档角色。
         /// </summary>
-        private void OnConfirmClicked()
+        private void OnWukongClicked()
+        {
+            ConfirmCharacter(WukongHeroId);
+        }
+
+        /// <summary>
+        /// 确认唐僧作为新档角色。
+        /// </summary>
+        private void OnTangsengClicked()
+        {
+            ConfirmCharacter(TangsengHeroId);
+        }
+
+        /// <summary>
+        /// 将当前窗口选择交给流程，窗口不创建或修改档案模型。
+        /// </summary>
+        /// <param name="heroId">已开放角色的英雄配置编号。</param>
+        private void ConfirmCharacter(int heroId)
         {
             if (!GF.UI.HasUIForm(SerialId))
             {
@@ -171,7 +194,7 @@ namespace GameLogic.UI
             }
 
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-            CharacterConfirmed?.Invoke(SerialId);
+            CharacterConfirmed?.Invoke(SerialId, heroId);
         }
 
         /// <summary>
@@ -179,13 +202,31 @@ namespace GameLogic.UI
         /// </summary>
         private void OnWukongMouseEntered()
         {
+            PreviewRole(m_Wukong);
+        }
+
+        /// <summary>
+        /// 预览唐僧官方卡片，将1P放到卡片顶部中央。
+        /// </summary>
+        private void OnTangsengMouseEntered()
+        {
+            PreviewRole(m_Sanzang);
+        }
+
+        /// <summary>
+        /// 同一时刻只突出当前可选角色，复用官方卡片的灰度材质。
+        /// </summary>
+        /// <param name="card">鼠标进入的已开放角色卡片。</param>
+        private void PreviewRole(TextureButton card)
+        {
             if (!GF.UI.HasUIForm(SerialId))
             {
                 return;
             }
 
-            ((ShaderMaterial)m_Wukong.Material).SetShaderParameter("grayscale", 0f);
-            m_PlayerOne.GlobalPosition = new Vector2(m_Wukong.GetGlobalRect().GetCenter().X - m_PlayerOne.Size.X / 2,
+            ResetRoleHover();
+            ((ShaderMaterial)card.Material).SetShaderParameter("grayscale", 0f);
+            m_PlayerOne.GlobalPosition = new Vector2(card.GetGlobalRect().GetCenter().X - m_PlayerOne.Size.X / 2,
                 m_PlayerOne.GlobalPosition.Y);
             m_PlayerOne.Visible = true;
         }
@@ -196,6 +237,7 @@ namespace GameLogic.UI
         private void ResetRoleHover()
         {
             ((ShaderMaterial)m_Wukong.Material).SetShaderParameter("grayscale", 1f);
+            ((ShaderMaterial)m_Sanzang.Material).SetShaderParameter("grayscale", 1f);
             m_PlayerOne.Visible = false;
         }
     }

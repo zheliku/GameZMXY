@@ -9,12 +9,14 @@ Input SWFs stay outside the repository. Requires FFDec 26.3.0 and Java.
 
 import argparse
 import hashlib
+import math
 from pathlib import Path
 import re
 import shutil
 import struct
 import subprocess
 import tempfile
+from PIL import Image
 
 
 # Role_v7's bitmap labels sit outside the shape's visible rectangle. FFDec's
@@ -36,7 +38,7 @@ def decode(source: Path, expected: str) -> bytes:
     return content
 
 
-def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "all") -> None:
+def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "all", hero: str = "wukong") -> None:
     """Copy rendered frames verbatim and generate external SpriteFrames resources."""
     game = Path(__file__).resolve().parents[2] / "Godot/GodotProject/TheGame"
     groups = [
@@ -57,9 +59,13 @@ def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "al
             subprocess.run([str(java), f"-Duser.home={temporary}", "-jar", str(ffdec), "-selectid",
                             ",".join(str(c[0]) for c in clips), "-ignorebackground",
                             "-export", "sprite", temporary, str(readable)], check=True)
+            tangseng_hurt = folder == 'hero_hurt' and hero == 'tangseng'
             destination = game / "Sprites/Effects" / folder
+            if folder == 'hero_hurt':
+                destination /= hero
             destination.mkdir(parents=True, exist_ok=True)
-            resource_file = destination / f"{folder}_frames.tres"
+            resource_name = 'tangseng_hurt' if tangseng_hurt else folder
+            resource_file = destination / f"{resource_name}_frames.tres"
             previous_header = resource_file.read_text(encoding="utf-8").splitlines()[0] if resource_file.exists() else ""
             previous_uid = re.search(r'uid="([^"]+)"', previous_header)
             if previous_uid:
@@ -78,8 +84,23 @@ def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "al
                 rendered = next(temp.glob(f"DefineSprite_{sprite_id}_*"))
                 frames = []
                 for frame in range(1, count + 1):
-                    asset = destination / f"{name.lower()}_{frame:02}.png"
-                    shutil.copyfile(rendered / f"{frame}.png", asset)
+                    asset = destination / f"{resource_name if tangseng_hurt else name.lower()}_{frame:02}.png"
+                    if tangseng_hurt:
+                        # BaseHero.addBeAttackEffect: my.ColorMatrix.adjustHue(160).
+                        # Preserve the rendered source alpha and registration; no runtime shader or duplicated clock.
+                        angle = math.radians(160)
+                        c, s = math.cos(angle), math.sin(angle)
+                        r, g, b = .213, .715, .072
+                        matrix = (r + c * (1-r) - s*r, g - c*g - s*g, b - c*b + s*(1-b), 0,
+                                  r - c*r + s*.143, g + c*(1-g) + s*.14, b - c*b - s*.283, 0,
+                                  r - c*r - s*(1-r), g - c*g + s*g, b + c*(1-b) + s*b, 0)
+                        with Image.open(rendered / f"{frame}.png") as source_image:
+                            rgba = source_image.convert('RGBA')
+                            tinted = rgba.convert('RGB').convert('RGB', matrix).convert('RGBA')
+                            tinted.putalpha(rgba.getchannel('A'))
+                            tinted.save(asset)
+                    else:
+                        shutil.copyfile(rendered / f"{frame}.png", asset)
                     key = f"{name}_{frame}"
                     imported = asset.with_suffix(".png.import")
                     texture_uid = re.search(r'^uid="([^"]+)"', imported.read_text(encoding="utf-8"), re.MULTILINE) if imported.exists() else None
@@ -102,7 +123,7 @@ def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "al
                 f'[gd_resource type="SpriteFrames" format=3{uid_attribute}]\n\n' + '\n'.join(resources)
                 + '\n\n' + '\n\n'.join(regions)
                 + '\n\n[resource]\nanimations = [' + ',\n'.join(animations) + ']\n', encoding="utf-8")
-            print(f"{folder}: {sum(c[2] for c in clips)} original rendered frames")
+            print(f"{resource_name}: {sum(c[2] for c in clips)} original rendered frames, hero={hero}")
 
 
 if __name__ == "__main__":
@@ -110,5 +131,6 @@ if __name__ == "__main__":
     for name in ("java", "ffdec", "role", "monsters"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--group", choices=("all", "level_up", "loot", "hero_hurt"), default="all")
+    parser.add_argument('--hero', choices=('wukong', 'tangseng'), default='wukong')
     args = parser.parse_args()
-    export(args.java, args.ffdec, args.role, args.monsters, args.group)
+    export(args.java, args.ffdec, args.role, args.monsters, args.group, args.hero)

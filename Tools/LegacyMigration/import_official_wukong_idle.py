@@ -42,7 +42,7 @@ def apply(manifest_path):
     duration = len(frames) / fps
     for relative, name in [
         ('TheGame/Entitys/Animations/Heroes/Wukong/wukong_anim_library.tres', 'idle1'),
-        ('TheGame/Sprites/UI/inventory/inventory_preview_animation.tres', 'idle'),
+        ('TheGame/Entitys/Animations/Heroes/Wukong/wukong_preview_library.tres', 'idle'),
     ]:
         path = PROJECT / relative
         text = path.read_text(encoding='utf-8')

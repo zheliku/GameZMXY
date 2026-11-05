@@ -79,7 +79,7 @@ namespace GameLogic.Heroes.Wukong
             body.ActionData.AttackReadyAt = body.ActionData.Time + 40d / 24d;
             actor.SkillPosition = target;
             // 本项目修正原版中心重合时向右的偏置，三段击退统一跟随施放朝向。
-            actor.SpawnSkillEffect(combo, target, SkillHitId.FireDemonCombo,
+            actor.PlaySkillEffect(combo, target, SkillHitId.FireDemonCombo,
                 FireDemonPower(body, SkillHitId.FireDemonCombo));
             // Role1.addHit10And1() returns after teleporting and creating the combo.
             // The body timeline continues naturally from source frame 7 to frame 47;
@@ -96,7 +96,7 @@ namespace GameLogic.Heroes.Wukong
         {
             Launch(body, velocity);
             var actor = (ISkillActor)body;
-            actor.SpawnSkillEffect(descent, actor.SkillPosition, SkillHitId.FireDemonDescent,
+            actor.PlaySkillEffect(descent, actor.SkillPosition, SkillHitId.FireDemonDescent,
                 FireDemonPower(body, SkillHitId.FireDemonDescent));
         }
 
@@ -194,7 +194,7 @@ namespace GameLogic.Heroes.Wukong
                 actor.PauseSkillAnimation();
             }
 
-            actor.SpawnSkillEffect(scene, landingPosition, SkillHitId.FireDemonLanding,
+            actor.PlaySkillEffect(scene, landingPosition, SkillHitId.FireDemonLanding,
                         FireDemonPower(body, SkillHitId.FireDemonLanding),
                         completed: holdBody ? () =>
                         {

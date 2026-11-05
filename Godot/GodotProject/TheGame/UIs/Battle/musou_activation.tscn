@@ -1,9 +1,10 @@
 [gd_scene format=3 uid="uid://bjub483gtcj0n"]
 
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_frames.tres" id="frames"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_frames.tres" id="frames"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_frames.tres" id="tangseng_frames"]
 [ext_resource type="Script" uid="uid://bymxyt55xb04o" path="res://TheGame/GameScripts/UI/BattleForm/Components/MusouActivationNode.cs" id="script"]
 
-[ext_resource type="AnimationLibrary" path="res://TheGame/Sprites/UI/hud/musou_activation/musou_activation_library.tres" id="library"]
+[ext_resource type="AnimationLibrary" path="res://TheGame/Sprites/UI/hud/musou_activation/shared/musou_activation_library.tres" id="library"]
 
 [node name="MusouActivation" type="Control" unique_id=109249331 node_paths=PackedStringArray("m_Animation", "m_Player")]
 visible = false
@@ -16,6 +17,10 @@ grow_vertical = 2
 script = ExtResource("script")
 m_Animation = NodePath("Animation")
 m_Player = NodePath("AnimationPlayer")
+m_HeroFrames = Dictionary[int, SpriteFrames]({
+1: ExtResource("frames"),
+2: ExtResource("tangseng_frames")
+})
 
 [node name="Animation" type="AnimatedSprite2D" parent="." unique_id=1962252916]
 position = Vector2(470, 295)

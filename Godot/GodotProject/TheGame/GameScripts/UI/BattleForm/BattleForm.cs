@@ -92,7 +92,7 @@ namespace GameLogic.UI
 		[Export]
 		private MusouActivationNode m_MusouActivation;
 		[Export]
-		private Label m_Combo;
+		private ComboHud m_Combo;
 
 	}
 }

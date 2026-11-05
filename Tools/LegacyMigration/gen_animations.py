@@ -1346,7 +1346,7 @@ def gen_wukong_library():
 def synchronize_weapon_tracks():
     """Synchronize independent weapon frames, preserving editor-authored timing and geometry."""
     paths = [os.path.join(ENTITY_ANIMS, 'wukong_anim_library.tres'),
-             os.path.join(SPRITES, 'UI', 'inventory', 'inventory_preview_animation.tres')]
+             os.path.join(ENTITY_ANIMS, 'Heroes', 'Wukong', 'wukong_preview_library.tres')]
     for path in paths:
         with open(path, encoding='utf-8') as source:
             text = source.read()

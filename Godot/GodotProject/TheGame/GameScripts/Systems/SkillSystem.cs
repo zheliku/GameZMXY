@@ -170,14 +170,36 @@ namespace GameLogic.Skills
                 return false;
             }
 
-            if (!this.GetSystem<HeroSystem>().TrySpendMp(
-                            this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost))
+            var manaCost = this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost;
+            if (definition.DeferredMana)
+            {
+                if (!CanAfford(id))
+                {
+                    return false;
+                }
+            }
+            else if (!this.GetSystem<HeroSystem>().TrySpendMp(manaCost))
             {
                 return false;
             }
 
             model.ActiveSkillId = id;
             return true;
+        }
+
+        /// <summary>
+        /// 扣除已激活的延迟耗蓝技能；未满足延迟契约时不改变蓝量。
+        /// </summary>
+        public bool TrySpendActivatedMana(SkillId id)
+        {
+            var model = this.GetModel<HeroModel>();
+            if (model?.ActiveSkillId != id || !m_SkillDefinitions.TryGetValue(id, out var definition) || !definition.DeferredMana)
+            {
+                return false;
+            }
+
+            return this.GetSystem<HeroSystem>().TrySpendMp(
+                this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost);
         }
 
         /// <summary>
@@ -324,7 +346,7 @@ namespace GameLogic.Skills
     /// <param name="InputAction">可选直接动作名；组合技能由具体角色匹配。</param>
     /// <param name="CanStart">可选起手条件；在扣费前检查。</param>
     public sealed record SkillDefinition(SkillId Id, Type BodyState,
-        string InputAction = null, Func<ISkillActor, bool> CanStart = null);
+        string InputAction = null, Func<ISkillActor, bool> CanStart = null, bool DeferredMana = false);
 
     /// <summary>
     /// 学习请求的业务结果；不以 UI 状态代替资格和余额检查。

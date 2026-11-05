@@ -31,7 +31,7 @@ public sealed partial class SoundConfig : Luban.BeanBase
     }
 
     /// <summary>
-    /// 音效ID(与 SoundId 枚举值一致)
+    /// 音乐1000起；UI2000起；角色=10000+(英雄ID-1)&#215;1000+事件段
     /// </summary>
     public readonly int Id;
     /// <summary>

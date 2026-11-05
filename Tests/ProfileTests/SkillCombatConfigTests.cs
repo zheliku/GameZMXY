@@ -1,6 +1,5 @@
 using GameLogic.Config;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using GameConfig;
@@ -72,9 +71,8 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void PreparedCombatTables_PassStartupValidation()
         {
-            List<string> errors = new();
-            ConfigurationSystem.ValidateSkillCombat(TestTables.Tables, errors);
-            Assert.Empty(errors);
+            var scope = TestTables.CreateConfigurationScope(TestTables.Tables);
+            Assert.True(scope.GetSystem<ConfigurationSystem>().Initialized);
         }
 
         /// <summary>
@@ -87,9 +85,7 @@ namespace GameLogic.Profile.Tests
                 Path.Combine(AppContext.BaseDirectory, "Data", name + ".bytes"))));
             var attack = tables.TbAttackConfig.Get((int)SkillHitId.FlameStorm);
             typeof(AttackConfig).GetField(nameof(attack.HitBudget)).SetValue(attack, 0);
-            List<string> errors = new();
-            ConfigurationSystem.ValidateSkillCombat(tables, errors);
-            Assert.Contains(errors, error => error.Contains("命中预算"));
+            Assert.Contains("命中预算", Assert.Throws<InvalidOperationException>(() => TestTables.CreateConfigurationScope(tables)).Message);
         }
     }
 }

@@ -146,27 +146,27 @@ m_Title = NodePath("Content/Header/Title")
 m_Description = NodePath("Content/Header/Description")
 m_Enemies = NodePath("Content/Encounter/Enemies")
 m_EnemyTextures = Dictionary[int, Texture2D]({
-1: SubResource("AtlasTexture_vwih8"),
-2: SubResource("AtlasTexture_l8573"),
-3: SubResource("AtlasTexture_rrli0"),
-4: SubResource("AtlasTexture_bvjx3"),
-6: SubResource("AtlasTexture_wjwuh"),
-7: SubResource("AtlasTexture_rdwx3"),
-8: SubResource("AtlasTexture_pk6x4"),
-9: SubResource("AtlasTexture_m817n"),
-10: SubResource("AtlasTexture_i8ac5"),
-11: SubResource("AtlasTexture_w6ol6"),
-13: SubResource("AtlasTexture_jw1cf"),
-14: SubResource("AtlasTexture_6mg53"),
-15: SubResource("AtlasTexture_uwes8"),
-16: SubResource("AtlasTexture_d75bf"),
-17: SubResource("AtlasTexture_mexvv"),
-18: SubResource("AtlasTexture_q6011"),
-19: SubResource("AtlasTexture_c12ke"),
-20: SubResource("AtlasTexture_t1gri"),
-21: SubResource("AtlasTexture_6akdi"),
-22: SubResource("AtlasTexture_sbwk4"),
-25: SubResource("AtlasTexture_l4oc6")
+10000: SubResource("AtlasTexture_vwih8"),
+10001: SubResource("AtlasTexture_l8573"),
+10002: SubResource("AtlasTexture_rrli0"),
+10003: SubResource("AtlasTexture_pk6x4"),
+10004: SubResource("AtlasTexture_jw1cf"),
+10005: SubResource("AtlasTexture_rdwx3"),
+10006: SubResource("AtlasTexture_uwes8"),
+10007: SubResource("AtlasTexture_d75bf"),
+10008: SubResource("AtlasTexture_6mg53"),
+10009: SubResource("AtlasTexture_mexvv"),
+10010: SubResource("AtlasTexture_t1gri"),
+10011: SubResource("AtlasTexture_q6011"),
+10012: SubResource("AtlasTexture_l4oc6"),
+100000: SubResource("AtlasTexture_bvjx3"),
+100001: SubResource("AtlasTexture_wjwuh"),
+100002: SubResource("AtlasTexture_6akdi"),
+100003: SubResource("AtlasTexture_w6ol6"),
+100004: SubResource("AtlasTexture_m817n"),
+100005: SubResource("AtlasTexture_i8ac5"),
+100006: SubResource("AtlasTexture_c12ke"),
+100007: SubResource("AtlasTexture_sbwk4")
 })
 m_Drops = NodePath("Content/Loot/Drops")
 m_Appearances = ExtResource("25_qypc3")

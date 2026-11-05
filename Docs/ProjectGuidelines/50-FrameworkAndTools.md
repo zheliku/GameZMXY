@@ -48,3 +48,25 @@
 - main 受保护；分支用 feature/、fix/、art/，提交前缀 feat:、fix:、refactor:、art:、config:、docs:、chore:。
 - 素材与逻辑改动分开提交；不提交 .godot、bin、obj、user://、临时文件和本机编辑器配置。保留用户已有工作及 Git 索引。
 - Godot/CLAUDE.md、.claude、.kilo 是各工具配置，不是项目规范。
+
+## Stop That Shit
+
+项目按用户要求采用 [Stop That Shit](https://github.com/lennney/stop-that-shit/tree/0.2.5) 的工程决策规则，入口见本目录 [AGENTS.md](AGENTS.md#ai-工作方式)。固定版本为 `0.2.5`，不自动跟随 main；不把插件复制进游戏、框架或 Godot addons。
+
+Codex CLI 的原生安装方式：
+
+```powershell
+codex plugin marketplace add lennney/stop-that-shit --ref 0.2.5
+codex plugin add stop-that-shit@stop-that-shit
+```
+
+安装后启动新的 Codex 会话，插件的 Skill 才能由宿主重新发现。Guard 执行拦截还要求在新的 CLI TUI 输入 `/hooks`，由用户对照安装版本的 `hooks/codex-hooks.json` 审阅并信任命令；不得自行写入信任或绕过此步骤。该版本绑定 UserPromptSubmit、PreToolUse、PostToolUse、SessionEnd，命令均调用包内 `hooks/stop-that-shit.cjs`。IDE 插件支持以当前 [OpenAI Docs](https://developers.openai.com/codex/plugins/) 为准；不能将 CLI 安装成功等同于所有宿主都已加载 Hook。
+
+需 Guard 设置明确任务模式时，用户在消息首个非空行使用：
+
+```text
+$stop-that-shit change -- 完成当前授权修改及必要验证。
+$stop-that-shit review -- 检查当前 diff，只报告问题。
+```
+
+普通项目规范立即适用；Guard 初始为观察模式，只有宿主加载、信任及显式指令到位后才可报告其实际拦截结果。不得伪造用户指令、文件锁或代理预算，不把 Skill 的建议描述成已执行的隔离保证。安装及更新流程遵循对应版本的 [INSTALL_FOR_AGENTS.md](https://github.com/lennney/stop-that-shit/blob/0.2.5/INSTALL_FOR_AGENTS.md)。

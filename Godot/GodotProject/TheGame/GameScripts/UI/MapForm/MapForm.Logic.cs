@@ -76,6 +76,8 @@ namespace GameLogic.UI
                 m_Back.Pressed += OnBackClicked;
                 m_Settings.Pressed += OnSettingsClicked;
                 m_Skills.Pressed += OnSkillsClicked;
+                m_Skills.MouseEntered += OnSkillsMouseEntered;
+                m_Skills.MouseExited += OnSkillsMouseExited;
                 m_Save.Pressed += OnSaveClicked;
                 InitializeLocations();
                 ValidateLocations();
@@ -106,6 +108,7 @@ namespace GameLogic.UI
             m_Save.SelfModulate = Colors.White;
             ResetLocationHover();
             PlayCurrentLocationHint();
+            ResetSkillsHint();
             Visible = true;
         }
 
@@ -179,6 +182,10 @@ namespace GameLogic.UI
         /// </summary>
         public void OnReveal()
         {
+            if (m_IsBound)
+            {
+                ResetSkillsHint();
+            }
         }
 
         /// <summary>
@@ -204,6 +211,10 @@ namespace GameLogic.UI
         /// </summary>
         private void Unbind()
         {
+            if (IsInstanceValid(m_SkillsArtwork))
+            {
+                m_SkillsArtwork.Stop();
+            }
             if (!m_IsBound)
             {
                 return;
@@ -418,6 +429,33 @@ namespace GameLogic.UI
 
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
             SkillsRequested?.Invoke(SerialId);
+        }
+
+        /// <summary>
+        /// 官方地图初入或从购技窗返回时，灵魂达到160显示原版可购发光循环。
+        /// </summary>
+        private void ResetSkillsHint()
+        {
+            m_SkillsArtwork.Stop();
+            m_SkillsArtwork.Play(this.GetModel<ProfileModel>().Soul.Value >= 160 ? "available" : "idle");
+        }
+
+        /// <summary>
+        /// 官方悬停切第2态，保留其十五帧子动画与说明字图。
+        /// </summary>
+        private void OnSkillsMouseEntered()
+        {
+            m_SkillsArtwork.Stop();
+            m_SkillsArtwork.Play("hover");
+        }
+
+        /// <summary>
+        /// 官方移出后回到第1态，重新进入地图前不继续可购闪烁。
+        /// </summary>
+        private void OnSkillsMouseExited()
+        {
+            m_SkillsArtwork.Stop();
+            m_SkillsArtwork.Play("idle");
         }
 
         /// <summary>

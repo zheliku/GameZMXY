@@ -198,6 +198,7 @@ public partial class TestArenaController : Node2D
                 m_TestFlow.RegisterUtility(new ArchiveUtility<GameCatalogue, GameData>(GF.Archive));
                 m_TestFlow.RegisterUtility(new SpatialUtility());
                 m_TestFlow.RegisterUtility(new SaveDataUtility());
+                m_TestFlow.RegisterUtility(new ConfigIdUtility());
                 m_TestFlow.RegisterModel(new ConfigurationModel(ConfigSystem.Instance.Tables));
                 m_TestFlow.RegisterUtility(new ExperienceCurveUtility(m_TestFlow.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList));
                 m_TestFlow.RegisterModel(new SaveModel());

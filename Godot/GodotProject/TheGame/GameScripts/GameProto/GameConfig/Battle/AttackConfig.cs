@@ -40,7 +40,7 @@ public sealed partial class AttackConfig : Luban.BeanBase
     }
 
     /// <summary>
-    /// 攻击ID
+    /// 实体ID&#215;1000+动作序号&#215;10+段号；英雄普攻动作0；环境900000000+关卡ID&#215;1000+序号
     /// </summary>
     public readonly int Id;
     /// <summary>
@@ -76,7 +76,7 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// </summary>
     public readonly int HitProtect;
     /// <summary>
-    /// 这招属于谁(None=通用招,将来多主体共享用)
+    /// 实际施放者；ComboIndex&gt;=0才进入本体攻击列表
     /// </summary>
     public readonly Entity.EntityId OwnerId;
     /// <summary>

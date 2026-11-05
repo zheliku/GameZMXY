@@ -130,9 +130,13 @@ namespace GameLogic.Enemies
 
             // 攻击伤害与冷却仍使用原有攻击表，龙王自行选择，不要求所有敌人支持等级档。
             var attacks = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig;
+            var ids = this.GetUtility<ConfigIdUtility>();
             m_HighLevelAttacks = Array.AsReadOnly(new[]
             {
-            attacks.Get(2049), attacks.Get(2050), attacks.Get(2051), attacks.Get(2052),
+            attacks.Get(ids.GetAttackId(GameConfig.Entity.EntityId.DragonKing, 1, 2)),
+            attacks.Get(ids.GetAttackId(GameConfig.Entity.EntityId.DragonKing, 2, 2)),
+            attacks.Get(ids.GetAttackId(GameConfig.Entity.EntityId.DragonKing, 3, 2)),
+            attacks.Get(ids.GetAttackId(GameConfig.Entity.EntityId.DragonKing, 4, 2)),
         });
             // 两档共用动画与运动，只为本首领替换攻击冷却和收招数值。
             var recovery = new float[m_HighLevelAttacks.Count];
@@ -265,7 +269,7 @@ namespace GameLogic.Enemies
         /// <param name="direction">效果朝向，水柱固定不镜像。</param>
         private void SpawnEffect(PackedScene scene, AttackConfig data, Vector2 position, int direction)
         {
-            var effect = CreateSkillEffect(scene);
+            var effect = RentSkillEffect(scene);
             int power = (int)MathF.Round(Mathf.Lerp(data.FlatPower.X, data.FlatPower.Y, GD.Randf()),
                 MidpointRounding.AwayFromZero);
             effect.Show(data, position, direction, CaptureCombatAttributes(), power, false,

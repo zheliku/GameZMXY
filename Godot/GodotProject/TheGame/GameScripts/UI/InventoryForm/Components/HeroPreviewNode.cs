@@ -12,7 +12,7 @@ namespace GameLogic.UI.Widgets
         [Export] private AnimationPlayer m_Player; // 只包含表现轨道，不含碰撞或战斗调用。
         [Export] private Sprite2D m_Body; // 与战斗角色相同网格的身体层。
         [Export] private Sprite2D m_Weapon; // 独立武器层，遮挡部分已在素材中裁成透明。
-        [Export] private HeroAppearanceResource m_Appearance; // 与战斗角色共用的外观资源。
+        private HeroAppearanceResource m_Appearance; // 每次打开借用当前战斗英雄的外观资源。
         private ulong m_LastTick; // 真实时间原点，不依赖 GGF 暂停后的零 delta。
 
         /// <summary>
@@ -23,16 +23,20 @@ namespace GameLogic.UI.Widgets
         public void ApplyAppearance(GameConfig.Equipment.EquipmentId weaponId, GameConfig.Equipment.EquipmentId armorId)
         {
             m_Appearance.ApplyToSprites(m_Body, m_Weapon, weaponId, armorId);
+            m_Player.Advance(0);
         }
 
         /// <summary>
-        /// 每次打开从待机第一帧开始。
+        /// 每次打开绑定当前英雄的预览动画，从待机第一帧开始。
         /// </summary>
-        public void Reset()
+        /// <param name="appearance">当前英雄拥有的换装与预览资源。</param>
+        public void Reset(HeroAppearanceResource appearance)
         {
             m_Player.Stop();
+            m_Appearance = appearance;
+            m_Player.RemoveAnimationLibrary("");
+            m_Player.AddAnimationLibrary("", appearance.PreviewAnimations);
             m_Player.Play(m_IdleAnimation);
-            m_Player.Advance(0);
             m_LastTick = Time.GetTicksUsec();
         }
 

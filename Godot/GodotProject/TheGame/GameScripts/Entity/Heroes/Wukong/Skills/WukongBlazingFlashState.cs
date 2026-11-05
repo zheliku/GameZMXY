@@ -51,7 +51,7 @@ namespace GameLogic.Heroes.Wukong
         {
             m_Dashing = true;
             var actor = (ISkillActor)body;
-            actor.SpawnSkillEffect(trail, actor.SkillPosition);
+            actor.PlaySkillEffect(trail, actor.SkillPosition);
             body.GetSystem<SkillSystem>().GrantInvulnerability(body.ActionData.Time, InvulnerabilitySeconds);
             body.Velocity = new Vector2(actor.Facing * speed, body.Velocity.Y);
         }

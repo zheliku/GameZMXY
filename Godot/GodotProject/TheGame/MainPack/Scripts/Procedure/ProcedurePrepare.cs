@@ -66,6 +66,7 @@ public sealed class ProcedurePrepare : ProcedureBase
             procedureOwner.RegisterUtility(new ArchiveUtility<GameCatalogue, GameData>(GF.Archive));
             procedureOwner.RegisterUtility(new SpatialUtility());
             procedureOwner.RegisterUtility(new SaveDataUtility());
+            procedureOwner.RegisterUtility(new ConfigIdUtility());
             procedureOwner.RegisterModel(new ConfigurationModel(ConfigSystem.Instance.Tables));
             procedureOwner.RegisterUtility(new ExperienceCurveUtility(procedureOwner.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList));
             procedureOwner.RegisterModel(new SaveModel());

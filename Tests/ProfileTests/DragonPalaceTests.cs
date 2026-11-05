@@ -93,9 +93,10 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var config = scope.GetModel<ConfigurationModel>();
-            var dragon = TestTables.Tables.TbEnemyConfig.Get(10011);
+            var dragon = TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.DragonKing);
             var lowAttacks = config.GetAttacks(dragon.EntityId);
-            var highAttacks = new[] { 2049, 2050, 2051, 2052 }.Select(TestTables.Tables.TbAttackConfig.Get).ToArray();
+            var highAttacks = Enumerable.Range(1, 4)
+                .Select(action => TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(dragon.EntityId, action, 2))).ToArray();
             Assert.Equal(new[] { 90f, 17f, 20f, 150f }, lowAttacks.Select(item => item.FlatPower.X));
             Assert.Equal(new[] { 200f, 35f, 100f, 300f }, highAttacks.Select(item => item.FlatPower.X));
             Assert.Same(lowAttacks, config.GetAttacks(dragon.EntityId));

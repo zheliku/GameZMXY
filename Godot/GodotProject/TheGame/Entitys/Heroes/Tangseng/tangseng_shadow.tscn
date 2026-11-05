@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Heroes/Tangseng/Skills/TangsengWaterCloneNode.cs" id="1_shadow_script"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/tangseng_shadow_atlas.png" id="2_shadow_texture"]
+[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Heroes/Tangseng/tangseng_water_clone_library.tres" id="3_animation"]
+
+[node name="TangsengWaterClone" type="Node2D" node_paths=PackedStringArray("m_Player")]
+z_index = 1
+script = ExtResource("1_shadow_script")
+m_Player = NodePath("AnimationPlayer")
+
+[node name="m_Body" type="Sprite2D" parent="."]
+position = Vector2(0, -28)
+texture = ExtResource("2_shadow_texture")
+hframes = 6
+vframes = 20
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries/ = ExtResource("3_animation")

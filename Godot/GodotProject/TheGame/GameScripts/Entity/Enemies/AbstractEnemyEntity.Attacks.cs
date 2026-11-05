@@ -16,12 +16,12 @@ namespace GameLogic.Enemies
     public abstract partial class AbstractEnemyEntity
     {
         /// <summary>
-        /// 取得并登记本敌人的离身攻击；具体敌人决定招式、位置和表现。
+        /// 取得并登记本敌人拥有的离身攻击，供具体敌人装填攻击数据。
         /// </summary>
         /// <param name="scene">已登记到 GGF 节点池的场景。</param>
         /// <returns>由本敌人负责归还的效果。</returns>
         /// <exception cref="InvalidOperationException">场景未登记到节点池。</exception>
-        protected SkillEffectNode CreateSkillEffect(PackedScene scene)
+        protected SkillEffectNode RentSkillEffect(PackedScene scene)
         {
             var effect = NodePool.Instance.Get<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
                 throw new InvalidOperationException($"敌人技能未登记到节点池：{scene.ResourcePath}");
@@ -73,14 +73,22 @@ namespace GameLogic.Enemies
         }
 
         /// <summary>
-        /// 原生动画多段时点更新当前招式的攻击编号，不重新计算冷却或切换身体状态。
+        /// 更新当前招式的攻击编号，不重新计算冷却或切换身体状态。
         /// </summary>
-        protected void NewAttackAnimEvent()
+        protected void RefreshAttack()
         {
             if (AttackSegment >= 0)
             {
                 PrepareAttack(OwnAttacks[AttackSegment]);
             }
+        }
+
+        /// <summary>
+        /// 由原生动画多段方法键刷新当前攻击包。
+        /// </summary>
+        private void NewAttackAnimEvent()
+        {
+            RefreshAttack();
         }
 
     }

@@ -21,7 +21,7 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var system = scope.GetSystem<HeroStatusSystem>();
-            system.ApplyPoison(TestTables.Tables.TbAttackConfig.Get(11004));
+            system.ApplyPoison(TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2)));
             int damage = 0;
             for (int i = 0; i < 10 * fps; i++)
             {
@@ -42,7 +42,7 @@ namespace GameLogic.Profile.Tests
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var system = scope.GetSystem<HeroStatusSystem>();
             var heroSystem = scope.GetSystem<HeroSystem>();
-            var attack = TestTables.Tables.TbAttackConfig.Get(11004);
+            var attack = TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2));
             system.ApplyPoison(attack);
             Assert.Equal(0, system.AdvancePoison(.75f));
             system.ApplyPoison(attack);

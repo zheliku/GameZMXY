@@ -677,7 +677,7 @@ public sealed partial class UiSmokeScenario
         foreach (int direction in new[] { -1, 1 })
         {
             hero.SetFacing(direction);
-            foreach (string name in new[] { "idle1", "walk", "run", "jump", "jump_2", "fall", "hurt", "death", "attack_1", "attack_2", "attack_3", "attack_4", "attack_5" })
+            foreach (string name in player.GetAnimationList().Where(name => name != HeroAnims.Reset.ToString()))
             {
                 var animation = player.GetAnimation(name);
                 player.Play(name);
@@ -685,11 +685,19 @@ public sealed partial class UiSmokeScenario
                 {
                     // 此处只采样画面；不重放每个采样点之前的音效和战斗方法轨道。
                     player.Seek(time, update: true, updateOnly: true);
-                    Check(body.Frame == weapon.Frame && body.FlipH == weapon.FlipH && hero.Position == root,
-                        $"动作 {name} 身体/武器帧、朝向不同步或修改了角色根坐标");
-                    Rect2I frame = new(body.Frame % 6 * 200, body.Frame / 6 * 200, 200, 200);
+                    Check(body.Frame >= 0 && body.Frame < body.Hframes * body.Vframes &&
+                        weapon.Frame >= 0 && weapon.Frame < weapon.Hframes * weapon.Vframes &&
+                        body.FlipH == weapon.FlipH && hero.Position == root,
+                        $"动作 {name} 身体/武器帧越界、朝向不同步或修改了角色根坐标");
+                    // 每层可有独立紧凑帧映射；用本层网格采样，不要求两层帧号相等。
+                    int width = image.GetWidth() / body.Hframes;
+                    int height = image.GetHeight() / body.Vframes;
+                    Rect2I frame = new(body.Frame % body.Hframes * width, body.Frame / body.Hframes * height, width, height);
                     using var crop = image.GetRegion(frame);
-                    Check(!crop.IsInvisible(), $"动作 {name} 引用空白身体帧 {body.Frame}");
+                    // 官方烈焰闪和火魔斩在技能表现接管时共用透明身体格91。
+                    bool effectOnly = hero is WukongEntity && body.Frame == 91 &&
+                        name is "skills/blazing_flash" or "skills/fire_demon_slash";
+                    Check(crop.IsInvisible() == effectOnly, $"动作 {name} 身体帧 {body.Frame} 透明性不符");
                 }
             }
         }

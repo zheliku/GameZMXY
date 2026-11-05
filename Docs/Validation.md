@@ -1,5 +1,333 @@
 # 验证
 
+## 动画方法入口与角色相关表现收尾（2026-11-05）
+
+按第10章动画入口命名、第30章状态与表现分层和Stop Ladder复核全项目 `*AnimEvent` 调用链。`AnimEvent` 仍只作为AnimationPlayer方法轨道键；普通业务使用无后缀实现，轨道方法只转发：唐僧音效、SkillEffect攻击刷新/结束、敌人攻击刷新和虾兵弹体均已收敛。烟测不再直接调用动画事件名，改为真实播放 `attack_1` 的第3源帧。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 编译/格式/引用 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有框架弃用警告；`dotnet run --project Tools/ProjectMaintenance/CSharpStyle -- . .../animation_event_boundaries_style_final_20261105.json`：358文件、0格式变更、0缺失文档；`validate_game_references.py`：2098路径、385 UID。 |
+| 唐僧/海怪事件边界 | `animation_event_boundaries_tangseng_20261105`、`animation_event_boundaries_sea_20261105`：退出0；唐僧技能/八段声音/玄冰与水魔效果、虾兵真实弹体命中/消散/暂停/池复用通过。退出期仅有既有ObjectDB/资源诊断。 |
+| 悟空/彭魔王事件边界 | `animation_event_boundaries_wukong_20261105`、`animation_event_boundaries_garuda_20261105`：退出0；悟空五技能/独立效果/声音与实际命中，彭魔王四招/冲刺/复生/回池通过。 |
+| 共用功能唐僧 | `tangseng_shared_physics_status_20261105`：退出0；官方平台双跳、狮驼王六招/中毒、60/120Hz冰冻控制锁与死亡清理通过。 |
+| 吞噬角色选择 | `tangseng_capture_bull_20261105` 与 `wukong_capture_bull_20261105`：退出0；两角色60/120Hz、双朝向、源五次脉冲、释放和selector图集选择通过。唐僧专属图集导入扫描 `tangseng_capture_import_20261105` 退出0。 |
+
+退出期仍报告ObjectDB/RID/资源占用；编辑器扫描另有已知插件free诊断。未据专项通过声称这些诊断已解决，也未修改只读插件。
+
+## 唐僧完整流程、目录与悟空共用功能对照（2026-11-05）
+
+| 检查 | 精确入口与结果 |
+| --- | --- |
+| 唐僧完整生命周期 | `run_godot.py tangseng_complete_role_validation_20261105 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 24000 -- --smoketest=ui --tangseng-only --tangseng-lifecycle-only`：退出0；正式新档、五主动学习/施放、15件实际拾取与GUI穿卸、60/120Hz无双/受击保护、25次被动购买、平地/坡面死亡重试、地图/标题/同槽磁盘重读、装备GUID/随机属性/槽位/技能与被动保持，再次穿卸通过。退出25个ObjectDB及5条资源占用诊断。 |
+| 十关主线 | `tangseng_chapter_gate_filtered_20261105` 用户参数 `--smoketest=progress --tangseng-only`：真实完成1..8，每关经标题重读；外部runner在900秒终止（124），保留原日志。复制这份隔离APPDATA到`tangseng_chapter_resume_disk_20261105`，以同一档案 `Validation/Progress/c55712374bf247d0ba774bc84938c197` 续跑；日志明确 `next=9, hero=2, read from actual disk profile`，实际完成9、10并再次标题重读，退出0。现有可重现续跑参数为 `--smoke-run-id=c55712374bf247d0ba774bc84938c197`，固定在Validation目录，不修改正式存档。最终18个ObjectDB及3条资源占用诊断。 |
+| 隐藏龙宫 | `tangseng_dragon_role_regression_20261105`，用户参数 `--smoketest=ui --tangseng-only --dragon-flow-only`：退出0，实际下水/暂停淡出/GGF转场/奖励保留/首次旗幡拾取/龙王死亡/W出口/磁盘/地图通过；退出11个ObjectDB及3条资源占用诊断。 |
+| 悟空既有流程 | `wukong_role_final_20261105`，用户参数 `--smoketest=ui --terrain-level5`：退出0；全部背包/技能、HUD退订/实体复用、七星洞坡面、事务/失败/当前格式读写及备份重入通过。退出138个ObjectDB、10条资源占用及RID诊断。 |
+| 悟空无双与墓碑 | `wukong_musou_role_regression_20261105 -- --smoketest=ui --musou-hurt-only`、`wukong_tombstone_role_regression_20261105 -- --smoketest=ui --hero-death-only`：均退出0；悟空专属立绘、白光/霸体、8帧受击闪光和60/120Hz平地/坡面墓碑、重试/地图重入通过。分别退出3与5个ObjectDB，后者1条资源占用诊断。 |
+| 目录与生成 | `musou_activation/{wukong,tangseng,shared}`、`hero_hurt/{wukong,tangseng}`、唐僧技能素材 `Effects/tangseng/skills`、悟空预览动画 `Animations/Heroes/Wukong`；全部携UID更新引用与作者工具。`hero_resources_collection_closeout_20261105 --headless --editor --script res://EditorScripts/regenerate_collection.gd --no-window`：退出0，明确 `Collection complete. 910 resources saved`；退出有既有编辑器插件/free与RID诊断。 |
+| 规则与工具 | `dotnet test Tests/ProfileTests --no-restore -v minimal`：260/260；`python -m unittest discover -s Tests/ToolTests -v`：24/24（包含唐僧就绪门）；第40章的可玩角色装备门已将唐僧从跳过名单改为身份/动作/GUI三项必验。 |
+
+所有引擎案例均通过同一个 `Godot/GodotProject/.godot/validation/movement_presets/run_godot.py` 执行，除单独列出的headless导入/生成外使用OpenGL兼容渲染及Dummy音频。角色功能/技能命中由专项覆盖；主线清场夹具使用提高HP和直接攻击包清怪，十关证据证明移动/刷怪/门/结算/解锁/保存流程，不声称全程用唐僧技能击败每个Boss。
+
+失败夹具的修正：悟空技能官方透明身体格91仅允许在烈焰闪/火魔斩的对应阶段；敌人1/2/3旧编号改为实体枚举；阶段门探针只取双方原有PlayerBarrier掩码，避免世界高台混入。原失败日志保留，不修改正式素材或放宽实际游戏规则来迎合测试。
+
+## 唐僧官方音频与输入触发（2026-11-05）
+
+按第20章声音事件编码、第30/50章GGF/原生方法轨道和当前Stop Ladder复用要求执行。已有官方技能音频导出器增加`--hero tangseng`，8段来自登记的Music.swf原MP3载荷。新增声音源表仅Resources与__enums__；不新增死亡音、不改悟空声音或运行期音频架构。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 官方导出 | `python Tools/LegacyMigration/export_official_skill_audio.py --source Godot/GodotProject/.godot/validation/wukong-skills-export/audio/music.swf --work Godot/GodotProject/.godot/validation/tangseng_audio_20261105/source --java "S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe" --ffdec "$env:TEMP/gamezmxy-ffdec/ffdec.jar" --output Godot/GodotProject/TheGame/Audios/SFX/tangseng --hero tangseng`：退出0，既有固定源SHA检查通过，原样复制8段MP3。 |
+| 作者化与原包 | `.godot/validation/tangseng_audio_20261105/author.mjs --edit`由Artifact作者化并重算、inspect/零公式错误扫描和前后render；两个视图已查看。preserve.py逐表核对全部值/公式后仅局部添加8行及共享字符串；原ZIP的样式/关系/其他Sheet和元数据部件逐字节保留。 |
+| XLSX Diff | 同目录`verify_diff.mjs`使用已安装1.6.4真实worker：Resources普通/公式均56格、__enums__均24格；全部右侧Sheet非空。此结果不代替用户VS Code面板恢复确认。 |
+| Luban | `$env:AI_MODE='1'; cmd /c Configs\GameConfig\gen_code_bin_to_project_lazyload.bat`：退出0；只更新SoundId.cs和sound_tbsoundconfig.bytes。 |
+| 构建/纯测 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有框架弃用警告；`dotnet test Tests/ProfileTests --no-restore -v minimal`：260/260，NU1900网络警告保留。 |
+| Godot导入 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py tangseng_audio_import_20261105 --headless --editor --quit --no-window`：退出0，8段导入完成；退出仍有既有ComponentInsoector/free诊断。 |
+| 正式输入与声音 | 同run_godot.py入口案例`tangseng_audio_verified_20261105`，参数`--rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --tangseng-only --effects-only`：退出0，8段经GGF SFX解码/无循环/停止，60/120Hz短按/未满/满蓄/低蓝复用、分身创建与换位、普通/无双玄冰仅本体发声、甘露分身两次起手、水魔无追加无声音/追加一次、真实命中与受击全部PASS。原生方法键核对普攻0、玄冰14/24、水魔下落13/24秒。 |
+| 引用/格式 | `python Tools/ProjectMaintenance/validate_game_references.py`：1958路径、384UID；`python -m py_compile Tools/LegacyMigration/export_official_skill_audio.py`与`git diff --check`通过。两份改动C#通过既有CSharpStyle的token/注释保持格式化。 |
+
+初轮普攻在伤害发生的同帧检查GGF派发前的命中音计数而失败；等待实际成功播放事件后修正。后续把异步成功播放时的动画位置当作原生键时间也失败，已改为检查实际动画键并分别观察播放结果，没有修改生产时点以迎合测试。最终专项退出仍有14个ObjectDB及4条资源占用诊断，未声称退出无错误。证据目录`.godot/validation/tangseng_audio_20261105/`及`movement_presets/tangseng_audio_*_20261105/`。全部装备实际穿卸、共用被动/状态、完整通关与磁盘重读仍待，原目标保持。
+
+## Stop That Shit 安装与项目规则（2026-11-05）
+
+用户要求安装插件并作为项目规范。按固定tag的INSTALL_FOR_AGENTS执行Codex原生安装，未克隆仓库、直接编辑宿主配置或绕过Hook信任；工程规则纳入ProjectGuidelines/AGENTS.md，安装/使用边界归第50章。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 宿主 | `codex --version`：0.154.0；`node --version`：v24.14.0。 |
+| Marketplace | `codex plugin marketplace add lennney/stop-that-shit --ref 0.2.5 --json`：退出0，注册stop-that-shit marketplace，固定tag。 |
+| 安装 | `codex plugin add stop-that-shit@stop-that-shit --json`：退出0，version0.2.5，安装目录为`C:/Users/zheliku/.codex/plugins/cache/stop-that-shit/stop-that-shit/0.2.5`。 |
+| 状态 | `codex plugin list --marketplace stop-that-shit --json`：installed=true、enabled=true、Git来源为指定仓库。 |
+| 包与文档 | 已阅读安装版SKILL.md及hooks/codex-hooks.json；`node --check <安装目录>/hooks/stop-that-shit.cjs`退出0。`git diff --check`通过；只修改中央规范与当前记录。 |
+
+尚未完成：重启后的宿主发现、CLI `/hooks`用户审阅/信任、显式任务模式后的实际Guard拒绝/允许烟测。上游安装说明要求用户自行审阅并信任，未用直接执行Hook、修改信任文件或伪造用户prompt代替。当前证据只支持插件已安装启用及工程规则已落地，不支持Guard已在本会话拦截。原唐僧目标仍继续，音效表工作稿未写回。
+
+## ConfigurationSystem实例初始化与注册依赖（2026-11-05）
+
+按用户当前要求移除静态ValidateTables、ValidateSkillCombat、ValidateSkillCatalog对外入口和Utility可空参数/兜底构造。ConfigurationSystem.OnInit只借用所属架构中已注册的ConfigurationModel、ExperienceCurveUtility、ConfigIdUtility；全部内部校验方法为私有实例方法。经验表验证仍由工具构造时完成，Procedure注册失败沿原失败出口终止。测试通过现有TestArchitecture按同一依赖顺序装配并执行ICanInit，未新增生产测试入口。第20章旧ValidateTables方法名尚未据此改写规范正文。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有框架弃用警告。 |
+| 同生命周期规则测试 | `dotnet test Tests/ProfileTests --no-restore -v minimal`：260/260；正式表初始化通过，编号/重复基础身份/攻击预算/英雄输入非法配置均由实例OnInit拒绝。测试包保留NU1900联网警告。 |
+| 依赖/旧入口检查 | 全项目C#引用检查无外部静态ConfigurationSystem校验调用；ConfigurationSystem内无static、new Utility、可空工具参数或工具缺失兜底。`git diff --check`通过。 |
+| 实际启动 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py config_system_registered_init_20261105 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend --level-guide-only`：退出0，正式Prepare注册/配置OnInit、十地点图鉴、悬停/两种尺寸及真实点击进关PASS。退出仅剩3个既有ObjectDB诊断，无资源占用错误。 |
+
+本次涉及的配置系统与测试文件通过CSharpStyle审计，0格式差异、0缺失XML。上一节编号专项的历史通过不替代本次初始化链路验证。唐僧声音表仍未编辑，后续继续原目标。
+
+## 配置ID工具统一与注册链路（2026-11-05）
+
+按用户本轮明确要求，ConfigIdUtility位于`TheGame/GameScripts/Utilities/Utility/`，实现现有IUtility，在ProcedurePrepare和独立TestArena注册。编号公式与范围判断只保留在该实例工具中；实体、图鉴、启动校验与烟测通过GetUtility取用，独立规则测试借用同一实现。未为本项改表、重编枚举、修改存档或改写规范正文。第00章的纯静态规则描述不覆盖用户此次指定的注册型工具形式。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误，5条既有框架弃用警告。 |
+| 规则/配置/图鉴 | `dotnet test Tests/ProfileTests --no-restore -v minimal`：260/260通过，含固定编号样本、跨实体/环境误归属启动拒绝、实体范围边界、毒云与龙王高等级档。NuGet漏洞数据查询仍有NU1900网络警告。 |
+| Godot扫描 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py config_id_utility_instance_scan_20261105 --headless --build-solutions --quit --no-window`：退出0、扫描完成；退出仍有既有ComponentInsoector与ArchiveSettingInspectorPlugin的free诊断。 |
+| 鲨魔王/鲨鱼 | 同run_godot.py入口，案例`config_ids_shark_20261105`，参数`--rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --shark-only`：退出0；60/120Hz、双朝向、两阶段八个出招选择、水牢警示/取消、鲨鱼斩击和召唤/死亡/复用全部PASS。 |
+| 毒云 | 案例`config_ids_qixing_20261105`，同上参数改`--qixing-only`：退出0，六招双朝向、飞刀/毒云命中、持续中毒、暂停/复用PASS。 |
+| 龙王 | 案例`config_ids_dragon_20261105`，同上参数改`--dragon-only`：退出0；普通/高等级四招、60/120Hz、双朝向及控制/暂停/弹体取消PASS。 |
+| 地图图鉴 | 案例`config_ids_guide_20261105`，同上用户参数改`--smoketest=frontend --level-guide-only`：退出0；十张真实图鉴、首领顺序、两种尺寸、嵌套悬停与点击进关清理PASS，验证Query取用已注册的工具。 |
+| 引用/重复规则 | `python Tools/ProjectMaintenance/validate_game_references.py`：1958路径、384UID通过。全项目手写C#/GDScript/Python搜索确认实体攻击/首领池乘法、攻击解析和敌人范围分组不再散落；固定源表枚举、场景引用及独立期望值保留。`git diff --check`通过。 |
+
+上述四项实际引擎案例退出时仍分别有9/9/7/5个ObjectDB实例与各1条资源占用诊断；不以专项PASS宣称退出期无错误。CSharpStyle审计357个手写文件、0缺失XML；新工具与更新的编号测试单独通过token/注释保持格式化，未批量改动其余历史格式差异。证据目录为`.godot/validation/config_id_utility_20261105/`及`movement_presets/config_ids_*_20261105/`。这些结果不替代仍在进行的唐僧声音、完整穿卸/状态/章节通关/磁盘重读验收。
+
+## 唐僧瞄准圈注册、特效层级与技能运动（2026-11-05）
+
+依第30章具体状态负责运动/分支、第40章完整父级矩阵和原生资源定位、第50章实际渲染验证执行。水魔圈补回官方body矩阵，与此前相比下移19.95px、横向补12.45px并随朝向镜像。唐僧离身场景z=2，血条层保留。玄冰本体/分身同步起手、各自朝向、无双缩放/额外刷新区别与最终整数威力对齐；删除错误统一冻结五招的中间基类，恢复冰龙空中运动与瞬发水幻影动量。
+
+| 检查 | 结果 |
+| --- | --- |
+| 官方完整父级 | `python Godot/GodotProject/.godot/validation/water_ball_position_review_20261105/prepare_reference.py`：退出0，核验SWF/XML散列，生成hit4完整body父级41源帧双朝向参考；第10/20/30/41帧与修正前后Godot截图已查看。 |
+| 正式场景注册 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py water_ball_all_registered_frames_20261105 --rendering-method gl_compatibility --audio-driver Dummy --quit-after 300 --script res://.godot/validation/water_ball_position_review_20261105/render.gd`：退出0、0错误；第10–41共32源帧×双朝向实际global_transform与官方注册点全部一致。像素不是全等：原生FFDec与Godot滤镜边缘不同，未据坐标通过宣称整幅像素相同。 |
+| 正式选角/学习/技能 | 同run_godot.py入口，案例`tangseng_full_fidelity_verified_20261105`，参数`--rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --tangseng-only`：退出0；分身walk/hit3/hit5/暂停/取消复用/192帧寿命，J短按/未满/满蓄/低蓝回退，空中蓄力/松方向/重力/瞬发分身动量/空中水魔拒绝，普通与无双玄冰同步/朝向/缩放/威力/独立刷新/层级，甘露末帧治疗、水魔圈/超时/追加独立命中均PASS，前四组覆盖60/120Hz。四张最新战斗截图已查看。 |
+| 清理后复跑 | 案例`tangseng_cleanup_verified_20261105`，同上参数加`--effects-only`：退出0；删除玄冰本体空判定轨道、甘露重复绑定与无用回调场景参数后，J输入、空中运动、普通/无双玄冰、甘露和水魔链再次全部PASS。此次退出剩5个既有ObjectDB诊断，无资源占用错误。 |
+| 构建与引用 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有框架弃用警告。`python Tools/ProjectMaintenance/validate_game_references.py`：1958路径、383UID通过。`git diff --check`通过。 |
+
+首轮无双案例在激活演出的暂停中发送输入而超时，测试改为等待演出释放暂停后重跑；空中夹具首轮在MoveAndSlide刷新传送前落地缓存前设置速度，改为进入Air后设定待测速度，未修改生产运动迎合错误夹具。参考渲染初版遗漏scaleY导致全透明，已修正重导；旧Seek采样值轨道的下一键问题改用原生Advance后复核。最终完整专项退出仍有既有8个ObjectDB实例和1个资源占用诊断。证据在`.godot/validation/water_ball_position_review_20261105/`和`movement_presets/tangseng_full_fidelity_verified_20261105/`。完整装备穿卸、全部状态/被动、章节通关及磁盘重读仍待，不据通用SMOKE尾句认定已验收。
+
+## 唐僧特效全帧清理与透明图集（2026-11-05）
+
+依据第40章源注册点与第50章实际渲染验证约束执行。用户明确要求去掉玄冰阵蓝色弧光；源604父轴完整核对为第5–11帧，595/597/599/601/603五张形状，已全部排除。593冰柱及其碎冰、滤镜和淡出保留。甘露仅对源703的ADD图做颜色/alpha等效转换，保留ADD材质，关闭该贴图fix_alpha_border。四组图集复用compact_registered_atlas与AtlasTexture.margin；不重新居中、删除动画帧或修改伤害判定。水魔球素材源注册offset=(-0.85,-11.3)；正式场景叠加hit4父级矩阵后的修正见上节。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 官方重导 | `python Tools/LegacyMigration/export_official_tangseng_effects.py --role Godot/GodotProject/.godot/validation/wukong-skills-export/role.swf --xml Godot/GodotProject/.godot/validation/action_origin_review/fresh_role.xml --java "S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe" --ffdec "$env:TEMP/gamezmxy-ffdec/ffdec.jar" --work Godot/GodotProject/.godot/validation/tangseng_effects_20261105/export --only dark_ice water_demon_fall cure_role water_demon_ball --install-to Godot/GodotProject/TheGame/Sprites/Effects/tangseng`：退出0，Role_v7 SHA校验通过，125源帧。 |
+| 帧/原点回读 | `python Godot/GodotProject/.godot/validation/tangseng_effects_20261105/verify.py`：125帧通过；从正式SpriteFrames回读region/margin与源画布逐帧比对，普通混合可见RGBA相同，甘露ADD光量误差≤1/255。普攻/冰龙单图与原始导出逐字节相同。 |
+| 存储裁切 | 玄冰阵2862×1536→2048×980；甘露2892×1662→1024×2090；水魔下落1602×2160→1024×1972；水魔球1176×332→4096×91。水魔下落22–25及玄冰阵45–46空帧仍保留原时长，共用1px透明存储；重复帧只共用贴图。 |
+| 实际GPU对比 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py tangseng_effect_gpu_verified_20261105 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --script res://.godot/validation/tangseng_effects_20261105/render.gd`：退出0、0错误、250张深浅背景双栏对比。逐图比较左右550×500区域，玄冰/球/下落最大通道差0，甘露最大差1；gpu_report.json已记录。 |
+| 正式技能回归 | 同run_godot.py入口，案例`tangseng_effects_verified_runtime_20261105`，参数`--rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --tangseng-only --effects-only`：退出0，正式学习控件、34帧甘露末帧治疗、玄冰真实命中、移动roundMc、无追加输入收招、二次释放落点及独立命中/回池PASS；实际截图已查看。退出仍有既有8条ObjectDB泄漏与1条资源占用诊断。 |
+| 构建与引用 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0警告、0错误；`python Tools/ProjectMaintenance/validate_game_references.py`：1957路径、384UID通过；`python -m py_compile Tools/LegacyMigration/export_official_tangseng_effects.py`及`git diff --check`通过。 |
+
+首轮GPU脚本的Vector2/Vector2i比较解析错误已修复。后续对比发现最近邻采样需对齐像素中心，以及甘露fix_alpha_border会在新alpha编码后改写半透明颜色；均修正后按上表最终案例复跑，未以最初截图代替通过结果。编辑器导入退出仍有既有ComponentInsoector/ArchiveSettingInspectorPlugin释放诊断，未修改只读插件。证据根为`.godot/validation/tangseng_effects_20261105/`；本项不代替唐僧全技能、全部状态、正式穿卸、完整通关与磁盘重读验收。
+
+## 英雄效果命名与唐僧目录整理（2026-11-04）
+
+按第10章一文件一个主要类型与动画入口半类、第30章状态/节点所有权、第50章携UID移动脚本和实际引擎验证执行。`RentSkillEffect` 表达取池登记，`PlaySkillEffect` 表达配置播放；英雄、敌人、测试同迁移。唐僧五状态独立放在 Skills，动画入口提取到 `TangsengEntity.AnimationEvents.cs`；水幻影改名 `TangsengWaterCloneNode`，原生 AnimationPlayer/外置动画库替代自制帧游标和动作枚举，清理未使用事件与重复清理入口。原生场景与动画仍在既有角色目录。
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误，5条既有框架弃用警告。 |
+| 规则回归 | `dotnet test Tests/ProfileTests/ProfileTests.csproj --no-restore -v quiet`：246/246；BattleTests同命令191/191；有既有测试编译警告及NuGet漏洞数据联网警告。 |
+| UID/资源 | `python Tools/ProjectMaintenance/validate_game_references.py`：2073条资源路径、384个UID通过；`git diff --check`通过。CSharpStyle在本轮唐僧10文件副本上执行token/注释保持格式化后写回，无缺失XML。 |
+| Godot扫描 | `S:/Godot4/Godot4CSharp_console.exe --headless --editor --path Godot/GodotProject --build-solutions --quit --no-window`：退出0，脚本扫描通过；退出期既有ComponentInsoector RefCounted/free诊断仍存在。 |
+| OpenGL衣装/动画 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py layout_tangseng_wardrobe_final_20261104 --rendering-method gl_compatibility --audio-driver Dummy --script res://EditorScripts/validate_tangseng_wardrobe_motion.gd -- res://.godot/validation/tangseng_20261103/semantic_install_manifest.json res://.godot/validation/identity_layout_20261104/wardrobe_final`：退出0，72种装备组合、44784个原生采样、0失败、0错误。 |
+| 分身实际引擎 | 同 `run_godot.py` 入口，最终案例 `layout_tangseng_clone_visible_20261104`，参数 `--rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --tangseng-only`：真实选角建立唐僧档并进关；60/120Hz的原生walk/hit3/hit5、暂停、一次出手/治疗、取消复用、192源帧寿命均PASS，退出0。退出期5条ObjectDB及1条资源诊断仍存在。首轮断言在Dismiss后读取帧号（Stop会回到动作开头）失败，改为在实际治疗回调中采样末帧115后复跑通过，未按错误断言更改动作。 |
+| 悟空最终回归 | 同入口 `layout_wukong_regression_20261104`，参数 `--rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest`：退出0，39次状态迁移、5次真实受击、连击峰值2且HUD显示；退出期8条ObjectDB及1条资源诊断仍存在。 |
+
+首次衣装复跑虽通过断言，但发现甘露方法轨道在同一时刻包含两个键，Godot载入报越界；合并治疗/收招入口后按上列最终命令重跑，诊断消失。此次验证包含场景实例化和原生动画播放，未替代唐僧技能实际命中、通关和磁盘重读验收。批量重写脚本被自动审批拒绝后改用逐文件补丁，无遗留审批阻塞。
+
+## 配置身份、攻击、掉落池与声音编码（2026-11-04）
+
+依据 `ProjectGuidelines/20-Configs.md`，本轮统一 EntityId/EnemyId、去除实体资源重复主键，按实体/动作/段号编码攻击，按品质或 Boss 身份编码掉落池，并整理声音事件段。HeroId、EquipmentId、SkillId、PassiveId 等持久身份未重编。
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 正式导表 | `$env:AI_MODE='1'; cmd /c Configs\GameConfig\gen_code_bin_to_project_lazyload.bat`：成功，`bye~`；C# 与 bytes 仅经此流程生成。 |
+| 正式构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0 错误，5 条既有框架弃用警告。 |
+| 配置/档案测试 | `dotnet test Tests/ProfileTests/ProfileTests.csproj --no-restore -v quiet`：246/246；最终复跑通过，另有无法获取 NuGet 漏洞数据的 NU1900 网络警告。 |
+| 战斗测试 | `dotnet test Tests/BattleTests/BattleTests.csproj --no-restore -v quiet`：191/191。 |
+| Schema/可读性 | `audit_config_schema.py`：17 个映射 Sheet、0 错误；`audit_config_readability.py`：11 本表、24 个枚举列，英文值/缺失别名/错误均为0。 |
+| 引用/包格式 | `validate_game_references.py`：2072 路径、378 UID 通过；`normalize_xlsx_namespaces.py`：0 本待修复；`git diff --check` 通过。 |
+| XLSX Diff 解析 | 已安装 1.6.4 worker 对 Resources/Enemy/Combat/Items/__enums__/__tables__ 的值与公式两模式均返回全部非空 Sheet；右侧变化格分别103/26/677/76/162/1（值模式）。表值/公式与审核稿逐项相同，未编辑 ZIP 部件逐字节保留。Artifact 预览检查实体主键、英雄攻击与掉落分组。 |
+| Godot 扫描 | `S:/Godot4/Godot4CSharp_console.exe --headless --editor --path Godot/GodotProject --build-solutions --quit --no-window`：退出0；退出期仍有既有 ComponentInsoector RefCounted/free 诊断。 |
+| 实际 OpenGL 音乐 | 隔离 APPDATA 的 `run_godot.py identity_music_20261104 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --chapter-music-only`：退出0；洞窟/海底/牛魔谷播放、进度推进、暂停停止及洞窟场景绑定通过；退出期3条既有 ObjectDB 泄漏诊断。 |
+| 悟空实际回归 | 同入口 `identity_hero_20261104 ... -- --smoketest`：退出0，39次状态迁移、5次真实猴子受击、连击 HUD 显示；退出期8条 ObjectDB 与1条资源诊断。 |
+
+证据位于 `.godot/validation/identity_layout_20261104/` 和 `movement_presets/identity_*_20261104/`。worker 检查不能代替 VS Code 面板显示验证；用户此前确认 Hero 正常、其他表空白，目前尚无实际面板恢复的证据。此前对字符串类型或缓存的解释没有完成界面复现，不能认定为根因。唐僧五技能、完整通关与磁盘重读继续验收，未在此标记完成。
+
+## 唐僧 Role2Shadow 官方分身接入（2026-11-04）
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 官方导出 | `python Tools/LegacyMigration/export_official_tangseng_shadow.py --role .../role.swf --xml .../fresh_role.xml --audit .../source_audit.json --java .../java.exe --ffdec .../ffdec.jar --work .../shadow_export`：官方 `Role2Shadow` 的 walk/hit3/hit5 共 116 帧导出通过。 |
+| 官方栅格 | 同工具 `--rasterize-only --godot S:/Godot4/Godot4CSharp_console.exe --output .../tangseng_shadow.png`：116 格、6列、1200×4000 图集通过；alpha bbox `(32,74,1151,3966)`，无全透明图集。 |
+| 运行时接入 | 新增 `TangsengWaterCloneNode`、`tangseng_shadow.tscn`；首次 I 创建、24fps/8px源帧移动、192源帧过期；第二次 I 直接换位销毁且不走技能扣蓝。水幻影不再复用甘露动画。 |
+| 场景/生命周期 | Godot 隔离脚本测试输出 `TANGSENG WATER CLONE LIFECYCLE PASS`；唐僧实体场景实例化并找到 `m_WaterClone/m_Body`。 |
+| 构建/扫描 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有弃用警告；Godot editor scan 完成，退出期仍为既有 `ComponentInsoector` RefCounted/free 诊断。 |
+
+当前仅完成分身移动、生命周期、换位所有权和官方表现；Shadow hit3/hit5 的独立伤害、治疗范围及换装纹理仍未完成，不据此宣称五技能或完整通关验收通过。
+
+## 唐僧冰龙波官方蓄力逻辑（2026-11-04）
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 源规则 | `Docs/TangsengImplementationStudy.md`：hit1 第2源帧进入 hit2 第1帧蓄力，最多30/24秒；满蓄 Bullet2 为360px/s、600px、0.8×且扣20 MP，未满 Bullet1 为192px/s、400px、0.6×且不扣20 MP。 |
+| 运行接入 | `TangsengIceDragonState` 复用 `ice_dragon` 原生轨道停姿态/松键释放；`TangsengEntity.SpawnIceDragonBolt` 与 `TangsengBoltNode.ConfigureTravel` 按本次蓄力配置速度、距离和缩放。 |
+| 架构边界 | 延迟扣蓝继续由 `SkillSystem` 所有，特效继续走 `SkillEffectNode`/NodePool；没有新增时间线、管理器或配置字段。 |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有弃用警告。 |
+
+真实 OpenGL 长按、松键、满/未满蓝量、命中预算和回池验证仍待接入现有 SmokeScenario；本节不把编译通过当成完整技能验收。
+
+## 配置身份范围统一与原生 XLSX 重建（2026-11-04）
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 身份规则 | `0=None`；英雄 `1-999`；小怪 `1000-4999`；Boss `5000+`。小怪/Boss 按 `Enemy.xlsx` 首次出场顺序连续编号，`LegacyId` 保持独立溯源。 |
+| 源表与场景 | `python Tools/ProjectMaintenance/migrate_identity_ranges.py`：更新 `__enums__.xlsx`、`Enemy.xlsx`、全部 `m_EnemyEntityId` 场景字段和地图图鉴键；同步测试与 `LevelGuideQuery` 阈值。 |
+| Luban | `cmd /c Configs\\GameConfig\\gen_code_bin_to_project_lazyload.bat`：退出0、`bye~`；生成 `EntityId.cs`、Enemy/Entity/Level/Attack 等对应 bytes。 |
+| XLSX Diff | `node Godot/GodotProject/.godot/validation/tangseng_20261103/config/check_diff.mjs`：退出0；Hero 951、`__enums__` 36、Resources 5、Combat 16 格变化，四表普通/公式模式均有非空右侧模型。 |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有弃用警告。 |
+| 纯测 | 迁移后首次测试发现3处旧硬编码 EnemyId，已改为 `1000/5000` 范围内身份；随后完整 `dotnet test Tests/ProfileTests/ProfileTests.csproj --no-restore -v quiet` 通过 242/242。 |
+
+VS Code 已打开的旧对比页仍可能缓存空模型；请关闭旧页并重新从当前工作树打开。worker 和包结构验证不能替代桌面 UI 截图确认。
+
+## 唐僧官方 Bullet3 玄冰阵效果（2026-11-04）
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 官方素材 | 从 `effects_official/native` 安装 Role2Bullet3 的46张原始PNG；不绘制替代图。 |
+| Godot资源 | 生成 `tangseng_dark_ice_frames.tres`、AnimationLibrary 与 `tangseng_dark_ice_effect.tscn`，池登记到 `NodePoolConfigRes.tres`；方法键覆盖源第1/6/11/16/21/26/31/46帧。 |
+| 运行接入 | `TangsengDarkIceState` 改为生成独立 Bullet3；分身 hit3 在第15源帧生成第二个独立 Bullet3，避免覆盖本体攻击包。 |
+| 场景验证 | Godot 隔离测试输出 `TANGSENG DARK ICE EFFECT SCENE PASS`，确认 AnimationPlayer 和46帧 SpriteFrames。 |
+| Godot扫描 | `S:/Godot4/Godot4CSharp_console.exe --headless --editor --path Godot/GodotProject --build-solutions --quit --no-window`：退出0；未发现新增资源/脚本解析错误，仅有既有编辑器插件 `ResourceComponentInspectorPlugin.free` 退出诊断。 |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有弃用警告。 |
+
+完整 Bullet3 命中刷新、无双 `(1.26,1.8)` 缩放和 OpenGL 目标受击回归仍待完成。
+
+## 唐僧官方天降甘露与分身治疗（2026-11-04）
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 官方素材 | 直接从核验 Role_v7 导出 sprite703 `cureRoleMc`，安装 `tangseng_cure_role.png`；未绘制替代图。 |
+| 运行规则 | 本体 hit5 末帧一次性治疗；分身 hit5 第50源帧按横向200/纵向160范围判断；治疗量 `int(MaxMP/8+8)`，无双倍率1.5；cure 视觉位于 `(0,-60)`，无双缩放1.6。 |
+| 池化接入 | 新增 cureRole `SkillEffectNode` 场景、AnimationLibrary、SpriteFrames，并注册节点池；技能方法轨道传入官方场景。 |
+| 场景验证 | `TANGSENG HEAVENLY DEW SCENE PASS`；Godot扫描退出0，仅保留既有编辑器插件释放诊断。 |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有弃用警告。 |
+
+真实 OpenGL 治疗范围、多人目标和完整存档/通关回读仍待。
+
+## 唐僧官方水魔爆光柱与追加下落（2026-11-04）
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 官方素材 | 安装 Role2Bullet4 的43帧 `water_demon_pillar` 和 `hit4FallDown` 的25帧官方PNG；未绘制替代图。 |
+| 运行接入 | 释放方法键生成独立光柱效果；技能状态第二次 L 输入生成下落效果并提交 `WaterDemonFall` 攻击。两个效果均注册节点池。 |
+| 场景验证 | `TANGSENG WATER DEMON SCENES PASS`，两套官方帧资源加载成功。 |
+| Godot/构建 | Godot扫描退出0；`dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有弃用警告。 |
+
+官方球体坐标、二段 OpenGL 目标命中、无双缩放和完整关卡回归仍待。
+
+## XLSX Diff 共享字符串回退复核（2026-11-04）
+
+此前将三张表所有文本统一为 `t="s"` 共享字符串后，插件 worker 仍能读到差异，但 VS Code 面板仍显示空白。已确认 Hero 使用原生 `str`/`inlineStr` 混合存储；本次从已逐格核对的原生 ZIP 保留包恢复 `__enums__`、Resources、Combat 的文本存储，再仅规范化 SpreadsheetML 默认命名空间。值和公式未变化。
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 值/公式核对 | 三表与恢复候选包逐格值/公式相同；`Hero` 也保持相同。 |
+| 命名空间 | `python Tools/ProjectMaintenance/normalize_xlsx_namespaces.py <四表>`：0 workbook(s) need repair。 |
+| XLSX Diff | `node Godot/GodotProject/.godot/validation/tangseng_20261103/config/check_diff.mjs`：退出0，值/公式两模式均通过，Hero 951、`__enums__` 3、Resources 5、Combat 16 格。 |
+| 生成与构建 | `cmd /c Configs\\GameConfig\\gen_code_bin_to_project_lazyload.bat`：退出0、`bye~`；`dotnet build Godot/GodotProject --no-restore -v quiet`：0警告、0错误。 |
+| 包结构 | `__enums__` 使用 `inlineStr`；Resources/Combat 使用原生 `str`/`inlineStr` 混合存储，不再全量使用 `t="s"`。 |
+
+VS Code 旧对比页可能保留此前空模型，需关闭该页后重新打开文件；本轮没有改变配置内容或设计。
+
+## XLSX Diff原ZIP保真修复（2026-11-03，界面确认待定）
+
+用户指出四份唐僧表在已安装codetypess.xlsx-diff 1.6.4中右侧全空。导出器用了带x:前缀的SpreadsheetML，而插件读取sheetData使用无前缀标签。仅规范化命名空间后worker虽通过，用户仍反馈新视图空白；因此不将首轮修复宣称完成，进一步恢复真正原ZIP结构。当前正式表保留已授权唐僧数据，ID重构/图集改名待此问题闭环后继续。
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 命名空间初修 | `python Tools/ProjectMaintenance/normalize_xlsx_namespaces.py --write <Hero/enums/Resources/Combat四表>`退出0，修复6/4/6/5个XML部件；随后旧check_plugin.mjs因为其Sheet数量基准过时失败，不作为通过证据。针对当前四表/Sheet数的`config/check_diff.mjs`八次普通/公式对照通过，但用户确认新界面仍空。 |
+| 原ZIP转存 | `python Godot/GodotProject/.godot/validation/tangseng_20261103/config/restore_native_package.py`退出0；复用此前preserve_config_package.py，Hero仅A7:P7/A62:S116，枚举原41行起下移1行并转入H41:J41，Resources仅B31:F31，Combat仅B77:Q77。原样式、关系、sharedStrings等其他ZIP部件逐字节保留，全部非空值/公式与已审阅Artifact输出一致；UIFormConfig列宽恢复原值。 |
+| 原ZIP版插件对照 | `node Godot/GodotProject/.godot/validation/tangseng_20261103/config/check_diff.mjs`退出0：四表普通/公式模式分别识别951/3/5/16格变化，原版与当前Sheet名/数量一致，右侧所有Sheet行列非空。命名空间检查0份需修复。 |
+| 真实模型进一步核对 | 直接运行已安装diff-load-worker.cjs，精确HEAD6691fd8对比当前正式__enums__；结果保存于config/native_diff_model.json。右侧Sheet1为195行12列，包含实际cells对象与##var、Skills.SkillHero/SkillId/PassiveId/SkillHitId等值；非仅依赖表头/Sheet计数。精确HEAD与最初originals备份字节相同。 |
+| 生成语义未变 | 原ZIP恢复后再次设置AI_MODE=1并执行规定Luban脚本，退出0、bye；luban-native-format.log保留。前后比较全部16份bytes和EntityId.cs共17份生成文件，SHA256逐项相同；格式修复未改数值、枚举或既有授权内容。 |
+| UI待确认 | 已用插件官方compare URI打开修复后正式文件，又以完全相同字节的新文件身份__enums___native_current.xlsx对比HEAD副本，排除已打开文档状态；用户尚未确认原ZIP版新页画面。原ZIP副本SHA256为b666502430ae270a60e7c3225cd335c03b5b543235c5e8408caae2c87de1a4a7。不能据worker PASS宣称编辑器已恢复。 |
+
+## 唐僧语义图集、光晕网格与表格可读性续检（2026-11-04）
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| XLSX 原生结构 | 对 Git HEAD、正式表、原生 Excel 副本逐部件核对；四表均为默认 SpreadsheetML `sheetData`，中文码点正确。`__enums__` 新增行已复制相邻原生 A:L 行结构，仅保留 H41=`Tangseng`、I41=`唐僧`、J41=27；修复前包保存在 `Godot/GodotProject/.godot/validation/tangseng_20261103/config/before_enum_row_shape_fix.xlsx`。 |
+| XLSX Diff worker | `node Godot/GodotProject/.godot/validation/tangseng_20261103/config/check_diff.mjs`：普通/公式模式均通过，Hero 951、`__enums__` 3、Resources 5、Combat 16 格；直接 worker 模型和面板投影右侧均有非空单元格。VS Code 实际界面因桌面自动化通道故障未能重新截图，不能把 worker 通过等同于 UI 已确认。 |
+| Luban | `Configs/GameConfig/gen_code_bin_to_project_lazyload.bat`：退出 0，命令输出 `bye~`。本轮只改变枚举行 XML 结构，未改变配置值。 |
+| 唐僧正式图集 | `python Tools/LegacyMigration/import_official_tangseng_art.py --report .../wardrobe_export_audit.json --project Godot/GodotProject --apply --replace-generated`：13 套官方语义图集、身体 100 格/武器 37 格、15 件装备绑定、3 套动画库安装完成；旧数字 PNG 移入验证备份目录。正式目录没有数字后缀图集引用。 |
+| 图集像素回放 | 逐像素检查正式安装资源 13×311=4043 个源格，全部通过；每张图集为 1200×3400 或 1200×1400，无全透明尾行。 |
+| 光晕 shader | `S:\Godot4\Godot4CSharp_console.exe --path Godot/GodotProject --rendering-method gl_compatibility --audio-driver Dummy --script res://EditorScripts/validate_hero_invulnerability.gd -- <validation>/glow`：OpenGL 退出 0，29/17/7 行图集、左右镜像、0/6/15px 光晕共 0 失败。 |
+| 构建与扫描 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0 错误、0 警告；Godot 编辑器扫描和贴图导入完成。编辑器退出时仍有既有 `ComponentInsoector` RefCounted/free 诊断。 |
+
+本轮仍未完成唐僧实体、五项技能、受击/无双/死亡、全装备实机、完整通关与磁盘重读验收；不据图集和配置基础设施通过宣称角色可玩。
+
+## 三张表兼容存储与唐僧普攻弹体基础（2026-11-04）
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 文本存储规范化 | `python .../canonicalize_string_storage.py`：`__enums__` 426、Resources 306、Combat 861 个文本单元格转共享字符串；数值字面量、公式、单元格属性、样式、关系和其他 ZIP 部件语义核对通过。 |
+| 正式源表与生成物 | 三张表写回 `Configs/GameConfig/Datas/`；`Configs/GameConfig/gen_code_bin_to_project_lazyload.bat` 退出 0、`bye~`。 |
+| XLSX Diff | `check_shared_diff.mjs` 值/公式模式均通过：`__enums__` 3、Resources 5、Combat 16 格；工作表行列非空。 |
+| 构建与扫描 | `dotnet build Godot/GodotProject --no-restore -v quiet` 0 错误；Godot headless editor scan 完成，退出期仍是只读 ComponentInsoector 的既有 RefCounted/free 诊断。 |
+| 唐僧弹体基础 | `SkillEffectNode` 增加活动契约，`TangsengBoltNode` 调整位移/基类回池顺序；两个官方弹体场景加入 `NodePoolConfigRes.tres`；`attack_1` 0.291666667 秒方法轨道登记 `FireNormalBoltAnimEvent`。普通普攻弹体命中实机与五项技能尚未完成。 |
+
+## 唐僧五项技能状态接入（2026-11-04，未完成实机验收）
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 技能登记 | 唐僧实体复用 `SkillSystem`/`AbstractHeroSkillState` 登记五项主动；输入槽 4/5 使用项目映射中的 P/L；悟空既有三键不变。 |
+| 官方时间轴 | `tangseng_skill_library.tres` 增加冰龙释放、玄冰阵第15源帧命中、水魔爆释放、甘露末帧治疗及收招方法轨道；独立弹体沿用官方 PNG/速度/距离场景。 |
+| 延迟耗蓝 | `SkillSystem` 增加延迟耗蓝契约；冰龙波在官方释放轨道才扣 20 MP，其他技能沿用原有激活扣蓝。 |
+| 构建与扫描 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0 错误、5 条既有弃用警告；Godot headless editor scan 完成，退出期仍有只读 ComponentInsoector 释放诊断。 |
+| 未完成项 | 水幻影目前只有状态入口，尚未接入官方分身实体/换位/192 帧生命周期；玄冰阵、水魔爆命中尚未做真实 OpenGL 命中回归；新档学习、五技能、完整通关/重读仍未通过。 |
+
+## 唐僧全动作换装导出与英雄加载回归（2026-11-03，角色未完成）
+
+依第30/40/50章保留官方注册点、独立身体/武器图层和原始绘制深度；仅修改迁入工具，修正版图集仍在忽略目录。本段不证明唐僧新档、技能或通关已通过。
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 全帧导出 | `export_official_tangseng.py --role <role.swf> --xml <fresh_role.xml> --audit <source_audit.json> --java <OpenJDK/java.exe> --ffdec <ffdec.jar> --work <证据>/atlases_baked/body_2 --kind body --cloth 2 --weapon 1`退出0，311帧/12动作。随后通过同一export/rasterize函数枚举body1–6、weapon1–7，shell会话49076已退出0、末行ALL BAKED VARIANTS FINISHED；每套export.log/raster.log均保留。输入SWF/XML路径与上一节一致，未覆盖旧验证产物或正式素材。 |
+| 栅格与已修正问题 | 复用`res://EditorScripts/import_official_wukong_equipment.gd`，每套打印WARDROBE ART PASS、311格。初版完整检查检出六套身体hit4第10–18帧触左边缘，视觉复核为roundMc外层951滤镜误混身体；已修正识别并独立重导。源867/870第1帧stop及攻击启动帧已逐动作烘焙；`cloth_bake_review.png`已查看，修正版body2完整311格无触边。原版`motion_review.png`仅用作发现问题，不列为修正版通过证据。 |
+| 全部换装源审计 | `python Tools/LegacyMigration/audit_official_tangseng_wardrobe.py --audit Godot/GodotProject/.godot/validation/tangseng_20261103/source_audit.json --atlases Godot/GodotProject/.godot/validation/tangseng_20261103/atlases_baked --output Godot/GodotProject/.godot/validation/tangseng_20261103/wardrobe_export_audit.json`退出0：15件身份、13个selector×311源帧，网格/帧序/衣装映射/源散列一致，逐格无裁切、padding透明；报告登记每份PNG散列。尚不覆盖原生绑定、全部42组合遮挡、实机播放/命中。 |
+| 语法与改动范围 | `python -m py_compile Tools/LegacyMigration/export_official_tangseng.py Tools/LegacyMigration/audit_official_tangseng_wardrobe.py`退出0。正式`Configs/GameConfig/Datas`的git diff仍为空，未执行Luban；用户已暂存索引未改。 |
+| 英雄加载前轮结果复核 | 已将ProcedureLevel固定Wukong改为档案ActiveHeroId→HeroConfig.EntityId→AbstractHeroEntity；SaveSystem入口使用GetOrDefault在IO前拒绝缺失英雄。`dotnet build Godot/GodotProject/GodotProject.csproj --no-restore --verbosity quiet`已退出0，build-config-driven-hero.log为0错误/5既有警告。独立APPDATA=`<证据>/profile_config_driven_hero`运行`S:/Godot4/Godot4CSharp_console.exe --path Godot/GodotProject --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest`已退出0；config-driven-hero.log记39次状态切换、SMOKE PASS，覆盖当前正式悟空的走跑/跳跃/普攻/受击。退出期仍有8个ObjectDB泄漏及1资源诊断；未据此声称唐僧可加载。 |
+
+用户随后指出数字命名与大片空武器区域，已按其要求修正作者工具、尚未替换正式资源。`python Tools/LegacyMigration/import_official_tangseng_art.py --report <证据>/wardrobe_export_audit.json --project <证据>/compact_native_v2 --manifest <证据>/compact_native_v2_manifest.json --apply`退出0，生成13套语义命名图集（身体100格/1200×3400；武器37格/1200×1400）、15装备绑定和3份保留源时序的动画库。独立逐像素回放13×311=4043源帧通过；全透明武器姿态复用首格，没有整行空尾，末行只保留正常网格padding。初版紧凑预览发现透明格在末尾导致一整空行，已在v2移至首格并重验；compact_weapon_review.png属于v1检查图，v2为compact_weapon_review_v2.png。后续必须调整共用保护shader按实际纹理推导200px帧边界，并验证两层不同网格的战斗/预览/残影；未据离线回放宣称实机完成。
+
+## 唐僧源证据与身份配置准备（2026-11-03，未实装完成）
+
+按第20章在原工作簿结构上用 spreadsheets 技能定点编辑：Hero.xlsx 新增ID2与55级成长，__enums__.xlsx 在EntityId末尾追加Tangseng=27，Resources.xlsx新增唐僧实体路径，Combat.xlsx新增唯一Role2.hit1普通攻击1101。四份输出仅在`.godot/validation/tangseng_20261103/config/`暂存；正式源表未覆盖，Luban未执行。前轮空槽确认/SaveSystem身份链仍因正式表缺英雄2不能完成唐僧新档，不将目录或配置准备视为可玩验收。
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 官方身份与时间轴 | `python Tools/LegacyMigration/audit_official_tangseng.py --role Godot/GodotProject/.godot/validation/wukong-skills-export/role.swf --xml Godot/GodotProject/.godot/validation/action_origin_review/fresh_role.xml --scripts Godot/GodotProject/.godot/validation/actor_review/role_scripts/scripts --output Godot/GodotProject/.godot/validation/tangseng_20261103/source_audit.json`：退出0；Role_v7 SHA-256严格核验，提取本体12动作311源帧、分身3动作116源帧、各动作父矩阵、受击盒、武器723/8帧及15个衣着selector、六组独立效果与嵌套回调。首版selector搜索曾把Role2构造赋值误识别为selector，已改为核对gotoAndPlay(curWeaponId)并重跑。 |
+| 配置输出范围 | `node .../config/edit_identity.mjs --apply`：退出0、仅导出验证目录；新增值、公式错误扫描0匹配。已渲染并查看英雄/成长/枚举/资源/普通攻击的改前改后范围。`python .../config/verify_identity.py`：退出0，逐单元格对照9个sheet，保留原有值、公式、合并和冻结；新增55级完整成长、唯一身份/实体/普攻。UIFormConfig原列宽29.285714285714285经导出为29.285715103149414，属于约8.2e-7的浮点序列化精度变化，未改变可见布局；其他页列元数据相同。 |
+| 工具与工作区 | `python -m py_compile Tools/LegacyMigration/audit_official_tangseng.py`与`git diff --check -- Docs/TangsengImplementationStudy.md Docs/WorkingNotes.md Tools/LegacyMigration/audit_official_tangseng.py`退出0；`git diff --stat -- Configs/GameConfig/Datas`无输出，确认正式源配置未被本轮改写。用户暂存索引未改。普通sandbox执行/Node内核启动失败，以上只读或验证目录步骤经自动审查后运行。 |
+| 未执行步骤 | 源表应用+`gen_code_bin_to_project_lazyload.bat`两次被自动审批以“可信可见消息未明确授权唐僧配置覆盖及生成物修改”为由拒绝；已向用户请求明确授权，没有改用间接方式执行。未声称Luban、构建、唐僧新档、技能、换装或通关回读通过。 |
+
+## 官方地图技能入口与连击表现（2026-11-03）
+
+按第00/10/30/40/50章复用MapForm、ProcedureMap、LevelSystem与BattleForm；替换表现，新ComboHud只组合官方字图，不持有玩法计数/渐隐时钟。未触碰集中规范、只读依赖、正式存档或用户暂存索引。证据目录为`Godot/GodotProject/.godot/validation/tangseng_20261103/`。
+
+| 检查 | 实际命令与结果 |
+| --- | --- |
+| 官方导出 | `python Tools/LegacyMigration/export_official_map_combo_ui.py --source Godot/GodotProject/.godot/validation/skills-source/official_othermat.swf --java <OpenJDK/java.exe> --ffdec <ffdec.jar> --work <证据>/map_combo_export`退出0。恢复后OtherMat_v9散列fa7681…fd5e严格校验；源SymbolClass/SelectPLace具名项核对；地图1/15/19帧、数字10×5帧及原始滤镜/注册保留，无裁切边缘。导出预览和manifest已查看。首次临时Java调用的-Duser.home未正确加引号而失败，改为逐参数传递后成功，正式工具无此问题。 |
+| 绑定生成与构建 | `regenerate_ui_form.py <map_form.tscn/battle_form.tscn> --namespace GameLogic.UI`分别生成16/6个绑定。`dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet`及最终UI构建退出0、0错误/5条既有弃用警告；`build-final-ui.log`。 |
+| 原生扫描 | `S:/Godot4/Godot4CSharp_console.exe --headless --editor --path Godot/GodotProject --build-solutions --quit --no-window`退出0，新增ComboHud.cs的UID和PNG导入已登记；`scan.log`仍含ComponentInsoector的RefCounted/free既有只读插件退出诊断。 |
+| OpenGL前端 | 用独立`<证据>/profile_frontend_final`作APPDATA：`Godot4CSharp_console.exe --path Godot/GodotProject --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend`退出0；`frontend-final.log`。实际鼠标验证官方入口位置、hover15帧/out普通、技能窗返回可购19帧；购技、余额、无战斗作用域、保存重读通过。连击一/二/三位官方起点与50px步长、五帧到清晰末帧、断连后高位消失、暂停旧delta、退出退订/清空及重入归零全部通过。 |
+| 真实画面 | 已查看`frontend/map_skill_entry_{hover,available}.png`、`frontend_combo.png`与`frontend_combo_three_digits.png`；官方卷轴/学习技能字图、发光与连击字图清晰，注册与比例保持源值。数字入场首帧模糊属于源五帧动画，后续截图确认末帧清晰。 |
+| 引用/格式 | `python Tools/ProjectMaintenance/validate_game_references.py`通过1892条路径/374个UID；既有CSharpStyle扫描347个手写文件，0缺XML，唯一格式差异是新增ComboHud，随后按同一工具整理。`git diff --check`及Python导出工具语法检查通过。 |
+
+最终前端故意注入的跨档检查点拒绝、损坏存档和重复注册失败保持原断言，不能视为本次回归失败或零诊断；最终关停有3个ObjectDB存活告警，首轮基础前端曾有5个ObjectDB/1资源。纯规则没有改动，本轮未声称重跑三套规则。唐僧主体、五技能、换装、通关和磁盘回读仍待实现与验证，不因本项UI完成而标记整个目标完成。
+
 ## 地图购技、tooltip 与连击闭环（2026-11-03）
 
 | 检查 | 实际结果 |

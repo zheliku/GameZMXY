@@ -26,8 +26,6 @@ namespace GameLogic.Enemies
             () => new EnemyDeathState(waitForEffect: true)); // 本首领的状态组合；运行实例由每次入场独立创建。
         private static readonly EnemyAiPreset m_Preset = new(typeof(DistanceSkillEngageState), typeof(DistanceSkillEngageState),
             () => new DistanceSkillEngageState()); // 近远距离共用首领时钟，原生范围与冷却保持本物种值。
-        private const int SharkWaveAttackId = 2034; // 独立鲨波的魔法伤害，不复用身体物理攻击。
-        private const int BubbleAttackId = 2035; // 水牢独立伤害与身体施法伤害区分。
 
         [Export] private PackedScene m_SharkWaveScene; // 第22源帧释放的横向鲨波。
         [Export] private PackedScene m_BubbleWarningScene; // 目标位置的24帧纯视觉警示。
@@ -180,7 +178,8 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            var data = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(SharkWaveAttackId);
+            int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(EntityId.SharkDemonKing, 2, 2);
+            var data = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId);
             SpawnEffect(m_SharkWaveScene, data, GlobalPosition + new Vector2(-Facing * 600f, -40f));
         }
 
@@ -195,14 +194,15 @@ namespace GameLogic.Enemies
             }
 
             CancellationToken token = m_ShowCancellation.Token;
+            int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(EntityId.SharkDemonKing, 3, 2);
             Vector2 position = GlobalPosition + ((IEnemyAiAgent)this).TargetOffset - new Vector2(100, 100);
-            var warning = CreateSkillEffect(m_BubbleWarningScene);
+            var warning = RentSkillEffect(m_BubbleWarningScene);
             warning.Show(null, position, -1, CaptureCombatAttributes(), 0, false, ReleaseSkillEffect,
                 () =>
                 {
                     if (!token.IsCancellationRequested && IsAlive)
                     {
-                        SpawnEffect(m_BubbleScene, this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(BubbleAttackId), position);
+                        SpawnEffect(m_BubbleScene, this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId), position);
                     }
                 });
         }
@@ -217,7 +217,7 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            var effect = CreateSkillEffect(m_DeathScene);
+            var effect = RentSkillEffect(m_DeathScene);
             effect.Show(null, GlobalPosition, Facing, CaptureCombatAttributes(), 0, false, ReleaseSkillEffect, state.CompleteEffect);
         }
 
@@ -229,7 +229,7 @@ namespace GameLogic.Enemies
         /// <param name="position">官方世界原点。</param>
         private void SpawnEffect(PackedScene scene, AttackConfig attack, Vector2 position)
         {
-            var effect = CreateSkillEffect(scene);
+            var effect = RentSkillEffect(scene);
             int power = Mathf.RoundToInt(Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf()));
             effect.Show(attack, position, Facing, CaptureCombatAttributes(), power, false, ReleaseSkillEffect, hitSoundId: HitSoundId);
         }

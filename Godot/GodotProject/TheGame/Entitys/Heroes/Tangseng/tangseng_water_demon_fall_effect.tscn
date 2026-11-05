@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://dxlixicchc8nr"]
+
+[ext_resource type="AnimationLibrary" uid="uid://bl1ccd4wudiuv" path="res://TheGame/Entitys/Animations/Heroes/Tangseng/tangseng_water_demon_fall_library.tres" id="animation"]
+[ext_resource type="SpriteFrames" uid="uid://cel7vkq54mjp8" path="res://TheGame/Sprites/Effects/tangseng/skills/tangseng_water_demon_fall_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://bx0447o7u7wmq" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_h1730"]
+size = Vector2(165, 60)
+
+[node name="TangsengWaterDemonFallEffect" type="Node2D" unique_id=1611506024 node_paths=PackedStringArray("m_Player", "m_HitBox")]
+z_index = 2
+script = ExtResource("script")
+m_Player = NodePath("AnimationPlayer")
+m_HitBox = NodePath("Origin/Visual/HitBox")
+
+[node name="Origin" type="Node2D" parent="." unique_id=361295864]
+
+[node name="Visual" type="Node2D" parent="Origin" unique_id=1344976301]
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Origin/Visual" unique_id=790564775]
+sprite_frames = ExtResource("frames")
+animation = &"play"
+frame = 24
+offset = Vector2(-3.45, 117.4)
+
+[node name="HitBox" type="Area2D" parent="Origin/Visual" unique_id=83110545]
+collision_layer = 16
+collision_mask = 32
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=1606919948]
+position = Vector2(-3, -65)
+shape = SubResource("RectangleShape2D_h1730")
+disabled = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=993164777]
+libraries/ = ExtResource("animation")

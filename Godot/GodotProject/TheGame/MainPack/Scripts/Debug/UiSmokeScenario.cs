@@ -100,6 +100,18 @@ public sealed partial class UiSmokeScenario
             Check(data?.SaveVersion == GameData.CurrentVersion && data.Heroes.Count == 1, "首次启动未按当前版本写回新档");
             CheckDisplay(battleForm, hero, flow.GetModel<ProfileModel>(), level);
 
+            if (OS.GetCmdlineUserArgs().Contains("--bull-capture-only"))
+            {
+                level.Cleanup();
+                var camera = SmokeInspection.Scene(level).GetNode<LevelCameraNode>("Camera2D");
+                camera.LimitLeft = 875;
+                camera.LimitRight = 1815;
+                camera.GlobalPosition = new Vector2(1350, camera.GlobalPosition.Y);
+                camera.ForceUpdateScroll();
+                await CheckBullEnemiesAsync(hero, flow);
+                return;
+            }
+
             string shutdownWindow = OS.GetCmdlineUserArgs().FirstOrDefault(argument => argument.StartsWith("--shutdown-window="));
             if (shutdownWindow != null)
             {
@@ -523,6 +535,38 @@ public sealed partial class UiSmokeScenario
                 return;
             }
 
+            if (OS.GetCmdlineUserArgs().Contains("--tangseng-only"))
+            {
+                Check(hero is TangsengEntity && data.ActiveHeroId == 2, "唐僧专项没有经真实选角建立独立档案");
+                if (OS.GetCmdlineUserArgs().Contains("--tangseng-shared-only"))
+                {
+                    level.Cleanup();
+                    await CheckSlopeMovementAsync(flow);
+                    await CheckQixingPlatformAsync(flow);
+                    await CheckQixingEnemiesAsync(hero, flow);
+                    await CheckFreezeAsync(hero, flow);
+                    return;
+                }
+                if (OS.GetCmdlineUserArgs().Contains("--tangseng-lifecycle-only"))
+                {
+                    await CheckTangsengLifecycleAsync((TangsengEntity)hero, flow, battleForm, level);
+                    return;
+                }
+                if (OS.GetCmdlineUserArgs().Contains("--tangseng-equipment-only"))
+                {
+                    await CheckTangsengEquipmentAsync((TangsengEntity)hero, flow, battleForm, level);
+                    level.Cleanup();
+                    return;
+                }
+                if (!OS.GetCmdlineUserArgs().Contains("--effects-only"))
+                {
+                    await CheckTangsengWaterCloneAsync((TangsengEntity)hero);
+                }
+                await CheckTangsengEffectsAsync((TangsengEntity)hero, flow, battleForm);
+                level.Cleanup();
+                return;
+            }
+
             await CheckFloatingTextAsync();
             await CheckGroundItemsAsync(flow, hero, level);
             await CheckInventoryAsync(battleForm, hero, flow, level);
@@ -673,11 +717,12 @@ public sealed partial class UiSmokeScenario
             AbstractEnemyEntity previousGorilla = null;
             var levelModel = GF.Fsm.GetModel<LevelModel>();
             int originalLevel = levelModel.LevelId;
-            (int Id, int LevelId)[] cases = [(1, 2), (2, 2), (3, 2), (3, 1), (3, 2)];
+            (EntityId Id, int LevelId)[] cases = [(EntityId.HuaguoshanMonkey, 2), (EntityId.DemonMonkey, 2),
+                (EntityId.Gorilla, 2), (EntityId.Gorilla, 1), (EntityId.Gorilla, 2)];
             foreach (var (id, levelId) in cases)
             {
-                var config = ConfigSystem.Instance.Tables.TbEnemyConfig.Get(id);
-                bool boosted = id == 3 && levelId == 1;
+                var config = ConfigSystem.Instance.Tables.TbEnemyConfig.Get((int)id);
+                bool boosted = id == EntityId.Gorilla && levelId == 1;
                 levelModel.LevelId = levelId;
                 m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(config.EntityId,
                     new EnemySpawn(new Vector2(hero.GlobalPosition.X + 40, 100)));
@@ -693,7 +738,7 @@ public sealed partial class UiSmokeScenario
                     $"怪物 {id} 的入场生命/物防错误，或误改了高级属性");
                 Check(SmokeInspection.ReadField<int>(m_Monster, "m_ExperienceReward") == (boosted ? 25 : config.AddExp),
                     $"怪物 {id} 的经验覆盖没有复位");
-                if (id == 3)
+                if (id == EntityId.Gorilla)
                 {
                     Check(m_Monster is GorillaEntity && config.BaseAttributes.MaxHp == 300, "大猩猩的共享基础配置被改动");
                     if (previousGorilla != null)
@@ -707,7 +752,7 @@ public sealed partial class UiSmokeScenario
                 int hp = GF.Fsm.GetModel<HeroModel>().Hp.Value;
                 var shape = m_Monster.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
                 // Monster1 源探针分别从第 14/3/5 帧启用，不能沿用旧移植的统一 0.25 秒前摇。
-                double windup = (id == 1 ? 13 : id == 2 ? 2 : 4) / 24d;
+                double windup = (id == EntityId.HuaguoshanMonkey ? 13 : id == EntityId.DemonMonkey ? 2 : 4) / 24d;
                 bool observedWindup = false, prematureHit = false;
                 double firstHitAt = double.PositiveInfinity;
                 void SampleAttackPhysics()
@@ -734,7 +779,7 @@ public sealed partial class UiSmokeScenario
                 {
                     Check(ai.RequestAttack(0), $"怪物 {id} 落地后拒绝有效出招");
                     await WaitUntilAsync(() => m_Monster.AttackSegment >= 0, $"怪物 {id} 身体未消费出招请求");
-                    if (id == 3)
+                    if (id == EntityId.Gorilla)
                     {
                         Check(Near(SmokeInspection.ReadField<AttackData>(m_Monster, "m_ActiveAttackData").Power, 20f),
                                                 "大猩猩守关特殊生命不应改变基础招式威力");
@@ -1055,8 +1100,9 @@ public sealed partial class UiSmokeScenario
     /// <returns>血条生命周期回归完成的任务。</returns>
     private async Task CheckMonsterHealthBarsAsync()
     {
+        var ids = GF.Fsm.GetUtility<ConfigIdUtility>();
         foreach (EntityId entityId in ConfigSystem.Instance.Tables.TbEnemyConfig.DataList
-                     .Where(config => config.EnemyId < 10000).Select(config => config.EntityId))
+                     .Where(config => ids.IsMonster(config.EntityId)).Select(config => config.EntityId))
         {
             var config = ConfigSystem.Instance.Tables.TbEnemyConfig.DataList.Single(x => x.EntityId == entityId);
             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(entityId, new EnemySpawn(new Vector2(200, 200)));
@@ -1519,7 +1565,8 @@ public sealed partial class UiSmokeScenario
         ResetHeroAttributes(flow.GetModel<ProfileModel>().ActiveHeroId, flow.GetUtility<ExperienceCurveUtility>().Evaluate(totalExperience).Level);
         var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
         heroSystem.ResetWs(battle.WsMax, battle.WsDecayPerSecond, battle.WsDrainPerSecond);
-        WukongEntity hero = await GF.Entity.ShowEntityAsync<WukongEntity>(EntityId.Wukong);
+        var definition = ConfigSystem.Instance.Tables.TbHeroConfig.Get(flow.GetModel<ProfileModel>().ActiveHeroId);
+        var hero = (AbstractHeroEntity)await GF.Entity.ShowEntityAsync(definition.EntityId);
         hero.SetPhysicsProcess(false);
         return hero;
     }
@@ -1655,6 +1702,9 @@ public sealed partial class UiSmokeScenario
     /// <param name="level">预期绑定关卡。</param>
     private static void CheckDisplay(BattleForm battleForm, AbstractHeroEntity hero, ProfileModel progression, LevelViewController level)
     {
+        string portrait = progression.ActiveHeroId == 2 ? "hud_head_tangseng.png" : "hud_head_wukong.png";
+        Check(battleForm.GetNode<Sprite2D>("StatusPanel/Head").Texture.ResourcePath.EndsWith(portrait),
+            "HUD头像与当前出战英雄不一致");
         foreach (string path in new[] { "StatusPanel/m_HpBar", "StatusPanel/m_MpBar", "StatusPanel/m_ExpBar", "MenuPanel/WsFrame/m_WsBar" })
         {
             ResourceBar resourceBar = battleForm.GetNode<ResourceBar>(path);

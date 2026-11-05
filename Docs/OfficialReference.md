@@ -20,6 +20,12 @@
 
 加载器对 Role、Monster_v1、OtherMat 等包恢复为 `bytes[100:110] + bytes[0:100] + bytes[110:]`；`Monster2_v4`、`Monster3_v3` 直接加载，不换头。主程序另从外层 CWS/DefineBinaryData 读取。JPEXS FFDec 26.3 导出脚本和 XML，坐标 TWIPS ÷ 20。素材编号及复现脚本见 [LegacyAssetMap](LegacyAssetMap.md)。
 
+## 地图技能入口与连击（2026-11-03）
+
+SelectPLace505的showBuySkill492放在(81.8,103.95)：普通第1态，hover第2态，out第1态；初入地图时任一玩家灵魂≥160切第3态。第2态内部488/487循环15帧，第3态内部491循环19帧黄光；外层gotoAndStop不停止子时间轴。点击派发showBuySkill/state=maping。项目继续复用现有地图流程、技能窗与档案，不因地图购技创建战斗模型。
+
+GameInfo在有效命中数≥2时创建Batter567，位置(694.95,234.95)，每次命中alpha归1后3.5秒渐隐；每20个24fps源步比较计数，未变化就归零。Batter用原版num0..9五帧数字（末帧stop），不采用普通Label。ANumber.aNumMC的第3/4参为int，因此源表达式4/−44.6/−95.6和28.3实际变为4/−44/−95和28，位间距50。素材源及固定注册画布见LegacyAssetMap；数字入场、暂停、断连、退出和窗口复用的当前实证见Validation。
+
 ## 全敌人行为复核（2026-10-30）
 
 同版BaseMonster的`count++ > 240`产生242/24秒周期，游荡在0.5秒选择方向，距相机中心400px外朝内，3或4秒后按源概率停步/重启；用游戏秒推进，暂停冻结，受击/状态切换不重置时钟。普通近战按原点距离而非武器外框选招，通用间隔1.5秒；Monster13/14/16/18为1秒。具体BOSS保留各自分支。skillCD赋值后同一源步末执行countCD，换算不能再延迟一物理帧，否则四秒技能会错过下一整秒决策。
@@ -158,7 +164,7 @@ Monster20灯笼鱼为1400生命、30防御、65经验、每球30灵魂，15%优�
 - `WsEffect`（sprite 59）放在 `(470,295)`；背景 52 共 24 帧、悟空立绘 55 共 11 帧后停在末姿势。`WsEffect.as` 监听背景到末帧即移除整段演出，时长约 1 秒，没有额外大立绘循环。
 - 开场后 `BaseHero.stepOther → BaseObject.shadowEffect` 持续产生角色残影：每 1/6 秒采样、每道淡出 1 秒；TweenMax 默认 Quad.easeOut，对应剩余透明度 `(1−t)²`，保留原色。无双耗尽后停止新增，已有残影继续淡完。
 - `GameInfo.addBossBlood` 把完整 `BossBlood`（568）放在 `(450,50)`。条底形状 540 的边界为 `(-164.5,-14)` 起、339×28；名称子片段 567 在 `(-186,5)`，姓名字形围绕该点排列。项目复用旧笔刷 PNG 和字体，保留内部间距与条顶 y=36；按用户确认将“名称＋条体”整体顶部居中，不把原组件注册点误当作整组中心，不显示生命数字。
-- 外置资源：`Sprites/UI/hud/musou_activation/musou_activation_frames.tres`（开场）、`hud_ws_full_frames.tres`（满值提示）、`UIs/Battle/encounter_health_bar.tscn`（守关条）。
+- 外置资源：`Sprites/UI/hud/musou_activation/{wukong,tangseng}/`（各自开场）、同级 `shared/musou_activation_library.tres`（共用24帧时钟）、`hud_ws_full_frames.tres`（满值提示）、`UIs/Battle/encounter_health_bar.tscn`（守关条）。
 
 ## 花果山标记与配方
 

@@ -57,7 +57,7 @@ namespace GameLogic.Enemies
             }
 
             AttackConfig attack = OwnAttacks[0];
-            var effect = CreateSkillEffect(m_ProjectileScene);
+            var effect = RentSkillEffect(m_ProjectileScene);
             int power = (int)Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf());
             effect.Show(attack, GlobalPosition, Facing, CaptureCombatAttributes(), power,
                 false, ReleaseSkillEffect, hitSoundId: HitSoundId);

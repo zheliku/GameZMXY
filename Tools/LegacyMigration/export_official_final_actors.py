@@ -48,14 +48,16 @@ def export(args):
     for group in groups:
         source = sources[SOURCE_PACKS[group]]
         destination = args.work / ('bull_art' if group in ('bull', 'guard') else 'dragon_art')
+        hero = args.hero
+        specs = {23: SPECS['bull'][23]} if group == 'bull' and hero == 'tangseng' else SPECS[group]
         request = SimpleNamespace(source=repo / source['swf'], xml=repo / source['xml'],
             inventory=args.inventory, java=args.java, ffdec=args.ffdec,
-            work=destination / ('monsters' if group == 'guard' else 'actors'), only=list(SPECS[group]))
-        exporter(request, SPECS[group], PARTS.get(group, ()),
-                 hidden_children=[(736, 'heart')] if group == 'bull' else (), compact=True,
+            work=destination / ('monsters' if group == 'guard' else 'actors'), only=list(specs))
+        exporter(request, specs, PARTS.get(group, ()) if hero == 'wukong' else (),
+                 hidden_children=[(736, 'heart')] if group == 'bull' and hero == 'wukong' else (), compact=True,
                  action_splits=[(50, 34, 'dragon_king_ice_aura')] if group == 'dragon' else (),
                  effect_blend_modes={'dragon_king_ice_aura': 'add', 'dragon_king_torrent': 'add'},
-                 selector_frames=[(917, 1)] if group == 'bull' else ())
+                 selector_frames=[(917, 2 if hero == 'tangseng' else 1)] if group == 'bull' else ())
     print(f'FINAL ACTORS SOURCE PASS: {", ".join(groups)}; independent registrations and original source frames')
 
 
@@ -64,4 +66,5 @@ if __name__ == '__main__':
     for name in ('inventory', 'java', 'ffdec', 'work'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--group', choices=('all', *SPECS), default='all')
+    parser.add_argument('--hero', choices=('wukong', 'tangseng'), default='wukong')
     export(parser.parse_args())

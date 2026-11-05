@@ -125,7 +125,7 @@ public sealed partial class UiSmokeScenario
                 try
                 {
                     var hit = (GameConfig.Battle.AttackConfig)typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic)!
-                        .Invoke(ConfigSystem.Instance.Tables.TbAttackConfig.Get(2001), null)!;
+                        .Invoke(ConfigSystem.Instance.Tables.TbAttackConfig.Get(GF.Fsm.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EntityId.HuaguoshanMonkey, 1)), null)!;
                     typeof(GameConfig.Battle.AttackConfig).GetField("HitBudget")!.SetValue(hit, 3);
                     var attacker = new CombatantAttributes(CombatSide.Enemy, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1);
                     int completions = 0;

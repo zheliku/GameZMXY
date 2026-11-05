@@ -3,10 +3,9 @@ using GameLogic.UI;
 using GameConfig.Constant;
 using GameLogic.Save;
 using GameLogic.Architecture;
+using GameLogic.Procedure.FlowData;
 using GameLogic.Audio;
 using GameFramework.Procedure;
-using System.Threading;
-using System;
 using GameConfig;
 using GameConfig.Sound;
 using GameFramework.Event;
@@ -16,14 +15,13 @@ using GodotGameFramework.UI;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
-/// 选角流程：确认进入地图，返回标题前等待最近一次存档完成。
+/// 新档选角：首次建档前确定英雄身份，再交给读档流程创建档案。
 /// </summary>
 public sealed class ProcedureCharacter : ProcedureBase
 {
     private int m_FormSerialId; // 本周期窗口，含在途加载请求。
     private int m_MusicSerialId; // 本周期 GGF 音乐请求。
     private ProcedureOwner m_Owner; // 仅当前流程周期借用主 FSM。
-    private CancellationTokenSource m_Cancellation; // 离开时使旧异步结果失效。
 
     /// <summary>
     /// 订阅本页面的点击事件后打开窗口。
@@ -33,7 +31,6 @@ public sealed class ProcedureCharacter : ProcedureBase
     {
         base.OnEnter(procedureOwner);
         m_Owner = procedureOwner;
-        m_Cancellation = new CancellationTokenSource();
         GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
         m_FormSerialId = GF.UI.OpenUIForm(UIFormId.CharacterForm);
@@ -50,10 +47,6 @@ public sealed class ProcedureCharacter : ProcedureBase
     {
         SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: false);
 
-
-        m_Cancellation?.Cancel();
-        m_Cancellation?.Dispose();
-        m_Cancellation = null;
         GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Unsubscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
         if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
@@ -71,14 +64,17 @@ public sealed class ProcedureCharacter : ProcedureBase
     }
 
     /// <summary>
-    /// 确认当前出战角色后进入地图。
+    /// 空槽确认英雄后才进入读档流程，首次快照直接写入所选角色。
     /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
-    private void OnCharacterConfirmed(int formSerialId)
+    /// <param name="heroId">当前窗口明确选择的英雄配置编号。</param>
+    private void OnCharacterConfirmed(int formSerialId, int heroId)
     {
         if (formSerialId == m_FormSerialId)
         {
-            ChangeState<ProcedureMap>(m_Owner);
+            var selection = m_Owner.GetData<SaveSelectionVariable>(FlowKeys.SaveSelection);
+            selection.Value = (selection.Value.SlotNumber, selection.Value.UnitId, heroId);
+            ChangeState<ProcedureLoadGame>(m_Owner);
         }
     }
 

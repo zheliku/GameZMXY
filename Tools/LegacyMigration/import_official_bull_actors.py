@@ -8,7 +8,9 @@ import argparse
 from copy import deepcopy
 import json
 from pathlib import Path
+import re
 import xml.etree.ElementTree as ET
+from PIL import Image
 
 from export_official_wukong import timeline_frames
 from prepare_official_garuda_level import _probe_reader
@@ -57,6 +59,58 @@ def swallow_frames(xml):
     if result[-1] >= 130:
         raise ValueError("Swallowing pulses exceed source release frame")
     return result
+
+
+def install_captive_variant(base_manifest, variant_manifest):
+    """Keep shared boss frames and replace only official Role2 swallowing poses."""
+    manifests = [json.loads(Path(path).read_text(encoding='utf-8')) for path in (base_manifest, variant_manifest)]
+    layers = [next(actor for actor in data['actors'] if actor['name'] == 'bull_demon_king')['layers'][0]
+              for data in manifests]
+    if any(data['source_sha256'] != '42a301a5ae4222aec54dfdc4c14efced48b9ad4f979902471011ff226d8cd09b' for data in manifests):
+        raise ValueError('Unexpected official bull pack')
+    if manifests[0]['selector_frames'] != [[917, 1]] or manifests[1]['selector_frames'] != [[917, 2]]:
+        raise ValueError('Expected the two official captive selectors')
+    if any(layers[0][key] != layers[1][key] for key in ('cell_size', 'sprite_offset', 'poses')):
+        raise ValueError('Captive variant changed native registration or animation frames')
+    images = [Image.open(layer['output']).convert('RGBA') for layer in layers]
+    changed = {}
+    for cell in sorted({cell for poses in layers[0]['poses'].values() for cell in poses}):
+        virtual = []
+        for layer, image in zip(layers, images):
+            entry = layer['atlas_regions'][str(cell)]
+            x, y, width, height = entry['region']
+            frame = Image.new('RGBA', layer['cell_size'])
+            frame.alpha_composite(image.crop((x, y, x + width, y + height)), tuple(entry['margin'][:2]))
+            virtual.append(frame)
+        if virtual[0].tobytes() != virtual[1].tobytes():
+            if cell not in layers[0]['poses']['attack_5']:
+                raise ValueError(f'Captive variant changed another action: {cell}')
+            changed[cell] = virtual[1]
+    directory = PROJECT / 'TheGame/Sprites/Characters/Enemies' / BOSS
+    atlas_path = directory / 'bull_demon_king_tangseng_capture_atlas.png'
+    regions = {cell: image.getchannel('A').getbbox() for cell, image in changed.items()}
+    atlas = Image.new('RGBA', (sum(box[2] - box[0] + 32 for box in regions.values()),
+                               max(box[3] - box[1] for box in regions.values()) + 32))
+    text = (directory / 'bull_demon_king_official_frames.tres').read_text(encoding='utf-8')
+    text = re.sub(r' uid="[^"]+"', '', text, count=1)
+    text = text.replace('[sub_resource', f'[ext_resource type="Texture2D" path="{uri(atlas_path)}" id="captive"]\n[sub_resource', 1)
+    x = 16
+    for cell, frame in changed.items():
+        left, top, right, bottom = regions[cell]
+        width, height = right - left, bottom - top
+        atlas.alpha_composite(frame.crop(regions[cell]), (x, 16))
+        block = (f'[sub_resource type="AtlasTexture" id="AtlasTexture_{cell:04d}"]\n'
+                 'atlas = ExtResource("captive")\n'
+                 f'region = Rect2({x}, 16, {width}, {height})\n'
+                 f'margin = Rect2({left}, {top}, {layers[0]["cell_size"][0] - width}, {layers[0]["cell_size"][1] - height})\n')
+        text, count = re.subn(r'\[sub_resource type="AtlasTexture" id="AtlasTexture_' + f'{cell:04d}' + r'"\]\n.*?(?=\[|\Z)',
+                             lambda _: block, text, count=1, flags=re.S)
+        if count != 1:
+            raise ValueError(f'Missing official cell {cell}')
+        x += width + 32
+    atlas.save(atlas_path)
+    (directory / 'bull_demon_king_tangseng_frames.tres').write_text(text, encoding='utf-8')
+    print(f'BULL CAPTIVE VARIANT PASS: {len(changed)} changed poses; all other frames reuse the original atlas')
 
 
 def actor_library(actor, pulses):
@@ -259,6 +313,9 @@ def fire_scene(effect, frames, hit_bounds):
 
 
 def main(args):
+    if args.captive_variant:
+        install_captive_variant(args.bosses, args.captive_variant)
+        return
     data = json.loads(args.bosses.read_text(encoding='utf-8'))
     guards = json.loads(args.monsters.read_text(encoding='utf-8'))
     if data['source_sha256'] != '42a301a5ae4222aec54dfdc4c14efced48b9ad4f979902471011ff226d8cd09b':
@@ -283,4 +340,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('bosses', 'monsters', 'xml'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--captive-variant', type=Path)
     main(parser.parse_args())

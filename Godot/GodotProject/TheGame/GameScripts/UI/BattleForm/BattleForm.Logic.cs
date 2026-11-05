@@ -145,6 +145,7 @@ namespace GameLogic.UI
             // 先登记本次引用再订阅，部分订阅失败时也能完整退订。
             m_FormData = data;
             m_ComboModel = levelModel;
+            m_Status.SetHero(progression.ActiveHeroId);
             try
             {
                 this.GetModel<HeroModel>().Hp.Register(RefreshResources);
@@ -427,7 +428,7 @@ namespace GameLogic.UI
         {
             if (active)
             {
-                m_MusouActivation.ShowActivation();
+                m_MusouActivation.ShowActivation(m_FormData.Hero.HeroId);
             }
             else
             {
@@ -474,7 +475,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            m_Combo.Text = $"{count} 连击";
+            m_Combo.SetCount(count);
             m_ComboElapsed = 0;
             m_Combo.Modulate = Colors.White;
             m_Combo.Visible = true;
@@ -510,7 +511,7 @@ namespace GameLogic.UI
             m_ComboElapsed = 0;
             if (IsInstanceValid(m_Combo))
             {
-                m_Combo.Text = string.Empty;
+                m_Combo.Clear();
                 m_Combo.Modulate = Colors.White;
                 m_Combo.Visible = false;
             }

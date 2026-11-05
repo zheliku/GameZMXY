@@ -102,6 +102,11 @@ namespace GameLogic.Input
         /// </summary>
         public const string Skill3 = "skill_3";
 
+        /// <summary>
+        /// 第四个直接技能槽，默认L。
+        /// </summary>
+        public const string Skill4 = "skill_4";
+
         private const double TimeEpsilon = 1e-4; // 物理时钟浮点容差，单位秒。
 
         // ---- 字段 ----

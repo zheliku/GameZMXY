@@ -225,7 +225,25 @@ public sealed class LevelSmokeScenario
                     // 末门靠近场景外墙时，宽身体会同时碰外墙；优先验证远离外墙的独立左门。
                     float gate = region.Left > m_Camera.SceneLeft ? region.Left : region.Right;
                     Transform2D from = new(0f, new Vector2(gate - 30f, 100f));
-                    if (monster.TestMove(from, new Vector2(60f, 0f)) || !m_Hero.TestMove(from, new Vector2(60f, 0f)))
+                    // 此探针只核对阶段门，避免场景高台侧壁混入；保留两者原有的门层取舍。
+                    uint barrierMask = LayerMask.LayerToMask2D("PlayerBarrier");
+                    uint heroMask = m_Hero.CollisionMask;
+                    uint monsterMask = monster.CollisionMask;
+                    bool blocked;
+                    bool monsterBlocked;
+                    try
+                    {
+                        m_Hero.CollisionMask &= barrierMask;
+                        monster.CollisionMask &= barrierMask;
+                        blocked = m_Hero.TestMove(from, new Vector2(60f, 0f));
+                        monsterBlocked = monster.TestMove(from, new Vector2(60f, 0f));
+                    }
+                    finally
+                    {
+                        m_Hero.CollisionMask = heroMask;
+                        monster.CollisionMask = monsterMask;
+                    }
+                    if (monsterBlocked || !blocked)
                     {
                         Fail($"阶段门未正确区分玩家阻挡与怪物场外入场：{monster.GetType().Name}，阶段 {m_StageOrder}");
                     }
@@ -526,6 +544,11 @@ public sealed class LevelSmokeScenario
                 }
             }
             GD.Print("SMOKE-LEVEL: exit rejects W+J/K/S combinations");
+            // 组合键由真实输入缓存消费；下一物理帧再提交单独W，避免同帧按放合并成旧组合。
+            m_ExitStep = 6;
+        }
+        else if (m_ExitStep == 6)
+        {
             m_ExitRequestedAt = Time.GetTicksMsec();
             m_ExitHadPendingLoot = SmokeInspection.ReadField<HashSet<GameLogic.Drops.LootOrbNode>>(m_Level, "m_LootOrbs").Count != 0;
             PressW();

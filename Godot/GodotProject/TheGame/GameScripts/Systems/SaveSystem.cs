@@ -50,11 +50,12 @@ namespace GameLogic.Save
         /// <param name="slotNumber">从 1 开始的存档格号。</param>
         /// <param name="unitId">GGF 存档编号；新格为 0。</param>
         /// <param name="cancellationToken">流程周期；取消后停止发布迟到结果，已提交的框架读写仍会完成。</param>
+        /// <param name="initialHeroId">新档选中的英雄；0使用建档表默认值，已有档不更换身份。</param>
         /// <returns>已校验的存档 DTO 及加载来源；运行时模型由流程创建并注册。</returns>
         /// <exception cref="InvalidOperationException">文件读取或写入失败，已拒绝覆盖。</exception>
-        /// <exception cref="ArgumentOutOfRangeException">格号不在六格范围内。</exception>
+        /// <exception cref="ArgumentOutOfRangeException">格号不在六格范围内或新档英雄未配置。</exception>
         public async Task<(GameData Data, SaveOrigin Origin)> LoadOrCreateAsync(int slotNumber, long unitId,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default, int initialHeroId = 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var archive = this.GetUtility<GameArchiveUtility>();
@@ -64,6 +65,10 @@ namespace GameLogic.Save
             }
 
             var tables = this.GetModel<ConfigurationModel>().Tables;
+            if (initialHeroId != 0 && tables.TbHeroConfig.GetOrDefault(initialHeroId) == null)
+            {
+                throw new ArgumentOutOfRangeException(nameof(initialHeroId), "新档英雄不在正式配置中。");
+            }
             var mapper = this.GetUtility<SaveDataUtility>();
             var saveModel = this.GetModel<SaveModel>();
             await m_DirectoryRead;
@@ -102,11 +107,12 @@ namespace GameLogic.Save
             }
 
             // 只有明确的新槽或框架新建的空槽才按建档规则创建，不转换历史文件。
+            int startHeroId = initialHeroId == 0 ? tables.TbProfileConfig.StartHeroId : initialHeroId;
             var source = created ? new GameData
             {
-                ActiveHeroId = tables.TbProfileConfig.StartHeroId,
+                ActiveHeroId = startHeroId,
                 Soul = tables.TbProfileConfig.StartSoul,
-                Heroes = [new HeroSaveData { HeroId = tables.TbProfileConfig.StartHeroId }]
+                Heroes = [new HeroSaveData { HeroId = startHeroId }]
             } : data;
             mapper.Validate(source, tables.TbEquipmentConfig,
                 tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig, tables.TbPassiveConfig);

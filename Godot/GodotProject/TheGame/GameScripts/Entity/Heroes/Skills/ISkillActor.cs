@@ -62,7 +62,7 @@ namespace GameLogic.Skills
         void NewSkillAttack(SkillHitId hit, double power, float? knockbackOriginX = null);
 
         /// <summary>
-        /// 从动画引用的场景创建独立特效并冻结本次攻击属性。
+        /// 从动画引用的正式场景取池，冻结本次攻击属性并立即播放。
         /// </summary>
         /// <param name="scene">方法轨道直接引用的特效场景。</param>
         /// <param name="position">世界位置。</param>
@@ -70,7 +70,7 @@ namespace GameLogic.Skills
         /// <param name="power">无双加成前的威力。</param>
         /// <param name="completed">本次效果完成通知。</param>
         /// <param name="knockbackOriginX">具体招式指定的击退中心。</param>
-        void SpawnSkillEffect(PackedScene scene, Vector2 position,
+        void PlaySkillEffect(PackedScene scene, Vector2 position,
             SkillHitId hit = SkillHitId.None, double power = 0, Action completed = null,
             float? knockbackOriginX = null);
     }

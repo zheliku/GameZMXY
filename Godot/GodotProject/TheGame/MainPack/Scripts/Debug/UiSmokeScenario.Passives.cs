@@ -26,6 +26,9 @@ public sealed partial class UiSmokeScenario
     {
         var profile = flow.GetModel<ProfileModel>();
         var levels = flow.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId);
+        var initial = flow.GetModel<HeroModel>();
+        var expected = (Hp: initial.MaxHp.Value + 600, Mp: initial.MaxMp.Value + 600,
+            Crit: initial.Crit.Value + .06f, HpRegen: initial.HpRegen.Value + 6, MpRegen: initial.MpRegen.Value + 6);
         profile.RestoreSoul(4999);
         battle.GetNode<TextureButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(form => form.Visible),
@@ -78,8 +81,9 @@ public sealed partial class UiSmokeScenario
             Check(profile.Soul.Value == expectedSoul, "直接发送满级按钮信号仍然扣费");
         }
         var hero = flow.GetModel<HeroModel>();
-        Check((hero.MaxHp.Value, hero.MaxMp.Value, hero.Crit.Value, hero.HpRegen.Value, hero.MpRegen.Value) ==
-            (680, 650, .06f, 6, 6), "被动未正确接入实际英雄最终属性");
+        Check((hero.MaxHp.Value, hero.MaxMp.Value, hero.HpRegen.Value, hero.MpRegen.Value) ==
+            (expected.Hp, expected.Mp, expected.HpRegen, expected.MpRegen) && Near(hero.Crit.Value, expected.Crit),
+            "被动未在本英雄成长和穿戴基础上正确增加五项属性");
         await CaptureCombatAsync("passive_upgrades_maximum");
         GF.UI.CloseUIForm(form.SerialId);
         await WaitFramesAsync(2);
@@ -95,7 +99,7 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() => FindLevel() != previousLevel && CurrentBattleForm() != null,
             "被动升级提交后重试没有进入新关卡", 15000);
         await WaitFramesAsync(5);
-        Check(flow.GetModel<HeroModel>().MaxHp.Value == 680 && flow.GetModel<HeroModel>().Crit.Value == .06f &&
+        Check(flow.GetModel<HeroModel>().MaxHp.Value == expected.Hp && Near(flow.GetModel<HeroModel>().Crit.Value, expected.Crit) &&
             ReferenceEquals(levels, flow.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId)),
             "重开关卡后被动丢失、重复叠加或换成另一份数据");
         GD.Print("SMOKE-PASSIVE-UPGRADES PASS: all 25 purchases, insufficient soul, UI binding, maximum refusal, five real attributes, disk checkpoint and reentry");

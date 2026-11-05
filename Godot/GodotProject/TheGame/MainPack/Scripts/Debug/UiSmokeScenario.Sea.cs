@@ -223,7 +223,10 @@ public sealed partial class UiSmokeScenario
             actor.SetFacing(direction);
             ((IEnemyBody)actor).BeginAttack(0);
             actor.SetFacing(direction);
-            actor.Call("SpawnProjectileAnimEvent");
+            actor.SetPhysicsProcess(false);
+            actor.AnimPlayer.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
+            actor.RestartAnim("attack_1");
+            actor.AnimPlayer.Advance(2d / 24d);
             var effect = actor.GetParent().GetChildren().OfType<ShrimpProjectileEffectNode>().Single(x => x.Visible);
             float start = effect.GlobalPosition.X;
             await WaitFramesAsync(4);
@@ -258,7 +261,8 @@ public sealed partial class UiSmokeScenario
 
                 attack.QueueFree();
             }
-            actor.Call("SpawnProjectileAnimEvent");
+            actor.RestartAnim("attack_1");
+            actor.AnimPlayer.Advance(2d / 24d);
             var reused = actor.GetParent().GetChildren().OfType<ShrimpProjectileEffectNode>().Single(x => x.Visible);
             Check(ReferenceEquals(effect, reused) && reused.Modulate.A == 1f &&
                 SmokeInspection.ReadField<float>(reused, "m_FadeLeft") == 0f, "弹体池复用残留消散状态");

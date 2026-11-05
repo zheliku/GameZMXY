@@ -34,7 +34,7 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            var effect = CreateSkillEffect(scene);
+            var effect = RentSkillEffect(scene);
             AttackConfig attack = OwnAttacks[1];
             int power = (int)Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf());
             effect.Show(attack, GlobalPosition + new Vector2(Facing * 20f, 0f), Facing,

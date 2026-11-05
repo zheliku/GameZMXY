@@ -39,6 +39,11 @@ namespace GameLogic.Effects
         private bool m_Active, m_FinishRequested; // 防止方法轨道中回池或重复完成。
 
         /// <summary>
+        /// 当前效果仍由所属实体持有；池回收后派生效果不得继续访问自身状态。
+        /// </summary>
+        protected bool IsActive => m_Active;
+
+        /// <summary>
         /// 使用场景导出绑定，声音与结束回调只连接一次。
         /// </summary>
         public override void _Ready()
@@ -81,7 +86,7 @@ namespace GameLogic.Effects
             }
             if (m_Hit != null && m_Player.CurrentAnimationPosition >= m_RepeatAt)
             {
-                NewAttackAnimEvent();
+                RefreshAttack();
             }
 
             if (m_Shapes.Any(shape => !shape.Disabled) && m_RemainingHits > 0)
@@ -151,7 +156,8 @@ namespace GameLogic.Effects
         /// <param name="hitSoundId">本次效果成功命中的声音；与目标自身的受击语音分别播放。</param>
         public void Show(AttackConfig hit, Vector2 position, int direction,
             CombatantAttributes attacker, int power, bool musou, Action<SkillEffectNode> finished,
-            Action completed = null, float? knockbackOriginX = null, SoundId hitSoundId = SoundId.None)
+            Action completed = null, float? knockbackOriginX = null, SoundId hitSoundId = SoundId.None,
+            Vector2? visualScaleMultiplier = null)
         {
             m_Hit = hit;
             m_Attacker = attacker;
@@ -165,11 +171,13 @@ namespace GameLogic.Effects
             m_RepeatAt = double.PositiveInfinity;
             m_FinishRequested = false;
             m_Active = true;
-            Scale = new Vector2(m_SourceScale.X * (direction > 0 ? -1 : 1), m_SourceScale.Y);
+            Vector2 visualScale = visualScaleMultiplier ?? Vector2.One;
+            Scale = new Vector2(m_SourceScale.X * visualScale.X * (direction > 0 ? -1 : 1),
+                m_SourceScale.Y * visualScale.Y);
             GlobalPosition = position;
             if (hit != null)
             {
-                NewAttackAnimEvent();
+                RefreshAttack();
             }
 
             m_Player.Stop();
@@ -185,9 +193,9 @@ namespace GameLogic.Effects
         }
 
         /// <summary>
-        /// 动画方法键创建新攻击包，不重置整段效果的预算。
+        /// 创建新攻击包，不重置整段效果的预算。
         /// </summary>
-        private void NewAttackAnimEvent()
+        private void RefreshAttack()
         {
             if (m_AttackData != null)
             {
@@ -200,6 +208,25 @@ namespace GameLogic.Effects
         }
 
         /// <summary>
+        /// 由官方效果动画的刷新方法键重新装填同一效果的攻击包。
+        /// </summary>
+        public void RefreshAttackAnimEvent()
+        {
+            if (m_Active && m_Hit != null)
+            {
+                RefreshAttack();
+            }
+        }
+
+        /// <summary>
+        /// 原生动画的新攻击段方法键重新装填攻击包。
+        /// </summary>
+        private void NewAttackAnimEvent()
+        {
+            RefreshAttack();
+        }
+
+        /// <summary>
         /// 原生声音键仍经过 GGF 的统一音频管理。
         /// </summary>
         /// <param name="id">已登记的声音编号。</param>
@@ -209,11 +236,19 @@ namespace GameLogic.Effects
         }
 
         /// <summary>
-        /// 原生方法键请求结束，待播放器返回后回池。
+        /// 请求结束，待当前物理帧的动画推进返回后回池。
         /// </summary>
-        protected void FinishAnimationAnimEvent()
+        protected void RequestFinish()
         {
             m_FinishRequested = true;
+        }
+
+        /// <summary>
+        /// 由原生动画结束方法键请求回池。
+        /// </summary>
+        private void FinishAnimationAnimEvent()
+        {
+            RequestFinish();
         }
 
         /// <summary>
@@ -240,7 +275,7 @@ namespace GameLogic.Effects
         /// <param name="animation">刚结束的动画。</param>
         private void OnAnimationFinished(StringName animation)
         {
-            m_FinishRequested = true;
+            RequestFinish();
         }
 
         /// <summary>
@@ -251,7 +286,31 @@ namespace GameLogic.Effects
         {
             if (!m_Active || m_AttackData == null || m_RemainingHits <= 0 || !m_Shapes.Any(shape => !shape.Disabled) ||
                 area is not HurtBoxNode { OwnerEntity: { IsAlive: true } target } hurtBox || target.Side == m_Attacker.Side ||
-                !hurtBox.Intersects(m_Shapes) ||
+                !hurtBox.Intersects(m_Shapes))
+            {
+                return;
+            }
+
+            ApplyHit(target, true);
+        }
+
+        /// <summary>
+        /// 对具体弹体已裁定的范围目标应用同一攻击，不递归扩散或消耗主命中预算。
+        /// </summary>
+        /// <param name="target">位于具体弹体溅射范围内的目标。</param>
+        protected void ApplySplashHit(AbstractActorEntity target)
+        {
+            ApplyHit(target, false);
+        }
+
+        /// <summary>
+        /// 共享直接命中与范围溅射的结算、去重、音效和无双收益。
+        /// </summary>
+        /// <param name="target">本次受击目标。</param>
+        /// <param name="primary">是否消耗弹体预算并触发具体效果的命中扩展。</param>
+        private void ApplyHit(AbstractActorEntity target, bool primary)
+        {
+            if (m_AttackData == null || !target.IsAlive || target.Side == m_Attacker.Side ||
                 !m_AttackData.TryRegisterHit(target.GetInstanceId()))
             {
                 return;
@@ -264,11 +323,14 @@ namespace GameLogic.Effects
             }
 
             GF.Sound.PlayConfigured(m_HitSoundId);
-            OnHitLanded(target, result);
-            m_RemainingHits--;
-            if (m_Hit.RepeatIntervalSeconds > 0)
+            if (primary)
             {
-                m_RepeatAt = Math.Min(m_RepeatAt, m_Player.CurrentAnimationPosition + m_Hit.RepeatIntervalSeconds);
+                OnHitLanded(target, result);
+                m_RemainingHits--;
+                if (m_Hit.RepeatIntervalSeconds > 0)
+                {
+                    m_RepeatAt = Math.Min(m_RepeatAt, m_Player.CurrentAnimationPosition + m_Hit.RepeatIntervalSeconds);
+                }
             }
 
             if (m_Attacker.Side == CombatSide.Hero)

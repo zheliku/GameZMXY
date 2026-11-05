@@ -67,9 +67,10 @@ namespace GameLogic.UI.Widgets
         /// <summary>
         /// 每次窗口打开从预览待机起点开始。
         /// </summary>
-        public void ResetPreview()
+        /// <param name="appearance">当前英雄共用的外观资源。</param>
+        public void ResetPreview(HeroAppearanceResource appearance)
         {
-            m_Preview.Reset();
+            m_Preview.Reset(appearance);
         }
 
         /// <summary>

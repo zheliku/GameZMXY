@@ -11,16 +11,17 @@ using Godot;
 using GodotGameFramework;
 
 /// <summary>
-/// 真实新档依次通关三关，每次退出到标题再读取同一槽，检查最新提示和锁定输入。
+/// 真实新档依次通关当前主线，每次退出到标题再读取同一槽，检查英雄身份、最新提示和锁定输入。
 /// </summary>
 /// <param name="driver">提供真实引擎帧和场景树的烟测驱动。</param>
 public sealed class MapProgressSmokeScenario(Node driver)
 {
-    private int m_LevelId = 1; // 下一次实际挑战的关卡。
+    private int m_LevelId; // 下一次实际挑战的关卡，首次从隔离档案的最新进度开始。
     private int m_Step; // 0 等待地图，1 战斗，2 退出重读，3 重读检查。
     private int m_ClosedMapSerial; // 刚关闭的地图，用于拒绝读取过渡期间的旧窗口。
     private LevelSmokeScenario m_Run; // 本次真实五波、出口与检查点回归。
     private double m_Time; // 等待导航的总秒数。
+    private readonly int m_HeroId = OS.GetCmdlineUserArgs().Contains("--tangseng-only") ? 2 : 1; // 真实选角身份，重读后不能回到默认英雄。
 
     /// <summary>
     /// 回归已经完成或失败。
@@ -46,9 +47,9 @@ public sealed class MapProgressSmokeScenario(Node driver)
         try
         {
             m_Time += delta;
-            if (m_Time > 600)
+            if (m_Time > 1200)
             {
-                throw new InvalidOperationException("三关解锁回归超时。");
+                throw new InvalidOperationException("主线解锁回归超时。");
             }
 
             if (m_Step == 4)
@@ -59,8 +60,8 @@ public sealed class MapProgressSmokeScenario(Node driver)
                     var map = VisibleMap();
                     if (map != null)
                     {
-                        string name = m_LevelId switch { 1 => "m_Huaguoshan", 2 => "m_Shuiliandong", _ => "m_Taohuayuan" };
-                        map.GetNode<BaseButton>(name).EmitSignal(BaseButton.SignalName.Pressed);
+                        map.GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>()
+                            .Single(button => button.LevelId == m_LevelId).EmitSignal(BaseButton.SignalName.Pressed);
                     }
                     return;
                 }
@@ -109,7 +110,7 @@ public sealed class MapProgressSmokeScenario(Node driver)
                 // 仅推进真实菜单到地图，不调用 AdvanceToLevel 的关卡夹具准备。
                 var forms = GF.UI.GetAllLoadedUIForms().OfType<Control>().Where(form => form.Visible);
                 var form = forms.FirstOrDefault(value => value is SaveForm) ?? forms.FirstOrDefault(value => value is StartForm or CharacterForm);
-                string path = form switch { StartForm => "m_Start", SaveForm => "Slots/m_Slot1", CharacterForm => "Roles/m_Wukong", _ => null };
+                string path = form switch { StartForm => "m_Start", SaveForm => "Slots/m_Slot1", CharacterForm => m_HeroId == 2 ? "Roles/m_Sanzang" : "Roles/m_Wukong", _ => null };
                 if (path != null && !form.GetNode<BaseButton>(path).Disabled)
                 {
                     form.GetNode<BaseButton>(path).EmitSignal(BaseButton.SignalName.Pressed);
@@ -117,11 +118,16 @@ public sealed class MapProgressSmokeScenario(Node driver)
 
                 return;
             }
+            if (m_LevelId == 0)
+            {
+                m_LevelId = GF.Fsm.GetModel<ProfileModel>().HighestClearedLevelId.Value + 1;
+                GD.Print($"SMOKE-PROGRESS START: next={m_LevelId}, hero={m_HeroId}, read from actual disk profile");
+            }
             if (m_Step == 3)
             {
                 CheckMap(current, m_LevelId);
                 GD.Print($"SMOKE-PROGRESS RELOAD: cleared={m_LevelId}, latest={GF.Fsm.GetSystem<ProfileSystem>().LatestLevelId}");
-                if (m_LevelId == 3)
+                if (m_LevelId == 10)
                 {
                     IsDone = true;
                     return;
@@ -130,8 +136,8 @@ public sealed class MapProgressSmokeScenario(Node driver)
                 m_Step = 0;
             }
             CheckMap(current, m_LevelId - 1);
-            string location = m_LevelId switch { 1 => "m_Huaguoshan", 2 => "m_Shuiliandong", _ => "m_Taohuayuan" };
-            current.GetNode<BaseButton>(location).EmitSignal(BaseButton.SignalName.Pressed);
+            current.GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>()
+                .Single(button => button.LevelId == m_LevelId).EmitSignal(BaseButton.SignalName.Pressed);
             m_Step = 4;
         }
         catch (Exception error)
@@ -155,32 +161,36 @@ public sealed class MapProgressSmokeScenario(Node driver)
     /// </summary>
     /// <param name="map">当前地图。</param>
     /// <param name="cleared">应已通关的最远编号。</param>
-    private static void CheckMap(MapForm map, int cleared)
+    private void CheckMap(MapForm map, int cleared)
     {
-        if (map == null || GF.Fsm.GetModel<ProfileModel>().HighestClearedLevelId.Value != cleared)
+        if (map == null || GF.Fsm.GetModel<ProfileModel>().HighestClearedLevelId.Value != cleared ||
+            GF.Fsm.GetModel<ProfileModel>().ActiveHeroId != m_HeroId)
         {
             throw new InvalidOperationException("重读或通关返回后地图进度错误。");
         }
 
-        int latest = Math.Min(3, cleared + 1);
+        int latest = Math.Min(10, cleared + 1);
         var player = map.GetNode<AnimationPlayer>("m_LocationAnimation");
-        string animation = latest switch { 1 => "location/current", 2 => "shuiliandong/current", _ => "taohuayuan/current" };
+        var locations = map.GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>().ToArray();
+        var latestButton = locations.Single(button => button.LevelId == latest);
+        string animation = latest == 1 ? "location/current" : latestButton.Name.ToString()[2..].ToLowerInvariant() + "/current";
         if (player.CurrentAnimation != animation)
         {
             throw new InvalidOperationException($"最新提示错误：{player.CurrentAnimation}，期望 {animation}");
         }
 
-        foreach (var (name, id) in new[] { ("m_Huaguoshan", 1), ("m_Shuiliandong", 2), ("m_Taohuayuan", 3) })
+        foreach (var button in locations)
         {
-            var button = map.GetNode<BaseButton>(name);
+            int id = button.LevelId;
             if (button.Disabled != (id > latest))
             {
                 throw new InvalidOperationException("地图解锁状态错误。");
             }
 
-            if (button.GetNode<CanvasItem>("LocationGlow").Visible != (id == latest))
+            if (button.GetNode<CanvasItem>("CurrentHint").Visible != (id == latest) ||
+                button.GetNode<CanvasItem>("LocationGlow").Visible)
             {
-                throw new InvalidOperationException("默认地图同时显示了多个关卡提示。");
+                throw new InvalidOperationException($"地图地点提示不符：id={id}, latest={latest}, animation={player.CurrentAnimation}");
             }
 
             if (id <= latest)

@@ -93,6 +93,17 @@ namespace GameLogic.Heroes
             }
         }
 
+        /// <summary>
+        /// 战斗与背包预览共用的只读外观资源引用。
+        /// </summary>
+        public HeroAppearanceResource Appearance
+        {
+            get
+            {
+                return m_Appearance;
+            }
+        }
+
         /// <inheritdoc />
         protected override GameConfig.Entity.EntityId EntityType
         {
@@ -668,8 +679,6 @@ namespace GameLogic.Heroes
             m_InvulnerabilityMaterial.SetShaderParameter("glow_radius", glowing ? radius : 0f);
             m_InvulnerabilityMaterial.SetShaderParameter("glow_alpha", phase < 9 ? 1f : .8f);
             m_InvulnerabilityMaterial.SetShaderParameter("mirrored", Facing > 0);
-            var sprite = (Sprite2D)Body;
-            m_InvulnerabilityMaterial.SetShaderParameter("frame_grid", new Vector2(sprite.Hframes, sprite.Vframes));
         }
 
         /// <summary>

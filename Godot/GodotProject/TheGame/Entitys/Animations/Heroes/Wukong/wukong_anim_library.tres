@@ -319,7 +319,7 @@ tracks/10/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "values": [{
-"args": [1],
+"args": [10001],
 "method": &"PlaySoundAnimEvent"
 }]
 }
@@ -480,7 +480,7 @@ tracks/10/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "values": [{
-"args": [1],
+"args": [10001],
 "method": &"PlaySoundAnimEvent"
 }]
 }
@@ -650,7 +650,7 @@ tracks/10/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "values": [{
-"args": [2],
+"args": [10002],
 "method": &"PlaySoundAnimEvent"
 }]
 }
@@ -817,7 +817,7 @@ tracks/10/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "values": [{
-"args": [2],
+"args": [10002],
 "method": &"PlaySoundAnimEvent"
 }]
 }
@@ -972,7 +972,7 @@ tracks/10/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "values": [{
-"args": [3],
+"args": [10003],
 "method": &"PlaySoundAnimEvent"
 }]
 }
@@ -1110,7 +1110,7 @@ tracks/10/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "values": [{
-"args": [5],
+"args": [10902],
 "method": &"PlaySoundAnimEvent"
 }]
 }

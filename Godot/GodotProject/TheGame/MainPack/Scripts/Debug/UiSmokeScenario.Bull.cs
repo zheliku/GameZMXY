@@ -174,19 +174,23 @@ public sealed partial class UiSmokeScenario
     private async Task CheckBullEnemiesAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
+        bool captureOnly = OS.GetCmdlineUserArgs().Contains("--bull-capture-only");
         var system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("BullSmoke", 1);
         system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
-            await CheckBullChargeAndGuardAsync(hero);
+            if (!captureOnly)
+            {
+                await CheckBullChargeAndGuardAsync(hero);
+            }
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
                 foreach (int direction in new[] { -1, 1 })
                 {
-                    foreach (int index in Enumerable.Range(0, 5))
+                    foreach (int index in captureOnly ? new[] { 4 } : Enumerable.Range(0, 5))
                     {
                         hero.GlobalPosition = new Vector2(100000, 100000);
                         m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BullDemonKing,
@@ -202,6 +206,7 @@ public sealed partial class UiSmokeScenario
                         await WaitUntilAsync(() => king.AttackSegment == index, "牛魔王身体没有消费招式");
                         bool captured = false;
                         bool capturedState = false;
+                        bool capturedFrame = false;
                         int pulses = 0;
                         int previousHp = hp;
                         ulong started = Time.GetTicksMsec();
@@ -224,6 +229,15 @@ public sealed partial class UiSmokeScenario
                                 captured = true;
                                 capturedState |= SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "m_BodyFsm").CurrentState is HeroCapturedState;
                                 Check(!hero.Visible, "吞噬没有隐藏英雄");
+                                var sprite = king.GetNode<AnimatedSprite2D>("m_Body");
+                                Check(sprite.SpriteFrames.ResourcePath.EndsWith(hero is TangsengEntity
+                                    ? "/bull_demon_king_tangseng_frames.tres" : "/bull_demon_king_official_frames.tres"),
+                                    "吞噬立绘未按实际捕获的英雄选择");
+                                if (!capturedFrame && sprite.Frame >= 46)
+                                {
+                                    capturedFrame = true;
+                                    await CaptureCombatAsync($"hero_{hero.HeroId}_bull_captured_{ticks}_{direction}");
+                                }
                             }
                             if (hero.Hp != previousHp)
                             {
@@ -235,7 +249,7 @@ public sealed partial class UiSmokeScenario
                         Check(hero.Hp < hp, $"牛魔王招式未命中：{index}/{direction}/{ticks}");
                         if (index == 4)
                         {
-                            Check(captured && capturedState && pulses == 5 && hp - hero.Hp == 250 && hero.Visible && !hero.ActionData.Captured,
+                            Check(captured && capturedState && capturedFrame && pulses == 5 && hp - hero.Hp == 250 && hero.Visible && !hero.ActionData.Captured,
                                 $"吞噬五次伤害、释放或显示错误：pulses={pulses} damage={hp - hero.Hp}");
                         }
                         hero.SetPhysicsProcess(false);
@@ -247,7 +261,11 @@ public sealed partial class UiSmokeScenario
                     }
                 }
 
-                GD.Print($"SMOKE-BULL ATTACKS 4-1 {ticks}Hz PASS: five native attacks, both directions, five drain pulses and release");
+                GD.Print($"SMOKE-BULL ATTACKS 4-1 {ticks}Hz PASS: hero={hero.HeroId}, {(captureOnly ? "swallowing" : "five native attacks")}, both directions, five drain pulses and release");
+            }
+            if (captureOnly)
+            {
+                return;
             }
             await CheckBullHeartAsync(hero);
             await CheckBullTreasureRewardAsync(hero, flow);

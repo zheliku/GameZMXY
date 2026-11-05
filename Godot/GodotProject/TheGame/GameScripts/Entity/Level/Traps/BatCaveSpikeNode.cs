@@ -26,7 +26,7 @@ namespace GameLogic.Level.Traps
         [Export] private CollisionShape2D m_Shape; // 覆盖主要刺身的基础矩形。
         [Export] private RayCast2D m_TriggerRay; // 仅检测下方英雄受击区；长度、起点与物理层在场景编辑。
         [Export] private bool m_Suspended; // 原版isUp，悬顶刺经过时落下，地面刺保持原位。
-        [Export] private int m_AttackId = 9001; // 统一攻击表中的尖刺固定伤害。
+        [Export] private int m_AttackId = 900004001; // 蝙蝠窟第1个机关的稳定攻击表引用，编辑器独立预览也使用此值。
 
         private Vector2 m_Origin; // 本关原点，复位不累积误差。
         private SpikePhase m_Phase; // 就绪、预警、下落互斥状态。

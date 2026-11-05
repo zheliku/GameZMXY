@@ -13,14 +13,13 @@ namespace GameLogic.Enemies
     /// </summary>
     public partial class LionCamelPoisonCloudNode : SkillEffectNode
     {
-        private const int PoisonAttackId = 11004; // 同版 Monster11 的持续伤害记录，区别于云雾主体伤害。
-
         /// <inheritdoc />
         protected override void OnHitLanded(AbstractActorEntity target, DamageResult result)
         {
             if (target is AbstractHeroEntity { CanReceiveStatusEffect: true })
             {
-                this.GetSystem<HeroStatusSystem>().ApplyPoison(this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(PoisonAttackId));
+                int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2);
+                this.GetSystem<HeroStatusSystem>().ApplyPoison(this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId));
             }
         }
     }

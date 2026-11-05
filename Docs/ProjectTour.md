@@ -32,8 +32,8 @@
 
 - [ ] **唐僧角色实战**：选角开放、角色场景、普攻与移动、五项主动技能、受击/无双/死亡及已有装备换装。目前仅有技能目录/伤害定义和装备图标，不能算可玩。入口：`Entity/Heroes/`、`Skills/`、`CharacterForm`。验收：新建唐僧档、学技、穿卸、完整通关与重读。
 - [x] **法宝穿戴与属性**：东海旗幡、金钢琢已经能获得、背包显示、独立 Treasure 槽穿卸、属性汇总并存档。入口：`EquipmentSystem`、`ProfileModel`、`InventoryForm`。造一源码把法宝列为 `zbfb` 装备，主动施放系统仍单独规划。
-- [ ] **地图购买技能入口**：官方 SelectPLace.showBuySkill 可在地图打开技能购买；当前仅战斗 V 键及战斗按钮可进入。入口：`ProcedureMap`、`MapForm`、`SkillForm`。验收：地图学技、余额/被动同步、保存、进关生效，不在地图创建战斗英雄。
-- [ ] **连击计数与显示**：官方 BaseMonster 增加 User.batterNum，GameInfo/Batter 负责显示与超时清零；当前普攻连段已实现，但没有这套连击统计 UI。入口：命中事件、`LevelModel`/所属规则、`BattleForm`。验收：连续命中累计、断连清零、暂停及退出清理，不能把普攻段号当连击数。
+- [x] **地图购买技能入口**：`MapForm`官方showBuySkill三态经`ProcedureMap`打开现有技能窗。官方位置(81.8,103.95)，悬停15帧、可购19帧子动画；地图学习、余额/被动同步、保存、进关生效已通过，地图不创建战斗模型或英雄。
+- [x] **连击计数与显示**：有效玩家命中经事件交给`LevelSystem`累计，20个24fps源步无变化清零；`BattleForm`/`ComboHud`使用官方Batter字图和五帧num数字，≥2命中显示，3.5秒渐隐。真实攻击、断连、暂停、退出/重入及一至三位数字布局已验证，普攻段号仍独立。
 
 随后补齐造一双人模式：
 
@@ -274,7 +274,7 @@ GGF 管理的界面统一采用 `XxxForm`：战斗根窗口为 `BattleForm`，�
 
 战斗 `idle1` 和背包预览 `idle` 共享原版 100 帧、24 fps 的完整待机循环，立棍张望由动画时间轴负责。地面装备和恢复品接触时入账，随后用 `Entitys/Animations/ground_item_pickup_library.tres` 在 0.8 秒内上移 100px 并淡出；关卡保留节点所有权直到动画结束。
 
-悟空五项技能动画挂在实体 AnimationPlayer 的 `skills` 库，源帧按 24 fps 换算为秒；仍共用身体/武器两张可独立替换的图层。大光效位于 `Sprites/Effects/wukong/skills/`，角色及独立效果场景在 `Entitys/Heroes/Wukong/`，外置库在 `Entitys/Animations/Heroes/Wukong/`。原版七段声音在 `SoundConfig` 中按 SoundId 7..13 登记到 GGF SFX。技能数据按职责分为：
+悟空五项技能动画挂在实体 AnimationPlayer 的 `skills` 库，源帧按 24 fps 换算为秒；仍共用身体/武器两张可独立替换的图层。大光效位于 `Sprites/Effects/wukong/skills/`，角色及独立效果场景在 `Entitys/Heroes/Wukong/`，外置库在 `Entitys/Animations/Heroes/Wukong/`。原版技能声音在 `SoundConfig` 中按角色、技能面板顺序及事件段登记到 GGF SFX，编码见第20章。技能数据按职责分为：
 
 | 源表 | 内容 |
 | --- | --- |
@@ -365,7 +365,7 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 
 三关的地形统一放在 `World/Geometry/Ground、Slopes、Walls、Water`，单向平台放在 `World/Platforms`。平台贴图和 Surface 同属一个 StaticBody2D；移动平台父节点即可同时移动图像与碰撞。碰撞顶点为父节点局部坐标，父节点位于原始首顶点；整幅地面图内含多个土坡，不能像独立平台一样只拖动其中一个碰撞就认为画面已同步。`EditorScripts/normalize_level_geometry.gd` 管几何与接缝，`align_official_level_art.gd` 按完整源矩阵摆放贴图、背景和官方出怪点；完整重建前先保留人工编辑。
 
-结算展示实际游玩秒数（不含暂停）、剩余生命比例、击败数和发放经验。连击与评分尚未实现，因此未显示虚构成绩。成功提供返回地图，失败提供重试和返回地图；第 60 章旧的自动重开/直接回地图描述保留待用户同步。
+结算展示实际游玩秒数（不含暂停）、剩余生命比例、击败数和发放经验。连击在战斗HUD显示；结算评分尚未实现，不显示虚构成绩。成功提供返回地图，失败提供重试和返回地图；第 60 章旧的自动重开/直接回地图描述保留待用户同步。
 
 ## 配置与原生动画（2026-10-18）
 
@@ -381,7 +381,7 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 | `Resources.xlsx` | EntityConfig、UIFormConfig、SoundConfig，保留 GGF 实际资源登记 |
 | 单表与 Schema | LevelConfig.xlsx、ProfileConfig.xlsx、__tables__.xlsx、__beans__.xlsx、__enums__.xlsx |
 
-共 11 个工作簿、17 张业务 Sheet；`__tables__` 用 `HeroConfig@Hero.xlsx` 等明确绑定，怪物表输入为 `MonsterConfig@Enemy.xlsx,BossConfig@Enemy.xlsx`。成长表按英雄记录嵌套 `Levels`，被动表按被动身份嵌套等级列表；小怪 EnemyId 从 1 起，BOSS 从 10001 起；EntityId 与 LegacyId 保持原资源身份和官方编号。改表仍走原 Luban 入口，不能手改生成代码。`dump_table.py Hero.xlsx HeroGrowthConfig` 可以只读指定 Sheet。
+共 11 个工作簿、17 张业务 Sheet；`__tables__` 用 `HeroConfig@Hero.xlsx` 等明确绑定，怪物表输入为 `MonsterConfig@Enemy.xlsx,BossConfig@Enemy.xlsx`。成长表按英雄记录嵌套 `Levels`，被动表按被动身份嵌套等级列表；身份范围统一为 `0=None`、英雄 `1-999`、小怪 `1000-4999`、BOSS `5000+`，各类按 Enemy 表首次出场顺序编号；`LegacyId` 仍单独保留为官方溯源。改表仍走原 Luban 入口，不能手改生成代码。`dump_table.py Hero.xlsx HeroGrowthConfig` 可以只读指定 Sheet。
 
 ### 动画如何连接技能
 
@@ -389,7 +389,7 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 
 实体先执行 `m_BodyFsm.Tick(dt)`，再推进仍在播放的技能 `AnimationPlayer.Advance(dt)`，最后 `MoveAndSlide`。暂停身体时独立效果继续推进。GGF 同帧跳状态不会重复推进动画；起手 `Advance(0)` 应用零时点。回调采用 Immediate，但只登记收招或下一阶段，切动画/退出状态/回池在 Advance 返回后执行。无逐帧 Seek、事件枚举或另一个时间游标。一个原生方法轨道同一时刻只能有一个键，同时播放声音与起手使用分开的方法轨道。
 
-火魔斩用原生 `descent`、`recovery` 标记选择阶段；状态拥有寻敌结果与落地等待，九连斩和本体并行。提前落地暂停本体，落地效果完成后请求recovery；未提前落地时直接在第70源帧兜底恢复。官方火魔斩不提供技能无敌，状态只负责输入锁、普攻阻塞、阶段和命中表现；具体状态决定伤害取整、方向和击退中心，实体最后应用无双倍率。技能行的 OwnerId=None、ComboIndex=-1，不进入普通攻击索引。
+火魔斩用原生 `descent`、`recovery` 标记选择阶段；状态拥有寻敌结果与落地等待，九连斩和本体并行。提前落地暂停本体，落地效果完成后请求recovery；未提前落地时直接在第70源帧兜底恢复。官方火魔斩不提供技能无敌，状态只负责输入锁、普攻阻塞、阶段和命中表现；具体状态决定伤害取整、方向和击退中心，实体最后应用无双倍率。技能行填写真实 OwnerId、ComboIndex=-1，不进入普通攻击索引。
 
 模型只保留 ActiveSkillId；重力、等待、完成属于状态，输入锁属于该英雄的 HeroActionData 并由火魔状态成对设置/解除。独立效果拥有攻击包、总预算和原生 AnimationPlayer；角色收招后效果可以继续播放，旧通知由接收状态拒绝。死亡、受伤、取消和隐藏必须清理，不等待动画末尾。技能退出统一经 RESET 恢复特效和判定值。动画方法使用 AnimEvent 后缀，死亡语音使用 PlaySoundAnimEvent(SoundId)；受击语音由ReceiveHit读取m_HurtSoundId播放，hurt动画不重复发声。
 
@@ -419,7 +419,7 @@ StyleBox 定义背景、边框、圆角和内容留白；Theme 按控件类型�
 - 无双数值：BattleConfig.xlsx 的 Ws 字段，含义与官方依据集中在 OfficialReference；角色参数不被开启/结束反复改写。
 - 满值提示：`Sprites/UI/hud/battle_menu_ws_glow_frames.tres`，原版 19 帧透明图；定位在 `BattleForm/MenuPanel/m_WsMax`，不叠加旧裁剪 shader。
 - 左下布局：保留造三五入口；`MenuPanel/WsFrame` 是 260×22 黑色长底板，子节点 `m_WsBar` 是细灰底和橙色填充；`SkillBar` 位于其上方。整体位置调父节点，条的尺寸调 `m_WsBar` 的偏移和缩放，不删除装饰层来调整进度。
-- 开启大立绘：`Sprites/UI/hud/musou_activation/musou_activation_frames.tres`，独立于满值闪烁。
+- 开启大立绘：`Sprites/UI/hud/musou_activation/` 下按 `wukong/`、`tangseng/` 选择当前英雄的官方帧；`shared/musou_activation_library.tres` 共用24帧时钟，独立于满值闪烁。
 - BOSS 条：`UIs/Battle/encounter_health_bar.tscn`；姓名和笔刷条构成顶部组件，无生命数字。
 - 地图悬停：LocationGlow.Scale 调尺寸，AnimationPlayer.SpeedScale 调速度；蝙蝠窟使用KeepAspectCentered保持普通图与悬停图中心一致，命中同步反转居中偏移及缩放，跟随可见轮廓。
 - 新持久字段：领域状态 → GameData → ProfileModel → SaveDataUtility 捕获/校验、ProfileSystem 回滚 → 格式版本与验证。

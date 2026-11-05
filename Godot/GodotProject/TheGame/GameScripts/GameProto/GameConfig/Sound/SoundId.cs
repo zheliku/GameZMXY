@@ -20,91 +20,123 @@ namespace GameConfig.Sound
         /// <summary>
         /// 开始与选角音乐
         /// </summary>
-        MenuTheme = 100,
+        MenuTheme = 1000,
         /// <summary>
         /// 地图音乐
         /// </summary>
-        MapTheme = 101,
+        MapTheme = 1001,
         /// <summary>
         /// 花果山音乐
         /// </summary>
-        HuaguoshanTheme = 102,
+        HuaguoshanTheme = 1002,
         /// <summary>
         /// 洞窟音乐
         /// </summary>
-        CaveTheme = 106,
+        CaveTheme = 1003,
         /// <summary>
         /// 海底音乐
         /// </summary>
-        SeaTheme = 107,
+        SeaTheme = 1004,
         /// <summary>
         /// 牛魔谷音乐
         /// </summary>
-        BullDemonValleyTheme = 108,
+        BullDemonValleyTheme = 1005,
         /// <summary>
         /// 挑战成功音乐
         /// </summary>
-        SettlementVictory = 104,
+        SettlementVictory = 1006,
         /// <summary>
         /// 挑战失败音乐
         /// </summary>
-        SettlementDefeat = 105,
+        SettlementDefeat = 1007,
         /// <summary>
         /// 菜单确认音
         /// </summary>
-        MenuConfirm = 103,
+        MenuConfirm = 2000,
         /// <summary>
         /// 悟空挥棍1/2
         /// </summary>
-        WukongAttack1And2 = 1,
+        WukongAttack1And2 = 10001,
         /// <summary>
         /// 悟空挥棍3/4
         /// </summary>
-        WukongAttack3And4 = 2,
+        WukongAttack3And4 = 10002,
         /// <summary>
         /// 悟空挥棍5
         /// </summary>
-        WukongAttack5 = 3,
+        WukongAttack5 = 10003,
         /// <summary>
         /// 悟空升龙斩
         /// </summary>
-        WukongRisingDragon = 7,
+        WukongRisingDragon = 10111,
         /// <summary>
         /// 悟空火焰突击
         /// </summary>
-        WukongFlameThrust = 8,
+        WukongFlameThrust = 10121,
         /// <summary>
         /// 悟空烈焰闪
         /// </summary>
-        WukongBlazingFlash = 9,
+        WukongBlazingFlash = 10131,
         /// <summary>
         /// 悟空烈焰风暴
         /// </summary>
-        WukongFlameStorm = 10,
+        WukongFlameStorm = 10141,
         /// <summary>
         /// 悟空火魔斩起手
         /// </summary>
-        WukongFireDemonStart = 11,
+        WukongFireDemonStart = 10151,
         /// <summary>
         /// 悟空火魔九连斩
         /// </summary>
-        WukongFireDemonCombo = 12,
+        WukongFireDemonCombo = 10152,
         /// <summary>
         /// 悟空火魔斩落地
         /// </summary>
-        WukongFireDemonLanding = 13,
+        WukongFireDemonLanding = 10153,
         /// <summary>
         /// 悟空命中音
         /// </summary>
-        WukongImpact = 6,
+        WukongImpact = 10900,
         /// <summary>
         /// 悟空受击语音
         /// </summary>
-        WukongHurt = 4,
+        WukongHurt = 10901,
         /// <summary>
         /// 悟空死亡语音
         /// </summary>
-        WukongDeath = 5,
+        WukongDeath = 10902,
+        /// <summary>
+        /// 唐僧普攻
+        /// </summary>
+        TangsengAttack = 11001,
+        /// <summary>
+        /// 唐僧冰龙波
+        /// </summary>
+        TangsengIceDragon = 11111,
+        /// <summary>
+        /// 唐僧玄冰阵
+        /// </summary>
+        TangsengDarkIce = 11121,
+        /// <summary>
+        /// 唐僧水幻影
+        /// </summary>
+        TangsengWaterClone = 11131,
+        /// <summary>
+        /// 唐僧天降甘露
+        /// </summary>
+        TangsengHeavenlyDew = 11141,
+        /// <summary>
+        /// 唐僧水魔爆
+        /// </summary>
+        TangsengWaterDemon = 11151,
+        /// <summary>
+        /// 唐僧命中音
+        /// </summary>
+        TangsengImpact = 11900,
+        /// <summary>
+        /// 唐僧受击语音
+        /// </summary>
+        TangsengHurt = 11901,
     }
 
 } 

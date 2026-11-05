@@ -1,0 +1,182 @@
+[gd_scene format=3 uid="uid://bt60t6f2hq27b"]
+
+[ext_resource type="Script" uid="uid://dqj5ij77ajw7w" path="res://TheGame/GameScripts/Entity/Heroes/Tangseng/TangsengEntity.cs" id="1_lcmpv"]
+[ext_resource type="Resource" path="res://TheGame/Sprites/Characters/Heroes/tangseng/tangseng_appearance.tres" id="2_p32r7"]
+[ext_resource type="Texture2D" uid="uid://2j117g6kj1ot" path="res://TheGame/Sprites/Characters/Heroes/tangseng/tangseng_body_bare.png" id="3_v2bpf"]
+[ext_resource type="Texture2D" uid="uid://dotglimbmjflv" path="res://TheGame/Sprites/Characters/Heroes/tangseng/tangseng_weapon_default.png" id="4_yi3k4"]
+[ext_resource type="AnimationLibrary" uid="uid://bw83rs4gv0ohe" path="res://TheGame/Entitys/Animations/Heroes/Tangseng/tangseng_anim_library.tres" id="6_jwy4g"]
+[ext_resource type="AnimationLibrary" uid="uid://3vibh7h44moq" path="res://TheGame/Entitys/Animations/Heroes/Tangseng/tangseng_skill_library.tres" id="7_lcmpv"]
+[ext_resource type="Script" uid="uid://cswoo8veqk4d0" path="res://TheGame/GameScripts/Entity/Heroes/Effects/MusouAfterimageNode.cs" id="8_23xmk"]
+[ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="9_8wyf5"]
+[ext_resource type="PackedScene" uid="uid://cqio6ihe2xbfn" path="res://TheGame/Entitys/Effects/level_up.tscn" id="10_wse2p"]
+[ext_resource type="SpriteFrames" uid="uid://57holtaij20o" path="res://TheGame/Sprites/Characters/Heroes/Status/poison_head_frames.tres" id="14_lj6ud"]
+[ext_resource type="SpriteFrames" uid="uid://8mwlugsruvxh" path="res://TheGame/Sprites/Characters/Heroes/Status/poison_up_frames.tres" id="15_23xmk"]
+[ext_resource type="PackedScene" uid="uid://butnv34uliogm" path="res://TheGame/Entitys/Effects/hero_tombstone.tscn" id="16_death"]
+[ext_resource type="SpriteFrames" uid="uid://by3wuh1srdydb" path="res://TheGame/Sprites/Characters/Heroes/Status/hero_frozen_frames.tres" id="17_8wyf5"]
+[ext_resource type="Shader" uid="uid://dy7uu85sk4r16" path="res://TheGame/Sprites/Characters/Heroes/Status/hero_invulnerability.gdshader" id="18_invulnerability"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Heroes/Tangseng/tangseng_shadow.tscn" id="19_shadow"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Heroes/Tangseng/tangseng_dark_ice_effect.tscn" id="20_dark_ice"]
+[ext_resource type="SpriteFrames" uid="uid://bcvorw6p5lcp6" path="res://TheGame/Sprites/Effects/tangseng/skills/tangseng_water_demon_ball_frames.tres" id="22_water_ball"]
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Heroes/Tangseng/tangseng_water_demon_fall_effect.tscn" id="23_water_fall"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/hero_hurt/tangseng/tangseng_hurt_frames.tres" id="hurt_feedback"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_invulnerability"]
+resource_local_to_scene = true
+shader = ExtResource("18_invulnerability")
+shader_parameter/glow_color = Color(0, 0, 1, 1)
+shader_parameter/glow_radius = 0.0
+shader_parameter/glow_alpha = 1.0
+shader_parameter/mirrored = false
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_2pdac"]
+radius = 22.50061
+height = 90.01099
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mmwcb"]
+size = Vector2(45.00122, 90.01099)
+
+[sub_resource type="RectangleShape2D" id="hitbox_rest"]
+size = Vector2(1, 1)
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_wse2p"]
+blend_mode = 1
+
+[node name="TangsengEntity" type="CharacterBody2D" unique_id=1997895029 node_paths=PackedStringArray("m_WaterClone", "m_WaterDemonBall", "m_Weapon", "m_EffectRoot", "m_MusouAfterimage", "m_HurtFeedback", "m_LevelUp", "m_PoisonHead", "m_PoisonPulse", "m_FrozenEffect", "m_Tombstone", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+z_index = 1
+collision_layer = 2
+collision_mask = 8201
+floor_constant_speed = true
+floor_max_angle = 0.87266463
+floor_snap_length = 12.0
+script = ExtResource("1_lcmpv")
+m_WaterClone = NodePath("m_WaterClone")
+m_DarkIceEffect = ExtResource("20_dark_ice")
+m_WaterDemonBall = NodePath("m_EffectRoot/m_WaterDemonBall")
+m_WaterDemonFallEffect = ExtResource("23_water_fall")
+m_Weapon = NodePath("m_Weapon")
+m_Appearance = ExtResource("2_p32r7")
+m_EffectRoot = NodePath("m_EffectRoot")
+m_HeroId = 2
+m_MusouAfterimage = NodePath("m_MusouAfterimage")
+m_HurtFeedback = NodePath("m_StatusEffects/m_HurtFeedback")
+m_LevelUp = NodePath("m_LevelUp")
+m_PoisonHead = NodePath("m_StatusEffects/m_PoisonHead")
+m_PoisonPulse = NodePath("m_StatusEffects/m_PoisonPulse")
+m_FrozenEffect = NodePath("m_StatusEffects/m_FrozenEffect")
+m_InvulnerabilityMaterial = SubResource("ShaderMaterial_invulnerability")
+m_Tombstone = NodePath("m_Tombstone")
+m_Body = NodePath("m_Body")
+m_AnimPlayer = NodePath("m_AnimPlayer")
+m_AttackAnimations = PackedStringArray("attack_1")
+m_HurtSoundId = 11901
+m_HitSoundId = 11900
+m_HurtBox = NodePath("m_HurtBox")
+m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
+m_HitBoxRoot = NodePath("m_HitBoxRoot")
+
+[node name="m_Body" type="Sprite2D" parent="." unique_id=1176817662]
+material = SubResource("ShaderMaterial_invulnerability")
+position = Vector2(0, -28)
+texture = ExtResource("3_v2bpf")
+hframes = 6
+vframes = 17
+metadata/_edit_lock_ = true
+
+[node name="m_Weapon" type="Sprite2D" parent="." unique_id=1875971229]
+material = SubResource("ShaderMaterial_invulnerability")
+position = Vector2(0, -28)
+texture = ExtResource("4_yi3k4")
+hframes = 6
+vframes = 7
+frame = 1
+
+[node name="m_Tombstone" parent="." unique_id=76563393 instance=ExtResource("16_death")]
+
+[node name="m_EffectRoot" type="Node2D" parent="." unique_id=1511528685]
+position = Vector2(0, -28)
+
+[node name="m_WaterDemonBall" type="AnimatedSprite2D" parent="m_EffectRoot" unique_id=1871711252]
+visible = false
+position = Vector2(-515.45, 51.6)
+sprite_frames = ExtResource("22_water_ball")
+animation = &"play"
+frame = 12
+offset = Vector2(11.6, 8.65)
+
+[node name="m_WaterClone" parent="." unique_id=61025387 instance=ExtResource("19_shadow")]
+visible = false
+top_level = true
+
+[node name="m_AnimPlayer" type="AnimationPlayer" parent="." unique_id=1868607720]
+libraries/ = ExtResource("6_jwy4g")
+libraries/skills = ExtResource("7_lcmpv")
+
+[node name="m_MusouAfterimage" type="Node2D" parent="." unique_id=453891703 node_paths=PackedStringArray("m_Layers")]
+script = ExtResource("8_23xmk")
+m_Layers = [NodePath("../m_Body"), NodePath("../m_Weapon")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=346349777]
+position = Vector2(0.5, -4.2)
+shape = SubResource("CapsuleShape2D_2pdac")
+debug_color = Color(0, 1, 0, 0.41960785)
+
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=789563650 node_paths=PackedStringArray("m_Owner")]
+collision_layer = 128
+collision_mask = 0
+monitoring = false
+script = ExtResource("9_8wyf5")
+m_Owner = NodePath("..")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1973699252]
+position = Vector2(0.5, -4.2)
+shape = SubResource("RectangleShape2D_mmwcb")
+debug_color = Color(1, 0, 0, 0.41960785)
+
+[node name="m_HitBoxRoot" type="Node2D" parent="." unique_id=1579760964]
+position = Vector2(0, -28)
+
+[node name="m_HitBox" type="Area2D" parent="m_HitBoxRoot" unique_id=589721293]
+collision_layer = 16
+collision_mask = 32
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HitBoxRoot/m_HitBox" unique_id=88732808]
+position = Vector2(-55, 0)
+shape = SubResource("hitbox_rest")
+disabled = true
+
+[node name="m_LevelUp" parent="." unique_id=1771260592 instance=ExtResource("10_wse2p")]
+frame = 27
+frame_progress = 1.0
+
+[node name="m_StatusEffects" type="Node2D" parent="." unique_id=1063296577]
+
+[node name="m_PoisonHead" type="AnimatedSprite2D" parent="m_StatusEffects" unique_id=970449794]
+visible = false
+position = Vector2(0, -70)
+sprite_frames = ExtResource("14_lj6ud")
+animation = &"play"
+offset = Vector2(0.5, -13.5)
+
+[node name="m_PoisonPulse" type="AnimatedSprite2D" parent="m_StatusEffects" unique_id=623994259]
+visible = false
+position = Vector2(0, -50)
+sprite_frames = ExtResource("15_23xmk")
+animation = &"play"
+offset = Vector2(-22, -26.5)
+
+[node name="m_FrozenEffect" type="AnimatedSprite2D" parent="m_StatusEffects" unique_id=830248947]
+visible = false
+material = SubResource("CanvasItemMaterial_wse2p")
+position = Vector2(-90, -115)
+sprite_frames = ExtResource("17_8wyf5")
+animation = &"play"
+offset = Vector2(96, 96)
+
+[node name="m_HurtFeedback" type="AnimatedSprite2D" parent="m_StatusEffects" unique_id=1500462707]
+visible = false
+z_index = 5
+position = Vector2(0.5, -4.2)
+sprite_frames = ExtResource("hurt_feedback")
+animation = &"hero_hurt"
+offset = Vector2(1.9, 0.05)

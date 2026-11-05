@@ -161,7 +161,7 @@ namespace GameLogic.UI
                     GF.Base.PauseGame();
                 }
 
-                m_Character.ResetPreview();
+                m_Character.ResetPreview(data.Hero.Appearance);
                 m_Bag.Refresh(resetPage: true);
                 RefreshInventoryPanels();
                 Visible = true;

@@ -11,6 +11,7 @@ namespace GameLogic.UI.Widgets
         private static readonly StringName m_ActivationAnimation = "activation"; // 播放与完成信号共用的外置动画键。
         [Export] private AnimatedSprite2D m_Animation; // 官方完整画面帧，帧号由外置动画轨道编辑。
         [Export] private AnimationPlayer m_Player; // 原生动画轨道是唯一演出时钟。
+        [Export] private Godot.Collections.Dictionary<int, SpriteFrames> m_HeroFrames = new(); // 按当前英雄身份绑定官方全屏演出。
         private ulong m_PreviousTick; // 真实时间上次采样点，游戏暂停时仍能推进。
         private bool m_OwnsPause; // 只恢复本演出自己申请的 GGF 暂停。
 
@@ -38,9 +39,11 @@ namespace GameLogic.UI.Widgets
         /// <summary>
         /// 从首帧播放，暂停时间完全由这段动画的实际长度决定。
         /// </summary>
-        public void ShowActivation()
+        /// <param name="heroId">当前HUD绑定的出战英雄身份。</param>
+        public void ShowActivation(int heroId)
         {
             Reset();
+            m_Animation.SpriteFrames = m_HeroFrames[heroId];
             m_OwnsPause = !GF.Base.IsGamePaused;
             if (m_OwnsPause)
             {

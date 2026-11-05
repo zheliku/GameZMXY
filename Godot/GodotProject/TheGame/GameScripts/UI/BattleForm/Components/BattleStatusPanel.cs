@@ -11,6 +11,17 @@ namespace GameLogic.UI.Widgets
         [Export] private ResourceBar m_MpBar; // 魔法资源条。
         [Export] private ResourceBar m_ExpBar; // 当前等级经验条。
         [Export] private Label m_LevelLabel; // 等级数字。
+        [Export] private Sprite2D m_Portrait; // 当前角色头像。
+        [Export] private Godot.Collections.Dictionary<int, Texture2D> m_Portraits = new(); // 本场景登记的角色头像。
+
+        /// <summary>
+        /// 每次绑定战斗英雄时切换对应头像，池复用不保留上一角色。
+        /// </summary>
+        /// <param name="heroId">当前出战英雄身份。</param>
+        public void SetHero(int heroId)
+        {
+            m_Portrait.Texture = m_Portraits[heroId];
+        }
 
         /// <summary>
         /// 同步生命和魔法现值与上限。

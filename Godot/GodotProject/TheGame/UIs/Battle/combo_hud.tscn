@@ -1,0 +1,15 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/UI/BattleForm/Components/ComboHud.cs" id="script"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/combo_caption.png" id="caption"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/hud/combo_digits_frames.tres" id="digits"]
+
+[node name="ComboHud" type="Control"]
+mouse_filter = 2
+script = ExtResource("script")
+m_DigitFrames = ExtResource("digits")
+
+[node name="Caption" type="Sprite2D" parent="."]
+position = Vector2(-16, -16)
+texture = ExtResource("caption")
+centered = false

@@ -1,8 +1,8 @@
-"""Render the official Role_v7 WsEffect for Wukong; keep SWF code outside the game.
+"""Render the official Role_v7 WsEffect for either hero; keep SWF code outside the game.
 
-Sprite 59 composes the 24-frame background and 11-frame Wukong entrance.
-The official runtime hides Role2Mc and keeps Wukong's final pose until the
-background finishes. Extend those display timelines for a faithful PNG export.
+Sprite 59 composes the 24-frame background and each hero's entrance.
+BaseHero.turnToGXP hides the other hero and keeps the selected final pose until
+the background finishes. Extend those display timelines for a faithful export.
 """
 
 import argparse
@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET
 from export_official_combat_effects import decode
 
 
-def export(java: Path, ffdec: Path, role: Path) -> None:
+def export(java: Path, ffdec: Path, role: Path, hero: str = 'wukong', output: Path | None = None) -> None:
     """Render the original composition, including outlines, text and placement."""
     game = Path(__file__).resolve().parents[2] / "Godot/GodotProject/TheGame"
     with tempfile.TemporaryDirectory(prefix="gamezmxy-musou-") as temporary:
@@ -31,8 +31,9 @@ def export(java: Path, ffdec: Path, role: Path) -> None:
         sprites = {e.get("spriteId"): e for e in tree.iter("item") if e.get("type") == "DefineSpriteTag"}
         parent = sprites["59"]
         tags = parent.find("subTags")
-        tags.remove(next(e for e in tags if e.get("name") == "Role2Mc"))
-        for sprite in [parent, sprites["55"]]:
+        selected, hidden = ('55', 'Role2Mc') if hero == 'wukong' else ('58', 'Role1Mc')
+        tags.remove(next(e for e in tags if e.get("name") == hidden))
+        for sprite in [parent, sprites[selected]]:
             timeline = sprite.find("subTags")
             last_frame = next(e for e in reversed(timeline) if e.get("type") == "ShowFrameTag")
             for _ in range(24 - int(sprite.get("frameCount"))): timeline.append(deepcopy(last_frame))
@@ -63,23 +64,26 @@ def export(java: Path, ffdec: Path, role: Path) -> None:
         subprocess.run(command + ["-ignorebackground", "-export", "frame", temporary, str(composed)], check=True)
         rendered = sorted(temp.rglob("*.png"), key=lambda p: int(re.findall(r"\d+", p.stem)[-1]))
         if len(rendered) != 24: raise ValueError(f"Expected 24 screen frames, found {len(rendered)}")
-        destination = game / "Sprites/UI/hud/musou_activation"
+        destination = output or game / "Sprites/UI/hud/musou_activation" / hero
         destination.mkdir(parents=True, exist_ok=True)
+        prefix = f'{hero}_musou_activation'
         resources, frames = [], []
         for frame in range(1, 25):
-            asset = destination / f"musou_activation_{frame:02}.png"
+            asset = destination / f"{prefix}_{frame:02}.png"
             shutil.copyfile(rendered[frame - 1], asset)
             resources.append(f'[ext_resource type="Texture2D" path="res://TheGame/{asset.relative_to(game).as_posix()}" id="f{frame}"]')
             frames.append('{"duration": 1.0, "texture": ExtResource("f' + str(frame) + '")}')
-        (destination / "musou_activation_frames.tres").write_text(
+        (destination / f"{prefix}_frames.tres").write_text(
             '[gd_resource type="SpriteFrames" format=3]\n\n' + '\n'.join(resources)
             + '\n\n[resource]\nanimations = [{"frames": [' + ',\n'.join(frames)
             + '], "loop": false, "name": &"musou_activation", "speed": 24.0}]\n', encoding="utf-8")
-        print("WsEffect: 24 original composed frames, Wukong only")
+        print(f"WsEffect: 24 original composed frames, {hero}, selected symbol {selected}, hidden {hidden}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("java", "ffdec", "role"): parser.add_argument(f"--{name}", type=Path, required=True)
+    parser.add_argument('--hero', choices=('wukong', 'tangseng'), default='wukong')
+    parser.add_argument('--output', type=Path)
     args = parser.parse_args()
-    export(args.java, args.ffdec, args.role)
+    export(args.java, args.ffdec, args.role, args.hero, args.output)

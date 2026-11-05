@@ -16,7 +16,6 @@ public sealed partial class EntityConfig : Luban.BeanBase
 {
     public EntityConfig(ByteBuf _buf) 
     {
-        Id = _buf.ReadInt();
         EntityId = (Entity.EntityId)_buf.ReadInt();
         AssetPath = _buf.ReadString();
         EntityGroupName = _buf.ReadString();
@@ -29,11 +28,7 @@ public sealed partial class EntityConfig : Luban.BeanBase
     }
 
     /// <summary>
-    /// 这是id
-    /// </summary>
-    public readonly int Id;
-    /// <summary>
-    /// 实体名称
+    /// 唯一实体主键；英雄1-9999，小怪10000-99999，Boss100000-199999
     /// </summary>
     public readonly Entity.EntityId EntityId;
     /// <summary>
@@ -59,7 +54,6 @@ public sealed partial class EntityConfig : Luban.BeanBase
     public override string ToString()
     {
         return "{ "
-        + "id:" + Id + ","
         + "EntityId:" + EntityId + ","
         + "AssetPath:" + AssetPath + ","
         + "EntityGroupName:" + EntityGroupName + ","

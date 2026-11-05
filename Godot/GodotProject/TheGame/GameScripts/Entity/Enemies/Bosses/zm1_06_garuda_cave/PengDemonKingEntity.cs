@@ -306,7 +306,7 @@ namespace GameLogic.Enemies
         {
             if (m_BodyFsm.CurrentState is PengDemonKingAttackState state)
             {
-                NewAttackAnimEvent();
+                RefreshAttack();
                 state.BeginDash(this);
             }
         }
@@ -330,7 +330,7 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            var effect = CreateSkillEffect(m_DeathScene);
+            var effect = RentSkillEffect(m_DeathScene);
             effect.Show(null, GlobalPosition, Facing, CaptureCombatAttributes(), 0, false, ReleaseSkillEffect,
                 state.CompleteEffect);
         }
@@ -343,7 +343,7 @@ namespace GameLogic.Enemies
         {
             Vector2 offset = sourceY is float y ? new Vector2(Facing * (float)GD.RandRange(30f, 230f), y) :
                 new Vector2((float)GD.RandRange(-100f, 100f), -(float)GD.RandRange(100f, 250f));
-            var effect = CreateSkillEffect(m_FireScene);
+            var effect = RentSkillEffect(m_FireScene);
             var attack = OwnAttacks[0];
             int power = (int)MathF.Round(Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf()));
             effect.Show(attack, GlobalPosition + offset, Facing, CaptureCombatAttributes(), power, false,

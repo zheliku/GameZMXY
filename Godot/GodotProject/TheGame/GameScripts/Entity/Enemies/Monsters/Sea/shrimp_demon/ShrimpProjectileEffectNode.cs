@@ -47,7 +47,7 @@ namespace GameLogic.Enemies
                 Modulate = new Color(1f, 1f, 1f, alpha * alpha);
                 if (m_FadeLeft <= 0f)
                 {
-                    FinishAnimationAnimEvent();
+                    RequestFinish();
                 }
             }
             else
@@ -65,7 +65,7 @@ namespace GameLogic.Enemies
                 m_Speed = next;
                 if (m_Distance >= MaxDistance)
                 {
-                    FinishAnimationAnimEvent();
+                    RequestFinish();
                 }
 
                 foreach (Area2D area in m_CancelArea.GetOverlappingAreas())

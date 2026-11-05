@@ -24,10 +24,8 @@ namespace GameLogic.Level
     /// 从关卡配方、敌人与掉落池组合关卡图鉴；不启动场景或修改档案。
     /// </summary>
     /// <param name="levelId">地图展示的主线关卡主键。</param>
-    public sealed class LevelGuideQuery(int levelId) : AbstractQuery<LevelGuideData>
+    public sealed class LevelGuideQuery(int levelId) : AbstractQuery<LevelGuideData>, ICanGetUtility
     {
-        private const int FirstBossId = 10001; // 项目已约定的小怪/首领编号分界。
-
         /// <summary>
         /// 查询实际配方并合并装备身份，不创建运行时敌人或装备。
         /// </summary>
@@ -36,12 +34,13 @@ namespace GameLogic.Level
         {
             var configuration = this.GetModel<ConfigurationModel>();
             var tables = configuration.Tables;
+            var ids = this.GetUtility<ConfigIdUtility>();
             var level = tables.TbLevelConfig.Get(levelId);
             var enemies = level.Stages.SelectMany(stage => stage.Recipes)
                 .Select(recipe => configuration.GetEnemy(recipe.EnemyEntityId))
                 .DistinctBy(enemy => enemy.EnemyId)
                 .ToArray();
-            var guardians = enemies.Where(enemy => enemy.EnemyId >= FirstBossId).ToArray();
+            var guardians = enemies.Where(enemy => ids.IsBoss(enemy.EntityId)).ToArray();
             if (guardians.Length == 0)
             {
                 // 末段可有多条并行流，末行不是守关身份；这两关复用具体普通物种。

@@ -31,44 +31,18 @@ namespace GameLogic.Config
         public ConfigurationSystem(IArchitecture architecture) : base(architecture) { }
 
         /// <summary>
-        /// 配置模型先注册，随后执行一次跨表校验。
+        /// 使用所属架构已注册的配置模型和工具执行一次跨表校验。
         /// </summary>
+        /// <exception cref="InvalidOperationException">任一约束不满足；消息列出全部问题。</exception>
         protected override void OnInit()
         {
-            ValidateTables(this.GetModel<ConfigurationModel>().Tables, this.GetUtility<ExperienceCurveUtility>());
-        }
-
-        /// <summary>
-        /// 校验全部启动约束，汇总所有错误后一次抛出。
-        /// </summary>
-        /// <param name="tables">已加载的配置总表。</param>
-        /// <param name="curve">已注册的共享曲线；独立校验未提供时才构建。</param>
-        /// <returns>经过校验的共享经验曲线（供档案与存档使用，避免重复构建）。</returns>
-        /// <exception cref="ArgumentNullException">总表为空。</exception>
-        /// <exception cref="InvalidOperationException">任一约束不满足；消息列出全部问题。</exception>
-        internal static ExperienceCurveUtility ValidateTables(Tables tables, ExperienceCurveUtility curve = null)
-        {
-            ArgumentNullException.ThrowIfNull(tables);
+            Tables tables = this.GetModel<ConfigurationModel>().Tables;
+            var curve = this.GetUtility<ExperienceCurveUtility>();
+            var ids = this.GetUtility<ConfigIdUtility>();
             List<string> errors = new();
 
-            // 经验曲线：构造函数内校验等级连续、末级为零、累计不溢出。
-            if (curve == null)
-            {
-                try
-                {
-                    curve = new ExperienceCurveUtility(tables.TbHeroLevelConfig.DataList);
-                }
-                catch (ArgumentException exception)
-                {
-                    errors.Add($"经验表：{exception.Message}");
-                }
-            }
-
-            // 成长表：每名英雄覆盖 1..MaxLevel，且没有多余等级。
-            if (curve != null)
-            {
-                ValidateGrowth(tables, curve.MaxLevel, errors);
-            }
+            // 经验表在曲线工具注册时已验证，成长行覆盖同一曲线的全部等级。
+            ValidateGrowth(tables, curve.MaxLevel, errors);
 
             // 建档规则：出战英雄存在。
             if (tables.TbHeroConfig.GetOrDefault(tables.TbProfileConfig.StartHeroId) == null)
@@ -84,6 +58,12 @@ namespace GameLogic.Config
             // 怪物：生命上限为正、经验奖励非负、等级为正。
             foreach (EnemyConfig enemy in tables.TbEnemyConfig.DataList)
             {
+                if (enemy.EnemyId != (int)enemy.EntityId ||
+                    !(ids.IsMonster(enemy.EntityId) || ids.IsBoss(enemy.EntityId)))
+                {
+                    errors.Add($"怪物 {enemy.EnemyId}：必须与 EntityId 相同，并使用小怪 10000-99999 或 Boss 100000-199999 范围。");
+                }
+
                 if (enemy.BaseAttributes.MaxHp <= 0 || enemy.AddExp < 0 || enemy.Level < 1)
                 {
                     errors.Add($"怪物 {enemy.EnemyId}：MaxHp 必须为正、AddExp 非负、Level 至少为 1。");
@@ -95,6 +75,24 @@ namespace GameLogic.Config
                 if (group.Count() != 1)
                 {
                     errors.Add($"怪物实体 {group.Key} 必须只有一条基础配置，特殊规则由具体实体处理。");
+                }
+            }
+
+            // 资源直接以实体枚举为主键；英雄档案编号也保持相同身份。
+            foreach (var hero in tables.TbHeroConfig.DataList)
+            {
+                if (hero.Id != (int)hero.EntityId || !ids.IsHero(hero.EntityId))
+                {
+                    errors.Add($"英雄 {hero.Id}：必须与 EntityId 相同，并使用 1-9999 范围。");
+                }
+            }
+
+            foreach (var entityId in tables.TbHeroConfig.DataList.Select(hero => hero.EntityId)
+                         .Concat(tables.TbEnemyConfig.DataList.Select(enemy => enemy.EntityId)))
+            {
+                if (tables.TbEntityConfig.GetOrDefault(entityId) == null)
+                {
+                    errors.Add($"实体 {entityId} 缺少唯一资源登记。");
                 }
             }
 
@@ -115,7 +113,7 @@ namespace GameLogic.Config
             ValidateDrops(tables, errors);
             ValidateEquipment(tables, errors);
             ValidateSkillCatalog(tables.TbSkillConfig, tables.TbPassiveConfig, errors);
-            ValidateSkillCombat(tables, errors);
+            ValidateSkillCombat(tables, errors, ids);
             var mainline = tables.TbLevelConfig.DataList.Where(level => level.LevelId != DragonPalaceRules.LevelId).ToArray();
             if (!mainline.Select(level => level.LevelId).OrderBy(id => id)
                     .SequenceEqual(Enumerable.Range(1, mainline.Length)))
@@ -175,8 +173,6 @@ namespace GameLogic.Config
             {
                 throw new InvalidOperationException("配置校验失败：\n" + string.Join("\n", errors));
             }
-
-            return curve;
         }
 
         /// <summary>
@@ -184,7 +180,7 @@ namespace GameLogic.Config
         /// </summary>
         /// <param name="tables">只读配置总表。</param>
         /// <param name="errors">集中错误列表。</param>
-        private static void ValidateDrops(Tables tables, List<string> errors)
+        private void ValidateDrops(Tables tables, List<string> errors)
         {
             var drop = tables.TbBattleConfig.Data;
             if (!float.IsFinite(drop.GroundLifetime) || drop.GroundLifetime <= 0)
@@ -240,7 +236,7 @@ namespace GameLogic.Config
         /// </summary>
         /// <param name="tables">只读配置总表。</param>
         /// <param name="errors">集中错误列表。</param>
-        private static void ValidateEquipment(Tables tables, List<string> errors)
+        private void ValidateEquipment(Tables tables, List<string> errors)
         {
             if (tables.TbProfileConfig.EquipmentCapacity is <= 0 or > 75)
             {
@@ -303,7 +299,7 @@ namespace GameLogic.Config
         /// <param name="tables">配置总表。</param>
         /// <param name="maxLevel">经验表最高等级。</param>
         /// <param name="errors">错误汇总。</param>
-        private static void ValidateGrowth(Tables tables, int maxLevel, List<string> errors)
+        private void ValidateGrowth(Tables tables, int maxLevel, List<string> errors)
         {
             // 身份只在外层校验一次；列表按等级排列，运行期可以直接用等级下标读取。
             foreach (HeroGrowthConfig growth in tables.TbHeroGrowthConfig.DataList)
@@ -330,7 +326,7 @@ namespace GameLogic.Config
 
             foreach (HeroConfig hero in tables.TbHeroConfig.DataList)
             {
-                int comboLength = tables.TbAttackConfig.DataList.Count(attack => attack.OwnerId == hero.EntityId);
+                int comboLength = tables.TbAttackConfig.DataList.Count(attack => attack.OwnerId == hero.EntityId && attack.ComboIndex >= 0);
                 if (hero.AttackInputCooldowns.Length != comboLength ||
                     hero.AttackInputCooldowns.Any(value => !float.IsFinite(value) || value <= 0f) ||
                     !float.IsFinite(hero.AirAttackCooldown) || hero.AirAttackCooldown <= 0f ||
@@ -352,10 +348,16 @@ namespace GameLogic.Config
         /// </summary>
         /// <param name="tables">正式配置总表。</param>
         /// <param name="errors">启动错误集合。</param>
-        internal static void ValidateSkillCombat(Tables tables, ICollection<string> errors)
+        /// <param name="ids">本次启动校验借用的配置编号工具。</param>
+        private void ValidateSkillCombat(Tables tables, ICollection<string> errors, ConfigIdUtility ids)
         {
             foreach (var hit in tables.TbAttackConfig.DataList)
             {
+                if (!ids.IsAttackIdForOwner(hit.Id, hit.OwnerId))
+                {
+                    errors.Add($"攻击 {hit.Id}：编号必须为 EntityId×1000+动作序号×10+段号，段号为 1-9。");
+                }
+
                 if (hit.Id <= 0 || !Enum.IsDefined(hit.DamageKind) ||
                     !hit.PowerScale.IsFinite() || hit.PowerScale.X < 0 || hit.PowerScale.Y < hit.PowerScale.X ||
                     !hit.FlatPower.IsFinite() || hit.FlatPower.X < 0 || hit.FlatPower.Y < hit.FlatPower.X ||
@@ -380,7 +382,7 @@ namespace GameLogic.Config
         /// <param name="active">主动技能表。</param>
         /// <param name="passive">被动技能等级表。</param>
         /// <param name="errors">启动校验汇总错误。</param>
-        internal static void ValidateSkillCatalog(TbSkillConfig active, TbPassiveConfig passive, ICollection<string> errors)
+        private void ValidateSkillCatalog(TbSkillConfig active, TbPassiveConfig passive, ICollection<string> errors)
         {
             foreach (SkillHero hero in Enum.GetValues<SkillHero>())
             {

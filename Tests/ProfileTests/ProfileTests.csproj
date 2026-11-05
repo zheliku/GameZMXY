@@ -55,6 +55,7 @@
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\Combat\*.cs" Link="Linked\Combat\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Models\ConfigurationModel.cs" Link="Linked\ConfigurationModel.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\ConfigurationSystem.cs" Link="Linked\ConfigurationSystem.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utilities\Utility\ConfigIdUtility.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\ExternalTypeUtil.cs" Link="Linked\ExternalTypeUtil.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Body\*.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Entity\Heroes\Body\**\*.cs" />

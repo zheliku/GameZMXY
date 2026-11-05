@@ -146,7 +146,14 @@ public sealed class ProcedureTitle : ProcedureBase
         }
 
         m_Owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(slot.SlotNumber, slot.UnitId));
-        ChangeState<ProcedureLoadGame>(m_Owner);
+        if (slot.State == SaveSlotState.Empty)
+        {
+            ChangeState<ProcedureCharacter>(m_Owner);
+        }
+        else
+        {
+            ChangeState<ProcedureLoadGame>(m_Owner);
+        }
     }
 
     /// <summary>

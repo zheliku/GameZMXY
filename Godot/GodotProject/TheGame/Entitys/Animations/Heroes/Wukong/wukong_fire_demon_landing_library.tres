@@ -103,7 +103,7 @@ tracks/6/keys = {
 "times": PackedFloat32Array(0, 0.5),
 "transitions": PackedFloat32Array(1, 1),
 "values": [{
-"args": [13],
+"args": [10153],
 "method": &"PlaySoundAnimEvent"
 }, {
 "args": [],
@@ -196,7 +196,7 @@ tracks/6/keys = {
 "times": PackedFloat32Array(0, 0.5),
 "transitions": PackedFloat32Array(1, 1),
 "values": [{
-"args": [13],
+"args": [10153],
 "method": &"PlaySoundAnimEvent"
 }, {
 "args": [],

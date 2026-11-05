@@ -554,7 +554,7 @@ namespace GameLogic.Battle.Tests
             public void NewSkillAttack(SkillHitId hit, double power, float? knockbackOriginX = null) { }
 
             /// <inheritdoc />
-            public void SpawnSkillEffect(PackedScene scene, Vector2 position, SkillHitId hit = SkillHitId.None, double power = 0, Action completed = null,
+            public void PlaySkillEffect(PackedScene scene, Vector2 position, SkillHitId hit = SkillHitId.None, double power = 0, Action completed = null,
             float? knockbackOriginX = null)
             {
                 if (FinishLandingEffect && hit == SkillHitId.FireDemonLanding)

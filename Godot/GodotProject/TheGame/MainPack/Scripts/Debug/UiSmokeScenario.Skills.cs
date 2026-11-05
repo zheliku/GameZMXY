@@ -1,4 +1,5 @@
 using GameLogic.Config;
+using GameLogic.Battle;
 using GameFramework.Fsm;
 using GameLogic.Architecture;
 using GameLogic.Equipment;
@@ -24,6 +25,7 @@ using GameConfig.Entity;
 using GameLogic.Skills;
 using GameLogic.Input;
 using GameLogic.Heroes;
+using GameLogic.Heroes.Tangseng;
 using GameLogic.Enemies;
 using GameLogic.Enemies.Body;
 using GameLogic.Effects;
@@ -35,6 +37,536 @@ using GodotGameFramework.Entity;
 /// </summary>
 public sealed partial class UiSmokeScenario
 {
+    /// <summary>
+    /// 经正式学习控件与真实技能输入验证甘露、玄冰阵及水魔爆的完整视觉链路。
+    /// </summary>
+    /// <param name="hero">真实创建的唐僧。</param>
+    /// <param name="flow">当前隔离档案作用域。</param>
+    /// <param name="battleForm">本关正式HUD。</param>
+    /// <returns>技能实际播放与独立命中的验证任务。</returns>
+    private async Task CheckTangsengEffectsAsync(TangsengEntity hero, ProcedureOwner flow, BattleForm battleForm)
+    {
+        var model = flow.GetModel<GameLogic.Battle.HeroModel>();
+        var system = flow.GetSystem<SkillSystem>();
+        var effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
+        flow.GetSystem<ProfileSystem>().AddSoul(10000);
+        battleForm.GetNode<BaseButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
+        await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(f => f.Visible), "唐僧技能页没有打开");
+        var form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(f => f.Visible);
+        foreach (var skill in ConfigSystem.Instance.Tables.TbSkillConfig.DataList.Where(s => s.Hero == SkillHero.Tangseng))
+        {
+            form.GetNode<BaseButton>($"Content/m_ActivePage/m_TangsengRows/Skill{skill.Order}/IconCell/Icon")
+                .EmitSignal(BaseButton.SignalName.Pressed);
+            Check(system.IsLearned(skill.Id), $"唐僧技能没有经正式控件学习：{skill.Id}");
+        }
+        form.GetNode<BaseButton>("Content/Header/m_Back").EmitSignal(BaseButton.SignalName.Pressed);
+        await WaitUntilAsync(() => !GF.Base.IsGamePaused, "学习后没有解除暂停");
+        hero.GlobalPosition = new Vector2(400, 300);
+        hero.Velocity = Vector2.Zero;
+        hero.SetPhysicsProcess(true);
+        hero.SetFacing(1);
+        await WaitUntilAsync(() => hero.OnFloor, "唐僧技能回归没有落地");
+        var soundIds = Enum.GetValues<SoundId>().Where(id => id.ToString().StartsWith("Tangseng")).ToArray();
+        await CheckSkillSoundsAsync(soundIds);
+        var soundPaths = soundIds.ToDictionary(id => ConfigSystem.Instance.Tables.TbSoundConfig.Get((int)id).Path);
+        var sounds = soundIds.ToDictionary(id => id, _ => 0);
+        void OnTangsengSound(object sender, GameFramework.Event.GameEventArgs args)
+        {
+            var played = (GodotGameFramework.Sound.PlaySoundSuccessEventArgs)args;
+            if (soundPaths.TryGetValue(played.SoundAssetName, out var id))
+            {
+                sounds[id]++;
+            }
+        }
+        GF.Event.Subscribe(GodotGameFramework.Sound.PlaySoundSuccessEventArgs.EventId, OnTangsengSound);
+        try
+        {
+            // 精确时点检查原生方法键，GGF成功事件用于验证播放结果；异步加载耗时不等于动画键时间。
+            CheckNativeMethodAt(hero.AnimPlayer.GetAnimation("attack_1"), "PlaySoundAnimEvent", 0);
+            CheckNativeMethodAt(hero.AnimPlayer.GetAnimation("skills/dark_ice"), "BeginDarkIceHitAnimEvent", 14d / 24d);
+            // 创建与换位走真实输入；分身的直接生命周期测试不替代两次输入发声。
+            var waterClone = hero.GetNode<TangsengWaterCloneNode>("m_WaterClone");
+            Input.ActionPress(InputSystem.Skill2);
+            await WaitUntilAsync(() => waterClone.IsAvailable && model.ActiveSkillId == null, "水幻影创建没有完成");
+            Input.ActionRelease(InputSystem.Skill2);
+            await WaitFramesAsync(3);
+            Input.ActionPress(InputSystem.Skill2);
+            await WaitUntilAsync(() => !waterClone.IsActive, "水幻影第二次输入没有换位");
+            Input.ActionRelease(InputSystem.Skill2);
+            await WaitUntilAsync(() => sounds[SoundId.TangsengWaterClone] == 2, "分身创建/换位声音次数错误");
+            await CheckTangsengBoltInputAsync(hero, flow, sounds);
+            await CheckTangsengAirSkillMotionAsync(hero, flow);
+
+            model.Hp.Value = 10;
+            int cureSounds = sounds[SoundId.TangsengHeavenlyDew];
+            await BeginAsync(SkillId.HeavenlyDew, InputSystem.Skill3);
+            var cure = effects.Single(e => e.SceneFilePath.EndsWith("tangseng_cure_role_effect.tscn"));
+            var cureSprite = cure.GetNode<AnimatedSprite2D>("Origin/Visual/Sprite");
+            await WaitUntilAsync(() => cureSprite.Frame >= 11, "甘露仍停在首帧");
+            Check(cureSprite.SpriteFrames.GetFrameCount("play") == 34 && model.Hp.Value == 10 &&
+                cureSprite.Material is CanvasItemMaterial { BlendMode: CanvasItemMaterial.BlendModeEnum.Add },
+                "甘露帧数、加法混合或治疗时点错误");
+            await CaptureCombatAsync("tangseng_cure_full");
+            await WaitUntilAsync(() => model.ActiveSkillId == null, "甘露没有在末帧收招");
+            Check(model.Hp.Value == 30, $"甘露没有按int(MaxMP/8+8)恢复20HP，实际{model.Hp.Value}");
+            Check(sounds[SoundId.TangsengHeavenlyDew] == cureSounds + 1, "无分身甘露起手未播放一次声音");
+            waterClone.Activate(hero.GlobalPosition, hero.Facing);
+            await BeginAsync(SkillId.HeavenlyDew, InputSystem.Skill3);
+            await WaitUntilAsync(() => model.ActiveSkillId == null && !waterClone.IsActive && effects.Count == 0,
+                "带分身甘露没有完整收招");
+            Check(sounds[SoundId.TangsengHeavenlyDew] == cureSounds + 3, "分身甘露没有保留官方两次起手音");
+
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+                new EnemySpawn(hero.GlobalPosition + new Vector2(90, 0)));
+            SmokeInspection.StrengthenTrainingTarget(m_Monster);
+            SmokeInspection.FreezeAi(m_Monster);
+            m_Monster.SetPhysicsProcess(false);
+            int hp = m_Monster.Hp;
+            var clone = hero.GetNode<TangsengWaterCloneNode>("m_WaterClone");
+            var clonePlayer = clone.GetNode<AnimationPlayer>("AnimationPlayer");
+            int originalTicks = Engine.PhysicsTicksPerSecond;
+            try
+            {
+                foreach (int rate in new[] { 60, 120 })
+                {
+                    Engine.PhysicsTicksPerSecond = rate;
+                    foreach (bool musou in new[] { false, true })
+                    {
+                        model.Ws.Value = musou ? model.MaxWs.Value : 0;
+                        model.WsActive.Value = musou;
+                        await WaitUntilAsync(() => !GF.Base.IsGamePaused, "无双演出结束后没有恢复游戏");
+                        await WaitFramesAsync(2);
+                        clone.Activate(hero.GlobalPosition + new Vector2(-80, 0), -1);
+                        hp = m_Monster.Hp;
+                        int iceSounds = sounds[SoundId.TangsengDarkIce];
+                        await BeginAsync(SkillId.DarkIceFormation, InputSystem.Skill1);
+                        await WaitUntilAsync(() => clonePlayer.CurrentAnimation == "dark_ice",
+                            "玄冰阵起手没有同步切换分身 hit3");
+                        Check(hero.AnimPlayer.CurrentAnimationPosition < .1 && !clone.IsAvailable && clone.Scale.X == 1,
+                            "分身辅助起手延迟、仍可换位或左向素材被错误镜像");
+                        await WaitUntilAsync(() => effects.Count == 2, "本体与分身没有各自产生独立玄冰阵");
+                        var dark = effects.OrderBy(e => e.GlobalPosition.DistanceSquaredTo(hero.GlobalPosition)).First();
+                        var shadowDark = effects.Single(e => e != dark);
+                        var player = dark.GetNode<AnimationPlayer>("AnimationPlayer");
+                        var shadowPlayer = shadowDark.GetNode<AnimationPlayer>("AnimationPlayer");
+                        Check(Math.Abs(player.CurrentAnimationPosition - shadowPlayer.CurrentAnimationPosition) <= 1.5 / rate,
+                            "本体与分身第15源帧的攻击错开");
+                        Check(player.CurrentAnimation == (musou ? "musou" : "play") && shadowPlayer.CurrentAnimation == "play",
+                            "分身错误取得本体无双才有的第26/31帧攻击刷新");
+                        Check(dark.Scale.X < 0 && shadowDark.Scale.X > 0 &&
+                            effects.All(e => e.ZIndex > hero.ZIndex && e.ZIndex > m_Monster.ZIndex),
+                            "玄冰阵没有保留各自朝向或离身攻击被角色遮挡");
+                        float width = musou ? 1.26f : 1f;
+                        float height = musou ? 1.8f : 1f;
+                        foreach (var effect in effects)
+                        {
+                            Transform2D visual = effect.GetNode<Node2D>("Origin/Visual").GlobalTransform;
+                            Check(Math.Abs(visual.X.Length() - width) < .001 && Math.Abs(visual.Y.Length() - height) < .001 &&
+                                SmokeInspection.ReadField<int>(effect, "m_Power") == (int)(model.Power.Value * .8f * (musou ? 1.5f : 1f)),
+                                "玄冰阵无双缩放或官方整数威力错误");
+                        }
+                        await WaitUntilAsync(() => dark.GetNode<AnimatedSprite2D>("Origin/Visual/Sprite").Frame >= 5,
+                            "玄冰阵没有推进到第6帧");
+                        if (rate == 120 && !musou)
+                        {
+                            await CaptureCombatAsync("tangseng_dark_ice_full");
+                        }
+                        await WaitUntilAsync(() => m_Monster.Hp < hp, "玄冰阵真实判定未命中近侧目标");
+                        await WaitUntilAsync(() => model.ActiveSkillId == null && effects.Count == 0 && !clone.IsActive,
+                            "玄冰阵本体、分身或效果没有完整结束");
+                        Check(sounds[SoundId.TangsengDarkIce] == iceSounds + 1,
+                            "玄冰阵本体未发声或分身错误重复出手音");
+                        GD.Print($"SMOKE-TANGSENG-DARK-ICE PASS: {rate}Hz musou={musou}, simultaneous casts, independent facing/refresh, scale/power and draw order.");
+                    }
+                }
+            }
+            finally
+            {
+                clone.Dismiss();
+                model.WsActive.Value = false;
+                model.Ws.Value = 0;
+                Engine.PhysicsTicksPerSecond = originalTicks;
+            }
+
+            int waterSounds = sounds[SoundId.TangsengWaterDemon];
+            await BeginAsync(SkillId.WaterDemonBurst, InputSystem.Skill4);
+            await WaitUntilAsync(() => hero.CanReleaseWaterDemon, "水魔爆第10源帧没有出现roundMc");
+            var waterBall = hero.GetNode<AnimatedSprite2D>("m_EffectRoot/m_WaterDemonBall");
+            Vector2 sourceOrigin = hero.GlobalPosition + new Vector2(
+                -(waterBall.Position.X + 12.45f - .85f), waterBall.Position.Y - 8.05f - 11.3f);
+            Check(waterBall.ToGlobal(waterBall.Offset).DistanceTo(sourceOrigin) < .01f,
+                "水魔瞄准圈没有保留官方 hit4 父矩阵与原始图像注册点");
+            await CaptureCombatAsync("tangseng_water_ball");
+            await WaitUntilAsync(() => model.ActiveSkillId == null, "无二次输入的水魔爆未在第42帧结束");
+            Check(effects.Count == 0 && !hero.CanReleaseWaterDemon, "无追加输入仍自动创建光柱或残留球体");
+            Check(sounds[SoundId.TangsengWaterDemon] == waterSounds, "水魔爆无追加输入却播放下落声音");
+
+            await BeginAsync(SkillId.WaterDemonBurst, InputSystem.Skill4);
+            await WaitUntilAsync(() => hero.AnimPlayer.CurrentAnimationPosition > .7, "水魔球没有前移");
+            Vector2 ball = hero.GetNode<AnimatedSprite2D>("m_EffectRoot/m_WaterDemonBall").Position;
+            Vector2 expected = hero.GlobalPosition + new Vector2(-ball.X, ball.Y - 300);
+            m_Monster.GlobalPosition = new Vector2(expected.X, hero.GlobalPosition.Y);
+            hp = m_Monster.Hp;
+            Input.ActionPress(InputSystem.Skill4);
+            await WaitUntilAsync(() => effects.Any(e => e.SceneFilePath.EndsWith("tangseng_water_demon_fall_effect.tscn")), "二次输入没有独立下落效果");
+            Input.ActionRelease(InputSystem.Skill4);
+            var fall = effects.Single(e => e.SceneFilePath.EndsWith("tangseng_water_demon_fall_effect.tscn"));
+            CheckNativeMethodAt(fall.GetNode<AnimationPlayer>("AnimationPlayer").GetAnimation("play"),
+                "PlaySoundAnimEvent", 13d / 24d);
+            Check(fall.GlobalPosition.DistanceTo(expected) < 16 && hero.AnimPlayer.CurrentAnimationPosition >= 42d / 24d,
+                $"水魔追加落点或恢复标记错误：实际{fall.GlobalPosition}、预期{expected}");
+            await WaitUntilAsync(() => fall.GetNode<AnimatedSprite2D>("Origin/Visual/Sprite").Frame >= 13, "水魔下落没有完整播放");
+            await CaptureCombatAsync("tangseng_water_fall");
+            await WaitUntilAsync(() => m_Monster.Hp < hp, "独立水魔下落未在光柱位置命中目标");
+            await WaitUntilAsync(() => model.ActiveSkillId == null && effects.Count == 0, "追加水魔效果未收招和回池");
+            Check(sounds[SoundId.TangsengWaterDemon] == waterSounds + 1, "水魔追加第14帧没有播放一次声音");
+            var damage = GameLogic.Battle.Attacks.AttackData.Create(0, default, 1,
+                GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
+            try
+            {
+                hero.ReceiveHit(damage, 0);
+            }
+            finally
+            {
+                GameFramework.ReferencePool.Release(damage);
+            }
+            await WaitUntilAsync(() => sounds[SoundId.TangsengHurt] > 0, "唐僧成功受击没有自己的声音");
+            Check(sounds.All(pair => pair.Value > 0), "真实输入链未覆盖全部唐僧声音");
+            GD.Print("SMOKE-TANGSENG-SOUNDS PASS: eight official MP3s on GGF SFX; real attack/partial/full charge, clone create/teleport, one ice voice, two clone-dew voices, follow-up-only fall, impact and hurt.");
+            GD.Print("SMOKE-TANGSENG-EFFECTS PASS: real skill learning, 34-frame additive cure, stopped nested ice, moving roundMc, timeout and independent fall hit.");
+        }
+        finally
+        {
+            GF.Event.Unsubscribe(GodotGameFramework.Sound.PlaySoundSuccessEventArgs.EventId, OnTangsengSound);
+            Input.ActionRelease(InputSystem.Skill1);
+            Input.ActionRelease(InputSystem.Skill2);
+            Input.ActionRelease(InputSystem.Skill3);
+            Input.ActionRelease(InputSystem.Skill4);
+            ReleaseTestEntity(m_Monster);
+            m_Monster = null;
+        }
+
+        async Task BeginAsync(SkillId id, string action)
+        {
+            model.Mp.Value = model.MaxMp.Value;
+            Input.ActionPress(action);
+            await WaitUntilAsync(() => model.ActiveSkillId == id, $"真实输入没有激活唐僧技能{id}");
+            Input.ActionRelease(action);
+        }
+
+        void CheckNativeMethodAt(Animation clip, string method, double time)
+        {
+            int matches = 0;
+            for (int track = 0; track < clip.GetTrackCount(); track++)
+            {
+                if (clip.TrackGetType(track) != Animation.TrackType.Method)
+                {
+                    continue;
+                }
+                for (int key = 0; key < clip.TrackGetKeyCount(track); key++)
+                {
+                    if (clip.TrackGetKeyValue(track, key).AsGodotDictionary()["method"].AsString() == method)
+                    {
+                        Check(Math.Abs(clip.TrackGetKeyTime(track, key) - time) < .000001,
+                            $"{clip.ResourceName}/{method}未保留官方源帧时点");
+                        matches++;
+                    }
+                }
+            }
+            Check(matches == 1, $"{clip.ResourceName}/{method}缺少唯一原生方法键");
+        }
+    }
+
+    /// <summary>
+    /// 按官方运动门槛验证空中蓄力、瞬发分身和完全定身的两招，覆盖60/120Hz。
+    /// </summary>
+    /// <param name="hero">正式唐僧实例。</param>
+    /// <param name="flow">隔离战斗作用域。</param>
+    /// <returns>真实身体运动与技能输入检查。</returns>
+    private async Task CheckTangsengAirSkillMotionAsync(TangsengEntity hero, ProcedureOwner flow)
+    {
+        var model = flow.GetModel<HeroModel>();
+        var fsm = SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "m_BodyFsm");
+        var effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
+        var clone = hero.GetNode<TangsengWaterCloneNode>("m_WaterClone");
+        int originalTicks = Engine.PhysicsTicksPerSecond;
+        Vector2 origin = hero.GlobalPosition;
+        try
+        {
+            foreach (int rate in new[] { 60, 120 })
+            {
+                Engine.PhysicsTicksPerSecond = rate;
+                await StartAirAsync(-180);
+                Input.ActionPress(InputSystem.Attack);
+                await WaitUntilAsync(() => fsm.CurrentState is TangsengIceDragonState, "空中普攻没有进入冰龙蓄力");
+                Vector2 start = hero.GlobalPosition;
+                float speedY = hero.Velocity.Y;
+                double time = hero.ActionData.Time;
+                await WaitUntilAsync(() => hero.ActionData.Time >= time + .2, "空中蓄力时钟没有推进");
+                Check(hero.Velocity.X > 140 && hero.Velocity.Y > speedY + 150 && hero.GlobalPosition.X > start.X + 20,
+                    "冰龙波蓄力错误清空空中横移或暂停重力");
+                Input.ActionRelease(InputSystem.MoveRight);
+                time = hero.ActionData.Time;
+                await WaitUntilAsync(() => hero.ActionData.Time >= time + .05, "空中松方向没有采样");
+                float stoppedX = hero.GlobalPosition.X;
+                Input.ActionPress(InputSystem.MoveRight);
+                time = hero.ActionData.Time;
+                await WaitUntilAsync(() => hero.ActionData.Time >= time + .1, "空中蓄力没有继续推进");
+                Check(hero.Velocity.X == 0 && Math.Abs(hero.GlobalPosition.X - stoppedX) < .1,
+                    "冰龙波松方向后再次按下恢复了本次攻击横移");
+                Input.ActionRelease(InputSystem.Attack);
+                Input.ActionRelease(InputSystem.MoveRight);
+                await WaitUntilAsync(() => model.ActiveSkillId == null && effects.Count == 0 && fsm.CurrentState is HeroGroundState,
+                    "空中冰龙释放后没有落地收招");
+
+                await StartAirAsync(120);
+                start = hero.GlobalPosition;
+                Input.ActionPress(InputSystem.Skill2);
+                await WaitUntilAsync(() => clone.IsActive && model.ActiveSkillId == null, "空中水幻影没有瞬发完成");
+                Input.ActionRelease(InputSystem.Skill2);
+                Check(hero.Velocity.X > 140 && hero.Velocity.Y >= 120, "瞬发水幻影清掉了空中移动或下落速度");
+                int mana = model.Mp.Value;
+                Input.ActionPress(InputSystem.Skill4);
+                time = hero.ActionData.Time;
+                await WaitUntilAsync(() => hero.ActionData.Time >= time + .1, "水幻影后空中运动未推进");
+                Input.ActionRelease(InputSystem.Skill4);
+                Check(model.ActiveSkillId == null && model.Mp.Value == mana && hero.GlobalPosition.Y > start.Y + 10,
+                    "空中水魔爆被错误激活或瞬发分身让身体悬空");
+                clone.Dismiss();
+                Input.ActionRelease(InputSystem.MoveRight);
+                await WaitUntilAsync(() => fsm.CurrentState is HeroGroundState, "水幻影后没有正常落地");
+
+                foreach (var (skill, action) in new[] { (SkillId.DarkIceFormation, InputSystem.Skill1),
+                    (SkillId.HeavenlyDew, InputSystem.Skill3) })
+                {
+                    await StartAirAsync(-180);
+                    Input.ActionPress(action);
+                    await WaitUntilAsync(() => model.ActiveSkillId == skill && hero.Velocity == Vector2.Zero,
+                        $"{skill}没有按官方完全定身");
+                    Input.ActionRelease(action);
+                    start = hero.GlobalPosition;
+                    time = hero.ActionData.Time;
+                    await WaitUntilAsync(() => hero.ActionData.Time >= time + .2, "定身技能时钟没有推进");
+                    Check(hero.GlobalPosition.DistanceTo(start) < .01 && hero.Velocity == Vector2.Zero,
+                        $"{skill}空中施法期间仍移动");
+                    Input.ActionRelease(InputSystem.MoveRight);
+                    await WaitUntilAsync(() => model.ActiveSkillId == null && effects.Count == 0 && fsm.CurrentState is HeroGroundState,
+                        $"{skill}收招后没有恢复重力并落地");
+                }
+                GD.Print($"SMOKE-TANGSENG-AIR-MOTION PASS: {rate}Hz ice-charge gravity/held direction, instant clone momentum, grounded-only burst and dark-ice/dew suspension.");
+            }
+        }
+        finally
+        {
+            foreach (string action in new[] { InputSystem.Attack, InputSystem.MoveRight, InputSystem.Skill1,
+                InputSystem.Skill2, InputSystem.Skill3, InputSystem.Skill4 })
+            {
+                Input.ActionRelease(action);
+            }
+            clone.Dismiss();
+            Engine.PhysicsTicksPerSecond = originalTicks;
+            hero.GlobalPosition = origin;
+            hero.Velocity = Vector2.Zero;
+            model.Mp.Value = model.MaxMp.Value;
+        }
+
+        async Task StartAirAsync(float speedY)
+        {
+            await WaitUntilAsync(() => fsm.CurrentState is HeroGroundState, "空中专项没有恢复起手状态");
+            model.Mp.Value = model.MaxMp.Value;
+            hero.GlobalPosition = new Vector2(400, 180);
+            hero.Velocity = new Vector2(144, speedY);
+            hero.ActionData.JumpCount = 1;
+            Input.ActionPress(InputSystem.MoveRight);
+            await WaitUntilAsync(() => fsm.CurrentState is HeroAirState, "空中专项没有进入真实离地状态");
+            // 先让MoveAndSlide刷新传送前的落地缓存，再设定待测的空中速度。
+            hero.Velocity = new Vector2(144, speedY);
+        }
+    }
+
+    /// <summary>
+    /// 以真实J输入核对短按、未满/满蓄力、低蓝回退和同池复用，覆盖60/120Hz。
+    /// </summary>
+    /// <param name="hero">正式唐僧实例。</param>
+    /// <param name="flow">隔离档案与战斗作用域。</param>
+    /// <param name="sounds">本次真实GGF成功播放事件的累计计数。</param>
+    /// <returns>输入、弹体、命中与资源校验任务。</returns>
+    private async Task CheckTangsengBoltInputAsync(TangsengEntity hero, ProcedureOwner flow,
+        IReadOnlyDictionary<SoundId, int> sounds)
+    {
+        var model = flow.GetModel<HeroModel>();
+        var effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
+        var fsm = SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "m_BodyFsm");
+        int ticks = Engine.PhysicsTicksPerSecond;
+        var target = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+            new EnemySpawn(hero.GlobalPosition + new Vector2(200, 0)));
+        SmokeInspection.StrengthenTrainingTarget(target);
+        SmokeInspection.FreezeAi(target);
+        target.SetPhysicsProcess(false);
+        try
+        {
+            foreach (int rate in new[] { 60, 120 })
+            {
+                Engine.PhysicsTicksPerSecond = rate;
+                foreach (var test in new[] { (Name: "tap", Hold: 0f, Mana: 100),
+                    (Name: "partial", Hold: .2f, Mana: 100), (Name: "full", Hold: 1.3f, Mana: 100),
+                    (Name: "poor/reuse", Hold: .5f, Mana: 19) })
+                {
+                    await WaitUntilAsync(() => fsm.CurrentState is HeroGroundState &&
+                        hero.ActionData.Time >= hero.ActionData.AttackReadyAt, "法弹测试没有恢复地面起手");
+                    model.Mp.Value = test.Mana;
+                    Vector2 origin = hero.GlobalPosition;
+                    target.GlobalPosition = origin + new Vector2(200, 0);
+                    int hp = target.Hp;
+                    int attackSounds = sounds[SoundId.TangsengAttack];
+                    int dragonSounds = sounds[SoundId.TangsengIceDragon];
+                    int impactSounds = sounds[SoundId.TangsengImpact];
+                    Input.ActionPress(InputSystem.Attack);
+                    await WaitUntilAsync(() => fsm.CurrentState is HeroAttackState, "J没有进入普通攻击");
+                    bool charge = test.Hold > 0 && test.Mana >= 20;
+                    if (charge)
+                    {
+                        await WaitUntilAsync(() => fsm.CurrentState is TangsengIceDragonState,
+                            "普攻第2源帧没有在长按J时进入冰龙蓄力");
+                        Check(effects.Count == 0 && !hero.AnimPlayer.IsPlaying() &&
+                            hero.AnimPlayer.CurrentAnimationPosition == 0, "蓄力提前发弹或姿态仍推进");
+                    }
+                    double start = hero.ActionData.Time;
+                    if (test.Name == "full")
+                    {
+                        GF.Base.PauseGame();
+                        await WaitFramesAsync(12);
+                        Check(hero.ActionData.Time == start && effects.Count == 0 && model.Mp.Value == test.Mana,
+                            "蓄力暂停时仍推进或扣蓝");
+                        GF.Base.ResumeGame();
+                    }
+                    if (test.Hold > 0)
+                    {
+                        await WaitUntilAsync(() => hero.ActionData.Time >= start + test.Hold, "长按时间未推进");
+                    }
+                    Input.ActionRelease(InputSystem.Attack);
+                    await WaitUntilAsync(() => effects.Any(e => e is TangsengBoltNode), "松键后没有法弹");
+                    Check(effects.Count == 1, "一次输入生成多枚法弹");
+                    var bolt = effects.Single();
+                    bool full = test.Name == "full";
+                    var definition = SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(bolt, "m_Hit");
+                    Check(bolt.SceneFilePath.EndsWith(full ? "tangseng_ice_dragon_bolt_effect.tscn" :
+                        "tangseng_normal_bolt_effect.tscn"), "未满蓄力错误使用了冰龙素材");
+                    Check(definition.DamageKind == (full ? GameConfig.Battle.DamageKind.Magic : GameConfig.Battle.DamageKind.Physics),
+                        "法弹伤害类型错误");
+                    Check(model.Mp.Value == test.Mana - (full ? 20 : 0), "冰龙只有满蓄力才应扣20MP");
+                    Check(Math.Abs(bolt.Scale.X) == (full ? .8f : .6f) &&
+                        SmokeInspection.ReadField<float>(bolt, "m_Speed") == (full ? 360 : 192), "法弹速度或缩放错误");
+                    Check(SmokeInspection.ReadField<float>(bolt, "m_TravelDistance") == (full ? 600 : 304),
+                        "临时蓄力射程污染了池实例的场景默认值");
+                    int power = (int)(model.Power.Value * (full ? .2f : 1f));
+                    Check(SmokeInspection.ReadField<int>(bolt, "m_Power") == power, "法弹威力未按官方整数截断");
+                    int hits = 0;
+                    int previousHp = hp;
+                    await WaitUntilAsync(() =>
+                    {
+                        if (target.Hp < previousHp)
+                        {
+                            hits++;
+                            previousHp = target.Hp;
+                        }
+                        return !effects.Contains(bolt);
+                    }, "法弹没有按射程结束并回池", 4000);
+                    Check(target.Hp < hp && (full ? hits >= 2 : hits == 1),
+                        $"{rate}Hz {test.Name} 实际命中次数异常：{hits}");
+                    Check(model.ActiveSkillId == null && hero.GlobalPosition.DistanceTo(origin) < 1,
+                        "法弹收招未释放身体或施放期间漂移");
+                    await WaitUntilAsync(() => sounds[SoundId.TangsengImpact] > impactSounds,
+                        "法弹成功命中后GGF未派发唐僧命中音事件");
+                    Check(sounds[SoundId.TangsengAttack] == attackSounds + (charge && !full ? 2 : 1) &&
+                        sounds[SoundId.TangsengIceDragon] == dragonSounds + (full ? 1 : 0) &&
+                        sounds[SoundId.TangsengImpact] > impactSounds,
+                        $"{rate}Hz {test.Name}声音错误：普攻{sounds[SoundId.TangsengAttack] - attackSounds}，冰龙{sounds[SoundId.TangsengIceDragon] - dragonSounds}，命中{sounds[SoundId.TangsengImpact] - impactSounds}，预期蓄力{charge}、满蓄{full}");
+                    GD.Print($"SMOKE-TANGSENG-BOLT PASS: {rate}Hz {test.Name}, damage={definition.DamageKind}, hits={hits}, mana={model.Mp.Value}.");
+                }
+            }
+        }
+        finally
+        {
+            Input.ActionRelease(InputSystem.Attack);
+            GF.Base.ResumeGame();
+            Engine.PhysicsTicksPerSecond = ticks;
+            model.Mp.Value = model.MaxMp.Value;
+            ReleaseTestEntity(target);
+        }
+    }
+
+    /// <summary>
+    /// 验证正式唐僧分身的原生动画、暂停、一次回调、寿命与复用。
+    /// </summary>
+    /// <param name="hero">真实选角与档案流程创建的唐僧。</param>
+    /// <returns>原生分身生命周期验证任务。</returns>
+    private async Task CheckTangsengWaterCloneAsync(TangsengEntity hero)
+    {
+        var clone = hero.GetNode<GameLogic.Heroes.Tangseng.TangsengWaterCloneNode>("m_WaterClone");
+        var player = clone.GetNode<AnimationPlayer>("AnimationPlayer");
+        var sprite = clone.GetNode<Sprite2D>("m_Body");
+        int originalTicks = Engine.PhysicsTicksPerSecond;
+        try
+        {
+            foreach (int ticks in new[] { 60, 120 })
+            {
+                Engine.PhysicsTicksPerSecond = ticks;
+                Vector2 start = hero.GlobalPosition;
+                clone.Activate(start, 1);
+                await WaitUntilAsync(() => clone.GlobalPosition.X > start.X + 30, "水幻影没有独立行进");
+                Check(player.CurrentAnimation == "walk" && sprite.Frame is >= 0 and < 16,
+                    "水幻影走路没有使用原生帧轨道");
+                GF.Base.PauseGame();
+                Vector2 pausedPosition = clone.GlobalPosition;
+                double pausedAnimation = player.CurrentAnimationPosition;
+                await WaitFramesAsync(12);
+                Check(clone.GlobalPosition == pausedPosition && player.CurrentAnimationPosition == pausedAnimation,
+                    "分身暂停时仍移动或推进动画");
+                GF.Base.ResumeGame();
+
+                int impacts = 0;
+                clone.PlayDarkIce(() => impacts++);
+                Check(!clone.IsAvailable, "已经辅助施法的分身仍可换位或重复接招");
+                Vector2 castPosition = clone.GlobalPosition;
+                await WaitUntilAsync(() => impacts == 1, "原生玄冰阵第15源帧没有回调");
+                Check(player.CurrentAnimationPosition >= 14d / 24d - .001 &&
+                    player.CurrentAnimationPosition < 14d / 24d + .1 && clone.GlobalPosition == castPosition,
+                    "分身玄冰阵回调时点或定身错误");
+                await WaitUntilAsync(() => !clone.IsActive, "分身玄冰阵第50源帧没有结束");
+                Check(impacts == 1, "分身玄冰阵重复回调");
+
+                int heals = 0;
+                int healFrame = -1;
+                clone.Activate(start, -1);
+                clone.PlayHeavenlyDew(() =>
+                {
+                    heals++;
+                    healFrame = sprite.Frame;
+                });
+                await WaitUntilAsync(() => !clone.IsActive, "分身甘露末帧没有结束");
+                Check(heals == 1 && healFrame == 115, $"分身甘露未在原生末帧治疗一次：次数{heals}、回调帧{healFrame}");
+
+                clone.Activate(start, 1);
+                clone.PlayDarkIce(() => impacts++);
+                clone.Dismiss();
+                await WaitFramesAsync(3);
+                Check(impacts == 1 && !clone.Visible && !clone.IsPhysicsProcessing(), "取消后仍回调或继续推进");
+                clone.Activate(start, -1);
+                await WaitUntilAsync(() => !clone.IsActive, "水幻影192源帧寿命未结束", 10000);
+                Check(clone.GlobalPosition.X < start.X - 1500 && !clone.Visible,
+                    "水幻影反向移动或到期隐藏错误");
+                GD.Print($"SMOKE-TANGSENG-CLONE PASS: {ticks}Hz native walk/hit3/hit5, pause, one callback, cancel/reuse and 192-frame expiry.");
+            }
+        }
+        finally
+        {
+            GF.Base.ResumeGame();
+            clone.Dismiss();
+            Engine.PhysicsTicksPerSecond = originalTicks;
+        }
+    }
+
     /// <summary>
     /// 通过正式 HUD 打开技能页，确认准备阶段没有学习或扣费行为。
     /// </summary>
@@ -620,14 +1152,16 @@ public sealed partial class UiSmokeScenario
     }
 
     /// <summary>
-    /// 通过正式 GGF 声音入口加载七段技能音效，检查分组、解码与停止。
+    /// 通过正式 GGF 声音入口加载指定角色音效，检查分组、解码与停止。
     /// </summary>
+    /// <param name="requested">需验证的声音列表；未提供时沿用悟空七段技能音效。</param>
     /// <returns>所有音效代理检查完成的任务。</returns>
-    private async Task CheckSkillSoundsAsync()
+    private async Task CheckSkillSoundsAsync(IReadOnlyList<SoundId> requested = null)
     {
-        foreach (SoundId id in new[] { SoundId.WukongRisingDragon, SoundId.WukongFlameThrust,
+        IReadOnlyList<SoundId> ids = requested ?? new[] { SoundId.WukongRisingDragon, SoundId.WukongFlameThrust,
             SoundId.WukongBlazingFlash, SoundId.WukongFlameStorm, SoundId.WukongFireDemonStart,
-            SoundId.WukongFireDemonCombo, SoundId.WukongFireDemonLanding })
+            SoundId.WukongFireDemonCombo, SoundId.WukongFireDemonLanding };
+        foreach (SoundId id in ids)
         {
             var definition = ConfigSystem.Instance.Tables.TbSoundConfig.Get((int)id);
             int serial = GF.Sound.PlayConfigured(id);
@@ -647,7 +1181,7 @@ public sealed partial class UiSmokeScenario
                 GF.Sound.StopSound(serial);
             }
         }
-        GD.Print("SMOKE-UI: 七段原版技能音效经 GGF SFX 代理播放与停止通过");
+        GD.Print($"SMOKE-SKILL-SOUNDS PASS: {ids.Count} original MP3s decoded, played and stopped on GGF SFX.");
     }
 
     /// <summary>

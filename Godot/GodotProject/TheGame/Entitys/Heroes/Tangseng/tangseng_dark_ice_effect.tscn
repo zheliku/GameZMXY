@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://bweitcqejnhaf"]
+
+[ext_resource type="AnimationLibrary" uid="uid://bibrexgm0a0m1" path="res://TheGame/Entitys/Animations/Heroes/Tangseng/tangseng_dark_ice_effect_library.tres" id="animation"]
+[ext_resource type="SpriteFrames" uid="uid://bu5n5vlgp3xlb" path="res://TheGame/Sprites/Effects/tangseng/skills/tangseng_dark_ice_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://bx0447o7u7wmq" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_13pf7"]
+size = Vector2(99.05, 119.9)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bhk0v"]
+size = Vector2(99.05, 119.9)
+
+[node name="TangsengDarkIceEffect" type="Node2D" unique_id=1675906295 node_paths=PackedStringArray("m_Player", "m_HitBox")]
+z_index = 2
+script = ExtResource("script")
+m_Player = NodePath("AnimationPlayer")
+m_HitBox = NodePath("Origin/Visual/HitBox")
+
+[node name="Origin" type="Node2D" parent="." unique_id=1592137267]
+
+[node name="Visual" type="Node2D" parent="Origin" unique_id=1788235038]
+scale = Vector2(1.26, 1.8)
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Origin/Visual" unique_id=145377275]
+sprite_frames = ExtResource("frames")
+animation = &"play"
+offset = Vector2(-4.3, 2.05)
+
+[node name="HitBox" type="Area2D" parent="Origin/Visual" unique_id=2049033175]
+collision_layer = 16
+collision_mask = 32
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=1713105488]
+position = Vector2(-81.4, -3)
+shape = SubResource("RectangleShape2D_13pf7")
+
+[node name="RightShape" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=105026672]
+position = Vector2(65.4, 0)
+shape = SubResource("RectangleShape2D_bhk0v")
+disabled = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=297216526]
+libraries/ = ExtResource("animation")

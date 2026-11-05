@@ -21,6 +21,8 @@ namespace GameLogic.Enemies
         private EnemyAiPreset m_Preset; // 状态工厂注入本实例的原生选招距离，每次显示仍创建独立状态。
         [Export] private CollisionShape2D m_CaptureRange; // 吞噬动作命中时的水平捕获范围，与80px选招距离分开。
         [Export] private CollisionShape2D m_SwallowRange; // 吞噬水平距离，仅参与AI原点距离判断。
+        [Export] private SpriteFrames m_TangsengCaptureFrames; // 官方selector917第2帧，仅替换吞噬中的唐僧姿态。
+        private SpriteFrames m_DefaultFrames; // 场景原有悟空吞噬姿态，复用时恢复。
         [Export] private CollisionShape2D m_StompRange; // 践踏水平距离，仅参与AI原点距离判断。
 
         [Export] private PackedScene m_DeathScene; // 人形闪烁后继续播放官方BossDead。
@@ -64,6 +66,10 @@ namespace GameLogic.Enemies
             bool isNewInstance, object userData)
         {
             base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
+            if (isNewInstance)
+            {
+                m_DefaultFrames = ((AnimatedSprite2D)Body).SpriteFrames;
+            }
             if (isNewInstance && (m_CaptureRange?.Shape is not SegmentShape2D || !m_CaptureRange.Disabled || m_SwallowRange?.Shape is not SegmentShape2D || !m_SwallowRange.Disabled || m_StompRange?.Shape is not SegmentShape2D || !m_StompRange.Disabled))
             {
                 throw new System.InvalidOperationException("本物种必须绑定禁用物理碰撞的原生选招范围。");
@@ -113,6 +119,7 @@ namespace GameLogic.Enemies
             m_InvulnerabilityLeft = 0f;
             m_Captive = null;
             m_CaptiveId = 0;
+            ((AnimatedSprite2D)Body).SpriteFrames = m_DefaultFrames;
             base.OnShow(userData);
         }
 
@@ -186,6 +193,14 @@ namespace GameLogic.Enemies
 
                 m_Captive = hero;
                 m_CaptiveId = hero.Id;
+                // 换资源保留当前源帧；后续帧仍由同一攻击动画推进。
+                var sprite = (AnimatedSprite2D)Body;
+                StringName animation = sprite.Animation;
+                int frame = sprite.Frame;
+                float progress = sprite.FrameProgress;
+                sprite.SpriteFrames = hero is TangsengEntity ? m_TangsengCaptureFrames : m_DefaultFrames;
+                sprite.Animation = animation;
+                sprite.SetFrameAndProgress(frame, progress);
                 return;
             }
             if (m_BodyFsm.CurrentState is BullDemonKingAttackState state)
@@ -220,7 +235,7 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            var effect = CreateSkillEffect(m_DeathScene);
+            var effect = RentSkillEffect(m_DeathScene);
             effect.Show(null, GlobalPosition, Facing, CaptureCombatAttributes(), 0, false, ReleaseSkillEffect,
                 state.CompleteAnimation);
         }

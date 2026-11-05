@@ -152,16 +152,16 @@ public class ProcedureLevel : ProcedureBase
             levelViewController.HiddenLevelRequested += OnHiddenLevelRequested;
             levelViewController.EntranceOpacityChanged += OnEntranceOpacityChanged;
 
-            // 属性系统已准备全部数据，实体显示参数不再携带模型或装配包装。
-            WukongEntity hero =
-                await entities.ShowEntityAsync<WukongEntity>(GameConfig.Entity.EntityId.Wukong);
+            // 档案身份决定实体资源；英雄共用同一装配与异步生命周期。
+            var heroConfig = tables.TbHeroConfig.Get(profile.ActiveHeroId);
+            AbstractHeroEntity hero = await entities.ShowEntityAsync<AbstractHeroEntity>(heroConfig.EntityId);
             if (entrySerial != m_EntrySerial)
             {
                 entities.HideEntitySafe(hero);
                 return;
             }
 
-            m_Hero = hero ?? throw new InvalidOperationException("Failed to create Wukong entity.");
+            m_Hero = hero ?? throw new InvalidOperationException($"英雄实体创建失败：{heroConfig.NameCn}。");
             if (hero.Config == null || !hero.IsShown)
             {
                 throw new InvalidOperationException("英雄初始化失败。");

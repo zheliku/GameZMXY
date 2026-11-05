@@ -25,18 +25,22 @@ using GodotGameFramework;
 public sealed partial class UiSmokeScenario
 {
     /// <summary>
-    /// 从源表枚举全部悟空武器、防具，经过真实分页菜单穿卸并核对战斗和背包的独立动作层。
+    /// 从源表枚举本英雄全部武器、防具，经过真实分页菜单穿卸并核对战斗和背包的独立动作层。
     /// </summary>
     /// <param name="form">已经打开的正式背包。</param>
     /// <param name="hero">本局实际英雄。</param>
     /// <param name="flow">共享档案和装备规则的作用域。</param>
     private static void CheckAllWearableEquipment(InventoryForm form, AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        var appearance = SmokeInspection.ReadField<HeroAppearanceResource>(hero, "m_Appearance");
+        var appearance = hero.Appearance;
+        var preview = form.GetNode<Node2D>("Window/CharacterPanel/m_Preview");
+        var previewPlayer = preview.GetNode<AnimationPlayer>("AnimationPlayer");
+        Check(previewPlayer.GetAnimationLibrary("") == appearance.PreviewAnimations,
+            "背包预览没有使用当前英雄的待机动画");
         int count = 0;
         foreach (var definition in ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList)
         {
-            if (definition.Owner != EquipmentOwner.Wukong || definition.Slot == EquipmentSlot.Accessory)
+            if (definition.Owner != (EquipmentOwner)hero.HeroId || definition.Slot is not (EquipmentSlot.Weapon or EquipmentSlot.Armor))
             {
                 continue;
             }
@@ -54,6 +58,18 @@ public sealed partial class UiSmokeScenario
                 actorSprite.Hframes == previewSprite.Hframes && actorSprite.Vframes == previewSprite.Vframes,
                 $"{definition.NameCn} 穿戴身份、战斗和预览图集或网格不同步");
             CheckHeroAnimationLayers(hero);
+            // 两层独立映射必须由本角色原生待机轨道实际驱动，不能只核对纹理引用。
+            var previewBody = preview.GetNode<Sprite2D>("Body");
+            var previewWeapon = preview.GetNode<Sprite2D>("Weapon");
+            var idle = previewPlayer.GetAnimation("idle");
+            previewPlayer.Play("idle");
+            for (int frame = 0; frame < (int)Math.Ceiling(idle.Length * 24); frame++)
+            {
+                previewPlayer.Seek(frame / 24d, update: true, updateOnly: true);
+                Check(previewBody.Frame >= 0 && previewBody.Frame < previewBody.Hframes * previewBody.Vframes &&
+                    previewWeapon.Frame >= 0 && previewWeapon.Frame < previewWeapon.Hframes * previewWeapon.Vframes,
+                    $"{definition.NameCn}预览待机引用了本层网格外的帧");
+            }
             // 卸装同样走正式控件事件，校验原图恢复，不能只验证资源字典存在。
             slot._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
             var baseTexture = appearance.Get(armor ? "m_BaseBody" : "m_BaseWeapon").AsGodotObject() as Texture2D;

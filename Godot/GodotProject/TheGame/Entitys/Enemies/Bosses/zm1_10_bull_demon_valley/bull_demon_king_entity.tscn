@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="5_yy7h8"]
 [ext_resource type="PackedScene" uid="uid://bp24tcpfb0ty5" path="res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn" id="death"]
 [ext_resource type="SpriteFrames" uid="uid://dqcjybaer1bm7" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_official_frames.tres" id="frames"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_tangseng_frames.tres" id="tangseng_frames"]
 [ext_resource type="Script" uid="uid://dm6jc33jpf5n3" path="res://TheGame/GameScripts/Entity/Combat/HurtBoxNode.cs" id="hurt"]
 [ext_resource type="AnimationLibrary" uid="uid://daxv5u3gtx8ub" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_library.tres" id="library"]
 [ext_resource type="Script" uid="uid://c0juhff8vvts2" path="res://TheGame/GameScripts/Entity/Enemies/Bosses/zm1_10_bull_demon_valley/BullDemonKingEntity.cs" id="script"]
@@ -48,11 +49,12 @@ floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("script")
 m_CaptureRange = NodePath("Perception/Capture")
+m_TangsengCaptureFrames = ExtResource("tangseng_frames")
 m_SwallowRange = NodePath("Perception/Swallow")
 m_StompRange = NodePath("Perception/Stomp")
 m_DeathScene = ExtResource("death")
 m_Perception = NodePath("Perception")
-m_EnemyEntityId = 23
+m_EnemyEntityId = 100008
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")
 m_AttackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3", "attack_4", "attack_5")

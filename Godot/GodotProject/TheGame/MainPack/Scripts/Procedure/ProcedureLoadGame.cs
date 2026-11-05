@@ -20,7 +20,7 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 
 /// <summary>
 /// 读档流程：经 <see cref="SaveSystem"/> 读取当前存档（首次建档或当前格式读取），
-/// 借用应用 SaveSystem，完整加载后注册ProfileModel、ProfileSystem 与 EquipmentSystem；新档进入选角，已有档案进入地图。
+/// 借用应用 SaveSystem，完整加载后注册ProfileModel、ProfileSystem 与 EquipmentSystem；新旧档案进入地图。
 /// 读档失败时停在加载界面，绝不新建空档覆盖玩家数据。
 /// </summary>
 public class ProcedureLoadGame : ProcedureBase
@@ -53,7 +53,7 @@ public class ProcedureLoadGame : ProcedureBase
                 ?? throw new InvalidOperationException("缺少存档选择结果。");
             // 先完成读档和校验，再一次发布状态与系统；等待期间不暴露半份运行时数据。
             SaveSystem saveSystem = procedureOwner.GetSystem<SaveSystem>();
-            var loaded = await saveSystem.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId, token);
+            var loaded = await saveSystem.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId, token, selection.HeroId);
             if (entrySerial != m_EntrySerial)
             {
                 return;
@@ -73,15 +73,8 @@ public class ProcedureLoadGame : ProcedureBase
             procedureOwner.RegisterSystem(new SkillSystem(architecture));
             Log.Info("[ProcedureLoadGame] 档案就绪：来源 {0}，出战英雄 {1}，等级 {2}", loaded.Origin,
                 profile.ActiveHeroId, profile.Level);
-            // 新建档案才需要确认角色；已有档案直接恢复地图入口。
-            if (loaded.Origin == SaveOrigin.Created)
-            {
-                ChangeState<ProcedureCharacter>(procedureOwner);
-            }
-            else
-            {
-                ChangeState<ProcedureMap>(procedureOwner);
-            }
+            // 空槽已在首次写盘前确认角色；新旧档案都沿同一已装配的地图入口继续。
+            ChangeState<ProcedureMap>(procedureOwner);
         }
         catch (Exception ex)
         {

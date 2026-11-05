@@ -203,7 +203,7 @@ size = Vector2(8, 4000)
 
 [node name="Level_7" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText")]
 script = ExtResource("1_v2hty")
-m_MusicId = 107
+m_MusicId = 1004
 m_LevelId = 7
 m_SpawnPoints = NodePath("World/SpawnPoints")
 m_Triggers = NodePath("World/StageTriggers")

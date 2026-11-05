@@ -147,7 +147,7 @@ tracks/10/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.375, 0.5),
 "transitions": PackedFloat32Array(1, 1, 1, 1),
 "values": [{
-"args": [9],
+"args": [10131],
 "method": &"PlaySoundAnimEvent"
 }, {
 "args": [ExtResource("1_q64rm"), 1080.0],
@@ -320,7 +320,7 @@ tracks/10/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.25, 1.9166666, 2, 2.8333333, 2.875),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
 "values": [{
-"args": [11],
+"args": [10151],
 "method": &"PlaySoundAnimEvent"
 }, {
 "args": [Vector2(480, -1200)],
@@ -520,7 +520,7 @@ tracks/10/keys = {
 "times": PackedFloat32Array(0, 0.083333336, 0.16666667, 0.25, 0.33333334, 0.41666666),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
 "values": [{
-"args": [10],
+"args": [10141],
 "method": &"PlaySoundAnimEvent"
 }, {
 "args": [],
@@ -702,7 +702,7 @@ tracks/10/keys = {
 "times": PackedFloat32Array(0, 0.16666667, 0.29166666, 0.41666666, 0.625),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1),
 "values": [{
-"args": [8],
+"args": [10121],
 "method": &"PlaySoundAnimEvent"
 }, {
 "args": [0.8],
@@ -890,7 +890,7 @@ tracks/10/keys = {
 "times": PackedFloat32Array(0, 0.625),
 "transitions": PackedFloat32Array(1, 1),
 "values": [{
-"args": [7],
+"args": [10111],
 "method": &"PlaySoundAnimEvent"
 }, {
 "args": [],

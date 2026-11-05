@@ -206,7 +206,7 @@ namespace GameLogic.UI
             }
 
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-            m_Status.Text = "当前开放悟空与花果山。\n仅供个人学习，禁止商用。";
+            m_Status.Text = "当前开放悟空、唐僧与造一篇章。\n仅供个人学习，禁止商用。";
         }
     }
 }

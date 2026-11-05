@@ -1,6 +1,5 @@
 using GameLogic.Config;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using GameConfig.Skills;
 using GameConfig.Sound;
@@ -67,9 +66,8 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void PreparedCatalog_PassesStartupValidation()
         {
-            List<string> errors = new();
-            ConfigurationSystem.ValidateSkillCatalog(TestTables.Tables.TbSkillConfig, TestTables.Tables.TbPassiveConfig, errors);
-            Assert.Empty(errors);
+            var scope = TestTables.CreateConfigurationScope(TestTables.Tables);
+            Assert.True(scope.GetSystem<ConfigurationSystem>().Initialized);
         }
 
         /// <summary>
@@ -78,7 +76,10 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void SkillSounds_UseGgfSfxGroupAndDistinctOriginalFiles()
         {
-            var sounds = Enumerable.Range(7, 7).Select(id => TestTables.Tables.TbSoundConfig.Get(id)).ToArray();
+            SoundId[] ids = [SoundId.WukongRisingDragon, SoundId.WukongFlameThrust,
+                SoundId.WukongBlazingFlash, SoundId.WukongFlameStorm, SoundId.WukongFireDemonStart,
+                SoundId.WukongFireDemonCombo, SoundId.WukongFireDemonLanding];
+            var sounds = ids.Select(id => TestTables.Tables.TbSoundConfig.Get((int)id)).ToArray();
             Assert.All(sounds, sound =>
             {
                 Assert.Equal("SFX", sound.Group);

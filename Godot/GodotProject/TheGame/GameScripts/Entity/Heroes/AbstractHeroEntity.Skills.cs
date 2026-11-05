@@ -180,7 +180,7 @@ namespace GameLogic.Heroes
         }
 
         /// <summary>
-        /// 从动画引用的正式场景取池，表现参数留在可预览的场景中。
+        /// 从动画引用的正式场景取池，冻结攻击快照并立即播放。
         /// </summary>
         /// <param name="scene">原生方法键直接引用的场景。</param>
         /// <param name="position">世界位置。</param>
@@ -189,12 +189,10 @@ namespace GameLogic.Heroes
         /// <param name="completed">本次效果完成通知。</param>
         /// <param name="knockbackOriginX">本次击退中心。</param>
         /// <exception cref="InvalidOperationException">场景未登记到框架节点池。</exception>
-        void ISkillActor.SpawnSkillEffect(PackedScene scene, Vector2 position,
+        void ISkillActor.PlaySkillEffect(PackedScene scene, Vector2 position,
             SkillHitId hit, double power, Action completed, float? knockbackOriginX)
         {
-            var node = NodePool.Instance.Get<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
-                throw new InvalidOperationException($"技能特效未登记到节点池：{scene.ResourcePath}");
-            m_SkillEffects.Add(node);
+            var node = RentSkillEffect(scene);
             float multiplier = this.GetSystem<HeroSystem>().AttackPowerMultiplier;
             node.Show(hit == SkillHitId.None ? null :
                     this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit),
@@ -202,13 +200,27 @@ namespace GameLogic.Heroes
                 this.GetModel<HeroModel>().WsActive.Value, ReleaseSkillEffect, completed, knockbackOriginX, HitSoundId);
         }
 
-        // ---- 私有回收方法 ----
+        // ---- 效果取池与回收 ----
+
+        /// <summary>
+        /// 取得并登记本英雄拥有的离身攻击，供具体角色装填普攻或技能数据。
+        /// </summary>
+        /// <param name="scene">已登记到框架节点池的场景。</param>
+        /// <returns>由本英雄负责回收的效果实例。</returns>
+        /// <exception cref="InvalidOperationException">场景尚未登记到节点池。</exception>
+        protected SkillEffectNode RentSkillEffect(PackedScene scene)
+        {
+            var effect = NodePool.Instance.Get<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
+                throw new InvalidOperationException($"技能特效未登记到节点池：{scene.ResourcePath}");
+            m_SkillEffects.Add(effect);
+            return effect;
+        }
 
         /// <summary>
         /// 移除本英雄的表现所有权后归还对象池。
         /// </summary>
         /// <param name="effect">已经完成的活动特效。</param>
-        private void ReleaseSkillEffect(SkillEffectNode effect)
+        protected void ReleaseSkillEffect(SkillEffectNode effect)
         {
             if (m_SkillEffects.Remove(effect))
             {

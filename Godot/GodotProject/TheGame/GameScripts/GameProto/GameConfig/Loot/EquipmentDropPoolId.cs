@@ -20,59 +20,59 @@ namespace GameConfig.Loot
         /// <summary>
         /// 粗糙装备
         /// </summary>
-        Rough = 1,
+        Rough = 1000,
         /// <summary>
         /// 普通装备
         /// </summary>
-        Common = 2,
-        /// <summary>
-        /// 猕猴王装备
-        /// </summary>
-        MacaqueKing = 3,
-        /// <summary>
-        /// 禺狨王装备
-        /// </summary>
-        TamarinKing = 4,
-        /// <summary>
-        /// 蝙蝠窟石像装备
-        /// </summary>
-        BatCaveStatue = 5,
-        /// <summary>
-        /// 狮驼王装备
-        /// </summary>
-        LionCamelKing = 6,
-        /// <summary>
-        /// 迦楼罗之穴装备
-        /// </summary>
-        GarudaCave = 7,
+        Common = 1100,
         /// <summary>
         /// 优秀装备
         /// </summary>
-        Excellent = 8,
-        /// <summary>
-        /// 鲛魔王装备
-        /// </summary>
-        JiaoDemonKing = 9,
-        /// <summary>
-        /// 鲨魔王装备
-        /// </summary>
-        SharkDemonKing = 10,
+        Excellent = 1200,
         /// <summary>
         /// 精良装备
         /// </summary>
-        Fine = 11,
+        Fine = 1300,
         /// <summary>
-        /// 东海旗幡首次奖励
+        /// 猕猴王装备
         /// </summary>
-        EastSeaBanner = 12,
+        MacaqueKing = 10000000,
+        /// <summary>
+        /// 禺狨王装备
+        /// </summary>
+        TamarinKing = 10000100,
+        /// <summary>
+        /// 蝙蝠窟石像装备
+        /// </summary>
+        BatCaveStatue = 10000200,
+        /// <summary>
+        /// 狮驼王装备
+        /// </summary>
+        LionCamelKing = 10000300,
+        /// <summary>
+        /// 迦楼罗之穴装备
+        /// </summary>
+        GarudaCave = 10000400,
+        /// <summary>
+        /// 鲛魔王装备
+        /// </summary>
+        JiaoDemonKing = 10000500,
+        /// <summary>
+        /// 鲨魔王装备
+        /// </summary>
+        SharkDemonKing = 10000600,
         /// <summary>
         /// 龙王普通装备
         /// </summary>
-        DragonKing = 13,
+        DragonKing = 10001000,
         /// <summary>
         /// 龙王高等级装备
         /// </summary>
-        DragonKingHigh = 14,
+        DragonKingHigh = 10001001,
+        /// <summary>
+        /// 东海旗幡首次奖励
+        /// </summary>
+        EastSeaBanner = 10001002,
     }
 
 } 

@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bit3xlive37sg"]
 
 [ext_resource type="PackedScene" uid="uid://qupkrnnfnhjh" path="res://TheGame/UIs/Map/level_guide_tooltip.tscn" id="level_guide"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/frontend/map_skills_frames.tres" id="map_skills"]
 [ext_resource type="Texture2D" uid="uid://6hjhxfwqedra" path="res://TheGame/Sprites/UI/frontend/map_huaguoshan_current.png" id="8_3fexe"]
 [ext_resource type="Texture2D" uid="uid://ccd6vrijbdaog" path="res://TheGame/Sprites/UI/frontend/map_shuiliandong_current.png" id="11_lyiep"]
 [ext_resource type="Texture2D" uid="uid://dg7mlq8i07wa" path="res://TheGame/Sprites/UI/frontend/map_taohuayuan_current.png" id="14_jo74s"]
@@ -113,7 +114,9 @@ shader = ExtResource("outline")
 shader_parameter/image_scale = 1.0
 shader_parameter/line_thickness = 0.0
 
-[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Settings", "m_Skills", "m_Back", "m_Huaguoshan", "m_Shuiliandong", "m_Taohuayuan", "m_Save", "m_LocationAnimation", "m_Bianfuku", "m_Qixingdong", "m_Jialuoluo", "m_Qianan", "m_Donghai", "m_Shazhiwoliu", "m_Niumogu")]
+[sub_resource type="StyleBoxEmpty" id="skills_empty"]
+
+[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Settings", "m_Skills", "m_SkillsArtwork", "m_Back", "m_Huaguoshan", "m_Shuiliandong", "m_Taohuayuan", "m_Save", "m_LocationAnimation", "m_Bianfuku", "m_Qixingdong", "m_Jialuoluo", "m_Qianan", "m_Donghai", "m_Shazhiwoliu", "m_Niumogu")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -124,6 +127,7 @@ theme = ExtResource("theme")
 script = ExtResource("script")
 m_Settings = NodePath("m_Settings")
 m_Skills = NodePath("m_Skills")
+m_SkillsArtwork = NodePath("m_Skills/Artwork")
 m_Back = NodePath("m_Back")
 m_Huaguoshan = NodePath("m_Huaguoshan")
 m_Shuiliandong = NodePath("m_Shuiliandong")
@@ -604,18 +608,22 @@ text = "游戏设置"
 
 [node name="m_Skills" type="Button" parent="."]
 layout_mode = 0
-offset_left = 14.0
-offset_top = 500.0
-offset_right = 132.0
-offset_bottom = 542.0
+offset_left = 41.8
+offset_top = 75.95
+offset_right = 121.8
+offset_bottom = 131.95
 focus_mode = 0
 mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.93, 0.65, 0.1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_fonts/font = ExtResource("caption_font")
-theme_override_font_sizes/font_size = 23
-text = "技能"
+theme_override_styles/normal = SubResource("skills_empty")
+theme_override_styles/hover = SubResource("skills_empty")
+theme_override_styles/pressed = SubResource("skills_empty")
+theme_override_styles/focus = SubResource("skills_empty")
+flat = true
+
+[node name="Artwork" type="AnimatedSprite2D" parent="m_Skills"]
+position = Vector2(40, 28)
+sprite_frames = ExtResource("map_skills")
+animation = &"idle"
 
 [node name="m_LevelGuide" parent="." instance=ExtResource("level_guide")]
 visible = false

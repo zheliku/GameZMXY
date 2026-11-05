@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://ckvn7vbcoutdx" path="res://TheGame/Sprites/UI/hud/hud_status_label.png" id="3_label"]
 [ext_resource type="Texture2D" uid="uid://dpwrtfexmdivo" path="res://TheGame/Sprites/UI/hud/hud_hp_fill.png" id="4_hp"]
 [ext_resource type="Texture2D" uid="uid://cqdd6j1ngowuj" path="res://TheGame/Sprites/UI/hud/hud_head_wukong.png" id="6_head"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/hud_head_tangseng.png" id="head_tangseng"]
 [ext_resource type="Texture2D" uid="uid://bk5owbpaligfn" path="res://TheGame/Sprites/UI/hud/hud_menu_panel.png" id="7_menu"]
 [ext_resource type="SpriteFrames" uid="uid://cxs2dh6k62665" path="res://TheGame/Sprites/UI/gogo/gogo_animations.tres" id="13_gogo"]
 [ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/BattleForm/Components/ResourceBar.cs" id="14_resourcebar"]
@@ -16,6 +17,7 @@
 [ext_resource type="Script" uid="uid://bn2sg3olgc8dc" path="res://TheGame/GameScripts/UI/BattleForm/Components/EncounterHealthBar.cs" id="38_ogrj0"]
 [ext_resource type="Script" uid="uid://bymxyt55xb04o" path="res://TheGame/GameScripts/UI/BattleForm/Components/MusouActivationNode.cs" id="40_4sdu0"]
 [ext_resource type="PackedScene" uid="uid://d1snaq64saolw" path="res://TheGame/UIs/Battle/encounter_health_bar.tscn" id="encounter"]
+[ext_resource type="PackedScene" path="res://TheGame/UIs/Battle/combo_hud.tscn" id="combo"]
 [ext_resource type="Texture2D" uid="uid://dnusvvhljgk87" path="res://TheGame/Sprites/UI/hud/menu_inventory_caption.png" id="inventory_caption"]
 [ext_resource type="Texture2D" uid="uid://bp04w8lqa5lgf" path="res://TheGame/Sprites/UI/hud/menu_inventory_hover.png" id="inventory_hover"]
 [ext_resource type="Texture2D" uid="uid://dupeqk5y4l6qd" path="res://TheGame/Sprites/UI/hud/menu_inventory_normal.png" id="inventory_normal"]
@@ -58,7 +60,7 @@ m_EncounterHealthBar = NodePath("m_EncounterHealthBar")
 m_MusouActivation = NodePath("m_MusouActivation")
 m_Combo = NodePath("m_Combo")
 
-[node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel")]
+[node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_Portrait")]
 position = Vector2(116, 44)
 texture = ExtResource("2_status")
 script = ExtResource("status_panel")
@@ -66,6 +68,8 @@ m_HpBar = NodePath("m_HpBar")
 m_MpBar = NodePath("m_MpBar")
 m_ExpBar = NodePath("m_ExpBar")
 m_LevelLabel = NodePath("m_LevelLabel")
+m_Portrait = NodePath("Head")
+m_Portraits = Dictionary[int, Texture2D]({1: ExtResource("6_head"), 2: ExtResource("head_tangseng")})
 
 [node name="m_HpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=172288184 node_paths=PackedStringArray("m_Text")]
 offset_left = -33.0
@@ -382,25 +386,16 @@ offset_bottom = 69.0
 grow_horizontal = 2
 mouse_filter = 2
 script = ExtResource("38_ogrj0")
-
-[node name="m_Combo" type="Label" parent="."]
-visible = false
-layout_mode = 0
-offset_left = 545.0
-offset_top = 208.0
-offset_right = 845.0
-offset_bottom = 266.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.6, 0.2, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_fonts/font = ExtResource("20_hud_font")
-theme_override_font_sizes/font_size = 40
-text = "2 连击"
-horizontal_alignment = 1
-vertical_alignment = 1
 m_Health = NodePath("Health")
 m_Name = NodePath("Name")
+
+[node name="m_Combo" parent="." instance=ExtResource("combo")]
+visible = false
+layout_mode = 0
+offset_left = 694.95
+offset_top = 234.95
+offset_right = 694.95
+offset_bottom = 234.95
 
 [node name="m_MusouActivation" type="Control" parent="." unique_id=520113477 node_paths=PackedStringArray("m_Animation", "m_Player") instance=ExtResource("musou_activation")]
 visible = false

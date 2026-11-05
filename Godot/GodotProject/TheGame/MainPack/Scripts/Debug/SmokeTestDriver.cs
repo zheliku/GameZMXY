@@ -119,7 +119,7 @@ public partial class SmokeTestDriver : Node
     private LevelCancellationSmokeScenario m_CancelScenario; // 真实在途显示的取消回归。
     private UiSmokeScenario m_UiScenario; // HUD 与存档的真实引擎回归。
     private FrontendSmokeScenario m_FrontendScenario; // 菜单、音乐与进出关卡回归。
-    private MapProgressSmokeScenario m_ProgressScenario; // 三关实际通关和退出重读后的地图解锁验证。
+    private MapProgressSmokeScenario m_ProgressScenario; // 主线实际通关和退出重读后的地图解锁验证。
 
     private EnemyAiSmokeScenario m_AiScenario; // ai 模式下驱动英雄与猴子的场景。
 
@@ -206,7 +206,7 @@ public partial class SmokeTestDriver : Node
                 m_RequestedLevel = 9;
             }
 
-            if (arg is "--smoketest=level10" or "--bull-only" or "--bull-flow-only")
+            if (arg is "--smoketest=level10" or "--bull-only" or "--bull-flow-only" or "--bull-capture-only")
             {
                 m_RequestedLevel = 10;
             }
@@ -228,7 +228,9 @@ public partial class SmokeTestDriver : Node
         else
         {
             // 每次烟测使用独立存档目录，自动保存和失败测试不触碰玩家实际进度。
-            GF.Archive.Setting.Folder = $"Validation/{m_Mode}/{Guid.NewGuid():N}";
+            string archive = OS.GetCmdlineUserArgs().FirstOrDefault(argument => argument.StartsWith("--smoke-run-id="));
+            Guid runId = archive == null ? Guid.NewGuid() : Guid.Parse(archive["--smoke-run-id=".Length..]);
+            GF.Archive.Setting.Folder = $"Validation/{m_Mode}/{runId:N}";
             GD.Print($"SMOKE ARCHIVE: user://{GF.Archive.Setting.Folder}");
         }
 
@@ -256,7 +258,7 @@ public partial class SmokeTestDriver : Node
                 }
                 else
                 {
-                    GD.Print("SMOKE-PROGRESS PASS: three real clears, disk saves, title reload, only latest hint and locked input rejection.");
+                    GD.Print("SMOKE-PROGRESS PASS: ten real mainline clears, disk saves, title reload, hero identity, only latest hint and locked input rejection.");
                     StopDriving(false);
                 }
             }
@@ -888,8 +890,9 @@ public partial class SmokeTestDriver : Node
     {
         int count = GF.Fsm.GetArchitecture().GetModel<LevelModel>()?.ComboCount.Value ?? 0;
         m_MaxComboCount = Math.Max(m_MaxComboCount, count);
-        m_ComboHudShown |= GetTree().Root.FindChildren("m_Combo", "Label", true, false)
-            .OfType<Label>().Any(label => label.Visible && label.Text.Contains("连击", StringComparison.Ordinal));
+        m_ComboHudShown |= GetTree().Root.FindChildren("m_Combo", "Control", true, false)
+            .OfType<GameLogic.UI.Widgets.ComboHud>().Any(hud => hud.Visible &&
+                hud.GetChildren().OfType<AnimatedSprite2D>().Any(digit => digit.Visible));
     }
 
     /// <summary>

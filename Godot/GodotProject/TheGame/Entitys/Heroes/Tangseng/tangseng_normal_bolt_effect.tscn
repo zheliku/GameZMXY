@@ -1,0 +1,43 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Heroes/Tangseng/Skills/TangsengBoltNode.cs" id="script"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/tangseng/tangseng_normal_bolt.png" id="texture"]
+
+[sub_resource type="RectangleShape2D" id="shape"]
+size = Vector2(100, 30)
+
+[sub_resource type="Animation" id="play"]
+resource_name = "play"
+length = 2.083333333
+tracks/0/type = "value"
+tracks/0/path = NodePath("HitBox/CollisionShape2D:disabled")
+tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [false]}
+
+[sub_resource type="AnimationLibrary" id="library"]
+_data = {&"play": SubResource("play")}
+
+[node name="TangsengNormalBolt" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox")]
+z_index = 2
+scale = Vector2(0.6, 1)
+script = ExtResource("script")
+m_Player = NodePath("AnimationPlayer")
+m_HitBox = NodePath("HitBox")
+m_Speed = 192.0
+m_TravelDistance = 304.0
+m_SplashRadius = 60.0
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture = ExtResource("texture")
+offset = Vector2(0.2, 0)
+
+[node name="HitBox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 32
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox"]
+shape = SubResource("shape")
+disabled = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries/ = SubResource("library")

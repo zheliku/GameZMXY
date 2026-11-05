@@ -14,109 +14,113 @@ namespace GameConfig.Entity
     public enum EntityId
     {
         /// <summary>
+        /// 无
+        /// </summary>
+        None = 0,
+        /// <summary>
         /// 悟空
         /// </summary>
-        Wukong = 0,
+        Wukong = 1,
+        /// <summary>
+        /// 唐僧
+        /// </summary>
+        Tangseng = 2,
         /// <summary>
         /// 花果山猴子
         /// </summary>
-        HuaguoshanMonkey = 1,
+        HuaguoshanMonkey = 10000,
         /// <summary>
         /// 妖猴
         /// </summary>
-        DemonMonkey = 2,
+        DemonMonkey = 10001,
         /// <summary>
         /// 普通实体；由关卡指定为守关对手
         /// </summary>
-        Gorilla = 3,
-        /// <summary>
-        /// 无
-        /// </summary>
-        None = -1,
-        /// <summary>
-        /// 猕猴王
-        /// </summary>
-        MacaqueKing = 4,
-        /// <summary>
-        /// 禺狨王
-        /// </summary>
-        TamarinKing = 6,
+        Gorilla = 10002,
         /// <summary>
         /// 蝙蝠
         /// </summary>
-        Bat = 8,
-        /// <summary>
-        /// 蝙蝠洞石像
-        /// </summary>
-        BatCaveStatue = 21,
-        /// <summary>
-        /// 蛮力怪
-        /// </summary>
-        CaveBrute = 7,
+        Bat = 10003,
         /// <summary>
         /// 飞刀魔
         /// </summary>
-        KnifeDemon = 13,
+        KnifeDemon = 10004,
         /// <summary>
-        /// 狮驼王
+        /// 蛮力怪
         /// </summary>
-        LionCamelKing = 11,
-        /// <summary>
-        /// 彭魔王
-        /// </summary>
-        PengDemonKing = 9,
+        CaveBrute = 10005,
         /// <summary>
         /// 飞行魔
         /// </summary>
-        FlyingDemon = 15,
-        /// <summary>
-        /// 虾兵
-        /// </summary>
-        ShrimpDemon = 14,
+        FlyingDemon = 10006,
         /// <summary>
         /// 潮汐妖
         /// </summary>
-        TideDemon = 16,
+        TideDemon = 10007,
+        /// <summary>
+        /// 虾兵
+        /// </summary>
+        ShrimpDemon = 10008,
         /// <summary>
         /// 龟丞相
         /// </summary>
-        TurtleMinister = 17,
-        /// <summary>
-        /// 鲛魔王
-        /// </summary>
-        JiaoDemonKing = 10,
+        TurtleMinister = 10009,
         /// <summary>
         /// 灯笼鱼
         /// </summary>
-        LanternFish = 20,
+        LanternFish = 10010,
         /// <summary>
         /// 鲨鱼
         /// </summary>
-        SharkSpawn = 18,
-        /// <summary>
-        /// 鲨魔王
-        /// </summary>
-        SharkDemonKing = 19,
-        /// <summary>
-        /// 牛魔王兽形
-        /// </summary>
-        BullDemonBeast = 22,
-        /// <summary>
-        /// 牛魔王人形
-        /// </summary>
-        BullDemonKing = 23,
-        /// <summary>
-        /// 牛魔王最终形态
-        /// </summary>
-        BullDemonHeart = 24,
+        SharkSpawn = 10011,
         /// <summary>
         /// 牛妖
         /// </summary>
-        BullGuard = 25,
+        BullGuard = 10012,
+        /// <summary>
+        /// 猕猴王
+        /// </summary>
+        MacaqueKing = 100000,
+        /// <summary>
+        /// 禺狨王
+        /// </summary>
+        TamarinKing = 100001,
+        /// <summary>
+        /// 蝙蝠洞石像
+        /// </summary>
+        BatCaveStatue = 100002,
+        /// <summary>
+        /// 狮驼王
+        /// </summary>
+        LionCamelKing = 100003,
+        /// <summary>
+        /// 彭魔王
+        /// </summary>
+        PengDemonKing = 100004,
+        /// <summary>
+        /// 鲛魔王
+        /// </summary>
+        JiaoDemonKing = 100005,
+        /// <summary>
+        /// 鲨魔王
+        /// </summary>
+        SharkDemonKing = 100006,
+        /// <summary>
+        /// 牛魔王兽形
+        /// </summary>
+        BullDemonBeast = 100007,
+        /// <summary>
+        /// 牛魔王人形
+        /// </summary>
+        BullDemonKing = 100008,
+        /// <summary>
+        /// 牛魔王最终形态
+        /// </summary>
+        BullDemonHeart = 100009,
         /// <summary>
         /// 龙王
         /// </summary>
-        DragonKing = 26,
+        DragonKing = 100010,
     }
 
 } 

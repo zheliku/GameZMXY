@@ -97,9 +97,9 @@ namespace GameLogic.Profile.Tests
             Assert.Single(TestTables.Tables.TbEquipmentDropPoolConfig.Get(EquipmentDropPoolId.MacaqueKing).Entries);
             Assert.Equal(2, TestTables.Tables.TbEquipmentDropPoolConfig.Get(EquipmentDropPoolId.TamarinKing).Entries.Count);
             Assert.Equal((.4f, EquipmentDropPoolId.MacaqueKing),
-                (TestTables.Tables.TbEnemyConfig.Get(10001).EquipmentDropChance, TestTables.Tables.TbEnemyConfig.Get(10001).EquipmentDropPoolId));
+                (TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.MacaqueKing).EquipmentDropChance, TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.MacaqueKing).EquipmentDropPoolId));
             Assert.Equal((.35f, EquipmentDropPoolId.TamarinKing),
-                (TestTables.Tables.TbEnemyConfig.Get(10002).EquipmentDropChance, TestTables.Tables.TbEnemyConfig.Get(10002).EquipmentDropPoolId));
+                (TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.TamarinKing).EquipmentDropChance, TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.TamarinKing).EquipmentDropPoolId));
         }
 
         /// <summary>

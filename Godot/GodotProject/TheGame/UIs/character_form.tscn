@@ -49,7 +49,7 @@ atlas = ExtResource("wujing")
 region = Rect2(22, 0, 237, 610)
 filter_clip = true
 
-[node name="CharacterForm" type="Control" unique_id=1389231940 node_paths=PackedStringArray("m_Wukong", "m_PlayerOne")]
+[node name="CharacterForm" type="Control" unique_id=1389231940 node_paths=PackedStringArray("m_Wukong", "m_Sanzang", "m_PlayerOne")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -59,6 +59,7 @@ grow_vertical = 2
 theme = ExtResource("theme")
 script = ExtResource("script")
 m_Wukong = NodePath("Roles/m_Wukong")
+m_Sanzang = NodePath("Roles/m_Sanzang")
 m_PlayerOne = NodePath("m_PlayerOne")
 
 [node name="Background" type="ColorRect" parent="." unique_id=381968765]
@@ -85,15 +86,17 @@ texture_normal = SubResource("wukong_card")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="m_Sanzang" type="TextureRect" parent="Roles" unique_id=176568400]
+[node name="m_Sanzang" type="TextureButton" parent="Roles" unique_id=176568400]
 material = SubResource("sanzang_material")
 layout_mode = 0
 offset_left = 235.0
 offset_right = 470.0
 offset_bottom = 590.0
-mouse_filter = 2
-texture = SubResource("sanzang_card")
-expand_mode = 1
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = SubResource("sanzang_card")
+ignore_texture_size = true
+stretch_mode = 0
 
 [node name="m_Bajie" type="TextureRect" parent="Roles" unique_id=1504500255]
 material = SubResource("bajie_material")

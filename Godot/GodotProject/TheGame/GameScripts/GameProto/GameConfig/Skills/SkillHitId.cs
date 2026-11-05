@@ -20,47 +20,47 @@ namespace GameConfig.Skills
         /// <summary>
         /// 升龙斩
         /// </summary>
-        RisingDragon = 101,
+        RisingDragon = 1011,
         /// <summary>
         /// 火炎突击
         /// </summary>
-        FlameThrust = 102,
+        FlameThrust = 1021,
         /// <summary>
         /// 烈焰闪
         /// </summary>
-        BlazingFlash = 103,
+        BlazingFlash = 1031,
         /// <summary>
         /// 烈焰风暴
         /// </summary>
-        FlameStorm = 104,
+        FlameStorm = 1041,
         /// <summary>
         /// 火魔九连斩
         /// </summary>
-        FireDemonCombo = 105,
+        FireDemonCombo = 1051,
         /// <summary>
         /// 火魔下冲
         /// </summary>
-        FireDemonDescent = 106,
+        FireDemonDescent = 1052,
         /// <summary>
         /// 火魔落地斩
         /// </summary>
-        FireDemonLanding = 107,
-        /// <summary>
-        /// 水魔光柱
-        /// </summary>
-        WaterDemonPillar = 203,
-        /// <summary>
-        /// 水魔追加下落
-        /// </summary>
-        WaterDemonFall = 204,
+        FireDemonLanding = 1053,
         /// <summary>
         /// 冰龙波
         /// </summary>
-        IceDragonWave = 201,
+        IceDragonWave = 2011,
         /// <summary>
         /// 玄冰阵
         /// </summary>
-        DarkIceFormation = 202,
+        DarkIceFormation = 2021,
+        /// <summary>
+        /// 水魔光柱
+        /// </summary>
+        WaterDemonPillar = 2051,
+        /// <summary>
+        /// 水魔追加下落
+        /// </summary>
+        WaterDemonFall = 2052,
     }
 
 } 

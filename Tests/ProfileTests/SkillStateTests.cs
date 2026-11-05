@@ -509,7 +509,7 @@ namespace GameLogic.Profile.Tests
             }
 
             /// <inheritdoc />
-            public void SpawnSkillEffect(PackedScene scene, Vector2 position, SkillHitId hit = SkillHitId.None, double power = 0, Action completed = null,
+            public void PlaySkillEffect(PackedScene scene, Vector2 position, SkillHitId hit = SkillHitId.None, double power = 0, Action completed = null,
                 float? knockbackOriginX = null)
             {
                 Effects.Add(hit);

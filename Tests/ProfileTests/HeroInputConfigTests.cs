@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using GameConfig;
 using GameConfig.Hero;
-using GameLogic.Config;
 using Luban;
 using Xunit;
 
@@ -24,7 +23,7 @@ namespace GameLogic.Profile.Tests
             HeroConfig hero = tables.TbHeroConfig.Get(1);
             float[] values = invalid == 0 ? [0.1f] : [0.1f, 0.1f, invalid, 0.1f, 0.1f];
             typeof(HeroConfig).GetField("AttackInputCooldowns").SetValue(hero, values);
-            Assert.Contains("普攻冷却", Assert.Throws<InvalidOperationException>(() => ConfigurationSystem.ValidateTables(tables)).Message);
+            Assert.Contains("普攻冷却", Assert.Throws<InvalidOperationException>(() => TestTables.CreateConfigurationScope(tables)).Message);
         }
 
         /// <summary>
@@ -37,7 +36,7 @@ namespace GameLogic.Profile.Tests
         {
             Tables tables = Load();
             typeof(HeroConfig).GetField(field).SetValue(tables.TbHeroConfig.Get(1), invalid);
-            Assert.Contains("普攻冷却", Assert.Throws<InvalidOperationException>(() => ConfigurationSystem.ValidateTables(tables)).Message);
+            Assert.Contains("普攻冷却", Assert.Throws<InvalidOperationException>(() => TestTables.CreateConfigurationScope(tables)).Message);
         }
 
         /// <summary>

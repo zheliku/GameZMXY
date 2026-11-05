@@ -16,6 +16,18 @@ namespace GameLogic.Heroes
         [Export] private Godot.Collections.Dictionary<EquipmentId, Texture2D> m_ArmorTextures = new(); // 按防具身份选择完整动作图集。
         [Export] private Texture2D m_BaseWeapon; // 默认木棍，已裁掉被身体前景遮挡的部分。
         [Export] private Godot.Collections.Dictionary<EquipmentId, Texture2D> m_WeaponTextures = new(); // 武器独立图集，保留身体遮挡的透明区。
+        [Export] private AnimationLibrary m_PreviewAnimations; // 本角色的背包待机表现，只引用预览节点。
+
+        /// <summary>
+        /// 与本角色换装图集配套的背包待机动画。
+        /// </summary>
+        public AnimationLibrary PreviewAnimations
+        {
+            get
+            {
+                return m_PreviewAnimations;
+            }
+        }
 
         /// <summary>
         /// 按穿戴状态替换纹理，保留帧号、朝向及动画播放位置。

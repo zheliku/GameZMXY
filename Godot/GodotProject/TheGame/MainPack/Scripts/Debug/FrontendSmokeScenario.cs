@@ -150,7 +150,7 @@ public sealed partial class FrontendSmokeScenario
         {
             StartForm => "m_Start",
             SaveForm save when GF.Fsm.GetModel<SaveModel>().Phase == SaveListState.Ready => "Slots/m_Slot1",
-            CharacterForm => "Roles/m_Wukong",
+            CharacterForm => OS.GetCmdlineUserArgs().Contains("--tangseng-only") ? "Roles/m_Sanzang" : "Roles/m_Wukong",
             MapForm => levelId switch { 2 => "m_Shuiliandong", 3 => "m_Taohuayuan", 4 => "m_Bianfuku", 5 => "m_Qixingdong", 6 => "m_Jialuoluo", 7 => "m_Qianan", 8 => "m_Donghai", 9 => "m_Shazhiwoliu", 10 => "m_Niumogu", _ => "m_Huaguoshan" },
             _ => null,
         };
@@ -251,20 +251,23 @@ public sealed partial class FrontendSmokeScenario
                 GF.Procedure.CurrentProcedure, "m_Owner");
             CheckTypedFsmData(flow);
             await CheckCancelledLoadAsync(flow);
-            var firstPlayerModel = flow.GetModel<ProfileModel>();
             var firstSaveSystem = flow.GetSystem<SaveSystem>();
+            Check(flow.GetModel<ProfileModel>() == null && flow.GetSystem<EquipmentSystem>() == null,
+                "选角前已按默认英雄创建档案作用域");
+            await CheckCharacterHoverAsync(character);
+            await ClickAsync(character, "Roles/m_Wukong");
+            Check(!character.GetNode<Label>("m_PlayerOne").Visible, "选角关闭后仍保留玩家标记");
+
+            MapForm map = await WaitForAsync<MapForm>();
+            var firstPlayerModel = flow.GetModel<ProfileModel>();
             var firstEquipmentSystem = flow.GetSystem<EquipmentSystem>();
             Check(ReferenceEquals(flow.GetArchitecture(), ((IBelongToArchitecture)firstSaveSystem).GetArchitecture()) &&
                 ReferenceEquals(((IBelongToArchitecture)firstSaveSystem).GetArchitecture(), ((IBelongToArchitecture)firstEquipmentSystem).GetArchitecture()) &&
                 ReferenceEquals(ConfigSystem.Instance.Tables, firstSaveSystem.GetModel<ConfigurationModel>().Tables) &&
                 ReferenceEquals(flow.GetUtility<ExperienceCurveUtility>(), firstSaveSystem.GetUtility<ExperienceCurveUtility>()),
                 "共享配置、经验曲线或模块没有使用主流程唯一的数据来源");
-            Check(firstPlayerModel.HeroIds.Count == 1, "选角未使用读档作用域");
-            await CheckCharacterHoverAsync(character);
-            await ClickAsync(character, "Roles/m_Wukong");
-            Check(!character.GetNode<Label>("m_PlayerOne").Visible, "选角关闭后仍保留玩家标记");
-
-            MapForm map = await WaitForAsync<MapForm>();
+            Check(firstPlayerModel.ActiveHeroId == 1 && firstPlayerModel.HeroIds.SequenceEqual(new[] { 1 }) &&
+                GF.Archive.CurrentData.ActiveHeroId == 1, "悟空新档没有按首次选角创建身份");
             Check(SmokeInspection.CallbackCount(character, "CharacterConfirmed") == 0 &&
                 SmokeInspection.CallbackCount(start, "StartGameRequested") == 0,
                 "离开选角或标题后仍保留导航回调");
@@ -377,14 +380,23 @@ public sealed partial class FrontendSmokeScenario
             await ClickAsync(saves, "Slots/m_Slot6");
             character = await WaitForAsync<CharacterForm>();
             await CheckCharacterHoverAsync(character);
+            Check(flow.GetModel<ProfileModel>() == null, "第六格选角前已装配默认英雄");
+            await ClickAsync(character, "Roles/m_Sanzang");
+            var tangsengMap = await WaitForAsync<MapForm>();
             Check(GF.Archive.CurrentCatalogue.SlotNumber == 6 && GF.Archive.CurrentCatalogue.UnitId != secondId, "第六格覆盖了第二格");
             long sixthId = GF.Archive.CurrentCatalogue.UnitId;
+            var tangsengProfile = flow.GetModel<ProfileModel>();
+            Check(tangsengProfile.ActiveHeroId == 2 && tangsengProfile.HeroIds.SequenceEqual(new[] { 2 }) &&
+                GF.Archive.CurrentData.ActiveHeroId == 2 && GF.Archive.CurrentData.Heroes.Single().HeroId == 2 &&
+                flow.GetModel<SkillModel>().GetLearnedSkills(2).Count == 0,
+                "唐僧首次快照、档案或技能书仍使用默认悟空身份");
+            GD.Print("SMOKE-TANGSENG-CREATE PASS: selected hero owns the first snapshot, profile and skill book; Wukong slot remains separate.");
             Check(!await firstSaveSystem.SaveCheckpointAsync(firstPlayerModel), "旧档案检查点写入了另一格");
-            // 选角没有返回按钮；回归通过既有导航事件结束临时第六格会话。
-            SmokeInspection.ChangeProcedure<ProcedureTitle>();
+            await ClickAsync(tangsengMap, "m_Back");
             start = await WaitForAsync<StartForm>();
             await ClickAsync(start, "m_Start");
             saves = await WaitForSaveAsync();
+            Check(flow.GetModel<SaveModel>().Slots[5].HeroName == "唐僧", "唐僧档案磁盘重读摘要仍显示其他角色");
             await ClickAsync(saves, "Slots/m_Slot2");
             map = await WaitForAsync<MapForm>();
             Check(!character.Visible && GF.Procedure.CurrentProcedure is ProcedureMap, "已有档案未直接进入地图");
@@ -430,10 +442,41 @@ public sealed partial class FrontendSmokeScenario
             levelSystem.RecordComboHit();
             levelSystem.RecordComboHit();
             await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
-            var combo = battleForm.GetNode<Label>("m_Combo");
-            Check(levelModel.ComboCount.Value == 2 && combo.Visible && combo.Text == "2 连击",
+            var combo = battleForm.GetNode<ComboHud>("m_Combo");
+            Check(levelModel.ComboCount.Value == 2 && combo.Visible && combo.GetNode<AnimatedSprite2D>("Digit0").Animation == "2" &&
+                combo.Position.IsEqualApprox(new Vector2(694.95f, 234.95f)),
                 "连击规则没有同步到战斗HUD");
+            await WaitUntilAsync(() => combo.GetNode<AnimatedSprite2D>("Digit0").Frame == 4,
+                "官方连击数字没有播放到清晰末帧");
             await CaptureAsync("frontend_combo");
+            for (int hit = 2; hit < 12; hit++)
+            {
+                levelSystem.RecordComboHit();
+            }
+            await WaitUntilAsync(() => combo.GetNode<AnimatedSprite2D>("Digit1").Frame == 4,
+                "两位连击数字没有完成原版五帧入场");
+            Check(combo.GetNode<AnimatedSprite2D>("Digit0").Animation == "1" &&
+                combo.GetNode<AnimatedSprite2D>("Digit0").Position == new Vector2(-44, 28) &&
+                combo.GetNode<AnimatedSprite2D>("Digit1").Animation == "2" &&
+                combo.GetNode<AnimatedSprite2D>("Digit1").Position == new Vector2(6, 28),
+                "两位连击未保持官方数字身份、起点和间距");
+            await CaptureAsync("frontend_combo_two_digits");
+            for (int hit = 12; hit < 123; hit++)
+            {
+                levelSystem.RecordComboHit();
+            }
+            await WaitUntilAsync(() => combo.GetNode<AnimatedSprite2D>("Digit2").Frame == 4,
+                "三位连击数字没有完成原版五帧入场");
+            Check(combo.GetNode<AnimatedSprite2D>("Digit0").Position == new Vector2(-95, 28) &&
+                combo.GetNode<AnimatedSprite2D>("Digit2").Animation == "3" &&
+                combo.GetNode<AnimatedSprite2D>("Digit2").Position == new Vector2(5, 28),
+                "三位连击未保持官方布局");
+            await CaptureAsync("frontend_combo_three_digits");
+            await WaitUntilAsync(() => levelModel.ComboCount.Value == 0, "多位连击没有按原规则断连");
+            levelSystem.RecordComboHit();
+            levelSystem.RecordComboHit();
+            Check(!combo.GetNode<AnimatedSprite2D>("Digit1").Visible &&
+                !combo.GetNode<AnimatedSprite2D>("Digit2").Visible, "新连击遗留了上一组高位数字");
             Check(!GF.Debugger.ActiveWindow, "框架调试按钮遮挡头像");
             await CheckMusicAsync("huaguoshan_theme.mp3");
             await CaptureAsync("frontend_battle");
@@ -499,7 +542,8 @@ public sealed partial class FrontendSmokeScenario
             Check(ReferenceEquals(reloadedPlayerModel, flow.GetModel<ProfileModel>()) &&
                 !levelModel.SessionActive && !levelSystem.Initialized && !levelModel.Initialized, "返回地图未保留档案或未解除关卡借用");
             Check(SmokeInspection.ReadField<BattleFormData>(battleForm, "m_FormData") == null, "HUD 关闭后仍观察旧关卡");
-            Check(levelModel.ComboCount.Value == 0 && !combo.Visible && string.IsNullOrEmpty(combo.Text) &&
+            Check(levelModel.ComboCount.Value == 0 && !combo.Visible &&
+                combo.GetChildren().OfType<AnimatedSprite2D>().All(digit => !digit.Visible && !digit.IsPlaying()) &&
                 SmokeInspection.CountBindingHandlers(levelModel.ComboCount, battleForm) == 0,
                 "离关没有清空连击、HUD数字或旧计数订阅");
             GD.Print("SMOKE-COMBO-LIFECYCLE PASS: HUD sync, paused stale delta, resumed timeout, new chain and exit cleanup.");
@@ -522,7 +566,7 @@ public sealed partial class FrontendSmokeScenario
             await ClickAsync(map, "m_Huaguoshan");
             battleForm = await WaitForAsync<BattleForm>();
             Check(Find<AbstractHeroEntity>().Count(x => x.IsShown) == 1, "重入生成了重复英雄");
-            Check(flow.GetModel<LevelModel>().ComboCount.Value == 0 && !battleForm.GetNode<Label>("m_Combo").Visible,
+            Check(flow.GetModel<LevelModel>().ComboCount.Value == 0 && !battleForm.GetNode<ComboHud>("m_Combo").Visible,
                 "重新进关沿用了旧连击或HUD数字");
             Check(flow.GetModel<HeroModel>().Initialized && !ReferenceEquals(heroModel, flow.GetModel<HeroModel>()),
                 "新关卡沿用了已结束的英雄运行模型");
@@ -975,7 +1019,8 @@ public sealed partial class FrontendSmokeScenario
     {
         Control[] roles = character.GetNode("Roles").GetChildren().OfType<Control>().ToArray();
         Label marker = character.GetNode<Label>("m_PlayerOne");
-        Check(roles.Length == 4 && roles[0] is TextureButton && roles.Skip(1).All(role => role is TextureRect), "角色节点未按四栏职责分组");
+        Check(roles.Length == 4 && roles.Take(2).All(role => role is TextureButton) &&
+            roles.Skip(2).All(role => role is TextureRect), "角色节点未按两名已开放角色和两栏占位分组");
         Check(roles.All(role => role.Size.IsEqualApprox(new Vector2(235, 590))) && marker.Text == "1P", "四栏构图或玩家标记错误");
         Check(roles.All(role => role.GetChildCount() == 0), "完整卡片仍叠加重复姓名或笔刷组件");
         await MoveMouseAsync(new Vector2(-5, -5));
@@ -1035,6 +1080,28 @@ public sealed partial class FrontendSmokeScenario
         Check(flow.GetModel<HeroModel>() == null && flow.GetModel<LevelModel>() == null &&
             !Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "地图学技前已创建战斗英雄或关卡");
 
+        var skillArtwork = map.GetNode<AnimatedSprite2D>("m_Skills/Artwork");
+        Check((skillArtwork.GlobalPosition - map.GlobalPosition).IsEqualApprox(new Vector2(81.8f, 103.95f)) &&
+            string.IsNullOrEmpty(map.GetNode<Button>("m_Skills").Text) &&
+            skillArtwork.SpriteFrames.GetFrameCount("hover") == 15 &&
+            skillArtwork.SpriteFrames.GetFrameCount("available") == 19,
+            "地图技能入口未使用官方位置及完整悬停/可购动画");
+        await MoveMouseAsync(skillArtwork.GlobalPosition);
+        Check(skillArtwork.Animation == "hover", "地图技能真实悬停未切换官方第2态");
+        int hoverFrame = skillArtwork.Frame;
+        await WaitUntilAsync(() => skillArtwork.Frame != hoverFrame, "官方地图技能悬停子动画没有播放");
+        await CaptureAsync("map_skill_entry_hover");
+        await MoveMouseAsync(new Vector2(-5, -5));
+        Check(skillArtwork.Animation == "idle", "移出地图技能入口未恢复官方第1态");
+        await CaptureAsync("map_skill_entry_idle");
+        // 原版从技能页回到地图会重新按余额选择第3态。
+        await ClickAsync(map, "m_Skills");
+        var preview = await WaitForAsync<SkillForm>();
+        await ClickAsync(preview, "Content/Header/m_Back");
+        Check(initialSoul >= 160 && skillArtwork.Animation == "available", "地图技能返回后未恢复原版可购提示");
+        int availableFrame = skillArtwork.Frame;
+        await WaitUntilAsync(() => skillArtwork.Frame != availableFrame, "官方地图可购发光子动画没有播放");
+        await CaptureAsync("map_skill_entry_available");
         await ClickAsync(map, "m_Skills");
         var form = await WaitForAsync<SkillForm>();
         Check(GF.Procedure.CurrentProcedure is ProcedureMap && !GF.Base.IsGamePaused &&

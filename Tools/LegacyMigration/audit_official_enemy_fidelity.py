@@ -125,12 +125,12 @@ def audit(args):
         if sheet != 'AttackConfig':continue
         source = re.search(r'Monster(\d+)\.hit(\d+(?:-\d+)?)(?![\w-])',str(row.get('LegacyId','')), re.I)
         entry={'id':row['Id'],'source':row.get('LegacyId'),'columns':dict(row)}
-        if row['Id'] in ('2030','2031','2032'):
+        if row.get('LegacyId') in ('official.Monster19.hit1','official.Monster19.hit2','official.Monster19.hit3'):
             # These records belong to both HP-tier body variants; the unsuffixed
             # hit2/hit3 records are already separate independently spawned effects.
             source=re.search(r'Monster(\d+)\.hit(\d+)',row['LegacyId'])
             source_label='hit'+source[2]+'-1'
-        elif row['Id']=='11004':
+        elif row.get('LegacyId')=='official.Monster11.hit3.poison':
             # Nested poison data has no independent enemy action or knockback.
             entry['evidence']='Monster11.hit3.addEffect: poison, 10 seconds, fixed 20 damage per second'
             attacks.append(entry)

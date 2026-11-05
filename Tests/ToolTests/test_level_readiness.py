@@ -67,8 +67,8 @@ class LevelReadinessTests(unittest.TestCase):
             {"legacy_id": "dslj", "id": 9, "name": "地煞灵戒", "owner": "通用", "slot": "饰品"},
         ]
         result = _playable_wardrobe_audit([9], actors, equipment)
-        self.assertEqual(["悟空"], result["required_owners"])
-        self.assertEqual(["tsyj"], [item["legacy_id"] for item in result["required_equipment"]])
+        self.assertEqual(["唐僧", "悟空"], result["required_owners"])
+        self.assertEqual(["tsyj", "tsyp"], [item["legacy_id"] for item in result["required_equipment"]])
         self.assertEqual([], result["errors"])
 
     def test_unknown_wearable_owner_cannot_bypass_wardrobe_audit(self):
@@ -138,6 +138,36 @@ class LevelReadinessTests(unittest.TestCase):
             accepted, errors = _validation_evidence(work, "2-3", "current", "source", owners)
             self.assertNotIn(gate, accepted)
             self.assertIn("--equipment-only", errors[0])
+
+    def test_tangseng_drop_requires_its_official_motion_and_live_equipment_checks(self):
+        actors = {9: {"equipment_drops": ["tsyp"]}}
+        equipment = [{"legacy_id": "tsyp", "id": 17, "name": "天煞羽袍", "owner": "唐僧", "slot": "防具"}]
+        result = _playable_wardrobe_audit([9], actors, equipment)
+        self.assertEqual(["唐僧"], result["required_owners"])
+        self.assertEqual(["tsyp"], [item["legacy_id"] for item in result["required_equipment"]])
+        gate = "playable_equipment_identity_and_motion"
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory)
+            folder = work / "validation/2-3"
+            folder.mkdir(parents=True)
+            log = folder / "wardrobe.log"
+            log.write_text("GARUDA WARDROBE 2-3 PASS\n", encoding="utf-8")
+            path = folder / "evidence.json"
+            command = ["python", "audit_official_tangseng_wardrobe.py",
+                       "validate_tangseng_wardrobe_motion.gd", "--tangseng-equipment-only"]
+            receipt = {"official_label": "2-3", "project_sha256": "current", "inventory_sha256": "source",
+                       "checks": {gate: {"command": command, "exit_code": 0, "log": log.name,
+                                         "log_sha256": hashlib.sha256(log.read_bytes()).hexdigest(),
+                                         "pass_marker": "GARUDA WARDROBE 2-3 PASS"}}}
+            path.write_text(json.dumps(receipt), encoding="utf-8")
+            accepted, errors = _validation_evidence(work, "2-3", "current", "source", ["唐僧"])
+            self.assertIn(gate, accepted)
+            self.assertEqual([], errors)
+            receipt["checks"][gate]["command"].pop(2)
+            path.write_text(json.dumps(receipt), encoding="utf-8")
+            accepted, errors = _validation_evidence(work, "2-3", "current", "source", ["唐僧"])
+            self.assertNotIn(gate, accepted)
+            self.assertIn("validate_tangseng_wardrobe_motion.gd", errors[0])
 
 
 if __name__ == "__main__":
