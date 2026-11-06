@@ -5,10 +5,10 @@
 [ext_resource type="Script" uid="uid://bx0447o7u7wmq" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="script"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_13pf7"]
-size = Vector2(99.05, 119.9)
+size = Vector2(42, 56)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bhk0v"]
-size = Vector2(99.05, 119.9)
+size = Vector2(42, 56)
 
 [node name="TangsengDarkIceEffect" type="Node2D" unique_id=1675906295 node_paths=PackedStringArray("m_Player", "m_HitBox")]
 z_index = 2
@@ -32,11 +32,11 @@ collision_mask = 32
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=1713105488]
-position = Vector2(-81.4, -3)
+position = Vector2(-80, 6)
 shape = SubResource("RectangleShape2D_13pf7")
 
 [node name="RightShape" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=105026672]
-position = Vector2(65.4, 0)
+position = Vector2(67, 9)
 shape = SubResource("RectangleShape2D_bhk0v")
 disabled = true
 

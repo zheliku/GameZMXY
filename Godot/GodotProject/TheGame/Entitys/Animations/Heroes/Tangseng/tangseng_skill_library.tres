@@ -1,8 +1,8 @@
 [gd_resource type="AnimationLibrary" format=3 uid="uid://3vibh7h44moq"]
 
 [ext_resource type="PackedScene" path="res://TheGame/Entitys/Heroes/Tangseng/tangseng_ice_dragon_bolt_effect.tscn" id="1_tangseng_ice_bolt"]
-[ext_resource type="PackedScene" path="res://TheGame/Entitys/Heroes/Tangseng/tangseng_dark_ice_effect.tscn" id="2_tangseng_dark_ice"]
-[ext_resource type="PackedScene" path="res://TheGame/Entitys/Heroes/Tangseng/tangseng_cure_role_effect.tscn" id="3_tangseng_cure"]
+[ext_resource type="PackedScene" uid="uid://bweitcqejnhaf" path="res://TheGame/Entitys/Heroes/Tangseng/tangseng_dark_ice_effect.tscn" id="2_tangseng_dark_ice"]
+[ext_resource type="PackedScene" uid="uid://dp66kp66gq6wr" path="res://TheGame/Entitys/Heroes/Tangseng/tangseng_cure_role_effect.tscn" id="3_tangseng_cure"]
 [ext_resource type="PackedScene" path="res://TheGame/Entitys/Heroes/Tangseng/tangseng_normal_bolt_effect.tscn" id="4_normal_bolt"]
 
 [sub_resource type="Animation" id="dark_ice"]

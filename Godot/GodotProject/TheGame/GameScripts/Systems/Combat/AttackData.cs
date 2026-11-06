@@ -49,6 +49,11 @@ namespace GameLogic.Battle.Attacks
         public bool IsEffect { get; private set; }
 
         /// <summary>
+        /// 伤害归属者、实际施放者和判定节点的值快照。
+        /// </summary>
+        public AttackSource Source { get; private set; }
+
+        /// <summary>
         /// 按攻击中心向两侧击退时使用的世界横坐标；为空时按出招朝向。
         /// </summary>
         public float? KnockbackOriginX { get; private set; }
@@ -70,9 +75,11 @@ namespace GameLogic.Battle.Attacks
         /// <param name="hitProtect">本次命中增加的受击保护值。</param>
         /// <param name="knockbackOriginX">可选的攻击中心世界横坐标；只用于向两侧击退的攻击。</param>
         /// <param name="isEffect">是否由独立效果创建本次攻击。</param>
+        /// <param name="source">本次攻击的来源身份，不保存节点引用。</param>
         /// <returns>已装填并由引用池管理的攻击数据包。</returns>
         public static AttackData Create(int attackId, in CombatantAttributes attacker, float power, DamageKind kind,
-            Vector2 knockback, int direction, int hitProtect, float? knockbackOriginX = null, bool isEffect = false)
+            Vector2 knockback, int direction, int hitProtect, float? knockbackOriginX = null, bool isEffect = false,
+            AttackSource source = default)
         {
             AttackData data = ReferencePool.Acquire<AttackData>();
             data.AttackId = attackId;
@@ -82,6 +89,11 @@ namespace GameLogic.Battle.Attacks
             data.Knockback = knockback;
             data.Direction = direction >= 0 ? 1 : -1;
             data.IsEffect = isEffect;
+            data.Source = source with
+            {
+                OwnerEntityId = source.OwnerEntityId != 0
+                ? source.OwnerEntityId : attacker.ActorId.GetValueOrDefault()
+            };
             data.KnockbackOriginX = knockbackOriginX;
             data.HitProtect = hitProtect;
             return data;
@@ -109,6 +121,7 @@ namespace GameLogic.Battle.Attacks
             Knockback = Vector2.Zero;
             Direction = 1;
             IsEffect = false;
+            Source = default;
             KnockbackOriginX = null;
             HitProtect = 0;
             m_HitTargets.Clear();

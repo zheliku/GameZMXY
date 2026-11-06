@@ -601,10 +601,10 @@ namespace GameLogic.Entity
         /// 公式不写在这里（GameScripts/AGENTS.md：命中回调不写公式）。
         /// </summary>
         /// <param name="data">调用方拥有的攻击快照，仅在结算期间读取。</param>
-        /// <param name="attackerEntityId">攻击方运行编号；无实体来源时为零。</param>
         /// <returns>实际伤害与闪避、暴击结果。</returns>
-        public DamageResult ReceiveHit(AttackData data, int attackerEntityId)
+        public DamageResult ReceiveHit(AttackData data)
         {
+            int attackerEntityId = data.Source.OwnerEntityId;
             if (Dead || Invulnerable)
             {
                 return DamageResult.Missed(data.Kind);
@@ -622,7 +622,7 @@ namespace GameLogic.Entity
                 GF.Sound.PlayConfigured(m_HurtSoundId);
             }
 
-            GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == CombatSide.Hero, HeadPosition, attackerEntityId));
+            GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == CombatSide.Hero, HeadPosition, data.Source));
             if (died)
             {
                 Died?.Invoke(this);
@@ -707,6 +707,15 @@ namespace GameLogic.Entity
         // ---- 内部方法与扩展点 ----
 
         /// <summary>
+        /// 捕获本次显示的攻击来源；身体攻击的施放者与判定节点相同。
+        /// </summary>
+        /// <returns>不持有节点的来源身份快照。</returns>
+        protected AttackSource CaptureAttackSource()
+        {
+            return new AttackSource(Id, EntityType, GetInstanceId(), GetInstanceId());
+        }
+
+        /// <summary>
         /// 将动画名转换为缓存的 StringName，避免播放请求分配。
         /// </summary>
         /// <param name="anim">动画名称。</param>
@@ -753,7 +762,7 @@ namespace GameLogic.Entity
             float power = attributes.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf())
                 + MathF.Round(Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf()), MidpointRounding.AwayFromZero);
             m_ActiveAttackData = AttackData.Create(attack.Id, attributes, power * powerMultiplier, attack.DamageKind, attack.Knockback, Facing,
-                attack.HitProtect);
+                attack.HitProtect, source: CaptureAttackSource());
         }
 
         /// <summary>
@@ -822,7 +831,7 @@ namespace GameLogic.Entity
             }
 
             // 命中后播放音效，并将有效命中收益交给具体角色。
-            DamageResult result = target.ReceiveHit(m_ActiveAttackData, Id);
+            DamageResult result = target.ReceiveHit(m_ActiveAttackData);
             if (!result.IsMiss)
             {
                 GF.Sound.PlayConfigured(m_HitSoundId);
@@ -883,6 +892,17 @@ namespace GameLogic.Entity
             return (float)(animation.HasMarker(ActionEndMarker)
                 ? animation.GetMarkerTime(ActionEndMarker)
                 : animation.Length);
+        }
+
+        /// <summary>
+        /// 从播放器查询动作完成事实，状态不再复制动画时长或维护第二份播放计时。
+        /// </summary>
+        /// <param name="animation">要核对的角色动作。</param>
+        /// <returns>动作已离开，或已到原生complete标记时为true。</returns>
+        public bool IsAnimationComplete(string animation)
+        {
+            return m_RequestedAnim != animation ||
+                m_AnimPlayer.CurrentAnimationPosition + 0.000001 >= GetActionDuration(animation);
         }
     }
 }

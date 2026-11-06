@@ -1,0 +1,38 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_1_01.png" id="hit_1_1"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_1_02.png" id="hit_1_2"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_1_03.png" id="hit_1_3"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_1_04.png" id="hit_1_4"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_1_05.png" id="hit_1_5"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_1_06.png" id="hit_1_6"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_1_07.png" id="hit_1_7"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_1_08.png" id="hit_1_8"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_2_01.png" id="hit_2_1"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_2_02.png" id="hit_2_2"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_2_03.png" id="hit_2_3"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_2_04.png" id="hit_2_4"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_2_05.png" id="hit_2_5"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_2_06.png" id="hit_2_6"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_2_07.png" id="hit_2_7"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_hit_2_08.png" id="hit_2_8"]
+
+
+
+[resource]
+animations = [{"frames": [{"duration": 1.0, "texture": ExtResource("hit_1_1")},
+{"duration": 1.0, "texture": ExtResource("hit_1_2")},
+{"duration": 1.0, "texture": ExtResource("hit_1_3")},
+{"duration": 1.0, "texture": ExtResource("hit_1_4")},
+{"duration": 1.0, "texture": ExtResource("hit_1_5")},
+{"duration": 1.0, "texture": ExtResource("hit_1_6")},
+{"duration": 1.0, "texture": ExtResource("hit_1_7")},
+{"duration": 1.0, "texture": ExtResource("hit_1_8")}], "loop": false, "name": &"hit_1", "speed": 24.0},
+{"frames": [{"duration": 1.0, "texture": ExtResource("hit_2_1")},
+{"duration": 1.0, "texture": ExtResource("hit_2_2")},
+{"duration": 1.0, "texture": ExtResource("hit_2_3")},
+{"duration": 1.0, "texture": ExtResource("hit_2_4")},
+{"duration": 1.0, "texture": ExtResource("hit_2_5")},
+{"duration": 1.0, "texture": ExtResource("hit_2_6")},
+{"duration": 1.0, "texture": ExtResource("hit_2_7")},
+{"duration": 1.0, "texture": ExtResource("hit_2_8")}], "loop": false, "name": &"hit_2", "speed": 24.0}]

@@ -206,6 +206,7 @@ namespace GameLogic.Level
             m_ExitRequested = false;
             m_LootRandom.Randomize();
             m_Player.Died += OnHeroDied;
+            m_Player.HealthRestored += OnHeroHealthRestored;
             this.GetModel<ProfileModel>().Slots.Register(OnEquipmentChanged);
             LevelModel.Outcome.Register(OnSessionEnded);
             m_SessionActive = true;
@@ -552,6 +553,7 @@ namespace GameLogic.Level
             }
 
             m_Player.Died -= OnHeroDied;
+            m_Player.HealthRestored -= OnHeroHealthRestored;
             if (m_HeroDeathPresentation == HeroDeathPresentation.Playing)
             {
                 m_Player.DeathPresentationFinished -= OnHeroDeathPresentationFinished;

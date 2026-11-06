@@ -57,6 +57,13 @@ namespace GameLogic.Heroes.Body
         HeroActionData ActionData { get; }
 
         /// <summary>
+        /// 查询指定动作是否到达原生完成标记，或已切换到其他动作。
+        /// </summary>
+        /// <param name="animation">角色动画名。</param>
+        /// <returns>动作已经完成或离开时为true。</returns>
+        bool IsAnimationComplete(string animation);
+
+        /// <summary>
         /// 在单向平台上执行向下穿越；普通地面与空中不执行。
         /// </summary>
         /// <returns>是否从可穿平台向下离开。</returns>

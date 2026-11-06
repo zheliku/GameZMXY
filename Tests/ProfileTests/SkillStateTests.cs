@@ -328,6 +328,9 @@ namespace GameLogic.Profile.Tests
         private sealed class Motion(TestGameScope scope) : ISkillActor, IHeroBody
         {
             /// <inheritdoc />
+            public bool IsAnimationComplete(string animation) => true;
+
+            /// <inheritdoc />
             IArchitecture IBelongToArchitecture.GetArchitecture()
             {
                 return scope;

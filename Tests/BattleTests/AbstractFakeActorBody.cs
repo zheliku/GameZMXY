@@ -22,6 +22,17 @@ namespace GameLogic.Battle.Tests
         /// </summary>
         public string LastAnim = "";
         /// <summary>
+        /// 测试注入的动画完成事实，与真实宿主的播放器查询对应。
+        /// </summary>
+        public bool AnimationComplete;
+
+        /// <summary>
+        /// 查询假动画的完成事实或切换状态。
+        /// </summary>
+        /// <param name="animation">待核对的动作。</param>
+        /// <returns>完成或已经切换时为true。</returns>
+        public bool IsAnimationComplete(string animation) => LastAnim != animation || AnimationComplete;
+        /// <summary>
         /// 最近一次重播使用的原生起点标记。
         /// </summary>
         public string LastStartMarker;
@@ -126,6 +137,7 @@ namespace GameLogic.Battle.Tests
         /// <param name="startMarker">可选原生起点标记。</param>
         public void RestartAnim(string anim, string startMarker = null)
         {
+            AnimationComplete = false;
             LastAnim = anim;
             LastStartMarker = startMarker;
             Anims.Add(anim);

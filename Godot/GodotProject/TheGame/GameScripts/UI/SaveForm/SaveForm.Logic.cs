@@ -19,11 +19,22 @@ namespace GameLogic.UI
         private bool m_IsBound; // 本周期拥有目录订阅，关闭或失败后不得在回池时重取模型。
 
         private (TextureButton Button, Label Name, Label Date)[] m_SlotViews; // 六个存档格的控件引用，不另建格子脚本。
+        private TextureButton[] m_DeleteButtons; // 六个格内的删除入口，只有已有可读档案启用。
+        private Control m_DeleteConfirmation; // 存档页自己的确认层，保持前端视觉一致。
+        private Label m_DeleteMessage; // 当前确认格号和不可恢复提示。
+        private TextureButton m_DeleteCancel; // 取消确认，不触碰存档。
+        private TextureButton m_DeleteConfirm; // 确认后才向流程提交删除请求。
+        private int m_DeleteSlot; // 当前等待确认的格号。
 
         /// <summary>
         /// 由所属流程处理 SaveSlotSelected；参数为本次窗口编号及选择编号。
         /// </summary>
         public event Action<int, int> SaveSlotSelected;
+
+        /// <summary>
+        /// 由所属流程处理删除存档请求；参数为窗口编号及格号。
+        /// </summary>
+        public event Action<int, int> SaveSlotDeleteRequested;
 
         /// <summary>
         /// 绑定 GGF 字段与一次性的按钮订阅。
@@ -60,12 +71,22 @@ namespace GameLogic.UI
             {
                 throw new InvalidOperationException("存档页必须为六格。");
             }
+            m_DeleteButtons = m_SlotViews.Select(slot => slot.Button.GetNode<TextureButton>("Delete")).ToArray();
+            m_DeleteConfirmation = GetNode<Control>("DeleteConfirmation");
+            m_DeleteMessage = m_DeleteConfirmation.GetNode<Label>("Panel/Message");
+            m_DeleteCancel = m_DeleteConfirmation.GetNode<TextureButton>("Panel/Cancel");
+            m_DeleteConfirm = m_DeleteConfirmation.GetNode<TextureButton>("Panel/Confirm");
             // 只在新建实例时收集本表单的固定格子，复用期间沿用引用与订阅。
             for (int i = 0; i < m_SlotViews.Length; i++)
             {
                 int number = i + 1;
                 m_SlotViews[i].Button.Pressed += () => SelectSlot(number);
+                m_DeleteButtons[i].Pressed += () => RequestDelete(number);
+                m_DeleteButtons[i].MouseEntered += () => SetDeleteHover(number, true);
+                m_DeleteButtons[i].MouseExited += () => SetDeleteHover(number, false);
             }
+            m_DeleteCancel.Pressed += CancelDelete;
+            m_DeleteConfirm.Pressed += ConfirmDelete;
         }
 
         /// <summary>
@@ -96,6 +117,8 @@ namespace GameLogic.UI
         public void OnClose(bool isShutdown, object userData)
         {
             SaveSlotSelected = null;
+            SaveSlotDeleteRequested = null;
+            CancelDelete();
             Unbind();
             if (!isShutdown && IsInstanceValid(this))
             {
@@ -108,6 +131,7 @@ namespace GameLogic.UI
         /// </summary>
         public void OnRecycle()
         {
+            CancelDelete();
             Unbind();
             m_SerialId = 0;
             m_DepthInUIGroup = 0;
@@ -220,6 +244,12 @@ namespace GameLogic.UI
                 var slot = ready ? directory.Slots[i] : null;
                 button.Disabled = slot == null || slot.State == SaveSlotState.Unreadable;
                 button.MouseDefaultCursorShape = button.Disabled ? CursorShape.Arrow : CursorShape.PointingHand;
+                bool canDelete = ready && slot?.State == SaveSlotState.Occupied;
+                m_DeleteButtons[i].Visible = canDelete;
+                m_DeleteButtons[i].Disabled = !canDelete;
+                m_DeleteButtons[i].Modulate = canDelete ? new Color(1f, 1f, 1f, 0.42f) : Colors.Transparent;
+                m_DeleteButtons[i].MouseDefaultCursorShape = !canDelete
+                    ? CursorShape.Arrow : CursorShape.PointingHand;
                 if (slot?.State == SaveSlotState.Occupied)
                 {
                     name.Text = $"{slot.HeroName} · Lv.{slot.Level}";
@@ -231,6 +261,16 @@ namespace GameLogic.UI
                     date.Text = "";
                 }
             }
+        }
+
+        /// <summary>
+        /// 鼠标靠近时提亮可用的删除入口。
+        /// </summary>
+        /// <param name="number">存档格号。</param>
+        /// <param name="hovered">是否处于鼠标悬停。</param>
+        private void SetDeleteHover(int number, bool hovered)
+        {
+            m_DeleteButtons[number - 1].Modulate = hovered ? Colors.White : new Color(1f, 1f, 1f, 0.42f);
         }
 
         /// <summary>
@@ -247,6 +287,53 @@ namespace GameLogic.UI
 
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
             SaveSlotSelected?.Invoke(SerialId, number);
+        }
+
+        /// <summary>
+        /// 打开存档页内的确认层，不直接删除档案。
+        /// </summary>
+        /// <param name="number">要删除的格号。</param>
+        private void RequestDelete(int number)
+        {
+            if (!GF.UI.HasUIForm(SerialId) || this.GetModel<SaveModel>().Phase != SaveListState.Ready ||
+                this.GetModel<SaveModel>().Slots[number - 1].State != SaveSlotState.Occupied)
+            {
+                return;
+            }
+
+            m_DeleteSlot = number;
+            m_DeleteMessage.Text = $"确定删除第 {number} 个存档吗？\n删除后无法恢复。";
+            m_DeleteConfirmation.Show();
+            m_DeleteCancel.GrabFocus();
+        }
+
+        /// <summary>
+        /// 关闭确认层并清除待确认的格号。
+        /// </summary>
+        private void CancelDelete()
+        {
+            m_DeleteSlot = 0;
+            if (m_DeleteConfirmation != null)
+            {
+                m_DeleteConfirmation.Hide();
+            }
+        }
+
+        /// <summary>
+        /// 确认后才提交当前窗口仍有效的删除请求。
+        /// </summary>
+        private void ConfirmDelete()
+        {
+            if (m_DeleteSlot <= 0 || !GF.UI.HasUIForm(SerialId))
+            {
+                CancelDelete();
+                return;
+            }
+
+            int slot = m_DeleteSlot;
+            CancelDelete();
+            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            SaveSlotDeleteRequested?.Invoke(SerialId, slot);
         }
 
         /// <summary>

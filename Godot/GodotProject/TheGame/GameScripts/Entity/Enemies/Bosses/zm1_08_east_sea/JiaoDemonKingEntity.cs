@@ -22,7 +22,6 @@ namespace GameLogic.Enemies
             () => new DistanceSkillEngageState()); // 本首领的原生范围与冷却仍由自身提供。
 
         [Export] private PackedScene m_DragonWaveScene; // 原生第五源帧生成的龙波。
-        [Export] private PackedScene m_DeathScene; // 共享官方BossDead旋涡。
         [Export] private AnimatedSprite2D m_BackHit; // 背部承受身体攻击时的原生十帧反馈。
         private float m_InvulnerabilityLeft; // 旋转开始后的剩余无敌秒数，暂停不推进。
 
@@ -176,18 +175,5 @@ namespace GameLogic.Enemies
                 CaptureCombatAttributes(), power, false, ReleaseSkillEffect, hitSoundId: HitSoundId);
         }
 
-        /// <summary>
-        /// 身体闪烁结束时创建共享死亡旋涡，旋涡结束才允许死亡状态回收本实体。
-        /// </summary>
-        private void SpawnBossDeathAnimEvent()
-        {
-            if (m_BodyFsm.CurrentState is not EnemyDeathState state)
-            {
-                return;
-            }
-
-            var effect = RentSkillEffect(m_DeathScene);
-            effect.Show(null, GlobalPosition, Facing, CaptureCombatAttributes(), 0, false, ReleaseSkillEffect, state.CompleteEffect);
-        }
     }
 }

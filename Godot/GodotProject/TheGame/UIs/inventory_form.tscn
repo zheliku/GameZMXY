@@ -718,20 +718,29 @@ theme_override_font_sizes/font_size = 17
 text = "EXP"
 vertical_alignment = 1
 
-[node name="m_Experience" type="TextureProgressBar" parent="Window/CharacterPanel/Experience" unique_id=2012779201]
+[node name="Frame" type="TextureRect" parent="Window/CharacterPanel/Experience"]
 layout_mode = 0
 offset_left = 37.0
 offset_top = 1.0
 offset_right = 274.0
 offset_bottom = 21.0
 mouse_filter = 2
+texture = ExtResource("exp_frame")
+expand_mode = 1
+
+[node name="m_Experience" type="TextureProgressBar" parent="Window/CharacterPanel/Experience" unique_id=2012779201]
+layout_mode = 0
+offset_left = 39.0
+offset_top = 3.0
+offset_right = 272.0
+offset_bottom = 19.0
+mouse_filter = 2
 step = 0.0
 nine_patch_stretch = true
 stretch_margin_left = 10
-stretch_margin_top = 10
+stretch_margin_top = 2
 stretch_margin_right = 10
-stretch_margin_bottom = 10
-texture_under = ExtResource("exp_frame")
+stretch_margin_bottom = 2
 texture_progress = ExtResource("exp_fill")
 
 [node name="m_ExperienceText" type="Label" parent="Window/CharacterPanel/Experience" unique_id=952829141]

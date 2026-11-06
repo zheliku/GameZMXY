@@ -301,11 +301,13 @@ public sealed partial class UiSmokeScenario
             SmokeInspection.FreezeAi(m_Monster);
             await WaitUntilAsync(() => m_Monster.OnFloor, "死亡鞭打夹具未落地");
             var lethalData = GameLogic.Battle.Attacks.AttackData.Create(0, default, m_Monster.MaxHp * 100f,
-                GameConfig.Battle.DamageKind.Real, Vector2.Zero, hero.Id, 0);
+                GameConfig.Battle.DamageKind.Real, Vector2.Zero, hero.Facing, 0,
+                source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, hero.Config.EntityId,
+                    hero.GetInstanceId(), hero.GetInstanceId()));
             var lethalResult = default(GameLogic.Battle.Damage.DamageResult);
             try
             {
-                lethalResult = m_Monster.ReceiveHit(lethalData, hero.Id);
+                lethalResult = m_Monster.ReceiveHit(lethalData);
             }
             finally
             {

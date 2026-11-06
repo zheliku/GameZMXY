@@ -7,6 +7,12 @@
 [ext_resource type="Texture2D" uid="uid://dhvpe5co288lm" path="res://TheGame/Sprites/UI/frontend/save_slot_hover.png" id="hover"]
 [ext_resource type="Texture2D" uid="uid://mkt51coh4f15" path="res://TheGame/Sprites/UI/frontend/save_slot_normal.png" id="normal"]
 [ext_resource type="Script" uid="uid://qer77g8x3nwt" path="res://TheGame/GameScripts/UI/SaveForm/SaveForm.cs" id="script"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/delete_confirm_panel.png" id="delete_panel"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/delete_confirm_cancel.png" id="delete_cancel"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/delete_confirm_cancel_hover.png" id="delete_cancel_hover"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/delete_confirm_confirm.png" id="delete_confirm"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/delete_confirm_confirm_hover.png" id="delete_confirm_hover"]
+[ext_resource type="FontFile" path="res://TheGame/MainPack/Fonts/df_song_w3.ttc" id="message_font"]
 
 [node name="SaveForm" type="Control" unique_id=462654616 node_paths=PackedStringArray("m_Close", "m_Status", "m_Slot1", "m_Name1", "m_Date1", "m_Slot2", "m_Name2", "m_Date2", "m_Slot3", "m_Name3", "m_Date3", "m_Slot4", "m_Name4", "m_Date4", "m_Slot5", "m_Name5", "m_Date5", "m_Slot6", "m_Name6", "m_Date6")]
 layout_mode = 3
@@ -99,11 +105,25 @@ vertical_alignment = 1
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
-offset_right = 249.0
+offset_right = 208.0
 offset_bottom = 73.0
 theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 vertical_alignment = 1
+
+[node name="Delete" type="TextureButton" parent="Slots/m_Slot1"]
+layout_mode = 0
+offset_left = 226.0
+offset_top = 29.0
+offset_right = 250.0
+offset_bottom = 53.0
+mouse_default_cursor_shape = 2
+focus_mode = 0
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("close")
+texture_hover = ExtResource("close_hover")
+texture_pressed = ExtResource("close_hover")
 
 [node name="m_Slot2" type="TextureButton" parent="Slots" unique_id=1021501749]
 layout_mode = 0
@@ -144,11 +164,25 @@ vertical_alignment = 1
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
-offset_right = 249.0
+offset_right = 208.0
 offset_bottom = 73.0
 theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 vertical_alignment = 1
+
+[node name="Delete" type="TextureButton" parent="Slots/m_Slot2"]
+layout_mode = 0
+offset_left = 226.0
+offset_top = 29.0
+offset_right = 250.0
+offset_bottom = 53.0
+mouse_default_cursor_shape = 2
+focus_mode = 0
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("close")
+texture_hover = ExtResource("close_hover")
+texture_pressed = ExtResource("close_hover")
 
 [node name="m_Slot3" type="TextureButton" parent="Slots" unique_id=292185257]
 layout_mode = 0
@@ -189,11 +223,25 @@ vertical_alignment = 1
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
-offset_right = 249.0
+offset_right = 208.0
 offset_bottom = 73.0
 theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 vertical_alignment = 1
+
+[node name="Delete" type="TextureButton" parent="Slots/m_Slot3"]
+layout_mode = 0
+offset_left = 226.0
+offset_top = 29.0
+offset_right = 250.0
+offset_bottom = 53.0
+mouse_default_cursor_shape = 2
+focus_mode = 0
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("close")
+texture_hover = ExtResource("close_hover")
+texture_pressed = ExtResource("close_hover")
 
 [node name="m_Slot4" type="TextureButton" parent="Slots" unique_id=298249113]
 layout_mode = 0
@@ -234,11 +282,25 @@ vertical_alignment = 1
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
-offset_right = 249.0
+offset_right = 208.0
 offset_bottom = 73.0
 theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 vertical_alignment = 1
+
+[node name="Delete" type="TextureButton" parent="Slots/m_Slot4"]
+layout_mode = 0
+offset_left = 226.0
+offset_top = 29.0
+offset_right = 250.0
+offset_bottom = 53.0
+mouse_default_cursor_shape = 2
+focus_mode = 0
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("close")
+texture_hover = ExtResource("close_hover")
+texture_pressed = ExtResource("close_hover")
 
 [node name="m_Slot5" type="TextureButton" parent="Slots" unique_id=287283765]
 layout_mode = 0
@@ -279,11 +341,25 @@ vertical_alignment = 1
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
-offset_right = 249.0
+offset_right = 208.0
 offset_bottom = 73.0
 theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 vertical_alignment = 1
+
+[node name="Delete" type="TextureButton" parent="Slots/m_Slot5"]
+layout_mode = 0
+offset_left = 226.0
+offset_top = 29.0
+offset_right = 250.0
+offset_bottom = 53.0
+mouse_default_cursor_shape = 2
+focus_mode = 0
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("close")
+texture_hover = ExtResource("close_hover")
+texture_pressed = ExtResource("close_hover")
 
 [node name="m_Slot6" type="TextureButton" parent="Slots" unique_id=1380690893]
 layout_mode = 0
@@ -324,11 +400,25 @@ vertical_alignment = 1
 layout_mode = 0
 offset_left = 62.0
 offset_top = 43.0
-offset_right = 249.0
+offset_right = 208.0
 offset_bottom = 73.0
 theme_override_fonts/font = ExtResource("font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 vertical_alignment = 1
+
+[node name="Delete" type="TextureButton" parent="Slots/m_Slot6"]
+layout_mode = 0
+offset_left = 226.0
+offset_top = 29.0
+offset_right = 250.0
+offset_bottom = 53.0
+mouse_default_cursor_shape = 2
+focus_mode = 0
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("close")
+texture_hover = ExtResource("close_hover")
+texture_pressed = ExtResource("close_hover")
 
 [node name="m_Close" type="TextureButton" parent="." unique_id=1698459297]
 layout_mode = 0
@@ -351,3 +441,81 @@ offset_bottom = 514.0
 theme_override_fonts/font = ExtResource("font")
 theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
+
+[node name="DeleteConfirmation" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+z_index = 1
+
+[node name="Shade" type="ColorRect" parent="DeleteConfirmation"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.015, 0.012, 0.01, 0.68)
+
+[node name="Panel" type="TextureRect" parent="DeleteConfirmation"]
+layout_mode = 0
+offset_left = 296.5
+offset_top = 195.5
+offset_right = 643.5
+offset_bottom = 393.5
+mouse_filter = 0
+texture = ExtResource("delete_panel")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="Message" type="Label" parent="DeleteConfirmation/Panel"]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 39.0
+offset_right = 313.0
+offset_bottom = 133.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 2
+theme_override_constants/shadow_outline_size = 9
+theme_override_fonts/font = ExtResource("message_font")
+theme_override_font_sizes/font_size = 17
+text = "确定删除这个存档吗？\n删除后无法恢复。"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 1
+
+[node name="Cancel" type="TextureButton" parent="DeleteConfirmation/Panel"]
+layout_mode = 0
+offset_left = 35.0
+offset_top = 145.0
+offset_right = 130.0
+offset_bottom = 193.0
+mouse_default_cursor_shape = 2
+focus_mode = 2
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("delete_cancel")
+texture_hover = ExtResource("delete_cancel_hover")
+texture_pressed = ExtResource("delete_cancel_hover")
+
+[node name="Confirm" type="TextureButton" parent="DeleteConfirmation/Panel"]
+layout_mode = 0
+offset_left = 212.0
+offset_top = 145.0
+offset_right = 307.0
+offset_bottom = 193.0
+mouse_default_cursor_shape = 2
+focus_mode = 2
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("delete_confirm")
+texture_hover = ExtResource("delete_confirm_hover")
+texture_pressed = ExtResource("delete_confirm_hover")

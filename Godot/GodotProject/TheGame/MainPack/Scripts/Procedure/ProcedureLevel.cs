@@ -103,15 +103,18 @@ public class ProcedureLevel : ProcedureBase
                                       ?? throw new InvalidOperationException($"关卡配置不存在：LevelId={selectedLevelId}");
             m_LevelScenePath = levelConfig.ScenePath;
             string scenePath = m_LevelScenePath;
+            var loadingWatch = System.Diagnostics.Stopwatch.StartNew();
             Log.Info("[ProcedureLevel] 加载关卡场景：{0}", m_LevelScenePath);
 
             // 场景加载本身不取消：若流程在加载中离开，继续等待成功事件后由 entrySerial 分支卸载，避免 additive 场景泄漏。
             string battleFormPath = tables.TbUIFormConfig.DataList.Single(form => form.UIFormId == UIFormId.BattleForm).AssetPath;
             var battleFormAsset = GF.Resource.LoadAssetAsync(battleFormPath);
+            var heroConfig = tables.TbHeroConfig.Get(profile.ActiveHeroId);
+            var heroAsset = GF.Resource.LoadAssetAsync(tables.TbEntityConfig.Get(heroConfig.EntityId).AssetPath);
             Task<Node2D> levelScene = LoadLevelSceneAsync(scenePath, CancellationToken.None);
             try
             {
-                await Task.WhenAll(levelScene, battleFormAsset);
+                await Task.WhenAll(levelScene, battleFormAsset, heroAsset);
             }
             catch
             {
@@ -124,6 +127,7 @@ public class ProcedureLevel : ProcedureBase
                 throw;
             }
             Node2D levelNode = levelScene.Result;
+            Log.Info("[ProcedureLevel] 加载耗时：场景与HUD资源 {0} ms", loadingWatch.ElapsedMilliseconds);
             if (entrySerial != m_EntrySerial)
             {
                 if (m_LevelOwnerEntry == 0 && GF.Scene.IsSceneLoaded(scenePath))
@@ -153,8 +157,9 @@ public class ProcedureLevel : ProcedureBase
             levelViewController.EntranceOpacityChanged += OnEntranceOpacityChanged;
 
             // 档案身份决定实体资源；英雄共用同一装配与异步生命周期。
-            var heroConfig = tables.TbHeroConfig.Get(profile.ActiveHeroId);
             AbstractHeroEntity hero = await entities.ShowEntityAsync<AbstractHeroEntity>(heroConfig.EntityId);
+            GC.KeepAlive(heroAsset.Result);
+            Log.Info("[ProcedureLevel] 加载耗时：英雄显示 {0} ms", loadingWatch.ElapsedMilliseconds);
             if (entrySerial != m_EntrySerial)
             {
                 entities.HideEntitySafe(hero);
@@ -183,6 +188,7 @@ public class ProcedureLevel : ProcedureBase
             }
 
             await battleFormReady.Task.WaitAsync(cancellationToken);
+            Log.Info("[ProcedureLevel] 加载耗时：HUD就绪 {0} ms", loadingWatch.ElapsedMilliseconds);
             // 保持预载资源存活到 GGF 窗口取得自己的资源引用，不另建常驻缓存。
             GC.KeepAlive(battleFormAsset.Result);
 

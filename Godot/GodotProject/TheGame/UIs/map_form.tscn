@@ -116,7 +116,38 @@ shader_parameter/line_thickness = 0.0
 
 [sub_resource type="StyleBoxEmpty" id="skills_empty"]
 
-[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Settings", "m_Skills", "m_SkillsArtwork", "m_Back", "m_Huaguoshan", "m_Shuiliandong", "m_Taohuayuan", "m_Save", "m_LocationAnimation", "m_Bianfuku", "m_Qixingdong", "m_Jialuoluo", "m_Qianan", "m_Donghai", "m_Shazhiwoliu", "m_Niumogu")]
+[sub_resource type="Animation" id="settings_reset"]
+resource_name = "RESET"
+length = 0.001
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:scale")
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="settings_hover"]
+resource_name = "hover"
+length = 0.8
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:scale")
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4, 0.8),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.04, 1.04), Vector2(1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="settings_animations"]
+_data = {
+&"RESET": SubResource("settings_reset"),
+&"hover": SubResource("settings_hover")
+}
+
+[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Settings", "m_SettingsAnimation", "m_Skills", "m_SkillsArtwork", "m_Back", "m_Huaguoshan", "m_Shuiliandong", "m_Taohuayuan", "m_Save", "m_LocationAnimation", "m_Bianfuku", "m_Qixingdong", "m_Jialuoluo", "m_Qianan", "m_Donghai", "m_Shazhiwoliu", "m_Niumogu")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -126,6 +157,7 @@ grow_vertical = 2
 theme = ExtResource("theme")
 script = ExtResource("script")
 m_Settings = NodePath("m_Settings")
+m_SettingsAnimation = NodePath("m_Settings/m_SettingsAnimation")
 m_Skills = NodePath("m_Skills")
 m_SkillsArtwork = NodePath("m_Skills/Artwork")
 m_Back = NodePath("m_Back")
@@ -553,18 +585,19 @@ mouse_default_cursor_shape = 2
 texture_normal = ExtResource("save")
 texture_hover = ExtResource("save")
 
-[node name="m_Back" type="TextureButton" parent="." unique_id=2059881241]
+[node name="m_Settings" type="TextureButton" parent="." unique_id=1175108554]
 layout_mode = 0
 offset_left = 16.0
 offset_top = 294.0
 offset_right = 128.0
 offset_bottom = 408.0
+pivot_offset = Vector2(56, 57)
 focus_mode = 0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("return_title")
 texture_hover = ExtResource("return_title")
 
-[node name="Caption" type="Label" parent="m_Back" unique_id=1598122156]
+[node name="Caption" type="Label" parent="m_Settings" unique_id=1598122156]
 layout_mode = 0
 offset_left = 17.0
 offset_top = 86.0
@@ -575,9 +608,12 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
 theme_override_fonts/font = ExtResource("caption_font")
 theme_override_font_sizes/font_size = 15
-text = "返回主菜单"
+text = "游戏设置"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="m_SettingsAnimation" type="AnimationPlayer" parent="m_Settings"]
+libraries/ = SubResource("settings_animations")
 
 [node name="m_LocationAnimation" type="AnimationPlayer" parent="." unique_id=328441174]
 libraries/bianfuku = ExtResource("29_0mcer")
@@ -591,7 +627,7 @@ libraries/shazhiwoliu = ExtResource("44_nkmx7")
 libraries/shuiliandong = ExtResource("30_s3lwo")
 libraries/taohuayuan = ExtResource("31_0mcer")
 
-[node name="m_Settings" type="Button" parent="." unique_id=1175108554]
+[node name="m_Back" type="Button" parent="." unique_id=2059881241]
 layout_mode = 0
 offset_left = 14.0
 offset_top = 444.0
@@ -603,8 +639,9 @@ theme_override_colors/font_color = Color(0.93, 0.65, 0.1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
 theme_override_fonts/font = ExtResource("caption_font")
-theme_override_font_sizes/font_size = 23
-text = "游戏设置"
+theme_override_font_sizes/font_size = 19
+text = "返回主菜单"
+flat = true
 
 [node name="m_Skills" type="Button" parent="."]
 layout_mode = 0

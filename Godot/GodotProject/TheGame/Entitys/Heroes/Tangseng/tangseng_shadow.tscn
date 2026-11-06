@@ -1,19 +1,35 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://cb5mym40j8ora"]
 
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Heroes/Tangseng/Skills/TangsengWaterCloneNode.cs" id="1_shadow_script"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/tangseng_shadow_atlas.png" id="2_shadow_texture"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Heroes/Tangseng/tangseng_water_clone_library.tres" id="3_animation"]
+[ext_resource type="Script" uid="uid://cudf4o2ko3q1f" path="res://TheGame/GameScripts/Entity/Heroes/Tangseng/Skills/TangsengWaterCloneNode.cs" id="1_shadow_script"]
+[ext_resource type="Texture2D" uid="uid://bsrwij452d3fy" path="res://TheGame/Sprites/Characters/Heroes/tangseng/tangseng_shadow_atlas.png" id="2_shadow_texture"]
+[ext_resource type="AnimationLibrary" uid="uid://dqw5wcclmx215" path="res://TheGame/Entitys/Animations/Heroes/Tangseng/tangseng_water_clone_library.tres" id="3_animation"]
 
-[node name="TangsengWaterClone" type="Node2D" node_paths=PackedStringArray("m_Player")]
+[sub_resource type="CapsuleShape2D" id="body_shape"]
+radius = 22.50061
+height = 88.4
+
+[node name="TangsengWaterClone" type="CharacterBody2D" unique_id=1771354943 node_paths=PackedStringArray("m_Player", "m_Body")]
 z_index = 1
+collision_layer = 0
+collision_mask = 8201
+floor_constant_speed = true
+floor_max_angle = 0.87266463
+floor_snap_length = 12.0
 script = ExtResource("1_shadow_script")
 m_Player = NodePath("AnimationPlayer")
+m_Body = NodePath("m_Body")
 
-[node name="m_Body" type="Sprite2D" parent="."]
-position = Vector2(0, -28)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1535332897]
+position = Vector2(0.5, -6.2)
+shape = SubResource("body_shape")
+
+[node name="m_Body" type="Sprite2D" parent="." unique_id=962981257]
+position = Vector2(0, -33)
+scale = Vector2(0.9, 0.9)
 texture = ExtResource("2_shadow_texture")
 hframes = 6
 vframes = 20
+frame = 16
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1086632103]
 libraries/ = ExtResource("3_animation")

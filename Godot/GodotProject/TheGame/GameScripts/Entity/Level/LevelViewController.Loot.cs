@@ -128,6 +128,15 @@ namespace GameLogic.Level
         }
 
         /// <summary>
+        /// 显示本关英雄已完成的主动治疗，本体与分身复用同一恢复数字。
+        /// </summary>
+        /// <param name="amount">官方技能的恢复量，满血时也保留反馈。</param>
+        private void OnHeroHealthRestored(int amount)
+        {
+            m_FloatingText.ShowRecovery(m_Player.GlobalPosition, amount, RecoveryKind.Health);
+        }
+
+        /// <summary>
         /// 拾取或过期后只回收本关拥有的实例。
         /// </summary>
         /// <param name="item">已经停止处理的节点。</param>

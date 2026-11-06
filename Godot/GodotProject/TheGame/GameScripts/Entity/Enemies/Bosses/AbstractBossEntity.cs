@@ -1,3 +1,5 @@
+using GameLogic.Enemies.Body;
+using Godot;
 
 namespace GameLogic.Enemies
 {
@@ -6,6 +8,26 @@ namespace GameLogic.Enemies
     /// </summary>
     public abstract partial class AbstractBossEntity : AbstractEnemyEntity
     {
+        private static readonly EnemyBodyPreset m_DeathEffectPreset = EnemyBodyPresets.Walk(true); // 普通地面首领共享状态配方，实例不共享。
+        /// <summary>
+        /// 原生死亡轴引用的官方BossDead；特殊形态按自己的死亡流程选择是否绑定。
+        /// </summary>
+        [Export] protected PackedScene m_DeathScene;
+
+        /// <inheritdoc />
+        protected override EnemyBodyPreset BodyPreset => m_DeathScene == null ? base.BodyPreset : m_DeathEffectPreset;
+
+        /// <summary>
+        /// 死亡轴完成闪烁后创建官方旋涡，结束时通知本次死亡状态再回收首领。
+        /// </summary>
+        protected virtual void SpawnBossDeathAnimEvent()
+        {
+            var state = (EnemyDeathState)m_BodyFsm.CurrentState;
+            var effect = RentSkillEffect(m_DeathScene);
+            effect.Show(null, GlobalPosition, Facing, CaptureCombatAttributes(), 0, false, ReleaseSkillEffect,
+                state.CompleteEffect);
+        }
+
         /// <summary>
         /// 官方首领进入死亡动作后立即停止受击，避免守关条与尸体重复结算。
         /// </summary>

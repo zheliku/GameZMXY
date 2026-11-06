@@ -31,7 +31,7 @@ def replace_track(animation, index, values, fps):
 
 
 def apply(manifest_path):
-    """Install the complete wait loop for combat and the inventory preview."""
+    """Install the complete combat wait loop; backpack previews have their own exporter."""
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     if manifest['source_sha256'] != SOURCE_SHA256 or manifest['source_sprite'] != 529:
         raise ValueError('Expected verified Role_v7.swf wait sprite 529')
@@ -42,7 +42,6 @@ def apply(manifest_path):
     duration = len(frames) / fps
     for relative, name in [
         ('TheGame/Entitys/Animations/Heroes/Wukong/wukong_anim_library.tres', 'idle1'),
-        ('TheGame/Entitys/Animations/Heroes/Wukong/wukong_preview_library.tres', 'idle'),
     ]:
         path = PROJECT / relative
         text = path.read_text(encoding='utf-8')
@@ -53,20 +52,16 @@ def apply(manifest_path):
         animation = re.sub(r'length = [^\n]+', f'length = {duration:.9f}', match[0], count=1)
         for index in (0, 1):
             animation = replace_track(animation, index, frames, fps)
-        if name == 'idle':
-            # Aura keeps its existing 15 fps independently of the character.
-            aura = [3 + i % 6 for i in range(int(duration * 15) + 1)]
-            animation = replace_track(animation, 2, aura, 15)
         text = text[:match.start()] + animation + text[match.end():]
         if name == 'idle1':
             text = re.sub(r'\[sub_resource type="Animation" id="idle2"\].*?(?=\n\[)', '', text, flags=re.S)
             text = text.replace('&"idle2": SubResource("idle2"),\n', '')
         path.write_text(text, encoding='utf-8')
-    for relative in ('TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn', 'TheGame/UIs/Inventory/hero_preview.tscn'):
+    for relative in ('TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn',):
         path = PROJECT / relative
         text = re.sub(r'hframes = 6\nvframes = \d+', f'hframes = 6\nvframes = {rows}', path.read_text(encoding='utf-8'))
         path.write_text(text, encoding='utf-8')
-    print(f'IDLE TIMELINE PASS: 100 frames / 24 fps = {duration:.9f}s; combat + preview; grid 6x{rows}')
+    print(f'IDLE TIMELINE PASS: 100 frames / 24 fps = {duration:.9f}s; combat; grid 6x{rows}')
 
 
 if __name__ == '__main__':

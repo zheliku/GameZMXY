@@ -74,12 +74,13 @@ namespace GameLogic.Enemies.Body
         /// <summary>
         /// 创建重力行走配方，含普通攻击、收招、受击和死亡。
         /// </summary>
+        /// <param name="waitForDeathEffect">死亡是否等待原生轨道生成的独立效果。</param>
         /// <returns>入口为行走状态的身体预设。</returns>
-        public static EnemyBodyPreset Walk()
+        public static EnemyBodyPreset Walk(bool waitForDeathEffect = false)
         {
             return new(typeof(EnemyWalkState), typeof(EnemyDeathState),
                 () => new EnemyWalkState(), () => new EnemyAttackState(), () => new EnemyRecoveryState(),
-                () => new EnemyHurtState(), () => new EnemyDeathState());
+                () => new EnemyHurtState(), () => new EnemyDeathState(waitForDeathEffect));
         }
 
         /// <summary>

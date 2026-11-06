@@ -1,5 +1,89 @@
 # 验证
 
+## 身体、攻击来源、技能与官方背包展示收尾（2026-11-07）
+
+本节覆盖当前12项目标及随后“两英雄都改用官方背包展示”的要求，覆盖下方11月6日关于战斗待机预览、SecondJumpTime和玄冰原点不动的历史结论。依据第00章单一状态所有权、第30章原生动画/基础形状、第40章原点/遮挡及第50章生成边界完成；第40章共用战斗/背包图像条款按用户当前要求作独立官方图例外，未改规范正文。
+
+runner为 `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py`；下表案例命令的 `...` 表示 `--rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 --`。日志位于 `.godot/validation/movement_presets/<案例>/{stdout,stderr}.log`，APPDATA独立；烟测里的通用UI PASS只代表实际执行分支。
+
+| 目标 | 当前实现与实际证据 |
+| --- | --- |
+| 1 幻影外观大小 | 以用户修改的本体为准，同用88.4高胶囊；按源幻影比本体高且偏低的差异，Sprite设(0,-33)/0.9。查看`hero_alignment_20261107/clone_body_aligned.png`及真实`tangseng_clone_platform_120_1.png`，未用角色根位移抵消姿态。 |
+| 2 身体脚底高度 | 本体/幻影胶囊中心均(0.5,-6.2)，局部底边38；正式平台召唤后两者Y差小于0.1px，双向60/120Hz检查通过。 |
+| 3 二跳时钟 | 删除SecondJumpTime和重复截止时刻，HeroAirState读取原生播放器完成情况；沿用GetActionDuration的complete标记/长度。两英雄实际60/120Hz翻身、切下落、落地通过；BattleTests保留两个有效频率用例，不重复四个无效参数组合。 |
+| 4 攻击来源 | AttackSource记录OwnerEntityId、CasterType/CasterInstanceId及EmitterInstanceId；ReceiveHit只消费AttackData，事件复制同一值快照。实机区分本体/幻影共同归属和不同施放、判定节点；攻击包池化测试核对来源复制/清空。 |
+| 5 无双归属 | 删除DamageBeforeDefense公开字段；CombatSystem在伤害计算中就地选定身体/离身的阶段伤害并算AttackerWsGain，HeroSystem只按当前死亡/激活状态接收。规则回归覆盖官方特殊招式分母、减伤与舍入；实机普通/未满每次+2，冰龙多次逐次增长。 |
+| 6 甘露居中 | 源亮核多阶段位于中心附近，去掉-4.5px横向偏移，保留-24.5纵向、34帧加法和治疗时间。已查看`tangseng_cure_full.png`，深浅底加法既有检查继续有效。 |
+| 7 玄冰范围/接地 | 幼柱42×56、成柱70×100、双柱148×100/154×100，原生轴在左右出生/长成/淡出时切换；无双按真实脚底上移30.4px。9个阶段实际物理点查询通过柱心有效/已去除外缘无效，真实目标技能命中通过，形状叠图和无双截图已查看。保留少量矩形近似，不声称Flash像素碰撞完全一致。 |
+| 8 进关等待 | 沿用GF.Resource异步接口，把英雄预加载与场景/HUD并行，无永久缓存或新管理器。时长记录见下；取消/迟到实体回收专项通过。 |
+| 9 重复普通音 | 未满冰龙释放沿用起手已播的普通音；满蓄保留专用音。真实点击/未满/满蓄/贫魔、分身创建换位、玄冰单声、双甘露、二次L、命中及受击全部通过。官方会重播未满普通音，这里按用户要求主动调整。 |
+| 10 平台召唤 | 平台夹具复制正式单向平台到当前波次，不传送过门触发下一波。本体实际落地后从正式CreateWaterClone生成；两频率双向均停留平台。完整8秒寿命、墙/落地、暂停、辅助动作、取消复用继续通过。 |
+| 11 EXP粗于框 | 原生Frame贴图独立画框，填充内缩为233×16；上下九宫格边距改2。两英雄正式背包0/50/100%截图已查看，满条仍在框内。 |
+| 12 全Boss死亡 | 猕猴王、禺狨王、狮驼王及石像补原生闪烁/第25帧旋涡；七位普通死亡目标复用AbstractBoss入口和已有状态/效果，60/120Hz共14例通过回收/可见复用。源脚本逐个检查后保留大猩猩尸体、牛魔形态链及龙王25帧无旋涡特例，详见OfficialReference。 |
+| 追加 两英雄官方背包 | backpack_v2悟空252为62帧短循环，没有立棍；唐僧283为1帧静态姿势，嵌套帧是装备selector。26张专用紧凑图、两份预览外观复用既有两层/字典/AnimationPlayer。两英雄自然播放和各15件正式GUI穿卸通过；已查看裸装、唐僧全装、经验条截图。战斗100/91帧wait继续只用于战斗。 |
+
+| 验证 | 实际命令/结果 |
+| --- | --- |
+| 构建/扫描 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误/5条既有框架弃用警告；`run_godot.py hero_alignment_scan_final_20261107 --headless --editor --build-solutions --quit --no-window`退出0，完成脚本扫描/构建；退出仍有既有ComponentInsoector/free诊断。 |
+| 档案与配置 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：274/274，退出0。 |
+| 战斗 | `dotnet test Tests/BattleTests --no-restore -v quiet`：193/193，退出0，含来源快照清空；二跳删除两个重复参数组合，非减少行为覆盖。 |
+| 工具 | `python -m unittest discover -s Tests/ToolTests -q`：24/24，退出0。 |
+| 唐僧完整技能/幻影 | `run_godot.py tangseng_alignment_full_final_20261107 ... --smoketest=ui --tangseng-only`：退出0；正式选角/建档/入关、两种频率完整幻影生命周期、平台召唤、普攻/冰龙、无双、来源、五技能及八音频通过。stderr仅5个ObjectDB退出诊断。 |
+| 官方背包/二跳/水魔 | `run_godot.py inventory_native_final_wukong_20261107 ... --smoketest=ui --hero-presentation-only`及 `inventory_native_final_tangseng_20261107 ... --smoketest=ui --tangseng-only --hero-presentation-only`：均退出0，分别SMOKE-PREVIEW-NATIVE 62/1帧；双向普攻根位置、60/120Hz二跳、EXP截图及唐僧细柱内外真实目标通过。退出分别5/6个ObjectDB，悟空1条资源占用。 |
+| 两英雄正式GUI穿卸 | `inventory_native_wukong_wardrobe_final_20261107 ... --smoketest=ui --equipment-only`、`inventory_native_tangseng_wardrobe_20261107 ... --smoketest=ui --tangseng-only --equipment-only`：均退出0，各15件源表可穿装备、分页/战斗与专用预览换装/卸装复位/存档通过。悟空完整UI回归同时通过；退出ObjectDB/资源/RID诊断保留，见各stderr。 |
+| 普通首领死亡 | `run_godot.py boss_death_statue_final_20261107 ... --smoketest=ui --boss-death-only`：退出0、14例PASS，实际旋涡播放到可见帧后截图，检查闪烁、唯一效果、完成回收及复用恢复。查看`boss_death_TamarinKing_120.png`及石像截图；stderr仅5个ObjectDB退出诊断。 |
+| 牛魔形态回归 | `run_godot.py boss_death_bull_regression_20261107 ... --smoketest=ui --bull-only`：退出0，冲撞/卫兵、五招双向60/120Hz、心脏淡入淡出/手掌火焰、致死赠宝/重复/满包/死亡完成/订退通过；9个ObjectDB退出诊断。 |
+| 龙王攻击回归 | `run_godot.py boss_death_dragon_regression_20261107 ... --smoketest=ui --dragon-only`：退出0，两难度/双向/两频率全部攻击、控制与效果取消通过；6个ObjectDB及1条资源退出诊断。 |
+| 龙王死亡与传送 | `run_godot.py boss_death_dragon_flow_final_20261107 ... --smoketest=ui --dragon-flow-only`：退出0，真实下水/暂停淡入淡出/GGF传送、收益保持、首次旗幡拾取、原生死亡、W传送门、磁盘检查点与返回地图通过；11个ObjectDB及3条资源退出诊断。 |
+| 玄冰原生范围 | `run_godot.py dark_ice_shapes_final_20261107 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/hero_alignment_20261107/render_dark_ice_shapes.gd`：退出0、stderr空；源1/5/6/11/16/30/35/40/45帧物理查询/形状叠图通过，已查看`dark_ice_shapes_montage.png`。 |
+| 加载取消 | `run_godot.py hero_loading_cancel_final_20261107 ... --smoketest=level-cancel`：退出0，中途显示取消、迟到实例回收、不推进关卡通过；8个ObjectDB及1条资源退出诊断。 |
+| 资源登记 | `run_godot.py hero_alignment_collection_final_20261107 --headless --editor --script res://EditorScripts/regenerate_collection.gd --no-window`：退出0、979项资源由既有生成器更新；编辑器退出仍有ComponentInsoector/free、RID/ObjectDB诊断。 |
+| 引用/格式/作者工具 | `python Tools/ProjectMaintenance/validate_game_references.py`：2246路径/388UID；`dotnet run --project Tools/ProjectMaintenance/CSharpStyle -- . Godot/GodotProject/.godot/validation/hero_alignment_style_applied_20261107.json --write`：362自有文件、0缺XML，token保持整理9文件。四个变更Python作者工具py_compile及`git diff --check`通过。 |
+
+加载实测的场景/HUD资源就绪、英雄显示、HUD就绪分别为：原串行`hero_alignment_baseline_20261107` 1259/2246/2277ms，并行初跑`hero_alignment_pipeline_20261107` 1062/1106/1152ms；后者之后在旧“分身缩放必须为1”的断言失败，不能称整组技能通过，但该加载阶段测量有效。最终完整唐僧场景为393/445/489ms，属于后续缓存条件，不拿它与首次串行数字直接计算性能提升。性能收益来自缩短串行资源等待，不承诺消除所有首次磁盘/纹理导入延迟。
+
+背包导出复现接口为 `export_official_inventory_preview.py --swf <恢复后的backpack.swf> --xml <backpack.xml> --work <忽略目录> --java <java.exe> --ffdec <ffdec.jar> --godot <Godot控制台> --manifests <已审阅装备manifest目录...>`；源SHA和selector见LegacyAssetMap。重用已审核的衣装身份/深度分层与紧凑打包，不手改原图或生成常量。初次将自定义Resource属性写在script前导致null，修正脚本声明顺序后以本节最终两英雄专项为准；旧测试要求战斗与预览纹理同一引用，也已同步改成对应专用资源。
+
+## UI与唐僧表现13项收尾（2026-11-06）
+
+以下逐项对应活动目标。依据第30章原生动画与少量基础判定形状、第40章源注册/实际渲染和第70章存档边界，复用已有状态、池、飘字及GGF窗口；来源和实现结论见TangsengImplementationStudy、OfficialReference、LegacyAssetMap。runner为 `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py`，日志在同级案例目录；运行参数中的 `...` 均为 `--rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 --`。
+
+| 目标 | 最终结果与证据 |
+| --- | --- |
+| 1 技能按钮循环 | SelectPLace showBuySkill的普通态1帧静止，hover15帧、available19帧按24fps循环；`map_buttons_token_20261106 ... --smoketest=frontend --map-buttons-only`实际hover/out/可学态通过。 |
+| 2 保存按钮动画 | 官方是SimpleButton，没有持续循环；保留其静态/交互态，不虚构技能式循环。与地图同一专项核对真实保存行为。 |
+| 3 设置令牌 | 复用原map_return_title令牌，标题“游戏设置”，原生AnimationPlayer悬停缩放1↔1.04，移出复位；地图专项与截图`frontend/map_settings_token_hover.png`通过。 |
+| 4 存档删除与面板 | 旧项目棕色确认框/金色按钮/原字体；小叉24px、默认42%透明度，仅可读存档显示。原图、真实鼠标、取消/删除/主备文件/重读均通过，精确命令见下一节。 |
+| 5 背包角色位置 | 官方backpack_v2裸装注册比较后只在唐僧预览补 `(2,6)`，共用锚点不动。`tangseng_preview_sampling_final_20261106 ... --smoketest=ui --tangseng-only --hero-presentation-only`、`wukong_preview_natural_final_20261106 ... --smoketest=ui --hero-presentation-only`均退出0；0/0.5/2.7/3/3.6秒真实渲染采样已查看。 |
+| 6 命中效果 | Role_v7的MonsterBeHurt1/2八帧闪光，唐僧hue+160、幻影原色；`tangseng_effects_release_final_20261106 ... --smoketest=ui --tangseng-only --effects-only`通过普攻/冰龙实际闪光，已查看`tangseng_normal_hit_feedback_60.png`。`enemy_lethal_flash_final_20261106 ... --smoketest=ui --enemy-death-only`六组60/120Hz致死闪光、抛飞、落地回收及一次死亡收益通过，退出0、6个ObjectDB诊断。 |
+| 7 二跳下落 | HeroAirState从原生complete标记取翻身时长；两英雄表现专项60/120Hz实际双跳均完整翻身、及时切下落并落地。源hit1/jump2/jump3同原点逐帧图与实机截图已查看。四项规则测试通过。 |
+| 8 冰龙蓄力条 | 原生ProgressBar复用官方ExceedPower尺寸/位置、绿条红框、满蓄闪色和半秒渐变。`tangseng_physics_charge_heal_musou_20261106 ... --smoketest=ui --tangseng-only`两种物理频率实际蓄力/暂停/取消/复用通过；已查看`tangseng_charge_60_full.png`。 |
+| 9 全英雄无双 | HeroSystem消费AttackData/DamageResult，按getBasePower的普通/特殊阶段基准、本体/离身减伤规则结算。`dotnet test Tests/ProfileTests --no-restore -v minimal`274/274，`dotnet test Tests/BattleTests --no-restore -v minimal`195/195；唐僧实际普通命中+2、冰龙多次命中逐次增长，60/120Hz专项通过。 |
+| 10 普攻前移 | 官方hit1的探身保留；两英雄表现专项60/120Hz、左右四组各逐物理步检查，根横坐标变化均0，未人为补偿源姿态。 |
+| 11 幻影重力 | CharacterBody2D共用本体普通重力/身体基线及地形层，施法停住；`tangseng_physics_charge_heal_musou_20261106`两种物理频率的下落/地面/墙、暂停、施法、八秒寿命和回池复用通过，已查看`tangseng_clone_gravity_120.png`。 |
+| 12 甘露数字 | 实际Heal恢复量进入既有FloatingTextPresenter，本体及幻影显示绿色20；同一专项和最终effects专项通过，已查看`tangseng_dew_heal_number.png`、`tangseng_clone_dew_heal_number.png`。 |
+| 13 全技能判定 | 普通/冰龙基础形状修正，玄冰46帧左右生长/淡出阶段及无双缩放完整复核，甘露无攻击形状。水魔原动画11–20帧的250×420大矩形改为细柱+上环+水花，Tang表现专项四组真实目标验证柱心命中、侧空白不命中、上环/水花命中及池复用；最终effects专项确认实际二次L流程正常。判定是基础形状近似，不宣称Flash像素级一致。 |
+
+追加的预览立棍核对：原生backpack252是62帧短循环，项目按用户要求复用Role_v7完整100帧战斗wait。`wukong_preview_natural_final_20261106`在不Seek的正式窗口自然播到立棍并循环回普通姿态，`SMOKE-PREVIEW-NATURAL PASS`，查看`wukong_preview_standing_pole.png`；唐僧3秒低头姿势同样可见。先前同一回调连续Seek后的ForceDraw截图会读到旧渲染，已经改为等待真实帧；旧静止截图不作为完整循环证据。
+
+追加的玄冰无双位置核对：`dark_ice_registration_native_final_20261106 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/hero_presentation_20261106/render_dark_ice_registration.gd`退出0、stderr空。Role2.SpecialAttack的源x/y与角色相同，只在无双绕原点缩放 `(1.26,1.8)`；第21源帧同锚点原生图/正式场景的alpha>64边界普通均为 `(130,92,501,196)`，无双均为 `(81,46,548,233)`。已查看`hero_presentation_20261106/dark_ice_normal_musou_registered_comparison.png`；底边下延属于源缩放，无额外Y偏移。`tangseng_dark_ice_position_final_20261106 ... --smoketest=ui --tangseng-only --effects-only`再次通过实际本体/幻影普通及无双施放、共同根坐标与全部效果回归，退出0、仅6个ObjectDB退出诊断；已查看`tangseng_dark_ice_{normal,musou}_registered.png`两张实际战斗截图。
+
+最终实机专项均退出0；唐僧表现、悟空自然预览分别只有6/2个ObjectDB退出诊断，`tangseng_effects_release_final_20261106`有14个ObjectDB及4条资源占用诊断。未将通用“SMOKE PASS”的文字当成未执行分支的证据。951资源登记由既有Collection Res生成器完成；`dotnet build Godot/GodotProject --no-restore -v quiet`0错误/5个既有框架警告；CSharpStyle `hero_ui_closeout_style_20261106.json`361个自有文件通过、token保持；`python Tools/ProjectMaintenance/validate_game_references.py`2178路径/386UID通过，三份修改的迁移脚本py_compile和`git diff --check`通过。`hero_ui_closeout_scan_20261106 --headless --build-solutions --quit --no-window`退出0、完成脚本扫描与解决方案构建，并生成新partial的UID；退出仍有既有ComponentInsoector/free诊断，未修改只读插件。
+
+## 存档删除与原项目面板（2026-11-06）
+
+按第40章旧资源迁入、第70章SaveSystem/ArchiveUtility边界及用户本轮美术要求完成。旧 `choose_scene.tscn` 的五张PNG与华康宋体W3字体原样迁入，删除入口只显示于可读存档，24×24、默认42%透明度、鼠标移入提亮；删除确认复用原面板和按钮字图，清理先前自绘StyleBox和额外关闭叉号。
+
+| 验证 | 命令/结果 |
+| --- | --- |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出0，0错误、5个既有框架弃用警告。 |
+| Godot资源导入 | `run_godot.py import_delete_confirm_assets_20261106 --headless --editor --quit --no-window`、`import_delete_confirm_font_20261106`：均退出0，完成六项导入；编辑器退出仍有既有ComponentInsoector/free诊断。 |
+| 实机删除与视觉 | `run_godot.py save_delete_original_art_20261106 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend --save-delete-only`：退出0，`SMOKE-SAVE-DELETE PASS`；真实鼠标验证空槽隐藏、24px暗色图标、悬停提亮/离开复位、原图载入、取消不删、确认删除主备文件、其他格保留、同槽新建唐僧、标题磁盘目录重读与关闭后的迟到确认。此运行stderr为空。 |
+| 截图 | 已查看`.godot/validation/frontend/save_delete_slots.png`、`save_delete_hover.png`、`save_delete_confirmation.png`，确认棕色原面板与原按钮字图、空槽无叉号、正文无遮挡。截图前等待造档成功提示自然结束。 |
+| 最终资源与格式 | `run_godot.py save_delete_resources_20261106 --headless --editor --script res://EditorScripts/regenerate_collection.gd --no-window`：退出0、916资源生成，编辑器退出仍有已知插件/free及RID诊断；`python Tools/ProjectMaintenance/validate_game_references.py`：2106路径、385UID通过；CSharpStyle `style_final.json`：358文件、0格式差异、0缺失文档；源5PNG+字体逐字节核对与`git diff --check`通过。 |
+
+最初`save_delete_official_ui_20261106`虽有逻辑PASS但新PNG未导入、字体未迁入，发生资源解析错误；此案例不算视觉通过，最终以`save_delete_original_art_20261106`为准。本节只覆盖存档专项，完整13项结果见上方收尾记录。
+
 ## 动画方法入口与角色相关表现收尾（2026-11-05）
 
 按第10章动画入口命名、第30章状态与表现分层和Stop Ladder复核全项目 `*AnimEvent` 调用链。`AnimEvent` 仍只作为AnimationPlayer方法轨道键；普通业务使用无后缀实现，轨道方法只转发：唐僧音效、SkillEffect攻击刷新/结束、敌人攻击刷新和虾兵弹体均已收敛。烟测不再直接调用动画事件名，改为真实播放 `attack_1` 的第3源帧。

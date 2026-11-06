@@ -26,6 +26,7 @@ namespace GameLogic.Enemies
             var effect = NodePool.Instance.Get<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
                 throw new InvalidOperationException($"敌人技能未登记到节点池：{scene.ResourcePath}");
             m_SkillEffects.Add(effect);
+            effect.Source = CaptureAttackSource();
             return effect;
         }
 

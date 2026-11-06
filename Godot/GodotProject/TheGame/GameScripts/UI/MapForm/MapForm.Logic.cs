@@ -75,6 +75,8 @@ namespace GameLogic.UI
             {
                 m_Back.Pressed += OnBackClicked;
                 m_Settings.Pressed += OnSettingsClicked;
+                m_Settings.MouseEntered += OnSettingsMouseEntered;
+                m_Settings.MouseExited += OnSettingsMouseExited;
                 m_Skills.Pressed += OnSkillsClicked;
                 m_Skills.MouseEntered += OnSkillsMouseEntered;
                 m_Skills.MouseExited += OnSkillsMouseExited;
@@ -109,6 +111,8 @@ namespace GameLogic.UI
             ResetLocationHover();
             PlayCurrentLocationHint();
             ResetSkillsHint();
+            m_SettingsAnimation.Play("RESET");
+            m_SettingsAnimation.Advance(0);
             Visible = true;
         }
 
@@ -438,6 +442,23 @@ namespace GameLogic.UI
         {
             m_SkillsArtwork.Stop();
             m_SkillsArtwork.Play(this.GetModel<ProfileModel>().Soul.Value >= 160 ? "available" : "idle");
+        }
+
+        /// <summary>
+        /// 设置令牌悬停时播放原生轻微起伏。
+        /// </summary>
+        private void OnSettingsMouseEntered()
+        {
+            m_SettingsAnimation.Play("hover");
+        }
+
+        /// <summary>
+        /// 移出设置令牌后恢复原尺寸。
+        /// </summary>
+        private void OnSettingsMouseExited()
+        {
+            m_SettingsAnimation.Play("RESET");
+            m_SettingsAnimation.Advance(0);
         }
 
         /// <summary>

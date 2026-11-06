@@ -17,6 +17,7 @@ using GameConfig.Entity;
 using GameConfig.Enemy;
 using GameConfig.Loot;
 using GameConfig.Attributes;
+using GameConfig.Constant;
 using GameFramework.Entity;
 using GameFramework.Fsm;
 using GameLogic.Body;
@@ -24,6 +25,7 @@ using GameLogic.UI.Widgets;
 using Godot;
 using GodotGameFramework.Entity;
 using GodotGameFramework;
+using GodotGameFramework.NodePool;
 
 namespace GameLogic.Enemies
 {
@@ -54,6 +56,7 @@ namespace GameLogic.Enemies
 
         private float m_HealthBarTimeLeft; // 最近一次受伤后的剩余淡出秒数，按游戏帧推进。
         private int m_LastHealthBarHp; // 上次生命值，用于区分受伤与治疗，治疗不延长显示。
+        private readonly HashSet<MonsterHitFeedbackNode> m_HitFeedback = new(); // 每次命中的独立八帧闪光。
 
         /// <summary>
         /// 按框架帧驱动的怪物 AI 状态机（行为类别按自己的状态类型查询）。
@@ -554,6 +557,10 @@ namespace GameLogic.Enemies
             // 身体和独立攻击均由同一个敌人拥有；隐藏后不遗留飞刀、风刃或毒雾。
             if (!isShutdown)
             {
+                foreach (var feedback in m_HitFeedback.ToArray())
+                {
+                    ReleaseHitFeedback(feedback);
+                }
                 foreach (var effect in m_SkillEffects.ToArray())
                 {
                     ReleaseSkillEffect(effect);
@@ -561,6 +568,7 @@ namespace GameLogic.Enemies
             }
 
             m_SkillEffects.Clear();
+            m_HitFeedback.Clear();
             // 关停时子节点可能已释放，不再访问表现对象。
             if (!isShutdown && IsInstanceValid(m_HealthBar))
             {
@@ -707,6 +715,12 @@ namespace GameLogic.Enemies
         /// <param name="attackerEntityId">攻击方运行编号；无来源时为零。</param>
         protected override void OnHurt(AttackData data, DamageResult result, Vector2 knockback, int attackerEntityId)
         {
+            var feedback = NodePool.Instance.Get<MonsterHitFeedbackNode>(
+                ResourcesCollectionConstant.Effects_monster_hit_feedback, this)
+                ?? throw new InvalidOperationException("怪物命中闪光未登记到节点池。");
+            m_HitFeedback.Add(feedback);
+            bool tangseng = data.Source.CasterType == EntityId.Tangseng;
+            feedback.ShowHit(tangseng, ToLocal(HurtBox.GetGlobalBounds().GetCenter()), ReleaseHitFeedback);
             if (Dead)
             {
                 return;
@@ -728,6 +742,16 @@ namespace GameLogic.Enemies
             AiData.AttackRequest = -1;
             ReleaseAttack();
             m_PendingHurt = knockback;
+        }
+
+        /// <summary>
+        /// 命中闪光播放结束或怪物隐藏时统一归还。
+        /// </summary>
+        /// <param name="feedback">由本实体持有的闪光。</param>
+        private void ReleaseHitFeedback(MonsterHitFeedbackNode feedback)
+        {
+            m_HitFeedback.Remove(feedback);
+            NodePool.Instance.Release(feedback);
         }
 
         /// <summary>

@@ -389,11 +389,15 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void AttackData_OneHitPerTarget_AndClearedOnRelease()
         {
-            AttackData attackData = AttackData.Create(1001, Hero(), 8f, DamageKind.Physics, Vector2.Zero, 1, 0);
+            var source = new AttackSource(7, GameConfig.Entity.EntityId.Tangseng, 101, 201);
+            AttackData attackData = AttackData.Create(1001, Hero(), 8f, DamageKind.Physics, Vector2.Zero, 1, 0,
+                source: source);
+            Assert.Equal(source, attackData.Source);
             Assert.True(attackData.TryRegisterHit(42));
             Assert.False(attackData.TryRegisterHit(42));
             Assert.True(attackData.TryRegisterHit(43));
             ReferencePool.Release(attackData);
+            Assert.Equal(default, attackData.Source);
 
             // 同类型复用池内对象：必须是干净的
             AttackData reusedData = AttackData.Create(1002, Hero(), 9f, DamageKind.Magic, Vector2.Zero, 1, 0);

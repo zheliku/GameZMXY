@@ -3,6 +3,7 @@ using GameLogic.Architecture;
 using GameLogic.Config;
 using System;
 using GameConfig.Battle;
+using GameConfig.Skills;
 using Godot;
 
 namespace GameLogic.Battle.Damage
@@ -82,6 +83,8 @@ namespace GameLogic.Battle.Damage
                 hurt *= config.CritBase + CalculateAttributeRatio(lucky, luckyK);
             }
 
+            int damageBeforeDefense = (int)Math.Max(0, Truncate(hurt));
+
             // 5. 减伤
             switch (data.Kind)
             {
@@ -94,7 +97,32 @@ namespace GameLogic.Battle.Damage
             }
 
             int damage = (int)Math.Max(0, Truncate(hurt));
-            return new DamageResult(damage, false, isCrit, data.Kind);
+            int wsGain = CalculateWsGain(data, data.IsEffect ? damageBeforeDefense : damage);
+            return new DamageResult(damage, false, isCrit, data.Kind, wsGain);
+        }
+
+        /// <summary>
+        /// 与本次伤害一同完成官方命中收益，避免表现层或英雄系统重解释伤害计算阶段。
+        /// </summary>
+        /// <param name="attack">本次攻击快照。</param>
+        /// <param name="damage">按身体/离身规则选定的本次伤害。</param>
+        /// <returns>按官方招式基准四舍五入的无双点数。</returns>
+        private int CalculateWsGain(AttackData attack, int damage)
+        {
+            if (attack.Attacker.Side != CombatSide.Hero || attack.AttackId == 0 || damage <= 0)
+            {
+                return 0;
+            }
+            var tables = this.GetModel<ConfigurationModel>().Tables;
+            int power = attack.Attacker.Power;
+            int basePower = (SkillHitId)attack.AttackId switch
+            {
+                SkillHitId.RisingDragon => power,
+                SkillHitId.FireDemonCombo => (int)Math.Floor(power * .5 + .5),
+                _ => tables.TbAttackConfig.Get(attack.AttackId).ComboIndex >= 0 ? power : (int)attack.Power
+            };
+            return basePower <= 0 ? 0 : (int)Math.Min(int.MaxValue,
+                Math.Floor((double)damage / basePower * tables.TbBattleConfig.WsGainPerDamageRatio + .5));
         }
 
         /// <summary>

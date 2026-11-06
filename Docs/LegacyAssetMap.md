@@ -249,6 +249,17 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 ## 菜单、地图、存档与音乐
 
+2026-11-06：存档删除确认沿用旧 `Scene/show_text/choose_scene.tscn` 的实际资产。原存档删除的调用链为 `Script/ArchiveInterface/read_archive_interface.gd` → `Global.add_choose_text` → 该场景；只迁入以下原始字节，不复制旧脚本、倒计时或全局信号。
+
+| 旧项目相对路径 | 正式 TheGame 相对路径 | 用途 |
+| --- | --- | --- |
+| `Art/BackPack/117.png` | `Sprites/UI/frontend/delete_confirm_panel.png` | 原棕色确认面板，保持原图比例放大约1.5倍 |
+| `Art/BackPack/124.png`、`126.png` | `Sprites/UI/frontend/delete_confirm_cancel{,_hover}.png` | 原取消按钮及悬停字图 |
+| `Art/BackPack/119.png`、`121.png` | `Sprites/UI/frontend/delete_confirm_confirm{,_hover}.png` | 原确定按钮及悬停字图 |
+| `Font/华康宋体W3.ttc` | `MainPack/Fonts/df_song_w3.ttc` | 旧确认窗使用的字体 |
+
+上述六文件逐字节相同，补入既有 `Tools/LegacyMigration/import_frontend_assets.py` 的映射；新Godot导入元数据独立生成。删除入口复用现有 `menu_close{,_hover}.png`，按当前用户要求缩为24×24、默认压暗，只有可读档案显示。
+
 迁入入口 `Tools/LegacyMigration/import_frontend_assets.py`；布局参考旧 Main_Menu、Map_1、set_menu、read_archive_interface 场景，仅取素材和布局。
 
 | 新资源 | 旧来源 | 用途 |
@@ -407,7 +418,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | `Art/BackPack/sz.png` | `Sprites/UI/inventory/inventory_slot_costume.png` |
 | `Art/BackPack/tx.png` | `Sprites/UI/inventory/inventory_slot_title.png` |
 
-`UIs/Inventory/hero_preview.tscn` 每次打开借用当前战斗英雄的 `HeroAppearanceResource`，共用该英雄的身体、武器与PreviewAnimations。悟空外置 `Entitys/Animations/Heroes/Wukong/wukong_preview_library.tres` 使用官方完整待机100帧，唐僧对应 `Heroes/Tangseng/tangseng_preview_library.tres` 使用自己的91帧及身体/武器独立映射；均24fps。金光取旧背包BackPackLight的第3..8格（192×192，15fps，竖直翻转），两角色共用。动画只改变显示，不带攻击或碰撞轨道。
+`UIs/Inventory/hero_preview.tscn` 每次打开从当前英雄的 `HeroAppearanceResource.PreviewAppearance` 借用专用背包身体/武器图集，动画使用该英雄的PreviewAnimations。悟空为backpack_v2的62帧短循环，唐僧为1帧静态姿势；源24fps，保持原帧序。金光取旧背包BackPackLight的第3..8格（192×192，15fps，竖直翻转），两角色共用并独立播放。动画不带攻击或碰撞轨道，源及导出映射见下方官方背包节。
 
 ## 装备与地面恢复品
 
@@ -436,7 +447,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 ## 悟空独立身体与武器
 
-当前战斗和背包使用官方 `Role_v7.swf` 的 `export.hero.Role1`（sprite 575）动作。六张图均为 1200×5800、6×29、每格 200×200；0..119 保留既有普攻、技能与完整待机映射，120..170 为完整基础动作，171..173 为空：
+战斗使用官方 `Role_v7.swf` 的 `export.hero.Role1`（sprite 575）动作；背包现用下节backpack_v2独立图集。早期六张战斗图均为 1200×5800、6×29、每格 200×200；0..119 保留既有普攻、技能与完整待机映射，120..170 为完整基础动作，171..173 为空：
 
 | 新文件（`Sprites/Characters/Heroes/wukong/`） | 源选择帧 | 用途 |
 | --- | --- | --- |
@@ -449,7 +460,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 沿用旧 `Scene/Hero/Role_1/Role1.tscn` 的两层结构：完整身体在后，武器在前；源绘制深度位于武器前方的头部、手臂等作为导出遮罩，裁掉武器被遮挡的部分。遮罩只在导出时使用，不创建第三个运行时层，也不导出武器和防具的组合图集。各套防具须保持相同的前景遮挡轮廓，便于武器独立替换。
 
-`HeroAppearanceResource` 的防具/武器字典按 EquipmentId 绑定具体纹理，战斗与背包预览共用 `wukong_appearance.tres`。猿甲经 `export_official_wukong_equipment.py` → `import_official_wukong_equipment.gd` 导出，`register_official_wukong_equipment.gd` 原生保存绑定；沿用现有帧号及原点，不覆盖人工动画。338/371/416/568 等技能能量继续使用独立特效，不能混入身体 SVG，否则模糊滤镜会成为矩形。唐僧尚未可玩，地煞权杖当前只有官方图标、掉落图和数值，没有虚构可用的唐僧换装动作。
+`HeroAppearanceResource` 的防具/武器字典按 EquipmentId 绑定具体纹理；战斗用 `wukong_appearance.tres`，它引用 `wukong_inventory_appearance.tres` 供背包换装。猿甲经 `export_official_wukong_equipment.py` → `import_official_wukong_equipment.gd` 导出，`register_official_wukong_equipment.gd` 原生保存绑定；沿用现有帧号及原点，不覆盖人工动画。338/371/416/568 等技能能量继续使用独立特效，不能混入身体 SVG，否则模糊滤镜会成为矩形。唐僧现已可玩并有完整独立战斗及背包换装资源。
 
 基础动作使用 walk 440（16帧）、run 452（8帧）、jump 533（1帧）、jump_2 539（10帧）、fall 543（1帧）、hurt 553（15帧）。每套装备都必须按自身选择帧导出这51帧，不能拿相近装备的动作补齐。装备导出器读取正式动画库的帧映射，自动覆盖完整基础动作并计算图集行数；`validate_wukong_wardrobe_motion.gd` 将六张图逐帧与各自源图层比较，再验证九种独立穿戴组合的双向播放。2026-10-26 修复了猿甲与宝剑新增51格被误填为行者服/棍的问题，既有0..119格逐字节不变。
 
@@ -465,7 +476,17 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 复现入口为 `Tools/LegacyMigration/export_official_wukong.py`（核对源 SHA、保留矩阵和逐帧深度）与 `EditorScripts/import_official_wukong.gd`（原生 SVG 栅格化、紧凑打包、拟合判定并输出 manifest）。必须显式指定工程内的特效输出路径；完整命令统一放在 [Validation](Validation.md)。随后 `Tools/LegacyMigration/import_official_wukong_attacks.py` 按 manifest 定向替换五段攻击、特效序列和矩形判定轨道，移除无消费者的 skill_*，一次性映射基础帧号并更新两处场景网格；其余基础动作只补齐判定旋转归零轨道，手调时序及已有轨道保持原样。重复执行不会再次映射。
 
-当前 13 个玩法动作（8 个基础动作、5 段攻击）和 RESET 使用同一两层资源。`wait` 子元件 529 的普通待机、立棍和张望属于同一条 100 帧时间轴，完整导入 `idle1` 与背包 `idle`，不再截取两帧拼成 `idle2` 或额外随机触发。`import_official_wukong_idle.gd` 只追加缺少姿势，`Tools/LegacyMigration/import_official_wukong_idle.py` 只更新待机轨道和两处网格；已有攻击、技能及手调时序保持不变。复现时在基础与技能导入后执行，命令见 Validation。悟空五项造一技能另挂 `skills` 动画库，仅供准备与预览；造三攻击没有混入这些资源。
+当前 13 个玩法动作（8 个基础动作、5 段攻击）和 RESET 使用同一两层战斗资源。`wait` 子元件529的普通待机、立棍和张望属于同一条100帧时间轴，只用于战斗 `idle1`，不再截取两帧拼成 `idle2` 或额外随机触发。`import_official_wukong_idle.gd` 只追加缺少姿势，`Tools/LegacyMigration/import_official_wukong_idle.py` 只更新战斗待机及实体网格，不能覆盖背包库。已有攻击、技能及手调时序保持不变。复现时在基础与技能导入后执行，命令见Validation。悟空五项造一技能另挂 `skills` 动画库；造三攻击没有混入这些资源。
+
+### 官方背包专用预览（2026-11-07）
+
+来源[backpack_v2.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/backpack_v2.swf)：下载SHA-256为 `e4360195f803d7fe0b36f70c2ea88ade5e7fe9de7ffacde3d2fa7e0452c4a0f9`，恢复后为 `47215d42043801243e7beae00ca4601d6040b343be8bd8a29a9c4aa4e8df17ea`。根285的personmc284位置为(252,221.4)，悟空252/唐僧283分别位于(.65,-.2)、(0,-.05)。完整父矩阵烘焙进统一200px画布，原先用战斗姿势推导的唐僧(2,6)补偿已删除；共用根(149,128)、缩放0.95。
+
+悟空252为62帧站立/低头短循环，没有立棍；唐僧283只有1个外层帧。BackPack.changeWKShowEquip/changeTSShowEquip控制的嵌套帧是装备选择，不可当动画播放。悟空衣装selector159/167/175/200、武器192；唐僧衣装276/头部282、武器269，身份沿用正式外观EquipmentId。
+
+`Tools/LegacyMigration/export_official_inventory_preview.py`复用selector冻结、按深度分层、原生Godot栅格器和compact_atlases，共导出26张去重紧凑图：`Sprites/Characters/Heroes/{hero}/preview/{hero}_preview_{body,weapon}_*.png`，均6列200px、当前1行。62帧时序通过映射保留，不把重复姿势存满图集。两个 `{hero}_inventory_appearance.tres`复用现有HeroAppearanceResource字典；主资源分别引用专用预览外观。两个preview_library只播放各自官方展示及共用光圈。战斗导入器不再写背包动画或网格。完整命令和两角色实际换装/自然播放证据集中于Validation。
+
+首领死亡继续复用 `Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn` 及已导出的官方12帧BossDead，不复制七份图片或场景。猕猴王、禺狨王、狮驼王及蝙蝠洞石像新增的只是角色死亡库中原生可见性/第25帧方法轨道和此场景引用；其余三个普通魔王已有资源。精英与形态特例的实际帧脚本依据见OfficialReference。
 
 ## 恢复飘字与装备菜单
 
@@ -534,3 +555,9 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 七段声音取自[官方 Music.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/Music.swf)，恢复后 SHA-256 `5cad2f1ef3ce592c2e9e44c631748e042d8cacae2c7571e57b1a0546998a7578`。`export_official_skill_audio.py` 原样导出 MP3：6/8/11/1 分别为升龙斩/火炎突击/烈焰闪/烈焰风暴，13/14/15 为火魔起手/九连斩/落地。正式路径 `Audios/SFX/wukong/skills/`，SoundId 7..13，全部登记到 GGF SFX，无循环。
 
 2026-10-26 补齐同一 Role_v7 的走、跑、起跳、二段跳、下落与受伤51个源帧，六套身体/武器图集共306层帧，沿用原格尺寸、两层和穿戴映射。三类初期地面怪从 v25928 `Monster1`（SHA-256 `5bd88da4211870f2ca2354b7cec8d1790747869641c11fe553910b10fe2a264a`）重新导入完整动作：猴子69、妖猴88、大猩猩92帧，含后两者的 `after_hurt`。资源位于各自角色贴图目录的 `<角色>_official_body.png` / `<角色>_official_frames.tres`，外置动画库保持原路径。导出入口 `export_official_ground_monsters.py`，原生导入入口 `import_official_ground_monsters.gd`；后者共享相同形状并压缩重复值键，不改声音和动作方法轨道。
+# 2026-11-06 新增表现资源
+
+| 来源 | 正式资源 | 用途 |
+| --- | --- | --- |
+| Role_v7 `MonsterBeHurt1/2`（symbol27/18） | `Sprites/Effects/monster_hit/{wukong,tangseng}/` | 怪物受击官方8帧闪光；唐僧目录为受官方 hue+160 后的原图变体。 |
+| 原项目地图令牌图 | `MapForm/m_Settings` 复用 `map_return_title.png` | 设置入口保留原版令牌，只替换文字为“游戏设置”，不重画按钮。 |

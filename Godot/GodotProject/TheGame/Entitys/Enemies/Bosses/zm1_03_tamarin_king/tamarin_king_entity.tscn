@@ -7,6 +7,8 @@
 [ext_resource type="AnimationLibrary" uid="uid://u24qwo132sgt" path="res://TheGame/Entitys/Animations/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_library.tres" id="5_6unwe"]
 [ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="5_hhl7o"]
 
+[ext_resource type="PackedScene" path="res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn" id="boss_death"]
+
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_aw30p"]
 radius = 22.498322
 height = 79.999695
@@ -34,6 +36,7 @@ floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("1_np6ac")
+m_DeathScene = ExtResource("boss_death")
 m_Perception = NodePath("Perception")
 m_EnemyEntityId = 100001
 m_Body = NodePath("m_Body")

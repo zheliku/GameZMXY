@@ -31,17 +31,12 @@ namespace GameLogic.Enemies
         /// <inheritdoc />
         protected override void OnHurt(AttackData data, DamageResult result, Vector2 knockback, int attackerEntityId)
         {
-            if (Dead)
-            {
-                // 死亡事实先于本回调置位，仍须把致死一击交给死亡状态，不能在这里丢掉击退。
-                if (knockback != Vector2.Zero)
-                {
-                    m_PendingHurt = knockback;
-                }
-
-                return;
-            }
             base.OnHurt(data, result, knockback, attackerEntityId);
+            if (Dead && knockback != Vector2.Zero)
+            {
+                // 死亡事实先于本回调置位；基类播放致死闪光，这里保留死亡抛飞。
+                m_PendingHurt = knockback;
+            }
         }
     }
 }

@@ -25,6 +25,9 @@ namespace GameLogic.Heroes
         [Export] private PackedScene m_DarkIceEffect; // 本体与分身共用的玄冰阵场景。
         [Export] private AnimatedSprite2D m_WaterDemonBall; // 原生身体动画驱动的官方roundMc。
         [Export] private PackedScene m_WaterDemonFallEffect; // 水魔爆追加下落效果。
+        [Export] private ProgressBar m_IceDragonCharge; // 官方ExceedPower蓄力提示，进度由冰龙状态提供。
+
+        private Tween m_ChargeFade; // 原生Tween负责半秒渐显/渐隐，离场时终止。
 
         private static readonly SkillDefinition[] m_Skills =
         [
@@ -69,6 +72,7 @@ namespace GameLogic.Heroes
         {
             base.OnShow(userData);
             m_WaterClone.Dismiss();
+            ResetIceDragonCharge();
             this.GetSystem<SkillSystem>().SelectSkills(2, m_Skills);
         }
 
@@ -88,6 +92,40 @@ namespace GameLogic.Heroes
         {
             m_WaterClone.Dismiss();
             base.OnHide(isShutdown, userData);
+            ResetIceDragonCharge();
+        }
+
+        /// <summary>
+        /// 显示官方蓄力比例、朝向和满蓄闪色，不另行累计技能进度。
+        /// </summary>
+        /// <param name="progress">技能状态提供的0到1比例；0时渐隐。</param>
+        public void UpdateIceDragonCharge(float progress)
+        {
+            bool wasCharging = m_IceDragonCharge.Value > 0;
+            bool charging = progress > 0;
+            m_IceDragonCharge.Value = progress;
+            m_IceDragonCharge.FillMode = (int)(Facing < 0 ? ProgressBar.FillModeEnum.BeginToEnd : ProgressBar.FillModeEnum.EndToBegin);
+            var fill = (StyleBoxFlat)m_IceDragonCharge.GetThemeStylebox("fill");
+            fill.BgColor = progress < 1 ? Colors.Green : (int)(ActionData.Time * 24) % 2 == 0
+                ? new Color(0x112233ff) : new Color(0xaabbccff);
+            if (wasCharging != charging)
+            {
+                m_ChargeFade?.Kill();
+                m_ChargeFade = CreateTween().SetProcessMode(Tween.TweenProcessMode.Physics);
+                m_ChargeFade.TweenProperty(m_IceDragonCharge, "modulate:a", charging ? 1f : 0f, .5)
+                    .SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+            }
+        }
+
+        /// <summary>
+        /// 清除本次蓄力表现，池复用不保留旧Tween或透明度。
+        /// </summary>
+        private void ResetIceDragonCharge()
+        {
+            m_ChargeFade?.Kill();
+            m_ChargeFade = null;
+            m_IceDragonCharge.Value = 0;
+            m_IceDragonCharge.Modulate = new Color(1, 1, 1, 0);
         }
 
         /// <summary>
@@ -97,7 +135,10 @@ namespace GameLogic.Heroes
         /// <param name="fullCharge">本次是否达到满蓄。</param>
         public void SpawnIceDragonBolt(PackedScene scene, bool fullCharge)
         {
-            GF.Sound.PlayConfigured(fullCharge ? SoundId.TangsengIceDragon : SoundId.TangsengAttack);
+            if (fullCharge)
+            {
+                GF.Sound.PlayConfigured(SoundId.TangsengIceDragon);
+            }
             var effect = (TangsengBoltNode)RentSkillEffect(scene);
             var hit = fullCharge
                 ? this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)SkillHitId.IceDragonWave)
@@ -116,10 +157,10 @@ namespace GameLogic.Heroes
         /// <param name="scene">原生轨道引用的玄冰阵场景。</param>
         /// <param name="position">施法者世界位置。</param>
         /// <param name="facing">本体或分身自身的出招朝向。</param>
-        /// <param name="fromClone">分身使用本体无双缩放与威力，但不取得本体的额外两次攻击刷新。</param>
-        public void SpawnDarkIceEffect(PackedScene scene, Vector2 position, int facing, bool fromClone = false)
+        /// <param name="clone">实际施放的分身；为空时由本体施放。</param>
+        public void SpawnDarkIceEffect(PackedScene scene, Vector2 position, int facing, TangsengWaterCloneNode clone = null)
         {
-            if (!fromClone)
+            if (clone == null)
             {
                 GF.Sound.PlayConfigured(SoundId.TangsengDarkIce);
             }
@@ -129,9 +170,18 @@ namespace GameLogic.Heroes
             bool musou = this.GetModel<HeroModel>().WsActive.Value;
             int power = (int)((attributes.Power * hit.PowerScale.X + hit.FlatPower.X) *
                 this.GetSystem<HeroSystem>().AttackPowerMultiplier);
-            effect.Show(hit, position, facing, attributes, power, musou && !fromClone,
+            var body = GetNode<CollisionShape2D>("CollisionShape2D");
+            float feet = body.Position.Y + body.Shape.GetRect().End.Y;
+            // 项目以双脚之间的接地线放大，消除源围绕腰部原点缩放造成的沉底。
+            Vector2 anchor = position - new Vector2(0, musou ? feet * .8f : 0);
+            effect.Show(hit, anchor, facing, attributes, power, musou && clone == null,
                 ReleaseSkillEffect, hitSoundId: HitSoundId,
-                visualScaleMultiplier: musou && fromClone ? new Vector2(1.26f, 1.8f) : Vector2.One);
+                visualScaleMultiplier: musou && clone != null ? new Vector2(1.26f, 1.8f) : Vector2.One,
+                source: clone == null ? CaptureAttackSource() : CaptureAttackSource() with
+                {
+                    CasterType = GameConfig.Entity.EntityId.None,
+                    CasterInstanceId = clone.GetInstanceId()
+                });
         }
 
         /// <summary>
@@ -142,7 +192,7 @@ namespace GameLogic.Heroes
             if (m_WaterClone.IsAvailable)
             {
                 m_WaterClone.PlayDarkIce(() => SpawnDarkIceEffect(m_DarkIceEffect,
-                    m_WaterClone.GlobalPosition, m_WaterClone.Facing, fromClone: true));
+                    m_WaterClone.GlobalPosition, m_WaterClone.Facing, m_WaterClone));
             }
         }
 
@@ -208,7 +258,7 @@ namespace GameLogic.Heroes
                 amount *= 1.5;
             }
 
-            this.GetSystem<HeroSystem>().Heal((int)amount);
+            Heal((int)amount);
         }
 
         /// <summary>

@@ -292,4 +292,22 @@ public sealed partial class UiSmokeScenario
         }
         Check(Math.Abs(centered ? firstLeft + previousRight : firstLeft) < .001, "数字整串居中或左对齐错误");
     }
+
+    /// <summary>
+    /// 核对主动治疗实际显示的绿色数字，不以HP变化代替表现验证。
+    /// </summary>
+    /// <param name="node">关卡实际取出的飘字。</param>
+    /// <param name="amount">官方应显示的治疗量。</param>
+    private static void CheckRecoveryText(FloatingTextNode node, int amount)
+    {
+        var digits = SmokeInspection.ReadField<Sprite2D[]>(node, "m_Digits").Where(digit => digit.Visible).ToArray();
+        string expected = amount.ToString();
+        Check(digits.Length == expected.Length && digits.All(digit => digit.Texture.ResourcePath.EndsWith("health.png")),
+            "主动治疗没有显示绿色恢复数字");
+        for (int i = 0; i < digits.Length; i++)
+        {
+            Check((int)digits[i].RegionRect.Position.X / (digits[i].Texture.GetWidth() / 10) == expected[i] - '0',
+                "主动治疗数字与官方配置量不一致");
+        }
+    }
 }

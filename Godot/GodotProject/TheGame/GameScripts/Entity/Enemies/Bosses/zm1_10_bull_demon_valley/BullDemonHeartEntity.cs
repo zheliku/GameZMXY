@@ -188,9 +188,11 @@ namespace GameLogic.Enemies
             var hand = OwnAttacks[0];
             var fire = OwnAttacks[1];
             m_HandAttackData = AttackData.Create(hand.Id, attributes,
-                Mathf.RoundToInt(hand.FlatPower.X), hand.DamageKind, hand.Knockback, -1, hand.HitProtect, isEffect: true);
+                Mathf.RoundToInt(hand.FlatPower.X), hand.DamageKind, hand.Knockback, -1, hand.HitProtect,
+                isEffect: true, source: CaptureAttackSource());
             m_FireAttackData = AttackData.Create(fire.Id, attributes,
-                Mathf.RoundToInt(fire.FlatPower.X), fire.DamageKind, fire.Knockback, -1, fire.HitProtect, isEffect: true);
+                Mathf.RoundToInt(fire.FlatPower.X), fire.DamageKind, fire.Knockback, -1, fire.HitProtect,
+                isEffect: true, source: CaptureAttackSource());
         }
 
         /// <summary>
@@ -242,7 +244,7 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            if (!target.ReceiveHit(data, Id).IsMiss)
+            if (!target.ReceiveHit(data).IsMiss)
             {
                 m_HitTargets.Add(target.GetInstanceId());
             }

@@ -30,7 +30,6 @@ namespace GameLogic.Enemies
         [Export] private PackedScene m_SharkWaveScene; // 第22源帧释放的横向鲨波。
         [Export] private PackedScene m_BubbleWarningScene; // 目标位置的24帧纯视觉警示。
         [Export] private PackedScene m_BubbleScene; // 警示结束后的水牢。
-        [Export] private PackedScene m_DeathScene; // 共享BossDead死亡旋涡。
         private bool m_SpawnedChild; // 本次显示中是否已触发一次低血召唤。
         private float m_InvulnerabilityLeft; // 按原生方法键启动的剩余无敌秒数。
         private CancellationTokenSource m_ShowCancellation; // 本次显示拥有的异步和警示后续回调。
@@ -205,20 +204,6 @@ namespace GameLogic.Enemies
                         SpawnEffect(m_BubbleScene, this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId), position);
                     }
                 });
-        }
-
-        /// <summary>
-        /// 身体闪烁完成后创建死亡旋涡，效果完成才允许回收首领和其鲨鱼。
-        /// </summary>
-        private void SpawnBossDeathAnimEvent()
-        {
-            if (m_BodyFsm.CurrentState is not EnemyDeathState state)
-            {
-                return;
-            }
-
-            var effect = RentSkillEffect(m_DeathScene);
-            effect.Show(null, GlobalPosition, Facing, CaptureCombatAttributes(), 0, false, ReleaseSkillEffect, state.CompleteEffect);
         }
 
         /// <summary>

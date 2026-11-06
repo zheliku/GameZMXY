@@ -95,5 +95,15 @@ namespace GameLogic.Utility
         {
             return m_Archive.OverWriteAsync();
         }
+
+        /// <summary>
+        /// 删除指定框架存档。
+        /// </summary>
+        /// <param name="unitId">框架文件编号。</param>
+        /// <returns>框架读写是否成功。</returns>
+        public Task<bool> DeleteAsync(long unitId)
+        {
+            return m_Archive.Delete(unitId);
+        }
     }
 }

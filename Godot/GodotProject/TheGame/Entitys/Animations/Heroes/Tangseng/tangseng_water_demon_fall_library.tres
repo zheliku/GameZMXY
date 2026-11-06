@@ -10,7 +10,7 @@ size = Vector2(146, 63)
 size = Vector2(172, 89)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_74l6x"]
-size = Vector2(250, 420)
+size = Vector2(60, 340)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h1730"]
 size = Vector2(165, 60)
@@ -78,7 +78,7 @@ tracks/4/keys = {
 "times": PackedFloat32Array(0, 0.16666667, 0.25, 0.41666666, 0.8333333),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1),
 "update": 1,
-"values": [Vector2(2.7, -54.275), Vector2(-0.45, -55.1), Vector2(0.05, -54.1), Vector2(-4, 117.4), Vector2(-3, -65)]
+"values": [Vector2(2.7, -54.275), Vector2(-0.45, -55.1), Vector2(0.05, -54.1), Vector2(-4, 126), Vector2(-3, -65)]
 }
 tracks/5/type = "method"
 tracks/5/imported = false
@@ -93,6 +93,30 @@ tracks/5/keys = {
 "args": [11151],
 "method": &"PlaySoundAnimEvent"
 }]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Origin/Visual/HitBox/TopRing:disabled")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0, 0.41666666, 0.8333333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [true, false, true]
+}
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Origin/Visual/HitBox/GroundSplash:disabled")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0, 0.41666666, 0.8333333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [true, false, true]
 }
 
 [resource]

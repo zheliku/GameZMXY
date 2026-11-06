@@ -132,16 +132,16 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() => m_Monster.AttackSegment == 0, "蝙蝠身体没有进入攻击");
         await WaitUntilAsync(() => hero.Hp < previousHp, "蝙蝠空中攻击没有造成真实伤害");
         await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "Fly", "蝙蝠收招没有返回飞行");
-        var data = AttackData.Create(0, default, 1, DamageKind.Real, new Vector2(48, -72), hero.Id, 0);
+        var data = AttackData.Create(0, default, 1, DamageKind.Real, new Vector2(48, -72), hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
         try
-        { m_Monster.ReceiveHit(data, hero.Id); }
+        { m_Monster.ReceiveHit(data); }
         finally { ReferencePool.Release(data); }
         await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "Hurt", "蝙蝠未进入受击");
         await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "Fly", "蝙蝠受击结束没有返回飞行");
         var bat = m_Monster;
-        data = AttackData.Create(0, default, 10000, DamageKind.Real, Vector2.Zero, hero.Id, 0);
+        data = AttackData.Create(0, default, 10000, DamageKind.Real, Vector2.Zero, hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
         try
-        { bat.ReceiveHit(data, hero.Id); }
+        { bat.ReceiveHit(data); }
         finally { ReferencePool.Release(data); }
         await WaitUntilAsync(() => !bat.IsShown, "蝙蝠死亡动画结束未回池");
         m_Monster = null;
@@ -152,9 +152,9 @@ public sealed partial class UiSmokeScenario
         Vector2 origin = m_Monster.GlobalPosition;
         Check(m_Monster.MaxHp == 6000 && !((IEnemyAiAgent)m_Monster).RequestAttack(0), "石像生命或静止行为不符原版");
         var attacker = new CombatantAttributes(CombatSide.Hero, m_Monster.Level, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
-        data = AttackData.Create(0, attacker, 30, DamageKind.Real, new Vector2(800, -800), hero.Id, 0);
+        data = AttackData.Create(0, attacker, 30, DamageKind.Real, new Vector2(800, -800), hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
         try
-        { m_Monster.ReceiveHit(data, hero.Id); }
+        { m_Monster.ReceiveHit(data); }
         finally { ReferencePool.Release(data); }
         await WaitFramesAsync(30);
         Check(m_Monster.Hp == 5970 && m_Monster.GlobalPosition.IsEqualApprox(origin),

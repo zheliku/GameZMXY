@@ -352,6 +352,49 @@ namespace GameLogic.Save
         }
 
         /// <summary>
+        /// 删除指定格的可读存档并刷新六格目录。
+        /// </summary>
+        /// <param name="slotNumber">从1开始的存档格号。</param>
+        /// <param name="unitId">目录中显示的稳定文件编号。</param>
+        /// <param name="cancellationToken">标题流程周期取消令牌。</param>
+        /// <returns>框架删除及目录刷新是否成功。</returns>
+        public async Task<bool> DeleteSlotAsync(int slotNumber, long unitId, CancellationToken cancellationToken)
+        {
+            if (slotNumber < 1 || slotNumber > SaveModel.SlotCount || unitId == 0)
+            {
+                return false;
+            }
+
+            await m_DirectoryRead;
+            await m_PendingWrite;
+            cancellationToken.ThrowIfCancellationRequested();
+            var archive = this.GetUtility<GameArchiveUtility>();
+            var catalogue = archive.Catalogues.SingleOrDefault(value => value.UnitId == unitId);
+            if (catalogue == null || (catalogue.SlotNumber != 0 && catalogue.SlotNumber != slotNumber))
+            {
+                return false;
+            }
+
+            var model = this.GetModel<SaveModel>();
+            UpdateDirectory(model, SaveListState.Loading);
+            m_PendingWrite = archive.DeleteAsync(unitId);
+            bool deleted = await m_PendingWrite;
+            if (!deleted)
+            {
+                UpdateDirectory(model, SaveListState.Failed, errorMessage: "删除存档失败，请关闭后重试。");
+                return false;
+            }
+
+            if (model.ActiveSlotUnitId == unitId)
+            {
+                model.ActiveSlotUnitId = 0;
+            }
+
+            await RefreshDirectoryAsync(cancellationToken);
+            return true;
+        }
+
+        /// <summary>
         /// 读取六格摘要并发布完整状态；取消后不再发布旧周期结果。
         /// </summary>
         /// <param name="cancellationToken">所属标题周期的取消令牌。</param>

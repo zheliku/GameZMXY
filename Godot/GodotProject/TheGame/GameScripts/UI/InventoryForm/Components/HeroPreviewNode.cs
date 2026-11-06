@@ -4,15 +4,15 @@ using GameLogic.Heroes;
 namespace GameLogic.UI.Widgets
 {
     /// <summary>
-    /// 独立于战斗实体的角色预览，共用身体、武器图集与外置表现动画。
+    /// 独立于战斗实体的官方背包预览，使用专用身体、武器图集与外置表现动画。
     /// </summary>
     public partial class HeroPreviewNode : Node2D
     {
         private static readonly StringName m_IdleAnimation = "idle"; // 预览资源自己的待机轨道，不与战斗动画库混用。
         [Export] private AnimationPlayer m_Player; // 只包含表现轨道，不含碰撞或战斗调用。
-        [Export] private Sprite2D m_Body; // 与战斗角色相同网格的身体层。
+        [Export] private Sprite2D m_Body; // 官方背包姿势的独立身体层。
         [Export] private Sprite2D m_Weapon; // 独立武器层，遮挡部分已在素材中裁成透明。
-        private HeroAppearanceResource m_Appearance; // 每次打开借用当前战斗英雄的外观资源。
+        private HeroAppearanceResource m_Appearance; // 每次打开借用当前英雄的背包换装资源。
         private ulong m_LastTick; // 真实时间原点，不依赖 GGF 暂停后的零 delta。
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace GameLogic.UI.Widgets
         public void Reset(HeroAppearanceResource appearance)
         {
             m_Player.Stop();
-            m_Appearance = appearance;
+            m_Appearance = appearance.PreviewAppearance;
             m_Player.RemoveAnimationLibrary("");
             m_Player.AddAnimationLibrary("", appearance.PreviewAnimations);
             m_Player.Play(m_IdleAnimation);

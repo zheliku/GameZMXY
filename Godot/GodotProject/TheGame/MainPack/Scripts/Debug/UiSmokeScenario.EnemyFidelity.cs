@@ -64,7 +64,7 @@ public sealed partial class UiSmokeScenario
                             new Vector2(1200, -100), direction, 0);
                         try
                         {
-                            actor.ReceiveHit(data, 0);
+                            actor.ReceiveHit(data);
                         }
                         finally
                         {

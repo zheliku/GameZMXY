@@ -79,6 +79,18 @@ tracks/5/keys = {
 "update": 1,
 "values": [SubResource("RectangleShape2D_gysqx")]
 }
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("m_Body:visible")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vf3i0"]
 size = Vector2(1, 1)
@@ -174,6 +186,18 @@ tracks/5/keys = {
 "update": 1,
 "values": [SubResource("RectangleShape2D_vf3i0"), SubResource("RectangleShape2D_dii8d"), SubResource("RectangleShape2D_hg0ei"), SubResource("RectangleShape2D_vb3ns"), SubResource("RectangleShape2D_4kw8p")]
 }
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("m_Body:visible")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h1dou"]
 size = Vector2(1, 1)
@@ -259,6 +283,18 @@ tracks/5/keys = {
 "transitions": PackedFloat32Array(1, 1),
 "update": 1,
 "values": [SubResource("RectangleShape2D_h1dou"), SubResource("RectangleShape2D_17k1d")]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("m_Body:visible")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
 }
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gxi0o"]
@@ -356,6 +392,18 @@ tracks/6/keys = {
 "method": &"SpawnPoisonCloudAnimEvent"
 }]
 }
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("m_Body:visible")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h8vui"]
 size = Vector2(1, 1)
@@ -438,6 +486,32 @@ tracks/5/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 1,
 "values": [SubResource("RectangleShape2D_h8vui")]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("m_Body:visible")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0, 0.083333336, 0.16666667, 0.25, 0.33333334, 0.41666666, 0.5, 0.5833333, 0.6666667, 0.75, 0.8333333, 0.9166667, 1),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [false, true, false, true, false, true, false, true, false, true, false, true, false]
+}
+tracks/7/type = "method"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath(".")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(1),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"SpawnBossDeathAnimEvent"
+}]
 }
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_2eclr"]
@@ -522,6 +596,18 @@ tracks/5/keys = {
 "update": 1,
 "values": [SubResource("RectangleShape2D_2eclr")]
 }
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("m_Body:visible")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7611o"]
 size = Vector2(1, 1)
@@ -601,6 +687,18 @@ tracks/5/keys = {
 "update": 1,
 "values": [SubResource("RectangleShape2D_7611o")]
 }
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("m_Body:visible")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_g6xbm"]
 size = Vector2(1, 1)
@@ -679,6 +777,18 @@ tracks/5/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 1,
 "values": [SubResource("RectangleShape2D_g6xbm")]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("m_Body:visible")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
 }
 
 [resource]

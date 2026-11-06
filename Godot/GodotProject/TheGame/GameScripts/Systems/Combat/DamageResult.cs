@@ -13,6 +13,11 @@ namespace GameLogic.Battle.Damage
         public readonly int Damage;
 
         /// <summary>
+        /// 本次命中结算出的攻击方无双收益；是否接受增长由英雄系统的当前状态决定。
+        /// </summary>
+        public readonly int AttackerWsGain;
+
+        /// <summary>
         /// 是否被闪避
         /// </summary>
         public readonly bool IsMiss;
@@ -34,9 +39,11 @@ namespace GameLogic.Battle.Damage
         /// <param name="isMiss">是否被闪避。</param>
         /// <param name="isCrit">是否暴击。</param>
         /// <param name="kind">伤害类型。</param>
-        public DamageResult(int damage, bool isMiss, bool isCrit, DamageKind kind)
+        /// <param name="attackerWsGain">战斗系统结算的无双收益；持续扣血等非命中事实为零。</param>
+        public DamageResult(int damage, bool isMiss, bool isCrit, DamageKind kind, int attackerWsGain = 0)
         {
             Damage = damage;
+            AttackerWsGain = attackerWsGain;
             IsMiss = isMiss;
             IsCrit = isCrit;
             Kind = kind;

@@ -1,4 +1,5 @@
 using IUIForm = GameFramework.UI.IUIForm;
+using System;
 using GameLogic.UI;
 using GameConfig.Constant;
 using GameLogic.Audio;
@@ -157,6 +158,37 @@ public sealed class ProcedureTitle : ProcedureBase
     }
 
     /// <summary>
+    /// 删除当前目录中指定的可读存档。
+    /// </summary>
+    /// <param name="formSerialId">发起操作的当前窗口编号。</param>
+    /// <param name="slotNumber">要删除的格号。</param>
+    private async void OnSaveSlotDeleteRequested(int formSerialId, int slotNumber)
+    {
+        var saveModel = GF.Fsm.GetModel<SaveModel>();
+        if (formSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) ||
+            saveModel.Phase != SaveListState.Ready || slotNumber < 1 || slotNumber > saveModel.Slots.Count)
+        {
+            return;
+        }
+
+        var slot = saveModel.Slots[slotNumber - 1];
+        if (slot.State != SaveSlotState.Occupied)
+        {
+            return;
+        }
+
+        var token = m_Cancellation.Token;
+        var saves = m_Owner.GetSystem<SaveSystem>();
+        try
+        {
+            await saves.DeleteSlotAsync(slot.SlotNumber, slot.UnitId, token);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+    }
+
+    /// <summary>
     /// 打开声音设置；加载中和已打开时不重复请求。
     /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
@@ -240,9 +272,11 @@ public sealed class ProcedureTitle : ProcedureBase
                 break;
             case SaveForm saveForm when saveForm.SerialId == m_SaveSerialId:
                 saveForm.SaveSlotSelected -= OnSaveSlotSelected;
+                saveForm.SaveSlotDeleteRequested -= OnSaveSlotDeleteRequested;
                 if (bind)
                 {
                     saveForm.SaveSlotSelected += OnSaveSlotSelected;
+                    saveForm.SaveSlotDeleteRequested += OnSaveSlotDeleteRequested;
                 }
 
                 break;

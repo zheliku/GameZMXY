@@ -464,7 +464,7 @@ public partial class SmokeTestDriver : Node
     {
         // 临时攻击数据只在结算期间持有，并在调用后归还对象池。
         AttackData data = AttackData.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0);
-        m_Hero.ReceiveHit(data, 0);
+        m_Hero.ReceiveHit(data);
         ReferencePool.Release(data);
     }
 

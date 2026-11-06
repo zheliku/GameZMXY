@@ -30,6 +30,81 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 public sealed partial class UiSmokeScenario
 {
     /// <summary>
+    /// 用真实致死命中检查七位首领的闪烁、旋涡及回池后的可见性。
+    /// </summary>
+    /// <param name="hero">本关伤害归属者。</param>
+    /// <returns>双物理频率的实际死亡检查。</returns>
+    private async Task CheckBossDeathEffectsAsync(AbstractHeroEntity hero)
+    {
+        foreach (var enemy in GF.Entity.GetAllEntityGroups().SelectMany(g => g.GetAllEntities()).OfType<AbstractEnemyEntity>())
+        {
+            SmokeInspection.FreezeAi(enemy);
+            enemy.SetPhysicsProcess(false);
+            enemy.GlobalPosition = new Vector2(100000, 100000);
+        }
+        int originalTicks = Engine.PhysicsTicksPerSecond;
+        try
+        {
+            foreach (int ticks in new[] { 60, 120 })
+            {
+                Engine.PhysicsTicksPerSecond = ticks;
+                foreach (var id in new[] { EntityId.MacaqueKing, EntityId.TamarinKing, EntityId.BatCaveStatue, EntityId.LionCamelKing,
+                    EntityId.PengDemonKing, EntityId.JiaoDemonKing, EntityId.SharkDemonKing })
+                {
+                    var enemy = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 300)));
+                    SmokeInspection.FreezeAi(enemy);
+                    var attack = AttackData.Create(0, default, 1000000, DamageKind.Real, Vector2.Zero, 1, 0,
+                        source: new AttackSource(hero.Id, hero.Config.EntityId, hero.GetInstanceId(), hero.GetInstanceId()));
+                    try
+                    {
+                        enemy.ReceiveHit(attack);
+                        if (enemy is PengDemonKingEntity)
+                        {
+                            await WaitUntilAsync(() => enemy.AnimPlayer.CurrentAnimation == "egg", "彭魔王没有化卵");
+                            for (int i = 0; i < 5; i++)
+                            {
+                                enemy.ReceiveHit(attack);
+                            }
+                        }
+                        await WaitUntilAsync(() => enemy.Dead && enemy.AnimPlayer.CurrentAnimation == "death", $"{id}未进入死亡");
+                        var body = enemy.GetNode<AnimatedSprite2D>("m_Body");
+                        bool seen = body.Visible, unseen = !body.Visible;
+                        var effects = SmokeInspection.ReadField<System.Collections.Generic.HashSet<SkillEffectNode>>(enemy, "m_SkillEffects");
+                        while (effects.Count == 0 && enemy.IsShown)
+                        {
+                            seen |= body.Visible;
+                            unseen |= !body.Visible;
+                            await WaitFramesAsync(1);
+                        }
+                        Check(seen && unseen && effects.Count == 1, $"{id}缺少死亡闪烁或唯一旋涡");
+                        await WaitUntilAsync(() => effects.Single().GetNode<AnimatedSprite2D>("Origin/Visual/Sprite").Frame >= 2,
+                            $"{id}死亡旋涡没有实际播放");
+                        await WaitFramesAsync(2);
+                        await CaptureCombatAsync($"boss_death_{id}_{ticks}");
+                        await WaitUntilAsync(() => !enemy.IsShown, $"{id}旋涡结束后未回收");
+                        var reused = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 300)));
+                        Check(reused.GetNode<CanvasItem>("m_Body").Visible && !reused.Dead, $"{id}复用残留死亡隐藏");
+                        ReleaseTestEntity(reused);
+                        GD.Print($"SMOKE-BOSS-DEATH PASS: {id}/{ticks}Hz blink, shared vortex, recycle and visible reuse.");
+                    }
+                    finally
+                    {
+                        ReferencePool.Release(attack);
+                        if (enemy.IsShown)
+                        {
+                            ReleaseTestEntity(enemy);
+                        }
+                    }
+                }
+            }
+        }
+        finally
+        {
+            Engine.PhysicsTicksPerSecond = originalTicks;
+        }
+    }
+
+    /// <summary>
     /// 以真实物理落地和身体 FSM 出招，分别覆盖两位 BOSS 的每项攻击。
     /// </summary>
     /// <param name="hero">本关正式英雄。</param>

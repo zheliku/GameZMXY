@@ -26,7 +26,6 @@ namespace GameLogic.Enemies
         [Export] private CollisionShape2D m_MeleeRange; // 近身刺击半径，仅参与AI原点距离判断。
 
         [Export] private PackedScene m_FireScene; // 攻击和化卵期间使用的同一池化火焰场景。
-        [Export] private PackedScene m_DeathScene; // 官方首领死亡旋涡，由死亡动画末帧创建。
         private float m_GroundLeft; // 地面阶段剩余秒数，化卵/复生时冻结而不重置。
         private float m_FlightLeft; // 飞行阶段剩余秒数。
         private float m_InvulnerableLeft; // 起飞和冲刺共用的本实例无敌时钟。
@@ -318,21 +317,6 @@ namespace GameLogic.Enemies
         private void BeginInvulnerabilityAnimEvent(float seconds)
         {
             m_InvulnerableLeft = seconds;
-        }
-
-        /// <summary>
-        /// 死亡动画末帧创建首领死亡旋涡；动画只负责时点，效果自身负责回池。
-        /// </summary>
-        private void SpawnBossDeathAnimEvent()
-        {
-            if (m_BodyFsm.CurrentState is not EnemyDeathState state)
-            {
-                return;
-            }
-
-            var effect = RentSkillEffect(m_DeathScene);
-            effect.Show(null, GlobalPosition, Facing, CaptureCombatAttributes(), 0, false, ReleaseSkillEffect,
-                state.CompleteEffect);
         }
 
         /// <summary>

@@ -63,7 +63,9 @@ public sealed partial class UiSmokeScenario
                         var data = AttackData.Create(0, default, 100000, DamageKind.Real, new Vector2(240, -720), 1, 0);
                         try
                         {
-                            Check(!m_Monster.ReceiveHit(data, 0).IsMiss && m_Monster.Dead, $"{id} 没有进入致死流程");
+                            Check(!m_Monster.ReceiveHit(data).IsMiss && m_Monster.Dead, $"{id} 没有进入致死流程");
+                            Check(SmokeInspection.ReadField<HashSet<GameLogic.Effects.MonsterHitFeedbackNode>>(
+                                m_Monster, "m_HitFeedback").Count == 1, $"{id} 致死一击缺少官方命中闪光");
                         }
                         finally
                         {
@@ -138,7 +140,7 @@ public sealed partial class UiSmokeScenario
             {
                 var definition = tables.TbAttackConfig.Get((int)hit);
                 var data = AttackData.Create((int)hit, default, 1, DamageKind.Real, definition.Knockback, 1, 0);
-                m_Monster.ReceiveHit(data, 0);
+                m_Monster.ReceiveHit(data);
                 GameFramework.ReferencePool.Release(data);
                 Check(m_Monster.TakePendingHurt() == expected, $"{hit}/{id} 实际击退没有按造一24fps换算");
             }
@@ -157,7 +159,7 @@ public sealed partial class UiSmokeScenario
                 Vector2 start = m_Monster.GlobalPosition;
                 var definition = tables.TbAttackConfig.Get((int)hit);
                 var data = AttackData.Create((int)hit, default, 1, DamageKind.Real, definition.Knockback, 1, 0);
-                m_Monster.ReceiveHit(data, 0);
+                m_Monster.ReceiveHit(data);
                 GameFramework.ReferencePool.Release(data);
                 await WaitUntilAsync(() => !m_Monster.HasPendingHurt, "身体状态没有消费技能击退");
                 ulong frame = Engine.GetPhysicsFrames();
@@ -236,7 +238,7 @@ public sealed partial class UiSmokeScenario
                     actor.SetFacing(facing);
                     var data = AttackData.Create(0, default, 1, DamageKind.Real,
                         new Vector2(2, -5), direction, 0);
-                    var result = actor.ReceiveHit(data, 0);
+                    var result = actor.ReceiveHit(data);
                     GameFramework.ReferencePool.Release(data);
                     Check(!result.IsMiss && actor.Facing == facing && actor.HasPendingHurt,
                         $"{actor.GetType().Name} 受击意外转身或未登记击退");

@@ -62,9 +62,9 @@ public sealed partial class UiSmokeScenario
                     $"{id} 的主动索敌规则错误");
                 if (id == EntityId.HuaguoshanMonkey)
                 {
-                    var data = AttackData.Create(0, default, 1, DamageKind.Real, Vector2.Zero, hero.Id, 0);
+                    var data = AttackData.Create(0, default, 1, DamageKind.Real, Vector2.Zero, hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
                     try
-                    { enemy.ReceiveHit(data, hero.Id); }
+                    { enemy.ReceiveHit(data); }
                     finally { ReferencePool.Release(data); }
                     Check(agent.HasTarget, "猴子受击后没有锁定攻击者");
                     typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic)!

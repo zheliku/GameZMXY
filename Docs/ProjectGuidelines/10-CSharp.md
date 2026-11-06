@@ -18,7 +18,7 @@
 
 ### 动画方法入口
 
-原生方法轨道调用的方法统一用 `AnimEvent` 后缀，如 `PlaySoundAnimEvent`、`BeginFlameThrustAnimEvent`；普通信号/事件处理仍用 `On...`，状态内的招式方法使用正常动词，不混用两套命名。入口较多时放在 `类型.AnimationEvents.cs` partial；不为单个声音键新建文件、接口或动作专属包装。重命名时同步原生方法键与导入/校验工具，不保留旧名转发。
+原生方法轨道调用的方法统一用 `AnimEvent` 后缀，如 `PlaySoundAnimEvent`、`BeginFlameThrustAnimEvent`；这些方法只作动画轨道入口，不作为普通业务 API。业务代码需要复用同一动作时，由轨道入口和业务调用共同调用无后缀实现。普通信号/事件处理仍用 `On...`，状态内的招式方法使用正常动词，不混用两套命名。入口较多时放在 `类型.AnimationEvents.cs` partial；不为单个声音键新建文件、接口或动作专属包装。重命名时同步原生方法键与导入/校验工具，不保留旧名转发。
 
 ### 类型命名后缀
 

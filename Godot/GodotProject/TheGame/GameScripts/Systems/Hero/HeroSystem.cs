@@ -10,6 +10,8 @@ using GameLogic.Equipment;
 using GameLogic.Profile;
 using GameLogic.Skills;
 using GameConfig.Skills;
+using GameLogic.Battle.Attacks;
+using GameLogic.Battle.Damage;
 
 namespace GameLogic.Battle
 {
@@ -517,24 +519,17 @@ namespace GameLogic.Battle
         }
 
         /// <summary>
-        /// 按实际伤害与出招时攻击力结算命中无双；开启期间不增长。
+        /// 接受战斗系统已经结算的命中收益；死亡或开启无双期间不接受增长。
         /// </summary>
-        /// <param name="damage">实际伤害。</param>
-        /// <param name="basePower">出招时基础攻击力。</param>
-        public void RecordHit(int damage, int basePower)
+        /// <param name="result">同一次命中的结算结果。</param>
+        public void RecordHit(DamageResult result)
         {
-            if (Hero.IsDepleted)
+            if (Hero.IsDepleted || Hero.WsActive.Value || result.IsMiss)
             {
                 return;
             }
 
-            float coefficient = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.WsGainPerDamageRatio;
-            if (damage <= 0 || basePower <= 0 || !float.IsFinite(coefficient) || coefficient <= 0f)
-            {
-                return;
-            }
-
-            AddWs((int)Math.Min(int.MaxValue, Math.Floor((double)damage / basePower * coefficient + .5)));
+            AddWs(result.AttackerWsGain);
         }
 
         /// <summary>

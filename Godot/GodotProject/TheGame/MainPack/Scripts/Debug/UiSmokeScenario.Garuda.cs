@@ -123,10 +123,10 @@ public sealed partial class UiSmokeScenario
                     Check(retreat - flyer.AiData.ElapsedSeconds > 2.8 && retreat - flyer.AiData.ElapsedSeconds <= 3,
                         "飞行魔退避没有从出招时开始计三秒");
                     await WaitUntilAsync(() => flyer.AttackSegment < 0, "飞行魔自主攻击未完成");
-                    var data = AttackData.Create(0, default, 1, DamageKind.Real, new Vector2(24, -24), 1, 0);
+                    var data = AttackData.Create(0, default, 1, DamageKind.Real, new Vector2(24, -24), 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
                     try
                     {
-                        flyer.ReceiveHit(data, hero.Id);
+                        flyer.ReceiveHit(data);
                     }
                     finally
                     {
@@ -375,10 +375,10 @@ public sealed partial class UiSmokeScenario
     /// <param name="attackerId">英雄实体编号。</param>
     private static void ApplyGarudaTestHit(AbstractEnemyEntity actor, int attackerId)
     {
-        var data = AttackData.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero, 1, 0);
+        var data = AttackData.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero, 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(attackerId, GameConfig.Entity.EntityId.None, 0, 0));
         try
         {
-            actor.ReceiveHit(data, attackerId);
+            actor.ReceiveHit(data);
         }
         finally
         {

@@ -17,8 +17,11 @@
 
 [ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Heroes/Tangseng/tangseng_preview_library.tres" id="preview"]
 
+[ext_resource type="Resource" path="res://TheGame/Sprites/Characters/Heroes/tangseng/tangseng_inventory_appearance.tres" id="inventory_appearance"]
+
 [resource]
 script = ExtResource("script")
+m_PreviewAppearance = ExtResource("inventory_appearance")
 m_PreviewAnimations = ExtResource("preview")
 m_BaseBody = ExtResource("body_1")
 m_ArmorTextures = Dictionary[int, Texture2D]({

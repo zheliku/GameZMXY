@@ -209,7 +209,7 @@ public sealed partial class UiSmokeScenario
             knockback ?? Vector2.Zero, 1, 0);
         try
         {
-            return hero.ReceiveHit(data, 0).IsMiss;
+            return hero.ReceiveHit(data).IsMiss;
         }
         finally
         {

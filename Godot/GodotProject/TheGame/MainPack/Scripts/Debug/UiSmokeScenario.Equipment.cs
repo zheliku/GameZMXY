@@ -37,6 +37,11 @@ public sealed partial class UiSmokeScenario
         var previewPlayer = preview.GetNode<AnimationPlayer>("AnimationPlayer");
         Check(previewPlayer.GetAnimationLibrary("") == appearance.PreviewAnimations,
             "背包预览没有使用当前英雄的待机动画");
+        Check(preview.Position.IsEqualApprox(new Vector2(149, 128)) &&
+            preview.Scale.IsEqualApprox(new Vector2(.95f, .95f)) &&
+            preview.GetNode<Sprite2D>("Body").Position == Vector2.Zero &&
+            preview.GetNode<Sprite2D>("Weapon").Position == preview.GetNode<Sprite2D>("Body").Position,
+            "悟空与唐僧没有共用官方背包预览注册点");
         int count = 0;
         foreach (var definition in ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList)
         {
@@ -48,14 +53,16 @@ public sealed partial class UiSmokeScenario
             bool armor = definition.Slot == EquipmentSlot.Armor;
             var textures = appearance.Get(armor ? "m_ArmorTextures" : "m_WeaponTextures").AsGodotDictionary();
             var expected = textures[(int)definition.Id].AsGodotObject() as Texture2D;
+            var previewTextures = appearance.PreviewAppearance.Get(armor ? "m_ArmorTextures" : "m_WeaponTextures").AsGodotDictionary();
+            var expectedPreview = previewTextures[(int)definition.Id].AsGodotObject() as Texture2D;
             var actorSprite = hero.GetNode<Sprite2D>(armor ? "m_Body" : "m_Weapon");
             var previewSprite = form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/" + (armor ? "Body" : "Weapon"));
             var slot = form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/" + (armor ? "m_ArmorSlot" : "m_WeaponSlot"));
             ClickBagEquipment(form, flow, definition.Id);
             var equipped = armor ? flow.GetModel<ProfileModel>().Armor : flow.GetModel<ProfileModel>().Weapon;
             Check(equipped?.EquipmentId == definition.Id && expected != null &&
-                actorSprite.Texture == expected && previewSprite.Texture == expected &&
-                actorSprite.Hframes == previewSprite.Hframes && actorSprite.Vframes == previewSprite.Vframes,
+                actorSprite.Texture == expected && previewSprite.Texture == expectedPreview &&
+                actorSprite.Hframes == 6 && previewSprite.Hframes == 6,
                 $"{definition.NameCn} 穿戴身份、战斗和预览图集或网格不同步");
             CheckHeroAnimationLayers(hero);
             // 两层独立映射必须由本角色原生待机轨道实际驱动，不能只核对纹理引用。
@@ -73,8 +80,9 @@ public sealed partial class UiSmokeScenario
             // 卸装同样走正式控件事件，校验原图恢复，不能只验证资源字典存在。
             slot._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
             var baseTexture = appearance.Get(armor ? "m_BaseBody" : "m_BaseWeapon").AsGodotObject() as Texture2D;
+            var previewBase = appearance.PreviewAppearance.Get(armor ? "m_BaseBody" : "m_BaseWeapon").AsGodotObject() as Texture2D;
             Check((armor ? flow.GetModel<ProfileModel>().Armor : flow.GetModel<ProfileModel>().Weapon) == null &&
-                actorSprite.Texture == baseTexture && previewSprite.Texture == baseTexture,
+                actorSprite.Texture == baseTexture && previewSprite.Texture == previewBase,
                 $"{definition.NameCn} 卸下后保留了穿戴外观");
             count++;
         }

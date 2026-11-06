@@ -446,6 +446,27 @@ namespace GameLogic.Battle.Tests
         }
 
         /// <summary>
+        /// 角色提前经过顶点也须播完二跳翻身，随后按各自动画结束标记切下落。
+        /// </summary>
+        /// <param name="hz">物理频率。</param>
+        [Theory]
+        [InlineData(60)]
+        [InlineData(120)]
+        public void DoubleJump_CompletesFlipBeforeFall(int hz)
+        {
+            using Harness h = new(hz, CreateWukongParameters());
+            h.Frame(jump: true);
+            h.Body.OnFloor = false;
+            h.Tap(jump: true);
+            h.Body.Velocity = new Vector2(0, 1);
+            h.Run(.2f);
+            Assert.Equal("jump_2", h.Body.LastAnim);
+            h.Body.AnimationComplete = true;
+            h.Frame();
+            Assert.Equal("fall", h.Body.LastAnim);
+        }
+
+        /// <summary>
         /// 攻击中按跳并松开会取消；持续按住则在收招后起跳一次。
         /// </summary>
         /// <param name="held">收招或硬直结束时输入是否仍被按住。</param>

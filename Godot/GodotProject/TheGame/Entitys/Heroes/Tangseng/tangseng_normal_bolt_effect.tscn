@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/tangseng/tangseng_normal_bolt.png" id="texture"]
 
 [sub_resource type="RectangleShape2D" id="shape"]
-size = Vector2(100, 30)
+size = Vector2(111.6, 30)
 
 [sub_resource type="Animation" id="play"]
 resource_name = "play"

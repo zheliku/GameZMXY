@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://rh7k5uikcbhr" path="res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs" id="4_d2pra"]
 [ext_resource type="PackedScene" uid="uid://caauui8brtx47" path="res://TheGame/UIs/Battle/monster_health_bar.tscn" id="5_tuyax"]
 [ext_resource type="Script" uid="uid://bv04t1nrtmbyc" path="res://TheGame/GameScripts/UI/BattleForm/Components/ResourceBar.cs" id="6_11v3d"]
+[ext_resource type="PackedScene" uid="uid://bp24tcpfb0ty5" path="res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn" id="death"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_lrdoq"]
 size = Vector2(261.79047, 168.97797)
@@ -34,6 +35,7 @@ floor_snap_length = 12.0
 script = ExtResource("1_7j050")
 m_Perception = NodePath("Perception")
 m_EnemyEntityId = 100002
+m_DeathScene = ExtResource("death")
 m_HealthBar = NodePath("m_HealthBar")
 m_Body = NodePath("m_Body")
 m_AnimPlayer = NodePath("m_AnimPlayer")

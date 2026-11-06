@@ -29,6 +29,12 @@ MAPPING = {
     'Art/HeroPicture/RoleProperiesBox/718.png': 'Sprites/UI/hud/hud_ws_frame.png',
     'Art/MainGame/BasicPicCd_1.png': 'Sprites/UI/frontend/save_slot_normal.png',
     'Art/MainGame/BasicPicCd_2.png': 'Sprites/UI/frontend/save_slot_hover.png',
+    'Art/BackPack/117.png': 'Sprites/UI/frontend/delete_confirm_panel.png',
+    'Art/BackPack/124.png': 'Sprites/UI/frontend/delete_confirm_cancel.png',
+    'Art/BackPack/126.png': 'Sprites/UI/frontend/delete_confirm_cancel_hover.png',
+    'Art/BackPack/119.png': 'Sprites/UI/frontend/delete_confirm_confirm.png',
+    'Art/BackPack/121.png': 'Sprites/UI/frontend/delete_confirm_confirm_hover.png',
+    'Font/华康宋体W3.ttc': 'MainPack/Fonts/df_song_w3.ttc',
     'Font/Aa我读山月山月独我_mianfeiziti.com.ttf': 'MainPack/Fonts/aa_shan_yue.ttf',
     'Font/Aa文徵明琴赋小楷_mianfeiziti.com.ttf': 'MainPack/Fonts/aa_wen_zheng_ming.ttf',
 }

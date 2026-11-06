@@ -30,6 +30,7 @@ using GameLogic.Enemies;
 using GameLogic.Enemies.Body;
 using GameLogic.Effects;
 using GameLogic.Event.Combat;
+using GameLogic.FloatingText;
 using GodotGameFramework.Entity;
 
 /// <summary>
@@ -46,6 +47,12 @@ public sealed partial class UiSmokeScenario
     /// <returns>技能实际播放与独立命中的验证任务。</returns>
     private async Task CheckTangsengEffectsAsync(TangsengEntity hero, ProcedureOwner flow, BattleForm battleForm)
     {
+        foreach (var enemy in GF.Entity.GetAllEntityGroups().SelectMany(g => g.GetAllEntities()).OfType<AbstractEnemyEntity>())
+        {
+            SmokeInspection.FreezeAi(enemy);
+            enemy.SetPhysicsProcess(false);
+            enemy.GlobalPosition = new Vector2(100000, 100000);
+        }
         var model = flow.GetModel<GameLogic.Battle.HeroModel>();
         var system = flow.GetSystem<SkillSystem>();
         var effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
@@ -66,6 +73,11 @@ public sealed partial class UiSmokeScenario
         hero.SetPhysicsProcess(true);
         hero.SetFacing(1);
         await WaitUntilAsync(() => hero.OnFloor, "唐僧技能回归没有落地");
+        await CheckTangsengClonePlatformsAsync(hero);
+        string cloneSound = ConfigSystem.Instance.Tables.TbSoundConfig.Get((int)SoundId.TangsengWaterClone).Path;
+        await WaitUntilAsync(() => !m_Driver.GetTree().Root.FindChildren("*", "AudioStreamPlayer", true, false)
+            .OfType<AudioStreamPlayer>().Any(player => player.Playing && player.Stream?.ResourcePath == cloneSound),
+            "平台释放的分身声音未播放结束");
         var soundIds = Enum.GetValues<SoundId>().Where(id => id.ToString().StartsWith("Tangseng")).ToArray();
         await CheckSkillSoundsAsync(soundIds);
         var soundPaths = soundIds.ToDictionary(id => ConfigSystem.Instance.Tables.TbSoundConfig.Get((int)id).Path);
@@ -97,6 +109,9 @@ public sealed partial class UiSmokeScenario
             await CheckTangsengBoltInputAsync(hero, flow, sounds);
             await CheckTangsengAirSkillMotionAsync(hero, flow);
 
+            var floating = SmokeInspection.ReadField<FloatingTextPresenter>(FindLevel(), "m_FloatingText");
+            var texts = SmokeInspection.ReadField<HashSet<FloatingTextNode>>(floating, "m_Texts");
+            await WaitUntilAsync(() => texts.Count == 0, "技能检查前旧飘字没有结束");
             model.Hp.Value = 10;
             int cureSounds = sounds[SoundId.TangsengHeavenlyDew];
             await BeginAsync(SkillId.HeavenlyDew, InputSystem.Skill3);
@@ -109,9 +124,21 @@ public sealed partial class UiSmokeScenario
             await CaptureCombatAsync("tangseng_cure_full");
             await WaitUntilAsync(() => model.ActiveSkillId == null, "甘露没有在末帧收招");
             Check(model.Hp.Value == 30, $"甘露没有按int(MaxMP/8+8)恢复20HP，实际{model.Hp.Value}");
+            CheckRecoveryText(texts.Single(), 20);
+            await CaptureCombatAsync("tangseng_dew_heal_number");
             Check(sounds[SoundId.TangsengHeavenlyDew] == cureSounds + 1, "无分身甘露起手未播放一次声音");
+            model.Hp.Value = 10;
             waterClone.Activate(hero.GlobalPosition, hero.Facing);
             await BeginAsync(SkillId.HeavenlyDew, InputSystem.Skill3);
+            await WaitUntilAsync(() => model.Hp.Value == 30, "带分身甘露的本体没有先治疗");
+            CheckRecoveryText(texts.Single(), 20);
+            await WaitUntilAsync(() => model.Hp.Value == 50, "水幻影甘露没有第二次治疗本体");
+            Check(texts.Count == 2, "本体与分身甘露没有分别显示治疗数字");
+            foreach (var text in texts)
+            {
+                CheckRecoveryText(text, 20);
+            }
+            await CaptureCombatAsync("tangseng_clone_dew_heal_number");
             await WaitUntilAsync(() => model.ActiveSkillId == null && !waterClone.IsActive && effects.Count == 0,
                 "带分身甘露没有完整收招");
             Check(sounds[SoundId.TangsengHeavenlyDew] == cureSounds + 3, "分身甘露没有保留官方两次起手音");
@@ -142,13 +169,19 @@ public sealed partial class UiSmokeScenario
                         await BeginAsync(SkillId.DarkIceFormation, InputSystem.Skill1);
                         await WaitUntilAsync(() => clonePlayer.CurrentAnimation == "dark_ice",
                             "玄冰阵起手没有同步切换分身 hit3");
-                        Check(hero.AnimPlayer.CurrentAnimationPosition < .1 && !clone.IsAvailable && clone.Scale.X == 1,
+                        Check(hero.AnimPlayer.CurrentAnimationPosition < .1 && !clone.IsAvailable && clone.GetNode<Sprite2D>("m_Body").Scale.X > 0,
                             "分身辅助起手延迟、仍可换位或左向素材被错误镜像");
                         await WaitUntilAsync(() => effects.Count == 2, "本体与分身没有各自产生独立玄冰阵");
                         var dark = effects.OrderBy(e => e.GlobalPosition.DistanceSquaredTo(hero.GlobalPosition)).First();
                         var shadowDark = effects.Single(e => e != dark);
                         var player = dark.GetNode<AnimationPlayer>("AnimationPlayer");
                         var shadowPlayer = shadowDark.GetNode<AnimationPlayer>("AnimationPlayer");
+                        Check(dark.Source.OwnerEntityId == hero.Id && shadowDark.Source.OwnerEntityId == hero.Id &&
+                            dark.Source.CasterInstanceId == hero.GetInstanceId() &&
+                            shadowDark.Source.CasterInstanceId == clone.GetInstanceId() &&
+                            dark.Source.EmitterInstanceId == dark.GetInstanceId() &&
+                            shadowDark.Source.EmitterInstanceId == shadowDark.GetInstanceId(),
+                            "本体/分身攻击来源没有区分施放者、判定节点及共同伤害归属");
                         Check(Math.Abs(player.CurrentAnimationPosition - shadowPlayer.CurrentAnimationPosition) <= 1.5 / rate,
                             "本体与分身第15源帧的攻击错开");
                         Check(player.CurrentAnimation == (musou ? "musou" : "play") && shadowPlayer.CurrentAnimation == "play",
@@ -170,6 +203,17 @@ public sealed partial class UiSmokeScenario
                         if (rate == 120 && !musou)
                         {
                             await CaptureCombatAsync("tangseng_dark_ice_full");
+                        }
+                        if (rate == 120)
+                        {
+                            await WaitUntilAsync(() => dark.GetNode<AnimatedSprite2D>("Origin/Visual/Sprite").Frame >= 20,
+                                "玄冰阵没有推进到共同视觉对照帧");
+                            var shape = hero.GetNode<CollisionShape2D>("CollisionShape2D");
+                            float feet = shape.Position.Y + shape.Shape.GetRect().End.Y;
+                            Check(dark.GlobalPosition.IsEqualApprox(hero.GlobalPosition - new Vector2(0, musou ? feet * .8f : 0)) &&
+                                dark.GetNode<Node2D>("Origin/Visual").Position == Vector2.Zero,
+                                "玄冰阵普通/无双没有保持角色接地线");
+                            await CaptureCombatAsync(musou ? "tangseng_dark_ice_musou_registered" : "tangseng_dark_ice_normal_registered");
                         }
                         await WaitUntilAsync(() => m_Monster.Hp < hp, "玄冰阵真实判定未命中近侧目标");
                         await WaitUntilAsync(() => model.ActiveSkillId == null && effects.Count == 0 && !clone.IsActive,
@@ -224,7 +268,7 @@ public sealed partial class UiSmokeScenario
                 GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
             try
             {
-                hero.ReceiveHit(damage, 0);
+                hero.ReceiveHit(damage);
             }
             finally
             {
@@ -249,8 +293,11 @@ public sealed partial class UiSmokeScenario
         async Task BeginAsync(SkillId id, string action)
         {
             model.Mp.Value = model.MaxMp.Value;
+            await WaitUntilAsync(() => SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "m_BodyFsm")
+                .CurrentState is HeroGroundState, "上次技能释放模型状态后尚未回到可起手身体状态");
             Input.ActionPress(action);
-            await WaitUntilAsync(() => model.ActiveSkillId == id, $"真实输入没有激活唐僧技能{id}");
+            await WaitUntilAsync(() => model.ActiveSkillId == id, $"真实输入没有激活唐僧技能{id}",
+                describe: () => $"hp={model.Hp.Value} mp={model.Mp.Value} active={model.ActiveSkillId} controls={model.ControlsEnabled} anim={hero.AnimPlayer.CurrentAnimation} time={hero.ActionData.Time}");
             Input.ActionRelease(action);
         }
 
@@ -397,17 +444,29 @@ public sealed partial class UiSmokeScenario
         var model = flow.GetModel<HeroModel>();
         var effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
         var fsm = SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "m_BodyFsm");
+        var chargeBar = hero.GetNode<ProgressBar>("m_IceDragonCharge");
+        Check(chargeBar.Size.IsEqualApprox(new Vector2(67.2f, 9)) &&
+            chargeBar.Position.IsEqualApprox(new Vector2(-33.6f, -76.025f)), "蓄力条没有采用官方尺寸和头顶偏移");
         int ticks = Engine.PhysicsTicksPerSecond;
         var target = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
             new EnemySpawn(hero.GlobalPosition + new Vector2(200, 0)));
         SmokeInspection.StrengthenTrainingTarget(target);
         SmokeInspection.FreezeAi(target);
         target.SetPhysicsProcess(false);
+        int wsGained = 0;
+        int lastWs = model.Ws.Value;
+        void OnWsChanged(int value)
+        {
+            wsGained += Math.Max(0, value - lastWs);
+            lastWs = value;
+        }
+        model.Ws.Register(OnWsChanged);
         try
         {
             foreach (int rate in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = rate;
+                hero.SetFacing(rate == 60 ? -1 : 1);
                 foreach (var test in new[] { (Name: "tap", Hold: 0f, Mana: 100),
                     (Name: "partial", Hold: .2f, Mana: 100), (Name: "full", Hold: 1.3f, Mana: 100),
                     (Name: "poor/reuse", Hold: .5f, Mana: 19) })
@@ -415,8 +474,10 @@ public sealed partial class UiSmokeScenario
                     await WaitUntilAsync(() => fsm.CurrentState is HeroGroundState &&
                         hero.ActionData.Time >= hero.ActionData.AttackReadyAt, "法弹测试没有恢复地面起手");
                     model.Mp.Value = test.Mana;
+                    model.Ws.Value = 0;
+                    int wsBefore = wsGained;
                     Vector2 origin = hero.GlobalPosition;
-                    target.GlobalPosition = origin + new Vector2(200, 0);
+                    target.GlobalPosition = origin + new Vector2(hero.Facing * 200, 0);
                     int hp = target.Hp;
                     int attackSounds = sounds[SoundId.TangsengAttack];
                     int dragonSounds = sounds[SoundId.TangsengIceDragon];
@@ -430,22 +491,35 @@ public sealed partial class UiSmokeScenario
                             "普攻第2源帧没有在长按J时进入冰龙蓄力");
                         Check(effects.Count == 0 && !hero.AnimPlayer.IsPlaying() &&
                             hero.AnimPlayer.CurrentAnimationPosition == 0, "蓄力提前发弹或姿态仍推进");
+                        await WaitUntilAsync(() => chargeBar.Value > 0, "进入蓄力后头顶进度条没有增长");
                     }
                     double start = hero.ActionData.Time;
                     if (test.Name == "full")
                     {
                         GF.Base.PauseGame();
+                        double progress = chargeBar.Value;
+                        float alpha = chargeBar.Modulate.A;
                         await WaitFramesAsync(12);
                         Check(hero.ActionData.Time == start && effects.Count == 0 && model.Mp.Value == test.Mana,
                             "蓄力暂停时仍推进或扣蓝");
+                        Check(chargeBar.Value == progress && chargeBar.Modulate.A == alpha,
+                            "暂停时蓄力条进度或渐显仍推进");
                         GF.Base.ResumeGame();
                     }
                     if (test.Hold > 0)
                     {
                         await WaitUntilAsync(() => hero.ActionData.Time >= start + test.Hold, "长按时间未推进");
                     }
+                    if (charge)
+                    {
+                        Check(chargeBar.FillMode == (hero.Facing < 0 ? 0 : 1) && chargeBar.Modulate.A > 0 &&
+                            (test.Name != "full" || chargeBar.Value == 1 && chargeBar.Modulate.A == 1),
+                            "蓄力条朝向、显示或满蓄比例不符合官方");
+                        await CaptureCombatAsync($"tangseng_charge_{rate}_{test.Name}");
+                    }
                     Input.ActionRelease(InputSystem.Attack);
                     await WaitUntilAsync(() => effects.Any(e => e is TangsengBoltNode), "松键后没有法弹");
+                    Check(chargeBar.Value == 0, "冰龙释放后还保留旧蓄力进度");
                     Check(effects.Count == 1, "一次输入生成多枚法弹");
                     var bolt = effects.Single();
                     bool full = test.Name == "full";
@@ -463,6 +537,14 @@ public sealed partial class UiSmokeScenario
                     Check(SmokeInspection.ReadField<int>(bolt, "m_Power") == power, "法弹威力未按官方整数截断");
                     int hits = 0;
                     int previousHp = hp;
+                    await WaitUntilAsync(() => target.Hp < hp, "法弹没有发生首次命中");
+                    var flashes = SmokeInspection.ReadField<HashSet<MonsterHitFeedbackNode>>(target, "m_HitFeedback");
+                    Check(flashes.Count > 0 && flashes.All(f => f.SpriteFrames.ResourcePath.Contains("/tangseng/")),
+                        "唐僧普攻/冰龙命中没有播放官方变色闪光");
+                    if (test.Name == "tap")
+                    {
+                        await CaptureCombatAsync($"tangseng_normal_hit_feedback_{rate}");
+                    }
                     await WaitUntilAsync(() =>
                     {
                         if (target.Hp < previousHp)
@@ -474,24 +556,28 @@ public sealed partial class UiSmokeScenario
                     }, "法弹没有按射程结束并回池", 4000);
                     Check(target.Hp < hp && (full ? hits >= 2 : hits == 1),
                         $"{rate}Hz {test.Name} 实际命中次数异常：{hits}");
+                    Check(wsGained - wsBefore >= hits * 2,
+                        $"{rate}Hz {test.Name}法弹命中无双错误：{hits}次命中只增长{wsGained - wsBefore}");
                     Check(model.ActiveSkillId == null && hero.GlobalPosition.DistanceTo(origin) < 1,
                         "法弹收招未释放身体或施放期间漂移");
                     await WaitUntilAsync(() => sounds[SoundId.TangsengImpact] > impactSounds,
                         "法弹成功命中后GGF未派发唐僧命中音事件");
-                    Check(sounds[SoundId.TangsengAttack] == attackSounds + (charge && !full ? 2 : 1) &&
+                    Check(sounds[SoundId.TangsengAttack] == attackSounds + 1 &&
                         sounds[SoundId.TangsengIceDragon] == dragonSounds + (full ? 1 : 0) &&
                         sounds[SoundId.TangsengImpact] > impactSounds,
                         $"{rate}Hz {test.Name}声音错误：普攻{sounds[SoundId.TangsengAttack] - attackSounds}，冰龙{sounds[SoundId.TangsengIceDragon] - dragonSounds}，命中{sounds[SoundId.TangsengImpact] - impactSounds}，预期蓄力{charge}、满蓄{full}");
-                    GD.Print($"SMOKE-TANGSENG-BOLT PASS: {rate}Hz {test.Name}, damage={definition.DamageKind}, hits={hits}, mana={model.Mp.Value}.");
+                    GD.Print($"SMOKE-TANGSENG-BOLT PASS: {rate}Hz {test.Name}, damage={definition.DamageKind}, hits={hits}, ws={wsGained - wsBefore}, mana={model.Mp.Value}.");
                 }
             }
         }
         finally
         {
             Input.ActionRelease(InputSystem.Attack);
+            model.Ws.UnRegister(OnWsChanged);
             GF.Base.ResumeGame();
             Engine.PhysicsTicksPerSecond = ticks;
             model.Mp.Value = model.MaxMp.Value;
+            hero.SetFacing(1);
             ReleaseTestEntity(target);
         }
     }
@@ -503,6 +589,9 @@ public sealed partial class UiSmokeScenario
     /// <returns>原生分身生命周期验证任务。</returns>
     private async Task CheckTangsengWaterCloneAsync(TangsengEntity hero)
     {
+        bool processing = hero.IsPhysicsProcessing();
+        hero.SetPhysicsProcess(true);
+        await WaitUntilAsync(() => hero.OnFloor, "分身专项前本体没有落到真实地形");
         var clone = hero.GetNode<GameLogic.Heroes.Tangseng.TangsengWaterCloneNode>("m_WaterClone");
         var player = clone.GetNode<AnimationPlayer>("AnimationPlayer");
         var sprite = clone.GetNode<Sprite2D>("m_Body");
@@ -513,6 +602,14 @@ public sealed partial class UiSmokeScenario
             {
                 Engine.PhysicsTicksPerSecond = ticks;
                 Vector2 start = hero.GlobalPosition;
+                clone.Activate(start + new Vector2(0, -140), 1);
+                Vector2 airborne = clone.GlobalPosition;
+                await WaitUntilAsync(() => clone.GlobalPosition.Y > airborne.Y + 20, "水幻影没有受重力下落");
+                Check(clone.Velocity.Y > 0, "水幻影下落没有物理速度");
+                await CaptureCombatAsync($"tangseng_clone_gravity_{ticks}");
+                await WaitUntilAsync(() => clone.IsOnFloor(), "水幻影没有落到真实地形");
+                Check(Math.Abs(clone.GlobalPosition.Y - start.Y) < 1,
+                    "分身与本体落地脚底不在同一高度");
                 clone.Activate(start, 1);
                 await WaitUntilAsync(() => clone.GlobalPosition.X > start.X + 30, "水幻影没有独立行进");
                 Check(player.CurrentAnimation == "walk" && sprite.Frame is >= 0 and < 16,
@@ -554,9 +651,9 @@ public sealed partial class UiSmokeScenario
                 Check(impacts == 1 && !clone.Visible && !clone.IsPhysicsProcessing(), "取消后仍回调或继续推进");
                 clone.Activate(start, -1);
                 await WaitUntilAsync(() => !clone.IsActive, "水幻影192源帧寿命未结束", 10000);
-                Check(clone.GlobalPosition.X < start.X - 1500 && !clone.Visible,
-                    "水幻影反向移动或到期隐藏错误");
-                GD.Print($"SMOKE-TANGSENG-CLONE PASS: {ticks}Hz native walk/hit3/hit5, pause, one callback, cancel/reuse and 192-frame expiry.");
+                Check(clone.GlobalPosition.X < start.X - 30 && clone.GlobalPosition.X > 0 && !clone.Visible,
+                    "水幻影反向移动、墙体约束或到期隐藏错误");
+                GD.Print($"SMOKE-TANGSENG-CLONE PASS: {ticks}Hz gravity/landing/wall, native walk/hit3/hit5, pause, one callback, cancel/reuse and 192-frame expiry.");
             }
         }
         finally
@@ -564,6 +661,7 @@ public sealed partial class UiSmokeScenario
             GF.Base.ResumeGame();
             clone.Dismiss();
             Engine.PhysicsTicksPerSecond = originalTicks;
+            hero.SetPhysicsProcess(processing);
         }
     }
 
@@ -1219,7 +1317,7 @@ public sealed partial class UiSmokeScenario
                 var data = GameLogic.Battle.Attacks.AttackData.Create(0, default, 1,
                     GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
                 try
-                { hero.ReceiveHit(data, 0); }
+                { hero.ReceiveHit(data); }
                 finally { GameFramework.ReferencePool.Release(data); }
                 await WaitUntilAsync(() => sounds.GetValueOrDefault(hurt) == expected, "成功受击未播放反馈");
                 hero.RestartAnim(HeroAnims.Hurt);
@@ -1266,7 +1364,7 @@ public sealed partial class UiSmokeScenario
                         var data = GameLogic.Battle.Attacks.AttackData.Create(0, default, damage,
                             GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
                         try
-                        { enemy.ReceiveHit(data, 0); }
+                        { enemy.ReceiveHit(data); }
                         finally { GameFramework.ReferencePool.Release(data); }
                         int expected = before;
                         if (animation.HasAnimation(EnemyAnims.Hurt))
@@ -1282,7 +1380,7 @@ public sealed partial class UiSmokeScenario
                     var ignored = GameLogic.Battle.Attacks.AttackData.Create(0, default, 1,
                         GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
                     try
-                    { Check(enemy.ReceiveHit(ignored, 0).IsMiss, $"{id} 死亡后仍受击"); }
+                    { Check(enemy.ReceiveHit(ignored).IsMiss, $"{id} 死亡后仍受击"); }
                     finally { GameFramework.ReferencePool.Release(ignored); }
                     await WaitFramesAsync(3);
                     Check(sounds.GetValueOrDefault(impact) == before, $"{id} 无效受击仍然发声");

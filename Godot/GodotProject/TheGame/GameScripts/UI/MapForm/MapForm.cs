@@ -82,13 +82,15 @@ namespace GameLogic.UI
 		#endregion
 
 		[Export]
-		private Button m_Settings;
+		private TextureButton m_Settings;
+		[Export]
+		private AnimationPlayer m_SettingsAnimation;
 		[Export]
 		private Button m_Skills;
 		[Export]
 		private AnimatedSprite2D m_SkillsArtwork;
 		[Export]
-		private TextureButton m_Back;
+		private Button m_Back;
 		[Export]
 		private MapLocationButton m_Huaguoshan;
 		[Export]

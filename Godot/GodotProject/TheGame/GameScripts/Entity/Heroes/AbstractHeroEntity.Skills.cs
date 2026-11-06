@@ -144,7 +144,8 @@ namespace GameLogic.Heroes
             var definition = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
             SetAttack(AttackData.Create((int)hit, CaptureCombatAttributes(),
                 (int)(power * this.GetSystem<HeroSystem>().AttackPowerMultiplier),
-                definition.DamageKind, definition.Knockback, Facing, definition.HitProtect, knockbackOriginX));
+                definition.DamageKind, definition.Knockback, Facing, definition.HitProtect, knockbackOriginX,
+                source: CaptureAttackSource()));
         }
 
         /// <summary>
@@ -213,6 +214,7 @@ namespace GameLogic.Heroes
             var effect = NodePool.Instance.Get<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
                 throw new InvalidOperationException($"技能特效未登记到节点池：{scene.ResourcePath}");
             m_SkillEffects.Add(effect);
+            effect.Source = CaptureAttackSource();
             return effect;
         }
 

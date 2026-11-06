@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Effects/MonsterHitFeedbackNode.cs" id="script"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/monster_hit/wukong/wukong_monster_hit_frames.tres" id="wukong"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/monster_hit/tangseng/tangseng_monster_hit_frames.tres" id="tangseng"]
+
+[node name="MonsterHitFeedback" type="AnimatedSprite2D"]
+z_index = 2
+sprite_frames = ExtResource("wukong")
+animation = &"hit_1"
+script = ExtResource("script")
+m_WukongFrames = ExtResource("wukong")
+m_TangsengFrames = ExtResource("tangseng")

@@ -25,7 +25,7 @@ ET.register_namespace('xlink', XLINK)
 ET.register_namespace('ffdec', FFDEC)
 
 
-def split_pose(source, output, transform):
+def split_pose(source, output, transform, excluded_ids=frozenset({'246', '205'})):
     """Separate body, equipment and effects, retaining Flash draw order."""
     # Reusing an export directory must not retain removed fragment sidecars.
     for previous in output.glob(source.stem + '_*.svg'):
@@ -38,13 +38,11 @@ def split_pose(source, output, transform):
             character = element.get('{' + FFDEC + '}characterId')
             if character in WEAPON_IDS:
                 return [('weapon', wrap(element, ancestors))]
-            if character == '246':
-                # This baked red/gold staff cannot follow the equipped weapon.
+            if character in excluded_ids:
+                # Role_v7 has a baked staff and invisible probe; other source packages opt out.
                 return []
             if character in EFFECT_IDS:
                 return [('effect', wrap(element, ancestors))]
-            if character == '205':  # Invisible collision probe, never artwork.
-                return []
             reference = definitions.get(element.get('{' + XLINK + '}href', '')[1:])
             if reference is not None and any(t.get('{' + FFDEC + '}characterId') in WEAPON_IDS for t in reference.iter()):
                 return [entry for child in reference for entry in flatten(child, ancestors + (element,))]

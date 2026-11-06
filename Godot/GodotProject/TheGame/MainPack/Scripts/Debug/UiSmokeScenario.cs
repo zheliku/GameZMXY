@@ -100,6 +100,18 @@ public sealed partial class UiSmokeScenario
             Check(data?.SaveVersion == GameData.CurrentVersion && data.Heroes.Count == 1, "首次启动未按当前版本写回新档");
             CheckDisplay(battleForm, hero, flow.GetModel<ProfileModel>(), level);
 
+            if (OS.GetCmdlineUserArgs().Contains("--boss-death-only"))
+            {
+                await CheckBossDeathEffectsAsync(hero);
+                return;
+            }
+
+            if (OS.GetCmdlineUserArgs().Contains("--hero-presentation-only"))
+            {
+                await CheckHeroPresentationAsync(hero, flow);
+                return;
+            }
+
             if (OS.GetCmdlineUserArgs().Contains("--bull-capture-only"))
             {
                 level.Cleanup();
@@ -807,8 +819,8 @@ public sealed partial class UiSmokeScenario
                 Check(ai.RequestAttack(0), $"怪物 {id} 收招后不能再次攻击");
                 await WaitUntilAsync(() => m_Monster.AttackSegment >= 0, "第二次攻击没有开始");
                 AttackData data = AttackData.Create(0, default, 1, GameConfig.Battle.DamageKind.Real,
-                    new Vector2(2, -5), 1, 0);
-                m_Monster.ReceiveHit(data, hero.Id);
+                    new Vector2(2, -5), 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
+                m_Monster.ReceiveHit(data);
                 GameFramework.ReferencePool.Release(data);
                 Check(SmokeInspection.ReadField<AttackData>(m_Monster, "m_ActiveAttackData") == null && !ai.RequestAttack(0),
                     $"怪物 {id} 已受击仍保留攻击包或立即反击");
@@ -1080,7 +1092,7 @@ public sealed partial class UiSmokeScenario
         {
             var attack = GameLogic.Battle.Attacks.AttackData.Create(0, default, 10f,
                 GameConfig.Battle.DamageKind.Real, new Vector2(30, 0), 1, 0);
-            hero.ReceiveHit(attack, 0);
+            hero.ReceiveHit(attack);
             GameFramework.ReferencePool.Release(attack);
         }
         Check(GF.Fsm.GetModel<HeroModel>().Hp.Value < hp && !((IHeroBody)hero).HasPendingHurt,
@@ -1186,7 +1198,7 @@ public sealed partial class UiSmokeScenario
                 {
                     if (!m_Monster.Dead)
                     {
-                        m_Monster.ReceiveHit(attack, 0);
+                        m_Monster.ReceiveHit(attack);
                     }
 
                     return m_Monster.Dead;
@@ -1453,7 +1465,7 @@ public sealed partial class UiSmokeScenario
             {
                 var attack = GameLogic.Battle.Attacks.AttackData.Create(0, default, monster.MaxHp * 10f,
                     GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
-                monster.ReceiveHit(attack, hero.Id);
+                monster.ReceiveHit(attack);
                 GameFramework.ReferencePool.Release(attack);
             }
 
@@ -1510,7 +1522,7 @@ public sealed partial class UiSmokeScenario
         {
             var attack = GameLogic.Battle.Attacks.AttackData.Create(0, default, GF.Fsm.GetModel<HeroModel>().MaxHp.Value * 100f,
                 GameConfig.Battle.DamageKind.Real, Vector2.Zero, -1, 0);
-            hero.ReceiveHit(attack, 0);
+            hero.ReceiveHit(attack);
             GameFramework.ReferencePool.Release(attack);
         }
 

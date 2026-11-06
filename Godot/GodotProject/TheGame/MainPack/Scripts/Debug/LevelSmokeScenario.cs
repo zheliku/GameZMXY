@@ -824,8 +824,8 @@ public sealed class LevelSmokeScenario
                 }
 
                 AttackData data = AttackData.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero,
-                                    -monster.Facing, 0);
-                monster.ReceiveHit(data, m_Hero.Id);
+                                    -monster.Facing, 0, source: new GameLogic.Battle.Attacks.AttackSource(m_Hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
+                monster.ReceiveHit(data);
                 ReferencePool.Release(data);
                 if (monster.Dead && m_Killed.Add(monster.Id))
                 {

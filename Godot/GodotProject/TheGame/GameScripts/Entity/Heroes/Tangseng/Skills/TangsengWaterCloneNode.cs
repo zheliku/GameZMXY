@@ -1,4 +1,6 @@
 using System;
+using GameLogic.Architecture;
+using GameLogic.Config;
 using Godot;
 
 namespace GameLogic.Heroes.Tangseng
@@ -6,7 +8,7 @@ namespace GameLogic.Heroes.Tangseng
     /// <summary>
     /// 官方 Role2Shadow 水幻影的移动、动作帧和 192 源帧生命周期。
     /// </summary>
-    public partial class TangsengWaterCloneNode : Node2D
+    public partial class TangsengWaterCloneNode : CharacterBody2D
     {
         private const string WalkAnimation = "walk"; // 原生行进动作。
         private const string DarkIceAnimation = "dark_ice"; // 分身玄冰阵动作。
@@ -15,8 +17,10 @@ namespace GameLogic.Heroes.Tangseng
         private const float LifetimeSeconds = 192f / 24f; // 官方192源帧寿命。
 
         [Export] private AnimationPlayer m_Player; // 原生动画唯一拥有帧序和施法时点。
+        [Export] private Sprite2D m_Body; // 只镜像表现，不翻转物理身体。
 
         private float m_Lifetime; // 本次经过的游戏秒数。
+        private float m_Gravity; // 从本体同一份配置取得的普通重力，分身自身不进入无双。
         private int m_Facing; // 创建时的行进方向。
         private Action m_Cast; // 当前辅助施法的一次回调。
         private bool m_CastRequested, m_FinishRequested; // 原生方法键只登记事实，播放器返回后执行。
@@ -53,7 +57,10 @@ namespace GameLogic.Heroes.Tangseng
         {
             GlobalPosition = position;
             m_Facing = facing < 0 ? -1 : 1;
-            Scale = new Vector2(-m_Facing, 1);
+            m_Body.Scale = new Vector2(-m_Facing * Mathf.Abs(m_Body.Scale.X), m_Body.Scale.Y);
+            Velocity = Vector2.Zero;
+            var hero = (TangsengEntity)GetParent();
+            m_Gravity = hero.GetModel<ConfigurationModel>().GetHeroBodyParams(hero.HeroId).Gravity;
             m_Lifetime = 0;
             m_Cast = null;
             BeginAnimation(WalkAnimation);
@@ -121,7 +128,12 @@ namespace GameLogic.Heroes.Tangseng
 
             if (m_Player.CurrentAnimation == WalkAnimation)
             {
-                GlobalPosition += new Vector2(MoveSpeed * m_Facing * dt, 0);
+                Velocity = new Vector2(MoveSpeed * m_Facing, Velocity.Y + m_Gravity * dt);
+                MoveAndSlide();
+            }
+            else
+            {
+                Velocity = Vector2.Zero;
             }
 
             // 与英雄技能相同：遍历轨道时不换动画、不隐藏或调用外部业务。

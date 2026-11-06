@@ -1,39 +1,40 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://dp66kp66gq6wr"]
 
-[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="script"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/Effects/tangseng/skills/tangseng_cure_role_frames.tres" id="frames"]
-[ext_resource type="AnimationLibrary" path="res://TheGame/Entitys/Animations/Heroes/Tangseng/tangseng_cure_role_library.tres" id="animation"]
-
-[sub_resource type="RectangleShape2D" id="rest"]
-size = Vector2(1, 1)
+[ext_resource type="AnimationLibrary" uid="uid://di83oxka103g6" path="res://TheGame/Entitys/Animations/Heroes/Tangseng/tangseng_cure_role_library.tres" id="animation"]
+[ext_resource type="SpriteFrames" uid="uid://s6n1ebp5andu" path="res://TheGame/Sprites/Effects/tangseng/skills/tangseng_cure_role_frames.tres" id="frames"]
+[ext_resource type="Script" uid="uid://bx0447o7u7wmq" path="res://TheGame/GameScripts/Entity/Effects/SkillEffectNode.cs" id="script"]
 
 [sub_resource type="CanvasItemMaterial" id="additive"]
 blend_mode = 1
 
-[node name="TangsengCureRole" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox")]
+[sub_resource type="RectangleShape2D" id="rest"]
+size = Vector2(1, 1)
+
+[node name="TangsengCureRole" type="Node2D" unique_id=1818688527 node_paths=PackedStringArray("m_Player", "m_HitBox")]
 z_index = 2
 script = ExtResource("script")
 m_Player = NodePath("AnimationPlayer")
 m_HitBox = NodePath("Origin/Visual/HitBox")
 
-[node name="Origin" type="Node2D" parent="."]
+[node name="Origin" type="Node2D" parent="." unique_id=1862896598]
 
-[node name="Visual" type="Node2D" parent="Origin"]
+[node name="Visual" type="Node2D" parent="Origin" unique_id=1360032101]
 
-[node name="Sprite" type="AnimatedSprite2D" parent="Origin/Visual"]
+[node name="Sprite" type="AnimatedSprite2D" parent="Origin/Visual" unique_id=2005394994]
 material = SubResource("additive")
-offset = Vector2(-4.5, -24.5)
 sprite_frames = ExtResource("frames")
 animation = &"play"
+frame = 33
+offset = Vector2(0, -24.5)
 
-[node name="HitBox" type="Area2D" parent="Origin/Visual"]
+[node name="HitBox" type="Area2D" parent="Origin/Visual" unique_id=600045275]
 collision_layer = 16
 collision_mask = 32
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Origin/Visual/HitBox" unique_id=2029593897]
 shape = SubResource("rest")
 disabled = true
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=2023455540]
 libraries/ = ExtResource("animation")

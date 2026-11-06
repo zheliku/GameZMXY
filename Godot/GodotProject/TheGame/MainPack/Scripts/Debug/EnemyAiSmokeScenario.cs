@@ -508,8 +508,8 @@ public sealed class EnemyAiSmokeScenario
     private void HitMonster(float power, Vector2 knockback)
     {
         // 攻击数据只在结算期间持有，完成后立即归还引用池。
-        AttackData data = AttackData.Create(0, default, power, DamageKind.Real, knockback, 1, 0);
-        m_Monster.ReceiveHit(data, m_Hero.Id);
+        AttackData data = AttackData.Create(0, default, power, DamageKind.Real, knockback, 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(m_Hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
+        m_Monster.ReceiveHit(data);
         ReferencePool.Release(data);
     }
 

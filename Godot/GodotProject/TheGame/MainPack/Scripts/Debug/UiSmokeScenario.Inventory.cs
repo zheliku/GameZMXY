@@ -137,11 +137,11 @@ public sealed partial class UiSmokeScenario
             GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense + 3 && GF.Fsm.GetModel<HeroModel>().MaxHp.Value == baseMaxHp + 27 && GF.Fsm.GetModel<HeroModel>().Hp.Value == currentHp,
             "防具未刷新具名属性，或换装意外补血");
         CheckHeroAnimationLayers(hero);
-        // 地煞猿甲必须按具体装备换整套动作纹理，战斗与预览读取同一资源。
+        // 地煞猿甲必须按具体装备换整套动作纹理，战斗与预览各读对应官方资源。
         ClickBagEquipment(form, flow, EquipmentId.EarthFiendApeArmor);
         var earthFiendTexture = GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_earth_fiend.png");
         Check(flow.GetModel<ProfileModel>().Armor?.EquipmentId == EquipmentId.EarthFiendApeArmor &&
-            hero.GetNode<Sprite2D>("m_Body").Texture == earthFiendTexture && body.Texture == earthFiendTexture,
+            hero.GetNode<Sprite2D>("m_Body").Texture == earthFiendTexture && body.Texture == GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/preview/wukong_preview_body_earth_fiend.png"),
             "地煞猿甲未同步替换战斗和预览的完整动作图集");
         CheckHeroAnimationLayers(hero);
         await CaptureCombatAsync("inventory_earth_fiend_armor");
@@ -180,7 +180,7 @@ public sealed partial class UiSmokeScenario
         ClickBagEquipment(form, flow, EquipmentId.HeirloomSword);
         var heirloomTexture = GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_heirloom.png");
         Check(hero.GetNode<Sprite2D>("m_Weapon").Texture == heirloomTexture &&
-            form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Weapon").Texture == heirloomTexture &&
+            form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Weapon").Texture == GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/preview/wukong_preview_weapon_heirloom.png") &&
             GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + 15 &&
             Mathf.IsEqualApprox(GF.Fsm.GetModel<HeroModel>().Crit.Value, .03f),
             "家传宝剑未同步替换战斗/背包动作图集或属性错误");
@@ -205,7 +205,7 @@ public sealed partial class UiSmokeScenario
         ClickBagEquipment(form, flow, EquipmentId.HeavenlyFiendMoonHalberd);
         var halberd = GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_heavenly_fiend.png");
         Check(hero.GetNode<Sprite2D>("m_Weapon").Texture == halberd &&
-            form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Weapon").Texture == halberd &&
+            form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Weapon").Texture == GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/preview/wukong_preview_weapon_heavenly_fiend.png") &&
             GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + 50 &&
             Mathf.IsEqualApprox(GF.Fsm.GetModel<HeroModel>().Crit.Value, .03f),
             "天煞月戟未同步战斗/预览动作图集或50攻击、3%暴击");
@@ -227,8 +227,8 @@ public sealed partial class UiSmokeScenario
         var wornWeapon = flow.GetModel<ProfileModel>().Weapon;
         var wornArmor = flow.GetModel<ProfileModel>().Armor;
         Check(hero.GetNode<Sprite2D>("m_Weapon").Texture == excellentWeapon &&
-            form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Weapon").Texture == excellentWeapon &&
-            hero.GetNode<Sprite2D>("m_Body").Texture == excellentArmor && body.Texture == excellentArmor &&
+            form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Weapon").Texture == GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/preview/wukong_preview_weapon_excellent.png") &&
+            hero.GetNode<Sprite2D>("m_Body").Texture == excellentArmor && body.Texture == GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/preview/wukong_preview_body_excellent.png") &&
             wornWeapon?.EquipmentId == EquipmentId.ExcellentPilgrimStaff && wornArmor?.EquipmentId == EquipmentId.ExcellentPilgrimClothes &&
             GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + wornWeapon.Attributes.Power &&
             GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense + 6 &&
@@ -300,7 +300,7 @@ public sealed partial class UiSmokeScenario
             "res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_blood_sea.png");
         Check(flow.GetModel<ProfileModel>().Armor?.EquipmentId == EquipmentId.BloodSeaDemonArmor &&
             hero.GetNode<Sprite2D>("m_Body").Texture == bloodSeaArmorTexture &&
-            body.Texture == bloodSeaArmorTexture &&
+            body.Texture == GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/preview/wukong_preview_body_blood_sea.png") &&
             GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + 80 &&
             GF.Fsm.GetModel<HeroModel>().Def.Value == Math.Max(0, baseDefense - 10) &&
             Mathf.IsEqualApprox(GF.Fsm.GetModel<HeroModel>().Crit.Value, .05f) &&

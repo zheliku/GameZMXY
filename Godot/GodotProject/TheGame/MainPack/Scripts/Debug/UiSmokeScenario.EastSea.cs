@@ -208,10 +208,10 @@ public sealed partial class UiSmokeScenario
     /// <returns>实际伤害。</returns>
     private static int ApplyEastSeaHit(AbstractEnemyEntity actor, int attackerId, int power, int direction, bool effect, Vector2 knockback)
     {
-        var data = AttackData.Create(0, default, power, DamageKind.Real, knockback, direction, 0, isEffect: effect);
+        var data = AttackData.Create(0, default, power, DamageKind.Real, knockback, direction, 0, isEffect: effect, source: new GameLogic.Battle.Attacks.AttackSource(attackerId, GameConfig.Entity.EntityId.None, 0, 0));
         try
         {
-            return actor.ReceiveHit(data, attackerId).Damage;
+            return actor.ReceiveHit(data).Damage;
         }
         finally
         {

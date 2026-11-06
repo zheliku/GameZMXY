@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/tangseng/skills/tangseng_ice_dragon_bolt.png" id="texture"]
 
 [sub_resource type="RectangleShape2D" id="shape"]
-size = Vector2(89.99939, 39.99939)
+size = Vector2(100.85, 61.3)
 
 [sub_resource type="Animation" id="play"]
 resource_name = "play"
@@ -35,7 +35,7 @@ collision_mask = 32
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(0.15, 0.5)
+position = Vector2(2.675, -4.85)
 shape = SubResource("shape")
 disabled = true
 

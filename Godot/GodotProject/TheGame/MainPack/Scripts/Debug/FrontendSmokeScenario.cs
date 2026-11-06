@@ -245,6 +245,11 @@ public sealed partial class FrontendSmokeScenario
                 SmokeInspection.CountBindingHandlers(GF.Fsm.GetModel<SaveModel>().Directory, saves) == 1 &&
                 SmokeInspection.CallbackCount(saves, "SaveSlotSelected") == 1,
                 "存档页未复用 GGF 池实例或重复订阅目录");
+            if (OS.GetCmdlineUserArgs().Contains("--save-delete-only"))
+            {
+                await CheckSaveDeletionAsync(saves);
+                return;
+            }
             await ClickAsync(saves, "Slots/m_Slot2");
             CharacterForm character = await WaitForAsync<CharacterForm>();
             var flow = SmokeInspection.ReadField<GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>>(
@@ -276,6 +281,28 @@ public sealed partial class FrontendSmokeScenario
                 "选角到地图更换了档案作用域");
             Check(!Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "点击花果山之前已创建关卡");
             await CaptureAsync("map_form");
+            if (OS.GetCmdlineUserArgs().Contains("--map-buttons-only"))
+            {
+                await MoveMouseAsync(new Vector2(900, 560));
+                var settingsToken = map.GetNode<TextureButton>("m_Settings");
+                var animation = settingsToken.GetNode<AnimationPlayer>("m_SettingsAnimation");
+                Check(settingsToken.TextureNormal.ResourcePath.EndsWith("map_return_title.png") &&
+                    settingsToken.GetNode<Label>("Caption").Text == "游戏设置", "设置入口没有复用原版令牌");
+                await CaptureAsync("map_settings_token_idle");
+                await MoveMouseAsync(settingsToken.GetGlobalRect().GetCenter());
+                await WaitUntilAsync(() => settingsToken.Scale.X > 1.025f, "设置令牌悬停未起伏");
+                Check(animation.CurrentAnimation == "hover" && animation.GetAnimation("hover").LoopMode == Animation.LoopModeEnum.Linear,
+                    "设置令牌动画未循环");
+                await CaptureAsync("map_settings_token_hover");
+                await MoveMouseAsync(new Vector2(900, 560));
+                Check(settingsToken.Scale.IsEqualApprox(Vector2.One), "设置令牌移出后未恢复");
+                await ClickAsync(map, "m_Settings");
+                var settingsForm = await WaitForAsync<SettingsForm>();
+                await ClickAsync(settingsForm, "Scroll/m_Close");
+                await CheckMapSkillPurchaseAsync(map, flow);
+                GD.Print("SMOKE-MAP-BUTTONS PASS: original token settings, hover/reset, real settings navigation and official skill loops.");
+                return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--level-guide-only"))
             {
                 await CheckLevelGuideAsync(map);
@@ -623,6 +650,79 @@ public sealed partial class FrontendSmokeScenario
                 GF.Sound.SetVolume("UI", originalUi);
             }
         }
+    }
+
+    /// <summary>
+    /// 以隔离档案验证真实删除按钮、确认取消、主备文件和格子复用。
+    /// </summary>
+    /// <param name="saves">当前六格存档窗口。</param>
+    /// <returns>删除与重新建档验证任务。</returns>
+    private async Task CheckSaveDeletionAsync(SaveForm saves)
+    {
+        var system = GF.Fsm.GetSystem<SaveSystem>();
+        var model = GF.Fsm.GetModel<SaveModel>();
+        Check(saves.GetNode<BaseButton>("Slots/m_Slot2/Delete").Disabled &&
+            !saves.GetNode<Control>("Slots/m_Slot2/Delete").Visible, "空存档仍显示删除入口");
+        await system.LoadOrCreateAsync(2, 0, initialHeroId: 2);
+        await system.LoadOrCreateAsync(3, 0, initialHeroId: 1);
+        await system.RefreshDirectoryAsync(default);
+        long deletedId = model.Slots[1].UnitId;
+        long retainedId = model.Slots[2].UnitId;
+        string path = ProjectSettings.GlobalizePath($"user://{GF.Archive.Setting.Folder}/Data/{deletedId}.sav");
+        Check(File.Exists(path), "删除夹具没有实际落盘");
+        File.Copy(path, path + ".bak", true);
+        await WaitUntilAsync(() => !Find<SaveNoticeForm>().Single().GetNode<Label>("SaveFeedback/m_SaveFeedback").Visible,
+            "建档保存提示未结束");
+        var delete = saves.GetNode<TextureButton>("Slots/m_Slot2/Delete");
+        Check(delete.Visible && delete.Size.IsEqualApprox(new Vector2(24, 24)) && delete.Modulate.A < .5f,
+            "有存档的删除入口没有使用缩小压暗的图标");
+        Check(saves.GetNode<TextureRect>("DeleteConfirmation/Panel").Texture != null &&
+            saves.GetNode<TextureButton>("DeleteConfirmation/Panel/Cancel").TextureNormal != null &&
+            saves.GetNode<TextureButton>("DeleteConfirmation/Panel/Confirm").TextureNormal != null,
+            "原项目确认框贴图没有载入");
+        await CaptureAsync("save_delete_slots");
+        await MoveMouseAsync(delete.GetGlobalRect().GetCenter());
+        Check(delete.Modulate.IsEqualApprox(Colors.White), "鼠标靠近时未提亮删除入口");
+        await CaptureAsync("save_delete_hover");
+        await MoveMouseAsync(new Vector2(20, 20));
+        Check(delete.Modulate.A < .5f, "鼠标离开后没有恢复暗色删除入口");
+        await ClickAsync(saves, "Slots/m_Slot2/Delete");
+        var confirmation = saves.GetNode<Control>("DeleteConfirmation");
+        Check(confirmation.Visible && confirmation.GetNode<Label>("Panel/Message").Text.Contains("第 2 个存档"),
+            "删除确认层没有显示当前格号");
+        Check(GF.Procedure.CurrentProcedure is ProcedureTitle && model.Slots[1].State == SaveSlotState.Occupied,
+            "删除按钮透传给格子或在确认前删除");
+        await CaptureAsync("save_delete_confirmation");
+        await ClickAsync(saves, "DeleteConfirmation/Panel/Cancel");
+        Check(File.Exists(path) && File.Exists(path + ".bak") && model.Slots[1].UnitId == deletedId,
+            "取消删除仍修改存档");
+        await ClickAsync(saves, "Slots/m_Slot2/Delete");
+        await ClickAsync(saves, "DeleteConfirmation/Panel/Confirm");
+        await WaitUntilAsync(() => model.Phase == SaveListState.Ready && model.Slots[1].State == SaveSlotState.Empty,
+            "删除后存档目录未刷新为空格");
+        Check(!File.Exists(path) && !File.Exists(path + ".bak") && !File.Exists(path + ".tmp") &&
+            model.Slots[2].UnitId == retainedId && model.Slots[2].State == SaveSlotState.Occupied,
+            "删除未清主备文件或影响其他格");
+        await CaptureAsync("save_delete_completed");
+        await ClickAsync(saves, "Slots/m_Slot2");
+        var character = await WaitForAsync<CharacterForm>();
+        await ClickAsync(character, "Roles/m_Sanzang");
+        var map = await WaitForAsync<MapForm>();
+        Check(GF.Archive.CurrentData.ActiveHeroId == 2 && GF.Archive.CurrentData.UnitId != deletedId &&
+            GF.Archive.CurrentCatalogue.SlotNumber == 2, "删除后的同格未正确新建唐僧档案");
+        await ClickAsync(map, "m_Back");
+        var start = await WaitForAsync<StartForm>();
+        await ClickAsync(start, "m_Start");
+        saves = await WaitForSaveAsync();
+        Check(model.Slots[1].State == SaveSlotState.Occupied && model.Slots[2].UnitId == retainedId &&
+            SmokeInspection.CallbackCount(saves, "SaveSlotDeleteRequested") == 1, "目录重读或删除订阅复用异常");
+        await ClickAsync(saves, "Slots/m_Slot3/Delete");
+        Check(saves.GetNode<Control>("DeleteConfirmation").Visible, "重开存档页没有显示删除确认层");
+        saves.GetNode<BaseButton>("m_Close").EmitSignal(BaseButton.SignalName.Pressed);
+        saves.GetNode<BaseButton>("DeleteConfirmation/Panel/Confirm").EmitSignal(BaseButton.SignalName.Pressed);
+        Check(model.Slots[2].UnitId == retainedId && GF.Archive.Catalogues.Any(value => value.UnitId == retainedId),
+            "已关闭存档窗口的迟到确认仍删除存档");
+        GD.Print("SMOKE-SAVE-DELETE PASS: empty hidden, compact dim icon, hover, original artwork, actual mouse, cancel, confirmation, main/backup removal, other slot, same-slot creation, reload and stale confirmation.");
     }
 
     /// <summary>

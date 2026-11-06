@@ -60,12 +60,24 @@ namespace GameLogic.Heroes.Tangseng
             if (input.IsActionPressed(InputSystem.Attack))
             {
                 m_ChargeTime = Mathf.Min(m_ChargeTime + dt, ChargeSeconds);
+                ((TangsengEntity)body).UpdateIceDragonCharge(m_ChargeTime / ChargeSeconds);
                 return;
             }
 
             m_FullCharge = m_ChargeTime >= ChargeSeconds - 0.0001f;
             m_Releasing = true;
+            ((TangsengEntity)body).UpdateIceDragonCharge(0);
             BeginAnimation(body, "skills/ice_dragon");
+        }
+
+        /// <inheritdoc />
+        protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
+        {
+            if (!isShutdown)
+            {
+                ((TangsengEntity)body).UpdateIceDragonCharge(0);
+            }
+            base.Leave(fsm, body, isShutdown);
         }
 
         /// <summary>

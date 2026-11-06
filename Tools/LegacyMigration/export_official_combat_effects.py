@@ -46,6 +46,8 @@ def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "al
          [(240, "level_up", 28, False)], "level_up"),
         (role, "11cae2f4f4e63dbb1e7199b9d1a8ed432036138b72e2d04d1da974329133fbe7",
          [(9, "hero_hurt", 8, False)], "hero_hurt"),
+        (role, "11cae2f4f4e63dbb1e7199b9d1a8ed432036138b72e2d04d1da974329133fbe7",
+         [(27, "hit_1", 8, False), (18, "hit_2", 8, False)], "monster_hit"),
         (monsters, "5bd88da4211870f2ca2354b7cec8d1790747869641c11fe553910b10fe2a264a",
          [(9, "Soul", 19, True), (5, "Musou", 19, True), (7, "Mana", 19, True)], "loot"),
     ]
@@ -59,12 +61,12 @@ def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "al
             subprocess.run([str(java), f"-Duser.home={temporary}", "-jar", str(ffdec), "-selectid",
                             ",".join(str(c[0]) for c in clips), "-ignorebackground",
                             "-export", "sprite", temporary, str(readable)], check=True)
-            tangseng_hurt = folder == 'hero_hurt' and hero == 'tangseng'
+            tangseng_hurt = folder in ('hero_hurt', 'monster_hit') and hero == 'tangseng'
             destination = game / "Sprites/Effects" / folder
-            if folder == 'hero_hurt':
+            if folder in ('hero_hurt', 'monster_hit'):
                 destination /= hero
             destination.mkdir(parents=True, exist_ok=True)
-            resource_name = 'tangseng_hurt' if tangseng_hurt else folder
+            resource_name = f'{hero}_monster_hit' if folder == 'monster_hit' else 'tangseng_hurt' if tangseng_hurt else folder
             resource_file = destination / f"{resource_name}_frames.tres"
             previous_header = resource_file.read_text(encoding="utf-8").splitlines()[0] if resource_file.exists() else ""
             previous_uid = re.search(r'uid="([^"]+)"', previous_header)
@@ -84,7 +86,8 @@ def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "al
                 rendered = next(temp.glob(f"DefineSprite_{sprite_id}_*"))
                 frames = []
                 for frame in range(1, count + 1):
-                    asset = destination / f"{resource_name if tangseng_hurt else name.lower()}_{frame:02}.png"
+                    basename = f'{hero}_{name}' if folder == 'monster_hit' else resource_name if tangseng_hurt else name.lower()
+                    asset = destination / f"{basename}_{frame:02}.png"
                     if tangseng_hurt:
                         # BaseHero.addBeAttackEffect: my.ColorMatrix.adjustHue(160).
                         # Preserve the rendered source alpha and registration; no runtime shader or duplicated clock.
@@ -130,7 +133,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("java", "ffdec", "role", "monsters"):
         parser.add_argument(f"--{name}", type=Path, required=True)
-    parser.add_argument("--group", choices=("all", "level_up", "loot", "hero_hurt"), default="all")
+    parser.add_argument("--group", choices=("all", "level_up", "loot", "hero_hurt", "monster_hit"), default="all")
     parser.add_argument('--hero', choices=('wukong', 'tangseng'), default='wukong')
     args = parser.parse_args()
     export(args.java, args.ffdec, args.role, args.monsters, args.group, args.hero)

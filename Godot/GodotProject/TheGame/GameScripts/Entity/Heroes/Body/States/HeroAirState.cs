@@ -8,7 +8,7 @@ namespace GameLogic.Heroes.Body
     /// <summary>
     /// 空中：起跳上升 / 二段跳 / 下落。空中保留横向控制、可二段跳、可起手角色指定的空中普攻；
     /// 落地进 Ground；仅空中普攻清空地面连段，普通跳跃不清空。
-    /// jump/jump_2 播完停在末帧（不循环），Air 不计时——下落姿势由纵向速度切换。
+    /// 二段跳按原生结束标记完成翻身再切下落，不在顶点截断翻身。
     /// </summary>
     public sealed class HeroAirState : AbstractHeroBodyState
     {
@@ -33,7 +33,10 @@ namespace GameLogic.Heroes.Body
                 return;
             }
 
-            TryJump(body, dt);
+            if (TryJump(body, dt))
+            {
+                body.RestartAnim(HeroAnims.Jump2);
+            }
             if (!IsAirborne(body))
             {
                 ChangeState<HeroGroundState>(fsm);
@@ -42,7 +45,9 @@ namespace GameLogic.Heroes.Body
 
             ApplyGravity(body, dt);
             ApplyHorizontalMovement(body);
-            body.PlayAnim(SelectAirAnimation(body));
+            body.PlayAnim(body.ActionData.JumpCount >= 2
+                ? body.IsAnimationComplete(HeroAnims.Jump2) ? HeroAnims.Fall : HeroAnims.Jump2
+                : SelectAirAnimation(body));
         }
 
         /// <inheritdoc />

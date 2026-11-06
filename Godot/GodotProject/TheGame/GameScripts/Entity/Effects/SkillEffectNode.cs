@@ -39,6 +39,11 @@ namespace GameLogic.Effects
         private bool m_Active, m_FinishRequested; // 防止方法轨道中回池或重复完成。
 
         /// <summary>
+        /// 由取池的实体绑定伤害来源，具体施放者可在Show时替换；不保存节点引用。
+        /// </summary>
+        internal AttackSource Source { get; set; }
+
+        /// <summary>
         /// 当前效果仍由所属实体持有；池回收后派生效果不得继续访问自身状态。
         /// </summary>
         protected bool IsActive => m_Active;
@@ -154,12 +159,15 @@ namespace GameLogic.Effects
         /// <param name="completed">效果完成通知。</param>
         /// <param name="knockbackOriginX">具体招式指定的击退中心。</param>
         /// <param name="hitSoundId">本次效果成功命中的声音；与目标自身的受击语音分别播放。</param>
+        /// <param name="visualScaleMultiplier">本次官方视觉缩放；不写回场景默认值。</param>
+        /// <param name="source">实际施放者不同于取池实体时，提供该次施放的来源快照。</param>
         public void Show(AttackConfig hit, Vector2 position, int direction,
             CombatantAttributes attacker, int power, bool musou, Action<SkillEffectNode> finished,
             Action completed = null, float? knockbackOriginX = null, SoundId hitSoundId = SoundId.None,
-            Vector2? visualScaleMultiplier = null)
+            Vector2? visualScaleMultiplier = null, AttackSource? source = null)
         {
             m_Hit = hit;
+            Source = (source ?? Source) with { EmitterInstanceId = GetInstanceId() };
             m_Attacker = attacker;
             m_Direction = direction;
             m_Power = power;
@@ -203,7 +211,8 @@ namespace GameLogic.Effects
             }
 
             m_AttackData = m_Hit == null ? null : AttackData.Create(m_Hit.Id, m_Attacker, m_Power,
-                        m_Hit.DamageKind, m_Hit.Knockback, m_Direction, m_Hit.HitProtect, m_KnockbackOriginX, isEffect: true);
+                        m_Hit.DamageKind, m_Hit.Knockback, m_Direction, m_Hit.HitProtect, m_KnockbackOriginX,
+                        isEffect: true, source: Source);
             m_RepeatAt = double.PositiveInfinity;
         }
 
@@ -316,7 +325,7 @@ namespace GameLogic.Effects
                 return;
             }
 
-            var result = target.ReceiveHit(m_AttackData, m_Attacker.ActorId.Value);
+            var result = target.ReceiveHit(m_AttackData);
             if (result.IsMiss)
             {
                 return;
@@ -335,7 +344,7 @@ namespace GameLogic.Effects
 
             if (m_Attacker.Side == CombatSide.Hero)
             {
-                this.GetSystem<HeroSystem>().RecordHit(result.Damage, m_Attacker.Power);
+                this.GetSystem<HeroSystem>().RecordHit(result);
             }
         }
 

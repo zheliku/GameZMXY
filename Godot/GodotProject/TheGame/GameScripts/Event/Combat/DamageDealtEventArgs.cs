@@ -1,6 +1,7 @@
 using GameFramework;
 using GameFramework.Event;
 using GameLogic.Battle.Damage;
+using GameLogic.Battle.Attacks;
 using Godot;
 
 namespace GameLogic.Event.Combat
@@ -30,9 +31,14 @@ namespace GameLogic.Event.Combat
         public DamageResult Result { get; private set; }
 
         /// <summary>
+        /// 伤害归属、实际施放与判定节点的值快照，节点回收后仍可读取。
+        /// </summary>
+        public AttackSource Source { get; private set; }
+
+        /// <summary>
         /// 攻击方的运行实体编号；无实体来源或持续扣血时为零。
         /// </summary>
-        public int AttackerEntityId { get; private set; }
+        public int AttackerEntityId => Source.OwnerEntityId;
 
         /// <summary>
         /// 受击方的运行实体编号；用于过滤场景所有权，实体回收后仍保留本次编号。
@@ -56,14 +62,14 @@ namespace GameLogic.Event.Combat
         /// <param name="targetEntityId">受击方本次显示的运行实体编号。</param>
         /// <param name="targetIsHero">受击方是否为英雄。</param>
         /// <param name="popPosition">飘字的世界坐标。</param>
-        /// <param name="attackerEntityId">攻击方本次显示的运行实体编号；无实体来源时为零。</param>
+        /// <param name="source">攻击来源身份；持续扣血等没有攻击实例的事实为空值。</param>
         /// <returns>仅在本次分发期间有效的参数。</returns>
         public static DamageDealtEventArgs Create(DamageResult result, int targetEntityId, bool targetIsHero, Vector2 popPosition,
-            int attackerEntityId = 0)
+            AttackSource source = default)
         {
             var args = ReferencePool.Acquire<DamageDealtEventArgs>();
             args.Result = result;
-            args.AttackerEntityId = attackerEntityId;
+            args.Source = source;
             args.TargetEntityId = targetEntityId;
             args.TargetIsHero = targetIsHero;
             args.PopPosition = popPosition;
@@ -76,7 +82,7 @@ namespace GameLogic.Event.Combat
         public override void Clear()
         {
             Result = default;
-            AttackerEntityId = 0;
+            Source = default;
             TargetEntityId = 0;
             TargetIsHero = false;
             PopPosition = Vector2.Zero;

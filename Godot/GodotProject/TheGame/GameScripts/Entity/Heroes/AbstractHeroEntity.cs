@@ -61,6 +61,11 @@ namespace GameLogic.Heroes
         public event Action DeathPresentationFinished;
 
         /// <summary>
+        /// 角色主动治疗完成后的显示量；关卡拥有飘字表现，按官方保留满血时的配置量提示。
+        /// </summary>
+        public event Action<int> HealthRestored;
+
+        /// <summary>
         /// 借用模型中同类英雄共享的身体参数。
         /// </summary>
         private HeroBodyParams BodyParams
@@ -520,6 +525,7 @@ namespace GameLogic.Heroes
         protected override void RestoreHealth(int amount)
         {
             this.GetSystem<HeroSystem>().Heal(amount);
+            HealthRestored?.Invoke(amount);
         }
 
         /// <summary>
@@ -613,7 +619,7 @@ namespace GameLogic.Heroes
         /// <param name="target">本次真实命中的目标。</param>
         protected override void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result)
         {
-            this.GetSystem<HeroSystem>().RecordHit(result.Damage, data.Attacker.Power);
+            this.GetSystem<HeroSystem>().RecordHit(result);
         }
 
         /// <summary>

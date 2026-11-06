@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="HeroAppearanceResource" format=3]
+
+[ext_resource type="Script" path="res://TheGame/GameScripts/Entity/Heroes/HeroAppearanceResource.cs" id="script"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_body_bare.png" id="body_1"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_body_cassock.png" id="body_2"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_body_excellent.png" id="body_3"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_body_heirloom.png" id="body_4"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_body_kirin.png" id="body_5"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_body_heavenly_fiend.png" id="body_6"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_weapon_default.png" id="weapon_1"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_weapon_pine.png" id="weapon_2"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_weapon_excellent.png" id="weapon_3"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_weapon_earth_fiend.png" id="weapon_4"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_weapon_white_tiger.png" id="weapon_5"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_weapon_blood_sea.png" id="weapon_6"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Heroes/tangseng/preview/tangseng_preview_weapon_nine_ring.png" id="weapon_7"]
+
+[resource]
+script = ExtResource("script")
+m_BaseBody = ExtResource("body_1")
+m_ArmorTextures = Dictionary[int, Texture2D]({
+3: ExtResource("body_2"),
+7: ExtResource("body_2"),
+14: ExtResource("body_4"),
+17: ExtResource("body_6"),
+20: ExtResource("body_3"),
+27: ExtResource("body_3"),
+33: ExtResource("body_5")
+})
+m_BaseWeapon = ExtResource("weapon_1")
+m_WeaponTextures = Dictionary[int, Texture2D]({
+4: ExtResource("weapon_2"),
+8: ExtResource("weapon_2"),
+11: ExtResource("weapon_4"),
+21: ExtResource("weapon_3"),
+24: ExtResource("weapon_6"),
+28: ExtResource("weapon_3"),
+32: ExtResource("weapon_5"),
+36: ExtResource("weapon_7")
+})

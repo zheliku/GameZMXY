@@ -23,7 +23,7 @@ APPEARANCES = {
 }
 
 
-def compact_atlases(variants):
+def compact_atlases(variants, frame_count=311):
     """Deduplicate each layer across every wardrobe choice, retaining 311 source keys."""
     outputs, mappings, counts = {}, {}, {}
     for kind in ('body', 'weapon'):
@@ -35,7 +35,7 @@ def compact_atlases(variants):
                 raise ValueError(f'Atlas changed since review: {item["path"]}')
             images[key] = Image.open(BytesIO(raw)).convert('RGBA')
         signatures, poses, mapping = {}, [], []
-        for frame in range(311):
+        for frame in range(frame_count):
             box = (frame % 6 * 200, frame // 6 * 200,
                    (frame % 6 + 1) * 200, (frame // 6 + 1) * 200)
             cells = {}
@@ -109,7 +109,8 @@ def install(args):
         files[path] = compact[kind, selector]
         appearance.append(f'[ext_resource type="Texture2D" path="res://{path}" id="{kind}_{selector}"]')
     appearance.append(f'[ext_resource type="AnimationLibrary" path="res://{animation_root}/tangseng_preview_library.tres" id="preview"]')
-    appearance.append('\n[resource]\nscript = ExtResource("script")\nm_PreviewAnimations = ExtResource("preview")')
+    appearance.append(f'[ext_resource type="Resource" path="res://{art}/tangseng_inventory_appearance.tres" id="inventory_appearance"]')
+    appearance.append('\n[resource]\nscript = ExtResource("script")\nm_PreviewAnimations = ExtResource("preview")\nm_PreviewAppearance = ExtResource("inventory_appearance")')
     for kind, base, field in [('body', 'm_BaseBody', 'm_ArmorTextures'),
                               ('weapon', 'm_BaseWeapon', 'm_WeaponTextures')]:
         appearance.append(f'{base} = ExtResource("{kind}_1")')
@@ -145,13 +146,6 @@ def install(args):
             markers.update(timeout=41 / 24, release=42 / 24)
         skills.append((name, frames[label], False, markers, []))
     files[f'{animation_root}/tangseng_skill_library.tres'] = library(skills)
-    preview = library([('idle', frames['wait'], True, {}, [])]).decode('utf-8')
-    preview = preview.replace('m_Body:frame', 'Body:frame').replace('m_Weapon:frame', 'Weapon:frame')
-    # 共用背包光圈保持既有15fps；角色两层仍使用各自的官方24fps帧映射。
-    aura_times = [i / 15 for i in range((len(frames['wait']['body']) * 15 + 23) // 24)]
-    preview = preview.replace('[resource]', track(2, 'Aura:frame', aura_times,
-        [str(3 + i % 6) for i in range(len(aura_times))]) + '\n[resource]')
-    files[f'{animation_root}/tangseng_preview_library.tres'] = preview.encode('utf-8')
     for relative, content in files.items():
         path = args.project / relative
         if path.exists() and path.read_bytes() != content and not args.replace_generated:

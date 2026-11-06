@@ -1,4 +1,8 @@
 using GameLogic.Battle.Damage;
+using GameLogic.Battle.Attacks;
+using GameConfig.Battle;
+using Godot;
+using GameFramework;
 using GameLogic.Battle;
 using System;
 using Xunit;
@@ -27,8 +31,19 @@ namespace GameLogic.Battle.Tests
         {
             var scope = new HeroTestScope();
             scope.System.ResetWs(100, 1f, 6f);
-            scope.System.RecordHit(damage, power);
-            Assert.Equal(expected, scope.Hero.Ws.Value);
+            var attacker = new CombatantAttributes(CombatSide.Hero, 1, power, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            var attack = AttackData.Create(1001, attacker, damage, DamageKind.Physics, Vector2.Zero, 1, 0);
+            try
+            {
+                var defender = new CombatantAttributes(CombatSide.Enemy, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                var result = new CombatSystem(scope).Calculate(attack, defender, 1, 1);
+                scope.System.RecordHit(result);
+                Assert.Equal(expected, scope.Hero.Ws.Value);
+            }
+            finally
+            {
+                ReferencePool.Release(attack);
+            }
         }
 
         /// <summary>

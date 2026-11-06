@@ -25,7 +25,6 @@ namespace GameLogic.Enemies
         private SpriteFrames m_DefaultFrames; // 场景原有悟空吞噬姿态，复用时恢复。
         [Export] private CollisionShape2D m_StompRange; // 践踏水平距离，仅参与AI原点距离判断。
 
-        [Export] private PackedScene m_DeathScene; // 人形闪烁后继续播放官方BossDead。
         private float m_InvulnerabilityLeft; // 原生方法键启动的无敌秒数。
         private AbstractHeroEntity m_Captive; // 当前吞噬目标，只在本次招式中借用。
         private int m_CaptiveId; // 捕获时的运行编号，防止对象回池后误恢复另一具英雄。
@@ -228,7 +227,7 @@ namespace GameLogic.Enemies
         /// <summary>
         /// 人形闪烁完成后播放独立死亡旋涡，完成才交接最终形态。
         /// </summary>
-        private void SpawnBossDeathAnimEvent()
+        protected override void SpawnBossDeathAnimEvent()
         {
             if (m_BodyFsm.CurrentState is not BullDemonTransformState state)
             {

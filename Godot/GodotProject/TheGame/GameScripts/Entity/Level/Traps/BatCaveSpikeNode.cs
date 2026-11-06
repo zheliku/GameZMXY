@@ -165,10 +165,11 @@ namespace GameLogic.Level.Traps
                 var attacker = new CombatantAttributes(CombatSide.Enemy, hero.Level, 0, 0, 0,
                     0, 0, 0, 0, 1, 0, 0, 0);
                 AttackData data = AttackData.Create(Attack.Id, attacker, Attack.FlatPower.X, Attack.DamageKind,
-                    Attack.Knockback, 1, Attack.HitProtect, GlobalPosition.X);
+                    Attack.Knockback, 1, Attack.HitProtect, GlobalPosition.X,
+                    source: new AttackSource(0, GameConfig.Entity.EntityId.None, GetInstanceId(), GetInstanceId()));
                 try
                 {
-                    m_Hit = !hero.ReceiveHit(data, 0).IsMiss;
+                    m_Hit = !hero.ReceiveHit(data).IsMiss;
                 }
                 finally
                 {
