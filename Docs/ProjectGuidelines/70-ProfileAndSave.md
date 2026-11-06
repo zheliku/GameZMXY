@@ -36,6 +36,7 @@
 | 通关或死亡 | 首个结局提交收益并写检查点；仅通关推进关卡进度 |
 | 放弃、运行失败 | ProfileSystem.RestoreCheckpoint 原地恢复进关快照 |
 | 地图手动保存 | 捕获当前档案，写盘后更新本次窗口的保存状态 |
+| 有活跃档案时返回主菜单 | 地图与关内设置通过SaveSystem提交当前档案，写盘成功后才导航；失败保留档案和当前页面供重试，不能只等待上次PendingWrite |
 
 SaveDataUtility 负责校验与转换；ProfileSystem 负责恢复 Model。窗口、实体和 DTO 分别保留各自生命周期。交易/锻造等后续玩法按自身检查点接入 SaveSystem。
 

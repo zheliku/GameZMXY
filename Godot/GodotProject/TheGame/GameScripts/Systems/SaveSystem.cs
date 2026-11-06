@@ -246,7 +246,7 @@ namespace GameLogic.Save
         }
 
         /// <summary>
-        /// 保存地图当前档案，并在请求周期仍有效时发布按钮结果。
+        /// 保存当前档案，供手动保存和地图/关卡设置离开共用；仅向有效请求周期发布结果。
         /// </summary>
         /// <param name="formSerialId">发起保存的窗口编号。</param>
         /// <param name="cancellationToken">窗口所属流程周期；取消只停止反馈，不取消已排队写盘。</param>

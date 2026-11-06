@@ -252,7 +252,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("frame_15")
 }],
-"loop": 1,
+"loop": 0,
 "name": &"hover",
 "speed": 24.0
 }, {

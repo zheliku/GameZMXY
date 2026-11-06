@@ -4,6 +4,7 @@ using GameFramework.UI;
 using GameLogic.Audio;
 using GameLogic;
 using GameLogic.Level;
+using GameLogic.Profile;
 using GameConfig.Sound;
 using Godot;
 using GodotGameFramework;
@@ -242,14 +243,15 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 按当前上下文排列官方五项，标题只保留三个可用选项。
+        /// 按当前上下文排列选项；地图及战斗提供返回主菜单，标题隐藏无效导航。
         /// </summary>
         private void RefreshOptions()
         {
             bool battle = m_InBattle;
             m_HelpText.Visible = m_ShowingHelp;
             m_AudioPanel.Visible = m_Help.Visible = !m_ShowingHelp;
-            m_ReturnMap.Visible = m_ReturnTitle.Visible = battle && !m_ShowingHelp;
+            m_ReturnMap.Visible = battle && !m_ShowingHelp;
+            m_ReturnTitle.Visible = (battle || this.GetModel<ProfileModel>() != null) && !m_ShowingHelp;
             if (m_ShowingHelp)
             {
                 m_Continue.Text = "返回设置";
@@ -397,11 +399,11 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 请关卡流程回滚当前关卡并返回标题。
+        /// 请求所属地图或关卡流程完成保存/回滚后返回主菜单。
         /// </summary>
         private void OnReturnTitleClicked()
         {
-            if (!GF.UI.HasUIForm(SerialId) || !m_InBattle)
+            if (!GF.UI.HasUIForm(SerialId))
             {
                 return;
             }

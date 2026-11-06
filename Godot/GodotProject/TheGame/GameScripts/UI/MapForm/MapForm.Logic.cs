@@ -29,11 +29,6 @@ namespace GameLogic.UI
         private bool m_IsBound; // 当前打开周期拥有保存状态订阅，关闭后不再借用架构。
 
         /// <summary>
-        /// 由所属流程处理 TitleRequested；参数为本次窗口编号。
-        /// </summary>
-        public event Action<int> TitleRequested;
-
-        /// <summary>
         /// 由所属流程处理 SaveRequested；参数为本次窗口编号。
         /// </summary>
         public event Action<int> SaveRequested;
@@ -73,7 +68,6 @@ namespace GameLogic.UI
             UIStringKeys.ForEach(key => key.SetLocalizationValue());
             if (isNewInstance)
             {
-                m_Back.Pressed += OnBackClicked;
                 m_Settings.Pressed += OnSettingsClicked;
                 m_Settings.MouseEntered += OnSettingsMouseEntered;
                 m_Settings.MouseExited += OnSettingsMouseExited;
@@ -123,7 +117,6 @@ namespace GameLogic.UI
         /// <param name="userData">关闭参数，不保存。</param>
         public void OnClose(bool isShutdown, object userData)
         {
-            TitleRequested = null;
             SettingsRequested = null;
             SkillsRequested = null;
             SaveRequested = null;
@@ -250,20 +243,6 @@ namespace GameLogic.UI
         {
             m_DepthInUIGroup = depthInUIGroup;
             ZIndex = depthInUIGroup;
-        }
-
-        /// <summary>
-        /// 返回主菜单。
-        /// </summary>
-        private void OnBackClicked()
-        {
-            if (!GF.UI.HasUIForm(SerialId))
-            {
-                return;
-            }
-
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-            TitleRequested?.Invoke(SerialId);
         }
 
         /// <summary>
@@ -436,7 +415,7 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 官方地图初入或从购技窗返回时，灵魂达到160显示原版可购发光循环。
+        /// 官方地图初入或从购技窗返回时，按余额选择静止普通态或可购发光。
         /// </summary>
         private void ResetSkillsHint()
         {
@@ -445,7 +424,7 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 设置令牌悬停时播放原生轻微起伏。
+        /// 设置令牌悬停时短暂提亮，不缩放图案和文字。
         /// </summary>
         private void OnSettingsMouseEntered()
         {
@@ -453,7 +432,7 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 移出设置令牌后恢复原尺寸。
+        /// 移出设置令牌后恢复常态亮度。
         /// </summary>
         private void OnSettingsMouseExited()
         {
@@ -462,7 +441,7 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 官方悬停切第2态，保留其十五帧子动画与说明字图。
+        /// 官方悬停切第2态，十五帧展开播一次后停在末帧。
         /// </summary>
         private void OnSkillsMouseEntered()
         {
@@ -471,7 +450,7 @@ namespace GameLogic.UI
         }
 
         /// <summary>
-        /// 官方移出后回到第1态，重新进入地图前不继续可购闪烁。
+        /// 官方移出后恢复静止普通态，重新进入地图前不再显示可购发光。
         /// </summary>
         private void OnSkillsMouseExited()
         {

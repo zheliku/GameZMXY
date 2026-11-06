@@ -13,6 +13,7 @@ using System;
 using System.Linq;
 using System.IO;
 using GameLogic.Save;
+using GameLogic.Save.Data;
 using System.Threading.Tasks;
 using GameLogic.Heroes;
 using GameLogic;
@@ -24,6 +25,8 @@ using Godot;
 using GodotGameFramework;
 using GodotGameFramework.UI;
 using GodotGameFramework.Sound;
+using GodotGameFramework.Json;
+using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// 在真实框架内验证菜单导航、关卡选择、设置保存后返回、普通离开回滚、音乐代理和菜单复用；不增加正式观测 API。
@@ -286,21 +289,82 @@ public sealed partial class FrontendSmokeScenario
                 await MoveMouseAsync(new Vector2(900, 560));
                 var settingsToken = map.GetNode<TextureButton>("m_Settings");
                 var animation = settingsToken.GetNode<AnimationPlayer>("m_SettingsAnimation");
+                var skillButton = map.GetNode<Button>("m_Skills");
+                var saveButton = map.GetNode<TextureButton>("m_Save");
+                var skillArtwork = skillButton.GetNode<AnimatedSprite2D>("Artwork");
+                var settingsCaption = settingsToken.GetNode<Label>("Caption");
+                Check(!map.HasNode("m_Back"), "地图仍保留独立返回主菜单");
+                await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(.9), SceneTreeTimer.SignalName.Timeout);
+                Check(skillArtwork.Animation == "idle" && skillArtwork.Frame == 0 && !skillArtwork.IsPlaying() &&
+                    skillArtwork.SpriteFrames.GetFrameCount("idle") == 1 &&
+                    skillArtwork.SpriteFrames.GetAnimationLoopMode("hover") == SpriteFrames.LoopMode.None,
+                    "官方技能普通态没有静止或展开仍被设置为循环");
+                Check(settingsCaption.GetThemeFont("font").ResourcePath.EndsWith("dfp_hai_bao_w12.ttc") &&
+                    settingsCaption.GetThemeFontSize("font_size") == 20 && settingsCaption.GetThemeConstant("shadow_outline_size") > 0,
+                    "设置标题没有使用海报字形、匹配字号和黑白描边");
+                Check(saveButton.TextureHover.ResourcePath.EndsWith("map_save_game_hover.png") &&
+                    saveButton.TextureHover != saveButton.TextureNormal, "保存按钮仍然缺少官方悬停态");
+                await MoveMouseAsync(saveButton.GetGlobalRect().GetCenter());
+                Check(saveButton.GetDrawMode() == BaseButton.DrawMode.Hover, "保存按钮没有响应真实悬停");
+                await CaptureAsync("map_save_official_hover");
+                await MoveMouseAsync(new Vector2(900, 560));
                 Check(settingsToken.TextureNormal.ResourcePath.EndsWith("map_return_title.png") &&
                     settingsToken.GetNode<Label>("Caption").Text == "游戏设置", "设置入口没有复用原版令牌");
                 await CaptureAsync("map_settings_token_idle");
                 await MoveMouseAsync(settingsToken.GetGlobalRect().GetCenter());
-                await WaitUntilAsync(() => settingsToken.Scale.X > 1.025f, "设置令牌悬停未起伏");
-                Check(animation.CurrentAnimation == "hover" && animation.GetAnimation("hover").LoopMode == Animation.LoopModeEnum.Linear,
-                    "设置令牌动画未循环");
+                await WaitUntilAsync(() => settingsToken.SelfModulate.R > 1.05f, "设置令牌悬停未提亮");
+                Check(settingsToken.Scale == Vector2.One &&
+                    animation.GetAnimation("hover").LoopMode == Animation.LoopModeEnum.None,
+                    "设置令牌仍反复缩放");
                 await CaptureAsync("map_settings_token_hover");
                 await MoveMouseAsync(new Vector2(900, 560));
-                Check(settingsToken.Scale.IsEqualApprox(Vector2.One), "设置令牌移出后未恢复");
+                Check(settingsToken.Scale == Vector2.One && Math.Abs(settingsToken.SelfModulate.R - .9f) < .001,
+                    "设置令牌移出后未恢复常态亮度");
                 await ClickAsync(map, "m_Settings");
                 var settingsForm = await WaitForAsync<SettingsForm>();
                 await ClickAsync(settingsForm, "Scroll/m_Close");
                 await CheckMapSkillPurchaseAsync(map, flow);
-                GD.Print("SMOKE-MAP-BUTTONS PASS: original token settings, hover/reset, real settings navigation and official skill loops.");
+                // 制造尚未手动保存的地图进度，不能用刚保存过的空变化证明返回会写盘。
+                flow.GetSystem<ProfileSystem>().AddSoul(17);
+                flow.GetSystem<ProfileSystem>().AddExperience(3);
+                await ClickAsync(map, "m_Settings");
+                settingsForm = await WaitForAsync<SettingsForm>();
+                var saveModel = flow.GetModel<SaveModel>();
+                long originalUnit = saveModel.ActiveSlotUnitId;
+                try
+                {
+                    // 仅使当前隔离档案的外键校验失败，不改文件或框架；失败后必须留在原地图。
+                    saveModel.ActiveSlotUnitId = originalUnit + 1;
+                    await ClickAsync(settingsForm, "Scroll/Content/Options/Navigation/m_ReturnTitle");
+                    await WaitUntilAsync(() => saveModel.ManualSave.Value.Phase == SaveWritePhase.Failed,
+                        "返回保存失败没有发布失败状态");
+                    Check(GF.Procedure.CurrentProcedure is ProcedureMap &&
+                        ReferenceEquals(firstPlayerModel, flow.GetModel<ProfileModel>()) && firstPlayerModel.Initialized,
+                        "存档失败仍返回标题或销毁了当前档案");
+                }
+                finally
+                {
+                    saveModel.ActiveSlotUnitId = originalUnit;
+                }
+                await ClickAsync(settingsForm, "Scroll/m_Close");
+                await ReturnMapToTitleAsync(map);
+                await WaitForAsync<StartForm>();
+                Check(flow.GetModel<ProfileModel>() == null && SmokeInspection.CallbackCount(settingsForm, "TitleRequested") == 0,
+                    "设置返回主菜单没有关闭导航订阅和档案作用域");
+                await ClickAsync(await WaitForAsync<StartForm>(), "m_Start");
+                var savedForms = await WaitForSaveAsync();
+                await ClickAsync(savedForms, "Slots/m_Slot2");
+                var reusedMap = await WaitForAsync<MapForm>();
+                Check(ReferenceEquals(map, reusedMap), "设置返回后没有复用地图窗口");
+                await ClickAsync(reusedMap, "m_Settings");
+                settingsForm = await WaitForAsync<SettingsForm>();
+                Check(SmokeInspection.CallbackCount(settingsForm, "TitleRequested") == 1,
+                    "地图设置复用时重复或漏绑导航");
+                await CaptureAsync("map_settings_navigation");
+                await ClickAsync(settingsForm, "Scroll/m_Close");
+                await MoveMouseAsync(new Vector2(900, 560));
+                await CaptureAsync("map_buttons_aligned");
+                GD.Print("SMOKE-MAP-BUTTONS PASS: official button states, save-on-return, failed-save retention, disk snapshot, reload and reuse.");
                 return;
             }
             if (OS.GetCmdlineUserArgs().Contains("--level-guide-only"))
@@ -394,7 +458,7 @@ public sealed partial class FrontendSmokeScenario
             await CheckSaveFeedbackAsync(map);
             long secondId = GF.Archive.CurrentCatalogue.UnitId;
             int savedMapSerialId = map.SerialId;
-            await ClickAsync(map, "m_Back");
+            await ReturnMapToTitleAsync(map);
             start = await WaitForAsync<StartForm>();
             Check(Find<SaveNoticeForm>().Any(x => x.SerialId != 0), "切换页面关闭了应用级保存提示");
             Check(flow.GetModel<ProfileModel>() == null && ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) && flow.GetSystem<EquipmentSystem>() == null, "返回标题仍持有旧档案作用域");
@@ -419,7 +483,7 @@ public sealed partial class FrontendSmokeScenario
                 "唐僧首次快照、档案或技能书仍使用默认悟空身份");
             GD.Print("SMOKE-TANGSENG-CREATE PASS: selected hero owns the first snapshot, profile and skill book; Wukong slot remains separate.");
             Check(!await firstSaveSystem.SaveCheckpointAsync(firstPlayerModel), "旧档案检查点写入了另一格");
-            await ClickAsync(tangsengMap, "m_Back");
+            await ReturnMapToTitleAsync(tangsengMap);
             start = await WaitForAsync<StartForm>();
             await ClickAsync(start, "m_Start");
             saves = await WaitForSaveAsync();
@@ -599,10 +663,13 @@ public sealed partial class FrontendSmokeScenario
                 "新关卡沿用了已结束的英雄运行模型");
             var previousInventory = flow.GetModel<ProfileModel>();
             flow.GetSystem<ProfileSystem>().AddSoul(9);
+            var battleExitSnapshot = flow.GetUtility<SaveDataUtility>().Capture(previousInventory, flow.GetModel<SkillModel>());
+            long battleExitUnit = flow.GetModel<SaveModel>().ActiveSlotUnitId;
             await ClickAsync(battleForm, "MenuPanel/m_SettingsButton");
             settings = await WaitForAsync<SettingsForm>();
             await ClickAsync(settings, "Scroll/Content/Options/Navigation/m_ReturnTitle");
             start = await WaitForAsync<StartForm>();
+            await CheckSavedProfileAsync(battleExitSnapshot, battleExitUnit);
             Check(previousInventory.Soul.Value == savedSoul + 9 && !previousInventory.Initialized && flow.GetModel<ProfileModel>() == null && !GF.Base.IsGamePaused && !Find<LevelViewController>().Any(), "返回标题未保存收益、恢复时钟或清理关卡");
             Check(flow.GetModel<ProfileModel>() == null && ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) && flow.GetSystem<EquipmentSystem>() == null, "战斗返回标题仍持有档案作用域");
             Check(!GF.UI.HasUIForm(character.SerialId), "关闭后选角仍接收请求");
@@ -710,7 +777,7 @@ public sealed partial class FrontendSmokeScenario
         var map = await WaitForAsync<MapForm>();
         Check(GF.Archive.CurrentData.ActiveHeroId == 2 && GF.Archive.CurrentData.UnitId != deletedId &&
             GF.Archive.CurrentCatalogue.SlotNumber == 2, "删除后的同格未正确新建唐僧档案");
-        await ClickAsync(map, "m_Back");
+        await ReturnMapToTitleAsync(map);
         var start = await WaitForAsync<StartForm>();
         await ClickAsync(start, "m_Start");
         saves = await WaitForSaveAsync();
@@ -1162,6 +1229,47 @@ public sealed partial class FrontendSmokeScenario
     }
 
     /// <summary>
+    /// 从地图打开设置，经实际导航按钮返回主菜单。
+    /// </summary>
+    /// <param name="map">本次显示的地图。</param>
+    /// <returns>设置导航提交完成的任务。</returns>
+    private async Task ReturnMapToTitleAsync(MapForm map)
+    {
+        var profile = GF.Fsm.GetModel<ProfileModel>();
+        var expected = GF.Fsm.GetUtility<SaveDataUtility>().Capture(profile, GF.Fsm.GetModel<SkillModel>());
+        long unitId = GF.Fsm.GetModel<SaveModel>().ActiveSlotUnitId;
+        await ClickAsync(map, "m_Settings");
+        var settings = await WaitForAsync<SettingsForm>();
+        Check(settings.GetNode<Control>("Scroll/Content/Options/Navigation/m_ReturnTitle").Visible &&
+            SmokeInspection.CallbackCount(settings, "TitleRequested") == 1,
+            "地图设置没有显示或绑定返回主菜单");
+        await ClickAsync(settings, "Scroll/Content/Options/Navigation/m_ReturnTitle");
+        await WaitForAsync<StartForm>();
+        await CheckSavedProfileAsync(expected, unitId);
+    }
+
+    /// <summary>
+    /// 直接读取指定磁盘槽，对照返回前的完整档案快照，拒绝以内存镜像代替落盘证据。
+    /// </summary>
+    /// <param name="expected">返回前捕获的独立档案。</param>
+    /// <param name="unitId">本次档案文件编号。</param>
+    /// <returns>真实读取与字段比对任务。</returns>
+    private static async Task CheckSavedProfileAsync(GameData expected, long unitId)
+    {
+        var setting = GF.Archive.Setting;
+        GameData actual = await EasySave.LoadFromUserAsync<GameData>($"{setting.Folder}/Data/{unitId}.sav",
+            setting.EnableAesEncryption, setting.KEY, setting.Salt);
+        var before = JObject.FromObject(expected);
+        var saved = JObject.FromObject(actual);
+        foreach (string field in new[] { "SaveVersion", "ActiveHeroId", "Soul", "Heroes", "EquipmentItems",
+            "HighestClearedLevelId", "EastSeaBannerAvailable" })
+        {
+            Check(JToken.DeepEquals(before[field], saved[field]), $"返回主菜单未保存当前档案字段：{field}");
+        }
+        GD.Print("SMOKE-RETURN-SAVE PASS: complete profile, skills and equipment read directly from disk.");
+    }
+
+    /// <summary>
     /// 在没有战斗作用域的地图中通过真实控件学习主动和被动技能，再检查窗口复用与状态同步。
     /// </summary>
     /// <param name="map">本次地图窗口。</param>
@@ -1181,18 +1289,22 @@ public sealed partial class FrontendSmokeScenario
             !Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "地图学技前已创建战斗英雄或关卡");
 
         var skillArtwork = map.GetNode<AnimatedSprite2D>("m_Skills/Artwork");
-        Check((skillArtwork.GlobalPosition - map.GlobalPosition).IsEqualApprox(new Vector2(81.8f, 103.95f)) &&
+        Check((skillArtwork.GlobalPosition - map.GlobalPosition).IsEqualApprox(new Vector2(77.5f, 85)) &&
             string.IsNullOrEmpty(map.GetNode<Button>("m_Skills").Text) &&
             skillArtwork.SpriteFrames.GetFrameCount("hover") == 15 &&
             skillArtwork.SpriteFrames.GetFrameCount("available") == 19,
-            "地图技能入口未使用官方位置及完整悬停/可购动画");
+            "地图技能入口未使用对齐后的布局及完整官方悬停/可购动画");
         await MoveMouseAsync(skillArtwork.GlobalPosition);
         Check(skillArtwork.Animation == "hover", "地图技能真实悬停未切换官方第2态");
         int hoverFrame = skillArtwork.Frame;
         await WaitUntilAsync(() => skillArtwork.Frame != hoverFrame, "官方地图技能悬停子动画没有播放");
+        await WaitUntilAsync(() => !skillArtwork.IsPlaying(), "官方技能展开到第15帧后没有停止");
+        Check(skillArtwork.Frame == 14, "官方技能展开没有停在末帧");
+        await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout);
+        Check(skillArtwork.Frame == 14 && !skillArtwork.IsPlaying(), "保持悬停时技能展开被循环重播");
         await CaptureAsync("map_skill_entry_hover");
         await MoveMouseAsync(new Vector2(-5, -5));
-        Check(skillArtwork.Animation == "idle", "移出地图技能入口未恢复官方第1态");
+        Check(skillArtwork.Animation == "idle" && skillArtwork.Frame == 0, "移出地图技能入口未恢复官方静止第1态");
         await CaptureAsync("map_skill_entry_idle");
         // 原版从技能页回到地图会重新按余额选择第3态。
         await ClickAsync(map, "m_Skills");
@@ -1364,11 +1476,12 @@ public sealed partial class FrontendSmokeScenario
         try
         {
             glow.Scale = new Vector2(1.6f, 1.6f);
-            Vector2 outerLocal = glow.GetTransform() * new Vector2(25, 87);
+            // 左侧是操作菜单、右侧是水帘洞，探针取顶端树冠，避开相邻控件。
+            Vector2 outerLocal = glow.GetTransform() * new Vector2(92, 25);
             Check(!new Rect2(Vector2.Zero, location.Size).HasPoint(outerLocal), "扩展探针未离开原按钮矩形");
             await MoveMouseAsync(location.GetGlobalTransformWithCanvas() * outerLocal);
             Check(hover.IsPlaying() && glow.Visible && m_Driver.GetViewport().GuiGetHoveredControl() == location,
-                "放大图超出原按钮矩形后不能保持悬停");
+                $"放大树冠未保持悬停：local={outerLocal}, hovered={m_Driver.GetViewport().GuiGetHoveredControl()?.GetPath()}, glow={glow.Visible}");
         }
         finally
         {

@@ -1,8 +1,8 @@
 """Render OtherMat_v9's map skill button and Batter with original registration.
 
-The map's outer three-frame selector is stopped by ActionScript, while its
-hover and affordable children keep playing. Export each selected display list
-for its complete child cycle. Combo digits play five frames and hold the last.
+The map selector stops on each state. Its hover children stop on frame 15;
+only the affordable glow loops. Export each complete child timeline and the
+save button's original up/over states. Combo digits play five frames and hold.
 Only pixels and native Godot SpriteFrames enter the project; SWF code stays in
 the validation work directory.
 """
@@ -144,8 +144,8 @@ def export(args):
                 for placement in placements:
                     placed = deepcopy(placement)
                     matrix = placed.find('matrix')
-                    matrix.set('translateX', str(int(matrix.get('translateX', 0)) + origin[0] * 20))
-                    matrix.set('translateY', str(int(matrix.get('translateY', 0)) + origin[1] * 20))
+                    matrix.set('translateX', str(round(int(matrix.get('translateX', 0)) + origin[0] * 20)))
+                    matrix.set('translateY', str(round(int(matrix.get('translateY', 0)) + origin[1] * 20)))
                     stage.append(placed)
                     previous_depths.append(placed.get('depth'))
                 for _ in range(count):
@@ -166,7 +166,23 @@ def export(args):
             raise ValueError('Expected three map skill selector states')
         map_images = render('map_skills', (256, 160), (128, 80), list(zip((1, 15, 19), states)))
         write_frames(game / 'Sprites/UI/frontend', 'map_skills', map_images,
-                     [('idle', 1, False), ('hover', 15, True), ('available', 19, True)])
+                     [('idle', 1, False), ('hover', 15, False), ('available', 19, True)])
+        # SimpleButton 502 swaps shape499/501; it has no looping timeline.
+        save_images = render('map_save', (138, 93), (75, 54.45),
+                             [(1, [character_placement(499)]), (1, [character_placement(501)])])
+        for state, bitmap in zip(('normal', 'hover'), save_images):
+            target = args.work / 'map_save_game_normal.png' if state == 'normal' else \
+                game / 'Sprites/UI/frontend/map_save_game_hover.png'
+            bitmap.save(target)
+        if args.map_only:
+            (args.work / 'manifest.json').write_text(json.dumps({
+                'source_sha256': SOURCE_SHA256, 'map_selector': 492,
+                'skill_frames': [1, 15, 19], 'skill_loops': [False, False, True],
+                'hover_stop_scripts': [488, 487], 'save_button': 502,
+                'save_shapes': [499, 501], 'save_origin': [75, 54.45],
+            }, indent=2), encoding='utf-8')
+            print('OFFICIAL MAP EXPORT PASS: static idle, single hover, affordable glow; save up/over')
+            return
         digits = render('combo_digits', (320, 320), (160, 160),
                         [(5, [character_placement(sid)]) for sid in DIGITS])
         write_frames(game / 'Sprites/UI/hud', 'combo_digits', digits,
@@ -196,4 +212,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('source', 'java', 'ffdec', 'work'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--map-only', action='store_true', help='Update map buttons without rewriting combo assets.')
     export(parser.parse_args())

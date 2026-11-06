@@ -1,7 +1,5 @@
 [gd_scene format=3 uid="uid://bit3xlive37sg"]
 
-[ext_resource type="PackedScene" uid="uid://qupkrnnfnhjh" path="res://TheGame/UIs/Map/level_guide_tooltip.tscn" id="level_guide"]
-[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/frontend/map_skills_frames.tres" id="map_skills"]
 [ext_resource type="Texture2D" uid="uid://6hjhxfwqedra" path="res://TheGame/Sprites/UI/frontend/map_huaguoshan_current.png" id="8_3fexe"]
 [ext_resource type="Texture2D" uid="uid://ccd6vrijbdaog" path="res://TheGame/Sprites/UI/frontend/map_shuiliandong_current.png" id="11_lyiep"]
 [ext_resource type="Texture2D" uid="uid://dg7mlq8i07wa" path="res://TheGame/Sprites/UI/frontend/map_taohuayuan_current.png" id="14_jo74s"]
@@ -36,7 +34,9 @@
 [ext_resource type="Texture2D" uid="uid://bj73pt6rq6bcr" path="res://TheGame/Sprites/UI/frontend/map_huaguoshan_normal.png" id="huaguoshan_normal"]
 [ext_resource type="Texture2D" uid="uid://456snmlisv53" path="res://TheGame/Sprites/UI/frontend/map_jialuoluo_hover.png" id="jialuoluo_hover"]
 [ext_resource type="Texture2D" uid="uid://l6vfnm668mrf" path="res://TheGame/Sprites/UI/frontend/map_jialuoluo_normal.png" id="jialuoluo_normal"]
+[ext_resource type="PackedScene" uid="uid://qupkrnnfnhjh" path="res://TheGame/UIs/Map/level_guide_tooltip.tscn" id="level_guide"]
 [ext_resource type="Script" uid="uid://bgiaah227v81a" path="res://TheGame/GameScripts/UI/MapForm/Components/MapLocationButton.cs" id="location_button"]
+[ext_resource type="SpriteFrames" uid="uid://b0e8vrxoynera" path="res://TheGame/Sprites/UI/frontend/map_skills_frames.tres" id="map_skills"]
 [ext_resource type="Texture2D" uid="uid://dgolqegcy6inw" path="res://TheGame/Sprites/UI/frontend/map_niumogu_hover.png" id="niumogu_hover"]
 [ext_resource type="Texture2D" uid="uid://dda6pmgrebrk7" path="res://TheGame/Sprites/UI/frontend/map_niumogu_normal.png" id="niumogu_normal"]
 [ext_resource type="Shader" uid="uid://dwpg72nk34cge" path="res://TheGame/Sprites/UI/frontend/map_location_outline.gdshader" id="outline"]
@@ -46,6 +46,7 @@
 [ext_resource type="Texture2D" uid="uid://btl5ybg8xbfrw" path="res://TheGame/Sprites/UI/frontend/map_qixingdong_normal.png" id="qixingdong_normal"]
 [ext_resource type="Texture2D" uid="uid://cduboi0hhjwwh" path="res://TheGame/Sprites/UI/frontend/map_return_title.png" id="return_title"]
 [ext_resource type="Texture2D" uid="uid://ccn3ilctrv7lh" path="res://TheGame/Sprites/UI/frontend/map_save_game.png" id="save"]
+[ext_resource type="Texture2D" uid="uid://cbyqpwyid0tf5" path="res://TheGame/Sprites/UI/frontend/map_save_game_hover.png" id="save_hover"]
 [ext_resource type="Script" uid="uid://j3l6184hm0yt" path="res://TheGame/GameScripts/UI/MapForm/MapForm.cs" id="script"]
 [ext_resource type="Texture2D" uid="uid://cf0lrs4cxjgqm" path="res://TheGame/Sprites/UI/frontend/map_shazhiwoliu_normal.png" id="shazhiwoliu_normal"]
 [ext_resource type="Texture2D" uid="uid://boepbieat5x6w" path="res://TheGame/Sprites/UI/frontend/map_shuiliandong_hover.png" id="shuiliandong_hover"]
@@ -114,31 +115,36 @@ shader = ExtResource("outline")
 shader_parameter/image_scale = 1.0
 shader_parameter/line_thickness = 0.0
 
-[sub_resource type="StyleBoxEmpty" id="skills_empty"]
-
 [sub_resource type="Animation" id="settings_reset"]
 resource_name = "RESET"
 length = 0.001
 tracks/0/type = "value"
-tracks/0/path = NodePath(".:scale")
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:self_modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
 tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Vector2(1, 1)]
+"values": [Color(0.9, 0.9, 0.9, 1)]
 }
 
 [sub_resource type="Animation" id="settings_hover"]
 resource_name = "hover"
-length = 0.8
-loop_mode = 1
+length = 0.12
 tracks/0/type = "value"
-tracks/0/path = NodePath(".:scale")
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:self_modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.4, 0.8),
-"transitions": PackedFloat32Array(1, 1, 1),
+"times": PackedFloat32Array(0, 0.12),
+"transitions": PackedFloat32Array(1, 1),
 "update": 0,
-"values": [Vector2(1, 1), Vector2(1.04, 1.04), Vector2(1, 1)]
+"values": [Color(0.9, 0.9, 0.9, 1), Color(1.08, 1.08, 1.08, 1)]
 }
 
 [sub_resource type="AnimationLibrary" id="settings_animations"]
@@ -147,7 +153,9 @@ _data = {
 &"hover": SubResource("settings_hover")
 }
 
-[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Settings", "m_SettingsAnimation", "m_Skills", "m_SkillsArtwork", "m_Back", "m_Huaguoshan", "m_Shuiliandong", "m_Taohuayuan", "m_Save", "m_LocationAnimation", "m_Bianfuku", "m_Qixingdong", "m_Jialuoluo", "m_Qianan", "m_Donghai", "m_Shazhiwoliu", "m_Niumogu")]
+[sub_resource type="StyleBoxEmpty" id="skills_empty"]
+
+[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Settings", "m_SettingsAnimation", "m_Skills", "m_SkillsArtwork", "m_Huaguoshan", "m_Shuiliandong", "m_Taohuayuan", "m_Save", "m_LocationAnimation", "m_Bianfuku", "m_Qixingdong", "m_Jialuoluo", "m_Qianan", "m_Donghai", "m_Shazhiwoliu", "m_Niumogu")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -160,7 +168,6 @@ m_Settings = NodePath("m_Settings")
 m_SettingsAnimation = NodePath("m_Settings/m_SettingsAnimation")
 m_Skills = NodePath("m_Skills")
 m_SkillsArtwork = NodePath("m_Skills/Artwork")
-m_Back = NodePath("m_Back")
 m_Huaguoshan = NodePath("m_Huaguoshan")
 m_Shuiliandong = NodePath("m_Shuiliandong")
 m_Taohuayuan = NodePath("m_Taohuayuan")
@@ -577,21 +584,23 @@ vframes = 4
 
 [node name="m_Save" type="TextureButton" parent="." unique_id=1994352566]
 layout_mode = 0
-offset_top = 179.0
-offset_right = 138.0
-offset_bottom = 272.0
+offset_left = 5.5
+offset_top = 166.5
+offset_right = 143.5
+offset_bottom = 259.5
 focus_mode = 0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("save")
-texture_hover = ExtResource("save")
+texture_pressed = ExtResource("save")
+texture_hover = ExtResource("save_hover")
 
 [node name="m_Settings" type="TextureButton" parent="." unique_id=1175108554]
+self_modulate = Color(0.9, 0.9, 0.9, 1)
 layout_mode = 0
-offset_left = 16.0
-offset_top = 294.0
-offset_right = 128.0
-offset_bottom = 408.0
-pivot_offset = Vector2(56, 57)
+offset_left = 17.0
+offset_top = 323.0
+offset_right = 129.0
+offset_bottom = 437.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("return_title")
@@ -599,20 +608,24 @@ texture_hover = ExtResource("return_title")
 
 [node name="Caption" type="Label" parent="m_Settings" unique_id=1598122156]
 layout_mode = 0
-offset_left = 17.0
-offset_top = 86.0
-offset_right = 97.0
-offset_bottom = 111.0
-theme_override_colors/font_color = Color(0.93, 0.65, 0.1, 1)
+offset_left = 8.5
+offset_top = 83.0
+offset_right = 108.5
+offset_bottom = 114.0
+theme_override_colors/font_color = Color(1, 0.8, 0.18, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/outline_size = 6
+theme_override_constants/shadow_outline_size = 9
 theme_override_fonts/font = ExtResource("caption_font")
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 20
 text = "游戏设置"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_SettingsAnimation" type="AnimationPlayer" parent="m_Settings"]
+[node name="m_SettingsAnimation" type="AnimationPlayer" parent="m_Settings" unique_id=775138696]
 libraries/ = SubResource("settings_animations")
 
 [node name="m_LocationAnimation" type="AnimationPlayer" parent="." unique_id=328441174]
@@ -627,40 +640,25 @@ libraries/shazhiwoliu = ExtResource("44_nkmx7")
 libraries/shuiliandong = ExtResource("30_s3lwo")
 libraries/taohuayuan = ExtResource("31_0mcer")
 
-[node name="m_Back" type="Button" parent="." unique_id=2059881241]
+[node name="m_Skills" type="Button" parent="." unique_id=1850162997]
 layout_mode = 0
-offset_left = 14.0
-offset_top = 444.0
-offset_right = 132.0
-offset_bottom = 486.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(0.93, 0.65, 0.1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_fonts/font = ExtResource("caption_font")
-theme_override_font_sizes/font_size = 19
-text = "返回主菜单"
-flat = true
-
-[node name="m_Skills" type="Button" parent="."]
-layout_mode = 0
-offset_left = 41.8
-offset_top = 75.95
-offset_right = 121.8
-offset_bottom = 131.95
+offset_left = 26.0
+offset_top = 43.0
+offset_right = 122.0
+offset_bottom = 157.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 theme_override_styles/normal = SubResource("skills_empty")
-theme_override_styles/hover = SubResource("skills_empty")
 theme_override_styles/pressed = SubResource("skills_empty")
+theme_override_styles/hover = SubResource("skills_empty")
 theme_override_styles/focus = SubResource("skills_empty")
 flat = true
 
-[node name="Artwork" type="AnimatedSprite2D" parent="m_Skills"]
-position = Vector2(40, 28)
+[node name="Artwork" type="AnimatedSprite2D" parent="m_Skills" unique_id=1366728129]
+position = Vector2(51.5, 42)
 sprite_frames = ExtResource("map_skills")
 animation = &"idle"
 
-[node name="m_LevelGuide" parent="." instance=ExtResource("level_guide")]
+[node name="m_LevelGuide" parent="." unique_id=142705694 instance=ExtResource("level_guide")]
 visible = false
+layout_mode = 0

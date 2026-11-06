@@ -17,7 +17,7 @@ using GodotGameFramework;
 public sealed class MapProgressSmokeScenario(Node driver)
 {
     private int m_LevelId; // 下一次实际挑战的关卡，首次从隔离档案的最新进度开始。
-    private int m_Step; // 0 等待地图，1 战斗，2 退出重读，3 重读检查。
+    private int m_Step; // 0等待地图，1战斗，2等待设置，3重读检查，4进关，5等待返回标题。
     private int m_ClosedMapSerial; // 刚关闭的地图，用于拒绝读取过渡期间的旧窗口。
     private LevelSmokeScenario m_Run; // 本次真实五波、出口与检查点回归。
     private double m_Time; // 等待导航的总秒数。
@@ -91,11 +91,22 @@ public sealed class MapProgressSmokeScenario(Node driver)
                 var map = VisibleMap();
                 CheckMap(map, m_LevelId);
                 m_ClosedMapSerial = map.SerialId;
-                map.GetNode<BaseButton>("m_Back").EmitSignal(BaseButton.SignalName.Pressed);
+                map.GetNode<BaseButton>("m_Settings").EmitSignal(BaseButton.SignalName.Pressed);
                 m_Step = 2;
                 return;
             }
             if (m_Step == 2)
+            {
+                var settings = GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().FirstOrDefault(form => form.Visible);
+                if (settings == null)
+                {
+                    return;
+                }
+                settings.GetNode<BaseButton>("Scroll/Content/Options/Navigation/m_ReturnTitle").EmitSignal(BaseButton.SignalName.Pressed);
+                m_Step = 5;
+                return;
+            }
+            if (m_Step == 5)
             {
                 if (GF.Procedure.CurrentProcedure is ProcedureMap)
                 {

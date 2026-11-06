@@ -10,7 +10,7 @@ Role2普通起手、满蓄/未满蓄、分身换位、甘露本体/分身双起�
 
 ## 官方地图技能入口与连击图元（2026-11-03）
 
-`Tools/LegacyMigration/export_official_map_combo_ui.py`校验OtherMat_v9恢复后散列，通过FFDec原生固定舞台渲染，保留原始矩阵、滤镜及注册点。外层三态选择器停帧不停止内部动画：idle为1帧，hover的488/487为15帧循环，available的491为19帧发光循环，均24fps。没有重画图案或用字体替代官方字图。
+`Tools/LegacyMigration/export_official_map_combo_ui.py`校验OtherMat_v9恢复后散列，通过FFDec原生固定舞台渲染，保留原始矩阵、滤镜及注册点。外层三态选择器停帧不停止内部动画：idle为1帧，hover的488/487为15帧单次展开并在末帧stop，available的491为19帧发光循环，均24fps。没有重画图案或用字体替代官方字图。
 
 | 正式资源 | 官方身份及注册 |
 | --- | --- |
@@ -561,3 +561,5 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | --- | --- | --- |
 | Role_v7 `MonsterBeHurt1/2`（symbol27/18） | `Sprites/Effects/monster_hit/{wukong,tangseng}/` | 怪物受击官方8帧闪光；唐僧目录为受官方 hue+160 后的原图变体。 |
 | 原项目地图令牌图 | `MapForm/m_Settings` 复用 `map_return_title.png` | 设置入口保留原版令牌，只替换文字为“游戏设置”，不重画按钮。 |
+
+2026-11-06按用户纠正，技能恢复1帧静止普通态、15帧单次展开停帧、19帧可购黄光；前轮“普通态循环”是AI误读，不是用户取舍。保存新增 `map_save_game_hover.png`，直接渲染官方SimpleButton502的悬停shape501，普通/按下保留既有499图片，同画布138×93/原点(75,54.45)。既有export_official_map_combo_ui增加 `--map-only`，避免改写连击素材。设置文字为20号海报字形、金色黑白描边，三个标题按源字图中心x约75.5视觉对齐；令牌保持一次亮度过渡。主菜单继续收在现有设置窗内。

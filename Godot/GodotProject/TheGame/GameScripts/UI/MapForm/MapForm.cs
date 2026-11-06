@@ -90,8 +90,6 @@ namespace GameLogic.UI
 		[Export]
 		private AnimatedSprite2D m_SkillsArtwork;
 		[Export]
-		private Button m_Back;
-		[Export]
 		private MapLocationButton m_Huaguoshan;
 		[Export]
 		private MapLocationButton m_Shuiliandong;

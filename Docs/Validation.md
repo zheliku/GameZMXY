@@ -1,5 +1,50 @@
 # 验证
 
+## 返回主菜单提交当前档案与选关可见间距（2026-11-06）
+
+地图设置原先只等待`PendingWrite`，没有提交地图上新产生的修改。现在地图与关内设置都调用既有`SaveSystem.SaveManuallyAsync`，成功后才导航，失败保留当前档案与页面。全部正式`ProcedureTitle`入口已检查：`ProcedurePreload`是无档案的首次启动；`ProcedureMap`提交当前档案；`ProcedureLevel`原本已提交后再`EndSession(false)`。未增加导航或存档抽象，未把写盘放进标题销毁档案的阶段。
+
+本节布局结果覆盖下节的初次位置：原生透明渲染按alpha>128测量完整按钮图案，普通态技能/保存/设置的横向中心分别为75.5/76/75px；两处垂直可见边界间隔从91/37px改为64/64px。保存整体上移27px，设置图案和题签分别校正；技能展开时保留官方扩展轮廓，不按动态包围盒移动按钮。设置20号海报字、官方技能单次展开和保存悬停换图均保留。
+
+| 验证 | 命令与结果 |
+| --- | --- |
+| 选关专项与失败重试 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py map_return_save_and_spacing_20261106 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend --map-buttons-only`：退出0、`SMOKE-MAP-BUTTONS PASS`。技能普通态静止、悬停展开15帧后保持末帧且持续0.8秒不重播、保存真实鼠标悬停切图、设置字体/固定尺寸/提亮/复用均通过。购买后再增加未手动保存的17灵魂/3经验；隔离档案编号故意不匹配时拒绝返回并保留状态，恢复编号后实际点击返回、重读磁盘与重新进图通过。 |
+| 全部返回路径 | 同runner案例`all_title_returns_save_20261106`，参数`--rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：退出0、完整前端PASS；悟空地图、唐僧地图、关内设置三次`SMOKE-RETURN-SAVE PASS`。返回前独立捕获快照，标题出现后直接通过`EasySave.LoadFromUserAsync<GameData>`读取对应文件，逐项比较版本、出战角色、灵魂、所有英雄的经验/学习/穿戴、装备实例/属性、关卡进度及东海旗标，不以内存检查点代替写盘证据。原有标题、六格档案、手动保存、暂停/回滚与失败清理回归通过。 |
+| 可见边界 | 同runner案例`map_visible_bounds_aligned_20261106`，参数`--rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/map_correction_20261106/render_map_bounds.gd`：退出0、`MAP VISIBLE BOUNDS RENDER PASS`。三张单按钮透明图在alpha>128下的包围盒为技能(41,59)..(110,103)、保存(11,167)..(141,259)、设置(21,323)..(129,436)（右/下边界不含），两处边界间隔均64px。 |
+| 实际画面 | 同runner案例`map_equal_visible_gaps_preview_20261106`，参数`--rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/map_correction_20261106/render_map.gd`：退出0、`MAP NATIVE RENDER PASS`。实际查看`.godot/validation/map_correction_20261106/map_native_idle.png`与`map_native_hover.png`；使用正式地图场景，确认普通态排列及展开末帧。独立渲染夹具设根尺寸时有一条anchors警告。 |
+| 构建/格式/引用 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出0、0错误/5条既有框架弃用警告；`dotnet run --project Tools/ProjectMaintenance/CSharpStyle -- . Godot/GodotProject/.godot/validation/title_return_spacing_style_20261106.json`：362文件、0格式差异/缺XML；`python Tools/ProjectMaintenance/validate_game_references.py`：2248路径/388UID；`git diff --check`通过。 |
+
+选关专项中的档案身份错误和拒绝返回日志是上述故意失败注入；退出仍有2个ObjectDB及1条资源诊断。完整前端保留既有旧档案、坏文件和注册失败注入，退出3个ObjectDB诊断。均未修改Framework/addons或用户Git索引。下方只等待`PendingWrite`以及按控件中心等距的旧记录不代表当前实现。
+
+## 选关停帧、保存悬停与设置标题纠正（2026-11-06）
+
+用户明确技能不应循环。此前把它当成故障描述，又把hover声明帧数当循环依据，两处结论都不成立：实际488/487帧脚本的frame15均stop。现恢复普通态1帧静止、悬停15帧单次展开后保持，移出回普通态；491的19帧可购黄光是源文件独立规则。保存502的BUTTONRECORD明确up/down=499、over=501，新增同注册画布的官方悬停PNG。设置标题15号改20号海报字、金色黑边/白外边，按源字图中心约75.5对齐并向右修正3.5px；使用单个原生Label的outline/shadow_outline，不额外加文字节点。
+
+| 验证 | 命令与结果 |
+| --- | --- |
+| 官方导出 | `python Tools/LegacyMigration/export_official_map_combo_ui.py --source Godot/GodotProject/.godot/validation/skills-source/official_othermat.swf --java <已安装Java> --ffdec <已安装ffdec.jar> --work Godot/GodotProject/.godot/validation/map_correction_20261106/export --map-only`：源SHA校验通过，只更新地图资源；manifest记录488/487停帧、502/499/501和画布原点。 |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出0、0错误/5条既有框架弃用警告。 |
+| 实际交互 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py map_official_controls_final_20261106 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend --map-buttons-only`：退出0，普通态静止、展开到14号帧停止并继续悬停0.8秒仍不重播、移出复位、可购发光/购买、保存真实鼠标悬停切图、标题对齐/字号/描边、设置导航/磁盘重读/复用通过；2个ObjectDB及1条资源退出诊断。 |
+| 完整前端 | 同runner，案例`map_official_frontend_final_20261106`，去掉`--map-buttons-only`：退出0，标题/两英雄建档重读、地图技能购买、手动保存、地点命中、设置导航/暂停/回滚/复用和失败清理全部通过。故意旧档案/坏档/注册失败注入日志保留，退出3个ObjectDB诊断。 |
+| 实际画面 | 已查看`frontend/map_buttons_aligned.png`、`map_save_official_hover.png`、`map_skill_entry_hover.png`及原生字体并排比较。保存图案没有裁切，标题同列，设置字号/金色与黑白轮廓已调整。 |
+| 资源登记 | runner案例`map_official_resources_20261106 --headless --editor --script res://EditorScripts/regenerate_collection.gd --no-window`：退出0，980资源生成；PNG导入完成，既有ComponentInsoector/free、RID/ObjectDB退出诊断保留。 |
+| 引用/格式 | `python Tools/ProjectMaintenance/validate_game_references.py`：2248路径/388UID；CSharpStyle报告`map_official_controls_style_20261106.json`：362文件、0格式差异/缺XML；作者工具py_compile、`git diff --check`通过。 |
+
+## 前轮选关调整历史（原循环结论由上节纠正）
+
+前轮误读时将技能普通态改成15帧循环，不能称为用户要求，现已撤回。其余导航改动保留：设置令牌由整块反复缩放改为原生AnimationPlayer的120ms提亮并停留，移出恢复；技能点击区收在中间96px，避免透明边覆盖花果山。地图m_Back及旧TitleRequested链路移除，主菜单导航复用SettingsForm按钮，由ProcedureMap持有回调并等待PendingWrite。标题隐藏无效导航，战斗保留原有返回/回滚。以下只记录历史执行结果，不替代上节当前状态的验证。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| UI绑定生成 | `python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/map_form.tscn --namespace GameLogic.UI`：16项绑定；仅删除m_Back导出，生成物未手改。 |
+| 选关实际交互 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py map_controls_buttons_final_20261107 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend --map-buttons-only`：退出0，普通态自然两个完整循环、技能悬停/可购循环、三个中心等距、令牌亮度/固定尺寸/复位、设置返回标题、磁盘重读及地图/设置复用通过。查看`frontend/map_buttons_aligned.png`、`map_settings_token_hover.png`、`map_settings_navigation.png`。退出有2个ObjectDB及1条资源占用诊断。 |
+| 完整前端回归 | 同runner，案例`map_controls_frontend_complete_20261107`，参数`--rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：退出0，标题/六格存档/选角、地图轮廓与扩展悬停、技能购买、手动保存、设置返回主菜单、悟空/唐僧磁盘重读、战斗设置保存/回滚/暂停/订退复用及初始化失败清理通过。stderr中的旧档案写入拒绝、坏档/注册失败为既有故意注入；退出5个ObjectDB及1条资源诊断保留。 |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出0，0错误/5条既有框架弃用警告。 |
+| 场景/脚本扫描 | `run_godot.py map_controls_scan_20261107 --headless --editor --build-solutions --quit --no-window`：退出0、扫描/构建完成；编辑器退出仍有既有ComponentInsoector/free诊断。 |
+| 引用/格式/作者工具 | `python Tools/ProjectMaintenance/validate_game_references.py`：2246路径/388UID；`dotnet run --project Tools/ProjectMaintenance/CSharpStyle -- . Godot/GodotProject/.godot/validation/map_controls_style_20261107.json`：362自有文件、0格式差异、0缺XML；作者工具py_compile、`git diff --check`通过。 |
+
+初次完整前端回归发现技能透明点击区遮住花果山普通扩展区，收窄原生按钮后该检查通过；人为1.6倍放大的左缘探针落在菜单、右缘又落在相邻水帘洞，最终改取无遮挡的顶部树冠验证扩展轮廓，继续检查图像确实超出原按钮矩形。保留原生相邻控件的输入优先级，不为烟测修改地点命中实现。三次中间失败案例保留在`movement_presets/map_controls_frontend_{final,verified,checked}_20261107`，不作为通过记录。
+
 ## 身体、攻击来源、技能与官方背包展示收尾（2026-11-07）
 
 本节覆盖当前12项目标及随后“两英雄都改用官方背包展示”的要求，覆盖下方11月6日关于战斗待机预览、SecondJumpTime和玄冰原点不动的历史结论。依据第00章单一状态所有权、第30章原生动画/基础形状、第40章原点/遮挡及第50章生成边界完成；第40章共用战斗/背包图像条款按用户当前要求作独立官方图例外，未改规范正文。

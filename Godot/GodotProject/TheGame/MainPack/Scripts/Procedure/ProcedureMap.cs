@@ -56,8 +56,7 @@ public sealed class ProcedureMap : ProcedureBase
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
         SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: false);
-
-
+        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: false);
         m_Cancellation?.Cancel();
         m_Cancellation?.Dispose();
         m_Cancellation = null;
@@ -89,12 +88,12 @@ public sealed class ProcedureMap : ProcedureBase
     }
 
     /// <summary>
-    /// 返回标题前等待当前检查点。
+    /// 返回标题前保存当前档案；地图与关卡设置复用同一存档入口。
     /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private async void OnTitleRequested(int formSerialId)
     {
-        if (formSerialId != m_FormSerialId || m_IsReturningToTitle)
+        if (formSerialId != m_SettingsSerialId || m_IsReturningToTitle)
         {
             return;
         }
@@ -106,7 +105,7 @@ public sealed class ProcedureMap : ProcedureBase
         try
         {
             // 捕获本周期引用，等待后不得访问已经换周期的流程字段。
-            bool saved = await saveSystem.PendingWrite;
+            bool saved = await saveSystem.SaveManuallyAsync(formSerialId, token);
             token.ThrowIfCancellationRequested();
             if (saved)
             {
@@ -181,6 +180,7 @@ public sealed class ProcedureMap : ProcedureBase
             return;
         }
         m_SettingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
+        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
     }
 
     /// <summary>
@@ -251,12 +251,6 @@ public sealed class ProcedureMap : ProcedureBase
         switch (form)
         {
             case MapForm mapForm when mapForm.SerialId == m_FormSerialId:
-                mapForm.TitleRequested -= OnTitleRequested;
-                if (bind)
-                {
-                    mapForm.TitleRequested += OnTitleRequested;
-                }
-
                 mapForm.SettingsRequested -= OnSettingsRequested;
                 if (bind)
                 {
@@ -281,6 +275,13 @@ public sealed class ProcedureMap : ProcedureBase
                     mapForm.LevelSelected += OnLevelSelected;
                 }
 
+                break;
+            case SettingsForm settingsForm when settingsForm.SerialId == m_SettingsSerialId:
+                settingsForm.TitleRequested -= OnTitleRequested;
+                if (bind)
+                {
+                    settingsForm.TitleRequested += OnTitleRequested;
+                }
                 break;
         }
     }

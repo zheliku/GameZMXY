@@ -115,7 +115,11 @@ public sealed partial class UiSmokeScenario
             GF.UI.GetAllLoadedUIForms().OfType<MapForm>().Any(value => value.Visible), "唐僧设置未返回地图");
         await WaitFramesAsync(2);
         GF.UI.GetAllLoadedUIForms().OfType<MapForm>().Single(value => value.Visible)
-            .GetNode<BaseButton>("m_Back").EmitSignal(BaseButton.SignalName.Pressed);
+            .GetNode<BaseButton>("m_Settings").EmitSignal(BaseButton.SignalName.Pressed);
+        await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().Any(value => value.Visible),
+            "唐僧地图未打开返回主菜单的设置窗口");
+        GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().Single(value => value.Visible)
+            .GetNode<BaseButton>("Scroll/Content/Options/Navigation/m_ReturnTitle").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.Procedure.CurrentProcedure is ProcedureTitle && flow.GetModel<ProfileModel>() == null,
             "唐僧返回标题未释放旧档案");
         await WaitUntilAsync(() =>
