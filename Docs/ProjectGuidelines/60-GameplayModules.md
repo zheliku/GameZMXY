@@ -1,7 +1,7 @@
 # 60 玩法模块
 
 > 状态：登记当前实现、长期系统的落位与数据形状，以及旧项目参考。落位表是新玩法的入口约定：新系统按表放目录、选所有者、定数据形状，不新建平行架构。
-> 证据：`Configs/GameConfig/Datas/`、`Godot/GodotProject/TheGame/GameScripts/`、`TheGame/MainPack/Scripts/Procedure/`、`TheGame/Scenes/level_1.tscn`、`Docs/LegacyAssetMap.md` 及所列旧项目脚本。
+> 证据：`Configs/GameConfig/Datas/`、`Godot/GodotProject/TheGame/GameScripts/`、`TheGame/MainPack/Scripts/Procedure/`、`TheGame/Scenes/Levels/zm1_01_huaguoshan/level_1.tscn`、`Docs/LegacyAssetMap.md` 及所列旧项目脚本。
 
 ## 当前实现
 
@@ -25,6 +25,8 @@
 - 属性修正使用 AttributeType、AttributeModifierKind 和 AttributeSourceId，由 HeroSystem 按来源登记与移除。
 - 新持久字段同时更新 Model、GameData、SaveDataUtility 和映射测试，按存档契约更新版本。
 - 新流程加入 GGF 的 Procedure.Procedures 清单前，按第 50 章登记授权范围。
+
+本表描述未来确有需求时的落位，不表示造一拥有宠物、炼丹、锻造等功能；当前造一边界以ProjectTour与OfficialReference为准。
 
 ## 旧项目玩法参考
 

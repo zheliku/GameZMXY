@@ -6,7 +6,9 @@
 
 复用`Tools/LegacyMigration/export_official_skill_audio.py --hero tangseng`，校验既有Music.swf固定版本后由FFDec导出原始MP3载荷。正式目录为`Audios/SFX/tangseng/`，五技能放在`skills/`。SymbolClass映射：23→tangseng_attack、24→skills/tangseng_ice_dragon、25→skills/tangseng_dark_ice、20→skills/tangseng_water_clone、22→skills/tangseng_heavenly_dew、5→skills/tangseng_water_demon、4→tangseng_hit_impact、27→tangseng_hurt。全部无循环、无重编码，资源表LegacyId保留official.Music符号名。
 
-Role2普通起手、满蓄/未满蓄、分身换位、甘露本体/分身双起手及水魔追加声音按TangsengImplementationStudy登记。Role2Shadow玄冰不自行发声；本版本无独立Role2死亡音。8段真实GGF播放及实际输入链已验证，精确命令、音频源散列基线和退出诊断见Validation/OfficialReference。
+Role2普通起手、满蓄/未满蓄、分身换位、甘露本体/分身双起手及水魔追加声音按OfficialReference的“唐僧已实装规则与项目取舍”登记。Role2Shadow玄冰不自行发声；本版本无独立Role2死亡音。8段真实GGF播放及实际输入链已验证，精确命令、音频源散列基线和退出诊断见Validation/OfficialReference。
+
+一般地图按钮统一由`register_official_map_location.gd`登记（含蝙蝠窟、七星洞、迦楼罗）；旧enable/rename分步脚本已合并。沿海三地点继续走完整源矩阵专用流程，不能用普通按钮居中缩放替代。重建前保留正式人工位置；命令和本轮隔离副本验证见Validation。
 
 ## 官方地图技能入口与连击图元（2026-11-03）
 
@@ -72,7 +74,7 @@ Role2普通起手、满蓄/未满蓄、分身换位、甘露本体/分身双起�
 | --- | --- |
 | 玄武甲、青龙刀、如意金箍棒、白虎杖、麒麟袍、朱雀戒、七星守护、九环禅杖及两件法宝的透明背包/地面图 | OtherMat_v9 的对应 SymbolClass；`export_official_equipment.py --only <对应英文资源名>` → `register_dragon_equipment.gd`。身份对应关系由导出器集中维护 |
 | `wukong_body_black_tortoise.png`、`wukong_weapon_azure_dragon.png`、`wukong_weapon_ruyi.png` | Role_v7 身体selector5、武器selector6/5，各166格；使用已有`export_official_wukong_equipment.py`与`import_official_wukong_equipment.gd`作者化，`register_dragon_equipment.gd`分别绑定EquipmentId29/30/31，身体与武器仍为两层 |
-| 金钢琢/东海旗幡的正式数据与背包表现 | AllEquipment的jgz/dhqf均为zbfb；仅获取/存档，界面标明功能待开放并禁止穿戴。金钢琢由最终形态直接赠送；东海旗幡在首次龙王出生消费资格后保证地面掉落，后续普通/高级池按Monster26脚本 |
+| 金钢琢/东海旗幡的正式数据与背包表现 | AllEquipment的jgz/dhqf均为zbfb；已接入获取、四槽穿戴/属性与存档；该版无已核实主动施放入口。金钢琢由最终形态直接赠送；东海旗幡在首次龙王出生消费资格后保证地面掉落，后续普通/高级池按Monster26脚本 |
 
 ### 第九关鲨之涡流（官方 3-3）
 
@@ -116,7 +118,7 @@ Role2普通起手、满蓄/未满蓄、分身换位、甘露本体/分身双起�
 | 彭魔王、飞行魔及彭魔王火焰/死亡旋涡场景与动作库 | Monster2_v4 的 Monster9/15、Boss4Bullet1，Monster_v1 的 BossDead；`export_official_garuda_cave.py` → `prepare_official_garuda_level.py` → `import_garuda_actor_assets.py`。335源帧保留注册点；火焰使用三条基础矩形排除中间空气，0.6秒淡入期间保持判定 |
 | `Sprites/Items/equipment/{equipment,ground}_heavenly_fiend_{moon_halberd,robe}.png` | OtherMat_v9：月戟126/125、羽袍124/123；`export_official_equipment.py` → `register_garuda_equipment.gd`，使用完整透明前景 |
 | `Sprites/Characters/Heroes/wukong/wukong_weapon_heavenly_fiend.png` | Role_v7 武器selector4，166姿态含全部51个基础动作帧；`export_official_wukong_equipment.py` → `import_official_wukong_equipment.gd`。与身体独立，保持既有原点和遮挡裁切 |
-| `Sprites/UI/frontend/map_jialuoluo_current.png` 及外置地点动画 | OtherMat_v9 元件420/423，19帧原始光晕；`export_official_map_hints.py --only jialuoluo` → `enable_garuda_map.gd` |
+| `Sprites/UI/frontend/map_jialuoluo_current.png` 及外置地点动画 | OtherMat_v9 元件420/423，19帧原始光晕；`export_official_map_hints.py --only jialuoluo` → `register_official_map_location.gd -- jialuoluo Location6 m_Jialuoluo 迦楼罗之穴 19` |
 
 ### 第五关七星洞（官方 2-2）
 
@@ -129,7 +131,7 @@ Role2普通起手、满蓄/未满蓄、分身换位、甘露本体/分身双起�
 | `Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/`、对应实体与动画目录 | Monster2_v4 的 Monster11；身体三段招式、毒雾独立 SpriteFrames，来源同上 |
 | `Sprites/Characters/Heroes/Status/`、悟空场景的 `m_StatusEffects` | 官方poison_head/poison_up；`register_qixing_poison.gd` 登记状态播放器及外置动画，不展开已有升级子场景 |
 | `Sprites/Items/equipment/{equipment,ground}_heavenly_fiend_necklace.png` | OtherMat_v9 的背包符号43、透明地面符号20；`export_official_equipment.py` → `register_qixing_equipment.gd`，两种用途均用透明前景 |
-| `Sprites/UI/frontend/map_qixingdong_hover_animation.tres` | 原地图七星洞普通/悬停图；`enable_qixing_map.gd` 外置悬停动画 |
+| `Sprites/UI/frontend/map_qixingdong_hover_animation.tres` | 原地图七星洞普通/悬停图；`register_official_map_location.gd -- qixingdong Location5 m_Qixingdong 七星洞 19` 外置悬停动画 |
 
 ### 后续关卡共享音乐与作者化暂存
 
@@ -366,6 +368,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | `Sprites/Effects/loot/musou_01..19.png` | Monster_v1 sprite 5，黄球 | 同上 |
 | `Sprites/Effects/loot/soul_*.png` | Monster_v1 sprite 9，紫球 | 同上 |
 | `Sprites/Effects/loot/mana_*.png` | Monster_v1 sprite 7，蓝球 | 同上 |
+| `Sprites/Effects/loot/health_01..19.png` | Monster_v1 sprite 3，实际为红色回血球；AS类名auraGreen与颜色不符 | 同上，`--group loot`；逐字节复制官方19帧，不改色/裁剪/原点 |
 | `Sprites/UI/hud/musou_activation/{wukong,tangseng,shared}/` | Role_v7 WsEffect 59：背景52、悟空55、唐僧58；按BaseHero.doWsEffect隐藏另一角色，共用24帧时钟 | `export_official_musou_activation.py --hero wukong|tangseng` |
 
 升级动画保留原始 PNG；后半段位图外的蓝色标记会被 FFDec 边缘采样带入，导出器通过 `AtlasTexture.region` 裁掉这一行，并用 `margin` 补回透明留白、启用 `filter_clip`。28 帧仍为 122×136，播放位置和时长不变；只重导升级动画可加 `--group level_up`。

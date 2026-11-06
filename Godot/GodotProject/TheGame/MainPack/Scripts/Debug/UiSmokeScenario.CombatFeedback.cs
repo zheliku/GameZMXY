@@ -106,7 +106,7 @@ public sealed partial class UiSmokeScenario
     }
 
     /// <summary>
-    /// 强制构造稀有蓝球夹具，验证实际拾取回蓝、上限、池复用与失效目标取消。
+    /// 验证红、蓝、黄球实际拾取、上限、跨类型池复用与关卡目标归属。
     /// </summary>
     /// <param name="flow">测试档案作用域。</param>
     /// <param name="level">正式奖励所有者。</param>
@@ -148,6 +148,35 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() => owned.Count == 0, "复用蓝球没有结束飞行", 10000);
         Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == GF.Fsm.GetModel<HeroModel>().MaxMp.Value, "蓝球超出上限或复用后未正确回蓝");
 
+        // 生命球复用刚归还的蓝球实例，暂停不能移动或提前恢复生命。
+        var model = flow.GetModel<HeroModel>();
+        model.Hp.Value = 1;
+        int health = flow.GetSystem<LootSystem>().HealthAmount(model.MaxHp.Value);
+        var red = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
+        Check(ReferenceEquals(reused, red) && red.Animation == LootAnims.Health && model.Hp.Value == 1,
+            "蓝球复用为红球后动画/奖励未刷新或提前回血");
+        Vector2 redPosition = red.GlobalPosition;
+        GF.Base.PauseGame();
+        try
+        {
+            await WaitFramesAsync(4);
+            Check(red.GlobalPosition.IsEqualApprox(redPosition) && model.Hp.Value == 1, "暂停时红球仍在飞行或回血");
+        }
+        finally
+        {
+            GF.Base.ResumeGame();
+        }
+        await WaitUntilAsync(() => owned.Count == 0, "红球未接触英雄", 10000);
+        Check(model.Hp.Value == Math.Min(model.MaxHp.Value, 1 + health), "红球实际恢复量错误");
+        foreach (int hp in new[] { model.MaxHp.Value - 1, model.MaxHp.Value })
+        {
+            model.Hp.Value = hp;
+            var clamped = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
+            Check(ReferenceEquals(red, clamped), "红球未复用原池实例");
+            await WaitUntilAsync(() => owned.Count == 0, "满血附近红球未回池", 10000);
+            Check(model.Hp.Value == model.MaxHp.Value, "红球超出生命上限或满血无法回收");
+        }
+
         // 黄球只增加无双，不能再次增加经验；开启期间也允许拾取补充。
         var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
         GF.Fsm.GetSystem<HeroSystem>().ClearWs();
@@ -187,7 +216,8 @@ public sealed partial class UiSmokeScenario
         m_ExtraHero = null;
         // 留一颗正在等待的球，调用方随后通过正式 Cleanup 验证卸载回收。
         SpawnManaOrb(level, hero.GlobalPosition);
-        GD.Print("SMOKE-UI: mana pickup/clamp/pool reuse/scene-owned target selection passed");
+        SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
+        GD.Print("SMOKE-UI: health/mana/musou pickup/clamp/pool reuse/scene-owned target selection passed");
     }
 
     /// <summary>
@@ -198,7 +228,8 @@ public sealed partial class UiSmokeScenario
     /// <returns>正在飞行的池实例。</returns>
     private static LootOrbNode SpawnManaOrb(LevelViewController level, Vector2 position)
     {
-        return SpawnOrb(level, position, new(LootKind.Mana, 0));
+        return SpawnOrb(level, position, new(LootKind.Mana,
+            GF.Fsm.GetSystem<LootSystem>().ManaAmount(GF.Fsm.GetModel<HeroModel>().MaxMp.Value)));
     }
 
     /// <summary>
@@ -370,7 +401,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckFlyingLootAsync(LevelViewController level, AbstractHeroEntity hero)
     {
         var orbs = SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "m_LootOrbs");
-        Check(orbs.Count is >= 2 and <= 10, "怪物死亡掉落数量超出官方范围");
+        Check(orbs.Count is >= 2 and <= 13, "怪物死亡掉落数量超出官方范围");
         if (m_PreviousOrb != null)
         {
             Check(orbs.Contains(m_PreviousOrb), "下一次击败未复用已归还的飞行球");

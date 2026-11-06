@@ -1,6 +1,6 @@
 # Godot + GGF + QF 架构审计与整改
 
-日期：2026-11-02。审计基线：`511b958eace86ee038409de068c5b4ce3e011334`。本报告是审计与实施记录，不覆盖 `ProjectGuidelines/`。用户要求对照GLM后实施，并继续完成全部审计结果。A01—A14及回归新增A15均有实施或有证据的保留结论；保留项不冒称已改造，低收益建议不机械变成新抽象。
+日期：2026-11-02。历史实施记录；当前状态与后续路线见ProjectTour，架构依据已合并到ArchitectureReview。审计基线：`511b958eace86ee038409de068c5b4ce3e011334`。本报告是审计与实施记录，不覆盖 `ProjectGuidelines/`。用户要求对照GLM后实施，并继续完成全部审计结果。A01—A14及回归新增A15均有实施或有证据的保留结论；保留项不冒称已改造，低收益建议不机械变成新抽象。
 
 ## 1. 项目事实与调查范围
 
@@ -9,7 +9,7 @@
 | 引擎 | 本机 `Godot4CSharp_console.exe --version` 为 `4.7.2.stable.mono.official.ed1daf0bf`；`project.godot` 声明 4.7/C#/GL Compatibility，`GodotProject.csproj` 使用 `Godot.NET.Sdk/4.7.2`、`net10.0`。SDK 与实际引擎均核实，不能只从规范推断补丁版本。 |
 | 语言与依赖 | 运行时业务主要 C#，EditorScripts 有 C#/GDScript，维护工具有 Python；NuGet 的 Newtonsoft.Json 为 13.0.4。GDScript 工具的存在不表示运行时有另一套玩法框架。 |
 | GGF | 以源码随仓库保存于 `Godot/GodotProject/Framework/`，分纯 C# GameFramework 与 GodotGameFrameworkCore；GameFramework AssemblyVersion 为 0.0.0.0，版权指向 Jiang Yin。无独立子模块版本可证明其上游 Tag/Commit；不能猜测 UGF 或 GGF 发布版本。当前仓库 HEAD 是 `511b958eace86ee038409de068c5b4ce3e011334`，Framework Git tree 为 `14f480a66fcf600094052e7d10c1c95b9e05e252`，可精确追溯此次审阅快照。 |
-| QF | 没有 QFramework 包引用；`GameScripts/Arch/` 是借鉴 QF 的本地契约、Bindable 与 GGF FSM 适配实现。不能把 QF 官方当前版本当成本项目依赖版本。既有上游研究见 `ArchitectureResearch.md`，本轮以本地实际实现为裁决依据。 |
+| QF | 没有 QFramework 包引用；`GameScripts/Arch/` 是借鉴 QF 的本地契约、Bindable 与 GGF FSM 适配实现。不能把 QF 官方当前版本当成本项目依赖版本。既有上游研究见 `ArchitectureReview.md`，本轮以本地实际实现为裁决依据。 |
 | 启动/插件 | 主场景使用 `uid://bggentry001`；Autoload 为 UpdateDriver、SmokeTestDriver。启用 ComponentInsoector、ExportInspector、TopMenu、asset_bundle、ezpz_inspector。SmokeTestDriver 默认关闭驱动，只在命令行模式中启动隔离验证。 |
 | 显示/物理/输入 | 940×590、canvas_items、gl_compatibility；2D 使用原生物理，项目中的 Jolt 配置属于 3D，不代表 2D 使用 Jolt。14 个具名业务物理层及 Ignore；A/D、J/K、空格、W、C/V、U/I/O 等动作由项目映射和 InputSystem 消费。 |
 | 配置与资产 | Luban xlsx 是玩法配置源，GameProto/bytes 是生成物；动作、形状、声音时点归原生场景/AnimationLibrary，关卡配方与场景空间引用分离。工程没有以 TileMap 为核心的重复关卡管理器。 |

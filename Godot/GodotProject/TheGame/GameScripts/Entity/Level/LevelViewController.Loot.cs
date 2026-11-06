@@ -61,8 +61,9 @@ namespace GameLogic.Level
                                     this.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), selection.Equipment, m_LootRandom.Randf));
                 }
 
+                var hero = this.GetModel<HeroModel>();
                 foreach (LootReward reward in this.GetSystem<LootSystem>().Roll(data.Config,
-                                         data.SoulPerOrbOverride ?? data.Config.SoulPerOrb, m_LootRandom.Randf))
+                    data.SoulPerOrbOverride ?? data.Config.SoulPerOrb, hero.MaxHp.Value, hero.MaxMp.Value, m_LootRandom.Randf))
                 {
                     var orb = NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, this)
                               ?? throw new InvalidOperationException("飞行掉落节点池未注册或资源无法显示。");

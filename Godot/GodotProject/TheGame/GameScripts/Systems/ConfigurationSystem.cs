@@ -206,9 +206,12 @@ namespace GameLogic.Config
             }
 
             if (drop.MusouPerOrb <= 0 || drop.ManaMinimum < 0 ||
-                        !float.IsFinite(drop.ManaMaxFraction) || drop.ManaMaxFraction < 0f)
+                !float.IsFinite(drop.ManaMaxFraction) || drop.ManaMaxFraction < 0f ||
+                drop.HealthMinimum < 0 || !float.IsFinite(drop.HealthMaxFraction) || drop.HealthMaxFraction < 0f ||
+                !float.IsFinite(drop.HealthDropChance) || drop.HealthDropChance is < 0f or > 1f ||
+                drop.HealthCount.X < 1 || drop.HealthCount.Y < drop.HealthCount.X)
             {
-                errors.Add("掉落：无双收益与回蓝数值非法。");
+                errors.Add("掉落：无双收益、回蓝/回血数值或生命球掉落概率、数量非法。");
             }
 
             foreach (var enemy in tables.TbEnemyConfig.DataList)

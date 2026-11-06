@@ -1,5 +1,4 @@
 using GameLogic.Architecture;
-using GameLogic.Utility;
 using GameLogic.Heroes.Body;
 using GameLogic.Input;
 using GameLogic.Body;

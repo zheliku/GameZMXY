@@ -5,7 +5,7 @@ using Xunit;
 namespace GameLogic.Profile.Tests
 {
     /// <summary>
-    /// 真实配置驱动的官方灵魂、蓝球与无双球掉落边界回归。
+    /// 真实配置驱动的灵魂、生命、魔法与无双球掉落边界回归。
     /// </summary>
     public sealed class LootTests
     {
@@ -28,7 +28,7 @@ namespace GameLogic.Profile.Tests
         }
 
         /// <summary>
-        /// 灵魂数量落在官方区间；奖励只含三种球，数量与经验规模无关。
+        /// 四种球总量有界；红、蓝球分别使用掉落时的生命、魔法上限。
         /// </summary>
         [Fact]
         public void Rewards_RespectOfficialRanges_AndHaveBoundedCount()
@@ -38,8 +38,10 @@ namespace GameLogic.Profile.Tests
             {
                 foreach (float random in new[] { 0f, .34f, .67f, .99999f, 1f })
                 {
-                    var loot = new LootSystem(TestTables.Architecture).Roll(monster, monster.SoulPerOrb, () => random);
-                    Assert.InRange(loot.Count, 2, 10);
+                    var loot = new LootSystem(TestTables.Architecture).Roll(monster, monster.SoulPerOrb, 1039, 2000, () => random);
+                    Assert.InRange(loot.Count, 2, 13);
+                    Assert.All(loot.Where(x => x.Kind == LootKind.Health), x => Assert.Equal(51, x.Amount));
+                    Assert.All(loot.Where(x => x.Kind == LootKind.Mana), x => Assert.Equal(100, x.Amount));
                     Assert.All(loot.Where(x => x.Kind == LootKind.Musou), x => Assert.Equal(5, x.Amount));
                     Assert.InRange(loot.Count(x => x.Kind == LootKind.Soul), monster.SoulCount.X, monster.SoulCount.Y);
                     Assert.All(loot.Where(x => x.Kind == LootKind.Soul), x => Assert.Equal(monster.SoulPerOrb, x.Amount));
@@ -62,7 +64,7 @@ namespace GameLogic.Profile.Tests
             int calls = 0;
             float Random() => ++calls == 2 ? chance : count;
             var monster = TestTables.Tables.TbEnemyConfig.DataList[0];
-            var loot = new LootSystem(TestTables.Architecture).Roll(monster, monster.SoulPerOrb, Random);
+            var loot = new LootSystem(TestTables.Architecture).Roll(monster, monster.SoulPerOrb, 50, 50, Random);
             Assert.Equal(expected, loot.Count(x => x.Kind == LootKind.Mana));
         }
 
@@ -81,7 +83,7 @@ namespace GameLogic.Profile.Tests
             int calls = 0;
             float Random() => ++calls switch { 1 => 0f, 2 => .99f, 3 => chance, _ => count };
             var monster = TestTables.Tables.TbEnemyConfig.DataList[0];
-            var loot = new LootSystem(TestTables.Architecture).Roll(monster, monster.SoulPerOrb, Random);
+            var loot = new LootSystem(TestTables.Architecture).Roll(monster, monster.SoulPerOrb, 50, 50, Random);
             Assert.DoesNotContain(loot, x => x.Kind == LootKind.Mana);
             Assert.Equal(expected, loot.Count(x => x.Kind == LootKind.Musou));
             Assert.All(loot.Where(x => x.Kind == LootKind.Musou), x => Assert.Equal(5, x.Amount));
@@ -99,6 +101,45 @@ namespace GameLogic.Profile.Tests
         public void Mana_UsesCurrentMaximum(int maximum, int expected)
         {
             Assert.Equal(expected, new LootSystem(TestTables.Architecture).ManaAmount(maximum));
+        }
+
+        /// <summary>
+        /// 红球独立于蓝/黄球；两次采样的联合分布保持官方1、2、3颗各4%。
+        /// </summary>
+        [Fact]
+        public void Health_HasOfficialDistributionAndIndependentSamples()
+        {
+            var system = new LootSystem(TestTables.Architecture);
+            var monster = TestTables.Tables.TbEnemyConfig.DataList[0];
+            int[] outcomes = new int[4];
+            for (int sample = 0; sample < 300; sample++)
+            {
+                for (int count = 0; count < 3; count++)
+                {
+                    int calls = 0;
+                    float Random() => ++calls switch { 1 => 0f, 2 or 3 => 1f, 4 => sample / 300f, _ => count / 3f };
+                    var loot = system.Roll(monster, monster.SoulPerOrb, 1039, 50, Random);
+                    outcomes[loot.Count(x => x.Kind == LootKind.Health)]++;
+                    Assert.DoesNotContain(loot, x => x.Kind is LootKind.Mana or LootKind.Musou);
+                }
+            }
+
+            Assert.Equal(new[] { 792, 36, 36, 36 }, outcomes);
+        }
+
+        /// <summary>
+        /// 红球最低10点；上限较高时向下取整恢复5%。
+        /// </summary>
+        /// <param name="maximum">生成时的生命上限。</param>
+        /// <param name="expected">官方恢复量。</param>
+        [Theory]
+        [InlineData(1, 10)]
+        [InlineData(199, 10)]
+        [InlineData(1039, 51)]
+        [InlineData(2000, 100)]
+        public void Health_UsesOfficialAmount(int maximum, int expected)
+        {
+            Assert.Equal(expected, new LootSystem(TestTables.Architecture).HealthAmount(maximum));
         }
     }
 }

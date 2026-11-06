@@ -179,6 +179,37 @@ public sealed partial class UiSmokeScenario
                 return;
             }
 
+            if (OS.GetCmdlineUserArgs().Contains("--loot-only"))
+            {
+                int originalTicks = Engine.PhysicsTicksPerSecond;
+                try
+                {
+                    foreach (int ticks in new[] { 60, 120 })
+                    {
+                        Engine.PhysicsTicksPerSecond = ticks;
+                        await DefeatMonsterAsync(level, procedure, healthDrops: true);
+                        await CheckManaPickupAsync(flow, level, hero);
+                        var owned = SmokeInspection.ReadField<HashSet<GameLogic.Drops.LootOrbNode>>(level, "m_LootOrbs");
+                        int hp = flow.GetModel<HeroModel>().Hp.Value;
+                        typeof(LevelViewController).GetMethod("ClearLoot", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                            .Invoke(level, null);
+                        Check(owned.Count == 0 && flow.GetModel<HeroModel>().Hp.Value == hp, "清理在途球时错误发放回血");
+                        GD.Print($"SMOKE-HEALTH {ticks}Hz PASS: actual death drop, pause, pickup, clamp, shared pool and cleanup.");
+                    }
+
+                    SpawnOrb(level, hero.GlobalPosition, new(GameLogic.Drops.LootKind.Health, 10));
+                    var pending = SmokeInspection.ReadField<HashSet<GameLogic.Drops.LootOrbNode>>(level, "m_LootOrbs");
+                    KillHero(hero);
+                    Check(pending.Count == 0 && flow.GetModel<HeroModel>().Hp.Value == 0, "死亡没有清理红球或红球使英雄复活");
+                    GD.Print("SMOKE-HEALTH DEATH PASS: in-flight health orb reclaimed without resurrection.");
+                }
+                finally
+                {
+                    Engine.PhysicsTicksPerSecond = originalTicks;
+                }
+                return;
+            }
+
             if (OS.GetCmdlineUserArgs().Contains("--enemy-knockback-only"))
             {
                 level.Cleanup();
@@ -1424,8 +1455,9 @@ public sealed partial class UiSmokeScenario
     /// </summary>
     /// <param name="level">正式关卡。</param>
     /// <param name="procedure">关卡流程。</param>
+    /// <param name="healthDrops">是否选择能真实掉落红球的随机种子并验证回血。</param>
     /// <returns>结算完成的任务。</returns>
-    private async Task DefeatMonsterAsync(LevelViewController level, ProcedureLevel procedure)
+    private async Task DefeatMonsterAsync(LevelViewController level, ProcedureLevel procedure, bool healthDrops = false)
     {
         AbstractHeroEntity hero = FindHero();
         LevelViewController run = SmokeInspection.Level(procedure);
@@ -1454,6 +1486,33 @@ public sealed partial class UiSmokeScenario
 
         Check(SmokeInspection.Model(run).Outcome.Value == LevelOutcome.Running, $"击杀前关卡运行已结束：{SmokeInspection.Model(run).Outcome.Value}");
         AbstractEnemyEntity monster = FindMonster();
+
+        if (healthDrops)
+        {
+            // 只选择测试随机种子，仍由正式死亡事件/掉落系统生成球，不改生产概率。
+            var loot = SmokeInspection.Flow(procedure).GetSystem<GameLogic.Drops.LootSystem>();
+            var model = SmokeInspection.Flow(procedure).GetModel<HeroModel>();
+            using var random = new RandomNumberGenerator();
+            ulong seed = 0;
+            for (; seed < 4096; seed++)
+            {
+                random.Seed = seed;
+                var ground = loot.RollGround(monster.Config.EquipmentDropChance, monster.Config.EquipmentDropPoolId, random.Randf);
+                if (ground.Pickup != GameConfig.Loot.PickupId.None || ground.Equipment != GameConfig.Equipment.EquipmentId.None)
+                {
+                    continue;
+                }
+
+                if (loot.Roll(monster.Config, monster.Config.SoulPerOrb, model.MaxHp.Value, model.MaxMp.Value, random.Randf)
+                    .Any(reward => reward.Kind == GameLogic.Drops.LootKind.Health))
+                {
+                    break;
+                }
+            }
+            Check(seed < 4096, "未找到实际红球掉落的测试种子");
+            SmokeInspection.ReadField<RandomNumberGenerator>(level, "m_LootRandom").Seed = seed;
+            model.Hp.Value = 1;
+        }
 
         // 死亡事件由身体状态机进入死亡状态时广播：受测怪物必须保留物理步进。
         monster.SetPhysicsProcess(true);
@@ -1485,10 +1544,27 @@ public sealed partial class UiSmokeScenario
             Check(effect.Visible && effect.IsPlaying(), "升级动画后半段提前隐藏或停止");
             await CaptureCombatAsync("level_up_tail");
         }
+        var healthOrbs = SmokeInspection.ReadField<HashSet<GameLogic.Drops.LootOrbNode>>(level, "m_LootOrbs")
+            .Where(orb => orb.Animation == GameLogic.Drops.LootAnims.Health).ToArray();
+        int healthBefore = SmokeInspection.Flow(procedure).GetModel<HeroModel>().Hp.Value;
+        int healthReward = healthOrbs.Sum(orb => SmokeInspection.ReadField<GameLogic.Drops.LootReward>(orb, "m_Reward").Amount);
+        if (healthDrops)
+        {
+            Check(healthOrbs.Length is >= 1 and <= 3 && healthBefore == 1, "正式击杀没有掉红球或提前回血");
+            Check(healthOrbs.All(orb => orb.IsPlaying() && orb.SpriteFrames.GetFrameCount(orb.Animation) == 19), "红球未使用正式19帧动画");
+            await WaitUntilAsync(() => healthOrbs.All(orb => orb.Frame >= 7), "红球动画未推进", 1000);
+            await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+            await CaptureCombatAsync($"health_orbs_{Engine.PhysicsTicksPerSecond}hz");
+        }
         await CheckFlyingLootAsync(level, hero);
         await WaitUntilAsync(() => SmokeInspection.ReadField<System.Collections.Generic.HashSet<GameLogic.Drops.LootOrbNode>>(level, "m_LootOrbs").Count == 0,
             "掉落没有追踪并接触英雄", 12000);
         Check(SmokeInspection.Flow(procedure).GetModel<ProfileModel>().TotalExperience == beforeXp + reward, "拾取黄球额外发放了经验");
+        if (healthDrops)
+        {
+            var model = SmokeInspection.Flow(procedure).GetModel<HeroModel>();
+            Check(model.Hp.Value == Math.Min(model.MaxHp.Value, healthBefore + healthReward), "正式死亡红球没有按生成快照恢复生命");
+        }
         int souls = SmokeInspection.Flow(procedure).GetModel<ProfileModel>().Soul.Value - beforeSoul;
         Check(souls >= monster.Config.SoulCount.X * monster.Config.SoulPerOrb &&
             souls <= monster.Config.SoulCount.Y * monster.Config.SoulPerOrb, "灵魂球没有按配置入账");

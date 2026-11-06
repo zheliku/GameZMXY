@@ -24,37 +24,36 @@ func _register() -> void:
     if button == null:
         button = form.get_node(args[1])
     var template: TextureButton = form.get_node("m_Jialuoluo")
+    var player: AnimationPlayer = form.get_node("m_LocationAnimation")
+    var library: AnimationLibrary = player.get_animation_library(key if player.has_animation_library(key) else "jialuoluo").duplicate(true)
     button.name = field
     button.set_script(template.get_script())
     button.disabled = true
     button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
     button.texture_hover = null
     button.texture_pressed = null
-    for child in button.get_children():
-        child.free()
-    var glow: TextureRect = template.get_node("LocationGlow").duplicate()
+    # Rebuilding an existing location must preserve its authored registration and hover padding.
+    var glow: TextureRect = button.get_node_or_null("LocationGlow")
+    if glow == null:
+        glow = template.get_node("LocationGlow").duplicate()
+        button.add_child(glow)
+        glow.owner = form
     glow.texture = load("res://TheGame/Sprites/UI/frontend/map_%s_hover.png" % key)
     glow.material = glow.material.duplicate()
-    glow.position = Vector2.ZERO
-    glow.size = button.size
-    glow.pivot_offset = button.size * .5
     glow.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
     glow.visible = false
-    button.add_child(glow)
-    glow.owner = form
     button.set("m_HoverImage", glow)
-    var hint: Sprite2D = template.get_node("CurrentHint").duplicate()
+    var hint: Sprite2D = button.get_node_or_null("CurrentHint")
+    if hint == null:
+        hint = template.get_node("CurrentHint").duplicate()
+        button.add_child(hint)
+        hint.owner = form
+        hint.position = button.size * .5
+        hint.scale = Vector2.ONE
     hint.texture = load("res://TheGame/Sprites/UI/frontend/map_%s_current.png" % key)
     hint.hframes = 5
     hint.vframes = ceili(frame_count / 5.0)
-    hint.position = button.size * .5
-    var fit := minf(button.size.x / button.texture_normal.get_width(), button.size.y / button.texture_normal.get_height())
-    hint.scale = Vector2.ONE * fit
     hint.visible = false
-    button.add_child(hint)
-    hint.owner = form
-    var player: AnimationPlayer = form.get_node("m_LocationAnimation")
-    var library: AnimationLibrary = player.get_animation_library("jialuoluo").duplicate(true)
     for name in library.get_animation_list():
         var animation := library.get_animation(name)
         for track in animation.get_track_count():
@@ -68,7 +67,10 @@ func _register() -> void:
             for index in frame_count:
                 animation.track_insert_key(track, index / 24.0, index)
     var destination := "res://TheGame/Sprites/UI/frontend/map_%s_hover_animation.tres" % key
+    var library_uid := ResourceLoader.get_resource_uid(destination)
     assert(ResourceSaver.save(library, destination) == OK)
+    if library_uid != -1:
+        assert(ResourceSaver.set_uid(destination, library_uid) == OK)
     if player.has_animation_library(key):
         player.remove_animation_library(key)
     player.add_animation_library(key, ResourceLoader.load(destination, "AnimationLibrary", ResourceLoader.CACHE_MODE_IGNORE))

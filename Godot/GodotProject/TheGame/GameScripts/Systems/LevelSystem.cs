@@ -175,7 +175,7 @@ namespace GameLogic.Level
         /// <summary>
         /// 本关球体接触后发放收益；场景只确认接触和实例所有权，不执行奖励规则。
         /// </summary>
-        /// <param name="reward">球体在生成时确定的收益，蓝球按接触时的魔法上限计算。</param>
+        /// <param name="reward">球体在生成时确定的收益，接触时发放并钳制上限。</param>
         public void CollectLoot(LootReward reward)
         {
             if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
@@ -193,8 +193,10 @@ namespace GameLogic.Level
                     this.GetSystem<HeroSystem>().AddWsFromPickup(reward.Amount);
                     break;
                 case LootKind.Mana:
-                    int amount = this.GetSystem<LootSystem>().ManaAmount(this.GetModel<HeroModel>().MaxMp.Value);
-                    this.GetSystem<HeroSystem>().RestoreMp(amount);
+                    this.GetSystem<HeroSystem>().RestoreMp(reward.Amount);
+                    break;
+                case LootKind.Health:
+                    this.GetSystem<HeroSystem>().Heal(reward.Amount);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(reward));

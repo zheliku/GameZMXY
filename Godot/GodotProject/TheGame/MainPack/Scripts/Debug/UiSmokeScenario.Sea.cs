@@ -174,7 +174,9 @@ public sealed partial class UiSmokeScenario
                     Check(soulPerOrb == (level == 7 ? 60 : 30) &&
                         (data.EquipmentDropChanceOverride ?? data.Config.EquipmentDropChance) == (level == 7 ? 0f : .15f) &&
                         data.ExperienceReward == (level == 7 ? 200 : 75), "龟丞相死亡奖励没有使用本次关卡变体");
-                    var loot = flow.GetSystem<GameLogic.Drops.LootSystem>().Roll(data.Config, soulPerOrb, () => 0f);
+                    var model = flow.GetModel<HeroModel>();
+                    var loot = flow.GetSystem<GameLogic.Drops.LootSystem>().Roll(data.Config, soulPerOrb,
+                        model.MaxHp.Value, model.MaxMp.Value, () => 0f);
                     Check(loot.Where(value => value.Kind == GameLogic.Drops.LootKind.Soul).All(value => value.Amount == soulPerOrb),
                         "灵魂球没有使用实例奖励");
                 }

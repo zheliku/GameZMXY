@@ -1,17 +1,13 @@
-using System;
-using System.Collections.Generic;
 using GameConfig.Loot;
-using GameConfig.Enemy;
 using GameConfig.Equipment;
-using Godot;
 
 namespace GameLogic.Drops
 {
     /// <summary>
-    /// 一颗球的不可变奖励及纯掉落规则；不创建节点或修改档案。
+    /// 一颗飞行球在生成时确定的不可变奖励。
     /// </summary>
     /// <param name="Kind">奖励类型。</param>
-    /// <param name="Amount">灵魂或无双数量；魔法在接触时按当前上限计算。</param>
+    /// <param name="Amount">生成时确定的灵魂、无双或生命/魔法恢复数量。</param>
     public readonly record struct LootReward(LootKind Kind, int Amount);
 
     /// <summary>
@@ -33,6 +29,11 @@ namespace GameLogic.Drops
         /// 本次出战的魔法恢复。
         /// </summary>
         Mana,
+
+        /// <summary>
+        /// 本次出战的生命恢复。
+        /// </summary>
+        Health,
     }
 
     /// <summary>

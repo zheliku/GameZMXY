@@ -41,7 +41,6 @@
     <Compile Include="*.cs" Exclude="TablesStub.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Arch\*.cs" Exclude="$(GodotProjectDir)TheGame\GameScripts\Arch\FsmArchitectureExtensions.cs;$(GodotProjectDir)TheGame\GameScripts\Arch\GgfArchitectureExtensions.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\GameProto\GameConfig\**\*.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utilities\Extension\SpatialExtensions.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Models\**\*.cs" Link="Linked\Models\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\Combat\*.cs" Link="Linked\Systems\Combat\%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\EnemyAiSystem.cs" />

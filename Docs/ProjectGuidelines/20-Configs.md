@@ -28,6 +28,8 @@ EntityId、SoundId、SkillHitId、掉落池枚举及对应业务表按编码升�
 
 已写入存档的 HeroId、EquipmentId、SkillId、PassiveId 保持稳定；SkillId 当前按 `HeroId×100+技能面板顺序` 编号。EquipmentId 是装备定义的稳定身份，不从可变品质/数值反推，也不复用已分配值；新增时在枚举中显式分配。攻击、声音、掉落池不写入档案，本次整理不改变存档格式或装备实例。若以后确需重编持久身份，应单独设计并授权一次性转存，不在正式运行代码堆兼容分支。
 
+运行期编码统一经已注册的`ConfigIdUtility : IUtility`取用，放`Utilities/Utility`；不散写公式、不在System/Entity中自行new、不提供静态验证旁路。
+
 ## 属性与成长
 
 - 属性种类只有一个定义：枚举 `Attributes.AttributeType`（`__enums__.xlsx`，值显式、只在末尾追加）。完整的一组属性值是 bean `Attributes.ActorBaseAttributes`（`__beans__.xlsx`），字段与枚举一一对应；新增属性时同时追加枚举项、bean 字段并更新 `HeroSystem` 的属性汇总。
@@ -36,25 +38,25 @@ EntityId、SoundId、SkillHitId、掉落池枚举及对应业务表按编码升�
 - 经验曲线：`Hero.TbHeroLevelConfig`，全英雄共用（等级 → 升级所需经验）。
 - 英雄成长：`Hero.TbHeroGrowthConfig` 按 `HeroId` 建立 map，每名英雄记录内嵌 `Levels` 列表；列表元素按 `Level=1..MaxLevel` 连续排列，并在每级保存完整 `BaseAttributes: ActorBaseAttributes`。`read_schema_from_file=false`；运行期先取英雄记录，再取等级元素，不再用平铺的联合键。`HeroConfig` 保留身份与基础移动参数，外观和声音由场景绑定。
 - 怪物没有成长：`MonsterConfig` 内嵌一个 `BaseAttributes: ActorBaseAttributes`，`Level` 只用于等级压制与经验门槛；怪物伤害由招式 `AttackConfig.FlatPower` 决定，`BaseAttributes.Power` 填 0。
-- `Enemy.xlsx` 按编辑职责分 `MonsterConfig`（小怪）与 `BossConfig`（BOSS）两个 Sheet，经同一个 `TbMonsterConfig` 输入合并，身份键全表唯一。专属技能由实体与状态实现，不因分类复制 Schema 或运行时系统。
+- `Enemy.xlsx` 按编辑职责分 `MonsterConfig`（小怪）与 `BossConfig`（BOSS）两个 Sheet，经同一个 `TbEnemyConfig` 输入合并，身份键全表唯一。专属技能由实体与状态实现，不因分类复制 Schema 或运行时系统。
 - 建档规则：单行表 `Profile.TbProfileConfig`（`StartHeroId`、`StartSoul`）。
-- 内嵌 bean 的数据表（`HeroGrowthConfig`、`MonsterConfig`、`LevelConfig`）用多级 `##var` 标题、没有 `##type` 行，记录 bean 定义在 `__beans__.xlsx`。
+- 内嵌 bean 的数据表（`HeroGrowthConfig`、`MonsterConfig`、`LevelConfig`）用多级 `##var` 标题及可见 `##type` 行，记录 bean 定义在 `__beans__.xlsx`。
 - 被动配置按 `PassiveId` 建立 map；`PassiveConfig` 保存名称、效果类型和 `Levels` 列表，等级费用、数值与说明放在 `PassiveLevel`。只有同一稳定身份的等级记录才合并；独立技能、攻击、掉落条目仍保持各自主键记录。
 
 ## 启动校验
 
-- 跨表约束由 `Config/ConfigurationSystem.ValidateTables` 在 `ProcedurePrepare` 集中校验一次，汇总全部错误后停止启动：经验曲线连续、每英雄成长行覆盖 1..MaxLevel、怪物 `MaxHp > 0` 且 `AddExp ≥ 0`、建档英雄存在、战斗常数非负。
+- 跨表约束由注册的 `ConfigurationSystem.OnInit` 在 `ProcedurePrepare` 取同架构配置模型及工具校验一次，汇总全部错误后停止启动；经验曲线连续性由注册的ExperienceCurveUtility构造验证，其余包括每英雄成长行覆盖 1..MaxLevel、怪物 `MaxHp > 0` 且 `AddExp ≥ 0`、建档英雄存在、战斗常数非负。
 - 运行期消费已校验的表，不再各自兜底或静默换默认值。关卡与场景装配的约束仍由各自的初始化边界（`LevelViewController.Initialize` 等）校验。
 - 新增跨表约束时加到 `ConfigurationSystem`，并在 `Tests/ProfileTests` 用正式表产物验证通过。
 
 ## 关卡配置
 
-- `Tools/ConfigBootstrap/build_m2_tables.py`、`migrate_stat_tables.py` 是已执行过的一次性种子/迁移脚本，**不要再运行**（会整表重写或检测到已迁移后退出）。之后直接编辑 xlsx。
-- 关卡只使用 `LevelConfig.xlsx` 一张表（`Level.TbLevelConfig`，map 模式，主键 `LevelId`，`read_schema_from_file=false`）。记录 bean `Level.LevelConfig`、`Level.LevelStage`、`Level.LevelSpawnRecipe` 定义在 `__beans__.xlsx`；数据表用多级 `##var` 标题行做列限定，不再有 `LevelStageConfig` / `RowId` / `Sequence` / `StageCount` 等外键与冗余字段。
+- 配置以当前xlsx为源；已删除的ConfigBootstrap种子/迁移脚本不属于维护入口，不恢复或重跑旧整表生成。
+- 关卡只使用 `LevelConfig.xlsx` 一张表（`Level.TbLevelConfig`，map 模式，主键 `LevelId`，`read_schema_from_file=false`）。记录 bean `Level.LevelConfig`、`Level.LevelStage`、`Level.LevelSpawnRecipe` 定义在 `__beans__.xlsx`；数据表用多级 `##var` 标题行做列限定，保留可见 `##type` 行，不再有 `LevelStageConfig` / `RowId` / `Sequence` / `StageCount` 等外键与冗余字段。
 - 关卡表采用嵌套多行列表（Luban `*name` 语法，参考 datable.cn《嵌套结构与容器》）：`*Stages` 是关卡行下的阶段列表，同一 `LevelId` 下每行一个阶段；每个阶段内 `*Recipes` 是生成配方列表，**同阶段各配方并行生成（同一波，如 stage_1_a 与 stage_1_b 同时出怪）**，行序只是表格可读性，`Delay`/`Interval`/`Count` 是每条配方自己的生成流参数。填写规则：
   - 外层字段的标题行做列合并，合并范围必须覆盖元素的完整宽度（含嵌套多行字段），不足会解析失败；
   - 配方续行的阶段列、关卡列全部留空（原子列留空 = 类型默认值），只在首行填写阶段/关卡字段；
-  - 数据表不需要 `##type` 行，类型来自 `__beans__.xlsx` 的 bean 定义。
+  - 数据表保留与字段对应的 `##type` 行供编辑者阅读；内嵌记录类型仍由 `__beans__.xlsx` 的bean定义。
 - 阶段的 `LeftGateId` / `GateId` 分别引用本阶段独立左右边界，空值使用场景原始左墙 / 右墙。**相邻战斗区域允许重叠，禁止用上一阶段出口推导下一阶段左界**。各边界 ID 唯一，阶段右界递增；位置属于场景空间事实，初始化校验区域位于关卡内且至少容纳一屏。行进保留上一场左界并封住新右界，抵达后切换为本场左右界；清波开放出口，其他门保持停用。花果山官方依据及当前接入范围见 [OfficialReference.md](../OfficialReference.md)。
 - 人类可读性优先：策划可见的表列与场景导出一律用可读标识（`MonsterEntityId` 填 `HuaguoshanMonkey` 等枚举名），程序运行时仍按 ID/枚举查找；不在表或场景里出现需要反查的裸数字 ID。当关卡配方使用 `MonsterEntityId` 查找 `MonsterConfig` 时，`MonsterConfig.EntityId` 必须与怪物配置保持一对一；运行时会校验并拒绝零条或多条匹配。若以后需要同一实体外观对应多个数值变体，应再引入可读的 MonsterConfig 业务键，而不是回退到数字 ID。
 - `##` 注释行的中文注释与列一一对齐：每个数据列一个注释；多行/合并字段把整段说明写在首列，禁止注释整行错位。

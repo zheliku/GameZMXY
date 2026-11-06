@@ -2,8 +2,8 @@
 
 Role_v7.swf sprite 240 is BaseHero.levelupmc; sprite 9 is its eight-frame
 HeroBeHurt feedback (also played during Wukong Musou). Monster_v1.swf sprites
-5/7/9 are yellow/blue/purple auras. Yellow restores Musou; AS class names
-"auraWhile" and "auraRed" do not describe the rendered colors accurately.
+3/5/7/9 are red/yellow/blue/purple auras. Yellow restores Musou; AS class names
+"auraGreen", "auraWhile" and "auraRed" do not describe rendered colors accurately.
 Input SWFs stay outside the repository. Requires FFDec 26.3.0 and Java.
 """
 
@@ -39,7 +39,7 @@ def decode(source: Path, expected: str) -> bytes:
 
 
 def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "all", hero: str = "wukong") -> None:
-    """Copy rendered frames verbatim and generate external SpriteFrames resources."""
+    """Copy official frames and generate resources; only Tangseng hurt feedback is tinted."""
     game = Path(__file__).resolve().parents[2] / "Godot/GodotProject/TheGame"
     groups = [
         (role, "11cae2f4f4e63dbb1e7199b9d1a8ed432036138b72e2d04d1da974329133fbe7",
@@ -49,7 +49,8 @@ def export(java: Path, ffdec: Path, role: Path, monsters: Path, group: str = "al
         (role, "11cae2f4f4e63dbb1e7199b9d1a8ed432036138b72e2d04d1da974329133fbe7",
          [(27, "hit_1", 8, False), (18, "hit_2", 8, False)], "monster_hit"),
         (monsters, "5bd88da4211870f2ca2354b7cec8d1790747869641c11fe553910b10fe2a264a",
-         [(9, "Soul", 19, True), (5, "Musou", 19, True), (7, "Mana", 19, True)], "loot"),
+         [(9, "Soul", 19, True), (5, "Musou", 19, True), (7, "Mana", 19, True),
+          (3, "Health", 19, True)], "loot"),
     ]
     with tempfile.TemporaryDirectory(prefix="gamezmxy-effects-") as temporary:
         temp = Path(temporary)

@@ -43,6 +43,10 @@ public sealed partial class BattleConfig : Luban.BeanBase
         ManaMinimum = _buf.ReadInt();
         ManaMaxFraction = _buf.ReadFloat();
         GroundLifetime = _buf.ReadFloat();
+        HealthDropChance = _buf.ReadFloat();
+        HealthCount = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
+        HealthMinimum = _buf.ReadInt();
+        HealthMaxFraction = _buf.ReadFloat();
     }
 
     public static BattleConfig DeserializeBattleConfig(ByteBuf _buf)
@@ -158,6 +162,22 @@ public sealed partial class BattleConfig : Luban.BeanBase
     /// 地面物品保留时间，秒
     /// </summary>
     public readonly float GroundLifetime;
+    /// <summary>
+    /// 回血球独立掉落概率
+    /// </summary>
+    public readonly float HealthDropChance;
+    /// <summary>
+    /// 回血球数量区间（含两端）
+    /// </summary>
+    public readonly Godot.Vector2I HealthCount;
+    /// <summary>
+    /// 每颗回血球最低恢复
+    /// </summary>
+    public readonly int HealthMinimum;
+    /// <summary>
+    /// 每颗回血球恢复生命上限比例
+    /// </summary>
+    public readonly float HealthMaxFraction;
    
     public const int __ID__ = -1776797808;
     public override int GetTypeId() => __ID__;
@@ -196,6 +216,10 @@ public sealed partial class BattleConfig : Luban.BeanBase
         + "ManaMinimum:" + ManaMinimum + ","
         + "ManaMaxFraction:" + ManaMaxFraction + ","
         + "GroundLifetime:" + GroundLifetime + ","
+        + "HealthDropChance:" + HealthDropChance + ","
+        + "HealthCount:" + HealthCount + ","
+        + "HealthMinimum:" + HealthMinimum + ","
+        + "HealthMaxFraction:" + HealthMaxFraction + ","
         + "}";
     }
 }

@@ -40,10 +40,10 @@ namespace GameLogic.Profile.Tests
         }
 
         /// <summary>
-        /// 球体发放灵魂和无双，蓝球以接触时的魔法上限而非生成时数据计算。
+        /// 球体沿用生成时的恢复量，飞行途中升级不重新计算；不会串改其他奖励。
         /// </summary>
         [Fact]
-        public void Orb_UsesCurrentHeroStateAndConfiguredManaFormula()
+        public void Orb_PreservesSpawnRewardAcrossLevelUpAndClampsRecovery()
         {
             var scope = Ready();
             var system = scope.GetSystem<LevelSystem>();
@@ -52,11 +52,26 @@ namespace GameLogic.Profile.Tests
             system.CollectLoot(new(LootKind.Musou, 5));
             Assert.Equal(11, scope.Profile.Soul.Value);
             Assert.Equal(5, scope.Hero.Ws.Value);
-            scope.GetSystem<ProfileSystem>().AddExperience(scope.Profile.MaxExperience);
+            var loot = scope.GetSystem<LootSystem>().Roll(TestTables.Tables.TbEnemyConfig.DataList[0], 0,
+                scope.Hero.MaxHp.Value, scope.Hero.MaxMp.Value, () => 0f);
+            var health = loot.Find(x => x.Kind == LootKind.Health);
+            var mana = loot.Find(x => x.Kind == LootKind.Mana);
+            scope.GetSystem<ProfileSystem>().AddExperience(int.MaxValue);
+            Assert.True(scope.GetSystem<LootSystem>().HealthAmount(scope.Hero.MaxHp.Value) > health.Amount);
+            Assert.True(scope.GetSystem<LootSystem>().ManaAmount(scope.Hero.MaxMp.Value) > mana.Amount);
+            scope.Hero.Hp.Value = 1;
             scope.Hero.Mp.Value = 0;
-            int expected = scope.GetSystem<LootSystem>().ManaAmount(scope.Hero.MaxMp.Value);
-            system.CollectLoot(new(LootKind.Mana, 0));
-            Assert.Equal(expected, scope.Hero.Mp.Value);
+            system.CollectLoot(health);
+            system.CollectLoot(mana);
+            Assert.Equal(1 + health.Amount, scope.Hero.Hp.Value);
+            Assert.Equal(mana.Amount, scope.Hero.Mp.Value);
+            scope.Hero.Hp.Value = scope.Hero.MaxHp.Value - 1;
+            system.CollectLoot(health);
+            Assert.Equal(scope.Hero.MaxHp.Value, scope.Hero.Hp.Value);
+            system.CollectLoot(health);
+            Assert.Equal(scope.Hero.MaxHp.Value, scope.Hero.Hp.Value);
+            Assert.Equal(11, scope.Profile.Soul.Value);
+            Assert.Equal(5, scope.Hero.Ws.Value);
             Assert.Throws<ArgumentOutOfRangeException>(() => system.CollectLoot(new((LootKind)999, 1)));
         }
 

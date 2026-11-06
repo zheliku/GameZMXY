@@ -7,6 +7,7 @@ Run from any directory:
 
 import argparse
 from functools import lru_cache
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -37,11 +38,34 @@ def stored_resource_uri(uri):
     return "res://" + "/".join(parts) if directory.is_file() else None
 
 
+def missing_project_uids(project):
+    """Check UID-only settings, including the application icon and autoloads, against source metadata."""
+    settings = (project / "project.godot").read_text(encoding="utf-8-sig")
+    required = set(re.findall(r'"\*?(uid://[^"\n]+)"', settings))
+    for directory, folders, files in os.walk(project):
+        folders[:] = [name for name in folders if name != ".godot"]
+        for name in files:
+            source = Path(directory) / name
+            if source.suffix not in {".uid", ".import", ".tscn", ".tres"}:
+                continue
+            if source.suffix in {".uid", ".import"} and not source.with_suffix("").is_file():
+                continue
+            with source.open(encoding="utf-8-sig") as metadata:
+                header = metadata.read(512)
+            if source.suffix in {".tscn", ".tres"}:
+                header = header.splitlines()[0]
+            # Only the resource's own UID defines it; nested ext_resources are references.
+            own_uid = re.search(r'uid://[A-Za-z0-9_]+', header)
+            if own_uid:
+                required.discard(own_uid[0])
+    return sorted(required)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compare-staged-geometry", action="store_true")
     args = parser.parse_args()
-    failures = []
+    failures = [f"project.godot: missing {uid}" for uid in missing_project_uids(PROJECT)]
     path_count = 0
     for source in GAME.rglob("*"):
         if source.suffix not in {".tscn", ".tres", ".cs"}:

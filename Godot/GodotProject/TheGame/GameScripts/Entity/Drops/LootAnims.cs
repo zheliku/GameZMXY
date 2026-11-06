@@ -6,12 +6,12 @@ namespace GameLogic.Drops
     public static class LootAnims
     {
         /// <summary>
-        /// 红色灵魂球。
+        /// 紫色灵魂球。
         /// </summary>
         public const string Soul = "Soul";
 
         /// <summary>
-        /// 白色无双球。
+        /// 黄色无双球。
         /// </summary>
         public const string Musou = "Musou";
 
@@ -19,5 +19,10 @@ namespace GameLogic.Drops
         /// 蓝色魔法球。
         /// </summary>
         public const string Mana = "Mana";
+
+        /// <summary>
+        /// 红色生命球。
+        /// </summary>
+        public const string Health = "Health";
     }
 }

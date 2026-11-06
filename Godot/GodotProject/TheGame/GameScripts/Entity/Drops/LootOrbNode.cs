@@ -72,6 +72,7 @@ namespace GameLogic.Drops
                 LootKind.Soul => LootAnims.Soul,
                 LootKind.Musou => LootAnims.Musou,
                 LootKind.Mana => LootAnims.Mana,
+                LootKind.Health => LootAnims.Health,
                 _ => throw new ArgumentOutOfRangeException(nameof(reward))
             });
             SetProcess(false);

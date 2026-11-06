@@ -15,3 +15,8 @@ Godot/exported_bundles/
 !Tools/FileServer/bin/
 
 __pycache__/
+
+# Local validation reports and assistant session logs
+/.codex/*_audit.json
+/.godot_arch_build.log
+/Godot/production/session-logs/

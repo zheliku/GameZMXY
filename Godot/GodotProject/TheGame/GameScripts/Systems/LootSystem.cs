@@ -70,13 +70,15 @@ namespace GameLogic.Drops
         }
 
         /// <summary>
-        /// 按原版规则生成灵魂、魔法与无双球；经验独立在击败时结算。
+        /// 按原版规则生成灵魂、魔法、无双与生命球；经验独立在击败时结算。
         /// </summary>
         /// <param name="monster">怪物基础掉落配置。</param>
         /// <param name="soulPerOrb">本次敌人实例确定的每球灵魂值。</param>
+        /// <param name="maximumHp">生成时英雄的生命上限。</param>
+        /// <param name="maximumMp">生成时英雄的魔法上限。</param>
         /// <param name="random">返回 [0,1) 随机值的函数。</param>
-        /// <returns>每颗球的类型和奖励；魔法在拾取时按角色上限计算。</returns>
-        public List<LootReward> Roll(EnemyConfig monster, int soulPerOrb, Func<float> random)
+        /// <returns>每颗球的类型和奖励；恢复量按生成时角色上限确定。</returns>
+        public List<LootReward> Roll(EnemyConfig monster, int soulPerOrb, int maximumHp, int maximumMp, Func<float> random)
         {
             var drops = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
             var rewards = new List<LootReward>();
@@ -90,9 +92,10 @@ namespace GameLogic.Drops
             if (random() < monster.ManaDropChance)
             {
                 int count = Count(monster.ManaCount, random());
+                int amount = ManaAmount(maximumMp);
                 for (int i = 0; i < count; i++)
                 {
-                    rewards.Add(new(LootKind.Mana, 0));
+                    rewards.Add(new(LootKind.Mana, amount));
                 }
             }
 
@@ -106,11 +109,22 @@ namespace GameLogic.Drops
                 }
             }
 
+            // 生命球与蓝、黄球分别独立采样；单颗恢复量在掉落时固定。
+            if (random() < drops.HealthDropChance)
+            {
+                int count = Count(drops.HealthCount, random());
+                int amount = HealthAmount(maximumHp);
+                for (int i = 0; i < count; i++)
+                {
+                    rewards.Add(new(LootKind.Health, amount));
+                }
+            }
+
             return rewards;
         }
 
         /// <summary>
-        /// 计算每颗蓝球实际回蓝量，拾取时读取当前等级的魔法上限。
+        /// 按生成时的魔法上限计算每颗蓝球恢复量。
         /// </summary>
         /// <param name="maximum">当前魔法上限。</param>
         /// <returns>向下取整后的回蓝量。</returns>
@@ -118,6 +132,17 @@ namespace GameLogic.Drops
         {
             var drops = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
             return Math.Max(drops.ManaMinimum, (int)(maximum * drops.ManaMaxFraction));
+        }
+
+        /// <summary>
+        /// 按生成时的生命上限计算每颗红球恢复量。
+        /// </summary>
+        /// <param name="maximum">掉落时的生命上限。</param>
+        /// <returns>向下取整并满足最低值的回血量。</returns>
+        public int HealthAmount(int maximum)
+        {
+            var drops = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig.Data;
+            return Math.Max(drops.HealthMinimum, (int)(maximum * drops.HealthMaxFraction));
         }
 
         /// <summary>

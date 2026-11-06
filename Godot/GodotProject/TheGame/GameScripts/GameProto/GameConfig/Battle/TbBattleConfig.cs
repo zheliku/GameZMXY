@@ -135,6 +135,22 @@ public partial class TbBattleConfig
     /// 地面物品保留时间，秒
     /// </summary>
      public float GroundLifetime => _data.GroundLifetime;
+    /// <summary>
+    /// 回血球独立掉落概率
+    /// </summary>
+     public float HealthDropChance => _data.HealthDropChance;
+    /// <summary>
+    /// 回血球数量区间（含两端）
+    /// </summary>
+     public Godot.Vector2I HealthCount => _data.HealthCount;
+    /// <summary>
+    /// 每颗回血球最低恢复
+    /// </summary>
+     public int HealthMinimum => _data.HealthMinimum;
+    /// <summary>
+    /// 每颗回血球恢复生命上限比例
+    /// </summary>
+     public float HealthMaxFraction => _data.HealthMaxFraction;
     
     public void ResolveRef(Tables tables)
     {
