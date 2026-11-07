@@ -16,7 +16,7 @@ public sealed partial class LevelSpawnRecipe : Luban.BeanBase
 {
     public LevelSpawnRecipe(ByteBuf _buf) 
     {
-        EnemyEntityId = (Entity.EEntityId)_buf.ReadInt();
+        EnemyEntityId = (Entity.EntityId)_buf.ReadInt();
         SpawnPointId = _buf.ReadString();
         Count = _buf.ReadInt();
         Delay = _buf.ReadFloat();
@@ -31,7 +31,7 @@ public sealed partial class LevelSpawnRecipe : Luban.BeanBase
     /// <summary>
     /// 可读敌人枚举，与 EnemyConfig.EntityId 一一对应
     /// </summary>
-    public readonly Entity.EEntityId EnemyEntityId;
+    public readonly Entity.EntityId EnemyEntityId;
     /// <summary>
     /// 场景生成点的稳定 ID
     /// </summary>

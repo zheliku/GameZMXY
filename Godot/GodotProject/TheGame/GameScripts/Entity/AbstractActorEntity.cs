@@ -1,908 +1,814 @@
-using GameLogic.Architecture;
-using GameLogic.Enemies;
-using GameLogic.Heroes;
-using GameLogic.Entity;
-using GameLogic.Battle;
-using GameLogic.Battle.Attributes;
-using GameLogic.Battle.Damage;
-using GameLogic.Battle.Attacks;
-using GameLogic.Event.Combat;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System;
+using GameConfig.Attributes;
 using GameConfig.Battle;
 using GameConfig.Entity;
 using GameConfig.Sound;
-using GameConfig.Attributes;
-using GameFramework.Entity;
 using GameFramework;
-using GameLogic.Config;
+using GameFramework.Entity;
+using GameLogic.Architecture;
 using GameLogic.Audio;
+using GameLogic.Battle;
+using GameLogic.Battle.Attacks;
+using GameLogic.Battle.Attributes;
+using GameLogic.Battle.Damage;
+using GameLogic.Config;
+using GameLogic.Enemies;
+using GameLogic.Entity;
+using GameLogic.Event.Combat;
+using GameLogic.Heroes;
 using Godot;
 using GodotGameFramework;
 
-namespace GameLogic.Entity
+namespace GameLogic.Entity;
+
+/// <summary>
+/// 提供战斗实体的生命周期、生命、动画、判定与受击结算，具体行为由英雄和怪物声明。
+/// </summary>
+public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IController
 {
+    // ---- 字段 ----
+
+    private const string ActionEndMarker = "complete"; // 原生动画中实际收招/受击结束的标记，不包含终止帧的额外停留。
+
+    [Export] private Node2D _body; // 身体表现层，帧由动画轨道驱动。
+
+    [Export] private AnimationPlayer _animPlayer; // 角色专属动画库，由本类直接驱动。
+
+    [Export] private string[] _attackAnimations = Array.Empty<string>(); // 普通招式动画，顺序与本实体的 ComboIndex 一致。
+
+    [Export] private SoundId _hurtSoundId; // 本实体受击语音，与攻击者的打击声音分开；霸体和零击退也播放。
+
+    [Export] private SoundId _hitSoundId; // 本角色攻击成功的打击声音，身体攻击和离身效果共用。
+
+    [Export] private HurtBoxNode _hurtBox; // 受击判定区，可为空；HurtBox 持有本实体引用。
+
+    [Export] private Area2D _hitBox; // 攻击判定区，几何和开关完全由动画值轨道驱动。
+
+    private CollisionShape2D[] _hitShapes = Array.Empty<CollisionShape2D>(); // 场景装配的固定攻击形状；不复制可变几何或动画启闭状态。
+
+    [Export] private Node2D _hitBoxRoot; // 攻击判定区镜像容器，随朝向翻转动画写入的位置。
+
+    private AttackData _activeAttackData; // 当前招式的攻击包；出招装填、收招归还，null 表示未出招。
+
+    private string _requestedAnim; // 最近一次请求播放的动画名；同名请求不重播，OnShow 时清空。
+
+    private readonly Dictionary<string, StringName> _animNames = new(); // 动画名到 StringName 的缓存，避免重复转换。
+    private bool _physicsInitialized; // 本次显示已完成真实移动；池化 CharacterBody2D 的旧落地缓存此前无效。
+
     /// <summary>
-    /// 提供战斗实体的生命周期、生命、动画、判定与受击结算，具体行为由英雄和怪物声明。
+    /// 待生效的受击（值 = 击退速度；null = 无）：OnHurt 登记（子类按门槛），身体状态生效
     /// </summary>
-    public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IController
+    protected Vector2? PendingHurt;
+
+    /// <summary>
+    /// 死亡事实置位的那一刻触发一次（作用域内订阅：关卡运行据此结算英雄死亡）。
+    /// </summary>
+    public event Action<AbstractActorEntity> Died;
+
+    /// <summary>
+    /// 本次显示的物理移动得到的落地事实；首次移动前不沿用上次池实例的缓存。
+    /// </summary>
+    public bool OnFloor => IsShown && _physicsInitialized && IsOnFloor();
+
+    /// <summary>
+    /// 本角色的有序招式定义；默认借用共享配置，特殊选择由具体角色决定。
+    /// </summary>
+    protected virtual IReadOnlyList<AttackConfig> OwnAttacks => this.GetModel<ConfigurationModel>().GetAttacks(EntityType);
+
+    /// <summary>
+    /// 场景装配的普通攻击动画，顺序对应本实体的数值招式。
+    /// </summary>
+    protected IReadOnlyList<string> AttackAnimations => _attackAnimations;
+
+    /// <summary>
+    /// 实体的基础配置类型；运行实例编号另由 GGF 管理。
+    /// </summary>
+    protected abstract EntityId EntityType { get; }
+
+    // ---- 属性 ----
+
+    /// <summary>
+    /// 供英雄外观装配使用的身体表现节点。
+    /// </summary>
+    protected Node2D Body => _body;
+
+    /// <summary>
+    /// 本角色攻击命中时的默认声音；独立效果在生成时借用此值。
+    /// </summary>
+    protected SoundId HitSoundId => _hitSoundId;
+
+    /// <summary>
+    /// 实体编号
+    /// </summary>
+    public int Id { get; private set; }
+
+    /// <summary>
+    /// 实体资源名称（PackedScene 路径）
+    /// </summary>
+    public string EntityAssetName { get; private set; }
+
+    /// <summary>
+    /// 实体实例
+    /// </summary>
+    public object Handle => this;
+
+    /// <summary>
+    /// 实体所属的实体组
+    /// </summary>
+    public IEntityGroup EntityGroup { get; private set; }
+
+    /// <summary>
+    /// 动画播放器
+    /// </summary>
+    public AnimationPlayer AnimPlayer => _animPlayer;
+
+    /// <summary>
+    /// 受击判定区
+    /// </summary>
+    public HurtBoxNode HurtBox => _hurtBox;
+
+    /// <summary>
+    /// 攻击判定区
+    /// </summary>
+    public Area2D HitBox => _hitBox;
+
+    /// <summary>
+    /// 攻击判定区容器（朝向镜像；怪物 AI 推导判定盒范围时要加上它的本地位置）
+    /// </summary>
+    public Node2D HitBoxRoot => _hitBoxRoot;
+
+    /// <summary>
+    /// 实际生命值；英雄从注册模型读取，怪物使用实体独有的普通状态。
+    /// </summary>
+    public abstract int Hp { get; }
+
+    /// <summary>
+    /// 当前生命上限。
+    /// </summary>
+    public abstract int MaxHp { get; }
+
+    /// <summary>
+    /// 等级（参与等级压制）；子类在 OnShow 写入。
+    /// </summary>
+    public abstract int Level { get; }
+
+    /// <summary>
+    /// 死亡事实。**单一事实源**：只在 ReceiveHit 扣血扣到 0 的那一刻置位、OnShow 复位；
+    /// 身体状态机在下一个物理帧据此进入死亡状态（死亡优先级最高）。
+    /// </summary>
+    public bool Dead { get; private set; }
+
+    /// <summary>
+    /// 技能等临时无敌可拒绝受击；无双霸体不等于无敌。
+    /// </summary>
+    protected virtual bool Invulnerable => false;
+
+    /// <summary>
+    /// 朝向：1 右 / -1 左。素材原始朝左，见 SetFacing 注释。
+    /// </summary>
+    public int Facing { get; private set; } = 1;
+
+    /// <summary>
+    /// 结算侧别（选 BattleConfig 常数组；子类必须固定返回）
+    /// </summary>
+    public abstract CombatSide Side { get; }
+
+    /// <summary>
+    /// 已显示、可驱动：OnShow 置真、OnHide 置假。子类 _PhysicsProcess 靠它提前返回（实体隐藏/回收后
+    /// 节点仍在树上，不挡会继续跑物理）；AI 等外部持有者靠它判断引用是否还有效（配合 IsInstanceValid）。
+    /// （2026-09-30 自 AbstractHeroEntity/AbstractEnemyEntity 各自的 _active 下沉合并。）
+    /// </summary>
+    public bool IsShown { get; private set; }
+
+    /// <summary>
+    /// 可作为目标/可交互：节点有效、已显示、未死亡（外部持有引用时用它判断是否还能用）。
+    /// </summary>
+    public bool IsAlive => IsInstanceValid(this) && IsShown && !Dead;
+
+    /// <summary>
+    /// 飘字锚点（世界坐标）：受击盒顶边中点——受击盒本来就按素材身形摆放，头顶位置随之而来，
+    /// 不需要每个角色再写一个偏移常数。没有受击盒时退到实体原点。
+    /// </summary>
+    public Vector2 HeadPosition
     {
-        // ---- 字段 ----
-
-        private const string ActionEndMarker = "complete"; // 原生动画中实际收招/受击结束的标记，不包含终止帧的额外停留。
-
-        [Export] private Node2D m_Body; // 身体表现层，帧由动画轨道驱动。
-
-        [Export] private AnimationPlayer m_AnimPlayer; // 角色专属动画库，由本类直接驱动。
-
-        [Export] private string[] m_AttackAnimations = Array.Empty<string>(); // 普通招式动画，顺序与本实体的 ComboIndex 一致。
-
-        [Export] private ESoundId m_HurtSoundId; // 本实体受击语音，与攻击者的打击声音分开；霸体和零击退也播放。
-
-        [Export] private ESoundId m_HitSoundId; // 本角色攻击成功的打击声音，身体攻击和离身效果共用。
-
-        [Export] private HurtBoxNode m_HurtBox; // 受击判定区，可为空；HurtBox 持有本实体引用。
-
-        [Export] private Area2D m_HitBox; // 攻击判定区，几何和开关完全由动画值轨道驱动。
-
-        private CollisionShape2D[] m_HitShapes = Array.Empty<CollisionShape2D>(); // 场景装配的固定攻击形状；不复制可变几何或动画启闭状态。
-
-        [Export] private Node2D m_HitBoxRoot; // 攻击判定区镜像容器，随朝向翻转动画写入的位置。
-
-        private AttackData m_ActiveAttackData; // 当前招式的攻击包；出招装填、收招归还，null 表示未出招。
-
-        private string m_RequestedAnim; // 最近一次请求播放的动画名；同名请求不重播，OnShow 时清空。
-
-        private readonly Dictionary<string, StringName> m_AnimNames = new(); // 动画名到 StringName 的缓存，避免重复转换。
-        private bool m_PhysicsInitialized; // 本次显示已完成真实移动；池化 CharacterBody2D 的旧落地缓存此前无效。
-
-        /// <summary>
-        /// 待生效的受击（值 = 击退速度；null = 无）：OnHurt 登记（子类按门槛），身体状态生效
-        /// </summary>
-        protected Vector2? m_PendingHurt;
-
-        /// <summary>
-        /// 死亡事实置位的那一刻触发一次（作用域内订阅：关卡运行据此结算英雄死亡）。
-        /// </summary>
-        public event Action<AbstractActorEntity> Died;
-
-        /// <summary>
-        /// 本次显示的物理移动得到的落地事实；首次移动前不沿用上次池实例的缓存。
-        /// </summary>
-        public bool OnFloor
+        get
         {
-            get
+            if (_hurtBox == null)
             {
-                return IsShown && m_PhysicsInitialized && IsOnFloor();
+                return GlobalPosition;
             }
+
+            Rect2 bounds = _hurtBox.GetGlobalBounds();
+            return new Vector2(bounds.GetCenter().X, bounds.Position.Y);
+        }
+    }
+
+    /// <summary>
+    /// 正在播的攻击段（0 起；-1 = 不在出招）：BeginAttack/EndAttack 维护，身体状态机与 AI 读取。
+    /// </summary>
+    public int AttackSegment { get; protected set; } = -1;
+
+    /// <summary>
+    /// 有待生效的受击
+    /// </summary>
+    public bool HasPendingHurt => PendingHurt.HasValue;
+
+    // ---- 生命周期 ----
+
+    /// <summary>
+    /// 实体初始化。isNewInstance 为 true 时做一次性初始化（见 Entity/AGENTS.md 生命周期）。
+    /// </summary>
+    /// <param name="entityId">本次运行实体编号。</param>
+    /// <param name="entityAssetName">实体资源路径。</param>
+    /// <param name="entityGroup">所属实体组。</param>
+    /// <param name="isNewInstance">是否首次创建池实例。</param>
+    /// <param name="userData">本次初始化参数。</param>
+    public virtual void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance,
+        object userData)
+    {
+        Id = entityId;
+        EntityAssetName = entityAssetName;
+        Name = entityAssetName == null ? "AbstractActorEntity" : $"Entity_{entityId}";
+        EntityGroup = entityGroup;
+
+        if (isNewInstance && _hitBox != null)
+        {
+            _hitShapes = _hitBox.GetChildren().OfType<CollisionShape2D>().ToArray();
+            // 命中回调只连一次（判定盒几何/开关全在动画轨道上，代码不再初始化形状）
+            _hitBox.AreaEntered += OnHitBoxAreaEntered;
         }
 
-        /// <summary>
-        /// 本角色的有序招式定义；默认借用共享配置，特殊选择由具体角色决定。
-        /// </summary>
-        protected virtual IReadOnlyList<AttackConfig> OwnAttacks
+        if (_body == null)
         {
-            get
-            {
-                return this.GetModel<ConfigurationModel>().GetAttacks(EntityType);
-            }
+            Log.Error("[AbstractActorEntity] 场景未绑定 _body（Sprite2D / AnimatedSprite2D）：{0}", entityAssetName);
         }
 
-        /// <summary>
-        /// 场景装配的普通攻击动画，顺序对应本实体的数值招式。
-        /// </summary>
-        protected IReadOnlyList<string> AttackAnimations
+        if (_animPlayer != null)
         {
-            get
-            {
-                return m_AttackAnimations;
-            }
+            // 与实体物理同频推进：父节点先提出播放请求，子播放器同帧消费。
+            _animPlayer.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Physics;
+            _animPlayer.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
+        }
+        else
+        {
+            Log.Error("[AbstractActorEntity] 场景未绑定 _animPlayer（AnimationPlayer）：{0}", entityAssetName);
         }
 
-        /// <summary>
-        /// 实体的基础配置类型；运行实例编号另由 GGF 管理。
-        /// </summary>
-        protected abstract EEntityId EntityType { get; }
-
-        // ---- 属性 ----
-
-        /// <summary>
-        /// 供英雄外观装配使用的身体表现节点。
-        /// </summary>
-        protected Node2D Body
+        // 动画由场景装配，数值按稳定连段顺序关联；装配不完整时在初始化边界停止。
+        if (_attackAnimations.Length != OwnAttacks.Count)
         {
-            get
-            {
-                return m_Body;
-            }
+            throw new InvalidOperationException($"{entityAssetName} 的普通攻击动画数与数值招式数不一致。");
         }
 
-        /// <summary>
-        /// 本角色攻击命中时的默认声音；独立效果在生成时借用此值。
-        /// </summary>
-        protected ESoundId HitSoundId
+        foreach (string animation in _attackAnimations)
         {
-            get
+            if (!HasAnim(animation))
             {
-                return m_HitSoundId;
+                throw new InvalidOperationException($"{entityAssetName} 缺少普通攻击动画 {animation}。");
             }
         }
+    }
 
-        /// <summary>
-        /// 实体编号
-        /// </summary>
-        public int Id { get; private set; }
-
-        /// <summary>
-        /// 实体资源名称（PackedScene 路径）
-        /// </summary>
-        public string EntityAssetName { get; private set; }
-
-        /// <summary>
-        /// 实体实例
-        /// </summary>
-        public object Handle
+    /// <summary>
+    /// 实体显示：启用动画播放器。可变状态每次显示都要重置（池复用会带回上次的脏状态）——子类在 base 之后复位
+    /// 自己的事实并重建身体状态机，初始状态进入时请求的动画会把播放器从上次的任意动画（含死亡）拉回来。
+    /// </summary>
+    /// <param name="userData">本次显示参数，由具体实体解释。</param>
+    public virtual void OnShow(object userData)
+    {
+        Visible = true;
+        Modulate = Colors.White;
+        IsShown = true;
+        Dead = false;
+        _physicsInitialized = false;
+        _requestedAnim = null;
+        if (_animPlayer != null)
         {
-            get
-            {
-                return this;
-            }
+            _animPlayer.Active = true;
+        }
+    }
+
+    /// <summary>
+    /// 实体隐藏：停动画播放器、归还攻击包。关停阶段（isShutdown=true）子节点可能已被引擎释放——
+    /// 框架的 Shutdown 在场景树析构之后才补调 OnHide，此时读节点会抛 ObjectDisposedException，所以不碰节点。
+    /// </summary>
+    /// <param name="isShutdown">是否框架关停；此时节点可能已释放。</param>
+    /// <param name="userData">本次隐藏参数。</param>
+    public virtual void OnHide(bool isShutdown, object userData)
+    {
+        IsShown = false;
+        _physicsInitialized = false;
+        ReleaseAttack();
+
+        if (isShutdown || !IsInstanceValid(this))
+        {
+            return;
         }
 
-        /// <summary>
-        /// 实体所属的实体组
-        /// </summary>
-        public IEntityGroup EntityGroup { get; private set; }
-
-        /// <summary>
-        /// 动画播放器
-        /// </summary>
-        public AnimationPlayer AnimPlayer
+        if (_animPlayer != null && IsInstanceValid(_animPlayer))
         {
-            get
-            {
-                return m_AnimPlayer;
-            }
+            _animPlayer.Stop();
+            _animPlayer.Active = false;
         }
 
-        /// <summary>
-        /// 受击判定区
-        /// </summary>
-        public HurtBoxNode HurtBox
+        Visible = false;
+    }
+
+    /// <summary>
+    /// 实体回收（下一帧执行，节点不销毁）。
+    /// </summary>
+    public virtual void OnRecycle()
+    {
+        Id = 0;
+        EntityAssetName = null;
+        Name = "AbstractActorEntity (Recycled)";
+        Visible = false;
+        Velocity = Vector2.Zero;
+    }
+
+    /// <summary>
+    /// 实体轮询。角色行为不走这里——由子类 _PhysicsProcess 里的身体状态机驱动。
+    /// </summary>
+    /// <param name="elapseSeconds">本帧游戏秒数。</param>
+    /// <param name="realElapseSeconds">本帧实际秒数。</param>
+    public virtual void OnUpdate(float elapseSeconds, float realElapseSeconds)
+    {
+    }
+
+    /// <summary>
+    /// 附加子实体。
+    /// </summary>
+    /// <param name="childEntity">被附加或移除的子实体。</param>
+    /// <param name="userData">本次框架调用的附加数据。</param>
+    public virtual void OnAttached(IEntity childEntity, object userData)
+    {
+    }
+
+    /// <summary>
+    /// 解除子实体。
+    /// </summary>
+    /// <param name="childEntity">被附加或移除的子实体。</param>
+    /// <param name="userData">本次框架调用的附加数据。</param>
+    public virtual void OnDetached(IEntity childEntity, object userData)
+    {
+    }
+
+    /// <summary>
+    /// 被附加到父实体。
+    /// </summary>
+    /// <param name="parentEntity">当前附加关系中的父实体。</param>
+    /// <param name="userData">本次框架调用的附加数据。</param>
+    public virtual void OnAttachTo(IEntity parentEntity, object userData)
+    {
+    }
+
+    /// <summary>
+    /// 从父实体解除。
+    /// </summary>
+    /// <param name="parentEntity">当前附加关系中的父实体。</param>
+    /// <param name="userData">本次框架调用的附加数据。</param>
+    public virtual void OnDetachFrom(IEntity parentEntity, object userData)
+    {
+    }
+
+    /// <summary>
+    /// 借用当前游戏流程的架构入口。
+    /// </summary>
+    /// <returns>所属流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
+    // ---- 业务入口 ----
+
+    /// <summary>
+    /// 取出待生效受击的击退速度（取出即清除）。
+    /// </summary>
+    /// <returns>本次取出的击退速度，无待处理受击时为零。</returns>
+    public Vector2 TakePendingHurt()
+    {
+        Vector2 knockback = PendingHurt ?? Vector2.Zero;
+        PendingHurt = null;
+        return knockback;
+    }
+
+    /// <summary>
+    /// 请求播放动画：本帧已请求（或正在播）同名动画时不打断；否则 Play（从头播）。
+    /// 同名不重播的判定看"最近请求"，不看播放器状态——非循环动画播完停在末帧时也算"在播"，
+    /// 逐帧请求 idle/jump 这类动画不会因此重播。参数是 string：身体状态是纯 C#，不构造 Godot 的 StringName。
+    /// </summary>
+    /// <param name="anim">动画库中的动画名称。</param>
+    public void PlayAnim(string anim)
+    {
+        if (_animPlayer == null || string.IsNullOrEmpty(anim))
         {
-            get
-            {
-                return m_HurtBox;
-            }
+            return;
         }
 
-        /// <summary>
-        /// 攻击判定区
-        /// </summary>
-        public Area2D HitBox
+        if (anim == _requestedAnim)
         {
-            get
-            {
-                return m_HitBox;
-            }
+            return;
         }
 
-        /// <summary>
-        /// 攻击判定区容器（朝向镜像；怪物 AI 推导判定盒范围时要加上它的本地位置）
-        /// </summary>
-        public Node2D HitBoxRoot
+        RestartAnim(anim);
+    }
+
+    /// <summary>
+    /// 重播动作或其原生分段；强制应用起点值和方法，即使同名也重新开始。
+    /// </summary>
+    /// <param name="anim">需要从起点播放的动画名称。</param>
+    /// <param name="startMarker">可选原生起播标记，例如未落地尸体的循环段。</param>
+    public void RestartAnim(string anim, string startMarker = null)
+    {
+        if (_animPlayer == null || string.IsNullOrEmpty(anim))
         {
-            get
-            {
-                return m_HitBoxRoot;
-            }
+            return;
         }
 
-        /// <summary>
-        /// 实际生命值；英雄从注册模型读取，怪物使用实体独有的普通状态。
-        /// </summary>
-        public abstract int Hp { get; }
-
-        /// <summary>
-        /// 当前生命上限。
-        /// </summary>
-        public abstract int MaxHp { get; }
-
-        /// <summary>
-        /// 等级（参与等级压制）；子类在 OnShow 写入。
-        /// </summary>
-        public abstract int Level { get; }
-
-        /// <summary>
-        /// 死亡事实。**单一事实源**：只在 ReceiveHit 扣血扣到 0 的那一刻置位、OnShow 复位；
-        /// 身体状态机在下一个物理帧据此进入死亡状态（死亡优先级最高）。
-        /// </summary>
-        public bool Dead { get; private set; }
-
-        /// <summary>
-        /// 技能等临时无敌可拒绝受击；无双霸体不等于无敌。
-        /// </summary>
-        protected virtual bool Invulnerable
+        _requestedAnim = anim;
+        _animPlayer.ResetSection();
+        _animPlayer.Stop();
+        if (string.IsNullOrEmpty(startMarker))
         {
-            get
-            {
-                return false;
-            }
+            _animPlayer.Play(AnimName(anim));
+        }
+        else
+        {
+            StringName name = AnimName(anim);
+            double start = (float)_animPlayer.GetAnimation(name).GetMarkerTime(startMarker);
+            _animPlayer.AssignedAnimation = name;
+            // 分段不补播此前的离散值键；仅取样值才能同时切换SpriteFrames动作，且不误触发旧音效。
+            _animPlayer.Seek(start, true, updateOnly: true);
+            _animPlayer.PlaySection(name, start);
+        }
+        // 起点值和方法必须在本帧MoveAndSlide前生效，不把上一动作姿态或速度多保留一物理步。
+        _animPlayer.Advance(0);
+    }
+
+    /// <summary>
+    /// 动画方法轨道按编号播放音效，资源与声音组仍由 GGF 管理。
+    /// </summary>
+    /// <param name="id">声音配置编号；None 不播放。</param>
+    public void PlaySoundAnimEvent(SoundId id) => GF.Sound.PlayConfigured(id);
+
+    /// <summary>
+    /// 原生动作帧停止当前运动；例如悟空受击第7帧与首领受击收尾。
+    /// </summary>
+    public void StopMotionAnimEvent() => Velocity = Vector2.Zero;
+
+    /// <summary>
+    /// 设置朝向（0 表示不变）。翻转通用表现层（身体/判定盒容器），最后调钩子（子类镜像自己的附加层）。
+    /// </summary>
+    /// <param name="dir">朝向：正值右，负值左，零不变。</param>
+    public void SetFacing(int dir)
+    {
+        if (dir == 0)
+        {
+            return;
         }
 
-        /// <summary>
-        /// 朝向：1 右 / -1 左。素材原始朝左，见 SetFacing 注释。
-        /// </summary>
-        public int Facing { get; private set; } = 1;
+        Facing = dir > 0 ? 1 : -1;
 
-        /// <summary>
-        /// 结算侧别（选 BattleConfig 常数组；子类必须固定返回）
-        /// </summary>
-        public abstract ECombatSide Side { get; }
-
-        /// <summary>
-        /// 已显示、可驱动：OnShow 置真、OnHide 置假。子类 _PhysicsProcess 靠它提前返回（实体隐藏/回收后
-        /// 节点仍在树上，不挡会继续跑物理）；AI 等外部持有者靠它判断引用是否还有效（配合 IsInstanceValid）。
-        /// （2026-09-30 自 AbstractHeroEntity/AbstractEnemyEntity 各自的 m_Active 下沉合并。）
-        /// </summary>
-        public bool IsShown { get; private set; }
-
-        /// <summary>
-        /// 可作为目标/可交互：节点有效、已显示、未死亡（外部持有引用时用它判断是否还能用）。
-        /// </summary>
-        public bool IsAlive
+        // 素材原始朝向是"左"：旧项目向右移动时把节点 scale.x 置 -1（BaseHero.gd:381/387），
+        // 所以这里"面朝右 = 翻转"，面朝左保持原样。
+        bool mirror = Facing > 0;
+        if (_body is Sprite2D sprite)
         {
-            get
-            {
-                return IsInstanceValid(this) && IsShown && !Dead;
-            }
+            // 网格身体层 offset 恒为 0，FlipH 即可（FlipH 不镜像 offset，已实测）
+            sprite.FlipH = mirror;
+        }
+        else if (_body != null)
+        {
+            // 轨道驱动 offset 的身体层（怪物）：负 scale 让 offset 一起镜像（同旧 MonsterDir.scale.x = ±1）。
+            // _body 是纯显示节点，负缩放没有物理节点的问题。
+            _body.Scale = new Vector2(mirror ? -1 : 1, 1);
         }
 
-        /// <summary>
-        /// 飘字锚点（世界坐标）：受击盒顶边中点——受击盒本来就按素材身形摆放，头顶位置随之而来，
-        /// 不需要每个角色再写一个偏移常数。没有受击盒时退到实体原点。
-        /// </summary>
-        public Vector2 HeadPosition
+        // 判定盒用父容器负 scale 镜像（同旧 base_damagebox.scale.x = ±1）：动画轨道写的是原生朝左坐标，
+        // 容器一翻，判定盒位置跟着镜像——代码不碰几何。
+        if (_hitBoxRoot != null)
         {
-            get
-            {
-                if (m_HurtBox == null)
-                {
-                    return GlobalPosition;
-                }
-
-                Rect2 bounds = m_HurtBox.GetGlobalBounds();
-                return new Vector2(bounds.GetCenter().X, bounds.Position.Y);
-            }
+            _hitBoxRoot.Scale = new Vector2(mirror ? -1 : 1, 1);
         }
 
-        /// <summary>
-        /// 正在播的攻击段（0 起；-1 = 不在出招）：BeginAttack/EndAttack 维护，身体状态机与 AI 读取。
-        /// </summary>
-        public int AttackSegment { get; protected set; } = -1;
+        OnFacingChanged(dir);
+    }
 
-        /// <summary>
-        /// 有待生效的受击
-        /// </summary>
-        public bool HasPendingHurt
+    /// <summary>
+    /// 收招（安全释放）：归还攻击包（纯 C#，状态机销毁期间也可调用）。由子类宿主钩子 EndAttack
+    /// （攻击状态离开时：收招、受击打断、死亡、实体隐藏）调用。
+    /// 判定盒不需要代码去关：库内每个动画都带齐判定盒值轨道（轨道完备性规则），
+    /// 切到任何动画首帧就写回安全值。
+    /// </summary>
+    public void ReleaseAttack()
+    {
+        if (_activeAttackData != null)
         {
-            get
-            {
-                return m_PendingHurt.HasValue;
-            }
+            ReferencePool.Release(_activeAttackData);
+            _activeAttackData = null;
+        }
+    }
+
+    /// <summary>
+    /// 受击结算：属性快照 + 攻击包交 DamageResult，扣血、击退、广播 DamageDealtEventArgs。
+    /// 公式不写在这里（GameScripts/AGENTS.md：命中回调不写公式）。
+    /// </summary>
+    /// <param name="data">调用方拥有的攻击快照，仅在结算期间读取。</param>
+    /// <returns>实际伤害与闪避、暴击结果。</returns>
+    public DamageResult ReceiveHit(AttackData data)
+    {
+        int attackerEntityId = data.Source.OwnerEntityId;
+        if (Dead || Invulnerable)
+        {
+            return DamageResult.Missed(data.Kind);
         }
 
-        // ---- 生命周期 ----
+        DamageResult result = CalculateIncomingHit(data);
 
-        /// <summary>
-        /// 实体初始化。isNewInstance 为 true 时做一次性初始化（见 Entity/AGENTS.md 生命周期）。
-        /// </summary>
-        /// <param name="entityId">本次运行实体编号。</param>
-        /// <param name="entityAssetName">实体资源路径。</param>
-        /// <param name="entityGroup">所属实体组。</param>
-        /// <param name="isNewInstance">是否首次创建池实例。</param>
-        /// <param name="userData">本次初始化参数。</param>
-        public virtual void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance,
-            object userData)
+        bool died = false;
+        if (!result.IsMiss)
         {
-            Id = entityId;
-            EntityAssetName = entityAssetName;
-            Name = entityAssetName == null ? "AbstractActorEntity" : $"Entity_{entityId}";
-            EntityGroup = entityGroup;
-
-            if (isNewInstance && m_HitBox != null)
-            {
-                m_HitShapes = m_HitBox.GetChildren().OfType<CollisionShape2D>().ToArray();
-                // 命中回调只连一次（判定盒几何/开关全在动画轨道上，代码不再初始化形状）
-                m_HitBox.AreaEntered += OnHitBoxAreaEntered;
-            }
-
-            if (m_Body == null)
-            {
-                Log.Error("[AbstractActorEntity] 场景未绑定 m_Body（Sprite2D / AnimatedSprite2D）：{0}", entityAssetName);
-            }
-
-            if (m_AnimPlayer != null)
-            {
-                // 与实体物理同频推进：父节点先提出播放请求，子播放器同帧消费。
-                m_AnimPlayer.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Physics;
-                m_AnimPlayer.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
-            }
-            else
-            {
-                Log.Error("[AbstractActorEntity] 场景未绑定 m_AnimPlayer（AnimationPlayer）：{0}", entityAssetName);
-            }
-
-            // 动画由场景装配，数值按稳定连段顺序关联；装配不完整时在初始化边界停止。
-            if (m_AttackAnimations.Length != OwnAttacks.Count)
-            {
-                throw new InvalidOperationException($"{entityAssetName} 的普通攻击动画数与数值招式数不一致。");
-            }
-
-            foreach (string animation in m_AttackAnimations)
-            {
-                if (!HasAnim(animation))
-                {
-                    throw new InvalidOperationException($"{entityAssetName} 缺少普通攻击动画 {animation}。");
-                }
-            }
-        }
-
-        /// <summary>
-        /// 实体显示：启用动画播放器。可变状态每次显示都要重置（池复用会带回上次的脏状态）——子类在 base 之后复位
-        /// 自己的事实并重建身体状态机，初始状态进入时请求的动画会把播放器从上次的任意动画（含死亡）拉回来。
-        /// </summary>
-        /// <param name="userData">本次显示参数，由具体实体解释。</param>
-        public virtual void OnShow(object userData)
-        {
-            Visible = true;
-            Modulate = Colors.White;
-            IsShown = true;
-            Dead = false;
-            m_PhysicsInitialized = false;
-            m_RequestedAnim = null;
-            if (m_AnimPlayer != null)
-            {
-                m_AnimPlayer.Active = true;
-            }
-        }
-
-        /// <summary>
-        /// 实体隐藏：停动画播放器、归还攻击包。关停阶段（isShutdown=true）子节点可能已被引擎释放——
-        /// 框架的 Shutdown 在场景树析构之后才补调 OnHide，此时读节点会抛 ObjectDisposedException，所以不碰节点。
-        /// </summary>
-        /// <param name="isShutdown">是否框架关停；此时节点可能已释放。</param>
-        /// <param name="userData">本次隐藏参数。</param>
-        public virtual void OnHide(bool isShutdown, object userData)
-        {
-            IsShown = false;
-            m_PhysicsInitialized = false;
-            ReleaseAttack();
-
-            if (isShutdown || !IsInstanceValid(this))
-            {
-                return;
-            }
-
-            if (m_AnimPlayer != null && IsInstanceValid(m_AnimPlayer))
-            {
-                m_AnimPlayer.Stop();
-                m_AnimPlayer.Active = false;
-            }
-
-            Visible = false;
-        }
-
-        /// <summary>
-        /// 实体回收（下一帧执行，节点不销毁）。
-        /// </summary>
-        public virtual void OnRecycle()
-        {
-            Id = 0;
-            EntityAssetName = null;
-            Name = "AbstractActorEntity (Recycled)";
-            Visible = false;
-            Velocity = Vector2.Zero;
-        }
-
-        /// <summary>
-        /// 实体轮询。角色行为不走这里——由子类 _PhysicsProcess 里的身体状态机驱动。
-        /// </summary>
-        /// <param name="elapseSeconds">本帧游戏秒数。</param>
-        /// <param name="realElapseSeconds">本帧实际秒数。</param>
-        public virtual void OnUpdate(float elapseSeconds, float realElapseSeconds)
-        {
-        }
-
-        /// <summary>
-        /// 附加子实体。
-        /// </summary>
-        /// <param name="childEntity">被附加或移除的子实体。</param>
-        /// <param name="userData">本次框架调用的附加数据。</param>
-        public virtual void OnAttached(IEntity childEntity, object userData)
-        {
-        }
-
-        /// <summary>
-        /// 解除子实体。
-        /// </summary>
-        /// <param name="childEntity">被附加或移除的子实体。</param>
-        /// <param name="userData">本次框架调用的附加数据。</param>
-        public virtual void OnDetached(IEntity childEntity, object userData)
-        {
-        }
-
-        /// <summary>
-        /// 被附加到父实体。
-        /// </summary>
-        /// <param name="parentEntity">当前附加关系中的父实体。</param>
-        /// <param name="userData">本次框架调用的附加数据。</param>
-        public virtual void OnAttachTo(IEntity parentEntity, object userData)
-        {
-        }
-
-        /// <summary>
-        /// 从父实体解除。
-        /// </summary>
-        /// <param name="parentEntity">当前附加关系中的父实体。</param>
-        /// <param name="userData">本次框架调用的附加数据。</param>
-        public virtual void OnDetachFrom(IEntity parentEntity, object userData)
-        {
-        }
-
-        /// <summary>
-        /// 借用当前游戏流程的架构入口。
-        /// </summary>
-        /// <returns>所属流程 FSM 的架构。</returns>
-        IArchitecture IBelongToArchitecture.GetArchitecture()
-        {
-            return GF.Fsm.GetArchitecture();
-        }
-
-        // ---- 业务入口 ----
-
-        /// <summary>
-        /// 取出待生效受击的击退速度（取出即清除）。
-        /// </summary>
-        /// <returns>本次取出的击退速度，无待处理受击时为零。</returns>
-        public Vector2 TakePendingHurt()
-        {
-            Vector2 knockback = m_PendingHurt ?? Vector2.Zero;
-            m_PendingHurt = null;
-            return knockback;
-        }
-
-        /// <summary>
-        /// 请求播放动画：本帧已请求（或正在播）同名动画时不打断；否则 Play（从头播）。
-        /// 同名不重播的判定看"最近请求"，不看播放器状态——非循环动画播完停在末帧时也算"在播"，
-        /// 逐帧请求 idle/jump 这类动画不会因此重播。参数是 string：身体状态是纯 C#，不构造 Godot 的 StringName。
-        /// </summary>
-        /// <param name="anim">动画库中的动画名称。</param>
-        public void PlayAnim(string anim)
-        {
-            if (m_AnimPlayer == null || string.IsNullOrEmpty(anim))
-            {
-                return;
-            }
-
-            if (anim == m_RequestedAnim)
-            {
-                return;
-            }
-
-            RestartAnim(anim);
-        }
-
-        /// <summary>
-        /// 重播动作或其原生分段；强制应用起点值和方法，即使同名也重新开始。
-        /// </summary>
-        /// <param name="anim">需要从起点播放的动画名称。</param>
-        /// <param name="startMarker">可选原生起播标记，例如未落地尸体的循环段。</param>
-        public void RestartAnim(string anim, string startMarker = null)
-        {
-            if (m_AnimPlayer == null || string.IsNullOrEmpty(anim))
-            {
-                return;
-            }
-
-            m_RequestedAnim = anim;
-            m_AnimPlayer.ResetSection();
-            m_AnimPlayer.Stop();
-            if (string.IsNullOrEmpty(startMarker))
-            {
-                m_AnimPlayer.Play(AnimName(anim));
-            }
-            else
-            {
-                StringName name = AnimName(anim);
-                double start = (float)m_AnimPlayer.GetAnimation(name).GetMarkerTime(startMarker);
-                m_AnimPlayer.AssignedAnimation = name;
-                // 分段不补播此前的离散值键；仅取样值才能同时切换SpriteFrames动作，且不误触发旧音效。
-                m_AnimPlayer.Seek(start, true, updateOnly: true);
-                m_AnimPlayer.PlaySection(name, start);
-            }
-            // 起点值和方法必须在本帧MoveAndSlide前生效，不把上一动作姿态或速度多保留一物理步。
-            m_AnimPlayer.Advance(0);
-        }
-
-        /// <summary>
-        /// 动画方法轨道按编号播放音效，资源与声音组仍由 GGF 管理。
-        /// </summary>
-        /// <param name="id">声音配置编号；None 不播放。</param>
-        public void PlaySoundAnimEvent(ESoundId id)
-        {
-            GF.Sound.PlayConfigured(id);
-        }
-
-        /// <summary>
-        /// 原生动作帧停止当前运动；例如悟空受击第7帧与首领受击收尾。
-        /// </summary>
-        public void StopMotionAnimEvent()
-        {
-            Velocity = Vector2.Zero;
-        }
-
-        /// <summary>
-        /// 设置朝向（0 表示不变）。翻转通用表现层（身体/判定盒容器），最后调钩子（子类镜像自己的附加层）。
-        /// </summary>
-        /// <param name="dir">朝向：正值右，负值左，零不变。</param>
-        public void SetFacing(int dir)
-        {
-            if (dir == 0)
-            {
-                return;
-            }
-
-            Facing = dir > 0 ? 1 : -1;
-
-            // 素材原始朝向是"左"：旧项目向右移动时把节点 scale.x 置 -1（BaseHero.gd:381/387），
-            // 所以这里"面朝右 = 翻转"，面朝左保持原样。
-            bool mirror = Facing > 0;
-            if (m_Body is Sprite2D sprite)
-            {
-                // 网格身体层 offset 恒为 0，FlipH 即可（FlipH 不镜像 offset，已实测）
-                sprite.FlipH = mirror;
-            }
-            else if (m_Body != null)
-            {
-                // 轨道驱动 offset 的身体层（怪物）：负 scale 让 offset 一起镜像（同旧 MonsterDir.scale.x = ±1）。
-                // m_Body 是纯显示节点，负缩放没有物理节点的问题。
-                m_Body.Scale = new Vector2(mirror ? -1 : 1, 1);
-            }
-
-            // 判定盒用父容器负 scale 镜像（同旧 base_damagebox.scale.x = ±1）：动画轨道写的是原生朝左坐标，
-            // 容器一翻，判定盒位置跟着镜像——代码不碰几何。
-            if (m_HitBoxRoot != null)
-            {
-                m_HitBoxRoot.Scale = new Vector2(mirror ? -1 : 1, 1);
-            }
-
-            OnFacingChanged(dir);
-        }
-
-        /// <summary>
-        /// 收招（安全释放）：归还攻击包（纯 C#，状态机销毁期间也可调用）。由子类宿主钩子 EndAttack
-        /// （攻击状态离开时：收招、受击打断、死亡、实体隐藏）调用。
-        /// 判定盒不需要代码去关：库内每个动画都带齐判定盒值轨道（轨道完备性规则），
-        /// 切到任何动画首帧就写回安全值。
-        /// </summary>
-        public void ReleaseAttack()
-        {
-            if (m_ActiveAttackData != null)
-            {
-                ReferencePool.Release(m_ActiveAttackData);
-                m_ActiveAttackData = null;
-            }
-        }
-
-        /// <summary>
-        /// 受击结算：属性快照 + 攻击包交 DamageResult，扣血、击退、广播 DamageDealtEventArgs。
-        /// 公式不写在这里（GameScripts/AGENTS.md：命中回调不写公式）。
-        /// </summary>
-        /// <param name="data">调用方拥有的攻击快照，仅在结算期间读取。</param>
-        /// <returns>实际伤害与闪避、暴击结果。</returns>
-        public DamageResult ReceiveHit(AttackData data)
-        {
-            int attackerEntityId = data.Source.OwnerEntityId;
-            if (Dead || Invulnerable)
-            {
-                return DamageResult.Missed(data.Kind);
-            }
-
-            DamageResult result = CalculateIncomingHit(data);
-
-            bool died = false;
-            if (!result.IsMiss)
-            {
-                // 死亡事实唯一置位点：只在生命归零的那一次为真，之后保持到下次显示复位。
-                died = ApplyDamage(result.Damage);
-                Dead |= died;
-                OnHurt(data, result, this.GetSystem<CombatSystem>().KnockbackVelocity(data, GlobalPosition.X), attackerEntityId);
-                GF.Sound.PlayConfigured(m_HurtSoundId);
-            }
-
-            GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == ECombatSide.Hero, HeadPosition, data.Source));
-            if (died)
-            {
-                Died?.Invoke(this);
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// 结算已经确定的持续伤害；不再次闪避、减防、击退或播放受击声音。
-        /// </summary>
-        /// <param name="amount">本步到期的固定伤害。</param>
-        /// <param name="showNumber">是否发布伤害飘字；装备生命流失不属于受击表现。</param>
-        protected void ReceivePeriodicDamage(int amount, bool showNumber = true)
-        {
-            if (Dead || amount <= 0)
-            {
-                return;
-            }
-
-            bool died = ApplyDamage(amount);
+            // 死亡事实唯一置位点：只在生命归零的那一次为真，之后保持到下次显示复位。
+            died = ApplyDamage(result.Damage);
             Dead |= died;
-            if (showNumber)
+            OnHurt(data, result, this.GetSystem<CombatSystem>().KnockbackVelocity(data, GlobalPosition.X), attackerEntityId);
+            GF.Sound.PlayConfigured(_hurtSoundId);
+        }
+
+        GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == CombatSide.Hero, HeadPosition, data.Source));
+        if (died)
+        {
+            Died?.Invoke(this);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 结算已经确定的持续伤害；不再次闪避、减防、击退或播放受击声音。
+    /// </summary>
+    /// <param name="amount">本步到期的固定伤害。</param>
+    /// <param name="showNumber">是否发布伤害飘字；装备生命流失不属于受击表现。</param>
+    protected void ReceivePeriodicDamage(int amount, bool showNumber = true)
+    {
+        if (Dead || amount <= 0)
+        {
+            return;
+        }
+
+        bool died = ApplyDamage(amount);
+        Dead |= died;
+        if (showNumber)
+        {
+            GF.Event.Fire(this, DamageDealtEventArgs.Create(new DamageResult(amount, false, false, DamageKind.Real),
+                            Id, Side == CombatSide.Hero, HeadPosition));
+        }
+
+        if (died)
+        {
+            Died?.Invoke(this);
+        }
+    }
+
+    /// <summary>
+    /// 恢复生命；已死亡时不复活。
+    /// </summary>
+    /// <param name="value">恢复量；非正数不处理。</param>
+    public void Heal(int value)
+    {
+        if (!Dead)
+        {
+            RestoreHealth(value);
+        }
+    }
+
+    /// <summary>
+    /// 按当前防守属性计算本次受击；具体敌人的非生命命中规则可在此调整结果。
+    /// </summary>
+    /// <param name="data">调用方拥有的攻击快照。</param>
+    /// <returns>本次生命伤害、闪避和暴击结果。</returns>
+    protected virtual DamageResult CalculateIncomingHit(AttackData data)
+    {
+        CombatantAttributes defender = CaptureCombatAttributes();
+        float missRoll = GD.Randf();
+        float critRoll = GD.Randf();
+        return this.GetSystem<CombatSystem>().Calculate(data, defender, missRoll, critRoll);
+    }
+
+    /// <summary>
+    /// 扣除实际生命；只在本次扣减首次归零时返回真。
+    /// </summary>
+    /// <param name="amount">实际伤害。</param>
+    /// <returns>本次是否导致死亡。</returns>
+    protected abstract bool ApplyDamage(int amount);
+
+    /// <summary>
+    /// 恢复实际生命，调用前已排除死亡。
+    /// </summary>
+    /// <param name="amount">恢复量。</param>
+    protected abstract void RestoreHealth(int amount);
+
+    /// <summary>
+    /// 提交一次真实物理移动，再开放本次显示的碰撞结果；避免池复用读取旧落地缓存。
+    /// </summary>
+    protected void MoveBody()
+    {
+        MoveAndSlide();
+        _physicsInitialized = true;
+    }
+
+    // ---- 内部方法与扩展点 ----
+
+    /// <summary>
+    /// 捕获本次显示的攻击来源；身体攻击的施放者与判定节点相同。
+    /// </summary>
+    /// <returns>不持有节点的来源身份快照。</returns>
+    protected AttackSource CaptureAttackSource() => new AttackSource(Id, EntityType, GetInstanceId(), GetInstanceId());
+
+    /// <summary>
+    /// 将动画名转换为缓存的 StringName，避免播放请求分配。
+    /// </summary>
+    /// <param name="anim">动画名称。</param>
+    /// <returns>由实体拥有的缓存名称。</returns>
+    private StringName AnimName(string anim)
+    {
+        // 首次遇到动画名时建立缓存，之后直接复用。
+        if (!_animNames.TryGetValue(anim, out StringName name))
+        {
+            name = new StringName(anim);
+            _animNames.Add(anim, name);
+        }
+
+        return name;
+    }
+
+    /// <summary>
+    /// 动画库是否有该动画。
+    /// </summary>
+    /// <param name="anim">需要查询的动画名称。</param>
+    /// <returns>动画是否存在。</returns>
+    protected bool HasAnim(string anim) => _animPlayer != null && _animPlayer.HasAnimation(anim);
+
+    /// <summary>
+    /// 出招装填：快照攻击方属性、掷威力倍率，装填攻击包（只装受击方结算要用的数据）。
+    /// 由子类宿主钩子 BeginAttack（攻击状态进入时）调用，上一招未收（连段直接推进）时先归还上一招的包。
+    /// **时序与几何**：判定窗口与判定盒尺寸/位置全部是动画值轨道的关键帧（同旧项目 keyframe
+    /// shape/position/disabled）——C# 只负责"这一招的数值事实"。
+    /// </summary>
+    /// <param name="attack">本次攻击配置；空值仅清除旧攻击。</param>
+    /// <param name="powerMultiplier">本次出招的威力倍率，作用于属性威力和固定威力之和。</param>
+    protected void PrepareAttack(AttackConfig attack, float powerMultiplier = 1f)
+    {
+        ReleaseAttack();
+        if (attack == null)
+        {
+            return;
+        }
+
+        CombatantAttributes attributes = CaptureCombatAttributes();
+        float power = attributes.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf())
+            + MathF.Round(Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf()), MidpointRounding.AwayFromZero);
+        _activeAttackData = AttackData.Create(attack.Id, attributes, power * powerMultiplier, attack.DamageKind, attack.Knockback, Facing,
+            attack.HitProtect, source: CaptureAttackSource());
+    }
+
+    /// <summary>
+    /// 接管一个已经由技能规则计算好的池化攻击包。
+    /// </summary>
+    /// <param name="data">所有权转交给本实体的攻击包。</param>
+    protected void SetAttack(AttackData data)
+    {
+        ReleaseAttack();
+        _activeAttackData = data;
+    }
+
+    /// <summary>
+    /// 处理持续重叠的受击盒；新技能攻击编号不依赖再次进入信号。
+    /// </summary>
+    protected void PollAttackOverlaps()
+    {
+        if (_activeAttackData == null)
+        {
+            return;
+        }
+
+        foreach (CollisionShape2D shape in _hitShapes)
+        {
+            if (!shape.Disabled)
             {
-                GF.Event.Fire(this, DamageDealtEventArgs.Create(new DamageResult(amount, false, false, EDamageKind.Real),
-                                Id, Side == ECombatSide.Hero, HeadPosition));
-            }
-
-            if (died)
-            {
-                Died?.Invoke(this);
-            }
-        }
-
-        /// <summary>
-        /// 恢复生命；已死亡时不复活。
-        /// </summary>
-        /// <param name="value">恢复量；非正数不处理。</param>
-        public void Heal(int value)
-        {
-            if (!Dead)
-            {
-                RestoreHealth(value);
-            }
-        }
-
-        /// <summary>
-        /// 按当前防守属性计算本次受击；具体敌人的非生命命中规则可在此调整结果。
-        /// </summary>
-        /// <param name="data">调用方拥有的攻击快照。</param>
-        /// <returns>本次生命伤害、闪避和暴击结果。</returns>
-        protected virtual DamageResult CalculateIncomingHit(AttackData data)
-        {
-            CombatantAttributes defender = CaptureCombatAttributes();
-            float missRoll = GD.Randf();
-            float critRoll = GD.Randf();
-            return this.GetSystem<CombatSystem>().Calculate(data, defender, missRoll, critRoll);
-        }
-
-        /// <summary>
-        /// 扣除实际生命；只在本次扣减首次归零时返回真。
-        /// </summary>
-        /// <param name="amount">实际伤害。</param>
-        /// <returns>本次是否导致死亡。</returns>
-        protected abstract bool ApplyDamage(int amount);
-
-        /// <summary>
-        /// 恢复实际生命，调用前已排除死亡。
-        /// </summary>
-        /// <param name="amount">恢复量。</param>
-        protected abstract void RestoreHealth(int amount);
-
-        /// <summary>
-        /// 提交一次真实物理移动，再开放本次显示的碰撞结果；避免池复用读取旧落地缓存。
-        /// </summary>
-        protected void MoveBody()
-        {
-            MoveAndSlide();
-            m_PhysicsInitialized = true;
-        }
-
-        // ---- 内部方法与扩展点 ----
-
-        /// <summary>
-        /// 捕获本次显示的攻击来源；身体攻击的施放者与判定节点相同。
-        /// </summary>
-        /// <returns>不持有节点的来源身份快照。</returns>
-        protected AttackSource CaptureAttackSource()
-        {
-            return new AttackSource(Id, EntityType, GetInstanceId(), GetInstanceId());
-        }
-
-        /// <summary>
-        /// 将动画名转换为缓存的 StringName，避免播放请求分配。
-        /// </summary>
-        /// <param name="anim">动画名称。</param>
-        /// <returns>由实体拥有的缓存名称。</returns>
-        private StringName AnimName(string anim)
-        {
-            // 首次遇到动画名时建立缓存，之后直接复用。
-            if (!m_AnimNames.TryGetValue(anim, out StringName name))
-            {
-                name = new StringName(anim);
-                m_AnimNames.Add(anim, name);
-            }
-
-            return name;
-        }
-
-        /// <summary>
-        /// 动画库是否有该动画。
-        /// </summary>
-        /// <param name="anim">需要查询的动画名称。</param>
-        /// <returns>动画是否存在。</returns>
-        protected bool HasAnim(string anim)
-        {
-            return m_AnimPlayer != null && m_AnimPlayer.HasAnimation(anim);
-        }
-
-        /// <summary>
-        /// 出招装填：快照攻击方属性、掷威力倍率，装填攻击包（只装受击方结算要用的数据）。
-        /// 由子类宿主钩子 BeginAttack（攻击状态进入时）调用，上一招未收（连段直接推进）时先归还上一招的包。
-        /// **时序与几何**：判定窗口与判定盒尺寸/位置全部是动画值轨道的关键帧（同旧项目 keyframe
-        /// shape/position/disabled）——C# 只负责"这一招的数值事实"。
-        /// </summary>
-        /// <param name="attack">本次攻击配置；空值仅清除旧攻击。</param>
-        /// <param name="powerMultiplier">本次出招的威力倍率，作用于属性威力和固定威力之和。</param>
-        protected void PrepareAttack(AttackConfig attack, float powerMultiplier = 1f)
-        {
-            ReleaseAttack();
-            if (attack == null)
-            {
-                return;
-            }
-
-            CombatantAttributes attributes = CaptureCombatAttributes();
-            float power = attributes.Power * Mathf.Lerp(attack.PowerScale.X, attack.PowerScale.Y, GD.Randf())
-                + MathF.Round(Mathf.Lerp(attack.FlatPower.X, attack.FlatPower.Y, GD.Randf()), MidpointRounding.AwayFromZero);
-            m_ActiveAttackData = AttackData.Create(attack.Id, attributes, power * powerMultiplier, attack.DamageKind, attack.Knockback, Facing,
-                attack.HitProtect, source: CaptureAttackSource());
-        }
-
-        /// <summary>
-        /// 接管一个已经由技能规则计算好的池化攻击包。
-        /// </summary>
-        /// <param name="data">所有权转交给本实体的攻击包。</param>
-        protected void SetAttack(AttackData data)
-        {
-            ReleaseAttack();
-            m_ActiveAttackData = data;
-        }
-
-        /// <summary>
-        /// 处理持续重叠的受击盒；新技能攻击编号不依赖再次进入信号。
-        /// </summary>
-        protected void PollAttackOverlaps()
-        {
-            if (m_ActiveAttackData == null)
-            {
-                return;
-            }
-
-            foreach (var shape in m_HitShapes)
-            {
-                if (!shape.Disabled)
+                foreach (Area2D area in _hitBox.GetOverlappingAreas())
                 {
-                    foreach (var area in m_HitBox.GetOverlappingAreas())
-                    {
-                        OnHitBoxAreaEntered(area);
-                    }
-
-                    break;
+                    OnHitBoxAreaEntered(area);
                 }
+
+                break;
             }
         }
+    }
 
-        /// <summary>
-        /// 将攻击判定交给受击方，并保证同一招不重复命中目标。
-        /// </summary>
-        /// <param name="area">进入攻击判定区的区域。</param>
-        private void OnHitBoxAreaEntered(Area2D area)
+    /// <summary>
+    /// 将攻击判定交给受击方，并保证同一招不重复命中目标。
+    /// </summary>
+    /// <param name="area">进入攻击判定区的区域。</param>
+    private void OnHitBoxAreaEntered(Area2D area)
+    {
+        // 只处理有效攻击包和受击盒，过滤判定窗口外或无关区域。
+        if (_activeAttackData == null || area is not HurtBoxNode hurtBox)
         {
-            // 只处理有效攻击包和受击盒，过滤判定窗口外或无关区域。
-            if (m_ActiveAttackData == null || area is not HurtBoxNode hurtBox)
-            {
-                return;
-            }
-
-            // 过滤自身、死亡目标和无效实体，避免产生无意义结算。
-            AbstractActorEntity target = hurtBox.OwnerEntity;
-            if (target == null || target == this || target.Dead)
-            {
-                return;
-            }
-
-            // 新招的物理候选可能仍来自上一物理步，先确认当前几何再消耗命中去重。
-            if (!hurtBox.Intersects(m_HitShapes))
-            {
-                return;
-            }
-
-            // AttackData 负责一招一目标去重。
-            if (!m_ActiveAttackData.TryRegisterHit(target.GetInstanceId()))
-            {
-                return;
-            }
-
-            // 命中后播放音效，并将有效命中收益交给具体角色。
-            DamageResult result = target.ReceiveHit(m_ActiveAttackData);
-            if (!result.IsMiss)
-            {
-                GF.Sound.PlayConfigured(m_HitSoundId);
-                OnHitLanded(target, m_ActiveAttackData, result);
-            }
+            return;
         }
 
-        /// <summary>
-        /// 结算用属性快照：取属性汇总当前最终值（出招与受击各取一次）。
-        /// </summary>
-        /// <returns>当前属性与等级对应的结算快照。</returns>
-        protected abstract CombatantAttributes CaptureCombatAttributes();
-
-        /// <summary>
-        /// 受击表现钩子（已扣血、未闪避时调用）：子类决定硬直/击退如何生效。
-        /// 沿用造一受击朝向：击退改变速度，不强制受击方转身。
-        /// </summary>
-        /// <param name="knockback">击退速度 px/s（已按侧别换算，方向已含攻击方朝向）</param>
-        /// <param name="attackerEntityId">攻击方实体编号（0 = 无实体来源，如 Buff/调试伤害）；怪物用它锁定仇恨</param>
-        /// <param name="data">本次攻击快照，不得保留池化引用。</param>
-        /// <param name="result">已完成的伤害结算结果。</param>
-        protected abstract void OnHurt(AttackData data, DamageResult result, Vector2 knockback, int attackerEntityId);
-
-        /// <summary>
-        /// 命中他人钩子（未闪避时）：攻击方收益的扩展点，英雄按实际伤害积累无双。
-        /// 基类不实现任何收益：收益规则属于具体角色，不进攻击包、不进基类。
-        /// </summary>
-        /// <param name="data">本次攻击快照，仅在回调内使用。</param>
-        /// <param name="result">目标已完成的伤害结算结果。</param>
-        /// <param name="target">本次真实命中的目标，仅在回调内借用。</param>
-        protected virtual void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result)
+        // 过滤自身、死亡目标和无效实体，避免产生无意义结算。
+        AbstractActorEntity target = hurtBox.OwnerEntity;
+        if (target == null || target == this || target.Dead)
         {
+            return;
         }
 
-        /// <summary>
-        /// 朝向变化钩子：基类翻转通用表现层（身体）与判定盒之后调用。
-        /// 子类用它镜像自己额外的附加层（如英雄专属的武器层/特效层），不要重写翻转规则本身。
-        /// </summary>
-        /// <param name="dir">朝向：1 右，-1 左。</param>
-        protected virtual void OnFacingChanged(int dir)
+        // 新招的物理候选可能仍来自上一物理步，先确认当前几何再消耗命中去重。
+        if (!hurtBox.Intersects(_hitShapes))
         {
+            return;
         }
 
-        /// <summary>
-        /// 读取原生动作的实际结束时点；有complete标记时以帧脚本收招为准，否则使用片段长度。
-        /// </summary>
-        /// <param name="animName">动画库中的动画名称。</param>
-        /// <returns>动画秒数，缺失时为零并记录警告。</returns>
-        protected float GetActionDuration(string animName)
+        // AttackData 负责一招一目标去重。
+        if (!_activeAttackData.TryRegisterHit(target.GetInstanceId()))
         {
-            if (m_AnimPlayer == null || string.IsNullOrEmpty(animName) || !m_AnimPlayer.HasAnimation(animName))
-            {
-                Log.Warning("[AbstractActorEntity] {0} 的动画库缺少 {1}，相关时长按 0 处理", Name, animName);
-                return 0f;
-            }
-
-            Animation animation = m_AnimPlayer.GetAnimation(animName);
-            return (float)(animation.HasMarker(ActionEndMarker)
-                ? animation.GetMarkerTime(ActionEndMarker)
-                : animation.Length);
+            return;
         }
 
-        /// <summary>
-        /// 从播放器查询动作完成事实，状态不再复制动画时长或维护第二份播放计时。
-        /// </summary>
-        /// <param name="animation">要核对的角色动作。</param>
-        /// <returns>动作已离开，或已到原生complete标记时为true。</returns>
-        public bool IsAnimationComplete(string animation)
+        // 命中后播放音效，并将有效命中收益交给具体角色。
+        DamageResult result = target.ReceiveHit(_activeAttackData);
+        if (!result.IsMiss)
         {
-            return m_RequestedAnim != animation ||
-                m_AnimPlayer.CurrentAnimationPosition + 0.000001 >= GetActionDuration(animation);
+            GF.Sound.PlayConfigured(_hitSoundId);
+            OnHitLanded(target, _activeAttackData, result);
         }
+    }
+
+    /// <summary>
+    /// 结算用属性快照：取属性汇总当前最终值（出招与受击各取一次）。
+    /// </summary>
+    /// <returns>当前属性与等级对应的结算快照。</returns>
+    protected abstract CombatantAttributes CaptureCombatAttributes();
+
+    /// <summary>
+    /// 受击表现钩子（已扣血、未闪避时调用）：子类决定硬直/击退如何生效。
+    /// 沿用造一受击朝向：击退改变速度，不强制受击方转身。
+    /// </summary>
+    /// <param name="knockback">击退速度 px/s（已按侧别换算，方向已含攻击方朝向）</param>
+    /// <param name="attackerEntityId">攻击方实体编号（0 = 无实体来源，如 Buff/调试伤害）；怪物用它锁定仇恨</param>
+    /// <param name="data">本次攻击快照，不得保留池化引用。</param>
+    /// <param name="result">已完成的伤害结算结果。</param>
+    protected abstract void OnHurt(AttackData data, DamageResult result, Vector2 knockback, int attackerEntityId);
+
+    /// <summary>
+    /// 命中他人钩子（未闪避时）：攻击方收益的扩展点，英雄按实际伤害积累无双。
+    /// 基类不实现任何收益：收益规则属于具体角色，不进攻击包、不进基类。
+    /// </summary>
+    /// <param name="data">本次攻击快照，仅在回调内使用。</param>
+    /// <param name="result">目标已完成的伤害结算结果。</param>
+    /// <param name="target">本次真实命中的目标，仅在回调内借用。</param>
+    protected virtual void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result)
+    {
+    }
+
+    /// <summary>
+    /// 朝向变化钩子：基类翻转通用表现层（身体）与判定盒之后调用。
+    /// 子类用它镜像自己额外的附加层（如英雄专属的武器层/特效层），不要重写翻转规则本身。
+    /// </summary>
+    /// <param name="dir">朝向：1 右，-1 左。</param>
+    protected virtual void OnFacingChanged(int dir)
+    {
+    }
+
+    /// <summary>
+    /// 读取原生动作的实际结束时点；有complete标记时以帧脚本收招为准，否则使用片段长度。
+    /// </summary>
+    /// <param name="animName">动画库中的动画名称。</param>
+    /// <returns>动画秒数，缺失时为零并记录警告。</returns>
+    protected float GetActionDuration(string animName)
+    {
+        if (_animPlayer == null || string.IsNullOrEmpty(animName) || !_animPlayer.HasAnimation(animName))
+        {
+            Log.Warning("[AbstractActorEntity] {0} 的动画库缺少 {1}，相关时长按 0 处理", Name, animName);
+            return 0f;
+        }
+
+        Animation animation = _animPlayer.GetAnimation(animName);
+        return (float)(animation.HasMarker(ActionEndMarker)
+            ? animation.GetMarkerTime(ActionEndMarker)
+            : animation.Length);
+    }
+
+    /// <summary>
+    /// 从播放器查询动作完成事实，状态不再复制动画时长或维护第二份播放计时。
+    /// </summary>
+    /// <param name="animation">要核对的角色动作。</param>
+    /// <returns>动作已离开，或已到原生complete标记时为true。</returns>
+    public bool IsAnimationComplete(string animation)
+    {
+        return _requestedAnim != animation ||
+            _animPlayer.CurrentAnimationPosition + 0.000001 >= GetActionDuration(animation);
     }
 }

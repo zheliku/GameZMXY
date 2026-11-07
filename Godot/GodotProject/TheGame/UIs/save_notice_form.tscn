@@ -4,7 +4,7 @@
 [ext_resource type="AnimationLibrary" uid="uid://i61lkwwdqgpu" path="res://TheGame/Sprites/UI/frontend/save_feedback.tres" id="save_feedback"]
 [ext_resource type="Script" uid="uid://bkvuegjou11rk" path="res://TheGame/GameScripts/UI/SaveNoticeForm/SaveNoticeForm.cs" id="script"]
 
-[node name="SaveNoticeForm" type="Control" unique_id=814369822 node_paths=PackedStringArray("m_SaveFeedback", "m_SaveFeedbackAnimation")]
+[node name="SaveNoticeForm" type="Control" unique_id=814369822 node_paths=PackedStringArray("_saveFeedback", "_saveFeedbackAnimation")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,8 +13,8 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("script")
-m_SaveFeedback = NodePath("SaveFeedback/m_SaveFeedback")
-m_SaveFeedbackAnimation = NodePath("m_SaveFeedbackAnimation")
+_saveFeedback = NodePath("SaveFeedback/m_SaveFeedback")
+_saveFeedbackAnimation = NodePath("m_SaveFeedbackAnimation")
 
 [node name="SaveFeedback" type="Control" parent="." unique_id=386898293]
 anchors_preset = 0

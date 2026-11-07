@@ -1,9 +1,10 @@
-using GameLogic.Level;
-using GameLogic.Input;
 using System.Collections.Generic;
 using System.Linq;
-using GameLogic.Heroes;
+using GameConfig.Level;
 using GameLogic.Enemies;
+using GameLogic.Heroes;
+using GameLogic.Input;
+using GameLogic.Level;
 using Godot;
 using GodotGameFramework;
 
@@ -12,12 +13,12 @@ using GodotGameFramework;
 /// </summary>
 public sealed class LevelCancellationSmokeScenario
 {
-    private readonly AbstractHeroEntity m_Hero; // 驱动实际移动的玩家。
-    private readonly LevelViewController m_Level; // 受测会话。
-    private readonly List<string> m_Failures = new(); // 取消与回收的断言结果。
-    private double m_Time; // 场景等待时间。
-    private double m_StopTime; // 停止会话之后经过的游戏秒数。
-    private bool m_Stopped; // 已主动停止会话，正在等待在途资源完成。
+    private readonly AbstractHeroEntity _hero; // 驱动实际移动的玩家。
+    private readonly LevelViewController _level; // 受测会话。
+    private readonly List<string> _failures = new(); // 取消与回收的断言结果。
+    private double _time; // 场景等待时间。
+    private double _stopTime; // 停止会话之后经过的游戏秒数。
+    private bool _stopped; // 已主动停止会话，正在等待在途资源完成。
 
     /// <summary>
     /// 回归已经完成。
@@ -27,13 +28,7 @@ public sealed class LevelCancellationSmokeScenario
     /// <summary>
     /// 失败原因。
     /// </summary>
-    public IReadOnlyList<string> Failures
-    {
-        get
-        {
-            return m_Failures;
-        }
-    }
+    public IReadOnlyList<string> Failures => _failures;
 
     /// <summary>
     /// 创建取消回归场景。
@@ -42,8 +37,8 @@ public sealed class LevelCancellationSmokeScenario
     /// <param name="level">当前测试借用的关卡控制器。</param>
     public LevelCancellationSmokeScenario(AbstractHeroEntity hero, LevelViewController level)
     {
-        m_Hero = hero;
-        m_Level = level;
+        _hero = hero;
+        _level = level;
         // 构造即有失败清理契约：尚未绑定架构和节点时，也能重复结束。
         var uninitialized = new LevelViewController();
         try
@@ -54,7 +49,7 @@ public sealed class LevelCancellationSmokeScenario
         }
         catch (System.Exception error)
         {
-            m_Failures.Add($"未初始化的关卡无法清理：{error.Message}");
+            _failures.Add($"未初始化的关卡无法清理：{error.Message}");
         }
         finally
         {
@@ -68,35 +63,35 @@ public sealed class LevelCancellationSmokeScenario
     /// <param name="delta">本次逻辑推进的秒数。</param>
     public void Update(double delta)
     {
-        m_Time += delta;
-        if (!m_Stopped && SmokeInspection.Sequence(m_Level).Phase == ELevelStagePhase.Fighting)
+        _time += delta;
+        if (!_stopped && SmokeInspection.Sequence(_level).Phase == LevelStagePhase.Fighting)
         {
             // 首次怪物场景尚未进池，按正式配方首只等待时间强制到期，覆盖真实在途边界。
-            var stage = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages[0];
-            SmokeInspection.Scene(m_Level).GetNode<LevelSpawnerNode>("Spawner")._Process(stage.SpawnDelay + stage.Recipes.Min(x => x.Delay) + 0.01);
+            LevelStage stage = ConfigSystem.Instance.Tables.TbLevelConfig.Get(1).Stages[0];
+            SmokeInspection.Scene(_level).GetNode<LevelSpawnerNode>("Spawner")._Process(stage.SpawnDelay + stage.Recipes.Min(x => x.Delay) + 0.01);
             int pending = GF.Entity.GetAllLoadingEntityIds().Length;
             if (pending == 0)
             {
-                m_Failures.Add("未观察到在途显示，取消用例没有覆盖异步边界");
+                _failures.Add("未观察到在途显示，取消用例没有覆盖异步边界");
             }
 
-            m_Level.Cleanup();
-            m_Stopped = true;
+            _level.Cleanup();
+            _stopped = true;
             Input.ActionRelease(InputSystem.MoveRight);
             Input.ActionRelease(InputSystem.Jump);
             GD.Print($"SMOKE-CANCEL: stopped with {pending} pending shows");
         }
 
-        if (m_Stopped)
+        if (_stopped)
         {
-            m_StopTime += delta;
-            if (m_StopTime >= 3.0 && GF.Entity.GetAllLoadingEntityIds().Length == 0)
+            _stopTime += delta;
+            if (_stopTime >= 3.0 && GF.Entity.GetAllLoadingEntityIds().Length == 0)
             {
-                bool shown = m_Hero.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+                bool shown = _hero.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
                     .OfType<AbstractEnemyEntity>().Any(x => x.IsShown);
-                if (shown || SmokeInspection.Sequence(m_Level).Phase != ELevelStagePhase.Stopped)
+                if (shown || SmokeInspection.Sequence(_level).Phase != LevelStagePhase.Stopped)
                 {
-                    m_Failures.Add("停止之后仍有怪物显示或关卡继续推进");
+                    _failures.Add("停止之后仍有怪物显示或关卡继续推进");
                 }
 
                 IsDone = true;
@@ -105,7 +100,7 @@ public sealed class LevelCancellationSmokeScenario
         else
         {
             Input.ActionPress(InputSystem.MoveRight);
-            if (m_Hero.IsOnWall() && m_Hero.IsOnFloor())
+            if (_hero.IsOnWall() && _hero.IsOnFloor())
             {
                 Input.ActionPress(InputSystem.Jump);
             }
@@ -115,9 +110,9 @@ public sealed class LevelCancellationSmokeScenario
             }
         }
 
-        if (m_Time > 30)
+        if (_time > 30)
         {
-            m_Failures.Add("取消回归超时");
+            _failures.Add("取消回归超时");
             IsDone = true;
         }
     }

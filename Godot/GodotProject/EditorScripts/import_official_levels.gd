@@ -27,7 +27,7 @@ func _build() -> void:
 		var folder := "zm1_%02d_%s" % [number, area]
 		scene = load("res://TheGame/Scenes/Levels/zm1_01_huaguoshan/level_1.tscn").instantiate()
 		scene.name = "Level_%d" % number
-		scene.set("m_LevelId", number)
+		scene.set("_levelId", number)
 		# Scene references stay attached to the same slot owners, with fresh entries.
 		for path in ["World/Background/Front", "World/Geometry", "World/Platforms", "World/SpawnPoints", "World/StageGates"]:
 			var node := scene.get_node(path)
@@ -90,8 +90,8 @@ func _build() -> void:
 			_point(points, "Stage%d%s" % [stage, String.chr(65 + index)], id, _vec(item.position), entries)
 			if int(item.properties.enemyType) in [4, 6]:
 				featured.append(id)
-		points.set("m_Entries", entries)
-		scene.set("m_FeaturedOpponentSpawnPointIds", featured)
+		points.set("_entries", entries)
+		scene.set("_featuredOpponentSpawnPointIds", featured)
 		entries = []
 		var gates := scene.get_node("World/StageGates")
 		for item in data.gates:
@@ -99,7 +99,7 @@ func _build() -> void:
 			if stage > 1:
 				_gate(gates, "Stage%dLeft" % stage, "stage_%d_left" % stage, float(item.battleBounds[0]), entries)
 			_gate(gates, "Stage%dGate" % stage, "stage_%d_gate" % stage, float(item.battleBounds[1]), entries)
-		gates.set("m_Entries", entries)
+		gates.set("_entries", entries)
 		for item in data.scenery:
 			if item.characterId == 86:
 				scene.get_node("World/Exit").position = _vec(item.position)
@@ -165,8 +165,8 @@ func _gate(parent: Node, title: String, id: String, x: float, entries: Array[Res
 ## Match the collection's typed resource list without per-marker scripts.
 func _entry(title: String, id: String, entries: Array[Resource]) -> void:
 	var entry: Resource = load("res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs").new()
-	entry.set("m_Id", id)
-	entry.set("m_Node", NodePath(title))
+	entry.set("_id", id)
+	entry.set("_node", NodePath(title))
 	entries.append(entry)
 
 ## Decode an original position without applying any layout normalization.

@@ -7,7 +7,7 @@
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_gift_disabled.png" id="gift"]
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_sell.png" id="sell"]
 
-[node name="EquipmentActionsMenu" type="Control" node_paths=PackedStringArray("m_Panel", "m_Equip", "m_Sell")]
+[node name="EquipmentActionsMenu" type="Control" node_paths=PackedStringArray("_panel", "_equip", "_sell")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -16,9 +16,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("script")
-m_Panel = NodePath("Panel")
-m_Equip = NodePath("Panel/Equip")
-m_Sell = NodePath("Panel/Sell")
+_panel = NodePath("Panel")
+_equip = NodePath("Panel/Equip")
+_sell = NodePath("Panel/Sell")
 
 [node name="Panel" type="TextureRect" parent="."]
 offset_right = 87.0

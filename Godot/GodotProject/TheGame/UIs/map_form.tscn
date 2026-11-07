@@ -155,7 +155,7 @@ _data = {
 
 [sub_resource type="StyleBoxEmpty" id="skills_empty"]
 
-[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("m_Settings", "m_SettingsAnimation", "m_Skills", "m_SkillsArtwork", "m_Huaguoshan", "m_Shuiliandong", "m_Taohuayuan", "m_Save", "m_LocationAnimation", "m_Bianfuku", "m_Qixingdong", "m_Jialuoluo", "m_Qianan", "m_Donghai", "m_Shazhiwoliu", "m_Niumogu")]
+[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("_settings", "_settingsAnimation", "_skills", "_skillsArtwork", "_huaguoshan", "_shuiliandong", "_taohuayuan", "_save", "_locationAnimation", "_bianfuku", "_qixingdong", "_jialuoluo", "_qianan", "_donghai", "_shazhiwoliu", "_niumogu")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -164,22 +164,22 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("theme")
 script = ExtResource("script")
-m_Settings = NodePath("m_Settings")
-m_SettingsAnimation = NodePath("m_Settings/m_SettingsAnimation")
-m_Skills = NodePath("m_Skills")
-m_SkillsArtwork = NodePath("m_Skills/Artwork")
-m_Huaguoshan = NodePath("m_Huaguoshan")
-m_Shuiliandong = NodePath("m_Shuiliandong")
-m_Taohuayuan = NodePath("m_Taohuayuan")
-m_Save = NodePath("m_Save")
-m_LocationAnimation = NodePath("m_LocationAnimation")
-m_Bianfuku = NodePath("m_Bianfuku")
-m_Qixingdong = NodePath("m_Qixingdong")
-m_Jialuoluo = NodePath("m_Jialuoluo")
-m_Qianan = NodePath("m_Qianan")
-m_Donghai = NodePath("m_Donghai")
-m_Shazhiwoliu = NodePath("m_Shazhiwoliu")
-m_Niumogu = NodePath("m_Niumogu")
+_settings = NodePath("m_Settings")
+_settingsAnimation = NodePath("m_Settings/m_SettingsAnimation")
+_skills = NodePath("m_Skills")
+_skillsArtwork = NodePath("m_Skills/Artwork")
+_huaguoshan = NodePath("m_Huaguoshan")
+_shuiliandong = NodePath("m_Shuiliandong")
+_taohuayuan = NodePath("m_Taohuayuan")
+_save = NodePath("m_Save")
+_locationAnimation = NodePath("m_LocationAnimation")
+_bianfuku = NodePath("m_Bianfuku")
+_qixingdong = NodePath("m_Qixingdong")
+_jialuoluo = NodePath("m_Jialuoluo")
+_qianan = NodePath("m_Qianan")
+_donghai = NodePath("m_Donghai")
+_shazhiwoliu = NodePath("m_Shazhiwoliu")
+_niumogu = NodePath("m_Niumogu")
 
 [node name="Background" type="TextureRect" parent="." unique_id=1431881532]
 layout_mode = 0
@@ -190,7 +190,7 @@ texture = ExtResource("bg")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="m_Huaguoshan" type="TextureButton" parent="." unique_id=1050552217 node_paths=PackedStringArray("m_HoverImage", "m_Guide")]
+[node name="m_Huaguoshan" type="TextureButton" parent="." unique_id=1050552217 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
 offset_left = 128.0
 offset_top = 85.0
@@ -203,9 +203,9 @@ texture_normal = ExtResource("huaguoshan_normal")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
-m_HoverImage = NodePath("LocationGlow")
-m_LevelId = 1
-m_Guide = NodePath("../m_LevelGuide")
+_hoverImage = NodePath("LocationGlow")
+_levelId = 1
+_guide = NodePath("../m_LevelGuide")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Huaguoshan" unique_id=619886601]
 visible = false
@@ -228,7 +228,7 @@ texture = ExtResource("8_3fexe")
 hframes = 5
 vframes = 4
 
-[node name="m_Shuiliandong" type="TextureButton" parent="." unique_id=1715632211 node_paths=PackedStringArray("m_HoverImage", "m_Guide")]
+[node name="m_Shuiliandong" type="TextureButton" parent="." unique_id=1715632211 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
 offset_left = 279.0
 offset_top = 79.0
@@ -242,9 +242,9 @@ texture_disabled = ExtResource("shuiliandong_normal")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
-m_HoverImage = NodePath("LocationGlow")
-m_LevelId = 2
-m_Guide = NodePath("../m_LevelGuide")
+_hoverImage = NodePath("LocationGlow")
+_levelId = 2
+_guide = NodePath("../m_LevelGuide")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Shuiliandong" unique_id=764583511]
 visible = false
@@ -267,7 +267,7 @@ texture = ExtResource("11_lyiep")
 hframes = 5
 vframes = 4
 
-[node name="m_Taohuayuan" type="TextureButton" parent="." unique_id=558010661 node_paths=PackedStringArray("m_HoverImage", "m_Guide")]
+[node name="m_Taohuayuan" type="TextureButton" parent="." unique_id=558010661 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
 offset_left = 481.0
 offset_top = 7.0
@@ -281,9 +281,9 @@ texture_disabled = ExtResource("taohuayuan_normal")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
-m_HoverImage = NodePath("LocationGlow")
-m_LevelId = 3
-m_Guide = NodePath("../m_LevelGuide")
+_hoverImage = NodePath("LocationGlow")
+_levelId = 3
+_guide = NodePath("../m_LevelGuide")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Taohuayuan" unique_id=1039934994]
 visible = false
@@ -306,7 +306,7 @@ texture = ExtResource("14_jo74s")
 hframes = 5
 vframes = 4
 
-[node name="m_Bianfuku" type="TextureButton" parent="." unique_id=433813825 node_paths=PackedStringArray("m_HoverImage", "m_Guide")]
+[node name="m_Bianfuku" type="TextureButton" parent="." unique_id=433813825 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
 offset_left = 611.0
 offset_top = -11.0
@@ -320,9 +320,9 @@ texture_disabled = ExtResource("bianfuku_normal")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
-m_HoverImage = NodePath("LocationGlow")
-m_LevelId = 4
-m_Guide = NodePath("../m_LevelGuide")
+_hoverImage = NodePath("LocationGlow")
+_levelId = 4
+_guide = NodePath("../m_LevelGuide")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Bianfuku" unique_id=1932379832]
 visible = false
@@ -345,7 +345,7 @@ texture = ExtResource("17_6v2in")
 hframes = 5
 vframes = 4
 
-[node name="m_Qixingdong" type="TextureButton" parent="." unique_id=1287385966 node_paths=PackedStringArray("m_HoverImage", "m_Guide")]
+[node name="m_Qixingdong" type="TextureButton" parent="." unique_id=1287385966 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
 offset_left = 547.0
 offset_top = 169.0
@@ -360,9 +360,9 @@ texture_disabled = ExtResource("qixingdong_normal")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
-m_HoverImage = NodePath("LocationGlow")
-m_LevelId = 5
-m_Guide = NodePath("../m_LevelGuide")
+_hoverImage = NodePath("LocationGlow")
+_levelId = 5
+_guide = NodePath("../m_LevelGuide")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Qixingdong" unique_id=789348238]
 visible = false
@@ -385,7 +385,7 @@ texture = ExtResource("20_eqj77")
 hframes = 5
 vframes = 4
 
-[node name="m_Jialuoluo" type="TextureButton" parent="." unique_id=932026306 node_paths=PackedStringArray("m_HoverImage", "m_Guide")]
+[node name="m_Jialuoluo" type="TextureButton" parent="." unique_id=932026306 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
 offset_left = 715.0
 offset_top = 69.0
@@ -400,9 +400,9 @@ texture_disabled = ExtResource("jialuoluo_normal")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
-m_HoverImage = NodePath("LocationGlow")
-m_LevelId = 6
-m_Guide = NodePath("../m_LevelGuide")
+_hoverImage = NodePath("LocationGlow")
+_levelId = 6
+_guide = NodePath("../m_LevelGuide")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Jialuoluo" unique_id=1571004914]
 visible = false
@@ -425,7 +425,7 @@ texture = ExtResource("23_jo74s")
 hframes = 5
 vframes = 4
 
-[node name="m_Qianan" type="TextureButton" parent="." unique_id=1061604071 node_paths=PackedStringArray("m_HoverImage", "m_Guide")]
+[node name="m_Qianan" type="TextureButton" parent="." unique_id=1061604071 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
 offset_left = 319.0
 offset_top = 222.15
@@ -441,9 +441,9 @@ texture_click_mask = ExtResource("25_aeh7o")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
-m_HoverImage = NodePath("LocationGlow")
-m_LevelId = 7
-m_Guide = NodePath("../m_LevelGuide")
+_hoverImage = NodePath("LocationGlow")
+_levelId = 7
+_guide = NodePath("../m_LevelGuide")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Qianan" unique_id=1948823058]
 visible = false
@@ -464,7 +464,7 @@ texture = ExtResource("26_eqj77")
 hframes = 5
 vframes = 4
 
-[node name="m_Donghai" type="TextureButton" parent="." unique_id=638111445 node_paths=PackedStringArray("m_HoverImage", "m_Guide")]
+[node name="m_Donghai" type="TextureButton" parent="." unique_id=638111445 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
 offset_left = 234.70001
 offset_top = 303.85
@@ -480,9 +480,9 @@ texture_click_mask = ExtResource("29_3018y")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
-m_HoverImage = NodePath("LocationGlow")
-m_LevelId = 8
-m_Guide = NodePath("../m_LevelGuide")
+_hoverImage = NodePath("LocationGlow")
+_levelId = 8
+_guide = NodePath("../m_LevelGuide")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Donghai" unique_id=1259693091]
 visible = false
@@ -503,7 +503,7 @@ texture = ExtResource("29_omjdr")
 hframes = 5
 vframes = 4
 
-[node name="m_Shazhiwoliu" type="TextureButton" parent="." unique_id=246093014 node_paths=PackedStringArray("m_HoverImage", "m_Guide")]
+[node name="m_Shazhiwoliu" type="TextureButton" parent="." unique_id=246093014 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
 offset_left = 573.55
 offset_top = 427.15
@@ -519,9 +519,9 @@ texture_click_mask = ExtResource("33_3018y")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
-m_HoverImage = NodePath("LocationGlow")
-m_LevelId = 9
-m_Guide = NodePath("../m_LevelGuide")
+_hoverImage = NodePath("LocationGlow")
+_levelId = 9
+_guide = NodePath("../m_LevelGuide")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Shazhiwoliu" unique_id=177963621]
 visible = false
@@ -542,7 +542,7 @@ texture = ExtResource("32_hxmi1")
 hframes = 5
 vframes = 10
 
-[node name="m_Niumogu" type="TextureButton" parent="." unique_id=1508662741 node_paths=PackedStringArray("m_HoverImage", "m_Guide")]
+[node name="m_Niumogu" type="TextureButton" parent="." unique_id=1508662741 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
 offset_left = 203.20001
 offset_top = 298.05
@@ -557,9 +557,9 @@ texture_disabled = ExtResource("niumogu_normal")
 ignore_texture_size = true
 stretch_mode = 3
 script = ExtResource("location_button")
-m_HoverImage = NodePath("LocationGlow")
-m_LevelId = 10
-m_Guide = NodePath("../m_LevelGuide")
+_hoverImage = NodePath("LocationGlow")
+_levelId = 10
+_guide = NodePath("../m_LevelGuide")
 
 [node name="LocationGlow" type="TextureRect" parent="m_Niumogu" unique_id=2062773213]
 visible = false

@@ -9,30 +9,18 @@
 
 
 
-namespace GameConfig.Skills
+namespace GameConfig.Loot
 { 
-    public enum EPassiveId
+    public enum PickupEffect
     {
         /// <summary>
-        /// 热血
+        /// 恢复生命
         /// </summary>
-        Vitality = 1,
+        Health = 0,
         /// <summary>
-        /// 魔泉
+        /// 恢复魔法
         /// </summary>
-        ManaSpring = 2,
-        /// <summary>
-        /// 狂暴
-        /// </summary>
-        Frenzy = 3,
-        /// <summary>
-        /// 光之永恒
-        /// </summary>
-        EternalLight = 4,
-        /// <summary>
-        /// 月之辉煌
-        /// </summary>
-        MoonBrilliance = 5,
+        Mana = 1,
     }
 
 } 

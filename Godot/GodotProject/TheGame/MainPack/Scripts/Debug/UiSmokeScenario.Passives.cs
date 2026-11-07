@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using GameConfig.Skills;
 using GameLogic.Architecture;
 using GameLogic.Battle;
+using GameLogic.Level;
 using GameLogic.Profile;
 using GameLogic.Save;
 using GameLogic.Skills;
@@ -24,23 +25,23 @@ public sealed partial class UiSmokeScenario
     /// <returns>按钮交易和重入全部完成的任务。</returns>
     private async Task CheckPassiveUpgradesAsync(BattleForm battle, ProcedureOwner flow)
     {
-        var profile = flow.GetModel<ProfileModel>();
-        var levels = flow.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId);
-        var initial = flow.GetModel<HeroModel>();
-        var expected = (Hp: initial.MaxHp.Value + 600, Mp: initial.MaxMp.Value + 600,
+        ProfileModel profile = flow.GetModel<ProfileModel>();
+        BindableDictionary<PassiveId, int> levels = flow.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId);
+        HeroModel initial = flow.GetModel<HeroModel>();
+        (int Hp, int Mp, float Crit, int HpRegen, int MpRegen) expected = (Hp: initial.MaxHp.Value + 600, Mp: initial.MaxMp.Value + 600,
             Crit: initial.Crit.Value + .06f, HpRegen: initial.HpRegen.Value + 6, MpRegen: initial.MpRegen.Value + 6);
         profile.RestoreSoul(4999);
         battle.GetNode<TextureButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(form => form.Visible),
             "被动专项未打开技能窗口");
-        var form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(form => form.Visible);
+        SkillForm form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(form => form.Visible);
         form.GetNode<TextureButton>("Content/Footer/m_Passive").EmitSignal(BaseButton.SignalName.Pressed);
-        const string rows = "Content/m_PassivePage/m_PassiveRows/";
-        var firstButton = form.GetNode<TextureButton>(rows + "Passive1/Upgrade");
+        const string Rows = "Content/m_PassivePage/m_PassiveRows/";
+        TextureButton firstButton = form.GetNode<TextureButton>(Rows + "Passive1/Upgrade");
         Check(!firstButton.Disabled && firstButton.MouseDefaultCursorShape == Control.CursorShape.PointingHand,
             "被动升级仍没有真实可点击按钮");
         // 原生鼠标事件检查普通、悬停、按下三态；松开后执行真实余额不足请求。
-        var viewport = m_Driver.GetViewport();
+        Viewport viewport = _driver.GetViewport();
         Vector2 outside = new(900, 570);
         viewport.PushInput(new InputEventMouseMotion { Position = outside, GlobalPosition = outside }, true);
         await WaitFramesAsync(3);
@@ -57,30 +58,30 @@ public sealed partial class UiSmokeScenario
         await CaptureCombatAsync("passive_upgrade_pressed");
         viewport.PushInput(new InputEventMouseButton { Position = pointer, GlobalPosition = pointer, ButtonIndex = MouseButton.Left, Pressed = false }, true);
         await WaitFramesAsync(3);
-        Check(profile.Soul.Value == 4999 && levels[EPassiveId.Vitality] == 0 &&
+        Check(profile.Soul.Value == 4999 && levels[PassiveId.Vitality] == 0 &&
             GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().Visible,
             "被动余额不足仍然扣费，或没有显示提示");
         profile.RestoreSoul(375000);
         int expectedSoul = profile.Soul.Value;
-        foreach (var definition in flow.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbPassiveConfig.DataList)
+        foreach (PassiveConfig definition in flow.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbPassiveConfig.DataList)
         {
             int row = (int)definition.PassiveId;
-            var button = form.GetNode<TextureButton>($"{rows}Passive{row}/Upgrade");
-            foreach (var definitionLevel in definition.Levels)
+            TextureButton button = form.GetNode<TextureButton>($"{Rows}Passive{row}/Upgrade");
+            foreach (PassiveLevel definitionLevel in definition.Levels)
             {
                 button.EmitSignal(BaseButton.SignalName.Pressed);
                 expectedSoul -= definitionLevel.LearnSoul;
                 Check(profile.Soul.Value == expectedSoul && levels[definition.PassiveId] == definitionLevel.Level,
                     $"被动{definition.PassiveId}/{definitionLevel.Level}费用或等级不符");
-                Check(form.GetNode<Label>($"{rows}Passive{row}/Level").Text == definitionLevel.Level.ToString() &&
-                    form.GetNode<Label>($"{rows}Passive{row}/CurrentEffect").Text == definitionLevel.Description,
+                Check(form.GetNode<Label>($"{Rows}Passive{row}/Level").Text == definitionLevel.Level.ToString() &&
+                    form.GetNode<Label>($"{Rows}Passive{row}/CurrentEffect").Text == definitionLevel.Description,
                     "被动升级后当前等级/总效果没有同步刷新");
             }
             Check(button.Disabled && !button.Visible, "被动满级后仍然显示升级按钮或可升级");
             button.EmitSignal(BaseButton.SignalName.Pressed);
             Check(profile.Soul.Value == expectedSoul, "直接发送满级按钮信号仍然扣费");
         }
-        var hero = flow.GetModel<HeroModel>();
+        HeroModel hero = flow.GetModel<HeroModel>();
         Check((hero.MaxHp.Value, hero.MaxMp.Value, hero.HpRegen.Value, hero.MpRegen.Value) ==
             (expected.Hp, expected.Mp, expected.HpRegen, expected.MpRegen) && Near(hero.Crit.Value, expected.Crit),
             "被动未在本英雄成长和穿戴基础上正确增加五项属性");
@@ -89,10 +90,10 @@ public sealed partial class UiSmokeScenario
         await WaitFramesAsync(2);
         Check(!GF.Base.IsGamePaused, "关闭被动页仍残留暂停");
         Check(await flow.GetSystem<SaveSystem>().SaveCheckpointAsync(profile), "被动升级检查点写盘失败");
-        var disk = await ReadDiskAsync();
+        GameData disk = await ReadDiskAsync();
         Check(disk.Heroes.Single().PassiveLevels.Values.All(level => level == 5), "磁盘没有保存五项被动等级");
         // 关卡中途重入按规则回滚进关快照；这里通过真实死亡提交本次购买后再重试。
-        var previousLevel = FindLevel();
+        LevelViewController previousLevel = FindLevel();
         KillHero(FindHero());
         await CheckFailureSettlementAsync(previousLevel);
         await WaitForLevelAsync();

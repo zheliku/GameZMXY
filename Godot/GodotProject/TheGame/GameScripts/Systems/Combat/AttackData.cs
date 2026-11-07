@@ -1,130 +1,126 @@
-using GameLogic.Battle.Damage;
 using System.Collections.Generic;
 using GameConfig.Battle;
-using Godot;
 using GameFramework;
+using GameLogic.Battle.Damage;
+using Godot;
 
-namespace GameLogic.Battle.Attacks
+namespace GameLogic.Battle.Attacks;
+
+/// <summary>
+/// 一次出招的池化数据：保存出招快照与命中记录；攻击方创建并归还，命中方只在结算期间借用。
+/// </summary>
+public sealed class AttackData : IReference
 {
+    private readonly HashSet<ulong> _hitTargets = new HashSet<ulong>(); // 本招已命中的目标实例号，防止重复结算。
+
     /// <summary>
-    /// 一次出招的池化数据：保存出招快照与命中记录；攻击方创建并归还，命中方只在结算期间借用。
+    /// 来源攻击 Id（AttackConfig.Id；运行时动态攻击为 0）。受击结算不回查表；攻击方用它结算自己的命中收益
     /// </summary>
-    public sealed class AttackData : IReference
+    public int AttackId { get; private set; }
+
+    /// <summary>
+    /// 攻击方属性快照（出招时刻）
+    /// </summary>
+    public CombatantAttributes Attacker { get; private set; }
+
+    /// <summary>
+    /// 本招威力（属性威力与固定威力之和，再应用无双等出招加成；最终取整由伤害结算负责）。
+    /// </summary>
+    public float Power { get; private set; }
+
+    /// <summary>
+    /// 伤害类型
+    /// </summary>
+    public DamageKind Kind { get; private set; }
+
+    /// <summary>
+    /// 击退速度（px/s）：X&gt;0 = 远离攻击者，Y&lt;0 = 向上。
+    /// </summary>
+    public Vector2 Knockback { get; private set; }
+
+    /// <summary>
+    /// 出招方向：1 右 / -1 左（击退方向 = 本值 × Knockback.X）
+    /// </summary>
+    public int Direction { get; private set; }
+
+    /// <summary>
+    /// 来自独立效果而非身体判定；具体敌人据此执行不同的背击反应。
+    /// </summary>
+    public bool IsEffect { get; private set; }
+
+    /// <summary>
+    /// 伤害归属者、实际施放者和判定节点的值快照。
+    /// </summary>
+    public AttackSource Source { get; private set; }
+
+    /// <summary>
+    /// 按攻击中心向两侧击退时使用的世界横坐标；为空时按出招朝向。
+    /// </summary>
+    public float? KnockbackOriginX { get; private set; }
+
+    /// <summary>
+    /// 命中给受击方累计的受击保护值（旧 HitProtect；0 = 按表默认）
+    /// </summary>
+    public int HitProtect { get; private set; }
+
+    /// <summary>
+    /// 从引用池取一个攻击包并装填（各参数语义见同名属性）。
+    /// </summary>
+    /// <param name="attackId">来源攻击编号；动态攻击传 0。</param>
+    /// <param name="attacker">出招时的攻击方属性快照。</param>
+    /// <param name="power">本招威力。</param>
+    /// <param name="kind">伤害类型。</param>
+    /// <param name="knockback">击退参数。</param>
+    /// <param name="direction">出招方向；非负视为向右，负数视为向左。</param>
+    /// <param name="hitProtect">本次命中增加的受击保护值。</param>
+    /// <param name="knockbackOriginX">可选的攻击中心世界横坐标；只用于向两侧击退的攻击。</param>
+    /// <param name="isEffect">是否由独立效果创建本次攻击。</param>
+    /// <param name="source">本次攻击的来源身份，不保存节点引用。</param>
+    /// <returns>已装填并由引用池管理的攻击数据包。</returns>
+    public static AttackData Create(int attackId, in CombatantAttributes attacker, float power, DamageKind kind,
+        Vector2 knockback, int direction, int hitProtect, float? knockbackOriginX = null, bool isEffect = false,
+        AttackSource source = default)
     {
-        private readonly HashSet<ulong> m_HitTargets = new HashSet<ulong>(); // 本招已命中的目标实例号，防止重复结算。
-
-        /// <summary>
-        /// 来源攻击 Id（AttackConfig.Id；运行时动态攻击为 0）。受击结算不回查表；攻击方用它结算自己的命中收益
-        /// </summary>
-        public int AttackId { get; private set; }
-
-        /// <summary>
-        /// 攻击方属性快照（出招时刻）
-        /// </summary>
-        public CombatantAttributes Attacker { get; private set; }
-
-        /// <summary>
-        /// 本招威力（属性威力与固定威力之和，再应用无双等出招加成；最终取整由伤害结算负责）。
-        /// </summary>
-        public float Power { get; private set; }
-
-        /// <summary>
-        /// 伤害类型
-        /// </summary>
-        public EDamageKind Kind { get; private set; }
-
-        /// <summary>
-        /// 击退速度（px/s）：X&gt;0 = 远离攻击者，Y&lt;0 = 向上。
-        /// </summary>
-        public Vector2 Knockback { get; private set; }
-
-        /// <summary>
-        /// 出招方向：1 右 / -1 左（击退方向 = 本值 × Knockback.X）
-        /// </summary>
-        public int Direction { get; private set; }
-
-        /// <summary>
-        /// 来自独立效果而非身体判定；具体敌人据此执行不同的背击反应。
-        /// </summary>
-        public bool IsEffect { get; private set; }
-
-        /// <summary>
-        /// 伤害归属者、实际施放者和判定节点的值快照。
-        /// </summary>
-        public AttackSource Source { get; private set; }
-
-        /// <summary>
-        /// 按攻击中心向两侧击退时使用的世界横坐标；为空时按出招朝向。
-        /// </summary>
-        public float? KnockbackOriginX { get; private set; }
-
-        /// <summary>
-        /// 命中给受击方累计的受击保护值（旧 HitProtect；0 = 按表默认）
-        /// </summary>
-        public int HitProtect { get; private set; }
-
-        /// <summary>
-        /// 从引用池取一个攻击包并装填（各参数语义见同名属性）。
-        /// </summary>
-        /// <param name="attackId">来源攻击编号；动态攻击传 0。</param>
-        /// <param name="attacker">出招时的攻击方属性快照。</param>
-        /// <param name="power">本招威力。</param>
-        /// <param name="kind">伤害类型。</param>
-        /// <param name="knockback">击退参数。</param>
-        /// <param name="direction">出招方向；非负视为向右，负数视为向左。</param>
-        /// <param name="hitProtect">本次命中增加的受击保护值。</param>
-        /// <param name="knockbackOriginX">可选的攻击中心世界横坐标；只用于向两侧击退的攻击。</param>
-        /// <param name="isEffect">是否由独立效果创建本次攻击。</param>
-        /// <param name="source">本次攻击的来源身份，不保存节点引用。</param>
-        /// <returns>已装填并由引用池管理的攻击数据包。</returns>
-        public static AttackData Create(int attackId, in CombatantAttributes attacker, float power, EDamageKind kind,
-            Vector2 knockback, int direction, int hitProtect, float? knockbackOriginX = null, bool isEffect = false,
-            AttackSource source = default)
+        AttackData data = ReferencePool.Acquire<AttackData>();
+        data.AttackId = attackId;
+        data.Attacker = attacker;
+        data.Power = power;
+        data.Kind = kind;
+        data.Knockback = knockback;
+        data.Direction = direction >= 0 ? 1 : -1;
+        data.IsEffect = isEffect;
+        data.Source = source with
         {
-            AttackData data = ReferencePool.Acquire<AttackData>();
-            data.AttackId = attackId;
-            data.Attacker = attacker;
-            data.Power = power;
-            data.Kind = kind;
-            data.Knockback = knockback;
-            data.Direction = direction >= 0 ? 1 : -1;
-            data.IsEffect = isEffect;
-            data.Source = source with
-            {
-                OwnerEntityId = source.OwnerEntityId != 0
-                ? source.OwnerEntityId : attacker.ActorId.GetValueOrDefault()
-            };
-            data.KnockbackOriginX = knockbackOriginX;
-            data.HitProtect = hitProtect;
-            return data;
-        }
+            OwnerEntityId = source.OwnerEntityId != 0
+            ? source.OwnerEntityId : attacker.ActorId.GetValueOrDefault()
+        };
+        data.KnockbackOriginX = knockbackOriginX;
+        data.HitProtect = hitProtect;
+        return data;
+    }
 
-        /// <summary>
-        /// 登记命中：目标本招首次命中返回 true（应结算），重复命中返回 false（应忽略）。
-        /// </summary>
-        /// <param name="targetInstanceId">目标节点实例编号。</param>
-        /// <returns>目标首次命中时为 <see langword="true"/>；否则为 <see langword="false"/>。</returns>
-        public bool TryRegisterHit(ulong targetInstanceId)
-        {
-            return m_HitTargets.Add(targetInstanceId);
-        }
+    /// <summary>
+    /// 登记命中：目标本招首次命中返回 true（应结算），重复命中返回 false（应忽略）。
+    /// </summary>
+    /// <param name="targetInstanceId">目标节点实例编号。</param>
+    /// <returns>目标首次命中时为 <see langword="true"/>；否则为 <see langword="false"/>。</returns>
+    public bool TryRegisterHit(ulong targetInstanceId) => _hitTargets.Add(targetInstanceId);
 
-        /// <summary>
-        /// 归还引用池时清空（IReference）。
-        /// </summary>
-        public void Clear()
-        {
-            AttackId = 0;
-            Attacker = default;
-            Power = 0f;
-            Kind = EDamageKind.Physics;
-            Knockback = Vector2.Zero;
-            Direction = 1;
-            IsEffect = false;
-            Source = default;
-            KnockbackOriginX = null;
-            HitProtect = 0;
-            m_HitTargets.Clear();
-        }
+    /// <summary>
+    /// 归还引用池时清空（IReference）。
+    /// </summary>
+    public void Clear()
+    {
+        AttackId = 0;
+        Attacker = default;
+        Power = 0f;
+        Kind = DamageKind.Physics;
+        Knockback = Vector2.Zero;
+        Direction = 1;
+        IsEffect = false;
+        Source = default;
+        KnockbackOriginX = null;
+        HitProtect = 0;
+        _hitTargets.Clear();
     }
 }

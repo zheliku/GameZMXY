@@ -16,21 +16,21 @@ func _run() -> void:
     _collect("res://TheGame/Entitys/Enemies/Monsters", paths)
     for path in paths:
         var entity: Node = load(path).instantiate()
-        for slot in ["m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot", "m_Perception", "m_HealthBar"]:
+        for slot in ["m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot", "_perception", "m_HealthBar"]:
             assert(entity.get(slot) != null, path + " missing " + slot)
-        assert(entity.get("m_HurtBox").get("m_Owner") == entity)
-        assert(entity.get("m_AnimPlayer").has_animation("death"))
-        assert(entity.get("m_AnimPlayer").has_animation("hurt"))
-        assert(entity.get("m_AnimPlayer").has_animation("idle"))
+        assert(entity.get("_hurtBox").get("_owner") == entity)
+        assert(entity.get("_animPlayer").has_animation("death"))
+        assert(entity.get("_animPlayer").has_animation("hurt"))
+        assert(entity.get("_animPlayer").has_animation("idle"))
         assert(entity.collision_mask & 8192 == 0, path + " blocked by camera gates")
         entity.free()
     var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(OS.get_cmdline_user_args()[0]))
     var scene: Node2D = load("res://TheGame/Entitys/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_entity.tscn").instantiate()
     root.add_child(scene)
     scene.set_physics_process(false)
-    var player: AnimationPlayer = scene.get("m_AnimPlayer")
+    var player: AnimationPlayer = scene.get("_animPlayer")
     player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
-    var area: Area2D = scene.get("m_HitBox")
+    var area: Area2D = scene.get("_hitBox")
     var samples := 0
     var gap_samples := 0
     for facing in [-1, 1]:

@@ -4,10 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using GameConfig.Attributes;
+using GameConfig.Battle;
 using GameConfig.Entity;
 using GameConfig.Skills;
 using GameLogic.Architecture;
 using GameLogic.Battle;
+using GameLogic.Battle.Attacks;
 using GameLogic.Battle.Attributes;
 using GameLogic.Config;
 using GameLogic.Effects;
@@ -37,43 +39,43 @@ public sealed partial class UiSmokeScenario
     private async Task CheckFireDemonOverlapReuseAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         int oldTicks = Engine.PhysicsTicksPerSecond;
-        var scene = GD.Load<PackedScene>("res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_combo_effect.tscn");
-        var hit = ConfigSystem.Instance.Tables.TbAttackConfig.Get((int)ESkillHitId.FireDemonCombo);
+        PackedScene scene = GD.Load<PackedScene>("res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_combo_effect.tscn");
+        AttackConfig hit = ConfigSystem.Instance.Tables.TbAttackConfig.Get((int)SkillHitId.FireDemonCombo);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Gorilla,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
                     new EnemySpawn(new Vector2(650, 150)));
-                SmokeInspection.FreezeAi(m_Monster);
-                m_Monster.SetPhysicsProcess(false);
-                SmokeInspection.StrengthenTrainingTarget(m_Monster);
-                var effect = scene.Instantiate<SkillEffectNode>();
+                SmokeInspection.FreezeAi(_monster);
+                _monster.SetPhysicsProcess(false);
+                SmokeInspection.StrengthenTrainingTarget(_monster);
+                SkillEffectNode effect = scene.Instantiate<SkillEffectNode>();
                 hero.GetParent().AddChild(effect);
-                var area = effect.GetNode<Area2D>("Origin/Visual/HitBox");
-                var shape = area.GetChild<CollisionShape2D>(0);
+                Area2D area = effect.GetNode<Area2D>("Origin/Visual/HitBox");
+                CollisionShape2D shape = area.GetChild<CollisionShape2D>(0);
                 try
                 {
                     // 先以无伤害实例建立真实物理重叠，再模拟同物理步的归还和再取出。
-                    effect.Show(null, m_Monster.GlobalPosition, 1, flow.GetModel<HeroModel>().CaptureCombatAttributes(hero.Id), 10,
+                    effect.Show(null, _monster.GlobalPosition, 1, flow.GetModel<HeroModel>().CaptureCombatAttributes(hero.Id), 10,
                         false, node => node.OnRelease());
-                    await WaitUntilAsync(() => area.GetOverlappingAreas().Contains(m_Monster.HurtBox),
+                    await WaitUntilAsync(() => area.GetOverlappingAreas().Contains(_monster.HurtBox),
                         "火魔复用夹具没有建立真实重叠");
-                    int hp = m_Monster.Hp;
+                    int hp = _monster.Hp;
                     effect.OnRelease();
                     effect.OnGet();
-                    effect.Show(hit, m_Monster.GlobalPosition + new Vector2(700, 0), 1,
+                    effect.Show(hit, _monster.GlobalPosition + new Vector2(700, 0), 1,
                         flow.GetModel<HeroModel>().CaptureCombatAttributes(hero.Id), 10, false, node => node.OnRelease());
                     effect.SetPhysicsProcess(false);
-                    Check(area.GetOverlappingAreas().Contains(m_Monster.HurtBox), "未保留要复现的旧Area缓存");
+                    Check(area.GetOverlappingAreas().Contains(_monster.HurtBox), "未保留要复现的旧Area缓存");
                     effect._PhysicsProcess(1d / ticks);
-                    Check(m_Monster.Hp == hp, $"{ticks}Hz池化九连误伤了700px以外的旧目标");
+                    Check(_monster.Hp == hp, $"{ticks}Hz池化九连误伤了700px以外的旧目标");
 
                     // 再落回真实重叠位置，确认不是单纯禁用攻击来规避问题。
-                    effect.GlobalPosition = m_Monster.GlobalPosition;
+                    effect.GlobalPosition = _monster.GlobalPosition;
                     effect.SetPhysicsProcess(true);
-                    await WaitUntilAsync(() => m_Monster.Hp < hp, "本地重叠的火魔九连没有造成伤害");
+                    await WaitUntilAsync(() => _monster.Hp < hp, "本地重叠的火魔九连没有造成伤害");
                     Check(!shape.Disabled, "真实命中不在有效帧");
                     GD.Print($"SMOKE-FIRE OVERLAP {ticks}Hz PASS: stale 700px target rejected, local actual hit retained");
                 }
@@ -81,8 +83,8 @@ public sealed partial class UiSmokeScenario
                 {
                     effect.OnRelease();
                     effect.QueueFree();
-                    ReleaseTestEntity(m_Monster);
-                    m_Monster = null;
+                    ReleaseTestEntity(_monster);
+                    _monster = null;
                     await WaitFramesAsync(3);
                 }
             }
@@ -90,8 +92,8 @@ public sealed partial class UiSmokeScenario
         finally
         {
             Engine.PhysicsTicksPerSecond = oldTicks;
-            ReleaseTestEntity(m_Monster);
-            m_Monster = null;
+            ReleaseTestEntity(_monster);
+            _monster = null;
         }
     }
 
@@ -108,112 +110,112 @@ public sealed partial class UiSmokeScenario
         int oldTicks = Engine.PhysicsTicksPerSecond;
         Vector2 origin = hero.GlobalPosition;
         var source = new AttributeSourceId("FireKnockbackSmoke", 1);
-        var profile = flow.GetModel<ProfileModel>();
-        var skills = flow.GetSystem<SkillSystem>();
-        var vitals = flow.GetModel<HeroModel>();
-        var heroSystem = flow.GetSystem<HeroSystem>();
-        var snapshot = flow.GetUtility<SaveDataUtility>().Capture(profile, flow.GetModel<SkillModel>());
+        ProfileModel profile = flow.GetModel<ProfileModel>();
+        SkillSystem skills = flow.GetSystem<SkillSystem>();
+        HeroModel vitals = flow.GetModel<HeroModel>();
+        HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
+        GameData snapshot = flow.GetUtility<SaveDataUtility>().Capture(profile, flow.GetModel<SkillModel>());
         var failures = new List<string>();
         try
         {
             // 只排除随机闪避和致死干扰，保留真实重力、硬直、位移、动画和判定。
             heroSystem.SetSource(source,
-                [AttributeModifier.Flat(EAttributeType.MaxMp, 1000), AttributeModifier.Flat(EAttributeType.Htarget, 1)]);
+                [AttributeModifier.Flat(AttributeType.MaxMp, 1000), AttributeModifier.Flat(AttributeType.Htarget, 1)]);
             flow.GetSystem<ProfileSystem>().AddSoul(4000);
-            skills.Learn(ESkillId.FireDemonSlash);
+            skills.Learn(SkillId.FireDemonSlash);
             hero.SetPhysicsProcess(true);
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
                 foreach (int direction in new[] { 1, -1 })
                 {
-                    foreach (EEntityId enemy in new[] { EEntityId.Gorilla, EEntityId.HuaguoshanMonkey })
+                    foreach (EntityId enemy in new[] { EntityId.Gorilla, EntityId.HuaguoshanMonkey })
                     {
                         hero.GlobalPosition = new Vector2(direction > 0 ? 400 : 750, 280);
                         hero.Velocity = Vector2.Zero;
                         await WaitFramesAsync(3);
                         await WaitForFireHeroLandingAsync(hero);
                         hero.SetFacing(direction);
-                        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(enemy,
+                        _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(enemy,
                             new EnemySpawn(hero.GlobalPosition + new Vector2(direction * 80, -160)));
-                        SmokeInspection.StrengthenTrainingTarget(m_Monster);
-                        SmokeInspection.FreezeAi(m_Monster);
-                        m_Monster.SetPhysicsProcess(true);
+                        SmokeInspection.StrengthenTrainingTarget(_monster);
+                        SmokeInspection.FreezeAi(_monster);
+                        _monster.SetPhysicsProcess(true);
                         heroSystem.RestoreMp(int.MaxValue);
-                        var effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
+                        HashSet<SkillEffectNode> effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "_skillEffects");
                         var rows = new List<object>();
                         bool comboHit = false, descentHit = false, landingHit = false, wrongDirection = false;
-                        int firstDirection = 0, previousHp = m_Monster.Hp;
+                        int firstDirection = 0, previousHp = _monster.Hp;
                         double start = hero.ActionData.Time;
                         string label = $"{ticks}_{direction}_{enemy}";
                         void SamplePhysics()
                         {
-                            Vector2? pending = SmokeInspection.ReadField<Vector2?>(m_Monster, "m_PendingHurt");
-                            bool damaged = previousHp != m_Monster.Hp;
+                            Vector2? pending = SmokeInspection.ReadField<Vector2?>(_monster, "PendingHurt");
+                            bool damaged = previousHp != _monster.Hp;
                             if (damaged && firstDirection == 0)
                             {
-                                firstDirection = Math.Sign(pending?.X ?? m_Monster.Velocity.X);
+                                firstDirection = Math.Sign(pending?.X ?? _monster.Velocity.X);
                             }
 
-                            if (damaged && Math.Sign(pending?.X ?? m_Monster.Velocity.X) != direction)
+                            if (damaged && Math.Sign(pending?.X ?? _monster.Velocity.X) != direction)
                             {
                                 wrongDirection = true;
                             }
 
-                            foreach (var effect in effects)
+                            foreach (SkillEffectNode effect in effects)
                             {
-                                var data = SmokeInspection.ReadField<GameLogic.Battle.Attacks.AttackData>(effect, "m_AttackData");
-                                if (data == null || !SmokeInspection.ReadField<HashSet<ulong>>(data, "m_HitTargets")
-                                    .Contains(m_Monster.GetInstanceId()))
+                                AttackData data = SmokeInspection.ReadField<GameLogic.Battle.Attacks.AttackData>(effect, "_attackData");
+                                if (data == null || !SmokeInspection.ReadField<HashSet<ulong>>(data, "_hitTargets")
+                                    .Contains(_monster.GetInstanceId()))
                                 {
                                     continue;
                                 }
 
-                                comboHit |= data.AttackId == (int)ESkillHitId.FireDemonCombo;
-                                descentHit |= data.AttackId == (int)ESkillHitId.FireDemonDescent;
-                                landingHit |= data.AttackId == (int)ESkillHitId.FireDemonLanding;
+                                comboHit |= data.AttackId == (int)SkillHitId.FireDemonCombo;
+                                descentHit |= data.AttackId == (int)SkillHitId.FireDemonDescent;
+                                landingHit |= data.AttackId == (int)SkillHitId.FireDemonLanding;
                             }
 
                             rows.Add(new
                             {
                                 time = hero.ActionData.Time - start,
                                 hero = hero.GlobalPosition,
-                                target = m_Monster.GlobalPosition,
-                                velocity = m_Monster.Velocity,
+                                target = _monster.GlobalPosition,
+                                velocity = _monster.Velocity,
                                 pending,
-                                hp = m_Monster.Hp,
+                                hp = _monster.Hp,
                                 damaged,
                                 comboHit,
                                 descentHit,
                                 landingHit
                             });
-                            previousHp = m_Monster.Hp;
+                            previousHp = _monster.Hp;
                         }
 
                         // 按每个物理步采样，渲染帧率不能影响命中或漏掉短时击退请求。
-                        m_Driver.GetTree().PhysicsFrame += SamplePhysics;
+                        _driver.GetTree().PhysicsFrame += SamplePhysics;
                         try
                         {
                             Input.ActionPress(InputSystem.Skill3);
-                            await WaitUntilAsync(() => vitals.ActiveSkillId == ESkillId.FireDemonSlash, "火魔击退专项未响应真实O输入");
+                            await WaitUntilAsync(() => vitals.ActiveSkillId == SkillId.FireDemonSlash, "火魔击退专项未响应真实O输入");
                             Input.ActionRelease(InputSystem.Skill3);
                             await WaitUntilAsync(() => vitals.ActiveSkillId == null, "火魔击退专项未完成收招");
                             await WaitFramesAsync(4);
                         }
                         finally
                         {
-                            m_Driver.GetTree().PhysicsFrame -= SamplePhysics;
+                            _driver.GetTree().PhysicsFrame -= SamplePhysics;
                         }
 
                         File.WriteAllText(Path.Combine(folder, label + ".json"), JsonConvert.SerializeObject(rows, Formatting.Indented));
-                        GD.Print($"SMOKE-FIRE-KNOCKBACK: {label}, first={firstDirection}, combo={comboHit}, descent={descentHit}, landing={landingHit}, target={m_Monster.GlobalPosition}, hero={hero.GlobalPosition}");
+                        GD.Print($"SMOKE-FIRE-KNOCKBACK: {label}, first={firstDirection}, combo={comboHit}, descent={descentHit}, landing={landingHit}, target={_monster.GlobalPosition}, hero={hero.GlobalPosition}");
                         if (!comboHit || !descentHit || !landingHit || firstDirection != direction || wrongDirection)
                         {
                             failures.Add($"{label}: first={firstDirection}/{direction}, wrongDirection={wrongDirection}, combo={comboHit}, descent={descentHit}, landing={landingHit}");
                         }
 
-                        ReleaseTestEntity(m_Monster);
-                        m_Monster = null;
+                        ReleaseTestEntity(_monster);
+                        _monster = null;
                         await WaitFramesAsync(3);
                     }
                 }
@@ -226,8 +228,8 @@ public sealed partial class UiSmokeScenario
         {
             Input.ActionRelease(InputSystem.Skill3);
             Engine.PhysicsTicksPerSecond = oldTicks;
-            ReleaseTestEntity(m_Monster);
-            m_Monster = null;
+            ReleaseTestEntity(_monster);
+            _monster = null;
             skills.CancelSkill();
             hero.SetPhysicsProcess(false);
             hero.GlobalPosition = origin;
@@ -249,30 +251,30 @@ public sealed partial class UiSmokeScenario
         Directory.CreateDirectory(folder);
         int oldTicks = Engine.PhysicsTicksPerSecond;
         var source = new AttributeSourceId("FireMotionSmoke", 1);
-        var profile = flow.GetModel<ProfileModel>();
-        var skills = flow.GetSystem<SkillSystem>();
-        var vitals = flow.GetModel<HeroModel>();
-        var heroSystem = flow.GetSystem<HeroSystem>();
-        var snapshot = flow.GetUtility<SaveDataUtility>().Capture(profile, flow.GetModel<SkillModel>());
+        ProfileModel profile = flow.GetModel<ProfileModel>();
+        SkillSystem skills = flow.GetSystem<SkillSystem>();
+        HeroModel vitals = flow.GetModel<HeroModel>();
+        HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
+        GameData snapshot = flow.GetUtility<SaveDataUtility>().Capture(profile, flow.GetModel<SkillModel>());
         Vector2 origin = hero.GlobalPosition;
         var failures = new List<string>();
         try
         {
-            heroSystem.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxMp, 1000)]);
+            heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxMp, 1000)]);
             flow.GetSystem<ProfileSystem>().AddSoul(4000);
-            skills.Learn(ESkillId.FireDemonSlash);
+            skills.Learn(SkillId.FireDemonSlash);
             hero.SetPhysicsProcess(true);
             foreach (int ticks in new[] { 60, 120 })
             {
                 foreach (int direction in new[] { 1, -1 })
                 {
-                    foreach (var targetCase in new[]
+                    foreach ((string Name, float? OffsetY, bool Combo, EntityId Enemy) targetCase in new[]
                                     {
-                        (Name: "none", OffsetY: (float?)null, Combo: false, Enemy: EEntityId.Gorilla),
-                        (Name: "center", OffsetY: (float?)-190, Combo: true, Enemy: EEntityId.Gorilla),
-                        (Name: "lower_edge", OffsetY: (float?)-43, Combo: false, Enemy: EEntityId.Gorilla),
-                        (Name: "upper_outside", OffsetY: (float?)-329, Combo: true, Enemy: EEntityId.Gorilla),
-                        (Name: "monkey_lower_edge", OffsetY: (float?)-30, Combo: false, Enemy: EEntityId.HuaguoshanMonkey)
+                        (Name: "none", OffsetY: (float?)null, Combo: false, Enemy: EntityId.Gorilla),
+                        (Name: "center", OffsetY: (float?)-190, Combo: true, Enemy: EntityId.Gorilla),
+                        (Name: "lower_edge", OffsetY: (float?)-43, Combo: false, Enemy: EntityId.Gorilla),
+                        (Name: "upper_outside", OffsetY: (float?)-329, Combo: true, Enemy: EntityId.Gorilla),
+                        (Name: "monkey_lower_edge", OffsetY: (float?)-30, Combo: false, Enemy: EntityId.HuaguoshanMonkey)
                     })
                     {
                         Engine.PhysicsTicksPerSecond = ticks;
@@ -287,17 +289,17 @@ public sealed partial class UiSmokeScenario
                         float floorY = hero.GlobalPosition.Y;
                         if (targetCase.OffsetY.HasValue)
                         {
-                            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(targetCase.Enemy,
+                            _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(targetCase.Enemy,
                                 new EnemySpawn(hero.GlobalPosition + new Vector2(direction * 80, targetCase.OffsetY.Value)));
-                            SmokeInspection.StrengthenTrainingTarget(m_Monster);
-                            SmokeInspection.FreezeAi(m_Monster);
-                            m_Monster.SetPhysicsProcess(false);
+                            SmokeInspection.StrengthenTrainingTarget(_monster);
+                            SmokeInspection.FreezeAi(_monster);
+                            _monster.SetPhysicsProcess(false);
                         }
-                        int hp = m_Monster?.Hp ?? 0;
+                        int hp = _monster?.Hp ?? 0;
                         heroSystem.RestoreMp(int.MaxValue);
                         int mana = vitals.Mp.Value;
                         var rows = new List<object>();
-                        var effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
+                        HashSet<SkillEffectNode> effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "_skillEffects");
                         string label = $"{ticks}_{direction}_{targetCase.Name}";
                         double start = hero.ActionData.Time, previous = -1, ended = double.PositiveInfinity, captureAt = 0;
                         bool descended = false, movedDown = false, contacted = false, roseAgain = false, combo = false, landing = false;
@@ -310,9 +312,9 @@ public sealed partial class UiSmokeScenario
                         }
                         int frame = 0;
                         Input.ActionPress(InputSystem.Skill3);
-                        await WaitUntilAsync(() => vitals.ActiveSkillId == ESkillId.FireDemonSlash, "实际O输入未释放火魔斩");
+                        await WaitUntilAsync(() => vitals.ActiveSkillId == SkillId.FireDemonSlash, "实际O输入未释放火魔斩");
                         Input.ActionRelease(InputSystem.Skill3);
-                        var prelude = hero.GetNode<AnimatedSprite2D>("m_FireDemonPrelude");
+                        AnimatedSprite2D prelude = hero.GetNode<AnimatedSprite2D>("m_FireDemonPrelude");
                         int previousPreludeFrame = prelude.Frame, preludeRestarts = 0;
                         bool previousPreludeVisible = prelude.Visible;
                         // 渲染/截图可跳过多个物理步；用原生物理信号记录每一步，避免漏掉一帧反弹。
@@ -325,18 +327,18 @@ public sealed partial class UiSmokeScenario
                             }
 
                             previous = hero.ActionData.Time;
-                            bool active = vitals.ActiveSkillId == ESkillId.FireDemonSlash;
+                            bool active = vitals.ActiveSkillId == SkillId.FireDemonSlash;
                             double position = active ? hero.AnimPlayer.CurrentAnimationPosition : -1;
                             descended |= active && position >= 46d / 24d - .00001;
                             movedDown |= descended && active && hero.Velocity.Y > 400;
                             contacted |= descended && hero.OnFloor;
                             roseAgain |= descended && hero.Velocity.Y < -.5f || contacted && hero.GlobalPosition.Y < floorY - 1;
-                            combo |= effects.Any(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)ESkillHitId.FireDemonCombo);
-                            landing |= effects.Any(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)ESkillHitId.FireDemonLanding);
-                            foreach (var effect in effects)
+                            combo |= effects.Any(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "_hit")?.Id == (int)SkillHitId.FireDemonCombo);
+                            landing |= effects.Any(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "_hit")?.Id == (int)SkillHitId.FireDemonLanding);
+                            foreach (SkillEffectNode effect in effects)
                             {
-                                int hit = SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(effect, "m_Hit")?.Id ?? 0;
-                                if (hit == (int)ESkillHitId.FireDemonCombo || hit == (int)ESkillHitId.FireDemonLanding)
+                                int hit = SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(effect, "_hit")?.Id ?? 0;
+                                if (hit == (int)SkillHitId.FireDemonCombo || hit == (int)SkillHitId.FireDemonLanding)
                                 {
                                     if (Math.Sign(effect.Scale.X) != -direction || !Near(Math.Abs(effect.Scale.X), 1) ||
                                         !Near(effect.Scale.Y, 1))
@@ -344,14 +346,14 @@ public sealed partial class UiSmokeScenario
                                         MarkInvalid($"scale/{hit}");
                                     }
                                 }
-                                if (hit == (int)ESkillHitId.FireDemonCombo)
+                                if (hit == (int)SkillHitId.FireDemonCombo)
                                 {
-                                    if (m_Monster == null || effect.GlobalPosition.DistanceTo(m_Monster.GlobalPosition) > .1f)
+                                    if (_monster == null || effect.GlobalPosition.DistanceTo(_monster.GlobalPosition) > .1f)
                                     {
                                         MarkInvalid("combo_target");
                                     }
                                 }
-                                if (hit == (int)ESkillHitId.FireDemonLanding)
+                                if (hit == (int)SkillHitId.FireDemonLanding)
                                 {
                                     if (!effect.GetNode<Node2D>("Origin/Visual").Scale.IsEqualApprox(new Vector2(1.4f, 2)))
                                     {
@@ -369,7 +371,7 @@ public sealed partial class UiSmokeScenario
                                         MarkInvalid($"landing_anchor/{anchorGap:0.000}/{effect.GlobalPosition}/{hero.GlobalPosition}");
                                     }
                                 }
-                                if (hit == (int)ESkillHitId.FireDemonDescent)
+                                if (hit == (int)SkillHitId.FireDemonDescent)
                                 {
                                     if (Math.Sign(effect.Scale.X) != direction)
                                     {
@@ -392,8 +394,8 @@ public sealed partial class UiSmokeScenario
                                 y = hero.GlobalPosition.Y,
                                 actionX = hero.GlobalPosition.X,
                                 actionY = hero.GlobalPosition.Y,
-                                targetX = m_Monster?.GlobalPosition.X,
-                                targetY = m_Monster?.GlobalPosition.Y,
+                                targetX = _monster?.GlobalPosition.X,
+                                targetY = _monster?.GlobalPosition.Y,
                                 vx = hero.Velocity.X,
                                 vy = hero.Velocity.Y,
                                 active,
@@ -408,7 +410,7 @@ public sealed partial class UiSmokeScenario
                                 ended = Math.Min(ended, time);
                             }
                         }
-                        m_Driver.GetTree().PhysicsFrame += SamplePhysics;
+                        _driver.GetTree().PhysicsFrame += SamplePhysics;
                         try
                         {
                             while (hero.ActionData.Time - start < 7)
@@ -417,8 +419,8 @@ public sealed partial class UiSmokeScenario
                                 double time = hero.ActionData.Time - start;
                                 if (time >= captureAt && ticks == 60)
                                 {
-                                    await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                                    using var image = m_Driver.GetViewport().GetTexture().GetImage();
+                                    await _driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                                    using Image image = _driver.GetViewport().GetTexture().GetImage();
                                     image.SavePng(Path.Combine(folder, $"{label}_{frame++:000}.png"));
                                     captureAt = time + .1;
                                 }
@@ -430,30 +432,30 @@ public sealed partial class UiSmokeScenario
                         }
                         finally
                         {
-                            m_Driver.GetTree().PhysicsFrame -= SamplePhysics;
+                            _driver.GetTree().PhysicsFrame -= SamplePhysics;
                         }
                         File.WriteAllText(Path.Combine(folder, label + ".json"), JsonConvert.SerializeObject(rows, Formatting.Indented));
-                        int expectedMana = mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(ESkillId.FireDemonSlash).ManaCost;
+                        int expectedMana = mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(SkillId.FireDemonSlash).ManaCost;
                         bool manaMismatch = vitals.Mp.Value != expectedMana;
-                        bool damageMismatch = targetCase.Combo && m_Monster.Hp >= hp;
+                        bool damageMismatch = targetCase.Combo && _monster.Hp >= hp;
                         string effectSummary = string.Join(" | ", effects.Select(effect =>
                         {
-                            int hit = SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(effect, "m_Hit")?.Id ?? 0;
+                            int hit = SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(effect, "_hit")?.Id ?? 0;
                             Vector2 visualScale = effect.GetNodeOrNull<Node2D>("Origin/Visual")?.Scale ?? Vector2.Zero;
-                            return $"hit={hit},pos={effect.GlobalPosition},scale={effect.Scale},visual={visualScale},targetGap={(m_Monster == null ? 0 : effect.GlobalPosition.DistanceTo(m_Monster.GlobalPosition)):0.###},heroGap={effect.GlobalPosition.DistanceTo(((ISkillActor)hero).SkillPosition):0.###}";
+                            return $"hit={hit},pos={effect.GlobalPosition},scale={effect.Scale},visual={visualScale},targetGap={(_monster == null ? 0 : effect.GlobalPosition.DistanceTo(_monster.GlobalPosition)):0.###},heroGap={effect.GlobalPosition.DistanceTo(((ISkillActor)hero).SkillPosition):0.###}";
                         }));
                         if (!descended || !movedDown || roseAgain || invalidEffect || preludeRestarts != 0 || vitals.ActiveSkillId != null || !hero.OnFloor || !landing || combo != targetCase.Combo || manaMismatch || damageMismatch)
                         {
-                            failures.Add($"{label}: descent={descended}, movedDown={movedDown}, rebound={roseAgain}, invalidEffect={invalidEffect}, reasons={string.Join(',', invalidReasons)}, preludeRestarts={preludeRestarts}, active={vitals.ActiveSkillId}, floor={hero.OnFloor}, combo={combo}/{targetCase.Combo}, landing={landing}, mana={vitals.Mp.Value}/{expectedMana}, hp={m_Monster?.Hp}/{hp}, effects=[{effectSummary}]");
+                            failures.Add($"{label}: descent={descended}, movedDown={movedDown}, rebound={roseAgain}, invalidEffect={invalidEffect}, reasons={string.Join(',', invalidReasons)}, preludeRestarts={preludeRestarts}, active={vitals.ActiveSkillId}, floor={hero.OnFloor}, combo={combo}/{targetCase.Combo}, landing={landing}, mana={vitals.Mp.Value}/{expectedMana}, hp={_monster?.Hp}/{hp}, effects=[{effectSummary}]");
                         }
 
                         GD.Print($"SMOKE-FIRE-MOTION: {label}, descended={descended}, movedDown={movedDown}, rebound={roseAgain}, preludeRestarts={preludeRestarts}, ended={ended:0.000}, samples={rows.Count}");
-                        if (m_Monster != null)
+                        if (_monster != null)
                         {
-                            ReleaseTestEntity(m_Monster);
+                            ReleaseTestEntity(_monster);
                         }
 
-                        m_Monster = null;
+                        _monster = null;
                         skills.CancelSkill();
                         await WaitFramesAsync(3);
                     }
@@ -467,8 +469,8 @@ public sealed partial class UiSmokeScenario
         {
             Input.ActionRelease(InputSystem.Skill3);
             Engine.PhysicsTicksPerSecond = oldTicks;
-            ReleaseTestEntity(m_Monster);
-            m_Monster = null;
+            ReleaseTestEntity(_monster);
+            _monster = null;
             skills.CancelSkill();
             hero.SetPhysicsProcess(false);
             hero.GlobalPosition = origin;

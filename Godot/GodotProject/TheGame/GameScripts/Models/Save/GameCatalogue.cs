@@ -1,5 +1,5 @@
-using GodotGameFramework.Archive;
 using System;
+using GodotGameFramework.Archive;
 
 /// <summary>
 /// Catalogue.sav 中一格的索引与显示信息：文件编号、格号、角色名称和保存时间。

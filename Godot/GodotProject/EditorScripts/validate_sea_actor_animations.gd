@@ -17,9 +17,9 @@ func _validate() -> void:
         var scene: Node = load("res://TheGame/Entitys/Enemies/%s/%s_entity.tscn" % [directory, actor.name]).instantiate()
         root.add_child(scene)
         scene.set_physics_process(false)
-        var player: AnimationPlayer = scene.get("m_AnimPlayer")
+        var player: AnimationPlayer = scene.get("_animPlayer")
         player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
-        var body: AnimatedSprite2D = scene.get("m_Body")
+        var body: AnimatedSprite2D = scene.get("_body")
         var shape: CollisionShape2D = scene.get_node("m_HitBoxRoot/m_HitBox/CollisionShape2D")
         for action in actor.actions:
             var animation: Animation = player.get_animation(action.name)

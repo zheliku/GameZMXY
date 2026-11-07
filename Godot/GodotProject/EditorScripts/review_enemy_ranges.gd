@@ -33,7 +33,7 @@ func _tracking(actor: Node, area: Area2D, size: Vector2) -> void:
     shape.b = Vector2(0, size.y / 2)
     node.shape = shape
     node.disabled = true
-    actor.set("m_TrackingRange", node)
+    actor.set("_trackingRange", node)
 
 func _run() -> void:
     var args := OS.get_cmdline_user_args()
@@ -52,9 +52,9 @@ func _run() -> void:
             if uid != -1: assert(ResourceSaver.set_uid(path, uid) == OK)
             actor.free()
             continue
-        var id: int = actor.get("m_EnemyEntityId")
+        var id: int = actor.get("_enemyEntityId")
         var expected: Dictionary = data.actors.filter(func(row): return int(row.id) == id)[0]
-        var area: Area2D = actor.get("m_Perception")
+        var area: Area2D = actor.get("_perception")
         # The source has no target-height condition for these horizontal decisions.
         if id in [14, 23, 26]:
             _horizontal(area.get_node("Engage"), float(expected.engage.x))
@@ -67,7 +67,7 @@ func _run() -> void:
                     capture.name = label
                     area.add_child(capture)
                     capture.owner = actor
-                    actor.set("m_CaptureRange", capture)
+                    actor.set("_captureRange", capture)
                 _horizontal(area.get_node(label), float(expected.extra[label][0]))
         if id not in [21, 24]:
             var patrol: CollisionShape2D = area.get_node("Patrol")
@@ -79,10 +79,10 @@ func _run() -> void:
         if id == 9:
             _tracking(actor, area, Vector2(0, 1600))
         if id in [21, 22, 24]:
-            area.set("m_EngageShape", null)
+            area.set("_engageShape", null)
             if area.get_node_or_null("Engage") != null: area.get_node("Engage").free()
         if id in [21, 24]:
-            area.set("m_PatrolShape", null)
+            area.set("_patrolShape", null)
             if area.get_node_or_null("Patrol") != null: area.get_node("Patrol").free()
         CollisionStyles.apply(actor)
         var packed := PackedScene.new()

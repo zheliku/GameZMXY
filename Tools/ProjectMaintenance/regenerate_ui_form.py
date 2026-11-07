@@ -5,6 +5,17 @@ from pathlib import Path
 import re
 
 
+def project_field_name(match: re.Match) -> str:
+    """Translate framework-template fields to the project's Microsoft C# naming convention."""
+    name = match[0][2:].replace("_", "")
+    last = 0
+    while last + 1 < len(name) and name[last + 1].isupper():
+        last += 1
+    if last > 0 and last + 1 < len(name) and name[last + 1].islower():
+        last -= 1
+    return "_" + name[:last + 1].lower() + name[last + 1:]
+
+
 def generate(scene_path: Path, namespace: str, add_bindings: list[str]) -> None:
     """Keep business partials untouched and derive field types from scene scripts."""
     project = Path(__file__).resolve().parents[2] / "Godot/GodotProject"
@@ -68,6 +79,7 @@ def generate(scene_path: Path, namespace: str, add_bindings: list[str]) -> None:
     output = template.replace("_NAMESPACE_", namespace).replace("_PARENT_", parent_type)
     output = output.replace("_CLASSNAME_", class_name).replace("_CHILDNODES_", "\n".join(fields))
     output = "".join(f"using {name};\n" for name in sorted(imported_namespaces)) + output
+    output = re.sub(r"\bm_[A-Za-z0-9_]+\b", project_field_name, output)
     root_script_id = re.search(r'^script = ExtResource\("([^"]+)"\)', root_body, re.M)[1]
     output_path = resources[root_script_id]
     output_path.write_text(output, encoding="utf-8", newline="\r\n")

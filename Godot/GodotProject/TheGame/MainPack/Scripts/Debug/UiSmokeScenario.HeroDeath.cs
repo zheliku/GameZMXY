@@ -1,11 +1,13 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using GameLogic.Level;
-using GameLogic.UI;
+using GameLogic.Heroes;
 using GameLogic.Heroes.Body;
 using GameLogic.Heroes.Effects;
+using GameLogic.Level;
+using GameLogic.UI;
 using Godot;
+using Godot.Collections;
 using GodotGameFramework;
 
 /// <summary>
@@ -22,11 +24,11 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         try
         {
-            foreach (var (ticks, spawnX) in new[] { (60, 200), (120, 200), (60, 1035), (120, 1035) })
+            foreach ((int ticks, int spawnX) in new[] { (60, 200), (120, 200), (60, 1035), (120, 1035) })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                var hero = FindHero();
-                var level = FindLevel();
+                AbstractHeroEntity hero = FindHero();
+                LevelViewController level = FindLevel();
                 hero.GlobalPosition = new Vector2(spawnX, 100);
                 hero.Velocity = new Vector2(150, -400);
                 KillHero(hero);
@@ -34,9 +36,9 @@ public sealed partial class UiSmokeScenario
                     "空中死亡没有进入死亡动画");
                 Check(hero.Velocity.X == 0 && hero.Velocity.Y >= 0,
                     $"墓碑继承了死亡前的上冲/横向速度：{hero.Velocity}");
-                var presentation = hero.GetNode<HeroTombstoneNode>("m_Tombstone");
-                var tombstone = presentation.GetNode<Sprite2D>("m_Sprite");
-                var deathPlayer = presentation.GetNode<AnimationPlayer>("m_AnimationPlayer");
+                HeroTombstoneNode presentation = hero.GetNode<HeroTombstoneNode>("m_Tombstone");
+                Sprite2D tombstone = presentation.GetNode<Sprite2D>("m_Sprite");
+                AnimationPlayer deathPlayer = presentation.GetNode<AnimationPlayer>("m_AnimationPlayer");
                 await WaitUntilAsync(() => presentation.IsOnFloor() && tombstone.Frame == 39, "墓碑稳定帧没有落地", 2500,
                     () => $"ticks={ticks}, x={spawnX}, position={presentation.GlobalPosition}, velocity={presentation.Velocity}, floor={presentation.IsOnFloor()}, frame={tombstone.Frame}");
                 deathPlayer.Pause();
@@ -45,12 +47,12 @@ public sealed partial class UiSmokeScenario
 
                 // 测试读取实际最后一格alpha底边与身体物理底边，不向生产实体添加观测API。
                 Vector2I cell = (Vector2I)tombstone.Texture.GetSize() / new Vector2I(tombstone.Hframes, tombstone.Vframes);
-                using var image = tombstone.Texture.GetImage();
-                using var frame = image.GetRegion(new Rect2I(tombstone.FrameCoords * cell, cell));
+                using Image image = tombstone.Texture.GetImage();
+                using Image frame = image.GetRegion(new Rect2I(tombstone.FrameCoords * cell, cell));
                 Rect2I opaque = frame.GetUsedRect();
                 Vector2 visualBottom = tombstone.ToGlobal(tombstone.GetRect().Position +
                     new Vector2(opaque.Position.X + opaque.Size.X / 2f, opaque.End.Y));
-                var collider = presentation.GetNode<CollisionShape2D>("CollisionShape2D");
+                CollisionShape2D collider = presentation.GetNode<CollisionShape2D>("CollisionShape2D");
                 Check(!collider.Disabled && hero.GetNode<CollisionShape2D>("CollisionShape2D").Disabled,
                     "死亡仍沿用英雄的大胶囊，或墓碑落地锚点未启用");
                 Vector2 foot = collider.ToGlobal(new Vector2(0, collider.Shape.GetRect().End.Y));
@@ -58,7 +60,7 @@ public sealed partial class UiSmokeScenario
                     $"墓碑底边未贴物理地面：visual={visualBottom.Y}, foot={foot.Y}");
                 var query = PhysicsRayQueryParameters2D.Create(visualBottom + Vector2.Up * 12,
                     visualBottom + Vector2.Down * 12, 9);
-                var contact = hero.GetWorld2D().DirectSpaceState.IntersectRay(query);
+                Dictionary contact = hero.GetWorld2D().DirectSpaceState.IntersectRay(query);
                 Check(contact.Count > 0 && Math.Abs(contact["position"].AsVector2().Y - visualBottom.Y) < 2,
                     $"墓碑与实际坡面/地面仍有间隙：x={spawnX}, visual={visualBottom}");
                 float height = opaque.Size.Y * tombstone.GlobalScale.Y;
@@ -88,7 +90,7 @@ public sealed partial class UiSmokeScenario
     /// </summary>
     private void CheckHeroRevived()
     {
-        var hero = FindHero();
+        AbstractHeroEntity hero = FindHero();
         Check(!hero.Dead && hero.Hp > 0 && hero.GetNode<Sprite2D>("m_Body").Visible &&
             hero.GetNode<Sprite2D>("m_Weapon").Visible && !hero.GetNode<HeroTombstoneNode>("m_Tombstone").Visible &&
             hero.AnimPlayer.CurrentAnimation != HeroAnims.Death &&

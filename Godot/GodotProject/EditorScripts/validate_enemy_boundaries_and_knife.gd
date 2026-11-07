@@ -81,8 +81,8 @@ func _run() -> void:
     var effect: Node = load("res://TheGame/Entitys/Enemies/Monsters/Ground/knife_demon/knife_demon_blade_effect.tscn").instantiate()
     root.add_child(effect)
     effect.set_physics_process(false)
-    var player: AnimationPlayer = effect.get("m_Player")
-    var shape: CollisionShape2D = effect.get("m_HitBox").get_child(0)
+    var player: AnimationPlayer = effect.get("_player")
+    var shape: CollisionShape2D = effect.get("_hitBox").get_child(0)
     player.play("play")
     assert(is_equal_approx(player.get_animation("play").length, 27 / 24.0))
     for frame in source.size():

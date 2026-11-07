@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using GameLogic.Architecture;
@@ -22,10 +23,10 @@ public sealed partial class UiSmokeScenario
     private async Task CheckQixingPlatformAsync(ProcedureOwner flow)
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
-        var terrain = GD.Load<PackedScene>(flow.GetModel<ConfigurationModel>().Tables.TbLevelConfig.Get(5).ScenePath).Instantiate<Node2D>();
+        Node2D terrain = GD.Load<PackedScene>(flow.GetModel<ConfigurationModel>().Tables.TbLevelConfig.Get(5).ScenePath).Instantiate<Node2D>();
         terrain.Position = new Vector2(10000, 5000);
         terrain.GetNode<Camera2D>("Camera2D").Enabled = false;
-        m_Driver.GetTree().Root.AddChild(terrain);
+        _driver.GetTree().Root.AddChild(terrain);
         try
         {
             var failures = new System.Collections.Generic.List<string>();
@@ -36,8 +37,8 @@ public sealed partial class UiSmokeScenario
                     foreach (int direction in new[] { 1, -1 })
                     {
                         Engine.PhysicsTicksPerSecond = ticks;
-                        m_ExtraHero = await ShowHeroAsync(flow, 0);
-                        var actor = m_ExtraHero;
+                        _extraHero = await ShowHeroAsync(flow, 0);
+                        AbstractHeroEntity actor = _extraHero;
                         actor.CollisionMask = 1 | 8;
                         actor.GlobalPosition = terrain.Position + new Vector2(direction > 0 ? 2940 : 3612, 350);
                         actor.SetPhysicsProcess(true);
@@ -56,7 +57,7 @@ public sealed partial class UiSmokeScenario
                         float minimum = floor;
                         for (int frame = 0; frame < ticks * 3; frame++)
                         {
-                            await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                            await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                             if (frame == 2)
                             {
                                 Input.ActionRelease(InputSystem.Jump);
@@ -95,7 +96,7 @@ public sealed partial class UiSmokeScenario
                         Input.ActionRelease(action);
                         Input.ActionRelease(InputSystem.Jump);
                         ReleaseTestEntity(actor);
-                        m_ExtraHero = null;
+                        _extraHero = null;
                         await WaitFramesAsync(3);
                     }
                 }
@@ -110,12 +111,12 @@ public sealed partial class UiSmokeScenario
             Input.ActionRelease(InputSystem.MoveRight);
             Input.ActionRelease(InputSystem.Jump);
             Engine.PhysicsTicksPerSecond = originalTicks;
-            if (m_ExtraHero != null)
+            if (_extraHero != null)
             {
-                ReleaseTestEntity(m_ExtraHero);
+                ReleaseTestEntity(_extraHero);
             }
 
-            m_ExtraHero = null;
+            _extraHero = null;
             terrain.Free();
         }
     }
@@ -142,13 +143,13 @@ public sealed partial class UiSmokeScenario
                     continue;
                 }
 
-                var terrain = GD.Load<PackedScene>(flow.GetModel<ConfigurationModel>().Tables.TbLevelConfig.Get(number).ScenePath).Instantiate<Node2D>();
+                Node2D terrain = GD.Load<PackedScene>(flow.GetModel<ConfigurationModel>().Tables.TbLevelConfig.Get(number).ScenePath).Instantiate<Node2D>();
                 terrain.Position = new Vector2(10000, 5000);
                 terrain.SetProcess(false);
                 terrain.SetPhysicsProcess(false);
                 terrain.GetNode<Camera2D>("Camera2D").Enabled = false;
                 terrain.GetNodeOrNull("World/Traps")?.Free(); // 本夹具只测行走；正式陷阱接触另有实战回归。
-                m_Driver.GetTree().Root.AddChild(terrain);
+                _driver.GetTree().Root.AddChild(terrain);
                 try
                 {
                     foreach (StaticBody2D hill in terrain.GetNode("World/Geometry/Slopes").GetChildren().OfType<StaticBody2D>())
@@ -160,8 +161,8 @@ public sealed partial class UiSmokeScenario
                                 foreach (int direction in new[] { 1, -1 })
                                 {
                                     Engine.PhysicsTicksPerSecond = ticks;
-                                    m_ExtraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
-                                    AbstractHeroEntity actor = m_ExtraHero;
+                                    _extraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
+                                    AbstractHeroEntity actor = _extraHero;
                                     actor.CollisionMask = 1 | 8; // 排除本关相机屏障；被测地形仍使用正式物理层。
                                     Vector2[] contour = hill.GetNode<CollisionPolygon2D>("Surface").Polygon;
                                     float start = hill.Position.X + contour.Min(point => point.X) - 60;
@@ -173,7 +174,7 @@ public sealed partial class UiSmokeScenario
                                     actor.SetPhysicsProcess(true);
                                     for (int frame = 0; frame < ticks; frame++)
                                     {
-                                        await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                                        await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                                     }
 
                                     Check(actor.OnFloor, $"坡面夹具未落地：level={number}, pos={actor.GlobalPosition - terrain.Position}, v={actor.Velocity}");
@@ -191,7 +192,7 @@ public sealed partial class UiSmokeScenario
                                     float stopAt = direction > 0 ? start + 95 : end - 50;
                                     for (int frame = 0; frame < ticks * 15; frame++)
                                     {
-                                        await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                                        await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                                         string state = SmokeInspection.BodyStateName(actor);
                                         Check(actor.OnFloor && state == "Ground",
                                             $"坡面意外离地：level={number}, {ticks}Hz, run={running}, dir={direction}, pos={actor.GlobalPosition - terrain.Position}, v={actor.Velocity}, state={state}");
@@ -203,7 +204,7 @@ public sealed partial class UiSmokeScenario
                                             Vector2 stopPosition = actor.GlobalPosition;
                                             for (int pause = 0; pause < ticks * 3 / 5; pause++)
                                             {
-                                                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                                                await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                                             }
 
                                             Check(actor.OnFloor && actor.GlobalPosition.DistanceTo(stopPosition) < 1,
@@ -224,7 +225,7 @@ public sealed partial class UiSmokeScenario
                                         }
                                     }
                                     string animation = actor.GetNode<AnimationPlayer>("m_AnimPlayer").CurrentAnimation;
-                                    var collisionNames = Enumerable.Range(0, actor.GetSlideCollisionCount())
+                                    IEnumerable<string> collisionNames = Enumerable.Range(0, actor.GetSlideCollisionCount())
                                         .Select(i => ((Node)actor.GetSlideCollision(i).GetCollider()).GetPath().ToString());
                                     Check(samples < ticks * 15 && animation == (running ? "run" : "walk"),
                                         $"未按真实走跑输入完成坡面路线：level={number}, running={running}, anim={animation}, " +
@@ -232,20 +233,20 @@ public sealed partial class UiSmokeScenario
                                     Input.ActionRelease(action);
                                     for (int frame = 0; frame < 5; frame++)
                                     {
-                                        await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                                        await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                                     }
 
                                     Check(actor.OnFloor && actor.GetNode<AnimationPlayer>("m_AnimPlayer").CurrentAnimation == "idle1", "坡后停步错误进入下落");
                                     Input.ActionPress(InputSystem.Jump);
                                     for (int frame = 0; frame < 4; frame++)
                                     {
-                                        await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                                        await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                                     }
 
                                     Check(!actor.OnFloor && actor.Velocity.Y < 0, "贴地修复阻止了主动跳跃");
                                     Input.ActionRelease(InputSystem.Jump);
-                                    ReleaseTestEntity(m_ExtraHero);
-                                    m_ExtraHero = null;
+                                    ReleaseTestEntity(_extraHero);
+                                    _extraHero = null;
                                     GD.Print($"SMOKE-SLOPE PASS: level={number}, hill={hill.Name}, {ticks}Hz, running={running}, direction={direction}, samples={samples}; stop/resume/jump");
                                 }
                             }
@@ -264,10 +265,10 @@ public sealed partial class UiSmokeScenario
             Input.ActionRelease(InputSystem.MoveLeft);
             Input.ActionRelease(InputSystem.MoveRight);
             Input.ActionRelease(InputSystem.Jump);
-            if (m_ExtraHero != null)
+            if (_extraHero != null)
             {
-                ReleaseTestEntity(m_ExtraHero);
-                m_ExtraHero = null;
+                ReleaseTestEntity(_extraHero);
+                _extraHero = null;
             }
         }
     }

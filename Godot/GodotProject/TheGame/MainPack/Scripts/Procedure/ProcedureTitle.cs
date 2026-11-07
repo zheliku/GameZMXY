@@ -1,23 +1,23 @@
-using IUIForm = GameFramework.UI.IUIForm;
 using System;
-using GameLogic.UI;
-using GameConfig.Constant;
-using GameLogic.Audio;
-using GameFramework.Procedure;
 using System.Threading;
-using GameLogic.Architecture;
-using GameLogic.Equipment;
-using GameLogic.Procedure.FlowData;
-using GameLogic.Save.Slots;
 using GameConfig;
+using GameConfig.Constant;
 using GameConfig.Sound;
 using GameFramework.Event;
+using GameFramework.Procedure;
 using GameLogic;
+using GameLogic.Architecture;
+using GameLogic.Audio;
+using GameLogic.Equipment;
+using GameLogic.Procedure.FlowData;
 using GameLogic.Profile;
-using GameLogic.Skills;
 using GameLogic.Save;
+using GameLogic.Save.Slots;
+using GameLogic.Skills;
+using GameLogic.UI;
 using GodotGameFramework;
 using GodotGameFramework.UI;
+using IUIForm = GameFramework.UI.IUIForm;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -25,13 +25,13 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public sealed class ProcedureTitle : ProcedureBase
 {
-    private int m_FormSerialId; // 本周期窗口，含在途加载请求。
-    private int m_MusicSerialId; // 本周期 GGF 音乐请求。
-    private ProcedureOwner m_Owner; // 仅当前流程周期借用主 FSM。
-    private CancellationTokenSource m_Cancellation; // 离开时使旧异步结果失效。
+    private int _formSerialId; // 本周期窗口，含在途加载请求。
+    private int _musicSerialId; // 本周期 GGF 音乐请求。
+    private ProcedureOwner _owner; // 仅当前流程周期借用主 FSM。
+    private CancellationTokenSource _cancellation; // 离开时使旧异步结果失效。
 
-    private int m_SaveSerialId; // 本流程打开的六格存档窗口。
-    private int m_SettingsSerialId; // 本流程打开的设置窗口，包括在途加载。
+    private int _saveSerialId; // 本流程打开的六格存档窗口。
+    private int _settingsSerialId; // 本流程打开的设置窗口，包括在途加载。
 
     /// <summary>
     /// 订阅本页面的点击事件后打开窗口。
@@ -49,13 +49,13 @@ public sealed class ProcedureTitle : ProcedureBase
         procedureOwner.RemoveData(FlowKeys.SaveSelection);
 
         base.OnEnter(procedureOwner);
-        m_Owner = procedureOwner;
-        m_Cancellation = new CancellationTokenSource();
+        _owner = procedureOwner;
+        _cancellation = new CancellationTokenSource();
         GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
-        m_FormSerialId = GF.UI.OpenUIForm(EUIFormId.StartForm);
-        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: true);
-        m_MusicSerialId = GF.Sound.PlayConfigured(ESoundId.MenuTheme, 0.3f);
+        _formSerialId = GF.UI.OpenUIForm(UIFormId.StartForm);
+        SetFormCallbacks(GF.UI.GetUIForm(_formSerialId), bind: true);
+        _musicSerialId = GF.Sound.PlayConfigured(SoundId.MenuTheme, 0.3f);
     }
 
     /// <summary>
@@ -65,38 +65,38 @@ public sealed class ProcedureTitle : ProcedureBase
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
-        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: false);
-        SetFormCallbacks(GF.UI.GetUIForm(m_SaveSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(_formSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(_saveSerialId), bind: false);
 
 
-        if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
+        if (_settingsSerialId != 0 && (GF.UI.HasUIForm(_settingsSerialId) || GF.UI.IsLoadingUIForm(_settingsSerialId)))
         {
-            GF.UI.CloseUIForm(m_SettingsSerialId);
+            GF.UI.CloseUIForm(_settingsSerialId);
         }
 
-        if (m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId)))
+        if (_saveSerialId != 0 && (GF.UI.HasUIForm(_saveSerialId) || GF.UI.IsLoadingUIForm(_saveSerialId)))
         {
-            GF.UI.CloseUIForm(m_SaveSerialId);
+            GF.UI.CloseUIForm(_saveSerialId);
         }
 
-        m_SettingsSerialId = m_SaveSerialId = 0;
-        m_Cancellation?.Cancel();
-        m_Cancellation?.Dispose();
-        m_Cancellation = null;
+        _settingsSerialId = _saveSerialId = 0;
+        _cancellation?.Cancel();
+        _cancellation?.Dispose();
+        _cancellation = null;
         GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Unsubscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
         // 窗口在关停时也须先于流程销毁，解除档案和设置绑定。
-        if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
+        if (_formSerialId != 0 && (GF.UI.HasUIForm(_formSerialId) || GF.UI.IsLoadingUIForm(_formSerialId)))
         {
-            GF.UI.CloseUIForm(m_FormSerialId);
+            GF.UI.CloseUIForm(_formSerialId);
         }
 
-        if (m_MusicSerialId != 0)
+        if (_musicSerialId != 0)
         {
-            GF.Sound.StopSound(m_MusicSerialId, isShutdown ? 0f : 0.2f);
+            GF.Sound.StopSound(_musicSerialId, isShutdown ? 0f : 0.2f);
         }
-        m_FormSerialId = m_MusicSerialId = 0;
-        m_Owner = null;
+        _formSerialId = _musicSerialId = 0;
+        _owner = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
 
@@ -106,20 +106,20 @@ public sealed class ProcedureTitle : ProcedureBase
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private async void OnStartGameRequested(int formSerialId)
     {
-        if (formSerialId != m_FormSerialId)
+        if (formSerialId != _formSerialId)
         {
             return;
         }
 
-        if (m_SaveSerialId != 0 && (GF.UI.HasUIForm(m_SaveSerialId) || GF.UI.IsLoadingUIForm(m_SaveSerialId)))
+        if (_saveSerialId != 0 && (GF.UI.HasUIForm(_saveSerialId) || GF.UI.IsLoadingUIForm(_saveSerialId)))
         {
             return;
         }
 
-        var saveSystem = m_Owner.GetSystem<SaveSystem>();
-        var token = m_Cancellation.Token;
-        m_SaveSerialId = GF.UI.OpenUIForm(EUIFormId.SaveForm);
-        SetFormCallbacks(GF.UI.GetUIForm(m_SaveSerialId), bind: true);
+        SaveSystem saveSystem = _owner.GetSystem<SaveSystem>();
+        CancellationToken token = _cancellation.Token;
+        _saveSerialId = GF.UI.OpenUIForm(UIFormId.SaveForm);
+        SetFormCallbacks(GF.UI.GetUIForm(_saveSerialId), bind: true);
         await saveSystem.RefreshDirectoryAsync(token);
     }
 
@@ -130,7 +130,7 @@ public sealed class ProcedureTitle : ProcedureBase
     /// <param name="selectionId">选中的存档格或关卡编号。</param>
     private void OnSaveSlotSelected(int formSerialId, int selectionId)
     {
-        if (formSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) || GF.Fsm.GetModel<SaveModel>().Phase != ESaveListState.Ready)
+        if (formSerialId != _saveSerialId || !GF.UI.HasUIForm(_saveSerialId) || GF.Fsm.GetModel<SaveModel>().Phase != SaveListState.Ready)
         {
             return;
         }
@@ -140,20 +140,20 @@ public sealed class ProcedureTitle : ProcedureBase
             return;
         }
 
-        var slot = GF.Fsm.GetModel<SaveModel>().Slots[selectionId - 1];
-        if (slot.State == ESaveSlotState.Unreadable)
+        SaveSlotInfo slot = GF.Fsm.GetModel<SaveModel>().Slots[selectionId - 1];
+        if (slot.State == SaveSlotState.Unreadable)
         {
             return;
         }
 
-        m_Owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(slot.SlotNumber, slot.UnitId));
-        if (slot.State == ESaveSlotState.Empty)
+        _owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(slot.SlotNumber, slot.UnitId));
+        if (slot.State == SaveSlotState.Empty)
         {
-            ChangeState<ProcedureCharacter>(m_Owner);
+            ChangeState<ProcedureCharacter>(_owner);
         }
         else
         {
-            ChangeState<ProcedureLoadGame>(m_Owner);
+            ChangeState<ProcedureLoadGame>(_owner);
         }
     }
 
@@ -164,21 +164,21 @@ public sealed class ProcedureTitle : ProcedureBase
     /// <param name="slotNumber">要删除的格号。</param>
     private async void OnSaveSlotDeleteRequested(int formSerialId, int slotNumber)
     {
-        var saveModel = GF.Fsm.GetModel<SaveModel>();
-        if (formSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) ||
-            saveModel.Phase != ESaveListState.Ready || slotNumber < 1 || slotNumber > saveModel.Slots.Count)
+        SaveModel saveModel = GF.Fsm.GetModel<SaveModel>();
+        if (formSerialId != _saveSerialId || !GF.UI.HasUIForm(_saveSerialId) ||
+            saveModel.Phase != SaveListState.Ready || slotNumber < 1 || slotNumber > saveModel.Slots.Count)
         {
             return;
         }
 
-        var slot = saveModel.Slots[slotNumber - 1];
-        if (slot.State != ESaveSlotState.Occupied)
+        SaveSlotInfo slot = saveModel.Slots[slotNumber - 1];
+        if (slot.State != SaveSlotState.Occupied)
         {
             return;
         }
 
-        var token = m_Cancellation.Token;
-        var saves = m_Owner.GetSystem<SaveSystem>();
+        CancellationToken token = _cancellation.Token;
+        SaveSystem saves = _owner.GetSystem<SaveSystem>();
         try
         {
             await saves.DeleteSlotAsync(slot.SlotNumber, slot.UnitId, token);
@@ -194,18 +194,18 @@ public sealed class ProcedureTitle : ProcedureBase
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnSettingsRequested(int formSerialId)
     {
-        if (formSerialId != m_FormSerialId)
+        if (formSerialId != _formSerialId)
         {
             return;
         }
 
-        if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
+        if (_settingsSerialId != 0 && (GF.UI.HasUIForm(_settingsSerialId) || GF.UI.IsLoadingUIForm(_settingsSerialId)))
         {
             return;
         }
 
-        m_SettingsSerialId = GF.UI.OpenUIForm(EUIFormId.SettingsForm);
-        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
+        _settingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
+        SetFormCallbacks(GF.UI.GetUIForm(_settingsSerialId), bind: true);
     }
 
     /// <summary>
@@ -220,7 +220,7 @@ public sealed class ProcedureTitle : ProcedureBase
             SetFormCallbacks(opened.UIForm, bind: true);
         }
 
-        if (args is not OpenUIFormSuccessEventArgs success || success.UIForm.SerialId != m_FormSerialId)
+        if (args is not OpenUIFormSuccessEventArgs success || success.UIForm.SerialId != _formSerialId)
         {
             return;
         }
@@ -236,7 +236,7 @@ public sealed class ProcedureTitle : ProcedureBase
     /// <param name="args">只在本次分发内读取的池化参数。</param>
     private void OnFormFailed(object sender, GameEventArgs args)
     {
-        if (args is OpenUIFormFailureEventArgs failure && failure.SerialId == m_FormSerialId)
+        if (args is OpenUIFormFailureEventArgs failure && failure.SerialId == _formSerialId)
         {
             Log.Error("[ProcedureTitle] 界面加载失败：{0}", failure.ErrorMessage);
         }
@@ -256,7 +256,7 @@ public sealed class ProcedureTitle : ProcedureBase
 
         switch (form)
         {
-            case StartForm startForm when startForm.SerialId == m_FormSerialId:
+            case StartForm startForm when startForm.SerialId == _formSerialId:
                 startForm.StartGameRequested -= OnStartGameRequested;
                 if (bind)
                 {
@@ -270,7 +270,7 @@ public sealed class ProcedureTitle : ProcedureBase
                 }
 
                 break;
-            case SaveForm saveForm when saveForm.SerialId == m_SaveSerialId:
+            case SaveForm saveForm when saveForm.SerialId == _saveSerialId:
                 saveForm.SaveSlotSelected -= OnSaveSlotSelected;
                 saveForm.SaveSlotDeleteRequested -= OnSaveSlotDeleteRequested;
                 if (bind)

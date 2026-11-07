@@ -37,9 +37,9 @@ func _register() -> void:
     var king: Node = load("res://TheGame/Entitys/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_entity.tscn").instantiate()
     for actor in [shark, king]:
         load("res://EditorScripts/enemy_perception_authoring.gd").configure(actor)
-        for field in ["m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"]:
+        for field in ["_perception", "_body", "_animPlayer", "_hurtBox", "_hitBox", "_hitBoxRoot"]:
             assert(actor.get(field) != null, actor.name + " missing " + field)
-        assert(actor.get("m_EnemyEntityId") in [18, 19], actor.name + " has wrong entity id")
+        assert(actor.get("_enemyEntityId") in [18, 19], actor.name + " has wrong entity id")
         var path := "res://TheGame/Entitys/Enemies/Monsters/Sea/shark_spawn/shark_spawn_entity.tscn" if actor == shark else "res://TheGame/Entitys/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_entity.tscn"
         var packed := PackedScene.new()
         assert(packed.pack(actor) == OK)

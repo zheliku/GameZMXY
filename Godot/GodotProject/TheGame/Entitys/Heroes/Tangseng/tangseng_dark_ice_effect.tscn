@@ -10,11 +10,11 @@ size = Vector2(42, 56)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bhk0v"]
 size = Vector2(42, 56)
 
-[node name="TangsengDarkIceEffect" type="Node2D" unique_id=1675906295 node_paths=PackedStringArray("m_Player", "m_HitBox")]
+[node name="TangsengDarkIceEffect" type="Node2D" unique_id=1675906295 node_paths=PackedStringArray("_player", "_hitBox")]
 z_index = 2
 script = ExtResource("script")
-m_Player = NodePath("AnimationPlayer")
-m_HitBox = NodePath("Origin/Visual/HitBox")
+_player = NodePath("AnimationPlayer")
+_hitBox = NodePath("Origin/Visual/HitBox")
 
 [node name="Origin" type="Node2D" parent="." unique_id=1592137267]
 

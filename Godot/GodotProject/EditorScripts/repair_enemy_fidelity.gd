@@ -37,7 +37,7 @@ func _run() -> void:
     # The Area now owns all its direct shapes; remove the obsolete single-shape export.
     for path in paths:
         var source := FileAccess.get_file_as_string(path)
-        if not "m_Shape = NodePath" in source or "BullDemonFireNode.cs" in source or "BatCaveSpikeNode.cs" in source:
+        if not "_shape = NodePath" in source or "BullDemonFireNode.cs" in source or "BatCaveSpikeNode.cs" in source:
             continue
         if not ("SkillEffectNode.cs" in source or "ShrimpProjectileEffectNode.cs" in source or "LionCamelPoisonCloudNode.cs" in source):
             continue
@@ -49,8 +49,8 @@ func _run() -> void:
     var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(OS.get_cmdline_user_args()[0]))
     var path := "res://TheGame/Entitys/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_entity.tscn"
     var entity: Node = load(path).instantiate()
-    var hitbox: Area2D = entity.get("m_HitBox")
-    var player: AnimationPlayer = entity.get("m_AnimPlayer")
+    var hitbox: Area2D = entity.get("_hitBox")
+    var player: AnimationPlayer = entity.get("_animPlayer")
     var library := player.get_animation_library("")
     var ice := library.get_animation("attack_3")
     var times: Array = []

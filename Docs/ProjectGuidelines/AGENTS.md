@@ -5,7 +5,7 @@
 模块中的 `TheGame/...` 路径相对 `Godot/GodotProject/`；`Configs/`、`Docs/`、`Tools/` 路径相对仓库根。
 
 - [00 架构](00-Architecture.md)：项目边界、分层、依赖、运行时约束。
-- [10 C#](10-CSharp.md)：命名、XML 文档、类型与代码约定。
+- [10 C#](10-CSharp.md)：微软命名约定、EditorConfig、格式化边界、XML 文档与代码约定。
 - [20 配置](20-Configs.md)：Luban、数值源和生成流程。
 - [30 实体与战斗](30-EntitiesAndCombat.md)：实体、战斗、身体/AI 状态机、动画和物理层。
 - [40 场景与资源](40-ScenesAndAssets.md)：场景、bundle、资产目录与导入约定。

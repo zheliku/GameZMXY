@@ -17,13 +17,13 @@ namespace GameConfig.Skills
 /// </summary>
 public partial class TbPassiveConfig
 {
-    private readonly System.Collections.Generic.Dictionary<Skills.EPassiveId, Skills.PassiveConfig> _dataMap;
+    private readonly System.Collections.Generic.Dictionary<Skills.PassiveId, Skills.PassiveConfig> _dataMap;
     private readonly System.Collections.Generic.List<Skills.PassiveConfig> _dataList;
     
     public TbPassiveConfig(ByteBuf _buf)
     {
         int n = _buf.ReadSize();
-        _dataMap = new System.Collections.Generic.Dictionary<Skills.EPassiveId, Skills.PassiveConfig>(n);
+        _dataMap = new System.Collections.Generic.Dictionary<Skills.PassiveId, Skills.PassiveConfig>(n);
         _dataList = new System.Collections.Generic.List<Skills.PassiveConfig>(n);
         for(int i = n ; i > 0 ; --i)
         {
@@ -34,12 +34,12 @@ public partial class TbPassiveConfig
         }
     }
 
-    public System.Collections.Generic.IReadOnlyDictionary<Skills.EPassiveId, Skills.PassiveConfig> DataMap => _dataMap;
+    public System.Collections.Generic.IReadOnlyDictionary<Skills.PassiveId, Skills.PassiveConfig> DataMap => _dataMap;
     public System.Collections.Generic.IReadOnlyList<Skills.PassiveConfig> DataList => _dataList;
 
-    public Skills.PassiveConfig GetOrDefault(Skills.EPassiveId key) => _dataMap.TryGetValue(key, out var v) ? v : default;
-    public Skills.PassiveConfig Get(Skills.EPassiveId key) => _dataMap[key];
-    public Skills.PassiveConfig this[Skills.EPassiveId key] => _dataMap[key];
+    public Skills.PassiveConfig GetOrDefault(Skills.PassiveId key) => _dataMap.TryGetValue(key, out var v) ? v : default;
+    public Skills.PassiveConfig Get(Skills.PassiveId key) => _dataMap[key];
+    public Skills.PassiveConfig this[Skills.PassiveId key] => _dataMap[key];
 
     public void ResolveRef(Tables tables)
     {

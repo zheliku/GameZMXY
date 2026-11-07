@@ -85,12 +85,12 @@ func _actor(actor: Dictionary) -> bool:
 	root.name = "BatEntity" if bat else "BatCaveStatueEntity"
 	root.set_script(load("res://TheGame/GameScripts/Entity/Enemies/%s/%s.cs" %
 		["Monsters/Bat" if bat else "Bosses/zm1_04_bat_cave", root.name]))
-	for pair in [["m_Perception", "Perception"], ["m_Body", "m_Body"], ["m_AnimPlayer", "m_AnimPlayer"],
+	for pair in [["_perception", "Perception"], ["m_Body", "m_Body"], ["m_AnimPlayer", "m_AnimPlayer"],
 		["m_HurtBox", "m_HurtBox"], ["m_HitBox", "m_HitBoxRoot/m_HitBox"], ["m_HitBoxRoot", "m_HitBoxRoot"],
 		["m_HealthBar", "m_HealthBar"]]:
 		root.set(pair[0], root.get_node(pair[1]))
-	root.set("m_EnemyEntityId", 8 if bat else 21)
-	root.set("m_AttackAnimations", PackedStringArray(["attack_1"] if bat else []))
+	root.set("_enemyEntityId", 8 if bat else 21)
+	root.set("_attackAnimations", PackedStringArray(["attack_1"] if bat else []))
 	root.motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	root.collision_mask = 1
 	var body: AnimatedSprite2D = root.get_node("m_Body")
@@ -160,7 +160,7 @@ func _actor(actor: Dictionary) -> bool:
 	player.add_animation_library("", library)
 	player.callback_mode_method = AnimationMixer.ANIMATION_CALLBACK_MODE_METHOD_IMMEDIATE
 	var packed := PackedScene.new()
-	if root.get("m_EnemyEntityId") != null:
+	if root.get("_enemyEntityId") != null:
 		load("res://EditorScripts/enemy_perception_authoring.gd").configure(root)
 	assert(packed.pack(root) == OK)
 	assert(ResourceSaver.save(packed, destination) == OK)

@@ -43,7 +43,7 @@
 [ext_resource type="Texture2D" uid="uid://c80du00fmxodl" path="res://TheGame/Sprites/UI/hud/menu_weapon_normal.png" id="weapon_normal"]
 [ext_resource type="Texture2D" uid="uid://6hpg33m2d84" path="res://TheGame/Sprites/UI/hud/hud_ws_frame.png" id="ws_frame"]
 
-[node name="BattleForm" type="Control" unique_id=1958358155 node_paths=PackedStringArray("m_Status", "m_Menu", "m_Go", "m_EncounterHealthBar", "m_MusouActivation", "m_Combo")]
+[node name="BattleForm" type="Control" unique_id=1958358155 node_paths=PackedStringArray("_status", "_menu", "_go", "_encounterHealthBar", "_musouActivation", "_combo")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -53,25 +53,25 @@ grow_vertical = 2
 mouse_filter = 2
 theme = ExtResource("18_theme")
 script = ExtResource("1_script")
-m_Status = NodePath("StatusPanel")
-m_Menu = NodePath("MenuPanel")
-m_Go = NodePath("m_Go")
-m_EncounterHealthBar = NodePath("m_EncounterHealthBar")
-m_MusouActivation = NodePath("m_MusouActivation")
-m_Combo = NodePath("m_Combo")
+_status = NodePath("StatusPanel")
+_menu = NodePath("MenuPanel")
+_go = NodePath("m_Go")
+_encounterHealthBar = NodePath("m_EncounterHealthBar")
+_musouActivation = NodePath("m_MusouActivation")
+_combo = NodePath("m_Combo")
 
-[node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247 node_paths=PackedStringArray("m_HpBar", "m_MpBar", "m_ExpBar", "m_LevelLabel", "m_Portrait")]
+[node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247 node_paths=PackedStringArray("_hpBar", "_mpBar", "_expBar", "_levelLabel", "_portrait")]
 position = Vector2(116, 44)
 texture = ExtResource("2_status")
 script = ExtResource("status_panel")
-m_HpBar = NodePath("m_HpBar")
-m_MpBar = NodePath("m_MpBar")
-m_ExpBar = NodePath("m_ExpBar")
-m_LevelLabel = NodePath("m_LevelLabel")
-m_Portrait = NodePath("Head")
-m_Portraits = Dictionary[int, Texture2D]({1: ExtResource("6_head"), 2: ExtResource("head_tangseng")})
+_hpBar = NodePath("m_HpBar")
+_mpBar = NodePath("m_MpBar")
+_expBar = NodePath("m_ExpBar")
+_levelLabel = NodePath("m_LevelLabel")
+_portrait = NodePath("Head")
+_portraits = Dictionary[int, Texture2D]({1: ExtResource("6_head"), 2: ExtResource("head_tangseng")})
 
-[node name="m_HpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=172288184 node_paths=PackedStringArray("m_Text")]
+[node name="m_HpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=172288184 node_paths=PackedStringArray("_text")]
 offset_left = -33.0
 offset_top = -30.0
 offset_right = 115.0
@@ -82,7 +82,7 @@ nine_patch_stretch = true
 texture_progress = ExtResource("4_hp")
 texture_progress_offset = Vector2(-3, 0)
 script = ExtResource("14_resourcebar")
-m_Text = NodePath("m_HpText")
+_text = NodePath("m_HpText")
 
 [node name="m_HpText" type="Label" parent="StatusPanel/m_HpBar" unique_id=1939437063]
 layout_mode = 0
@@ -108,7 +108,7 @@ text = "1"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_MpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=118777741 node_paths=PackedStringArray("m_Text")]
+[node name="m_MpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=118777741 node_paths=PackedStringArray("_text")]
 offset_left = -28.0
 offset_top = -11.0
 offset_right = 117.0
@@ -119,7 +119,7 @@ nine_patch_stretch = true
 texture_progress = ExtResource("15_mp")
 texture_progress_offset = Vector2(-2, 0)
 script = ExtResource("14_resourcebar")
-m_Text = NodePath("MpText")
+_text = NodePath("MpText")
 
 [node name="MpText" type="Label" parent="StatusPanel/m_MpBar" unique_id=651970840]
 layout_mode = 0
@@ -132,7 +132,7 @@ theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_ExpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=86960589 node_paths=PackedStringArray("m_Text")]
+[node name="m_ExpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=86960589 node_paths=PackedStringArray("_text")]
 offset_left = -32.0
 offset_top = 8.0
 offset_right = 119.0
@@ -143,8 +143,8 @@ nine_patch_stretch = true
 texture_progress = ExtResource("16_exp")
 texture_progress_offset = Vector2(-3, 0)
 script = ExtResource("14_resourcebar")
-m_Text = NodePath("ExpText")
-m_FullAtZeroMaximum = true
+_text = NodePath("ExpText")
+_fullAtZeroMaximum = true
 
 [node name="ExpText" type="Label" parent="StatusPanel/m_ExpBar" unique_id=1604997483]
 layout_mode = 0
@@ -165,17 +165,17 @@ texture = ExtResource("6_head")
 position = Vector2(-19, -5)
 texture = ExtResource("3_label")
 
-[node name="MenuPanel" type="Sprite2D" parent="." unique_id=1301947710 node_paths=PackedStringArray("m_WsBar", "m_WsMax", "m_SettingsButton", "m_InventoryButton", "m_SkillsButton", "m_Icons")]
+[node name="MenuPanel" type="Sprite2D" parent="." unique_id=1301947710 node_paths=PackedStringArray("_wsBar", "_wsMax", "_settingsButton", "_inventoryButton", "_skillsButton", "_icons")]
 position = Vector2(90, 531)
 texture = ExtResource("7_menu")
 script = ExtResource("menu_panel")
-m_WsBar = NodePath("WsFrame/m_WsBar")
-m_WsMax = NodePath("m_WsMax")
-m_SettingsButton = NodePath("m_SettingsButton")
-m_InventoryButton = NodePath("m_InventoryButton")
-m_SkillsButton = NodePath("m_SkillsButton")
-m_SkillIcons = ExtResource("official_skills")
-m_Icons = [NodePath("SkillBar/Skill1/Icon"), NodePath("SkillBar/Skill2/Icon"), NodePath("SkillBar/Skill3/Icon"), NodePath("SkillBar/Skill4/Icon"), NodePath("SkillBar/Skill5/Icon")]
+_wsBar = NodePath("WsFrame/m_WsBar")
+_wsMax = NodePath("m_WsMax")
+_settingsButton = NodePath("m_SettingsButton")
+_inventoryButton = NodePath("m_InventoryButton")
+_skillsButton = NodePath("m_SkillsButton")
+_skillIcons = ExtResource("official_skills")
+_icons = [NodePath("SkillBar/Skill1/Icon"), NodePath("SkillBar/Skill2/Icon"), NodePath("SkillBar/Skill3/Icon"), NodePath("SkillBar/Skill4/Icon"), NodePath("SkillBar/Skill5/Icon")]
 
 [node name="WsFrame" type="Sprite2D" parent="MenuPanel" unique_id=129619926]
 position = Vector2(113, 25)
@@ -373,7 +373,7 @@ scale = Vector2(0.6, 0.6)
 sprite_frames = ExtResource("13_gogo")
 animation = &"go"
 
-[node name="m_EncounterHealthBar" type="Control" parent="." unique_id=1088788372 node_paths=PackedStringArray("m_Health", "m_Name") instance=ExtResource("encounter")]
+[node name="m_EncounterHealthBar" type="Control" parent="." unique_id=1088788372 node_paths=PackedStringArray("_health", "_name") instance=ExtResource("encounter")]
 visible = false
 layout_mode = 1
 anchors_preset = 5
@@ -386,8 +386,8 @@ offset_bottom = 69.0
 grow_horizontal = 2
 mouse_filter = 2
 script = ExtResource("38_ogrj0")
-m_Health = NodePath("Health")
-m_Name = NodePath("Name")
+_health = NodePath("Health")
+_name = NodePath("Name")
 
 [node name="m_Combo" parent="." instance=ExtResource("combo")]
 visible = false
@@ -397,7 +397,7 @@ offset_top = 234.95
 offset_right = 694.95
 offset_bottom = 234.95
 
-[node name="m_MusouActivation" type="Control" parent="." unique_id=520113477 node_paths=PackedStringArray("m_Animation", "m_Player") instance=ExtResource("musou_activation")]
+[node name="m_MusouActivation" type="Control" parent="." unique_id=520113477 node_paths=PackedStringArray("_animation", "_player") instance=ExtResource("musou_activation")]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -406,5 +406,5 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("40_4sdu0")
-m_Animation = NodePath("Animation")
-m_Player = NodePath("AnimationPlayer")
+_animation = NodePath("Animation")
+_player = NodePath("AnimationPlayer")

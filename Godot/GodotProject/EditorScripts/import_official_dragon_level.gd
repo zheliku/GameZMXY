@@ -17,9 +17,9 @@ func _build() -> void:
     var uid := ResourceLoader.get_resource_uid(m_Destination) if FileAccess.file_exists(m_Destination) else -1
     m_Scene = load("res://TheGame/Scenes/Levels/zm1_01_huaguoshan/level_1.tscn").instantiate()
     m_Scene.name = "Level_11"
-    m_Scene.set("m_LevelId", 11)
-    m_Scene.set("m_MusicId", 108)
-    m_Scene.set("m_FeaturedOpponentSpawnPointIds", PackedStringArray(["stage_1_a"]))
+    m_Scene.set("_levelId", 11)
+    m_Scene.set("_musicId", 108)
+    m_Scene.set("_featuredOpponentSpawnPointIds", PackedStringArray(["stage_1_a"]))
     for path in ["World/Geometry", "World/Platforms", "World/SpawnPoints", "World/StageGates"]:
         for child in m_Scene.get_node(path).get_children():
             child.free()
@@ -37,9 +37,9 @@ func _build() -> void:
     _markers()
     m_Scene.get_node("World/SpawnPoints/PlayerStart").position = Vector2(200, 200)
     var gates := m_Scene.get_node("World/StageGates")
-    var entries: Array = gates.get("m_Entries")
+    var entries: Array = gates.get("_entries")
     entries.append(_gate("Stage1Left", "stage_1_left", m_Source.gates[0].battleBounds[0]))
-    gates.set("m_Entries", entries)
+    gates.set("_entries", entries)
     m_Scene.get_node("World/Exit").position = Vector2(814.75, 457.55)
     var camera: Camera2D = m_Scene.get_node("Camera2D")
     camera.limit_right = 1222
@@ -60,7 +60,7 @@ func _build() -> void:
         assert(actor != null)
         if actor is CharacterBody2D:
             load("res://EditorScripts/enemy_perception_authoring.gd").configure(actor)
-            for field in ["m_Body", "m_AnimPlayer", "m_HitBox", "m_HurtBox", "m_Perception", "m_WaveScene", "m_TorrentScene"]:
+            for field in ["_body", "_animPlayer", "_hitBox", "_hurtBox", "_perception", "_waveScene", "_torrentScene"]:
                 assert(actor.get(field) != null, path + " missing " + field)
         packed = PackedScene.new()
         assert(packed.pack(actor) == OK)

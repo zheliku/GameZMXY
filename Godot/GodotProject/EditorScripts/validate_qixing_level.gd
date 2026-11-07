@@ -6,11 +6,11 @@ func _initialize() -> void:
 
 func _validate() -> void:
 	var level: Node2D = load("res://TheGame/Scenes/Levels/zm1_05_qixing_cave/level_5.tscn").instantiate()
-	assert(level.get("m_LevelId") == 5)
-	assert(level.get("m_FeaturedOpponentSpawnPointIds").has("stage_5_a"))
+	assert(level.get("_levelId") == 5)
+	assert(level.get("_featuredOpponentSpawnPointIds").has("stage_5_a"))
 	var points := level.get_node("World/SpawnPoints")
-	assert(points.get("m_Entries").size() == 21)
-	assert(level.get_node("World/StageGates").get("m_Entries").size() == 9)
+	assert(points.get("_entries").size() == 21)
+	assert(level.get_node("World/StageGates").get("_entries").size() == 9)
 	assert(level.get_node("World/Geometry").find_children("*", "CollisionShape2D", true, false).size() == 5)
 	var hill: CollisionPolygon2D = level.get_node("World/Geometry/Slopes/Hill03/Surface")
 	assert(hill.polygon.size() == 6)
@@ -25,11 +25,11 @@ func _validate() -> void:
 		"res://TheGame/Entitys/Enemies/Monsters/Ground/knife_demon/knife_demon_entity.tscn",
 		"res://TheGame/Entitys/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_entity.tscn"]:
 		var actor: Node = load(scene).instantiate()
-		for binding in ["m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot", "m_Perception"]:
+		for binding in ["m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot", "_perception"]:
 			assert(actor.get(binding) != null, scene + " missing " + binding)
 		assert(actor.get_node("m_HurtBox").position == Vector2.ZERO)
-		var player: AnimationPlayer = actor.get("m_AnimPlayer")
-		for attack in actor.get("m_AttackAnimations"):
+		var player: AnimationPlayer = actor.get("_animPlayer")
+		for attack in actor.get("_attackAnimations"):
 			assert(player.has_animation(attack))
 		actor.free()
 	var form: Control = load("res://TheGame/UIs/map_form.tscn").instantiate()

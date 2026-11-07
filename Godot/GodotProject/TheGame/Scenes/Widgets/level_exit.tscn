@@ -7,13 +7,13 @@
 [sub_resource type="CircleShape2D" id="range"]
 radius = 85.0
 
-[node name="LevelExitNode" type="Area2D" unique_id=247170705 node_paths=PackedStringArray("m_Marker", "m_Prompt")]
+[node name="LevelExitNode" type="Area2D" unique_id=247170705 node_paths=PackedStringArray("_marker", "_prompt")]
 visible = false
 collision_layer = 2048
 collision_mask = 2
 script = ExtResource("script")
-m_Marker = NodePath("Marker")
-m_Prompt = NodePath("Prompt")
+_marker = NodePath("Marker")
+_prompt = NodePath("Prompt")
 
 [node name="Marker" type="AnimatedSprite2D" parent="." unique_id=704925547]
 position = Vector2(-90.75, -110.7)

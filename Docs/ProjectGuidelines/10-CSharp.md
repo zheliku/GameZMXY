@@ -1,23 +1,48 @@
 # 10 C# 与文档
 
+## 依据与执行范围
+
+命名与格式以微软的 [C# 标识符命名](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/identifier-names)、[常用代码约定](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions)及 [Framework Design Guidelines](https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/) 为基础。微软的文档示例风格与框架 API 设计建议各有适用范围，本章明确项目采用的部分；GGF/QF 的职责、注册和生命周期仍按第00章执行。
+
+可由工具表达的规则只在仓库根 [`.editorconfig`](../../.editorconfig) 配置；本章解释含义和工具不能检查的约束，不再另外维护一份格式配置。项目手写代码、测试和维护工具遵守本章。Godot/.NET/GGF/第三方的类型、重写回调、接口成员与生成契约保持原名，不能为了命名修改只读依赖。
+
+**2026-11-07 调整：** 用户明确采用微软命名，替代此前枚举 `E` 前缀和字段 `m_` 约定，并要求实际迁移项目代码。项目枚举及字段、相关场景导出和作者/验证工具已同步迁移；具体范围和验证见Validation。Framework、addons和Tools/Luban保持原字节，不把本次命名/格式整理混入双人功能。GGF既有扩展引用的两个旧配置类型名仅通过Godot工程的编译别名衔接，业务代码使用正式新名称，不新增运行时兼容类型。
+
 ## 命名
 
-| 成员                         | 规则                                       |
-| ---------------------------- | ------------------------------------------ |
-| 类型、方法、属性、事件 | `PascalCase`；接口以 `I` 开头          |
-| 枚举类型 | `E` + `PascalCase`，如 `EPlayerSlot`、`EDamageKind`；枚举项使用 `PascalCase` |
-| 字段（含`[Export]`）       | `m_` + `PascalCase`，如 `m_Hp`       |
-| 参数、局部变量               | `camelCase`                              |
-| 常量                         | `PascalCase`；优先用有名常量表达工程规则 |
-| 命名空间                     | `GameLogic.<业务模块>` 或 `GameConfig`；模块映射见 [00-Architecture.md](00-Architecture.md) |
+| 对象 | 规则与示例 |
+| --- | --- |
+| 类、结构、record、委托 | `PascalCase`，如 `PlayerProfile`、`DamageResult`；不用 `C`、`S` 或 `D` 类型前缀 |
+| 接口 | `I` + `PascalCase`，如 `IHeroBody`；只为实际抽象建立接口 |
+| 普通枚举 | 单数名词 `PascalCase`，如 `PlayerSlot`、`DamageKind`；不加 `E` 前缀或 `Enum` 后缀 |
+| 标志枚举 | `[Flags]` 与复数名词，如 `AttackTargets`；成员用独立位，确有组合需求才使用 |
+| 枚举成员 | `PascalCase`，如 `P1`、`P2`、`Physical`；不重复类型前缀 |
+| 方法、局部函数 | `PascalCase` 动词或动词短语，如 `ApplyHit`、`TrySpendSoul` |
+| 属性、事件、公开/受保护字段 | `PascalCase`，如 `ActiveHeroId`、`IsAlive`、`SaveCompleted`；业务数据优先用属性而非公开可变字段 |
+| 私有/内部实例字段，含 `readonly`、`[Export]` | `_camelCase`，如 `_hp`、`_activeMonsters` |
+| 私有/内部静态字段，含 `static readonly` | `s_camelCase`，如 `s_defaultBodyPreset` |
+| 私有/内部 `[ThreadStatic]` 字段 | `t_camelCase`；仅在线程局部数据确有用途时采用 |
+| 常量，含私有字段和局部常量 | `PascalCase`，如 `AttackOwnerStride`；不加字段前缀，不用 `ALL_CAPS` |
+| 参数、局部变量 | `camelCase`，如 `playerSlot`、`heroId`；弃值用 `_` |
+| 位置 record 的参数 | 对应公开属性，使用 `PascalCase`，如 `record HeroSaveData(int HeroId)` |
+| 泛型参数 | 单一、含义明确时用 `T`，否则 `T` + 职责，如 `TActor`、`TResult` |
+| 命名空间 | `PascalCase`；保留 `GameLogic.<业务模块>` 或 `GameConfig` 边界，模块映射见第00章 |
 
-一文件一个主要类型，文件名与类型名一致。标识符使用英文；中文只用于配置文本和用户可见内容。
+一文件一个主要类型，文件名与类型名一致。标识符使用英文，文档和注释可用中文。用完整业务词表达职责，不用 `data1`、`temp2` 等含糊名字；简短循环计数器可用 `i`。缩写以清楚、通用为前提，`heroId`、`HeroId`、`Hp`、`Mp` 等沿用正常大小写，外部 API 与生成契约保留。集合通常用复数，布尔值优先用 `Is`、`Has`、`Can` 等肯定含义，不重复编码变量类型。
 
-附属于同一功能的小枚举、结果与统计类型可以和主要类型放在同一文件，保留清晰的 XML 文档与命名空间。例如 `ESaveSlotState` 随 `SaveSlotInfo`，`ELevelOutcome` 随 `LevelModel`，`HeroSaveData` 随 `GameData`。多处独立使用、有独立职责的类型仍单独存放；大型节点可按职责使用 `类型.职责.cs` partial，字段和生命周期仍由同一对象拥有。
+附属于同一功能的小枚举、结果与统计类型可以和主要类型放在同一文件，保留清晰的 XML 文档与命名空间。例如 `SaveSlotState` 随 `SaveSlotInfo`，`LevelOutcome` 随 `LevelModel`，`HeroSaveData` 随 `GameData`。多处独立使用、有独立职责的类型仍单独存放；大型节点可按职责使用 `类型.职责.cs` partial，字段和生命周期仍由同一对象拥有；这些示例描述目标命名，现有代码的迁移范围见本章开头。
 
-枚举前缀适用于项目手写的公开、内部、私有枚举及Luban生成的项目配置枚举。配置类型名从源表修改后重新生成；独立枚举文件与类型同名，迁移时携带原UID。只改类型名称，不给字段、属性、枚举项或存档键加前缀，不改变已有枚举值。Godot、.NET、GGF及第三方枚举遵循各自API名称。
+枚举规则适用于公开、内部、私有手写类型及 Luban 项目配置类型。配置类型名从源表修改后重新生成；独立枚举文件与类型同名，迁移时携带原UID。持久化、配置及跨模块身份显式赋值，命名迁移不改已有值、字段/属性名或存档键。只有领域确实允许“无值”时才声明 `None = 0`，不为形式统一给 `PlayerSlot.P1/P2` 增加虚构席位。枚举用于有限语义集合，不把开放的实例编号、数量和任意输入机械改成枚举。
 
 流程状态机的数据键统一放在 `MainPack/Scripts/Procedure/FlowData/FlowKeys.cs`，池化包装放在同目录。其他模块的常量归所属功能。
+
+### 方法与事件语义
+
+- 属性表达低成本读取；执行操作、修改业务或进行组合计算使用动词方法。集合查询不以 `Get` 为名暗中修改状态。
+- `TryXxx` 表示预期会失败的尝试，以 `bool` 或既有业务结果表达；不是把所有异常吞掉。不存在是正常结果时在契约中说明，不静默改取另一名玩家或默认配置。
+- 可等待方法用 `Async` 后缀，返回 `Task`、`Task<T>` 或已有可等待类型；同步方法不加后缀。Godot/GGF 重写入口保持契约名，内部异步实现正常命名。只在事件签名必须返回 `void` 时使用 `async void`，任务及失败由所属生命周期处理。
+- C# 事件表达发生的事实，如 `Saved`、`HealthChanged`；处理方法用 `OnXxx` 或 `On<控件><动作>`。沿用 Godot 信号与 GGF 事件机制，不为套用通用 .NET 事件签名重建事件系统。
+- 名称区分所有权与动作：`RentSkillEffect` 取池并登记，`PlaySkillEffect` 播放。相关领域规则通过已注册的 System/Utility 实例调用；`static` 留给常量集合、扩展方法和所属领域的无状态规则，不作绕开 Architecture 的业务入口。
 
 ### 动画方法入口
 
@@ -45,8 +70,26 @@
 
 模块目录按功能分类，所属节点、纯规则、资源和 `Helper` 放在同一功能目录，通过类型后缀辨别职责。例如 `Level/Camera/` 同时放 `LevelCameraNode` 与 `LevelCameraHelper`，`Level/Spawning/` 放刷怪节点、生成点与调度规则。跨功能共享的空间条目放 `Level/Markers/`。小模块不机械拆空目录；模块入口的 partial 留在根目录。
 
+## 格式与表达
+
+- UTF-8、四个空格缩进、CRLF、文件末尾换行；去掉行尾空格。CRLF 是本仓库的文件约定。大括号使用 Allman 风格，控制流分支和循环写完整大括号，不把多个语句挤在一行。
+- `using` 放命名空间外，`System` 排在前；新文件优先使用文件范围命名空间。partial 与全局流程类型仍遵守所属类型及框架契约，不为迁移命名空间而改业务职责。
+- 简单单行属性、转发和计算可以使用表达式体；多步操作、资源取得/释放和业务分支使用块体。没有长度或职责问题时不机械展开或压缩代码。
+- 使用 `int`、`string`、`bool` 等 C# 关键字。内置类型局部变量通常显式声明；右侧能直接看出类型时可用 `var`，如 `var players = new Dictionary<PlayerSlot, PlayerProfile>()`；匿名类型使用 `var`。方法调用的返回类型不明显时写明类型。
+- 访问修饰符明确写出；只读引用使用 `readonly`，常量只用于真正的编译期常量。局部值和字段不为形式统一改成公开属性、record、接口或主构造函数。
+- 保持字段/自动属性初始化顺序，不为格式化重排可能影响行为的成员。使用标准语言特性、集合和已有扩展；新语法的采用以可读性和当前 C# 版本支持为准。
+
+## EditorConfig 与格式化
+
+[`.editorconfig`](../../.editorconfig) 配置空白格式、`using`、命名空间、表达式体、`var` 及命名诊断。命名以警告提示，其他风格以建议提示；当前不提高全仓构建门槛、不新增分析器依赖。配置枚举 `PascalCase` 不能自动识别所有多余 `E` 前缀；单复数、布尔含义、异步所有权、`AnimEvent` 调用边界和本章文档要求仍需审查。`[ThreadStatic]` 前缀及位置 record 参数的语义也不能靠普通符号规则完全表达。
+
+格式化优先使用 SDK 自带的 `dotnet format`；只格式化本批明确的手写文件，生成物、Framework、addons、Luban不作为输入。操作命令见第50章，实际执行结果只记 [Validation](../Validation.md)。VS Code 的 C# 格式化提供程序读取 EditorConfig，`Shift+Alt+F` 用于当前文档；命名诊断是否显示取决于所用 C# 语言服务，不以安装 EditorConfig 插件等同语义分析器已工作。
+
+工具分为三种能力：`whitespace` 处理空白格式；`style` 处理具有修复器的语言风格；命名通常使用 IDE 的重命名重构，并同步检查资源/配置引用。不能把“一键格式化”当成安全的一键重命名。原 `CSharpStyle` 工具带有固定的块命名空间和成员重排规则，不再作为新规范的写入入口；历史审计结果保持原记录，不用它的 `--write` 覆盖 EditorConfig 格式。
+
 ## XML 文档与实现注释
 
+- 以下中文 XML 与实现注释约定属于项目要求；比微软针对公开 API 的文档建议更广，格式化器不生成调用契约。
 - 手写 C# 的类型、方法（含私有方法）、构造函数、重写方法、Godot 生命周期回调以及公开/受保护成员都写 XML 文档注释。
 - `<summary>` 用一句话说明职责。方法一律补齐影响调用方式的 `<param>`、`<returns>`、`<exception>`，单位写进对应说明。
 - XML 文档写调用契约：作用、单位、生命周期、所有权或限制；不要复述方法体，也不要写空泛注释。
@@ -69,7 +112,7 @@ public int ApplyHit(AbstractActorEntity target)
     // ...
 }
 
-private readonly Dictionary<int, IEntity> m_ActiveMonsters = new(); // 当前关卡创建且尚未死亡的实体。
+private readonly Dictionary<int, IEntity> _activeMonsters = new(); // 当前关卡创建且尚未死亡的实体。
 
 /// <summary>按配方顺序生成阶段内容并维护并存上限。</summary>
 /// <param name="stage">要生成内容的阶段配置。</param>

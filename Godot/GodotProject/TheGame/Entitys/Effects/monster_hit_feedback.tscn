@@ -9,5 +9,5 @@ z_index = 2
 sprite_frames = ExtResource("wukong")
 animation = &"hit_1"
 script = ExtResource("script")
-m_WukongFrames = ExtResource("wukong")
-m_TangsengFrames = ExtResource("tangseng")
+_wukongFrames = ExtResource("wukong")
+_tangsengFrames = ExtResource("tangseng")

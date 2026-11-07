@@ -1,38 +1,38 @@
-using GameLogic.FloatingText;
-using GameLogic.Battle;
-using GameLogic.Battle.Attacks;
-using GameLogic.Architecture;
-using GameLogic.Equipment;
-using GameLogic.Save;
-using GameLogic.Profile;
-using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Reflection;
-using GameConfig.Entity;
+using System.Threading.Tasks;
+using GameConfig.Battle;
 using GameConfig.Constant;
+using GameConfig.Entity;
+using GameFramework;
 using GameFramework.Fsm;
+using GameLogic;
+using GameLogic.Architecture;
+using GameLogic.Battle;
+using GameLogic.Battle.Attacks;
 using GameLogic.Drops;
-using GameLogic.Heroes;
-using GameLogic.Level;
 using GameLogic.Enemies;
 using GameLogic.Enemies.AI;
-using GameLogic;
-using GameConfig.Battle;
-using GameFramework;
+using GameLogic.Equipment;
+using GameLogic.FloatingText;
+using GameLogic.Heroes;
 using GameLogic.Input;
+using GameLogic.Level;
+using GameLogic.Profile;
+using GameLogic.Save;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
+using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
 /// 真实引擎中的单向平台、飞行拾取、暂停和升级画面回归。
 /// </summary>
 public sealed partial class UiSmokeScenario
 {
-    private LootOrbNode m_PreviousOrb; // 已回池实例，供下一次击败检查 GGF 实际复用。
+    private LootOrbNode _previousOrb; // 已回池实例，供下一次击败检查 GGF 实际复用。
 
     /// <summary>
     /// 验证地面分支的落地门槛、具体怪物的索敌选择和猴子的受击激怒与复用。
@@ -45,12 +45,12 @@ public sealed partial class UiSmokeScenario
         hero.GlobalPosition = new Vector2(600, 400);
         try
         {
-            foreach (var id in new[] { EEntityId.HuaguoshanMonkey, EEntityId.DemonMonkey, EEntityId.Gorilla,
-                         EEntityId.CaveBrute, EEntityId.KnifeDemon })
+            foreach (EntityId id in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey, EntityId.Gorilla,
+                         EntityId.CaveBrute, EntityId.KnifeDemon })
             {
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
                     new EnemySpawn(new Vector2(720, 100)));
-                var enemy = m_Monster;
+                AbstractEnemyEntity enemy = _monster;
                 SmokeInspection.FreezeAi(enemy);
                 var agent = (IEnemyAiAgent)enemy;
                 Check(enemy is AbstractGroundMonsterEntity && !agent.RequestAttack(0),
@@ -58,13 +58,15 @@ public sealed partial class UiSmokeScenario
                 await WaitUntilAsync(() => enemy.OnFloor, $"{id} 未通过地面身体落地");
                 hero.GlobalPosition = enemy.GlobalPosition - new Vector2(120, 0);
                 await WaitFramesAsync(3);
-                Check(agent.HasTarget == (id != EEntityId.HuaguoshanMonkey),
+                Check(agent.HasTarget == (id != EntityId.HuaguoshanMonkey),
                     $"{id} 的主动索敌规则错误");
-                if (id == EEntityId.HuaguoshanMonkey)
+                if (id == EntityId.HuaguoshanMonkey)
                 {
-                    var data = AttackData.Create(0, default, 1, EDamageKind.Real, Vector2.Zero, hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EEntityId.None, 0, 0));
+                    var data = AttackData.Create(0, default, 1, DamageKind.Real, Vector2.Zero, hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
                     try
-                    { enemy.ReceiveHit(data); }
+                    {
+                        enemy.ReceiveHit(data);
+                    }
                     finally { ReferencePool.Release(data); }
                     Check(agent.HasTarget, "猴子受击后没有锁定攻击者");
                     typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic)!
@@ -76,31 +78,31 @@ public sealed partial class UiSmokeScenario
                 await WaitUntilAsync(() => enemy.AttackSegment == 0, $"{id} 未消费攻击请求");
                 await WaitUntilAsync(() => SmokeInspection.BodyStateName(enemy) == "Walk", $"{id} 收招未返回地面移动");
                 ReleaseTestEntity(enemy);
-                m_Monster = null;
+                _monster = null;
                 await WaitFramesAsync(2); // GGF 在帧末完成隐藏并归还可复用池。
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
                     new EnemySpawn(new Vector2(720, 100)));
-                Check(ReferenceEquals(enemy, m_Monster), $"{id} 未复用实体");
-                SmokeInspection.FreezeAi(m_Monster);
+                Check(ReferenceEquals(enemy, _monster), $"{id} 未复用实体");
+                SmokeInspection.FreezeAi(_monster);
                 await WaitFramesAsync(3);
-                if (id == EEntityId.HuaguoshanMonkey)
+                if (id == EntityId.HuaguoshanMonkey)
                 {
-                    Check(!((IEnemyAiAgent)m_Monster).HasTarget, "猴子复用后遗留激怒和目标");
+                    Check(!((IEnemyAiAgent)_monster).HasTarget, "猴子复用后遗留激怒和目标");
                 }
 
-                ReleaseTestEntity(m_Monster);
-                m_Monster = null;
+                ReleaseTestEntity(_monster);
+                _monster = null;
             }
             GD.Print("SMOKE-ENEMY-HIERARCHY PASS: five ground species, airborne attack rejection, grounded attack/recovery, monkey provocation/reacquisition and reuse.");
         }
         finally
         {
-            if (m_Monster != null)
+            if (_monster != null)
             {
-                ReleaseTestEntity(m_Monster);
+                ReleaseTestEntity(_monster);
             }
 
-            m_Monster = null;
+            _monster = null;
             hero.GlobalPosition = origin;
         }
     }
@@ -114,7 +116,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>真实节点飞行与资源变化验证。</returns>
     private async Task CheckManaPickupAsync(ProcedureOwner flow, LevelViewController level, AbstractHeroEntity hero)
     {
-        var owned = SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "m_LootOrbs");
+        HashSet<LootOrbNode> owned = SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "_lootOrbs");
         GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(GF.Fsm.GetModel<HeroModel>().Mp.Value - 2);
         LootOrbNode first = SpawnManaOrb(level, hero.GlobalPosition);
         Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == 2, "蓝球出生时已直接回蓝");
@@ -136,9 +138,9 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() => owned.Count == 0, "蓝球没有接触英雄", 10000);
         Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().MaxMp.Value, 2 + flow.GetSystem<LootSystem>().ManaAmount(GF.Fsm.GetModel<HeroModel>().MaxMp.Value)), "接触后回蓝量不符合配置");
 
-        var floating = SmokeInspection.ReadField<FloatingTextPresenter>(level, "m_FloatingText");
-        var texts = SmokeInspection.ReadField<HashSet<FloatingTextNode>>(floating, "m_Texts");
-        Check(!texts.Any(x => SmokeInspection.ReadField<object>(x, "m_Kind").ToString() == "Recovery"),
+        FloatingTextPresenter floating = SmokeInspection.ReadField<FloatingTextPresenter>(level, "_floatingText");
+        HashSet<FloatingTextNode> texts = SmokeInspection.ReadField<HashSet<FloatingTextNode>>(floating, "_texts");
+        Check(!texts.Any(x => SmokeInspection.ReadField<object>(x, "_kind").ToString() == "Recovery"),
             "蓝量灵魂不应生成恢复飘字");
         hero.GlobalPosition = originalHeroPosition;
         GF.Fsm.GetSystem<HeroSystem>().RestoreMp(GF.Fsm.GetModel<HeroModel>().MaxMp.Value);
@@ -149,10 +151,10 @@ public sealed partial class UiSmokeScenario
         Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == GF.Fsm.GetModel<HeroModel>().MaxMp.Value, "蓝球超出上限或复用后未正确回蓝");
 
         // 生命球复用刚归还的蓝球实例，暂停不能移动或提前恢复生命。
-        var model = flow.GetModel<HeroModel>();
+        HeroModel model = flow.GetModel<HeroModel>();
         model.Hp.Value = 1;
         int health = flow.GetSystem<LootSystem>().HealthAmount(model.MaxHp.Value);
-        var red = SpawnOrb(level, hero.GlobalPosition, new(ELootKind.Health, health));
+        LootOrbNode red = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
         Check(ReferenceEquals(reused, red) && red.Animation == LootAnims.Health && model.Hp.Value == 1,
             "蓝球复用为红球后动画/奖励未刷新或提前回血");
         Vector2 redPosition = red.GlobalPosition;
@@ -171,14 +173,14 @@ public sealed partial class UiSmokeScenario
         foreach (int hp in new[] { model.MaxHp.Value - 1, model.MaxHp.Value })
         {
             model.Hp.Value = hp;
-            var clamped = SpawnOrb(level, hero.GlobalPosition, new(ELootKind.Health, health));
+            LootOrbNode clamped = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
             Check(ReferenceEquals(red, clamped), "红球未复用原池实例");
             await WaitUntilAsync(() => owned.Count == 0, "满血附近红球未回池", 10000);
             Check(model.Hp.Value == model.MaxHp.Value, "红球超出生命上限或满血无法回收");
         }
 
         // 黄球只增加无双，不能再次增加经验；开启期间也允许拾取补充。
-        var battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
+        BattleConfig battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
         GF.Fsm.GetSystem<HeroSystem>().ClearWs();
         GF.Fsm.GetSystem<HeroSystem>().AddWs(GF.Fsm.GetModel<HeroModel>().MaxWs.Value);
         Check(hero.TryActivateMusou(), "黄球回归前未开启无双");
@@ -186,18 +188,18 @@ public sealed partial class UiSmokeScenario
         GF.Fsm.GetSystem<HeroSystem>().AdvanceWs(2);
         int musou = GF.Fsm.GetModel<HeroModel>().Ws.Value;
         int experience = flow.GetModel<ProfileModel>().TotalExperience;
-        SpawnOrb(level, hero.GlobalPosition, new(ELootKind.Musou, ConfigSystem.Instance.Tables.TbBattleConfig.Data.MusouPerOrb));
+        SpawnOrb(level, hero.GlobalPosition, new(LootKind.Musou, ConfigSystem.Instance.Tables.TbBattleConfig.Data.MusouPerOrb));
         await WaitUntilAsync(() => owned.Count == 0, "黄球没有接触英雄", 10000);
         Check(GF.Fsm.GetModel<HeroModel>().Ws.Value == musou + 5 && flow.GetModel<ProfileModel>().TotalExperience == experience,
             "开启期间的黄球没有补充5无双，或错误增加经验");
         hero._PhysicsProcess(battle.WsMax / battle.WsDrainPerSecond + 1f);
 
-        m_ExtraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
+        _extraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
         // 两个表现节点借用同一 HeroModel，不能通过击杀额外节点来伪造独立生命。
         // 用明显不同的位置验证球的飞行目标，不改动本关生命状态。
-        m_ExtraHero.GlobalPosition = hero.GlobalPosition + new Vector2(400, 0);
+        _extraHero.GlobalPosition = hero.GlobalPosition + new Vector2(400, 0);
         GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(GF.Fsm.GetModel<HeroModel>().Mp.Value - 2);
-        var targetProbe = SpawnManaOrb(level, m_ExtraHero.GlobalPosition);
+        LootOrbNode targetProbe = SpawnManaOrb(level, _extraHero.GlobalPosition);
         Vector2 lastPosition = targetProbe.GlobalPosition;
         await WaitUntilAsync(() =>
         {
@@ -208,15 +210,15 @@ public sealed partial class UiSmokeScenario
 
             return owned.Count == 0;
         }, "飞行球没有跟随关卡所有者的实际英雄", 10000);
-        Check(lastPosition.DistanceTo(hero.GlobalPosition) < lastPosition.DistanceTo(m_ExtraHero.GlobalPosition),
+        Check(lastPosition.DistanceTo(hero.GlobalPosition) < lastPosition.DistanceTo(_extraHero.GlobalPosition),
             "球飞向了额外显示的英雄，没有飞向本关实际英雄");
         Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().MaxMp.Value, 2 + flow.GetSystem<LootSystem>().ManaAmount(GF.Fsm.GetModel<HeroModel>().MaxMp.Value)),
             "球错误跟随了同场景的其他英雄，未向本关英雄发放奖励");
-        ReleaseTestEntity(m_ExtraHero);
-        m_ExtraHero = null;
+        ReleaseTestEntity(_extraHero);
+        _extraHero = null;
         // 留一颗正在等待的球，调用方随后通过正式 Cleanup 验证卸载回收。
         SpawnManaOrb(level, hero.GlobalPosition);
-        SpawnOrb(level, hero.GlobalPosition, new(ELootKind.Health, health));
+        SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
         GD.Print("SMOKE-UI: health/mana/musou pickup/clamp/pool reuse/scene-owned target selection passed");
     }
 
@@ -228,7 +230,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>正在飞行的池实例。</returns>
     private static LootOrbNode SpawnManaOrb(LevelViewController level, Vector2 position)
     {
-        return SpawnOrb(level, position, new(ELootKind.Mana,
+        return SpawnOrb(level, position, new(LootKind.Mana,
             GF.Fsm.GetSystem<LootSystem>().ManaAmount(GF.Fsm.GetModel<HeroModel>().MaxMp.Value)));
     }
 
@@ -241,8 +243,8 @@ public sealed partial class UiSmokeScenario
     /// <returns>真实池实例。</returns>
     private static LootOrbNode SpawnOrb(LevelViewController level, Vector2 position, LootReward reward)
     {
-        var orb = GodotGameFramework.NodePool.NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, SmokeInspection.Scene(level));
-        SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "m_LootOrbs").Add(orb);
+        LootOrbNode orb = GodotGameFramework.NodePool.NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, SmokeInspection.Scene(level));
+        SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "_lootOrbs").Add(orb);
         MethodInfo finish = typeof(LevelViewController).GetMethod("OnLootFinished", BindingFlags.Instance | BindingFlags.NonPublic)!;
         orb.Show(position + new Vector2(180, -30), reward,
             (node, reward) => finish.Invoke(level, [node, reward]));
@@ -258,47 +260,47 @@ public sealed partial class UiSmokeScenario
     {
         Vector2 origin = hero.GlobalPosition;
         hero.GlobalPosition = new Vector2(300, 100);
-        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.DemonMonkey,
+        _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DemonMonkey,
             new EnemySpawn(new Vector2(600, 100)));
-        m_Monster.SetPhysicsProcess(true); // 前一声音夹具使用同一池实例时冻结过身体，测试侧显式恢复。
-        await WaitUntilAsync(() => m_Monster.OnFloor, "妖猴追击夹具没有落地");
-        hero.GlobalPosition = m_Monster.GlobalPosition - new Vector2(300, 0);
-        typeof(AbstractEnemyEntity).GetField("m_Target", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(m_Monster, hero);
-        var fsm = SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(m_Monster, "m_AiFsm");
-        var body = m_Monster.GetNode<AnimatedSprite2D>("m_Body");
-        FieldInfo desire = m_Monster.Config.GetType().GetField("AttackDesire")!;
-        int originalDesire = m_Monster.Config.AttackDesire;
-        desire.SetValue(m_Monster.Config, 0); // 只检查实际追击渲染，不让随机合法出招混入夹具。
+        _monster.SetPhysicsProcess(true); // 前一声音夹具使用同一池实例时冻结过身体，测试侧显式恢复。
+        await WaitUntilAsync(() => _monster.OnFloor, "妖猴追击夹具没有落地");
+        hero.GlobalPosition = _monster.GlobalPosition - new Vector2(300, 0);
+        typeof(AbstractEnemyEntity).GetField("_target", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(_monster, hero);
+        IFsm<IEnemyAiAgent> fsm = SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(_monster, "AiFsm");
+        AnimatedSprite2D body = _monster.GetNode<AnimatedSprite2D>("m_Body");
+        FieldInfo desire = _monster.Config.GetType().GetField("AttackDesire")!;
+        int originalDesire = _monster.Config.AttackDesire;
+        desire.SetValue(_monster.Config, 0); // 只检查实际追击渲染，不让随机合法出招混入夹具。
         try
         {
             foreach (float direction in new[] { -1f, 1f })
             {
-                hero.GlobalPosition = m_Monster.GlobalPosition + new Vector2(direction * 300, 0);
-                await WaitUntilAsync(() => m_Monster.AiData.MoveIntent == (int)direction, "妖猴没有自主转向追击");
+                hero.GlobalPosition = _monster.GlobalPosition + new Vector2(direction * 300, 0);
+                await WaitUntilAsync(() => _monster.AiData.MoveIntent == (int)direction, "妖猴没有自主转向追击");
                 await WaitFramesAsync(2);
                 for (int frame = 0; frame < 16; frame++)
                 {
-                    hero.GlobalPosition = m_Monster.GlobalPosition + new Vector2(direction * (frame % 2 == 0 ? 140 : 300), 0);
-                    await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                    Check(fsm.CurrentState is EngageState && body.Animation == "run" && m_Monster.AttackSegment < 0,
+                    hero.GlobalPosition = _monster.GlobalPosition + new Vector2(direction * (frame % 2 == 0 ? 140 : 300), 0);
+                    await _driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                    Check(fsm.CurrentState is EngageState && body.Animation == "run" && _monster.AttackSegment < 0,
                         $"合法追击中闪出举棒：AI={fsm.CurrentState.GetType().Name}，身体={body.Animation}");
                 }
                 // 原版妖猴交战高度为220px；超限后游荡可以停步，但不能提前进入攻击动作。
                 for (int frame = 0; frame < 30; frame++)
                 {
-                    hero.GlobalPosition = m_Monster.GlobalPosition + new Vector2(direction * 30, -240);
-                    await m_Driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                    Check(m_Monster.AttackSegment < 0 && body.Animation != "attack_1", "高处不可达目标引起一帧举棒");
+                    hero.GlobalPosition = _monster.GlobalPosition + new Vector2(direction * 30, -240);
+                    await _driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                    Check(_monster.AttackSegment < 0 && body.Animation != "attack_1", "高处不可达目标引起一帧举棒");
                 }
             }
         }
         finally
         {
-            desire.SetValue(m_Monster.Config, originalDesire);
+            desire.SetValue(_monster.Config, originalDesire);
             hero.GlobalPosition = origin;
         }
-        ReleaseTestEntity(m_Monster);
-        m_Monster = null;
+        ReleaseTestEntity(_monster);
+        _monster = null;
         GD.Print("SMOKE-UI: 妖猴自主左右追击与高处不可达目标逐渲染帧检查通过，无瞬间举棒");
     }
 
@@ -317,7 +319,7 @@ public sealed partial class UiSmokeScenario
             SmokeInspection.Scene(level).AddChild(probe);
             try
             {
-                var surface = platform.GetNode<CollisionShape2D>("Surface");
+                CollisionShape2D surface = platform.GetNode<CollisionShape2D>("Surface");
                 Rect2 bounds = surface.GlobalTransform * surface.Shape.GetRect();
                 float centerX = bounds.GetCenter().X;
                 float surfaceTop = bounds.Position.Y;
@@ -326,7 +328,7 @@ public sealed partial class UiSmokeScenario
                 bool above = false;
                 for (int frame = 0; frame < 150; frame++)
                 {
-                    await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                    await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                     probe.Velocity += new Vector2(0, 900f / Engine.PhysicsTicksPerSecond);
                     probe.MoveAndSlide();
                     above |= probe.GlobalPosition.Y < surfaceTop - 20;
@@ -344,13 +346,13 @@ public sealed partial class UiSmokeScenario
                 probe.QueueFree();
             }
         }
-        m_ExtraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
-        AbstractHeroEntity hero = m_ExtraHero;
+        _extraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
+        AbstractHeroEntity hero = _extraHero;
         try
         {
             StaticBody2D platform = SmokeInspection.Scene(level).GetNode("World/Platforms").GetChildren().OfType<StaticBody2D>().First();
             CollisionShape2D bodyShape = hero.GetNode<CollisionShape2D>("CollisionShape2D");
-            var platformSurface = platform.GetNode<CollisionShape2D>("Surface");
+            CollisionShape2D platformSurface = platform.GetNode<CollisionShape2D>("Surface");
             Rect2 platformBounds = platformSurface.GlobalTransform * platformSurface.Shape.GetRect();
             float feetOffset = bodyShape.Position.Y + bodyShape.Shape.GetRect().End.Y;
             float surfaceTop = platformBounds.Position.Y;
@@ -361,12 +363,12 @@ public sealed partial class UiSmokeScenario
             // 等两次帧信号，确保至少完成一次移位后的物理更新。
             for (int frame = 0; frame < 2; frame++)
             {
-                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
             }
 
             for (int frame = 0; frame < 120 && !hero.IsOnFloor(); frame++)
             {
-                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
             }
 
             Check(hero.IsOnFloor() && Enumerable.Range(0, hero.GetSlideCollisionCount()).Any(index =>
@@ -376,7 +378,7 @@ public sealed partial class UiSmokeScenario
             Input.ActionPress(InputSystem.Jump);
             for (int frame = 0; frame < 20; frame++)
             {
-                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
             }
 
             Check(hero.GlobalPosition.Y > before + hero.Config.PlatformDropDistance && hero.Velocity.Y >= 0,
@@ -386,8 +388,8 @@ public sealed partial class UiSmokeScenario
         {
             Input.ActionRelease(InputSystem.MoveDown);
             Input.ActionRelease(InputSystem.Jump);
-            ReleaseTestEntity(m_ExtraHero);
-            m_ExtraHero = null;
+            ReleaseTestEntity(_extraHero);
+            _extraHero = null;
         }
         GD.Print("SMOKE-UI: three official one-way platforms and hero S+K drop passed real physics");
     }
@@ -400,14 +402,14 @@ public sealed partial class UiSmokeScenario
     /// <returns>飞行中行为检查任务。</returns>
     private async Task CheckFlyingLootAsync(LevelViewController level, AbstractHeroEntity hero)
     {
-        var orbs = SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "m_LootOrbs");
+        HashSet<LootOrbNode> orbs = SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "_lootOrbs");
         Check(orbs.Count is >= 2 and <= 13, "怪物死亡掉落数量超出官方范围");
-        if (m_PreviousOrb != null)
+        if (_previousOrb != null)
         {
-            Check(orbs.Contains(m_PreviousOrb), "下一次击败未复用已归还的飞行球");
+            Check(orbs.Contains(_previousOrb), "下一次击败未复用已归还的飞行球");
         }
 
-        m_PreviousOrb = orbs.First();
+        _previousOrb = orbs.First();
         var positions = orbs.ToDictionary(x => x, x => x.GlobalPosition);
         double elapsed = SmokeInspection.Model(level).ElapsedSeconds;
         GF.Base.PauseGame();
@@ -416,7 +418,7 @@ public sealed partial class UiSmokeScenario
             // 暂停可能发生在delta已经采样的物理/流程回调中，验证同帧旧delta也不能推进关卡。
             level._Process(1.0 / 60.0);
             Check(SmokeInspection.Model(level).ElapsedSeconds == elapsed, "暂停当帧仍推进关卡计时");
-            await m_Driver.ToSignal(m_Driver.GetTree().CreateTimer(.3, true, false, true), SceneTreeTimer.SignalName.Timeout);
+            await _driver.ToSignal(_driver.GetTree().CreateTimer(.3, true, false, true), SceneTreeTimer.SignalName.Timeout);
             Check(positions.All(x => x.Key.GlobalPosition.IsEqualApprox(x.Value)), "暂停时飞行球仍在运动");
         }
         finally
@@ -426,7 +428,7 @@ public sealed partial class UiSmokeScenario
 
         // 跟踪目标换位置，后续调用方等待真正接触后的档案变化。
         hero.GlobalPosition += new Vector2(-40, 0);
-        foreach (AbstractEnemyEntity monster in m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false).OfType<AbstractEnemyEntity>())
+        foreach (AbstractEnemyEntity monster in _driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false).OfType<AbstractEnemyEntity>())
         {
             SmokeInspection.FreezeAi(monster);
         }
@@ -450,7 +452,7 @@ public sealed partial class UiSmokeScenario
         // 主动渲染当前测试状态，避免窗口不再重绘时永远等不到FramePostDraw。
         RenderingServer.ForceDraw(false);
         DirAccess.MakeDirRecursiveAbsolute("res://.godot/validation");
-        Check(m_Driver.GetViewport().GetTexture().GetImage().SavePng($"res://.godot/validation/{name}.png") == Error.Ok,
+        Check(_driver.GetViewport().GetTexture().GetImage().SavePng($"res://.godot/validation/{name}.png") == Error.Ok,
             "战斗反馈截图保存失败");
         return Task.CompletedTask;
     }

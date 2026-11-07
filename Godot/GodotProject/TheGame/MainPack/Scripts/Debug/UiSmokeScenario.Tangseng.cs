@@ -11,6 +11,7 @@ using GameLogic.Heroes;
 using GameLogic.Level;
 using GameLogic.Profile;
 using GameLogic.Save;
+using GameLogic.Save.Data;
 using GameLogic.UI;
 using Godot;
 using GodotGameFramework;
@@ -32,18 +33,18 @@ public sealed partial class UiSmokeScenario
     private async Task CheckTangsengEquipmentAsync(TangsengEntity hero, ProcedureOwner flow,
         BattleForm battle, LevelViewController level)
     {
-        var profile = flow.GetModel<ProfileModel>();
-        var equipment = flow.GetSystem<EquipmentSystem>();
-        var definitions = ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList
-            .Where(item => item.Owner == EEquipmentOwner.Tangseng && item.Slot is EEquipmentSlot.Weapon or EEquipmentSlot.Armor)
+        ProfileModel profile = flow.GetModel<ProfileModel>();
+        EquipmentSystem equipment = flow.GetSystem<EquipmentSystem>();
+        EquipmentConfig[] definitions = ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList
+            .Where(item => item.Owner == EquipmentOwner.Tangseng && item.Slot is EquipmentSlot.Weapon or EquipmentSlot.Armor)
             .ToArray();
         var items = new List<EquipmentData>();
-        var ground = SmokeInspection.ReadField<HashSet<GroundItemNode>>(level, "m_GroundItems");
-        foreach (var definition in definitions)
+        HashSet<GroundItemNode> ground = SmokeInspection.ReadField<HashSet<GroundItemNode>>(level, "_groundItems");
+        foreach (EquipmentConfig definition in definitions)
         {
-            var item = equipment.Roll(Guid.NewGuid(), definition.Id, () => .37f);
+            EquipmentData item = equipment.Roll(Guid.NewGuid(), definition.Id, () => .37f);
             SpawnGround(level, hero.HurtBox.GetGlobalBounds().GetCenter(), null, item);
-            var pickup = ground.Single();
+            GroundItemNode pickup = ground.Single();
             CheckGroundShape(pickup);
             await WaitUntilAsync(() => profile.EquipmentDatas.Any(value => value.InstanceId == item.InstanceId),
                 $"{definition.NameCn}未通过真实接触拾取");
@@ -56,13 +57,13 @@ public sealed partial class UiSmokeScenario
         PushInventoryKey(false);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Any(form => form.Visible),
             "唐僧装备专项没有打开正式背包");
-        var form = GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Single(value => value.Visible);
+        InventoryForm form = GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Single(value => value.Visible);
         CheckAllWearableEquipment(form, hero, flow);
-        ClickBagEquipment(form, flow, EEquipmentId.NineRingMonkStaff);
-        ClickBagEquipment(form, flow, EEquipmentId.HeavenlyFiendRobe);
-        var weapon = profile.Weapon;
-        var armor = profile.Armor;
-        Check(weapon?.EquipmentId == EEquipmentId.NineRingMonkStaff && armor?.EquipmentId == EEquipmentId.HeavenlyFiendRobe,
+        ClickBagEquipment(form, flow, EquipmentId.NineRingMonkStaff);
+        ClickBagEquipment(form, flow, EquipmentId.HeavenlyFiendRobe);
+        EquipmentData weapon = profile.Weapon;
+        EquipmentData armor = profile.Armor;
+        Check(weapon?.EquipmentId == EquipmentId.NineRingMonkStaff && armor?.EquipmentId == EquipmentId.HeavenlyFiendRobe,
             "唐僧没有通过正式菜单穿上九环禅杖与天煞羽袍");
         await WaitFramesAsync(3);
         await CaptureCombatAsync("tangseng_inventory_wearing");
@@ -70,8 +71,8 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() => !GF.Base.IsGamePaused, "关闭唐僧背包没有恢复游戏");
 
         Check(await flow.GetSystem<SaveSystem>().SaveCheckpointAsync(profile), "唐僧装备检查点未写盘");
-        var disk = await ReadDiskAsync();
-        var savedHero = disk.Heroes.Single();
+        GameData disk = await ReadDiskAsync();
+        HeroSaveData savedHero = disk.Heroes.Single();
         Check(savedHero.HeroId == 2 && disk.ActiveHeroId == 2 &&
             savedHero.WeaponInstanceId == weapon.InstanceId && savedHero.ArmorInstanceId == armor.InstanceId &&
             items.All(item => disk.EquipmentItems.Any(saved => saved.InstanceId == item.InstanceId && saved.Attributes == item.Attributes)),
@@ -98,12 +99,12 @@ public sealed partial class UiSmokeScenario
         await CheckPassiveUpgradesAsync(battle, flow);
         await CheckHeroDeathReentryAsync();
 
-        var profile = flow.GetModel<ProfileModel>();
-        var weapon = profile.Weapon;
-        var armor = profile.Armor;
-        var items = profile.EquipmentDatas.ToArray();
+        ProfileModel profile = flow.GetModel<ProfileModel>();
+        EquipmentData weapon = profile.Weapon;
+        EquipmentData armor = profile.Armor;
+        EquipmentData[] items = profile.EquipmentDatas.ToArray();
         int expectedHp = flow.GetModel<HeroModel>().MaxHp.Value;
-        var settingsButton = CurrentBattleForm().GetNode<BaseButton>("MenuPanel/m_SettingsButton");
+        BaseButton settingsButton = CurrentBattleForm().GetNode<BaseButton>("MenuPanel/m_SettingsButton");
         settingsButton.EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().Any(value => value.Visible),
             "唐僧磁盘重入未打开设置");
@@ -128,7 +129,7 @@ public sealed partial class UiSmokeScenario
             return GF.Procedure.CurrentProcedure is ProcedureLevel && CurrentBattleForm() != null;
         }, "唐僧已有档案无法经存档列表重读进关", 15000);
         await WaitFramesAsync(6);
-        var restored = flow.GetModel<ProfileModel>();
+        ProfileModel restored = flow.GetModel<ProfileModel>();
         Check(!ReferenceEquals(profile, restored) && restored.ActiveHeroId == 2 && FindHero() is TangsengEntity &&
             restored.Weapon?.InstanceId == weapon.InstanceId && restored.Armor?.InstanceId == armor.InstanceId &&
             items.All(item => restored.EquipmentDatas.Any(value => value.InstanceId == item.InstanceId && value.Attributes == item.Attributes)) &&
@@ -141,7 +142,7 @@ public sealed partial class UiSmokeScenario
         PushInventoryKey(false);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Any(value => value.Visible),
             "唐僧磁盘重入无法打开复用背包");
-        var inventory = GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Single(value => value.Visible);
+        InventoryForm inventory = GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Single(value => value.Visible);
         CheckAllWearableEquipment(inventory, FindHero(), flow);
         GF.UI.CloseUIForm(inventory.SerialId);
         GD.Print("SMOKE-TANGSENG-LIFECYCLE PASS: equipment, 60/120Hz hurt/musou/death, 25 passive purchases, retry/map/title and fresh disk profile with all equipment/passives.");

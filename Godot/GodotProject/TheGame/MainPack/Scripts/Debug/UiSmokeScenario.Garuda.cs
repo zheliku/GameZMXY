@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -6,23 +7,23 @@ using GameConfig.Attributes;
 using GameConfig.Battle;
 using GameConfig.Entity;
 using GameConfig.Equipment;
-using GameLogic.Equipment;
-using GameLogic.Drops;
-using GameLogic.Level;
-using GameLogic.Profile;
-using GameLogic.UI;
 using GameFramework;
+using GameFramework.Fsm;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Battle.Attacks;
 using GameLogic.Battle.Attributes;
+using GameLogic.Drops;
 using GameLogic.Effects;
 using GameLogic.Enemies;
 using GameLogic.Enemies.AI;
 using GameLogic.Enemies.Body;
-using GameFramework.Fsm;
 using GameLogic.Entity;
+using GameLogic.Equipment;
 using GameLogic.Heroes;
+using GameLogic.Level;
+using GameLogic.Profile;
+using GameLogic.UI;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
@@ -42,9 +43,9 @@ public sealed partial class UiSmokeScenario
     private async Task CheckGarudaAiAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
-        var system = flow.GetSystem<HeroSystem>();
+        HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("GarudaAiSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
@@ -52,19 +53,19 @@ public sealed partial class UiSmokeScenario
             {
                 Engine.PhysicsTicksPerSecond = ticks;
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.PengDemonKing,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.PengDemonKing,
                     new EnemySpawn(new Vector2(580, 100)));
-                var peng = (PengDemonKingEntity)m_Monster;
+                var peng = (PengDemonKingEntity)_monster;
                 var agent = (IEnemyAiAgent)peng;
                 await WaitUntilAsync(() => peng.OnFloor, "自主选招夹具未落地");
-                typeof(PengDemonKingEntity).GetField("m_GroundLeft", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(peng, 60f);
+                typeof(PengDemonKingEntity).GetField("_groundLeft", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(peng, 60f);
                 GD.Seed(7711);
                 float distance = 250f;
                 void FollowPeng()
                 {
                     hero.GlobalPosition = peng.GlobalPosition + new Vector2(distance, 0);
                 }
-                m_Driver.GetTree().PhysicsFrame += FollowPeng;
+                _driver.GetTree().PhysicsFrame += FollowPeng;
                 try
                 {
                     FollowPeng();
@@ -88,42 +89,42 @@ public sealed partial class UiSmokeScenario
                     distance = 80f;
                     await WaitUntilAsync(() => peng.AttackSegment == 3, "彭魔王近身没有自主刺击");
                     await WaitUntilAsync(() => !agent.IsAttacking, "近身刺击未收招");
-                    typeof(PengDemonKingEntity).GetField("m_GroundLeft", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(peng, .05f);
+                    typeof(PengDemonKingEntity).GetField("_groundLeft", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(peng, .05f);
                     await WaitUntilAsync(() => peng.Flying, "地面时钟到点未起飞");
-                    Check(SmokeInspection.ReadField<float>(peng, "m_InvulnerableLeft") > 2.9f, "起飞没有三秒无敌");
-                    typeof(PengDemonKingEntity).GetField("m_FlightLeft", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(peng, .1f);
+                    Check(SmokeInspection.ReadField<float>(peng, "_invulnerableLeft") > 2.9f, "起飞没有三秒无敌");
+                    typeof(PengDemonKingEntity).GetField("_flightLeft", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(peng, .1f);
                     await WaitUntilAsync(() => !peng.Flying, "飞行时钟到点未下落");
                     Check(Math.Abs(peng.GlobalPosition.Y - 150f) < 10, "下落没有使用官方150px高度");
                 }
                 finally
                 {
-                    m_Driver.GetTree().PhysicsFrame -= FollowPeng;
+                    _driver.GetTree().PhysicsFrame -= FollowPeng;
                 }
                 ReleaseTestEntity(peng);
-                m_Monster = null;
+                _monster = null;
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.FlyingDemon,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.FlyingDemon,
                     new EnemySpawn(new Vector2(580, 200)));
-                var flyer = m_Monster;
+                AbstractEnemyEntity flyer = _monster;
                 var flyerAgent = (IEnemyAiAgent)flyer;
-                var fsm = SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(flyer, "m_AiFsm");
-                var state = fsm.GetState<FlyingPursuitState>();
-                float turn = SmokeInspection.ReadField<float>(state, "m_TurnInterval");
+                IFsm<IEnemyAiAgent> fsm = SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(flyer, "AiFsm");
+                FlyingPursuitState state = fsm.GetState<FlyingPursuitState>();
+                float turn = SmokeInspection.ReadField<float>(state, "_turnInterval");
                 void FollowFlyer()
                 {
                     hero.GlobalPosition = flyer.GlobalPosition + new Vector2(80, 60);
                 }
-                m_Driver.GetTree().PhysicsFrame += FollowFlyer;
+                _driver.GetTree().PhysicsFrame += FollowFlyer;
                 try
                 {
                     FollowFlyer();
                     typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(flyer, [hero]);
                     await WaitUntilAsync(() => flyer.AttackSegment == 0, "飞行魔没有自主近身攻击");
-                    double retreat = SmokeInspection.ReadField<double>(state, "m_RetreatUntil");
+                    double retreat = SmokeInspection.ReadField<double>(state, "_retreatUntil");
                     Check(retreat - flyer.AiData.ElapsedSeconds > 2.8 && retreat - flyer.AiData.ElapsedSeconds <= 3,
                         "飞行魔退避没有从出招时开始计三秒");
                     await WaitUntilAsync(() => flyer.AttackSegment < 0, "飞行魔自主攻击未完成");
-                    var data = AttackData.Create(0, default, 1, EDamageKind.Real, new Vector2(24, -24), 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EEntityId.None, 0, 0));
+                    var data = AttackData.Create(0, default, 1, DamageKind.Real, new Vector2(24, -24), 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
                     try
                     {
                         flyer.ReceiveHit(data);
@@ -134,32 +135,32 @@ public sealed partial class UiSmokeScenario
                     }
                     await WaitUntilAsync(() => ((IEnemyBody)flyer).HasPendingHurt || flyerAgent.IsCcLocked, "飞行魔未进入真实受击");
                     await WaitUntilAsync(() => !flyerAgent.IsCcLocked && !((IEnemyBody)flyer).HasPendingHurt, "飞行魔受击未恢复");
-                    Check(SmokeInspection.ReadField<float>(state, "m_TurnInterval") == turn &&
-                        SmokeInspection.ReadField<double>(state, "m_RetreatUntil") == retreat,
+                    Check(SmokeInspection.ReadField<float>(state, "_turnInterval") == turn &&
+                        SmokeInspection.ReadField<double>(state, "_retreatUntil") == retreat,
                         "飞行魔受击重入重新抽取了折返间隔或退避截止时间");
                 }
                 finally
                 {
-                    m_Driver.GetTree().PhysicsFrame -= FollowFlyer;
+                    _driver.GetTree().PhysicsFrame -= FollowFlyer;
                 }
                 hero.GlobalPosition = new Vector2(100000, 100000);
                 double age = flyer.AiData.ElapsedSeconds;
                 await WaitUntilAsync(() => flyer.AiData.ElapsedSeconds - age > 3.2, "飞行魔时钟未推进");
                 Check(flyerAgent.HasTarget, "飞行魔错误地在超出视野三秒后丢失原版持续目标");
                 ReleaseTestEntity(flyer);
-                m_Monster = null;
+                _monster = null;
                 GD.Print($"SMOKE-GARUDA AI 2-3 {ticks}Hz PASS: autonomous casts, shared cooldown, takeoff/fall, retreat and hurt continuity");
             }
         }
         finally
         {
             Engine.PhysicsTicksPerSecond = originalTicks;
-            if (m_Monster is { IsShown: true })
+            if (_monster is { IsShown: true })
             {
-                ReleaseTestEntity(m_Monster);
+                ReleaseTestEntity(_monster);
             }
 
-            m_Monster = null;
+            _monster = null;
             system.RemoveSource(source);
             system.Heal(int.MaxValue);
         }
@@ -177,17 +178,17 @@ public sealed partial class UiSmokeScenario
     /// <param name="label">用于区分关卡证据的官方标签。</param>
     /// <returns>场景与磁盘重读完成的任务。</returns>
     private async Task CheckEquipmentFlowAsync(AbstractHeroEntity hero, ProcedureOwner flow, LevelViewController level,
-        BattleForm form, int levelId, EEquipmentId[] equipmentIds, string label)
+        BattleForm form, int levelId, EquipmentId[] equipmentIds, string label)
     {
-        Check(SmokeInspection.ReadField<int>(level, "m_LevelId") == levelId, "流程夹具进入错误关卡");
+        Check(SmokeInspection.ReadField<int>(level, "_levelId") == levelId, "流程夹具进入错误关卡");
         await CheckGroundItemsAsync(flow, hero, level);
-        var owned = SmokeInspection.ReadField<System.Collections.Generic.HashSet<GroundItemNode>>(level, "m_GroundItems");
+        HashSet<GroundItemNode> owned = SmokeInspection.ReadField<System.Collections.Generic.HashSet<GroundItemNode>>(level, "_groundItems");
         var equipmentDatas = new System.Collections.Generic.List<EquipmentData>();
-        foreach (var id in equipmentIds)
+        foreach (EquipmentId id in equipmentIds)
         {
-            var data = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), id, () => .5f);
+            EquipmentData data = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), id, () => .5f);
             SpawnGround(level, hero.HurtBox.GetGlobalBounds().GetCenter(), null, data);
-            var item = owned.Single();
+            GroundItemNode item = owned.Single();
             await WaitUntilAsync(() => flow.GetModel<ProfileModel>().EquipmentDatas.Any(value => value.InstanceId == data.InstanceId),
                 "新装备没有通过真实接触进入背包");
             equipmentDatas.Add(data);
@@ -199,17 +200,17 @@ public sealed partial class UiSmokeScenario
         Check(equipmentDatas.All(data => flow.GetModel<ProfileModel>().EquipmentDatas.Any(value => value.InstanceId == data.InstanceId)),
             "穿卸界面恢复后丢失真实拾取的新装备");
         KillHero(hero);
-        await WaitUntilAsync(() => SmokeInspection.Model(level).Outcome.Value == ELevelOutcome.Defeated,
+        await WaitUntilAsync(() => SmokeInspection.Model(level).Outcome.Value == LevelOutcome.Defeated,
             "第六关墓碑结束后未提交失败", 15000);
         Check(await SmokeInspection.GetLevelSystem(level).CheckpointWrite, "第六关失败检查点写入失败");
-        var saved = await ReadDiskAsync();
+        GameData saved = await ReadDiskAsync();
         Check(equipmentDatas.All(data => saved.EquipmentItems.Any(value => value.InstanceId == data.InstanceId && value.Attributes == data.Attributes)),
             "第六关失败检查点没有保存两件新装备及实际属性");
         await CheckFailureSettlementAsync(level);
         await WaitUntilAsync(() => GF.Procedure.CurrentProcedure is ProcedureLevel && FindLevel() is { } current &&
             !ReferenceEquals(current, level) && CurrentBattleForm() != null, "第六关失败页重试未重建场景", 15000);
-        var retry = FindLevel();
-        Check(SmokeInspection.ReadField<int>(retry, "m_LevelId") == levelId &&
+        LevelViewController retry = FindLevel();
+        Check(SmokeInspection.ReadField<int>(retry, "_levelId") == levelId &&
             equipmentDatas.All(data => flow.GetModel<ProfileModel>().EquipmentDatas.Any(value => value.InstanceId == data.InstanceId)),
             "重试进入错误关卡或丢失已保存装备");
         await CheckFailureReturnMapAsync();
@@ -224,22 +225,22 @@ public sealed partial class UiSmokeScenario
     /// <returns>所有动作和池生命周期验证完成的任务。</returns>
     private async Task CheckGarudaEnemiesAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        var system = flow.GetSystem<HeroSystem>();
+        HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SmokeGaruda", 1);
-        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                foreach (var (id, count) in new[] { (EEntityId.FlyingDemon, 1), (EEntityId.PengDemonKing, 4) })
+                foreach ((EntityId id, int count) in new[] { (EntityId.FlyingDemon, 1), (EntityId.PengDemonKing, 4) })
                 {
                     hero.GlobalPosition = new Vector2(100000, 100000);
-                    m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
-                    var actor = m_Monster;
+                    _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
+                    AbstractEnemyEntity actor = _monster;
                     SmokeInspection.FreezeAi(actor);
-                    if (id == EEntityId.PengDemonKing)
+                    if (id == EntityId.PengDemonKing)
                     {
                         await WaitUntilAsync(() => actor.OnFloor, "彭魔王夹具未落地");
                     }
@@ -252,8 +253,8 @@ public sealed partial class UiSmokeScenario
                             if (actor is PengDemonKingEntity)
                             {
                                 typeof(PengDemonKingEntity).GetProperty("Flying", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(actor, index == 0);
-                                typeof(PengDemonKingEntity).GetField("m_GroundLeft", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(actor, 60f);
-                                typeof(PengDemonKingEntity).GetField("m_FlightLeft", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(actor, 60f);
+                                typeof(PengDemonKingEntity).GetField("_groundLeft", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(actor, 60f);
+                                typeof(PengDemonKingEntity).GetField("_flightLeft", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(actor, 60f);
                                 if (index == 0)
                                 {
                                     actor.GlobalPosition = new Vector2(580, 150);
@@ -276,8 +277,8 @@ public sealed partial class UiSmokeScenario
                             while (actor.AttackSegment >= 0 || actor.GetParent().GetChildren().OfType<SkillEffectNode>().Any(effect => effect.Visible))
                             {
                                 Check(Time.GetTicksMsec() - start < 7000, $"{id}/{index + 1} 未完成或效果未回池");
-                                var effect = actor.GetParent().GetChildren().OfType<SkillEffectNode>().FirstOrDefault(effect => effect.Visible);
-                                var shape = effect?.GetNode<CollisionShape2D>("Origin/Visual/HitBox/CollisionShape2D") ??
+                                SkillEffectNode effect = actor.GetParent().GetChildren().OfType<SkillEffectNode>().FirstOrDefault(effect => effect.Visible);
+                                CollisionShape2D shape = effect?.GetNode<CollisionShape2D>("Origin/Visual/HitBox/CollisionShape2D") ??
                                     actor.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
                                 sawFire |= effect != null;
                                 if (!shape.Disabled)
@@ -298,7 +299,7 @@ public sealed partial class UiSmokeScenario
                                 await WaitFramesAsync(1);
                             }
                             Check(hero.Hp < hp, $"{id}/{index + 1}/{direction}/{ticks} 未造成真实伤害");
-                            if (id == EEntityId.PengDemonKing && index is 0 or 2)
+                            if (id == EntityId.PengDemonKing && index is 0 or 2)
                             {
                                 Check(sawFire && hitDuringFade, "火焰未生成，或错误地将淡入期改成无伤害预警");
                             }
@@ -332,19 +333,19 @@ public sealed partial class UiSmokeScenario
                         await WaitFramesAsync(3);
                         Check(!peng.HurtBox.Monitorable && peng.IsShown, "破蛋后应关闭受击体并等待死亡演出");
                         await WaitUntilAsync(() => !peng.IsShown, "首领死亡旋涡结束后没有回池");
-                        m_Monster = null;
+                        _monster = null;
                     }
                     else
                     {
                         ReleaseTestEntity(actor);
-                        m_Monster = null;
+                        _monster = null;
                     }
                     await WaitFramesAsync(3);
-                    m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
-                    Check(ReferenceEquals(actor, m_Monster) && actor.Hp == actor.MaxHp && !actor.Dead && actor.AttackSegment == -1 &&
+                    _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
+                    Check(ReferenceEquals(actor, _monster) && actor.Hp == actor.MaxHp && !actor.Dead && actor.AttackSegment == -1 &&
                         actor.GetNode<AnimatedSprite2D>("m_Body").Visible, "新敌人复用后残留生命、招式或死亡可见性");
-                    ReleaseTestEntity(m_Monster);
-                    m_Monster = null;
+                    ReleaseTestEntity(_monster);
+                    _monster = null;
                 }
             }
             GD.Print("SMOKE-GARUDA 2-3 PASS: 60/120Hz, both directions, five actions, active fade, egg/rebirth/death and pool reuse");
@@ -357,12 +358,12 @@ public sealed partial class UiSmokeScenario
                 GF.Base.ResumeGame();
             }
 
-            if (m_Monster is { IsShown: true })
+            if (_monster is { IsShown: true })
             {
-                ReleaseTestEntity(m_Monster);
+                ReleaseTestEntity(_monster);
             }
 
-            m_Monster = null;
+            _monster = null;
             system.RemoveSource(source);
             system.Heal(int.MaxValue);
         }
@@ -375,7 +376,7 @@ public sealed partial class UiSmokeScenario
     /// <param name="attackerId">英雄实体编号。</param>
     private static void ApplyGarudaTestHit(AbstractEnemyEntity actor, int attackerId)
     {
-        var data = AttackData.Create(0, default, 100000f, EDamageKind.Real, Vector2.Zero, 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(attackerId, GameConfig.Entity.EEntityId.None, 0, 0));
+        var data = AttackData.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero, 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(attackerId, GameConfig.Entity.EntityId.None, 0, 0));
         try
         {
             actor.ReceiveHit(data);

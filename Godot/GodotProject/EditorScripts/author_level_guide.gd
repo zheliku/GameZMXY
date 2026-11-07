@@ -57,8 +57,8 @@ func _author() -> void:
     content.add_theme_constant_override("separation", 4)
     var header: VBoxContainer = _child(content, VBoxContainer.new(), "Header", card)
     header.add_theme_constant_override("separation", 3)
-    card.set("m_Title", _label(header, "Title", 18, card))
-    card.set("m_Description", _label(header, "Description", 12, card))
+    card.set("_title", _label(header, "Title", 18, card))
+    card.set("_description", _label(header, "Description", 12, card))
     var encounter: VBoxContainer = _child(content, VBoxContainer.new(), "Encounter", card)
     encounter.add_theme_constant_override("separation", 2)
     var encounter_caption := _label(encounter, "Caption", 12, card)
@@ -80,7 +80,7 @@ func _author() -> void:
     enemies.add_theme_constant_override("icon_margin", 4)
     enemies.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
     enemies.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-    card.set("m_Enemies", enemies)
+    card.set("_enemies", enemies)
     var portraits: Dictionary[int, Texture2D] = {}
     var sources := {
         1: "Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_official_frames.tres",
@@ -115,7 +115,7 @@ func _author() -> void:
         portrait.region = Rect2(frame.region.position + Vector2(used.position), Vector2(used.size))
         portrait.filter_clip = true
         portraits[id] = portrait
-    card.set("m_EnemyTextures", portraits)
+    card.set("_enemyTextures", portraits)
     var loot: VBoxContainer = _child(content, VBoxContainer.new(), "Loot", card)
     loot.add_theme_constant_override("separation", 2)
     var caption := _label(loot, "Caption", 12, card)
@@ -125,9 +125,9 @@ func _author() -> void:
     grid.columns = 5
     grid.add_theme_constant_override("h_separation", 4)
     grid.add_theme_constant_override("v_separation", 2)
-    card.set("m_Drops", grid)
-    card.set("m_Appearances", load("res://TheGame/Sprites/Items/item_appearances.tres"))
-    card.set("m_EquipmentCellScene", load("res://TheGame/UIs/Map/guide_equipment_icon.tscn"))
+    card.set("_drops", grid)
+    card.set("_appearances", load("res://TheGame/Sprites/Items/item_appearances.tres"))
+    card.set("_equipmentCellScene", load("res://TheGame/UIs/Map/guide_equipment_icon.tscn"))
     var directory := "res://TheGame/UIs/Map"
     DirAccess.make_dir_recursive_absolute(directory)
     var packed := PackedScene.new()
@@ -156,8 +156,8 @@ func _author() -> void:
     guide.owner = map
     for i in names.size():
         var button: TextureButton = map.get_node(NodePath(names[i]))
-        button.set("m_LevelId", i + 1)
-        button.set("m_Guide", guide)
+        button.set("_levelId", i + 1)
+        button.set("_guide", guide)
         button.tooltip_text = ""
     var scene := PackedScene.new()
     assert(scene.pack(map) == OK)

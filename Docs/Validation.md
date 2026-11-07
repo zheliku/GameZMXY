@@ -2,6 +2,39 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 微软C#命名与格式迁移（2026-11-07）
+
+按用户要求从规范配置推进到实际项目代码，并排除GGF/第三方。40个枚举去E（21手写、19Luban），1014个字段按可见性与静态归属命名；12份UI绑定、项目Luban加载器/总表模板从各自生成入口更新。脚本UID、枚举成员/值、配置bytes、存档v12与玩法保持。主工作区不应用双人02A草稿。
+
+Framework/addons/Tools/Luban共937份跟踪文件逐字节核对HEAD无变化，Git索引保持原样。GGF扩展的旧EEntityId/EUIFormId引用仅通过GodotProject.csproj的两个编译别名绑定正式新类型，不新增兼容枚举或复制框架API。`.editorconfig`的C#规则也限定在项目自有源文件路径。
+
+以下从仓库根执行可复用格式检查；目录路径必须保留末尾`/`，SDK 10.0.303在不带斜杠时可能没有选中任何文件仍返回0。已用故意不规范样例验证两种参数的差别。真正应用时移除`--verify-no-changes`，保留输入/排除范围，不传`--include-generated`。
+
+```powershell
+Push-Location Godot/GodotProject
+dotnet format whitespace GodotProject.csproj --no-restore --include TheGame/ EditorScripts/ --exclude TheGame/GameScripts/GameProto/ --verify-no-changes
+dotnet format style GodotProject.csproj --no-restore --include TheGame/ EditorScripts/ --exclude TheGame/GameScripts/GameProto/ --severity info --diagnostics IDE0007 IDE0008 IDE0011 IDE0021 IDE0022 IDE0023 IDE0025 IDE0026 IDE0027 IDE0049 IDE0065 IDE0161 --verify-no-changes
+Pop-Location
+```
+
+小批次可把目录换成具体文件。测试和工具在各自csproj按同一方式指定本批文件；需要特殊生成契约的ExternalTypeUtil手写入口可明确指定单文件。命名是独立重构，不能以格式化代替场景导出/动画属性/反射/源表迁移。旧CSharpStyle的固定成员重排和块命名空间不再用于写入。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 配置源表与生成 | 9张表56格经Artifact Tool编辑、重算、逐值核验及前后渲染后，只转入原生XML文本。9份最终xlsx与858f22a加E前版本逐字节一致，无关ZIP部件、共享字符串与样式保留。`$env:AI_MODE='1'; cmd /c Configs\GameConfig\gen_code_bin_to_project_lazyload.bat`最终schema/data/validation/code完成；Luban工具本体未改；全部bytes对HEAD无差异 |
+| UI生成 | `python Tools/ProjectMaintenance/regenerate_ui_form.py <场景> --namespace <原命名空间>`逐个重生成10份业务Form与LoadingForm/QuestionTips；生成器只在项目侧转换模板字段，不修改Framework模板。代码/资源引用同步 |
+| 类型与资源保持 | 40个枚举成员序列/值逐项一致；19份配置枚举与PlayerSlot的原UID保留。96份场景/资源与操作前快照独立比较，仅序列化属性名替换，节点名/路径、几何、动画轨道和数值原样；正式存档未写入 |
+| 编译与命名检查 | `dotnet build Godot/GodotProject --no-restore -v quiet -p:EnforceCodeStyleInBuild=true`最终0错误、0条IDE1006；保留5条既有框架弃用警告。只在本命令临时启用风格分析，没有修改全仓构建门槛 |
+| 规则与工具 | `dotnet test Tests/ProfileTests --no-restore -v quiet`279/279，BattleTests同命令193/193，LevelTests19/19；`python -m unittest discover -s Tests/ToolTests -v`26/26。既有NU1900及Battle的CS8632/CS0649警告保留；12份变更Python均py_compile通过 |
+| 格式 | 按显式手写文件清单应用SDK style/whitespace；上述有效目录命令的whitespace与全部列出的style诊断`--verify-no-changes`最终均退出0，四组测试/工具显式清单复核也退出0。简单自动属性保留单行，using/命名空间/表达式体/var按EditorConfig，初始化次序不重排 |
+| 实际Godot扫描 | 既有runner案例`microsoft_style_import_20261107 --headless --editor --build-solutions --quit --no-window`退出0、完成扫描/构建；退出仍有既有ComponentInsoector/free诊断，未修改插件 |
+| 实际导出绑定 | runner案例`microsoft_style_bindings_verified_20261107 --headless --script res://.godot/validation/microsoft_style/validate_bindings.gd --no-window`退出0：91场景、1110个序列化属性实际实例化取值通过。NodePath解析到真实节点；Resource的local_to_scene复制按存储内容比较，不误判为丢绑定 |
+| 正式前端 | runner案例`microsoft_style_frontend_20261107 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`退出0、完整SMOKE PASS；包括建档/选角、目录、地图、关内保存返回、备份/失败及重新加载。预期失败注入与退出5个ObjectDB/1条资源诊断分别保留 |
+| 完整UI | runner案例`microsoft_style_ui_final_20261107 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 30000 -- --smoketest=ui`退出0、完整SMOKE PASS；HUD/背包/技能、实体/窗口复用、60/120Hz地形/平台、拾取、死亡、备份回退、加载取消与失败清理通过。预期坏文件/HUD失败注入单列；退出仍有20个Texture RID、8个ShapedText、2个Font RID、140个ObjectDB/11条资源诊断 |
+| 引用与边界 | `python Tools/ProjectMaintenance/validate_game_references.py`2283路径/388UID通过；`audit_equipment_appearances.py`38装备/38外观通过。`git diff --check`通过，索引未改，隔离02A草稿不动 |
+
+临时符号迁移/核验脚本和报告均在忽略目录`.godot/validation/microsoft_style/`，未引入正式迁移工具或生产测试API。首次UI尝试发现烟测元组内保存的旧反射字段名，已修复后重新完整执行；早期失败不作为最终通过证据。以下E前缀章节只保留历史实施证据，其规范已被本节及第10章替代。
+
 ## 全项目枚举E前缀（2026-11-07）
 
 按用户本次要求统一项目自有枚举类型：21个手写枚举（含私有/调试状态）与19个Luban配置枚举全部加E前缀。通过C#符号区分类型和同名字段，公开接口、状态机、UI、测试及工具引用一起迁移；字段/属性、枚举项及持久键不加前缀。独立枚举文件同名迁移并携带原UID；EPlayerSlot.P1/P2保持1/2。按第10章更新命名规范，第20章同步配置类型说明；框架两份项目适配扩展仅6处配置枚举参数同步，例外登记第50章。双人02A未开始。

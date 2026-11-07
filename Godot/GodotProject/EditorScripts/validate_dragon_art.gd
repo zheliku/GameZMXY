@@ -45,7 +45,7 @@ func _validate() -> void:
     var frozen: SpriteFrames = load("res://TheGame/Sprites/Characters/Heroes/Status/hero_frozen_frames.tres")
     assert(frozen.get_frame_count("play") == 35 and not frozen.get_animation_loop("play"))
     var hero: Node = load("res://TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn").instantiate()
-    var overlay: AnimatedSprite2D = hero.get("m_FrozenEffect")
+    var overlay: AnimatedSprite2D = hero.get("_frozenEffect")
     assert(overlay != null and not overlay.visible and overlay.position == Vector2(-90, -115))
     assert((overlay.material as CanvasItemMaterial).blend_mode == CanvasItemMaterial.BLEND_MODE_ADD)
     hero.free()

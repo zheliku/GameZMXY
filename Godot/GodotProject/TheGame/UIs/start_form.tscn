@@ -6,7 +6,7 @@
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/menu_separator.png" id="separator"]
 [ext_resource type="FontFile" path="res://TheGame/MainPack/Fonts/aa_wen_zheng_ming.ttf" id="smallfont"]
 
-[node name="StartForm" type="Control" node_paths=PackedStringArray("m_Start", "m_Settings", "m_Help", "m_Notice", "m_Status")]
+[node name="StartForm" type="Control" node_paths=PackedStringArray("_start", "_settings", "_help", "_notice", "_status")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -15,11 +15,11 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("theme")
 script = ExtResource("script")
-m_Start = NodePath("m_Start")
-m_Settings = NodePath("m_Settings")
-m_Help = NodePath("m_Help")
-m_Notice = NodePath("m_Notice")
-m_Status = NodePath("m_Status")
+_start = NodePath("m_Start")
+_settings = NodePath("m_Settings")
+_help = NodePath("m_Help")
+_notice = NodePath("m_Notice")
+_status = NodePath("m_Status")
 
 [node name="Background" type="TextureRect" parent="."]
 offset_left = 0.0

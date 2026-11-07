@@ -11,29 +11,29 @@ public partial class {{__name}}
     /// {{escape_comment table.comment}}
     /// </summary>
 {{~end~}}
-    private {{table.full_name}} m_{{table.name}};
+    private {{table.full_name}} _{{string.downcase (string.slice table.name 0 1)}}{{string.slice table.name 1}};
     public {{table.full_name}} {{format_property_name __code_style table.name}}
     {
         get
         {
-            if (m_{{table.name}} == null)
+            if (_{{string.downcase (string.slice table.name 0 1)}}{{string.slice table.name 1}} == null)
             {
-                m_{{table.name}} = new {{table.full_name}}(defaultLoader("{{table.output_data_file}}"));
-                m_{{table.name}}.ResolveRef(this);
+                _{{string.downcase (string.slice table.name 0 1)}}{{string.slice table.name 1}} = new {{table.full_name}}(_defaultLoader("{{table.output_data_file}}"));
+                _{{string.downcase (string.slice table.name 0 1)}}{{string.slice table.name 1}}.ResolveRef(this);
             }
-            return m_{{table.name}};
+            return _{{string.downcase (string.slice table.name 0 1)}}{{string.slice table.name 1}};
         }
         set
         {
-            m_{{table.name}} = value;
-            m_{{table.name}}.ResolveRef(this);
+            _{{string.downcase (string.slice table.name 0 1)}}{{string.slice table.name 1}} = value;
+            _{{string.downcase (string.slice table.name 0 1)}}{{string.slice table.name 1}}.ResolveRef(this);
         }
     }
     {{~end~}}
 
     #endregion
 
-    System.Func<string, ByteBuf> defaultLoader;
+    private System.Func<string, ByteBuf> _defaultLoader;
 
     public {{__name}}(System.Func<string, ByteBuf> loader)
     {
@@ -43,8 +43,8 @@ public partial class {{__name}}
     
     public void SetDefaultLoader(System.Func<string, ByteBuf> loader)
     {
-        defaultLoader = null;
-        defaultLoader = loader;
+        _defaultLoader = null;
+        _defaultLoader = loader;
     }
 
     //public partial void Init();

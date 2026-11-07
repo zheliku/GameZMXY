@@ -16,15 +16,15 @@ tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Arr
 [sub_resource type="AnimationLibrary" id="library"]
 _data = {&"play": SubResource("play")}
 
-[node name="TangsengNormalBolt" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox")]
+[node name="TangsengNormalBolt" type="Node2D" node_paths=PackedStringArray("_player", "_hitBox")]
 z_index = 2
 scale = Vector2(0.6, 1)
 script = ExtResource("script")
-m_Player = NodePath("AnimationPlayer")
-m_HitBox = NodePath("HitBox")
-m_Speed = 192.0
-m_TravelDistance = 304.0
-m_SplashRadius = 60.0
+_player = NodePath("AnimationPlayer")
+_hitBox = NodePath("HitBox")
+_speed = 192.0
+_travelDistance = 304.0
+_splashRadius = 60.0
 
 [node name="Sprite" type="Sprite2D" parent="."]
 texture = ExtResource("texture")

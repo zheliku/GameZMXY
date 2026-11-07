@@ -6,7 +6,7 @@
 
 [ext_resource type="AnimationLibrary" path="res://TheGame/Sprites/UI/hud/musou_activation/shared/musou_activation_library.tres" id="library"]
 
-[node name="MusouActivation" type="Control" unique_id=109249331 node_paths=PackedStringArray("m_Animation", "m_Player")]
+[node name="MusouActivation" type="Control" unique_id=109249331 node_paths=PackedStringArray("_animation", "_player")]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -15,9 +15,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("script")
-m_Animation = NodePath("Animation")
-m_Player = NodePath("AnimationPlayer")
-m_HeroFrames = Dictionary[int, SpriteFrames]({
+_animation = NodePath("Animation")
+_player = NodePath("AnimationPlayer")
+_heroFrames = Dictionary[int, SpriteFrames]({
 1: ExtResource("frames"),
 2: ExtResource("tangseng_frames")
 })

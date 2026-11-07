@@ -23,7 +23,7 @@ public sealed partial class EnemyConfig : Luban.BeanBase
         LegacyId = _buf.ReadInt();
         NameCn = _buf.ReadString();
         Desc = _buf.ReadString();
-        EntityId = (Entity.EEntityId)_buf.ReadInt();
+        EntityId = (Entity.EntityId)_buf.ReadInt();
         Level = _buf.ReadInt();
         BaseAttributes = global::GameConfig.Attributes.ActorBaseAttributes.DeserializeActorBaseAttributes(_buf);
         MoveSpeed = _buf.ReadFloat();
@@ -39,7 +39,7 @@ public sealed partial class EnemyConfig : Luban.BeanBase
         MusouDropChance = _buf.ReadFloat();
         MusouCount = GameLogic.Config.ExternalTypeUtil.NewVector2I(global::GameConfig.vector2i.Deserializevector2i(_buf));
         EquipmentDropChance = _buf.ReadFloat();
-        EquipmentDropPoolId = (Loot.EEquipmentDropPoolId)_buf.ReadInt();
+        EquipmentDropPoolId = (Loot.EquipmentDropPoolId)_buf.ReadInt();
     }
 
     public static EnemyConfig DeserializeEnemyConfig(ByteBuf _buf)
@@ -66,7 +66,7 @@ public sealed partial class EnemyConfig : Luban.BeanBase
     /// <summary>
     /// 实体枚举
     /// </summary>
-    public readonly Entity.EEntityId EntityId;
+    public readonly Entity.EntityId EntityId;
     /// <summary>
     /// 等级(参与等级压制)
     /// </summary>
@@ -130,7 +130,7 @@ public sealed partial class EnemyConfig : Luban.BeanBase
     /// <summary>
     /// 装备掉落池；None 不掉装备
     /// </summary>
-    public readonly Loot.EEquipmentDropPoolId EquipmentDropPoolId;
+    public readonly Loot.EquipmentDropPoolId EquipmentDropPoolId;
    
     public const int __ID__ = -1277633724;
     public override int GetTypeId() => __ID__;

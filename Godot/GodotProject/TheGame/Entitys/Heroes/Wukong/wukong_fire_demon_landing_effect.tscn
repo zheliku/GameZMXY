@@ -7,10 +7,10 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_txy77"]
 size = Vector2(1, 1)
 
-[node name="FireDemonLanding" type="Node2D" unique_id=870908912 node_paths=PackedStringArray("m_Player", "m_HitBox")]
+[node name="FireDemonLanding" type="Node2D" unique_id=870908912 node_paths=PackedStringArray("_player", "_hitBox")]
 script = ExtResource("script")
-m_Player = NodePath("AnimationPlayer")
-m_HitBox = NodePath("Origin/Visual/HitBox")
+_player = NodePath("AnimationPlayer")
+_hitBox = NodePath("Origin/Visual/HitBox")
 
 [node name="Origin" type="Node2D" parent="." unique_id=531969873]
 

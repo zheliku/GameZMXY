@@ -16,9 +16,9 @@ public sealed partial class SkillConfig : Luban.BeanBase
 {
     public SkillConfig(ByteBuf _buf) 
     {
-        Id = (Skills.ESkillId)_buf.ReadInt();
+        Id = (Skills.SkillId)_buf.ReadInt();
         LegacyId = _buf.ReadString();
-        Hero = (Skills.ESkillHero)_buf.ReadInt();
+        Hero = (Skills.SkillHero)_buf.ReadInt();
         Order = _buf.ReadInt();
         NameCn = _buf.ReadString();
         Description = _buf.ReadString();
@@ -34,7 +34,7 @@ public sealed partial class SkillConfig : Luban.BeanBase
     /// <summary>
     /// 技能唯一标识
     /// </summary>
-    public readonly Skills.ESkillId Id;
+    public readonly Skills.SkillId Id;
     /// <summary>
     /// 造一原文件动作/机制
     /// </summary>
@@ -42,7 +42,7 @@ public sealed partial class SkillConfig : Luban.BeanBase
     /// <summary>
     /// 所属角色（展示不代表已可出战）
     /// </summary>
-    public readonly Skills.ESkillHero Hero;
+    public readonly Skills.SkillHero Hero;
     /// <summary>
     /// 原版面板行序，从1开始
     /// </summary>

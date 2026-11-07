@@ -17,13 +17,13 @@ func _run() -> void:
     assert(paths.size() == 24)
     for path in paths:
         var actor: Node = load(path).instantiate()
-        var area: Area2D = actor.get("m_Perception")
+        var area: Area2D = actor.get("_perception")
         assert(area != null, path)
         area.call("Validate")
-        assert(area.get("m_DetectionShape") == area.get_node("Detection"))
-        var id: int = actor.get("m_EnemyEntityId")
+        assert(area.get("_detectionShape") == area.get_node("Detection"))
+        var id: int = actor.get("_enemyEntityId")
         if id not in [21, 22, 24]:
-            assert(area.get("m_EngageShape") == area.get_node("Engage"))
+            assert(area.get("_engageShape") == area.get_node("Engage"))
             var engage: CollisionShape2D = area.get_node("Engage")
             var rect: Rect2 = engage.shape.get_rect()
             assert(area.call("ContainsEngage", Vector2.ZERO))
@@ -36,10 +36,10 @@ func _run() -> void:
         else:
             assert(area.get_node_or_null("Engage") == null)
         if id not in [21, 24]:
-            assert(area.get("m_PatrolShape") == area.get_node("Patrol"))
+            assert(area.get("_patrolShape") == area.get_node("Patrol"))
         else:
             assert(area.get_node_or_null("Patrol") == null)
-        var ranges := {8: ["m_TrackingRange"], 15: ["m_TrackingRange"], 18: ["m_TrackingRange"], 9: ["m_MeleeRange", "m_TrackingRange"], 14: ["m_RetreatRange"], 23: ["m_SwallowRange", "m_StompRange", "m_CaptureRange"], 26: ["m_WaterColumnRange"]}
+        var ranges := {8: ["_trackingRange"], 15: ["_trackingRange"], 18: ["_trackingRange"], 9: ["_meleeRange", "_trackingRange"], 14: ["_retreatRange"], 23: ["_swallowRange", "_stompRange", "_captureRange"], 26: ["_waterColumnRange"]}
         for field in ranges.get(id, []):
             var node: CollisionShape2D = actor.get(field)
             assert(node != null and node.disabled and node.position == Vector2.ZERO)

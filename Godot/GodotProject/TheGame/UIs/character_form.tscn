@@ -49,7 +49,7 @@ atlas = ExtResource("wujing")
 region = Rect2(22, 0, 237, 610)
 filter_clip = true
 
-[node name="CharacterForm" type="Control" unique_id=1389231940 node_paths=PackedStringArray("m_Wukong", "m_Sanzang", "m_PlayerOne")]
+[node name="CharacterForm" type="Control" unique_id=1389231940 node_paths=PackedStringArray("_wukong", "_sanzang", "_playerOne")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -58,9 +58,9 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("theme")
 script = ExtResource("script")
-m_Wukong = NodePath("Roles/m_Wukong")
-m_Sanzang = NodePath("Roles/m_Sanzang")
-m_PlayerOne = NodePath("m_PlayerOne")
+_wukong = NodePath("Roles/m_Wukong")
+_sanzang = NodePath("Roles/m_Sanzang")
+_playerOne = NodePath("m_PlayerOne")
 
 [node name="Background" type="ColorRect" parent="." unique_id=381968765]
 layout_mode = 0

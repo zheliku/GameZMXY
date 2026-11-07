@@ -29,27 +29,27 @@ size = Vector2(600, 800)
 [sub_resource type="RectangleShape2D" id="hand_shape"]
 size = Vector2(280, 153)
 
-[node name="BullDemonHeartEntity" type="CharacterBody2D" unique_id=1579089503 node_paths=PackedStringArray("m_Heart", "m_HeartFade", "m_Presentation", "m_LeftHand", "m_RightHand", "m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[node name="BullDemonHeartEntity" type="CharacterBody2D" unique_id=1579089503 node_paths=PackedStringArray("_heart", "_heartFade", "_presentation", "_leftHand", "_rightHand", "_perception", "_body", "_animPlayer", "_hurtBox", "_hitBox", "_hitBoxRoot")]
 collision_layer = 4
 collision_mask = 0
 floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("script")
-m_Heart = NodePath("m_Heart")
-m_HeartFade = NodePath("m_HeartFade")
-m_Presentation = NodePath("m_Presentation")
-m_LeftHand = NodePath("m_LeftHand")
-m_RightHand = NodePath("m_RightHand")
-m_FireScene = ExtResource("fire")
-m_Perception = NodePath("Perception")
-m_EnemyEntityId = 100009
-m_Body = NodePath("m_Body")
-m_AnimPlayer = NodePath("m_AnimPlayer")
-m_AttackAnimations = PackedStringArray("idle", "idle")
-m_HurtBox = NodePath("m_HurtBox")
-m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
-m_HitBoxRoot = NodePath("m_HitBoxRoot")
+_heart = NodePath("m_Heart")
+_heartFade = NodePath("m_HeartFade")
+_presentation = NodePath("m_Presentation")
+_leftHand = NodePath("m_LeftHand")
+_rightHand = NodePath("m_RightHand")
+_fireScene = ExtResource("fire")
+_perception = NodePath("Perception")
+_enemyEntityId = 100009
+_body = NodePath("m_Body")
+_animPlayer = NodePath("m_AnimPlayer")
+_attackAnimations = PackedStringArray("idle", "idle")
+_hurtBox = NodePath("m_HurtBox")
+_hitBox = NodePath("m_HitBoxRoot/m_HitBox")
+_hitBoxRoot = NodePath("m_HitBoxRoot")
 
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1990371321]
 sprite_frames = ExtResource("frames")
@@ -61,12 +61,12 @@ position = Vector2(14.65, 141.00938)
 shape = SubResource("body_shape")
 debug_color = Color(0.58, 0.64, 0.72, 0.12)
 
-[node name="m_HurtBox" type="Area2D" parent="." unique_id=769256545 node_paths=PackedStringArray("m_Owner")]
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=769256545 node_paths=PackedStringArray("_owner")]
 collision_layer = 32
 collision_mask = 0
 monitoring = false
 script = ExtResource("hurt")
-m_Owner = NodePath("..")
+_owner = NodePath("..")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1108676797]
 position = Vector2(14.65, 141.00938)
@@ -85,12 +85,12 @@ shape = SubResource("shape_empty")
 disabled = true
 debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="Perception" type="Area2D" parent="." unique_id=1332371529 node_paths=PackedStringArray("m_DetectionShape")]
+[node name="Perception" type="Area2D" parent="." unique_id=1332371529 node_paths=PackedStringArray("_detectionShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
 script = ExtResource("5_cswe7")
-m_DetectionShape = NodePath("Detection")
+_detectionShape = NodePath("Detection")
 
 [node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=1764500039]
 shape = SubResource("RectangleShape2D_7n3c3")
@@ -120,10 +120,10 @@ libraries/ = ExtResource("fade")
 [node name="m_Presentation" type="AnimationPlayer" parent="." unique_id=1016948907]
 libraries/ = ExtResource("presentation")
 
-[node name="m_LeftHand" type="Node2D" parent="." unique_id=342974523 node_paths=PackedStringArray("m_HitBox")]
+[node name="m_LeftHand" type="Node2D" parent="." unique_id=342974523 node_paths=PackedStringArray("_hitBox")]
 visible = false
 script = ExtResource("hand_script")
-m_HitBox = NodePath("HitBox")
+_hitBox = NodePath("HitBox")
 
 [node name="Visual" type="AnimatedSprite2D" parent="m_LeftHand" unique_id=1683876973]
 sprite_frames = ExtResource("hands")
@@ -140,10 +140,10 @@ monitorable = false
 shape = SubResource("hand_shape")
 debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="m_RightHand" type="Node2D" parent="." unique_id=294928614 node_paths=PackedStringArray("m_HitBox")]
+[node name="m_RightHand" type="Node2D" parent="." unique_id=294928614 node_paths=PackedStringArray("_hitBox")]
 visible = false
 script = ExtResource("hand_script")
-m_HitBox = NodePath("HitBox")
+_hitBox = NodePath("HitBox")
 
 [node name="Visual" type="AnimatedSprite2D" parent="m_RightHand" unique_id=219986866]
 sprite_frames = ExtResource("hands")

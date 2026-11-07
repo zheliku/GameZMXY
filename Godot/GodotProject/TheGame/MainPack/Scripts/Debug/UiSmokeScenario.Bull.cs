@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using GameConfig;
 using GameConfig.Attributes;
+using GameConfig.Constant;
 using GameConfig.Entity;
 using GameConfig.Equipment;
 using GameFramework.Fsm;
@@ -12,15 +15,12 @@ using GameLogic.Battle.Attributes;
 using GameLogic.Enemies;
 using GameLogic.Enemies.AI;
 using GameLogic.Enemies.Body;
+using GameLogic.Equipment;
+using GameLogic.Event.Equipment;
 using GameLogic.Heroes;
 using GameLogic.Heroes.Body;
-using GameLogic.Equipment;
 using GameLogic.Profile;
 using GameLogic.UI;
-using GameLogic.Event.Equipment;
-using GameConfig;
-using GameConfig.Constant;
-using System.Collections.Generic;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
@@ -40,9 +40,9 @@ public sealed partial class UiSmokeScenario
     private async Task CheckBullHeartTimingAsync(AbstractHeroEntity hero)
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
-        var heroSystem = GF.Fsm.GetSystem<HeroSystem>();
+        HeroSystem heroSystem = GF.Fsm.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("BullHeartTiming", 1);
-        heroSystem.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         heroSystem.Heal(int.MaxValue);
         try
         {
@@ -50,14 +50,14 @@ public sealed partial class UiSmokeScenario
             {
                 Engine.PhysicsTicksPerSecond = ticks;
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.BullDemonHeart,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BullDemonHeart,
                     new EnemySpawn(new Vector2(1350, 300)));
-                var heart = (BullDemonHeartEntity)m_Monster;
-                var sprite = heart.GetNode<AnimatedSprite2D>("m_Heart");
+                var heart = (BullDemonHeartEntity)_monster;
+                AnimatedSprite2D sprite = heart.GetNode<AnimatedSprite2D>("m_Heart");
                 Check(sprite.Modulate.A == 0f, "心脏取池后没有立即恢复隐藏");
-                var fsm = SmokeInspection.ReadField<IFsm<IEnemyBody>>(heart, "m_BodyFsm");
-                var state = fsm.CurrentState;
-                float hidden = SmokeInspection.ReadField<float>(state, "m_HeartLeft");
+                IFsm<IEnemyBody> fsm = SmokeInspection.ReadField<IFsm<IEnemyBody>>(heart, "BodyFsm");
+                FsmState<IEnemyBody> state = fsm.CurrentState;
+                float hidden = SmokeInspection.ReadField<float>(state, "_heartLeft");
                 Check(hidden >= 5 && hidden <= 9, "首次隐藏秒数不符合官方5..9");
                 double clock = 0;
                 double showingAt = -1, shownAt = -1, hidingAt = -1, hiddenAt = -1;
@@ -88,9 +88,9 @@ public sealed partial class UiSmokeScenario
                         hiddenAt = clock;
                     }
 
-                    if (SmokeInspection.ReadField<object>(state, "m_HeartPhase").ToString() == "Shown")
+                    if (SmokeInspection.ReadField<object>(state, "_heartPhase").ToString() == "Shown")
                     {
-                        shownDuration = Math.Max(shownDuration, SmokeInspection.ReadField<float>(state, "m_HeartLeft"));
+                        shownDuration = Math.Max(shownDuration, SmokeInspection.ReadField<float>(state, "_heartLeft"));
                     }
 
                     if (alpha < 1)
@@ -101,7 +101,7 @@ public sealed partial class UiSmokeScenario
 
                     previousAlpha = alpha;
                 }
-                m_Driver.GetTree().PhysicsFrame += Sample;
+                _driver.GetTree().PhysicsFrame += Sample;
                 try
                 {
                     await WaitUntilAsync(() => hiddenAt >= 0, "心脏没有完成完整显隐周期", 22000);
@@ -112,9 +112,9 @@ public sealed partial class UiSmokeScenario
                         Math.Abs(hidingAt - shownAt - shownDuration) < .15, "完整可伤害停留不符合原版2..5秒");
                     Check(Math.Abs(hiddenAt - hidingAt - 2) < .15, "原生淡出不是2秒");
                     Check(ReferenceEquals(fsm.CurrentState, state), "心脏受伤重启了显隐状态");
-                    await WaitUntilAsync(() => SmokeInspection.ReadField<object>(state, "m_HeartPhase").ToString() == "Hidden",
+                    await WaitUntilAsync(() => SmokeInspection.ReadField<object>(state, "_heartPhase").ToString() == "Hidden",
                         "淡出后没有进入下一隐藏周期");
-                    float nextHidden = SmokeInspection.ReadField<float>(state, "m_HeartLeft");
+                    float nextHidden = SmokeInspection.ReadField<float>(state, "_heartLeft");
                     Check(nextHidden >= 4.9f && nextHidden <= 11 && sprite.Modulate.A == 0f,
                         "后续隐藏不符合原版5..11秒或未完全隐藏");
                     GD.Print($"SMOKE-BULL HEART TIMING {ticks}Hz PASS: hidden={hidden}, fadeIn={shownAt - showingAt:F3}, vulnerable={hidingAt - shownAt:F3}, fadeOut={hiddenAt - hidingAt:F3}; first-full-alpha hit accepted");
@@ -122,9 +122,9 @@ public sealed partial class UiSmokeScenario
                 }
                 finally
                 {
-                    m_Driver.GetTree().PhysicsFrame -= Sample;
+                    _driver.GetTree().PhysicsFrame -= Sample;
                     ReleaseTestEntity(heart);
-                    m_Monster = null;
+                    _monster = null;
                     await WaitFramesAsync(3);
                 }
             }
@@ -146,14 +146,14 @@ public sealed partial class UiSmokeScenario
     /// <returns>上边界排除与上部实际伤害检查。</returns>
     private async Task CheckBullFireRangeAsync(AbstractHeroEntity hero, BullDemonHeartEntity heart, int ticks)
     {
-        var owned = SmokeInspection.ReadField<HashSet<BullDemonFireNode>>(heart, "m_Fires");
-        var before = owned.ToArray();
+        HashSet<BullDemonFireNode> owned = SmokeInspection.ReadField<HashSet<BullDemonFireNode>>(heart, "_fires");
+        BullDemonFireNode[] before = owned.ToArray();
         typeof(BullDemonHeartEntity).GetMethod("SpawnFire", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(heart, [1]);
-        var fire = owned.Except(before).Single();
-        var player = fire.GetNode<AnimationPlayer>("AnimationPlayer");
+        BullDemonFireNode fire = owned.Except(before).Single();
+        AnimationPlayer player = fire.GetNode<AnimationPlayer>("AnimationPlayer");
         Vector2 hurtOffset = hero.HurtBox.GetGlobalBounds().GetCenter() - hero.GlobalPosition;
         hero.GlobalPosition = fire.GlobalPosition + new Vector2(0, -350) - hurtOffset;
-        var system = GF.Fsm.GetSystem<HeroSystem>();
+        HeroSystem system = GF.Fsm.GetSystem<HeroSystem>();
         system.AdvanceHurtProtection(float.MaxValue);
         int hp = hero.Hp;
         await WaitUntilAsync(() => player.CurrentAnimationPosition >= 1.05, "火柱未进入喷发帧");
@@ -175,9 +175,9 @@ public sealed partial class UiSmokeScenario
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
         bool captureOnly = OS.GetCmdlineUserArgs().Contains("--bull-capture-only");
-        var system = flow.GetSystem<HeroSystem>();
+        HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("BullSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
@@ -193,9 +193,9 @@ public sealed partial class UiSmokeScenario
                     foreach (int index in captureOnly ? new[] { 4 } : Enumerable.Range(0, 5))
                     {
                         hero.GlobalPosition = new Vector2(100000, 100000);
-                        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.BullDemonKing,
+                        _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BullDemonKing,
                             new EnemySpawn(new Vector2(1350, 100), ContinueEncounterAsync: (_, _, _) => Task.CompletedTask));
-                        var king = m_Monster;
+                        AbstractEnemyEntity king = _monster;
                         SmokeInspection.FreezeAi(king);
                         await WaitUntilAsync(() => king.OnFloor, "牛魔王人形未落地");
                         hero.GlobalPosition = king.GlobalPosition + new Vector2(direction * 70, 0);
@@ -213,7 +213,7 @@ public sealed partial class UiSmokeScenario
                         while (((IEnemyAiAgent)king).IsAttacking)
                         {
                             Check(Time.GetTicksMsec() - started < 9000, "牛魔王招式没有收招" + index);
-                            var shape = king.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
+                            CollisionShape2D shape = king.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
                             if (index < 4 && !shape.Disabled)
                             {
                                 Vector2 center = hero.HurtBox.GetGlobalBounds().GetCenter() - hero.GlobalPosition;
@@ -227,9 +227,9 @@ public sealed partial class UiSmokeScenario
                                 }
 
                                 captured = true;
-                                capturedState |= SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "m_BodyFsm").CurrentState is HeroCapturedState;
+                                capturedState |= SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "_bodyFsm").CurrentState is HeroCapturedState;
                                 Check(!hero.Visible, "吞噬没有隐藏英雄");
-                                var sprite = king.GetNode<AnimatedSprite2D>("m_Body");
+                                AnimatedSprite2D sprite = king.GetNode<AnimatedSprite2D>("m_Body");
                                 Check(sprite.SpriteFrames.ResourcePath.EndsWith(hero is TangsengEntity
                                     ? "/bull_demon_king_tangseng_frames.tres" : "/bull_demon_king_official_frames.tres"),
                                     "吞噬立绘未按实际捕获的英雄选择");
@@ -256,7 +256,7 @@ public sealed partial class UiSmokeScenario
                         Check(king.HitBox.GetChildren().OfType<CollisionShape2D>().All(shape => shape.Disabled), "牛魔王收招残留判定");
                         await CaptureCombatAsync($"bull_king_{ticks}_{index}_{direction}");
                         ReleaseTestEntity(king);
-                        m_Monster = null;
+                        _monster = null;
                         await WaitFramesAsync(3);
                     }
                 }
@@ -277,12 +277,12 @@ public sealed partial class UiSmokeScenario
                 GF.Base.ResumeGame();
             }
 
-            if (m_Monster is { IsShown: true })
+            if (_monster is { IsShown: true })
             {
-                ReleaseTestEntity(m_Monster);
+                ReleaseTestEntity(_monster);
             }
 
-            m_Monster = null;
+            _monster = null;
             hero.SetPhysicsProcess(false);
             hero.Visible = true;
             Engine.PhysicsTicksPerSecond = originalTicks;
@@ -299,10 +299,10 @@ public sealed partial class UiSmokeScenario
     private async Task CheckBullChargeAndGuardAsync(AbstractHeroEntity hero)
     {
         hero.GlobalPosition = new Vector2(100000, 100000);
-        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.BullDemonBeast,
+        _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BullDemonBeast,
             new EnemySpawn(new Vector2(1350, 100), ContinueEncounterAsync: (_, _, _) => Task.CompletedTask));
-        var beast = m_Monster;
-        beast.SetPatrolAnchor(m_Driver.GetViewport().GetCamera2D());
+        AbstractEnemyEntity beast = _monster;
+        beast.SetPatrolAnchor(_driver.GetViewport().GetCamera2D());
         await WaitUntilAsync(() => beast.OnFloor && beast.AttackSegment == 0, "兽形没有开始自主冲撞");
         Check(beast.Velocity.X < 0 && ApplyEastSeaHit(beast, hero.Id, 100, 1, false, Vector2.Zero) == 0,
             "兽形首次方向或冲撞无敌错误");
@@ -316,12 +316,12 @@ public sealed partial class UiSmokeScenario
         GF.Base.ResumeGame();
         await WaitUntilAsync(() => beast.AttackSegment == 0 && beast.Velocity.X > 0, "兽形没有反向冲撞", 5000);
         ReleaseTestEntity(beast);
-        m_Monster = null;
+        _monster = null;
         await WaitFramesAsync(3);
         foreach (int direction in new[] { -1, 1 })
         {
-            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.BullGuard, new EnemySpawn(new Vector2(1350, 100)));
-            var guard = m_Monster;
+            _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BullGuard, new EnemySpawn(new Vector2(1350, 100)));
+            AbstractEnemyEntity guard = _monster;
             SmokeInspection.FreezeAi(guard);
             await WaitUntilAsync(() => guard.OnFloor, "牛妖护卫未落地");
             hero.GlobalPosition = guard.GlobalPosition + new Vector2(direction * 120, 0);
@@ -333,7 +333,7 @@ public sealed partial class UiSmokeScenario
             int hp = hero.Hp;
             await WaitUntilAsync(() => hero.Hp < hp, "牛妖原生重斩未命中", 4000);
             ReleaseTestEntity(guard);
-            m_Monster = null;
+            _monster = null;
             await WaitFramesAsync(3);
         }
         GD.Print("SMOKE-BULL BEAST/GUARD PASS: charge invulnerability, vulnerable rest, reverse, pause, 110px guard range and both-facing hits");
@@ -347,10 +347,10 @@ public sealed partial class UiSmokeScenario
     private async Task CheckBullHeartAsync(AbstractHeroEntity hero)
     {
         hero.GlobalPosition = new Vector2(100000, 100000);
-        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.BullDemonHeart,
+        _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BullDemonHeart,
             new EnemySpawn(new Vector2(1350, 300)));
-        var heart = (BullDemonHeartEntity)m_Monster;
-        var sprite = heart.GetNode<AnimatedSprite2D>("m_Heart");
+        var heart = (BullDemonHeartEntity)_monster;
+        AnimatedSprite2D sprite = heart.GetNode<AnimatedSprite2D>("m_Heart");
         int hp = heart.Hp;
         Check(ApplyEastSeaHit(heart, hero.Id, 100, 1, false, Vector2.Zero) == 0 && heart.Hp == hp,
             "隐藏心脏接受了伤害");
@@ -359,17 +359,17 @@ public sealed partial class UiSmokeScenario
         await CaptureCombatAsync("bull_heart_visible");
         GF.Base.PauseGame();
         await WaitFramesAsync(3);
-        var hand = heart.GetNode<Node2D>("m_LeftHand");
+        Node2D hand = heart.GetNode<Node2D>("m_LeftHand");
         Vector2 position = hand.Position;
         float alpha = sprite.Modulate.A;
         await WaitFramesAsync(10);
         Check(hand.Position == position && sprite.Modulate.A == alpha, "暂停推进心脏或巨掌");
         GF.Base.ResumeGame();
         heart.GetType().GetMethod("SpawnFire", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(heart, [2]);
-        var fires = heart.GetParent().GetChildren().OfType<BullDemonFireNode>().Where(value => value.Visible).ToArray();
+        BullDemonFireNode[] fires = heart.GetParent().GetChildren().OfType<BullDemonFireNode>().Where(value => value.Visible).ToArray();
         Check(fires.Length >= 2, "最终形态没有从节点池生成火柱");
         ReleaseTestEntity(heart);
-        m_Monster = null;
+        _monster = null;
         await WaitFramesAsync(3);
         Check(fires.All(value => !value.Visible), "最终形态离场遗留火柱");
         GD.Print("SMOKE-BULL HEART 4-1 PASS: source fade, invulnerability, native pause, independent hands/fire and owned pool cleanup");
@@ -383,8 +383,8 @@ public sealed partial class UiSmokeScenario
     /// <returns>实际死亡、窗口复用及背包事务完成。</returns>
     private async Task CheckBullTreasureRewardAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        var profile = flow.GetModel<ProfileModel>();
-        var original = profile.EquipmentDatas.ToArray();
+        ProfileModel profile = flow.GetModel<ProfileModel>();
+        EquipmentData[] original = profile.EquipmentDatas.ToArray();
         try
         {
             foreach (string scenario in new[] { "first", "duplicate", "full", "without-notice" })
@@ -404,27 +404,27 @@ public sealed partial class UiSmokeScenario
                     while (profile.EquipmentDatas.Count < profile.Capacity)
                     {
                         flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(
-                                                Guid.NewGuid(), EEquipmentId.RoughPilgrimStaff, () => 0));
+                                                Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0));
                     }
                 }
                 int before = profile.EquipmentDatas.Count;
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.BullDemonHeart,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BullDemonHeart,
                     new EnemySpawn(new Vector2(1350, 300)));
-                var heart = (BullDemonHeartEntity)m_Monster;
+                var heart = (BullDemonHeartEntity)_monster;
                 heart.SetPhysicsProcess(false);
                 heart.GetNode<AnimationPlayer>("m_HeartFade").Stop();
                 heart.GetNode<AnimatedSprite2D>("m_Heart").Modulate = Colors.White;
                 ApplyEastSeaHit(heart, hero.Id, 1000000, 1, false, Vector2.Zero);
                 Check(heart.Dead, "奖励夹具未实际击败心脏");
                 heart.SetPhysicsProcess(true);
-                await WaitUntilAsync(() => SmokeInspection.ReadField<IFsm<IEnemyBody>>(heart, "m_BodyFsm").CurrentState is BullDemonHeartDeathState,
+                await WaitUntilAsync(() => SmokeInspection.ReadField<IFsm<IEnemyBody>>(heart, "BodyFsm").CurrentState is BullDemonHeartDeathState,
                     "最终形态未进入实际死亡演出");
-                int treasures = profile.EquipmentDatas.Count(value => value.EquipmentId == EEquipmentId.DiamondSnare);
+                int treasures = profile.EquipmentDatas.Count(value => value.EquipmentId == EquipmentId.DiamondSnare);
                 Check(profile.EquipmentDatas.Count == before + (scenario is "first" or "without-notice" ? 1 : 0) &&
                     treasures == (scenario == "full" ? 0 : 1), "金钢琢重复赠送、满包丢弃或未直接入包：" + scenario);
                 if (scenario is "first" or "full")
                 {
-                    var notice = GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single();
+                    SaveNoticeForm notice = GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single();
                     await WaitUntilAsync(() => notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Text.Contains(
                         scenario == "full" ? "背包已满" : "获得 金钢琢"), "金钢琢获得或满包提示缺失");
                 }
@@ -432,7 +432,7 @@ public sealed partial class UiSmokeScenario
                 if (scenario == "without-notice")
                 {
                     await WaitUntilAsync(() => !heart.IsShown, "提示缺席阻止了心脏完成死亡回池");
-                    var notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(EUIFormId.SaveNoticeForm);
+                    SaveNoticeForm notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(UIFormId.SaveNoticeForm);
                     Check(GF.Event.Count(EquipmentRewardEventArgs.EventId) == 1, "提示池复用后奖励订阅不唯一");
                     Check(!notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Visible, "提示重开播放了已过期奖励");
                 }
@@ -440,7 +440,7 @@ public sealed partial class UiSmokeScenario
                 {
                     ReleaseTestEntity(heart);
                 }
-                m_Monster = null;
+                _monster = null;
                 await WaitFramesAsync(3);
             }
             GD.Print("SMOKE-BULL TREASURE PASS: lethal hit, direct grant, duplicate defeat, full bag, absent notice, death completion and subscription reuse");
@@ -449,7 +449,7 @@ public sealed partial class UiSmokeScenario
         {
             if (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_save_notice_form) == null)
             {
-                await GF.UI.OpenUIFormAsync<SaveNoticeForm>(EUIFormId.SaveNoticeForm);
+                await GF.UI.OpenUIFormAsync<SaveNoticeForm>(UIFormId.SaveNoticeForm);
             }
 
             profile.EquipmentDatas.ReplaceAll(original);

@@ -17,7 +17,7 @@ public sealed partial class UIFormConfig : Luban.BeanBase
     public UIFormConfig(ByteBuf _buf) 
     {
         Id = _buf.ReadInt();
-        UIFormId = (EUIFormId)_buf.ReadInt();
+        UIFormId = (UIFormId)_buf.ReadInt();
         AssetPath = _buf.ReadString();
         PauseCoveredUIForm = _buf.ReadBool();
         UIGroupName = _buf.ReadString();
@@ -35,7 +35,7 @@ public sealed partial class UIFormConfig : Luban.BeanBase
     /// <summary>
     /// 名字
     /// </summary>
-    public readonly EUIFormId UIFormId;
+    public readonly UIFormId UIFormId;
     /// <summary>
     /// 资源名
     /// </summary>

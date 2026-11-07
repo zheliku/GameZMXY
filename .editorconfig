@@ -3,16 +3,140 @@ root = true
 [*]
 charset = utf-8
 
-[*.cs]
+# Only project-owned C# receives these rules. Framework, addons and Tools/Luban keep their own style.
+[{Godot/GodotProject/TheGame,Godot/GodotProject/EditorScripts,Tests,Tools/ProjectMaintenance}/**.cs]
 indent_style = space
 indent_size = 4
 end_of_line = crlf
 insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Microsoft C# formatting; project scope and migration policy: Docs/ProjectGuidelines/10-CSharp.md.
 csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_after_comma = true
+csharp_space_before_comma = false
 csharp_preserve_single_line_blocks = true
 csharp_preserve_single_line_statements = false
-csharp_style_expression_bodied_methods = false:warning
-csharp_style_expression_bodied_constructors = false:warning
-csharp_style_expression_bodied_properties = false:warning
-csharp_style_expression_bodied_accessors = false:warning
-csharp_style_expression_bodied_indexers = false:warning
+
+# Language style and naming diagnostics share the same project-owned scope.
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
+dotnet_style_predefined_type_for_member_access = true:suggestion
+csharp_using_directive_placement = outside_namespace:suggestion
+csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_prefer_braces = true:suggestion
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_constructors = false:suggestion
+csharp_style_expression_bodied_properties = when_on_single_line:suggestion
+csharp_style_expression_bodied_accessors = when_on_single_line:suggestion
+csharp_style_expression_bodied_indexers = when_on_single_line:suggestion
+
+dotnet_diagnostic.IDE1006.severity = warning
+
+# Types (including enums) and members use PascalCase. No enum-specific E prefix.
+dotnet_naming_rule.types.symbols = types
+dotnet_naming_rule.types.style = pascal_case
+dotnet_naming_rule.types.severity = warning
+dotnet_naming_symbols.types.applicable_kinds = class, struct, enum, delegate
+dotnet_naming_symbols.types.applicable_accessibilities = *
+
+dotnet_naming_rule.interfaces.symbols = interfaces
+dotnet_naming_rule.interfaces.style = interface_name
+dotnet_naming_rule.interfaces.severity = warning
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_symbols.interfaces.applicable_accessibilities = *
+
+dotnet_naming_rule.members.symbols = members
+dotnet_naming_rule.members.style = pascal_case
+dotnet_naming_rule.members.severity = warning
+dotnet_naming_symbols.members.applicable_kinds = property, method, event, local_function
+dotnet_naming_symbols.members.applicable_accessibilities = *
+
+dotnet_naming_rule.type_parameters.symbols = type_parameters
+dotnet_naming_rule.type_parameters.style = type_parameter_name
+dotnet_naming_rule.type_parameters.severity = warning
+dotnet_naming_symbols.type_parameters.applicable_kinds = type_parameter
+dotnet_naming_symbols.type_parameters.applicable_accessibilities = *
+
+dotnet_naming_rule.parameters_and_locals.symbols = parameters_and_locals
+dotnet_naming_rule.parameters_and_locals.style = camel_case
+dotnet_naming_rule.parameters_and_locals.severity = warning
+dotnet_naming_symbols.parameters_and_locals.applicable_kinds = parameter, local
+dotnet_naming_symbols.parameters_and_locals.applicable_accessibilities = *
+
+dotnet_naming_rule.public_fields.symbols = public_fields
+dotnet_naming_rule.public_fields.style = pascal_case
+dotnet_naming_rule.public_fields.severity = warning
+dotnet_naming_symbols.public_fields.applicable_kinds = field
+dotnet_naming_symbols.public_fields.applicable_accessibilities = public, protected, protected_internal, private_protected
+
+dotnet_naming_rule.instance_fields.symbols = nonpublic_fields
+dotnet_naming_rule.instance_fields.style = instance_field
+dotnet_naming_rule.instance_fields.severity = warning
+dotnet_naming_symbols.nonpublic_fields.applicable_kinds = field
+dotnet_naming_symbols.nonpublic_fields.applicable_accessibilities = private, internal
+
+dotnet_naming_rule.static_fields.symbols = nonpublic_static_fields
+dotnet_naming_rule.static_fields.style = static_field
+dotnet_naming_rule.static_fields.severity = warning
+dotnet_naming_symbols.nonpublic_static_fields.applicable_kinds = field
+dotnet_naming_symbols.nonpublic_static_fields.applicable_accessibilities = private, internal
+dotnet_naming_symbols.nonpublic_static_fields.required_modifiers = static
+
+# Constants are implicitly static; the intersection rule keeps them PascalCase.
+dotnet_naming_rule.constants.symbols = constants
+dotnet_naming_rule.constants.style = pascal_case
+dotnet_naming_rule.constants.severity = warning
+dotnet_naming_symbols.constants.applicable_kinds = field, local
+dotnet_naming_symbols.constants.applicable_accessibilities = *
+dotnet_naming_symbols.constants.required_modifiers = const
+
+dotnet_naming_rule.nonpublic_constants.symbols = nonpublic_constants
+dotnet_naming_rule.nonpublic_constants.style = pascal_case
+dotnet_naming_rule.nonpublic_constants.severity = warning
+dotnet_naming_symbols.nonpublic_constants.applicable_kinds = field
+dotnet_naming_symbols.nonpublic_constants.applicable_accessibilities = private, internal
+dotnet_naming_symbols.nonpublic_constants.required_modifiers = const
+
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+dotnet_naming_style.camel_case.capitalization = camel_case
+dotnet_naming_style.interface_name.capitalization = pascal_case
+dotnet_naming_style.interface_name.required_prefix = I
+dotnet_naming_style.type_parameter_name.capitalization = pascal_case
+dotnet_naming_style.type_parameter_name.required_prefix = T
+dotnet_naming_style.instance_field.capitalization = camel_case
+dotnet_naming_style.instance_field.required_prefix = _
+dotnet_naming_style.static_field.capitalization = camel_case
+dotnet_naming_style.static_field.required_prefix = s_
+
+# Generated sources stay under their existing generators. These paths are not formatter inputs.
+[Godot/GodotProject/TheGame/GameScripts/GameProto/GameConfig/**.cs]
+generated_code = true
+dotnet_diagnostic.IDE1006.severity = none
+
+[Godot/GodotProject/TheGame/GameScripts/UI/**/*Form.cs]
+generated_code = true
+dotnet_diagnostic.IDE1006.severity = none
+
+[Godot/GodotProject/TheGame/MainPack/Scripts/UI/{LoadingForm,QuestionTips}.cs]
+generated_code = true
+dotnet_diagnostic.IDE1006.severity = none
+
+[Godot/GodotProject/TheGame/GameScripts/GameProto/{ConfigSystem,ResourcesCollectionConstant}.cs]
+generated_code = true
+dotnet_diagnostic.IDE1006.severity = none

@@ -41,10 +41,10 @@ func _run() -> void:
     var weapon: Sprite2D = hero.get_node("m_Weapon")
     var player: AnimationPlayer = hero.get_node("m_AnimPlayer")
     var appearance: Resource = load(ART + "tangseng_appearance.tres")
-    var armors: Dictionary = appearance.get("m_ArmorTextures").duplicate()
-    var weapons: Dictionary = appearance.get("m_WeaponTextures").duplicate()
-    armors[0] = appearance.get("m_BaseBody")
-    weapons[0] = appearance.get("m_BaseWeapon")
+    var armors: Dictionary = appearance.get("_armorTextures").duplicate()
+    var weapons: Dictionary = appearance.get("_weaponTextures").duplicate()
+    armors[0] = appearance.get("_baseBody")
+    weapons[0] = appearance.get("_baseWeapon")
     _check(armors.size() == 8 and weapons.size() == 9, "Missing one of the 15 registered Tang equipment identities")
     var playback := 0
     for armor in armors:

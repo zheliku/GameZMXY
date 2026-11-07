@@ -7,7 +7,7 @@
 
 [ext_resource type="Theme" path="res://TheGame/MainPack/Themes/settings_theme.tres" id="settings_theme"]
 
-[node name="SettingsForm" type="Control" node_paths=PackedStringArray("m_Scroll", "m_Content", "m_Continue", "m_Sound", "m_ReturnMap", "m_Help", "m_ReturnTitle", "m_Close", "m_HelpText", "m_AudioPanel", "m_MusicVolume", "m_EffectVolume")]
+[node name="SettingsForm" type="Control" node_paths=PackedStringArray("_scroll", "_content", "_continue", "_sound", "_returnMap", "_help", "_returnTitle", "_close", "_helpText", "_audioPanel", "_musicVolume", "_effectVolume")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -16,18 +16,18 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("settings_theme")
 script = ExtResource("script")
-m_Scroll = NodePath("Scroll")
-m_Content = NodePath("Scroll/Content")
-m_Continue = NodePath("Scroll/Content/Options/m_Continue")
-m_Sound = NodePath("Scroll/Content/Options/m_AudioPanel/m_Sound")
-m_ReturnMap = NodePath("Scroll/Content/Options/Navigation/m_ReturnMap")
-m_Help = NodePath("Scroll/Content/Options/Navigation/m_Help")
-m_ReturnTitle = NodePath("Scroll/Content/Options/Navigation/m_ReturnTitle")
-m_Close = NodePath("Scroll/m_Close")
-m_HelpText = NodePath("Scroll/Content/m_HelpText")
-m_AudioPanel = NodePath("Scroll/Content/Options/m_AudioPanel")
-m_MusicVolume = NodePath("Scroll/Content/Options/m_AudioPanel/Music/m_MusicVolume")
-m_EffectVolume = NodePath("Scroll/Content/Options/m_AudioPanel/Effect/m_EffectVolume")
+_scroll = NodePath("Scroll")
+_content = NodePath("Scroll/Content")
+_continue = NodePath("Scroll/Content/Options/m_Continue")
+_sound = NodePath("Scroll/Content/Options/m_AudioPanel/m_Sound")
+_returnMap = NodePath("Scroll/Content/Options/Navigation/m_ReturnMap")
+_help = NodePath("Scroll/Content/Options/Navigation/m_Help")
+_returnTitle = NodePath("Scroll/Content/Options/Navigation/m_ReturnTitle")
+_close = NodePath("Scroll/m_Close")
+_helpText = NodePath("Scroll/Content/m_HelpText")
+_audioPanel = NodePath("Scroll/Content/Options/m_AudioPanel")
+_musicVolume = NodePath("Scroll/Content/Options/m_AudioPanel/Music/m_MusicVolume")
+_effectVolume = NodePath("Scroll/Content/Options/m_AudioPanel/Effect/m_EffectVolume")
 
 [node name="Shade" type="ColorRect" parent="."]
 layout_mode = 1

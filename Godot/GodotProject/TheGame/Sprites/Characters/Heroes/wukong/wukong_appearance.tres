@@ -21,10 +21,10 @@
 
 [resource]
 script = ExtResource("script")
-m_PreviewAppearance = ExtResource("inventory_appearance")
-m_PreviewAnimations = ExtResource("preview")
-m_BaseBody = ExtResource("body_bare")
-m_ArmorTextures = Dictionary[int, Texture2D]({
+_previewAppearance = ExtResource("inventory_appearance")
+_previewAnimations = ExtResource("preview")
+_baseBody = ExtResource("body_bare")
+_armorTextures = Dictionary[int, Texture2D]({
 1: ExtResource("1_rju3e"),
 5: ExtResource("1_rju3e"),
 10: ExtResource("2_psys0"),
@@ -33,8 +33,8 @@ m_ArmorTextures = Dictionary[int, Texture2D]({
 25: ExtResource("3_pego7"),
 29: ExtResource("5_unm2t")
 })
-m_BaseWeapon = ExtResource("weapon_default")
-m_WeaponTextures = Dictionary[int, Texture2D]({
+_baseWeapon = ExtResource("weapon_default")
+_weaponTextures = Dictionary[int, Texture2D]({
 2: ExtResource("5_48jhp"),
 6: ExtResource("5_48jhp"),
 13: ExtResource("6_psys0"),

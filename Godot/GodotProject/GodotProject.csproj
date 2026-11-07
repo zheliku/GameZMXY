@@ -17,5 +17,8 @@
   </PropertyGroup>
    <ItemGroup>
      <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+     <!-- GGF现有扩展引用的旧配置类型名；仅用编译别名衔接，不修改框架或增加运行时类型。 -->
+     <Using Include="GameConfig.Entity.EntityId" Alias="EEntityId" />
+     <Using Include="GameConfig.UIFormId" Alias="EUIFormId" />
    </ItemGroup>
 </Project>

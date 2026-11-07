@@ -19,9 +19,9 @@ func _run() -> void:
     var checks := 0
     for path in paths:
         var actor: Node = load(path).instantiate()
-        var id: int = actor.get("m_EnemyEntityId")
+        var id: int = actor.get("_enemyEntityId")
         var expected: Dictionary = data.actors.filter(func(row): return int(row.id) == id)[0]
-        var area: Area2D = actor.get("m_Perception")
+        var area: Area2D = actor.get("_perception")
         area.call("Validate")
         var detection: CollisionShape2D = area.get_node("Detection")
         assert(detection.position == Vector2.ZERO)

@@ -9,15 +9,15 @@
 [sub_resource type="Theme" id="tooltip_theme"]
 TooltipPanel/styles/panel = SubResource("tooltip_wrapper")
 
-[node name="EquipmentCell" type="TextureRect" unique_id=1855060501 node_paths=PackedStringArray("m_Icon")]
+[node name="EquipmentCell" type="TextureRect" unique_id=1855060501 node_paths=PackedStringArray("_icon")]
 custom_minimum_size = Vector2(47, 47)
 mouse_filter = 0
 theme = SubResource("tooltip_theme")
 texture = ExtResource("background")
 expand_mode = 1
 script = ExtResource("script")
-m_Icon = NodePath("Icon")
-m_TooltipScene = ExtResource("tooltip")
+_icon = NodePath("Icon")
+_tooltipScene = ExtResource("tooltip")
 
 [node name="Icon" type="TextureRect" parent="." unique_id=2139787385]
 layout_mode = 1

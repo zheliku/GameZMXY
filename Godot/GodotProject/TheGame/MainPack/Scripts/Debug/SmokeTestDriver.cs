@@ -1,10 +1,3 @@
-using GameLogic.Architecture;
-using GameLogic.Level;
-using GameLogic.FloatingText;
-using GameLogic.Battle;
-using GameLogic.Battle.Attacks;
-using GameLogic.Event.Combat;
-using GameLogic.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,8 +6,15 @@ using GameConfig.Sound;
 using GameFramework;
 using GameFramework.Event;
 using GameLogic;
-using GameLogic.Heroes;
+using GameLogic.Architecture;
+using GameLogic.Battle;
+using GameLogic.Battle.Attacks;
 using GameLogic.Enemies;
+using GameLogic.Event.Combat;
+using GameLogic.FloatingText;
+using GameLogic.Heroes;
+using GameLogic.Input;
+using GameLogic.Level;
 using GameLogic.UI;
 using Godot;
 using GodotGameFramework;
@@ -43,7 +43,7 @@ using GodotGameFramework;
 /// </summary>
 public partial class SmokeTestDriver : Node
 {
-    private static readonly (double At, string Action, string Mode)[] Plan =
+    private static readonly (double At, string Action, string Mode)[] s_plan =
     {
         (2.00, "attack", "mash"),
         (4.60, "attack", "release"),
@@ -62,13 +62,13 @@ public partial class SmokeTestDriver : Node
         (13.00, "attack", "mash-four"),
     }; // 按时间安排英雄烟测的输入动作。
 
-    private static readonly string[] Required =
+    private static readonly string[] s_required =
     {
         "Attack/attack_1", "Attack/attack_2", "Attack/attack_3", "Attack/attack_4", "Attack/attack_5",
         "Ground/run", "Hurt/hurt", "Air/jump", "Air/fall", "Air/jump_2", "Ground/idle1",
     }; // 必须观测到的身体状态与实际动画组合。
 
-    private static readonly (string A, string B, bool LastA, bool LastB)[] Order =
+    private static readonly (string A, string B, bool LastA, bool LastB)[] s_order =
     {
         ("Attack/attack_1", "Attack/attack_2", false, false),
         ("Attack/attack_2", "Attack/attack_3", false, false),
@@ -87,51 +87,51 @@ public partial class SmokeTestDriver : Node
 
     private const float SandbagOffset = 60f; // 沙包站在可见棍身范围内（像素）；越界不命中由逐帧物理验证覆盖。
 
-    private AbstractHeroEntity m_Hero; // 烟测中的英雄实体。
+    private AbstractHeroEntity _hero; // 烟测中的英雄实体。
 
     // ---- M4 命中链路观测（悟空连打面前的猴子）----
 
-    private AbstractEnemyEntity m_Monster; // 沙包猴子（场上第一只怪物）。
+    private AbstractEnemyEntity _monster; // 沙包猴子（场上第一只怪物）。
 
-    private readonly List<(int Damage, bool Crit, bool Miss)> m_MonsterHits = new(); // 按事件记录猴子每次受击结果。
+    private readonly List<(int Damage, bool Crit, bool Miss)> _monsterHits = new(); // 按事件记录猴子每次受击结果。
 
-    private int m_MaxPopCount; // 场上飘字节点的可见峰值数量。
-    private int m_MaxComboCount; // 烟测期间由真实命中累计到的连击峰值。
-    private bool m_ComboHudShown; // 实际连击数字曾在战斗HUD显示。
-    private ESmokeMode m_Mode; // 命令行选择的唯一冒烟模式。
-    private int m_RequestedLevel = 1; // 真实地图点击的关卡，后续关卡仍走完整菜单流程。
-    private double m_WaitTime; // 等待英雄出现的累计时间（秒）。
-    private double m_Time; // 烟测当前时间（秒）。
-    private int m_NextStep; // 下一条输入计划索引。
-    private bool m_Mashing; // 是否正在交替注入攻击输入。
-    private double m_MashUntil; // 攻击连打结束时间（秒）。
-    private int m_MashFrame; // 攻击连打帧计数。
-    private bool m_StopAfterFourth; // 本轮到第四段后停止输入，检查第五段不会被提前排队。
-    private double m_FourthReachedAt; // 第四段开始时刻，零表示尚未观察到。
-    private string m_LastPath = ""; // 上一次记录的身体状态与动画路径。
-    private bool m_HasQuitAfter; // 命令行是否包含引擎自动退出参数。
-    private readonly List<(double Time, string Path)> m_Observed = new(); // 按时间记录身体状态与动画路径。
+    private int _maxPopCount; // 场上飘字节点的可见峰值数量。
+    private int _maxComboCount; // 烟测期间由真实命中累计到的连击峰值。
+    private bool _comboHudShown; // 实际连击数字曾在战斗HUD显示。
+    private SmokeMode _mode; // 命令行选择的唯一冒烟模式。
+    private int _requestedLevel = 1; // 真实地图点击的关卡，后续关卡仍走完整菜单流程。
+    private double _waitTime; // 等待英雄出现的累计时间（秒）。
+    private double _time; // 烟测当前时间（秒）。
+    private int _nextStep; // 下一条输入计划索引。
+    private bool _mashing; // 是否正在交替注入攻击输入。
+    private double _mashUntil; // 攻击连打结束时间（秒）。
+    private int _mashFrame; // 攻击连打帧计数。
+    private bool _stopAfterFourth; // 本轮到第四段后停止输入，检查第五段不会被提前排队。
+    private double _fourthReachedAt; // 第四段开始时刻，零表示尚未观察到。
+    private string _lastPath = ""; // 上一次记录的身体状态与动画路径。
+    private bool _hasQuitAfter; // 命令行是否包含引擎自动退出参数。
+    private readonly List<(double Time, string Path)> _observed = new(); // 按时间记录身体状态与动画路径。
 
-    private readonly HashSet<int> m_WalkFrames = new(); // walk 期间采样到的身体帧号。
-    private readonly HashSet<int> m_RunFrames = new(); // run 期间采样到的身体帧号。
+    private readonly HashSet<int> _walkFrames = new(); // walk 期间采样到的身体帧号。
+    private readonly HashSet<int> _runFrames = new(); // run 期间采样到的身体帧号。
 
-    private LevelSmokeScenario m_LevelScenario; // 正式关卡四段流程的观测与输入计划。
-    private LevelCancellationSmokeScenario m_CancelScenario; // 真实在途显示的取消回归。
-    private UiSmokeScenario m_UiScenario; // HUD 与存档的真实引擎回归。
-    private FrontendSmokeScenario m_FrontendScenario; // 菜单、音乐与进出关卡回归。
-    private MapProgressSmokeScenario m_ProgressScenario; // 主线实际通关和退出重读后的地图解锁验证。
+    private LevelSmokeScenario _levelScenario; // 正式关卡四段流程的观测与输入计划。
+    private LevelCancellationSmokeScenario _cancelScenario; // 真实在途显示的取消回归。
+    private UiSmokeScenario _uiScenario; // HUD 与存档的真实引擎回归。
+    private FrontendSmokeScenario _frontendScenario; // 菜单、音乐与进出关卡回归。
+    private MapProgressSmokeScenario _progressScenario; // 主线实际通关和退出重读后的地图解锁验证。
 
-    private EnemyAiSmokeScenario m_AiScenario; // ai 模式下驱动英雄与猴子的场景。
+    private EnemyAiSmokeScenario _aiScenario; // ai 模式下驱动英雄与猴子的场景。
 
-    private double m_AiStartTime; // AI 烟测场景的开始时间。
+    private double _aiStartTime; // AI 烟测场景的开始时间。
 
-    private double m_TravelTime; // 战斗烟测进入首阶段的准备时间。
-    private bool m_StageEntered; // 相机已到达首阶段右界，战斗时间轴可开始。
-    private LevelViewController m_Level; // 烟测观测的关卡会话。
+    private double _travelTime; // 战斗烟测进入首阶段的准备时间。
+    private bool _stageEntered; // 相机已到达首阶段右界，战斗时间轴可开始。
+    private LevelViewController _level; // 烟测观测的关卡会话。
 
-    private double m_MonsterFoundAt = -1.0; // 找到受测猴子的时间（秒）；-1 表示尚未找到。
+    private double _monsterFoundAt = -1.0; // 找到受测猴子的时间（秒）；-1 表示尚未找到。
 
-    private readonly HashSet<int> m_FrozenMonsters = new(); // 已冻结为沙包的怪物 runtime ID。
+    private readonly HashSet<int> _frozenMonsters = new(); // 已冻结为沙包的怪物 runtime ID。
 
     /// <summary>
     /// 读取烟测参数并设置物理处理优先级。
@@ -140,75 +140,75 @@ public partial class SmokeTestDriver : Node
     {
         foreach (string arg in OS.GetCmdlineUserArgs())
         {
-            m_Mode = arg switch
+            _mode = arg switch
             {
-                "--smoketest" => ESmokeMode.Hero,
-                "--smoketest=ai" => ESmokeMode.EnemyAi,
-                "--smoketest=level" => ESmokeMode.Level,
-                "--smoketest=level2" => ESmokeMode.Level,
-                "--smoketest=level3" => ESmokeMode.Level,
-                "--smoketest=level4" => ESmokeMode.Level,
-                "--smoketest=level5" => ESmokeMode.Level,
-                "--smoketest=level6" => ESmokeMode.Level,
-                "--smoketest=level7" => ESmokeMode.Level,
-                "--smoketest=level8" => ESmokeMode.Level,
-                "--smoketest=level9" => ESmokeMode.Level,
-                "--smoketest=level10" => ESmokeMode.Level,
-                "--smoketest=level-cancel" => ESmokeMode.Cancellation,
-                "--smoketest=ui" => ESmokeMode.Ui,
-                "--smoketest=bosses" => ESmokeMode.Bosses,
-                "--smoketest=frontend" => ESmokeMode.Frontend,
-                "--smoketest=progress" => ESmokeMode.Progress,
-                _ => m_Mode,
+                "--smoketest" => SmokeMode.Hero,
+                "--smoketest=ai" => SmokeMode.EnemyAi,
+                "--smoketest=level" => SmokeMode.Level,
+                "--smoketest=level2" => SmokeMode.Level,
+                "--smoketest=level3" => SmokeMode.Level,
+                "--smoketest=level4" => SmokeMode.Level,
+                "--smoketest=level5" => SmokeMode.Level,
+                "--smoketest=level6" => SmokeMode.Level,
+                "--smoketest=level7" => SmokeMode.Level,
+                "--smoketest=level8" => SmokeMode.Level,
+                "--smoketest=level9" => SmokeMode.Level,
+                "--smoketest=level10" => SmokeMode.Level,
+                "--smoketest=level-cancel" => SmokeMode.Cancellation,
+                "--smoketest=ui" => SmokeMode.Ui,
+                "--smoketest=bosses" => SmokeMode.Bosses,
+                "--smoketest=frontend" => SmokeMode.Frontend,
+                "--smoketest=progress" => SmokeMode.Progress,
+                _ => _mode,
             };
             if (arg == "--smoketest=level2")
             {
-                m_RequestedLevel = 2;
+                _requestedLevel = 2;
             }
 
             if (arg == "--smoketest=level3")
             {
-                m_RequestedLevel = 3;
+                _requestedLevel = 3;
             }
 
             if (arg == "--smoketest=level4")
             {
-                m_RequestedLevel = 4;
+                _requestedLevel = 4;
             }
 
             if (arg == "--smoketest=level5")
             {
-                m_RequestedLevel = 5;
+                _requestedLevel = 5;
             }
 
             if (arg == "--smoketest=level6")
             {
-                m_RequestedLevel = 6;
+                _requestedLevel = 6;
             }
 
             if (arg == "--garuda-flow-only")
             {
-                m_RequestedLevel = 6;
+                _requestedLevel = 6;
             }
 
             if (arg is "--smoketest=level7" or "--sea-flow-only")
             {
-                m_RequestedLevel = 7;
+                _requestedLevel = 7;
             }
 
             if (arg is "--smoketest=level8" or "--east-sea-flow-only")
             {
-                m_RequestedLevel = 8;
+                _requestedLevel = 8;
             }
 
             if (arg is "--smoketest=level9" or "--shark-flow-only")
             {
-                m_RequestedLevel = 9;
+                _requestedLevel = 9;
             }
 
             if (arg is "--smoketest=level10" or "--bull-only" or "--bull-flow-only" or "--bull-capture-only")
             {
-                m_RequestedLevel = 10;
+                _requestedLevel = 10;
             }
         }
 
@@ -217,11 +217,11 @@ public partial class SmokeTestDriver : Node
         {
             if (arg == "--quit-after")
             {
-                m_HasQuitAfter = true;
+                _hasQuitAfter = true;
             }
         }
 
-        if (m_Mode == ESmokeMode.Disabled)
+        if (_mode == SmokeMode.Disabled)
         {
             SetPhysicsProcess(false);
         }
@@ -230,7 +230,7 @@ public partial class SmokeTestDriver : Node
             // 每次烟测使用独立存档目录，自动保存和失败测试不触碰玩家实际进度。
             string archive = OS.GetCmdlineUserArgs().FirstOrDefault(argument => argument.StartsWith("--smoke-run-id="));
             Guid runId = archive == null ? Guid.NewGuid() : Guid.Parse(archive["--smoke-run-id=".Length..]);
-            GF.Archive.Setting.Folder = $"Validation/{m_Mode}/{runId:N}";
+            GF.Archive.Setting.Folder = $"Validation/{_mode}/{runId:N}";
             GD.Print($"SMOKE ARCHIVE: user://{GF.Archive.Setting.Folder}");
         }
 
@@ -246,15 +246,15 @@ public partial class SmokeTestDriver : Node
     /// <param name="delta">上一帧到当前帧的秒数。</param>
     public override void _PhysicsProcess(double delta)
     {
-        if (m_Mode == ESmokeMode.Progress)
+        if (_mode == SmokeMode.Progress)
         {
-            m_ProgressScenario ??= new MapProgressSmokeScenario(this);
-            m_ProgressScenario.Update(delta);
-            if (m_ProgressScenario.IsDone)
+            _progressScenario ??= new MapProgressSmokeScenario(this);
+            _progressScenario.Update(delta);
+            if (_progressScenario.IsDone)
             {
-                if (m_ProgressScenario.Failure != null)
+                if (_progressScenario.Failure != null)
                 {
-                    Fail(m_ProgressScenario.Failure);
+                    Fail(_progressScenario.Failure);
                 }
                 else
                 {
@@ -264,14 +264,14 @@ public partial class SmokeTestDriver : Node
             }
             return;
         }
-        if (m_Mode == ESmokeMode.Frontend)
+        if (_mode == SmokeMode.Frontend)
         {
-            m_FrontendScenario ??= new FrontendSmokeScenario(this);
-            if (m_FrontendScenario.IsDone)
+            _frontendScenario ??= new FrontendSmokeScenario(this);
+            if (_frontendScenario.IsDone)
             {
-                if (m_FrontendScenario.Failure != null)
+                if (_frontendScenario.Failure != null)
                 {
-                    Fail(m_FrontendScenario.Failure);
+                    Fail(_frontendScenario.Failure);
                 }
                 else
                 {
@@ -281,32 +281,32 @@ public partial class SmokeTestDriver : Node
             }
             return;
         }
-        if (m_Mode == ESmokeMode.Level && m_LevelScenario != null)
+        if (_mode == SmokeMode.Level && _levelScenario != null)
         {
             DriveLevelScenario(delta);
             return;
         }
-        if (m_Mode is ESmokeMode.Ui or ESmokeMode.Bosses && m_UiScenario != null)
+        if (_mode is SmokeMode.Ui or SmokeMode.Bosses && _uiScenario != null)
         {
             // 初次进关后由专项拥有导航，不能在它观察返回地图时自动再次点击地图。
             DriveUiScenario(delta);
             return;
         }
         // 既有战斗回归也从真实菜单进入，不给生产流程增加测试专用跳转。
-        if (!FrontendSmokeScenario.AdvanceToLevel(m_RequestedLevel))
+        if (!FrontendSmokeScenario.AdvanceToLevel(_requestedLevel))
         {
             return;
         }
 
-        if (m_Mode is ESmokeMode.Ui or ESmokeMode.Bosses)
+        if (_mode is SmokeMode.Ui or SmokeMode.Bosses)
         {
             DriveUiScenario(delta);
             return;
         }
-        if (m_Hero == null)
+        if (_hero == null)
         {
-            m_WaitTime += delta;
-            if (m_WaitTime > FindTimeout)
+            _waitTime += delta;
+            if (_waitTime > FindTimeout)
             {
                 Fail("5 秒内没有找到英雄（游戏没起来？）");
             }
@@ -316,12 +316,12 @@ public partial class SmokeTestDriver : Node
             {
                 if (node is AbstractHeroEntity hero)
                 {
-                    m_Hero = hero;
+                    _hero = hero;
                     break;
                 }
             }
 
-            if (m_Hero == null)
+            if (_hero == null)
             {
                 return;
             }
@@ -330,27 +330,27 @@ public partial class SmokeTestDriver : Node
             GD.Print("SMOKE: 找到 hero，开始时间轴");
         }
 
-        if (m_Mode == ESmokeMode.Cancellation)
+        if (_mode == SmokeMode.Cancellation)
         {
             DriveCancellationScenario(delta);
             return;
         }
 
-        if (m_Mode == ESmokeMode.Level)
+        if (_mode == SmokeMode.Level)
         {
             DriveLevelScenario(delta);
             return;
         }
 
         FindMonster();
-        if (!m_StageEntered)
+        if (!_stageEntered)
         {
             DriveStageEntry(delta);
             return;
         }
 
-        m_Time += delta;
-        if (m_Mode == ESmokeMode.EnemyAi)
+        _time += delta;
+        if (_mode == SmokeMode.EnemyAi)
         {
             DriveAiScenario();
             return;
@@ -361,7 +361,7 @@ public partial class SmokeTestDriver : Node
         TrackBodyFrames();
         TrackPops();
         TrackCombo();
-        if (m_Time >= EndTime)
+        if (_time >= EndTime)
         {
             Finish();
         }
@@ -373,25 +373,25 @@ public partial class SmokeTestDriver : Node
     /// <param name="delta">物理帧间隔秒数。</param>
     private void DriveUiScenario(double delta)
     {
-        if (m_UiScenario == null)
+        if (_uiScenario == null)
         {
             // 场景自行等待关卡流程装配完成。
-            m_UiScenario = new UiSmokeScenario(this, m_Mode == ESmokeMode.Bosses);
+            _uiScenario = new UiSmokeScenario(this, _mode == SmokeMode.Bosses);
             return;
         }
 
-        if (m_UiScenario.IsDone)
+        if (_uiScenario.IsDone)
         {
-            if (m_UiScenario.Failure == null)
+            if (_uiScenario.Failure == null)
             {
-                GD.Print(m_Mode == ESmokeMode.Bosses
+                GD.Print(_mode == SmokeMode.Bosses
                     ? "SMOKE PASS：两位 BOSS 的原生招式、实际命中、无敌、独立风刃与回池复用全部通过"
                     : "SMOKE PASS：UI 数值、解绑复用、实体复用、加载取消、失败清理与存档重入全部通过");
                 StopDriving(false);
             }
             else
             {
-                Fail(m_UiScenario.Failure);
+                Fail(_uiScenario.Failure);
             }
         }
     }
@@ -402,20 +402,20 @@ public partial class SmokeTestDriver : Node
     private void DriveInput()
     {
         // 先维持连打期间的交替按键，再执行所有已到时刻的计划动作。
-        if (m_Mashing)
+        if (_mashing)
         {
-            if (m_StopAfterFourth && m_FourthReachedAt == 0 && m_Hero.AttackSegment == 3)
+            if (_stopAfterFourth && _fourthReachedAt == 0 && _hero.AttackSegment == 3)
             {
-                m_FourthReachedAt = m_Time;
-                m_MashUntil = m_Time + 0.12; // 继续注入过早的普攻，再彻底松开。
+                _fourthReachedAt = _time;
+                _mashUntil = _time + 0.12; // 继续注入过早的普攻，再彻底松开。
             }
-            m_MashFrame++;
-            if (m_Time >= m_MashUntil)
+            _mashFrame++;
+            if (_time >= _mashUntil)
             {
                 Input.ActionRelease(InputSystem.Attack);
-                m_Mashing = false;
+                _mashing = false;
             }
-            else if (m_MashFrame % 2 == 0)
+            else if (_mashFrame % 2 == 0)
             {
                 Input.ActionPress(InputSystem.Attack);
             }
@@ -425,9 +425,9 @@ public partial class SmokeTestDriver : Node
             }
         }
 
-        while (m_NextStep < Plan.Length && m_Time >= Plan[m_NextStep].At)
+        while (_nextStep < s_plan.Length && _time >= s_plan[_nextStep].At)
         {
-            (double _, string action, string mode) = Plan[m_NextStep];
+            (double _, string action, string mode) = s_plan[_nextStep];
             switch (mode)
             {
                 case "tap":
@@ -441,19 +441,19 @@ public partial class SmokeTestDriver : Node
                     Input.ActionRelease(action);
                     break;
                 case "mash-four":
-                    m_StopAfterFourth = true;
+                    _stopAfterFourth = true;
                     goto case "mash";
                 case "mash":
-                    m_Mashing = true;
-                    m_MashUntil = m_Time + 2.0;
-                    m_MashFrame = 0;
+                    _mashing = true;
+                    _mashUntil = _time + 2.0;
+                    _mashFrame = 0;
                     break;
                 case "damage":
                     HurtHeroOnce();   // 验证受击：硬直 + hurt 动画（走真实结算链路）
                     break;
             }
 
-            m_NextStep++;
+            _nextStep++;
         }
     }
 
@@ -463,8 +463,8 @@ public partial class SmokeTestDriver : Node
     private void HurtHeroOnce()
     {
         // 临时攻击数据只在结算期间持有，并在调用后归还对象池。
-        AttackData data = AttackData.Create(0, default, 1f, EDamageKind.Real, Vector2.Zero, -1, 0);
-        m_Hero.ReceiveHit(data);
+        var data = AttackData.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0);
+        _hero.ReceiveHit(data);
         ReferencePool.Release(data);
     }
 
@@ -474,11 +474,11 @@ public partial class SmokeTestDriver : Node
     private void DriveAiScenario()
     {
         // 场景只在英雄与猴子都准备好后创建，避免测试时钟先行。
-        if (m_AiScenario == null)
+        if (_aiScenario == null)
         {
-            if (m_Monster == null)
+            if (_monster == null)
             {
-                if (m_Time > FindTimeout + 2.0)
+                if (_time > FindTimeout + 2.0)
                 {
                     Fail("相机抵达首阶段后 7 秒内没有找到猴子");
                 }
@@ -487,22 +487,22 @@ public partial class SmokeTestDriver : Node
             }
 
             // 清除夹具生成前继承的目标，让首次索敌从真正无目标状态开始。
-            typeof(AbstractEnemyEntity).GetField("m_Target", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(m_Monster, null);
-            m_AiScenario = new EnemyAiSmokeScenario(m_Hero, m_Monster);
-            m_AiStartTime = m_Time;
+            typeof(AbstractEnemyEntity).GetField("_target", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(_monster, null);
+            _aiScenario = new EnemyAiSmokeScenario(_hero, _monster);
+            _aiStartTime = _time;
             GD.Print("SMOKE-AI: 开始怪物 AI 场景");
         }
 
-        double t = m_Time - m_AiStartTime;
+        double t = _time - _aiStartTime;
         // 每帧驱动场景一次；未结束时等待下一帧，结束时统一采集断言并关闭。
-        m_AiScenario.Update(t);
-        if (!m_AiScenario.IsDone)
+        _aiScenario.Update(t);
+        if (!_aiScenario.IsDone)
         {
             return;
         }
 
-        List<string> failures = m_AiScenario.Finish();
-        m_AiScenario = null;
+        List<string> failures = _aiScenario.Finish();
+        _aiScenario = null;
         if (failures.Count == 0)
         {
             GD.Print("SMOKE PASS：怪物 AI 场景断言全部通过");
@@ -520,31 +520,31 @@ public partial class SmokeTestDriver : Node
     /// <param name="delta">本次逻辑推进的秒数。</param>
     private void DriveStageEntry(double delta)
     {
-        m_TravelTime += delta;
+        _travelTime += delta;
         foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
         {
             if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level)
             {
-                m_Level = level;
+                _level = level;
                 break;
             }
         }
 
-        if (SmokeInspection.Sequence(m_Level)?.Phase == ELevelStagePhase.Fighting)
+        if (SmokeInspection.Sequence(_level)?.Phase == LevelStagePhase.Fighting)
         {
             Input.ActionRelease(InputSystem.MoveRight);
             Input.ActionRelease(InputSystem.Jump);
             // 战斗回归需要平地，使用场景中已配置的平坦玩家出生点，避免斜坡改变高度断言。
-            m_Hero.GlobalPosition = m_Level.PlayerSpawnPosition;
-            m_Hero.Velocity = Vector2.Zero;
-            GF.Fsm.GetSystem<InputSystem>().Reset(m_Hero.ActionData);
-            m_StageEntered = true;
+            _hero.GlobalPosition = _level.PlayerSpawnPosition;
+            _hero.Velocity = Vector2.Zero;
+            GF.Fsm.GetSystem<InputSystem>().Reset(_hero.ActionData);
+            _stageEntered = true;
             GD.Print("SMOKE: 相机抵达首阶段，开始战斗时间轴");
             return;
         }
 
         Input.ActionPress(InputSystem.MoveRight);
-        if (m_Hero.IsOnWall() && m_Hero.IsOnFloor())
+        if (_hero.IsOnWall() && _hero.IsOnFloor())
         {
             Input.ActionPress(InputSystem.Jump);
         }
@@ -552,7 +552,7 @@ public partial class SmokeTestDriver : Node
         {
             Input.ActionRelease(InputSystem.Jump);
         }
-        if (m_TravelTime > 20.0)
+        if (_travelTime > 20.0)
         {
             Fail("20 秒内相机未抵达首阶段右界");
         }
@@ -564,34 +564,34 @@ public partial class SmokeTestDriver : Node
     /// <param name="delta">本次逻辑推进的秒数。</param>
     private void DriveLevelScenario(double delta)
     {
-        if (m_LevelScenario == null)
+        if (_levelScenario == null)
         {
             foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
             {
-                if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level && SmokeInspection.Sequence(level).Phase != ELevelStagePhase.Ready)
+                if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
                 {
-                    m_LevelScenario = new LevelSmokeScenario(m_Hero, level);
+                    _levelScenario = new LevelSmokeScenario(_hero, level);
                     break;
                 }
             }
         }
 
-        if (m_LevelScenario == null)
+        if (_levelScenario == null)
         {
             return;
         }
 
-        m_LevelScenario.Update(delta);
-        if (m_LevelScenario.IsDone)
+        _levelScenario.Update(delta);
+        if (_levelScenario.IsDone)
         {
-            if (m_LevelScenario.Failures.Count == 0)
+            if (_levelScenario.Failures.Count == 0)
             {
-                GD.Print($"SMOKE PASS：关卡 {m_RequestedLevel} 的阶段、相机、物理门、守关目标、W 出口、自动存档与地图重读全部通过");
+                GD.Print($"SMOKE PASS：关卡 {_requestedLevel} 的阶段、相机、物理门、守关目标、W 出口、自动存档与地图重读全部通过");
                 StopDriving(false);
             }
             else
             {
-                Fail(string.Join("；", m_LevelScenario.Failures));
+                Fail(string.Join("；", _levelScenario.Failures));
             }
         }
     }
@@ -602,29 +602,29 @@ public partial class SmokeTestDriver : Node
     /// <param name="delta">本次逻辑推进的秒数。</param>
     private void DriveCancellationScenario(double delta)
     {
-        if (m_CancelScenario == null)
+        if (_cancelScenario == null)
         {
             foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
             {
-                if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level && SmokeInspection.Sequence(level).Phase != ELevelStagePhase.Ready)
+                if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
                 {
-                    m_CancelScenario = new LevelCancellationSmokeScenario(m_Hero, level);
+                    _cancelScenario = new LevelCancellationSmokeScenario(_hero, level);
                     break;
                 }
             }
         }
 
-        m_CancelScenario?.Update(delta);
-        if (m_CancelScenario?.IsDone == true)
+        _cancelScenario?.Update(delta);
+        if (_cancelScenario?.IsDone == true)
         {
-            if (m_CancelScenario.Failures.Count == 0)
+            if (_cancelScenario.Failures.Count == 0)
             {
                 GD.Print("SMOKE PASS：在途显示取消，晚到怪物已回收且关卡不再推进");
                 StopDriving(false);
             }
             else
             {
-                Fail(string.Join("；", m_CancelScenario.Failures));
+                Fail(string.Join("；", _cancelScenario.Failures));
             }
         }
     }
@@ -634,15 +634,15 @@ public partial class SmokeTestDriver : Node
     /// </summary>
     private void Sample()
     {
-        string path = ObservePath(SmokeInspection.BodyStateName(m_Hero), m_Hero.AnimPlayer.AssignedAnimation.ToString());
-        if (path.Length == 0 || path == m_LastPath)
+        string path = ObservePath(SmokeInspection.BodyStateName(_hero), _hero.AnimPlayer.AssignedAnimation.ToString());
+        if (path.Length == 0 || path == _lastPath)
         {
             return;
         }
 
-        m_LastPath = path;
-        m_Observed.Add((m_Time, path));
-        GD.Print($"SMOKE[{m_Time:F2}] 身体/动画 {path}  ({Facts()})");
+        _lastPath = path;
+        _observed.Add((_time, path));
+        GD.Print($"SMOKE[{_time:F2}] 身体/动画 {path}  ({Facts()})");
     }
 
     /// <summary>
@@ -652,29 +652,26 @@ public partial class SmokeTestDriver : Node
     /// <param name="bodyState">当前身体状态名。</param>
     /// <param name="anim">当前动画名。</param>
     /// <returns>组合路径；动画为空时返回空串。</returns>
-    public static string ObservePath(string bodyState, string anim)
-    {
-        return anim.Length == 0 ? "" : $"{bodyState}/{anim}";
-    }
+    public static string ObservePath(string bodyState, string anim) => anim.Length == 0 ? "" : $"{bodyState}/{anim}";
 
     /// <summary>
-    /// 身体帧采样：walk/run 状态下记录 m_Body 的帧号。动画库若漏了 m_Body:frame 轨道，
+    /// 身体帧采样：walk/run 状态下记录 _body 的帧号。动画库若漏了 _body:frame 轨道，
     /// 帧会停在进入前的一个值上不动——这里用"出现过的不同帧数"抓这类回归。
     /// </summary>
     private void TrackBodyFrames() // 收集 walk/run 期间身体动画的帧变化证据。
     {
-        if (m_Hero == null || SmokeInspection.ReadField<Node2D>(m_Hero, "m_Body") is not Sprite2D body)
+        if (_hero == null || SmokeInspection.ReadField<Node2D>(_hero, "_body") is not Sprite2D body)
         {
             return;
         }
 
-        if (m_LastPath == "Ground/walk")
+        if (_lastPath == "Ground/walk")
         {
-            m_WalkFrames.Add(body.Frame);
+            _walkFrames.Add(body.Frame);
         }
-        else if (m_LastPath == "Ground/run")
+        else if (_lastPath == "Ground/run")
         {
-            m_RunFrames.Add(body.Frame);
+            _runFrames.Add(body.Frame);
         }
     }
 
@@ -684,9 +681,9 @@ public partial class SmokeTestDriver : Node
     /// <returns>供失败日志定位的身体状态与运动快照。</returns>
     private string Facts()
     {
-        return $"move={m_Hero.ActionData.MoveAxis} run={m_Hero.ActionData.Running} jump={m_Hero.ActionData.JumpCount} "
-            + $"seg={m_Hero.AttackSegment} dead={m_Hero.Dead} "
-            + $"floor={m_Hero.IsOnFloor()} vy={m_Hero.Velocity.Y:F0}";
+        return $"move={_hero.ActionData.MoveAxis} run={_hero.ActionData.Running} jump={_hero.ActionData.JumpCount} "
+            + $"seg={_hero.AttackSegment} dead={_hero.Dead} "
+            + $"floor={_hero.IsOnFloor()} vy={_hero.Velocity.Y:F0}";
     }
 
     /// <summary>
@@ -696,7 +693,7 @@ public partial class SmokeTestDriver : Node
     {
         // 汇总必须出现的观测点与先后约束。
         List<string> failures = new();
-        foreach (string required in Required)
+        foreach (string required in s_required)
         {
             if (LastIndex(required) < 0)
             {
@@ -704,7 +701,7 @@ public partial class SmokeTestDriver : Node
             }
         }
 
-        foreach ((string a, string b, bool lastA, bool lastB) in Order)
+        foreach ((string a, string b, bool lastA, bool lastB) in s_order)
         {
             int indexA = lastA ? LastIndex(a) : FirstIndex(a);
             int indexB = lastB ? LastIndex(b) : FirstIndex(b);
@@ -719,14 +716,14 @@ public partial class SmokeTestDriver : Node
         CheckLocomotionFrames(failures);
         CheckAttackFinishTiming(failures);
         CheckCombat(failures);
-        if (m_FourthReachedAt == 0 || m_Observed.Any(item => item.Time >= 13 && item.Path == "Attack/attack_5"))
+        if (_fourthReachedAt == 0 || _observed.Any(item => item.Time >= 13 && item.Path == "Attack/attack_5"))
         {
             failures.Add("第四段提前输入并松手后仍补出了第五段，或未到达第四段");
         }
 
         if (failures.Count == 0)
         {
-            GD.Print($"SMOKE PASS：观察到 {m_Observed.Count} 次状态切换，断言全部通过");
+            GD.Print($"SMOKE PASS：观察到 {_observed.Count} 次状态切换，断言全部通过");
             StopDriving(false);
             return;
         }
@@ -740,7 +737,7 @@ public partial class SmokeTestDriver : Node
     /// <param name="failures">本次验证累积的失败说明。</param>
     private void CheckEffectLayer(List<string> failures)
     {
-        if (m_Hero.GetNodeOrNull<Node2D>("m_EffectRoot/m_Effect") is not AnimatedSprite2D effect)
+        if (_hero.GetNodeOrNull<Node2D>("m_EffectRoot/m_Effect") is not AnimatedSprite2D effect)
         {
             failures.Add("场景里找不到 m_EffectRoot/m_Effect");
             return;
@@ -768,12 +765,12 @@ public partial class SmokeTestDriver : Node
     /// <param name="failures">本次验证累积的失败说明。</param>
     private void CheckLocomotionFrames(List<string> failures)
     {
-        if (m_RunFrames.Count < 3)
+        if (_runFrames.Count < 3)
         {
-            failures.Add($"run 期间身体帧没有在动（观察到 {m_RunFrames.Count} 个不同帧：{string.Join(",", m_RunFrames)}）");
+            failures.Add($"run 期间身体帧没有在动（观察到 {_runFrames.Count} 个不同帧：{string.Join(",", _runFrames)}）");
         }
 
-        if (m_WalkFrames.Count < 1)
+        if (_walkFrames.Count < 1)
         {
             failures.Add("walk 期间没有采样到身体帧");
         }
@@ -794,8 +791,8 @@ public partial class SmokeTestDriver : Node
                 continue;
             }
 
-            double gap = m_Observed[indexB].Time - m_Observed[indexA].Time;
-            double cooldown = m_Hero.Config.AttackInputCooldowns[Math.Max(seg - 2, 0)];
+            double gap = _observed[indexB].Time - _observed[indexA].Time;
+            double cooldown = _hero.Config.AttackInputCooldowns[Math.Max(seg - 2, 0)];
             double tick = 1d / Engine.PhysicsTicksPerSecond;
             if (gap < cooldown - tick || gap > cooldown + 3 * tick)
             {
@@ -818,28 +815,28 @@ public partial class SmokeTestDriver : Node
                 continue;
             }
 
-            if (m_Monster == null)
+            if (_monster == null)
             {
-                m_Monster = monster;
-                if (m_Mode == ESmokeMode.EnemyAi)
+                _monster = monster;
+                if (_mode == SmokeMode.EnemyAi)
                 {
                     // 受测猴子在相机抵达后生成时会索敌到英雄；
                     // 先把夹具挪到视野外，AI专项开始时显式清除旧目标。
-                    monster.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X + 900f, monster.GlobalPosition.Y);
+                    monster.GlobalPosition = new Vector2(_hero.GlobalPosition.X + 900f, monster.GlobalPosition.Y);
                     monster.Velocity = Vector2.Zero;
-                    m_MonsterFoundAt = m_Time;
-                    GD.Print($"SMOKE[{m_Time:F2}] 找到受测猴子 HP {monster.Hp}/{monster.MaxHp}，已挪出视野等待丢失目标");
+                    _monsterFoundAt = _time;
+                    GD.Print($"SMOKE[{_time:F2}] 找到受测猴子 HP {monster.Hp}/{monster.MaxHp}，已挪出视野等待丢失目标");
                 }
                 else
                 {
                     // M4 站位：悟空右侧、普攻判定范围内，供第二轮连打命中。
-                    monster.GlobalPosition = new Vector2(m_Hero.GlobalPosition.X + SandbagOffset, monster.GlobalPosition.Y);
-                    GD.Print($"SMOKE[{m_Time:F2}] 找到沙包猴子 HP {monster.Hp}/{monster.MaxHp} 位置 {monster.GlobalPosition}");
+                    monster.GlobalPosition = new Vector2(_hero.GlobalPosition.X + SandbagOffset, monster.GlobalPosition.Y);
+                    GD.Print($"SMOKE[{_time:F2}] 找到沙包猴子 HP {monster.Hp}/{monster.MaxHp} 位置 {monster.GlobalPosition}");
                 }
             }
 
             // ai 模式保留受测怪物的 AI；M4 模式连同沙包一起全部冻结。
-            if (!m_FrozenMonsters.Add(monster.Id) || (m_Mode == ESmokeMode.EnemyAi && m_Monster == monster))
+            if (!_frozenMonsters.Add(monster.Id) || (_mode == SmokeMode.EnemyAi && _monster == monster))
             {
                 continue;
             }
@@ -856,11 +853,11 @@ public partial class SmokeTestDriver : Node
     /// <param name="args">当前同步回调借用的事件参数。</param>
     private void OnDamageDealt(object sender, GameEventArgs args)
     {
-        if (args is DamageDealtEventArgs e && m_Monster != null && ReferenceEquals(sender, m_Monster))
+        if (args is DamageDealtEventArgs e && _monster != null && ReferenceEquals(sender, _monster))
         {
-            m_MonsterHits.Add((e.Result.Damage, e.Result.IsCrit, e.Result.IsMiss));
-            GD.Print($"SMOKE[{m_Time:F2}] 猴子受击 伤害={e.Result.Damage} 暴击={e.Result.IsCrit} 闪避={e.Result.IsMiss} 剩余HP={m_Monster.Hp} "
-                + $"猴子x={m_Monster.GlobalPosition.X:F0} 英雄x={m_Hero.GlobalPosition.X:F0}");
+            _monsterHits.Add((e.Result.Damage, e.Result.IsCrit, e.Result.IsMiss));
+            GD.Print($"SMOKE[{_time:F2}] 猴子受击 伤害={e.Result.Damage} 暴击={e.Result.IsCrit} 闪避={e.Result.IsMiss} 剩余HP={_monster.Hp} "
+                + $"猴子x={_monster.GlobalPosition.X:F0} 英雄x={_hero.GlobalPosition.X:F0}");
         }
     }
 
@@ -874,13 +871,13 @@ public partial class SmokeTestDriver : Node
         foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
         {
             if (node is FloatingTextNode pop && pop.Visible && pop.IsInsideTree() &&
-                SmokeInspection.ReadField<object>(pop, "m_Kind").ToString() != "Recovery")
+                SmokeInspection.ReadField<object>(pop, "_kind").ToString() != "Recovery")
             {
                 count++;
             }
         }
 
-        m_MaxPopCount = Mathf.Max(m_MaxPopCount, count);
+        _maxPopCount = Mathf.Max(_maxPopCount, count);
     }
 
     /// <summary>
@@ -889,8 +886,8 @@ public partial class SmokeTestDriver : Node
     private void TrackCombo()
     {
         int count = GF.Fsm.GetArchitecture().GetModel<LevelModel>()?.ComboCount.Value ?? 0;
-        m_MaxComboCount = Math.Max(m_MaxComboCount, count);
-        m_ComboHudShown |= GetTree().Root.FindChildren("m_Combo", "Control", true, false)
+        _maxComboCount = Math.Max(_maxComboCount, count);
+        _comboHudShown |= GetTree().Root.FindChildren("m_Combo", "Control", true, false)
             .OfType<GameLogic.UI.Widgets.ComboHud>().Any(hud => hud.Visible &&
                 hud.GetChildren().OfType<AnimatedSprite2D>().Any(digit => digit.Visible));
     }
@@ -901,13 +898,13 @@ public partial class SmokeTestDriver : Node
     /// <param name="failures">本次验证累积的失败说明。</param>
     private void CheckCombat(List<string> failures)
     {
-        if (m_Monster == null)
+        if (_monster == null)
         {
             failures.Add("场上没有找到沙包猴子");
             return;
         }
 
-        if (m_MonsterHits.Count == 0)
+        if (_monsterHits.Count == 0)
         {
             failures.Add("连打期间猴子没有受到任何命中");
             return;
@@ -915,7 +912,7 @@ public partial class SmokeTestDriver : Node
 
         int total = 0;
         // 按真实伤害事件累计并检查每次命中结果。
-        foreach ((int damage, bool crit, bool miss) in m_MonsterHits)
+        foreach ((int damage, bool crit, bool miss) in _monsterHits)
         {
             total += damage;
             if (miss || crit)
@@ -929,27 +926,27 @@ public partial class SmokeTestDriver : Node
         }
 
         // 事件累计伤害应与实体血量一致，再检查命中后是否确实创建池化飘字。
-        int expectedHp = Mathf.Max(0, m_Monster.MaxHp - total);
-        if (m_Monster.Hp != expectedHp && !m_Monster.Dead)
+        int expectedHp = Mathf.Max(0, _monster.MaxHp - total);
+        if (_monster.Hp != expectedHp && !_monster.Dead)
         {
-            failures.Add($"猴子 HP {m_Monster.Hp} 与事件累计 {expectedHp} 不一致");
+            failures.Add($"猴子 HP {_monster.Hp} 与事件累计 {expectedHp} 不一致");
         }
 
-        if (m_MaxPopCount == 0)
+        if (_maxPopCount == 0)
         {
             failures.Add("命中后场上没有出现过伤害飘字（NodePool 未取出 FloatingTextNode）");
         }
 
-        if (m_MaxComboCount < 2)
+        if (_maxComboCount < 2)
         {
-            failures.Add($"真实命中只累计到 {m_MaxComboCount} 连击，未达到HUD显示阈值");
+            failures.Add($"真实命中只累计到 {_maxComboCount} 连击，未达到HUD显示阈值");
         }
-        if (!m_ComboHudShown)
+        if (!_comboHudShown)
         {
             failures.Add("实际战斗HUD从未显示连击数字");
         }
 
-        GD.Print($"SMOKE: 猴子共受击 {m_MonsterHits.Count} 次，累计伤害 {total}，连击峰值 {m_MaxComboCount}，HUD {m_ComboHudShown}，HP {m_Monster.Hp}/{m_Monster.MaxHp}，同屏飘字峰值 {m_MaxPopCount}");
+        GD.Print($"SMOKE: 猴子共受击 {_monsterHits.Count} 次，累计伤害 {total}，连击峰值 {_maxComboCount}，HUD {_comboHudShown}，HP {_monster.Hp}/{_monster.MaxHp}，同屏飘字峰值 {_maxPopCount}");
     }
 
     /// <summary>
@@ -959,7 +956,7 @@ public partial class SmokeTestDriver : Node
     private void Fail(string reason)
     {
         GD.PrintErr($"SMOKE FAIL：{reason}");
-        foreach ((double time, string path) in m_Observed)
+        foreach ((double time, string path) in _observed)
         {
             GD.PrintErr($"  观察[{time:F2}] {path}");
         }
@@ -978,12 +975,12 @@ public partial class SmokeTestDriver : Node
         Input.ActionRelease(InputSystem.MoveLeft);
         Input.ActionRelease(InputSystem.MoveRight);
         Input.ActionRelease(InputSystem.Jump);
-        if (m_Hero != null)
+        if (_hero != null)
         {
             GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
         }
 
-        if (!failed && m_HasQuitAfter)
+        if (!failed && _hasQuitAfter)
         {
             return;
         }
@@ -998,25 +995,19 @@ public partial class SmokeTestDriver : Node
     /// </summary>
     /// <param name="path">待查找的状态路径。</param>
     /// <returns>路径首次出现的下标；不存在时为-1。</returns>
-    private int FirstIndex(string path)
-    {
-        return m_Observed.FindIndex(o => o.Path == path);
-    }
+    private int FirstIndex(string path) => _observed.FindIndex(o => o.Path == path);
 
     /// <summary>
     /// 返回观测序列中路径最后出现的位置，不存在时为 -1。
     /// </summary>
     /// <param name="path">待查找的状态路径。</param>
     /// <returns>路径最后出现的下标；不存在时为-1。</returns>
-    private int LastIndex(string path)
-    {
-        return m_Observed.FindLastIndex(o => o.Path == path);
-    }
+    private int LastIndex(string path) => _observed.FindLastIndex(o => o.Path == path);
 
     /// <summary>
     /// 互斥的自动回归模式。
     /// </summary>
-    private enum ESmokeMode
+    private enum SmokeMode
     {
         Disabled,
         Hero,

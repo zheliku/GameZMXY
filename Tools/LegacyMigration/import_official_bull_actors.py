@@ -182,24 +182,24 @@ def actor_scene(actor, frames, library):
               f'[node name="{class_name}" type="CharacterBody2D" node_paths=PackedStringArray(' + ', '.join('"' + key + '"' for key in bindings + extra) + ')]',
               'collision_layer = 4', f'collision_mask = {0 if heart else 9}', 'floor_constant_speed = true',
               'floor_max_angle = 0.87266463', 'floor_snap_length = 12.0', 'script = ExtResource("script")',
-              f'm_EnemyEntityId = {identity}', 'm_Detector = NodePath("m_Detector")', 'm_Body = NodePath("m_Body")',
-              'm_AnimPlayer = NodePath("m_AnimPlayer")', 'm_HurtBox = NodePath("m_HurtBox")',
-              'm_HitBox = NodePath("m_HitBoxRoot/m_HitBox")', 'm_HitBoxRoot = NodePath("m_HitBoxRoot")',
-              'm_AttackAnimations = PackedStringArray(' + ', '.join('"' + value + '"' for value in attacks) + ')']
+              f'_enemyEntityId = {identity}', 'm_Detector = NodePath("m_Detector")', '_body = NodePath("m_Body")',
+              '_animPlayer = NodePath("m_AnimPlayer")', '_hurtBox = NodePath("m_HurtBox")',
+              '_hitBox = NodePath("m_HitBoxRoot/m_HitBox")', '_hitBoxRoot = NodePath("m_HitBoxRoot")',
+              '_attackAnimations = PackedStringArray(' + ', '.join('"' + value + '"' for value in attacks) + ')']
     if name == "bull_demon_king":
-        lines.append('m_DeathScene = ExtResource("death")')
+        lines.append('DeathScene = ExtResource("death")')
     if name == "bull_guard":
-        lines.append('m_HealthBar = NodePath("m_HealthBar")')
+        lines.append('HealthBar = NodePath("m_HealthBar")')
     if heart:
         lines += [f'{key} = NodePath("{key}")' for key in extra]
-        lines.append('m_FireScene = ExtResource("fire")')
+        lines.append('_fireScene = ExtResource("fire")')
     lines += ['[node name="m_Body" type="AnimatedSprite2D" parent="."]',
               'sprite_frames = ExtResource("frames")', 'animation = &"idle"',
               f'offset = {vec2(actor["layers"][0]["sprite_offset"])}',
               '[node name="m_BodyShape" type="CollisionShape2D" parent="."]', 'shape = SubResource("body_shape")',
               f'position = {vec2(center)}', f'rotation = {1.57079632679 if hurt[2] > hurt[3] else 0}',
-              '[node name="m_HurtBox" type="Area2D" parent="." node_paths=PackedStringArray("m_Owner")]',
-              'collision_layer = 32', 'collision_mask = 0', 'monitoring = false', 'script = ExtResource("hurt")', 'm_Owner = NodePath("..")',
+              '[node name="m_HurtBox" type="Area2D" parent="." node_paths=PackedStringArray("_owner")]',
+              'collision_layer = 32', 'collision_mask = 0', 'monitoring = false', 'script = ExtResource("hurt")', '_owner = NodePath("..")',
               '[node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox"]',
               'shape = SubResource("hurt_shape")', f'position = {vec2(center)}',
               '[node name="m_HitBoxRoot" type="Node2D" parent="."]',
@@ -229,8 +229,8 @@ def heart_nodes():
              '[node name="m_HeartFade" type="AnimationPlayer" parent="."]', 'libraries/ = ExtResource("fade")',
              '[node name="m_Presentation" type="AnimationPlayer" parent="."]', 'libraries/ = ExtResource("presentation")']
     for name, mirrored in (("m_LeftHand", False), ("m_RightHand", True)):
-        lines += [f'[node name="{name}" type="Node2D" parent="." node_paths=PackedStringArray("m_HitBox")]',
-                  'visible = false', 'script = ExtResource("hand_script")', 'm_HitBox = NodePath("HitBox")',
+        lines += [f'[node name="{name}" type="Node2D" parent="." node_paths=PackedStringArray("_hitBox")]',
+                  'visible = false', 'script = ExtResource("hand_script")', '_hitBox = NodePath("HitBox")',
                   f'[node name="Visual" type="AnimatedSprite2D" parent="{name}"]',
                   'sprite_frames = ExtResource("hands")', 'animation = &"play"', 'offset = Vector2(0, -0.5)',
                   f'flip_h = {str(mirrored).lower()}', f'[node name="HitBox" type="Area2D" parent="{name}"]',
@@ -302,8 +302,8 @@ def fire_scene(effect, frames, hit_bounds):
         f'[ext_resource type="SpriteFrames" path="{uri(frames)}" id="frames"]',
         f'[ext_resource type="AnimationLibrary" path="{uri(library)}" id="library"]',
         '[sub_resource type="RectangleShape2D" id="shape"]', f'size = {vec2(bounds[2:])}',
-        '[node name="BullDemonFire" type="Node2D" node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]',
-        'script = ExtResource("script")', 'm_Player = NodePath("AnimationPlayer")', 'm_HitBox = NodePath("HitBox")', 'm_Shape = NodePath("HitBox/Shape")',
+        '[node name="BullDemonFire" type="Node2D" node_paths=PackedStringArray("_player", "_hitBox", "_shape")]',
+        'script = ExtResource("script")', '_player = NodePath("AnimationPlayer")', '_hitBox = NodePath("HitBox")', '_shape = NodePath("HitBox/Shape")',
         '[node name="Sprite" type="AnimatedSprite2D" parent="."]', 'sprite_frames = ExtResource("frames")', 'animation = &"play"',
         f'offset = {vec2(effect["layers"][0]["sprite_offset"])}',
         '[node name="HitBox" type="Area2D" parent="."]', 'collision_layer = 64', 'collision_mask = 128', 'monitorable = false',

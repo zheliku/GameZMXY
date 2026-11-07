@@ -3,7 +3,7 @@
 [ext_resource type="Theme" uid="uid://2gwbh6otun6r" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="1_7kksp"]
 [ext_resource type="Script" uid="uid://dvplgi4pg45a5" path="res://TheGame/MainPack/Scripts/UI/LoadingForm.cs" id="2_e876v"]
 
-[node name="LoadingForm" type="Control" unique_id=1234650829 node_paths=PackedStringArray("m_State", "m_HSlider")]
+[node name="LoadingForm" type="Control" unique_id=1234650829 node_paths=PackedStringArray("_state", "_hSlider")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -12,8 +12,8 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_7kksp")
 script = ExtResource("2_e876v")
-m_State = NodePath("m_State")
-m_HSlider = NodePath("m_HSlider")
+_state = NodePath("m_State")
+_hSlider = NodePath("m_HSlider")
 
 [node name="Overlay" type="ColorRect" parent="." unique_id=180522928]
 layout_mode = 1

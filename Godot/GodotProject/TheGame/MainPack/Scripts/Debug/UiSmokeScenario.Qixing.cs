@@ -33,8 +33,8 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         Vector2 origin = hero.GlobalPosition;
         var source = new AttributeSourceId("LionAiSmoke", 1);
-        var heroSystem = flow.GetSystem<HeroSystem>();
-        heroSystem.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
+        heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         heroSystem.Heal(int.MaxValue);
         try
         {
@@ -42,9 +42,9 @@ public sealed partial class UiSmokeScenario
             {
                 Engine.PhysicsTicksPerSecond = ticks;
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.LionCamelKing,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.LionCamelKing,
                     new EnemySpawn(new Vector2(580, 100)));
-                var actor = m_Monster;
+                AbstractEnemyEntity actor = _monster;
                 var agent = (IEnemyAiAgent)actor;
                 var attacks = (System.Collections.Generic.IReadOnlyList<GameConfig.Battle.AttackConfig>)typeof(AbstractActorEntity)
                     .GetProperty("OwnAttacks", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(actor)!;
@@ -79,7 +79,7 @@ public sealed partial class UiSmokeScenario
                     {
                         while (observed < casts.Count)
                         {
-                            var cast = casts[observed++];
+                            (double Time, int Index, float Distance) cast = casts[observed++];
                             if (cast.Index == index)
                             {
                                 return cast;
@@ -93,10 +93,10 @@ public sealed partial class UiSmokeScenario
                     throw new InvalidOperationException($"狮驼王在距离{distance}时未自主释放第{index + 1}招。");
                 }
 
-                m_Driver.GetTree().PhysicsFrame += SamplePhysics;
+                _driver.GetTree().PhysicsFrame += SamplePhysics;
                 try
                 {
-                    var cloud = await WaitForCast(2, 200);
+                    (double Time, int Index, float Distance) cloud = await WaitForCast(2, 200);
                     GF.Base.PauseGame();
                     await WaitFramesAsync(2);
                     double age = actor.AiData.ElapsedSeconds;
@@ -105,14 +105,14 @@ public sealed partial class UiSmokeScenario
                     Check(actor.AiData.ElapsedSeconds == age && actor.AiData.Cooldowns[2] == remaining,
                         "暂停期间狮驼王继续推进选招时钟或毒雾冷却");
                     GF.Base.ResumeGame();
-                    var spin = await WaitForCast(1, 100);
-                    var basic = await WaitForCast(0, 100);
-                    var nextSpin = await WaitForCast(1, 100, true);
+                    (double Time, int Index, float Distance) spin = await WaitForCast(1, 100);
+                    (double Time, int Index, float Distance) basic = await WaitForCast(0, 100);
+                    (double Time, int Index, float Distance) nextSpin = await WaitForCast(1, 100, true);
                     Check(nextSpin.Time - spin.Time >= 100d / 24d - .05,
                         "近身旋风未等待原版100/24秒冷却");
                     Check(new[] { spin.Time, basic.Time, nextSpin.Time }.All(time => Math.Abs(time - Math.Round(time)) < .1),
                         "狮驼王近身出招没有遵守原版整秒决策节拍");
-                    var nextCloud = await WaitForCast(2, 600);
+                    (double Time, int Index, float Distance) nextCloud = await WaitForCast(2, 600);
                     Check(nextCloud.Time - cloud.Time >= 10.95 && nextCloud.Time - cloud.Time <= 11.15 &&
                         agent.HasTarget, $"毒雾11秒独立冷却或追击不符原版：cloud={cloud.Time:F4}, next={nextCloud.Time:F4}, retained={agent.HasTarget}");
                     System.IO.Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://.godot/validation/qixing_combat_alignment"));
@@ -124,20 +124,20 @@ public sealed partial class UiSmokeScenario
                 }
                 finally
                 {
-                    m_Driver.GetTree().PhysicsFrame -= SamplePhysics;
+                    _driver.GetTree().PhysicsFrame -= SamplePhysics;
                 }
                 ReleaseTestEntity(actor);
                 // GGF 在下一次 EntityManager.Update 才把隐藏实例归还对象池。
                 await WaitFramesAsync(2);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.LionCamelKing,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.LionCamelKing,
                     new EnemySpawn(new Vector2(580, 100)));
-                Check(ReferenceEquals(actor, m_Monster) && m_Monster.AttackSegment == -1 &&
-                    m_Monster.AiData.ElapsedSeconds < .1 && m_Monster.AiData.Cooldowns[1] == 0,
-                    $"狮驼王池复用残留：same={ReferenceEquals(actor, m_Monster)}, attack={m_Monster.AttackSegment}, " +
-                    $"age={m_Monster.AiData.ElapsedSeconds}, spinCd={m_Monster.AiData.Cooldowns[1]}, " +
+                Check(ReferenceEquals(actor, _monster) && _monster.AttackSegment == -1 &&
+                    _monster.AiData.ElapsedSeconds < .1 && _monster.AiData.Cooldowns[1] == 0,
+                    $"狮驼王池复用残留：same={ReferenceEquals(actor, _monster)}, attack={_monster.AttackSegment}, " +
+                    $"age={_monster.AiData.ElapsedSeconds}, spinCd={_monster.AiData.Cooldowns[1]}, " +
                     $"spinInitial={attacks[1].AiInitCooldown}");
-                ReleaseTestEntity(m_Monster);
-                m_Monster = null;
+                ReleaseTestEntity(_monster);
+                _monster = null;
                 await WaitFramesAsync(2);
             }
             GD.Print("SMOKE-LION-AI PASS: autonomous far poison, near spin/basic cadence, independent cooldowns, pause and pool reuse.");
@@ -149,8 +149,8 @@ public sealed partial class UiSmokeScenario
                 GF.Base.ResumeGame();
             }
 
-            ReleaseTestEntity(m_Monster);
-            m_Monster = null;
+            ReleaseTestEntity(_monster);
+            _monster = null;
             Engine.PhysicsTicksPerSecond = originalTicks;
             hero.GlobalPosition = origin;
             heroSystem.RemoveSource(source);
@@ -166,21 +166,21 @@ public sealed partial class UiSmokeScenario
     /// <returns>全部七星洞角色检查结束的任务。</returns>
     private async Task CheckQixingEnemiesAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        var heroSystem = flow.GetSystem<HeroSystem>();
+        HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SmokeQixing", 1);
-        heroSystem.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         heroSystem.Heal(int.MaxValue);
         try
         {
-            foreach (var (id, count) in new[] { (EEntityId.CaveBrute, 1), (EEntityId.KnifeDemon, 2), (EEntityId.LionCamelKing, 3) })
+            foreach ((EntityId id, int count) in new[] { (EntityId.CaveBrute, 1), (EntityId.KnifeDemon, 2), (EntityId.LionCamelKing, 3) })
             {
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
-                var actor = m_Monster;
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
+                AbstractEnemyEntity actor = _monster;
                 SmokeInspection.FreezeAi(actor);
                 await WaitUntilAsync(() => actor.OnFloor, $"{id} 没有落地");
                 typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic)
                     .Invoke(actor, [hero]);
-                var shape = actor.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
+                CollisionShape2D shape = actor.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
                 foreach (int direction in new[] { -1, 1 })
                 {
                     for (int index = 0; index < count; index++)
@@ -189,7 +189,7 @@ public sealed partial class UiSmokeScenario
                         hero.Velocity = Vector2.Zero;
                         heroSystem.AdvanceHurtProtection(float.MaxValue);
                         int beforeHp = hero.Hp;
-                        if (id == EEntityId.LionCamelKing && index == 1)
+                        if (id == EntityId.LionCamelKing && index == 1)
                         {
                             actor.SetFacing(-direction); // 双侧旋风应保留旧朝向，即使目标在身后。
                         }
@@ -197,7 +197,7 @@ public sealed partial class UiSmokeScenario
                         int oldFacing = actor.Facing;
                         Check(((IEnemyAiAgent)actor).RequestAttack(index), $"{id} 未接受第 {index + 1} 招");
                         await WaitUntilAsync(() => actor.AttackSegment == index, $"{id} 身体 FSM 没有提交招式");
-                        if (id == EEntityId.LionCamelKing)
+                        if (id == EntityId.LionCamelKing)
                         {
                             Check(actor.Facing == (index == 1 ? oldFacing : direction), "狮驼王的招式转向与原版不同");
                         }
@@ -207,7 +207,7 @@ public sealed partial class UiSmokeScenario
                         double elapsed = 0;
                         while (true)
                         {
-                            var effects = actor.GetParent().GetChildren().OfType<SkillEffectNode>().Where(x => x.Visible).ToArray();
+                            SkillEffectNode[] effects = actor.GetParent().GetChildren().OfType<SkillEffectNode>().Where(x => x.Visible).ToArray();
                             if (actor.AttackSegment != index && effects.Length == 0)
                             {
                                 break;
@@ -215,13 +215,13 @@ public sealed partial class UiSmokeScenario
 
                             Check(elapsed < 13, $"{id}/{index + 1} 的动画或独立效果没有完成");
                             sawEffect |= effects.Length > 0;
-                            var active = effects.Length > 0 ? effects[0].GetNode<CollisionShape2D>("HitBox/CollisionShape2D") : shape;
+                            CollisionShape2D active = effects.Length > 0 ? effects[0].GetNode<CollisionShape2D>("HitBox/CollisionShape2D") : shape;
                             if (!active.Disabled)
                             {
                                 Vector2 offset = hero.HurtBox.GetGlobalBounds().GetCenter() - hero.GlobalPosition;
                                 hero.GlobalPosition = active.GlobalPosition - offset;
                             }
-                            if (id == EEntityId.LionCamelKing && index == 1 && actor.AttackSegment == index)
+                            if (id == EntityId.LionCamelKing && index == 1 && actor.AttackSegment == index)
                             {
                                 bool invulnerable = (bool)typeof(AbstractActorEntity).GetProperty("Invulnerable", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(actor);
                                 Check(invulnerable, "狮驼王旋风没有全程无敌");
@@ -235,14 +235,14 @@ public sealed partial class UiSmokeScenario
                             elapsed += 1d / Engine.PhysicsTicksPerSecond;
                         }
                         Check(hero.Hp < beforeHp, $"{id}/{index + 1}/{direction} 没有造成实际伤害");
-                        if (id == EEntityId.KnifeDemon && index == 1 || id == EEntityId.LionCamelKing && index == 2)
+                        if (id == EntityId.KnifeDemon && index == 1 || id == EntityId.LionCamelKing && index == 2)
                         {
                             Check(sawEffect, $"{id} 的离身招式没有生成效果");
                         }
 
                         Check(shape.Disabled, $"{id} 收招后判定未关闭");
                         GD.Print($"SMOKE-QIXING ATTACK: {id}/{index + 1}, direction={direction}, damage={beforeHp - hero.Hp}, independent={sawEffect}");
-                        if (id == EEntityId.LionCamelKing && index == 2)
+                        if (id == EntityId.LionCamelKing && index == 2)
                         {
                             Check(flow.GetSystem<HeroStatusSystem>().IsPoisoned, "毒雾命中没有施加中毒");
                             int hp = hero.Hp;
@@ -263,14 +263,14 @@ public sealed partial class UiSmokeScenario
                         await WaitFramesAsync(2);
                     }
                 }
-                if (id == EEntityId.LionCamelKing)
+                if (id == EntityId.LionCamelKing)
                 {
-                    var setTarget = typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic);
+                    MethodInfo setTarget = typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic);
                     setTarget.Invoke(actor, [null]);
                     hero.GlobalPosition = actor.GlobalPosition + new Vector2(50, 200);
                     for (int frame = 0; frame < 6; frame++)
                     {
-                        await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                        await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                     }
 
                     Check(!((IEnemyAiAgent)actor).HasTarget, "狮驼王首次发现超出了官方150高度");
@@ -287,38 +287,38 @@ public sealed partial class UiSmokeScenario
                     GD.Print("SMOKE-LION-AI PASS: 150px acquisition height, target retained beyond sight, spin facing preserved");
                 }
                 ReleaseTestEntity(actor);
-                m_Monster = null;
+                _monster = null;
                 await WaitFramesAsync(2);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
-                Check(ReferenceEquals(actor, m_Monster) && actor.AttackSegment == -1 && actor.Hp == actor.MaxHp,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
+                Check(ReferenceEquals(actor, _monster) && actor.AttackSegment == -1 && actor.Hp == actor.MaxHp,
                     $"{id} 池复用状态残留");
-                ReleaseTestEntity(m_Monster);
-                m_Monster = null;
+                ReleaseTestEntity(_monster);
+                _monster = null;
             }
             // 普通怪物进入死亡动作仍保留原版受击体；Dead 事实让后续攻击只产生 Miss，不显示伤害数字。
-            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.CaveBrute,
+            _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.CaveBrute,
                 new EnemySpawn(new Vector2(580, 100)));
-            SmokeInspection.FreezeAi(m_Monster);
-            await WaitUntilAsync(() => m_Monster.OnFloor, "死亡鞭打夹具未落地");
-            var lethalData = GameLogic.Battle.Attacks.AttackData.Create(0, default, m_Monster.MaxHp * 100f,
-                GameConfig.Battle.EDamageKind.Real, Vector2.Zero, hero.Facing, 0,
+            SmokeInspection.FreezeAi(_monster);
+            await WaitUntilAsync(() => _monster.OnFloor, "死亡鞭打夹具未落地");
+            var lethalData = GameLogic.Battle.Attacks.AttackData.Create(0, default, _monster.MaxHp * 100f,
+                GameConfig.Battle.DamageKind.Real, Vector2.Zero, hero.Facing, 0,
                 source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, hero.Config.EntityId,
                     hero.GetInstanceId(), hero.GetInstanceId()));
             var lethalResult = default(GameLogic.Battle.Damage.DamageResult);
             try
             {
-                lethalResult = m_Monster.ReceiveHit(lethalData);
+                lethalResult = _monster.ReceiveHit(lethalData);
             }
             finally
             {
                 GameFramework.ReferencePool.Release(lethalData);
             }
-            Check(m_Monster.Dead, $"致死结算后死亡事实未置位：damage={lethalResult.Damage}, miss={lethalResult.IsMiss}, hp={m_Monster.Hp}/{m_Monster.MaxHp}");
+            Check(_monster.Dead, $"致死结算后死亡事实未置位：damage={lethalResult.Damage}, miss={lethalResult.IsMiss}, hp={_monster.Hp}/{_monster.MaxHp}");
             await WaitFramesAsync(2);
-            Check(m_Monster.Dead && m_Monster.HurtBox.Monitorable,
-                $"普通怪物死亡动作过早关闭受击体，无法保留原版鞭打表现：dead={m_Monster.Dead}, monitorable={m_Monster.HurtBox.Monitorable}, monitoring={m_Monster.HurtBox.Monitoring}, visible={m_Monster.IsShown}, damage={lethalResult.Damage}, miss={lethalResult.IsMiss}");
-            ReleaseTestEntity(m_Monster);
-            m_Monster = null;
+            Check(_monster.Dead && _monster.HurtBox.Monitorable,
+                $"普通怪物死亡动作过早关闭受击体，无法保留原版鞭打表现：dead={_monster.Dead}, monitorable={_monster.HurtBox.Monitorable}, monitoring={_monster.HurtBox.Monitoring}, visible={_monster.IsShown}, damage={lethalResult.Damage}, miss={lethalResult.IsMiss}");
+            ReleaseTestEntity(_monster);
+            _monster = null;
             GD.Print("SMOKE-QIXING PASS: six actions in both directions, knife/cloud hits, spin invulnerability, poison, pause and reuse");
         }
         finally

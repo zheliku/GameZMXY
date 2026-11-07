@@ -11,7 +11,7 @@
 [ext_resource type="Script" uid="uid://datp3ioaeabv0" path="res://TheGame/GameScripts/UI/SettlementForm/SettlementForm.cs" id="script"]
 [ext_resource type="Texture2D" uid="uid://cob1djukuy5n7" path="res://TheGame/Sprites/UI/settlement/settlement_success.png" id="success"]
 
-[node name="SettlementForm" type="Control" unique_id=1810590113 node_paths=PackedStringArray("m_OutcomeArt", "m_ReturnMap", "m_Retry", "m_Time", "m_Health", "m_Kills", "m_Experience")]
+[node name="SettlementForm" type="Control" unique_id=1810590113 node_paths=PackedStringArray("_outcomeArt", "_returnMap", "_retry", "_time", "_health", "_kills", "_experience")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -19,15 +19,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("script")
-m_OutcomeArt = NodePath("Content/Outcome/m_OutcomeArt")
-m_ReturnMap = NodePath("Content/Actions/m_ReturnMap")
-m_Retry = NodePath("Content/Actions/m_Retry")
-m_Time = NodePath("Content/Results/Time/m_Time")
-m_Health = NodePath("Content/Results/Health/m_Health")
-m_Kills = NodePath("Content/Results/Kills/m_Kills")
-m_Experience = NodePath("Content/Results/Experience/m_Experience")
-m_SuccessTexture = ExtResource("success")
-m_FailureTexture = ExtResource("failure")
+_outcomeArt = NodePath("Content/Outcome/m_OutcomeArt")
+_returnMap = NodePath("Content/Actions/m_ReturnMap")
+_retry = NodePath("Content/Actions/m_Retry")
+_time = NodePath("Content/Results/Time/m_Time")
+_health = NodePath("Content/Results/Health/m_Health")
+_kills = NodePath("Content/Results/Kills/m_Kills")
+_experience = NodePath("Content/Results/Experience/m_Experience")
+_successTexture = ExtResource("success")
+_failureTexture = ExtResource("failure")
 
 [node name="Content" type="Control" parent="." unique_id=464857417]
 anchors_preset = 0

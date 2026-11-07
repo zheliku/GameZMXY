@@ -5,157 +5,121 @@ using System.Collections.Generic;
 using GodotGameFramework.Localization;
 namespace GameLogic.UI
 {
-    /// <summary>
-    /// 界面,生成时会被覆盖，请勿手动修改
-    /// </summary>
-    public partial class SaveForm : Control, IUIForm
-    {
-        #region 框架属性
-        /// <summary>
-        /// 界面序列编号。
-        /// </summary>
-        private int m_SerialId;
+	/// <summary>
+	/// 界面,生成时会被覆盖，请勿手动修改
+	/// </summary>
+	public partial class SaveForm : Control, IUIForm
+	{
+		#region 框架属性
+		/// <summary>
+		/// 界面序列编号。
+		/// </summary>
+		private int _serialId;
 
-        /// <summary>
-        /// 界面资源名称。
-        /// </summary>
-        private string m_UIFormAssetName;
+		/// <summary>
+		/// 界面资源名称。
+		/// </summary>
+		private string _uiFormAssetName;
 
-        /// <summary>
-        /// 界面所属的界面组。
-        /// </summary>
-        private IUIGroup m_UIGroup;
+		/// <summary>
+		/// 界面所属的界面组。
+		/// </summary>
+		private IUIGroup _uiGroup;
 
-        /// <summary>
-        /// 界面在界面组中的深度。
-        /// </summary>
-        private int m_DepthInUIGroup;
+		/// <summary>
+		/// 界面在界面组中的深度。
+		/// </summary>
+		private int _depthInUIGroup;
 
-        /// <summary>
-        /// 是否暂停被覆盖的界面。
-        /// </summary>
-        private bool m_PauseCoveredUIForm;
+		/// <summary>
+		/// 是否暂停被覆盖的界面。
+		/// </summary>
+		private bool _pauseCoveredUIForm;
 
-        /// <summary>
-        /// 获取界面序列编号。
-        /// </summary>
-        public int SerialId
-        {
-            get
-            {
-                return m_SerialId;
-            }
-        }
+		/// <summary>
+		/// 获取界面序列编号。
+		/// </summary>
+		public int SerialId => _serialId;
 
-        /// <summary>
-        /// 获取界面资源名称。
-        /// </summary>
-        public string UIFormAssetName
-        {
-            get
-            {
-                return m_UIFormAssetName;
-            }
-        }
+		/// <summary>
+		/// 获取界面资源名称。
+		/// </summary>
+		public string UIFormAssetName => _uiFormAssetName;
 
-        /// <summary>
-        /// 获取界面实例。
-        /// </summary>
-        public object Handle
-        {
-            get
-            {
-                return this;
-            }
-        }
+		/// <summary>
+		/// 获取界面实例。
+		/// </summary>
+		public object Handle => this;
 
-        /// <summary>
-        /// 获取界面所属的界面组。
-        /// </summary>
-        public IUIGroup UIGroup
-        {
-            get
-            {
-                return m_UIGroup;
-            }
-        }
+		/// <summary>
+		/// 获取界面所属的界面组。
+		/// </summary>
+		public IUIGroup UIGroup => _uiGroup;
 
-        /// <summary>
-        /// 获取界面深度。
-        /// </summary>
-        public int DepthInUIGroup
-        {
-            get
-            {
-                return m_DepthInUIGroup;
-            }
-        }
+		/// <summary>
+		/// 获取界面深度。
+		/// </summary>
+		public int DepthInUIGroup => _depthInUIGroup;
 
-        /// <summary>
-        /// 获取是否暂停被覆盖的界面。
-        /// </summary>
-        public bool PauseCoveredUIForm
-        {
-            get
-            {
-                return m_PauseCoveredUIForm;
-            }
-        }
+		/// <summary>
+		/// 获取是否暂停被覆盖的界面。
+		/// </summary>
+		public bool PauseCoveredUIForm => _pauseCoveredUIForm;
 
-        private List<IStringKey> m_UIStringKeys;
-        public List<IStringKey> UIStringKeys
-        {
-            get
-            {
-                if (m_UIStringKeys == null)
-                {
-                    m_UIStringKeys = this.FindChildrenOfType<IStringKey>() ?? new List<IStringKey>();
-                }
-                return m_UIStringKeys;
-            }
-        }
-        #endregion
+		private List<IStringKey> _uiStringKeys;
+		public List<IStringKey> UIStringKeys
+		{
+			get
+			{
+				if (_uiStringKeys == null)
+				{
+					_uiStringKeys = this.FindChildrenOfType<IStringKey>() ?? new List<IStringKey>();
+				}
+				return _uiStringKeys;
+			}
+		}
+		#endregion
 
-        [Export]
-        private TextureButton m_Close;
-        [Export]
-        private Label m_Status;
-        [Export]
-        private TextureButton m_Slot1;
-        [Export]
-        private Label m_Name1;
-        [Export]
-        private Label m_Date1;
-        [Export]
-        private TextureButton m_Slot2;
-        [Export]
-        private Label m_Name2;
-        [Export]
-        private Label m_Date2;
-        [Export]
-        private TextureButton m_Slot3;
-        [Export]
-        private Label m_Name3;
-        [Export]
-        private Label m_Date3;
-        [Export]
-        private TextureButton m_Slot4;
-        [Export]
-        private Label m_Name4;
-        [Export]
-        private Label m_Date4;
-        [Export]
-        private TextureButton m_Slot5;
-        [Export]
-        private Label m_Name5;
-        [Export]
-        private Label m_Date5;
-        [Export]
-        private TextureButton m_Slot6;
-        [Export]
-        private Label m_Name6;
-        [Export]
-        private Label m_Date6;
+		[Export]
+		private TextureButton _close;
+		[Export]
+		private Label _status;
+		[Export]
+		private TextureButton _slot1;
+		[Export]
+		private Label _name1;
+		[Export]
+		private Label _date1;
+		[Export]
+		private TextureButton _slot2;
+		[Export]
+		private Label _name2;
+		[Export]
+		private Label _date2;
+		[Export]
+		private TextureButton _slot3;
+		[Export]
+		private Label _name3;
+		[Export]
+		private Label _date3;
+		[Export]
+		private TextureButton _slot4;
+		[Export]
+		private Label _name4;
+		[Export]
+		private Label _date4;
+		[Export]
+		private TextureButton _slot5;
+		[Export]
+		private Label _name5;
+		[Export]
+		private Label _date5;
+		[Export]
+		private TextureButton _slot6;
+		[Export]
+		private Label _name6;
+		[Export]
+		private Label _date6;
 
-    }
+	}
 }

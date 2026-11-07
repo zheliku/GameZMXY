@@ -18,29 +18,29 @@ func validate() -> void:
 	if snapshot:
 		root.size = Vector2i(940, 590)
 		for path in ["World/SpawnPoints", "World/StageGates", "World/StageTriggers", "Camera2D"]:
-			level.get_node(path).set("m_DrawInGame", true)
+			level.get_node(path).set("_drawInGame", true)
 	root.add_child(level)
 	await process_frame
 	var exit := level.get_node_or_null("World/Exit")
 	check(exit is Area2D and exit.get_script() == load("res://TheGame/GameScripts/Entity/Level/Exit/LevelExitNode.cs"), "World/Exit 必须是真正的出口子场景，不能绑定旧占位节点")
-	check(level.get("m_Exit") == exit, "关卡控制器必须绑定 World/Exit")
+	check(level.get("_exit") == exit, "关卡控制器必须绑定 World/Exit")
 	check(level.get_node_or_null("World/Exit2") == null, "不应残留因重名而自动改名的 Exit2")
 	var floating_text := level.get_node_or_null("World/FloatingText")
 	check(floating_text != null and floating_text.get_script() == load("res://TheGame/GameScripts/Entity/FloatingText/FloatingTextPresenter.cs"), "世界飘字必须绑定通用 FloatingTextPresenter")
-	check(level.get("m_FloatingText") == floating_text, "关卡必须通过导出字段绑定本场飘字入口")
-	check(level.get("m_FeaturedOpponentSpawnPointIds") == PackedStringArray(["stage_5_a"]), "守关顶部生命条应由场景绑定第五波生成点")
+	check(level.get("_floatingText") == floating_text, "关卡必须通过导出字段绑定本场飘字入口")
+	check(level.get("_featuredOpponentSpawnPointIds") == PackedStringArray(["stage_5_a"]), "守关顶部生命条应由场景绑定第五波生成点")
 	for path in ["World/SpawnPoints", "World/StageGates", "World/StageTriggers"]:
 		var manager := level.get_node(path)
 		check(manager.get_script().is_tool(), "%s 必须运行 Tool 脚本" % path)
 		var warnings = manager.call("_GetConfigurationWarnings")
 		check(warnings.size() == 0, "%s 有条目绑定警告：%s" % [path, warnings])
-		for entry in manager.get("m_Entries"):
+		for entry in manager.get("_entries"):
 			check(entry != null and entry.get_script().is_tool(), "条目必须是可在编辑器中运行的 Tool Resource")
-			check(not str(entry.get("m_Id")).is_empty(), "条目必须有可读 ID")
-			check(manager.get_node_or_null(entry.get("m_Node")) != null, "条目的直接子节点引用必须有效")
+			check(not str(entry.get("_id")).is_empty(), "条目必须有可读 ID")
+			check(manager.get_node_or_null(entry.get("_node")) != null, "条目的直接子节点引用必须有效")
 		manager.queue_redraw()
-	check(level.get_node("World/SpawnPoints").get("m_Entries").size() == 15, "五波十四处生成点与玩家出生点必须登记")
-	check(level.get_node("World/StageGates").get("m_Entries").size() == 9, "五个出口与四个独立左界必须登记")
+	check(level.get_node("World/SpawnPoints").get("_entries").size() == 15, "五波十四处生成点与玩家出生点必须登记")
+	check(level.get_node("World/StageGates").get("_entries").size() == 9, "五个出口与四个独立左界必须登记")
 	var points := {"Stage1A": Vector2(1256.4, 377.3), "Stage2A": Vector2(1863, 428.65),
 		"Stage2B": Vector2(806.35, 359.4), "Stage2C": Vector2(1863, 377.25),
 		"Stage3A": Vector2(2059.65, 284.45), "Stage3B": Vector2(2349.75, 116.75),
@@ -70,8 +70,8 @@ func validate() -> void:
 		check(image.save_png("res://.godot/validation/level_guides.png") == OK, "绘制快照保存失败")
 		var marker_color := image.get_pixel(316, 300)
 		var camera_color := image.get_pixel(430, 100)
-		var marker_tint: Color = level.get_node("World/SpawnPoints").get("m_Entries")[0].get("m_DrawColor")
-		var camera_tint: Color = level.get_node("Camera2D").get("m_GuideColor")
+		var marker_tint: Color = level.get_node("World/SpawnPoints").get("_entries")[0].get("_drawColor")
+		var camera_tint: Color = level.get_node("Camera2D").get("_guideColor")
 		# 颜色是检查器参数；验证当前配置的实际像素，而非假定所有引导都使用青色。
 		check(rgb(marker_color).distance_to(rgb(marker_tint)) < 0.3, "生成点圆圈未出现在实际绘制中")
 		check(rgb(camera_color).distance_to(rgb(camera_tint)) < 0.3, "相机死区未出现在实际绘制中")

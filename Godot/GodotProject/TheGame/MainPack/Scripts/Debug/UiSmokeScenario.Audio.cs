@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using GameConfig;
 using GameConfig.Sound;
 using GameLogic.Architecture;
 using GameLogic.Audio;
@@ -22,21 +23,21 @@ public sealed partial class UiSmokeScenario
         // 本专项只验证声音，先停止流程已经提交的开场音乐请求。
         GF.Sound.StopAllLoadingSounds();
         GF.Sound.StopAllLoadedSounds();
-        var tables = GF.Fsm.GetModel<ConfigurationModel>().Tables;
-        foreach (var id in new[] { ESoundId.CaveTheme, ESoundId.SeaTheme, ESoundId.BullDemonValleyTheme })
+        Tables tables = GF.Fsm.GetModel<ConfigurationModel>().Tables;
+        foreach (SoundId id in new[] { SoundId.CaveTheme, SoundId.SeaTheme, SoundId.BullDemonValleyTheme })
         {
-            var config = tables.TbSoundConfig.Get((int)id);
+            SoundConfig config = tables.TbSoundConfig.Get((int)id);
             Check(config.Group == "Music", $"章节音乐分组错误：{id}");
             int serial = GF.Sound.PlayConfigured(id);
             Check(serial > 0, $"GGF未提交章节音乐请求：{id}");
-            await WaitUntilAsync(() => m_Driver.GetTree().Root.FindChildren("*", "AudioStreamPlayer", true, false)
+            await WaitUntilAsync(() => _driver.GetTree().Root.FindChildren("*", "AudioStreamPlayer", true, false)
                 .OfType<AudioStreamPlayer>().Any(player => player.Bus == "Music" && player.Playing &&
                     player.Stream.ResourcePath == config.Path), $"GGF章节音乐没有起播：{id}");
-            var players = m_Driver.GetTree().Root.FindChildren("*", "AudioStreamPlayer", true, false)
+            AudioStreamPlayer[] players = _driver.GetTree().Root.FindChildren("*", "AudioStreamPlayer", true, false)
                 .OfType<AudioStreamPlayer>().Where(player => player.Bus == "Music" && player.Playing).ToArray();
             Check(players.Length == 1 && players[0].Stream is AudioStreamMP3 { Loop: true },
                 $"章节音乐重叠或导入未循环：{id}");
-            var music = players[0];
+            AudioStreamPlayer music = players[0];
             double start = music.GetPlaybackPosition();
             await WaitFramesAsync(12);
             Check(music.GetPlaybackPosition() > start, $"章节音乐播放位置未推进：{id}");
@@ -66,8 +67,8 @@ public sealed partial class UiSmokeScenario
             "res://TheGame/Scenes/Levels/zm1_05_qixing_cave/level_5.tscn"
         })
         {
-            var view = GD.Load<PackedScene>(path).Instantiate<LevelViewController>();
-            Check(view.MusicId == ESoundId.CaveTheme, $"洞窟关卡仍沿用花果山音乐：{path}");
+            LevelViewController view = GD.Load<PackedScene>(path).Instantiate<LevelViewController>();
+            Check(view.MusicId == SoundId.CaveTheme, $"洞窟关卡仍沿用花果山音乐：{path}");
             view.Free();
         }
         GD.Print("SMOKE-CHAPTER-SCENES PASS: both cave levels select the official bg2 identity.");

@@ -38,23 +38,23 @@ gradient = SubResource("Gradient_fill")
 width = 50
 height = 5
 
-[node name="LionCamelKingEntity" type="CharacterBody2D" unique_id=802693107 node_paths=PackedStringArray("m_Perception", "m_HealthBar", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[node name="LionCamelKingEntity" type="CharacterBody2D" unique_id=802693107 node_paths=PackedStringArray("_perception", "HealthBar", "_body", "_animPlayer", "_hurtBox", "_hitBox", "_hitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("1_5iarb")
-m_DeathScene = ExtResource("boss_death")
-m_Perception = NodePath("Perception")
-m_EnemyEntityId = 100003
-m_HealthBar = NodePath("m_HealthBar")
-m_Body = NodePath("m_Body")
-m_AnimPlayer = NodePath("m_AnimPlayer")
-m_AttackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3")
-m_HurtBox = NodePath("m_HurtBox")
-m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
-m_HitBoxRoot = NodePath("m_HitBoxRoot")
+DeathScene = ExtResource("boss_death")
+_perception = NodePath("Perception")
+_enemyEntityId = 100003
+HealthBar = NodePath("m_HealthBar")
+_body = NodePath("m_Body")
+_animPlayer = NodePath("m_AnimPlayer")
+_attackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3")
+_hurtBox = NodePath("m_HurtBox")
+_hitBox = NodePath("m_HitBoxRoot/m_HitBox")
+_hitBoxRoot = NodePath("m_HitBoxRoot")
 
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1821930133]
 sprite_frames = ExtResource("2_e3f0t")
@@ -66,12 +66,12 @@ position = Vector2(0.5, 0)
 shape = SubResource("CapsuleShape2D_hef3j")
 debug_color = Color(0.58, 0.64, 0.72, 0.12)
 
-[node name="m_HurtBox" type="Area2D" parent="." unique_id=1243224820 node_paths=PackedStringArray("m_Owner")]
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=1243224820 node_paths=PackedStringArray("_owner")]
 collision_layer = 32
 collision_mask = 0
 monitoring = false
 script = ExtResource("3_ntire")
-m_Owner = NodePath("..")
+_owner = NodePath("..")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1986919316]
 position = Vector2(0.5, 0)
@@ -90,14 +90,14 @@ shape = SubResource("RectangleShape2D_gysqx")
 disabled = true
 debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="Perception" type="Area2D" parent="." unique_id=73551405 node_paths=PackedStringArray("m_DetectionShape", "m_EngageShape", "m_PatrolShape")]
+[node name="Perception" type="Area2D" parent="." unique_id=73551405 node_paths=PackedStringArray("_detectionShape", "_engageShape", "_patrolShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
 script = ExtResource("4_e3f0t")
-m_DetectionShape = NodePath("Detection")
-m_EngageShape = NodePath("Engage")
-m_PatrolShape = NodePath("Patrol")
+_detectionShape = NodePath("Detection")
+_engageShape = NodePath("Engage")
+_patrolShape = NodePath("Patrol")
 
 [node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=1927869245]
 shape = SubResource("RectangleShape2D_5iarb")

@@ -1,6 +1,6 @@
+using System;
 using Calcatz.EzpzInspector;
 using Godot;
-using System;
 
 /// <summary>
 /// 编辑器脚本生成器的路径和命名设置。

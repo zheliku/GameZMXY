@@ -16,10 +16,10 @@ public sealed partial class PassiveConfig : Luban.BeanBase
 {
     public PassiveConfig(ByteBuf _buf) 
     {
-        PassiveId = (Skills.EPassiveId)_buf.ReadInt();
+        PassiveId = (Skills.PassiveId)_buf.ReadInt();
         LegacyId = _buf.ReadString();
         NameCn = _buf.ReadString();
-        Effect = (Skills.EPassiveEffect)_buf.ReadInt();
+        Effect = (Skills.PassiveEffect)_buf.ReadInt();
         {int n0 = _buf.ReadSize(); Levels = new System.Collections.Generic.List<Skills.PassiveLevel>(n0);for(var i0 = 0 ; i0 < n0 ; i0++) { Skills.PassiveLevel _e0;  _e0 = global::GameConfig.Skills.PassiveLevel.DeserializePassiveLevel(_buf); Levels.Add(_e0);}}
     }
 
@@ -31,7 +31,7 @@ public sealed partial class PassiveConfig : Luban.BeanBase
     /// <summary>
     /// 被动技能编号
     /// </summary>
-    public readonly Skills.EPassiveId PassiveId;
+    public readonly Skills.PassiveId PassiveId;
     /// <summary>
     /// 造一被动数组下标
     /// </summary>
@@ -43,7 +43,7 @@ public sealed partial class PassiveConfig : Luban.BeanBase
     /// <summary>
     /// 各等级共用的效果类型
     /// </summary>
-    public readonly Skills.EPassiveEffect Effect;
+    public readonly Skills.PassiveEffect Effect;
     /// <summary>
     /// 等级列表；每级一行，按1..5排列
     /// </summary>

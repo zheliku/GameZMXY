@@ -4,106 +4,72 @@ using System.Threading.Tasks;
 using GameLogic.Architecture;
 using GodotGameFramework.Archive;
 
-namespace GameLogic.Utility
+namespace GameLogic.Utility;
+
+/// <summary>
+/// 泛型 GGF 存档适配器；传递框架读写结果，不解释游戏字段、版本或检查点。
+/// </summary>
+/// <typeparam name="TCatalogue">框架目录类型。</typeparam>
+/// <typeparam name="TData">框架存档类型，工具不依赖它的业务字段。</typeparam>
+public sealed class ArchiveUtility<TCatalogue, TData> : IUtility
+    where TCatalogue : ArchiveCatalogue, new()
+    where TData : ArchiveData, new()
 {
+    private readonly ArchiveSystem<TCatalogue, TData> _archive; // 借用：GGF 拥有并串行调度的存档服务。
+
     /// <summary>
-    /// 泛型 GGF 存档适配器；传递框架读写结果，不解释游戏字段、版本或检查点。
+    /// 绑定已初始化的第三方存档服务。
     /// </summary>
-    /// <typeparam name="TCatalogue">框架目录类型。</typeparam>
-    /// <typeparam name="TData">框架存档类型，工具不依赖它的业务字段。</typeparam>
-    public sealed class ArchiveUtility<TCatalogue, TData> : IUtility
-        where TCatalogue : ArchiveCatalogue, new()
-        where TData : ArchiveData, new()
+    /// <param name="archive">框架存档服务。</param>
+    public ArchiveUtility(ArchiveSystem<TCatalogue, TData> archive)
     {
-        private readonly ArchiveSystem<TCatalogue, TData> m_Archive; // 借用：GGF 拥有并串行调度的存档服务。
-
-        /// <summary>
-        /// 绑定已初始化的第三方存档服务。
-        /// </summary>
-        /// <param name="archive">框架存档服务。</param>
-        public ArchiveUtility(ArchiveSystem<TCatalogue, TData> archive)
-        {
-            m_Archive = archive ?? throw new ArgumentNullException(nameof(archive));
-        }
-
-        /// <summary>
-        /// 框架当前目录列表，只借用。
-        /// </summary>
-        public IReadOnlyList<TCatalogue> Catalogues
-        {
-            get
-            {
-                return m_Archive.Catalogues;
-            }
-        }
-
-        /// <summary>
-        /// 框架当前目录记录，只借用。
-        /// </summary>
-        public TCatalogue CurrentCatalogue
-        {
-            get
-            {
-                return m_Archive.CurrentCatalogue;
-            }
-        }
-
-        /// <summary>
-        /// 框架当前数据记录，只借用。
-        /// </summary>
-        public TData CurrentData
-        {
-            get
-            {
-                return m_Archive.CurrentData;
-            }
-        }
-
-        /// <summary>
-        /// 由框架新建一个槽位并写盘。
-        /// </summary>
-        /// <returns>框架读写是否成功。</returns>
-        public Task<bool> SaveAsync()
-        {
-            return m_Archive.SaveAsync();
-        }
-
-        /// <summary>
-        /// 读取框架目录和默认槽。
-        /// </summary>
-        /// <returns>框架读写是否成功。</returns>
-        public Task<bool> LoadAsync()
-        {
-            return m_Archive.LoadAsync();
-        }
-
-        /// <summary>
-        /// 读取明确指定的文件。
-        /// </summary>
-        /// <param name="unitId">框架文件编号。</param>
-        /// <returns>框架读写是否成功。</returns>
-        public Task<bool> LoadAsync(long unitId)
-        {
-            return m_Archive.LoadAsync(unitId);
-        }
-
-        /// <summary>
-        /// 请求框架覆盖当前槽，备份与原子写由框架处理。
-        /// </summary>
-        /// <returns>框架读写是否成功。</returns>
-        public Task<bool> OverWriteAsync()
-        {
-            return m_Archive.OverWriteAsync();
-        }
-
-        /// <summary>
-        /// 删除指定框架存档。
-        /// </summary>
-        /// <param name="unitId">框架文件编号。</param>
-        /// <returns>框架读写是否成功。</returns>
-        public Task<bool> DeleteAsync(long unitId)
-        {
-            return m_Archive.Delete(unitId);
-        }
+        _archive = archive ?? throw new ArgumentNullException(nameof(archive));
     }
+
+    /// <summary>
+    /// 框架当前目录列表，只借用。
+    /// </summary>
+    public IReadOnlyList<TCatalogue> Catalogues => _archive.Catalogues;
+
+    /// <summary>
+    /// 框架当前目录记录，只借用。
+    /// </summary>
+    public TCatalogue CurrentCatalogue => _archive.CurrentCatalogue;
+
+    /// <summary>
+    /// 框架当前数据记录，只借用。
+    /// </summary>
+    public TData CurrentData => _archive.CurrentData;
+
+    /// <summary>
+    /// 由框架新建一个槽位并写盘。
+    /// </summary>
+    /// <returns>框架读写是否成功。</returns>
+    public Task<bool> SaveAsync() => _archive.SaveAsync();
+
+    /// <summary>
+    /// 读取框架目录和默认槽。
+    /// </summary>
+    /// <returns>框架读写是否成功。</returns>
+    public Task<bool> LoadAsync() => _archive.LoadAsync();
+
+    /// <summary>
+    /// 读取明确指定的文件。
+    /// </summary>
+    /// <param name="unitId">框架文件编号。</param>
+    /// <returns>框架读写是否成功。</returns>
+    public Task<bool> LoadAsync(long unitId) => _archive.LoadAsync(unitId);
+
+    /// <summary>
+    /// 请求框架覆盖当前槽，备份与原子写由框架处理。
+    /// </summary>
+    /// <returns>框架读写是否成功。</returns>
+    public Task<bool> OverWriteAsync() => _archive.OverWriteAsync();
+
+    /// <summary>
+    /// 删除指定框架存档。
+    /// </summary>
+    /// <param name="unitId">框架文件编号。</param>
+    /// <returns>框架读写是否成功。</returns>
+    public Task<bool> DeleteAsync(long unitId) => _archive.Delete(unitId);
 }

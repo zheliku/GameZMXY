@@ -5,8 +5,8 @@ using GameLogic.Architecture;
 using GameLogic.Battle.Damage;
 using GameLogic.Config;
 using GameLogic.Drops;
-using GameLogic.Input;
 using GameLogic.Enemies.AI;
+using GameLogic.Input;
 using GameLogic.Profile;
 using GameLogic.Save;
 using GameLogic.Utility;
@@ -30,7 +30,7 @@ public sealed class ProcedurePrepare : ProcedureBase
         try
         {
             // 按配置创建资源组；任何必要组失败都停止启动。
-            foreach (var group in GF.Entity.EntityGroupRes.EntityGroups)
+            foreach (EntityGroup group in GF.Entity.EntityGroupRes.EntityGroups)
             {
                 if (!GF.Entity.HasEntityGroup(group.Name) && !GF.Entity.AddEntityGroup(group.Name, group.ReleaseInterval,
                         group.Capacity, group.ExpireTime, group.Priority))
@@ -38,14 +38,14 @@ public sealed class ProcedurePrepare : ProcedureBase
                     throw new InvalidOperationException($"实体组 {group.Name} 创建失败。");
                 }
             }
-            foreach (var group in GF.UI.UIGroupRes.Groups)
+            foreach (UIGroup group in GF.UI.UIGroupRes.Groups)
             {
                 if (!GF.UI.HasUIGroup(group.Name) && !GF.UI.AddUIGroup(group.Name, group.Depth))
                 {
                     throw new InvalidOperationException($"UI 组 {group.Name} 创建失败。");
                 }
             }
-            foreach (var group in GF.Sound.SoundGroupRes.SoundGroups)
+            foreach (SoundGroup group in GF.Sound.SoundGroupRes.SoundGroups)
             {
                 if (!GF.Sound.HasSoundGroup(group.Name) && !GF.Sound.AddSoundGroup(group.Name, group.AgentCounts,
                         group.AvoidBeingReplacedBySamePriority))
@@ -62,7 +62,7 @@ public sealed class ProcedurePrepare : ProcedureBase
             LayerMask.Instance.Active();
 
             // 主流程 FSM 是唯一所有者；按工具、模型、系统的依赖顺序直接注册。
-            var architecture = procedureOwner.InitializeArchitecture();
+            IArchitecture architecture = procedureOwner.InitializeArchitecture();
             procedureOwner.RegisterUtility(new ArchiveUtility<GameCatalogue, GameData>(GF.Archive));
             procedureOwner.RegisterUtility(new SpatialUtility());
             procedureOwner.RegisterUtility(new SaveDataUtility());

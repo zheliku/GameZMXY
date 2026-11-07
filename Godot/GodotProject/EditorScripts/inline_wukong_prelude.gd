@@ -20,7 +20,7 @@ func _initialize() -> void:
 	root.add_child(sprite)
 	sprite.owner = root
 	sprite.connect("animation_finished", Callable(sprite, "hide"), CONNECT_PERSIST)
-	root.set("m_FireDemonPrelude", sprite)
+	root.set("_fireDemonPrelude", sprite)
 	var library: AnimationLibrary = root.get_node("m_AnimPlayer").get_animation_library("skills")
 	var animation := library.get_animation("fire_demon_slash")
 	for track in animation.get_track_count():

@@ -9,18 +9,22 @@
 
 
 
-namespace GameConfig.Level
+namespace GameConfig.Attributes
 { 
-    public enum EStageActivation
+    public enum AttributeModifierKind
     {
         /// <summary>
-        /// 相机抵达阶段右界
+        /// 固定值
         /// </summary>
-        CameraArrived = 0,
+        Flat = 0,
         /// <summary>
-        /// 特殊区域激活
+        /// 同类百分比相加
         /// </summary>
-        Trigger = 1,
+        PercentAdd = 1,
+        /// <summary>
+        /// 独立百分比相乘
+        /// </summary>
+        PercentMult = 2,
     }
 
 } 

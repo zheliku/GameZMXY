@@ -12,10 +12,10 @@ func _run() -> void:
     for actor in data.actors:
         var path: String = actor.installed_scene
         var entity: Node = load(path).instantiate()
-        var body: AnimatedSprite2D = entity.get("m_Body")
+        var body: AnimatedSprite2D = entity.get("_body")
         body.sprite_frames = load(actor.installed_frames)
         body.offset = Vector2(actor.layers[0].sprite_offset[0], actor.layers[0].sprite_offset[1])
-        var player: AnimationPlayer = entity.get("m_AnimPlayer")
+        var player: AnimationPlayer = entity.get("_animPlayer")
         var library := player.get_animation_library("")
         for name in library.get_animation_list():
             var animation := library.get_animation(name)

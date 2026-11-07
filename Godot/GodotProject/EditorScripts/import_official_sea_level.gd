@@ -28,9 +28,9 @@ func _build() -> void:
     m_Source = JSON.parse_string(FileAccess.get_file_as_string(args[0]))[label]
     m_Scene = load("res://TheGame/Scenes/Levels/zm1_01_huaguoshan/level_1.tscn").instantiate()
     m_Scene.name = "Level_%d" % level_id
-    m_Scene.set("m_LevelId", level_id)
-    m_Scene.set("m_MusicId", 107)
-    m_Scene.set("m_FeaturedOpponentSpawnPointIds", PackedStringArray(["stage_5_a"]))
+    m_Scene.set("_levelId", level_id)
+    m_Scene.set("_musicId", 107)
+    m_Scene.set("_featuredOpponentSpawnPointIds", PackedStringArray(["stage_5_a"]))
     for path in ["World/Geometry", "World/Platforms", "World/SpawnPoints", "World/StageGates"]:
         for child in m_Scene.get_node(path).get_children():
             child.free()
@@ -127,7 +127,7 @@ func _markers() -> void:
         marker.position = _vec(item.position)
         _add(points, marker)
         entries.append(_entry("stage_%d_%s" % [stage, letter], marker.name))
-    points.set("m_Entries", entries)
+    points.set("_entries", entries)
     var gates := m_Scene.get_node("World/StageGates")
     entries = []
     var sourceGates: Array = m_Source.gates.duplicate()
@@ -137,7 +137,7 @@ func _markers() -> void:
         if stage > 1:
             entries.append(_gate("Stage%dLeft" % stage, "stage_%d_left" % stage, item.battleBounds[0]))
         entries.append(_gate("Stage%dGate" % stage, "stage_%d_gate" % stage, item.battleBounds[1]))
-    gates.set("m_Entries", entries)
+    gates.set("_entries", entries)
 
 ## Create one disabled gate and its resource-backed marker entry.
 func _gate(title: String, id: String, x: float) -> Resource:
@@ -159,8 +159,8 @@ func _gate(title: String, id: String, x: float) -> Resource:
 ## Keep marker identities readable without duplicating coordinates in tables.
 func _entry(id: String, title: String) -> Resource:
     var entry: Resource = load("res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs").new()
-    entry.set("m_Id", id)
-    entry.set("m_Node", NodePath(title))
+    entry.set("_id", id)
+    entry.set("_node", NodePath(title))
     return entry
 
 ## Set ownership when authoring children for PackedScene.

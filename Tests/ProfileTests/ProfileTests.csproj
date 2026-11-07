@@ -46,7 +46,7 @@
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\LootSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utilities\Utility\ExperienceCurveUtility.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Utilities\Utility\SaveDataUtility.cs" />
-    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Models\EPlayerSlot.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Models\PlayerSlot.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Models\Profile\ProfileModel.cs" Link="Linked\Models\Profile\ProfileModel.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\ProfileSystem.cs" Link="Linked\Systems\ProfileSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Models\Save\**\*.cs" Link="Linked\Save\%(RecursiveDir)%(Filename)%(Extension)" />

@@ -4,48 +4,47 @@ using GameFramework.Fsm;
 using GameLogic.Heroes.Body;
 using GameLogic.Skills;
 
-namespace GameLogic.Heroes.Wukong
+namespace GameLogic.Heroes.Wukong;
+
+/// <summary>
+/// 烈焰风暴：地面定身、占用空中跳跃，三段旋转攻击向悟空两侧击退。
+/// </summary>
+public sealed class WukongFlameStormState : AbstractHeroSkillState
 {
-    /// <summary>
-    /// 烈焰风暴：地面定身、占用空中跳跃，三段旋转攻击向悟空两侧击退。
-    /// </summary>
-    public sealed class WukongFlameStormState : AbstractHeroSkillState
+    private const string AnimationName = "skills/flame_storm"; // 本招的原生动画资源名。
+    private const double NormalAttackBlockSeconds = 10d / 24d; // 官方风暴起手对普通攻击的阻塞秒数。
+
+    /// <inheritdoc />
+    protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
     {
-        private const string AnimationName = "skills/flame_storm"; // 本招的原生动画资源名。
-        private const double NormalAttackBlockSeconds = 10d / 24d; // 官方风暴起手对普通攻击的阻塞秒数。
-
-        /// <inheritdoc />
-        protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
+        base.Enter(fsm, body);
+        body.ActionData.LastGroundSegment = -1;
+        if (body.ActionData.JumpCount == 1)
         {
-            base.Enter(fsm, body);
-            body.ActionData.LastGroundSegment = -1;
-            if (body.ActionData.JumpCount == 1)
-            {
-                body.ActionData.JumpCount = 2;
-            }
-
-            body.ActionData.AttackReadyAt = body.ActionData.Time + NormalAttackBlockSeconds;
-            BeginAnimation(body, AnimationName);
+            body.ActionData.JumpCount = 2;
         }
 
-        /// <summary>
-        /// 动画每段创建独立判定；中心击退与取整是本招规则。
-        /// </summary>
-        /// <param name="body">悟空身体。</param>
-        public void BeginHit(IHeroBody body)
-        {
-            var actor = (ISkillActor)body;
-            actor.NewSkillAttack(ESkillHitId.FlameStorm,
-                Math.Round(AttackPower(body, ESkillHitId.FlameStorm), MidpointRounding.AwayFromZero), actor.SkillPosition.X);
-        }
+        body.ActionData.AttackReadyAt = body.ActionData.Time + NormalAttackBlockSeconds;
+        BeginAnimation(body, AnimationName);
+    }
 
-        /// <inheritdoc />
-        protected override void UpdateSkill(IHeroBody body, float dt)
+    /// <summary>
+    /// 动画每段创建独立判定；中心击退与取整是本招规则。
+    /// </summary>
+    /// <param name="body">悟空身体。</param>
+    public void BeginHit(IHeroBody body)
+    {
+        var actor = (ISkillActor)body;
+        actor.NewSkillAttack(SkillHitId.FlameStorm,
+            Math.Round(AttackPower(body, SkillHitId.FlameStorm), MidpointRounding.AwayFromZero), actor.SkillPosition.X);
+    }
+
+    /// <inheritdoc />
+    protected override void UpdateSkill(IHeroBody body, float dt)
+    {
+        if (body.OnFloor)
         {
-            if (body.OnFloor)
-            {
-                Stand(body);
-            }
+            Stand(body);
         }
     }
 }

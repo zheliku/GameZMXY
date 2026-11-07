@@ -20,7 +20,7 @@
 
 - Godot 4.7 .NET / SDK 4.7.2，C# net10.0，Newtonsoft.Json 13.0.4；gl_compatibility、内置 2D 物理、940×590、canvas_items + keep。
 - 源表改动经 `Configs/GameConfig/gen_code_bin_to_project_lazyload.bat` 导出，之后构建。Tools/Luban 为只读 vendored 工具。
-- UI 绑定经 `Tools/ProjectMaintenance/regenerate_ui_form.py <场景> --namespace GameLogic.UI` 生成；资源常量经既有 Collection Res 生成器更新。不得手改生成物。
+- UI 绑定经 `Tools/ProjectMaintenance/regenerate_ui_form.py <场景> --namespace GameLogic.UI` 生成；项目生成器把只读GGF模板的字段转为第10章的命名，框架模板本身不改。资源常量经既有 Collection Res 生成器更新。不得手改生成物。
 - 旧资源迁入工具位于 Tools/LegacyMigration，来源登记在 LegacyAssetMap；已有人工调整的动画不能无差别重生成。
 - 新增 C# 后用 Godot `--headless --build-solutions --quit --no-window` 完成扫描；场景/动画改动按风险验证装配、物理和实际渲染，不以构建代替画面检查。
 - 单测覆盖纯规则，引擎烟测覆盖真实输入、UI、物理和流程。测试用隔离的 `user://Validation/<模式>/<唯一编号>`，不修改玩家正式存档、不新增生产测试 API。
@@ -37,7 +37,7 @@
 | addons/ExportInspector/ExportInspector.cs | 2026-10-15 用户授权扫描修补：先读脚本依赖元数据，只加载候选包标记并校验；条目扫描和打包复用已识别标记，避免提前加载普通资源触发编辑器 GCHandle 异常；仅此扫描与排除逻辑 |
 | Framework/GodotGameFrameworkCore/Base/BaseComponent.cs | 2026-10-31 用户要求修复框架关停异常：自动关停从 OnPreDestroy 提前至 OnExitTree，并调用既有 GameEntry.Shutdown(None) 清理模块及组件注册；避免在 HttpRequest/声音辅助节点销毁后清理代理，不改其他生命周期 |
 | Framework/GameFramework.tscn 的 Procedure.Procedures | Launch、Update、Prepare、Preload、Title、LoadGame、Character、Map、Level；2026-10-15 用户要求整理准备流程并重命名读档流程，登记 Prepare 与 LoadGame；EnterProcedure 不变；新增其他流程另行授权 |
-| Framework/GodotGameFrameworkCore/UI/UIExtension.cs、Entity/EntityExtension.cs | 2026-11-07 用户要求全项目枚举类型统一E前缀：仅同步6处项目配置枚举参数类型，UIFormId→EUIFormId、EntityId→EEntityId；方法、配置字段、框架枚举及行为保持 |
+| Framework/GodotGameFrameworkCore/UI/UIExtension.cs、Entity/EntityExtension.cs | 历史E前缀迁移仅同步过6处项目配置枚举参数。用户随后明确本次规范化不动GGF：两文件保持ef54cbb原字节，Godot工程以编译别名把既有EUIFormId/EEntityId引用绑定到正式新配置类型；不据此扩大框架修改授权 |
 | Framework/GodotGameFrameworkCore/Json/EasySave.cs | 增加 Serialize、WriteUserTextAtomicAsync、LoadFromUserWithBackupAsync、ExistsInUserOrBackup、DeleteInUserWithBackupAsync、BackupSuffix；原接口及热更调用不变 |
 | Framework/GodotGameFrameworkCore/Archive/ArchiveSystem.cs | 原子写/.bak、调用顺序串行、调用时序列化、读取备份回退、严格首次建档、覆盖时重写目录、读写/删除返回 Task<bool>；ArchiveCatalogue/ArchiveData、布局、加密和 GF 泛型绑定不变 |
 | 生成代码与资源 | 用户要求改源表、UI 或资源登记时，只经上述既有生成流程更新；脚本迁移携带 UID，并修复引用后由 Godot 重扫 |
@@ -49,6 +49,13 @@
 - main 受保护；分支用 feature/、fix/、art/，提交前缀 feat:、fix:、refactor:、art:、config:、docs:、chore:。
 - 素材与逻辑改动分开提交；不提交 .godot、bin、obj、user://、临时文件和本机编辑器配置。保留用户已有工作及 Git 索引。
 - Godot/CLAUDE.md、.claude、.kilo 是各工具配置，不是项目规范。
+
+## C# 规范工具
+
+- 命名和语言风格采用第10章；机器可读配置在根`.editorconfig`，不另建格式配置或引入额外分析器包。SDK内置`dotnet format whitespace`处理空白格式，`dotnet format style`处理有修复器的语言风格。
+- 先用`--verify-no-changes`检查明确列出的手写文件，审阅范围后移除该参数应用。目录参数必须以`/`结尾，否则当前SDK可能选中0份文件而退出成功。命名使用IDE重命名并检查资源/配置引用；不把格式化扩大为全仓改名。只读边界不因格式命令而放开，不能使用`--include-generated`。
+- UI绑定、Luban与资源常量的生成物不格式化；仅靠生成文件识别不足以覆盖所有自定义模板，命令必须明确输入范围。旧`CSharpStyle --write`带有固定风格与成员重排，不再作为写入入口；历史XML/token审计记录不等于对新EditorConfig的验证。
+- VS Code可使用读取EditorConfig的C#格式化提供程序格式化当前文件；仓库级检查与应用命令、已实际验证的能力及限制见[Validation](../Validation.md#微软c命名与格式迁移2026-11-07)。本次不新增本机编辑器配置或构建失败门槛。
 
 ## Stop That Shit
 

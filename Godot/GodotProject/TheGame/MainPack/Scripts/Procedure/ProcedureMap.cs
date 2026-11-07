@@ -1,21 +1,21 @@
-using IUIForm = GameFramework.UI.IUIForm;
-using GameLogic.UI;
-using GameConfig.Constant;
-using GameLogic.Audio;
-using GameFramework.Procedure;
-using System.Threading;
-using GameLogic.Config;
-using GameLogic.Architecture;
-using GameLogic.Save;
-using GameLogic.Profile;
-using GameLogic.Procedure.FlowData;
 using System;
+using System.Threading;
 using GameConfig;
+using GameConfig.Constant;
 using GameConfig.Sound;
 using GameFramework.Event;
+using GameFramework.Procedure;
 using GameLogic;
+using GameLogic.Architecture;
+using GameLogic.Audio;
+using GameLogic.Config;
+using GameLogic.Procedure.FlowData;
+using GameLogic.Profile;
+using GameLogic.Save;
+using GameLogic.UI;
 using GodotGameFramework;
 using GodotGameFramework.UI;
+using IUIForm = GameFramework.UI.IUIForm;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -23,13 +23,13 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public sealed class ProcedureMap : ProcedureBase
 {
-    private int m_FormSerialId; // 本周期窗口，含在途加载请求。
-    private int m_SettingsSerialId; // 当前地图拥有的设置窗口，包括在途请求。
-    private int m_SkillSerialId; // 当前地图拥有的技能窗口，包括在途请求。
-    private int m_MusicSerialId; // 本周期 GGF 音乐请求。
-    private ProcedureOwner m_Owner; // 仅当前流程周期借用主 FSM。
-    private CancellationTokenSource m_Cancellation; // 离开时使旧异步结果失效。
-    private bool m_IsReturningToTitle; // 等待写盘期间拒绝重复导航。
+    private int _formSerialId; // 本周期窗口，含在途加载请求。
+    private int _settingsSerialId; // 当前地图拥有的设置窗口，包括在途请求。
+    private int _skillSerialId; // 当前地图拥有的技能窗口，包括在途请求。
+    private int _musicSerialId; // 本周期 GGF 音乐请求。
+    private ProcedureOwner _owner; // 仅当前流程周期借用主 FSM。
+    private CancellationTokenSource _cancellation; // 离开时使旧异步结果失效。
+    private bool _isReturningToTitle; // 等待写盘期间拒绝重复导航。
 
     /// <summary>
     /// 订阅本页面的点击事件后打开窗口。
@@ -38,14 +38,14 @@ public sealed class ProcedureMap : ProcedureBase
     protected internal override void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
-        m_Owner = procedureOwner;
-        m_IsReturningToTitle = false;
-        m_Cancellation = new CancellationTokenSource();
+        _owner = procedureOwner;
+        _isReturningToTitle = false;
+        _cancellation = new CancellationTokenSource();
         GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
-        m_FormSerialId = GF.UI.OpenUIForm(EUIFormId.MapForm);
-        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: true);
-        m_MusicSerialId = GF.Sound.PlayConfigured(ESoundId.MapTheme, 0.3f);
+        _formSerialId = GF.UI.OpenUIForm(UIFormId.MapForm);
+        SetFormCallbacks(GF.UI.GetUIForm(_formSerialId), bind: true);
+        _musicSerialId = GF.Sound.PlayConfigured(SoundId.MapTheme, 0.3f);
     }
 
     /// <summary>
@@ -55,35 +55,35 @@ public sealed class ProcedureMap : ProcedureBase
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
-        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: false);
-        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: false);
-        m_Cancellation?.Cancel();
-        m_Cancellation?.Dispose();
-        m_Cancellation = null;
+        SetFormCallbacks(GF.UI.GetUIForm(_formSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(_settingsSerialId), bind: false);
+        _cancellation?.Cancel();
+        _cancellation?.Dispose();
+        _cancellation = null;
         GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Unsubscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
         // 地图绑定的模型归流程FSM所有，关停时同样先关窗再销毁流程。
-        if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
+        if (_settingsSerialId != 0 && (GF.UI.HasUIForm(_settingsSerialId) || GF.UI.IsLoadingUIForm(_settingsSerialId)))
         {
-            GF.UI.CloseUIForm(m_SettingsSerialId);
+            GF.UI.CloseUIForm(_settingsSerialId);
         }
 
-        if (m_SkillSerialId != 0 && (GF.UI.HasUIForm(m_SkillSerialId) || GF.UI.IsLoadingUIForm(m_SkillSerialId)))
+        if (_skillSerialId != 0 && (GF.UI.HasUIForm(_skillSerialId) || GF.UI.IsLoadingUIForm(_skillSerialId)))
         {
-            GF.UI.CloseUIForm(m_SkillSerialId);
+            GF.UI.CloseUIForm(_skillSerialId);
         }
 
-        if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
+        if (_formSerialId != 0 && (GF.UI.HasUIForm(_formSerialId) || GF.UI.IsLoadingUIForm(_formSerialId)))
         {
-            GF.UI.CloseUIForm(m_FormSerialId);
+            GF.UI.CloseUIForm(_formSerialId);
         }
 
-        if (m_MusicSerialId != 0)
+        if (_musicSerialId != 0)
         {
-            GF.Sound.StopSound(m_MusicSerialId, isShutdown ? 0f : 0.2f);
+            GF.Sound.StopSound(_musicSerialId, isShutdown ? 0f : 0.2f);
         }
-        m_SkillSerialId = m_SettingsSerialId = m_FormSerialId = m_MusicSerialId = 0;
-        m_Owner = null;
+        _skillSerialId = _settingsSerialId = _formSerialId = _musicSerialId = 0;
+        _owner = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
 
@@ -93,15 +93,15 @@ public sealed class ProcedureMap : ProcedureBase
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private async void OnTitleRequested(int formSerialId)
     {
-        if (formSerialId != m_SettingsSerialId || m_IsReturningToTitle)
+        if (formSerialId != _settingsSerialId || _isReturningToTitle)
         {
             return;
         }
 
-        m_IsReturningToTitle = true;
-        var token = m_Cancellation.Token;
-        var owner = m_Owner;
-        var saveSystem = owner.GetSystem<SaveSystem>();
+        _isReturningToTitle = true;
+        CancellationToken token = _cancellation.Token;
+        ProcedureOwner owner = _owner;
+        SaveSystem saveSystem = owner.GetSystem<SaveSystem>();
         try
         {
             // 捕获本周期引用，等待后不得访问已经换周期的流程字段。
@@ -125,7 +125,7 @@ public sealed class ProcedureMap : ProcedureBase
         {
             if (!token.IsCancellationRequested)
             {
-                m_IsReturningToTitle = false;
+                _isReturningToTitle = false;
             }
         }
     }
@@ -136,12 +136,12 @@ public sealed class ProcedureMap : ProcedureBase
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private async void OnSaveRequested(int formSerialId)
     {
-        if (formSerialId != m_FormSerialId || m_IsReturningToTitle)
+        if (formSerialId != _formSerialId || _isReturningToTitle)
         {
             return;
         }
 
-        await m_Owner.GetSystem<SaveSystem>().SaveManuallyAsync(formSerialId, m_Cancellation.Token);
+        await _owner.GetSystem<SaveSystem>().SaveManuallyAsync(formSerialId, _cancellation.Token);
     }
 
     /// <summary>
@@ -151,18 +151,18 @@ public sealed class ProcedureMap : ProcedureBase
     /// <param name="selectionId">选中的存档格或关卡编号。</param>
     private void OnLevelSelected(int formSerialId, int selectionId)
     {
-        if (formSerialId != m_FormSerialId || m_IsReturningToTitle)
+        if (formSerialId != _formSerialId || _isReturningToTitle)
         {
             return;
         }
 
-        if (!m_Owner.GetSystem<ProfileSystem>().CanEnterLevel(selectionId))
+        if (!_owner.GetSystem<ProfileSystem>().CanEnterLevel(selectionId))
         {
             Log.Error("[ProcedureMap] 地图请求了不存在的关卡：{0}", selectionId);
             return;
         }
-        m_Owner.SetData<VarInt32>(FlowKeys.SelectedLevelId, selectionId);
-        ChangeState<ProcedureLevel>(m_Owner);
+        _owner.SetData<VarInt32>(FlowKeys.SelectedLevelId, selectionId);
+        ChangeState<ProcedureLevel>(_owner);
     }
 
     /// <summary>
@@ -171,16 +171,16 @@ public sealed class ProcedureMap : ProcedureBase
     /// <param name="formSerialId">发起操作的地图窗口编号。</param>
     private void OnSettingsRequested(int formSerialId)
     {
-        if (formSerialId != m_FormSerialId || m_IsReturningToTitle)
+        if (formSerialId != _formSerialId || _isReturningToTitle)
         {
             return;
         }
-        if (m_SettingsSerialId != 0 && (GF.UI.HasUIForm(m_SettingsSerialId) || GF.UI.IsLoadingUIForm(m_SettingsSerialId)))
+        if (_settingsSerialId != 0 && (GF.UI.HasUIForm(_settingsSerialId) || GF.UI.IsLoadingUIForm(_settingsSerialId)))
         {
             return;
         }
-        m_SettingsSerialId = GF.UI.OpenUIForm(EUIFormId.SettingsForm);
-        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
+        _settingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
+        SetFormCallbacks(GF.UI.GetUIForm(_settingsSerialId), bind: true);
     }
 
     /// <summary>
@@ -189,17 +189,17 @@ public sealed class ProcedureMap : ProcedureBase
     /// <param name="formSerialId">发起操作的地图窗口编号。</param>
     private void OnSkillsRequested(int formSerialId)
     {
-        if (formSerialId != m_FormSerialId || m_IsReturningToTitle)
+        if (formSerialId != _formSerialId || _isReturningToTitle)
         {
             return;
         }
 
-        if (m_SkillSerialId != 0 && (GF.UI.HasUIForm(m_SkillSerialId) || GF.UI.IsLoadingUIForm(m_SkillSerialId)))
+        if (_skillSerialId != 0 && (GF.UI.HasUIForm(_skillSerialId) || GF.UI.IsLoadingUIForm(_skillSerialId)))
         {
             return;
         }
 
-        m_SkillSerialId = GF.UI.OpenUIForm(EUIFormId.SkillForm);
+        _skillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm);
     }
 
     /// <summary>
@@ -214,7 +214,7 @@ public sealed class ProcedureMap : ProcedureBase
             SetFormCallbacks(opened.UIForm, bind: true);
         }
 
-        if (args is not OpenUIFormSuccessEventArgs success || success.UIForm.SerialId != m_FormSerialId)
+        if (args is not OpenUIFormSuccessEventArgs success || success.UIForm.SerialId != _formSerialId)
         {
             return;
         }
@@ -230,7 +230,7 @@ public sealed class ProcedureMap : ProcedureBase
     private void OnFormFailed(object sender, GameEventArgs args)
     {
         if (args is OpenUIFormFailureEventArgs failure &&
-            (failure.SerialId == m_FormSerialId || failure.SerialId == m_SettingsSerialId || failure.SerialId == m_SkillSerialId))
+            (failure.SerialId == _formSerialId || failure.SerialId == _settingsSerialId || failure.SerialId == _skillSerialId))
         {
             Log.Error("[ProcedureMap] 界面加载失败：{0}", failure.ErrorMessage);
         }
@@ -250,7 +250,7 @@ public sealed class ProcedureMap : ProcedureBase
 
         switch (form)
         {
-            case MapForm mapForm when mapForm.SerialId == m_FormSerialId:
+            case MapForm mapForm when mapForm.SerialId == _formSerialId:
                 mapForm.SettingsRequested -= OnSettingsRequested;
                 if (bind)
                 {
@@ -276,7 +276,7 @@ public sealed class ProcedureMap : ProcedureBase
                 }
 
                 break;
-            case SettingsForm settingsForm when settingsForm.SerialId == m_SettingsSerialId:
+            case SettingsForm settingsForm when settingsForm.SerialId == _settingsSerialId:
                 settingsForm.TitleRequested -= OnTitleRequested;
                 if (bind)
                 {

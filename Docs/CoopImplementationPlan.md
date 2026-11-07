@@ -1,13 +1,13 @@
 # 双人扩展实施计划
 
-状态：**01已实施，暂停等待审查；02A及以后尚未开始。** 2026-11-07已按用户要求撤回此前过大的实现批次，源码基线恢复为`858f22a`，当前存档仍为v12。本文件是双人实施范围、步骤和审查边界的唯一计划；实际规则来源见[OfficialReference](OfficialReference.md#双人扩展的源码依据2026-11-07)，验证记录见[Validation](Validation.md)。项目规范仍以[ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md)为准。
+状态：**双人02A隔离草稿暂停；主工作区先完成微软C#命名/格式迁移。** 主工作区仍为单人v12。02A仅在`P:/Godot-Project/.codex-worktrees/GameZMXY-coop-02a`形成ProfileModel、PlayerProfile、SkillModel三文件草稿，尚未核验完成或应用；02B及以后未开始。当前项目代码使用PlayerSlot及微软字段命名，后续继续02A时须基于新命名重放并核验草稿，不能直接覆盖当前源文件。本文件是双人实施范围、步骤和审查边界的唯一计划；实际规则来源见[OfficialReference](OfficialReference.md#双人扩展的源码依据2026-11-07)，验证记录见[Validation](Validation.md)。项目规范仍以[ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md)为准。
 
 ## 已确定的需求
 
 - 本地同屏、同键盘合作。一格存档保存双方，单人和双人共用一种结构。
 - 每人独立拥有经验、灵魂、背包、穿戴、主动和被动技能；关卡进度和档案级一次性奖励共享。
 - 两名参战者不能选择相同英雄；可选角色来自已实装目录，不能写死悟空加唐僧，未来新增英雄适用同一规则。
-- 玩家身份使用`EPlayerSlot.P1`、`EPlayerSlot.P2`，与`HeroId`、GGF实体编号、六格存档的`SlotNumber`分开。
+- 玩家身份使用`PlayerSlot.P1`、`PlayerSlot.P2`，与`HeroId`、GGF实体编号、六格存档的`SlotNumber`分开。
 - 复用一个根Architecture、现有System、英雄状态机、技能效果、伤害公式和GGF生命周期。
 - 继续遵循[Stop That Shit 0.2.5](https://github.com/lennney/stop-that-shit/blob/0.2.5/skills/stop-that-shit/SKILL.md)：完成当前批准的步骤及必要调用方，不自行扩大到下一步。
 
@@ -24,25 +24,25 @@
 
 | 位置 | 拟采用的形状与职责 |
 | --- | --- |
-| 玩家身份 | 普通枚举`EPlayerSlot { P1 = 1, P2 = 2 }`，建议放`GameScripts/Models/EPlayerSlot.cs`，共享命名空间`GameLogic`；不另建身份管理器 |
-| ProfileModel | 一个根Model持有`EPlayerSlot → PlayerProfile`普通子数据，以及共享关卡进度、旗幡资格；`ActivePlayerSlots`表示本次参战名单 |
+| 玩家身份 | 普通枚举`PlayerSlot { P1 = 1, P2 = 2 }`，建议放`GameScripts/Models/PlayerSlot.cs`，共享命名空间`GameLogic`；不另建身份管理器 |
+| ProfileModel | 一个根Model持有`PlayerSlot → PlayerProfile`普通子数据，以及共享关卡进度、旗幡资格；`ActivePlayerSlots`表示本次参战名单 |
 | PlayerProfile | 原单人档案中的英雄成长、钱包、背包及穿戴字段；不实现IModel、不独立注册 |
-| SkillModel | 以`(EPlayerSlot, HeroId)`区分主动与被动学习记录 |
-| HeroModel | 一个根Model持有`EPlayerSlot → HeroState`普通子数据；HP/MP/WS、属性来源、状态效果与时钟各自独立 |
-| System | 保留现有实例；个人业务接明确玩家，例如`Damage(EPlayerSlot player, int amount)`、`TryEquip(EPlayerSlot player, Guid item)` |
+| SkillModel | 以`(PlayerSlot, HeroId)`区分主动与被动学习记录 |
+| HeroModel | 一个根Model持有`PlayerSlot → HeroState`普通子数据；HP/MP/WS、属性来源、状态效果与时钟各自独立 |
+| System | 保留现有实例；个人业务接明确玩家，例如`Damage(PlayerSlot player, int amount)`、`TryEquip(PlayerSlot player, Guid item)` |
 | 技能与实体 | `ISkillActor`、`IHeroBody`及真实英雄提供所属玩家；技能激活从actor取得身份；GGF显示参数携带明确玩家 |
 | 个人窗口/请求 | FormData、Command、Query传入所属玩家；窗口订阅并退订同一个人的状态，不修改全局“当前玩家” |
 | 存档 | 拟升v13：`Players`保存所有已建立的个人档案，`ActivePlayerSlots`保存参战者，共享字段只一份；枚举按明确数字1/2序列化，不增加一套存档字符串规则 |
 | 攻击来源 | 沿用AttackSource的OwnerEntityId/Caster/Emitter，补充玩家归属值；敌人或环境明确没有玩家归属，不能默认为P1 |
 
-`EPlayerSlot`只表达两名本地玩家；未来第三种、第四种英雄仍用HeroId扩展，与玩家枚举无关。参战人数由名单派生，不同时维护一个可能矛盾的Coop布尔和PlayerCount。
+`PlayerSlot`只表达两名本地玩家；未来第三种、第四种英雄仍用HeroId扩展，与玩家枚举无关。参战人数由名单派生，不同时维护一个可能矛盾的Coop布尔和PlayerCount。
 
 ## 顺序与依赖
 
 | 编号 | 交付 | 依赖 | 当前状态 |
 | --- | --- | --- | --- |
 | 01 | 玩家身份枚举 | 无 | 已实施，待审查 |
-| 02A～02C | 个人档案与技能所有权 | 01 | 未开始 |
+| 02A～02C | 个人档案与技能所有权 | 01 | 02A隔离草稿暂停；02B/C未开始 |
 | 03A～03C | 整档存储、转换和目录 | 02 | 未开始 |
 | 04A～04C | 局内属性与状态效果 | 02、03 | 未开始 |
 | 05A～05B | 施放登记、英雄和效果归属 | 04 | 未开始 |
@@ -62,13 +62,13 @@
 
 ## 01：玩家身份枚举
 
-**已实施，等待用户审查。** 本批仅新增`GameScripts/Models/EPlayerSlot.cs`及Godot扫描生成的UID；需要独立链接源文件的规则测试工程增加编译项。
+**已实施，等待用户审查。** 本批仅新增`GameScripts/Models/PlayerSlot.cs`及Godot扫描生成的UID；需要独立链接源文件的规则测试工程增加编译项。
 
 明确`P1=1`、`P2=2`的稳定含义及XML注释。此批不改ProfileModel、HeroModel、存档版本、技能或场景，不全项目替换整数，也不为两个枚举值新增冗余测试。构建及Godot扫描通过后交付审查。
 
-实际代码差异只有`Models/EPlayerSlot.cs`、扫描生成的`.cs.uid`及`Tests/ProfileTests/ProfileTests.csproj`的一行编译引用。BattleTests已有Models通配引用，无需修改。构建和扫描结果见[Validation](Validation.md#双人01玩家身份枚举2026-11-07)；本批完成后暂停，未经审查不进入02A。
+实际代码差异只有`Models/PlayerSlot.cs`、扫描生成的`.cs.uid`及`Tests/ProfileTests/ProfileTests.csproj`的一行编译引用。BattleTests已有Models通配引用，无需修改。构建和扫描结果见[Validation](Validation.md#双人01玩家身份枚举2026-11-07)；本批完成后暂停，未经审查不进入02A。
 
-用户随后要求所有项目枚举类型统一E前缀，01的玩家类型随之更名为EPlayerSlot并携带原UID；其他枚举及引用的命名迁移不代表02A启动。执行边界仍是每批审阅后再继续。
+玩家枚举曾随E前缀迁移更名，现按用户最终选择恢复微软PascalCase，继续携带原UID和1/2数值。命名/格式整理不代替双人功能迁移；执行边界仍是每批审阅后再继续。
 
 ## 02：个人档案与技能所有权迁移
 

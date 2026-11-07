@@ -34,138 +34,138 @@ size = Vector2(60.02539, 999.99927)
 
 [sub_resource type="Resource" id="Resource_3jwmm"]
 script = ExtResource("7_sowip")
-m_Id = "player_start"
-m_Node = NodePath("PlayerStart")
+_id = "player_start"
+_node = NodePath("PlayerStart")
 
 [sub_resource type="Resource" id="Resource_8xyn4"]
 script = ExtResource("7_sowip")
-m_Id = "stage_4_a"
-m_Node = NodePath("Stage4A")
+_id = "stage_4_a"
+_node = NodePath("Stage4A")
 
 [sub_resource type="Resource" id="Resource_pyaqv"]
 script = ExtResource("7_sowip")
-m_Id = "stage_5_a"
-m_Node = NodePath("Stage5A")
+_id = "stage_5_a"
+_node = NodePath("Stage5A")
 
 [sub_resource type="Resource" id="Resource_p5ufk"]
 script = ExtResource("7_sowip")
-m_Id = "stage_4_b"
-m_Node = NodePath("Stage4B")
+_id = "stage_4_b"
+_node = NodePath("Stage4B")
 
 [sub_resource type="Resource" id="Resource_7rghe"]
 script = ExtResource("7_sowip")
-m_Id = "stage_4_c"
-m_Node = NodePath("Stage4C")
+_id = "stage_4_c"
+_node = NodePath("Stage4C")
 
 [sub_resource type="Resource" id="Resource_04wjj"]
 script = ExtResource("7_sowip")
-m_Id = "stage_4_d"
-m_Node = NodePath("Stage4D")
+_id = "stage_4_d"
+_node = NodePath("Stage4D")
 
 [sub_resource type="Resource" id="Resource_olrsv"]
 script = ExtResource("7_sowip")
-m_Id = "stage_4_e"
-m_Node = NodePath("Stage4E")
+_id = "stage_4_e"
+_node = NodePath("Stage4E")
 
 [sub_resource type="Resource" id="Resource_jhhkj"]
 script = ExtResource("7_sowip")
-m_Id = "stage_3_a"
-m_Node = NodePath("Stage3A")
+_id = "stage_3_a"
+_node = NodePath("Stage3A")
 
 [sub_resource type="Resource" id="Resource_xspjm"]
 script = ExtResource("7_sowip")
-m_Id = "stage_4_f"
-m_Node = NodePath("Stage4F")
+_id = "stage_4_f"
+_node = NodePath("Stage4F")
 
 [sub_resource type="Resource" id="Resource_f6xm0"]
 script = ExtResource("7_sowip")
-m_Id = "stage_4_g"
-m_Node = NodePath("Stage4G")
+_id = "stage_4_g"
+_node = NodePath("Stage4G")
 
 [sub_resource type="Resource" id="Resource_hvg0s"]
 script = ExtResource("7_sowip")
-m_Id = "stage_2_a"
-m_Node = NodePath("Stage2A")
+_id = "stage_2_a"
+_node = NodePath("Stage2A")
 
 [sub_resource type="Resource" id="Resource_ba642"]
 script = ExtResource("7_sowip")
-m_Id = "stage_2_b"
-m_Node = NodePath("Stage2B")
+_id = "stage_2_b"
+_node = NodePath("Stage2B")
 
 [sub_resource type="Resource" id="Resource_1lq4f"]
 script = ExtResource("7_sowip")
-m_Id = "stage_2_c"
-m_Node = NodePath("Stage2C")
+_id = "stage_2_c"
+_node = NodePath("Stage2C")
 
 [sub_resource type="Resource" id="Resource_pc2dk"]
 script = ExtResource("7_sowip")
-m_Id = "stage_1_a"
-m_Node = NodePath("Stage1A")
+_id = "stage_1_a"
+_node = NodePath("Stage1A")
 
 [sub_resource type="Resource" id="Resource_ene1l"]
 script = ExtResource("7_sowip")
-m_Id = "stage_1_b"
-m_Node = NodePath("Stage1B")
+_id = "stage_1_b"
+_node = NodePath("Stage1B")
 
 [sub_resource type="Resource" id="Resource_kcdii"]
 script = ExtResource("7_sowip")
-m_Id = "stage_5_b"
-m_Node = NodePath("Stage5B")
+_id = "stage_5_b"
+_node = NodePath("Stage5B")
 
 [sub_resource type="Resource" id="Resource_hnxki"]
 script = ExtResource("7_sowip")
-m_Id = "stage_5_c"
-m_Node = NodePath("Stage5C")
+_id = "stage_5_c"
+_node = NodePath("Stage5C")
 
 [sub_resource type="Resource" id="Resource_8opo6"]
 script = ExtResource("7_sowip")
-m_Id = "stage_5_d"
-m_Node = NodePath("Stage5D")
+_id = "stage_5_d"
+_node = NodePath("Stage5D")
 
 [sub_resource type="Resource" id="Resource_4amx5"]
 script = ExtResource("7_sowip")
-m_Id = "stage_5_left"
-m_Node = NodePath("Stage5Left")
+_id = "stage_5_left"
+_node = NodePath("Stage5Left")
 
 [sub_resource type="Resource" id="Resource_0r0hb"]
 script = ExtResource("7_sowip")
-m_Id = "stage_5_gate"
-m_Node = NodePath("Stage5Gate")
+_id = "stage_5_gate"
+_node = NodePath("Stage5Gate")
 
 [sub_resource type="Resource" id="Resource_cxwyp"]
 script = ExtResource("7_sowip")
-m_Id = "stage_4_left"
-m_Node = NodePath("Stage4Left")
+_id = "stage_4_left"
+_node = NodePath("Stage4Left")
 
 [sub_resource type="Resource" id="Resource_d32in"]
 script = ExtResource("7_sowip")
-m_Id = "stage_4_gate"
-m_Node = NodePath("Stage4Gate")
+_id = "stage_4_gate"
+_node = NodePath("Stage4Gate")
 
 [sub_resource type="Resource" id="Resource_urq2y"]
 script = ExtResource("7_sowip")
-m_Id = "stage_3_left"
-m_Node = NodePath("Stage3Left")
+_id = "stage_3_left"
+_node = NodePath("Stage3Left")
 
 [sub_resource type="Resource" id="Resource_v58os"]
 script = ExtResource("7_sowip")
-m_Id = "stage_3_gate"
-m_Node = NodePath("Stage3Gate")
+_id = "stage_3_gate"
+_node = NodePath("Stage3Gate")
 
 [sub_resource type="Resource" id="Resource_llkwr"]
 script = ExtResource("7_sowip")
-m_Id = "stage_2_left"
-m_Node = NodePath("Stage2Left")
+_id = "stage_2_left"
+_node = NodePath("Stage2Left")
 
 [sub_resource type="Resource" id="Resource_61xwe"]
 script = ExtResource("7_sowip")
-m_Id = "stage_2_gate"
-m_Node = NodePath("Stage2Gate")
+_id = "stage_2_gate"
+_node = NodePath("Stage2Gate")
 
 [sub_resource type="Resource" id="Resource_kpq1y"]
 script = ExtResource("7_sowip")
-m_Id = "stage_1_gate"
-m_Node = NodePath("Stage1Gate")
+_id = "stage_1_gate"
+_node = NodePath("Stage1Gate")
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3cveu"]
 size = Vector2(20, 1800)
@@ -197,18 +197,18 @@ size = Vector2(20, 1800)
 [sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
 size = Vector2(8, 4000)
 
-[node name="Level_4" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText")]
+[node name="Level_4" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("_spawnPoints", "_triggers", "_gates", "_spawner", "_camera", "_exit", "_floatingText")]
 script = ExtResource("1_cfsoo")
-m_MusicId = 1003
-m_LevelId = 4
-m_SpawnPoints = NodePath("World/SpawnPoints")
-m_Triggers = NodePath("World/StageTriggers")
-m_Gates = NodePath("World/StageGates")
-m_Spawner = NodePath("Spawner")
-m_Camera = NodePath("Camera2D")
-m_Exit = NodePath("World/Exit")
-m_FloatingText = NodePath("World/FloatingText")
-m_FeaturedOpponentSpawnPointIds = PackedStringArray("stage_5_d")
+_musicId = 1003
+_levelId = 4
+_spawnPoints = NodePath("World/SpawnPoints")
+_triggers = NodePath("World/StageTriggers")
+_gates = NodePath("World/StageGates")
+_spawner = NodePath("Spawner")
+_camera = NodePath("Camera2D")
+_exit = NodePath("World/Exit")
+_floatingText = NodePath("World/FloatingText")
+_featuredOpponentSpawnPointIds = PackedStringArray("stage_5_d")
 
 [node name="World" type="Node2D" parent="." unique_id=219105317]
 
@@ -303,7 +303,7 @@ shape = SubResource("RectangleShape2D_j5wvk")
 [node name="SpawnPoints" type="Node2D" parent="World" unique_id=773829097]
 z_index = 200
 script = ExtResource("6_wjjp1")
-m_Entries = Array[ExtResource("7_sowip")]([SubResource("Resource_3jwmm"), SubResource("Resource_8xyn4"), SubResource("Resource_pyaqv"), SubResource("Resource_p5ufk"), SubResource("Resource_7rghe"), SubResource("Resource_04wjj"), SubResource("Resource_olrsv"), SubResource("Resource_jhhkj"), SubResource("Resource_xspjm"), SubResource("Resource_f6xm0"), SubResource("Resource_hvg0s"), SubResource("Resource_ba642"), SubResource("Resource_1lq4f"), SubResource("Resource_pc2dk"), SubResource("Resource_ene1l"), SubResource("Resource_kcdii"), SubResource("Resource_hnxki"), SubResource("Resource_8opo6")])
+_entries = Array[ExtResource("7_sowip")]([SubResource("Resource_3jwmm"), SubResource("Resource_8xyn4"), SubResource("Resource_pyaqv"), SubResource("Resource_p5ufk"), SubResource("Resource_7rghe"), SubResource("Resource_04wjj"), SubResource("Resource_olrsv"), SubResource("Resource_jhhkj"), SubResource("Resource_xspjm"), SubResource("Resource_f6xm0"), SubResource("Resource_hvg0s"), SubResource("Resource_ba642"), SubResource("Resource_1lq4f"), SubResource("Resource_pc2dk"), SubResource("Resource_ene1l"), SubResource("Resource_kcdii"), SubResource("Resource_hnxki"), SubResource("Resource_8opo6")])
 
 [node name="PlayerStart" type="Marker2D" parent="World/SpawnPoints" unique_id=539425877]
 position = Vector2(300, 300)
@@ -366,8 +366,8 @@ script = ExtResource("8_i1x6i")
 [node name="StageGates" type="Node2D" parent="World" unique_id=429529906]
 z_index = 200
 script = ExtResource("9_int6c")
-m_Entries = Array[ExtResource("7_sowip")]([SubResource("Resource_4amx5"), SubResource("Resource_0r0hb"), SubResource("Resource_cxwyp"), SubResource("Resource_d32in"), SubResource("Resource_urq2y"), SubResource("Resource_v58os"), SubResource("Resource_llkwr"), SubResource("Resource_61xwe"), SubResource("Resource_kpq1y")])
-m_MarkerSize = 350.0
+_entries = Array[ExtResource("7_sowip")]([SubResource("Resource_4amx5"), SubResource("Resource_0r0hb"), SubResource("Resource_cxwyp"), SubResource("Resource_d32in"), SubResource("Resource_urq2y"), SubResource("Resource_v58os"), SubResource("Resource_llkwr"), SubResource("Resource_61xwe"), SubResource("Resource_kpq1y")])
+_markerSize = 350.0
 
 [node name="Stage5Left" type="StaticBody2D" parent="World/StageGates" unique_id=1879929518]
 position = Vector2(3467.25, 295)
@@ -476,35 +476,35 @@ scale = Vector2(1, -1)
 
 [node name="Spike06" parent="World/Traps" unique_id=595757356 instance=ExtResource("12_yxtkd")]
 position = Vector2(1242.75, 16.55)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike07" parent="World/Traps" unique_id=1597147164 instance=ExtResource("12_yxtkd")]
 position = Vector2(1199.7, 16.55)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike08" parent="World/Traps" unique_id=1609693956 instance=ExtResource("12_yxtkd")]
 position = Vector2(1157.2, 16.55)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike09" parent="World/Traps" unique_id=1033050047 instance=ExtResource("12_yxtkd")]
 position = Vector2(1116.05, 16.55)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike10" parent="World/Traps" unique_id=1234828056 instance=ExtResource("12_yxtkd")]
 position = Vector2(1686.95, 17.05)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike11" parent="World/Traps" unique_id=317177308 instance=ExtResource("12_yxtkd")]
 position = Vector2(1643.9, 17.05)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike12" parent="World/Traps" unique_id=621715887 instance=ExtResource("12_yxtkd")]
 position = Vector2(1601.4, 17.05)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike13" parent="World/Traps" unique_id=2136256047 instance=ExtResource("12_yxtkd")]
 position = Vector2(1560.25, 17.05)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike14" parent="World/Traps" unique_id=1347362036 instance=ExtResource("12_yxtkd")]
 position = Vector2(2364.35, 474.3)
@@ -536,72 +536,72 @@ scale = Vector2(1, -1)
 
 [node name="Spike21" parent="World/Traps" unique_id=724104182 instance=ExtResource("12_yxtkd")]
 position = Vector2(3278.25, 21.8)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike22" parent="World/Traps" unique_id=304851224 instance=ExtResource("12_yxtkd")]
 position = Vector2(3235.2, 21.8)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike23" parent="World/Traps" unique_id=1611570706 instance=ExtResource("12_yxtkd")]
 position = Vector2(3192.7, 21.8)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike24" parent="World/Traps" unique_id=1642950855 instance=ExtResource("12_yxtkd")]
 position = Vector2(3151.55, 21.8)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike25" parent="World/Traps" unique_id=1888076160 instance=ExtResource("12_yxtkd")]
 position = Vector2(3321.65, 20.8)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike26" parent="World/Traps" unique_id=318672793 instance=ExtResource("12_yxtkd")]
 position = Vector2(3366.9, 20.8)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike27" parent="World/Traps" unique_id=1363180551 instance=ExtResource("12_yxtkd")]
 position = Vector2(3413.35, 20.8)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike28" parent="World/Traps" unique_id=638729925 instance=ExtResource("12_yxtkd")]
 position = Vector2(3456.45, 20.8)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike29" parent="World/Traps" unique_id=1015777439 instance=ExtResource("12_yxtkd")]
 position = Vector2(3947, 20.7)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike30" parent="World/Traps" unique_id=1562765610 instance=ExtResource("12_yxtkd")]
 position = Vector2(3992.25, 20.7)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike31" parent="World/Traps" unique_id=1797939007 instance=ExtResource("12_yxtkd")]
 position = Vector2(4038.7, 20.7)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike32" parent="World/Traps" unique_id=698590890 instance=ExtResource("12_yxtkd")]
 position = Vector2(4081.8, 20.7)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike33" parent="World/Traps" unique_id=1172129859 instance=ExtResource("12_yxtkd")]
 position = Vector2(4377.95, 20.7)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike34" parent="World/Traps" unique_id=911618309 instance=ExtResource("12_yxtkd")]
 position = Vector2(4423.2, 20.7)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike35" parent="World/Traps" unique_id=1106632516 instance=ExtResource("12_yxtkd")]
 position = Vector2(4469.65, 20.7)
-m_Suspended = true
+_suspended = true
 
 [node name="Spike36" parent="World/Traps" unique_id=215308356 instance=ExtResource("12_yxtkd")]
 position = Vector2(4512.75, 20.7)
-m_Suspended = true
+_suspended = true
 
 [node name="Spawner" type="Node" parent="." unique_id=605185327]
 script = ExtResource("14_qvmi8")
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=958629535 node_paths=PackedStringArray("m_LeftPlayerWall", "m_RightPlayerWall")]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=958629535 node_paths=PackedStringArray("_leftPlayerWall", "_rightPlayerWall")]
 z_index = 200
 position = Vector2(470, 295)
 limit_left = 0
@@ -609,8 +609,8 @@ limit_top = 0
 limit_right = 4696
 limit_bottom = 590
 script = ExtResource("15_crwa4")
-m_LeftPlayerWall = NodePath("PlayerScreenWalls/Left")
-m_RightPlayerWall = NodePath("PlayerScreenWalls/Right")
+_leftPlayerWall = NodePath("PlayerScreenWalls/Left")
+_rightPlayerWall = NodePath("PlayerScreenWalls/Right")
 
 [node name="PlayerScreenWalls" type="StaticBody2D" parent="Camera2D" unique_id=2023691008]
 collision_layer = 8192

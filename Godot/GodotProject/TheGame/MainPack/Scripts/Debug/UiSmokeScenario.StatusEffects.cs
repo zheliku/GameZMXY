@@ -1,14 +1,14 @@
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using GameLogic.Architecture;
 using GameLogic.Battle;
-using static GameLogic.Battle.HeroModel;
 using GameLogic.Heroes;
 using GameLogic.Heroes.Body;
 using GameLogic.Input;
 using Godot;
 using GodotGameFramework;
+using static GameLogic.Battle.HeroModel;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -24,9 +24,9 @@ public sealed partial class UiSmokeScenario
     /// <returns>双向、60/120Hz受击及收尾验证。</returns>
     private async Task CheckMusouHurtAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        var model = flow.GetModel<HeroModel>();
-        var system = flow.GetSystem<HeroSystem>();
-        var protectionColor = SmokeInspection.ReadField<Color>(hero, "m_ProtectionGlowColor");
+        HeroModel model = flow.GetModel<HeroModel>();
+        HeroSystem system = flow.GetSystem<HeroSystem>();
+        Color protectionColor = SmokeInspection.ReadField<Color>(hero, "_protectionGlowColor");
         int originalTicks = Engine.PhysicsTicksPerSecond;
         try
         {
@@ -44,8 +44,8 @@ public sealed partial class UiSmokeScenario
                 await WaitUntilAsync(() => model.WsActive.Value, "无双没有经正式空格映射激活");
                 Input.ActionRelease(InputSystem.Musou);
                 await WaitFramesAsync(2);
-                var activation = CurrentBattleForm().GetNode<Control>("m_MusouActivation");
-                var clip = activation.GetNode<AnimatedSprite2D>("Animation");
+                Control activation = CurrentBattleForm().GetNode<Control>("m_MusouActivation");
+                AnimatedSprite2D clip = activation.GetNode<AnimatedSprite2D>("Animation");
                 await WaitUntilAsync(() => clip.Frame > 0, "无双开场没有按真实时间推进首帧");
                 string expectedFrames = hero.HeroId == 2 ? "tangseng_musou_activation_frames.tres" : "wukong_musou_activation_frames.tres";
                 Check(activation.Visible && GF.Base.IsGamePaused && clip.Frame > 0 &&
@@ -60,9 +60,9 @@ public sealed partial class UiSmokeScenario
                 await WaitUntilAsync(() => !GF.Base.IsGamePaused, "无双开场没有结束");
                 await WaitFramesAsync(2);
                 bool armored = hero.SuperArmor;
-                var body = hero.GetNode<Sprite2D>("m_Body");
+                Sprite2D body = hero.GetNode<Sprite2D>("m_Body");
                 var material = (ShaderMaterial)body.Material;
-                var feedback = hero.GetNode<AnimatedSprite2D>("m_StatusEffects/m_HurtFeedback");
+                AnimatedSprite2D feedback = hero.GetNode<AnimatedSprite2D>("m_StatusEffects/m_HurtFeedback");
                 Check(feedback.SpriteFrames.ResourcePath.EndsWith(hero.HeroId == 2
                     ? "/tangseng_hurt_frames.tres" : "/hero_hurt_frames.tres"),
                     "受击闪光没有使用本角色的官方颜色版本");
@@ -134,9 +134,9 @@ public sealed partial class UiSmokeScenario
     /// <returns>两个物理频率的命中与渲染验证任务。</returns>
     private async Task CheckHurtProtectionAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        var model = flow.GetModel<HeroModel>();
-        var system = flow.GetSystem<HeroSystem>();
-        var protectionColor = SmokeInspection.ReadField<Color>(hero, "m_ProtectionGlowColor");
+        HeroModel model = flow.GetModel<HeroModel>();
+        HeroSystem system = flow.GetSystem<HeroSystem>();
+        Color protectionColor = SmokeInspection.ReadField<Color>(hero, "_protectionGlowColor");
         int originalTicks = Engine.PhysicsTicksPerSecond;
         try
         {
@@ -203,9 +203,9 @@ public sealed partial class UiSmokeScenario
     /// <returns>本次是否被无敌拦截。</returns>
     private static bool HitHeroForProtection(AbstractHeroEntity hero, Vector2? knockback = null)
     {
-        var attacker = new GameLogic.Battle.Damage.CombatantAttributes(GameLogic.Battle.Damage.ECombatSide.Enemy,
+        var attacker = new GameLogic.Battle.Damage.CombatantAttributes(GameLogic.Battle.Damage.CombatSide.Enemy,
             hero.Level, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        var data = GameLogic.Battle.Attacks.AttackData.Create(0, attacker, 1, GameConfig.Battle.EDamageKind.Real,
+        var data = GameLogic.Battle.Attacks.AttackData.Create(0, attacker, 1, GameConfig.Battle.DamageKind.Real,
             knockback ?? Vector2.Zero, 1, 0);
         try
         {
@@ -225,9 +225,9 @@ public sealed partial class UiSmokeScenario
     /// <returns>两种物理频率与死亡清理检查完成。</returns>
     private async Task CheckFreezeAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        var system = flow.GetSystem<HeroSystem>();
-        var model = flow.GetModel<HeroModel>();
-        var statusEffects = flow.GetSystem<HeroStatusSystem>();
+        HeroSystem system = flow.GetSystem<HeroSystem>();
+        HeroModel model = flow.GetModel<HeroModel>();
+        HeroStatusSystem statusEffects = flow.GetSystem<HeroStatusSystem>();
         int originalTicks = Engine.PhysicsTicksPerSecond;
         hero.SetPhysicsProcess(true);
         try
@@ -250,7 +250,7 @@ public sealed partial class UiSmokeScenario
                 Input.ActionPress(InputSystem.Jump);
                 Input.ActionPress(InputSystem.Musou);
                 await WaitFramesAsync(3);
-                var frozen = SmokeInspection.ReadField<AnimatedSprite2D>(hero, "m_FrozenEffect");
+                AnimatedSprite2D frozen = SmokeInspection.ReadField<AnimatedSprite2D>(hero, "_frozenEffect");
                 Check(frozen.Visible && frozen.SpriteFrames.GetFrameCount("play") == 35 &&
                     frozen.Position == new Vector2(-90, -115) &&
                     frozen.Material is CanvasItemMaterial { BlendMode: CanvasItemMaterial.BlendModeEnum.Add },
@@ -264,12 +264,12 @@ public sealed partial class UiSmokeScenario
                 Check(hero.AnimPlayer.CurrentAnimationPosition != animationTime, "冰冻错误地暂停了原生动作");
                 GF.Base.PauseGame();
                 await WaitFramesAsync(3);
-                float paused = model.StatusEffects.GetValueOrDefault(EStatusEffectKind.Freeze)?.RemainingSeconds ?? 0;
+                float paused = model.StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0;
                 await WaitFramesAsync(10);
-                Check((model.StatusEffects.GetValueOrDefault(EStatusEffectKind.Freeze)?.RemainingSeconds ?? 0) == paused, "游戏暂停仍推进冰冻时长");
+                Check((model.StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0) == paused, "游戏暂停仍推进冰冻时长");
                 GF.Base.ResumeGame();
                 await WaitUntilAsync(() => frozen.Frame == 34 && !frozen.IsPlaying(), "冰块原版最后一帧未完整播放", 2500);
-                Check(frozen.Visible && (model.StatusEffects.GetValueOrDefault(EStatusEffectKind.Freeze)?.RemainingSeconds ?? 0) > 0 && !frozen.IsPlaying(), "冰块没有保持末帧到状态结束");
+                Check(frozen.Visible && (model.StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0) > 0 && !frozen.IsPlaying(), "冰块没有保持末帧到状态结束");
                 if (ticks == 60)
                 {
                     await CaptureCombatAsync("hero_frozen_official");

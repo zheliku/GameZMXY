@@ -14,7 +14,7 @@ func _build() -> void:
 	m_Artwork = JSON.parse_string(FileAccess.get_file_as_string(OS.get_cmdline_user_args()[1]))
 	m_Scene = load("res://TheGame/Scenes/Levels/zm1_01_huaguoshan/level_1.tscn").instantiate()
 	m_Scene.name = "Level_5"
-	m_Scene.set("m_LevelId", 5)
+	m_Scene.set("_levelId", 5)
 	for path in ["World/Background/Front", "World/Geometry", "World/Platforms", "World/SpawnPoints", "World/StageGates"]:
 		var node := m_Scene.get_node(path)
 		if path.ends_with("Front"):
@@ -138,7 +138,7 @@ func _build_traps() -> void:
 		spike.name = "Spike%02d" % index
 		spike.position = _vector(item.position)
 		spike.scale.y = float(item.scale[1])
-		spike.set("m_Suspended", bool(item.properties.isUp))
+		spike.set("_suspended", bool(item.properties.isUp))
 		_add(traps, spike)
 
 func _build_markers() -> void:
@@ -153,8 +153,8 @@ func _build_markers() -> void:
 		_point(points, "Stage%d%s" % [stage, letter.to_upper()], id, _vector(item.position), entries)
 		if int(item.properties.enemyType) == 11:
 			featured.append(id)
-	points.set("m_Entries", entries)
-	m_Scene.set("m_FeaturedOpponentSpawnPointIds", featured)
+	points.set("_entries", entries)
+	m_Scene.set("_featuredOpponentSpawnPointIds", featured)
 	var gates := m_Scene.get_node("World/StageGates")
 	entries = []
 	for item in m_Source.gates:
@@ -167,17 +167,17 @@ func _build_markers() -> void:
 		if stage == 1:
 			right = maxf(right, 940.0)
 		_gate(gates, "Stage%dGate" % stage, "stage_%d_gate" % stage, right, entries)
-	gates.set("m_Entries", entries)
+	gates.set("_entries", entries)
 
 func _point(parent: Node, title: String, id: String, position: Vector2, entries: Array[Resource]) -> void:
 	var node := Marker2D.new(); node.name = title; node.position = position; _add(parent, node)
 	var entry: Resource = load("res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs").new()
-	entry.set("m_Id", id); entry.set("m_Node", NodePath(title)); entries.append(entry)
+	entry.set("_id", id); entry.set("_node", NodePath(title)); entries.append(entry)
 
 func _gate(parent: Node, title: String, id: String, x: float, entries: Array[Resource]) -> void:
 	var body := StaticBody2D.new(); body.name = title; body.position = Vector2(x, 295); body.collision_layer = 8192; body.collision_mask = 0; _add(parent, body)
 	var shape := CollisionShape2D.new(); shape.name = "Surface"; var rectangle := RectangleShape2D.new(); rectangle.size = Vector2(20, 1800); shape.shape = rectangle; shape.disabled = true; body.add_child(shape); shape.owner = m_Scene
-	var entry: Resource = load("res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs").new(); entry.set("m_Id", id); entry.set("m_Node", NodePath(title)); entries.append(entry)
+	var entry: Resource = load("res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs").new(); entry.set("_id", id); entry.set("_node", NodePath(title)); entries.append(entry)
 
 func _add(parent: Node, child: Node) -> void:
 	parent.add_child(child)

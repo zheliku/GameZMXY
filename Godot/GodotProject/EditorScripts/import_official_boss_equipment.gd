@@ -14,20 +14,20 @@ func _build() -> void:
 		await process_frame
 	var library_path := "res://TheGame/Sprites/Items/item_appearances.tres"
 	var library := load(library_path)
-	var items: Array = library.get("m_Items")
+	var items: Array = library.get("_items")
 	var item_script := load("res://TheGame/GameScripts/Models/Profile/ItemAppearanceResource.cs")
 	for entry in [[9, "earth_fiend_ring"], [10, "earth_fiend_ape_armor"], [11, "earth_fiend_scepter"]]:
 		for item in items:
-			if int(item.get("m_EquipmentId")) == entry[0]:
+			if int(item.get("_equipmentId")) == entry[0]:
 				push_error("Boss equipment already registered")
 				quit(1)
 				return
 		var item: Resource = item_script.new()
-		item.set("m_EquipmentId", entry[0])
-		item.set("m_InventoryIcon", load("res://TheGame/Sprites/Items/equipment/equipment_%s.png" % entry[1]))
-		item.set("m_GroundIcon", load("res://TheGame/Sprites/Items/equipment/ground_%s.png" % entry[1]))
+		item.set("_equipmentId", entry[0])
+		item.set("_inventoryIcon", load("res://TheGame/Sprites/Items/equipment/equipment_%s.png" % entry[1]))
+		item.set("_groundIcon", load("res://TheGame/Sprites/Items/equipment/ground_%s.png" % entry[1]))
 		items.append(item)
-	library.set("m_Items", items)
+	library.set("_items", items)
 	assert(ResourceSaver.save(library, library_path) == OK)
 	var form_path := "res://TheGame/UIs/inventory_form.tscn"
 	var form: Control = load(form_path).instantiate()
@@ -44,7 +44,7 @@ func _build() -> void:
 	cell.owner = form
 	slots.move_child(cell, placeholder.get_index())
 	placeholder.free()
-	panel.set("m_AccessorySlot", cell)
+	panel.set("_accessorySlot", cell)
 	var packed := PackedScene.new()
 	assert(packed.pack(form) == OK)
 	assert(ResourceSaver.save(packed, form_path) == OK)

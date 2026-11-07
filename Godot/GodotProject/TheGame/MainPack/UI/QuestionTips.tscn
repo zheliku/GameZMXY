@@ -3,7 +3,7 @@
 [ext_resource type="Theme" uid="uid://2gwbh6otun6r" path="res://TheGame/MainPack/Themes/MainThemes.tres" id="1_7fjk1"]
 [ext_resource type="Script" uid="uid://bg1ajegc6pt2m" path="res://TheGame/MainPack/Scripts/UI/QuestionTips.cs" id="2_b8msi"]
 
-[node name="QuestionTips" type="Control" unique_id=1234650829 node_paths=PackedStringArray("m_Label", "m_Btn_Cancle", "m_Btn_Confirm")]
+[node name="QuestionTips" type="Control" unique_id=1234650829 node_paths=PackedStringArray("_label", "_btnCancle", "_btnConfirm")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -12,9 +12,9 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_7fjk1")
 script = ExtResource("2_b8msi")
-m_Label = NodePath("Content/VBoxContainer/m_Label")
-m_Btn_Cancle = NodePath("Content/VBoxContainer/HBoxContainer/m_Btn_Cancle")
-m_Btn_Confirm = NodePath("Content/VBoxContainer/HBoxContainer/m_Btn_Confirm")
+_label = NodePath("Content/VBoxContainer/m_Label")
+_btnCancle = NodePath("Content/VBoxContainer/HBoxContainer/m_Btn_Cancle")
+_btnConfirm = NodePath("Content/VBoxContainer/HBoxContainer/m_Btn_Confirm")
 
 [node name="BG" type="ColorRect" parent="." unique_id=180522928]
 layout_mode = 1

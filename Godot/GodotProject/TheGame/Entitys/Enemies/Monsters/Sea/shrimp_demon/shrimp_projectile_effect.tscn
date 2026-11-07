@@ -26,11 +26,11 @@ _data = {
 &"play": SubResource("play")
 }
 
-[node name="ShrimpProjectileEffect" type="Node2D" unique_id=1962973242 node_paths=PackedStringArray("m_CancelArea", "m_Player", "m_HitBox")]
+[node name="ShrimpProjectileEffect" type="Node2D" unique_id=1962973242 node_paths=PackedStringArray("_cancelArea", "_player", "_hitBox")]
 script = ExtResource("script")
-m_CancelArea = NodePath("CancelArea")
-m_Player = NodePath("AnimationPlayer")
-m_HitBox = NodePath("HitBox")
+_cancelArea = NodePath("CancelArea")
+_player = NodePath("AnimationPlayer")
+_hitBox = NodePath("HitBox")
 
 [node name="Sprite" type="Sprite2D" parent="." unique_id=1712902609]
 texture = ExtResource("texture")

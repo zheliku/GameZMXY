@@ -20,7 +20,7 @@ public sealed partial class HeroConfig : Luban.BeanBase
         LegacyId = _buf.ReadInt();
         NameCn = _buf.ReadString();
         Desc = _buf.ReadString();
-        EntityId = (Entity.EEntityId)_buf.ReadInt();
+        EntityId = (Entity.EntityId)_buf.ReadInt();
         WalkSpeed = _buf.ReadFloat();
         RunSpeed = _buf.ReadFloat();
         RunDoubleTapWindow = _buf.ReadFloat();
@@ -57,7 +57,7 @@ public sealed partial class HeroConfig : Luban.BeanBase
     /// <summary>
     /// 实体枚举
     /// </summary>
-    public readonly Entity.EEntityId EntityId;
+    public readonly Entity.EntityId EntityId;
     /// <summary>
     /// 慢走速度px/s，造一悟空6px/帧&#215;24
     /// </summary>

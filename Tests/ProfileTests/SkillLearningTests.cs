@@ -1,144 +1,144 @@
 using System;
 using System.Linq;
-using GameLogic.Battle;
-using GameLogic.Level;
 using GameConfig.Skills;
 using GameLogic.Architecture;
+using GameLogic.Battle;
+using GameLogic.Level;
+using GameLogic.Save.Data;
 using GameLogic.Skills;
 using Newtonsoft.Json;
 using Xunit;
 
-namespace GameLogic.Profile.Tests
+namespace GameLogic.Profile.Tests;
+
+/// <summary>
+/// 通过正式系统验证学习资格、扣费、可绑定通知、快照和严格存档校验。
+/// </summary>
+public sealed class SkillLearningTests
 {
     /// <summary>
-    /// 通过正式系统验证学习资格、扣费、可绑定通知、快照和严格存档校验。
+    /// 初始未学；余额不足不变，刚好足够成功一次，重复点击不重复扣费。
     /// </summary>
-    public sealed class SkillLearningTests
+    [Fact]
+    public void Learning_ChargesOnceAndPublishesTheSharedSkillBook()
     {
-        /// <summary>
-        /// 初始未学；余额不足不变，刚好足够成功一次，重复点击不重复扣费。
-        /// </summary>
-        [Fact]
-        public void Learning_ChargesOnceAndPublishesTheSharedSkillBook()
-        {
-            var scope = new TestGameScope(1, [(1, 0)], 99, 20);
-            var system = scope.GetSystem<SkillSystem>();
-            var learned = scope.Skills.GetLearnedSkills(1);
-            int notifications = 0;
-            learned.Register(_ => notifications++);
-            Assert.False(system.IsLearned(ESkillId.RisingDragon));
-            Assert.Equal(ESkillLearnResult.InsufficientSoul, system.Learn(ESkillId.RisingDragon));
-            Assert.Equal(99, scope.Profile.Soul.Value);
-            Assert.Empty(learned);
-            Assert.Equal(0, notifications);
-            scope.GetSystem<ProfileSystem>().AddSoul(1);
-            Assert.Equal(ESkillLearnResult.Learned, system.Learn(ESkillId.RisingDragon));
-            Assert.Equal(0, scope.Profile.Soul.Value);
-            Assert.True(system.IsLearned(ESkillId.RisingDragon));
-            Assert.Equal(ESkillLearnResult.AlreadyLearned, system.Learn(ESkillId.RisingDragon));
-            Assert.Equal(0, scope.Profile.Soul.Value);
-            Assert.Equal(1, notifications);
-        }
+        var scope = new TestGameScope(1, [(1, 0)], 99, 20);
+        SkillSystem system = scope.GetSystem<SkillSystem>();
+        BindableList<SkillId> learned = scope.Skills.GetLearnedSkills(1);
+        int notifications = 0;
+        learned.Register(_ => notifications++);
+        Assert.False(system.IsLearned(SkillId.RisingDragon));
+        Assert.Equal(SkillLearnResult.InsufficientSoul, system.Learn(SkillId.RisingDragon));
+        Assert.Equal(99, scope.Profile.Soul.Value);
+        Assert.Empty(learned);
+        Assert.Equal(0, notifications);
+        scope.GetSystem<ProfileSystem>().AddSoul(1);
+        Assert.Equal(SkillLearnResult.Learned, system.Learn(SkillId.RisingDragon));
+        Assert.Equal(0, scope.Profile.Soul.Value);
+        Assert.True(system.IsLearned(SkillId.RisingDragon));
+        Assert.Equal(SkillLearnResult.AlreadyLearned, system.Learn(SkillId.RisingDragon));
+        Assert.Equal(0, scope.Profile.Soul.Value);
+        Assert.Equal(1, notifications);
+    }
 
-        /// <summary>
-        /// 地图没有英雄与关卡模型时仍可购买技能；档案保存后下一局读取主动和被动效果。
-        /// </summary>
-        [Fact]
-        public void MapPurchase_UsesProfileSkillsWithoutBattleModelsAndSurvivesReload()
-        {
-            var scope = new TestGameScope(1, [(1, 0)], 10000, 20, initializeHero: false);
-            scope.EnterMapContext();
-            Assert.Null(scope.GetModel<HeroModel>());
-            Assert.Null(scope.GetModel<LevelModel>());
-            var system = scope.GetSystem<SkillSystem>();
-            system.ClearSkillDefinitions();
-            int skillCost = TestTables.Tables.TbSkillConfig.Get(ESkillId.RisingDragon).LearnSoul;
-            int passiveCost = TestTables.Tables.TbPassiveConfig.Get(EPassiveId.Vitality).Levels[0].LearnSoul;
+    /// <summary>
+    /// 地图没有英雄与关卡模型时仍可购买技能；档案保存后下一局读取主动和被动效果。
+    /// </summary>
+    [Fact]
+    public void MapPurchase_UsesProfileSkillsWithoutBattleModelsAndSurvivesReload()
+    {
+        var scope = new TestGameScope(1, [(1, 0)], 10000, 20, initializeHero: false);
+        scope.EnterMapContext();
+        Assert.Null(scope.GetModel<HeroModel>());
+        Assert.Null(scope.GetModel<LevelModel>());
+        SkillSystem system = scope.GetSystem<SkillSystem>();
+        system.ClearSkillDefinitions();
+        int skillCost = TestTables.Tables.TbSkillConfig.Get(SkillId.RisingDragon).LearnSoul;
+        int passiveCost = TestTables.Tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
 
-            Assert.False(system.IsAvailable(ESkillId.RisingDragon));
-            Assert.True(system.IsLearnable(ESkillId.RisingDragon));
-            Assert.Equal(ESkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(ESkillId.RisingDragon)));
-            Assert.Equal(ESkillLearnResult.Learned, scope.SendCommand(new UpgradePassiveCommand(EPassiveId.Vitality)));
-            Assert.Equal(10000 - skillCost - passiveCost, scope.Profile.Soul.Value);
+        Assert.False(system.IsAvailable(SkillId.RisingDragon));
+        Assert.True(system.IsLearnable(SkillId.RisingDragon));
+        Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
+        Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
+        Assert.Equal(10000 - skillCost - passiveCost, scope.Profile.Soul.Value);
 
-            var save = scope.CaptureSaveData();
-            var heroData = save.Heroes.Single(hero => hero.HeroId == 1);
-            Assert.Contains(ESkillId.RisingDragon, heroData.LearnedSkills);
-            Assert.Equal(1, heroData.PassiveLevels[EPassiveId.Vitality]);
+        GameData save = scope.CaptureSaveData();
+        HeroSaveData heroData = save.Heroes.Single(hero => hero.HeroId == 1);
+        Assert.Contains(SkillId.RisingDragon, heroData.LearnedSkills);
+        Assert.Equal(1, heroData.PassiveLevels[PassiveId.Vitality]);
 
-            var reloaded = TestGameScope.FromSaveData(save, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 20);
-            Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(ESkillId.RisingDragon));
-            Assert.True(reloaded.GetSystem<SkillSystem>().IsAvailable(ESkillId.RisingDragon));
-            Assert.True(reloaded.Hero.MaxHp.Value > TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.MaxHp);
-        }
+        var reloaded = TestGameScope.FromSaveData(save, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 20);
+        Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(SkillId.RisingDragon));
+        Assert.True(reloaded.GetSystem<SkillSystem>().IsAvailable(SkillId.RisingDragon));
+        Assert.True(reloaded.Hero.MaxHp.Value > TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.MaxHp);
+    }
 
-        /// <summary>
-        /// 其他角色、未知编号和未实现的角色动作不能购买。
-        /// </summary>
-        /// <param name="id">应被拒绝学习的技能配置编号。</param>
-        [Theory]
-        [InlineData(ESkillId.IceDragonWave)]
-        [InlineData((ESkillId)999)]
-        public void Learning_RejectsUnavailableDefinitions(ESkillId id)
-        {
-            var scope = new TestGameScope(1, [(1, 0)], 9999, 20);
-            Assert.Equal(ESkillLearnResult.Unavailable, scope.GetSystem<SkillSystem>().Learn(id));
-            Assert.Equal(9999, scope.Profile.Soul.Value);
-            Assert.Empty(scope.Skills.GetLearnedSkills(1));
-        }
+    /// <summary>
+    /// 其他角色、未知编号和未实现的角色动作不能购买。
+    /// </summary>
+    /// <param name="id">应被拒绝学习的技能配置编号。</param>
+    [Theory]
+    [InlineData(SkillId.IceDragonWave)]
+    [InlineData((SkillId)999)]
+    public void Learning_RejectsUnavailableDefinitions(SkillId id)
+    {
+        var scope = new TestGameScope(1, [(1, 0)], 9999, 20);
+        Assert.Equal(SkillLearnResult.Unavailable, scope.GetSystem<SkillSystem>().Learn(id));
+        Assert.Equal(9999, scope.Profile.Soul.Value);
+        Assert.Empty(scope.Skills.GetLearnedSkills(1));
+    }
 
-        /// <summary>
-        /// 技能书按英雄保存、快照独立；放弃关卡同时回滚扣费和学习，保留绑定身份。
-        /// </summary>
-        [Fact]
-        public void SaveAndRollback_PreserveHeroOwnershipAndBindingIdentity()
-        {
-            var scope = new TestGameScope(1, [(1, 0), (2, 0)], 3000, 20);
-            var learned = scope.Skills.GetLearnedSkills(1);
-            Assert.Equal(ESkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(ESkillId.FlameThrust));
-            var checkpoint = scope.CaptureSaveData();
-            Assert.Equal(new[] { ESkillId.FlameThrust }, checkpoint.Heroes.Single(x => x.HeroId == 1).LearnedSkills);
-            Assert.Empty(checkpoint.Heroes.Single(x => x.HeroId == 2).LearnedSkills);
-            var reloaded = TestGameScope.FromSaveData(JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(checkpoint)),
-                TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 20);
-            Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(ESkillId.FlameThrust));
-            Assert.Equal(ESkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(ESkillId.BlazingFlash));
-            Assert.DoesNotContain(ESkillId.BlazingFlash, checkpoint.Heroes[0].LearnedSkills);
-            scope.RestoreCheckpoint(checkpoint);
-            Assert.Same(learned, scope.Skills.GetLearnedSkills(1));
-            Assert.Equal(new[] { ESkillId.FlameThrust }, learned);
-            Assert.Equal(2800, scope.Profile.Soul.Value);
-        }
+    /// <summary>
+    /// 技能书按英雄保存、快照独立；放弃关卡同时回滚扣费和学习，保留绑定身份。
+    /// </summary>
+    [Fact]
+    public void SaveAndRollback_PreserveHeroOwnershipAndBindingIdentity()
+    {
+        var scope = new TestGameScope(1, [(1, 0), (2, 0)], 3000, 20);
+        BindableList<SkillId> learned = scope.Skills.GetLearnedSkills(1);
+        Assert.Equal(SkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(SkillId.FlameThrust));
+        GameData checkpoint = scope.CaptureSaveData();
+        Assert.Equal(new[] { SkillId.FlameThrust }, checkpoint.Heroes.Single(x => x.HeroId == 1).LearnedSkills);
+        Assert.Empty(checkpoint.Heroes.Single(x => x.HeroId == 2).LearnedSkills);
+        var reloaded = TestGameScope.FromSaveData(JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(checkpoint)),
+            TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 20);
+        Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(SkillId.FlameThrust));
+        Assert.Equal(SkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(SkillId.BlazingFlash));
+        Assert.DoesNotContain(SkillId.BlazingFlash, checkpoint.Heroes[0].LearnedSkills);
+        scope.RestoreCheckpoint(checkpoint);
+        Assert.Same(learned, scope.Skills.GetLearnedSkills(1));
+        Assert.Equal(new[] { SkillId.FlameThrust }, learned);
+        Assert.Equal(2800, scope.Profile.Soul.Value);
+    }
 
-        /// <summary>
-        /// 坏学习记录在恢复前失败，原档案数据不变。
-        /// </summary>
-        /// <param name="invalid">重复、其他英雄或未知技能。</param>
-        [Theory]
-        [InlineData(ESkillId.RisingDragon)]
-        [InlineData(ESkillId.IceDragonWave)]
-        [InlineData((ESkillId)999)]
-        public void Restore_RejectsInvalidSkillRecordsBeforeWriting(ESkillId invalid)
-        {
-            var scope = new TestGameScope(1, [(1, 0)], 3000, 20);
-            var snapshot = scope.CaptureSaveData();
-            snapshot.Heroes[0].LearnedSkills.AddRange([ESkillId.RisingDragon, invalid]);
-            snapshot.Soul = 0;
-            Assert.Throws<ArgumentException>(() => scope.RestoreCheckpoint(snapshot));
-            Assert.Equal(3000, scope.Profile.Soul.Value);
-            Assert.Empty(scope.Skills.GetLearnedSkills(1));
-        }
+    /// <summary>
+    /// 坏学习记录在恢复前失败，原档案数据不变。
+    /// </summary>
+    /// <param name="invalid">重复、其他英雄或未知技能。</param>
+    [Theory]
+    [InlineData(SkillId.RisingDragon)]
+    [InlineData(SkillId.IceDragonWave)]
+    [InlineData((SkillId)999)]
+    public void Restore_RejectsInvalidSkillRecordsBeforeWriting(SkillId invalid)
+    {
+        var scope = new TestGameScope(1, [(1, 0)], 3000, 20);
+        GameData snapshot = scope.CaptureSaveData();
+        snapshot.Heroes[0].LearnedSkills.AddRange([SkillId.RisingDragon, invalid]);
+        snapshot.Soul = 0;
+        Assert.Throws<ArgumentException>(() => scope.RestoreCheckpoint(snapshot));
+        Assert.Equal(3000, scope.Profile.Soul.Value);
+        Assert.Empty(scope.Skills.GetLearnedSkills(1));
+    }
 
-        /// <summary>
-        /// 当前格式必须显式提供学习记录，缺字段不能被空列表默认值掩盖。
-        /// </summary>
-        [Fact]
-        public void Save_RequiresAnExplicitSkillBook()
-        {
-            var scope = new TestGameScope(1, [(1, 0)], 0, 20);
-            var json = Newtonsoft.Json.Linq.JObject.FromObject(scope.CaptureSaveData());
-            ((Newtonsoft.Json.Linq.JObject)json["Heroes"][0]).Remove("LearnedSkills");
-            Assert.Throws<JsonSerializationException>(() => json.ToObject<GameData>());
-        }
+    /// <summary>
+    /// 当前格式必须显式提供学习记录，缺字段不能被空列表默认值掩盖。
+    /// </summary>
+    [Fact]
+    public void Save_RequiresAnExplicitSkillBook()
+    {
+        var scope = new TestGameScope(1, [(1, 0)], 0, 20);
+        var json = Newtonsoft.Json.Linq.JObject.FromObject(scope.CaptureSaveData());
+        ((Newtonsoft.Json.Linq.JObject)json["Heroes"][0]).Remove("LearnedSkills");
+        Assert.Throws<JsonSerializationException>(() => json.ToObject<GameData>());
     }
 }

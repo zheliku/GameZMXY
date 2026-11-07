@@ -21,8 +21,8 @@ func _register() -> void:
 	armor[10] = load(root.path_join("wukong_body_earth_fiend.png"))
 	weapon[2] = load(root.path_join("wukong_weapon_pilgrim.png"))
 	weapon[6] = weapon[2]
-	resource.set("m_ArmorTextures",armor)
-	resource.set("m_WeaponTextures",weapon)
+	resource.set("_armorTextures",armor)
+	resource.set("_weaponTextures",weapon)
 	assert(ResourceSaver.save(resource,path)==OK)
 	print("WARDROBE BINDINGS PASS: two base armor IDs, Earth Fiend armor, two base weapon IDs.")
 	quit()

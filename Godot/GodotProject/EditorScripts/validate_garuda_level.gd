@@ -7,10 +7,10 @@ func _initialize() -> void:
 func _validate() -> void:
     var source: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(OS.get_cmdline_user_args()[0]))["2-3"]
     var scene: Node2D = load("res://TheGame/Scenes/Levels/zm1_06_garuda_cave/level_6.tscn").instantiate()
-    assert(scene.get("m_LevelId") == 6 and scene.get("m_MusicId") == 106)
-    assert(scene.get("m_FeaturedOpponentSpawnPointIds") == PackedStringArray(["stage_5_a"]))
-    assert(scene.get_node("World/SpawnPoints").get("m_Entries").size() == 23)
-    assert(scene.get_node("World/StageGates").get("m_Entries").size() == 9)
+    assert(scene.get("_levelId") == 6 and scene.get("_musicId") == 106)
+    assert(scene.get("_featuredOpponentSpawnPointIds") == PackedStringArray(["stage_5_a"]))
+    assert(scene.get_node("World/SpawnPoints").get("_entries").size() == 23)
+    assert(scene.get_node("World/StageGates").get("_entries").size() == 9)
     assert(scene.get_node("World/Platforms").get_child_count() == 4)
     assert(scene.get_node("World/Geometry").find_children("*", "CollisionShape2D", true, false).size() == 3)
     assert(scene.get_node("World/Traps").get_child_count() == 39)
@@ -26,9 +26,9 @@ func _validate() -> void:
     for path in ["Bosses/zm1_06_garuda_cave/peng_demon_king_entity", "Monsters/Sky/flying_demon/flying_demon_entity"]:
         var actor: CharacterBody2D = load("res://TheGame/Entitys/Enemies/" + path + ".tscn").instantiate()
         assert(actor.collision_mask == 9)
-        for binding in ["m_Body", "m_AnimPlayer", "m_HitBox", "m_HurtBox", "m_HitBoxRoot", "m_Perception"]:
+        for binding in ["m_Body", "m_AnimPlayer", "m_HitBox", "m_HurtBox", "m_HitBoxRoot", "_perception"]:
             assert(actor.get(binding) != null)
-        var player: AnimationPlayer = actor.get("m_AnimPlayer")
+        var player: AnimationPlayer = actor.get("_animPlayer")
         for key in player.get_animation_list():
             var animation := player.get_animation(key)
             for track in animation.get_track_count():
@@ -45,7 +45,7 @@ func _validate() -> void:
     assert(is_equal_approx(animation.length, .6 + 15.0 / 24))
     effect.free()
     var form: Control = load("res://TheGame/UIs/map_form.tscn").instantiate()
-    assert(form.get("m_Jialuoluo") == form.get_node("m_Jialuoluo"))
+    assert(form.get("_jialuoluo") == form.get_node("m_Jialuoluo"))
     var library: AnimationLibrary = form.get_node("m_LocationAnimation").get_animation_library("jialuoluo")
     assert(is_equal_approx(library.get_animation("current").length, 19.0 / 24))
     form.free()

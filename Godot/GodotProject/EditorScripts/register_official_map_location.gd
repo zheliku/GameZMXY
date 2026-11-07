@@ -42,7 +42,7 @@ func _register() -> void:
     glow.material = glow.material.duplicate()
     glow.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
     glow.visible = false
-    button.set("m_HoverImage", glow)
+    button.set("_hoverImage", glow)
     var hint: Sprite2D = button.get_node_or_null("CurrentHint")
     if hint == null:
         hint = template.get_node("CurrentHint").duplicate()

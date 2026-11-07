@@ -9,7 +9,7 @@ func _register() -> void:
     var path := "res://TheGame/Scenes/Levels/zm1_02_shuiliandong/level_2.tscn"
     var uid := ResourceLoader.get_resource_uid(path)
     var scene: Node = load(path).instantiate()
-    assert(scene.get("m_HiddenEntrance") == null, "Entrance already authored; review before replacing")
+    assert(scene.get("_hiddenEntrance") == null, "Entrance already authored; review before replacing")
     var root := scene.get_node("World")
     var entrance := Area2D.new()
     entrance.name = "DragonPalaceEntrance"
@@ -43,9 +43,9 @@ func _register() -> void:
     assert(ResourceSaver.save(library, library_path) == OK)
     player.add_animation_library("", load(library_path))
     player.assigned_animation = "fade"
-    scene.set("m_HiddenEntrance", entrance)
-    scene.set("m_EntranceFade", player)
-    assert(scene.get("m_HiddenEntrance") == entrance and scene.get("m_EntranceFade") == player)
+    scene.set("_hiddenEntrance", entrance)
+    scene.set("_entranceFade", player)
+    assert(scene.get("_hiddenEntrance") == entrance and scene.get("_entranceFade") == player)
     var packed := PackedScene.new()
     assert(packed.pack(scene) == OK)
     assert(ResourceSaver.save(packed, path) == OK)

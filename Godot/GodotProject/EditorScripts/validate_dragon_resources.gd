@@ -23,7 +23,7 @@ func _check() -> void:
         var node: Node = load(base + record.actor + ("_entity.tscn" if is_actor else "_effect.tscn")).instantiate()
         node.process_mode = Node.PROCESS_MODE_DISABLED
         root.add_child(node)
-        var player: AnimationPlayer = node.get("m_AnimPlayer" if is_actor else "m_Player")
+        var player: AnimationPlayer = node.get("_animPlayer" if is_actor else "_player")
         var shape_path := "m_HitBoxRoot/m_HitBox/CollisionShape2D" if is_actor else "Origin/Visual/HitBox/CollisionShape2D"
         for frame in int(record.frames):
             player.play(record.animation)
@@ -39,16 +39,16 @@ func _check() -> void:
             count += 1
         node.free()
     var room: Node = load("res://TheGame/Scenes/Levels/zm1_11_hidden_dragon_palace/level_11.tscn").instantiate()
-    assert(room.get("m_LevelId") == 11 and room.get("m_MusicId") == 108)
+    assert(room.get("_levelId") == 11 and room.get("_musicId") == 108)
     assert(room.get_node("World/Exit").position == Vector2(814.75, 457.55))
     assert(room.get_node("World/SpawnPoints/Stage1A").position.is_equal_approx(Vector2(947.65, 285.75)))
     room.free()
     var cave: Node = load("res://TheGame/Scenes/Levels/zm1_02_shuiliandong/level_2.tscn").instantiate()
-    var entrance: Area2D = cave.get("m_HiddenEntrance")
+    var entrance: Area2D = cave.get("_hiddenEntrance")
     assert(entrance != null and not entrance.monitoring)
     assert(entrance.position.is_equal_approx(Vector2(2151.024558265, 615.010125734)))
     assert(entrance.get_child(0).shape.size.is_equal_approx(Vector2(499.95119367, 50.00032979)))
-    var fade: AnimationPlayer = cave.get("m_EntranceFade")
+    var fade: AnimationPlayer = cave.get("_entranceFade")
     assert(fade != null and is_equal_approx(fade.get_animation("fade").length, 1))
     cave.free()
     print("DRAGON NATIVE RESOURCES PASS: ", count, " source collision frames, room/portal/music and water entrance bindings")

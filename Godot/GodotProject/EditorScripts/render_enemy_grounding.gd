@@ -43,9 +43,9 @@ func _run() -> void:
         actor.visible = false
         root.add_child(actor)
         actor.set_physics_process(false)
-        var body: AnimatedSprite2D = actor.get("m_Body")
+        var body: AnimatedSprite2D = actor.get("_body")
         body.stop()
-        var player: AnimationPlayer = actor.get("m_AnimPlayer")
+        var player: AnimationPlayer = actor.get("_animPlayer")
         player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
         var actions: Array[String] = []
         for name in player.get_animation_list():
@@ -54,7 +54,7 @@ func _run() -> void:
         var physics_shape: CollisionShape2D = actor.get_node("m_BodyShape")
         var aabb := physics_shape.shape.get_rect()
         var bottom := physics_shape.position.y + (aabb.size.x / 2 if absf(physics_shape.rotation) > 1 else aabb.end.y)
-        var hurt := actor.get("m_HurtBox") as Area2D
+        var hurt := actor.get("_hurtBox") as Area2D
         var scale := minf(1.0, 160.0 / maxf(aabb.size.y, 1))
         var sheet := Image.create_empty(1050, 250 * actions.size(), false, Image.FORMAT_RGBA8)
         for row in actions.size():

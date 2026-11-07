@@ -71,7 +71,7 @@ size = Vector2(1,1)
 size = Vector2(600,600)
 [sub_resource type="CanvasItemMaterial" id="add"]
 blend_mode = 1
-[node name="DragonKingEntity" type="CharacterBody2D" node_paths=PackedStringArray("m_Detector","m_Body","m_AnimPlayer","m_HurtBox","m_HitBox","m_HitBoxRoot")]
+[node name="DragonKingEntity" type="CharacterBody2D" node_paths=PackedStringArray("m_Detector","_body","_animPlayer","_hurtBox","_hitBox","_hitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 floor_constant_speed = true
@@ -79,15 +79,15 @@ floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("script")
 m_Detector = NodePath("m_Detector")
-m_Body = NodePath("m_Body")
-m_AnimPlayer = NodePath("m_AnimPlayer")
-m_HurtBox = NodePath("m_HurtBox")
-m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
-m_HitBoxRoot = NodePath("m_HitBoxRoot")
-m_EnemyEntityId = 26
-m_AttackAnimations = PackedStringArray("attack_1","attack_2","attack_3","attack_4")
-m_WaveScene = ExtResource("wave")
-m_TorrentScene = ExtResource("torrent")
+_body = NodePath("m_Body")
+_animPlayer = NodePath("m_AnimPlayer")
+_hurtBox = NodePath("m_HurtBox")
+_hitBox = NodePath("m_HitBoxRoot/m_HitBox")
+_hitBoxRoot = NodePath("m_HitBoxRoot")
+_enemyEntityId = 26
+_attackAnimations = PackedStringArray("attack_1","attack_2","attack_3","attack_4")
+_waveScene = ExtResource("wave")
+_torrentScene = ExtResource("torrent")
 [node name="m_Body" type="AnimatedSprite2D" parent="."]
 sprite_frames = ExtResource("body")
 animation = &"idle"
@@ -95,12 +95,12 @@ offset = {vec2(offset)}
 [node name="m_BodyShape" type="CollisionShape2D" parent="."]
 position = {vec2([x+width/2,y+height/2])}
 shape = SubResource("body_shape")
-[node name="m_HurtBox" type="Area2D" parent="." node_paths=PackedStringArray("m_Owner")]
+[node name="m_HurtBox" type="Area2D" parent="." node_paths=PackedStringArray("_owner")]
 collision_layer = 32
 collision_mask = 0
 monitoring = false
 script = ExtResource("hurt")
-m_Owner = NodePath("..")
+_owner = NodePath("..")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox"]
 position = {vec2([x+width/2,y+height/2])}
 shape = SubResource("hurt_shape")

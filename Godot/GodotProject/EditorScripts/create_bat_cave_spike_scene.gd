@@ -52,13 +52,13 @@ func _build() -> void:
 	sprite.animation = "spike"
 	sprite.offset = Vector2(1.45, 0.925)
 	root.add_child(sprite); sprite.owner = root
-	root.set("m_Sprite", sprite)
+	root.set("_sprite", sprite)
 	var shape_node := CollisionShape2D.new()
 	shape_node.name = "CollisionShape2D"
 	var shape := RectangleShape2D.new(); shape.size = Vector2(30, 58)
 	shape_node.shape = shape; shape_node.position = Vector2(1.45, 0.925)
 	root.add_child(shape_node); shape_node.owner = root
-	root.set("m_Shape", shape_node)
+	root.set("_shape", shape_node)
 	var trigger := RayCast2D.new()
 	trigger.name = "Trigger"
 	trigger.collision_mask = root.collision_mask
@@ -67,7 +67,7 @@ func _build() -> void:
 	trigger.collide_with_areas = true
 	trigger.collide_with_bodies = false
 	root.add_child(trigger); trigger.owner = root
-	root.set("m_TriggerRay", trigger)
+	root.set("_triggerRay", trigger)
 	sprite.speed_scale = 1
 	var packed := PackedScene.new()
 	assert(packed.pack(root) == OK)

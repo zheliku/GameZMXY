@@ -1,9 +1,3 @@
-using GameLogic.Architecture;
-using GameLogic.Enemies.Body;
-using GameLogic.Enemies.AI;
-using GameLogic.Battle;
-using GameLogic.Battle.Attacks;
-using GameLogic.Event.Combat;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -12,8 +6,14 @@ using GameConfig.Sound;
 using GameFramework;
 using GameFramework.Event;
 using GameFramework.Fsm;
-using GameLogic.Heroes;
+using GameLogic.Architecture;
+using GameLogic.Battle;
+using GameLogic.Battle.Attacks;
 using GameLogic.Enemies;
+using GameLogic.Enemies.AI;
+using GameLogic.Enemies.Body;
+using GameLogic.Event.Combat;
+using GameLogic.Heroes;
 using Godot;
 using GodotGameFramework;
 
@@ -49,52 +49,46 @@ public sealed class EnemyAiSmokeScenario
     private const float InSightOffset = 150f; // 进入怪物视野时的水平偏移（像素）。
     private const float BehindOffset = 60f; // 转身测试中英雄位于怪物身后的水平偏移（像素）。
 
-    private readonly AbstractHeroEntity m_Hero; // 受测英雄实体。
-    private readonly AbstractEnemyEntity m_Monster; // 受测怪物实体。
-    private readonly int m_OriginalAttackDesire; // 结束时恢复测试夹具覆盖的出手概率。
-    private readonly int m_MonsterId; // 受测怪物实体编号。
-    private EPhase m_Phase = EPhase.OutOfSight; // 当前场景阶段。
-    private double m_PhaseStart; // 当前阶段开始时间（秒）。
-    private bool m_PlacedOutOfSight; // 是否已将怪物放到视野外。
-    private int m_LastSegment = -1; // 上一帧攻击段编号。
-    private string m_LastAi = ""; // 上一次观测到的 AI 状态名。
-    private string m_LastAnim = ""; // 上一次观测到的动画路径。
-    private readonly List<(double Time, string Ai)> m_AiObserved = new(); // 按时间记录 AI 状态序列。
-    private readonly List<(double Time, string Anim)> m_AnimObserved = new(); // 按时间记录动画序列。
-    private readonly List<(double Time, string Ai)> m_AiBeforeSight = new(); // 进入视野前记录的 AI 状态序列。
-    private readonly List<string> m_Failures = new(); // 断言失败原因列表。
-    private int m_HeroHitsByMonster; // 怪物命中英雄的次数。
-    private int m_DiedEvents; // 收到怪物死亡事件的次数。
-    private double? m_DeathAiTime; // 死亡后AI时钟停止，尸体阶段只推进身体。
-    private bool m_HiddenAfterDeath; // 是否已观察到死亡后的实体回收。
+    private readonly AbstractHeroEntity _hero; // 受测英雄实体。
+    private readonly AbstractEnemyEntity _monster; // 受测怪物实体。
+    private readonly int _originalAttackDesire; // 结束时恢复测试夹具覆盖的出手概率。
+    private readonly int _monsterId; // 受测怪物实体编号。
+    private Phase _phase = Phase.OutOfSight; // 当前场景阶段。
+    private double _phaseStart; // 当前阶段开始时间（秒）。
+    private bool _placedOutOfSight; // 是否已将怪物放到视野外。
+    private int _lastSegment = -1; // 上一帧攻击段编号。
+    private string _lastAi = ""; // 上一次观测到的 AI 状态名。
+    private string _lastAnim = ""; // 上一次观测到的动画路径。
+    private readonly List<(double Time, string Ai)> _aiObserved = new(); // 按时间记录 AI 状态序列。
+    private readonly List<(double Time, string Anim)> _animObserved = new(); // 按时间记录动画序列。
+    private readonly List<(double Time, string Ai)> _aiBeforeSight = new(); // 进入视野前记录的 AI 状态序列。
+    private readonly List<string> _failures = new(); // 断言失败原因列表。
+    private int _heroHitsByMonster; // 怪物命中英雄的次数。
+    private int _diedEvents; // 收到怪物死亡事件的次数。
+    private double? _deathAiTime; // 死亡后AI时钟停止，尸体阶段只推进身体。
+    private bool _hiddenAfterDeath; // 是否已观察到死亡后的实体回收。
 
     // 转身阶段
-    private int m_LockedFacing; // 转身测试中锁定的朝向。
-    private double m_RecoveredAt = -1; // 收招硬直结束时间（秒）。
-    private bool m_TurnedAfterRecovery; // 是否在收招后成功转向英雄。
+    private int _lockedFacing; // 转身测试中锁定的朝向。
+    private double _recoveredAt = -1; // 收招硬直结束时间（秒）。
+    private bool _turnedAfterRecovery; // 是否在收招后成功转向英雄。
 
     // 空中（平台）阶段
-    private float m_HeroFloorY; // 英雄落地时的地面 Y 坐标。
-    private float m_AirX; // 平台阶段固定的英雄 X 坐标。
-    private float m_AirMinX; // 平台阶段怪物走位的最小 X 坐标。
-    private float m_AirMaxX; // 平台阶段怪物走位的最大 X 坐标。
-    private bool m_SawUnreachableBehavior; // 是否观察到守候状态。
-    private int m_AirAttacks; // 英雄在空中时怪物出招次数。
-    private bool m_StruckAfterLanding; // 英雄落地后怪物是否已出招。
+    private float _heroFloorY; // 英雄落地时的地面 Y 坐标。
+    private float _airX; // 平台阶段固定的英雄 X 坐标。
+    private float _airMinX; // 平台阶段怪物走位的最小 X 坐标。
+    private float _airMaxX; // 平台阶段怪物走位的最大 X 坐标。
+    private bool _sawUnreachableBehavior; // 是否观察到守候状态。
+    private int _airAttacks; // 英雄在空中时怪物出招次数。
+    private bool _struckAfterLanding; // 英雄落地后怪物是否已出招。
 
     // 视野外保留目标阶段
-    private bool m_RetainedTarget; // 是否确认怪物在视野外保留存活目标。
+    private bool _retainedTarget; // 是否确认怪物在视野外保留存活目标。
 
     /// <summary>
     /// 场景已结束（通过或超时），驱动器据此调用 <see cref="Finish"/>。
     /// </summary>
-    public bool IsDone
-    {
-        get
-        {
-            return m_Phase == EPhase.Done;
-        }
-    }
+    public bool IsDone => _phase == Phase.Done;
 
     /// <summary>
     /// 创建 AI 烟测场景并订阅战斗事件。
@@ -103,10 +97,10 @@ public sealed class EnemyAiSmokeScenario
     /// <param name="monster">受测怪物实体。</param>
     public EnemyAiSmokeScenario(AbstractHeroEntity hero, AbstractEnemyEntity monster)
     {
-        m_Hero = hero;
-        m_Monster = monster;
-        m_MonsterId = monster.Id;
-        m_OriginalAttackDesire = monster.Config.AttackDesire;
+        _hero = hero;
+        _monster = monster;
+        _monsterId = monster.Id;
+        _originalAttackDesire = monster.Config.AttackDesire;
         // 本场验证行为能否恢复，不验证随机出手概率；只在测试侧固定，避免把连续未出手误判为卡死。
         typeof(GameConfig.Enemy.EnemyConfig).GetField("AttackDesire").SetValue(monster.Config, 100);
         GF.Event.Subscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
@@ -120,99 +114,99 @@ public sealed class EnemyAiSmokeScenario
     /// <param name="t">相对场景开始时间（秒）。</param>
     public void Update(double t)
     {
-        if (t >= TimeoutAt && m_Phase != EPhase.Done)
+        if (t >= TimeoutAt && _phase != Phase.Done)
         {
-            m_Failures.Add($"超时：停在阶段 {m_Phase}");
-            m_Phase = EPhase.Done;
+            _failures.Add($"超时：停在阶段 {_phase}");
+            _phase = Phase.Done;
             return;
         }
 
-        int segment = m_Monster.IsShown ? m_Monster.AttackSegment : -1;
-        bool attackStarted = segment >= 0 && m_LastSegment < 0;
-        m_LastSegment = segment;
+        int segment = _monster.IsShown ? _monster.AttackSegment : -1;
+        bool attackStarted = segment >= 0 && _lastSegment < 0;
+        _lastSegment = segment;
 
-        switch (m_Phase)
+        switch (_phase)
         {
-            case EPhase.OutOfSight:
-                if (!m_PlacedOutOfSight)
+            case Phase.OutOfSight:
+                if (!_placedOutOfSight)
                 {
                     Teleport(OutOfSightOffset);
-                    m_PlacedOutOfSight = true;
+                    _placedOutOfSight = true;
                 }
 
                 if (t >= InSightAt)
                 {
                     Teleport(InSightOffset);
                     HitMonster(1, Vector2.Zero);
-                    Enter(EPhase.WaitFirstHit, t);
+                    Enter(Phase.WaitFirstHit, t);
                 }
 
                 break;
 
-            case EPhase.WaitFirstHit:
-                if (m_HeroHitsByMonster > 0)
+            case Phase.WaitFirstHit:
+                if (_heroHitsByMonster > 0)
                 {
-                    m_Hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);   // 防止后续阶段英雄被打死导致目标失效
-                    Enter(EPhase.WaitSecondAttack, t);
+                    _hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);   // 防止后续阶段英雄被打死导致目标失效
+                    Enter(Phase.WaitSecondAttack, t);
                 }
 
                 break;
 
-            case EPhase.WaitSecondAttack:
+            case Phase.WaitSecondAttack:
                 if (attackStarted)
                 {
                     // 出招当帧把英雄放到猴子身后：朝向必须锁到收招硬直结束
-                    m_LockedFacing = m_Monster.Facing;
-                    float behind = m_Monster.GlobalPosition.X - m_LockedFacing * BehindOffset;
-                    m_Hero.GlobalPosition = new Vector2(behind, m_Hero.GlobalPosition.Y);
-                    m_Hero.Velocity = Vector2.Zero;
-                    GD.Print($"SMOKE-AI[{t:F2}] 转身测试：猴子出招朝向 {m_LockedFacing}，英雄瞬移到身后 x={behind:F0}");
-                    Enter(EPhase.TurnAround, t);
+                    _lockedFacing = _monster.Facing;
+                    float behind = _monster.GlobalPosition.X - _lockedFacing * BehindOffset;
+                    _hero.GlobalPosition = new Vector2(behind, _hero.GlobalPosition.Y);
+                    _hero.Velocity = Vector2.Zero;
+                    GD.Print($"SMOKE-AI[{t:F2}] 转身测试：猴子出招朝向 {_lockedFacing}，英雄瞬移到身后 x={behind:F0}");
+                    Enter(Phase.TurnAround, t);
                 }
 
                 break;
 
-            case EPhase.TurnAround:
+            case Phase.TurnAround:
                 UpdateTurnAround(t);
                 break;
 
-            case EPhase.Air:
+            case Phase.Air:
                 UpdateAir(t, attackStarted);
                 break;
 
-            case EPhase.WaitLanded:
+            case Phase.WaitLanded:
                 // 看"正在出招"而不是起手沿：落地当帧就可能已提交出招（起手沿落在 Air 阶段的最后一帧）
-                if (!m_StruckAfterLanding && segment >= 0)
+                if (!_struckAfterLanding && segment >= 0)
                 {
-                    GD.Print($"SMOKE-AI[{t:F2}] 英雄落地后 {t - m_PhaseStart:F2}s 猴子出招");
-                    m_StruckAfterLanding = true;
+                    GD.Print($"SMOKE-AI[{t:F2}] 英雄落地后 {t - _phaseStart:F2}s 猴子出招");
+                    _struckAfterLanding = true;
                 }
 
-                if (m_StruckAfterLanding || t - m_PhaseStart > LandedTimeout)
+                if (_struckAfterLanding || t - _phaseStart > LandedTimeout)
                 {
-                    m_Hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
-                    Enter(EPhase.Lose, t);
+                    _hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
+                    Enter(Phase.Lose, t);
                 }
 
                 break;
 
-            case EPhase.Lose:
+            case Phase.Lose:
                 UpdateLose(t);
                 break;
 
-            case EPhase.WaitKill:
-                if (t - m_PhaseStart >= KillDelay)
+            case Phase.WaitKill:
+                if (t - _phaseStart >= KillDelay)
                 {
-                    HitMonster(m_Monster.MaxHp * 10f, Vector2.Zero);
-                    Enter(EPhase.WaitEnd, t);
+                    HitMonster(_monster.MaxHp * 10f, Vector2.Zero);
+                    Enter(Phase.WaitEnd, t);
                 }
 
                 break;
 
-            case EPhase.WaitEnd:
-                if (t - m_PhaseStart >= EndDelay)
+            case Phase.WaitEnd:
+                if (t - _phaseStart >= EndDelay)
                 {
-                    Enter(EPhase.Done, t);
+                    Enter(Phase.Done, t);
                 }
 
                 break;
@@ -227,67 +221,67 @@ public sealed class EnemyAiSmokeScenario
     /// <returns>断言失败原因；全部通过时为空列表。</returns>
     public List<string> Finish()
     {
-        typeof(GameConfig.Enemy.EnemyConfig).GetField("AttackDesire").SetValue(m_Monster.Config, m_OriginalAttackDesire);
+        typeof(GameConfig.Enemy.EnemyConfig).GetField("AttackDesire").SetValue(_monster.Config, _originalAttackDesire);
         GF.Event.Unsubscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
         GF.Event.Unsubscribe(EnemyDiedEventArgs.EventId, OnEnemyDied);
 
-        List<string> failures = new(m_Failures);
-        if (!m_AiBeforeSight.Exists(o => o.Ai is "Patrol"))
+        List<string> failures = new(_failures);
+        if (!_aiBeforeSight.Exists(o => o.Ai is "Patrol"))
         {
             failures.Add("视野外期间没有观察到 Wander/Pause");
         }
 
-        if (m_AiBeforeSight.Exists(o => o.Ai is "Engage"))
+        if (_aiBeforeSight.Exists(o => o.Ai is "Engage"))
         {
             failures.Add("视野外期间不应追击/攻击（索敌范围或目标锁定有误）");
         }
 
-        RequireInOrder(failures, m_AiObserved.ConvertAll(o => o.Ai), "AI", "Engage");
-        RequireInOrder(failures, m_AnimObserved.ConvertAll(o => o.Anim), "猴子身体/动画", "Walk/run", "Attack/attack_1", "Hurt/hurt", "Death/death");
+        RequireInOrder(failures, _aiObserved.ConvertAll(o => o.Ai), "AI", "Engage");
+        RequireInOrder(failures, _animObserved.ConvertAll(o => o.Anim), "猴子身体/动画", "Walk/run", "Attack/attack_1", "Hurt/hurt", "Death/death");
 
-        if (m_HeroHitsByMonster == 0)
+        if (_heroHitsByMonster == 0)
         {
             failures.Add("猴子出招期间没有打中英雄（判定盒/物理层/出招链路）");
         }
 
-        if (!m_TurnedAfterRecovery)
+        if (!_turnedAfterRecovery)
         {
             failures.Add("转身测试未完成：收招硬直结束后猴子没有转向身后的英雄");
         }
 
-        if (m_AirAttacks > 0)
+        if (_airAttacks > 0)
         {
-            failures.Add($"英雄在头顶 {AirHeight}px 期间猴子出招了 {m_AirAttacks} 次（高度判定失效）");
+            failures.Add($"英雄在头顶 {AirHeight}px 期间猴子出招了 {_airAttacks} 次（高度判定失效）");
         }
 
-        if (!m_StruckAfterLanding)
+        if (!_struckAfterLanding)
         {
             failures.Add($"英雄落地 {LandedTimeout}s 内猴子没有出招（交战决策未恢复）");
         }
 
-        if (!m_RetainedTarget)
+        if (!_retainedTarget)
         {
             failures.Add("英雄离开视野后猴子没有保留存活目标");
         }
 
-        if (m_DiedEvents != 1)
+        if (_diedEvents != 1)
         {
-            failures.Add($"EnemyDiedEventArgs 应恰好广播 1 次，实际 {m_DiedEvents}");
+            failures.Add($"EnemyDiedEventArgs 应恰好广播 1 次，实际 {_diedEvents}");
         }
 
-        if (m_DeathAiTime != m_Monster.AiData.ElapsedSeconds)
+        if (_deathAiTime != _monster.AiData.ElapsedSeconds)
         {
             failures.Add("死亡后仍在推进AI时钟");
         }
 
-        if (!m_HiddenAfterDeath)
+        if (!_hiddenAfterDeath)
         {
             failures.Add("死亡动画后猴子没有被回收（HideEntity）");
         }
 
-        GD.Print($"SMOKE-AI: AI 序列 {string.Join(" → ", m_AiObserved.ConvertAll(o => $"{o.Ai}@{o.Time:F2}"))}");
-        GD.Print($"SMOKE-AI: 动画序列 {string.Join(" → ", m_AnimObserved.ConvertAll(o => $"{o.Anim}@{o.Time:F2}"))}");
-        GD.Print($"SMOKE-AI: 猴子命中英雄 {m_HeroHitsByMonster} 次，英雄 HP {GF.Fsm.GetModel<HeroModel>().Hp.Value}/{GF.Fsm.GetModel<HeroModel>().MaxHp.Value}");
+        GD.Print($"SMOKE-AI: AI 序列 {string.Join(" → ", _aiObserved.ConvertAll(o => $"{o.Ai}@{o.Time:F2}"))}");
+        GD.Print($"SMOKE-AI: 动画序列 {string.Join(" → ", _animObserved.ConvertAll(o => $"{o.Anim}@{o.Time:F2}"))}");
+        GD.Print($"SMOKE-AI: 猴子命中英雄 {_heroHitsByMonster} 次，英雄 HP {GF.Fsm.GetModel<HeroModel>().Hp.Value}/{GF.Fsm.GetModel<HeroModel>().MaxHp.Value}");
         return failures;
     }
 
@@ -296,10 +290,10 @@ public sealed class EnemyAiSmokeScenario
     /// </summary>
     /// <param name="phase">下一烟测阶段。</param>
     /// <param name="t">当前烟测累计时间，单位为秒。</param>
-    private void Enter(EPhase phase, double t)
+    private void Enter(Phase phase, double t)
     {
-        m_Phase = phase;
-        m_PhaseStart = t;
+        _phase = phase;
+        _phaseStart = t;
         GD.Print($"SMOKE-AI[{t:F2}] 阶段 → {phase}");
     }
 
@@ -309,46 +303,46 @@ public sealed class EnemyAiSmokeScenario
     /// <param name="t">当前烟测累计时间，单位为秒。</param>
     private void UpdateTurnAround(double t)
     {
-        if (m_RecoveredAt >= 0 && m_Monster.Facing == -m_LockedFacing)
+        if (_recoveredAt >= 0 && _monster.Facing == -_lockedFacing)
         {
-            m_TurnedAfterRecovery = true;
+            _turnedAfterRecovery = true;
             StartAir(t);
             return;
         }
         // 忙碌期间只允许攻击动画和原朝向；恢复后等待 AI 转向英雄。
-        bool busy = m_Monster.AttackSegment >= 0 || SmokeInspection.InRecovery(m_Monster);
+        bool busy = _monster.AttackSegment >= 0 || SmokeInspection.InRecovery(_monster);
         if (busy)
         {
-            if (m_Monster.Facing != m_LockedFacing)
+            if (_monster.Facing != _lockedFacing)
             {
-                m_Failures.Add($"出招/收招硬直期间转身了（t={t:F2} seg={m_Monster.AttackSegment} 硬直={SmokeInspection.InRecovery(m_Monster)}）");
-                Enter(EPhase.Air, t);
+                _failures.Add($"出招/收招硬直期间转身了（t={t:F2} seg={_monster.AttackSegment} 硬直={SmokeInspection.InRecovery(_monster)}）");
+                Enter(Phase.Air, t);
                 return;
             }
 
-            if (m_Monster.AttackSegment >= 0 && !CurrentMonsterAnim().StartsWith("Attack/attack_"))
+            if (_monster.AttackSegment >= 0 && !CurrentMonsterAnim().StartsWith("Attack/attack_"))
             {
-                m_Failures.Add($"出招期间动画被切走：{CurrentMonsterAnim()}（t={t:F2}）");
+                _failures.Add($"出招期间动画被切走：{CurrentMonsterAnim()}（t={t:F2}）");
             }
 
             return;
         }
 
-        if (m_RecoveredAt < 0)
+        if (_recoveredAt < 0)
         {
-            m_RecoveredAt = t;
-            GD.Print($"SMOKE-AI[{t:F2}] 收招硬直结束（出招开始后 {t - m_PhaseStart:F2}s）");
+            _recoveredAt = t;
+            GD.Print($"SMOKE-AI[{t:F2}] 收招硬直结束（出招开始后 {t - _phaseStart:F2}s）");
         }
 
-        if (m_Monster.Facing == -m_LockedFacing)
+        if (_monster.Facing == -_lockedFacing)
         {
-            m_TurnedAfterRecovery = true;
-            GD.Print($"SMOKE-AI[{t:F2}] 硬直结束后 {t - m_RecoveredAt:F2}s 转向英雄");
+            _turnedAfterRecovery = true;
+            GD.Print($"SMOKE-AI[{t:F2}] 硬直结束后 {t - _recoveredAt:F2}s 转向英雄");
             StartAir(t);
         }
-        else if (t - m_RecoveredAt > TurnAroundWindow)
+        else if (t - _recoveredAt > TurnAroundWindow)
         {
-            m_Failures.Add($"收招硬直结束 {TurnAroundWindow}s 后仍未转向身后的英雄");
+            _failures.Add($"收招硬直结束 {TurnAroundWindow}s 后仍未转向身后的英雄");
             StartAir(t);
         }
     }
@@ -359,11 +353,11 @@ public sealed class EnemyAiSmokeScenario
     /// <param name="t">当前烟测累计时间，单位为秒。</param>
     private void StartAir(double t)
     {
-        m_HeroFloorY = m_Hero.GlobalPosition.Y;
-        m_AirX = m_Monster.GlobalPosition.X - m_Monster.Facing * AirOffsetX;
-        m_AirMinX = m_AirMaxX = m_Monster.GlobalPosition.X;
-        m_Hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
-        Enter(EPhase.Air, t);
+        _heroFloorY = _hero.GlobalPosition.Y;
+        _airX = _monster.GlobalPosition.X - _monster.Facing * AirOffsetX;
+        _airMinX = _airMaxX = _monster.GlobalPosition.X;
+        _hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
+        Enter(Phase.Air, t);
     }
 
     /// <summary>
@@ -375,32 +369,32 @@ public sealed class EnemyAiSmokeScenario
     {
         // 每帧锁定英雄位置并收集怪物在目标两侧的移动证据。
         // 每帧重设位置（本驱动器在实体物理之后处理：猴子下一帧读到的就是这个位置）
-        m_Hero.GlobalPosition = new Vector2(m_AirX, m_HeroFloorY - AirHeight);
-        m_Hero.Velocity = Vector2.Zero;
+        _hero.GlobalPosition = new Vector2(_airX, _heroFloorY - AirHeight);
+        _hero.Velocity = Vector2.Zero;
 
-        float mx = m_Monster.GlobalPosition.X;
-        m_AirMinX = Mathf.Min(m_AirMinX, mx);
-        m_AirMaxX = Mathf.Max(m_AirMaxX, mx);
-        m_SawUnreachableBehavior |= SmokeInspection.AiStateName(m_Monster) == "Engage";
-        if (attackStarted && t - m_PhaseStart > 0.1)
+        float mx = _monster.GlobalPosition.X;
+        _airMinX = Mathf.Min(_airMinX, mx);
+        _airMaxX = Mathf.Max(_airMaxX, mx);
+        _sawUnreachableBehavior |= SmokeInspection.AiStateName(_monster) == "Engage";
+        if (attackStarted && t - _phaseStart > 0.1)
         {
-            m_AirAttacks++;
-            GD.Print($"SMOKE-AI[{t:F2}] 英雄在头顶时猴子出招了（seg={m_Monster.AttackSegment}）");
+            _airAttacks++;
+            GD.Print($"SMOKE-AI[{t:F2}] 英雄在头顶时猴子出招了（seg={_monster.AttackSegment}）");
         }
 
-        if (t - m_PhaseStart < AirDuration)
+        if (t - _phaseStart < AirDuration)
         {
             return;
         }
 
-        GD.Print($"SMOKE-AI[{t:F2}] 守候踱步范围 x∈[{m_AirMinX:F0},{m_AirMaxX:F0}]（英雄 x={m_AirX:F0}）");
-        if (!m_SawUnreachableBehavior)
+        GD.Print($"SMOKE-AI[{t:F2}] 守候踱步范围 x∈[{_airMinX:F0},{_airMaxX:F0}]（英雄 x={_airX:F0}）");
+        if (!_sawUnreachableBehavior)
         {
-            m_Failures.Add($"英雄高度不可达时应保留交战状态并游荡，实际 {SmokeInspection.AiStateName(m_Monster)}");
+            _failures.Add($"英雄高度不可达时应保留交战状态并游荡，实际 {SmokeInspection.AiStateName(_monster)}");
         }
 
-        m_Hero.GlobalPosition = new Vector2(m_Monster.GlobalPosition.X + 30, m_HeroFloorY);
-        Enter(EPhase.WaitLanded, t);
+        _hero.GlobalPosition = new Vector2(_monster.GlobalPosition.X + 30, _heroFloorY);
+        Enter(Phase.WaitLanded, t);
     }
 
     /// <summary>
@@ -409,20 +403,20 @@ public sealed class EnemyAiSmokeScenario
     /// <param name="t">当前烟测累计时间，单位为秒。</param>
     private void UpdateLose(double t)
     {
-        m_Hero.GlobalPosition = new Vector2(m_Monster.GlobalPosition.X + LoseOffset, m_HeroFloorY);
-        m_Hero.Velocity = Vector2.Zero;
-        if (!((IEnemyAiAgent)m_Monster).HasTarget)
+        _hero.GlobalPosition = new Vector2(_monster.GlobalPosition.X + LoseOffset, _heroFloorY);
+        _hero.Velocity = Vector2.Zero;
+        if (!((IEnemyAiAgent)_monster).HasTarget)
         {
-            m_Failures.Add("离开视野错误清除了仍存活的目标");
-            Enter(EPhase.WaitKill, t);
+            _failures.Add("离开视野错误清除了仍存活的目标");
+            Enter(Phase.WaitKill, t);
         }
-        else if (t - m_PhaseStart > LoseTimeout)
+        else if (t - _phaseStart > LoseTimeout)
         {
-            m_RetainedTarget = true;
+            _retainedTarget = true;
             GD.Print($"SMOKE-AI[{t:F2}] 视野外{LoseTimeout}s仍保留目标，符合官方");
-            m_Hero.GlobalPosition = new Vector2(m_Monster.GlobalPosition.X + InSightOffset, m_HeroFloorY);
+            _hero.GlobalPosition = new Vector2(_monster.GlobalPosition.X + InSightOffset, _heroFloorY);
             HitMonster(1f, new Vector2(3, 0));
-            Enter(EPhase.WaitKill, t);
+            Enter(Phase.WaitKill, t);
         }
     }
 
@@ -431,10 +425,10 @@ public sealed class EnemyAiSmokeScenario
     /// </summary>
     private void CheckReach()
     {
-        Rect2 bounds = ((IEnemyAiAgent)m_Monster).EngageBounds;
+        Rect2 bounds = ((IEnemyAiAgent)_monster).EngageBounds;
         if (bounds != new Rect2(-80, -160, 160, 320))
         {
-            m_Failures.Add($"猴子场景交战范围错误：{bounds}");
+            _failures.Add($"猴子场景交战范围错误：{bounds}");
         }
     }
 
@@ -442,10 +436,7 @@ public sealed class EnemyAiSmokeScenario
     /// 返回猴子身体状态与当前动画树节点的组合路径。
     /// </summary>
     /// <returns>当前身体状态与动画树节点的组合路径。</returns>
-    private string CurrentMonsterAnim()
-    {
-        return SmokeTestDriver.ObservePath(SmokeInspection.BodyStateName(m_Monster), m_Monster.AnimPlayer.AssignedAnimation.ToString());
-    }
+    private string CurrentMonsterAnim() => SmokeTestDriver.ObservePath(SmokeInspection.BodyStateName(_monster), _monster.AnimPlayer.AssignedAnimation.ToString());
 
     /// <summary>
     /// 记录 AI、动画变化及死亡后的实体回收。
@@ -454,37 +445,37 @@ public sealed class EnemyAiSmokeScenario
     private void Sample(double t)
     {
         // 先捕获死亡回收，再在实体仍可见时采样状态序列。
-        if (!m_HiddenAfterDeath && m_DiedEvents > 0 && !m_Monster.IsShown)
+        if (!_hiddenAfterDeath && _diedEvents > 0 && !_monster.IsShown)
         {
-            m_HiddenAfterDeath = true;
+            _hiddenAfterDeath = true;
             GD.Print($"SMOKE-AI[{t:F2}] 猴子已回收");
         }
 
-        if (!m_Monster.IsShown)
+        if (!_monster.IsShown)
         {
             return;
         }
 
-        string ai = SmokeInspection.AiStateName(m_Monster);
-        if (ai.Length > 0 && ai != m_LastAi)
+        string ai = SmokeInspection.AiStateName(_monster);
+        if (ai.Length > 0 && ai != _lastAi)
         {
-            m_LastAi = ai;
-            m_AiObserved.Add((t, ai));
+            _lastAi = ai;
+            _aiObserved.Add((t, ai));
             if (t < InSightAt)
             {
-                m_AiBeforeSight.Add((t, ai));
+                _aiBeforeSight.Add((t, ai));
             }
 
-            GD.Print($"SMOKE-AI[{t:F2}] AI {ai}  (dx={m_Hero.GlobalPosition.X - m_Monster.GlobalPosition.X:F0} "
-                + $"move={((IEnemyBody)m_Monster).MoveIntent} body={SmokeInspection.BodyStateName(m_Monster)} seg={m_Monster.AttackSegment} dead={m_Monster.Dead})");
+            GD.Print($"SMOKE-AI[{t:F2}] AI {ai}  (dx={_hero.GlobalPosition.X - _monster.GlobalPosition.X:F0} "
+                + $"move={((IEnemyBody)_monster).MoveIntent} body={SmokeInspection.BodyStateName(_monster)} seg={_monster.AttackSegment} dead={_monster.Dead})");
         }
 
         string anim = CurrentMonsterAnim();
-        if (anim.Length > 0 && anim != m_LastAnim)
+        if (anim.Length > 0 && anim != _lastAnim)
         {
-            m_LastAnim = anim;
-            m_AnimObserved.Add((t, anim));
-            GD.Print($"SMOKE-AI[{t:F2}] 猴子动画 {anim}  (facing={m_Monster.Facing} 硬直={SmokeInspection.InRecovery(m_Monster)})");
+            _lastAnim = anim;
+            _animObserved.Add((t, anim));
+            GD.Print($"SMOKE-AI[{t:F2}] 猴子动画 {anim}  (facing={_monster.Facing} 硬直={SmokeInspection.InRecovery(_monster)})");
         }
     }
 
@@ -494,10 +485,10 @@ public sealed class EnemyAiSmokeScenario
     /// <param name="offset">怪物相对英雄的水平偏移，单位为像素。</param>
     private void Teleport(float offset)
     {
-        Vector2 pos = new Vector2(m_Hero.GlobalPosition.X + offset, m_Monster.GlobalPosition.Y);
-        m_Monster.GlobalPosition = pos;
-        m_Monster.Velocity = Vector2.Zero;
-        GD.Print($"SMOKE-AI: 猴子挪到 x={pos.X:F0}（英雄 x={m_Hero.GlobalPosition.X:F0}）");
+        var pos = new Vector2(_hero.GlobalPosition.X + offset, _monster.GlobalPosition.Y);
+        _monster.GlobalPosition = pos;
+        _monster.Velocity = Vector2.Zero;
+        GD.Print($"SMOKE-AI: 猴子挪到 x={pos.X:F0}（英雄 x={_hero.GlobalPosition.X:F0}）");
     }
 
     /// <summary>
@@ -508,8 +499,8 @@ public sealed class EnemyAiSmokeScenario
     private void HitMonster(float power, Vector2 knockback)
     {
         // 攻击数据只在结算期间持有，完成后立即归还引用池。
-        AttackData data = AttackData.Create(0, default, power, EDamageKind.Real, knockback, 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(m_Hero.Id, GameConfig.Entity.EEntityId.None, 0, 0));
-        m_Monster.ReceiveHit(data);
+        var data = AttackData.Create(0, default, power, DamageKind.Real, knockback, 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(_hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
+        _monster.ReceiveHit(data);
         ReferencePool.Release(data);
     }
 
@@ -520,10 +511,10 @@ public sealed class EnemyAiSmokeScenario
     /// <param name="args">当前同步回调借用的事件参数。</param>
     private void OnDamageDealt(object sender, GameEventArgs args)
     {
-        if (args is DamageDealtEventArgs e && ReferenceEquals(sender, m_Hero) &&
+        if (args is DamageDealtEventArgs e && ReferenceEquals(sender, _hero) &&
             !e.Result.IsMiss)
         {
-            m_HeroHitsByMonster++;
+            _heroHitsByMonster++;
         }
     }
 
@@ -534,13 +525,13 @@ public sealed class EnemyAiSmokeScenario
     /// <param name="args">当前同步回调借用的事件参数。</param>
     private void OnEnemyDied(object sender, GameEventArgs args)
     {
-        if (args is EnemyDiedEventArgs e && e.EntityId == m_MonsterId)
+        if (args is EnemyDiedEventArgs e && e.EntityId == _monsterId)
         {
-            m_DiedEvents++;
-            m_DeathAiTime = m_Monster.AiData.ElapsedSeconds;
-            if (SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(m_Monster, "m_AiFsm") != null)
+            _diedEvents++;
+            _deathAiTime = _monster.AiData.ElapsedSeconds;
+            if (SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(_monster, "AiFsm") != null)
             {
-                m_Failures.Add("身体进入死亡后AI状态机仍未释放");
+                _failures.Add("身体进入死亡后AI状态机仍未释放");
             }
         }
     }
@@ -572,7 +563,7 @@ public sealed class EnemyAiSmokeScenario
     /// <summary>
     /// AI 烟测的阶段状态。
     /// </summary>
-    private enum EPhase
+    private enum Phase
     {
         /// <summary>
         /// 怪物位于英雄视野外。

@@ -7,16 +7,16 @@
 [sub_resource type="RectangleShape2D" id="item_shape"]
 size = Vector2(32, 40)
 
-[node name="GroundItem" type="CharacterBody2D" unique_id=39514946 node_paths=PackedStringArray("m_Icon", "m_PickupAnimation", "m_Shape")]
+[node name="GroundItem" type="CharacterBody2D" unique_id=39514946 node_paths=PackedStringArray("_icon", "_pickupAnimation", "_shape")]
 z_index = 4
 collision_layer = 0
 collision_mask = 9
 script = ExtResource("script")
-m_Icon = NodePath("Icon")
-m_PickupAnimation = NodePath("AnimationPlayer")
-m_Shape = NodePath("Shape")
-m_Appearances = ExtResource("appearances")
-m_Gravity = 980.0
+_icon = NodePath("Icon")
+_pickupAnimation = NodePath("AnimationPlayer")
+_shape = NodePath("Shape")
+_appearances = ExtResource("appearances")
+_gravity = 980.0
 
 [node name="Shape" type="CollisionShape2D" parent="." unique_id=1174947348]
 position = Vector2(0, -20)

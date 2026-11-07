@@ -101,11 +101,11 @@ func _run() -> void:
     var samples := 0
     var energy_samples := [0, 0, 0, 0, 0]
     var lingering_samples := [0, 0, 0, 0, 0]
-    var body_textures: Array[Texture2D] = [appearance.get("m_BaseBody")]
-    var weapon_textures: Array[Texture2D] = [appearance.get("m_BaseWeapon")]
-    for texture in (appearance.get("m_ArmorTextures") as Dictionary).values():
+    var body_textures: Array[Texture2D] = [appearance.get("_baseBody")]
+    var weapon_textures: Array[Texture2D] = [appearance.get("_baseWeapon")]
+    for texture in (appearance.get("_armorTextures") as Dictionary).values():
         if not body_textures.has(texture): body_textures.append(texture)
-    for texture in (appearance.get("m_WeaponTextures") as Dictionary).values():
+    for texture in (appearance.get("_weaponTextures") as Dictionary).values():
         if not weapon_textures.has(texture): weapon_textures.append(texture)
     # Weapon/energy geometry is independent of armor; full motion/GUI audits cover all body pairings.
     # Keep the default full-combination audit available for art changes that affect those pairings.

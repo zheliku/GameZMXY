@@ -23,31 +23,31 @@ func _register() -> void:
     assert(ResourceSaver.save(pool, pool_path) == OK)
     var path := "res://TheGame/Sprites/Items/item_appearances.tres"
     var library: Resource = load(path)
-    var items: Array = library.get("m_Items")
-    var matches := items.filter(func(item): return int(item.get("m_EquipmentId")) == 22)
+    var items: Array = library.get("_items")
+    var matches := items.filter(func(item): return int(item.get("_equipmentId")) == 22)
     assert(matches.size() <= 1, "Duplicate BloodSeaShell appearance")
     var item: Resource = load("res://TheGame/GameScripts/Models/Profile/ItemAppearanceResource.cs").new() if matches.is_empty() else matches[0]
-    item.set("m_EquipmentId", 22)
-    item.set("m_InventoryIcon", load("res://TheGame/Sprites/Items/equipment/equipment_blood_sea_shell.png"))
-    item.set("m_GroundIcon", load("res://TheGame/Sprites/Items/equipment/ground_blood_sea_shell.png"))
-    assert(item.get("m_InventoryIcon") != null and item.get("m_GroundIcon") != null)
+    item.set("_equipmentId", 22)
+    item.set("_inventoryIcon", load("res://TheGame/Sprites/Items/equipment/equipment_blood_sea_shell.png"))
+    item.set("_groundIcon", load("res://TheGame/Sprites/Items/equipment/ground_blood_sea_shell.png"))
+    assert(item.get("_inventoryIcon") != null and item.get("_groundIcon") != null)
     if matches.is_empty():
         items.append(item)
-    library.set("m_Items", items)
+    library.set("_items", items)
     assert(ResourceSaver.save(library, path) == OK)
     for scene_path in [
         "res://TheGame/Entitys/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_entity.tscn",
         "res://TheGame/Entitys/Enemies/Monsters/Sea/lantern_fish/lantern_fish_entity.tscn"]:
         var packed: PackedScene = load(scene_path)
         var actor: Node = packed.instantiate()
-        if actor.get("m_EnemyEntityId") == 10:
-            actor.set("m_DragonWaveScene", load(projectile_path))
-            actor.set("m_DeathScene", load("res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn"))
-            actor.set("m_BackHit", actor.get_node("m_BackHit"))
-            for field in ["m_DragonWaveScene", "m_DeathScene", "m_BackHit"]:
+        if actor.get("_enemyEntityId") == 10:
+            actor.set("_dragonWaveScene", load(projectile_path))
+            actor.set("DeathScene", load("res://TheGame/Entitys/Enemies/Bosses/zm1_06_garuda_cave/boss_death_effect.tscn"))
+            actor.set("_backHit", actor.get_node("m_BackHit"))
+            for field in ["_dragonWaveScene", "DeathScene", "_backHit"]:
                 assert(actor.get(field) != null, scene_path + " missing " + field)
         load("res://EditorScripts/enemy_perception_authoring.gd").configure(actor)
-        for field in ["m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"]:
+        for field in ["_perception", "_body", "_animPlayer", "_hurtBox", "_hitBox", "_hitBoxRoot"]:
             assert(actor.get(field) != null, scene_path + " missing " + field)
         assert(packed.pack(actor) == OK)
         assert(ResourceSaver.save(packed, scene_path) == OK)

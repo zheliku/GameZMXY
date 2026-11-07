@@ -13,16 +13,16 @@ func _repair() -> void:
     for path in paths:
         var uid := ResourceLoader.get_resource_uid(path)
         var entity: Node = load(path).instantiate()
-        if entity.get("m_HealthBar") == null or OS.get_cmdline_user_args().has("--author-positions"):
+        if entity.get("HealthBar") == null or OS.get_cmdline_user_args().has("--author-positions"):
             var bar: Control = entity.get_node_or_null("m_HealthBar")
             if bar == null:
                 bar = bar_scene.instantiate()
                 bar.name = "m_HealthBar"
                 entity.add_child(bar)
                 bar.owner = entity
-            entity.set("m_HealthBar", bar)
+            entity.set("HealthBar", bar)
             # Position is authored once. Runtime only updates value, visibility and fade.
-            var hurt: Area2D = entity.get("m_HurtBox")
+            var hurt: Area2D = entity.get("_hurtBox")
             var bounds := Rect2()
             var any := false
             for child in hurt.get_children():

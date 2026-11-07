@@ -7,10 +7,10 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_h0joe"]
 size = Vector2(289, 101)
 
-[node name="LionCamelPoisonCloudEffect" type="Node2D" unique_id=958094195 node_paths=PackedStringArray("m_Player", "m_HitBox")]
+[node name="LionCamelPoisonCloudEffect" type="Node2D" unique_id=958094195 node_paths=PackedStringArray("_player", "_hitBox")]
 script = ExtResource("1_j0s3y")
-m_Player = NodePath("AnimationPlayer")
-m_HitBox = NodePath("HitBox")
+_player = NodePath("AnimationPlayer")
+_hitBox = NodePath("HitBox")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1262798460]
 sprite_frames = ExtResource("2_43o3w")

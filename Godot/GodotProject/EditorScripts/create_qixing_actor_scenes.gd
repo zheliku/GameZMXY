@@ -41,15 +41,15 @@ func _build_actor(actor: Dictionary) -> bool:
 	var root: CharacterBody2D = load("res://TheGame/Entitys/Enemies/Monsters/Ground/gorilla/gorilla_entity.tscn").instantiate()
 	root.name = info.script
 	root.set_script(load("res://TheGame/GameScripts/Entity/Enemies/%s/%s.cs" % [folder, info.script]))
-	root.set("m_Perception", root.get_node("Perception"))
-	root.set("m_EnemyEntityId", info.id)
-	root.set("m_HealthBar", root.get_node("m_HealthBar"))
-	root.set("m_Body", root.get_node("m_Body"))
-	root.set("m_AnimPlayer", root.get_node("m_AnimPlayer"))
-	root.set("m_AttackAnimations", PackedStringArray(info.attacks))
-	root.set("m_HurtBox", root.get_node("m_HurtBox"))
-	root.set("m_HitBox", root.get_node("m_HitBoxRoot/m_HitBox"))
-	root.set("m_HitBoxRoot", root.get_node("m_HitBoxRoot"))
+	root.set("_perception", root.get_node("Perception"))
+	root.set("_enemyEntityId", info.id)
+	root.set("HealthBar", root.get_node("m_HealthBar"))
+	root.set("_body", root.get_node("m_Body"))
+	root.set("_animPlayer", root.get_node("m_AnimPlayer"))
+	root.set("_attackAnimations", PackedStringArray(info.attacks))
+	root.set("_hurtBox", root.get_node("m_HurtBox"))
+	root.set("_hitBox", root.get_node("m_HitBoxRoot/m_HitBox"))
+	root.set("_hitBoxRoot", root.get_node("m_HitBoxRoot"))
 	var layer: Dictionary = actor.layers[0]
 	# Normalize the one previously emitted manifest before scene authoring; new
 	# manifests always store the path on the layer itself.
@@ -134,7 +134,7 @@ func _build_actor(actor: Dictionary) -> bool:
 	root.get_node("m_AnimPlayer").add_animation_library("", library)
 	root.get_node("m_AnimPlayer").callback_mode_method = AnimationMixer.ANIMATION_CALLBACK_MODE_METHOD_IMMEDIATE
 	var packed := PackedScene.new()
-	if root.get("m_EnemyEntityId") != null:
+	if root.get("_enemyEntityId") != null:
 		load("res://EditorScripts/enemy_perception_authoring.gd").configure(root)
 	assert(packed.pack(root) == OK and ResourceSaver.save(packed, entity_path) == OK)
 	root.free()
@@ -189,8 +189,8 @@ func _build_effect(effect: Dictionary) -> bool:
 	player.callback_mode_method = AnimationMixer.ANIMATION_CALLBACK_MODE_METHOD_IMMEDIATE
 	root.add_child(player)
 	player.owner = root
-	root.set("m_Player", player)
-	root.set("m_HitBox", hitbox)
+	root.set("_player", player)
+	root.set("_hitBox", hitbox)
 
 	var action: Dictionary = effect.actions[0]
 	var animation := Animation.new()
@@ -223,7 +223,7 @@ func _build_effect(effect: Dictionary) -> bool:
 	var scene_path: String = "res://TheGame/Entitys/Enemies/" + folder + "/" + String(effect.name) + "_effect.tscn"
 	DirAccess.make_dir_recursive_absolute(scene_path.get_base_dir())
 	var packed := PackedScene.new()
-	if root.get("m_EnemyEntityId") != null:
+	if root.get("_enemyEntityId") != null:
 		load("res://EditorScripts/enemy_perception_authoring.gd").configure(root)
 	assert(packed.pack(root) == OK and ResourceSaver.save(packed, scene_path) == OK)
 	root.free()

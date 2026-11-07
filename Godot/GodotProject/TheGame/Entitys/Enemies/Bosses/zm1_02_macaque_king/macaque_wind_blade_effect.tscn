@@ -7,10 +7,10 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ub8kb"]
 size = Vector2(98, 126)
 
-[node name="MacaqueWindBlade" type="Node2D" unique_id=1539196503 node_paths=PackedStringArray("m_Player", "m_HitBox")]
+[node name="MacaqueWindBlade" type="Node2D" unique_id=1539196503 node_paths=PackedStringArray("_player", "_hitBox")]
 script = ExtResource("1_imeaf")
-m_Player = NodePath("AnimationPlayer")
-m_HitBox = NodePath("HitBox")
+_player = NodePath("AnimationPlayer")
+_hitBox = NodePath("HitBox")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=151489019]
 sprite_frames = ExtResource("2_oxet1")

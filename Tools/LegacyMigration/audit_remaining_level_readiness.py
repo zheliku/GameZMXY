@@ -185,7 +185,7 @@ def _enum_map(config_dir):
     for row in xlsx_rows(config_dir / "__enums__.xlsx")["Sheet1"]:
         cells = _cells(row)
         active = cells.get("B") or active
-        if active != "Entity.EEntityId" or not cells.get("H") or not cells.get("J"):
+        if active != "Entity.EntityId" or not cells.get("H") or not cells.get("J"):
             continue
         # Formal source tables use the Chinese alias; C# keeps the stable H name.
         result[int(cells["J"])] = cells.get("I") or cells["H"]
@@ -274,7 +274,7 @@ def _drop_audit(required_ids, actors, equipment, appearances, project):
         if appearance is None:
             errors.append(f"Drop {legacy} has no appearance entry")
             continue
-        for field in ("m_InventoryIcon", "m_GroundIcon"):
+        for field in ("_inventoryIcon", "_groundIcon"):
             texture = _texture_report(project, appearance["textures"].get(field))
             if texture.get("error"):
                 errors.append(f"Drop {legacy}/{field}: {texture['error']}")

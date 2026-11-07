@@ -45,7 +45,7 @@ static func _vertical(actor: Node, area: Area2D, label: String, radius: float) -
     return node
 
 static func configure(actor: Node) -> void:
-    var id: int = actor.get("m_EnemyEntityId")
+    var id: int = actor.get("_enemyEntityId")
     assert(ENGAGE.has(id))
     var area := actor.get_node_or_null("Perception") as Area2D
     if area == null:
@@ -54,7 +54,7 @@ static func configure(actor: Node) -> void:
     area.set_script(load("res://TheGame/GameScripts/Entity/Enemies/Perception/EnemyPerceptionNode.cs"))
     var detection: CollisionShape2D = area.get_child(0)
     detection.name = "Detection"
-    area.set("m_DetectionShape", detection)
+    area.set("_detectionShape", detection)
     var engage := _shape(actor, area, "Engage", ENGAGE[id] * 2)
     if id == 9:
         var circle := CircleShape2D.new()
@@ -62,33 +62,33 @@ static func configure(actor: Node) -> void:
         engage.shape = circle
     if id in [14, 23, 26]:
         engage = _horizontal(actor, area, "Engage", ENGAGE[id].x)
-    area.set("m_EngageShape", engage)
-    area.set("m_PatrolShape", _horizontal(actor, area, "Patrol", 400))
+    area.set("_engageShape", engage)
+    area.set("_patrolShape", _horizontal(actor, area, "Patrol", 400))
     if id == 22:
         area.get_node("Patrol").shape.a = Vector2(-360, 0)
     if id in [21, 22, 24]:
-        area.set("m_EngageShape", null)
+        area.set("_engageShape", null)
         engage.free()
     if id in [21, 24]:
         var unused_patrol := area.get_node("Patrol")
-        area.set("m_PatrolShape", null)
+        area.set("_patrolShape", null)
         unused_patrol.free()
-    actor.set("m_Perception", area)
+    actor.set("_perception", area)
     if id in [8, 15, 18]:
-        actor.set("m_TrackingRange", _vertical(actor, area, "Tracking", 900))
+        actor.set("_trackingRange", _vertical(actor, area, "Tracking", 900))
     elif id == 14:
-        actor.set("m_RetreatRange", _horizontal(actor, area, "Retreat", 200))
+        actor.set("_retreatRange", _horizontal(actor, area, "Retreat", 200))
     elif id == 9:
         var melee := _shape(actor, area, "Melee", Vector2(300, 300))
         var circle := CircleShape2D.new()
         circle.radius = 150
         melee.shape = circle
-        actor.set("m_MeleeRange", melee)
-        actor.set("m_TrackingRange", _vertical(actor, area, "Tracking", 800))
+        actor.set("_meleeRange", melee)
+        actor.set("_trackingRange", _vertical(actor, area, "Tracking", 800))
     elif id == 26:
-        actor.set("m_WaterColumnRange", _horizontal(actor, area, "WaterColumn", 100))
+        actor.set("_waterColumnRange", _horizontal(actor, area, "WaterColumn", 100))
     elif id == 23:
-        actor.set("m_SwallowRange", _horizontal(actor, area, "Swallow", 80))
-        actor.set("m_StompRange", _horizontal(actor, area, "Stomp", 100))
-        actor.set("m_CaptureRange", _horizontal(actor, area, "Capture", 200))
+        actor.set("_swallowRange", _horizontal(actor, area, "Swallow", 80))
+        actor.set("_stompRange", _horizontal(actor, area, "Stomp", 100))
+        actor.set("_captureRange", _horizontal(actor, area, "Capture", 200))
     CollisionStyles.apply(actor)

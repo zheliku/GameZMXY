@@ -8,16 +8,16 @@
 [ext_resource type="Texture2D" uid="uid://dvy06abgohsl8" path="res://TheGame/Sprites/Number/recovery_number_health.png" id="health"]
 [ext_resource type="Texture2D" uid="uid://bdnjsjotteuu6" path="res://TheGame/Sprites/Number/recovery_number_mana.png" id="mana"]
 
-[node name="FloatingTextNode" type="Node2D" unique_id=224632249 node_paths=PackedStringArray("m_Miss", "m_Content")]
+[node name="FloatingTextNode" type="Node2D" unique_id=224632249 node_paths=PackedStringArray("_miss", "_content")]
 z_index = 100
 script = ExtResource("1_script")
-m_EnemyDamage = ExtResource("2_mp")
-m_EnemyCritical = ExtResource("3_mpc")
-m_HeroDamage = ExtResource("7_hm")
-m_Health = ExtResource("health")
-m_Mana = ExtResource("mana")
-m_Miss = NodePath("m_Content/m_Miss")
-m_Content = NodePath("m_Content")
+_enemyDamage = ExtResource("2_mp")
+_enemyCritical = ExtResource("3_mpc")
+_heroDamage = ExtResource("7_hm")
+_health = ExtResource("health")
+_mana = ExtResource("mana")
+_miss = NodePath("m_Content/m_Miss")
+_content = NodePath("m_Content")
 
 [node name="m_Content" type="Node2D" parent="." unique_id=2117150614]
 

@@ -88,143 +88,143 @@ _data = {
 
 [sub_resource type="Resource" id="Resource_v77um"]
 script = ExtResource("10_v8tj1")
-m_Id = "player_start"
-m_Node = NodePath("PlayerStart")
+_id = "player_start"
+_node = NodePath("PlayerStart")
 
 [sub_resource type="Resource" id="Resource_h2fqv"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_1_a"
-m_Node = NodePath("Stage1A")
+_id = "stage_1_a"
+_node = NodePath("Stage1A")
 
 [sub_resource type="Resource" id="Resource_0ivns"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_2_a"
-m_Node = NodePath("Stage2A")
+_id = "stage_2_a"
+_node = NodePath("Stage2A")
 
 [sub_resource type="Resource" id="Resource_emnlr"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_4_a"
-m_Node = NodePath("Stage4A")
+_id = "stage_4_a"
+_node = NodePath("Stage4A")
 
 [sub_resource type="Resource" id="Resource_4qkxi"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_5_a"
-m_Node = NodePath("Stage5A")
+_id = "stage_5_a"
+_node = NodePath("Stage5A")
 
 [sub_resource type="Resource" id="Resource_p0hfg"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_4_b"
-m_Node = NodePath("Stage4B")
+_id = "stage_4_b"
+_node = NodePath("Stage4B")
 
 [sub_resource type="Resource" id="Resource_aykyt"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_4_c"
-m_Node = NodePath("Stage4C")
+_id = "stage_4_c"
+_node = NodePath("Stage4C")
 
 [sub_resource type="Resource" id="Resource_d1535"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_2_b"
-m_Node = NodePath("Stage2B")
+_id = "stage_2_b"
+_node = NodePath("Stage2B")
 
 [sub_resource type="Resource" id="Resource_ojb35"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_3_a"
-m_Node = NodePath("Stage3A")
+_id = "stage_3_a"
+_node = NodePath("Stage3A")
 
 [sub_resource type="Resource" id="Resource_h1jmf"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_3_b"
-m_Node = NodePath("Stage3B")
+_id = "stage_3_b"
+_node = NodePath("Stage3B")
 
 [sub_resource type="Resource" id="Resource_k5f75"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_3_c"
-m_Node = NodePath("Stage3C")
+_id = "stage_3_c"
+_node = NodePath("Stage3C")
 
 [sub_resource type="Resource" id="Resource_wbwwp"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_1_b"
-m_Node = NodePath("Stage1B")
+_id = "stage_1_b"
+_node = NodePath("Stage1B")
 
 [sub_resource type="Resource" id="Resource_mj1i1"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_2_c"
-m_Node = NodePath("Stage2C")
+_id = "stage_2_c"
+_node = NodePath("Stage2C")
 
 [sub_resource type="Resource" id="Resource_vkt06"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_2_d"
-m_Node = NodePath("Stage2D")
+_id = "stage_2_d"
+_node = NodePath("Stage2D")
 
 [sub_resource type="Resource" id="Resource_qs00p"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_2_e"
-m_Node = NodePath("Stage2E")
+_id = "stage_2_e"
+_node = NodePath("Stage2E")
 
 [sub_resource type="Resource" id="Resource_mrr0x"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_3_d"
-m_Node = NodePath("Stage3D")
+_id = "stage_3_d"
+_node = NodePath("Stage3D")
 
 [sub_resource type="Resource" id="Resource_cwk62"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_3_e"
-m_Node = NodePath("Stage3E")
+_id = "stage_3_e"
+_node = NodePath("Stage3E")
 
 [sub_resource type="Resource" id="Resource_55j6u"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_4_d"
-m_Node = NodePath("Stage4D")
+_id = "stage_4_d"
+_node = NodePath("Stage4D")
 
 [sub_resource type="Resource" id="Resource_vnnkc"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_4_e"
-m_Node = NodePath("Stage4E")
+_id = "stage_4_e"
+_node = NodePath("Stage4E")
 
 [sub_resource type="Resource" id="Resource_fi0vh"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_1_gate"
-m_Node = NodePath("Stage1Gate")
+_id = "stage_1_gate"
+_node = NodePath("Stage1Gate")
 
 [sub_resource type="Resource" id="Resource_l26k6"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_4_left"
-m_Node = NodePath("Stage4Left")
+_id = "stage_4_left"
+_node = NodePath("Stage4Left")
 
 [sub_resource type="Resource" id="Resource_geft0"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_4_gate"
-m_Node = NodePath("Stage4Gate")
+_id = "stage_4_gate"
+_node = NodePath("Stage4Gate")
 
 [sub_resource type="Resource" id="Resource_o3d0r"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_5_left"
-m_Node = NodePath("Stage5Left")
+_id = "stage_5_left"
+_node = NodePath("Stage5Left")
 
 [sub_resource type="Resource" id="Resource_pt40o"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_5_gate"
-m_Node = NodePath("Stage5Gate")
+_id = "stage_5_gate"
+_node = NodePath("Stage5Gate")
 
 [sub_resource type="Resource" id="Resource_peyc0"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_2_left"
-m_Node = NodePath("Stage2Left")
+_id = "stage_2_left"
+_node = NodePath("Stage2Left")
 
 [sub_resource type="Resource" id="Resource_6ov3j"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_2_gate"
-m_Node = NodePath("Stage2Gate")
+_id = "stage_2_gate"
+_node = NodePath("Stage2Gate")
 
 [sub_resource type="Resource" id="Resource_aang1"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_3_left"
-m_Node = NodePath("Stage3Left")
+_id = "stage_3_left"
+_node = NodePath("Stage3Left")
 
 [sub_resource type="Resource" id="Resource_xbwtq"]
 script = ExtResource("10_v8tj1")
-m_Id = "stage_3_gate"
-m_Node = NodePath("Stage3Gate")
+_id = "stage_3_gate"
+_node = NodePath("Stage3Gate")
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1w3sd"]
 size = Vector2(20, 1800)
@@ -280,20 +280,20 @@ size = Vector2(499.9512, 50.000328)
 [sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
 size = Vector2(8, 4000)
 
-[node name="Level_2" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText", "m_HiddenEntrance", "m_EntranceFade")]
+[node name="Level_2" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("_spawnPoints", "_triggers", "_gates", "_spawner", "_camera", "_exit", "_floatingText", "_hiddenEntrance", "_entranceFade")]
 script = ExtResource("1_0i2t0")
-m_MusicId = 1002
-m_LevelId = 2
-m_SpawnPoints = NodePath("World/SpawnPoints")
-m_Triggers = NodePath("World/StageTriggers")
-m_Gates = NodePath("World/StageGates")
-m_Spawner = NodePath("Spawner")
-m_Camera = NodePath("Camera2D")
-m_Exit = NodePath("World/Exit")
-m_FloatingText = NodePath("World/FloatingText")
-m_FeaturedOpponentSpawnPointIds = PackedStringArray("stage_5_a")
-m_HiddenEntrance = NodePath("World/DragonPalaceEntrance")
-m_EntranceFade = NodePath("EntranceFade")
+_musicId = 1002
+_levelId = 2
+_spawnPoints = NodePath("World/SpawnPoints")
+_triggers = NodePath("World/StageTriggers")
+_gates = NodePath("World/StageGates")
+_spawner = NodePath("Spawner")
+_camera = NodePath("Camera2D")
+_exit = NodePath("World/Exit")
+_floatingText = NodePath("World/FloatingText")
+_featuredOpponentSpawnPointIds = PackedStringArray("stage_5_a")
+_hiddenEntrance = NodePath("World/DragonPalaceEntrance")
+_entranceFade = NodePath("EntranceFade")
 
 [node name="World" type="Node2D" parent="." unique_id=219105317]
 
@@ -487,7 +487,7 @@ autoplay = &"flow"
 [node name="SpawnPoints" type="Node2D" parent="World" unique_id=773829097]
 z_index = 200
 script = ExtResource("9_m6fs8")
-m_Entries = Array[ExtResource("10_v8tj1")]([SubResource("Resource_v77um"), SubResource("Resource_h2fqv"), SubResource("Resource_0ivns"), SubResource("Resource_emnlr"), SubResource("Resource_4qkxi"), SubResource("Resource_p0hfg"), SubResource("Resource_aykyt"), SubResource("Resource_d1535"), SubResource("Resource_ojb35"), SubResource("Resource_h1jmf"), SubResource("Resource_k5f75"), SubResource("Resource_wbwwp"), SubResource("Resource_mj1i1"), SubResource("Resource_vkt06"), SubResource("Resource_qs00p"), SubResource("Resource_mrr0x"), SubResource("Resource_cwk62"), SubResource("Resource_55j6u"), SubResource("Resource_vnnkc")])
+_entries = Array[ExtResource("10_v8tj1")]([SubResource("Resource_v77um"), SubResource("Resource_h2fqv"), SubResource("Resource_0ivns"), SubResource("Resource_emnlr"), SubResource("Resource_4qkxi"), SubResource("Resource_p0hfg"), SubResource("Resource_aykyt"), SubResource("Resource_d1535"), SubResource("Resource_ojb35"), SubResource("Resource_h1jmf"), SubResource("Resource_k5f75"), SubResource("Resource_wbwwp"), SubResource("Resource_mj1i1"), SubResource("Resource_vkt06"), SubResource("Resource_qs00p"), SubResource("Resource_mrr0x"), SubResource("Resource_cwk62"), SubResource("Resource_55j6u"), SubResource("Resource_vnnkc")])
 
 [node name="PlayerStart" type="Marker2D" parent="World/SpawnPoints" unique_id=1301574526]
 position = Vector2(300, 300)
@@ -553,8 +553,8 @@ script = ExtResource("11_2ggsk")
 [node name="StageGates" type="Node2D" parent="World" unique_id=429529906]
 z_index = 200
 script = ExtResource("12_jp8yd")
-m_Entries = Array[ExtResource("10_v8tj1")]([SubResource("Resource_fi0vh"), SubResource("Resource_l26k6"), SubResource("Resource_geft0"), SubResource("Resource_o3d0r"), SubResource("Resource_pt40o"), SubResource("Resource_peyc0"), SubResource("Resource_6ov3j"), SubResource("Resource_aang1"), SubResource("Resource_xbwtq")])
-m_MarkerSize = 350.0
+_entries = Array[ExtResource("10_v8tj1")]([SubResource("Resource_fi0vh"), SubResource("Resource_l26k6"), SubResource("Resource_geft0"), SubResource("Resource_o3d0r"), SubResource("Resource_pt40o"), SubResource("Resource_peyc0"), SubResource("Resource_6ov3j"), SubResource("Resource_aang1"), SubResource("Resource_xbwtq")])
+_markerSize = 350.0
 
 [node name="Stage1Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1947586231]
 position = Vector2(1004.4, 295)
@@ -755,7 +755,7 @@ shape = SubResource("RectangleShape2D_ytfb2")
 [node name="Spawner" type="Node" parent="." unique_id=605185327]
 script = ExtResource("15_xx51u")
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=958629535 node_paths=PackedStringArray("m_LeftPlayerWall", "m_RightPlayerWall")]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=958629535 node_paths=PackedStringArray("_leftPlayerWall", "_rightPlayerWall")]
 z_index = 200
 position = Vector2(470, 295)
 limit_left = 0
@@ -763,8 +763,8 @@ limit_top = 0
 limit_right = 4700
 limit_bottom = 590
 script = ExtResource("16_fwr6c")
-m_LeftPlayerWall = NodePath("PlayerScreenWalls/Left")
-m_RightPlayerWall = NodePath("PlayerScreenWalls/Right")
+_leftPlayerWall = NodePath("PlayerScreenWalls/Left")
+_rightPlayerWall = NodePath("PlayerScreenWalls/Right")
 
 [node name="PlayerScreenWalls" type="StaticBody2D" parent="Camera2D" unique_id=2023691008]
 collision_layer = 8192

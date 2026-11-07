@@ -73,7 +73,7 @@ func _simple(shape: Shape2D) -> bool:
 
 ## 与修改前的真实地形对照：普通地形保留外接矩形，五座整体土坡保留六个拐点。
 func _terrain_baseline(level: Node2D, directory: String) -> void:
-	var number: int = level.get("m_LevelId")
+	var number: int = level.get("_levelId")
 	var file := directory.path_join("baseline_level_%d.json" % number)
 	_check(FileAccess.file_exists(file), "Missing pre-task terrain snapshot " + file)
 	if not FileAccess.file_exists(file):

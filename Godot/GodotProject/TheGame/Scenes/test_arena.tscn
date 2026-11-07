@@ -13,13 +13,13 @@ size = Vector2(1600, 93)
 [sub_resource type="RectangleShape2D" id="WallShape"]
 size = Vector2(80, 700)
 
-[node name="TestArena" type="Node2D" unique_id=1771597482 node_paths=PackedStringArray("m_PlayerStart", "m_Enemies", "m_Camera", "m_FloatingText")]
+[node name="TestArena" type="Node2D" unique_id=1771597482 node_paths=PackedStringArray("_playerStart", "_enemies", "_camera", "_floatingText")]
 script = ExtResource("1_controller")
-m_FrameworkScene = ExtResource("2_framework")
-m_PlayerStart = NodePath("World/PlayerStart")
-m_Enemies = NodePath("Monsters")
-m_Camera = NodePath("Camera2D")
-m_FloatingText = NodePath("World/FloatingText")
+_frameworkScene = ExtResource("2_framework")
+_playerStart = NodePath("World/PlayerStart")
+_enemies = NodePath("Monsters")
+_camera = NodePath("Camera2D")
+_floatingText = NodePath("World/FloatingText")
 
 [node name="World" type="Node2D" parent="." unique_id=518203444]
 

@@ -24,10 +24,10 @@ public sealed partial class UiSmokeScenario
         var first = new FloatingTextPresenter();
         var second = new FloatingTextPresenter();
         var targets = new HashSet<int> { -101 };
-        m_Driver.AddChild(first);
-        m_Driver.AddChild(second);
-        var firstTexts = SmokeInspection.ReadField<HashSet<FloatingTextNode>>(first, "m_Texts");
-        var secondTexts = SmokeInspection.ReadField<HashSet<FloatingTextNode>>(second, "m_Texts");
+        _driver.AddChild(first);
+        _driver.AddChild(second);
+        HashSet<FloatingTextNode> firstTexts = SmokeInspection.ReadField<HashSet<FloatingTextNode>>(first, "_texts");
+        HashSet<FloatingTextNode> secondTexts = SmokeInspection.ReadField<HashSet<FloatingTextNode>>(second, "_texts");
         try
         {
             Check(GF.Event.Count(DamageDealtEventArgs.EventId) == subscribers, "飘字组件仅挂树就订阅了玩法事件");
@@ -36,9 +36,9 @@ public sealed partial class UiSmokeScenario
             Check(GF.Event.Count(DamageDealtEventArgs.EventId) == subscribers + 2, "飘字显式开始没有建立订阅");
 
             // 一个真实池实例依次显示四种反馈，验证位图、对齐、缩放和透明度不会跨样式残留。
-            first.ShowRecovery(Vector2.Zero, 100, ERecoveryKind.Health);
-            var reused = firstTexts.Single();
-            var reusedDigits = SmokeInspection.ReadField<Sprite2D[]>(reused, "m_Digits");
+            first.ShowRecovery(Vector2.Zero, 100, RecoveryKind.Health);
+            FloatingTextNode reused = firstTexts.Single();
+            Sprite2D[] reusedDigits = SmokeInspection.ReadField<Sprite2D[]>(reused, "_digits");
             Check(!reusedDigits[0].Centered && reusedDigits.Count(x => x.Visible) == 3, "恢复数字初始布局错误");
             CheckDigitSpacing(reused, 3, false);
             Check(reusedDigits[1].Position.X - reusedDigits[0].Position.X <
@@ -48,19 +48,19 @@ public sealed partial class UiSmokeScenario
             // 全部两位组合验证轮廓宽度和窄字侧留白，覆盖 0–9，包含内部零与重复字符。
             for (int value = 0; value < 100; value++)
             {
-                first.ShowRecovery(Vector2.Zero, value + 100, ERecoveryKind.Health);
+                first.ShowRecovery(Vector2.Zero, value + 100, RecoveryKind.Health);
                 CheckDigitSpacing(firstTexts.Single(), 3, false);
                 firstTexts.Single()._Process(1);
-                first.ShowRecovery(Vector2.Zero, value + 100, ERecoveryKind.Mana);
+                first.ShowRecovery(Vector2.Zero, value + 100, RecoveryKind.Mana);
                 CheckDigitSpacing(firstTexts.Single(), 3, false);
                 firstTexts.Single()._Process(1);
             }
-            foreach (var (kind, crit, hero) in new[]
+            foreach ((DamageKind kind, bool crit, bool hero) in new[]
             {
-                (EDamageKind.Physics, false, false), (EDamageKind.Physics, true, false),
-                (EDamageKind.Magic, false, false), (EDamageKind.Magic, true, false),
-                (EDamageKind.Physics, false, true), (EDamageKind.Magic, false, true),
-                (EDamageKind.Real, false, true)
+                (DamageKind.Physics, false, false), (DamageKind.Physics, true, false),
+                (DamageKind.Magic, false, false), (DamageKind.Magic, true, false),
+                (DamageKind.Physics, false, true), (DamageKind.Magic, false, true),
+                (DamageKind.Real, false, true)
             })
             {
                 for (int value = 0; value < 100; value++)
@@ -73,71 +73,71 @@ public sealed partial class UiSmokeScenario
             }
 
             Check(firstTexts.Count == 0, "恢复样式没有自然回池");
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(int.MaxValue, false, true, EDamageKind.Magic),
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(int.MaxValue, false, true, DamageKind.Magic),
                 -101, false, Vector2.Zero));
             Check(ReferenceEquals(reused, firstTexts.Single()) && reusedDigits.All(x => x.Visible && x.Centered),
                 "恢复到伤害没有复用同一池实例，或最大整数的十位数布局错误");
             CheckDigitSpacing(reused, 10, true);
             reused._Process(.2);
-            Check(SmokeInspection.ReadField<Node2D>(reused, "m_Content").Scale == Vector2.One * 3, "暴击放大节奏错误");
+            Check(SmokeInspection.ReadField<Node2D>(reused, "_content").Scale == Vector2.One * 3, "暴击放大节奏错误");
             reused._Process(.6);
-            Check(SmokeInspection.ReadField<Node2D>(reused, "m_Content").Modulate.A < 1, "伤害没有淡出");
+            Check(SmokeInspection.ReadField<Node2D>(reused, "_content").Modulate.A < 1, "伤害没有淡出");
             reused._Process(.2);
-            first.ShowRecovery(Vector2.Zero, 8, ERecoveryKind.Mana);
-            var reusedContent = SmokeInspection.ReadField<Node2D>(reused, "m_Content");
+            first.ShowRecovery(Vector2.Zero, 8, RecoveryKind.Mana);
+            Node2D reusedContent = SmokeInspection.ReadField<Node2D>(reused, "_content");
             Check(ReferenceEquals(reused, firstTexts.Single()) && reusedContent.Scale == Vector2.One &&
                 reusedContent.Modulate == Colors.White && reusedDigits.Count(x => x.Visible) == 1 &&
                 !reusedDigits[0].Centered && reusedDigits[0].Texture.ResourcePath.EndsWith("mana.png"),
                 "伤害到魔法恢复残留旧布局、透明度或缩放");
             CheckDigitSpacing(reused, 1, false);
             reused._Process(1);
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(DamageResult.Missed(EDamageKind.Physics), -101,
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(DamageResult.Missed(DamageKind.Physics), -101,
                 false, Vector2.Zero));
             Check(ReferenceEquals(reused, firstTexts.Single()) && reusedDigits.All(x => !x.Visible) &&
-                SmokeInspection.ReadField<Sprite2D>(reused, "m_Miss").Visible, "闪避复用没有隐藏数字");
+                SmokeInspection.ReadField<Sprite2D>(reused, "_miss").Visible, "闪避复用没有隐藏数字");
             reused._Process(1);
 
             // 各伤害类型走正式事件，统一选三套官方伤害图；蓝色只用于恢复魔法。
-            foreach (var (kind, crit, hero, sheet) in new[]
+            foreach ((DamageKind kind, bool crit, bool hero, string sheet) in new[]
             {
-                (EDamageKind.Physics, false, false, "m_EnemyDamage"),
-                (EDamageKind.Physics, true, false, "m_EnemyCritical"),
-                (EDamageKind.Magic, false, false, "m_EnemyDamage"),
-                (EDamageKind.Magic, true, false, "m_EnemyCritical"),
-                (EDamageKind.Physics, false, true, "m_HeroDamage"),
-                (EDamageKind.Magic, false, true, "m_HeroDamage"),
-                (EDamageKind.Real, false, true, "m_HeroDamage")
+                (DamageKind.Physics, false, false, "_enemyDamage"),
+                (DamageKind.Physics, true, false, "_enemyCritical"),
+                (DamageKind.Magic, false, false, "_enemyDamage"),
+                (DamageKind.Magic, true, false, "_enemyCritical"),
+                (DamageKind.Physics, false, true, "_heroDamage"),
+                (DamageKind.Magic, false, true, "_heroDamage"),
+                (DamageKind.Real, false, true, "_heroDamage")
             })
             {
                 var before = firstTexts.ToHashSet();
                 GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(123, false, crit, kind), -101,
                     hero, Vector2.Zero));
-                var pop = firstTexts.Single(x => !before.Contains(x));
-                var digits = SmokeInspection.ReadField<Sprite2D[]>(pop, "m_Digits");
+                FloatingTextNode pop = firstTexts.Single(x => !before.Contains(x));
+                Sprite2D[] digits = SmokeInspection.ReadField<Sprite2D[]>(pop, "_digits");
                 Check(digits.Count(x => x.Visible) == 3 &&
                     digits[0].Texture == SmokeInspection.ReadField<Texture2D>(pop, sheet), "伤害数字位数或样式错误");
                 CheckDigitSpacing(pop, 3, true);
             }
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(DamageResult.Missed(EDamageKind.Physics), -101,
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(DamageResult.Missed(DamageKind.Physics), -101,
                 false, Vector2.Zero));
             Check(firstTexts.Count == 8 && firstTexts.Count(x =>
-                SmokeInspection.ReadField<Sprite2D>(x, "m_Miss").Visible) == 1, "闪避提示没有使用专用样式");
+                SmokeInspection.ReadField<Sprite2D>(x, "_miss").Visible) == 1, "闪避提示没有使用专用样式");
             GF.Event.FireNow(this, DamageDealtEventArgs.Create(default, -101, false, Vector2.Zero));
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(10, false, false, EDamageKind.Physics),
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(10, false, false, DamageKind.Physics),
                 -999, false, Vector2.Zero));
             Check(firstTexts.Count == 8 && secondTexts.Count == 0, "零伤害或其他场景事件产生了多余飘字");
 
             var beforeRecovery = firstTexts.ToHashSet();
-            first.ShowRecovery(Vector2.Zero, 100, ERecoveryKind.Health);
-            first.ShowRecovery(Vector2.Zero, 50, ERecoveryKind.Mana);
-            first.ShowRecovery(Vector2.Zero, 0, ERecoveryKind.Health);
-            var recoveryTexts = firstTexts.Where(x => !beforeRecovery.Contains(x)).ToArray();
+            first.ShowRecovery(Vector2.Zero, 100, RecoveryKind.Health);
+            first.ShowRecovery(Vector2.Zero, 50, RecoveryKind.Mana);
+            first.ShowRecovery(Vector2.Zero, 0, RecoveryKind.Health);
+            FloatingTextNode[] recoveryTexts = firstTexts.Where(x => !beforeRecovery.Contains(x)).ToArray();
             Check(firstTexts.Count == 10 && recoveryTexts.Length == 2 && recoveryTexts.Select(x =>
-                SmokeInspection.ReadField<Sprite2D[]>(x, "m_Digits")[0].Texture.ResourcePath)
+                SmokeInspection.ReadField<Sprite2D[]>(x, "_digits")[0].Texture.ResourcePath)
                 .Distinct().Count() == 2, "通用恢复入口没有区分加血和加蓝，或显示了零量提示");
-            foreach (var recovery in recoveryTexts)
+            foreach (FloatingTextNode recovery in recoveryTexts)
             {
-                CheckDigitSpacing(recovery, SmokeInspection.ReadField<Sprite2D[]>(recovery, "m_Digits").Count(x => x.Visible), false);
+                CheckDigitSpacing(recovery, SmokeInspection.ReadField<Sprite2D[]>(recovery, "_digits").Count(x => x.Visible), false);
             }
 
             // 所有反馈使用同一游戏秒数计时，暂停应同时冻结位置、脉冲和淡出。
@@ -145,11 +145,11 @@ public sealed partial class UiSmokeScenario
             GF.Base.PauseGame();
             // ProcessFrame 在节点更新前发出；让本帧已计算的 delta 消费完，再观察暂停区间。
             await WaitFramesAsync(2);
-            var sampleDamage = beforeRecovery.First();
-            var sampleRecovery = recoveryTexts.First();
+            FloatingTextNode sampleDamage = beforeRecovery.First();
+            FloatingTextNode sampleRecovery = recoveryTexts.First();
             Vector2 damagePosition = sampleDamage.GlobalPosition;
             Vector2 recoveryPosition = sampleRecovery.GlobalPosition;
-            var damageContent = SmokeInspection.ReadField<Node2D>(sampleDamage, "m_Content");
+            Node2D damageContent = SmokeInspection.ReadField<Node2D>(sampleDamage, "_content");
             Vector2 damageScale = damageContent.Scale;
             Color damageColor = damageContent.Modulate;
             await WaitFramesAsync(12);
@@ -160,12 +160,12 @@ public sealed partial class UiSmokeScenario
             await WaitUntilAsync(() => firstTexts.Count == 0, "飘字没有自然结束并回池", 4000);
 
             // 两个组件共享同类池，停止第一个不能回收第二个的活动实例。
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(10, false, false, EDamageKind.Physics),
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(10, false, false, DamageKind.Physics),
                 -101, false, Vector2.Zero));
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(20, false, true, EDamageKind.Magic),
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(20, false, true, DamageKind.Magic),
                 -102, false, Vector2.Zero));
-            first.ShowRecovery(Vector2.Zero, 10, ERecoveryKind.Health);
-            second.ShowRecovery(Vector2.Zero, 20, ERecoveryKind.Mana);
+            first.ShowRecovery(Vector2.Zero, 10, RecoveryKind.Health);
+            second.ShowRecovery(Vector2.Zero, 20, RecoveryKind.Mana);
             var held = firstTexts.ToHashSet();
             first.StopSession();
             first.StopSession();
@@ -175,20 +175,20 @@ public sealed partial class UiSmokeScenario
             Check(GF.Event.Count(DamageDealtEventArgs.EventId) == subscribers + 1, "重复停止会话导致订阅数量错误");
 
             // 旧实体的排队事件不能串到复用组件的新会话；被归还的节点不保留旧完成回调。
-            GF.Event.Fire(this, DamageDealtEventArgs.Create(new DamageResult(99, false, false, EDamageKind.Physics),
+            GF.Event.Fire(this, DamageDealtEventArgs.Create(new DamageResult(99, false, false, DamageKind.Physics),
                 -101, false, Vector2.Zero));
             targets.Clear();
             targets.Add(-103);
             first.StartSession(targets.Contains);
             await WaitFramesAsync(2);
             Check(firstTexts.Count == 0, "旧周期排队伤害串入了新飘字会话");
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(7, false, false, EDamageKind.Physics),
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(7, false, false, DamageKind.Physics),
                 -103, false, Vector2.Zero));
-            first.ShowRecovery(Vector2.Zero, 8, ERecoveryKind.Mana);
+            first.ShowRecovery(Vector2.Zero, 8, RecoveryKind.Mana);
             Check(firstTexts.SetEquals(held),
                 "结束会话后飘字实例没有从同一 GGF 节点池复用");
-            Check(firstTexts.All(x => SmokeInspection.ReadField<Sprite2D[]>(x, "m_Digits").Count(digit => digit.Visible) == 1) &&
-                firstTexts.Count(x => SmokeInspection.ReadField<Sprite2D[]>(x, "m_Digits")[0].Texture.ResourcePath.EndsWith("mana.png")) == 1,
+            Check(firstTexts.All(x => SmokeInspection.ReadField<Sprite2D[]>(x, "_digits").Count(digit => digit.Visible) == 1) &&
+                firstTexts.Count(x => SmokeInspection.ReadField<Sprite2D[]>(x, "_digits")[0].Texture.ResourcePath.EndsWith("mana.png")) == 1,
                 "复用残留旧数字或恢复样式");
             await WaitUntilAsync(() => firstTexts.Count == 0 && secondTexts.Count == 0, "复用后的飘字没有正确结束", 4000);
 
@@ -196,12 +196,12 @@ public sealed partial class UiSmokeScenario
             GF.Base.PauseGame();
             await WaitFramesAsync(2);
             int row = 0;
-            foreach (var (kind, crit, hero) in new[]
+            foreach ((DamageKind kind, bool crit, bool hero) in new[]
             {
-                (EDamageKind.Physics, false, false), (EDamageKind.Physics, true, false),
-                (EDamageKind.Magic, false, false), (EDamageKind.Magic, true, false),
-                (EDamageKind.Physics, false, true), (EDamageKind.Magic, false, true),
-                (EDamageKind.Real, false, true)
+                (DamageKind.Physics, false, false), (DamageKind.Physics, true, false),
+                (DamageKind.Magic, false, false), (DamageKind.Magic, true, false),
+                (DamageKind.Physics, false, true), (DamageKind.Magic, false, true),
+                (DamageKind.Real, false, true)
             })
             {
                 int column = 0;
@@ -212,7 +212,7 @@ public sealed partial class UiSmokeScenario
                 }
                 row++;
             }
-            foreach (var recoveryKind in new[] { ERecoveryKind.Health, ERecoveryKind.Mana })
+            foreach (RecoveryKind recoveryKind in new[] { RecoveryKind.Health, RecoveryKind.Mana })
             {
                 int column = 0;
                 foreach (int value in new[] { 111, 108, 888 })
@@ -225,7 +225,7 @@ public sealed partial class UiSmokeScenario
             foreach (int value in new[] { 10, 17, 24, 36, 59, 70, 99, 1234567890 })
             {
                 Vector2 position = first.GetCanvasTransform().AffineInverse() * new Vector2(120 + sampleRow % 4 * 210, 420 + sampleRow / 4 * 45);
-                GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(value, false, false, EDamageKind.Physics), -103, false, position));
+                GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(value, false, false, DamageKind.Physics), -103, false, position));
                 sampleRow++;
             }
             await CaptureCombatAsync("floating_text_spacing");
@@ -251,9 +251,9 @@ public sealed partial class UiSmokeScenario
     /// <param name="centered">伤害应整串居中，恢复应从原点左起。</param>
     private void CheckDigitSpacing(FloatingTextNode node, int expectedCount, bool centered)
     {
-        var digits = SmokeInspection.ReadField<Sprite2D[]>(node, "m_Digits").Where(x => x.Visible).ToArray();
+        Sprite2D[] digits = SmokeInspection.ReadField<Sprite2D[]>(node, "_digits").Where(x => x.Visible).ToArray();
         Check(digits.Length == expectedCount, "数字字距检查的数位数量错误");
-        using var image = digits[0].Texture.GetImage();
+        using Image image = digits[0].Texture.GetImage();
         if (image.IsCompressed())
         {
             image.Decompress();
@@ -263,17 +263,17 @@ public sealed partial class UiSmokeScenario
         int widest = 0;
         for (int number = 0; number < 10; number++)
         {
-            using var glyph = image.GetRegion(new Rect2I(number * cellWidth, 0, cellWidth, image.GetHeight()));
+            using Image glyph = image.GetRegion(new Rect2I(number * cellWidth, 0, cellWidth, image.GetHeight()));
             widest = Math.Max(widest, glyph.GetUsedRect().Size.X);
         }
         float firstLeft = 0;
         float previousRight = 0;
         for (int i = 0; i < digits.Length; i++)
         {
-            var digit = digits[i];
-            var region = digit.RegionRect;
+            Sprite2D digit = digits[i];
+            Rect2 region = digit.RegionRect;
             int number = (int)region.Position.X / cellWidth;
-            using var original = image.GetRegion(new Rect2I(number * cellWidth, 0, cellWidth, image.GetHeight()));
+            using Image original = image.GetRegion(new Rect2I(number * cellWidth, 0, cellWidth, image.GetHeight()));
             Rect2I bounds = original.GetUsedRect();
             Check(region.Position.X == number * cellWidth + bounds.Position.X && region.Size.X == bounds.Size.X &&
                 region.Position.Y == 0 && region.Size.Y == image.GetHeight(), "数字裁切丢失描边或改变纵向注册位置");
@@ -300,7 +300,7 @@ public sealed partial class UiSmokeScenario
     /// <param name="amount">官方应显示的治疗量。</param>
     private static void CheckRecoveryText(FloatingTextNode node, int amount)
     {
-        var digits = SmokeInspection.ReadField<Sprite2D[]>(node, "m_Digits").Where(digit => digit.Visible).ToArray();
+        Sprite2D[] digits = SmokeInspection.ReadField<Sprite2D[]>(node, "_digits").Where(digit => digit.Visible).ToArray();
         string expected = amount.ToString();
         Check(digits.Length == expected.Length && digits.All(digit => digit.Texture.ResourcePath.EndsWith("health.png")),
             "主动治疗没有显示绿色恢复数字");

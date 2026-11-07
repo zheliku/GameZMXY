@@ -25,7 +25,7 @@
 - 全装备实机专项使用 `-- --smoketest=ui --equipment-only`，自动枚举正式表中的装备检查地面非透明底边贴合，并经真实分页、穿卸控件检查战斗与背包预览同步；随新装备自动扩展，不限于第一页或少数历史装备。后续关卡就绪收据必须同时包含该专项及上述三项身份/动作/攻击验证。官方明确共用同一 selector 的不同品质可共享动作图集，但背包、地面图仍按各件身份登记。
 
 - 实体场景与实体表 `AssetPath` 一致；节点引用由实体脚本 `[Export]` 字段绑定。
-- 怪物实体场景用 `[Export] Entity.EntityId` 枚举字段（如 `m_EnemyEntityId`）绑定 `MonsterConfig`，编辑器显示为可读枚举下拉框；禁止导出需要反查的裸数字 ID。运行时按 `MonsterConfig.EntityId` 一对一查找，零条或多条命中在实体初始化时失败并交由会话拥有者报告。
+- 怪物实体场景用 `[Export] Entity.EntityId` 枚举字段（如 `_enemyEntityId`）绑定 `MonsterConfig`，编辑器显示为可读枚举下拉框；禁止导出需要反查的裸数字 ID。运行时按 `MonsterConfig.EntityId` 一对一查找，零条或多条命中在实体初始化时失败并交由会话拥有者报告。
 - `.tscn` 的外部节点路径在场景头部 `node_paths` 声明，否则 Godot 可能忽略 `NodePath` 导出赋值。
 - 动画库位于 `Entitys/Animations/`，资源边界与判定约定见 [30-EntitiesAndCombat.md](30-EntitiesAndCombat.md)。
 - `Scenes/test_arena.tscn` 是战斗验证场景；正式关卡使用 LevelViewController 和组合式子节点，契约见 [60-GameplayModules.md](60-GameplayModules.md)。

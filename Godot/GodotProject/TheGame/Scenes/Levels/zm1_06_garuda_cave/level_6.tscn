@@ -27,163 +27,163 @@ size = Vector2(60.02539, 999.99927)
 
 [sub_resource type="Resource" id="Resource_lqc0d"]
 script = ExtResource("7_uimbb")
-m_Id = "player_start"
-m_Node = NodePath("PlayerStart")
+_id = "player_start"
+_node = NodePath("PlayerStart")
 
 [sub_resource type="Resource" id="Resource_ygtvh"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_1_a"
-m_Node = NodePath("Stage1A")
+_id = "stage_1_a"
+_node = NodePath("Stage1A")
 
 [sub_resource type="Resource" id="Resource_n20lu"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_1_b"
-m_Node = NodePath("Stage1B")
+_id = "stage_1_b"
+_node = NodePath("Stage1B")
 
 [sub_resource type="Resource" id="Resource_wlpfd"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_1_c"
-m_Node = NodePath("Stage1C")
+_id = "stage_1_c"
+_node = NodePath("Stage1C")
 
 [sub_resource type="Resource" id="Resource_v8b5f"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_2_a"
-m_Node = NodePath("Stage2A")
+_id = "stage_2_a"
+_node = NodePath("Stage2A")
 
 [sub_resource type="Resource" id="Resource_sg7mg"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_2_b"
-m_Node = NodePath("Stage2B")
+_id = "stage_2_b"
+_node = NodePath("Stage2B")
 
 [sub_resource type="Resource" id="Resource_nykua"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_2_c"
-m_Node = NodePath("Stage2C")
+_id = "stage_2_c"
+_node = NodePath("Stage2C")
 
 [sub_resource type="Resource" id="Resource_8vjdy"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_2_d"
-m_Node = NodePath("Stage2D")
+_id = "stage_2_d"
+_node = NodePath("Stage2D")
 
 [sub_resource type="Resource" id="Resource_yi3ei"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_2_e"
-m_Node = NodePath("Stage2E")
+_id = "stage_2_e"
+_node = NodePath("Stage2E")
 
 [sub_resource type="Resource" id="Resource_hoyh0"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_3_a"
-m_Node = NodePath("Stage3A")
+_id = "stage_3_a"
+_node = NodePath("Stage3A")
 
 [sub_resource type="Resource" id="Resource_med2p"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_3_b"
-m_Node = NodePath("Stage3B")
+_id = "stage_3_b"
+_node = NodePath("Stage3B")
 
 [sub_resource type="Resource" id="Resource_nmh7c"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_3_c"
-m_Node = NodePath("Stage3C")
+_id = "stage_3_c"
+_node = NodePath("Stage3C")
 
 [sub_resource type="Resource" id="Resource_1yedv"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_3_d"
-m_Node = NodePath("Stage3D")
+_id = "stage_3_d"
+_node = NodePath("Stage3D")
 
 [sub_resource type="Resource" id="Resource_w6335"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_3_e"
-m_Node = NodePath("Stage3E")
+_id = "stage_3_e"
+_node = NodePath("Stage3E")
 
 [sub_resource type="Resource" id="Resource_4xhxn"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_3_f"
-m_Node = NodePath("Stage3F")
+_id = "stage_3_f"
+_node = NodePath("Stage3F")
 
 [sub_resource type="Resource" id="Resource_a01mw"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_3_g"
-m_Node = NodePath("Stage3G")
+_id = "stage_3_g"
+_node = NodePath("Stage3G")
 
 [sub_resource type="Resource" id="Resource_lo3b3"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_4_a"
-m_Node = NodePath("Stage4A")
+_id = "stage_4_a"
+_node = NodePath("Stage4A")
 
 [sub_resource type="Resource" id="Resource_x6lai"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_4_b"
-m_Node = NodePath("Stage4B")
+_id = "stage_4_b"
+_node = NodePath("Stage4B")
 
 [sub_resource type="Resource" id="Resource_o3w8n"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_4_c"
-m_Node = NodePath("Stage4C")
+_id = "stage_4_c"
+_node = NodePath("Stage4C")
 
 [sub_resource type="Resource" id="Resource_gmxl7"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_4_d"
-m_Node = NodePath("Stage4D")
+_id = "stage_4_d"
+_node = NodePath("Stage4D")
 
 [sub_resource type="Resource" id="Resource_kclhk"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_4_e"
-m_Node = NodePath("Stage4E")
+_id = "stage_4_e"
+_node = NodePath("Stage4E")
 
 [sub_resource type="Resource" id="Resource_f32ds"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_4_f"
-m_Node = NodePath("Stage4F")
+_id = "stage_4_f"
+_node = NodePath("Stage4F")
 
 [sub_resource type="Resource" id="Resource_e0naw"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_5_a"
-m_Node = NodePath("Stage5A")
+_id = "stage_5_a"
+_node = NodePath("Stage5A")
 
 [sub_resource type="Resource" id="Resource_f7unq"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_1_gate"
-m_Node = NodePath("Stage1Gate")
+_id = "stage_1_gate"
+_node = NodePath("Stage1Gate")
 
 [sub_resource type="Resource" id="Resource_ucskv"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_2_left"
-m_Node = NodePath("Stage2Left")
+_id = "stage_2_left"
+_node = NodePath("Stage2Left")
 
 [sub_resource type="Resource" id="Resource_b3fgr"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_2_gate"
-m_Node = NodePath("Stage2Gate")
+_id = "stage_2_gate"
+_node = NodePath("Stage2Gate")
 
 [sub_resource type="Resource" id="Resource_aro8o"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_3_left"
-m_Node = NodePath("Stage3Left")
+_id = "stage_3_left"
+_node = NodePath("Stage3Left")
 
 [sub_resource type="Resource" id="Resource_trdof"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_3_gate"
-m_Node = NodePath("Stage3Gate")
+_id = "stage_3_gate"
+_node = NodePath("Stage3Gate")
 
 [sub_resource type="Resource" id="Resource_kvkmq"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_4_left"
-m_Node = NodePath("Stage4Left")
+_id = "stage_4_left"
+_node = NodePath("Stage4Left")
 
 [sub_resource type="Resource" id="Resource_f070t"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_4_gate"
-m_Node = NodePath("Stage4Gate")
+_id = "stage_4_gate"
+_node = NodePath("Stage4Gate")
 
 [sub_resource type="Resource" id="Resource_jwj22"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_5_left"
-m_Node = NodePath("Stage5Left")
+_id = "stage_5_left"
+_node = NodePath("Stage5Left")
 
 [sub_resource type="Resource" id="Resource_bwok8"]
 script = ExtResource("7_uimbb")
-m_Id = "stage_5_gate"
-m_Node = NodePath("Stage5Gate")
+_id = "stage_5_gate"
+_node = NodePath("Stage5Gate")
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_fdjfu"]
 size = Vector2(20, 1800)
@@ -227,18 +227,18 @@ size = Vector2(247.68848, 38.69919)
 [sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
 size = Vector2(8, 4000)
 
-[node name="Level_6" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText")]
+[node name="Level_6" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("_spawnPoints", "_triggers", "_gates", "_spawner", "_camera", "_exit", "_floatingText")]
 script = ExtResource("1_78tiv")
-m_MusicId = 1003
-m_LevelId = 6
-m_SpawnPoints = NodePath("World/SpawnPoints")
-m_Triggers = NodePath("World/StageTriggers")
-m_Gates = NodePath("World/StageGates")
-m_Spawner = NodePath("Spawner")
-m_Camera = NodePath("Camera2D")
-m_Exit = NodePath("World/Exit")
-m_FloatingText = NodePath("World/FloatingText")
-m_FeaturedOpponentSpawnPointIds = PackedStringArray("stage_5_a")
+_musicId = 1003
+_levelId = 6
+_spawnPoints = NodePath("World/SpawnPoints")
+_triggers = NodePath("World/StageTriggers")
+_gates = NodePath("World/StageGates")
+_spawner = NodePath("Spawner")
+_camera = NodePath("Camera2D")
+_exit = NodePath("World/Exit")
+_floatingText = NodePath("World/FloatingText")
+_featuredOpponentSpawnPointIds = PackedStringArray("stage_5_a")
 
 [node name="World" type="Node2D" parent="." unique_id=219105317]
 
@@ -304,7 +304,7 @@ shape = SubResource("RectangleShape2D_xq4ko")
 [node name="SpawnPoints" type="Node2D" parent="World" unique_id=773829097]
 z_index = 200
 script = ExtResource("6_32xnt")
-m_Entries = Array[Resource]([SubResource("Resource_lqc0d"), SubResource("Resource_ygtvh"), SubResource("Resource_n20lu"), SubResource("Resource_wlpfd"), SubResource("Resource_v8b5f"), SubResource("Resource_sg7mg"), SubResource("Resource_nykua"), SubResource("Resource_8vjdy"), SubResource("Resource_yi3ei"), SubResource("Resource_hoyh0"), SubResource("Resource_med2p"), SubResource("Resource_nmh7c"), SubResource("Resource_1yedv"), SubResource("Resource_w6335"), SubResource("Resource_4xhxn"), SubResource("Resource_a01mw"), SubResource("Resource_lo3b3"), SubResource("Resource_x6lai"), SubResource("Resource_o3w8n"), SubResource("Resource_gmxl7"), SubResource("Resource_kclhk"), SubResource("Resource_f32ds"), SubResource("Resource_e0naw")])
+_entries = Array[Resource]([SubResource("Resource_lqc0d"), SubResource("Resource_ygtvh"), SubResource("Resource_n20lu"), SubResource("Resource_wlpfd"), SubResource("Resource_v8b5f"), SubResource("Resource_sg7mg"), SubResource("Resource_nykua"), SubResource("Resource_8vjdy"), SubResource("Resource_yi3ei"), SubResource("Resource_hoyh0"), SubResource("Resource_med2p"), SubResource("Resource_nmh7c"), SubResource("Resource_1yedv"), SubResource("Resource_w6335"), SubResource("Resource_4xhxn"), SubResource("Resource_a01mw"), SubResource("Resource_lo3b3"), SubResource("Resource_x6lai"), SubResource("Resource_o3w8n"), SubResource("Resource_gmxl7"), SubResource("Resource_kclhk"), SubResource("Resource_f32ds"), SubResource("Resource_e0naw")])
 
 [node name="PlayerStart" type="Marker2D" parent="World/SpawnPoints" unique_id=2065741528]
 position = Vector2(300, 300)
@@ -382,8 +382,8 @@ script = ExtResource("8_xv2nl")
 [node name="StageGates" type="Node2D" parent="World" unique_id=429529906]
 z_index = 200
 script = ExtResource("9_gea5l")
-m_Entries = Array[Resource]([SubResource("Resource_f7unq"), SubResource("Resource_ucskv"), SubResource("Resource_b3fgr"), SubResource("Resource_aro8o"), SubResource("Resource_trdof"), SubResource("Resource_kvkmq"), SubResource("Resource_f070t"), SubResource("Resource_jwj22"), SubResource("Resource_bwok8")])
-m_MarkerSize = 350.0
+_entries = Array[Resource]([SubResource("Resource_f7unq"), SubResource("Resource_ucskv"), SubResource("Resource_b3fgr"), SubResource("Resource_aro8o"), SubResource("Resource_trdof"), SubResource("Resource_kvkmq"), SubResource("Resource_f070t"), SubResource("Resource_jwj22"), SubResource("Resource_bwok8")])
+_markerSize = 350.0
 
 [node name="Stage1Gate" type="StaticBody2D" parent="World/StageGates" unique_id=2083115056]
 position = Vector2(1013.75, 295)
@@ -466,14 +466,14 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_fqenh")
 disabled = true
 
-[node name="Exit" type="Area2D" parent="World" unique_id=720884043 node_paths=PackedStringArray("m_Marker", "m_Prompt") instance=ExtResource("10_8e4xl")]
+[node name="Exit" type="Area2D" parent="World" unique_id=720884043 node_paths=PackedStringArray("_marker", "_prompt") instance=ExtResource("10_8e4xl")]
 visible = false
 position = Vector2(4266.55, 424.15)
 collision_layer = 2048
 collision_mask = 2
 script = ExtResource("11_3xhyl")
-m_Marker = NodePath("Marker")
-m_Prompt = NodePath("Prompt")
+_marker = NodePath("Marker")
+_prompt = NodePath("Prompt")
 
 [node name="Platforms" type="Node2D" parent="World" unique_id=860227771]
 
@@ -520,439 +520,439 @@ one_way_collision = true
 [node name="Traps" type="Node2D" parent="World" unique_id=1377519259]
 z_index = 2
 
-[node name="Spike01" type="Area2D" parent="World/Traps" unique_id=845648522 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike01" type="Area2D" parent="World/Traps" unique_id=845648522 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(401.8, 3.2)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike02" type="Area2D" parent="World/Traps" unique_id=1351552908 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike02" type="Area2D" parent="World/Traps" unique_id=1351552908 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(445.55, 3.2)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike03" type="Area2D" parent="World/Traps" unique_id=1857506090 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike03" type="Area2D" parent="World/Traps" unique_id=1857506090 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(495.1, 3.2)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike04" type="Area2D" parent="World/Traps" unique_id=225781346 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike04" type="Area2D" parent="World/Traps" unique_id=225781346 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(544.6, 3.2)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike05" type="Area2D" parent="World/Traps" unique_id=1332270490 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike05" type="Area2D" parent="World/Traps" unique_id=1332270490 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(589.5, 3.2)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike06" type="Area2D" parent="World/Traps" unique_id=2124652455 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike06" type="Area2D" parent="World/Traps" unique_id=2124652455 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(636.1, 3.2)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike07" type="Area2D" parent="World/Traps" unique_id=1138955515 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike07" type="Area2D" parent="World/Traps" unique_id=1138955515 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(1326.7, 3.7)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike08" type="Area2D" parent="World/Traps" unique_id=1165187925 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike08" type="Area2D" parent="World/Traps" unique_id=1165187925 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(1370.45, 3.7)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike09" type="Area2D" parent="World/Traps" unique_id=124670111 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike09" type="Area2D" parent="World/Traps" unique_id=124670111 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(1420, 3.7)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike10" type="Area2D" parent="World/Traps" unique_id=935098757 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike10" type="Area2D" parent="World/Traps" unique_id=935098757 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(1469.5, 3.7)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike11" type="Area2D" parent="World/Traps" unique_id=211062509 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike11" type="Area2D" parent="World/Traps" unique_id=211062509 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(1514.4, 3.7)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike12" type="Area2D" parent="World/Traps" unique_id=721025433 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike12" type="Area2D" parent="World/Traps" unique_id=721025433 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(1561, 5.6)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike13" type="Area2D" parent="World/Traps" unique_id=86882766 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike13" type="Area2D" parent="World/Traps" unique_id=86882766 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(1983.25, 3.7)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike14" type="Area2D" parent="World/Traps" unique_id=248570780 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike14" type="Area2D" parent="World/Traps" unique_id=248570780 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2028.15, 3.7)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike15" type="Area2D" parent="World/Traps" unique_id=1571428387 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike15" type="Area2D" parent="World/Traps" unique_id=1571428387 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2074.75, 5.6)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike16" type="Area2D" parent="World/Traps" unique_id=543987302 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike16" type="Area2D" parent="World/Traps" unique_id=543987302 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2481.8, 3.7)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike17" type="Area2D" parent="World/Traps" unique_id=924853772 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike17" type="Area2D" parent="World/Traps" unique_id=924853772 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2526.7, 3.7)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike18" type="Area2D" parent="World/Traps" unique_id=685643540 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike18" type="Area2D" parent="World/Traps" unique_id=685643540 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2573.3, 5.6)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike19" type="Area2D" parent="World/Traps" unique_id=1026938752 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike19" type="Area2D" parent="World/Traps" unique_id=1026938752 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(3461.65, 1.8)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike20" type="Area2D" parent="World/Traps" unique_id=1826314918 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike20" type="Area2D" parent="World/Traps" unique_id=1826314918 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(3511.15, 1.8)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike21" type="Area2D" parent="World/Traps" unique_id=1450884740 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike21" type="Area2D" parent="World/Traps" unique_id=1450884740 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(3556.05, 1.8)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike22" type="Area2D" parent="World/Traps" unique_id=1228926345 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike22" type="Area2D" parent="World/Traps" unique_id=1228926345 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(3602.65, 3.7)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
-m_Suspended = true
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
+_suspended = true
 
-[node name="Spike23" type="Area2D" parent="World/Traps" unique_id=1876574112 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike23" type="Area2D" parent="World/Traps" unique_id=1876574112 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(1847.6, 461.95)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike24" type="Area2D" parent="World/Traps" unique_id=1149249725 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike24" type="Area2D" parent="World/Traps" unique_id=1149249725 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(1892.5, 461.95)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike25" type="Area2D" parent="World/Traps" unique_id=1785103583 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike25" type="Area2D" parent="World/Traps" unique_id=1785103583 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(1939.1, 460.05)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike26" type="Area2D" parent="World/Traps" unique_id=1643270671 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike26" type="Area2D" parent="World/Traps" unique_id=1643270671 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2106.65, 460.05)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike27" type="Area2D" parent="World/Traps" unique_id=1231187304 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike27" type="Area2D" parent="World/Traps" unique_id=1231187304 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2151.55, 460.05)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike28" type="Area2D" parent="World/Traps" unique_id=779537062 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike28" type="Area2D" parent="World/Traps" unique_id=779537062 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2198.15, 458.15)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike29" type="Area2D" parent="World/Traps" unique_id=1388396824 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike29" type="Area2D" parent="World/Traps" unique_id=1388396824 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2361.85, 461.95)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike30" type="Area2D" parent="World/Traps" unique_id=903420775 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike30" type="Area2D" parent="World/Traps" unique_id=903420775 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2406.75, 461.95)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike31" type="Area2D" parent="World/Traps" unique_id=1721905165 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike31" type="Area2D" parent="World/Traps" unique_id=1721905165 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2453.35, 460.05)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike32" type="Area2D" parent="World/Traps" unique_id=438585318 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike32" type="Area2D" parent="World/Traps" unique_id=438585318 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2591.95, 460.05)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike33" type="Area2D" parent="World/Traps" unique_id=372577491 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike33" type="Area2D" parent="World/Traps" unique_id=372577491 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2636.85, 460.05)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike34" type="Area2D" parent="World/Traps" unique_id=1001814086 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike34" type="Area2D" parent="World/Traps" unique_id=1001814086 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(2683.45, 458.15)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike35" type="Area2D" parent="World/Traps" unique_id=1087291625 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike35" type="Area2D" parent="World/Traps" unique_id=1087291625 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(3225.3, 454.3)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike41" type="Area2D" parent="World/Traps" unique_id=2097523308 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike41" type="Area2D" parent="World/Traps" unique_id=2097523308 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(3274.85, 454.3)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike42" type="Area2D" parent="World/Traps" unique_id=107283474 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike42" type="Area2D" parent="World/Traps" unique_id=107283474 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(3324.35, 454.3)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike43" type="Area2D" parent="World/Traps" unique_id=1045570171 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike43" type="Area2D" parent="World/Traps" unique_id=1045570171 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(3369.25, 454.3)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
-[node name="Spike44" type="Area2D" parent="World/Traps" unique_id=784479059 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay") instance=ExtResource("12_d5h4s")]
+[node name="Spike44" type="Area2D" parent="World/Traps" unique_id=784479059 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay") instance=ExtResource("12_d5h4s")]
 position = Vector2(3415.85, 452.4)
 scale = Vector2(1, -1)
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("13_540sm")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
 [node name="Spawner" type="Node" parent="." unique_id=605185327]
 script = ExtResource("14_su2rf")
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=958629535 node_paths=PackedStringArray("m_LeftPlayerWall", "m_RightPlayerWall")]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=958629535 node_paths=PackedStringArray("_leftPlayerWall", "_rightPlayerWall")]
 z_index = 200
 position = Vector2(470, 295)
 limit_left = 0
@@ -960,8 +960,8 @@ limit_top = 0
 limit_right = 4692
 limit_bottom = 590
 script = ExtResource("15_gaqut")
-m_LeftPlayerWall = NodePath("PlayerScreenWalls/Left")
-m_RightPlayerWall = NodePath("PlayerScreenWalls/Right")
+_leftPlayerWall = NodePath("PlayerScreenWalls/Left")
+_rightPlayerWall = NodePath("PlayerScreenWalls/Right")
 
 [node name="PlayerScreenWalls" type="StaticBody2D" parent="Camera2D" unique_id=2023691008]
 collision_layer = 8192

@@ -111,8 +111,8 @@ def install(args):
     appearance.append(f'[ext_resource type="AnimationLibrary" path="res://{animation_root}/tangseng_preview_library.tres" id="preview"]')
     appearance.append(f'[ext_resource type="Resource" path="res://{art}/tangseng_inventory_appearance.tres" id="inventory_appearance"]')
     appearance.append('\n[resource]\nscript = ExtResource("script")\nm_PreviewAnimations = ExtResource("preview")\nm_PreviewAppearance = ExtResource("inventory_appearance")')
-    for kind, base, field in [('body', 'm_BaseBody', 'm_ArmorTextures'),
-                              ('weapon', 'm_BaseWeapon', 'm_WeaponTextures')]:
+    for kind, base, field in [('body', '_baseBody', '_armorTextures'),
+                              ('weapon', '_baseWeapon', '_weaponTextures')]:
         appearance.append(f'{base} = ExtResource("{kind}_1")')
         entries = [f'{item["id"]}: ExtResource("{kind}_{item["selector"]}")'
                    for item in report['equipment'] if ('body' if item['slot'] == '防具' else 'weapon') == kind]

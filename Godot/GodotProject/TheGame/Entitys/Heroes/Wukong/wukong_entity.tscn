@@ -39,7 +39,7 @@ size = Vector2(90, 90)
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_wse2p"]
 blend_mode = 1
 
-[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("m_FireDemonPrelude", "m_Weapon", "m_EffectRoot", "m_MusouAfterimage", "m_HurtFeedback", "m_LevelUp", "m_PoisonHead", "m_PoisonPulse", "m_FrozenEffect", "m_Tombstone", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[node name="WukongEntity" type="CharacterBody2D" unique_id=1325076206 node_paths=PackedStringArray("_fireDemonPrelude", "_weapon", "_effectRoot", "_musouAfterimage", "_hurtFeedback", "_levelUp", "_poisonHead", "_poisonPulse", "_frozenEffect", "_tombstone", "_body", "_animPlayer", "_hurtBox", "_hitBox", "_hitBoxRoot")]
 z_index = 1
 collision_layer = 2
 collision_mask = 8201
@@ -47,27 +47,27 @@ floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("1_lcmpv")
-m_FireDemonPrelude = NodePath("m_FireDemonPrelude")
-m_Weapon = NodePath("m_Weapon")
-m_Appearance = ExtResource("2_p32r7")
-m_EffectRoot = NodePath("m_EffectRoot")
-m_HeroId = 1
-m_MusouAfterimage = NodePath("m_MusouAfterimage")
-m_HurtFeedback = NodePath("m_StatusEffects/m_HurtFeedback")
-m_LevelUp = NodePath("m_LevelUp")
-m_PoisonHead = NodePath("m_StatusEffects/m_PoisonHead")
-m_PoisonPulse = NodePath("m_StatusEffects/m_PoisonPulse")
-m_FrozenEffect = NodePath("m_StatusEffects/m_FrozenEffect")
-m_InvulnerabilityMaterial = SubResource("ShaderMaterial_invulnerability")
-m_Tombstone = NodePath("m_Tombstone")
-m_Body = NodePath("m_Body")
-m_AnimPlayer = NodePath("m_AnimPlayer")
-m_AttackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3", "attack_4", "attack_5")
-m_HurtSoundId = 10901
-m_HitSoundId = 10900
-m_HurtBox = NodePath("m_HurtBox")
-m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
-m_HitBoxRoot = NodePath("m_HitBoxRoot")
+_fireDemonPrelude = NodePath("m_FireDemonPrelude")
+_weapon = NodePath("m_Weapon")
+_appearance = ExtResource("2_p32r7")
+_effectRoot = NodePath("m_EffectRoot")
+_heroId = 1
+_musouAfterimage = NodePath("m_MusouAfterimage")
+_hurtFeedback = NodePath("m_StatusEffects/m_HurtFeedback")
+_levelUp = NodePath("m_LevelUp")
+_poisonHead = NodePath("m_StatusEffects/m_PoisonHead")
+_poisonPulse = NodePath("m_StatusEffects/m_PoisonPulse")
+_frozenEffect = NodePath("m_StatusEffects/m_FrozenEffect")
+_invulnerabilityMaterial = SubResource("ShaderMaterial_invulnerability")
+_tombstone = NodePath("m_Tombstone")
+_body = NodePath("m_Body")
+_animPlayer = NodePath("m_AnimPlayer")
+_attackAnimations = PackedStringArray("attack_1", "attack_2", "attack_3", "attack_4", "attack_5")
+_hurtSoundId = 10901
+_hitSoundId = 10900
+_hurtBox = NodePath("m_HurtBox")
+_hitBox = NodePath("m_HitBoxRoot/m_HitBox")
+_hitBoxRoot = NodePath("m_HitBoxRoot")
 
 [node name="m_Body" type="Sprite2D" parent="." unique_id=803944199]
 material = SubResource("ShaderMaterial_invulnerability")
@@ -97,21 +97,21 @@ animation = &"empty"
 libraries/ = ExtResource("6_jwy4g")
 libraries/skills = ExtResource("7_lcmpv")
 
-[node name="m_MusouAfterimage" type="Node2D" parent="." unique_id=137909945 node_paths=PackedStringArray("m_Layers")]
+[node name="m_MusouAfterimage" type="Node2D" parent="." unique_id=137909945 node_paths=PackedStringArray("_layers")]
 script = ExtResource("8_23xmk")
-m_Layers = [NodePath("../m_Body"), NodePath("../m_Weapon")]
+_layers = [NodePath("../m_Body"), NodePath("../m_Weapon")]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=889744088]
 position = Vector2(0.4, -0.05)
 shape = SubResource("CapsuleShape2D_2pdac")
 debug_color = Color(0, 1, 0, 0.41960785)
 
-[node name="m_HurtBox" type="Area2D" parent="." unique_id=648785980 node_paths=PackedStringArray("m_Owner")]
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=648785980 node_paths=PackedStringArray("_owner")]
 collision_layer = 128
 collision_mask = 0
 monitoring = false
 script = ExtResource("9_8wyf5")
-m_Owner = NodePath("..")
+_owner = NodePath("..")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1046093583]
 position = Vector2(0.4, -0.05)

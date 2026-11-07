@@ -21,10 +21,10 @@ func _run() -> void:
         var packed: PackedScene = load(scene_path)
         var instance: Node = packed.instantiate()
         load("res://EditorScripts/enemy_perception_authoring.gd").configure(instance)
-        assert(instance.get("m_EnemyEntityId") in [14, 16, 17])
-        for field in ["m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot"]:
+        assert(instance.get("_enemyEntityId") in [14, 16, 17])
+        for field in ["_perception", "_body", "_animPlayer", "_hurtBox", "_hitBox", "_hitBoxRoot"]:
             assert(instance.get(field) != null, name + " missing " + field)
-        var player: AnimationPlayer = instance.get("m_AnimPlayer")
+        var player: AnimationPlayer = instance.get("_animPlayer")
         for action in ["attack_1", "hurt", "death"]:
             assert(player.get_animation(action).has_marker("complete"), name + " missing terminal source frame")
         assert(packed.pack(instance) == OK)

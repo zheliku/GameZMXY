@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://bn2sg3olgc8dc" path="res://TheGame/GameScripts/UI/BattleForm/Components/EncounterHealthBar.cs" id="script"]
 [ext_resource type="Texture2D" uid="uid://csf5pqq6wfrx1" path="res://TheGame/Sprites/UI/hud/boss_health_under.png" id="under"]
 
-[node name="EncounterHealthBar" type="Control" unique_id=1140017495 node_paths=PackedStringArray("m_Health", "m_Name")]
+[node name="EncounterHealthBar" type="Control" unique_id=1140017495 node_paths=PackedStringArray("_health", "_name")]
 layout_mode = 3
 anchors_preset = 5
 anchor_left = 0.5
@@ -18,8 +18,8 @@ offset_bottom = 69.0
 grow_horizontal = 2
 mouse_filter = 2
 script = ExtResource("script")
-m_Health = NodePath("Health")
-m_Name = NodePath("Name")
+_health = NodePath("Health")
+_name = NodePath("Name")
 
 [node name="Health" type="TextureProgressBar" parent="." unique_id=1120444682]
 layout_mode = 0

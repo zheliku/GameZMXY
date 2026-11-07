@@ -11,28 +11,16 @@
 
 namespace GameConfig.Skills
 { 
-    public enum EPassiveEffect
+    public enum SkillHero
     {
         /// <summary>
-        /// 生命上限
+        /// 悟空
         /// </summary>
-        MaxHealth = 0,
+        Wukong = 1,
         /// <summary>
-        /// 魔法上限
+        /// 唐僧
         /// </summary>
-        MaxMana = 1,
-        /// <summary>
-        /// 暴击概率加成
-        /// </summary>
-        CriticalChance = 2,
-        /// <summary>
-        /// 每秒回血
-        /// </summary>
-        HealthRegen = 3,
-        /// <summary>
-        /// 每秒回魔
-        /// </summary>
-        ManaRegen = 4,
+        Tangseng = 2,
     }
 
 } 

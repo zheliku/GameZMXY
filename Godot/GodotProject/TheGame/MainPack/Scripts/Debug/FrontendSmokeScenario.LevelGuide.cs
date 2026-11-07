@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using GameConfig.Equipment;
@@ -22,25 +23,25 @@ public sealed partial class FrontendSmokeScenario
     /// <returns>卡片渲染和鼠标行为完成。</returns>
     private async Task CheckLevelGuideAsync(MapForm map)
     {
-        var architecture = GF.Fsm.GetArchitecture();
-        var profile = GF.Fsm.GetSystem<ProfileSystem>();
+        IArchitecture architecture = GF.Fsm.GetArchitecture();
+        ProfileSystem profile = GF.Fsm.GetSystem<ProfileSystem>();
         await CheckWhirlpoolStatesAsync(map);
         for (int id = 1; id < 10; id++)
         {
             profile.RecordLevelClear(id);
         }
-        var names = new[] { "Huaguoshan", "Shuiliandong", "Taohuayuan", "Bianfuku", "Qixingdong",
+        string[] names = new[] { "Huaguoshan", "Shuiliandong", "Taohuayuan", "Bianfuku", "Qixingdong",
             "Jialuoluo", "Qianan", "Donghai", "Shazhiwoliu", "Niumogu" };
-        var window = m_Driver.GetWindow();
+        Window window = _driver.GetWindow();
         window.GuiEmbedSubwindows = true;
         for (int id = 1; id <= 10; id++)
         {
             LevelGuideData data = architecture.SendQuery(new LevelGuideQuery(id));
             Check(!string.IsNullOrEmpty(data.Level.Desc) && !string.IsNullOrEmpty(data.Enemies[0].NameCn), "图鉴缺少介绍或守关敌人");
             Check(data.Drops.Select(item => item.Id).Distinct().Count() == data.Drops.Count, "图鉴掉落没有按装备身份去重");
-            Check(id != 10 || data.Drops.Any(item => item.Id == EEquipmentId.DiamondSnare), "牛魔谷图鉴缺少实际直接奖励");
-            var packed = GD.Load<PackedScene>("res://TheGame/UIs/Map/level_guide_tooltip.tscn");
-            var card = packed.Instantiate<LevelGuideTooltip>();
+            Check(id != 10 || data.Drops.Any(item => item.Id == EquipmentId.DiamondSnare), "牛魔谷图鉴缺少实际直接奖励");
+            PackedScene packed = GD.Load<PackedScene>("res://TheGame/UIs/Map/level_guide_tooltip.tscn");
+            LevelGuideTooltip card = packed.Instantiate<LevelGuideTooltip>();
             map.AddChild(card);
             // 静态美术测量独立于鼠标生命周期，后半段另测真实移入/移出。
             card.SetProcess(false);
@@ -50,13 +51,13 @@ public sealed partial class FrontendSmokeScenario
             card.Show();
             for (int frame = 0; frame < 5; frame++)
             {
-                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+                await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.ProcessFrame);
             }
             card.Size = card.GetCombinedMinimumSize();
             Check(card.IsVisibleInTree(), "卡片测量期间已错误关闭");
             Check(card.Size.X <= 210 && card.Size.Y <= 260, $"图鉴没有适配小型浮层：{id}, size={card.Size}");
             Check(card.GetNode<GridContainer>("Content/Loot/Drops").GetChildCount() == data.Drops.Count, "掉落图文数与查询不符");
-            var enemies = card.GetNode<ItemList>("Content/Encounter/Enemies");
+            ItemList enemies = card.GetNode<ItemList>("Content/Encounter/Enemies");
             Check(enemies.ItemCount == data.Enemies.Count && enemies.GetItemRect(0).Position.Y == enemies.GetItemRect(1).Position.Y,
                 "怪物列表数量错误或未按两列紧凑排布");
             for (int index = 0; index < enemies.ItemCount; index++)
@@ -69,25 +70,25 @@ public sealed partial class FrontendSmokeScenario
                     enemies.GetThemeConstant("icon_margin"), "怪物名称在紧凑列表中被裁断");
                 Check(portrait != null && new Rect2(Vector2.Zero, portrait.Atlas.GetSize()).Encloses(portrait.Region),
                     "怪物图像裁切超出正式图集");
-                using (var portraitImage = portrait.GetImage())
+                using (Image portraitImage = portrait.GetImage())
                 {
                     Check(!portraitImage.IsInvisible() && portraitImage.GetUsedRect().Size == portraitImage.GetSize(),
                         "怪物图片为空或仍含未裁去的透明边缘");
                 }
             }
             Check(!card.HasNode("Content/Footer"), "图鉴仍保留隐藏关入口或提示尾句");
-            foreach (var icon in card.GetNode<GridContainer>("Content/Loot/Drops").GetChildren().OfType<EquipmentCell>())
+            foreach (EquipmentCell icon in card.GetNode<GridContainer>("Content/Loot/Drops").GetChildren().OfType<EquipmentCell>())
             {
                 Check(icon.Texture == null && icon.CustomMinimumSize == new Vector2(32, 32), "图鉴装备仍使用背包背景或未缩小");
             }
 
-            foreach (var text in card.FindChildren("*", "Label", true, false).OfType<Label>())
+            foreach (Label text in card.FindChildren("*", "Label", true, false).OfType<Label>())
             {
                 Check(!text.IsVisibleInTree() || card.GetGlobalRect().Encloses(text.GetGlobalRect()), $"图鉴文本超出背景：{id}/{text.Name}");
             }
             RenderingServer.ForceDraw(false);
             DirAccess.MakeDirRecursiveAbsolute("res://.godot/validation/guide_compact_20261102/cards");
-            using (var image = map.GetViewport().GetTexture().GetImage())
+            using (Image image = map.GetViewport().GetTexture().GetImage())
             {
                 image.SavePng($"res://.godot/validation/guide_compact_20261102/cards/{id}.png");
             }
@@ -100,7 +101,7 @@ public sealed partial class FrontendSmokeScenario
         {
             await MoveMouseAsync(new Vector2(20, 20));
             await WaitUntilAsync(() => !Find<LevelGuideTooltip>().Any(card => card.IsVisibleInTree()), "上一张关卡卡片未关闭");
-            var button = map.GetNode<MapLocationButton>("m_" + name);
+            MapLocationButton button = map.GetNode<MapLocationButton>("m_" + name);
             Vector2 point = Vector2.Zero;
             bool found = false;
             for (int y = 2; y < button.Size.Y && !found; y += 3)
@@ -118,12 +119,12 @@ public sealed partial class FrontendSmokeScenario
             Check(found, "地图入口没有可见命中点：" + name);
             await MoveMouseAsync(point);
             await WaitUntilAsync(() => Find<LevelGuideTooltip>().Any(card => card.IsVisibleInTree()), "原生鼠标悬停没有显示关卡图鉴");
-            var guide = Find<LevelGuideTooltip>().Single(card => card.IsVisibleInTree());
+            LevelGuideTooltip guide = Find<LevelGuideTooltip>().Single(card => card.IsVisibleInTree());
             for (int frame = 0; frame < 5; frame++)
             {
-                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+                await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.ProcessFrame);
             }
-            var cell = guide.GetNode<GridContainer>("Content/Loot/Drops").GetChildren().OfType<EquipmentCell>().First();
+            EquipmentCell cell = guide.GetNode<GridContainer>("Content/Loot/Drops").GetChildren().OfType<EquipmentCell>().First();
             await MoveMouseAsync(cell.GetGlobalRect().GetCenter());
             GD.Print($"GUIDE HOVER PROBE: {name}, card={guide.GetGlobalRect()}, icon={cell.GetGlobalRect()}, visible={guide.Visible}");
             await CaptureAsync("guide_nested_probe_" + name.ToLowerInvariant());
@@ -135,8 +136,8 @@ public sealed partial class FrontendSmokeScenario
             await WaitUntilAsync(() => !Find<LevelGuideTooltip>().Any(card => card.IsVisibleInTree()), "离开地图地点后图鉴仍显示");
         }
         // 图鉴使用定义范围，背包仍显示实例数值，不能为了预览随机生成一份装备。
-        var tooltip = GD.Load<PackedScene>("res://TheGame/UIs/Inventory/equipment_tooltip.tscn").Instantiate<EquipmentTooltip>();
-        tooltip.BindDefinition(GF.Fsm.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbEquipmentConfig.Get(EEquipmentId.CommonPilgrimClothes));
+        EquipmentTooltip tooltip = GD.Load<PackedScene>("res://TheGame/UIs/Inventory/equipment_tooltip.tscn").Instantiate<EquipmentTooltip>();
+        tooltip.BindDefinition(GF.Fsm.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbEquipmentConfig.Get(EquipmentId.CommonPilgrimClothes));
         Check(tooltip.GetNode<VBoxContainer>("Content/Attributes").GetChildren().OfType<Label>().Any(label => label.Text.Contains("20～40")),
             "图鉴没有显示配置属性范围");
         tooltip.Free();
@@ -147,10 +148,10 @@ public sealed partial class FrontendSmokeScenario
             {
                 DisplayServer.WindowSetSize(size);
                 await MoveMouseAsync(new Vector2(20, 20));
-                var button = map.GetNode<MapLocationButton>("m_Huaguoshan");
+                MapLocationButton button = map.GetNode<MapLocationButton>("m_Huaguoshan");
                 await MoveMouseAsync(button.GetGlobalRect().GetCenter());
                 await WaitUntilAsync(() => Find<LevelGuideTooltip>().Any(card => card.IsVisibleInTree()), "缩放后没有显示卡片");
-                var guide = Find<LevelGuideTooltip>().Single(card => card.IsVisibleInTree());
+                LevelGuideTooltip guide = Find<LevelGuideTooltip>().Single(card => card.IsVisibleInTree());
                 Check(new Rect2(Vector2.Zero, map.GetViewportRect().Size).Encloses(guide.GetGlobalRect()), "缩放后卡片超出视口");
                 await CaptureAsync("guide_scale_" + size.X);
             }
@@ -161,7 +162,7 @@ public sealed partial class FrontendSmokeScenario
         }
         await MoveMouseAsync(new Vector2(20, 20));
         await WaitUntilAsync(() => !Find<LevelGuideTooltip>().Any(card => card.IsVisibleInTree()), "点击夹具旧卡未关闭");
-        var first = map.GetNode<MapLocationButton>("m_Huaguoshan");
+        MapLocationButton first = map.GetNode<MapLocationButton>("m_Huaguoshan");
         await ClickAsync(map, "m_Huaguoshan");
         await WaitUntilAsync(() => GF.Procedure.CurrentProcedure is ProcedureLevel, "图鉴阻挡了原地点的真实点击进关");
         Check(!map.IsVisibleInTree() && !Find<LevelGuideTooltip>().Any(card => card.IsVisibleInTree()), "离开地图后遗留浮层");
@@ -170,7 +171,7 @@ public sealed partial class FrontendSmokeScenario
         Find<LevelViewController>().Single().Cleanup();
         for (int frame = 0; frame < 3; frame++)
         {
-            await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+            await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.ProcessFrame);
         }
         GD.Print("SMOKE-LEVEL GUIDE PASS: 10 compact 208px cards, named boss-first enemy lists, transparent 32px equipment, no hidden-room disclosure, 10 nested hovers/exits, two sizes and real click-to-level cleanup");
     }
@@ -182,12 +183,12 @@ public sealed partial class FrontendSmokeScenario
     /// <returns>三态渲染与鼠标检查完成。</returns>
     private async Task CheckWhirlpoolStatesAsync(MapForm map)
     {
-        var profile = GF.Fsm.GetSystem<ProfileSystem>();
-        var button = map.GetNode<MapLocationButton>("m_Shazhiwoliu");
-        var current = button.GetNode<Sprite2D>("CurrentHint");
-        var glow = button.GetNode<TextureRect>("LocationGlow");
-        var animation = map.GetNode<AnimationPlayer>("m_LocationAnimation");
-        using (var normal = button.TextureNormal.GetImage())
+        ProfileSystem profile = GF.Fsm.GetSystem<ProfileSystem>();
+        MapLocationButton button = map.GetNode<MapLocationButton>("m_Shazhiwoliu");
+        Sprite2D current = button.GetNode<Sprite2D>("CurrentHint");
+        TextureRect glow = button.GetNode<TextureRect>("LocationGlow");
+        AnimationPlayer animation = map.GetNode<AnimationPlayer>("m_LocationAnimation");
+        using (Image normal = button.TextureNormal.GetImage())
         {
             Check(normal.IsInvisible(), "鲨之涡流普通态不再是官方透明点击区");
         }
@@ -205,7 +206,7 @@ public sealed partial class FrontendSmokeScenario
         int firstFrame = current.Frame;
         for (int frame = 0; frame < 8; frame++)
         {
-            await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+            await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.ProcessFrame);
         }
         Check(current.Frame != firstFrame, "最新漩涡提示是静止画面");
         await CaptureAsync("guide_whirlpool_current");
@@ -231,25 +232,25 @@ public sealed partial class FrontendSmokeScenario
     /// <returns>布局检查与详情裁图保存完成。</returns>
     private async Task CheckGuideEquipmentDetailsAsync(MapForm map)
     {
-        var scene = GD.Load<PackedScene>("res://TheGame/UIs/Inventory/equipment_tooltip.tscn");
-        var definitions = GF.Fsm.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbEquipmentConfig.DataList;
+        PackedScene scene = GD.Load<PackedScene>("res://TheGame/UIs/Inventory/equipment_tooltip.tscn");
+        IReadOnlyList<EquipmentConfig> definitions = GF.Fsm.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbEquipmentConfig.DataList;
         string output = "res://.godot/validation/guide_visual_20261102/equipment";
         DirAccess.MakeDirRecursiveAbsolute(output);
-        foreach (var definition in definitions)
+        foreach (EquipmentConfig definition in definitions)
         {
-            var tooltip = scene.Instantiate<EquipmentTooltip>();
+            EquipmentTooltip tooltip = scene.Instantiate<EquipmentTooltip>();
             tooltip.BindDefinition(definition);
             tooltip.Position = new Vector2(30, 20);
             map.AddChild(tooltip);
             for (int frame = 0; frame < 3; frame++)
             {
-                await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+                await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.ProcessFrame);
             }
             foreach (string row in new[] { "Quality", "Type" })
             {
-                var caption = tooltip.GetNode<Label>($"Content/Header/{row}/Caption");
-                var value = tooltip.GetNode<Label>($"Content/Header/{row}/Value");
-                var line = caption.GetNode<TextureRect>("Underline");
+                Label caption = tooltip.GetNode<Label>($"Content/Header/{row}/Caption");
+                Label value = tooltip.GetNode<Label>($"Content/Header/{row}/Value");
+                TextureRect line = caption.GetNode<TextureRect>("Underline");
                 Check(Math.Abs(caption.GetGlobalRect().GetCenter().Y - value.GetGlobalRect().GetCenter().Y) <= .5 &&
                     caption.GetThemeFont("font") == value.GetThemeFont("font") &&
                     caption.GetThemeFontSize("font_size") == value.GetThemeFontSize("font_size") &&
@@ -258,17 +259,17 @@ public sealed partial class FrontendSmokeScenario
                 Check(line.Position == new Vector2(36, 18) && line.Size == new Vector2(80, 2),
                     $"{definition.Id}/{row} 渐隐线位置不正确");
             }
-            var price = tooltip.GetNode<Label>("Content/Footer/Price");
+            Label price = tooltip.GetNode<Label>("Content/Footer/Price");
             Check(Math.Abs(tooltip.GetGlobalRect().End.Y - price.GetGlobalRect().End.Y - 6) < 1,
                 $"{definition.Id} 详情底部出现多余留白");
-            foreach (var label in tooltip.FindChildren("*", "Label", true, false).OfType<Label>())
+            foreach (Label label in tooltip.FindChildren("*", "Label", true, false).OfType<Label>())
             {
                 Check(!label.IsVisibleInTree() || tooltip.GetGlobalRect().Encloses(label.GetGlobalRect()),
                     $"{definition.Id}/{label.Name} 文本超出详情背景");
             }
             RenderingServer.ForceDraw(false);
-            using (var image = map.GetViewport().GetTexture().GetImage())
-            using (var crop = image.GetRegion(new Rect2I((Vector2I)tooltip.GlobalPosition, (Vector2I)tooltip.Size)))
+            using (Image image = map.GetViewport().GetTexture().GetImage())
+            using (Image crop = image.GetRegion(new Rect2I((Vector2I)tooltip.GlobalPosition, (Vector2I)tooltip.Size)))
             {
                 crop.SavePng($"{output}/{(int)definition.Id}.png");
             }

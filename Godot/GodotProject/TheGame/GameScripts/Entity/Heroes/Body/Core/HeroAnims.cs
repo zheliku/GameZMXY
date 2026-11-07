@@ -1,68 +1,67 @@
-namespace GameLogic.Heroes.Body
+namespace GameLogic.Heroes.Body;
+
+/// <summary>
+/// 英雄共用的身体与提示动画名；普攻动画名由 AttackConfig.Animation 提供。
+/// </summary>
+public static class HeroAnims
 {
     /// <summary>
-    /// 英雄共用的身体与提示动画名；普攻动画名由 AttackConfig.Animation 提供。
+    /// 独立于身体动作的官方受击闪光。
     /// </summary>
-    public static class HeroAnims
-    {
-        /// <summary>
-        /// 独立于身体动作的官方受击闪光。
-        /// </summary>
-        public const string HurtFeedback = "hero_hurt";
+    public const string HurtFeedback = "hero_hurt";
 
-        /// <summary>
-        /// 原生动画复位轨道；中断也恢复特效和判定默认值。
-        /// </summary>
-        public const string Reset = "RESET";
+    /// <summary>
+    /// 原生动画复位轨道；中断也恢复特效和判定默认值。
+    /// </summary>
+    public const string Reset = "RESET";
 
-        /// <summary>
-        /// 基础待机动画名。
-        /// </summary>
-        public const string Idle = "idle1";
+    /// <summary>
+    /// 基础待机动画名。
+    /// </summary>
+    public const string Idle = "idle1";
 
-        /// <summary>
-        /// 行走动画名。
-        /// </summary>
-        public const string Walk = "walk";
+    /// <summary>
+    /// 行走动画名。
+    /// </summary>
+    public const string Walk = "walk";
 
-        /// <summary>
-        /// 跑步动画名。
-        /// </summary>
-        public const string Run = "run";
+    /// <summary>
+    /// 跑步动画名。
+    /// </summary>
+    public const string Run = "run";
 
-        /// <summary>
-        /// 首次跳跃动画名。
-        /// </summary>
-        public const string Jump = "jump";
+    /// <summary>
+    /// 首次跳跃动画名。
+    /// </summary>
+    public const string Jump = "jump";
 
-        /// <summary>
-        /// 二段跳动画名。
-        /// </summary>
-        public const string Jump2 = "jump_2";
+    /// <summary>
+    /// 二段跳动画名。
+    /// </summary>
+    public const string Jump2 = "jump_2";
 
-        /// <summary>
-        /// 下落动画名。
-        /// </summary>
-        public const string Fall = "fall";
+    /// <summary>
+    /// 下落动画名。
+    /// </summary>
+    public const string Fall = "fall";
 
-        /// <summary>
-        /// 受击动画名。
-        /// </summary>
-        public const string Hurt = "hurt";
+    /// <summary>
+    /// 受击动画名。
+    /// </summary>
+    public const string Hurt = "hurt";
 
-        /// <summary>
-        /// 死亡动画名。
-        /// </summary>
-        public const string Death = "death";
+    /// <summary>
+    /// 死亡动画名。
+    /// </summary>
+    public const string Death = "death";
 
-        /// <summary>
-        /// 独立升级特效动画名。
-        /// </summary>
-        public const string LevelUp = "level_up";
+    /// <summary>
+    /// 独立升级特效动画名。
+    /// </summary>
+    public const string LevelUp = "level_up";
 
-        /// <summary>
-        /// 屏幕空间无双开启提示动画名。
-        /// </summary>
-        public const string MusouActivation = "musou_activation";
-    }
+    /// <summary>
+    /// 屏幕空间无双开启提示动画名。
+    /// </summary>
+    public const string MusouActivation = "musou_activation";
 }

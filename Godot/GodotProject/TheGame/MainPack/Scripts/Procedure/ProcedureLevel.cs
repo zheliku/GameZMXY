@@ -1,32 +1,33 @@
-using IUIForm = GameFramework.UI.IUIForm;
-using GameLogic.Battle;
-using GameLogic.Config;
-using GameLogic.Architecture;
-using GameLogic.Equipment;
-using GameLogic.Save;
-using GameLogic.Battle.Attributes;
-using GameLogic.Procedure.FlowData;
 using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GameConfig;
 using GameConfig.Constant;
+using GameConfig.Hero;
 using GameConfig.Level;
 using GameConfig.Sound;
 using GameFramework.Event;
 using GameFramework.Procedure;
+using GameLogic;
+using GameLogic.Architecture;
+using GameLogic.Audio;
+using GameLogic.Battle;
+using GameLogic.Battle.Attributes;
+using GameLogic.Config;
+using GameLogic.Equipment;
+using GameLogic.Heroes;
+using GameLogic.Level;
+using GameLogic.Procedure.FlowData;
+using GameLogic.Profile;
+using GameLogic.Save;
+using GameLogic.UI;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
 using GodotGameFramework.Scene;
 using GodotGameFramework.UI;
-using GameLogic;
-using GameLogic.Heroes;
-using GameLogic.Level;
-using GameLogic.Profile;
-using GameLogic.UI;
-using GameLogic.Audio;
+using IUIForm = GameFramework.UI.IUIForm;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -37,33 +38,33 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// <remarks>本流程拥有本周期的场景加载、英雄显示、窗口与音乐请求；从流程 FSM 借用档案和系统，离关不移除档案。</remarks>
 public class ProcedureLevel : ProcedureBase
 {
-    private bool m_PendingSettlement; // 待下一流程帧打开结算，避免输入回调内操作窗口。
-    private int m_InventorySerialId; // 本周期的背包窗口，包括在途请求。
-    private int m_SkillSerialId; // 本周期的技能目录窗口，包括在途请求。
-    private int m_SettlementSerialId; // 本周期的结算窗口。
-    private bool m_Navigating; // 检查点等待期间拒绝重复导航。
-    private int m_PendingHiddenLevelId; // 原生入口完成后，下一流程帧重入隐藏关。
-    private ProcedureOwner m_Owner; // 当前流程状态机，重开关卡时使用。
+    private bool _pendingSettlement; // 待下一流程帧打开结算，避免输入回调内操作窗口。
+    private int _inventorySerialId; // 本周期的背包窗口，包括在途请求。
+    private int _skillSerialId; // 本周期的技能目录窗口，包括在途请求。
+    private int _settlementSerialId; // 本周期的结算窗口。
+    private bool _navigating; // 检查点等待期间拒绝重复导航。
+    private int _pendingHiddenLevelId; // 原生入口完成后，下一流程帧重入隐藏关。
+    private ProcedureOwner _owner; // 当前流程状态机，重开关卡时使用。
 
-    private AbstractHeroEntity m_Hero; // 当前流程创建并拥有的玩家实体。
+    private AbstractHeroEntity _hero; // 当前流程创建并拥有的玩家实体。
 
-    private LevelViewController m_LevelViewController; // 流程加载并卸载的场景控制器。
-    private LevelModel m_LevelModel; // 借用：由流程 FSM 独立拥有的本局状态。
-    private LevelSystem m_LevelSystem; // 借用：流程 FSM 独立注册的关卡业务系统。
+    private LevelViewController _levelViewController; // 流程加载并卸载的场景控制器。
+    private LevelModel _levelModel; // 借用：由流程 FSM 独立拥有的本局状态。
+    private LevelSystem _levelSystem; // 借用：流程 FSM 独立注册的关卡业务系统。
 
-    private CancellationTokenSource m_SessionCancellation; // 离开流程时取消正在执行的实体生成。
+    private CancellationTokenSource _sessionCancellation; // 离开流程时取消正在执行的实体生成。
 
-    private int m_EntrySerial; // 让异步完成结果与当前流程进入周期绑定。
+    private int _entrySerial; // 让异步完成结果与当前流程进入周期绑定。
 
-    private int m_LevelOwnerEntry; // 记录当前加载场景由哪个流程周期负责卸载。
+    private int _levelOwnerEntry; // 记录当前加载场景由哪个流程周期负责卸载。
 
-    private string m_LevelScenePath; // 从 Luban LevelConfig 读取的场景路径。
+    private string _levelScenePath; // 从 Luban LevelConfig 读取的场景路径。
 
-    private int m_BattleFormSerialId; // 本会话打开的战斗 HUD 编号；0 表示未打开。
-    private TaskCompletionSource m_BattleFormReady; // 本周期 HUD 完成装配后才开放关卡。
+    private int _battleFormSerialId; // 本会话打开的战斗 HUD 编号；0 表示未打开。
+    private TaskCompletionSource _battleFormReady; // 本周期 HUD 完成装配后才开放关卡。
 
-    private int m_MusicSerial; // 本关 GGF 音乐请求，清理时连在途加载一起取消。
-    private int m_SettingsSerialId; // 本周期的设置窗口，含正在加载的请求。
+    private int _musicSerial; // 本关 GGF 音乐请求，清理时连在途加载一起取消。
+    private int _settingsSerialId; // 本周期的设置窗口，含正在加载的请求。
 
     /// <summary>
     /// 进入流程：并行准备场景和 HUD 资源 → 显示英雄并装配 HUD → 关闭加载界面 → 开始关卡。
@@ -72,18 +73,18 @@ public class ProcedureLevel : ProcedureBase
     protected internal override async void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
-        int entrySerial = ++m_EntrySerial;
-        m_Owner = procedureOwner;
+        int entrySerial = ++_entrySerial;
+        _owner = procedureOwner;
 
 
         try
         {
-            m_SessionCancellation = new CancellationTokenSource();
-            CancellationToken cancellationToken = m_SessionCancellation.Token;
-            var entities = GF.Entity;
+            _sessionCancellation = new CancellationTokenSource();
+            CancellationToken cancellationToken = _sessionCancellation.Token;
+            EntityComponent entities = GF.Entity;
             Tables tables = procedureOwner.GetModel<ConfigurationModel>().Tables;
-            var profile = procedureOwner.GetModel<ProfileModel>();
-            var saveSystem = procedureOwner.GetSystem<SaveSystem>();
+            ProfileModel profile = procedureOwner.GetModel<ProfileModel>();
+            SaveSystem saveSystem = procedureOwner.GetSystem<SaveSystem>();
 
             // 上一局的检查点必须先落盘：重开前等待，失败只记录（档案仍在内存，下一检查点会再写）。
             if (!await saveSystem.PendingWrite)
@@ -91,7 +92,7 @@ public class ProcedureLevel : ProcedureBase
                 Log.Error("[ProcedureLevel] 上一个检查点写入失败，进度仍保留在内存中。");
             }
 
-            if (entrySerial != m_EntrySerial)
+            if (entrySerial != _entrySerial)
             {
                 return;
             }
@@ -101,16 +102,16 @@ public class ProcedureLevel : ProcedureBase
                                   ?? throw new InvalidOperationException("关卡流程缺少地图选择结果。");
             LevelConfig levelConfig = tables.TbLevelConfig.GetOrDefault(selectedLevelId)
                                       ?? throw new InvalidOperationException($"关卡配置不存在：LevelId={selectedLevelId}");
-            m_LevelScenePath = levelConfig.ScenePath;
-            string scenePath = m_LevelScenePath;
+            _levelScenePath = levelConfig.ScenePath;
+            string scenePath = _levelScenePath;
             var loadingWatch = System.Diagnostics.Stopwatch.StartNew();
-            Log.Info("[ProcedureLevel] 加载关卡场景：{0}", m_LevelScenePath);
+            Log.Info("[ProcedureLevel] 加载关卡场景：{0}", _levelScenePath);
 
             // 场景加载本身不取消：若流程在加载中离开，继续等待成功事件后由 entrySerial 分支卸载，避免 additive 场景泄漏。
-            string battleFormPath = tables.TbUIFormConfig.DataList.Single(form => form.UIFormId == EUIFormId.BattleForm).AssetPath;
-            var battleFormAsset = GF.Resource.LoadAssetAsync(battleFormPath);
-            var heroConfig = tables.TbHeroConfig.Get(profile.ActiveHeroId);
-            var heroAsset = GF.Resource.LoadAssetAsync(tables.TbEntityConfig.Get(heroConfig.EntityId).AssetPath);
+            string battleFormPath = tables.TbUIFormConfig.DataList.Single(form => form.UIFormId == UIFormId.BattleForm).AssetPath;
+            Task<Resource> battleFormAsset = GF.Resource.LoadAssetAsync(battleFormPath);
+            HeroConfig heroConfig = tables.TbHeroConfig.Get(profile.ActiveHeroId);
+            Task<Resource> heroAsset = GF.Resource.LoadAssetAsync(tables.TbEntityConfig.Get(heroConfig.EntityId).AssetPath);
             Task<Node2D> levelScene = LoadLevelSceneAsync(scenePath, CancellationToken.None);
             try
             {
@@ -119,7 +120,7 @@ public class ProcedureLevel : ProcedureBase
             catch
             {
                 // 任一并行加载失败，仍回收已经成功挂树且未交给新周期的场景。
-                if (levelScene.IsCompletedSuccessfully && m_LevelOwnerEntry == 0 && GF.Scene.IsSceneLoaded(scenePath))
+                if (levelScene.IsCompletedSuccessfully && _levelOwnerEntry == 0 && GF.Scene.IsSceneLoaded(scenePath))
                 {
                     GF.Scene.UnloadScene(scenePath);
                 }
@@ -128,9 +129,9 @@ public class ProcedureLevel : ProcedureBase
             }
             Node2D levelNode = levelScene.Result;
             Log.Info("[ProcedureLevel] 加载耗时：场景与HUD资源 {0} ms", loadingWatch.ElapsedMilliseconds);
-            if (entrySerial != m_EntrySerial)
+            if (entrySerial != _entrySerial)
             {
-                if (m_LevelOwnerEntry == 0 && GF.Scene.IsSceneLoaded(scenePath))
+                if (_levelOwnerEntry == 0 && GF.Scene.IsSceneLoaded(scenePath))
                 {
                     GF.Scene.UnloadScene(scenePath);
                 }
@@ -139,19 +140,19 @@ public class ProcedureLevel : ProcedureBase
             }
 
             // 先登记场景所有权，再校验根节点；失败路径也能卸载已加载场景。
-            m_LevelOwnerEntry = entrySerial;
-            var levelViewController = levelNode as LevelViewController
-                      ?? throw new InvalidOperationException($"{m_LevelScenePath} 场景根节点未绑定 LevelViewController。");
-            m_LevelViewController = levelViewController;
-            m_LevelModel = new LevelModel();
-            procedureOwner.RegisterModel(m_LevelModel);
+            _levelOwnerEntry = entrySerial;
+            LevelViewController levelViewController = levelNode as LevelViewController
+                      ?? throw new InvalidOperationException($"{_levelScenePath} 场景根节点未绑定 LevelViewController。");
+            _levelViewController = levelViewController;
+            _levelModel = new LevelModel();
+            procedureOwner.RegisterModel(_levelModel);
             procedureOwner.RegisterModel(new HeroModel());
             procedureOwner.RegisterSystem(new HeroStatusSystem(procedureOwner.GetArchitecture()));
             procedureOwner.RegisterSystem(new HeroSystem(procedureOwner.GetArchitecture()));
-            m_LevelSystem = new LevelSystem(procedureOwner.GetArchitecture());
-            procedureOwner.RegisterSystem(m_LevelSystem);
+            _levelSystem = new LevelSystem(procedureOwner.GetArchitecture());
+            procedureOwner.RegisterSystem(_levelSystem);
             levelViewController.Initialize(procedureOwner.GetArchitecture());
-            m_MusicSerial = GF.Sound.PlayConfigured(levelViewController.MusicId, 0.4f);
+            _musicSerial = GF.Sound.PlayConfigured(levelViewController.MusicId, 0.4f);
             levelViewController.Failed += OnLevelFailed;
             levelViewController.HiddenLevelRequested += OnHiddenLevelRequested;
             levelViewController.EntranceOpacityChanged += OnEntranceOpacityChanged;
@@ -160,27 +161,27 @@ public class ProcedureLevel : ProcedureBase
             AbstractHeroEntity hero = await entities.ShowEntityAsync<AbstractHeroEntity>(heroConfig.EntityId);
             GC.KeepAlive(heroAsset.Result);
             Log.Info("[ProcedureLevel] 加载耗时：英雄显示 {0} ms", loadingWatch.ElapsedMilliseconds);
-            if (entrySerial != m_EntrySerial)
+            if (entrySerial != _entrySerial)
             {
                 entities.HideEntitySafe(hero);
                 return;
             }
 
-            m_Hero = hero ?? throw new InvalidOperationException($"英雄实体创建失败：{heroConfig.NameCn}。");
+            _hero = hero ?? throw new InvalidOperationException($"英雄实体创建失败：{heroConfig.NameCn}。");
             if (hero.Config == null || !hero.IsShown)
             {
                 throw new InvalidOperationException("英雄初始化失败。");
             }
 
-            m_Hero.GlobalPosition = m_LevelViewController.PlayerSpawnPosition;
+            _hero.GlobalPosition = _levelViewController.PlayerSpawnPosition;
 
             // HUD 依赖与场景并行加载；先装配并绑定窗口，避免开战后再等首帧 UI 加载。
             var battleFormReady = new TaskCompletionSource();
-            m_BattleFormReady = battleFormReady;
+            _battleFormReady = battleFormReady;
             GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
             GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnBattleFormOpenFailed);
-            m_BattleFormSerialId = GF.UI.OpenUIForm(EUIFormId.BattleForm, new BattleFormData(m_Hero, m_LevelViewController));
-            var battleForm = GF.UI.GetUIForm(m_BattleFormSerialId);
+            _battleFormSerialId = GF.UI.OpenUIForm(UIFormId.BattleForm, new BattleFormData(_hero, _levelViewController));
+            IUIForm battleForm = GF.UI.GetUIForm(_battleFormSerialId);
             SetFormCallbacks(battleForm, bind: true);
             if (battleForm != null)
             {
@@ -198,15 +199,15 @@ public class ProcedureLevel : ProcedureBase
                 await loading.CloseLoadingAsync(cancellationToken);
             }
 
-            if (entrySerial != m_EntrySerial)
+            if (entrySerial != _entrySerial)
             {
                 return;
             }
 
-            m_LevelModel.Outcome.Register(OnLevelEnded);
-            m_LevelViewController.StartSession(entities, m_Hero, cancellationToken);
+            _levelModel.Outcome.Register(OnLevelEnded);
+            _levelViewController.StartSession(entities, _hero, cancellationToken);
 
-            Log.Info("[ProcedureLevel] 战斗 HUD 已就绪，开始关卡：{0}", m_BattleFormSerialId);
+            Log.Info("[ProcedureLevel] 战斗 HUD 已就绪，开始关卡：{0}", _battleFormSerialId);
         }
         catch (Exception ex)
         {
@@ -216,7 +217,7 @@ public class ProcedureLevel : ProcedureBase
             }
 
             Log.Error("[ProcedureLevel] 关卡启动失败：{0}", ex);
-            if (entrySerial == m_EntrySerial)
+            if (entrySerial == _entrySerial)
             {
                 CleanupSession(entrySerial);
                 (GF.UI.GetUIForm(ResourcesCollectionConstant.UI_LoadingForm) as LoadingForm)?.CloseLoading();
@@ -236,19 +237,19 @@ public class ProcedureLevel : ProcedureBase
             GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         }
 
-        SetFormCallbacks(GF.UI.GetUIForm(m_BattleFormSerialId), bind: false);
-        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: false);
-        SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(_battleFormSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(_settingsSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(_settlementSerialId), bind: false);
 
 
-        m_PendingSettlement = false;
+        _pendingSettlement = false;
         base.OnLeave(procedureOwner, isShutdown);
-        int entrySerial = m_EntrySerial;
-        m_EntrySerial++;
-        m_SessionCancellation?.Cancel();
-        m_SessionCancellation?.Dispose();
-        m_SessionCancellation = null;
-        m_BattleFormReady = null;
+        int entrySerial = _entrySerial;
+        _entrySerial++;
+        _sessionCancellation?.Cancel();
+        _sessionCancellation?.Dispose();
+        _sessionCancellation = null;
+        _battleFormReady = null;
 
         if (!isShutdown)
         {
@@ -258,20 +259,20 @@ public class ProcedureLevel : ProcedureBase
         {
             // 窗口退订仍需访问本流程模型，必须在流程FSM被销毁前关闭；不提交存档或回滚。
             CloseForms();
-            if (m_MusicSerial != 0)
+            if (_musicSerial != 0)
             {
-                GF.Sound.StopSound(m_MusicSerial, 0f);
-                m_MusicSerial = 0;
+                GF.Sound.StopSound(_musicSerial, 0f);
+                _musicSerial = 0;
             }
 
-            m_LevelViewController?.UnsubscribeProgressEvents();
+            _levelViewController?.UnsubscribeProgressEvents();
         }
 
-        m_LevelViewController = null;
-        m_LevelSystem = null;
-        m_LevelModel = null;
-        m_Hero = null;
-        m_Owner = null;
+        _levelViewController = null;
+        _levelSystem = null;
+        _levelModel = null;
+        _hero = null;
+        _owner = null;
     }
 
     /// <summary>
@@ -284,29 +285,29 @@ public class ProcedureLevel : ProcedureBase
         float realElapseSeconds)
     {
         base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
-        if (m_PendingHiddenLevelId != 0)
+        if (_pendingHiddenLevelId != 0)
         {
-            procedureOwner.SetData(FlowKeys.SelectedLevelId, (VarInt32)m_PendingHiddenLevelId);
-            m_PendingHiddenLevelId = 0;
+            procedureOwner.SetData(FlowKeys.SelectedLevelId, (VarInt32)_pendingHiddenLevelId);
+            _pendingHiddenLevelId = 0;
             ChangeState<ProcedureLevel>(procedureOwner);
             return;
         }
-        if (!m_PendingSettlement)
+        if (!_pendingSettlement)
         {
             return;
         }
 
-        m_PendingSettlement = false;
+        _pendingSettlement = false;
         // 结算属于本关流程：停止旧音乐（包括在途请求），成功和失败曲仍由同一个 GGF 请求拥有者清理。
-        if (m_MusicSerial != 0)
+        if (_musicSerial != 0)
         {
-            GF.Sound.StopSound(m_MusicSerial);
+            GF.Sound.StopSound(_musicSerial);
         }
         // 结算马上暂停场景；框架的淡入Tween跟随场景暂停，因此此处直接按设置音量起播。
-        m_MusicSerial = GF.Sound.PlayConfigured(m_LevelModel.Outcome.Value == ELevelOutcome.Cleared
-            ? ESoundId.SettlementVictory : ESoundId.SettlementDefeat);
-        m_SettlementSerialId = GF.UI.OpenUIForm(EUIFormId.SettlementForm, new SettlementFormData(m_LevelModel.Result));
-        SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: true);
+        _musicSerial = GF.Sound.PlayConfigured(_levelModel.Outcome.Value == LevelOutcome.Cleared
+            ? SoundId.SettlementVictory : SoundId.SettlementDefeat);
+        _settlementSerialId = GF.UI.OpenUIForm(UIFormId.SettlementForm, new SettlementFormData(_levelModel.Result));
+        SetFormCallbacks(GF.UI.GetUIForm(_settlementSerialId), bind: true);
     }
 
     /// <summary>
@@ -315,19 +316,19 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnSettingsRequested(int formSerialId)
     {
-        if (formSerialId != m_BattleFormSerialId ||
-            m_LevelModel?.Outcome.Value != ELevelOutcome.Running)
+        if (formSerialId != _battleFormSerialId ||
+            _levelModel?.Outcome.Value != LevelOutcome.Running)
         {
             return;
         }
 
-        if (HasWindow(m_SettingsSerialId) || HasWindow(m_InventorySerialId) || HasWindow(m_SkillSerialId))
+        if (HasWindow(_settingsSerialId) || HasWindow(_inventorySerialId) || HasWindow(_skillSerialId))
         {
             return;
         }
 
-        m_SettingsSerialId = GF.UI.OpenUIForm(EUIFormId.SettingsForm);
-        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
+        _settingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
+        SetFormCallbacks(GF.UI.GetUIForm(_settingsSerialId), bind: true);
     }
 
     /// <summary>
@@ -336,19 +337,19 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnInventoryRequested(int formSerialId)
     {
-        if (formSerialId != m_BattleFormSerialId ||
-            m_LevelModel?.Outcome.Value != ELevelOutcome.Running)
+        if (formSerialId != _battleFormSerialId ||
+            _levelModel?.Outcome.Value != LevelOutcome.Running)
         {
             return;
         }
 
-        if (HasWindow(m_SettingsSerialId) || HasWindow(m_InventorySerialId) || HasWindow(m_SkillSerialId))
+        if (HasWindow(_settingsSerialId) || HasWindow(_inventorySerialId) || HasWindow(_skillSerialId))
         {
             return;
         }
 
-        m_InventorySerialId =
-                    GF.UI.OpenUIForm(EUIFormId.InventoryForm, new InventoryFormData(m_Hero));
+        _inventorySerialId =
+                    GF.UI.OpenUIForm(UIFormId.InventoryForm, new InventoryFormData(_hero));
     }
 
     /// <summary>
@@ -357,19 +358,19 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private void OnSkillsRequested(int formSerialId)
     {
-        if (formSerialId != m_BattleFormSerialId ||
-            m_LevelModel?.Outcome.Value != ELevelOutcome.Running ||
-            m_Hero == null || !m_Hero.IsAlive)
+        if (formSerialId != _battleFormSerialId ||
+            _levelModel?.Outcome.Value != LevelOutcome.Running ||
+            _hero == null || !_hero.IsAlive)
         {
             return;
         }
 
-        if (HasWindow(m_SettingsSerialId) || HasWindow(m_InventorySerialId) || HasWindow(m_SkillSerialId))
+        if (HasWindow(_settingsSerialId) || HasWindow(_inventorySerialId) || HasWindow(_skillSerialId))
         {
             return;
         }
 
-        m_SkillSerialId = GF.UI.OpenUIForm(EUIFormId.SkillForm);
+        _skillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm);
     }
 
     /// <summary>
@@ -379,13 +380,13 @@ public class ProcedureLevel : ProcedureBase
     private async void OnMapRequested(int formSerialId)
     {
         int serial = formSerialId;
-        if (serial != 0 && serial == m_SettlementSerialId && m_LevelModel?.Result != null)
+        if (serial != 0 && serial == _settlementSerialId && _levelModel?.Result != null)
         {
-            NavigateAfterCheckpointAsync(m_Owner, m_EntrySerial, retry: false);
+            NavigateAfterCheckpointAsync(_owner, _entrySerial, retry: false);
         }
-        else if (serial != 0 && serial == m_SettingsSerialId && m_LevelModel?.Outcome.Value == ELevelOutcome.Running)
+        else if (serial != 0 && serial == _settingsSerialId && _levelModel?.Outcome.Value == LevelOutcome.Running)
         {
-            await SaveAndNavigateAsync(m_Owner, m_EntrySerial, serial, returnToTitle: false);
+            await SaveAndNavigateAsync(_owner, _entrySerial, serial, returnToTitle: false);
         }
     }
 
@@ -396,9 +397,9 @@ public class ProcedureLevel : ProcedureBase
     private void OnRetryRequested(int formSerialId)
     {
         int serial = formSerialId;
-        if (serial != 0 && serial == m_SettlementSerialId && m_LevelModel?.Outcome.Value == ELevelOutcome.Defeated)
+        if (serial != 0 && serial == _settlementSerialId && _levelModel?.Outcome.Value == LevelOutcome.Defeated)
         {
-            NavigateAfterCheckpointAsync(m_Owner, m_EntrySerial, retry: true);
+            NavigateAfterCheckpointAsync(_owner, _entrySerial, retry: true);
         }
     }
 
@@ -407,10 +408,7 @@ public class ProcedureLevel : ProcedureBase
     /// </summary>
     /// <param name="serial">窗口请求编号；零表示无请求。</param>
     /// <returns>窗口仍属于本周期时为 true。</returns>
-    private static bool HasWindow(int serial)
-    {
-        return serial != 0 && (GF.UI.HasUIForm(serial) || GF.UI.IsLoadingUIForm(serial));
-    }
+    private static bool HasWindow(int serial) => serial != 0 && (GF.UI.HasUIForm(serial) || GF.UI.IsLoadingUIForm(serial));
 
     /// <summary>
     /// 从设置返回标题，先保存当前档案再正常离开关卡。
@@ -418,10 +416,10 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     private async void OnTitleRequested(int formSerialId)
     {
-        if (formSerialId == m_SettingsSerialId &&
-            m_LevelModel?.Outcome.Value == ELevelOutcome.Running)
+        if (formSerialId == _settingsSerialId &&
+            _levelModel?.Outcome.Value == LevelOutcome.Running)
         {
-            await SaveAndNavigateAsync(m_Owner, m_EntrySerial, formSerialId, returnToTitle: true);
+            await SaveAndNavigateAsync(_owner, _entrySerial, formSerialId, returnToTitle: true);
         }
     }
 
@@ -435,22 +433,22 @@ public class ProcedureLevel : ProcedureBase
     private async Task SaveAndNavigateAsync(ProcedureOwner owner, int entrySerial,
         int formSerialId, bool returnToTitle)
     {
-        if (entrySerial != m_EntrySerial || owner.IsDestroyed || m_Navigating)
+        if (entrySerial != _entrySerial || owner.IsDestroyed || _navigating)
         {
             return;
         }
 
-        m_Navigating = true;
-        CancellationToken token = m_SessionCancellation?.Token ?? CancellationToken.None;
+        _navigating = true;
+        CancellationToken token = _sessionCancellation?.Token ?? CancellationToken.None;
         try
         {
             SaveSystem saveSystem = owner.GetSystem<SaveSystem>();
             bool saved = await saveSystem.SaveManuallyAsync(formSerialId, token);
             token.ThrowIfCancellationRequested();
-            if (!saved || entrySerial != m_EntrySerial || owner.IsDestroyed)
+            if (!saved || entrySerial != _entrySerial || owner.IsDestroyed)
             {
                 Log.Error("[ProcedureLevel] 设置返回前存档失败，保留当前关卡。");
-                m_Navigating = false;
+                _navigating = false;
                 return;
             }
 
@@ -469,7 +467,7 @@ public class ProcedureLevel : ProcedureBase
         catch (Exception error)
         {
             Log.Error("[ProcedureLevel] 设置返回前保存失败：{0}", error);
-            m_Navigating = false;
+            _navigating = false;
         }
     }
 
@@ -535,39 +533,39 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="entrySerial">被清理的流程进入周期。</param>
     private void CleanupSession(int entrySerial)
     {
-        SetFormCallbacks(GF.UI.GetUIForm(m_BattleFormSerialId), bind: false);
-        SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: false);
-        SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: false);
-        m_PendingSettlement = false;
-        m_Navigating = false;
-        m_PendingHiddenLevelId = 0;
-        if (m_LevelViewController != null)
+        SetFormCallbacks(GF.UI.GetUIForm(_battleFormSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(_settingsSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(_settlementSerialId), bind: false);
+        _pendingSettlement = false;
+        _navigating = false;
+        _pendingHiddenLevelId = 0;
+        if (_levelViewController != null)
         {
-            m_LevelViewController.HiddenLevelRequested -= OnHiddenLevelRequested;
-            m_LevelViewController.EntranceOpacityChanged -= OnEntranceOpacityChanged;
+            _levelViewController.HiddenLevelRequested -= OnHiddenLevelRequested;
+            _levelViewController.EntranceOpacityChanged -= OnEntranceOpacityChanged;
         }
         // 启动或运行失败也必须使在途等待失效，随后重新进入可创建新周期。
-        if (m_EntrySerial == entrySerial)
+        if (_entrySerial == entrySerial)
         {
-            m_EntrySerial++;
+            _entrySerial++;
         }
 
-        m_SessionCancellation?.Cancel();
-        m_SessionCancellation?.Dispose();
-        m_SessionCancellation = null;
-        m_BattleFormReady = null;
+        _sessionCancellation?.Cancel();
+        _sessionCancellation?.Dispose();
+        _sessionCancellation = null;
+        _battleFormReady = null;
         if (GF.Event.Check(OpenUIFormSuccessEventArgs.EventId, OnFormOpened))
         {
             GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         }
         // 模态窗口先解除暂停和运行订阅，再清理 HUD、实体及关卡事务。
         CloseForms();
-        if (m_MusicSerial != 0)
+        if (_musicSerial != 0)
         {
-            GF.Sound.StopSound(m_MusicSerial, 0.2f);
+            GF.Sound.StopSound(_musicSerial, 0.2f);
         }
 
-        m_MusicSerial = 0;
+        _musicSerial = 0;
 
         if (GF.Event.Check(OpenUIFormFailureEventArgs.EventId, OnBattleFormOpenFailed))
         {
@@ -575,45 +573,45 @@ public class ProcedureLevel : ProcedureBase
         }
 
         // 先停表现和关卡事件，再隐藏实体，最后卸载场景。
-        if (m_LevelViewController != null)
+        if (_levelViewController != null)
         {
-            m_LevelViewController.Failed -= OnLevelFailed;
-            m_LevelModel.Outcome.UnRegister(OnLevelEnded);
-            m_LevelViewController.Cleanup();
+            _levelViewController.Failed -= OnLevelFailed;
+            _levelModel.Outcome.UnRegister(OnLevelEnded);
+            _levelViewController.Cleanup();
         }
 
-        if (m_LevelSystem != null)
+        if (_levelSystem != null)
         {
-            m_Owner.RemoveSystem<LevelSystem>();
+            _owner.RemoveSystem<LevelSystem>();
         }
 
-        if (m_LevelModel != null)
+        if (_levelModel != null)
         {
-            m_Owner.RemoveModel<LevelModel>();
+            _owner.RemoveModel<LevelModel>();
         }
 
-        GF.Entity.HideEntitySafe(m_Hero);
-        m_Owner.RemoveSystem<HeroSystem>();
-        m_Owner.RemoveSystem<HeroStatusSystem>();
-        m_Owner.RemoveModel<HeroModel>();
-        bool ownsScene = m_LevelOwnerEntry == entrySerial;
+        GF.Entity.HideEntitySafe(_hero);
+        _owner.RemoveSystem<HeroSystem>();
+        _owner.RemoveSystem<HeroStatusSystem>();
+        _owner.RemoveModel<HeroModel>();
+        bool ownsScene = _levelOwnerEntry == entrySerial;
         if (ownsScene)
         {
-            if (m_LevelScenePath != null && GF.Scene.IsSceneLoaded(m_LevelScenePath))
+            if (_levelScenePath != null && GF.Scene.IsSceneLoaded(_levelScenePath))
             {
-                GF.Scene.UnloadScene(m_LevelScenePath);
+                GF.Scene.UnloadScene(_levelScenePath);
             }
 
-            m_LevelOwnerEntry = 0;
+            _levelOwnerEntry = 0;
         }
 
-        m_LevelViewController = null;
-        m_LevelSystem = null;
-        m_LevelModel = null;
-        m_Hero = null;
+        _levelViewController = null;
+        _levelSystem = null;
+        _levelModel = null;
+        _hero = null;
         if (ownsScene)
         {
-            m_LevelScenePath = null;
+            _levelScenePath = null;
         }
     }
 
@@ -623,7 +621,7 @@ public class ProcedureLevel : ProcedureBase
     private void CloseForms()
     {
         foreach (int serialId in new[]
-                 { m_InventorySerialId, m_SkillSerialId, m_SettlementSerialId, m_SettingsSerialId, m_BattleFormSerialId })
+                 { _inventorySerialId, _skillSerialId, _settlementSerialId, _settingsSerialId, _battleFormSerialId })
         {
             if (HasWindow(serialId))
             {
@@ -631,21 +629,21 @@ public class ProcedureLevel : ProcedureBase
             }
         }
 
-        m_InventorySerialId = m_SkillSerialId = m_SettlementSerialId = m_SettingsSerialId = m_BattleFormSerialId = 0;
+        _inventorySerialId = _skillSerialId = _settlementSerialId = _settingsSerialId = _battleFormSerialId = 0;
     }
 
     /// <summary>
     /// 场景已完成胜败表现后登记结算，下一流程帧打开窗口；不重复等待已经结束的死亡动画。
     /// </summary>
     /// <param name="outcome">本次关卡结局。</param>
-    private void OnLevelEnded(ELevelOutcome outcome)
+    private void OnLevelEnded(LevelOutcome outcome)
     {
-        if (outcome is not (ELevelOutcome.Cleared or ELevelOutcome.Defeated) || m_Owner == null)
+        if (outcome is not (LevelOutcome.Cleared or LevelOutcome.Defeated) || _owner == null)
         {
             return;
         }
 
-        m_PendingSettlement = true;
+        _pendingSettlement = true;
     }
 
     /// <summary>
@@ -654,10 +652,10 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="levelId">已由关卡系统校验的隐藏关目标。</param>
     private void OnHiddenLevelRequested(int levelId)
     {
-        if (m_LevelModel?.Outcome.Value == ELevelOutcome.Transferred && !m_Navigating)
+        if (_levelModel?.Outcome.Value == LevelOutcome.Transferred && !_navigating)
         {
-            m_Navigating = true;
-            m_PendingHiddenLevelId = levelId;
+            _navigating = true;
+            _pendingHiddenLevelId = levelId;
         }
     }
 
@@ -667,7 +665,7 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="opacity">原生动画给出的0至1透明度。</param>
     private void OnEntranceOpacityChanged(float opacity)
     {
-        if (GF.UI.GetUIForm(m_BattleFormSerialId) is CanvasItem form)
+        if (GF.UI.GetUIForm(_battleFormSerialId) is CanvasItem form)
         {
             form.Modulate = new Color(1, 1, 1, opacity);
         }
@@ -681,15 +679,15 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="retry">失败后重试为 true，否则返回地图。</param>
     private async void NavigateAfterCheckpointAsync(ProcedureOwner owner, int entrySerial, bool retry)
     {
-        if (entrySerial != m_EntrySerial || owner.IsDestroyed || m_Navigating)
+        if (entrySerial != _entrySerial || owner.IsDestroyed || _navigating)
         {
             return;
         }
 
-        m_Navigating = true;
+        _navigating = true;
 
         // 返回地图前等待本次检查点完成；写入失败仍保留内存进度，地图可手动重试保存。
-        Task<bool> write = m_LevelSystem?.CheckpointWrite;
+        Task<bool> write = _levelSystem?.CheckpointWrite;
         try
         {
             if (write != null && !await write)
@@ -703,7 +701,7 @@ public class ProcedureLevel : ProcedureBase
             Log.Error("[ProcedureLevel] 检查点任务异常，当前进度仍保留在内存中，请在地图重新保存：{0}", error);
         }
 
-        if (entrySerial != m_EntrySerial || owner.IsDestroyed)
+        if (entrySerial != _entrySerial || owner.IsDestroyed)
         {
             return;
         }
@@ -725,13 +723,13 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="args">池化事件参数，只在本次分发内读取。</param>
     private void OnBattleFormOpenFailed(object sender, GameEventArgs args)
     {
-        if (args is OpenUIFormFailureEventArgs failure && (failure.SerialId == m_BattleFormSerialId ||
-                                                           failure.SerialId == m_InventorySerialId ||
-                                                           failure.SerialId == m_SkillSerialId ||
-                                                           failure.SerialId == m_SettlementSerialId))
+        if (args is OpenUIFormFailureEventArgs failure && (failure.SerialId == _battleFormSerialId ||
+                                                           failure.SerialId == _inventorySerialId ||
+                                                           failure.SerialId == _skillSerialId ||
+                                                           failure.SerialId == _settlementSerialId))
         {
             Log.Error("[ProcedureLevel] 战斗窗口打开失败：{0}", failure.ErrorMessage);
-            CleanupSession(m_EntrySerial);
+            CleanupSession(_entrySerial);
         }
     }
 
@@ -742,7 +740,7 @@ public class ProcedureLevel : ProcedureBase
     private void OnLevelFailed(Exception error)
     {
         Log.Error("[ProcedureLevel] 关卡运行失败：{0}", error);
-        CleanupSession(m_EntrySerial);
+        CleanupSession(_entrySerial);
     }
 
     /// <summary>
@@ -755,9 +753,9 @@ public class ProcedureLevel : ProcedureBase
         if (args is OpenUIFormSuccessEventArgs opened)
         {
             SetFormCallbacks(opened.UIForm, bind: true);
-            if (opened.UIForm.SerialId == m_BattleFormSerialId)
+            if (opened.UIForm.SerialId == _battleFormSerialId)
             {
-                m_BattleFormReady?.TrySetResult();
+                _battleFormReady?.TrySetResult();
             }
         }
     }
@@ -776,7 +774,7 @@ public class ProcedureLevel : ProcedureBase
 
         switch (form)
         {
-            case BattleForm battleForm when battleForm.SerialId == m_BattleFormSerialId:
+            case BattleForm battleForm when battleForm.SerialId == _battleFormSerialId:
                 battleForm.SettingsRequested -= OnSettingsRequested;
                 if (bind)
                 {
@@ -796,7 +794,7 @@ public class ProcedureLevel : ProcedureBase
                 }
 
                 break;
-            case SettingsForm settingsForm when settingsForm.SerialId == m_SettingsSerialId:
+            case SettingsForm settingsForm when settingsForm.SerialId == _settingsSerialId:
                 settingsForm.TitleRequested -= OnTitleRequested;
                 if (bind)
                 {
@@ -810,7 +808,7 @@ public class ProcedureLevel : ProcedureBase
                 }
 
                 break;
-            case SettlementForm settlementForm when settlementForm.SerialId == m_SettlementSerialId:
+            case SettlementForm settlementForm when settlementForm.SerialId == _settlementSerialId:
                 settlementForm.MapRequested -= OnMapRequested;
                 if (bind)
                 {

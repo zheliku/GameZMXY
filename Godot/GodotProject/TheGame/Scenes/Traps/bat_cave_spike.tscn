@@ -6,14 +6,14 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mjv3q"]
 size = Vector2(30, 58)
 
-[node name="BatCaveSpike" type="Area2D" unique_id=845648522 node_paths=PackedStringArray("m_Sprite", "m_Shape", "m_TriggerRay")]
+[node name="BatCaveSpike" type="Area2D" unique_id=845648522 node_paths=PackedStringArray("_sprite", "_shape", "_triggerRay")]
 collision_layer = 0
 collision_mask = 128
 monitorable = false
 script = ExtResource("1_dngwx")
-m_Sprite = NodePath("Sprite")
-m_Shape = NodePath("CollisionShape2D")
-m_TriggerRay = NodePath("Trigger")
+_sprite = NodePath("Sprite")
+_shape = NodePath("CollisionShape2D")
+_triggerRay = NodePath("Trigger")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=2008937349]
 sprite_frames = ExtResource("2_q2nwm")

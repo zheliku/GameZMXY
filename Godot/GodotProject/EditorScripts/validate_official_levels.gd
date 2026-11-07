@@ -17,8 +17,8 @@ func _validate() -> void:
 		var data: Dictionary = source["1-%d" % number]
 		var level: Node2D = load("res://TheGame/Scenes/Levels/%s/level_%d.tscn" % [["zm1_01_huaguoshan", "zm1_02_shuiliandong", "zm1_03_taohuayuan"][number - 1], number]).instantiate()
 		root.add_child(level)
-		check(level.get("m_LevelId") == number, "LevelId")
-		check(level.get("m_FeaturedOpponentSpawnPointIds").size() == 1, "One boss health bar binding")
+		check(level.get("_levelId") == number, "LevelId")
+		check(level.get("_featuredOpponentSpawnPointIds").size() == 1, "One boss health bar binding")
 		var points := level.get_node("World/SpawnPoints")
 		check(points.get_child_count() == data.spawns.size() + 1, "All source spawn streams")
 		for item in data.spawns:
@@ -79,7 +79,7 @@ func _validate() -> void:
 					matched = matched or collision.to_global(corner).distance_to(point) < 0.01
 				check(matched, "Source collision transform %d/%s" % [number,title])
 		check(level.get_node("World/Geometry").get_child_count() == 4, "Ground/Slopes/Walls/Water groups")
-		for field in ["m_SpawnPoints", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText"]:
+		for field in ["_spawnPoints", "_gates", "_spawner", "_camera", "_exit", "_floatingText"]:
 			check(level.get(field) != null, "Native export binding " + field)
 		if args.has("--snapshots"):
 			var exit := level.get_node("World/Exit")

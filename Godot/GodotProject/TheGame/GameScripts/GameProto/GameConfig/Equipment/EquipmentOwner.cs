@@ -9,18 +9,22 @@
 
 
 
-namespace GameConfig.Loot
+namespace GameConfig.Equipment
 { 
-    public enum EPickupEffect
+    public enum EquipmentOwner
     {
         /// <summary>
-        /// 恢复生命
+        /// 悟空
         /// </summary>
-        Health = 0,
+        Wukong = 1,
         /// <summary>
-        /// 恢复魔法
+        /// 唐僧
         /// </summary>
-        Mana = 1,
+        Tangseng = 2,
+        /// <summary>
+        /// 通用
+        /// </summary>
+        Universal = 0,
     }
 
 } 

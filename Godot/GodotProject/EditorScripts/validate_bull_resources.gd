@@ -30,9 +30,9 @@ func _validate() -> void:
             var scene: Node = load("res://TheGame/Entitys/Enemies/%s/%s_entity.tscn" % [relative, actor.name]).instantiate()
             root.add_child(scene)
             scene.set_physics_process(false)
-            var player: AnimationPlayer = scene.get("m_AnimPlayer")
+            var player: AnimationPlayer = scene.get("_animPlayer")
             player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
-            var body: AnimatedSprite2D = scene.get("m_Body")
+            var body: AnimatedSprite2D = scene.get("_body")
             var shape: CollisionShape2D = scene.get_node("m_HitBoxRoot/m_HitBox/CollisionShape2D")
             for action in actor.actions:
                 var animation := player.get_animation(action.name)
@@ -73,8 +73,8 @@ func _validate() -> void:
                     assert(_method_at(player.get_animation("attack_5"), "DrainCaptiveAnimEvent", frame))
                 assert(_method_at(player.get_animation("death"), "SpawnBossDeathAnimEvent", 25))
             elif actor.name == "bull_demon_heart":
-                var fade: AnimationPlayer = scene.get("m_HeartFade")
-                var heart: AnimatedSprite2D = scene.get("m_Heart")
+                var fade: AnimationPlayer = scene.get("_heartFade")
+                var heart: AnimatedSprite2D = scene.get("_heart")
                 fade.play("show")
                 fade.seek(.5, true, true)
                 assert(is_equal_approx(heart.modulate.a, .4375), "Native fade does not match official Quad.easeOut")
@@ -85,11 +85,11 @@ func _validate() -> void:
             await process_frame
     var level: Node = load("res://TheGame/Scenes/Levels/zm1_10_bull_demon_valley/level_10.tscn").instantiate()
     var source: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(args[2]))["4-1"]
-    assert(level.get("m_LevelId") == 10 and level.get("m_MusicId") == 108)
-    assert(level.get("m_Exit") == null and not level.has_node("World/Exit"))
-    assert(level.get("m_FeaturedOpponentSpawnPointIds") == PackedStringArray(["stage_2_a"]))
-    assert(level.get_node("World/SpawnPoints").get("m_Entries").size() == 4)
-    assert(level.get_node("World/StageGates").get("m_Entries").size() == 3)
+    assert(level.get("_levelId") == 10 and level.get("_musicId") == 108)
+    assert(level.get("_exit") == null and not level.has_node("World/Exit"))
+    assert(level.get("_featuredOpponentSpawnPointIds") == PackedStringArray(["stage_2_a"]))
+    assert(level.get_node("World/SpawnPoints").get("_entries").size() == 4)
+    assert(level.get_node("World/StageGates").get("_entries").size() == 3)
     assert(level.get_node("World/Geometry").find_children("*", "CollisionShape2D", true, false).size() == 3)
     for point in source.spawns:
         assert(level.get_node("World/SpawnPoints/" + point.projectNode).position.is_equal_approx(Vector2(point.position[0], point.position[1])))
@@ -98,7 +98,7 @@ func _validate() -> void:
         assert(is_equal_approx(level.get_node("World/StageGates/Stage%dGate" % order).position.x, gate.battleBounds[1]))
     level.free()
     var form: Control = load("res://TheGame/UIs/map_form.tscn").instantiate()
-    assert(form.get("m_Niumogu") == form.get_node("m_Niumogu"))
+    assert(form.get("_niumogu") == form.get_node("m_Niumogu"))
     assert(form.get_node("m_Niumogu/CurrentHint").scale.is_equal_approx(Vector2.ONE))
     assert(is_equal_approx(form.get_node("m_LocationAnimation").get_animation("niumogu/current").length, 19 / 24.0))
     form.free()

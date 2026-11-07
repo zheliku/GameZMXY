@@ -29,7 +29,7 @@ def _equipment_ids(config_dir):
     for row in xlsx_rows(config_dir / "__enums__.xlsx")["Sheet1"]:
         cells = _cells(row)
         active = cells.get("B") or active
-        if active != "Equipment.EEquipmentId" or not cells.get("H") or not cells.get("J"):
+        if active != "Equipment.EquipmentId" or not cells.get("H") or not cells.get("J"):
             continue
         for name in (cells["H"], cells.get("I")):
             if name:
@@ -79,13 +79,13 @@ def _appearance_entries(project):
         text,
         re.S,
     ):
-        equipment_id = re.search(r"m_EquipmentId = (\d+)", body)
+        equipment_id = re.search(r"_equipmentId = (\d+)", body)
         if equipment_id is None:
             continue
         textures = {
             field: resources[ext_id]
             for field, ext_id in re.findall(
-                r'(m_InventoryIcon|m_GroundIcon) = ExtResource\("([^"]+)"\)', body
+                r'(_inventoryIcon|_groundIcon) = ExtResource\("([^"]+)"\)', body
             )
         }
         if int(equipment_id.group(1)) in entries:
@@ -142,8 +142,8 @@ def _hero_atlas_bindings(project):
     }
     bindings = {}
     for kind, field, base_field in (
-        ("body", "m_ArmorTextures", "m_BaseBody"),
-        ("weapon", "m_WeaponTextures", "m_BaseWeapon"),
+        ("body", "_armorTextures", "_baseBody"),
+        ("weapon", "_weaponTextures", "_baseWeapon"),
     ):
         dictionary = re.search(field + r' = Dictionary\[int, Texture2D\]\(\{(.*?)\}\)', text, re.S)
         base = re.search(base_field + r' = ExtResource\("([^"]+)"\)', text)
@@ -270,7 +270,7 @@ def audit(args):
             continue
         textures = {
             field: _texture_report(project, appearance["textures"].get(field))
-            for field in ("m_InventoryIcon", "m_GroundIcon")
+            for field in ("_inventoryIcon", "_groundIcon")
         }
         for field, report in textures.items():
             if report.get("error"):

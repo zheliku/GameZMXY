@@ -1,252 +1,235 @@
 using System;
 using System.Linq;
+using GameConfig.Battle;
 using GameConfig.Skills;
+using GameFramework.Entity;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Battle.Attacks;
 using GameLogic.Config;
-using GameLogic.Heroes.Body;
 using GameLogic.Effects;
 using GameLogic.Enemies;
+using GameLogic.Heroes.Body;
 using GameLogic.Skills;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.NodePool;
 
-namespace GameLogic.Heroes
+namespace GameLogic.Heroes;
+
+/// <summary>
+/// 英雄技能表现：手动动画、身体攻击包和独立特效的所有权。
+/// </summary>
+public abstract partial class AbstractHeroEntity : ISkillActor
 {
+    // ---- 属性 ----
+
     /// <summary>
-    /// 英雄技能表现：手动动画、身体攻击包和独立特效的所有权。
+    /// 招式使用实体根坐标；与官方角色脚本创建特效和瞬移的 x/y 语义一致。
     /// </summary>
-    public abstract partial class AbstractHeroEntity : ISkillActor
+    Vector2 ISkillActor.SkillPosition
     {
-        // ---- 属性 ----
+        get => GlobalPosition;
 
-        /// <summary>
-        /// 招式使用实体根坐标；与官方角色脚本创建特效和瞬移的 x/y 语义一致。
-        /// </summary>
-        Vector2 ISkillActor.SkillPosition
+        set => GlobalPosition = value;
+    }
+
+    /// <summary>
+    /// 身体状态机当前真正执行的技能，供具体角色连接动画方法。
+    /// </summary>
+    protected AbstractHeroSkillState CurrentSkillState => _bodyFsm?.CurrentState as AbstractHeroSkillState;
+
+    // ---- 技能输入 ----
+
+    /// <summary>
+    /// 角色在身体允许的输入窗口匹配技能和普攻；只登记请求，实际转换归状态机。
+    /// </summary>
+    /// <param name="attacking">当前是否处于普攻。</param>
+    /// <param name="airborne">当前是否处于空中。</param>
+    protected abstract void MatchActionInput(bool attacking, bool airborne);
+
+    // ---- 技能表现接口 ----
+
+    /// <summary>
+    /// 播放原生技能动画及方法轨道，跳阶段使用动画自身的命名标记。
+    /// </summary>
+    /// <param name="animation">完整动画名。</param>
+    /// <param name="startMarker">可选的阶段标记。</param>
+    public void BeginSkillAnimation(string animation, string startMarker = null)
+    {
+        ReleaseAttack();
+        AnimPlayer.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual;
+        AnimPlayer.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
+        if (string.IsNullOrEmpty(startMarker))
         {
-            get
-            {
-                return GlobalPosition;
-            }
-
-            set
-            {
-                GlobalPosition = value;
-            }
-        }
-
-        /// <summary>
-        /// 身体状态机当前真正执行的技能，供具体角色连接动画方法。
-        /// </summary>
-        protected AbstractHeroSkillState CurrentSkillState
-        {
-            get
-            {
-                return m_BodyFsm?.CurrentState as AbstractHeroSkillState;
-            }
-        }
-
-        // ---- 技能输入 ----
-
-        /// <summary>
-        /// 角色在身体允许的输入窗口匹配技能和普攻；只登记请求，实际转换归状态机。
-        /// </summary>
-        /// <param name="attacking">当前是否处于普攻。</param>
-        /// <param name="airborne">当前是否处于空中。</param>
-        protected abstract void MatchActionInput(bool attacking, bool airborne);
-
-        // ---- 技能表现接口 ----
-
-        /// <summary>
-        /// 播放原生技能动画及方法轨道，跳阶段使用动画自身的命名标记。
-        /// </summary>
-        /// <param name="animation">完整动画名。</param>
-        /// <param name="startMarker">可选的阶段标记。</param>
-        public void BeginSkillAnimation(string animation, string startMarker = null)
-        {
-            ReleaseAttack();
-            AnimPlayer.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual;
-            AnimPlayer.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
-            if (string.IsNullOrEmpty(startMarker))
-            {
-                // Stop会回到当前分段起点，先清分段才能确保下一次施放从零开始。
-                AnimPlayer.ResetSection();
-                AnimPlayer.Stop();
-                AnimPlayer.Play(animation);
-            }
-            else
-            {
-                // 原生起播只调用起点的精确方法键。Seek(false)会找各轨道最近的旧键，不能用于招式分支。
-                AnimPlayer.Pause();
-                AnimPlayer.AssignedAnimation = animation;
-                // .tres方法键以float32保存、标记以double保存；同一时点必须使用相同精度才能精确起播。
-                double start = (float)AnimPlayer.GetAnimation(animation).GetMarkerTime(startMarker);
-                AnimPlayer.SetSection(start);
-                AnimPlayer.PlaySection(animation, start);
-            }
-            AnimPlayer.Advance(0);
-        }
-
-        /// <summary>
-        /// 原生推进负责方法键顺序，判定仍重叠时补齐新攻击包的命中。
-        /// </summary>
-        /// <param name="dt">游戏秒数。</param>
-        void ISkillActor.AdvanceSkillAnimation(float dt)
-        {
-            if (AnimPlayer.IsPlaying())
-            {
-                AnimPlayer.Advance(dt);
-            }
-
-            PollAttackOverlaps();
-        }
-
-        /// <summary>
-        /// 保留当前原生姿态，等待具体招式决定后续阶段。
-        /// </summary>
-        void ISkillActor.PauseSkillAnimation()
-        {
-            AnimPlayer.Pause();
-        }
-
-        /// <summary>
-        /// 收招或中断后释放判定并恢复常规动画，不销毁独立效果。
-        /// </summary>
-        public void EndSkillAnimation()
-        {
-            ReleaseAttack();
+            // Stop会回到当前分段起点，先清分段才能确保下一次施放从零开始。
             AnimPlayer.ResetSection();
-            RestartAnim(HeroAnims.Reset);
-            AnimPlayer.Advance(0);
             AnimPlayer.Stop();
-            AnimPlayer.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Physics;
+            AnimPlayer.Play(animation);
+        }
+        else
+        {
+            // 原生起播只调用起点的精确方法键。Seek(false)会找各轨道最近的旧键，不能用于招式分支。
+            AnimPlayer.Pause();
+            AnimPlayer.AssignedAnimation = animation;
+            // .tres方法键以float32保存、标记以double保存；同一时点必须使用相同精度才能精确起播。
+            double start = (float)AnimPlayer.GetAnimation(animation).GetMarkerTime(startMarker);
+            AnimPlayer.SetSection(start);
+            AnimPlayer.PlaySection(animation, start);
+        }
+        AnimPlayer.Advance(0);
+    }
+
+    /// <summary>
+    /// 原生推进负责方法键顺序，判定仍重叠时补齐新攻击包的命中。
+    /// </summary>
+    /// <param name="dt">游戏秒数。</param>
+    void ISkillActor.AdvanceSkillAnimation(float dt)
+    {
+        if (AnimPlayer.IsPlaying())
+        {
+            AnimPlayer.Advance(dt);
         }
 
-        /// <summary>
-        /// 具体角色的原生方法轨道请求收招；状态在轨道遍历返回后执行迁移。
-        /// </summary>
-        protected void CompleteSkillAnimationAnimEvent()
-        {
-            CurrentSkillState?.CompleteAnimation();
-        }
+        PollAttackOverlaps();
+    }
 
-        /// <summary>
-        /// 接收具体技能已计算的基础威力，再应用本次无双倍率。
-        /// </summary>
-        /// <param name="hit">统一伤害表的技能编号。</param>
-        /// <param name="power">无双前威力。</param>
-        /// <param name="knockbackOriginX">具体招式指定的击退中心。</param>
-        void ISkillActor.NewSkillAttack(ESkillHitId hit, double power, float? knockbackOriginX)
-        {
-            var definition = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
-            SetAttack(AttackData.Create((int)hit, CaptureCombatAttributes(),
-                (int)(power * this.GetSystem<HeroSystem>().AttackPowerMultiplier),
-                definition.DamageKind, definition.Knockback, Facing, definition.HitProtect, knockbackOriginX,
-                source: CaptureAttackSource()));
-        }
+    /// <summary>
+    /// 保留当前原生姿态，等待具体招式决定后续阶段。
+    /// </summary>
+    void ISkillActor.PauseSkillAnimation() => AnimPlayer.Pause();
 
-        /// <summary>
-        /// 从框架当前怪物组查找首个可见目标，不穿透场景树。
-        /// </summary>
-        /// <param name="range">最大欧氏距离，像素。</param>
-        /// <param name="inset">视口左右留白，像素。</param>
-        /// <returns>满足条件的世界位置；没有则为空。</returns>
-        Vector2? ISkillActor.FindSkillTarget(float range, float inset)
+    /// <summary>
+    /// 收招或中断后释放判定并恢复常规动画，不销毁独立效果。
+    /// </summary>
+    public void EndSkillAnimation()
+    {
+        ReleaseAttack();
+        AnimPlayer.ResetSection();
+        RestartAnim(HeroAnims.Reset);
+        AnimPlayer.Advance(0);
+        AnimPlayer.Stop();
+        AnimPlayer.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Physics;
+    }
+
+    /// <summary>
+    /// 具体角色的原生方法轨道请求收招；状态在轨道遍历返回后执行迁移。
+    /// </summary>
+    protected void CompleteSkillAnimationAnimEvent() => CurrentSkillState?.CompleteAnimation();
+
+    /// <summary>
+    /// 接收具体技能已计算的基础威力，再应用本次无双倍率。
+    /// </summary>
+    /// <param name="hit">统一伤害表的技能编号。</param>
+    /// <param name="power">无双前威力。</param>
+    /// <param name="knockbackOriginX">具体招式指定的击退中心。</param>
+    void ISkillActor.NewSkillAttack(SkillHitId hit, double power, float? knockbackOriginX)
+    {
+        AttackConfig definition = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
+        SetAttack(AttackData.Create((int)hit, CaptureCombatAttributes(),
+            (int)(power * this.GetSystem<HeroSystem>().AttackPowerMultiplier),
+            definition.DamageKind, definition.Knockback, Facing, definition.HitProtect, knockbackOriginX,
+            source: CaptureAttackSource()));
+    }
+
+    /// <summary>
+    /// 从框架当前怪物组查找首个可见目标，不穿透场景树。
+    /// </summary>
+    /// <param name="range">最大欧氏距离，像素。</param>
+    /// <param name="inset">视口左右留白，像素。</param>
+    /// <returns>满足条件的世界位置；没有则为空。</returns>
+    Vector2? ISkillActor.FindSkillTarget(float range, float inset)
+    {
+        Transform2D canvas = GetViewport().GetCanvasTransform();
+        float width = GetViewportRect().Size.X;
+        Vector2 origin = GlobalPosition;
+        foreach (IEntityGroup group in GF.Entity.GetAllEntityGroups())
         {
-            Transform2D canvas = GetViewport().GetCanvasTransform();
-            float width = GetViewportRect().Size.X;
-            Vector2 origin = GlobalPosition;
-            foreach (var group in GF.Entity.GetAllEntityGroups())
+            foreach (AbstractEnemyEntity monster in group.GetAllEntities().OfType<AbstractEnemyEntity>())
             {
-                foreach (var monster in group.GetAllEntities().OfType<AbstractEnemyEntity>())
+                if (!monster.IsAlive || origin.DistanceTo(monster.GlobalPosition) > range)
                 {
-                    if (!monster.IsAlive || origin.DistanceTo(monster.GlobalPosition) > range)
-                    {
-                        continue;
-                    }
-
-                    var bounds = monster.HurtBox.GetGlobalBounds();
-                    float left = (canvas * bounds.Position).X;
-                    if (left > inset && left < width - inset)
-                    {
-                        return monster.GlobalPosition;
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// 从动画引用的正式场景取池，冻结攻击快照并立即播放。
-        /// </summary>
-        /// <param name="scene">原生方法键直接引用的场景。</param>
-        /// <param name="position">世界位置。</param>
-        /// <param name="hit">可选的伤害阶段。</param>
-        /// <param name="power">已按本招规则取整的威力。</param>
-        /// <param name="completed">本次效果完成通知。</param>
-        /// <param name="knockbackOriginX">本次击退中心。</param>
-        /// <exception cref="InvalidOperationException">场景未登记到框架节点池。</exception>
-        void ISkillActor.PlaySkillEffect(PackedScene scene, Vector2 position,
-            ESkillHitId hit, double power, Action completed, float? knockbackOriginX)
-        {
-            var node = RentSkillEffect(scene);
-            float multiplier = this.GetSystem<HeroSystem>().AttackPowerMultiplier;
-            node.Show(hit == ESkillHitId.None ? null :
-                    this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit),
-                position, Facing, CaptureCombatAttributes(), (int)(power * multiplier),
-                this.GetModel<HeroModel>().WsActive.Value, ReleaseSkillEffect, completed, knockbackOriginX, HitSoundId);
-        }
-
-        // ---- 效果取池与回收 ----
-
-        /// <summary>
-        /// 取得并登记本英雄拥有的离身攻击，供具体角色装填普攻或技能数据。
-        /// </summary>
-        /// <param name="scene">已登记到框架节点池的场景。</param>
-        /// <returns>由本英雄负责回收的效果实例。</returns>
-        /// <exception cref="InvalidOperationException">场景尚未登记到节点池。</exception>
-        protected SkillEffectNode RentSkillEffect(PackedScene scene)
-        {
-            var effect = NodePool.Instance.Get<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
-                throw new InvalidOperationException($"技能特效未登记到节点池：{scene.ResourcePath}");
-            m_SkillEffects.Add(effect);
-            effect.Source = CaptureAttackSource();
-            return effect;
-        }
-
-        /// <summary>
-        /// 移除本英雄的表现所有权后归还对象池。
-        /// </summary>
-        /// <param name="effect">已经完成的活动特效。</param>
-        protected void ReleaseSkillEffect(SkillEffectNode effect)
-        {
-            if (m_SkillEffects.Remove(effect))
-            {
-                NodePool.Instance.Release(effect);
-            }
-        }
-
-        /// <summary>
-        /// 隐藏英雄时回收所有活动特效；关停不访问已释放的节点池。
-        /// </summary>
-        /// <param name="shutdown">是否框架关停。</param>
-        private void ClearSkillEffects(bool shutdown)
-        {
-            if (!shutdown)
-            {
-                foreach (var effect in m_SkillEffects.ToArray())
-                {
-                    ReleaseSkillEffect(effect);
+                    continue;
                 }
 
-                this.GetSystem<SkillSystem>().CancelSkill();
+                Rect2 bounds = monster.HurtBox.GetGlobalBounds();
+                float left = (canvas * bounds.Position).X;
+                if (left > inset && left < width - inset)
+                {
+                    return monster.GlobalPosition;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 从动画引用的正式场景取池，冻结攻击快照并立即播放。
+    /// </summary>
+    /// <param name="scene">原生方法键直接引用的场景。</param>
+    /// <param name="position">世界位置。</param>
+    /// <param name="hit">可选的伤害阶段。</param>
+    /// <param name="power">已按本招规则取整的威力。</param>
+    /// <param name="completed">本次效果完成通知。</param>
+    /// <param name="knockbackOriginX">本次击退中心。</param>
+    /// <exception cref="InvalidOperationException">场景未登记到框架节点池。</exception>
+    void ISkillActor.PlaySkillEffect(PackedScene scene, Vector2 position,
+        SkillHitId hit, double power, Action completed, float? knockbackOriginX)
+    {
+        SkillEffectNode node = RentSkillEffect(scene);
+        float multiplier = this.GetSystem<HeroSystem>().AttackPowerMultiplier;
+        node.Show(hit == SkillHitId.None ? null :
+                this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit),
+            position, Facing, CaptureCombatAttributes(), (int)(power * multiplier),
+            this.GetModel<HeroModel>().WsActive.Value, ReleaseSkillEffect, completed, knockbackOriginX, HitSoundId);
+    }
+
+    // ---- 效果取池与回收 ----
+
+    /// <summary>
+    /// 取得并登记本英雄拥有的离身攻击，供具体角色装填普攻或技能数据。
+    /// </summary>
+    /// <param name="scene">已登记到框架节点池的场景。</param>
+    /// <returns>由本英雄负责回收的效果实例。</returns>
+    /// <exception cref="InvalidOperationException">场景尚未登记到节点池。</exception>
+    protected SkillEffectNode RentSkillEffect(PackedScene scene)
+    {
+        SkillEffectNode effect = NodePool.Instance.Get<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
+            throw new InvalidOperationException($"技能特效未登记到节点池：{scene.ResourcePath}");
+        _skillEffects.Add(effect);
+        effect.Source = CaptureAttackSource();
+        return effect;
+    }
+
+    /// <summary>
+    /// 移除本英雄的表现所有权后归还对象池。
+    /// </summary>
+    /// <param name="effect">已经完成的活动特效。</param>
+    protected void ReleaseSkillEffect(SkillEffectNode effect)
+    {
+        if (_skillEffects.Remove(effect))
+        {
+            NodePool.Instance.Release(effect);
+        }
+    }
+
+    /// <summary>
+    /// 隐藏英雄时回收所有活动特效；关停不访问已释放的节点池。
+    /// </summary>
+    /// <param name="shutdown">是否框架关停。</param>
+    private void ClearSkillEffects(bool shutdown)
+    {
+        if (!shutdown)
+        {
+            foreach (SkillEffectNode effect in _skillEffects.ToArray())
+            {
+                ReleaseSkillEffect(effect);
             }
 
-            m_SkillEffects.Clear();
+            this.GetSystem<SkillSystem>().CancelSkill();
         }
+
+        _skillEffects.Clear();
     }
 }

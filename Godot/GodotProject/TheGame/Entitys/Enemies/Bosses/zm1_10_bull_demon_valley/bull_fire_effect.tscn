@@ -7,11 +7,11 @@
 [sub_resource type="RectangleShape2D" id="shape"]
 size = Vector2(102, 101.1)
 
-[node name="BullDemonFire" type="Node2D" unique_id=1369270674 node_paths=PackedStringArray("m_Player", "m_HitBox", "m_Shape")]
+[node name="BullDemonFire" type="Node2D" unique_id=1369270674 node_paths=PackedStringArray("_player", "_hitBox", "_shape")]
 script = ExtResource("script")
-m_Player = NodePath("AnimationPlayer")
-m_HitBox = NodePath("HitBox")
-m_Shape = NodePath("HitBox/Shape")
+_player = NodePath("AnimationPlayer")
+_hitBox = NodePath("HitBox")
+_shape = NodePath("HitBox/Shape")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1738584259]
 sprite_frames = ExtResource("frames")

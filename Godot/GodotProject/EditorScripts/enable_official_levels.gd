@@ -25,7 +25,7 @@ func _build() -> void:
 		glow.visible = false
 		button.add_child(glow)
 		glow.owner = form
-		button.set("m_HoverImage",glow)
+		button.set("_hoverImage",glow)
 		var library := source.duplicate(true) as AnimationLibrary
 		for name in library.get_animation_list():
 			var animation := library.get_animation(name)

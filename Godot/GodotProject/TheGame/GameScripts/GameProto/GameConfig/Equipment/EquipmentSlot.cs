@@ -9,18 +9,26 @@
 
 
 
-namespace GameConfig.Skills
+namespace GameConfig.Equipment
 { 
-    public enum ESkillHero
+    public enum EquipmentSlot
     {
         /// <summary>
-        /// 悟空
+        /// 武器
         /// </summary>
-        Wukong = 1,
+        Weapon = 0,
         /// <summary>
-        /// 唐僧
+        /// 防具
         /// </summary>
-        Tangseng = 2,
+        Armor = 1,
+        /// <summary>
+        /// 饰品
+        /// </summary>
+        Accessory = 2,
+        /// <summary>
+        /// 法宝
+        /// </summary>
+        Treasure = 3,
     }
 
 } 

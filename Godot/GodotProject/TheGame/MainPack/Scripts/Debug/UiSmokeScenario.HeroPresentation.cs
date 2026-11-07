@@ -11,6 +11,7 @@ using GameLogic.Effects;
 using GameLogic.Enemies;
 using GameLogic.Heroes;
 using GameLogic.Heroes.Body;
+using GameLogic.Heroes.Tangseng;
 using GameLogic.Input;
 using GameLogic.Skills;
 using GameLogic.UI;
@@ -32,7 +33,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>实际渲染与运动检查任务。</returns>
     private async Task CheckHeroPresentationAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        foreach (var enemy in GF.Entity.GetAllEntityGroups().SelectMany(group => group.GetAllEntities()).OfType<AbstractEnemyEntity>())
+        foreach (AbstractEnemyEntity enemy in GF.Entity.GetAllEntityGroups().SelectMany(group => group.GetAllEntities()).OfType<AbstractEnemyEntity>())
         {
             SmokeInspection.FreezeAi(enemy);
             enemy.SetPhysicsProcess(false);
@@ -46,14 +47,14 @@ public sealed partial class UiSmokeScenario
         PushInventoryKey(false);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Any(form => form.Visible),
             "表现专项未打开正式背包");
-        var inventory = GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Single(form => form.Visible);
+        InventoryForm inventory = GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Single(form => form.Visible);
         await WaitUntilAsync(() => !GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single()
             .GetNode<Label>("SaveFeedback/m_SaveFeedback").Visible, "表现截图前保存提示未结束", 5000);
-        var preview = inventory.GetNode<Node2D>("Window/CharacterPanel/m_Preview");
-        var player = preview.GetNode<AnimationPlayer>("AnimationPlayer");
-        var previewBody = preview.GetNode<Sprite2D>("Body");
+        Node2D preview = inventory.GetNode<Node2D>("Window/CharacterPanel/m_Preview");
+        AnimationPlayer player = preview.GetNode<AnimationPlayer>("AnimationPlayer");
+        Sprite2D previewBody = preview.GetNode<Sprite2D>("Body");
         int previewFrames = hero.HeroId == 1 ? 62 : 1;
-        var previewIdle = player.GetAnimation("idle");
+        Animation previewIdle = player.GetAnimation("idle");
         Check(previewIdle.TrackGetKeyCount(0) == previewFrames &&
             previewBody.Texture.ResourcePath.Contains("/preview/"),
             "背包没有使用官方专用待机，仍混入战斗立棍或低头动作");
@@ -74,7 +75,7 @@ public sealed partial class UiSmokeScenario
             preview.GetNode<Sprite2D>("Body").Position == Vector2.Zero,
             "正式背包未采用已核对的共同锚点和角色注册补偿");
         player.SpeedScale = 1;
-        var exp = inventory.GetNode<TextureProgressBar>("Window/CharacterPanel/Experience/m_Experience");
+        TextureProgressBar exp = inventory.GetNode<TextureProgressBar>("Window/CharacterPanel/Experience/m_Experience");
         double expValue = exp.Value;
         foreach (int value in new[] { 0, 50, 100 })
         {
@@ -86,7 +87,7 @@ public sealed partial class UiSmokeScenario
         GF.UI.CloseUIForm(inventory.SerialId);
         await WaitUntilAsync(() => !GF.Base.IsGamePaused, "背包关闭未解除暂停");
 
-        var fsm = SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "m_BodyFsm");
+        IFsm<IHeroBody> fsm = SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "_bodyFsm");
         int originalTicks = Engine.PhysicsTicksPerSecond;
         try
         {
@@ -113,7 +114,7 @@ public sealed partial class UiSmokeScenario
                             captured = true;
                         }
                         samples++;
-                        await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                        await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                     }
                     Check(samples > 0 && captured, "普攻没有覆盖完整姿态与实际物理步");
                     GD.Print($"SMOKE-HERO-ATTACK-ROOT PASS: hero={hero.HeroId}, {ticks}Hz dir={direction}, samples={samples}, dx={hero.GlobalPosition.X - start.X}.");
@@ -127,7 +128,7 @@ public sealed partial class UiSmokeScenario
                 Input.ActionPress(InputSystem.Jump);
                 await WaitUntilAsync(() => hero.ActionData.JumpCount == 2, "二跳未起飞");
                 Input.ActionRelease(InputSystem.Jump);
-                var jump = hero.AnimPlayer.GetAnimation(HeroAnims.Jump2);
+                Animation jump = hero.AnimPlayer.GetAnimation(HeroAnims.Jump2);
                 double endsAt = hero.ActionData.Time + (jump.HasMarker("complete") ? jump.GetMarkerTime("complete") : jump.Length)
                     - hero.AnimPlayer.CurrentAnimationPosition;
                 bool flipCaptured = false;
@@ -140,7 +141,7 @@ public sealed partial class UiSmokeScenario
                         await CaptureCombatAsync($"{name}_double_jump_flip_{ticks}");
                         flipCaptured = true;
                     }
-                    await m_Driver.ToSignal(m_Driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
+                    await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.PhysicsFrame);
                 }
                 await WaitUntilAsync(() => hero.AnimPlayer.CurrentAnimation == HeroAnims.Fall, "二跳结束后未切换下落姿势");
                 Check(Math.Abs(hero.ActionData.Time - endsAt) < 3d / ticks, "二跳姿态切换未跟随原生结束时点");
@@ -168,12 +169,12 @@ public sealed partial class UiSmokeScenario
     /// <returns>两种物理频率和双朝向的平台检查。</returns>
     private async Task CheckTangsengClonePlatformsAsync(TangsengEntity hero)
     {
-        var clone = hero.GetNode<GameLogic.Heroes.Tangseng.TangsengWaterCloneNode>("m_WaterClone");
-        var mainShape = hero.GetNode<CollisionShape2D>("CollisionShape2D");
-        var cloneShape = clone.GetNode<CollisionShape2D>("CollisionShape2D");
+        TangsengWaterCloneNode clone = hero.GetNode<GameLogic.Heroes.Tangseng.TangsengWaterCloneNode>("m_WaterClone");
+        CollisionShape2D mainShape = hero.GetNode<CollisionShape2D>("CollisionShape2D");
+        CollisionShape2D cloneShape = clone.GetNode<CollisionShape2D>("CollisionShape2D");
         Check(mainShape.Position == cloneShape.Position && mainShape.Shape.GetRect() == cloneShape.Shape.GetRect(),
             "幻影没有使用最新本体身体形状及脚底基线");
-        var platforms = FindLevel().GetNode("World/Platforms").GetChildren().OfType<StaticBody2D>().ToArray();
+        StaticBody2D[] platforms = FindLevel().GetNode("World/Platforms").GetChildren().OfType<StaticBody2D>().ToArray();
         Check(platforms.Length > 0, "分身专项没有正式单向平台");
         // 复制正式平台到当前波次内，避免把英雄传送过关卡边界触发后续战斗和奖励。
         var platform = (StaticBody2D)platforms[0].Duplicate();
@@ -187,7 +188,7 @@ public sealed partial class UiSmokeScenario
                 Engine.PhysicsTicksPerSecond = ticks;
                 foreach (int direction in new[] { -1, 1 })
                 {
-                    var surface = platform.GetNode<CollisionShape2D>("Surface");
+                    CollisionShape2D surface = platform.GetNode<CollisionShape2D>("Surface");
                     Rect2 bounds = surface.GlobalTransform * surface.Shape.GetRect();
                     float feet = mainShape.Position.Y + mainShape.Shape.GetRect().End.Y;
                     hero.GlobalPosition = new Vector2(bounds.GetCenter().X, bounds.Position.Y - feet - 60);
@@ -201,7 +202,7 @@ public sealed partial class UiSmokeScenario
                         "从平台释放的水幻影穿过平台");
                     Check(Math.Abs(clone.GlobalPosition.Y - hero.GlobalPosition.Y) < .1,
                         "平台分身与本体的接地高度不同");
-                    var previousCamera = hero.GetViewport().GetCamera2D();
+                    Camera2D previousCamera = hero.GetViewport().GetCamera2D();
                     var camera = new Camera2D { GlobalPosition = new Vector2(bounds.GetCenter().X, 295) };
                     FindLevel().AddChild(camera);
                     camera.MakeCurrent();
@@ -233,8 +234,8 @@ public sealed partial class UiSmokeScenario
     /// <returns>双朝向、两种物理频率和池复用检查任务。</returns>
     private async Task CheckWaterDemonBeamCoverageAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        var scene = GD.Load<PackedScene>("res://TheGame/Entitys/Heroes/Tangseng/tangseng_water_demon_fall_effect.tscn");
-        var effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
+        PackedScene scene = GD.Load<PackedScene>("res://TheGame/Entitys/Heroes/Tangseng/tangseng_water_demon_fall_effect.tscn");
+        HashSet<SkillEffectNode> effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "_skillEffects");
         foreach (int ticks in new[] { 60, 120 })
         {
             Engine.PhysicsTicksPerSecond = ticks;
@@ -245,26 +246,26 @@ public sealed partial class UiSmokeScenario
                 var targets = new List<(AbstractEnemyEntity Enemy, int Hp, bool Hit)>();
                 try
                 {
-                    foreach (var sample in new[] { (Position: new Vector2(0, 126), Hit: true),
+                    foreach ((Vector2 Position, bool Hit) sample in new[] { (Position: new Vector2(0, 126), Hit: true),
                         (Position: new Vector2(100, 126), Hit: false),
                         (Position: new Vector2(65, -50), Hit: true),
                         (Position: new Vector2(90, 289), Hit: true) })
                     {
-                        var enemy = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Gorilla,
+                        var enemy = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
                             new EnemySpawn(origin + sample.Position));
                         SmokeInspection.StrengthenTrainingTarget(enemy);
                         SmokeInspection.FreezeAi(enemy);
                         enemy.SetPhysicsProcess(false);
                         targets.Add((enemy, enemy.Hp, sample.Hit));
                     }
-                    ((ISkillActor)hero).PlaySkillEffect(scene, origin, ESkillHitId.WaterDemonFall,
+                    ((ISkillActor)hero).PlaySkillEffect(scene, origin, SkillHitId.WaterDemonFall,
                         flow.GetModel<HeroModel>().Power.Value * 8);
-                    var effect = effects.Single(e => e.SceneFilePath == scene.ResourcePath);
+                    SkillEffectNode effect = effects.Single(e => e.SceneFilePath == scene.ResourcePath);
                     await WaitUntilAsync(() => effect.GetNode<AnimatedSprite2D>("Origin/Visual/Sprite").Frame >= 13,
                         "水魔光柱没有展开");
                     await CaptureCombatAsync($"tangseng_water_beam_coverage_{ticks}_{direction}");
                     await WaitUntilAsync(() => !effects.Contains(effect), "水魔范围专项效果没有回池");
-                    foreach (var sample in targets)
+                    foreach ((AbstractEnemyEntity Enemy, int Hp, bool Hit) sample in targets)
                     {
                         Check((sample.Enemy.Hp < sample.Hp) == sample.Hit,
                             $"水魔光柱区域错误：{sample.Enemy.GlobalPosition - origin}，expectedHit={sample.Hit}");
@@ -273,7 +274,7 @@ public sealed partial class UiSmokeScenario
                 }
                 finally
                 {
-                    foreach (var sample in targets)
+                    foreach ((AbstractEnemyEntity Enemy, int Hp, bool Hit) sample in targets)
                     {
                         ReleaseTestEntity(sample.Enemy);
                     }

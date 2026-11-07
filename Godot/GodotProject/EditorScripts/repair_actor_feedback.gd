@@ -15,8 +15,8 @@ func _repair() -> void:
 		var original_uid := ResourceLoader.get_resource_uid(path)
 		var actor: Node = load(path).instantiate(PackedScene.GEN_EDIT_STATE_MAIN)
 		var hero := path.contains("wukong")
-		actor.set("m_HurtSoundId", 4 if hero else 0)
-		actor.set("m_HitSoundId", 6 if hero else 0)
+		actor.set("_hurtSoundId", 4 if hero else 0)
+		actor.set("_hitSoundId", 6 if hero else 0)
 		if hero: actor.z_index = 1
 		var packed := PackedScene.new()
 		assert(packed.pack(actor) == OK)

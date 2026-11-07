@@ -35,24 +35,24 @@ public sealed partial class UiSmokeScenario
     private async Task CheckEastSeaEnemiesAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
-        var system = flow.GetSystem<HeroSystem>();
+        HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EastSeaSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                foreach (var (id, count) in new[] { (EEntityId.JiaoDemonKing, 3), (EEntityId.LanternFish, 1) })
+                foreach ((EntityId id, int count) in new[] { (EntityId.JiaoDemonKing, 3), (EntityId.LanternFish, 1) })
                 {
                     foreach (int direction in new[] { -1, 1 })
                     {
                         for (int index = 0; index < count; index++)
                         {
                             hero.GlobalPosition = new Vector2(100000, 100000);
-                            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
-                            var actor = m_Monster;
+                            _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
+                            AbstractEnemyEntity actor = _monster;
                             await WaitUntilAsync(() => actor.OnFloor, "东海出招夹具未落地");
                             SmokeInspection.FreezeAi(actor);
                             hero.GlobalPosition = actor.GlobalPosition + new Vector2(direction * 120, 0);
@@ -70,15 +70,15 @@ public sealed partial class UiSmokeScenario
                             while (actor.AttackSegment >= 0 || actor.GetParent().GetChildren().OfType<SkillEffectNode>().Any(effect => effect.Visible))
                             {
                                 Check(Time.GetTicksMsec() - started < 6500, "东海招式或龙波未结束");
-                                var effect = actor.GetParent().GetChildren().OfType<SkillEffectNode>().FirstOrDefault(effect => effect.Visible);
+                                SkillEffectNode effect = actor.GetParent().GetChildren().OfType<SkillEffectNode>().FirstOrDefault(effect => effect.Visible);
                                 if (effect != null && !sawWave)
                                 {
                                     sawWave = true;
                                     Check(effect.GlobalPosition.IsEqualApprox(castPosition + new Vector2(direction * 30, direction * 30)),
                                         "龙波没有保留官方双向位置");
                                 }
-                                var hitbox = effect?.GetNode<Area2D>("Origin/Visual/HitBox") ?? actor.HitBox;
-                                var shape = hitbox.GetChildren().OfType<CollisionShape2D>().FirstOrDefault(value => !value.Disabled);
+                                Area2D hitbox = effect?.GetNode<Area2D>("Origin/Visual/HitBox") ?? actor.HitBox;
+                                CollisionShape2D shape = hitbox.GetChildren().OfType<CollisionShape2D>().FirstOrDefault(value => !value.Disabled);
                                 if (shape != null)
                                 {
                                     hero.GlobalPosition = shape.GlobalPosition - (hero.HurtBox.GetGlobalBounds().GetCenter() - hero.GlobalPosition);
@@ -97,14 +97,14 @@ public sealed partial class UiSmokeScenario
                                 previousHp = hero.Hp;
                             }
                             Check(hero.Hp < hp, $"东海招式未命中：{id}/{index}/{direction}/{ticks}");
-                            int expectedHits = id == EEntityId.LanternFish ? 2 : index == 2 ? 4 : 1;
+                            int expectedHits = id == EntityId.LanternFish ? 2 : index == 2 ? 4 : 1;
                             Check(actualHits == expectedHits, $"嵌套源帧刷新次数不正确：{id}/{index} expected={expectedHits} actual={actualHits}");
-                            Check(sawWave == (id == EEntityId.JiaoDemonKing && index == 1), "龙波生成招式不正确");
+                            Check(sawWave == (id == EntityId.JiaoDemonKing && index == 1), "龙波生成招式不正确");
                             Check(actor.HitBox.GetChildren().OfType<CollisionShape2D>().All(shape => shape.Disabled), "收招没有关闭身体判定");
                             await WaitUntilAsync(() => !((IEnemyAiAgent)actor).IsAttacking, "东海招式收招未完成");
                             if (actor is JiaoDemonKingEntity)
                             {
-                                await WaitUntilAsync(() => SmokeInspection.ReadField<float>(actor, "m_InvulnerabilityLeft") == 0f,
+                                await WaitUntilAsync(() => SmokeInspection.ReadField<float>(actor, "_invulnerabilityLeft") == 0f,
                                     "45源帧旋转无敌没有结束");
                                 await CheckJiaoDefenseAndDeathAsync(actor, hero);
                             }
@@ -113,7 +113,7 @@ public sealed partial class UiSmokeScenario
                                 ReleaseTestEntity(actor);
                             }
 
-                            m_Monster = null;
+                            _monster = null;
                             GD.Print($"SMOKE-EAST SEA ATTACK 3-2 {ticks}Hz {id}/{index}/{direction} PASS: damage={hp - hero.Hp}, hits={actualHits}");
                             await WaitFramesAsync(3);
                         }
@@ -130,12 +130,12 @@ public sealed partial class UiSmokeScenario
                 GF.Base.ResumeGame();
             }
 
-            if (m_Monster is { IsShown: true })
+            if (_monster is { IsShown: true })
             {
-                ReleaseTestEntity(m_Monster);
+                ReleaseTestEntity(_monster);
             }
 
-            m_Monster = null;
+            _monster = null;
             Engine.PhysicsTicksPerSecond = originalTicks;
             system.RemoveSource(source);
             system.Heal(int.MaxValue);
@@ -155,7 +155,7 @@ public sealed partial class UiSmokeScenario
         int hp = actor.Hp;
         Check(ApplyEastSeaHit(actor, hero.Id, 100, facing, false, new Vector2(48, -48)) == 1 && actor.Hp == hp - 1,
             "鲛魔王背击不是固定一点伤害");
-        var backHit = actor.GetNode<AnimatedSprite2D>("m_BackHit");
+        AnimatedSprite2D backHit = actor.GetNode<AnimatedSprite2D>("m_BackHit");
         Check(backHit.Visible && !((IEnemyBody)actor).HasPendingHurt, "身体背击没有专属反馈或错误地硬直");
         await WaitUntilAsync(() => !backHit.Visible, "十帧背击反馈没有结束");
         Check(ApplyEastSeaHit(actor, hero.Id, 100, facing, true, new Vector2(48, -48)) == 1 &&
@@ -189,9 +189,9 @@ public sealed partial class UiSmokeScenario
             actor.Died -= OnDied;
         }
         await WaitFramesAsync(3);
-        var reused = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.JiaoDemonKing, new EnemySpawn(new Vector2(580, 100)));
+        var reused = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.JiaoDemonKing, new EnemySpawn(new Vector2(580, 100)));
         Check(ReferenceEquals(actor, reused) && !reused.Dead && reused.Hp == reused.MaxHp &&
-            !reused.GetNode<AnimatedSprite2D>("m_BackHit").Visible && SmokeInspection.ReadField<float>(reused, "m_InvulnerabilityLeft") == 0f,
+            !reused.GetNode<AnimatedSprite2D>("m_BackHit").Visible && SmokeInspection.ReadField<float>(reused, "_invulnerabilityLeft") == 0f,
             $"鲛魔王复用残留死亡、背击或无敌：same={ReferenceEquals(actor, reused)}, dead={reused.Dead}, hp={reused.Hp}/{reused.MaxHp}, back={reused.GetNode<AnimatedSprite2D>("m_BackHit").Visible}");
         ReleaseTestEntity(reused);
     }
@@ -208,7 +208,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>实际伤害。</returns>
     private static int ApplyEastSeaHit(AbstractEnemyEntity actor, int attackerId, int power, int direction, bool effect, Vector2 knockback)
     {
-        var data = AttackData.Create(0, default, power, EDamageKind.Real, knockback, direction, 0, isEffect: effect, source: new GameLogic.Battle.Attacks.AttackSource(attackerId, GameConfig.Entity.EEntityId.None, 0, 0));
+        var data = AttackData.Create(0, default, power, DamageKind.Real, knockback, direction, 0, isEffect: effect, source: new GameLogic.Battle.Attacks.AttackSource(attackerId, GameConfig.Entity.EntityId.None, 0, 0));
         try
         {
             return actor.ReceiveHit(data).Damage;
@@ -228,20 +228,20 @@ public sealed partial class UiSmokeScenario
     private async Task CheckEastSeaAiAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
-        var system = flow.GetSystem<HeroSystem>();
+        HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EastSeaAi", 1);
-        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
-                foreach (EEntityId id in new[] { EEntityId.JiaoDemonKing, EEntityId.LanternFish })
+                foreach (EntityId id in new[] { EntityId.JiaoDemonKing, EntityId.LanternFish })
                 {
                     Engine.PhysicsTicksPerSecond = ticks;
                     hero.GlobalPosition = new Vector2(100000, 100000);
-                    m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
-                    var actor = m_Monster;
+                    _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
+                    AbstractEnemyEntity actor = _monster;
                     var agent = (IEnemyAiAgent)actor;
                     await WaitUntilAsync(() => actor.OnFloor, "东海AI未落地");
                     float distance = 280f;
@@ -249,23 +249,23 @@ public sealed partial class UiSmokeScenario
                     {
                         hero.GlobalPosition = actor.GlobalPosition + new Vector2(distance, 0);
                     }
-                    m_Driver.GetTree().PhysicsFrame += FollowActor;
+                    _driver.GetTree().PhysicsFrame += FollowActor;
                     try
                     {
                         FollowActor();
                         typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(actor, [hero]);
-                        if (id == EEntityId.JiaoDemonKing)
+                        if (id == EntityId.JiaoDemonKing)
                         {
                             await WaitUntilAsync(() => actor.AttackSegment == 2, "鲛魔王远距没有旋转");
-                            float invulnerability = SmokeInspection.ReadField<float>(actor, "m_InvulnerabilityLeft");
+                            float invulnerability = SmokeInspection.ReadField<float>(actor, "_invulnerabilityLeft");
                             Check(invulnerability > 1.8f && invulnerability <= 45f / 24f &&
                                 ApplyEastSeaHit(actor, hero.Id, 100, -actor.Facing, false, Vector2.Zero) == 0,
                                 "旋转没有完整45源帧无敌");
                             GF.Base.PauseGame();
                             await WaitFramesAsync(3);
-                            float paused = SmokeInspection.ReadField<float>(actor, "m_InvulnerabilityLeft");
+                            float paused = SmokeInspection.ReadField<float>(actor, "_invulnerabilityLeft");
                             await WaitFramesAsync(8);
-                            Check(SmokeInspection.ReadField<float>(actor, "m_InvulnerabilityLeft") == paused, "暂停推进了旋转无敌");
+                            Check(SmokeInspection.ReadField<float>(actor, "_invulnerabilityLeft") == paused, "暂停推进了旋转无敌");
                             GF.Base.ResumeGame();
                             await WaitUntilAsync(() => !agent.IsAttacking, "旋转未收招");
                             Check(agent.AiData.Cooldowns[2] > 7.9f && agent.AiData.Cooldowns[2] < 8.2f, "旋转不是十秒冷却");
@@ -284,10 +284,10 @@ public sealed partial class UiSmokeScenario
                     }
                     finally
                     {
-                        m_Driver.GetTree().PhysicsFrame -= FollowActor;
+                        _driver.GetTree().PhysicsFrame -= FollowActor;
                     }
                     ReleaseTestEntity(actor);
-                    m_Monster = null;
+                    _monster = null;
                 }
             }
         }
@@ -298,12 +298,12 @@ public sealed partial class UiSmokeScenario
                 GF.Base.ResumeGame();
             }
 
-            if (m_Monster is { IsShown: true })
+            if (_monster is { IsShown: true })
             {
-                ReleaseTestEntity(m_Monster);
+                ReleaseTestEntity(_monster);
             }
 
-            m_Monster = null;
+            _monster = null;
             Engine.PhysicsTicksPerSecond = originalTicks;
             system.RemoveSource(source);
             system.Heal(int.MaxValue);

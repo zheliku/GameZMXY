@@ -15,313 +15,313 @@ public partial class Tables
 {
     #region The Tables
 
-    private UI.TbUIFormConfig m_TbUIFormConfig;
+    private UI.TbUIFormConfig _tbUIFormConfig;
     public UI.TbUIFormConfig TbUIFormConfig
     {
         get
         {
-            if (m_TbUIFormConfig == null)
+            if (_tbUIFormConfig == null)
             {
-                m_TbUIFormConfig = new UI.TbUIFormConfig(defaultLoader("ui_tbuiformconfig"));
-                m_TbUIFormConfig.ResolveRef(this);
+                _tbUIFormConfig = new UI.TbUIFormConfig(_defaultLoader("ui_tbuiformconfig"));
+                _tbUIFormConfig.ResolveRef(this);
             }
-            return m_TbUIFormConfig;
+            return _tbUIFormConfig;
         }
         set
         {
-            m_TbUIFormConfig = value;
-            m_TbUIFormConfig.ResolveRef(this);
+            _tbUIFormConfig = value;
+            _tbUIFormConfig.ResolveRef(this);
         }
     }
-    private Entity.TbEntityConfig m_TbEntityConfig;
+    private Entity.TbEntityConfig _tbEntityConfig;
     public Entity.TbEntityConfig TbEntityConfig
     {
         get
         {
-            if (m_TbEntityConfig == null)
+            if (_tbEntityConfig == null)
             {
-                m_TbEntityConfig = new Entity.TbEntityConfig(defaultLoader("entity_tbentityconfig"));
-                m_TbEntityConfig.ResolveRef(this);
+                _tbEntityConfig = new Entity.TbEntityConfig(_defaultLoader("entity_tbentityconfig"));
+                _tbEntityConfig.ResolveRef(this);
             }
-            return m_TbEntityConfig;
+            return _tbEntityConfig;
         }
         set
         {
-            m_TbEntityConfig = value;
-            m_TbEntityConfig.ResolveRef(this);
+            _tbEntityConfig = value;
+            _tbEntityConfig.ResolveRef(this);
         }
     }
-    private Hero.TbHeroConfig m_TbHeroConfig;
+    private Hero.TbHeroConfig _tbHeroConfig;
     public Hero.TbHeroConfig TbHeroConfig
     {
         get
         {
-            if (m_TbHeroConfig == null)
+            if (_tbHeroConfig == null)
             {
-                m_TbHeroConfig = new Hero.TbHeroConfig(defaultLoader("hero_tbheroconfig"));
-                m_TbHeroConfig.ResolveRef(this);
+                _tbHeroConfig = new Hero.TbHeroConfig(_defaultLoader("hero_tbheroconfig"));
+                _tbHeroConfig.ResolveRef(this);
             }
-            return m_TbHeroConfig;
+            return _tbHeroConfig;
         }
         set
         {
-            m_TbHeroConfig = value;
-            m_TbHeroConfig.ResolveRef(this);
+            _tbHeroConfig = value;
+            _tbHeroConfig.ResolveRef(this);
         }
     }
-    private Hero.TbHeroLevelConfig m_TbHeroLevelConfig;
+    private Hero.TbHeroLevelConfig _tbHeroLevelConfig;
     public Hero.TbHeroLevelConfig TbHeroLevelConfig
     {
         get
         {
-            if (m_TbHeroLevelConfig == null)
+            if (_tbHeroLevelConfig == null)
             {
-                m_TbHeroLevelConfig = new Hero.TbHeroLevelConfig(defaultLoader("hero_tbherolevelconfig"));
-                m_TbHeroLevelConfig.ResolveRef(this);
+                _tbHeroLevelConfig = new Hero.TbHeroLevelConfig(_defaultLoader("hero_tbherolevelconfig"));
+                _tbHeroLevelConfig.ResolveRef(this);
             }
-            return m_TbHeroLevelConfig;
+            return _tbHeroLevelConfig;
         }
         set
         {
-            m_TbHeroLevelConfig = value;
-            m_TbHeroLevelConfig.ResolveRef(this);
+            _tbHeroLevelConfig = value;
+            _tbHeroLevelConfig.ResolveRef(this);
         }
     }
-    private Enemy.TbEnemyConfig m_TbEnemyConfig;
+    private Enemy.TbEnemyConfig _tbEnemyConfig;
     public Enemy.TbEnemyConfig TbEnemyConfig
     {
         get
         {
-            if (m_TbEnemyConfig == null)
+            if (_tbEnemyConfig == null)
             {
-                m_TbEnemyConfig = new Enemy.TbEnemyConfig(defaultLoader("enemy_tbenemyconfig"));
-                m_TbEnemyConfig.ResolveRef(this);
+                _tbEnemyConfig = new Enemy.TbEnemyConfig(_defaultLoader("enemy_tbenemyconfig"));
+                _tbEnemyConfig.ResolveRef(this);
             }
-            return m_TbEnemyConfig;
+            return _tbEnemyConfig;
         }
         set
         {
-            m_TbEnemyConfig = value;
-            m_TbEnemyConfig.ResolveRef(this);
+            _tbEnemyConfig = value;
+            _tbEnemyConfig.ResolveRef(this);
         }
     }
-    private Battle.TbAttackConfig m_TbAttackConfig;
+    private Battle.TbAttackConfig _tbAttackConfig;
     public Battle.TbAttackConfig TbAttackConfig
     {
         get
         {
-            if (m_TbAttackConfig == null)
+            if (_tbAttackConfig == null)
             {
-                m_TbAttackConfig = new Battle.TbAttackConfig(defaultLoader("battle_tbattackconfig"));
-                m_TbAttackConfig.ResolveRef(this);
+                _tbAttackConfig = new Battle.TbAttackConfig(_defaultLoader("battle_tbattackconfig"));
+                _tbAttackConfig.ResolveRef(this);
             }
-            return m_TbAttackConfig;
+            return _tbAttackConfig;
         }
         set
         {
-            m_TbAttackConfig = value;
-            m_TbAttackConfig.ResolveRef(this);
+            _tbAttackConfig = value;
+            _tbAttackConfig.ResolveRef(this);
         }
     }
-    private Battle.TbBattleConfig m_TbBattleConfig;
+    private Battle.TbBattleConfig _tbBattleConfig;
     public Battle.TbBattleConfig TbBattleConfig
     {
         get
         {
-            if (m_TbBattleConfig == null)
+            if (_tbBattleConfig == null)
             {
-                m_TbBattleConfig = new Battle.TbBattleConfig(defaultLoader("battle_tbbattleconfig"));
-                m_TbBattleConfig.ResolveRef(this);
+                _tbBattleConfig = new Battle.TbBattleConfig(_defaultLoader("battle_tbbattleconfig"));
+                _tbBattleConfig.ResolveRef(this);
             }
-            return m_TbBattleConfig;
+            return _tbBattleConfig;
         }
         set
         {
-            m_TbBattleConfig = value;
-            m_TbBattleConfig.ResolveRef(this);
+            _tbBattleConfig = value;
+            _tbBattleConfig.ResolveRef(this);
         }
     }
-    private Sound.TbSoundConfig m_TbSoundConfig;
+    private Sound.TbSoundConfig _tbSoundConfig;
     public Sound.TbSoundConfig TbSoundConfig
     {
         get
         {
-            if (m_TbSoundConfig == null)
+            if (_tbSoundConfig == null)
             {
-                m_TbSoundConfig = new Sound.TbSoundConfig(defaultLoader("sound_tbsoundconfig"));
-                m_TbSoundConfig.ResolveRef(this);
+                _tbSoundConfig = new Sound.TbSoundConfig(_defaultLoader("sound_tbsoundconfig"));
+                _tbSoundConfig.ResolveRef(this);
             }
-            return m_TbSoundConfig;
+            return _tbSoundConfig;
         }
         set
         {
-            m_TbSoundConfig = value;
-            m_TbSoundConfig.ResolveRef(this);
+            _tbSoundConfig = value;
+            _tbSoundConfig.ResolveRef(this);
         }
     }
-    private Level.TbLevelConfig m_TbLevelConfig;
+    private Level.TbLevelConfig _tbLevelConfig;
     public Level.TbLevelConfig TbLevelConfig
     {
         get
         {
-            if (m_TbLevelConfig == null)
+            if (_tbLevelConfig == null)
             {
-                m_TbLevelConfig = new Level.TbLevelConfig(defaultLoader("level_tblevelconfig"));
-                m_TbLevelConfig.ResolveRef(this);
+                _tbLevelConfig = new Level.TbLevelConfig(_defaultLoader("level_tblevelconfig"));
+                _tbLevelConfig.ResolveRef(this);
             }
-            return m_TbLevelConfig;
+            return _tbLevelConfig;
         }
         set
         {
-            m_TbLevelConfig = value;
-            m_TbLevelConfig.ResolveRef(this);
+            _tbLevelConfig = value;
+            _tbLevelConfig.ResolveRef(this);
         }
     }
-    private Hero.TbHeroGrowthConfig m_TbHeroGrowthConfig;
+    private Hero.TbHeroGrowthConfig _tbHeroGrowthConfig;
     public Hero.TbHeroGrowthConfig TbHeroGrowthConfig
     {
         get
         {
-            if (m_TbHeroGrowthConfig == null)
+            if (_tbHeroGrowthConfig == null)
             {
-                m_TbHeroGrowthConfig = new Hero.TbHeroGrowthConfig(defaultLoader("hero_tbherogrowthconfig"));
-                m_TbHeroGrowthConfig.ResolveRef(this);
+                _tbHeroGrowthConfig = new Hero.TbHeroGrowthConfig(_defaultLoader("hero_tbherogrowthconfig"));
+                _tbHeroGrowthConfig.ResolveRef(this);
             }
-            return m_TbHeroGrowthConfig;
+            return _tbHeroGrowthConfig;
         }
         set
         {
-            m_TbHeroGrowthConfig = value;
-            m_TbHeroGrowthConfig.ResolveRef(this);
+            _tbHeroGrowthConfig = value;
+            _tbHeroGrowthConfig.ResolveRef(this);
         }
     }
-    private Profile.TbProfileConfig m_TbProfileConfig;
+    private Profile.TbProfileConfig _tbProfileConfig;
     public Profile.TbProfileConfig TbProfileConfig
     {
         get
         {
-            if (m_TbProfileConfig == null)
+            if (_tbProfileConfig == null)
             {
-                m_TbProfileConfig = new Profile.TbProfileConfig(defaultLoader("profile_tbprofileconfig"));
-                m_TbProfileConfig.ResolveRef(this);
+                _tbProfileConfig = new Profile.TbProfileConfig(_defaultLoader("profile_tbprofileconfig"));
+                _tbProfileConfig.ResolveRef(this);
             }
-            return m_TbProfileConfig;
+            return _tbProfileConfig;
         }
         set
         {
-            m_TbProfileConfig = value;
-            m_TbProfileConfig.ResolveRef(this);
+            _tbProfileConfig = value;
+            _tbProfileConfig.ResolveRef(this);
         }
     }
     /// <summary>
     /// 造一粗糙与普通装备
     /// </summary>
-    private Equipment.TbEquipmentConfig m_TbEquipmentConfig;
+    private Equipment.TbEquipmentConfig _tbEquipmentConfig;
     public Equipment.TbEquipmentConfig TbEquipmentConfig
     {
         get
         {
-            if (m_TbEquipmentConfig == null)
+            if (_tbEquipmentConfig == null)
             {
-                m_TbEquipmentConfig = new Equipment.TbEquipmentConfig(defaultLoader("equipment_tbequipmentconfig"));
-                m_TbEquipmentConfig.ResolveRef(this);
+                _tbEquipmentConfig = new Equipment.TbEquipmentConfig(_defaultLoader("equipment_tbequipmentconfig"));
+                _tbEquipmentConfig.ResolveRef(this);
             }
-            return m_TbEquipmentConfig;
+            return _tbEquipmentConfig;
         }
         set
         {
-            m_TbEquipmentConfig = value;
-            m_TbEquipmentConfig.ResolveRef(this);
+            _tbEquipmentConfig = value;
+            _tbEquipmentConfig.ResolveRef(this);
         }
     }
     /// <summary>
     /// 怪物装备池
     /// </summary>
-    private Loot.TbEquipmentDropPoolConfig m_TbEquipmentDropPoolConfig;
+    private Loot.TbEquipmentDropPoolConfig _tbEquipmentDropPoolConfig;
     public Loot.TbEquipmentDropPoolConfig TbEquipmentDropPoolConfig
     {
         get
         {
-            if (m_TbEquipmentDropPoolConfig == null)
+            if (_tbEquipmentDropPoolConfig == null)
             {
-                m_TbEquipmentDropPoolConfig = new Loot.TbEquipmentDropPoolConfig(defaultLoader("loot_tbequipmentdroppoolconfig"));
-                m_TbEquipmentDropPoolConfig.ResolveRef(this);
+                _tbEquipmentDropPoolConfig = new Loot.TbEquipmentDropPoolConfig(_defaultLoader("loot_tbequipmentdroppoolconfig"));
+                _tbEquipmentDropPoolConfig.ResolveRef(this);
             }
-            return m_TbEquipmentDropPoolConfig;
+            return _tbEquipmentDropPoolConfig;
         }
         set
         {
-            m_TbEquipmentDropPoolConfig = value;
-            m_TbEquipmentDropPoolConfig.ResolveRef(this);
+            _tbEquipmentDropPoolConfig = value;
+            _tbEquipmentDropPoolConfig.ResolveRef(this);
         }
     }
     /// <summary>
     /// 地面恢复品，接触立即使用
     /// </summary>
-    private Loot.TbPickupConfig m_TbPickupConfig;
+    private Loot.TbPickupConfig _tbPickupConfig;
     public Loot.TbPickupConfig TbPickupConfig
     {
         get
         {
-            if (m_TbPickupConfig == null)
+            if (_tbPickupConfig == null)
             {
-                m_TbPickupConfig = new Loot.TbPickupConfig(defaultLoader("loot_tbpickupconfig"));
-                m_TbPickupConfig.ResolveRef(this);
+                _tbPickupConfig = new Loot.TbPickupConfig(_defaultLoader("loot_tbpickupconfig"));
+                _tbPickupConfig.ResolveRef(this);
             }
-            return m_TbPickupConfig;
+            return _tbPickupConfig;
         }
         set
         {
-            m_TbPickupConfig = value;
-            m_TbPickupConfig.ResolveRef(this);
+            _tbPickupConfig = value;
+            _tbPickupConfig.ResolveRef(this);
         }
     }
     /// <summary>
     /// 造一主动技能面板、学习费用与耗蓝
     /// </summary>
-    private Skills.TbSkillConfig m_TbSkillConfig;
+    private Skills.TbSkillConfig _tbSkillConfig;
     public Skills.TbSkillConfig TbSkillConfig
     {
         get
         {
-            if (m_TbSkillConfig == null)
+            if (_tbSkillConfig == null)
             {
-                m_TbSkillConfig = new Skills.TbSkillConfig(defaultLoader("skills_tbskillconfig"));
-                m_TbSkillConfig.ResolveRef(this);
+                _tbSkillConfig = new Skills.TbSkillConfig(_defaultLoader("skills_tbskillconfig"));
+                _tbSkillConfig.ResolveRef(this);
             }
-            return m_TbSkillConfig;
+            return _tbSkillConfig;
         }
         set
         {
-            m_TbSkillConfig = value;
-            m_TbSkillConfig.ResolveRef(this);
+            _tbSkillConfig = value;
+            _tbSkillConfig.ResolveRef(this);
         }
     }
     /// <summary>
     /// 造一五项被动，每项五级
     /// </summary>
-    private Skills.TbPassiveConfig m_TbPassiveConfig;
+    private Skills.TbPassiveConfig _tbPassiveConfig;
     public Skills.TbPassiveConfig TbPassiveConfig
     {
         get
         {
-            if (m_TbPassiveConfig == null)
+            if (_tbPassiveConfig == null)
             {
-                m_TbPassiveConfig = new Skills.TbPassiveConfig(defaultLoader("skills_tbpassiveconfig"));
-                m_TbPassiveConfig.ResolveRef(this);
+                _tbPassiveConfig = new Skills.TbPassiveConfig(_defaultLoader("skills_tbpassiveconfig"));
+                _tbPassiveConfig.ResolveRef(this);
             }
-            return m_TbPassiveConfig;
+            return _tbPassiveConfig;
         }
         set
         {
-            m_TbPassiveConfig = value;
-            m_TbPassiveConfig.ResolveRef(this);
+            _tbPassiveConfig = value;
+            _tbPassiveConfig.ResolveRef(this);
         }
     }
 
     #endregion
 
-    System.Func<string, ByteBuf> defaultLoader;
+    private System.Func<string, ByteBuf> _defaultLoader;
 
     public Tables(System.Func<string, ByteBuf> loader)
     {
@@ -331,8 +331,8 @@ public partial class Tables
     
     public void SetDefaultLoader(System.Func<string, ByteBuf> loader)
     {
-        defaultLoader = null;
-        defaultLoader = loader;
+        _defaultLoader = null;
+        _defaultLoader = loader;
     }
 
     //public partial void Init();

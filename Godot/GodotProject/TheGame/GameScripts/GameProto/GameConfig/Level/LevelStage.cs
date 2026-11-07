@@ -18,7 +18,7 @@ public sealed partial class LevelStage : Luban.BeanBase
     {
         StageOrder = _buf.ReadInt();
         StageName = _buf.ReadString();
-        Activation = (Level.EStageActivation)_buf.ReadInt();
+        Activation = (Level.StageActivation)_buf.ReadInt();
         TriggerId = _buf.ReadString();
         LeftGateId = _buf.ReadString();
         GateId = _buf.ReadString();
@@ -43,7 +43,7 @@ public sealed partial class LevelStage : Luban.BeanBase
     /// <summary>
     /// CameraArrived=相机右缘抵达阶段右界；Trigger=特殊区域激活
     /// </summary>
-    public readonly Level.EStageActivation Activation;
+    public readonly Level.StageActivation Activation;
     /// <summary>
     /// 仅 Trigger 阶段填写，其他阶段留空
     /// </summary>

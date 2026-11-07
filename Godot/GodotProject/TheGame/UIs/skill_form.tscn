@@ -42,7 +42,7 @@
 [ext_resource type="Texture2D" uid="uid://dflf2u60a6bce" path="res://TheGame/Sprites/UI/skills/skills_wukong_normal.png" id="wukong_normal"]
 [ext_resource type="Texture2D" uid="uid://c62rdxg1jxdkh" path="res://TheGame/Sprites/UI/skills/skills_wukong_selected.png" id="wukong_selected"]
 
-[node name="SkillForm" type="Control" unique_id=1949534136 node_paths=PackedStringArray("m_Wukong", "m_Tangseng", "m_Back", "m_ActivePage", "m_PassivePage", "m_Active", "m_Passive", "m_Soul")]
+[node name="SkillForm" type="Control" unique_id=1949534136 node_paths=PackedStringArray("_wukong", "_tangseng", "_back", "_activePage", "_passivePage", "_active", "_passive", "_soul")]
 editor_description = "技能行直接位于本场景。图标及键位由本场景编辑；运行时只刷新数值目录与学习信息。列宽对应原版表格；图标保留各自的原始坐标。字体使用原版方正粗圆，说明不额外缩小。"
 layout_mode = 3
 anchors_preset = 15
@@ -52,14 +52,14 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("official_theme")
 script = ExtResource("script")
-m_Wukong = NodePath("Content/Header/m_Wukong")
-m_Tangseng = NodePath("Content/Header/m_Tangseng")
-m_Back = NodePath("Content/Header/m_Back")
-m_ActivePage = NodePath("Content/m_ActivePage")
-m_PassivePage = NodePath("Content/m_PassivePage")
-m_Active = NodePath("Content/Footer/m_Active")
-m_Passive = NodePath("Content/Footer/m_Passive")
-m_Soul = NodePath("Content/Footer/Balance/m_Soul")
+_wukong = NodePath("Content/Header/m_Wukong")
+_tangseng = NodePath("Content/Header/m_Tangseng")
+_back = NodePath("Content/Header/m_Back")
+_activePage = NodePath("Content/m_ActivePage")
+_passivePage = NodePath("Content/m_PassivePage")
+_active = NodePath("Content/Footer/m_Active")
+_passive = NodePath("Content/Footer/m_Passive")
+_soul = NodePath("Content/Footer/Balance/m_Soul")
 
 [node name="Content" type="Control" parent="." unique_id=2134977421]
 layout_mode = 1
@@ -130,18 +130,18 @@ texture_normal = ExtResource("back_normal")
 texture_pressed = ExtResource("back_hover")
 texture_hover = ExtResource("back_hover")
 
-[node name="m_ActivePage" type="Control" parent="Content" unique_id=1979918179 node_paths=PackedStringArray("m_WukongRows", "m_TangsengRows", "m_Names", "m_Icons", "m_Souls", "m_Descriptions")]
+[node name="m_ActivePage" type="Control" parent="Content" unique_id=1979918179 node_paths=PackedStringArray("_wukongRows", "_tangsengRows", "_names", "_icons", "_souls", "_descriptions")]
 anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 535.0
 mouse_filter = 2
 script = ExtResource("active_page")
-m_WukongRows = NodePath("m_WukongRows")
-m_TangsengRows = NodePath("m_TangsengRows")
-m_Names = [NodePath("m_WukongRows/Skill1/Name"), NodePath("m_WukongRows/Skill2/Name"), NodePath("m_WukongRows/Skill3/Name"), NodePath("m_WukongRows/Skill4/Name"), NodePath("m_WukongRows/Skill5/Name"), NodePath("m_TangsengRows/Skill1/Name"), NodePath("m_TangsengRows/Skill2/Name"), NodePath("m_TangsengRows/Skill3/Name"), NodePath("m_TangsengRows/Skill4/Name"), NodePath("m_TangsengRows/Skill5/Name")]
-m_Icons = [NodePath("m_WukongRows/Skill1/IconCell/Icon"), NodePath("m_WukongRows/Skill2/IconCell/Icon"), NodePath("m_WukongRows/Skill3/IconCell/Icon"), NodePath("m_WukongRows/Skill4/IconCell/Icon"), NodePath("m_WukongRows/Skill5/IconCell/Icon"), NodePath("m_TangsengRows/Skill1/IconCell/Icon"), NodePath("m_TangsengRows/Skill2/IconCell/Icon"), NodePath("m_TangsengRows/Skill3/IconCell/Icon"), NodePath("m_TangsengRows/Skill4/IconCell/Icon"), NodePath("m_TangsengRows/Skill5/IconCell/Icon")]
-m_Souls = [NodePath("m_WukongRows/Skill1/Soul"), NodePath("m_WukongRows/Skill2/Soul"), NodePath("m_WukongRows/Skill3/Soul"), NodePath("m_WukongRows/Skill4/Soul"), NodePath("m_WukongRows/Skill5/Soul"), NodePath("m_TangsengRows/Skill1/Soul"), NodePath("m_TangsengRows/Skill2/Soul"), NodePath("m_TangsengRows/Skill3/Soul"), NodePath("m_TangsengRows/Skill4/Soul"), NodePath("m_TangsengRows/Skill5/Soul")]
-m_Descriptions = [NodePath("m_WukongRows/Skill1/DescriptionCell/Description"), NodePath("m_WukongRows/Skill2/DescriptionCell/Description"), NodePath("m_WukongRows/Skill3/DescriptionCell/Description"), NodePath("m_WukongRows/Skill4/DescriptionCell/Description"), NodePath("m_WukongRows/Skill5/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill1/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill2/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill3/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill4/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill5/DescriptionCell/Description")]
+_wukongRows = NodePath("m_WukongRows")
+_tangsengRows = NodePath("m_TangsengRows")
+_names = [NodePath("m_WukongRows/Skill1/Name"), NodePath("m_WukongRows/Skill2/Name"), NodePath("m_WukongRows/Skill3/Name"), NodePath("m_WukongRows/Skill4/Name"), NodePath("m_WukongRows/Skill5/Name"), NodePath("m_TangsengRows/Skill1/Name"), NodePath("m_TangsengRows/Skill2/Name"), NodePath("m_TangsengRows/Skill3/Name"), NodePath("m_TangsengRows/Skill4/Name"), NodePath("m_TangsengRows/Skill5/Name")]
+_icons = [NodePath("m_WukongRows/Skill1/IconCell/Icon"), NodePath("m_WukongRows/Skill2/IconCell/Icon"), NodePath("m_WukongRows/Skill3/IconCell/Icon"), NodePath("m_WukongRows/Skill4/IconCell/Icon"), NodePath("m_WukongRows/Skill5/IconCell/Icon"), NodePath("m_TangsengRows/Skill1/IconCell/Icon"), NodePath("m_TangsengRows/Skill2/IconCell/Icon"), NodePath("m_TangsengRows/Skill3/IconCell/Icon"), NodePath("m_TangsengRows/Skill4/IconCell/Icon"), NodePath("m_TangsengRows/Skill5/IconCell/Icon")]
+_souls = [NodePath("m_WukongRows/Skill1/Soul"), NodePath("m_WukongRows/Skill2/Soul"), NodePath("m_WukongRows/Skill3/Soul"), NodePath("m_WukongRows/Skill4/Soul"), NodePath("m_WukongRows/Skill5/Soul"), NodePath("m_TangsengRows/Skill1/Soul"), NodePath("m_TangsengRows/Skill2/Soul"), NodePath("m_TangsengRows/Skill3/Soul"), NodePath("m_TangsengRows/Skill4/Soul"), NodePath("m_TangsengRows/Skill5/Soul")]
+_descriptions = [NodePath("m_WukongRows/Skill1/DescriptionCell/Description"), NodePath("m_WukongRows/Skill2/DescriptionCell/Description"), NodePath("m_WukongRows/Skill3/DescriptionCell/Description"), NodePath("m_WukongRows/Skill4/DescriptionCell/Description"), NodePath("m_WukongRows/Skill5/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill1/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill2/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill3/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill4/DescriptionCell/Description"), NodePath("m_TangsengRows/Skill5/DescriptionCell/Description")]
 
 [node name="TableBackground" type="TextureRect" parent="Content/m_ActivePage" unique_id=1479476789]
 layout_mode = 0
@@ -909,19 +909,19 @@ text = "召唤出魔法阵，向空中引出一道光柱，对目标造成较大
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="m_PassivePage" type="Control" parent="Content" unique_id=1676550797 node_paths=PackedStringArray("m_Names", "m_Levels", "m_CurrentEffects", "m_NextEffects", "m_Souls", "m_UpgradeButtons")]
+[node name="m_PassivePage" type="Control" parent="Content" unique_id=1676550797 node_paths=PackedStringArray("_names", "_levels", "_currentEffects", "_nextEffects", "_souls", "_upgradeButtons")]
 visible = false
 anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 535.0
 mouse_filter = 2
 script = ExtResource("passive_page")
-m_Names = [NodePath("m_PassiveRows/Passive1/Name"), NodePath("m_PassiveRows/Passive2/Name"), NodePath("m_PassiveRows/Passive3/Name"), NodePath("m_PassiveRows/Passive4/Name"), NodePath("m_PassiveRows/Passive5/Name")]
-m_Levels = [NodePath("m_PassiveRows/Passive1/Level"), NodePath("m_PassiveRows/Passive2/Level"), NodePath("m_PassiveRows/Passive3/Level"), NodePath("m_PassiveRows/Passive4/Level"), NodePath("m_PassiveRows/Passive5/Level")]
-m_CurrentEffects = [NodePath("m_PassiveRows/Passive1/CurrentEffect"), NodePath("m_PassiveRows/Passive2/CurrentEffect"), NodePath("m_PassiveRows/Passive3/CurrentEffect"), NodePath("m_PassiveRows/Passive4/CurrentEffect"), NodePath("m_PassiveRows/Passive5/CurrentEffect")]
-m_NextEffects = [NodePath("m_PassiveRows/Passive1/NextEffect"), NodePath("m_PassiveRows/Passive2/NextEffect"), NodePath("m_PassiveRows/Passive3/NextEffect"), NodePath("m_PassiveRows/Passive4/NextEffect"), NodePath("m_PassiveRows/Passive5/NextEffect")]
-m_Souls = [NodePath("m_PassiveRows/Passive1/Soul"), NodePath("m_PassiveRows/Passive2/Soul"), NodePath("m_PassiveRows/Passive3/Soul"), NodePath("m_PassiveRows/Passive4/Soul"), NodePath("m_PassiveRows/Passive5/Soul")]
-m_UpgradeButtons = [NodePath("m_PassiveRows/Passive1/Upgrade"), NodePath("m_PassiveRows/Passive2/Upgrade"), NodePath("m_PassiveRows/Passive3/Upgrade"), NodePath("m_PassiveRows/Passive4/Upgrade"), NodePath("m_PassiveRows/Passive5/Upgrade")]
+_names = [NodePath("m_PassiveRows/Passive1/Name"), NodePath("m_PassiveRows/Passive2/Name"), NodePath("m_PassiveRows/Passive3/Name"), NodePath("m_PassiveRows/Passive4/Name"), NodePath("m_PassiveRows/Passive5/Name")]
+_levels = [NodePath("m_PassiveRows/Passive1/Level"), NodePath("m_PassiveRows/Passive2/Level"), NodePath("m_PassiveRows/Passive3/Level"), NodePath("m_PassiveRows/Passive4/Level"), NodePath("m_PassiveRows/Passive5/Level")]
+_currentEffects = [NodePath("m_PassiveRows/Passive1/CurrentEffect"), NodePath("m_PassiveRows/Passive2/CurrentEffect"), NodePath("m_PassiveRows/Passive3/CurrentEffect"), NodePath("m_PassiveRows/Passive4/CurrentEffect"), NodePath("m_PassiveRows/Passive5/CurrentEffect")]
+_nextEffects = [NodePath("m_PassiveRows/Passive1/NextEffect"), NodePath("m_PassiveRows/Passive2/NextEffect"), NodePath("m_PassiveRows/Passive3/NextEffect"), NodePath("m_PassiveRows/Passive4/NextEffect"), NodePath("m_PassiveRows/Passive5/NextEffect")]
+_souls = [NodePath("m_PassiveRows/Passive1/Soul"), NodePath("m_PassiveRows/Passive2/Soul"), NodePath("m_PassiveRows/Passive3/Soul"), NodePath("m_PassiveRows/Passive4/Soul"), NodePath("m_PassiveRows/Passive5/Soul")]
+_upgradeButtons = [NodePath("m_PassiveRows/Passive1/Upgrade"), NodePath("m_PassiveRows/Passive2/Upgrade"), NodePath("m_PassiveRows/Passive3/Upgrade"), NodePath("m_PassiveRows/Passive4/Upgrade"), NodePath("m_PassiveRows/Passive5/Upgrade")]
 
 [node name="TableBackground" type="TextureRect" parent="Content/m_PassivePage" unique_id=1582481764]
 layout_mode = 0

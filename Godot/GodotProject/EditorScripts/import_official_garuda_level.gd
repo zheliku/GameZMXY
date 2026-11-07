@@ -15,9 +15,9 @@ func _build() -> void:
     m_Source = JSON.parse_string(FileAccess.get_file_as_string(manifest))["2-3"]
     m_Scene = load("res://TheGame/Scenes/Levels/zm1_01_huaguoshan/level_1.tscn").instantiate()
     m_Scene.name = "Level_6"
-    m_Scene.set("m_LevelId", 6)
-    m_Scene.set("m_MusicId", 106)
-    m_Scene.set("m_FeaturedOpponentSpawnPointIds", PackedStringArray(["stage_5_a"]))
+    m_Scene.set("_levelId", 6)
+    m_Scene.set("_musicId", 106)
+    m_Scene.set("_featuredOpponentSpawnPointIds", PackedStringArray(["stage_5_a"]))
     for path in ["World/Geometry", "World/Platforms", "World/SpawnPoints", "World/StageGates"]:
         for child in m_Scene.get_node(path).get_children():
             child.free()
@@ -106,7 +106,7 @@ func _markers() -> void:
         point.position = _vector(item.position)
         _add(points, point)
         entries.append(_entry("stage_%d_%s" % [stage, letter], point.name))
-    points.set("m_Entries", entries)
+    points.set("_entries", entries)
     entries = []
     var gates: Array = m_Source.gates.duplicate()
     gates.sort_custom(func(left, right): return int(left.properties.idx) < int(right.properties.idx))
@@ -115,7 +115,7 @@ func _markers() -> void:
         if stage > 1:
             entries.append(_gate("Stage%dLeft" % stage, "stage_%d_left" % stage, item.battleBounds[0]))
         entries.append(_gate("Stage%dGate" % stage, "stage_%d_gate" % stage, item.battleBounds[1]))
-    m_Scene.get_node("World/StageGates").set("m_Entries", entries)
+    m_Scene.get_node("World/StageGates").set("_entries", entries)
 
 func _gate(title: String, id: String, x: float) -> Resource:
     var body := StaticBody2D.new()
@@ -147,13 +147,13 @@ func _traps() -> void:
         spike.name = "Spike%02d" % index
         spike.position = _vector(item.position)
         spike.scale.y = float(item.scale[1])
-        spike.set("m_Suspended", bool(item.properties.get("isUp", false)))
+        spike.set("_suspended", bool(item.properties.get("isUp", false)))
         _add(group, spike)
 
 func _entry(id: String, title: String) -> Resource:
     var resource: Resource = load("res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs").new()
-    resource.set("m_Id", id)
-    resource.set("m_Node", NodePath(title))
+    resource.set("_id", id)
+    resource.set("_node", NodePath(title))
     return resource
 
 func _add(parent: Node, child: Node) -> void:

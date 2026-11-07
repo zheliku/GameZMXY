@@ -1,91 +1,92 @@
-using GameLogic.Config;
 using System;
 using System.IO;
 using System.Linq;
 using GameConfig;
 using GameConfig.Battle;
+using GameConfig.Entity;
 using GameConfig.Skills;
 using GameConfig.Sound;
+using GameLogic.Architecture;
+using GameLogic.Config;
 using Godot;
 using Luban;
 using Xunit;
 
-namespace GameLogic.Profile.Tests
+namespace GameLogic.Profile.Tests;
+
+/// <summary>
+/// 从正式 Luban 产物核对统一伤害数据与技能平衡参数。
+/// </summary>
+public sealed class SkillCombatConfigTests
 {
     /// <summary>
-    /// 从正式 Luban 产物核对统一伤害数据与技能平衡参数。
+    /// 原版每个伤害键的威力、伤害类型、秒制击退与重复命中参数分别保留。
     /// </summary>
-    public sealed class SkillCombatConfigTests
+    /// <param name="id">阶段标识。</param>
+    /// <param name="scale">原版攻击倍率。</param>
+    /// <param name="flat">原版固定威力。</param>
+    /// <param name="kind">伤害类型。</param>
+    /// <param name="backX">源水平击退系数。</param>
+    /// <param name="backY">源竖直击退系数。</param>
+    /// <param name="budget">攻击源的总命中预算。</param>
+    /// <param name="sourceInterval">24 fps 源时间轴的编号更新间隔。</param>
+    [Theory]
+    [InlineData(SkillHitId.RisingDragon, 2f, 0f, DamageKind.Magic, 2f, -22f, 100, 2)]
+    [InlineData(SkillHitId.FlameThrust, .5f, 0f, DamageKind.Magic, 35f, -2f, 1, 5)]
+    [InlineData(SkillHitId.BlazingFlash, 0f, 100f, DamageKind.Magic, 0f, -2f, 1, 4)]
+    [InlineData(SkillHitId.FlameStorm, 1.2f, 0f, DamageKind.Magic, 20f, -2f, 100, 2)]
+    [InlineData(SkillHitId.FireDemonCombo, 1f, 0f, DamageKind.Physics, 2f, -3f, 100, 999)]
+    [InlineData(SkillHitId.FireDemonDescent, 1f, 0f, DamageKind.Magic, 40f, 25f, 100, 999)]
+    [InlineData(SkillHitId.FireDemonLanding, 3f, 0f, DamageKind.Magic, 40f, -15f, 100, 999)]
+    [InlineData(SkillHitId.IceDragonWave, .2f, 0f, DamageKind.Magic, 20f, -5f, 200, 4)]
+    [InlineData(SkillHitId.DarkIceFormation, .8f, 0f, DamageKind.Magic, 6f, -7f, 200, 999)]
+    [InlineData(SkillHitId.WaterDemonPillar, 2f, 0f, DamageKind.Magic, 25f, -5f, 200, 999)]
+    [InlineData(SkillHitId.WaterDemonFall, 8f, 0f, DamageKind.Magic, 25f, -5f, 200, 999)]
+    public void DamageStages_PreserveOfficialRules(SkillHitId id, float scale, float flat,
+        DamageKind kind, float backX, float backY, int budget, int sourceInterval)
     {
-        /// <summary>
-        /// 原版每个伤害键的威力、伤害类型、秒制击退与重复命中参数分别保留。
-        /// </summary>
-        /// <param name="id">阶段标识。</param>
-        /// <param name="scale">原版攻击倍率。</param>
-        /// <param name="flat">原版固定威力。</param>
-        /// <param name="kind">伤害类型。</param>
-        /// <param name="backX">源水平击退系数。</param>
-        /// <param name="backY">源竖直击退系数。</param>
-        /// <param name="budget">攻击源的总命中预算。</param>
-        /// <param name="sourceInterval">24 fps 源时间轴的编号更新间隔。</param>
-        [Theory]
-        [InlineData(ESkillHitId.RisingDragon, 2f, 0f, EDamageKind.Magic, 2f, -22f, 100, 2)]
-        [InlineData(ESkillHitId.FlameThrust, .5f, 0f, EDamageKind.Magic, 35f, -2f, 1, 5)]
-        [InlineData(ESkillHitId.BlazingFlash, 0f, 100f, EDamageKind.Magic, 0f, -2f, 1, 4)]
-        [InlineData(ESkillHitId.FlameStorm, 1.2f, 0f, EDamageKind.Magic, 20f, -2f, 100, 2)]
-        [InlineData(ESkillHitId.FireDemonCombo, 1f, 0f, EDamageKind.Physics, 2f, -3f, 100, 999)]
-        [InlineData(ESkillHitId.FireDemonDescent, 1f, 0f, EDamageKind.Magic, 40f, 25f, 100, 999)]
-        [InlineData(ESkillHitId.FireDemonLanding, 3f, 0f, EDamageKind.Magic, 40f, -15f, 100, 999)]
-        [InlineData(ESkillHitId.IceDragonWave, .2f, 0f, EDamageKind.Magic, 20f, -5f, 200, 4)]
-        [InlineData(ESkillHitId.DarkIceFormation, .8f, 0f, EDamageKind.Magic, 6f, -7f, 200, 999)]
-        [InlineData(ESkillHitId.WaterDemonPillar, 2f, 0f, EDamageKind.Magic, 25f, -5f, 200, 999)]
-        [InlineData(ESkillHitId.WaterDemonFall, 8f, 0f, EDamageKind.Magic, 25f, -5f, 200, 999)]
-        public void DamageStages_PreserveOfficialRules(ESkillHitId id, float scale, float flat,
-            EDamageKind kind, float backX, float backY, int budget, int sourceInterval)
-        {
-            var hit = TestTables.Tables.TbAttackConfig.Get((int)id);
-            Assert.Equal(new Vector2(scale, scale), hit.PowerScale);
-            Assert.Equal(new Vector2(flat, flat), hit.FlatPower);
-            Assert.Equal(kind, hit.DamageKind);
-            Assert.Equal(new Vector2(backX * 24, backY * 24), hit.Knockback);
-            Assert.Equal(budget, hit.HitBudget);
-            Assert.Equal(sourceInterval / 24f, hit.RepeatIntervalSeconds, .000001f);
-        }
+        AttackConfig hit = TestTables.Tables.TbAttackConfig.Get((int)id);
+        Assert.Equal(new Vector2(scale, scale), hit.PowerScale);
+        Assert.Equal(new Vector2(flat, flat), hit.FlatPower);
+        Assert.Equal(kind, hit.DamageKind);
+        Assert.Equal(new Vector2(backX * 24, backY * 24), hit.Knockback);
+        Assert.Equal(budget, hit.HitBudget);
+        Assert.Equal(sourceInterval / 24f, hit.RepeatIntervalSeconds, .000001f);
+    }
 
-        /// <summary>
-        /// 技能伤害不能混进实体的普通攻击段列表。
-        /// </summary>
-        [Fact]
-        public void NormalAttackIndex_ExcludesSkillDamageStages()
+    /// <summary>
+    /// 技能伤害不能混进实体的普通攻击段列表。
+    /// </summary>
+    [Fact]
+    public void NormalAttackIndex_ExcludesSkillDamageStages()
+    {
+        Assert.Empty(TestTables.Configuration.GetAttacks(GameConfig.Entity.EntityId.None));
+        foreach (EntityId owner in TestTables.Tables.TbAttackConfig.DataList.Where(x => x.ComboIndex >= 0).Select(x => x.OwnerId).Distinct())
         {
-            Assert.Empty(TestTables.Configuration.GetAttacks(GameConfig.Entity.EEntityId.None));
-            foreach (var owner in TestTables.Tables.TbAttackConfig.DataList.Where(x => x.ComboIndex >= 0).Select(x => x.OwnerId).Distinct())
-            {
-                Assert.All(TestTables.Configuration.GetAttacks(owner), attack => Assert.True(attack.ComboIndex >= 0));
-            }
+            Assert.All(TestTables.Configuration.GetAttacks(owner), attack => Assert.True(attack.ComboIndex >= 0));
         }
+    }
 
-        /// <summary>
-        /// 正式表通过同一套启动校验。
-        /// </summary>
-        [Fact]
-        public void PreparedCombatTables_PassStartupValidation()
-        {
-            var scope = TestTables.CreateConfigurationScope(TestTables.Tables);
-            Assert.True(scope.GetSystem<ConfigurationSystem>().Initialized);
-        }
+    /// <summary>
+    /// 正式表通过同一套启动校验。
+    /// </summary>
+    [Fact]
+    public void PreparedCombatTables_PassStartupValidation()
+    {
+        IArchitecture scope = TestTables.CreateConfigurationScope(TestTables.Tables);
+        Assert.True(scope.GetSystem<ConfigurationSystem>().Initialized);
+    }
 
-        /// <summary>
-        /// 无效攻击数值必须在预加载拒绝。
-        /// </summary>
-        [Fact]
-        public void StartupValidation_RejectsInvalidHitBudget()
-        {
-            var tables = new Tables(name => new ByteBuf(File.ReadAllBytes(
-                Path.Combine(AppContext.BaseDirectory, "Data", name + ".bytes"))));
-            var attack = tables.TbAttackConfig.Get((int)ESkillHitId.FlameStorm);
-            typeof(AttackConfig).GetField(nameof(attack.HitBudget)).SetValue(attack, 0);
-            Assert.Contains("命中预算", Assert.Throws<InvalidOperationException>(() => TestTables.CreateConfigurationScope(tables)).Message);
-        }
+    /// <summary>
+    /// 无效攻击数值必须在预加载拒绝。
+    /// </summary>
+    [Fact]
+    public void StartupValidation_RejectsInvalidHitBudget()
+    {
+        var tables = new Tables(name => new ByteBuf(File.ReadAllBytes(
+            Path.Combine(AppContext.BaseDirectory, "Data", name + ".bytes"))));
+        AttackConfig attack = tables.TbAttackConfig.Get((int)SkillHitId.FlameStorm);
+        typeof(AttackConfig).GetField(nameof(attack.HitBudget)).SetValue(attack, 0);
+        Assert.Contains("命中预算", Assert.Throws<InvalidOperationException>(() => TestTables.CreateConfigurationScope(tables)).Message);
     }
 }

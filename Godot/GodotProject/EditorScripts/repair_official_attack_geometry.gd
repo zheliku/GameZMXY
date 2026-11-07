@@ -163,8 +163,8 @@ func _hero_attack_geometry(probes: Dictionary, normal_only: bool = false, new_eq
 	var effect: AnimatedSprite2D = actor.get_node("m_EffectRoot/m_Effect")
 	var hit: CollisionShape2D = actor.get_node("m_HitBoxRoot/m_HitBox/CollisionShape2D")
 	var appearance: Resource = load("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_appearance.tres")
-	var textures: Array[Texture2D] = [appearance.get("m_BaseWeapon")]
-	for texture in (appearance.get("m_WeaponTextures") as Dictionary).values():
+	var textures: Array[Texture2D] = [appearance.get("_baseWeapon")]
+	for texture in (appearance.get("_weaponTextures") as Dictionary).values():
 		if not textures.has(texture):
 			textures.append(texture)
 	var libraries := {"":WUKONG_LIBRARY, "skills":"res://TheGame/Entitys/Animations/Heroes/Wukong/wukong_skill_library.tres"}

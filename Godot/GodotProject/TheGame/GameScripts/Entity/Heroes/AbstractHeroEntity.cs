@@ -1,827 +1,709 @@
-using System.Collections.Generic;
-using GameLogic.Skills;
-using GameLogic.Config;
-using GameLogic.Architecture;
-using GameLogic.Heroes.Body;
-using GameLogic.Entity;
-using GameLogic.Battle;
-using GameLogic.Battle.Attributes;
-using GameLogic.Battle.Damage;
-using GameLogic.Battle.Attacks;
-using GameLogic.Input;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using GameConfig.Battle;
 using GameConfig.Hero;
 using GameFramework.Entity;
 using GameFramework.Fsm;
+using GameLogic.Architecture;
+using GameLogic.Battle;
+using GameLogic.Battle.Attacks;
+using GameLogic.Battle.Attributes;
+using GameLogic.Battle.Damage;
 using GameLogic.Body;
+using GameLogic.Config;
 using GameLogic.Effects;
-using GameLogic.Heroes.Effects;
+using GameLogic.Entity;
 using GameLogic.Equipment;
+using GameLogic.Heroes.Body;
+using GameLogic.Heroes.Effects;
+using GameLogic.Input;
 using GameLogic.Profile;
-using System.Linq;
+using GameLogic.Skills;
 using Godot;
 using GodotGameFramework;
 
-namespace GameLogic.Heroes
+namespace GameLogic.Heroes;
+
+/// <summary>
+/// 英雄表现与交互：输入、身体状态机、动画、武器层及出招；数值状态借用已注册的 HeroModel。
+/// 不持有持久进度（等级、经验、灵魂属于档案）；属性由 HeroSystem 随成长、穿戴和局内来源更新，实体只读取。
+/// </summary>
+public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBody
 {
+    // ---- 字段 ----
+
+    [Export] private Sprite2D _weapon; // 与身体共用定位及帧号，透明区保留原始遮挡。
+    [Export] private HeroAppearanceResource _appearance; // 身体、防具与武器独立换装的图集资源。
+
+    [Export] private Node2D _effectRoot; // 攻击特效层容器，由动画轨道驱动并随朝向镜像。
+
+    [Export] private int _heroId; // 场景绑定的 HeroConfig 主键。
+
+    [Export] private MusouAfterimageNode _musouAfterimage; // 英雄自有的残影表现，可按角色场景选配。
+    [Export] private AnimatedSprite2D _hurtFeedback; // 官方8帧命中反馈；霸体也播放，不占身体动作。
+    [Export] private HeroLevelUpNode _levelUp; // 独立升级动画层，不随身体朝向镜像。
+    [Export] private AnimatedSprite2D _poisonHead; // 持续中毒的头顶官方标记。
+    [Export] private AnimatedSprite2D _poisonPulse; // 每跳中毒扣血的短暂官方效果。
+    [Export] private AnimatedSprite2D _frozenEffect; // 原版35帧冰块，末帧保持到控制状态结束。
+    [Export] private ShaderMaterial _invulnerabilityMaterial; // 身体和武器共用本实例的无双/无敌光晕材质。
+    private Color _protectionGlowColor; // 借用本角色材质原配色；无双结束后恢复，不把悟空颜色写进共享层。
+    [Export] private HeroTombstoneNode _tombstone; // 独立场景的共用死亡表现，自己拥有下落与落地碰撞。
+
+    private IFsm<IHeroBody> _bodyFsm; // 按物理帧推进的英雄身体状态机。
+    private readonly HashSet<SkillEffectNode> _skillEffects = new(); // 本英雄生成的活动特效，隐藏时统一归还。
+
+    // ---- 属性 ----
+
     /// <summary>
-    /// 英雄表现与交互：输入、身体状态机、动画、武器层及出招；数值状态借用已注册的 HeroModel。
-    /// 不持有持久进度（等级、经验、灵魂属于档案）；属性由 HeroSystem 随成长、穿戴和局内来源更新，实体只读取。
+    /// 本英雄触发的共用墓碑已完整播放，关卡据此结束失败流程。
     /// </summary>
-    public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBody
+    public event Action DeathPresentationFinished;
+
+    /// <summary>
+    /// 角色主动治疗完成后的显示量；关卡拥有飘字表现，按官方保留满血时的配置量提示。
+    /// </summary>
+    public event Action<int> HealthRestored;
+
+    /// <summary>
+    /// 借用模型中同类英雄共享的身体参数。
+    /// </summary>
+    private HeroBodyParams BodyParams => this.GetModel<ConfigurationModel>().GetHeroBodyParams(HeroId);
+
+    /// <summary>
+    /// 技能无敌与连续受击保护任一有效时拒绝直接命中。
+    /// </summary>
+    protected override bool Invulnerable => Attributes.HurtInvulnerabilitySeconds > 0 || this.GetSystem<SkillSystem>().IsInvulnerable(ActionData.Time);
+
+    /// <summary>
+    /// 英雄配置 Id（对应 HeroConfig.Id）。每个英雄场景必须显式填写，缺失时本实体停用。
+    /// </summary>
+    public int HeroId => _heroId;
+
+    /// <summary>
+    /// 战斗与背包预览共用的只读外观资源引用。
+    /// </summary>
+    public HeroAppearanceResource Appearance => _appearance;
+
+    /// <inheritdoc />
+    protected override GameConfig.Entity.EntityId EntityType => Config.EntityId;
+
+    /// <summary>
+    /// 英雄配置
+    /// </summary>
+    public HeroConfig Config => this.GetModel<ConfigurationModel>().Tables.TbHeroConfig.Get(HeroId);
+
+    /// <summary>
+    /// 本英雄独占的输入、跳跃与连段数据，由共享 InputSystem 和身体状态推进。
+    /// </summary>
+    public HeroActionData ActionData { get; } = new();
+
+    /// <inheritdoc />
+    public override CombatSide Side => CombatSide.Hero;
+
+    /// <summary>
+    /// 直接读取本局已注册属性模型，实体不缓存、创建或销毁模型。
+    /// </summary>
+    private HeroModel Attributes => this.GetModel<HeroModel>();
+
+    /// <inheritdoc />
+    public override int Hp => Attributes.Hp.Value;
+
+    /// <inheritdoc />
+    public override int MaxHp => Attributes.MaxHp.Value;
+
+    /// <inheritdoc />
+    public override int Level => Attributes.Level.Value;
+
+    /// <summary>
+    /// 由具体英雄给出身体初始状态类型。
+    /// </summary>
+    protected abstract Type InitialBodyStateType { get; }
+
+    // ---- 接口实现 ----
+
+    /// <summary>
+    /// 提供身体状态机使用的共享身体参数。
+    /// </summary>
+    HeroBodyParams IHeroBody.Params => BodyParams;
+
+    /// <summary>
+    /// 无双提高横向走跑速度。
+    /// </summary>
+    float IHeroBody.MoveSpeedMultiplier => this.GetSystem<HeroSystem>().MoveSpeedMultiplier;
+
+    /// <summary>
+    /// 无双提高起跳速度；读取时生效，不改写配置快照。
+    /// </summary>
+    float IHeroBody.JumpSpeedMultiplier => this.GetSystem<HeroSystem>().JumpSpeedMultiplier;
+
+    /// <summary>
+    /// 本英雄当前是否免受击硬直与击退；具体角色声明自己的霸体规则。
+    /// </summary>
+    public virtual bool SuperArmor => false;
+
+    /// <summary>
+    /// 提供当前重力，无双时应用官方倍率。
+    /// </summary>
+    float IActorBody.Gravity => BodyParams.Gravity * this.GetSystem<HeroSystem>().GravityMultiplier;
+
+    // ---- 生命周期 ----
+
+    /// <summary>
+    /// 读取英雄配置、招式和输入参数，并初始化实体状态。
+    /// </summary>
+    /// <param name="entityId">本次运行实体编号。</param>
+    /// <param name="entityAssetName">实体资源路径。</param>
+    /// <param name="entityGroup">所属实体组。</param>
+    /// <param name="isNewInstance">是否首次创建池实例。</param>
+    /// <param name="userData">本次初始化参数。</param>
+    public override void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance,
+        object userData)
     {
-        // ---- 字段 ----
-
-        [Export] private Sprite2D m_Weapon; // 与身体共用定位及帧号，透明区保留原始遮挡。
-        [Export] private HeroAppearanceResource m_Appearance; // 身体、防具与武器独立换装的图集资源。
-
-        [Export] private Node2D m_EffectRoot; // 攻击特效层容器，由动画轨道驱动并随朝向镜像。
-
-        [Export] private int m_HeroId; // 场景绑定的 HeroConfig 主键。
-
-        [Export] private MusouAfterimageNode m_MusouAfterimage; // 英雄自有的残影表现，可按角色场景选配。
-        [Export] private AnimatedSprite2D m_HurtFeedback; // 官方8帧命中反馈；霸体也播放，不占身体动作。
-        [Export] private HeroLevelUpNode m_LevelUp; // 独立升级动画层，不随身体朝向镜像。
-        [Export] private AnimatedSprite2D m_PoisonHead; // 持续中毒的头顶官方标记。
-        [Export] private AnimatedSprite2D m_PoisonPulse; // 每跳中毒扣血的短暂官方效果。
-        [Export] private AnimatedSprite2D m_FrozenEffect; // 原版35帧冰块，末帧保持到控制状态结束。
-        [Export] private ShaderMaterial m_InvulnerabilityMaterial; // 身体和武器共用本实例的无双/无敌光晕材质。
-        private Color m_ProtectionGlowColor; // 借用本角色材质原配色；无双结束后恢复，不把悟空颜色写进共享层。
-        [Export] private HeroTombstoneNode m_Tombstone; // 独立场景的共用死亡表现，自己拥有下落与落地碰撞。
-
-        private IFsm<IHeroBody> m_BodyFsm; // 按物理帧推进的英雄身体状态机。
-        private readonly HashSet<SkillEffectNode> m_SkillEffects = new(); // 本英雄生成的活动特效，隐藏时统一归还。
-
-        // ---- 属性 ----
-
-        /// <summary>
-        /// 本英雄触发的共用墓碑已完整播放，关卡据此结束失败流程。
-        /// </summary>
-        public event Action DeathPresentationFinished;
-
-        /// <summary>
-        /// 角色主动治疗完成后的显示量；关卡拥有飘字表现，按官方保留满血时的配置量提示。
-        /// </summary>
-        public event Action<int> HealthRestored;
-
-        /// <summary>
-        /// 借用模型中同类英雄共享的身体参数。
-        /// </summary>
-        private HeroBodyParams BodyParams
+        base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
+        if (isNewInstance && _invulnerabilityMaterial != null)
         {
-            get
+            _protectionGlowColor = _invulnerabilityMaterial.GetShaderParameter("glow_color").AsColor();
+        }
+        if (_tombstone == null)
+        {
+            throw new InvalidOperationException($"{entityAssetName} 缺少共用墓碑场景绑定。");
+        }
+        if (isNewInstance)
+        {
+            Died += OnDied;
+            if (_hurtFeedback != null)
             {
-                return this.GetModel<ConfigurationModel>().GetHeroBodyParams(HeroId);
+                _hurtFeedback.AnimationFinished += OnHurtFeedbackFinished;
             }
+            _tombstone.Finished += OnDeathPresentationFinished;
         }
 
-        /// <summary>
-        /// 技能无敌与连续受击保护任一有效时拒绝直接命中。
-        /// </summary>
-        protected override bool Invulnerable
+        if (Config == null)
         {
-            get
-            {
-                return Attributes.HurtInvulnerabilitySeconds > 0 || this.GetSystem<SkillSystem>().IsInvulnerable(ActionData.Time);
-            }
+            Log.Error("[AbstractHeroEntity] HeroConfig 缺失：HeroId={0}，本实体停用（物理与动画不再驱动）", HeroId);
+            SetPhysicsProcess(false);
+            return;
         }
 
-        /// <summary>
-        /// 英雄配置 Id（对应 HeroConfig.Id）。每个英雄场景必须显式填写，缺失时本实体停用。
-        /// </summary>
-        public int HeroId
+        if (_weapon == null)
         {
-            get
-            {
-                return m_HeroId;
-            }
+            throw new InvalidOperationException($"{entityAssetName} 缺少英雄武器 Sprite2D 的场景绑定。");
         }
 
-        /// <summary>
-        /// 战斗与背包预览共用的只读外观资源引用。
-        /// </summary>
-        public HeroAppearanceResource Appearance
+        if (_appearance == null)
         {
-            get
-            {
-                return m_Appearance;
-            }
+            throw new InvalidOperationException($"{entityAssetName} 缺少英雄外观资源绑定。");
         }
 
-        /// <inheritdoc />
-        protected override GameConfig.Entity.EEntityId EntityType
+        if (!HasAnim(HeroAnims.Reset))
         {
-            get
-            {
-                return Config.EntityId;
-            }
+            throw new InvalidOperationException($"{entityAssetName} 缺少用于技能退出的 RESET 动画。");
         }
 
-        /// <summary>
-        /// 英雄配置
-        /// </summary>
-        public HeroConfig Config
+        this.GetSystem<ConfigurationSystem>().EnsureHeroBodyParams(HeroId, BuildBodyParams);
+    }
+
+    /// <summary>
+    /// 显示时绑定流程已经准备好的数据，复位动作表现并创建身体状态机。
+    /// </summary>
+    /// <param name="userData">不传递英雄数据；属性从本局模型读取。</param>
+    /// <exception cref="InvalidOperationException">本局属性模型未准备，或不是当前英雄。</exception>
+    public override void OnShow(object userData)
+    {
+        // 显示只装配表现；即使异步迟到，也不重置或修改当前模型。
+        if (Attributes == null || Attributes.HeroId != HeroId)
         {
-            get
-            {
-                return this.GetModel<ConfigurationModel>().Tables.TbHeroConfig.Get(HeroId);
-            }
+            throw new InvalidOperationException($"英雄 {HeroId} 显示前必须准备本局属性模型。");
         }
 
-        /// <summary>
-        /// 本英雄独占的输入、跳跃与连段数据，由共享 InputSystem 和身体状态推进。
-        /// </summary>
-        public HeroActionData ActionData { get; } = new();
-
-        /// <inheritdoc />
-        public override ECombatSide Side
+        base.OnShow(userData);
+        // 先复位上次动作写入的可见性/效果轨道，不能让死亡动画在本次显示后继续写回墓碑。
+        RestartAnim(HeroAnims.Reset);
+        RefreshAppearance();
+        Body.Visible = true;
+        _weapon.Visible = true;
+        _musouAfterimage?.Reset();
+        OnHurtFeedbackFinished();
+        _levelUp?.Reset();
+        _tombstone.Reset();
+        if (_frozenEffect != null)
         {
-            get
-            {
-                return ECombatSide.Hero;
-            }
+            _frozenEffect.Stop();
+            _frozenEffect.Hide();
         }
 
-        /// <summary>
-        /// 直接读取本局已注册属性模型，实体不缓存、创建或销毁模型。
-        /// </summary>
-        private HeroModel Attributes
+        // 池复用的实例带着上次的脏事实回来，一律在 OnShow 复位（见 Entity/AGENTS.md 生命周期）
+        PendingHurt = null;
+        _captorId = 0;
+        ActionData.Captured = false;
+        Velocity = Vector2.Zero;
+        this.GetSystem<InputSystem>().Reset(ActionData);
+        SetFacing(1);
+        PlayAnim(HeroAnims.Idle);
+        CreateBodyStateMachine();
+        RefreshInvulnerabilityGlow();
+    }
+
+    /// <summary>
+    /// 隐藏时销毁身体状态机并执行基类清理。
+    /// </summary>
+    /// <param name="isShutdown">是否框架关停；此时节点可能已释放。</param>
+    /// <param name="userData">本次隐藏参数。</param>
+    public override void OnHide(bool isShutdown, object userData)
+    {
+        _captorId = 0;
+        ActionData.Captured = false;
+        if (!isShutdown && IsInstanceValid(_musouAfterimage))
         {
-            get
-            {
-                return this.GetModel<HeroModel>();
-            }
+            _musouAfterimage.Reset();
         }
 
-        /// <inheritdoc />
-        public override int Hp
+        if (!isShutdown && IsInstanceValid(_levelUp))
         {
-            get
-            {
-                return Attributes.Hp.Value;
-            }
+            _levelUp.Reset();
         }
 
-        /// <inheritdoc />
-        public override int MaxHp
+        if (!isShutdown)
         {
-            get
-            {
-                return Attributes.MaxHp.Value;
-            }
-        }
-
-        /// <inheritdoc />
-        public override int Level
-        {
-            get
-            {
-                return Attributes.Level.Value;
-            }
-        }
-
-        /// <summary>
-        /// 由具体英雄给出身体初始状态类型。
-        /// </summary>
-        protected abstract Type InitialBodyStateType { get; }
-
-        // ---- 接口实现 ----
-
-        /// <summary>
-        /// 提供身体状态机使用的共享身体参数。
-        /// </summary>
-        HeroBodyParams IHeroBody.Params
-        {
-            get
-            {
-                return BodyParams;
-            }
-        }
-
-        /// <summary>
-        /// 无双提高横向走跑速度。
-        /// </summary>
-        float IHeroBody.MoveSpeedMultiplier
-        {
-            get
-            {
-                return this.GetSystem<HeroSystem>().MoveSpeedMultiplier;
-            }
-        }
-
-        /// <summary>
-        /// 无双提高起跳速度；读取时生效，不改写配置快照。
-        /// </summary>
-        float IHeroBody.JumpSpeedMultiplier
-        {
-            get
-            {
-                return this.GetSystem<HeroSystem>().JumpSpeedMultiplier;
-            }
-        }
-
-        /// <summary>
-        /// 本英雄当前是否免受击硬直与击退；具体角色声明自己的霸体规则。
-        /// </summary>
-        public virtual bool SuperArmor
-        {
-            get
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// 提供当前重力，无双时应用官方倍率。
-        /// </summary>
-        float IActorBody.Gravity
-        {
-            get
-            {
-                return BodyParams.Gravity * this.GetSystem<HeroSystem>().GravityMultiplier;
-            }
-        }
-
-        // ---- 生命周期 ----
-
-        /// <summary>
-        /// 读取英雄配置、招式和输入参数，并初始化实体状态。
-        /// </summary>
-        /// <param name="entityId">本次运行实体编号。</param>
-        /// <param name="entityAssetName">实体资源路径。</param>
-        /// <param name="entityGroup">所属实体组。</param>
-        /// <param name="isNewInstance">是否首次创建池实例。</param>
-        /// <param name="userData">本次初始化参数。</param>
-        public override void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance,
-            object userData)
-        {
-            base.OnInit(entityId, entityAssetName, entityGroup, isNewInstance, userData);
-            if (isNewInstance && m_InvulnerabilityMaterial != null)
-            {
-                m_ProtectionGlowColor = m_InvulnerabilityMaterial.GetShaderParameter("glow_color").AsColor();
-            }
-            if (m_Tombstone == null)
-            {
-                throw new InvalidOperationException($"{entityAssetName} 缺少共用墓碑场景绑定。");
-            }
-            if (isNewInstance)
-            {
-                Died += OnDied;
-                if (m_HurtFeedback != null)
-                {
-                    m_HurtFeedback.AnimationFinished += OnHurtFeedbackFinished;
-                }
-                m_Tombstone.Finished += OnDeathPresentationFinished;
-            }
-
-            if (Config == null)
-            {
-                Log.Error("[AbstractHeroEntity] HeroConfig 缺失：HeroId={0}，本实体停用（物理与动画不再驱动）", HeroId);
-                SetPhysicsProcess(false);
-                return;
-            }
-
-            if (m_Weapon == null)
-            {
-                throw new InvalidOperationException($"{entityAssetName} 缺少英雄武器 Sprite2D 的场景绑定。");
-            }
-
-            if (m_Appearance == null)
-            {
-                throw new InvalidOperationException($"{entityAssetName} 缺少英雄外观资源绑定。");
-            }
-
-            if (!HasAnim(HeroAnims.Reset))
-            {
-                throw new InvalidOperationException($"{entityAssetName} 缺少用于技能退出的 RESET 动画。");
-            }
-
-            this.GetSystem<ConfigurationSystem>().EnsureHeroBodyParams(HeroId, BuildBodyParams);
-        }
-
-        /// <summary>
-        /// 显示时绑定流程已经准备好的数据，复位动作表现并创建身体状态机。
-        /// </summary>
-        /// <param name="userData">不传递英雄数据；属性从本局模型读取。</param>
-        /// <exception cref="InvalidOperationException">本局属性模型未准备，或不是当前英雄。</exception>
-        public override void OnShow(object userData)
-        {
-            // 显示只装配表现；即使异步迟到，也不重置或修改当前模型。
-            if (Attributes == null || Attributes.HeroId != HeroId)
-            {
-                throw new InvalidOperationException($"英雄 {HeroId} 显示前必须准备本局属性模型。");
-            }
-
-            base.OnShow(userData);
-            // 先复位上次动作写入的可见性/效果轨道，不能让死亡动画在本次显示后继续写回墓碑。
-            RestartAnim(HeroAnims.Reset);
-            RefreshAppearance();
-            Body.Visible = true;
-            m_Weapon.Visible = true;
-            m_MusouAfterimage?.Reset();
+            _tombstone.Reset();
             OnHurtFeedbackFinished();
-            m_LevelUp?.Reset();
-            m_Tombstone.Reset();
-            if (m_FrozenEffect != null)
+            _invulnerabilityMaterial?.SetShaderParameter("glow_radius", 0f);
+            if (_poisonHead != null)
             {
-                m_FrozenEffect.Stop();
-                m_FrozenEffect.Hide();
+                _poisonHead.Hide();
             }
 
-            // 池复用的实例带着上次的脏事实回来，一律在 OnShow 复位（见 Entity/AGENTS.md 生命周期）
-            m_PendingHurt = null;
-            m_CaptorId = 0;
-            ActionData.Captured = false;
-            Velocity = Vector2.Zero;
-            this.GetSystem<InputSystem>().Reset(ActionData);
-            SetFacing(1);
-            PlayAnim(HeroAnims.Idle);
-            CreateBodyStateMachine();
-            RefreshInvulnerabilityGlow();
-        }
-
-        /// <summary>
-        /// 隐藏时销毁身体状态机并执行基类清理。
-        /// </summary>
-        /// <param name="isShutdown">是否框架关停；此时节点可能已释放。</param>
-        /// <param name="userData">本次隐藏参数。</param>
-        public override void OnHide(bool isShutdown, object userData)
-        {
-            m_CaptorId = 0;
-            ActionData.Captured = false;
-            if (!isShutdown && IsInstanceValid(m_MusouAfterimage))
+            if (_poisonPulse != null)
             {
-                m_MusouAfterimage.Reset();
+                _poisonPulse.Hide();
             }
 
-            if (!isShutdown && IsInstanceValid(m_LevelUp))
+            if (_frozenEffect != null)
             {
-                m_LevelUp.Reset();
-            }
-
-            if (!isShutdown)
-            {
-                m_Tombstone.Reset();
-                OnHurtFeedbackFinished();
-                m_InvulnerabilityMaterial?.SetShaderParameter("glow_radius", 0f);
-                if (m_PoisonHead != null)
-                {
-                    m_PoisonHead.Hide();
-                }
-
-                if (m_PoisonPulse != null)
-                {
-                    m_PoisonPulse.Hide();
-                }
-
-                if (m_FrozenEffect != null)
-                {
-                    m_FrozenEffect.Stop();
-                    m_FrozenEffect.Hide();
-                }
-            }
-            DestroyBodyStateMachine(isShutdown);
-            ClearSkillEffects(isShutdown);
-            if (!isShutdown)
-            {
-                this.GetSystem<SkillSystem>().ClearSkillDefinitions();
-            }
-
-            base.OnHide(isShutdown, userData);
-        }
-
-        /// <summary>
-        /// 物理步长：采样输入 → 身体状态机 → 物理。AnimationPlayer（子节点）同帧稍后消费播放请求。
-        /// </summary>
-        /// <param name="delta">本次物理帧秒数。</param>
-        public override void _PhysicsProcess(double delta)
-        {
-            if (!IsShown || Config == null || delta <= 0)
-            {
-                return;
-            }
-
-            float dt = (float)delta;
-            this.GetSystem<HeroSystem>().AdvanceHurtProtection(dt);
-            HeroStatusSystem statusEffects = this.GetSystem<HeroStatusSystem>();
-            statusEffects.AdvanceFreeze(dt);
-            RefreshFreezePresentation(statusEffects.IsFrozen);
-            ReceivePeriodicDamage(this.GetSystem<HeroSystem>().AdvanceRecovery(dt), showNumber: false);
-            int poisonDamage = statusEffects.AdvancePoison(dt);
-            ReceivePeriodicDamage(poisonDamage);
-            RefreshPoisonPresentation(statusEffects.IsPoisoned, poisonDamage);
-            if (Dead && ActionData.Captured)
-            {
-                ReleaseCapture(m_CaptorId);
-            }
-
-            bool wasActive = this.GetModel<HeroModel>().WsActive.Value;
-            this.GetSystem<HeroSystem>().AdvanceWs(dt);
-            if (wasActive && !this.GetModel<HeroModel>().WsActive.Value)
-            {
-                EndMusou();
-            }
-            // 引擎采样保留按住及短按边沿，组合闩锁在输入层，连段与冷却由共享 InputSystem 根据本英雄动作数据裁定。
-            var heroModel = this.GetModel<HeroModel>();
-            bool controlsEnabled = heroModel.ControlsEnabled && !this.GetSystem<HeroStatusSystem>().IsFrozen;
-            this.GetSystem<InputSystem>().Sample(this, dt, controlsEnabled);
-            if (!ActionData.Captured && ActionData.MusouRequested)
-            {
-                TryActivateMusou();
-            }
-
-            if (this.GetModel<HeroModel>().IsDepleted)
-            {
-                this.GetSystem<SkillSystem>().CancelSkill();
-            }
-            // 当前状态声明输入窗口；角色匹配具体组合，状态随后消费请求并决定转换。
-            if (!Dead && controlsEnabled && !ActionData.Captured && (!HasPendingHurt || ((IHeroBody)this).SuperArmor) &&
-                this.GetModel<HeroModel>().ActiveSkillId == null &&
-                m_BodyFsm.CurrentState is AbstractHeroBodyState bodyState &&
-                bodyState.TryGetActionInput(this, out bool attacking, out bool airborne))
-            {
-                MatchActionInput(attacking, airborne);
-            }
-
-            m_BodyFsm.Tick(dt);
-            if (m_BodyFsm.CurrentState is AbstractHeroSkillState skillState)
-            {
-                skillState.AdvanceAnimation(m_BodyFsm, this, dt);
-            }
-
-            if (!Dead)
-            {
-                MoveBody();
-            }
-            RefreshInvulnerabilityGlow();
-
-            // 落地归零跳跃次数。必须带 "Velocity.Y >= 0"：起跳那一帧角色可能还没离开地面，
-            // 只判 IsOnFloor() 会把刚用掉的次数立刻清零，变成无限跳。
-            if (OnFloor && Velocity.Y >= 0)
-            {
-                ActionData.JumpCount = 0;
+                _frozenEffect.Stop();
+                _frozenEffect.Hide();
             }
         }
-
-        /// <summary>
-        /// 冻结规则推进后刷新原生效果，不改变本步恢复、持续伤害和输入的执行顺序。
-        /// </summary>
-        /// <param name="frozen">规则层当前是否冻结。</param>
-        private void RefreshFreezePresentation(bool frozen)
+        DestroyBodyStateMachine(isShutdown);
+        ClearSkillEffects(isShutdown);
+        if (!isShutdown)
         {
-            if (m_FrozenEffect == null)
+            this.GetSystem<SkillSystem>().ClearSkillDefinitions();
+        }
+
+        base.OnHide(isShutdown, userData);
+    }
+
+    /// <summary>
+    /// 物理步长：采样输入 → 身体状态机 → 物理。AnimationPlayer（子节点）同帧稍后消费播放请求。
+    /// </summary>
+    /// <param name="delta">本次物理帧秒数。</param>
+    public override void _PhysicsProcess(double delta)
+    {
+        if (!IsShown || Config == null || delta <= 0)
+        {
+            return;
+        }
+
+        float dt = (float)delta;
+        this.GetSystem<HeroSystem>().AdvanceHurtProtection(dt);
+        HeroStatusSystem statusEffects = this.GetSystem<HeroStatusSystem>();
+        statusEffects.AdvanceFreeze(dt);
+        RefreshFreezePresentation(statusEffects.IsFrozen);
+        ReceivePeriodicDamage(this.GetSystem<HeroSystem>().AdvanceRecovery(dt), showNumber: false);
+        int poisonDamage = statusEffects.AdvancePoison(dt);
+        ReceivePeriodicDamage(poisonDamage);
+        RefreshPoisonPresentation(statusEffects.IsPoisoned, poisonDamage);
+        if (Dead && ActionData.Captured)
+        {
+            ReleaseCapture(_captorId);
+        }
+
+        bool wasActive = this.GetModel<HeroModel>().WsActive.Value;
+        this.GetSystem<HeroSystem>().AdvanceWs(dt);
+        if (wasActive && !this.GetModel<HeroModel>().WsActive.Value)
+        {
+            EndMusou();
+        }
+        // 引擎采样保留按住及短按边沿，组合闩锁在输入层，连段与冷却由共享 InputSystem 根据本英雄动作数据裁定。
+        HeroModel heroModel = this.GetModel<HeroModel>();
+        bool controlsEnabled = heroModel.ControlsEnabled && !this.GetSystem<HeroStatusSystem>().IsFrozen;
+        this.GetSystem<InputSystem>().Sample(this, dt, controlsEnabled);
+        if (!ActionData.Captured && ActionData.MusouRequested)
+        {
+            TryActivateMusou();
+        }
+
+        if (this.GetModel<HeroModel>().IsDepleted)
+        {
+            this.GetSystem<SkillSystem>().CancelSkill();
+        }
+        // 当前状态声明输入窗口；角色匹配具体组合，状态随后消费请求并决定转换。
+        if (!Dead && controlsEnabled && !ActionData.Captured && (!HasPendingHurt || ((IHeroBody)this).SuperArmor) &&
+            this.GetModel<HeroModel>().ActiveSkillId == null &&
+            _bodyFsm.CurrentState is AbstractHeroBodyState bodyState &&
+            bodyState.TryGetActionInput(this, out bool attacking, out bool airborne))
+        {
+            MatchActionInput(attacking, airborne);
+        }
+
+        _bodyFsm.Tick(dt);
+        if (_bodyFsm.CurrentState is AbstractHeroSkillState skillState)
+        {
+            skillState.AdvanceAnimation(_bodyFsm, this, dt);
+        }
+
+        if (!Dead)
+        {
+            MoveBody();
+        }
+        RefreshInvulnerabilityGlow();
+
+        // 落地归零跳跃次数。必须带 "Velocity.Y >= 0"：起跳那一帧角色可能还没离开地面，
+        // 只判 IsOnFloor() 会把刚用掉的次数立刻清零，变成无限跳。
+        if (OnFloor && Velocity.Y >= 0)
+        {
+            ActionData.JumpCount = 0;
+        }
+    }
+
+    /// <summary>
+    /// 冻结规则推进后刷新原生效果，不改变本步恢复、持续伤害和输入的执行顺序。
+    /// </summary>
+    /// <param name="frozen">规则层当前是否冻结。</param>
+    private void RefreshFreezePresentation(bool frozen)
+    {
+        if (_frozenEffect == null)
+        {
+            return;
+        }
+
+        frozen &= !Dead;
+        if (frozen && !_frozenEffect.Visible)
+        {
+            _frozenEffect.Frame = 0;
+            _frozenEffect.Play();
+            _frozenEffect.Show();
+        }
+        else if (!frozen)
+        {
+            _frozenEffect.Stop();
+            _frozenEffect.Hide();
+        }
+    }
+
+    /// <summary>
+    /// 伤害结算后更新中毒常驻效果与本跳脉冲，死亡时隐藏表现。
+    /// </summary>
+    /// <param name="poisoned">规则层当前是否中毒。</param>
+    /// <param name="damage">本步实际结算前取得的中毒伤害。</param>
+    private void RefreshPoisonPresentation(bool poisoned, int damage)
+    {
+        if (_poisonHead != null)
+        {
+            _poisonHead.Visible = !Dead && poisoned;
+        }
+        if (_poisonPulse != null)
+        {
+            if (damage > 0 && !Dead)
             {
-                return;
+                _poisonPulse.Frame = 0;
+                _poisonPulse.Play();
+                _poisonPulse.Show();
             }
-
-            frozen &= !Dead;
-            if (frozen && !m_FrozenEffect.Visible)
+            else if (!_poisonPulse.IsPlaying() || Dead)
             {
-                m_FrozenEffect.Frame = 0;
-                m_FrozenEffect.Play();
-                m_FrozenEffect.Show();
-            }
-            else if (!frozen)
-            {
-                m_FrozenEffect.Stop();
-                m_FrozenEffect.Hide();
-            }
-        }
-
-        /// <summary>
-        /// 伤害结算后更新中毒常驻效果与本跳脉冲，死亡时隐藏表现。
-        /// </summary>
-        /// <param name="poisoned">规则层当前是否中毒。</param>
-        /// <param name="damage">本步实际结算前取得的中毒伤害。</param>
-        private void RefreshPoisonPresentation(bool poisoned, int damage)
-        {
-            if (m_PoisonHead != null)
-            {
-                m_PoisonHead.Visible = !Dead && poisoned;
-            }
-            if (m_PoisonPulse != null)
-            {
-                if (damage > 0 && !Dead)
-                {
-                    m_PoisonPulse.Frame = 0;
-                    m_PoisonPulse.Play();
-                    m_PoisonPulse.Show();
-                }
-                else if (!m_PoisonPulse.IsPlaying() || Dead)
-                {
-                    m_PoisonPulse.Hide();
-                }
-            }
-        }
-
-        /// <inheritdoc />
-        protected override bool ApplyDamage(int amount)
-        {
-            return this.GetSystem<HeroSystem>().Damage(amount);
-        }
-
-        /// <inheritdoc />
-        protected override void RestoreHealth(int amount)
-        {
-            this.GetSystem<HeroSystem>().Heal(amount);
-            HealthRestored?.Invoke(amount);
-        }
-
-        /// <summary>
-        /// 在成长模型确认升级并更新属性后显示提示；普通进关不触发。
-        /// </summary>
-        public void PlayLevelUp()
-        {
-            m_LevelUp?.ShowLevelUp();
-        }
-
-        // ---- 业务入口 ----
-
-        /// <summary>
-        /// 当前英雄是否接受命中附带的中毒、冰冻；具体英雄声明自己的免疫规则。
-        /// </summary>
-        public virtual bool CanReceiveStatusEffect
-        {
-            get
-            {
-                return IsAlive;
-            }
-        }
-
-        /// <summary>
-        /// 存活且蓄满时开启无双，使出招与运动读取加成并开始角色残影。
-        /// </summary>
-        /// <returns>本次是否成功开启；按住按键、未满值、已开启或已死亡均不重复开启。</returns>
-        public bool TryActivateMusou()
-        {
-            if (!IsShown || Dead || GF.Base.IsGamePaused || !this.GetSystem<HeroSystem>().TryActivateWs())
-            {
-                return false;
-            }
-
-            m_PendingHurt = null;
-            m_MusouAfterimage?.SetEmitting(true);
-            return true;
-        }
-
-        /// <summary>
-        /// 移除局内加成并结束残影采样，不影响成长或装备来源。
-        /// </summary>
-        private void EndMusou()
-        {
-            this.GetSystem<HeroSystem>().ClearWs();
-            m_MusouAfterimage?.SetEmitting(false);
-        }
-
-        /// <summary>
-        /// 读取当前穿戴，仅刷新身体和武器视觉，不修改属性。
-        /// </summary>
-        public void RefreshAppearance()
-        {
-            var equipment = this.GetModel<ProfileModel>();
-            var body = (Sprite2D)Body;
-            m_Appearance.ApplyToSprites(body, m_Weapon,
-                equipment.Weapon?.EquipmentId ?? GameConfig.Equipment.EEquipmentId.None,
-                equipment.Armor?.EquipmentId ?? GameConfig.Equipment.EEquipmentId.None);
-        }
-
-        /// <inheritdoc />
-        protected override CombatantAttributes CaptureCombatAttributes()
-        {
-            return Attributes.CaptureCombatAttributes(Id);
-        }
-
-        // ---- 内部方法与扩展点 ----
-
-        /// <summary>
-        /// 同步镜像英雄武器及特效，身体层由公共实体镜像。
-        /// </summary>
-        /// <param name="dir">朝向：1 右，-1 左。</param>
-        protected override void OnFacingChanged(int dir)
-        {
-            bool mirror = dir > 0;
-            m_Weapon.FlipH = mirror;
-            // 特效层用父容器负 scale 镜像（同旧项目 Action.scale.x = ±1）：
-            // 这样特效节点上由轨道写入的 offset 会一起镜像，特效不会跑到身体另一侧。
-            if (m_EffectRoot != null)
-            {
-                m_EffectRoot.Scale = new Vector2(mirror ? -1 : 1, 1);
+                _poisonPulse.Hide();
             }
         }
+    }
 
-        /// <summary>
-        /// 命中收益（英雄专属）：按实际伤害相对出招时攻击力计算官方无双增长。
-        /// 收益规则属于英雄，不进攻击包、不进 AbstractActorEntity（怪物没有无双值）。
-        /// </summary>
-        /// <param name="data">本次攻击快照，仅在回调内使用。</param>
-        /// <param name="result">目标已完成的伤害结算结果。</param>
-        /// <param name="target">本次真实命中的目标。</param>
-        protected override void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result)
+    /// <inheritdoc />
+    protected override bool ApplyDamage(int amount) => this.GetSystem<HeroSystem>().Damage(amount);
+
+    /// <inheritdoc />
+    protected override void RestoreHealth(int amount)
+    {
+        this.GetSystem<HeroSystem>().Heal(amount);
+        HealthRestored?.Invoke(amount);
+    }
+
+    /// <summary>
+    /// 在成长模型确认升级并更新属性后显示提示；普通进关不触发。
+    /// </summary>
+    public void PlayLevelUp() => _levelUp?.ShowLevelUp();
+
+    // ---- 业务入口 ----
+
+    /// <summary>
+    /// 当前英雄是否接受命中附带的中毒、冰冻；具体英雄声明自己的免疫规则。
+    /// </summary>
+    public virtual bool CanReceiveStatusEffect => IsAlive;
+
+    /// <summary>
+    /// 存活且蓄满时开启无双，使出招与运动读取加成并开始角色残影。
+    /// </summary>
+    /// <returns>本次是否成功开启；按住按键、未满值、已开启或已死亡均不重复开启。</returns>
+    public bool TryActivateMusou()
+    {
+        if (!IsShown || Dead || GF.Base.IsGamePaused || !this.GetSystem<HeroSystem>().TryActivateWs())
         {
-            this.GetSystem<HeroSystem>().RecordHit(result);
-        }
-
-        /// <summary>
-        /// 受击：只登记事实（击退速度），何时生效由身体状态决定——
-        /// 普通受击立即打断动作，无双霸体不登记硬直；连段与冷却由英雄持有，受击不清空。
-        /// 死亡由 ReceiveHit 置位 Dead，身体状态机下一帧进入死亡。
-        /// 没有 hurt 动画（时长无从谈起）时不登记。
-        /// </summary>
-        /// <param name="data">本次攻击快照，不得保留池化引用。</param>
-        /// <param name="result">已完成的伤害结算结果。</param>
-        /// <param name="knockback">击退速度，单位像素每秒。</param>
-        /// <param name="attackerEntityId">攻击方运行编号；无来源时为零。</param>
-        protected override void OnHurt(AttackData data, DamageResult result, Vector2 knockback,
-            int attackerEntityId)
-        {
-            this.GetSystem<HeroSystem>().RecordHurt();
-            if (m_HurtFeedback != null && !Dead)
-            {
-                m_HurtFeedback.Stop();
-                m_HurtFeedback.Frame = 0;
-                m_HurtFeedback.Show();
-                m_HurtFeedback.Play(HeroAnims.HurtFeedback);
-            }
-            RefreshInvulnerabilityGlow();
-            if (Dead)
-            {
-                EndMusou();
-            }
-
-            if (!Dead && !SuperArmor && BodyParams.HurtTime > 0f)
-            {
-                m_PendingHurt = knockback;
-            }
-        }
-
-        /// <summary>
-        /// 命中动画结束或实体回池后停播并隐藏，不残留到下一次入场。
-        /// </summary>
-        private void OnHurtFeedbackFinished()
-        {
-            if (IsInstanceValid(m_HurtFeedback))
-            {
-                m_HurtFeedback.Stop();
-                m_HurtFeedback.Hide();
-            }
-        }
-
-        /// <summary>
-        /// 以官方6..15像素的光晕节拍显示本角色无敌；颜色由角色场景决定。
-        /// </summary>
-        private void RefreshInvulnerabilityGlow()
-        {
-            if (m_InvulnerabilityMaterial == null)
-            {
-                return;
-            }
-
-            bool musou = Attributes.WsActive.Value;
-            bool glowing = !Dead && (musou || Invulnerable);
-            m_InvulnerabilityMaterial.SetShaderParameter("glow_color", musou ? Colors.White : m_ProtectionGlowColor);
-            double phase = ActionData.Time * 24d % 18d;
-            float radius = (float)(6 + Math.Abs(9 - phase));
-            m_InvulnerabilityMaterial.SetShaderParameter("glow_radius", glowing ? radius : 0f);
-            m_InvulnerabilityMaterial.SetShaderParameter("glow_alpha", phase < 9 ? 1f : .8f);
-            m_InvulnerabilityMaterial.SetShaderParameter("mirrored", Facing > 0);
-        }
-
-        /// <summary>
-        /// 死亡时启动独立墓碑；身体状态只关闭英雄自身动作和碰撞。
-        /// </summary>
-        /// <param name="actor">本次死亡的英雄实例。</param>
-        private void OnDied(AbstractActorEntity actor)
-        {
-            Velocity = Vector2.Zero;
-            m_Tombstone.ShowAt(GlobalPosition);
-        }
-
-        /// <summary>
-        /// 将本英雄拥有的墓碑完成事实交给关卡，不以身体动画长度代替演出结束。
-        /// </summary>
-        private void OnDeathPresentationFinished()
-        {
-            DeathPresentationFinished?.Invoke();
-        }
-
-        /// <summary>
-        /// 由具体英雄给出自己的身体状态集合。
-        /// </summary>
-        /// <returns>本英雄使用的全部身体状态。</returns>
-        protected abstract FsmState<IHeroBody>[] CreateBodyStates();
-
-        /// <summary>
-        /// 每次显示重建身体状态机，从初始状态起步。
-        /// </summary>
-        private void CreateBodyStateMachine()
-        {
-            // 已有配置或状态机时不重复创建。
-            if (Config == null || m_BodyFsm != null)
-            {
-                return;
-            }
-
-            m_BodyFsm = GF.Fsm.CreateFsm($"HeroBody_{Id}", this, CreateBodyStates());
-            m_BodyFsm.Start(InitialBodyStateType);
-        }
-
-        /// <summary>
-        /// 销毁身体状态机，关停阶段仅清除本地引用。
-        /// </summary>
-        /// <param name="isShutdown">是否框架关停，关停时不再次访问状态机服务。</param>
-        private void DestroyBodyStateMachine(bool isShutdown)
-        {
-            if (m_BodyFsm != null && !isShutdown && !m_BodyFsm.IsDestroyed)
-            {
-                GF.Fsm.DestroyFsm(m_BodyFsm);
-            }
-
-            m_BodyFsm = null;
-        }
-
-        /// <summary>
-        /// 构建身体状态机所需的配置、动画名和时长定义（扩展点：远程角色可改写移动/攻击参数）。
-        /// </summary>
-        /// <returns>身体状态机使用的共享身体参数。</returns>
-        protected virtual HeroBodyParams BuildBodyParams()
-        {
-            // 先读取每段普攻动画及其时长，缺失动画直接记录配置错误。
-            string[] attackAnims = new string[OwnAttacks.Count];
-            float[] attackTimes = new float[OwnAttacks.Count];
-            for (int i = 0; i < OwnAttacks.Count; i++)
-            {
-                attackAnims[i] = AttackAnimations[i];
-                attackTimes[i] = GetActionDuration(attackAnims[i]);
-            }
-
-            // 汇总移动、跳跃与受击参数；待机时序由完整循环动画负责。
-            return new HeroBodyParams
-            {
-                WalkSpeed = Config.WalkSpeed,
-                RunDoubleTapWindow = Config.RunDoubleTapWindow,
-                RunSpeed = Config.RunSpeed,
-                JumpSpeed = Config.JumpSpeed,
-                Gravity = Config.Gravity,
-                JumpCountMax = Config.JumpCountMax,
-                HurtTime = GetActionDuration(HeroAnims.Hurt),
-                AttackAnims = Array.AsReadOnly(attackAnims),
-                AttackTimes = Array.AsReadOnly(attackTimes),
-                AttackInputCooldowns = Array.AsReadOnly(Config.AttackInputCooldowns),
-                AirAttackCooldown = Config.AirAttackCooldown,
-                ComboResetTime = Config.ComboResetTime,
-            };
-        }
-
-        /// <summary>
-        /// S＋K 仅从单向平台向下离开，不穿越普通地面。
-        /// </summary>
-        /// <returns>是否执行平台下落。</returns>
-        bool IHeroBody.TryDropThroughPlatform()
-        {
-            if (!OnFloor)
-            {
-                return false;
-            }
-
-            uint platformMask = LayerMask.LayerToMask2D("Platform");
-            for (int i = 0; i < GetSlideCollisionCount(); i++)
-            {
-                KinematicCollision2D collision = GetSlideCollision(i);
-                if (collision.GetNormal().Dot(Vector2.Up) < Mathf.Cos(FloorMaxAngle) ||
-                    collision.GetCollider() is not CollisionObject2D collider ||
-                    (collider.CollisionLayer & platformMask) == 0)
-                {
-                    continue;
-                }
-                // 原版从平台向下移 10px；单向碰撞不再阻挡已位于平台下方的脚底。
-                Position += Vector2.Down * Config.PlatformDropDistance;
-                ActionData.JumpCount = 1;
-                return true;
-            }
-
             return false;
         }
 
-        /// <summary>
-        /// 提交攻击段并装填攻击数据；起手音效由动画方法轨道播放。
-        /// </summary>
-        /// <param name="segment">英雄连段下标。</param>
-        void IActorBody.BeginAttack(int segment)
-        {
-            AttackSegment = segment;
-            // 官方加成乘在整招威力上，包含随机固定加值，避免只放大基础攻击。
-            PrepareAttack(OwnAttacks[segment], this.GetSystem<HeroSystem>().AttackPowerMultiplier);
-        }
-
-        /// <summary>
-        /// 结束攻击段并归还攻击数据。
-        /// </summary>
-        void IActorBody.EndAttack()
-        {
-            AttackSegment = -1;
-            ReleaseAttack();
-        }
-
+        PendingHurt = null;
+        _musouAfterimage?.SetEmitting(true);
+        return true;
     }
+
+    /// <summary>
+    /// 移除局内加成并结束残影采样，不影响成长或装备来源。
+    /// </summary>
+    private void EndMusou()
+    {
+        this.GetSystem<HeroSystem>().ClearWs();
+        _musouAfterimage?.SetEmitting(false);
+    }
+
+    /// <summary>
+    /// 读取当前穿戴，仅刷新身体和武器视觉，不修改属性。
+    /// </summary>
+    public void RefreshAppearance()
+    {
+        ProfileModel equipment = this.GetModel<ProfileModel>();
+        var body = (Sprite2D)Body;
+        _appearance.ApplyToSprites(body, _weapon,
+            equipment.Weapon?.EquipmentId ?? GameConfig.Equipment.EquipmentId.None,
+            equipment.Armor?.EquipmentId ?? GameConfig.Equipment.EquipmentId.None);
+    }
+
+    /// <inheritdoc />
+    protected override CombatantAttributes CaptureCombatAttributes() => Attributes.CaptureCombatAttributes(Id);
+
+    // ---- 内部方法与扩展点 ----
+
+    /// <summary>
+    /// 同步镜像英雄武器及特效，身体层由公共实体镜像。
+    /// </summary>
+    /// <param name="dir">朝向：1 右，-1 左。</param>
+    protected override void OnFacingChanged(int dir)
+    {
+        bool mirror = dir > 0;
+        _weapon.FlipH = mirror;
+        // 特效层用父容器负 scale 镜像（同旧项目 Action.scale.x = ±1）：
+        // 这样特效节点上由轨道写入的 offset 会一起镜像，特效不会跑到身体另一侧。
+        if (_effectRoot != null)
+        {
+            _effectRoot.Scale = new Vector2(mirror ? -1 : 1, 1);
+        }
+    }
+
+    /// <summary>
+    /// 命中收益（英雄专属）：按实际伤害相对出招时攻击力计算官方无双增长。
+    /// 收益规则属于英雄，不进攻击包、不进 AbstractActorEntity（怪物没有无双值）。
+    /// </summary>
+    /// <param name="data">本次攻击快照，仅在回调内使用。</param>
+    /// <param name="result">目标已完成的伤害结算结果。</param>
+    /// <param name="target">本次真实命中的目标。</param>
+    protected override void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result) => this.GetSystem<HeroSystem>().RecordHit(result);
+
+    /// <summary>
+    /// 受击：只登记事实（击退速度），何时生效由身体状态决定——
+    /// 普通受击立即打断动作，无双霸体不登记硬直；连段与冷却由英雄持有，受击不清空。
+    /// 死亡由 ReceiveHit 置位 Dead，身体状态机下一帧进入死亡。
+    /// 没有 hurt 动画（时长无从谈起）时不登记。
+    /// </summary>
+    /// <param name="data">本次攻击快照，不得保留池化引用。</param>
+    /// <param name="result">已完成的伤害结算结果。</param>
+    /// <param name="knockback">击退速度，单位像素每秒。</param>
+    /// <param name="attackerEntityId">攻击方运行编号；无来源时为零。</param>
+    protected override void OnHurt(AttackData data, DamageResult result, Vector2 knockback,
+        int attackerEntityId)
+    {
+        this.GetSystem<HeroSystem>().RecordHurt();
+        if (_hurtFeedback != null && !Dead)
+        {
+            _hurtFeedback.Stop();
+            _hurtFeedback.Frame = 0;
+            _hurtFeedback.Show();
+            _hurtFeedback.Play(HeroAnims.HurtFeedback);
+        }
+        RefreshInvulnerabilityGlow();
+        if (Dead)
+        {
+            EndMusou();
+        }
+
+        if (!Dead && !SuperArmor && BodyParams.HurtTime > 0f)
+        {
+            PendingHurt = knockback;
+        }
+    }
+
+    /// <summary>
+    /// 命中动画结束或实体回池后停播并隐藏，不残留到下一次入场。
+    /// </summary>
+    private void OnHurtFeedbackFinished()
+    {
+        if (IsInstanceValid(_hurtFeedback))
+        {
+            _hurtFeedback.Stop();
+            _hurtFeedback.Hide();
+        }
+    }
+
+    /// <summary>
+    /// 以官方6..15像素的光晕节拍显示本角色无敌；颜色由角色场景决定。
+    /// </summary>
+    private void RefreshInvulnerabilityGlow()
+    {
+        if (_invulnerabilityMaterial == null)
+        {
+            return;
+        }
+
+        bool musou = Attributes.WsActive.Value;
+        bool glowing = !Dead && (musou || Invulnerable);
+        _invulnerabilityMaterial.SetShaderParameter("glow_color", musou ? Colors.White : _protectionGlowColor);
+        double phase = ActionData.Time * 24d % 18d;
+        float radius = (float)(6 + Math.Abs(9 - phase));
+        _invulnerabilityMaterial.SetShaderParameter("glow_radius", glowing ? radius : 0f);
+        _invulnerabilityMaterial.SetShaderParameter("glow_alpha", phase < 9 ? 1f : .8f);
+        _invulnerabilityMaterial.SetShaderParameter("mirrored", Facing > 0);
+    }
+
+    /// <summary>
+    /// 死亡时启动独立墓碑；身体状态只关闭英雄自身动作和碰撞。
+    /// </summary>
+    /// <param name="actor">本次死亡的英雄实例。</param>
+    private void OnDied(AbstractActorEntity actor)
+    {
+        Velocity = Vector2.Zero;
+        _tombstone.ShowAt(GlobalPosition);
+    }
+
+    /// <summary>
+    /// 将本英雄拥有的墓碑完成事实交给关卡，不以身体动画长度代替演出结束。
+    /// </summary>
+    private void OnDeathPresentationFinished() => DeathPresentationFinished?.Invoke();
+
+    /// <summary>
+    /// 由具体英雄给出自己的身体状态集合。
+    /// </summary>
+    /// <returns>本英雄使用的全部身体状态。</returns>
+    protected abstract FsmState<IHeroBody>[] CreateBodyStates();
+
+    /// <summary>
+    /// 每次显示重建身体状态机，从初始状态起步。
+    /// </summary>
+    private void CreateBodyStateMachine()
+    {
+        // 已有配置或状态机时不重复创建。
+        if (Config == null || _bodyFsm != null)
+        {
+            return;
+        }
+
+        _bodyFsm = GF.Fsm.CreateFsm($"HeroBody_{Id}", this, CreateBodyStates());
+        _bodyFsm.Start(InitialBodyStateType);
+    }
+
+    /// <summary>
+    /// 销毁身体状态机，关停阶段仅清除本地引用。
+    /// </summary>
+    /// <param name="isShutdown">是否框架关停，关停时不再次访问状态机服务。</param>
+    private void DestroyBodyStateMachine(bool isShutdown)
+    {
+        if (_bodyFsm != null && !isShutdown && !_bodyFsm.IsDestroyed)
+        {
+            GF.Fsm.DestroyFsm(_bodyFsm);
+        }
+
+        _bodyFsm = null;
+    }
+
+    /// <summary>
+    /// 构建身体状态机所需的配置、动画名和时长定义（扩展点：远程角色可改写移动/攻击参数）。
+    /// </summary>
+    /// <returns>身体状态机使用的共享身体参数。</returns>
+    protected virtual HeroBodyParams BuildBodyParams()
+    {
+        // 先读取每段普攻动画及其时长，缺失动画直接记录配置错误。
+        string[] attackAnims = new string[OwnAttacks.Count];
+        float[] attackTimes = new float[OwnAttacks.Count];
+        for (int i = 0; i < OwnAttacks.Count; i++)
+        {
+            attackAnims[i] = AttackAnimations[i];
+            attackTimes[i] = GetActionDuration(attackAnims[i]);
+        }
+
+        // 汇总移动、跳跃与受击参数；待机时序由完整循环动画负责。
+        return new HeroBodyParams
+        {
+            WalkSpeed = Config.WalkSpeed,
+            RunDoubleTapWindow = Config.RunDoubleTapWindow,
+            RunSpeed = Config.RunSpeed,
+            JumpSpeed = Config.JumpSpeed,
+            Gravity = Config.Gravity,
+            JumpCountMax = Config.JumpCountMax,
+            HurtTime = GetActionDuration(HeroAnims.Hurt),
+            AttackAnims = Array.AsReadOnly(attackAnims),
+            AttackTimes = Array.AsReadOnly(attackTimes),
+            AttackInputCooldowns = Array.AsReadOnly(Config.AttackInputCooldowns),
+            AirAttackCooldown = Config.AirAttackCooldown,
+            ComboResetTime = Config.ComboResetTime,
+        };
+    }
+
+    /// <summary>
+    /// S＋K 仅从单向平台向下离开，不穿越普通地面。
+    /// </summary>
+    /// <returns>是否执行平台下落。</returns>
+    bool IHeroBody.TryDropThroughPlatform()
+    {
+        if (!OnFloor)
+        {
+            return false;
+        }
+
+        uint platformMask = LayerMask.LayerToMask2D("Platform");
+        for (int i = 0; i < GetSlideCollisionCount(); i++)
+        {
+            KinematicCollision2D collision = GetSlideCollision(i);
+            if (collision.GetNormal().Dot(Vector2.Up) < Mathf.Cos(FloorMaxAngle) ||
+                collision.GetCollider() is not CollisionObject2D collider ||
+                (collider.CollisionLayer & platformMask) == 0)
+            {
+                continue;
+            }
+            // 原版从平台向下移 10px；单向碰撞不再阻挡已位于平台下方的脚底。
+            Position += Vector2.Down * Config.PlatformDropDistance;
+            ActionData.JumpCount = 1;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 提交攻击段并装填攻击数据；起手音效由动画方法轨道播放。
+    /// </summary>
+    /// <param name="segment">英雄连段下标。</param>
+    void IActorBody.BeginAttack(int segment)
+    {
+        AttackSegment = segment;
+        // 官方加成乘在整招威力上，包含随机固定加值，避免只放大基础攻击。
+        PrepareAttack(OwnAttacks[segment], this.GetSystem<HeroSystem>().AttackPowerMultiplier);
+    }
+
+    /// <summary>
+    /// 结束攻击段并归还攻击数据。
+    /// </summary>
+    void IActorBody.EndAttack()
+    {
+        AttackSegment = -1;
+        ReleaseAttack();
+    }
+
 }

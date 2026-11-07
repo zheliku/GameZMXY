@@ -8,14 +8,14 @@
 [sub_resource type="Theme" id="tooltip_theme"]
 TooltipPanel/styles/panel = SubResource("tooltip_wrapper")
 
-[node name="GuideEquipmentIcon" type="TextureRect" unique_id=1855060501 node_paths=PackedStringArray("m_Icon")]
+[node name="GuideEquipmentIcon" type="TextureRect" unique_id=1855060501 node_paths=PackedStringArray("_icon")]
 custom_minimum_size = Vector2(32, 32)
 mouse_filter = 0
 theme = SubResource("tooltip_theme")
 expand_mode = 1
 script = ExtResource("1_yr1se")
-m_Icon = NodePath("Icon")
-m_TooltipScene = ExtResource("2_dtr7p")
+_icon = NodePath("Icon")
+_tooltipScene = ExtResource("2_dtr7p")
 
 [node name="Icon" type="TextureRect" parent="." unique_id=2139787385]
 layout_mode = 1

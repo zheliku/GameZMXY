@@ -25,23 +25,23 @@ size = Vector2(60.025642, 999.99927)
 
 [sub_resource type="Resource" id="Resource_wy5vc"]
 script = ExtResource("7_rqmen")
-m_Id = "player_start"
-m_Node = NodePath("PlayerStart")
+_id = "player_start"
+_node = NodePath("PlayerStart")
 
 [sub_resource type="Resource" id="Resource_4axe1"]
 script = ExtResource("7_rqmen")
-m_Id = "stage_1_a"
-m_Node = NodePath("Stage1A")
+_id = "stage_1_a"
+_node = NodePath("Stage1A")
 
 [sub_resource type="Resource" id="Resource_8j2xt"]
 script = ExtResource("7_rqmen")
-m_Id = "stage_1_gate"
-m_Node = NodePath("Stage1Gate")
+_id = "stage_1_gate"
+_node = NodePath("Stage1Gate")
 
 [sub_resource type="Resource" id="Resource_5xpmd"]
 script = ExtResource("7_rqmen")
-m_Id = "stage_1_left"
-m_Node = NodePath("Stage1Left")
+_id = "stage_1_left"
+_node = NodePath("Stage1Left")
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_jbnvr"]
 size = Vector2(20, 1800)
@@ -52,18 +52,18 @@ size = Vector2(20, 1800)
 [sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
 size = Vector2(8, 4000)
 
-[node name="Level_11" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("m_SpawnPoints", "m_Triggers", "m_Gates", "m_Spawner", "m_Camera", "m_Exit", "m_FloatingText")]
+[node name="Level_11" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("_spawnPoints", "_triggers", "_gates", "_spawner", "_camera", "_exit", "_floatingText")]
 script = ExtResource("1_rgb6t")
-m_MusicId = 1005
-m_LevelId = 11
-m_SpawnPoints = NodePath("World/SpawnPoints")
-m_Triggers = NodePath("World/StageTriggers")
-m_Gates = NodePath("World/StageGates")
-m_Spawner = NodePath("Spawner")
-m_Camera = NodePath("Camera2D")
-m_Exit = NodePath("World/Exit")
-m_FloatingText = NodePath("World/FloatingText")
-m_FeaturedOpponentSpawnPointIds = PackedStringArray("stage_1_a")
+_musicId = 1005
+_levelId = 11
+_spawnPoints = NodePath("World/SpawnPoints")
+_triggers = NodePath("World/StageTriggers")
+_gates = NodePath("World/StageGates")
+_spawner = NodePath("Spawner")
+_camera = NodePath("Camera2D")
+_exit = NodePath("World/Exit")
+_floatingText = NodePath("World/FloatingText")
+_featuredOpponentSpawnPointIds = PackedStringArray("stage_1_a")
 
 [node name="World" type="Node2D" parent="." unique_id=219105317]
 
@@ -130,7 +130,7 @@ shape = SubResource("RectangleShape2D_eiucu")
 [node name="SpawnPoints" type="Node2D" parent="World" unique_id=773829097]
 z_index = 200
 script = ExtResource("6_w5568")
-m_Entries = Array[Resource]([SubResource("Resource_wy5vc"), SubResource("Resource_4axe1")])
+_entries = Array[Resource]([SubResource("Resource_wy5vc"), SubResource("Resource_4axe1")])
 
 [node name="PlayerStart" type="Marker2D" parent="World/SpawnPoints" unique_id=1439222630]
 position = Vector2(200, 200)
@@ -145,8 +145,8 @@ script = ExtResource("8_l2the")
 [node name="StageGates" type="Node2D" parent="World" unique_id=429529906]
 z_index = 200
 script = ExtResource("9_38ua4")
-m_Entries = Array[Resource]([SubResource("Resource_8j2xt"), SubResource("Resource_5xpmd")])
-m_MarkerSize = 350.0
+_entries = Array[Resource]([SubResource("Resource_8j2xt"), SubResource("Resource_5xpmd")])
+_markerSize = 350.0
 
 [node name="Stage1Gate" type="StaticBody2D" parent="World/StageGates" unique_id=1295573834]
 position = Vector2(1044.25, 295)
@@ -166,21 +166,21 @@ collision_mask = 0
 shape = SubResource("RectangleShape2D_ufbke")
 disabled = true
 
-[node name="Exit" type="Area2D" parent="World" unique_id=720884043 node_paths=PackedStringArray("m_Marker", "m_Prompt") instance=ExtResource("10_afb5p")]
+[node name="Exit" type="Area2D" parent="World" unique_id=720884043 node_paths=PackedStringArray("_marker", "_prompt") instance=ExtResource("10_afb5p")]
 visible = false
 position = Vector2(814.75, 457.55)
 collision_layer = 2048
 collision_mask = 2
 script = ExtResource("11_60oit")
-m_Marker = NodePath("Marker")
-m_Prompt = NodePath("Prompt")
+_marker = NodePath("Marker")
+_prompt = NodePath("Prompt")
 
 [node name="Platforms" type="Node2D" parent="World" unique_id=860227771]
 
 [node name="Spawner" type="Node" parent="." unique_id=605185327]
 script = ExtResource("12_r7f44")
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=958629535 node_paths=PackedStringArray("m_LeftPlayerWall", "m_RightPlayerWall")]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=958629535 node_paths=PackedStringArray("_leftPlayerWall", "_rightPlayerWall")]
 z_index = 200
 position = Vector2(470, 295)
 limit_left = 0
@@ -188,8 +188,8 @@ limit_top = 0
 limit_right = 1222
 limit_bottom = 590
 script = ExtResource("13_y8amo")
-m_LeftPlayerWall = NodePath("PlayerScreenWalls/Left")
-m_RightPlayerWall = NodePath("PlayerScreenWalls/Right")
+_leftPlayerWall = NodePath("PlayerScreenWalls/Left")
+_rightPlayerWall = NodePath("PlayerScreenWalls/Right")
 
 [node name="PlayerScreenWalls" type="StaticBody2D" parent="Camera2D" unique_id=2023691008]
 collision_layer = 8192

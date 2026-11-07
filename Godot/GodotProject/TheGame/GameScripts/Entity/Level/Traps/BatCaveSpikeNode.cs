@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using GameConfig.Battle;
+using GameFramework;
 using GameLogic.Architecture;
 using GameLogic.Battle.Attacks;
 using GameLogic.Battle.Damage;
@@ -7,195 +9,186 @@ using GameLogic.Config;
 using GameLogic.Entity;
 using GameLogic.Heroes;
 using Godot;
-using GameFramework;
 using GodotGameFramework;
-using System.Linq;
 
-namespace GameLogic.Level.Traps
+namespace GameLogic.Level.Traps;
+
+/// <summary>
+/// 洞窟尖刺：向下射线检测英雄触发预警，动画决定下落；不持有玩家或关卡控制器。
+/// </summary>
+public partial class BatCaveSpikeNode : Area2D, IController
 {
+    private const float FallAcceleration = 576f; // 原版每源帧竖速增加1，换算为px/s²。
+    private const float SourceHalfStep = 1f / 48f; // 原版先加速后位移的积分校正，不建立24Hz循环。
+    private const string SpikeAnimation = "spike"; // 完整20格原版动画。
+
+    [Export] private AnimatedSprite2D _sprite; // 预警动画，第20源帧开始下落。
+    [Export] private CollisionShape2D _shape; // 覆盖主要刺身的基础矩形。
+    [Export] private RayCast2D _triggerRay; // 仅检测下方英雄受击区；长度、起点与物理层在场景编辑。
+    [Export] private bool _suspended; // 原版isUp，悬顶刺经过时落下，地面刺保持原位。
+    [Export] private int _attackId = 900004001; // 蝙蝠窟第1个机关的稳定攻击表引用，编辑器独立预览也使用此值。
+
+    private Vector2 _origin; // 本关原点，复位不累积误差。
+    private SpikePhase _phase; // 就绪、预警、下落互斥状态。
+    private double _elapsed; // 当前编号的秒数，下落时重新计时。
+    private bool _hit; // 当前编号已经命中，无敌拒绝不消费。
+
     /// <summary>
-    /// 洞窟尖刺：向下射线检测英雄触发预警，动画决定下落；不持有玩家或关卡控制器。
+    /// 读取已经过启动校验的共享攻击定义。
     /// </summary>
-    public partial class BatCaveSpikeNode : Area2D, IController
+    private AttackConfig Attack => this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(_attackId);
+
+    /// <summary>
+    /// 使用当前主流程拥有的架构。
+    /// </summary>
+    /// <returns>GGF主流程架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+
+    /// <summary>
+    /// 验证绑定并停用加载期玩法。
+    /// </summary>
+    public override void _Ready()
     {
-        private const float FallAcceleration = 576f; // 原版每源帧竖速增加1，换算为px/s²。
-        private const float SourceHalfStep = 1f / 48f; // 原版先加速后位移的积分校正，不建立24Hz循环。
-        private const string SpikeAnimation = "spike"; // 完整20格原版动画。
-
-        [Export] private AnimatedSprite2D m_Sprite; // 预警动画，第20源帧开始下落。
-        [Export] private CollisionShape2D m_Shape; // 覆盖主要刺身的基础矩形。
-        [Export] private RayCast2D m_TriggerRay; // 仅检测下方英雄受击区；长度、起点与物理层在场景编辑。
-        [Export] private bool m_Suspended; // 原版isUp，悬顶刺经过时落下，地面刺保持原位。
-        [Export] private int m_AttackId = 900004001; // 蝙蝠窟第1个机关的稳定攻击表引用，编辑器独立预览也使用此值。
-
-        private Vector2 m_Origin; // 本关原点，复位不累积误差。
-        private ESpikePhase m_Phase; // 就绪、预警、下落互斥状态。
-        private double m_Elapsed; // 当前编号的秒数，下落时重新计时。
-        private bool m_Hit; // 当前编号已经命中，无敌拒绝不消费。
-
-        /// <summary>
-        /// 读取已经过启动校验的共享攻击定义。
-        /// </summary>
-        private AttackConfig Attack
+        if (_sprite?.SpriteFrames == null || _shape?.Shape == null || _triggerRay == null)
         {
-            get
-            {
-                return this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(m_AttackId);
-            }
+            throw new InvalidOperationException("尖刺必须绑定原版动画、伤害形状和向下检测射线。");
         }
 
-        /// <summary>
-        /// 使用当前主流程拥有的架构。
-        /// </summary>
-        /// <returns>GGF主流程架构。</returns>
-        IArchitecture IBelongToArchitecture.GetArchitecture()
+        _origin = Position;
+        _triggerRay.Enabled = _suspended;
+        _sprite.FrameChanged += OnFrameChanged;
+        ResetCycle();
+    }
+
+    /// <summary>
+    /// 按游戏秒数推进预警、下落和重复命中，暂停自然停止。
+    /// </summary>
+    /// <param name="delta">当前物理步长秒数。</param>
+    public override void _PhysicsProcess(double delta)
+    {
+        if (delta <= 0)
         {
-            return GF.Fsm.GetArchitecture();
+            return;
         }
 
-        /// <summary>
-        /// 验证绑定并停用加载期玩法。
-        /// </summary>
-        public override void _Ready()
+        _elapsed += delta;
+        // 没有接触者时保持就绪，不索取游戏架构；场景可独立预览。
+        bool triggered = _suspended
+            ? _triggerRay.GetCollider() is HurtBoxNode { OwnerEntity: AbstractHeroEntity { IsAlive: true } }
+            : GetOverlappingAreas().OfType<HurtBoxNode>()
+                .Any(hurt => hurt.OwnerEntity is AbstractHeroEntity { IsAlive: true });
+        if (_phase == SpikePhase.Ready && !triggered)
         {
-            if (m_Sprite?.SpriteFrames == null || m_Shape?.Shape == null || m_TriggerRay == null)
-            {
-                throw new InvalidOperationException("尖刺必须绑定原版动画、伤害形状和向下检测射线。");
-            }
+            return;
+        }
 
-            m_Origin = Position;
-            m_TriggerRay.Enabled = m_Suspended;
-            m_Sprite.FrameChanged += OnFrameChanged;
+        LevelModel level = this.GetModel<LevelModel>();
+        if (!level.SessionActive || level.Outcome.Value != LevelOutcome.Running)
+        {
             ResetCycle();
+            return;
+        }
+        if (Attack.DamageKind != DamageKind.Real || Attack.FlatPower.X != Attack.FlatPower.Y ||
+            Attack.PowerScale != Vector2.Zero || Attack.RepeatIntervalSeconds <= 0)
+        {
+            throw new InvalidOperationException("尖刺攻击必须为固定真实伤害，并配置重复秒数。");
         }
 
-        /// <summary>
-        /// 按游戏秒数推进预警、下落和重复命中，暂停自然停止。
-        /// </summary>
-        /// <param name="delta">当前物理步长秒数。</param>
-        public override void _PhysicsProcess(double delta)
+        if (!_suspended && _elapsed >= Attack.RepeatIntervalSeconds)
         {
-            if (delta <= 0)
-            {
-                return;
-            }
+            _elapsed %= Attack.RepeatIntervalSeconds;
+            _hit = false;
+        }
 
-            m_Elapsed += delta;
-            // 没有接触者时保持就绪，不索取游戏架构；场景可独立预览。
-            bool triggered = m_Suspended
-                ? m_TriggerRay.GetCollider() is HurtBoxNode { OwnerEntity: AbstractHeroEntity { IsAlive: true } }
-                : GetOverlappingAreas().OfType<HurtBoxNode>()
-                    .Any(hurt => hurt.OwnerEntity is AbstractHeroEntity { IsAlive: true });
-            if (m_Phase == ESpikePhase.Ready && !triggered)
-            {
-                return;
-            }
+        // 射线和物理层决定何时预警，刺身Area负责实际伤害，不在代码中另算横向范围。
+        if (_suspended && _phase == SpikePhase.Ready && triggered)
+        {
+            _phase = SpikePhase.Warning;
+            _sprite.Play(SpikeAnimation);
+            _sprite.Frame = 1;
+        }
 
-            var level = this.GetModel<LevelModel>();
-            if (!level.SessionActive || level.Outcome.Value != ELevelOutcome.Running)
+        if (_phase == SpikePhase.Falling)
+        {
+            // y=g*t*(t+h)/2 重现源先加速后位移，不依赖当前物理帧率。
+            float elapsed = (float)_elapsed;
+            Position = _origin + Vector2.Down * (FallAcceleration * elapsed * (elapsed * 0.5f + SourceHalfStep));
+            Visible = Position.Y < 500f;
+            if (Position.Y >= 1000f)
             {
                 ResetCycle();
-                return;
-            }
-            if (Attack.DamageKind != EDamageKind.Real || Attack.FlatPower.X != Attack.FlatPower.Y ||
-                Attack.PowerScale != Vector2.Zero || Attack.RepeatIntervalSeconds <= 0)
-            {
-                throw new InvalidOperationException("尖刺攻击必须为固定真实伤害，并配置重复秒数。");
-            }
-
-            if (!m_Suspended && m_Elapsed >= Attack.RepeatIntervalSeconds)
-            {
-                m_Elapsed %= Attack.RepeatIntervalSeconds;
-                m_Hit = false;
-            }
-
-            // 射线和物理层决定何时预警，刺身Area负责实际伤害，不在代码中另算横向范围。
-            if (m_Suspended && m_Phase == ESpikePhase.Ready && triggered)
-            {
-                m_Phase = ESpikePhase.Warning;
-                m_Sprite.Play(SpikeAnimation);
-                m_Sprite.Frame = 1;
-            }
-
-            if (m_Phase == ESpikePhase.Falling)
-            {
-                // y=g*t*(t+h)/2 重现源先加速后位移，不依赖当前物理帧率。
-                float elapsed = (float)m_Elapsed;
-                Position = m_Origin + Vector2.Down * (FallAcceleration * elapsed * (elapsed * 0.5f + SourceHalfStep));
-                Visible = Position.Y < 500f;
-                if (Position.Y >= 1000f)
-                {
-                    ResetCycle();
-                }
-            }
-
-            if (!m_Hit && Visible)
-            {
-                CheckHit();
             }
         }
 
-        /// <summary>
-        /// 第20源帧开始下落，不能在预警起点移动。
-        /// </summary>
-        private void OnFrameChanged()
+        if (!_hit && Visible)
         {
-            if (m_Phase != ESpikePhase.Warning || m_Sprite.Frame != 19)
-            {
-                return;
-            }
-
-            m_Sprite.Stop();
-            m_Phase = ESpikePhase.Falling;
-            m_Elapsed = 0;
+            CheckHit();
         }
+    }
 
-        /// <summary>
-        /// 英雄真实受击盒结算固定伤害，无敌时保留本编号资格。
-        /// </summary>
-        private void CheckHit()
+    /// <summary>
+    /// 第20源帧开始下落，不能在预警起点移动。
+    /// </summary>
+    private void OnFrameChanged()
+    {
+        if (_phase != SpikePhase.Warning || _sprite.Frame != 19)
         {
-            foreach (Area2D area in GetOverlappingAreas())
-            {
-                if (area is not HurtBoxNode { OwnerEntity: AbstractHeroEntity { IsAlive: true } hero })
-                {
-                    continue;
-                }
-                // 同级、必中且无暴击；环境固定伤害不参与等级缩放，仍走正式扣血和死亡入口。
-                var attacker = new CombatantAttributes(ECombatSide.Enemy, hero.Level, 0, 0, 0,
-                    0, 0, 0, 0, 1, 0, 0, 0);
-                AttackData data = AttackData.Create(Attack.Id, attacker, Attack.FlatPower.X, Attack.DamageKind,
-                    Attack.Knockback, 1, Attack.HitProtect, GlobalPosition.X,
-                    source: new AttackSource(0, GameConfig.Entity.EEntityId.None, GetInstanceId(), GetInstanceId()));
-                try
-                {
-                    m_Hit = !hero.ReceiveHit(data).IsMiss;
-                }
-                finally
-                {
-                    ReferencePool.Release(data);
-                }
-                return;
-            }
+            return;
         }
 
-        /// <summary>
-        /// 落刺回原点开始新编号，地面刺以表内间隔更新。
-        /// </summary>
-        private void ResetCycle()
+        _sprite.Stop();
+        _phase = SpikePhase.Falling;
+        _elapsed = 0;
+    }
+
+    /// <summary>
+    /// 英雄真实受击盒结算固定伤害，无敌时保留本编号资格。
+    /// </summary>
+    private void CheckHit()
+    {
+        foreach (Area2D area in GetOverlappingAreas())
         {
-            Position = m_Origin;
-            Visible = true;
-            m_Phase = ESpikePhase.Ready;
-            m_Elapsed = 0;
-            m_Hit = false;
-            m_Sprite.Stop();
-            m_Sprite.Frame = 0;
+            if (area is not HurtBoxNode { OwnerEntity: AbstractHeroEntity { IsAlive: true } hero })
+            {
+                continue;
+            }
+            // 同级、必中且无暴击；环境固定伤害不参与等级缩放，仍走正式扣血和死亡入口。
+            var attacker = new CombatantAttributes(CombatSide.Enemy, hero.Level, 0, 0, 0,
+                0, 0, 0, 0, 1, 0, 0, 0);
+            var data = AttackData.Create(Attack.Id, attacker, Attack.FlatPower.X, Attack.DamageKind,
+                Attack.Knockback, 1, Attack.HitProtect, GlobalPosition.X,
+                source: new AttackSource(0, GameConfig.Entity.EntityId.None, GetInstanceId(), GetInstanceId()));
+            try
+            {
+                _hit = !hero.ReceiveHit(data).IsMiss;
+            }
+            finally
+            {
+                ReferencePool.Release(data);
+            }
+            return;
         }
+    }
 
-        /// <summary>
-        /// 悬顶刺的互斥动作阶段。
-        /// </summary>
-        private enum ESpikePhase { Ready, Warning, Falling }
+    /// <summary>
+    /// 落刺回原点开始新编号，地面刺以表内间隔更新。
+    /// </summary>
+    private void ResetCycle()
+    {
+        Position = _origin;
+        Visible = true;
+        _phase = SpikePhase.Ready;
+        _elapsed = 0;
+        _hit = false;
+        _sprite.Stop();
+        _sprite.Frame = 0;
+    }
+
+    /// <summary>
+    /// 悬顶刺的互斥动作阶段。
+    /// </summary>
+    private enum SpikePhase
+    {
+        Ready, Warning, Falling
     }
 }

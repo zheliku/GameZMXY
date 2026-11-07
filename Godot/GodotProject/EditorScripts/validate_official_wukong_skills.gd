@@ -6,13 +6,13 @@ const DETACHED_SOURCE_ORIGIN := Vector2.ZERO
 
 func _weapon_texture(appearance: Resource, armed: bool) -> Texture2D:
     if not armed:
-        return appearance.get("m_BaseWeapon")
-    return (appearance.get("m_WeaponTextures") as Dictionary)[2]
+        return appearance.get("_baseWeapon")
+    return (appearance.get("_weaponTextures") as Dictionary)[2]
 
 func _body_texture(appearance: Resource, armored: bool) -> Texture2D:
     if not armored:
-        return appearance.get("m_BaseBody")
-    return (appearance.get("m_ArmorTextures") as Dictionary)[1]
+        return appearance.get("_baseBody")
+    return (appearance.get("_armorTextures") as Dictionary)[1]
 
 func _check(condition: bool, message: String) -> void:
     if not condition:

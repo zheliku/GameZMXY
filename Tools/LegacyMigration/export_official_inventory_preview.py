@@ -94,8 +94,8 @@ def export(args):
             Path(item["path"]).write_bytes(packed[key])
         preview_path = appearance_path.with_name(hero + "_inventory_appearance.tres")
         body = appearance.split("[resource]",1)[1]
-        body = re.sub(r'm_PreviewAnimations = [^\n]+\n',"",body)
-        body = re.sub(r'm_PreviewAppearance = [^\n]+\n',"",body)
+        body = re.sub(r'_previewAnimations = [^\n]+\n',"",body)
+        body = re.sub(r'_previewAppearance = [^\n]+\n',"",body)
         script = next(line for line in appearance.splitlines() if 'type="Script"' in line)
         preview_path.write_text('[gd_resource type="Resource" script_class="HeroAppearanceResource" format=3]\n\n'+script+'\n'+'\n'.join(preview_resources)+'\n\n[resource]'+body,encoding="utf-8")
         if 'id="inventory_appearance"' not in appearance:

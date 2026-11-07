@@ -26,22 +26,22 @@ public partial class ValidateOfficialLevelRecipes : RefCounted
         foreach (int number in new[] { 1, 2, 3 })
         {
             LevelConfig config = table.Get(number);
-            var level = source.RootElement.GetProperty($"1-{number}");
-            foreach (var item in level.GetProperty("spawns").EnumerateArray())
+            JsonElement level = source.RootElement.GetProperty($"1-{number}");
+            foreach (JsonElement item in level.GetProperty("spawns").EnumerateArray())
             {
-                var properties = item.GetProperty("properties");
+                JsonElement properties = item.GetProperty("properties");
                 int stage = properties.GetProperty("stopPointIdx").GetInt32() + 1;
                 string node = item.GetProperty("projectNode").GetString();
                 string id = $"stage_{stage}_{char.ToLowerInvariant(node[^1])}";
                 LevelStage stageConfig = config.Stages.Single(value => value.StageOrder == stage);
                 LevelSpawnRecipe recipe = stageConfig.Recipes.Single(value => value.SpawnPointId == id);
-                EEntityId enemy = properties.GetProperty("enemyType").GetInt32() switch
+                EntityId enemy = properties.GetProperty("enemyType").GetInt32() switch
                 {
-                    1 => EEntityId.HuaguoshanMonkey,
-                    2 => EEntityId.DemonMonkey,
-                    3 => EEntityId.Gorilla,
-                    4 => EEntityId.MacaqueKing,
-                    6 => EEntityId.TamarinKing,
+                    1 => EntityId.HuaguoshanMonkey,
+                    2 => EntityId.DemonMonkey,
+                    3 => EntityId.Gorilla,
+                    4 => EntityId.MacaqueKing,
+                    6 => EntityId.TamarinKing,
                     _ => throw new InvalidOperationException("未知官方敌人编号")
                 };
                 float first = item.GetProperty("firstSpawnSeconds").GetSingle();

@@ -1,486 +1,443 @@
 using GameLogic.Architecture;
 using GameLogic.Heroes.Body;
 
-namespace GameLogic.Input
+namespace GameLogic.Input;
+
+/// <summary>
+/// 统一输入采样、方向双击、动作组合闩锁及连段冷却；每名英雄独占动作数据。
+/// </summary>
+/// <param name="architecture">所属流程的模型与系统入口。</param>
+/// <param name="source">可选替代输入源；默认在内部读取 Godot 输入。</param>
+public sealed class InputSystem(IArchitecture architecture, IInputSource source = null) : AbstractSystem(architecture)
 {
+    // ---- 常量 ----
+
     /// <summary>
-    /// 统一输入采样、方向双击、动作组合闩锁及连段冷却；每名英雄独占动作数据。
+    /// 打开或关闭背包；默认 C，可在输入映射中修改。
     /// </summary>
-    /// <param name="architecture">所属流程的模型与系统入口。</param>
-    /// <param name="source">可选替代输入源；默认在内部读取 Godot 输入。</param>
-    public sealed class InputSystem(IArchitecture architecture, IInputSource source = null) : AbstractSystem(architecture)
+    public const string InventoryToggle = "inventory_toggle";
+
+    /// <summary>
+    /// 打开或关闭技能面板；默认 V，可在输入映射中修改。
+    /// </summary>
+    public const string SkillToggle = "skill_toggle";
+
+    /// <summary>
+    /// 使用关卡出口（W）。
+    /// </summary>
+    public const string Interact = "interact";
+
+    /// <summary>
+    /// 角色向左移动。
+    /// </summary>
+    public const string MoveLeft = "move_left";
+
+    /// <summary>
+    /// 角色向右移动。
+    /// </summary>
+    public const string MoveRight = "move_right";
+
+    /// <summary>
+    /// 下方向，与跳跃组合穿过单向平台（S）。
+    /// </summary>
+    public const string MoveDown = "move_down";
+
+    /// <summary>
+    /// 跳跃。
+    /// </summary>
+    public const string Jump = "jump";
+
+    /// <summary>
+    /// 普通攻击。
+    /// </summary>
+    public const string Attack = "attack";
+
+    /// <summary>
+    /// 发动无双。
+    /// </summary>
+    public const string Musou = "musou";
+
+    /// <summary>
+    /// Godot 内置界面确认。
+    /// </summary>
+    public const string UiAccept = "ui_accept";
+
+    /// <summary>
+    /// Godot 内置界面取消。
+    /// </summary>
+    public const string UiCancel = "ui_cancel";
+
+    /// <summary>
+    /// Godot 内置界面向左。
+    /// </summary>
+    public const string UiLeft = "ui_left";
+
+    /// <summary>
+    /// Godot 内置界面向右。
+    /// </summary>
+    public const string UiRight = "ui_right";
+
+    /// <summary>
+    /// Godot 内置界面向上。
+    /// </summary>
+    public const string UiUp = "ui_up";
+
+    /// <summary>
+    /// Godot 内置界面向下。
+    /// </summary>
+    public const string UiDown = "ui_down";
+
+    /// <summary>
+    /// 第一个直接技能槽，默认 U；对应招式由角色决定。
+    /// </summary>
+    public const string Skill1 = "skill_1";
+
+    /// <summary>
+    /// 第二个直接技能槽，默认 I；对应招式由角色决定。
+    /// </summary>
+    public const string Skill2 = "skill_2";
+
+    /// <summary>
+    /// 第三个直接技能槽，默认 O；对应招式由角色决定。
+    /// </summary>
+    public const string Skill3 = "skill_3";
+
+    /// <summary>
+    /// 第四个直接技能槽，默认L。
+    /// </summary>
+    public const string Skill4 = "skill_4";
+
+    private const double TimeEpsilon = 1e-4; // 物理时钟浮点容差，单位秒。
+
+    // ---- 字段 ----
+
+    private readonly IInputSource _source = source ?? new GodotInputSource(); // 输入来源；默认直接读取引擎，替代输入也走相同规则。
+
+    // ---- 业务方法 ----
+
+    /// <summary>
+    /// 开始本英雄的新一帧消费记录，采样常规动作并推进独占的闩锁和时钟。
+    /// </summary>
+    /// <param name="hero">本帧采样的英雄宿主，提供动作数据和共享动作参数。</param>
+    /// <param name="dt">本帧游戏秒数。</param>
+    /// <param name="controlsEnabled">本帧是否允许玩家控制；状态禁止控制不覆盖动作自身的输入锁。</param>
+    public void Sample(IHeroBody hero, float dt, bool controlsEnabled = true)
     {
-        // ---- 常量 ----
-
-        /// <summary>
-        /// 打开或关闭背包；默认 C，可在输入映射中修改。
-        /// </summary>
-        public const string InventoryToggle = "inventory_toggle";
-
-        /// <summary>
-        /// 打开或关闭技能面板；默认 V，可在输入映射中修改。
-        /// </summary>
-        public const string SkillToggle = "skill_toggle";
-
-        /// <summary>
-        /// 使用关卡出口（W）。
-        /// </summary>
-        public const string Interact = "interact";
-
-        /// <summary>
-        /// 角色向左移动。
-        /// </summary>
-        public const string MoveLeft = "move_left";
-
-        /// <summary>
-        /// 角色向右移动。
-        /// </summary>
-        public const string MoveRight = "move_right";
-
-        /// <summary>
-        /// 下方向，与跳跃组合穿过单向平台（S）。
-        /// </summary>
-        public const string MoveDown = "move_down";
-
-        /// <summary>
-        /// 跳跃。
-        /// </summary>
-        public const string Jump = "jump";
-
-        /// <summary>
-        /// 普通攻击。
-        /// </summary>
-        public const string Attack = "attack";
-
-        /// <summary>
-        /// 发动无双。
-        /// </summary>
-        public const string Musou = "musou";
-
-        /// <summary>
-        /// Godot 内置界面确认。
-        /// </summary>
-        public const string UiAccept = "ui_accept";
-
-        /// <summary>
-        /// Godot 内置界面取消。
-        /// </summary>
-        public const string UiCancel = "ui_cancel";
-
-        /// <summary>
-        /// Godot 内置界面向左。
-        /// </summary>
-        public const string UiLeft = "ui_left";
-
-        /// <summary>
-        /// Godot 内置界面向右。
-        /// </summary>
-        public const string UiRight = "ui_right";
-
-        /// <summary>
-        /// Godot 内置界面向上。
-        /// </summary>
-        public const string UiUp = "ui_up";
-
-        /// <summary>
-        /// Godot 内置界面向下。
-        /// </summary>
-        public const string UiDown = "ui_down";
-
-        /// <summary>
-        /// 第一个直接技能槽，默认 U；对应招式由角色决定。
-        /// </summary>
-        public const string Skill1 = "skill_1";
-
-        /// <summary>
-        /// 第二个直接技能槽，默认 I；对应招式由角色决定。
-        /// </summary>
-        public const string Skill2 = "skill_2";
-
-        /// <summary>
-        /// 第三个直接技能槽，默认 O；对应招式由角色决定。
-        /// </summary>
-        public const string Skill3 = "skill_3";
-
-        /// <summary>
-        /// 第四个直接技能槽，默认L。
-        /// </summary>
-        public const string Skill4 = "skill_4";
-
-        private const double TimeEpsilon = 1e-4; // 物理时钟浮点容差，单位秒。
-
-        // ---- 字段 ----
-
-        private readonly IInputSource m_Source = source ?? new GodotInputSource(); // 输入来源；默认直接读取引擎，替代输入也走相同规则。
-
-        // ---- 业务方法 ----
-
-        /// <summary>
-        /// 开始本英雄的新一帧消费记录，采样常规动作并推进独占的闩锁和时钟。
-        /// </summary>
-        /// <param name="hero">本帧采样的英雄宿主，提供动作数据和共享动作参数。</param>
-        /// <param name="dt">本帧游戏秒数。</param>
-        /// <param name="controlsEnabled">本帧是否允许玩家控制；状态禁止控制不覆盖动作自身的输入锁。</param>
-        public void Sample(IHeroBody hero, float dt, bool controlsEnabled = true)
+        HeroActionData data = hero.ActionData;
+        data.Time += dt;
+        data.ConsumedActions.Clear();
+        data.AttackRequested = false;
+        data.MusouRequested = false;
+        // 状态造成的控制禁止与身体动作拥有的输入锁分开，不互相覆盖或提前解锁。
+        if (!controlsEnabled)
         {
-            var data = hero.ActionData;
-            data.Time += dt;
-            data.ConsumedActions.Clear();
-            data.AttackRequested = false;
-            data.MusouRequested = false;
-            // 状态造成的控制禁止与身体动作拥有的输入锁分开，不互相覆盖或提前解锁。
-            if (!controlsEnabled)
-            {
-                StopRunning(data);
-                data.MoveAxis = data.FacingAxis = 0;
-                data.JumpHeld = data.AttackHeld = data.DownHeld = data.UpHeld = false;
-                data.CanAct = false;
-                return;
-            }
-            // 输入锁独立于重力；游戏时钟继续走，锁定期间按键不留到收招后补动作。
-            if (data.InputLocked)
-            {
-                data.CanAct = false;
-                return;
-            }
-            float doubleTapWindow = hero.Params.RunDoubleTapWindow;
-            bool leftHeld = IsActionPressed(MoveLeft), rightHeld = IsActionPressed(MoveRight);
-            bool leftPressed = IsActionJustPressed(MoveLeft), rightPressed = IsActionJustPressed(MoveRight);
-            bool jumpHeld = IsActionPressed(Jump), attackHeld = IsActionPressed(Attack);
-            bool musouPressed = IsActionJustPressed(Musou);
-            bool downHeld = IsActionPressed(MoveDown), upHeld = IsActionPressed(Interact);
-            bool jumpPressed = IsActionJustPressed(Jump), attackPressed = IsActionJustPressed(Attack);
-            bool actionReleased = IsActionJustReleased(Jump) || IsActionJustReleased(Attack) ||
-                IsActionJustReleased(MoveDown) || IsActionJustReleased(Interact);
-            bool leftReleased = IsActionJustReleased(MoveLeft), rightReleased = IsActionJustReleased(MoveRight);
-            data.MusouRequested = musouPressed;
-            bool jump = jumpHeld || jumpPressed;
-            bool attack = attackHeld || attackPressed;
+            StopRunning(data);
+            data.MoveAxis = data.FacingAxis = 0;
+            data.JumpHeld = data.AttackHeld = data.DownHeld = data.UpHeld = false;
+            data.CanAct = false;
+            return;
+        }
+        // 输入锁独立于重力；游戏时钟继续走，锁定期间按键不留到收招后补动作。
+        if (data.InputLocked)
+        {
+            data.CanAct = false;
+            return;
+        }
+        float doubleTapWindow = hero.Params.RunDoubleTapWindow;
+        bool leftHeld = IsActionPressed(MoveLeft), rightHeld = IsActionPressed(MoveRight);
+        bool leftPressed = IsActionJustPressed(MoveLeft), rightPressed = IsActionJustPressed(MoveRight);
+        bool jumpHeld = IsActionPressed(Jump), attackHeld = IsActionPressed(Attack);
+        bool musouPressed = IsActionJustPressed(Musou);
+        bool downHeld = IsActionPressed(MoveDown), upHeld = IsActionPressed(Interact);
+        bool jumpPressed = IsActionJustPressed(Jump), attackPressed = IsActionJustPressed(Attack);
+        bool actionReleased = IsActionJustReleased(Jump) || IsActionJustReleased(Attack) ||
+            IsActionJustReleased(MoveDown) || IsActionJustReleased(Interact);
+        bool leftReleased = IsActionJustReleased(MoveLeft), rightReleased = IsActionJustReleased(MoveRight);
+        data.MusouRequested = musouPressed;
+        bool jump = jumpHeld || jumpPressed;
+        bool attack = attackHeld || attackPressed;
 
-            // 四个动作键共用闩锁；被阻止的跳跃仅在仍按住时等待动作结束。
-            if (actionReleased || (data.JumpHeld && !jump) || (data.AttackHeld && !attack) ||
-                (data.DownHeld && !downHeld) || (data.UpHeld && !upHeld))
-            {
-                data.CanAct = true;
-            }
-
-            // 松方向取消奔跑；新的方向边沿更新朝向与双击窗口。
-            data.LeftReleased = leftReleased || (data.LeftHeld && !leftHeld);
-            data.RightReleased = rightReleased || (data.RightHeld && !rightHeld);
-            if (data.LeftReleased || data.RightReleased)
-            {
-                data.Running = false;
-            }
-
-            if (leftPressed)
-            {
-                RegisterDirectionPress(data, doubleTapWindow, -1);
-            }
-
-            if (rightPressed)
-            {
-                RegisterDirectionPress(data, doubleTapWindow, 1);
-            }
-
-            if ((jump && !data.JumpHeld) || (attack && !data.AttackHeld) || (downHeld && !data.DownHeld) ||
-                (upHeld && !data.UpHeld) ||
-                musouPressed)
-            {
-                data.LastKeyDirection = 0;
-            }
-
-            data.LeftHeld = leftHeld;
-            data.RightHeld = rightHeld;
-            data.JumpHeld = jump;
-            data.AttackHeld = attack;
-            data.DownHeld = downHeld;
-            data.UpHeld = upHeld;
-            if (!IsDirectionHeld(data, data.FacingAxis))
-            {
-                data.FacingAxis = 0;
-            }
-
-            data.MoveAxis = data.FacingAxis;
+        // 四个动作键共用闩锁；被阻止的跳跃仅在仍按住时等待动作结束。
+        if (actionReleased || (data.JumpHeld && !jump) || (data.AttackHeld && !attack) ||
+            (data.DownHeld && !downHeld) || (data.UpHeld && !upHeld))
+        {
+            data.CanAct = true;
         }
 
-        /// <summary>
-        /// 消费 J 或 S＋J，冷却拒绝的尝试也耗掉闩锁。
-        /// </summary>
-        /// <param name="data">本英雄拥有的动作数据。</param>
-        /// <returns>是否存在可消费的普攻组合。</returns>
-        public bool ConsumeAttack(HeroActionData data)
-        {
-            return ConsumeAction(data, data.AttackHeld && !data.JumpHeld && !data.UpHeld);
-        }
-
-        /// <summary>
-        /// 消费单独 K。
-        /// </summary>
-        /// <param name="data">本英雄拥有的动作数据。</param>
-        /// <returns>是否存在可消费的跳跃组合。</returns>
-        public bool ConsumeJump(HeroActionData data)
-        {
-            return ConsumeAction(data, data.JumpHeld && !data.AttackHeld && !data.DownHeld && !data.UpHeld);
-        }
-
-        /// <summary>
-        /// 消费 S＋K 穿平台组合。
-        /// </summary>
-        /// <param name="data">本英雄拥有的动作数据。</param>
-        /// <returns>是否存在可消费的穿平台组合。</returns>
-        public bool ConsumePlatformDrop(HeroActionData data)
-        {
-            return ConsumeAction(data,
-            data.DownHeld && data.JumpHeld && !data.AttackHeld && !data.UpHeld);
-        }
-
-        /// <summary>
-        /// 允许动作时吞掉 J＋K，避免误触普攻或跳跃。
-        /// </summary>
-        /// <param name="data">本英雄拥有的动作数据。</param>
-        public void ConsumeJumpAttackCombination(HeroActionData data)
-        {
-            ConsumeAction(data, data.AttackHeld && data.JumpHeld && !data.DownHeld && !data.UpHeld);
-        }
-
-        /// <summary>
-        /// 查询攻击起手时的方向是否仍按住。
-        /// </summary>
-        /// <param name="data">本英雄拥有的动作数据。</param>
-        /// <param name="direction">左为 -1，右为 1。</param>
-        /// <returns>指定方向是否仍按住。</returns>
-        public bool IsDirectionHeld(HeroActionData data, int direction)
-        {
-            return direction < 0 ? data.LeftHeld : direction > 0 && data.RightHeld;
-        }
-
-        /// <summary>
-        /// 查询指定方向本帧是否松开过，供攻击状态永久停止已有横移。
-        /// </summary>
-        /// <param name="data">本英雄拥有的动作数据。</param>
-        /// <param name="direction">左为 -1，右为 1；零表示没有方向。</param>
-        /// <returns>指定方向是否出现松键边沿。</returns>
-        public bool WasDirectionReleased(HeroActionData data, int direction)
-        {
-            return direction < 0 ? data.LeftReleased : direction > 0 && data.RightReleased;
-        }
-
-        /// <summary>
-        /// 受击或未学跑攻的地面普攻取消奔跑档。
-        /// </summary>
-        /// <param name="data">本英雄拥有的动作数据。</param>
-        public void StopRunning(HeroActionData data)
+        // 松方向取消奔跑；新的方向边沿更新朝向与双击窗口。
+        data.LeftReleased = leftReleased || (data.LeftHeld && !leftHeld);
+        data.RightReleased = rightReleased || (data.RightHeld && !rightHeld);
+        if (data.LeftReleased || data.RightReleased)
         {
             data.Running = false;
         }
 
-        /// <summary>
-        /// 消费一次匹配的动作组合。
-        /// </summary>
-        /// <param name="data">本英雄拥有的动作数据。</param>
-        /// <param name="matches">按键是否匹配。</param>
-        /// <returns>组合与闩锁均允许时返回 true。</returns>
-        public bool ConsumeAction(HeroActionData data, bool matches)
+        if (leftPressed)
         {
-            if (!data.CanAct || !matches)
-            {
-                return false;
-            }
-
-            data.CanAct = false;
-            return true;
+            RegisterDirectionPress(data, doubleTapWindow, -1);
         }
 
-        /// <summary>
-        /// 消费一次普攻尝试；冷却允许时选定下一段，拒绝的输入不留到后续帧。
-        /// </summary>
-        /// <param name="data">本英雄的输入组合和游戏时钟。</param>
-        /// <param name="parameters">同类英雄共享的只读动作参数。</param>
-        /// <param name="airborne">本次是否从空中出招。</param>
-        /// <param name="isAttacking">当前是否已经处于攻击动作。</param>
-        /// <returns>已选定本次攻击段时返回 true。</returns>
-        public bool TryStartAttack(HeroActionData data, HeroBodyParams parameters, bool airborne, bool isAttacking)
+        if (rightPressed)
         {
-            return parameters.ComboLength > 0 && ConsumeAttack(data) &&
-                   TrySelectAttack(data, parameters, airborne, isAttacking);
+            RegisterDirectionPress(data, doubleTapWindow, 1);
         }
 
-        /// <summary>
-        /// 查询普攻冷却是否允许起手，不消费输入或推进连段。
-        /// </summary>
-        /// <param name="data">本英雄动作数据。</param>
-        /// <param name="airborne">是否在空中。</param>
-        /// <param name="isAttacking">是否正在普攻。</param>
-        /// <returns>冷却与动作条件允许时为真。</returns>
-        public bool IsAttackReady(HeroActionData data, bool airborne, bool isAttacking)
+        if ((jump && !data.JumpHeld) || (attack && !data.AttackHeld) || (downHeld && !data.DownHeld) ||
+            (upHeld && !data.UpHeld) ||
+            musouPressed)
         {
-            return data.Time + TimeEpsilon >= data.AttackReadyAt && (airborne || !data.Running || !isAttacking);
+            data.LastKeyDirection = 0;
         }
 
-        /// <summary>
-        /// 为已经消费的攻击输入裁定冷却并选择连段；允许角色自行决定攻击组合键。
-        /// </summary>
-        /// <param name="data">本英雄的动作数据。</param>
-        /// <param name="parameters">共享动作参数。</param>
-        /// <param name="airborne">是否从空中出招。</param>
-        /// <param name="isAttacking">是否已经处于攻击动作。</param>
-        /// <returns>成功选定攻击段时为真。</returns>
-        public bool TrySelectAttack(HeroActionData data, HeroBodyParams parameters, bool airborne, bool isAttacking)
+        data.LeftHeld = leftHeld;
+        data.RightHeld = rightHeld;
+        data.JumpHeld = jump;
+        data.AttackHeld = attack;
+        data.DownHeld = downHeld;
+        data.UpHeld = upHeld;
+        if (!IsDirectionHeld(data, data.FacingAxis))
         {
-            if (parameters.ComboLength == 0)
-            {
-                return false;
-            }
-
-            double now = data.Time;
-            bool reset = now - data.LastAttackAttempt > parameters.ComboResetTime + TimeEpsilon;
-            data.LastAttackAttempt = now;
-            if (!IsAttackReady(data, airborne, isAttacking))
-            {
-                return false;
-            }
-
-            // 原版先按上一段设置本次起手后的冷却，再推进段号；与动画收招时间独立。
-            float cooldown;
-            if (airborne)
-            {
-                cooldown = parameters.AirAttackCooldown;
-                data.LastGroundSegment = -1;
-                data.AttackSegment = parameters.AirAttackIndex;
-            }
-            else
-            {
-                cooldown = parameters.AttackInputCooldowns[System.Math.Max(data.LastGroundSegment, 0)];
-                data.LastGroundSegment = reset ? 0 : (data.LastGroundSegment + 1) % parameters.ComboLength;
-                data.AttackSegment = data.LastGroundSegment;
-                StopRunning(data);
-            }
-
-            data.AttackReadyAt = now + cooldown;
-            return true;
+            data.FacingAxis = 0;
         }
 
-        /// <summary>
-        /// 池实例重新显示时重置本英雄的输入、跳跃次数及连段，不影响其他英雄。
-        /// </summary>
-        /// <param name="data">本英雄拥有的动作数据。</param>
-        public void Reset(HeroActionData data)
-        {
-            data.Time = 0;
-            data.ConsumedActions.Clear();
-            data.AttackRequested = false;
-            data.LastTapTime = data.LastAttackAttempt = double.NegativeInfinity;
-            data.LastKeyDirection = data.FacingAxis = data.MoveAxis = data.JumpCount = 0;
-            data.LeftHeld = data.RightHeld = data.JumpHeld = data.AttackHeld = data.DownHeld = data.UpHeld = false;
-            data.Running = data.MusouRequested = data.LeftReleased = data.RightReleased = false;
-            data.CanAct = true;
-            data.AttackSegment = data.LastGroundSegment = -1;
-            data.AttackReadyAt = 0;
-        }
-
-        /// <summary>
-        /// 查询逻辑动作当前是否按住；默认使用 Godot InputMap 与 Input 原生查询。
-        /// </summary>
-        /// <param name="action">输入映射名称。</param>
-        /// <returns>当前按住时为真。</returns>
-        public bool IsActionPressed(string action)
-        {
-            return m_Source.IsPressed(action);
-        }
-
-        /// <summary>
-        /// 查询本物理帧是否出现按下，包括同帧已经松开的短按。
-        /// </summary>
-        /// <param name="action">输入映射名称。</param>
-        /// <returns>存在按下边沿时为真。</returns>
-        public bool IsActionJustPressed(string action)
-        {
-            return m_Source.IsJustPressed(action);
-        }
-
-        /// <summary>
-        /// 查询本物理帧是否出现松开，包括同帧已经重新按住。
-        /// </summary>
-        /// <param name="action">输入映射名称。</param>
-        /// <returns>存在松开边沿时为真。</returns>
-        public bool IsActionJustReleased(string action)
-        {
-            return m_Source.IsJustReleased(action);
-        }
-
-        /// <summary>
-        /// 按角色消费一次动作按下；同一角色本帧不能重复消费，其他角色互不影响。
-        /// </summary>
-        /// <param name="data">本角色的动作数据。</param>
-        /// <param name="action">任意动作映射名称。</param>
-        /// <returns>本帧存在尚未消费的按下边沿时为真。</returns>
-        public bool ConsumePress(HeroActionData data, string action)
-        {
-            return IsActionJustPressed(action) && data.ConsumedActions.Add(action);
-        }
-
-        /// <summary>
-        /// 同方向两次按下间隔严格小于窗口时奔跑。
-        /// </summary>
-        /// <param name="data">本英雄拥有的动作数据。</param>
-        /// <param name="doubleTapWindow">双击窗口秒数。</param>
-        /// <param name="direction">本次方向。</param>
-        private void RegisterDirectionPress(HeroActionData data, float doubleTapWindow, int direction)
-        {
-            data.Running = direction == data.LastKeyDirection && data.Time - data.LastTapTime < doubleTapWindow;
-            data.LastKeyDirection = data.FacingAxis = direction;
-            data.LastTapTime = data.Time;
-        }
-
-        /// <summary>
-        /// 默认来源直接读取 Godot 的动作映射及本帧边沿。
-        /// </summary>
-        private sealed class GodotInputSource : IInputSource
-        {
-            /// <inheritdoc />
-            public bool IsPressed(string action)
-            {
-                return Godot.Input.IsActionPressed(action);
-            }
-
-            /// <inheritdoc />
-            public bool IsJustPressed(string action)
-            {
-                return Godot.Input.IsActionJustPressed(action);
-            }
-
-            /// <inheritdoc />
-            public bool IsJustReleased(string action)
-            {
-                return Godot.Input.IsActionJustReleased(action);
-            }
-        }
+        data.MoveAxis = data.FacingAxis;
     }
 
     /// <summary>
-    /// 按动作名提供当前输入事实；替代输入源只负责读键，组合与冷却规则仍由 InputSystem 执行。
+    /// 消费 J 或 S＋J，冷却拒绝的尝试也耗掉闩锁。
     /// </summary>
-    public interface IInputSource
+    /// <param name="data">本英雄拥有的动作数据。</param>
+    /// <returns>是否存在可消费的普攻组合。</returns>
+    public bool ConsumeAttack(HeroActionData data) => ConsumeAction(data, data.AttackHeld && !data.JumpHeld && !data.UpHeld);
+
+    /// <summary>
+    /// 消费单独 K。
+    /// </summary>
+    /// <param name="data">本英雄拥有的动作数据。</param>
+    /// <returns>是否存在可消费的跳跃组合。</returns>
+    public bool ConsumeJump(HeroActionData data) => ConsumeAction(data, data.JumpHeld && !data.AttackHeld && !data.DownHeld && !data.UpHeld);
+
+    /// <summary>
+    /// 消费 S＋K 穿平台组合。
+    /// </summary>
+    /// <param name="data">本英雄拥有的动作数据。</param>
+    /// <returns>是否存在可消费的穿平台组合。</returns>
+    public bool ConsumePlatformDrop(HeroActionData data)
     {
-        /// <summary>
-        /// 查询当前是否按住。
-        /// </summary>
-        /// <param name="action">Godot 动作映射名称。</param>
-        /// <returns>当前按住时为 true。</returns>
-        bool IsPressed(string action);
-
-        /// <summary>
-        /// 查询本帧是否刚按下，包括同帧结束的短按。
-        /// </summary>
-        /// <param name="action">Godot 动作映射名称。</param>
-        /// <returns>存在按下边沿时为 true。</returns>
-        bool IsJustPressed(string action);
-
-        /// <summary>
-        /// 查询本帧是否松开过，包括同帧重新按住。
-        /// </summary>
-        /// <param name="action">Godot 动作映射名称。</param>
-        /// <returns>存在松开边沿时为 true。</returns>
-        bool IsJustReleased(string action);
+        return ConsumeAction(data,
+        data.DownHeld && data.JumpHeld && !data.AttackHeld && !data.UpHeld);
     }
+
+    /// <summary>
+    /// 允许动作时吞掉 J＋K，避免误触普攻或跳跃。
+    /// </summary>
+    /// <param name="data">本英雄拥有的动作数据。</param>
+    public void ConsumeJumpAttackCombination(HeroActionData data) => ConsumeAction(data, data.AttackHeld && data.JumpHeld && !data.DownHeld && !data.UpHeld);
+
+    /// <summary>
+    /// 查询攻击起手时的方向是否仍按住。
+    /// </summary>
+    /// <param name="data">本英雄拥有的动作数据。</param>
+    /// <param name="direction">左为 -1，右为 1。</param>
+    /// <returns>指定方向是否仍按住。</returns>
+    public bool IsDirectionHeld(HeroActionData data, int direction) => direction < 0 ? data.LeftHeld : direction > 0 && data.RightHeld;
+
+    /// <summary>
+    /// 查询指定方向本帧是否松开过，供攻击状态永久停止已有横移。
+    /// </summary>
+    /// <param name="data">本英雄拥有的动作数据。</param>
+    /// <param name="direction">左为 -1，右为 1；零表示没有方向。</param>
+    /// <returns>指定方向是否出现松键边沿。</returns>
+    public bool WasDirectionReleased(HeroActionData data, int direction) => direction < 0 ? data.LeftReleased : direction > 0 && data.RightReleased;
+
+    /// <summary>
+    /// 受击或未学跑攻的地面普攻取消奔跑档。
+    /// </summary>
+    /// <param name="data">本英雄拥有的动作数据。</param>
+    public void StopRunning(HeroActionData data) => data.Running = false;
+
+    /// <summary>
+    /// 消费一次匹配的动作组合。
+    /// </summary>
+    /// <param name="data">本英雄拥有的动作数据。</param>
+    /// <param name="matches">按键是否匹配。</param>
+    /// <returns>组合与闩锁均允许时返回 true。</returns>
+    public bool ConsumeAction(HeroActionData data, bool matches)
+    {
+        if (!data.CanAct || !matches)
+        {
+            return false;
+        }
+
+        data.CanAct = false;
+        return true;
+    }
+
+    /// <summary>
+    /// 消费一次普攻尝试；冷却允许时选定下一段，拒绝的输入不留到后续帧。
+    /// </summary>
+    /// <param name="data">本英雄的输入组合和游戏时钟。</param>
+    /// <param name="parameters">同类英雄共享的只读动作参数。</param>
+    /// <param name="airborne">本次是否从空中出招。</param>
+    /// <param name="isAttacking">当前是否已经处于攻击动作。</param>
+    /// <returns>已选定本次攻击段时返回 true。</returns>
+    public bool TryStartAttack(HeroActionData data, HeroBodyParams parameters, bool airborne, bool isAttacking)
+    {
+        return parameters.ComboLength > 0 && ConsumeAttack(data) &&
+               TrySelectAttack(data, parameters, airborne, isAttacking);
+    }
+
+    /// <summary>
+    /// 查询普攻冷却是否允许起手，不消费输入或推进连段。
+    /// </summary>
+    /// <param name="data">本英雄动作数据。</param>
+    /// <param name="airborne">是否在空中。</param>
+    /// <param name="isAttacking">是否正在普攻。</param>
+    /// <returns>冷却与动作条件允许时为真。</returns>
+    public bool IsAttackReady(HeroActionData data, bool airborne, bool isAttacking) => data.Time + TimeEpsilon >= data.AttackReadyAt && (airborne || !data.Running || !isAttacking);
+
+    /// <summary>
+    /// 为已经消费的攻击输入裁定冷却并选择连段；允许角色自行决定攻击组合键。
+    /// </summary>
+    /// <param name="data">本英雄的动作数据。</param>
+    /// <param name="parameters">共享动作参数。</param>
+    /// <param name="airborne">是否从空中出招。</param>
+    /// <param name="isAttacking">是否已经处于攻击动作。</param>
+    /// <returns>成功选定攻击段时为真。</returns>
+    public bool TrySelectAttack(HeroActionData data, HeroBodyParams parameters, bool airborne, bool isAttacking)
+    {
+        if (parameters.ComboLength == 0)
+        {
+            return false;
+        }
+
+        double now = data.Time;
+        bool reset = now - data.LastAttackAttempt > parameters.ComboResetTime + TimeEpsilon;
+        data.LastAttackAttempt = now;
+        if (!IsAttackReady(data, airborne, isAttacking))
+        {
+            return false;
+        }
+
+        // 原版先按上一段设置本次起手后的冷却，再推进段号；与动画收招时间独立。
+        float cooldown;
+        if (airborne)
+        {
+            cooldown = parameters.AirAttackCooldown;
+            data.LastGroundSegment = -1;
+            data.AttackSegment = parameters.AirAttackIndex;
+        }
+        else
+        {
+            cooldown = parameters.AttackInputCooldowns[System.Math.Max(data.LastGroundSegment, 0)];
+            data.LastGroundSegment = reset ? 0 : (data.LastGroundSegment + 1) % parameters.ComboLength;
+            data.AttackSegment = data.LastGroundSegment;
+            StopRunning(data);
+        }
+
+        data.AttackReadyAt = now + cooldown;
+        return true;
+    }
+
+    /// <summary>
+    /// 池实例重新显示时重置本英雄的输入、跳跃次数及连段，不影响其他英雄。
+    /// </summary>
+    /// <param name="data">本英雄拥有的动作数据。</param>
+    public void Reset(HeroActionData data)
+    {
+        data.Time = 0;
+        data.ConsumedActions.Clear();
+        data.AttackRequested = false;
+        data.LastTapTime = data.LastAttackAttempt = double.NegativeInfinity;
+        data.LastKeyDirection = data.FacingAxis = data.MoveAxis = data.JumpCount = 0;
+        data.LeftHeld = data.RightHeld = data.JumpHeld = data.AttackHeld = data.DownHeld = data.UpHeld = false;
+        data.Running = data.MusouRequested = data.LeftReleased = data.RightReleased = false;
+        data.CanAct = true;
+        data.AttackSegment = data.LastGroundSegment = -1;
+        data.AttackReadyAt = 0;
+    }
+
+    /// <summary>
+    /// 查询逻辑动作当前是否按住；默认使用 Godot InputMap 与 Input 原生查询。
+    /// </summary>
+    /// <param name="action">输入映射名称。</param>
+    /// <returns>当前按住时为真。</returns>
+    public bool IsActionPressed(string action) => _source.IsPressed(action);
+
+    /// <summary>
+    /// 查询本物理帧是否出现按下，包括同帧已经松开的短按。
+    /// </summary>
+    /// <param name="action">输入映射名称。</param>
+    /// <returns>存在按下边沿时为真。</returns>
+    public bool IsActionJustPressed(string action) => _source.IsJustPressed(action);
+
+    /// <summary>
+    /// 查询本物理帧是否出现松开，包括同帧已经重新按住。
+    /// </summary>
+    /// <param name="action">输入映射名称。</param>
+    /// <returns>存在松开边沿时为真。</returns>
+    public bool IsActionJustReleased(string action) => _source.IsJustReleased(action);
+
+    /// <summary>
+    /// 按角色消费一次动作按下；同一角色本帧不能重复消费，其他角色互不影响。
+    /// </summary>
+    /// <param name="data">本角色的动作数据。</param>
+    /// <param name="action">任意动作映射名称。</param>
+    /// <returns>本帧存在尚未消费的按下边沿时为真。</returns>
+    public bool ConsumePress(HeroActionData data, string action) => IsActionJustPressed(action) && data.ConsumedActions.Add(action);
+
+    /// <summary>
+    /// 同方向两次按下间隔严格小于窗口时奔跑。
+    /// </summary>
+    /// <param name="data">本英雄拥有的动作数据。</param>
+    /// <param name="doubleTapWindow">双击窗口秒数。</param>
+    /// <param name="direction">本次方向。</param>
+    private void RegisterDirectionPress(HeroActionData data, float doubleTapWindow, int direction)
+    {
+        data.Running = direction == data.LastKeyDirection && data.Time - data.LastTapTime < doubleTapWindow;
+        data.LastKeyDirection = data.FacingAxis = direction;
+        data.LastTapTime = data.Time;
+    }
+
+    /// <summary>
+    /// 默认来源直接读取 Godot 的动作映射及本帧边沿。
+    /// </summary>
+    private sealed class GodotInputSource : IInputSource
+    {
+        /// <inheritdoc />
+        public bool IsPressed(string action) => Godot.Input.IsActionPressed(action);
+
+        /// <inheritdoc />
+        public bool IsJustPressed(string action) => Godot.Input.IsActionJustPressed(action);
+
+        /// <inheritdoc />
+        public bool IsJustReleased(string action) => Godot.Input.IsActionJustReleased(action);
+    }
+}
+
+/// <summary>
+/// 按动作名提供当前输入事实；替代输入源只负责读键，组合与冷却规则仍由 InputSystem 执行。
+/// </summary>
+public interface IInputSource
+{
+    /// <summary>
+    /// 查询当前是否按住。
+    /// </summary>
+    /// <param name="action">Godot 动作映射名称。</param>
+    /// <returns>当前按住时为 true。</returns>
+    bool IsPressed(string action);
+
+    /// <summary>
+    /// 查询本帧是否刚按下，包括同帧结束的短按。
+    /// </summary>
+    /// <param name="action">Godot 动作映射名称。</param>
+    /// <returns>存在按下边沿时为 true。</returns>
+    bool IsJustPressed(string action);
+
+    /// <summary>
+    /// 查询本帧是否松开过，包括同帧重新按住。
+    /// </summary>
+    /// <param name="action">Godot 动作映射名称。</param>
+    /// <returns>存在松开边沿时为 true。</returns>
+    bool IsJustReleased(string action);
 }

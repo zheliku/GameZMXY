@@ -31,15 +31,15 @@ public sealed partial class UiSmokeScenario
     /// <returns>完成尖刺与敌人专项验证的任务。</returns>
     private async Task CheckBatCaveAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        var heroSystem = flow.GetSystem<HeroSystem>();
+        HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
         heroSystem.Heal(int.MaxValue);
         hero.GlobalPosition = new Vector2(500, 400);
         hero.Velocity = Vector2.Zero;
-        var packed = GD.Load<PackedScene>("res://TheGame/Scenes/Traps/bat_cave_spike.tscn");
-        var spike = packed.Instantiate<BatCaveSpikeNode>();
+        PackedScene packed = GD.Load<PackedScene>("res://TheGame/Scenes/Traps/bat_cave_spike.tscn");
+        BatCaveSpikeNode spike = packed.Instantiate<BatCaveSpikeNode>();
         spike.Position = new Vector2(500, 370);
         spike.ProcessMode = Node.ProcessModeEnum.Disabled;
-        m_Driver.GetTree().Root.AddChild(spike);
+        _driver.GetTree().Root.AddChild(spike);
         Check(!spike.GetNode<RayCast2D>("Trigger").Enabled, "地刺不需要启用悬顶检测射线");
         try
         {
@@ -67,15 +67,15 @@ public sealed partial class UiSmokeScenario
         {
             spike.QueueFree();
         }
-        var ceiling = packed.Instantiate<BatCaveSpikeNode>();
-        typeof(BatCaveSpikeNode).GetField("m_Suspended", BindingFlags.Instance | BindingFlags.NonPublic)
+        BatCaveSpikeNode ceiling = packed.Instantiate<BatCaveSpikeNode>();
+        typeof(BatCaveSpikeNode).GetField("_suspended", BindingFlags.Instance | BindingFlags.NonPublic)
             .SetValue(ceiling, true);
         ceiling.Position = new Vector2(500, 100);
         hero.GlobalPosition = new Vector2(650, 400);
-        m_Driver.GetTree().Root.AddChild(ceiling);
+        _driver.GetTree().Root.AddChild(ceiling);
         try
         {
-            var ray = ceiling.GetNode<RayCast2D>("Trigger");
+            RayCast2D ray = ceiling.GetNode<RayCast2D>("Trigger");
             Check(ray.Enabled && ray.CollideWithAreas && !ray.CollideWithBodies && ray.TargetPosition.Y > 0,
                 "悬顶刺未使用向下且只检测英雄受击区的射线");
             await WaitFramesAsync(8);
@@ -90,7 +90,7 @@ public sealed partial class UiSmokeScenario
             hero.GlobalPosition = new Vector2(800, 400);
             await WaitUntilAsync(() => ceiling.Position.Y > 100, "完整预警后悬顶刺没有下落");
             ceiling.SetPhysicsProcess(false);
-            double elapsed = SmokeInspection.ReadField<double>(ceiling, "m_Elapsed");
+            double elapsed = SmokeInspection.ReadField<double>(ceiling, "_elapsed");
             ceiling._PhysicsProcess(.25);
             double t = elapsed + .25;
             Check(Math.Abs(ceiling.Position.Y - (100 + 576 * t * (t / 2 + 1d / 48))) < .01,
@@ -116,51 +116,57 @@ public sealed partial class UiSmokeScenario
 
         heroSystem.Heal(int.MaxValue);
         hero.GlobalPosition = new Vector2(600, 400);
-        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Bat,
+        _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Bat,
             new EnemySpawn(new Vector2(400, 150)));
-        await WaitUntilAsync(() => m_Monster.GlobalPosition.X > 430 && m_Monster.GlobalPosition.Y > 155,
+        await WaitUntilAsync(() => _monster.GlobalPosition.X > 430 && _monster.GlobalPosition.Y > 155,
             "蝙蝠没有通过真实AI追踪英雄并下降");
-        Check(!m_Monster.OnFloor, "飞行追踪错误地依赖地面接触");
-        SmokeInspection.FreezeAi(m_Monster);
-        m_Monster.GlobalPosition = new Vector2(640, 380);
-        m_Monster.Velocity = Vector2.Zero;
-        m_Monster.SetFacing(-1);
+        Check(!_monster.OnFloor, "飞行追踪错误地依赖地面接触");
+        SmokeInspection.FreezeAi(_monster);
+        _monster.GlobalPosition = new Vector2(640, 380);
+        _monster.Velocity = Vector2.Zero;
+        _monster.SetFacing(-1);
         typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic)
-            .Invoke(m_Monster, [hero]);
+            .Invoke(_monster, [hero]);
         int previousHp = hero.Hp;
-        Check(((IEnemyAiAgent)m_Monster).RequestAttack(0), "空中蝙蝠拒绝出招");
-        await WaitUntilAsync(() => m_Monster.AttackSegment == 0, "蝙蝠身体没有进入攻击");
+        Check(((IEnemyAiAgent)_monster).RequestAttack(0), "空中蝙蝠拒绝出招");
+        await WaitUntilAsync(() => _monster.AttackSegment == 0, "蝙蝠身体没有进入攻击");
         await WaitUntilAsync(() => hero.Hp < previousHp, "蝙蝠空中攻击没有造成真实伤害");
-        await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "Fly", "蝙蝠收招没有返回飞行");
-        var data = AttackData.Create(0, default, 1, EDamageKind.Real, new Vector2(48, -72), hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EEntityId.None, 0, 0));
+        await WaitUntilAsync(() => SmokeInspection.BodyStateName(_monster) == "Fly", "蝙蝠收招没有返回飞行");
+        var data = AttackData.Create(0, default, 1, DamageKind.Real, new Vector2(48, -72), hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
         try
-        { m_Monster.ReceiveHit(data); }
+        {
+            _monster.ReceiveHit(data);
+        }
         finally { ReferencePool.Release(data); }
-        await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "Hurt", "蝙蝠未进入受击");
-        await WaitUntilAsync(() => SmokeInspection.BodyStateName(m_Monster) == "Fly", "蝙蝠受击结束没有返回飞行");
-        var bat = m_Monster;
-        data = AttackData.Create(0, default, 10000, EDamageKind.Real, Vector2.Zero, hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EEntityId.None, 0, 0));
+        await WaitUntilAsync(() => SmokeInspection.BodyStateName(_monster) == "Hurt", "蝙蝠未进入受击");
+        await WaitUntilAsync(() => SmokeInspection.BodyStateName(_monster) == "Fly", "蝙蝠受击结束没有返回飞行");
+        AbstractEnemyEntity bat = _monster;
+        data = AttackData.Create(0, default, 10000, DamageKind.Real, Vector2.Zero, hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
         try
-        { bat.ReceiveHit(data); }
+        {
+            bat.ReceiveHit(data);
+        }
         finally { ReferencePool.Release(data); }
         await WaitUntilAsync(() => !bat.IsShown, "蝙蝠死亡动画结束未回池");
-        m_Monster = null;
+        _monster = null;
         GD.Print("SMOKE-BAT PASS: airborne pursuit, attack hit, recovery/hurt return to flight and death recycle.");
 
-        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.BatCaveStatue,
+        _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BatCaveStatue,
             new EnemySpawn(new Vector2(800, 300)));
-        Vector2 origin = m_Monster.GlobalPosition;
-        Check(m_Monster.MaxHp == 6000 && !((IEnemyAiAgent)m_Monster).RequestAttack(0), "石像生命或静止行为不符原版");
-        var attacker = new CombatantAttributes(ECombatSide.Hero, m_Monster.Level, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
-        data = AttackData.Create(0, attacker, 30, EDamageKind.Real, new Vector2(800, -800), hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EEntityId.None, 0, 0));
+        Vector2 origin = _monster.GlobalPosition;
+        Check(_monster.MaxHp == 6000 && !((IEnemyAiAgent)_monster).RequestAttack(0), "石像生命或静止行为不符原版");
+        var attacker = new CombatantAttributes(CombatSide.Hero, _monster.Level, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
+        data = AttackData.Create(0, attacker, 30, DamageKind.Real, new Vector2(800, -800), hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
         try
-        { m_Monster.ReceiveHit(data); }
+        {
+            _monster.ReceiveHit(data);
+        }
         finally { ReferencePool.Release(data); }
         await WaitFramesAsync(30);
-        Check(m_Monster.Hp == 5970 && m_Monster.GlobalPosition.IsEqualApprox(origin),
-            $"石像受击发生移动或未扣血：HP={m_Monster.Hp}，位置={m_Monster.GlobalPosition}，原点={origin}");
-        ReleaseTestEntity(m_Monster);
-        m_Monster = null;
+        Check(_monster.Hp == 5970 && _monster.GlobalPosition.IsEqualApprox(origin),
+            $"石像受击发生移动或未扣血：HP={_monster.Hp}，位置={_monster.GlobalPosition}，原点={origin}");
+        ReleaseTestEntity(_monster);
+        _monster = null;
         GD.Print("SMOKE-STATUE PASS: 6000 health, no attack, fixed position under knockback.");
     }
 
@@ -174,8 +180,8 @@ public sealed partial class UiSmokeScenario
     {
         int oldTicks = Engine.PhysicsTicksPerSecond;
         Vector2 origin = hero.GlobalPosition;
-        var heroSystem = flow.GetSystem<HeroSystem>();
-        var hp = flow.GetModel<HeroModel>().Hp;
+        HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
+        BindableProperty<int> hp = flow.GetModel<HeroModel>().Hp;
         try
         {
             foreach (int ticks in new[] { 60, 120 })
@@ -186,10 +192,10 @@ public sealed partial class UiSmokeScenario
                     {
                         Engine.PhysicsTicksPerSecond = ticks;
                         heroSystem.Heal(int.MaxValue);
-                        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Bat,
+                        _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Bat,
                             new EnemySpawn(new Vector2(500, 200)));
-                        SmokeInspection.FreezeAi(m_Monster);
-                        m_Monster.Velocity = Vector2.Zero;
+                        SmokeInspection.FreezeAi(_monster);
+                        _monster.Velocity = Vector2.Zero;
                         // 靠近音波第二档下缘；旧四档判定要等到第六源帧才会覆盖此处。
                         Rect2 hurt = hero.HurtBox.GetGlobalBounds();
                         float left = direction < 0 ? 500 - 12 - hurt.Size.X : 500 + 12;
@@ -197,7 +203,7 @@ public sealed partial class UiSmokeScenario
                             sample == "below" ? 200 + 82 : 200 + 25;
                         hero.GlobalPosition += new Vector2(left, top) - hurt.Position;
                         typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic)
-                            .Invoke(m_Monster, [hero]);
+                            .Invoke(_monster, [hero]);
                         int previousHp = hp.Value, hits = 0;
                         double firstHit = double.PositiveInfinity;
                         void OnHpChanged(int current)
@@ -209,15 +215,15 @@ public sealed partial class UiSmokeScenario
 
                             previousHp = current;
                             hits++;
-                            firstHit = Math.Min(firstHit, m_Monster.AnimPlayer.CurrentAnimationPosition);
+                            firstHit = Math.Min(firstHit, _monster.AnimPlayer.CurrentAnimationPosition);
                         }
                         hp.Register(OnHpChanged);
                         try
                         {
                             // 真正请求身体状态出招，让原生动画、物理重叠与ReceiveHit完成伤害。
-                            Check(((IEnemyAiAgent)m_Monster).RequestAttack(0), "蝙蝠音波时序夹具拒绝出招");
-                            await WaitUntilAsync(() => m_Monster.AttackSegment == 0, "蝙蝠未开始音波动作");
-                            await WaitUntilAsync(() => m_Monster.AttackSegment < 0, "蝙蝠音波动作未收招");
+                            Check(((IEnemyAiAgent)_monster).RequestAttack(0), "蝙蝠音波时序夹具拒绝出招");
+                            await WaitUntilAsync(() => _monster.AttackSegment == 0, "蝙蝠未开始音波动作");
+                            await WaitUntilAsync(() => _monster.AttackSegment < 0, "蝙蝠音波动作未收招");
                             GD.Print($"SMOKE-BAT-SONIC: {ticks}Hz facing={direction} {sample}, hits={hits}, first={firstHit:0.0000}s");
                             Check(sample == "edge" ? hits == 1 && firstHit <= 2d / 24d + 2d / ticks + .001 : hits == 0,
                                 $"音波判定延迟或范围错误：{ticks}Hz/{direction}/{sample}, hits={hits}, first={firstHit:0.0000}s");
@@ -225,8 +231,8 @@ public sealed partial class UiSmokeScenario
                         finally
                         {
                             hp.UnRegister(OnHpChanged);
-                            ReleaseTestEntity(m_Monster);
-                            m_Monster = null;
+                            ReleaseTestEntity(_monster);
+                            _monster = null;
                         }
                     }
                 }
@@ -236,8 +242,8 @@ public sealed partial class UiSmokeScenario
         }
         finally
         {
-            ReleaseTestEntity(m_Monster);
-            m_Monster = null;
+            ReleaseTestEntity(_monster);
+            _monster = null;
             hero.GlobalPosition = origin;
             hero.Velocity = Vector2.Zero;
             heroSystem.Heal(int.MaxValue);

@@ -1,17 +1,17 @@
-using IUIForm = GameFramework.UI.IUIForm;
-using GameLogic.UI;
-using GameConfig.Constant;
-using GameLogic.Save;
-using GameLogic.Architecture;
-using GameLogic.Procedure.FlowData;
-using GameLogic.Audio;
-using GameFramework.Procedure;
 using GameConfig;
+using GameConfig.Constant;
 using GameConfig.Sound;
 using GameFramework.Event;
+using GameFramework.Procedure;
 using GameLogic;
+using GameLogic.Architecture;
+using GameLogic.Audio;
+using GameLogic.Procedure.FlowData;
+using GameLogic.Save;
+using GameLogic.UI;
 using GodotGameFramework;
 using GodotGameFramework.UI;
+using IUIForm = GameFramework.UI.IUIForm;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -19,9 +19,9 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public sealed class ProcedureCharacter : ProcedureBase
 {
-    private int m_FormSerialId; // 本周期窗口，含在途加载请求。
-    private int m_MusicSerialId; // 本周期 GGF 音乐请求。
-    private ProcedureOwner m_Owner; // 仅当前流程周期借用主 FSM。
+    private int _formSerialId; // 本周期窗口，含在途加载请求。
+    private int _musicSerialId; // 本周期 GGF 音乐请求。
+    private ProcedureOwner _owner; // 仅当前流程周期借用主 FSM。
 
     /// <summary>
     /// 订阅本页面的点击事件后打开窗口。
@@ -30,12 +30,12 @@ public sealed class ProcedureCharacter : ProcedureBase
     protected internal override void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
-        m_Owner = procedureOwner;
+        _owner = procedureOwner;
         GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
-        m_FormSerialId = GF.UI.OpenUIForm(EUIFormId.CharacterForm);
-        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: true);
-        m_MusicSerialId = GF.Sound.PlayConfigured(ESoundId.MenuTheme, 0.3f);
+        _formSerialId = GF.UI.OpenUIForm(UIFormId.CharacterForm);
+        SetFormCallbacks(GF.UI.GetUIForm(_formSerialId), bind: true);
+        _musicSerialId = GF.Sound.PlayConfigured(SoundId.MenuTheme, 0.3f);
     }
 
     /// <summary>
@@ -45,21 +45,21 @@ public sealed class ProcedureCharacter : ProcedureBase
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
-        SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: false);
+        SetFormCallbacks(GF.UI.GetUIForm(_formSerialId), bind: false);
 
         GF.Event.Unsubscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Unsubscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
-        if (m_FormSerialId != 0 && (GF.UI.HasUIForm(m_FormSerialId) || GF.UI.IsLoadingUIForm(m_FormSerialId)))
+        if (_formSerialId != 0 && (GF.UI.HasUIForm(_formSerialId) || GF.UI.IsLoadingUIForm(_formSerialId)))
         {
-            GF.UI.CloseUIForm(m_FormSerialId);
+            GF.UI.CloseUIForm(_formSerialId);
         }
 
-        if (m_MusicSerialId != 0)
+        if (_musicSerialId != 0)
         {
-            GF.Sound.StopSound(m_MusicSerialId, isShutdown ? 0f : 0.2f);
+            GF.Sound.StopSound(_musicSerialId, isShutdown ? 0f : 0.2f);
         }
-        m_FormSerialId = m_MusicSerialId = 0;
-        m_Owner = null;
+        _formSerialId = _musicSerialId = 0;
+        _owner = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
 
@@ -70,11 +70,11 @@ public sealed class ProcedureCharacter : ProcedureBase
     /// <param name="heroId">当前窗口明确选择的英雄配置编号。</param>
     private void OnCharacterConfirmed(int formSerialId, int heroId)
     {
-        if (formSerialId == m_FormSerialId)
+        if (formSerialId == _formSerialId)
         {
-            var selection = m_Owner.GetData<SaveSelectionVariable>(FlowKeys.SaveSelection);
+            SaveSelectionVariable selection = _owner.GetData<SaveSelectionVariable>(FlowKeys.SaveSelection);
             selection.Value = (selection.Value.SlotNumber, selection.Value.UnitId, heroId);
-            ChangeState<ProcedureLoadGame>(m_Owner);
+            ChangeState<ProcedureLoadGame>(_owner);
         }
     }
 
@@ -90,7 +90,7 @@ public sealed class ProcedureCharacter : ProcedureBase
             SetFormCallbacks(opened.UIForm, bind: true);
         }
 
-        if (args is not OpenUIFormSuccessEventArgs success || success.UIForm.SerialId != m_FormSerialId)
+        if (args is not OpenUIFormSuccessEventArgs success || success.UIForm.SerialId != _formSerialId)
         {
             return;
         }
@@ -105,7 +105,7 @@ public sealed class ProcedureCharacter : ProcedureBase
     /// <param name="args">只在本次分发内读取的池化参数。</param>
     private void OnFormFailed(object sender, GameEventArgs args)
     {
-        if (args is OpenUIFormFailureEventArgs failure && failure.SerialId == m_FormSerialId)
+        if (args is OpenUIFormFailureEventArgs failure && failure.SerialId == _formSerialId)
         {
             Log.Error("[ProcedureCharacter] 界面加载失败：{0}", failure.ErrorMessage);
         }
@@ -125,7 +125,7 @@ public sealed class ProcedureCharacter : ProcedureBase
 
         switch (form)
         {
-            case CharacterForm characterForm when characterForm.SerialId == m_FormSerialId:
+            case CharacterForm characterForm when characterForm.SerialId == _formSerialId:
                 characterForm.CharacterConfirmed -= OnCharacterConfirmed;
                 if (bind)
                 {

@@ -16,7 +16,7 @@ public sealed partial class EquipmentAttributeRange : Luban.BeanBase
 {
     public EquipmentAttributeRange(ByteBuf _buf) 
     {
-        Attribute = (Attributes.EAttributeType)_buf.ReadInt();
+        Attribute = (Attributes.AttributeType)_buf.ReadInt();
         Minimum = _buf.ReadFloat();
         Maximum = _buf.ReadFloat();
     }
@@ -29,7 +29,7 @@ public sealed partial class EquipmentAttributeRange : Luban.BeanBase
     /// <summary>
     /// 属性种类
     /// </summary>
-    public readonly Attributes.EAttributeType Attribute;
+    public readonly Attributes.AttributeType Attribute;
     /// <summary>
     /// 最小值；概率用 0..1，其余属性用整数
     /// </summary>

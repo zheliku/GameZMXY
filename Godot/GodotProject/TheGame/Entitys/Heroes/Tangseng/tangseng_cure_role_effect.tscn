@@ -10,11 +10,11 @@ blend_mode = 1
 [sub_resource type="RectangleShape2D" id="rest"]
 size = Vector2(1, 1)
 
-[node name="TangsengCureRole" type="Node2D" unique_id=1818688527 node_paths=PackedStringArray("m_Player", "m_HitBox")]
+[node name="TangsengCureRole" type="Node2D" unique_id=1818688527 node_paths=PackedStringArray("_player", "_hitBox")]
 z_index = 2
 script = ExtResource("script")
-m_Player = NodePath("AnimationPlayer")
-m_HitBox = NodePath("Origin/Visual/HitBox")
+_player = NodePath("AnimationPlayer")
+_hitBox = NodePath("Origin/Visual/HitBox")
 
 [node name="Origin" type="Node2D" parent="." unique_id=1862896598]
 

@@ -17,13 +17,13 @@ namespace GameConfig.Skills
 /// </summary>
 public partial class TbSkillConfig
 {
-    private readonly System.Collections.Generic.Dictionary<Skills.ESkillId, Skills.SkillConfig> _dataMap;
+    private readonly System.Collections.Generic.Dictionary<Skills.SkillId, Skills.SkillConfig> _dataMap;
     private readonly System.Collections.Generic.List<Skills.SkillConfig> _dataList;
     
     public TbSkillConfig(ByteBuf _buf)
     {
         int n = _buf.ReadSize();
-        _dataMap = new System.Collections.Generic.Dictionary<Skills.ESkillId, Skills.SkillConfig>(n);
+        _dataMap = new System.Collections.Generic.Dictionary<Skills.SkillId, Skills.SkillConfig>(n);
         _dataList = new System.Collections.Generic.List<Skills.SkillConfig>(n);
         for(int i = n ; i > 0 ; --i)
         {
@@ -34,12 +34,12 @@ public partial class TbSkillConfig
         }
     }
 
-    public System.Collections.Generic.IReadOnlyDictionary<Skills.ESkillId, Skills.SkillConfig> DataMap => _dataMap;
+    public System.Collections.Generic.IReadOnlyDictionary<Skills.SkillId, Skills.SkillConfig> DataMap => _dataMap;
     public System.Collections.Generic.IReadOnlyList<Skills.SkillConfig> DataList => _dataList;
 
-    public Skills.SkillConfig GetOrDefault(Skills.ESkillId key) => _dataMap.TryGetValue(key, out var v) ? v : default;
-    public Skills.SkillConfig Get(Skills.ESkillId key) => _dataMap[key];
-    public Skills.SkillConfig this[Skills.ESkillId key] => _dataMap[key];
+    public Skills.SkillConfig GetOrDefault(Skills.SkillId key) => _dataMap.TryGetValue(key, out var v) ? v : default;
+    public Skills.SkillConfig Get(Skills.SkillId key) => _dataMap[key];
+    public Skills.SkillConfig this[Skills.SkillId key] => _dataMap[key];
 
     public void ResolveRef(Tables tables)
     {

@@ -34,11 +34,11 @@ public sealed partial class UiSmokeScenario
     private async Task CheckDragonRulesAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
-        var system = flow.GetSystem<HeroSystem>();
-        var status = flow.GetSystem<HeroStatusSystem>();
-        var snapshot = flow.GetUtility<SaveDataUtility>().Capture(flow.GetModel<ProfileModel>(), flow.GetModel<SkillModel>());
+        HeroSystem system = flow.GetSystem<HeroSystem>();
+        HeroStatusSystem status = flow.GetSystem<HeroStatusSystem>();
+        GameData snapshot = flow.GetUtility<SaveDataUtility>().Capture(flow.GetModel<ProfileModel>(), flow.GetModel<SkillModel>());
         var source = new AttributeSourceId("DragonRules", 1);
-        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
@@ -54,10 +54,10 @@ public sealed partial class UiSmokeScenario
                     {
                         hero.SetPhysicsProcess(false);
                         hero.GlobalPosition = new Vector2(100000, 100000);
-                        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.DragonKing,
+                        _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DragonKing,
                             new EnemySpawn(new Vector2(580, 100)));
-                        var actor = m_Monster;
-                        var ai = SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(actor, "m_AiFsm").CurrentState;
+                        AbstractEnemyEntity actor = _monster;
+                        FsmState<IEnemyAiAgent> ai = SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(actor, "AiFsm").CurrentState;
                         SmokeInspection.FreezeAi(actor);
                         await WaitUntilAsync(() => actor.OnFloor, "龙王规则夹具未落地");
                         actor.SetPhysicsProcess(false);
@@ -103,9 +103,9 @@ public sealed partial class UiSmokeScenario
                         double frozenAt = hero.ActionData.Time;
                         GF.Base.PauseGame();
                         await WaitFramesAsync(3);
-                        double remaining = flow.GetModel<HeroModel>().GetStatusEffect(HeroModel.EStatusEffectKind.Freeze).RemainingSeconds;
+                        double remaining = flow.GetModel<HeroModel>().GetStatusEffect(HeroModel.StatusEffectKind.Freeze).RemainingSeconds;
                         await WaitFramesAsync(10);
-                        Check(flow.GetModel<HeroModel>().GetStatusEffect(HeroModel.EStatusEffectKind.Freeze).RemainingSeconds == remaining,
+                        Check(flow.GetModel<HeroModel>().GetStatusEffect(HeroModel.StatusEffectKind.Freeze).RemainingSeconds == remaining,
                             "暂停仍推进冻结时间");
                         GF.Base.ResumeGame();
                         await WaitUntilAsync(() => !status.IsFrozen, "冻结未按官方秒数结束", 7000);
@@ -118,7 +118,7 @@ public sealed partial class UiSmokeScenario
                         await WaitUntilAsync(() => actor.AttackSegment < 0, "暴雪收招未结束");
                         hero.SetPhysicsProcess(false);
                         ReleaseTestEntity(actor);
-                        m_Monster = null;
+                        _monster = null;
                         await WaitFramesAsync(3);
                         GD.Print($"SMOKE-DRAGON RULES PASS: level={tier}, ticks={ticks}, side={direction}, 4 stationary casts, source facing, freeze={seconds:F3}s and pause");
                     }
@@ -131,8 +131,8 @@ public sealed partial class UiSmokeScenario
             {
                 GF.Base.ResumeGame();
             }
-            ReleaseTestEntity(m_Monster);
-            m_Monster = null;
+            ReleaseTestEntity(_monster);
+            _monster = null;
             hero.SetPhysicsProcess(false);
             status.AdvanceFreeze(100);
             system.RemoveSource(source);
@@ -163,7 +163,7 @@ public sealed partial class UiSmokeScenario
         {
             while (actor.AttackSegment == 1 && !checkedGap)
             {
-                var shapes = actor.HitBox.GetChildren().OfType<CollisionShape2D>().Where(item => !item.Disabled)
+                CollisionShape2D[] shapes = actor.HitBox.GetChildren().OfType<CollisionShape2D>().Where(item => !item.Disabled)
                     .OrderBy(item => item.GlobalPosition.X).ToArray();
                 Rect2 hurt = hero.HurtBox.GetGlobalBounds();
                 for (int index = 0; index + 1 < shapes.Length; index++)
@@ -218,9 +218,9 @@ public sealed partial class UiSmokeScenario
     private static void CheckDragonDecisions(AbstractEnemyEntity actor, AbstractHeroEntity hero,
         FsmState<IEnemyAiAgent> state, int tier, int direction)
     {
-        var data = actor.AiData;
-        var tick = state.GetType().GetMethod("Tick", BindingFlags.Instance | BindingFlags.NonPublic);
-        int desire = SmokeInspection.ReadField<int>(state, "m_AttackDesire");
+        EnemyAiData data = actor.AiData;
+        MethodInfo tick = state.GetType().GetMethod("Tick", BindingFlags.Instance | BindingFlags.NonPublic);
+        int desire = SmokeInspection.ReadField<int>(state, "_attackDesire");
         Check(desire == (tier == 20 ? 40 : 20), "龙王出手欲望不符入场等级");
         foreach (float distance in new[] { 99.9f, 100f, 100.1f, 450f, 450.1f })
         {

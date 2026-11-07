@@ -9,26 +9,30 @@
 
 
 
-namespace GameConfig.Equipment
+namespace GameConfig.Skills
 { 
-    public enum EEquipmentSlot
+    public enum PassiveEffect
     {
         /// <summary>
-        /// 武器
+        /// 生命上限
         /// </summary>
-        Weapon = 0,
+        MaxHealth = 0,
         /// <summary>
-        /// 防具
+        /// 魔法上限
         /// </summary>
-        Armor = 1,
+        MaxMana = 1,
         /// <summary>
-        /// 饰品
+        /// 暴击概率加成
         /// </summary>
-        Accessory = 2,
+        CriticalChance = 2,
         /// <summary>
-        /// 法宝
+        /// 每秒回血
         /// </summary>
-        Treasure = 3,
+        HealthRegen = 3,
+        /// <summary>
+        /// 每秒回魔
+        /// </summary>
+        ManaRegen = 4,
     }
 
 } 

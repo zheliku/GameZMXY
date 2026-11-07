@@ -16,7 +16,7 @@ public partial class RegenerateNodePools : SceneTree
         try
         {
             var scanner = new GodotGameFramework.Editor.NodePoolInspectorPlugin();
-            var resource = ResourceLoader.Load<Resource>("res://TheGame/MainPack/Resources/NodePoolConfigRes.tres");
+            Resource resource = ResourceLoader.Load<Resource>("res://TheGame/MainPack/Resources/NodePoolConfigRes.tres");
             typeof(GodotGameFramework.Editor.NodePoolInspectorPlugin)
                 .GetMethod("OnScanPressed", BindingFlags.NonPublic | BindingFlags.Instance)
                 .Invoke(scanner, [resource]);

@@ -27,18 +27,18 @@ gradient = SubResource("line_gradient")
 width = 80
 height = 2
 
-[node name="EquipmentTooltip" type="PanelContainer" unique_id=393154271 node_paths=PackedStringArray("m_Name", "m_Quality", "m_Type", "m_Attributes", "m_Description", "m_Value")]
+[node name="EquipmentTooltip" type="PanelContainer" unique_id=393154271 node_paths=PackedStringArray("_name", "_quality", "_type", "_attributes", "_description", "_value")]
 custom_minimum_size = Vector2(170, 0)
 mouse_filter = 2
 theme = ExtResource("1_b02tm")
 theme_override_styles/panel = SubResource("panel")
 script = ExtResource("script")
-m_Name = NodePath("Content/Header/Name")
-m_Quality = NodePath("Content/Header/Quality/Value")
-m_Type = NodePath("Content/Header/Type/Value")
-m_Attributes = NodePath("Content/Attributes")
-m_Description = NodePath("Content/Footer/Description")
-m_Value = NodePath("Content/Footer/Price")
+_name = NodePath("Content/Header/Name")
+_quality = NodePath("Content/Header/Quality/Value")
+_type = NodePath("Content/Header/Type/Value")
+_attributes = NodePath("Content/Attributes")
+_description = NodePath("Content/Footer/Description")
+_value = NodePath("Content/Footer/Price")
 
 [node name="Content" type="VBoxContainer" parent="." unique_id=1445574142]
 layout_mode = 2

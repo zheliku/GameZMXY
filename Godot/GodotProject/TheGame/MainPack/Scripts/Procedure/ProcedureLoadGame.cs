@@ -1,5 +1,3 @@
-using GameLogic.Architecture;
-using GameLogic.Procedure.FlowData;
 //------------------------------------------------------------
 // 读档流程：读取当前存档槽（当前格式读取或建档），创建档案作用域
 //------------------------------------------------------------
@@ -7,15 +5,18 @@ using GameLogic.Procedure.FlowData;
 using System;
 using System.Linq;
 using System.Threading;
+using GameConfig.Constant;
 using GameFramework.Procedure;
-using GameLogic.Save;
-using GameLogic.Equipment;
-using GameLogic.Profile;
-using GameLogic.Skills;
 using GameLogic;
+using GameLogic.Architecture;
+using GameLogic.Config;
+using GameLogic.Equipment;
+using GameLogic.Procedure.FlowData;
+using GameLogic.Profile;
+using GameLogic.Save;
+using GameLogic.Skills;
 using GodotGameFramework;
 using GodotGameFramework.UI;
-using GameConfig.Constant;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -25,8 +26,8 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public class ProcedureLoadGame : ProcedureBase
 {
-    private int m_EntrySerial; // 每次进出使旧异步结果失效，不让离开后的读档覆盖新作用域。
-    private CancellationTokenSource m_Cancellation; // 离开时停止迟到读档结果的校验与发布，已提交的磁盘操作仍由框架完成。
+    private int _entrySerial; // 每次进出使旧异步结果失效，不让离开后的读档覆盖新作用域。
+    private CancellationTokenSource _cancellation; // 离开时停止迟到读档结果的校验与发布，已提交的磁盘操作仍由框架完成。
 
     /// <summary>
     /// 读档并创建档案作用域。
@@ -35,32 +36,32 @@ public class ProcedureLoadGame : ProcedureBase
     protected internal override async void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
-        int entrySerial = ++m_EntrySerial;
-        m_Cancellation = new CancellationTokenSource();
-        var token = m_Cancellation.Token;
+        int entrySerial = ++_entrySerial;
+        _cancellation = new CancellationTokenSource();
+        CancellationToken token = _cancellation.Token;
         bool ownsProfile = false;
         try
         {
             // 标题界面已关闭加载页；读档期间重新显示框架共享加载界面。
             await GF.UI.OpenLoadingUIFormAsync();
-            if (entrySerial != m_EntrySerial)
+            if (entrySerial != _entrySerial)
             {
                 return;
             }
             // 准备流程已建立 Architecture 并注册 ConfigurationModel。
-            var architecture = procedureOwner.GetArchitecture();
-            var selection = procedureOwner.GetData<SaveSelectionVariable>(FlowKeys.SaveSelection)?.Value
+            IArchitecture architecture = procedureOwner.GetArchitecture();
+            (int SlotNumber, long UnitId, int HeroId) selection = procedureOwner.GetData<SaveSelectionVariable>(FlowKeys.SaveSelection)?.Value
                 ?? throw new InvalidOperationException("缺少存档选择结果。");
             // 先完成读档和校验，再一次发布状态与系统；等待期间不暴露半份运行时数据。
             SaveSystem saveSystem = procedureOwner.GetSystem<SaveSystem>();
-            var loaded = await saveSystem.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId, token, selection.HeroId);
-            if (entrySerial != m_EntrySerial)
+            (GameData Data, SaveOrigin Origin) loaded = await saveSystem.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId, token, selection.HeroId);
+            if (entrySerial != _entrySerial)
             {
                 return;
             }
             // 校验成功后由流程创建、发布档案模型；不把 Model 再包装成 LoadResult。
-            var data = loaded.Data;
-            var config = procedureOwner.GetModel<GameLogic.Config.ConfigurationModel>();
+            GameData data = loaded.Data;
+            ConfigurationModel config = procedureOwner.GetModel<GameLogic.Config.ConfigurationModel>();
             var profile = new ProfileModel(data.ActiveHeroId,
                 data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), procedureOwner.GetUtility<ExperienceCurveUtility>(),
                 config.Tables.TbProfileConfig.EquipmentCapacity, data.Soul);
@@ -78,7 +79,7 @@ public class ProcedureLoadGame : ProcedureBase
         }
         catch (Exception ex)
         {
-            if (entrySerial != m_EntrySerial)
+            if (entrySerial != _entrySerial)
             {
                 return;
             }
@@ -104,10 +105,10 @@ public class ProcedureLoadGame : ProcedureBase
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
-        ++m_EntrySerial;
-        m_Cancellation?.Cancel();
-        m_Cancellation?.Dispose();
-        m_Cancellation = null;
+        ++_entrySerial;
+        _cancellation?.Cancel();
+        _cancellation?.Dispose();
+        _cancellation = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
 }

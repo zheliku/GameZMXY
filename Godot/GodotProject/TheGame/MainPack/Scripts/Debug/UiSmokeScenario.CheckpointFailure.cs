@@ -28,11 +28,11 @@ public sealed partial class UiSmokeScenario
         KillHero(FindHero());
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SettlementForm>().Any(form => form.Visible),
             "检查点异常夹具未显示真实失败结算");
-        var system = flow.GetSystem<LevelSystem>();
+        LevelSystem system = flow.GetSystem<LevelSystem>();
         Check(await system.CheckpointWrite, "异常注入前的隔离检查点未成功完成");
         typeof(LevelSystem).GetProperty(nameof(LevelSystem.CheckpointWrite)).SetValue(system,
             Task.FromException<bool>(new InvalidOperationException("checkpoint failure probe")));
-        var settlement = GF.UI.GetAllLoadedUIForms().OfType<SettlementForm>().Single(form => form.Visible);
+        SettlementForm settlement = GF.UI.GetAllLoadedUIForms().OfType<SettlementForm>().Single(form => form.Visible);
         await WaitUntilAsync(() => SmokeInspection.CallbackCount(settlement, "MapRequested") == 1,
             "结算窗口未完成流程回调绑定");
         settlement.GetNode<BaseButton>("Content/Actions/m_ReturnMap").EmitSignal(BaseButton.SignalName.Pressed);
@@ -40,7 +40,7 @@ public sealed partial class UiSmokeScenario
             GF.UI.GetAllLoadedUIForms().OfType<MapForm>().Any(form => form.Visible),
             "faulted检查点任务阻止了按既有失败语义返回地图");
         Check(flow.GetModel<ProfileModel>().Soul.Value == soul, "检查点任务异常丢失了已提交的内存收益");
-        var map = GF.UI.GetAllLoadedUIForms().OfType<MapForm>().Single(form => form.Visible);
+        MapForm map = GF.UI.GetAllLoadedUIForms().OfType<MapForm>().Single(form => form.Visible);
         map.GetNode<BaseButton>("m_Save").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => !map.GetNode<BaseButton>("m_Save").Disabled, "地图未恢复手动保存");
         Check(await flow.GetSystem<SaveSystem>().PendingWrite, "异常后的地图手动保存失败");

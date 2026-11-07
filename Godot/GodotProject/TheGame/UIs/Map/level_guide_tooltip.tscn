@@ -136,16 +136,16 @@ filter_clip = true
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1nvid"]
 
-[node name="LevelGuideTooltip" type="PanelContainer" unique_id=2028420211 node_paths=PackedStringArray("m_Title", "m_Description", "m_Enemies", "m_Drops")]
+[node name="LevelGuideTooltip" type="PanelContainer" unique_id=2028420211 node_paths=PackedStringArray("_title", "_description", "_enemies", "_drops")]
 z_index = 100
 custom_minimum_size = Vector2(208, 0)
 theme = ExtResource("1_3l2qw")
 theme_override_styles/panel = ExtResource("2_vgndu")
 script = ExtResource("3_5cxao")
-m_Title = NodePath("Content/Header/Title")
-m_Description = NodePath("Content/Header/Description")
-m_Enemies = NodePath("Content/Encounter/Enemies")
-m_EnemyTextures = Dictionary[int, Texture2D]({
+_title = NodePath("Content/Header/Title")
+_description = NodePath("Content/Header/Description")
+_enemies = NodePath("Content/Encounter/Enemies")
+_enemyTextures = Dictionary[int, Texture2D]({
 10000: SubResource("AtlasTexture_vwih8"),
 10001: SubResource("AtlasTexture_l8573"),
 10002: SubResource("AtlasTexture_rrli0"),
@@ -168,9 +168,9 @@ m_EnemyTextures = Dictionary[int, Texture2D]({
 100006: SubResource("AtlasTexture_c12ke"),
 100007: SubResource("AtlasTexture_sbwk4")
 })
-m_Drops = NodePath("Content/Loot/Drops")
-m_Appearances = ExtResource("25_qypc3")
-m_EquipmentCellScene = ExtResource("26_rgniy")
+_drops = NodePath("Content/Loot/Drops")
+_appearances = ExtResource("25_qypc3")
+_equipmentCellScene = ExtResource("26_rgniy")
 
 [node name="Content" type="VBoxContainer" parent="." unique_id=1847406600]
 layout_mode = 2

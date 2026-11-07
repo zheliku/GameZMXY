@@ -29,22 +29,22 @@ size = Vector2(500, 1800)
 a = Vector2(-400, 0)
 b = Vector2(400, 0)
 
-[node name="TamarinKingEntity" type="CharacterBody2D" unique_id=802693107 node_paths=PackedStringArray("m_Perception", "m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot")]
+[node name="TamarinKingEntity" type="CharacterBody2D" unique_id=802693107 node_paths=PackedStringArray("_perception", "_body", "_animPlayer", "_hurtBox", "_hitBox", "_hitBoxRoot")]
 collision_layer = 4
 collision_mask = 9
 floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("1_np6ac")
-m_DeathScene = ExtResource("boss_death")
-m_Perception = NodePath("Perception")
-m_EnemyEntityId = 100001
-m_Body = NodePath("m_Body")
-m_AnimPlayer = NodePath("m_AnimPlayer")
-m_AttackAnimations = PackedStringArray("attack_1", "attack_2")
-m_HurtBox = NodePath("m_HurtBox")
-m_HitBox = NodePath("m_HitBoxRoot/m_HitBox")
-m_HitBoxRoot = NodePath("m_HitBoxRoot")
+DeathScene = ExtResource("boss_death")
+_perception = NodePath("Perception")
+_enemyEntityId = 100001
+_body = NodePath("m_Body")
+_animPlayer = NodePath("m_AnimPlayer")
+_attackAnimations = PackedStringArray("attack_1", "attack_2")
+_hurtBox = NodePath("m_HurtBox")
+_hitBox = NodePath("m_HitBoxRoot/m_HitBox")
+_hitBoxRoot = NodePath("m_HitBoxRoot")
 
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1821930133]
 sprite_frames = ExtResource("2_exky5")
@@ -62,12 +62,12 @@ position = Vector2(0.5, -0.049999237)
 shape = SubResource("CapsuleShape2D_aw30p")
 debug_color = Color(0.58, 0.64, 0.72, 0.12)
 
-[node name="m_HurtBox" type="Area2D" parent="." unique_id=1243224820 node_paths=PackedStringArray("m_Owner")]
+[node name="m_HurtBox" type="Area2D" parent="." unique_id=1243224820 node_paths=PackedStringArray("_owner")]
 collision_layer = 32
 collision_mask = 0
 monitoring = false
 script = ExtResource("4_bfkbl")
-m_Owner = NodePath("..")
+_owner = NodePath("..")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="m_HurtBox" unique_id=1986919316]
 position = Vector2(0.5, -0.049999237)
@@ -86,14 +86,14 @@ shape = SubResource("RectangleShape2D_t82im")
 disabled = true
 debug_color = Color(0.88, 0.36, 0.3, 0.18)
 
-[node name="Perception" type="Area2D" parent="." unique_id=73551405 node_paths=PackedStringArray("m_DetectionShape", "m_EngageShape", "m_PatrolShape")]
+[node name="Perception" type="Area2D" parent="." unique_id=73551405 node_paths=PackedStringArray("_detectionShape", "_engageShape", "_patrolShape")]
 collision_layer = 4096
 collision_mask = 2
 monitorable = false
 script = ExtResource("5_hhl7o")
-m_DetectionShape = NodePath("Detection")
-m_EngageShape = NodePath("Engage")
-m_PatrolShape = NodePath("Patrol")
+_detectionShape = NodePath("Detection")
+_engageShape = NodePath("Engage")
+_patrolShape = NodePath("Patrol")
 
 [node name="Detection" type="CollisionShape2D" parent="Perception" unique_id=1927869245]
 shape = SubResource("RectangleShape2D_fvkl8")

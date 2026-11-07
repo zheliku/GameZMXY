@@ -8,7 +8,7 @@
 radius = 22.50061
 height = 88.4
 
-[node name="TangsengWaterClone" type="CharacterBody2D" unique_id=1771354943 node_paths=PackedStringArray("m_Player", "m_Body")]
+[node name="TangsengWaterClone" type="CharacterBody2D" unique_id=1771354943 node_paths=PackedStringArray("_player", "_body")]
 z_index = 1
 collision_layer = 0
 collision_mask = 8201
@@ -16,8 +16,8 @@ floor_constant_speed = true
 floor_max_angle = 0.87266463
 floor_snap_length = 12.0
 script = ExtResource("1_shadow_script")
-m_Player = NodePath("AnimationPlayer")
-m_Body = NodePath("m_Body")
+_player = NodePath("AnimationPlayer")
+_body = NodePath("m_Body")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1535332897]
 position = Vector2(0.5, -6.2)

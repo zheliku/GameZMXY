@@ -6,8 +6,8 @@ using GameConfig.Battle;
 using GameConfig.Entity;
 using GameLogic.Battle.Attacks;
 using GameLogic.Battle.Damage;
-using GameLogic.Entity;
 using GameLogic.Enemies;
+using GameLogic.Entity;
 using GameLogic.Heroes;
 using Godot;
 using GodotGameFramework;
@@ -26,53 +26,53 @@ public sealed partial class UiSmokeScenario
     private async Task CheckBodyOverlapReuseAsync(AbstractHeroEntity hero)
     {
         int oldTicks = Engine.PhysicsTicksPerSecond;
-        var shapes = hero.HitBox.GetChildren().OfType<CollisionShape2D>().ToArray();
-        var original = shapes.Select(shape => (shape.Shape, shape.Transform, shape.Disabled)).ToArray();
-        var setAttack = typeof(AbstractActorEntity).GetMethod("SetAttack", BindingFlags.Instance | BindingFlags.NonPublic);
-        var poll = typeof(AbstractActorEntity).GetMethod("PollAttackOverlaps", BindingFlags.Instance | BindingFlags.NonPublic);
+        CollisionShape2D[] shapes = hero.HitBox.GetChildren().OfType<CollisionShape2D>().ToArray();
+        (Shape2D Shape, Transform2D Transform, bool Disabled)[] original = shapes.Select(shape => (shape.Shape, shape.Transform, shape.Disabled)).ToArray();
+        MethodInfo setAttack = typeof(AbstractActorEntity).GetMethod("SetAttack", BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo poll = typeof(AbstractActorEntity).GetMethod("PollAttackOverlaps", BindingFlags.Instance | BindingFlags.NonPublic);
         try
         {
             hero.ReleaseAttack();
             hero.AnimPlayer.Stop();
             hero.SetPhysicsProcess(false);
-            foreach (var shape in shapes)
+            foreach (CollisionShape2D shape in shapes)
             {
                 shape.Disabled = true;
             }
 
-            var hit = shapes[0];
+            CollisionShape2D hit = shapes[0];
             hit.Shape = new RectangleShape2D { Size = new Vector2(80, 80) };
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Gorilla,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
                     new EnemySpawn(new Vector2(650, 150)));
-                SmokeInspection.FreezeAi(m_Monster);
-                m_Monster.SetPhysicsProcess(false);
-                SmokeInspection.StrengthenTrainingTarget(m_Monster);
-                Vector2 center = m_Monster.HurtBox.GetGlobalBounds().GetCenter();
+                SmokeInspection.FreezeAi(_monster);
+                _monster.SetPhysicsProcess(false);
+                SmokeInspection.StrengthenTrainingTarget(_monster);
+                Vector2 center = _monster.HurtBox.GetGlobalBounds().GetCenter();
                 hit.GlobalTransform = new Transform2D(0, center);
                 hit.Disabled = false;
-                await WaitUntilAsync(() => hero.HitBox.GetOverlappingAreas().Contains(m_Monster.HurtBox),
+                await WaitUntilAsync(() => hero.HitBox.GetOverlappingAreas().Contains(_monster.HurtBox),
                     "身体复用夹具未建立真实Area重叠");
-                int hp = m_Monster.Hp;
-                var attacker = new CombatantAttributes(ECombatSide.Hero, 1, 10, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, hero.Id);
+                int hp = _monster.Hp;
+                var attacker = new CombatantAttributes(CombatSide.Hero, 1, 10, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, hero.Id);
                 // 保留物理引擎的旧候选，再模拟新招的形状或角色同帧移出。
                 hit.GlobalPosition += new Vector2(700, 0);
-                setAttack.Invoke(hero, [AttackData.Create(0, attacker, 10, EDamageKind.Real, Vector2.Zero, 1, 0)]);
-                Check(hero.HitBox.GetOverlappingAreas().Contains(m_Monster.HurtBox), "身体Area未保留要复现的旧缓存");
+                setAttack.Invoke(hero, [AttackData.Create(0, attacker, 10, DamageKind.Real, Vector2.Zero, 1, 0)]);
+                Check(hero.HitBox.GetOverlappingAreas().Contains(_monster.HurtBox), "身体Area未保留要复现的旧缓存");
                 poll.Invoke(hero, null);
-                Check(m_Monster.Hp == hp, $"{ticks}Hz身体攻击误伤700px外的旧候选");
+                Check(_monster.Hp == hp, $"{ticks}Hz身体攻击误伤700px外的旧候选");
 
                 hit.GlobalPosition = center;
                 poll.Invoke(hero, null);
-                Check(m_Monster.Hp < hp, "恢复本地相交后身体攻击未命中，或旧候选提前消耗去重");
-                int afterHp = m_Monster.Hp;
+                Check(_monster.Hp < hp, "恢复本地相交后身体攻击未命中，或旧候选提前消耗去重");
+                int afterHp = _monster.Hp;
                 poll.Invoke(hero, null);
-                Check(m_Monster.Hp == afterHp, "同一招对同一身体重复结算");
+                Check(_monster.Hp == afterHp, "同一招对同一身体重复结算");
                 hero.ReleaseAttack();
-                ReleaseTestEntity(m_Monster);
-                m_Monster = null;
+                ReleaseTestEntity(_monster);
+                _monster = null;
                 hit.Disabled = true;
                 await WaitFramesAsync(3);
                 GD.Print($"SMOKE-BODY OVERLAP {ticks}Hz PASS: stale 700px candidate rejected; local hit and dedup retained");
@@ -87,8 +87,8 @@ public sealed partial class UiSmokeScenario
                 shapes[i].Transform = original[i].Transform;
                 shapes[i].Disabled = original[i].Disabled;
             }
-            ReleaseTestEntity(m_Monster);
-            m_Monster = null;
+            ReleaseTestEntity(_monster);
+            _monster = null;
             Engine.PhysicsTicksPerSecond = oldTicks;
         }
     }

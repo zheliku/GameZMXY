@@ -2,67 +2,60 @@ using GameLogic.Architecture;
 using GameLogic.Config;
 using GameLogic.Skills;
 
-namespace GameLogic.Battle.Tests
+namespace GameLogic.Battle.Tests;
+
+/// <summary>
+/// 纯规则测试的独立英雄状态；与游戏使用同一系统，不共享可变数据。
+/// </summary>
+internal sealed class HeroTestScope : IArchitecture
 {
     /// <summary>
-    /// 纯规则测试的独立英雄状态；与游戏使用同一系统，不共享可变数据。
+    /// 本测试独占的英雄数值。
     /// </summary>
-    internal sealed class HeroTestScope : IArchitecture
+    public HeroModel Hero { get; } = new();
+    private readonly SkillModel _skills = new([1]); // 与正式英雄装配相同的独立技能记录。
+
+    /// <summary>
+    /// 执行正式英雄业务规则。
+    /// </summary>
+    public HeroSystem System { get; }
+    private readonly HeroStatusSystem _heroStatusSystem;
+
+    /// <summary>
+    /// 建立最小存活英雄，规则测试不依赖场景。
+    /// </summary>
+    public HeroTestScope()
     {
-        /// <summary>
-        /// 本测试独占的英雄数值。
-        /// </summary>
-        public HeroModel Hero { get; } = new();
-        private readonly SkillModel m_Skills = new([1]); // 与正式英雄装配相同的独立技能记录。
-
-        /// <summary>
-        /// 执行正式英雄业务规则。
-        /// </summary>
-        public HeroSystem System { get; }
-        private readonly HeroStatusSystem m_HeroStatusSystem;
-
-        /// <summary>
-        /// 建立最小存活英雄，规则测试不依赖场景。
-        /// </summary>
-        public HeroTestScope()
+        _heroStatusSystem = new(this);
+        ((ICanInit)_heroStatusSystem).Init();
+        System = new(this);
+        var buffer = new Luban.ByteBuf();
+        for (int i = 0; i < 16; i++)
         {
-            m_HeroStatusSystem = new(this);
-            ((ICanInit)m_HeroStatusSystem).Init();
-            System = new(this);
-            var buffer = new Luban.ByteBuf();
-            for (int i = 0; i < 16; i++)
+            if (i is 5 or 6 or 9 or 10)
             {
-                if (i is 5 or 6 or 9 or 10)
-                {
-                    buffer.WriteFloat(0);
-                }
-                else
-                {
-                    buffer.WriteInt(0);
-                }
+                buffer.WriteFloat(0);
             }
-
-            System.Reset(1, 1, new GameConfig.Attributes.ActorBaseAttributes(buffer));
+            else
+            {
+                buffer.WriteInt(0);
+            }
         }
 
-        /// <inheritdoc />
-        public TModel GetModel<TModel>() where TModel : class, IModel
-        {
-            return (typeof(TModel) == typeof(HeroModel) ? (IModel)Hero :
-                typeof(TModel) == typeof(SkillModel) ? m_Skills :
-                typeof(TModel) == typeof(ConfigurationModel) ? BattleArchitecture.Instance.GetModel<ConfigurationModel>() : null) as TModel;
-        }
-
-        /// <inheritdoc />
-        public TSystem GetSystem<TSystem>() where TSystem : class, ISystem
-        {
-            return (typeof(TSystem) == typeof(HeroStatusSystem) ? (ISystem)m_HeroStatusSystem : System) as TSystem;
-        }
-
-        /// <inheritdoc />
-        public TUtility GetUtility<TUtility>() where TUtility : class, IUtility
-        {
-            return null;
-        }
+        System.Reset(1, 1, new GameConfig.Attributes.ActorBaseAttributes(buffer));
     }
+
+    /// <inheritdoc />
+    public TModel GetModel<TModel>() where TModel : class, IModel
+    {
+        return (typeof(TModel) == typeof(HeroModel) ? (IModel)Hero :
+            typeof(TModel) == typeof(SkillModel) ? _skills :
+            typeof(TModel) == typeof(ConfigurationModel) ? BattleArchitecture.Instance.GetModel<ConfigurationModel>() : null) as TModel;
+    }
+
+    /// <inheritdoc />
+    public TSystem GetSystem<TSystem>() where TSystem : class, ISystem => (typeof(TSystem) == typeof(HeroStatusSystem) ? (ISystem)_heroStatusSystem : System) as TSystem;
+
+    /// <inheritdoc />
+    public TUtility GetUtility<TUtility>() where TUtility : class, IUtility => null;
 }

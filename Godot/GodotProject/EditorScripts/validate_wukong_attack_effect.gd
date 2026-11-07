@@ -36,9 +36,9 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(output)
 	var samples := 0
 	for armor in [0, 1]:
-		body.texture = appearance.get("m_BaseBody") if armor == 0 else appearance.get("m_ArmorTextures")[1]
+		body.texture = appearance.get("_baseBody") if armor == 0 else appearance.get("_armorTextures")[1]
 		for armed in [0, 1]:
-			weapon.texture = appearance.get("m_BaseWeapon") if armed == 0 else appearance.get("m_WeaponTextures")[2]
+			weapon.texture = appearance.get("_baseWeapon") if armed == 0 else appearance.get("_weaponTextures")[2]
 			for facing in [-1, 1]:
 				player.play("RESET")
 				player.advance(0)

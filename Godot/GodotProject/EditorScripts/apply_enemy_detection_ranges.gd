@@ -19,11 +19,11 @@ func _run() -> void:
     var count := 0
     for path in paths:
         var entity: Node = load(path).instantiate()
-        var identity: int = entity.get("m_EnemyEntityId")
+        var identity: int = entity.get("_enemyEntityId")
         var records: Array = data.enemies.filter(func(e): return e.legacy_id == identity)
         assert(records.size() == 1, path + " missing source identity")
         var range_y: float = records[0].attack_range
-        var detector: Area2D = entity.get("m_Perception")
+        var detector: Area2D = entity.get("_perception")
         var shape: CollisionShape2D = detector.get_child(0)
         var rectangle: RectangleShape2D = shape.shape.duplicate()
         rectangle.size = Vector2(float(records[0].sight_range) * 2, range_y * 2)

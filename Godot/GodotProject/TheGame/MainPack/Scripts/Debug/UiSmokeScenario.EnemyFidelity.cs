@@ -3,19 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using GameConfig.Entity;
 using GameConfig.Attributes;
+using GameConfig.Enemy;
+using GameConfig.Entity;
+using GameLogic.Architecture;
 using GameLogic.Battle;
+using GameLogic.Battle.Attacks;
 using GameLogic.Battle.Attributes;
 using GameLogic.Battle.Damage;
-using GameLogic.Battle.Attacks;
-using GameLogic.Effects;
-using GameLogic.Level;
-using GameLogic.Architecture;
 using GameLogic.Config;
+using GameLogic.Effects;
 using GameLogic.Enemies;
 using GameLogic.Enemies.AI;
 using GameLogic.Heroes;
+using GameLogic.Level;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
@@ -35,14 +36,14 @@ public sealed partial class UiSmokeScenario
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
         Vector2 originalPosition = hero.GlobalPosition;
-        var gates = SmokeInspection.Scene(level).GetNode("World/StageGates").GetChildren()
+        StaticBody2D[] gates = SmokeInspection.Scene(level).GetNode("World/StageGates").GetChildren()
             .OfType<StaticBody2D>().OrderBy(x => x.Position.X).ToArray();
-        var shapes = gates.SelectMany(x => x.GetChildren().OfType<CollisionShape2D>()).ToArray();
+        CollisionShape2D[] shapes = gates.SelectMany(x => x.GetChildren().OfType<CollisionShape2D>()).ToArray();
         bool[] disabled = shapes.Select(x => x.Disabled).ToArray();
         try
         {
             hero.GlobalPosition = new Vector2(100000, 100000);
-            foreach (var shape in shapes)
+            foreach (CollisionShape2D shape in shapes)
             {
                 shape.Disabled = false;
             }
@@ -50,17 +51,17 @@ public sealed partial class UiSmokeScenario
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                foreach (var gate in new[] { gates.First(), gates[gates.Length / 2], gates.Last() })
+                foreach (StaticBody2D gate in new[] { gates.First(), gates[gates.Length / 2], gates.Last() })
                 {
                     float x = gate.GetChild<CollisionShape2D>(0).GlobalPosition.X;
                     foreach (int direction in new[] { -1, 1 })
                     {
-                        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.DemonMonkey,
+                        _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DemonMonkey,
                             new EnemySpawn(new Vector2(x - direction * 50, 100)));
-                        SmokeInspection.FreezeAi(m_Monster);
-                        var actor = m_Monster;
+                        SmokeInspection.FreezeAi(_monster);
+                        AbstractEnemyEntity actor = _monster;
                         await WaitUntilAsync(() => actor.OnFloor, "受击穿门夹具未落地");
-                        var data = AttackData.Create(0, default, 1, GameConfig.Battle.EDamageKind.Real,
+                        var data = AttackData.Create(0, default, 1, GameConfig.Battle.DamageKind.Real,
                             new Vector2(1200, -100), direction, 0);
                         try
                         {
@@ -73,7 +74,7 @@ public sealed partial class UiSmokeScenario
                         await WaitUntilAsync(() => direction * (actor.GlobalPosition.X - x) > 25,
                             $"{gate.Name}/{ticks}Hz/{direction} 玩家战斗门阻挡了实际受击敌人", 3000);
                         ReleaseTestEntity(actor);
-                        m_Monster = null;
+                        _monster = null;
                         await WaitFramesAsync(2);
                     }
                 }
@@ -87,12 +88,12 @@ public sealed partial class UiSmokeScenario
                 shapes[i].Disabled = disabled[i];
             }
 
-            if (m_Monster is { IsShown: true })
+            if (_monster is { IsShown: true })
             {
-                ReleaseTestEntity(m_Monster);
+                ReleaseTestEntity(_monster);
             }
 
-            m_Monster = null;
+            _monster = null;
             hero.GlobalPosition = originalPosition;
             Engine.PhysicsTicksPerSecond = originalTicks;
         }
@@ -107,27 +108,27 @@ public sealed partial class UiSmokeScenario
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
         Vector2 originalPosition = hero.GlobalPosition;
-        var system = GF.Fsm.GetSystem<HeroSystem>();
+        HeroSystem system = GF.Fsm.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EffectShapes", 1);
-        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                var effect = GD.Load<PackedScene>("res://TheGame/Entitys/Enemies/Monsters/Ground/knife_demon/knife_demon_blade_effect.tscn").Instantiate<SkillEffectNode>();
-                var area = effect.GetNode<Area2D>("HitBox");
-                var primary = area.GetChild<CollisionShape2D>(0);
+                SkillEffectNode effect = GD.Load<PackedScene>("res://TheGame/Entitys/Enemies/Monsters/Ground/knife_demon/knife_demon_blade_effect.tscn").Instantiate<SkillEffectNode>();
+                Area2D area = effect.GetNode<Area2D>("HitBox");
+                CollisionShape2D primary = area.GetChild<CollisionShape2D>(0);
                 var secondary = new CollisionShape2D { Shape = new RectangleShape2D { Size = new Vector2(40, 40) }, Disabled = true };
                 area.AddChild(secondary);
                 hero.GetParent().AddChild(effect);
                 try
                 {
                     var hit = (GameConfig.Battle.AttackConfig)typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic)!
-                        .Invoke(ConfigSystem.Instance.Tables.TbAttackConfig.Get(GF.Fsm.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EEntityId.HuaguoshanMonkey, 1)), null)!;
+                        .Invoke(ConfigSystem.Instance.Tables.TbAttackConfig.Get(GF.Fsm.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EntityId.HuaguoshanMonkey, 1)), null)!;
                     typeof(GameConfig.Battle.AttackConfig).GetField("HitBudget")!.SetValue(hit, 3);
-                    var attacker = new CombatantAttributes(ECombatSide.Enemy, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1);
+                    var attacker = new CombatantAttributes(CombatSide.Enemy, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1);
                     int completions = 0;
                     void Released(SkillEffectNode node)
                     {
@@ -138,7 +139,7 @@ public sealed partial class UiSmokeScenario
                     effect.Show(hit, new Vector2(100000, 100000), -1, attacker, 5, false, Released);
                     GF.Base.PauseGame();
                     await WaitFramesAsync(3);
-                    var player = effect.GetNode<AnimationPlayer>("AnimationPlayer");
+                    AnimationPlayer player = effect.GetNode<AnimationPlayer>("AnimationPlayer");
                     double paused = player.CurrentAnimationPosition;
                     await WaitFramesAsync(6);
                     Check(player.CurrentAnimationPosition == paused, "暂停仍推进独立效果动画");
@@ -152,7 +153,7 @@ public sealed partial class UiSmokeScenario
                     await WaitUntilAsync(() => hero.Hp < beforeHp, "仅第二碰撞体没有命中");
                     int afterHp = hero.Hp;
                     await WaitFramesAsync(6);
-                    Check(hero.Hp == afterHp && SmokeInspection.ReadField<int>(effect, "m_RemainingHits") == 2,
+                    Check(hero.Hp == afterHp && SmokeInspection.ReadField<int>(effect, "_remainingHits") == 2,
                         "多形状重复接触没有共用攻击去重与预算");
                     typeof(SkillEffectNode).GetMethod("StopAttack", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(effect, null);
                     await WaitFramesAsync(2);
@@ -232,26 +233,26 @@ public sealed partial class UiSmokeScenario
         MethodInfo accepts = typeof(AbstractEnemyEntity).GetMethod("CanSelectTarget", BindingFlags.NonPublic | BindingFlags.Instance)!;
         MethodInfo setTarget = typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance)!;
         MethodInfo updateTarget = typeof(AbstractEnemyEntity).GetMethod("UpdateTarget", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        var system = GF.Fsm.GetSystem<HeroSystem>();
+        HeroSystem system = GF.Fsm.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EnemyFidelity", 1);
-        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         Vector2 original = hero.GlobalPosition;
         int originalTicks = Engine.PhysicsTicksPerSecond;
         try
         {
-            foreach (var config in ConfigSystem.Instance.Tables.TbEnemyConfig.DataList)
+            foreach (EnemyConfig config in ConfigSystem.Instance.Tables.TbEnemyConfig.DataList)
             {
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(config.EntityId, new EnemySpawn(new Vector2(600, 100), ContinueEncounterAsync: (_, _, _) => Task.CompletedTask));
-                var actor = m_Monster;
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(config.EntityId, new EnemySpawn(new Vector2(600, 100), ContinueEncounterAsync: (_, _, _) => Task.CompletedTask));
+                AbstractEnemyEntity actor = _monster;
                 SmokeInspection.FreezeAi(actor);
                 actor.SetPhysicsProcess(false);
-                float sightRange = SmokeInspection.ReadField<EnemyPerceptionNode>(actor, "m_Perception").DetectionBounds.End.X;
+                float sightRange = SmokeInspection.ReadField<EnemyPerceptionNode>(actor, "_perception").DetectionBounds.End.X;
                 float height = heights[(int)config.EntityId];
                 foreach (int direction in new[] { -1, 1 })
                 {
-                    foreach (var sample in new[]
+                    foreach ((Vector2 Offset, bool Expected) sample in new[]
                     {
                         (Offset: new Vector2(direction * (sightRange - .1f), 0), Expected: true),
                         (Offset: new Vector2(direction * sightRange, 0), Expected: false),
@@ -272,7 +273,7 @@ public sealed partial class UiSmokeScenario
                     Check(((IEnemyAiAgent)actor).HasTarget, $"{config.EntityId} 错误放弃视野外存活目标");
                 }
                 ReleaseTestEntity(actor);
-                m_Monster = null;
+                _monster = null;
                 await WaitFramesAsync(2);
                 GD.Print($"SMOKE-ENEMY DETECTION PASS: {config.EntityId}, strict X/inclusive Y, both sides, retained target");
             }
@@ -280,12 +281,12 @@ public sealed partial class UiSmokeScenario
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                foreach (EEntityId id in new[] { EEntityId.HuaguoshanMonkey, EEntityId.DemonMonkey, EEntityId.Gorilla,
-                             EEntityId.CaveBrute, EEntityId.BullGuard, EEntityId.KnifeDemon })
+                foreach (EntityId id in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey, EntityId.Gorilla,
+                             EntityId.CaveBrute, EntityId.BullGuard, EntityId.KnifeDemon })
                 {
                     hero.GlobalPosition = new Vector2(100000, 100000);
-                    m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(600, 100)));
-                    var actor = m_Monster;
+                    _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(600, 100)));
+                    AbstractEnemyEntity actor = _monster;
                     var agent = (IEnemyAiAgent)actor;
                     FieldInfo desire = actor.Config.GetType().GetField("AttackDesire")!;
                     int oldDesire = actor.Config.AttackDesire;
@@ -295,7 +296,7 @@ public sealed partial class UiSmokeScenario
                     {
                         hero.GlobalPosition = actor.GlobalPosition + new Vector2(offset, 0);
                     }
-                    m_Driver.GetTree().PhysicsFrame += FollowActor;
+                    _driver.GetTree().PhysicsFrame += FollowActor;
                     try
                     {
                         await WaitUntilAsync(() => actor.OnFloor, $"{id} 未落地");
@@ -306,7 +307,7 @@ public sealed partial class UiSmokeScenario
                         var casts = new List<(double Time, int Index)>();
                         int previous = -1;
                         ulong start = Time.GetTicksMsec();
-                        while (id == EEntityId.KnifeDemon ? casts.Count(x => x.Index == 1) < 2 || !casts.Any(x => x.Index == 0) : casts.Count < 2)
+                        while (id == EntityId.KnifeDemon ? casts.Count(x => x.Index == 1) < 2 || !casts.Any(x => x.Index == 0) : casts.Count < 2)
                         {
                             Check(Time.GetTicksMsec() - start < 12000, $"{id} 没有自主完成出招");
                             if (actor.AttackSegment >= 0 && actor.AttackSegment != previous)
@@ -316,13 +317,13 @@ public sealed partial class UiSmokeScenario
                             previous = actor.AttackSegment;
                             await WaitFramesAsync(1);
                         }
-                        if (id == EEntityId.KnifeDemon)
+                        if (id == EntityId.KnifeDemon)
                         {
-                            var throws = casts.Where(x => x.Index == 1).ToArray();
+                            (double Time, int Index)[] throws = casts.Where(x => x.Index == 1).ToArray();
                             Check(throws[1].Time - throws[0].Time >= 3.95, "飞刀四秒冷却提前结束");
                             Check(throws[1].Time - throws[0].Time < 4.1, "身体延迟消费请求导致飞刀错过四秒后的决策点");
                         }
-                        foreach (var cast in casts)
+                        foreach ((double Time, int Index) cast in casts)
                         {
                             double age = (cast.Time - agent.AiData.ClockOrigin) % (242d / 24d);
                             double phase = age % actor.Config.AttackInterval;
@@ -333,23 +334,23 @@ public sealed partial class UiSmokeScenario
                     }
                     finally
                     {
-                        m_Driver.GetTree().PhysicsFrame -= FollowActor;
+                        _driver.GetTree().PhysicsFrame -= FollowActor;
                         desire.SetValue(actor.Config, oldDesire);
                     }
                     ReleaseTestEntity(actor);
-                    m_Monster = null;
+                    _monster = null;
                     await WaitFramesAsync(2);
                 }
             }
         }
         finally
         {
-            if (m_Monster is { IsShown: true })
+            if (_monster is { IsShown: true })
             {
-                ReleaseTestEntity(m_Monster);
+                ReleaseTestEntity(_monster);
             }
 
-            m_Monster = null;
+            _monster = null;
             hero.GlobalPosition = original;
             Engine.PhysicsTicksPerSecond = originalTicks;
             system.RemoveSource(source);

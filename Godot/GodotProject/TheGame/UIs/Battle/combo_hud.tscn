@@ -7,7 +7,7 @@
 [node name="ComboHud" type="Control"]
 mouse_filter = 2
 script = ExtResource("script")
-m_DigitFrames = ExtResource("digits")
+_digitFrames = ExtResource("digits")
 
 [node name="Caption" type="Sprite2D" parent="."]
 position = Vector2(-16, -16)

@@ -13,10 +13,10 @@ size = Vector2(82.26846, 55.263683)
 [sub_resource type="RectangleShape2D" id="flame_2"]
 size = Vector2(53.364902, 82.27006)
 
-[node name="peng_fire" type="Node2D" unique_id=356471770 node_paths=PackedStringArray("m_Player", "m_HitBox")]
+[node name="peng_fire" type="Node2D" unique_id=356471770 node_paths=PackedStringArray("_player", "_hitBox")]
 script = ExtResource("script")
-m_Player = NodePath("AnimationPlayer")
-m_HitBox = NodePath("Origin/Visual/HitBox")
+_player = NodePath("AnimationPlayer")
+_hitBox = NodePath("Origin/Visual/HitBox")
 
 [node name="Origin" type="Node2D" parent="." unique_id=25720714]
 

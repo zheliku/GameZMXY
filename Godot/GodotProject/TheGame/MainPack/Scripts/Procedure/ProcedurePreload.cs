@@ -4,9 +4,9 @@
 
 using System;
 using GameConfig;
-using GameLogic.UI;
 using GameFramework.Localization;
 using GameFramework.Procedure;
+using GameLogic.UI;
 using GodotGameFramework;
 using GodotGameFramework.UI;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
@@ -17,7 +17,7 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public class ProcedurePreload : ProcedureBase
 {
-    private int m_EntrySerial; // 离开后忽略旧加载结果及取消异常。
+    private int _entrySerial; // 离开后忽略旧加载结果及取消异常。
 
     /// <summary>
     /// 加载语言和常驻提示界面，再进入标题流程。
@@ -26,7 +26,7 @@ public class ProcedurePreload : ProcedureBase
     protected internal async override void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
-        int entrySerial = ++m_EntrySerial;
+        int entrySerial = ++_entrySerial;
 
         try
         {
@@ -54,7 +54,7 @@ public class ProcedurePreload : ProcedureBase
         }
         catch (Exception ex)
         {
-            if (entrySerial != m_EntrySerial)
+            if (entrySerial != _entrySerial)
             {
                 return;
             }
@@ -63,7 +63,7 @@ public class ProcedurePreload : ProcedureBase
             return;
         }
 
-        if (entrySerial != m_EntrySerial)
+        if (entrySerial != _entrySerial)
         {
             return;
         }
@@ -71,8 +71,8 @@ public class ProcedurePreload : ProcedureBase
         // 先建立应用级提示监听，再允许标题流程新建档案；切页不会关闭这张非交互窗口。
         try
         {
-            var notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(EUIFormId.SaveNoticeForm);
-            if (entrySerial != m_EntrySerial)
+            SaveNoticeForm notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(UIFormId.SaveNoticeForm);
+            if (entrySerial != _entrySerial)
             {
                 GF.UI.CloseUIForm(notice.SerialId);
                 return;
@@ -80,7 +80,7 @@ public class ProcedurePreload : ProcedureBase
         }
         catch (Exception ex)
         {
-            if (entrySerial != m_EntrySerial)
+            if (entrySerial != _entrySerial)
             {
                 return;
             }
@@ -98,7 +98,7 @@ public class ProcedurePreload : ProcedureBase
     /// <param name="isShutdown">是否框架关停。</param>
     protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
-        ++m_EntrySerial;
+        ++_entrySerial;
         base.OnLeave(procedureOwner, isShutdown);
     }
 }

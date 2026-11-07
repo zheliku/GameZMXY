@@ -17,14 +17,14 @@ func _build() -> void:
     var uid := ResourceLoader.get_resource_uid(m_Destination) if FileAccess.file_exists(m_Destination) else -1
     m_Scene = load("res://TheGame/Scenes/Levels/zm1_01_huaguoshan/level_1.tscn").instantiate()
     m_Scene.name = "Level_10"
-    m_Scene.set("m_LevelId", 10)
-    m_Scene.set("m_MusicId", 108)
-    m_Scene.set("m_FeaturedOpponentSpawnPointIds", PackedStringArray(["stage_2_a"]))
+    m_Scene.set("_levelId", 10)
+    m_Scene.set("_musicId", 108)
+    m_Scene.set("_featuredOpponentSpawnPointIds", PackedStringArray(["stage_2_a"]))
     for path in ["World/Geometry", "World/Platforms", "World/SpawnPoints", "World/StageGates"]:
         for child in m_Scene.get_node(path).get_children():
             child.free()
     # The official last stage has no portal: the heart's complete death advances to settlement.
-    m_Scene.set("m_Exit", null)
+    m_Scene.set("_exit", null)
     m_Scene.get_node("World/Exit").free()
     var front: Sprite2D = m_Scene.get_node("World/Background/Front")
     front.texture = load(m_ArtRoot + m_ArtPrefix + "_front.png")

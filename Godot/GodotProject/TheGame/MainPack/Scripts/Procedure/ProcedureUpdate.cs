@@ -6,10 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
 using GameConfig.Constant;
 using GameFramework;
 using GameFramework.Procedure;
@@ -17,13 +17,13 @@ using GameFramework.Resource;
 using GameLogic;
 using Godot;
 using GodotGameFramework;
-using GodotGameFramework.HotUpdate;
-using GodotGameFramework.Json;
-using GodotGameFramework.Web;
-using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 using GodotGameFramework.Download;
 using GodotGameFramework.Extensions;
+using GodotGameFramework.HotUpdate;
+using GodotGameFramework.Json;
 using GodotGameFramework.UI;
+using GodotGameFramework.Web;
+using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
 /// 更新检测流程。
@@ -34,18 +34,12 @@ public class ProcedureUpdate : ProcedureBase
     private const int MaxRetries = 3; // 每个网络操作的最大尝试次数。
     private const float RetryBaseDelaySeconds = 1.5f; // 重试之间的基础等待时间（秒）。
     private const float VersionFetchTimeoutSeconds = 10f; // 单次版本清单请求超时（秒）。
-    private LoadingForm m_LoadingForm; // 当前热更流程使用的加载界面。
+    private LoadingForm _loadingForm; // 当前热更流程使用的加载界面。
 
     /// <summary>
     /// 按配置与安装目录可写性选择并创建热更目录。
     /// </summary>
-    private string SubpackDir
-    {
-        get
-        {
-            return GetOrCreateHotUpdateDir();
-        }
-    }
+    private string SubpackDir => GetOrCreateHotUpdateDir();
 
     /// <summary>
     /// 执行版本检查、完整性校验、下载和子包加载。
@@ -64,7 +58,7 @@ public class ProcedureUpdate : ProcedureBase
             Log.Error("[ProcedureUpdate] 更新流程异常: {0}", ex);
 
             // 检查是否为强制更新，若是则阻塞而非跳过
-            var localVersion = EasySave.LoadFromUser<PackVersionList>(
+            PackVersionList localVersion = EasySave.LoadFromUser<PackVersionList>(
                 ResourceManager.GameFrameworkVersionData);
             if (localVersion?.ForceUpdate == true)
             {
@@ -174,7 +168,7 @@ public class ProcedureUpdate : ProcedureBase
         {
             // 没有远程地址 → 跳过更新检测，但仍加载已下载的本地补丁
             Log.Warning("[ProcedureUpdate] 未配置 RemoteUrl，跳过更新检测。");
-            var localVersion = EasySave.LoadFromUser<PackVersionList>(
+            PackVersionList localVersion = EasySave.LoadFromUser<PackVersionList>(
                 ResourceManager.GameFrameworkVersionData);
             if (localVersion != null)
             {
@@ -190,7 +184,7 @@ public class ProcedureUpdate : ProcedureBase
             return;
         }
 
-        m_LoadingForm = await GF.UI.OpenLoadingUIFormAsync();
+        _loadingForm = await GF.UI.OpenLoadingUIFormAsync();
 
         try
         {
@@ -200,10 +194,10 @@ public class ProcedureUpdate : ProcedureBase
             // ── 1. 请求服务器版本文件 ──
             string versionUrl = $"{remoteUrl.TrimEnd('/')}/{ResourceManager.GameFrameworkVersionData}";
             Log.Info("[ProcedureUpdate] 请求版本文件: {0}", versionUrl);
-            m_LoadingForm?.SetLogState("检测更新...", 0);
+            _loadingForm?.SetLogState("检测更新...", 0);
 
             // 先加载本地版本，用于 ForceUpdate 回退判断（带完整性校验）
-            var localVersionPre = ResourceManager.LocalPackVersionList
+            PackVersionList localVersionPre = ResourceManager.LocalPackVersionList
                 ?? NodeUtility.LoadAndValidateVersionList(ResourceManager.GameFrameworkVersionData);
             if (localVersionPre != null)
             {
@@ -225,7 +219,7 @@ public class ProcedureUpdate : ProcedureBase
                     if (retry)
                     {
                         // 重试整个更新流程
-                        GF.UI.CloseUIForm(m_LoadingForm);
+                        GF.UI.CloseUIForm(_loadingForm);
                         await RunUpdateFlowAsync(procedureOwner);
                         return;
                     }
@@ -233,7 +227,7 @@ public class ProcedureUpdate : ProcedureBase
                     return;
                 }
 
-                m_LoadingForm?.SetLogState("版本检测失败", 100);
+                _loadingForm?.SetLogState("版本检测失败", 100);
                 await Task.Delay(1500);
                 await SkipToNextAsync(procedureOwner);
                 return;
@@ -249,7 +243,7 @@ public class ProcedureUpdate : ProcedureBase
             {
                 Log.Warning("[ProcedureUpdate] App 版本过低 ({0} < {1})，需要去商店更新。",
                     appVersion, serverVersion.MinAppVersion);
-                m_LoadingForm?.SetLogState("请更新App版本", 100);
+                _loadingForm?.SetLogState("请更新App版本", 100);
                 await Task.Delay(3000);
                 await ShowForceUpdateDialogAsync("客户端版本过低，请升级客户端后再试。");
                 HotUpdateSafetyGuard.MarkStartupSuccess();
@@ -258,19 +252,19 @@ public class ProcedureUpdate : ProcedureBase
             }
 
             // ── 3. 加载本地版本并校验完整性 ──
-            var localVersion = ResourceManager.LocalPackVersionList
+            PackVersionList localVersion = ResourceManager.LocalPackVersionList
                 ?? NodeUtility.LoadAndValidateVersionList(ResourceManager.GameFrameworkVersionData);
-            m_LoadingForm?.SetLogState("校验本地数据...", 5);
+            _loadingForm?.SetLogState("校验本地数据...", 5);
 
             int damagedCount = await VerifyLocalPackIntegrityAsync(localVersion);
             if (damagedCount > 0)
             {
                 Log.Warning("[ProcedureUpdate] 本地客户端不完整！{0} 个包已损坏或丢失，将重新下载。", damagedCount);
-                m_LoadingForm?.SetLogState($"检测到 {damagedCount} 个文件损坏,即将修复", 8);
+                _loadingForm?.SetLogState($"检测到 {damagedCount} 个文件损坏,即将修复", 8);
             }
 
             // ── 4. 与服务器版本比对 ──
-            var toDownload = FindPacksToUpdate(serverVersion, localVersion);
+            List<(Pack Pack, string Url)> toDownload = FindPacksToUpdate(serverVersion, localVersion);
 
             if (toDownload.Count > 0 && isForceUpdate)
             {
@@ -287,7 +281,7 @@ public class ProcedureUpdate : ProcedureBase
                 {
                     Log.Warning("[ProcedureUpdate] 磁盘空间不足: 需要 {0}, 可用 {1}",
                         StringExtension.FormatBytes(totalSize * 2), StringExtension.FormatBytes(freeSpace));
-                    m_LoadingForm?.SetLogState("磁盘空间不足", 100);
+                    _loadingForm?.SetLogState("磁盘空间不足", 100);
 
                     if (isForceUpdate)
                     {
@@ -296,7 +290,7 @@ public class ProcedureUpdate : ProcedureBase
                             $"磁盘空间不足（需要 {StringExtension.FormatBytes(totalSize * 2)}），请清理后重试。");
                         if (retry)
                         {
-                            GF.UI.CloseUIForm(m_LoadingForm);
+                            GF.UI.CloseUIForm(_loadingForm);
                             await RunUpdateFlowAsync(procedureOwner);
                             return;
                         }
@@ -322,7 +316,7 @@ public class ProcedureUpdate : ProcedureBase
                             "更新下载失败，请检查网络后重试。");
                         if (retry)
                         {
-                            GF.UI.CloseUIForm(m_LoadingForm);
+                            GF.UI.CloseUIForm(_loadingForm);
                             await RunUpdateFlowAsync(procedureOwner);
                             return;
                         }
@@ -330,14 +324,14 @@ public class ProcedureUpdate : ProcedureBase
                         return;
                     }
 
-                    m_LoadingForm?.SetLogState("下载失败，请检查网络", 100);
+                    _loadingForm?.SetLogState("下载失败，请检查网络", 100);
                     await Task.Delay(2000);
                     await SkipToNextAsync(procedureOwner);
                     return;
                 }
 
                 // ── 4. 先加载子包（验证可用） ──
-                m_LoadingForm?.SetLogState("加载资源...", 95);
+                _loadingForm?.SetLogState("加载资源...", 95);
                 HotUpdateSafetyGuard.MarkStartupBegin();
 
                 await LoadDownloadedPacksAsync(serverVersion);
@@ -356,7 +350,7 @@ public class ProcedureUpdate : ProcedureBase
                 ResourceManager.LocalPackVersionList = serverVersion;
                 Log.Info("[ProcedureUpdate] 版本文件已保存。");
 
-                m_LoadingForm?.SetLogState("更新完成", 100);
+                _loadingForm?.SetLogState("更新完成", 100);
                 await Task.Delay(500);
 
                 GF.UI.OpenQuestionTipsAsync("更新完成，是否重启？", "退出", "确认", () =>
@@ -377,7 +371,7 @@ public class ProcedureUpdate : ProcedureBase
         finally
         {
             HotUpdateSafetyGuard.MarkStartupSuccess();
-            GF.UI.CloseUIForm(m_LoadingForm);
+            GF.UI.CloseUIForm(_loadingForm);
         }
     }
 
@@ -391,7 +385,7 @@ public class ProcedureUpdate : ProcedureBase
         // 用一次性任务桥接 UI 回调，保证调用方只能在用户选择后继续。
         var tcs = new TaskCompletionSource<bool>();
 
-        m_LoadingForm?.SetLogState(message, 100);
+        _loadingForm?.SetLogState(message, 100);
 
         GF.UI.OpenQuestionTipsAsync(message, "退出", "重试", () =>
         {
@@ -423,7 +417,7 @@ public class ProcedureUpdate : ProcedureBase
         var validPacks = new List<Pack>();
         int damaged = 0;
 
-        foreach (var pack in localVersion.Packs)
+        foreach (Pack pack in localVersion.Packs)
         {
             if (!pack.IsValid())
             {
@@ -513,7 +507,7 @@ public class ProcedureUpdate : ProcedureBase
         var localDict = new Dictionary<string, Pack>();
         if (local?.Packs != null)
         {
-            foreach (var lp in local.Packs)
+            foreach (Pack lp in local.Packs)
             {
                 if (!string.IsNullOrEmpty(lp.Name))
                 {
@@ -523,7 +517,7 @@ public class ProcedureUpdate : ProcedureBase
         }
 
         // 为每个有效服务端包确定下载地址，再比较本地哈希/大小决定是否下载。
-        foreach (var sp in server.Packs)
+        foreach (Pack sp in server.Packs)
         {
             if (!sp.IsValid())
             {
@@ -535,7 +529,7 @@ public class ProcedureUpdate : ProcedureBase
                 ? sp.Url
                 : $"{Utility.Path.GetRemotePath(GF.Resource.UpdateSettingRes?.RemoteUrl)}/{sp.Name}.pck";
 
-            if (!localDict.TryGetValue(sp.Name, out var lp))
+            if (!localDict.TryGetValue(sp.Name, out Pack lp))
             {
                 Log.Info("[ProcedureUpdate] 发现新包: {0} ({1} bytes)", sp.Name, sp.Size);
                 toDownload.Add((sp, url));
@@ -564,7 +558,7 @@ public class ProcedureUpdate : ProcedureBase
         // 先计算总字节数，再为每个包建立独立进度槽位供主线程聚合。
         long totalBytes = 0;
 
-        foreach (var (pack, _) in packs)
+        foreach ((Pack pack, string _) in packs)
         {
             try
             {
@@ -596,7 +590,7 @@ public class ProcedureUpdate : ProcedureBase
             int pct = totalBytes > 0
                 ? 10 + (int)(80.0 * sum / totalBytes)
                 : 10 + (int)(80.0 * completedCount / packs.Count);
-            m_LoadingForm?.SetLogState(
+            _loadingForm?.SetLogState(
                 $"下载中 {completedCount}/{packs.Count} ({StringExtension.FormatBytes(sum)}/{StringExtension.FormatBytes(totalBytes)})",
                 Math.Min(pct, 90));
         }
@@ -615,12 +609,12 @@ public class ProcedureUpdate : ProcedureBase
             return ok;
         }
 
-        m_LoadingForm?.SetLogState($"下载中 0/{packs.Count}", 10);
+        _loadingForm?.SetLogState($"下载中 0/{packs.Count}", 10);
 
         var tasks = new List<Task<bool>>(packs.Count);
         for (int i = 0; i < packs.Count; i++)
         {
-            var (pack, url) = packs[i];
+            (Pack pack, string url) = packs[i];
             string savePath = Path.Combine(SubpackDir, pack.Name + ".pck");
             tasks.Add(RunPackAsync(i, pack, url, savePath));
         }
@@ -717,10 +711,10 @@ public class ProcedureUpdate : ProcedureBase
             try
             {
                 // 先校验 HTTP 状态，再解码正文，避免把错误页当成版本数据。
-                var result = await GF.WebRequest.SendRequestAsync(versionUrl, VersionFetchTimeoutSeconds);
+                WebRequestCompleteEventArgs result = await GF.WebRequest.SendRequestAsync(versionUrl, VersionFetchTimeoutSeconds);
                 if (!IsHttpSuccess(result))
                 {
-                    m_LoadingForm.SetLogState($"版本文件请求失败(再次尝试:{attempt + 1}/{MaxRetries})", 0);
+                    _loadingForm.SetLogState($"版本文件请求失败(再次尝试:{attempt + 1}/{MaxRetries})", 0);
                     Log.Warning("[ProcedureUpdate] 版本文件请求失败 (attempt {0}/{1}, HTTP {2})",
                         attempt + 1, MaxRetries, result?.ResponseCode);
                     continue;
@@ -728,7 +722,7 @@ public class ProcedureUpdate : ProcedureBase
 
                 // JSON 反序列化成功后继续验证清单结构，结构无效时进入下一次重试。
                 string json = Encoding.UTF8.GetString(result.Body);
-                var version = Utility.Json.ToObject<PackVersionList>(json);
+                PackVersionList version = Utility.Json.ToObject<PackVersionList>(json);
                 if (version != null)
                 {
                     // 校验服务器版本清单完整性
@@ -769,14 +763,14 @@ public class ProcedureUpdate : ProcedureBase
         }
 
         // 先 Config 后 Resource，确保场景加载时配置已就绪
-        var ordered = version.Packs
+        Pack[] ordered = version.Packs
             .OrderBy(p => p.Type == PackType.Config ? 0 : 1)
             .ToArray();
 
         int loaded = 0;
         int failed = 0;
 
-        foreach (var pack in ordered)
+        foreach (Pack pack in ordered)
         {
             if (!pack.IsValid())
             {
@@ -941,7 +935,7 @@ public class ProcedureUpdate : ProcedureBase
         {
             // 读取并反序列化清单后先验证，再登记版本并按资源依赖顺序加载子包。
             string json = File.ReadAllText(manifestPath, Encoding.UTF8);
-            var localVersion = Utility.Json.ToObject<PackVersionList>(json);
+            PackVersionList localVersion = Utility.Json.ToObject<PackVersionList>(json);
 
             if (localVersion == null)
             {
@@ -1001,7 +995,7 @@ public class ProcedureUpdate : ProcedureBase
     private async Task SkipToNextAsync(ProcedureOwner procedureOwner)
     {
         // 尝试加载已存在的本地版本（优先使用缓存的统一版本，带完整性校验）
-        var local = ResourceManager.LocalPackVersionList
+        PackVersionList local = ResourceManager.LocalPackVersionList
             ?? NodeUtility.LoadAndValidateVersionList(ResourceManager.GameFrameworkVersionData);
         if (local != null)
         {

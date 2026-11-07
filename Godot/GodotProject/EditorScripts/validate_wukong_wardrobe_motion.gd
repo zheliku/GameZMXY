@@ -32,7 +32,7 @@ func _check(condition: bool, message: String) -> void:
 ## Read every registered equipment identity from the production appearance resource.
 func _wardrobe_entries(appearance: Resource, property: String, inventory: Dictionary) -> Array:
     var textures: Dictionary = appearance.get(property).duplicate()
-    textures[0] = appearance.get("m_BaseBody" if property == "m_ArmorTextures" else "m_BaseWeapon")
+    textures[0] = appearance.get("_baseBody" if property == "_armorTextures" else "_baseWeapon")
     var ids: Array = textures.keys()
     ids.sort()
     var entries := []
@@ -96,7 +96,7 @@ func _check_complete_atlases(player: AnimationPlayer, appearance: Resource, inve
     var inventory: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(inventory_path))
     _check(inventory.source_sha256 == SOURCE_SHA, "Unexpected wardrobe source inventory")
     for item in inventory.equipment:
-        var textures: Dictionary = appearance.get("m_ArmorTextures" if item.kind == "body" else "m_WeaponTextures")
+        var textures: Dictionary = appearance.get("_armorTextures" if item.kind == "body" else "_weaponTextures")
         _check(textures.has(int(item.id)) and textures[int(item.id)].resource_path == item.texture,
             "Playable equipment binding differs from official identity: " + item.name)
     var samples := 0
@@ -171,8 +171,8 @@ func _run() -> void:
     if not render_only:
         complete_report = _check_complete_atlases(player, appearance, args[4])
     var inventory: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(args[4]))
-    var bodies := _wardrobe_entries(appearance, "m_ArmorTextures", inventory)
-    var weapons := _wardrobe_entries(appearance, "m_WeaponTextures", inventory)
+    var bodies := _wardrobe_entries(appearance, "_armorTextures", inventory)
+    var weapons := _wardrobe_entries(appearance, "_weaponTextures", inventory)
     var source_samples := 0
     for entry in bodies + weapons:
         if render_only:

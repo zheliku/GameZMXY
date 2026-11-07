@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -12,12 +13,12 @@ using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Battle.Attacks;
 using GameLogic.Battle.Attributes;
-using GameLogic.Entity;
 using GameLogic.Effects;
-using GameLogic.Heroes;
-using GameLogic.Level;
 using GameLogic.Enemies;
 using GameLogic.Enemies.AI;
+using GameLogic.Entity;
+using GameLogic.Heroes;
+using GameLogic.Level;
 using GameLogic.Profile;
 using Godot;
 using GodotGameFramework;
@@ -36,7 +37,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>双物理频率的实际死亡检查。</returns>
     private async Task CheckBossDeathEffectsAsync(AbstractHeroEntity hero)
     {
-        foreach (var enemy in GF.Entity.GetAllEntityGroups().SelectMany(g => g.GetAllEntities()).OfType<AbstractEnemyEntity>())
+        foreach (AbstractEnemyEntity enemy in GF.Entity.GetAllEntityGroups().SelectMany(g => g.GetAllEntities()).OfType<AbstractEnemyEntity>())
         {
             SmokeInspection.FreezeAi(enemy);
             enemy.SetPhysicsProcess(false);
@@ -48,12 +49,12 @@ public sealed partial class UiSmokeScenario
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                foreach (var id in new[] { EEntityId.MacaqueKing, EEntityId.TamarinKing, EEntityId.BatCaveStatue, EEntityId.LionCamelKing,
-                    EEntityId.PengDemonKing, EEntityId.JiaoDemonKing, EEntityId.SharkDemonKing })
+                foreach (EntityId id in new[] { EntityId.MacaqueKing, EntityId.TamarinKing, EntityId.BatCaveStatue, EntityId.LionCamelKing,
+                    EntityId.PengDemonKing, EntityId.JiaoDemonKing, EntityId.SharkDemonKing })
                 {
                     var enemy = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 300)));
                     SmokeInspection.FreezeAi(enemy);
-                    var attack = AttackData.Create(0, default, 1000000, EDamageKind.Real, Vector2.Zero, 1, 0,
+                    var attack = AttackData.Create(0, default, 1000000, DamageKind.Real, Vector2.Zero, 1, 0,
                         source: new AttackSource(hero.Id, hero.Config.EntityId, hero.GetInstanceId(), hero.GetInstanceId()));
                     try
                     {
@@ -67,9 +68,9 @@ public sealed partial class UiSmokeScenario
                             }
                         }
                         await WaitUntilAsync(() => enemy.Dead && enemy.AnimPlayer.CurrentAnimation == "death", $"{id}未进入死亡");
-                        var body = enemy.GetNode<AnimatedSprite2D>("m_Body");
+                        AnimatedSprite2D body = enemy.GetNode<AnimatedSprite2D>("m_Body");
                         bool seen = body.Visible, unseen = !body.Visible;
-                        var effects = SmokeInspection.ReadField<System.Collections.Generic.HashSet<SkillEffectNode>>(enemy, "m_SkillEffects");
+                        HashSet<SkillEffectNode> effects = SmokeInspection.ReadField<System.Collections.Generic.HashSet<SkillEffectNode>>(enemy, "_skillEffects");
                         while (effects.Count == 0 && enemy.IsShown)
                         {
                             seen |= body.Visible;
@@ -113,17 +114,17 @@ public sealed partial class UiSmokeScenario
     /// <returns>全部 BOSS 回归完成。</returns>
     private async Task CheckBossesAsync(AbstractHeroEntity hero, ProcedureOwner flow, LevelViewController level)
     {
-        var bystanders = m_Driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+        AbstractEnemyEntity[] bystanders = _driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
             .OfType<AbstractEnemyEntity>().Where(x => x.IsVisibleInTree()).ToArray();
-        foreach (var actor in bystanders)
+        foreach (AbstractEnemyEntity actor in bystanders)
         {
             SmokeInspection.FreezeAi(actor);
             actor.SetPhysicsProcess(false);
             actor.GlobalPosition = new Vector2(100000, 100000);
         }
         var source = new AttributeSourceId("SmokeBoss", 1);
-        var heroSystem = flow.GetSystem<HeroSystem>();
-        heroSystem.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
+        heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         heroSystem.Heal(100000);
         try
         {
@@ -132,20 +133,20 @@ public sealed partial class UiSmokeScenario
             await WaitFramesAsync(2);
             await WaitUntilAsync(() => hero.OnFloor, "BOSS 夹具英雄没有落地");
             hero.SetPhysicsProcess(false);
-            foreach (var id in new[] { EEntityId.MacaqueKing, EEntityId.TamarinKing })
+            foreach (EntityId id in new[] { EntityId.MacaqueKing, EntityId.TamarinKing })
             {
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
                     new EnemySpawn(new Vector2(580, 100)));
-                SmokeInspection.FreezeAi(m_Monster);
-                await WaitUntilAsync(() => m_Monster.OnFloor, $"{id} 没有真实落地");
-                var actor = m_Monster;
-                var player = actor.GetNode<AnimationPlayer>("m_AnimPlayer");
-                var shape = actor.GetNodeOrNull<CollisionShape2D>("m_HitBoxRoot/m_HitBox/CollisionShape2D");
-                var effect = actor.GetNode<AnimatedSprite2D>("m_Body/Effect");
-                Check(actor.MaxHp == (id == EEntityId.MacaqueKing ? 1500 : 3000), $"{id} 生命不符原版");
+                SmokeInspection.FreezeAi(_monster);
+                await WaitUntilAsync(() => _monster.OnFloor, $"{id} 没有真实落地");
+                AbstractEnemyEntity actor = _monster;
+                AnimationPlayer player = actor.GetNode<AnimationPlayer>("m_AnimPlayer");
+                CollisionShape2D shape = actor.GetNodeOrNull<CollisionShape2D>("m_HitBoxRoot/m_HitBox/CollisionShape2D");
+                AnimatedSprite2D effect = actor.GetNode<AnimatedSprite2D>("m_Body/Effect");
+                Check(actor.MaxHp == (id == EntityId.MacaqueKing ? 1500 : 3000), $"{id} 生命不符原版");
                 typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic)
                     .Invoke(actor, [hero]);
-                for (int index = 0; index < (id == EEntityId.MacaqueKing ? 3 : 2); index++)
+                for (int index = 0; index < (id == EntityId.MacaqueKing ? 3 : 2); index++)
                 {
                     heroSystem.Heal(100000);
                     heroSystem.AdvanceHurtProtection(float.MaxValue);
@@ -180,7 +181,7 @@ public sealed partial class UiSmokeScenario
                         {
                             bool invulnerable = (bool)typeof(AbstractActorEntity).GetProperty("Invulnerable",
                                 BindingFlags.Instance | BindingFlags.NonPublic).GetValue(actor);
-                            Check(invulnerable == (id == EEntityId.MacaqueKing || player.CurrentAnimationPosition < 2),
+                            Check(invulnerable == (id == EntityId.MacaqueKing || player.CurrentAnimationPosition < 2),
                                 $"{id} 无敌时段不符原版");
                         }
                         await WaitFramesAsync(1);
@@ -190,7 +191,7 @@ public sealed partial class UiSmokeScenario
                         Check(enabled, $"{id} 第 {index + 1} 招没有启用碰撞判定");
                     }
 
-                    if (id == EEntityId.MacaqueKing && index == 2)
+                    if (id == EntityId.MacaqueKing && index == 2)
                     {
                         await WaitUntilAsync(() => !actor.GetParent().GetChildren().OfType<SkillEffectNode>().Any(x => x.Visible),
                                                 "风刃完整 50 帧后没有回池");
@@ -203,14 +204,14 @@ public sealed partial class UiSmokeScenario
                 }
                 // 重新取同一池实例时不得保留无敌、伤害、局部时钟或特效。
                 ReleaseTestEntity(actor);
-                m_Monster = null;
+                _monster = null;
                 await WaitFramesAsync(2);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
                     new EnemySpawn(new Vector2(580, 100)));
-                Check(ReferenceEquals(actor, m_Monster) && actor.Hp == actor.MaxHp && actor.AttackSegment == -1 &&
+                Check(ReferenceEquals(actor, _monster) && actor.Hp == actor.MaxHp && actor.AttackSegment == -1 &&
                     actor.AiData.ElapsedSeconds < .2 && !effect.Visible, $"{id} 池复用残留状态或更换实例");
-                ReleaseTestEntity(m_Monster);
-                m_Monster = null;
+                ReleaseTestEntity(_monster);
+                _monster = null;
             }
             GD.Print("SMOKE-BOSSES PASS: original health, all five native actions, hit windows, invulnerability, wind lifetime and pool reset.");
         }

@@ -17,10 +17,10 @@ func _validate() -> void:
     var directory: String = settings[1]
     var source: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(args[0]))[label]
     var scene: Node2D = load("res://TheGame/Scenes/Levels/%s/level_%d.tscn" % [directory, id]).instantiate()
-    assert(scene.get("m_LevelId") == id and scene.get("m_MusicId") == 107)
-    assert(scene.get("m_FeaturedOpponentSpawnPointIds") == PackedStringArray(["stage_5_a"]))
-    assert(scene.get_node("World/SpawnPoints").get("m_Entries").size() == source.spawns.size() + 1)
-    assert(scene.get_node("World/StageGates").get("m_Entries").size() == 9)
+    assert(scene.get("_levelId") == id and scene.get("_musicId") == 107)
+    assert(scene.get("_featuredOpponentSpawnPointIds") == PackedStringArray(["stage_5_a"]))
+    assert(scene.get_node("World/SpawnPoints").get("_entries").size() == source.spawns.size() + 1)
+    assert(scene.get_node("World/StageGates").get("_entries").size() == 9)
     assert(scene.get_node("World/Platforms").get_child_count() == source.geometry.filter(func(item): return item.oneWay).size())
     assert(scene.get_node("World/Geometry").find_children("*", "CollisionShape2D", true, false).size() == 3)
     assert(not scene.has_node("World/Traps") or scene.get_node("World/Traps").get_child_count() == 0)

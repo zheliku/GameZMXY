@@ -17,13 +17,13 @@ namespace GameConfig.Loot
 /// </summary>
 public partial class TbEquipmentDropPoolConfig
 {
-    private readonly System.Collections.Generic.Dictionary<Loot.EEquipmentDropPoolId, Loot.EquipmentDropPoolConfig> _dataMap;
+    private readonly System.Collections.Generic.Dictionary<Loot.EquipmentDropPoolId, Loot.EquipmentDropPoolConfig> _dataMap;
     private readonly System.Collections.Generic.List<Loot.EquipmentDropPoolConfig> _dataList;
     
     public TbEquipmentDropPoolConfig(ByteBuf _buf)
     {
         int n = _buf.ReadSize();
-        _dataMap = new System.Collections.Generic.Dictionary<Loot.EEquipmentDropPoolId, Loot.EquipmentDropPoolConfig>(n);
+        _dataMap = new System.Collections.Generic.Dictionary<Loot.EquipmentDropPoolId, Loot.EquipmentDropPoolConfig>(n);
         _dataList = new System.Collections.Generic.List<Loot.EquipmentDropPoolConfig>(n);
         for(int i = n ; i > 0 ; --i)
         {
@@ -34,12 +34,12 @@ public partial class TbEquipmentDropPoolConfig
         }
     }
 
-    public System.Collections.Generic.IReadOnlyDictionary<Loot.EEquipmentDropPoolId, Loot.EquipmentDropPoolConfig> DataMap => _dataMap;
+    public System.Collections.Generic.IReadOnlyDictionary<Loot.EquipmentDropPoolId, Loot.EquipmentDropPoolConfig> DataMap => _dataMap;
     public System.Collections.Generic.IReadOnlyList<Loot.EquipmentDropPoolConfig> DataList => _dataList;
 
-    public Loot.EquipmentDropPoolConfig GetOrDefault(Loot.EEquipmentDropPoolId key) => _dataMap.TryGetValue(key, out var v) ? v : default;
-    public Loot.EquipmentDropPoolConfig Get(Loot.EEquipmentDropPoolId key) => _dataMap[key];
-    public Loot.EquipmentDropPoolConfig this[Loot.EEquipmentDropPoolId key] => _dataMap[key];
+    public Loot.EquipmentDropPoolConfig GetOrDefault(Loot.EquipmentDropPoolId key) => _dataMap.TryGetValue(key, out var v) ? v : default;
+    public Loot.EquipmentDropPoolConfig Get(Loot.EquipmentDropPoolId key) => _dataMap[key];
+    public Loot.EquipmentDropPoolConfig this[Loot.EquipmentDropPoolId key] => _dataMap[key];
 
     public void ResolveRef(Tables tables)
     {

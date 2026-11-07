@@ -1,12 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using GameConfig.Constant;
 using GameLogic;
 using GameLogic.Architecture;
 using GameLogic.Heroes;
 using GameLogic.Level;
 using GameLogic.Profile;
 using GameLogic.UI;
-using GameConfig.Constant;
+using GameLogic.UI.Widgets;
 using Godot;
 using GodotGameFramework;
 
@@ -16,12 +18,12 @@ using GodotGameFramework;
 /// <param name="driver">提供真实引擎帧和场景树的烟测驱动。</param>
 public sealed class MapProgressSmokeScenario(Node driver)
 {
-    private int m_LevelId; // 下一次实际挑战的关卡，首次从隔离档案的最新进度开始。
-    private int m_Step; // 0等待地图，1战斗，2等待设置，3重读检查，4进关，5等待返回标题。
-    private int m_ClosedMapSerial; // 刚关闭的地图，用于拒绝读取过渡期间的旧窗口。
-    private LevelSmokeScenario m_Run; // 本次真实五波、出口与检查点回归。
-    private double m_Time; // 等待导航的总秒数。
-    private readonly int m_HeroId = OS.GetCmdlineUserArgs().Contains("--tangseng-only") ? 2 : 1; // 真实选角身份，重读后不能回到默认英雄。
+    private int _levelId; // 下一次实际挑战的关卡，首次从隔离档案的最新进度开始。
+    private int _step; // 0等待地图，1战斗，2等待设置，3重读检查，4进关，5等待返回标题。
+    private int _closedMapSerial; // 刚关闭的地图，用于拒绝读取过渡期间的旧窗口。
+    private LevelSmokeScenario _run; // 本次真实五波、出口与检查点回归。
+    private double _time; // 等待导航的总秒数。
+    private readonly int _heroId = OS.GetCmdlineUserArgs().Contains("--tangseng-only") ? 2 : 1; // 真实选角身份，重读后不能回到默认英雄。
 
     /// <summary>
     /// 回归已经完成或失败。
@@ -46,82 +48,88 @@ public sealed class MapProgressSmokeScenario(Node driver)
 
         try
         {
-            m_Time += delta;
-            if (m_Time > 1200)
+            _time += delta;
+            if (_time > 1200)
             {
                 throw new InvalidOperationException("主线解锁回归超时。");
             }
 
-            if (m_Step == 4)
+            if (_step == 4)
             {
                 if (GF.Procedure.CurrentProcedure is not ProcedureLevel procedure)
                 {
                     // 窗口可见与打开成功回调可能相差一帧，重复实际点击直至流程接管。
-                    var map = VisibleMap();
+                    MapForm map = VisibleMap();
                     if (map != null)
                     {
                         map.GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>()
-                            .Single(button => button.LevelId == m_LevelId).EmitSignal(BaseButton.SignalName.Pressed);
+                            .Single(button => button.LevelId == _levelId).EmitSignal(BaseButton.SignalName.Pressed);
                     }
                     return;
                 }
-                var level = SmokeInspection.Level(procedure);
-                var hero = driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
+                LevelViewController level = SmokeInspection.Level(procedure);
+                AbstractHeroEntity hero = driver.GetTree().Root.FindChildren("*", "CharacterBody2D", true, false)
                     .OfType<AbstractHeroEntity>().FirstOrDefault(value => value.IsShown);
                 if (level != null && hero != null && GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_battle_form) is BattleForm { Visible: true })
                 {
-                    m_Run = new LevelSmokeScenario(hero, level);
-                    m_Step = 1;
+                    _run = new LevelSmokeScenario(hero, level);
+                    _step = 1;
                 }
                 return;
             }
-            if (m_Step == 1)
+            if (_step == 1)
             {
-                m_Run.Update(delta);
-                if (!m_Run.IsDone)
+                _run.Update(delta);
+                if (!_run.IsDone)
                 {
                     return;
                 }
 
-                if (m_Run.Failures.Count != 0)
+                if (_run.Failures.Count != 0)
                 {
-                    throw new InvalidOperationException(string.Join("; ", m_Run.Failures));
+                    throw new InvalidOperationException(string.Join("; ", _run.Failures));
                 }
 
-                var map = VisibleMap();
-                CheckMap(map, m_LevelId);
-                m_ClosedMapSerial = map.SerialId;
+                MapForm map = VisibleMap();
+                CheckMap(map, _levelId);
+                _closedMapSerial = map.SerialId;
                 map.GetNode<BaseButton>("m_Settings").EmitSignal(BaseButton.SignalName.Pressed);
-                m_Step = 2;
+                _step = 2;
                 return;
             }
-            if (m_Step == 2)
+            if (_step == 2)
             {
-                var settings = GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().FirstOrDefault(form => form.Visible);
+                SettingsForm settings = GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().FirstOrDefault(form => form.Visible);
                 if (settings == null)
                 {
                     return;
                 }
                 settings.GetNode<BaseButton>("Scroll/Content/Options/Navigation/m_ReturnTitle").EmitSignal(BaseButton.SignalName.Pressed);
-                m_Step = 5;
+                _step = 5;
                 return;
             }
-            if (m_Step == 5)
+            if (_step == 5)
             {
                 if (GF.Procedure.CurrentProcedure is ProcedureMap)
                 {
                     return;
                 }
 
-                m_Step = 3;
+                _step = 3;
             }
-            var current = VisibleMap();
-            if (current == null || current.SerialId == m_ClosedMapSerial)
+            MapForm current = VisibleMap();
+            if (current == null || current.SerialId == _closedMapSerial)
             {
                 // 仅推进真实菜单到地图，不调用 AdvanceToLevel 的关卡夹具准备。
-                var forms = GF.UI.GetAllLoadedUIForms().OfType<Control>().Where(form => form.Visible);
-                var form = forms.FirstOrDefault(value => value is SaveForm) ?? forms.FirstOrDefault(value => value is StartForm or CharacterForm);
-                string path = form switch { StartForm => "m_Start", SaveForm => "Slots/m_Slot1", CharacterForm => m_HeroId == 2 ? "Roles/m_Sanzang" : "Roles/m_Wukong", _ => null };
+                IEnumerable<Control> forms = GF.UI.GetAllLoadedUIForms().OfType<Control>().Where(form => form.Visible);
+                Control form = forms.FirstOrDefault(value => value is SaveForm) ?? forms.FirstOrDefault(value => value is StartForm or CharacterForm);
+                string path = form switch
+                {
+                    StartForm => "m_Start",
+                    SaveForm => "Slots/m_Slot1",
+                    CharacterForm => _heroId == 2 ? "Roles/m_Sanzang" : "Roles/m_Wukong",
+                    _ => null
+                };
                 if (path != null && !form.GetNode<BaseButton>(path).Disabled)
                 {
                     form.GetNode<BaseButton>(path).EmitSignal(BaseButton.SignalName.Pressed);
@@ -129,27 +137,27 @@ public sealed class MapProgressSmokeScenario(Node driver)
 
                 return;
             }
-            if (m_LevelId == 0)
+            if (_levelId == 0)
             {
-                m_LevelId = GF.Fsm.GetModel<ProfileModel>().HighestClearedLevelId.Value + 1;
-                GD.Print($"SMOKE-PROGRESS START: next={m_LevelId}, hero={m_HeroId}, read from actual disk profile");
+                _levelId = GF.Fsm.GetModel<ProfileModel>().HighestClearedLevelId.Value + 1;
+                GD.Print($"SMOKE-PROGRESS START: next={_levelId}, hero={_heroId}, read from actual disk profile");
             }
-            if (m_Step == 3)
+            if (_step == 3)
             {
-                CheckMap(current, m_LevelId);
-                GD.Print($"SMOKE-PROGRESS RELOAD: cleared={m_LevelId}, latest={GF.Fsm.GetSystem<ProfileSystem>().LatestLevelId}");
-                if (m_LevelId == 10)
+                CheckMap(current, _levelId);
+                GD.Print($"SMOKE-PROGRESS RELOAD: cleared={_levelId}, latest={GF.Fsm.GetSystem<ProfileSystem>().LatestLevelId}");
+                if (_levelId == 10)
                 {
                     IsDone = true;
                     return;
                 }
-                m_LevelId++;
-                m_Step = 0;
+                _levelId++;
+                _step = 0;
             }
-            CheckMap(current, m_LevelId - 1);
+            CheckMap(current, _levelId - 1);
             current.GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>()
-                .Single(button => button.LevelId == m_LevelId).EmitSignal(BaseButton.SignalName.Pressed);
-            m_Step = 4;
+                .Single(button => button.LevelId == _levelId).EmitSignal(BaseButton.SignalName.Pressed);
+            _step = 4;
         }
         catch (Exception error)
         {
@@ -162,10 +170,7 @@ public sealed class MapProgressSmokeScenario(Node driver)
     /// 返回当前真实地图实例。
     /// </summary>
     /// <returns>可见的地图窗口，加载中为空。</returns>
-    private static MapForm VisibleMap()
-    {
-        return GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_map_form) as MapForm is { Visible: true } map ? map : null;
-    }
+    private static MapForm VisibleMap() => GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_map_form) as MapForm is { Visible: true } map ? map : null;
 
     /// <summary>
     /// 逐个地点核对解锁、原生提示以及直接发送锁定信号的拒绝。
@@ -175,22 +180,22 @@ public sealed class MapProgressSmokeScenario(Node driver)
     private void CheckMap(MapForm map, int cleared)
     {
         if (map == null || GF.Fsm.GetModel<ProfileModel>().HighestClearedLevelId.Value != cleared ||
-            GF.Fsm.GetModel<ProfileModel>().ActiveHeroId != m_HeroId)
+            GF.Fsm.GetModel<ProfileModel>().ActiveHeroId != _heroId)
         {
             throw new InvalidOperationException("重读或通关返回后地图进度错误。");
         }
 
         int latest = Math.Min(10, cleared + 1);
-        var player = map.GetNode<AnimationPlayer>("m_LocationAnimation");
-        var locations = map.GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>().ToArray();
-        var latestButton = locations.Single(button => button.LevelId == latest);
+        AnimationPlayer player = map.GetNode<AnimationPlayer>("m_LocationAnimation");
+        MapLocationButton[] locations = map.GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>().ToArray();
+        MapLocationButton latestButton = locations.Single(button => button.LevelId == latest);
         string animation = latest == 1 ? "location/current" : latestButton.Name.ToString()[2..].ToLowerInvariant() + "/current";
         if (player.CurrentAnimation != animation)
         {
             throw new InvalidOperationException($"最新提示错误：{player.CurrentAnimation}，期望 {animation}");
         }
 
-        foreach (var button in locations)
+        foreach (MapLocationButton button in locations)
         {
             int id = button.LevelId;
             if (button.Disabled != (id > latest))

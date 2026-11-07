@@ -45,8 +45,8 @@ func _register() -> void:
     var material := CanvasItemMaterial.new()
     material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
     frozen.material = material
-    actor.set("m_FrozenEffect", frozen)
-    assert(actor.get("m_FrozenEffect") == frozen)
+    actor.set("_frozenEffect", frozen)
+    assert(actor.get("_frozenEffect") == frozen)
     var packed := PackedScene.new()
     assert(packed.pack(actor) == OK)
     assert(ResourceSaver.save(packed, scene_path) == OK)

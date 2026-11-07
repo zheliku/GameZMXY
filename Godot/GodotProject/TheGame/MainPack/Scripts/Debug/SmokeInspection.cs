@@ -1,20 +1,20 @@
-using GodotGameFramework;
-using System.Linq;
-using GameLogic.Architecture;
-using GameLogic.Level;
-using GameLogic.Enemies.Body;
-using GameLogic.Enemies.AI;
-using GameLogic.Heroes.Body;
 using System;
-using GameLogic.Battle;
+using System.Linq;
 using System.Reflection;
 using GameFramework.Fsm;
 using GameFramework.Procedure;
-using GameLogic.Procedure.FlowData;
+using GameLogic;
+using GameLogic.Architecture;
+using GameLogic.Battle;
+using GameLogic.Enemies;
+using GameLogic.Enemies.AI;
+using GameLogic.Enemies.Body;
 using GameLogic.Entity;
 using GameLogic.Heroes;
-using GameLogic.Enemies;
-using GameLogic;
+using GameLogic.Heroes.Body;
+using GameLogic.Level;
+using GameLogic.Procedure.FlowData;
+using GodotGameFramework;
 
 /// <summary>
 /// 开发测试侧读取内部事实与设置沙包，不要求玩法代码提供测试接口。
@@ -58,9 +58,9 @@ internal static class SmokeInspection
     /// <param name="enemy">真实创建的测试敌人。</param>
     public static void StrengthenTrainingTarget(AbstractEnemyEntity enemy)
     {
-        typeof(AbstractEnemyEntity).GetField("m_MaxHp", BindingFlags.Instance | BindingFlags.NonPublic)
+        typeof(AbstractEnemyEntity).GetField("MaximumHp", BindingFlags.Instance | BindingFlags.NonPublic)
             .SetValue(enemy, 100000);
-        typeof(AbstractEnemyEntity).GetField("m_Hp", BindingFlags.Instance | BindingFlags.NonPublic)
+        typeof(AbstractEnemyEntity).GetField("_hp", BindingFlags.Instance | BindingFlags.NonPublic)
             .SetValue(enemy, 100000);
     }
 
@@ -98,13 +98,13 @@ internal static class SmokeInspection
     /// <returns>该对象在属性上的回调数量。</returns>
     public static int CountBindingHandlers(object source, object listener)
     {
-        object callbacks = ReadField<object>(source, "m_Callbacks");
+        object callbacks = ReadField<object>(source, "_callbacks");
         var handlers = (Delegate[])callbacks.GetType()
             .GetProperty("Snapshot", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(callbacks);
         int count = 0;
         if (handlers != null)
         {
-            foreach (var handler in handlers)
+            foreach (Delegate handler in handlers)
             {
                 if (ReferenceEquals(handler.Target, listener))
                 {
@@ -121,20 +121,14 @@ internal static class SmokeInspection
     /// </summary>
     /// <param name="monster">受测怪物。</param>
     /// <param name="amount">伤害量。</param>
-    public static void DamageMonster(AbstractEnemyEntity monster, int amount)
-    {
-        typeof(AbstractEnemyEntity).GetMethod("ApplyDamage", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(monster, [amount]);
-    }
+    public static void DamageMonster(AbstractEnemyEntity monster, int amount) => typeof(AbstractEnemyEntity).GetMethod("ApplyDamage", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(monster, [amount]);
 
     /// <summary>
     /// 只在隐藏状态测试中准备生命，正式代码不增加测试写入接口。
     /// </summary>
     /// <param name="monster">隐藏的池实例。</param>
     /// <param name="hp">准备值。</param>
-    public static void SetMonsterHp(AbstractEnemyEntity monster, int hp)
-    {
-        typeof(AbstractEnemyEntity).GetField("m_Hp", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(monster, hp);
-    }
+    public static void SetMonsterHp(AbstractEnemyEntity monster, int hp) => typeof(AbstractEnemyEntity).GetField("_hp", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(monster, hp);
 
     /// <summary>
     /// 读取英雄或怪物状态机的真实当前状态，并格式化日志名称。
@@ -144,8 +138,8 @@ internal static class SmokeInspection
     public static string BodyStateName(AbstractActorEntity actor)
     {
         object state = actor is AbstractHeroEntity
-            ? ReadField<IFsm<IHeroBody>>(actor, "m_BodyFsm")?.CurrentState
-            : ReadField<IFsm<IEnemyBody>>(actor, "m_BodyFsm")?.CurrentState;
+            ? ReadField<IFsm<IHeroBody>>(actor, "_bodyFsm")?.CurrentState
+            : ReadField<IFsm<IEnemyBody>>(actor, "BodyFsm")?.CurrentState;
         return StateName(state);
     }
 
@@ -154,80 +148,56 @@ internal static class SmokeInspection
     /// </summary>
     /// <param name="monster">受测怪物。</param>
     /// <returns>AI 状态名；状态机未运行时为空。</returns>
-    public static string AiStateName(AbstractEnemyEntity monster)
-    {
-        return StateName(ReadField<IFsm<IEnemyAiAgent>>(monster, "m_AiFsm")?.CurrentState);
-    }
+    public static string AiStateName(AbstractEnemyEntity monster) => StateName(ReadField<IFsm<IEnemyAiAgent>>(monster, "AiFsm")?.CurrentState);
 
     /// <summary>
     /// 读取怪物是否处于收招状态。
     /// </summary>
     /// <param name="monster">受测怪物。</param>
     /// <returns>身体状态机是否正在收招。</returns>
-    public static bool InRecovery(AbstractEnemyEntity monster)
-    {
-        return ReadField<IFsm<IEnemyBody>>(monster, "m_BodyFsm")?.CurrentState is EnemyRecoveryState;
-    }
+    public static bool InRecovery(AbstractEnemyEntity monster) => ReadField<IFsm<IEnemyBody>>(monster, "BodyFsm")?.CurrentState is EnemyRecoveryState;
 
     /// <summary>
     /// 读取关卡阶段所有者，未找到关卡时返回空。
     /// </summary>
     /// <param name="level">受测关卡。</param>
     /// <returns>正式逻辑使用的阶段序列。</returns>
-    public static LevelStageSequence Sequence(LevelViewController level)
-    {
-        return level == null ? null : Model(level).Sequence;
-    }
+    public static LevelStageSequence Sequence(LevelViewController level) => level == null ? null : Model(level).Sequence;
 
     /// <summary>
     /// 读取真实场景控制器，不向生产代码添加测试 getter。
     /// </summary>
     /// <param name="level">受测关卡控制器。</param>
     /// <returns>对应场景根节点。</returns>
-    public static LevelViewController Scene(LevelViewController level)
-    {
-        return level;
-    }
+    public static LevelViewController Scene(LevelViewController level) => level;
 
     /// <summary>
     /// 借用测试对象归属的本局模型。
     /// </summary>
     /// <param name="level">受测控制器。</param>
     /// <returns>真实注册模型；控制器为空时为空。</returns>
-    public static LevelModel Model(LevelViewController level)
-    {
-        return level?.GetModel<LevelModel>();
-    }
+    public static LevelModel Model(LevelViewController level) => level?.GetModel<LevelModel>();
 
     /// <summary>
     /// 借用测试对象归属的业务模块。
     /// </summary>
     /// <param name="level">受测控制器。</param>
     /// <returns>真实注册模块。</returns>
-    public static LevelSystem GetLevelSystem(LevelViewController level)
-    {
-        return level.GetSystem<LevelSystem>();
-    }
+    public static LevelSystem GetLevelSystem(LevelViewController level) => level.GetSystem<LevelSystem>();
 
     /// <summary>
     /// 读取正式流程拥有的本次运行，流程不在关卡时返回空。
     /// </summary>
     /// <param name="procedure">当前关卡流程；允许为空。</param>
     /// <returns>本次关卡运行。</returns>
-    public static LevelViewController Level(ProcedureLevel procedure)
-    {
-        return procedure == null ? null : ReadField<LevelViewController>(procedure, "m_LevelViewController");
-    }
+    public static LevelViewController Level(ProcedureLevel procedure) => procedure == null ? null : ReadField<LevelViewController>(procedure, "_levelViewController");
 
     /// <summary>
     /// 读取正式流程持有状态的 FSM，流程不在关卡时返回空。
     /// </summary>
     /// <param name="procedure">当前关卡流程；允许为空。</param>
     /// <returns>持有档案状态与模块的流程 FSM。</returns>
-    public static IFsm<IProcedureManager> Flow(ProcedureLevel procedure)
-    {
-        return procedure == null ? null : ReadField<IFsm<IProcedureManager>>(procedure, "m_Owner");
-    }
+    public static IFsm<IProcedureManager> Flow(ProcedureLevel procedure) => procedure == null ? null : ReadField<IFsm<IProcedureManager>>(procedure, "_owner");
 
     /// <summary>
     /// 仅在测试中停止怪物 AI 并清除待消费意图，身体动作仍按正式逻辑执行。
@@ -286,10 +256,7 @@ internal static class SmokeInspection
     /// </summary>
     /// <param name="hero">被观测英雄。</param>
     /// <returns>实体读取的模型。</returns>
-    public static HeroModel HeroAttributes(AbstractHeroEntity hero)
-    {
-        return (HeroModel)typeof(AbstractHeroEntity).GetProperty("Attributes", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(hero);
-    }
+    public static HeroModel HeroAttributes(AbstractHeroEntity hero) => (HeroModel)typeof(AbstractHeroEntity).GetProperty("Attributes", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(hero);
 
     /// <summary>
     /// 仅测试无返回按钮的流程切换，通过框架受保护入口完成。
@@ -297,8 +264,8 @@ internal static class SmokeInspection
     /// <typeparam name="TProcedure">目标流程。</typeparam>
     public static void ChangeProcedure<TProcedure>() where TProcedure : GameFramework.Procedure.ProcedureBase
     {
-        var current = GF.Procedure.CurrentProcedure;
-        var change = current.GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
+        ProcedureBase current = GF.Procedure.CurrentProcedure;
+        MethodInfo change = current.GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
             .Single(method => method.Name == "ChangeState" && method.IsGenericMethodDefinition);
         change.MakeGenericMethod(typeof(TProcedure)).Invoke(current, [GodotGameFramework.GF.Fsm.GetFsm<IProcedureManager>()]);
     }

@@ -22,13 +22,13 @@ def audit(args):
     resources = {identifier: path for path, identifier in re.findall(
         r'\[ext_resource[^\n]*path="([^"]+)" id="([^"]+)"', text)}
     bindings = {}
-    for kind, field in [('body', 'm_ArmorTextures'), ('weapon', 'm_WeaponTextures')]:
+    for kind, field in [('body', '_armorTextures'), ('weapon', '_weaponTextures')]:
         values = re.search(field + r' = Dictionary\[int, Texture2D\]\(\{(.*?)\}\)', text, re.S)
         if values is None:
             raise ValueError(f'Missing native wardrobe dictionary: {field}')
         bindings[kind] = {int(key): resources[value] for key, value in re.findall(
             r'(\d+): ExtResource\("([^"]+)"\)', values[1])}
-        field = 'm_BaseBody' if kind == 'body' else 'm_BaseWeapon'
+        field = '_baseBody' if kind == 'body' else '_baseWeapon'
         base = re.search(field + r' = ExtResource\("([^"]+)"\)', text)
         bindings[kind][0] = resources[base[1]]
 
@@ -50,7 +50,7 @@ def audit(args):
     for row in xlsx_rows(config / '__enums__.xlsx')['Sheet1']:
         cells = {re.sub(r'\d+$', '', key): value for key, value in row.items()}
         active = cells.get('B') or active
-        if active == 'Equipment.EEquipmentId' and cells.get('H') and cells.get('J'):
+        if active == 'Equipment.EquipmentId' and cells.get('H') and cells.get('J'):
             for name in (cells['H'], cells.get('I')):
                 if name:
                     identities[name] = int(cells['J'])

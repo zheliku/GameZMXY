@@ -14,7 +14,7 @@ func _initialize() -> void:
 			var old := pattern.search(FileAccess.get_file_as_string(path))
 			assert(old != null, "Run once against pre-refactor serialization: " + path)
 			var actor: Node = load(path).instantiate()
-			actor.set("m_EnemyEntityId", int(old.get_string(1)))
+			actor.set("_enemyEntityId", int(old.get_string(1)))
 			var packed := PackedScene.new()
 			assert(packed.pack(actor) == OK)
 			assert(ResourceSaver.save(packed, path) == OK)

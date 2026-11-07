@@ -1,22 +1,24 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using GameConfig.Attributes;
 using GameConfig.Entity;
+using GameFramework.Event;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Battle.Attributes;
+using GameLogic.Drops;
 using GameLogic.Enemies;
 using GameLogic.Enemies.AI;
 using GameLogic.Enemies.Body;
+using GameLogic.Event.Combat;
 using GameLogic.Heroes;
+using GameLogic.Level;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
-using GameFramework.Event;
-using GameLogic.Event.Combat;
-using GameLogic.Level;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -33,46 +35,46 @@ public sealed partial class UiSmokeScenario
     private async Task CheckSeaAiAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
-        var system = flow.GetSystem<HeroSystem>();
+        HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SeaAiSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
-                foreach (EEntityId id in new[] { EEntityId.ShrimpDemon, EEntityId.TideDemon, EEntityId.TurtleMinister })
+                foreach (EntityId id in new[] { EntityId.ShrimpDemon, EntityId.TideDemon, EntityId.TurtleMinister })
                 {
                     Engine.PhysicsTicksPerSecond = ticks;
                     hero.GlobalPosition = new Vector2(100000, 100000);
-                    m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
-                    var actor = m_Monster;
+                    _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
+                    AbstractEnemyEntity actor = _monster;
                     var agent = (IEnemyAiAgent)actor;
                     await WaitUntilAsync(() => actor.OnFloor, "海怪AI夹具未落地");
                     GD.Seed(3147);
-                    float distance = id == EEntityId.ShrimpDemon ? 120f : id == EEntityId.TurtleMinister ? 500f : 240f;
+                    float distance = id == EntityId.ShrimpDemon ? 120f : id == EntityId.TurtleMinister ? 500f : 240f;
                     float height = 0f;
                     void FollowActor()
                     {
                         hero.GlobalPosition = actor.GlobalPosition + new Vector2(distance, height);
                     }
-                    m_Driver.GetTree().PhysicsFrame += FollowActor;
+                    _driver.GetTree().PhysicsFrame += FollowActor;
                     try
                     {
                         FollowActor();
                         typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(actor, [hero]);
-                        await WaitUntilAsync(() => agent.AiData.MoveIntent == (id == EEntityId.ShrimpDemon ? -1 : 1),
+                        await WaitUntilAsync(() => agent.AiData.MoveIntent == (id == EntityId.ShrimpDemon ? -1 : 1),
                             "海怪没有自主退避或追击：" + id);
-                        if (id == EEntityId.ShrimpDemon)
+                        if (id == EntityId.ShrimpDemon)
                         {
                             distance = 400f;
                             await WaitUntilAsync(() => agent.AiData.MoveIntent == 1, "虾兵远距离没有追击");
                         }
-                        distance = id == EEntityId.TideDemon ? 120f : 300f;
+                        distance = id == EntityId.TideDemon ? 120f : 300f;
                         var casts = new System.Collections.Generic.List<(double Time, int Index)>();
                         int previous = -1;
                         ulong started = Time.GetTicksMsec();
-                        while (id == EEntityId.TideDemon ? casts.Count(value => value.Index == 1) < 2 || !casts.Any(value => value.Index == 0) : casts.Count < 2)
+                        while (id == EntityId.TideDemon ? casts.Count(value => value.Index == 1) < 2 || !casts.Any(value => value.Index == 0) : casts.Count < 2)
                         {
                             Check(Time.GetTicksMsec() - started < 22000, "海怪未自主完成选招：" + id);
                             if (actor.AttackSegment >= 0 && previous != actor.AttackSegment)
@@ -89,15 +91,15 @@ public sealed partial class UiSmokeScenario
                                                     "海怪决策间隔快于官方节拍：" + id);
                         }
 
-                        if (id == EEntityId.TideDemon)
+                        if (id == EntityId.TideDemon)
                         {
-                            var heavy = casts.Where(value => value.Index == 1).ToArray();
+                            (double Time, int Index)[] heavy = casts.Where(value => value.Index == 1).ToArray();
                             Check(heavy[1].Time - heavy[0].Time >= 10f - 2f / ticks, "潮汐妖十秒重击冷却提前结束");
                         }
-                        if (id != EEntityId.ShrimpDemon)
+                        if (id != EntityId.ShrimpDemon)
                         {
                             await WaitUntilAsync(() => !agent.IsAttacking, "高处目标夹具未收招");
-                            height = id == EEntityId.TideDemon ? -350f : -850f;
+                            height = id == EntityId.TideDemon ? -350f : -850f;
                             FollowActor();
                             for (int frame = 0; frame < ticks; frame++)
                             {
@@ -115,14 +117,14 @@ public sealed partial class UiSmokeScenario
                     }
                     finally
                     {
-                        m_Driver.GetTree().PhysicsFrame -= FollowActor;
+                        _driver.GetTree().PhysicsFrame -= FollowActor;
                         if (GF.Base.IsGamePaused)
                         {
                             GF.Base.ResumeGame();
                         }
 
                         ReleaseTestEntity(actor);
-                        m_Monster = null;
+                        _monster = null;
                     }
                     await WaitFramesAsync(3);
                 }
@@ -144,7 +146,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>死亡通知和池复用验证。</returns>
     private async Task CheckSeaRewardsAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        var model = flow.GetModel<LevelModel>();
+        LevelModel model = flow.GetModel<LevelModel>();
         int originalLevel = model.LevelId;
         try
         {
@@ -152,9 +154,9 @@ public sealed partial class UiSmokeScenario
             {
                 model.LevelId = level;
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.TurtleMinister,
+                _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.TurtleMinister,
                     new EnemySpawn(new Vector2(580, 100)));
-                var actor = m_Monster;
+                AbstractEnemyEntity actor = _monster;
                 SmokeInspection.FreezeAi(actor);
                 await WaitUntilAsync(() => actor.OnFloor, "奖励夹具龟丞相未落地");
                 int notifications = 0;
@@ -174,10 +176,10 @@ public sealed partial class UiSmokeScenario
                     Check(soulPerOrb == (level == 7 ? 60 : 30) &&
                         (data.EquipmentDropChanceOverride ?? data.Config.EquipmentDropChance) == (level == 7 ? 0f : .15f) &&
                         data.ExperienceReward == (level == 7 ? 200 : 75), "龟丞相死亡奖励没有使用本次关卡变体");
-                    var model = flow.GetModel<HeroModel>();
-                    var loot = flow.GetSystem<GameLogic.Drops.LootSystem>().Roll(data.Config, soulPerOrb,
+                    HeroModel model = flow.GetModel<HeroModel>();
+                    List<LootReward> loot = flow.GetSystem<GameLogic.Drops.LootSystem>().Roll(data.Config, soulPerOrb,
                         model.MaxHp.Value, model.MaxMp.Value, () => 0f);
-                    Check(loot.Where(value => value.Kind == GameLogic.Drops.ELootKind.Soul).All(value => value.Amount == soulPerOrb),
+                    Check(loot.Where(value => value.Kind == GameLogic.Drops.LootKind.Soul).All(value => value.Amount == soulPerOrb),
                         "灵魂球没有使用实例奖励");
                 }
                 GF.Event.Subscribe(EnemyDiedEventArgs.EventId, Observe);
@@ -195,7 +197,7 @@ public sealed partial class UiSmokeScenario
                 {
                     GF.Event.Unsubscribe(EnemyDiedEventArgs.EventId, Observe);
                     ReleaseTestEntity(actor);
-                    m_Monster = null;
+                    _monster = null;
                 }
                 await WaitFramesAsync(3);
             }
@@ -217,9 +219,9 @@ public sealed partial class UiSmokeScenario
         foreach (int direction in new[] { -1, 1 })
         {
             hero.GlobalPosition = new Vector2(100000, 100000);
-            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.ShrimpDemon,
+            _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.ShrimpDemon,
                 new EnemySpawn(new Vector2(580, 100)));
-            var actor = m_Monster;
+            AbstractEnemyEntity actor = _monster;
             SmokeInspection.FreezeAi(actor);
             await WaitUntilAsync(() => actor.OnFloor, "虾兵弹体取消夹具未落地");
             actor.SetFacing(direction);
@@ -229,7 +231,7 @@ public sealed partial class UiSmokeScenario
             actor.AnimPlayer.CallbackModeMethod = AnimationMixer.AnimationCallbackModeMethod.Immediate;
             actor.RestartAnim("attack_1");
             actor.AnimPlayer.Advance(2d / 24d);
-            var effect = actor.GetParent().GetChildren().OfType<ShrimpProjectileEffectNode>().Single(x => x.Visible);
+            ShrimpProjectileEffectNode effect = actor.GetParent().GetChildren().OfType<ShrimpProjectileEffectNode>().Single(x => x.Visible);
             float start = effect.GlobalPosition.X;
             await WaitFramesAsync(4);
             Check(Math.Sign(effect.GlobalPosition.X - start) == direction, "虾兵弹体方向错误");
@@ -239,7 +241,7 @@ public sealed partial class UiSmokeScenario
             attack.GlobalPosition = effect.GlobalPosition;
             try
             {
-                await WaitUntilAsync(() => SmokeInspection.ReadField<float>(effect, "m_FadeLeft") > 0f,
+                await WaitUntilAsync(() => SmokeInspection.ReadField<float>(effect, "_fadeLeft") > 0f,
                     "玩家攻击没有击散虾兵魔法弹");
                 await WaitFramesAsync(2);
                 Check(effect.GetNode<CollisionShape2D>("HitBox/CollisionShape2D").Disabled,
@@ -265,11 +267,11 @@ public sealed partial class UiSmokeScenario
             }
             actor.RestartAnim("attack_1");
             actor.AnimPlayer.Advance(2d / 24d);
-            var reused = actor.GetParent().GetChildren().OfType<ShrimpProjectileEffectNode>().Single(x => x.Visible);
+            ShrimpProjectileEffectNode reused = actor.GetParent().GetChildren().OfType<ShrimpProjectileEffectNode>().Single(x => x.Visible);
             Check(ReferenceEquals(effect, reused) && reused.Modulate.A == 1f &&
-                SmokeInspection.ReadField<float>(reused, "m_FadeLeft") == 0f, "弹体池复用残留消散状态");
+                SmokeInspection.ReadField<float>(reused, "_fadeLeft") == 0f, "弹体池复用残留消散状态");
             ReleaseTestEntity(actor);
-            m_Monster = null;
+            _monster = null;
             await WaitFramesAsync(3);
             Check(!reused.Visible, "敌人离场没有归还其投射物");
         }
@@ -285,26 +287,26 @@ public sealed partial class UiSmokeScenario
     private async Task CheckSeaEnemiesAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         int originalTicks = Engine.PhysicsTicksPerSecond;
-        var system = flow.GetSystem<HeroSystem>();
+        HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SeaSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                foreach (EEntityId id in new[] { EEntityId.ShrimpDemon, EEntityId.TideDemon, EEntityId.TurtleMinister })
+                foreach (EntityId id in new[] { EntityId.ShrimpDemon, EntityId.TideDemon, EntityId.TurtleMinister })
                 {
-                    int count = id == EEntityId.TideDemon ? 2 : 1;
+                    int count = id == EntityId.TideDemon ? 2 : 1;
                     for (int direction = -1; direction <= 1; direction += 2)
                     {
                         for (int index = 0; index < count; index++)
                         {
                             hero.GlobalPosition = new Vector2(100000, 100000);
-                            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
+                            _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
                                 new EnemySpawn(new Vector2(580, 100)));
-                            var actor = m_Monster;
+                            AbstractEnemyEntity actor = _monster;
                             var body = (IEnemyBody)actor;
                             await WaitUntilAsync(() => actor.OnFloor, "海怪未落地：" + id);
                             SmokeInspection.FreezeAi(actor);
@@ -324,8 +326,8 @@ public sealed partial class UiSmokeScenario
                             while (actor.AttackSegment >= 0 || actor.GetParent().GetChildren().OfType<ShrimpProjectileEffectNode>().Any(x => x.Visible))
                             {
                                 Check(Time.GetTicksMsec() - started < 6000, "海怪出招或弹体未结束：" + id);
-                                var projectile = actor.GetParent().GetChildren().OfType<ShrimpProjectileEffectNode>().FirstOrDefault(x => x.Visible);
-                                var shape = projectile?.GetNode<CollisionShape2D>("HitBox/CollisionShape2D") ??
+                                ShrimpProjectileEffectNode projectile = actor.GetParent().GetChildren().OfType<ShrimpProjectileEffectNode>().FirstOrDefault(x => x.Visible);
+                                CollisionShape2D shape = projectile?.GetNode<CollisionShape2D>("HitBox/CollisionShape2D") ??
                                     actor.HitBox.GetNode<CollisionShape2D>("CollisionShape2D");
                                 if (!shape.Disabled)
                                 {
@@ -343,7 +345,7 @@ public sealed partial class UiSmokeScenario
                             Check(actor.HitBox.GetChildren().OfType<CollisionShape2D>().All(x => x.Disabled), "海怪收招判定未关闭");
                             await WaitUntilAsync(() => !((IEnemyAiAgent)actor).IsAttacking, "海怪收招仍忙碌");
                             ReleaseTestEntity(actor);
-                            m_Monster = null;
+                            _monster = null;
                             await WaitFramesAsync(3);
                         }
                     }
@@ -354,10 +356,10 @@ public sealed partial class UiSmokeScenario
         }
         finally
         {
-            if (m_Monster != null)
+            if (_monster != null)
             {
-                ReleaseTestEntity(m_Monster);
-                m_Monster = null;
+                ReleaseTestEntity(_monster);
+                _monster = null;
             }
             Engine.PhysicsTicksPerSecond = originalTicks;
             system.RemoveSource(source);

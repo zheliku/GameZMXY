@@ -6,21 +6,20 @@ using GameLogic.Effects;
 using GameLogic.Entity;
 using GameLogic.Heroes;
 
-namespace GameLogic.Enemies
+namespace GameLogic.Enemies;
+
+/// <summary>
+/// 狮驼王毒雾：命中主体后施加十秒中毒；持续状态由本局状态效果系统拥有。
+/// </summary>
+public partial class LionCamelPoisonCloudNode : SkillEffectNode
 {
-    /// <summary>
-    /// 狮驼王毒雾：命中主体后施加十秒中毒；持续状态由本局状态效果系统拥有。
-    /// </summary>
-    public partial class LionCamelPoisonCloudNode : SkillEffectNode
+    /// <inheritdoc />
+    protected override void OnHitLanded(AbstractActorEntity target, DamageResult result)
     {
-        /// <inheritdoc />
-        protected override void OnHitLanded(AbstractActorEntity target, DamageResult result)
+        if (target is AbstractHeroEntity { CanReceiveStatusEffect: true })
         {
-            if (target is AbstractHeroEntity { CanReceiveStatusEffect: true })
-            {
-                int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EEntityId.LionCamelKing, 3, 2);
-                this.GetSystem<HeroStatusSystem>().ApplyPoison(this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId));
-            }
+            int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2);
+            this.GetSystem<HeroStatusSystem>().ApplyPoison(this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId));
         }
     }
 }
