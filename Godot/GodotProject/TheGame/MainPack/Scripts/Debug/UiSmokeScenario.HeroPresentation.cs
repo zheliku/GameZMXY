@@ -250,14 +250,14 @@ public sealed partial class UiSmokeScenario
                         (Position: new Vector2(65, -50), Hit: true),
                         (Position: new Vector2(90, 289), Hit: true) })
                     {
-                        var enemy = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+                        var enemy = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Gorilla,
                             new EnemySpawn(origin + sample.Position));
                         SmokeInspection.StrengthenTrainingTarget(enemy);
                         SmokeInspection.FreezeAi(enemy);
                         enemy.SetPhysicsProcess(false);
                         targets.Add((enemy, enemy.Hp, sample.Hit));
                     }
-                    ((ISkillActor)hero).PlaySkillEffect(scene, origin, SkillHitId.WaterDemonFall,
+                    ((ISkillActor)hero).PlaySkillEffect(scene, origin, ESkillHitId.WaterDemonFall,
                         flow.GetModel<HeroModel>().Power.Value * 8);
                     var effect = effects.Single(e => e.SceneFilePath == scene.ResourcePath);
                     await WaitUntilAsync(() => effect.GetNode<AnimatedSprite2D>("Origin/Visual/Sprite").Frame >= 13,

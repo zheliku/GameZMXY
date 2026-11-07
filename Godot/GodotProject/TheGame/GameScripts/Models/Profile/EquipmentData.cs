@@ -16,9 +16,9 @@ namespace GameLogic.Equipment
         /// <param name="attributes">本件已抽出的不可变具名属性。</param>
         /// <exception cref="ArgumentException">编号无效。</exception>
         /// <exception cref="ArgumentNullException">属性集合为空。</exception>
-        public EquipmentData(Guid instanceId, EquipmentId equipmentId, EquipmentAttributes attributes)
+        public EquipmentData(Guid instanceId, EEquipmentId equipmentId, EquipmentAttributes attributes)
         {
-            if (instanceId == Guid.Empty || equipmentId == EquipmentId.None)
+            if (instanceId == Guid.Empty || equipmentId == EEquipmentId.None)
             {
                 throw new ArgumentException("装备实例需要非空编号与装备定义。");
             }
@@ -37,7 +37,7 @@ namespace GameLogic.Equipment
         /// <summary>
         /// 只读装备定义的编号。
         /// </summary>
-        public EquipmentId EquipmentId { get; }
+        public EEquipmentId EquipmentId { get; }
 
         /// <summary>
         /// 本件装备已确定的实际属性；配置范围不进入运行时数据。

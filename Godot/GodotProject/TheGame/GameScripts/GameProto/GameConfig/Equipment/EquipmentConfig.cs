@@ -16,13 +16,13 @@ public sealed partial class EquipmentConfig : Luban.BeanBase
 {
     public EquipmentConfig(ByteBuf _buf) 
     {
-        Id = (Equipment.EquipmentId)_buf.ReadInt();
+        Id = (Equipment.EEquipmentId)_buf.ReadInt();
         LegacyId = _buf.ReadString();
         NameCn = _buf.ReadString();
         Description = _buf.ReadString();
-        Owner = (Equipment.EquipmentOwner)_buf.ReadInt();
-        Slot = (Equipment.EquipmentSlot)_buf.ReadInt();
-        Quality = (Equipment.EquipmentQuality)_buf.ReadInt();
+        Owner = (Equipment.EEquipmentOwner)_buf.ReadInt();
+        Slot = (Equipment.EEquipmentSlot)_buf.ReadInt();
+        Quality = (Equipment.EEquipmentQuality)_buf.ReadInt();
         {int n0 = _buf.ReadSize(); AttributeRanges = new System.Collections.Generic.List<Equipment.EquipmentAttributeRange>(n0);for(var i0 = 0 ; i0 < n0 ; i0++) { Equipment.EquipmentAttributeRange _e0;  _e0 = global::GameConfig.Equipment.EquipmentAttributeRange.DeserializeEquipmentAttributeRange(_buf); AttributeRanges.Add(_e0);}}
         SellPrice = _buf.ReadInt();
     }
@@ -35,7 +35,7 @@ public sealed partial class EquipmentConfig : Luban.BeanBase
     /// <summary>
     /// 装备可读编号
     /// </summary>
-    public readonly Equipment.EquipmentId Id;
+    public readonly Equipment.EEquipmentId Id;
     /// <summary>
     /// 官方 AllEquipment 填充名
     /// </summary>
@@ -51,15 +51,15 @@ public sealed partial class EquipmentConfig : Luban.BeanBase
     /// <summary>
     /// 所属角色，不依赖尚未实现的唐僧实体
     /// </summary>
-    public readonly Equipment.EquipmentOwner Owner;
+    public readonly Equipment.EEquipmentOwner Owner;
     /// <summary>
     /// 部位
     /// </summary>
-    public readonly Equipment.EquipmentSlot Slot;
+    public readonly Equipment.EEquipmentSlot Slot;
     /// <summary>
     /// 粗糙或普通
     /// </summary>
-    public readonly Equipment.EquipmentQuality Quality;
+    public readonly Equipment.EEquipmentQuality Quality;
     /// <summary>
     /// 生成时抽取，实例保存实际值
     /// </summary>

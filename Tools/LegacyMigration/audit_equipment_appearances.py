@@ -29,7 +29,7 @@ def _equipment_ids(config_dir):
     for row in xlsx_rows(config_dir / "__enums__.xlsx")["Sheet1"]:
         cells = _cells(row)
         active = cells.get("B") or active
-        if active != "Equipment.EquipmentId" or not cells.get("H") or not cells.get("J"):
+        if active != "Equipment.EEquipmentId" or not cells.get("H") or not cells.get("J"):
             continue
         for name in (cells["H"], cells.get("I")):
             if name:

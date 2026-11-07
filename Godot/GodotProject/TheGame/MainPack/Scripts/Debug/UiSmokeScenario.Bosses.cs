@@ -48,12 +48,12 @@ public sealed partial class UiSmokeScenario
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                foreach (var id in new[] { EntityId.MacaqueKing, EntityId.TamarinKing, EntityId.BatCaveStatue, EntityId.LionCamelKing,
-                    EntityId.PengDemonKing, EntityId.JiaoDemonKing, EntityId.SharkDemonKing })
+                foreach (var id in new[] { EEntityId.MacaqueKing, EEntityId.TamarinKing, EEntityId.BatCaveStatue, EEntityId.LionCamelKing,
+                    EEntityId.PengDemonKing, EEntityId.JiaoDemonKing, EEntityId.SharkDemonKing })
                 {
                     var enemy = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 300)));
                     SmokeInspection.FreezeAi(enemy);
-                    var attack = AttackData.Create(0, default, 1000000, DamageKind.Real, Vector2.Zero, 1, 0,
+                    var attack = AttackData.Create(0, default, 1000000, EDamageKind.Real, Vector2.Zero, 1, 0,
                         source: new AttackSource(hero.Id, hero.Config.EntityId, hero.GetInstanceId(), hero.GetInstanceId()));
                     try
                     {
@@ -123,7 +123,7 @@ public sealed partial class UiSmokeScenario
         }
         var source = new AttributeSourceId("SmokeBoss", 1);
         var heroSystem = flow.GetSystem<HeroSystem>();
-        heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        heroSystem.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         heroSystem.Heal(100000);
         try
         {
@@ -132,7 +132,7 @@ public sealed partial class UiSmokeScenario
             await WaitFramesAsync(2);
             await WaitUntilAsync(() => hero.OnFloor, "BOSS 夹具英雄没有落地");
             hero.SetPhysicsProcess(false);
-            foreach (var id in new[] { EntityId.MacaqueKing, EntityId.TamarinKing })
+            foreach (var id in new[] { EEntityId.MacaqueKing, EEntityId.TamarinKing })
             {
                 m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
                     new EnemySpawn(new Vector2(580, 100)));
@@ -142,10 +142,10 @@ public sealed partial class UiSmokeScenario
                 var player = actor.GetNode<AnimationPlayer>("m_AnimPlayer");
                 var shape = actor.GetNodeOrNull<CollisionShape2D>("m_HitBoxRoot/m_HitBox/CollisionShape2D");
                 var effect = actor.GetNode<AnimatedSprite2D>("m_Body/Effect");
-                Check(actor.MaxHp == (id == EntityId.MacaqueKing ? 1500 : 3000), $"{id} 生命不符原版");
+                Check(actor.MaxHp == (id == EEntityId.MacaqueKing ? 1500 : 3000), $"{id} 生命不符原版");
                 typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic)
                     .Invoke(actor, [hero]);
-                for (int index = 0; index < (id == EntityId.MacaqueKing ? 3 : 2); index++)
+                for (int index = 0; index < (id == EEntityId.MacaqueKing ? 3 : 2); index++)
                 {
                     heroSystem.Heal(100000);
                     heroSystem.AdvanceHurtProtection(float.MaxValue);
@@ -180,7 +180,7 @@ public sealed partial class UiSmokeScenario
                         {
                             bool invulnerable = (bool)typeof(AbstractActorEntity).GetProperty("Invulnerable",
                                 BindingFlags.Instance | BindingFlags.NonPublic).GetValue(actor);
-                            Check(invulnerable == (id == EntityId.MacaqueKing || player.CurrentAnimationPosition < 2),
+                            Check(invulnerable == (id == EEntityId.MacaqueKing || player.CurrentAnimationPosition < 2),
                                 $"{id} 无敌时段不符原版");
                         }
                         await WaitFramesAsync(1);
@@ -190,7 +190,7 @@ public sealed partial class UiSmokeScenario
                         Check(enabled, $"{id} 第 {index + 1} 招没有启用碰撞判定");
                     }
 
-                    if (id == EntityId.MacaqueKing && index == 2)
+                    if (id == EEntityId.MacaqueKing && index == 2)
                     {
                         await WaitUntilAsync(() => !actor.GetParent().GetChildren().OfType<SkillEffectNode>().Any(x => x.Visible),
                                                 "风刃完整 50 帧后没有回池");

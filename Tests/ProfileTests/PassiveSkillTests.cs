@@ -22,12 +22,12 @@ namespace GameLogic.Profile.Tests
             var scope = new TestGameScope(1, [(1, 0)], 15000, 25);
             var skill = scope.GetSystem<SkillSystem>();
             scope.GetSystem<HeroSystem>().Damage(30);
-            Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(PassiveId.Vitality));
+            Assert.Equal(ESkillLearnResult.Learned, skill.Upgrade(EPassiveId.Vitality));
             Assert.Equal((280, 250, 10000, 1), (scope.Hero.MaxHp.Value, scope.Hero.Hp.Value,
-                scope.Profile.Soul.Value, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));
-            Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(PassiveId.Vitality));
+                scope.Profile.Soul.Value, scope.Skills.GetPassiveLevels(1)[EPassiveId.Vitality]));
+            Assert.Equal(ESkillLearnResult.Learned, skill.Upgrade(EPassiveId.Vitality));
             Assert.Equal((380, 350, 0, 2), (scope.Hero.MaxHp.Value, scope.Hero.Hp.Value,
-                scope.Profile.Soul.Value, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));
+                scope.Profile.Soul.Value, scope.Skills.GetPassiveLevels(1)[EPassiveId.Vitality]));
         }
 
         /// <summary>
@@ -38,19 +38,19 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new TestGameScope(1, [(1, 0)], 4999, 25);
             var skill = scope.GetSystem<SkillSystem>();
-            Assert.Equal(SkillLearnResult.InsufficientSoul, skill.Upgrade(PassiveId.Vitality));
+            Assert.Equal(ESkillLearnResult.InsufficientSoul, skill.Upgrade(EPassiveId.Vitality));
             Assert.Equal((4999, 0, 80), (scope.Profile.Soul.Value,
-                scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality], scope.Hero.MaxHp.Value));
+                scope.Skills.GetPassiveLevels(1)[EPassiveId.Vitality], scope.Hero.MaxHp.Value));
             scope.GetSystem<ProfileSystem>().AddSoul(75000 - 4999);
             for (int i = 0; i < 5; i++)
             {
-                Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(PassiveId.Vitality));
+                Assert.Equal(ESkillLearnResult.Learned, skill.Upgrade(EPassiveId.Vitality));
             }
 
             Assert.Equal((0, 680, 5), (scope.Profile.Soul.Value, scope.Hero.MaxHp.Value,
-                        scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));
-            Assert.Equal(SkillLearnResult.AlreadyLearned, skill.Upgrade(PassiveId.Vitality));
-            Assert.Equal(SkillLearnResult.Unavailable, skill.Upgrade((PassiveId)999));
+                        scope.Skills.GetPassiveLevels(1)[EPassiveId.Vitality]));
+            Assert.Equal(ESkillLearnResult.AlreadyLearned, skill.Upgrade(EPassiveId.Vitality));
+            Assert.Equal(ESkillLearnResult.Unavailable, skill.Upgrade((EPassiveId)999));
             Assert.Equal(0, scope.Profile.Soul.Value);
         }
 
@@ -61,9 +61,9 @@ namespace GameLogic.Profile.Tests
         public void AllEffects_SurviveSaveRestartAndRemainHeroOwned()
         {
             var scope = new TestGameScope(1, [(1, 0), (2, 0)], 25000, 25);
-            foreach (var id in Enum.GetValues<PassiveId>())
+            foreach (var id in Enum.GetValues<EPassiveId>())
             {
-                Assert.Equal(SkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Upgrade(id));
+                Assert.Equal(ESkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Upgrade(id));
             }
 
             Assert.Equal((280, 250, .02f, 2, 2), (scope.Hero.MaxHp.Value, scope.Hero.MaxMp.Value,
@@ -86,11 +86,11 @@ namespace GameLogic.Profile.Tests
             var scope = new TestGameScope(1, [(1, 0)], 15000, 25);
             var levels = scope.Skills.GetPassiveLevels(1);
             var checkpoint = scope.CaptureSaveData();
-            scope.GetSystem<SkillSystem>().Upgrade(PassiveId.Vitality);
-            Assert.Equal(0, checkpoint.Heroes[0].PassiveLevels[PassiveId.Vitality]);
+            scope.GetSystem<SkillSystem>().Upgrade(EPassiveId.Vitality);
+            Assert.Equal(0, checkpoint.Heroes[0].PassiveLevels[EPassiveId.Vitality]);
             scope.RestoreCheckpoint(checkpoint);
             Assert.Same(levels, scope.Skills.GetPassiveLevels(1));
-            Assert.Equal((0, 15000, 80), (levels[PassiveId.Vitality], scope.Profile.Soul.Value, scope.Hero.MaxHp.Value));
+            Assert.Equal((0, 15000, 80), (levels[EPassiveId.Vitality], scope.Profile.Soul.Value, scope.Hero.MaxHp.Value));
         }
 
         /// <summary>
@@ -104,10 +104,10 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new TestGameScope(1, [(1, 0)], 10000, 25);
             var data = scope.CaptureSaveData();
-            data.Heroes[0].PassiveLevels[PassiveId.Vitality] = level;
+            data.Heroes[0].PassiveLevels[EPassiveId.Vitality] = level;
             Assert.Throws<ArgumentException>(() => scope.RestoreCheckpoint(data));
-            Assert.Equal(0, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]);
-            Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
+            Assert.Equal(0, scope.Skills.GetPassiveLevels(1)[EPassiveId.Vitality]);
+            Assert.Equal(ESkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(EPassiveId.Vitality)));
             Assert.Equal(10000, scope.Profile.Soul.Value);
         }
     }

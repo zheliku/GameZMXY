@@ -43,9 +43,9 @@ public sealed class ProcedureMap : ProcedureBase
         m_Cancellation = new CancellationTokenSource();
         GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
-        m_FormSerialId = GF.UI.OpenUIForm(UIFormId.MapForm);
+        m_FormSerialId = GF.UI.OpenUIForm(EUIFormId.MapForm);
         SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: true);
-        m_MusicSerialId = GF.Sound.PlayConfigured(SoundId.MapTheme, 0.3f);
+        m_MusicSerialId = GF.Sound.PlayConfigured(ESoundId.MapTheme, 0.3f);
     }
 
     /// <summary>
@@ -179,7 +179,7 @@ public sealed class ProcedureMap : ProcedureBase
         {
             return;
         }
-        m_SettingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
+        m_SettingsSerialId = GF.UI.OpenUIForm(EUIFormId.SettingsForm);
         SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
     }
 
@@ -199,7 +199,7 @@ public sealed class ProcedureMap : ProcedureBase
             return;
         }
 
-        m_SkillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm);
+        m_SkillSerialId = GF.UI.OpenUIForm(EUIFormId.SkillForm);
     }
 
     /// <summary>

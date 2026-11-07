@@ -185,7 +185,7 @@ def _enum_map(config_dir):
     for row in xlsx_rows(config_dir / "__enums__.xlsx")["Sheet1"]:
         cells = _cells(row)
         active = cells.get("B") or active
-        if active != "Entity.EntityId" or not cells.get("H") or not cells.get("J"):
+        if active != "Entity.EEntityId" or not cells.get("H") or not cells.get("J"):
             continue
         # Formal source tables use the Chinese alias; C# keeps the stable H name.
         result[int(cells["J"])] = cells.get("I") or cells["H"]

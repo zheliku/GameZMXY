@@ -20,7 +20,7 @@ namespace GameLogic.Event.Equipment
         /// <summary>
         /// 本次尝试直接赠送的装备定义。
         /// </summary>
-        public EquipmentId EquipmentId { get; private set; }
+        public EEquipmentId EquipmentId { get; private set; }
 
         /// <summary>
         /// 是否已加入背包；false 表示背包满而未创建实例。
@@ -33,7 +33,7 @@ namespace GameLogic.Event.Equipment
         /// <param name="equipmentId">本次奖励的定义。</param>
         /// <param name="collected">本次是否领取成功。</param>
         /// <returns>仅在本次分发期间有效的参数。</returns>
-        public static EquipmentRewardEventArgs Create(EquipmentId equipmentId, bool collected)
+        public static EquipmentRewardEventArgs Create(EEquipmentId equipmentId, bool collected)
         {
             var args = ReferencePool.Acquire<EquipmentRewardEventArgs>();
             args.EquipmentId = equipmentId;
@@ -46,7 +46,7 @@ namespace GameLogic.Event.Equipment
         /// </summary>
         public override void Clear()
         {
-            EquipmentId = EquipmentId.None;
+            EquipmentId = EEquipmentId.None;
             Collected = false;
         }
     }

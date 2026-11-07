@@ -36,11 +36,11 @@ namespace GameLogic.Enemies
         }
 
         /// <inheritdoc />
-        protected override EntityId NextForm
+        protected override EEntityId NextForm
         {
             get
             {
-                return EntityId.BullDemonKing;
+                return EEntityId.BullDemonKing;
             }
         }
 

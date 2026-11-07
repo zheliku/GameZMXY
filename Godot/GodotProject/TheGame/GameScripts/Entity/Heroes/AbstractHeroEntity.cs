@@ -110,7 +110,7 @@ namespace GameLogic.Heroes
         }
 
         /// <inheritdoc />
-        protected override GameConfig.Entity.EntityId EntityType
+        protected override GameConfig.Entity.EEntityId EntityType
         {
             get
             {
@@ -135,11 +135,11 @@ namespace GameLogic.Heroes
         public HeroActionData ActionData { get; } = new();
 
         /// <inheritdoc />
-        public override CombatSide Side
+        public override ECombatSide Side
         {
             get
             {
-                return CombatSide.Hero;
+                return ECombatSide.Hero;
             }
         }
 
@@ -582,8 +582,8 @@ namespace GameLogic.Heroes
             var equipment = this.GetModel<ProfileModel>();
             var body = (Sprite2D)Body;
             m_Appearance.ApplyToSprites(body, m_Weapon,
-                equipment.Weapon?.EquipmentId ?? GameConfig.Equipment.EquipmentId.None,
-                equipment.Armor?.EquipmentId ?? GameConfig.Equipment.EquipmentId.None);
+                equipment.Weapon?.EquipmentId ?? GameConfig.Equipment.EEquipmentId.None,
+                equipment.Armor?.EquipmentId ?? GameConfig.Equipment.EEquipmentId.None);
         }
 
         /// <inheritdoc />

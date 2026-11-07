@@ -73,9 +73,9 @@ namespace GameLogic.UI
             Visible = false;
             var profile = this.GetModel<ProfileModel>();
             var levelModel = this.GetModel<LevelModel>();
-            if (profile == null || !Enum.IsDefined((SkillHero)profile.ActiveHeroId) ||
+            if (profile == null || !Enum.IsDefined((ESkillHero)profile.ActiveHeroId) ||
                 levelModel != null && (!levelModel.Initialized || !levelModel.SessionActive ||
-                                       levelModel.Outcome.Value != LevelOutcome.Running))
+                                       levelModel.Outcome.Value != ELevelOutcome.Running))
             {
                 throw new InvalidOperationException("技能面板需要有效出战角色；已创建的关卡必须处于运行状态。");
             }
@@ -227,7 +227,7 @@ namespace GameLogic.UI
         /// 学习、读档或关卡回滚后重绘同一份技能记录。
         /// </summary>
         /// <param name="skills">当前英雄的权威学习列表。</param>
-        private void RefreshLearnedSkills(IReadOnlyList<SkillId> skills)
+        private void RefreshLearnedSkills(IReadOnlyList<ESkillId> skills)
         {
             m_ActivePage.Refresh();
         }
@@ -236,7 +236,7 @@ namespace GameLogic.UI
         /// 升级或回滚后刷新本英雄的被动整页。
         /// </summary>
         /// <param name="levels">模型提交的被动等级。</param>
-        private void RefreshPassiveLevels(IReadOnlyDictionary<PassiveId, int> levels)
+        private void RefreshPassiveLevels(IReadOnlyDictionary<EPassiveId, int> levels)
         {
             m_PassivePage.Refresh();
         }
@@ -245,7 +245,7 @@ namespace GameLogic.UI
         /// 提交一次被动升级请求，余额不足复用统一提示。
         /// </summary>
         /// <param name="id">点击的被动。</param>
-        private void OnUpgradeRequested(PassiveId id)
+        private void OnUpgradeRequested(EPassiveId id)
         {
             if (!Visible || !m_ShowPassive || !GF.UI.HasUIForm(SerialId))
             {
@@ -253,13 +253,13 @@ namespace GameLogic.UI
             }
 
             var result = this.SendCommand(new UpgradePassiveCommand(id));
-            if (result == SkillLearnResult.InsufficientSoul)
+            if (result == ESkillLearnResult.InsufficientSoul)
             {
                 (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_save_notice_form) as SaveNoticeForm)?.ShowMessage("灵魂不足！");
             }
-            else if (result == SkillLearnResult.Learned)
+            else if (result == ESkillLearnResult.Learned)
             {
-                GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+                GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             }
         }
 
@@ -267,7 +267,7 @@ namespace GameLogic.UI
         /// 只在本窗口有效周期内提交购买，余额不足复用已有提示动画。
         /// </summary>
         /// <param name="skill">点击的技能。</param>
-        private void OnLearnRequested(SkillId skill)
+        private void OnLearnRequested(ESkillId skill)
         {
             if (!Visible || !GF.UI.HasUIForm(SerialId))
             {
@@ -275,13 +275,13 @@ namespace GameLogic.UI
             }
 
             var result = this.SendCommand(new LearnSkillCommand(skill));
-            if (result == SkillLearnResult.InsufficientSoul)
+            if (result == ESkillLearnResult.InsufficientSoul)
             {
                 (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_save_notice_form) as SaveNoticeForm)?.ShowMessage("灵魂不足！");
             }
-            else if (result == SkillLearnResult.Learned)
+            else if (result == ESkillLearnResult.Learned)
             {
-                GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+                GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             }
         }
 
@@ -290,9 +290,9 @@ namespace GameLogic.UI
         /// </summary>
         private void RefreshPage()
         {
-            SkillHero hero = (SkillHero)this.GetModel<ProfileModel>().ActiveHeroId;
-            SetHeroButton(m_Wukong, hero == SkillHero.Wukong);
-            SetHeroButton(m_Tangseng, hero == SkillHero.Tangseng);
+            ESkillHero hero = (ESkillHero)this.GetModel<ProfileModel>().ActiveHeroId;
+            SetHeroButton(m_Wukong, hero == ESkillHero.Wukong);
+            SetHeroButton(m_Tangseng, hero == ESkillHero.Tangseng);
             m_ActivePage.Visible = !m_ShowPassive;
             m_PassivePage.Visible = m_ShowPassive;
             m_ActivePage.SetHero(hero);
@@ -315,7 +315,7 @@ namespace GameLogic.UI
         /// </summary>
         private void OnWukongClicked()
         {
-            SelectPage(SkillHero.Wukong, false);
+            SelectPage(ESkillHero.Wukong, false);
         }
 
         /// <summary>
@@ -323,7 +323,7 @@ namespace GameLogic.UI
         /// </summary>
         private void OnTangsengClicked()
         {
-            SelectPage(SkillHero.Tangseng, false);
+            SelectPage(ESkillHero.Tangseng, false);
         }
 
         /// <summary>
@@ -333,7 +333,7 @@ namespace GameLogic.UI
         {
             if (GF.UI.HasUIForm(SerialId) && Visible)
             {
-                SelectPage((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId, false);
+                SelectPage((ESkillHero)this.GetModel<ProfileModel>().ActiveHeroId, false);
             }
         }
 
@@ -344,7 +344,7 @@ namespace GameLogic.UI
         {
             if (GF.UI.HasUIForm(SerialId) && Visible)
             {
-                SelectPage((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId, true);
+                SelectPage((ESkillHero)this.GetModel<ProfileModel>().ActiveHeroId, true);
             }
         }
 
@@ -353,16 +353,16 @@ namespace GameLogic.UI
         /// </summary>
         /// <param name="hero">当前查看角色。</param>
         /// <param name="passive">是否查看被动。</param>
-        private void SelectPage(SkillHero hero, bool passive)
+        private void SelectPage(ESkillHero hero, bool passive)
         {
-            if (!GF.UI.HasUIForm(SerialId) || !Visible || hero != (SkillHero)this.GetModel<ProfileModel>().ActiveHeroId)
+            if (!GF.UI.HasUIForm(SerialId) || !Visible || hero != (ESkillHero)this.GetModel<ProfileModel>().ActiveHeroId)
             {
                 return;
             }
 
             m_ShowPassive = passive;
             RefreshPage();
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
         }
 
         /// <summary>
@@ -375,7 +375,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             GF.UI.CloseUIForm(SerialId);
         }
 
@@ -383,9 +383,9 @@ namespace GameLogic.UI
         /// 所属关卡结束时关闭窗口。
         /// </summary>
         /// <param name="outcome">已经提交的关卡结局。</param>
-        private void OnLevelEnded(LevelOutcome outcome)
+        private void OnLevelEnded(ELevelOutcome outcome)
         {
-            if (outcome != LevelOutcome.Running)
+            if (outcome != ELevelOutcome.Running)
             {
                 GF.UI.CloseUIForm(SerialId);
             }

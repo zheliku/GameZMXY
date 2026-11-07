@@ -9,7 +9,7 @@ namespace GameLogic.UI.Widgets
     /// </summary>
     public static class EquipmentQualityStyle
     {
-        extension(EquipmentQuality quality)
+        extension(EEquipmentQuality quality)
         {
             /// <summary>
             /// 返回品质的中文显示名。
@@ -20,12 +20,12 @@ namespace GameLogic.UI.Widgets
             {
                 return quality switch
                 {
-                    EquipmentQuality.Rough => "粗糙",
-                    EquipmentQuality.Common => "普通",
-                    EquipmentQuality.Excellent => "优秀",
-                    EquipmentQuality.Fine => "精良",
-                    EquipmentQuality.Epic => "史诗",
-                    EquipmentQuality.Legendary => "传说",
+                    EEquipmentQuality.Rough => "粗糙",
+                    EEquipmentQuality.Common => "普通",
+                    EEquipmentQuality.Excellent => "优秀",
+                    EEquipmentQuality.Fine => "精良",
+                    EEquipmentQuality.Epic => "史诗",
+                    EEquipmentQuality.Legendary => "传说",
                     _ => throw new ArgumentOutOfRangeException(nameof(quality))
                 };
             }
@@ -39,12 +39,12 @@ namespace GameLogic.UI.Widgets
             {
                 return quality switch
                 {
-                    EquipmentQuality.Rough => new Color("cccccc"),
-                    EquipmentQuality.Common => Colors.White,
-                    EquipmentQuality.Excellent => new Color("00ff00"),
-                    EquipmentQuality.Fine => new Color("0000ff"),
-                    EquipmentQuality.Epic => new Color("660099"),
-                    EquipmentQuality.Legendary => new Color("ff9933"),
+                    EEquipmentQuality.Rough => new Color("cccccc"),
+                    EEquipmentQuality.Common => Colors.White,
+                    EEquipmentQuality.Excellent => new Color("00ff00"),
+                    EEquipmentQuality.Fine => new Color("0000ff"),
+                    EEquipmentQuality.Epic => new Color("660099"),
+                    EEquipmentQuality.Legendary => new Color("ff9933"),
                     _ => throw new ArgumentOutOfRangeException(nameof(quality))
                 };
             }

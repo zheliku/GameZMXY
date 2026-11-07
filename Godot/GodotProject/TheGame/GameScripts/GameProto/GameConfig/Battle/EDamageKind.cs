@@ -9,26 +9,22 @@
 
 
 
-namespace GameConfig.Loot
+namespace GameConfig.Battle
 { 
-    public enum PickupId
+    public enum EDamageKind
     {
         /// <summary>
-        /// 无恢复品
+        /// 物理
         /// </summary>
-        None = 0,
+        Physics = 0,
         /// <summary>
-        /// 小桃子
+        /// 魔法
         /// </summary>
-        SmallPeach = 1,
+        Magic = 1,
         /// <summary>
-        /// 大桃子
+        /// 真实
         /// </summary>
-        LargePeach = 2,
-        /// <summary>
-        /// 蓝瓶
-        /// </summary>
-        ManaBottle = 3,
+        Real = 2,
     }
 
 } 

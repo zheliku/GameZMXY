@@ -27,7 +27,7 @@ namespace GameLogic.Enemies
         /// <summary>
         /// 具体形态选择下一具实体资源。
         /// </summary>
-        protected abstract EntityId NextForm { get; }
+        protected abstract EEntityId NextForm { get; }
 
         /// <summary>
         /// 原版变身后的固定世界出生原点。
@@ -79,7 +79,7 @@ namespace GameLogic.Enemies
         /// <param name="token">原显示周期取消令牌。</param>
         /// <param name="completed">原死亡状态的完成通知。</param>
         /// <returns>后继登记任务。</returns>
-        private static async Task TransformAsync(int previousId, EntityId nextForm, EnemySpawn spawn,
+        private static async Task TransformAsync(int previousId, EEntityId nextForm, EnemySpawn spawn,
             CancellationToken token, Action completed)
         {
             try

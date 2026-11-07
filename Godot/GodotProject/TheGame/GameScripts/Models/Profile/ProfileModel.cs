@@ -227,7 +227,7 @@ namespace GameLogic.Profile
         /// </summary>
         /// <param name="equipmentId">装备或法宝定义编号。</param>
         /// <returns>任一位置拥有相同定义时为 true。</returns>
-        public bool HasEquipment(EquipmentId equipmentId)
+        public bool HasEquipment(EEquipmentId equipmentId)
         {
             if (EquipmentDatas.Any(data => data.EquipmentId == equipmentId))
             {
@@ -252,14 +252,14 @@ namespace GameLogic.Profile
         /// <param name="slot">武器、防具、饰品或法宝。</param>
         /// <returns>该部位的实例或空。</returns>
         /// <exception cref="ArgumentOutOfRangeException">部位无效。</exception>
-        public EquipmentData GetEquippedItem(EquipmentSlot slot)
+        public EquipmentData GetEquippedItem(EEquipmentSlot slot)
         {
             return slot switch
             {
-                EquipmentSlot.Weapon => Weapon,
-                EquipmentSlot.Armor => Armor,
-                EquipmentSlot.Accessory => Accessory,
-                EquipmentSlot.Treasure => Treasure,
+                EEquipmentSlot.Weapon => Weapon,
+                EEquipmentSlot.Armor => Armor,
+                EEquipmentSlot.Accessory => Accessory,
+                EEquipmentSlot.Treasure => Treasure,
                 _ => throw new ArgumentOutOfRangeException(nameof(slot))
             };
         }

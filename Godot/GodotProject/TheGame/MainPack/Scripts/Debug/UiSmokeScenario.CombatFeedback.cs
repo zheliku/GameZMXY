@@ -45,8 +45,8 @@ public sealed partial class UiSmokeScenario
         hero.GlobalPosition = new Vector2(600, 400);
         try
         {
-            foreach (var id in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey, EntityId.Gorilla,
-                         EntityId.CaveBrute, EntityId.KnifeDemon })
+            foreach (var id in new[] { EEntityId.HuaguoshanMonkey, EEntityId.DemonMonkey, EEntityId.Gorilla,
+                         EEntityId.CaveBrute, EEntityId.KnifeDemon })
             {
                 m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
                     new EnemySpawn(new Vector2(720, 100)));
@@ -58,11 +58,11 @@ public sealed partial class UiSmokeScenario
                 await WaitUntilAsync(() => enemy.OnFloor, $"{id} 未通过地面身体落地");
                 hero.GlobalPosition = enemy.GlobalPosition - new Vector2(120, 0);
                 await WaitFramesAsync(3);
-                Check(agent.HasTarget == (id != EntityId.HuaguoshanMonkey),
+                Check(agent.HasTarget == (id != EEntityId.HuaguoshanMonkey),
                     $"{id} 的主动索敌规则错误");
-                if (id == EntityId.HuaguoshanMonkey)
+                if (id == EEntityId.HuaguoshanMonkey)
                 {
-                    var data = AttackData.Create(0, default, 1, DamageKind.Real, Vector2.Zero, hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
+                    var data = AttackData.Create(0, default, 1, EDamageKind.Real, Vector2.Zero, hero.Id, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EEntityId.None, 0, 0));
                     try
                     { enemy.ReceiveHit(data); }
                     finally { ReferencePool.Release(data); }
@@ -83,7 +83,7 @@ public sealed partial class UiSmokeScenario
                 Check(ReferenceEquals(enemy, m_Monster), $"{id} 未复用实体");
                 SmokeInspection.FreezeAi(m_Monster);
                 await WaitFramesAsync(3);
-                if (id == EntityId.HuaguoshanMonkey)
+                if (id == EEntityId.HuaguoshanMonkey)
                 {
                     Check(!((IEnemyAiAgent)m_Monster).HasTarget, "猴子复用后遗留激怒和目标");
                 }
@@ -152,7 +152,7 @@ public sealed partial class UiSmokeScenario
         var model = flow.GetModel<HeroModel>();
         model.Hp.Value = 1;
         int health = flow.GetSystem<LootSystem>().HealthAmount(model.MaxHp.Value);
-        var red = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
+        var red = SpawnOrb(level, hero.GlobalPosition, new(ELootKind.Health, health));
         Check(ReferenceEquals(reused, red) && red.Animation == LootAnims.Health && model.Hp.Value == 1,
             "蓝球复用为红球后动画/奖励未刷新或提前回血");
         Vector2 redPosition = red.GlobalPosition;
@@ -171,7 +171,7 @@ public sealed partial class UiSmokeScenario
         foreach (int hp in new[] { model.MaxHp.Value - 1, model.MaxHp.Value })
         {
             model.Hp.Value = hp;
-            var clamped = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
+            var clamped = SpawnOrb(level, hero.GlobalPosition, new(ELootKind.Health, health));
             Check(ReferenceEquals(red, clamped), "红球未复用原池实例");
             await WaitUntilAsync(() => owned.Count == 0, "满血附近红球未回池", 10000);
             Check(model.Hp.Value == model.MaxHp.Value, "红球超出生命上限或满血无法回收");
@@ -186,7 +186,7 @@ public sealed partial class UiSmokeScenario
         GF.Fsm.GetSystem<HeroSystem>().AdvanceWs(2);
         int musou = GF.Fsm.GetModel<HeroModel>().Ws.Value;
         int experience = flow.GetModel<ProfileModel>().TotalExperience;
-        SpawnOrb(level, hero.GlobalPosition, new(LootKind.Musou, ConfigSystem.Instance.Tables.TbBattleConfig.Data.MusouPerOrb));
+        SpawnOrb(level, hero.GlobalPosition, new(ELootKind.Musou, ConfigSystem.Instance.Tables.TbBattleConfig.Data.MusouPerOrb));
         await WaitUntilAsync(() => owned.Count == 0, "黄球没有接触英雄", 10000);
         Check(GF.Fsm.GetModel<HeroModel>().Ws.Value == musou + 5 && flow.GetModel<ProfileModel>().TotalExperience == experience,
             "开启期间的黄球没有补充5无双，或错误增加经验");
@@ -216,7 +216,7 @@ public sealed partial class UiSmokeScenario
         m_ExtraHero = null;
         // 留一颗正在等待的球，调用方随后通过正式 Cleanup 验证卸载回收。
         SpawnManaOrb(level, hero.GlobalPosition);
-        SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
+        SpawnOrb(level, hero.GlobalPosition, new(ELootKind.Health, health));
         GD.Print("SMOKE-UI: health/mana/musou pickup/clamp/pool reuse/scene-owned target selection passed");
     }
 
@@ -228,7 +228,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>正在飞行的池实例。</returns>
     private static LootOrbNode SpawnManaOrb(LevelViewController level, Vector2 position)
     {
-        return SpawnOrb(level, position, new(LootKind.Mana,
+        return SpawnOrb(level, position, new(ELootKind.Mana,
             GF.Fsm.GetSystem<LootSystem>().ManaAmount(GF.Fsm.GetModel<HeroModel>().MaxMp.Value)));
     }
 
@@ -258,7 +258,7 @@ public sealed partial class UiSmokeScenario
     {
         Vector2 origin = hero.GlobalPosition;
         hero.GlobalPosition = new Vector2(300, 100);
-        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DemonMonkey,
+        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.DemonMonkey,
             new EnemySpawn(new Vector2(600, 100)));
         m_Monster.SetPhysicsProcess(true); // 前一声音夹具使用同一池实例时冻结过身体，测试侧显式恢复。
         await WaitUntilAsync(() => m_Monster.OnFloor, "妖猴追击夹具没有落地");

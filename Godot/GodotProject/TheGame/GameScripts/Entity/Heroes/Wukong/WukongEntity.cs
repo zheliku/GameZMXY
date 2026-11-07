@@ -37,11 +37,11 @@ namespace GameLogic.Heroes
         private const double NormalAttackCancelRatio = .7d; // 前四段普攻进入最后30%源帧后允许升龙取消。
         private static readonly SkillDefinition[] m_Skills =
         [
-            new(SkillId.RisingDragon, typeof(WukongRisingDragonState)),
-            new(SkillId.FlameThrust, typeof(WukongFlameThrustState), CanStart: actor => actor.OnFloor),
-            new(SkillId.BlazingFlash, typeof(WukongBlazingFlashState), InputSystem.Skill1),
-            new(SkillId.FlameStorm, typeof(WukongFlameStormState), InputSystem.Skill2),
-            new(SkillId.FireDemonSlash, typeof(WukongFireDemonState), InputSystem.Skill3)
+            new(ESkillId.RisingDragon, typeof(WukongRisingDragonState)),
+            new(ESkillId.FlameThrust, typeof(WukongFlameThrustState), CanStart: actor => actor.OnFloor),
+            new(ESkillId.BlazingFlash, typeof(WukongBlazingFlashState), InputSystem.Skill1),
+            new(ESkillId.FlameStorm, typeof(WukongFlameStormState), InputSystem.Skill2),
+            new(ESkillId.FireDemonSlash, typeof(WukongFireDemonState), InputSystem.Skill3)
         ]; // 悟空只提供不可变登记项，本局登记容器归 HeroModel。
 
         /// <summary>
@@ -136,14 +136,14 @@ namespace GameLogic.Heroes
                     return;
                 }
 
-                if (skills.IsLearned(SkillId.RisingDragon) && !skills.CanAfford(SkillId.RisingDragon))
+                if (skills.IsLearned(ESkillId.RisingDragon) && !skills.CanAfford(ESkillId.RisingDragon))
                 {
                     ActionData.AttackRequested = input.ConsumeAction(ActionData, true) &&
                                         input.TrySelectAttack(ActionData, body.Params, airborne, attacking);
                 }
                 else
                 {
-                    skills.TryActivate(SkillId.RisingDragon, this);
+                    skills.TryActivate(ESkillId.RisingDragon, this);
                 }
 
                 return;
@@ -153,7 +153,7 @@ namespace GameLogic.Heroes
             if (ActionData.Running && !airborne && !attacking && ActionData.CanAct &&
                 ActionData.AttackHeld && !ActionData.JumpHeld && !ActionData.UpHeld &&
                 input.IsAttackReady(ActionData, airborne, attacking) &&
-                skills.TryActivate(SkillId.FlameThrust, this))
+                skills.TryActivate(ESkillId.FlameThrust, this))
             {
                 input.ConsumeAttack(ActionData);
                 ActionData.LastAttackAttempt = ActionData.Time;

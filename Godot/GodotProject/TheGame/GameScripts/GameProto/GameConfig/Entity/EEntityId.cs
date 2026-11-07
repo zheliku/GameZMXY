@@ -11,7 +11,7 @@
 
 namespace GameConfig.Entity
 { 
-    public enum EntityId
+    public enum EEntityId
     {
         /// <summary>
         /// 无

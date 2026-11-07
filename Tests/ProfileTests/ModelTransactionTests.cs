@@ -18,15 +18,15 @@ namespace GameLogic.Profile.Tests
         /// <param name="slot">实际穿戴部位。</param>
         /// <param name="otherHero">是否把物品放在非出战英雄的穿戴中。</param>
         [Theory]
-        [InlineData(EquipmentId.RoughPilgrimStaff, EquipmentSlot.Weapon, false)]
-        [InlineData(EquipmentId.EarthFiendApeArmor, EquipmentSlot.Armor, false)]
-        [InlineData(EquipmentId.EarthFiendRing, EquipmentSlot.Accessory, false)]
-        [InlineData(EquipmentId.DiamondSnare, EquipmentSlot.Treasure, false)]
-        [InlineData(EquipmentId.EastSeaBanner, EquipmentSlot.Treasure, false)]
-        [InlineData(EquipmentId.DiamondSnare, EquipmentSlot.Treasure, true)]
-        [InlineData(EquipmentId.EastSeaBanner, EquipmentSlot.Treasure, true)]
-        public void ProfileCollection_RejectsAlreadyEquippedInstance(EquipmentId equipmentId,
-            EquipmentSlot slot, bool otherHero)
+        [InlineData(EEquipmentId.RoughPilgrimStaff, EEquipmentSlot.Weapon, false)]
+        [InlineData(EEquipmentId.EarthFiendApeArmor, EEquipmentSlot.Armor, false)]
+        [InlineData(EEquipmentId.EarthFiendRing, EEquipmentSlot.Accessory, false)]
+        [InlineData(EEquipmentId.DiamondSnare, EEquipmentSlot.Treasure, false)]
+        [InlineData(EEquipmentId.EastSeaBanner, EEquipmentSlot.Treasure, false)]
+        [InlineData(EEquipmentId.DiamondSnare, EEquipmentSlot.Treasure, true)]
+        [InlineData(EEquipmentId.EastSeaBanner, EEquipmentSlot.Treasure, true)]
+        public void ProfileCollection_RejectsAlreadyEquippedInstance(EEquipmentId equipmentId,
+            EEquipmentSlot slot, bool otherHero)
         {
             var scope = new TestGameScope(1, [(1, 0), (2, 0)], 0, 25);
             var system = scope.GetSystem<ProfileSystem>();
@@ -68,22 +68,22 @@ namespace GameLogic.Profile.Tests
             var system = scope.GetSystem<ProfileSystem>();
             var snapshot = scope.CaptureSaveData();
             int samples = 0;
-            Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(EquipmentId.DiamondSnare,
+            Assert.Equal(EEquipmentGrantResult.Collected, system.GrantUniqueEquipment(EEquipmentId.DiamondSnare,
                 () => { samples++; return .37f; }));
             var item = Assert.Single(scope.Profile.EquipmentDatas);
             Assert.True(samples > 0);
             int rolled = samples;
 
             Assert.True(scope.GetSystem<EquipmentSystem>().TryEquip(item.InstanceId));
-            Assert.Equal(EquipmentGrantResult.AlreadyOwned, system.GrantUniqueEquipment(EquipmentId.DiamondSnare,
+            Assert.Equal(EEquipmentGrantResult.AlreadyOwned, system.GrantUniqueEquipment(EEquipmentId.DiamondSnare,
                 () => { samples++; return .99f; }));
             Assert.Equal(rolled, samples);
             Assert.Same(item, scope.Profile.Treasure);
             Assert.Empty(scope.Profile.EquipmentDatas);
 
             scope.RestoreCheckpoint(snapshot);
-            Assert.False(scope.Profile.HasEquipment(EquipmentId.DiamondSnare));
-            Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(EquipmentId.DiamondSnare, () => .5f));
+            Assert.False(scope.Profile.HasEquipment(EEquipmentId.DiamondSnare));
+            Assert.Equal(EEquipmentGrantResult.Collected, system.GrantUniqueEquipment(EEquipmentId.DiamondSnare, () => .5f));
             Assert.NotEqual(item.InstanceId, Assert.Single(scope.Profile.EquipmentDatas).InstanceId);
         }
 
@@ -96,15 +96,15 @@ namespace GameLogic.Profile.Tests
             var scope = new TestGameScope(1, [(1, 0)], 0, 1);
             var system = scope.GetSystem<ProfileSystem>();
             var equipment = scope.GetSystem<EquipmentSystem>();
-            var item = equipment.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
+            var item = equipment.Roll(Guid.NewGuid(), EEquipmentId.RoughPilgrimStaff, () => 0);
             Assert.True(system.TryCollectEquipment(item));
-            Assert.Equal(EquipmentGrantResult.InventoryFull, system.GrantUniqueEquipment(EquipmentId.DiamondSnare,
+            Assert.Equal(EEquipmentGrantResult.InventoryFull, system.GrantUniqueEquipment(EEquipmentId.DiamondSnare,
                 () => throw new InvalidOperationException("满包不应抽取属性。")));
             Assert.Same(item, Assert.Single(scope.Profile.EquipmentDatas));
 
             Assert.True(equipment.TryEquip(item.InstanceId));
-            Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(EquipmentId.DiamondSnare, () => .5f));
-            Assert.Equal(EquipmentId.DiamondSnare, Assert.Single(scope.Profile.EquipmentDatas).EquipmentId);
+            Assert.Equal(EEquipmentGrantResult.Collected, system.GrantUniqueEquipment(EEquipmentId.DiamondSnare, () => .5f));
+            Assert.Equal(EEquipmentId.DiamondSnare, Assert.Single(scope.Profile.EquipmentDatas).EquipmentId);
         }
 
         /// <summary>
@@ -115,8 +115,8 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var equipment = new EquipmentSystem(scope);
-            var first = equipment.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
-            var second = equipment.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimStaff, () => 0);
+            var first = equipment.Roll(Guid.NewGuid(), EEquipmentId.RoughPilgrimStaff, () => 0);
+            var second = equipment.Roll(Guid.NewGuid(), EEquipmentId.CommonPilgrimStaff, () => 0);
             var items = scope.Profile.EquipmentDatas;
             scope.GetSystem<ProfileSystem>().TryCollectEquipment(first);
             Assert.True(equipment.TryEquip(first.InstanceId));
@@ -143,11 +143,11 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new TestGameScope(1, [(1, 0)], 20, 25);
             var equipment = new EquipmentSystem(scope);
-            var staff = equipment.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
+            var staff = equipment.Roll(Guid.NewGuid(), EEquipmentId.RoughPilgrimStaff, () => 0);
             scope.GetSystem<ProfileSystem>().TryCollectEquipment(staff);
             var snapshot = scope.CaptureSaveData();
             Assert.True(equipment.TryEquip(staff.InstanceId));
-            scope.GetSystem<ProfileSystem>().TryCollectEquipment(equipment.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimStaff, () => 0));
+            scope.GetSystem<ProfileSystem>().TryCollectEquipment(equipment.Roll(Guid.NewGuid(), EEquipmentId.CommonPilgrimStaff, () => 0));
             scope.GetSystem<ProfileSystem>().AddSoul(100);
             scope.GetSystem<ProfileSystem>().AddExperience(281);
             var progress = scope.Profile.Progress;

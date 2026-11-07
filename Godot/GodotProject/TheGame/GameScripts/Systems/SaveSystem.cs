@@ -54,7 +54,7 @@ namespace GameLogic.Save
         /// <returns>已校验的存档 DTO 及加载来源；运行时模型由流程创建并注册。</returns>
         /// <exception cref="InvalidOperationException">文件读取或写入失败，已拒绝覆盖。</exception>
         /// <exception cref="ArgumentOutOfRangeException">格号不在六格范围内或新档英雄未配置。</exception>
-        public async Task<(GameData Data, SaveOrigin Origin)> LoadOrCreateAsync(int slotNumber, long unitId,
+        public async Task<(GameData Data, ESaveOrigin Origin)> LoadOrCreateAsync(int slotNumber, long unitId,
             CancellationToken cancellationToken = default, int initialHeroId = 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -128,7 +128,7 @@ namespace GameLogic.Save
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
-            return (source, created ? SaveOrigin.Created : SaveOrigin.Loaded);
+            return (source, created ? ESaveOrigin.Created : ESaveOrigin.Loaded);
         }
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace GameLogic.Save
             }
 
             var slots = Enumerable.Range(1, SaveModel.SlotCount)
-                            .Select(number => new SaveSlotInfo(number, 0, SaveSlotState.Empty)).ToArray();
+                            .Select(number => new SaveSlotInfo(number, 0, ESaveSlotState.Empty)).ToArray();
             var used = new HashSet<int>();
             foreach (var catalogue in catalogues)
             {
@@ -181,7 +181,7 @@ namespace GameLogic.Save
                     cancellationToken.ThrowIfCancellationRequested();
                     if (IsUnclaimedSlot(catalogue, archive.CurrentData))
                     {
-                        slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Empty);
+                        slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, ESaveSlotState.Empty);
                     }
                     else
                     {
@@ -195,7 +195,7 @@ namespace GameLogic.Save
                             tables.TbEquipmentConfig, tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig, tables.TbPassiveConfig);
                         string name = tables.TbHeroConfig.Get(data.ActiveHeroId).NameCn;
                         int level = curve.Evaluate(data.Heroes.Single(x => x.HeroId == data.ActiveHeroId).TotalExperience).Level;
-                        slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Occupied,
+                        slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, ESaveSlotState.Occupied,
                             name, level, DateTimeOffset.FromUnixTimeSeconds(catalogue.SavedAtUtc));
                     }
                 }
@@ -206,7 +206,7 @@ namespace GameLogic.Save
                 catch (Exception error)
                 {
                     Log.Warning("[SaveSystem] 存档格 {0} 不可读：{1}", number, error.Message);
-                    slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Unreadable);
+                    slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, ESaveSlotState.Unreadable);
                 }
             }
 
@@ -259,14 +259,14 @@ namespace GameLogic.Save
             }
 
             var saveModel = this.GetModel<SaveModel>();
-            if (saveModel.ManualSave.Value is { Phase: SaveWritePhase.Writing, FormSerialId: var serial } &&
+            if (saveModel.ManualSave.Value is { Phase: ESaveWritePhase.Writing, FormSerialId: var serial } &&
                 serial == formSerialId)
             {
                 return false;
             }
 
             var profile = this.GetModel<ProfileModel>();
-            saveModel.ManualSave.Value = new(formSerialId, SaveWritePhase.Writing);
+            saveModel.ManualSave.Value = new(formSerialId, ESaveWritePhase.Writing);
             bool succeeded;
             try
             { succeeded = await SaveCheckpointAsync(profile); }
@@ -280,7 +280,7 @@ namespace GameLogic.Save
                 ReferenceEquals(profile, this.GetModel<ProfileModel>()) &&
                 saveModel.ManualSave.Value.FormSerialId == formSerialId)
             {
-                saveModel.ManualSave.Value = new(formSerialId, succeeded ? SaveWritePhase.Succeeded : SaveWritePhase.Failed);
+                saveModel.ManualSave.Value = new(formSerialId, succeeded ? ESaveWritePhase.Succeeded : ESaveWritePhase.Failed);
             }
 
             return succeeded;
@@ -376,12 +376,12 @@ namespace GameLogic.Save
             }
 
             var model = this.GetModel<SaveModel>();
-            UpdateDirectory(model, SaveListState.Loading);
+            UpdateDirectory(model, ESaveListState.Loading);
             m_PendingWrite = archive.DeleteAsync(unitId);
             bool deleted = await m_PendingWrite;
             if (!deleted)
             {
-                UpdateDirectory(model, SaveListState.Failed, errorMessage: "删除存档失败，请关闭后重试。");
+                UpdateDirectory(model, ESaveListState.Failed, errorMessage: "删除存档失败，请关闭后重试。");
                 return false;
             }
 
@@ -402,22 +402,22 @@ namespace GameLogic.Save
         private async Task ReadDirectoryAsync(CancellationToken cancellationToken)
         {
             var model = this.GetModel<SaveModel>();
-            UpdateDirectory(model, SaveListState.Loading);
+            UpdateDirectory(model, ESaveListState.Loading);
             try
             {
                 var slots = await ReadSlotsAsync(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                UpdateDirectory(model, SaveListState.Ready, slots);
+                UpdateDirectory(model, ESaveListState.Ready, slots);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 // 取消的是本次读取；共享目录可由下一个标题周期重新读取。
-                UpdateDirectory(model, SaveListState.NotLoaded);
+                UpdateDirectory(model, ESaveListState.NotLoaded);
             }
             catch (Exception error)
             {
                 Log.Error("[SaveSystem] 目录读取失败：{0}", error);
-                UpdateDirectory(model, SaveListState.Failed, errorMessage: "存档目录读取失败，请关闭后重试。");
+                UpdateDirectory(model, ESaveListState.Failed, errorMessage: "存档目录读取失败，请关闭后重试。");
             }
         }
 
@@ -428,7 +428,7 @@ namespace GameLogic.Save
         /// <param name="phase">目录读取阶段。</param>
         /// <param name="slots">完整格子摘要；省略时保留上次结果。</param>
         /// <param name="errorMessage">本次读取失败提示。</param>
-        private static void UpdateDirectory(SaveModel model, SaveListState phase, IReadOnlyList<SaveSlotInfo> slots = null, string errorMessage = "")
+        private static void UpdateDirectory(SaveModel model, ESaveListState phase, IReadOnlyList<SaveSlotInfo> slots = null, string errorMessage = "")
         {
             // 复制集合边界，调用方随后修改数组不会偷偷改变已发布目录。
             var entries = slots == null ? model.Slots : Array.AsReadOnly(slots.ToArray());

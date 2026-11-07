@@ -107,7 +107,7 @@ public class ProcedureLevel : ProcedureBase
             Log.Info("[ProcedureLevel] 加载关卡场景：{0}", m_LevelScenePath);
 
             // 场景加载本身不取消：若流程在加载中离开，继续等待成功事件后由 entrySerial 分支卸载，避免 additive 场景泄漏。
-            string battleFormPath = tables.TbUIFormConfig.DataList.Single(form => form.UIFormId == UIFormId.BattleForm).AssetPath;
+            string battleFormPath = tables.TbUIFormConfig.DataList.Single(form => form.UIFormId == EUIFormId.BattleForm).AssetPath;
             var battleFormAsset = GF.Resource.LoadAssetAsync(battleFormPath);
             var heroConfig = tables.TbHeroConfig.Get(profile.ActiveHeroId);
             var heroAsset = GF.Resource.LoadAssetAsync(tables.TbEntityConfig.Get(heroConfig.EntityId).AssetPath);
@@ -179,7 +179,7 @@ public class ProcedureLevel : ProcedureBase
             m_BattleFormReady = battleFormReady;
             GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
             GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnBattleFormOpenFailed);
-            m_BattleFormSerialId = GF.UI.OpenUIForm(UIFormId.BattleForm, new BattleFormData(m_Hero, m_LevelViewController));
+            m_BattleFormSerialId = GF.UI.OpenUIForm(EUIFormId.BattleForm, new BattleFormData(m_Hero, m_LevelViewController));
             var battleForm = GF.UI.GetUIForm(m_BattleFormSerialId);
             SetFormCallbacks(battleForm, bind: true);
             if (battleForm != null)
@@ -303,9 +303,9 @@ public class ProcedureLevel : ProcedureBase
             GF.Sound.StopSound(m_MusicSerial);
         }
         // 结算马上暂停场景；框架的淡入Tween跟随场景暂停，因此此处直接按设置音量起播。
-        m_MusicSerial = GF.Sound.PlayConfigured(m_LevelModel.Outcome.Value == LevelOutcome.Cleared
-            ? SoundId.SettlementVictory : SoundId.SettlementDefeat);
-        m_SettlementSerialId = GF.UI.OpenUIForm(UIFormId.SettlementForm, new SettlementFormData(m_LevelModel.Result));
+        m_MusicSerial = GF.Sound.PlayConfigured(m_LevelModel.Outcome.Value == ELevelOutcome.Cleared
+            ? ESoundId.SettlementVictory : ESoundId.SettlementDefeat);
+        m_SettlementSerialId = GF.UI.OpenUIForm(EUIFormId.SettlementForm, new SettlementFormData(m_LevelModel.Result));
         SetFormCallbacks(GF.UI.GetUIForm(m_SettlementSerialId), bind: true);
     }
 
@@ -316,7 +316,7 @@ public class ProcedureLevel : ProcedureBase
     private void OnSettingsRequested(int formSerialId)
     {
         if (formSerialId != m_BattleFormSerialId ||
-            m_LevelModel?.Outcome.Value != LevelOutcome.Running)
+            m_LevelModel?.Outcome.Value != ELevelOutcome.Running)
         {
             return;
         }
@@ -326,7 +326,7 @@ public class ProcedureLevel : ProcedureBase
             return;
         }
 
-        m_SettingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
+        m_SettingsSerialId = GF.UI.OpenUIForm(EUIFormId.SettingsForm);
         SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
     }
 
@@ -337,7 +337,7 @@ public class ProcedureLevel : ProcedureBase
     private void OnInventoryRequested(int formSerialId)
     {
         if (formSerialId != m_BattleFormSerialId ||
-            m_LevelModel?.Outcome.Value != LevelOutcome.Running)
+            m_LevelModel?.Outcome.Value != ELevelOutcome.Running)
         {
             return;
         }
@@ -348,7 +348,7 @@ public class ProcedureLevel : ProcedureBase
         }
 
         m_InventorySerialId =
-                    GF.UI.OpenUIForm(UIFormId.InventoryForm, new InventoryFormData(m_Hero));
+                    GF.UI.OpenUIForm(EUIFormId.InventoryForm, new InventoryFormData(m_Hero));
     }
 
     /// <summary>
@@ -358,7 +358,7 @@ public class ProcedureLevel : ProcedureBase
     private void OnSkillsRequested(int formSerialId)
     {
         if (formSerialId != m_BattleFormSerialId ||
-            m_LevelModel?.Outcome.Value != LevelOutcome.Running ||
+            m_LevelModel?.Outcome.Value != ELevelOutcome.Running ||
             m_Hero == null || !m_Hero.IsAlive)
         {
             return;
@@ -369,7 +369,7 @@ public class ProcedureLevel : ProcedureBase
             return;
         }
 
-        m_SkillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm);
+        m_SkillSerialId = GF.UI.OpenUIForm(EUIFormId.SkillForm);
     }
 
     /// <summary>
@@ -383,7 +383,7 @@ public class ProcedureLevel : ProcedureBase
         {
             NavigateAfterCheckpointAsync(m_Owner, m_EntrySerial, retry: false);
         }
-        else if (serial != 0 && serial == m_SettingsSerialId && m_LevelModel?.Outcome.Value == LevelOutcome.Running)
+        else if (serial != 0 && serial == m_SettingsSerialId && m_LevelModel?.Outcome.Value == ELevelOutcome.Running)
         {
             await SaveAndNavigateAsync(m_Owner, m_EntrySerial, serial, returnToTitle: false);
         }
@@ -396,7 +396,7 @@ public class ProcedureLevel : ProcedureBase
     private void OnRetryRequested(int formSerialId)
     {
         int serial = formSerialId;
-        if (serial != 0 && serial == m_SettlementSerialId && m_LevelModel?.Outcome.Value == LevelOutcome.Defeated)
+        if (serial != 0 && serial == m_SettlementSerialId && m_LevelModel?.Outcome.Value == ELevelOutcome.Defeated)
         {
             NavigateAfterCheckpointAsync(m_Owner, m_EntrySerial, retry: true);
         }
@@ -419,7 +419,7 @@ public class ProcedureLevel : ProcedureBase
     private async void OnTitleRequested(int formSerialId)
     {
         if (formSerialId == m_SettingsSerialId &&
-            m_LevelModel?.Outcome.Value == LevelOutcome.Running)
+            m_LevelModel?.Outcome.Value == ELevelOutcome.Running)
         {
             await SaveAndNavigateAsync(m_Owner, m_EntrySerial, formSerialId, returnToTitle: true);
         }
@@ -638,9 +638,9 @@ public class ProcedureLevel : ProcedureBase
     /// 场景已完成胜败表现后登记结算，下一流程帧打开窗口；不重复等待已经结束的死亡动画。
     /// </summary>
     /// <param name="outcome">本次关卡结局。</param>
-    private void OnLevelEnded(LevelOutcome outcome)
+    private void OnLevelEnded(ELevelOutcome outcome)
     {
-        if (outcome is not (LevelOutcome.Cleared or LevelOutcome.Defeated) || m_Owner == null)
+        if (outcome is not (ELevelOutcome.Cleared or ELevelOutcome.Defeated) || m_Owner == null)
         {
             return;
         }
@@ -654,7 +654,7 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="levelId">已由关卡系统校验的隐藏关目标。</param>
     private void OnHiddenLevelRequested(int levelId)
     {
-        if (m_LevelModel?.Outcome.Value == LevelOutcome.Transferred && !m_Navigating)
+        if (m_LevelModel?.Outcome.Value == ELevelOutcome.Transferred && !m_Navigating)
         {
             m_Navigating = true;
             m_PendingHiddenLevelId = levelId;

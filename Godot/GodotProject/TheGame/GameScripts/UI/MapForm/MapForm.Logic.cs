@@ -257,7 +257,7 @@ namespace GameLogic.UI
 
             m_Save.Disabled = true;
             m_Save.MouseDefaultCursorShape = CursorShape.Arrow;
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             SaveRequested?.Invoke(SerialId);
         }
 
@@ -272,14 +272,14 @@ namespace GameLogic.UI
                 return;
             }
 
-            m_Save.Disabled = result.Phase == SaveWritePhase.Writing;
+            m_Save.Disabled = result.Phase == ESaveWritePhase.Writing;
             m_Save.MouseDefaultCursorShape = m_Save.Disabled ? CursorShape.Arrow : CursorShape.PointingHand;
             if (m_Save.Disabled)
             {
                 return;
             }
 
-            m_Save.SelfModulate = result.Phase == SaveWritePhase.Succeeded ? new Color(0.65f, 1f, 0.65f) : new Color(1f, 0.55f, 0.55f);
+            m_Save.SelfModulate = result.Phase == ESaveWritePhase.Succeeded ? new Color(0.65f, 1f, 0.65f) : new Color(1f, 0.55f, 0.55f);
         }
 
         /// <summary>
@@ -293,7 +293,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             LevelSelected?.Invoke(SerialId, levelId);
         }
 
@@ -396,7 +396,7 @@ namespace GameLogic.UI
             {
                 return;
             }
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             SettingsRequested?.Invoke(SerialId);
         }
 
@@ -410,7 +410,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             SkillsRequested?.Invoke(SerialId);
         }
 

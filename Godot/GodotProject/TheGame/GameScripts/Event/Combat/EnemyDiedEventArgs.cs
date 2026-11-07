@@ -48,7 +48,7 @@ namespace GameLogic.Event.Combat
         /// <summary>
         /// 特殊敌人选择的装备池覆盖值；为空时使用 Config.EquipmentDropPoolId。
         /// </summary>
-        public EquipmentDropPoolId? EquipmentDropPoolIdOverride { get; private set; }
+        public EEquipmentDropPoolId? EquipmentDropPoolIdOverride { get; private set; }
 
         /// <summary>
         /// 本次死亡是否结束配方名额；变身中的形态只结算收益，后继形态继续持有名额。
@@ -79,7 +79,7 @@ namespace GameLogic.Event.Combat
         /// <returns>仅在本次分发期间有效的参数。</returns>
         public static EnemyDiedEventArgs Create(int entityId, int experienceReward, EnemyConfig config,
             Vector2 position, int? soulPerOrbOverride = null, float? equipmentDropChanceOverride = null,
-            bool encounterComplete = true, EquipmentDropPoolId? equipmentDropPoolIdOverride = null)
+            bool encounterComplete = true, EEquipmentDropPoolId? equipmentDropPoolIdOverride = null)
         {
             var args = ReferencePool.Acquire<EnemyDiedEventArgs>();
             args.EntityId = entityId;

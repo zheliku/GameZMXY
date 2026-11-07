@@ -57,7 +57,7 @@ namespace GameLogic.Heroes.Wukong
         private static void BeginHit(IHeroBody body)
         {
             ((ISkillActor)body).NewSkillAttack(
-            SkillHitId.FlameThrust, Math.Round(AttackPower(body, SkillHitId.FlameThrust), MidpointRounding.AwayFromZero));
+            ESkillHitId.FlameThrust, Math.Round(AttackPower(body, ESkillHitId.FlameThrust), MidpointRounding.AwayFromZero));
         }
     }
 }

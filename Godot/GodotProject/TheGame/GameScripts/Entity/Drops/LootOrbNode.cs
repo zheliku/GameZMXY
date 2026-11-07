@@ -69,10 +69,10 @@ namespace GameLogic.Drops
             Frame = 0;
             Play(reward.Kind switch
             {
-                LootKind.Soul => LootAnims.Soul,
-                LootKind.Musou => LootAnims.Musou,
-                LootKind.Mana => LootAnims.Mana,
-                LootKind.Health => LootAnims.Health,
+                ELootKind.Soul => LootAnims.Soul,
+                ELootKind.Musou => LootAnims.Musou,
+                ELootKind.Mana => LootAnims.Mana,
+                ELootKind.Health => LootAnims.Health,
                 _ => throw new ArgumentOutOfRangeException(nameof(reward))
             });
             SetProcess(false);

@@ -152,7 +152,7 @@ public sealed partial class FrontendSmokeScenario
         string button = form switch
         {
             StartForm => "m_Start",
-            SaveForm save when GF.Fsm.GetModel<SaveModel>().Phase == SaveListState.Ready => "Slots/m_Slot1",
+            SaveForm save when GF.Fsm.GetModel<SaveModel>().Phase == ESaveListState.Ready => "Slots/m_Slot1",
             CharacterForm => OS.GetCmdlineUserArgs().Contains("--tangseng-only") ? "Roles/m_Sanzang" : "Roles/m_Wukong",
             MapForm => levelId switch { 2 => "m_Shuiliandong", 3 => "m_Taohuayuan", 4 => "m_Bianfuku", 5 => "m_Qixingdong", 6 => "m_Jialuoluo", 7 => "m_Qianan", 8 => "m_Donghai", 9 => "m_Shazhiwoliu", 10 => "m_Niumogu", _ => "m_Huaguoshan" },
             _ => null,
@@ -220,7 +220,7 @@ public sealed partial class FrontendSmokeScenario
             await ClickAsync(start, "m_Start");
 
             SaveForm saves = await WaitForSaveAsync();
-            Check(GF.Fsm.GetModel<SaveModel>().Slots.All(slot => slot.State == SaveSlotState.Empty), "隔离目录首次不为空");
+            Check(GF.Fsm.GetModel<SaveModel>().Slots.All(slot => slot.State == ESaveSlotState.Empty), "隔离目录首次不为空");
             await CaptureAsync("save_slots_empty");
             int closedSaveSerial = saves.SerialId;
             saves.GetNode<BaseButton>("m_Close").EmitSignal(BaseButton.SignalName.Pressed);
@@ -336,7 +336,7 @@ public sealed partial class FrontendSmokeScenario
                     // 仅使当前隔离档案的外键校验失败，不改文件或框架；失败后必须留在原地图。
                     saveModel.ActiveSlotUnitId = originalUnit + 1;
                     await ClickAsync(settingsForm, "Scroll/Content/Options/Navigation/m_ReturnTitle");
-                    await WaitUntilAsync(() => saveModel.ManualSave.Value.Phase == SaveWritePhase.Failed,
+                    await WaitUntilAsync(() => saveModel.ManualSave.Value.Phase == ESaveWritePhase.Failed,
                         "返回保存失败没有发布失败状态");
                     Check(GF.Procedure.CurrentProcedure is ProcedureMap &&
                         ReferenceEquals(firstPlayerModel, flow.GetModel<ProfileModel>()) && firstPlayerModel.Initialized,
@@ -465,7 +465,7 @@ public sealed partial class FrontendSmokeScenario
             await ClickAsync(start, "m_Start");
             saves = await WaitForSaveAsync();
             var slots = GF.Fsm.GetModel<SaveModel>().Slots;
-            Check(slots[1].State == SaveSlotState.Occupied && slots[1].UnitId == secondId && slots[0].State == SaveSlotState.Empty, "存档摘要或框架空槽位置不正确");
+            Check(slots[1].State == ESaveSlotState.Occupied && slots[1].UnitId == secondId && slots[0].State == ESaveSlotState.Empty, "存档摘要或框架空槽位置不正确");
             await MoveMouseAsync(saves.GetNode<BaseButton>("Slots/m_Slot2").GetGlobalRect().GetCenter());
             await CaptureAsync("save_slots_occupied");
             await ClickAsync(saves, "Slots/m_Slot6");
@@ -496,10 +496,10 @@ public sealed partial class FrontendSmokeScenario
                 ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) &&
                 !ReferenceEquals(firstEquipmentSystem, flow.GetSystem<EquipmentSystem>()), "重新读档复用了已结束的作用域");
             Check(flow.GetModel<ProfileModel>().Soul.Value == savedSoul, "重新读档没有从快照重建运行时状态");
-            Check(flow.GetSystem<SkillSystem>().IsLearned(SkillId.RisingDragon) &&
-                flow.GetModel<SkillModel>().GetPassiveLevels(1)[PassiveId.Vitality] == 1,
+            Check(flow.GetSystem<SkillSystem>().IsLearned(ESkillId.RisingDragon) &&
+                flow.GetModel<SkillModel>().GetPassiveLevels(1)[EPassiveId.Vitality] == 1,
                 "地图购买的主动技能或被动等级没有从磁盘恢复");
-            GF.Fsm.GetModel<SaveModel>().ManualSave.Value = new(savedMapSerialId, SaveWritePhase.Succeeded);
+            GF.Fsm.GetModel<SaveModel>().ManualSave.Value = new(savedMapSerialId, ESaveWritePhase.Succeeded);
             await MoveMouseAsync(new Vector2(30, 30));
             Check(string.IsNullOrEmpty(map.GetNode<BaseButton>("m_Save").TooltipText), "保存按钮仍有多余悬停提示");
             Check(GF.Archive.CurrentCatalogue.UnitId == secondId && GF.Archive.CurrentData.Soul == savedSoul, "选择第二格读取成最新格或进度丢失");
@@ -518,7 +518,7 @@ public sealed partial class FrontendSmokeScenario
             var heroSystem = flow.GetSystem<HeroSystem>();
             Check(heroModel.Initialized && ReferenceEquals(heroModel, SmokeInspection.HeroAttributes(hero)),
                 "英雄 Entity 没有借用 Architecture 注册的同一运行属性");
-            Check(flow.GetSystem<SkillSystem>().IsAvailable(SkillId.RisingDragon) &&
+            Check(flow.GetSystem<SkillSystem>().IsAvailable(ESkillId.RisingDragon) &&
                 heroModel.MaxHp.Value > ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.MaxHp,
                 "地图学习的主动技能或被动属性未在进关后生效");
             Check(SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().Progress, heroSystem) == 1 &&
@@ -528,7 +528,7 @@ public sealed partial class FrontendSmokeScenario
             Check(ReferenceEquals(flow.GetArchitecture(), ((IBelongToArchitecture)level).GetArchitecture()),
                 "关卡没有借用流程持有的档案作用域");
             // 此处从已有规则入口准备HUD状态；真实攻击到命中事件的计数由英雄烟测覆盖。
-            await WaitUntilAsync(() => levelModel.SessionActive && levelModel.Outcome.Value == LevelOutcome.Running,
+            await WaitUntilAsync(() => levelModel.SessionActive && levelModel.Outcome.Value == ELevelOutcome.Running,
                 "关卡会话尚未进入运行态，无法验证连击HUD");
             levelSystem.RecordComboHit();
             levelSystem.RecordComboHit();
@@ -679,7 +679,7 @@ public sealed partial class FrontendSmokeScenario
             File.WriteAllText(broken + ".bak", "{ broken json");
             await ClickAsync(start, "m_Start");
             saves = await WaitForSaveAsync();
-            Check(saves.GetNode<BaseButton>("Slots/m_Slot6").Disabled && GF.Fsm.GetModel<SaveModel>().Slots[1].State == SaveSlotState.Occupied, "损坏格未禁用或影响其他存档");
+            Check(saves.GetNode<BaseButton>("Slots/m_Slot6").Disabled && GF.Fsm.GetModel<SaveModel>().Slots[1].State == ESaveSlotState.Occupied, "损坏格未禁用或影响其他存档");
             SmokeInspection.InvokeProcedureCallback("OnSaveSlotSelected", saves.SerialId, 6);
             for (int frame = 0; frame < 4; frame++)
             {
@@ -757,7 +757,7 @@ public sealed partial class FrontendSmokeScenario
         var confirmation = saves.GetNode<Control>("DeleteConfirmation");
         Check(confirmation.Visible && confirmation.GetNode<Label>("Panel/Message").Text.Contains("第 2 个存档"),
             "删除确认层没有显示当前格号");
-        Check(GF.Procedure.CurrentProcedure is ProcedureTitle && model.Slots[1].State == SaveSlotState.Occupied,
+        Check(GF.Procedure.CurrentProcedure is ProcedureTitle && model.Slots[1].State == ESaveSlotState.Occupied,
             "删除按钮透传给格子或在确认前删除");
         await CaptureAsync("save_delete_confirmation");
         await ClickAsync(saves, "DeleteConfirmation/Panel/Cancel");
@@ -765,10 +765,10 @@ public sealed partial class FrontendSmokeScenario
             "取消删除仍修改存档");
         await ClickAsync(saves, "Slots/m_Slot2/Delete");
         await ClickAsync(saves, "DeleteConfirmation/Panel/Confirm");
-        await WaitUntilAsync(() => model.Phase == SaveListState.Ready && model.Slots[1].State == SaveSlotState.Empty,
+        await WaitUntilAsync(() => model.Phase == ESaveListState.Ready && model.Slots[1].State == ESaveSlotState.Empty,
             "删除后存档目录未刷新为空格");
         Check(!File.Exists(path) && !File.Exists(path + ".bak") && !File.Exists(path + ".tmp") &&
-            model.Slots[2].UnitId == retainedId && model.Slots[2].State == SaveSlotState.Occupied,
+            model.Slots[2].UnitId == retainedId && model.Slots[2].State == ESaveSlotState.Occupied,
             "删除未清主备文件或影响其他格");
         await CaptureAsync("save_delete_completed");
         await ClickAsync(saves, "Slots/m_Slot2");
@@ -781,7 +781,7 @@ public sealed partial class FrontendSmokeScenario
         var start = await WaitForAsync<StartForm>();
         await ClickAsync(start, "m_Start");
         saves = await WaitForSaveAsync();
-        Check(model.Slots[1].State == SaveSlotState.Occupied && model.Slots[2].UnitId == retainedId &&
+        Check(model.Slots[1].State == ESaveSlotState.Occupied && model.Slots[2].UnitId == retainedId &&
             SmokeInspection.CallbackCount(saves, "SaveSlotDeleteRequested") == 1, "目录重读或删除订阅复用异常");
         await ClickAsync(saves, "Slots/m_Slot3/Delete");
         Check(saves.GetNode<Control>("DeleteConfirmation").Visible, "重开存档页没有显示删除确认层");
@@ -1055,7 +1055,7 @@ public sealed partial class FrontendSmokeScenario
     private async Task<SaveForm> WaitForSaveAsync()
     {
         var form = await WaitForAsync<SaveForm>();
-        await WaitUntilAsync(() => GF.Fsm.GetModel<SaveModel>().Phase == SaveListState.Ready, "存档目录读取超时");
+        await WaitUntilAsync(() => GF.Fsm.GetModel<SaveModel>().Phase == ESaveListState.Ready, "存档目录读取超时");
         return form;
     }
 
@@ -1281,8 +1281,8 @@ public sealed partial class FrontendSmokeScenario
         var skillSystem = flow.GetSystem<SkillSystem>();
         var profile = flow.GetModel<ProfileModel>();
         var skills = flow.GetModel<SkillModel>();
-        int activeCost = tables.TbSkillConfig.Get(SkillId.RisingDragon).LearnSoul;
-        int passiveCost = tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
+        int activeCost = tables.TbSkillConfig.Get(ESkillId.RisingDragon).LearnSoul;
+        int passiveCost = tables.TbPassiveConfig.Get(EPassiveId.Vitality).Levels[0].LearnSoul;
         flow.GetSystem<ProfileSystem>().AddSoul(activeCost + passiveCost);
         int initialSoul = profile.Soul.Value;
         Check(flow.GetModel<HeroModel>() == null && flow.GetModel<LevelModel>() == null &&
@@ -1321,14 +1321,14 @@ public sealed partial class FrontendSmokeScenario
             "地图技能窗改变流程、暂停或创建了战斗模型");
         await CaptureAsync("map_skill_active");
         await ClickAsync(form, "Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon");
-        Check(skillSystem.IsLearned(SkillId.RisingDragon) && profile.Soul.Value == initialSoul - activeCost &&
+        Check(skillSystem.IsLearned(ESkillId.RisingDragon) && profile.Soul.Value == initialSoul - activeCost &&
             form.GetNode<BaseButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon").Disabled &&
             form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.Soul.Value.ToString(),
             "地图主动购买未同步学习、扣费、图标或余额");
 
         await ClickAsync(form, "Content/Footer/m_Passive");
         await ClickAsync(form, "Content/m_PassivePage/m_PassiveRows/Passive1/Upgrade");
-        Check(skills.GetPassiveLevels(1)[PassiveId.Vitality] == 1 &&
+        Check(skills.GetPassiveLevels(1)[EPassiveId.Vitality] == 1 &&
             profile.Soul.Value == initialSoul - activeCost - passiveCost &&
             form.GetNode<Label>("Content/m_PassivePage/m_PassiveRows/Passive1/Level").Text == "1" &&
             form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.Soul.Value.ToString(),
@@ -1367,7 +1367,7 @@ public sealed partial class FrontendSmokeScenario
         Check(!animation.IsPlaying() && Mathf.IsEqualApprox(feedback.Modulate.A, 1f) && feedback.Position.IsEqualApprox(new Vector2(-250, -61)), "提示淡出后未恢复初始位置和透明度");
 
         // 在现有结果事件边界模拟写入失败，不破坏文件，也不增加生产测试接口。
-        GF.Fsm.GetModel<SaveModel>().ManualSave.Value = new(map.SerialId, SaveWritePhase.Failed);
+        GF.Fsm.GetModel<SaveModel>().ManualSave.Value = new(map.SerialId, ESaveWritePhase.Failed);
         await WaitUntilAsync(() => map.GetNode<BaseButton>("m_Save").SelfModulate == new Color(1f, .55f, .55f), "失败结果未更新按钮状态");
         Check(!feedback.Visible && !map.GetNode<BaseButton>("m_Save").Disabled, "写入失败误报成功或不能重试");
         await CaptureAsync("map_save_failure");

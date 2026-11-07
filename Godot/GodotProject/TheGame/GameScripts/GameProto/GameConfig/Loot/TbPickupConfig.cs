@@ -17,13 +17,13 @@ namespace GameConfig.Loot
 /// </summary>
 public partial class TbPickupConfig
 {
-    private readonly System.Collections.Generic.Dictionary<Loot.PickupId, Loot.PickupConfig> _dataMap;
+    private readonly System.Collections.Generic.Dictionary<Loot.EPickupId, Loot.PickupConfig> _dataMap;
     private readonly System.Collections.Generic.List<Loot.PickupConfig> _dataList;
     
     public TbPickupConfig(ByteBuf _buf)
     {
         int n = _buf.ReadSize();
-        _dataMap = new System.Collections.Generic.Dictionary<Loot.PickupId, Loot.PickupConfig>(n);
+        _dataMap = new System.Collections.Generic.Dictionary<Loot.EPickupId, Loot.PickupConfig>(n);
         _dataList = new System.Collections.Generic.List<Loot.PickupConfig>(n);
         for(int i = n ; i > 0 ; --i)
         {
@@ -34,12 +34,12 @@ public partial class TbPickupConfig
         }
     }
 
-    public System.Collections.Generic.IReadOnlyDictionary<Loot.PickupId, Loot.PickupConfig> DataMap => _dataMap;
+    public System.Collections.Generic.IReadOnlyDictionary<Loot.EPickupId, Loot.PickupConfig> DataMap => _dataMap;
     public System.Collections.Generic.IReadOnlyList<Loot.PickupConfig> DataList => _dataList;
 
-    public Loot.PickupConfig GetOrDefault(Loot.PickupId key) => _dataMap.TryGetValue(key, out var v) ? v : default;
-    public Loot.PickupConfig Get(Loot.PickupId key) => _dataMap[key];
-    public Loot.PickupConfig this[Loot.PickupId key] => _dataMap[key];
+    public Loot.PickupConfig GetOrDefault(Loot.EPickupId key) => _dataMap.TryGetValue(key, out var v) ? v : default;
+    public Loot.PickupConfig Get(Loot.EPickupId key) => _dataMap[key];
+    public Loot.PickupConfig this[Loot.EPickupId key] => _dataMap[key];
 
     public void ResolveRef(Tables tables)
     {

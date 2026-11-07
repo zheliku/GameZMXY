@@ -53,7 +53,7 @@ public sealed partial class UiSmokeScenario
                 system.Damage(20);
                 system.TrySpendMp(10);
                 model.RecoveryProgress = 0;
-                system.SetSource(source, [AttributeModifier.Flat(AttributeType.HpRegen, 2), AttributeModifier.Flat(AttributeType.MpRegen, 3)]);
+                system.SetSource(source, [AttributeModifier.Flat(EAttributeType.HpRegen, 2), AttributeModifier.Flat(EAttributeType.MpRegen, 3)]);
                 int hp = hero.Hp;
                 int mp = model.Mp.Value;
                 await WaitUntilAsync(() => hero.Hp > hp, "装备回血没有在真实物理帧结算");
@@ -64,13 +64,13 @@ public sealed partial class UiSmokeScenario
                 await WaitFramesAsync(30);
                 Check(hero.Hp == hp + 2 && model.Mp.Value == mp + 3 && model.RecoveryProgress == progress, "暂停仍推进自然恢复");
                 GF.Base.ResumeGame();
-                system.SetSource(source, [AttributeModifier.Flat(AttributeType.HpRegen, -2), AttributeModifier.Flat(AttributeType.MpRegen, -3)]);
+                system.SetSource(source, [AttributeModifier.Flat(EAttributeType.HpRegen, -2), AttributeModifier.Flat(EAttributeType.MpRegen, -3)]);
                 await WaitUntilAsync(() => hero.Hp < hp + 2, "负回血没有实际消耗生命");
                 Check(hero.Hp == hp && model.Mp.Value == mp, "负恢复钳制或结算不正确");
                 Check(damageNotifications == 0 && deaths == 0, "自然恢复错误地产生受击数字或死亡");
                 GD.Print($"SMOKE-RECOVERY {ticks}Hz PASS: positive/negative resources, shared source cadence and pause");
             }
-            system.SetSource(source, [AttributeModifier.Flat(AttributeType.HpRegen, -100000)]);
+            system.SetSource(source, [AttributeModifier.Flat(EAttributeType.HpRegen, -100000)]);
             await WaitUntilAsync(() => hero.Dead, "负回血耗尽没有进入正式死亡");
             await WaitFramesAsync(3);
             Check(deaths == 1 && damageNotifications == 0 && model.IsDepleted, "生命流失死亡没有唯一通知或生成受击数字");

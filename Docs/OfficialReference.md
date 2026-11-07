@@ -186,6 +186,26 @@ Monster20灯笼鱼为1400生命、30防御、65经验、每球30灵魂，15%优�
 
 计时由 `HeroSystem.AdvanceWs(delta)` 累积点数，满一点再扣；配置与运行时均不依赖 24/60/120 fps。原文件每 24 帧自然减一点、每 4 帧额外减一点，只作为换算依据。
 
+## 双人扩展的源码依据（2026-11-07）
+
+本次只读复核同一主程序导出的脚本，位置为`.godot/validation/remaining_levels/main_scripts/scripts/`。玩法设计及实施顺序只维护[双人扩展实施计划](CoopImplementationPlan.md)，不以旧工程Godot脚本代替本版Flash调用证据。
+
+| 规则 | 已核实的原始调用 |
+| --- | --- |
+| 一槽含双方/共享进度 | `storage/MemoryClass.getStorage/setStorage`读取/保存player1_obj与player2_obj，curBigLevel/curBigStage/cangetDHQF在同一份槽数据；`Config/User`分别持有两玩家资产。项目按用户要求扩展当前六槽格式，仍是一格保存整队 |
+| 不可重复选角 | `export/SelectRole.onClick`先移除当前按钮CLICK/ROLL监听，之后才增加curSelected；第二人只能选剩余角色。不能仅看newRole可以传任意role编号便断言原版允许重复。用户进一步明确未来新增角色仍适用“不重复”，不是固定悟空/唐僧二选一 |
+| 第二套键位 | `my/KeyBoardControl`：P1方向A/D，动作S/J/K/W，技能索引L/U/I/O/Space；P2方向Left/Right，动作Down/Numpad1/Numpad2/Up，技能索引Numpad3/4/5/6/0。UI与游戏组合按同一语义映射，不按数字顺序重新排列技能 |
+| 经验与球归属 | `base/BaseMonster`在身体/子弹有效攻击时更新curAttackTarget，Role2Shadow归其source；致死分支向该英雄setExper(exp)，dropAura构造所有球时传入该英雄；`BaseAura.sourceHero`追踪同一接收者，`RoleInfo.addWarriors`只处理自己的hero。不能由此推导“每人都得整份经验”或“所有飞行球共享抢拾” |
+| 地面物品 | `my/FallEquipObj.step/colwho`遍历存活玩家，背包有空位的实际接触者领取，isfirst阻止第二次领取；满包者不会消耗掉落。项目沿用已定75格容量，不回退到源码25格 |
+| 赠送 | `export/pack/PackThings.clickHandler`单人禁用bgy；`gyClick`把当前MyEquipObj加入另一玩家zblist后从发出者移除。项目用既有EquipmentData/InstanceId转移，保留自己的容量和唯一归属检查，不复制旧事件/交易代码 |
+| 全灭 | `GMain.heroDead`生成墓碑/销毁表现；`my/MainGame.gameOver`在双人两英雄均isDead才GameOver。项目仍由LevelViewController/LevelSystem协调原生墓碑演出与唯一结局 |
+| 甘露本体 | `export/hero/Role2.__cureRole`：自己存活则自疗，合作队友与施法点横纵各≤200且存活才恢复；MODE3不治疗对手 |
+| 甘露分身 | `export/hero/Role2Shadow.cureRole`按分身位置横≤200、纵≤160遍历玩家；数值仍取source唐僧的getRealPower。项目合作按同范围排除死者，不能只检查分身距本体后只治疗本体 |
+| 龙王等级 | `export/monster/Monster26`构造取hero1/hero2等级的最小值，minLevel>20进入高级档。项目现有单人阈值保持，双人扩展为所有参战者中的最低等级 |
+| 共享视口 | `my/ViewControllor.__enterFrame`同时比较role1/role2屏幕坐标和速度再前后卷屏；不是无条件跟P1。项目保留中央死区和Camera2D/屏幕墙实现，不复制原版平移整场景的架构 |
+
+进关人数切换、双方同时触碰的裁定顺序、现有死亡未领取球规则如何按玩家延伸、相机中央窗口适配及单模态请求仲裁属于项目设计建议，不能写成逐项已核实的官方规则。竞技场MODE3与本地合作MODE2分开，当前扩展计划先完成合作。
+
 ## 球的颜色与用途
 
 颜色以原始矢量帧为准，不能按 ActionScript 类名猜。`auraGreen` 实际呈红色，`auraWhile` 呈黄色，`auraRed` 呈紫色；先前按类名写成“绿色回血”已纠正。

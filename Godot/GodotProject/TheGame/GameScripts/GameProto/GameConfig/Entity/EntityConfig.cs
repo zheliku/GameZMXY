@@ -16,7 +16,7 @@ public sealed partial class EntityConfig : Luban.BeanBase
 {
     public EntityConfig(ByteBuf _buf) 
     {
-        EntityId = (Entity.EntityId)_buf.ReadInt();
+        EntityId = (Entity.EEntityId)_buf.ReadInt();
         AssetPath = _buf.ReadString();
         EntityGroupName = _buf.ReadString();
         Priority = _buf.ReadInt();
@@ -30,7 +30,7 @@ public sealed partial class EntityConfig : Luban.BeanBase
     /// <summary>
     /// 唯一实体主键；英雄1-9999，小怪10000-99999，Boss100000-199999
     /// </summary>
-    public readonly Entity.EntityId EntityId;
+    public readonly Entity.EEntityId EntityId;
     /// <summary>
     /// 路径
     /// </summary>

@@ -45,7 +45,7 @@ namespace GameLogic.Level
         {
             get
             {
-                return LevelModel is { SessionActive: true } && LevelModel.Outcome.Value == LevelOutcome.Running;
+                return LevelModel is { SessionActive: true } && LevelModel.Outcome.Value == ELevelOutcome.Running;
             }
         }
 
@@ -105,7 +105,7 @@ namespace GameLogic.Level
             LevelModel.SessionActive = true;
             LevelModel.TravelAvailable.Value = false;
             LevelModel.Sequence.Begin();
-            LevelModel.Outcome.Value = LevelOutcome.Running;
+            LevelModel.Outcome.Value = ELevelOutcome.Running;
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace GameLogic.Level
         /// <returns>是否至少升了一级。</returns>
         public bool RecordDefeat(int experienceReward)
         {
-            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running)
+            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != ELevelOutcome.Running)
             {
                 return false;
             }
@@ -133,7 +133,7 @@ namespace GameLogic.Level
         /// <returns>是否完成领取。</returns>
         public bool TryCollectEquipment(EquipmentData data)
         {
-            return LevelModel.SessionActive && LevelModel.Outcome.Value == LevelOutcome.Running
+            return LevelModel.SessionActive && LevelModel.Outcome.Value == ELevelOutcome.Running
                                 && this.GetSystem<ProfileSystem>().TryCollectEquipment(data);
         }
 
@@ -142,9 +142,9 @@ namespace GameLogic.Level
         /// </summary>
         /// <param name="id">恢复品定义。</param>
         /// <returns>本次已消费恢复品时为真，场景据此回收节点并播放反馈。</returns>
-        public bool TryCollectPickup(PickupId id)
+        public bool TryCollectPickup(EPickupId id)
         {
-            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
+            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != ELevelOutcome.Running ||
                 this.GetModel<HeroModel>().IsDepleted)
             {
                 return false;
@@ -159,10 +159,10 @@ namespace GameLogic.Level
             var hero = this.GetSystem<HeroSystem>();
             switch (pickup.Effect)
             {
-                case PickupEffect.Health:
+                case EPickupEffect.Health:
                     hero.Heal(pickup.RestoreAmount);
                     break;
-                case PickupEffect.Mana:
+                case EPickupEffect.Mana:
                     hero.RestoreMp(pickup.RestoreAmount);
                     break;
                 default:
@@ -178,7 +178,7 @@ namespace GameLogic.Level
         /// <param name="reward">球体在生成时确定的收益，接触时发放并钳制上限。</param>
         public void CollectLoot(LootReward reward)
         {
-            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
+            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != ELevelOutcome.Running ||
                 this.GetModel<HeroModel>().IsDepleted)
             {
                 return;
@@ -186,16 +186,16 @@ namespace GameLogic.Level
 
             switch (reward.Kind)
             {
-                case LootKind.Soul:
+                case ELootKind.Soul:
                     this.GetSystem<ProfileSystem>().AddSoul(reward.Amount);
                     break;
-                case LootKind.Musou:
+                case ELootKind.Musou:
                     this.GetSystem<HeroSystem>().AddWsFromPickup(reward.Amount);
                     break;
-                case LootKind.Mana:
+                case ELootKind.Mana:
                     this.GetSystem<HeroSystem>().RestoreMp(reward.Amount);
                     break;
-                case LootKind.Health:
+                case ELootKind.Health:
                     this.GetSystem<HeroSystem>().Heal(reward.Amount);
                     break;
                 default:
@@ -210,7 +210,7 @@ namespace GameLogic.Level
         public void AdvanceTime(double delta)
         {
             if (double.IsFinite(delta) && delta > 0 && LevelModel.SessionActive &&
-                LevelModel.Outcome.Value == LevelOutcome.Running)
+                LevelModel.Outcome.Value == ELevelOutcome.Running)
             {
                 LevelModel.ElapsedSeconds += delta;
                 m_ComboCheckElapsed += delta;
@@ -257,7 +257,7 @@ namespace GameLogic.Level
         public void ClearBattle()
         {
             LevelModel.Sequence.ClearBattle();
-            LevelModel.TravelAvailable.Value = LevelModel.Sequence.Phase == LevelStagePhase.Travelling;
+            LevelModel.TravelAvailable.Value = LevelModel.Sequence.Phase == ELevelStagePhase.Travelling;
         }
 
         /// <summary>
@@ -269,8 +269,8 @@ namespace GameLogic.Level
         {
             var tables = this.GetModel<ConfigurationModel>().Tables;
             var config = tables.TbLevelConfig.Get(LevelModel.LevelId);
-            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
-                LevelModel.Sequence.Phase != LevelStagePhase.Fighting ||
+            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != ELevelOutcome.Running ||
+                LevelModel.Sequence.Phase != ELevelStagePhase.Fighting ||
                 LevelModel.Sequence.Current.StageOrder != config.Stages.Count ||
                 LevelModel.LevelId != BatCaveRules.LevelId ||
                 BatCaveRules.StatueSpawnPointId != spawnPointId)
@@ -288,19 +288,19 @@ namespace GameLogic.Level
         /// </summary>
         /// <param name="outcome">通关或失败。</param>
         /// <param name="healthPercent">结局时生命百分比。</param>
-        public void Complete(LevelOutcome outcome, int healthPercent)
+        public void Complete(ELevelOutcome outcome, int healthPercent)
         {
-            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running)
+            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != ELevelOutcome.Running)
             {
                 return;
             }
 
-            if (outcome != LevelOutcome.Cleared && outcome != LevelOutcome.Defeated)
+            if (outcome != ELevelOutcome.Cleared && outcome != ELevelOutcome.Defeated)
             {
                 throw new ArgumentOutOfRangeException(nameof(outcome));
             }
 
-            if (outcome == LevelOutcome.Cleared)
+            if (outcome == ELevelOutcome.Cleared)
             {
                 LevelModel.Sequence.Complete();
                 this.GetSystem<ProfileSystem>().RecordLevelClear(LevelModel.LevelId);
@@ -334,7 +334,7 @@ namespace GameLogic.Level
             ResetCombo();
             if (rollback && abandoned)
             {
-                LevelModel.Outcome.Value = LevelOutcome.Abandoned;
+                LevelModel.Outcome.Value = ELevelOutcome.Abandoned;
             }
         }
 
@@ -345,7 +345,7 @@ namespace GameLogic.Level
         /// <returns>本次是否接受转场；重复、死亡或错误入口拒绝。</returns>
         public bool TransferToDragonPalace(int levelId)
         {
-            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
+            if (!LevelModel.SessionActive || LevelModel.Outcome.Value != ELevelOutcome.Running ||
                 this.GetModel<HeroModel>().IsDepleted || levelId != DragonPalaceRules.LevelId ||
                 DragonPalaceRules.EntranceLevelId != LevelModel.LevelId)
             {
@@ -357,7 +357,7 @@ namespace GameLogic.Level
             LevelModel.TravelAvailable.Value = false;
             LevelModel.Sequence.Stop();
             ResetCombo();
-            LevelModel.Outcome.Value = LevelOutcome.Transferred;
+            LevelModel.Outcome.Value = ELevelOutcome.Transferred;
             return true;
         }
 

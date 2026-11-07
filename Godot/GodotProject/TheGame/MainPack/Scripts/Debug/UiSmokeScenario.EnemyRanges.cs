@@ -30,7 +30,7 @@ public sealed partial class UiSmokeScenario
             foreach (int hz in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = hz;
-                foreach (EntityId id in new[] { EntityId.Bat, EntityId.FlyingDemon, EntityId.SharkSpawn })
+                foreach (EEntityId id in new[] { EEntityId.Bat, EEntityId.FlyingDemon, EEntityId.SharkSpawn })
                 {
                     hero.GlobalPosition = new Vector2(100000, 100000);
                     m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(600, 200)));
@@ -54,7 +54,7 @@ public sealed partial class UiSmokeScenario
                 }
 
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DragonKing, new EnemySpawn(new Vector2(600, 100)));
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.DragonKing, new EnemySpawn(new Vector2(600, 100)));
                 await WaitUntilAsync(() => m_Monster.OnFloor, "龙王范围夹具未落地");
                 m_Monster.SetPhysicsProcess(false);
                 hero.GlobalPosition = m_Monster.GlobalPosition + new Vector2(80, -700);
@@ -67,7 +67,7 @@ public sealed partial class UiSmokeScenario
                 await WaitFramesAsync(2);
 
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BullDemonKing,
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.BullDemonKing,
                     new EnemySpawn(new Vector2(1350, 100), ContinueEncounterAsync: (_, _, _) => Task.CompletedTask));
                 var bull = m_Monster;
                 await WaitUntilAsync(() => bull.OnFloor, "牛魔王范围夹具未落地");

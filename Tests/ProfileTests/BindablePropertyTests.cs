@@ -187,7 +187,7 @@ namespace GameLogic.Profile.Tests
                 Assert.Same(model.Slots, state.Slots);
                 Assert.Equal(model.ErrorMessage, state.ErrorMessage);
             });
-            model.Directory.Value = new(SaveListState.Failed, Array.Empty<GameLogic.Save.Slots.SaveSlotInfo>(), "failure");
+            model.Directory.Value = new(ESaveListState.Failed, Array.Empty<GameLogic.Save.Slots.SaveSlotInfo>(), "failure");
             Assert.Equal(1, calls);
         }
 
@@ -209,7 +209,7 @@ namespace GameLogic.Profile.Tests
                 Assert.Null(scope.Level.EntrySnapshot);
                 Assert.False(scope.Level.TravelAvailable.Value);
             });
-            system.Complete(LevelOutcome.Defeated, 100);
+            system.Complete(ELevelOutcome.Defeated, 100);
             Assert.Equal(1, calls);
         }
     }

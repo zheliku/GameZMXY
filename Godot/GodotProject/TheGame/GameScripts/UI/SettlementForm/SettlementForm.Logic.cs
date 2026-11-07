@@ -115,12 +115,12 @@ namespace GameLogic.UI
         {
             ReleaseResultAndPause();
             m_Result = (userData as SettlementFormData)?.Result;
-            if (m_Result == null || m_Result.Outcome is not (LevelOutcome.Cleared or LevelOutcome.Defeated))
+            if (m_Result == null || m_Result.Outcome is not (ELevelOutcome.Cleared or ELevelOutcome.Defeated))
             {
                 throw new ArgumentException("结算需要成功或失败的成绩。", nameof(userData));
             }
 
-            bool success = m_Result.Outcome == LevelOutcome.Cleared;
+            bool success = m_Result.Outcome == ELevelOutcome.Cleared;
             m_OutcomeArt.Texture = success ? m_SuccessTexture : m_FailureTexture;
             m_ReturnMap.Position = new Vector2(success ? 285 : 305, 405);
             m_Retry.Visible = !success;
@@ -198,7 +198,7 @@ namespace GameLogic.UI
         private void DisableNavigation()
         {
             m_ReturnMap.Disabled = m_Retry.Disabled = true;
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
         }
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace GameLogic.UI
         /// </summary>
         private void OnRetryClicked()
         {
-            if (m_Result?.Outcome != LevelOutcome.Defeated || m_Retry.Disabled)
+            if (m_Result?.Outcome != ELevelOutcome.Defeated || m_Retry.Disabled)
             {
                 return;
             }

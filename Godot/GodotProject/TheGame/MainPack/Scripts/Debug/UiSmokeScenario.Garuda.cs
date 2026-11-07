@@ -44,7 +44,7 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         var system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("GarudaAiSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
@@ -52,7 +52,7 @@ public sealed partial class UiSmokeScenario
             {
                 Engine.PhysicsTicksPerSecond = ticks;
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.PengDemonKing,
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.PengDemonKing,
                     new EnemySpawn(new Vector2(580, 100)));
                 var peng = (PengDemonKingEntity)m_Monster;
                 var agent = (IEnemyAiAgent)peng;
@@ -102,7 +102,7 @@ public sealed partial class UiSmokeScenario
                 ReleaseTestEntity(peng);
                 m_Monster = null;
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.FlyingDemon,
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.FlyingDemon,
                     new EnemySpawn(new Vector2(580, 200)));
                 var flyer = m_Monster;
                 var flyerAgent = (IEnemyAiAgent)flyer;
@@ -123,7 +123,7 @@ public sealed partial class UiSmokeScenario
                     Check(retreat - flyer.AiData.ElapsedSeconds > 2.8 && retreat - flyer.AiData.ElapsedSeconds <= 3,
                         "飞行魔退避没有从出招时开始计三秒");
                     await WaitUntilAsync(() => flyer.AttackSegment < 0, "飞行魔自主攻击未完成");
-                    var data = AttackData.Create(0, default, 1, DamageKind.Real, new Vector2(24, -24), 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
+                    var data = AttackData.Create(0, default, 1, EDamageKind.Real, new Vector2(24, -24), 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(hero.Id, GameConfig.Entity.EEntityId.None, 0, 0));
                     try
                     {
                         flyer.ReceiveHit(data);
@@ -177,7 +177,7 @@ public sealed partial class UiSmokeScenario
     /// <param name="label">用于区分关卡证据的官方标签。</param>
     /// <returns>场景与磁盘重读完成的任务。</returns>
     private async Task CheckEquipmentFlowAsync(AbstractHeroEntity hero, ProcedureOwner flow, LevelViewController level,
-        BattleForm form, int levelId, EquipmentId[] equipmentIds, string label)
+        BattleForm form, int levelId, EEquipmentId[] equipmentIds, string label)
     {
         Check(SmokeInspection.ReadField<int>(level, "m_LevelId") == levelId, "流程夹具进入错误关卡");
         await CheckGroundItemsAsync(flow, hero, level);
@@ -199,7 +199,7 @@ public sealed partial class UiSmokeScenario
         Check(equipmentDatas.All(data => flow.GetModel<ProfileModel>().EquipmentDatas.Any(value => value.InstanceId == data.InstanceId)),
             "穿卸界面恢复后丢失真实拾取的新装备");
         KillHero(hero);
-        await WaitUntilAsync(() => SmokeInspection.Model(level).Outcome.Value == LevelOutcome.Defeated,
+        await WaitUntilAsync(() => SmokeInspection.Model(level).Outcome.Value == ELevelOutcome.Defeated,
             "第六关墓碑结束后未提交失败", 15000);
         Check(await SmokeInspection.GetLevelSystem(level).CheckpointWrite, "第六关失败检查点写入失败");
         var saved = await ReadDiskAsync();
@@ -226,20 +226,20 @@ public sealed partial class UiSmokeScenario
     {
         var system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SmokeGaruda", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                foreach (var (id, count) in new[] { (EntityId.FlyingDemon, 1), (EntityId.PengDemonKing, 4) })
+                foreach (var (id, count) in new[] { (EEntityId.FlyingDemon, 1), (EEntityId.PengDemonKing, 4) })
                 {
                     hero.GlobalPosition = new Vector2(100000, 100000);
                     m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
                     var actor = m_Monster;
                     SmokeInspection.FreezeAi(actor);
-                    if (id == EntityId.PengDemonKing)
+                    if (id == EEntityId.PengDemonKing)
                     {
                         await WaitUntilAsync(() => actor.OnFloor, "彭魔王夹具未落地");
                     }
@@ -298,7 +298,7 @@ public sealed partial class UiSmokeScenario
                                 await WaitFramesAsync(1);
                             }
                             Check(hero.Hp < hp, $"{id}/{index + 1}/{direction}/{ticks} 未造成真实伤害");
-                            if (id == EntityId.PengDemonKing && index is 0 or 2)
+                            if (id == EEntityId.PengDemonKing && index is 0 or 2)
                             {
                                 Check(sawFire && hitDuringFade, "火焰未生成，或错误地将淡入期改成无伤害预警");
                             }
@@ -375,7 +375,7 @@ public sealed partial class UiSmokeScenario
     /// <param name="attackerId">英雄实体编号。</param>
     private static void ApplyGarudaTestHit(AbstractEnemyEntity actor, int attackerId)
     {
-        var data = AttackData.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero, 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(attackerId, GameConfig.Entity.EntityId.None, 0, 0));
+        var data = AttackData.Create(0, default, 100000f, EDamageKind.Real, Vector2.Zero, 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(attackerId, GameConfig.Entity.EEntityId.None, 0, 0));
         try
         {
             actor.ReceiveHit(data);

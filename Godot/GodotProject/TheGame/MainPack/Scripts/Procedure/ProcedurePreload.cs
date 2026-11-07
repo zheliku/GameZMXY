@@ -71,7 +71,7 @@ public class ProcedurePreload : ProcedureBase
         // 先建立应用级提示监听，再允许标题流程新建档案；切页不会关闭这张非交互窗口。
         try
         {
-            var notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(UIFormId.SaveNoticeForm);
+            var notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(EUIFormId.SaveNoticeForm);
             if (entrySerial != m_EntrySerial)
             {
                 GF.UI.CloseUIForm(notice.SerialId);

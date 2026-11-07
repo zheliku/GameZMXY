@@ -38,7 +38,7 @@ public sealed partial class UiSmokeScenario
         var status = flow.GetSystem<HeroStatusSystem>();
         var snapshot = flow.GetUtility<SaveDataUtility>().Capture(flow.GetModel<ProfileModel>(), flow.GetModel<SkillModel>());
         var source = new AttributeSourceId("DragonRules", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
@@ -54,7 +54,7 @@ public sealed partial class UiSmokeScenario
                     {
                         hero.SetPhysicsProcess(false);
                         hero.GlobalPosition = new Vector2(100000, 100000);
-                        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DragonKing,
+                        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.DragonKing,
                             new EnemySpawn(new Vector2(580, 100)));
                         var actor = m_Monster;
                         var ai = SmokeInspection.ReadField<IFsm<IEnemyAiAgent>>(actor, "m_AiFsm").CurrentState;
@@ -103,9 +103,9 @@ public sealed partial class UiSmokeScenario
                         double frozenAt = hero.ActionData.Time;
                         GF.Base.PauseGame();
                         await WaitFramesAsync(3);
-                        double remaining = flow.GetModel<HeroModel>().GetStatusEffect(HeroModel.StatusEffectKind.Freeze).RemainingSeconds;
+                        double remaining = flow.GetModel<HeroModel>().GetStatusEffect(HeroModel.EStatusEffectKind.Freeze).RemainingSeconds;
                         await WaitFramesAsync(10);
-                        Check(flow.GetModel<HeroModel>().GetStatusEffect(HeroModel.StatusEffectKind.Freeze).RemainingSeconds == remaining,
+                        Check(flow.GetModel<HeroModel>().GetStatusEffect(HeroModel.EStatusEffectKind.Freeze).RemainingSeconds == remaining,
                             "暂停仍推进冻结时间");
                         GF.Base.ResumeGame();
                         await WaitUntilAsync(() => !status.IsFrozen, "冻结未按官方秒数结束", 7000);

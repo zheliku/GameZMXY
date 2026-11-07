@@ -18,7 +18,7 @@ namespace GameLogic.Enemies
         {
             if (target is AbstractHeroEntity { CanReceiveStatusEffect: true })
             {
-                int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2);
+                int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EEntityId.LionCamelKing, 3, 2);
                 this.GetSystem<HeroStatusSystem>().ApplyPoison(this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId));
             }
         }

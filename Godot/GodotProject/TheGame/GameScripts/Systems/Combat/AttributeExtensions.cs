@@ -19,26 +19,26 @@ namespace GameLogic.Battle.Attributes
             /// </summary>
             /// <param name = "attribute">属性种类。</param>
             /// <returns>配置值；概率使用 0..1。</returns>
-            public float Get(AttributeType attribute)
+            public float Get(EAttributeType attribute)
             {
                 return attribute switch
                 {
-                    AttributeType.MaxHp => attributes.MaxHp,
-                    AttributeType.MaxMp => attributes.MaxMp,
-                    AttributeType.Power => attributes.Power,
-                    AttributeType.Def => attributes.Def,
-                    AttributeType.Mdef => attributes.Mdef,
-                    AttributeType.Crit => attributes.Crit,
-                    AttributeType.Miss => attributes.Miss,
-                    AttributeType.Lucky => attributes.Lucky,
-                    AttributeType.Toughness => attributes.Toughness,
-                    AttributeType.Htarget => attributes.Htarget,
-                    AttributeType.CritReduce => attributes.CritReduce,
-                    AttributeType.Ar => attributes.Ar,
-                    AttributeType.Sp => attributes.Sp,
-                    AttributeType.Vampirism => attributes.Vampirism,
-                    AttributeType.HpRegen => attributes.HpRegen,
-                    AttributeType.MpRegen => attributes.MpRegen,
+                    EAttributeType.MaxHp => attributes.MaxHp,
+                    EAttributeType.MaxMp => attributes.MaxMp,
+                    EAttributeType.Power => attributes.Power,
+                    EAttributeType.Def => attributes.Def,
+                    EAttributeType.Mdef => attributes.Mdef,
+                    EAttributeType.Crit => attributes.Crit,
+                    EAttributeType.Miss => attributes.Miss,
+                    EAttributeType.Lucky => attributes.Lucky,
+                    EAttributeType.Toughness => attributes.Toughness,
+                    EAttributeType.Htarget => attributes.Htarget,
+                    EAttributeType.CritReduce => attributes.CritReduce,
+                    EAttributeType.Ar => attributes.Ar,
+                    EAttributeType.Sp => attributes.Sp,
+                    EAttributeType.Vampirism => attributes.Vampirism,
+                    EAttributeType.HpRegen => attributes.HpRegen,
+                    EAttributeType.MpRegen => attributes.MpRegen,
                     _ => throw new ArgumentOutOfRangeException(nameof(attribute))
                 };
             }
@@ -48,7 +48,7 @@ namespace GameLogic.Battle.Attributes
         /// 属性单位与整数、概率两类取值的共同约定。
         /// </summary>
         /// <param name = "attribute">统一属性种类。</param>
-        extension(AttributeType attribute)
+        extension(EAttributeType attribute)
         {
             /// <summary>
             /// 是否使用 0..1 的直接概率；命中与抗暴以相同单位抵消对手。
@@ -57,7 +57,7 @@ namespace GameLogic.Battle.Attributes
             {
                 get
                 {
-                    return attribute is AttributeType.Crit or AttributeType.Miss or AttributeType.Htarget or AttributeType.CritReduce;
+                    return attribute is EAttributeType.Crit or EAttributeType.Miss or EAttributeType.Htarget or EAttributeType.CritReduce;
                 }
             }
         }

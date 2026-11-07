@@ -9,18 +9,26 @@
 
 
 
-namespace GameConfig.Level
+namespace GameConfig.Loot
 { 
-    public enum StageActivation
+    public enum EPickupId
     {
         /// <summary>
-        /// 相机抵达阶段右界
+        /// 无恢复品
         /// </summary>
-        CameraArrived = 0,
+        None = 0,
         /// <summary>
-        /// 特殊区域激活
+        /// 小桃子
         /// </summary>
-        Trigger = 1,
+        SmallPeach = 1,
+        /// <summary>
+        /// 大桃子
+        /// </summary>
+        LargePeach = 2,
+        /// <summary>
+        /// 蓝瓶
+        /// </summary>
+        ManaBottle = 3,
     }
 
 } 

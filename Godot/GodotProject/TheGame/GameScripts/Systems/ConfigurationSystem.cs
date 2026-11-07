@@ -100,7 +100,7 @@ namespace GameLogic.Config
             foreach (var attributes in tables.TbHeroGrowthConfig.DataList.SelectMany(x => x.Levels).Select(x => x.BaseAttributes)
                          .Concat(tables.TbEnemyConfig.DataList.Select(x => x.BaseAttributes)))
             {
-                foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
+                foreach (EAttributeType attribute in Enum.GetValues<EAttributeType>())
                 {
                     if (attribute.IsProbability && (!float.IsFinite(attributes.Get(attribute)) || attributes.Get(attribute) is < 0 or > 1))
                     {
@@ -128,7 +128,7 @@ namespace GameLogic.Config
             }
 
             if (tables.TbLevelConfig.GetOrDefault(BatCaveRules.LevelId) is not { } batCave ||
-                        !batCave.Stages[^1].Recipes.Any(recipe => recipe.EnemyEntityId == EntityId.BatCaveStatue &&
+                        !batCave.Stages[^1].Recipes.Any(recipe => recipe.EnemyEntityId == EEntityId.BatCaveStatue &&
                             recipe.SpawnPointId == BatCaveRules.StatueSpawnPointId && recipe.Count == 1))
             {
                 errors.Add("蝙蝠洞专属配置：出口必须关联末阶段唯一的石像。");
@@ -191,7 +191,7 @@ namespace GameLogic.Config
             float chance = 0;
             foreach (var pickup in tables.TbPickupConfig.DataList)
             {
-                if (pickup.Id == PickupId.None || !Enum.IsDefined(pickup.Effect) || pickup.RestoreAmount <= 0 ||
+                if (pickup.Id == EPickupId.None || !Enum.IsDefined(pickup.Effect) || pickup.RestoreAmount <= 0 ||
                     !float.IsFinite(pickup.DropChance) || pickup.DropChance is < 0 or > 1)
                 {
                     errors.Add($"恢复品 {pickup.Id}：恢复量或概率非法。");
@@ -217,7 +217,7 @@ namespace GameLogic.Config
             foreach (var enemy in tables.TbEnemyConfig.DataList)
             {
                 if (!float.IsFinite(enemy.EquipmentDropChance) || enemy.EquipmentDropChance is < 0 or > 1 ||
-                    enemy.EquipmentDropPoolId != EquipmentDropPoolId.None &&
+                    enemy.EquipmentDropPoolId != EEquipmentDropPoolId.None &&
                     tables.TbEquipmentDropPoolConfig.GetOrDefault(enemy.EquipmentDropPoolId) == null)
                 {
                     errors.Add($"怪物 {enemy.EnemyId}：装备概率或基础装备池非法。");
@@ -248,14 +248,14 @@ namespace GameLogic.Config
 
             foreach (var item in tables.TbEquipmentConfig.DataList)
             {
-                if (item.Id == EquipmentId.None || !Enum.IsDefined(item.Owner) || !Enum.IsDefined(item.Slot) ||
+                if (item.Id == EEquipmentId.None || !Enum.IsDefined(item.Owner) || !Enum.IsDefined(item.Slot) ||
                     !Enum.IsDefined(item.Quality) || item.SellPrice < 0 || string.IsNullOrWhiteSpace(item.NameCn) ||
                     item.AttributeRanges.Count == 0)
                 {
                     errors.Add($"装备 {item.Id}：身份、角色、部位、品质或资源非法。");
                 }
 
-                HashSet<GameConfig.Attributes.AttributeType> attributes =
+                HashSet<GameConfig.Attributes.EAttributeType> attributes =
                                 new();
                 // 固定值可包含装备代价，概率仍须0..1；最终资源与攻防下限归属性汇总规则。
                 foreach (var roll in item.AttributeRanges)
@@ -275,7 +275,7 @@ namespace GameLogic.Config
             foreach (var pool in tables.TbEquipmentDropPoolConfig.DataList)
             {
                 long total = 0;
-                if (pool.Id == EquipmentDropPoolId.None || pool.Entries.Count == 0)
+                if (pool.Id == EEquipmentDropPoolId.None || pool.Entries.Count == 0)
                 {
                     errors.Add($"装备池 {pool.Id}：编号或条目非法。");
                 }
@@ -370,9 +370,9 @@ namespace GameLogic.Config
                     errors.Add($"攻击 {hit.Id}：威力、击退、总命中预算或重复间隔无效。");
                 }
             }
-            foreach (var hit in Enum.GetValues<SkillHitId>())
+            foreach (var hit in Enum.GetValues<ESkillHitId>())
             {
-                if (hit != SkillHitId.None && tables.TbAttackConfig.GetOrDefault((int)hit) == null)
+                if (hit != ESkillHitId.None && tables.TbAttackConfig.GetOrDefault((int)hit) == null)
                 {
                     errors.Add($"技能伤害 {hit}：统一攻击表缺少定义。");
                 }
@@ -387,7 +387,7 @@ namespace GameLogic.Config
         /// <param name="errors">启动校验汇总错误。</param>
         private void ValidateSkillCatalog(TbSkillConfig active, TbPassiveConfig passive, ICollection<string> errors)
         {
-            foreach (SkillHero hero in Enum.GetValues<SkillHero>())
+            foreach (ESkillHero hero in Enum.GetValues<ESkillHero>())
             {
                 var skills = active.DataList.Where(x => x.Hero == hero).OrderBy(x => x.Order).ToArray();
                 if (skills.Length != 5 || !skills.Select(x => x.Order).SequenceEqual(Enumerable.Range(1, 5)))
@@ -406,7 +406,7 @@ namespace GameLogic.Config
                 }
             }
 
-            foreach (PassiveId id in Enum.GetValues<PassiveId>())
+            foreach (EPassiveId id in Enum.GetValues<EPassiveId>())
             {
                 var definition = passive.GetOrDefault(id);
                 if (definition == null || !definition.Levels.Select(x => x.Level).SequenceEqual(Enumerable.Range(1, 5)))
@@ -415,7 +415,7 @@ namespace GameLogic.Config
                 }
             }
 
-            if (!passive.DataList.Select(definition => definition.PassiveId).SequenceEqual(Enum.GetValues<PassiveId>()))
+            if (!passive.DataList.Select(definition => definition.PassiveId).SequenceEqual(Enum.GetValues<EPassiveId>()))
             {
                 errors.Add("被动目录必须按官方编号顺序排列。");
             }
@@ -431,7 +431,7 @@ namespace GameLogic.Config
                 foreach (var level in definition.Levels)
                 {
                     if (level.LearnSoul < 0 || !float.IsFinite(level.Value) || level.Value < 0 ||
-                                    (definition.Effect == PassiveEffect.CriticalChance && level.Value > 1) ||
+                                    (definition.Effect == EPassiveEffect.CriticalChance && level.Value > 1) ||
                                     string.IsNullOrWhiteSpace(level.Description))
                     {
                         errors.Add($"被动 {definition.PassiveId}/{level.Level}：费用、效果或文字无效。");
@@ -458,7 +458,7 @@ namespace GameLogic.Config
         /// </summary>
         /// <param name="entityId">怪物实体类型。</param>
         /// <param name="create">从当前场景动画读取纯数据的工厂；模型不保留委托。</param>
-        public void EnsureEnemyBodyParams(EntityId entityId, Func<EnemyBodyParams> create)
+        public void EnsureEnemyBodyParams(EEntityId entityId, Func<EnemyBodyParams> create)
         {
             if (!this.GetModel<ConfigurationModel>().EnemyBodies.ContainsKey(entityId))
             {

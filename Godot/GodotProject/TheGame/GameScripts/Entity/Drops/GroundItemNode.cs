@@ -22,9 +22,9 @@ namespace GameLogic.Drops
         [Export] private CollisionShape2D m_Shape; // 场景预设的唯一矩形，落地与接触共用。
         [Export] private ItemAppearancesResource m_Appearances; // 背包与地面掉落共用的外观资源。
         [Export] private float m_Gravity = 980f; // 地面物品落下的表现重力，像素/秒²。
-        private PickupId m_PickupId; // 恢复品定义，与装备互斥。
+        private EPickupId m_PickupId; // 恢复品定义，与装备互斥。
         private EquipmentData m_EquipmentData; // 已抽取实际属性的地面装备。
-        private Func<AbstractHeroEntity, PickupId, EquipmentData, bool> m_Collect; // 接触者交给关卡校验并结算；满包继续留地。
+        private Func<AbstractHeroEntity, EPickupId, EquipmentData, bool> m_Collect; // 接触者交给关卡校验并结算；满包继续留地。
         private Action<GroundItemNode> m_Finished; // 关卡移除所有权并回池。
         private float m_Age; // 已存在的游戏秒数，暂停时不增加。
         private bool m_Collected; // 已成功入账，只完成淡出，不再检测接触或过期。
@@ -91,7 +91,7 @@ namespace GameLogic.Drops
         public void OnRelease()
         {
             SetPhysicsProcess(false);
-            m_PickupId = PickupId.None;
+            m_PickupId = EPickupId.None;
             m_EquipmentData = null;
             m_Collect = null;
             m_Finished = null;
@@ -111,10 +111,10 @@ namespace GameLogic.Drops
         /// <param name="finished">过期或领取动画结束后的回收回调。</param>
         /// <exception cref="ArgumentException">恢复品和装备未按互斥规则提供。</exception>
         /// <exception cref="InvalidOperationException">图标不存在、无法读取或完全透明。</exception>
-        public void Show(Vector2 position, PickupId pickupId, EquipmentData data,
-            Func<AbstractHeroEntity, PickupId, EquipmentData, bool> collect, Action<GroundItemNode> finished)
+        public void Show(Vector2 position, EPickupId pickupId, EquipmentData data,
+            Func<AbstractHeroEntity, EPickupId, EquipmentData, bool> collect, Action<GroundItemNode> finished)
         {
-            if ((pickupId == PickupId.None) == (data == null))
+            if ((pickupId == EPickupId.None) == (data == null))
             {
                 throw new ArgumentException("一次地面掉落必须且只能包含一种物品。");
             }
@@ -167,7 +167,7 @@ namespace GameLogic.Drops
 
             m_Collected = true;
             Velocity = Vector2.Zero;
-            m_PickupId = PickupId.None;
+            m_PickupId = EPickupId.None;
             m_EquipmentData = null;
             m_Collect = null;
             m_PickupAnimation.Play(m_PickupAnimationName);

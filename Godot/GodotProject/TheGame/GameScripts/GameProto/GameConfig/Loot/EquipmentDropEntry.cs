@@ -16,7 +16,7 @@ public sealed partial class EquipmentDropEntry : Luban.BeanBase
 {
     public EquipmentDropEntry(ByteBuf _buf) 
     {
-        EquipmentId = (Equipment.EquipmentId)_buf.ReadInt();
+        EquipmentId = (Equipment.EEquipmentId)_buf.ReadInt();
         Weight = _buf.ReadInt();
     }
 
@@ -28,7 +28,7 @@ public sealed partial class EquipmentDropEntry : Luban.BeanBase
     /// <summary>
     /// 装备编号
     /// </summary>
-    public readonly Equipment.EquipmentId EquipmentId;
+    public readonly Equipment.EEquipmentId EquipmentId;
     /// <summary>
     /// 权重；复现官方 round 索引端点半权重
     /// </summary>

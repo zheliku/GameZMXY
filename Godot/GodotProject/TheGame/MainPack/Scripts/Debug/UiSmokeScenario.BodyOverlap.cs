@@ -45,7 +45,7 @@ public sealed partial class UiSmokeScenario
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Gorilla,
                     new EnemySpawn(new Vector2(650, 150)));
                 SmokeInspection.FreezeAi(m_Monster);
                 m_Monster.SetPhysicsProcess(false);
@@ -56,10 +56,10 @@ public sealed partial class UiSmokeScenario
                 await WaitUntilAsync(() => hero.HitBox.GetOverlappingAreas().Contains(m_Monster.HurtBox),
                     "身体复用夹具未建立真实Area重叠");
                 int hp = m_Monster.Hp;
-                var attacker = new CombatantAttributes(CombatSide.Hero, 1, 10, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, hero.Id);
+                var attacker = new CombatantAttributes(ECombatSide.Hero, 1, 10, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, hero.Id);
                 // 保留物理引擎的旧候选，再模拟新招的形状或角色同帧移出。
                 hit.GlobalPosition += new Vector2(700, 0);
-                setAttack.Invoke(hero, [AttackData.Create(0, attacker, 10, DamageKind.Real, Vector2.Zero, 1, 0)]);
+                setAttack.Invoke(hero, [AttackData.Create(0, attacker, 10, EDamageKind.Real, Vector2.Zero, 1, 0)]);
                 Check(hero.HitBox.GetOverlappingAreas().Contains(m_Monster.HurtBox), "身体Area未保留要复现的旧缓存");
                 poll.Invoke(hero, null);
                 Check(m_Monster.Hp == hp, $"{ticks}Hz身体攻击误伤700px外的旧候选");

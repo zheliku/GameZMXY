@@ -40,7 +40,7 @@ namespace GameLogic.Heroes.Wukong
         public void BeginHit(IHeroBody body)
         {
             ((ISkillActor)body).NewSkillAttack(
-            SkillHitId.RisingDragon, AttackPower(body, SkillHitId.RisingDragon));
+            ESkillHitId.RisingDragon, AttackPower(body, ESkillHitId.RisingDragon));
         }
 
         /// <inheritdoc />

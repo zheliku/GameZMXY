@@ -97,7 +97,7 @@ namespace GameLogic.UI.Widgets
         /// <param name="definitions">当前角色的有序技能定义。</param>
         /// <param name="learned">已学习技能列表。</param>
         /// <exception cref="InvalidOperationException">当前场景容纳不下角色技能。</exception>
-        public void SetSkills(IReadOnlyList<SkillConfig> definitions, IReadOnlyList<SkillId> learned)
+        public void SetSkills(IReadOnlyList<SkillConfig> definitions, IReadOnlyList<ESkillId> learned)
         {
             if (definitions.Count > m_SkillCells.Length)
             {

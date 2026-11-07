@@ -38,13 +38,13 @@ public sealed partial class UiSmokeScenario
     {
         int oldTicks = Engine.PhysicsTicksPerSecond;
         var scene = GD.Load<PackedScene>("res://TheGame/Entitys/Heroes/Wukong/wukong_fire_demon_combo_effect.tscn");
-        var hit = ConfigSystem.Instance.Tables.TbAttackConfig.Get((int)SkillHitId.FireDemonCombo);
+        var hit = ConfigSystem.Instance.Tables.TbAttackConfig.Get((int)ESkillHitId.FireDemonCombo);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Gorilla,
                     new EnemySpawn(new Vector2(650, 150)));
                 SmokeInspection.FreezeAi(m_Monster);
                 m_Monster.SetPhysicsProcess(false);
@@ -118,16 +118,16 @@ public sealed partial class UiSmokeScenario
         {
             // 只排除随机闪避和致死干扰，保留真实重力、硬直、位移、动画和判定。
             heroSystem.SetSource(source,
-                [AttributeModifier.Flat(AttributeType.MaxMp, 1000), AttributeModifier.Flat(AttributeType.Htarget, 1)]);
+                [AttributeModifier.Flat(EAttributeType.MaxMp, 1000), AttributeModifier.Flat(EAttributeType.Htarget, 1)]);
             flow.GetSystem<ProfileSystem>().AddSoul(4000);
-            skills.Learn(SkillId.FireDemonSlash);
+            skills.Learn(ESkillId.FireDemonSlash);
             hero.SetPhysicsProcess(true);
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
                 foreach (int direction in new[] { 1, -1 })
                 {
-                    foreach (EntityId enemy in new[] { EntityId.Gorilla, EntityId.HuaguoshanMonkey })
+                    foreach (EEntityId enemy in new[] { EEntityId.Gorilla, EEntityId.HuaguoshanMonkey })
                     {
                         hero.GlobalPosition = new Vector2(direction > 0 ? 400 : 750, 280);
                         hero.Velocity = Vector2.Zero;
@@ -169,9 +169,9 @@ public sealed partial class UiSmokeScenario
                                     continue;
                                 }
 
-                                comboHit |= data.AttackId == (int)SkillHitId.FireDemonCombo;
-                                descentHit |= data.AttackId == (int)SkillHitId.FireDemonDescent;
-                                landingHit |= data.AttackId == (int)SkillHitId.FireDemonLanding;
+                                comboHit |= data.AttackId == (int)ESkillHitId.FireDemonCombo;
+                                descentHit |= data.AttackId == (int)ESkillHitId.FireDemonDescent;
+                                landingHit |= data.AttackId == (int)ESkillHitId.FireDemonLanding;
                             }
 
                             rows.Add(new
@@ -195,7 +195,7 @@ public sealed partial class UiSmokeScenario
                         try
                         {
                             Input.ActionPress(InputSystem.Skill3);
-                            await WaitUntilAsync(() => vitals.ActiveSkillId == SkillId.FireDemonSlash, "火魔击退专项未响应真实O输入");
+                            await WaitUntilAsync(() => vitals.ActiveSkillId == ESkillId.FireDemonSlash, "火魔击退专项未响应真实O输入");
                             Input.ActionRelease(InputSystem.Skill3);
                             await WaitUntilAsync(() => vitals.ActiveSkillId == null, "火魔击退专项未完成收招");
                             await WaitFramesAsync(4);
@@ -258,9 +258,9 @@ public sealed partial class UiSmokeScenario
         var failures = new List<string>();
         try
         {
-            heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxMp, 1000)]);
+            heroSystem.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxMp, 1000)]);
             flow.GetSystem<ProfileSystem>().AddSoul(4000);
-            skills.Learn(SkillId.FireDemonSlash);
+            skills.Learn(ESkillId.FireDemonSlash);
             hero.SetPhysicsProcess(true);
             foreach (int ticks in new[] { 60, 120 })
             {
@@ -268,11 +268,11 @@ public sealed partial class UiSmokeScenario
                 {
                     foreach (var targetCase in new[]
                                     {
-                        (Name: "none", OffsetY: (float?)null, Combo: false, Enemy: EntityId.Gorilla),
-                        (Name: "center", OffsetY: (float?)-190, Combo: true, Enemy: EntityId.Gorilla),
-                        (Name: "lower_edge", OffsetY: (float?)-43, Combo: false, Enemy: EntityId.Gorilla),
-                        (Name: "upper_outside", OffsetY: (float?)-329, Combo: true, Enemy: EntityId.Gorilla),
-                        (Name: "monkey_lower_edge", OffsetY: (float?)-30, Combo: false, Enemy: EntityId.HuaguoshanMonkey)
+                        (Name: "none", OffsetY: (float?)null, Combo: false, Enemy: EEntityId.Gorilla),
+                        (Name: "center", OffsetY: (float?)-190, Combo: true, Enemy: EEntityId.Gorilla),
+                        (Name: "lower_edge", OffsetY: (float?)-43, Combo: false, Enemy: EEntityId.Gorilla),
+                        (Name: "upper_outside", OffsetY: (float?)-329, Combo: true, Enemy: EEntityId.Gorilla),
+                        (Name: "monkey_lower_edge", OffsetY: (float?)-30, Combo: false, Enemy: EEntityId.HuaguoshanMonkey)
                     })
                     {
                         Engine.PhysicsTicksPerSecond = ticks;
@@ -310,7 +310,7 @@ public sealed partial class UiSmokeScenario
                         }
                         int frame = 0;
                         Input.ActionPress(InputSystem.Skill3);
-                        await WaitUntilAsync(() => vitals.ActiveSkillId == SkillId.FireDemonSlash, "实际O输入未释放火魔斩");
+                        await WaitUntilAsync(() => vitals.ActiveSkillId == ESkillId.FireDemonSlash, "实际O输入未释放火魔斩");
                         Input.ActionRelease(InputSystem.Skill3);
                         var prelude = hero.GetNode<AnimatedSprite2D>("m_FireDemonPrelude");
                         int previousPreludeFrame = prelude.Frame, preludeRestarts = 0;
@@ -325,18 +325,18 @@ public sealed partial class UiSmokeScenario
                             }
 
                             previous = hero.ActionData.Time;
-                            bool active = vitals.ActiveSkillId == SkillId.FireDemonSlash;
+                            bool active = vitals.ActiveSkillId == ESkillId.FireDemonSlash;
                             double position = active ? hero.AnimPlayer.CurrentAnimationPosition : -1;
                             descended |= active && position >= 46d / 24d - .00001;
                             movedDown |= descended && active && hero.Velocity.Y > 400;
                             contacted |= descended && hero.OnFloor;
                             roseAgain |= descended && hero.Velocity.Y < -.5f || contacted && hero.GlobalPosition.Y < floorY - 1;
-                            combo |= effects.Any(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)SkillHitId.FireDemonCombo);
-                            landing |= effects.Any(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)SkillHitId.FireDemonLanding);
+                            combo |= effects.Any(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)ESkillHitId.FireDemonCombo);
+                            landing |= effects.Any(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)ESkillHitId.FireDemonLanding);
                             foreach (var effect in effects)
                             {
                                 int hit = SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(effect, "m_Hit")?.Id ?? 0;
-                                if (hit == (int)SkillHitId.FireDemonCombo || hit == (int)SkillHitId.FireDemonLanding)
+                                if (hit == (int)ESkillHitId.FireDemonCombo || hit == (int)ESkillHitId.FireDemonLanding)
                                 {
                                     if (Math.Sign(effect.Scale.X) != -direction || !Near(Math.Abs(effect.Scale.X), 1) ||
                                         !Near(effect.Scale.Y, 1))
@@ -344,14 +344,14 @@ public sealed partial class UiSmokeScenario
                                         MarkInvalid($"scale/{hit}");
                                     }
                                 }
-                                if (hit == (int)SkillHitId.FireDemonCombo)
+                                if (hit == (int)ESkillHitId.FireDemonCombo)
                                 {
                                     if (m_Monster == null || effect.GlobalPosition.DistanceTo(m_Monster.GlobalPosition) > .1f)
                                     {
                                         MarkInvalid("combo_target");
                                     }
                                 }
-                                if (hit == (int)SkillHitId.FireDemonLanding)
+                                if (hit == (int)ESkillHitId.FireDemonLanding)
                                 {
                                     if (!effect.GetNode<Node2D>("Origin/Visual").Scale.IsEqualApprox(new Vector2(1.4f, 2)))
                                     {
@@ -369,7 +369,7 @@ public sealed partial class UiSmokeScenario
                                         MarkInvalid($"landing_anchor/{anchorGap:0.000}/{effect.GlobalPosition}/{hero.GlobalPosition}");
                                     }
                                 }
-                                if (hit == (int)SkillHitId.FireDemonDescent)
+                                if (hit == (int)ESkillHitId.FireDemonDescent)
                                 {
                                     if (Math.Sign(effect.Scale.X) != direction)
                                     {
@@ -433,7 +433,7 @@ public sealed partial class UiSmokeScenario
                             m_Driver.GetTree().PhysicsFrame -= SamplePhysics;
                         }
                         File.WriteAllText(Path.Combine(folder, label + ".json"), JsonConvert.SerializeObject(rows, Formatting.Indented));
-                        int expectedMana = mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(SkillId.FireDemonSlash).ManaCost;
+                        int expectedMana = mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(ESkillId.FireDemonSlash).ManaCost;
                         bool manaMismatch = vitals.Mp.Value != expectedMana;
                         bool damageMismatch = targetCase.Combo && m_Monster.Hp >= hp;
                         string effectSummary = string.Join(" | ", effects.Select(effect =>

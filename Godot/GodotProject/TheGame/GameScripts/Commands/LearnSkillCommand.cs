@@ -9,20 +9,20 @@ namespace GameLogic.Skills
     /// 玩家在地图或运行中的关卡学习技能，学习与扣费规则由技能系统执行。
     /// </summary>
     /// <param name = "skillId">本次选择的技能。</param>
-    public sealed class LearnSkillCommand(SkillId skillId) : AbstractCommand<SkillLearnResult>
+    public sealed class LearnSkillCommand(ESkillId skillId) : AbstractCommand<ESkillLearnResult>
     {
         /// <inheritdoc/>
-        protected override SkillLearnResult OnExecute()
+        protected override ESkillLearnResult OnExecute()
         {
             var level = this.GetModel<LevelModel>();
             if (level == null && (this.GetModel<ProfileModel>() == null || this.GetModel<SkillModel>() == null))
             {
-                return SkillLearnResult.Unavailable;
+                return ESkillLearnResult.Unavailable;
             }
 
-            if (level != null && (!level.SessionActive || level.Outcome.Value != LevelOutcome.Running))
+            if (level != null && (!level.SessionActive || level.Outcome.Value != ELevelOutcome.Running))
             {
-                return SkillLearnResult.Unavailable;
+                return ESkillLearnResult.Unavailable;
             }
 
             return this.GetSystem<SkillSystem>().Learn(skillId);
@@ -33,20 +33,20 @@ namespace GameLogic.Skills
     /// 技能面板发起一次被动升级，业务系统按提交时的等级和余额重新校验。
     /// </summary>
     /// <param name = "passiveId">本次选择的被动。</param>
-    public sealed class UpgradePassiveCommand(PassiveId passiveId) : AbstractCommand<SkillLearnResult>
+    public sealed class UpgradePassiveCommand(EPassiveId passiveId) : AbstractCommand<ESkillLearnResult>
     {
         /// <inheritdoc/>
-        protected override SkillLearnResult OnExecute()
+        protected override ESkillLearnResult OnExecute()
         {
             var level = this.GetModel<LevelModel>();
             if (level == null && (this.GetModel<ProfileModel>() == null || this.GetModel<SkillModel>() == null))
             {
-                return SkillLearnResult.Unavailable;
+                return ESkillLearnResult.Unavailable;
             }
 
-            if (level != null && (!level.SessionActive || level.Outcome.Value != LevelOutcome.Running))
+            if (level != null && (!level.SessionActive || level.Outcome.Value != ELevelOutcome.Running))
             {
-                return SkillLearnResult.Unavailable;
+                return ESkillLearnResult.Unavailable;
             }
 
             return this.GetSystem<SkillSystem>().Upgrade(passiveId);

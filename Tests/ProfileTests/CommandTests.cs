@@ -22,8 +22,8 @@ namespace GameLogic.Profile.Tests
         {
             var first = Ready();
             var second = Ready();
-            var firstItem = AddItem(first, EquipmentId.RoughPilgrimStaff);
-            var secondItem = AddItem(second, EquipmentId.CommonPilgrimStaff);
+            var firstItem = AddItem(first, EEquipmentId.RoughPilgrimStaff);
+            var secondItem = AddItem(second, EEquipmentId.CommonPilgrimStaff);
             var controller = new Controller(first);
             Assert.False(controller.SendCommand(new EquipEquipmentCommand(secondItem.InstanceId)));
             Assert.True(controller.SendCommand(new EquipEquipmentCommand(firstItem.InstanceId)));
@@ -31,7 +31,7 @@ namespace GameLogic.Profile.Tests
             Assert.Empty(first.Profile.EquipmentDatas);
             Assert.Null(second.Profile.Weapon);
             Assert.Same(secondItem, Assert.Single(second.Profile.EquipmentDatas));
-            Assert.True(controller.SendCommand(new UnequipEquipmentCommand(EquipmentSlot.Weapon)));
+            Assert.True(controller.SendCommand(new UnequipEquipmentCommand(EEquipmentSlot.Weapon)));
             Assert.Same(firstItem, Assert.Single(first.Profile.EquipmentDatas));
         }
 
@@ -46,11 +46,11 @@ namespace GameLogic.Profile.Tests
         public void InactiveSession_RejectsAllPlayerMutations(int state)
         {
             var scope = state == 0 ? new TestGameScope(1, [(1, 0)], 100, 25) : Ready();
-            var item = AddItem(scope, EquipmentId.RoughPilgrimStaff);
+            var item = AddItem(scope, EEquipmentId.RoughPilgrimStaff);
             var system = scope.GetSystem<LevelSystem>();
             if (state == 1)
             {
-                system.Complete(LevelOutcome.Defeated, 0);
+                system.Complete(ELevelOutcome.Defeated, 0);
             }
             else if (state == 2)
             {
@@ -60,11 +60,11 @@ namespace GameLogic.Profile.Tests
             int soul = scope.Profile.Soul.Value;
             var items = scope.Profile.EquipmentDatas.Count;
             Assert.False(scope.SendCommand(new EquipEquipmentCommand(item.InstanceId)));
-            Assert.False(scope.SendCommand(new UnequipEquipmentCommand(EquipmentSlot.Weapon)));
+            Assert.False(scope.SendCommand(new UnequipEquipmentCommand(EEquipmentSlot.Weapon)));
             Assert.False(scope.SendCommand(new SellEquipmentCommand(item.InstanceId)));
-            Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
-            Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
-            Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
+            Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EEquipmentQuality.Rough)));
+            Assert.Equal(ESkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(ESkillId.RisingDragon)));
+            Assert.Equal(ESkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(EPassiveId.Vitality)));
             Assert.Null(scope.Profile.Weapon);
             Assert.Equal(items, scope.Profile.EquipmentDatas.Count);
             Assert.Equal(soul, scope.Profile.Soul.Value);
@@ -79,11 +79,11 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new EmptyArchitecture();
             Assert.False(scope.SendCommand(new EquipEquipmentCommand(Guid.NewGuid())));
-            Assert.False(scope.SendCommand(new UnequipEquipmentCommand(EquipmentSlot.Weapon)));
+            Assert.False(scope.SendCommand(new UnequipEquipmentCommand(EEquipmentSlot.Weapon)));
             Assert.False(scope.SendCommand(new SellEquipmentCommand(Guid.NewGuid())));
-            Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
-            Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
-            Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
+            Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EEquipmentQuality.Rough)));
+            Assert.Equal(ESkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(ESkillId.RisingDragon)));
+            Assert.Equal(ESkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(EPassiveId.Vitality)));
         }
 
         /// <summary>
@@ -93,15 +93,15 @@ namespace GameLogic.Profile.Tests
         public void SaleCommands_PreserveDeduplicationAndCheckpointRollback()
         {
             var scope = Ready();
-            var first = AddItem(scope, EquipmentId.RoughPilgrimStaff);
-            var second = AddItem(scope, EquipmentId.RoughPilgrimClothes);
-            var third = AddItem(scope, EquipmentId.RoughPilgrimStaff);
+            var first = AddItem(scope, EEquipmentId.RoughPilgrimStaff);
+            var second = AddItem(scope, EEquipmentId.RoughPilgrimClothes);
+            var third = AddItem(scope, EEquipmentId.RoughPilgrimStaff);
             int before = scope.Profile.Soul.Value;
             Assert.True(scope.SendCommand(new EquipEquipmentCommand(first.InstanceId)));
             Assert.True(scope.SendCommand(new SellEquipmentCommand(second.InstanceId)));
             Assert.False(scope.SendCommand(new SellEquipmentCommand(second.InstanceId)));
-            Assert.Equal(1, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
-            Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
+            Assert.Equal(1, scope.SendCommand(new SellEquipmentByQualityCommand(EEquipmentQuality.Rough)));
+            Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EEquipmentQuality.Rough)));
             Assert.Equal(before + 20, scope.Profile.Soul.Value);
             Assert.Same(first, scope.Profile.Weapon);
             scope.GetSystem<LevelSystem>().EndSession();
@@ -117,17 +117,17 @@ namespace GameLogic.Profile.Tests
         public void PlayerCommands_KeepEquipmentAndLearningRules()
         {
             var scope = Ready(capacity: 1);
-            var first = AddItem(scope, EquipmentId.RoughPilgrimStaff);
+            var first = AddItem(scope, EEquipmentId.RoughPilgrimStaff);
             Assert.True(scope.SendCommand(new EquipEquipmentCommand(first.InstanceId)));
-            AddItem(scope, EquipmentId.RoughPineStaff);
-            Assert.False(scope.SendCommand(new UnequipEquipmentCommand(EquipmentSlot.Weapon)));
+            AddItem(scope, EEquipmentId.RoughPineStaff);
+            Assert.False(scope.SendCommand(new UnequipEquipmentCommand(EEquipmentSlot.Weapon)));
             Assert.Same(first, scope.Profile.Weapon);
-            Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
+            Assert.Equal(ESkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(ESkillId.RisingDragon)));
             Assert.Equal(0, scope.Profile.Soul.Value);
-            Assert.Equal(SkillLearnResult.AlreadyLearned, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
-            Assert.Equal(SkillLearnResult.InsufficientSoul, scope.SendCommand(new LearnSkillCommand(SkillId.FlameThrust)));
-            Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(SkillId.IceDragonWave)));
-            Assert.Equal(SkillId.RisingDragon, Assert.Single(scope.Skills.GetLearnedSkills(1)));
+            Assert.Equal(ESkillLearnResult.AlreadyLearned, scope.SendCommand(new LearnSkillCommand(ESkillId.RisingDragon)));
+            Assert.Equal(ESkillLearnResult.InsufficientSoul, scope.SendCommand(new LearnSkillCommand(ESkillId.FlameThrust)));
+            Assert.Equal(ESkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(ESkillId.IceDragonWave)));
+            Assert.Equal(ESkillId.RisingDragon, Assert.Single(scope.Skills.GetLearnedSkills(1)));
         }
 
         /// <summary>
@@ -138,7 +138,7 @@ namespace GameLogic.Profile.Tests
         {
             var first = Ready();
             var second = Ready();
-            var item = AddItem(second, EquipmentId.RoughPilgrimStaff);
+            var item = AddItem(second, EEquipmentId.RoughPilgrimStaff);
             var command = new EquipEquipmentCommand(item.InstanceId);
             Assert.False(first.SendCommand(command));
             Assert.True(second.SendCommand(command));
@@ -166,7 +166,7 @@ namespace GameLogic.Profile.Tests
         /// <param name="scope">所属测试架构。</param>
         /// <param name="id">实际装备定义。</param>
         /// <returns>本次加入的同一实例。</returns>
-        private static EquipmentData AddItem(TestGameScope scope, EquipmentId id)
+        private static EquipmentData AddItem(TestGameScope scope, EEquipmentId id)
         {
             var item = scope.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), id, () => 0);
             Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(item));

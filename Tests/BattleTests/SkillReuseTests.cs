@@ -26,10 +26,10 @@ namespace GameLogic.Battle.Tests
         /// </summary>
         /// <param name="skill">测试宿主为槽 1 选择的招式。</param>
         [Theory]
-        [InlineData(SkillId.BlazingFlash)]
-        [InlineData(SkillId.FlameStorm)]
-        [InlineData(SkillId.FireDemonSlash)]
-        public void SharedStates_UseHostSkillBinding(SkillId skill)
+        [InlineData(ESkillId.BlazingFlash)]
+        [InlineData(ESkillId.FlameStorm)]
+        [InlineData(ESkillId.FireDemonSlash)]
+        public void SharedStates_UseHostSkillBinding(ESkillId skill)
         {
             var scope = new SkillScope();
             scope.Skills.GetLearnedSkills(1).Add(skill);
@@ -88,8 +88,8 @@ namespace GameLogic.Battle.Tests
         {
             var scope = new SkillScope();
             var hero = new SkillHero(scope);
-            SkillId[] ids = [SkillId.RisingDragon, SkillId.FlameThrust, SkillId.BlazingFlash,
-            SkillId.FlameStorm, SkillId.FireDemonSlash];
+            ESkillId[] ids = [ESkillId.RisingDragon, ESkillId.FlameThrust, ESkillId.BlazingFlash,
+            ESkillId.FlameStorm, ESkillId.FireDemonSlash];
             var definitions = new SkillDefinition[ids.Length];
             for (int i = 0; i < ids.Length; i++)
             {
@@ -107,8 +107,8 @@ namespace GameLogic.Battle.Tests
             fsm.Start<HeroGroundState>();
             Tick(fsm, .01f);
             Assert.IsType<TestSkillState>(fsm.CurrentState);
-            Assert.Equal(SkillId.FireDemonSlash, scope.Hero.ActiveSkillId.Value);
-            Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(SkillId.FireDemonSlash).ManaCost,
+            Assert.Equal(ESkillId.FireDemonSlash, scope.Hero.ActiveSkillId.Value);
+            Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(ESkillId.FireDemonSlash).ManaCost,
                 scope.GetModel<HeroModel>().Mp.Value);
         }
 
@@ -141,7 +141,7 @@ namespace GameLogic.Battle.Tests
         {
             var scope = new SkillScope();
             var hero = new SkillHero(scope);
-            scope.Hero.ActiveSkillId = SkillId.RisingDragon;
+            scope.Hero.ActiveSkillId = ESkillId.RisingDragon;
             hero.ActionData.InputLocked = inputLocked;
             var source = scope.Source;
             var input = new InputSystem(scope, source);
@@ -177,9 +177,9 @@ namespace GameLogic.Battle.Tests
         {
             var scope = new SkillScope();
             var hero = new SkillHero(scope);
-            scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
-            scope.GetSystem<SkillSystem>().SelectSkills(1, new SkillDefinition(SkillId.RisingDragon, typeof(TestSkillState)));
-            Assert.True(scope.GetSystem<SkillSystem>().TryActivate(SkillId.RisingDragon, hero));
+            scope.Skills.GetLearnedSkills(1).Add(ESkillId.RisingDragon);
+            scope.GetSystem<SkillSystem>().SelectSkills(1, new SkillDefinition(ESkillId.RisingDragon, typeof(TestSkillState)));
+            Assert.True(scope.GetSystem<SkillSystem>().TryActivate(ESkillId.RisingDragon, hero));
             using var manager = new FsmLifetime();
             var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
                 new HeroGroundState(), new HeroAirState(), new TestSkillState(), new HeroHurtState(), new HeroDeathState());
@@ -206,8 +206,8 @@ namespace GameLogic.Battle.Tests
             var scope = new SkillScope();
             var hero = new SkillHero(scope) { AllowSkillDuringAttack = true };
             var skills = scope.GetSystem<SkillSystem>();
-            scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
-            skills.SelectSkills(1, new SkillDefinition(SkillId.RisingDragon, typeof(TestSkillState), InputSystem.Skill1));
+            scope.Skills.GetLearnedSkills(1).Add(ESkillId.RisingDragon);
+            skills.SelectSkills(1, new SkillDefinition(ESkillId.RisingDragon, typeof(TestSkillState), InputSystem.Skill1));
             hero.ActionData.AttackSegment = 0;
             using var manager = new FsmLifetime();
             var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
@@ -228,12 +228,12 @@ namespace GameLogic.Battle.Tests
         /// <param name="id">悟空招式。</param>
         /// <param name="stateType">招式自己的状态类型。</param>
         [Theory]
-        [InlineData(SkillId.RisingDragon, typeof(WukongRisingDragonState))]
-        [InlineData(SkillId.FlameThrust, typeof(WukongFlameThrustState))]
-        [InlineData(SkillId.BlazingFlash, typeof(WukongBlazingFlashState))]
-        [InlineData(SkillId.FlameStorm, typeof(WukongFlameStormState))]
-        [InlineData(SkillId.FireDemonSlash, typeof(WukongFireDemonState))]
-        public void WukongSkills_UseSeparateGgfStatesAndFinish(SkillId id, Type stateType)
+        [InlineData(ESkillId.RisingDragon, typeof(WukongRisingDragonState))]
+        [InlineData(ESkillId.FlameThrust, typeof(WukongFlameThrustState))]
+        [InlineData(ESkillId.BlazingFlash, typeof(WukongBlazingFlashState))]
+        [InlineData(ESkillId.FlameStorm, typeof(WukongFlameStormState))]
+        [InlineData(ESkillId.FireDemonSlash, typeof(WukongFireDemonState))]
+        public void WukongSkills_UseSeparateGgfStatesAndFinish(ESkillId id, Type stateType)
         {
             var scope = new SkillScope();
             var hero = new SkillHero(scope) { FinishLandingEffect = true };
@@ -270,12 +270,12 @@ namespace GameLogic.Battle.Tests
         {
             var scope = new SkillScope();
             var hero = new SkillHero(scope);
-            scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
+            scope.Skills.GetLearnedSkills(1).Add(ESkillId.RisingDragon);
             var skills = scope.GetSystem<SkillSystem>();
             skills.SelectSkills(1, SkillTestDefinitions.Wukong());
             hero.ActionData.MoveAxis = 1;
             hero.ActionData.RightHeld = true;
-            Assert.True(skills.TryActivate(SkillId.RisingDragon, hero));
+            Assert.True(skills.TryActivate(ESkillId.RisingDragon, hero));
             using var manager = new FsmLifetime();
             var fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
                 new WukongRisingDragonState(), new HeroGroundState(), new HeroAirState(),
@@ -303,9 +303,9 @@ namespace GameLogic.Battle.Tests
             var scope = new SkillScope();
             var hero = new SkillHero(scope);
             var skills = scope.GetSystem<SkillSystem>();
-            scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
-            skills.SelectSkills(1, new SkillDefinition(SkillId.RisingDragon, typeof(TestPreparationState), InputSystem.Skill1));
-            Assert.True(skills.TryActivate(SkillId.RisingDragon, hero));
+            scope.Skills.GetLearnedSkills(1).Add(ESkillId.RisingDragon);
+            skills.SelectSkills(1, new SkillDefinition(ESkillId.RisingDragon, typeof(TestPreparationState), InputSystem.Skill1));
+            Assert.True(skills.TryActivate(ESkillId.RisingDragon, hero));
             var data = scope.Hero.ActiveSkillId;
             int mana = scope.GetModel<HeroModel>().Mp.Value;
             using var manager = new FsmLifetime();
@@ -551,13 +551,13 @@ namespace GameLogic.Battle.Tests
             }
 
             /// <inheritdoc />
-            public void NewSkillAttack(SkillHitId hit, double power, float? knockbackOriginX = null) { }
+            public void NewSkillAttack(ESkillHitId hit, double power, float? knockbackOriginX = null) { }
 
             /// <inheritdoc />
-            public void PlaySkillEffect(PackedScene scene, Vector2 position, SkillHitId hit = SkillHitId.None, double power = 0, Action completed = null,
+            public void PlaySkillEffect(PackedScene scene, Vector2 position, ESkillHitId hit = ESkillHitId.None, double power = 0, Action completed = null,
             float? knockbackOriginX = null)
             {
-                if (FinishLandingEffect && hit == SkillHitId.FireDemonLanding)
+                if (FinishLandingEffect && hit == ESkillHitId.FireDemonLanding)
                 {
                     completed?.Invoke();
                 }

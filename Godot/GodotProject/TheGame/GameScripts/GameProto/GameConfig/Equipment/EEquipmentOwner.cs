@@ -11,32 +11,20 @@
 
 namespace GameConfig.Equipment
 { 
-    public enum EquipmentQuality
+    public enum EEquipmentOwner
     {
         /// <summary>
-        /// 粗糙
+        /// 悟空
         /// </summary>
-        Rough = 0,
+        Wukong = 1,
         /// <summary>
-        /// 普通
+        /// 唐僧
         /// </summary>
-        Common = 1,
+        Tangseng = 2,
         /// <summary>
-        /// 优秀
+        /// 通用
         /// </summary>
-        Excellent = 2,
-        /// <summary>
-        /// 精良
-        /// </summary>
-        Fine = 3,
-        /// <summary>
-        /// 史诗
-        /// </summary>
-        Epic = 4,
-        /// <summary>
-        /// 传说
-        /// </summary>
-        Legendary = 5,
+        Universal = 0,
     }
 
 } 

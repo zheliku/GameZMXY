@@ -23,7 +23,7 @@ public sealed partial class UiSmokeScenario
         GF.Sound.StopAllLoadingSounds();
         GF.Sound.StopAllLoadedSounds();
         var tables = GF.Fsm.GetModel<ConfigurationModel>().Tables;
-        foreach (var id in new[] { SoundId.CaveTheme, SoundId.SeaTheme, SoundId.BullDemonValleyTheme })
+        foreach (var id in new[] { ESoundId.CaveTheme, ESoundId.SeaTheme, ESoundId.BullDemonValleyTheme })
         {
             var config = tables.TbSoundConfig.Get((int)id);
             Check(config.Group == "Music", $"章节音乐分组错误：{id}");
@@ -67,7 +67,7 @@ public sealed partial class UiSmokeScenario
         })
         {
             var view = GD.Load<PackedScene>(path).Instantiate<LevelViewController>();
-            Check(view.MusicId == SoundId.CaveTheme, $"洞窟关卡仍沿用花果山音乐：{path}");
+            Check(view.MusicId == ESoundId.CaveTheme, $"洞窟关卡仍沿用花果山音乐：{path}");
             view.Free();
         }
         GD.Print("SMOKE-CHAPTER-SCENES PASS: both cave levels select the official bg2 identity.");

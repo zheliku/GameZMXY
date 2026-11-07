@@ -38,7 +38,7 @@ public sealed partial class UiSmokeScenario
         {
             foreach (int ticks in new[] { 60, 120 })
             {
-                foreach (EntityId id in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey, EntityId.Gorilla })
+                foreach (EEntityId id in new[] { EEntityId.HuaguoshanMonkey, EEntityId.DemonMonkey, EEntityId.Gorilla })
                 {
                     Engine.PhysicsTicksPerSecond = ticks;
                     m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
@@ -60,7 +60,7 @@ public sealed partial class UiSmokeScenario
                     GF.Event.Subscribe(EnemyDiedEventArgs.EventId, OnDeath);
                     try
                     {
-                        var data = AttackData.Create(0, default, 100000, DamageKind.Real, new Vector2(240, -720), 1, 0);
+                        var data = AttackData.Create(0, default, 100000, EDamageKind.Real, new Vector2(240, -720), 1, 0);
                         try
                         {
                             Check(!m_Monster.ReceiveHit(data).IsMiss && m_Monster.Dead, $"{id} 没有进入致死流程");
@@ -121,15 +121,15 @@ public sealed partial class UiSmokeScenario
         var traces = new List<object>();
         var stages = new[]
         {
-            (SkillHitId.RisingDragon, new Vector2(48, -528)),
-            (SkillHitId.FlameThrust, new Vector2(840, -48)),
-            (SkillHitId.BlazingFlash, new Vector2(0, -48)),
-            (SkillHitId.FlameStorm, new Vector2(480, -48)),
-            (SkillHitId.FireDemonCombo, new Vector2(48, -72)),
-            (SkillHitId.FireDemonDescent, new Vector2(960, 600)),
-            (SkillHitId.FireDemonLanding, new Vector2(960, -360))
+            (ESkillHitId.RisingDragon, new Vector2(48, -528)),
+            (ESkillHitId.FlameThrust, new Vector2(840, -48)),
+            (ESkillHitId.BlazingFlash, new Vector2(0, -48)),
+            (ESkillHitId.FlameStorm, new Vector2(480, -48)),
+            (ESkillHitId.FireDemonCombo, new Vector2(48, -72)),
+            (ESkillHitId.FireDemonDescent, new Vector2(960, 600)),
+            (ESkillHitId.FireDemonLanding, new Vector2(960, -360))
         };
-        foreach (int id in new[] { (int)EntityId.HuaguoshanMonkey, (int)EntityId.DemonMonkey, (int)EntityId.Gorilla })
+        foreach (int id in new[] { (int)EEntityId.HuaguoshanMonkey, (int)EEntityId.DemonMonkey, (int)EEntityId.Gorilla })
         {
             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(tables.TbEnemyConfig.Get(id).EntityId,
                 new EnemySpawn(new Vector2(600, 300)));
@@ -139,7 +139,7 @@ public sealed partial class UiSmokeScenario
             foreach (var (hit, expected) in stages)
             {
                 var definition = tables.TbAttackConfig.Get((int)hit);
-                var data = AttackData.Create((int)hit, default, 1, DamageKind.Real, definition.Knockback, 1, 0);
+                var data = AttackData.Create((int)hit, default, 1, EDamageKind.Real, definition.Knockback, 1, 0);
                 m_Monster.ReceiveHit(data);
                 GameFramework.ReferencePool.Release(data);
                 Check(m_Monster.TakePendingHurt() == expected, $"{hit}/{id} 实际击退没有按造一24fps换算");
@@ -148,7 +148,7 @@ public sealed partial class UiSmokeScenario
             m_Monster = null;
 
             // 每条轨迹从新取池开始，避免上一招硬直、落地或追击意图影响下一条。
-            foreach (var hit in new[] { SkillHitId.RisingDragon, SkillHitId.FlameThrust })
+            foreach (var hit in new[] { ESkillHitId.RisingDragon, ESkillHitId.FlameThrust })
             {
                 m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(tables.TbEnemyConfig.Get(id).EntityId,
                     new EnemySpawn(new Vector2(600, 300)));
@@ -158,7 +158,7 @@ public sealed partial class UiSmokeScenario
                 await WaitUntilAsync(() => m_Monster.OnFloor, "击退采样目标没有落地");
                 Vector2 start = m_Monster.GlobalPosition;
                 var definition = tables.TbAttackConfig.Get((int)hit);
-                var data = AttackData.Create((int)hit, default, 1, DamageKind.Real, definition.Knockback, 1, 0);
+                var data = AttackData.Create((int)hit, default, 1, EDamageKind.Real, definition.Knockback, 1, 0);
                 m_Monster.ReceiveHit(data);
                 GameFramework.ReferencePool.Release(data);
                 await WaitUntilAsync(() => !m_Monster.HasPendingHurt, "身体状态没有消费技能击退");
@@ -185,7 +185,7 @@ public sealed partial class UiSmokeScenario
                 // 第13帧一进入就返回wait，实际硬直是12/24秒，不能把终止帧再停留一帧。
                 Check(parameters.Gravity == 864 && Math.Abs(parameters.HurtTime - .5d) < .001,
                     $"怪物重力或受击时长与官方源不符：{id}, gravity={parameters.Gravity}, hurt={parameters.HurtTime}");
-                if (hit == SkillHitId.RisingDragon)
+                if (hit == ESkillHitId.RisingDragon)
                 {
                     Check(maximumRise > 170 && maximumRise < 175, $"升龙挑起高度异常：{id}/{maximumRise}");
                 }
@@ -217,7 +217,7 @@ public sealed partial class UiSmokeScenario
         CheckActor(m_ExtraHero);
         ReleaseTestEntity(m_ExtraHero);
         m_ExtraHero = null;
-        foreach (int id in new[] { (int)EntityId.HuaguoshanMonkey, (int)EntityId.DemonMonkey, (int)EntityId.Gorilla })
+        foreach (int id in new[] { (int)EEntityId.HuaguoshanMonkey, (int)EEntityId.DemonMonkey, (int)EEntityId.Gorilla })
         {
             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(
                 ConfigSystem.Instance.Tables.TbEnemyConfig.Get(id).EntityId, new EnemySpawn(new Vector2(200, 100)));
@@ -236,7 +236,7 @@ public sealed partial class UiSmokeScenario
                 foreach (int direction in new[] { -1, 1 })
                 {
                     actor.SetFacing(facing);
-                    var data = AttackData.Create(0, default, 1, DamageKind.Real,
+                    var data = AttackData.Create(0, default, 1, EDamageKind.Real,
                         new Vector2(2, -5), direction, 0);
                     var result = actor.ReceiveHit(data);
                     GameFramework.ReferencePool.Release(data);

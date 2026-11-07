@@ -53,7 +53,7 @@ public sealed class EnemyAiSmokeScenario
     private readonly AbstractEnemyEntity m_Monster; // 受测怪物实体。
     private readonly int m_OriginalAttackDesire; // 结束时恢复测试夹具覆盖的出手概率。
     private readonly int m_MonsterId; // 受测怪物实体编号。
-    private Phase m_Phase = Phase.OutOfSight; // 当前场景阶段。
+    private EPhase m_Phase = EPhase.OutOfSight; // 当前场景阶段。
     private double m_PhaseStart; // 当前阶段开始时间（秒）。
     private bool m_PlacedOutOfSight; // 是否已将怪物放到视野外。
     private int m_LastSegment = -1; // 上一帧攻击段编号。
@@ -92,7 +92,7 @@ public sealed class EnemyAiSmokeScenario
     {
         get
         {
-            return m_Phase == Phase.Done;
+            return m_Phase == EPhase.Done;
         }
     }
 
@@ -120,10 +120,10 @@ public sealed class EnemyAiSmokeScenario
     /// <param name="t">相对场景开始时间（秒）。</param>
     public void Update(double t)
     {
-        if (t >= TimeoutAt && m_Phase != Phase.Done)
+        if (t >= TimeoutAt && m_Phase != EPhase.Done)
         {
             m_Failures.Add($"超时：停在阶段 {m_Phase}");
-            m_Phase = Phase.Done;
+            m_Phase = EPhase.Done;
             return;
         }
 
@@ -133,7 +133,7 @@ public sealed class EnemyAiSmokeScenario
 
         switch (m_Phase)
         {
-            case Phase.OutOfSight:
+            case EPhase.OutOfSight:
                 if (!m_PlacedOutOfSight)
                 {
                     Teleport(OutOfSightOffset);
@@ -144,21 +144,21 @@ public sealed class EnemyAiSmokeScenario
                 {
                     Teleport(InSightOffset);
                     HitMonster(1, Vector2.Zero);
-                    Enter(Phase.WaitFirstHit, t);
+                    Enter(EPhase.WaitFirstHit, t);
                 }
 
                 break;
 
-            case Phase.WaitFirstHit:
+            case EPhase.WaitFirstHit:
                 if (m_HeroHitsByMonster > 0)
                 {
                     m_Hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);   // 防止后续阶段英雄被打死导致目标失效
-                    Enter(Phase.WaitSecondAttack, t);
+                    Enter(EPhase.WaitSecondAttack, t);
                 }
 
                 break;
 
-            case Phase.WaitSecondAttack:
+            case EPhase.WaitSecondAttack:
                 if (attackStarted)
                 {
                     // 出招当帧把英雄放到猴子身后：朝向必须锁到收招硬直结束
@@ -167,20 +167,20 @@ public sealed class EnemyAiSmokeScenario
                     m_Hero.GlobalPosition = new Vector2(behind, m_Hero.GlobalPosition.Y);
                     m_Hero.Velocity = Vector2.Zero;
                     GD.Print($"SMOKE-AI[{t:F2}] 转身测试：猴子出招朝向 {m_LockedFacing}，英雄瞬移到身后 x={behind:F0}");
-                    Enter(Phase.TurnAround, t);
+                    Enter(EPhase.TurnAround, t);
                 }
 
                 break;
 
-            case Phase.TurnAround:
+            case EPhase.TurnAround:
                 UpdateTurnAround(t);
                 break;
 
-            case Phase.Air:
+            case EPhase.Air:
                 UpdateAir(t, attackStarted);
                 break;
 
-            case Phase.WaitLanded:
+            case EPhase.WaitLanded:
                 // 看"正在出招"而不是起手沿：落地当帧就可能已提交出招（起手沿落在 Air 阶段的最后一帧）
                 if (!m_StruckAfterLanding && segment >= 0)
                 {
@@ -191,28 +191,28 @@ public sealed class EnemyAiSmokeScenario
                 if (m_StruckAfterLanding || t - m_PhaseStart > LandedTimeout)
                 {
                     m_Hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
-                    Enter(Phase.Lose, t);
+                    Enter(EPhase.Lose, t);
                 }
 
                 break;
 
-            case Phase.Lose:
+            case EPhase.Lose:
                 UpdateLose(t);
                 break;
 
-            case Phase.WaitKill:
+            case EPhase.WaitKill:
                 if (t - m_PhaseStart >= KillDelay)
                 {
                     HitMonster(m_Monster.MaxHp * 10f, Vector2.Zero);
-                    Enter(Phase.WaitEnd, t);
+                    Enter(EPhase.WaitEnd, t);
                 }
 
                 break;
 
-            case Phase.WaitEnd:
+            case EPhase.WaitEnd:
                 if (t - m_PhaseStart >= EndDelay)
                 {
-                    Enter(Phase.Done, t);
+                    Enter(EPhase.Done, t);
                 }
 
                 break;
@@ -296,7 +296,7 @@ public sealed class EnemyAiSmokeScenario
     /// </summary>
     /// <param name="phase">下一烟测阶段。</param>
     /// <param name="t">当前烟测累计时间，单位为秒。</param>
-    private void Enter(Phase phase, double t)
+    private void Enter(EPhase phase, double t)
     {
         m_Phase = phase;
         m_PhaseStart = t;
@@ -322,7 +322,7 @@ public sealed class EnemyAiSmokeScenario
             if (m_Monster.Facing != m_LockedFacing)
             {
                 m_Failures.Add($"出招/收招硬直期间转身了（t={t:F2} seg={m_Monster.AttackSegment} 硬直={SmokeInspection.InRecovery(m_Monster)}）");
-                Enter(Phase.Air, t);
+                Enter(EPhase.Air, t);
                 return;
             }
 
@@ -363,7 +363,7 @@ public sealed class EnemyAiSmokeScenario
         m_AirX = m_Monster.GlobalPosition.X - m_Monster.Facing * AirOffsetX;
         m_AirMinX = m_AirMaxX = m_Monster.GlobalPosition.X;
         m_Hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
-        Enter(Phase.Air, t);
+        Enter(EPhase.Air, t);
     }
 
     /// <summary>
@@ -400,7 +400,7 @@ public sealed class EnemyAiSmokeScenario
         }
 
         m_Hero.GlobalPosition = new Vector2(m_Monster.GlobalPosition.X + 30, m_HeroFloorY);
-        Enter(Phase.WaitLanded, t);
+        Enter(EPhase.WaitLanded, t);
     }
 
     /// <summary>
@@ -414,7 +414,7 @@ public sealed class EnemyAiSmokeScenario
         if (!((IEnemyAiAgent)m_Monster).HasTarget)
         {
             m_Failures.Add("离开视野错误清除了仍存活的目标");
-            Enter(Phase.WaitKill, t);
+            Enter(EPhase.WaitKill, t);
         }
         else if (t - m_PhaseStart > LoseTimeout)
         {
@@ -422,7 +422,7 @@ public sealed class EnemyAiSmokeScenario
             GD.Print($"SMOKE-AI[{t:F2}] 视野外{LoseTimeout}s仍保留目标，符合官方");
             m_Hero.GlobalPosition = new Vector2(m_Monster.GlobalPosition.X + InSightOffset, m_HeroFloorY);
             HitMonster(1f, new Vector2(3, 0));
-            Enter(Phase.WaitKill, t);
+            Enter(EPhase.WaitKill, t);
         }
     }
 
@@ -508,7 +508,7 @@ public sealed class EnemyAiSmokeScenario
     private void HitMonster(float power, Vector2 knockback)
     {
         // 攻击数据只在结算期间持有，完成后立即归还引用池。
-        AttackData data = AttackData.Create(0, default, power, DamageKind.Real, knockback, 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(m_Hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
+        AttackData data = AttackData.Create(0, default, power, EDamageKind.Real, knockback, 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(m_Hero.Id, GameConfig.Entity.EEntityId.None, 0, 0));
         m_Monster.ReceiveHit(data);
         ReferencePool.Release(data);
     }
@@ -572,7 +572,7 @@ public sealed class EnemyAiSmokeScenario
     /// <summary>
     /// AI 烟测的阶段状态。
     /// </summary>
-    private enum Phase
+    private enum EPhase
     {
         /// <summary>
         /// 怪物位于英雄视野外。

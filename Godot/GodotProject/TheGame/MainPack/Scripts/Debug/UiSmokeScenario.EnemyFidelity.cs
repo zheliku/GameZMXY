@@ -55,12 +55,12 @@ public sealed partial class UiSmokeScenario
                     float x = gate.GetChild<CollisionShape2D>(0).GlobalPosition.X;
                     foreach (int direction in new[] { -1, 1 })
                     {
-                        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DemonMonkey,
+                        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.DemonMonkey,
                             new EnemySpawn(new Vector2(x - direction * 50, 100)));
                         SmokeInspection.FreezeAi(m_Monster);
                         var actor = m_Monster;
                         await WaitUntilAsync(() => actor.OnFloor, "受击穿门夹具未落地");
-                        var data = AttackData.Create(0, default, 1, GameConfig.Battle.DamageKind.Real,
+                        var data = AttackData.Create(0, default, 1, GameConfig.Battle.EDamageKind.Real,
                             new Vector2(1200, -100), direction, 0);
                         try
                         {
@@ -109,7 +109,7 @@ public sealed partial class UiSmokeScenario
         Vector2 originalPosition = hero.GlobalPosition;
         var system = GF.Fsm.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EffectShapes", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
@@ -125,9 +125,9 @@ public sealed partial class UiSmokeScenario
                 try
                 {
                     var hit = (GameConfig.Battle.AttackConfig)typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic)!
-                        .Invoke(ConfigSystem.Instance.Tables.TbAttackConfig.Get(GF.Fsm.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EntityId.HuaguoshanMonkey, 1)), null)!;
+                        .Invoke(ConfigSystem.Instance.Tables.TbAttackConfig.Get(GF.Fsm.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EEntityId.HuaguoshanMonkey, 1)), null)!;
                     typeof(GameConfig.Battle.AttackConfig).GetField("HitBudget")!.SetValue(hit, 3);
-                    var attacker = new CombatantAttributes(CombatSide.Enemy, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1);
+                    var attacker = new CombatantAttributes(ECombatSide.Enemy, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1);
                     int completions = 0;
                     void Released(SkillEffectNode node)
                     {
@@ -234,7 +234,7 @@ public sealed partial class UiSmokeScenario
         MethodInfo updateTarget = typeof(AbstractEnemyEntity).GetMethod("UpdateTarget", BindingFlags.NonPublic | BindingFlags.Instance)!;
         var system = GF.Fsm.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EnemyFidelity", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         Vector2 original = hero.GlobalPosition;
         int originalTicks = Engine.PhysicsTicksPerSecond;
@@ -280,8 +280,8 @@ public sealed partial class UiSmokeScenario
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                foreach (EntityId id in new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey, EntityId.Gorilla,
-                             EntityId.CaveBrute, EntityId.BullGuard, EntityId.KnifeDemon })
+                foreach (EEntityId id in new[] { EEntityId.HuaguoshanMonkey, EEntityId.DemonMonkey, EEntityId.Gorilla,
+                             EEntityId.CaveBrute, EEntityId.BullGuard, EEntityId.KnifeDemon })
                 {
                     hero.GlobalPosition = new Vector2(100000, 100000);
                     m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(600, 100)));
@@ -306,7 +306,7 @@ public sealed partial class UiSmokeScenario
                         var casts = new List<(double Time, int Index)>();
                         int previous = -1;
                         ulong start = Time.GetTicksMsec();
-                        while (id == EntityId.KnifeDemon ? casts.Count(x => x.Index == 1) < 2 || !casts.Any(x => x.Index == 0) : casts.Count < 2)
+                        while (id == EEntityId.KnifeDemon ? casts.Count(x => x.Index == 1) < 2 || !casts.Any(x => x.Index == 0) : casts.Count < 2)
                         {
                             Check(Time.GetTicksMsec() - start < 12000, $"{id} 没有自主完成出招");
                             if (actor.AttackSegment >= 0 && actor.AttackSegment != previous)
@@ -316,7 +316,7 @@ public sealed partial class UiSmokeScenario
                             previous = actor.AttackSegment;
                             await WaitFramesAsync(1);
                         }
-                        if (id == EntityId.KnifeDemon)
+                        if (id == EEntityId.KnifeDemon)
                         {
                             var throws = casts.Where(x => x.Index == 1).ToArray();
                             Check(throws[1].Time - throws[0].Time >= 3.95, "飞刀四秒冷却提前结束");

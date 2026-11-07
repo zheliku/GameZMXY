@@ -40,11 +40,11 @@ namespace GameLogic.Profile.Tests
                 {
                     var loot = new LootSystem(TestTables.Architecture).Roll(monster, monster.SoulPerOrb, 1039, 2000, () => random);
                     Assert.InRange(loot.Count, 2, 13);
-                    Assert.All(loot.Where(x => x.Kind == LootKind.Health), x => Assert.Equal(51, x.Amount));
-                    Assert.All(loot.Where(x => x.Kind == LootKind.Mana), x => Assert.Equal(100, x.Amount));
-                    Assert.All(loot.Where(x => x.Kind == LootKind.Musou), x => Assert.Equal(5, x.Amount));
-                    Assert.InRange(loot.Count(x => x.Kind == LootKind.Soul), monster.SoulCount.X, monster.SoulCount.Y);
-                    Assert.All(loot.Where(x => x.Kind == LootKind.Soul), x => Assert.Equal(monster.SoulPerOrb, x.Amount));
+                    Assert.All(loot.Where(x => x.Kind == ELootKind.Health), x => Assert.Equal(51, x.Amount));
+                    Assert.All(loot.Where(x => x.Kind == ELootKind.Mana), x => Assert.Equal(100, x.Amount));
+                    Assert.All(loot.Where(x => x.Kind == ELootKind.Musou), x => Assert.Equal(5, x.Amount));
+                    Assert.InRange(loot.Count(x => x.Kind == ELootKind.Soul), monster.SoulCount.X, monster.SoulCount.Y);
+                    Assert.All(loot.Where(x => x.Kind == ELootKind.Soul), x => Assert.Equal(monster.SoulPerOrb, x.Amount));
                 }
             }
         }
@@ -65,7 +65,7 @@ namespace GameLogic.Profile.Tests
             float Random() => ++calls == 2 ? chance : count;
             var monster = TestTables.Tables.TbEnemyConfig.DataList[0];
             var loot = new LootSystem(TestTables.Architecture).Roll(monster, monster.SoulPerOrb, 50, 50, Random);
-            Assert.Equal(expected, loot.Count(x => x.Kind == LootKind.Mana));
+            Assert.Equal(expected, loot.Count(x => x.Kind == ELootKind.Mana));
         }
 
         /// <summary>
@@ -84,9 +84,9 @@ namespace GameLogic.Profile.Tests
             float Random() => ++calls switch { 1 => 0f, 2 => .99f, 3 => chance, _ => count };
             var monster = TestTables.Tables.TbEnemyConfig.DataList[0];
             var loot = new LootSystem(TestTables.Architecture).Roll(monster, monster.SoulPerOrb, 50, 50, Random);
-            Assert.DoesNotContain(loot, x => x.Kind == LootKind.Mana);
-            Assert.Equal(expected, loot.Count(x => x.Kind == LootKind.Musou));
-            Assert.All(loot.Where(x => x.Kind == LootKind.Musou), x => Assert.Equal(5, x.Amount));
+            Assert.DoesNotContain(loot, x => x.Kind == ELootKind.Mana);
+            Assert.Equal(expected, loot.Count(x => x.Kind == ELootKind.Musou));
+            Assert.All(loot.Where(x => x.Kind == ELootKind.Musou), x => Assert.Equal(5, x.Amount));
         }
 
         /// <summary>
@@ -119,8 +119,8 @@ namespace GameLogic.Profile.Tests
                     int calls = 0;
                     float Random() => ++calls switch { 1 => 0f, 2 or 3 => 1f, 4 => sample / 300f, _ => count / 3f };
                     var loot = system.Roll(monster, monster.SoulPerOrb, 1039, 50, Random);
-                    outcomes[loot.Count(x => x.Kind == LootKind.Health)]++;
-                    Assert.DoesNotContain(loot, x => x.Kind is LootKind.Mana or LootKind.Musou);
+                    outcomes[loot.Count(x => x.Kind == ELootKind.Health)]++;
+                    Assert.DoesNotContain(loot, x => x.Kind is ELootKind.Mana or ELootKind.Musou);
                 }
             }
 

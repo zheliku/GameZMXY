@@ -147,23 +147,23 @@ namespace GameLogic.Profile
         /// <param name="equipmentId">本次特殊奖励的装备定义。</param>
         /// <param name="random">实例属性采样源，返回 [0,1) 内的数。</param>
         /// <returns>已拥有、领取成功或背包已满；只在成功时创建新实例。</returns>
-        public EquipmentGrantResult GrantUniqueEquipment(EquipmentId equipmentId, Func<float> random)
+        public EEquipmentGrantResult GrantUniqueEquipment(EEquipmentId equipmentId, Func<float> random)
         {
             var profile = this.GetModel<ProfileModel>();
             if (profile.HasEquipment(equipmentId))
             {
-                return EquipmentGrantResult.AlreadyOwned;
+                return EEquipmentGrantResult.AlreadyOwned;
             }
 
             if (profile.EquipmentDatas.Count == profile.Capacity)
             {
-                return EquipmentGrantResult.InventoryFull;
+                return EEquipmentGrantResult.InventoryFull;
             }
 
             // 本入口已确认容量和定义唯一性；新编号与属性在写入背包前一次确定。
             var data = this.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), equipmentId, random);
             profile.EquipmentDatas.Add(data);
-            return EquipmentGrantResult.Collected;
+            return EEquipmentGrantResult.Collected;
         }
 
         /// <summary>
@@ -230,7 +230,7 @@ namespace GameLogic.Profile
     /// <summary>
     /// 一次直接赠送唯一装备的结果，不保存独立于背包与穿戴的领取标志。
     /// </summary>
-    public enum EquipmentGrantResult
+    public enum EEquipmentGrantResult
     {
         /// <summary>
         /// 档案中已拥有该定义，不重复抽取或提示。

@@ -31,7 +31,7 @@ namespace GameLogic.Battle.Attacks
         /// <summary>
         /// 伤害类型
         /// </summary>
-        public DamageKind Kind { get; private set; }
+        public EDamageKind Kind { get; private set; }
 
         /// <summary>
         /// 击退速度（px/s）：X&gt;0 = 远离攻击者，Y&lt;0 = 向上。
@@ -77,7 +77,7 @@ namespace GameLogic.Battle.Attacks
         /// <param name="isEffect">是否由独立效果创建本次攻击。</param>
         /// <param name="source">本次攻击的来源身份，不保存节点引用。</param>
         /// <returns>已装填并由引用池管理的攻击数据包。</returns>
-        public static AttackData Create(int attackId, in CombatantAttributes attacker, float power, DamageKind kind,
+        public static AttackData Create(int attackId, in CombatantAttributes attacker, float power, EDamageKind kind,
             Vector2 knockback, int direction, int hitProtect, float? knockbackOriginX = null, bool isEffect = false,
             AttackSource source = default)
         {
@@ -117,7 +117,7 @@ namespace GameLogic.Battle.Attacks
             AttackId = 0;
             Attacker = default;
             Power = 0f;
-            Kind = DamageKind.Physics;
+            Kind = EDamageKind.Physics;
             Knockback = Vector2.Zero;
             Direction = 1;
             IsEffect = false;

@@ -12,8 +12,8 @@ namespace GameLogic.Skills
     {
         // ---- 字段 ----
 
-        private readonly Dictionary<int, BindableList<SkillId>> m_LearnedSkills; // 已拥有英雄的学习记录，不含动作计时或配置副本。
-        private readonly Dictionary<int, BindableDictionary<PassiveId, int>> m_PassiveLevels; // 各英雄的被动等级，0表示未学习。
+        private readonly Dictionary<int, BindableList<ESkillId>> m_LearnedSkills; // 已拥有英雄的学习记录，不含动作计时或配置副本。
+        private readonly Dictionary<int, BindableDictionary<EPassiveId, int>> m_PassiveLevels; // 各英雄的被动等级，0表示未学习。
 
         // ---- 构造 ----
 
@@ -24,19 +24,19 @@ namespace GameLogic.Skills
         public SkillModel(IEnumerable<int> heroIds)
         {
             ArgumentNullException.ThrowIfNull(heroIds);
-            m_LearnedSkills = new Dictionary<int, BindableList<SkillId>>();
-            m_PassiveLevels = new Dictionary<int, BindableDictionary<PassiveId, int>>();
+            m_LearnedSkills = new Dictionary<int, BindableList<ESkillId>>();
+            m_PassiveLevels = new Dictionary<int, BindableDictionary<EPassiveId, int>>();
             foreach (int heroId in heroIds)
             {
-                m_LearnedSkills.Add(heroId, new BindableList<SkillId>());
+                m_LearnedSkills.Add(heroId, new BindableList<ESkillId>());
 
                 // 每名英雄拥有独立的零级被动记录，不共享可变字典。
-                var passiveLevels = new Dictionary<PassiveId, int>();
-                foreach (PassiveId passiveId in Enum.GetValues<PassiveId>())
+                var passiveLevels = new Dictionary<EPassiveId, int>();
+                foreach (EPassiveId passiveId in Enum.GetValues<EPassiveId>())
                 {
                     passiveLevels.Add(passiveId, 0);
                 }
-                m_PassiveLevels.Add(heroId, new BindableDictionary<PassiveId, int>(passiveLevels));
+                m_PassiveLevels.Add(heroId, new BindableDictionary<EPassiveId, int>(passiveLevels));
             }
         }
 
@@ -47,7 +47,7 @@ namespace GameLogic.Skills
         /// </summary>
         /// <param name="heroId">本档案已经拥有的英雄编号。</param>
         /// <returns>该英雄的可绑定技能书。</returns>
-        public BindableList<SkillId> GetLearnedSkills(int heroId)
+        public BindableList<ESkillId> GetLearnedSkills(int heroId)
         {
             return m_LearnedSkills[heroId];
         }
@@ -57,7 +57,7 @@ namespace GameLogic.Skills
         /// </summary>
         /// <param name="heroId">本档案已拥有的英雄。</param>
         /// <returns>被动编号到已学习等级的绑定。</returns>
-        public BindableDictionary<PassiveId, int> GetPassiveLevels(int heroId)
+        public BindableDictionary<EPassiveId, int> GetPassiveLevels(int heroId)
         {
             return m_PassiveLevels[heroId];
         }

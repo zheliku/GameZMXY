@@ -10,8 +10,8 @@ namespace GameLogic.Equipment
     [Tool, GlobalClass]
     public partial class ItemAppearanceResource : Resource
     {
-        [Export] private EquipmentId m_EquipmentId; // 装备主键；恢复品填 None。
-        [Export] private PickupId m_PickupId; // 恢复品主键；装备填 None。
+        [Export] private EEquipmentId m_EquipmentId; // 装备主键；恢复品填 None。
+        [Export] private EPickupId m_PickupId; // 恢复品主键；装备填 None。
         [Export] private Texture2D m_InventoryIcon; // 背包中的透明图标。
         [Export] private Texture2D m_GroundIcon; // 地面图标，保留原始透明留白。
         [Export] private Vector2 m_GroundScale = new(.7f, .7f); // 地面显示缩放，不改变碰撞体。
@@ -19,7 +19,7 @@ namespace GameLogic.Equipment
         /// <summary>
         /// 对应的装备主键。
         /// </summary>
-        public EquipmentId EquipmentId
+        public EEquipmentId EquipmentId
         {
             get
             {
@@ -30,7 +30,7 @@ namespace GameLogic.Equipment
         /// <summary>
         /// 对应的恢复品主键。
         /// </summary>
-        public PickupId PickupId
+        public EPickupId PickupId
         {
             get
             {

@@ -43,12 +43,12 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var system = scope.GetSystem<HeroSystem>();
-            var attacker = new CombatantAttributes(CombatSide.Hero, 1, 100, 0, 0, crit ? 1 : 0, 0, 0, 0, 0, 0, 0, 0);
-            var attack = AttackData.Create(attackId, attacker, power, DamageKind.Physics, Vector2.Zero, 1, 0,
+            var attacker = new CombatantAttributes(ECombatSide.Hero, 1, 100, 0, 0, crit ? 1 : 0, 0, 0, 0, 0, 0, 0, 0);
+            var attack = AttackData.Create(attackId, attacker, power, EDamageKind.Physics, Vector2.Zero, 1, 0,
                 isEffect: effect);
             try
             {
-                var defender = new CombatantAttributes(CombatSide.Enemy, 1, 0, defense, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                var defender = new CombatantAttributes(ECombatSide.Enemy, 1, 0, defense, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                 var result = new CombatSystem(scope).Calculate(attack, defender, 1, 0);
                 Assert.Equal(expected, result.AttackerWsGain);
                 system.RecordHit(result);

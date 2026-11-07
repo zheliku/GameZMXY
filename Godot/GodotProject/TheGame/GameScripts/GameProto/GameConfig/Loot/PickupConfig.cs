@@ -16,10 +16,10 @@ public sealed partial class PickupConfig : Luban.BeanBase
 {
     public PickupConfig(ByteBuf _buf) 
     {
-        Id = (Loot.PickupId)_buf.ReadInt();
+        Id = (Loot.EPickupId)_buf.ReadInt();
         LegacyId = _buf.ReadString();
         NameCn = _buf.ReadString();
-        Effect = (Loot.PickupEffect)_buf.ReadInt();
+        Effect = (Loot.EPickupEffect)_buf.ReadInt();
         RestoreAmount = _buf.ReadInt();
         DropChance = _buf.ReadFloat();
     }
@@ -32,7 +32,7 @@ public sealed partial class PickupConfig : Luban.BeanBase
     /// <summary>
     /// 可读编号
     /// </summary>
-    public readonly Loot.PickupId Id;
+    public readonly Loot.EPickupId Id;
     /// <summary>
     /// 官方类名
     /// </summary>
@@ -44,7 +44,7 @@ public sealed partial class PickupConfig : Luban.BeanBase
     /// <summary>
     /// 恢复种类
     /// </summary>
-    public readonly Loot.PickupEffect Effect;
+    public readonly Loot.EPickupEffect Effect;
     /// <summary>
     /// 恢复量（不超过角色上限）
     /// </summary>

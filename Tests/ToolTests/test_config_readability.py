@@ -17,9 +17,9 @@ class ConfigReadabilityTests(unittest.TestCase):
 
     def test_same_enum_name_can_have_different_aliases_in_different_types(self):
         rows = [
-            {'B4': 'Entity.EntityId', 'H4': 'None', 'I4': '无实体', 'J4': '-1'},
-            {'B5': 'Equipment.EquipmentId', 'H5': 'None', 'I5': '无装备', 'J5': '0'},
+            {'B4': 'Entity.EEntityId', 'H4': 'None', 'I4': '无实体', 'J4': '-1'},
+            {'B5': 'Equipment.EEquipmentId', 'H5': 'None', 'I5': '无装备', 'J5': '0'},
         ]
         definitions = enum_definitions(rows)
-        self.assertEqual('无实体', definitions['Entity.EntityId']['None'])
-        self.assertEqual('无装备', definitions['Equipment.EquipmentId']['None'])
+        self.assertEqual('无实体', definitions['Entity.EEntityId']['None'])
+        self.assertEqual('无装备', definitions['Equipment.EEquipmentId']['None'])

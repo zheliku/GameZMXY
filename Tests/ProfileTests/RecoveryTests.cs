@@ -25,7 +25,7 @@ namespace GameLogic.Profile.Tests
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var system = scope.GetSystem<HeroSystem>();
             system.SetSource(new AttributeSourceId("Recovery", 1),
-                [AttributeModifier.Flat(AttributeType.HpRegen, 2), AttributeModifier.Flat(AttributeType.MpRegen, 1)]);
+                [AttributeModifier.Flat(EAttributeType.HpRegen, 2), AttributeModifier.Flat(EAttributeType.MpRegen, 1)]);
             system.Damage(60);
             system.TrySpendMp(40);
             for (int index = 0; index < 25 * fps; index++)
@@ -47,7 +47,7 @@ namespace GameLogic.Profile.Tests
             var system = scope.GetSystem<HeroSystem>();
             var source = new AttributeSourceId("Recovery", 1);
             system.AdvanceRecovery(1f);
-            system.SetSource(source, [AttributeModifier.Flat(AttributeType.HpRegen, -2), AttributeModifier.Flat(AttributeType.MpRegen, -3)]);
+            system.SetSource(source, [AttributeModifier.Flat(EAttributeType.HpRegen, -2), AttributeModifier.Flat(EAttributeType.MpRegen, -3)]);
             Assert.Equal(-2, scope.Hero.HpRegen.Value);
             for (int index = 0; index < 100; index++)
             {
@@ -71,7 +71,7 @@ namespace GameLogic.Profile.Tests
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var system = scope.GetSystem<HeroSystem>();
             system.SetSource(new AttributeSourceId("Recovery", 1),
-                [AttributeModifier.Flat(AttributeType.HpRegen, 100), AttributeModifier.Flat(AttributeType.MpRegen, 100)]);
+                [AttributeModifier.Flat(EAttributeType.HpRegen, 100), AttributeModifier.Flat(EAttributeType.MpRegen, 100)]);
             system.AdvanceRecovery(100);
             Assert.Equal((80, 50), (scope.Hero.Hp.Value, scope.Hero.Mp.Value));
             system.Damage(int.MaxValue);

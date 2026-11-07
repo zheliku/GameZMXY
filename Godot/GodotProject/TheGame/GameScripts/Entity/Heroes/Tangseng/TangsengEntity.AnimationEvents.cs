@@ -20,7 +20,7 @@ namespace GameLogic.Heroes
         {
             if (this.GetSystem<InputSystem>().IsActionPressed(InputSystem.Attack))
             {
-                this.GetSystem<SkillSystem>().TryActivate(SkillId.IceDragonWave, this);
+                this.GetSystem<SkillSystem>().TryActivate(ESkillId.IceDragonWave, this);
             }
         }
 

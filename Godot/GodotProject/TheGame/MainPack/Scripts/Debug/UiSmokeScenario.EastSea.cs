@@ -37,14 +37,14 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         var system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EastSeaSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                foreach (var (id, count) in new[] { (EntityId.JiaoDemonKing, 3), (EntityId.LanternFish, 1) })
+                foreach (var (id, count) in new[] { (EEntityId.JiaoDemonKing, 3), (EEntityId.LanternFish, 1) })
                 {
                     foreach (int direction in new[] { -1, 1 })
                     {
@@ -97,9 +97,9 @@ public sealed partial class UiSmokeScenario
                                 previousHp = hero.Hp;
                             }
                             Check(hero.Hp < hp, $"东海招式未命中：{id}/{index}/{direction}/{ticks}");
-                            int expectedHits = id == EntityId.LanternFish ? 2 : index == 2 ? 4 : 1;
+                            int expectedHits = id == EEntityId.LanternFish ? 2 : index == 2 ? 4 : 1;
                             Check(actualHits == expectedHits, $"嵌套源帧刷新次数不正确：{id}/{index} expected={expectedHits} actual={actualHits}");
-                            Check(sawWave == (id == EntityId.JiaoDemonKing && index == 1), "龙波生成招式不正确");
+                            Check(sawWave == (id == EEntityId.JiaoDemonKing && index == 1), "龙波生成招式不正确");
                             Check(actor.HitBox.GetChildren().OfType<CollisionShape2D>().All(shape => shape.Disabled), "收招没有关闭身体判定");
                             await WaitUntilAsync(() => !((IEnemyAiAgent)actor).IsAttacking, "东海招式收招未完成");
                             if (actor is JiaoDemonKingEntity)
@@ -189,7 +189,7 @@ public sealed partial class UiSmokeScenario
             actor.Died -= OnDied;
         }
         await WaitFramesAsync(3);
-        var reused = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.JiaoDemonKing, new EnemySpawn(new Vector2(580, 100)));
+        var reused = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.JiaoDemonKing, new EnemySpawn(new Vector2(580, 100)));
         Check(ReferenceEquals(actor, reused) && !reused.Dead && reused.Hp == reused.MaxHp &&
             !reused.GetNode<AnimatedSprite2D>("m_BackHit").Visible && SmokeInspection.ReadField<float>(reused, "m_InvulnerabilityLeft") == 0f,
             $"鲛魔王复用残留死亡、背击或无敌：same={ReferenceEquals(actor, reused)}, dead={reused.Dead}, hp={reused.Hp}/{reused.MaxHp}, back={reused.GetNode<AnimatedSprite2D>("m_BackHit").Visible}");
@@ -208,7 +208,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>实际伤害。</returns>
     private static int ApplyEastSeaHit(AbstractEnemyEntity actor, int attackerId, int power, int direction, bool effect, Vector2 knockback)
     {
-        var data = AttackData.Create(0, default, power, DamageKind.Real, knockback, direction, 0, isEffect: effect, source: new GameLogic.Battle.Attacks.AttackSource(attackerId, GameConfig.Entity.EntityId.None, 0, 0));
+        var data = AttackData.Create(0, default, power, EDamageKind.Real, knockback, direction, 0, isEffect: effect, source: new GameLogic.Battle.Attacks.AttackSource(attackerId, GameConfig.Entity.EEntityId.None, 0, 0));
         try
         {
             return actor.ReceiveHit(data).Damage;
@@ -230,13 +230,13 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         var system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EastSeaAi", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
-                foreach (EntityId id in new[] { EntityId.JiaoDemonKing, EntityId.LanternFish })
+                foreach (EEntityId id in new[] { EEntityId.JiaoDemonKing, EEntityId.LanternFish })
                 {
                     Engine.PhysicsTicksPerSecond = ticks;
                     hero.GlobalPosition = new Vector2(100000, 100000);
@@ -254,7 +254,7 @@ public sealed partial class UiSmokeScenario
                     {
                         FollowActor();
                         typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(actor, [hero]);
-                        if (id == EntityId.JiaoDemonKing)
+                        if (id == EEntityId.JiaoDemonKing)
                         {
                             await WaitUntilAsync(() => actor.AttackSegment == 2, "鲛魔王远距没有旋转");
                             float invulnerability = SmokeInspection.ReadField<float>(actor, "m_InvulnerabilityLeft");

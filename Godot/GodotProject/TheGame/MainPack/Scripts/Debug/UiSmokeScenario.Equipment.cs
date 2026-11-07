@@ -45,12 +45,12 @@ public sealed partial class UiSmokeScenario
         int count = 0;
         foreach (var definition in ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList)
         {
-            if (definition.Owner != (EquipmentOwner)hero.HeroId || definition.Slot is not (EquipmentSlot.Weapon or EquipmentSlot.Armor))
+            if (definition.Owner != (EEquipmentOwner)hero.HeroId || definition.Slot is not (EEquipmentSlot.Weapon or EEquipmentSlot.Armor))
             {
                 continue;
             }
 
-            bool armor = definition.Slot == EquipmentSlot.Armor;
+            bool armor = definition.Slot == EEquipmentSlot.Armor;
             var textures = appearance.Get(armor ? "m_ArmorTextures" : "m_WeaponTextures").AsGodotDictionary();
             var expected = textures[(int)definition.Id].AsGodotObject() as Texture2D;
             var previewTextures = appearance.PreviewAppearance.Get(armor ? "m_ArmorTextures" : "m_WeaponTextures").AsGodotDictionary();
@@ -101,7 +101,7 @@ public sealed partial class UiSmokeScenario
         var tables = ConfigSystem.Instance.Tables;
         var owned = SmokeInspection.ReadField<HashSet<GroundItemNode>>(level, "m_GroundItems");
         var original = flow.GetModel<ProfileModel>().EquipmentDatas.ToArray();
-        SpawnGround(level, hero.GlobalPosition + new Vector2(180, -80), tables.TbPickupConfig.Get(PickupId.SmallPeach), null);
+        SpawnGround(level, hero.GlobalPosition + new Vector2(180, -80), tables.TbPickupConfig.Get(EPickupId.SmallPeach), null);
         var peach = owned.Single();
         await WaitUntilAsync(() => peach.IsOnFloor(), "桃子没有落到实际关卡地形上", 5000);
         // 同一玩家物理层的非英雄，以及其他作用域英雄，都不能给本会话发放收益。
@@ -167,7 +167,7 @@ public sealed partial class UiSmokeScenario
         peach._PhysicsProcess(.02);
         Check(owned.Count == 0, "领取动画结束后未回池");
         GF.Base.ResumeGame();
-        SpawnGround(level, hero.GlobalPosition + new Vector2(180, 0), tables.TbPickupConfig.Get(PickupId.ManaBottle), null);
+        SpawnGround(level, hero.GlobalPosition + new Vector2(180, 0), tables.TbPickupConfig.Get(EPickupId.ManaBottle), null);
         var bottle = owned.Single();
         Check(ReferenceEquals(peach, bottle), "地面物品没有使用 GGF 节点池复用");
         CheckGroundShape(bottle);
@@ -222,10 +222,10 @@ public sealed partial class UiSmokeScenario
 
         Check(numbers.Count == 0, "恢复数字没有按一秒生命周期回池");
 
-        var item = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.CommonPineStaff, () => .75f);
+        var item = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EEquipmentId.CommonPineStaff, () => .75f);
         while (flow.GetModel<ProfileModel>().EquipmentDatas.Count < flow.GetModel<ProfileModel>().Capacity)
         {
-            flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.RoughCassock, () => 0));
+            flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EEquipmentId.RoughCassock, () => 0));
         }
 
         SpawnGround(level, hero.HurtBox.GetGlobalBounds().GetCenter(), null, item);
@@ -289,7 +289,7 @@ public sealed partial class UiSmokeScenario
     private static void SpawnGround(LevelViewController level, Vector2 position, PickupConfig pickup, EquipmentData data)
     {
         typeof(LevelViewController).GetMethod("ShowGroundItem", BindingFlags.NonPublic | BindingFlags.Instance)
-            .Invoke(level, [position, pickup?.Id ?? PickupId.None, data]);
+            .Invoke(level, [position, pickup?.Id ?? EPickupId.None, data]);
     }
 
     /// <summary>

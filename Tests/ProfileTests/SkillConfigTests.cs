@@ -20,8 +20,8 @@ namespace GameLogic.Profile.Tests
         {
             var tables = TestTables.Tables;
             var configuration = new ConfigurationModel(tables);
-            var wukong = configuration.GetActive(SkillHero.Wukong);
-            var tangseng = configuration.GetActive(SkillHero.Tangseng);
+            var wukong = configuration.GetActive(ESkillHero.Wukong);
+            var tangseng = configuration.GetActive(ESkillHero.Tangseng);
             Assert.Equal(new[] { "升龙斩", "火炎突击", "烈焰闪", "烈焰风暴", "火魔斩" }, wukong.Select(x => x.NameCn));
             Assert.Equal(new[] { "冰龙波", "玄冰阵", "水幻影", "天降甘露", "水魔爆" }, tangseng.Select(x => x.NameCn));
             foreach (var skills in new[] { wukong, tangseng })
@@ -41,7 +41,7 @@ namespace GameLogic.Profile.Tests
         {
             var table = TestTables.Tables.TbPassiveConfig;
             Assert.Equal(5, table.DataList.Count);
-            foreach (PassiveId id in Enum.GetValues<PassiveId>())
+            foreach (EPassiveId id in Enum.GetValues<EPassiveId>())
             {
                 var levels = table.Get(id).Levels;
                 Assert.Equal(Enumerable.Range(1, 5), levels.Select(level => level.Level));
@@ -50,14 +50,14 @@ namespace GameLogic.Profile.Tests
                 {
                     float expected = id switch
                     {
-                        PassiveId.Vitality or PassiveId.ManaSpring => (i + 2) * 100,
-                        PassiveId.Frenzy => (i + 2) / 100f,
+                        EPassiveId.Vitality or EPassiveId.ManaSpring => (i + 2) * 100,
+                        EPassiveId.Frenzy => (i + 2) / 100f,
                         _ => i + 2
                     };
                     Assert.Equal(expected, levels[i].Value);
                 }
             }
-            Assert.Equal(PassiveEffect.CriticalChance, table.Get(PassiveId.Frenzy).Effect);
+            Assert.Equal(EPassiveEffect.CriticalChance, table.Get(EPassiveId.Frenzy).Effect);
         }
 
         /// <summary>
@@ -76,16 +76,16 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void SkillSounds_UseGgfSfxGroupAndDistinctOriginalFiles()
         {
-            SoundId[] ids = [SoundId.WukongRisingDragon, SoundId.WukongFlameThrust,
-                SoundId.WukongBlazingFlash, SoundId.WukongFlameStorm, SoundId.WukongFireDemonStart,
-                SoundId.WukongFireDemonCombo, SoundId.WukongFireDemonLanding];
+            ESoundId[] ids = [ESoundId.WukongRisingDragon, ESoundId.WukongFlameThrust,
+                ESoundId.WukongBlazingFlash, ESoundId.WukongFlameStorm, ESoundId.WukongFireDemonStart,
+                ESoundId.WukongFireDemonCombo, ESoundId.WukongFireDemonLanding];
             var sounds = ids.Select(id => TestTables.Tables.TbSoundConfig.Get((int)id)).ToArray();
             Assert.All(sounds, sound =>
             {
                 Assert.Equal("SFX", sound.Group);
                 Assert.StartsWith("official.Music.Role1_hit", sound.LegacyId);
                 Assert.StartsWith("res://TheGame/Audios/SFX/wukong/skills/", sound.Path);
-                Assert.Equal(((SoundId)sound.Id).ToString(), sound.Key);
+                Assert.Equal(((ESoundId)sound.Id).ToString(), sound.Key);
             });
             Assert.Equal(7, sounds.Select(sound => sound.Path).Distinct().Count());
         }

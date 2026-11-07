@@ -31,11 +31,11 @@ namespace GameLogic.Battle.Tests
         {
             var scope = new HeroTestScope();
             scope.System.ResetWs(100, 1f, 6f);
-            var attacker = new CombatantAttributes(CombatSide.Hero, 1, power, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-            var attack = AttackData.Create(1001, attacker, damage, DamageKind.Physics, Vector2.Zero, 1, 0);
+            var attacker = new CombatantAttributes(ECombatSide.Hero, 1, power, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            var attack = AttackData.Create(1001, attacker, damage, EDamageKind.Physics, Vector2.Zero, 1, 0);
             try
             {
-                var defender = new CombatantAttributes(CombatSide.Enemy, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                var defender = new CombatantAttributes(ECombatSide.Enemy, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                 var result = new CombatSystem(scope).Calculate(attack, defender, 1, 1);
                 scope.System.RecordHit(result);
                 Assert.Equal(expected, scope.Hero.Ws.Value);

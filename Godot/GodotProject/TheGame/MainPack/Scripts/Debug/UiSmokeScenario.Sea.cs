@@ -35,13 +35,13 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         var system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SeaAiSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
-                foreach (EntityId id in new[] { EntityId.ShrimpDemon, EntityId.TideDemon, EntityId.TurtleMinister })
+                foreach (EEntityId id in new[] { EEntityId.ShrimpDemon, EEntityId.TideDemon, EEntityId.TurtleMinister })
                 {
                     Engine.PhysicsTicksPerSecond = ticks;
                     hero.GlobalPosition = new Vector2(100000, 100000);
@@ -50,7 +50,7 @@ public sealed partial class UiSmokeScenario
                     var agent = (IEnemyAiAgent)actor;
                     await WaitUntilAsync(() => actor.OnFloor, "海怪AI夹具未落地");
                     GD.Seed(3147);
-                    float distance = id == EntityId.ShrimpDemon ? 120f : id == EntityId.TurtleMinister ? 500f : 240f;
+                    float distance = id == EEntityId.ShrimpDemon ? 120f : id == EEntityId.TurtleMinister ? 500f : 240f;
                     float height = 0f;
                     void FollowActor()
                     {
@@ -61,18 +61,18 @@ public sealed partial class UiSmokeScenario
                     {
                         FollowActor();
                         typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(actor, [hero]);
-                        await WaitUntilAsync(() => agent.AiData.MoveIntent == (id == EntityId.ShrimpDemon ? -1 : 1),
+                        await WaitUntilAsync(() => agent.AiData.MoveIntent == (id == EEntityId.ShrimpDemon ? -1 : 1),
                             "海怪没有自主退避或追击：" + id);
-                        if (id == EntityId.ShrimpDemon)
+                        if (id == EEntityId.ShrimpDemon)
                         {
                             distance = 400f;
                             await WaitUntilAsync(() => agent.AiData.MoveIntent == 1, "虾兵远距离没有追击");
                         }
-                        distance = id == EntityId.TideDemon ? 120f : 300f;
+                        distance = id == EEntityId.TideDemon ? 120f : 300f;
                         var casts = new System.Collections.Generic.List<(double Time, int Index)>();
                         int previous = -1;
                         ulong started = Time.GetTicksMsec();
-                        while (id == EntityId.TideDemon ? casts.Count(value => value.Index == 1) < 2 || !casts.Any(value => value.Index == 0) : casts.Count < 2)
+                        while (id == EEntityId.TideDemon ? casts.Count(value => value.Index == 1) < 2 || !casts.Any(value => value.Index == 0) : casts.Count < 2)
                         {
                             Check(Time.GetTicksMsec() - started < 22000, "海怪未自主完成选招：" + id);
                             if (actor.AttackSegment >= 0 && previous != actor.AttackSegment)
@@ -89,15 +89,15 @@ public sealed partial class UiSmokeScenario
                                                     "海怪决策间隔快于官方节拍：" + id);
                         }
 
-                        if (id == EntityId.TideDemon)
+                        if (id == EEntityId.TideDemon)
                         {
                             var heavy = casts.Where(value => value.Index == 1).ToArray();
                             Check(heavy[1].Time - heavy[0].Time >= 10f - 2f / ticks, "潮汐妖十秒重击冷却提前结束");
                         }
-                        if (id != EntityId.ShrimpDemon)
+                        if (id != EEntityId.ShrimpDemon)
                         {
                             await WaitUntilAsync(() => !agent.IsAttacking, "高处目标夹具未收招");
-                            height = id == EntityId.TideDemon ? -350f : -850f;
+                            height = id == EEntityId.TideDemon ? -350f : -850f;
                             FollowActor();
                             for (int frame = 0; frame < ticks; frame++)
                             {
@@ -152,7 +152,7 @@ public sealed partial class UiSmokeScenario
             {
                 model.LevelId = level;
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.TurtleMinister,
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.TurtleMinister,
                     new EnemySpawn(new Vector2(580, 100)));
                 var actor = m_Monster;
                 SmokeInspection.FreezeAi(actor);
@@ -177,7 +177,7 @@ public sealed partial class UiSmokeScenario
                     var model = flow.GetModel<HeroModel>();
                     var loot = flow.GetSystem<GameLogic.Drops.LootSystem>().Roll(data.Config, soulPerOrb,
                         model.MaxHp.Value, model.MaxMp.Value, () => 0f);
-                    Check(loot.Where(value => value.Kind == GameLogic.Drops.LootKind.Soul).All(value => value.Amount == soulPerOrb),
+                    Check(loot.Where(value => value.Kind == GameLogic.Drops.ELootKind.Soul).All(value => value.Amount == soulPerOrb),
                         "灵魂球没有使用实例奖励");
                 }
                 GF.Event.Subscribe(EnemyDiedEventArgs.EventId, Observe);
@@ -217,7 +217,7 @@ public sealed partial class UiSmokeScenario
         foreach (int direction in new[] { -1, 1 })
         {
             hero.GlobalPosition = new Vector2(100000, 100000);
-            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.ShrimpDemon,
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.ShrimpDemon,
                 new EnemySpawn(new Vector2(580, 100)));
             var actor = m_Monster;
             SmokeInspection.FreezeAi(actor);
@@ -287,16 +287,16 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         var system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SeaSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                foreach (EntityId id in new[] { EntityId.ShrimpDemon, EntityId.TideDemon, EntityId.TurtleMinister })
+                foreach (EEntityId id in new[] { EEntityId.ShrimpDemon, EEntityId.TideDemon, EEntityId.TurtleMinister })
                 {
-                    int count = id == EntityId.TideDemon ? 2 : 1;
+                    int count = id == EEntityId.TideDemon ? 2 : 1;
                     for (int direction = -1; direction <= 1; direction += 2)
                     {
                         for (int index = 0; index < count; index++)

@@ -18,7 +18,7 @@ namespace GameLogic.Equipment
             return level is
             {
                 SessionActive: true
-            } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TryEquip(instanceId);
+            } && level.Outcome.Value == ELevelOutcome.Running && this.GetSystem<EquipmentSystem>().TryEquip(instanceId);
         }
     }
 
@@ -26,7 +26,7 @@ namespace GameLogic.Equipment
     /// 玩家请求卸下一个部位；结局或离关后拒绝迟到操作。
     /// </summary>
     /// <param name = "slot">要卸下的部位。</param>
-    public sealed class UnequipEquipmentCommand(EquipmentSlot slot) : AbstractCommand<bool>
+    public sealed class UnequipEquipmentCommand(EEquipmentSlot slot) : AbstractCommand<bool>
     {
         /// <inheritdoc/>
         protected override bool OnExecute()
@@ -35,7 +35,7 @@ namespace GameLogic.Equipment
             return level is
             {
                 SessionActive: true
-            } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TryUnequip(slot);
+            } && level.Outcome.Value == ELevelOutcome.Running && this.GetSystem<EquipmentSystem>().TryUnequip(slot);
         }
     }
 
@@ -52,7 +52,7 @@ namespace GameLogic.Equipment
             return level is
             {
                 SessionActive: true
-            } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TrySell(instanceId);
+            } && level.Outcome.Value == ELevelOutcome.Running && this.GetSystem<EquipmentSystem>().TrySell(instanceId);
         }
     }
 
@@ -60,7 +60,7 @@ namespace GameLogic.Equipment
     /// 玩家确认按品质批量出售；结束后的会话不接受交易。
     /// </summary>
     /// <param name = "quality">确认出售的品质，不包含已穿戴装备。</param>
-    public sealed class SellEquipmentByQualityCommand(EquipmentQuality quality) : AbstractCommand<int>
+    public sealed class SellEquipmentByQualityCommand(EEquipmentQuality quality) : AbstractCommand<int>
     {
         /// <inheritdoc/>
         protected override int OnExecute()
@@ -69,7 +69,7 @@ namespace GameLogic.Equipment
             return level is
             {
                 SessionActive: true
-            } && level.Outcome.Value == LevelOutcome.Running ? this.GetSystem<EquipmentSystem>().SellByQuality(quality) : 0;
+            } && level.Outcome.Value == ELevelOutcome.Running ? this.GetSystem<EquipmentSystem>().SellByQuality(quality) : 0;
         }
     }
 }

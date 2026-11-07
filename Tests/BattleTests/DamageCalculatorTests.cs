@@ -52,7 +52,7 @@ namespace GameLogic.Battle.Tests
         private static CombatantAttributes Hero(int level = 1, int power = 8, int def = 10, int mdef = 10, float crit = 0,
             float miss = 0, int lucky = 0, int toughness = 0, float htarget = 0, float critReduce = 0, int ar = 0, int sp = 0)
         {
-            return new CombatantAttributes(CombatSide.Hero, level, power, def, mdef, crit, miss, lucky, toughness, htarget,
+            return new CombatantAttributes(ECombatSide.Hero, level, power, def, mdef, crit, miss, lucky, toughness, htarget,
                 critReduce, ar, sp);
         }
 
@@ -75,7 +75,7 @@ namespace GameLogic.Battle.Tests
         private static CombatantAttributes Enemy(int level = 5, int power = 0, int def = 50, int mdef = 80, float crit = 0,
             float miss = 0, int lucky = 0, int toughness = 0, float htarget = 0, float critReduce = 0, int ar = 0, int sp = 0)
         {
-            return new CombatantAttributes(CombatSide.Enemy, level, power, def, mdef, crit, miss, lucky, toughness,
+            return new CombatantAttributes(ECombatSide.Enemy, level, power, def, mdef, crit, miss, lucky, toughness,
                 htarget, critReduce, ar, sp);
         }
 
@@ -89,7 +89,7 @@ namespace GameLogic.Battle.Tests
         /// <param name="missRoll">用于闪避判定的0..1随机样本。</param>
         /// <param name="critRoll">用于暴击判定的0..1随机样本。</param>
         /// <returns>独立于已归还攻击包的伤害结算结果。</returns>
-        private static DamageResult Hit(in CombatantAttributes attacker, float power, DamageKind kind,
+        private static DamageResult Hit(in CombatantAttributes attacker, float power, EDamageKind kind,
             in CombatantAttributes defender, float missRoll, float critRoll)
         {
             // 从对象池创建一次性攻击包，确保测试覆盖与游戏内相同的生命周期。
@@ -126,7 +126,7 @@ namespace GameLogic.Battle.Tests
             // 悟空 1 级(攻 8) 普攻1 倍率 1.0 → 威力 8；猴子 5 级 物防 50。
             // 等级压制（怪物防守，封顶 2 级）：8 × (1 − 2×0.05) = 7.2 → 7
             // 物防减伤：50/(50+100) = 0.333 → 7 × 0.667 = 4.669 → 4
-            DamageResult r = Hit(Hero(), 8f, DamageKind.Physics, Enemy(), NoProc, NoProc);
+            DamageResult r = Hit(Hero(), 8f, EDamageKind.Physics, Enemy(), NoProc, NoProc);
             Assert.False(r.IsMiss);
             Assert.False(r.IsCrit);
             Assert.Equal(4, r.Damage);
@@ -140,7 +140,7 @@ namespace GameLogic.Battle.Tests
         {
             // 猴子固定威力 10；英雄防守压制封顶 5 级：d=4 → 10 × (1 + 4×0.05) = 12
             // 英雄物防 10：10/(10+250) = 0.038 → 12 × 0.962 = 11.544 → 11
-            DamageResult r = Hit(Enemy(), 10f, DamageKind.Physics, Hero(), NoProc, NoProc);
+            DamageResult r = Hit(Enemy(), 10f, EDamageKind.Physics, Hero(), NoProc, NoProc);
             Assert.Equal(11, r.Damage);
         }
 
@@ -150,7 +150,7 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void SameLevel_RealDamage_IgnoresDefense()
         {
-            DamageResult r = Hit(Hero(level: 5), 37.9f, DamageKind.Real, Enemy(def: 999, mdef: 999), NoProc, NoProc);
+            DamageResult r = Hit(Hero(level: 5), 37.9f, EDamageKind.Real, Enemy(def: 999, mdef: 999), NoProc, NoProc);
             Assert.Equal(37, r.Damage);
         }
 
@@ -161,7 +161,7 @@ namespace GameLogic.Battle.Tests
         public void Magic_UsesMdef()
         {
             // 同级 威力 100，魔防 80：80/180 = 0.444 → 100 × 0.556 = 55.6 → 55
-            DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Magic, Enemy(), NoProc, NoProc);
+            DamageResult r = Hit(Hero(level: 5), 100f, EDamageKind.Magic, Enemy(), NoProc, NoProc);
             Assert.Equal(55, r.Damage);
         }
 
@@ -172,7 +172,7 @@ namespace GameLogic.Battle.Tests
         public void Penetration_ReducesDefense_ClampedAtZero()
         {
             // 破甲 60 > 物防 50 → 净物防 0，不减伤
-            DamageResult r = Hit(Hero(level: 5, ar: 60), 100f, DamageKind.Physics, Enemy(), NoProc, NoProc);
+            DamageResult r = Hit(Hero(level: 5, ar: 60), 100f, EDamageKind.Physics, Enemy(), NoProc, NoProc);
             Assert.Equal(100, r.Damage);
         }
 
@@ -183,7 +183,7 @@ namespace GameLogic.Battle.Tests
         public void Miss_ReturnsZeroAndFlag()
         {
             // 怪物闪避为 0.5；roll 0.49 < 0.5 → 闪避
-            DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Physics, Enemy(miss: .5f),
+            DamageResult r = Hit(Hero(level: 5), 100f, EDamageKind.Physics, Enemy(miss: .5f),
                 0.49f, 0f);
             Assert.True(r.IsMiss);
             Assert.Equal(0, r.Damage);
@@ -195,7 +195,7 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void Miss_RollAtRate_DoesNotMiss()
         {
-            DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Real, Enemy(miss: .5f), 0.5f, 0.9999f);
+            DamageResult r = Hit(Hero(level: 5), 100f, EDamageKind.Real, Enemy(miss: .5f), 0.5f, 0.9999f);
             Assert.False(r.IsMiss);
         }
 
@@ -206,7 +206,7 @@ namespace GameLogic.Battle.Tests
         public void ZeroRates_NeverProc_EvenWithZeroRolls()
         {
             // 旧项目 <= 判定在率为 0、roll 恰为 0 时仍会触发；新实现率为 0 必不触发
-            DamageResult r = Hit(Hero(level: 5), 100f, DamageKind.Real, Enemy(), 0f, 0f);
+            DamageResult r = Hit(Hero(level: 5), 100f, EDamageKind.Real, Enemy(), 0f, 0f);
             Assert.False(r.IsMiss);
             Assert.False(r.IsCrit);
             Assert.Equal(100, r.Damage);
@@ -219,7 +219,7 @@ namespace GameLogic.Battle.Tests
         public void Htarget_OffsetsMiss()
         {
             // 闪避 50% − 命中 50% = 0 → 闪避率 0
-            DamageResult r = Hit(Hero(level: 5, htarget: .5f), 100f, DamageKind.Real, Enemy(miss: .5f),
+            DamageResult r = Hit(Hero(level: 5, htarget: .5f), 100f, EDamageKind.Real, Enemy(miss: .5f),
                 0f, 0.9999f);
             Assert.False(r.IsMiss);
         }
@@ -232,7 +232,7 @@ namespace GameLogic.Battle.Tests
         {
             // 同级，暴击率 50%；幸运 100、英雄攻击幸运K 100 → 倍率 2 + 0.5 = 2.5
             // 真实伤害：100 × 2.5 = 250
-            DamageResult r = Hit(Hero(level: 5, crit: .5f, lucky: 100), 100f, DamageKind.Real, Enemy(),
+            DamageResult r = Hit(Hero(level: 5, crit: .5f, lucky: 100), 100f, EDamageKind.Real, Enemy(),
                 0.9999f, 0.49f);
             Assert.True(r.IsCrit);
             Assert.Equal(250, r.Damage);
@@ -245,7 +245,7 @@ namespace GameLogic.Battle.Tests
         public void Crit_MonsterAttacks_UsesMonsterLuckyK()
         {
             // 同级，幸运 50、怪物攻击幸运K 50 → 倍率 2.5；真实 100 → 250
-            DamageResult r = Hit(Enemy(level: 1, crit: .5f, lucky: 50), 100f, DamageKind.Real, Hero(level: 1),
+            DamageResult r = Hit(Enemy(level: 1, crit: .5f, lucky: 50), 100f, EDamageKind.Real, Hero(level: 1),
                 0.9999f, 0.49f);
             Assert.True(r.IsCrit);
             Assert.Equal(250, r.Damage);
@@ -258,12 +258,12 @@ namespace GameLogic.Battle.Tests
         public void Crit_ToughnessOffsetsLucky_CritReduceOffsetsCrit()
         {
             // 暴击 50% − 暴抗 50% = 0 → 不暴击
-            DamageResult none = Hit(Hero(level: 5, crit: .5f), 100f, DamageKind.Real, Enemy(critReduce: .5f),
+            DamageResult none = Hit(Hero(level: 5, crit: .5f), 100f, EDamageKind.Real, Enemy(critReduce: .5f),
                 0.9999f, 0f);
             Assert.False(none.IsCrit);
 
             // 幸运 100 − 韧性 100 = 0 → 倍率仅基数 2
-            DamageResult plain = Hit(Hero(level: 5, crit: .5f, lucky: 100), 100f, DamageKind.Real,
+            DamageResult plain = Hit(Hero(level: 5, crit: .5f, lucky: 100), 100f, EDamageKind.Real,
                 Enemy(toughness: 100), 0.9999f, 0f);
             Assert.True(plain.IsCrit);
             Assert.Equal(200, plain.Damage);
@@ -276,7 +276,7 @@ namespace GameLogic.Battle.Tests
         public void Crit_ThenDefense_OrderMatchesLegacy()
         {
             // 同级 威力 100，暴击倍率 2（幸运 0），物防 50 → 200 × 0.667 = 133.4 → 133
-            DamageResult r = Hit(Hero(level: 5, crit: .5f), 100f, DamageKind.Physics, Enemy(),
+            DamageResult r = Hit(Hero(level: 5, crit: .5f), 100f, EDamageKind.Physics, Enemy(),
                 0.9999f, 0f);
             Assert.Equal(133, r.Damage);
         }
@@ -288,7 +288,7 @@ namespace GameLogic.Battle.Tests
         public void LevelSuppression_MonsterDefends_CapsAtTwoLevels()
         {
             // 英雄 10 级打 1 级怪：d=9 但封顶 2 级 → 100 × 1.1 = 110（真实伤害，隔离减伤）
-            DamageResult r = Hit(Hero(level: 10), 100f, DamageKind.Real, Enemy(level: 1), NoProc, NoProc);
+            DamageResult r = Hit(Hero(level: 10), 100f, EDamageKind.Real, Enemy(level: 1), NoProc, NoProc);
             Assert.Equal(110, r.Damage);
         }
 
@@ -300,11 +300,11 @@ namespace GameLogic.Battle.Tests
         {
             // 1 级英雄被 10 级怪打：封顶 5 级，攻击方(怪)等级高 → ×1.25
             // （回归：表系数是 float，×0.75 一侧曾因 74.9999996 被截成 74，见 DamageResult.TruncateEpsilon）
-            DamageResult up = Hit(Enemy(level: 10), 100f, DamageKind.Real, Hero(level: 1), NoProc, NoProc);
+            DamageResult up = Hit(Enemy(level: 10), 100f, EDamageKind.Real, Hero(level: 1), NoProc, NoProc);
             Assert.Equal(125, up.Damage);
 
             // 10 级英雄被 1 级怪打 → ×0.75
-            DamageResult down = Hit(Enemy(level: 1), 100f, DamageKind.Real, Hero(level: 10), NoProc, NoProc);
+            DamageResult down = Hit(Enemy(level: 1), 100f, EDamageKind.Real, Hero(level: 10), NoProc, NoProc);
             Assert.Equal(75, down.Damage);
         }
 
@@ -321,14 +321,14 @@ namespace GameLogic.Battle.Tests
         {
             var hero = Hero(level: attackerLevel, crit: .03f);
             var enemy = Enemy(level: defenderLevel, miss: .03f);
-            Assert.True(Hit(hero, 100f, DamageKind.Real, enemy, .029f, NoProc).IsMiss);
-            Assert.False(Hit(hero, 100f, DamageKind.Real, enemy, .03f, NoProc).IsMiss);
-            Assert.True(Hit(hero, 100f, DamageKind.Real, enemy, NoProc, .029f).IsCrit);
-            Assert.False(Hit(hero, 100f, DamageKind.Real, enemy, NoProc, .03f).IsCrit);
+            Assert.True(Hit(hero, 100f, EDamageKind.Real, enemy, .029f, NoProc).IsMiss);
+            Assert.False(Hit(hero, 100f, EDamageKind.Real, enemy, .03f, NoProc).IsMiss);
+            Assert.True(Hit(hero, 100f, EDamageKind.Real, enemy, NoProc, .029f).IsCrit);
+            Assert.False(Hit(hero, 100f, EDamageKind.Real, enemy, NoProc, .03f).IsCrit);
             // 人怪结算方向相反时也不引入另一条概率曲线。
-            Assert.True(Hit(Enemy(level: attackerLevel, crit: .03f), 100f, DamageKind.Real,
+            Assert.True(Hit(Enemy(level: attackerLevel, crit: .03f), 100f, EDamageKind.Real,
                 Hero(level: defenderLevel), NoProc, .029f).IsCrit);
-            Assert.True(Hit(Enemy(level: attackerLevel), 100f, DamageKind.Real,
+            Assert.True(Hit(Enemy(level: attackerLevel), 100f, EDamageKind.Real,
                 Hero(level: defenderLevel, miss: .03f), .029f, NoProc).IsMiss);
         }
 
@@ -338,7 +338,7 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void Damage_NeverNegative()
         {
-            DamageResult r = Hit(Hero(level: 5), 0f, DamageKind.Physics, Enemy(), NoProc, NoProc);
+            DamageResult r = Hit(Hero(level: 5), 0f, EDamageKind.Physics, Enemy(), NoProc, NoProc);
             Assert.Equal(0, r.Damage);
         }
 
@@ -348,7 +348,7 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void Knockback_AppliesDirectionWithoutRescaling()
         {
-            AttackData data = AttackData.Create(1004, Hero(), 10f, DamageKind.Physics, new Vector2(144, -120), -1, 0);
+            AttackData data = AttackData.Create(1004, Hero(), 10f, EDamageKind.Physics, new Vector2(144, -120), -1, 0);
             try
             {
                 Assert.Equal(new Vector2(-144, -120), new CombatSystem(BattleArchitecture.Instance).KnockbackVelocity(data));
@@ -370,7 +370,7 @@ namespace GameLogic.Battle.Tests
         [InlineData(250, 480)]
         public void Knockback_FromCenter(float targetX, float expectedX)
         {
-            var data = AttackData.Create(0, Hero(), 10f, DamageKind.Magic, new Vector2(480, -48), -1, 0, 200f);
+            var data = AttackData.Create(0, Hero(), 10f, EDamageKind.Magic, new Vector2(480, -48), -1, 0, 200f);
             try
             {
                 Assert.Equal(new Vector2(expectedX, -48), new CombatSystem(BattleArchitecture.Instance)
@@ -389,8 +389,8 @@ namespace GameLogic.Battle.Tests
         [Fact]
         public void AttackData_OneHitPerTarget_AndClearedOnRelease()
         {
-            var source = new AttackSource(7, GameConfig.Entity.EntityId.Tangseng, 101, 201);
-            AttackData attackData = AttackData.Create(1001, Hero(), 8f, DamageKind.Physics, Vector2.Zero, 1, 0,
+            var source = new AttackSource(7, GameConfig.Entity.EEntityId.Tangseng, 101, 201);
+            AttackData attackData = AttackData.Create(1001, Hero(), 8f, EDamageKind.Physics, Vector2.Zero, 1, 0,
                 source: source);
             Assert.Equal(source, attackData.Source);
             Assert.True(attackData.TryRegisterHit(42));
@@ -400,10 +400,10 @@ namespace GameLogic.Battle.Tests
             Assert.Equal(default, attackData.Source);
 
             // 同类型复用池内对象：必须是干净的
-            AttackData reusedData = AttackData.Create(1002, Hero(), 9f, DamageKind.Magic, Vector2.Zero, 1, 0);
+            AttackData reusedData = AttackData.Create(1002, Hero(), 9f, EDamageKind.Magic, Vector2.Zero, 1, 0);
             Assert.True(reusedData.TryRegisterHit(42));
             Assert.Equal(1002, reusedData.AttackId);
-            Assert.Equal(DamageKind.Magic, reusedData.Kind);
+            Assert.Equal(EDamageKind.Magic, reusedData.Kind);
             ReferencePool.Release(reusedData);
         }
     }

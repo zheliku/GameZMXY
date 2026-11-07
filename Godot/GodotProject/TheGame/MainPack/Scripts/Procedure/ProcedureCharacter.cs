@@ -33,9 +33,9 @@ public sealed class ProcedureCharacter : ProcedureBase
         m_Owner = procedureOwner;
         GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
-        m_FormSerialId = GF.UI.OpenUIForm(UIFormId.CharacterForm);
+        m_FormSerialId = GF.UI.OpenUIForm(EUIFormId.CharacterForm);
         SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: true);
-        m_MusicSerialId = GF.Sound.PlayConfigured(SoundId.MenuTheme, 0.3f);
+        m_MusicSerialId = GF.Sound.PlayConfigured(ESoundId.MenuTheme, 0.3f);
     }
 
     /// <summary>

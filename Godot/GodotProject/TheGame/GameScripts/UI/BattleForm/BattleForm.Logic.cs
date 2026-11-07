@@ -264,7 +264,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             SettingsRequested?.Invoke(SerialId);
         }
 
@@ -278,7 +278,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             InventoryRequested?.Invoke(SerialId);
         }
 
@@ -292,7 +292,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             SkillsRequested?.Invoke(SerialId);
         }
 
@@ -355,10 +355,10 @@ namespace GameLogic.UI
         /// 技能学习或关卡回滚后同步战斗栏颜色。
         /// </summary>
         /// <param name="learned">当前英雄的权威学习记录。</param>
-        private void RefreshSkills(IReadOnlyList<SkillId> learned)
+        private void RefreshSkills(IReadOnlyList<ESkillId> learned)
         {
             m_Menu.SetSkills(
-            this.GetModel<ConfigurationModel>().GetActive((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId), learned);
+            this.GetModel<ConfigurationModel>().GetActive((ESkillHero)this.GetModel<ProfileModel>().ActiveHeroId), learned);
         }
 
         /// <summary>

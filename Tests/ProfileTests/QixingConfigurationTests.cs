@@ -35,16 +35,16 @@ namespace GameLogic.Profile.Tests
         public void LionLoot_UsesOfficialNecklaceInsteadOfPreviousBossPool()
         {
             var tables = TestTables.Tables;
-            var boss = tables.TbEnemyConfig.DataList.Single(x => x.EntityId == EntityId.LionCamelKing);
+            var boss = tables.TbEnemyConfig.DataList.Single(x => x.EntityId == EEntityId.LionCamelKing);
             Assert.Equal(96, boss.MoveSpeed);
             Assert.Equal(.3f, boss.EquipmentDropChance);
-            Assert.Equal(EquipmentDropPoolId.LionCamelKing, boss.EquipmentDropPoolId);
-            Assert.Equal(EquipmentId.HeavenlyFiendNecklace,
+            Assert.Equal(EEquipmentDropPoolId.LionCamelKing, boss.EquipmentDropPoolId);
+            Assert.Equal(EEquipmentId.HeavenlyFiendNecklace,
                 Assert.Single(tables.TbEquipmentDropPoolConfig.Get(boss.EquipmentDropPoolId).Entries).EquipmentId);
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var system = scope.GetSystem<EquipmentSystem>();
-            var low = system.Roll(Guid.NewGuid(), EquipmentId.HeavenlyFiendNecklace, () => 0);
-            var high = system.Roll(Guid.NewGuid(), EquipmentId.HeavenlyFiendNecklace, () => 1);
+            var low = system.Roll(Guid.NewGuid(), EEquipmentId.HeavenlyFiendNecklace, () => 0);
+            var high = system.Roll(Guid.NewGuid(), EEquipmentId.HeavenlyFiendNecklace, () => 1);
             Assert.Equal((30, 10, .03f, .03f), (low.Attributes.Power, low.Attributes.Def, low.Attributes.Crit, low.Attributes.Miss));
             Assert.Equal((40, 12, .03f, .03f), (high.Attributes.Power, high.Attributes.Def, high.Attributes.Crit, high.Attributes.Miss));
             Assert.Equal(80, tables.TbEquipmentConfig.Get(low.EquipmentId).SellPrice);

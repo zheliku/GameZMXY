@@ -35,7 +35,7 @@ public sealed partial class UiSmokeScenario
         var profile = flow.GetModel<ProfileModel>();
         var equipment = flow.GetSystem<EquipmentSystem>();
         var definitions = ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList
-            .Where(item => item.Owner == EquipmentOwner.Tangseng && item.Slot is EquipmentSlot.Weapon or EquipmentSlot.Armor)
+            .Where(item => item.Owner == EEquipmentOwner.Tangseng && item.Slot is EEquipmentSlot.Weapon or EEquipmentSlot.Armor)
             .ToArray();
         var items = new List<EquipmentData>();
         var ground = SmokeInspection.ReadField<HashSet<GroundItemNode>>(level, "m_GroundItems");
@@ -58,11 +58,11 @@ public sealed partial class UiSmokeScenario
             "唐僧装备专项没有打开正式背包");
         var form = GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Single(value => value.Visible);
         CheckAllWearableEquipment(form, hero, flow);
-        ClickBagEquipment(form, flow, EquipmentId.NineRingMonkStaff);
-        ClickBagEquipment(form, flow, EquipmentId.HeavenlyFiendRobe);
+        ClickBagEquipment(form, flow, EEquipmentId.NineRingMonkStaff);
+        ClickBagEquipment(form, flow, EEquipmentId.HeavenlyFiendRobe);
         var weapon = profile.Weapon;
         var armor = profile.Armor;
-        Check(weapon?.EquipmentId == EquipmentId.NineRingMonkStaff && armor?.EquipmentId == EquipmentId.HeavenlyFiendRobe,
+        Check(weapon?.EquipmentId == EEquipmentId.NineRingMonkStaff && armor?.EquipmentId == EEquipmentId.HeavenlyFiendRobe,
             "唐僧没有通过正式菜单穿上九环禅杖与天煞羽袍");
         await WaitFramesAsync(3);
         await CaptureCombatAsync("tangseng_inventory_wearing");

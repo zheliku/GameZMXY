@@ -21,27 +21,27 @@ namespace GameLogic.Profile.Tests
         public void SaleSummary_CoversAllPagesAndMatchesActualSale()
         {
             var scope = Ready();
-            var worn = AddItem(scope, EquipmentId.RoughPilgrimStaff);
+            var worn = AddItem(scope, EEquipmentId.RoughPilgrimStaff);
             Assert.True(scope.SendCommand(new EquipEquipmentCommand(worn.InstanceId)));
             for (int i = 0; i < 75; i++)
             {
-                AddItem(scope, i % 3 == 0 ? EquipmentId.CommonPineStaff : EquipmentId.RoughPilgrimStaff);
+                AddItem(scope, i % 3 == 0 ? EEquipmentId.CommonPineStaff : EEquipmentId.RoughPilgrimStaff);
             }
 
-            var retained = scope.Profile.EquipmentDatas.Where(data => data.EquipmentId == EquipmentId.CommonPineStaff).ToArray();
-            var rough = scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Rough));
-            var common = scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Common));
+            var retained = scope.Profile.EquipmentDatas.Where(data => data.EquipmentId == EEquipmentId.CommonPineStaff).ToArray();
+            var rough = scope.SendQuery(new EquipmentSaleSummaryQuery(EEquipmentQuality.Rough));
+            var common = scope.SendQuery(new EquipmentSaleSummaryQuery(EEquipmentQuality.Common));
             Assert.Equal(50, rough.Count);
             Assert.Equal(25, common.Count);
-            Assert.Equal(50L * TestTables.Tables.TbEquipmentConfig.Get(EquipmentId.RoughPilgrimStaff).SellPrice, rough.Price);
-            Assert.Equal(25L * TestTables.Tables.TbEquipmentConfig.Get(EquipmentId.CommonPineStaff).SellPrice, common.Price);
+            Assert.Equal(50L * TestTables.Tables.TbEquipmentConfig.Get(EEquipmentId.RoughPilgrimStaff).SellPrice, rough.Price);
+            Assert.Equal(25L * TestTables.Tables.TbEquipmentConfig.Get(EEquipmentId.CommonPineStaff).SellPrice, common.Price);
             int soul = scope.Profile.Soul.Value;
-            Assert.Equal(rough.Count, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
+            Assert.Equal(rough.Count, scope.SendCommand(new SellEquipmentByQualityCommand(EEquipmentQuality.Rough)));
             Assert.Equal(soul + rough.Price, scope.Profile.Soul.Value);
             Assert.Same(worn, scope.Profile.Weapon);
             Assert.Equal(retained, scope.Profile.EquipmentDatas);
-            Assert.Equal((0, 0L), scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Rough)));
-            Assert.Equal(common, scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Common)));
+            Assert.Equal((0, 0L), scope.SendQuery(new EquipmentSaleSummaryQuery(EEquipmentQuality.Rough)));
+            Assert.Equal(common, scope.SendQuery(new EquipmentSaleSummaryQuery(EEquipmentQuality.Common)));
         }
 
         /// <summary>
@@ -59,12 +59,12 @@ namespace GameLogic.Profile.Tests
             scope.Profile.Soul.Register(onSoulChanged);
             try
             {
-                var query = new EquipmentSaleSummaryQuery(EquipmentQuality.Rough);
+                var query = new EquipmentSaleSummaryQuery(EEquipmentQuality.Rough);
                 var before = scope.SendQuery(query);
                 Assert.Equal((0, 0L), before);
                 Assert.Equal(0, inventoryChanges);
                 Assert.Equal(0, soulChanges);
-                AddItem(scope, EquipmentId.RoughPilgrimStaff);
+                AddItem(scope, EEquipmentId.RoughPilgrimStaff);
                 Assert.Equal(1, inventoryChanges);
                 Assert.Equal((0, 0L), before);
                 Assert.Equal(1, scope.SendQuery(query).Count);
@@ -86,13 +86,13 @@ namespace GameLogic.Profile.Tests
         {
             var first = Ready();
             var second = Ready();
-            AddItem(first, EquipmentId.RoughPilgrimStaff);
-            var query = new EquipmentSaleSummaryQuery(EquipmentQuality.Rough);
+            AddItem(first, EEquipmentId.RoughPilgrimStaff);
+            var query = new EquipmentSaleSummaryQuery(EEquipmentQuality.Rough);
             var firstController = new Controller(first);
             var secondController = new Controller(second);
             Assert.Equal(1, firstController.SendQuery(query).Count);
             Assert.Equal((0, 0L), secondController.SendQuery(query));
-            AddItem(second, EquipmentId.RoughPilgrimClothes);
+            AddItem(second, EEquipmentId.RoughPilgrimClothes);
             Assert.Equal(1, secondController.SendQuery(query).Count);
             Assert.Equal(1, firstController.SendQuery(query).Count);
             Assert.Throws<ArgumentNullException>(() => first.SendQuery<(int, long)>(null));
@@ -106,15 +106,15 @@ namespace GameLogic.Profile.Tests
         public void SaleSummary_DoesNotAuthorizeOrReserveTheSale()
         {
             var scope = Ready(int.MaxValue - 15);
-            var first = AddItem(scope, EquipmentId.RoughPilgrimStaff);
-            AddItem(scope, EquipmentId.RoughPilgrimClothes);
-            var summary = scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Rough));
+            var first = AddItem(scope, EEquipmentId.RoughPilgrimStaff);
+            AddItem(scope, EEquipmentId.RoughPilgrimClothes);
+            var summary = scope.SendQuery(new EquipmentSaleSummaryQuery(EEquipmentQuality.Rough));
             Assert.Equal((2, 20L), summary);
-            Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
+            Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EEquipmentQuality.Rough)));
             Assert.Equal(2, scope.Profile.EquipmentDatas.Count);
             Assert.Equal(int.MaxValue - 15, scope.Profile.Soul.Value);
             Assert.True(scope.SendCommand(new EquipEquipmentCommand(first.InstanceId)));
-            Assert.Equal(1, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
+            Assert.Equal(1, scope.SendCommand(new SellEquipmentByQualityCommand(EEquipmentQuality.Rough)));
             Assert.Same(first, scope.Profile.Weapon);
             Assert.Equal(int.MaxValue - 5, scope.Profile.Soul.Value);
             Assert.Equal((2, 20L), summary);
@@ -125,13 +125,13 @@ namespace GameLogic.Profile.Tests
         /// </summary>
         /// <param name="quality">无匹配物的品质。</param>
         [Theory]
-        [InlineData(EquipmentQuality.Excellent)]
-        [InlineData(EquipmentQuality.Legendary)]
-        [InlineData((EquipmentQuality)99)]
-        public void SaleSummary_UnmatchedQualityIsEmpty(EquipmentQuality quality)
+        [InlineData(EEquipmentQuality.Excellent)]
+        [InlineData(EEquipmentQuality.Legendary)]
+        [InlineData((EEquipmentQuality)99)]
+        public void SaleSummary_UnmatchedQualityIsEmpty(EEquipmentQuality quality)
         {
             var scope = Ready();
-            var item = AddItem(scope, EquipmentId.RoughPilgrimStaff);
+            var item = AddItem(scope, EEquipmentId.RoughPilgrimStaff);
             Assert.Equal((0, 0L), scope.SendQuery(new EquipmentSaleSummaryQuery(quality)));
             Assert.Same(item, Assert.Single(scope.Profile.EquipmentDatas));
         }
@@ -155,7 +155,7 @@ namespace GameLogic.Profile.Tests
         /// <param name="scope">所属作用域。</param>
         /// <param name="id">装备定义。</param>
         /// <returns>加入的同一装备。</returns>
-        private static EquipmentData AddItem(TestGameScope scope, EquipmentId id)
+        private static EquipmentData AddItem(TestGameScope scope, EEquipmentId id)
         {
             var data = scope.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), id, () => 0);
             Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(data));

@@ -44,7 +44,7 @@ public partial class TestArenaController : Node2D
 {
     [Export] private PackedScene m_FrameworkScene; // 真实框架场景；仅去掉 Procedure 流程后复用。
 
-    [Export] private EntityId m_HeroEntityId = EntityId.Wukong; // 测试用玩家实体枚举。
+    [Export] private EEntityId m_HeroEntityId = EEntityId.Wukong; // 测试用玩家实体枚举。
 
     [Export] private Node2D m_PlayerStart; // 玩家出生点（Marker2D）。
 
@@ -158,7 +158,7 @@ public partial class TestArenaController : Node2D
         m_Events = GF.Event;
         m_Events.TreeExiting += StopSession;
         m_Cancellation = new CancellationTokenSource();
-        List<(EntityId Id, Vector2 Position)> monsters = TakeMonsterPlaceholders();
+        List<(EEntityId Id, Vector2 Position)> monsters = TakeMonsterPlaceholders();
         _ = StartAsync(monsters, m_Entities, m_Cancellation.Token);
     }
 
@@ -183,7 +183,7 @@ public partial class TestArenaController : Node2D
     /// <param name="entities">本场地捕获的实体服务。</param>
     /// <param name="cancellationToken">场地退出时取消。</param>
     /// <returns>启动完成的异步任务。</returns>
-    private async Task StartAsync(List<(EntityId Id, Vector2 Position)> monsters, EntityComponent entities,
+    private async Task StartAsync(List<(EEntityId Id, Vector2 Position)> monsters, EntityComponent entities,
         CancellationToken cancellationToken)
     {
         try
@@ -221,7 +221,7 @@ public partial class TestArenaController : Node2D
             }
             m_FloatingText.StartSession(m_OwnedIds.Contains);
             await SpawnHeroAsync(entities, cancellationToken);
-            foreach ((EntityId id, Vector2 position) in monsters)
+            foreach ((EEntityId id, Vector2 position) in monsters)
             {
                 await ShowOwnedEntityAsync(entities, id, new EnemySpawn(position), cancellationToken);
                 Log.Info("[TestArena] 显示怪物 {0} @ {1}", id, position);
@@ -267,7 +267,7 @@ public partial class TestArenaController : Node2D
     /// <returns>已经登记本场所有权的实体。</returns>
     /// <exception cref="InvalidOperationException">实体显示失败。</exception>
     /// <exception cref="OperationCanceledException">场地已退出。</exception>
-    private async Task<IEntity> ShowOwnedEntityAsync(EntityComponent entities, EntityId id, object data,
+    private async Task<IEntity> ShowOwnedEntityAsync(EntityComponent entities, EEntityId id, object data,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -302,9 +302,9 @@ public partial class TestArenaController : Node2D
     /// 取出并移除 Monsters 容器中的怪物占位节点，返回它们提供的枚举与坐标。
     /// </summary>
     /// <returns>每只待生成怪物的枚举与出生坐标。</returns>
-    private List<(EntityId Id, Vector2 Position)> TakeMonsterPlaceholders()
+    private List<(EEntityId Id, Vector2 Position)> TakeMonsterPlaceholders()
     {
-        List<(EntityId Id, Vector2 Position)> monsters = new();
+        List<(EEntityId Id, Vector2 Position)> monsters = new();
         foreach (Node child in m_Enemies.GetChildren())
         {
             if (child is not AbstractEnemyEntity placeholder)
@@ -312,7 +312,7 @@ public partial class TestArenaController : Node2D
                 continue;
             }
 
-            monsters.Add((SmokeInspection.ReadField<EntityId>(placeholder, "m_EnemyEntityId"), placeholder.GlobalPosition));
+            monsters.Add((SmokeInspection.ReadField<EEntityId>(placeholder, "m_EnemyEntityId"), placeholder.GlobalPosition));
             m_Enemies.RemoveChild(placeholder);
             placeholder.QueueFree();
         }

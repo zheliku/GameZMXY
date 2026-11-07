@@ -21,10 +21,10 @@ namespace GameLogic.Battle.Tests
             var scope = new HeroTestScope();
             var attributes = scope.Hero;
             AttributeSourceId source = new("Buff", 1);
-            scope.System.SetSource(source, [AttributeModifier.Flat(AttributeType.Power, 15)]);
+            scope.System.SetSource(source, [AttributeModifier.Flat(EAttributeType.Power, 15)]);
             CombatantAttributes snapshot = attributes.CaptureCombatAttributes(-42);
-            scope.System.SetSource(source, [AttributeModifier.Flat(AttributeType.Power, 99)]);
-            Assert.Equal((-42, CombatSide.Hero, 1, 15),
+            scope.System.SetSource(source, [AttributeModifier.Flat(EAttributeType.Power, 99)]);
+            Assert.Equal((-42, ECombatSide.Hero, 1, 15),
                 (snapshot.ActorId, snapshot.Side, snapshot.Level, snapshot.Power));
             Assert.Equal(99, attributes.Power.Value);
         }
@@ -39,13 +39,13 @@ namespace GameLogic.Battle.Tests
             var sheet = scope.Hero;
             scope.System.SetSource(new AttributeSourceId("Equipment", 1), new[]
             {
-                AttributeModifier.Flat(AttributeType.Power, 10),
-                AttributeModifier.PercentAdd(AttributeType.Power, 0.1f),
+                AttributeModifier.Flat(EAttributeType.Power, 10),
+                AttributeModifier.PercentAdd(EAttributeType.Power, 0.1f),
             });
             scope.System.SetSource(new AttributeSourceId("Buff", 1), new[]
             {
-                AttributeModifier.PercentAdd(AttributeType.Power, 0.1f),
-                AttributeModifier.PercentMult(AttributeType.Power, 0.5f),
+                AttributeModifier.PercentAdd(EAttributeType.Power, 0.1f),
+                AttributeModifier.PercentMult(EAttributeType.Power, 0.5f),
             });
 
             // 基础 0 + 固定 10 = 10；同类百分比 0.1+0.1 → ×1.2 = 12；独立 ×1.5 = 18。
@@ -62,8 +62,8 @@ namespace GameLogic.Battle.Tests
             var scope = new HeroTestScope();
             var sheet = scope.Hero;
             AttributeSourceId sword = new("Equipment", 7);
-            scope.System.SetSource(sword, new[] { AttributeModifier.Flat(AttributeType.Power, 5), AttributeModifier.Flat(AttributeType.Crit, .02f) });
-            scope.System.SetSource(sword, new[] { AttributeModifier.Flat(AttributeType.Power, 8) });
+            scope.System.SetSource(sword, new[] { AttributeModifier.Flat(EAttributeType.Power, 5), AttributeModifier.Flat(EAttributeType.Crit, .02f) });
+            scope.System.SetSource(sword, new[] { AttributeModifier.Flat(EAttributeType.Power, 8) });
             Assert.Equal((8, 0f), (sheet.Power.Value, sheet.Crit.Value));
 
             Assert.True(scope.System.RemoveSource(sword));
@@ -79,10 +79,10 @@ namespace GameLogic.Battle.Tests
         {
             var scope = new HeroTestScope();
             var sheet = scope.Hero;
-            scope.System.SetSource(new AttributeSourceId("Debuff", 1), new[] { AttributeModifier.Flat(AttributeType.Def, -5) });
+            scope.System.SetSource(new AttributeSourceId("Debuff", 1), new[] { AttributeModifier.Flat(EAttributeType.Def, -5) });
             Assert.Equal(0, sheet.Def.Value);
 
-            scope.System.SetSource(new AttributeSourceId("Buff", 2), new[] { AttributeModifier.Flat(AttributeType.Mdef, 2.5f) });
+            scope.System.SetSource(new AttributeSourceId("Buff", 2), new[] { AttributeModifier.Flat(EAttributeType.Mdef, 2.5f) });
             Assert.Equal(3, sheet.Mdef.Value);
         }
 
@@ -94,9 +94,9 @@ namespace GameLogic.Battle.Tests
         {
             var scope = new HeroTestScope();
             var sheet = scope.Hero;
-            AttributeModifier[] modifiers = { AttributeModifier.Flat(AttributeType.Power, 4) };
+            AttributeModifier[] modifiers = { AttributeModifier.Flat(EAttributeType.Power, 4) };
             scope.System.SetSource(new AttributeSourceId("Pellet", 1), modifiers);
-            modifiers[0] = AttributeModifier.Flat(AttributeType.Power, 100);
+            modifiers[0] = AttributeModifier.Flat(EAttributeType.Power, 100);
             Assert.Equal(4, sheet.Power.Value);
             scope.System.RemoveSource(new AttributeSourceId("Pellet", 1));
             Assert.Equal(0, sheet.Power.Value);
@@ -203,37 +203,37 @@ namespace GameLogic.Battle.Tests
         /// </summary>
         /// <param name="attribute">本次验证的整数属性种类。</param>
         [Theory]
-        [InlineData(AttributeType.MaxHp)]
-        [InlineData(AttributeType.MaxMp)]
-        [InlineData(AttributeType.Power)]
-        [InlineData(AttributeType.Def)]
-        [InlineData(AttributeType.Mdef)]
-        [InlineData(AttributeType.Lucky)]
-        [InlineData(AttributeType.Toughness)]
-        [InlineData(AttributeType.Ar)]
-        [InlineData(AttributeType.Sp)]
-        [InlineData(AttributeType.Vampirism)]
-        [InlineData(AttributeType.HpRegen)]
-        [InlineData(AttributeType.MpRegen)]
-        public void EveryAttribute_NotifiesActualChanges(AttributeType attribute)
+        [InlineData(EAttributeType.MaxHp)]
+        [InlineData(EAttributeType.MaxMp)]
+        [InlineData(EAttributeType.Power)]
+        [InlineData(EAttributeType.Def)]
+        [InlineData(EAttributeType.Mdef)]
+        [InlineData(EAttributeType.Lucky)]
+        [InlineData(EAttributeType.Toughness)]
+        [InlineData(EAttributeType.Ar)]
+        [InlineData(EAttributeType.Sp)]
+        [InlineData(EAttributeType.Vampirism)]
+        [InlineData(EAttributeType.HpRegen)]
+        [InlineData(EAttributeType.MpRegen)]
+        public void EveryAttribute_NotifiesActualChanges(EAttributeType attribute)
         {
             var scope = new HeroTestScope();
             var model = scope.Hero;
             scope.System.Reset(1, 1, BaseAttributes(100, 30));
             var property = attribute switch
             {
-                AttributeType.MaxHp => model.MaxHp,
-                AttributeType.MaxMp => model.MaxMp,
-                AttributeType.Power => model.Power,
-                AttributeType.Def => model.Def,
-                AttributeType.Mdef => model.Mdef,
-                AttributeType.Lucky => model.Lucky,
-                AttributeType.Toughness => model.Toughness,
-                AttributeType.Ar => model.Ar,
-                AttributeType.Sp => model.Sp,
-                AttributeType.Vampirism => model.Vampirism,
-                AttributeType.HpRegen => model.HpRegen,
-                AttributeType.MpRegen => model.MpRegen,
+                EAttributeType.MaxHp => model.MaxHp,
+                EAttributeType.MaxMp => model.MaxMp,
+                EAttributeType.Power => model.Power,
+                EAttributeType.Def => model.Def,
+                EAttributeType.Mdef => model.Mdef,
+                EAttributeType.Lucky => model.Lucky,
+                EAttributeType.Toughness => model.Toughness,
+                EAttributeType.Ar => model.Ar,
+                EAttributeType.Sp => model.Sp,
+                EAttributeType.Vampirism => model.Vampirism,
+                EAttributeType.HpRegen => model.HpRegen,
+                EAttributeType.MpRegen => model.MpRegen,
                 _ => throw new ArgumentOutOfRangeException(nameof(attribute))
             };
             int original = property.Value, count = 0;
@@ -253,20 +253,20 @@ namespace GameLogic.Battle.Tests
         /// </summary>
         /// <param name="attribute">暴击、闪避及其抵消属性。</param>
         [Theory]
-        [InlineData(AttributeType.Crit)]
-        [InlineData(AttributeType.Miss)]
-        [InlineData(AttributeType.Htarget)]
-        [InlineData(AttributeType.CritReduce)]
-        public void ProbabilityModifiers_PreserveFractionsAndClamp(AttributeType attribute)
+        [InlineData(EAttributeType.Crit)]
+        [InlineData(EAttributeType.Miss)]
+        [InlineData(EAttributeType.Htarget)]
+        [InlineData(EAttributeType.CritReduce)]
+        public void ProbabilityModifiers_PreserveFractionsAndClamp(EAttributeType attribute)
         {
             var scope = new HeroTestScope();
             var model = scope.Hero;
             var property = attribute switch
             {
-                AttributeType.Crit => model.Crit,
-                AttributeType.Miss => model.Miss,
-                AttributeType.Htarget => model.Htarget,
-                AttributeType.CritReduce => model.CritReduce,
+                EAttributeType.Crit => model.Crit,
+                EAttributeType.Miss => model.Miss,
+                EAttributeType.Htarget => model.Htarget,
+                EAttributeType.CritReduce => model.CritReduce,
                 _ => throw new ArgumentOutOfRangeException(nameof(attribute))
             };
             var source = new AttributeSourceId("Equipment", 3);

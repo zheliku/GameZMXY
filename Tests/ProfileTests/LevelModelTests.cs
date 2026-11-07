@@ -30,9 +30,9 @@ namespace GameLogic.Profile.Tests
             system.RecordDefeat(7);
             int ended = 0;
             levelModel.Outcome.Register(_ => ended++);
-            system.Complete(LevelOutcome.Defeated, 0);
+            system.Complete(ELevelOutcome.Defeated, 0);
             var result = levelModel.Result;
-            system.Complete(LevelOutcome.Cleared, 100);
+            system.Complete(ELevelOutcome.Cleared, 100);
             system.AdvanceTime(100);
             system.EndSession();
             Assert.Equal(1.25, result.ElapsedSeconds);
@@ -62,7 +62,7 @@ namespace GameLogic.Profile.Tests
             int ended = 0;
             levelModel.Outcome.Register(outcome =>
             {
-                Assert.Equal(LevelOutcome.Abandoned, outcome);
+                Assert.Equal(ELevelOutcome.Abandoned, outcome);
                 Assert.Null(levelModel.EntrySnapshot);
                 Assert.False(levelModel.SessionActive);
                 ended++;
@@ -71,7 +71,7 @@ namespace GameLogic.Profile.Tests
             system.EndSession();
             Assert.Equal(1, ended);
             Assert.Equal(levelModel.Result == null ? 0 : 1, scope.GetSystem<SaveSystem>().CheckpointCount);
-            Assert.Equal(LevelStagePhase.Stopped, levelModel.Sequence.Phase);
+            Assert.Equal(ELevelStagePhase.Stopped, levelModel.Sequence.Phase);
             Assert.Null(levelModel.Result);
             Assert.Equal(80, scope.Profile.Soul.Value);
         }

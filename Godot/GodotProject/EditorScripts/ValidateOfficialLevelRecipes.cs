@@ -35,13 +35,13 @@ public partial class ValidateOfficialLevelRecipes : RefCounted
                 string id = $"stage_{stage}_{char.ToLowerInvariant(node[^1])}";
                 LevelStage stageConfig = config.Stages.Single(value => value.StageOrder == stage);
                 LevelSpawnRecipe recipe = stageConfig.Recipes.Single(value => value.SpawnPointId == id);
-                EntityId enemy = properties.GetProperty("enemyType").GetInt32() switch
+                EEntityId enemy = properties.GetProperty("enemyType").GetInt32() switch
                 {
-                    1 => EntityId.HuaguoshanMonkey,
-                    2 => EntityId.DemonMonkey,
-                    3 => EntityId.Gorilla,
-                    4 => EntityId.MacaqueKing,
-                    6 => EntityId.TamarinKing,
+                    1 => EEntityId.HuaguoshanMonkey,
+                    2 => EEntityId.DemonMonkey,
+                    3 => EEntityId.Gorilla,
+                    4 => EEntityId.MacaqueKing,
+                    6 => EEntityId.TamarinKing,
                     _ => throw new InvalidOperationException("未知官方敌人编号")
                 };
                 float first = item.GetProperty("firstSpawnSeconds").GetSingle();

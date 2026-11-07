@@ -50,7 +50,7 @@ def audit(args):
     for row in xlsx_rows(config / '__enums__.xlsx')['Sheet1']:
         cells = {re.sub(r'\d+$', '', key): value for key, value in row.items()}
         active = cells.get('B') or active
-        if active == 'Equipment.EquipmentId' and cells.get('H') and cells.get('J'):
+        if active == 'Equipment.EEquipmentId' and cells.get('H') and cells.get('J'):
             for name in (cells['H'], cells.get('I')):
                 if name:
                     identities[name] = int(cells['J'])

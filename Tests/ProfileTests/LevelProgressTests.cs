@@ -76,9 +76,9 @@ namespace GameLogic.Profile.Tests
             Assert.False(system.TryOpenBatCaveExit("stage_5_a"));
             Assert.True(system.TryOpenBatCaveExit("stage_5_d"));
             Assert.False(system.TryOpenBatCaveExit("stage_5_d"));
-            Assert.Equal(LevelOutcome.Running, scope.Level.Outcome.Value);
+            Assert.Equal(ELevelOutcome.Running, scope.Level.Outcome.Value);
             Assert.Null(system.CheckpointWrite);
-            system.Complete(LevelOutcome.Cleared, 100);
+            system.Complete(ELevelOutcome.Cleared, 100);
             Assert.Equal(4, scope.Profile.HighestClearedLevelId.Value);
         }
 
@@ -121,7 +121,7 @@ namespace GameLogic.Profile.Tests
             level.Prepare(1);
             level.StartSession(1);
             Assert.Equal(0, scope.Profile.HighestClearedLevelId.Value);
-            level.Complete(LevelOutcome.Defeated, 0);
+            level.Complete(ELevelOutcome.Defeated, 0);
             Assert.Equal(0, scope.Profile.HighestClearedLevelId.Value);
             level.EndSession();
             level.Prepare(1);

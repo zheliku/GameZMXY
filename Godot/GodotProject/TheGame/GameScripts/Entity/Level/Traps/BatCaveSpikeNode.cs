@@ -29,7 +29,7 @@ namespace GameLogic.Level.Traps
         [Export] private int m_AttackId = 900004001; // 蝙蝠窟第1个机关的稳定攻击表引用，编辑器独立预览也使用此值。
 
         private Vector2 m_Origin; // 本关原点，复位不累积误差。
-        private SpikePhase m_Phase; // 就绪、预警、下落互斥状态。
+        private ESpikePhase m_Phase; // 就绪、预警、下落互斥状态。
         private double m_Elapsed; // 当前编号的秒数，下落时重新计时。
         private bool m_Hit; // 当前编号已经命中，无敌拒绝不消费。
 
@@ -86,18 +86,18 @@ namespace GameLogic.Level.Traps
                 ? m_TriggerRay.GetCollider() is HurtBoxNode { OwnerEntity: AbstractHeroEntity { IsAlive: true } }
                 : GetOverlappingAreas().OfType<HurtBoxNode>()
                     .Any(hurt => hurt.OwnerEntity is AbstractHeroEntity { IsAlive: true });
-            if (m_Phase == SpikePhase.Ready && !triggered)
+            if (m_Phase == ESpikePhase.Ready && !triggered)
             {
                 return;
             }
 
             var level = this.GetModel<LevelModel>();
-            if (!level.SessionActive || level.Outcome.Value != LevelOutcome.Running)
+            if (!level.SessionActive || level.Outcome.Value != ELevelOutcome.Running)
             {
                 ResetCycle();
                 return;
             }
-            if (Attack.DamageKind != DamageKind.Real || Attack.FlatPower.X != Attack.FlatPower.Y ||
+            if (Attack.DamageKind != EDamageKind.Real || Attack.FlatPower.X != Attack.FlatPower.Y ||
                 Attack.PowerScale != Vector2.Zero || Attack.RepeatIntervalSeconds <= 0)
             {
                 throw new InvalidOperationException("尖刺攻击必须为固定真实伤害，并配置重复秒数。");
@@ -110,14 +110,14 @@ namespace GameLogic.Level.Traps
             }
 
             // 射线和物理层决定何时预警，刺身Area负责实际伤害，不在代码中另算横向范围。
-            if (m_Suspended && m_Phase == SpikePhase.Ready && triggered)
+            if (m_Suspended && m_Phase == ESpikePhase.Ready && triggered)
             {
-                m_Phase = SpikePhase.Warning;
+                m_Phase = ESpikePhase.Warning;
                 m_Sprite.Play(SpikeAnimation);
                 m_Sprite.Frame = 1;
             }
 
-            if (m_Phase == SpikePhase.Falling)
+            if (m_Phase == ESpikePhase.Falling)
             {
                 // y=g*t*(t+h)/2 重现源先加速后位移，不依赖当前物理帧率。
                 float elapsed = (float)m_Elapsed;
@@ -140,13 +140,13 @@ namespace GameLogic.Level.Traps
         /// </summary>
         private void OnFrameChanged()
         {
-            if (m_Phase != SpikePhase.Warning || m_Sprite.Frame != 19)
+            if (m_Phase != ESpikePhase.Warning || m_Sprite.Frame != 19)
             {
                 return;
             }
 
             m_Sprite.Stop();
-            m_Phase = SpikePhase.Falling;
+            m_Phase = ESpikePhase.Falling;
             m_Elapsed = 0;
         }
 
@@ -162,11 +162,11 @@ namespace GameLogic.Level.Traps
                     continue;
                 }
                 // 同级、必中且无暴击；环境固定伤害不参与等级缩放，仍走正式扣血和死亡入口。
-                var attacker = new CombatantAttributes(CombatSide.Enemy, hero.Level, 0, 0, 0,
+                var attacker = new CombatantAttributes(ECombatSide.Enemy, hero.Level, 0, 0, 0,
                     0, 0, 0, 0, 1, 0, 0, 0);
                 AttackData data = AttackData.Create(Attack.Id, attacker, Attack.FlatPower.X, Attack.DamageKind,
                     Attack.Knockback, 1, Attack.HitProtect, GlobalPosition.X,
-                    source: new AttackSource(0, GameConfig.Entity.EntityId.None, GetInstanceId(), GetInstanceId()));
+                    source: new AttackSource(0, GameConfig.Entity.EEntityId.None, GetInstanceId(), GetInstanceId()));
                 try
                 {
                     m_Hit = !hero.ReceiveHit(data).IsMiss;
@@ -186,7 +186,7 @@ namespace GameLogic.Level.Traps
         {
             Position = m_Origin;
             Visible = true;
-            m_Phase = SpikePhase.Ready;
+            m_Phase = ESpikePhase.Ready;
             m_Elapsed = 0;
             m_Hit = false;
             m_Sprite.Stop();
@@ -196,6 +196,6 @@ namespace GameLogic.Level.Traps
         /// <summary>
         /// 悬顶刺的互斥动作阶段。
         /// </summary>
-        private enum SpikePhase { Ready, Warning, Falling }
+        private enum ESpikePhase { Ready, Warning, Falling }
     }
 }

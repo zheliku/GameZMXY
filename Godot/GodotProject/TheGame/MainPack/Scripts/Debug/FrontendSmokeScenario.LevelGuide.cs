@@ -38,7 +38,7 @@ public sealed partial class FrontendSmokeScenario
             LevelGuideData data = architecture.SendQuery(new LevelGuideQuery(id));
             Check(!string.IsNullOrEmpty(data.Level.Desc) && !string.IsNullOrEmpty(data.Enemies[0].NameCn), "图鉴缺少介绍或守关敌人");
             Check(data.Drops.Select(item => item.Id).Distinct().Count() == data.Drops.Count, "图鉴掉落没有按装备身份去重");
-            Check(id != 10 || data.Drops.Any(item => item.Id == EquipmentId.DiamondSnare), "牛魔谷图鉴缺少实际直接奖励");
+            Check(id != 10 || data.Drops.Any(item => item.Id == EEquipmentId.DiamondSnare), "牛魔谷图鉴缺少实际直接奖励");
             var packed = GD.Load<PackedScene>("res://TheGame/UIs/Map/level_guide_tooltip.tscn");
             var card = packed.Instantiate<LevelGuideTooltip>();
             map.AddChild(card);
@@ -136,7 +136,7 @@ public sealed partial class FrontendSmokeScenario
         }
         // 图鉴使用定义范围，背包仍显示实例数值，不能为了预览随机生成一份装备。
         var tooltip = GD.Load<PackedScene>("res://TheGame/UIs/Inventory/equipment_tooltip.tscn").Instantiate<EquipmentTooltip>();
-        tooltip.BindDefinition(GF.Fsm.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbEquipmentConfig.Get(EquipmentId.CommonPilgrimClothes));
+        tooltip.BindDefinition(GF.Fsm.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbEquipmentConfig.Get(EEquipmentId.CommonPilgrimClothes));
         Check(tooltip.GetNode<VBoxContainer>("Content/Attributes").GetChildren().OfType<Label>().Any(label => label.Text.Contains("20～40")),
             "图鉴没有显示配置属性范围");
         tooltip.Free();

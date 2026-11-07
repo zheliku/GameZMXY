@@ -3,7 +3,7 @@
 - 源数据位于 `Configs/GameConfig/Datas/`，生成 C# 与二进制位于 `TheGame/GameScripts/GameProto/GameConfig/`、`TheGame/DataTables/GameConfigs/`。
 - 配置侧外部类型（`Defines/external_types.xml`）：`vector2`/`vector2i` 映射为 `Godot.Vector2`/`Godot.Vector2I`。Luban 的 TypeMapper **必须**提供 `constructor` 工厂（`GameLogic.Config.ExternalTypeUtil.NewVector2/NewVector2I`）——去掉该选项会报 `option 'constructor' not found`，因此这层占位 bean → Godot 类型的转换是框架要求，不能省；字段本身已是 `Godot.Vector2`，调用方无需再转换。
 - 改表后运行 `Configs/GameConfig/gen_code_bin_to_project_lazyload.bat`，提交时将源表和对应生成物保持同步。不得手改生成代码或 `.bytes`。
-- 业务表包含中文名称与说明；多行表有显式主键，枚举值显式赋值。字段中文注释会进入生成代码文档。
+- 业务表包含中文名称与说明；多行表有显式主键，枚举值显式赋值。配置枚举类型遵循第10章的E前缀，如Entity.EEntityId、Attributes.EAttributeType；业务字段名EntityId/Attribute等保持原语义。字段中文注释会进入生成代码文档。
 - `LevelId` 是关卡唯一主键；阶段归属由嵌套列表表达（不再用 `LevelId`/`StageOrder` 平铺外键），怪物使用 `MonsterEntityId` 枚举名。
 - 有旧项目对应项时保留 `LegacyId` 作为溯源；资源路径使用明确字段，不由名称拼接。
 - 数值平衡、费用、奖励与关卡配方进表；动作时点、声音键、素材、缩放、偏移、镜像和判定几何放原生动画/场景，分支规则放具体状态，不用表格指令或 Resource 再造解释器。
@@ -32,9 +32,9 @@ EntityId、SoundId、SkillHitId、掉落池枚举及对应业务表按编码升�
 
 ## 属性与成长
 
-- 属性种类只有一个定义：枚举 `Attributes.AttributeType`（`__enums__.xlsx`，值显式、只在末尾追加）。完整的一组属性值是 bean `Attributes.ActorBaseAttributes`（`__beans__.xlsx`），字段与枚举一一对应；新增属性时同时追加枚举项、bean 字段并更新 `HeroSystem` 的属性汇总。
+- 属性种类只有一个定义：枚举 `Attributes.EAttributeType`（`__enums__.xlsx`，值显式、只在末尾追加）。完整的一组属性值是 bean `Attributes.ActorBaseAttributes`（`__beans__.xlsx`），字段与枚举一一对应；新增属性时同时追加枚举项、bean 字段并更新 `HeroSystem` 的属性汇总。
 - 暴击、闪避采用造一的直接概率，`0.03` 表示 3%；命中、抗暴以相同单位抵消对手。上述四项用 `float`，汇总结果钳制至 0..1，不参与属性点曲线或等级差修正。生命、攻击、防御等仍用整数。装备随机范围兼容两种单位：概率按区间采样，其余属性按官方 round 分布取整数。
-- 修正方式是枚举 `Attributes.AttributeModifierKind`（`Flat` / `PercentAdd` / `PercentMult`）；装备、法宝、被动、丹药、Buff 表用它描述加成，不另造字段。
+- 修正方式是枚举 `Attributes.EAttributeModifierKind`（`Flat` / `PercentAdd` / `PercentMult`）；装备、法宝、被动、丹药、Buff 表用它描述加成，不另造字段。
 - 经验曲线：`Hero.TbHeroLevelConfig`，全英雄共用（等级 → 升级所需经验）。
 - 英雄成长：`Hero.TbHeroGrowthConfig` 按 `HeroId` 建立 map，每名英雄记录内嵌 `Levels` 列表；列表元素按 `Level=1..MaxLevel` 连续排列，并在每级保存完整 `BaseAttributes: ActorBaseAttributes`。`read_schema_from_file=false`；运行期先取英雄记录，再取等级元素，不再用平铺的联合键。`HeroConfig` 保留身份与基础移动参数，外观和声音由场景绑定。
 - 怪物没有成长：`MonsterConfig` 内嵌一个 `BaseAttributes: ActorBaseAttributes`，`Level` 只用于等级压制与经验门槛；怪物伤害由招式 `AttackConfig.FlatPower` 决定，`BaseAttributes.Power` 填 0。

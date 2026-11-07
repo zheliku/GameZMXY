@@ -47,7 +47,7 @@ namespace GameLogic.Profile.Tests
             var otherScope = new TestGameScope(1, [(1, 0)], 0, 25);
             var system = scope.GetSystem<HeroStatusSystem>();
             var otherSystem = otherScope.GetSystem<HeroStatusSystem>();
-            var poison = TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2));
+            var poison = TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EEntityId.LionCamelKing, 3, 2));
 
             // 冻结限制动作但不停止中毒的游戏时钟，各作用域独立推进。
             system.ApplyFreeze(2);
@@ -63,7 +63,7 @@ namespace GameLogic.Profile.Tests
             Assert.False(system.IsFrozen || system.IsPoisoned);
             Assert.Equal(0, system.AdvancePoison(100));
             Assert.True(otherSystem.IsFrozen);
-            Assert.Equal(5f, otherScope.Hero.StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze).RemainingSeconds);
+            Assert.Equal(5f, otherScope.Hero.StatusEffects.GetValueOrDefault(EStatusEffectKind.Freeze).RemainingSeconds);
             system.ApplyPoison(poison);
             Assert.Equal(20, system.AdvancePoison(1));
         }

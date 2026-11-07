@@ -61,7 +61,7 @@ namespace GodotGameFramework.UI
         {
             return uiComponent.OpenUIForm(uiFormAssetName, uiGroupName, userData);
         }
-        public static int OpenUIForm(this UIComponent uiComponent, UIFormId formId, object userData = null)
+        public static int OpenUIForm(this UIComponent uiComponent, EUIFormId formId, object userData = null)
         {
             if (ConfigSystem.Instance.Tables.TbUIFormConfig?.DataList == null)
             {
@@ -82,7 +82,7 @@ namespace GodotGameFramework.UI
         /// <param name="formId"></param>
         /// <param name="userData"></param>
         /// <returns></returns>
-        public static async Task<T> OpenUIFormAsync<T>(this UIComponent uiComponent, UIFormId formId, object userData = null) where T : class, IUIForm
+        public static async Task<T> OpenUIFormAsync<T>(this UIComponent uiComponent, EUIFormId formId, object userData = null) where T : class, IUIForm
         {
             if (ConfigSystem.Instance.Tables.TbUIFormConfig?.DataList == null)
             {
@@ -121,7 +121,7 @@ namespace GodotGameFramework.UI
                 tip.SetAction(contenttxt, cancelTxt, confirmTxt, cancel, confirm);
             }
         }
-        public static bool HasUIForm(this UIComponent uiComponent, UIFormId formId)
+        public static bool HasUIForm(this UIComponent uiComponent, EUIFormId formId)
         {
             UIFormConfig formConfig = ConfigSystem.Instance.Tables.TbUIFormConfig.DataList.FirstOrDefault(x => x.UIFormId == formId);
             IUIForm[] uiForms = uiComponent.GetUIForms(formConfig.AssetPath);

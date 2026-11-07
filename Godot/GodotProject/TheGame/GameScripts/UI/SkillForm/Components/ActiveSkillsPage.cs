@@ -32,7 +32,7 @@ namespace GameLogic.UI.Widgets
         /// <summary>
         /// 玩家点击尚未学习的技能；购买由窗口提交给技能系统。
         /// </summary>
-        public event Action<SkillId> LearnRequested;
+        public event Action<ESkillId> LearnRequested;
 
         // ---- 节点生命周期 ----
 
@@ -51,12 +51,12 @@ namespace GameLogic.UI.Widgets
             }
 
             m_HeroRows = [CollectRows(0), CollectRows(SkillsPerHero)];
-            foreach (var (hero, rows) in new[] { (SkillHero.Wukong, m_HeroRows[0]), (SkillHero.Tangseng, m_HeroRows[1]) })
+            foreach (var (hero, rows) in new[] { (ESkillHero.Wukong, m_HeroRows[0]), (ESkillHero.Tangseng, m_HeroRows[1]) })
             {
                 var definitions = this.GetModel<ConfigurationModel>().GetActive(hero);
                 for (int i = 0; i < rows.Length; i++)
                 {
-                    SkillId id = definitions[i].Id;
+                    ESkillId id = definitions[i].Id;
                     rows[i].Icon.Pressed += () => LearnRequested?.Invoke(id);
                 }
             }
@@ -79,18 +79,18 @@ namespace GameLogic.UI.Widgets
         public void Refresh()
         {
             var configurationModel = this.GetModel<ConfigurationModel>();
-            BindRows(m_HeroRows[0], configurationModel.GetActive(SkillHero.Wukong));
-            BindRows(m_HeroRows[1], configurationModel.GetActive(SkillHero.Tangseng));
+            BindRows(m_HeroRows[0], configurationModel.GetActive(ESkillHero.Wukong));
+            BindRows(m_HeroRows[1], configurationModel.GetActive(ESkillHero.Tangseng));
         }
 
         /// <summary>
         /// 在主动页显示选中的角色行。
         /// </summary>
         /// <param name="hero">当前查看角色。</param>
-        public void SetHero(SkillHero hero)
+        public void SetHero(ESkillHero hero)
         {
-            m_WukongRows.Visible = hero == SkillHero.Wukong;
-            m_TangsengRows.Visible = hero == SkillHero.Tangseng;
+            m_WukongRows.Visible = hero == ESkillHero.Wukong;
+            m_TangsengRows.Visible = hero == ESkillHero.Tangseng;
         }
 
         // ---- 私有方法 ----

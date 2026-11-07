@@ -17,7 +17,7 @@ namespace GameLogic.Skills
     /// <param name="architecture">借用的所属作用域；模型和服务由作用域持有。</param>
     public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(architecture)
     {
-        private readonly Dictionary<SkillId, SkillDefinition> m_SkillDefinitions = new(); // 当前英雄实体登记的状态类型和起手条件，不属于英雄数值。
+        private readonly Dictionary<ESkillId, SkillDefinition> m_SkillDefinitions = new(); // 当前英雄实体登记的状态类型和起手条件，不属于英雄数值。
 
         /// <summary>
         /// 当前身体技能登记的 GGF 状态；具体角色负责在身体状态机中注册它。
@@ -46,12 +46,12 @@ namespace GameLogic.Skills
         /// </summary>
         /// <param name="id">本次要升级的被动。</param>
         /// <returns>购买结果；AlreadyLearned表示已满级。</returns>
-        public SkillLearnResult Upgrade(PassiveId id)
+        public ESkillLearnResult Upgrade(EPassiveId id)
         {
             var definition = this.GetModel<ConfigurationModel>().Tables.TbPassiveConfig.GetOrDefault(id);
             if (definition == null)
             {
-                return SkillLearnResult.Unavailable;
+                return ESkillLearnResult.Unavailable;
             }
 
             var profile = this.GetModel<ProfileModel>();
@@ -59,16 +59,16 @@ namespace GameLogic.Skills
             int current = levels[id];
             if (current >= definition.Levels.Count)
             {
-                return SkillLearnResult.AlreadyLearned;
+                return ESkillLearnResult.AlreadyLearned;
             }
 
             if (!this.GetSystem<ProfileSystem>().TrySpendSoul(definition.Levels[current].LearnSoul))
             {
-                return SkillLearnResult.InsufficientSoul;
+                return ESkillLearnResult.InsufficientSoul;
             }
 
             levels[id] = current + 1;
-            return SkillLearnResult.Learned;
+            return ESkillLearnResult.Learned;
         }
 
         /// <summary>
@@ -76,11 +76,11 @@ namespace GameLogic.Skills
         /// </summary>
         /// <param name="skillId">主动技能定义。</param>
         /// <returns>学习结果，界面据此展示反馈。</returns>
-        public SkillLearnResult Learn(SkillId skillId)
+        public ESkillLearnResult Learn(ESkillId skillId)
         {
             if (!IsLearnable(skillId))
             {
-                return SkillLearnResult.Unavailable;
+                return ESkillLearnResult.Unavailable;
             }
 
             var definition = this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(skillId);
@@ -88,16 +88,16 @@ namespace GameLogic.Skills
             var learned = this.GetModel<SkillModel>().GetLearnedSkills(profile.ActiveHeroId);
             if (learned.Contains(skillId))
             {
-                return SkillLearnResult.AlreadyLearned;
+                return ESkillLearnResult.AlreadyLearned;
             }
 
             if (!this.GetSystem<ProfileSystem>().TrySpendSoul(definition.LearnSoul))
             {
-                return SkillLearnResult.InsufficientSoul;
+                return ESkillLearnResult.InsufficientSoul;
             }
 
             learned.Add(skillId);
-            return SkillLearnResult.Learned;
+            return ESkillLearnResult.Learned;
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace GameLogic.Skills
         /// </summary>
         /// <param name="skillId">技能定义。</param>
         /// <returns>已学习时为 true。</returns>
-        public bool IsLearned(SkillId skillId)
+        public bool IsLearned(ESkillId skillId)
         {
             return this.GetModel<SkillModel>()
             .GetLearnedSkills(this.GetModel<ProfileModel>().ActiveHeroId).Contains(skillId);
@@ -116,7 +116,7 @@ namespace GameLogic.Skills
         /// </summary>
         /// <param name="id">技能编号。</param>
         /// <returns>当前英雄的技能配置存在时为真。</returns>
-        public bool IsLearnable(SkillId id)
+        public bool IsLearnable(ESkillId id)
         {
             var definition = this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.GetOrDefault(id);
             return definition != null && (int)definition.Hero == this.GetModel<ProfileModel>().ActiveHeroId;
@@ -127,7 +127,7 @@ namespace GameLogic.Skills
         /// </summary>
         /// <param name="id">技能编号。</param>
         /// <returns>当前可用时为真。</returns>
-        public bool IsAvailable(SkillId id)
+        public bool IsAvailable(ESkillId id)
         {
             var model = this.GetModel<HeroModel>();
             var tables = this.GetModel<ConfigurationModel>().Tables;
@@ -141,7 +141,7 @@ namespace GameLogic.Skills
         /// </summary>
         /// <param name="id">技能编号。</param>
         /// <returns>蓝量足够时为真。</returns>
-        public bool CanAfford(SkillId id)
+        public bool CanAfford(ESkillId id)
         {
             return this.GetModel<HeroModel>().Mp.Value >=
                                              this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost;
@@ -153,7 +153,7 @@ namespace GameLogic.Skills
         /// <param name="id">技能编号。</param>
         /// <param name="actor">本次调用借用的角色能力。</param>
         /// <returns>本次登记并扣费成功时为真。</returns>
-        public bool TryActivate(SkillId id, ISkillActor actor)
+        public bool TryActivate(ESkillId id, ISkillActor actor)
         {
             var model = this.GetModel<HeroModel>();
             // 先检查本局控制权和当前动作，再检查该技能的学习与起手条件。
@@ -190,7 +190,7 @@ namespace GameLogic.Skills
         /// <summary>
         /// 扣除已激活的延迟耗蓝技能；未满足延迟契约时不改变蓝量。
         /// </summary>
-        public bool TrySpendActivatedMana(SkillId id)
+        public bool TrySpendActivatedMana(ESkillId id)
         {
             var model = this.GetModel<HeroModel>();
             if (model?.ActiveSkillId != id || !m_SkillDefinitions.TryGetValue(id, out var definition) || !definition.DeferredMana)
@@ -220,7 +220,7 @@ namespace GameLogic.Skills
             }
 
             // 完整校验后才取消旧技能：状态类型、配置归属和输入唯一性分别检查。
-            var skillIds = new HashSet<SkillId>();
+            var skillIds = new HashSet<ESkillId>();
             var inputActions = new HashSet<string>(StringComparer.Ordinal);
             foreach (var definition in definitions)
             {
@@ -305,7 +305,7 @@ namespace GameLogic.Skills
         /// 当前招式正常收招后解除身体占用，保留按秒计算的无敌区间；过期招式不得结束其他技能。
         /// </summary>
         /// <param name="id">正在退出的状态所对应的技能。</param>
-        public void EndSkill(SkillId id)
+        public void EndSkill(ESkillId id)
         {
             var model = this.GetModel<HeroModel>();
             if (model?.ActiveSkillId == id)
@@ -345,13 +345,13 @@ namespace GameLogic.Skills
     /// <param name="BodyState">本技能的 GGF 身体状态。</param>
     /// <param name="InputAction">可选直接动作名；组合技能由具体角色匹配。</param>
     /// <param name="CanStart">可选起手条件；在扣费前检查。</param>
-    public sealed record SkillDefinition(SkillId Id, Type BodyState,
+    public sealed record SkillDefinition(ESkillId Id, Type BodyState,
         string InputAction = null, Func<ISkillActor, bool> CanStart = null, bool DeferredMana = false);
 
     /// <summary>
     /// 学习请求的业务结果；不以 UI 状态代替资格和余额检查。
     /// </summary>
-    public enum SkillLearnResult
+    public enum ESkillLearnResult
     {
         /// <summary>
         /// 本次已扣费并学习。

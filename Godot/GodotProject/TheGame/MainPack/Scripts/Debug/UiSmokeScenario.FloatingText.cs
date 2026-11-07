@@ -36,7 +36,7 @@ public sealed partial class UiSmokeScenario
             Check(GF.Event.Count(DamageDealtEventArgs.EventId) == subscribers + 2, "飘字显式开始没有建立订阅");
 
             // 一个真实池实例依次显示四种反馈，验证位图、对齐、缩放和透明度不会跨样式残留。
-            first.ShowRecovery(Vector2.Zero, 100, RecoveryKind.Health);
+            first.ShowRecovery(Vector2.Zero, 100, ERecoveryKind.Health);
             var reused = firstTexts.Single();
             var reusedDigits = SmokeInspection.ReadField<Sprite2D[]>(reused, "m_Digits");
             Check(!reusedDigits[0].Centered && reusedDigits.Count(x => x.Visible) == 3, "恢复数字初始布局错误");
@@ -48,19 +48,19 @@ public sealed partial class UiSmokeScenario
             // 全部两位组合验证轮廓宽度和窄字侧留白，覆盖 0–9，包含内部零与重复字符。
             for (int value = 0; value < 100; value++)
             {
-                first.ShowRecovery(Vector2.Zero, value + 100, RecoveryKind.Health);
+                first.ShowRecovery(Vector2.Zero, value + 100, ERecoveryKind.Health);
                 CheckDigitSpacing(firstTexts.Single(), 3, false);
                 firstTexts.Single()._Process(1);
-                first.ShowRecovery(Vector2.Zero, value + 100, RecoveryKind.Mana);
+                first.ShowRecovery(Vector2.Zero, value + 100, ERecoveryKind.Mana);
                 CheckDigitSpacing(firstTexts.Single(), 3, false);
                 firstTexts.Single()._Process(1);
             }
             foreach (var (kind, crit, hero) in new[]
             {
-                (DamageKind.Physics, false, false), (DamageKind.Physics, true, false),
-                (DamageKind.Magic, false, false), (DamageKind.Magic, true, false),
-                (DamageKind.Physics, false, true), (DamageKind.Magic, false, true),
-                (DamageKind.Real, false, true)
+                (EDamageKind.Physics, false, false), (EDamageKind.Physics, true, false),
+                (EDamageKind.Magic, false, false), (EDamageKind.Magic, true, false),
+                (EDamageKind.Physics, false, true), (EDamageKind.Magic, false, true),
+                (EDamageKind.Real, false, true)
             })
             {
                 for (int value = 0; value < 100; value++)
@@ -73,7 +73,7 @@ public sealed partial class UiSmokeScenario
             }
 
             Check(firstTexts.Count == 0, "恢复样式没有自然回池");
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(int.MaxValue, false, true, DamageKind.Magic),
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(int.MaxValue, false, true, EDamageKind.Magic),
                 -101, false, Vector2.Zero));
             Check(ReferenceEquals(reused, firstTexts.Single()) && reusedDigits.All(x => x.Visible && x.Centered),
                 "恢复到伤害没有复用同一池实例，或最大整数的十位数布局错误");
@@ -83,7 +83,7 @@ public sealed partial class UiSmokeScenario
             reused._Process(.6);
             Check(SmokeInspection.ReadField<Node2D>(reused, "m_Content").Modulate.A < 1, "伤害没有淡出");
             reused._Process(.2);
-            first.ShowRecovery(Vector2.Zero, 8, RecoveryKind.Mana);
+            first.ShowRecovery(Vector2.Zero, 8, ERecoveryKind.Mana);
             var reusedContent = SmokeInspection.ReadField<Node2D>(reused, "m_Content");
             Check(ReferenceEquals(reused, firstTexts.Single()) && reusedContent.Scale == Vector2.One &&
                 reusedContent.Modulate == Colors.White && reusedDigits.Count(x => x.Visible) == 1 &&
@@ -91,7 +91,7 @@ public sealed partial class UiSmokeScenario
                 "伤害到魔法恢复残留旧布局、透明度或缩放");
             CheckDigitSpacing(reused, 1, false);
             reused._Process(1);
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(DamageResult.Missed(DamageKind.Physics), -101,
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(DamageResult.Missed(EDamageKind.Physics), -101,
                 false, Vector2.Zero));
             Check(ReferenceEquals(reused, firstTexts.Single()) && reusedDigits.All(x => !x.Visible) &&
                 SmokeInspection.ReadField<Sprite2D>(reused, "m_Miss").Visible, "闪避复用没有隐藏数字");
@@ -100,13 +100,13 @@ public sealed partial class UiSmokeScenario
             // 各伤害类型走正式事件，统一选三套官方伤害图；蓝色只用于恢复魔法。
             foreach (var (kind, crit, hero, sheet) in new[]
             {
-                (DamageKind.Physics, false, false, "m_EnemyDamage"),
-                (DamageKind.Physics, true, false, "m_EnemyCritical"),
-                (DamageKind.Magic, false, false, "m_EnemyDamage"),
-                (DamageKind.Magic, true, false, "m_EnemyCritical"),
-                (DamageKind.Physics, false, true, "m_HeroDamage"),
-                (DamageKind.Magic, false, true, "m_HeroDamage"),
-                (DamageKind.Real, false, true, "m_HeroDamage")
+                (EDamageKind.Physics, false, false, "m_EnemyDamage"),
+                (EDamageKind.Physics, true, false, "m_EnemyCritical"),
+                (EDamageKind.Magic, false, false, "m_EnemyDamage"),
+                (EDamageKind.Magic, true, false, "m_EnemyCritical"),
+                (EDamageKind.Physics, false, true, "m_HeroDamage"),
+                (EDamageKind.Magic, false, true, "m_HeroDamage"),
+                (EDamageKind.Real, false, true, "m_HeroDamage")
             })
             {
                 var before = firstTexts.ToHashSet();
@@ -118,19 +118,19 @@ public sealed partial class UiSmokeScenario
                     digits[0].Texture == SmokeInspection.ReadField<Texture2D>(pop, sheet), "伤害数字位数或样式错误");
                 CheckDigitSpacing(pop, 3, true);
             }
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(DamageResult.Missed(DamageKind.Physics), -101,
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(DamageResult.Missed(EDamageKind.Physics), -101,
                 false, Vector2.Zero));
             Check(firstTexts.Count == 8 && firstTexts.Count(x =>
                 SmokeInspection.ReadField<Sprite2D>(x, "m_Miss").Visible) == 1, "闪避提示没有使用专用样式");
             GF.Event.FireNow(this, DamageDealtEventArgs.Create(default, -101, false, Vector2.Zero));
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(10, false, false, DamageKind.Physics),
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(10, false, false, EDamageKind.Physics),
                 -999, false, Vector2.Zero));
             Check(firstTexts.Count == 8 && secondTexts.Count == 0, "零伤害或其他场景事件产生了多余飘字");
 
             var beforeRecovery = firstTexts.ToHashSet();
-            first.ShowRecovery(Vector2.Zero, 100, RecoveryKind.Health);
-            first.ShowRecovery(Vector2.Zero, 50, RecoveryKind.Mana);
-            first.ShowRecovery(Vector2.Zero, 0, RecoveryKind.Health);
+            first.ShowRecovery(Vector2.Zero, 100, ERecoveryKind.Health);
+            first.ShowRecovery(Vector2.Zero, 50, ERecoveryKind.Mana);
+            first.ShowRecovery(Vector2.Zero, 0, ERecoveryKind.Health);
             var recoveryTexts = firstTexts.Where(x => !beforeRecovery.Contains(x)).ToArray();
             Check(firstTexts.Count == 10 && recoveryTexts.Length == 2 && recoveryTexts.Select(x =>
                 SmokeInspection.ReadField<Sprite2D[]>(x, "m_Digits")[0].Texture.ResourcePath)
@@ -160,12 +160,12 @@ public sealed partial class UiSmokeScenario
             await WaitUntilAsync(() => firstTexts.Count == 0, "飘字没有自然结束并回池", 4000);
 
             // 两个组件共享同类池，停止第一个不能回收第二个的活动实例。
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(10, false, false, DamageKind.Physics),
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(10, false, false, EDamageKind.Physics),
                 -101, false, Vector2.Zero));
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(20, false, true, DamageKind.Magic),
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(20, false, true, EDamageKind.Magic),
                 -102, false, Vector2.Zero));
-            first.ShowRecovery(Vector2.Zero, 10, RecoveryKind.Health);
-            second.ShowRecovery(Vector2.Zero, 20, RecoveryKind.Mana);
+            first.ShowRecovery(Vector2.Zero, 10, ERecoveryKind.Health);
+            second.ShowRecovery(Vector2.Zero, 20, ERecoveryKind.Mana);
             var held = firstTexts.ToHashSet();
             first.StopSession();
             first.StopSession();
@@ -175,16 +175,16 @@ public sealed partial class UiSmokeScenario
             Check(GF.Event.Count(DamageDealtEventArgs.EventId) == subscribers + 1, "重复停止会话导致订阅数量错误");
 
             // 旧实体的排队事件不能串到复用组件的新会话；被归还的节点不保留旧完成回调。
-            GF.Event.Fire(this, DamageDealtEventArgs.Create(new DamageResult(99, false, false, DamageKind.Physics),
+            GF.Event.Fire(this, DamageDealtEventArgs.Create(new DamageResult(99, false, false, EDamageKind.Physics),
                 -101, false, Vector2.Zero));
             targets.Clear();
             targets.Add(-103);
             first.StartSession(targets.Contains);
             await WaitFramesAsync(2);
             Check(firstTexts.Count == 0, "旧周期排队伤害串入了新飘字会话");
-            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(7, false, false, DamageKind.Physics),
+            GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(7, false, false, EDamageKind.Physics),
                 -103, false, Vector2.Zero));
-            first.ShowRecovery(Vector2.Zero, 8, RecoveryKind.Mana);
+            first.ShowRecovery(Vector2.Zero, 8, ERecoveryKind.Mana);
             Check(firstTexts.SetEquals(held),
                 "结束会话后飘字实例没有从同一 GGF 节点池复用");
             Check(firstTexts.All(x => SmokeInspection.ReadField<Sprite2D[]>(x, "m_Digits").Count(digit => digit.Visible) == 1) &&
@@ -198,10 +198,10 @@ public sealed partial class UiSmokeScenario
             int row = 0;
             foreach (var (kind, crit, hero) in new[]
             {
-                (DamageKind.Physics, false, false), (DamageKind.Physics, true, false),
-                (DamageKind.Magic, false, false), (DamageKind.Magic, true, false),
-                (DamageKind.Physics, false, true), (DamageKind.Magic, false, true),
-                (DamageKind.Real, false, true)
+                (EDamageKind.Physics, false, false), (EDamageKind.Physics, true, false),
+                (EDamageKind.Magic, false, false), (EDamageKind.Magic, true, false),
+                (EDamageKind.Physics, false, true), (EDamageKind.Magic, false, true),
+                (EDamageKind.Real, false, true)
             })
             {
                 int column = 0;
@@ -212,7 +212,7 @@ public sealed partial class UiSmokeScenario
                 }
                 row++;
             }
-            foreach (var recoveryKind in new[] { RecoveryKind.Health, RecoveryKind.Mana })
+            foreach (var recoveryKind in new[] { ERecoveryKind.Health, ERecoveryKind.Mana })
             {
                 int column = 0;
                 foreach (int value in new[] { 111, 108, 888 })
@@ -225,7 +225,7 @@ public sealed partial class UiSmokeScenario
             foreach (int value in new[] { 10, 17, 24, 36, 59, 70, 99, 1234567890 })
             {
                 Vector2 position = first.GetCanvasTransform().AffineInverse() * new Vector2(120 + sampleRow % 4 * 210, 420 + sampleRow / 4 * 45);
-                GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(value, false, false, DamageKind.Physics), -103, false, position));
+                GF.Event.FireNow(this, DamageDealtEventArgs.Create(new DamageResult(value, false, false, EDamageKind.Physics), -103, false, position));
                 sampleRow++;
             }
             await CaptureCombatAsync("floating_text_spacing");

@@ -140,7 +140,7 @@ namespace GameLogic.Enemies
         {
             try
             {
-                IEntity child = await entities.ShowEntityAsync(EntityId.SharkSpawn, new EnemySpawn(position));
+                IEntity child = await entities.ShowEntityAsync(EEntityId.SharkSpawn, new EnemySpawn(position));
                 if (token.IsCancellationRequested)
                 {
                     entities.HideEntitySafe(child.Id);
@@ -177,7 +177,7 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(EntityId.SharkDemonKing, 2, 2);
+            int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(EEntityId.SharkDemonKing, 2, 2);
             var data = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId);
             SpawnEffect(m_SharkWaveScene, data, GlobalPosition + new Vector2(-Facing * 600f, -40f));
         }
@@ -193,7 +193,7 @@ namespace GameLogic.Enemies
             }
 
             CancellationToken token = m_ShowCancellation.Token;
-            int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(EntityId.SharkDemonKing, 3, 2);
+            int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(EEntityId.SharkDemonKing, 3, 2);
             Vector2 position = GlobalPosition + ((IEnemyAiAgent)this).TargetOffset - new Vector2(100, 100);
             var warning = RentSkillEffect(m_BubbleWarningScene);
             warning.Show(null, position, -1, CaptureCombatAttributes(), 0, false, ReleaseSkillEffect,

@@ -17,10 +17,10 @@ namespace GameLogic.Profile.Tests
         /// </summary>
         /// <param name="id">恢复品定义。</param>
         [Theory]
-        [InlineData(PickupId.SmallPeach)]
-        [InlineData(PickupId.LargePeach)]
-        [InlineData(PickupId.ManaBottle)]
-        public void Pickup_UsesConfiguredEffectAndConsumesAtMaximum(PickupId id)
+        [InlineData(EPickupId.SmallPeach)]
+        [InlineData(EPickupId.LargePeach)]
+        [InlineData(EPickupId.ManaBottle)]
+        public void Pickup_UsesConfiguredEffectAndConsumesAtMaximum(EPickupId id)
         {
             var scope = Ready();
             var system = scope.GetSystem<LevelSystem>();
@@ -28,15 +28,15 @@ namespace GameLogic.Profile.Tests
             scope.Hero.Hp.Value = 1;
             scope.Hero.Mp.Value = 0;
             Assert.True(system.TryCollectPickup(id));
-            Assert.Equal(pickup.Effect == PickupEffect.Health
+            Assert.Equal(pickup.Effect == EPickupEffect.Health
                 ? Math.Min(scope.Hero.MaxHp.Value, 1 + pickup.RestoreAmount) : 1, scope.Hero.Hp.Value);
-            Assert.Equal(pickup.Effect == PickupEffect.Mana
+            Assert.Equal(pickup.Effect == EPickupEffect.Mana
                 ? Math.Min(scope.Hero.MaxMp.Value, pickup.RestoreAmount) : 0, scope.Hero.Mp.Value);
             scope.GetSystem<HeroSystem>().Heal(int.MaxValue);
             scope.GetSystem<HeroSystem>().RestoreMp(int.MaxValue);
             Assert.True(system.TryCollectPickup(id));
-            Assert.False(system.TryCollectPickup(PickupId.None));
-            Assert.False(system.TryCollectPickup((PickupId)999));
+            Assert.False(system.TryCollectPickup(EPickupId.None));
+            Assert.False(system.TryCollectPickup((EPickupId)999));
         }
 
         /// <summary>
@@ -48,14 +48,14 @@ namespace GameLogic.Profile.Tests
             var scope = Ready();
             var system = scope.GetSystem<LevelSystem>();
             scope.Hero.Mp.Value = 0;
-            system.CollectLoot(new(LootKind.Soul, 11));
-            system.CollectLoot(new(LootKind.Musou, 5));
+            system.CollectLoot(new(ELootKind.Soul, 11));
+            system.CollectLoot(new(ELootKind.Musou, 5));
             Assert.Equal(11, scope.Profile.Soul.Value);
             Assert.Equal(5, scope.Hero.Ws.Value);
             var loot = scope.GetSystem<LootSystem>().Roll(TestTables.Tables.TbEnemyConfig.DataList[0], 0,
                 scope.Hero.MaxHp.Value, scope.Hero.MaxMp.Value, () => 0f);
-            var health = loot.Find(x => x.Kind == LootKind.Health);
-            var mana = loot.Find(x => x.Kind == LootKind.Mana);
+            var health = loot.Find(x => x.Kind == ELootKind.Health);
+            var mana = loot.Find(x => x.Kind == ELootKind.Mana);
             scope.GetSystem<ProfileSystem>().AddExperience(int.MaxValue);
             Assert.True(scope.GetSystem<LootSystem>().HealthAmount(scope.Hero.MaxHp.Value) > health.Amount);
             Assert.True(scope.GetSystem<LootSystem>().ManaAmount(scope.Hero.MaxMp.Value) > mana.Amount);
@@ -72,7 +72,7 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(scope.Hero.MaxHp.Value, scope.Hero.Hp.Value);
             Assert.Equal(11, scope.Profile.Soul.Value);
             Assert.Equal(5, scope.Hero.Ws.Value);
-            Assert.Throws<ArgumentOutOfRangeException>(() => system.CollectLoot(new((LootKind)999, 1)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => system.CollectLoot(new((ELootKind)999, 1)));
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace GameLogic.Profile.Tests
             var system = scope.GetSystem<LevelSystem>();
             if (state == 1)
             {
-                system.Complete(LevelOutcome.Defeated, 0);
+                system.Complete(ELevelOutcome.Defeated, 0);
             }
             else if (state == 2)
             {
@@ -103,9 +103,9 @@ namespace GameLogic.Profile.Tests
 
             int hp = scope.Hero.Hp.Value;
             scope.Hero.Mp.Value = 0;
-            Assert.False(system.TryCollectPickup(PickupId.LargePeach));
-            Assert.False(system.TryCollectPickup(PickupId.ManaBottle));
-            foreach (var kind in Enum.GetValues<LootKind>())
+            Assert.False(system.TryCollectPickup(EPickupId.LargePeach));
+            Assert.False(system.TryCollectPickup(EPickupId.ManaBottle));
+            foreach (var kind in Enum.GetValues<ELootKind>())
             {
                 system.CollectLoot(new(kind, 5));
             }
@@ -124,7 +124,7 @@ namespace GameLogic.Profile.Tests
         {
             var scope = Ready();
             var system = scope.GetSystem<LevelSystem>();
-            system.CollectLoot(new(LootKind.Soul, 17));
+            system.CollectLoot(new(ELootKind.Soul, 17));
             Assert.Equal(17, scope.Profile.Soul.Value);
             system.EndSession();
             Assert.Equal(0, scope.Profile.Soul.Value);

@@ -68,17 +68,17 @@ namespace GameLogic.UI
             m_Quality.AddThemeColorOverride("font_color", qualityColor);
             string slotName = definition.Slot switch
             {
-                EquipmentSlot.Weapon => "武器",
-                EquipmentSlot.Armor => "防具",
-                EquipmentSlot.Accessory => "饰品",
-                EquipmentSlot.Treasure => "法宝",
+                EEquipmentSlot.Weapon => "武器",
+                EEquipmentSlot.Armor => "防具",
+                EEquipmentSlot.Accessory => "饰品",
+                EEquipmentSlot.Treasure => "法宝",
                 _ => throw new System.ArgumentOutOfRangeException(nameof(definition.Slot))
             };
             string ownerName = definition.Owner switch
             {
-                EquipmentOwner.Universal => "通用",
-                EquipmentOwner.Wukong => "悟空",
-                EquipmentOwner.Tangseng => "唐僧",
+                EEquipmentOwner.Universal => "通用",
+                EEquipmentOwner.Wukong => "悟空",
+                EEquipmentOwner.Tangseng => "唐僧",
                 _ => throw new System.ArgumentOutOfRangeException(nameof(definition.Owner))
             };
             m_Type.Text = $"{slotName}·{ownerName}";
@@ -98,7 +98,7 @@ namespace GameLogic.UI
         /// <param name="attribute">属性身份。</param>
         /// <param name="value">值或范围端点。</param>
         /// <returns>显示数值。</returns>
-        private static string FormatValue(AttributeType attribute, float value)
+        private static string FormatValue(EAttributeType attribute, float value)
         {
             return attribute.IsProbability ? $"{value * 100:0.##}%" : $"{value:0.##}";
         }
@@ -108,7 +108,7 @@ namespace GameLogic.UI
         /// </summary>
         /// <param name="attribute">属性身份。</param>
         /// <param name="value">已格式化的显示值。</param>
-        private void AddAttribute(AttributeType attribute, string value)
+        private void AddAttribute(EAttributeType attribute, string value)
         {
             Label line = new()
             {
@@ -126,26 +126,26 @@ namespace GameLogic.UI
         /// </summary>
         /// <param name="attribute">属性类型。</param>
         /// <returns>界面名称。</returns>
-        private static string AttributeName(AttributeType attribute)
+        private static string AttributeName(EAttributeType attribute)
         {
             return attribute switch
             {
-                AttributeType.MaxHp => "生命",
-                AttributeType.MaxMp => "魔法",
-                AttributeType.Power => "攻击",
-                AttributeType.Def => "防御",
-                AttributeType.Mdef => "魔抗",
-                AttributeType.Crit => "暴击",
-                AttributeType.Miss => "闪避",
-                AttributeType.Lucky => "幸运",
-                AttributeType.Toughness => "韧性",
-                AttributeType.Htarget => "命中",
-                AttributeType.CritReduce => "抗暴",
-                AttributeType.Ar => "破甲",
-                AttributeType.Sp => "破魔",
-                AttributeType.Vampirism => "吸血",
-                AttributeType.HpRegen => "回血",
-                AttributeType.MpRegen => "回蓝",
+                EAttributeType.MaxHp => "生命",
+                EAttributeType.MaxMp => "魔法",
+                EAttributeType.Power => "攻击",
+                EAttributeType.Def => "防御",
+                EAttributeType.Mdef => "魔抗",
+                EAttributeType.Crit => "暴击",
+                EAttributeType.Miss => "闪避",
+                EAttributeType.Lucky => "幸运",
+                EAttributeType.Toughness => "韧性",
+                EAttributeType.Htarget => "命中",
+                EAttributeType.CritReduce => "抗暴",
+                EAttributeType.Ar => "破甲",
+                EAttributeType.Sp => "破魔",
+                EAttributeType.Vampirism => "吸血",
+                EAttributeType.HpRegen => "回血",
+                EAttributeType.MpRegen => "回蓝",
                 _ => attribute.ToString()
             };
         }

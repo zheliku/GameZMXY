@@ -36,11 +36,11 @@ namespace GameLogic.Enemies
             body.Velocity = Vector2.Zero;
             owner.BeginDeathPresentation();
             // 原版在退场开始时直接赠入背包；延迟的死亡事件仍留到两秒演出完成，不能提前清关。
-            var reward = owner.GetSystem<ProfileSystem>().GrantUniqueEquipment(EquipmentId.DiamondSnare, GD.Randf);
-            if (reward != EquipmentGrantResult.AlreadyOwned)
+            var reward = owner.GetSystem<ProfileSystem>().GrantUniqueEquipment(EEquipmentId.DiamondSnare, GD.Randf);
+            if (reward != EEquipmentGrantResult.AlreadyOwned)
             {
-                GF.Event.Fire(owner, EquipmentRewardEventArgs.Create(EquipmentId.DiamondSnare,
-                    reward == EquipmentGrantResult.Collected));
+                GF.Event.Fire(owner, EquipmentRewardEventArgs.Create(EEquipmentId.DiamondSnare,
+                    reward == EEquipmentGrantResult.Collected));
             }
 
             m_Left = owner.DeathDuration;

@@ -53,9 +53,9 @@ namespace GameLogic.Profile.Tests
         {
             var data = TestTables.Architecture.SendQuery(new LevelGuideQuery(10));
             Assert.Equal("牛魔王", data.Enemies[0].NameCn);
-            Assert.Equal(EntityId.BullDemonBeast, data.Enemies[0].EntityId);
+            Assert.Equal(EEntityId.BullDemonBeast, data.Enemies[0].EntityId);
             Assert.Single(data.Enemies, enemy => enemy.NameCn == "牛魔王");
-            Assert.Contains(data.Drops, item => item.Id == EquipmentId.DiamondSnare);
+            Assert.Contains(data.Drops, item => item.Id == EEquipmentId.DiamondSnare);
         }
 
         /// <summary>
@@ -65,11 +65,11 @@ namespace GameLogic.Profile.Tests
         public void SummonedEnemies_AppearAfterGuardians()
         {
             var cave = TestTables.Architecture.SendQuery(new LevelGuideQuery(4));
-            Assert.Equal(EntityId.BatCaveStatue, cave.Enemies[0].EntityId);
-            Assert.Contains(cave.Enemies.Skip(1), enemy => enemy.EntityId == EntityId.Bat);
+            Assert.Equal(EEntityId.BatCaveStatue, cave.Enemies[0].EntityId);
+            Assert.Contains(cave.Enemies.Skip(1), enemy => enemy.EntityId == EEntityId.Bat);
             var whirlpool = TestTables.Architecture.SendQuery(new LevelGuideQuery(9));
-            Assert.Equal(EntityId.SharkDemonKing, whirlpool.Enemies[0].EntityId);
-            Assert.Contains(whirlpool.Enemies.Skip(1), enemy => enemy.EntityId == EntityId.SharkSpawn);
+            Assert.Equal(EEntityId.SharkDemonKing, whirlpool.Enemies[0].EntityId);
+            Assert.Contains(whirlpool.Enemies.Skip(1), enemy => enemy.EntityId == EEntityId.SharkSpawn);
         }
     }
 }

@@ -20,7 +20,7 @@ namespace GameLogic.UI.Widgets
         /// </summary>
         /// <param name="weaponId">当前武器身份。</param>
         /// <param name="armorId">当前防具身份。</param>
-        public void ApplyAppearance(GameConfig.Equipment.EquipmentId weaponId, GameConfig.Equipment.EquipmentId armorId)
+        public void ApplyAppearance(GameConfig.Equipment.EEquipmentId weaponId, GameConfig.Equipment.EEquipmentId armorId)
         {
             m_Appearance.ApplyToSprites(m_Body, m_Weapon, weaponId, armorId);
             m_Player.Advance(0);

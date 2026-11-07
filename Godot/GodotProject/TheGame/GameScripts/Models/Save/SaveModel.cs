@@ -19,7 +19,7 @@ namespace GameLogic.Save
         /// 可绑定的目录快照，不包含存档文件本身。
         /// </summary>
         public BindableProperty<SaveDirectoryState> Directory { get; } =
-            new(new(SaveListState.NotLoaded, Array.Empty<SaveSlotInfo>(), ""));
+            new(new(ESaveListState.NotLoaded, Array.Empty<SaveSlotInfo>(), ""));
 
         /// <summary>
         /// 地图手动保存状态，包含发起窗口身份，重开窗口不会接受旧结果。
@@ -34,7 +34,7 @@ namespace GameLogic.Save
         /// <summary>
         /// 当前读取阶段。
         /// </summary>
-        public SaveListState Phase
+        public ESaveListState Phase
         {
             get
             {
@@ -70,12 +70,12 @@ namespace GameLogic.Save
     /// </summary>
     /// <param name="FormSerialId">发起窗口编号。</param>
     /// <param name="Phase">写盘阶段。</param>
-    public readonly record struct ManualSaveState(int FormSerialId, SaveWritePhase Phase);
+    public readonly record struct ManualSaveState(int FormSerialId, ESaveWritePhase Phase);
 
     /// <summary>
     /// 地图手动保存按钮的显示阶段。
     /// </summary>
-    public enum SaveWritePhase
+    public enum ESaveWritePhase
     {
         /// <summary>
         /// 尚未发起。
@@ -104,13 +104,13 @@ namespace GameLogic.Save
     /// <param name="Phase">读取阶段。</param>
     /// <param name="Slots">完整的只读六格摘要。</param>
     /// <param name="ErrorMessage">失败提示或空串。</param>
-    public readonly record struct SaveDirectoryState(SaveListState Phase, IReadOnlyList<SaveSlotInfo> Slots,
+    public readonly record struct SaveDirectoryState(ESaveListState Phase, IReadOnlyList<SaveSlotInfo> Slots,
         string ErrorMessage);
 
     /// <summary>
     /// 存档选择页读取目录的互斥阶段。
     /// </summary>
-    public enum SaveListState
+    public enum ESaveListState
     {
         /// <summary>
         /// 尚未请求读取。
@@ -136,7 +136,7 @@ namespace GameLogic.Save
     /// <summary>
     /// 一次加载操作的来源，用于决定是否进入选角。
     /// </summary>
-    public enum SaveOrigin
+    public enum ESaveOrigin
     {
         /// <summary>
         /// 读取已有档案。

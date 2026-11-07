@@ -93,7 +93,7 @@ namespace GameLogic.Level
         private void OnEntranceBodyEntered(Node2D body)
         {
             if (!m_SessionActive || m_EnteringHiddenLevel || body != m_Player || !m_Player.IsAlive ||
-                LevelModel.Outcome.Value != LevelOutcome.Running)
+                LevelModel.Outcome.Value != ELevelOutcome.Running)
             {
                 return;
             }

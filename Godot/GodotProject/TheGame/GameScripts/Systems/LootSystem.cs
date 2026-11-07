@@ -27,13 +27,13 @@ namespace GameLogic.Drops
         /// <param name="equipmentPoolId">怪物的装备池主键。</param>
         /// <param name="random">返回 [0,1] 的采样器，允许 Godot 的闭区间端点。</param>
         /// <returns>至多一件恢复品和一件装备的定义编号。</returns>
-        public GroundLootSelection RollGround(float equipmentChance, EquipmentDropPoolId equipmentPoolId, Func<float> random)
+        public GroundLootSelection RollGround(float equipmentChance, EEquipmentDropPoolId equipmentPoolId, Func<float> random)
         {
             var tables = this.GetModel<ConfigurationModel>().Tables;
             var pickups = tables.TbPickupConfig.DataList;
             var pool = tables.TbEquipmentDropPoolConfig.GetOrDefault(equipmentPoolId);
             float medicine = random();
-            PickupId pickup = PickupId.None;
+            EPickupId pickup = EPickupId.None;
             float threshold = 0;
             foreach (var entry in pickups)
             {
@@ -45,7 +45,7 @@ namespace GameLogic.Drops
                 }
             }
 
-            EquipmentId equipment = EquipmentId.None;
+            EEquipmentId equipment = EEquipmentId.None;
             if (pool != null && random() < equipmentChance)
             {
                 int total = 0;
@@ -85,7 +85,7 @@ namespace GameLogic.Drops
             int souls = Count(monster.SoulCount, random());
             for (int i = 0; i < souls; i++)
             {
-                rewards.Add(new(LootKind.Soul, soulPerOrb));
+                rewards.Add(new(ELootKind.Soul, soulPerOrb));
             }
 
             // 原版蓝球 12%：1、2、3 颗各 4%，在条件数量区间内均匀采样。
@@ -95,7 +95,7 @@ namespace GameLogic.Drops
                 int amount = ManaAmount(maximumMp);
                 for (int i = 0; i < count; i++)
                 {
-                    rewards.Add(new(LootKind.Mana, amount));
+                    rewards.Add(new(ELootKind.Mana, amount));
                 }
             }
 
@@ -105,7 +105,7 @@ namespace GameLogic.Drops
                 int count = Count(monster.MusouCount, random());
                 for (int i = 0; i < count; i++)
                 {
-                    rewards.Add(new(LootKind.Musou, drops.MusouPerOrb));
+                    rewards.Add(new(ELootKind.Musou, drops.MusouPerOrb));
                 }
             }
 
@@ -116,7 +116,7 @@ namespace GameLogic.Drops
                 int amount = HealthAmount(maximumHp);
                 for (int i = 0; i < count; i++)
                 {
-                    rewards.Add(new(LootKind.Health, amount));
+                    rewards.Add(new(ELootKind.Health, amount));
                 }
             }
 

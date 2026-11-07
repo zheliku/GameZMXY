@@ -16,7 +16,7 @@ namespace GameLogic.Save.Slots
         /// <param name="heroName">角色名称。</param>
         /// <param name="level">角色等级。</param>
         /// <param name="savedAt">检查点时间。</param>
-        public SaveSlotInfo(int slotNumber, long unitId, SaveSlotState state, string heroName = "", int level = 0,
+        public SaveSlotInfo(int slotNumber, long unitId, ESaveSlotState state, string heroName = "", int level = 0,
             DateTimeOffset? savedAt = null)
         {
             SlotNumber = slotNumber;
@@ -40,7 +40,7 @@ namespace GameLogic.Save.Slots
         /// <summary>
         /// 内容是否为空、可读或损坏。
         /// </summary>
-        public SaveSlotState State { get; }
+        public ESaveSlotState State { get; }
 
         /// <summary>
         /// 出战角色名称；空格不显示文字。
@@ -61,7 +61,7 @@ namespace GameLogic.Save.Slots
     /// <summary>
     /// 存档格的实际内容；不可读的存档不能被当成空格覆盖。
     /// </summary>
-    public enum SaveSlotState
+    public enum ESaveSlotState
     {
         /// <summary>
         /// 尚未创建角色。

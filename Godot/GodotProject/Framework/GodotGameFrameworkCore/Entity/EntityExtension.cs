@@ -15,7 +15,7 @@ namespace GodotGameFramework.Entity
         private static int s_NextEntityId;
 
         #region 显示实体
-        public static int ShowEntity(this EntityComponent entityComponent, EntityId entityId, object userData = null)
+        public static int ShowEntity(this EntityComponent entityComponent, EEntityId entityId, object userData = null)
         {
             if (ConfigSystem.Instance.Tables.TbEntityConfig?.DataList == null)
             {
@@ -47,7 +47,7 @@ namespace GodotGameFramework.Entity
         /// <param name="entityId"></param>
         /// <param name="userData"></param>
         /// <returns></returns>
-        public static async Task<T> ShowEntityAsync<T>(this EntityComponent entityComponent, EntityId entityId, object userData = null) where T : Node, IEntity
+        public static async Task<T> ShowEntityAsync<T>(this EntityComponent entityComponent, EEntityId entityId, object userData = null) where T : Node, IEntity
         {
             if (ConfigSystem.Instance.Tables.TbEntityConfig?.DataList == null)
             {
@@ -65,7 +65,7 @@ namespace GodotGameFramework.Entity
             IEntity entity = await entityComponent.ShowEntityAsync(ser, cfg.AssetPath, cfg.EntityGroupName, userData);
             return entity as T;
         }
-        public static async Task<IEntity> ShowEntityAsync(this EntityComponent entityComponent, EntityId entityId, object userData = null)
+        public static async Task<IEntity> ShowEntityAsync(this EntityComponent entityComponent, EEntityId entityId, object userData = null)
         {
             if (ConfigSystem.Instance.Tables.TbEntityConfig?.DataList == null)
             {

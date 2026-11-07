@@ -5,7 +5,7 @@ namespace GameLogic.Battle.Damage
     /// （旧项目人怪两侧的 K 值、等级压制系数与封顶都不一致）。
     /// 它只描述"按哪套公式算"，不是阵营——敌我关系仍由物理层表达（根规范 §7）。
     /// </summary>
-    public enum CombatSide
+    public enum ECombatSide
     {
         /// <summary>
         /// 英雄
@@ -31,7 +31,7 @@ namespace GameLogic.Battle.Damage
         /// <summary>
         /// 结算侧别（选常数组用）
         /// </summary>
-        public readonly CombatSide Side;
+        public readonly ECombatSide Side;
 
         /// <summary>
         /// 等级（参与等级压制）
@@ -110,7 +110,7 @@ namespace GameLogic.Battle.Damage
         /// <param name="ar">破甲。</param>
         /// <param name="sp">破魔。</param>
         /// <param name="actorId">来源运行实体编号；场景外计算可为空。</param>
-        public CombatantAttributes(CombatSide side, int level, int power, int def, int mdef, float crit, float miss,
+        public CombatantAttributes(ECombatSide side, int level, int power, int def, int mdef, float crit, float miss,
             int lucky, int toughness, float htarget, float critReduce, int ar, int sp, int? actorId = null)
         {
             ActorId = actorId;

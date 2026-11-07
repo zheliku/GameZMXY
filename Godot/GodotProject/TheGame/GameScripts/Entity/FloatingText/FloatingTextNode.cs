@@ -8,7 +8,7 @@ namespace GameLogic.FloatingText
     /// <summary>
     /// 恢复提示的颜色样式；调用方负责实际生命或魔法结算。
     /// </summary>
-    public enum RecoveryKind
+    public enum ERecoveryKind
     {
         /// <summary>
         /// 绿色生命恢复。
@@ -54,7 +54,7 @@ namespace GameLogic.FloatingText
         private readonly int[] m_DigitValues = new int[MaxDigits]; // 本次排布的数位，避免每次显示分配字符串或数组。
         private readonly Dictionary<Texture2D, Rect2[]> m_GlyphRegions = new(); // 每种图集首次使用时读取轮廓，池复用保留只读字宽。
         private Action<FloatingTextNode> m_Finished; // 显示完成只通知模块，由模块归还节点。
-        private DisplayKind m_Kind; // 本次使用的动画节奏。
+        private EDisplayKind m_Kind; // 本次使用的动画节奏。
         private bool m_IsCrit; // 伤害样式是否使用暴击脉冲。
         private float m_Age; // 本次已经显示的游戏秒数。
         private Vector2 m_Start; // 本次世界锚点，显示后不跟随角色移动。
@@ -68,20 +68,20 @@ namespace GameLogic.FloatingText
             m_Age += (float)delta;
             float riseSeconds = m_Kind switch
             {
-                DisplayKind.Damage => DamageRiseSeconds,
-                DisplayKind.Miss => MissRiseSeconds,
+                EDisplayKind.Damage => DamageRiseSeconds,
+                EDisplayKind.Miss => MissRiseSeconds,
                 _ => RecoveryLifetime
             };
             float riseDistance = m_Kind switch
             {
-                DisplayKind.Damage => DamageRiseDistance,
-                DisplayKind.Miss => MissRiseDistance,
+                EDisplayKind.Damage => DamageRiseDistance,
+                EDisplayKind.Miss => MissRiseDistance,
                 _ => RecoveryRiseDistance
             };
             float fadeSeconds = m_Kind switch
             {
-                DisplayKind.Damage => DamageFadeSeconds,
-                DisplayKind.Miss => MissFadeSeconds,
+                EDisplayKind.Damage => DamageFadeSeconds,
+                EDisplayKind.Miss => MissFadeSeconds,
                 _ => 0f
             };
 
@@ -89,7 +89,7 @@ namespace GameLogic.FloatingText
             GlobalPosition = m_Start + Vector2.Up * (riseDistance * Math.Clamp(m_Age / riseSeconds, 0f, 1f));
             float alpha = fadeSeconds == 0 ? 1f : 1f - Math.Clamp((m_Age - riseSeconds) / fadeSeconds, 0f, 1f);
             m_Content.Modulate = new Color(1, 1, 1, alpha);
-            if (m_Kind == DisplayKind.Damage)
+            if (m_Kind == EDisplayKind.Damage)
             {
                 float halfPulse = m_IsCrit ? CriticalPulseSeconds : DamagePulseSeconds;
                 float peakScale = m_IsCrit ? CriticalPeakScale : DamagePeakScale;
@@ -176,7 +176,7 @@ namespace GameLogic.FloatingText
                 sheet = isCrit ? m_EnemyCritical : m_EnemyDamage;
             }
             LayoutDigits(damage, sheet, true);
-            Begin(position, DisplayKind.Damage, isCrit, finished);
+            Begin(position, EDisplayKind.Damage, isCrit, finished);
         }
 
         /// <summary>
@@ -191,7 +191,7 @@ namespace GameLogic.FloatingText
                 digit.Visible = false;
             }
 
-            Begin(position, DisplayKind.Miss, false, finished);
+            Begin(position, EDisplayKind.Miss, false, finished);
         }
 
         /// <summary>
@@ -201,10 +201,10 @@ namespace GameLogic.FloatingText
         /// <param name="amount">正数显示量，不改变实际属性。</param>
         /// <param name="kind">生命或魔法的位图样式。</param>
         /// <param name="finished">显示结束后由模块归还节点。</param>
-        public void ShowRecovery(Vector2 position, int amount, RecoveryKind kind, Action<FloatingTextNode> finished)
+        public void ShowRecovery(Vector2 position, int amount, ERecoveryKind kind, Action<FloatingTextNode> finished)
         {
-            LayoutDigits(amount, kind == RecoveryKind.Mana ? m_Mana : m_Health, false);
-            Begin(position + new Vector2(-20, -60), DisplayKind.Recovery, false, finished);
+            LayoutDigits(amount, kind == ERecoveryKind.Mana ? m_Mana : m_Health, false);
+            Begin(position + new Vector2(-20, -60), EDisplayKind.Recovery, false, finished);
         }
 
         /// <summary>
@@ -214,7 +214,7 @@ namespace GameLogic.FloatingText
         /// <param name="kind">动画节奏。</param>
         /// <param name="isCrit">是否使用暴击放大。</param>
         /// <param name="finished">唯一一次完成回调。</param>
-        private void Begin(Vector2 position, DisplayKind kind, bool isCrit, Action<FloatingTextNode> finished)
+        private void Begin(Vector2 position, EDisplayKind kind, bool isCrit, Action<FloatingTextNode> finished)
         {
             m_Start = position;
             GlobalPosition = position;
@@ -222,7 +222,7 @@ namespace GameLogic.FloatingText
             m_Kind = kind;
             m_IsCrit = isCrit;
             m_Finished = finished;
-            m_Miss.Visible = kind == DisplayKind.Miss;
+            m_Miss.Visible = kind == EDisplayKind.Miss;
             m_Content.Scale = Vector2.One;
             m_Content.Modulate = Colors.White;
             SetProcess(true);
@@ -354,6 +354,6 @@ namespace GameLogic.FloatingText
         /// <summary>
         /// 决定本次动画节奏，不影响玩法结算。
         /// </summary>
-        private enum DisplayKind { Damage, Miss, Recovery }
+        private enum EDisplayKind { Damage, Miss, Recovery }
     }
 }

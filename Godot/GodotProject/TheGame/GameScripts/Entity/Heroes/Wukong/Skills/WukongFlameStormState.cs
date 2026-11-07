@@ -35,8 +35,8 @@ namespace GameLogic.Heroes.Wukong
         public void BeginHit(IHeroBody body)
         {
             var actor = (ISkillActor)body;
-            actor.NewSkillAttack(SkillHitId.FlameStorm,
-                Math.Round(AttackPower(body, SkillHitId.FlameStorm), MidpointRounding.AwayFromZero), actor.SkillPosition.X);
+            actor.NewSkillAttack(ESkillHitId.FlameStorm,
+                Math.Round(AttackPower(body, ESkillHitId.FlameStorm), MidpointRounding.AwayFromZero), actor.SkillPosition.X);
         }
 
         /// <inheritdoc />

@@ -13,9 +13,9 @@ namespace GameLogic.Heroes
         private const int FrameColumns = 6;
 
         [Export] private Texture2D m_BaseBody; // 未穿防具时的身体图集。
-        [Export] private Godot.Collections.Dictionary<EquipmentId, Texture2D> m_ArmorTextures = new(); // 按防具身份选择完整动作图集。
+        [Export] private Godot.Collections.Dictionary<EEquipmentId, Texture2D> m_ArmorTextures = new(); // 按防具身份选择完整动作图集。
         [Export] private Texture2D m_BaseWeapon; // 默认木棍，已裁掉被身体前景遮挡的部分。
-        [Export] private Godot.Collections.Dictionary<EquipmentId, Texture2D> m_WeaponTextures = new(); // 武器独立图集，保留身体遮挡的透明区。
+        [Export] private Godot.Collections.Dictionary<EEquipmentId, Texture2D> m_WeaponTextures = new(); // 武器独立图集，保留身体遮挡的透明区。
         [Export] private AnimationLibrary m_PreviewAnimations; // 本角色的背包待机表现，只引用预览节点。
         [Export] private HeroAppearanceResource m_PreviewAppearance; // 官方背包的独立衣装图集，复用相同换装数据形状。
 
@@ -43,12 +43,12 @@ namespace GameLogic.Heroes
         /// <param name="weaponId">当前武器身份，None 使用默认木棍。</param>
         /// <param name="armorId">当前防具身份，None 使用裸身。</param>
         /// <exception cref="System.InvalidOperationException">该角色的已穿戴装备缺少完整动作图集。</exception>
-        public void ApplyToSprites(Sprite2D body, Sprite2D weapon, EquipmentId weaponId, EquipmentId armorId)
+        public void ApplyToSprites(Sprite2D body, Sprite2D weapon, EEquipmentId weaponId, EEquipmentId armorId)
         {
-            Texture2D bodyTexture = armorId == EquipmentId.None ? m_BaseBody
+            Texture2D bodyTexture = armorId == EEquipmentId.None ? m_BaseBody
                 : m_ArmorTextures.TryGetValue(armorId, out var armor) && armor != null ? armor
                 : throw new System.InvalidOperationException($"防具缺少角色动作图集：{armorId}");
-            Texture2D weaponTexture = weaponId == EquipmentId.None ? m_BaseWeapon
+            Texture2D weaponTexture = weaponId == EEquipmentId.None ? m_BaseWeapon
                 : m_WeaponTextures.TryGetValue(weaponId, out var equipped) && equipped != null ? equipped
                 : throw new System.InvalidOperationException($"武器缺少角色动作图集：{weaponId}");
 

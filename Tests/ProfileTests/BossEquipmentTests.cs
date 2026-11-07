@@ -22,7 +22,7 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var equipment = scope.GetSystem<EquipmentSystem>();
-            var ring = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => .5f);
+            var ring = equipment.Roll(Guid.NewGuid(), EEquipmentId.EarthFiendRing, () => .5f);
             Assert.Equal((15, 4, .03f, .03f),
                 (ring.Attributes.Power, ring.Attributes.Def, ring.Attributes.Crit, ring.Attributes.Miss));
             Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
@@ -30,7 +30,7 @@ namespace GameLogic.Profile.Tests
             Assert.False(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
             Assert.Equal((25, 6, .03f, .03f),
                 (scope.Hero.Power.Value, scope.Hero.Def.Value, scope.Hero.Crit.Value, scope.Hero.Miss.Value));
-            foreach (var id in new[] { EquipmentId.CommonPilgrimStaff, EquipmentId.EarthFiendApeArmor })
+            foreach (var id in new[] { EEquipmentId.CommonPilgrimStaff, EEquipmentId.EarthFiendApeArmor })
             {
                 var item = equipment.Roll(Guid.NewGuid(), id, () => 0);
                 Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(item));
@@ -49,10 +49,10 @@ namespace GameLogic.Profile.Tests
                 (restored.Hero.Power.Value, restored.Hero.Def.Value, restored.Hero.Crit.Value, restored.Hero.Miss.Value));
             restored.RestartHero();
             Assert.Equal(.03f, restored.Hero.Crit.Value);
-            Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(EquipmentSlot.Weapon));
-            Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(EquipmentSlot.Armor));
+            Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(EEquipmentSlot.Weapon));
+            Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(EEquipmentSlot.Armor));
             Assert.Equal(ring.InstanceId, restored.Profile.Accessory.InstanceId);
-            Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(EquipmentSlot.Accessory));
+            Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(EEquipmentSlot.Accessory));
             Assert.Null(restored.Profile.Accessory);
             Assert.Equal((0f, 0f), (restored.Hero.Crit.Value, restored.Hero.Miss.Value));
         }
@@ -65,8 +65,8 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new TestGameScope(2, [(2, 0)], 0, 25, initializeHero: false);
             var equipment = scope.GetSystem<EquipmentSystem>();
-            var ring = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
-            var armor = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendApeArmor, () => 0);
+            var ring = equipment.Roll(Guid.NewGuid(), EEquipmentId.EarthFiendRing, () => 0);
+            var armor = equipment.Roll(Guid.NewGuid(), EEquipmentId.EarthFiendApeArmor, () => 0);
             Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
             Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(armor));
             Assert.True(equipment.TryEquip(ring.InstanceId));
@@ -82,24 +82,24 @@ namespace GameLogic.Profile.Tests
         public void OriginalEquipment_RetainsRollRangesAndSalePrices()
         {
             var equipment = new EquipmentSystem(TestTables.Architecture);
-            var low = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendApeArmor, () => 0);
-            var high = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendApeArmor, () => .999999f);
+            var low = equipment.Roll(Guid.NewGuid(), EEquipmentId.EarthFiendApeArmor, () => 0);
+            var high = equipment.Roll(Guid.NewGuid(), EEquipmentId.EarthFiendApeArmor, () => .999999f);
             Assert.Equal((80, 50, 4), (low.Attributes.MaxHp, low.Attributes.MaxMp, low.Attributes.Def));
             Assert.Equal((110, 70, 4), (high.Attributes.MaxHp, high.Attributes.MaxMp, high.Attributes.Def));
-            var staff = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendScepter, () => 0);
+            var staff = equipment.Roll(Guid.NewGuid(), EEquipmentId.EarthFiendScepter, () => 0);
             Assert.Equal((100, 20), (staff.Attributes.MaxMp, staff.Attributes.Power));
-            foreach (var id in new[] { EquipmentId.EarthFiendRing, EquipmentId.EarthFiendApeArmor, EquipmentId.EarthFiendScepter })
+            foreach (var id in new[] { EEquipmentId.EarthFiendRing, EEquipmentId.EarthFiendApeArmor, EEquipmentId.EarthFiendScepter })
             {
                 var definition = TestTables.Tables.TbEquipmentConfig.Get(id);
-                Assert.Equal(EquipmentQuality.Excellent, definition.Quality);
+                Assert.Equal(EEquipmentQuality.Excellent, definition.Quality);
                 Assert.Equal(40, definition.SellPrice);
             }
-            Assert.Single(TestTables.Tables.TbEquipmentDropPoolConfig.Get(EquipmentDropPoolId.MacaqueKing).Entries);
-            Assert.Equal(2, TestTables.Tables.TbEquipmentDropPoolConfig.Get(EquipmentDropPoolId.TamarinKing).Entries.Count);
-            Assert.Equal((.4f, EquipmentDropPoolId.MacaqueKing),
-                (TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.MacaqueKing).EquipmentDropChance, TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.MacaqueKing).EquipmentDropPoolId));
-            Assert.Equal((.35f, EquipmentDropPoolId.TamarinKing),
-                (TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.TamarinKing).EquipmentDropChance, TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.TamarinKing).EquipmentDropPoolId));
+            Assert.Single(TestTables.Tables.TbEquipmentDropPoolConfig.Get(EEquipmentDropPoolId.MacaqueKing).Entries);
+            Assert.Equal(2, TestTables.Tables.TbEquipmentDropPoolConfig.Get(EEquipmentDropPoolId.TamarinKing).Entries.Count);
+            Assert.Equal((.4f, EEquipmentDropPoolId.MacaqueKing),
+                (TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EEntityId.MacaqueKing).EquipmentDropChance, TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EEntityId.MacaqueKing).EquipmentDropPoolId));
+            Assert.Equal((.35f, EEquipmentDropPoolId.TamarinKing),
+                (TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EEntityId.TamarinKing).EquipmentDropChance, TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EEntityId.TamarinKing).EquipmentDropPoolId));
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace GameLogic.Profile.Tests
         public void Save_RejectsAlteredProbabilitiesAndInvalidAccessoryOwnership()
         {
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
-            var ring = scope.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
+            var ring = scope.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EEquipmentId.EarthFiendRing, () => 0);
             Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
             var utility = new SaveDataUtility();
             foreach (float invalid in new[] { .031f, 3f, float.NaN, float.PositiveInfinity })

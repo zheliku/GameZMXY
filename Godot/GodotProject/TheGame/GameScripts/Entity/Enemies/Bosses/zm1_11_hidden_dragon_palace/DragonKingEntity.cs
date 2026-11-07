@@ -100,12 +100,12 @@ namespace GameLogic.Enemies
         }
 
         /// <inheritdoc />
-        protected override EquipmentDropPoolId? EquipmentDropPoolIdOverride
+        protected override EEquipmentDropPoolId? EquipmentDropPoolIdOverride
         {
             get
             {
-                return m_DropsBanner ? EquipmentDropPoolId.EastSeaBanner :
-                    m_HighLevel ? EquipmentDropPoolId.DragonKingHigh : null;
+                return m_DropsBanner ? EEquipmentDropPoolId.EastSeaBanner :
+                    m_HighLevel ? EEquipmentDropPoolId.DragonKingHigh : null;
             }
         }
 
@@ -133,10 +133,10 @@ namespace GameLogic.Enemies
             var ids = this.GetUtility<ConfigIdUtility>();
             m_HighLevelAttacks = Array.AsReadOnly(new[]
             {
-            attacks.Get(ids.GetAttackId(GameConfig.Entity.EntityId.DragonKing, 1, 2)),
-            attacks.Get(ids.GetAttackId(GameConfig.Entity.EntityId.DragonKing, 2, 2)),
-            attacks.Get(ids.GetAttackId(GameConfig.Entity.EntityId.DragonKing, 3, 2)),
-            attacks.Get(ids.GetAttackId(GameConfig.Entity.EntityId.DragonKing, 4, 2)),
+            attacks.Get(ids.GetAttackId(GameConfig.Entity.EEntityId.DragonKing, 1, 2)),
+            attacks.Get(ids.GetAttackId(GameConfig.Entity.EEntityId.DragonKing, 2, 2)),
+            attacks.Get(ids.GetAttackId(GameConfig.Entity.EEntityId.DragonKing, 3, 2)),
+            attacks.Get(ids.GetAttackId(GameConfig.Entity.EEntityId.DragonKing, 4, 2)),
         });
             // 两档共用动画与运动，只为本首领替换攻击冷却和收招数值。
             var recovery = new float[m_HighLevelAttacks.Count];

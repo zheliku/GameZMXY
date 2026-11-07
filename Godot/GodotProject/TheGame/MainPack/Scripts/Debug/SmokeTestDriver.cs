@@ -98,7 +98,7 @@ public partial class SmokeTestDriver : Node
     private int m_MaxPopCount; // 场上飘字节点的可见峰值数量。
     private int m_MaxComboCount; // 烟测期间由真实命中累计到的连击峰值。
     private bool m_ComboHudShown; // 实际连击数字曾在战斗HUD显示。
-    private SmokeMode m_Mode; // 命令行选择的唯一冒烟模式。
+    private ESmokeMode m_Mode; // 命令行选择的唯一冒烟模式。
     private int m_RequestedLevel = 1; // 真实地图点击的关卡，后续关卡仍走完整菜单流程。
     private double m_WaitTime; // 等待英雄出现的累计时间（秒）。
     private double m_Time; // 烟测当前时间（秒）。
@@ -142,23 +142,23 @@ public partial class SmokeTestDriver : Node
         {
             m_Mode = arg switch
             {
-                "--smoketest" => SmokeMode.Hero,
-                "--smoketest=ai" => SmokeMode.EnemyAi,
-                "--smoketest=level" => SmokeMode.Level,
-                "--smoketest=level2" => SmokeMode.Level,
-                "--smoketest=level3" => SmokeMode.Level,
-                "--smoketest=level4" => SmokeMode.Level,
-                "--smoketest=level5" => SmokeMode.Level,
-                "--smoketest=level6" => SmokeMode.Level,
-                "--smoketest=level7" => SmokeMode.Level,
-                "--smoketest=level8" => SmokeMode.Level,
-                "--smoketest=level9" => SmokeMode.Level,
-                "--smoketest=level10" => SmokeMode.Level,
-                "--smoketest=level-cancel" => SmokeMode.Cancellation,
-                "--smoketest=ui" => SmokeMode.Ui,
-                "--smoketest=bosses" => SmokeMode.Bosses,
-                "--smoketest=frontend" => SmokeMode.Frontend,
-                "--smoketest=progress" => SmokeMode.Progress,
+                "--smoketest" => ESmokeMode.Hero,
+                "--smoketest=ai" => ESmokeMode.EnemyAi,
+                "--smoketest=level" => ESmokeMode.Level,
+                "--smoketest=level2" => ESmokeMode.Level,
+                "--smoketest=level3" => ESmokeMode.Level,
+                "--smoketest=level4" => ESmokeMode.Level,
+                "--smoketest=level5" => ESmokeMode.Level,
+                "--smoketest=level6" => ESmokeMode.Level,
+                "--smoketest=level7" => ESmokeMode.Level,
+                "--smoketest=level8" => ESmokeMode.Level,
+                "--smoketest=level9" => ESmokeMode.Level,
+                "--smoketest=level10" => ESmokeMode.Level,
+                "--smoketest=level-cancel" => ESmokeMode.Cancellation,
+                "--smoketest=ui" => ESmokeMode.Ui,
+                "--smoketest=bosses" => ESmokeMode.Bosses,
+                "--smoketest=frontend" => ESmokeMode.Frontend,
+                "--smoketest=progress" => ESmokeMode.Progress,
                 _ => m_Mode,
             };
             if (arg == "--smoketest=level2")
@@ -221,7 +221,7 @@ public partial class SmokeTestDriver : Node
             }
         }
 
-        if (m_Mode == SmokeMode.Disabled)
+        if (m_Mode == ESmokeMode.Disabled)
         {
             SetPhysicsProcess(false);
         }
@@ -246,7 +246,7 @@ public partial class SmokeTestDriver : Node
     /// <param name="delta">上一帧到当前帧的秒数。</param>
     public override void _PhysicsProcess(double delta)
     {
-        if (m_Mode == SmokeMode.Progress)
+        if (m_Mode == ESmokeMode.Progress)
         {
             m_ProgressScenario ??= new MapProgressSmokeScenario(this);
             m_ProgressScenario.Update(delta);
@@ -264,7 +264,7 @@ public partial class SmokeTestDriver : Node
             }
             return;
         }
-        if (m_Mode == SmokeMode.Frontend)
+        if (m_Mode == ESmokeMode.Frontend)
         {
             m_FrontendScenario ??= new FrontendSmokeScenario(this);
             if (m_FrontendScenario.IsDone)
@@ -281,12 +281,12 @@ public partial class SmokeTestDriver : Node
             }
             return;
         }
-        if (m_Mode == SmokeMode.Level && m_LevelScenario != null)
+        if (m_Mode == ESmokeMode.Level && m_LevelScenario != null)
         {
             DriveLevelScenario(delta);
             return;
         }
-        if (m_Mode is SmokeMode.Ui or SmokeMode.Bosses && m_UiScenario != null)
+        if (m_Mode is ESmokeMode.Ui or ESmokeMode.Bosses && m_UiScenario != null)
         {
             // 初次进关后由专项拥有导航，不能在它观察返回地图时自动再次点击地图。
             DriveUiScenario(delta);
@@ -298,7 +298,7 @@ public partial class SmokeTestDriver : Node
             return;
         }
 
-        if (m_Mode is SmokeMode.Ui or SmokeMode.Bosses)
+        if (m_Mode is ESmokeMode.Ui or ESmokeMode.Bosses)
         {
             DriveUiScenario(delta);
             return;
@@ -330,13 +330,13 @@ public partial class SmokeTestDriver : Node
             GD.Print("SMOKE: 找到 hero，开始时间轴");
         }
 
-        if (m_Mode == SmokeMode.Cancellation)
+        if (m_Mode == ESmokeMode.Cancellation)
         {
             DriveCancellationScenario(delta);
             return;
         }
 
-        if (m_Mode == SmokeMode.Level)
+        if (m_Mode == ESmokeMode.Level)
         {
             DriveLevelScenario(delta);
             return;
@@ -350,7 +350,7 @@ public partial class SmokeTestDriver : Node
         }
 
         m_Time += delta;
-        if (m_Mode == SmokeMode.EnemyAi)
+        if (m_Mode == ESmokeMode.EnemyAi)
         {
             DriveAiScenario();
             return;
@@ -376,7 +376,7 @@ public partial class SmokeTestDriver : Node
         if (m_UiScenario == null)
         {
             // 场景自行等待关卡流程装配完成。
-            m_UiScenario = new UiSmokeScenario(this, m_Mode == SmokeMode.Bosses);
+            m_UiScenario = new UiSmokeScenario(this, m_Mode == ESmokeMode.Bosses);
             return;
         }
 
@@ -384,7 +384,7 @@ public partial class SmokeTestDriver : Node
         {
             if (m_UiScenario.Failure == null)
             {
-                GD.Print(m_Mode == SmokeMode.Bosses
+                GD.Print(m_Mode == ESmokeMode.Bosses
                     ? "SMOKE PASS：两位 BOSS 的原生招式、实际命中、无敌、独立风刃与回池复用全部通过"
                     : "SMOKE PASS：UI 数值、解绑复用、实体复用、加载取消、失败清理与存档重入全部通过");
                 StopDriving(false);
@@ -463,7 +463,7 @@ public partial class SmokeTestDriver : Node
     private void HurtHeroOnce()
     {
         // 临时攻击数据只在结算期间持有，并在调用后归还对象池。
-        AttackData data = AttackData.Create(0, default, 1f, DamageKind.Real, Vector2.Zero, -1, 0);
+        AttackData data = AttackData.Create(0, default, 1f, EDamageKind.Real, Vector2.Zero, -1, 0);
         m_Hero.ReceiveHit(data);
         ReferencePool.Release(data);
     }
@@ -530,7 +530,7 @@ public partial class SmokeTestDriver : Node
             }
         }
 
-        if (SmokeInspection.Sequence(m_Level)?.Phase == LevelStagePhase.Fighting)
+        if (SmokeInspection.Sequence(m_Level)?.Phase == ELevelStagePhase.Fighting)
         {
             Input.ActionRelease(InputSystem.MoveRight);
             Input.ActionRelease(InputSystem.Jump);
@@ -568,7 +568,7 @@ public partial class SmokeTestDriver : Node
         {
             foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
             {
-                if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
+                if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level && SmokeInspection.Sequence(level).Phase != ELevelStagePhase.Ready)
                 {
                     m_LevelScenario = new LevelSmokeScenario(m_Hero, level);
                     break;
@@ -606,7 +606,7 @@ public partial class SmokeTestDriver : Node
         {
             foreach (Node node in GetTree().Root.FindChildren("*", "Node2D", true, false))
             {
-                if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level && SmokeInspection.Sequence(level).Phase != LevelStagePhase.Ready)
+                if (node is LevelViewController && SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel) is LevelViewController level && SmokeInspection.Sequence(level).Phase != ELevelStagePhase.Ready)
                 {
                     m_CancelScenario = new LevelCancellationSmokeScenario(m_Hero, level);
                     break;
@@ -821,7 +821,7 @@ public partial class SmokeTestDriver : Node
             if (m_Monster == null)
             {
                 m_Monster = monster;
-                if (m_Mode == SmokeMode.EnemyAi)
+                if (m_Mode == ESmokeMode.EnemyAi)
                 {
                     // 受测猴子在相机抵达后生成时会索敌到英雄；
                     // 先把夹具挪到视野外，AI专项开始时显式清除旧目标。
@@ -839,7 +839,7 @@ public partial class SmokeTestDriver : Node
             }
 
             // ai 模式保留受测怪物的 AI；M4 模式连同沙包一起全部冻结。
-            if (!m_FrozenMonsters.Add(monster.Id) || (m_Mode == SmokeMode.EnemyAi && m_Monster == monster))
+            if (!m_FrozenMonsters.Add(monster.Id) || (m_Mode == ESmokeMode.EnemyAi && m_Monster == monster))
             {
                 continue;
             }
@@ -1016,7 +1016,7 @@ public partial class SmokeTestDriver : Node
     /// <summary>
     /// 互斥的自动回归模式。
     /// </summary>
-    private enum SmokeMode
+    private enum ESmokeMode
     {
         Disabled,
         Hero,

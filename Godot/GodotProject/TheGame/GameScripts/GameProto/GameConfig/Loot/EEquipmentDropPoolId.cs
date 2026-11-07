@@ -9,74 +9,70 @@
 
 
 
-namespace GameConfig.Attributes
+namespace GameConfig.Loot
 { 
-    public enum AttributeType
+    public enum EEquipmentDropPoolId
     {
         /// <summary>
-        /// 生命上限
+        /// 不掉落
         /// </summary>
-        MaxHp = 0,
+        None = 0,
         /// <summary>
-        /// 魔法上限
+        /// 粗糙装备
         /// </summary>
-        MaxMp = 1,
+        Rough = 1000,
         /// <summary>
-        /// 攻击
+        /// 普通装备
         /// </summary>
-        Power = 2,
+        Common = 1100,
         /// <summary>
-        /// 物防
+        /// 优秀装备
         /// </summary>
-        Def = 3,
+        Excellent = 1200,
         /// <summary>
-        /// 魔防
+        /// 精良装备
         /// </summary>
-        Mdef = 4,
+        Fine = 1300,
         /// <summary>
-        /// 暴击
+        /// 猕猴王装备
         /// </summary>
-        Crit = 5,
+        MacaqueKing = 10000000,
         /// <summary>
-        /// 闪避
+        /// 禺狨王装备
         /// </summary>
-        Miss = 6,
+        TamarinKing = 10000100,
         /// <summary>
-        /// 幸运(加暴击倍率)
+        /// 蝙蝠窟石像装备
         /// </summary>
-        Lucky = 7,
+        BatCaveStatue = 10000200,
         /// <summary>
-        /// 韧性(减对方幸运)
+        /// 狮驼王装备
         /// </summary>
-        Toughness = 8,
+        LionCamelKing = 10000300,
         /// <summary>
-        /// 命中(减对方闪避)
+        /// 迦楼罗之穴装备
         /// </summary>
-        Htarget = 9,
+        GarudaCave = 10000400,
         /// <summary>
-        /// 暴击抵抗
+        /// 鲛魔王装备
         /// </summary>
-        CritReduce = 10,
+        JiaoDemonKing = 10000500,
         /// <summary>
-        /// 破甲(减对方物防)
+        /// 鲨魔王装备
         /// </summary>
-        Ar = 11,
+        SharkDemonKing = 10000600,
         /// <summary>
-        /// 破魔(减对方魔防)
+        /// 龙王普通装备
         /// </summary>
-        Sp = 12,
+        DragonKing = 10001000,
         /// <summary>
-        /// 吸血(百分点,伤害转生命)
+        /// 龙王高等级装备
         /// </summary>
-        Vampirism = 13,
+        DragonKingHigh = 10001001,
         /// <summary>
-        /// 每秒回血
+        /// 东海旗幡首次奖励
         /// </summary>
-        HpRegen = 14,
-        /// <summary>
-        /// 每秒回蓝
-        /// </summary>
-        MpRegen = 15,
+        EastSeaBanner = 10001002,
     }
 
 } 

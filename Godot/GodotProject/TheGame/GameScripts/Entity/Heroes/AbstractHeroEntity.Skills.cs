@@ -139,7 +139,7 @@ namespace GameLogic.Heroes
         /// <param name="hit">统一伤害表的技能编号。</param>
         /// <param name="power">无双前威力。</param>
         /// <param name="knockbackOriginX">具体招式指定的击退中心。</param>
-        void ISkillActor.NewSkillAttack(SkillHitId hit, double power, float? knockbackOriginX)
+        void ISkillActor.NewSkillAttack(ESkillHitId hit, double power, float? knockbackOriginX)
         {
             var definition = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
             SetAttack(AttackData.Create((int)hit, CaptureCombatAttributes(),
@@ -191,11 +191,11 @@ namespace GameLogic.Heroes
         /// <param name="knockbackOriginX">本次击退中心。</param>
         /// <exception cref="InvalidOperationException">场景未登记到框架节点池。</exception>
         void ISkillActor.PlaySkillEffect(PackedScene scene, Vector2 position,
-            SkillHitId hit, double power, Action completed, float? knockbackOriginX)
+            ESkillHitId hit, double power, Action completed, float? knockbackOriginX)
         {
             var node = RentSkillEffect(scene);
             float multiplier = this.GetSystem<HeroSystem>().AttackPowerMultiplier;
-            node.Show(hit == SkillHitId.None ? null :
+            node.Show(hit == ESkillHitId.None ? null :
                     this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit),
                 position, Facing, CaptureCombatAttributes(), (int)(power * multiplier),
                 this.GetModel<HeroModel>().WsActive.Value, ReleaseSkillEffect, completed, knockbackOriginX, HitSoundId);

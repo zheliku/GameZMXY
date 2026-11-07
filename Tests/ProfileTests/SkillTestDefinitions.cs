@@ -17,11 +17,11 @@ namespace GameLogic.SkillTests
         internal static SkillDefinition[] Wukong()
         {
             return [
-                new(SkillId.RisingDragon, typeof(WukongRisingDragonState)),
-            new(SkillId.FlameThrust, typeof(WukongFlameThrustState), CanStart: actor => actor.OnFloor),
-            new(SkillId.BlazingFlash, typeof(WukongBlazingFlashState), InputSystem.Skill1),
-            new(SkillId.FlameStorm, typeof(WukongFlameStormState), InputSystem.Skill2),
-            new(SkillId.FireDemonSlash, typeof(WukongFireDemonState), InputSystem.Skill3)];
+                new(ESkillId.RisingDragon, typeof(WukongRisingDragonState)),
+            new(ESkillId.FlameThrust, typeof(WukongFlameThrustState), CanStart: actor => actor.OnFloor),
+            new(ESkillId.BlazingFlash, typeof(WukongBlazingFlashState), InputSystem.Skill1),
+            new(ESkillId.FlameStorm, typeof(WukongFlameStormState), InputSystem.Skill2),
+            new(ESkillId.FireDemonSlash, typeof(WukongFireDemonState), InputSystem.Skill3)];
         }
     }
 }

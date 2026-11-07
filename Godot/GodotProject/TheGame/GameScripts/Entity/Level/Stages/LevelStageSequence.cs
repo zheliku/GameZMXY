@@ -26,7 +26,7 @@ namespace GameLogic.Level
         /// <summary>
         /// 当前会话阶段状态。
         /// </summary>
-        public LevelStagePhase Phase { get; private set; } = LevelStagePhase.Ready;
+        public ELevelStagePhase Phase { get; private set; } = ELevelStagePhase.Ready;
 
         /// <summary>
         /// 校验阶段编排并创建尚未开始的会话。
@@ -53,8 +53,8 @@ namespace GameLogic.Level
                 bool hasTrigger = !string.IsNullOrWhiteSpace(stage.TriggerId);
                 bool validActivation = stage.Activation switch
                 {
-                    StageActivation.CameraArrived => !hasTrigger,
-                    StageActivation.Trigger => hasTrigger,
+                    EStageActivation.CameraArrived => !hasTrigger,
+                    EStageActivation.Trigger => hasTrigger,
                     _ => false,
                 };
                 if (!validActivation)
@@ -72,7 +72,7 @@ namespace GameLogic.Level
         /// <exception cref="InvalidOperationException">会话不处于 Ready 状态时抛出。</exception>
         public void Begin()
         {
-            ChangePhase(LevelStagePhase.Ready, LevelStagePhase.Travelling);
+            ChangePhase(ELevelStagePhase.Ready, ELevelStagePhase.Travelling);
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace GameLogic.Level
         /// <exception cref="InvalidOperationException">会话不处于 Travelling 状态时抛出。</exception>
         public void StartBattle()
         {
-            ChangePhase(LevelStagePhase.Travelling, LevelStagePhase.Fighting);
+            ChangePhase(ELevelStagePhase.Travelling, ELevelStagePhase.Fighting);
         }
 
         /// <summary>
@@ -90,11 +90,11 @@ namespace GameLogic.Level
         /// <exception cref="InvalidOperationException">会话不处于 Fighting 状态时抛出。</exception>
         public void ClearBattle()
         {
-            ChangePhase(LevelStagePhase.Fighting, LevelStagePhase.AwaitingExit);
+            ChangePhase(ELevelStagePhase.Fighting, ELevelStagePhase.AwaitingExit);
             if (m_Index + 1 < m_Stages.Count)
             {
                 m_Index++;
-                Phase = LevelStagePhase.Travelling;
+                Phase = ELevelStagePhase.Travelling;
             }
         }
 
@@ -109,7 +109,7 @@ namespace GameLogic.Level
                 throw new InvalidOperationException("只有最后阶段的目标可以开放出口。");
             }
 
-            ChangePhase(LevelStagePhase.Fighting, LevelStagePhase.AwaitingExit);
+            ChangePhase(ELevelStagePhase.Fighting, ELevelStagePhase.AwaitingExit);
         }
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace GameLogic.Level
         /// <exception cref="InvalidOperationException">尚未清除最后阶段时抛出。</exception>
         public void Complete()
         {
-            ChangePhase(LevelStagePhase.AwaitingExit, LevelStagePhase.Completed);
+            ChangePhase(ELevelStagePhase.AwaitingExit, ELevelStagePhase.Completed);
         }
 
         /// <summary>
@@ -126,7 +126,7 @@ namespace GameLogic.Level
         /// </summary>
         public void Stop()
         {
-            Phase = LevelStagePhase.Stopped;
+            Phase = ELevelStagePhase.Stopped;
         }
 
         /// <summary>
@@ -135,7 +135,7 @@ namespace GameLogic.Level
         /// <param name="expected">调用方必须处于的状态。</param>
         /// <param name="next">迁移后的状态。</param>
         /// <exception cref="InvalidOperationException">当前状态与 expected 不符时抛出。</exception>
-        private void ChangePhase(LevelStagePhase expected, LevelStagePhase next)
+        private void ChangePhase(ELevelStagePhase expected, ELevelStagePhase next)
         {
             // 用显式状态表达调用契约，不根据依赖字段是否为空猜测就绪。
             if (Phase != expected)
@@ -150,7 +150,7 @@ namespace GameLogic.Level
     /// <summary>
     /// 关卡会话的互斥阶段状态。
     /// </summary>
-    public enum LevelStagePhase
+    public enum ELevelStagePhase
     {
         /// <summary>
         /// 已初始化，尚未开放玩法事件。

@@ -30,7 +30,7 @@ namespace GameLogic.Battle.Damage
         /// <summary>
         /// 伤害类型（飘字按它选数字样式）
         /// </summary>
-        public readonly DamageKind Kind;
+        public readonly EDamageKind Kind;
 
         /// <summary>
         /// 创建一次命中的结算结果。
@@ -40,7 +40,7 @@ namespace GameLogic.Battle.Damage
         /// <param name="isCrit">是否暴击。</param>
         /// <param name="kind">伤害类型。</param>
         /// <param name="attackerWsGain">战斗系统结算的无双收益；持续扣血等非命中事实为零。</param>
-        public DamageResult(int damage, bool isMiss, bool isCrit, DamageKind kind, int attackerWsGain = 0)
+        public DamageResult(int damage, bool isMiss, bool isCrit, EDamageKind kind, int attackerWsGain = 0)
         {
             Damage = damage;
             AttackerWsGain = attackerWsGain;
@@ -54,7 +54,7 @@ namespace GameLogic.Battle.Damage
         /// </summary>
         /// <param name="kind">本次攻击的伤害类型。</param>
         /// <returns>伤害为 0、标记闪避且不暴击的结果。</returns>
-        public static DamageResult Missed(DamageKind kind)
+        public static DamageResult Missed(EDamageKind kind)
         {
             return new(0, true, false, kind);
         }

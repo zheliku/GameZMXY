@@ -31,11 +31,11 @@ namespace GameLogic.Heroes
 
         private static readonly SkillDefinition[] m_Skills =
         [
-            new(SkillId.IceDragonWave, typeof(TangsengIceDragonState), DeferredMana: true),
-            new(SkillId.DarkIceFormation, typeof(TangsengDarkIceState), InputSystem.Skill1),
-            new(SkillId.WaterClone, typeof(TangsengWaterCloneState), InputSystem.Skill2),
-            new(SkillId.HeavenlyDew, typeof(TangsengHeavenlyDewState), InputSystem.Skill3),
-            new(SkillId.WaterDemonBurst, typeof(TangsengWaterDemonBurstState), InputSystem.Skill4,
+            new(ESkillId.IceDragonWave, typeof(TangsengIceDragonState), DeferredMana: true),
+            new(ESkillId.DarkIceFormation, typeof(TangsengDarkIceState), InputSystem.Skill1),
+            new(ESkillId.WaterClone, typeof(TangsengWaterCloneState), InputSystem.Skill2),
+            new(ESkillId.HeavenlyDew, typeof(TangsengHeavenlyDewState), InputSystem.Skill3),
+            new(ESkillId.WaterDemonBurst, typeof(TangsengWaterDemonBurstState), InputSystem.Skill4,
                 CanStart: actor => actor.OnFloor)
         ]; // 仅登记本角色的具体状态与起手资格。
 
@@ -52,7 +52,7 @@ namespace GameLogic.Heroes
             var input = this.GetSystem<InputSystem>();
             if (!attacking && m_WaterClone.IsAvailable && input.ConsumePress(ActionData, InputSystem.Skill2))
             {
-                GF.Sound.PlayConfigured(SoundId.TangsengWaterClone);
+                GF.Sound.PlayConfigured(ESoundId.TangsengWaterClone);
                 GlobalPosition = m_WaterClone.GlobalPosition;
                 m_WaterClone.Dismiss();
                 return;
@@ -81,7 +81,7 @@ namespace GameLogic.Heroes
         /// </summary>
         public void CreateWaterClone()
         {
-            GF.Sound.PlayConfigured(SoundId.TangsengWaterClone);
+            GF.Sound.PlayConfigured(ESoundId.TangsengWaterClone);
             m_WaterClone.Activate(GlobalPosition, Facing);
         }
 
@@ -137,11 +137,11 @@ namespace GameLogic.Heroes
         {
             if (fullCharge)
             {
-                GF.Sound.PlayConfigured(SoundId.TangsengIceDragon);
+                GF.Sound.PlayConfigured(ESoundId.TangsengIceDragon);
             }
             var effect = (TangsengBoltNode)RentSkillEffect(scene);
             var hit = fullCharge
-                ? this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)SkillHitId.IceDragonWave)
+                ? this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)ESkillHitId.IceDragonWave)
                 : OwnAttacks[0];
             var attributes = CaptureCombatAttributes();
             int power = (int)((attributes.Power * hit.PowerScale.X + hit.FlatPower.X) *
@@ -162,10 +162,10 @@ namespace GameLogic.Heroes
         {
             if (clone == null)
             {
-                GF.Sound.PlayConfigured(SoundId.TangsengDarkIce);
+                GF.Sound.PlayConfigured(ESoundId.TangsengDarkIce);
             }
             var effect = RentSkillEffect(scene);
-            var hit = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)SkillHitId.DarkIceFormation);
+            var hit = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)ESkillHitId.DarkIceFormation);
             var attributes = CaptureCombatAttributes();
             bool musou = this.GetModel<HeroModel>().WsActive.Value;
             int power = (int)((attributes.Power * hit.PowerScale.X + hit.FlatPower.X) *
@@ -179,7 +179,7 @@ namespace GameLogic.Heroes
                 visualScaleMultiplier: musou && clone != null ? new Vector2(1.26f, 1.8f) : Vector2.One,
                 source: clone == null ? CaptureAttackSource() : CaptureAttackSource() with
                 {
-                    CasterType = GameConfig.Entity.EntityId.None,
+                    CasterType = GameConfig.Entity.EEntityId.None,
                     CasterInstanceId = clone.GetInstanceId()
                 });
         }
@@ -203,10 +203,10 @@ namespace GameLogic.Heroes
         public void BeginHeavenlyDew(PackedScene scene)
         {
             SpawnCureEffect(scene, GlobalPosition);
-            GF.Sound.PlayConfigured(SoundId.TangsengHeavenlyDew);
+            GF.Sound.PlayConfigured(ESoundId.TangsengHeavenlyDew);
             if (m_WaterClone.IsAvailable)
             {
-                GF.Sound.PlayConfigured(SoundId.TangsengHeavenlyDew);
+                GF.Sound.PlayConfigured(ESoundId.TangsengHeavenlyDew);
                 m_WaterClone.PlayHeavenlyDew(() =>
                 {
                     Vector2 delta = m_WaterClone.GlobalPosition - GlobalPosition;
@@ -231,7 +231,7 @@ namespace GameLogic.Heroes
             Vector2 local = m_WaterDemonBall.Position;
             Vector2 position = GlobalPosition + new Vector2(local.X * (Facing > 0 ? -1 : 1), local.Y - 300);
             ((ISkillActor)this).PlaySkillEffect(m_WaterDemonFallEffect, position,
-                SkillHitId.WaterDemonFall, PowerFor(SkillHitId.WaterDemonFall));
+                ESkillHitId.WaterDemonFall, PowerFor(ESkillHitId.WaterDemonFall));
             m_WaterDemonBall.Stop();
             m_WaterDemonBall.Hide();
         }
@@ -241,7 +241,7 @@ namespace GameLogic.Heroes
         /// </summary>
         /// <param name="hit">统一攻击定义。</param>
         /// <returns>无双倍率前的威力。</returns>
-        private double PowerFor(SkillHitId hit)
+        private double PowerFor(ESkillHitId hit)
         {
             var definition = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
             return this.GetModel<HeroModel>().Power.Value * definition.PowerScale.X + definition.FlatPower.X;

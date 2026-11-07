@@ -35,7 +35,7 @@ namespace GameLogic.Level
         /// <param name="spawnPointId">实际死亡实体归属的配方生成点。</param>
         private void OnEnemyDefeated(EnemyDiedEventArgs data, string spawnPointId)
         {
-            if (LevelModel.Outcome.Value != LevelOutcome.Running || !m_Player.IsAlive)
+            if (LevelModel.Outcome.Value != ELevelOutcome.Running || !m_Player.IsAlive)
             {
                 return;
             }
@@ -50,14 +50,14 @@ namespace GameLogic.Level
                 var selection = this.GetSystem<LootSystem>()
                     .RollGround(data.EquipmentDropChanceOverride ?? data.Config.EquipmentDropChance,
                         data.EquipmentDropPoolIdOverride ?? data.Config.EquipmentDropPoolId, m_LootRandom.Randf);
-                if (selection.Pickup != PickupId.None)
+                if (selection.Pickup != EPickupId.None)
                 {
                     ShowGroundItem(data.Position + new Vector2(-18, 0), selection.Pickup, null);
                 }
 
-                if (selection.Equipment != EquipmentId.None)
+                if (selection.Equipment != EEquipmentId.None)
                 {
-                    ShowGroundItem(data.Position + new Vector2(18, 0), PickupId.None,
+                    ShowGroundItem(data.Position + new Vector2(18, 0), EPickupId.None,
                                     this.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), selection.Equipment, m_LootRandom.Randf));
                 }
 
@@ -89,7 +89,7 @@ namespace GameLogic.Level
         /// <param name="position">死亡位置附近。</param>
         /// <param name="pickupId">恢复品或空。</param>
         /// <param name="data">装备或空。</param>
-        private void ShowGroundItem(Vector2 position, PickupId pickupId, EquipmentData data)
+        private void ShowGroundItem(Vector2 position, EPickupId pickupId, EquipmentData data)
         {
             var item = NodePool.Instance.Get<GroundItemNode>(ResourcesCollectionConstant.Drops_ground_item, this)
                        ?? throw new InvalidOperationException("地面物品节点池未注册。");
@@ -105,9 +105,9 @@ namespace GameLogic.Level
         /// <param name="pickupId">接触的恢复品。</param>
         /// <param name="data">接触的实际装备。</param>
         /// <returns>是否完成领取。</returns>
-        private bool TryCollectGroundItem(AbstractHeroEntity hero, PickupId pickupId, EquipmentData data)
+        private bool TryCollectGroundItem(AbstractHeroEntity hero, EPickupId pickupId, EquipmentData data)
         {
-            if (LevelModel.Outcome.Value != LevelOutcome.Running || !ReferenceEquals(hero, m_Player) || !hero.IsAlive)
+            if (LevelModel.Outcome.Value != ELevelOutcome.Running || !ReferenceEquals(hero, m_Player) || !hero.IsAlive)
             {
                 return false;
             }
@@ -124,7 +124,7 @@ namespace GameLogic.Level
 
             var pickup = this.GetModel<ConfigurationModel>().Tables.TbPickupConfig.Get(pickupId);
             m_FloatingText.ShowRecovery(m_Player.GlobalPosition, pickup.RestoreAmount,
-                pickup.Effect == PickupEffect.Mana ? RecoveryKind.Mana : RecoveryKind.Health);
+                pickup.Effect == EPickupEffect.Mana ? ERecoveryKind.Mana : ERecoveryKind.Health);
             return true;
         }
 
@@ -134,7 +134,7 @@ namespace GameLogic.Level
         /// <param name="amount">官方技能的恢复量，满血时也保留反馈。</param>
         private void OnHeroHealthRestored(int amount)
         {
-            m_FloatingText.ShowRecovery(m_Player.GlobalPosition, amount, RecoveryKind.Health);
+            m_FloatingText.ShowRecovery(m_Player.GlobalPosition, amount, ERecoveryKind.Health);
         }
 
         /// <summary>
@@ -164,7 +164,7 @@ namespace GameLogic.Level
             NodePool.Instance.Release(orb);
             this.GetSystem<LevelSystem>().CollectLoot(reward);
 
-            if (m_ExitRequested && m_LootOrbs.Count == 0 && LevelModel.Outcome.Value == LevelOutcome.Running)
+            if (m_ExitRequested && m_LootOrbs.Count == 0 && LevelModel.Outcome.Value == ELevelOutcome.Running)
             {
                 OnExitEntered();
             }

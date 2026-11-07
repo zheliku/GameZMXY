@@ -125,7 +125,7 @@ namespace GameLogic.UI
             var levelModel = this.GetModel<LevelModel>();
             if (userData is not InventoryFormData data || !IsInstanceValid(data.Hero) || !data.Hero.IsAlive ||
                 levelModel == null || !levelModel.Initialized ||
-                levelModel.Outcome.Value != LevelOutcome.Running || data.Hero.HeroId != profile.ActiveHeroId)
+                levelModel.Outcome.Value != ELevelOutcome.Running || data.Hero.HeroId != profile.ActiveHeroId)
             {
                 throw new ArgumentException("背包需要本关存活的出战英雄与档案。", nameof(userData));
             }
@@ -290,9 +290,9 @@ namespace GameLogic.UI
         /// 关卡结局后不保留旧英雄窗口。
         /// </summary>
         /// <param name="outcome">已提交的结局。</param>
-        private void OnLevelEnded(LevelOutcome outcome)
+        private void OnLevelEnded(ELevelOutcome outcome)
         {
-            if (outcome != LevelOutcome.Running)
+            if (outcome != ELevelOutcome.Running)
             {
                 GF.UI.CloseUIForm(SerialId);
             }
@@ -308,7 +308,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             GF.UI.CloseUIForm(SerialId);
         }
 
@@ -393,7 +393,7 @@ namespace GameLogic.UI
 
             var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(data.EquipmentId);
             m_Actions.Open(data.InstanceId, anchor,
-                definition.Owner == EquipmentOwner.Universal ||
+                definition.Owner == EEquipmentOwner.Universal ||
                  (int)definition.Owner == this.GetModel<ProfileModel>().ActiveHeroId);
         }
 
@@ -405,7 +405,7 @@ namespace GameLogic.UI
         {
             if (m_InventoryData != null && this.SendCommand(new EquipEquipmentCommand(instanceId)))
             {
-                GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+                GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             }
         }
 
@@ -417,7 +417,7 @@ namespace GameLogic.UI
         {
             if (m_InventoryData != null && this.SendCommand(new SellEquipmentCommand(instanceId)))
             {
-                GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+                GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             }
         }
 
@@ -425,11 +425,11 @@ namespace GameLogic.UI
         /// 请求卸下当前部位；背包满时保持原状态。
         /// </summary>
         /// <param name="slot">被点击的穿戴部位。</param>
-        private void OnSlotClicked(EquipmentSlot slot)
+        private void OnSlotClicked(EEquipmentSlot slot)
         {
             if (m_InventoryData != null && this.SendCommand(new UnequipEquipmentCommand(slot)))
             {
-                GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+                GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             }
         }
 
@@ -448,7 +448,7 @@ namespace GameLogic.UI
         /// <param name="quality">子组件当前选择的品质。</param>
         /// <param name="count">完整未穿戴背包中的件数。</param>
         /// <param name="price">未截断收益。</param>
-        private void OnQualitySaleSelected(EquipmentQuality quality, int count, long price)
+        private void OnQualitySaleSelected(EEquipmentQuality quality, int count, long price)
         {
             if (m_InventoryData == null || m_SaleConfirmation.Visible)
             {
@@ -463,11 +463,11 @@ namespace GameLogic.UI
         /// 确认层已清除一次性意图，窗口通过命令提交已确认的交易请求。
         /// </summary>
         /// <param name="quality">本次明确确认的品质。</param>
-        private void OnQualitySaleConfirmed(EquipmentQuality quality)
+        private void OnQualitySaleConfirmed(EEquipmentQuality quality)
         {
             if (m_InventoryData != null && this.SendCommand(new SellEquipmentByQualityCommand(quality)) > 0)
             {
-                GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+                GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             }
         }
     }

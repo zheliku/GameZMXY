@@ -9,30 +9,34 @@
 
 
 
-namespace GameConfig.Skills
+namespace GameConfig.Equipment
 { 
-    public enum PassiveId
+    public enum EEquipmentQuality
     {
         /// <summary>
-        /// 热血
+        /// 粗糙
         /// </summary>
-        Vitality = 1,
+        Rough = 0,
         /// <summary>
-        /// 魔泉
+        /// 普通
         /// </summary>
-        ManaSpring = 2,
+        Common = 1,
         /// <summary>
-        /// 狂暴
+        /// 优秀
         /// </summary>
-        Frenzy = 3,
+        Excellent = 2,
         /// <summary>
-        /// 光之永恒
+        /// 精良
         /// </summary>
-        EternalLight = 4,
+        Fine = 3,
         /// <summary>
-        /// 月之辉煌
+        /// 史诗
         /// </summary>
-        MoonBrilliance = 5,
+        Epic = 4,
+        /// <summary>
+        /// 传说
+        /// </summary>
+        Legendary = 5,
     }
 
 } 

@@ -26,9 +26,9 @@ namespace GameLogic.Audio
             /// <param name="fadeInSeconds">淡入秒数。</param>
             /// <returns>GGF 请求编号；None 为零。</returns>
             /// <exception cref="InvalidOperationException">声音配置缺失。</exception>
-            public int PlayConfigured(SoundId id, float fadeInSeconds = 0f)
+            public int PlayConfigured(ESoundId id, float fadeInSeconds = 0f)
             {
-                if (id == SoundId.None)
+                if (id == ESoundId.None)
                 {
                     return 0;
                 }

@@ -94,7 +94,7 @@ namespace GameLogic.Heroes.Tangseng
             }
 
             m_EffectReleased = true;
-            if (m_FullCharge && !body.GetSystem<SkillSystem>().TrySpendActivatedMana(SkillId.IceDragonWave))
+            if (m_FullCharge && !body.GetSystem<SkillSystem>().TrySpendActivatedMana(ESkillId.IceDragonWave))
             {
                 body.GetSystem<SkillSystem>().CancelSkill();
                 return;

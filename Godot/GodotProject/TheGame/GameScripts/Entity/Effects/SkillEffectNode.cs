@@ -28,7 +28,7 @@ namespace GameLogic.Effects
         private CollisionShape2D[] m_Shapes; // 同一判定区的全部基础形状，几何及启闭均由动画驱动。
         private AttackConfig m_Hit; // 只借用统一数值表；纯视觉效果为空。
         private CombatantAttributes m_Attacker; // 效果生成时冻结的攻击者属性和阵营。
-        private SoundId m_HitSoundId; // 施放者提供的成功打击声音，不由受击怪物指定。
+        private ESoundId m_HitSoundId; // 施放者提供的成功打击声音，不由受击怪物指定。
         private AttackData m_AttackData; // 节点拥有并按段更新的攻击包。
         private Action m_Completed; // 本次效果完成通知。
         private Action<SkillEffectNode> m_Finished; // 所属实体负责归还节点池。
@@ -136,7 +136,7 @@ namespace GameLogic.Effects
             m_Finished = null;
             m_Completed = null;
             m_KnockbackOriginX = null;
-            m_HitSoundId = SoundId.None;
+            m_HitSoundId = ESoundId.None;
             m_Active = m_FinishRequested = false;
             m_Player.Stop();
             foreach (var shape in m_Shapes)
@@ -163,7 +163,7 @@ namespace GameLogic.Effects
         /// <param name="source">实际施放者不同于取池实体时，提供该次施放的来源快照。</param>
         public void Show(AttackConfig hit, Vector2 position, int direction,
             CombatantAttributes attacker, int power, bool musou, Action<SkillEffectNode> finished,
-            Action completed = null, float? knockbackOriginX = null, SoundId hitSoundId = SoundId.None,
+            Action completed = null, float? knockbackOriginX = null, ESoundId hitSoundId = ESoundId.None,
             Vector2? visualScaleMultiplier = null, AttackSource? source = null)
         {
             m_Hit = hit;
@@ -239,7 +239,7 @@ namespace GameLogic.Effects
         /// 原生声音键仍经过 GGF 的统一音频管理。
         /// </summary>
         /// <param name="id">已登记的声音编号。</param>
-        private void PlaySoundAnimEvent(SoundId id)
+        private void PlaySoundAnimEvent(ESoundId id)
         {
             GF.Sound.PlayConfigured(id);
         }
@@ -342,7 +342,7 @@ namespace GameLogic.Effects
                 }
             }
 
-            if (m_Attacker.Side == CombatSide.Hero)
+            if (m_Attacker.Side == ECombatSide.Hero)
             {
                 this.GetSystem<HeroSystem>().RecordHit(result);
             }

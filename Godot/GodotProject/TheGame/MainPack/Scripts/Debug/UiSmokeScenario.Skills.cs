@@ -60,7 +60,7 @@ public sealed partial class UiSmokeScenario
         battleForm.GetNode<BaseButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(f => f.Visible), "唐僧技能页没有打开");
         var form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(f => f.Visible);
-        foreach (var skill in ConfigSystem.Instance.Tables.TbSkillConfig.DataList.Where(s => s.Hero == SkillHero.Tangseng))
+        foreach (var skill in ConfigSystem.Instance.Tables.TbSkillConfig.DataList.Where(s => s.Hero == ESkillHero.Tangseng))
         {
             form.GetNode<BaseButton>($"Content/m_ActivePage/m_TangsengRows/Skill{skill.Order}/IconCell/Icon")
                 .EmitSignal(BaseButton.SignalName.Pressed);
@@ -74,11 +74,11 @@ public sealed partial class UiSmokeScenario
         hero.SetFacing(1);
         await WaitUntilAsync(() => hero.OnFloor, "唐僧技能回归没有落地");
         await CheckTangsengClonePlatformsAsync(hero);
-        string cloneSound = ConfigSystem.Instance.Tables.TbSoundConfig.Get((int)SoundId.TangsengWaterClone).Path;
+        string cloneSound = ConfigSystem.Instance.Tables.TbSoundConfig.Get((int)ESoundId.TangsengWaterClone).Path;
         await WaitUntilAsync(() => !m_Driver.GetTree().Root.FindChildren("*", "AudioStreamPlayer", true, false)
             .OfType<AudioStreamPlayer>().Any(player => player.Playing && player.Stream?.ResourcePath == cloneSound),
             "平台释放的分身声音未播放结束");
-        var soundIds = Enum.GetValues<SoundId>().Where(id => id.ToString().StartsWith("Tangseng")).ToArray();
+        var soundIds = Enum.GetValues<ESoundId>().Where(id => id.ToString().StartsWith("Tangseng")).ToArray();
         await CheckSkillSoundsAsync(soundIds);
         var soundPaths = soundIds.ToDictionary(id => ConfigSystem.Instance.Tables.TbSoundConfig.Get((int)id).Path);
         var sounds = soundIds.ToDictionary(id => id, _ => 0);
@@ -105,7 +105,7 @@ public sealed partial class UiSmokeScenario
             Input.ActionPress(InputSystem.Skill2);
             await WaitUntilAsync(() => !waterClone.IsActive, "水幻影第二次输入没有换位");
             Input.ActionRelease(InputSystem.Skill2);
-            await WaitUntilAsync(() => sounds[SoundId.TangsengWaterClone] == 2, "分身创建/换位声音次数错误");
+            await WaitUntilAsync(() => sounds[ESoundId.TangsengWaterClone] == 2, "分身创建/换位声音次数错误");
             await CheckTangsengBoltInputAsync(hero, flow, sounds);
             await CheckTangsengAirSkillMotionAsync(hero, flow);
 
@@ -113,8 +113,8 @@ public sealed partial class UiSmokeScenario
             var texts = SmokeInspection.ReadField<HashSet<FloatingTextNode>>(floating, "m_Texts");
             await WaitUntilAsync(() => texts.Count == 0, "技能检查前旧飘字没有结束");
             model.Hp.Value = 10;
-            int cureSounds = sounds[SoundId.TangsengHeavenlyDew];
-            await BeginAsync(SkillId.HeavenlyDew, InputSystem.Skill3);
+            int cureSounds = sounds[ESoundId.TangsengHeavenlyDew];
+            await BeginAsync(ESkillId.HeavenlyDew, InputSystem.Skill3);
             var cure = effects.Single(e => e.SceneFilePath.EndsWith("tangseng_cure_role_effect.tscn"));
             var cureSprite = cure.GetNode<AnimatedSprite2D>("Origin/Visual/Sprite");
             await WaitUntilAsync(() => cureSprite.Frame >= 11, "甘露仍停在首帧");
@@ -126,10 +126,10 @@ public sealed partial class UiSmokeScenario
             Check(model.Hp.Value == 30, $"甘露没有按int(MaxMP/8+8)恢复20HP，实际{model.Hp.Value}");
             CheckRecoveryText(texts.Single(), 20);
             await CaptureCombatAsync("tangseng_dew_heal_number");
-            Check(sounds[SoundId.TangsengHeavenlyDew] == cureSounds + 1, "无分身甘露起手未播放一次声音");
+            Check(sounds[ESoundId.TangsengHeavenlyDew] == cureSounds + 1, "无分身甘露起手未播放一次声音");
             model.Hp.Value = 10;
             waterClone.Activate(hero.GlobalPosition, hero.Facing);
-            await BeginAsync(SkillId.HeavenlyDew, InputSystem.Skill3);
+            await BeginAsync(ESkillId.HeavenlyDew, InputSystem.Skill3);
             await WaitUntilAsync(() => model.Hp.Value == 30, "带分身甘露的本体没有先治疗");
             CheckRecoveryText(texts.Single(), 20);
             await WaitUntilAsync(() => model.Hp.Value == 50, "水幻影甘露没有第二次治疗本体");
@@ -141,9 +141,9 @@ public sealed partial class UiSmokeScenario
             await CaptureCombatAsync("tangseng_clone_dew_heal_number");
             await WaitUntilAsync(() => model.ActiveSkillId == null && !waterClone.IsActive && effects.Count == 0,
                 "带分身甘露没有完整收招");
-            Check(sounds[SoundId.TangsengHeavenlyDew] == cureSounds + 3, "分身甘露没有保留官方两次起手音");
+            Check(sounds[ESoundId.TangsengHeavenlyDew] == cureSounds + 3, "分身甘露没有保留官方两次起手音");
 
-            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Gorilla,
                 new EnemySpawn(hero.GlobalPosition + new Vector2(90, 0)));
             SmokeInspection.StrengthenTrainingTarget(m_Monster);
             SmokeInspection.FreezeAi(m_Monster);
@@ -165,8 +165,8 @@ public sealed partial class UiSmokeScenario
                         await WaitFramesAsync(2);
                         clone.Activate(hero.GlobalPosition + new Vector2(-80, 0), -1);
                         hp = m_Monster.Hp;
-                        int iceSounds = sounds[SoundId.TangsengDarkIce];
-                        await BeginAsync(SkillId.DarkIceFormation, InputSystem.Skill1);
+                        int iceSounds = sounds[ESoundId.TangsengDarkIce];
+                        await BeginAsync(ESkillId.DarkIceFormation, InputSystem.Skill1);
                         await WaitUntilAsync(() => clonePlayer.CurrentAnimation == "dark_ice",
                             "玄冰阵起手没有同步切换分身 hit3");
                         Check(hero.AnimPlayer.CurrentAnimationPosition < .1 && !clone.IsAvailable && clone.GetNode<Sprite2D>("m_Body").Scale.X > 0,
@@ -218,7 +218,7 @@ public sealed partial class UiSmokeScenario
                         await WaitUntilAsync(() => m_Monster.Hp < hp, "玄冰阵真实判定未命中近侧目标");
                         await WaitUntilAsync(() => model.ActiveSkillId == null && effects.Count == 0 && !clone.IsActive,
                             "玄冰阵本体、分身或效果没有完整结束");
-                        Check(sounds[SoundId.TangsengDarkIce] == iceSounds + 1,
+                        Check(sounds[ESoundId.TangsengDarkIce] == iceSounds + 1,
                             "玄冰阵本体未发声或分身错误重复出手音");
                         GD.Print($"SMOKE-TANGSENG-DARK-ICE PASS: {rate}Hz musou={musou}, simultaneous casts, independent facing/refresh, scale/power and draw order.");
                     }
@@ -232,8 +232,8 @@ public sealed partial class UiSmokeScenario
                 Engine.PhysicsTicksPerSecond = originalTicks;
             }
 
-            int waterSounds = sounds[SoundId.TangsengWaterDemon];
-            await BeginAsync(SkillId.WaterDemonBurst, InputSystem.Skill4);
+            int waterSounds = sounds[ESoundId.TangsengWaterDemon];
+            await BeginAsync(ESkillId.WaterDemonBurst, InputSystem.Skill4);
             await WaitUntilAsync(() => hero.CanReleaseWaterDemon, "水魔爆第10源帧没有出现roundMc");
             var waterBall = hero.GetNode<AnimatedSprite2D>("m_EffectRoot/m_WaterDemonBall");
             Vector2 sourceOrigin = hero.GlobalPosition + new Vector2(
@@ -243,9 +243,9 @@ public sealed partial class UiSmokeScenario
             await CaptureCombatAsync("tangseng_water_ball");
             await WaitUntilAsync(() => model.ActiveSkillId == null, "无二次输入的水魔爆未在第42帧结束");
             Check(effects.Count == 0 && !hero.CanReleaseWaterDemon, "无追加输入仍自动创建光柱或残留球体");
-            Check(sounds[SoundId.TangsengWaterDemon] == waterSounds, "水魔爆无追加输入却播放下落声音");
+            Check(sounds[ESoundId.TangsengWaterDemon] == waterSounds, "水魔爆无追加输入却播放下落声音");
 
-            await BeginAsync(SkillId.WaterDemonBurst, InputSystem.Skill4);
+            await BeginAsync(ESkillId.WaterDemonBurst, InputSystem.Skill4);
             await WaitUntilAsync(() => hero.AnimPlayer.CurrentAnimationPosition > .7, "水魔球没有前移");
             Vector2 ball = hero.GetNode<AnimatedSprite2D>("m_EffectRoot/m_WaterDemonBall").Position;
             Vector2 expected = hero.GlobalPosition + new Vector2(-ball.X, ball.Y - 300);
@@ -263,9 +263,9 @@ public sealed partial class UiSmokeScenario
             await CaptureCombatAsync("tangseng_water_fall");
             await WaitUntilAsync(() => m_Monster.Hp < hp, "独立水魔下落未在光柱位置命中目标");
             await WaitUntilAsync(() => model.ActiveSkillId == null && effects.Count == 0, "追加水魔效果未收招和回池");
-            Check(sounds[SoundId.TangsengWaterDemon] == waterSounds + 1, "水魔追加第14帧没有播放一次声音");
+            Check(sounds[ESoundId.TangsengWaterDemon] == waterSounds + 1, "水魔追加第14帧没有播放一次声音");
             var damage = GameLogic.Battle.Attacks.AttackData.Create(0, default, 1,
-                GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
+                GameConfig.Battle.EDamageKind.Real, Vector2.Zero, 1, 0);
             try
             {
                 hero.ReceiveHit(damage);
@@ -274,7 +274,7 @@ public sealed partial class UiSmokeScenario
             {
                 GameFramework.ReferencePool.Release(damage);
             }
-            await WaitUntilAsync(() => sounds[SoundId.TangsengHurt] > 0, "唐僧成功受击没有自己的声音");
+            await WaitUntilAsync(() => sounds[ESoundId.TangsengHurt] > 0, "唐僧成功受击没有自己的声音");
             Check(sounds.All(pair => pair.Value > 0), "真实输入链未覆盖全部唐僧声音");
             GD.Print("SMOKE-TANGSENG-SOUNDS PASS: eight official MP3s on GGF SFX; real attack/partial/full charge, clone create/teleport, one ice voice, two clone-dew voices, follow-up-only fall, impact and hurt.");
             GD.Print("SMOKE-TANGSENG-EFFECTS PASS: real skill learning, 34-frame additive cure, stopped nested ice, moving roundMc, timeout and independent fall hit.");
@@ -290,7 +290,7 @@ public sealed partial class UiSmokeScenario
             m_Monster = null;
         }
 
-        async Task BeginAsync(SkillId id, string action)
+        async Task BeginAsync(ESkillId id, string action)
         {
             model.Mp.Value = model.MaxMp.Value;
             await WaitUntilAsync(() => SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "m_BodyFsm")
@@ -383,8 +383,8 @@ public sealed partial class UiSmokeScenario
                 Input.ActionRelease(InputSystem.MoveRight);
                 await WaitUntilAsync(() => fsm.CurrentState is HeroGroundState, "水幻影后没有正常落地");
 
-                foreach (var (skill, action) in new[] { (SkillId.DarkIceFormation, InputSystem.Skill1),
-                    (SkillId.HeavenlyDew, InputSystem.Skill3) })
+                foreach (var (skill, action) in new[] { (ESkillId.DarkIceFormation, InputSystem.Skill1),
+                    (ESkillId.HeavenlyDew, InputSystem.Skill3) })
                 {
                     await StartAirAsync(-180);
                     Input.ActionPress(action);
@@ -439,7 +439,7 @@ public sealed partial class UiSmokeScenario
     /// <param name="sounds">本次真实GGF成功播放事件的累计计数。</param>
     /// <returns>输入、弹体、命中与资源校验任务。</returns>
     private async Task CheckTangsengBoltInputAsync(TangsengEntity hero, ProcedureOwner flow,
-        IReadOnlyDictionary<SoundId, int> sounds)
+        IReadOnlyDictionary<ESoundId, int> sounds)
     {
         var model = flow.GetModel<HeroModel>();
         var effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
@@ -448,7 +448,7 @@ public sealed partial class UiSmokeScenario
         Check(chargeBar.Size.IsEqualApprox(new Vector2(67.2f, 9)) &&
             chargeBar.Position.IsEqualApprox(new Vector2(-33.6f, -76.025f)), "蓄力条没有采用官方尺寸和头顶偏移");
         int ticks = Engine.PhysicsTicksPerSecond;
-        var target = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+        var target = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Gorilla,
             new EnemySpawn(hero.GlobalPosition + new Vector2(200, 0)));
         SmokeInspection.StrengthenTrainingTarget(target);
         SmokeInspection.FreezeAi(target);
@@ -479,9 +479,9 @@ public sealed partial class UiSmokeScenario
                     Vector2 origin = hero.GlobalPosition;
                     target.GlobalPosition = origin + new Vector2(hero.Facing * 200, 0);
                     int hp = target.Hp;
-                    int attackSounds = sounds[SoundId.TangsengAttack];
-                    int dragonSounds = sounds[SoundId.TangsengIceDragon];
-                    int impactSounds = sounds[SoundId.TangsengImpact];
+                    int attackSounds = sounds[ESoundId.TangsengAttack];
+                    int dragonSounds = sounds[ESoundId.TangsengIceDragon];
+                    int impactSounds = sounds[ESoundId.TangsengImpact];
                     Input.ActionPress(InputSystem.Attack);
                     await WaitUntilAsync(() => fsm.CurrentState is HeroAttackState, "J没有进入普通攻击");
                     bool charge = test.Hold > 0 && test.Mana >= 20;
@@ -526,7 +526,7 @@ public sealed partial class UiSmokeScenario
                     var definition = SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(bolt, "m_Hit");
                     Check(bolt.SceneFilePath.EndsWith(full ? "tangseng_ice_dragon_bolt_effect.tscn" :
                         "tangseng_normal_bolt_effect.tscn"), "未满蓄力错误使用了冰龙素材");
-                    Check(definition.DamageKind == (full ? GameConfig.Battle.DamageKind.Magic : GameConfig.Battle.DamageKind.Physics),
+                    Check(definition.DamageKind == (full ? GameConfig.Battle.EDamageKind.Magic : GameConfig.Battle.EDamageKind.Physics),
                         "法弹伤害类型错误");
                     Check(model.Mp.Value == test.Mana - (full ? 20 : 0), "冰龙只有满蓄力才应扣20MP");
                     Check(Math.Abs(bolt.Scale.X) == (full ? .8f : .6f) &&
@@ -560,12 +560,12 @@ public sealed partial class UiSmokeScenario
                         $"{rate}Hz {test.Name}法弹命中无双错误：{hits}次命中只增长{wsGained - wsBefore}");
                     Check(model.ActiveSkillId == null && hero.GlobalPosition.DistanceTo(origin) < 1,
                         "法弹收招未释放身体或施放期间漂移");
-                    await WaitUntilAsync(() => sounds[SoundId.TangsengImpact] > impactSounds,
+                    await WaitUntilAsync(() => sounds[ESoundId.TangsengImpact] > impactSounds,
                         "法弹成功命中后GGF未派发唐僧命中音事件");
-                    Check(sounds[SoundId.TangsengAttack] == attackSounds + 1 &&
-                        sounds[SoundId.TangsengIceDragon] == dragonSounds + (full ? 1 : 0) &&
-                        sounds[SoundId.TangsengImpact] > impactSounds,
-                        $"{rate}Hz {test.Name}声音错误：普攻{sounds[SoundId.TangsengAttack] - attackSounds}，冰龙{sounds[SoundId.TangsengIceDragon] - dragonSounds}，命中{sounds[SoundId.TangsengImpact] - impactSounds}，预期蓄力{charge}、满蓄{full}");
+                    Check(sounds[ESoundId.TangsengAttack] == attackSounds + 1 &&
+                        sounds[ESoundId.TangsengIceDragon] == dragonSounds + (full ? 1 : 0) &&
+                        sounds[ESoundId.TangsengImpact] > impactSounds,
+                        $"{rate}Hz {test.Name}声音错误：普攻{sounds[ESoundId.TangsengAttack] - attackSounds}，冰龙{sounds[ESoundId.TangsengIceDragon] - dragonSounds}，命中{sounds[ESoundId.TangsengImpact] - impactSounds}，预期蓄力{charge}、满蓄{full}");
                     GD.Print($"SMOKE-TANGSENG-BOLT PASS: {rate}Hz {test.Name}, damage={definition.DamageKind}, hits={hits}, ws={wsGained - wsBefore}, mana={model.Mp.Value}.");
                 }
             }
@@ -802,8 +802,8 @@ public sealed partial class UiSmokeScenario
         activePage.Refresh();
         foreach (var (group, hero) in new[]
         {
-            ("m_WukongRows", GameConfig.Skills.SkillHero.Wukong),
-            ("m_TangsengRows", GameConfig.Skills.SkillHero.Tangseng)
+            ("m_WukongRows", GameConfig.Skills.ESkillHero.Wukong),
+            ("m_TangsengRows", GameConfig.Skills.ESkillHero.Tangseng)
         })
         {
             var definitions = configuration.GetActive(hero);
@@ -941,7 +941,7 @@ public sealed partial class UiSmokeScenario
         Vector2 originalPosition = hero.GlobalPosition;
         int originalMp = attributes.Mp.Value;
         int impactSounds = 0;
-        string impactPath = flow.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)SoundId.WukongImpact).Path;
+        string impactPath = flow.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)ESoundId.WukongImpact).Path;
         void OnImpactPlayed(object sender, GameFramework.Event.GameEventArgs args)
         {
             if (args is GodotGameFramework.Sound.PlaySoundSuccessEventArgs sound && sound.SoundAssetName == impactPath)
@@ -963,14 +963,14 @@ public sealed partial class UiSmokeScenario
             GF.UI.CloseUIForm(notice.SerialId);
             await WaitFramesAsync(3);
             first.EmitSignal(BaseButton.SignalName.Pressed);
-            Check(!system.IsLearned(SkillId.RisingDragon) && flow.GetModel<ProfileModel>().Soul.Value == 0,
+            Check(!system.IsLearned(ESkillId.RisingDragon) && flow.GetModel<ProfileModel>().Soul.Value == 0,
                 "提示窗口缺席影响了技能学习拒绝结果");
-            notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(GameConfig.UIFormId.SaveNoticeForm);
+            notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(GameConfig.EUIFormId.SaveNoticeForm);
             first.EmitSignal(BaseButton.SignalName.Pressed);
-            Check(!system.IsLearned(SkillId.RisingDragon) && notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Text == "灵魂不足！",
+            Check(!system.IsLearned(ESkillId.RisingDragon) && notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Text == "灵魂不足！",
                 "灵魂不足没有拒绝学习并显示复用提示");
             flow.GetSystem<ProfileSystem>().AddSoul(4000);
-            foreach (var definition in ConfigSystem.Instance.Tables.TbSkillConfig.DataList.Where(x => x.Hero == SkillHero.Wukong))
+            foreach (var definition in ConfigSystem.Instance.Tables.TbSkillConfig.DataList.Where(x => x.Hero == ESkillHero.Wukong))
             {
                 var button = form.GetNode<TextureButton>($"Content/m_ActivePage/m_WukongRows/Skill{definition.Order}/IconCell/Icon");
                 button.EmitSignal(BaseButton.SignalName.Pressed);
@@ -993,14 +993,14 @@ public sealed partial class UiSmokeScenario
             hero.SetPhysicsProcess(true);
             await WaitUntilAsync(() => hero.OnFloor, "技能测试英雄没有落地");
             hero.SetFacing(1);
-            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Gorilla,
                 new EnemySpawn(hero.GlobalPosition + new Vector2(60, 0)));
             SmokeInspection.StrengthenTrainingTarget(m_Monster);
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             int bodyTargetHp = m_Monster.Hp;
             int beforeBodyImpact = impactSounds;
-            await CastAsync(SkillId.RisingDragon, [InputSystem.Interact, InputSystem.Attack], "skill_rising");
+            await CastAsync(ESkillId.RisingDragon, [InputSystem.Interact, InputSystem.Attack], "skill_rising");
             Check(m_Monster.Hp < bodyTargetHp && impactSounds > beforeBodyImpact,
                 "身体技能命中没有通过 GGF 播放悟空有效命中音");
             ReleaseTestEntity(m_Monster);
@@ -1009,7 +1009,7 @@ public sealed partial class UiSmokeScenario
             attributes.Mp.Value = attributes.MaxMp.Value;
             Input.ActionPress(InputSystem.Interact);
             Input.ActionPress(InputSystem.Attack);
-            await WaitUntilAsync(() => attributes.ActiveSkillId == SkillId.RisingDragon, "持续组合键没有开始升龙");
+            await WaitUntilAsync(() => attributes.ActiveSkillId == ESkillId.RisingDragon, "持续组合键没有开始升龙");
             var fsm = SmokeInspection.ReadField<GameFramework.Fsm.IFsm<GameLogic.Heroes.Body.IHeroBody>>(hero, "m_BodyFsm");
             var state = fsm.CurrentState;
             var serial = typeof(GameLogic.Body.AbstractBodyState<GameLogic.Heroes.Body.IHeroBody>).GetProperty("EnterSerial",
@@ -1017,7 +1017,7 @@ public sealed partial class UiSmokeScenario
             int entered = (int)serial.GetValue(state);
             await WaitUntilAsync(() => fsm.CurrentState == state && (int)serial.GetValue(state) > entered,
                 "持续 W+J 被错误消费，升龙收招后不能再次释放", 4000);
-            Check(attributes.ActiveSkillId.Value == SkillId.RisingDragon, "持续升龙变成了普攻");
+            Check(attributes.ActiveSkillId.Value == ESkillId.RisingDragon, "持续升龙变成了普攻");
             Input.ActionRelease(InputSystem.Interact);
             Input.ActionRelease(InputSystem.Attack);
             await WaitUntilAsync(() => attributes.ActiveSkillId == null && hero.OnFloor, "连续升龙没有正常落地", 4000);
@@ -1032,7 +1032,7 @@ public sealed partial class UiSmokeScenario
             await WaitFramesAsync(2);
             Check(hero.ActionData.Running, "技能测试没有进入奔跑");
             // 宽沙包始终与突刺重叠，隔离移动脱离，验证每段只命中一次且段点确实重建攻击包。
-            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Gorilla,
                 new EnemySpawn(hero.GlobalPosition + new Vector2(100, 0)));
             SmokeInspection.StrengthenTrainingTarget(m_Monster);
             SmokeInspection.FreezeAi(m_Monster);
@@ -1051,7 +1051,7 @@ public sealed partial class UiSmokeScenario
             GF.Event.Subscribe(DamageDealtEventArgs.EventId, OnThrustDamage);
             try
             {
-                await CastAsync(SkillId.FlameThrust, [InputSystem.Attack], "skill_thrust");
+                await CastAsync(ESkillId.FlameThrust, [InputSystem.Attack], "skill_thrust");
                 Check(thrustHits == 4, $"突刺没有按第 1/5/8/11 源帧形成四个独立命中，实际 {thrustHits}");
                 GD.Print("SMOKE-THRUST PASS: four native attack stages hit the same overlapping target once each.");
             }
@@ -1063,22 +1063,22 @@ public sealed partial class UiSmokeScenario
                 m_Monster = null;
             }
             Input.ActionRelease(InputSystem.MoveRight);
-            await CastAsync(SkillId.BlazingFlash, [InputSystem.Skill1], "skill_flash");
-            await CastAsync(SkillId.FlameStorm, [InputSystem.Skill2], "skill_storm");
-            await CastAsync(SkillId.FireDemonSlash, [InputSystem.Skill3], "skill_fire_no_target");
+            await CastAsync(ESkillId.BlazingFlash, [InputSystem.Skill1], "skill_flash");
+            await CastAsync(ESkillId.FlameStorm, [InputSystem.Skill2], "skill_storm");
+            await CastAsync(ESkillId.FireDemonSlash, [InputSystem.Skill3], "skill_fire_no_target");
 
             // 第七源帧前跃进约 (80,-200)，在该位置提供唯一的近距可见目标。
             hero.GlobalPosition = new Vector2(400, 360);
             hero.Velocity = Vector2.Zero;
             await WaitFramesAsync(2);
-            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Gorilla,
+            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.Gorilla,
                 new EnemySpawn(hero.GlobalPosition + new Vector2(80, -190)));
             SmokeInspection.StrengthenTrainingTarget(m_Monster);
             SmokeInspection.FreezeAi(m_Monster);
             m_Monster.SetPhysicsProcess(false);
             int hp = m_Monster.Hp;
             int beforeEffectImpact = impactSounds;
-            await CastAsync(SkillId.FireDemonSlash, [InputSystem.Skill3], "skill_fire_combo", SkillHitId.FireDemonCombo);
+            await CastAsync(ESkillId.FireDemonSlash, [InputSystem.Skill3], "skill_fire_combo", ESkillHitId.FireDemonCombo);
             Check(m_Monster.Hp < hp, "九连斩未通过真实判定伤害目标");
             Check(impactSounds > beforeEffectImpact, "独立技能特效命中没有通过 GGF 播放悟空有效命中音");
             ReleaseTestEntity(m_Monster);
@@ -1107,7 +1107,7 @@ public sealed partial class UiSmokeScenario
             flow.GetSystem<ProfileSystem>().RestoreCheckpoint(snapshot);
         }
 
-        async Task CastAsync(SkillId id, string[] inputs, string capture, SkillHitId expectedEffect = SkillHitId.None)
+        async Task CastAsync(ESkillId id, string[] inputs, string capture, ESkillHitId expectedEffect = ESkillHitId.None)
         {
             attributes.Mp.Value = attributes.MaxMp.Value;
             int mana = attributes.Mp.Value;
@@ -1124,7 +1124,7 @@ public sealed partial class UiSmokeScenario
             }
 
             Check(attributes.Mp.Value == mana - ConfigSystem.Instance.Tables.TbSkillConfig.Get(id).ManaCost, $"{id} 扣蓝不正确");
-            if (expectedEffect != SkillHitId.None)
+            if (expectedEffect != ESkillHitId.None)
             {
                 await WaitUntilAsync(() => SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects")
                     .Any(x => SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)expectedEffect), "火魔斩没有创建九连特效");
@@ -1143,7 +1143,7 @@ public sealed partial class UiSmokeScenario
             }
 
             await CaptureCombatAsync(capture);
-            if (id == SkillId.FireDemonSlash)
+            if (id == ESkillId.FireDemonSlash)
             {
                 var prelude = hero.GetNode<AnimatedSprite2D>("m_FireDemonPrelude");
                 Check(prelude.Visible && prelude.IsPlaying() && prelude.GlobalPosition.DistanceTo(hero.GlobalPosition) > 30,
@@ -1152,17 +1152,17 @@ public sealed partial class UiSmokeScenario
                 Input.ActionPress(InputSystem.Skill1);
                 await WaitUntilAsync(() => hero.AnimPlayer.CurrentAnimationPosition >= 46d / 24d,
                     "火魔斩未进入第 47 帧下冲", 5000);
-                Check(hero.ActionData.Time - castAt < (expectedEffect == SkillHitId.None ? .4 : 2.0),
+                Check(hero.ActionData.Time - castAt < (expectedEffect == ESkillHitId.None ? .4 : 2.0),
                     "火魔斩第 47 帧超过原版时间轴；独立效果不得延迟角色下冲");
 
-                if (expectedEffect != SkillHitId.None)
+                if (expectedEffect != ESkillHitId.None)
                 {
                     var fireEffects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "m_SkillEffects");
                     await WaitUntilAsync(() => fireEffects.Any(x =>
-                        SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)SkillHitId.FireDemonLanding),
+                        SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)ESkillHitId.FireDemonLanding),
                         "火魔斩在落地窗口内没有创建落地斩", 5000);
                     var landing = fireEffects.Single(x =>
-                        SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)SkillHitId.FireDemonLanding);
+                        SmokeInspection.ReadField<GameConfig.Battle.AttackConfig>(x, "m_Hit")?.Id == (int)ESkillHitId.FireDemonLanding);
                     var landingPlayer = SmokeInspection.ReadField<AnimationPlayer>(landing, "m_Player");
                     double bodyAtLanding = hero.AnimPlayer.CurrentAnimationPosition;
                     double effectAtLanding = landingPlayer.CurrentAnimationPosition;
@@ -1188,7 +1188,7 @@ public sealed partial class UiSmokeScenario
                     $"位置 {hero.GlobalPosition}，速度 {hero.Velocity}，落地 {hero.OnFloor}，" +
                     $"动画 {player.CurrentAnimation}:{player.CurrentAnimationPosition:0.###}/{player.CurrentAnimationLength:0.###}，效果 [{effects}]。", error);
             }
-            if (id == SkillId.FireDemonSlash)
+            if (id == ESkillId.FireDemonSlash)
             {
                 await WaitFramesAsync(2);
                 await WaitUntilAsync(() => !hero.GetNode<AnimatedSprite2D>("m_FireDemonPrelude").Visible,
@@ -1254,12 +1254,12 @@ public sealed partial class UiSmokeScenario
     /// </summary>
     /// <param name="requested">需验证的声音列表；未提供时沿用悟空七段技能音效。</param>
     /// <returns>所有音效代理检查完成的任务。</returns>
-    private async Task CheckSkillSoundsAsync(IReadOnlyList<SoundId> requested = null)
+    private async Task CheckSkillSoundsAsync(IReadOnlyList<ESoundId> requested = null)
     {
-        IReadOnlyList<SoundId> ids = requested ?? new[] { SoundId.WukongRisingDragon, SoundId.WukongFlameThrust,
-            SoundId.WukongBlazingFlash, SoundId.WukongFlameStorm, SoundId.WukongFireDemonStart,
-            SoundId.WukongFireDemonCombo, SoundId.WukongFireDemonLanding };
-        foreach (SoundId id in ids)
+        IReadOnlyList<ESoundId> ids = requested ?? new[] { ESoundId.WukongRisingDragon, ESoundId.WukongFlameThrust,
+            ESoundId.WukongBlazingFlash, ESoundId.WukongFlameStorm, ESoundId.WukongFireDemonStart,
+            ESoundId.WukongFireDemonCombo, ESoundId.WukongFireDemonLanding };
+        foreach (ESoundId id in ids)
         {
             var definition = ConfigSystem.Instance.Tables.TbSoundConfig.Get((int)id);
             int serial = GF.Sound.PlayConfigured(id);
@@ -1293,9 +1293,9 @@ public sealed partial class UiSmokeScenario
         var player = hero.GetNode<AnimationPlayer>("m_AnimPlayer");
         var sounds = new Dictionary<string, int>();
         var serials = new List<int>();
-        string hurt = GF.Fsm.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)SoundId.WukongHurt).Path;
-        string death = GF.Fsm.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)SoundId.WukongDeath).Path;
-        string impact = GF.Fsm.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)SoundId.WukongImpact).Path;
+        string hurt = GF.Fsm.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)ESoundId.WukongHurt).Path;
+        string death = GF.Fsm.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)ESoundId.WukongDeath).Path;
+        string impact = GF.Fsm.GetModel<ConfigurationModel>().Tables.TbSoundConfig.Get((int)ESoundId.WukongImpact).Path;
         void OnSoundPlayed(object sender, GameFramework.Event.GameEventArgs args)
         {
             var sound = (GodotGameFramework.Sound.PlaySoundSuccessEventArgs)args;
@@ -1315,7 +1315,7 @@ public sealed partial class UiSmokeScenario
             for (int expected = 1; expected <= 2; expected++)
             {
                 var data = GameLogic.Battle.Attacks.AttackData.Create(0, default, 1,
-                    GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
+                    GameConfig.Battle.EDamageKind.Real, Vector2.Zero, 1, 0);
                 try
                 { hero.ReceiveHit(data); }
                 finally { GameFramework.ReferencePool.Release(data); }
@@ -1345,10 +1345,10 @@ public sealed partial class UiSmokeScenario
             Check(sounds.GetValueOrDefault(hurt) == 2 && sounds.GetValueOrDefault(death) == 1 && !hero.Dead,
                 "动画声音重复，或单独播放死亡视觉改变了业务事实");
             // 无攻击来源的直接伤害不能凭空播放悟空打击声；hurt动画也不承担攻击者反馈。
-            foreach (var id in new[] { GameConfig.Entity.EntityId.HuaguoshanMonkey, GameConfig.Entity.EntityId.DemonMonkey,
-                         GameConfig.Entity.EntityId.Gorilla, GameConfig.Entity.EntityId.MacaqueKing, GameConfig.Entity.EntityId.TamarinKing,
-                         GameConfig.Entity.EntityId.CaveBrute, GameConfig.Entity.EntityId.KnifeDemon, GameConfig.Entity.EntityId.LionCamelKing,
-                         GameConfig.Entity.EntityId.Bat, GameConfig.Entity.EntityId.BatCaveStatue })
+            foreach (var id in new[] { GameConfig.Entity.EEntityId.HuaguoshanMonkey, GameConfig.Entity.EEntityId.DemonMonkey,
+                         GameConfig.Entity.EEntityId.Gorilla, GameConfig.Entity.EEntityId.MacaqueKing, GameConfig.Entity.EEntityId.TamarinKing,
+                         GameConfig.Entity.EEntityId.CaveBrute, GameConfig.Entity.EEntityId.KnifeDemon, GameConfig.Entity.EEntityId.LionCamelKing,
+                         GameConfig.Entity.EEntityId.Bat, GameConfig.Entity.EEntityId.BatCaveStatue })
             {
                 var enemy = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(10000, 100)));
                 try
@@ -1362,7 +1362,7 @@ public sealed partial class UiSmokeScenario
                     foreach (int damage in new[] { 1, enemy.MaxHp * 2 })
                     {
                         var data = GameLogic.Battle.Attacks.AttackData.Create(0, default, damage,
-                            GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
+                            GameConfig.Battle.EDamageKind.Real, Vector2.Zero, 1, 0);
                         try
                         { enemy.ReceiveHit(data); }
                         finally { GameFramework.ReferencePool.Release(data); }
@@ -1378,7 +1378,7 @@ public sealed partial class UiSmokeScenario
                     }
                     Check(enemy.Dead, $"{id} 致死受击未完成");
                     var ignored = GameLogic.Battle.Attacks.AttackData.Create(0, default, 1,
-                        GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
+                        GameConfig.Battle.EDamageKind.Real, Vector2.Zero, 1, 0);
                     try
                     { Check(enemy.ReceiveHit(ignored).IsMiss, $"{id} 死亡后仍受击"); }
                     finally { GameFramework.ReferencePool.Release(ignored); }

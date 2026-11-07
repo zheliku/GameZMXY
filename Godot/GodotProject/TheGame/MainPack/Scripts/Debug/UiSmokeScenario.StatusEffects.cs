@@ -203,9 +203,9 @@ public sealed partial class UiSmokeScenario
     /// <returns>本次是否被无敌拦截。</returns>
     private static bool HitHeroForProtection(AbstractHeroEntity hero, Vector2? knockback = null)
     {
-        var attacker = new GameLogic.Battle.Damage.CombatantAttributes(GameLogic.Battle.Damage.CombatSide.Enemy,
+        var attacker = new GameLogic.Battle.Damage.CombatantAttributes(GameLogic.Battle.Damage.ECombatSide.Enemy,
             hero.Level, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        var data = GameLogic.Battle.Attacks.AttackData.Create(0, attacker, 1, GameConfig.Battle.DamageKind.Real,
+        var data = GameLogic.Battle.Attacks.AttackData.Create(0, attacker, 1, GameConfig.Battle.EDamageKind.Real,
             knockback ?? Vector2.Zero, 1, 0);
         try
         {
@@ -264,12 +264,12 @@ public sealed partial class UiSmokeScenario
                 Check(hero.AnimPlayer.CurrentAnimationPosition != animationTime, "冰冻错误地暂停了原生动作");
                 GF.Base.PauseGame();
                 await WaitFramesAsync(3);
-                float paused = model.StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0;
+                float paused = model.StatusEffects.GetValueOrDefault(EStatusEffectKind.Freeze)?.RemainingSeconds ?? 0;
                 await WaitFramesAsync(10);
-                Check((model.StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0) == paused, "游戏暂停仍推进冰冻时长");
+                Check((model.StatusEffects.GetValueOrDefault(EStatusEffectKind.Freeze)?.RemainingSeconds ?? 0) == paused, "游戏暂停仍推进冰冻时长");
                 GF.Base.ResumeGame();
                 await WaitUntilAsync(() => frozen.Frame == 34 && !frozen.IsPlaying(), "冰块原版最后一帧未完整播放", 2500);
-                Check(frozen.Visible && (model.StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0) > 0 && !frozen.IsPlaying(), "冰块没有保持末帧到状态结束");
+                Check(frozen.Visible && (model.StatusEffects.GetValueOrDefault(EStatusEffectKind.Freeze)?.RemainingSeconds ?? 0) > 0 && !frozen.IsPlaying(), "冰块没有保持末帧到状态结束");
                 if (ticks == 60)
                 {
                     await CaptureCombatAsync("hero_frozen_official");

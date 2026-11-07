@@ -44,19 +44,19 @@ namespace GameLogic.Level
             if (guardians.Length == 0)
             {
                 // 末段可有多条并行流，末行不是守关身份；这两关复用具体普通物种。
-                EntityId guardian = levelId switch
+                EEntityId guardian = levelId switch
                 {
-                    1 => EntityId.Gorilla,
-                    7 => EntityId.TurtleMinister,
+                    1 => EEntityId.Gorilla,
+                    7 => EEntityId.TurtleMinister,
                     _ => throw new InvalidOperationException("关卡图鉴缺少守关身份。")
                 };
                 guardians = [configuration.GetEnemy(guardian)];
             }
-            var drops = new HashSet<EquipmentId>();
+            var drops = new HashSet<EEquipmentId>();
             foreach (var enemy in enemies)
             {
                 // 浅岸守关龟丞相明确不掉装备，不能把后续海域的基础掉落放到这里。
-                bool guardianWithoutEquipment = levelId == 7 && enemy.EntityId == EntityId.TurtleMinister;
+                bool guardianWithoutEquipment = levelId == 7 && enemy.EntityId == EEntityId.TurtleMinister;
                 if (enemy.EquipmentDropChance > 0 && !guardianWithoutEquipment)
                 {
                     AddEquipmentFromPool(tables, enemy.EquipmentDropPoolId, drops);
@@ -64,13 +64,13 @@ namespace GameLogic.Level
             }
             if (levelId == 10)
             {
-                drops.Add(EquipmentId.DiamondSnare);
+                drops.Add(EEquipmentId.DiamondSnare);
             }
             // 召唤物不在刷怪配方里，但会在本关出现；仅补图鉴名单，不改变掉落合并规则。
             var summoned = levelId switch
             {
-                4 => new[] { configuration.GetEnemy(EntityId.Bat) },
-                9 => new[] { configuration.GetEnemy(EntityId.SharkSpawn) },
+                4 => new[] { configuration.GetEnemy(EEntityId.Bat) },
+                9 => new[] { configuration.GetEnemy(EEntityId.SharkSpawn) },
                 _ => Array.Empty<EnemyConfig>()
             };
             var displayEnemies = guardians.Concat(enemies).Concat(summoned)
@@ -89,10 +89,10 @@ namespace GameLogic.Level
         /// <param name="tables">本次查询借用的配置总表。</param>
         /// <param name="poolId">敌人配置的掉落池；None不贡献装备。</param>
         /// <param name="equipmentIds">本次查询拥有的去重集合。</param>
-        private static void AddEquipmentFromPool(Tables tables, EquipmentDropPoolId poolId,
-            HashSet<EquipmentId> equipmentIds)
+        private static void AddEquipmentFromPool(Tables tables, EEquipmentDropPoolId poolId,
+            HashSet<EEquipmentId> equipmentIds)
         {
-            if (poolId == EquipmentDropPoolId.None)
+            if (poolId == EEquipmentDropPoolId.None)
             {
                 return;
             }

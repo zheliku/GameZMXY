@@ -14,7 +14,7 @@ namespace GameLogic.Heroes.Body
     /// </summary>
     public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     {
-        private SkillId m_SkillId; // 本状态进入时的技能，取消后不借用下一招的编号。
+        private ESkillId m_SkillId; // 本状态进入时的技能，取消后不借用下一招的编号。
         private bool m_AnimationCompleted; // 方法轨道只登记完成，退出在动画调用返回后执行。
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace GameLogic.Heroes.Body
         /// <param name="body">英雄身体。</param>
         /// <param name="hit">伤害阶段。</param>
         /// <returns>乘无双之前的威力。</returns>
-        protected static double AttackPower(IHeroBody body, SkillHitId hit)
+        protected static double AttackPower(IHeroBody body, ESkillHitId hit)
         {
             var definition = body.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
             return body.GetModel<HeroModel>().Power.Value * (double)definition.PowerScale.X + definition.FlatPower.X;

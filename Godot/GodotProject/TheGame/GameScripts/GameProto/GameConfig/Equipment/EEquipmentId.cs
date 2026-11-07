@@ -11,7 +11,7 @@
 
 namespace GameConfig.Equipment
 { 
-    public enum EquipmentId
+    public enum EEquipmentId
     {
         /// <summary>
         /// 无装备

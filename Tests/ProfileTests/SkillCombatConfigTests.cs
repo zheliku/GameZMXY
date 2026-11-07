@@ -29,19 +29,19 @@ namespace GameLogic.Profile.Tests
         /// <param name="budget">攻击源的总命中预算。</param>
         /// <param name="sourceInterval">24 fps 源时间轴的编号更新间隔。</param>
         [Theory]
-        [InlineData(SkillHitId.RisingDragon, 2f, 0f, DamageKind.Magic, 2f, -22f, 100, 2)]
-        [InlineData(SkillHitId.FlameThrust, .5f, 0f, DamageKind.Magic, 35f, -2f, 1, 5)]
-        [InlineData(SkillHitId.BlazingFlash, 0f, 100f, DamageKind.Magic, 0f, -2f, 1, 4)]
-        [InlineData(SkillHitId.FlameStorm, 1.2f, 0f, DamageKind.Magic, 20f, -2f, 100, 2)]
-        [InlineData(SkillHitId.FireDemonCombo, 1f, 0f, DamageKind.Physics, 2f, -3f, 100, 999)]
-        [InlineData(SkillHitId.FireDemonDescent, 1f, 0f, DamageKind.Magic, 40f, 25f, 100, 999)]
-        [InlineData(SkillHitId.FireDemonLanding, 3f, 0f, DamageKind.Magic, 40f, -15f, 100, 999)]
-        [InlineData(SkillHitId.IceDragonWave, .2f, 0f, DamageKind.Magic, 20f, -5f, 200, 4)]
-        [InlineData(SkillHitId.DarkIceFormation, .8f, 0f, DamageKind.Magic, 6f, -7f, 200, 999)]
-        [InlineData(SkillHitId.WaterDemonPillar, 2f, 0f, DamageKind.Magic, 25f, -5f, 200, 999)]
-        [InlineData(SkillHitId.WaterDemonFall, 8f, 0f, DamageKind.Magic, 25f, -5f, 200, 999)]
-        public void DamageStages_PreserveOfficialRules(SkillHitId id, float scale, float flat,
-            DamageKind kind, float backX, float backY, int budget, int sourceInterval)
+        [InlineData(ESkillHitId.RisingDragon, 2f, 0f, EDamageKind.Magic, 2f, -22f, 100, 2)]
+        [InlineData(ESkillHitId.FlameThrust, .5f, 0f, EDamageKind.Magic, 35f, -2f, 1, 5)]
+        [InlineData(ESkillHitId.BlazingFlash, 0f, 100f, EDamageKind.Magic, 0f, -2f, 1, 4)]
+        [InlineData(ESkillHitId.FlameStorm, 1.2f, 0f, EDamageKind.Magic, 20f, -2f, 100, 2)]
+        [InlineData(ESkillHitId.FireDemonCombo, 1f, 0f, EDamageKind.Physics, 2f, -3f, 100, 999)]
+        [InlineData(ESkillHitId.FireDemonDescent, 1f, 0f, EDamageKind.Magic, 40f, 25f, 100, 999)]
+        [InlineData(ESkillHitId.FireDemonLanding, 3f, 0f, EDamageKind.Magic, 40f, -15f, 100, 999)]
+        [InlineData(ESkillHitId.IceDragonWave, .2f, 0f, EDamageKind.Magic, 20f, -5f, 200, 4)]
+        [InlineData(ESkillHitId.DarkIceFormation, .8f, 0f, EDamageKind.Magic, 6f, -7f, 200, 999)]
+        [InlineData(ESkillHitId.WaterDemonPillar, 2f, 0f, EDamageKind.Magic, 25f, -5f, 200, 999)]
+        [InlineData(ESkillHitId.WaterDemonFall, 8f, 0f, EDamageKind.Magic, 25f, -5f, 200, 999)]
+        public void DamageStages_PreserveOfficialRules(ESkillHitId id, float scale, float flat,
+            EDamageKind kind, float backX, float backY, int budget, int sourceInterval)
         {
             var hit = TestTables.Tables.TbAttackConfig.Get((int)id);
             Assert.Equal(new Vector2(scale, scale), hit.PowerScale);
@@ -58,7 +58,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void NormalAttackIndex_ExcludesSkillDamageStages()
         {
-            Assert.Empty(TestTables.Configuration.GetAttacks(GameConfig.Entity.EntityId.None));
+            Assert.Empty(TestTables.Configuration.GetAttacks(GameConfig.Entity.EEntityId.None));
             foreach (var owner in TestTables.Tables.TbAttackConfig.DataList.Where(x => x.ComboIndex >= 0).Select(x => x.OwnerId).Distinct())
             {
                 Assert.All(TestTables.Configuration.GetAttacks(owner), attack => Assert.True(attack.ComboIndex >= 0));
@@ -83,7 +83,7 @@ namespace GameLogic.Profile.Tests
         {
             var tables = new Tables(name => new ByteBuf(File.ReadAllBytes(
                 Path.Combine(AppContext.BaseDirectory, "Data", name + ".bytes"))));
-            var attack = tables.TbAttackConfig.Get((int)SkillHitId.FlameStorm);
+            var attack = tables.TbAttackConfig.Get((int)ESkillHitId.FlameStorm);
             typeof(AttackConfig).GetField(nameof(attack.HitBudget)).SetValue(attack, 0);
             Assert.Contains("命中预算", Assert.Throws<InvalidOperationException>(() => TestTables.CreateConfigurationScope(tables)).Message);
         }

@@ -10,12 +10,12 @@ namespace GameLogic.Battle.Attributes
         /// <summary>
         /// 被修正的属性。
         /// </summary>
-        public readonly AttributeType Attribute;
+        public readonly EAttributeType Attribute;
 
         /// <summary>
         /// 修正方式：固定值、同类百分比相加或独立百分比相乘。
         /// </summary>
-        public readonly AttributeModifierKind Kind;
+        public readonly EAttributeModifierKind Kind;
 
         /// <summary>
         /// 修正值；百分比类以小数表示（0.1 = +10%）。
@@ -28,7 +28,7 @@ namespace GameLogic.Battle.Attributes
         /// <param name = "attribute">被修正的属性。</param>
         /// <param name = "kind">修正方式。</param>
         /// <param name = "value">修正值；百分比类以小数表示。</param>
-        public AttributeModifier(AttributeType attribute, AttributeModifierKind kind, float value)
+        public AttributeModifier(EAttributeType attribute, EAttributeModifierKind kind, float value)
         {
             Attribute = attribute;
             Kind = kind;
@@ -41,9 +41,9 @@ namespace GameLogic.Battle.Attributes
         /// <param name = "attribute">被修正的属性。</param>
         /// <param name = "value">叠加到基础值上的固定量。</param>
         /// <returns>固定值修正。</returns>
-        public static AttributeModifier Flat(AttributeType attribute, float value)
+        public static AttributeModifier Flat(EAttributeType attribute, float value)
         {
-            return new(attribute, AttributeModifierKind.Flat, value);
+            return new(attribute, EAttributeModifierKind.Flat, value);
         }
 
         /// <summary>
@@ -52,9 +52,9 @@ namespace GameLogic.Battle.Attributes
         /// <param name = "attribute">被修正的属性。</param>
         /// <param name = "value">百分比小数（0.1 = +10%）。</param>
         /// <returns>同类百分比修正。</returns>
-        public static AttributeModifier PercentAdd(AttributeType attribute, float value)
+        public static AttributeModifier PercentAdd(EAttributeType attribute, float value)
         {
-            return new(attribute, AttributeModifierKind.PercentAdd, value);
+            return new(attribute, EAttributeModifierKind.PercentAdd, value);
         }
 
         /// <summary>
@@ -63,9 +63,9 @@ namespace GameLogic.Battle.Attributes
         /// <param name = "attribute">被修正的属性。</param>
         /// <param name = "value">百分比小数（0.1 = ×1.1）。</param>
         /// <returns>独立百分比修正。</returns>
-        public static AttributeModifier PercentMult(AttributeType attribute, float value)
+        public static AttributeModifier PercentMult(EAttributeType attribute, float value)
         {
-            return new(attribute, AttributeModifierKind.PercentMult, value);
+            return new(attribute, EAttributeModifierKind.PercentMult, value);
         }
     }
 }

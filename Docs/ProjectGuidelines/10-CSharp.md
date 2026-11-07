@@ -4,7 +4,8 @@
 
 | 成员                         | 规则                                       |
 | ---------------------------- | ------------------------------------------ |
-| 类型、枚举、方法、属性、事件 | `PascalCase`；接口以 `I` 开头          |
+| 类型、方法、属性、事件 | `PascalCase`；接口以 `I` 开头          |
+| 枚举类型 | `E` + `PascalCase`，如 `EPlayerSlot`、`EDamageKind`；枚举项使用 `PascalCase` |
 | 字段（含`[Export]`）       | `m_` + `PascalCase`，如 `m_Hp`       |
 | 参数、局部变量               | `camelCase`                              |
 | 常量                         | `PascalCase`；优先用有名常量表达工程规则 |
@@ -12,7 +13,9 @@
 
 一文件一个主要类型，文件名与类型名一致。标识符使用英文；中文只用于配置文本和用户可见内容。
 
-附属于同一功能的小枚举、结果与统计类型可以和主要类型放在同一文件，保留清晰的 XML 文档与命名空间。例如 `SaveSlotState` 随 `SaveSlotInfo`，`LevelOutcome` 随 `LevelModel`，`HeroSaveData` 随 `GameData`。多处独立使用、有独立职责的类型仍单独存放；大型节点可按职责使用 `类型.职责.cs` partial，字段和生命周期仍由同一对象拥有。
+附属于同一功能的小枚举、结果与统计类型可以和主要类型放在同一文件，保留清晰的 XML 文档与命名空间。例如 `ESaveSlotState` 随 `SaveSlotInfo`，`ELevelOutcome` 随 `LevelModel`，`HeroSaveData` 随 `GameData`。多处独立使用、有独立职责的类型仍单独存放；大型节点可按职责使用 `类型.职责.cs` partial，字段和生命周期仍由同一对象拥有。
+
+枚举前缀适用于项目手写的公开、内部、私有枚举及Luban生成的项目配置枚举。配置类型名从源表修改后重新生成；独立枚举文件与类型同名，迁移时携带原UID。只改类型名称，不给字段、属性、枚举项或存档键加前缀，不改变已有枚举值。Godot、.NET、GGF及第三方枚举遵循各自API名称。
 
 流程状态机的数据键统一放在 `MainPack/Scripts/Procedure/FlowData/FlowKeys.cs`，池化包装放在同目录。其他模块的常量归所属功能。
 

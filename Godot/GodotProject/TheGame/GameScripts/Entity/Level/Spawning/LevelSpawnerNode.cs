@@ -245,7 +245,7 @@ namespace GameLogic.Level
         /// <param name="patrolAnchor">原会话取景中心。</param>
         /// <param name="cancellationToken">原会话取消令牌。</param>
         /// <returns>交接登记完成；失败由调用形态经原会话失败出口上报。</returns>
-        private async Task ContinueEncounterAsync(int previousId, EntityId nextId, EnemySpawn spawn,
+        private async Task ContinueEncounterAsync(int previousId, EEntityId nextId, EnemySpawn spawn,
             LevelSpawnSchedule schedule, EntityComponent entities, Node2D patrolAnchor, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)

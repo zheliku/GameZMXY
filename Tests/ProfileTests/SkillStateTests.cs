@@ -25,7 +25,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void Thrust_ConcreteStateOwnsHitPowerAndDeceleration()
         {
-            using var skill = new SkillFixture(SkillId.FlameThrust, velocity: new Vector2(120, 0));
+            using var skill = new SkillFixture(ESkillId.FlameThrust, velocity: new Vector2(120, 0));
             skill.Scope.Hero.Power.Value = 11;
             var state = Assert.IsType<WukongFlameThrustState>(skill.Fsm.CurrentState);
             state.BeginThrust(skill.Actor, 360, 720);
@@ -36,7 +36,7 @@ namespace GameLogic.Profile.Tests
             }
 
             Assert.Equal(4, skill.Actor.Attacks.Count);
-            Assert.All(skill.Actor.Attacks, hit => Assert.Equal(SkillHitId.FlameThrust, hit));
+            Assert.All(skill.Actor.Attacks, hit => Assert.Equal(ESkillHitId.FlameThrust, hit));
             Assert.All(skill.Actor.Powers, power => Assert.Equal(6d, power));
             Assert.InRange(skill.Actor.Velocity.X, 184.31, 184.33);
             state.CompleteAnimation();
@@ -51,7 +51,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void Thrust_UsesFacingWhenReleasedFromStandstill()
         {
-            using var skill = new SkillFixture(SkillId.FlameThrust, velocity: Vector2.Zero);
+            using var skill = new SkillFixture(ESkillId.FlameThrust, velocity: Vector2.Zero);
             var state = Assert.IsType<WukongFlameThrustState>(skill.Fsm.CurrentState);
 
             state.BeginThrust(skill.Actor, 360, 720);
@@ -65,7 +65,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void CancelledSkill_DoesNotAdvanceOldAnimation()
         {
-            using var skill = new SkillFixture(SkillId.FlameThrust);
+            using var skill = new SkillFixture(ESkillId.FlameThrust);
             skill.System.CancelSkill();
             skill.Advance(.1f);
             Assert.Equal(0, skill.Actor.Advances);
@@ -77,13 +77,13 @@ namespace GameLogic.Profile.Tests
         /// </summary>
         /// <param name="id">技能编号。</param>
         [Theory]
-        [InlineData(SkillId.RisingDragon)]
-        [InlineData(SkillId.FlameStorm)]
-        public void Entry_OwnsJumpConsumptionAndCooldown(SkillId id)
+        [InlineData(ESkillId.RisingDragon)]
+        [InlineData(ESkillId.FlameStorm)]
+        public void Entry_OwnsJumpConsumptionAndCooldown(ESkillId id)
         {
             using var skill = new SkillFixture(id, jumpCount: 1);
             Assert.Equal(2, skill.Actor.ActionData.JumpCount);
-            Assert.Equal(id == SkillId.RisingDragon ? 21d / 24d : 10d / 24d,
+            Assert.Equal(id == ESkillId.RisingDragon ? 21d / 24d : 10d / 24d,
                 skill.Actor.ActionData.AttackReadyAt);
         }
 
@@ -93,7 +93,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void Storm_OwnsCenterAndRounding()
         {
-            using var skill = new SkillFixture(SkillId.FlameStorm);
+            using var skill = new SkillFixture(ESkillId.FlameStorm);
             skill.Scope.Hero.Power.Value = 11;
             skill.Actor.SkillPosition = new Vector2(200, 100);
             Assert.IsType<WukongFlameStormState>(skill.Fsm.CurrentState).BeginHit(skill.Actor);
@@ -107,7 +107,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void Flash_StartsInvulnerabilityAtDashPhase()
         {
-            using var skill = new SkillFixture(SkillId.BlazingFlash);
+            using var skill = new SkillFixture(ESkillId.BlazingFlash);
             skill.Actor.ActionData.Time = .1;
             Assert.IsType<WukongBlazingFlashState>(skill.Fsm.CurrentState).StartDash(skill.Actor, null, 1080);
             Assert.False(skill.System.IsInvulnerable(.09));
@@ -121,11 +121,11 @@ namespace GameLogic.Profile.Tests
         /// 官方悟空技能中只有烈焰闪的冲刺阶段提供无敌；其他技能不能继承上一招的无敌语义。
         /// </summary>
         [Theory]
-        [InlineData(SkillId.RisingDragon)]
-        [InlineData(SkillId.FlameThrust)]
-        [InlineData(SkillId.FlameStorm)]
-        [InlineData(SkillId.FireDemonSlash)]
-        public void OtherWukongSkills_DoNotStartInvulnerability(SkillId id)
+        [InlineData(ESkillId.RisingDragon)]
+        [InlineData(ESkillId.FlameThrust)]
+        [InlineData(ESkillId.FlameStorm)]
+        [InlineData(ESkillId.FireDemonSlash)]
+        public void OtherWukongSkills_DoNotStartInvulnerability(ESkillId id)
         {
             using var skill = new SkillFixture(id);
 
@@ -138,7 +138,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void FireDemon_NoTargetAndCancellationRestoreInput()
         {
-            using var skill = new SkillFixture(SkillId.FireDemonSlash);
+            using var skill = new SkillFixture(ESkillId.FireDemonSlash);
             var state = Assert.IsType<WukongFireDemonState>(skill.Fsm.CurrentState);
             Assert.True(skill.Actor.ActionData.InputLocked);
             Assert.False(skill.System.IsInvulnerable(skill.Actor.ActionData.Time));
@@ -156,7 +156,7 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void FireDemon_TargetOwnsTeleportAndParallelCombo()
         {
-            using var skill = new SkillFixture(SkillId.FireDemonSlash, target: new Vector2(80, 100));
+            using var skill = new SkillFixture(ESkillId.FireDemonSlash, target: new Vector2(80, 100));
             var state = Assert.IsType<WukongFireDemonState>(skill.Fsm.CurrentState);
             state.SearchTarget(skill.Actor, null, 130, 20);
             Assert.Equal(skill.Actor.ActionData.Time + 40d / 24d, skill.Actor.ActionData.AttackReadyAt);
@@ -165,13 +165,13 @@ namespace GameLogic.Profile.Tests
             skill.Advance(1f);
             Assert.Equal(new Vector2(80, 100), skill.Actor.SkillPosition);
             Assert.Equal(2, skill.Actor.Advances);
-            Assert.Equal(SkillHitId.FireDemonCombo, Assert.Single(skill.Actor.Effects));
+            Assert.Equal(ESkillHitId.FireDemonCombo, Assert.Single(skill.Actor.Effects));
             Assert.Null(Assert.Single(skill.Actor.EffectOrigins));
             skill.Advance(1f);
             Assert.Equal(3, skill.Actor.Advances);
             state.Descend(skill.Actor, null, new Vector2(720, 480));
             state.Recover(skill.Actor, null);
-            Assert.Equal(new[] { SkillHitId.FireDemonCombo, SkillHitId.FireDemonDescent, SkillHitId.FireDemonLanding },
+            Assert.Equal(new[] { ESkillHitId.FireDemonCombo, ESkillHitId.FireDemonDescent, ESkillHitId.FireDemonLanding },
                 skill.Actor.Effects);
             Assert.All(skill.Actor.EffectOrigins, origin => Assert.Null(origin));
         }
@@ -182,16 +182,16 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void LandingFallback_RecoversImmediatelyAndDoesNotSpawnTwice()
         {
-            using var skill = new SkillFixture(SkillId.FireDemonSlash);
+            using var skill = new SkillFixture(ESkillId.FireDemonSlash);
             var state = Assert.IsType<WukongFireDemonState>(skill.Fsm.CurrentState);
             state.Recover(skill.Actor, null);
             skill.Advance(.01f);
             skill.Scope.Hero.Mp.Value = 100;
             Assert.Null(skill.Scope.Hero.ActiveSkillId);
             Assert.False(skill.Actor.ActionData.InputLocked);
-            Assert.Equal(SkillHitId.FireDemonLanding, Assert.Single(skill.Actor.Effects));
+            Assert.Equal(ESkillHitId.FireDemonLanding, Assert.Single(skill.Actor.Effects));
             Assert.Empty(skill.Actor.Completions);
-            Assert.True(skill.System.TryActivate(SkillId.FireDemonSlash, skill.Actor));
+            Assert.True(skill.System.TryActivate(ESkillId.FireDemonSlash, skill.Actor));
             skill.Advance(.01f);
             state.Recover(skill.Actor, null);
             skill.Advance(.01f);
@@ -206,19 +206,19 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void LandingContact_HoldsBodyUntilEffectCompletes()
         {
-            using var skill = new SkillFixture(SkillId.FireDemonSlash);
+            using var skill = new SkillFixture(ESkillId.FireDemonSlash);
             var state = Assert.IsType<WukongFireDemonState>(skill.Fsm.CurrentState);
             var scene = (PackedScene)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(PackedScene));
             state.OpenLandingWindow(scene);
             skill.Actor.OnFloor = true;
             skill.Advance(.01f);
             Assert.True(skill.Actor.AnimationPaused);
-            Assert.Equal(SkillHitId.FireDemonLanding, Assert.Single(skill.Actor.Effects));
+            Assert.Equal(ESkillHitId.FireDemonLanding, Assert.Single(skill.Actor.Effects));
             Assert.NotNull(skill.Scope.Hero.ActiveSkillId);
             skill.Advance(.25f);
             Assert.Null(skill.Actor.LastMarker);
             Assert.Single(skill.Actor.Effects);
-            skill.Actor.Completions[SkillHitId.FireDemonLanding]();
+            skill.Actor.Completions[ESkillHitId.FireDemonLanding]();
             skill.Advance(.01f);
             Assert.Equal("recovery", skill.Actor.LastMarker);
             Assert.False(skill.Actor.AnimationPaused);
@@ -230,17 +230,17 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void LandingCompletion_FromPreviousCastDoesNotAffectReuse()
         {
-            using var skill = new SkillFixture(SkillId.FireDemonSlash);
+            using var skill = new SkillFixture(ESkillId.FireDemonSlash);
             var state = Assert.IsType<WukongFireDemonState>(skill.Fsm.CurrentState);
             var scene = (PackedScene)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(PackedScene));
             state.OpenLandingWindow(scene);
             skill.Actor.OnFloor = true;
             skill.Advance(.01f);
-            Action oldCompletion = skill.Actor.Completions[SkillHitId.FireDemonLanding];
+            Action oldCompletion = skill.Actor.Completions[ESkillHitId.FireDemonLanding];
             skill.System.CancelSkill();
             skill.Advance(.01f);
             skill.Scope.Hero.Mp.Value = 100;
-            Assert.True(skill.System.TryActivate(SkillId.FireDemonSlash, skill.Actor));
+            Assert.True(skill.System.TryActivate(ESkillId.FireDemonSlash, skill.Actor));
             skill.Advance(.01f);
             oldCompletion();
             skill.Advance(.01f);
@@ -284,7 +284,7 @@ namespace GameLogic.Profile.Tests
             /// <param name="target">可选寻敌结果。</param>
             /// <param name="velocity">可选起手速度。</param>
             /// <param name="jumpCount">起手前已使用的跳跃次数。</param>
-            public SkillFixture(SkillId id, Vector2? target = null, Vector2? velocity = null, int jumpCount = 0)
+            public SkillFixture(ESkillId id, Vector2? target = null, Vector2? velocity = null, int jumpCount = 0)
             {
                 Actor = new Motion(Scope) { Target = target, OnFloor = true, Velocity = velocity ?? Vector2.Zero };
                 Actor.ActionData.JumpCount = jumpCount;
@@ -455,7 +455,7 @@ namespace GameLogic.Profile.Tests
             /// <summary>
             /// 本招产生的独立命中编号请求。
             /// </summary>
-            public List<SkillHitId> Attacks { get; } = new();
+            public List<ESkillHitId> Attacks { get; } = new();
 
             /// <summary>
             /// 按实际创建顺序记录技能攻击包的威力。
@@ -480,7 +480,7 @@ namespace GameLogic.Profile.Tests
             /// <summary>
             /// 测试可延后触发的独立效果完成通知。
             /// </summary>
-            public Dictionary<SkillHitId, Action> Completions { get; } = new();
+            public Dictionary<ESkillHitId, Action> Completions { get; } = new();
 
             /// <summary>
             /// 测试提供的首个有效目标。
@@ -490,7 +490,7 @@ namespace GameLogic.Profile.Tests
             /// <summary>
             /// 已请求的特效。
             /// </summary>
-            public List<SkillHitId> Effects { get; } = new();
+            public List<ESkillHitId> Effects { get; } = new();
 
             /// <summary>
             /// 具体招式提供的特效击退中心；空值沿出招朝向。
@@ -504,7 +504,7 @@ namespace GameLogic.Profile.Tests
             }
 
             /// <inheritdoc />
-            public void NewSkillAttack(SkillHitId hit, double power, float? knockbackOriginX = null)
+            public void NewSkillAttack(ESkillHitId hit, double power, float? knockbackOriginX = null)
             {
                 Attacks.Add(hit);
                 Powers.Add(power);
@@ -512,7 +512,7 @@ namespace GameLogic.Profile.Tests
             }
 
             /// <inheritdoc />
-            public void PlaySkillEffect(PackedScene scene, Vector2 position, SkillHitId hit = SkillHitId.None, double power = 0, Action completed = null,
+            public void PlaySkillEffect(PackedScene scene, Vector2 position, ESkillHitId hit = ESkillHitId.None, double power = 0, Action completed = null,
                 float? knockbackOriginX = null)
             {
                 Effects.Add(hit);

@@ -165,7 +165,7 @@ namespace GameLogic.Enemies
         /// <param name="position">接触时已捕获的世界原点。</param>
         internal void SpawnContactSlash(Vector2 position)
         {
-            int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EntityId.SharkSpawn, 1, 2);
+            int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EEntityId.SharkSpawn, 1, 2);
             var slash = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId);
             var effect = RentSkillEffect(m_SlashScene);
             effect.Show(slash, position, Facing, CaptureCombatAttributes(),

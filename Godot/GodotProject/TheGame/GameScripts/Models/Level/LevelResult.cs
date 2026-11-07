@@ -9,7 +9,7 @@ namespace GameLogic.Level
     /// <param name="DefeatedEnemies">本局实际击败的敌人数。</param>
     /// <param name="Experience">本局发放的经验。</param>
     public sealed record LevelResult(
-        LevelOutcome Outcome,
+        ELevelOutcome Outcome,
         double ElapsedSeconds,
         int HealthPercent,
         int DefeatedEnemies,

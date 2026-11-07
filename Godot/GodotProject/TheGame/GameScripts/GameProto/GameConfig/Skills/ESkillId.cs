@@ -11,7 +11,7 @@
 
 namespace GameConfig.Skills
 { 
-    public enum SkillId
+    public enum ESkillId
     {
         /// <summary>
         /// 升龙斩

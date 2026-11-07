@@ -73,7 +73,7 @@ namespace GameLogic.Profile.Tests
             Assert.False(level.TransferToDragonPalace(3));
             Assert.True(level.TransferToDragonPalace(11));
             Assert.False(level.TransferToDragonPalace(11));
-            Assert.Equal(LevelOutcome.Transferred, scope.Level.Outcome.Value);
+            Assert.Equal(ELevelOutcome.Transferred, scope.Level.Outcome.Value);
             level.EndSession();
             Assert.Equal(21, scope.Profile.Soul.Value);
             Assert.Equal(1, scope.Profile.HighestClearedLevelId.Value);
@@ -93,7 +93,7 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new TestGameScope(1, [(1, 0)], 0, 25);
             var config = scope.GetModel<ConfigurationModel>();
-            var dragon = TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.DragonKing);
+            var dragon = TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EEntityId.DragonKing);
             var lowAttacks = config.GetAttacks(dragon.EntityId);
             var highAttacks = Enumerable.Range(1, 4)
                 .Select(action => TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(dragon.EntityId, action, 2))).ToArray();

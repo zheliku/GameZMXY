@@ -12,7 +12,7 @@ namespace GameLogic.Enemies
         [Export] private Area2D m_HitBox; // 巨掌少量基础矩形判定，不含场景背景。
         private Action<AbstractActorEntity> m_Hit; // 借用本次首领的共享命中入口。
         private Action m_ResetAttack; // 任一手掌复位时更新父攻击编号。
-        private Motion m_Motion; // 当前运动阶段。
+        private EMotion m_Motion; // 当前运动阶段。
         private float m_Left; // 当前游荡或落地停留剩余秒数。
         private float m_DirectionLeft; // 下一次随机折返前秒数。
         private int m_Direction; // 0向左、1向右、2停留，与源规则一致。
@@ -38,7 +38,7 @@ namespace GameLogic.Enemies
             m_Hit = hit;
             m_ResetAttack = resetAttack;
             Position = new Vector2(x, 18);
-            m_Motion = Motion.Wandering;
+            m_Motion = EMotion.Wandering;
             m_Left = GD.RandRange(2, 4);
             m_DirectionLeft = 1f;
             m_Direction = 0;
@@ -70,7 +70,7 @@ namespace GameLogic.Enemies
                 return;
             }
 
-            if (m_Motion == Motion.Wandering)
+            if (m_Motion == EMotion.Wandering)
             {
                 float stepX = 0;
                 if (m_Direction == 0)
@@ -100,12 +100,12 @@ namespace GameLogic.Enemies
                 m_Left -= dt;
                 if (m_Left <= 0)
                 {
-                    m_Motion = Motion.Descending;
+                    m_Motion = EMotion.Descending;
                     m_DownSpeed = (m_FirstDescent ? 3f : 2f) * 24f - 6f;
                 }
                 return;
             }
-            if (m_Motion == Motion.Descending)
+            if (m_Motion == EMotion.Descending)
             {
                 Position += new Vector2(0, m_DownSpeed * dt + 144f * dt * dt);
                 m_DownSpeed += 288f * dt;
@@ -119,7 +119,7 @@ namespace GameLogic.Enemies
 
                 if (Position.Y >= 144)
                 {
-                    m_Motion = Motion.Impact;
+                    m_Motion = EMotion.Impact;
                     m_Left = 1f;
                 }
                 return;
@@ -129,7 +129,7 @@ namespace GameLogic.Enemies
             {
                 Position = new Vector2(Position.X, 18);
                 m_FirstDescent = false;
-                m_Motion = Motion.Wandering;
+                m_Motion = EMotion.Wandering;
                 m_Left = GD.RandRange(3, 6);
                 m_ResetAttack();
             }
@@ -138,6 +138,6 @@ namespace GameLogic.Enemies
         /// <summary>
         /// 互斥运动阶段，避免多个移动标志竞争。
         /// </summary>
-        private enum Motion { Wandering, Descending, Impact }
+        private enum EMotion { Wandering, Descending, Impact }
     }
 }

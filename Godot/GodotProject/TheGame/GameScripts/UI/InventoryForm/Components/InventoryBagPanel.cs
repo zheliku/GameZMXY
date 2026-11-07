@@ -47,7 +47,7 @@ namespace GameLogic.UI.Widgets
         /// <summary>
         /// 品质出售选择及未提交交易的摘要。
         /// </summary>
-        public event Action<EquipmentQuality, int, long> QualitySelected;
+        public event Action<EEquipmentQuality, int, long> QualitySelected;
 
         /// <summary>
         /// 收集固定的分类和格子，交互直接由背包面板处理。
@@ -143,7 +143,7 @@ namespace GameLogic.UI.Widgets
             m_PageIndex = 0;
             ViewChanged?.Invoke();
             RefreshView();
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
         }
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace GameLogic.UI.Widgets
             m_PageIndex = Math.Clamp(m_PageIndex + offset, 0, PageCount() - 1);
             ViewChanged?.Invoke();
             RefreshView();
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace GameLogic.UI.Widgets
             }
 
             m_QualityOptions.Clear();
-            foreach (EquipmentQuality quality in Enum.GetValues<EquipmentQuality>())
+            foreach (EEquipmentQuality quality in Enum.GetValues<EEquipmentQuality>())
             {
                 var (count, price) = this.SendQuery(new EquipmentSaleSummaryQuery(quality));
                 m_QualityOptions.AddItem($"出售{quality.DisplayName()}装备（{count}）", (int)quality);
@@ -282,7 +282,7 @@ namespace GameLogic.UI.Widgets
             Rect2 button = m_SellQuality.GetScreenTransform() * new Rect2(Vector2.Zero, m_SellQuality.Size);
             m_QualityOptions.Popup(new Rect2I(new Vector2I((int)button.End.X - size.X, (int)button.Position.Y - size.Y - 4),
                 size));
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
         }
 
         /// <summary>
@@ -292,12 +292,12 @@ namespace GameLogic.UI.Widgets
         private void OnQualitySelected(long id)
         {
             if (!m_IsBound || m_SelectedTab != 0 || id < 0 || id > int.MaxValue ||
-                !Enum.IsDefined((EquipmentQuality)id))
+                !Enum.IsDefined((EEquipmentQuality)id))
             {
                 return;
             }
 
-            var quality = (EquipmentQuality)id;
+            var quality = (EEquipmentQuality)id;
             var (count, price) = this.SendQuery(new EquipmentSaleSummaryQuery(quality));
             if (count == 0 || price > int.MaxValue - this.GetModel<ProfileModel>().Soul.Value)
             {
@@ -306,7 +306,7 @@ namespace GameLogic.UI.Widgets
 
             m_QualityOptions.Hide();
             QualitySelected?.Invoke(quality, count, price);
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
         }
     }
 }

@@ -59,7 +59,7 @@ namespace GameLogic.Skills
         /// <param name="hit">伤害定义编号。</param>
         /// <param name="power">无双加成前的威力。</param>
         /// <param name="knockbackOriginX">向中心两侧击退的横坐标；为空时沿朝向。</param>
-        void NewSkillAttack(SkillHitId hit, double power, float? knockbackOriginX = null);
+        void NewSkillAttack(ESkillHitId hit, double power, float? knockbackOriginX = null);
 
         /// <summary>
         /// 从动画引用的正式场景取池，冻结本次攻击属性并立即播放。
@@ -71,7 +71,7 @@ namespace GameLogic.Skills
         /// <param name="completed">本次效果完成通知。</param>
         /// <param name="knockbackOriginX">具体招式指定的击退中心。</param>
         void PlaySkillEffect(PackedScene scene, Vector2 position,
-            SkillHitId hit = SkillHitId.None, double power = 0, Action completed = null,
+            ESkillHitId hit = ESkillHitId.None, double power = 0, Action completed = null,
             float? knockbackOriginX = null);
     }
 }

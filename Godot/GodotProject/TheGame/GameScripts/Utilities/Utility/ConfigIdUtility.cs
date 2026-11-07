@@ -25,7 +25,7 @@ namespace GameLogic.Config
         /// </summary>
         /// <param name="entityId">实体配置身份。</param>
         /// <returns>是否属于英雄编号区间。</returns>
-        public bool IsHero(EntityId entityId)
+        public bool IsHero(EEntityId entityId)
         {
             return (int)entityId is >= FirstHeroId and < FirstMonsterId;
         }
@@ -35,7 +35,7 @@ namespace GameLogic.Config
         /// </summary>
         /// <param name="entityId">实体配置身份。</param>
         /// <returns>是否属于小怪编号区间。</returns>
-        public bool IsMonster(EntityId entityId)
+        public bool IsMonster(EEntityId entityId)
         {
             return (int)entityId is >= FirstMonsterId and < FirstBossId;
         }
@@ -45,7 +45,7 @@ namespace GameLogic.Config
         /// </summary>
         /// <param name="entityId">实体配置身份。</param>
         /// <returns>是否属于首领编号区间。</returns>
-        public bool IsBoss(EntityId entityId)
+        public bool IsBoss(EEntityId entityId)
         {
             return (int)entityId is >= FirstBossId and < EnemyIdLimit;
         }
@@ -57,7 +57,7 @@ namespace GameLogic.Config
         /// <param name="action">动作序号0-99，0保留给英雄普攻，其他按技能面板或敌人招式排序。</param>
         /// <param name="segment">同一动作内的段号1-9；离身效果、持续状态或数值档使用后续段。</param>
         /// <returns>统一攻击表的主键；调用方提供约定范围内的参数，表记录由启动校验确认。</returns>
-        public int GetAttackId(EntityId ownerId, int action, int segment = 1)
+        public int GetAttackId(EEntityId ownerId, int action, int segment = 1)
         {
             return (int)ownerId * AttackOwnerStride + action * AttackActionStride + segment;
         }
@@ -68,9 +68,9 @@ namespace GameLogic.Config
         /// <param name="attackId">待校验的攻击配置编号。</param>
         /// <param name="ownerId">攻击表声明的所属实体身份。</param>
         /// <returns>编号是否符合该所属身份的编码约定。</returns>
-        public bool IsAttackIdForOwner(int attackId, EntityId ownerId)
+        public bool IsAttackIdForOwner(int attackId, EEntityId ownerId)
         {
-            return ownerId == EntityId.None
+            return ownerId == EEntityId.None
                 ? attackId >= EnvironmentAttackBase
                 : attackId / AttackOwnerStride == (int)ownerId && attackId % AttackActionStride is >= 1 and <= 9;
         }
@@ -92,9 +92,9 @@ namespace GameLogic.Config
         /// <param name="quality">装备品质。</param>
         /// <param name="variant">品质内变体号0-99，0为普通池。</param>
         /// <returns>对应品质及变体的掉落池身份。</returns>
-        public EquipmentDropPoolId GetCommonEquipmentDropPoolId(EquipmentQuality quality, int variant = 0)
+        public EEquipmentDropPoolId GetCommonEquipmentDropPoolId(EEquipmentQuality quality, int variant = 0)
         {
-            return (EquipmentDropPoolId)(CommonDropPoolBase + (int)quality * DropPoolStride + variant);
+            return (EEquipmentDropPoolId)(CommonDropPoolBase + (int)quality * DropPoolStride + variant);
         }
 
         /// <summary>
@@ -103,9 +103,9 @@ namespace GameLogic.Config
         /// <param name="bossId">首领实体身份。</param>
         /// <param name="variant">首领内变体号0-99，0为普通池，后续号用于数值档或独立奖励。</param>
         /// <returns>对应首领及变体的掉落池身份。</returns>
-        public EquipmentDropPoolId GetBossEquipmentDropPoolId(EntityId bossId, int variant = 0)
+        public EEquipmentDropPoolId GetBossEquipmentDropPoolId(EEntityId bossId, int variant = 0)
         {
-            return (EquipmentDropPoolId)((int)bossId * DropPoolStride + variant);
+            return (EEquipmentDropPoolId)((int)bossId * DropPoolStride + variant);
         }
     }
 }

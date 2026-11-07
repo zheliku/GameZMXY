@@ -57,7 +57,7 @@ public sealed partial class UiSmokeScenario
         await CaptureCombatAsync("passive_upgrade_pressed");
         viewport.PushInput(new InputEventMouseButton { Position = pointer, GlobalPosition = pointer, ButtonIndex = MouseButton.Left, Pressed = false }, true);
         await WaitFramesAsync(3);
-        Check(profile.Soul.Value == 4999 && levels[PassiveId.Vitality] == 0 &&
+        Check(profile.Soul.Value == 4999 && levels[EPassiveId.Vitality] == 0 &&
             GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().Visible,
             "被动余额不足仍然扣费，或没有显示提示");
         profile.RestoreSoul(375000);

@@ -35,7 +35,7 @@ public sealed partial class UiSmokeScenario
             {
                 Engine.PhysicsTicksPerSecond = ticks;
                 hero.GlobalPosition = new Vector2(100000, 100000);
-                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.SharkSpawn,
+                m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.SharkSpawn,
                     new EnemySpawn(new Vector2(580, 250)));
                 var shark = (SharkSpawnEntity)m_Monster;
                 var agent = (IEnemyAiAgent)shark;
@@ -112,7 +112,7 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         var system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SharkSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
@@ -126,9 +126,9 @@ public sealed partial class UiSmokeScenario
                 Engine.PhysicsTicksPerSecond = ticks;
                 foreach (var (id, low, count) in new[]
                 {
-                    (EntityId.SharkDemonKing, false, 3),
-                    (EntityId.SharkDemonKing, true, 3),
-                    (EntityId.SharkSpawn, false, 2),
+                    (EEntityId.SharkDemonKing, false, 3),
+                    (EEntityId.SharkDemonKing, true, 3),
+                    (EEntityId.SharkSpawn, false, 2),
                 })
                 {
                     foreach (int direction in new[] { -1, 1 })
@@ -137,10 +137,10 @@ public sealed partial class UiSmokeScenario
                         {
                             hero.GlobalPosition = new Vector2(100000, 100000);
                             m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id,
-                                new EnemySpawn(new Vector2(580, id == EntityId.SharkSpawn ? 300 : 100)));
+                                new EnemySpawn(new Vector2(580, id == EEntityId.SharkSpawn ? 300 : 100)));
                             var actor = m_Monster;
                             SmokeInspection.FreezeAi(actor);
-                            if (id == EntityId.SharkDemonKing)
+                            if (id == EEntityId.SharkDemonKing)
                             {
                                 await WaitUntilAsync(() => actor.OnFloor, "鲨魔王夹具没有落地");
                             }
@@ -197,8 +197,8 @@ public sealed partial class UiSmokeScenario
                                 await WaitFramesAsync(1);
                             }
                             Check(hero.Hp < hp, $"鲨鱼招式没有真实命中：{id}/{index}/{low}/{direction}/{ticks}");
-                            Check(sawEffect == (id == EntityId.SharkSpawn || index > 0), "鲨鱼独立效果缺失或出现在错误招式");
-                            Check(sawWarning == (id == EntityId.SharkSpawn ? index == 1 : index == 2), "鲨鱼警示缺失或使用错误招式");
+                            Check(sawEffect == (id == EEntityId.SharkSpawn || index > 0), "鲨鱼独立效果缺失或出现在错误招式");
+                            Check(sawWarning == (id == EEntityId.SharkSpawn ? index == 1 : index == 2), "鲨鱼警示缺失或使用错误招式");
                             Check(actor.GetNode<Node2D>("m_Body").Visible && actor.HitBox.GetChildren().OfType<CollisionShape2D>().All(shape => shape.Disabled),
                                 "鲨鱼收招没有恢复身体或关闭攻击判定");
                             await WaitUntilAsync(() => !((IEnemyAiAgent)actor).IsAttacking, "鲨鱼收招仍忙碌");
@@ -244,7 +244,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckSharkLifecyclesAsync(AbstractHeroEntity hero)
     {
         hero.GlobalPosition = new Vector2(100000, 100000);
-        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.SharkDemonKing,
+        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.SharkDemonKing,
             new EnemySpawn(new Vector2(580, 100)));
         var king = m_Monster;
         SmokeInspection.FreezeAi(king);
@@ -277,7 +277,7 @@ public sealed partial class UiSmokeScenario
         Check(!child.IsShown, "首领死亡后召唤鲨鱼没有回池");
         m_Monster = null;
         await WaitFramesAsync(3);
-        var revived = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.SharkDemonKing,
+        var revived = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.SharkDemonKing,
             new EnemySpawn(new Vector2(580, 100)));
         Check(ReferenceEquals(king, revived) && revived.GetNode<Node2D>("m_Body").Visible &&
             !revived.Dead && revived.Hp == revived.MaxHp,
@@ -285,7 +285,7 @@ public sealed partial class UiSmokeScenario
         ReleaseTestEntity(revived);
         await WaitFramesAsync(3);
 
-        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.SharkSpawn,
+        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.SharkSpawn,
             new EnemySpawn(new Vector2(580, 250)));
         var shark = m_Monster;
         SmokeInspection.FreezeAi(shark);
@@ -306,7 +306,7 @@ public sealed partial class UiSmokeScenario
         m_Monster = null;
         await WaitFramesAsync(3);
         Check(!warning.Visible, "隐藏鲨鱼没有归还其警示");
-        var reused = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.SharkSpawn,
+        var reused = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.SharkSpawn,
             new EnemySpawn(new Vector2(580, 250)));
         Check(ReferenceEquals(shark, reused) && reused.GetNode<Node2D>("m_Body").Visible &&
             reused.HurtBox.Monitorable && reused.AttackSegment == -1,

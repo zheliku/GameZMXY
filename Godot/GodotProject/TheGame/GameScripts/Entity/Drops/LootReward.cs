@@ -8,12 +8,12 @@ namespace GameLogic.Drops
     /// </summary>
     /// <param name="Kind">奖励类型。</param>
     /// <param name="Amount">生成时确定的灵魂、无双或生命/魔法恢复数量。</param>
-    public readonly record struct LootReward(LootKind Kind, int Amount);
+    public readonly record struct LootReward(ELootKind Kind, int Amount);
 
     /// <summary>
     /// 飞行球承载的收益类型；颜色由外置动画资源提供。
     /// </summary>
-    public enum LootKind
+    public enum ELootKind
     {
         /// <summary>
         /// 持久灵魂。
@@ -41,5 +41,5 @@ namespace GameLogic.Drops
     /// </summary>
     /// <param name="Pickup">互斥恢复品，无掉落时为 None。</param>
     /// <param name="Equipment">独立装备判定，无掉落时为 None。</param>
-    public readonly record struct GroundLootSelection(PickupId Pickup, EquipmentId Equipment);
+    public readonly record struct GroundLootSelection(EPickupId Pickup, EEquipmentId Equipment);
 }

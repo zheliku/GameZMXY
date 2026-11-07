@@ -114,26 +114,26 @@ namespace GameLogic.Equipment
         /// <param name="attribute">统一的战斗属性类型。</param>
         /// <returns>该字段的实际值；概率使用 0..1。</returns>
         /// <exception cref="ArgumentOutOfRangeException">类型未定义。</exception>
-        public float Get(AttributeType attribute)
+        public float Get(EAttributeType attribute)
         {
             return attribute switch
             {
-                AttributeType.MaxHp => MaxHp,
-                AttributeType.MaxMp => MaxMp,
-                AttributeType.Power => Power,
-                AttributeType.Def => Def,
-                AttributeType.Mdef => Mdef,
-                AttributeType.Crit => Crit,
-                AttributeType.Miss => Miss,
-                AttributeType.Lucky => Lucky,
-                AttributeType.Toughness => Toughness,
-                AttributeType.Htarget => Htarget,
-                AttributeType.CritReduce => CritReduce,
-                AttributeType.Ar => Ar,
-                AttributeType.Sp => Sp,
-                AttributeType.Vampirism => Vampirism,
-                AttributeType.HpRegen => HpRegen,
-                AttributeType.MpRegen => MpRegen,
+                EAttributeType.MaxHp => MaxHp,
+                EAttributeType.MaxMp => MaxMp,
+                EAttributeType.Power => Power,
+                EAttributeType.Def => Def,
+                EAttributeType.Mdef => Mdef,
+                EAttributeType.Crit => Crit,
+                EAttributeType.Miss => Miss,
+                EAttributeType.Lucky => Lucky,
+                EAttributeType.Toughness => Toughness,
+                EAttributeType.Htarget => Htarget,
+                EAttributeType.CritReduce => CritReduce,
+                EAttributeType.Ar => Ar,
+                EAttributeType.Sp => Sp,
+                EAttributeType.Vampirism => Vampirism,
+                EAttributeType.HpRegen => HpRegen,
+                EAttributeType.MpRegen => MpRegen,
                 _ => throw new ArgumentOutOfRangeException(nameof(attribute))
             };
         }
@@ -145,26 +145,26 @@ namespace GameLogic.Equipment
         /// <param name="value">实际抽取值。</param>
         /// <returns>不修改原对象的新属性。</returns>
         /// <exception cref="ArgumentOutOfRangeException">类型未定义。</exception>
-        internal EquipmentAttributes WithValue(AttributeType attribute, float value)
+        internal EquipmentAttributes WithValue(EAttributeType attribute, float value)
         {
             return attribute switch
             {
-                AttributeType.MaxHp => this with { MaxHp = (int)value },
-                AttributeType.MaxMp => this with { MaxMp = (int)value },
-                AttributeType.Power => this with { Power = (int)value },
-                AttributeType.Def => this with { Def = (int)value },
-                AttributeType.Mdef => this with { Mdef = (int)value },
-                AttributeType.Crit => this with { Crit = value },
-                AttributeType.Miss => this with { Miss = value },
-                AttributeType.Lucky => this with { Lucky = (int)value },
-                AttributeType.Toughness => this with { Toughness = (int)value },
-                AttributeType.Htarget => this with { Htarget = value },
-                AttributeType.CritReduce => this with { CritReduce = value },
-                AttributeType.Ar => this with { Ar = (int)value },
-                AttributeType.Sp => this with { Sp = (int)value },
-                AttributeType.Vampirism => this with { Vampirism = (int)value },
-                AttributeType.HpRegen => this with { HpRegen = (int)value },
-                AttributeType.MpRegen => this with { MpRegen = (int)value },
+                EAttributeType.MaxHp => this with { MaxHp = (int)value },
+                EAttributeType.MaxMp => this with { MaxMp = (int)value },
+                EAttributeType.Power => this with { Power = (int)value },
+                EAttributeType.Def => this with { Def = (int)value },
+                EAttributeType.Mdef => this with { Mdef = (int)value },
+                EAttributeType.Crit => this with { Crit = value },
+                EAttributeType.Miss => this with { Miss = value },
+                EAttributeType.Lucky => this with { Lucky = (int)value },
+                EAttributeType.Toughness => this with { Toughness = (int)value },
+                EAttributeType.Htarget => this with { Htarget = value },
+                EAttributeType.CritReduce => this with { CritReduce = value },
+                EAttributeType.Ar => this with { Ar = (int)value },
+                EAttributeType.Sp => this with { Sp = (int)value },
+                EAttributeType.Vampirism => this with { Vampirism = (int)value },
+                EAttributeType.HpRegen => this with { HpRegen = (int)value },
+                EAttributeType.MpRegen => this with { MpRegen = (int)value },
                 _ => throw new ArgumentOutOfRangeException(nameof(attribute))
             };
         }
@@ -175,12 +175,12 @@ namespace GameLogic.Equipment
         /// <returns>带明确类型的固定值修正。</returns>
         public IEnumerable<AttributeModifier> EnumerateModifiers()
         {
-            foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
+            foreach (EAttributeType attribute in Enum.GetValues<EAttributeType>())
             {
                 float value = Get(attribute);
                 if (value != 0)
                 {
-                    yield return new AttributeModifier(attribute, AttributeModifierKind.Flat, value);
+                    yield return new AttributeModifier(attribute, EAttributeModifierKind.Flat, value);
                 }
             }
         }

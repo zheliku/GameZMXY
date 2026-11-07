@@ -32,7 +32,7 @@ func _run() -> void:
         var text := FileAccess.get_file_as_string(path)
         assert(text.count("m_MusicId = 102") + text.count("m_MusicId = 106") == 1)
         var file := FileAccess.open(path, FileAccess.WRITE)
-        file.store_string(text.replace("m_MusicId = 102", "m_MusicId = 106")) # SoundId.CaveTheme.
+        file.store_string(text.replace("m_MusicId = 102", "m_MusicId = 106")) # ESoundId.CaveTheme.
         file.close()
     for path in TRACKS:
         var stream: AudioStreamMP3 = ResourceLoader.load(path, "AudioStreamMP3", ResourceLoader.CACHE_MODE_IGNORE)

@@ -47,7 +47,7 @@ namespace GameLogic.Battle.Damage
             }
 
             CombatantAttributes attacker = data.Attacker;
-            bool heroDefends = defender.Side == CombatSide.Hero;
+            bool heroDefends = defender.Side == ECombatSide.Hero;
 
             // 1. 净值（下限 0）
             double miss = Math.Clamp(defender.Miss - attacker.Htarget, 0f, 1f);
@@ -88,10 +88,10 @@ namespace GameLogic.Battle.Damage
             // 5. 减伤
             switch (data.Kind)
             {
-                case DamageKind.Physics:
+                case EDamageKind.Physics:
                     hurt *= 1 - CalculateAttributeRatio(def, heroDefends ? config.DefKHero : config.DefKEnemy);
                     break;
-                case DamageKind.Magic:
+                case EDamageKind.Magic:
                     hurt *= 1 - CalculateAttributeRatio(mdef, heroDefends ? config.MdefKHero : config.MdefKEnemy);
                     break;
             }
@@ -109,16 +109,16 @@ namespace GameLogic.Battle.Damage
         /// <returns>按官方招式基准四舍五入的无双点数。</returns>
         private int CalculateWsGain(AttackData attack, int damage)
         {
-            if (attack.Attacker.Side != CombatSide.Hero || attack.AttackId == 0 || damage <= 0)
+            if (attack.Attacker.Side != ECombatSide.Hero || attack.AttackId == 0 || damage <= 0)
             {
                 return 0;
             }
             var tables = this.GetModel<ConfigurationModel>().Tables;
             int power = attack.Attacker.Power;
-            int basePower = (SkillHitId)attack.AttackId switch
+            int basePower = (ESkillHitId)attack.AttackId switch
             {
-                SkillHitId.RisingDragon => power,
-                SkillHitId.FireDemonCombo => (int)Math.Floor(power * .5 + .5),
+                ESkillHitId.RisingDragon => power,
+                ESkillHitId.FireDemonCombo => (int)Math.Floor(power * .5 + .5),
                 _ => tables.TbAttackConfig.Get(attack.AttackId).ComboIndex >= 0 ? power : (int)attack.Power
             };
             return basePower <= 0 ? 0 : (int)Math.Min(int.MaxValue,

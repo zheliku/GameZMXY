@@ -2,6 +2,58 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 全项目枚举E前缀（2026-11-07）
+
+按用户本次要求统一项目自有枚举类型：21个手写枚举（含私有/调试状态）与19个Luban配置枚举全部加E前缀。通过C#符号区分类型和同名字段，公开接口、状态机、UI、测试及工具引用一起迁移；字段/属性、枚举项及持久键不加前缀。独立枚举文件同名迁移并携带原UID；EPlayerSlot.P1/P2保持1/2。按第10章更新命名规范，第20章同步配置类型说明；框架两份项目适配扩展仅6处配置枚举参数同步，例外登记第50章。双人02A未开始。
+
+| 验证 | 命令及结果 |
+| --- | --- |
+| 源表/生成 | Artifact Tool编辑并逐值检查9张表56个类型单元格，查看__enums__/__beans__前后预览；只转入这些单元格的原生XML文本，所有其他单元格、样式、关系、共享字符串、工作簿部件及ZIP条目顺序保持。`$env:AI_MODE='1'; cmd /c Configs\GameConfig\gen_code_bin_to_project_lazyload.bat`：最终schema/data/validation/code完成；原19份声明清理、新文件保留原UID。未手改生成C#或bytes，未声称操作了用户XLSX Diff插件 |
+| 名称与数值 | TheGame内40/40枚举均为E前缀；对照隔离的改名前快照，40个成员序列和赋值逐项一致；全部配置bytes无diff。439份C#还原类型前缀后与改名前内容一致，后续仅另同步一处注释类型名；框架差异验证仅6个类型引用，无逻辑变更 |
+| 构建/规则 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0错误、5条既有框架弃用警告；`dotnet test Tests/ProfileTests --no-restore -v quiet`：279/279；BattleTests同命令193/193；LevelTests同命令最终19/19（补齐3个显式源码文件名引用）。`python -m unittest discover -s Tests/ToolTests -v`：最终26/26；未弱化原断言。规则项目NU1900及Battle既有CS8632/CS0649警告保留 |
+| Godot扫描 | 既有runner案例`enum_prefix_import_20261107 --headless --editor --build-solutions --quit --no-window`：退出0，扫描和构建完成；既有ComponentInsoector/free退出诊断保留 |
+| 正式前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py enum_prefix_frontend_20261107 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：退出0，完整SMOKE PASS，含建档/选角、目录、地图学技、战斗、设置保存返回、备份/失败及重新加载；预期失败注入保留，退出5个ObjectDB/1条资源诊断 |
+| 完整UI回归 | 同runner案例`enum_prefix_ui_20261107 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 30000 -- --smoketest=ui`：退出0，完整SMOKE PASS；技能/无双、HUD/背包绑定、实体/窗口复用、60/120Hz地形/平台、拾取、死亡结算、备份回退、加载取消及失败清理通过。预期坏文件/HUD失败注入与退出诊断分开：20个Texture RID、8个ShapedText、2个Font RID、138个ObjectDB/10条资源诊断保留 |
+| 引用/格式/索引 | `python Tools/ProjectMaintenance/validate_game_references.py`：2283序列化路径/388UID通过。CSharpStyle审计362个自有文件，XML齐全；165个原有格式建议不扩为本次全项目格式化。`git diff --check`通过；既有Git暂存内容散列保持，未暂存/提交 |
+
+## 双人01：玩家身份枚举（2026-11-07）
+
+按CoopImplementationPlan的01执行，仅新增`TheGame/GameScripts/Models/PlayerSlot.cs`及Godot扫描的UID；`Tests/ProfileTests/ProfileTests.csproj`增加一行源码引用。枚举在GameLogic命名空间，P1=1、P2=2；BattleTests已有Models通配引用。依据第10章的类型命名/XML与第50章新增C#扫描要求。未改变模型、业务API、输入、场景或v12存档；未增加只验证枚举字面值的测试。本批完成后暂停等待审查，02A未开始。
+
+| 检查 | 命令与结果 |
+| --- | --- |
+| 游戏构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出0，0错误，5条既有框架弃用警告 |
+| 独立源码引用 | `dotnet build Tests/ProfileTests --no-restore -v quiet`：退出0，0错误；NuGet漏洞服务不可达的既有NU1900警告保留；本次没有运行规则测试 |
+| Godot扫描/构建 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_stage01_player_slot_scan_20261107 --headless --editor --build-solutions --quit --no-window`：退出0，dotnet_build_project及update_scripts_classes完成，生成`PlayerSlot.cs.uid`。既有ComponentInsoector退出时Can't free a RefCounted/nonexistent free诊断保留，不宣称编辑器无错误 |
+| 范围 | `git diff --check`通过；本批实现差异3个文件（含UID），另更新计划/导览/沟通/验证状态；既有暂存文档内容散列保持，未自动暂存/提交 |
+
+## 双人实现撤回与重新规划（2026-11-07）
+
+用户要求恢复逐步审查，已撤回本次双人实现：169个受影响的已跟踪文件（含格式触及）恢复到858f22a原字节；移除10个本次新增实现/测试/UID文件。源码、测试、规范、场景与当前v12格式均恢复，Git索引内容保持，未暂存或提交。只保留规划文档和官方只读依据，并新增CoopImplementationPlan作为详细计划。
+
+| 检查 | 结果 |
+| --- | --- |
+| 回退核验 | 逐文件读取HEAD原字节与恢复文件比较，全部相同；`git diff --stat`只包含文档，原新增实现文件已不存在 |
+| 回退后构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出0、0错误，5条既有框架弃用警告 |
+| 边界 | `PlayerSlot`枚举尚未实现，v13未保留，正式玩家存档未修改；此前实现的规则/引擎结果不作为回退后功能证据 |
+
+后续按[详细计划](CoopImplementationPlan.md)逐批执行；不因历史验证通过而跳过审查，也不在本次规划后自动开始01。
+
+## 双人规划的现状验证（2026-11-07）
+
+本次是先审查、制定分阶段计划，只改ProjectTour/OfficialReference/WorkingNotes及本记录；未实现双人、修改源表/场景/框架/存档格式，未写入玩家存档。入口时工作区干净，审阅基线提交858f22a。
+
+| 检查 | 本轮命令及结果 |
+| --- | --- |
+| 实际架构/调用链 | 读取project.godot/csproj、Arch/FsmArchitectureExtensions、ProcedurePrepare/LoadGame/Level/Character、Profile/Hero/Skill/Level/SaveModel及系统、GameData/SaveDataUtility、InputSystem、攻击来源/伤害/死亡事件、敌人索敌、Loot/GroundItem、相机/入口、HUD/Inventory/SkillForm/Musou、甘露/分身与龙王。证据及待改契约在CoopImplementationPlan，不以额外英雄烟测冒充双人独立数据 |
+| 官方只读核对 | 读取同一主程序SelectRole、MemoryClass、KeyBoardControl、BaseMonster/BaseAura、RoleInfo、PackThings/FallEquipObj、MainGame/GMain、ViewControllor、Role2/Role2Shadow、Monster26；核实不可重复选角、同槽双方、奖励归属/赠送/治疗范围、全灭和最低等级分档 |
+| 构建基线 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出0，0错误/5条既有框架弃用警告 |
+| 档案/技能/掉落基线 | `dotnet run --project Tests/ProfileTests --no-restore -- -parallel none`：279/279通过 |
+| 战斗基线 | `dotnet run --project Tests/BattleTests --no-restore -- -parallel none`：193/193通过；测试项目既有CS8632与Godot导出字段CS0649警告保留 |
+| 关卡基线 | `dotnet run --project Tests/LevelTests --no-restore -- -parallel none`：19/19通过 |
+
+三个规则项目均有NU1900（NuGet漏洞数据服务不可达），不影响本轮断言。此次未执行双人引擎烟测，也没有以单人基线测试证明双人方案已经实现；实际玩法、输入、美术及生命周期验收按ProjectTour各阶段执行。
+
 ## 红色回血球与官方掉落数值（2026-11-07）
 
 遵循第20/30/40/50章，扩展既有LootSystem/LootOrbNode/LevelSystem。Monster_v1 sprite3原始渲染确认为红色，auraGreen只是类名，先前“绿色回血球”已纠正。红/蓝恢复量在生成时固定为上限5%向下取整、最低10；黄色每颗5无双。三类各自独立12%，1/2/3颗各4%。
@@ -43,7 +95,7 @@ ProjectTour重写为当前功能矩阵、单人待办和双人分阶段方案；
 
 ## 当前限制与验收边界
 
-- 当前v12本地存档；悟空/唐僧单人及红色回血球均已接入。片头/结尾、战功兑换和双人未实现，详细范围见ProjectTour，不能用旧“唐僧未实装”描述现状。
+- 当前v12本地存档；本次双人实现已撤回，悟空/唐僧单人及红色回血球均已接入。片头/结尾、战功兑换和双人未实现，详细范围见ProjectTour，不能用旧“唐僧未实装”描述现状。
 - 正常数值下两角色完整自然战斗通关尚缺统一验收；主线进度夹具提高生命并用攻击包清场，技能命中专项另验。
 - 构建保留框架弃用警告。长流程可出现ObjectDB/资源/RID退出诊断，编辑器另有ComponentInsoector/free诊断；按具体记录解释，不以业务PASS宣布无泄漏。
 - 跨槽/旧档案/损坏文件、注册或HUD装配失败属于显式失败注入；须确认预期拒绝/清理后测试继续通过。测试只操作隔离Validation存档，正式玩家进度和用户Git索引不动。

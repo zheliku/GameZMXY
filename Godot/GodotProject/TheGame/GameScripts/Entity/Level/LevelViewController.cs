@@ -26,7 +26,7 @@ namespace GameLogic.Level
     /// </summary>
     public partial class LevelViewController : Node2D, IController
     {
-        [Export] private SoundId m_MusicId; // 关卡场景绑定的背景音乐，播放请求由流程拥有。
+        [Export] private ESoundId m_MusicId; // 关卡场景绑定的背景音乐，播放请求由流程拥有。
         [Export] private int m_LevelId = 1; // 关卡配置主键。
         [Export] private LevelSpawnPointsNode m_SpawnPoints; // 生成点目录。
         [Export] private LevelTriggersNode m_Triggers; // 可选区域触发器。
@@ -40,7 +40,7 @@ namespace GameLogic.Level
         private IArchitecture m_Architecture; // 借用流程 FSM 的入口，初始化绑定后不跨作用域转移。
         private AbstractHeroEntity m_Player; // 借用流程显示并隐藏的英雄。
         private bool m_SessionActive; // 当前节点订阅是否已建立。
-        private HeroDeathPresentation m_HeroDeathPresentation; // 原生死亡演出阶段；只在本关流程帧提交完成。
+        private EHeroDeathPresentation m_HeroDeathPresentation; // 原生死亡演出阶段；只在本关流程帧提交完成。
 
         /// <summary>
         /// 守关对手显示、死亡或解除绑定，HUD 据此刷新生命条。
@@ -55,7 +55,7 @@ namespace GameLogic.Level
         /// <summary>
         /// 交给关卡流程播放的音乐绑定。
         /// </summary>
-        public SoundId MusicId
+        public ESoundId MusicId
         {
             get
             {
@@ -112,10 +112,10 @@ namespace GameLogic.Level
                 this.GetSystem<LevelSystem>().AdvanceTime(delta);
                 TickLoot((float)delta);
                 AdvanceEntrance();
-                if (m_HeroDeathPresentation == HeroDeathPresentation.Completed && LevelModel.Outcome.Value == LevelOutcome.Running)
+                if (m_HeroDeathPresentation == EHeroDeathPresentation.Completed && LevelModel.Outcome.Value == ELevelOutcome.Running)
                 {
-                    m_HeroDeathPresentation = HeroDeathPresentation.None;
-                    Complete(LevelOutcome.Defeated);
+                    m_HeroDeathPresentation = EHeroDeathPresentation.None;
+                    Complete(ELevelOutcome.Defeated);
                 }
             }
         }
@@ -153,7 +153,7 @@ namespace GameLogic.Level
             // 初始化不订阅玩法事件；失败仍由流程完整卸载场景。
             m_SpawnPoints.Initialize(Config);
             m_Gates.Initialize(Config, m_Camera.SceneLeft, m_Camera.SceneRight, m_Camera.ViewSize.X);
-            if (m_Triggers == null && Config.Stages.Exists(x => x.Activation == StageActivation.Trigger))
+            if (m_Triggers == null && Config.Stages.Exists(x => x.Activation == EStageActivation.Trigger))
             {
                 throw new InvalidOperationException("Trigger 阶段必须绑定触发器集合。");
             }
@@ -201,7 +201,7 @@ namespace GameLogic.Level
             }
 
             m_Player = player;
-            m_HeroDeathPresentation = HeroDeathPresentation.None;
+            m_HeroDeathPresentation = EHeroDeathPresentation.None;
             this.GetSystem<LevelSystem>().StartSession(player.HeroId);
             m_ExitRequested = false;
             m_LootRandom.Randomize();
@@ -272,7 +272,7 @@ namespace GameLogic.Level
                 m_Exit.Disable();
             }
             ClearFeaturedOpponent();
-            m_HeroDeathPresentation = HeroDeathPresentation.None;
+            m_HeroDeathPresentation = EHeroDeathPresentation.None;
             if (m_Spawner != null)
             {
                 m_Spawner.StageCleared -= OnStageCleared;
@@ -319,7 +319,7 @@ namespace GameLogic.Level
             LevelStage stage = LevelModel.Sequence.Current;
             m_Gates.BeginTravel(stage.StageOrder);
             m_Camera.TravelTo(m_Gates.BoundsOf(stage.StageOrder).Right);
-            if (stage.Activation == StageActivation.Trigger)
+            if (stage.Activation == EStageActivation.Trigger)
             {
                 m_Triggers.BeginWatching(stage.TriggerId);
             }
@@ -330,7 +330,7 @@ namespace GameLogic.Level
         /// </summary>
         private void OnCameraArrived()
         {
-            if (LevelModel.Sequence.Current.Activation == StageActivation.CameraArrived)
+            if (LevelModel.Sequence.Current.Activation == EStageActivation.CameraArrived)
             {
                 StartBattle();
             }
@@ -353,14 +353,14 @@ namespace GameLogic.Level
         /// </summary>
         private void OnStageCleared()
         {
-            if (LevelModel.Sequence.Phase != LevelStagePhase.Fighting)
+            if (LevelModel.Sequence.Phase != ELevelStagePhase.Fighting)
             {
                 return; // 目标死亡可能已开放出口，清波不能再次推进。
             }
 
             m_Gates.ReleaseRegion(LevelModel.Sequence.Current.StageOrder);
             this.GetSystem<LevelSystem>().ClearBattle();
-            if (LevelModel.Sequence.Phase == LevelStagePhase.Travelling)
+            if (LevelModel.Sequence.Phase == ELevelStagePhase.Travelling)
             {
                 BeginTravel();
             }
@@ -382,7 +382,7 @@ namespace GameLogic.Level
         /// </summary>
         private void OnExitEntered()
         {
-            if (LevelModel.Sequence.Phase != LevelStagePhase.AwaitingExit || !m_Player.IsAlive)
+            if (LevelModel.Sequence.Phase != ELevelStagePhase.AwaitingExit || !m_Player.IsAlive)
             {
                 return;
             }
@@ -393,7 +393,7 @@ namespace GameLogic.Level
                 return;
             }
 
-            Complete(LevelOutcome.Cleared);
+            Complete(ELevelOutcome.Cleared);
         }
 
         /// <summary>
@@ -484,12 +484,12 @@ namespace GameLogic.Level
         /// <param name="actor">本关英雄。</param>
         private void OnHeroDied(AbstractActorEntity actor)
         {
-            if (!m_SessionActive || !ReferenceEquals(actor, m_Player) || m_HeroDeathPresentation != HeroDeathPresentation.None)
+            if (!m_SessionActive || !ReferenceEquals(actor, m_Player) || m_HeroDeathPresentation != EHeroDeathPresentation.None)
             {
                 return;
             }
 
-            m_HeroDeathPresentation = HeroDeathPresentation.Playing;
+            m_HeroDeathPresentation = EHeroDeathPresentation.Playing;
             ClearLoot(); // 未领取奖励在死亡时回收，失败界面仍等待墓碑演出。
             m_Player.DeathPresentationFinished += OnHeroDeathPresentationFinished;
         }
@@ -499,20 +499,20 @@ namespace GameLogic.Level
         /// </summary>
         private void OnHeroDeathPresentationFinished()
         {
-            if (!m_SessionActive || m_HeroDeathPresentation != HeroDeathPresentation.Playing)
+            if (!m_SessionActive || m_HeroDeathPresentation != EHeroDeathPresentation.Playing)
             {
                 return;
             }
 
             m_Player.DeathPresentationFinished -= OnHeroDeathPresentationFinished;
-            m_HeroDeathPresentation = HeroDeathPresentation.Completed;
+            m_HeroDeathPresentation = EHeroDeathPresentation.Completed;
         }
 
         /// <summary>
         /// 传递结局时生命比例，不把实体传入业务模块。
         /// </summary>
         /// <param name="outcome">本局结局。</param>
-        private void Complete(LevelOutcome outcome)
+        private void Complete(ELevelOutcome outcome)
         {
             this.GetSystem<LevelSystem>().Complete(outcome,
             (int)Math.Round(100.0 * this.GetModel<HeroModel>().Hp.Value / this.GetModel<HeroModel>().MaxHp.Value));
@@ -522,9 +522,9 @@ namespace GameLogic.Level
         /// 模型结局确定后停止奖励表现和订阅。
         /// </summary>
         /// <param name="outcome">已确定的结局。</param>
-        private void OnSessionEnded(LevelOutcome outcome)
+        private void OnSessionEnded(ELevelOutcome outcome)
         {
-            if (outcome == LevelOutcome.Running)
+            if (outcome == ELevelOutcome.Running)
             {
                 return;
             }
@@ -554,12 +554,12 @@ namespace GameLogic.Level
 
             m_Player.Died -= OnHeroDied;
             m_Player.HealthRestored -= OnHeroHealthRestored;
-            if (m_HeroDeathPresentation == HeroDeathPresentation.Playing)
+            if (m_HeroDeathPresentation == EHeroDeathPresentation.Playing)
             {
                 m_Player.DeathPresentationFinished -= OnHeroDeathPresentationFinished;
             }
 
-            m_HeroDeathPresentation = HeroDeathPresentation.None;
+            m_HeroDeathPresentation = EHeroDeathPresentation.None;
             this.GetModel<ProfileModel>().Slots.UnRegister(OnEquipmentChanged);
             LevelModel.Outcome.UnRegister(OnSessionEnded);
         }
@@ -567,7 +567,7 @@ namespace GameLogic.Level
         /// <summary>
         /// 本关拥有的死亡演出阶段，不另建与动画竞争的秒数计时器。
         /// </summary>
-        private enum HeroDeathPresentation
+        private enum EHeroDeathPresentation
         {
             None,
             Playing,

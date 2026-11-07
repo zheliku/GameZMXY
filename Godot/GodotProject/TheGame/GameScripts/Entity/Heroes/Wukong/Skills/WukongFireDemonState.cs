@@ -79,8 +79,8 @@ namespace GameLogic.Heroes.Wukong
             body.ActionData.AttackReadyAt = body.ActionData.Time + 40d / 24d;
             actor.SkillPosition = target;
             // 本项目修正原版中心重合时向右的偏置，三段击退统一跟随施放朝向。
-            actor.PlaySkillEffect(combo, target, SkillHitId.FireDemonCombo,
-                FireDemonPower(body, SkillHitId.FireDemonCombo));
+            actor.PlaySkillEffect(combo, target, ESkillHitId.FireDemonCombo,
+                FireDemonPower(body, ESkillHitId.FireDemonCombo));
             // Role1.addHit10And1() returns after teleporting and creating the combo.
             // The body timeline continues naturally from source frame 7 to frame 47;
             // only the no-target branch jumps directly to the descent frame.
@@ -96,8 +96,8 @@ namespace GameLogic.Heroes.Wukong
         {
             Launch(body, velocity);
             var actor = (ISkillActor)body;
-            actor.PlaySkillEffect(descent, actor.SkillPosition, SkillHitId.FireDemonDescent,
-                FireDemonPower(body, SkillHitId.FireDemonDescent));
+            actor.PlaySkillEffect(descent, actor.SkillPosition, ESkillHitId.FireDemonDescent,
+                FireDemonPower(body, ESkillHitId.FireDemonDescent));
         }
 
         /// <summary>
@@ -194,8 +194,8 @@ namespace GameLogic.Heroes.Wukong
                 actor.PauseSkillAnimation();
             }
 
-            actor.PlaySkillEffect(scene, landingPosition, SkillHitId.FireDemonLanding,
-                        FireDemonPower(body, SkillHitId.FireDemonLanding),
+            actor.PlaySkillEffect(scene, landingPosition, ESkillHitId.FireDemonLanding,
+                        FireDemonPower(body, ESkillHitId.FireDemonLanding),
                         completed: holdBody ? () =>
                         {
                             // 已取消或复用的效果不得改变下一次施放；回调只登记阶段，下一物理帧再切动画。
@@ -213,7 +213,7 @@ namespace GameLogic.Heroes.Wukong
         /// <param name="body">悟空身体。</param>
         /// <param name="hit">当前伤害阶段。</param>
         /// <returns>无双加成之前的威力。</returns>
-        private static double FireDemonPower(IHeroBody body, SkillHitId hit)
+        private static double FireDemonPower(IHeroBody body, ESkillHitId hit)
         {
             var definition = body.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
             return Math.Round((double)body.GetModel<GameLogic.Battle.HeroModel>().Power.Value,

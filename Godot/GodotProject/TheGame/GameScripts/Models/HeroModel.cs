@@ -15,19 +15,19 @@ namespace GameLogic.Battle
         /// <summary>
         /// 当前英雄独占的状态效果；HeroStatusSystem 维护，同英雄模型一起创建和结束。
         /// </summary>
-        private readonly Dictionary<StatusEffectKind, StatusEffectState> m_StatusEffects = new(); // 英雄效果运行时数据，由 HeroStatusSystem 维护。
+        private readonly Dictionary<EStatusEffectKind, StatusEffectState> m_StatusEffects = new(); // 英雄效果运行时数据，由 HeroStatusSystem 维护。
 
         /// <summary>
         /// 当前英雄的效果数据只读视图。
         /// </summary>
-        public IReadOnlyDictionary<StatusEffectKind, StatusEffectState> StatusEffects => m_StatusEffects;
+        public IReadOnlyDictionary<EStatusEffectKind, StatusEffectState> StatusEffects => m_StatusEffects;
 
         /// <summary>
         /// 读取一种当前英雄效果。
         /// </summary>
         /// <param name="kind">效果类别。</param>
         /// <returns>效果状态；未施加时为 null。</returns>
-        public StatusEffectState GetStatusEffect(StatusEffectKind kind) => m_StatusEffects.GetValueOrDefault(kind);
+        public StatusEffectState GetStatusEffect(EStatusEffectKind kind) => m_StatusEffects.GetValueOrDefault(kind);
 
         /// <summary>
         /// 写入已经由 HeroStatusSystem 校验的效果状态。
@@ -39,7 +39,7 @@ namespace GameLogic.Battle
         /// 移除一种效果。
         /// </summary>
         /// <param name="kind">效果类别。</param>
-        internal void RemoveStatusEffect(StatusEffectKind kind) => m_StatusEffects.Remove(kind);
+        internal void RemoveStatusEffect(EStatusEffectKind kind) => m_StatusEffects.Remove(kind);
 
         /// <summary>
         /// 清空本局英雄效果。
@@ -211,7 +211,7 @@ namespace GameLogic.Battle
         /// <summary>
         /// 本局当前激活的技能编号；招式阶段与旧回调有效性归具体 GGF 状态。
         /// </summary>
-        public SkillId? ActiveSkillId { get; internal set; }
+        public ESkillId? ActiveSkillId { get; internal set; }
 
         /// <summary>
         /// 技能无敌区间起点，使用本英雄的游戏时钟，单位秒。
@@ -260,7 +260,7 @@ namespace GameLogic.Battle
         /// <returns>伤害公式使用的不可变快照。</returns>
         public CombatantAttributes CaptureCombatAttributes(int? actorId = null)
         {
-            return new(CombatSide.Hero,
+            return new(ECombatSide.Hero,
             Level.Value, Power.Value, Def.Value, Mdef.Value, Crit.Value, Miss.Value, Lucky.Value,
             Toughness.Value, Htarget.Value, CritReduce.Value, Ar.Value, Sp.Value, actorId);
         }
@@ -268,7 +268,7 @@ namespace GameLogic.Battle
         /// <summary>
         /// 状态效果类别；动作状态仍由英雄身体 FSM 表达。
         /// </summary>
-        public enum StatusEffectKind
+        public enum EStatusEffectKind
         {
             /// <summary>
             /// 按间隔结算固定伤害的中毒效果。
@@ -290,7 +290,7 @@ namespace GameLogic.Battle
             /// 建立指定类别的效果状态。
             /// </summary>
             /// <param name="kind">效果类别。</param>
-            public StatusEffectState(StatusEffectKind kind)
+            public StatusEffectState(EStatusEffectKind kind)
             {
                 Kind = kind;
             }
@@ -298,7 +298,7 @@ namespace GameLogic.Battle
             /// <summary>
             /// 效果类别。
             /// </summary>
-            public StatusEffectKind Kind { get; }
+            public EStatusEffectKind Kind { get; }
 
             /// <summary>
             /// 固定每跳伤害；非持续伤害效果为零。

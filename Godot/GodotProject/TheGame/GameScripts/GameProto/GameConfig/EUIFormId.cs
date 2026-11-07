@@ -9,58 +9,54 @@
 
 
 
-namespace GameConfig.Skills
+namespace GameConfig
 { 
-    public enum SkillHitId
+    public enum EUIFormId
     {
         /// <summary>
-        /// 无身体或特效伤害
+        /// 无
         /// </summary>
         None = 0,
         /// <summary>
-        /// 升龙斩
+        /// 战斗HUD
         /// </summary>
-        RisingDragon = 1011,
+        BattleForm = 1,
         /// <summary>
-        /// 火炎突击
+        /// 开始界面
         /// </summary>
-        FlameThrust = 1021,
+        StartForm = 2,
         /// <summary>
-        /// 烈焰闪
+        /// 选角界面
         /// </summary>
-        BlazingFlash = 1031,
+        CharacterForm = 3,
         /// <summary>
-        /// 烈焰风暴
+        /// 地图界面
         /// </summary>
-        FlameStorm = 1041,
+        MapForm = 4,
         /// <summary>
-        /// 火魔九连斩
+        /// 设置界面
         /// </summary>
-        FireDemonCombo = 1051,
+        SettingsForm = 5,
         /// <summary>
-        /// 火魔下冲
+        /// 存档选择
         /// </summary>
-        FireDemonDescent = 1052,
+        SaveForm = 6,
         /// <summary>
-        /// 火魔落地斩
+        /// 保存成功提示
         /// </summary>
-        FireDemonLanding = 1053,
+        SaveNoticeForm = 7,
         /// <summary>
-        /// 冰龙波
+        /// 战斗背包与个人资料
         /// </summary>
-        IceDragonWave = 2011,
+        InventoryForm = 8,
         /// <summary>
-        /// 玄冰阵
+        /// 关卡成功或失败结算
         /// </summary>
-        DarkIceFormation = 2021,
+        SettlementForm = 9,
         /// <summary>
-        /// 水魔光柱
+        /// 造一技能面板
         /// </summary>
-        WaterDemonPillar = 2051,
-        /// <summary>
-        /// 水魔追加下落
-        /// </summary>
-        WaterDemonFall = 2052,
+        SkillForm = 10,
     }
 
 } 

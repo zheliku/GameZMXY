@@ -27,8 +27,8 @@ namespace GameLogic.Level.Tests
             Assert.Equal((4, "stage_5_d"), (BatCaveRules.LevelId, BatCaveRules.StatueSpawnPointId));
             Assert.Equal(new[] { 7, 10, 5, 17 }, level.Stages.Take(4).Select(stage => stage.Recipes.Sum(recipe => recipe.Count)));
             Assert.Equal(new[] { 999, 999, 999 }, level.Stages[^1].Recipes
-                .Where(recipe => recipe.EnemyEntityId == EntityId.Bat).Select(recipe => recipe.Count));
-            var statue = Assert.Single(level.Stages[^1].Recipes, recipe => recipe.EnemyEntityId == EntityId.BatCaveStatue);
+                .Where(recipe => recipe.EnemyEntityId == EEntityId.Bat).Select(recipe => recipe.Count));
+            var statue = Assert.Single(level.Stages[^1].Recipes, recipe => recipe.EnemyEntityId == EEntityId.BatCaveStatue);
             Assert.Equal(("stage_5_d", 1), (statue.SpawnPointId, statue.Count));
             var sequence = new LevelStageSequence(level.Stages);
             sequence.Begin();
@@ -40,10 +40,10 @@ namespace GameLogic.Level.Tests
                 sequence.StartBattle();
             }
             sequence.OpenExit();
-            Assert.Equal(LevelStagePhase.AwaitingExit, sequence.Phase);
+            Assert.Equal(ELevelStagePhase.AwaitingExit, sequence.Phase);
             Assert.Throws<InvalidOperationException>(sequence.OpenExit);
             sequence.Complete();
-            Assert.Equal(LevelStagePhase.Completed, sequence.Phase);
+            Assert.Equal(ELevelStagePhase.Completed, sequence.Phase);
         }
 
         /// <summary>
@@ -65,8 +65,8 @@ namespace GameLogic.Level.Tests
             LevelConfig level = LoadLevel();
             Assert.Equal(5, level.Stages.Count);
             Assert.Equal(new[] { 3, 7, 6, 7, 10 }, level.Stages.Select(x => x.Recipes.Sum(r => r.Count)));
-            Assert.Equal(new[] { EntityId.HuaguoshanMonkey, EntityId.DemonMonkey }, level.Stages[1].Recipes.Select(x => x.EnemyEntityId).Distinct());
-            Assert.All(level.Stages, x => Assert.Equal(StageActivation.CameraArrived, x.Activation));
+            Assert.Equal(new[] { EEntityId.HuaguoshanMonkey, EEntityId.DemonMonkey }, level.Stages[1].Recipes.Select(x => x.EnemyEntityId).Distinct());
+            Assert.All(level.Stages, x => Assert.Equal(EStageActivation.CameraArrived, x.Activation));
             Assert.All(level.Stages, x => Assert.True(x.SpawnDelay >= 0));
         }
 
@@ -77,7 +77,7 @@ namespace GameLogic.Level.Tests
         public void HuaguoshanOwnsItsGorillaValues()
         {
             LevelSpawnRecipe[] recipes = LoadLevel().Stages.SelectMany(x => x.Recipes).ToArray();
-            LevelSpawnRecipe gorilla = Assert.Single(recipes, x => x.EnemyEntityId == EntityId.Gorilla);
+            LevelSpawnRecipe gorilla = Assert.Single(recipes, x => x.EnemyEntityId == EEntityId.Gorilla);
             Assert.Equal(("stage_5_a", 1), (gorilla.SpawnPointId, gorilla.Count));
         }
 
@@ -106,20 +106,20 @@ namespace GameLogic.Level.Tests
         public void SequenceWaitsForArrivalAfterEveryClear()
         {
             LevelStageSequence sequence = new(LoadLevel().Stages);
-            Assert.Equal(LevelStagePhase.Ready, sequence.Phase);
+            Assert.Equal(ELevelStagePhase.Ready, sequence.Phase);
             Assert.Throws<InvalidOperationException>(sequence.StartBattle);
             sequence.Begin();
             for (int i = 1; i <= LoadLevel().Stages.Count; i++)
             {
                 Assert.Equal(i, sequence.Current.StageOrder);
-                Assert.Equal(LevelStagePhase.Travelling, sequence.Phase);
+                Assert.Equal(ELevelStagePhase.Travelling, sequence.Phase);
                 sequence.StartBattle();
                 sequence.ClearBattle();
             }
 
-            Assert.Equal(LevelStagePhase.AwaitingExit, sequence.Phase);
+            Assert.Equal(ELevelStagePhase.AwaitingExit, sequence.Phase);
             sequence.Complete();
-            Assert.Equal(LevelStagePhase.Completed, sequence.Phase);
+            Assert.Equal(ELevelStagePhase.Completed, sequence.Phase);
             Assert.Throws<InvalidOperationException>(sequence.Complete);
             Assert.Throws<InvalidOperationException>(sequence.StartBattle);
         }
@@ -147,18 +147,18 @@ namespace GameLogic.Level.Tests
         /// <param name="triggerId">特殊触发区的稳定ID；相机阶段应为空。</param>
         /// <param name="valid">当前激活方式与触发区ID组合是否应被接受。</param>
         [Theory]
-        [InlineData(StageActivation.Trigger, "special_area", true)]
-        [InlineData(StageActivation.Trigger, "", false)]
-        [InlineData(StageActivation.CameraArrived, "special_area", false)]
-        [InlineData(StageActivation.CameraArrived, "", true)]
-        public void ActivationHasExplicitTriggerContract(StageActivation activation, string triggerId, bool valid)
+        [InlineData(EStageActivation.Trigger, "special_area", true)]
+        [InlineData(EStageActivation.Trigger, "", false)]
+        [InlineData(EStageActivation.CameraArrived, "special_area", false)]
+        [InlineData(EStageActivation.CameraArrived, "", true)]
+        public void ActivationHasExplicitTriggerContract(EStageActivation activation, string triggerId, bool valid)
         {
             LevelStage stage = CreateCapacityStage(activation, triggerId);
             if (valid)
             {
                 LevelStageSequence sequence = new(new[] { stage });
                 sequence.Begin();
-                Assert.Equal(LevelStagePhase.Travelling, sequence.Phase);
+                Assert.Equal(ELevelStagePhase.Travelling, sequence.Phase);
             }
             else
             {
@@ -301,7 +301,7 @@ namespace GameLogic.Level.Tests
         /// <param name="maxActive">本阶段允许同时存活的敌人数。</param>
         /// <param name="spawnDelay">本阶段逐只生成的间隔，单位为秒。</param>
         /// <returns>按指定激活和容量边界建立的测试阶段。</returns>
-        private static LevelStage CreateCapacityStage(StageActivation activation = StageActivation.CameraArrived,
+        private static LevelStage CreateCapacityStage(EStageActivation activation = EStageActivation.CameraArrived,
             string triggerId = "", int maxActive = 1, float spawnDelay = 0f)
         {
             ByteBuf bytes = new();
@@ -316,7 +316,7 @@ namespace GameLogic.Level.Tests
             bytes.WriteSize(2);
             foreach (string point in new[] { "a", "b" })
             {
-                bytes.WriteInt((int)EntityId.HuaguoshanMonkey);
+                bytes.WriteInt((int)EEntityId.HuaguoshanMonkey);
                 bytes.WriteString(point);
                 bytes.WriteInt(2);
                 bytes.WriteFloat(0f);

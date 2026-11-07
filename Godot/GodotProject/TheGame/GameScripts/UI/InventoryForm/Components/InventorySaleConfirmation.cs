@@ -12,12 +12,12 @@ namespace GameLogic.UI.Widgets
         [Export] private Label m_SaleSummary; // 待确认件数和收益。
         [Export] private Button m_SaleCancel; // 取消并清除意图。
         [Export] private Button m_SaleConfirm; // 明确确认。
-        private EquipmentQuality? m_PendingQuality; // 当前未提交意图；隐藏、状态变化及复用前清除。
+        private EEquipmentQuality? m_PendingQuality; // 当前未提交意图；隐藏、状态变化及复用前清除。
 
         /// <summary>
         /// 玩家明确确认本次品质出售。
         /// </summary>
-        public event Action<EquipmentQuality> Confirmed;
+        public event Action<EEquipmentQuality> Confirmed;
 
         /// <summary>
         /// 绑定本弹层按钮并清除编辑器预览状态。
@@ -35,7 +35,7 @@ namespace GameLogic.UI.Widgets
         /// <param name="quality">所选品质。</param>
         /// <param name="count">未穿戴装备件数。</param>
         /// <param name="price">未截断收益。</param>
-        public void Open(EquipmentQuality quality, int count, long price)
+        public void Open(EEquipmentQuality quality, int count, long price)
         {
             m_PendingQuality = quality;
             m_SaleSummary.Text = $"出售全部「{quality.DisplayName()}」装备？\n共 {count} 件，可获得 {price} 灵魂";
@@ -63,7 +63,7 @@ namespace GameLogic.UI.Widgets
         /// </summary>
         private void OnConfirmed()
         {
-            if (m_PendingQuality is not EquipmentQuality quality)
+            if (m_PendingQuality is not EEquipmentQuality quality)
             {
                 return;
             }

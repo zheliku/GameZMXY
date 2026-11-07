@@ -193,7 +193,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             CharacterConfirmed?.Invoke(SerialId, heroId);
         }
 

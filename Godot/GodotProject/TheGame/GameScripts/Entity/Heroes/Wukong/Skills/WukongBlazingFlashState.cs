@@ -38,7 +38,7 @@ namespace GameLogic.Heroes.Wukong
         public void BeginHit(IHeroBody body)
         {
             ((ISkillActor)body).NewSkillAttack(
-            SkillHitId.BlazingFlash, AttackPower(body, SkillHitId.BlazingFlash));
+            ESkillHitId.BlazingFlash, AttackPower(body, ESkillHitId.BlazingFlash));
         }
 
         /// <summary>

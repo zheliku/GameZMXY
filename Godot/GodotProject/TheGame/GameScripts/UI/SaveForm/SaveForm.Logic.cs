@@ -231,33 +231,33 @@ namespace GameLogic.UI
         /// <param name="directory">已原子提交的目录快照。</param>
         private void RefreshDirectory(SaveDirectoryState directory)
         {
-            bool ready = directory.Phase == SaveListState.Ready;
+            bool ready = directory.Phase == ESaveListState.Ready;
             m_Status.Text = directory.Phase switch
             {
-                SaveListState.Ready => "",
-                SaveListState.Failed => directory.ErrorMessage,
+                ESaveListState.Ready => "",
+                ESaveListState.Failed => directory.ErrorMessage,
                 _ => "正在读取存档…"
             };
             for (int i = 0; i < m_SlotViews.Length; i++)
             {
                 var (button, name, date) = m_SlotViews[i];
                 var slot = ready ? directory.Slots[i] : null;
-                button.Disabled = slot == null || slot.State == SaveSlotState.Unreadable;
+                button.Disabled = slot == null || slot.State == ESaveSlotState.Unreadable;
                 button.MouseDefaultCursorShape = button.Disabled ? CursorShape.Arrow : CursorShape.PointingHand;
-                bool canDelete = ready && slot?.State == SaveSlotState.Occupied;
+                bool canDelete = ready && slot?.State == ESaveSlotState.Occupied;
                 m_DeleteButtons[i].Visible = canDelete;
                 m_DeleteButtons[i].Disabled = !canDelete;
                 m_DeleteButtons[i].Modulate = canDelete ? new Color(1f, 1f, 1f, 0.42f) : Colors.Transparent;
                 m_DeleteButtons[i].MouseDefaultCursorShape = !canDelete
                     ? CursorShape.Arrow : CursorShape.PointingHand;
-                if (slot?.State == SaveSlotState.Occupied)
+                if (slot?.State == ESaveSlotState.Occupied)
                 {
                     name.Text = $"{slot.HeroName} · Lv.{slot.Level}";
                     date.Text = slot.SavedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "";
                 }
                 else
                 {
-                    name.Text = slot?.State == SaveSlotState.Unreadable ? "存档不可读" : "";
+                    name.Text = slot?.State == ESaveSlotState.Unreadable ? "存档不可读" : "";
                     date.Text = "";
                 }
             }
@@ -279,13 +279,13 @@ namespace GameLogic.UI
         /// <param name="number">从 1 开始的格号。</param>
         private void SelectSlot(int number)
         {
-            if (!GF.UI.HasUIForm(SerialId) || this.GetModel<SaveModel>().Phase != SaveListState.Ready ||
-                this.GetModel<SaveModel>().Slots[number - 1].State == SaveSlotState.Unreadable)
+            if (!GF.UI.HasUIForm(SerialId) || this.GetModel<SaveModel>().Phase != ESaveListState.Ready ||
+                this.GetModel<SaveModel>().Slots[number - 1].State == ESaveSlotState.Unreadable)
             {
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             SaveSlotSelected?.Invoke(SerialId, number);
         }
 
@@ -295,8 +295,8 @@ namespace GameLogic.UI
         /// <param name="number">要删除的格号。</param>
         private void RequestDelete(int number)
         {
-            if (!GF.UI.HasUIForm(SerialId) || this.GetModel<SaveModel>().Phase != SaveListState.Ready ||
-                this.GetModel<SaveModel>().Slots[number - 1].State != SaveSlotState.Occupied)
+            if (!GF.UI.HasUIForm(SerialId) || this.GetModel<SaveModel>().Phase != ESaveListState.Ready ||
+                this.GetModel<SaveModel>().Slots[number - 1].State != ESaveSlotState.Occupied)
             {
                 return;
             }
@@ -332,7 +332,7 @@ namespace GameLogic.UI
 
             int slot = m_DeleteSlot;
             CancelDelete();
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             SaveSlotDeleteRequested?.Invoke(SerialId, slot);
         }
 
@@ -346,7 +346,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             GF.UI.CloseUIForm(SerialId);
         }
     }

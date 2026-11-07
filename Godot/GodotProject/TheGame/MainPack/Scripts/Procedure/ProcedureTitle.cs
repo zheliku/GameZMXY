@@ -53,9 +53,9 @@ public sealed class ProcedureTitle : ProcedureBase
         m_Cancellation = new CancellationTokenSource();
         GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
         GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnFormFailed);
-        m_FormSerialId = GF.UI.OpenUIForm(UIFormId.StartForm);
+        m_FormSerialId = GF.UI.OpenUIForm(EUIFormId.StartForm);
         SetFormCallbacks(GF.UI.GetUIForm(m_FormSerialId), bind: true);
-        m_MusicSerialId = GF.Sound.PlayConfigured(SoundId.MenuTheme, 0.3f);
+        m_MusicSerialId = GF.Sound.PlayConfigured(ESoundId.MenuTheme, 0.3f);
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ public sealed class ProcedureTitle : ProcedureBase
 
         var saveSystem = m_Owner.GetSystem<SaveSystem>();
         var token = m_Cancellation.Token;
-        m_SaveSerialId = GF.UI.OpenUIForm(UIFormId.SaveForm);
+        m_SaveSerialId = GF.UI.OpenUIForm(EUIFormId.SaveForm);
         SetFormCallbacks(GF.UI.GetUIForm(m_SaveSerialId), bind: true);
         await saveSystem.RefreshDirectoryAsync(token);
     }
@@ -130,7 +130,7 @@ public sealed class ProcedureTitle : ProcedureBase
     /// <param name="selectionId">选中的存档格或关卡编号。</param>
     private void OnSaveSlotSelected(int formSerialId, int selectionId)
     {
-        if (formSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) || GF.Fsm.GetModel<SaveModel>().Phase != SaveListState.Ready)
+        if (formSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) || GF.Fsm.GetModel<SaveModel>().Phase != ESaveListState.Ready)
         {
             return;
         }
@@ -141,13 +141,13 @@ public sealed class ProcedureTitle : ProcedureBase
         }
 
         var slot = GF.Fsm.GetModel<SaveModel>().Slots[selectionId - 1];
-        if (slot.State == SaveSlotState.Unreadable)
+        if (slot.State == ESaveSlotState.Unreadable)
         {
             return;
         }
 
         m_Owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(slot.SlotNumber, slot.UnitId));
-        if (slot.State == SaveSlotState.Empty)
+        if (slot.State == ESaveSlotState.Empty)
         {
             ChangeState<ProcedureCharacter>(m_Owner);
         }
@@ -166,13 +166,13 @@ public sealed class ProcedureTitle : ProcedureBase
     {
         var saveModel = GF.Fsm.GetModel<SaveModel>();
         if (formSerialId != m_SaveSerialId || !GF.UI.HasUIForm(m_SaveSerialId) ||
-            saveModel.Phase != SaveListState.Ready || slotNumber < 1 || slotNumber > saveModel.Slots.Count)
+            saveModel.Phase != ESaveListState.Ready || slotNumber < 1 || slotNumber > saveModel.Slots.Count)
         {
             return;
         }
 
         var slot = saveModel.Slots[slotNumber - 1];
-        if (slot.State != SaveSlotState.Occupied)
+        if (slot.State != ESaveSlotState.Occupied)
         {
             return;
         }
@@ -204,7 +204,7 @@ public sealed class ProcedureTitle : ProcedureBase
             return;
         }
 
-        m_SettingsSerialId = GF.UI.OpenUIForm(UIFormId.SettingsForm);
+        m_SettingsSerialId = GF.UI.OpenUIForm(EUIFormId.SettingsForm);
         SetFormCallbacks(GF.UI.GetUIForm(m_SettingsSerialId), bind: true);
     }
 

@@ -14,7 +14,7 @@ namespace GameLogic.UI
         [Export] private Label m_Title; // 关卡名称。
         [Export] private Label m_Description; // 简短表内介绍。
         [Export] private ItemList m_Enemies; // 同尺寸怪物图与名称，守关对手排在前面。
-        [Export] private Godot.Collections.Dictionary<EntityId, Texture2D> m_EnemyTextures = new(); // 按实体身份装配的正式待机图像。
+        [Export] private Godot.Collections.Dictionary<EEntityId, Texture2D> m_EnemyTextures = new(); // 按实体身份装配的正式待机图像。
         [Export] private GridContainer m_Drops; // 只显示透明装备图标。
         [Export] private ItemAppearancesResource m_Appearances; // 背包共用物品图像。
         [Export] private PackedScene m_EquipmentCellScene; // 复用背包图标与装备详情。

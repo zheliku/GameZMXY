@@ -26,12 +26,12 @@ namespace GameLogic.Battle
         /// <summary>
         /// 当前英雄是否被冻结。
         /// </summary>
-        public bool IsFrozen => Hero.GetStatusEffect(HeroModel.StatusEffectKind.Freeze)?.RemainingSeconds > 0;
+        public bool IsFrozen => Hero.GetStatusEffect(HeroModel.EStatusEffectKind.Freeze)?.RemainingSeconds > 0;
 
         /// <summary>
         /// 当前英雄是否中毒。
         /// </summary>
-        public bool IsPoisoned => Hero.GetStatusEffect(HeroModel.StatusEffectKind.Poison) != null;
+        public bool IsPoisoned => Hero.GetStatusEffect(HeroModel.EStatusEffectKind.Poison) != null;
 
         /// <summary>
         /// 施加冻结；重复施加只保留更长的剩余时间。
@@ -49,8 +49,8 @@ namespace GameLogic.Battle
                 return;
             }
 
-            HeroModel.StatusEffectState state = Hero.GetStatusEffect(HeroModel.StatusEffectKind.Freeze)
-                ?? new HeroModel.StatusEffectState(HeroModel.StatusEffectKind.Freeze);
+            HeroModel.StatusEffectState state = Hero.GetStatusEffect(HeroModel.EStatusEffectKind.Freeze)
+                ?? new HeroModel.StatusEffectState(HeroModel.EStatusEffectKind.Freeze);
             state.RemainingSeconds = Math.Max(state.RemainingSeconds, seconds);
             Hero.SetStatusEffect(state);
         }
@@ -66,7 +66,7 @@ namespace GameLogic.Battle
                 return;
             }
 
-            HeroModel.StatusEffectState state = Hero.GetStatusEffect(HeroModel.StatusEffectKind.Freeze);
+            HeroModel.StatusEffectState state = Hero.GetStatusEffect(HeroModel.EStatusEffectKind.Freeze);
             if (state == null)
             {
                 return;
@@ -75,7 +75,7 @@ namespace GameLogic.Battle
             state.RemainingSeconds = Math.Max(0, state.RemainingSeconds - delta);
             if (state.RemainingSeconds <= StatusTickTolerance)
             {
-                Hero.RemoveStatusEffect(HeroModel.StatusEffectKind.Freeze);
+                Hero.RemoveStatusEffect(HeroModel.EStatusEffectKind.Freeze);
             }
         }
 
@@ -98,9 +98,9 @@ namespace GameLogic.Battle
                 return;
             }
 
-            HeroModel.StatusEffectState state = Hero.GetStatusEffect(HeroModel.StatusEffectKind.Poison);
+            HeroModel.StatusEffectState state = Hero.GetStatusEffect(HeroModel.EStatusEffectKind.Poison);
             bool firstApplication = state == null;
-            state ??= new HeroModel.StatusEffectState(HeroModel.StatusEffectKind.Poison);
+            state ??= new HeroModel.StatusEffectState(HeroModel.EStatusEffectKind.Poison);
             state.Damage = (int)attack.FlatPower.X;
             state.RemainingTicks = attack.HitBudget;
             state.TickIntervalSeconds = attack.RepeatIntervalSeconds;
@@ -124,7 +124,7 @@ namespace GameLogic.Battle
                 return 0;
             }
 
-            HeroModel.StatusEffectState state = Hero.GetStatusEffect(HeroModel.StatusEffectKind.Poison);
+            HeroModel.StatusEffectState state = Hero.GetStatusEffect(HeroModel.EStatusEffectKind.Poison);
             if (state == null)
             {
                 return 0;
@@ -141,7 +141,7 @@ namespace GameLogic.Battle
 
             if (state.RemainingTicks <= 0)
             {
-                Hero.RemoveStatusEffect(HeroModel.StatusEffectKind.Poison);
+                Hero.RemoveStatusEffect(HeroModel.EStatusEffectKind.Poison);
             }
 
             return damage;

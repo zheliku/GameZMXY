@@ -52,7 +52,7 @@ namespace GameLogic.Level
             HashSet<string> used = new(StringComparer.Ordinal);
             foreach (LevelStage stage in config.Stages)
             {
-                if (stage.Activation == StageActivation.Trigger &&
+                if (stage.Activation == EStageActivation.Trigger &&
                     (!m_Triggers.ContainsKey(stage.TriggerId) || !used.Add(stage.TriggerId)))
                 {
                     throw new InvalidOperationException($"阶段触发区缺失或重复：{stage.TriggerId}");

@@ -11,7 +11,7 @@
 
 namespace GameConfig.Sound
 { 
-    public enum SoundId
+    public enum ESoundId
     {
         /// <summary>
         /// 无

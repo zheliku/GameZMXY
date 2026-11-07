@@ -80,7 +80,7 @@ namespace GameLogic.Save.Data
         /// 装备配置编号。
         /// </summary>
         [JsonProperty(Required = Required.Always)]
-        public EquipmentId EquipmentId { get; set; }
+        public EEquipmentId EquipmentId { get; set; }
 
         /// <summary>
         /// 本件生成时已经确定的属性，读档不得重新随机。
@@ -111,14 +111,14 @@ namespace GameLogic.Save.Data
         /// 已学习的主动技能编号；不保存费用、伤害、图标或施放中的临时状态。
         /// </summary>
         [JsonProperty(Required = Required.Always)]
-        public List<SkillId> LearnedSkills { get; set; } = new();
+        public List<ESkillId> LearnedSkills { get; set; } = new();
 
         /// <summary>
         /// 各被动的已学等级；0表示未学习，效果与费用仍读取当前配置。
         /// </summary>
         [JsonProperty(Required = Required.Always)]
-        public Dictionary<PassiveId, int> PassiveLevels { get; set; } =
-            System.Linq.Enumerable.ToDictionary(Enum.GetValues<PassiveId>(), id => id, _ => 0);
+        public Dictionary<EPassiveId, int> PassiveLevels { get; set; } =
+            System.Linq.Enumerable.ToDictionary(Enum.GetValues<EPassiveId>(), id => id, _ => 0);
 
         /// <summary>
         /// 已穿戴武器的实例编号；空编号表示未穿戴。

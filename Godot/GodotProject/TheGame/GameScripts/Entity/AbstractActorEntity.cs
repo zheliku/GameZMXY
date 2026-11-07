@@ -38,9 +38,9 @@ namespace GameLogic.Entity
 
         [Export] private string[] m_AttackAnimations = Array.Empty<string>(); // 普通招式动画，顺序与本实体的 ComboIndex 一致。
 
-        [Export] private SoundId m_HurtSoundId; // 本实体受击语音，与攻击者的打击声音分开；霸体和零击退也播放。
+        [Export] private ESoundId m_HurtSoundId; // 本实体受击语音，与攻击者的打击声音分开；霸体和零击退也播放。
 
-        [Export] private SoundId m_HitSoundId; // 本角色攻击成功的打击声音，身体攻击和离身效果共用。
+        [Export] private ESoundId m_HitSoundId; // 本角色攻击成功的打击声音，身体攻击和离身效果共用。
 
         [Export] private HurtBoxNode m_HurtBox; // 受击判定区，可为空；HurtBox 持有本实体引用。
 
@@ -103,7 +103,7 @@ namespace GameLogic.Entity
         /// <summary>
         /// 实体的基础配置类型；运行实例编号另由 GGF 管理。
         /// </summary>
-        protected abstract EntityId EntityType { get; }
+        protected abstract EEntityId EntityType { get; }
 
         // ---- 属性 ----
 
@@ -121,7 +121,7 @@ namespace GameLogic.Entity
         /// <summary>
         /// 本角色攻击命中时的默认声音；独立效果在生成时借用此值。
         /// </summary>
-        protected SoundId HitSoundId
+        protected ESoundId HitSoundId
         {
             get
             {
@@ -239,7 +239,7 @@ namespace GameLogic.Entity
         /// <summary>
         /// 结算侧别（选 BattleConfig 常数组；子类必须固定返回）
         /// </summary>
-        public abstract CombatSide Side { get; }
+        public abstract ECombatSide Side { get; }
 
         /// <summary>
         /// 已显示、可驱动：OnShow 置真、OnHide 置假。子类 _PhysicsProcess 靠它提前返回（实体隐藏/回收后
@@ -530,7 +530,7 @@ namespace GameLogic.Entity
         /// 动画方法轨道按编号播放音效，资源与声音组仍由 GGF 管理。
         /// </summary>
         /// <param name="id">声音配置编号；None 不播放。</param>
-        public void PlaySoundAnimEvent(SoundId id)
+        public void PlaySoundAnimEvent(ESoundId id)
         {
             GF.Sound.PlayConfigured(id);
         }
@@ -622,7 +622,7 @@ namespace GameLogic.Entity
                 GF.Sound.PlayConfigured(m_HurtSoundId);
             }
 
-            GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == CombatSide.Hero, HeadPosition, data.Source));
+            GF.Event.Fire(this, DamageDealtEventArgs.Create(result, Id, Side == ECombatSide.Hero, HeadPosition, data.Source));
             if (died)
             {
                 Died?.Invoke(this);
@@ -647,8 +647,8 @@ namespace GameLogic.Entity
             Dead |= died;
             if (showNumber)
             {
-                GF.Event.Fire(this, DamageDealtEventArgs.Create(new DamageResult(amount, false, false, DamageKind.Real),
-                                Id, Side == CombatSide.Hero, HeadPosition));
+                GF.Event.Fire(this, DamageDealtEventArgs.Create(new DamageResult(amount, false, false, EDamageKind.Real),
+                                Id, Side == ECombatSide.Hero, HeadPosition));
             }
 
             if (died)

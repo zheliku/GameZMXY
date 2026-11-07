@@ -200,9 +200,9 @@ namespace GameLogic.UI
         /// 运行结束时关闭设置，避免阻塞流程结局计时。
         /// </summary>
         /// <param name="outcome">已经确定的关卡结局。</param>
-        private void OnLevelEnded(LevelOutcome outcome)
+        private void OnLevelEnded(ELevelOutcome outcome)
         {
-            if (outcome != LevelOutcome.Running)
+            if (outcome != ELevelOutcome.Running)
             {
                 GF.UI.CloseUIForm(SerialId);
             }
@@ -223,7 +223,7 @@ namespace GameLogic.UI
                 OnCloseClicked();
                 return;
             }
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             m_ShowingHelp = false;
             RefreshOptions();
         }
@@ -238,7 +238,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             GF.UI.CloseUIForm(SerialId);
         }
 
@@ -305,7 +305,7 @@ namespace GameLogic.UI
             SetMuted(SoundComponent.DefaultMusicGroup, mute, 0.7f);
             SetMuted(SoundComponent.DefaultSfxGroup, mute, 1f);
             SetMuted(SoundComponent.DefaultUiGroup, mute, 1f);
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             RefreshSoundSettings();
         }
 
@@ -364,7 +364,7 @@ namespace GameLogic.UI
         {
             if (changed && GF.UI.HasUIForm(SerialId))
             {
-                GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+                GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             }
         }
 
@@ -393,7 +393,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             m_ShowingHelp = true;
             RefreshOptions();
         }
@@ -408,7 +408,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             TitleRequested?.Invoke(SerialId);
         }
 
@@ -422,7 +422,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             MapRequested?.Invoke(SerialId);
         }
     }

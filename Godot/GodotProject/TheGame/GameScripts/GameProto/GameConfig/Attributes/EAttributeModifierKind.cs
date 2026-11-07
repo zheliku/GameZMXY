@@ -9,22 +9,22 @@
 
 
 
-namespace GameConfig.Battle
+namespace GameConfig.Attributes
 { 
-    public enum DamageKind
+    public enum EAttributeModifierKind
     {
         /// <summary>
-        /// 物理
+        /// 固定值
         /// </summary>
-        Physics = 0,
+        Flat = 0,
         /// <summary>
-        /// 魔法
+        /// 同类百分比相加
         /// </summary>
-        Magic = 1,
+        PercentAdd = 1,
         /// <summary>
-        /// 真实
+        /// 独立百分比相乘
         /// </summary>
-        Real = 2,
+        PercentMult = 2,
     }
 
 } 

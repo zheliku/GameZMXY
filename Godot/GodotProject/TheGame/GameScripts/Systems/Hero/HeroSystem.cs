@@ -20,7 +20,7 @@ namespace GameLogic.Battle
     /// </summary>
     public sealed class HeroSystem : AbstractSystem
     {
-        private static readonly int m_AttributeCount = Enum.GetValues<AttributeType>().Length; // 配置属性的连续数量。
+        private static readonly int m_AttributeCount = Enum.GetValues<EAttributeType>().Length; // 配置属性的连续数量。
         private static readonly AttributeSourceId m_WeaponSource = new("EquipmentWeapon", 0); // 当前武器的来源键。
         private static readonly AttributeSourceId m_ArmorSource = new("EquipmentArmor", 0); // 当前防具的来源键。
         private static readonly AttributeSourceId m_AccessorySource = new("EquipmentAccessory", 0); // 当前饰品的来源键。
@@ -392,7 +392,7 @@ namespace GameLogic.Battle
         /// 被动升级或回滚时替换总加成；增加资源上限时同时增加当前资源，保留原有缺损。
         /// </summary>
         /// <param name="levels">当前英雄已经提交的全部被动等级。</param>
-        private void OnPassiveLevelsChanged(IReadOnlyDictionary<PassiveId, int> levels)
+        private void OnPassiveLevelsChanged(IReadOnlyDictionary<EPassiveId, int> levels)
         {
             int maxHp = Hero.MaxHp.Value;
             int maxMp = Hero.MaxMp.Value;
@@ -406,7 +406,7 @@ namespace GameLogic.Battle
         /// 各被动只读取已学习等级的总值，避免把1至当前等级重复累加。
         /// </summary>
         /// <param name="levels">本英雄的被动等级。</param>
-        private void ReplacePassiveSource(IReadOnlyDictionary<PassiveId, int> levels)
+        private void ReplacePassiveSource(IReadOnlyDictionary<EPassiveId, int> levels)
         {
             var definitions = this.GetModel<ConfigurationModel>().Tables.TbPassiveConfig;
             List<AttributeModifier> modifiers = new();
@@ -418,13 +418,13 @@ namespace GameLogic.Battle
                 }
 
                 var definition = definitions.Get(id);
-                AttributeType attribute = definition.Effect switch
+                EAttributeType attribute = definition.Effect switch
                 {
-                    PassiveEffect.MaxHealth => AttributeType.MaxHp,
-                    PassiveEffect.MaxMana => AttributeType.MaxMp,
-                    PassiveEffect.CriticalChance => AttributeType.Crit,
-                    PassiveEffect.HealthRegen => AttributeType.HpRegen,
-                    PassiveEffect.ManaRegen => AttributeType.MpRegen,
+                    EPassiveEffect.MaxHealth => EAttributeType.MaxHp,
+                    EPassiveEffect.MaxMana => EAttributeType.MaxMp,
+                    EPassiveEffect.CriticalChance => EAttributeType.Crit,
+                    EPassiveEffect.HealthRegen => EAttributeType.HpRegen,
+                    EPassiveEffect.ManaRegen => EAttributeType.MpRegen,
                     _ => throw new InvalidOperationException($"未实现的被动效果：{definition.Effect}")
                 };
                 modifiers.Add(AttributeModifier.Flat(attribute, definition.Levels[level - 1].Value));
@@ -487,13 +487,13 @@ namespace GameLogic.Battle
                     int index = (int)modifier.Attribute;
                     switch (modifier.Kind)
                     {
-                        case AttributeModifierKind.Flat:
+                        case EAttributeModifierKind.Flat:
                             flat[index] += modifier.Value;
                             break;
-                        case AttributeModifierKind.PercentAdd:
+                        case EAttributeModifierKind.PercentAdd:
                             percentAdd[index] += modifier.Value;
                             break;
-                        case AttributeModifierKind.PercentMult:
+                        case EAttributeModifierKind.PercentMult:
                             percentMult[index] *= 1f + modifier.Value;
                             break;
                     }
@@ -503,10 +503,10 @@ namespace GameLogic.Battle
             Span<float> final = stackalloc float[count];
             for (int i = 0; i < count; i++)
             {
-                var attribute = (AttributeType)i;
+                var attribute = (EAttributeType)i;
                 float value = ((Hero.BaseAttributes?.Get(attribute) ?? 0) + flat[i])
                                            * (1 + percentAdd[i]) * percentMult[i];
-                if (attribute is not (AttributeType.HpRegen or AttributeType.MpRegen))
+                if (attribute is not (EAttributeType.HpRegen or EAttributeType.MpRegen))
                 {
                     value = MathF.Max(0, value);
                 }
@@ -514,7 +514,7 @@ namespace GameLogic.Battle
                 final[i] = attribute.IsProbability ? Math.Clamp(value, 0f, 1f)
                                 : MathF.Round(value, MidpointRounding.AwayFromZero);
             }
-            final[(int)AttributeType.MaxHp] = Math.Max(1, final[(int)AttributeType.MaxHp]);
+            final[(int)EAttributeType.MaxHp] = Math.Max(1, final[(int)EAttributeType.MaxHp]);
             ApplyFinalAttributes(final, heroId, level, refill);
         }
 
@@ -664,29 +664,29 @@ namespace GameLogic.Battle
         /// <summary>
         /// 更新最终属性与资源；各属性由 Value 自动通知。
         /// </summary>
-        /// <param name="final">按 AttributeType 排列的最终数值。</param>
+        /// <param name="final">按 EAttributeType 排列的最终数值。</param>
         /// <param name="heroId">本局英雄身份。</param>
         /// <param name="level">对应等级。</param>
         /// <param name="refill">是否补满生命魔法。</param>
         private void ApplyFinalAttributes(ReadOnlySpan<float> final, int heroId, int level, bool refill)
         {
             Hero.HeroId = heroId;
-            Hero.MaxHp.Value = (int)final[(int)AttributeType.MaxHp];
-            Hero.MaxMp.Value = (int)final[(int)AttributeType.MaxMp];
-            Hero.Power.Value = (int)final[(int)AttributeType.Power];
-            Hero.Def.Value = (int)final[(int)AttributeType.Def];
-            Hero.Mdef.Value = (int)final[(int)AttributeType.Mdef];
-            Hero.Crit.Value = final[(int)AttributeType.Crit];
-            Hero.Miss.Value = final[(int)AttributeType.Miss];
-            Hero.Lucky.Value = (int)final[(int)AttributeType.Lucky];
-            Hero.Toughness.Value = (int)final[(int)AttributeType.Toughness];
-            Hero.Htarget.Value = final[(int)AttributeType.Htarget];
-            Hero.CritReduce.Value = final[(int)AttributeType.CritReduce];
-            Hero.Ar.Value = (int)final[(int)AttributeType.Ar];
-            Hero.Sp.Value = (int)final[(int)AttributeType.Sp];
-            Hero.Vampirism.Value = (int)final[(int)AttributeType.Vampirism];
-            Hero.HpRegen.Value = (int)final[(int)AttributeType.HpRegen];
-            Hero.MpRegen.Value = (int)final[(int)AttributeType.MpRegen];
+            Hero.MaxHp.Value = (int)final[(int)EAttributeType.MaxHp];
+            Hero.MaxMp.Value = (int)final[(int)EAttributeType.MaxMp];
+            Hero.Power.Value = (int)final[(int)EAttributeType.Power];
+            Hero.Def.Value = (int)final[(int)EAttributeType.Def];
+            Hero.Mdef.Value = (int)final[(int)EAttributeType.Mdef];
+            Hero.Crit.Value = final[(int)EAttributeType.Crit];
+            Hero.Miss.Value = final[(int)EAttributeType.Miss];
+            Hero.Lucky.Value = (int)final[(int)EAttributeType.Lucky];
+            Hero.Toughness.Value = (int)final[(int)EAttributeType.Toughness];
+            Hero.Htarget.Value = final[(int)EAttributeType.Htarget];
+            Hero.CritReduce.Value = final[(int)EAttributeType.CritReduce];
+            Hero.Ar.Value = (int)final[(int)EAttributeType.Ar];
+            Hero.Sp.Value = (int)final[(int)EAttributeType.Sp];
+            Hero.Vampirism.Value = (int)final[(int)EAttributeType.Vampirism];
+            Hero.HpRegen.Value = (int)final[(int)EAttributeType.HpRegen];
+            Hero.MpRegen.Value = (int)final[(int)EAttributeType.MpRegen];
             Hero.Hp.Value = refill ? Hero.MaxHp.Value : Math.Min(Hero.Hp.Value, Hero.MaxHp.Value);
             Hero.Mp.Value = refill ? Hero.MaxMp.Value : Math.Min(Hero.Mp.Value, Hero.MaxMp.Value);
             Hero.Level.Value = level;

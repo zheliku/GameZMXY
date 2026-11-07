@@ -19,9 +19,9 @@ namespace GameLogic.Equipment
         /// <param name="id">稳定的装备主键。</param>
         /// <returns>该物品的外观资源。</returns>
         /// <exception cref="InvalidOperationException">未装配或重复装配指定物品。</exception>
-        public ItemAppearanceResource Get(EquipmentId id)
+        public ItemAppearanceResource Get(EEquipmentId id)
         {
-            return Find(id, PickupId.None);
+            return Find(id, EPickupId.None);
         }
 
         /// <summary>
@@ -30,9 +30,9 @@ namespace GameLogic.Equipment
         /// <param name="id">稳定的恢复品主键。</param>
         /// <returns>该物品的外观资源。</returns>
         /// <exception cref="InvalidOperationException">未装配或重复装配指定物品。</exception>
-        public ItemAppearanceResource Get(PickupId id)
+        public ItemAppearanceResource Get(EPickupId id)
         {
-            return Find(EquipmentId.None, id);
+            return Find(EEquipmentId.None, id);
         }
 
         /// <summary>
@@ -42,9 +42,9 @@ namespace GameLogic.Equipment
         /// <param name="pickupId">恢复品身份；装备时为 None。</param>
         /// <returns>唯一的外观条目。</returns>
         /// <exception cref="InvalidOperationException">身份互斥或条目图像不成立。</exception>
-        private ItemAppearanceResource Find(EquipmentId equipmentId, PickupId pickupId)
+        private ItemAppearanceResource Find(EEquipmentId equipmentId, EPickupId pickupId)
         {
-            if ((equipmentId == EquipmentId.None) == (pickupId == PickupId.None))
+            if ((equipmentId == EEquipmentId.None) == (pickupId == EPickupId.None))
             {
                 throw new InvalidOperationException("物品外观必须指定一种有效物品身份。");
             }

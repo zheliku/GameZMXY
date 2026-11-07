@@ -20,7 +20,7 @@ namespace GameLogic.Level
         /// <summary>
         /// 本局互斥结局；关联成绩先提交，结局最后发布。
         /// </summary>
-        public BindableProperty<LevelOutcome> Outcome { get; } = new(LevelOutcome.Running);
+        public BindableProperty<ELevelOutcome> Outcome { get; } = new(ELevelOutcome.Running);
 
         /// <summary>
         /// 结局时冻结的成绩；进行中为空。
@@ -66,7 +66,7 @@ namespace GameLogic.Level
     /// <summary>
     /// 一次关卡会话的互斥结局。
     /// </summary>
-    public enum LevelOutcome
+    public enum ELevelOutcome
     {
         /// <summary>
         /// 关卡进行中。

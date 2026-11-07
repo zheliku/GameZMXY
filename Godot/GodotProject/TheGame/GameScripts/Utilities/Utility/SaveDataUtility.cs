@@ -113,10 +113,10 @@ namespace GameLogic.Save
 
             foreach (var hero in data.Heroes)
             {
-                ValidateSlot(slots[hero.HeroId].Weapon, hero.HeroId, EquipmentSlot.Weapon, definitions);
-                ValidateSlot(slots[hero.HeroId].Armor, hero.HeroId, EquipmentSlot.Armor, definitions);
-                ValidateSlot(slots[hero.HeroId].Accessory, hero.HeroId, EquipmentSlot.Accessory, definitions);
-                ValidateSlot(slots[hero.HeroId].Treasure, hero.HeroId, EquipmentSlot.Treasure, definitions);
+                ValidateSlot(slots[hero.HeroId].Weapon, hero.HeroId, EEquipmentSlot.Weapon, definitions);
+                ValidateSlot(slots[hero.HeroId].Armor, hero.HeroId, EEquipmentSlot.Armor, definitions);
+                ValidateSlot(slots[hero.HeroId].Accessory, hero.HeroId, EEquipmentSlot.Accessory, definitions);
+                ValidateSlot(slots[hero.HeroId].Treasure, hero.HeroId, EEquipmentSlot.Treasure, definitions);
             }
         }
 
@@ -273,7 +273,7 @@ namespace GameLogic.Save
             }
 
             // 未配置的属性只能为零，已配置的属性必须处于原抽取范围内。
-            foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
+            foreach (EAttributeType attribute in Enum.GetValues<EAttributeType>())
             {
                 var expected = definition.AttributeRanges.Find(x => x.Attribute == attribute);
                 float value = data.Attributes.Get(attribute);
@@ -291,7 +291,7 @@ namespace GameLogic.Save
         /// <param name="heroId">穿戴者编号。</param>
         /// <param name="slot">保存的部位。</param>
         /// <param name="definitions">当前装备定义。</param>
-        private static void ValidateSlot(EquipmentData data, int heroId, EquipmentSlot slot,
+        private static void ValidateSlot(EquipmentData data, int heroId, EEquipmentSlot slot,
             TbEquipmentConfig definitions)
         {
             if (data == null)
@@ -300,7 +300,7 @@ namespace GameLogic.Save
             }
 
             var definition = definitions.Get(data.EquipmentId);
-            if ((definition.Owner != EquipmentOwner.Universal && (int)definition.Owner != heroId) || definition.Slot != slot)
+            if ((definition.Owner != EEquipmentOwner.Universal && (int)definition.Owner != heroId) || definition.Slot != slot)
             {
                 throw new ArgumentException("装备不属于该英雄或该部位。");
             }

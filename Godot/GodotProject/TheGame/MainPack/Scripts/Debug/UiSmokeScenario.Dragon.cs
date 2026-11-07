@@ -90,7 +90,7 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() => SmokeInspection.ReadField<float>(dragon, "m_InvulnerabilityLeft") <= 0,
             "龙王技能无敌没有按秒结束", 7000);
         Check(!flow.GetModel<ProfileModel>().EastSeaBannerAvailable &&
-            (EquipmentDropPoolId?)typeof(DragonKingEntity).GetProperty("EquipmentDropPoolIdOverride", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(dragon) == EquipmentDropPoolId.EastSeaBanner,
+            (EEquipmentDropPoolId?)typeof(DragonKingEntity).GetProperty("EquipmentDropPoolIdOverride", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(dragon) == EEquipmentDropPoolId.EastSeaBanner,
             "首次龙王未在出生时消费旗幡资格");
         await CaptureCombatAsync("dragon_palace_before_defeat");
         ApplyEastSeaHit(dragon, hero.Id, 10000000, 1, false, Vector2.Zero);
@@ -98,14 +98,14 @@ public sealed partial class UiSmokeScenario
         var exit = SmokeInspection.ReadField<LevelExitNode>(room, "m_Exit");
         await WaitFramesAsync(2);
         Check(!dragon.HurtBox.Monitorable, "龙王死亡闪烁期间仍保留首领受击盒");
-        Check(!exit.Visible && SmokeInspection.Model(room).Outcome.Value == LevelOutcome.Running,
+        Check(!exit.Visible && SmokeInspection.Model(room).Outcome.Value == ELevelOutcome.Running,
             "龙王死亡动画未完成就开放出口");
         await WaitUntilAsync(() => !dragon.IsShown && exit.Visible, "龙王完成死亡后没有开放传送门", 5000);
         var drops = SmokeInspection.ReadField<System.Collections.Generic.HashSet<GroundItemNode>>(room, "m_GroundItems");
-        var banner = drops.Single(item => SmokeInspection.ReadField<EquipmentData>(item, "m_EquipmentData")?.EquipmentId == EquipmentId.EastSeaBanner);
+        var banner = drops.Single(item => SmokeInspection.ReadField<EquipmentData>(item, "m_EquipmentData")?.EquipmentId == EEquipmentId.EastSeaBanner);
         EquipmentData data = SmokeInspection.ReadField<EquipmentData>(banner, "m_EquipmentData");
         hero.GlobalPosition = banner.GlobalPosition;
-        await WaitUntilAsync(() => flow.GetModel<ProfileModel>().HasEquipment(EquipmentId.EastSeaBanner), "旗幡没有通过真实地面接触拾取");
+        await WaitUntilAsync(() => flow.GetModel<ProfileModel>().HasEquipment(EEquipmentId.EastSeaBanner), "旗幡没有通过真实地面接触拾取");
         await WaitFramesAsync(55);
         hero.GlobalPosition = exit.GlobalPosition - new Vector2(0, 80);
         hero.Velocity = Vector2.Zero;
@@ -115,7 +115,7 @@ public sealed partial class UiSmokeScenario
         m_Driver.GetViewport().PushInput(new InputEventAction { Action = InputSystem.Interact, Pressed = true }, true);
         await WaitFramesAsync(2);
         m_Driver.GetViewport().PushInput(new InputEventAction { Action = InputSystem.Interact, Pressed = false }, true);
-        await WaitUntilAsync(() => flow.GetModel<LevelModel>().Outcome.Value == LevelOutcome.Cleared,
+        await WaitUntilAsync(() => flow.GetModel<LevelModel>().Outcome.Value == ELevelOutcome.Cleared,
             "龙宫W出口没有提交结算", 7000);
         Check(await flow.GetSystem<LevelSystem>().CheckpointWrite, "龙宫检查点写入失败");
         var disk = await ReadDiskAsync();
@@ -143,7 +143,7 @@ public sealed partial class UiSmokeScenario
         var system = flow.GetSystem<HeroSystem>();
         var profile = flow.GetModel<ProfileModel>();
         var source = new AttributeSourceId("DragonSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.SetSource(source, [AttributeModifier.Flat(EAttributeType.MaxHp, 100000)]);
         system.Heal(int.MaxValue);
         try
         {
@@ -165,7 +165,7 @@ public sealed partial class UiSmokeScenario
                             flow.GetSystem<HeroStatusSystem>().AdvanceFreeze(100);
                             system.Heal(int.MaxValue);
                             hero.GlobalPosition = new Vector2(100000, 100000);
-                            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DragonKing,
+                            m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.DragonKing,
                                 new EnemySpawn(new Vector2(580, 100)));
                             var actor = m_Monster;
                             SmokeInspection.FreezeAi(actor);
@@ -246,7 +246,7 @@ public sealed partial class UiSmokeScenario
                             Check(sawEffect == (index is 0 or 3), "龙王离身攻击的所属招式错误");
                             if (index == 2)
                             {
-                                Check((flow.GetModel<HeroModel>().StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0) == (tier == 1 ? 2 : 5), "冰冻持续时间不符等级档");
+                                Check((flow.GetModel<HeroModel>().StatusEffects.GetValueOrDefault(EStatusEffectKind.Freeze)?.RemainingSeconds ?? 0) == (tier == 1 ? 2 : 5), "冰冻持续时间不符等级档");
                             }
 
                             Check(actor.HitBox.GetChildren().OfType<CollisionShape2D>().All(item => item.Disabled), "龙王收招残留身体判定");
@@ -291,7 +291,7 @@ public sealed partial class UiSmokeScenario
         model.Ws.Value = model.MaxWs.Value;
         Check(hero.TryActivateMusou() && !hero.CanReceiveStatusEffect, "悟空无双没有禁止附加控制状态");
         hero.GlobalPosition = new Vector2(100000, 100000);
-        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DragonKing, new EnemySpawn(new Vector2(580, 100)));
+        m_Monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EEntityId.DragonKing, new EnemySpawn(new Vector2(580, 100)));
         var actor = m_Monster;
         SmokeInspection.FreezeAi(actor);
         await WaitUntilAsync(() => actor.OnFloor, "无双免疫夹具龙王未落地");

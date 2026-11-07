@@ -22,10 +22,10 @@ public sealed partial class AttackConfig : Luban.BeanBase
         Desc = _buf.ReadString();
         PowerScale = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         FlatPower = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
-        DamageKind = (Battle.DamageKind)_buf.ReadInt();
+        DamageKind = (Battle.EDamageKind)_buf.ReadInt();
         Knockback = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         HitProtect = _buf.ReadInt();
-        OwnerId = (Entity.EntityId)_buf.ReadInt();
+        OwnerId = (Entity.EEntityId)_buf.ReadInt();
         ComboIndex = _buf.ReadInt();
         AiCooldown = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
         AiInitCooldown = GameLogic.Config.ExternalTypeUtil.NewVector2(global::GameConfig.vector2.Deserializevector2(_buf));
@@ -66,7 +66,7 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// <summary>
     /// 伤害类型
     /// </summary>
-    public readonly Battle.DamageKind DamageKind;
+    public readonly Battle.EDamageKind DamageKind;
     /// <summary>
     /// 击退速度 px/s；X&gt;0 远离攻击者，Y&lt;0 向上；方向由出招代码确定
     /// </summary>
@@ -78,7 +78,7 @@ public sealed partial class AttackConfig : Luban.BeanBase
     /// <summary>
     /// 实际施放者；ComboIndex&gt;=0才进入本体攻击列表
     /// </summary>
-    public readonly Entity.EntityId OwnerId;
+    public readonly Entity.EEntityId OwnerId;
     /// <summary>
     /// 连段第几段(0起;同一 OwnerId 内连续,越大越靠后)
     /// </summary>

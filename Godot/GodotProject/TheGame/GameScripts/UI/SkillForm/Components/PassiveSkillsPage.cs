@@ -25,7 +25,7 @@ namespace GameLogic.UI.Widgets
         /// <summary>
         /// 玩家请求购买下一级，表单负责提交Command。
         /// </summary>
-        public event Action<PassiveId> UpgradeRequested;
+        public event Action<EPassiveId> UpgradeRequested;
 
         /// <summary>
         /// 收集本页行并验证固定行数。
@@ -45,7 +45,7 @@ namespace GameLogic.UI.Widgets
             var definitions = this.GetModel<ConfigurationModel>().Tables.TbPassiveConfig.DataList;
             for (int i = 0; i < m_UpgradeButtons.Length; i++)
             {
-                PassiveId id = definitions[i].PassiveId;
+                EPassiveId id = definitions[i].PassiveId;
                 m_UpgradeButtons[i].Pressed += () => UpgradeRequested?.Invoke(id);
             }
         }

@@ -264,7 +264,7 @@ def prepare(args):
     for row in enum_rows:
         cells = {re.sub(r'\d+$', '', key): value for key, value in row.items()}
         active_enum = cells.get('B') or active_enum
-        if active_enum == 'Entity.EntityId' and cells.get('H'):
+        if active_enum == 'Entity.EEntityId' and cells.get('H'):
             entity_names.add(cells['H'])
     entity_gaps = {name: number for number, name in required.items() if name not in entity_names}
     resource_rows = xlsx_rows(repo / 'Configs/GameConfig/Datas/Resources.xlsx')['EntityConfig']

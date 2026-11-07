@@ -26,16 +26,16 @@ namespace GameLogic.Profile.Tests
             var learned = scope.Skills.GetLearnedSkills(1);
             int notifications = 0;
             learned.Register(_ => notifications++);
-            Assert.False(system.IsLearned(SkillId.RisingDragon));
-            Assert.Equal(SkillLearnResult.InsufficientSoul, system.Learn(SkillId.RisingDragon));
+            Assert.False(system.IsLearned(ESkillId.RisingDragon));
+            Assert.Equal(ESkillLearnResult.InsufficientSoul, system.Learn(ESkillId.RisingDragon));
             Assert.Equal(99, scope.Profile.Soul.Value);
             Assert.Empty(learned);
             Assert.Equal(0, notifications);
             scope.GetSystem<ProfileSystem>().AddSoul(1);
-            Assert.Equal(SkillLearnResult.Learned, system.Learn(SkillId.RisingDragon));
+            Assert.Equal(ESkillLearnResult.Learned, system.Learn(ESkillId.RisingDragon));
             Assert.Equal(0, scope.Profile.Soul.Value);
-            Assert.True(system.IsLearned(SkillId.RisingDragon));
-            Assert.Equal(SkillLearnResult.AlreadyLearned, system.Learn(SkillId.RisingDragon));
+            Assert.True(system.IsLearned(ESkillId.RisingDragon));
+            Assert.Equal(ESkillLearnResult.AlreadyLearned, system.Learn(ESkillId.RisingDragon));
             Assert.Equal(0, scope.Profile.Soul.Value);
             Assert.Equal(1, notifications);
         }
@@ -52,23 +52,23 @@ namespace GameLogic.Profile.Tests
             Assert.Null(scope.GetModel<LevelModel>());
             var system = scope.GetSystem<SkillSystem>();
             system.ClearSkillDefinitions();
-            int skillCost = TestTables.Tables.TbSkillConfig.Get(SkillId.RisingDragon).LearnSoul;
-            int passiveCost = TestTables.Tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
+            int skillCost = TestTables.Tables.TbSkillConfig.Get(ESkillId.RisingDragon).LearnSoul;
+            int passiveCost = TestTables.Tables.TbPassiveConfig.Get(EPassiveId.Vitality).Levels[0].LearnSoul;
 
-            Assert.False(system.IsAvailable(SkillId.RisingDragon));
-            Assert.True(system.IsLearnable(SkillId.RisingDragon));
-            Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
-            Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
+            Assert.False(system.IsAvailable(ESkillId.RisingDragon));
+            Assert.True(system.IsLearnable(ESkillId.RisingDragon));
+            Assert.Equal(ESkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(ESkillId.RisingDragon)));
+            Assert.Equal(ESkillLearnResult.Learned, scope.SendCommand(new UpgradePassiveCommand(EPassiveId.Vitality)));
             Assert.Equal(10000 - skillCost - passiveCost, scope.Profile.Soul.Value);
 
             var save = scope.CaptureSaveData();
             var heroData = save.Heroes.Single(hero => hero.HeroId == 1);
-            Assert.Contains(SkillId.RisingDragon, heroData.LearnedSkills);
-            Assert.Equal(1, heroData.PassiveLevels[PassiveId.Vitality]);
+            Assert.Contains(ESkillId.RisingDragon, heroData.LearnedSkills);
+            Assert.Equal(1, heroData.PassiveLevels[EPassiveId.Vitality]);
 
             var reloaded = TestGameScope.FromSaveData(save, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 20);
-            Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(SkillId.RisingDragon));
-            Assert.True(reloaded.GetSystem<SkillSystem>().IsAvailable(SkillId.RisingDragon));
+            Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(ESkillId.RisingDragon));
+            Assert.True(reloaded.GetSystem<SkillSystem>().IsAvailable(ESkillId.RisingDragon));
             Assert.True(reloaded.Hero.MaxHp.Value > TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.MaxHp);
         }
 
@@ -77,12 +77,12 @@ namespace GameLogic.Profile.Tests
         /// </summary>
         /// <param name="id">应被拒绝学习的技能配置编号。</param>
         [Theory]
-        [InlineData(SkillId.IceDragonWave)]
-        [InlineData((SkillId)999)]
-        public void Learning_RejectsUnavailableDefinitions(SkillId id)
+        [InlineData(ESkillId.IceDragonWave)]
+        [InlineData((ESkillId)999)]
+        public void Learning_RejectsUnavailableDefinitions(ESkillId id)
         {
             var scope = new TestGameScope(1, [(1, 0)], 9999, 20);
-            Assert.Equal(SkillLearnResult.Unavailable, scope.GetSystem<SkillSystem>().Learn(id));
+            Assert.Equal(ESkillLearnResult.Unavailable, scope.GetSystem<SkillSystem>().Learn(id));
             Assert.Equal(9999, scope.Profile.Soul.Value);
             Assert.Empty(scope.Skills.GetLearnedSkills(1));
         }
@@ -95,18 +95,18 @@ namespace GameLogic.Profile.Tests
         {
             var scope = new TestGameScope(1, [(1, 0), (2, 0)], 3000, 20);
             var learned = scope.Skills.GetLearnedSkills(1);
-            Assert.Equal(SkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(SkillId.FlameThrust));
+            Assert.Equal(ESkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(ESkillId.FlameThrust));
             var checkpoint = scope.CaptureSaveData();
-            Assert.Equal(new[] { SkillId.FlameThrust }, checkpoint.Heroes.Single(x => x.HeroId == 1).LearnedSkills);
+            Assert.Equal(new[] { ESkillId.FlameThrust }, checkpoint.Heroes.Single(x => x.HeroId == 1).LearnedSkills);
             Assert.Empty(checkpoint.Heroes.Single(x => x.HeroId == 2).LearnedSkills);
             var reloaded = TestGameScope.FromSaveData(JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(checkpoint)),
                 TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 20);
-            Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(SkillId.FlameThrust));
-            Assert.Equal(SkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(SkillId.BlazingFlash));
-            Assert.DoesNotContain(SkillId.BlazingFlash, checkpoint.Heroes[0].LearnedSkills);
+            Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(ESkillId.FlameThrust));
+            Assert.Equal(ESkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(ESkillId.BlazingFlash));
+            Assert.DoesNotContain(ESkillId.BlazingFlash, checkpoint.Heroes[0].LearnedSkills);
             scope.RestoreCheckpoint(checkpoint);
             Assert.Same(learned, scope.Skills.GetLearnedSkills(1));
-            Assert.Equal(new[] { SkillId.FlameThrust }, learned);
+            Assert.Equal(new[] { ESkillId.FlameThrust }, learned);
             Assert.Equal(2800, scope.Profile.Soul.Value);
         }
 
@@ -115,14 +115,14 @@ namespace GameLogic.Profile.Tests
         /// </summary>
         /// <param name="invalid">重复、其他英雄或未知技能。</param>
         [Theory]
-        [InlineData(SkillId.RisingDragon)]
-        [InlineData(SkillId.IceDragonWave)]
-        [InlineData((SkillId)999)]
-        public void Restore_RejectsInvalidSkillRecordsBeforeWriting(SkillId invalid)
+        [InlineData(ESkillId.RisingDragon)]
+        [InlineData(ESkillId.IceDragonWave)]
+        [InlineData((ESkillId)999)]
+        public void Restore_RejectsInvalidSkillRecordsBeforeWriting(ESkillId invalid)
         {
             var scope = new TestGameScope(1, [(1, 0)], 3000, 20);
             var snapshot = scope.CaptureSaveData();
-            snapshot.Heroes[0].LearnedSkills.AddRange([SkillId.RisingDragon, invalid]);
+            snapshot.Heroes[0].LearnedSkills.AddRange([ESkillId.RisingDragon, invalid]);
             snapshot.Soul = 0;
             Assert.Throws<ArgumentException>(() => scope.RestoreCheckpoint(snapshot));
             Assert.Equal(3000, scope.Profile.Soul.Value);

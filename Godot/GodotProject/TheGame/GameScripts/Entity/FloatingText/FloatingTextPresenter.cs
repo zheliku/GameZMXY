@@ -83,7 +83,7 @@ namespace GameLogic.FloatingText
         /// <param name="amount">正数显示量；拾取保留官方显示配置量的行为，满值时仍可提示。</param>
         /// <param name="kind">绿色生命或蓝色魔法样式。</param>
         /// <exception cref="InvalidOperationException">会话未开始或节点池资源未注册。</exception>
-        public void ShowRecovery(Vector2 position, int amount, RecoveryKind kind)
+        public void ShowRecovery(Vector2 position, int amount, ERecoveryKind kind)
         {
             if (!m_SessionActive)
             {

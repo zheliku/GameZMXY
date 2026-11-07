@@ -163,7 +163,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             StartGameRequested?.Invoke(SerialId);
         }
 
@@ -177,7 +177,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             SettingsRequested?.Invoke(SerialId);
         }
 
@@ -191,7 +191,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             m_Status.Text = "A / D 移动 · 连按奔跑\nJ 攻击 · K 跳跃 · 空格 无双\n左下角设置中返回地图";
         }
 
@@ -205,7 +205,7 @@ namespace GameLogic.UI
                 return;
             }
 
-            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            GF.Sound.PlayConfigured(ESoundId.MenuConfirm);
             m_Status.Text = "当前开放悟空、唐僧与造一篇章。\n仅供个人学习，禁止商用。";
         }
     }

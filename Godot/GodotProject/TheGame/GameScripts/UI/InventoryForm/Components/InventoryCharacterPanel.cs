@@ -42,7 +42,7 @@ namespace GameLogic.UI.Widgets
         /// <summary>
         /// 玩家请求卸下当前穿戴部位，由窗口执行事务。
         /// </summary>
-        public event Action<EquipmentSlot> UnequipRequested;
+        public event Action<EEquipmentSlot> UnequipRequested;
 
         /// <summary>
         /// 穿戴槽直接向所属面板提交卸装请求。
@@ -108,7 +108,7 @@ namespace GameLogic.UI.Widgets
             BindSlot(m_ArmorSlot, profile.Armor);
             BindSlot(m_AccessorySlot, profile.Accessory);
             BindSlot(m_TreasureSlot, profile.Treasure);
-            m_Preview.ApplyAppearance(profile.Weapon?.EquipmentId ?? EquipmentId.None, profile.Armor?.EquipmentId ?? EquipmentId.None);
+            m_Preview.ApplyAppearance(profile.Weapon?.EquipmentId ?? EEquipmentId.None, profile.Armor?.EquipmentId ?? EEquipmentId.None);
         }
 
         /// <summary>
@@ -138,7 +138,7 @@ namespace GameLogic.UI.Widgets
         /// <param name="instanceId">当前槽的装备实例编号。</param>
         private void OnWeaponClicked(Guid instanceId)
         {
-            UnequipRequested?.Invoke(EquipmentSlot.Weapon);
+            UnequipRequested?.Invoke(EEquipmentSlot.Weapon);
         }
 
         /// <summary>
@@ -147,7 +147,7 @@ namespace GameLogic.UI.Widgets
         /// <param name="instanceId">当前槽的装备实例编号。</param>
         private void OnArmorClicked(Guid instanceId)
         {
-            UnequipRequested?.Invoke(EquipmentSlot.Armor);
+            UnequipRequested?.Invoke(EEquipmentSlot.Armor);
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace GameLogic.UI.Widgets
         /// <param name="instanceId">当前槽的装备实例编号。</param>
         private void OnAccessoryClicked(Guid instanceId)
         {
-            UnequipRequested?.Invoke(EquipmentSlot.Accessory);
+            UnequipRequested?.Invoke(EEquipmentSlot.Accessory);
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace GameLogic.UI.Widgets
         /// <param name="instanceId">当前槽的装备实例编号。</param>
         private void OnTreasureClicked(Guid instanceId)
         {
-            UnequipRequested?.Invoke(EquipmentSlot.Treasure);
+            UnequipRequested?.Invoke(EEquipmentSlot.Treasure);
         }
     }
 }

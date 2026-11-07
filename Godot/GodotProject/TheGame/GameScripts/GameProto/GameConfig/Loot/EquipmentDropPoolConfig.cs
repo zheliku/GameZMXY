@@ -16,7 +16,7 @@ public sealed partial class EquipmentDropPoolConfig : Luban.BeanBase
 {
     public EquipmentDropPoolConfig(ByteBuf _buf) 
     {
-        Id = (Loot.EquipmentDropPoolId)_buf.ReadInt();
+        Id = (Loot.EEquipmentDropPoolId)_buf.ReadInt();
         NameCn = _buf.ReadString();
         {int n0 = _buf.ReadSize(); Entries = new System.Collections.Generic.List<Loot.EquipmentDropEntry>(n0);for(var i0 = 0 ; i0 < n0 ; i0++) { Loot.EquipmentDropEntry _e0;  _e0 = global::GameConfig.Loot.EquipmentDropEntry.DeserializeEquipmentDropEntry(_buf); Entries.Add(_e0);}}
     }
@@ -29,7 +29,7 @@ public sealed partial class EquipmentDropPoolConfig : Luban.BeanBase
     /// <summary>
     /// 掉落池编号
     /// </summary>
-    public readonly Loot.EquipmentDropPoolId Id;
+    public readonly Loot.EEquipmentDropPoolId Id;
     /// <summary>
     /// 名称
     /// </summary>

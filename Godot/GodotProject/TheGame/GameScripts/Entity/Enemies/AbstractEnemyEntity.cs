@@ -40,7 +40,7 @@ namespace GameLogic.Enemies
 
         [Export] private EnemyPerceptionNode m_Perception; // 本场景唯一的发现、交战与巡逻空间配置。
 
-        [Export] private EntityId m_EnemyEntityId; // 场景声明实体种类，与基础怪物配置一一对应。
+        [Export] private EEntityId m_EnemyEntityId; // 场景声明实体种类，与基础怪物配置一一对应。
 
         /// <summary>
         /// 本次显示的击败经验；具体敌人在初始化时应用自身守关规则。
@@ -105,7 +105,7 @@ namespace GameLogic.Enemies
         /// <summary>
         /// 特殊敌人按自身奖励规则选择的装备池；为空时使用基础配置。
         /// </summary>
-        protected virtual EquipmentDropPoolId? EquipmentDropPoolIdOverride
+        protected virtual EEquipmentDropPoolId? EquipmentDropPoolIdOverride
         {
             get
             {
@@ -152,7 +152,7 @@ namespace GameLogic.Enemies
         }
 
         /// <inheritdoc />
-        protected override EntityId EntityType
+        protected override EEntityId EntityType
         {
             get
             {
@@ -172,11 +172,11 @@ namespace GameLogic.Enemies
         }
 
         /// <inheritdoc />
-        public override CombatSide Side
+        public override ECombatSide Side
         {
             get
             {
-                return CombatSide.Enemy;
+                return ECombatSide.Enemy;
             }
         }
 
@@ -719,7 +719,7 @@ namespace GameLogic.Enemies
                 ResourcesCollectionConstant.Effects_monster_hit_feedback, this)
                 ?? throw new InvalidOperationException("怪物命中闪光未登记到节点池。");
             m_HitFeedback.Add(feedback);
-            bool tangseng = data.Source.CasterType == EntityId.Tangseng;
+            bool tangseng = data.Source.CasterType == EEntityId.Tangseng;
             feedback.ShowHit(tangseng, ToLocal(HurtBox.GetGlobalBounds().GetCenter()), ReleaseHitFeedback);
             if (Dead)
             {
@@ -1039,5 +1039,5 @@ namespace GameLogic.Enemies
     /// <param name="ContinueEncounterAsync">交接到后继形态，沿用本次配方名额及会话所有权；普通怪物不使用。</param>
     public readonly record struct EnemySpawn(Vector2 Position,
         Action<Exception> SpawnFailed = null,
-        Func<int, EntityId, EnemySpawn, Task> ContinueEncounterAsync = null);
+        Func<int, EEntityId, EnemySpawn, Task> ContinueEncounterAsync = null);
 }

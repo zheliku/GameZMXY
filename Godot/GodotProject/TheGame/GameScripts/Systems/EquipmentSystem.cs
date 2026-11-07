@@ -25,7 +25,7 @@ namespace GameLogic.Equipment
         /// <param name="random">返回 [0,1) 的随机采样器。</param>
         /// <returns>以后查看、拾取和保存均复用的不可变实例。</returns>
         /// <exception cref="ArgumentNullException">采样器为空。</exception>
-        public EquipmentData Roll(Guid instanceId, EquipmentId equipmentId, Func<float> random)
+        public EquipmentData Roll(Guid instanceId, EEquipmentId equipmentId, Func<float> random)
         {
             ArgumentNullException.ThrowIfNull(random);
             var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(equipmentId);
@@ -61,7 +61,7 @@ namespace GameLogic.Equipment
             }
 
             var definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
-            if (definition.Owner != EquipmentOwner.Universal && (int)definition.Owner != profile.ActiveHeroId)
+            if (definition.Owner != EEquipmentOwner.Universal && (int)definition.Owner != profile.ActiveHeroId)
             {
                 return false;
             }
@@ -73,10 +73,10 @@ namespace GameLogic.Equipment
 
             profile.Slots.Value = definition.Slot switch
             {
-                EquipmentSlot.Weapon => profile.Slots.Value with { Weapon = item },
-                EquipmentSlot.Armor => profile.Slots.Value with { Armor = item },
-                EquipmentSlot.Accessory => profile.Slots.Value with { Accessory = item },
-                EquipmentSlot.Treasure => profile.Slots.Value with { Treasure = item },
+                EEquipmentSlot.Weapon => profile.Slots.Value with { Weapon = item },
+                EEquipmentSlot.Armor => profile.Slots.Value with { Armor = item },
+                EEquipmentSlot.Accessory => profile.Slots.Value with { Accessory = item },
+                EEquipmentSlot.Treasure => profile.Slots.Value with { Treasure = item },
                 _ => throw new ArgumentOutOfRangeException(nameof(definition.Slot))
             };
             return true;
@@ -87,7 +87,7 @@ namespace GameLogic.Equipment
         /// </summary>
         /// <param name="slot">要卸下的部位。</param>
         /// <returns>实际卸下时为 true。</returns>
-        public bool TryUnequip(EquipmentSlot slot)
+        public bool TryUnequip(EEquipmentSlot slot)
         {
             var profile = this.GetModel<ProfileModel>();
             var item = profile.GetEquippedItem(slot);
@@ -98,10 +98,10 @@ namespace GameLogic.Equipment
 
             profile.Slots.Value = slot switch
             {
-                EquipmentSlot.Weapon => profile.Slots.Value with { Weapon = null },
-                EquipmentSlot.Armor => profile.Slots.Value with { Armor = null },
-                EquipmentSlot.Accessory => profile.Slots.Value with { Accessory = null },
-                EquipmentSlot.Treasure => profile.Slots.Value with { Treasure = null },
+                EEquipmentSlot.Weapon => profile.Slots.Value with { Weapon = null },
+                EEquipmentSlot.Armor => profile.Slots.Value with { Armor = null },
+                EEquipmentSlot.Accessory => profile.Slots.Value with { Accessory = null },
+                EEquipmentSlot.Treasure => profile.Slots.Value with { Treasure = null },
                 _ => throw new ArgumentOutOfRangeException(nameof(slot))
             };
             return true;
@@ -141,7 +141,7 @@ namespace GameLogic.Equipment
         /// </summary>
         /// <param name="quality">要出售的品质。</param>
         /// <returns>本次实际出售件数；没有匹配物或无法入账时为零。</returns>
-        public int SellByQuality(EquipmentQuality quality)
+        public int SellByQuality(EEquipmentQuality quality)
         {
             var profile = this.GetModel<ProfileModel>();
             if (!Enum.IsDefined(quality))

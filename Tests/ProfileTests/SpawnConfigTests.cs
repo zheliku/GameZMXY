@@ -60,7 +60,7 @@ namespace GameLogic.Profile.Tests
             Assert.Equal(sounds.Select(sound => sound.Id).OrderBy(id => id), sounds.Select(sound => sound.Id));
             Assert.All(sounds, sound =>
             {
-                Assert.Equal(sound.Id, (int)Enum.Parse<GameConfig.Sound.SoundId>(sound.Key));
+                Assert.Equal(sound.Id, (int)Enum.Parse<GameConfig.Sound.ESoundId>(sound.Key));
                 if (sound.Group == "Music")
                 {
                     Assert.InRange(sound.Id, 1000, 1999);
@@ -83,19 +83,19 @@ namespace GameLogic.Profile.Tests
         public void AttackIdsEncodeOwnerActionAndStage()
         {
             var tables = LoadTables();
-            Assert.All(tables.TbAttackConfig.DataList.Where(hit => hit.OwnerId != GameConfig.Entity.EntityId.None), hit =>
+            Assert.All(tables.TbAttackConfig.DataList.Where(hit => hit.OwnerId != GameConfig.Entity.EEntityId.None), hit =>
             {
                 Assert.True(TestTables.ConfigIds.IsAttackIdForOwner(hit.Id, hit.OwnerId));
             });
-            Assert.Equal(1011, (int)GameConfig.Skills.SkillHitId.RisingDragon);
+            Assert.Equal(1011, (int)GameConfig.Skills.ESkillHitId.RisingDragon);
             Assert.Equal(new[] { 1051, 1052, 1053 }, new[] {
-                (int)GameConfig.Skills.SkillHitId.FireDemonCombo,
-                (int)GameConfig.Skills.SkillHitId.FireDemonDescent,
-                (int)GameConfig.Skills.SkillHitId.FireDemonLanding });
-            Assert.Equal(2051, (int)GameConfig.Skills.SkillHitId.WaterDemonPillar);
-            Assert.Equal(2052, (int)GameConfig.Skills.SkillHitId.WaterDemonFall);
-            Assert.Equal(5, new ConfigurationModel(tables).GetAttacks(GameConfig.Entity.EntityId.Wukong).Count);
-            Assert.Single(new ConfigurationModel(tables).GetAttacks(GameConfig.Entity.EntityId.Tangseng));
+                (int)GameConfig.Skills.ESkillHitId.FireDemonCombo,
+                (int)GameConfig.Skills.ESkillHitId.FireDemonDescent,
+                (int)GameConfig.Skills.ESkillHitId.FireDemonLanding });
+            Assert.Equal(2051, (int)GameConfig.Skills.ESkillHitId.WaterDemonPillar);
+            Assert.Equal(2052, (int)GameConfig.Skills.ESkillHitId.WaterDemonFall);
+            Assert.Equal(5, new ConfigurationModel(tables).GetAttacks(GameConfig.Entity.EEntityId.Wukong).Count);
+            Assert.Single(new ConfigurationModel(tables).GetAttacks(GameConfig.Entity.EEntityId.Tangseng));
         }
 
         /// <summary>
@@ -104,14 +104,14 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void DropPoolIdsEncodeQualityOrBossVariant()
         {
-            Assert.Equal(EquipmentDropPoolId.Rough, TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EquipmentQuality.Rough));
-            Assert.Equal(EquipmentDropPoolId.Common, TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EquipmentQuality.Common));
-            Assert.Equal(EquipmentDropPoolId.Excellent, TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EquipmentQuality.Excellent));
-            Assert.Equal(EquipmentDropPoolId.Fine, TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EquipmentQuality.Fine));
-            Assert.Equal(EquipmentDropPoolId.GarudaCave, TestTables.ConfigIds.GetBossEquipmentDropPoolId(EntityId.PengDemonKing));
-            Assert.Equal(EquipmentDropPoolId.DragonKing, TestTables.ConfigIds.GetBossEquipmentDropPoolId(EntityId.DragonKing));
-            Assert.Equal(EquipmentDropPoolId.DragonKingHigh, TestTables.ConfigIds.GetBossEquipmentDropPoolId(EntityId.DragonKing, 1));
-            Assert.Equal(EquipmentDropPoolId.EastSeaBanner, TestTables.ConfigIds.GetBossEquipmentDropPoolId(EntityId.DragonKing, 2));
+            Assert.Equal(EEquipmentDropPoolId.Rough, TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EEquipmentQuality.Rough));
+            Assert.Equal(EEquipmentDropPoolId.Common, TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EEquipmentQuality.Common));
+            Assert.Equal(EEquipmentDropPoolId.Excellent, TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EEquipmentQuality.Excellent));
+            Assert.Equal(EEquipmentDropPoolId.Fine, TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EEquipmentQuality.Fine));
+            Assert.Equal(EEquipmentDropPoolId.GarudaCave, TestTables.ConfigIds.GetBossEquipmentDropPoolId(EEntityId.PengDemonKing));
+            Assert.Equal(EEquipmentDropPoolId.DragonKing, TestTables.ConfigIds.GetBossEquipmentDropPoolId(EEntityId.DragonKing));
+            Assert.Equal(EEquipmentDropPoolId.DragonKingHigh, TestTables.ConfigIds.GetBossEquipmentDropPoolId(EEntityId.DragonKing, 1));
+            Assert.Equal(EEquipmentDropPoolId.EastSeaBanner, TestTables.ConfigIds.GetBossEquipmentDropPoolId(EEntityId.DragonKing, 2));
         }
 
         /// <summary>
@@ -120,17 +120,17 @@ namespace GameLogic.Profile.Tests
         [Fact]
         public void EncodedIdsKeepPublishedValues()
         {
-            Assert.Equal(1001, TestTables.ConfigIds.GetAttackId(EntityId.Wukong, 0));
-            Assert.Equal(1053, TestTables.ConfigIds.GetAttackId(EntityId.Wukong, 5, 3));
-            Assert.Equal(2052, TestTables.ConfigIds.GetAttackId(EntityId.Tangseng, 5, 2));
-            Assert.Equal(100006022, TestTables.ConfigIds.GetAttackId(EntityId.SharkDemonKing, 2, 2));
-            Assert.Equal(100006032, TestTables.ConfigIds.GetAttackId(EntityId.SharkDemonKing, 3, 2));
-            Assert.Equal(10011012, TestTables.ConfigIds.GetAttackId(EntityId.SharkSpawn, 1, 2));
-            Assert.Equal(100003032, TestTables.ConfigIds.GetAttackId(EntityId.LionCamelKing, 3, 2));
+            Assert.Equal(1001, TestTables.ConfigIds.GetAttackId(EEntityId.Wukong, 0));
+            Assert.Equal(1053, TestTables.ConfigIds.GetAttackId(EEntityId.Wukong, 5, 3));
+            Assert.Equal(2052, TestTables.ConfigIds.GetAttackId(EEntityId.Tangseng, 5, 2));
+            Assert.Equal(100006022, TestTables.ConfigIds.GetAttackId(EEntityId.SharkDemonKing, 2, 2));
+            Assert.Equal(100006032, TestTables.ConfigIds.GetAttackId(EEntityId.SharkDemonKing, 3, 2));
+            Assert.Equal(10011012, TestTables.ConfigIds.GetAttackId(EEntityId.SharkSpawn, 1, 2));
+            Assert.Equal(100003032, TestTables.ConfigIds.GetAttackId(EEntityId.LionCamelKing, 3, 2));
             Assert.Equal(900004001, TestTables.ConfigIds.GetEnvironmentAttackId(4, 1));
-            Assert.Equal(1000, (int)TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EquipmentQuality.Rough));
-            Assert.Equal(1300, (int)TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EquipmentQuality.Fine));
-            Assert.Equal(10001002, (int)TestTables.ConfigIds.GetBossEquipmentDropPoolId(EntityId.DragonKing, 2));
+            Assert.Equal(1000, (int)TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EEquipmentQuality.Rough));
+            Assert.Equal(1300, (int)TestTables.ConfigIds.GetCommonEquipmentDropPoolId(EEquipmentQuality.Fine));
+            Assert.Equal(10001002, (int)TestTables.ConfigIds.GetBossEquipmentDropPoolId(EEntityId.DragonKing, 2));
         }
 
         /// <summary>
@@ -139,11 +139,11 @@ namespace GameLogic.Profile.Tests
         /// <param name="attackId">错误的攻击主键。</param>
         /// <param name="ownerId">声明的所属身份。</param>
         [Theory]
-        [InlineData(1000, EntityId.Wukong)]
-        [InlineData(2011, EntityId.Wukong)]
-        [InlineData(1011, EntityId.None)]
-        [InlineData(900004001, EntityId.Wukong)]
-        public void RejectsAttackIdsOutsideOwnerEncoding(int attackId, EntityId ownerId)
+        [InlineData(1000, EEntityId.Wukong)]
+        [InlineData(2011, EEntityId.Wukong)]
+        [InlineData(1011, EEntityId.None)]
+        [InlineData(900004001, EEntityId.Wukong)]
+        public void RejectsAttackIdsOutsideOwnerEncoding(int attackId, EEntityId ownerId)
         {
             Tables tables = LoadTables();
             var attack = tables.TbAttackConfig.Get(1011);
@@ -171,9 +171,9 @@ namespace GameLogic.Profile.Tests
         [InlineData(200000, false, false, false)]
         public void EntityRangesRemainDisjoint(int id, bool hero, bool monster, bool boss)
         {
-            Assert.Equal(hero, TestTables.ConfigIds.IsHero((EntityId)id));
-            Assert.Equal(monster, TestTables.ConfigIds.IsMonster((EntityId)id));
-            Assert.Equal(boss, TestTables.ConfigIds.IsBoss((EntityId)id));
+            Assert.Equal(hero, TestTables.ConfigIds.IsHero((EEntityId)id));
+            Assert.Equal(monster, TestTables.ConfigIds.IsMonster((EEntityId)id));
+            Assert.Equal(boss, TestTables.ConfigIds.IsBoss((EEntityId)id));
         }
 
         /// <summary>
@@ -184,7 +184,7 @@ namespace GameLogic.Profile.Tests
         {
             Tables tables = LoadTables();
             typeof(GameConfig.Enemy.EnemyConfig).GetField("EntityId")
-                .SetValue(tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.DemonMonkey), GameConfig.Entity.EntityId.Gorilla);
+                .SetValue(tables.TbEnemyConfig.Get((int)GameConfig.Entity.EEntityId.DemonMonkey), GameConfig.Entity.EEntityId.Gorilla);
             Assert.Contains("只有一条基础配置", Assert.Throws<InvalidOperationException>(() => TestTables.CreateConfigurationScope(tables)).Message);
         }
 
