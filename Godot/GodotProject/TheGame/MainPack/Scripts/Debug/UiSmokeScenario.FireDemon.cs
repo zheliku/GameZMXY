@@ -122,7 +122,7 @@ public sealed partial class UiSmokeScenario
             // 只排除随机闪避和致死干扰，保留真实重力、硬直、位移、动画和判定。
             heroSystem.SetSource(source,
                 [AttributeModifier.Flat(AttributeType.MaxMp, 1000), AttributeModifier.Flat(AttributeType.Htarget, 1)]);
-            flow.GetSystem<ProfileSystem>().AddSoul(4000);
+            flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 4000);
             skills.Learn(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.FireDemonSlash);
             hero.SetPhysicsProcess(true);
             foreach (int ticks in new[] { 60, 120 })
@@ -262,7 +262,7 @@ public sealed partial class UiSmokeScenario
         try
         {
             heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxMp, 1000)]);
-            flow.GetSystem<ProfileSystem>().AddSoul(4000);
+            flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 4000);
             skills.Learn(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.FireDemonSlash);
             hero.SetPhysicsProcess(true);
             foreach (int ticks in new[] { 60, 120 })

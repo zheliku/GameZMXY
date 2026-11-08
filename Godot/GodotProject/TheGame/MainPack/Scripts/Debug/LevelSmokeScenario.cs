@@ -105,7 +105,7 @@ public sealed class LevelSmokeScenario
             [GameLogic.Battle.Attributes.AttributeModifier.Flat(GameConfig.Attributes.AttributeType.MaxHp, 100000)]);
         heroSystem.Heal(int.MaxValue);
         _startExperience = _flow.GetModel<ProfileModel>().GetProgress(_flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience;
-        _startSoul = _flow.GetModel<ProfileModel>().Soul.Value;
+        _startSoul = _flow.GetModel<ProfileModel>().GetSoul(_flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
         _camera = SmokeInspection.Scene(level).GetNode<LevelCameraNode>("Camera2D");
         _gates = SmokeInspection.Scene(level).GetNode<LevelGatesNode>("World/StageGates");
         _lastCenter = _camera.GlobalPosition.X;
@@ -412,7 +412,7 @@ public sealed class LevelSmokeScenario
                 minimumSoul += monster.Config.SoulCount.X * monster.SoulPerOrb;
                 maximumSoul += monster.Config.SoulCount.Y * monster.SoulPerOrb;
             }
-            _expectedSoul = _flow.GetModel<ProfileModel>().Soul.Value;
+            _expectedSoul = _flow.GetModel<ProfileModel>().GetSoul(_flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
             int gainedSoul = _expectedSoul - _startSoul;
             if (gainedSoul < minimumSoul || gainedSoul > maximumSoul)
             {
@@ -707,7 +707,7 @@ public sealed class LevelSmokeScenario
         }
 
         if (_reload.IsFaulted || _reload.Result.Data.Heroes.Single(x => x.HeroId == _reload.Result.Data.Heroes[0].HeroId).TotalExperience != _expectedTotalExperience ||
-                    _reload.Result.Data.Soul != _expectedSoul ||
+                    _reload.Result.Data.Heroes[0].Soul != _expectedSoul ||
                     _reload.Result.Data.HighestClearedLevelId < _levelId)
         {
             Fail("返回地图后重新读取存档，经验或灵魂与通关收益不一致");
@@ -716,7 +716,7 @@ public sealed class LevelSmokeScenario
         {
             if (_levelId == 10)
             {
-                EquipmentData item = _flow.GetModel<ProfileModel>().EquipmentDatas.SingleOrDefault(data =>
+                EquipmentData item = _flow.GetModel<ProfileModel>().GetBag(_flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).SingleOrDefault(data =>
                     data.EquipmentId == GameConfig.Equipment.EquipmentId.DiamondSnare);
                 EquipmentSaveData saved = _reload.Result.Data.EquipmentItems.SingleOrDefault(data => data.InstanceId == item?.InstanceId);
                 if (item == null || saved == null || saved.EquipmentId != item.EquipmentId || saved.Attributes != item.Attributes)

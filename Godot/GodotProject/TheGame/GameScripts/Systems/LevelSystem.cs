@@ -119,20 +119,22 @@ public sealed class LevelSystem : AbstractSystem
     /// <summary>
     /// 实际拾取时将装备加入本槽背包；结局后拒绝领取，满包不消耗地面物品。
     /// </summary>
+    /// <param name="heroId">本次拾取收益所属的英雄编号。</param>
     /// <param name="data">掉落时已抽定属性的装备实例。</param>
     /// <returns>是否完成领取。</returns>
-    public bool TryCollectEquipment(EquipmentData data)
+    public bool TryCollectEquipment(int heroId, EquipmentData data)
     {
         return LevelModel.SessionActive && LevelModel.Outcome.Value == LevelOutcome.Running
-                            && this.GetSystem<ProfileSystem>().TryCollectEquipment(data);
+                            && this.GetSystem<ProfileSystem>().TryCollectEquipment(heroId, data);
     }
 
     /// <summary>
     /// 接触地面恢复品时执行其配置效果；满值仍消耗，未开始、死亡及结局后拒绝。
     /// </summary>
+    /// <param name="heroId">本次拾取收益所属的英雄编号。</param>
     /// <param name="id">恢复品定义。</param>
     /// <returns>本次已消费恢复品时为真，场景据此回收节点并播放反馈。</returns>
-    public bool TryCollectPickup(PickupId id)
+    public bool TryCollectPickup(int heroId, PickupId id)
     {
         if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
             this.GetModel<HeroModel>().IsDepleted)
@@ -165,8 +167,9 @@ public sealed class LevelSystem : AbstractSystem
     /// <summary>
     /// 本关球体接触后发放收益；场景只确认接触和实例所有权，不执行奖励规则。
     /// </summary>
+    /// <param name="heroId">本次拾取收益所属的英雄编号。</param>
     /// <param name="reward">球体在生成时确定的收益，接触时发放并钳制上限。</param>
-    public void CollectLoot(LootReward reward)
+    public void CollectLoot(int heroId, LootReward reward)
     {
         if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
             this.GetModel<HeroModel>().IsDepleted)
@@ -177,7 +180,7 @@ public sealed class LevelSystem : AbstractSystem
         switch (reward.Kind)
         {
             case LootKind.Soul:
-                this.GetSystem<ProfileSystem>().AddSoul(reward.Amount);
+                this.GetSystem<ProfileSystem>().AddSoul(heroId, reward.Amount);
                 break;
             case LootKind.Musou:
                 this.GetSystem<HeroSystem>().AddWsFromPickup(reward.Amount);

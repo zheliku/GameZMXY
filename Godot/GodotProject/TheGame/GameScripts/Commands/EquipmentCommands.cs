@@ -44,8 +44,9 @@ public sealed class UnequipEquipmentCommand(int heroId, EquipmentSlot slot) : Ab
 /// <summary>
 /// 玩家请求出售一件装备；实例归属与售价规则由装备系统校验。
 /// </summary>
+/// <param name="heroId">本次出售的资产所属英雄编号。</param>
 /// <param name = "instanceId">本次明确选择的背包实例。</param>
-public sealed class SellEquipmentCommand(Guid instanceId) : AbstractCommand<bool>
+public sealed class SellEquipmentCommand(int heroId, Guid instanceId) : AbstractCommand<bool>
 {
     /// <inheritdoc/>
     protected override bool OnExecute()
@@ -54,15 +55,16 @@ public sealed class SellEquipmentCommand(Guid instanceId) : AbstractCommand<bool
         return level is
         {
             SessionActive: true
-        } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TrySell(instanceId);
+        } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TrySell(heroId, instanceId);
     }
 }
 
 /// <summary>
 /// 玩家确认按品质批量出售；结束后的会话不接受交易。
 /// </summary>
+/// <param name="heroId">本次出售的资产所属英雄编号。</param>
 /// <param name = "quality">确认出售的品质，不包含已穿戴装备。</param>
-public sealed class SellEquipmentByQualityCommand(EquipmentQuality quality) : AbstractCommand<int>
+public sealed class SellEquipmentByQualityCommand(int heroId, EquipmentQuality quality) : AbstractCommand<int>
 {
     /// <inheritdoc/>
     protected override int OnExecute()
@@ -71,6 +73,6 @@ public sealed class SellEquipmentByQualityCommand(EquipmentQuality quality) : Ab
         return level is
         {
             SessionActive: true
-        } && level.Outcome.Value == LevelOutcome.Running ? this.GetSystem<EquipmentSystem>().SellByQuality(quality) : 0;
+        } && level.Outcome.Value == LevelOutcome.Running ? this.GetSystem<EquipmentSystem>().SellByQuality(heroId, quality) : 0;
     }
 }

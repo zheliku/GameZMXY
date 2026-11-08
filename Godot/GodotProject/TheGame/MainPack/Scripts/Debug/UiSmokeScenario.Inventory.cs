@@ -32,11 +32,11 @@ public sealed partial class UiSmokeScenario
     /// <returns>全部背包检查完成的任务。</returns>
     private async Task CheckInventoryAsync(BattleForm battleForm, AbstractHeroEntity hero, ProcedureOwner flow, LevelViewController level)
     {
-        EquipmentData[] originalEquipment = flow.GetModel<ProfileModel>().EquipmentDatas.ToArray();
+        EquipmentData[] originalEquipment = flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).ToArray();
         EquippedItems originalSlots = flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
         foreach (EquipmentConfig definition in ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList)
         {
-            flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), definition.Id, () => .37f));
+            flow.GetSystem<ProfileSystem>().TryCollectEquipment(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), definition.Id, () => .37f));
         }
 
         PushInventoryKey(true);
@@ -60,12 +60,12 @@ public sealed partial class UiSmokeScenario
         Check(weaponBackground != armorBackground && !weaponBackground.GetShaderParameter("occupied").AsBool() &&
             !armorBackground.GetShaderParameter("occupied").AsBool(), "空穿戴槽题签未恢复，或两个槽共用可变材质");
         Check(Math.Abs(SmokeInspection.Model(level).ElapsedSeconds - elapsed) < .001, "背包暂停计入关卡时间");
-        int originalSoul = flow.GetModel<ProfileModel>().Soul.Value;
-        flow.GetSystem<ProfileSystem>().AddSoul(17);
+        int originalSoul = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
+        flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 17);
         Check(form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text == (originalSoul + 17).ToString(), "背包未响应钱包变化");
         await WaitUntilAsync(() => !GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().GetNode<Label>("SaveFeedback/m_SaveFeedback").Visible,
             "保存成功提示在背包暂停时没有结束", 5000);
-        int tooltipIndex = flow.GetModel<ProfileModel>().EquipmentDatas.ToList().FindIndex(data => data.EquipmentId == EquipmentId.CommonPineStaff);
+        int tooltipIndex = flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).ToList().FindIndex(data => data.EquipmentId == EquipmentId.CommonPineStaff);
         EquipmentCell cell = form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid").GetChild<EquipmentCell>(tooltipIndex);
         using (Control tooltip = cell._MakeCustomTooltip(cell.TooltipText))
         {
@@ -86,7 +86,7 @@ public sealed partial class UiSmokeScenario
         foreach (EquipmentId id in new[] { EquipmentId.DiamondSnare, EquipmentId.EastSeaBanner })
         {
             EquipmentData previousTreasure = flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Treasure;
-            EquipmentData newTreasure = flow.GetModel<ProfileModel>().EquipmentDatas.Single(value => value.EquipmentId == id);
+            EquipmentData newTreasure = flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Single(value => value.EquipmentId == id);
             int previousPower = flow.GetModel<HeroModel>().Power.Value;
             ClickBagEquipment(form, flow, id);
             Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Treasure?.EquipmentId == id &&
@@ -159,12 +159,12 @@ public sealed partial class UiSmokeScenario
         // Freeze only the visual fixture while capturing; the desktop pointer
         // can move independently of the injected viewport mouse event.
         actions.SetProcess(false);
-        Guid saleId = flow.GetModel<ProfileModel>().EquipmentDatas.First(x => x.EquipmentId == EquipmentId.RoughPineStaff).InstanceId;
+        Guid saleId = flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).First(x => x.EquipmentId == EquipmentId.RoughPineStaff).InstanceId;
         await CaptureCombatAsync("inventory_actions");
-        int saleSoul = flow.GetModel<ProfileModel>().Soul.Value;
+        int saleSoul = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
         actions.GetNode<TextureButton>("Panel/Sell").EmitSignal(BaseButton.SignalName.Pressed);
-        Check(flow.GetModel<ProfileModel>().Soul.Value == saleSoul + 10 &&
-            flow.GetModel<ProfileModel>().EquipmentDatas.All(x => x.InstanceId != saleId), "菜单出售没有按配置入账并移除装备");
+        Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == saleSoul + 10 &&
+            flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).All(x => x.InstanceId != saleId), "菜单出售没有按配置入账并移除装备");
         await CaptureCombatAsync("inventory_wearing");
         foreach (string path in new[] { "m_WeaponSlot", "m_ArmorSlot" })
         {
@@ -330,13 +330,13 @@ public sealed partial class UiSmokeScenario
         form.GetNode<PopupMenu>("Window/BagPanel/Footer/m_SellQuality/m_QualityOptions")
             .EmitSignal(PopupMenu.SignalName.IdPressed, (long)EquipmentQuality.Rough);
         Check(form.GetNode<Control>("m_SaleConfirmation").Visible, "关窗夹具没有打开出售确认");
-        EquipmentData[] beforeCloseItems = flow.GetModel<ProfileModel>().EquipmentDatas.ToArray();
+        EquipmentData[] beforeCloseItems = flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).ToArray();
         PushInventoryKey(true);
         PushInventoryKey(false);
         await WaitFramesAsync(2);
         Check(!GF.Base.IsGamePaused && !form.Visible, "关闭背包没有恢复战斗");
         string closedValue = form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text;
-        flow.GetModel<ProfileModel>().RestoreSoul(originalSoul);
+        flow.GetModel<ProfileModel>().RestoreSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), originalSoul);
         Check(form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text == closedValue, "关闭后背包仍订阅钱包");
         battleForm.GetNode<TextureButton>("MenuPanel/m_InventoryButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => form.Visible, "背包未复用原窗口");
@@ -345,7 +345,7 @@ public sealed partial class UiSmokeScenario
         Check(form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text == originalSoul.ToString(), "重新打开未拉取当前钱包");
         form.GetNode<Button>("m_SaleConfirmation/Center/Panel/Content/Actions/m_SaleConfirm").EmitSignal(BaseButton.SignalName.Pressed);
         Check(!form.GetNode<Control>("m_SaleConfirmation").Visible &&
-            flow.GetModel<ProfileModel>().EquipmentDatas.SequenceEqual(beforeCloseItems) && flow.GetModel<ProfileModel>().Soul.Value == originalSoul,
+            flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).SequenceEqual(beforeCloseItems) && flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == originalSoul,
             "窗口复用残留出售确认或提交了旧交易");
         form.GetNode<TextureButton>("Window/Header/m_Close").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitFramesAsync(2);
@@ -373,7 +373,7 @@ public sealed partial class UiSmokeScenario
         }
         // 穿戴与背包一起还原，不能把本夹具的法宝加成带入后续裸身成长验证。
         flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value = originalSlots;
-        flow.GetModel<ProfileModel>().RestoreItems(originalEquipment);
+        flow.GetModel<ProfileModel>().RestoreItems(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), originalEquipment);
         GD.Print("SMOKE-UI: inventory actual attributes, 25 cells, live soul, pause, animated preview, key remap/echo, unsubscribe and reuse passed");
     }
 
@@ -385,7 +385,7 @@ public sealed partial class UiSmokeScenario
     /// <param name="id">要点击的装备定义。</param>
     private static void ClickBagEquipment(InventoryForm form, ProcedureOwner flow, EquipmentId id)
     {
-        int index = flow.GetModel<ProfileModel>().EquipmentDatas.ToList().FindIndex(x => x.EquipmentId == id);
+        int index = flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).ToList().FindIndex(x => x.EquipmentId == id);
         Check(index >= 0, "受测装备不在背包中");
         // 新关装备超过一页后仍从真实分类、翻页按钮选择，不能把全包索引当格子索引。
         form.GetNode<Control>("Window/BagPanel/m_Tabs").GetChild<TextureButton>(0)
@@ -513,11 +513,11 @@ public sealed partial class UiSmokeScenario
     private async Task CheckBagNavigationAsync(InventoryForm form, ProcedureOwner flow)
     {
         ProfileModel inventory = flow.GetModel<ProfileModel>();
-        EquipmentData[] before = inventory.EquipmentDatas.ToArray();
-        int soul = flow.GetModel<ProfileModel>().Soul.Value;
+        EquipmentData[] before = inventory.GetBag(inventory.HeroOf(PlayerSlot.P1)).ToArray();
+        int soul = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
         EquipmentData[] items = Enumerable.Range(0, 75).Select(i => flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(),
             i % 3 == 0 ? EquipmentId.CommonPineStaff : EquipmentId.RoughPilgrimStaff, () => .37f)).ToArray();
-        inventory.RestoreItems(items);
+        inventory.RestoreItems(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), items);
         GridContainer grid = form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid");
         Control tabs = form.GetNode<Control>("Window/BagPanel/m_Tabs");
         TextureButton previous = form.GetNode<TextureButton>("Window/BagPanel/Footer/Pages/m_PreviousPage");
@@ -545,7 +545,7 @@ public sealed partial class UiSmokeScenario
         EquipmentActionsMenu actions = form.GetNode<EquipmentActionsMenu>("m_Actions");
         Check(actions.Visible, "第三页装备没有打开操作菜单");
         actions.GetNode<TextureButton>("Panel/Sell").EmitSignal(BaseButton.SignalName.Pressed);
-        Check(inventory.EquipmentDatas.All(x => x.InstanceId != items[50].InstanceId) && flow.GetModel<ProfileModel>().Soul.Value == soul + 10,
+        Check(inventory.GetBag(inventory.HeroOf(PlayerSlot.P1)).All(x => x.InstanceId != items[50].InstanceId) && flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soul + 10,
             "第三页出售选择了第一页同位置装备");
         previous.EmitSignal(BaseButton.SignalName.Pressed);
         previous.EmitSignal(BaseButton.SignalName.Pressed);
@@ -579,7 +579,7 @@ public sealed partial class UiSmokeScenario
         Button confirm = confirmation.GetNode<Button>("Center/Panel/Content/Actions/m_SaleConfirm");
         Check(confirmation.Visible && !popup.Visible && summary.Text.Contains("粗糙") &&
             summary.Text.Contains("49 件") && summary.Text.Contains("490 灵魂") && cancel.HasFocus() &&
-            inventory.EquipmentDatas.Count == 74 && flow.GetModel<ProfileModel>().Soul.Value == soul + 10,
+            inventory.GetBag(inventory.HeroOf(PlayerSlot.P1)).Count == 74 && flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soul + 10,
             "选中品质直接出售、确认摘要错误或默认焦点不是取消");
         await WaitFramesAsync(2);
         PushMouseClick(next);
@@ -595,7 +595,7 @@ public sealed partial class UiSmokeScenario
         await WaitFramesAsync(3);
         cancel.EmitSignal(BaseButton.SignalName.Pressed);
         confirm.EmitSignal(BaseButton.SignalName.Pressed);
-        Check(!confirmation.Visible && inventory.EquipmentDatas.Count == 74 && flow.GetModel<ProfileModel>().Soul.Value == soul + 10,
+        Check(!confirmation.Visible && inventory.GetBag(inventory.HeroOf(PlayerSlot.P1)).Count == 74 && flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soul + 10,
             "取消交易后仍可提交旧确认");
         sale.EmitSignal(BaseButton.SignalName.Pressed);
         popup.EmitSignal(PopupMenu.SignalName.IdPressed, (long)EquipmentQuality.Rough);
@@ -604,26 +604,26 @@ public sealed partial class UiSmokeScenario
             form.GetViewport().PushInput(escape, true);
         }
 
-        Check(!confirmation.Visible && form.Visible && inventory.EquipmentDatas.Count == 74, "Esc 未取消交易或关闭了整个背包");
+        Check(!confirmation.Visible && form.Visible && inventory.GetBag(inventory.HeroOf(PlayerSlot.P1)).Count == 74, "Esc 未取消交易或关闭了整个背包");
         sale.EmitSignal(BaseButton.SignalName.Pressed);
         popup.EmitSignal(PopupMenu.SignalName.IdPressed, (long)EquipmentQuality.Rough);
-        flow.GetSystem<ProfileSystem>().AddSoul(1);
+        flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 1);
         confirm.EmitSignal(BaseButton.SignalName.Pressed);
-        Check(!confirmation.Visible && inventory.EquipmentDatas.Count == 74 && flow.GetModel<ProfileModel>().Soul.Value == soul + 11,
+        Check(!confirmation.Visible && inventory.GetBag(inventory.HeroOf(PlayerSlot.P1)).Count == 74 && flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soul + 11,
             "数据变化后旧确认仍能出售装备");
-        flow.GetModel<ProfileModel>().RestoreSoul(soul + 10);
+        flow.GetModel<ProfileModel>().RestoreSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), soul + 10);
         sale.EmitSignal(BaseButton.SignalName.Pressed);
         popup.EmitSignal(PopupMenu.SignalName.IdPressed, (long)EquipmentQuality.Rough);
         await WaitFramesAsync(2);
         PushMouseClick(confirm);
         await WaitFramesAsync(2);
-        Check(inventory.EquipmentDatas.SequenceEqual(items.Where(x => x.EquipmentId == EquipmentId.CommonPineStaff)) &&
-            flow.GetModel<ProfileModel>().Soul.Value == soul + 500 && !popup.Visible && !confirmation.Visible,
+        Check(inventory.GetBag(inventory.HeroOf(PlayerSlot.P1)).SequenceEqual(items.Where(x => x.EquipmentId == EquipmentId.CommonPineStaff)) &&
+            flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soul + 500 && !popup.Visible && !confirmation.Visible,
             "品质出售未跨页提交完整交易或未关闭菜单");
         confirm.EmitSignal(BaseButton.SignalName.Pressed);
-        Check(flow.GetModel<ProfileModel>().Soul.Value == soul + 500 && inventory.EquipmentDatas.Count == 25, "重复确认重复入账");
-        inventory.RestoreItems(before);
-        flow.GetModel<ProfileModel>().RestoreSoul(soul);
+        Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soul + 500 && inventory.GetBag(inventory.HeroOf(PlayerSlot.P1)).Count == 25, "重复确认重复入账");
+        inventory.RestoreItems(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), before);
+        flow.GetModel<ProfileModel>().RestoreSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), soul);
         GD.Print("SMOKE-UI: four tabs, 75 slots, three-page bounds; quality sale confirmation, cancel/Esc, modal input, stale/duplicate rejection and bulk transaction passed");
     }
 

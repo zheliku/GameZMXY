@@ -47,7 +47,7 @@ public sealed partial class UiSmokeScenario
             SpawnGround(level, hero.HurtBox.GetGlobalBounds().GetCenter(), null, item);
             GroundItemNode pickup = ground.Single();
             CheckGroundShape(pickup);
-            await WaitUntilAsync(() => profile.EquipmentDatas.Any(value => value.InstanceId == item.InstanceId),
+            await WaitUntilAsync(() => profile.GetBag(profile.HeroOf(PlayerSlot.P1)).Any(value => value.InstanceId == item.InstanceId),
                 $"{definition.NameCn}未通过真实接触拾取");
             pickup._PhysicsProcess(.81);
             items.Add(item);
@@ -103,7 +103,7 @@ public sealed partial class UiSmokeScenario
         ProfileModel profile = flow.GetModel<ProfileModel>();
         EquipmentData weapon = profile.GetSlots(profile.HeroOf(PlayerSlot.P1)).Value.Weapon;
         EquipmentData armor = profile.GetSlots(profile.HeroOf(PlayerSlot.P1)).Value.Armor;
-        EquipmentData[] items = profile.EquipmentDatas.ToArray();
+        EquipmentData[] items = profile.GetBag(profile.HeroOf(PlayerSlot.P1)).ToArray();
         int expectedHp = flow.GetModel<HeroModel>().MaxHp.Value;
         BaseButton settingsButton = CurrentBattleForm().GetNode<BaseButton>("MenuPanel/m_SettingsButton");
         settingsButton.EmitSignal(BaseButton.SignalName.Pressed);
@@ -133,7 +133,7 @@ public sealed partial class UiSmokeScenario
         ProfileModel restored = flow.GetModel<ProfileModel>();
         Check(!ReferenceEquals(profile, restored) && restored.HeroOf(PlayerSlot.P1) == 2 && FindHero() is TangsengEntity &&
             restored.GetSlots(restored.HeroOf(PlayerSlot.P1)).Value.Weapon?.InstanceId == weapon.InstanceId && restored.GetSlots(restored.HeroOf(PlayerSlot.P1)).Value.Armor?.InstanceId == armor.InstanceId &&
-            items.All(item => restored.EquipmentDatas.Any(value => value.InstanceId == item.InstanceId && value.Attributes == item.Attributes)) &&
+            items.All(item => restored.GetBag(restored.HeroOf(PlayerSlot.P1)).Any(value => value.InstanceId == item.InstanceId && value.Attributes == item.Attributes)) &&
             flow.GetModel<GameLogic.Skills.SkillModel>().GetPassiveLevels(2).Values.All(value => value == 5) &&
             flow.GetModel<GameLogic.Skills.SkillModel>().GetLearnedSkills(2).Count == 5 &&
             flow.GetModel<HeroModel>().MaxHp.Value == expectedHp,

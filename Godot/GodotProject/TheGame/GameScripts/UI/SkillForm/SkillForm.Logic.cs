@@ -86,7 +86,7 @@ public partial class SkillForm : IController
             _heroId = profile.HeroOf(PlayerSlot.P1);
             _levelModel = levelModel;
             _isBound = true;
-            this.GetModel<ProfileModel>().Soul.RegisterWithInitValue(RefreshSoul);
+            this.GetModel<ProfileModel>().GetSoul(_heroId).RegisterWithInitValue(RefreshSoul);
             this.GetModel<SkillModel>().GetLearnedSkills(_heroId).RegisterWithInitValue(RefreshLearnedSkills);
             this.GetModel<SkillModel>().GetPassiveLevels(_heroId).RegisterWithInitValue(RefreshPassiveLevels);
             levelModel?.Outcome.Register(OnLevelEnded);
@@ -207,7 +207,7 @@ public partial class SkillForm : IController
         {
             _isBound = false;
             ProfileModel profile = this.GetModel<ProfileModel>();
-            profile.Soul.UnRegister(RefreshSoul);
+            profile.GetSoul(_heroId).UnRegister(RefreshSoul);
             this.GetModel<SkillModel>().GetLearnedSkills(_heroId).UnRegister(RefreshLearnedSkills);
             this.GetModel<SkillModel>().GetPassiveLevels(_heroId).UnRegister(RefreshPassiveLevels);
             _levelModel?.Outcome.UnRegister(OnLevelEnded);

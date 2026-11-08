@@ -24,10 +24,10 @@ public sealed class PassiveSkillTests
         scope.GetSystem<HeroSystem>().Damage(30);
         Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(1, PassiveId.Vitality));
         Assert.Equal((280, 250, 10000, 1), (scope.Hero.MaxHp.Value, scope.Hero.Hp.Value,
-            scope.Profile.Soul.Value, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));
+            scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));
         Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(1, PassiveId.Vitality));
         Assert.Equal((380, 350, 0, 2), (scope.Hero.MaxHp.Value, scope.Hero.Hp.Value,
-            scope.Profile.Soul.Value, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));
+            scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));
     }
 
     /// <summary>
@@ -39,19 +39,19 @@ public sealed class PassiveSkillTests
         var scope = new TestGameScope([(1, 0)], 4999, 25);
         SkillSystem skill = scope.GetSystem<SkillSystem>();
         Assert.Equal(SkillLearnResult.InsufficientSoul, skill.Upgrade(1, PassiveId.Vitality));
-        Assert.Equal((4999, 0, 80), (scope.Profile.Soul.Value,
+        Assert.Equal((4999, 0, 80), (scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value,
             scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality], scope.Hero.MaxHp.Value));
-        scope.GetSystem<ProfileSystem>().AddSoul(75000 - 4999);
+        scope.GetSystem<ProfileSystem>().AddSoul(1, 75000 - 4999);
         for (int i = 0; i < 5; i++)
         {
             Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(1, PassiveId.Vitality));
         }
 
-        Assert.Equal((0, 680, 5), (scope.Profile.Soul.Value, scope.Hero.MaxHp.Value,
+        Assert.Equal((0, 680, 5), (scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value, scope.Hero.MaxHp.Value,
                     scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));
         Assert.Equal(SkillLearnResult.AlreadyLearned, skill.Upgrade(1, PassiveId.Vitality));
         Assert.Equal(SkillLearnResult.Unavailable, skill.Upgrade(1, (PassiveId)999));
-        Assert.Equal(0, scope.Profile.Soul.Value);
+        Assert.Equal(0, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ public sealed class PassiveSkillTests
         Assert.Equal(0, checkpoint.Heroes[0].PassiveLevels[PassiveId.Vitality]);
         scope.RestoreCheckpoint(checkpoint);
         Assert.Same(levels, scope.Skills.GetPassiveLevels(1));
-        Assert.Equal((0, 15000, 80), (levels[PassiveId.Vitality], scope.Profile.Soul.Value, scope.Hero.MaxHp.Value));
+        Assert.Equal((0, 15000, 80), (levels[PassiveId.Vitality], scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value, scope.Hero.MaxHp.Value));
     }
 
     /// <summary>
@@ -108,6 +108,6 @@ public sealed class PassiveSkillTests
         Assert.Throws<ArgumentException>(() => scope.RestoreCheckpoint(data));
         Assert.Equal(0, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]);
         Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(1, PassiveId.Vitality)));
-        Assert.Equal(10000, scope.Profile.Soul.Value);
+        Assert.Equal(10000, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
     }
 }

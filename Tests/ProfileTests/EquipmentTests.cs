@@ -22,6 +22,119 @@ namespace GameLogic.Profile.Tests;
 public sealed class EquipmentTests
 {
     /// <summary>
+    /// 背包容量和出售收益各归本人，同一实例不能跨背包重复领取或被另一人使用。
+    /// </summary>
+    [Fact]
+    public void PersonalAssets_KeepCapacityOwnershipAndSaleProceedsSeparate()
+    {
+        var scope = new TestGameScope([(2, 0), (1, 0)], 10, 1);
+        ProfileSystem profile = scope.GetSystem<ProfileSystem>();
+        EquipmentSystem equipment = scope.GetSystem<EquipmentSystem>();
+        EquipmentData first = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
+        EquipmentData second = equipment.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimStaff, () => 0);
+
+        // 各有一个格子；全档唯一归属检查不能退化为只检查接收方。
+        Assert.True(profile.TryCollectEquipment(2, first));
+        Assert.False(profile.TryCollectEquipment(1, first));
+        Assert.True(profile.TryCollectEquipment(1, second));
+        Assert.False(equipment.TryEquip(1, first.InstanceId));
+        Assert.False(equipment.TrySell(1, first.InstanceId));
+        Assert.NotSame(scope.Profile.GetBag(1), scope.Profile.GetBag(2));
+        Assert.True(scope.Profile.HasEquipment(EquipmentId.EarthFiendRing));
+        Assert.False(profile.TryCollectEquipment(2, equipment.Roll(Guid.NewGuid(), EquipmentId.DiamondSnare, () => 0)));
+
+        Assert.True(equipment.TrySell(2, first.InstanceId));
+        Assert.Equal(10 + TestTables.Tables.TbEquipmentConfig.Get(first.EquipmentId).SellPrice,
+            scope.Profile.GetSoul(2).Value);
+        Assert.Equal(10, scope.Profile.GetSoul(1).Value);
+        Assert.Same(second, Assert.Single(scope.Profile.GetBag(1)));
+        Assert.Empty(scope.Profile.GetBag(2));
+    }
+
+    /// <summary>
+    /// 归属编号可排序保存，但两人的钱包、穿戴和原始背包格子顺序都必须往返保留。
+    /// </summary>
+    [Fact]
+    public void PersonalAssets_RoundTripSortedReferencesWithoutReorderingBags()
+    {
+        var scope = new TestGameScope([(2, 0), (1, 0)], 10, 3);
+        ProfileSystem profile = scope.GetSystem<ProfileSystem>();
+        EquipmentSystem equipment = scope.GetSystem<EquipmentSystem>();
+        EquipmentData high = equipment.Roll(Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"), EquipmentId.CommonPineStaff, () => .5f);
+        EquipmentData low = equipment.Roll(Guid.Parse("00000000-0000-0000-0000-000000000001"), EquipmentId.CommonPineStaff, () => .2f);
+        EquipmentData ring = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
+        Assert.True(profile.TryCollectEquipment(2, high));
+        Assert.True(profile.TryCollectEquipment(2, low));
+        Assert.True(profile.TryCollectEquipment(1, ring));
+        Assert.True(equipment.TryEquip(1, ring.InstanceId));
+        profile.AddSoul(2, 27);
+        profile.AddSoul(1, 1);
+
+        // 故意让格子顺序与编号顺序相反，验证归属列表不成为显示排序。
+        GameData snapshot = scope.CaptureSaveData();
+        Assert.Equal(new[] { low.InstanceId, high.InstanceId }, snapshot.Heroes[0].BagInstanceIds);
+        Assert.Empty(snapshot.Heroes[1].BagInstanceIds);
+        GameData loaded = JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(snapshot));
+        var restored = TestGameScope.FromSaveData(loaded, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 3);
+        Assert.Equal(new[] { 2, 1 }, restored.Profile.HeroIds);
+        Assert.Equal(new[] { high.InstanceId, low.InstanceId }, restored.Profile.GetBag(2).Select(item => item.InstanceId));
+        Assert.Equal(high.Attributes, restored.Profile.GetBag(2)[0].Attributes);
+        Assert.Equal(37, restored.Profile.GetSoul(2).Value);
+        Assert.Equal(11, restored.Profile.GetSoul(1).Value);
+        Assert.Empty(restored.Profile.GetBag(1));
+        Assert.Equal(ring.InstanceId, restored.Profile.GetSlots(1).Value.Accessory.InstanceId);
+    }
+
+    /// <summary>
+    /// 实例引用必须存在、唯一、完整且不超过各人的容量。
+    /// </summary>
+    /// <param name="invalidCase">模拟的外部存档错误类型。</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void PersonalAssets_RejectInvalidInstanceOwnership(int invalidCase)
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 0, 2);
+        EquipmentSystem equipment = scope.GetSystem<EquipmentSystem>();
+        ProfileSystem profile = scope.GetSystem<ProfileSystem>();
+        EquipmentData first = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
+        EquipmentData second = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
+        Assert.True(profile.TryCollectEquipment(1, first));
+        Assert.True(profile.TryCollectEquipment(2, second));
+        GameData snapshot = scope.CaptureSaveData();
+        int capacity = 2;
+        switch (invalidCase)
+        {
+            case 0:
+                snapshot.Heroes[0].BagInstanceIds.Add(first.InstanceId);
+                break;
+            case 1:
+                snapshot.Heroes[1].BagInstanceIds.Add(first.InstanceId);
+                break;
+            case 2:
+                snapshot.Heroes[0].AccessoryInstanceId = first.InstanceId;
+                break;
+            case 3:
+                snapshot.Heroes[0].BagInstanceIds[0] = Guid.NewGuid();
+                break;
+            case 4:
+                snapshot.Heroes[0].BagInstanceIds.Clear();
+                break;
+            case 5:
+                snapshot.Heroes[1].BagInstanceIds.Clear();
+                snapshot.Heroes[0].BagInstanceIds.Add(second.InstanceId);
+                capacity = 1;
+                break;
+        }
+
+        Assert.Throws<ArgumentException>(() => GameLogic.Save.SaveDataUtility.ReadItems(snapshot, capacity));
+    }
+
+    /// <summary>
     /// 法宝作为独立部位穿戴，属性和实例引用均可保存、重建与卸下。
     /// </summary>
     /// <param name="id">当前可穿戴的法宝。</param>
@@ -34,7 +147,7 @@ public sealed class EquipmentTests
         EquipmentSystem system = CreateEquipmentSystem(scope);
         EquipmentData data = system.Roll(Guid.NewGuid(), id, () => .37f);
         Assert.Equal(EquipmentSlot.Treasure, TestTables.Tables.TbEquipmentConfig.Get(id).Slot);
-        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(data));
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, data));
         Assert.True(scope.Profile.HasEquipment(id));
         CombatantAttributes original = scope.Hero.CaptureCombatAttributes();
         Assert.True(system.TryEquip(1, data.InstanceId));
@@ -42,7 +155,7 @@ public sealed class EquipmentTests
         Assert.NotEqual(original, scope.Hero.CaptureCombatAttributes());
         GameData saved = JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(scope.CaptureSaveData()));
         var restored = TestGameScope.FromSaveData(saved, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
-        Assert.Empty(restored.Profile.EquipmentDatas);
+        Assert.Empty(restored.Profile.GetBag(restored.Profile.HeroOf(PlayerSlot.P1)));
         EquipmentData actual = restored.Profile.GetSlots(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Treasure;
         Assert.NotNull(actual);
         Assert.Equal(data.InstanceId, actual.InstanceId);
@@ -50,7 +163,7 @@ public sealed class EquipmentTests
         Assert.True(restored.Profile.HasEquipment(id));
         Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(1, EquipmentSlot.Treasure));
         Assert.Null(restored.Profile.GetSlots(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Treasure);
-        Assert.Single(restored.Profile.EquipmentDatas);
+        Assert.Single(restored.Profile.GetBag(restored.Profile.HeroOf(PlayerSlot.P1)));
     }
 
     /// <summary>
@@ -73,7 +186,7 @@ public sealed class EquipmentTests
         EquipmentSystem system = CreateEquipmentSystem(scope);
         ProfileSystem profileSystem = scope.GetSystem<ProfileSystem>();
         EquipmentData treasure = system.Roll(Guid.NewGuid(), treasureId, () => .37f);
-        Assert.True(profileSystem.TryCollectEquipment(treasure));
+        Assert.True(profileSystem.TryCollectEquipment(1, treasure));
         Assert.True(system.TryEquip(1, treasure.InstanceId));
         CombatantAttributes equippedAttributes = scope.Hero.CaptureCombatAttributes();
 
@@ -81,7 +194,7 @@ public sealed class EquipmentTests
         foreach (float sample in new[] { 0f, .99f })
         {
             EquipmentData item = system.Roll(Guid.NewGuid(), equipmentId, () => sample);
-            Assert.True(profileSystem.TryCollectEquipment(item));
+            Assert.True(profileSystem.TryCollectEquipment(1, item));
             Assert.True(system.TryEquip(1, item.InstanceId));
             EquippedItems slots = scope.Profile.GetSlots(1).Value;
             Assert.Same(item, slot switch
@@ -105,7 +218,7 @@ public sealed class EquipmentTests
         var restored = TestGameScope.FromSaveData(saved, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
         Assert.Equal(treasure.InstanceId, restored.Profile.GetSlots(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Treasure.InstanceId);
         Assert.Equal(equippedAttributes, restored.Hero.CaptureCombatAttributes());
-        Assert.Equal(2, restored.Profile.EquipmentDatas.Count);
+        Assert.Equal(2, restored.Profile.GetBag(restored.Profile.HeroOf(PlayerSlot.P1)).Count);
     }
 
     /// <summary>
@@ -138,7 +251,7 @@ public sealed class EquipmentTests
         EquipmentSystem system = CreateEquipmentSystem(scope);
         int power = scope.Hero.Power.Value;
         EquipmentData item = system.Roll(Guid.NewGuid(), EquipmentId.RuyiGoldenStaff, () => 0);
-        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(item));
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, item));
         Assert.True(system.TryEquip(1, item.InstanceId));
         Assert.Equal((power + 120, .15f, 0f), (scope.Hero.Power.Value, scope.Hero.Miss.Value, scope.Hero.Crit.Value));
     }
@@ -157,7 +270,7 @@ public sealed class EquipmentTests
         Assert.Equal((80, -10, -2, .05f, .05f),
             (armor.Attributes.Power, armor.Attributes.Def, armor.Attributes.HpRegen,
                 armor.Attributes.Crit, armor.Attributes.Miss));
-        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(armor));
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, armor));
         Assert.True(system.TryEquip(1, armor.InstanceId));
         Assert.Equal((basePower + 80, Math.Max(0, baseDefense - 10), -2, .05f, .05f),
             (scope.Hero.Power.Value, scope.Hero.Def.Value, scope.Hero.HpRegen.Value,
@@ -192,7 +305,7 @@ public sealed class EquipmentTests
         EquipmentSystem firstSystem = CreateEquipmentSystem(first);
         EquipmentSystem secondSystem = CreateEquipmentSystem(second);
         EquipmentData weapon = firstSystem.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
-        first.GetSystem<ProfileSystem>().TryCollectEquipment(weapon);
+        first.GetSystem<ProfileSystem>().TryCollectEquipment(1, weapon);
         Assert.False(secondSystem.TryEquip(1, weapon.InstanceId));
         Assert.True(firstSystem.TryEquip(1, weapon.InstanceId));
         CombatantAttributes snapshot = first.Hero.CaptureCombatAttributes();
@@ -200,7 +313,7 @@ public sealed class EquipmentTests
         Assert.Null(second.Profile.GetSlots(second.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
         Assert.True(firstSystem.TryUnequip(1, EquipmentSlot.Weapon));
         Assert.Equal(first.Hero.Power.Value + weapon.Attributes.Power, snapshot.Power);
-        Assert.Empty(second.Profile.EquipmentDatas);
+        Assert.Empty(second.Profile.GetBag(second.Profile.HeroOf(PlayerSlot.P1)));
         Assert.Null(second.Profile.GetSlots(second.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
     }
 
@@ -213,43 +326,43 @@ public sealed class EquipmentTests
         TestGameScope playerModel = new([(1, 0)], 7, 75);
         EquipmentSystem equipmentSystem = CreateEquipmentSystem(playerModel);
         EquipmentData worn = equipmentSystem.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
-        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(worn);
+        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(1, worn);
         Assert.True(equipmentSystem.TryEquip(1, worn.InstanceId));
         for (int i = 0; i < 75; i++)
         {
-            playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(equipmentSystem.Roll(Guid.NewGuid(), i % 3 == 0
+            playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(1, equipmentSystem.Roll(Guid.NewGuid(), i % 3 == 0
                         ? EquipmentId.CommonPineStaff : EquipmentId.RoughPilgrimStaff, () => 0));
         }
 
-        EquipmentData[] retained = playerModel.Profile.EquipmentDatas.Where(x => x.EquipmentId == EquipmentId.CommonPineStaff).ToArray();
+        EquipmentData[] retained = playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1)).Where(x => x.EquipmentId == EquipmentId.CommonPineStaff).ToArray();
         int inventoryNotifications = 0;
         int walletNotifications = 0;
-        playerModel.Profile.EquipmentDatas.Register(_ => Observe());
-        playerModel.Profile.Soul.Register(_ =>
+        playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1)).Register(_ => Observe());
+        playerModel.Profile.GetSoul(playerModel.Profile.HeroOf(PlayerSlot.P1)).Register(_ =>
         {
             walletNotifications++;
             ObserveCommittedState();
         });
 
-        Assert.Equal(50, equipmentSystem.SellByQuality(EquipmentQuality.Rough));
+        Assert.Equal(50, equipmentSystem.SellByQuality(1, EquipmentQuality.Rough));
         Assert.Equal(1, inventoryNotifications);
         Assert.Equal(1, walletNotifications);
         Assert.Same(worn, playerModel.Profile.GetSlots(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
-        Assert.Equal(0, equipmentSystem.SellByQuality(EquipmentQuality.Rough));
-        Assert.Equal(0, equipmentSystem.SellByQuality(EquipmentQuality.Excellent));
-        Assert.Equal(0, equipmentSystem.SellByQuality((EquipmentQuality)99));
+        Assert.Equal(0, equipmentSystem.SellByQuality(1, EquipmentQuality.Rough));
+        Assert.Equal(0, equipmentSystem.SellByQuality(1, EquipmentQuality.Excellent));
+        Assert.Equal(0, equipmentSystem.SellByQuality(1, (EquipmentQuality)99));
         Assert.Equal(1, inventoryNotifications);
         Assert.Equal(1, walletNotifications);
 
         void Observe()
         {
             inventoryNotifications++;
-            Assert.Equal(retained, playerModel.Profile.EquipmentDatas);
+            Assert.Equal(retained, playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1)));
         }
         void ObserveCommittedState()
         {
-            Assert.Equal(retained, playerModel.Profile.EquipmentDatas);
-            Assert.Equal(507, playerModel.Profile.Soul.Value);
+            Assert.Equal(retained, playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1)));
+            Assert.Equal(507, playerModel.Profile.GetSoul(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value);
         }
     }
 
@@ -264,16 +377,16 @@ public sealed class EquipmentTests
         EquipmentSystem equipmentSystem = CreateEquipmentSystem(playerModel);
         for (int i = 0; i < 2; i++)
         {
-            playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(equipmentSystem.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0));
+            playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(1, equipmentSystem.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0));
         }
 
-        EquipmentData[] before = playerModel.Profile.EquipmentDatas.ToArray();
+        EquipmentData[] before = playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1)).ToArray();
         int notifications = 0;
-        playerModel.Profile.EquipmentDatas.Register(_ => notifications++);
-        playerModel.Profile.Soul.Register(_ => notifications++);
-        Assert.Equal(0, equipmentSystem.SellByQuality(EquipmentQuality.Rough));
-        Assert.Equal(before, playerModel.Profile.EquipmentDatas);
-        Assert.Equal(int.MaxValue - 15, playerModel.Profile.Soul.Value);
+        playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1)).Register(_ => notifications++);
+        playerModel.Profile.GetSoul(playerModel.Profile.HeroOf(PlayerSlot.P1)).Register(_ => notifications++);
+        Assert.Equal(0, equipmentSystem.SellByQuality(1, EquipmentQuality.Rough));
+        Assert.Equal(before, playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1)));
+        Assert.Equal(int.MaxValue - 15, playerModel.Profile.GetSoul(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Equal(0, notifications);
     }
 
@@ -287,22 +400,22 @@ public sealed class EquipmentTests
         EquipmentSystem equipmentSystem = CreateEquipmentSystem(playerModel);
         EquipmentData rough = equipmentSystem.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
         EquipmentData common = equipmentSystem.Roll(Guid.NewGuid(), EquipmentId.CommonPineStaff, () => 0);
-        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(rough);
-        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(common);
+        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(1, rough);
+        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(1, common);
         Assert.True(equipmentSystem.TryEquip(1, rough.InstanceId));
-        Assert.False(equipmentSystem.TrySell(rough.InstanceId));
-        Assert.True(equipmentSystem.TrySell(common.InstanceId));
-        Assert.Equal(20, playerModel.Profile.Soul.Value);
-        Assert.False(equipmentSystem.TrySell(common.InstanceId));
+        Assert.False(equipmentSystem.TrySell(1, rough.InstanceId));
+        Assert.True(equipmentSystem.TrySell(1, common.InstanceId));
+        Assert.Equal(20, playerModel.Profile.GetSoul(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value);
+        Assert.False(equipmentSystem.TrySell(1, common.InstanceId));
         Assert.True(equipmentSystem.TryUnequip(1, EquipmentSlot.Weapon));
-        playerModel.Profile.RestoreSoul(int.MaxValue - 9);
-        Assert.False(equipmentSystem.TrySell(rough.InstanceId));
-        Assert.Same(rough, Assert.Single(playerModel.Profile.EquipmentDatas));
-        Assert.Equal(int.MaxValue - 9, playerModel.Profile.Soul.Value);
-        playerModel.Profile.RestoreSoul(0);
-        Assert.True(equipmentSystem.TrySell(rough.InstanceId));
-        Assert.Equal(10, playerModel.Profile.Soul.Value);
-        Assert.Empty(playerModel.Profile.EquipmentDatas);
+        playerModel.Profile.RestoreSoul(1, int.MaxValue - 9);
+        Assert.False(equipmentSystem.TrySell(1, rough.InstanceId));
+        Assert.Same(rough, Assert.Single(playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1))));
+        Assert.Equal(int.MaxValue - 9, playerModel.Profile.GetSoul(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value);
+        playerModel.Profile.RestoreSoul(1, 0);
+        Assert.True(equipmentSystem.TrySell(1, rough.InstanceId));
+        Assert.Equal(10, playerModel.Profile.GetSoul(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value);
+        Assert.Empty(playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1)));
     }
 
     /// <summary>
@@ -389,11 +502,11 @@ public sealed class EquipmentTests
     {
         ProfileModel bag = new([(1, 0)], TestTables.Curve, 1);
         int changes = 0;
-        bag.EquipmentDatas.Register(_ => changes++);
+        bag.GetBag(bag.HeroOf(PlayerSlot.P1)).Register(_ => changes++);
         EquipmentData item = CreateEquipmentSystem().Roll(Guid.NewGuid(), EquipmentId.CommonPineStaff, () => .5f);
-        Assert.True(TestTables.ForProfile(bag).TryCollectEquipment(item));
-        Assert.False(TestTables.ForProfile(bag).TryCollectEquipment(item));
-        Assert.False(TestTables.ForProfile(bag).TryCollectEquipment(CreateEquipmentSystem().Roll(Guid.NewGuid(), EquipmentId.RoughCassock, () => 0)));
+        Assert.True(TestTables.ForProfile(bag).TryCollectEquipment(1, item));
+        Assert.False(TestTables.ForProfile(bag).TryCollectEquipment(1, item));
+        Assert.False(TestTables.ForProfile(bag).TryCollectEquipment(1, CreateEquipmentSystem().Roll(Guid.NewGuid(), EquipmentId.RoughCassock, () => 0)));
         var scope = new TestGameScope([(1, 0)], 0, 1);
         GameData malformed = scope.CaptureSaveData();
         var data = new GameLogic.Save.Data.EquipmentSaveData
@@ -405,8 +518,8 @@ public sealed class EquipmentTests
         malformed.EquipmentItems.Add(data);
         malformed.EquipmentItems.Add(data);
         Assert.Throws<ArgumentException>(() => scope.RestoreCheckpoint(malformed));
-        Assert.Empty(scope.Profile.EquipmentDatas);
-        Assert.Same(item, Assert.Single(bag.EquipmentDatas));
+        Assert.Empty(scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1)));
+        Assert.Same(item, Assert.Single(bag.GetBag(bag.HeroOf(PlayerSlot.P1))));
         Assert.Equal(1, changes);
     }
 
@@ -418,19 +531,19 @@ public sealed class EquipmentTests
     {
         TestGameScope playerModel = new(new[] { (1, 0) }, 0, 25);
         EquipmentData first = CreateEquipmentSystem().Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimClothes, () => .73f);
-        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(first);
+        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(1, first);
         GameData snapshot = playerModel.CaptureSaveData();
-        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(CreateEquipmentSystem().Roll(Guid.NewGuid(), EquipmentId.CommonPineStaff, () => .2f));
+        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(1, CreateEquipmentSystem().Roll(Guid.NewGuid(), EquipmentId.CommonPineStaff, () => .2f));
         var json = JsonConvert.SerializeObject(snapshot);
         var restored = TestGameScope.FromSaveData(JsonConvert.DeserializeObject<GameData>(json),
             TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
-        EquipmentData actual = Assert.Single(restored.Profile.EquipmentDatas);
+        EquipmentData actual = Assert.Single(restored.Profile.GetBag(restored.Profile.HeroOf(PlayerSlot.P1)));
         Assert.Equal(first.InstanceId, actual.InstanceId);
         Assert.Equal(first.Attributes, actual.Attributes);
         ProfileModel bag = playerModel.Profile;
         playerModel.RestoreCheckpoint(snapshot);
         Assert.Same(bag, playerModel.Profile);
-        Assert.Equal(first.InstanceId, Assert.Single(bag.EquipmentDatas).InstanceId);
+        Assert.Equal(first.InstanceId, Assert.Single(bag.GetBag(bag.HeroOf(PlayerSlot.P1))).InstanceId);
         snapshot.EquipmentItems[0].Attributes = first.Attributes with
         {
             MaxHp = 999
@@ -452,25 +565,25 @@ public sealed class EquipmentTests
         EquipmentSystem equipmentSystem = CreateEquipmentSystem(playerModel);
         EquipmentData rough = equipmentSystem.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
         EquipmentData common = equipmentSystem.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimStaff, () => .999999f);
-        Assert.True(playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(rough));
+        Assert.True(playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(1, rough));
         Assert.True(equipmentSystem.TryEquip(1, rough.InstanceId));
         Assert.Same(rough, playerModel.Profile.GetSlots(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
-        Assert.Empty(playerModel.Profile.EquipmentDatas);
-        Assert.True(playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(common));
+        Assert.Empty(playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1)));
+        Assert.True(playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(1, common));
         Assert.True(equipmentSystem.TryEquip(1, common.InstanceId));
         Assert.Same(common, playerModel.Profile.GetSlots(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
-        Assert.Same(rough, Assert.Single(playerModel.Profile.EquipmentDatas));
+        Assert.Same(rough, Assert.Single(playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1))));
         Assert.False(equipmentSystem.TryUnequip(1, EquipmentSlot.Weapon));
         Assert.Same(common, playerModel.Profile.GetSlots(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
         EquipmentData tang = equipmentSystem.Roll(Guid.NewGuid(), EquipmentId.RoughPineStaff, () => 0);
-        playerModel.Profile.RestoreItems([tang]);
+        playerModel.Profile.RestoreItems(1, [tang]);
         Assert.False(equipmentSystem.TryEquip(1, tang.InstanceId));
         Assert.Same(common, playerModel.Profile.GetSlots(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
-        Assert.Same(tang, Assert.Single(playerModel.Profile.EquipmentDatas));
-        playerModel.Profile.RestoreItems([]);
+        Assert.Same(tang, Assert.Single(playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1))));
+        playerModel.Profile.RestoreItems(1, []);
         Assert.True(equipmentSystem.TryUnequip(1, EquipmentSlot.Weapon));
         Assert.Null(playerModel.Profile.GetSlots(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
-        Assert.Same(common, Assert.Single(playerModel.Profile.EquipmentDatas));
+        Assert.Same(common, Assert.Single(playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1))));
     }
 
     /// <summary>
@@ -482,20 +595,20 @@ public sealed class EquipmentTests
         TestGameScope playerModel = new([(1, 0)], 0, 25);
         EquipmentSystem equipmentSystem = CreateEquipmentSystem(playerModel);
         EquipmentData armor = equipmentSystem.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimClothes, () => .5f);
-        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(armor);
+        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(1, armor);
         equipmentSystem.TryEquip(1, armor.InstanceId);
         GameData snapshot = playerModel.CaptureSaveData();
         var json = Newtonsoft.Json.Linq.JObject.FromObject(snapshot);
         var attrs = (Newtonsoft.Json.Linq.JObject)json["EquipmentItems"][0]["Attributes"];
         json["EquipmentItems"][0]["Attributes"] = new Newtonsoft.Json.Linq.JObject(attrs.Properties().Reverse());
         var restored = TestGameScope.FromSaveData(json.ToObject<GameData>(), TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
-        Assert.Empty(restored.Profile.EquipmentDatas);
+        Assert.Empty(restored.Profile.GetBag(restored.Profile.HeroOf(PlayerSlot.P1)));
         Assert.Equal(armor.Attributes, restored.Profile.GetSlots(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Armor.Attributes);
         Assert.Equal((30, 30, 3), (restored.Profile.GetSlots(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Armor.Attributes.MaxHp,
             restored.Profile.GetSlots(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Armor.Attributes.MaxMp, restored.Profile.GetSlots(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Armor.Attributes.Def));
         Assert.True(equipmentSystem.TryUnequip(1, EquipmentSlot.Armor));
         playerModel.RestoreCheckpoint(snapshot);
-        Assert.Empty(playerModel.Profile.EquipmentDatas);
+        Assert.Empty(playerModel.Profile.GetBag(playerModel.Profile.HeroOf(PlayerSlot.P1)));
         Assert.Equal(armor.InstanceId, playerModel.Profile.GetSlots(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value.Armor.InstanceId);
         CombatantAttributes frozen = playerModel.Hero.CaptureCombatAttributes();
         Assert.True(equipmentSystem.TryUnequip(1, EquipmentSlot.Armor));
@@ -511,7 +624,7 @@ public sealed class EquipmentTests
     {
         TestGameScope playerModel = new([(1, 0)], 0, 25);
         EquipmentData item = CreateEquipmentSystem().Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
-        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(item);
+        playerModel.GetSystem<ProfileSystem>().TryCollectEquipment(1, item);
         GameData data = playerModel.CaptureSaveData();
         data.Heroes[0].ArmorInstanceId = item.InstanceId;
         Assert.Throws<ArgumentException>(() => TestGameScope.FromSaveData(data, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));

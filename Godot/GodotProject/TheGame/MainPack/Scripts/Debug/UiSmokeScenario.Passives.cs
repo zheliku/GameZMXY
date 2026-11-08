@@ -31,7 +31,7 @@ public sealed partial class UiSmokeScenario
         HeroModel initial = flow.GetModel<HeroModel>();
         (int Hp, int Mp, float Crit, int HpRegen, int MpRegen) expected = (Hp: initial.MaxHp.Value + 600, Mp: initial.MaxMp.Value + 600,
             Crit: initial.Crit.Value + .06f, HpRegen: initial.HpRegen.Value + 6, MpRegen: initial.MpRegen.Value + 6);
-        profile.RestoreSoul(4999);
+        profile.RestoreSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 4999);
         battle.GetNode<TextureButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(form => form.Visible),
             "被动专项未打开技能窗口");
@@ -59,11 +59,11 @@ public sealed partial class UiSmokeScenario
         await CaptureCombatAsync("passive_upgrade_pressed");
         viewport.PushInput(new InputEventMouseButton { Position = pointer, GlobalPosition = pointer, ButtonIndex = MouseButton.Left, Pressed = false }, true);
         await WaitFramesAsync(3);
-        Check(profile.Soul.Value == 4999 && levels[PassiveId.Vitality] == 0 &&
+        Check(profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value == 4999 && levels[PassiveId.Vitality] == 0 &&
             GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single().Visible,
             "被动余额不足仍然扣费，或没有显示提示");
-        profile.RestoreSoul(375000);
-        int expectedSoul = profile.Soul.Value;
+        profile.RestoreSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 375000);
+        int expectedSoul = profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value;
         foreach (PassiveConfig definition in flow.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbPassiveConfig.DataList)
         {
             int row = (int)definition.PassiveId;
@@ -72,7 +72,7 @@ public sealed partial class UiSmokeScenario
             {
                 button.EmitSignal(BaseButton.SignalName.Pressed);
                 expectedSoul -= definitionLevel.LearnSoul;
-                Check(profile.Soul.Value == expectedSoul && levels[definition.PassiveId] == definitionLevel.Level,
+                Check(profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value == expectedSoul && levels[definition.PassiveId] == definitionLevel.Level,
                     $"被动{definition.PassiveId}/{definitionLevel.Level}费用或等级不符");
                 Check(form.GetNode<Label>($"{Rows}Passive{row}/Level").Text == definitionLevel.Level.ToString() &&
                     form.GetNode<Label>($"{Rows}Passive{row}/CurrentEffect").Text == definitionLevel.Description,
@@ -80,7 +80,7 @@ public sealed partial class UiSmokeScenario
             }
             Check(button.Disabled && !button.Visible, "被动满级后仍然显示升级按钮或可升级");
             button.EmitSignal(BaseButton.SignalName.Pressed);
-            Check(profile.Soul.Value == expectedSoul, "直接发送满级按钮信号仍然扣费");
+            Check(profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value == expectedSoul, "直接发送满级按钮信号仍然扣费");
         }
         HeroModel hero = flow.GetModel<HeroModel>();
         Check((hero.MaxHp.Value, hero.MaxMp.Value, hero.HpRegen.Value, hero.MpRegen.Value) ==

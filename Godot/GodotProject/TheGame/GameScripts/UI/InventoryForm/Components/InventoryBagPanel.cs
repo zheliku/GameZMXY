@@ -1,11 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using GameConfig.Equipment;
 using GameConfig.Sound;
 using GameLogic.Architecture;
 using GameLogic.Audio;
 using GameLogic.Equipment;
-using GameLogic.Profile;
 using Godot;
 using GodotGameFramework;
 
@@ -30,6 +30,10 @@ public partial class InventoryBagPanel : Control, IController
     private TextureButton[] _tabButtons; // 本面板的四个分类按钮。
     private EquipmentCell[] _cells; // 当前页的固定格子。
     private readonly EquipmentData[] _equipmentDatas = new EquipmentData[PageSize]; // 与当前页格子一一对应，关闭后清空。
+    private int _heroId; // 本周期显示背包的英雄编号，供出售查询使用。
+    private int _capacity; // 所属窗口传入的个人背包容量。
+    private int _soul; // 最近一次刷新时的个人余额，只用于显示和交互提示。
+    private IReadOnlyList<EquipmentData> _items; // 借用本人背包的只读视图，关闭时释放。
     private bool _isBound; // 窗口明确启用/清理本面板，关闭后不处理交互。
     private int _selectedTab; // 当前分类；零为装备。
     private int _pageIndex; // 当前分类内从零开始的页号。
@@ -88,16 +92,23 @@ public partial class InventoryBagPanel : Control, IController
     /// <summary>
     /// 更新只读显示数据；窗口打开时明确重置到装备第一页。
     /// </summary>
+    /// <param name="heroId">本窗口所属的参战英雄编号。</param>
+    /// <param name="capacity">该英雄的背包容量。</param>
+    /// <param name="items">该英雄背包的实时只读视图。</param>
+    /// <param name="soul">该英雄已经提交的灵魂余额。</param>
     /// <param name="resetPage">是否开始新的窗口周期。</param>
     /// <exception cref="InvalidOperationException">容量超过当前三页的显示能力。</exception>
-    public void Refresh(bool resetPage = false)
+    public void Refresh(int heroId, int capacity, IReadOnlyList<EquipmentData> items, int soul, bool resetPage = false)
     {
-        ProfileModel inventory = this.GetModel<ProfileModel>();
-        if (inventory.Capacity > PageSize * MaximumPages)
+        if (capacity > PageSize * MaximumPages)
         {
             throw new InvalidOperationException("背包容量超过当前三页界面的显示上限。");
         }
 
+        _heroId = heroId;
+        _capacity = capacity;
+        _items = items;
+        _soul = soul;
         _isBound = true;
         if (resetPage)
         {
@@ -114,6 +125,7 @@ public partial class InventoryBagPanel : Control, IController
     public void Clear()
     {
         _isBound = false;
+        _items = null;
         Array.Clear(_equipmentDatas);
         foreach (EquipmentCell cell in _cells)
         {
@@ -177,7 +189,7 @@ public partial class InventoryBagPanel : Control, IController
     private int PageCount()
     {
         return _selectedTab == 0
-        ? (this.GetModel<ProfileModel>().Capacity + PageSize - 1) / PageSize
+        ? (_capacity + PageSize - 1) / PageSize
         : 1;
     }
 
@@ -186,7 +198,7 @@ public partial class InventoryBagPanel : Control, IController
     /// </summary>
     private void RefreshView()
     {
-        BindableList<EquipmentData> items = _selectedTab == 0 ? this.GetModel<ProfileModel>().EquipmentDatas : null;
+        IReadOnlyList<EquipmentData> items = _selectedTab == 0 ? _items : null;
         for (int i = 0; i < _tabButtons.Length; i++)
         {
             _tabButtons[i].SetPressedNoSignal(i == _selectedTab);
@@ -203,7 +215,7 @@ public partial class InventoryBagPanel : Control, IController
         }
 
         _grid.Show();
-        _soulText.Text = this.GetModel<ProfileModel>().Soul.Value.ToString();
+        _soulText.Text = _soul.ToString();
         _pageNumber.Text = $"{_pageIndex + 1} / {PageCount()}";
         SetPageButton(_previousPage, _pageIndex > 0);
         SetPageButton(_nextPage, _pageIndex + 1 < PageCount());
@@ -261,10 +273,10 @@ public partial class InventoryBagPanel : Control, IController
         _qualityOptions.Clear();
         foreach (EquipmentQuality quality in Enum.GetValues<EquipmentQuality>())
         {
-            (int count, long price) = this.SendQuery(new EquipmentSaleSummaryQuery(quality));
+            (int count, long price) = this.SendQuery(new EquipmentSaleSummaryQuery(_heroId, quality));
             _qualityOptions.AddItem($"出售{quality.DisplayName()}装备（{count}）", (int)quality);
             int index = _qualityOptions.ItemCount - 1;
-            bool overflow = price > int.MaxValue - this.GetModel<ProfileModel>().Soul.Value;
+            bool overflow = price > int.MaxValue - _soul;
             _qualityOptions.SetItemDisabled(index, count == 0 || overflow);
         }
 
@@ -289,8 +301,8 @@ public partial class InventoryBagPanel : Control, IController
         }
 
         var quality = (EquipmentQuality)id;
-        (int count, long price) = this.SendQuery(new EquipmentSaleSummaryQuery(quality));
-        if (count == 0 || price > int.MaxValue - this.GetModel<ProfileModel>().Soul.Value)
+        (int count, long price) = this.SendQuery(new EquipmentSaleSummaryQuery(_heroId, quality));
+        if (count == 0 || price > int.MaxValue - _soul)
         {
             return;
         }

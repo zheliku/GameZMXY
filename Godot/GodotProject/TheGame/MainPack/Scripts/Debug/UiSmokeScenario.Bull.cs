@@ -9,6 +9,7 @@ using GameConfig.Constant;
 using GameConfig.Entity;
 using GameConfig.Equipment;
 using GameFramework.Fsm;
+using GameLogic;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Battle.Attributes;
@@ -384,14 +385,14 @@ public sealed partial class UiSmokeScenario
     private async Task CheckBullTreasureRewardAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         ProfileModel profile = flow.GetModel<ProfileModel>();
-        EquipmentData[] original = profile.EquipmentDatas.ToArray();
+        EquipmentData[] original = profile.GetBag(profile.HeroOf(PlayerSlot.P1)).ToArray();
         try
         {
             foreach (string scenario in new[] { "first", "duplicate", "full", "without-notice" })
             {
                 if (scenario == "without-notice")
                 {
-                    profile.EquipmentDatas.Clear();
+                    profile.GetBag(profile.HeroOf(PlayerSlot.P1)).Clear();
                     var notice = (SaveNoticeForm)GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_save_notice_form);
                     GF.UI.CloseUIForm(notice.SerialId);
                     await WaitFramesAsync(3);
@@ -400,14 +401,14 @@ public sealed partial class UiSmokeScenario
 
                 if (scenario == "full")
                 {
-                    profile.EquipmentDatas.Clear();
-                    while (profile.EquipmentDatas.Count < profile.Capacity)
+                    profile.GetBag(profile.HeroOf(PlayerSlot.P1)).Clear();
+                    while (profile.GetBag(profile.HeroOf(PlayerSlot.P1)).Count < profile.Capacity)
                     {
-                        flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(
+                        flow.GetSystem<ProfileSystem>().TryCollectEquipment(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), flow.GetSystem<EquipmentSystem>().Roll(
                                                 Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0));
                     }
                 }
-                int before = profile.EquipmentDatas.Count;
+                int before = profile.GetBag(profile.HeroOf(PlayerSlot.P1)).Count;
                 _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BullDemonHeart,
                     new EnemySpawn(new Vector2(1350, 300)));
                 var heart = (BullDemonHeartEntity)_monster;
@@ -419,8 +420,8 @@ public sealed partial class UiSmokeScenario
                 heart.SetPhysicsProcess(true);
                 await WaitUntilAsync(() => SmokeInspection.ReadField<IFsm<IEnemyBody>>(heart, "BodyFsm").CurrentState is BullDemonHeartDeathState,
                     "最终形态未进入实际死亡演出");
-                int treasures = profile.EquipmentDatas.Count(value => value.EquipmentId == EquipmentId.DiamondSnare);
-                Check(profile.EquipmentDatas.Count == before + (scenario is "first" or "without-notice" ? 1 : 0) &&
+                int treasures = profile.GetBag(profile.HeroOf(PlayerSlot.P1)).Count(value => value.EquipmentId == EquipmentId.DiamondSnare);
+                Check(profile.GetBag(profile.HeroOf(PlayerSlot.P1)).Count == before + (scenario is "first" or "without-notice" ? 1 : 0) &&
                     treasures == (scenario == "full" ? 0 : 1), "金钢琢重复赠送、满包丢弃或未直接入包：" + scenario);
                 if (scenario is "first" or "full")
                 {
@@ -452,7 +453,7 @@ public sealed partial class UiSmokeScenario
                 await GF.UI.OpenUIFormAsync<SaveNoticeForm>(UIFormId.SaveNoticeForm);
             }
 
-            profile.EquipmentDatas.ReplaceAll(original);
+            profile.GetBag(profile.HeroOf(PlayerSlot.P1)).ReplaceAll(original);
         }
     }
 }

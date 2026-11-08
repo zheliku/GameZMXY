@@ -176,7 +176,7 @@ internal sealed class TestGameScope : IArchitecture
         var utility = new SaveDataUtility();
         utility.Validate(data, definitions, capacity, TestTables.Tables.TbSkillConfig,
             TestTables.Tables.TbLevelConfig, TestTables.Tables.TbPassiveConfig);
-        var scope = new TestGameScope(data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), data.Soul, capacity);
+        var scope = new TestGameScope(data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), 0, capacity);
         scope.RestoreCheckpoint(data);
         return scope;
     }

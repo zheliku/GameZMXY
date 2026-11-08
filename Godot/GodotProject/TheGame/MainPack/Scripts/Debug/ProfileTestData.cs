@@ -29,13 +29,15 @@ internal static class ProfileTestData
         /// <summary>
         /// 设置夹具余额，保持背包和绑定身份。
         /// </summary>
+        /// <param name="heroId">本次设置数据的英雄编号。</param>
         /// <param name="soul">余额，负数按零处理。</param>
-        internal void RestoreSoul(int soul) => profile.Soul.Value = Math.Max(0, soul);
+        internal void RestoreSoul(int heroId, int soul) => profile.GetSoul(heroId).Value = Math.Max(0, soul);
 
         /// <summary>
         /// 直接设置本测试拥有的背包；非法存档通过正式回滚入口验证。
         /// </summary>
+        /// <param name="heroId">本次设置数据的英雄编号。</param>
         /// <param name="datas">装备集合。</param>
-        internal void RestoreItems(IEnumerable<EquipmentData> datas) => profile.EquipmentDatas.ReplaceAll(datas);
+        internal void RestoreItems(int heroId, IEnumerable<EquipmentData> datas) => profile.GetBag(heroId).ReplaceAll(datas);
     }
 }

@@ -30,7 +30,7 @@ internal sealed class BullDemonHeartDeathState : AbstractEnemyBodyState
         body.Velocity = Vector2.Zero;
         owner.BeginDeathPresentation();
         // 原版在退场开始时直接赠入背包；延迟的死亡事件仍留到两秒演出完成，不能提前清关。
-        EquipmentGrantResult reward = owner.GetSystem<ProfileSystem>().GrantUniqueEquipment(EquipmentId.DiamondSnare, GD.Randf);
+        EquipmentGrantResult reward = owner.GetSystem<ProfileSystem>().GrantUniqueEquipment(owner.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), EquipmentId.DiamondSnare, GD.Randf);
         if (reward != EquipmentGrantResult.AlreadyOwned)
         {
             GF.Event.Fire(owner, EquipmentRewardEventArgs.Create(EquipmentId.DiamondSnare,

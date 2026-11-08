@@ -1,6 +1,6 @@
 # 双人扩展实施计划
 
-状态：**A1-1～A1-8 已实现并完成验证，停在 A1 等待用户审查；A2 未开始。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、穿戴与学习接口显式传 HeroId，存档 v13；本局仍只有一个 `HeroModel`、一套输入与 HUD。`PlayerSlot` 用于席位换算，当前只装配 P1。2026-11-08 按用户授权同步规范、计划与文档引用；旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
+状态：**A1 已经用户接受；A2-1～A2-4 已实现并完成验证，停在 A2 等待用户审查；A3 未开始。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局仍只有一个 `HeroModel`、一套输入与 HUD。`PlayerSlot` 用于席位换算，当前只装配 P1。2026-11-08 按用户授权同步规范、计划与文档引用；旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
 
 官方依据见 [造一双人源码依据](OfficialReference.md#双人扩展的源码依据2026-11-07) 与 [造三本地双人规则](OfficialReference.md#造梦三本地双人规则2026-11-07)。项目规范以 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md) 为准，验证记录见 [Validation](Validation.md)。
 
@@ -13,7 +13,7 @@
 ## 1. 任务粒度与停止点
 
 - **大任务**（A1、A2、…）是一次交付单元。完成一个大任务后**必须停下**，输出交付说明并等待用户审查，不得自动进入下一个大任务。
-- **子任务**（A1-1、A1-2、…）是大任务内部的执行步骤，按编号顺序做。子任务之间不需要停下等审查，但每个子任务都要求本步骤结束时项目仍能 `dotnet build` 通过。**A1 的用户裁决例外：允许 A1-1～A1-7 保留本批接口迁移引起的编译错误，每步记录，A1-8 必须全部消除；其余子任务仍要求逐步构建通过。**
+- **子任务**（A1-1、A1-2、…）是大任务内部的执行步骤，按编号顺序做。子任务之间不需要停下等审查，但每个子任务都要求本步骤结束时项目仍能 `dotnet build` 通过。**用户裁决例外：允许 A1-1～A1-7 保留本批接口迁移引起的编译错误，每步记录，A1-8 必须全部消除；允许 A2-1～A2-3 保留本批迁移编译错误，逐步记录，A2-4 全部消除。** 其余子任务仍要求逐步构建通过。
 - 禁止合并大任务、禁止"顺手"实现下一个大任务的内容。
 
 ## 2. 遇到计划未覆盖的情况
@@ -151,25 +151,25 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 
 **单人假设的集中点：**
 
-| 位置                                                                                                                             | 现状                                             | 谁负责改  |
-| -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | --------- |
-| `ProfileModel.HeroIds` / `GetProgress(heroId)` / `GetSlots(heroId)`                                                        | A1 已移除单一出战身份与便捷视图，按有序阵容查询  | A1 已完成 |
-| `GameData.Heroes`                                                                                                              | A1 已移除单一身份字段，按席位顺序保存阵容（v13） | A1 已完成 |
-| `ProfileModel.Soul` / `EquipmentDatas` / `GameData.Soul`                                                                   | 全档共享钱包与背包                               | A2        |
-| `HeroModel` 全部字段                                                                                                           | 单个英雄的本局数值                               | B1        |
-| `HeroSystem.OnDeinit`                                                                                                          | A1 已按实际订阅编号退订；B1 再逐人保存委托       | A1 / B1   |
-| `SkillSystem._skillDefinitions`                                                                                                | 单份技能登记表                                   | B2        |
-| `AbstractHeroEntity.OnShow` 校验 `Attributes.HeroId != HeroId`                                                               | 依赖全局单一身份                                 | B1        |
-| `EnemyDiedEventArgs` 无致死者字段；`ProfileSystem.AddExperience` 给出战英雄                                                  | 经验无归属                                       | C2        |
-| `LootOrbNode.Tick(delta, target)` 单目标；`LevelViewController.Loot` 只认 `_player`                                        | 掉落无归属                                       | C3        |
-| `InputSystem` 动作名是 P1 常量；`LevelExitNode`/`BattleForm`/`InventoryForm`/`SkillForm`/`TangsengEntity` 等直接读键 | 单套键位                                         | C4        |
-| `LevelViewController._player` 单引用（相机、连击、出口、触发区、掉落、死亡、换装都读它）                                       | 单人                                             | D2        |
-| `LevelCameraNode._target` 单 `Node2D`                                                                                        | 单人取景                                         | D4        |
-| `LevelViewController._Process` 中 `HeroDeathPresentation.Completed` 直接判失败                                               | 一人死即失败                                     | D5        |
-| `TangsengEntity.ApplyHeavenlyDew` 只治疗自己                                                                                   | 无队友治疗                                       | D6        |
-| `DragonKingEntity.OnShow` 读 P1 的成长等级                                                                                     | 单人等级分档                                     | D7        |
-| `equipment_actions_menu.tscn` 的 `Panel/Gift` 按钮永久禁用（脚本无字段）                                                     | 无赠送                                           | E1        |
-| `SkillForm.SelectPage` 拒绝非出战英雄页签                                                                                      | 只能看自己                                       | E2        |
+| 位置                                                                                                                             | 现状                                            | 谁负责改  |
+| -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | --------- |
+| `ProfileModel.HeroIds` / `GetProgress(heroId)` / `GetSlots(heroId)`                                                        | A1 已移除单一出战身份与便捷视图，按有序阵容查询 | A1 已完成 |
+| `GameData.Heroes`                                                                                                              | A1 已按席位顺序保存阵容，A2 当前格式为 v14      | A1 已完成 |
+| `ProfileModel.GetSoul(heroId)` / `GetBag(heroId)` / `HeroSaveData`                                                         | 个人钱包与背包，实例池全档唯一                  | A2 已实现 |
+| `HeroModel` 全部字段                                                                                                           | 单个英雄的本局数值                              | B1        |
+| `HeroSystem.OnDeinit`                                                                                                          | A1 已按实际订阅编号退订；B1 再逐人保存委托      | A1 / B1   |
+| `SkillSystem._skillDefinitions`                                                                                                | 单份技能登记表                                  | B2        |
+| `AbstractHeroEntity.OnShow` 校验 `Attributes.HeroId != HeroId`                                                               | 依赖全局单一身份                                | B1        |
+| `EnemyDiedEventArgs` 无致死者字段；`ProfileSystem.AddExperience` 给出战英雄                                                  | 经验无归属                                      | C2        |
+| `LootOrbNode.Tick(delta, target)` 单目标；`LevelViewController.Loot` 只认 `_player`                                        | 掉落无归属                                      | C3        |
+| `InputSystem` 动作名是 P1 常量；`LevelExitNode`/`BattleForm`/`InventoryForm`/`SkillForm`/`TangsengEntity` 等直接读键 | 单套键位                                        | C4        |
+| `LevelViewController._player` 单引用（相机、连击、出口、触发区、掉落、死亡、换装都读它）                                       | 单人                                            | D2        |
+| `LevelCameraNode._target` 单 `Node2D`                                                                                        | 单人取景                                        | D4        |
+| `LevelViewController._Process` 中 `HeroDeathPresentation.Completed` 直接判失败                                               | 一人死即失败                                    | D5        |
+| `TangsengEntity.ApplyHeavenlyDew` 只治疗自己                                                                                   | 无队友治疗                                      | D6        |
+| `DragonKingEntity.OnShow` 读 P1 的成长等级                                                                                     | 单人等级分档                                    | D7        |
+| `equipment_actions_menu.tscn` 的 `Panel/Gift` 按钮永久禁用（脚本无字段）                                                     | 无赠送                                          | E1        |
+| `SkillForm.SelectPage` 拒绝非出战英雄页签                                                                                      | 只能看自己                                      | E2        |
 
 **其他必须知道的事实：**
 
@@ -195,8 +195,8 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 
 | 编号 | 大任务                           | 依赖   | 玩法行为变化       | 状态                     |
 | ---- | -------------------------------- | ------ | ------------------ | ------------------------ |
-| A1   | 阵容取代单一出战英雄（存档 v13） | —     | 无                 | 已实现并验证，待用户审查 |
-| A2   | 灵魂与背包归个人（存档 v14）     | A1     | 无                 | 未开始                   |
+| A1   | 阵容取代单一出战英雄（存档 v13） | —     | 无                 | 已接受，提交 d2c3d13     |
+| A2   | 灵魂与背包归个人（存档 v14）     | A1     | 无                 | 已实现并验证，待用户审查 |
 | A3   | 档案规则证据与存档格摘要         | A2     | 存档格文本         | 未开始                   |
 | B1   | `HeroModel` 按英雄承载本局状态 | A1     | 无                 | 未开始                   |
 | B2   | 技能登记与施放按英雄             | B1     | 无                 | 未开始                   |
@@ -264,7 +264,7 @@ public PlayerSlot SlotOf(int heroId)
 
 单一出战英雄编号成员，以及 `Progress`、`Level`、`TotalExperience`、`Experience`、`MaxExperience`、`Slots`、`Weapon`、`Armor`、`Accessory`、`Treasure`、`GetEquippedItem(EquipmentSlot)`。
 
-**保留不变：** `GetProgress(heroId)`、`GetSlots(heroId)`、`HasEquipment(equipmentId)`、`Soul`、`HighestClearedLevelId`、`EastSeaBannerAvailable`、`Capacity`、`EquipmentDatas`、`HeroProgressionState`、`EquippedItems`。
+**A1 阶段保留不变：** `GetProgress(heroId)`、`GetSlots(heroId)`、`HasEquipment(equipmentId)`、当时的共享钱包与背包、`HighestClearedLevelId`、`EastSeaBannerAvailable`、`Capacity`、`HeroProgressionState`、`EquippedItems`。共享钱包与背包在 A2 改为按英雄持有。
 
 本子任务结束时会有大量编译错误，由 A1-2 ~ A1-8 消除。
 
@@ -394,7 +394,7 @@ public void StartSession(IReadOnlyList<int> heroIds)
 
 | 文件                                                                   | 改法                                                                                                                                                                                                                                                                        |
 | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MainPack/Scripts/Procedure/ProcedureLoadGame.cs`                    | `new ProfileModel(data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), curve, capacity, data.Soul)`；日志中的英雄编号与等级改为阵容首位                                                                                                                                |
+| `MainPack/Scripts/Procedure/ProcedureLoadGame.cs`                    | 构造改传有序阵容、经验曲线与容量；A1 当时仍传共享初始余额，A2 改为由快照逐人恢复；日志中的英雄编号与等级改为阵容首位                                                                                                                                                        |
 | `MainPack/Scripts/Procedure/ProcedureLevel.cs`                       | `TbHeroConfig.Get(profile.HeroOf(PlayerSlot.P1))`；关卡会话由 `LevelViewController.StartSession` 向 `LevelSystem` 传 `profile.HeroIds`；`new InventoryFormData(_hero)` 暂不改（C1 再带席位）                                                                      |
 | `GameScripts/Systems/SaveSystem.cs`                                  | `LoadOrCreateAsync` 新档 `GameData` 去掉单一出战身份赋值，`Heroes = [new HeroSaveData { HeroId = startHeroId }]` 保留；`ReadSlotsAsync` 的摘要英雄编号取 `data.Heroes[0].HeroId`；`WriteSnapshotAsync` 的 catalogue 名同样改为 `Heroes[0]`（A3 改成全员摘要） |
 | `GameScripts/Entity/Level/LevelViewController.cs`                    | `ProfileModel.Slots.Register/UnRegister(OnEquipmentChanged)` 改为 `GetSlots(_player.HeroId)`                                                                                                                                                                            |
@@ -435,7 +435,7 @@ public void StartSession(IReadOnlyList<int> heroIds)
 
 文件：`GameScripts/Models/Profile/ProfileModel.cs`
 
-- 删除 `public BindableProperty<int> Soul` 与 `public BindableList<EquipmentData> EquipmentDatas`。
+- 删除旧的共享灵魂绑定属性与共享背包集合属性。
 - 新增按英雄的私有字典与取用方法：
 
 ```csharp
@@ -473,7 +473,7 @@ public int SellByQuality(int heroId, EquipmentQuality quality)
 文件：`GameScripts/Models/Save/GameData.cs`、`GameScripts/Utilities/Utility/SaveDataUtility.cs`
 
 - `CurrentVersion` → `14`。
-- **删除** `GameData.Soul`。
+- **删除**根 DTO 的共享灵魂字段。
 - `HeroSaveData` 新增：
 
 ```csharp
@@ -490,7 +490,7 @@ public List<Guid> BagInstanceIds { get; set; } = new();
   - 每个实例编号在全档只被一处（某人背包或某人某部位）引用；
   - 池中不存在未被引用的孤立实例（拒绝，不静默丢弃）；
   - 每人背包不超 `capacity`。
-- `Validate` 增加 `Soul >= 0` 的逐人检查，删除对 `data.Soul` 的检查。
+- `Validate` 增加 `Soul >= 0` 的逐人检查，删除对根 DTO 共享余额的检查。
 
 ### A2-4　改消费者
 
@@ -506,14 +506,14 @@ public List<Guid> BagInstanceIds { get; set; } = new();
 | `GameScripts/UI/InventoryForm/Components/InventoryBagPanel.cs`                           | `Capacity`、背包集合、`Soul` 都改为由 Logic 注入该英雄的值；`EquipmentSaleSummaryQuery` 补 heroId                                     |
 | `GameScripts/UI/SkillForm/SkillForm.Logic.cs`                                            | `GetSoul(当前显示英雄)`                                                                                                                   |
 | `GameScripts/UI/MapForm/MapForm.Logic.cs`                                                | 技能按钮发光门槛读 `GetSoul(profile.HeroOf(PlayerSlot.P1))`                                                                               |
-| `MainPack/Scripts/Debug/ProfileTestData.cs` 及各烟测                                     | 全部 `Soul`、`EquipmentDatas` 调用按 heroId 改                                                                                          |
+| `MainPack/Scripts/Debug/ProfileTestData.cs` 及各烟测                                     | 全部旧共享钱包与背包调用按 heroId 改                                                                                                        |
 | `Tests/ProfileTests/*`、`Tests/BattleTests/*`                                          | 同步；`TestGameScope.CaptureSaveData` 不变                                                                                                |
 
 ### A2 完成判定
 
 - 构建与三套测试全绿，数量不减。
 - 实机前端与 UI 烟测通过（覆盖拾取、出售、批量出售、学技、唯一奖励、检查点回滚）。
-- 全仓搜索 `ProfileModel` 上的 `.Soul`、`.EquipmentDatas` **零命中**。
+- 全仓源码与文档不再引用 `ProfileModel` 已删除的共享钱包与背包成员；精确搜索及零命中结果记入 Validation，不在记录中重新引入旧成员名。
 - 单人行为、数值、存档往返不变。
 
 ---
@@ -843,6 +843,6 @@ public static string ActionOf(string action, PlayerSlot slot)
 
 # 第八部分　本轮交付
 
-A1（子任务 A1-1～A1-8）已实现并完成构建、规则测试、Godot 扫描、引用与前端/UI 烟测；实际命令、数字、接口对照和文件清单统一见 [Validation](Validation.md)。2026-11-08 已按用户授权清理文档中的旧字段名称，并同步第 70 章与 ProjectTour 的 v13 现状；本次文档补齐不重复执行代码验证。
+A1 已经用户接受并提交为 d2c3d13。本轮只实施 A2（子任务 A2-1～A2-4）：个人灵魂与背包、全档装备实例唯一归属、存档 v14。构建、规则测试、Godot 扫描、引用、完整前端/UI 烟测与牛心唯一奖励专项均已通过；实际命令、数字、接口对照和文件清单统一见 [Validation](Validation.md)。第 70 章与 ProjectTour 按用户授权同步当前契约。
 
-当前**停在 A1 等待用户审查**。A2 及后续大任务均未开始，需审查通过后再获授权推进。
+当前**停在 A2 等待用户审查**。A3 及后续大任务均未开始，需审查通过后再获授权推进。

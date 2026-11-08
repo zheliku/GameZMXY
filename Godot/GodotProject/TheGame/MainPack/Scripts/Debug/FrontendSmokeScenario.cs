@@ -316,7 +316,7 @@ public sealed partial class FrontendSmokeScenario
                 await ClickAsync(settingsForm, "Scroll/m_Close");
                 await CheckMapSkillPurchaseAsync(map, flow);
                 // 制造尚未手动保存的地图进度，不能用刚保存过的空变化证明返回会写盘。
-                flow.GetSystem<ProfileSystem>().AddSoul(17);
+                flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 17);
                 flow.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 3);
                 await ClickAsync(map, "m_Settings");
                 settingsForm = await WaitForAsync<SettingsForm>();
@@ -441,8 +441,8 @@ public sealed partial class FrontendSmokeScenario
             await CheckMusicAsync("map_theme.mp3");
 
             // 保存图标写入第二格；第六格建档后再读第二格，不能误读最新档。
-            flow.GetSystem<ProfileSystem>().AddSoul(7);
-            int savedSoul = flow.GetModel<ProfileModel>().Soul.Value;
+            flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 7);
+            int savedSoul = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
             await ClickAsync(map, "m_Save");
             await WaitUntilAsync(() => !map.GetNode<BaseButton>("m_Save").Disabled, "手动保存反馈超时");
             Check(await firstSaveSystem.PendingWrite && GF.Archive.CurrentCatalogue.SlotNumber == 2, "地图手动保存写错格");
@@ -486,14 +486,14 @@ public sealed partial class FrontendSmokeScenario
             Check(!ReferenceEquals(firstPlayerModel, reloadedPlayerModel) &&
                 ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) &&
                 !ReferenceEquals(firstEquipmentSystem, flow.GetSystem<EquipmentSystem>()), "重新读档复用了已结束的作用域");
-            Check(flow.GetModel<ProfileModel>().Soul.Value == savedSoul, "重新读档没有从快照重建运行时状态");
+            Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == savedSoul, "重新读档没有从快照重建运行时状态");
             Check(flow.GetSystem<SkillSystem>().IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) &&
                 flow.GetModel<SkillModel>().GetPassiveLevels(1)[PassiveId.Vitality] == 1,
                 "地图购买的主动技能或被动等级没有从磁盘恢复");
             GF.Fsm.GetModel<SaveModel>().ManualSave.Value = new(savedMapSerialId, SaveWritePhase.Succeeded);
             await MoveMouseAsync(new Vector2(30, 30));
             Check(string.IsNullOrEmpty(map.GetNode<BaseButton>("m_Save").TooltipText), "保存按钮仍有多余悬停提示");
-            Check(GF.Archive.CurrentCatalogue.UnitId == secondId && GF.Archive.CurrentData.Soul == savedSoul, "选择第二格读取成最新格或进度丢失");
+            Check(GF.Archive.CurrentCatalogue.UnitId == secondId && GF.Archive.CurrentData.Heroes[0].Soul == savedSoul, "选择第二格读取成最新格或进度丢失");
             // 从普通树身进入悬停，再在仅放大图可见的位置实际点击进关。
             location = map.GetNode<TextureButton>("m_Huaguoshan");
             await MoveMouseAsync(location.GetGlobalRect().GetCenter());
@@ -653,7 +653,7 @@ public sealed partial class FrontendSmokeScenario
             Check(flow.GetModel<HeroModel>().Initialized && !ReferenceEquals(heroModel, flow.GetModel<HeroModel>()),
                 "新关卡沿用了已结束的英雄运行模型");
             ProfileModel previousInventory = flow.GetModel<ProfileModel>();
-            flow.GetSystem<ProfileSystem>().AddSoul(9);
+            flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 9);
             GameData battleExitSnapshot = flow.GetUtility<SaveDataUtility>().Capture(previousInventory, flow.GetModel<SkillModel>());
             long battleExitUnit = flow.GetModel<SaveModel>().ActiveSlotUnitId;
             await ClickAsync(battleForm, "MenuPanel/m_SettingsButton");
@@ -661,7 +661,7 @@ public sealed partial class FrontendSmokeScenario
             await ClickAsync(settings, "Scroll/Content/Options/Navigation/m_ReturnTitle");
             start = await WaitForAsync<StartForm>();
             await CheckSavedProfileAsync(battleExitSnapshot, battleExitUnit);
-            Check(previousInventory.Soul.Value == savedSoul + 9 && !previousInventory.Initialized && flow.GetModel<ProfileModel>() == null && !GF.Base.IsGamePaused && !Find<LevelViewController>().Any(), "返回标题未保存收益、恢复时钟或清理关卡");
+            Check(previousInventory.GetSoul(previousInventory.HeroOf(PlayerSlot.P1)).Value == savedSoul + 9 && !previousInventory.Initialized && flow.GetModel<ProfileModel>() == null && !GF.Base.IsGamePaused && !Find<LevelViewController>().Any(), "返回标题未保存收益、恢复时钟或清理关卡");
             Check(flow.GetModel<ProfileModel>() == null && ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) && flow.GetSystem<EquipmentSystem>() == null, "战斗返回标题仍持有档案作用域");
             Check(!GF.UI.HasUIForm(character.SerialId), "关闭后选角仍接收请求");
             // 损坏槽不能被当成空格；读取目录也不能使旧档案向其他槽写入。
@@ -1251,7 +1251,7 @@ public sealed partial class FrontendSmokeScenario
             setting.EnableAesEncryption, setting.KEY, setting.Salt);
         var before = JObject.FromObject(expected);
         var saved = JObject.FromObject(actual);
-        foreach (string field in new[] { "SaveVersion", "Soul", "Heroes", "EquipmentItems",
+        foreach (string field in new[] { "SaveVersion", "Heroes", "EquipmentItems",
             "HighestClearedLevelId", "EastSeaBannerAvailable" })
         {
             Check(JToken.DeepEquals(before[field], saved[field]), $"返回主菜单未保存当前档案字段：{field}");
@@ -1273,8 +1273,8 @@ public sealed partial class FrontendSmokeScenario
         SkillModel skills = flow.GetModel<SkillModel>();
         int activeCost = tables.TbSkillConfig.Get(SkillId.RisingDragon).LearnSoul;
         int passiveCost = tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
-        flow.GetSystem<ProfileSystem>().AddSoul(activeCost + passiveCost);
-        int initialSoul = profile.Soul.Value;
+        flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), activeCost + passiveCost);
+        int initialSoul = profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value;
         Check(flow.GetModel<HeroModel>() == null && flow.GetModel<LevelModel>() == null &&
             !Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "地图学技前已创建战斗英雄或关卡");
 
@@ -1311,17 +1311,17 @@ public sealed partial class FrontendSmokeScenario
             "地图技能窗改变流程、暂停或创建了战斗模型");
         await CaptureAsync("map_skill_active");
         await ClickAsync(form, "Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon");
-        Check(skillSystem.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) && profile.Soul.Value == initialSoul - activeCost &&
+        Check(skillSystem.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) && profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value == initialSoul - activeCost &&
             form.GetNode<BaseButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon").Disabled &&
-            form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.Soul.Value.ToString(),
+            form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value.ToString(),
             "地图主动购买未同步学习、扣费、图标或余额");
 
         await ClickAsync(form, "Content/Footer/m_Passive");
         await ClickAsync(form, "Content/m_PassivePage/m_PassiveRows/Passive1/Upgrade");
         Check(skills.GetPassiveLevels(1)[PassiveId.Vitality] == 1 &&
-            profile.Soul.Value == initialSoul - activeCost - passiveCost &&
+            profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value == initialSoul - activeCost - passiveCost &&
             form.GetNode<Label>("Content/m_PassivePage/m_PassiveRows/Passive1/Level").Text == "1" &&
-            form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.Soul.Value.ToString(),
+            form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value.ToString(),
             "地图被动购买未同步等级、扣费或余额");
         await CaptureAsync("map_skill_passive");
         int firstSerial = form.SerialId;
@@ -1331,7 +1331,7 @@ public sealed partial class FrontendSmokeScenario
         await ClickAsync(map, "m_Skills");
         form = await WaitForAsync<SkillForm>();
         Check(form.GetNode<BaseButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon").Disabled &&
-            form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.Soul.Value.ToString(),
+            form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value.ToString(),
             "重开地图技能窗未显示已购买状态");
         await ClickAsync(form, "Content/Header/m_Back");
         Check(flow.GetModel<HeroModel>() == null && flow.GetModel<LevelModel>() == null &&

@@ -23,13 +23,13 @@ public sealed class ModelTransactionTests
         snapshot.Heroes.Reverse();
         scope.GetSystem<ProfileSystem>().AddExperience(2, 135);
         scope.GetSystem<ProfileSystem>().AddExperience(1, 281);
-        scope.GetSystem<ProfileSystem>().AddSoul(5);
+        scope.GetSystem<ProfileSystem>().AddSoul(2, 5);
 
         Assert.Throws<InvalidOperationException>(() => scope.RestoreCheckpoint(snapshot));
         Assert.Equal(new[] { 2, 1 }, scope.Profile.HeroIds);
         Assert.Equal(135, scope.Profile.GetProgress(2).Value.TotalExperience);
         Assert.Equal(281, scope.Profile.GetProgress(1).Value.TotalExperience);
-        Assert.Equal(25, scope.Profile.Soul.Value);
+        Assert.Equal(25, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public sealed class ModelTransactionTests
         ProfileSystem system = scope.GetSystem<ProfileSystem>();
         var equipment = new EquipmentSystem(scope);
         EquipmentData item = equipment.Roll(Guid.NewGuid(), equipmentId, () => 0);
-        Assert.True(system.TryCollectEquipment(item));
+        Assert.True(system.TryCollectEquipment(1, item));
         Assert.True(equipment.TryEquip(1, item.InstanceId));
         if (otherHero)
         {
@@ -62,8 +62,8 @@ public sealed class ModelTransactionTests
             scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value = default;
         }
 
-        Assert.False(system.TryCollectEquipment(item));
-        Assert.Empty(scope.Profile.EquipmentDatas);
+        Assert.False(system.TryCollectEquipment(1, item));
+        Assert.Empty(scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1)));
         if (otherHero)
         {
             Assert.Same(item, scope.Profile.GetSlots(2).Value.Treasure);
@@ -84,7 +84,7 @@ public sealed class ModelTransactionTests
         // 被拒绝的请求不得破坏后续保存与重建的不变量。
         var restored = TestGameScope.FromSaveData(scope.CaptureSaveData(), TestTables.Curve,
             TestTables.Tables.TbEquipmentConfig, 25);
-        Assert.Empty(restored.Profile.EquipmentDatas);
+        Assert.Empty(restored.Profile.GetBag(restored.Profile.HeroOf(PlayerSlot.P1)));
     }
 
     /// <summary>
@@ -97,23 +97,23 @@ public sealed class ModelTransactionTests
         ProfileSystem system = scope.GetSystem<ProfileSystem>();
         GameData snapshot = scope.CaptureSaveData();
         int samples = 0;
-        Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(EquipmentId.DiamondSnare,
+        Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(1, EquipmentId.DiamondSnare,
             () => { samples++; return .37f; }));
-        EquipmentData item = Assert.Single(scope.Profile.EquipmentDatas);
+        EquipmentData item = Assert.Single(scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1)));
         Assert.True(samples > 0);
         int rolled = samples;
 
         Assert.True(scope.GetSystem<EquipmentSystem>().TryEquip(1, item.InstanceId));
-        Assert.Equal(EquipmentGrantResult.AlreadyOwned, system.GrantUniqueEquipment(EquipmentId.DiamondSnare,
+        Assert.Equal(EquipmentGrantResult.AlreadyOwned, system.GrantUniqueEquipment(1, EquipmentId.DiamondSnare,
             () => { samples++; return .99f; }));
         Assert.Equal(rolled, samples);
         Assert.Same(item, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Treasure);
-        Assert.Empty(scope.Profile.EquipmentDatas);
+        Assert.Empty(scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1)));
 
         scope.RestoreCheckpoint(snapshot);
         Assert.False(scope.Profile.HasEquipment(EquipmentId.DiamondSnare));
-        Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(EquipmentId.DiamondSnare, () => .5f));
-        Assert.NotEqual(item.InstanceId, Assert.Single(scope.Profile.EquipmentDatas).InstanceId);
+        Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(1, EquipmentId.DiamondSnare, () => .5f));
+        Assert.NotEqual(item.InstanceId, Assert.Single(scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1))).InstanceId);
     }
 
     /// <summary>
@@ -126,14 +126,14 @@ public sealed class ModelTransactionTests
         ProfileSystem system = scope.GetSystem<ProfileSystem>();
         EquipmentSystem equipment = scope.GetSystem<EquipmentSystem>();
         EquipmentData item = equipment.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
-        Assert.True(system.TryCollectEquipment(item));
-        Assert.Equal(EquipmentGrantResult.InventoryFull, system.GrantUniqueEquipment(EquipmentId.DiamondSnare,
+        Assert.True(system.TryCollectEquipment(1, item));
+        Assert.Equal(EquipmentGrantResult.InventoryFull, system.GrantUniqueEquipment(1, EquipmentId.DiamondSnare,
             () => throw new InvalidOperationException("满包不应抽取属性。")));
-        Assert.Same(item, Assert.Single(scope.Profile.EquipmentDatas));
+        Assert.Same(item, Assert.Single(scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1))));
 
         Assert.True(equipment.TryEquip(1, item.InstanceId));
-        Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(EquipmentId.DiamondSnare, () => .5f));
-        Assert.Equal(EquipmentId.DiamondSnare, Assert.Single(scope.Profile.EquipmentDatas).EquipmentId);
+        Assert.Equal(EquipmentGrantResult.Collected, system.GrantUniqueEquipment(1, EquipmentId.DiamondSnare, () => .5f));
+        Assert.Equal(EquipmentId.DiamondSnare, Assert.Single(scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1))).EquipmentId);
     }
 
     /// <summary>
@@ -146,10 +146,10 @@ public sealed class ModelTransactionTests
         var equipment = new EquipmentSystem(scope);
         EquipmentData first = equipment.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
         EquipmentData second = equipment.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimStaff, () => 0);
-        BindableList<EquipmentData> items = scope.Profile.EquipmentDatas;
-        scope.GetSystem<ProfileSystem>().TryCollectEquipment(first);
+        BindableList<EquipmentData> items = scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1));
+        scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, first);
         Assert.True(equipment.TryEquip(1, first.InstanceId));
-        scope.GetSystem<ProfileSystem>().TryCollectEquipment(second);
+        scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, second);
         int notifications = 0;
         items.Register(newItems =>
         {
@@ -160,7 +160,7 @@ public sealed class ModelTransactionTests
 
         Assert.True(equipment.TryEquip(1, second.InstanceId));
         Assert.Same(second, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
-        Assert.Same(items, scope.Profile.EquipmentDatas);
+        Assert.Same(items, scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1)));
         Assert.Equal(1, notifications);
     }
 
@@ -173,31 +173,31 @@ public sealed class ModelTransactionTests
         var scope = new TestGameScope([(1, 0)], 20, 25);
         var equipment = new EquipmentSystem(scope);
         EquipmentData staff = equipment.Roll(Guid.NewGuid(), EquipmentId.RoughPilgrimStaff, () => 0);
-        scope.GetSystem<ProfileSystem>().TryCollectEquipment(staff);
+        scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, staff);
         GameData snapshot = scope.CaptureSaveData();
         Assert.True(equipment.TryEquip(1, staff.InstanceId));
-        scope.GetSystem<ProfileSystem>().TryCollectEquipment(equipment.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimStaff, () => 0));
-        scope.GetSystem<ProfileSystem>().AddSoul(100);
+        scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, equipment.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimStaff, () => 0));
+        scope.GetSystem<ProfileSystem>().AddSoul(1, 100);
         scope.GetSystem<ProfileSystem>().AddExperience(1, 281);
         BindableProperty<HeroProgressionState> progress = scope.Profile.GetProgress(scope.Profile.HeroOf(PlayerSlot.P1));
-        BindableList<EquipmentData> items = scope.Profile.EquipmentDatas;
+        BindableList<EquipmentData> items = scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1));
         BindableProperty<EquippedItems> slots = scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1));
         int notifications = 0;
         progress.Register(value => { notifications++; Assert.Equal(0, value.TotalExperience); });
         slots.Register(value => { notifications++; Assert.Null(value.Weapon); Assert.Null(value.Armor); });
-        scope.Profile.Soul.Register(value => { notifications++; Assert.Equal(20, value); });
+        scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Register(value => { notifications++; Assert.Equal(20, value); });
         items.Register(value => { notifications++; Assert.Equal(staff.InstanceId, Assert.Single(value).InstanceId); });
 
         scope.RestoreCheckpoint(snapshot);
         Assert.Equal(4, notifications);
         Assert.Equal(0, progress.Value.TotalExperience);
-        Assert.Equal(20, scope.Profile.Soul.Value);
+        Assert.Equal(20, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Equal(staff.InstanceId, Assert.Single(items).InstanceId);
         Assert.Null(slots.Value.Weapon);
         Assert.Equal(TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.Power, scope.Hero.Power.Value);
         Assert.Equal(1, scope.Hero.Level.Value);
         Assert.Same(progress, scope.Profile.GetProgress(scope.Profile.HeroOf(PlayerSlot.P1)));
-        Assert.Same(items, scope.Profile.EquipmentDatas);
+        Assert.Same(items, scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1)));
         Assert.Same(slots, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)));
     }
 }

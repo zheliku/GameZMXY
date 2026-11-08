@@ -72,20 +72,20 @@ public sealed class DragonPalaceTests
         LevelSystem level = scope.GetSystem<LevelSystem>();
         level.Prepare(2);
         level.StartSession([1]);
-        profile.AddSoul(21);
+        profile.AddSoul(1, 21);
         Assert.False(level.TransferToDragonPalace(3));
         Assert.True(level.TransferToDragonPalace(11));
         Assert.False(level.TransferToDragonPalace(11));
         Assert.Equal(LevelOutcome.Transferred, scope.Level.Outcome.Value);
         level.EndSession();
-        Assert.Equal(21, scope.Profile.Soul.Value);
+        Assert.Equal(21, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Equal(1, scope.Profile.HighestClearedLevelId.Value);
         level.Prepare(11);
         level.StartSession([1]);
         Assert.True(profile.TryClaimEastSeaBanner());
         level.EndSession();
         Assert.True(scope.Profile.EastSeaBannerAvailable);
-        Assert.Equal(21, scope.Profile.Soul.Value);
+        Assert.Equal(21, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
     }
 
     /// <summary>

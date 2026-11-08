@@ -114,10 +114,10 @@ public partial class LevelViewController
 
         if (data != null)
         {
-            return this.GetSystem<LevelSystem>().TryCollectEquipment(data);
+            return this.GetSystem<LevelSystem>().TryCollectEquipment(_player.HeroId, data);
         }
 
-        if (!this.GetSystem<LevelSystem>().TryCollectPickup(pickupId))
+        if (!this.GetSystem<LevelSystem>().TryCollectPickup(_player.HeroId, pickupId))
         {
             return false;
         }
@@ -159,7 +159,7 @@ public partial class LevelViewController
         }
 
         NodePool.Instance.Release(orb);
-        this.GetSystem<LevelSystem>().CollectLoot(reward);
+        this.GetSystem<LevelSystem>().CollectLoot(_player.HeroId, reward);
 
         if (_exitRequested && _lootOrbs.Count == 0 && LevelModel.Outcome.Value == LevelOutcome.Running)
         {

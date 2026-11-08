@@ -17,7 +17,7 @@ public class GameData : ArchiveData
     /// <summary>
     /// 当前存档格式；格式改变时递增，不保留迁移分支。
     /// </summary>
-    public const int CurrentVersion = 13;
+    public const int CurrentVersion = 14;
 
     /// <summary>
     /// 必需的格式版本；框架创建的新空槽使用当前版本。
@@ -32,12 +32,6 @@ public class GameData : ArchiveData
     public List<HeroSaveData> Heroes = new();
 
     /// <summary>
-    /// 钱包灵魂总数。
-    /// </summary>
-    [JsonProperty(Required = Required.Always)]
-    public int Soul;
-
-    /// <summary>
     /// 已通关的最远关卡主键；0 表示尚未通关，进入或失败不推进。
     /// </summary>
     [JsonProperty(Required = Required.Always)]
@@ -50,7 +44,7 @@ public class GameData : ArchiveData
     public bool EastSeaBannerAvailable = true;
 
     /// <summary>
-    /// 已拾取的装备实例；随机属性作为实例状态保存，配置范围不写盘。
+    /// 全档装备实例池，包含全部背包与穿戴物；记录顺序保留各背包的格子顺序，属性不重抽。
     /// </summary>
     [JsonProperty(Required = Required.Always)]
     public List<EquipmentSaveData> EquipmentItems = new();
@@ -100,6 +94,18 @@ namespace GameLogic.Save.Data
         /// </summary>
         [JsonProperty(Required = Required.Always)]
         public int TotalExperience { get; set; }
+
+        /// <summary>
+        /// 该英雄的灵魂余额。
+        /// </summary>
+        [JsonProperty(Required = Required.Always)]
+        public int Soul { get; set; }
+
+        /// <summary>
+        /// 该英雄背包内装备的实例编号；穿戴物不出现在此列表。
+        /// </summary>
+        [JsonProperty(Required = Required.Always)]
+        public List<Guid> BagInstanceIds { get; set; } = new();
 
         /// <summary>
         /// 已学习的主动技能编号；不保存费用、伤害、图标或施放中的临时状态。

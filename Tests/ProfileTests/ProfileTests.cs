@@ -71,16 +71,16 @@ public sealed class ProfileTests
     public void Wallet_RejectsOverspendAndNegativeAmounts()
     {
         ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25, -5);
-        Assert.Equal(0, wallet.Soul.Value);
-        TestTables.ForProfile(wallet).AddSoul(30);
-        Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(31));
-        Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(30));
-        Assert.Equal(0, wallet.Soul.Value);
-        TestTables.ForProfile(wallet).AddSoul(int.MaxValue);
-        TestTables.ForProfile(wallet).AddSoul(10);
-        Assert.Equal(int.MaxValue, wallet.Soul.Value);
-        Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(wallet).AddSoul(-1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(wallet).TrySpendSoul(-1));
+        Assert.Equal(0, wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Value);
+        TestTables.ForProfile(wallet).AddSoul(1, 30);
+        Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(1, 31));
+        Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(1, 30));
+        Assert.Equal(0, wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Value);
+        TestTables.ForProfile(wallet).AddSoul(1, int.MaxValue);
+        TestTables.ForProfile(wallet).AddSoul(1, 10);
+        Assert.Equal(int.MaxValue, wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Value);
+        Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(wallet).AddSoul(1, -1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(wallet).TrySpendSoul(1, -1));
     }
 
     /// <summary>
@@ -90,19 +90,19 @@ public sealed class ProfileTests
     public void Wallet_PreservesBalanceAcrossNoOpsAndRestore()
     {
         ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25, 30);
-        TestTables.ForProfile(wallet).AddSoul(0);
-        Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(0));
-        Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(31));
-        Assert.Equal(30, wallet.Soul.Value);
-        Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(10));
-        Assert.Equal(20, wallet.Soul.Value);
-        wallet.RestoreSoul(20);
-        Assert.Equal(20, wallet.Soul.Value);
-        TestTables.ForProfile(wallet).AddSoul(int.MaxValue);
-        TestTables.ForProfile(wallet).AddSoul(1);
-        Assert.Equal(int.MaxValue, wallet.Soul.Value);
-        wallet.RestoreSoul(-1);
-        Assert.Equal(0, wallet.Soul.Value);
+        TestTables.ForProfile(wallet).AddSoul(1, 0);
+        Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(1, 0));
+        Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(1, 31));
+        Assert.Equal(30, wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Value);
+        Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(1, 10));
+        Assert.Equal(20, wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Value);
+        wallet.RestoreSoul(1, 20);
+        Assert.Equal(20, wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Value);
+        TestTables.ForProfile(wallet).AddSoul(1, int.MaxValue);
+        TestTables.ForProfile(wallet).AddSoul(1, 1);
+        Assert.Equal(int.MaxValue, wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Value);
+        wallet.RestoreSoul(1, -1);
+        Assert.Equal(0, wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Value);
     }
 
     /// <summary>
@@ -173,22 +173,22 @@ public sealed class ProfileTests
         ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25, 10);
         int notifications = 0;
         int observed = -1;
-        wallet.Soul.Register(_ =>
+        wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Register(_ =>
         {
             notifications++;
-            observed = wallet.Soul.Value;
+            observed = wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Value;
         });
-        TestTables.ForProfile(wallet).AddSoul(0);
-        Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(11));
+        TestTables.ForProfile(wallet).AddSoul(1, 0);
+        Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(1, 11));
         Assert.Equal(0, notifications);
-        TestTables.ForProfile(wallet).AddSoul(5);
+        TestTables.ForProfile(wallet).AddSoul(1, 5);
         Assert.Equal((1, 15), (notifications, observed));
-        Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(3));
+        Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(1, 3));
         Assert.Equal((2, 12), (notifications, observed));
-        wallet.RestoreSoul(12);
+        wallet.RestoreSoul(1, 12);
         Assert.Equal(2, notifications);
-        wallet.RestoreSoul(int.MaxValue);
-        TestTables.ForProfile(wallet).AddSoul(1);
+        wallet.RestoreSoul(1, int.MaxValue);
+        TestTables.ForProfile(wallet).AddSoul(1, 1);
         Assert.Equal((3, int.MaxValue), (notifications, observed));
     }
 
@@ -278,6 +278,8 @@ public sealed class ProfileTests
     [Theory]
     [InlineData("HeroId")]
     [InlineData("TotalExperience")]
+    [InlineData("Soul")]
+    [InlineData("BagInstanceIds")]
     public void Archive_RejectsIncompleteHeroRecord(string field)
     {
         var data = Newtonsoft.Json.Linq.JObject.FromObject(new GameData
@@ -299,7 +301,7 @@ public sealed class ProfileTests
         Assert.Equal(GameData.CurrentVersion, data.SaveVersion);
         Assert.Empty(data.Heroes);
         Assert.Empty(data.EquipmentItems);
-        Assert.Equal(0, data.Soul);
+        Assert.DoesNotContain("\"Soul\"", JsonConvert.SerializeObject(data));
         Assert.Equal(7, data.UnitId);
     }
 
@@ -325,13 +327,13 @@ public sealed class ProfileTests
     {
         TestGameScope playerModel = new(new[] { (1, 472) }, 42, 25);
         GameData snapshotData = playerModel.CaptureSaveData();
-        playerModel.GetSystem<ProfileSystem>().AddSoul(100);
-        Assert.Equal(42, snapshotData.Soul);
+        playerModel.GetSystem<ProfileSystem>().AddSoul(1, 100);
+        Assert.Equal(42, snapshotData.Heroes[0].Soul);
 
         string json = JsonConvert.SerializeObject(snapshotData);
         GameData loadedData = JsonConvert.DeserializeObject<GameData>(json);
         var restored = TestGameScope.FromSaveData(loadedData, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
-        Assert.Equal(42, restored.Profile.Soul.Value);
+        Assert.Equal(42, restored.Profile.GetSoul(restored.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Equal((4, 37), (restored.Profile.GetProgress(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Level, restored.Profile.GetProgress(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Experience));
         Assert.DoesNotContain("\"Player\"", json);
         Assert.DoesNotContain("\"Profile\"", json);
@@ -351,11 +353,11 @@ public sealed class ProfileTests
         progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Register(_ => levels.Add(progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level));
 
         TestTables.ForProfile(progression).AddExperience(1, 400);
-        playerModel.GetSystem<ProfileSystem>().AddSoul(50);
+        playerModel.GetSystem<ProfileSystem>().AddSoul(1, 50);
         playerModel.RestoreCheckpoint(data);
 
         Assert.Same(progression, playerModel.Profile);
-        Assert.Equal((1, 5), (progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level, playerModel.Profile.Soul.Value));
+        Assert.Equal((1, 5), (progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level, playerModel.Profile.GetSoul(playerModel.Profile.HeroOf(PlayerSlot.P1)).Value));
         Assert.Equal(new[] { 3, 1 }, levels);
     }
 }

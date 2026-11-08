@@ -63,7 +63,7 @@ public class ProcedureLoadGame : ProcedureBase
             GameData data = loaded.Data;
             ConfigurationModel config = procedureOwner.GetModel<GameLogic.Config.ConfigurationModel>();
             var profile = new ProfileModel(data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), procedureOwner.GetUtility<ExperienceCurveUtility>(),
-                config.Tables.TbProfileConfig.EquipmentCapacity, data.Soul);
+                config.Tables.TbProfileConfig.EquipmentCapacity);
             procedureOwner.RegisterModel(profile);
             ownsProfile = true;
             procedureOwner.RegisterModel(new SkillModel(profile.HeroIds));

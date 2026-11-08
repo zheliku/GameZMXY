@@ -28,16 +28,16 @@ public sealed class LevelRewardTests
         PickupConfig pickup = TestTables.Tables.TbPickupConfig.Get(id);
         scope.Hero.Hp.Value = 1;
         scope.Hero.Mp.Value = 0;
-        Assert.True(system.TryCollectPickup(id));
+        Assert.True(system.TryCollectPickup(1, id));
         Assert.Equal(pickup.Effect == PickupEffect.Health
             ? Math.Min(scope.Hero.MaxHp.Value, 1 + pickup.RestoreAmount) : 1, scope.Hero.Hp.Value);
         Assert.Equal(pickup.Effect == PickupEffect.Mana
             ? Math.Min(scope.Hero.MaxMp.Value, pickup.RestoreAmount) : 0, scope.Hero.Mp.Value);
         scope.GetSystem<HeroSystem>().Heal(int.MaxValue);
         scope.GetSystem<HeroSystem>().RestoreMp(int.MaxValue);
-        Assert.True(system.TryCollectPickup(id));
-        Assert.False(system.TryCollectPickup(PickupId.None));
-        Assert.False(system.TryCollectPickup((PickupId)999));
+        Assert.True(system.TryCollectPickup(1, id));
+        Assert.False(system.TryCollectPickup(1, PickupId.None));
+        Assert.False(system.TryCollectPickup(1, (PickupId)999));
     }
 
     /// <summary>
@@ -49,9 +49,9 @@ public sealed class LevelRewardTests
         TestGameScope scope = Ready();
         LevelSystem system = scope.GetSystem<LevelSystem>();
         scope.Hero.Mp.Value = 0;
-        system.CollectLoot(new(LootKind.Soul, 11));
-        system.CollectLoot(new(LootKind.Musou, 5));
-        Assert.Equal(11, scope.Profile.Soul.Value);
+        system.CollectLoot(1, new(LootKind.Soul, 11));
+        system.CollectLoot(1, new(LootKind.Musou, 5));
+        Assert.Equal(11, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Equal(5, scope.Hero.Ws.Value);
         List<LootReward> loot = scope.GetSystem<LootSystem>().Roll(TestTables.Tables.TbEnemyConfig.DataList[0], 0,
             scope.Hero.MaxHp.Value, scope.Hero.MaxMp.Value, () => 0f);
@@ -62,18 +62,18 @@ public sealed class LevelRewardTests
         Assert.True(scope.GetSystem<LootSystem>().ManaAmount(scope.Hero.MaxMp.Value) > mana.Amount);
         scope.Hero.Hp.Value = 1;
         scope.Hero.Mp.Value = 0;
-        system.CollectLoot(health);
-        system.CollectLoot(mana);
+        system.CollectLoot(1, health);
+        system.CollectLoot(1, mana);
         Assert.Equal(1 + health.Amount, scope.Hero.Hp.Value);
         Assert.Equal(mana.Amount, scope.Hero.Mp.Value);
         scope.Hero.Hp.Value = scope.Hero.MaxHp.Value - 1;
-        system.CollectLoot(health);
+        system.CollectLoot(1, health);
         Assert.Equal(scope.Hero.MaxHp.Value, scope.Hero.Hp.Value);
-        system.CollectLoot(health);
+        system.CollectLoot(1, health);
         Assert.Equal(scope.Hero.MaxHp.Value, scope.Hero.Hp.Value);
-        Assert.Equal(11, scope.Profile.Soul.Value);
+        Assert.Equal(11, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Equal(5, scope.Hero.Ws.Value);
-        Assert.Throws<ArgumentOutOfRangeException>(() => system.CollectLoot(new((LootKind)999, 1)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => system.CollectLoot(1, new((LootKind)999, 1)));
     }
 
     /// <summary>
@@ -104,17 +104,17 @@ public sealed class LevelRewardTests
 
         int hp = scope.Hero.Hp.Value;
         scope.Hero.Mp.Value = 0;
-        Assert.False(system.TryCollectPickup(PickupId.LargePeach));
-        Assert.False(system.TryCollectPickup(PickupId.ManaBottle));
+        Assert.False(system.TryCollectPickup(1, PickupId.LargePeach));
+        Assert.False(system.TryCollectPickup(1, PickupId.ManaBottle));
         foreach (LootKind kind in Enum.GetValues<LootKind>())
         {
-            system.CollectLoot(new(kind, 5));
+            system.CollectLoot(1, new(kind, 5));
         }
 
         Assert.Equal(hp, scope.Hero.Hp.Value);
         Assert.Equal(0, scope.Hero.Mp.Value);
         Assert.Equal(0, scope.Hero.Ws.Value);
-        Assert.Equal(0, scope.Profile.Soul.Value);
+        Assert.Equal(0, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
     }
 
     /// <summary>
@@ -125,10 +125,10 @@ public sealed class LevelRewardTests
     {
         TestGameScope scope = Ready();
         LevelSystem system = scope.GetSystem<LevelSystem>();
-        system.CollectLoot(new(LootKind.Soul, 17));
-        Assert.Equal(17, scope.Profile.Soul.Value);
+        system.CollectLoot(1, new(LootKind.Soul, 17));
+        Assert.Equal(17, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         system.EndSession();
-        Assert.Equal(0, scope.Profile.Soul.Value);
+        Assert.Equal(0, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
     }
 
     /// <summary>

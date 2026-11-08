@@ -91,25 +91,27 @@ public sealed class ProfileSystem : AbstractSystem
     }
 
     /// <summary>
-    /// 增加档案灵魂，保持余额整数上限。
+    /// 增加指定英雄的灵魂，保持余额整数上限。
     /// </summary>
+    /// <param name="heroId">本次接收或消费资产的参战英雄编号。</param>
     /// <param name="amount">非负奖励。</param>
-    public void AddSoul(int amount)
+    public void AddSoul(int heroId, int amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
-        BindableProperty<int> soul = this.GetModel<ProfileModel>().Soul;
+        BindableProperty<int> soul = this.GetModel<ProfileModel>().GetSoul(heroId);
         soul.Value = (int)Math.Min((long)soul.Value + amount, int.MaxValue);
     }
 
     /// <summary>
     /// 在余额足够时支付灵魂。
     /// </summary>
+    /// <param name="heroId">本次接收或消费资产的参战英雄编号。</param>
     /// <param name="amount">非负价格。</param>
     /// <returns>是否完成支付。</returns>
-    public bool TrySpendSoul(int amount)
+    public bool TrySpendSoul(int heroId, int amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
-        BindableProperty<int> soul = this.GetModel<ProfileModel>().Soul;
+        BindableProperty<int> soul = this.GetModel<ProfileModel>().GetSoul(heroId);
         if (amount > soul.Value)
         {
             return false;
@@ -122,38 +124,43 @@ public sealed class ProfileSystem : AbstractSystem
     /// <summary>
     /// 领取已确定属性的装备；满包、背包或穿戴中已拥有此实例时拒绝。
     /// </summary>
+    /// <param name="heroId">本次接收或消费资产的参战英雄编号。</param>
     /// <param name="data">掉落实例。</param>
     /// <returns>是否完成领取。</returns>
-    public bool TryCollectEquipment(EquipmentData data)
+    public bool TryCollectEquipment(int heroId, EquipmentData data)
     {
         ArgumentNullException.ThrowIfNull(data);
         ProfileModel profile = this.GetModel<ProfileModel>();
-        foreach (int heroId in profile.HeroIds)
+        BindableList<EquipmentData> bag = profile.GetBag(heroId);
+        // 实例在全档只能被一个背包或穿戴部位持有。
+        foreach (int ownerHeroId in profile.HeroIds)
         {
-            EquippedItems slots = profile.GetSlots(heroId).Value;
-            if (slots.Weapon?.InstanceId == data.InstanceId || slots.Armor?.InstanceId == data.InstanceId ||
+            EquippedItems slots = profile.GetSlots(ownerHeroId).Value;
+            if (profile.GetBag(ownerHeroId).Any(item => item.InstanceId == data.InstanceId) ||
+                slots.Weapon?.InstanceId == data.InstanceId || slots.Armor?.InstanceId == data.InstanceId ||
                 slots.Accessory?.InstanceId == data.InstanceId || slots.Treasure?.InstanceId == data.InstanceId)
             {
                 return false;
             }
         }
 
-        if (profile.EquipmentDatas.Count == profile.Capacity || profile.EquipmentDatas.Any(x => x.InstanceId == data.InstanceId))
+        if (bag.Count == profile.Capacity)
         {
             return false;
         }
 
-        profile.EquipmentDatas.Add(data);
+        bag.Add(data);
         return true;
     }
 
     /// <summary>
     /// 直接赠送整个档案尚未拥有的装备；满包不抽属性，也不生成地面掉落。
     /// </summary>
+    /// <param name="heroId">本次接收或消费资产的参战英雄编号。</param>
     /// <param name="equipmentId">本次特殊奖励的装备定义。</param>
     /// <param name="random">实例属性采样源，返回 [0,1) 内的数。</param>
     /// <returns>已拥有、领取成功或背包已满；只在成功时创建新实例。</returns>
-    public EquipmentGrantResult GrantUniqueEquipment(EquipmentId equipmentId, Func<float> random)
+    public EquipmentGrantResult GrantUniqueEquipment(int heroId, EquipmentId equipmentId, Func<float> random)
     {
         ProfileModel profile = this.GetModel<ProfileModel>();
         if (profile.HasEquipment(equipmentId))
@@ -161,14 +168,14 @@ public sealed class ProfileSystem : AbstractSystem
             return EquipmentGrantResult.AlreadyOwned;
         }
 
-        if (profile.EquipmentDatas.Count == profile.Capacity)
+        if (profile.GetBag(heroId).Count == profile.Capacity)
         {
             return EquipmentGrantResult.InventoryFull;
         }
 
         // 本入口已确认容量和定义唯一性；新编号与属性在写入背包前一次确定。
         EquipmentData data = this.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), equipmentId, random);
-        profile.EquipmentDatas.Add(data);
+        profile.GetBag(heroId).Add(data);
         return EquipmentGrantResult.Collected;
     }
 
@@ -189,12 +196,12 @@ public sealed class ProfileSystem : AbstractSystem
         if (!data.Heroes.Select(hero => hero.HeroId).SequenceEqual(profile.HeroIds) ||
             data.Heroes.Count != profile.HeroIds.Count ||
             data.Heroes.Select(x => x.HeroId).Distinct().Count() != data.Heroes.Count ||
-            data.Heroes.Any(x => !profile.HeroIds.Contains(x.HeroId) || x.TotalExperience < 0) || data.Soul < 0)
+            data.Heroes.Any(x => !profile.HeroIds.Contains(x.HeroId) || x.TotalExperience < 0 || x.Soul < 0))
         {
             throw new InvalidOperationException("回滚快照与档案不一致或数值非法。");
         }
 
-        (EquipmentData[] bag, Dictionary<int, EquippedItems> slots) = SaveDataUtility.ReadItems(data, profile.Capacity);
+        (Dictionary<int, EquipmentData[]> bags, Dictionary<int, EquippedItems> slots) = SaveDataUtility.ReadItems(data, profile.Capacity);
         // 校验完成后使用正常修改入口；派生系统按绑定优先级先于 UI 同步。
         foreach (HeroSaveData hero in data.Heroes)
         {
@@ -210,9 +217,9 @@ public sealed class ProfileSystem : AbstractSystem
 
             profile.GetSlots(hero.HeroId).Value = slots[hero.HeroId];
             profile.GetProgress(hero.HeroId).Value = this.GetUtility<ExperienceCurveUtility>().GetProgress(hero.TotalExperience);
+            profile.GetBag(hero.HeroId).ReplaceAll(bags[hero.HeroId]);
+            profile.GetSoul(hero.HeroId).Value = hero.Soul;
         }
-        profile.EquipmentDatas.ReplaceAll(bag);
-        profile.Soul.Value = data.Soul;
         profile.HighestClearedLevelId.Value = data.HighestClearedLevelId;
         profile.EastSeaBannerAvailable = data.EastSeaBannerAvailable;
     }

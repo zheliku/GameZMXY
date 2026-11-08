@@ -58,7 +58,7 @@ public sealed partial class UiSmokeScenario
         HeroModel model = flow.GetModel<GameLogic.Battle.HeroModel>();
         SkillSystem system = flow.GetSystem<SkillSystem>();
         HashSet<SkillEffectNode> effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "_skillEffects");
-        flow.GetSystem<ProfileSystem>().AddSoul(10000);
+        flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 10000);
         battleForm.GetNode<BaseButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(f => f.Visible), "唐僧技能页没有打开");
         SkillForm form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(f => f.Visible);
@@ -676,7 +676,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>全部技能面板检查完成的任务。</returns>
     private async Task CheckSkillsAsync(BattleForm battleForm, ProcedureOwner flow, LevelViewController level)
     {
-        int soul = flow.GetModel<ProfileModel>().Soul.Value;
+        int soul = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
         TextureButton entrance = battleForm.GetNode<TextureButton>("MenuPanel/m_SkillsButton");
         Check(InputMap.ActionGetEvents(GameLogic.Input.InputSystem.SkillToggle).OfType<InputEventKey>()
             .Any(input => input.PhysicalKeycode == Key.V), "技能面板没有默认 V 输入映射");
@@ -719,15 +719,15 @@ public sealed partial class UiSmokeScenario
         otherHero.EmitSignal(BaseButton.SignalName.Pressed);
         Check(form.GetNode<Control>("Content/m_PassivePage").Visible &&
             !form.GetNode<Control>("Content/m_ActivePage").Visible, "非出战页签改变了当前主动/被动分类");
-        Check(flow.GetModel<ProfileModel>().Soul.Value == soul, "技能展示页意外消费灵魂");
-        flow.GetSystem<ProfileSystem>().AddSoul(7);
+        Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soul, "技能展示页意外消费灵魂");
+        flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 7);
         Label balance = form.GetNode<Label>(Footer + "Balance/m_Soul");
         Check(balance.Text == (soul + 7).ToString(), "技能面板没有观察钱包变化");
         PushSkillKey(true);
         PushSkillKey(false);
         await WaitFramesAsync(4);
         Check(!form.Visible && !GF.Base.IsGamePaused, "V 没有关闭技能页，或同一输入又把窗口打开");
-        flow.GetModel<ProfileModel>().RestoreSoul(soul);
+        flow.GetModel<ProfileModel>().RestoreSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), soul);
         Check(balance.Text == (soul + 7).ToString(), "关闭后仍保留钱包订阅");
         entrance.EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => form.Visible, "技能窗口没有从池复用");
@@ -960,18 +960,18 @@ public sealed partial class UiSmokeScenario
             battleForm.GetNode<TextureButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
             await WaitUntilAsync(() => form.Visible, "学习时没有打开技能窗口");
             TextureButton first = form.GetNode<TextureButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon");
-            flow.GetModel<ProfileModel>().Soul.Value = 0;
+            flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value = 0;
             SaveNoticeForm notice = GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single();
             GF.UI.CloseUIForm(notice.SerialId);
             await WaitFramesAsync(3);
             first.EmitSignal(BaseButton.SignalName.Pressed);
-            Check(!system.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) && flow.GetModel<ProfileModel>().Soul.Value == 0,
+            Check(!system.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) && flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == 0,
                 "提示窗口缺席影响了技能学习拒绝结果");
             notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(GameConfig.UIFormId.SaveNoticeForm);
             first.EmitSignal(BaseButton.SignalName.Pressed);
             Check(!system.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) && notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Text == "灵魂不足！",
                 "灵魂不足没有拒绝学习并显示复用提示");
-            flow.GetSystem<ProfileSystem>().AddSoul(4000);
+            flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 4000);
             foreach (SkillConfig definition in ConfigSystem.Instance.Tables.TbSkillConfig.DataList.Where(x => x.Hero == SkillHero.Wukong))
             {
                 TextureButton button = form.GetNode<TextureButton>($"Content/m_ActivePage/m_WukongRows/Skill{definition.Order}/IconCell/Icon");
@@ -982,9 +982,9 @@ public sealed partial class UiSmokeScenario
                     hudIcon.Region == new Rect2(definition.Order * 45, 0, 45, 45),
                     $"学习没有同步两个图标：{definition.Id}");
             }
-            Check(flow.GetModel<ProfileModel>().Soul.Value == 200, "五招学习费用不是 3800");
+            Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == 200, "五招学习费用不是 3800");
             first.EmitSignal(BaseButton.SignalName.Pressed);
-            Check(flow.GetModel<ProfileModel>().Soul.Value == 200, "重复学习重复扣费");
+            Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == 200, "重复学习重复扣费");
             await CaptureCombatAsync("skills_learned");
             form.GetNode<TextureButton>("Content/Header/m_Back").EmitSignal(BaseButton.SignalName.Pressed);
             await WaitFramesAsync(2);

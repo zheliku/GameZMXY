@@ -50,8 +50,8 @@ public sealed partial class UiSmokeScenario
         AbstractHeroEntity hero = FindHero();
         hero.SetPhysicsProcess(true);
         Check(SmokeInspection.ReadField<int>(cave, "_levelId") == 2, "入口夹具未进入水帘洞");
-        flow.GetSystem<ProfileSystem>().AddSoul(17);
-        int soul = flow.GetModel<ProfileModel>().Soul.Value;
+        flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 17);
+        int soul = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
         hero.GlobalPosition = new Vector2(2150, 450);
         hero.Velocity = Vector2.Zero;
         await WaitFramesAsync(3);
@@ -77,7 +77,7 @@ public sealed partial class UiSmokeScenario
             "自动入口没有经GGF重入龙宫", 15000);
         LevelViewController room = FindLevel();
         hero = FindHero();
-        Check(flow.GetModel<ProfileModel>().Soul.Value == soul && flow.GetModel<ProfileModel>().HighestClearedLevelId.Value == 1,
+        Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soul && flow.GetModel<ProfileModel>().HighestClearedLevelId.Value == 1,
             "隐藏转场回滚已领取收益或误通关水帘洞");
         Check(hero.Modulate.A == 1 && CurrentBattleForm().Modulate.A == 1 && flow.GetModel<HeroModel>().ControlsEnabled,
             "转场复用后英雄或HUD仍透明，或未恢复控制");

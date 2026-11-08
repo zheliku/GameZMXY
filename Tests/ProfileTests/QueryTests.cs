@@ -28,20 +28,20 @@ public sealed class QueryTests
             AddItem(scope, i % 3 == 0 ? EquipmentId.CommonPineStaff : EquipmentId.RoughPilgrimStaff);
         }
 
-        EquipmentData[] retained = scope.Profile.EquipmentDatas.Where(data => data.EquipmentId == EquipmentId.CommonPineStaff).ToArray();
-        (int Count, long Price) rough = scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Rough));
-        (int Count, long Price) common = scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Common));
+        EquipmentData[] retained = scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1)).Where(data => data.EquipmentId == EquipmentId.CommonPineStaff).ToArray();
+        (int Count, long Price) rough = scope.SendQuery(new EquipmentSaleSummaryQuery(1, EquipmentQuality.Rough));
+        (int Count, long Price) common = scope.SendQuery(new EquipmentSaleSummaryQuery(1, EquipmentQuality.Common));
         Assert.Equal(50, rough.Count);
         Assert.Equal(25, common.Count);
         Assert.Equal(50L * TestTables.Tables.TbEquipmentConfig.Get(EquipmentId.RoughPilgrimStaff).SellPrice, rough.Price);
         Assert.Equal(25L * TestTables.Tables.TbEquipmentConfig.Get(EquipmentId.CommonPineStaff).SellPrice, common.Price);
-        int soul = scope.Profile.Soul.Value;
-        Assert.Equal(rough.Count, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
-        Assert.Equal(soul + rough.Price, scope.Profile.Soul.Value);
+        int soul = scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value;
+        Assert.Equal(rough.Count, scope.SendCommand(new SellEquipmentByQualityCommand(1, EquipmentQuality.Rough)));
+        Assert.Equal(soul + rough.Price, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Same(worn, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
-        Assert.Equal(retained, scope.Profile.EquipmentDatas);
-        Assert.Equal((0, 0L), scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Rough)));
-        Assert.Equal(common, scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Common)));
+        Assert.Equal(retained, scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1)));
+        Assert.Equal((0, 0L), scope.SendQuery(new EquipmentSaleSummaryQuery(1, EquipmentQuality.Rough)));
+        Assert.Equal(common, scope.SendQuery(new EquipmentSaleSummaryQuery(1, EquipmentQuality.Common)));
     }
 
     /// <summary>
@@ -55,11 +55,11 @@ public sealed class QueryTests
         int soulChanges = 0;
         Action<IReadOnlyList<EquipmentData>> onInventoryChanged = _ => inventoryChanges++;
         Action<int> onSoulChanged = _ => soulChanges++;
-        scope.Profile.EquipmentDatas.Register(onInventoryChanged);
-        scope.Profile.Soul.Register(onSoulChanged);
+        scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1)).Register(onInventoryChanged);
+        scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Register(onSoulChanged);
         try
         {
-            var query = new EquipmentSaleSummaryQuery(EquipmentQuality.Rough);
+            var query = new EquipmentSaleSummaryQuery(1, EquipmentQuality.Rough);
             (int Count, long Price) before = scope.SendQuery(query);
             Assert.Equal((0, 0L), before);
             Assert.Equal(0, inventoryChanges);
@@ -73,8 +73,8 @@ public sealed class QueryTests
         }
         finally
         {
-            scope.Profile.EquipmentDatas.UnRegister(onInventoryChanged);
-            scope.Profile.Soul.UnRegister(onSoulChanged);
+            scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1)).UnRegister(onInventoryChanged);
+            scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).UnRegister(onSoulChanged);
         }
     }
 
@@ -87,7 +87,7 @@ public sealed class QueryTests
         TestGameScope first = Ready();
         TestGameScope second = Ready();
         AddItem(first, EquipmentId.RoughPilgrimStaff);
-        var query = new EquipmentSaleSummaryQuery(EquipmentQuality.Rough);
+        var query = new EquipmentSaleSummaryQuery(1, EquipmentQuality.Rough);
         var firstController = new Controller(first);
         var secondController = new Controller(second);
         Assert.Equal(1, firstController.SendQuery(query).Count);
@@ -108,15 +108,15 @@ public sealed class QueryTests
         TestGameScope scope = Ready(int.MaxValue - 15);
         EquipmentData first = AddItem(scope, EquipmentId.RoughPilgrimStaff);
         AddItem(scope, EquipmentId.RoughPilgrimClothes);
-        (int Count, long Price) summary = scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Rough));
+        (int Count, long Price) summary = scope.SendQuery(new EquipmentSaleSummaryQuery(1, EquipmentQuality.Rough));
         Assert.Equal((2, 20L), summary);
-        Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
-        Assert.Equal(2, scope.Profile.EquipmentDatas.Count);
-        Assert.Equal(int.MaxValue - 15, scope.Profile.Soul.Value);
+        Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(1, EquipmentQuality.Rough)));
+        Assert.Equal(2, scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1)).Count);
+        Assert.Equal(int.MaxValue - 15, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.True(scope.SendCommand(new EquipEquipmentCommand(1, first.InstanceId)));
-        Assert.Equal(1, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
+        Assert.Equal(1, scope.SendCommand(new SellEquipmentByQualityCommand(1, EquipmentQuality.Rough)));
         Assert.Same(first, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
-        Assert.Equal(int.MaxValue - 5, scope.Profile.Soul.Value);
+        Assert.Equal(int.MaxValue - 5, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Equal((2, 20L), summary);
     }
 
@@ -132,8 +132,8 @@ public sealed class QueryTests
     {
         TestGameScope scope = Ready();
         EquipmentData item = AddItem(scope, EquipmentId.RoughPilgrimStaff);
-        Assert.Equal((0, 0L), scope.SendQuery(new EquipmentSaleSummaryQuery(quality)));
-        Assert.Same(item, Assert.Single(scope.Profile.EquipmentDatas));
+        Assert.Equal((0, 0L), scope.SendQuery(new EquipmentSaleSummaryQuery(1, quality)));
+        Assert.Same(item, Assert.Single(scope.Profile.GetBag(scope.Profile.HeroOf(PlayerSlot.P1))));
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ public sealed class QueryTests
     private static EquipmentData AddItem(TestGameScope scope, EquipmentId id)
     {
         EquipmentData data = scope.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), id, () => 0);
-        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(data));
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, data));
         return data;
     }
 

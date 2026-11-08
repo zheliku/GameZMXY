@@ -57,8 +57,8 @@ public sealed class LevelModelTests
         system.Prepare(1);
         LevelModel levelModel = scope.Level;
         system.StartSession([1]);
-        Assert.Equal(80, levelModel.EntrySnapshot.Soul);
-        scope.GetSystem<ProfileSystem>().AddSoul(20);
+        Assert.Equal(80, levelModel.EntrySnapshot.Heroes[0].Soul);
+        scope.GetSystem<ProfileSystem>().AddSoul(1, 20);
         int ended = 0;
         levelModel.Outcome.Register(outcome =>
         {
@@ -73,7 +73,7 @@ public sealed class LevelModelTests
         Assert.Equal(levelModel.Result == null ? 0 : 1, scope.GetSystem<SaveSystem>().CheckpointCount);
         Assert.Equal(LevelStagePhase.Stopped, levelModel.Sequence.Phase);
         Assert.Null(levelModel.Result);
-        Assert.Equal(80, scope.Profile.Soul.Value);
+        Assert.Equal(80, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
     }
 
     /// <summary>
@@ -86,11 +86,11 @@ public sealed class LevelModelTests
         LevelSystem system = scope.GetSystem<LevelSystem>();
         system.Prepare(1);
         system.StartSession([1]);
-        scope.GetSystem<ProfileSystem>().AddSoul(20);
+        scope.GetSystem<ProfileSystem>().AddSoul(1, 20);
 
         system.EndSession(rollback: false);
         Assert.Null(scope.Level.EntrySnapshot);
-        Assert.Equal(100, scope.Profile.Soul.Value);
+        Assert.Equal(100, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
     }
 
     /// <summary>

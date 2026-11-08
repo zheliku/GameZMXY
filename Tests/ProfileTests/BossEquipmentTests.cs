@@ -25,15 +25,15 @@ public sealed class BossEquipmentTests
         EquipmentData ring = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => .5f);
         Assert.Equal((15, 4, .03f, .03f),
             (ring.Attributes.Power, ring.Attributes.Def, ring.Attributes.Crit, ring.Attributes.Miss));
-        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(scope.Profile.HeroOf(PlayerSlot.P1), ring));
         Assert.True(equipment.TryEquip(scope.Profile.HeroIds[0], ring.InstanceId));
-        Assert.False(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
+        Assert.False(scope.GetSystem<ProfileSystem>().TryCollectEquipment(scope.Profile.HeroOf(PlayerSlot.P1), ring));
         Assert.Equal((25, 6, .03f, .03f),
             (scope.Hero.Power.Value, scope.Hero.Def.Value, scope.Hero.Crit.Value, scope.Hero.Miss.Value));
         foreach (EquipmentId id in new[] { EquipmentId.CommonPilgrimStaff, EquipmentId.EarthFiendApeArmor })
         {
             EquipmentData item = equipment.Roll(Guid.NewGuid(), id, () => 0);
-            Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(item));
+            Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(scope.Profile.HeroOf(PlayerSlot.P1), item));
             Assert.True(equipment.TryEquip(scope.Profile.HeroIds[0], item.InstanceId));
             Assert.Same(ring, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Accessory);
             Assert.Equal(.03f, scope.Hero.Crit.Value);
@@ -67,8 +67,8 @@ public sealed class BossEquipmentTests
         EquipmentSystem equipment = scope.GetSystem<EquipmentSystem>();
         EquipmentData ring = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
         EquipmentData armor = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendApeArmor, () => 0);
-        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
-        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(armor));
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(scope.Profile.HeroOf(PlayerSlot.P1), ring));
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(scope.Profile.HeroOf(PlayerSlot.P1), armor));
         Assert.True(equipment.TryEquip(scope.Profile.HeroIds[0], ring.InstanceId));
         Assert.False(equipment.TryEquip(scope.Profile.HeroIds[0], armor.InstanceId));
         Assert.Same(ring, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Accessory);
@@ -110,7 +110,7 @@ public sealed class BossEquipmentTests
     {
         var scope = new TestGameScope([(1, 0)], 0, 25);
         EquipmentData ring = scope.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
-        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(scope.Profile.HeroOf(PlayerSlot.P1), ring));
         var utility = new SaveDataUtility();
         foreach (float invalid in new[] { .031f, 3f, float.NaN, float.PositiveInfinity })
         {
@@ -123,6 +123,7 @@ public sealed class BossEquipmentTests
                 TestTables.Tables.TbSkillConfig, TestTables.Tables.TbLevelConfig, TestTables.Tables.TbPassiveConfig));
         }
         GameData valid = scope.CaptureSaveData();
+        valid.Heroes[0].BagInstanceIds.Remove(ring.InstanceId);
         valid.Heroes[0].AccessoryInstanceId = ring.InstanceId;
         utility.Validate(valid, TestTables.Tables.TbEquipmentConfig, 25, TestTables.Tables.TbSkillConfig,
             TestTables.Tables.TbLevelConfig, TestTables.Tables.TbPassiveConfig);

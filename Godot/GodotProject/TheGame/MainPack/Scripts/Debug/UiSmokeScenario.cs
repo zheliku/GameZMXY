@@ -629,7 +629,7 @@ public sealed partial class UiSmokeScenario
             // 用曾经缺少外观映射的装备重新进关，验证 OnShow 而不只验证界面穿戴。
             EquipmentData startupArmor = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(),
                 GameConfig.Equipment.EquipmentId.RoughPilgrimClothes, () => .5f);
-            Check(flow.GetSystem<ProfileSystem>().TryCollectEquipment(startupArmor) &&
+            Check(flow.GetSystem<ProfileSystem>().TryCollectEquipment(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), startupArmor) &&
                 flow.GetSystem<EquipmentSystem>().TryEquip(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), startupArmor.InstanceId),
                 "穿戴读档回归的粗糙行者服准备失败");
             hero.RefreshAppearance(); // 夹具已结束关卡订阅，显式建立这次穿戴的视觉基准。
@@ -651,11 +651,11 @@ public sealed partial class UiSmokeScenario
             // 中途离开：关内收益回滚，不写盘；重入读回进关前状态。
             ProfileModel progression = flow.GetModel<ProfileModel>();
             int before = progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.TotalExperience;
-            int soulBefore = flow.GetModel<ProfileModel>().Soul.Value;
-            Guid[] inventoryBefore = flow.GetModel<ProfileModel>().EquipmentDatas.Select(x => x.InstanceId).ToArray();
+            int soulBefore = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
+            Guid[] inventoryBefore = flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Select(x => x.InstanceId).ToArray();
             await DefeatMonsterAsync(level, procedure);
-            flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPilgrimStaff, () => .7f));
-            Check(flow.GetArchitecture().SendCommand(new SellEquipmentByQualityCommand(GameConfig.Equipment.EquipmentQuality.Common)) > 0,
+            flow.GetSystem<ProfileSystem>().TryCollectEquipment(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPilgrimStaff, () => .7f));
+            Check(flow.GetArchitecture().SendCommand(new SellEquipmentByQualityCommand(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), GameConfig.Equipment.EquipmentQuality.Common)) > 0,
                 "批量出售命令未接收整包品质出售请求");
             Check(progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.TotalExperience > before, "击败怪物没有把经验写入档案");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == before, "关内收益在结算前就写盘了");
@@ -663,21 +663,21 @@ public sealed partial class UiSmokeScenario
             procedure = await WaitForLevelAsync();
             Check(ReferenceEquals(SmokeInspection.Flow(procedure), flow), "重入关卡没有沿用同一档案作用域");
             Check(progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.TotalExperience == before, "中途离开没有回滚关内收益");
-            Check(flow.GetModel<ProfileModel>().EquipmentDatas.Select(x => x.InstanceId).SequenceEqual(inventoryBefore), "中途离开没有回滚装备实例");
-            Check(flow.GetModel<ProfileModel>().Soul.Value == soulBefore, "中途离开没有回滚已拾取的灵魂");
+            Check(flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Select(x => x.InstanceId).SequenceEqual(inventoryBefore), "中途离开没有回滚装备实例");
+            Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soulBefore, "中途离开没有回滚已拾取的灵魂");
 
             // 死亡：提交本关收益（写盘），显示失败结算并由玩家重试。关卡运行在击杀前捕获，重开后流程会换成新运行。
             await DefeatMonsterAsync(FindLevel(), procedure);
             EquipmentData checkpointGear = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPineStaff, () => .73f);
-            flow.GetSystem<ProfileSystem>().TryCollectEquipment(checkpointGear);
+            flow.GetSystem<ProfileSystem>().TryCollectEquipment(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), checkpointGear);
             int afterKill = progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.TotalExperience;
-            int soulAfterKill = flow.GetModel<ProfileModel>().Soul.Value;
+            int soulAfterKill = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
             LevelViewController deathRun = SmokeInspection.Level(procedure);
             HashSet<LootOrbNode> pendingOrbs = SmokeInspection.ReadField<HashSet<GameLogic.Drops.LootOrbNode>>(deathRun, "_lootOrbs");
             SpawnOrb(deathRun, FindHero().GlobalPosition, new(GameLogic.Drops.LootKind.Soul, 50));
             Check(pendingOrbs.Count > 0, "死亡回收测试缺少在途奖励");
             KillHero(FindHero());
-            Check(pendingOrbs.Count == 0 && flow.GetModel<ProfileModel>().Soul.Value == soulAfterKill,
+            Check(pendingOrbs.Count == 0 && flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soulAfterKill,
                 "死亡没有回收在途球，或错误领取了未接触奖励");
             AnimationPlayer deathPlayer = FindHero().GetNode<AnimationPlayer>("m_Tombstone/m_AnimationPlayer");
             await WaitUntilAsync(() => deathPlayer.CurrentAnimation == "play" && deathPlayer.IsPlaying(),
@@ -693,7 +693,7 @@ public sealed partial class UiSmokeScenario
             Check(SmokeInspection.Model(deathRun).Outcome.Value == LevelOutcome.Defeated, $"英雄死亡没有结束关卡运行：{SmokeInspection.Model(deathRun).Outcome.Value}");
             Check(await SmokeInspection.GetLevelSystem(deathRun).CheckpointWrite, "死亡检查点写入失败");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == afterKill, "死亡没有保存本关收益");
-            Check((await ReadDiskAsync()).Soul == soulAfterKill, "死亡没有保存已拾取的灵魂");
+            Check((await ReadDiskAsync()).Heroes[0].Soul == soulAfterKill, "死亡没有保存已拾取的灵魂");
             EquipmentSaveData savedGear = (await ReadDiskAsync()).EquipmentItems.Single(x => x.InstanceId == checkpointGear.InstanceId);
             Check(savedGear.Attributes == checkpointGear.Attributes, "死亡检查点没有保存实际装备属性");
             await CheckFailureSettlementAsync(deathRun);
@@ -1463,7 +1463,7 @@ public sealed partial class UiSmokeScenario
         hero.SetPhysicsProcess(true);
         int kills = SmokeInspection.Model(run).DefeatedEnemyCount;
         int beforeXp = SmokeInspection.Flow(procedure).GetModel<ProfileModel>().GetProgress(hero.HeroId).Value.TotalExperience;
-        int beforeSoul = SmokeInspection.Flow(procedure).GetModel<ProfileModel>().Soul.Value;
+        int beforeSoul = SmokeInspection.Flow(procedure).GetModel<ProfileModel>().GetSoul(hero.HeroId).Value;
         int beforeLevel = hero.Level;
 
         // 推动相机抵达首阶段右界触发首波刷怪；刷出的怪物立即停用 AI，避免它先打死测试英雄。
@@ -1531,7 +1531,7 @@ public sealed partial class UiSmokeScenario
         }, "击败怪物没有经关卡运行结算", 10000, () => Describe(monster, run, level));
         int reward = SmokeInspection.ReadField<int>(monster, "ExperienceReward");
         Check(SmokeInspection.Flow(procedure).GetModel<ProfileModel>().GetProgress(hero.HeroId).Value.TotalExperience == beforeXp + reward &&
-            SmokeInspection.Flow(procedure).GetModel<ProfileModel>().Soul.Value == beforeSoul, "击败经验未直接结算或灵魂未拾取就入账");
+            SmokeInspection.Flow(procedure).GetModel<ProfileModel>().GetSoul(hero.HeroId).Value == beforeSoul, "击败经验未直接结算或灵魂未拾取就入账");
         if (hero.Level > beforeLevel)
         {
             HeroLevelUpNode effect = SmokeInspection.ReadField<GameLogic.Heroes.Effects.HeroLevelUpNode>(hero, "_levelUp");
@@ -1564,7 +1564,7 @@ public sealed partial class UiSmokeScenario
             HeroModel model = SmokeInspection.Flow(procedure).GetModel<HeroModel>();
             Check(model.Hp.Value == Math.Min(model.MaxHp.Value, healthBefore + healthReward), "正式死亡红球没有按生成快照恢复生命");
         }
-        int souls = SmokeInspection.Flow(procedure).GetModel<ProfileModel>().Soul.Value - beforeSoul;
+        int souls = SmokeInspection.Flow(procedure).GetModel<ProfileModel>().GetSoul(hero.HeroId).Value - beforeSoul;
         Check(souls >= monster.Config.SoulCount.X * monster.Config.SoulPerOrb &&
             souls <= monster.Config.SoulCount.Y * monster.Config.SoulPerOrb, "灵魂球没有按配置入账");
         hero.SetPhysicsProcess(false);

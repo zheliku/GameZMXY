@@ -9,6 +9,7 @@ using GameConfig.Entity;
 using GameConfig.Equipment;
 using GameFramework;
 using GameFramework.Fsm;
+using GameLogic;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Battle.Attacks;
@@ -189,7 +190,7 @@ public sealed partial class UiSmokeScenario
             EquipmentData data = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), id, () => .5f);
             SpawnGround(level, hero.HurtBox.GetGlobalBounds().GetCenter(), null, data);
             GroundItemNode item = owned.Single();
-            await WaitUntilAsync(() => flow.GetModel<ProfileModel>().EquipmentDatas.Any(value => value.InstanceId == data.InstanceId),
+            await WaitUntilAsync(() => flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Any(value => value.InstanceId == data.InstanceId),
                 "新装备没有通过真实接触进入背包");
             equipmentDatas.Add(data);
             item._PhysicsProcess(.81);
@@ -197,7 +198,7 @@ public sealed partial class UiSmokeScenario
         }
         await CheckInventoryAsync(form, hero, flow, level);
         // 界面夹具恢复了原始背包，新装备必须仍是同一档案的权威实例。
-        Check(equipmentDatas.All(data => flow.GetModel<ProfileModel>().EquipmentDatas.Any(value => value.InstanceId == data.InstanceId)),
+        Check(equipmentDatas.All(data => flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Any(value => value.InstanceId == data.InstanceId)),
             "穿卸界面恢复后丢失真实拾取的新装备");
         KillHero(hero);
         await WaitUntilAsync(() => SmokeInspection.Model(level).Outcome.Value == LevelOutcome.Defeated,
@@ -211,7 +212,7 @@ public sealed partial class UiSmokeScenario
             !ReferenceEquals(current, level) && CurrentBattleForm() != null, "第六关失败页重试未重建场景", 15000);
         LevelViewController retry = FindLevel();
         Check(SmokeInspection.ReadField<int>(retry, "_levelId") == levelId &&
-            equipmentDatas.All(data => flow.GetModel<ProfileModel>().EquipmentDatas.Any(value => value.InstanceId == data.InstanceId)),
+            equipmentDatas.All(data => flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Any(value => value.InstanceId == data.InstanceId)),
             "重试进入错误关卡或丢失已保存装备");
         await CheckFailureReturnMapAsync();
         GD.Print($"SMOKE-EQUIPMENT FLOW {label} PASS: all ground icons, {equipmentIds.Length} real pickups, GUI wardrobe, failure save, retry and map return");

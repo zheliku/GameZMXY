@@ -2,6 +2,66 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人A2：灵魂与背包归个人（2026-11-08）
+
+A1 已由用户接受并提交为 `d2c3d13`；本轮按实施计划顺序完成 A2-1～A2-4，钱包、背包、拾取、穿卸、出售和学技均显式指定 HeroId，唯一奖励与实例排重覆盖全档。本局仍只装配 P1，单个 HeroModel、输入和 HUD 保持原状。构建、规则测试、扫描、引用、完整前端/UI 烟测与牛心唯一奖励专项均通过；当前停在 A2 等待用户审查，不进入 A3。
+
+依据为实施计划 A2、规范第 00 章的状态所有权与订退生命周期、第 10 章的中文注释/格式、第 70 章的存档与检查点规则。用户已授权同步规范和计划原文；本批更新其当前事实，不提前实现后续阶段。
+
+存档 v13 → v14：删除根级共享余额；每个 `HeroSaveData` 必需保存 `Soul` 与 `BagInstanceIds`，`EquipmentItems` 改为包含全部背包和穿戴的全档实例池。同一实例必须且只能被一处引用，拒绝缺失引用、重复归属、孤立实例、个人超容量及负余额。仍只接受当前格式，**旧 v13 及更早开发档需重建**，没有兼容或迁移分支。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 开工基线 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0 错误、5 条既有框架弃用警告；三套规则测试分别为 **282/282、193/193、19/19**，均退出 0 |
+| 子任务编译 | 每步执行 `dotnet build Godot/GodotProject --no-restore -v quiet`。用户明确允许 A2-1～A2-3 暂留本批迁移错误；错误数依次为 **122、126、130**，A2-4 全部消除：**0 错误、5 警告、退出 0**。步骤日志为 `.godot/validation/coop_a2_20261108/a2_1_build.log` 至 `a2_4_build.log`；中间失败不作为最终通过证据 |
+| 最终游戏构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：**退出 0，0 错误、5 条既有框架弃用警告** |
+| 档案规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：**退出 0，292/292**，失败 0、跳过 0。比 A2 开工增加 10 例：个人容量/出售收益隔离、排序归属与原格子顺序往返两项 Fact，6 例非法实例归属，2 例必需英雄字段缺失；原有断言保留 |
+| 战斗规则 | `dotnet test Tests/BattleTests --no-restore -v quiet`：**退出 0，193/193**，失败 0、跳过 0 |
+| 关卡规则 | `dotnet test Tests/LevelTests --no-restore -v quiet`：**退出 0，19/19**，失败 0、跳过 0。测试工程既有 NU1900，Battle 的 CS8632/CS0649 警告保留 |
+| Godot 扫描/构建 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_a2_scan_final_20261108 --headless --editor --build-solutions --quit --no-window`：**退出 0**，最终代码扫描与构建完成；既有 ComponentInsoector 的 RefCounted/free 退出诊断保留 |
+| 引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出 0，2283 条序列化路径、388 个 UID** 通过 |
+| 正式前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_a2_frontend_20261108 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出 0，完整 SMOKE PASS**；两英雄建档、选角、地图主动/被动购技、钱包刷新、保存返回、磁盘重读、加载取消和部分注册清理通过。旧作用域拒绝、坏文件与重复注册为预期注入；退出有 **5 个 ObjectDB 实例、1 个资源占用**诊断 |
+| 完整 UI | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_a2_ui_20261108 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 30000 -- --smoketest=ui`：**退出 0，完整 SMOKE PASS**；拾取/满包/过期与池复用、单件/批量出售、钱包观察、学习扣费、15 件装备穿卸、60/120Hz 坡地与平台、死亡/检查点回滚、备份恢复、加载取消/失败清理、存档重入通过。坏文件与 HUD 打开失败为预期注入；退出保留 **38 个 CanvasItem RID、20 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、141 个 ObjectDB 实例、11 个资源占用**诊断，并有 20 条 GL 纹理泄漏明细 |
+| 牛心唯一奖励专项 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_a2_bull_reward_20261108 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --bull-only`：**退出 0**，`SMOKE-BULL TREASURE PASS` 与最终 `SMOKE PASS` 均出现；真实致死攻击、首次直接入包、重复击败排重、满包拒绝、提示缺席仍完成死亡、提示池复用及订退通过。另有 60/120Hz 原生招式与牛心演出 PASS；退出保留 **10 个 ObjectDB 实例、1 个资源占用**诊断。唯一奖励由此既有专项执行，普通完整 UI 不覆盖此分支 |
+| 退役接口搜索 | 从仓库根执行 `$oldBag = 'Equipment' + 'Datas'; rg -n -- $oldBag .`，以及 `$oldWallet = ('Profile' + 'Model') + '.' + ('So' + 'ul'); rg -n -F -- $oldWallet .`、`$oldRootWallet = ('Game' + 'Data') + '.' + ('So' + 'ul'); rg -n -F -- $oldRootWallet .`：均退出 1、**0 命中**，含源码、规范、计划和历史说明；同时逐项核对剩余 `.Soul`，只属于英雄 DTO、掉落枚举或显示行，不再访问旧共享钱包。遵循仓库忽略规则，Git 对象、构建缓存和验证日志不属于源码文档验收 |
+| 格式与边界 | `dotnet format whitespace <csproj> --no-restore --include <本批文件绝对路径清单> --verify-no-changes`：Godot 工程 **31 份**、ProfileTests **12 份** C# 文件均退出 0；仅既有工作区加载警告。`git diff --check` 退出 0；43 份修改 C# 均验证为 UTF-8/CRLF。无新增/删除类型或正式文件，Framework、addons、Tools/Luban、生成代码/资源、源表、bytes、场景无本批修改；未执行 Git 写操作 |
+
+关键接口变化（返回类型未变化的行省略返回类型）：
+
+| 修改前 | 修改后 |
+| --- | --- |
+| ProfileModel 共享钱包与共享背包属性 | 删除；改为 `BindableProperty<int> GetSoul(int heroId)`、`BindableList<EquipmentData> GetBag(int heroId)`；构造的 `soul` 表示每人初始余额，`Capacity` 表示每人容量 |
+| `AddSoul(int amount)` / `TrySpendSoul(int amount)` | `AddSoul(int heroId, int amount)` / `TrySpendSoul(int heroId, int amount)` |
+| `TryCollectEquipment(EquipmentData data)`（ProfileSystem/LevelSystem） | `TryCollectEquipment(int heroId, EquipmentData data)` |
+| `GrantUniqueEquipment(EquipmentId equipmentId, Func<float> random)` | `GrantUniqueEquipment(int heroId, EquipmentId equipmentId, Func<float> random)` |
+| `TrySell(Guid instanceId)` / `SellByQuality(EquipmentQuality quality)` | `TrySell(int heroId, Guid instanceId)` / `SellByQuality(int heroId, EquipmentQuality quality)` |
+| `CollectLoot(LootReward reward)` / `TryCollectPickup(PickupId id)` | `CollectLoot(int heroId, LootReward reward)` / `TryCollectPickup(int heroId, PickupId id)` |
+| `EquipmentSaleSummaryQuery(EquipmentQuality quality)` | `EquipmentSaleSummaryQuery(int heroId, EquipmentQuality quality)` |
+| `SellEquipmentCommand(Guid instanceId)` / `SellEquipmentByQualityCommand(EquipmentQuality quality)` | 两个构造函数均在首位增加 `int heroId` |
+| `InventoryBagPanel.Refresh(bool resetPage = false)` | `Refresh(int heroId, int capacity, IReadOnlyList<EquipmentData> items, int soul, bool resetPage = false)`；Form 注入同一英雄的只读显示数据，关闭时清除借用引用 |
+| `ReadItems(GameData data, int capacity)` 返回共享数组与逐人穿戴 | 返回 `(Dictionary<int, EquipmentData[]> Bags, Dictionary<int, EquippedItems> Slots)`；先完整校验，再逐人恢复 |
+| Debug 的 `RestoreSoul(int soul)` / `RestoreItems(IEnumerable<EquipmentData> datas)` | 两个入口均在首位增加 `int heroId`，只修改目标英雄 |
+
+本批文件清单：**48 份修改（43 份 C#、5 份文档），无新增、无删除**。下表逐项列出各目录内的相对文件名。
+
+| 所属目录 | 修改文件 |
+| --- | --- |
+| `Docs/` | `CoopImplementationPlan.md`、`ProjectGuidelines/70-ProfileAndSave.md`、`ProjectTour.md`、`Validation.md`、`WorkingNotes.md` |
+| `Godot/GodotProject/TheGame/GameScripts/` | `Commands/EquipmentCommands.cs`、`Entity/Enemies/Bosses/zm1_10_bull_demon_valley/BullDemonHeartDeathState.cs`、`Entity/Level/LevelViewController.Loot.cs`、`Models/Profile/ProfileModel.cs`、`Models/Save/GameData.cs`、`Queries/EquipmentSaleSummaryQuery.cs`、`Systems/EquipmentSystem.cs`、`Systems/LevelSystem.cs`、`Systems/ProfileSystem.cs`、`Systems/SaveSystem.cs`、`Systems/SkillSystem.cs`、`UI/InventoryForm/Components/InventoryBagPanel.cs`、`UI/InventoryForm/InventoryForm.Logic.cs`、`UI/MapForm/MapForm.Logic.cs`、`UI/SkillForm/SkillForm.Logic.cs`、`Utilities/Utility/SaveDataUtility.cs` |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/` | `FrontendSmokeScenario.cs`、`LevelSmokeScenario.cs`、`ProfileTestData.cs`、`UiSmokeScenario.Bull.cs`、`UiSmokeScenario.CheckpointFailure.cs`、`UiSmokeScenario.Dragon.cs`、`UiSmokeScenario.Equipment.cs`、`UiSmokeScenario.FireDemon.cs`、`UiSmokeScenario.Garuda.cs`、`UiSmokeScenario.Inventory.cs`、`UiSmokeScenario.Passives.cs`、`UiSmokeScenario.Skills.cs`、`UiSmokeScenario.Tangseng.cs`、`UiSmokeScenario.cs` |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/` | `ProcedureLoadGame.cs` |
+| `Tests/ProfileTests/` | `BossEquipmentTests.cs`、`CommandTests.cs`、`DragonPalaceTests.cs`、`EquipmentTests.cs`、`LevelModelTests.cs`、`LevelRewardTests.cs`、`ModelTransactionTests.cs`、`PassiveSkillTests.cs`、`ProfileTests.cs`、`QueryTests.cs`、`SkillLearningTests.cs`、`TestGameScope.cs` |
+
+计划之外的实际情况与处理：
+
+- 中间构建门槛与删除旧接口的顺序冲突，已上报并取得用户裁决；保留原顺序且不增兼容视图，A2-4 编译错误清零。
+- 背包显示按集合下标取格子；仅依照排序后的归属编号恢复会改变原单人背包顺序。本批沿用实例池的原始顺序来恢复各人的背包，归属编号仍按计划排序；没有增加持久字段或排序状态，反向 GUID 插入的 JSON 往返测试已验证。
+- 计划未单列的机械消费者：`SaveSystem` 新档把初始余额写入首个英雄记录，空槽检查和快照回写删除根级钱包访问；`ProcedureLoadGame` 与 `TestGameScope.FromSaveData` 构造时使用默认零余额，再由现有 RestoreCheckpoint 恢复逐人钱包；烟测的根字段比较删除共享余额，完整 Heroes 比较已覆盖个人余额。
+- `BossEquipmentTests.Save_RejectsAlteredProbabilitiesAndInvalidAccessoryOwnership` 原夹具直接把包内饰品移到穿戴位置，v14 必须同时移除原背包引用；首次规则测试因此失败，修正夹具后全套 292/292 通过，原有断言未弱化。A2-4 早期构建失败也已清零，失败日志保留在忽略的验证目录。
+- `Tests/BattleTests` 经核对无需改源码或断言；本批未新增类型、正式文件、事件、配置或生产测试入口。
+
+遗留与下一批前置条件：A3 须在用户接受 A2 并授权后开始，补齐完整双人档案规则证据和全员存档格摘要；当前仍只显示阵容首位摘要。单份本局模型、技能登记、输入/HUD、P1 开窗和牛心奖励本阶段显式归 P1，分别留给既定 B/C/D/E 批次。引擎退出诊断保留，不在本批修改只读依赖或处理无关生命周期。实机烟测使用既有 runner 的案例专属 APPDATA 和 Validation 存档，正式玩家存档未覆盖；正常数值下全关人工实战未执行，烟测不替代该验收。
+
 ## 双人A1：阵容取代单一出战英雄（2026-11-07）
 
 按用户目标文件及 CoopImplementationPlan 第四部分顺序实施 A1-1～A1-8。当前仍只建立一名战斗英雄，单人输入与界面布局不变；钱包和背包归属留给 A2，本局模型留给 B1。依据项目规范第 00/10/30/50/70 章执行分层、中文注释、对称订退和隔离存档验证，2026-11-08 用户进一步要求文档也清零并授权同步规范和计划，已补齐文档当前状态。

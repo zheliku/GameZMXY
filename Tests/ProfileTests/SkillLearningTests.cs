@@ -29,15 +29,15 @@ public sealed class SkillLearningTests
         learned.Register(_ => notifications++);
         Assert.False(system.IsLearned(1, SkillId.RisingDragon));
         Assert.Equal(SkillLearnResult.InsufficientSoul, system.Learn(1, SkillId.RisingDragon));
-        Assert.Equal(99, scope.Profile.Soul.Value);
+        Assert.Equal(99, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Empty(learned);
         Assert.Equal(0, notifications);
-        scope.GetSystem<ProfileSystem>().AddSoul(1);
+        scope.GetSystem<ProfileSystem>().AddSoul(1, 1);
         Assert.Equal(SkillLearnResult.Learned, system.Learn(1, SkillId.RisingDragon));
-        Assert.Equal(0, scope.Profile.Soul.Value);
+        Assert.Equal(0, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.True(system.IsLearned(1, SkillId.RisingDragon));
         Assert.Equal(SkillLearnResult.AlreadyLearned, system.Learn(1, SkillId.RisingDragon));
-        Assert.Equal(0, scope.Profile.Soul.Value);
+        Assert.Equal(0, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Equal(1, notifications);
     }
 
@@ -60,7 +60,7 @@ public sealed class SkillLearningTests
         Assert.True(system.IsLearnable(1, SkillId.RisingDragon));
         Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(1, SkillId.RisingDragon)));
         Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new UpgradePassiveCommand(1, PassiveId.Vitality)));
-        Assert.Equal(10000 - skillCost - passiveCost, scope.Profile.Soul.Value);
+        Assert.Equal(10000 - skillCost - passiveCost, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
 
         GameData save = scope.CaptureSaveData();
         HeroSaveData heroData = save.Heroes.Single(hero => hero.HeroId == 1);
@@ -84,7 +84,7 @@ public sealed class SkillLearningTests
     {
         var scope = new TestGameScope([(1, 0)], 9999, 20);
         Assert.Equal(SkillLearnResult.Unavailable, scope.GetSystem<SkillSystem>().Learn(1, id));
-        Assert.Equal(9999, scope.Profile.Soul.Value);
+        Assert.Equal(9999, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Empty(scope.Skills.GetLearnedSkills(1));
     }
 
@@ -108,7 +108,7 @@ public sealed class SkillLearningTests
         scope.RestoreCheckpoint(checkpoint);
         Assert.Same(learned, scope.Skills.GetLearnedSkills(1));
         Assert.Equal(new[] { SkillId.FlameThrust }, learned);
-        Assert.Equal(2800, scope.Profile.Soul.Value);
+        Assert.Equal(2800, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
     }
 
     /// <summary>
@@ -124,9 +124,9 @@ public sealed class SkillLearningTests
         var scope = new TestGameScope([(1, 0)], 3000, 20);
         GameData snapshot = scope.CaptureSaveData();
         snapshot.Heroes[0].LearnedSkills.AddRange([SkillId.RisingDragon, invalid]);
-        snapshot.Soul = 0;
+        snapshot.Heroes[0].Soul = 0;
         Assert.Throws<ArgumentException>(() => scope.RestoreCheckpoint(snapshot));
-        Assert.Equal(3000, scope.Profile.Soul.Value);
+        Assert.Equal(3000, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
         Assert.Empty(scope.Skills.GetLearnedSkills(1));
     }
 

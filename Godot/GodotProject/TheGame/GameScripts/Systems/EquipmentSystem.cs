@@ -55,7 +55,7 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
     public bool TryEquip(int heroId, Guid instanceId)
     {
         ProfileModel profile = this.GetModel<ProfileModel>();
-        EquipmentData item = profile.EquipmentDatas.FirstOrDefault(x => x.InstanceId == instanceId);
+        EquipmentData item = profile.GetBag(heroId).FirstOrDefault(x => x.InstanceId == instanceId);
         if (item == null)
         {
             return false;
@@ -68,7 +68,7 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         }
 
         BindableProperty<EquippedItems> slots = profile.GetSlots(heroId);
-        if (!TryExchange(instanceId, SlotOf(slots.Value, definition.Slot)))
+        if (!TryExchange(heroId, instanceId, SlotOf(slots.Value, definition.Slot)))
         {
             return false;
         }
@@ -95,7 +95,7 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         ProfileModel profile = this.GetModel<ProfileModel>();
         BindableProperty<EquippedItems> slots = profile.GetSlots(heroId);
         EquipmentData item = SlotOf(slots.Value, slot);
-        if (item == null || !TryExchange(Guid.Empty, item))
+        if (item == null || !TryExchange(heroId, Guid.Empty, item))
         {
             return false;
         }
@@ -114,38 +114,40 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
     /// <summary>
     /// 出售背包中的一件装备；过期选择、已穿戴物或余额溢出时不修改档案。
     /// </summary>
+    /// <param name="heroId">本次操作的参战英雄编号。</param>
     /// <param name="instanceId">要出售的背包实例。</param>
     /// <returns>移除装备并入账配置售价时为 true。</returns>
-    public bool TrySell(Guid instanceId)
+    public bool TrySell(int heroId, Guid instanceId)
     {
         ProfileModel profile = this.GetModel<ProfileModel>();
-        EquipmentData item = profile.EquipmentDatas.FirstOrDefault(x => x.InstanceId == instanceId);
+        EquipmentData item = profile.GetBag(heroId).FirstOrDefault(x => x.InstanceId == instanceId);
         if (item == null)
         {
             return false;
         }
 
         int price = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId).SellPrice;
-        if (price > int.MaxValue - profile.Soul.Value)
+        if (price > int.MaxValue - profile.GetSoul(heroId).Value)
         {
             return false;
         }
 
-        if (!TryExchange(instanceId, null))
+        if (!TryExchange(heroId, instanceId, null))
         {
             return false;
         }
         // 背包移除完成后入账。
-        profile.Soul.Value += price;
+        profile.GetSoul(heroId).Value += price;
         return true;
     }
 
     /// <summary>
     /// 一次出售背包内指定品质的全部装备；穿戴物不在背包内，余额溢出时整批不变。
     /// </summary>
+    /// <param name="heroId">本次操作的参战英雄编号。</param>
     /// <param name="quality">要出售的品质。</param>
     /// <returns>本次实际出售件数；没有匹配物或无法入账时为零。</returns>
-    public int SellByQuality(EquipmentQuality quality)
+    public int SellByQuality(int heroId, EquipmentQuality quality)
     {
         ProfileModel profile = this.GetModel<ProfileModel>();
         if (!Enum.IsDefined(quality))
@@ -156,7 +158,7 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         HashSet<Guid> ids = new();
         long price = 0;
         TbEquipmentConfig definitions = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig;
-        foreach (EquipmentData item in profile.EquipmentDatas)
+        foreach (EquipmentData item in profile.GetBag(heroId))
         {
             EquipmentConfig definition = definitions.Get(item.EquipmentId);
             if (definition.Quality != quality)
@@ -168,13 +170,13 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
             price += definition.SellPrice;
         }
 
-        if (ids.Count == 0 || price > int.MaxValue - profile.Soul.Value)
+        if (ids.Count == 0 || price > int.MaxValue - profile.GetSoul(heroId).Value)
         {
             return 0;
         }
 
-        profile.EquipmentDatas.ReplaceAll(profile.EquipmentDatas.Where(item => !ids.Contains(item.InstanceId)));
-        profile.Soul.Value += (int)price;
+        profile.GetBag(heroId).ReplaceAll(profile.GetBag(heroId).Where(item => !ids.Contains(item.InstanceId)));
+        profile.GetSoul(heroId).Value += (int)price;
         return ids.Count;
     }
 
@@ -200,22 +202,24 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
     /// <summary>
     /// 交换背包中的一件物品；先验证，再经正常集合入口修改。
     /// </summary>
+    /// <param name="heroId">本次操作的参战英雄编号。</param>
     /// <param name="removeId">移出背包的实例；空编号表示只放回。</param>
     /// <param name="data">放回背包的实例；空表示只移出。</param>
     /// <returns>容量、编号均有效时完成交换。</returns>
-    private bool TryExchange(Guid removeId, EquipmentData data)
+    private bool TryExchange(int heroId, Guid removeId, EquipmentData data)
     {
         ProfileModel profile = this.GetModel<ProfileModel>();
+        BindableList<EquipmentData> bag = profile.GetBag(heroId);
         int index = removeId == Guid.Empty
             ? -1
-            : Enumerable.Range(0, profile.EquipmentDatas.Count).FirstOrDefault(i => profile.EquipmentDatas[i].InstanceId == removeId, -1);
+            : Enumerable.Range(0, bag.Count).FirstOrDefault(i => bag[i].InstanceId == removeId, -1);
         if (removeId != Guid.Empty && index < 0)
         {
             return false;
         }
 
-        if (data != null && (profile.EquipmentDatas.Any(x => x.InstanceId == data.InstanceId) ||
-                                    (index < 0 && profile.EquipmentDatas.Count == profile.Capacity)))
+        if (data != null && (bag.Any(x => x.InstanceId == data.InstanceId) ||
+                                    (index < 0 && bag.Count == profile.Capacity)))
         {
             return false;
         }
@@ -224,16 +228,16 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         {
             if (data == null)
             {
-                profile.EquipmentDatas.RemoveAt(index);
+                bag.RemoveAt(index);
             }
             else
             {
-                profile.EquipmentDatas[index] = data;
+                bag[index] = data;
             }
         }
         else if (data != null)
         {
-            profile.EquipmentDatas.Add(data);
+            bag.Add(data);
         }
 
         return true;

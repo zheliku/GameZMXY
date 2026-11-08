@@ -104,8 +104,7 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
         int startHeroId = initialHeroId == 0 ? tables.TbProfileConfig.StartHeroId : initialHeroId;
         GameData source = created ? new GameData
         {
-            Soul = tables.TbProfileConfig.StartSoul,
-            Heroes = [new HeroSaveData { HeroId = startHeroId }]
+            Heroes = [new HeroSaveData { HeroId = startHeroId, Soul = tables.TbProfileConfig.StartSoul }]
         } : data;
         mapper.Validate(source, tables.TbEquipmentConfig,
             tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig, tables.TbPassiveConfig);
@@ -215,7 +214,7 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
     private static bool IsUnclaimedSlot(GameCatalogue catalogue, GameData data)
     {
         return data != null && data.UnitId == catalogue.UnitId && data.SaveVersion == GameData.CurrentVersion &&
-        data.Heroes is { Count: 0 } && data.Soul == 0 && data.HighestClearedLevelId == 0 &&
+        data.Heroes is { Count: 0 } && data.HighestClearedLevelId == 0 &&
         data.EquipmentItems is { Count: 0 } &&
         catalogue.SlotNumber == 0 && catalogue.SavedAtUtc == 0 && string.IsNullOrEmpty(catalogue.Name);
     }
@@ -303,7 +302,6 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
         archive.CurrentCatalogue.SavedAtUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         data.SaveVersion = GameData.CurrentVersion;
         data.Heroes = snapshotData.Heroes;
-        data.Soul = snapshotData.Soul;
         data.HighestClearedLevelId = snapshotData.HighestClearedLevelId;
         data.EastSeaBannerAvailable = snapshotData.EastSeaBannerAvailable;
         data.EquipmentItems = snapshotData.EquipmentItems;

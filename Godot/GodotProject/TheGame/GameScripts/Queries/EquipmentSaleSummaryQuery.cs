@@ -8,8 +8,9 @@ namespace GameLogic.Equipment;
 /// <summary>
 /// 汇总整个未穿戴背包的指定品质装备；结果用于展示，出售时仍由 System 重新校验。
 /// </summary>
+/// <param name="heroId">要统计背包的参战英雄编号。</param>
 /// <param name="quality">要查询的品质。</param>
-public sealed class EquipmentSaleSummaryQuery(EquipmentQuality quality) : AbstractQuery<(int Count, long Price)>
+public sealed class EquipmentSaleSummaryQuery(int heroId, EquipmentQuality quality) : AbstractQuery<(int Count, long Price)>
 {
     /// <summary>
     /// 只读取背包与配置，返回执行这一刻的件数和未截断总售价。
@@ -21,7 +22,7 @@ public sealed class EquipmentSaleSummaryQuery(EquipmentQuality quality) : Abstra
         long price = 0;
         TbEquipmentConfig definitions = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig;
         // 统计整个权威背包，与界面当前分类和页码无关；穿戴物不在此集合。
-        foreach (EquipmentData data in this.GetModel<ProfileModel>().EquipmentDatas)
+        foreach (EquipmentData data in this.GetModel<ProfileModel>().GetBag(heroId))
         {
             EquipmentConfig definition = definitions.Get(data.EquipmentId);
             if (definition.Quality != quality)

@@ -30,18 +30,21 @@ public sealed class SaveDataUtility : IUtility
         ArgumentNullException.ThrowIfNull(skills);
         GameData data = new()
         {
-            Soul = profile.Soul.Value,
             HighestClearedLevelId = profile.HighestClearedLevelId.Value,
             EastSeaBannerAvailable = profile.EastSeaBannerAvailable
         };
-        List<EquipmentData> datas = new(profile.EquipmentDatas);
+        List<EquipmentData> datas = new();
         foreach (int heroId in profile.HeroIds)
         {
             EquippedItems slots = profile.GetSlots(heroId).Value;
+            // 归属编号稳定排序；实例池沿用背包顺序，恢复时不改变格子位置。
+            datas.AddRange(profile.GetBag(heroId));
             data.Heroes.Add(new HeroSaveData
             {
                 HeroId = heroId,
                 TotalExperience = profile.GetProgress(heroId).Value.TotalExperience,
+                Soul = profile.GetSoul(heroId).Value,
+                BagInstanceIds = profile.GetBag(heroId).Select(item => item.InstanceId).OrderBy(id => id).ToList(),
                 LearnedSkills = skills.GetLearnedSkills(heroId).OrderBy(id => id).ToList(),
                 PassiveLevels = skills.GetPassiveLevels(heroId).OrderBy(pair => pair.Key)
                     .ToDictionary(pair => pair.Key, pair => pair.Value),
@@ -102,12 +105,12 @@ public sealed class SaveDataUtility : IUtility
         ValidateSkills(data, skills, passives);
         ValidateLevelProgress(data, levels);
         ArgumentNullException.ThrowIfNull(definitions);
-        if (data.Soul < 0 || data.Heroes.Any(x => x.HeroId <= 0 || x.TotalExperience < 0))
+        if (data.Heroes.Any(x => x.HeroId <= 0 || x.TotalExperience < 0 || x.Soul < 0))
         {
             throw new ArgumentException("存档英雄或余额无效。", nameof(data));
         }
 
-        (EquipmentData[] _, Dictionary<int, EquippedItems> slots) = ReadItems(data, capacity);
+        (Dictionary<int, EquipmentData[]> _, Dictionary<int, EquippedItems> slots) = ReadItems(data, capacity);
         foreach (EquipmentSaveData item in data.EquipmentItems)
         {
             ValidateEquipment(item, definitions.GetOrDefault(item.EquipmentId));
@@ -143,7 +146,7 @@ public sealed class SaveDataUtility : IUtility
 
         foreach (HeroSaveData hero in data.Heroes)
         {
-            if (hero == null || hero.LearnedSkills == null || hero.PassiveLevels == null)
+            if (hero == null || hero.LearnedSkills == null || hero.PassiveLevels == null || hero.BagInstanceIds == null)
             {
                 throw new ArgumentException("存档缺少英雄或装备记录。");
             }
@@ -203,9 +206,9 @@ public sealed class SaveDataUtility : IUtility
     /// </summary>
     /// <param name="data">已验证必要集合的快照。</param>
     /// <param name="capacity">背包容量。</param>
-    /// <returns>背包实例及每名英雄的完整穿戴。</returns>
-    /// <exception cref="ArgumentException">编号重复、引用不存在或背包超限。</exception>
-    internal static (EquipmentData[] Bag, Dictionary<int, EquippedItems> Slots)
+    /// <returns>按英雄保存的背包实例及完整穿戴，背包顺序保持实例池中的原始格子顺序。</returns>
+    /// <exception cref="ArgumentException">编号重复、引用不存在、实例归属重复或缺失、背包超限。</exception>
+    internal static (Dictionary<int, EquipmentData[]> Bags, Dictionary<int, EquippedItems> Slots)
         ReadItems(GameData data, int capacity)
     {
         Dictionary<Guid, EquipmentData> equipmentById = new();
@@ -218,47 +221,66 @@ public sealed class SaveDataUtility : IUtility
             }
         }
 
-        HashSet<Guid> equippedIds = new();
+        HashSet<Guid> ownedIds = new();
+        Dictionary<int, EquipmentData[]> bags = new();
         Dictionary<int, EquippedItems> slots = new();
+        // 先验证全部归属；调用方只有在完整转换成功后才提交模型。
         foreach (HeroSaveData hero in data.Heroes)
         {
+            if (hero.BagInstanceIds.Count > capacity)
+            {
+                throw new ArgumentException("装备背包超出容量。");
+            }
+
+            HashSet<Guid> bagIds = new();
+            foreach (Guid id in hero.BagInstanceIds)
+            {
+                if (!equipmentById.ContainsKey(id) || !ownedIds.Add(id))
+                {
+                    throw new ArgumentException("背包引用不存在或重复占用实例。");
+                }
+
+                bagIds.Add(id);
+            }
+
             var equipped = new EquippedItems(
-                Weapon: ResolveEquippedItem(hero.WeaponInstanceId, equipmentById, equippedIds),
-                Armor: ResolveEquippedItem(hero.ArmorInstanceId, equipmentById, equippedIds),
-                Accessory: ResolveEquippedItem(hero.AccessoryInstanceId, equipmentById, equippedIds),
-                Treasure: ResolveEquippedItem(hero.TreasureInstanceId, equipmentById, equippedIds));
+                Weapon: ResolveEquippedItem(hero.WeaponInstanceId, equipmentById, ownedIds),
+                Armor: ResolveEquippedItem(hero.ArmorInstanceId, equipmentById, ownedIds),
+                Accessory: ResolveEquippedItem(hero.AccessoryInstanceId, equipmentById, ownedIds),
+                Treasure: ResolveEquippedItem(hero.TreasureInstanceId, equipmentById, ownedIds));
             if (!slots.TryAdd(hero.HeroId, equipped))
             {
                 throw new ArgumentException("英雄编号重复。");
             }
+
+            bags.Add(hero.HeroId, equipmentById.Values.Where(item => bagIds.Contains(item.InstanceId)).ToArray());
         }
 
-        EquipmentData[] bag = equipmentById.Values.Where(item => !equippedIds.Contains(item.InstanceId)).ToArray();
-        if (bag.Length > capacity)
+        if (ownedIds.Count != equipmentById.Count)
         {
-            throw new ArgumentException("装备背包超出容量。");
+            throw new ArgumentException("装备实例池包含未归属任何背包或部位的记录。");
         }
 
-        return (bag, slots);
+        return (bags, slots);
     }
 
     /// <summary>
-    /// 解析一个穿戴引用并登记占用；同一实例只能属于一名英雄的一个部位。
+    /// 解析穿戴引用，并与全部背包和穿戴共同校验实例唯一归属。
     /// </summary>
     /// <param name="id">保存的实例编号；空编号表示未穿戴。</param>
     /// <param name="equipmentById">本次读档已建立的装备实例索引。</param>
-    /// <param name="equippedIds">本次读档中已经被穿戴引用占用的实例。</param>
+    /// <param name="ownedIds">本次读档中已经被背包或穿戴引用占用的实例。</param>
     /// <returns>引用的装备实例；未穿戴时为空。</returns>
     /// <exception cref="ArgumentException">引用不存在或实例已被其他部位占用。</exception>
     private static EquipmentData ResolveEquippedItem(Guid id,
-        IReadOnlyDictionary<Guid, EquipmentData> equipmentById, HashSet<Guid> equippedIds)
+        IReadOnlyDictionary<Guid, EquipmentData> equipmentById, HashSet<Guid> ownedIds)
     {
         if (id == Guid.Empty)
         {
             return null;
         }
 
-        if (!equipmentById.TryGetValue(id, out EquipmentData item) || !equippedIds.Add(id))
+        if (!equipmentById.TryGetValue(id, out EquipmentData item) || !ownedIds.Add(id))
         {
             throw new ArgumentException("穿戴引用不存在或重复占用实例。");
         }

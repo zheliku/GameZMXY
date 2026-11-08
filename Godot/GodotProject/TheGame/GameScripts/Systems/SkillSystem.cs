@@ -60,7 +60,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
             return SkillLearnResult.AlreadyLearned;
         }
 
-        if (!this.GetSystem<ProfileSystem>().TrySpendSoul(definition.Levels[current].LearnSoul))
+        if (!this.GetSystem<ProfileSystem>().TrySpendSoul(heroId, definition.Levels[current].LearnSoul))
         {
             return SkillLearnResult.InsufficientSoul;
         }
@@ -89,7 +89,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
             return SkillLearnResult.AlreadyLearned;
         }
 
-        if (!this.GetSystem<ProfileSystem>().TrySpendSoul(definition.LearnSoul))
+        if (!this.GetSystem<ProfileSystem>().TrySpendSoul(heroId, definition.LearnSoul))
         {
             return SkillLearnResult.InsufficientSoul;
         }

@@ -152,8 +152,8 @@ public partial class InventoryForm : IController
             heroModel.Miss.Register(RefreshProbability);
             heroModel.Level.Register(RefreshResources);
             profile.GetProgress(data.Hero.HeroId).Register(RefreshProgression);
-            profile.Soul.Register(RefreshSoul);
-            profile.EquipmentDatas.Register(RefreshItems);
+            profile.GetSoul(data.Hero.HeroId).Register(RefreshSoul);
+            profile.GetBag(data.Hero.HeroId).Register(RefreshItems);
             profile.GetSlots(data.Hero.HeroId).Register(RefreshEquipment);
             levelModel.Outcome.Register(OnLevelEnded);
             _resumeGame = !GF.Base.IsGamePaused;
@@ -163,7 +163,7 @@ public partial class InventoryForm : IController
             }
 
             _character.ResetPreview(data.Hero.Appearance);
-            _bag.Refresh(resetPage: true);
+            RefreshBag(resetPage: true);
             RefreshInventoryPanels();
             Visible = true;
         }
@@ -270,8 +270,8 @@ public partial class InventoryForm : IController
             heroModel.Miss.UnRegister(RefreshProbability);
             heroModel.Level.UnRegister(RefreshResources);
             profile.GetProgress(data.Hero.HeroId).UnRegister(RefreshProgression);
-            profile.Soul.UnRegister(RefreshSoul);
-            profile.EquipmentDatas.UnRegister(RefreshItems);
+            profile.GetSoul(data.Hero.HeroId).UnRegister(RefreshSoul);
+            profile.GetBag(data.Hero.HeroId).UnRegister(RefreshItems);
             profile.GetSlots(data.Hero.HeroId).UnRegister(RefreshEquipment);
             this.GetModel<LevelModel>().Outcome.UnRegister(OnLevelEnded);
         }
@@ -317,7 +317,7 @@ public partial class InventoryForm : IController
     {
         CloseTransientSelection();
         RefreshCharacter();
-        _bag.Refresh();
+        RefreshBag();
     }
 
     /// <summary>
@@ -328,6 +328,17 @@ public partial class InventoryForm : IController
         ProfileModel profile = this.GetModel<ProfileModel>();
         int heroId = _inventoryData.Hero.HeroId;
         _character.Refresh(_inventoryData.Hero, profile.GetProgress(heroId).Value, profile.GetSlots(heroId).Value);
+    }
+
+    /// <summary>
+    /// 把本窗口英雄的背包、容量与余额交给背包面板。
+    /// </summary>
+    /// <param name="resetPage">是否开始新的窗口周期并回到第一页。</param>
+    private void RefreshBag(bool resetPage = false)
+    {
+        ProfileModel profile = this.GetModel<ProfileModel>();
+        int heroId = _inventoryData.Hero.HeroId;
+        _bag.Refresh(heroId, profile.Capacity, profile.GetBag(heroId), profile.GetSoul(heroId).Value, resetPage);
     }
 
     /// <summary>
@@ -355,7 +366,7 @@ public partial class InventoryForm : IController
     private void RefreshSoul(int soul)
     {
         CloseTransientSelection();
-        _bag.Refresh();
+        RefreshBag();
     }
 
     /// <summary>
@@ -365,7 +376,7 @@ public partial class InventoryForm : IController
     private void RefreshItems(IReadOnlyList<EquipmentData> datas)
     {
         CloseTransientSelection();
-        _bag.Refresh();
+        RefreshBag();
     }
 
     /// <summary>
@@ -414,7 +425,7 @@ public partial class InventoryForm : IController
     /// <param name="instanceId">菜单捕获的背包实例。</param>
     private void OnSellRequested(Guid instanceId)
     {
-        if (_inventoryData != null && this.SendCommand(new SellEquipmentCommand(instanceId)))
+        if (_inventoryData != null && this.SendCommand(new SellEquipmentCommand(_inventoryData.Hero.HeroId, instanceId)))
         {
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         }
@@ -464,7 +475,7 @@ public partial class InventoryForm : IController
     /// <param name="quality">本次明确确认的品质。</param>
     private void OnQualitySaleConfirmed(EquipmentQuality quality)
     {
-        if (_inventoryData != null && this.SendCommand(new SellEquipmentByQualityCommand(quality)) > 0)
+        if (_inventoryData != null && this.SendCommand(new SellEquipmentByQualityCommand(_inventoryData.Hero.HeroId, quality)) > 0)
         {
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         }
