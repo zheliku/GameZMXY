@@ -1,6 +1,6 @@
 # 双人扩展实施计划
 
-状态：**A1 已经用户接受；A2-1～A2-4 已实现并完成验证，停在 A2 等待用户审查；A3 未开始。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局仍只有一个 `HeroModel`、一套输入与 HUD。`PlayerSlot` 用于席位换算，当前只装配 P1。2026-11-08 按用户授权同步规范、计划与文档引用；旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
+状态：**A1、A2 已经用户接受；A3-1～A3-2 已实现并完成验证，停在 A3 等待用户审查；B1 未开始。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局仍只有一个 `HeroModel`、一套输入与 HUD。`PlayerSlot` 用于席位换算，当前只装配 P1。2026-11-08 按用户授权同步规范、计划与文档引用；旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
 
 官方依据见 [造一双人源码依据](OfficialReference.md#双人扩展的源码依据2026-11-07) 与 [造三本地双人规则](OfficialReference.md#造梦三本地双人规则2026-11-07)。项目规范以 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md) 为准，验证记录见 [Validation](Validation.md)。
 
@@ -196,8 +196,8 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 | 编号 | 大任务                           | 依赖   | 玩法行为变化       | 状态                     |
 | ---- | -------------------------------- | ------ | ------------------ | ------------------------ |
 | A1   | 阵容取代单一出战英雄（存档 v13） | —     | 无                 | 已接受，提交 d2c3d13     |
-| A2   | 灵魂与背包归个人（存档 v14）     | A1     | 无                 | 已实现并验证，待用户审查 |
-| A3   | 档案规则证据与存档格摘要         | A2     | 存档格文本         | 未开始                   |
+| A2   | 灵魂与背包归个人（存档 v14）     | A1     | 无                 | 已接受                   |
+| A3   | 档案规则证据与存档格摘要         | A2     | 存档格文本         | 已实现并验证，待用户审查 |
 | B1   | `HeroModel` 按英雄承载本局状态 | A1     | 无                 | 未开始                   |
 | B2   | 技能登记与施放按英雄             | B1     | 无                 | 未开始                   |
 | B3   | 战斗规则证据与阶段 A～B 回归     | B2     | 只加测试           | 未开始                   |
@@ -542,14 +542,14 @@ public List<Guid> BagInstanceIds { get; set; } = new();
 - `GameScripts/UI/SaveForm/SaveForm.Logic.cs`
 - `SaveSlotInfo` 的 `HeroName`、`Level` 两个标量改为一个按席位有序的只读摘要集合，元素含英雄名与等级（用一个随 `SaveSlotInfo` 放在同文件的 `readonly record struct`，命名按 10 章规则）。
 - `SaveSystem.ReadSlotsAsync` 按 `data.Heroes` 顺序构建摘要；`WriteSnapshotAsync` 的 catalogue 名改为各英雄 `NameCn` 以单空格连接（与造三 `"孙悟空 唐僧"` 一致）。
-- `SaveForm.Logic.RefreshDirectory` 的文本改为逐位拼接（示例：`"孙悟空 Lv.10　唐僧 Lv.8"`），单人只显示一项。
+- `SaveForm.Logic.RefreshDirectory` 按席位拼接。2026-11-08 用户最终裁决：单/双人统一只显示角色名，均不显示等级；当前分别为 `"悟空"` 与 `"悟空 · 唐僧"`（双人 22 号字宽 132px）。不新增单双人显示分支、简称映射或动态字体/布局机制。
 - **不改 `save_form.tscn` 的节点结构、位置与美术**；只改 Label 文本内容。若现有 Label 宽度放不下两人，停下报告，不要自行改布局。
 
 ### A3 完成判定
 
 - 构建与三套测试全绿，ProfileTests 数量明显增加。
 - 前端烟测通过（含目录读取、建档、删除确认）。
-- 存档页在单人档下显示与之前一致。
+- 存档页单人、双人统一只显示角色名；日期、字号和布局保持原样（2026-11-08 用户裁决）。
 
 ---
 
@@ -843,6 +843,6 @@ public static string ActionOf(string action, PlayerSlot slot)
 
 # 第八部分　本轮交付
 
-A1 已经用户接受并提交为 d2c3d13。本轮只实施 A2（子任务 A2-1～A2-4）：个人灵魂与背包、全档装备实例唯一归属、存档 v14。构建、规则测试、Godot 扫描、引用、完整前端/UI 烟测与牛心唯一奖励专项均已通过；实际命令、数字、接口对照和文件清单统一见 [Validation](Validation.md)。第 70 章与 ProjectTour 按用户授权同步当前契约。
+A2 已由用户接受。本轮只实施 A3：补齐双人档案规则证据，ProfileTests 从 292 增至 304；目录按席位发布只读摘要，catalogue 名称以单空格连接全员配置名。用户已裁决名称优先，省略放不下的等级；单/双人统一只显示角色名，分别为“悟空”和“悟空 · 唐僧”，场景、字号与布局均未改。构建、三套规则、Godot 扫描、引用、完整前端与存档/删除专项均通过；实际命令、结果、覆盖映射、接口对照及文件清单见 [Validation](Validation.md)。
 
-当前**停在 A2 等待用户审查**。A3 及后续大任务均未开始，需审查通过后再获授权推进。
+当前**停在 A3 等待用户审查**。B1 及后续大任务未开始。

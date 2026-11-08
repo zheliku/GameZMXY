@@ -2,6 +2,69 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人A3：档案规则证据与存档格摘要（2026-11-08）
+
+按用户授权完成 A3-1～A3-2：补齐双人个人数据隔离、完整 v14 往返及恢复前校验的规则证据；六格目录发布按席位排列的只读摘要，catalogue 名以单空格连接全员配置名称。**当前停在 A3 等待用户审查，B1 未开始。** 依据为实施计划 A3、规范第 00 章的状态所有权、第 10 章的只读值/中文注释和格式、第 70 章的目录与检查点契约。
+
+标题宽度曾触发计划的停止条件，现已按用户裁决解决：单/双人统一只显示角色名，不显示等级。项目实际 NameCn 为“悟空”“唐僧”，不新增简称映射；当前双人标题“悟空 · 唐僧”宽 **132px**，加入两人的最低等级仍需 **220px**。沿用 **22 号字、187×30px 标题区**，正文终点早于删除按钮；单人显示“悟空”，双人显示“悟空 · 唐僧”，均不显示等级，日期样式不变。没有修改字体、场景、节点或布局。造三存档格以角色名作为标题的既有官方依据见 OfficialReference；双人摘要始终保留双方等级，只在该窄标题中省略。
+
+开工时 A2 的 48 份文件已由用户暂存，工作区无未暂存差异；执行期间其提交为 `c2f74db`，已按 SHA-256 核对提交差异与开工暂存内容完全一致。本轮 A3 改动均保留在未暂存工作区，未执行 Git 写操作。**存档格式仍为 v14，本批不要求重建现有 v14 档。** v13 及更早开发档仍按现有契约拒绝，无迁移分支。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 开工基线 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0、0 错误、增量 0 警告；`dotnet test Tests/ProfileTests --no-restore -v quiet`：**292/292**。日志在 `.godot/validation/coop_a3_20261108/baseline_*.log` |
+| 子任务与最终构建 | A3-1、A3-2 与最后一次源码修改后均执行 `dotnet build Godot/GodotProject --no-restore -v quiet`：均**退出 0、0 错误、5 条既有框架弃用警告**。日志 `a3_1_build.log`、`a3_2_build.log`、`final_build.log`；统一纯名称后的最终日志为 `final_names_only_build.log` |
+| 档案规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：**退出 0，304/304**，失败 0、跳过 0。A3-1 为 303/303，A3-2 增加摘要只读发布证据；相比开工共增加 **12 例**，原有断言保留。最终日志 `a3_2_profile.log` |
+| 战斗规则 | `dotnet test Tests/BattleTests --no-restore -v quiet`：**退出 0，193/193**，失败 0、跳过 0；既有 CS8632/CS0649 警告保留，日志 `final_battle.log` |
+| 关卡规则 | `dotnet test Tests/LevelTests --no-restore -v quiet`：**退出 0，19/19**，失败 0、跳过 0；各测试工程既有 NU1900 警告保留，日志 `final_level.log` |
+| Godot 扫描/构建 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_a3_names_only_scan_20261108 --headless --editor --build-solutions --quit --no-window`：**退出 0**，扫描及构建完成；既有 ComponentInsoector 的 RefCounted/free 退出诊断保留 |
+| 引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出 0，2283 条序列化路径、388 个 UID** 通过 |
+| 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_a3_names_only_frontend_20261108 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出 0，完整 SMOKE PASS**；两英雄分别建档、目录读取、保存返回、磁盘重读、旧作用域拒绝、加载取消与部分注册清理通过。坏文件与重复注册为预期注入；退出保留 **4 个 ObjectDB 实例、1 个资源占用**诊断 |
+| 双人摘要与删除专项 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_a3_names_only_slots_20261108 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend --save-delete-only`：**退出 0**，出现 `SMOKE-SAVE-ROSTER PASS`、`SMOKE-SAVE-DELETE PASS` 及最终 `SMOKE PASS`。实际写盘并重读两种席位顺序，核对全员名称/等级、catalogue 名、单/双人统一纯名称标题与删除按钮安全间距；确认取消/确认、主备文件删除、其他格不变、同格重建和过期确认拒绝。退出保留 **4 个 ObjectDB 实例、2 个资源占用**诊断 |
+| 原生宽度与画面 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_a3_summary_final_measure_20261108 --headless --script res://.godot/validation/coop_a3_20261108/measure_save_summary.gd --no-window`：**退出 0**，使用原场景实际字体测得名称 132px、最低等级双人 220px、双 55 级 254px；标题到删除按钮的可用距离 164px。已查看 `.godot/validation/frontend/save_slots_coop_1.png` 与 `save_slots_coop_2.png`：分别显示“悟空 · 唐僧”“唐僧 · 悟空”，同屏单人统一显示“唐僧”、无截断或删除按钮遮挡 |
+| 格式 | 实际执行 `$gameFiles = @(git diff --name-only -- '*.cs' \| Where-Object { $_.StartsWith('Godot/GodotProject/') } \| ForEach-Object { (Resolve-Path -LiteralPath $_).Path }); dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include $gameFiles --verify-no-changes`；测试用 `$profileFiles = @(git diff --name-only -- 'Tests/ProfileTests/*.cs' \| ForEach-Object { (Resolve-Path -LiteralPath $_).Path }); dotnet format whitespace Tests/ProfileTests/ProfileTests.csproj --no-restore --include $profileFiles --verify-no-changes`：**4 份生产/Debug、3 份测试均退出 0**，仅测试工作区既有加载警告 |
+| 最终差异 | `git diff --check` 退出 0；**7 份 C# 均为 UTF-8/CRLF**；`rg -n 'HeroName|slot\.Level' Godot/GodotProject/TheGame Tests --glob '*.cs'` 无旧摘要标量消费者；只读目录、生成物、源表、bytes、场景无差异，12 份改动均未暂存 |
+
+A3-1 必需规则与实际证据：
+
+| 计划要求 | 实际覆盖 |
+| --- | --- |
+| 六类个人状态完全隔离 | 新增 `PersonalData_ChangesOnlyTheRequestedHero` 两个方向，正式业务分别修改成长、钱包、背包、穿戴、主动/被动；另一人的完整英雄 DTO 保持原样 |
+| 全档实例唯一 | 复用 A2 `PersonalAssets_RejectInvalidInstanceOwnership` 跨背包重复案例，新增 case 6 覆盖一人背包与另一人穿戴占用同一实例；已有运行时拾取/穿戴排重保留 |
+| 非法阵容构造拒绝 | 复用 `Profile_RejectsInvalidHeroSets`，已覆盖空、超过两人、重复、零和负编号及非法席位 |
+| 完整 v14 双人往返 | 新增 `TwoHeroCheckpoint_RoundTripsAllPersonalData` 两种席位顺序，实际 Capture → JSON → Validate → RestoreCheckpoint；包括不同余额/经验、各人背包、四槽穿戴/随机属性、不同主动和被动等级、共享进度/旗幡，并比较完整捕获结果 |
+| 第二人非法时第一人不变 | 新增 `RestoreCheckpoint_RejectsInvalidSecondHeroWithoutMutation` 六例：余额、经验、引用不存在、跨人重复归属、错误英雄主动技能、非法被动等级；全部状态与调用前一致、第一人绑定零通知、容器身份不变 |
+| 孤立实例拒绝 | 复用 `PersonalAssets_RejectInvalidInstanceOwnership` case 4，直接调用 ReadItems 拒绝池中无归属实例 |
+
+关键接口变化：
+
+| 修改前 | 修改后 |
+| --- | --- |
+| `SaveSlotInfo(int slotNumber, long unitId, SaveSlotState state, string heroName = "", int level = 0, DateTimeOffset? savedAt = null)` | `SaveSlotInfo(int slotNumber, long unitId, SaveSlotState state, IEnumerable<SaveHeroSummary> heroes = null, DateTimeOffset? savedAt = null)` |
+| 存档格的单个 `HeroName` / `Level` 标量 | `IReadOnlyList<SaveHeroSummary> Heroes`，构造时复制，只读发布并保留席位顺序 |
+| 无参战者摘要值类型 | 按计划在同文件新增 `readonly record struct SaveHeroSummary(string Name, int Level)`，不写入存档 DTO |
+| 读取/写入/窗口生命周期公共方法 | 签名均不变；目录读取由首位改为全员摘要，写入 catalogue 名由首位改为全员 NameCn 单空格连接 |
+
+本批文件清单：**12 份修改（7 份 C#、5 份文档），无新增/删除正式文件**。唯一新增类型为计划要求的同文件 SaveHeroSummary，没有新的系统、接口、配置或测试辅助类型。
+
+| 所属目录 | 修改文件 |
+| --- | --- |
+| `Docs/` | `CoopImplementationPlan.md`、`ProjectGuidelines/70-ProfileAndSave.md`、`ProjectTour.md`、`Validation.md`、`WorkingNotes.md` |
+| `Godot/GodotProject/TheGame/GameScripts/` | `Models/Save/SaveSlotInfo.cs`、`Systems/SaveSystem.cs`、`UI/SaveForm/SaveForm.Logic.cs` |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/` | `FrontendSmokeScenario.cs` |
+| `Tests/ProfileTests/` | `EquipmentTests.cs`、`ModelTransactionTests.cs`、`ProfileTests.cs` |
+
+实际遇到的情况及处理：
+
+- 标题宽度与计划原示例冲突时先报告并停止；用户明确授权按官方风格缩减文字，并最终要求单/双人统一；全部标题只显示角色名，不显示等级。实际使用 NameCn，删除单双人显示分支，未硬编码角色简称或组合，没有运行时字体缩放/宽度回退机制；完整名称已能在现有位置显示。
+- A3-1 首次两例往返测试因新增夹具余额不足以购买二级被动而失败；仅增加该往返夹具初始余额，保留扣费规则及所有断言，随后 303/303、最终 304/304 通过。
+- 计划未单列的机械消费者为 `FrontendSmokeScenario` 的唐僧摘要断言，改为读取唯一的 Heroes 摘要。双人建档入口尚未开发，因此在既有删除专项内经反射调用既有私有 WriteSnapshotAsync 写入双人快照，随后走正式目录重读与原生窗口显示；没有生产测试入口，也不装配第二个战斗英雄。普通前端不执行删除分支，本批另跑 `--save-delete-only`，没有用通用尾句替代专项证据。
+- A3-2 增加 `SaveSlotSummary_PreservesOrderAndOwnsReadonlySnapshot`，验证来源集合修改和消费者写入均不能改变已发布摘要，空格和不可读格为空摘要。
+
+用户最终要求单/双人统一后，已删除专门的显示分支，两个模式均只以同一条 string.Join 按席位拼接名称；最终构建、编辑器扫描、完整前端与存档/删除专项均重新通过，截图已核对。
+
+本批要求已完成，无范围内遗留。B1 须在用户接受 A3 并授权后开始；仍为单个 HeroModel、一套输入/HUD，当前建档/关卡装配只有一人。引擎退出诊断沿用既有边界保留。所有烟测使用 runner 的案例专属 APPDATA，未覆盖正式玩家存档。完整战斗 UI 烟测和双人实战本批未执行；本批按 A3 计划验证档案、存档页及前端流程，双人战斗留给后续阶段。
+
 ## 双人A2：灵魂与背包归个人（2026-11-08）
 
 A1 已由用户接受并提交为 `d2c3d13`；本轮按实施计划顺序完成 A2-1～A2-4，钱包、背包、拾取、穿卸、出售和学技均显式指定 HeroId，唯一奖励与实例排重覆盖全档。本局仍只装配 P1，单个 HeroModel、输入和 HUD 保持原状。构建、规则测试、扫描、引用、完整前端/UI 烟测与牛心唯一奖励专项均通过；当前停在 A2 等待用户审查，不进入 A3。

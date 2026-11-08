@@ -11,6 +11,7 @@ using GameLogic.Equipment;
 using GameLogic.Profile;
 using GameLogic.Save;
 using GameLogic.Save.Data;
+using GameLogic.Save.Slots;
 using Newtonsoft.Json;
 using Xunit;
 
@@ -21,6 +22,27 @@ namespace GameLogic.Profile.Tests;
 /// </summary>
 public sealed class ProfileTests
 {
+    /// <summary>
+    /// 存档摘要按席位复制发布，生产者和消费者都不能在发布后修改同一份目录。
+    /// </summary>
+    [Fact]
+    public void SaveSlotSummary_PreservesOrderAndOwnsReadonlySnapshot()
+    {
+        List<SaveHeroSummary> heroes = [new("唐僧", 8), new("孙悟空", 10)];
+        DateTimeOffset savedAt = DateTimeOffset.FromUnixTimeSeconds(100);
+        SaveSlotInfo slot = new(2, 7, SaveSlotState.Occupied, heroes, savedAt);
+        heroes.Reverse();
+        heroes[0] = new("已变更", 1);
+
+        Assert.Equal(new[] { new SaveHeroSummary("唐僧", 8), new SaveHeroSummary("孙悟空", 10) }, slot.Heroes);
+        Assert.Equal(savedAt, slot.SavedAt);
+        Assert.Equal((2, 7L, SaveSlotState.Occupied), (slot.SlotNumber, slot.UnitId, slot.State));
+        IList<SaveHeroSummary> published = Assert.IsAssignableFrom<IList<SaveHeroSummary>>(slot.Heroes);
+        Assert.Throws<NotSupportedException>(() => published[0] = new("不应修改", 1));
+        Assert.Empty(new SaveSlotInfo(1, 0, SaveSlotState.Empty).Heroes);
+        Assert.Empty(new SaveSlotInfo(3, 9, SaveSlotState.Unreadable).Heroes);
+    }
+
     /// <summary>
     /// 累计经验是唯一事实，升级与跨级都从曲线派生，并只通知一次。
     /// </summary>

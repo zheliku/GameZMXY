@@ -478,7 +478,7 @@ public sealed partial class FrontendSmokeScenario
             start = await WaitForAsync<StartForm>();
             await ClickAsync(start, "m_Start");
             saves = await WaitForSaveAsync();
-            Check(flow.GetModel<SaveModel>().Slots[5].HeroName == "唐僧", "唐僧档案磁盘重读摘要仍显示其他角色");
+            Check(flow.GetModel<SaveModel>().Slots[5].Heroes.Single().Name == "唐僧", "唐僧档案磁盘重读摘要仍显示其他角色");
             await ClickAsync(saves, "Slots/m_Slot2");
             map = await WaitForAsync<MapForm>();
             Check(!character.Visible && GF.Procedure.CurrentProcedure is ProcedureMap, "已有档案未直接进入地图");
@@ -723,7 +723,36 @@ public sealed partial class FrontendSmokeScenario
             !saves.GetNode<Control>("Slots/m_Slot2/Delete").Visible, "空存档仍显示删除入口");
         await system.LoadOrCreateAsync(2, 0, initialHeroId: 2);
         await system.LoadOrCreateAsync(3, 0, initialHeroId: 1);
-        await system.RefreshDirectoryAsync(default);
+        Tables tables = GF.Fsm.GetModel<ConfigurationModel>().Tables;
+        ExperienceCurveUtility curve = GF.Fsm.GetUtility<ExperienceCurveUtility>();
+        // 双人建档入口尚未开放；从既有写入入口验证两种席位摘要，不装配第二个战斗英雄。
+        foreach (int[] heroIds in new[] { new[] { 1, 2 }, new[] { 2, 1 } })
+        {
+            ProfileModel profile = new(heroIds.Select(heroId => (heroId, heroId == 1 ? curve.MaxTotalExperience : 135)),
+                curve, tables.TbProfileConfig.EquipmentCapacity);
+            SkillModel skills = new(profile.HeroIds);
+            GameData snapshot = GF.Fsm.GetUtility<SaveDataUtility>().Capture(profile, skills);
+            Task<bool> write = (Task<bool>)typeof(SaveSystem)
+                .GetMethod("WriteSnapshotAsync", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(system, [snapshot]);
+            Check(await write, "双人摘要夹具未实际写入第三格");
+            await system.RefreshDirectoryAsync(default);
+
+            string[] names = heroIds.Select(heroId => tables.TbHeroConfig.Get(heroId).NameCn).ToArray();
+            SaveSlotInfo slot = model.Slots[2];
+            Check(slot.State == SaveSlotState.Occupied && slot.Heroes.Select(hero => hero.Name).SequenceEqual(names) &&
+                slot.Heroes.Select(hero => hero.Level).SequenceEqual(heroIds.Select(heroId => heroId == 1 ? curve.MaxLevel : 2)),
+                "双人存档目录没有按席位读取双方名称和等级");
+            Check(GF.Archive.Catalogues.Single(value => value.UnitId == slot.UnitId).Name == string.Join(" ", names),
+                "双人目录名称没有按席位以单空格连接");
+            Label title = saves.GetNode<Label>("Slots/m_Slot3/m_Name3");
+            float width = title.GetThemeFont("font").GetStringSize(title.Text, fontSize: title.GetThemeFontSize("font_size")).X;
+            Check(title.Text == string.Join(" · ", names) && width <= title.Size.X &&
+                title.Position.X + width < saves.GetNode<Control>("Slots/m_Slot3/Delete").Position.X,
+                "双人名称缺失、顺序错误、超出标题或遮挡删除按钮");
+            Check(saves.GetNode<Label>("Slots/m_Slot2/m_Name2").Text == "唐僧", "单人存档没有统一显示纯角色名");
+            await CaptureAsync($"save_slots_coop_{heroIds[0]}");
+        }
+        GD.Print("SMOKE-SAVE-ROSTER PASS: both seat orders, disk directory, catalogue names, uniform name-only titles and delete clearance.");
         long deletedId = model.Slots[1].UnitId;
         long retainedId = model.Slots[2].UnitId;
         string path = ProjectSettings.GlobalizePath($"user://{GF.Archive.Setting.Folder}/Data/{deletedId}.sav");

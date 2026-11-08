@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GameLogic.Save.Slots;
 
@@ -13,17 +15,15 @@ public sealed class SaveSlotInfo
     /// <param name="slotNumber">从 1 开始的格号。</param>
     /// <param name="unitId">框架存档编号，尚无文件时为 0。</param>
     /// <param name="state">内容状态。</param>
-    /// <param name="heroName">角色名称。</param>
-    /// <param name="level">角色等级。</param>
+    /// <param name="heroes">按席位排列的参战者摘要；空格或不可读格省略。</param>
     /// <param name="savedAt">检查点时间。</param>
-    public SaveSlotInfo(int slotNumber, long unitId, SaveSlotState state, string heroName = "", int level = 0,
+    public SaveSlotInfo(int slotNumber, long unitId, SaveSlotState state, IEnumerable<SaveHeroSummary> heroes = null,
         DateTimeOffset? savedAt = null)
     {
         SlotNumber = slotNumber;
         UnitId = unitId;
         State = state;
-        HeroName = heroName;
-        Level = level;
+        Heroes = Array.AsReadOnly(heroes?.ToArray() ?? []);
         SavedAt = savedAt;
     }
 
@@ -43,20 +43,22 @@ public sealed class SaveSlotInfo
     public SaveSlotState State { get; }
 
     /// <summary>
-    /// 出战角色名称；空格不显示文字。
+    /// 按玩家席位排列的参战者摘要；构造时复制，发布后不可修改。
     /// </summary>
-    public string HeroName { get; }
-
-    /// <summary>
-    /// 从档案累计经验计算的角色等级，仅用于显示。
-    /// </summary>
-    public int Level { get; }
+    public IReadOnlyList<SaveHeroSummary> Heroes { get; }
 
     /// <summary>
     /// 最近检查点的 UTC 时间。
     /// </summary>
     public DateTimeOffset? SavedAt { get; }
 }
+
+/// <summary>
+/// 一名参战者的存档显示摘要，不保存运行时绑定或临时战斗状态。
+/// </summary>
+/// <param name="Name">配置中的角色名称。</param>
+/// <param name="Level">由累计经验计算的等级。</param>
+public readonly record struct SaveHeroSummary(string Name, int Level);
 
 /// <summary>
 /// 存档格的实际内容；不可读的存档不能被当成空格覆盖。

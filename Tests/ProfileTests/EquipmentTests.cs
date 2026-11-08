@@ -96,6 +96,7 @@ public sealed class EquipmentTests
     [InlineData(3)]
     [InlineData(4)]
     [InlineData(5)]
+    [InlineData(6)]
     public void PersonalAssets_RejectInvalidInstanceOwnership(int invalidCase)
     {
         var scope = new TestGameScope([(1, 0), (2, 0)], 0, 2);
@@ -128,6 +129,9 @@ public sealed class EquipmentTests
                 snapshot.Heroes[1].BagInstanceIds.Clear();
                 snapshot.Heroes[0].BagInstanceIds.Add(second.InstanceId);
                 capacity = 1;
+                break;
+            case 6:
+                snapshot.Heroes[1].AccessoryInstanceId = first.InstanceId;
                 break;
         }
 

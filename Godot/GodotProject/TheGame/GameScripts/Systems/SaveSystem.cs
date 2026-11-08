@@ -185,10 +185,10 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
                     GameData data = archive.CurrentData;
                     mapper.Validate(data,
                         tables.TbEquipmentConfig, tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig, tables.TbPassiveConfig);
-                    string name = tables.TbHeroConfig.Get(data.Heroes[0].HeroId).NameCn;
-                    int level = curve.Evaluate(data.Heroes[0].TotalExperience).Level;
                     slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Occupied,
-                        name, level, DateTimeOffset.FromUnixTimeSeconds(catalogue.SavedAtUtc));
+                        data.Heroes.Select(hero => new SaveHeroSummary(tables.TbHeroConfig.Get(hero.HeroId).NameCn,
+                            curve.Evaluate(hero.TotalExperience).Level)),
+                        DateTimeOffset.FromUnixTimeSeconds(catalogue.SavedAtUtc));
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -297,8 +297,8 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
         }
 
         // 框架在调用时刻序列化；目录摘要与档案快照一起提交。
-        archive.CurrentCatalogue.Name = this.GetModel<ConfigurationModel>().Tables.TbHeroConfig
-            .Get(snapshotData.Heroes[0].HeroId).NameCn;
+        Tables tables = this.GetModel<ConfigurationModel>().Tables;
+        archive.CurrentCatalogue.Name = string.Join(" ", snapshotData.Heroes.Select(hero => tables.TbHeroConfig.Get(hero.HeroId).NameCn));
         archive.CurrentCatalogue.SavedAtUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         data.SaveVersion = GameData.CurrentVersion;
         data.Heroes = snapshotData.Heroes;

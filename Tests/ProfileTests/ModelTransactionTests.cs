@@ -1,8 +1,13 @@
 using System;
 using System.Linq;
 using GameConfig.Equipment;
+using GameConfig.Skills;
 using GameLogic.Architecture;
 using GameLogic.Equipment;
+using GameLogic.Save;
+using GameLogic.Save.Data;
+using GameLogic.Skills;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
@@ -12,6 +17,201 @@ namespace GameLogic.Profile.Tests;
 /// </summary>
 public sealed class ModelTransactionTests
 {
+    /// <summary>
+    /// 两个席位分别执行个人业务时，成长、钱包、背包、穿戴和两类技能都只修改本人。
+    /// </summary>
+    /// <param name="heroId">执行本次业务的英雄。</param>
+    /// <param name="otherHeroId">必须保持原样的另一英雄。</param>
+    [Theory]
+    [InlineData(1, 2)]
+    [InlineData(2, 1)]
+    public void PersonalData_ChangesOnlyTheRequestedHero(int heroId, int otherHeroId)
+    {
+        var scope = new TestGameScope([(2, 0), (1, 0)], 10000, 3, initializeHero: false);
+        scope.EnterMapContext();
+        ProfileSystem profile = scope.GetSystem<ProfileSystem>();
+        EquipmentSystem equipment = scope.GetSystem<EquipmentSystem>();
+        SkillSystem skills = scope.GetSystem<SkillSystem>();
+        string untouched = JsonConvert.SerializeObject(scope.CaptureSaveData().Heroes.Single(hero => hero.HeroId == otherHeroId));
+        SkillId skillId = heroId == 1 ? SkillId.RisingDragon : SkillId.IceDragonWave;
+        EquipmentData ring = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => .5f);
+        EquipmentData bagItem = equipment.Roll(Guid.NewGuid(), EquipmentId.DiamondSnare, () => .25f);
+
+        // 通过正式业务入口修改六类个人状态，反向阵容避免把编号当作席位。
+        profile.AddExperience(heroId, 135);
+        profile.AddSoul(heroId, 21);
+        Assert.True(profile.TryCollectEquipment(heroId, ring));
+        Assert.True(profile.TryCollectEquipment(heroId, bagItem));
+        Assert.True(equipment.TryEquip(heroId, ring.InstanceId));
+        Assert.Equal(SkillLearnResult.Learned, skills.Learn(heroId, skillId));
+        Assert.Equal(SkillLearnResult.Learned, skills.Upgrade(heroId, PassiveId.Vitality));
+
+        int cost = TestTables.Tables.TbSkillConfig.Get(skillId).LearnSoul +
+            TestTables.Tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
+        Assert.Equal(135, scope.Profile.GetProgress(heroId).Value.TotalExperience);
+        Assert.Equal(10021 - cost, scope.Profile.GetSoul(heroId).Value);
+        Assert.Same(bagItem, Assert.Single(scope.Profile.GetBag(heroId)));
+        Assert.Same(ring, scope.Profile.GetSlots(heroId).Value.Accessory);
+        Assert.Equal(skillId, Assert.Single(scope.Skills.GetLearnedSkills(heroId)));
+        Assert.Equal(1, scope.Skills.GetPassiveLevels(heroId)[PassiveId.Vitality]);
+        Assert.Equal(untouched, JsonConvert.SerializeObject(scope.CaptureSaveData().Heroes.Single(hero => hero.HeroId == otherHeroId)));
+        Assert.Empty(scope.Profile.GetBag(otherHeroId));
+        Assert.Empty(scope.Skills.GetLearnedSkills(otherHeroId));
+        Assert.Equal(0, scope.Skills.GetPassiveLevels(otherHeroId)[PassiveId.Vitality]);
+    }
+
+    /// <summary>
+    /// v14 双人档案经捕获、JSON、完整校验和原地恢复后，席位与全部个人状态一致。
+    /// </summary>
+    /// <param name="firstHeroId">P1 英雄编号。</param>
+    /// <param name="secondHeroId">P2 英雄编号。</param>
+    [Theory]
+    [InlineData(1, 2)]
+    [InlineData(2, 1)]
+    public void TwoHeroCheckpoint_RoundTripsAllPersonalData(int firstHeroId, int secondHeroId)
+    {
+        var scope = new TestGameScope([(firstHeroId, 0), (secondHeroId, 0)], 1000000, 3, initializeHero: false);
+        scope.EnterMapContext();
+        ProfileSystem profile = scope.GetSystem<ProfileSystem>();
+        EquipmentSystem equipment = scope.GetSystem<EquipmentSystem>();
+        SkillSystem skills = scope.GetSystem<SkillSystem>();
+        foreach (int heroId in scope.Profile.HeroIds)
+        {
+            profile.AddExperience(heroId, TestTables.Curve.MaxTotalExperience - heroId);
+            profile.AddSoul(heroId, heroId * 17);
+            EquipmentId[] items =
+            [
+                heroId == 1 ? EquipmentId.RoughPilgrimStaff : EquipmentId.RoughPineStaff,
+                heroId == 1 ? EquipmentId.RoughPilgrimClothes : EquipmentId.RoughCassock,
+                EquipmentId.EarthFiendRing,
+                heroId == 1 ? EquipmentId.DiamondSnare : EquipmentId.EastSeaBanner,
+                EquipmentId.EarthFiendRing
+            ];
+            for (int index = 0; index < items.Length; index++)
+            {
+                EquipmentData item = equipment.Roll(Guid.NewGuid(), items[index], () => heroId * .25f);
+                Assert.True(profile.TryCollectEquipment(heroId, item));
+                if (index < 4)
+                {
+                    Assert.True(equipment.TryEquip(heroId, item.InstanceId));
+                }
+            }
+            Assert.Equal(SkillLearnResult.Learned, skills.Learn(heroId,
+                heroId == 1 ? SkillId.RisingDragon : SkillId.IceDragonWave));
+            for (int level = 0; level < heroId; level++)
+            {
+                Assert.Equal(SkillLearnResult.Learned, skills.Upgrade(heroId, PassiveId.Vitality));
+            }
+        }
+        Assert.Equal(SkillLearnResult.Learned, skills.Learn(2, SkillId.DarkIceFormation));
+        profile.RecordLevelClear(1);
+        Assert.True(profile.TryClaimEastSeaBanner());
+
+        // 显式走完整转换链，不通过只比较单一英雄的便捷断言替代双人往返。
+        GameData snapshot = scope.CaptureSaveData();
+        string json = JsonConvert.SerializeObject(snapshot);
+        GameData loaded = JsonConvert.DeserializeObject<GameData>(json);
+        var mapper = new SaveDataUtility();
+        mapper.Validate(loaded, TestTables.Tables.TbEquipmentConfig, 3, TestTables.Tables.TbSkillConfig,
+            TestTables.Tables.TbLevelConfig, TestTables.Tables.TbPassiveConfig);
+        var restored = new TestGameScope([(firstHeroId, 0), (secondHeroId, 0)], 0, 3, initializeHero: false);
+        restored.RestoreCheckpoint(loaded);
+
+        Assert.Equal(14, loaded.SaveVersion);
+        Assert.Equal(new[] { firstHeroId, secondHeroId }, restored.Profile.HeroIds);
+        Assert.Equal(firstHeroId, restored.Profile.HeroOf(PlayerSlot.P1));
+        Assert.Equal(secondHeroId, restored.Profile.HeroOf(PlayerSlot.P2));
+        Assert.Equal(json, JsonConvert.SerializeObject(restored.CaptureSaveData()));
+        foreach (int heroId in restored.Profile.HeroIds)
+        {
+            Assert.Equal(scope.Profile.GetProgress(heroId).Value, restored.Profile.GetProgress(heroId).Value);
+            Assert.Equal(scope.Profile.GetSoul(heroId).Value, restored.Profile.GetSoul(heroId).Value);
+            Assert.Single(restored.Profile.GetBag(heroId));
+            EquippedItems slots = restored.Profile.GetSlots(heroId).Value;
+            Assert.NotNull(slots.Weapon);
+            Assert.NotNull(slots.Armor);
+            Assert.NotNull(slots.Accessory);
+            Assert.NotNull(slots.Treasure);
+            Assert.Equal(heroId, restored.Skills.GetPassiveLevels(heroId)[PassiveId.Vitality]);
+        }
+    }
+
+    /// <summary>
+    /// 第二人任一关键数据非法时，恢复在发布任何第一人状态前拒绝，且保留原模型与绑定。
+    /// </summary>
+    /// <param name="invalidField">第二人的非法快照字段。</param>
+    [Theory]
+    [InlineData("Soul")]
+    [InlineData("Experience")]
+    [InlineData("MissingItem")]
+    [InlineData("DuplicateOwner")]
+    [InlineData("Skill")]
+    [InlineData("Passive")]
+    public void RestoreCheckpoint_RejectsInvalidSecondHeroWithoutMutation(string invalidField)
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 10000, 3, initializeHero: false);
+        ProfileSystem profile = scope.GetSystem<ProfileSystem>();
+        EquipmentSystem equipment = scope.GetSystem<EquipmentSystem>();
+        SkillSystem skills = scope.GetSystem<SkillSystem>();
+        foreach (int heroId in scope.Profile.HeroIds)
+        {
+            EquipmentData ring = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => .5f);
+            Assert.True(profile.TryCollectEquipment(heroId, ring));
+        }
+        GameData snapshot = scope.CaptureSaveData();
+
+        // 调用前状态故意不同于快照；若逐人提交后才发现第二人错误，第一人的变化就会被观察到。
+        profile.AddExperience(1, 472);
+        profile.AddSoul(1, 31);
+        Assert.True(equipment.TryEquip(1, scope.Profile.GetBag(1)[0].InstanceId));
+        Assert.Equal(SkillLearnResult.Learned, skills.Learn(1, SkillId.RisingDragon));
+        Assert.Equal(SkillLearnResult.Learned, skills.Upgrade(1, PassiveId.Vitality));
+        string before = JsonConvert.SerializeObject(scope.CaptureSaveData());
+        BindableList<EquipmentData> bag = scope.Profile.GetBag(1);
+        BindableProperty<int> soul = scope.Profile.GetSoul(1);
+        int notifications = 0;
+        scope.Profile.GetProgress(1).Register(_ => notifications++);
+        soul.Register(_ => notifications++);
+        bag.Register(_ => notifications++);
+        scope.Profile.GetSlots(1).Register(_ => notifications++);
+        scope.Skills.GetLearnedSkills(1).Register(_ => notifications++);
+
+        HeroSaveData second = snapshot.Heroes[1];
+        switch (invalidField)
+        {
+            case "Soul":
+                second.Soul = -1;
+                break;
+            case "Experience":
+                second.TotalExperience = -1;
+                break;
+            case "MissingItem":
+                second.BagInstanceIds[0] = Guid.NewGuid();
+                break;
+            case "DuplicateOwner":
+                second.BagInstanceIds.Add(snapshot.Heroes[0].BagInstanceIds[0]);
+                break;
+            case "Skill":
+                second.LearnedSkills.Add(SkillId.RisingDragon);
+                break;
+            case "Passive":
+                second.PassiveLevels[PassiveId.Vitality] = int.MaxValue;
+                break;
+        }
+        if (invalidField is "Soul" or "Experience")
+        {
+            Assert.Throws<InvalidOperationException>(() => scope.RestoreCheckpoint(snapshot));
+        }
+        else
+        {
+            Assert.Throws<ArgumentException>(() => scope.RestoreCheckpoint(snapshot));
+        }
+        Assert.Equal(before, JsonConvert.SerializeObject(scope.CaptureSaveData()));
+        Assert.Equal(0, notifications);
+        Assert.Same(bag, scope.Profile.GetBag(1));
+        Assert.Same(soul, scope.Profile.GetSoul(1));
+    }
+
     /// <summary>
     /// 回滚快照不能交换席位；拒绝时双方成长与钱包都保持调用前状态。
     /// </summary>

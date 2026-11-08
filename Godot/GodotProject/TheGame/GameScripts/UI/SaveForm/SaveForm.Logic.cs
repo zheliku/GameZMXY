@@ -249,7 +249,7 @@ public partial class SaveForm : IController
                 ? CursorShape.Arrow : CursorShape.PointingHand;
             if (slot?.State == SaveSlotState.Occupied)
             {
-                name.Text = $"{slot.HeroName} · Lv.{slot.Level}";
+                name.Text = string.Join(" · ", slot.Heroes.Select(hero => hero.Name));
                 date.Text = slot.SavedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "";
             }
             else
