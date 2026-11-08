@@ -77,11 +77,12 @@ public partial class InventoryCharacterPanel : Control, IController
     /// 从同一组状态刷新个人资料与预览，不拥有或修改状态。
     /// </summary>
     /// <param name="hero">当前存活的出战角色。</param>
-    public void Refresh(AbstractHeroEntity hero)
+    /// <param name="progress">该英雄的完整成长值。</param>
+    /// <param name="items">该英雄的完整穿戴值。</param>
+    public void Refresh(AbstractHeroEntity hero, HeroProgressionState progress, EquippedItems items)
     {
-        ProfileModel profile = this.GetModel<ProfileModel>();
         _name.Text = hero.Config.NameCn;
-        _level.Text = profile.Level.ToString();
+        _level.Text = progress.Level.ToString();
         HeroModel heroModel = this.GetModel<HeroModel>();
         TbBattleConfig battle = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig;
         _hp.Text = $"{heroModel.Hp.Value} / {heroModel.MaxHp.Value}";
@@ -94,13 +95,13 @@ public partial class InventoryCharacterPanel : Control, IController
         _miss.Text = $"{heroModel.Miss.Value * 100:0.#}%";
         _hpRegen.Text = heroModel.HpRegen.Value.ToString();
         _mpRegen.Text = heroModel.MpRegen.Value.ToString();
-        _experience.Value = profile.MaxExperience == 0 ? 100 : 100.0 * profile.Experience / profile.MaxExperience;
-        _experienceText.Text = profile.MaxExperience == 0 ? "MAX" : $"{profile.Experience}/{profile.MaxExperience}";
-        BindSlot(_weaponSlot, profile.Weapon);
-        BindSlot(_armorSlot, profile.Armor);
-        BindSlot(_accessorySlot, profile.Accessory);
-        BindSlot(_treasureSlot, profile.Treasure);
-        _preview.ApplyAppearance(profile.Weapon?.EquipmentId ?? EquipmentId.None, profile.Armor?.EquipmentId ?? EquipmentId.None);
+        _experience.Value = progress.MaxExperience == 0 ? 100 : 100.0 * progress.Experience / progress.MaxExperience;
+        _experienceText.Text = progress.MaxExperience == 0 ? "MAX" : $"{progress.Experience}/{progress.MaxExperience}";
+        BindSlot(_weaponSlot, items.Weapon);
+        BindSlot(_armorSlot, items.Armor);
+        BindSlot(_accessorySlot, items.Accessory);
+        BindSlot(_treasureSlot, items.Treasure);
+        _preview.ApplyAppearance(items.Weapon?.EquipmentId ?? EquipmentId.None, items.Armor?.EquipmentId ?? EquipmentId.None);
     }
 
     /// <summary>

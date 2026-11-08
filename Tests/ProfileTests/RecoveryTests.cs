@@ -22,7 +22,7 @@ public sealed class RecoveryTests
     [InlineData(144)]
     public void Recovery_UsesOfficialSecondsAtEveryFrequency(int fps)
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroSystem system = scope.GetSystem<HeroSystem>();
         system.SetSource(new AttributeSourceId("Recovery", 1),
             [AttributeModifier.Flat(AttributeType.HpRegen, 2), AttributeModifier.Flat(AttributeType.MpRegen, 1)]);
@@ -43,7 +43,7 @@ public sealed class RecoveryTests
     [Fact]
     public void Recovery_KeepsPhaseAcrossEquipmentChangesAndPreservesNegativeCost()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroSystem system = scope.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("Recovery", 1);
         system.AdvanceRecovery(1f);
@@ -68,7 +68,7 @@ public sealed class RecoveryTests
     [Fact]
     public void Recovery_ClampsResourcesAndResetsOnlyWithSession()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroSystem system = scope.GetSystem<HeroSystem>();
         system.SetSource(new AttributeSourceId("Recovery", 1),
             [AttributeModifier.Flat(AttributeType.HpRegen, 100), AttributeModifier.Flat(AttributeType.MpRegen, 100)]);

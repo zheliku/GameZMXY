@@ -7,6 +7,7 @@ using GameConfig.Attributes;
 using GameConfig.Battle;
 using GameConfig.Entity;
 using GameConfig.Skills;
+using GameLogic;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Battle.Attacks;
@@ -122,7 +123,7 @@ public sealed partial class UiSmokeScenario
             heroSystem.SetSource(source,
                 [AttributeModifier.Flat(AttributeType.MaxMp, 1000), AttributeModifier.Flat(AttributeType.Htarget, 1)]);
             flow.GetSystem<ProfileSystem>().AddSoul(4000);
-            skills.Learn(SkillId.FireDemonSlash);
+            skills.Learn(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.FireDemonSlash);
             hero.SetPhysicsProcess(true);
             foreach (int ticks in new[] { 60, 120 })
             {
@@ -262,7 +263,7 @@ public sealed partial class UiSmokeScenario
         {
             heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxMp, 1000)]);
             flow.GetSystem<ProfileSystem>().AddSoul(4000);
-            skills.Learn(SkillId.FireDemonSlash);
+            skills.Learn(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.FireDemonSlash);
             hero.SetPhysicsProcess(true);
             foreach (int ticks in new[] { 60, 120 })
             {

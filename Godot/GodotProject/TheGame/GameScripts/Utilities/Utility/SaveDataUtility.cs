@@ -30,7 +30,6 @@ public sealed class SaveDataUtility : IUtility
         ArgumentNullException.ThrowIfNull(skills);
         GameData data = new()
         {
-            ActiveHeroId = profile.ActiveHeroId,
             Soul = profile.Soul.Value,
             HighestClearedLevelId = profile.HighestClearedLevelId.Value,
             EastSeaBannerAvailable = profile.EastSeaBannerAvailable
@@ -103,8 +102,7 @@ public sealed class SaveDataUtility : IUtility
         ValidateSkills(data, skills, passives);
         ValidateLevelProgress(data, levels);
         ArgumentNullException.ThrowIfNull(definitions);
-        if (data.Soul < 0 || data.Heroes.Any(x => x.HeroId <= 0 || x.TotalExperience < 0) ||
-            !data.Heroes.Any(x => x.HeroId == data.ActiveHeroId))
+        if (data.Soul < 0 || data.Heroes.Any(x => x.HeroId <= 0 || x.TotalExperience < 0))
         {
             throw new ArgumentException("存档英雄或余额无效。", nameof(data));
         }
@@ -129,7 +127,7 @@ public sealed class SaveDataUtility : IUtility
     /// </summary>
     /// <param name="data">待校验的快照。</param>
     /// <exception cref="NotSupportedException">格式不是当前版本。</exception>
-    /// <exception cref="ArgumentException">必要集合为空或含空记录。</exception>
+    /// <exception cref="ArgumentException">阵容人数不在一至两人之间、英雄重复、必要集合为空或含空记录。</exception>
     internal static void ValidateEnvelope(GameData data)
     {
         ArgumentNullException.ThrowIfNull(data);
@@ -138,7 +136,7 @@ public sealed class SaveDataUtility : IUtility
             throw new NotSupportedException($"只支持存档格式 v{GameData.CurrentVersion}，当前文件为 v{data.SaveVersion}。");
         }
 
-        if (data.HighestClearedLevelId < 0 || data.Heroes == null || data.Heroes.Count == 0 || data.EquipmentItems == null)
+        if (data.HighestClearedLevelId < 0 || data.Heroes == null || data.Heroes.Count is < 1 or > 2 || data.EquipmentItems == null)
         {
             throw new ArgumentException("存档缺少英雄或装备记录。");
         }
@@ -149,6 +147,11 @@ public sealed class SaveDataUtility : IUtility
             {
                 throw new ArgumentException("存档缺少英雄或装备记录。");
             }
+        }
+
+        if (data.Heroes.Select(hero => hero.HeroId).Distinct().Count() != data.Heroes.Count)
+        {
+            throw new ArgumentException("存档阵容的英雄编号不得重复。", nameof(data));
         }
     }
 

@@ -160,18 +160,18 @@ public sealed class BindablePropertyTests
     [Fact]
     public void ProgressBinding_SynchronizesHeroBeforeEarlierUiSubscriber()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroSystem system = scope.GetSystem<HeroSystem>();
         ((ICanInit)system).Deinit();
         int calls = 0;
-        scope.Profile.Progress.Register(progress =>
+        scope.Profile.GetProgress(scope.Profile.HeroOf(PlayerSlot.P1)).Register(progress =>
         {
             calls++;
             Assert.Equal(progress.Level, scope.Hero.Level.Value);
             Assert.Equal(scope.Hero.MaxHp.Value, scope.Hero.Hp.Value);
         });
         ((ICanInit)system).Init();
-        scope.GetSystem<ProfileSystem>().AddExperience(281);
+        scope.GetSystem<ProfileSystem>().AddExperience(1, 281);
         Assert.Equal(1, calls);
     }
 
@@ -200,10 +200,10 @@ public sealed class BindablePropertyTests
     [Fact]
     public void LevelOutcome_PublishesAfterResultIsFrozen()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         LevelSystem system = scope.GetSystem<LevelSystem>();
         system.Prepare(1);
-        system.StartSession(1);
+        system.StartSession([1]);
         int calls = 0;
         scope.Level.Outcome.Register(outcome =>
         {

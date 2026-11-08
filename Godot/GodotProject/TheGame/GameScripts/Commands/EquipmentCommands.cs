@@ -8,8 +8,9 @@ namespace GameLogic.Equipment;
 /// <summary>
 /// 玩家请求穿戴一件背包装备；当前关卡接受操作时才交给装备系统。
 /// </summary>
+/// <param name="heroId">本次操作的参战英雄编号。</param>
 /// <param name = "instanceId">背包中仍然存在的实例编号。</param>
-public sealed class EquipEquipmentCommand(Guid instanceId) : AbstractCommand<bool>
+public sealed class EquipEquipmentCommand(int heroId, Guid instanceId) : AbstractCommand<bool>
 {
     /// <inheritdoc/>
     protected override bool OnExecute()
@@ -18,15 +19,16 @@ public sealed class EquipEquipmentCommand(Guid instanceId) : AbstractCommand<boo
         return level is
         {
             SessionActive: true
-        } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TryEquip(instanceId);
+        } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TryEquip(heroId, instanceId);
     }
 }
 
 /// <summary>
 /// 玩家请求卸下一个部位；结局或离关后拒绝迟到操作。
 /// </summary>
+/// <param name="heroId">本次操作的参战英雄编号。</param>
 /// <param name = "slot">要卸下的部位。</param>
-public sealed class UnequipEquipmentCommand(EquipmentSlot slot) : AbstractCommand<bool>
+public sealed class UnequipEquipmentCommand(int heroId, EquipmentSlot slot) : AbstractCommand<bool>
 {
     /// <inheritdoc/>
     protected override bool OnExecute()
@@ -35,7 +37,7 @@ public sealed class UnequipEquipmentCommand(EquipmentSlot slot) : AbstractComman
         return level is
         {
             SessionActive: true
-        } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TryUnequip(slot);
+        } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TryUnequip(heroId, slot);
     }
 }
 

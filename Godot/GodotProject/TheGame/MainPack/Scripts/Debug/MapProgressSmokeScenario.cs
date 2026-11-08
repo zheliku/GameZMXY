@@ -180,7 +180,7 @@ public sealed class MapProgressSmokeScenario(Node driver)
     private void CheckMap(MapForm map, int cleared)
     {
         if (map == null || GF.Fsm.GetModel<ProfileModel>().HighestClearedLevelId.Value != cleared ||
-            GF.Fsm.GetModel<ProfileModel>().ActiveHeroId != _heroId)
+            GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1) != _heroId)
         {
             throw new InvalidOperationException("重读或通关返回后地图进度错误。");
         }

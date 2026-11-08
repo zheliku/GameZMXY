@@ -66,7 +66,7 @@ public sealed partial class UiSmokeScenario
         {
             form.GetNode<BaseButton>($"Content/m_ActivePage/m_TangsengRows/Skill{skill.Order}/IconCell/Icon")
                 .EmitSignal(BaseButton.SignalName.Pressed);
-            Check(system.IsLearned(skill.Id), $"唐僧技能没有经正式控件学习：{skill.Id}");
+            Check(system.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), skill.Id), $"唐僧技能没有经正式控件学习：{skill.Id}");
         }
         form.GetNode<BaseButton>("Content/Header/m_Back").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => !GF.Base.IsGamePaused, "学习后没有解除暂停");
@@ -801,7 +801,7 @@ public sealed partial class UiSmokeScenario
             }
         }
 
-        activePage.Refresh();
+        activePage.Refresh(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1));
         foreach ((string group, SkillHero hero) in new[]
         {
             ("m_WukongRows", GameConfig.Skills.SkillHero.Wukong),
@@ -832,7 +832,7 @@ public sealed partial class UiSmokeScenario
             }
         }
 
-        passivePage.Refresh();
+        passivePage.Refresh(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1));
         for (int i = 0; i < passives.Count; i++)
         {
             GridContainer row = passivePage.GetNode<GridContainer>($"m_PassiveRows/Passive{i + 1}");
@@ -965,11 +965,11 @@ public sealed partial class UiSmokeScenario
             GF.UI.CloseUIForm(notice.SerialId);
             await WaitFramesAsync(3);
             first.EmitSignal(BaseButton.SignalName.Pressed);
-            Check(!system.IsLearned(SkillId.RisingDragon) && flow.GetModel<ProfileModel>().Soul.Value == 0,
+            Check(!system.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) && flow.GetModel<ProfileModel>().Soul.Value == 0,
                 "提示窗口缺席影响了技能学习拒绝结果");
             notice = await GF.UI.OpenUIFormAsync<SaveNoticeForm>(GameConfig.UIFormId.SaveNoticeForm);
             first.EmitSignal(BaseButton.SignalName.Pressed);
-            Check(!system.IsLearned(SkillId.RisingDragon) && notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Text == "灵魂不足！",
+            Check(!system.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) && notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Text == "灵魂不足！",
                 "灵魂不足没有拒绝学习并显示复用提示");
             flow.GetSystem<ProfileSystem>().AddSoul(4000);
             foreach (SkillConfig definition in ConfigSystem.Instance.Tables.TbSkillConfig.DataList.Where(x => x.Hero == SkillHero.Wukong))
@@ -977,7 +977,7 @@ public sealed partial class UiSmokeScenario
                 TextureButton button = form.GetNode<TextureButton>($"Content/m_ActivePage/m_WukongRows/Skill{definition.Order}/IconCell/Icon");
                 button.EmitSignal(BaseButton.SignalName.Pressed);
                 var hudIcon = battleForm.GetNode<TextureRect>($"MenuPanel/SkillBar/Skill{definition.Order}/Icon").Texture as AtlasTexture;
-                Check(system.IsLearned(definition.Id) && button.Disabled && button.TextureNormal.ResourcePath.EndsWith("_learned.png", StringComparison.Ordinal) &&
+                Check(system.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), definition.Id) && button.Disabled && button.TextureNormal.ResourcePath.EndsWith("_learned.png", StringComparison.Ordinal) &&
                     hudIcon?.Atlas.ResourcePath == "res://TheGame/Sprites/UI/hud/battle_skill_icons.png" &&
                     hudIcon.Region == new Rect2(definition.Order * 45, 0, 45, 45),
                     $"学习没有同步两个图标：{definition.Id}");

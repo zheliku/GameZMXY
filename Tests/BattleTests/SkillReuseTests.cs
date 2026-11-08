@@ -359,7 +359,7 @@ public sealed class SkillReuseTests
     private sealed class SkillScope : IArchitecture
     {
         private readonly HeroModel _hero = new(); // 本测试的数值来源。
-        private readonly ProfileModel _profile = new(1, [(1, 0)],
+        private readonly ProfileModel _profile = new([(1, 0)],
             new ExperienceCurveUtility(BattleArchitecture.Instance.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList), 20); // 独立出战身份。
         private readonly InputSystem _input; // 共用的正式输入规则。
         private readonly SkillSystem _system; // 共用的正式时间轴规则。

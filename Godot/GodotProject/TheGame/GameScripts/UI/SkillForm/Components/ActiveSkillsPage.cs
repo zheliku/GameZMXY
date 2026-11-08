@@ -73,11 +73,12 @@ public partial class ActiveSkillsPage : Control, IController
     /// <summary>
     /// 把正式只读目录分配给对应角色。
     /// </summary>
-    public void Refresh()
+    /// <param name="heroId">本窗口当前显示的参战英雄编号。</param>
+    public void Refresh(int heroId)
     {
         ConfigurationModel configurationModel = this.GetModel<ConfigurationModel>();
-        BindRows(_heroRows[0], configurationModel.GetActive(SkillHero.Wukong));
-        BindRows(_heroRows[1], configurationModel.GetActive(SkillHero.Tangseng));
+        BindRows(heroId, _heroRows[0], configurationModel.GetActive(SkillHero.Wukong));
+        BindRows(heroId, _heroRows[1], configurationModel.GetActive(SkillHero.Tangseng));
     }
 
     /// <summary>
@@ -107,9 +108,10 @@ public partial class ActiveSkillsPage : Control, IController
     /// <summary>
     /// 用数值目录刷新学习信息，图标和键位由本场景提供。
     /// </summary>
+    /// <param name="heroId">当前查看的英雄编号，用于判断学习资格。</param>
     /// <param name="rows">已经收集的五行控件。</param>
     /// <param name="definitions">按面板顺序排列的五项主动定义。</param>
-    private void BindRows((Label Name, TextureButton Icon, Label Soul, Label Description, Texture2D Unlearned, Texture2D Learned)[] rows,
+    private void BindRows(int heroId, (Label Name, TextureButton Icon, Label Soul, Label Description, Texture2D Unlearned, Texture2D Learned)[] rows,
         IReadOnlyList<SkillConfig> definitions)
     {
         // 只装配表现，不写学习记录或消费灵魂。
@@ -118,8 +120,8 @@ public partial class ActiveSkillsPage : Control, IController
             (Label Name, TextureButton Icon, Label Soul, Label Description, Texture2D Unlearned, Texture2D Learned) row = rows[i];
             SkillConfig definition = definitions[i];
             row.Name.Text = definition.NameCn;
-            bool available = this.GetSystem<SkillSystem>().IsLearnable(definition.Id);
-            bool learned = available && this.GetSystem<SkillSystem>().IsLearned(definition.Id);
+            bool available = this.GetSystem<SkillSystem>().IsLearnable(heroId, definition.Id);
+            bool learned = available && this.GetSystem<SkillSystem>().IsLearned(heroId, definition.Id);
             row.Icon.TextureNormal = learned ? row.Learned : row.Unlearned;
             row.Icon.TextureDisabled = row.Icon.TextureNormal;
             row.Icon.Disabled = !available || learned;

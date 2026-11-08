@@ -18,7 +18,7 @@
 | 标志枚举 | `[Flags]` 与复数名词，如 `AttackTargets`；成员用独立位，确有组合需求才使用 |
 | 枚举成员 | `PascalCase`，如 `P1`、`P2`、`Physical`；不重复类型前缀 |
 | 方法、局部函数 | `PascalCase` 动词或动词短语，如 `ApplyHit`、`TrySpendSoul` |
-| 属性、事件、公开/受保护字段 | `PascalCase`，如 `ActiveHeroId`、`IsAlive`、`SaveCompleted`；业务数据优先用属性而非公开可变字段 |
+| 属性、事件、公开/受保护字段 | `PascalCase`，如 `HeroId`、`IsAlive`、`SaveCompleted`；业务数据优先用属性而非公开可变字段 |
 | 私有/内部实例字段，含 `readonly`、`[Export]` | `_camelCase`，如 `_hp`、`_activeMonsters` |
 | 私有/内部静态字段，含 `static readonly` | `s_camelCase`，如 `s_defaultBodyPreset` |
 | 私有/内部 `[ThreadStatic]` 字段 | `t_camelCase`；仅在线程局部数据确有用途时采用 |

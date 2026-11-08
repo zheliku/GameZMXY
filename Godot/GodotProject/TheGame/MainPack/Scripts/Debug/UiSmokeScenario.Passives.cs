@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using GameConfig.Skills;
+using GameLogic;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Level;
@@ -26,7 +27,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckPassiveUpgradesAsync(BattleForm battle, ProcedureOwner flow)
     {
         ProfileModel profile = flow.GetModel<ProfileModel>();
-        BindableDictionary<PassiveId, int> levels = flow.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId);
+        BindableDictionary<PassiveId, int> levels = flow.GetModel<SkillModel>().GetPassiveLevels(profile.HeroOf(PlayerSlot.P1));
         HeroModel initial = flow.GetModel<HeroModel>();
         (int Hp, int Mp, float Crit, int HpRegen, int MpRegen) expected = (Hp: initial.MaxHp.Value + 600, Mp: initial.MaxMp.Value + 600,
             Crit: initial.Crit.Value + .06f, HpRegen: initial.HpRegen.Value + 6, MpRegen: initial.MpRegen.Value + 6);
@@ -101,7 +102,7 @@ public sealed partial class UiSmokeScenario
             "被动升级提交后重试没有进入新关卡", 15000);
         await WaitFramesAsync(5);
         Check(flow.GetModel<HeroModel>().MaxHp.Value == expected.Hp && Near(flow.GetModel<HeroModel>().Crit.Value, expected.Crit) &&
-            ReferenceEquals(levels, flow.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId)),
+            ReferenceEquals(levels, flow.GetModel<SkillModel>().GetPassiveLevels(profile.HeroOf(PlayerSlot.P1))),
             "重开关卡后被动丢失、重复叠加或换成另一份数据");
         GD.Print("SMOKE-PASSIVE-UPGRADES PASS: all 25 purchases, insufficient soul, UI binding, maximum refusal, five real attributes, disk checkpoint and reentry");
     }

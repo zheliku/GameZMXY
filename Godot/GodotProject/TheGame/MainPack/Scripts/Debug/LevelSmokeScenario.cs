@@ -104,7 +104,7 @@ public sealed class LevelSmokeScenario
         heroSystem.SetSource(new GameLogic.Battle.Attributes.AttributeSourceId("LevelSmoke", _levelId),
             [GameLogic.Battle.Attributes.AttributeModifier.Flat(GameConfig.Attributes.AttributeType.MaxHp, 100000)]);
         heroSystem.Heal(int.MaxValue);
-        _startExperience = _flow.GetModel<ProfileModel>().TotalExperience;
+        _startExperience = _flow.GetModel<ProfileModel>().GetProgress(_flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience;
         _startSoul = _flow.GetModel<ProfileModel>().Soul.Value;
         _camera = SmokeInspection.Scene(level).GetNode<LevelCameraNode>("Camera2D");
         _gates = SmokeInspection.Scene(level).GetNode<LevelGatesNode>("World/StageGates");
@@ -398,8 +398,8 @@ public sealed class LevelSmokeScenario
             }
 
             LevelViewController run = SmokeInspection.Level(GF.Procedure.CurrentProcedure as ProcedureLevel);
-            int gained = SmokeInspection.Flow(GF.Procedure.CurrentProcedure as ProcedureLevel)?.GetModel<ProfileModel>()
-                .TotalExperience - _startExperience ?? -1;
+            ProfileModel profile = SmokeInspection.Flow(GF.Procedure.CurrentProcedure as ProcedureLevel)?.GetModel<ProfileModel>();
+            int gained = profile?.GetProgress(profile.HeroOf(PlayerSlot.P1)).Value.TotalExperience - _startExperience ?? -1;
             int awardedExperience = SmokeInspection.Model(run).AwardedExperience;
             if (gained != expectedExperience || awardedExperience != expectedExperience)
             {
@@ -706,7 +706,7 @@ public sealed class LevelSmokeScenario
             return;
         }
 
-        if (_reload.IsFaulted || _reload.Result.Data.Heroes.Single(x => x.HeroId == _reload.Result.Data.ActiveHeroId).TotalExperience != _expectedTotalExperience ||
+        if (_reload.IsFaulted || _reload.Result.Data.Heroes.Single(x => x.HeroId == _reload.Result.Data.Heroes[0].HeroId).TotalExperience != _expectedTotalExperience ||
                     _reload.Result.Data.Soul != _expectedSoul ||
                     _reload.Result.Data.HighestClearedLevelId < _levelId)
         {

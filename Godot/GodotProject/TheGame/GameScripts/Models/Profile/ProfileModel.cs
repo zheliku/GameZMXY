@@ -16,64 +16,9 @@ public sealed class ProfileModel : AbstractModel
     private readonly Dictionary<int, BindableProperty<EquippedItems>> _heroSlots = new(); // 每名英雄唯一的穿戴状态。
 
     /// <summary>
-    /// 当前出战英雄编号。
-    /// </summary>
-    public int ActiveHeroId { get; }
-
-    /// <summary>
-    /// 本档案已拥有的英雄编号。
+    /// 按玩家席位排列的参战英雄编号；下标 0 为 P1，下标 1 为 P2。
     /// </summary>
     public IReadOnlyList<int> HeroIds { get; }
-
-    /// <summary>
-    /// 出战英雄的完整成长值。
-    /// </summary>
-    public BindableProperty<HeroProgressionState> Progress => GetProgress(ActiveHeroId);
-
-    /// <summary>
-    /// 出战英雄的等级。
-    /// </summary>
-    public int Level => Progress.Value.Level;
-
-    /// <summary>
-    /// 出战英雄累计经验。
-    /// </summary>
-    public int TotalExperience => Progress.Value.TotalExperience;
-
-    /// <summary>
-    /// 本级经验。
-    /// </summary>
-    public int Experience => Progress.Value.Experience;
-
-    /// <summary>
-    /// 本级升级门槛。
-    /// </summary>
-    public int MaxExperience => Progress.Value.MaxExperience;
-
-    /// <summary>
-    /// 出战英雄的完整穿戴。
-    /// </summary>
-    public BindableProperty<EquippedItems> Slots => GetSlots(ActiveHeroId);
-
-    /// <summary>
-    /// 当前武器或空。
-    /// </summary>
-    public EquipmentData Weapon => Slots.Value.Weapon;
-
-    /// <summary>
-    /// 当前防具或空。
-    /// </summary>
-    public EquipmentData Armor => Slots.Value.Armor;
-
-    /// <summary>
-    /// 当前饰品或空；通用饰品仍由实际穿戴英雄独占。
-    /// </summary>
-    public EquipmentData Accessory => Slots.Value.Accessory;
-
-    /// <summary>
-    /// 当前法宝或空；法宝是独立穿戴部位，不占用饰品槽。
-    /// </summary>
-    public EquipmentData Treasure => Slots.Value.Treasure;
 
     /// <summary>
     /// 灵魂余额。
@@ -103,41 +48,39 @@ public sealed class ProfileModel : AbstractModel
     /// <summary>
     /// 从已验证的档案记录建立数据，不缓存共享经验曲线。
     /// </summary>
-    /// <param name="activeHeroId">已拥有的出战英雄。</param>
-    /// <param name="heroes">英雄编号与累计经验。</param>
+    /// <param name="roster">按席位排列的英雄编号与累计经验，包含一至两名不重复的英雄。</param>
     /// <param name="curve">仅构造期间使用的共享经验规则。</param>
     /// <param name="equipmentCapacity">正数背包容量。</param>
     /// <param name="soul">初始余额，负数按零处理。</param>
-    /// <exception cref="ArgumentException">英雄重复或出战英雄未拥有。</exception>
-    /// <exception cref="ArgumentNullException">英雄列表或曲线为空。</exception>
-    /// <exception cref="ArgumentOutOfRangeException">容量不是正数。</exception>
-    public ProfileModel(int activeHeroId, IEnumerable<(int HeroId, int TotalExperience)> heroes,
+    /// <exception cref="ArgumentException">阵容为空、超过两人或英雄编号重复。</exception>
+    /// <exception cref="ArgumentNullException">阵容或曲线为空。</exception>
+    /// <exception cref="ArgumentOutOfRangeException">容量或英雄编号不是正数。</exception>
+    public ProfileModel(IEnumerable<(int HeroId, int TotalExperience)> roster,
         ExperienceCurveUtility curve, int equipmentCapacity, int soul = 0)
     {
-        ArgumentNullException.ThrowIfNull(heroes);
+        ArgumentNullException.ThrowIfNull(roster);
         ArgumentNullException.ThrowIfNull(curve);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(equipmentCapacity);
-        // 只在构造边界建立数据与固定身份，运行期不更换绑定对象。
-        foreach ((int HeroId, int TotalExperience) hero in heroes)
+        // 构造时固定阵容与席位顺序，运行期不更换绑定对象。
+        var heroIds = new List<int>(2);
+        foreach ((int HeroId, int TotalExperience) hero in roster)
         {
-            if (!_heroes.TryAdd(hero.HeroId, new(curve.GetProgress(hero.TotalExperience))))
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(hero.HeroId, nameof(roster));
+            if (heroIds.Count == 2 || !_heroes.TryAdd(hero.HeroId, new(curve.GetProgress(hero.TotalExperience))))
             {
-                throw new ArgumentException($"英雄 {hero.HeroId} 重复。", nameof(heroes));
+                throw new ArgumentException("阵容最多两人，且英雄编号不得重复。", nameof(roster));
             }
+
+            heroIds.Add(hero.HeroId);
+            _heroSlots.Add(hero.HeroId, new());
         }
 
-        if (!_heroes.ContainsKey(activeHeroId))
+        if (heroIds.Count == 0)
         {
-            throw new ArgumentException("出战英雄不在已拥有列表中。", nameof(activeHeroId));
+            throw new ArgumentException("阵容不能为空。", nameof(roster));
         }
 
-        ActiveHeroId = activeHeroId;
-        HeroIds = Array.AsReadOnly(_heroes.Keys.OrderBy(x => x).ToArray());
-        foreach (int heroId in HeroIds)
-        {
-            _heroSlots.Add(heroId, new());
-        }
-
+        HeroIds = heroIds.AsReadOnly();
         Capacity = equipmentCapacity;
         Soul = new(Math.Max(0, soul));
     }
@@ -181,21 +124,37 @@ public sealed class ProfileModel : AbstractModel
     }
 
     /// <summary>
-    /// 读取出战英雄的指定部位。
+    /// 按席位取参战英雄编号。
     /// </summary>
-    /// <param name="slot">武器、防具、饰品或法宝。</param>
-    /// <returns>该部位的实例或空。</returns>
-    /// <exception cref="ArgumentOutOfRangeException">部位无效。</exception>
-    public EquipmentData GetEquippedItem(EquipmentSlot slot)
+    /// <param name="slot">当前阵容中的玩家席位。</param>
+    /// <returns>该席位的英雄编号。</returns>
+    /// <exception cref="ArgumentOutOfRangeException">席位不在当前阵容中。</exception>
+    public int HeroOf(PlayerSlot slot)
     {
-        return slot switch
+        int index = (int)slot - 1;
+        if (index < 0 || index >= HeroIds.Count)
         {
-            EquipmentSlot.Weapon => Weapon,
-            EquipmentSlot.Armor => Armor,
-            EquipmentSlot.Accessory => Accessory,
-            EquipmentSlot.Treasure => Treasure,
-            _ => throw new ArgumentOutOfRangeException(nameof(slot))
-        };
+            throw new ArgumentOutOfRangeException(nameof(slot));
+        }
+
+        return HeroIds[index];
+    }
+
+    /// <summary>
+    /// 按英雄编号取其席位。
+    /// </summary>
+    /// <param name="heroId">当前阵容中的英雄编号。</param>
+    /// <returns>该英雄占据的玩家席位。</returns>
+    /// <exception cref="ArgumentOutOfRangeException">英雄不在当前阵容中。</exception>
+    public PlayerSlot SlotOf(int heroId)
+    {
+        int index = ((IList<int>)HeroIds).IndexOf(heroId);
+        if (index < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(heroId));
+        }
+
+        return (PlayerSlot)(index + 1);
     }
 }
 

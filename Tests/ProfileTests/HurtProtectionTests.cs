@@ -21,7 +21,7 @@ public sealed class HurtProtectionTests
     [InlineData(2, 60)]
     public void FifthHit_ProtectsForTwoSeconds(int heroId, int frequency)
     {
-        var scope = new TestGameScope(heroId, [(heroId, 0)], 0, 25, initializeHero: heroId == 1);
+        var scope = new TestGameScope([(heroId, 0)], 0, 25, initializeHero: heroId == 1);
         HeroSystem system = scope.GetSystem<HeroSystem>();
         if (heroId != 1)
         {
@@ -52,7 +52,7 @@ public sealed class HurtProtectionTests
     [Fact]
     public void Chain_BreaksAtOneSecondAndClearsWithSession()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroSystem system = scope.GetSystem<HeroSystem>();
         system.RecordHurt();
         system.AdvanceHurtProtection(.99f);

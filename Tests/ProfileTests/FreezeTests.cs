@@ -25,7 +25,7 @@ public sealed class FreezeTests
     [InlineData(144, 5)]
     public void Freeze_ExpiresInGameSeconds(int frequency, int seconds)
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroStatusSystem system = scope.GetSystem<HeroStatusSystem>();
         system.ApplyFreeze(seconds);
         for (int step = 0; step < seconds * frequency - 1; step++)
@@ -44,8 +44,8 @@ public sealed class FreezeTests
     [Fact]
     public void Effects_CoexistAndClearWithoutCrossingScopes()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
-        var otherScope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
+        var otherScope = new TestGameScope([(1, 0)], 0, 25);
         HeroStatusSystem system = scope.GetSystem<HeroStatusSystem>();
         HeroStatusSystem otherSystem = otherScope.GetSystem<HeroStatusSystem>();
         AttackConfig poison = TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2));
@@ -75,7 +75,7 @@ public sealed class FreezeTests
     [Fact]
     public void Freeze_RefreshesPausesAndClearsWithSession()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroStatusSystem system = scope.GetSystem<HeroStatusSystem>();
         HeroSystem heroSystem = scope.GetSystem<HeroSystem>();
         system.ApplyFreeze(5);

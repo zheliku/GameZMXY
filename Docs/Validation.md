@@ -2,6 +2,64 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人A1：阵容取代单一出战英雄（2026-11-07）
+
+按用户目标文件及 CoopImplementationPlan 第四部分顺序实施 A1-1～A1-8。当前仍只建立一名战斗英雄，单人输入与界面布局不变；钱包和背包归属留给 A2，本局模型留给 B1。依据项目规范第 00/10/30/50/70 章执行分层、中文注释、对称订退和隔离存档验证，2026-11-08 用户进一步要求文档也清零并授权同步规范和计划，已补齐文档当前状态。
+
+存档 v12 → v13：删除单一出战英雄字段，以 `GameData.Heroes` 和 `ProfileModel.HeroIds` 的顺序表示席位（下标 0=P1、1=P2）；阵容人数限 1～2，英雄编号唯一。捕获不重新排序，回滚必须匹配同一有序阵容。其余持久字段和数值规则不变。只接受当前格式，**旧 v12 开发档需重建**，没有迁移或兼容分支。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 开工基线 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0，0 错误、5 条既有框架弃用警告；三套 `dotnet test`：279/279、193/193、19/19 |
+| 子任务编译 | 每步均执行 `dotnet build Godot/GodotProject --no-restore -v quiet`。用户已明确允许 A1-1～A1-7 暂留本批接口迁移错误；各步错误数依次为 194、208、218、208、208、189、135，A1-8 全部消除，退出 0、0 错误、5 条既有警告。日志在 `.godot/validation/coop_a1_20261107/a1_*_build.log` |
+| 最终游戏构建 | 八步结束后重执行 `dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0，0 错误；增量构建显示 0 警告，A1-8 的完整编译保留原 5 条弃用警告，无新增警告 |
+| 档案规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：退出 0，**282/282**，失败 0、跳过 0。比基线新增 3 例：反序阵容席位/JSON 往返、非法阵容信封、交换席位快照拒绝且数据不变；原有测试全部保留并迁移参数 |
+| 战斗规则 | `dotnet test Tests/BattleTests --no-restore -v quiet`：退出 0，**193/193**，失败 0、跳过 0；既有 CS8632/CS0649 警告保留 |
+| 关卡规则 | `dotnet test Tests/LevelTests --no-restore -v quiet`：退出 0，**19/19**，失败 0、跳过 0；三个测试工程的既有 NU1900 网络警告保留 |
+| Godot 扫描/构建 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_a1_scan_20261107 --headless --editor --build-solutions --quit --no-window`：退出 0，扫描和构建完成；既有 ComponentInsoector 的 free/退出诊断保留 |
+| 引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：退出 0，**2283 条序列化路径、388 个 UID** 通过 |
+| 正式前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_a1_frontend_20261107 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：退出 0，完整 `SMOKE PASS`，覆盖两英雄建档/选角、地图购技、保存返回、目录重读、加载取消及失败清理；预期旧作用域拒绝、坏文件与重复注册注入单列，退出有 3 个 ObjectDB 诊断 |
+| 完整 UI | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_a1_ui_20261107 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 30000 -- --smoketest=ui`：退出 0，完整 `SMOKE PASS`；HUD/背包/技能、15 件装备穿卸、实体/窗口解绑复用、60/120Hz 坡地/平台、拾取/死亡、检查点重入、备份回退、加载取消/失败清理通过。坏文件与 HUD 打开失败为预期注入；退出保留 38 个 CanvasItem RID、20 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、141 个 ObjectDB 实例及 11 个资源占用诊断 |
+| 旧接口搜索 | 2026-11-08 从仓库根执行 `$retiredField = 'Active' + 'HeroId'; rg -n -- $retiredField .`：退出 1，**0 命中**，包含源码、规范、计划与历史说明；遵循仓库忽略规则，Git 对象、构建缓存和验证日志不属于源码文档验收。命令中分段构造搜索词，以免记录本身重新引入旧名称 |
+| 目标复核 | 2026-11-08 新目标文件仍指定 A1。对照当前 A1-1～A1-8 实现、接口、数据流、测试、8 份步骤构建日志及交付记录核验，未重做已完成实现。重新执行 `dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0、0 错误、增量 0 警告；`dotnet test Tests/ProfileTests --no-restore -v quiet`：282/282；`dotnet test Tests/BattleTests --no-restore -v quiet`：193/193；`dotnet test Tests/LevelTests --no-restore -v quiet`：19/19；`python Tools/ProjectMaintenance/validate_game_references.py`：2283 路径/388 UID 通过，均退出 0。非 Docs 目录工作区差异 SHA-256 仍为 `6629b8ff93d0ebb2bf7cb60bb8e76356261979b5f3ed8f7e759b714f6f65b3d6`，与完整扫描/前端/UI 验证后的代码一致；已检查现存扫描完成与两项最终 PASS 日志，本轮未重复执行引擎烟测。旧名称搜索与 `git diff --check` 再次通过，继续停在 A1 待审 |
+| 文档补齐 | 2026-11-08 仅更新上述 6 份文档；`git diff --check` 退出 0。前后对 Git 索引及非 Docs 目录工作区差异执行 SHA-256 比较，两项均相同；本轮构建、规则与引擎烟测未重跑，沿用上一轮未变代码的验证结果 |
+| 格式与边界 | `dotnet format whitespace <csproj> --no-restore --include <本批文件绝对路径清单> --verify-no-changes`：Godot 工程 38 文件、ProfileTests 22 文件、BattleTests 1 文件均退出 0；仅工作区加载既有警告。`git diff --check` 通过；61 份修改的 C# 文件均为 UTF-8/CRLF，文档保留原换行格式。Framework、addons、Tools/Luban、生成代码/资源、源表、bytes、场景无本批差异；未执行 Git 写操作，既有四份暂存文档保留 |
+
+关键接口变化（类型、返回类型不变的行省略返回类型）：
+
+| 修改前 | 修改后 |
+| --- | --- |
+| `ProfileModel(int activeHeroId, IEnumerable<(int HeroId, int TotalExperience)> heroes, ExperienceCurveUtility curve, int equipmentCapacity, int soul = 0)` | `ProfileModel(IEnumerable<(int HeroId, int TotalExperience)> roster, ExperienceCurveUtility curve, int equipmentCapacity, int soul = 0)` |
+| 单一出战英雄及其成长/穿戴便捷成员 | 删除；使用 `GetProgress(int heroId)`、`GetSlots(int heroId)`，新增 `int HeroOf(PlayerSlot slot)`、`PlayerSlot SlotOf(int heroId)` |
+| `AddExperience(int amount)` | `AddExperience(int heroId, int amount)` |
+| `Learn(SkillId skillId)` / `Upgrade(PassiveId id)` | `Learn(int heroId, SkillId skillId)` / `Upgrade(int heroId, PassiveId id)` |
+| `IsLearned(SkillId skillId)` / `IsLearnable(SkillId id)` / `IsAvailable(SkillId id)` | 对应方法均在首位增加 `int heroId` |
+| `TryEquip(Guid instanceId)` / `TryUnequip(EquipmentSlot slot)` | `TryEquip(int heroId, Guid instanceId)` / `TryUnequip(int heroId, EquipmentSlot slot)` |
+| `EquipEquipmentCommand(Guid instanceId)` / `UnequipEquipmentCommand(EquipmentSlot slot)` / `LearnSkillCommand(SkillId skillId)` / `UpgradePassiveCommand(PassiveId passiveId)` | 四个构造函数均在首位增加 `int heroId` |
+| `StartSession(int heroId)`（LevelSystem） | `StartSession(IReadOnlyList<int> heroIds)` |
+| `InventoryCharacterPanel.Refresh(AbstractHeroEntity hero)` | `Refresh(AbstractHeroEntity hero, HeroProgressionState progress, EquippedItems items)` |
+| `ActiveSkillsPage.Refresh()` / `PassiveSkillsPage.Refresh()` | `Refresh(int heroId)`；由窗口传入本周期显示的英雄 |
+| `TestGameScope(int activeHeroId, IEnumerable<(int HeroId, int TotalExperience)> heroes, int soul, int capacity, bool initializeHero = true)` | 删除首个身份参数，阵容首位决定本阶段的战斗英雄 |
+
+本批文件清单：67 份修改（61 份 C#、6 份文档），无新增、无删除。以下目录内逐项列出相对文件名；此外修改 `Docs/Validation.md`、`Docs/WorkingNotes.md`、`Docs/CoopImplementationPlan.md`、`Docs/ProjectTour.md`、`Docs/ProjectGuidelines/10-CSharp.md`、`Docs/ProjectGuidelines/70-ProfileAndSave.md`。2026-11-08 文档补齐只涉及这六份文档；用户原已暂存的 OfficialReference 保持不动，Git 索引未改。
+
+| 所属目录 | 修改文件 |
+| --- | --- |
+| `Godot/GodotProject/TheGame/GameScripts/` | `Commands/EquipmentCommands.cs`、`Commands/LearnSkillCommand.cs`、`Entity/Enemies/Bosses/zm1_11_hidden_dragon_palace/DragonKingEntity.cs`、`Entity/Heroes/AbstractHeroEntity.cs`、`Entity/Heroes/Wukong/WukongEntity.cs`、`Entity/Level/LevelViewController.cs`、`Models/Profile/ProfileModel.cs`、`Models/Save/GameData.cs`、`Systems/EquipmentSystem.cs`、`Systems/Hero/HeroSystem.cs`、`Systems/LevelSystem.cs`、`Systems/ProfileSystem.cs`、`Systems/SaveSystem.cs`、`Systems/SkillSystem.cs`、`UI/BattleForm/BattleForm.Logic.cs`、`UI/InventoryForm/Components/InventoryCharacterPanel.cs`、`UI/InventoryForm/InventoryForm.Logic.cs`、`UI/SkillForm/Components/ActiveSkillsPage.cs`、`UI/SkillForm/Components/PassiveSkillsPage.cs`、`UI/SkillForm/SkillForm.Logic.cs`、`Utilities/Utility/SaveDataUtility.cs` |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/` | `FrontendSmokeScenario.cs`、`LevelSmokeScenario.cs`、`MapProgressSmokeScenario.cs`、`TestArenaController.cs`、`UiSmokeScenario.CombatFeedback.cs`、`UiSmokeScenario.Dragon.cs`、`UiSmokeScenario.DragonRules.cs`、`UiSmokeScenario.Equipment.cs`、`UiSmokeScenario.FireDemon.cs`、`UiSmokeScenario.Inventory.cs`、`UiSmokeScenario.Passives.cs`、`UiSmokeScenario.Skills.cs`、`UiSmokeScenario.Tangseng.cs`、`UiSmokeScenario.Terrain.cs`、`UiSmokeScenario.cs` |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/` | `ProcedureLevel.cs`、`ProcedureLoadGame.cs` |
+| `Tests/ProfileTests/` | `BindablePropertyTests.cs`、`BossEquipmentTests.cs`、`CommandTests.cs`、`DragonPalaceTests.cs`、`EquipmentTests.cs`、`FreezeTests.cs`、`HurtProtectionTests.cs`、`LevelModelTests.cs`、`LevelProgressTests.cs`、`LevelRewardTests.cs`、`ModelTransactionTests.cs`、`MusouTests.cs`、`PassiveSkillTests.cs`、`PoisonTests.cs`、`ProfileTests.cs`、`QixingConfigurationTests.cs`、`QueryTests.cs`、`RecoveryTests.cs`、`SkillLearningTests.cs`、`SkillStateTests.cs`、`SkillSystemTests.cs`、`TestGameScope.cs` |
+| `Tests/BattleTests/` | `SkillReuseTests.cs` |
+
+计划之外的实际情况与处理：
+
+- 中间步骤编译门槛与删除接口的先后顺序冲突，开工前已上报并取得用户裁决；保留原子任务顺序，逐步记录错误，A1-8 清零。
+- 机械消费者补齐：`AbstractHeroEntity.RefreshAppearance` 按实体 HeroId 读取穿戴；`WukongEntity` 的升龙斩学习判断补 HeroId；`SkillSystem.TryActivate` 内部调用新增签名时显式传本阶段的 P1；`PassiveSkillsPage` 由窗口传 HeroId；`SaveSystem.IsUnclaimedSlot` 与快照回写移除已删除字段；Debug 页面刷新、反射字段比较及所有相关规则调用一并更新。
+- `LevelSystem.StartSession` 的实际调用位置是 `LevelViewController.StartSession`，本批在实际调用处传 `profile.HeroIds`，未移动流程职责。`MapForm`、`ProfileTestData`、`EnemyAiSmokeScenario`、`HeroTestScope`、`BattleArchitecture` 经核对无需改动；SmokeInspection 的 `Attributes` 反射契约保留。
+- 2026-11-08 用户明确要求文档也清零，并授权同步规范和计划。第 70 章、ProjectTour 与计划现状已更新为 v13、A1 已实现待审；历史记录保留原版本含义，以描述旧字段职责代替旧名称。此前的搜索范围待裁决项已解决。
+
+当前仍保留共享灵魂/背包、单份 HeroModel/技能登记和 P1 开窗；这些是后续计划边界。A2 前置条件为用户审查接受本批 A1；本轮不开始 A2。引擎烟测使用既有 runner 的案例专属 APPDATA 和 Validation 存档；未覆盖正式玩家存档。正常数值下全关人工实战：未执行；本次烟测不替代该验收。
+
 ## 微软C#命名与格式迁移（2026-11-07）
 
 按用户要求从规范配置推进到实际项目代码，并排除GGF/第三方。40个枚举去E（21手写、19Luban），1014个字段按可见性与静态归属命名；12份UI绑定、项目Luban加载器/总表模板从各自生成入口更新。脚本UID、枚举成员/值、配置bytes、存档v12与玩法保持。主工作区不应用双人02A草稿。

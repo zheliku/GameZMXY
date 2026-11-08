@@ -24,7 +24,7 @@ public sealed class DragonPalaceTests
     [Fact]
     public void HiddenRoom_DoesNotAdvanceMainline()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         ProfileSystem profile = scope.GetSystem<ProfileSystem>();
         Assert.False(profile.CanEnterLevel(11));
         profile.RecordLevelClear(1);
@@ -44,7 +44,7 @@ public sealed class DragonPalaceTests
     [Fact]
     public void BannerEligibility_RoundTripsAndRollsBack()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         ProfileSystem system = scope.GetSystem<ProfileSystem>();
         GameData checkpoint = scope.CaptureSaveData();
         Assert.True(system.TryClaimEastSeaBanner());
@@ -66,12 +66,12 @@ public sealed class DragonPalaceTests
     [Fact]
     public void Transfer_CommitsCollectedProgressWithoutClearingSource()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         ProfileSystem profile = scope.GetSystem<ProfileSystem>();
         profile.RecordLevelClear(1);
         LevelSystem level = scope.GetSystem<LevelSystem>();
         level.Prepare(2);
-        level.StartSession(1);
+        level.StartSession([1]);
         profile.AddSoul(21);
         Assert.False(level.TransferToDragonPalace(3));
         Assert.True(level.TransferToDragonPalace(11));
@@ -81,7 +81,7 @@ public sealed class DragonPalaceTests
         Assert.Equal(21, scope.Profile.Soul.Value);
         Assert.Equal(1, scope.Profile.HighestClearedLevelId.Value);
         level.Prepare(11);
-        level.StartSession(1);
+        level.StartSession([1]);
         Assert.True(profile.TryClaimEastSeaBanner());
         level.EndSession();
         Assert.True(scope.Profile.EastSeaBannerAvailable);
@@ -94,7 +94,7 @@ public sealed class DragonPalaceTests
     [Fact]
     public void DragonTiers_KeepOneIdentityAndDistinctCombatData()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         ConfigurationModel config = scope.GetModel<ConfigurationModel>();
         EnemyConfig dragon = TestTables.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.DragonKing);
         IReadOnlyList<AttackConfig> lowAttacks = config.GetAttacks(dragon.EntityId);

@@ -47,11 +47,12 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
     }
 
     /// <summary>
-    /// 把背包中的装备穿到出战英雄；替换件原位放回，异角色装备没有副作用。
+    /// 把背包中的装备穿到指定英雄；替换件原位放回，异角色装备没有副作用。
     /// </summary>
+    /// <param name="heroId">本次穿戴操作的参战英雄编号。</param>
     /// <param name="instanceId">背包中要穿上的实例。</param>
     /// <returns>成功完成一次交换时为 true。</returns>
-    public bool TryEquip(Guid instanceId)
+    public bool TryEquip(int heroId, Guid instanceId)
     {
         ProfileModel profile = this.GetModel<ProfileModel>();
         EquipmentData item = profile.EquipmentDatas.FirstOrDefault(x => x.InstanceId == instanceId);
@@ -61,22 +62,23 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         }
 
         EquipmentConfig definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(item.EquipmentId);
-        if (definition.Owner != EquipmentOwner.Universal && (int)definition.Owner != profile.ActiveHeroId)
+        if (definition.Owner != EquipmentOwner.Universal && (int)definition.Owner != heroId)
         {
             return false;
         }
 
-        if (!TryExchange(instanceId, profile.GetEquippedItem(definition.Slot)))
+        BindableProperty<EquippedItems> slots = profile.GetSlots(heroId);
+        if (!TryExchange(instanceId, SlotOf(slots.Value, definition.Slot)))
         {
             return false;
         }
 
-        profile.Slots.Value = definition.Slot switch
+        slots.Value = definition.Slot switch
         {
-            EquipmentSlot.Weapon => profile.Slots.Value with { Weapon = item },
-            EquipmentSlot.Armor => profile.Slots.Value with { Armor = item },
-            EquipmentSlot.Accessory => profile.Slots.Value with { Accessory = item },
-            EquipmentSlot.Treasure => profile.Slots.Value with { Treasure = item },
+            EquipmentSlot.Weapon => slots.Value with { Weapon = item },
+            EquipmentSlot.Armor => slots.Value with { Armor = item },
+            EquipmentSlot.Accessory => slots.Value with { Accessory = item },
+            EquipmentSlot.Treasure => slots.Value with { Treasure = item },
             _ => throw new ArgumentOutOfRangeException(nameof(definition.Slot))
         };
         return true;
@@ -85,23 +87,25 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
     /// <summary>
     /// 卸下指定部位；背包满时保留当前装备，不丢弃物品。
     /// </summary>
+    /// <param name="heroId">本次穿戴操作的参战英雄编号。</param>
     /// <param name="slot">要卸下的部位。</param>
     /// <returns>实际卸下时为 true。</returns>
-    public bool TryUnequip(EquipmentSlot slot)
+    public bool TryUnequip(int heroId, EquipmentSlot slot)
     {
         ProfileModel profile = this.GetModel<ProfileModel>();
-        EquipmentData item = profile.GetEquippedItem(slot);
+        BindableProperty<EquippedItems> slots = profile.GetSlots(heroId);
+        EquipmentData item = SlotOf(slots.Value, slot);
         if (item == null || !TryExchange(Guid.Empty, item))
         {
             return false;
         }
 
-        profile.Slots.Value = slot switch
+        slots.Value = slot switch
         {
-            EquipmentSlot.Weapon => profile.Slots.Value with { Weapon = null },
-            EquipmentSlot.Armor => profile.Slots.Value with { Armor = null },
-            EquipmentSlot.Accessory => profile.Slots.Value with { Accessory = null },
-            EquipmentSlot.Treasure => profile.Slots.Value with { Treasure = null },
+            EquipmentSlot.Weapon => slots.Value with { Weapon = null },
+            EquipmentSlot.Armor => slots.Value with { Armor = null },
+            EquipmentSlot.Accessory => slots.Value with { Accessory = null },
+            EquipmentSlot.Treasure => slots.Value with { Treasure = null },
             _ => throw new ArgumentOutOfRangeException(nameof(slot))
         };
         return true;
@@ -172,6 +176,25 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
         profile.EquipmentDatas.ReplaceAll(profile.EquipmentDatas.Where(item => !ids.Contains(item.InstanceId)));
         profile.Soul.Value += (int)price;
         return ids.Count;
+    }
+
+    /// <summary>
+    /// 从完整穿戴值读取指定部位。
+    /// </summary>
+    /// <param name="items">指定英雄的完整穿戴值。</param>
+    /// <param name="slot">要读取的装备部位。</param>
+    /// <returns>部位上的实例或空。</returns>
+    /// <exception cref="ArgumentOutOfRangeException">部位无效。</exception>
+    private static EquipmentData SlotOf(EquippedItems items, EquipmentSlot slot)
+    {
+        return slot switch
+        {
+            EquipmentSlot.Weapon => items.Weapon,
+            EquipmentSlot.Armor => items.Armor,
+            EquipmentSlot.Accessory => items.Accessory,
+            EquipmentSlot.Treasure => items.Treasure,
+            _ => throw new ArgumentOutOfRangeException(nameof(slot))
+        };
     }
 
     /// <summary>

@@ -45,7 +45,7 @@ public sealed class QixingConfigurationTests
         Assert.Equal(EquipmentDropPoolId.LionCamelKing, boss.EquipmentDropPoolId);
         Assert.Equal(EquipmentId.HeavenlyFiendNecklace,
             Assert.Single(tables.TbEquipmentDropPoolConfig.Get(boss.EquipmentDropPoolId).Entries).EquipmentId);
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         EquipmentSystem system = scope.GetSystem<EquipmentSystem>();
         EquipmentData low = system.Roll(Guid.NewGuid(), EquipmentId.HeavenlyFiendNecklace, () => 0);
         EquipmentData high = system.Roll(Guid.NewGuid(), EquipmentId.HeavenlyFiendNecklace, () => 1);

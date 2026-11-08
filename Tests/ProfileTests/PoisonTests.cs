@@ -20,7 +20,7 @@ public sealed class PoisonTests
     [InlineData(144)]
     public void Poison_UsesTenSecondsAtEveryFrameRate(int fps)
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroStatusSystem system = scope.GetSystem<HeroStatusSystem>();
         system.ApplyPoison(TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2)));
         int damage = 0;
@@ -40,7 +40,7 @@ public sealed class PoisonTests
     [Fact]
     public void Refresh_KeepsTickPhaseAndDeathClearsPoison()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroStatusSystem system = scope.GetSystem<HeroStatusSystem>();
         HeroSystem heroSystem = scope.GetSystem<HeroSystem>();
         AttackConfig attack = TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2));

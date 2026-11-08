@@ -471,7 +471,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// </summary>
     public void RefreshAppearance()
     {
-        ProfileModel equipment = this.GetModel<ProfileModel>();
+        EquippedItems equipment = this.GetModel<ProfileModel>().GetSlots(HeroId).Value;
         var body = (Sprite2D)Body;
         _appearance.ApplyToSprites(body, _weapon,
             equipment.Weapon?.EquipmentId ?? GameConfig.Equipment.EquipmentId.None,

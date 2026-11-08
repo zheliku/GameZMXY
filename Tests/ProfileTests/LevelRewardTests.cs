@@ -57,7 +57,7 @@ public sealed class LevelRewardTests
             scope.Hero.MaxHp.Value, scope.Hero.MaxMp.Value, () => 0f);
         LootReward health = loot.Find(x => x.Kind == LootKind.Health);
         LootReward mana = loot.Find(x => x.Kind == LootKind.Mana);
-        scope.GetSystem<ProfileSystem>().AddExperience(int.MaxValue);
+        scope.GetSystem<ProfileSystem>().AddExperience(1, int.MaxValue);
         Assert.True(scope.GetSystem<LootSystem>().HealthAmount(scope.Hero.MaxHp.Value) > health.Amount);
         Assert.True(scope.GetSystem<LootSystem>().ManaAmount(scope.Hero.MaxMp.Value) > mana.Amount);
         scope.Hero.Hp.Value = 1;
@@ -87,7 +87,7 @@ public sealed class LevelRewardTests
     [InlineData(3)]
     public void InactiveRun_RejectsEveryRecoveryAndReward(int state)
     {
-        TestGameScope scope = state == 0 ? new TestGameScope(1, [(1, 0)], 0, 25) : Ready();
+        TestGameScope scope = state == 0 ? new TestGameScope([(1, 0)], 0, 25) : Ready();
         LevelSystem system = scope.GetSystem<LevelSystem>();
         if (state == 1)
         {
@@ -137,9 +137,9 @@ public sealed class LevelRewardTests
     /// <returns>独立测试作用域。</returns>
     private static TestGameScope Ready()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         scope.GetSystem<LevelSystem>().Prepare(1);
-        scope.GetSystem<LevelSystem>().StartSession(1);
+        scope.GetSystem<LevelSystem>().StartSession([1]);
         return scope;
     }
 }

@@ -20,14 +20,14 @@ public sealed class LevelProgressTests
     [Fact]
     public void Combo_UsesOfficialStablePollAndSessionClock()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         LevelSystem system = scope.GetSystem<LevelSystem>();
         const double pollInterval = 20d / 24d;
 
         system.RecordComboHit();
         Assert.Equal(0, scope.Level.ComboCount.Value);
         system.Prepare(1);
-        system.StartSession(1);
+        system.StartSession([1]);
         system.RecordComboHit();
         system.RecordComboHit();
         Assert.Equal(2, scope.Level.ComboCount.Value);
@@ -44,7 +44,7 @@ public sealed class LevelProgressTests
         system.EndSession();
         Assert.Equal(0, scope.Level.ComboCount.Value);
         system.Prepare(1);
-        system.StartSession(1);
+        system.StartSession([1]);
         Assert.Equal(0, scope.Level.ComboCount.Value);
         system.EndSession();
     }
@@ -55,7 +55,7 @@ public sealed class LevelProgressTests
     [Fact]
     public void TargetExit_RejectsWrongStageAndRepeatedDefeat()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         ProfileSystem profile = scope.GetSystem<ProfileSystem>();
         for (int id = 1; id <= 3; id++)
         {
@@ -65,7 +65,7 @@ public sealed class LevelProgressTests
         LevelSystem system = scope.GetSystem<LevelSystem>();
         system.Prepare(4);
         Assert.False(system.TryOpenBatCaveExit("stage_5_d"));
-        system.StartSession(1);
+        system.StartSession([1]);
         system.StartBattle();
         Assert.False(system.TryOpenBatCaveExit("stage_5_d"));
         for (int stage = 1; stage < 5; stage++)
@@ -88,7 +88,7 @@ public sealed class LevelProgressTests
     [Fact]
     public void Clear_UnlocksNextLevel_WithoutSkippingOrRegressing()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         ProfileSystem system = scope.GetSystem<ProfileSystem>();
         Assert.Equal(1, system.LatestLevelId);
         Assert.True(system.CanEnterLevel(1));
@@ -115,17 +115,17 @@ public sealed class LevelProgressTests
     [Fact]
     public void FailureAndAbandon_DoNotUnlock()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         LevelSystem level = scope.GetSystem<LevelSystem>();
         Assert.Throws<InvalidOperationException>(() => level.Prepare(2));
         level.Prepare(1);
-        level.StartSession(1);
+        level.StartSession([1]);
         Assert.Equal(0, scope.Profile.HighestClearedLevelId.Value);
         level.Complete(LevelOutcome.Defeated, 0);
         Assert.Equal(0, scope.Profile.HighestClearedLevelId.Value);
         level.EndSession();
         level.Prepare(1);
-        level.StartSession(1);
+        level.StartSession([1]);
         level.EndSession();
         Assert.Equal(0, scope.Profile.HighestClearedLevelId.Value);
     }
@@ -136,7 +136,7 @@ public sealed class LevelProgressTests
     [Fact]
     public void SaveRoundTripAndRollback_PreserveProgressAndBindingIdentity()
     {
-        var scope = new TestGameScope(1, [(1, 135)], 17, 25);
+        var scope = new TestGameScope([(1, 135)], 17, 25);
         BindableProperty<int> binding = scope.Profile.HighestClearedLevelId;
         scope.GetSystem<ProfileSystem>().RecordLevelClear(1);
         GameData snapshot = JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(scope.CaptureSaveData()));
@@ -158,7 +158,7 @@ public sealed class LevelProgressTests
     [InlineData(999)]
     public void InvalidProgress_IsRejected(int id)
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         GameData data = scope.CaptureSaveData();
         data.HighestClearedLevelId = id;
         Assert.Throws<ArgumentException>(() => new SaveDataUtility().Validate(data, TestTables.Tables.TbEquipmentConfig,

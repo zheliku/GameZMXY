@@ -60,10 +60,11 @@ public partial class PassiveSkillsPage : Control, IController
     /// <summary>
     /// 显示当前等级和下一等级费用，满级后停止交互。
     /// </summary>
-    public void Refresh()
+    /// <param name="heroId">本窗口当前显示的参战英雄编号。</param>
+    public void Refresh(int heroId)
     {
         IReadOnlyList<PassiveConfig> definitions = this.GetModel<ConfigurationModel>().Tables.TbPassiveConfig.DataList;
-        BindableDictionary<PassiveId, int> levels = this.GetModel<SkillModel>().GetPassiveLevels(this.GetModel<ProfileModel>().ActiveHeroId);
+        BindableDictionary<PassiveId, int> levels = this.GetModel<SkillModel>().GetPassiveLevels(heroId);
         for (int i = 0; i < _names.Length; i++)
         {
             PassiveConfig definition = definitions[i];

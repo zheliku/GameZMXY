@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using GameConfig;
 using GameConfig.Level;
@@ -66,15 +68,16 @@ public sealed class LevelSystem : AbstractSystem
     }
 
     /// <summary>
-    /// 验证出战身份并捕获进关回滚副本。
+    /// 验证阵容顺序并捕获进关回滚副本。
     /// </summary>
-    /// <param name="heroId">实际显示的英雄身份。</param>
-    public void StartSession(int heroId)
+    /// <param name="heroIds">按玩家席位排列的关卡英雄编号。</param>
+    /// <exception cref="InvalidOperationException">关卡阵容与档案阵容不一致。</exception>
+    public void StartSession(IReadOnlyList<int> heroIds)
     {
         ProfileModel profile = this.GetModel<ProfileModel>();
-        if (heroId != profile.ActiveHeroId)
+        if (!heroIds.SequenceEqual(profile.HeroIds))
         {
-            throw new InvalidOperationException("关卡实体必须与档案的出战英雄一致。");
+            throw new InvalidOperationException("关卡实体必须与档案阵容一致。");
         }
 
         if (LevelModel.SessionActive)
@@ -110,7 +113,7 @@ public sealed class LevelSystem : AbstractSystem
         int experience = Math.Max(0, experienceReward);
         LevelModel.DefeatedEnemyCount++;
         LevelModel.AwardedExperience += experience;
-        return experience > 0 && this.GetSystem<ProfileSystem>().AddExperience(experience) > 0;
+        return experience > 0 && this.GetSystem<ProfileSystem>().AddExperience(this.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), experience) > 0;
     }
 
     /// <summary>

@@ -57,15 +57,14 @@ internal sealed class TestGameScope : IArchitecture
     /// <summary>
     /// 建立独立测试作用域，不复制正式规则。
     /// </summary>
-    /// <param name="activeHeroId">出战身份。</param>
     /// <param name="heroes">累计经验。</param>
     /// <param name="soul">灵魂余额。</param>
     /// <param name="capacity">背包容量。</param>
     /// <param name="initializeHero">是否装配已有可玩英雄数值；未导入角色的技能机制测试自行提供本局蓝量。</param>
-    public TestGameScope(int activeHeroId, IEnumerable<(int HeroId, int TotalExperience)> heroes,
+    public TestGameScope(IEnumerable<(int HeroId, int TotalExperience)> heroes,
         int soul, int capacity, bool initializeHero = true)
     {
-        Profile = new(activeHeroId, heroes, TestTables.Curve, capacity, soul);
+        Profile = new(heroes, TestTables.Curve, capacity, soul);
         Skills = new(Profile.HeroIds);
         foreach (IModel model in new IModel[] { Profile, Skills, Hero, Level })
         {
@@ -88,7 +87,7 @@ internal sealed class TestGameScope : IArchitecture
         _lootSystem = new LootSystem(this);
         _saveSystem = new SaveSystem(this);
         _levelSystem = new LevelSystem(this);
-        if (activeHeroId == 1)
+        if (Profile.HeroIds[0] == 1)
         {
             _skillSystem.SelectSkills(1, GameLogic.SkillTests.SkillTestDefinitions.Wukong());
         }
@@ -177,8 +176,7 @@ internal sealed class TestGameScope : IArchitecture
         var utility = new SaveDataUtility();
         utility.Validate(data, definitions, capacity, TestTables.Tables.TbSkillConfig,
             TestTables.Tables.TbLevelConfig, TestTables.Tables.TbPassiveConfig);
-        var scope = new TestGameScope(data.ActiveHeroId,
-            data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), data.Soul, capacity);
+        var scope = new TestGameScope(data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), data.Soul, capacity);
         scope.RestoreCheckpoint(data);
         return scope;
     }

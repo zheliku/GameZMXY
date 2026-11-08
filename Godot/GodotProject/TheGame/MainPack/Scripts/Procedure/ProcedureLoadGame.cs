@@ -62,8 +62,7 @@ public class ProcedureLoadGame : ProcedureBase
             // 校验成功后由流程创建、发布档案模型；不把 Model 再包装成 LoadResult。
             GameData data = loaded.Data;
             ConfigurationModel config = procedureOwner.GetModel<GameLogic.Config.ConfigurationModel>();
-            var profile = new ProfileModel(data.ActiveHeroId,
-                data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), procedureOwner.GetUtility<ExperienceCurveUtility>(),
+            var profile = new ProfileModel(data.Heroes.Select(x => (x.HeroId, x.TotalExperience)), procedureOwner.GetUtility<ExperienceCurveUtility>(),
                 config.Tables.TbProfileConfig.EquipmentCapacity, data.Soul);
             procedureOwner.RegisterModel(profile);
             ownsProfile = true;
@@ -73,7 +72,7 @@ public class ProcedureLoadGame : ProcedureBase
             procedureOwner.RegisterSystem(new EquipmentSystem(architecture));
             procedureOwner.RegisterSystem(new SkillSystem(architecture));
             Log.Info("[ProcedureLoadGame] 档案就绪：来源 {0}，出战英雄 {1}，等级 {2}", loaded.Origin,
-                profile.ActiveHeroId, profile.Level);
+                profile.HeroOf(PlayerSlot.P1), profile.GetProgress(profile.HeroOf(PlayerSlot.P1)).Value.Level);
             // 空槽已在首次写盘前确认角色；新旧档案都沿同一已装配的地图入口继续。
             ChangeState<ProcedureMap>(procedureOwner);
         }

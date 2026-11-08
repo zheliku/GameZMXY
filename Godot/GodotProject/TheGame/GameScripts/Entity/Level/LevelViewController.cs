@@ -175,12 +175,12 @@ public partial class LevelViewController : Node2D, IController
 
         _player = player;
         _heroDeathPresentation = HeroDeathPresentation.None;
-        this.GetSystem<LevelSystem>().StartSession(player.HeroId);
+        this.GetSystem<LevelSystem>().StartSession(this.GetModel<ProfileModel>().HeroIds);
         _exitRequested = false;
         _lootRandom.Randomize();
         _player.Died += OnHeroDied;
         _player.HealthRestored += OnHeroHealthRestored;
-        this.GetModel<ProfileModel>().Slots.Register(OnEquipmentChanged);
+        this.GetModel<ProfileModel>().GetSlots(_player.HeroId).Register(OnEquipmentChanged);
         LevelModel.Outcome.Register(OnSessionEnded);
         _sessionActive = true;
         GF.Event.Subscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
@@ -524,7 +524,7 @@ public partial class LevelViewController : Node2D, IController
         }
 
         _heroDeathPresentation = HeroDeathPresentation.None;
-        this.GetModel<ProfileModel>().Slots.UnRegister(OnEquipmentChanged);
+        this.GetModel<ProfileModel>().GetSlots(_player.HeroId).UnRegister(OnEquipmentChanged);
         LevelModel.Outcome.UnRegister(OnSessionEnded);
     }
 

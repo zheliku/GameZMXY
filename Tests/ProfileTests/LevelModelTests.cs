@@ -16,12 +16,12 @@ public sealed class LevelModelTests
     [Fact]
     public void Result_FreezesRunStatistics_AndStopDoesNotPublishAbandonment()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 80, 25);
+        var scope = new TestGameScope([(1, 0)], 80, 25);
         LevelSystem system = scope.GetSystem<LevelSystem>();
         system.Prepare(1);
         LevelModel levelModel = scope.Level;
         system.AdvanceTime(100);
-        system.StartSession(1);
+        system.StartSession([1]);
         system.AdvanceTime(1.25);
         system.AdvanceTime(double.NaN);
         system.AdvanceTime(double.PositiveInfinity);
@@ -52,11 +52,11 @@ public sealed class LevelModelTests
     [Fact]
     public void Stop_ReleasesUnsubmittedSnapshot_AndPublishesAbandonmentOnce()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 80, 25);
+        var scope = new TestGameScope([(1, 0)], 80, 25);
         LevelSystem system = scope.GetSystem<LevelSystem>();
         system.Prepare(1);
         LevelModel levelModel = scope.Level;
-        system.StartSession(1);
+        system.StartSession([1]);
         Assert.Equal(80, levelModel.EntrySnapshot.Soul);
         scope.GetSystem<ProfileSystem>().AddSoul(20);
         int ended = 0;
@@ -82,10 +82,10 @@ public sealed class LevelModelTests
     [Fact]
     public void EndSessionWithoutRollback_PreservesSavedProgress()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 80, 25);
+        var scope = new TestGameScope([(1, 0)], 80, 25);
         LevelSystem system = scope.GetSystem<LevelSystem>();
         system.Prepare(1);
-        system.StartSession(1);
+        system.StartSession([1]);
         scope.GetSystem<ProfileSystem>().AddSoul(20);
 
         system.EndSession(rollback: false);
@@ -99,13 +99,13 @@ public sealed class LevelModelTests
     [Fact]
     public void Begin_RejectsDuplicateSession_WithoutReplacingSnapshot()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 80, 25);
+        var scope = new TestGameScope([(1, 0)], 80, 25);
         LevelSystem system = scope.GetSystem<LevelSystem>();
         system.Prepare(1);
         LevelModel levelModel = scope.Level;
-        system.StartSession(1);
+        system.StartSession([1]);
         GameData snapshot = levelModel.EntrySnapshot;
-        Assert.Throws<InvalidOperationException>(() => system.StartSession(1));
+        Assert.Throws<InvalidOperationException>(() => system.StartSession([1]));
         Assert.Same(snapshot, levelModel.EntrySnapshot);
     }
 }

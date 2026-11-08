@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using GameConfig.Attributes;
 using GameConfig.Entity;
 using GameFramework.Fsm;
+using GameLogic;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Battle.Attributes;
@@ -46,7 +47,7 @@ public sealed partial class UiSmokeScenario
             {
                 int experience = flow.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList
                     .Where(item => item.Id < tier).Sum(item => item.MaxExp);
-                flow.GetSystem<ProfileSystem>().AddExperience(experience - flow.GetModel<ProfileModel>().TotalExperience);
+                flow.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), experience - flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience);
                 foreach (int ticks in new[] { 60, 120 })
                 {
                     Engine.PhysicsTicksPerSecond = ticks;

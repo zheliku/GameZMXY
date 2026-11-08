@@ -259,7 +259,7 @@ public sealed class SkillStateTests
         /// <summary>
         /// 独立模型作用域。
         /// </summary>
-        public TestGameScope Scope { get; } = new(1, [(1, 0)], 9999, 20);
+        public TestGameScope Scope { get; } = new([(1, 0)], 9999, 20);
 
         /// <summary>
         /// 角色表现替身。
@@ -283,7 +283,7 @@ public sealed class SkillStateTests
             Actor = new Motion(Scope) { Target = target, OnFloor = true, Velocity = velocity ?? Vector2.Zero };
             Actor.ActionData.JumpCount = jumpCount;
             System.SelectSkills(1, SkillTestDefinitions.Wukong());
-            System.Learn(id);
+            System.Learn(1, id);
             Scope.Hero.Mp.Value = 100;
             Assert.True(System.TryActivate(id, Actor));
             Actor.OnFloor = false;

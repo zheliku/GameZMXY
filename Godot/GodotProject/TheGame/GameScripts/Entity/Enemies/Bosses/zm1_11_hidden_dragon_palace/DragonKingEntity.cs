@@ -127,7 +127,8 @@ public partial class DragonKingEntity : AbstractBossEntity, IEnemyAiAgent
         }
 
         // 只在本首领入场时选择难度，由自身重置规则应用数值，不改写共享怪物配置。
-        _highLevel = this.GetModel<ProfileModel>().Level >= HighLevelMinimum;
+        ProfileModel profile = this.GetModel<ProfileModel>();
+        _highLevel = profile.GetProgress(profile.HeroOf(PlayerSlot.P1)).Value.Level >= HighLevelMinimum;
         base.OnShow(spawn);
         // 原版在实例构造时消费资格，即使随后没捡到法宝也不会再次保证掉落。
         _dropsBanner = this.GetSystem<ProfileSystem>().TryClaimEastSeaBanner();

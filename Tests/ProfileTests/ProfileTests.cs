@@ -27,25 +27,25 @@ public sealed class ProfileTests
     [Fact]
     public void Progression_DerivesLevelAndNotifiesOncePerChange()
     {
-        ProfileModel progression = new(1, [(1, 0)], TestTables.Curve, 25);
+        ProfileModel progression = new([(1, 0)], TestTables.Curve, 25);
         TestTables.Initialize(progression);
         int notifications = 0;
-        progression.Progress.Register(_ => notifications++);
+        progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Register(_ => notifications++);
 
         // 135 经验恰好升到 2 级；再加 145 + 1 跨到 3 级并保留 1 点余量。
-        Assert.Equal(1, TestTables.ForProfile(progression).AddExperience(135));
-        Assert.Equal((2, 0, 145), (progression.Level, progression.Experience, progression.MaxExperience));
-        Assert.Equal(1, TestTables.ForProfile(progression).AddExperience(146));
-        Assert.Equal((3, 1, 155), (progression.Level, progression.Experience, progression.MaxExperience));
-        Assert.Equal(0, TestTables.ForProfile(progression).AddExperience(0));
+        Assert.Equal(1, TestTables.ForProfile(progression).AddExperience(1, 135));
+        Assert.Equal((2, 0, 145), (progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level, progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Experience, progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience));
+        Assert.Equal(1, TestTables.ForProfile(progression).AddExperience(1, 146));
+        Assert.Equal((3, 1, 155), (progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level, progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Experience, progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience));
+        Assert.Equal(0, TestTables.ForProfile(progression).AddExperience(1, 0));
         Assert.Equal(2, notifications);
 
         // 回滚恢复派生值并通知；相同值不通知。
-        progression.RestoreExperience(progression.ActiveHeroId, 0);
-        progression.RestoreExperience(progression.ActiveHeroId, 0);
-        Assert.Equal((1, 0, 135), (progression.Level, progression.Experience, progression.MaxExperience));
+        progression.RestoreExperience(progression.HeroOf(PlayerSlot.P1), 0);
+        progression.RestoreExperience(progression.HeroOf(PlayerSlot.P1), 0);
+        Assert.Equal((1, 0, 135), (progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level, progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Experience, progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience));
         Assert.Equal(3, notifications);
-        Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(progression).AddExperience(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => TestTables.ForProfile(progression).AddExperience(1, -1));
     }
 
     /// <summary>
@@ -54,14 +54,14 @@ public sealed class ProfileTests
     [Fact]
     public void Progression_StopsAtMaxLevel()
     {
-        ProfileModel progression = new(1, [(1, int.MaxValue)], TestTables.Curve, 25);
+        ProfileModel progression = new([(1, int.MaxValue)], TestTables.Curve, 25);
         TestTables.Initialize(progression);
         int notifications = 0;
-        progression.Progress.Register(_ => notifications++);
-        Assert.Equal(TestTables.Curve.MaxLevel, progression.Level);
-        Assert.Equal(0, TestTables.ForProfile(progression).AddExperience(1000));
+        progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Register(_ => notifications++);
+        Assert.Equal(TestTables.Curve.MaxLevel, progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level);
+        Assert.Equal(0, TestTables.ForProfile(progression).AddExperience(1, 1000));
         Assert.Equal(0, notifications);
-        Assert.Equal((55, 0, 0), (progression.Level, progression.Experience, progression.MaxExperience));
+        Assert.Equal((55, 0, 0), (progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level, progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Experience, progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience));
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ public sealed class ProfileTests
     [Fact]
     public void Wallet_RejectsOverspendAndNegativeAmounts()
     {
-        ProfileModel wallet = new(1, [(1, 0)], TestTables.Curve, 25, -5);
+        ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25, -5);
         Assert.Equal(0, wallet.Soul.Value);
         TestTables.ForProfile(wallet).AddSoul(30);
         Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(31));
@@ -89,7 +89,7 @@ public sealed class ProfileTests
     [Fact]
     public void Wallet_PreservesBalanceAcrossNoOpsAndRestore()
     {
-        ProfileModel wallet = new(1, [(1, 0)], TestTables.Curve, 25, 30);
+        ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25, 30);
         TestTables.ForProfile(wallet).AddSoul(0);
         Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(0));
         Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(31));
@@ -106,16 +106,62 @@ public sealed class ProfileTests
     }
 
     /// <summary>
-    /// 档案拒绝重复英雄与未拥有的出战英雄。
+    /// 档案拒绝重复英雄，且不为未参战英雄分配席位。
     /// </summary>
     [Fact]
     public void Profile_RejectsInvalidHeroSets()
     {
-        ProfileModel hero = new(1, [(1, 0)], TestTables.Curve, 25);
+        ProfileModel hero = new([(1, 0)], TestTables.Curve, 25);
         TestTables.Initialize(hero);
-        Assert.Throws<ArgumentException>(() => new TestGameScope(1, new[] { (1, 0), (1, 0) }, 0, 25));
-        Assert.Throws<ArgumentException>(() => new TestGameScope(2, new[] { (1, 0) }, 0, 25));
-        Assert.Equal(1, new TestGameScope(1, new[] { (1, 0) }, 0, 25).Profile.ActiveHeroId);
+        Assert.Throws<ArgumentException>(() => new TestGameScope(new[] { (1, 0), (1, 0) }, 0, 25));
+        Assert.Throws<ArgumentOutOfRangeException>(() => hero.SlotOf(2));
+        Assert.Throws<ArgumentOutOfRangeException>(() => hero.HeroOf(PlayerSlot.P2));
+        Assert.Throws<ArgumentOutOfRangeException>(() => hero.HeroOf((PlayerSlot)0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => hero.HeroOf((PlayerSlot)3));
+        Assert.Throws<ArgumentException>(() => new ProfileModel([], TestTables.Curve, 25));
+        Assert.Throws<ArgumentException>(() => new ProfileModel([(1, 0), (2, 0), (3, 0)], TestTables.Curve, 25));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ProfileModel([(0, 0)], TestTables.Curve, 25));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ProfileModel([(-1, 0)], TestTables.Curve, 25));
+        Assert.Equal(1, new TestGameScope(new[] { (1, 0) }, 0, 25).Profile.HeroOf(PlayerSlot.P1));
+    }
+
+    /// <summary>
+    /// 阵容的输入顺序决定席位，反向英雄编号经过存档往返仍保持原席位。
+    /// </summary>
+    [Fact]
+    public void Mapper_PreservesRosterOrderAndSeatsThroughJson()
+    {
+        var scope = new TestGameScope([(2, 472), (1, 135)], 42, 25);
+        GameData snapshot = scope.CaptureSaveData();
+        GameData loaded = JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(snapshot));
+        var restored = TestGameScope.FromSaveData(loaded, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
+
+        // 使用非编号升序阵容，证明席位不会在构造、捕获或恢复时重新排序。
+        Assert.Equal(new[] { 2, 1 }, scope.Profile.HeroIds);
+        Assert.Equal(new[] { 2, 1 }, loaded.Heroes.Select(hero => hero.HeroId));
+        Assert.Equal(new[] { 2, 1 }, restored.Profile.HeroIds);
+        Assert.Equal(2, restored.Profile.HeroOf(PlayerSlot.P1));
+        Assert.Equal(1, restored.Profile.HeroOf(PlayerSlot.P2));
+        Assert.Equal(PlayerSlot.P1, restored.Profile.SlotOf(2));
+        Assert.Equal(PlayerSlot.P2, restored.Profile.SlotOf(1));
+        Assert.Equal(472, restored.Profile.GetProgress(2).Value.TotalExperience);
+        Assert.Equal(135, restored.Profile.GetProgress(1).Value.TotalExperience);
+        Assert.Equal(GameData.CurrentVersion, loaded.SaveVersion);
+    }
+
+    /// <summary>
+    /// 存档信封拒绝人数越界与重复英雄，不能建立含歧义席位的档案。
+    /// </summary>
+    [Fact]
+    public void Mapper_RejectsInvalidRosterEnvelopes()
+    {
+        HeroSaveData first = new() { HeroId = 1 };
+        HeroSaveData second = new() { HeroId = 2 };
+        HeroSaveData third = new() { HeroId = 3 };
+        foreach (List<HeroSaveData> heroes in new List<HeroSaveData>[] { [], [first, first], [first, second, third] })
+        {
+            Assert.Throws<ArgumentException>(() => SaveDataUtility.ValidateEnvelope(new GameData { Heroes = heroes }));
+        }
     }
 
     /// <summary>
@@ -124,7 +170,7 @@ public sealed class ProfileTests
     [Fact]
     public void Wallet_NotifiesOnlyCommittedBalanceChanges()
     {
-        ProfileModel wallet = new(1, [(1, 0)], TestTables.Curve, 25, 10);
+        ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25, 10);
         int notifications = 0;
         int observed = -1;
         wallet.Soul.Register(_ =>
@@ -152,13 +198,13 @@ public sealed class ProfileTests
     [Fact]
     public void HeroAttributes_FollowsProgressionAndKeepsBuff()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroModel model = scope.Hero;
         scope.GetSystem<GameLogic.Battle.HeroSystem>().SetSource(new AttributeSourceId("Buff", 1),
             [AttributeModifier.PercentMult(GameConfig.Attributes.AttributeType.Power, 1)]);
         Assert.Equal(20, model.Power.Value);
         scope.GetSystem<GameLogic.Battle.HeroSystem>().Damage(20);
-        scope.GetSystem<ProfileSystem>().AddExperience(140);
+        scope.GetSystem<ProfileSystem>().AddExperience(1, 140);
         Assert.Equal(30, model.Power.Value);
         Assert.Equal(130, model.MaxHp.Value);
         Assert.Equal(model.MaxHp.Value, model.Hp.Value);
@@ -236,7 +282,6 @@ public sealed class ProfileTests
     {
         var data = Newtonsoft.Json.Linq.JObject.FromObject(new GameData
         {
-            ActiveHeroId = 1,
             Heroes = [new GameLogic.Save.Data.HeroSaveData { HeroId = 1, TotalExperience = 0 }]
         });
         var hero = (Newtonsoft.Json.Linq.JObject)data["Heroes"][0];
@@ -252,8 +297,8 @@ public sealed class ProfileTests
     {
         GameData data = JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(new GameData { UnitId = 7 }));
         Assert.Equal(GameData.CurrentVersion, data.SaveVersion);
-        Assert.Equal(0, data.ActiveHeroId);
         Assert.Empty(data.Heroes);
+        Assert.Empty(data.EquipmentItems);
         Assert.Equal(0, data.Soul);
         Assert.Equal(7, data.UnitId);
     }
@@ -266,7 +311,7 @@ public sealed class ProfileTests
     {
         foreach (int version in Enumerable.Range(0, GameData.CurrentVersion).Append(GameData.CurrentVersion + 1))
         {
-            Assert.Throws<NotSupportedException>(() => TestGameScope.FromSaveData(new GameData { SaveVersion = version, ActiveHeroId = 1, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
+            Assert.Throws<NotSupportedException>(() => TestGameScope.FromSaveData(new GameData { SaveVersion = version, Heroes = [new HeroSaveData { HeroId = 1 }] }, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
         }
 
         Assert.Throws<ArgumentException>(() => TestGameScope.FromSaveData(new GameData(), TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25));
@@ -278,7 +323,7 @@ public sealed class ProfileTests
     [Fact]
     public void Mapper_RoundTripsThroughJson()
     {
-        TestGameScope playerModel = new(1, new[] { (1, 472) }, 42, 25);
+        TestGameScope playerModel = new(new[] { (1, 472) }, 42, 25);
         GameData snapshotData = playerModel.CaptureSaveData();
         playerModel.GetSystem<ProfileSystem>().AddSoul(100);
         Assert.Equal(42, snapshotData.Soul);
@@ -287,7 +332,7 @@ public sealed class ProfileTests
         GameData loadedData = JsonConvert.DeserializeObject<GameData>(json);
         var restored = TestGameScope.FromSaveData(loadedData, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
         Assert.Equal(42, restored.Profile.Soul.Value);
-        Assert.Equal((4, 37), (restored.Profile.Level, restored.Profile.Experience));
+        Assert.Equal((4, 37), (restored.Profile.GetProgress(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Level, restored.Profile.GetProgress(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Experience));
         Assert.DoesNotContain("\"Player\"", json);
         Assert.DoesNotContain("\"Profile\"", json);
         Assert.Contains("\"TotalExperience\"", json);
@@ -299,18 +344,18 @@ public sealed class ProfileTests
     [Fact]
     public void Mapper_RollsBackToSnapshot()
     {
-        TestGameScope playerModel = new(1, new[] { (1, 0) }, 5, 25);
+        TestGameScope playerModel = new(new[] { (1, 0) }, 5, 25);
         GameData data = playerModel.CaptureSaveData();
         ProfileModel progression = playerModel.Profile;
         List<int> levels = new();
-        progression.Progress.Register(_ => levels.Add(progression.Level));
+        progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Register(_ => levels.Add(progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level));
 
-        TestTables.ForProfile(progression).AddExperience(400);
+        TestTables.ForProfile(progression).AddExperience(1, 400);
         playerModel.GetSystem<ProfileSystem>().AddSoul(50);
         playerModel.RestoreCheckpoint(data);
 
         Assert.Same(progression, playerModel.Profile);
-        Assert.Equal((1, 5), (progression.Level, playerModel.Profile.Soul.Value));
+        Assert.Equal((1, 5), (progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level, playerModel.Profile.Soul.Value));
         Assert.Equal(new[] { 3, 1 }, levels);
     }
 }

@@ -110,7 +110,7 @@ public class ProcedureLevel : ProcedureBase
             // 场景加载本身不取消：若流程在加载中离开，继续等待成功事件后由 entrySerial 分支卸载，避免 additive 场景泄漏。
             string battleFormPath = tables.TbUIFormConfig.DataList.Single(form => form.UIFormId == UIFormId.BattleForm).AssetPath;
             Task<Resource> battleFormAsset = GF.Resource.LoadAssetAsync(battleFormPath);
-            HeroConfig heroConfig = tables.TbHeroConfig.Get(profile.ActiveHeroId);
+            HeroConfig heroConfig = tables.TbHeroConfig.Get(profile.HeroOf(PlayerSlot.P1));
             Task<Resource> heroAsset = GF.Resource.LoadAssetAsync(tables.TbEntityConfig.Get(heroConfig.EntityId).AssetPath);
             Task<Node2D> levelScene = LoadLevelSceneAsync(scenePath, CancellationToken.None);
             try

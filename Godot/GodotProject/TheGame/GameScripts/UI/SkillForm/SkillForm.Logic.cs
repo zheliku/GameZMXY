@@ -23,6 +23,7 @@ public partial class SkillForm : IController
 {
     // ---- 字段 ----
 
+    private int _heroId; // 本窗口当前显示并订阅的英雄编号，本批只取 P1。
     private bool _showPassive; // 当前是否展示五项被动。
     private bool _resumeGame; // 只恢复本窗口发起的暂停。
     private bool _isBound; // 本周期已经开始订阅；关闭后回池不再访问已移除的关卡模型。
@@ -73,7 +74,7 @@ public partial class SkillForm : IController
         Visible = false;
         ProfileModel profile = this.GetModel<ProfileModel>();
         LevelModel levelModel = this.GetModel<LevelModel>();
-        if (profile == null || !Enum.IsDefined((SkillHero)profile.ActiveHeroId) ||
+        if (profile == null || !Enum.IsDefined((SkillHero)profile.HeroOf(PlayerSlot.P1)) ||
             levelModel != null && (!levelModel.Initialized || !levelModel.SessionActive ||
                                    levelModel.Outcome.Value != LevelOutcome.Running))
         {
@@ -82,11 +83,12 @@ public partial class SkillForm : IController
 
         try
         {
+            _heroId = profile.HeroOf(PlayerSlot.P1);
             _levelModel = levelModel;
             _isBound = true;
             this.GetModel<ProfileModel>().Soul.RegisterWithInitValue(RefreshSoul);
-            this.GetModel<SkillModel>().GetLearnedSkills(profile.ActiveHeroId).RegisterWithInitValue(RefreshLearnedSkills);
-            this.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId).RegisterWithInitValue(RefreshPassiveLevels);
+            this.GetModel<SkillModel>().GetLearnedSkills(_heroId).RegisterWithInitValue(RefreshLearnedSkills);
+            this.GetModel<SkillModel>().GetPassiveLevels(_heroId).RegisterWithInitValue(RefreshPassiveLevels);
             levelModel?.Outcome.Register(OnLevelEnded);
             _resumeGame = levelModel != null && !GF.Base.IsGamePaused;
             if (_resumeGame)
@@ -95,8 +97,8 @@ public partial class SkillForm : IController
             }
 
             _showPassive = false;
-            _activePage.Refresh();
-            _passivePage.Refresh();
+            _activePage.Refresh(_heroId);
+            _passivePage.Refresh(_heroId);
             RefreshPage();
             Visible = true;
         }
@@ -206,8 +208,8 @@ public partial class SkillForm : IController
             _isBound = false;
             ProfileModel profile = this.GetModel<ProfileModel>();
             profile.Soul.UnRegister(RefreshSoul);
-            this.GetModel<SkillModel>().GetLearnedSkills(profile.ActiveHeroId).UnRegister(RefreshLearnedSkills);
-            this.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId).UnRegister(RefreshPassiveLevels);
+            this.GetModel<SkillModel>().GetLearnedSkills(_heroId).UnRegister(RefreshLearnedSkills);
+            this.GetModel<SkillModel>().GetPassiveLevels(_heroId).UnRegister(RefreshPassiveLevels);
             _levelModel?.Outcome.UnRegister(OnLevelEnded);
         }
 
@@ -231,13 +233,13 @@ public partial class SkillForm : IController
     /// 学习、读档或关卡回滚后重绘同一份技能记录。
     /// </summary>
     /// <param name="skills">当前英雄的权威学习列表。</param>
-    private void RefreshLearnedSkills(IReadOnlyList<SkillId> skills) => _activePage.Refresh();
+    private void RefreshLearnedSkills(IReadOnlyList<SkillId> skills) => _activePage.Refresh(_heroId);
 
     /// <summary>
     /// 升级或回滚后刷新本英雄的被动整页。
     /// </summary>
     /// <param name="levels">模型提交的被动等级。</param>
-    private void RefreshPassiveLevels(IReadOnlyDictionary<PassiveId, int> levels) => _passivePage.Refresh();
+    private void RefreshPassiveLevels(IReadOnlyDictionary<PassiveId, int> levels) => _passivePage.Refresh(_heroId);
 
     /// <summary>
     /// 提交一次被动升级请求，余额不足复用统一提示。
@@ -250,7 +252,7 @@ public partial class SkillForm : IController
             return;
         }
 
-        SkillLearnResult result = this.SendCommand(new UpgradePassiveCommand(id));
+        SkillLearnResult result = this.SendCommand(new UpgradePassiveCommand(_heroId, id));
         if (result == SkillLearnResult.InsufficientSoul)
         {
             (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_save_notice_form) as SaveNoticeForm)?.ShowMessage("灵魂不足！");
@@ -272,7 +274,7 @@ public partial class SkillForm : IController
             return;
         }
 
-        SkillLearnResult result = this.SendCommand(new LearnSkillCommand(skill));
+        SkillLearnResult result = this.SendCommand(new LearnSkillCommand(_heroId, skill));
         if (result == SkillLearnResult.InsufficientSoul)
         {
             (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_save_notice_form) as SaveNoticeForm)?.ShowMessage("灵魂不足！");
@@ -288,7 +290,7 @@ public partial class SkillForm : IController
     /// </summary>
     private void RefreshPage()
     {
-        var hero = (SkillHero)this.GetModel<ProfileModel>().ActiveHeroId;
+        var hero = (SkillHero)_heroId;
         SetHeroButton(_wukong, hero == SkillHero.Wukong);
         SetHeroButton(_tangseng, hero == SkillHero.Tangseng);
         _activePage.Visible = !_showPassive;
@@ -325,7 +327,7 @@ public partial class SkillForm : IController
     {
         if (GF.UI.HasUIForm(SerialId) && Visible)
         {
-            SelectPage((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId, false);
+            SelectPage((SkillHero)_heroId, false);
         }
     }
 
@@ -336,7 +338,7 @@ public partial class SkillForm : IController
     {
         if (GF.UI.HasUIForm(SerialId) && Visible)
         {
-            SelectPage((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId, true);
+            SelectPage((SkillHero)_heroId, true);
         }
     }
 
@@ -347,7 +349,7 @@ public partial class SkillForm : IController
     /// <param name="passive">是否查看被动。</param>
     private void SelectPage(SkillHero hero, bool passive)
     {
-        if (!GF.UI.HasUIForm(SerialId) || !Visible || hero != (SkillHero)this.GetModel<ProfileModel>().ActiveHeroId)
+        if (!GF.UI.HasUIForm(SerialId) || !Visible || hero != (SkillHero)_heroId)
         {
             return;
         }

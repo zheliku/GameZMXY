@@ -124,7 +124,7 @@ public partial class WukongEntity : AbstractHeroEntity
                 return;
             }
 
-            if (skills.IsLearned(SkillId.RisingDragon) && !skills.CanAfford(SkillId.RisingDragon))
+            if (skills.IsLearned(HeroId, SkillId.RisingDragon) && !skills.CanAfford(SkillId.RisingDragon))
             {
                 ActionData.AttackRequested = input.ConsumeAction(ActionData, true) &&
                                     input.TrySelectAttack(ActionData, body.Params, airborne, attacking);

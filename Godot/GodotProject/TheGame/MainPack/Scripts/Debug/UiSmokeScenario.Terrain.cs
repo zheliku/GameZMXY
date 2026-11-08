@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using GameLogic;
 using GameLogic.Architecture;
 using GameLogic.Config;
 using GameLogic.Heroes;
@@ -161,7 +162,7 @@ public sealed partial class UiSmokeScenario
                                 foreach (int direction in new[] { 1, -1 })
                                 {
                                     Engine.PhysicsTicksPerSecond = ticks;
-                                    _extraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
+                                    _extraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience);
                                     AbstractHeroEntity actor = _extraHero;
                                     actor.CollisionMask = 1 | 8; // 排除本关相机屏障；被测地形仍使用正式物理层。
                                     Vector2[] contour = hill.GetNode<CollisionPolygon2D>("Surface").Polygon;

@@ -2,27 +2,32 @@
 
 ## 数据归属
 
-- ProfileModel 保存英雄身份、累计经验、灵魂、装备与穿戴、最远通关关卡；SkillModel 保存技能学习记录。HeroModel 保存本局属性、生命魔法、无双与施放状态。
+- ProfileModel 保存有序阵容、各英雄累计经验与穿戴、全档共享灵魂和背包、最远通关关卡；SkillModel 按 HeroId 保存技能学习记录。当前 A1 已完成，仍只装配 P1；HeroModel 继续保存单名英雄的本局属性、生命魔法、无双与施放状态。个人钱包和背包归属由后续 A2 实施。
 - SaveModel 保存当前文件编号、六格目录摘要和手动保存状态；SaveSystem 执行读写。初始化与取用规则见 [00](00-Architecture.md)。
 
 ## 文件内容
 
 | 类型 | 持久字段 |
 | --- | --- |
-| GameData | UnitId、SaveVersion、ActiveHeroId、Soul、Heroes、EquipmentItems、HighestClearedLevelId、EastSeaBannerAvailable |
+| GameData | UnitId、SaveVersion、Soul、Heroes、EquipmentItems、HighestClearedLevelId、EastSeaBannerAvailable |
 | HeroSaveData（随 GameData） | HeroId、TotalExperience、LearnedSkills、PassiveLevels、武器/防具/饰品/法宝 InstanceId |
 | EquipmentSaveData（随 GameData） | InstanceId、EquipmentId、生成时已确定的 Attributes |
 | GameCatalogue | UnitId、SlotNumber、Name、SavedAtUtc |
 
-等级、本级经验与最终属性由经验曲线和配置重新计算。随机装备保存已抽出的实际属性；存档集合按稳定键排序。完整字段契约见 `TheGame/GameScripts/Models/Save/GameData.cs`。
+等级、本级经验与最终属性由经验曲线和配置重新计算。随机装备保存已抽出的实际属性；英雄记录保持阵容顺序，技能和被动记录沿用既有的稳定键排序。完整字段契约见 `TheGame/GameScripts/Models/Save/GameData.cs`。
 
-当前格式 v12：HighestClearedLevelId 为必需字段，0 表示尚未通关；关卡编号按连续顺序解锁，最新可挑战关卡取最远通关编号加一并限制在已配置范围。通关先推进进度再保存，死亡、放弃与重玩旧关不推进。装备暴击、闪避、命中和抗暴使用 0..1 的直接概率，保存饰品与法宝穿戴引用。通用饰品和法宝可由不同英雄使用，同一实例仍只能属于一个背包或穿戴部位；卸装和其他部位交换不得清除饰品。旧开发档按已授权的一次性转存规则处理，不在正式代码中增加兼容分支。
+当前格式 v13：`GameData.Heroes` 与 `ProfileModel.HeroIds` 的顺序即玩家席位，下标 0 为 P1、下标 1 为 P2；阵容包含一至两名英雄，编号必须为正数且不重复，不另存人数或单一出战身份。
+
+`HighestClearedLevelId` 为必需字段，0 表示尚未通关；关卡编号按连续顺序解锁，最新可挑战关卡取最远通关编号加一并限制在已配置范围。通关先推进进度再保存，死亡、放弃与重玩旧关不推进。装备暴击、闪避、命中和抗暴使用 0..1 的直接概率，保存饰品与法宝穿戴引用。通用饰品和法宝可由不同英雄使用，同一实例仍只能属于一个背包或穿戴部位；卸装和其他部位交换不得清除饰品。v12 及更早开发档需重建，不增加运行时兼容分支。
+
+2026-11-08 按用户授权同步 A1 的 v13 契约；后续批次不提前写成已实现。
 
 ## 读写路径
 
 - 读取：SaveSystem → ArchiveUtility → GF.Archive → GameData → SaveDataUtility.Validate → ProcedureLoadGame 注册档案模型和系统。
 - 保存：SaveDataUtility.Capture(profile, skills) → GameData → SaveSystem → ArchiveUtility → GF.Archive。
-- 格式以 GameData.CurrentVersion 为准，仅接受当前格式及完整字段。结构变化时递增版本；旧开发档的一次性转存按用户授权执行。
+- `HeroOf(PlayerSlot)` 与 `SlotOf(int heroId)` 在阵容和席位之间换算；个人成长、穿戴与学习业务显式接收 HeroId，不提供全局当前玩家兼容入口。
+- 格式以 GameData.CurrentVersion 为准，仅接受当前格式及完整字段。结构变化时递增版本；当前 v13 不迁移旧开发档。
 - 框架首次建立、尚未认领的当前格式空槽按建档表创建角色并立即写回。已有格按指定 UnitId 读取；读取失败保留原文件并报告。
 - GGF 负责原子写、备份回退和读写串行；写入调用时捕获序列化内容。调用方检查 Task<bool>，切换作用域前等待 PendingWrite。
 
@@ -38,11 +43,11 @@
 | 地图手动保存 | 捕获当前档案，写盘后更新本次窗口的保存状态 |
 | 有活跃档案时返回主菜单 | 地图与关内设置通过SaveSystem提交当前档案，写盘成功后才导航；失败保留档案和当前页面供重试，不能只等待上次PendingWrite |
 
-SaveDataUtility 负责校验与转换；ProfileSystem 负责恢复 Model。窗口、实体和 DTO 分别保留各自生命周期。交易/锻造等后续玩法按自身检查点接入 SaveSystem。
+SaveDataUtility 负责校验与转换；ProfileSystem 负责恢复 Model。回滚前必须确认快照的英雄编号有序序列与当前阵容完全一致，不能交换席位。窗口、实体和 DTO 分别保留各自生命周期。交易/锻造等后续玩法按自身检查点接入 SaveSystem。
 
 ## 六格目录与异步请求
 
 - SaveSlotInfo 是只读摘要，SlotNumber 为 1～6，UnitId 为框架文件编号。标题读取目录后，流程将所选格号与编号作为 SaveSelectionVariable 传给读档流程。
-- 已有格具备有效格号和检查点 UTC 时间；角色名称来自配置。不可读槽禁用并保留文件；重复格号、超过六档或目录损坏时报告错误。
+- 已有格具备有效格号和检查点 UTC 时间；角色名称来自配置；A1 仍只显示阵容首位的摘要，全员摘要留给 A3。不可读槽禁用并保留文件；重复格号、超过六档或目录损坏时报告错误。
 - 提交检查点前核对档案身份、当前目录和数据编号。目录读取、读档与手动保存使用所属流程的取消令牌；迟到结果只作用于原周期。
 - 音量、语言、键位等应用偏好使用 GF.Setting。

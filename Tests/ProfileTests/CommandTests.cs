@@ -25,13 +25,13 @@ public sealed class CommandTests
         EquipmentData firstItem = AddItem(first, EquipmentId.RoughPilgrimStaff);
         EquipmentData secondItem = AddItem(second, EquipmentId.CommonPilgrimStaff);
         var controller = new Controller(first);
-        Assert.False(controller.SendCommand(new EquipEquipmentCommand(secondItem.InstanceId)));
-        Assert.True(controller.SendCommand(new EquipEquipmentCommand(firstItem.InstanceId)));
-        Assert.Same(firstItem, first.Profile.Weapon);
+        Assert.False(controller.SendCommand(new EquipEquipmentCommand(1, secondItem.InstanceId)));
+        Assert.True(controller.SendCommand(new EquipEquipmentCommand(1, firstItem.InstanceId)));
+        Assert.Same(firstItem, first.Profile.GetSlots(first.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
         Assert.Empty(first.Profile.EquipmentDatas);
-        Assert.Null(second.Profile.Weapon);
+        Assert.Null(second.Profile.GetSlots(second.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
         Assert.Same(secondItem, Assert.Single(second.Profile.EquipmentDatas));
-        Assert.True(controller.SendCommand(new UnequipEquipmentCommand(EquipmentSlot.Weapon)));
+        Assert.True(controller.SendCommand(new UnequipEquipmentCommand(1, EquipmentSlot.Weapon)));
         Assert.Same(firstItem, Assert.Single(first.Profile.EquipmentDatas));
     }
 
@@ -45,7 +45,7 @@ public sealed class CommandTests
     [InlineData(2)]
     public void InactiveSession_RejectsAllPlayerMutations(int state)
     {
-        TestGameScope scope = state == 0 ? new TestGameScope(1, [(1, 0)], 100, 25) : Ready();
+        TestGameScope scope = state == 0 ? new TestGameScope([(1, 0)], 100, 25) : Ready();
         EquipmentData item = AddItem(scope, EquipmentId.RoughPilgrimStaff);
         LevelSystem system = scope.GetSystem<LevelSystem>();
         if (state == 1)
@@ -59,13 +59,13 @@ public sealed class CommandTests
 
         int soul = scope.Profile.Soul.Value;
         var items = scope.Profile.EquipmentDatas.Count;
-        Assert.False(scope.SendCommand(new EquipEquipmentCommand(item.InstanceId)));
-        Assert.False(scope.SendCommand(new UnequipEquipmentCommand(EquipmentSlot.Weapon)));
+        Assert.False(scope.SendCommand(new EquipEquipmentCommand(1, item.InstanceId)));
+        Assert.False(scope.SendCommand(new UnequipEquipmentCommand(1, EquipmentSlot.Weapon)));
         Assert.False(scope.SendCommand(new SellEquipmentCommand(item.InstanceId)));
         Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
-        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
-        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
-        Assert.Null(scope.Profile.Weapon);
+        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(1, SkillId.RisingDragon)));
+        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(1, PassiveId.Vitality)));
+        Assert.Null(scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
         Assert.Equal(items, scope.Profile.EquipmentDatas.Count);
         Assert.Equal(soul, scope.Profile.Soul.Value);
         Assert.Empty(scope.Skills.GetLearnedSkills(1));
@@ -78,12 +78,12 @@ public sealed class CommandTests
     public void MissingModels_RejectWithoutAutoCreatingState()
     {
         var scope = new EmptyArchitecture();
-        Assert.False(scope.SendCommand(new EquipEquipmentCommand(Guid.NewGuid())));
-        Assert.False(scope.SendCommand(new UnequipEquipmentCommand(EquipmentSlot.Weapon)));
+        Assert.False(scope.SendCommand(new EquipEquipmentCommand(1, Guid.NewGuid())));
+        Assert.False(scope.SendCommand(new UnequipEquipmentCommand(1, EquipmentSlot.Weapon)));
         Assert.False(scope.SendCommand(new SellEquipmentCommand(Guid.NewGuid())));
         Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
-        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
-        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
+        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(1, SkillId.RisingDragon)));
+        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(1, PassiveId.Vitality)));
     }
 
     /// <summary>
@@ -97,16 +97,16 @@ public sealed class CommandTests
         EquipmentData second = AddItem(scope, EquipmentId.RoughPilgrimClothes);
         EquipmentData third = AddItem(scope, EquipmentId.RoughPilgrimStaff);
         int before = scope.Profile.Soul.Value;
-        Assert.True(scope.SendCommand(new EquipEquipmentCommand(first.InstanceId)));
+        Assert.True(scope.SendCommand(new EquipEquipmentCommand(1, first.InstanceId)));
         Assert.True(scope.SendCommand(new SellEquipmentCommand(second.InstanceId)));
         Assert.False(scope.SendCommand(new SellEquipmentCommand(second.InstanceId)));
         Assert.Equal(1, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
         Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
         Assert.Equal(before + 20, scope.Profile.Soul.Value);
-        Assert.Same(first, scope.Profile.Weapon);
+        Assert.Same(first, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
         scope.GetSystem<LevelSystem>().EndSession();
         Assert.Equal(before, scope.Profile.Soul.Value);
-        Assert.Null(scope.Profile.Weapon);
+        Assert.Null(scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
         Assert.Empty(scope.Profile.EquipmentDatas);
     }
 
@@ -118,15 +118,15 @@ public sealed class CommandTests
     {
         TestGameScope scope = Ready(capacity: 1);
         EquipmentData first = AddItem(scope, EquipmentId.RoughPilgrimStaff);
-        Assert.True(scope.SendCommand(new EquipEquipmentCommand(first.InstanceId)));
+        Assert.True(scope.SendCommand(new EquipEquipmentCommand(1, first.InstanceId)));
         AddItem(scope, EquipmentId.RoughPineStaff);
-        Assert.False(scope.SendCommand(new UnequipEquipmentCommand(EquipmentSlot.Weapon)));
-        Assert.Same(first, scope.Profile.Weapon);
-        Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
+        Assert.False(scope.SendCommand(new UnequipEquipmentCommand(1, EquipmentSlot.Weapon)));
+        Assert.Same(first, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
+        Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(1, SkillId.RisingDragon)));
         Assert.Equal(0, scope.Profile.Soul.Value);
-        Assert.Equal(SkillLearnResult.AlreadyLearned, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
-        Assert.Equal(SkillLearnResult.InsufficientSoul, scope.SendCommand(new LearnSkillCommand(SkillId.FlameThrust)));
-        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(SkillId.IceDragonWave)));
+        Assert.Equal(SkillLearnResult.AlreadyLearned, scope.SendCommand(new LearnSkillCommand(1, SkillId.RisingDragon)));
+        Assert.Equal(SkillLearnResult.InsufficientSoul, scope.SendCommand(new LearnSkillCommand(1, SkillId.FlameThrust)));
+        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new LearnSkillCommand(1, SkillId.IceDragonWave)));
         Assert.Equal(SkillId.RisingDragon, Assert.Single(scope.Skills.GetLearnedSkills(1)));
     }
 
@@ -139,11 +139,11 @@ public sealed class CommandTests
         TestGameScope first = Ready();
         TestGameScope second = Ready();
         EquipmentData item = AddItem(second, EquipmentId.RoughPilgrimStaff);
-        var command = new EquipEquipmentCommand(item.InstanceId);
+        var command = new EquipEquipmentCommand(1, item.InstanceId);
         Assert.False(first.SendCommand(command));
         Assert.True(second.SendCommand(command));
-        Assert.Null(first.Profile.Weapon);
-        Assert.Same(item, second.Profile.Weapon);
+        Assert.Null(first.Profile.GetSlots(first.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
+        Assert.Same(item, second.Profile.GetSlots(second.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
         Assert.Throws<ArgumentNullException>(() => first.SendCommand<bool>(null));
     }
 
@@ -154,9 +154,9 @@ public sealed class CommandTests
     /// <returns>独立测试架构。</returns>
     private static TestGameScope Ready(int capacity = 25)
     {
-        var scope = new TestGameScope(1, [(1, 0)], 100, capacity);
+        var scope = new TestGameScope([(1, 0)], 100, capacity);
         scope.GetSystem<LevelSystem>().Prepare(1);
-        scope.GetSystem<LevelSystem>().StartSession(1);
+        scope.GetSystem<LevelSystem>().StartSession([1]);
         return scope;
     }
 

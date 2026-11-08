@@ -22,21 +22,21 @@ public sealed class SkillLearningTests
     [Fact]
     public void Learning_ChargesOnceAndPublishesTheSharedSkillBook()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 99, 20);
+        var scope = new TestGameScope([(1, 0)], 99, 20);
         SkillSystem system = scope.GetSystem<SkillSystem>();
         BindableList<SkillId> learned = scope.Skills.GetLearnedSkills(1);
         int notifications = 0;
         learned.Register(_ => notifications++);
-        Assert.False(system.IsLearned(SkillId.RisingDragon));
-        Assert.Equal(SkillLearnResult.InsufficientSoul, system.Learn(SkillId.RisingDragon));
+        Assert.False(system.IsLearned(1, SkillId.RisingDragon));
+        Assert.Equal(SkillLearnResult.InsufficientSoul, system.Learn(1, SkillId.RisingDragon));
         Assert.Equal(99, scope.Profile.Soul.Value);
         Assert.Empty(learned);
         Assert.Equal(0, notifications);
         scope.GetSystem<ProfileSystem>().AddSoul(1);
-        Assert.Equal(SkillLearnResult.Learned, system.Learn(SkillId.RisingDragon));
+        Assert.Equal(SkillLearnResult.Learned, system.Learn(1, SkillId.RisingDragon));
         Assert.Equal(0, scope.Profile.Soul.Value);
-        Assert.True(system.IsLearned(SkillId.RisingDragon));
-        Assert.Equal(SkillLearnResult.AlreadyLearned, system.Learn(SkillId.RisingDragon));
+        Assert.True(system.IsLearned(1, SkillId.RisingDragon));
+        Assert.Equal(SkillLearnResult.AlreadyLearned, system.Learn(1, SkillId.RisingDragon));
         Assert.Equal(0, scope.Profile.Soul.Value);
         Assert.Equal(1, notifications);
     }
@@ -47,7 +47,7 @@ public sealed class SkillLearningTests
     [Fact]
     public void MapPurchase_UsesProfileSkillsWithoutBattleModelsAndSurvivesReload()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 10000, 20, initializeHero: false);
+        var scope = new TestGameScope([(1, 0)], 10000, 20, initializeHero: false);
         scope.EnterMapContext();
         Assert.Null(scope.GetModel<HeroModel>());
         Assert.Null(scope.GetModel<LevelModel>());
@@ -56,10 +56,10 @@ public sealed class SkillLearningTests
         int skillCost = TestTables.Tables.TbSkillConfig.Get(SkillId.RisingDragon).LearnSoul;
         int passiveCost = TestTables.Tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
 
-        Assert.False(system.IsAvailable(SkillId.RisingDragon));
-        Assert.True(system.IsLearnable(SkillId.RisingDragon));
-        Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(SkillId.RisingDragon)));
-        Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
+        Assert.False(system.IsAvailable(1, SkillId.RisingDragon));
+        Assert.True(system.IsLearnable(1, SkillId.RisingDragon));
+        Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new LearnSkillCommand(1, SkillId.RisingDragon)));
+        Assert.Equal(SkillLearnResult.Learned, scope.SendCommand(new UpgradePassiveCommand(1, PassiveId.Vitality)));
         Assert.Equal(10000 - skillCost - passiveCost, scope.Profile.Soul.Value);
 
         GameData save = scope.CaptureSaveData();
@@ -68,8 +68,8 @@ public sealed class SkillLearningTests
         Assert.Equal(1, heroData.PassiveLevels[PassiveId.Vitality]);
 
         var reloaded = TestGameScope.FromSaveData(save, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 20);
-        Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(SkillId.RisingDragon));
-        Assert.True(reloaded.GetSystem<SkillSystem>().IsAvailable(SkillId.RisingDragon));
+        Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(1, SkillId.RisingDragon));
+        Assert.True(reloaded.GetSystem<SkillSystem>().IsAvailable(1, SkillId.RisingDragon));
         Assert.True(reloaded.Hero.MaxHp.Value > TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.MaxHp);
     }
 
@@ -82,8 +82,8 @@ public sealed class SkillLearningTests
     [InlineData((SkillId)999)]
     public void Learning_RejectsUnavailableDefinitions(SkillId id)
     {
-        var scope = new TestGameScope(1, [(1, 0)], 9999, 20);
-        Assert.Equal(SkillLearnResult.Unavailable, scope.GetSystem<SkillSystem>().Learn(id));
+        var scope = new TestGameScope([(1, 0)], 9999, 20);
+        Assert.Equal(SkillLearnResult.Unavailable, scope.GetSystem<SkillSystem>().Learn(1, id));
         Assert.Equal(9999, scope.Profile.Soul.Value);
         Assert.Empty(scope.Skills.GetLearnedSkills(1));
     }
@@ -94,16 +94,16 @@ public sealed class SkillLearningTests
     [Fact]
     public void SaveAndRollback_PreserveHeroOwnershipAndBindingIdentity()
     {
-        var scope = new TestGameScope(1, [(1, 0), (2, 0)], 3000, 20);
+        var scope = new TestGameScope([(1, 0), (2, 0)], 3000, 20);
         BindableList<SkillId> learned = scope.Skills.GetLearnedSkills(1);
-        Assert.Equal(SkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(SkillId.FlameThrust));
+        Assert.Equal(SkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(1, SkillId.FlameThrust));
         GameData checkpoint = scope.CaptureSaveData();
         Assert.Equal(new[] { SkillId.FlameThrust }, checkpoint.Heroes.Single(x => x.HeroId == 1).LearnedSkills);
         Assert.Empty(checkpoint.Heroes.Single(x => x.HeroId == 2).LearnedSkills);
         var reloaded = TestGameScope.FromSaveData(JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(checkpoint)),
             TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 20);
-        Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(SkillId.FlameThrust));
-        Assert.Equal(SkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(SkillId.BlazingFlash));
+        Assert.True(reloaded.GetSystem<SkillSystem>().IsLearned(1, SkillId.FlameThrust));
+        Assert.Equal(SkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Learn(1, SkillId.BlazingFlash));
         Assert.DoesNotContain(SkillId.BlazingFlash, checkpoint.Heroes[0].LearnedSkills);
         scope.RestoreCheckpoint(checkpoint);
         Assert.Same(learned, scope.Skills.GetLearnedSkills(1));
@@ -121,7 +121,7 @@ public sealed class SkillLearningTests
     [InlineData((SkillId)999)]
     public void Restore_RejectsInvalidSkillRecordsBeforeWriting(SkillId invalid)
     {
-        var scope = new TestGameScope(1, [(1, 0)], 3000, 20);
+        var scope = new TestGameScope([(1, 0)], 3000, 20);
         GameData snapshot = scope.CaptureSaveData();
         snapshot.Heroes[0].LearnedSkills.AddRange([SkillId.RisingDragon, invalid]);
         snapshot.Soul = 0;
@@ -136,7 +136,7 @@ public sealed class SkillLearningTests
     [Fact]
     public void Save_RequiresAnExplicitSkillBook()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 20);
+        var scope = new TestGameScope([(1, 0)], 0, 20);
         var json = Newtonsoft.Json.Linq.JObject.FromObject(scope.CaptureSaveData());
         ((Newtonsoft.Json.Linq.JObject)json["Heroes"][0]).Remove("LearnedSkills");
         Assert.Throws<JsonSerializationException>(() => json.ToObject<GameData>());

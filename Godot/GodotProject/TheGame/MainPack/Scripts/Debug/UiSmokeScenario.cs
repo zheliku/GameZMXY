@@ -579,7 +579,7 @@ public sealed partial class UiSmokeScenario
 
             if (OS.GetCmdlineUserArgs().Contains("--tangseng-only"))
             {
-                Check(hero is TangsengEntity && data.ActiveHeroId == 2, "唐僧专项没有经真实选角建立独立档案");
+                Check(hero is TangsengEntity && data.Heroes[0].HeroId == 2, "唐僧专项没有经真实选角建立独立档案");
                 if (OS.GetCmdlineUserArgs().Contains("--tangseng-shared-only"))
                 {
                     level.Cleanup();
@@ -630,39 +630,39 @@ public sealed partial class UiSmokeScenario
             EquipmentData startupArmor = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(),
                 GameConfig.Equipment.EquipmentId.RoughPilgrimClothes, () => .5f);
             Check(flow.GetSystem<ProfileSystem>().TryCollectEquipment(startupArmor) &&
-                flow.GetSystem<EquipmentSystem>().TryEquip(startupArmor.InstanceId),
+                flow.GetSystem<EquipmentSystem>().TryEquip(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), startupArmor.InstanceId),
                 "穿戴读档回归的粗糙行者服准备失败");
             hero.RefreshAppearance(); // 夹具已结束关卡订阅，显式建立这次穿戴的视觉基准。
             string armorTexture = hero.GetNode<Sprite2D>("m_Body").Texture.ResourcePath;
             // 从真实保存的临界经验重入，下一次击败应立即触发脚底升级动画。
             Check(!SmokeInspection.Scene(level).GetChildren().OfType<GameLogic.Drops.LootOrbNode>().Any(), "关停后仍有本关飞行奖励");
             ProfileModel active = flow.GetModel<ProfileModel>();
-            flow.GetSystem<ProfileSystem>().AddExperience(active.MaxExperience - active.Experience - 1);
+            flow.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), active.GetProgress(active.HeroOf(PlayerSlot.P1)).Value.MaxExperience - active.GetProgress(active.HeroOf(PlayerSlot.P1)).Value.Experience - 1);
             Check(await flow.GetSystem<SaveSystem>().SaveCheckpointAsync(flow.GetModel<ProfileModel>()), "升级临界检查点保存失败");
             ReenterLevel();
             procedure = await WaitForLevelAsync();
             level = FindLevel();
-            Check(flow.GetModel<ProfileModel>().Armor?.InstanceId == startupArmor.InstanceId &&
+            Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor?.InstanceId == startupArmor.InstanceId &&
                 FindHero().GetNode<Sprite2D>("m_Body").Texture.ResourcePath == armorTexture,
-                $"穿戴粗糙行者服重新进关后丢失外观：armor={flow.GetModel<ProfileModel>().Armor?.InstanceId}, " +
+                $"穿戴粗糙行者服重新进关后丢失外观：armor={flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor?.InstanceId}, " +
                 $"expected={startupArmor.InstanceId}, texture={FindHero().GetNode<Sprite2D>("m_Body").Texture.ResourcePath}, expectedTexture={armorTexture}");
             GD.Print("SMOKE-APPEARANCE-REENTRY PASS: equipped RoughPilgrimClothes survives checkpoint and hero OnShow.");
 
             // 中途离开：关内收益回滚，不写盘；重入读回进关前状态。
             ProfileModel progression = flow.GetModel<ProfileModel>();
-            int before = progression.TotalExperience;
+            int before = progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.TotalExperience;
             int soulBefore = flow.GetModel<ProfileModel>().Soul.Value;
             Guid[] inventoryBefore = flow.GetModel<ProfileModel>().EquipmentDatas.Select(x => x.InstanceId).ToArray();
             await DefeatMonsterAsync(level, procedure);
             flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPilgrimStaff, () => .7f));
             Check(flow.GetArchitecture().SendCommand(new SellEquipmentByQualityCommand(GameConfig.Equipment.EquipmentQuality.Common)) > 0,
                 "批量出售命令未接收整包品质出售请求");
-            Check(progression.TotalExperience > before, "击败怪物没有把经验写入档案");
+            Check(progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.TotalExperience > before, "击败怪物没有把经验写入档案");
             Check((await ReadDiskAsync()).Heroes[0].TotalExperience == before, "关内收益在结算前就写盘了");
             ReenterLevel();
             procedure = await WaitForLevelAsync();
             Check(ReferenceEquals(SmokeInspection.Flow(procedure), flow), "重入关卡没有沿用同一档案作用域");
-            Check(progression.TotalExperience == before, "中途离开没有回滚关内收益");
+            Check(progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.TotalExperience == before, "中途离开没有回滚关内收益");
             Check(flow.GetModel<ProfileModel>().EquipmentDatas.Select(x => x.InstanceId).SequenceEqual(inventoryBefore), "中途离开没有回滚装备实例");
             Check(flow.GetModel<ProfileModel>().Soul.Value == soulBefore, "中途离开没有回滚已拾取的灵魂");
 
@@ -670,7 +670,7 @@ public sealed partial class UiSmokeScenario
             await DefeatMonsterAsync(FindLevel(), procedure);
             EquipmentData checkpointGear = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), GameConfig.Equipment.EquipmentId.CommonPineStaff, () => .73f);
             flow.GetSystem<ProfileSystem>().TryCollectEquipment(checkpointGear);
-            int afterKill = progression.TotalExperience;
+            int afterKill = progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.TotalExperience;
             int soulAfterKill = flow.GetModel<ProfileModel>().Soul.Value;
             LevelViewController deathRun = SmokeInspection.Level(procedure);
             HashSet<LootOrbNode> pendingOrbs = SmokeInspection.ReadField<HashSet<GameLogic.Drops.LootOrbNode>>(deathRun, "_lootOrbs");
@@ -700,7 +700,7 @@ public sealed partial class UiSmokeScenario
             await WaitUntilAsync(() => SmokeInspection.Level(procedure) != null && !ReferenceEquals(SmokeInspection.Level(procedure), deathRun) &&
                 SmokeInspection.Model(SmokeInspection.Level(procedure)).Outcome.Value == LevelOutcome.Running && CurrentBattleForm() != null,
                 "失败结算点击重试后没有重开关卡", 15000);
-            Check(progression.TotalExperience == afterKill, "死亡重开后档案收益丢失");
+            Check(progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.TotalExperience == afterKill, "死亡重开后档案收益丢失");
 
             await CheckFailureReturnMapAsync();
             await CheckBackupRecoveryAsync(flow);
@@ -931,10 +931,10 @@ public sealed partial class UiSmokeScenario
         double closedHp = bar.Value;
         string closedLevel = battleForm.GetNode<Label>("StatusPanel/m_LevelLabel").Text;
         GF.Fsm.GetSystem<HeroSystem>().Damage(5);
-        flow.GetSystem<ProfileSystem>().AddExperience(140);
+        flow.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 140);
         Check(Near(bar.Value, closedHp), "关闭后血条仍响应旧状态源");
         Check(battleForm.GetNode<Label>("StatusPanel/m_LevelLabel").Text == closedLevel, "关闭后等级仍响应旧状态源");
-        progression.RestoreExperience(progression.ActiveHeroId, 0);
+        progression.RestoreExperience(progression.HeroOf(PlayerSlot.P1), 0);
         await WaitFramesAsync(2);
 
         // 改绑到另一英雄：旧英雄的变化不再影响显示。
@@ -968,11 +968,11 @@ public sealed partial class UiSmokeScenario
         AnimatedSprite2D animation = battleForm.GetNode<AnimatedSprite2D>("MenuPanel/m_WsMax");
         ResourceBar bar = battleForm.GetNode<ResourceBar>("MenuPanel/WsFrame/m_WsBar");
         Check(!animation.Visible && !animation.IsPlaying(), "无双未蓄满就显示或播放了闪烁动画");
-        int originalExperience = progression.TotalExperience;
-        GF.Fsm.GetSystem<ProfileSystem>().AddExperience(1);
+        int originalExperience = progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.TotalExperience;
+        GF.Fsm.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 1);
         await WaitFramesAsync(3);
         Check(!animation.Visible && !animation.IsPlaying(), "获得经验错误地触发了无双闪烁动画");
-        progression.RestoreExperience(progression.ActiveHeroId, originalExperience);
+        progression.RestoreExperience(progression.HeroOf(PlayerSlot.P1), originalExperience);
 
         // 保持数值不变，直接观察引擎循环信号，避免只检查 Play 标志而漏掉停帧。
         int loops = 0;
@@ -1276,37 +1276,37 @@ public sealed partial class UiSmokeScenario
     private async Task CheckLevelUpAsync(ProcedureOwner flow, LevelViewController level)
     {
         ProfileModel record = flow.GetModel<ProfileModel>();
-        int originalExperience = record.TotalExperience;
-        record.RestoreExperience(record.ActiveHeroId, 0);
-        _extraHero = await ShowHeroAsync(flow, record.TotalExperience);
+        int originalExperience = record.GetProgress(record.HeroOf(PlayerSlot.P1)).Value.TotalExperience;
+        record.RestoreExperience(record.HeroOf(PlayerSlot.P1), 0);
+        _extraHero = await ShowHeroAsync(flow, record.GetProgress(record.HeroOf(PlayerSlot.P1)).Value.TotalExperience);
         _testBattleForm = await OpenBattleFormAsync(new BattleFormData(_extraHero, level));
         GF.Fsm.GetSystem<HeroSystem>().Damage(GF.Fsm.GetModel<HeroModel>().MaxHp.Value - 1);
         GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(GF.Fsm.GetModel<HeroModel>().Mp.Value - 1);
 
         // 门槛前不升级、不补满。
-        flow.GetSystem<ProfileSystem>().AddExperience(134);
-        Check(record.Level == 1 && GF.Fsm.GetModel<HeroModel>().Hp.Value == 1, "升级前门槛或补满时机错误");
+        flow.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 134);
+        Check(record.GetProgress(record.HeroOf(PlayerSlot.P1)).Value.Level == 1 && GF.Fsm.GetModel<HeroModel>().Hp.Value == 1, "升级前门槛或补满时机错误");
         CheckDisplay(_testBattleForm, _extraHero, record, level);
 
         // 跨三级：与 LevelViewController 相同的注入路径（档案 → 装配 → 实体，补满）。
-        flow.GetSystem<ProfileSystem>().AddExperience(338);
+        flow.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 338);
         ActorBaseAttributes row = ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1).Levels[3].BaseAttributes;
-        Check(record.Level == 4 && record.Experience == 37 && record.MaxExperience == 165,
+        Check(record.GetProgress(record.HeroOf(PlayerSlot.P1)).Value.Level == 4 && record.GetProgress(record.HeroOf(PlayerSlot.P1)).Value.Experience == 37 && record.GetProgress(record.HeroOf(PlayerSlot.P1)).Value.MaxExperience == 165,
             "连升未保留余量或等级错误");
         Check(_extraHero.Level == 4 && GF.Fsm.GetModel<HeroModel>().MaxHp.Value == row.MaxHp && GF.Fsm.GetModel<HeroModel>().Hp.Value == row.MaxHp &&
             GF.Fsm.GetModel<HeroModel>().MaxMp.Value == row.MaxMp && GF.Fsm.GetModel<HeroModel>().Mp.Value == row.MaxMp,
             $"升级未按成长表注入并补满：level={_extraHero.Level}, hp={GF.Fsm.GetModel<HeroModel>().Hp.Value}/{GF.Fsm.GetModel<HeroModel>().MaxHp.Value}, " +
             $"mp={GF.Fsm.GetModel<HeroModel>().Mp.Value}/{GF.Fsm.GetModel<HeroModel>().MaxMp.Value}, expected={row.MaxHp}/{row.MaxMp}, " +
-            $"equipment={record.Weapon?.EquipmentId}/{record.Armor?.EquipmentId}/{record.Accessory?.EquipmentId}/{record.Treasure?.EquipmentId}");
+            $"equipment={record.GetSlots(record.HeroOf(PlayerSlot.P1)).Value.Weapon?.EquipmentId}/{record.GetSlots(record.HeroOf(PlayerSlot.P1)).Value.Armor?.EquipmentId}/{record.GetSlots(record.HeroOf(PlayerSlot.P1)).Value.Accessory?.EquipmentId}/{record.GetSlots(record.HeroOf(PlayerSlot.P1)).Value.Treasure?.EquipmentId}");
         CheckDisplay(_testBattleForm, _extraHero, record, level);
 
-        flow.GetSystem<ProfileSystem>().AddExperience(int.MaxValue);
-        Check(record.Level == flow.GetUtility<ExperienceCurveUtility>().MaxLevel && record.MaxExperience == 0, "满级没有封顶");
+        flow.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), int.MaxValue);
+        Check(record.GetProgress(record.HeroOf(PlayerSlot.P1)).Value.Level == flow.GetUtility<ExperienceCurveUtility>().MaxLevel && record.GetProgress(record.HeroOf(PlayerSlot.P1)).Value.MaxExperience == 0, "满级没有封顶");
         CheckDisplay(_testBattleForm, _extraHero, record, level);
         CloseBattleForm(_testBattleForm);
         ReleaseTestEntity(_extraHero);
         _extraHero = null;
-        record.RestoreExperience(record.ActiveHeroId, originalExperience);
+        record.RestoreExperience(record.HeroOf(PlayerSlot.P1), originalExperience);
         await WaitFramesAsync(2);
         GD.Print("SMOKE-LEVEL UP PASS: threshold, multiple levels, growth refill, HUD and maximum level");
     }
@@ -1319,7 +1319,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckBackupRecoveryAsync(ProcedureOwner flow)
     {
         // 再写一个检查点，确保 .bak 是上一份完整数据、主文件是最新数据。
-        int expected = flow.GetModel<ProfileModel>().TotalExperience;
+        int expected = flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience;
         Check(await flow.GetSystem<SaveSystem>().SaveCheckpointAsync(flow.GetModel<ProfileModel>()), "检查点写入失败");
         string dataPath = DataFilePath();
         Check(File.Exists(dataPath + EasySave.BackupSuffix), "覆盖写入没有保留 .bak");
@@ -1462,7 +1462,7 @@ public sealed partial class UiSmokeScenario
         LevelViewController run = SmokeInspection.Level(procedure);
         hero.SetPhysicsProcess(true);
         int kills = SmokeInspection.Model(run).DefeatedEnemyCount;
-        int beforeXp = SmokeInspection.Flow(procedure).GetModel<ProfileModel>().TotalExperience;
+        int beforeXp = SmokeInspection.Flow(procedure).GetModel<ProfileModel>().GetProgress(hero.HeroId).Value.TotalExperience;
         int beforeSoul = SmokeInspection.Flow(procedure).GetModel<ProfileModel>().Soul.Value;
         int beforeLevel = hero.Level;
 
@@ -1530,7 +1530,7 @@ public sealed partial class UiSmokeScenario
             return SmokeInspection.Model(run).DefeatedEnemyCount > kills;
         }, "击败怪物没有经关卡运行结算", 10000, () => Describe(monster, run, level));
         int reward = SmokeInspection.ReadField<int>(monster, "ExperienceReward");
-        Check(SmokeInspection.Flow(procedure).GetModel<ProfileModel>().TotalExperience == beforeXp + reward &&
+        Check(SmokeInspection.Flow(procedure).GetModel<ProfileModel>().GetProgress(hero.HeroId).Value.TotalExperience == beforeXp + reward &&
             SmokeInspection.Flow(procedure).GetModel<ProfileModel>().Soul.Value == beforeSoul, "击败经验未直接结算或灵魂未拾取就入账");
         if (hero.Level > beforeLevel)
         {
@@ -1558,7 +1558,7 @@ public sealed partial class UiSmokeScenario
         await CheckFlyingLootAsync(level, hero);
         await WaitUntilAsync(() => SmokeInspection.ReadField<System.Collections.Generic.HashSet<GameLogic.Drops.LootOrbNode>>(level, "_lootOrbs").Count == 0,
             "掉落没有追踪并接触英雄", 12000);
-        Check(SmokeInspection.Flow(procedure).GetModel<ProfileModel>().TotalExperience == beforeXp + reward, "拾取黄球额外发放了经验");
+        Check(SmokeInspection.Flow(procedure).GetModel<ProfileModel>().GetProgress(hero.HeroId).Value.TotalExperience == beforeXp + reward, "拾取黄球额外发放了经验");
         if (healthDrops)
         {
             HeroModel model = SmokeInspection.Flow(procedure).GetModel<HeroModel>();
@@ -1621,7 +1621,7 @@ public sealed partial class UiSmokeScenario
         // 本游戏只注册一名出战英雄；额外池探针结束后恢复正式英雄所借用的同一数据。
         if (entity is AbstractHeroEntity && GF.Fsm.GetSystem<HeroSystem>() is { } heroSystem)
         {
-            ResetHeroAttributes(GF.Fsm.GetModel<ProfileModel>().ActiveHeroId, GF.Fsm.GetModel<ProfileModel>().Level);
+            ResetHeroAttributes(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), GF.Fsm.GetModel<ProfileModel>().GetProgress(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Level);
             BattleConfig battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
             heroSystem.ResetWs(battle.WsMax, battle.WsDecayPerSecond, battle.WsDrainPerSecond);
         }
@@ -1637,7 +1637,7 @@ public sealed partial class UiSmokeScenario
         ProfileModel equipment = GF.Fsm.GetModel<ProfileModel>();
         GF.Fsm.GetSystem<HeroSystem>().Reset(heroId, level,
             ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(heroId).Levels[level - 1].BaseAttributes,
-            equipment.Weapon, equipment.Armor, equipment.Accessory, equipment.Treasure);
+            equipment.GetSlots(equipment.HeroOf(PlayerSlot.P1)).Value.Weapon, equipment.GetSlots(equipment.HeroOf(PlayerSlot.P1)).Value.Armor, equipment.GetSlots(equipment.HeroOf(PlayerSlot.P1)).Value.Accessory, equipment.GetSlots(equipment.HeroOf(PlayerSlot.P1)).Value.Treasure);
     }
 
     /// <summary>
@@ -1649,10 +1649,10 @@ public sealed partial class UiSmokeScenario
     private static async Task<AbstractHeroEntity> ShowHeroAsync(ProcedureOwner flow, int totalExperience)
     {
         HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
-        ResetHeroAttributes(flow.GetModel<ProfileModel>().ActiveHeroId, flow.GetUtility<ExperienceCurveUtility>().Evaluate(totalExperience).Level);
+        ResetHeroAttributes(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), flow.GetUtility<ExperienceCurveUtility>().Evaluate(totalExperience).Level);
         BattleConfig battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
         heroSystem.ResetWs(battle.WsMax, battle.WsDecayPerSecond, battle.WsDrainPerSecond);
-        HeroConfig definition = ConfigSystem.Instance.Tables.TbHeroConfig.Get(flow.GetModel<ProfileModel>().ActiveHeroId);
+        HeroConfig definition = ConfigSystem.Instance.Tables.TbHeroConfig.Get(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1));
         var hero = (AbstractHeroEntity)await GF.Entity.ShowEntityAsync(definition.EntityId);
         hero.SetPhysicsProcess(false);
         return hero;
@@ -1777,7 +1777,7 @@ public sealed partial class UiSmokeScenario
     /// <param name="level">预期绑定关卡。</param>
     private static void CheckDisplay(BattleForm battleForm, AbstractHeroEntity hero, ProfileModel progression, LevelViewController level)
     {
-        string portrait = progression.ActiveHeroId == 2 ? "hud_head_tangseng.png" : "hud_head_wukong.png";
+        string portrait = progression.HeroOf(PlayerSlot.P1) == 2 ? "hud_head_tangseng.png" : "hud_head_wukong.png";
         Check(battleForm.GetNode<Sprite2D>("StatusPanel/Head").Texture.ResourcePath.EndsWith(portrait),
             "HUD头像与当前出战英雄不一致");
         foreach (string path in new[] { "StatusPanel/m_HpBar", "StatusPanel/m_MpBar", "StatusPanel/m_ExpBar", "MenuPanel/WsFrame/m_WsBar" })
@@ -1799,13 +1799,13 @@ public sealed partial class UiSmokeScenario
             ResourcesCollectionConstant.Fonts_dfp_hai_bao_w12, "等级标签未使用旧 HUD 海报体");
         Check(Near(battleForm.GetNode<ResourceBar>("StatusPanel/m_HpBar").Value, (double)vitals.Hp.Value / vitals.MaxHp.Value), "血条填充与当前英雄不一致");
         Check(battleForm.GetNode<Label>("StatusPanel/m_HpBar/m_HpText").Text == $"{vitals.Hp.Value}/{vitals.MaxHp.Value}", "生命文本不一致");
-        Check(battleForm.GetNode<Label>("StatusPanel/m_LevelLabel").Text == progression.Level.ToString(), "等级文本不一致");
+        Check(battleForm.GetNode<Label>("StatusPanel/m_LevelLabel").Text == progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level.ToString(), "等级文本不一致");
         Check(Near(battleForm.GetNode<ResourceBar>("StatusPanel/m_MpBar").Value, (double)vitals.Mp.Value / vitals.MaxMp.Value), "魔法条不一致");
         Check(battleForm.GetNode<Label>("StatusPanel/m_MpBar/MpText").Text == $"{vitals.Mp.Value}/{vitals.MaxMp.Value}", "魔法文本不一致");
-        double experienceRatio = progression.MaxExperience == 0 ? 1 : (double)progression.Experience / progression.MaxExperience;
+        double experienceRatio = progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience == 0 ? 1 : (double)progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Experience / progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience;
         Check(Near(battleForm.GetNode<ResourceBar>("StatusPanel/m_ExpBar").Value, experienceRatio), "经验条不一致");
         Check(battleForm.GetNode<Label>("StatusPanel/m_ExpBar/ExpText").Text ==
-            (progression.MaxExperience == 0 ? "MAX" : $"{progression.Experience}/{progression.MaxExperience}"), "经验文本不一致");
+            (progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience == 0 ? "MAX" : $"{progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Experience}/{progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience}"), "经验文本不一致");
         Check(Near(battleForm.GetNode<TextureProgressBar>("MenuPanel/WsFrame/m_WsBar").Value, (double)GF.Fsm.GetModel<HeroModel>().Ws.Value / GF.Fsm.GetModel<HeroModel>().MaxWs.Value),
             "无双条不一致");
         Check(battleForm.GetNode<AnimatedSprite2D>("m_Go").Visible == SmokeInspection.Model(level).TravelAvailable.Value, "Go 显示与关卡状态不一致");

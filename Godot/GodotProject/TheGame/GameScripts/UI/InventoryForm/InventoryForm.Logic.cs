@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GameConfig.Attributes;
 using GameConfig.Equipment;
 using GameConfig.Sound;
@@ -125,7 +126,7 @@ public partial class InventoryForm : IController
         LevelModel levelModel = this.GetModel<LevelModel>();
         if (userData is not InventoryFormData data || !IsInstanceValid(data.Hero) || !data.Hero.IsAlive ||
             levelModel == null || !levelModel.Initialized ||
-            levelModel.Outcome.Value != LevelOutcome.Running || data.Hero.HeroId != profile.ActiveHeroId)
+            levelModel.Outcome.Value != LevelOutcome.Running || !profile.HeroIds.Contains(data.Hero.HeroId))
         {
             throw new ArgumentException("背包需要本关存活的出战英雄与档案。", nameof(userData));
         }
@@ -150,10 +151,10 @@ public partial class InventoryForm : IController
             heroModel.Crit.Register(RefreshProbability);
             heroModel.Miss.Register(RefreshProbability);
             heroModel.Level.Register(RefreshResources);
-            profile.Progress.Register(RefreshProgression);
+            profile.GetProgress(data.Hero.HeroId).Register(RefreshProgression);
             profile.Soul.Register(RefreshSoul);
             profile.EquipmentDatas.Register(RefreshItems);
-            profile.Slots.Register(RefreshEquipment);
+            profile.GetSlots(data.Hero.HeroId).Register(RefreshEquipment);
             levelModel.Outcome.Register(OnLevelEnded);
             _resumeGame = !GF.Base.IsGamePaused;
             if (_resumeGame)
@@ -268,10 +269,10 @@ public partial class InventoryForm : IController
             heroModel.Crit.UnRegister(RefreshProbability);
             heroModel.Miss.UnRegister(RefreshProbability);
             heroModel.Level.UnRegister(RefreshResources);
-            profile.Progress.UnRegister(RefreshProgression);
+            profile.GetProgress(data.Hero.HeroId).UnRegister(RefreshProgression);
             profile.Soul.UnRegister(RefreshSoul);
             profile.EquipmentDatas.UnRegister(RefreshItems);
-            profile.Slots.UnRegister(RefreshEquipment);
+            profile.GetSlots(data.Hero.HeroId).UnRegister(RefreshEquipment);
             this.GetModel<LevelModel>().Outcome.UnRegister(OnLevelEnded);
         }
 
@@ -315,27 +316,37 @@ public partial class InventoryForm : IController
     private void RefreshInventoryPanels()
     {
         CloseTransientSelection();
-        _character.Refresh(_inventoryData.Hero);
+        RefreshCharacter();
         _bag.Refresh();
+    }
+
+    /// <summary>
+    /// 把本窗口英雄的完整成长与穿戴值交给个人资料面板。
+    /// </summary>
+    private void RefreshCharacter()
+    {
+        ProfileModel profile = this.GetModel<ProfileModel>();
+        int heroId = _inventoryData.Hero.HeroId;
+        _character.Refresh(_inventoryData.Hero, profile.GetProgress(heroId).Value, profile.GetSlots(heroId).Value);
     }
 
     /// <summary>
     /// 生命、魔法变化只刷新个人资料。
     /// </summary>
     /// <param name="value">已提交的资源值。</param>
-    private void RefreshResources(int value) => _character.Refresh(_inventoryData.Hero);
+    private void RefreshResources(int value) => RefreshCharacter();
 
     /// <summary>
     /// 概率变化时读取同一模型，保留小数概率而不转成属性点。
     /// </summary>
     /// <param name="value">已提交的 0..1 概率。</param>
-    private void RefreshProbability(float value) => _character.Refresh(_inventoryData.Hero);
+    private void RefreshProbability(float value) => RefreshCharacter();
 
     /// <summary>
     /// 成长变化只刷新个人资料。
     /// </summary>
     /// <param name="progress">已经提交的成长快照。</param>
-    private void RefreshProgression(HeroProgressionState progress) => _character.Refresh(_inventoryData.Hero);
+    private void RefreshProgression(HeroProgressionState progress) => RefreshCharacter();
 
     /// <summary>
     /// 余额变化刷新背包与出售选项，清除已过期的确认。
@@ -364,7 +375,7 @@ public partial class InventoryForm : IController
     private void RefreshEquipment(EquippedItems slots)
     {
         CloseTransientSelection();
-        _character.Refresh(_inventoryData.Hero);
+        RefreshCharacter();
     }
 
     /// <summary>
@@ -382,7 +393,7 @@ public partial class InventoryForm : IController
         EquipmentConfig definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(data.EquipmentId);
         _actions.Open(data.InstanceId, anchor,
             definition.Owner == EquipmentOwner.Universal ||
-             (int)definition.Owner == this.GetModel<ProfileModel>().ActiveHeroId);
+             (int)definition.Owner == _inventoryData.Hero.HeroId);
     }
 
     /// <summary>
@@ -391,7 +402,7 @@ public partial class InventoryForm : IController
     /// <param name="instanceId">菜单捕获的背包实例。</param>
     private void OnEquipRequested(Guid instanceId)
     {
-        if (_inventoryData != null && this.SendCommand(new EquipEquipmentCommand(instanceId)))
+        if (_inventoryData != null && this.SendCommand(new EquipEquipmentCommand(_inventoryData.Hero.HeroId, instanceId)))
         {
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         }
@@ -415,7 +426,7 @@ public partial class InventoryForm : IController
     /// <param name="slot">被点击的穿戴部位。</param>
     private void OnSlotClicked(EquipmentSlot slot)
     {
-        if (_inventoryData != null && this.SendCommand(new UnequipEquipmentCommand(slot)))
+        if (_inventoryData != null && this.SendCommand(new UnequipEquipmentCommand(_inventoryData.Hero.HeroId, slot)))
         {
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         }

@@ -33,7 +33,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckInventoryAsync(BattleForm battleForm, AbstractHeroEntity hero, ProcedureOwner flow, LevelViewController level)
     {
         EquipmentData[] originalEquipment = flow.GetModel<ProfileModel>().EquipmentDatas.ToArray();
-        EquippedItems originalSlots = flow.GetModel<ProfileModel>().Slots.Value;
+        EquippedItems originalSlots = flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
         foreach (EquipmentConfig definition in ConfigSystem.Instance.Tables.TbEquipmentConfig.DataList)
         {
             flow.GetSystem<ProfileSystem>().TryCollectEquipment(flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), definition.Id, () => .37f));
@@ -85,11 +85,11 @@ public sealed partial class UiSmokeScenario
         await CheckBagNavigationAsync(form, flow);
         foreach (EquipmentId id in new[] { EquipmentId.DiamondSnare, EquipmentId.EastSeaBanner })
         {
-            EquipmentData previousTreasure = flow.GetModel<ProfileModel>().Treasure;
+            EquipmentData previousTreasure = flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Treasure;
             EquipmentData newTreasure = flow.GetModel<ProfileModel>().EquipmentDatas.Single(value => value.EquipmentId == id);
             int previousPower = flow.GetModel<HeroModel>().Power.Value;
             ClickBagEquipment(form, flow, id);
-            Check(flow.GetModel<ProfileModel>().Treasure?.EquipmentId == id &&
+            Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Treasure?.EquipmentId == id &&
                 flow.GetModel<HeroModel>().Power.Value == previousPower - (previousTreasure?.Attributes.Power ?? 0) + newTreasure.Attributes.Power,
                 "法宝没有进入独立槽位或属性未生效");
             EquipmentCell treasureCell = form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_TreasureSlot");
@@ -103,7 +103,7 @@ public sealed partial class UiSmokeScenario
         ClickBagEquipment(form, flow, EquipmentId.EarthFiendRing);
         EquipmentCell accessory = form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_AccessorySlot");
         var accessoryBackground = (ShaderMaterial)accessory.Material;
-        Check(flow.GetModel<ProfileModel>().Accessory?.EquipmentId == EquipmentId.EarthFiendRing &&
+        Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Accessory?.EquipmentId == EquipmentId.EarthFiendRing &&
             accessoryBackground.GetShaderParameter("occupied").AsBool() &&
             accessory.GetNode<TextureRect>("Icon").Texture != null &&
             form.GetNode<Label>("Window/CharacterPanel/Attributes/Left/Crit/m_Crit").Text == "3%" &&
@@ -118,7 +118,7 @@ public sealed partial class UiSmokeScenario
         }
         await CaptureCombatAsync("inventory_earth_fiend_ring");
         accessory._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
-        Check(flow.GetModel<ProfileModel>().Accessory == null &&
+        Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Accessory == null &&
             GF.Fsm.GetModel<HeroModel>().Crit.Value == 0f && GF.Fsm.GetModel<HeroModel>().Miss.Value == 0f &&
             !accessoryBackground.GetShaderParameter("occupied").AsBool(), "饰品卸下后仍保留图标背景或概率加成");
         GD.Print("SMOKE-ACCESSORY PASS: shared ring slot, GUI commands, direct 3% labels and tooltip, unequip cleanup.");
@@ -128,20 +128,20 @@ public sealed partial class UiSmokeScenario
         int baseMaxHp = GF.Fsm.GetModel<HeroModel>().MaxHp.Value;
         int currentHp = GF.Fsm.GetModel<HeroModel>().Hp.Value;
         ClickBagEquipment(form, flow, EquipmentId.RoughPilgrimStaff);
-        Check(flow.GetModel<ProfileModel>().Weapon?.EquipmentId == EquipmentId.RoughPilgrimStaff &&
+        Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Weapon?.EquipmentId == EquipmentId.RoughPilgrimStaff &&
             GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + 3, "背包点击未穿戴武器或攻击未刷新");
         Check(weaponBackground.GetShaderParameter("occupied").AsBool() && !armorBackground.GetShaderParameter("occupied").AsBool(),
             "穿戴武器没有隐藏对应题签，或影响了空防具槽");
         CheckHeroAnimationLayers(hero);
         ClickBagEquipment(form, flow, EquipmentId.CommonPilgrimClothes);
-        Check(flow.GetModel<ProfileModel>().Armor?.EquipmentId == EquipmentId.CommonPilgrimClothes &&
+        Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor?.EquipmentId == EquipmentId.CommonPilgrimClothes &&
             GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense + 3 && GF.Fsm.GetModel<HeroModel>().MaxHp.Value == baseMaxHp + 27 && GF.Fsm.GetModel<HeroModel>().Hp.Value == currentHp,
             "防具未刷新具名属性，或换装意外补血");
         CheckHeroAnimationLayers(hero);
         // 地煞猿甲必须按具体装备换整套动作纹理，战斗与预览各读对应官方资源。
         ClickBagEquipment(form, flow, EquipmentId.EarthFiendApeArmor);
         Texture2D earthFiendTexture = GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_earth_fiend.png");
-        Check(flow.GetModel<ProfileModel>().Armor?.EquipmentId == EquipmentId.EarthFiendApeArmor &&
+        Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor?.EquipmentId == EquipmentId.EarthFiendApeArmor &&
             hero.GetNode<Sprite2D>("m_Body").Texture == earthFiendTexture && body.Texture == GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/preview/wukong_preview_body_earth_fiend.png"),
             "地煞猿甲未同步替换战斗和预览的完整动作图集");
         CheckHeroAnimationLayers(hero);
@@ -152,7 +152,7 @@ public sealed partial class UiSmokeScenario
         Check(form.GetNode<Label>("Window/CharacterPanel/Attributes/Left/Attack/m_Attack").Text == GF.Fsm.GetModel<HeroModel>().Power.Value.ToString(),
             "穿戴后界面未响应最终攻击变化");
         ClickBagEquipment(form, flow, EquipmentId.RoughPineStaff);
-        Check(flow.GetModel<ProfileModel>().Weapon.EquipmentId == EquipmentId.RoughPilgrimStaff, "悟空穿上了唐僧武器");
+        Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Weapon.EquipmentId == EquipmentId.RoughPilgrimStaff, "悟空穿上了唐僧武器");
         EquipmentActionsMenu actions = form.GetNode<EquipmentActionsMenu>("m_Actions");
         Check(actions.Visible && actions.GetNode<TextureButton>("Panel/Equip").Disabled &&
             actions.GetNode<TextureButton>("Panel/Gift").Disabled, "单人赠送或异角色装备没有禁用");
@@ -175,7 +175,7 @@ public sealed partial class UiSmokeScenario
                 armorBackground.GetShaderParameter("occupied").AsBool() == (path == "m_WeaponSlot"),
                 "卸装没有独立恢复对应部位题签");
         }
-        Check(flow.GetModel<ProfileModel>().Weapon == null && flow.GetModel<ProfileModel>().Armor == null &&
+        Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Weapon == null && flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor == null &&
             GF.Fsm.GetModel<HeroModel>().Power.Value == basePower && GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense && GF.Fsm.GetModel<HeroModel>().MaxHp.Value == baseMaxHp,
             "卸装后装备栏或属性来源残留");
         ClickBagEquipment(form, flow, EquipmentId.HeirloomSword);
@@ -191,7 +191,7 @@ public sealed partial class UiSmokeScenario
             GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense + 4, "家传手镯属性未加入饰品槽");
         await CaptureCombatAsync("inventory_heirloom_sword");
         ClickBagEquipment(form, flow, EquipmentId.HeirloomClothes);
-        Check(actions.GetNode<TextureButton>("Panel/Equip").Disabled && flow.GetModel<ProfileModel>().Armor == null,
+        Check(actions.GetNode<TextureButton>("Panel/Equip").Disabled && flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor == null,
             "悟空错误穿上唐僧家传衣裳");
         actions.Hide();
         foreach (string path in new[] { "m_WeaponSlot", "m_AccessorySlot" })
@@ -213,7 +213,7 @@ public sealed partial class UiSmokeScenario
         CheckHeroAnimationLayers(hero);
         await CaptureCombatAsync("inventory_heavenly_fiend_moon_halberd");
         ClickBagEquipment(form, flow, EquipmentId.HeavenlyFiendRobe);
-        Check(actions.GetNode<TextureButton>("Panel/Equip").Disabled && flow.GetModel<ProfileModel>().Armor == null,
+        Check(actions.GetNode<TextureButton>("Panel/Equip").Disabled && flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor == null,
             "悟空错误穿上唐僧天煞羽袍");
         actions.Hide();
         form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_WeaponSlot")
@@ -225,8 +225,8 @@ public sealed partial class UiSmokeScenario
         ClickBagEquipment(form, flow, EquipmentId.ExcellentPilgrimClothes);
         Texture2D excellentWeapon = GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_weapon_excellent.png");
         Texture2D excellentArmor = GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_excellent.png");
-        EquipmentData wornWeapon = flow.GetModel<ProfileModel>().Weapon;
-        EquipmentData wornArmor = flow.GetModel<ProfileModel>().Armor;
+        EquipmentData wornWeapon = flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Weapon;
+        EquipmentData wornArmor = flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor;
         Check(hero.GetNode<Sprite2D>("m_Weapon").Texture == excellentWeapon &&
             form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/Weapon").Texture == GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/preview/wukong_preview_weapon_excellent.png") &&
             hero.GetNode<Sprite2D>("m_Body").Texture == excellentArmor && body.Texture == GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/preview/wukong_preview_body_excellent.png") &&
@@ -241,8 +241,8 @@ public sealed partial class UiSmokeScenario
         {
             ClickBagEquipment(form, flow, id);
             Check(actions.GetNode<TextureButton>("Panel/Equip").Disabled &&
-                flow.GetModel<ProfileModel>().Weapon.EquipmentId == EquipmentId.ExcellentPilgrimStaff &&
-                flow.GetModel<ProfileModel>().Armor.EquipmentId == EquipmentId.ExcellentPilgrimClothes,
+                flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Weapon.EquipmentId == EquipmentId.ExcellentPilgrimStaff &&
+                flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor.EquipmentId == EquipmentId.ExcellentPilgrimClothes,
                 "优秀唐僧装备错误替换悟空外观");
             actions.Hide();
         }
@@ -256,7 +256,7 @@ public sealed partial class UiSmokeScenario
                     GF.Fsm.GetModel<HeroModel>().MaxHp.Value == baseMaxHp, "优秀装备卸下后仍残留属性");
         GD.Print("SMOKE-SEA EQUIPMENT 3-1 PASS: independent selector-3 layers, GUI equip/unequip, stats and owner rejection");
         ClickBagEquipment(form, flow, EquipmentId.HeavenlyFiendNecklace);
-        Check(flow.GetModel<ProfileModel>().Accessory?.EquipmentId == EquipmentId.HeavenlyFiendNecklace &&
+        Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Accessory?.EquipmentId == EquipmentId.HeavenlyFiendNecklace &&
             accessory.GetNode<TextureRect>("Icon").Texture != null &&
             GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + 34 &&
             GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense + 11 &&
@@ -276,7 +276,7 @@ public sealed partial class UiSmokeScenario
         GD.Print("SMOKE-QIXING-NECKLACE PASS: transparent icon, GUI equip/unequip, four attributes and sell price 80");
         int baseRegen = GF.Fsm.GetModel<HeroModel>().HpRegen.Value;
         ClickBagEquipment(form, flow, EquipmentId.BloodSeaShell);
-        EquipmentData shell = flow.GetModel<ProfileModel>().Accessory;
+        EquipmentData shell = flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Accessory;
         Check(shell?.EquipmentId == EquipmentId.BloodSeaShell && accessory.GetNode<TextureRect>("Icon").Texture != null &&
             GF.Fsm.GetModel<HeroModel>().MaxHp.Value == baseMaxHp + shell.Attributes.MaxHp &&
             GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense + 20 &&
@@ -299,7 +299,7 @@ public sealed partial class UiSmokeScenario
         ClickBagEquipment(form, flow, EquipmentId.BloodSeaDemonArmor);
         Texture2D bloodSeaArmorTexture = GD.Load<Texture2D>(
             "res://TheGame/Sprites/Characters/Heroes/wukong/wukong_body_blood_sea.png");
-        Check(flow.GetModel<ProfileModel>().Armor?.EquipmentId == EquipmentId.BloodSeaDemonArmor &&
+        Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor?.EquipmentId == EquipmentId.BloodSeaDemonArmor &&
             hero.GetNode<Sprite2D>("m_Body").Texture == bloodSeaArmorTexture &&
             body.Texture == GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/preview/wukong_preview_body_blood_sea.png") &&
             GF.Fsm.GetModel<HeroModel>().Power.Value == basePower + 80 &&
@@ -312,14 +312,14 @@ public sealed partial class UiSmokeScenario
         await CaptureCombatAsync("inventory_blood_sea_armor");
         form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/m_ArmorSlot")
             ._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
-        Check(flow.GetModel<ProfileModel>().Armor == null &&
+        Check(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor == null &&
             GF.Fsm.GetModel<HeroModel>().Power.Value == basePower &&
             GF.Fsm.GetModel<HeroModel>().Def.Value == baseDefense &&
             GF.Fsm.GetModel<HeroModel>().HpRegen.Value == baseRegen,
             "血海魔甲卸下后仍残留属性或外观");
         ClickBagEquipment(form, flow, EquipmentId.BloodSeaEvilStaff);
         Check(actions.GetNode<TextureButton>("Panel/Equip").Disabled &&
-            flow.GetModel<ProfileModel>().Weapon == null,
+            flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Weapon == null,
             "血海邪皇错误替换悟空武器");
         actions.Hide();
         GD.Print("SMOKE-SHARK EQUIPMENT 3-3 PASS: official selector-6 armor, negative stats, full motion and Tang ownership rejection");
@@ -372,7 +372,7 @@ public sealed partial class UiSmokeScenario
             }
         }
         // 穿戴与背包一起还原，不能把本夹具的法宝加成带入后续裸身成长验证。
-        flow.GetModel<ProfileModel>().Slots.Value = originalSlots;
+        flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value = originalSlots;
         flow.GetModel<ProfileModel>().RestoreItems(originalEquipment);
         GD.Print("SMOKE-UI: inventory actual attributes, 25 cells, live soul, pause, animated preview, key remap/echo, unsubscribe and reuse passed");
     }
@@ -402,11 +402,11 @@ public sealed partial class UiSmokeScenario
         Check(SmokeInspection.ReadField<EquipmentData>(cell, "_equipmentData").EquipmentId == id,
             "跨页点击选择了其他装备");
         form.GetViewport().PushInput(new InputEventMouseMotion { Position = cell.GetGlobalRect().GetCenter(), GlobalPosition = cell.GetGlobalRect().GetCenter() }, true);
-        Guid weapon = flow.GetModel<ProfileModel>().Weapon?.InstanceId ?? Guid.Empty;
-        Guid armor = flow.GetModel<ProfileModel>().Armor?.InstanceId ?? Guid.Empty;
+        Guid weapon = flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Weapon?.InstanceId ?? Guid.Empty;
+        Guid armor = flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor?.InstanceId ?? Guid.Empty;
         cell._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
-        Check((flow.GetModel<ProfileModel>().Weapon?.InstanceId ?? Guid.Empty) == weapon &&
-            (flow.GetModel<ProfileModel>().Armor?.InstanceId ?? Guid.Empty) == armor, "点击格子直接穿戴，跳过菜单");
+        Check((flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Weapon?.InstanceId ?? Guid.Empty) == weapon &&
+            (flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor?.InstanceId ?? Guid.Empty) == armor, "点击格子直接穿戴，跳过菜单");
         EquipmentActionsMenu menu = form.GetNode<EquipmentActionsMenu>("m_Actions");
         Check(menu.Visible, "装备格没有打开操作菜单");
         TextureButton equip = menu.GetNode<TextureButton>("Panel/Equip");

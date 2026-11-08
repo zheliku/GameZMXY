@@ -19,13 +19,13 @@ public sealed class PassiveSkillTests
     [Fact]
     public void Upgrade_ChargesNextLevelAndReplacesTotalBonus()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 15000, 25);
+        var scope = new TestGameScope([(1, 0)], 15000, 25);
         SkillSystem skill = scope.GetSystem<SkillSystem>();
         scope.GetSystem<HeroSystem>().Damage(30);
-        Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(PassiveId.Vitality));
+        Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(1, PassiveId.Vitality));
         Assert.Equal((280, 250, 10000, 1), (scope.Hero.MaxHp.Value, scope.Hero.Hp.Value,
             scope.Profile.Soul.Value, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));
-        Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(PassiveId.Vitality));
+        Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(1, PassiveId.Vitality));
         Assert.Equal((380, 350, 0, 2), (scope.Hero.MaxHp.Value, scope.Hero.Hp.Value,
             scope.Profile.Soul.Value, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));
     }
@@ -36,21 +36,21 @@ public sealed class PassiveSkillTests
     [Fact]
     public void Upgrade_RejectsInsufficientBalanceMaximumAndUnknownId()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 4999, 25);
+        var scope = new TestGameScope([(1, 0)], 4999, 25);
         SkillSystem skill = scope.GetSystem<SkillSystem>();
-        Assert.Equal(SkillLearnResult.InsufficientSoul, skill.Upgrade(PassiveId.Vitality));
+        Assert.Equal(SkillLearnResult.InsufficientSoul, skill.Upgrade(1, PassiveId.Vitality));
         Assert.Equal((4999, 0, 80), (scope.Profile.Soul.Value,
             scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality], scope.Hero.MaxHp.Value));
         scope.GetSystem<ProfileSystem>().AddSoul(75000 - 4999);
         for (int i = 0; i < 5; i++)
         {
-            Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(PassiveId.Vitality));
+            Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(1, PassiveId.Vitality));
         }
 
         Assert.Equal((0, 680, 5), (scope.Profile.Soul.Value, scope.Hero.MaxHp.Value,
                     scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));
-        Assert.Equal(SkillLearnResult.AlreadyLearned, skill.Upgrade(PassiveId.Vitality));
-        Assert.Equal(SkillLearnResult.Unavailable, skill.Upgrade((PassiveId)999));
+        Assert.Equal(SkillLearnResult.AlreadyLearned, skill.Upgrade(1, PassiveId.Vitality));
+        Assert.Equal(SkillLearnResult.Unavailable, skill.Upgrade(1, (PassiveId)999));
         Assert.Equal(0, scope.Profile.Soul.Value);
     }
 
@@ -60,10 +60,10 @@ public sealed class PassiveSkillTests
     [Fact]
     public void AllEffects_SurviveSaveRestartAndRemainHeroOwned()
     {
-        var scope = new TestGameScope(1, [(1, 0), (2, 0)], 25000, 25);
+        var scope = new TestGameScope([(1, 0), (2, 0)], 25000, 25);
         foreach (PassiveId id in Enum.GetValues<PassiveId>())
         {
-            Assert.Equal(SkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Upgrade(id));
+            Assert.Equal(SkillLearnResult.Learned, scope.GetSystem<SkillSystem>().Upgrade(1, id));
         }
 
         Assert.Equal((280, 250, .02f, 2, 2), (scope.Hero.MaxHp.Value, scope.Hero.MaxMp.Value,
@@ -83,10 +83,10 @@ public sealed class PassiveSkillTests
     [Fact]
     public void Rollback_RestoresLevelsAndBalanceUsingSameBinding()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 15000, 25);
+        var scope = new TestGameScope([(1, 0)], 15000, 25);
         BindableDictionary<PassiveId, int> levels = scope.Skills.GetPassiveLevels(1);
         GameData checkpoint = scope.CaptureSaveData();
-        scope.GetSystem<SkillSystem>().Upgrade(PassiveId.Vitality);
+        scope.GetSystem<SkillSystem>().Upgrade(1, PassiveId.Vitality);
         Assert.Equal(0, checkpoint.Heroes[0].PassiveLevels[PassiveId.Vitality]);
         scope.RestoreCheckpoint(checkpoint);
         Assert.Same(levels, scope.Skills.GetPassiveLevels(1));
@@ -102,12 +102,12 @@ public sealed class PassiveSkillTests
     [InlineData(6)]
     public void InvalidLevels_RejectBeforeWriting(int level)
     {
-        var scope = new TestGameScope(1, [(1, 0)], 10000, 25);
+        var scope = new TestGameScope([(1, 0)], 10000, 25);
         GameData data = scope.CaptureSaveData();
         data.Heroes[0].PassiveLevels[PassiveId.Vitality] = level;
         Assert.Throws<ArgumentException>(() => scope.RestoreCheckpoint(data));
         Assert.Equal(0, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]);
-        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(PassiveId.Vitality)));
+        Assert.Equal(SkillLearnResult.Unavailable, scope.SendCommand(new UpgradePassiveCommand(1, PassiveId.Vitality)));
         Assert.Equal(10000, scope.Profile.Soul.Value);
     }
 }

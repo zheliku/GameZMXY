@@ -41,7 +41,7 @@ public sealed class MusouTests
     public void Hit_UsesOfficialStagePower(int attackId, int power, int defense, bool crit,
         bool effect, int expected)
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroSystem system = scope.GetSystem<HeroSystem>();
         var attacker = new CombatantAttributes(CombatSide.Hero, 1, 100, 0, 0, crit ? 1 : 0, 0, 0, 0, 0, 0, 0, 0);
         var attack = AttackData.Create(attackId, attacker, power, DamageKind.Physics, Vector2.Zero, 1, 0,

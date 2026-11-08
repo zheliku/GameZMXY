@@ -465,6 +465,30 @@ BaseMonster按攻击者Role1/Role2分别播放BeattackByRole1/BeattackByRole2，
 
 保留三个明确源差异：大猩猩Monster3的dead129/元件6_52第20帧按落地决定destroy或回第9帧，没有BossDead；牛魔兽Monster22的dead1007/Timeline_30第25帧直接destroy并转形，人形Monster23的dead951/Timeline_60第25帧BossDead后转最终形态，Monster24.toDead整体两秒淡出；龙王Monster3_v1的dead105/Timeline_32在第25帧dropAura、destroy，没有BossDead。不能把这些流程强制替换成普通首领旋涡。
 
+## 造梦三：本地双人规则（2026-11-07）
+
+用户要求双人的入口、选角、键位、结算等按造二/造三官方做法同步。本地没有造二源码；以上表同一 v260714.swf（SHA 一致）DefineBinaryData `L4399Main_gamefile` 为 CWS 主程序，FFDec 26.3 导出 1104 份脚本于临时目录 `gamezmxy-coop-ref/zm3_game_scripts`，不进工程。注意 `Config.isSingleGame()` 表示“不在联机房间”（`nodeFloor == 0`），本地双人同样走该分支；人数是 `gc.playNum`。云存档、邀请好友(player3)、点券、联机房间属于4399在线服务，不纳入。
+
+| 规则 | 造三调用依据 | 项目采用 |
+| --- | --- | --- |
+| 人数入口 | 标题右侧 `newGame`/`continueGame` 两个按钮。`newGameClick→showSelectNum` 隐藏主菜单，在原位显示 simpleGame/doubleGame/backbtn 三项，backbtn→showMenu 恢复主菜单；`continueClick` 以 `saveInter.state="read"` 打开存档面板，不问人数 | 标题“新开游戏”展开单人/双人/返回三项；“读取存档”打开存档面板读档 |
+| 新档选格 | 新游戏选人数→选角→（片头）→地图 `MapMenu.added` 在 `isnew` 时自动点保存，`SaveInter.state="save"` 提示“第一次进入游戏请选择存档”；点已有格弹 `IsCover` 确认覆盖/更换，空格直接写；关闭面板 `initData` 回标题 | 选角确认后打开同一存档面板的保存模式选格（项目无片头，时序等价）；占用格先确认覆盖；关闭回标题且不写档 |
+| 档案人数 | `MemoryClass.setStorage` 写 `playerNum = gc.playNum`，读档 `gc.playNum = read.playerNum`；无改人数路径 | 人数随档保存，读档不可切换 |
+| 存档格 | 六格；格标题为 `player1名 + " " + player2名`，另显示时间 | 沿用项目六格，摘要显示参战者 |
+| 个人数据 | `player1_obj/player2_obj = User.getSaveObj()`：灵魂lhValue、经验/等级、roleid、技能与键位、背包、穿戴、宠物各自一份；按**玩家席位**存 roleid | 个人资产按席位归属（见实施计划） |
+| 共享数据 | 根级 curBigStage/curBigLevel 进度、全局buff、各类日计数与活动资格 | 最远通关、旗幡资格共享 |
+| 选角 | 四卡 btn1..4；双人 `selectOneInDouble` 拒绝已按下卡；选中卡保持按下态并在上方放 `1P/2P` 图；单人可改选；双人 resetBtn 清空两人选择；返回回标题；开始需选满 | 同规则；已选卡保持按下并显示1P/2P标记，“重选”清空，返回取消 |
+| 键位 | `KeyBoardControl`：P1 A/D＋S/J/K/W，技能 Y/L/U/I/O/空格/H；P2 ←/→＋↓/小1/小2/↑，技能 小8/小3/小4/小5/小6/小0/小7；窗口 P1 C/V/B，P2 小键盘`/`、`*`、`-`、`+` | P1 现键位不变；P2 移动/动作/技能按同语义；P2 背包`小/`、技能`小*` |
+| 开窗归属 | 快捷键点击**本人HUD**按钮 `getRoleInfoByPlayer(...).btn_bb`；背包 `setpack(rn)` 绑本人；同时只开一个背包；技能窗为两人页签但默认P1页 | 各自快捷键/HUD按钮开本人窗口；任一时刻只开一个模态窗 |
+| HUD | `GameInfo` P1 `RoleInfo(1)` x=0；P2 `RoleInfo(2)` x=920 水平镜像，`setPos` 把文字/按钮翻回；各自无双槽 | P2 状态区右侧镜像 |
+| 暂停 | 背包/技能/宠物/设置在本地都 `MainGame.stopGame()` 停双方，期间 `KeyBoardControl` 忽略两人按键；造一 `BaseHero.turnToGXP` 无双开启 `stopGame(1000)` 同样停双方约1秒 | 模态窗与无双开场演出都暂停双方；暂停期间两人的无双/开窗请求均不受理（现有 `TryActivateMusou` 已在暂停时拒绝） |
+| 经验/掉落 | `BaseMonster` 经验全给 `curAttackTarget`；`dropAura` 球飞向同一英雄，`RoleInfo.addWarriors` 只给本人；`FallEquipObj` 首个接触且背包未满的存活英雄领取 | 经验与球给最后命中者；地面物首个接触且有空位者 |
+| 死亡 | `BaseHero.destroy` 移出关卡；`MainGame.checkGameOver` 存活人数为0才 GameOver；无队友复活；死者HUD显示 0 血，背包按钮提示“角色已经死亡” | 一死一活继续，全灭失败，死者不可开窗，无复活 |
+| 结算 | `GameWin` 只有共享：用时、最高连击、平均状态、总分；无个人区；`GameFail` 重玩/回地图 | 结算继续共享一份；剩余生命取存活参战者平均 |
+| 赠送 | `PackThings.gyClick` 仅背包格可赠，单人禁用；直接 push 到对方 zblist 后从自己移除，**无接收方容量检查** | 仅背包物可赠，单人禁用；保留项目“目标背包须有空位”的唯一归属/容量约束 |
+| 相机 | `ViewControllor` 两人共同决定前进/后退，死者忽略；`BaseHero` 每人限制在屏幕 20..920 | 单相机跟存活者，屏幕墙约束每人 |
+| 队友治疗/等级 | `Role2.hit6/hit8` 范围内所有存活英雄；`Config.getAverageLevel` 双人取平均，用于首领压制 | 治疗按造一 Role2 范围；龙王分档按造一 Monster26 取两人最低等级（造一自身规则优先） |
+
 ## 造梦三：背包提示与操作菜单
 
 这部分按用户要求单独参考第三代，不改变上述第一代战斗数值。官方入口为 [造梦西游三](https://www.4399.com/flash/zmhj.htm?g=3)，[游戏容器 v260714](https://sbai.4399.com/4399swf/upload_swf/ftp7/hanbao/20120107/6/v260714.htm)。

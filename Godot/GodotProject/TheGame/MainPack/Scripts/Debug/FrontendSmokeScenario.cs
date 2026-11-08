@@ -265,8 +265,8 @@ public sealed partial class FrontendSmokeScenario
                 ReferenceEquals(ConfigSystem.Instance.Tables, firstSaveSystem.GetModel<ConfigurationModel>().Tables) &&
                 ReferenceEquals(flow.GetUtility<ExperienceCurveUtility>(), firstSaveSystem.GetUtility<ExperienceCurveUtility>()),
                 "共享配置、经验曲线或模块没有使用主流程唯一的数据来源");
-            Check(firstPlayerModel.ActiveHeroId == 1 && firstPlayerModel.HeroIds.SequenceEqual(new[] { 1 }) &&
-                GF.Archive.CurrentData.ActiveHeroId == 1, "悟空新档没有按首次选角创建身份");
+            Check(firstPlayerModel.HeroOf(PlayerSlot.P1) == 1 && firstPlayerModel.HeroIds.SequenceEqual(new[] { 1 }) &&
+                GF.Archive.CurrentData.Heroes[0].HeroId == 1, "悟空新档没有按首次选角创建身份");
             Check(SmokeInspection.CallbackCount(character, "CharacterConfirmed") == 0 &&
                 SmokeInspection.CallbackCount(start, "StartGameRequested") == 0,
                 "离开选角或标题后仍保留导航回调");
@@ -317,7 +317,7 @@ public sealed partial class FrontendSmokeScenario
                 await CheckMapSkillPurchaseAsync(map, flow);
                 // 制造尚未手动保存的地图进度，不能用刚保存过的空变化证明返回会写盘。
                 flow.GetSystem<ProfileSystem>().AddSoul(17);
-                flow.GetSystem<ProfileSystem>().AddExperience(3);
+                flow.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 3);
                 await ClickAsync(map, "m_Settings");
                 settingsForm = await WaitForAsync<SettingsForm>();
                 SaveModel saveModel = flow.GetModel<SaveModel>();
@@ -468,8 +468,8 @@ public sealed partial class FrontendSmokeScenario
             Check(GF.Archive.CurrentCatalogue.SlotNumber == 6 && GF.Archive.CurrentCatalogue.UnitId != secondId, "第六格覆盖了第二格");
             long sixthId = GF.Archive.CurrentCatalogue.UnitId;
             ProfileModel tangsengProfile = flow.GetModel<ProfileModel>();
-            Check(tangsengProfile.ActiveHeroId == 2 && tangsengProfile.HeroIds.SequenceEqual(new[] { 2 }) &&
-                GF.Archive.CurrentData.ActiveHeroId == 2 && GF.Archive.CurrentData.Heroes.Single().HeroId == 2 &&
+            Check(tangsengProfile.HeroOf(PlayerSlot.P1) == 2 && tangsengProfile.HeroIds.SequenceEqual(new[] { 2 }) &&
+                GF.Archive.CurrentData.Heroes[0].HeroId == 2 && GF.Archive.CurrentData.Heroes.Single().HeroId == 2 &&
                 flow.GetModel<SkillModel>().GetLearnedSkills(2).Count == 0,
                 "唐僧首次快照、档案或技能书仍使用默认悟空身份");
             GD.Print("SMOKE-TANGSENG-CREATE PASS: selected hero owns the first snapshot, profile and skill book; Wukong slot remains separate.");
@@ -487,7 +487,7 @@ public sealed partial class FrontendSmokeScenario
                 ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) &&
                 !ReferenceEquals(firstEquipmentSystem, flow.GetSystem<EquipmentSystem>()), "重新读档复用了已结束的作用域");
             Check(flow.GetModel<ProfileModel>().Soul.Value == savedSoul, "重新读档没有从快照重建运行时状态");
-            Check(flow.GetSystem<SkillSystem>().IsLearned(SkillId.RisingDragon) &&
+            Check(flow.GetSystem<SkillSystem>().IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) &&
                 flow.GetModel<SkillModel>().GetPassiveLevels(1)[PassiveId.Vitality] == 1,
                 "地图购买的主动技能或被动等级没有从磁盘恢复");
             GF.Fsm.GetModel<SaveModel>().ManualSave.Value = new(savedMapSerialId, SaveWritePhase.Succeeded);
@@ -509,11 +509,11 @@ public sealed partial class FrontendSmokeScenario
             HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
             Check(heroModel.Initialized && ReferenceEquals(heroModel, SmokeInspection.HeroAttributes(hero)),
                 "英雄 Entity 没有借用 Architecture 注册的同一运行属性");
-            Check(flow.GetSystem<SkillSystem>().IsAvailable(SkillId.RisingDragon) &&
+            Check(flow.GetSystem<SkillSystem>().IsAvailable(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) &&
                 heroModel.MaxHp.Value > ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.MaxHp,
                 "地图学习的主动技能或被动属性未在进关后生效");
-            Check(SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().Progress, heroSystem) == 1 &&
-                SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().Slots, heroSystem) == 1,
+            Check(SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)), heroSystem) == 1 &&
+                SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)), heroSystem) == 1,
                 "英雄属性系统没有唯一订阅成长和穿戴来源");
             LevelSystem levelSystem = flow.GetSystem<LevelSystem>();
             Check(ReferenceEquals(flow.GetArchitecture(), ((IBelongToArchitecture)level).GetArchitecture()),
@@ -566,8 +566,8 @@ public sealed partial class FrontendSmokeScenario
             ProfileModel playerModel = SmokeInspection.Flow((ProcedureLevel)GF.Procedure.CurrentProcedure).GetModel<ProfileModel>();
             Check(ReferenceEquals(playerModel, reloadedPlayerModel) &&
                 ReferenceEquals(data.Hero, hero) && ReferenceEquals(data.ViewController, level), "HUD 与关卡没有借用同一份运行状态");
-            int experience = playerModel.TotalExperience;
-            flow.GetSystem<ProfileSystem>().AddExperience(1);
+            int experience = playerModel.GetProgress(playerModel.HeroOf(PlayerSlot.P1)).Value.TotalExperience;
+            flow.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 1);
             await ClickAsync(battleForm, "MenuPanel/m_SettingsButton");
             SettingsForm settings = await WaitForAsync<SettingsForm>();
             Check(GF.Base.IsGamePaused, "战斗设置未暂停");
@@ -620,7 +620,7 @@ public sealed partial class FrontendSmokeScenario
             await ClickAsync(settings, "Scroll/Content/Options/Navigation/m_ReturnMap");
             map = await WaitForAsync<MapForm>();
             Check(!hero.IsShown && !Find<LevelViewController>().Any(), "返回地图未清理英雄与关卡");
-            Check(flow.GetModel<ProfileModel>().TotalExperience == experience + 1, "设置返回地图未保存关内经验");
+            Check(flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience == experience + 1, "设置返回地图未保存关内经验");
             Check(ReferenceEquals(reloadedPlayerModel, flow.GetModel<ProfileModel>()) &&
                 !levelModel.SessionActive && !levelSystem.Initialized && !levelModel.Initialized, "返回地图未保留档案或未解除关卡借用");
             Check(SmokeInspection.ReadField<BattleFormData>(battleForm, "_formData") == null, "HUD 关闭后仍观察旧关卡");
@@ -632,8 +632,8 @@ public sealed partial class FrontendSmokeScenario
             Check(!GF.Base.IsGamePaused, "返回地图后仍处于暂停");
             Check(!heroModel.Initialized && flow.GetModel<HeroModel>() == null &&
                 !heroSystem.Initialized && flow.GetSystem<HeroSystem>() == null &&
-                SmokeInspection.CountBindingHandlers(playerModel.Progress, heroSystem) == 0 &&
-                SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().Slots, heroSystem) == 0,
+                SmokeInspection.CountBindingHandlers(playerModel.GetProgress(playerModel.HeroOf(PlayerSlot.P1)), heroSystem) == 0 &&
+                SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)), heroSystem) == 0,
                 "离关没有结束英雄运行模型");
             Check(SmokeInspection.CallbackCount(battleForm, "SettingsRequested") == 0 &&
                 SmokeInspection.CallbackCount(battleForm, "InventoryRequested") == 0 &&
@@ -766,7 +766,7 @@ public sealed partial class FrontendSmokeScenario
         CharacterForm character = await WaitForAsync<CharacterForm>();
         await ClickAsync(character, "Roles/m_Sanzang");
         MapForm map = await WaitForAsync<MapForm>();
-        Check(GF.Archive.CurrentData.ActiveHeroId == 2 && GF.Archive.CurrentData.UnitId != deletedId &&
+        Check(GF.Archive.CurrentData.Heroes[0].HeroId == 2 && GF.Archive.CurrentData.UnitId != deletedId &&
             GF.Archive.CurrentCatalogue.SlotNumber == 2, "删除后的同格未正确新建唐僧档案");
         await ReturnMapToTitleAsync(map);
         StartForm start = await WaitForAsync<StartForm>();
@@ -1251,7 +1251,7 @@ public sealed partial class FrontendSmokeScenario
             setting.EnableAesEncryption, setting.KEY, setting.Salt);
         var before = JObject.FromObject(expected);
         var saved = JObject.FromObject(actual);
-        foreach (string field in new[] { "SaveVersion", "ActiveHeroId", "Soul", "Heroes", "EquipmentItems",
+        foreach (string field in new[] { "SaveVersion", "Soul", "Heroes", "EquipmentItems",
             "HighestClearedLevelId", "EastSeaBannerAvailable" })
         {
             Check(JToken.DeepEquals(before[field], saved[field]), $"返回主菜单未保存当前档案字段：{field}");
@@ -1311,7 +1311,7 @@ public sealed partial class FrontendSmokeScenario
             "地图技能窗改变流程、暂停或创建了战斗模型");
         await CaptureAsync("map_skill_active");
         await ClickAsync(form, "Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon");
-        Check(skillSystem.IsLearned(SkillId.RisingDragon) && profile.Soul.Value == initialSoul - activeCost &&
+        Check(skillSystem.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) && profile.Soul.Value == initialSoul - activeCost &&
             form.GetNode<BaseButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon").Disabled &&
             form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.Soul.Value.ToString(),
             "地图主动购买未同步学习、扣费、图标或余额");

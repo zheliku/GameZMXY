@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using GameConfig.Equipment;
+using GameLogic;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Drops;
@@ -61,8 +62,8 @@ public sealed partial class UiSmokeScenario
         CheckAllWearableEquipment(form, hero, flow);
         ClickBagEquipment(form, flow, EquipmentId.NineRingMonkStaff);
         ClickBagEquipment(form, flow, EquipmentId.HeavenlyFiendRobe);
-        EquipmentData weapon = profile.Weapon;
-        EquipmentData armor = profile.Armor;
+        EquipmentData weapon = profile.GetSlots(profile.HeroOf(PlayerSlot.P1)).Value.Weapon;
+        EquipmentData armor = profile.GetSlots(profile.HeroOf(PlayerSlot.P1)).Value.Armor;
         Check(weapon?.EquipmentId == EquipmentId.NineRingMonkStaff && armor?.EquipmentId == EquipmentId.HeavenlyFiendRobe,
             "唐僧没有通过正式菜单穿上九环禅杖与天煞羽袍");
         await WaitFramesAsync(3);
@@ -73,7 +74,7 @@ public sealed partial class UiSmokeScenario
         Check(await flow.GetSystem<SaveSystem>().SaveCheckpointAsync(profile), "唐僧装备检查点未写盘");
         GameData disk = await ReadDiskAsync();
         HeroSaveData savedHero = disk.Heroes.Single();
-        Check(savedHero.HeroId == 2 && disk.ActiveHeroId == 2 &&
+        Check(savedHero.HeroId == 2 && disk.Heroes[0].HeroId == 2 &&
             savedHero.WeaponInstanceId == weapon.InstanceId && savedHero.ArmorInstanceId == armor.InstanceId &&
             items.All(item => disk.EquipmentItems.Any(saved => saved.InstanceId == item.InstanceId && saved.Attributes == item.Attributes)),
             "唐僧装备身份、随机属性或穿戴引用没有保持到磁盘");
@@ -100,8 +101,8 @@ public sealed partial class UiSmokeScenario
         await CheckHeroDeathReentryAsync();
 
         ProfileModel profile = flow.GetModel<ProfileModel>();
-        EquipmentData weapon = profile.Weapon;
-        EquipmentData armor = profile.Armor;
+        EquipmentData weapon = profile.GetSlots(profile.HeroOf(PlayerSlot.P1)).Value.Weapon;
+        EquipmentData armor = profile.GetSlots(profile.HeroOf(PlayerSlot.P1)).Value.Armor;
         EquipmentData[] items = profile.EquipmentDatas.ToArray();
         int expectedHp = flow.GetModel<HeroModel>().MaxHp.Value;
         BaseButton settingsButton = CurrentBattleForm().GetNode<BaseButton>("MenuPanel/m_SettingsButton");
@@ -130,8 +131,8 @@ public sealed partial class UiSmokeScenario
         }, "唐僧已有档案无法经存档列表重读进关", 15000);
         await WaitFramesAsync(6);
         ProfileModel restored = flow.GetModel<ProfileModel>();
-        Check(!ReferenceEquals(profile, restored) && restored.ActiveHeroId == 2 && FindHero() is TangsengEntity &&
-            restored.Weapon?.InstanceId == weapon.InstanceId && restored.Armor?.InstanceId == armor.InstanceId &&
+        Check(!ReferenceEquals(profile, restored) && restored.HeroOf(PlayerSlot.P1) == 2 && FindHero() is TangsengEntity &&
+            restored.GetSlots(restored.HeroOf(PlayerSlot.P1)).Value.Weapon?.InstanceId == weapon.InstanceId && restored.GetSlots(restored.HeroOf(PlayerSlot.P1)).Value.Armor?.InstanceId == armor.InstanceId &&
             items.All(item => restored.EquipmentDatas.Any(value => value.InstanceId == item.InstanceId && value.Attributes == item.Attributes)) &&
             flow.GetModel<GameLogic.Skills.SkillModel>().GetPassiveLevels(2).Values.All(value => value == 5) &&
             flow.GetModel<GameLogic.Skills.SkillModel>().GetLearnedSkills(2).Count == 5 &&

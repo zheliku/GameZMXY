@@ -40,11 +40,11 @@
 
 ## 双人扩展方案
 
-双人实现回退到`858f22a`后，现仅按计划完成01：新增PlayerSlot枚举与规则测试工程编译引用。当前仍是单人ProfileModel、HeroModel、一套输入与HUD，存档v12。此前一次性推进的双人实现已按用户要求撤回，不能把其测试结果或数据结构当作当前功能。
+此前一次性推进的双人实现已按用户要求撤回；重新制定计划后，PlayerSlot 枚举与 A1 已实现并验证。2026-11-08 文档同步时，ProfileModel 已采用有序阵容、个人业务显式传 HeroId，存档 v13；本局仍只装配 P1，保留单个 HeroModel、一套输入与 HUD。A1 待用户审查，A2 未开始，不能把旧草稿当作当前双人玩法。
 
-已确认一格保存双方、个人资产独立、共享进度、参战英雄不可重复，且继续支持新增英雄；玩家身份已定义`PlayerSlot.P1/P2`枚举，业务调用方尚未迁移。保留唯一根Architecture和现有业务系统。
+已确认一格保存双方、个人资产独立、共享进度、参战英雄不可重复，且继续支持新增英雄；入口、选角、键位、开窗、暂停与结算按造一/造三官方调用同步。`PlayerSlot.P1/P2` 已用于 `ProfileModel.HeroOf` / `SlotOf` 席位换算；存档英雄记录的顺序表示席位，HeroId 作为运行时个人数据主键。PlayerSlot 只表示座位，保留唯一根 Architecture 和现有业务系统；双人实体、个人钱包/背包、第二套输入和双 HUD 均未在 A1 实施。
 
-详细文件清单、接口、依赖、分批审查与验收统一见[双人扩展实施计划](CoopImplementationPlan.md)。01已完成并暂停待审查；后续每次仅执行用户选定的一批，审阅后再推进。官方证据见[OfficialReference](OfficialReference.md#双人扩展的源码依据2026-11-07)，当前验证见[Validation](Validation.md#双人实现撤回与重新规划2026-11-07)。
+详细文件清单、接口、依赖、分批审查与验收统一见[双人扩展实施计划](CoopImplementationPlan.md)。当前停在 A1 等待审查；每次仅执行一批，审阅并获授权后再推进。官方证据见[OfficialReference](OfficialReference.md#双人扩展的源码依据2026-11-07)，当前验证见[Validation](Validation.md#双人a1阵容取代单一出战英雄2026-11-07)。
 
 ## 启动与返回
 
@@ -62,7 +62,7 @@ Prepare注册资源组、共享Utility及应用Model/System；LoadGame校验DTO�
 | --- | --- | --- |
 | ConfigurationModel | Tables、已验证配置与共享身体参数 | Prepare→应用结束 |
 | SaveModel | 文件身份、目录、手动保存反馈 | Prepare→应用结束 |
-| ProfileModel | 出战身份、各英雄成长/穿戴、背包、灵魂、进度/旗幡资格 | LoadGame→标题 |
+| ProfileModel | 有序阵容、各英雄成长/穿戴、共享背包与灵魂、进度/旗幡资格 | LoadGame→标题 |
 | SkillModel | 主动学习和被动等级 | LoadGame→标题 |
 | HeroModel | 本局属性、HP/MP/WS、当前技能、恢复节拍及StatusEffects普通子数据 | Level→离关 |
 | LevelModel | 阶段、时间、统计、结局、连击和完整进关快照 | Level→离关 |
@@ -124,7 +124,7 @@ EnemyDeathState共用普通尸体与等待死亡效果的终态；龙王死亡�
 
 十一工作簿、十七业务Sheet；数据、编号及原ZIP保真约定见[第20章](ProjectGuidelines/20-Configs.md)。EntityId与EnemyId同号：英雄1..9999、小怪10000..99999、Boss100000..199999；LegacyId独立记录官方编号。ConfigIdUtility是已注册IUtility，调用方GetUtility取用，不自行new或散写编码。
 
-存档当前**v12**，唯一字段契约是`Models/Save/GameData.cs`：保存英雄成长、主动/被动学习、四槽实例引用、装备实际属性、灵魂、主线进度、旗幡资格；不保存临时HP/MP/WS、位置、波次和地面掉落。SaveDataUtility捕获/校验，ProfileSystem恢复，SaveSystem执行读写；不保留旧格式运行时兼容。六格本地档案与应用音量设置分开。
+存档当前**v13**，唯一字段契约是`Models/Save/GameData.cs`：按席位顺序保存英雄成长、主动/被动学习、四槽实例引用，以及共享装备实例、灵魂、主线进度和旗幡资格；不保存临时HP/MP/WS、位置、波次和地面掉落。SaveDataUtility捕获/校验，ProfileSystem恢复，SaveSystem执行读写；不保留旧格式运行时兼容，旧 v12 开发档需重建。六格本地档案与应用音量设置分开。
 
 ## 界面与资源编辑位置
 

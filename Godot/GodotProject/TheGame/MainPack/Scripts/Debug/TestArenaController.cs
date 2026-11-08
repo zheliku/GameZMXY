@@ -200,7 +200,7 @@ public partial class TestArenaController : Node2D
                 _testFlow.RegisterUtility(new ExperienceCurveUtility(_testFlow.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList));
                 _testFlow.RegisterModel(new SaveModel());
                 int heroId = ConfigSystem.Instance.Tables.TbHeroConfig.DataList.First(x => x.EntityId == _heroEntityId).Id;
-                _testFlow.RegisterModel(new ProfileModel(heroId, [(heroId, 0)], _testFlow.GetUtility<ExperienceCurveUtility>(),
+                _testFlow.RegisterModel(new ProfileModel([(heroId, 0)], _testFlow.GetUtility<ExperienceCurveUtility>(),
                     ConfigSystem.Instance.Tables.TbProfileConfig.EquipmentCapacity));
                 _testFlow.RegisterModel(new HeroModel());
                 _testFlow.RegisterModel(new SkillModel(_testFlow.GetModel<ProfileModel>().HeroIds));

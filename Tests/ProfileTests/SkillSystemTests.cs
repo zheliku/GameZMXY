@@ -37,7 +37,7 @@ public sealed class SkillSystemTests
         Assert.Throws<ArgumentException>(() => system.SelectSkills(2,
             new SkillDefinition(SkillId.RisingDragon, typeof(TestSkillState))));
         Assert.Equal(data, scope.Hero.ActiveSkillId);
-        Assert.True(system.IsAvailable(SkillId.WaterClone));
+        Assert.True(system.IsAvailable(scope.Profile.HeroIds[0], SkillId.WaterClone));
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public sealed class SkillSystemTests
         Assert.Throws<ArgumentException>(() => system.SelectSkills(2,
             new SkillDefinition(SkillId.WaterClone, state, InputSystem.Skill1)));
         Assert.Null(scope.Hero.ActiveSkillId);
-        Assert.False(system.IsAvailable(SkillId.WaterClone));
+        Assert.False(system.IsAvailable(scope.Profile.HeroIds[0], SkillId.WaterClone));
         Assert.Equal(mana, scope.Hero.Mp.Value);
     }
 
@@ -108,9 +108,9 @@ public sealed class SkillSystemTests
     [Fact]
     public void NewRun_PreservesLearningAndDropsAllCastState()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 100, 25);
+        var scope = new TestGameScope([(1, 0)], 100, 25);
         SkillSystem system = scope.GetSystem<SkillSystem>();
-        Assert.Equal(SkillLearnResult.Learned, system.Learn(SkillId.RisingDragon));
+        Assert.Equal(SkillLearnResult.Learned, system.Learn(scope.Profile.HeroIds[0], SkillId.RisingDragon));
         Assert.True(system.TryActivate(SkillId.RisingDragon, new Actor()));
         system.GrantInvulnerability(0, 100);
         HeroModel previousHero = scope.Hero;
@@ -118,12 +118,12 @@ public sealed class SkillSystemTests
         scope.RestartHero();
         Assert.NotSame(previousHero, scope.Hero);
         Assert.Same(learned, scope.Skills.GetLearnedSkills(1));
-        Assert.True(system.IsLearned(SkillId.RisingDragon));
-        Assert.False(system.IsAvailable(SkillId.RisingDragon));
+        Assert.True(system.IsLearned(scope.Profile.HeroIds[0], SkillId.RisingDragon));
+        Assert.False(system.IsAvailable(scope.Profile.HeroIds[0], SkillId.RisingDragon));
         Assert.Null(scope.Hero.ActiveSkillId);
         Assert.Null(system.BodyStateType);
         Assert.False(system.IsInvulnerable(1));
-        Assert.False(system.IsAvailable(SkillId.RisingDragon));
+        Assert.False(system.IsAvailable(scope.Profile.HeroIds[0], SkillId.RisingDragon));
         system.SelectSkills(1, GameLogic.SkillTests.SkillTestDefinitions.Wukong());
         Assert.True(system.TryActivate(SkillId.RisingDragon, new Actor()));
         Assert.Equal(SkillId.RisingDragon, scope.Hero.ActiveSkillId);
@@ -166,8 +166,8 @@ public sealed class SkillSystemTests
         Assert.Equal(data, scope.Hero.ActiveSkillId);
         system.SelectSkills(2, new SkillDefinition(SkillId.WaterDemonBurst, typeof(TestSkillState), InputSystem.Skill1));
         Assert.Null(scope.Hero.ActiveSkillId);
-        Assert.True(system.IsLearned(SkillId.WaterClone));
-        Assert.False(system.IsAvailable(SkillId.WaterClone));
+        Assert.True(system.IsLearned(scope.Profile.HeroIds[0], SkillId.WaterClone));
+        Assert.False(system.IsAvailable(scope.Profile.HeroIds[0], SkillId.WaterClone));
         Assert.True(system.TryActivate(SkillId.WaterDemonBurst, actor));
     }
 
@@ -222,7 +222,7 @@ public sealed class SkillSystemTests
     /// <returns>独立的规则测试作用域。</returns>
     private static TestGameScope Ready()
     {
-        var scope = new TestGameScope(2, [(2, 0)], 99999, 20, initializeHero: false);
+        var scope = new TestGameScope([(2, 0)], 99999, 20, initializeHero: false);
         scope.Skills.GetLearnedSkills(2).Add(SkillId.WaterClone);
         scope.Skills.GetLearnedSkills(2).Add(SkillId.WaterDemonBurst);
         scope.Hero.Mp.Value = 200;

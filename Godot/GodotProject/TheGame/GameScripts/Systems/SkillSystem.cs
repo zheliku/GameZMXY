@@ -40,11 +40,12 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     // ---- 业务方法 ----
 
     /// <summary>
-    /// 购买出战英雄的下一级被动；只应用该等级的总加成，满级或不足时不扣费。
+    /// 购买指定英雄的下一级被动；只应用该等级的总加成，满级或不足时不扣费。
     /// </summary>
+    /// <param name="heroId">本次操作的参战英雄编号。</param>
     /// <param name="id">本次要升级的被动。</param>
     /// <returns>购买结果；AlreadyLearned表示已满级。</returns>
-    public SkillLearnResult Upgrade(PassiveId id)
+    public SkillLearnResult Upgrade(int heroId, PassiveId id)
     {
         PassiveConfig definition = this.GetModel<ConfigurationModel>().Tables.TbPassiveConfig.GetOrDefault(id);
         if (definition == null)
@@ -52,8 +53,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
             return SkillLearnResult.Unavailable;
         }
 
-        ProfileModel profile = this.GetModel<ProfileModel>();
-        BindableDictionary<PassiveId, int> levels = this.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId);
+        BindableDictionary<PassiveId, int> levels = this.GetModel<SkillModel>().GetPassiveLevels(heroId);
         int current = levels[id];
         if (current >= definition.Levels.Count)
         {
@@ -70,20 +70,20 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     }
 
     /// <summary>
-    /// 一次性学习当前英雄的主动技能；重复学习、其他角色和余额不足都不扣费。
+    /// 一次性学习指定英雄的主动技能；重复学习、其他角色和余额不足都不扣费。
     /// </summary>
+    /// <param name="heroId">本次操作的参战英雄编号。</param>
     /// <param name="skillId">主动技能定义。</param>
     /// <returns>学习结果，界面据此展示反馈。</returns>
-    public SkillLearnResult Learn(SkillId skillId)
+    public SkillLearnResult Learn(int heroId, SkillId skillId)
     {
-        if (!IsLearnable(skillId))
+        if (!IsLearnable(heroId, skillId))
         {
             return SkillLearnResult.Unavailable;
         }
 
         SkillConfig definition = this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(skillId);
-        ProfileModel profile = this.GetModel<ProfileModel>();
-        BindableList<SkillId> learned = this.GetModel<SkillModel>().GetLearnedSkills(profile.ActiveHeroId);
+        BindableList<SkillId> learned = this.GetModel<SkillModel>().GetLearnedSkills(heroId);
         if (learned.Contains(skillId))
         {
             return SkillLearnResult.AlreadyLearned;
@@ -99,38 +99,41 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     }
 
     /// <summary>
-    /// 查询本档案当前出战英雄是否已学习指定技能。
+    /// 查询本档案指定英雄是否已学习指定技能。
     /// </summary>
+    /// <param name="heroId">本次操作的参战英雄编号。</param>
     /// <param name="skillId">技能定义。</param>
     /// <returns>已学习时为 true。</returns>
-    public bool IsLearned(SkillId skillId)
+    public bool IsLearned(int heroId, SkillId skillId)
     {
         return this.GetModel<SkillModel>()
-        .GetLearnedSkills(this.GetModel<ProfileModel>().ActiveHeroId).Contains(skillId);
+        .GetLearnedSkills(heroId).Contains(skillId);
     }
 
     /// <summary>
-    /// 查询当前出战英雄的配置目录是否允许购买该技能，不要求战斗实体已登记状态。
+    /// 查询指定英雄的配置目录是否允许购买该技能，不要求战斗实体已登记状态。
     /// </summary>
+    /// <param name="heroId">本次操作的参战英雄编号。</param>
     /// <param name="id">技能编号。</param>
     /// <returns>当前英雄的技能配置存在时为真。</returns>
-    public bool IsLearnable(SkillId id)
+    public bool IsLearnable(int heroId, SkillId id)
     {
         SkillConfig definition = this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.GetOrDefault(id);
-        return definition != null && (int)definition.Hero == this.GetModel<ProfileModel>().ActiveHeroId;
+        return definition != null && (int)definition.Hero == heroId;
     }
 
     /// <summary>
-    /// 查询当前战斗英雄实体是否已登记此技能状态。
+    /// 查询指定战斗英雄实体是否已登记此技能状态。
     /// </summary>
+    /// <param name="heroId">本次操作的参战英雄编号。</param>
     /// <param name="id">技能编号。</param>
     /// <returns>当前可用时为真。</returns>
-    public bool IsAvailable(SkillId id)
+    public bool IsAvailable(int heroId, SkillId id)
     {
         HeroModel model = this.GetModel<HeroModel>();
         Tables tables = this.GetModel<ConfigurationModel>().Tables;
         SkillConfig definition = tables.TbSkillConfig.GetOrDefault(id);
-        return model != null && definition != null && (int)definition.Hero == this.GetModel<ProfileModel>().ActiveHeroId &&
+        return model != null && definition != null && (int)definition.Hero == heroId &&
                _skillDefinitions.ContainsKey(id);
     }
 
@@ -159,7 +162,8 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
         {
             return false;
         }
-        if (!IsAvailable(id) || !IsLearned(id))
+        if (!IsAvailable(this.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), id) ||
+            !IsLearned(this.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), id))
         {
             return false;
         }
@@ -212,7 +216,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
         ArgumentNullException.ThrowIfNull(definitions);
         HeroModel model = this.GetModel<HeroModel>() ?? throw new InvalidOperationException("登记技能前必须先创建本局英雄模型。");
         Tables tables = this.GetModel<ConfigurationModel>().Tables;
-        if (heroId != this.GetModel<ProfileModel>().ActiveHeroId || definitions.Length == 0)
+        if (!this.GetModel<ProfileModel>().HeroIds.Contains(heroId) || definitions.Length == 0)
         {
             throw new ArgumentException("技能登记须属于当前英雄，编号、状态和动作绑定须合法且不重复。", nameof(definitions));
         }

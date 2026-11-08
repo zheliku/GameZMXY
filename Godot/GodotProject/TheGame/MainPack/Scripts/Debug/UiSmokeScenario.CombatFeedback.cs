@@ -187,14 +187,14 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() => !GF.Base.IsGamePaused, "黄球回归的开启停顿未结束", 4000);
         GF.Fsm.GetSystem<HeroSystem>().AdvanceWs(2);
         int musou = GF.Fsm.GetModel<HeroModel>().Ws.Value;
-        int experience = flow.GetModel<ProfileModel>().TotalExperience;
+        int experience = flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience;
         SpawnOrb(level, hero.GlobalPosition, new(LootKind.Musou, ConfigSystem.Instance.Tables.TbBattleConfig.Data.MusouPerOrb));
         await WaitUntilAsync(() => owned.Count == 0, "黄球没有接触英雄", 10000);
-        Check(GF.Fsm.GetModel<HeroModel>().Ws.Value == musou + 5 && flow.GetModel<ProfileModel>().TotalExperience == experience,
+        Check(GF.Fsm.GetModel<HeroModel>().Ws.Value == musou + 5 && flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience == experience,
             "开启期间的黄球没有补充5无双，或错误增加经验");
         hero._PhysicsProcess(battle.WsMax / battle.WsDrainPerSecond + 1f);
 
-        _extraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
+        _extraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience);
         // 两个表现节点借用同一 HeroModel，不能通过击杀额外节点来伪造独立生命。
         // 用明显不同的位置验证球的飞行目标，不改动本关生命状态。
         _extraHero.GlobalPosition = hero.GlobalPosition + new Vector2(400, 0);
@@ -346,7 +346,7 @@ public sealed partial class UiSmokeScenario
                 probe.QueueFree();
             }
         }
-        _extraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().TotalExperience);
+        _extraHero = await ShowHeroAsync(flow, flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience);
         AbstractHeroEntity hero = _extraHero;
         try
         {

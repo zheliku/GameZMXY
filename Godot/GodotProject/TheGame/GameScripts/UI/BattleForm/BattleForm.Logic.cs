@@ -145,7 +145,7 @@ public partial class BattleForm : IController
         // 先登记本次引用再订阅，部分订阅失败时也能完整退订。
         _formData = data;
         _comboModel = levelModel;
-        _status.SetHero(progression.ActiveHeroId);
+        _status.SetHero(_formData.Hero.HeroId);
         try
         {
             this.GetModel<HeroModel>().Hp.Register(RefreshResources);
@@ -155,8 +155,8 @@ public partial class BattleForm : IController
             this.GetModel<HeroModel>().Ws.Register(RefreshMusou);
             this.GetModel<HeroModel>().MaxWs.Register(RefreshMusou);
             this.GetModel<HeroModel>().WsActive.Register(RefreshMusouActive);
-            progression.Progress.RegisterWithInitValue(RefreshProgression);
-            this.GetModel<SkillModel>().GetLearnedSkills(progression.ActiveHeroId).RegisterWithInitValue(RefreshSkills);
+            progression.GetProgress(_formData.Hero.HeroId).RegisterWithInitValue(RefreshProgression);
+            this.GetModel<SkillModel>().GetLearnedSkills(_formData.Hero.HeroId).RegisterWithInitValue(RefreshSkills);
             levelModel.TravelAvailable.RegisterWithInitValue(RefreshTravel);
             levelModel.ComboCount.RegisterWithInitValue(RefreshCombo);
             data.ViewController.FeaturedOpponentChanged += RefreshEncounter;
@@ -322,8 +322,8 @@ public partial class BattleForm : IController
             this.GetModel<HeroModel>().Ws.UnRegister(RefreshMusou);
             this.GetModel<HeroModel>().MaxWs.UnRegister(RefreshMusou);
             this.GetModel<HeroModel>().WsActive.UnRegister(RefreshMusouActive);
-            this.GetModel<ProfileModel>().Progress.UnRegister(RefreshProgression);
-            this.GetModel<SkillModel>().GetLearnedSkills(this.GetModel<ProfileModel>().ActiveHeroId).UnRegister(RefreshSkills);
+            this.GetModel<ProfileModel>().GetProgress(data.Hero.HeroId).UnRegister(RefreshProgression);
+            this.GetModel<SkillModel>().GetLearnedSkills(data.Hero.HeroId).UnRegister(RefreshSkills);
             this.GetModel<LevelModel>().TravelAvailable.UnRegister(RefreshTravel);
             data.ViewController.FeaturedOpponentChanged -= RefreshEncounter;
         }
@@ -363,7 +363,7 @@ public partial class BattleForm : IController
     private void RefreshSkills(IReadOnlyList<SkillId> learned)
     {
         _menu.SetSkills(
-        this.GetModel<ConfigurationModel>().GetActive((SkillHero)this.GetModel<ProfileModel>().ActiveHeroId), learned);
+        this.GetModel<ConfigurationModel>().GetActive((SkillHero)_formData.Hero.HeroId), learned);
     }
 
     /// <summary>

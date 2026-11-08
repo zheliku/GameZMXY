@@ -20,13 +20,13 @@ public sealed class BossEquipmentTests
     [Fact]
     public void Ring_StaysEquippedAcrossOtherSlotsAndPersistsDirectProbabilities()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         EquipmentSystem equipment = scope.GetSystem<EquipmentSystem>();
         EquipmentData ring = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => .5f);
         Assert.Equal((15, 4, .03f, .03f),
             (ring.Attributes.Power, ring.Attributes.Def, ring.Attributes.Crit, ring.Attributes.Miss));
         Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
-        Assert.True(equipment.TryEquip(ring.InstanceId));
+        Assert.True(equipment.TryEquip(scope.Profile.HeroIds[0], ring.InstanceId));
         Assert.False(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
         Assert.Equal((25, 6, .03f, .03f),
             (scope.Hero.Power.Value, scope.Hero.Def.Value, scope.Hero.Crit.Value, scope.Hero.Miss.Value));
@@ -34,26 +34,26 @@ public sealed class BossEquipmentTests
         {
             EquipmentData item = equipment.Roll(Guid.NewGuid(), id, () => 0);
             Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(item));
-            Assert.True(equipment.TryEquip(item.InstanceId));
-            Assert.Same(ring, scope.Profile.Accessory);
+            Assert.True(equipment.TryEquip(scope.Profile.HeroIds[0], item.InstanceId));
+            Assert.Same(ring, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Accessory);
             Assert.Equal(.03f, scope.Hero.Crit.Value);
         }
-        scope.GetSystem<ProfileSystem>().AddExperience(140);
-        Assert.Same(ring, scope.Profile.Accessory);
+        scope.GetSystem<ProfileSystem>().AddExperience(scope.Profile.HeroIds[0], 140);
+        Assert.Same(ring, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Accessory);
         Assert.Equal(.03f, scope.Hero.Miss.Value);
         GameData data = JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(scope.CaptureSaveData()));
         Assert.Equal(ring.InstanceId, data.Heroes[0].AccessoryInstanceId);
         var restored = TestGameScope.FromSaveData(data, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 25);
-        Assert.Equal(ring.InstanceId, restored.Profile.Accessory.InstanceId);
+        Assert.Equal(ring.InstanceId, restored.Profile.GetSlots(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Accessory.InstanceId);
         Assert.Equal((scope.Hero.Power.Value, scope.Hero.Def.Value, .03f, .03f),
             (restored.Hero.Power.Value, restored.Hero.Def.Value, restored.Hero.Crit.Value, restored.Hero.Miss.Value));
         restored.RestartHero();
         Assert.Equal(.03f, restored.Hero.Crit.Value);
-        Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(EquipmentSlot.Weapon));
-        Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(EquipmentSlot.Armor));
-        Assert.Equal(ring.InstanceId, restored.Profile.Accessory.InstanceId);
-        Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(EquipmentSlot.Accessory));
-        Assert.Null(restored.Profile.Accessory);
+        Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(scope.Profile.HeroIds[0], EquipmentSlot.Weapon));
+        Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(scope.Profile.HeroIds[0], EquipmentSlot.Armor));
+        Assert.Equal(ring.InstanceId, restored.Profile.GetSlots(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Accessory.InstanceId);
+        Assert.True(restored.GetSystem<EquipmentSystem>().TryUnequip(scope.Profile.HeroIds[0], EquipmentSlot.Accessory));
+        Assert.Null(restored.Profile.GetSlots(restored.Profile.HeroOf(PlayerSlot.P1)).Value.Accessory);
         Assert.Equal((0f, 0f), (restored.Hero.Crit.Value, restored.Hero.Miss.Value));
     }
 
@@ -63,16 +63,16 @@ public sealed class BossEquipmentTests
     [Fact]
     public void UniversalAccessory_DoesNotRequireAPlayableHeroOrChangeOtherOwners()
     {
-        var scope = new TestGameScope(2, [(2, 0)], 0, 25, initializeHero: false);
+        var scope = new TestGameScope([(2, 0)], 0, 25, initializeHero: false);
         EquipmentSystem equipment = scope.GetSystem<EquipmentSystem>();
         EquipmentData ring = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
         EquipmentData armor = equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendApeArmor, () => 0);
         Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
         Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(armor));
-        Assert.True(equipment.TryEquip(ring.InstanceId));
-        Assert.False(equipment.TryEquip(armor.InstanceId));
-        Assert.Same(ring, scope.Profile.Accessory);
-        Assert.Null(scope.Profile.Armor);
+        Assert.True(equipment.TryEquip(scope.Profile.HeroIds[0], ring.InstanceId));
+        Assert.False(equipment.TryEquip(scope.Profile.HeroIds[0], armor.InstanceId));
+        Assert.Same(ring, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Accessory);
+        Assert.Null(scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Armor);
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public sealed class BossEquipmentTests
     [Fact]
     public void Save_RejectsAlteredProbabilitiesAndInvalidAccessoryOwnership()
     {
-        var scope = new TestGameScope(1, [(1, 0)], 0, 25);
+        var scope = new TestGameScope([(1, 0)], 0, 25);
         EquipmentData ring = scope.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
         Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(ring));
         var utility = new SaveDataUtility();

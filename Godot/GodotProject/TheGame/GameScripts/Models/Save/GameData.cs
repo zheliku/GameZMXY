@@ -8,7 +8,7 @@ using GodotGameFramework.Archive;
 using Newtonsoft.Json;
 
 /// <summary>
-/// 一格存档的完整数据：版本、出战英雄、经验、灵魂、装备实例和已学技能；文件编号继承自框架。
+/// 一格存档的完整数据：版本、有序阵容、经验、灵魂、装备实例和已学技能；文件编号继承自框架。
 /// </summary>
 /// <remarks>GGF 直接写盘；关卡回滚也使用本类型的独立快照。与运行时档案的转换集中在 SaveDataUtility。</remarks>
 [Serializable]
@@ -17,7 +17,7 @@ public class GameData : ArchiveData
     /// <summary>
     /// 当前存档格式；格式改变时递增，不保留迁移分支。
     /// </summary>
-    public const int CurrentVersion = 12;
+    public const int CurrentVersion = 13;
 
     /// <summary>
     /// 必需的格式版本；框架创建的新空槽使用当前版本。
@@ -26,13 +26,7 @@ public class GameData : ArchiveData
     public int SaveVersion = CurrentVersion;
 
     /// <summary>
-    /// 当前出战英雄的 HeroConfig.Id；0 仅用于框架尚未认领的新空槽。
-    /// </summary>
-    [JsonProperty(Required = Required.Always)]
-    public int ActiveHeroId;
-
-    /// <summary>
-    /// 拥有英雄的配置 ID、累计经验与学习记录；等级和战斗属性读档时重新计算。
+    /// 参战英雄的配置 ID、累计经验与学习记录；顺序即玩家席位，下标 0 为 P1，下标 1 为 P2。
     /// </summary>
     [JsonProperty(Required = Required.Always)]
     public List<HeroSaveData> Heroes = new();

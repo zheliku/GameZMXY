@@ -22,7 +22,7 @@ public sealed class QueryTests
     {
         TestGameScope scope = Ready();
         EquipmentData worn = AddItem(scope, EquipmentId.RoughPilgrimStaff);
-        Assert.True(scope.SendCommand(new EquipEquipmentCommand(worn.InstanceId)));
+        Assert.True(scope.SendCommand(new EquipEquipmentCommand(1, worn.InstanceId)));
         for (int i = 0; i < 75; i++)
         {
             AddItem(scope, i % 3 == 0 ? EquipmentId.CommonPineStaff : EquipmentId.RoughPilgrimStaff);
@@ -38,7 +38,7 @@ public sealed class QueryTests
         int soul = scope.Profile.Soul.Value;
         Assert.Equal(rough.Count, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
         Assert.Equal(soul + rough.Price, scope.Profile.Soul.Value);
-        Assert.Same(worn, scope.Profile.Weapon);
+        Assert.Same(worn, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
         Assert.Equal(retained, scope.Profile.EquipmentDatas);
         Assert.Equal((0, 0L), scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Rough)));
         Assert.Equal(common, scope.SendQuery(new EquipmentSaleSummaryQuery(EquipmentQuality.Common)));
@@ -113,9 +113,9 @@ public sealed class QueryTests
         Assert.Equal(0, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
         Assert.Equal(2, scope.Profile.EquipmentDatas.Count);
         Assert.Equal(int.MaxValue - 15, scope.Profile.Soul.Value);
-        Assert.True(scope.SendCommand(new EquipEquipmentCommand(first.InstanceId)));
+        Assert.True(scope.SendCommand(new EquipEquipmentCommand(1, first.InstanceId)));
         Assert.Equal(1, scope.SendCommand(new SellEquipmentByQualityCommand(EquipmentQuality.Rough)));
-        Assert.Same(first, scope.Profile.Weapon);
+        Assert.Same(first, scope.Profile.GetSlots(scope.Profile.HeroOf(PlayerSlot.P1)).Value.Weapon);
         Assert.Equal(int.MaxValue - 5, scope.Profile.Soul.Value);
         Assert.Equal((2, 20L), summary);
     }
@@ -143,9 +143,9 @@ public sealed class QueryTests
     /// <returns>已开始的独立测试作用域。</returns>
     private static TestGameScope Ready(int soul = 0)
     {
-        var scope = new TestGameScope(1, [(1, 0)], soul, 75);
+        var scope = new TestGameScope([(1, 0)], soul, 75);
         scope.GetSystem<LevelSystem>().Prepare(1);
-        scope.GetSystem<LevelSystem>().StartSession(1);
+        scope.GetSystem<LevelSystem>().StartSession([1]);
         return scope;
     }
 

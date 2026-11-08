@@ -28,6 +28,7 @@ public sealed class HeroSystem : AbstractSystem
     private static readonly AttributeSourceId s_accessorySource = new("EquipmentAccessory", 0); // 当前饰品的来源键。
     private static readonly AttributeSourceId s_treasureSource = new("EquipmentTreasure", 0); // 当前法宝的来源键。
     private static readonly AttributeSourceId s_passiveSource = new("PassiveSkills", 0); // 当前英雄的五项被动总加成。
+    private int _subscribedHeroId; // 本周期实际订阅成长、穿戴和被动的英雄编号。
     private const double TickTolerance = 1e-5; // 秒数累计的浮点点数容差。
     private const double RecoveryInterval = 25d / 24d; // 官方tcount++ >= 24每25个源帧执行一次恢复。
     private const int HurtProtectionHitCount = 5; // 官方BaseAddEffect在第五次有效命中后开启保护。
@@ -104,14 +105,18 @@ public sealed class HeroSystem : AbstractSystem
     {
         ProfileModel profile = this.GetModel<ProfileModel>();
         Tables tables = this.GetModel<ConfigurationModel>().Tables;
-        Reset(profile.ActiveHeroId, profile.Level,
-            tables.TbHeroGrowthConfig.Get(profile.ActiveHeroId).Levels[profile.Level - 1].BaseAttributes,
-            profile.Weapon, profile.Armor, profile.Accessory, profile.Treasure);
+        int heroId = profile.HeroOf(PlayerSlot.P1);
+        _subscribedHeroId = heroId;
+        HeroProgressionState progress = profile.GetProgress(heroId).Value;
+        EquippedItems slots = profile.GetSlots(heroId).Value;
+        Reset(heroId, progress.Level,
+            tables.TbHeroGrowthConfig.Get(heroId).Levels[progress.Level - 1].BaseAttributes,
+            slots.Weapon, slots.Armor, slots.Accessory, slots.Treasure);
         BattleConfig battle = tables.TbBattleConfig.Data;
         ResetWs(battle.WsMax, battle.WsDecayPerSecond, battle.WsDrainPerSecond);
-        profile.Progress.Register(OnProgressChanged, priority: 100);
-        profile.Slots.Register(OnEquipmentChanged, priority: 100);
-        this.GetModel<SkillModel>().GetPassiveLevels(profile.ActiveHeroId).Register(OnPassiveLevelsChanged, priority: 100);
+        profile.GetProgress(heroId).Register(OnProgressChanged, priority: 100);
+        profile.GetSlots(heroId).Register(OnEquipmentChanged, priority: 100);
+        this.GetModel<SkillModel>().GetPassiveLevels(heroId).Register(OnPassiveLevelsChanged, priority: 100);
     }
 
     /// <summary>
@@ -119,9 +124,9 @@ public sealed class HeroSystem : AbstractSystem
     /// </summary>
     protected override void OnDeinit()
     {
-        this.GetModel<ProfileModel>().Progress.UnRegister(OnProgressChanged);
-        this.GetModel<ProfileModel>().Slots.UnRegister(OnEquipmentChanged);
-        this.GetModel<SkillModel>().GetPassiveLevels(Hero.HeroId).UnRegister(OnPassiveLevelsChanged);
+        this.GetModel<ProfileModel>().GetProgress(_subscribedHeroId).UnRegister(OnProgressChanged);
+        this.GetModel<ProfileModel>().GetSlots(_subscribedHeroId).UnRegister(OnEquipmentChanged);
+        this.GetModel<SkillModel>().GetPassiveLevels(_subscribedHeroId).UnRegister(OnPassiveLevelsChanged);
         ClearWs();
         this.GetSystem<HeroStatusSystem>().ClearAll();
         ClearHurtProtection();
@@ -369,9 +374,9 @@ public sealed class HeroSystem : AbstractSystem
         }
 
         HeroGrowthLevel row = this.GetModel<ConfigurationModel>().Tables.TbHeroGrowthConfig.Get(Hero.HeroId).Levels[progress.Level - 1];
-        ProfileModel profile = this.GetModel<ProfileModel>();
-        SetGrowth(row.BaseAttributes, Hero.HeroId, progress.Level, profile.Weapon, profile.Armor,
-            refill: progress.Level > Hero.Level.Value, profile.Accessory, profile.Treasure);
+        EquippedItems slots = this.GetModel<ProfileModel>().GetSlots(Hero.HeroId).Value;
+        SetGrowth(row.BaseAttributes, Hero.HeroId, progress.Level, slots.Weapon, slots.Armor,
+            refill: progress.Level > Hero.Level.Value, slots.Accessory, slots.Treasure);
     }
 
     /// <summary>

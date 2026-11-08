@@ -62,7 +62,7 @@ public sealed partial class UiSmokeScenario
             Sprite2D previewSprite = form.GetNode<Sprite2D>("Window/CharacterPanel/m_Preview/" + (armor ? "Body" : "Weapon"));
             EquipmentCell slot = form.GetNode<EquipmentCell>("Window/CharacterPanel/EquipmentSlots/" + (armor ? "m_ArmorSlot" : "m_WeaponSlot"));
             ClickBagEquipment(form, flow, definition.Id);
-            EquipmentData equipped = armor ? flow.GetModel<ProfileModel>().Armor : flow.GetModel<ProfileModel>().Weapon;
+            EquipmentData equipped = armor ? flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor : flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Weapon;
             Check(equipped?.EquipmentId == definition.Id && expected != null &&
                 actorSprite.Texture == expected && previewSprite.Texture == expectedPreview &&
                 actorSprite.Hframes == 6 && previewSprite.Hframes == 6,
@@ -84,7 +84,7 @@ public sealed partial class UiSmokeScenario
             slot._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
             var baseTexture = appearance.Get(armor ? "_baseBody" : "_baseWeapon").AsGodotObject() as Texture2D;
             var previewBase = appearance.PreviewAppearance.Get(armor ? "_baseBody" : "_baseWeapon").AsGodotObject() as Texture2D;
-            Check((armor ? flow.GetModel<ProfileModel>().Armor : flow.GetModel<ProfileModel>().Weapon) == null &&
+            Check((armor ? flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Armor : flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.Weapon) == null &&
                 actorSprite.Texture == baseTexture && previewSprite.Texture == previewBase,
                 $"{definition.NameCn} 卸下后保留了穿戴外观");
             count++;

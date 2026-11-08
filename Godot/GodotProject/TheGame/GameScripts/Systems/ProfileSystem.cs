@@ -74,18 +74,20 @@ public sealed class ProfileSystem : AbstractSystem
     }
 
     /// <summary>
-    /// 奖励出战英雄经验，按共享曲线求值后一次提交完整成长进度。
+    /// 奖励指定英雄经验，按共享曲线求值后一次提交完整成长进度。
     /// </summary>
+    /// <param name="heroId">接受奖励的参战英雄编号。</param>
     /// <param name="amount">非负经验。</param>
     /// <returns>提升等级数。</returns>
-    public int AddExperience(int amount)
+    public int AddExperience(int heroId, int amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
         ProfileModel profile = this.GetModel<ProfileModel>();
         ExperienceCurveUtility curve = this.GetUtility<ExperienceCurveUtility>();
-        int previousLevel = profile.Level;
-        profile.Progress.Value = curve.GetProgress(curve.Add(profile.TotalExperience, amount));
-        return profile.Level - previousLevel;
+        BindableProperty<HeroProgressionState> progress = profile.GetProgress(heroId);
+        int previousLevel = progress.Value.Level;
+        progress.Value = curve.GetProgress(curve.Add(progress.Value.TotalExperience, amount));
+        return progress.Value.Level - previousLevel;
     }
 
     /// <summary>
@@ -184,7 +186,8 @@ public sealed class ProfileSystem : AbstractSystem
             this.GetModel<ConfigurationModel>().Tables.TbPassiveConfig);
         Tables tables = this.GetModel<ConfigurationModel>().Tables;
         SaveDataUtility.ValidateLevelProgress(data, tables.TbLevelConfig);
-        if (data.ActiveHeroId != profile.ActiveHeroId || data.Heroes.Count != profile.HeroIds.Count ||
+        if (!data.Heroes.Select(hero => hero.HeroId).SequenceEqual(profile.HeroIds) ||
+            data.Heroes.Count != profile.HeroIds.Count ||
             data.Heroes.Select(x => x.HeroId).Distinct().Count() != data.Heroes.Count ||
             data.Heroes.Any(x => !profile.HeroIds.Contains(x.HeroId) || x.TotalExperience < 0) || data.Soul < 0)
         {
