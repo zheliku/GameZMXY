@@ -14,6 +14,69 @@ namespace GameLogic.Profile.Tests;
 public sealed class FreezeTests
 {
     /// <summary>
+    /// 两人的冻结和中毒独立计时；死亡或 Reset 只清本人效果和保护，死亡同时清本人无双。
+    /// </summary>
+    /// <param name="heroId">死亡或重置的英雄。</param>
+    /// <param name="otherId">效果继续保留的另一英雄。</param>
+    /// <param name="reset">是否用重置替代死亡触发个人清理。</param>
+    [Theory]
+    [InlineData(1, 2, false)]
+    [InlineData(2, 1, false)]
+    [InlineData(1, 2, true)]
+    [InlineData(2, 1, true)]
+    public void TwoHeroes_AdvanceAndClearOnlyPersonalEffects(int heroId, int otherId, bool reset)
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 0, 20);
+        HeroSystem heroes = scope.GetSystem<HeroSystem>();
+        HeroStatusSystem effects = scope.GetSystem<HeroStatusSystem>();
+        HeroState hero = scope.GetModel<HeroModel>().GetState(heroId);
+        HeroState other = scope.GetModel<HeroModel>().GetState(otherId);
+        AttackConfig poison = TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2));
+        effects.ApplyFreeze(heroId, 2);
+        effects.ApplyFreeze(otherId, 5);
+        effects.ApplyPoison(heroId, poison);
+        effects.ApplyPoison(otherId, poison);
+        Assert.NotSame(hero.GetStatusEffect(StatusEffectKind.Poison), other.GetStatusEffect(StatusEffectKind.Poison));
+        effects.AdvanceFreeze(heroId, 1);
+        Assert.Equal(0, effects.AdvancePoison(heroId, .75f));
+        Assert.Equal(0, effects.AdvancePoison(otherId, .25f));
+        Assert.Equal(20, effects.AdvancePoison(heroId, .25f));
+        Assert.Equal(1, hero.GetStatusEffect(StatusEffectKind.Freeze).RemainingSeconds);
+        Assert.Equal(5, other.GetStatusEffect(StatusEffectKind.Freeze).RemainingSeconds);
+        Assert.Equal(10, other.GetStatusEffect(StatusEffectKind.Poison).RemainingTicks);
+        Assert.Equal(.75, other.GetStatusEffect(StatusEffectKind.Poison).TickLeftSeconds);
+        heroes.AddWs(heroId, 20);
+        heroes.AddWs(otherId, 30);
+        for (int hit = 0; hit < 5; hit++)
+        {
+            heroes.RecordHurt(heroId);
+            heroes.RecordHurt(otherId);
+        }
+        int otherHp = other.Hp.Value;
+
+        if (reset)
+        {
+            heroes.Reset(heroId, 1, TestTables.Tables.TbHeroGrowthConfig.Get(heroId).Levels[0].BaseAttributes);
+        }
+        else
+        {
+            Assert.True(heroes.Damage(heroId, int.MaxValue));
+            Assert.Equal(0, hero.Ws.Value);
+            Assert.False(hero.WsActive.Value);
+        }
+
+        Assert.False(effects.IsFrozen(heroId) || effects.IsPoisoned(heroId));
+        Assert.Equal(0, hero.HurtInvulnerabilitySeconds);
+        Assert.True(effects.IsFrozen(otherId) && effects.IsPoisoned(otherId));
+        Assert.Equal((otherHp, 30, 2d), (other.Hp.Value, other.Ws.Value, other.HurtInvulnerabilitySeconds));
+        Assert.Equal(5, other.GetStatusEffect(StatusEffectKind.Freeze).RemainingSeconds);
+        Assert.Equal(20, effects.AdvancePoison(otherId, .75f));
+        Assert.Equal(9, other.GetStatusEffect(StatusEffectKind.Poison).RemainingTicks);
+        effects.AdvanceFreeze(otherId, 5);
+        Assert.False(effects.IsFrozen(otherId));
+    }
+
+    /// <summary>
     /// 两档官方持续时间在不同物理频率下按秒结束，不受渲染帧数影响。
     /// </summary>
     /// <param name="frequency">每秒游戏步数。</param>

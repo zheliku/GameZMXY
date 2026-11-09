@@ -2,6 +2,61 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人B3：战斗规则证据与阶段A～B回归（2026-11-09）
+
+用户接受 B2 后授权 B3，按 B3-1 → B3-2 完成双人战斗规则证据与阶段 A～B 完整回归。**只修改测试和进度/验证文档，生产源码与资源无变化**。新增 17 个规则案例，当前 Profile 320、Battle 195、Level 19。仍只装配一名实战英雄，存档保持 v14，无持久结构变化；本批完成后停在 B3，等待审查，不进入 C1。
+
+依据为计划第一、二、五部分 B3 与第九部分，规范第 00/10/30 章的普通状态所有权、订退生命周期、中文注释/格式和身体状态职责。复用 TestGameScope 的双 HeroState 与既有正式业务系统；Battle 的最小 HeroTestScope 增加两人装配选项，没有新增 scope、生产入口或第三套状态。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 开工基线 | HEAD 为 **e3440ca**，工作区干净。`dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0、0 错误、5 条既有框架警告；`dotnet test Tests/ProfileTests --no-restore -v quiet`、`dotnet test Tests/BattleTests --no-restore -v quiet`、`dotnet test Tests/LevelTests --no-restore -v quiet` 分别 **305/305、193/193、19/19**，均退出 0。日志位于 `.godot/validation/coop_b3_20261109/baseline_*.log` |
+| B3-1 完成 | 同样四条命令全部退出 0，游戏构建 **0 错误、0 警告（增量）**，规则 **320/320、195/195、19/19**。日志 `b3_1_build.log`、`b3_1_profile.log`、`b3_1_battle.log`、`b3_1_level.log`。两个测试工程也完成编译、0 错误；本批没有中间编译失败或失败测试 |
+| B3-2 最终构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：**退出 0，0 错误、0 警告（增量）**，日志 `b3_2_build.log`；开工重编译时的 5 条既有框架弃用警告未处理 |
+| B3-2 档案规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：**退出 0，320/320**，失败 0、跳过 0，较 B2 增加 **15** 例；`b3_2_profile.log` |
+| B3-2 战斗规则 | `dotnet test Tests/BattleTests --no-restore -v quiet`：**退出 0，195/195**，失败 0、跳过 0，较 B2 增加 **2** 例；`b3_2_battle.log` |
+| B3-2 关卡规则 | `dotnet test Tests/LevelTests --no-restore -v quiet`：**退出 0，19/19**，失败 0、跳过 0；`b3_2_level.log`。原有测试与断言保留，NU1900、CS8632/CS0649 既有警告保留 |
+| Godot 扫描/构建 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_b3_scan_20261109 --headless --editor --build-solutions --quit --no-window`：**退出 0**。保留既有 ComponentInsoector 的 RefCounted/free 退出诊断 |
+| 引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出 0，2283 条序列化路径、389 个 UID**，与 B2 相同；`b3_2_references.log` |
+| 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_b3_frontend_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend`：**退出 0，完整 SMOKE PASS**。两英雄分别建档/选角、进关、学技、保存返回、重读、加载取消和部分注册清理通过；坏文件、重复注册和旧作用域拒绝为预期注入。退出保留 **5 个 ObjectDB 实例、1 个资源占用**诊断 |
+| 完整 UI | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_b3_ui_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui`：**退出 0，完整 SMOKE PASS**。技能/无双、拾取/出售、15 件穿戴、窗口与实体池复用、60/120Hz 坡地/平台、死亡/检查点、存档重入、备份恢复及加载取消/失败清理通过。坏文件与 HUD 打开失败为预期注入；退出保留 **20 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、138 个 ObjectDB 实例、10 个资源占用**，以及既有 CanvasItem/GL 明细。无帧数强制退出参数，仍使用原 runner 的 900 秒超时，由完整烟测完成后退出 |
+| 格式与边界 | `dotnet format whitespace <csproj> --no-restore --include <本批 C# 绝对路径清单> --verify-no-changes`：ProfileTests **5 份**、BattleTests **2 份**均退出 0，仅工作区既有加载警告。`git diff --check`、`git diff --cached --check` 均退出 0；7 份 C# 为 UTF-8/CRLF，无行尾空白。HEAD 保持 e3440ca，索引为空，11 份增量均未暂存；生产源码/资源、Framework/addons/Luban、生成物、源表、bytes、场景无差异 |
+
+B3-1 七项验收与实际证据：
+
+| 计划要求 | 案例与断言 |
+| --- | --- |
+| ① 两人装备、被动、Buff 隔离；RemoveSource 只影响本人 | `TwoHeroes_KeepEquipmentPassivesAndBuffSourcesIndependent` **2 例**，交换操作英雄；通过正式拾取/穿卸和 Upgrade 为双方建立同类装备、不同被动/同名 Buff 来源，检查本人的实际暴击、攻击及生命上限变化，移除 Buff/卸装后对方完整战斗属性、生命魔法与来源保持原样 |
+| ② 两人的冻结、中毒、受击保护、恢复节拍隔离；死亡只清本人 | `TwoHeroes_AdvanceAndClearOnlyPersonalEffects` **4 例**：双方各自推进冻结和毒跳相位，死亡/Reset × 两个英雄方向，其他人的冻结剩时、毒跳数/相位、生命、受击保护、无双蓄量保持；死亡者效果/保护/无双清零。`TwoHeroes_KeepHitChainsAndProtectionClocksIndependent` **2 例**核对五次保护、连击断链与两个独立时钟；`TwoHeroes_KeepRecoveryValuesAndPhasesIndependent` **2 例**核对不同恢复数值、25/24 秒节拍、相位和个人 RemoveSource |
+| ③ 无双蓄积、开启、衰减、消耗隔离 | Battle 的 `TwoHeroes_KeepGainActivationAndDrainIndependent` **2 例**：交换主要操作英雄，真实 RecordHit 记账、各自自然扣点小数相位、满值开启、未满拒绝、双方同时开启的小数耗点相位、黄球恢复和耗尽；另一人的状态与相位保持 |
+| ④ 同时施放不覆盖，各扣本人蓝量 | `TwoHeroes_CastSpendCancelAndClearIndependently` **2 例**，两人真实登记/学习不同技能后同时激活，核对各自 ActiveSkillId、普通/延迟耗蓝、错误技能延迟扣费拒绝、取消/无敌及另一人再次起手的费用 |
+| ⑤ 一人回池清登记后另一人仍可施放 | 同上 **2 例**调用与 AbstractHeroEntity.OnHide 相同的正式 `ClearSkillDefinitions(heroId)`，清理者正在施放且拥有无敌区间，核对本人登记/施放/无敌清除，另一人收招后可再次激活并只扣本人蓝量。B2 的原 `RegistrationAndClear_OnlyAffectRequestedHero` 保留。完整 UI 另验证真实单人实体池回收/复用；生产 OnHide 仍直接传 HeroId。本批不生成第二个实战实体，不把纯规则测试称为双实体实战 |
+| ⑥ 重建后旧状态不被订阅更新，逐人对称退订 | `TwoHeroes_RestartDetachesAllOldCallbacksAndStates` **1 例**，连续重建两轮，每人核对三个旧委托已从成长/穿戴/被动的真实 Snapshot 中移除，新委托各注册 1 次；旧容器清空、旧状态不变；随后正式经验/换装/被动操作只更新新状态 |
+| ⑦ 非阵容英雄登记拒绝 | `Registration_RejectsHeroOutsideRosterWithoutMutation` **2 例**，使用配置合法但阵容外的另一英雄，确认 ArgumentException、原登记/正在施放的编号与蓝量不变、没有创建额外 HeroState |
+
+两个角色均作为被操作方和被保留方，而不是只验证 P1 修改。测试使用真实成长、被动、装备、技能配置与正式业务；Battle 无双仍复用已有零基础值夹具，只扩展到两份状态，不复制规则实现。
+
+实际接口变化：
+
+| 交付前 | 交付后 |
+| --- | --- |
+| 测试夹具 `HeroTestScope()` | `HeroTestScope(bool twoHeroes = false)`；默认行为保持，选项只在测试中创建两份 HeroState/技能书并共用正式系统 |
+| TestGameScope、HeroModel、HeroState、HeroSystem、HeroStatusSystem、IHeroBody、SkillSystem | **本批全部无接口/源码变化**；TestGameScope 已能按阵容创建两份状态，直接复用 |
+
+本批没有发现需要修改生产代码或改变计划的缺陷。B1 的逐人闭包/死亡 Reset 个人效果清理、B2 的个人登记清理均由新增案例检查。针对旧状态不变这一证据的局限，直接在现有测试内反射读取绑定 Snapshot：旧闭包会重新取 Architecture 当前模型，仅比较旧 HeroState 无法发现其泄漏；因此同时检查实际旧委托消失、新委托唯一。没有为观测增加生产成员、事件或测试辅助类型。
+
+实际文件清单：**11 份修改（7 份测试 C#、4 份文档），无新增、无删除正式文件**。
+
+| 所属目录 | 修改文件 |
+| --- | --- |
+| `Tests/ProfileTests/` | `PassiveSkillTests.cs`、`FreezeTests.cs`、`HurtProtectionTests.cs`、`RecoveryTests.cs`、`SkillSystemTests.cs` |
+| `Tests/BattleTests/` | `HeroTestScope.cs`、`MusouTests.cs` |
+| `Docs/` | `CoopImplementationPlan.md`、`ProjectTour.md`、`Validation.md`、`WorkingNotes.md` |
+
+生产代码、生成物、框架、源表、场景和存档版本均未变化。阶段 A 的个人档案/钱包/背包、v14 双人往返和原子恢复案例全部重跑；完整前端/UI 验证当前单人玩法、数值、存档往返与 B2 基线一致。双人规则证据不等于双人实战，第二实体、席位输入和双 HUD 仍待后续批次。正常数值全关人工实战本批未执行。烟测继续使用既有 runner 的案例专属 APPDATA/Validation 存档，不覆盖正式玩家存档；未执行 Git 写操作。
+
+C1 须待用户接受 B3 并明确授权后开始，其范围为实体席位/出生参数，不提前实现 C2 的致死归属或 C4 的第二套键位。当前范围内无未完成项。
+
 ## 双人B2：技能登记与施放按英雄（2026-11-09）
 
 用户授权在 B1 基础上完成 B2。SkillSystem 的技能登记改为 HeroId → 技能表，SelectSkills 只替换本人，AbstractHeroEntity.OnHide 只撤销本人的登记、施放和无敌区间；系统退出保留无参全局清理。仍只生成 P1，输入/HUD、技能行为、学技和存档格式 v14 保持原状；**本批完成后停在 B2，不进入 B3**。

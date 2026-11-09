@@ -1,6 +1,6 @@
 # 双人扩展实施计划
 
-状态：**阶段 A（A1～A3）已完成并经架构审查通过（提交 d2c3d13、c2f74db、fe0bdbc）；B1 已交付；用户授权继续 B2，B2 已完成并通过验证，当前停在 B2 等待审查，不进入 B3。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局 `HeroModel` 已按 HeroId 持有 `HeroState`，仍只生成 P1，保持一套输入与 HUD。`PlayerSlot` 用于席位换算，当前只装配 P1。阶段 A 审查结论与对后续计划的修正见第九部分。旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
+状态：**阶段 A（A1～A3）已完成并经架构审查通过（提交 d2c3d13、c2f74db、fe0bdbc）；B1/B2 已交付（53e9b11、e3440ca）；用户已授权 B3，B3-1/B3-2 已完成并通过验证，当前停在 B3 待审，不进入 C1。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局 `HeroModel` 已按 HeroId 持有 `HeroState`，仍只生成 P1，保持一套输入与 HUD。`PlayerSlot` 用于席位换算，当前只装配 P1。阶段 A 审查结论与对后续计划的修正见第九部分。旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
 
 官方依据见 [造一双人源码依据](OfficialReference.md#双人扩展的源码依据2026-11-07) 与 [造三本地双人规则](OfficialReference.md#造梦三本地双人规则2026-11-07)。项目规范以 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md) 为准，验证记录见 [Validation](Validation.md)。
 
@@ -160,8 +160,8 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 | `HeroModel` / `HeroState` | B1 已将个人数值搬入按 HeroId 索引的普通状态 | B1 已交付 |
 | `HeroSystem.OnDeinit` | B1 已逐人保存三个闭包并对称退订、清空状态 | B1 已交付 |
 | `HeroSystem.Damage` 死亡分支与 `Reset` | B1 已改用 ClearAll(heroId)，仅清本人效果 | B1 已交付 |
-| `SkillSystem._skillDefinitions` | B2 已改为每位 HeroId 独立登记表 | B2 待审 |
-| `AbstractHeroEntity.OnHide` | B2 已使用 ClearSkillDefinitions(HeroId)，只清本人 | B2 待审 |
+| `SkillSystem._skillDefinitions` | B2 已改为每位 HeroId 独立登记表 | B2 已交付 |
+| `AbstractHeroEntity.OnHide` | B2 已使用 ClearSkillDefinitions(HeroId)，只清本人 | B2 已交付 |
 | `AbstractHeroEntity.OnShow` | B1 已先检查容器中存在本人的状态，再读取 Attributes | B1 已交付 |
 | `AbstractEnemyEntity.OnHurt` 的 `if (Dead) return;` 在锁定攻击方**之前**                                                   | 致死那一击不会被记录，归属必须更早写入          | C2        |
 | `EnemyDiedEventArgs` 无致死者字段；经验发给 P1 占位                                                                            | 经验无归属                                      | C2        |

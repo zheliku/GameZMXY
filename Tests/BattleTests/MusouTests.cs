@@ -15,6 +15,69 @@ namespace GameLogic.Battle.Tests;
 public sealed class MusouTests
 {
     /// <summary>
+    /// 同一系统下两人的蓄积、满值、开启和两种扣点相位互不推进，交换英雄方向仍成立。
+    /// </summary>
+    /// <param name="heroId">本次主要推进的英雄编号。</param>
+    /// <param name="otherId">应保持独立相位的另一英雄编号。</param>
+    [Theory]
+    [InlineData(1, 2)]
+    [InlineData(2, 1)]
+    public void TwoHeroes_KeepGainActivationAndDrainIndependent(int heroId, int otherId)
+    {
+        var scope = new HeroTestScope(twoHeroes: true);
+        HeroModel heroes = scope.GetModel<HeroModel>();
+        HeroState hero = heroes.GetState(heroId);
+        HeroState other = heroes.GetState(otherId);
+        scope.System.ResetWs(heroId, 100, 1, 6);
+        scope.System.ResetWs(otherId, 100, 1, 6);
+
+        // 各自接收命中收益；推进一人的小数相位不能影响另一人的下一次整点扣减。
+        scope.System.RecordHit(heroId, new DamageResult(1, false, false, DamageKind.Physics, 20));
+        Assert.Equal(0, other.Ws.Value);
+        scope.System.RecordHit(otherId, new DamageResult(1, false, false, DamageKind.Physics, 10));
+        scope.System.AdvanceWs(heroId, .6f);
+        scope.System.AdvanceWs(otherId, .25f);
+        scope.System.RecordHit(heroId, new DamageResult(1, false, false, DamageKind.Physics, 2));
+        scope.System.AdvanceWs(heroId, .4f);
+        Assert.Equal((21, 10), (hero.Ws.Value, other.Ws.Value));
+        Assert.Equal(.25, other.WsDecayProgress);
+        Assert.False(other.WsActive.Value);
+
+        // 仅本人的满值可以开启；另一人保持原进度、相位和激活状态。
+        scope.System.AddWs(heroId, 79);
+        Assert.False(scope.System.TryActivateWs(otherId));
+        Assert.True(scope.System.TryActivateWs(heroId));
+        scope.System.AdvanceWs(heroId, 2);
+        Assert.Equal((87, 10), (hero.Ws.Value, other.Ws.Value));
+        Assert.True(hero.WsActive.Value);
+        Assert.False(other.WsActive.Value);
+        Assert.Equal(.25, other.WsDecayProgress);
+        Assert.Equal(0, other.WsDrainProgress);
+        scope.System.AdvanceWs(otherId, .75f);
+        Assert.Equal((87, 9), (hero.Ws.Value, other.Ws.Value));
+        scope.System.AddWsFromPickup(heroId, 5);
+        Assert.Equal((92, 9), (hero.Ws.Value, other.Ws.Value));
+
+        // 两人同时开启时仍各自累计不足一点的消耗，后开启者不能重置先开启者的时钟。
+        scope.System.AdvanceWs(heroId, .125f);
+        Assert.Equal(.75, hero.WsDrainProgress);
+        scope.System.AddWs(otherId, 91);
+        Assert.True(scope.System.TryActivateWs(otherId));
+        Assert.Equal(.75, hero.WsDrainProgress);
+        scope.System.AdvanceWs(otherId, .25f);
+        Assert.Equal((92, 99), (hero.Ws.Value, other.Ws.Value));
+        Assert.Equal((.75, .5), (hero.WsDrainProgress, other.WsDrainProgress));
+        scope.System.AdvanceWs(heroId, .125f);
+        Assert.Equal((90, 99), (hero.Ws.Value, other.Ws.Value));
+        Assert.Equal(.5, other.WsDrainProgress);
+        scope.System.AdvanceWs(heroId, 20);
+        Assert.Equal(0, hero.Ws.Value);
+        Assert.False(hero.WsActive.Value);
+        Assert.Equal(99, other.Ws.Value);
+        Assert.True(other.WsActive.Value);
+    }
+
+    /// <summary>
     /// 原版伤害比例四舍五入，暴击伤害可增加蓄力，零威力不产生无穷奖励。
     /// </summary>
     /// <param name="damage">已经结算的实际伤害值。</param>

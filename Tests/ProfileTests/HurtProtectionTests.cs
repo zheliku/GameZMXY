@@ -10,6 +10,42 @@ namespace GameLogic.Profile.Tests;
 public sealed class HurtProtectionTests
 {
     /// <summary>
+    /// 连击计数和保护秒数由各人独占，推进或触发一人的保护不改变另一人的连击相位。
+    /// </summary>
+    /// <param name="heroId">先触发保护的英雄。</param>
+    /// <param name="otherId">保留独立连击的另一英雄。</param>
+    [Theory]
+    [InlineData(1, 2)]
+    [InlineData(2, 1)]
+    public void TwoHeroes_KeepHitChainsAndProtectionClocksIndependent(int heroId, int otherId)
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 0, 20);
+        HeroSystem system = scope.GetSystem<HeroSystem>();
+        HeroState hero = scope.GetModel<HeroModel>().GetState(heroId);
+        HeroState other = scope.GetModel<HeroModel>().GetState(otherId);
+        system.RecordHurt(otherId);
+        system.AdvanceHurtProtection(otherId, .25f);
+        for (int hit = 0; hit < 5; hit++)
+        {
+            system.RecordHurt(heroId);
+        }
+        Assert.Equal((0, 2d), (hero.HurtHitCount, hero.HurtInvulnerabilitySeconds));
+        Assert.Equal((1, .75d, 0d), (other.HurtHitCount, other.HurtChainSeconds, other.HurtInvulnerabilitySeconds));
+        system.AdvanceHurtProtection(heroId, 1);
+        Assert.Equal((1, .75d, 0d), (other.HurtHitCount, other.HurtChainSeconds, other.HurtInvulnerabilitySeconds));
+        system.AdvanceHurtProtection(otherId, .75f);
+        Assert.Equal(0, other.HurtHitCount);
+        Assert.Equal(1d, hero.HurtInvulnerabilitySeconds);
+        for (int hit = 0; hit < 5; hit++)
+        {
+            system.RecordHurt(otherId);
+        }
+        system.AdvanceHurtProtection(heroId, 1);
+        Assert.Equal(0, hero.HurtInvulnerabilitySeconds);
+        Assert.Equal(2d, other.HurtInvulnerabilitySeconds);
+    }
+
+    /// <summary>
     /// 悟空与唐僧共用阈值，第五次扣血后保护后续命中，持续时间不依赖物理帧率。
     /// </summary>
     /// <param name="heroId">官方拥有保护的英雄编号。</param>

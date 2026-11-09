@@ -16,6 +16,84 @@ namespace GameLogic.Profile.Tests;
 public sealed class SkillSystemTests
 {
     /// <summary>
+    /// 两人同时施放各自登记，取消和个人回池清理不清另一人的招式，后者仍可再次施放并独立扣蓝。
+    /// </summary>
+    /// <param name="heroId">先取消并清理的英雄。</param>
+    /// <param name="otherId">继续施放的另一英雄。</param>
+    [Theory]
+    [InlineData(1, 2)]
+    [InlineData(2, 1)]
+    public void TwoHeroes_CastSpendCancelAndClearIndependently(int heroId, int otherId)
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 100000, 20);
+        SkillSystem system = scope.GetSystem<SkillSystem>();
+        HeroState hero = scope.GetModel<HeroModel>().GetState(heroId);
+        HeroState other = scope.GetModel<HeroModel>().GetState(otherId);
+        SkillId skill = heroId == 1 ? SkillId.RisingDragon : SkillId.WaterClone;
+        SkillId otherSkill = otherId == 1 ? SkillId.RisingDragon : SkillId.WaterClone;
+        system.SelectSkills(heroId, new SkillDefinition(skill, typeof(TestSkillState), InputSystem.Skill1, DeferredMana: true));
+        system.SelectSkills(otherId, new SkillDefinition(otherSkill, typeof(TestSkillState), InputSystem.Skill1));
+        Assert.Equal(SkillLearnResult.Learned, system.Learn(heroId, skill));
+        Assert.Equal(SkillLearnResult.Learned, system.Learn(otherId, otherSkill));
+        int cost = TestTables.Tables.TbSkillConfig.Get(skill).ManaCost;
+        int otherCost = TestTables.Tables.TbSkillConfig.Get(otherSkill).ManaCost;
+        int mp = hero.Mp.Value, otherMp = other.Mp.Value;
+        var actor = new Actor();
+        Assert.True(system.TryActivate(heroId, skill, actor));
+        Assert.Equal(mp, hero.Mp.Value);
+        Assert.True(system.TryActivate(otherId, otherSkill, actor));
+        Assert.Equal((skill, otherSkill), (hero.ActiveSkillId, other.ActiveSkillId));
+        Assert.True(system.TrySpendActivatedMana(heroId, skill));
+        Assert.Equal((mp - cost, otherMp - otherCost), (hero.Mp.Value, other.Mp.Value));
+        Assert.False(system.TrySpendActivatedMana(heroId, otherSkill));
+        system.GrantInvulnerability(heroId, 1, 10);
+        system.GrantInvulnerability(otherId, 2, 20);
+        system.CancelSkill(heroId);
+        Assert.Null(hero.ActiveSkillId);
+        Assert.Equal(otherSkill, other.ActiveSkillId);
+        Assert.False(system.IsInvulnerable(heroId, 3));
+        Assert.True(system.IsInvulnerable(otherId, 3));
+        Assert.True(system.TryActivate(heroId, skill, actor));
+        system.GrantInvulnerability(heroId, 1, 10);
+        system.ClearSkillDefinitions(heroId);
+        Assert.Null(hero.ActiveSkillId);
+        Assert.False(system.IsInvulnerable(heroId, 3));
+        Assert.False(system.IsAvailable(heroId, skill));
+        Assert.True(system.IsAvailable(otherId, otherSkill));
+        system.EndSkill(otherId, otherSkill);
+        Assert.True(system.TryActivate(otherId, otherSkill, actor));
+        Assert.Equal(otherMp - 2 * otherCost, other.Mp.Value);
+        Assert.Equal(mp - cost, hero.Mp.Value);
+    }
+
+    /// <summary>
+    /// 不在当前阵容中的真实英雄也不能登记，失败不改变已有登记、施放或魔法。
+    /// </summary>
+    /// <param name="heroId">唯一参战英雄。</param>
+    /// <param name="absentId">配置中存在但不在阵容内的英雄。</param>
+    [Theory]
+    [InlineData(1, 2)]
+    [InlineData(2, 1)]
+    public void Registration_RejectsHeroOutsideRosterWithoutMutation(int heroId, int absentId)
+    {
+        var scope = new TestGameScope([(heroId, 0)], 100000, 20);
+        SkillSystem system = scope.GetSystem<SkillSystem>();
+        SkillId skill = heroId == 1 ? SkillId.RisingDragon : SkillId.WaterClone;
+        SkillId absentSkill = absentId == 1 ? SkillId.RisingDragon : SkillId.WaterClone;
+        system.SelectSkills(heroId, new SkillDefinition(skill, typeof(TestSkillState)));
+        Assert.Equal(SkillLearnResult.Learned, system.Learn(heroId, skill));
+        Assert.True(system.TryActivate(heroId, skill, new Actor()));
+        int mp = scope.Hero.Mp.Value;
+        Assert.Throws<ArgumentException>(() => system.SelectSkills(absentId,
+            new SkillDefinition(absentSkill, typeof(TestSkillState))));
+        Assert.Equal(skill, scope.Hero.ActiveSkillId);
+        Assert.Equal(mp, scope.Hero.Mp.Value);
+        Assert.True(system.IsAvailable(heroId, skill));
+        Assert.False(system.IsAvailable(absentId, absentSkill));
+        Assert.Single(scope.GetModel<HeroModel>().Heroes);
+    }
+
+    /// <summary>
     /// 两人可以登记相同输入动作；替换和清除只影响本人，系统退出的全局清理仍结束全部登记。
     /// </summary>
     [Fact]
