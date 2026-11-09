@@ -18,7 +18,7 @@ namespace GameLogic.Skills;
 /// <param name="architecture">借用的所属作用域；模型和服务由作用域持有。</param>
 public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(architecture)
 {
-    private readonly Dictionary<SkillId, SkillDefinition> _skillDefinitions = new(); // 当前英雄实体登记的状态类型和起手条件，不属于英雄数值。
+    private readonly Dictionary<int, Dictionary<SkillId, SkillDefinition>> _skillDefinitions = new(); // 每位英雄实体独立登记的状态类型和起手条件，不属于英雄数值。
 
     /// <summary>
     /// 当前身体技能登记的 GGF 状态；具体角色负责在身体状态机中注册它。
@@ -28,7 +28,8 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     public Type GetBodyStateType(int heroId)
     {
         return this.GetModel<HeroModel>()?.GetState(heroId).ActiveSkillId is { } id &&
-               _skillDefinitions.TryGetValue(id, out SkillDefinition definition)
+               _skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) &&
+               definitions.TryGetValue(id, out SkillDefinition definition)
             ? definition.BodyState
             : null;
     }
@@ -133,19 +134,21 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
         Tables tables = this.GetModel<ConfigurationModel>().Tables;
         SkillConfig definition = tables.TbSkillConfig.GetOrDefault(id);
         return model != null && definition != null && (int)definition.Hero == heroId &&
-               _skillDefinitions.ContainsKey(id);
+               _skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) &&
+               definitions.ContainsKey(id);
     }
 
     /// <summary>
-    /// 读取当前蓝量是否足够，不预扣资源。
+    /// 查询本人已登记技能的蓝量是否足够，不预扣资源。
     /// </summary>
     /// <param name="heroId">参战英雄编号。</param>
     /// <param name="id">技能编号。</param>
     /// <returns>蓝量足够时为真。</returns>
     public bool CanAfford(int heroId, SkillId id)
     {
-        return this.GetModel<HeroModel>().GetState(heroId).Mp.Value >=
-                                         this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost;
+        return _skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) &&
+               definitions.ContainsKey(id) && this.GetModel<HeroModel>().GetState(heroId).Mp.Value >=
+               this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost;
     }
 
     /// <summary>
@@ -168,7 +171,8 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
         {
             return false;
         }
-        if (!_skillDefinitions.TryGetValue(id, out SkillDefinition definition) || definition.CanStart?.Invoke(actor) == false)
+        SkillDefinition definition = _skillDefinitions[heroId][id];
+        if (definition.CanStart?.Invoke(actor) == false)
         {
             return false;
         }
@@ -199,7 +203,9 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     public bool TrySpendActivatedMana(int heroId, SkillId id)
     {
         HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
-        if (model?.ActiveSkillId != id || !_skillDefinitions.TryGetValue(id, out SkillDefinition definition) || !definition.DeferredMana)
+        if (model?.ActiveSkillId != id ||
+            !_skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) ||
+            !definitions.TryGetValue(id, out SkillDefinition definition) || !definition.DeferredMana)
         {
             return false;
         }
@@ -209,10 +215,10 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     }
 
     /// <summary>
-    /// 选择角色或武器的一组技能登记；校验完成后才取消旧施放并替换模型数据。
+    /// 选择指定英雄的一组技能登记；校验完成后只取消本人的旧施放并替换本人登记。
     /// </summary>
     /// <param name="heroId">此组所属英雄。</param>
-    /// <param name="definitions">角色提供的登记，复制到模型，调用方不拥有运行时容器。</param>
+    /// <param name="definitions">角色提供的登记，复制到本人的登记表，调用方不拥有运行时容器。</param>
     /// <exception cref="ArgumentException">角色、编号、动作绑定或状态不合法。</exception>
     /// <exception cref="InvalidOperationException">本局英雄模型尚未注册。</exception>
     public void SelectSkills(int heroId, params SkillDefinition[] definitions)
@@ -249,17 +255,14 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
             }
         }
 
-        if (_skillDefinitions.Values.SequenceEqual(definitions))
+        if (_skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> selected) &&
+            selected.Values.SequenceEqual(definitions))
         {
             return;
         }
 
         CancelSkill(heroId);
-        _skillDefinitions.Clear();
-        foreach (SkillDefinition definition in definitions)
-        {
-            _skillDefinitions.Add(definition.Id, definition);
-        }
+        _skillDefinitions[heroId] = definitions.ToDictionary(definition => definition.Id);
     }
 
     /// <summary>
@@ -271,8 +274,13 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <returns>匹配并激活成功时为真。</returns>
     public bool TryActivateInput(int heroId, ISkillActor actor, HeroActionData data)
     {
+        if (!_skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions))
+        {
+            return false;
+        }
+
         InputSystem input = this.GetSystem<InputSystem>();
-        foreach (SkillDefinition definition in _skillDefinitions.Values)
+        foreach (SkillDefinition definition in definitions.Values)
         {
             if (definition.InputAction is { } action && input.ConsumePress(data, action))
             {
@@ -301,7 +309,17 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     }
 
     /// <summary>
-    /// 回池或卸载时撤销整份技能登记并取消已建立的英雄施放；按英雄拆登记留给后续批次。
+    /// 英雄回池时只撤销本人的技能登记、施放与无敌区间。
+    /// </summary>
+    /// <param name="heroId">本次离场的参战英雄编号。</param>
+    public void ClearSkillDefinitions(int heroId)
+    {
+        CancelSkill(heroId);
+        _skillDefinitions.Remove(heroId);
+    }
+
+    /// <summary>
+    /// 技能系统退出时撤销全部技能登记，并取消已建立的英雄施放与无敌区间。
     /// </summary>
     public void ClearSkillDefinitions()
     {

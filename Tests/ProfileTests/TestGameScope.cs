@@ -154,7 +154,10 @@ internal sealed class TestGameScope : IArchitecture
     /// </summary>
     public void RestartHero()
     {
-        _skillSystem.ClearSkillDefinitions();
+        foreach (int heroId in Profile.HeroIds)
+        {
+            _skillSystem.ClearSkillDefinitions(heroId);
+        }
         ((ICanInit)_heroSystem).Deinit();
         ((ICanInit)_heroStatusSystem).Deinit();
         ((ICanInit)_heroes).Deinit();

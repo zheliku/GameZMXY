@@ -52,7 +52,7 @@ public sealed class SkillLearningTests
         Assert.Null(scope.GetModel<HeroModel>());
         Assert.Null(scope.GetModel<LevelModel>());
         SkillSystem system = scope.GetSystem<SkillSystem>();
-        system.ClearSkillDefinitions();
+        system.ClearSkillDefinitions(1);
         int skillCost = TestTables.Tables.TbSkillConfig.Get(SkillId.RisingDragon).LearnSoul;
         int passiveCost = TestTables.Tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
 

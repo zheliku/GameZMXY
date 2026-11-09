@@ -2,6 +2,59 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人B2：技能登记与施放按英雄（2026-11-09）
+
+用户授权在 B1 基础上完成 B2。SkillSystem 的技能登记改为 HeroId → 技能表，SelectSkills 只替换本人，AbstractHeroEntity.OnHide 只撤销本人的登记、施放和无敌区间；系统退出保留无参全局清理。仍只生成 P1，输入/HUD、技能行为、学技和存档格式 v14 保持原状；**本批完成后停在 B2，不进入 B3**。
+
+依据：实施计划第一、二、五部分 B2 和第九部分；第 00 章所有权/生命周期，第 10 章方法命名、中文注释与格式，第 30 章招式与实体生命周期。沿用原 SkillSystem、HeroState 与 Dictionary，没有新增系统、类型、事件、生产观测入口或兼容重载。规范和计划只同步当前实现事实。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 开工状态与基线 | HEAD 为 fe0bdbc；B1 的 **99 份差异全部已暂存、无未暂存修改**。开工运行 `dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0、0 错误/0 警告（增量）；三套规则 **304/304、193/193、19/19**，均退出 0。日志 `.godot/validation/coop_b2_20261109/baseline_*.log` |
+| 逐步编译 | B2 计划没有编号子任务；技能系统/实体清理实现后 `dotnet build Godot/GodotProject --no-restore -v quiet`：**0 错误、5 条既有框架警告**（`b2_system_build.log`）；夹具与 B2 回归同步后同命令：**0 错误、5 条既有框架警告**（`b2_consumers_build.log`）。本批没有中间编译错误或失败测试 |
+| 最终游戏构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：**退出 0，0 错误、0 警告（增量）**，日志 `final_build.log`；重编译时的 5 条既有框架弃用警告未处理 |
+| 档案规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：**退出 0，305/305**，失败 0、跳过 0（`final_profile.log`）。新增 1 项 B2 登记替换/清理回归；原 304 项及断言保留 |
+| 战斗规则 | `dotnet test Tests/BattleTests --no-restore -v quiet`：**退出 0，193/193**，失败 0、跳过 0（`final_battle.log`）；保留既有 CS8632/CS0649 |
+| 关卡规则 | `dotnet test Tests/LevelTests --no-restore -v quiet`：**退出 0，19/19**，失败 0、跳过 0（`final_level.log`）；测试工程 NU1900 网络警告保留 |
+| Godot 扫描/构建 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_b2_scan_20261109 --headless --editor --build-solutions --quit --no-window`：**退出 0**，保留既有 ComponentInsoector 的 RefCounted/free 退出诊断 |
+| 引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出 0，2283 条序列化路径、389 个 UID**（`final_references.log`），与 B1 相同 |
+| 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_b2_frontend_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend`：**退出 0，完整 SMOKE PASS**。建档/选角、进关、地图学技、保存返回、重读、加载取消与部分注册清理通过；坏文件与重复注册为预期注入。退出保留 **5 个 ObjectDB 实例、1 个资源占用**诊断 |
+| 完整 UI | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_b2_ui_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui`：**退出 0，完整 SMOKE PASS**。技能/无双、拾取出售、15 件穿戴、窗口与实体池复用、60/120Hz 坡地/平台、死亡/检查点、备份回退、存档重入及加载取消/失败清理通过。坏文件与 HUD 打开失败为预期注入；退出保留 **20 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、141 个 ObjectDB 实例、11 个资源占用**以及既有 CanvasItem/GL 明细。使用原 runner 的 900 秒超时，由完整烟测完成后退出 |
+| 格式与最终差异 | `dotnet format whitespace <csproj> --no-restore --include <本批 C# 绝对路径清单> --verify-no-changes`：GodotProject **2 份**、ProfileTests **3 份**均退出 0（仅测试工作区既有加载警告）。`git diff --check`、`git diff --cached --check` 均退出 0；5 份 C# 为 UTF-8/CRLF、无行尾空白。10 份增量均未暂存；执行中外部将 B1 提交为 53e9b11，经二进制差异 SHA-256 比对，与开工时暂存的 B1 完全一致，当前索引为空。未执行 Git 写操作；Framework/addons/Luban、生成物、源表、bytes、场景无本批修改 |
+
+关键接口及行为对照：
+
+| B1 交付状态 | B2 交付状态 |
+| --- | --- |
+| `Dictionary<SkillId, SkillDefinition> _skillDefinitions` | `Dictionary<int, Dictionary<SkillId, SkillDefinition>> _skillDefinitions`，按 HeroId 分表 |
+| `void SelectSkills(int heroId, params SkillDefinition[] definitions)` 清空共享登记 | 签名不变；先完整校验，再只取消该 heroId 的施放、替换其登记；同组重登仍不打断 |
+| `void ClearSkillDefinitions()` 清全部；实体回池也调用此方法 | 新增 `void ClearSkillDefinitions(int heroId)` 取消本人并移除本人表；无参版本保留，生产调用仅为 OnDeinit |
+| `Type GetBodyStateType(int heroId)`、`bool IsAvailable(int heroId, SkillId id)` 读共享表 | 签名不变，读取本人表；没有登记时按既有查询结果返回 null/false |
+| `bool CanAfford(int heroId, SkillId id)` 只比较蓝量 | 签名不变，先确认本人表登记，再比较本人蓝量；不能因他人登记或蓝量足够而误报可用 |
+| `bool TryActivate(int heroId, SkillId id, ISkillActor actor)` / `bool TrySpendActivatedMana(int heroId, SkillId id)` / `bool TryActivateInput(int heroId, ISkillActor actor, HeroActionData data)` | 签名不变，起手条件、延迟耗蓝和输入枚举均使用本人表；输入仍按登记顺序，失败不排队、不补发 |
+| `void CancelSkill(int heroId)` / `void EndSkill(int heroId, SkillId id)` / `void GrantInvulnerability(int heroId, double from, double duration)` / `bool IsInvulnerable(int heroId, double now)` | 签名及按本人 HeroState 处理的行为不变；清除后仍可取消/退出，不人为用登记存在性阻挡清理或独立无敌区间 |
+| `AbstractHeroEntity.OnHide` 调 `ClearSkillDefinitions()` | 调 `ClearSkillDefinitions(HeroId)`，真实回池不会清掉另一人的登记或施放 |
+| `HeroModel`、`HeroState`、`HeroSystem`、`HeroStatusSystem`、`IHeroBody` | **本批均无接口/源码变化**，沿用 B1 的 GetState(heroId)、普通状态和显式编号契约 |
+
+B1 的两处缺陷已在上一批修正，本批没有重复实现或改动：①HeroSystem 为每位英雄保存三个实际闭包、以同一编号/委托对称退订；②Damage 死亡与 Reset 使用 ClearAll(heroId)，只清本人状态效果。其证据见下方 B1 记录；本批复跑已有规则和单人流程。B2 新修复的是**实体回池清全表**，清理边界已与逐人状态对应。
+
+实际遇到的调用与处理：
+
+- 所有原校验保留：参战阵容包含该编号、非空数组、每个定义非 null、具体 AbstractHeroSkillState 类型、配置归属、技能编号唯一、输入动作非空白且本人组内唯一。先完整校验再修改；不加默认英雄、不增加第二份学习状态。
+- 个人表由调用方数组内的不可变 SkillDefinition 复制建立，SelectSkills 仅替换该 heroId 的字典；相同定义序列保持当前施放，两个英雄允许相同输入动作名。TryActivate 在 IsAvailable 确认本人登记后直接读取其定义。
+- TestGameScope.RestartHero 在结束数值模型前按 Profile.HeroIds 逐人清理，模拟实体逐人退场。SkillLearningTests 的地图清理也改用个人入口，保留地图无 HeroModel 时的既有行为。SkillStateTests、SkillReuseTests 已在 B1 显式传 HeroId，经核对本批无需额外修改；三套测试全部复跑。
+- 新增 `RegistrationAndClear_OnlyAffectRequestedHero`，在现有 TestGameScope 和 SkillSystemTests 内使用正式系统，覆盖两人同名动作、第二人登记/替换不改第一人施放与蓝量、个人清理同时清登记和无敌、第一人之后仍能通过输入继续施放、系统 Deinit 全局清理。未增加测试辅助类型或生产入口；B3 的全面双人属性/效果/无双及实际双实体回池验收仍待授权。
+
+本批文件清单：**10 份修改（2 份生产 C#、3 份测试 C#、5 份文档），无新增、无删除正式文件**。只列相对开工时已暂存 B1 的增量：
+
+| 所属目录 | 修改文件 |
+| --- | --- |
+| `Godot/GodotProject/TheGame/GameScripts/` | `Systems/SkillSystem.cs`、`Entity/Heroes/AbstractHeroEntity.cs` |
+| `Tests/ProfileTests/` | `SkillSystemTests.cs`、`SkillLearningTests.cs`、`TestGameScope.cs` |
+| `Docs/` | `CoopImplementationPlan.md`、`ProjectGuidelines/70-ProfileAndSave.md`、`ProjectTour.md`、`Validation.md`、`WorkingNotes.md` |
+
+本批没有持久结构变化，存档继续 v14，不需要因 B2 重建现有 v14 档案。仍只装配一个实战英雄，一套输入/HUD；B3 须待用户接受 B2 并授权后补齐全面隔离证据和阶段 A～B 回归，本批不提前开始。所有引擎验证使用原 runner 的案例专属 APPDATA 与 Validation 存档，未覆盖正式玩家存档。正常数值全关人工实战、双人实战均未执行，退出时既有引擎资源诊断单独记录。
+
 ## 双人B1：本局状态按英雄承载（2026-11-09）
 
 按已授权目标与实施计划 B1-1～B1-6 顺序完成本局状态迁移，并响应用户追加的全项目业务方法命名要求。HeroModel 只保存 HeroId → HeroState，个人系统、实体、身体/技能状态和 UI 按本人 HeroId 读写；仍只生成 P1，保留一套输入/HUD。**当前停在 B1 等待审查，不进入 B2。** 存档保持 v14，本批没有持久结构变化，不要求重建现有 v14 开发档；v13 及更早档的既有重建规则不变。

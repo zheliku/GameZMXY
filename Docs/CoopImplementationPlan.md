@@ -1,6 +1,6 @@
 # 双人扩展实施计划
 
-状态：**阶段 A（A1～A3）已完成并经架构审查通过（提交 d2c3d13、c2f74db、fe0bdbc）；B1 已实现，等待审查，不进入 B2。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局 `HeroModel` 已按 HeroId 持有 `HeroState`，仍只生成 P1，保持一套输入与 HUD。`PlayerSlot` 用于席位换算，当前只装配 P1。阶段 A 审查结论与对后续计划的修正见第九部分。旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
+状态：**阶段 A（A1～A3）已完成并经架构审查通过（提交 d2c3d13、c2f74db、fe0bdbc）；B1 已交付；用户授权继续 B2，B2 已完成并通过验证，当前停在 B2 等待审查，不进入 B3。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局 `HeroModel` 已按 HeroId 持有 `HeroState`，仍只生成 P1，保持一套输入与 HUD。`PlayerSlot` 用于席位换算，当前只装配 P1。阶段 A 审查结论与对后续计划的修正见第九部分。旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
 
 官方依据见 [造一双人源码依据](OfficialReference.md#双人扩展的源码依据2026-11-07) 与 [造三本地双人规则](OfficialReference.md#造梦三本地双人规则2026-11-07)。项目规范以 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md) 为准，验证记录见 [Validation](Validation.md)。
 
@@ -157,12 +157,12 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 | `ProfileModel.HeroIds` / `GetProgress(heroId)` / `GetSlots(heroId)`                                                        | A1 已移除单一出战身份与便捷视图，按有序阵容查询 | A1 已完成 |
 | `GameData.Heroes`                                                                                                              | A1 已按席位顺序保存阵容，A2 当前格式为 v14      | A1 已完成 |
 | `ProfileModel.GetSoul(heroId)` / `GetBag(heroId)` / `HeroSaveData`                                                         | 个人钱包与背包，实例池全档唯一                  | A2 已实现 |
-| `HeroModel` / `HeroState` | B1 已将个人数值搬入按 HeroId 索引的普通状态 | B1 待审 |
-| `HeroSystem.OnDeinit` | B1 已逐人保存三个闭包并对称退订、清空状态 | B1 待审 |
-| `HeroSystem.Damage` 死亡分支与 `Reset` | B1 已改用 ClearAll(heroId)，仅清本人效果 | B1 待审 |
-| `SkillSystem._skillDefinitions`                                                                                                | 单份技能登记表                                  | B2        |
-| `AbstractHeroEntity.OnHide` 调 **无参** `ClearSkillDefinitions()`                                                            | 多人下一人回池会清空另一人的登记                | B2        |
-| `AbstractHeroEntity.OnShow` | B1 已先检查容器中存在本人的状态，再读取 Attributes | B1 待审 |
+| `HeroModel` / `HeroState` | B1 已将个人数值搬入按 HeroId 索引的普通状态 | B1 已交付 |
+| `HeroSystem.OnDeinit` | B1 已逐人保存三个闭包并对称退订、清空状态 | B1 已交付 |
+| `HeroSystem.Damage` 死亡分支与 `Reset` | B1 已改用 ClearAll(heroId)，仅清本人效果 | B1 已交付 |
+| `SkillSystem._skillDefinitions` | B2 已改为每位 HeroId 独立登记表 | B2 待审 |
+| `AbstractHeroEntity.OnHide` | B2 已使用 ClearSkillDefinitions(HeroId)，只清本人 | B2 待审 |
+| `AbstractHeroEntity.OnShow` | B1 已先检查容器中存在本人的状态，再读取 Attributes | B1 已交付 |
 | `AbstractEnemyEntity.OnHurt` 的 `if (Dead) return;` 在锁定攻击方**之前**                                                   | 致死那一击不会被记录，归属必须更早写入          | C2        |
 | `EnemyDiedEventArgs` 无致死者字段；经验发给 P1 占位                                                                            | 经验无归属                                      | C2        |
 | `LootOrbNode.Tick(delta, target)` 单目标；`LevelViewController.Loot` 只认 `_player`                                        | 掉落无归属                                      | C3        |
@@ -921,8 +921,8 @@ public static string ActionOf(string action, PlayerSlot slot)
 
 | 位置 | 当前写法 | 负责批次 |
 | --- | --- | --- |
-| `Systems/Hero/HeroSystem.cs`（`OnInit`） | B1 已遍历阵容、逐人闭包，无 P1 占位 | B1-4 已完成，待审 |
-| `Systems/SkillSystem.cs`（`TryActivate`） | B1 已使用参数 heroId，无 P1 占位 | B1-5 已完成，待审 |
+| `Systems/Hero/HeroSystem.cs`（`OnInit`） | B1 已遍历阵容、逐人闭包，无 P1 占位 | B1-4 已完成 |
+| `Systems/SkillSystem.cs`（`TryActivate`） | B1 已使用参数 heroId，无 P1 占位 | B1-5 已完成 |
 | `Systems/LevelSystem.cs:116`（`RecordDefeat`） | `HeroOf(PlayerSlot.P1)` | C2（改为致死者） |
 | `Systems/LevelSystem.cs`（`TransferToDragonPalace` 的 `IsDepleted`） | B1 已显式使用 `HeroOf(PlayerSlot.P1)` | D5 改为任一存活者 |
 | `Entity/Enemies/.../BullDemonHeartDeathState.cs:33` | `HeroOf(PlayerSlot.P1)` | C2（改为致死者） |

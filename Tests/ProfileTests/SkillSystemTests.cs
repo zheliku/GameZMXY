@@ -16,6 +16,67 @@ namespace GameLogic.Profile.Tests;
 public sealed class SkillSystemTests
 {
     /// <summary>
+    /// 两人可以登记相同输入动作；替换和清除只影响本人，系统退出的全局清理仍结束全部登记。
+    /// </summary>
+    [Fact]
+    public void RegistrationAndClear_OnlyAffectRequestedHero()
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 99999, 20, initializeHero: false);
+        SkillSystem system = scope.GetSystem<SkillSystem>();
+        ((ICanInit)system).Init();
+        HeroModel heroes = scope.GetModel<HeroModel>();
+        HeroState first = heroes.GetState(1);
+        HeroState second = heroes.GetState(2);
+        first.Mp.Value = second.Mp.Value = 200;
+        scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
+        scope.Skills.GetLearnedSkills(2).Add(SkillId.WaterClone);
+        scope.Skills.GetLearnedSkills(2).Add(SkillId.WaterDemonBurst);
+        var actor = new Actor();
+
+        // 输入动作仅在本人登记中唯一；第二份登记不能替换第一人的起手条件或施放。
+        system.SelectSkills(1, new SkillDefinition(SkillId.RisingDragon, typeof(TestSkillState), InputSystem.Skill1));
+        Assert.True(system.TryActivate(1, SkillId.RisingDragon, actor));
+        system.GrantInvulnerability(1, 0, 10);
+        int firstMana = first.Mp.Value;
+        system.SelectSkills(2, new SkillDefinition(SkillId.WaterClone, typeof(TestSkillState), InputSystem.Skill1));
+        Assert.True(system.IsAvailable(1, SkillId.RisingDragon));
+        Assert.True(system.IsAvailable(2, SkillId.WaterClone));
+        Assert.False(system.IsAvailable(1, SkillId.WaterClone));
+        Assert.False(system.CanAfford(1, SkillId.WaterClone));
+        Assert.True(system.TryActivate(2, SkillId.WaterClone, actor));
+
+        system.SelectSkills(2, new SkillDefinition(SkillId.WaterDemonBurst, typeof(TestSkillState), InputSystem.Skill1));
+        Assert.True(system.TryActivate(2, SkillId.WaterDemonBurst, actor));
+        system.GrantInvulnerability(2, 0, 10);
+        Assert.Equal(SkillId.RisingDragon, first.ActiveSkillId);
+        Assert.Equal(firstMana, first.Mp.Value);
+        Assert.True(system.IsInvulnerable(1, 1));
+
+        // 个人离场清理全部个人登记与施放，另一人的查询和无敌区间继续有效。
+        system.ClearSkillDefinitions(2);
+        Assert.False(system.IsAvailable(2, SkillId.WaterDemonBurst));
+        Assert.False(system.CanAfford(2, SkillId.WaterDemonBurst));
+        Assert.False(system.TryActivateInput(2, actor, new HeroActionData()));
+        Assert.Null(second.ActiveSkillId);
+        Assert.False(system.IsInvulnerable(2, 1));
+        Assert.Null(system.GetBodyStateType(2));
+        Assert.Equal(typeof(TestSkillState), system.GetBodyStateType(1));
+        Assert.True(system.IsAvailable(1, SkillId.RisingDragon));
+        Assert.Equal(firstMana, first.Mp.Value);
+        Assert.True(system.IsInvulnerable(1, 1));
+
+        system.EndSkill(1, SkillId.RisingDragon);
+        scope.Input.Actions[InputSystem.Skill1] = (true, true, false);
+        Assert.True(system.TryActivateInput(1, actor, new HeroActionData()));
+        Assert.Equal(firstMana - TestTables.Tables.TbSkillConfig.Get(SkillId.RisingDragon).ManaCost, first.Mp.Value);
+
+        ((ICanInit)system).Deinit();
+        Assert.False(system.IsAvailable(1, SkillId.RisingDragon));
+        Assert.Null(first.ActiveSkillId);
+        Assert.False(system.IsInvulnerable(1, 1));
+    }
+
+    /// <summary>
     /// 角色提供的登记数组由技能系统复制；无效替换不能取消当前施放或修改旧登记。
     /// </summary>
     [Fact]

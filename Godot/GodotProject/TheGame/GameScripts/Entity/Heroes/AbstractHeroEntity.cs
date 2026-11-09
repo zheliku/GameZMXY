@@ -289,7 +289,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
         ClearSkillEffects(isShutdown);
         if (!isShutdown)
         {
-            this.GetSystem<SkillSystem>().ClearSkillDefinitions();
+            this.GetSystem<SkillSystem>().ClearSkillDefinitions(HeroId);
         }
 
         base.OnHide(isShutdown, userData);
