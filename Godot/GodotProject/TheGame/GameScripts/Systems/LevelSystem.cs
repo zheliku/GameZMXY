@@ -99,21 +99,28 @@ public sealed class LevelSystem : AbstractSystem
     }
 
     /// <summary>
-    /// 记录击败并奖励经验，返回表现层是否需要播放升级。
+    /// 记录击败；有归属英雄时把配方经验发给该英雄。
     /// </summary>
+    /// <param name="heroId">归属英雄编号；0 表示无英雄命中过，只计数不发经验。</param>
     /// <param name="experienceReward">本次配方经验。</param>
-    /// <returns>是否至少升了一级。</returns>
-    public bool RecordDefeat(int experienceReward)
+    /// <returns>归属英雄是否至少升了一级。</returns>
+    public bool RecordDefeat(int heroId, int experienceReward)
     {
         if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running)
         {
             return false;
         }
 
-        int experience = Math.Max(0, experienceReward);
+        // 无英雄归属也计击败数，但不能把未发出的经验记入结算。
         LevelModel.DefeatedEnemyCount++;
+        if (heroId == 0)
+        {
+            return false;
+        }
+
+        int experience = Math.Max(0, experienceReward);
         LevelModel.AwardedExperience += experience;
-        return experience > 0 && this.GetSystem<ProfileSystem>().AddExperience(this.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), experience) > 0;
+        return experience > 0 && this.GetSystem<ProfileSystem>().AddExperience(heroId, experience) > 0;
     }
 
     /// <summary>

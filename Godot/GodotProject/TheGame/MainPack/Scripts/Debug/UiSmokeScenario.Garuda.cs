@@ -240,6 +240,7 @@ public sealed partial class UiSmokeScenario
                     hero.GlobalPosition = new Vector2(100000, 100000);
                     _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
                     AbstractEnemyEntity actor = _monster;
+                    Check(actor.LastHeroAttackerId == 0, "新显示敌人遗留上轮英雄归属");
                     SmokeInspection.FreezeAi(actor);
                     if (id == EntityId.PengDemonKing)
                     {
@@ -313,7 +314,7 @@ public sealed partial class UiSmokeScenario
                     if (actor is PengDemonKingEntity peng)
                     {
                         hero.GlobalPosition = new Vector2(100000, 100000);
-                        ApplyGarudaTestHit(peng, hero.Id);
+                        ApplyGarudaTestHit(peng, 0);
                         await WaitFramesAsync(3);
                         Check(peng.Hp == 0 && !peng.Dead && peng.HurtBox.Monitorable, "首次耗尽应化卵且保留受击体");
                         GF.Base.PauseGame();
@@ -324,12 +325,15 @@ public sealed partial class UiSmokeScenario
                         GF.Base.ResumeGame();
                         await WaitUntilAsync(() => peng.Hp == peng.MaxHp, "七秒后没有回满复生", 12000);
                         await WaitUntilAsync(() => peng.AnimPlayer.CurrentAnimation != "rebirth", "复生动作没有正常收招");
-                        ApplyGarudaTestHit(peng, hero.Id);
+                        ApplyGarudaTestHit(peng, 0);
                         await WaitFramesAsync(3);
+                        Check(peng.LastHeroAttackerId == 0, "无英雄来源的化卵误记奖励归属");
                         for (int hit = 1; hit <= 5; hit++)
                         {
-                            ApplyGarudaTestHit(peng, hero.Id);
+                            ApplyGarudaTestHit(peng, hit == 5 ? hero.Id : 0);
                             Check(peng.Dead == (hit == 5), $"凤凰蛋第{hit}次命中的死亡事实不正确");
+                            Check(peng.LastHeroAttackerId == (hit == 5 ? hero.Id : 0),
+                                $"凤凰蛋第{hit}次命中的英雄归属不正确");
                         }
                         await WaitFramesAsync(3);
                         Check(!peng.HurtBox.Monitorable && peng.IsShown, "破蛋后应关闭受击体并等待死亡演出");
@@ -343,13 +347,13 @@ public sealed partial class UiSmokeScenario
                     }
                     await WaitFramesAsync(3);
                     _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(id, new EnemySpawn(new Vector2(580, 100)));
-                    Check(ReferenceEquals(actor, _monster) && actor.Hp == actor.MaxHp && !actor.Dead && actor.AttackSegment == -1 &&
+                    Check(ReferenceEquals(actor, _monster) && actor.Hp == actor.MaxHp && !actor.Dead && actor.AttackSegment == -1 && actor.LastHeroAttackerId == 0 &&
                         actor.GetNode<AnimatedSprite2D>("m_Body").Visible, "新敌人复用后残留生命、招式或死亡可见性");
                     ReleaseTestEntity(_monster);
                     _monster = null;
                 }
             }
-            GD.Print("SMOKE-GARUDA 2-3 PASS: 60/120Hz, both directions, five actions, active fade, egg/rebirth/death and pool reuse");
+            GD.Print("SMOKE-GARUDA 2-3 PASS: 60/120Hz, both directions, five actions, active fade, egg/rebirth/death, fifth-hit ownership and pool reset");
         }
         finally
         {
@@ -374,7 +378,7 @@ public sealed partial class UiSmokeScenario
     /// 夹具通过正式受击入口提交一次独立真实伤害，不绕过化卵规则。
     /// </summary>
     /// <param name="actor">受测首领。</param>
-    /// <param name="attackerId">英雄实体编号。</param>
+    /// <param name="attackerId">攻击来源实体编号；0 表示无英雄归属。</param>
     private static void ApplyGarudaTestHit(AbstractEnemyEntity actor, int attackerId)
     {
         var data = AttackData.Create(0, default, 100000f, DamageKind.Real, Vector2.Zero, 1, 0, source: new GameLogic.Battle.Attacks.AttackSource(attackerId, GameConfig.Entity.EntityId.None, 0, 0));

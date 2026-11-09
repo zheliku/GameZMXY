@@ -377,7 +377,7 @@ public sealed partial class UiSmokeScenario
     }
 
     /// <summary>
-    /// 用真实致死攻击检查直接赠送、重复击败、满包与提示缺席，复用不能遗留奖励资格。
+    /// 用真实致死攻击检查无归属拒绝、直接赠送、重复击败、满包与提示缺席，复用不能遗留奖励资格。
     /// </summary>
     /// <param name="hero">真实伤害来源。</param>
     /// <param name="flow">隔离档案和物品系统。</param>
@@ -388,7 +388,7 @@ public sealed partial class UiSmokeScenario
         EquipmentData[] original = profile.GetBag(profile.HeroOf(PlayerSlot.P1)).ToArray();
         try
         {
-            foreach (string scenario in new[] { "first", "duplicate", "full", "without-notice" })
+            foreach (string scenario in new[] { "unowned", "first", "duplicate", "full", "without-notice" })
             {
                 if (scenario == "without-notice")
                 {
@@ -412,17 +412,20 @@ public sealed partial class UiSmokeScenario
                 _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.BullDemonHeart,
                     new EnemySpawn(new Vector2(1350, 300)));
                 var heart = (BullDemonHeartEntity)_monster;
+                Check(heart.LastHeroAttackerId == 0, "心脏池复用遗留上次奖励归属");
                 heart.SetPhysicsProcess(false);
                 heart.GetNode<AnimationPlayer>("m_HeartFade").Stop();
                 heart.GetNode<AnimatedSprite2D>("m_Heart").Modulate = Colors.White;
-                ApplyEastSeaHit(heart, hero.Id, 1000000, 1, false, Vector2.Zero);
+                int attackerId = scenario == "unowned" ? 0 : hero.Id;
+                ApplyEastSeaHit(heart, attackerId, 1000000, 1, false, Vector2.Zero);
                 Check(heart.Dead, "奖励夹具未实际击败心脏");
+                Check(heart.LastHeroAttackerId == attackerId, "心脏致死一击未记录正确英雄归属");
                 heart.SetPhysicsProcess(true);
                 await WaitUntilAsync(() => SmokeInspection.ReadField<IFsm<IEnemyBody>>(heart, "BodyFsm").CurrentState is BullDemonHeartDeathState,
                     "最终形态未进入实际死亡演出");
                 int treasures = profile.GetBag(profile.HeroOf(PlayerSlot.P1)).Count(value => value.EquipmentId == EquipmentId.DiamondSnare);
                 Check(profile.GetBag(profile.HeroOf(PlayerSlot.P1)).Count == before + (scenario is "first" or "without-notice" ? 1 : 0) &&
-                    treasures == (scenario == "full" ? 0 : 1), "金钢琢重复赠送、满包丢弃或未直接入包：" + scenario);
+                    treasures == (scenario is "unowned" or "full" ? 0 : 1), "金钢琢无归属误赠、重复赠送、满包丢弃或未直接入包：" + scenario);
                 if (scenario is "first" or "full")
                 {
                     SaveNoticeForm notice = GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single();
@@ -444,7 +447,7 @@ public sealed partial class UiSmokeScenario
                 _monster = null;
                 await WaitFramesAsync(3);
             }
-            GD.Print("SMOKE-BULL TREASURE PASS: lethal hit, direct grant, duplicate defeat, full bag, absent notice, death completion and subscription reuse");
+            GD.Print("SMOKE-BULL TREASURE PASS: unowned rejection, lethal ownership, direct grant, duplicate defeat, full bag, absent notice, death completion and subscription reuse");
         }
         finally
         {

@@ -26,8 +26,8 @@ public sealed class LevelModelTests
         system.AdvanceTime(double.NaN);
         system.AdvanceTime(double.PositiveInfinity);
         system.AdvanceTime(-1);
-        system.RecordDefeat(25);
-        system.RecordDefeat(7);
+        system.RecordDefeat(1, 25);
+        system.RecordDefeat(1, 7);
         int ended = 0;
         levelModel.Outcome.Register(_ => ended++);
         system.Complete(LevelOutcome.Defeated, 0);
@@ -44,6 +44,52 @@ public sealed class LevelModelTests
         Assert.False(levelModel.SessionActive);
         Assert.Equal(1, ended);
         Assert.Equal(levelModel.Result == null ? 0 : 1, scope.GetSystem<SaveSystem>().CheckpointCount);
+    }
+
+    /// <summary>
+    /// 无英雄归属的击败只增加计数，不改变任一英雄经验或已发经验统计。
+    /// </summary>
+    [Fact]
+    public void UnownedDefeat_OnlyCountsEnemy()
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 0, 25);
+        LevelSystem system = scope.GetSystem<LevelSystem>();
+        system.Prepare(1);
+        system.StartSession([1, 2]);
+        system.RecordDefeat(2, 25);
+        HeroProgressionState first = scope.Profile.GetProgress(1).Value;
+        HeroProgressionState second = scope.Profile.GetProgress(2).Value;
+
+        // 经验足以升级也不能冒认 P1 或覆盖已有的已发经验统计。
+        Assert.False(system.RecordDefeat(0, 135));
+        Assert.Equal(2, scope.Level.DefeatedEnemyCount);
+        Assert.Equal(25, scope.Level.AwardedExperience);
+        Assert.Equal(first, scope.Profile.GetProgress(1).Value);
+        Assert.Equal(second, scope.Profile.GetProgress(2).Value);
+    }
+
+    /// <summary>
+    /// 经验只发给显式归属英雄，另一人的成长保持原样。
+    /// </summary>
+    /// <param name="heroId">本次击败收益所属英雄。</param>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Defeat_AwardsOnlyRequestedHero(int heroId)
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 0, 25);
+        LevelSystem system = scope.GetSystem<LevelSystem>();
+        system.Prepare(1);
+        system.StartSession([1, 2]);
+        HeroProgressionState other = scope.Profile.GetProgress(3 - heroId).Value;
+
+        // 用真实成长门槛验证升级返回值与个人经验，不复制经验公式。
+        Assert.True(system.RecordDefeat(heroId, 135));
+        Assert.Equal(1, scope.Level.DefeatedEnemyCount);
+        Assert.Equal(135, scope.Level.AwardedExperience);
+        Assert.Equal(135, scope.Profile.GetProgress(heroId).Value.TotalExperience);
+        Assert.Equal(2, scope.Profile.GetProgress(heroId).Value.Level);
+        Assert.Equal(other, scope.Profile.GetProgress(3 - heroId).Value);
     }
 
     /// <summary>

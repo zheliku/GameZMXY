@@ -189,7 +189,10 @@ public partial class PengDemonKingEntity : AbstractBossEntity, IActorBody
         if (!IsEgg)
         {
             base.OnHurt(data, result, knockback, attackerEntityId);
+            return;
         }
+
+        RecordHeroAttacker(attackerEntityId);
     }
 
     /// <summary>

@@ -1,6 +1,6 @@
 # 双人扩展实施计划
 
-状态：**阶段 A（A1～A3：d2c3d13、c2f74db、fe0bdbc）与阶段 B（B1～B3：53e9b11、e3440ca、511f0c5）已完成并经架构审查通过；C1 已完成并验证，停下待审，C2 未开始。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局 `HeroModel` 按 HeroId 持有 `HeroState`，`HeroSystem`/`HeroStatusSystem`/`SkillSystem` 的个人操作显式传 HeroId；英雄显示强制传 `HeroSpawn`，实体持有本次 `Slot` 与出生位置，仍只生成 P1，保持一套输入与 HUD。阶段 A、B 审查结论与对后续计划的修正见第九、十部分。旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
+状态：**阶段 A（A1～A3：d2c3d13、c2f74db、fe0bdbc）与阶段 B（B1～B3：53e9b11、e3440ca、511f0c5）已完成并经架构审查通过；C1 已接受（394b97c）；C2 已完成并验证，停下待审，C3 未开始。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局 `HeroModel` 按 HeroId 持有 `HeroState`，`HeroSystem`/`HeroStatusSystem`/`SkillSystem` 的个人操作显式传 HeroId；英雄显示强制传 `HeroSpawn`，实体持有本次 `Slot` 与出生位置；敌人独立记录最近有效命中英雄，经验、牛心唯一奖励与飞行球生成按归属处理。仍只生成 P1，保持一套输入与 HUD。阶段 A、B 审查结论与对后续计划的修正见第九、十部分。旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
 
 官方依据见 [造一双人源码依据](OfficialReference.md#双人扩展的源码依据2026-11-07) 与 [造三本地双人规则](OfficialReference.md#造梦三本地双人规则2026-11-07)。项目规范以 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md) 为准，验证记录见 [Validation](Validation.md)。
 
@@ -163,8 +163,8 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 | `SkillSystem._skillDefinitions` | B2 已改为每位 HeroId 独立登记表 | B2 已交付 |
 | `AbstractHeroEntity.OnHide` | B2 已使用 ClearSkillDefinitions(HeroId)，只清本人 | B2 已交付 |
 | `AbstractHeroEntity.OnShow` | B1 已先检查容器中存在本人的状态，再读取 Attributes | B1 已交付 |
-| `AbstractEnemyEntity.OnHurt` 的 `if (Dead) return;` 在锁定攻击方**之前**                                                   | 致死那一击不会被记录，归属必须更早写入          | C2        |
-| `EnemyDiedEventArgs` 无致死者字段；经验发给 P1 占位                                                                            | 经验无归属                                      | C2        |
+| `AbstractEnemyEntity.OnHurt` 首先调用 RecordHeroAttacker，鹏魔蛋态单独调用；显示复位归属 | 致死一击记录不受 Dead 早退或 AI 目标清除影响 | C2 已实现 |
+| `EnemyDiedEventArgs.KillerEntityId` 与 `LevelSystem.RecordDefeat(heroId, experienceReward)` | 按有效归属发经验；无归属只计击败、不出球，地面掉落保持 | C2 已实现 |
 | `LootOrbNode.Tick(delta, target)` 单目标；`LevelViewController.Loot` 只认 `_player`                                        | 掉落无归属                                      | C3        |
 | `InputSystem` 动作名是 P1 常量；`LevelExitNode`/`BattleForm`/`InventoryForm`/`SkillForm`/`TangsengEntity` 等直接读键 | 单套键位                                        | C4        |
 | `LevelViewController._player` 单引用（相机、连击、出口、触发区、掉落、死亡、换装都读它）                                       | 单人                                            | D2        |
@@ -207,8 +207,8 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 | B1   | `HeroModel` 按英雄承载本局状态 | A1     | 无                 | 已完成，53e9b11，审查通过 |
 | B2   | 技能登记与施放按英雄             | B1     | 无                 | 已完成，e3440ca，审查通过 |
 | B3   | 战斗规则证据与阶段 A～B 回归     | B2     | 只加测试           | 已完成，511f0c5，审查通过 |
-| C1   | 英雄实体携带席位                 | B1     | 无                 | 已完成，验证通过，待审   |
-| C2   | 经验归属最后命中者               | C1     | 无人命中的怪不发经验与球 | 未开始             |
+| C1   | 英雄实体携带席位                 | B1     | 无                 | 已接受，394b97c          |
+| C2   | 经验归属最后命中者               | C1     | 无人命中的怪不发经验与球 | 已完成，验证通过，待审 |
 | C3   | 地面物品与球按归属领取           | C2     | 无                 | 未开始                   |
 | C4   | 第二套键位与按席位开窗           | C1     | 新增 P2 映射       | 未开始                   |
 | C5   | 阶段 C 单人回归                  | C4     | 只验证             | 未开始                   |
@@ -1078,7 +1078,7 @@ public static string ActionOf(string action, PlayerSlot slot) => slot == PlayerS
 
 阶段 B 已完成：B1（53e9b11，含用户追加的 18 处业务方法命名整理）、B2（e3440ca）、B3（511f0c5）。各批实际命令、结果与文件清单见 [Validation](Validation.md)。
 
-C1-1～C1-4 已按序完成，逐步编译错误数 **0 / 0 / 0 / 0**；三处英雄入口传 `HeroSpawn`，出生位置在实体池复位时写入。最终构建、320/195/19 规则、Godot 扫描、2283 路径/390 UID、测试场地、完整前端/UI 和格式检查均通过，实际命令与接口/文件清单见 [Validation](Validation.md#双人c1英雄实体携带席位2026-11-09)。**本批停在 C1 等待审查；C2 未开始，须获明确授权后推进。**
+C1（394b97c）已接受；三处英雄入口传 `HeroSpawn`，出生位置在实体池复位时写入。用户随后授权 C2，C2-1～C2-5 已按序完成，逐步编译错误数 **0 / 0 / 0 / 0 / 0**；规则 323/195/19、Godot 扫描、2283 路径/390 UID、掉落/鹏魔/牛心三个专项、完整前端/UI 和格式检查全部通过。实际命令、接口/文件清单与历史诊断见 [Validation](Validation.md#双人c2经验与球的命中归属2026-11-10)。**本批停在 C2 等待审查，C3 未开始，须获明确授权后推进。**
 
 ---
 
@@ -1118,9 +1118,9 @@ C1-1～C1-4 已按序完成，逐步编译错误数 **0 / 0 / 0 / 0**；三处�
 | --- | --- | --- |
 | `Systems/Hero/HeroSystem.cs`（`OnInit`） | 已遍历阵容、逐人闭包 | B1 已清零 |
 | `Systems/SkillSystem.cs`（`TryActivate`） | 已使用参数 heroId | B1 已清零 |
-| `Systems/LevelSystem.cs`（`RecordDefeat`） | `HeroOf(PlayerSlot.P1)` | C2-3 |
-| `Entity/Enemies/.../BullDemonHeartDeathState.cs`（`GrantUniqueEquipment`） | `HeroOf(PlayerSlot.P1)` | C2-4 |
-| `Entity/Level/LevelViewController.Loot.cs`（`OnEnemyDefeated` 的 `PlayLevelUp`、球上限） | `_player` | C2-3、C2-5 |
+| `Systems/LevelSystem.cs`（`RecordDefeat`） | 已显式接收 heroId，0 只计击败数 | C2-3 已清零 |
+| `Entity/Enemies/.../BullDemonHeartDeathState.cs`（`GrantUniqueEquipment`） | 已按 LastHeroAttackerId 解析英雄，无归属不发 | C2-4 已清零 |
+| `Entity/Level/LevelViewController.Loot.cs`（`OnEnemyDefeated` 的 `PlayLevelUp`、球上限） | 已按本会话 killer，ReferenceEquals(killer, _player) 校验留 D2 | C2-3、C2-5 已清零 |
 | `Entity/Level/LevelViewController.Loot.cs`（`TryCollectGroundItem`、`OnLootFinished`、`TickLoot`） | `_player.HeroId` / `_player` 目标 | C3 |
 | `Entity/Level/LevelViewController.Loot.cs`（`OnHeroHealthRestored` 飘字位置） | `_player.GlobalPosition` | D2（订阅改集合时用闭包捕获实体） |
 | `Entity/Level/LevelViewController.cs`（换装订阅、`Complete` 的剩余生命百分比） | `_player.HeroId` | D2 / D5 |

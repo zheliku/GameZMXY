@@ -836,7 +836,7 @@ public sealed class LevelSmokeScenario
                 if (monster.Dead && monster is not (AbstractBullDemonFormEntity or BullDemonHeartEntity))
                 {
                     GF.Event.Fire(this, EnemyDiedEventArgs.Create(monster.Id,
-                                        SmokeInspection.ReadField<int>(monster, "ExperienceReward"), monster.Config, monster.GlobalPosition,
+                                        SmokeInspection.ReadField<int>(monster, "ExperienceReward"), _hero.Id, monster.Config, monster.GlobalPosition,
                                         monster.Config.SoulPerOrb, monster.Config.EquipmentDropChance));
                 }
             }

@@ -180,6 +180,50 @@ public sealed partial class UiSmokeScenario
 
             if (OS.GetCmdlineUserArgs().Contains("--loot-only"))
             {
+                // 用正式掉落消费者验证无归属边界，固定随机种子保证地面物品必出。
+                var config = ConfigSystem.Instance.Tables.TbEnemyConfig.Get((int)GameConfig.Entity.EntityId.HuaguoshanMonkey);
+                LootSystem loot = flow.GetSystem<LootSystem>();
+                using var random = new RandomNumberGenerator();
+                ulong seed = 0;
+                GroundLootSelection expectedGround = default;
+                for (; seed < 4096; seed++)
+                {
+                    random.Seed = seed;
+                    expectedGround = loot.RollGround(config.EquipmentDropChance, config.EquipmentDropPoolId, random.Randf);
+                    if (expectedGround.Pickup != GameConfig.Loot.PickupId.None || expectedGround.Equipment != GameConfig.Equipment.EquipmentId.None)
+                    {
+                        break;
+                    }
+                }
+                Check(seed < 4096, "未找到保证地面物品掉落的测试种子");
+                SmokeInspection.ReadField<RandomNumberGenerator>(level, "_lootRandom").Seed = seed;
+                LevelModel model = SmokeInspection.Model(level);
+                int kills = model.DefeatedEnemyCount, awarded = model.AwardedExperience;
+                int experience = flow.GetModel<ProfileModel>().GetProgress(hero.HeroId).Value.TotalExperience;
+                HashSet<GroundItemNode> groundItems = SmokeInspection.ReadField<HashSet<GroundItemNode>>(level, "_groundItems");
+                HashSet<LootOrbNode> orbs = SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "_lootOrbs");
+                int groundCount = groundItems.Count, orbCount = orbs.Count;
+                var death = GameLogic.Event.Combat.EnemyDiedEventArgs.Create(0, 135, 0, config,
+                    hero.GlobalPosition + new Vector2(10000, 0), encounterComplete: false);
+                try
+                {
+                    typeof(LevelViewController).GetMethod("OnEnemyDefeated", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                        .Invoke(level, [death, ""]);
+                    int groundRewardCount = (expectedGround.Pickup != GameConfig.Loot.PickupId.None ? 1 : 0) +
+                        (expectedGround.Equipment != GameConfig.Equipment.EquipmentId.None ? 1 : 0);
+                    Check(model.DefeatedEnemyCount == kills + 1 && model.AwardedExperience == awarded &&
+                        flow.GetModel<ProfileModel>().GetProgress(hero.HeroId).Value.TotalExperience == experience &&
+                        orbs.Count == orbCount && groundItems.Count == groundCount + groundRewardCount,
+                        "无归属死亡没有保留地面掉落，或错误发放经验/飞行球");
+                }
+                finally
+                {
+                    GameFramework.ReferencePool.Release(death);
+                    typeof(LevelViewController).GetMethod("ClearLoot", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                        .Invoke(level, null);
+                }
+                GD.Print("SMOKE-UNOWNED LOOT PASS: defeat counted, experience and orbs unchanged, ground drops retained.");
+
                 int originalTicks = Engine.PhysicsTicksPerSecond;
                 try
                 {
@@ -1525,13 +1569,15 @@ public sealed partial class UiSmokeScenario
             if (!monster.Dead)
             {
                 var attack = GameLogic.Battle.Attacks.AttackData.Create(0, default, monster.MaxHp * 10f,
-                    GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0);
+                    GameConfig.Battle.DamageKind.Real, Vector2.Zero, 1, 0,
+                    source: new AttackSource(hero.Id, GameConfig.Entity.EntityId.None, 0, 0));
                 monster.ReceiveHit(attack);
                 GameFramework.ReferencePool.Release(attack);
             }
 
             return SmokeInspection.Model(run).DefeatedEnemyCount > kills;
         }, "击败怪物没有经关卡运行结算", 10000, () => Describe(monster, run, level));
+        Check(monster.LastHeroAttackerId == hero.Id, "普通致死一击未记录当前英雄归属");
         int reward = SmokeInspection.ReadField<int>(monster, "ExperienceReward");
         Check(SmokeInspection.Flow(procedure).GetModel<ProfileModel>().GetProgress(hero.HeroId).Value.TotalExperience == beforeXp + reward &&
             SmokeInspection.Flow(procedure).GetModel<ProfileModel>().GetSoul(hero.HeroId).Value == beforeSoul, "击败经验未直接结算或灵魂未拾取就入账");

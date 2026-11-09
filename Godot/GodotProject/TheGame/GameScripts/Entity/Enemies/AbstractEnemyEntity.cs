@@ -21,6 +21,7 @@ using GameLogic.Enemies.AI;
 using GameLogic.Enemies.Body;
 using GameLogic.Entity;
 using GameLogic.Event.Combat;
+using GameLogic.Heroes;
 using GameLogic.UI.Widgets;
 using Godot;
 using GodotGameFramework;
@@ -69,6 +70,7 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     protected IFsm<IEnemyBody> BodyFsm;
 
     private AbstractActorEntity _target; // 当前索敌目标；只在失效或本次显示结束后清除。
+    private int _lastHeroAttackerId; // 最近一次有效命中本怪的英雄实体编号；决定经验与飞行球归属，0 表示没有英雄命中过。
 
     private Vector2 _spawnPosition; // 未绑定关卡视野时使用的巡逻中心。
 
@@ -91,6 +93,11 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     private readonly HashSet<SkillEffectNode> _skillEffects = new(); // 本敌人拥有的离身攻击；小怪飞刀与首领技能使用同一生命周期。
 
     // ---- 属性 ----
+
+    /// <summary>
+    /// 最后一次有效命中本怪的英雄实体编号；供本怪死亡状态发放专属奖励。
+    /// </summary>
+    internal int LastHeroAttackerId => _lastHeroAttackerId;
 
     /// <summary>
     /// 本次显示的每球灵魂覆盖值；普通敌人为空，直接使用基础配置。
@@ -331,6 +338,7 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
         PendingHurt = null;
         _recycleRequested = false;
         SetTarget(null);
+        _lastHeroAttackerId = 0;
         Velocity = Vector2.Zero;
         this.GetSystem<EnemyAiSystem>().Reset(AiData, OwnAttacks, GD.Randf);
 
@@ -535,6 +543,8 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     /// <param name="attackerEntityId">攻击方运行编号；无来源时为零。</param>
     protected override void OnHurt(AttackData data, DamageResult result, Vector2 knockback, int attackerEntityId)
     {
+        // 先记账再处理表现：致死的那一击也必须记入归属，官方 beAttack 同样先改写目标再扣血。
+        RecordHeroAttacker(attackerEntityId);
         MonsterHitFeedbackNode feedback = NodePool.Instance.RentNode<MonsterHitFeedbackNode>(
             ResourcesCollectionConstant.Effects_monster_hit_feedback, this)
             ?? throw new InvalidOperationException("怪物命中闪光未登记到节点池。");
@@ -562,6 +572,18 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
         AiData.AttackRequest = -1;
         ReleaseAttack();
         PendingHurt = knockback;
+    }
+
+    /// <summary>
+    /// 记录有效命中本怪的英雄，非英雄来源保留已有归属。
+    /// </summary>
+    /// <param name="attackerEntityId">本次有效命中的来源实体编号。</param>
+    protected void RecordHeroAttacker(int attackerEntityId)
+    {
+        if (GF.Entity.GetEntity(attackerEntityId) is AbstractHeroEntity)
+        {
+            _lastHeroAttackerId = attackerEntityId;
+        }
     }
 
     /// <summary>
@@ -768,7 +790,7 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
         DestroyAiStateMachine(false);
         SetHurtBoxEnabled(KeepHurtBoxDuringDeath);
         GF.Event.Fire(this,
-            EnemyDiedEventArgs.Create(Id, ExperienceReward, Config, HurtBox.GetGlobalBounds().GetCenter(),
+            EnemyDiedEventArgs.Create(Id, ExperienceReward, _lastHeroAttackerId, Config, HurtBox.GetGlobalBounds().GetCenter(),
                 SoulPerOrbOverride, EquipmentDropChanceOverride, EncounterComplete, EquipmentDropPoolIdOverride));
     }
 

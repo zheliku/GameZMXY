@@ -12,6 +12,7 @@ using GameLogic.Event.Combat;
 using GameLogic.FloatingText;
 using GameLogic.Heroes;
 using Godot;
+using GodotGameFramework;
 using GodotGameFramework.NodePool;
 
 namespace GameLogic.Level;
@@ -40,9 +41,16 @@ public partial class LevelViewController
             return;
         }
 
-        if (this.GetSystem<LevelSystem>().RecordDefeat(data.ExperienceReward))
+        // 当前会话只生成一个英雄；外部或已离场的来源不参与本局奖励。
+        var killer = GF.Entity.GetEntity(data.KillerEntityId) as AbstractHeroEntity;
+        if (!ReferenceEquals(killer, _player))
         {
-            _player.PlayLevelUp();
+            killer = null;
+        }
+
+        if (this.GetSystem<LevelSystem>().RecordDefeat(killer?.HeroId ?? 0, data.ExperienceReward))
+        {
+            killer.PlayLevelUp();
         }
 
         try
@@ -61,14 +69,18 @@ public partial class LevelViewController
                                 this.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), selection.Equipment, _lootRandom.Randf));
             }
 
-            HeroState hero = this.GetModel<HeroModel>().GetState(_player.HeroId);
-            foreach (LootReward reward in this.GetSystem<LootSystem>().Roll(data.Config,
-                data.SoulPerOrbOverride ?? data.Config.SoulPerOrb, hero.MaxHp.Value, hero.MaxMp.Value, _lootRandom.Randf))
+            // 无英雄归属时仍保留地面掉落，只跳过飞行球，与官方 dropAura 的早退边界一致。
+            if (killer != null)
             {
-                LootOrbNode orb = NodePool.Instance.RentNode<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, this)
-                          ?? throw new InvalidOperationException("飞行掉落节点池未注册或资源无法显示。");
-                _lootOrbs.Add(orb);
-                orb.Show(data.Position, reward, OnLootFinished);
+                HeroState hero = this.GetModel<HeroModel>().GetState(killer.HeroId);
+                foreach (LootReward reward in this.GetSystem<LootSystem>().Roll(data.Config,
+                    data.SoulPerOrbOverride ?? data.Config.SoulPerOrb, hero.MaxHp.Value, hero.MaxMp.Value, _lootRandom.Randf))
+                {
+                    LootOrbNode orb = NodePool.Instance.RentNode<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, this)
+                              ?? throw new InvalidOperationException("飞行掉落节点池未注册或资源无法显示。");
+                    _lootOrbs.Add(orb);
+                    orb.Show(data.Position, reward, OnLootFinished);
+                }
             }
             // 先完成掉落登记，再允许玩家使用目标出口。
             if (data.EncounterComplete && this.GetSystem<LevelSystem>().TryOpenBatCaveExit(spawnPointId))

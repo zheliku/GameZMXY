@@ -3,6 +3,7 @@ using GameFramework.Fsm;
 using GameLogic.Architecture;
 using GameLogic.Enemies.Body;
 using GameLogic.Event.Equipment;
+using GameLogic.Heroes;
 using GameLogic.Profile;
 using Godot;
 using GodotGameFramework;
@@ -29,12 +30,16 @@ internal sealed class BullDemonHeartDeathState : AbstractEnemyBodyState
         body.TakePendingHurt();
         body.Velocity = Vector2.Zero;
         owner.BeginDeathPresentation();
-        // 原版在退场开始时直接赠入背包；延迟的死亡事件仍留到两秒演出完成，不能提前清关。
-        EquipmentGrantResult reward = owner.GetSystem<ProfileSystem>().GrantUniqueEquipment(owner.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), EquipmentId.DiamondSnare, GD.Randf);
-        if (reward != EquipmentGrantResult.AlreadyOwned)
+        // 退场开始时赠入致死者背包；延迟的死亡事件仍留到两秒演出完成，不能提前清关。
+        int heroId = GF.Entity.GetEntity(owner.LastHeroAttackerId) is AbstractHeroEntity hero ? hero.HeroId : 0;
+        if (heroId != 0)
         {
-            GF.Event.Fire(owner, EquipmentRewardEventArgs.Create(EquipmentId.DiamondSnare,
-                reward == EquipmentGrantResult.Collected));
+            EquipmentGrantResult reward = owner.GetSystem<ProfileSystem>().GrantUniqueEquipment(heroId, EquipmentId.DiamondSnare, GD.Randf);
+            if (reward != EquipmentGrantResult.AlreadyOwned)
+            {
+                GF.Event.Fire(owner, EquipmentRewardEventArgs.Create(EquipmentId.DiamondSnare,
+                    reward == EquipmentGrantResult.Collected));
+            }
         }
 
         _left = owner.DeathDuration;

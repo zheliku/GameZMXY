@@ -30,6 +30,11 @@ public sealed class EnemyDiedEventArgs : GameEventArgs
     public int ExperienceReward { get; private set; }
 
     /// <summary>
+    /// 最后一次有效命中本怪的英雄实体编号；0 表示无英雄归属，不发经验与飞行球。
+    /// </summary>
+    public int KillerEntityId { get; private set; }
+
+    /// <summary>
     /// 特殊敌人的每球灵魂覆盖值；为空时使用 Config.SoulPerOrb。
     /// </summary>
     public int? SoulPerOrbOverride { get; private set; }
@@ -64,6 +69,7 @@ public sealed class EnemyDiedEventArgs : GameEventArgs
     /// </summary>
     /// <param name="entityId">运行实体编号。</param>
     /// <param name="experienceReward">本次生成确定的击败经验。</param>
+    /// <param name="killerEntityId">最后一次有效命中的英雄实体编号；0 表示无英雄归属。</param>
     /// <param name="config">怪物只读配置。</param>
     /// <param name="position">死亡位置。</param>
     /// <param name="soulPerOrbOverride">特殊的每球灵魂覆盖值；为空时使用基础配置。</param>
@@ -71,13 +77,14 @@ public sealed class EnemyDiedEventArgs : GameEventArgs
     /// <param name="encounterComplete">是否归还当前配方名额并允许目标出口开放。</param>
     /// <param name="equipmentDropPoolIdOverride">特殊的装备池覆盖值；为空时使用基础配置。</param>
     /// <returns>仅在本次分发期间有效的参数。</returns>
-    public static EnemyDiedEventArgs Create(int entityId, int experienceReward, EnemyConfig config,
+    public static EnemyDiedEventArgs Create(int entityId, int experienceReward, int killerEntityId, EnemyConfig config,
         Vector2 position, int? soulPerOrbOverride = null, float? equipmentDropChanceOverride = null,
         bool encounterComplete = true, EquipmentDropPoolId? equipmentDropPoolIdOverride = null)
     {
         EnemyDiedEventArgs args = ReferencePool.Acquire<EnemyDiedEventArgs>();
         args.EntityId = entityId;
         args.ExperienceReward = experienceReward;
+        args.KillerEntityId = killerEntityId;
         args.Config = config;
         args.Position = position;
         args.SoulPerOrbOverride = soulPerOrbOverride;
@@ -94,6 +101,7 @@ public sealed class EnemyDiedEventArgs : GameEventArgs
     {
         EntityId = 0;
         ExperienceReward = 0;
+        KillerEntityId = 0;
         Config = null;
         Position = default;
         SoulPerOrbOverride = null;

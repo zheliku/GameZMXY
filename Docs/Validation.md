@@ -2,6 +2,71 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人C2：经验与球的命中归属（2026-11-10）
+
+用户在 C1 交付后授权继续 C2，按 C2-1 → C2-5 完成最后一次有效英雄命中的记录、死亡事件传递、经验发放、牛心唯一奖励与飞行球生成边界。11 月 9 日开工，完整 UI 回归跨至 11 月 10 日，案例目录沿用开工日期。仍只生成 P1，存档保持 v14；**全部要求验证通过，停在 C2 等待审查，不开始 C3**。
+
+依据：计划第一、二部分、第六部分阶段共同约束与 C2、第九部分占位清单、第十部分审查修正，以及规范第 00/10/30 章的状态所有权、实体生命周期、值事件与中文文档要求。复用 OnHurt、GF.Entity.GetEntity、池化事件、LevelSystem、ProfileSystem 与已有烟测；没有新增类型、文件或系统。
+
+本阶段的明确玩法变化：从未被任何英雄有效命中的怪物仍计击败、照常生成地面物品，**不发经验、不生成飞行球**；结算 AwardedExperience 也不累计未发出的经验。官方 BaseMonster.dropAura 先生成地面物品，再于无 curAttackTarget 时早退；官方还会自行用 AI 选人，所以存在“从未被打但已锁定某人仍给经验/球”的副作用，本项目按计划只认实际命中，归属字段与 AI 目标独立。牛心金钢琢按致死者发放，无归属则不发物品或奖励事件；官方 Monster24.toDead 固定写入 player1.zblist，本项目有意不采用这一点。源码行号与取舍见计划 C2 官方规则及 C2-4。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 开工基线 | HEAD 为 **394b97c**，工作区与索引干净。`dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0，**0 错误、5 条既有框架警告**；`dotnet test Tests/ProfileTests --no-restore -v quiet`、`dotnet test Tests/BattleTests --no-restore -v quiet`、`dotnet test Tests/LevelTests --no-restore -v quiet`：**320/320、195/195、19/19**，均退出 0。快照与日志在 `.godot/validation/coop_c2_20261109/` |
+| C2-1 完成 | 英雄归属记账与鹏魔蛋态同步后执行 `dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0，**0 错误、5 条既有框架警告**；`c2_1_build.log` |
+| C2-2 完成 | 死亡事件与两处原调用同步后，同命令：退出 0，**0 错误、5 条既有框架警告**；`c2_2_build.log` |
+| C2-3 完成 | 经验接口、当前会话归属解析与规则案例同步后，同命令：退出 0，**0 错误、5 条既有框架警告**；`c2_3_build.log` |
+| C2-4 完成 | 牛心唯一奖励按致死者发放后，同命令：退出 0，**0 错误、5 条既有框架警告**；`c2_4_build.log` |
+| C2-5 完成 | 飞行球按有效归属分支生成后，同命令：退出 0，**0 错误、5 条既有框架警告**；`c2_5_build.log`。五步错误数为 **0 / 0 / 0 / 0 / 0** |
+| 最终游戏构建 | 补齐烟测输入和边界案例、格式化后 `dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0，**0 错误、5 条既有框架警告**；`final_build.log` |
+| 最终规则测试 | 重跑三条 `dotnet test` 命令：退出 0，**323/323、195/195、19/19**，失败 0、跳过 0；Profile 新增 3 例，原测试数量与断言不减。`final_profile.log`、`final_battle.log`、`final_level.log`；保留既有 NU1900、CS8632/CS0649，后两项出现在 Battle 开工重编译日志 |
+| Godot 扫描/构建 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c2_scan_final_20261109 --headless --editor --build-solutions --quit --no-window`：退出 0，最终源码扫描/构建通过；保留既有 ComponentInsoector RefCounted/free 退出诊断。补烟测前的 `coop_c2_scan_20261109` 也退出 0，最终证据以前者为准 |
+| 引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：退出 0，**2283 条序列化路径、390 个 UID**，与 C1 相同；`final_references.log` |
+| 掉落专项 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c2_loot_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --loot-only`：**退出 0，完整 SMOKE PASS**。新增 `SMOKE-UNOWNED LOOT PASS`：直接消费真实死亡快照，击败数加一、个人经验/AwardedExperience/球集合不变、地面掉落数量符合正式 RollGround。保留 60/120Hz 正常击杀的经验/升级动画、红球数量与拾取、暂停、池复用和死亡清理断言。退出报告 **5 个 ObjectDB 实例** |
+| 鹏魔专项 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c2_garuda_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --garuda-only`：**退出 0，完整 SMOKE PASS**；60/120Hz、双朝向、五招、火焰淡入有效伤害、化卵/复生/死亡、第五击归属与池复用清零通过。退出报告 **7 个 ObjectDB 实例** |
+| 牛心专项 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c2_bull_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --bull-only`：**退出 0，完整 SMOKE PASS**；60/120Hz、五招/双朝向、吞噬释放、心脏显隐与火柱回收、无归属拒绝、致死归属、首次/重复/满包/提示缺席奖励、死亡完成与订阅复用通过。退出报告 **8 个 ObjectDB 实例** |
+| 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c2_frontend_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend`：**退出 0，完整 SMOKE PASS**；两英雄建档/选角、进关、地图购技、设置保存返回、重读、加载取消和部分注册清理通过。坏文件、重复注册与旧作用域拒绝为预期注入；退出报告 **5 个 ObjectDB 实例、1 个资源占用** |
+| 完整 UI | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c2_ui_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui`：**退出 0，完整 SMOKE PASS**；技能/无双、拾取出售、15 件穿戴、窗口/实体复用、升级与动画、60/120Hz 坡地/平台、死亡/检查点、备份恢复、存档重入与加载取消/失败清理通过。坏文件与 HUD 打开失败为预期注入。另有 **18 条 Godot GCHandle 初始化诊断**，同签名已在 11 月 6 日历史日志出现，详见下段；退出报告 **38 个 CanvasItem RID、20 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、141 个 ObjectDB 实例、11 个资源占用**与 GL 纹理明细。前端/UI 和所有专项均不设帧数强制退出，复用原 runner 的 900 秒超时与烟测完成后自行退出 |
+| 格式 | `dotnet format whitespace <csproj> --no-restore --include <本批 C# 绝对路径清单> --verify-no-changes`：GodotProject **10 份**、ProfileTests **1 份**均退出 0；`format_verify_game.log`、`format_verify_profile.log`，仅测试工作区既有加载警告 |
+| 差异与边界 | `git diff --check`、`git diff --cached --check` 均退出 0；11 份 C# 与4份文档为 UTF-8/CRLF，无行尾空白。HEAD 保持 **394b97c**，索引为空，15 份增量均未暂存；未执行 Git 写操作。Framework/addons/Luban、生成物、源表/bytes、场景、project.godot、csproj、HeroSpawn/IHeroBody/英雄 OnShow 与球追踪领取接口均无变化 |
+
+关键接口与生命周期对照：
+
+| C2 前 | C2 后 |
+| --- | --- |
+| 敌人只有 AI 目标 `_target` | 独立 `_lastHeroAttackerId`，0 表示未被英雄命中；新增 `protected void RecordHeroAttacker(int attackerEntityId)`，只由基类 OnHurt 首条语句与鹏魔蛋态分支调用；新增 `internal int LastHeroAttackerId`，供牛心死亡状态消费 |
+| 敌人 OnShow 只清 AI 目标 | 同时清英雄归属；BeginDeath 保留归属用于事件，持续伤害不改写；Miss、无敌或已死亡的攻击仍在原 ReceiveHit 边界拒绝，不进入 OnHurt |
+| `EnemyDiedEventArgs.Create(int entityId, int experienceReward, EnemyConfig config, ...)` | 增加 `int killerEntityId`，紧随 experienceReward；新增只读 `KillerEntityId`，Create 写入、Clear 清零。原敌人死亡入口和 LevelSmokeScenario 的重复事件同步实参，掉落专项另创建无归属输入 |
+| `bool RecordDefeat(int experienceReward)` | `bool RecordDefeat(int heroId, int experienceReward)`；保留会话门槛，运行中始终计击败；0 不发经验且返回 false，非零才累计已发经验并调用 AddExperience(heroId, ...) |
+| OnEnemyDefeated 总给 `_player` 经验与升级动画、按 `_player` 上限生成球 | 解析 KillerEntityId，仅 ReferenceEquals(killer, _player) 为当前会话有效归属；RecordDefeat 返回 true 时调用 killer.PlayLevelUp，球只按该英雄 HeroState 的生命/魔法上限生成。原 `_player.IsAlive` 总守卫按计划保留，D5 再处理死后延迟击杀 |
+| 牛心总向 P1 发唯一装备 | 由 owner.LastHeroAttackerId 解析英雄；0 时不调用 GrantUniqueEquipment、不发布 EquipmentRewardEventArgs；延迟两秒死亡/清关时序保持 |
+| `HeroSpawn(PlayerSlot Slot, Vector2 Position)`、AbstractHeroEntity.Slot、IHeroBody.Slot、英雄 OnShow 强制参数/席位契约 | **全部保持 C1 接口与实现**；本批不改英雄显示入口或席位装配 |
+| LootOrbNode.Show / Tick、球领取与追踪 | **签名与行为保持**，C3 才按球归属追踪/领取；本批只限制生成 |
+
+新增规则证据复用 LevelModelTests 和正式 TestGameScope：`UnownedDefeat_OnlyCountsEnemy` 先给第二英雄记录 25 点已发经验，再以 0/135 记录无归属击败，断言两人完整成长与已发统计保持、击败数加一；`Defeat_AwardsOnlyRequestedHero` 分别以英雄 1、2 为归属，核对真实 135 点升级门槛、返回值、结算统计与另一人完整成长不变。
+
+现有专项的新增检查：鹏魔在无英雄来源化卵、复生后，再以无来源完成前四次破蛋，第五次才用实际英雄来源；检查每击的归属、真正死亡与池复用清零，原动作/暂停/复生/死亡断言保留。牛心新增无归属真实致死情形，随后继续原首次/重复/满包/提示缺席四情形，核对致死一击归属与每次显示清零。
+
+实际文件清单：**15 份修改（11 份 C#、4 份文档），无新增或删除文件**。TheGame 路径相对 `Godot/GodotProject/`：
+
+| 目录 | 修改文件 |
+| --- | --- |
+| `TheGame/GameScripts/Entity/Enemies/` | `AbstractEnemyEntity.cs`、`Bosses/zm1_06_garuda_cave/PengDemonKingEntity.cs`、`Bosses/zm1_10_bull_demon_valley/BullDemonHeartDeathState.cs` |
+| `TheGame/GameScripts/Entity/Level/` | `LevelViewController.Loot.cs` |
+| `TheGame/GameScripts/Event/Combat/` | `EnemyDiedEventArgs.cs` |
+| `TheGame/GameScripts/Systems/` | `LevelSystem.cs` |
+| `TheGame/MainPack/Scripts/Debug/` | `LevelSmokeScenario.cs`、`UiSmokeScenario.cs`、`UiSmokeScenario.Bull.cs`、`UiSmokeScenario.Garuda.cs` |
+| `Tests/ProfileTests/` | `LevelModelTests.cs` |
+| `Docs/` | `CoopImplementationPlan.md`、`WorkingNotes.md`、`ProjectTour.md`、`Validation.md` |
+
+全仓执行 `rg -n -C 2 'ShowEntityAsync|ShowOwnedEntityAsync' . --glob '*.cs'`：仍只有 ProcedureLevel、UiSmokeScenario.ShowHeroAsync、TestArenaController.SpawnHeroAsync 三处英雄请求，分别传 `HeroSpawn(P1, PlayerSpawnPosition)`、`HeroSpawn(P1, Vector2.Zero)`、`HeroSpawn(P1, _playerStart.GlobalPosition)`；本批没有新增英雄显示点。完整输出见 `hero_show_search.log`。归属字段、事件与 RecordDefeat 调用搜索见 `ownership_search.log`。
+
+实际遇到而计划未逐文件列出的情况：通用 `UiSmokeScenario.DefeatMonsterAsync` 原用无来源攻击包模拟英雄击杀，却断言获得经验；按 C2 新契约应被视为无归属。已机械补传该方法已有的 hero.Id，并新增致死归属断言，原经验、球、升级动画断言全部保留；其他有意无来源的伤害夹具不冒认英雄。掉落、鹏魔和牛心边界均扩展在既有烟测分支/方法内，没有新增模式或生产观测入口。未遇到需改变计划方向的冲突。
+
+完整 UI 的 stderr 中出现 18 条 `System.InvalidOperationException: Handle is not initialized`，栈为 `GCHandle.FromIntPtr → ScriptManagerBridge.SwapGCHandleForType → PackedScene.Instantiate → DefaultSceneHelper`。全验证目录搜索发现 `tangseng_hit_musou_final_20261106`、`skill_grid_full_ui`、`enemy_garuda_shapes` 三份旧日志已有同一 GCHandle/SwapGCHandleForType 错误签名，各 2 条；前者时间为 2026-11-06，原栈经 ResourceLoader.LoadThreadedGet。本次将出现位置与数量如实登记，不能称为日志无错误；未修改引擎、框架、场景或资源加载链，也未为此重复烟测。当前 C2 规则和全部运行断言均通过，该历史诊断与原退出泄漏保留待另批定位。
+
+当前 C2 范围内无未完成项。单人正常击杀的经验、升级动画与球数量由原掉落专项和完整 UI 再次检查；只改变前述无归属边界和牛心奖励归属。正常数值全关人工实战未执行，本批不声称已完成双实体实战。所有烟测使用既有 runner 的案例专属 APPDATA，不覆盖正式玩家存档；存档仍为 v14，无结构变更或旧档重建要求。C3 须待用户接受 C2 并明确授权；球追踪/领取、地面物品归属、P2 输入和双英雄装配未开始。
+
 ## 双人C1：英雄实体携带席位（2026-11-09）
 
 用户接受阶段 B 审查并确认开始后，按 C1-1 → C1-4 完成英雄显示参数、实体席位、身体接口和全部三处消费者迁移。当前仍只生成 P1，一套输入与 HUD，存档保持 v14。全部要求验证通过；**本批停在 C1 等待审查，不进入 C2**。
