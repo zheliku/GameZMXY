@@ -19,6 +19,7 @@ using GameLogic.Enemies;
 using GameLogic.Enemies.AI;
 using GameLogic.Equipment;
 using GameLogic.FloatingText;
+using GameLogic.Heroes;
 using GameLogic.Input;
 using GameLogic.Profile;
 using GameLogic.Save;
@@ -242,14 +243,14 @@ public partial class TestArenaController : Node2D
     /// <returns>显示完成的异步任务。</returns>
     private async Task SpawnHeroAsync(EntityComponent entities, CancellationToken cancellationToken)
     {
-        IEntity entity = await ShowOwnedEntityAsync(entities, _heroEntityId, null, cancellationToken);
+        IEntity entity = await ShowOwnedEntityAsync(entities, _heroEntityId,
+            new HeroSpawn(PlayerSlot.P1, _playerStart.GlobalPosition), cancellationToken);
         if (entity?.Handle is not Node2D hero)
         {
             GD.PushError($"[TestArena] 玩家实体显示失败：{_heroEntityId}");
             return;
         }
 
-        hero.GlobalPosition = _playerStart.GlobalPosition;
         _hero = hero;
         Log.Info("[TestArena] 显示玩家 {0} @ {1}", _heroEntityId, hero.GlobalPosition);
     }

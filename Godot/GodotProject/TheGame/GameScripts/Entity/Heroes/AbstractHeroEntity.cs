@@ -81,6 +81,11 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     public int HeroId => _heroId;
 
     /// <summary>
+    /// 本次显示由哪个玩家席位控制；每次 OnShow 覆盖。
+    /// </summary>
+    public PlayerSlot Slot { get; private set; }
+
+    /// <summary>
     /// 战斗与背包预览共用的只读外观资源引用。
     /// </summary>
     public HeroAppearanceResource Appearance => _appearance;
@@ -207,8 +212,10 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <summary>
     /// 显示时绑定流程已经准备好的数据，复位动作表现并创建身体状态机。
     /// </summary>
-    /// <param name="userData">不传递英雄数据；属性从本局模型读取。</param>
-    /// <exception cref="InvalidOperationException">本局属性模型未准备，或不是当前英雄。</exception>
+    /// <param name="userData">必须是 <see cref="HeroSpawn"/>；属性从本局模型读取。</param>
+    /// <exception cref="ArgumentException">显示参数不是 HeroSpawn。</exception>
+    /// <exception cref="InvalidOperationException">本局属性模型未准备，或席位与英雄不一致。</exception>
+    /// <exception cref="ArgumentOutOfRangeException">玩家席位不在当前阵容内。</exception>
     public override void OnShow(object userData)
     {
         // 显示只装配表现；即使异步迟到，也不重置或修改当前模型。
@@ -217,6 +224,16 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
             throw new InvalidOperationException($"英雄 {HeroId} 显示前必须准备本局属性模型。");
         }
 
+        if (userData is not HeroSpawn spawn)
+        {
+            throw new ArgumentException("英雄显示参数必须包含玩家席位与出生位置。", nameof(userData));
+        }
+        if (this.GetModel<ProfileModel>().HeroOf(spawn.Slot) != HeroId)
+        {
+            throw new InvalidOperationException($"玩家席位 {spawn.Slot} 与英雄 {HeroId} 不一致。");
+        }
+
+        Slot = spawn.Slot;
         base.OnShow(userData);
         // 先复位上次动作写入的可见性/效果轨道，不能让死亡动画在本次显示后继续写回墓碑。
         RestartAnim(HeroAnims.Reset);
@@ -238,6 +255,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
         _captorId = 0;
         ActionData.Captured = false;
         Velocity = Vector2.Zero;
+        GlobalPosition = spawn.Position;
         this.GetSystem<InputSystem>().Reset(ActionData);
         SetFacing(1);
         PlayAnim(HeroAnims.Idle);

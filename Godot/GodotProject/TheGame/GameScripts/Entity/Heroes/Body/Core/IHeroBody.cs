@@ -19,6 +19,11 @@ public interface IHeroBody : IActorBody, Architecture.ICanGetSystem, Architectur
     int HeroId { get; }
 
     /// <summary>
+    /// 本身体当前所属的玩家席位，用于按席位读取输入。
+    /// </summary>
+    PlayerSlot Slot { get; }
+
+    /// <summary>
     /// 同类英雄共享的只读身体参数，动作时长来自动画资源。
     /// </summary>
     HeroBodyParams Params

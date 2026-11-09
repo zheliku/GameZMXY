@@ -158,7 +158,8 @@ public class ProcedureLevel : ProcedureBase
             levelViewController.EntranceOpacityChanged += OnEntranceOpacityChanged;
 
             // 档案身份决定实体资源；英雄共用同一装配与异步生命周期。
-            AbstractHeroEntity hero = await entities.ShowEntityAsync<AbstractHeroEntity>(heroConfig.EntityId);
+            AbstractHeroEntity hero = await entities.ShowEntityAsync<AbstractHeroEntity>(heroConfig.EntityId,
+                new HeroSpawn(PlayerSlot.P1, _levelViewController.PlayerSpawnPosition));
             GC.KeepAlive(heroAsset.Result);
             Log.Info("[ProcedureLevel] 加载耗时：英雄显示 {0} ms", loadingWatch.ElapsedMilliseconds);
             if (entrySerial != _entrySerial)
@@ -172,8 +173,6 @@ public class ProcedureLevel : ProcedureBase
             {
                 throw new InvalidOperationException("英雄初始化失败。");
             }
-
-            _hero.GlobalPosition = _levelViewController.PlayerSpawnPosition;
 
             // HUD 依赖与场景并行加载；先装配并绑定窗口，避免开战后再等首帧 UI 加载。
             var battleFormReady = new TaskCompletionSource();

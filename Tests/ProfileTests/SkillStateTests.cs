@@ -322,6 +322,9 @@ public sealed class SkillStateTests
         public int HeroId => 1;
 
         /// <inheritdoc />
+        public PlayerSlot Slot => PlayerSlot.P1;
+
+        /// <inheritdoc />
         public bool IsAnimationComplete(string animation) => true;
 
         /// <inheritdoc />

@@ -1656,7 +1656,8 @@ public sealed partial class UiSmokeScenario
         BattleConfig battle = ConfigSystem.Instance.Tables.TbBattleConfig.Data;
         heroSystem.ResetWs(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), battle.WsMax, battle.WsDecayPerSecond, battle.WsDrainPerSecond);
         HeroConfig definition = ConfigSystem.Instance.Tables.TbHeroConfig.Get(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1));
-        var hero = (AbstractHeroEntity)await GF.Entity.ShowEntityAsync(definition.EntityId);
+        var hero = (AbstractHeroEntity)await GF.Entity.ShowEntityAsync(definition.EntityId,
+            new HeroSpawn(PlayerSlot.P1, Vector2.Zero));
         hero.SetPhysicsProcess(false);
         return hero;
     }

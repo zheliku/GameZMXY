@@ -431,6 +431,9 @@ public sealed class SkillReuseTests
         public int HeroId => 1;
 
         /// <inheritdoc />
+        public PlayerSlot Slot => PlayerSlot.P1;
+
+        /// <inheritdoc />
         public HeroBodyParams Params { get; } = new()
         {
             WalkSpeed = 144,

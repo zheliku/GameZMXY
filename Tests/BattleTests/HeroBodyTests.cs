@@ -822,6 +822,9 @@ public sealed class HeroBodyTests
         public int HeroId => 1;
 
         /// <inheritdoc />
+        public PlayerSlot Slot => PlayerSlot.P1;
+
+        /// <inheritdoc />
         float IActorBody.Gravity => Params.Gravity;
         /// <summary>
         /// 是否站在单向平台。

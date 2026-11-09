@@ -2,6 +2,66 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人C1：英雄实体携带席位（2026-11-09）
+
+用户接受阶段 B 审查并确认开始后，按 C1-1 → C1-4 完成英雄显示参数、实体席位、身体接口和全部三处消费者迁移。当前仍只生成 P1，一套输入与 HUD，存档保持 v14。全部要求验证通过；**本批停在 C1 等待审查，不进入 C2**。
+
+依据为实施计划第一、二部分、第六部分共同约束与 C1、第九部分占位清单及第十部分审查修正，以及规范第 00/10/30 章。复用现有 GF.Entity 显示参数、ProfileModel.HeroOf 和实体池生命周期，不新增系统、兼容入口或默认 P1 回退。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 开工状态与基线 | HEAD 为 **511f0c5**；已有计划与 WorkingNotes 两份用户未暂存修订，索引原为空。`dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0，**0 错误、0 警告（增量）**；`dotnet test Tests/ProfileTests --no-restore -v quiet`、`dotnet test Tests/BattleTests --no-restore -v quiet`、`dotnet test Tests/LevelTests --no-restore -v quiet`：**320/320、195/195、19/19**，均退出 0。快照与日志在 `.godot/validation/coop_c1_20261109/` |
+| C1-1 完成 | 新增 HeroSpawn 后运行 `dotnet build Godot/GodotProject --no-restore -v quiet`：**退出 0，0 错误、5 条既有框架警告**；`c1_1_build.log` |
+| C1-2 完成 | 实体新增 Slot、强制参数/席位校验并接管出生位置；同一构建命令：**退出 0，0 错误、5 条既有框架警告**；`c1_2_build.log`。此时旧消费者尚未迁移，未启动游戏；编译通过不等于旧入口可运行 |
+| C1-3 完成 | IHeroBody 与三处假实现同步后，同一构建命令：**退出 0，0 错误、5 条既有框架警告**；`c1_3_build.log` |
+| C1-4 完成 | 三处显示入口全部传 HeroSpawn 后，同一构建命令：**退出 0，0 错误、5 条既有框架警告**；`c1_4_build.log`。四步编译错误数为 **0 / 0 / 0 / 0** |
+| 最终游戏构建 | 格式化后 `dotnet build Godot/GodotProject --no-restore -v quiet`：**退出 0，0 错误、5 条既有框架警告**；`final_build.log` |
+| 最终规则测试 | 再次执行上述三条 `dotnet test` 命令：**退出 0，320/320、195/195、19/19**，各自失败 0、跳过 0；`final_profile.log`、`final_battle.log`、`final_level.log`。测试数量及原断言保持，既有 NU1900、CS8632/CS0649 警告保留 |
+| Godot 扫描/构建 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c1_scan_20261109 --headless --editor --build-solutions --quit --no-window`：**退出 0**，Godot 正常生成 HeroSpawn.cs.uid；保留既有 ComponentInsoector 的 RefCounted/free 退出诊断 |
+| 引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出 0，2283 条序列化路径、390 个 UID**；比 B3 增加 HeroSpawn 的 1 个 UID，路径数不变；`final_references.log` |
+| 测试场地入口 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c1_arena_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 600 res://TheGame/Scenes/test_arena.tscn`：**退出 0**；日志记录 `Wukong @ (120, 300)`，与 PlayerStart 原标记一致，随后显示两只怪并报告就绪，关停前无参数/席位异常。退出报告 **3 个 Shape2D RID、8 个 ObjectDB 实例、3 个资源占用**，如实保留 |
+| 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c1_frontend_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend`：**退出 0，完整 SMOKE PASS**。悟空/唐僧建档、进关、保存重读、地图学技、加载取消与部分注册清理通过。坏文件、重复注册和旧作用域拒绝为预期注入；退出保留 **3 个 ObjectDB 实例**诊断 |
+| 完整 UI | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c1_ui_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui`：**退出 0，完整 SMOKE PASS**。技能/无双、拾取/出售、15 件穿戴、朝向/动画/外观、窗口和实体复用、60/120Hz 坡地/平台、死亡/检查点、存档重入、备份恢复、加载取消和失败清理通过。坏文件及 HUD 打开失败为预期注入；退出保留 **38 个 CanvasItem RID、20 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、140 个 ObjectDB 实例、11 个资源占用**与 GL 纹理明细。前端/UI 均未设帧数强制退出，使用原 runner 的 900 秒超时与烟测完成后自行退出 |
+| 格式 | `dotnet format whitespace <csproj> --no-restore --include <本批 C# 绝对路径清单> --verify-no-changes`：GodotProject **6 份**、ProfileTests **1 份**、BattleTests **2 份**，均退出 0；`format_verify_game.log`、`format_verify_profile.log`、`format_verify_battle.log`，仅测试工作区既有加载警告 |
+| 差异与边界 | `git diff --check`、`git diff --cached --check` 均退出 0；9 份 C# 为 UTF-8/CRLF，无行尾空白。HEAD 保持 511f0c5；执行中用户暂存的两份原文档修订与开工快照一致，暂存差异 SHA-256 在后续操作中保持；本批增量未暂存，未执行 Git 写操作。Framework/addons/Luban、生成业务代码/资源、源表/bytes、场景、project.godot、csproj 与 FormData、SmokeTestDriver 均无本批变化 |
+
+关键接口前后对照：
+
+| C1 前 | C1 后 |
+| --- | --- |
+| 无英雄显示参数类型 | 新增 `public readonly record struct HeroSpawn(PlayerSlot Slot, Vector2 Position)`，命名空间 GameLogic.Heroes，位置为世界坐标/像素 |
+| AbstractHeroEntity 无席位属性 | 新增 `public PlayerSlot Slot { get; private set; }`，每次 OnShow 覆盖，OnHide 不清空 |
+| `OnShow(object userData)` 不消费英雄参数；只检查本局模型已有 HeroId | 签名不变；按顺序检查本局模型已有 HeroId → userData 是 HeroSpawn → `ProfileModel.HeroOf(spawn.Slot) == HeroId` → 写 Slot → base.OnShow。参数类型错误抛 ArgumentException，英雄不匹配抛 InvalidOperationException；非法席位沿用 HeroOf 的 ArgumentOutOfRangeException |
+| 流程/测试场地在显示返回后另赋出生位置 | OnShow 的池复位段在 Velocity 旁写 `GlobalPosition = spawn.Position`；删除两处返回后的单独赋值。原朝向、待机、RESET、外观和身体状态机代码保持 |
+| IHeroBody 只有 HeroId，无席位 | 在 HeroId 后新增 `PlayerSlot Slot { get; }`；三处既有测试假实现返回 P1 |
+
+全仓搜索执行 `rg -n -C 2 'ShowEntityAsync|ShowOwnedEntityAsync' . --glob '*.cs'`（完整输出见 `hero_show_search.log`），逐项检查显示入口与转发链，仅下列三处创建英雄显示请求，其余为敌人显示、框架实现或注释，无第四处英雄消费者：
+
+| 英雄入口 | 最终参数与位置归属 |
+| --- | --- |
+| `MainPack/Scripts/Procedure/ProcedureLevel.cs:161` | `ShowEntityAsync<AbstractHeroEntity>(heroConfig.EntityId, new HeroSpawn(PlayerSlot.P1, _levelViewController.PlayerSpawnPosition))` |
+| `MainPack/Scripts/Debug/UiSmokeScenario.cs:1659` | `GF.Entity.ShowEntityAsync(definition.EntityId, new HeroSpawn(PlayerSlot.P1, Vector2.Zero))`；具体烟测随后设置测试位置的代码按计划保留 |
+| `MainPack/Scripts/Debug/TestArenaController.cs:246` | `ShowOwnedEntityAsync(entities, _heroEntityId, new HeroSpawn(PlayerSlot.P1, _playerStart.GlobalPosition), cancellationToken)`；现有转发方法只改写 EnemySpawn，对 HeroSpawn 原样透传 |
+
+另执行 `rg -n 'new HeroSpawn|GlobalPosition\s*=' Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLevel.cs Godot/GodotProject/TheGame/MainPack/Scripts/Debug/TestArenaController.cs`：只有两处 HeroSpawn 和测试场地原有相机跟随赋值，英雄出生位置不再由消费者重复赋值。SmokeTestDriver 没有显示入口，未修改。
+
+实际文件清单：**14 份（12 份修改、2 份新增），无删除**。下列 TheGame 路径相对 `Godot/GodotProject/`：
+
+| 目录 | 文件 |
+| --- | --- |
+| `TheGame/GameScripts/Entity/Heroes/` | 新增 `HeroSpawn.cs`、Godot 生成的 `HeroSpawn.cs.uid`；修改 `AbstractHeroEntity.cs`、`Body/Core/IHeroBody.cs` |
+| `TheGame/MainPack/Scripts/Procedure/` | 修改 `ProcedureLevel.cs` |
+| `TheGame/MainPack/Scripts/Debug/` | 修改 `UiSmokeScenario.cs`、`TestArenaController.cs` |
+| `Tests/BattleTests/` | 修改 `HeroBodyTests.cs`、`SkillReuseTests.cs` |
+| `Tests/ProfileTests/` | 修改 `SkillStateTests.cs` |
+| `Docs/` | 修改 `CoopImplementationPlan.md`、`WorkingNotes.md`、`ProjectTour.md`、`Validation.md`；保留开工已有的用户文档修订 |
+
+任务目标已明确三处英雄调用，计划 C1-4 首句却仍写“两处”，下段才另列 TestArena；按目标与第十部分修正执行，并将该段统一为三行表格，未改变方案。HeroSpawn 无需测试编译项，两个测试工程均正常编译，未改 csproj。除此之外未遇到需改变方向的计划冲突。
+
+单人出生位置沿用原流程/场地标记，朝向、动画和外观初始化逻辑保持，完整前端/UI 与池复用回归通过；正常数值全关人工实战未执行。本批未改存档结构，v14 档案无需重建。烟测均使用既有 runner 的案例专属 APPDATA，不覆盖正式玩家存档；历史退出诊断保留，未在本批处理。
+
+当前 C1 范围内无未完成项。C2 的前置条件为用户接受 C1 并明确授权；经验/致死归属、掉落归属、P2 输入、第二英雄装配、双 HUD 均未开始。
+
 ## 双人B3：战斗规则证据与阶段A～B回归（2026-11-09）
 
 用户接受 B2 后授权 B3，按 B3-1 → B3-2 完成双人战斗规则证据与阶段 A～B 完整回归。**只修改测试和进度/验证文档，生产源码与资源无变化**。新增 17 个规则案例，当前 Profile 320、Battle 195、Level 19。仍只装配一名实战英雄，存档保持 v14，无持久结构变化；本批完成后停在 B3，等待审查，不进入 C1。
