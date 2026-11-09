@@ -28,11 +28,17 @@ public partial class LootOrbNode : AnimatedSprite2D, IPoolable
     private float _speed; // 当前追踪速度，像素/秒。
 
     /// <summary>
+    /// 本次飞行奖励归属的英雄实体编号；取出和归还节点池时清零。
+    /// </summary>
+    public int OwnerEntityId { get; private set; }
+
+    /// <summary>
     /// 池取出时停止上次驱动，等待所属关卡提供本次参数。
     /// </summary>
     public void OnGet()
     {
         SetProcess(false);
+        OwnerEntityId = 0;
         _age = 0;
         Modulate = Colors.White;
     }
@@ -44,6 +50,7 @@ public partial class LootOrbNode : AnimatedSprite2D, IPoolable
     {
         SetProcess(false);
         Stop();
+        OwnerEntityId = 0;
         _finished = null;
         _reward = default;
     }
@@ -53,11 +60,13 @@ public partial class LootOrbNode : AnimatedSprite2D, IPoolable
     /// </summary>
     /// <param name="position">怪物死亡位置附近的出生点。</param>
     /// <param name="reward">尚未领取的奖励。</param>
+    /// <param name="ownerEntityId">本次追踪和领取奖励的英雄实体编号。</param>
     /// <param name="finished">完成回调；只在当前显示期间调用一次。</param>
-    public void Show(Vector2 position, LootReward reward,
+    public void Show(Vector2 position, LootReward reward, int ownerEntityId,
         Action<LootOrbNode, LootReward> finished)
     {
         _reward = reward;
+        OwnerEntityId = ownerEntityId;
         _finished = finished;
         _random.Randomize();
         _start = GlobalPosition = position + new Vector2(

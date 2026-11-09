@@ -79,7 +79,7 @@ public partial class LevelViewController
                     LootOrbNode orb = NodePool.Instance.RentNode<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, this)
                               ?? throw new InvalidOperationException("飞行掉落节点池未注册或资源无法显示。");
                     _lootOrbs.Add(orb);
-                    orb.Show(data.Position, reward, OnLootFinished);
+                    orb.Show(data.Position, reward, killer.Id, OnLootFinished);
                 }
             }
             // 先完成掉落登记，再允许玩家使用目标出口。
@@ -119,23 +119,23 @@ public partial class LevelViewController
     /// <returns>是否完成领取。</returns>
     private bool TryCollectGroundItem(AbstractHeroEntity hero, PickupId pickupId, EquipmentData data)
     {
-        if (LevelModel.Outcome.Value != LevelOutcome.Running || !ReferenceEquals(hero, _player) || !hero.IsAlive)
+        if (LevelModel.Outcome.Value != LevelOutcome.Running || !(ReferenceEquals(hero, _player) && hero.IsAlive))
         {
             return false;
         }
 
         if (data != null)
         {
-            return this.GetSystem<LevelSystem>().TryCollectEquipment(_player.HeroId, data);
+            return this.GetSystem<LevelSystem>().TryCollectEquipment(hero.HeroId, data);
         }
 
-        if (!this.GetSystem<LevelSystem>().TryCollectPickup(_player.HeroId, pickupId))
+        if (!this.GetSystem<LevelSystem>().TryCollectPickup(hero.HeroId, pickupId))
         {
             return false;
         }
 
         PickupConfig pickup = this.GetModel<ConfigurationModel>().Tables.TbPickupConfig.Get(pickupId);
-        _floatingText.ShowRecovery(_player.GlobalPosition, pickup.RestoreAmount,
+        _floatingText.ShowRecovery(hero.GlobalPosition, pickup.RestoreAmount,
             pickup.Effect == PickupEffect.Mana ? RecoveryKind.Mana : RecoveryKind.Health);
         return true;
     }
@@ -159,7 +159,7 @@ public partial class LevelViewController
     }
 
     /// <summary>
-    /// 只接受本关仍拥有的球，先归还实例，再在一次接触中发放对应奖励。
+    /// 只接受本关仍拥有的球，先读取归属再回池，向仍存活的归属英雄发放一次奖励。
     /// </summary>
     /// <param name="orb">结束飞行的池实例。</param>
     /// <param name="reward">本次收益快照。</param>
@@ -170,8 +170,13 @@ public partial class LevelViewController
             return;
         }
 
+        // 归还节点池会清零归属，必须先解析本次接收者。
+        var hero = GF.Entity.GetEntity(orb.OwnerEntityId) as AbstractHeroEntity;
         NodePool.Instance.Release(orb);
-        this.GetSystem<LevelSystem>().CollectLoot(_player.HeroId, reward);
+        if (hero is { IsAlive: true })
+        {
+            this.GetSystem<LevelSystem>().CollectLoot(hero.HeroId, reward);
+        }
 
         if (_exitRequested && _lootOrbs.Count == 0 && LevelModel.Outcome.Value == LevelOutcome.Running)
         {
@@ -180,7 +185,7 @@ public partial class LevelViewController
     }
 
     /// <summary>
-    /// 仅由本关所有者取英雄坐标，逐球推进；接触回调可以清空集合。
+    /// 由本关所有者解析各球的归属英雄并推进；目标失效则回收，接触回调可以清空集合。
     /// </summary>
     /// <param name="delta">本帧游戏秒数。</param>
     private void TickLoot(float delta)
@@ -210,7 +215,6 @@ public partial class LevelViewController
             return;
         }
 
-        Vector2 target = _player.HurtBox.GetGlobalBounds().GetCenter();
         _lootTickBuffer.AddRange(_lootOrbs);
         try
         {
@@ -218,7 +222,16 @@ public partial class LevelViewController
             {
                 if (_lootOrbs.Contains(orb))
                 {
-                    orb.Tick(delta, target);
+                    if (GF.Entity.GetEntity(orb.OwnerEntityId) is AbstractHeroEntity { IsAlive: true } hero)
+                    {
+                        orb.Tick(delta, hero.HurtBox.GetGlobalBounds().GetCenter());
+                    }
+                    else
+                    {
+                        // 归属者离场或死亡时球作废，回收不经过领取结算。
+                        _lootOrbs.Remove(orb);
+                        NodePool.Instance.Release(orb);
+                    }
                 }
             }
         }

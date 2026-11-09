@@ -240,7 +240,7 @@ public sealed partial class UiSmokeScenario
                         GD.Print($"SMOKE-HEALTH {ticks}Hz PASS: actual death drop, pause, pickup, clamp, shared pool and cleanup.");
                     }
 
-                    SpawnOrb(level, hero.GlobalPosition, new(GameLogic.Drops.LootKind.Health, 10));
+                    SpawnOrb(level, hero.GlobalPosition, new(GameLogic.Drops.LootKind.Health, 10), hero.Id);
                     HashSet<LootOrbNode> pending = SmokeInspection.ReadField<HashSet<GameLogic.Drops.LootOrbNode>>(level, "_lootOrbs");
                     KillHero(hero);
                     Check(pending.Count == 0 && flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Hp.Value == 0, "死亡没有清理红球或红球使英雄复活");
@@ -718,7 +718,7 @@ public sealed partial class UiSmokeScenario
             int soulAfterKill = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
             LevelViewController deathRun = SmokeInspection.Level(procedure);
             HashSet<LootOrbNode> pendingOrbs = SmokeInspection.ReadField<HashSet<GameLogic.Drops.LootOrbNode>>(deathRun, "_lootOrbs");
-            SpawnOrb(deathRun, FindHero().GlobalPosition, new(GameLogic.Drops.LootKind.Soul, 50));
+            SpawnOrb(deathRun, FindHero().GlobalPosition, new(GameLogic.Drops.LootKind.Soul, 50), FindHero().Id);
             Check(pendingOrbs.Count > 0, "死亡回收测试缺少在途奖励");
             KillHero(FindHero());
             Check(pendingOrbs.Count == 0 && flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soulAfterKill,

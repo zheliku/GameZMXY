@@ -118,7 +118,7 @@ public sealed partial class UiSmokeScenario
     {
         HashSet<LootOrbNode> owned = SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "_lootOrbs");
         GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(hero.HeroId, GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Mp.Value - 2);
-        LootOrbNode first = SpawnManaOrb(level, hero.GlobalPosition);
+        LootOrbNode first = SpawnManaOrb(level, hero.GlobalPosition, hero.Id);
         Check(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Mp.Value == 2, "蓝球出生时已直接回蓝");
         Vector2 pausedPosition = first.GlobalPosition;
         GF.Base.PauseGame();
@@ -145,7 +145,7 @@ public sealed partial class UiSmokeScenario
         hero.GlobalPosition = originalHeroPosition;
         GF.Fsm.GetSystem<HeroSystem>().RestoreMp(hero.HeroId, GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).MaxMp.Value);
         GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(hero.HeroId, 2);
-        LootOrbNode reused = SpawnManaOrb(level, hero.GlobalPosition);
+        LootOrbNode reused = SpawnManaOrb(level, hero.GlobalPosition, hero.Id);
         Check(ReferenceEquals(first, reused), "蓝球没有复用同一 GGF 池实例");
         await WaitUntilAsync(() => owned.Count == 0, "复用蓝球没有结束飞行", 10000);
         Check(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Mp.Value == GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).MaxMp.Value, "蓝球超出上限或复用后未正确回蓝");
@@ -154,7 +154,7 @@ public sealed partial class UiSmokeScenario
         HeroState model = flow.GetModel<HeroModel>().GetState(hero.HeroId);
         model.Hp.Value = 1;
         int health = flow.GetSystem<LootSystem>().HealthAmount(model.MaxHp.Value);
-        LootOrbNode red = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
+        LootOrbNode red = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health), hero.Id);
         Check(ReferenceEquals(reused, red) && red.Animation == LootAnims.Health && model.Hp.Value == 1,
             "蓝球复用为红球后动画/奖励未刷新或提前回血");
         Vector2 redPosition = red.GlobalPosition;
@@ -173,7 +173,7 @@ public sealed partial class UiSmokeScenario
         foreach (int hp in new[] { model.MaxHp.Value - 1, model.MaxHp.Value })
         {
             model.Hp.Value = hp;
-            LootOrbNode clamped = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
+            LootOrbNode clamped = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health), hero.Id);
             Check(ReferenceEquals(red, clamped), "红球未复用原池实例");
             await WaitUntilAsync(() => owned.Count == 0, "满血附近红球未回池", 10000);
             Check(model.Hp.Value == model.MaxHp.Value, "红球超出生命上限或满血无法回收");
@@ -188,7 +188,7 @@ public sealed partial class UiSmokeScenario
         GF.Fsm.GetSystem<HeroSystem>().AdvanceWs(hero.HeroId, 2);
         int musou = GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Ws.Value;
         int experience = flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience;
-        SpawnOrb(level, hero.GlobalPosition, new(LootKind.Musou, ConfigSystem.Instance.Tables.TbBattleConfig.Data.MusouPerOrb));
+        SpawnOrb(level, hero.GlobalPosition, new(LootKind.Musou, ConfigSystem.Instance.Tables.TbBattleConfig.Data.MusouPerOrb), hero.Id);
         await WaitUntilAsync(() => owned.Count == 0, "黄球没有接触英雄", 10000);
         Check(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Ws.Value == musou + 5 && flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience == experience,
             "开启期间的黄球没有补充5无双，或错误增加经验");
@@ -199,7 +199,8 @@ public sealed partial class UiSmokeScenario
         // 用明显不同的位置验证球的飞行目标，不改动本关生命状态。
         _extraHero.GlobalPosition = hero.GlobalPosition + new Vector2(400, 0);
         GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(hero.HeroId, GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Mp.Value - 2);
-        LootOrbNode targetProbe = SpawnManaOrb(level, _extraHero.GlobalPosition);
+        LootOrbNode targetProbe = SpawnManaOrb(level, _extraHero.GlobalPosition, hero.Id);
+        Check(targetProbe.OwnerEntityId == hero.Id, "飞行球没有保存指定归属英雄编号");
         Vector2 lastPosition = targetProbe.GlobalPosition;
         await WaitUntilAsync(() =>
         {
@@ -214,11 +215,36 @@ public sealed partial class UiSmokeScenario
             "球飞向了额外显示的英雄，没有飞向本关实际英雄");
         Check(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Mp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).MaxMp.Value, 2 + flow.GetSystem<LootSystem>().ManaAmount(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).MaxMp.Value)),
             "球错误跟随了同场景的其他英雄，未向本关英雄发放奖励");
+        Check(targetProbe.OwnerEntityId == 0, "飞行球领取后归还节点池没有清零归属");
+
+        // 反向指定现有额外节点，确认目标由每颗球的编号决定，而非统一使用关卡主节点。
+        model.Mp.Value = 2;
+        LootOrbNode personalProbe = SpawnManaOrb(level, hero.GlobalPosition, _extraHero.Id);
+        lastPosition = personalProbe.GlobalPosition;
+        await WaitUntilAsync(() =>
+        {
+            if (owned.Contains(personalProbe))
+            {
+                lastPosition = personalProbe.GlobalPosition;
+            }
+            return !owned.Contains(personalProbe);
+        }, "指定额外节点的飞行球没有完成追踪", 10000);
+        Check(lastPosition.DistanceTo(_extraHero.GlobalPosition) < lastPosition.DistanceTo(hero.GlobalPosition) &&
+            model.Mp.Value == Math.Min(model.MaxMp.Value, 2 + flow.GetSystem<LootSystem>().ManaAmount(model.MaxMp.Value)),
+            "飞行球没有跟随自身归属节点，或回池清零后丢失了奖励");
+
+        // 用已有额外表现节点验证目标离场；它与本关英雄共用数值，不能伪造独立死亡。
+        int soul = flow.GetModel<ProfileModel>().GetSoul(hero.HeroId).Value;
+        LootOrbNode orphan = SpawnOrb(level, _extraHero.GlobalPosition, new(LootKind.Soul, 50), _extraHero.Id);
         ReleaseTestEntity(_extraHero);
         _extraHero = null;
+        await WaitUntilAsync(() => !owned.Contains(orphan), "归属英雄离场后飞行球没有回收");
+        Check(!orphan.Visible && orphan.OwnerEntityId == 0 && flow.GetModel<ProfileModel>().GetSoul(hero.HeroId).Value == soul,
+            "归属失效的球没有清零回收，或错误改发给本关英雄");
+        GD.Print("SMOKE-ORB OWNERSHIP PASS: explicit target, reward before pool reset, owner cleared, vanished owner reclaimed without reward.");
         // 留一颗正在等待的球，调用方随后通过正式 Cleanup 验证卸载回收。
-        SpawnManaOrb(level, hero.GlobalPosition);
-        SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health));
+        SpawnManaOrb(level, hero.GlobalPosition, hero.Id);
+        SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health), hero.Id);
         GD.Print("SMOKE-UI: health/mana/musou pickup/clamp/pool reuse/scene-owned target selection passed");
     }
 
@@ -226,27 +252,30 @@ public sealed partial class UiSmokeScenario
     /// 只在测试侧通过反射把蓝球挂入正式所有权，避免为随机测试增加生产接口。
     /// </summary>
     /// <param name="level">实际结算所有者。</param>
-    /// <param name="position">出生位置；不绑定目标英雄。</param>
+    /// <param name="position">本次出生位置。</param>
+    /// <param name="ownerEntityId">本次球的归属英雄实体编号。</param>
     /// <returns>正在飞行的池实例。</returns>
-    private static LootOrbNode SpawnManaOrb(LevelViewController level, Vector2 position)
+    private static LootOrbNode SpawnManaOrb(LevelViewController level, Vector2 position, int ownerEntityId)
     {
         return SpawnOrb(level, position, new(LootKind.Mana,
-            GF.Fsm.GetSystem<LootSystem>().ManaAmount(GF.Fsm.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).MaxMp.Value)));
+            GF.Fsm.GetSystem<LootSystem>().ManaAmount(GF.Fsm.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).MaxMp.Value)), ownerEntityId);
     }
 
     /// <summary>
     /// 在测试中生成指定球并接入当前关卡实际的拾取回调。
     /// </summary>
     /// <param name="level">实际奖励所有者。</param>
-    /// <param name="position">出生位置；实际目标由关卡所有者决定。</param>
+    /// <param name="position">本次出生位置。</param>
     /// <param name="reward">受测奖励，不向生产代码增加观测入口。</param>
+    /// <param name="ownerEntityId">本次球的归属英雄实体编号。</param>
     /// <returns>真实池实例。</returns>
-    private static LootOrbNode SpawnOrb(LevelViewController level, Vector2 position, LootReward reward)
+    private static LootOrbNode SpawnOrb(LevelViewController level, Vector2 position, LootReward reward, int ownerEntityId)
     {
         LootOrbNode orb = GodotGameFramework.NodePool.NodePool.Instance.RentNode<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, SmokeInspection.Scene(level));
+        Check(orb.OwnerEntityId == 0, "飞行球取池时遗留旧归属");
         SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "_lootOrbs").Add(orb);
         MethodInfo finish = typeof(LevelViewController).GetMethod("OnLootFinished", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        orb.Show(position + new Vector2(180, -30), reward,
+        orb.Show(position + new Vector2(180, -30), reward, ownerEntityId,
             (node, reward) => finish.Invoke(level, [node, reward]));
         return orb;
     }
@@ -404,6 +433,7 @@ public sealed partial class UiSmokeScenario
     {
         HashSet<LootOrbNode> orbs = SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "_lootOrbs");
         Check(orbs.Count is >= 2 and <= 13, "怪物死亡掉落数量超出官方范围");
+        Check(orbs.All(orb => orb.OwnerEntityId == hero.Id), "正式死亡掉落没有写入命中英雄归属");
         if (_previousOrb != null)
         {
             Check(orbs.Contains(_previousOrb), "下一次击败未复用已归还的飞行球");
