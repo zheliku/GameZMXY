@@ -31,18 +31,18 @@ public sealed class HurtProtectionTests
         int initial = scope.Hero.Hp.Value;
         for (int hit = 1; hit <= 5; hit++)
         {
-            system.Damage(1);
-            system.RecordHurt();
+            system.Damage(scope.Hero.HeroId, 1);
+            system.RecordHurt(scope.Hero.HeroId);
             Assert.Equal(initial - hit, scope.Hero.Hp.Value);
             Assert.Equal(hit == 5 ? 2d : 0d, scope.Hero.HurtInvulnerabilitySeconds);
         }
 
         for (int frame = 0; frame < frequency * 2 - 1; frame++)
         {
-            system.AdvanceHurtProtection(1f / frequency);
+            system.AdvanceHurtProtection(scope.Hero.HeroId, 1f / frequency);
         }
         Assert.True(scope.Hero.HurtInvulnerabilitySeconds > 0);
-        system.AdvanceHurtProtection(1f / frequency);
+        system.AdvanceHurtProtection(scope.Hero.HeroId, 1f / frequency);
         Assert.Equal(0, scope.Hero.HurtInvulnerabilitySeconds);
     }
 
@@ -54,26 +54,26 @@ public sealed class HurtProtectionTests
     {
         var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroSystem system = scope.GetSystem<HeroSystem>();
-        system.RecordHurt();
-        system.AdvanceHurtProtection(.99f);
-        system.RecordHurt();
+        system.RecordHurt(scope.Hero.HeroId);
+        system.AdvanceHurtProtection(scope.Hero.HeroId, .99f);
+        system.RecordHurt(scope.Hero.HeroId);
         Assert.Equal(2, scope.Hero.HurtHitCount);
-        system.AdvanceHurtProtection(1);
-        system.RecordHurt();
+        system.AdvanceHurtProtection(scope.Hero.HeroId, 1);
+        system.RecordHurt(scope.Hero.HeroId);
         Assert.Equal(1, scope.Hero.HurtHitCount);
         for (int hit = 0; hit < 4; hit++)
         {
-            system.RecordHurt();
+            system.RecordHurt(scope.Hero.HeroId);
         }
-        system.AdvanceHurtProtection(0);
-        system.AdvanceHurtProtection(float.NaN);
+        system.AdvanceHurtProtection(scope.Hero.HeroId, 0);
+        system.AdvanceHurtProtection(scope.Hero.HeroId, float.NaN);
         Assert.Equal(2, scope.Hero.HurtInvulnerabilitySeconds);
-        system.RecordHurt();
+        system.RecordHurt(scope.Hero.HeroId);
         Assert.Equal(0, scope.Hero.HurtHitCount);
-        system.Damage(int.MaxValue);
+        system.Damage(scope.Hero.HeroId, int.MaxValue);
         Assert.Equal(0, scope.Hero.HurtInvulnerabilitySeconds);
         system.Reset(1, 1, TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes);
-        system.RecordHurt();
+        system.RecordHurt(scope.Hero.HeroId);
         Assert.Equal(1, scope.Hero.HurtHitCount);
     }
 }

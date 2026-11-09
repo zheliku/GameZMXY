@@ -97,7 +97,7 @@ public partial class LevelViewController
 
         _enteringHiddenLevel = true;
         _hiddenEntrance.SetDeferred(Area2D.PropertyName.Monitoring, false);
-        this.GetSystem<HeroSystem>().SetControlsEnabled(false);
+        this.GetSystem<HeroSystem>().SetControlsEnabled(_player.HeroId, false);
         _entranceFade.Play(_entranceFade.GetAnimationList().Single());
     }
 

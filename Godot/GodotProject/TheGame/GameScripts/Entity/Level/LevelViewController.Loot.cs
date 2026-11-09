@@ -61,11 +61,11 @@ public partial class LevelViewController
                                 this.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), selection.Equipment, _lootRandom.Randf));
             }
 
-            HeroModel hero = this.GetModel<HeroModel>();
+            HeroState hero = this.GetModel<HeroModel>().GetState(_player.HeroId);
             foreach (LootReward reward in this.GetSystem<LootSystem>().Roll(data.Config,
                 data.SoulPerOrbOverride ?? data.Config.SoulPerOrb, hero.MaxHp.Value, hero.MaxMp.Value, _lootRandom.Randf))
             {
-                LootOrbNode orb = NodePool.Instance.Get<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, this)
+                LootOrbNode orb = NodePool.Instance.RentNode<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, this)
                           ?? throw new InvalidOperationException("飞行掉落节点池未注册或资源无法显示。");
                 _lootOrbs.Add(orb);
                 orb.Show(data.Position, reward, OnLootFinished);
@@ -91,7 +91,7 @@ public partial class LevelViewController
     /// <param name="data">装备或空。</param>
     private void ShowGroundItem(Vector2 position, PickupId pickupId, EquipmentData data)
     {
-        GroundItemNode item = NodePool.Instance.Get<GroundItemNode>(ResourcesCollectionConstant.Drops_ground_item, this)
+        GroundItemNode item = NodePool.Instance.RentNode<GroundItemNode>(ResourcesCollectionConstant.Drops_ground_item, this)
                    ?? throw new InvalidOperationException("地面物品节点池未注册。");
         _groundItems.Add(item);
         item.Show(position, pickupId, data,

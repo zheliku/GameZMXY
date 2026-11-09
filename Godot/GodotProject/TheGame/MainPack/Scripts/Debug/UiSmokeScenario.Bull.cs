@@ -43,8 +43,8 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         HeroSystem heroSystem = GF.Fsm.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("BullHeartTiming", 1);
-        heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        heroSystem.Heal(int.MaxValue);
+        heroSystem.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        heroSystem.Heal(hero.HeroId, int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
@@ -133,8 +133,8 @@ public sealed partial class UiSmokeScenario
         finally
         {
             Engine.PhysicsTicksPerSecond = originalTicks;
-            heroSystem.RemoveSource(source);
-            heroSystem.Heal(int.MaxValue);
+            heroSystem.RemoveSource(hero.HeroId, source);
+            heroSystem.Heal(hero.HeroId, int.MaxValue);
         }
     }
 
@@ -155,7 +155,7 @@ public sealed partial class UiSmokeScenario
         Vector2 hurtOffset = hero.HurtBox.GetGlobalBounds().GetCenter() - hero.GlobalPosition;
         hero.GlobalPosition = fire.GlobalPosition + new Vector2(0, -350) - hurtOffset;
         HeroSystem system = GF.Fsm.GetSystem<HeroSystem>();
-        system.AdvanceHurtProtection(float.MaxValue);
+        system.AdvanceHurtProtection(hero.HeroId, float.MaxValue);
         int hp = hero.Hp;
         await WaitUntilAsync(() => player.CurrentAnimationPosition >= 1.05, "火柱未进入喷发帧");
         Check(hero.Hp == hp, "火柱误伤了高于源火焰的留白区");
@@ -178,8 +178,8 @@ public sealed partial class UiSmokeScenario
         bool captureOnly = OS.GetCmdlineUserArgs().Contains("--bull-capture-only");
         HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("BullSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         try
         {
             if (!captureOnly)
@@ -201,7 +201,7 @@ public sealed partial class UiSmokeScenario
                         await WaitUntilAsync(() => king.OnFloor, "牛魔王人形未落地");
                         hero.GlobalPosition = king.GlobalPosition + new Vector2(direction * 70, 0);
                         typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(king, [hero]);
-                        flow.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
+                        flow.GetSystem<HeroSystem>().AdvanceHurtProtection(hero.HeroId, float.MaxValue);
                         int hp = hero.Hp;
                         Check(((IEnemyAiAgent)king).RequestAttack(index), "牛魔王拒绝原生招式" + index);
                         await WaitUntilAsync(() => king.AttackSegment == index, "牛魔王身体没有消费招式");
@@ -287,8 +287,8 @@ public sealed partial class UiSmokeScenario
             hero.SetPhysicsProcess(false);
             hero.Visible = true;
             Engine.PhysicsTicksPerSecond = originalTicks;
-            system.RemoveSource(source);
-            system.Heal(int.MaxValue);
+            system.RemoveSource(hero.HeroId, source);
+            system.Heal(hero.HeroId, int.MaxValue);
         }
     }
 
@@ -330,7 +330,7 @@ public sealed partial class UiSmokeScenario
             Check(!((IEnemyAiAgent)guard).IsInEngageRange, "牛妖场景交战范围错误包含110px以外的目标");
             hero.GlobalPosition = guard.GlobalPosition + new Vector2(direction * 70, 0);
             Check(((IEnemyAiAgent)guard).RequestAttack(0), "牛妖近身没有出招");
-            GF.Fsm.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
+            GF.Fsm.GetSystem<HeroSystem>().AdvanceHurtProtection(hero.HeroId, float.MaxValue);
             int hp = hero.Hp;
             await WaitUntilAsync(() => hero.Hp < hp, "牛妖原生重斩未命中", 4000);
             ReleaseTestEntity(guard);

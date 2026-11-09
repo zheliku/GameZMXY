@@ -94,9 +94,9 @@ public sealed class TangsengIceDragonState : AbstractHeroSkillState
         }
 
         _effectReleased = true;
-        if (_fullCharge && !body.GetSystem<SkillSystem>().TrySpendActivatedMana(SkillId.IceDragonWave))
+        if (_fullCharge && !body.GetSystem<SkillSystem>().TrySpendActivatedMana(body.HeroId, SkillId.IceDragonWave))
         {
-            body.GetSystem<SkillSystem>().CancelSkill();
+            body.GetSystem<SkillSystem>().CancelSkill(body.HeroId);
             return;
         }
 

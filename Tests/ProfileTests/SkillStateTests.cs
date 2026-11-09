@@ -66,7 +66,7 @@ public sealed class SkillStateTests
     public void CancelledSkill_DoesNotAdvanceOldAnimation()
     {
         using var skill = new SkillFixture(SkillId.FlameThrust);
-        skill.System.CancelSkill();
+        skill.System.CancelSkill(skill.Scope.Hero.HeroId);
         skill.Advance(.1f);
         Assert.Equal(0, skill.Actor.Advances);
         Assert.Null(skill.Scope.Hero.ActiveSkillId);
@@ -110,10 +110,10 @@ public sealed class SkillStateTests
         using var skill = new SkillFixture(SkillId.BlazingFlash);
         skill.Actor.ActionData.Time = .1;
         Assert.IsType<WukongBlazingFlashState>(skill.Fsm.CurrentState).StartDash(skill.Actor, null, 1080);
-        Assert.False(skill.System.IsInvulnerable(.09));
-        Assert.True(skill.System.IsInvulnerable(.1));
-        Assert.True(skill.System.IsInvulnerable(.59));
-        Assert.False(skill.System.IsInvulnerable(.61));
+        Assert.False(skill.System.IsInvulnerable(skill.Scope.Hero.HeroId, .09));
+        Assert.True(skill.System.IsInvulnerable(skill.Scope.Hero.HeroId, .1));
+        Assert.True(skill.System.IsInvulnerable(skill.Scope.Hero.HeroId, .59));
+        Assert.False(skill.System.IsInvulnerable(skill.Scope.Hero.HeroId, .61));
         Assert.Equal(1080, skill.Actor.Velocity.X);
     }
 
@@ -129,7 +129,7 @@ public sealed class SkillStateTests
     {
         using var skill = new SkillFixture(id);
 
-        Assert.False(skill.System.IsInvulnerable(skill.Actor.ActionData.Time));
+        Assert.False(skill.System.IsInvulnerable(skill.Scope.Hero.HeroId, skill.Actor.ActionData.Time));
     }
 
     /// <summary>
@@ -141,11 +141,11 @@ public sealed class SkillStateTests
         using var skill = new SkillFixture(SkillId.FireDemonSlash);
         WukongFireDemonState state = Assert.IsType<WukongFireDemonState>(skill.Fsm.CurrentState);
         Assert.True(skill.Actor.ActionData.InputLocked);
-        Assert.False(skill.System.IsInvulnerable(skill.Actor.ActionData.Time));
+        Assert.False(skill.System.IsInvulnerable(skill.Scope.Hero.HeroId, skill.Actor.ActionData.Time));
         state.SearchTarget(skill.Actor, null, 130, 20);
         skill.Advance(.01f);
         Assert.Equal("descent", skill.Actor.LastMarker);
-        skill.System.CancelSkill();
+        skill.System.CancelSkill(skill.Scope.Hero.HeroId);
         skill.Advance(.01f);
         Assert.False(skill.Actor.ActionData.InputLocked);
     }
@@ -191,7 +191,7 @@ public sealed class SkillStateTests
         Assert.False(skill.Actor.ActionData.InputLocked);
         Assert.Equal(SkillHitId.FireDemonLanding, Assert.Single(skill.Actor.Effects));
         Assert.Empty(skill.Actor.Completions);
-        Assert.True(skill.System.TryActivate(SkillId.FireDemonSlash, skill.Actor));
+        Assert.True(skill.System.TryActivate(skill.Scope.Hero.HeroId, SkillId.FireDemonSlash, skill.Actor));
         skill.Advance(.01f);
         state.Recover(skill.Actor, null);
         skill.Advance(.01f);
@@ -237,10 +237,10 @@ public sealed class SkillStateTests
         skill.Actor.OnFloor = true;
         skill.Advance(.01f);
         Action oldCompletion = skill.Actor.Completions[SkillHitId.FireDemonLanding];
-        skill.System.CancelSkill();
+        skill.System.CancelSkill(skill.Scope.Hero.HeroId);
         skill.Advance(.01f);
         skill.Scope.Hero.Mp.Value = 100;
-        Assert.True(skill.System.TryActivate(SkillId.FireDemonSlash, skill.Actor));
+        Assert.True(skill.System.TryActivate(skill.Scope.Hero.HeroId, SkillId.FireDemonSlash, skill.Actor));
         skill.Advance(.01f);
         oldCompletion();
         skill.Advance(.01f);
@@ -285,13 +285,13 @@ public sealed class SkillStateTests
             System.SelectSkills(1, SkillTestDefinitions.Wukong());
             System.Learn(1, id);
             Scope.Hero.Mp.Value = 100;
-            Assert.True(System.TryActivate(id, Actor));
+            Assert.True(System.TryActivate(Scope.Hero.HeroId, id, Actor));
             Actor.OnFloor = false;
             Fsm = _manager.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), Actor,
                 new HeroGroundState(), new HeroAirState(), new HeroHurtState(), new HeroDeathState(),
                 new WukongRisingDragonState(), new WukongFlameThrustState(), new WukongBlazingFlashState(),
                 new WukongFlameStormState(), new WukongFireDemonState());
-            Fsm.Start(System.BodyStateType);
+            Fsm.Start(System.GetBodyStateType(Scope.Hero.HeroId));
         }
 
         /// <summary>
@@ -318,6 +318,9 @@ public sealed class SkillStateTests
     /// <param name="scope">本测试替身借用的独立模型与系统作用域。</param>
     private sealed class Motion(TestGameScope scope) : ISkillActor, IHeroBody
     {
+        /// <inheritdoc />
+        public int HeroId => 1;
+
         /// <inheritdoc />
         public bool IsAnimationComplete(string animation) => true;
 

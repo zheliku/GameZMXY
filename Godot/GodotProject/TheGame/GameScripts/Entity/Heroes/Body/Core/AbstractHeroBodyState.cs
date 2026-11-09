@@ -98,13 +98,13 @@ public abstract class AbstractHeroBodyState : AbstractBodyState<IHeroBody>
         }
 
         SkillSystem skills = body.GetSystem<SkillSystem>();
-        if (body.GetModel<HeroModel>().ActiveSkillId == null)
+        if (body.GetModel<HeroModel>().GetState(body.HeroId).ActiveSkillId == null)
         {
             return false;
         }
 
         body.SetFacing(body.ActionData.MoveAxis);
-        ChangeState(fsm, skills.BodyStateType);
+        ChangeState(fsm, skills.GetBodyStateType(body.HeroId));
         return true;
     }
 

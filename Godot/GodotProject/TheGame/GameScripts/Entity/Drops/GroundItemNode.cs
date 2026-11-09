@@ -124,7 +124,7 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
         ResetPresentation();
         _pickupId = pickupId;
         _equipmentData = data;
-        ItemAppearanceResource appearance = data == null ? _appearances.Get(pickupId) : _appearances.Get(data.EquipmentId);
+        ItemAppearanceResource appearance = data == null ? _appearances.GetAppearance(pickupId) : _appearances.GetAppearance(data.EquipmentId);
         _icon.Texture = appearance.GroundIcon;
         _icon.Scale = appearance.GroundScale;
         string iconPath = _icon.Texture.ResourcePath;

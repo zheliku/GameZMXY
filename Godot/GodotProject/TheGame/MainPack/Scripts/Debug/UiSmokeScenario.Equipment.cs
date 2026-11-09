@@ -140,14 +140,14 @@ public sealed partial class UiSmokeScenario
         GF.Base.PauseGame();
         await WaitFramesAsync(12);
         Check(SmokeInspection.ReadField<float>(peach, "_age") == age, "暂停时地面物品仍在过期");
-        GF.Fsm.GetSystem<HeroSystem>().Damage(GF.Fsm.GetModel<HeroModel>().Hp.Value - 1);
+        GF.Fsm.GetSystem<HeroSystem>().Damage(hero.HeroId, GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Hp.Value - 1);
         peach.GlobalPosition = hero.HurtBox.GetGlobalBounds().GetCenter();
         await WaitFramesAsync(6);
-        Check(GF.Fsm.GetModel<HeroModel>().Hp.Value == 1 && !SmokeInspection.ReadField<bool>(peach, "_collected"),
+        Check(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Hp.Value == 1 && !SmokeInspection.ReadField<bool>(peach, "_collected"),
             "暂停时接触仍发放收益");
         GF.Base.ResumeGame();
         await WaitUntilAsync(() => SmokeInspection.ReadField<bool>(peach, "_collected"), "真实拾取区域没有识别接触英雄", 3000);
-        Check(owned.Count == 1 && GF.Fsm.GetModel<HeroModel>().Hp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().MaxHp.Value, 101), "小桃子未即时入账或未保留领取动画");
+        Check(owned.Count == 1 && GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Hp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).MaxHp.Value, 101), "小桃子未即时入账或未保留领取动画");
         Sprite2D icon = peach.GetNode<Sprite2D>("Icon");
         AnimationPlayer pickupPlayer = peach.GetNode<AnimationPlayer>("AnimationPlayer");
         Check(pickupPlayer.IsPlaying() && !peach.HasNode("Shadow"),
@@ -164,7 +164,7 @@ public sealed partial class UiSmokeScenario
             "暂停时领取动画继续推进");
         peach._PhysicsProcess(.2);
         await CaptureCombatAsync("pickup_rising");
-        Check(GF.Fsm.GetModel<HeroModel>().Hp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().MaxHp.Value, 101), "领取动画重复发放恢复收益");
+        Check(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Hp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).MaxHp.Value, 101), "领取动画重复发放恢复收益");
         peach._PhysicsProcess(.39);
         Check(owned.Contains(peach), "领取动画未满 0.8 秒就提前回池");
         peach._PhysicsProcess(.02);
@@ -177,14 +177,14 @@ public sealed partial class UiSmokeScenario
         Check(icon.Position == Vector2.Zero && icon.Modulate.A == 1 &&
             !bottle.HasNode("Shadow") && !pickupPlayer.IsPlaying(),
             "地面物品复用后未恢复原点、透明度、无阴影或动画状态");
-        GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(GF.Fsm.GetModel<HeroModel>().Mp.Value);
+        GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(hero.HeroId, GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Mp.Value);
         bottle._PhysicsProcess(1.0 / 60);
         await WaitFramesAsync(4);
-        Check(GF.Fsm.GetModel<HeroModel>().Mp.Value == 0 && !SmokeInspection.ReadField<bool>(bottle, "_collected"),
+        Check(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Mp.Value == 0 && !SmokeInspection.ReadField<bool>(bottle, "_collected"),
             "池复用继承了旧的英雄接触");
         bottle.GlobalPosition = hero.HurtBox.GetGlobalBounds().GetCenter();
         await WaitUntilAsync(() => SmokeInspection.ReadField<bool>(bottle, "_collected"), "蓝瓶的真实接触未触发领取", 3000);
-        Check(owned.Count == 1 && GF.Fsm.GetModel<HeroModel>().Mp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().MaxMp.Value, 100), "蓝瓶没有接触回蓝或超出上限");
+        Check(owned.Count == 1 && GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Mp.Value == Math.Min(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).MaxMp.Value, 100), "蓝瓶没有接触回蓝或超出上限");
         bottle._PhysicsProcess(.81);
         Check(owned.Count == 0, "蓝瓶领取动画结束后未回池");
         FloatingTextPresenter floatingText = SmokeInspection.ReadField<GameLogic.FloatingText.FloatingTextPresenter>(level, "_floatingText");

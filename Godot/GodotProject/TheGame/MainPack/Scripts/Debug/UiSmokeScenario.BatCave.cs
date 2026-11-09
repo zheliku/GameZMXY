@@ -32,7 +32,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckBatCaveAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
-        heroSystem.Heal(int.MaxValue);
+        heroSystem.Heal(hero.HeroId, int.MaxValue);
         hero.GlobalPosition = new Vector2(500, 400);
         hero.Velocity = Vector2.Zero;
         PackedScene packed = GD.Load<PackedScene>("res://TheGame/Scenes/Traps/bat_cave_spike.tscn");
@@ -46,11 +46,11 @@ public sealed partial class UiSmokeScenario
             int hp = hero.Hp;
             await WaitFramesAsync(10);
             Check(hero.Hp == hp, "加载期尖刺造成了伤害");
-            flow.GetSystem<GameLogic.Skills.SkillSystem>().GrantInvulnerability(hero.ActionData.Time, 100);
+            flow.GetSystem<GameLogic.Skills.SkillSystem>().GrantInvulnerability(hero.HeroId, hero.ActionData.Time, 100);
             spike.ProcessMode = Node.ProcessModeEnum.Inherit;
             await WaitFramesAsync(8);
             Check(hero.Hp == hp, "尖刺穿透了英雄无敌");
-            flow.GetSystem<GameLogic.Skills.SkillSystem>().CancelSkill();
+            flow.GetSystem<GameLogic.Skills.SkillSystem>().CancelSkill(hero.HeroId);
             await WaitUntilAsync(() => hero.Hp < hp, "尖刺在无敌结束后未命中");
             Check(hero.Hp == hp - 30, "尖刺没有造成固定30真实伤害");
             spike.SetPhysicsProcess(false);
@@ -114,7 +114,7 @@ public sealed partial class UiSmokeScenario
         }
         GD.Print("SMOKE-SPIKES PASS: downward ray, above/side exclusion, loading, fixed damage, invulnerability retry, one-second cycle, full warning, gravity576, pause, hide/reset and cleanup.");
 
-        heroSystem.Heal(int.MaxValue);
+        heroSystem.Heal(hero.HeroId, int.MaxValue);
         hero.GlobalPosition = new Vector2(600, 400);
         _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Bat,
             new EnemySpawn(new Vector2(400, 150)));
@@ -181,7 +181,7 @@ public sealed partial class UiSmokeScenario
         int oldTicks = Engine.PhysicsTicksPerSecond;
         Vector2 origin = hero.GlobalPosition;
         HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
-        BindableProperty<int> hp = flow.GetModel<HeroModel>().Hp;
+        BindableProperty<int> hp = flow.GetModel<HeroModel>().GetState(hero.HeroId).Hp;
         try
         {
             foreach (int ticks in new[] { 60, 120 })
@@ -191,7 +191,7 @@ public sealed partial class UiSmokeScenario
                     foreach (string sample in new[] { "edge", "above", "below" })
                     {
                         Engine.PhysicsTicksPerSecond = ticks;
-                        heroSystem.Heal(int.MaxValue);
+                        heroSystem.Heal(hero.HeroId, int.MaxValue);
                         _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.Bat,
                             new EnemySpawn(new Vector2(500, 200)));
                         SmokeInspection.FreezeAi(_monster);
@@ -246,7 +246,7 @@ public sealed partial class UiSmokeScenario
             _monster = null;
             hero.GlobalPosition = origin;
             hero.Velocity = Vector2.Zero;
-            heroSystem.Heal(int.MaxValue);
+            heroSystem.Heal(hero.HeroId, int.MaxValue);
             Engine.PhysicsTicksPerSecond = oldTicks;
         }
     }

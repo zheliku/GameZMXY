@@ -31,7 +31,7 @@ public sealed class ExperienceCurveTests
     [InlineData(136, 2, 1, 145)]
     [InlineData(280, 3, 0, 155)]
     [InlineData(472, 4, 37, 165)]
-    public void ResolvesThresholds(int total, int level, int experience, int maximum) => Assert.Equal((level, experience, maximum), LoadCurve().Evaluate(total));
+    public void ResolvesThresholds(int total, int level, int experience, int maximum) => Assert.Equal((level, experience, maximum), LoadCurve().EvaluateProgress(total));
 
     /// <summary>
     /// 一次超大收益支持跨多级并在表末级封顶，不溢出。
@@ -41,10 +41,10 @@ public sealed class ExperienceCurveTests
     {
         ExperienceCurveUtility curve = LoadCurve();
         Assert.Equal(55, curve.MaxLevel);
-        Assert.Equal((55, 0, 0), curve.Evaluate(curve.Add(139, int.MaxValue)));
-        Assert.Equal(curve.MaxTotalExperience, curve.Add(curve.MaxTotalExperience, int.MaxValue));
-        Assert.Equal((54, 179999, 180000), curve.Evaluate(curve.MaxTotalExperience - 1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => curve.Add(0, -1));
+        Assert.Equal((55, 0, 0), curve.EvaluateProgress(curve.AddExperience(139, int.MaxValue)));
+        Assert.Equal(curve.MaxTotalExperience, curve.AddExperience(curve.MaxTotalExperience, int.MaxValue));
+        Assert.Equal((54, 179999, 180000), curve.EvaluateProgress(curve.MaxTotalExperience - 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => curve.AddExperience(0, -1));
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ public sealed class ExperienceCurveTests
         Assert.Throws<ArgumentException>(() => new ExperienceCurveUtility([Row(1, 0), Row(2, 0)]));
         Assert.Throws<ArgumentException>(() => new ExperienceCurveUtility([Row(1, 10), Row(2, 10)]));
         Assert.Throws<ArgumentException>(() => new ExperienceCurveUtility([Row(1, int.MaxValue), Row(2, 1), Row(3, 0)]));
-        Assert.Equal((2, 1, 20), new ExperienceCurveUtility([Row(3, 0), Row(1, 10), Row(2, 20)]).Evaluate(11));
+        Assert.Equal((2, 1, 20), new ExperienceCurveUtility([Row(3, 0), Row(1, 10), Row(2, 20)]).EvaluateProgress(11));
     }
 
     /// <summary>

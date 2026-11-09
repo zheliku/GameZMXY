@@ -8,7 +8,7 @@ using GameLogic.Heroes.Body;
 using GameLogic.Input;
 using Godot;
 using GodotGameFramework;
-using static GameLogic.Battle.HeroModel;
+using static GameLogic.Battle.HeroState;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -24,7 +24,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>双向、60/120Hz受击及收尾验证。</returns>
     private async Task CheckMusouHurtAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        HeroModel model = flow.GetModel<HeroModel>();
+        HeroState model = flow.GetModel<HeroModel>().GetState(hero.HeroId);
         HeroSystem system = flow.GetSystem<HeroSystem>();
         Color protectionColor = SmokeInspection.ReadField<Color>(hero, "_protectionGlowColor");
         int originalTicks = Engine.PhysicsTicksPerSecond;
@@ -37,9 +37,9 @@ public sealed partial class UiSmokeScenario
                 hero.GlobalPosition = new Vector2(440, 200);
                 hero.Velocity = Vector2.Zero;
                 model.Miss.Value = 0;
-                system.AdvanceHurtProtection(100);
+                system.AdvanceHurtProtection(hero.HeroId, 100);
                 await WaitUntilAsync(() => hero.OnFloor, "无双夹具未落地");
-                system.AddWsFromPickup(model.MaxWs.Value - model.Ws.Value);
+                system.AddWsFromPickup(hero.HeroId, model.MaxWs.Value - model.Ws.Value);
                 Input.ActionPress(InputSystem.Musou);
                 await WaitUntilAsync(() => model.WsActive.Value, "无双没有经正式空格映射激活");
                 Input.ActionRelease(InputSystem.Musou);
@@ -86,7 +86,7 @@ public sealed partial class UiSmokeScenario
                     await CaptureCombatAsync($"musou_hurt_{ticks}_{direction}");
                 }
                 await WaitUntilAsync(() => !feedback.Visible, "受击闪光没有播完自动隐藏");
-                system.AdvanceHurtProtection(100);
+                system.AdvanceHurtProtection(hero.HeroId, 100);
                 await WaitUntilAsync(() => SmokeInspection.BodyStateName(hero) == "Ground", "无双受击后没有恢复地面动作");
                 Input.ActionPress(InputSystem.Attack);
                 await WaitFramesAsync(2);
@@ -109,11 +109,11 @@ public sealed partial class UiSmokeScenario
                     HitHeroForProtection(hero);
                 }
 
-                system.ClearWs();
+                system.ClearWs(hero.HeroId);
                 await WaitFramesAsync(2);
                 Check(material.GetShaderParameter("glow_color").AsColor() == protectionColor && material.GetShaderParameter("glow_radius").AsSingle() > 0,
                     "无双结束未恢复本角色受击保护颜色");
-                system.AdvanceHurtProtection(100);
+                system.AdvanceHurtProtection(hero.HeroId, 100);
                 await WaitFramesAsync(2);
                 Check(material.GetShaderParameter("glow_radius").AsSingle() == 0, "无双/保护结束仍残留光晕");
                 GD.Print($"SMOKE-MUSOU HURT {ticks}Hz PASS: damage, armor={armored}, white glow, 8 source frames, fifth-hit protection and color restore");
@@ -121,7 +121,7 @@ public sealed partial class UiSmokeScenario
         }
         finally
         {
-            system.ClearWs();
+            system.ClearWs(hero.HeroId);
             Engine.PhysicsTicksPerSecond = originalTicks;
         }
     }
@@ -134,7 +134,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>两个物理频率的命中与渲染验证任务。</returns>
     private async Task CheckHurtProtectionAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        HeroModel model = flow.GetModel<HeroModel>();
+        HeroState model = flow.GetModel<HeroModel>().GetState(hero.HeroId);
         HeroSystem system = flow.GetSystem<HeroSystem>();
         Color protectionColor = SmokeInspection.ReadField<Color>(hero, "_protectionGlowColor");
         int originalTicks = Engine.PhysicsTicksPerSecond;
@@ -162,7 +162,7 @@ public sealed partial class UiSmokeScenario
                     material.GetShaderParameter("glow_color").AsColor() == protectionColor &&
                     material.GetShaderParameter("glow_radius").AsSingle() > 0,
                     "受击保护没有为身体和武器显示本角色的光晕");
-                flow.GetSystem<GameLogic.Skills.SkillSystem>().GrantInvulnerability(hero.ActionData.Time, .2);
+                flow.GetSystem<GameLogic.Skills.SkillSystem>().GrantInvulnerability(hero.HeroId, hero.ActionData.Time, .2);
                 await WaitFramesAsync(ticks / 4);
                 Check(HitHeroForProtection(hero), "技能无敌结束覆盖了连续受击保护");
                 foreach (int direction in new[] { -1, 1 })
@@ -181,7 +181,7 @@ public sealed partial class UiSmokeScenario
                 Check(!HitHeroForProtection(hero) && hero.Hp == initialHp - 6 &&
                     material.GetShaderParameter("glow_radius").AsSingle() == 0,
                     "保护结束后仍免伤或保留光晕");
-                system.AdvanceHurtProtection(1);
+                system.AdvanceHurtProtection(hero.HeroId, 1);
                 GD.Print($"SMOKE-HURT-PROTECTION PASS: {ticks}Hz, fifth hit, sixth ignored, skill overlap, character two-layer glow, pause and expiry");
             }
         }
@@ -226,7 +226,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckFreezeAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         HeroSystem system = flow.GetSystem<HeroSystem>();
-        HeroModel model = flow.GetModel<HeroModel>();
+        HeroState model = flow.GetModel<HeroModel>().GetState(hero.HeroId);
         HeroStatusSystem statusEffects = flow.GetSystem<HeroStatusSystem>();
         int originalTicks = Engine.PhysicsTicksPerSecond;
         hero.SetPhysicsProcess(true);
@@ -243,7 +243,7 @@ public sealed partial class UiSmokeScenario
                 Input.ActionPress(InputSystem.MoveRight);
                 await WaitFramesAsync(10);
                 model.Ws.Value = model.MaxWs.Value;
-                statusEffects.ApplyFreeze(2);
+                statusEffects.ApplyFreeze(hero.HeroId, 2);
                 Check(!hero.TryActivateMusou() && !model.WsActive.Value,
                     "冰冻期间鼠标调用的无双入口仍可激活");
                 Input.ActionPress(InputSystem.Attack);
@@ -275,7 +275,7 @@ public sealed partial class UiSmokeScenario
                     await CaptureCombatAsync("hero_frozen_official");
                 }
 
-                await WaitUntilAsync(() => !statusEffects.IsFrozen, "冰冻没有按游戏秒数结束", 4000);
+                await WaitUntilAsync(() => !statusEffects.IsFrozen(hero.HeroId), "冰冻没有按游戏秒数结束", 4000);
                 Check(hero.AttackSegment < 0 && hero.OnFloor && !frozen.Visible, "解冻后回放了期间的输入或保留冰块");
                 ReleaseFreezeInputs();
                 await WaitFramesAsync(3);
@@ -285,9 +285,9 @@ public sealed partial class UiSmokeScenario
                 ReleaseFreezeInputs();
                 GD.Print($"SMOKE-FREEZE {ticks}Hz PASS: keyboard and UI activation blocked, native animation, no queued actions, pause and thaw");
             }
-            statusEffects.ApplyFreeze(5);
-            system.Damage(int.MaxValue);
-            Check(!statusEffects.IsFrozen, "死亡未清理冰冻");
+            statusEffects.ApplyFreeze(hero.HeroId, 5);
+            system.Damage(hero.HeroId, int.MaxValue);
+            Check(!statusEffects.IsFrozen(hero.HeroId), "死亡未清理冰冻");
             GD.Print("SMOKE-FREEZE DEATH PASS: no persistent freeze after hero depletion");
         }
         finally

@@ -137,7 +137,7 @@ public sealed class LevelSystem : AbstractSystem
     public bool TryCollectPickup(int heroId, PickupId id)
     {
         if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
-            this.GetModel<HeroModel>().IsDepleted)
+            this.GetModel<HeroModel>().GetState(heroId).IsDepleted)
         {
             return false;
         }
@@ -152,10 +152,10 @@ public sealed class LevelSystem : AbstractSystem
         switch (pickup.Effect)
         {
             case PickupEffect.Health:
-                hero.Heal(pickup.RestoreAmount);
+                hero.Heal(heroId, pickup.RestoreAmount);
                 break;
             case PickupEffect.Mana:
-                hero.RestoreMp(pickup.RestoreAmount);
+                hero.RestoreMp(heroId, pickup.RestoreAmount);
                 break;
             default:
                 throw new InvalidOperationException($"恢复品 {id} 的效果未实现：{pickup.Effect}。");
@@ -172,7 +172,7 @@ public sealed class LevelSystem : AbstractSystem
     public void CollectLoot(int heroId, LootReward reward)
     {
         if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
-            this.GetModel<HeroModel>().IsDepleted)
+            this.GetModel<HeroModel>().GetState(heroId).IsDepleted)
         {
             return;
         }
@@ -183,13 +183,13 @@ public sealed class LevelSystem : AbstractSystem
                 this.GetSystem<ProfileSystem>().AddSoul(heroId, reward.Amount);
                 break;
             case LootKind.Musou:
-                this.GetSystem<HeroSystem>().AddWsFromPickup(reward.Amount);
+                this.GetSystem<HeroSystem>().AddWsFromPickup(heroId, reward.Amount);
                 break;
             case LootKind.Mana:
-                this.GetSystem<HeroSystem>().RestoreMp(reward.Amount);
+                this.GetSystem<HeroSystem>().RestoreMp(heroId, reward.Amount);
                 break;
             case LootKind.Health:
-                this.GetSystem<HeroSystem>().Heal(reward.Amount);
+                this.GetSystem<HeroSystem>().Heal(heroId, reward.Amount);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(reward));
@@ -339,7 +339,7 @@ public sealed class LevelSystem : AbstractSystem
     public bool TransferToDragonPalace(int levelId)
     {
         if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
-            this.GetModel<HeroModel>().IsDepleted || levelId != DragonPalaceRules.LevelId ||
+            this.GetModel<HeroModel>().GetState(this.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).IsDepleted || levelId != DragonPalaceRules.LevelId ||
             DragonPalaceRules.EntranceLevelId != LevelModel.LevelId)
         {
             return false;

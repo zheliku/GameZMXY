@@ -97,7 +97,7 @@ public partial class BullDemonHeartEntity : AbstractBossEntity
     {
         for (int index = 0; index < count; index++)
         {
-            BullDemonFireNode fire = NodePool.Instance.Get<BullDemonFireNode>(_fireScene.ResourcePath, GetParent()) ??
+            BullDemonFireNode fire = NodePool.Instance.RentNode<BullDemonFireNode>(_fireScene.ResourcePath, GetParent()) ??
                 throw new InvalidOperationException("牛魔王火柱未登记到GGF节点池。");
             _fires.Add(fire);
             fire.Show(new Vector2(900 + GD.Randf() * 800, 520), HitWithFire, ReleaseFire);

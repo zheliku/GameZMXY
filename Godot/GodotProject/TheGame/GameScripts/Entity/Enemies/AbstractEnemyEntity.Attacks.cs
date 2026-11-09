@@ -23,7 +23,7 @@ public abstract partial class AbstractEnemyEntity
     /// <exception cref="InvalidOperationException">场景未登记到节点池。</exception>
     protected SkillEffectNode RentSkillEffect(PackedScene scene)
     {
-        SkillEffectNode effect = NodePool.Instance.Get<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
+        SkillEffectNode effect = NodePool.Instance.RentNode<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
             throw new InvalidOperationException($"敌人技能未登记到节点池：{scene.ResourcePath}");
         _skillEffects.Add(effect);
         effect.Source = CaptureAttackSource();

@@ -22,7 +22,7 @@ public partial class TangsengEntity
     {
         if (this.GetSystem<InputSystem>().IsActionPressed(InputSystem.Attack))
         {
-            this.GetSystem<SkillSystem>().TryActivate(SkillId.IceDragonWave, this);
+            this.GetSystem<SkillSystem>().TryActivate(HeroId, SkillId.IceDragonWave, this);
         }
     }
 
@@ -35,10 +35,10 @@ public partial class TangsengEntity
         AttackConfig hit = OwnAttacks[0];
         CombatantAttributes attributes = CaptureCombatAttributes();
         float power = (attributes.Power * hit.PowerScale.X + hit.FlatPower.X) *
-            this.GetSystem<HeroSystem>().AttackPowerMultiplier;
+            this.GetSystem<HeroSystem>().GetAttackPowerMultiplier(HeroId);
         var effect = (TangsengBoltNode)RentSkillEffect(scene);
         effect.Show(hit, GlobalPosition, Facing, attributes, (int)power,
-            this.GetModel<HeroModel>().WsActive.Value, ReleaseSkillEffect, hitSoundId: HitSoundId);
+            this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value, ReleaseSkillEffect, hitSoundId: HitSoundId);
     }
 
     /// <summary>

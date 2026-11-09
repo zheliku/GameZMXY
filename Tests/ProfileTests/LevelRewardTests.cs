@@ -33,8 +33,8 @@ public sealed class LevelRewardTests
             ? Math.Min(scope.Hero.MaxHp.Value, 1 + pickup.RestoreAmount) : 1, scope.Hero.Hp.Value);
         Assert.Equal(pickup.Effect == PickupEffect.Mana
             ? Math.Min(scope.Hero.MaxMp.Value, pickup.RestoreAmount) : 0, scope.Hero.Mp.Value);
-        scope.GetSystem<HeroSystem>().Heal(int.MaxValue);
-        scope.GetSystem<HeroSystem>().RestoreMp(int.MaxValue);
+        scope.GetSystem<HeroSystem>().Heal(scope.Hero.HeroId, int.MaxValue);
+        scope.GetSystem<HeroSystem>().RestoreMp(scope.Hero.HeroId, int.MaxValue);
         Assert.True(system.TryCollectPickup(1, id));
         Assert.False(system.TryCollectPickup(1, PickupId.None));
         Assert.False(system.TryCollectPickup(1, (PickupId)999));
@@ -99,7 +99,7 @@ public sealed class LevelRewardTests
         }
         else if (state == 3)
         {
-            scope.GetSystem<HeroSystem>().Damage(int.MaxValue);
+            scope.GetSystem<HeroSystem>().Damage(scope.Hero.HeroId, int.MaxValue);
         }
 
         int hp = scope.Hero.Hp.Value;

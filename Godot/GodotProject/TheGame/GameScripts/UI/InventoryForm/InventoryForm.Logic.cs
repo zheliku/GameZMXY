@@ -135,7 +135,7 @@ public partial class InventoryForm : IController
         // 先记录借用引用，装配失败时也能完整解除订阅与暂停。
         try
         {
-            HeroModel heroModel = this.GetModel<HeroModel>();
+            HeroState heroModel = this.GetModel<HeroModel>().GetState(_inventoryData.Hero.HeroId);
             heroModel.Hp.Register(RefreshResources);
             heroModel.Mp.Register(RefreshResources);
             foreach (BindableProperty<int> property in new[]
@@ -253,7 +253,7 @@ public partial class InventoryForm : IController
         {
             // 流程先关闭窗口再移除 Model，本次订阅源在关闭前保持同一实例。
             ProfileModel profile = this.GetModel<ProfileModel>();
-            HeroModel heroModel = this.GetModel<HeroModel>();
+            HeroState heroModel = this.GetModel<HeroModel>().GetState(data.Hero.HeroId);
             heroModel.Hp.UnRegister(RefreshResources);
             heroModel.Mp.UnRegister(RefreshResources);
             foreach (BindableProperty<int> property in new[]

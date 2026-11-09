@@ -94,7 +94,7 @@ internal static class SmokeInspection
     /// 反射读取属性绑定数，验证关闭退订及复用时没有重复绑定。
     /// </summary>
     /// <param name="source">受测的可绑定属性。</param>
-    /// <param name="listener">接收更新的窗口或对象。</param>
+    /// <param name="listener">接收更新的窗口、对象，或需匹配的确切回调委托。</param>
     /// <returns>该对象在属性上的回调数量。</returns>
     public static int CountBindingHandlers(object source, object listener)
     {
@@ -106,7 +106,7 @@ internal static class SmokeInspection
         {
             foreach (Delegate handler in handlers)
             {
-                if (ReferenceEquals(handler.Target, listener))
+                if (listener is Delegate callback ? handler.Equals(callback) : ReferenceEquals(handler.Target, listener))
                 {
                     count++;
                 }
@@ -256,7 +256,7 @@ internal static class SmokeInspection
     /// </summary>
     /// <param name="hero">被观测英雄。</param>
     /// <returns>实体读取的模型。</returns>
-    public static HeroModel HeroAttributes(AbstractHeroEntity hero) => (HeroModel)typeof(AbstractHeroEntity).GetProperty("Attributes", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(hero);
+    public static HeroState HeroAttributes(AbstractHeroEntity hero) => (HeroState)typeof(AbstractHeroEntity).GetProperty("Attributes", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(hero);
 
     /// <summary>
     /// 仅测试无返回按钮的流程切换，通过框架受保护入口完成。

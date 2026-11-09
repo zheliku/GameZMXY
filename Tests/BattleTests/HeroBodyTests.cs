@@ -819,6 +819,9 @@ public sealed class HeroBodyTests
     private sealed class Hero : AbstractFakeActorBody, IHeroBody
     {
         /// <inheritdoc />
+        public int HeroId => 1;
+
+        /// <inheritdoc />
         float IActorBody.Gravity => Params.Gravity;
         /// <summary>
         /// 是否站在单向平台。

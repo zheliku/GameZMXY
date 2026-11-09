@@ -60,7 +60,7 @@ public partial class TangsengEntity : AbstractHeroEntity
             return;
         }
 
-        if (!attacking && this.GetSystem<SkillSystem>().TryActivateInput(this, ActionData))
+        if (!attacking && this.GetSystem<SkillSystem>().TryActivateInput(HeroId, this, ActionData))
         {
             return;
         }
@@ -147,10 +147,10 @@ public partial class TangsengEntity : AbstractHeroEntity
             : OwnAttacks[0];
         CombatantAttributes attributes = CaptureCombatAttributes();
         int power = (int)((attributes.Power * hit.PowerScale.X + hit.FlatPower.X) *
-            this.GetSystem<HeroSystem>().AttackPowerMultiplier);
+            this.GetSystem<HeroSystem>().GetAttackPowerMultiplier(HeroId));
         effect.ConfigureTravel(fullCharge ? 600f : 400f);
         effect.Show(hit, GlobalPosition, Facing, attributes, power,
-            this.GetModel<HeroModel>().WsActive.Value, ReleaseSkillEffect, hitSoundId: HitSoundId);
+            this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value, ReleaseSkillEffect, hitSoundId: HitSoundId);
     }
 
     /// <summary>
@@ -169,9 +169,9 @@ public partial class TangsengEntity : AbstractHeroEntity
         SkillEffectNode effect = RentSkillEffect(scene);
         AttackConfig hit = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)SkillHitId.DarkIceFormation);
         CombatantAttributes attributes = CaptureCombatAttributes();
-        bool musou = this.GetModel<HeroModel>().WsActive.Value;
+        bool musou = this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value;
         int power = (int)((attributes.Power * hit.PowerScale.X + hit.FlatPower.X) *
-            this.GetSystem<HeroSystem>().AttackPowerMultiplier);
+            this.GetSystem<HeroSystem>().GetAttackPowerMultiplier(HeroId));
         CollisionShape2D body = GetNode<CollisionShape2D>("CollisionShape2D");
         float feet = body.Position.Y + body.Shape.GetRect().End.Y;
         // 项目以双脚之间的接地线放大，消除源围绕腰部原点缩放造成的沉底。
@@ -246,7 +246,7 @@ public partial class TangsengEntity : AbstractHeroEntity
     private double PowerFor(SkillHitId hit)
     {
         AttackConfig definition = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
-        return this.GetModel<HeroModel>().Power.Value * definition.PowerScale.X + definition.FlatPower.X;
+        return this.GetModel<HeroModel>().GetState(HeroId).Power.Value * definition.PowerScale.X + definition.FlatPower.X;
     }
 
     /// <summary>
@@ -254,8 +254,8 @@ public partial class TangsengEntity : AbstractHeroEntity
     /// </summary>
     public void ApplyHeavenlyDew()
     {
-        double amount = this.GetModel<HeroModel>().MaxMp.Value / 8d + 8;
-        if (this.GetModel<HeroModel>().WsActive.Value)
+        double amount = this.GetModel<HeroModel>().GetState(HeroId).MaxMp.Value / 8d + 8;
+        if (this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value)
         {
             amount *= 1.5;
         }
@@ -272,8 +272,8 @@ public partial class TangsengEntity : AbstractHeroEntity
     {
         SkillEffectNode effect = RentSkillEffect(scene);
         effect.Show(null, position + new Vector2(0, -60), Facing,
-            CaptureCombatAttributes(), 0, this.GetModel<HeroModel>().WsActive.Value,
-            ReleaseSkillEffect, visualScaleMultiplier: this.GetModel<HeroModel>().WsActive.Value
+            CaptureCombatAttributes(), 0, this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value,
+            ReleaseSkillEffect, visualScaleMultiplier: this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value
                 ? new Vector2(1.6f, 1.6f) : Vector2.One);
     }
 

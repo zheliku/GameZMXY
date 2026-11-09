@@ -24,7 +24,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckNaturalRecoveryAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
         HeroSystem system = flow.GetSystem<HeroSystem>();
-        HeroModel model = flow.GetModel<HeroModel>();
+        HeroState model = flow.GetModel<HeroModel>().GetState(hero.HeroId);
         var source = new AttributeSourceId("RecoverySmoke", 1);
         int originalTicks = Engine.PhysicsTicksPerSecond;
         int damageNotifications = 0;
@@ -48,12 +48,12 @@ public sealed partial class UiSmokeScenario
             foreach (int ticks in new[] { 60, 120 })
             {
                 Engine.PhysicsTicksPerSecond = ticks;
-                system.Heal(int.MaxValue);
-                system.RestoreMp(int.MaxValue);
-                system.Damage(20);
-                system.TrySpendMp(10);
+                system.Heal(hero.HeroId, int.MaxValue);
+                system.RestoreMp(hero.HeroId, int.MaxValue);
+                system.Damage(hero.HeroId, 20);
+                system.TrySpendMp(hero.HeroId, 10);
                 model.RecoveryProgress = 0;
-                system.SetSource(source, [AttributeModifier.Flat(AttributeType.HpRegen, 2), AttributeModifier.Flat(AttributeType.MpRegen, 3)]);
+                system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.HpRegen, 2), AttributeModifier.Flat(AttributeType.MpRegen, 3)]);
                 int hp = hero.Hp;
                 int mp = model.Mp.Value;
                 await WaitUntilAsync(() => hero.Hp > hp, "装备回血没有在真实物理帧结算");
@@ -64,13 +64,13 @@ public sealed partial class UiSmokeScenario
                 await WaitFramesAsync(30);
                 Check(hero.Hp == hp + 2 && model.Mp.Value == mp + 3 && model.RecoveryProgress == progress, "暂停仍推进自然恢复");
                 GF.Base.ResumeGame();
-                system.SetSource(source, [AttributeModifier.Flat(AttributeType.HpRegen, -2), AttributeModifier.Flat(AttributeType.MpRegen, -3)]);
+                system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.HpRegen, -2), AttributeModifier.Flat(AttributeType.MpRegen, -3)]);
                 await WaitUntilAsync(() => hero.Hp < hp + 2, "负回血没有实际消耗生命");
                 Check(hero.Hp == hp && model.Mp.Value == mp, "负恢复钳制或结算不正确");
                 Check(damageNotifications == 0 && deaths == 0, "自然恢复错误地产生受击数字或死亡");
                 GD.Print($"SMOKE-RECOVERY {ticks}Hz PASS: positive/negative resources, shared source cadence and pause");
             }
-            system.SetSource(source, [AttributeModifier.Flat(AttributeType.HpRegen, -100000)]);
+            system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.HpRegen, -100000)]);
             await WaitUntilAsync(() => hero.Dead, "负回血耗尽没有进入正式死亡");
             await WaitFramesAsync(3);
             Check(deaths == 1 && damageNotifications == 0 && model.IsDepleted, "生命流失死亡没有唯一通知或生成受击数字");
@@ -85,7 +85,7 @@ public sealed partial class UiSmokeScenario
                 GF.Base.ResumeGame();
             }
 
-            system.RemoveSource(source);
+            system.RemoveSource(hero.HeroId, source);
             Engine.PhysicsTicksPerSecond = originalTicks;
         }
     }

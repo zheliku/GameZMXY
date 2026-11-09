@@ -30,14 +30,14 @@ public sealed class MusouTests
     public void HitGain_UsesOfficialDamageRatio(int damage, int power, int expected)
     {
         var scope = new HeroTestScope();
-        scope.System.ResetWs(100, 1f, 6f);
+        scope.System.ResetWs(scope.Hero.HeroId, 100, 1f, 6f);
         var attacker = new CombatantAttributes(CombatSide.Hero, 1, power, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         var attack = AttackData.Create(1001, attacker, damage, DamageKind.Physics, Vector2.Zero, 1, 0);
         try
         {
             var defender = new CombatantAttributes(CombatSide.Enemy, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             DamageResult result = new CombatSystem(scope).Calculate(attack, defender, 1, 1);
-            scope.System.RecordHit(result);
+            scope.System.RecordHit(scope.Hero.HeroId, result);
             Assert.Equal(expected, scope.Hero.Ws.Value);
         }
         finally
@@ -53,24 +53,24 @@ public sealed class MusouTests
     public void NaturalDecay_PreservesFullGaugeAndDoesNotResetOnHit()
     {
         var scope = new HeroTestScope();
-        HeroModel gauge = scope.Hero;
-        scope.System.ResetWs(100, 1f, 6f);
-        scope.System.AddWs(20);
-        scope.System.AdvanceWs(.6f);
-        scope.System.AddWs(2);
-        scope.System.AdvanceWs(.4f);
+        HeroState gauge = scope.Hero;
+        scope.System.ResetWs(scope.Hero.HeroId, 100, 1f, 6f);
+        scope.System.AddWs(scope.Hero.HeroId, 20);
+        scope.System.AdvanceWs(scope.Hero.HeroId, .6f);
+        scope.System.AddWs(scope.Hero.HeroId, 2);
+        scope.System.AdvanceWs(scope.Hero.HeroId, .4f);
         Assert.Equal(21, gauge.Ws.Value);
-        scope.System.AdvanceWs(3);
+        scope.System.AdvanceWs(scope.Hero.HeroId, 3);
         Assert.Equal(18, gauge.Ws.Value);
-        scope.System.AdvanceWs(0);
+        scope.System.AdvanceWs(scope.Hero.HeroId, 0);
         Assert.Equal(18, gauge.Ws.Value);
-        scope.System.AddWs(82);
-        scope.System.AdvanceWs(60);
+        scope.System.AddWs(scope.Hero.HeroId, 82);
+        scope.System.AdvanceWs(scope.Hero.HeroId, 60);
         Assert.True(gauge.IsWsFull);
         Assert.Equal(100, gauge.Ws.Value);
-        scope.System.ClearWs();
-        scope.System.AddWs(8);
-        scope.System.AdvanceWs(8);
+        scope.System.ClearWs(scope.Hero.HeroId);
+        scope.System.AddWs(scope.Hero.HeroId, 8);
+        scope.System.AdvanceWs(scope.Hero.HeroId, 8);
         Assert.Equal(0, gauge.Ws.Value);
     }
 
@@ -81,17 +81,17 @@ public sealed class MusouTests
     public void Pickup_CanRefillActiveGauge_WithoutOverflow()
     {
         var scope = new HeroTestScope();
-        HeroModel gauge = scope.Hero;
-        scope.System.ResetWs(100, 1f, 6f);
-        scope.System.AddWs(100);
-        Assert.True(scope.System.TryActivateWs());
-        scope.System.AdvanceWs(2);
+        HeroState gauge = scope.Hero;
+        scope.System.ResetWs(scope.Hero.HeroId, 100, 1f, 6f);
+        scope.System.AddWs(scope.Hero.HeroId, 100);
+        Assert.True(scope.System.TryActivateWs(scope.Hero.HeroId));
+        scope.System.AdvanceWs(scope.Hero.HeroId, 2);
         int value = gauge.Ws.Value;
-        scope.System.AddWs(5);
+        scope.System.AddWs(scope.Hero.HeroId, 5);
         Assert.Equal(value, gauge.Ws.Value);
-        scope.System.AddWsFromPickup(5);
+        scope.System.AddWsFromPickup(scope.Hero.HeroId, 5);
         Assert.Equal(value + 5, gauge.Ws.Value);
-        scope.System.AddWsFromPickup(100);
+        scope.System.AddWsFromPickup(scope.Hero.HeroId, 100);
         Assert.Equal(value + 5, gauge.Ws.Value);
         Assert.True(gauge.WsActive.Value);
     }
@@ -110,24 +110,24 @@ public sealed class MusouTests
     {
         var wholeScope = new HeroTestScope();
         var splitScope = new HeroTestScope();
-        HeroModel whole = wholeScope.Hero;
-        HeroModel split = splitScope.Hero;
+        HeroState whole = wholeScope.Hero;
+        HeroState split = splitScope.Hero;
         foreach (HeroTestScope scope in new[] { wholeScope, splitScope })
         {
-            scope.System.ResetWs(100, 1f, 6f);
-            scope.System.AddWs(100);
-            Assert.True(scope.System.TryActivateWs());
+            scope.System.ResetWs(scope.Hero.HeroId, 100, 1f, 6f);
+            scope.System.AddWs(scope.Hero.HeroId, 100);
+            Assert.True(scope.System.TryActivateWs(scope.Hero.HeroId));
         }
-        wholeScope.System.AdvanceWs(5);
+        wholeScope.System.AdvanceWs(wholeScope.Hero.HeroId, 5);
         for (int i = 0; i < 5 * updatesPerSecond; i++)
         {
-            splitScope.System.AdvanceWs(1f / updatesPerSecond);
+            splitScope.System.AdvanceWs(splitScope.Hero.HeroId, 1f / updatesPerSecond);
         }
 
         Assert.Equal(66, whole.Ws.Value);
         Assert.Equal(whole.Ws.Value, split.Ws.Value);
-        wholeScope.System.AdvanceWs(20);
-        splitScope.System.AdvanceWs(20);
+        wholeScope.System.AdvanceWs(wholeScope.Hero.HeroId, 20);
+        splitScope.System.AdvanceWs(splitScope.Hero.HeroId, 20);
         Assert.False(whole.WsActive.Value);
         Assert.False(split.WsActive.Value);
     }
@@ -139,18 +139,18 @@ public sealed class MusouTests
     public void Activation_RequiresFullGaugeAndLocksGains()
     {
         var scope = new HeroTestScope();
-        HeroModel gauge = scope.Hero;
-        scope.System.ResetWs(100, 1f, 6f);
-        scope.System.AddWs(99);
-        Assert.False(scope.System.TryActivateWs());
-        scope.System.AddWs(1);
+        HeroState gauge = scope.Hero;
+        scope.System.ResetWs(scope.Hero.HeroId, 100, 1f, 6f);
+        scope.System.AddWs(scope.Hero.HeroId, 99);
+        Assert.False(scope.System.TryActivateWs(scope.Hero.HeroId));
+        scope.System.AddWs(scope.Hero.HeroId, 1);
         Assert.Equal(100, gauge.Ws.Value);
-        Assert.True(scope.System.TryActivateWs());
+        Assert.True(scope.System.TryActivateWs(scope.Hero.HeroId));
         Assert.True(gauge.WsActive.Value);
         Assert.False(gauge.IsWsFull);
-        Assert.False(scope.System.TryActivateWs());
-        scope.System.AdvanceWs(2.5f);
-        scope.System.AddWs(40);
+        Assert.False(scope.System.TryActivateWs(scope.Hero.HeroId));
+        scope.System.AdvanceWs(scope.Hero.HeroId, 2.5f);
+        scope.System.AddWs(scope.Hero.HeroId, 40);
         Assert.Equal(83, gauge.Ws.Value);
     }
 
@@ -161,9 +161,9 @@ public sealed class MusouTests
     public void TimeAndReset_NotifyCommittedStateAndAllowReuse()
     {
         var scope = new HeroTestScope();
-        HeroModel gauge = scope.Hero;
-        scope.System.ResetWs(100, 1f, 6f);
-        scope.System.AddWs(100);
+        HeroState gauge = scope.Hero;
+        scope.System.ResetWs(scope.Hero.HeroId, 100, 1f, 6f);
+        scope.System.AddWs(scope.Hero.HeroId, 100);
         int notices = 0;
         bool observedActive = false;
         gauge.WsActive.Register(_ =>
@@ -171,22 +171,22 @@ public sealed class MusouTests
             notices++;
             observedActive = gauge.WsActive.Value;
         });
-        Assert.True(scope.System.TryActivateWs());
+        Assert.True(scope.System.TryActivateWs(scope.Hero.HeroId));
         Assert.True(observedActive);
-        scope.System.AdvanceWs(6.25f);
+        scope.System.AdvanceWs(scope.Hero.HeroId, 6.25f);
         Assert.Equal(57, gauge.Ws.Value);
-        scope.System.AdvanceWs(20f);
+        scope.System.AdvanceWs(scope.Hero.HeroId, 20f);
         Assert.False(observedActive);
         Assert.Equal(0, gauge.Ws.Value);
         Assert.Equal(2, notices);
-        scope.System.AddWs(100);
-        Assert.True(scope.System.TryActivateWs());
-        scope.System.ResetWs(50, 1f, 6f);
+        scope.System.AddWs(scope.Hero.HeroId, 100);
+        Assert.True(scope.System.TryActivateWs(scope.Hero.HeroId));
+        scope.System.ResetWs(scope.Hero.HeroId, 50, 1f, 6f);
         Assert.False(gauge.WsActive.Value);
         Assert.Equal((0, 50), (gauge.Ws.Value, gauge.MaxWs.Value));
-        scope.System.AddWs(50);
-        Assert.True(scope.System.TryActivateWs());
-        scope.System.ClearWs();
+        scope.System.AddWs(scope.Hero.HeroId, 50);
+        Assert.True(scope.System.TryActivateWs(scope.Hero.HeroId));
+        scope.System.ClearWs(scope.Hero.HeroId);
         Assert.False(gauge.WsActive.Value);
         Assert.Equal(0, gauge.Ws.Value);
     }

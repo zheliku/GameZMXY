@@ -35,7 +35,7 @@ public sealed class WukongFlameThrustState : AbstractHeroSkillState
     {
         int direction = ((ISkillActor)body).Facing;
         body.Velocity = new Vector2(direction *
-            (body.GetModel<HeroModel>().WsActive.Value ? musouSpeed : speed), body.Velocity.Y);
+            (body.GetModel<HeroModel>().GetState(body.HeroId).WsActive.Value ? musouSpeed : speed), body.Velocity.Y);
         BeginHit(body);
     }
 

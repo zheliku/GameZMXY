@@ -507,13 +507,17 @@ public sealed partial class FrontendSmokeScenario
             LevelModel levelModel = flow.GetModel<LevelModel>();
             HeroModel heroModel = flow.GetModel<HeroModel>();
             HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
-            Check(heroModel.Initialized && ReferenceEquals(heroModel, SmokeInspection.HeroAttributes(hero)),
+            var heroCallbacks = SmokeInspection.ReadField<Dictionary<int, (Action<HeroProgressionState> Progress,
+                Action<EquippedItems> Slots, Action<IReadOnlyDictionary<PassiveId, int>> Passives)>>(heroSystem,
+                "_subscriptions")[hero.HeroId];
+            Check(heroModel.Initialized && ReferenceEquals(heroModel.GetState(hero.HeroId), SmokeInspection.HeroAttributes(hero)),
                 "英雄 Entity 没有借用 Architecture 注册的同一运行属性");
             Check(flow.GetSystem<SkillSystem>().IsAvailable(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.RisingDragon) &&
-                heroModel.MaxHp.Value > ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.MaxHp,
+                heroModel.GetState(hero.HeroId).MaxHp.Value > ConfigSystem.Instance.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes.MaxHp,
                 "地图学习的主动技能或被动属性未在进关后生效");
-            Check(SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().GetProgress(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)), heroSystem) == 1 &&
-                SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)), heroSystem) == 1,
+            Check(SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().GetProgress(hero.HeroId), heroCallbacks.Progress) == 1 &&
+                SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().GetSlots(hero.HeroId), heroCallbacks.Slots) == 1 &&
+                SmokeInspection.CountBindingHandlers(flow.GetModel<SkillModel>().GetPassiveLevels(hero.HeroId), heroCallbacks.Passives) == 1,
                 "英雄属性系统没有唯一订阅成长和穿戴来源");
             LevelSystem levelSystem = flow.GetSystem<LevelSystem>();
             Check(ReferenceEquals(flow.GetArchitecture(), ((IBelongToArchitecture)level).GetArchitecture()),
@@ -632,8 +636,9 @@ public sealed partial class FrontendSmokeScenario
             Check(!GF.Base.IsGamePaused, "返回地图后仍处于暂停");
             Check(!heroModel.Initialized && flow.GetModel<HeroModel>() == null &&
                 !heroSystem.Initialized && flow.GetSystem<HeroSystem>() == null &&
-                SmokeInspection.CountBindingHandlers(playerModel.GetProgress(playerModel.HeroOf(PlayerSlot.P1)), heroSystem) == 0 &&
-                SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().GetSlots(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)), heroSystem) == 0,
+                SmokeInspection.CountBindingHandlers(playerModel.GetProgress(hero.HeroId), heroCallbacks.Progress) == 0 &&
+                SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().GetSlots(hero.HeroId), heroCallbacks.Slots) == 0 &&
+                SmokeInspection.CountBindingHandlers(flow.GetModel<SkillModel>().GetPassiveLevels(hero.HeroId), heroCallbacks.Passives) == 0,
                 "离关没有结束英雄运行模型");
             Check(SmokeInspection.CallbackCount(battleForm, "SettingsRequested") == 0 &&
                 SmokeInspection.CallbackCount(battleForm, "InventoryRequested") == 0 &&
@@ -650,7 +655,8 @@ public sealed partial class FrontendSmokeScenario
             Check(Find<AbstractHeroEntity>().Count(x => x.IsShown) == 1, "重入生成了重复英雄");
             Check(flow.GetModel<LevelModel>().ComboCount.Value == 0 && !battleForm.GetNode<ComboHud>("m_Combo").Visible,
                 "重新进关沿用了旧连击或HUD数字");
-            Check(flow.GetModel<HeroModel>().Initialized && !ReferenceEquals(heroModel, flow.GetModel<HeroModel>()),
+            HeroModel reenteredHeroModel = flow.GetModel<HeroModel>();
+            Check(reenteredHeroModel.Initialized && !ReferenceEquals(heroModel, reenteredHeroModel),
                 "新关卡沿用了已结束的英雄运行模型");
             ProfileModel previousInventory = flow.GetModel<ProfileModel>();
             flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 9);

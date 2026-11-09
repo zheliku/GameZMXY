@@ -86,7 +86,7 @@ public sealed class ProfileSystem : AbstractSystem
         ExperienceCurveUtility curve = this.GetUtility<ExperienceCurveUtility>();
         BindableProperty<HeroProgressionState> progress = profile.GetProgress(heroId);
         int previousLevel = progress.Value.Level;
-        progress.Value = curve.GetProgress(curve.Add(progress.Value.TotalExperience, amount));
+        progress.Value = curve.GetProgress(curve.AddExperience(progress.Value.TotalExperience, amount));
         return progress.Value.Level - previousLevel;
     }
 

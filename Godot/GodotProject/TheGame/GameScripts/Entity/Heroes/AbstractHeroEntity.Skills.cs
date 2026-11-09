@@ -127,7 +127,7 @@ public abstract partial class AbstractHeroEntity : ISkillActor
     {
         AttackConfig definition = this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
         SetAttack(AttackData.Create((int)hit, CaptureCombatAttributes(),
-            (int)(power * this.GetSystem<HeroSystem>().AttackPowerMultiplier),
+            (int)(power * this.GetSystem<HeroSystem>().GetAttackPowerMultiplier(HeroId)),
             definition.DamageKind, definition.Knockback, Facing, definition.HitProtect, knockbackOriginX,
             source: CaptureAttackSource()));
     }
@@ -178,11 +178,11 @@ public abstract partial class AbstractHeroEntity : ISkillActor
         SkillHitId hit, double power, Action completed, float? knockbackOriginX)
     {
         SkillEffectNode node = RentSkillEffect(scene);
-        float multiplier = this.GetSystem<HeroSystem>().AttackPowerMultiplier;
+        float multiplier = this.GetSystem<HeroSystem>().GetAttackPowerMultiplier(HeroId);
         node.Show(hit == SkillHitId.None ? null :
                 this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit),
             position, Facing, CaptureCombatAttributes(), (int)(power * multiplier),
-            this.GetModel<HeroModel>().WsActive.Value, ReleaseSkillEffect, completed, knockbackOriginX, HitSoundId);
+            this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value, ReleaseSkillEffect, completed, knockbackOriginX, HitSoundId);
     }
 
     // ---- 效果取池与回收 ----
@@ -195,7 +195,7 @@ public abstract partial class AbstractHeroEntity : ISkillActor
     /// <exception cref="InvalidOperationException">场景尚未登记到节点池。</exception>
     protected SkillEffectNode RentSkillEffect(PackedScene scene)
     {
-        SkillEffectNode effect = NodePool.Instance.Get<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
+        SkillEffectNode effect = NodePool.Instance.RentNode<SkillEffectNode>(scene.ResourcePath, GetParent()) ??
             throw new InvalidOperationException($"技能特效未登记到节点池：{scene.ResourcePath}");
         _skillEffects.Add(effect);
         effect.Source = CaptureAttackSource();
@@ -227,7 +227,7 @@ public abstract partial class AbstractHeroEntity : ISkillActor
                 ReleaseSkillEffect(effect);
             }
 
-            this.GetSystem<SkillSystem>().CancelSkill();
+            this.GetSystem<SkillSystem>().CancelSkill(HeroId);
         }
 
         _skillEffects.Clear();

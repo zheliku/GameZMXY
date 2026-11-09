@@ -51,13 +51,13 @@ public sealed class MusouTests
             var defender = new CombatantAttributes(CombatSide.Enemy, 1, 0, defense, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             DamageResult result = new CombatSystem(scope).Calculate(attack, defender, 1, 0);
             Assert.Equal(expected, result.AttackerWsGain);
-            system.RecordHit(result);
+            system.RecordHit(scope.Hero.HeroId, result);
             Assert.Equal(expected, scope.Hero.Ws.Value);
-            system.RecordHit(DamageResult.Missed(attack.Kind));
+            system.RecordHit(scope.Hero.HeroId, DamageResult.Missed(attack.Kind));
             Assert.Equal(expected, scope.Hero.Ws.Value);
             scope.Hero.Ws.Value = scope.Hero.MaxWs.Value;
-            Assert.True(system.TryActivateWs());
-            system.RecordHit(result);
+            Assert.True(system.TryActivateWs(scope.Hero.HeroId));
+            system.RecordHit(scope.Hero.HeroId, result);
             Assert.Equal(scope.Hero.MaxWs.Value, scope.Hero.Ws.Value);
         }
         finally

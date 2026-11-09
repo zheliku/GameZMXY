@@ -12,7 +12,8 @@ internal sealed class HeroTestScope : IArchitecture
     /// <summary>
     /// 本测试独占的英雄数值。
     /// </summary>
-    public HeroModel Hero { get; } = new();
+    public HeroState Hero => _heroes.GetState(1);
+    private readonly HeroModel _heroes = new(); // 本测试的本局状态容器。
     private readonly SkillModel _skills = new([1]); // 与正式英雄装配相同的独立技能记录。
 
     /// <summary>
@@ -26,6 +27,7 @@ internal sealed class HeroTestScope : IArchitecture
     /// </summary>
     public HeroTestScope()
     {
+        _heroes.CreateState(1);
         _heroStatusSystem = new(this);
         ((ICanInit)_heroStatusSystem).Init();
         System = new(this);
@@ -48,7 +50,7 @@ internal sealed class HeroTestScope : IArchitecture
     /// <inheritdoc />
     public TModel GetModel<TModel>() where TModel : class, IModel
     {
-        return (typeof(TModel) == typeof(HeroModel) ? (IModel)Hero :
+        return (typeof(TModel) == typeof(HeroModel) ? (IModel)_heroes :
             typeof(TModel) == typeof(SkillModel) ? _skills :
             typeof(TModel) == typeof(ConfigurationModel) ? BattleArchitecture.Instance.GetModel<ConfigurationModel>() : null) as TModel;
     }

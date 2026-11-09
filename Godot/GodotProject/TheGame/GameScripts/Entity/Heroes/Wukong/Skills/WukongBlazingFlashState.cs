@@ -52,7 +52,7 @@ public sealed class WukongBlazingFlashState : AbstractHeroSkillState
         _dashing = true;
         var actor = (ISkillActor)body;
         actor.PlaySkillEffect(trail, actor.SkillPosition);
-        body.GetSystem<SkillSystem>().GrantInvulnerability(body.ActionData.Time, InvulnerabilitySeconds);
+        body.GetSystem<SkillSystem>().GrantInvulnerability(body.HeroId, body.ActionData.Time, InvulnerabilitySeconds);
         body.Velocity = new Vector2(actor.Facing * speed, body.Velocity.Y);
     }
 

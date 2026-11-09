@@ -8,7 +8,7 @@
 - **实体层级**：AbstractActorEntity 提供人怪共用的物理、动画与受击能力。敌方按 `AbstractEnemyEntity → AbstractMonsterEntity / AbstractBossEntity → 具体敌人` 组织；Enemy 管共同生命、感知、攻击与 FSM 生命周期，Monster 提供小怪预设，Enemy统一登记/归还离身攻击，Boss保留首领共同行为，具体敌人保留专属选招和无敌等行为。
 - **基类与具体类**：共用机制放抽象实体，角色与怪物的特殊行为放具体实体和状态。具体英雄声明 CreateBodyStates 与输入匹配；具体怪物选择 AiPreset，并按需要覆写 BuildBodyParams、BuildAttackParams 和 TryRequestAttack。
 - **生命周期**：显示和隐藏经 GF.Entity；OnInit 装配固定节点，OnShow 重置本实例局部状态并建立状态机，OnHide 停止状态、回收攻击与特效。英雄显示前由流程注册并初始化 HeroModel/HeroSystem；怪物接收 EnemySpawn，以唯一基础BaseAttributes重建生命、防御与经验；守关/等级变体由具体物种的专属Resource及规则处理。
-- **数据所有权**：英雄属性、生命魔法、无双与施放状态归 HeroModel；档案成长、装备和灵魂归 ProfileModel，学习记录归 SkillModel。实体拥有节点、运动、输入消费和身体/AI FSM；怪物的普通生命、防御、冷却等局部状态归本实例。
+- **数据所有权**：HeroModel 按 HeroId 持有 HeroState；英雄属性、生命魔法、无双与施放状态归各自 HeroState，HeroSystem/HeroStatusSystem 显式按 HeroId 操作；档案成长、装备和灵魂归 ProfileModel，学习记录归 SkillModel。实体拥有节点、运动、输入消费和身体/AI FSM；怪物的普通生命、防御、冷却等局部状态归本实例。
 - **属性汇总**：HeroSystem 按 `(基础 + Σ固定值) × (1 + Σ加算百分比) × Π(1 + 独立百分比)` 计算最终值，下限 0，整数四舍五入。成长来自 BaseAttributes，穿戴和局内修正按 AttributeSourceId 登记；SetSource/RemoveSource 更新同一来源的完整修正。
 - **结算快照**：出招与受击时读取 CombatantAttributes；AttackData 保存出招快照、威力与命中去重，已发出的攻击保持当次数据。
 - **生命与死亡**：ReceiveHit 计算 DamageResult，HeroSystem 或怪物本实例执行扣血；首次归零置 Dead 并触发一次 Died。英雄恢复经 HeroSystem，死亡动作归身体状态，关卡结局归 LevelSystem。
@@ -19,7 +19,7 @@
 - **出手节奏**：EnemyAiSystem推进共同游戏秒时钟，按已配置攻击间隔、欲望和逐招冷却决策。物种特殊选招保留其源规则，不再使用已删除的StandAndStrikeState/AttackFirstDelay预设。
 - **动画与判定**：原生 `AnimationLibrary` 的值轨道编辑帧、特效及判定盒几何/启闭；方法轨道以 `AnimEvent` 入口表达出手、声音及阶段时点。挥击、技能和死亡声音由对应动画方法轨道触发 `PlaySoundAnimEvent(SoundId)`；普通业务代码直接调用无后缀实现或 GGF 音频服务。成功受击的反馈由 ReceiveHit 按接收实体的 m_HurtSoundId 经 GGF 播放，人怪同源，霸体及零击退也生效，hurt 动画不重复发声。AttackData 与独立效果不保存第二份命中声音。普通状态读取长度按物理秒数计时；技能状态每物理帧手动推进一次原生播放器，不再自建时间线、事件枚举或第二个游标。
 - **招式职责**：输入匹配归具体英雄，激活/扣费归 `SkillSystem`，运动、判定威力、阶段分支及打断归对应 GGF 状态；动画节点入口只连接当前状态。方法回调只登记动画切换/结束请求，在播放器推进返回后执行，不在轨道遍历中换动画、销毁状态或回池。死亡收益通知及碰撞清理归状态生命周期，不依赖视觉方法键。
-- **退出与复用**：状态退出释放攻击包，应用原生 `RESET` 轨道并恢复普通播放；资源库负责特效默认值，不在角色中硬编码节点路径和空动画名。`HeroModel.ActiveSkillId` 只记录激活编号；独立效果不持有施放包装，延迟回调由所属状态核对原 FSM、当前状态与 `EnterSerial`，取消和复用均不可影响下一次施放。
+- **退出与复用**：状态退出释放攻击包，应用原生 `RESET` 轨道并恢复普通播放；资源库负责特效默认值，不在角色中硬编码节点路径和空动画名。`HeroState.ActiveSkillId` 只记录激活编号；独立效果不持有施放包装，延迟回调由所属状态核对原 FSM、当前状态与 `EnterSerial`，取消和复用均不可影响下一次施放。
 - **判定几何**：英雄、怪物、BOSS、独立技能效果和普通地形优先用矩形、圆、胶囊等基础形状，以少量形状覆盖主要有效区域。攻击通常一个形状，确有不同区域时可用两个；不按图片 alpha 提取逐像素多边形，不为闪电间隙或美术毛边拆大量碰撞体。排除乌云等纯装饰和外侧大块无攻击区域；按招式阶段调整范围即可，不逐帧追随细小视觉变化。同一用途不重复建立相同判定，身体、受击、感知区按各自物理层分工。
 - **地形简化**：地面、平台、墙使用原生矩形等基础形状。平顶带双侧斜坡的土坡保留一个六点简单整体凸坡体，减少形状数量并避免内部侧面和接缝；不按草叶或图片轮廓细分。调整时保留已有空间覆盖、单向平台行为与美术归属，检查走跑、坡面和跳跃。
 - **攻击范围**：实际伤害由原生HitBox基础形状与动画启闭决定，当前世界形状经HurtBoxNode.Intersects复核后才消费AttackData去重。AI发现/交战/巡逻读取Perception原生矩形、圆或线段，禁止从动画伤害形状并集反推AI距离。AttackSource保存归属实体、实际施放者和判定来源的值快照，不持有节点。

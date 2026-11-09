@@ -28,7 +28,7 @@ public sealed partial class UiSmokeScenario
     {
         ProfileModel profile = flow.GetModel<ProfileModel>();
         BindableDictionary<PassiveId, int> levels = flow.GetModel<SkillModel>().GetPassiveLevels(profile.HeroOf(PlayerSlot.P1));
-        HeroModel initial = flow.GetModel<HeroModel>();
+        HeroState initial = flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1));
         (int Hp, int Mp, float Crit, int HpRegen, int MpRegen) expected = (Hp: initial.MaxHp.Value + 600, Mp: initial.MaxMp.Value + 600,
             Crit: initial.Crit.Value + .06f, HpRegen: initial.HpRegen.Value + 6, MpRegen: initial.MpRegen.Value + 6);
         profile.RestoreSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 4999);
@@ -82,7 +82,7 @@ public sealed partial class UiSmokeScenario
             button.EmitSignal(BaseButton.SignalName.Pressed);
             Check(profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value == expectedSoul, "直接发送满级按钮信号仍然扣费");
         }
-        HeroModel hero = flow.GetModel<HeroModel>();
+        HeroState hero = flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1));
         Check((hero.MaxHp.Value, hero.MaxMp.Value, hero.HpRegen.Value, hero.MpRegen.Value) ==
             (expected.Hp, expected.Mp, expected.HpRegen, expected.MpRegen) && Near(hero.Crit.Value, expected.Crit),
             "被动未在本英雄成长和穿戴基础上正确增加五项属性");
@@ -101,7 +101,7 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() => FindLevel() != previousLevel && CurrentBattleForm() != null,
             "被动升级提交后重试没有进入新关卡", 15000);
         await WaitFramesAsync(5);
-        Check(flow.GetModel<HeroModel>().MaxHp.Value == expected.Hp && Near(flow.GetModel<HeroModel>().Crit.Value, expected.Crit) &&
+        Check(flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).MaxHp.Value == expected.Hp && Near(flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Crit.Value, expected.Crit) &&
             ReferenceEquals(levels, flow.GetModel<SkillModel>().GetPassiveLevels(profile.HeroOf(PlayerSlot.P1))),
             "重开关卡后被动丢失、重复叠加或换成另一份数据");
         GD.Print("SMOKE-PASSIVE-UPGRADES PASS: all 25 purchases, insufficient soul, UI binding, maximum refusal, five real attributes, disk checkpoint and reentry");

@@ -9,6 +9,7 @@ using GameLogic.Battle;
 using GameLogic.Battle.Attacks;
 using GameLogic.Battle.Damage;
 using GameLogic.Entity;
+using GameLogic.Heroes;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.NodePool;
@@ -321,9 +322,9 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
             }
         }
 
-        if (_attacker.Side == CombatSide.Hero)
+        if (_attacker.Side == CombatSide.Hero && GF.Entity.GetEntity(Source.OwnerEntityId) is AbstractHeroEntity hero)
         {
-            this.GetSystem<HeroSystem>().RecordHit(result);
+            this.GetSystem<HeroSystem>().RecordHit(hero.HeroId, result);
         }
     }
 

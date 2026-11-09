@@ -49,7 +49,7 @@ public partial class BattleForm : IController
     /// <param name="inputEvent">输入映射处理的事件。</param>
     public override void _UnhandledInput(InputEvent inputEvent)
     {
-        if (_formData == null || !Visible || GF.Base.IsGamePaused || !this.GetModel<HeroModel>().ControlsEnabled)
+        if (_formData == null || !Visible || GF.Base.IsGamePaused || !this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).ControlsEnabled)
         {
             return;
         }
@@ -148,13 +148,13 @@ public partial class BattleForm : IController
         _status.SetHero(_formData.Hero.HeroId);
         try
         {
-            this.GetModel<HeroModel>().Hp.Register(RefreshResources);
-            this.GetModel<HeroModel>().MaxHp.Register(RefreshResources);
-            this.GetModel<HeroModel>().Mp.Register(RefreshResources);
-            this.GetModel<HeroModel>().MaxMp.Register(RefreshResources);
-            this.GetModel<HeroModel>().Ws.Register(RefreshMusou);
-            this.GetModel<HeroModel>().MaxWs.Register(RefreshMusou);
-            this.GetModel<HeroModel>().WsActive.Register(RefreshMusouActive);
+            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).Hp.Register(RefreshResources);
+            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).MaxHp.Register(RefreshResources);
+            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).Mp.Register(RefreshResources);
+            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).MaxMp.Register(RefreshResources);
+            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).Ws.Register(RefreshMusou);
+            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).MaxWs.Register(RefreshMusou);
+            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).WsActive.Register(RefreshMusouActive);
             progression.GetProgress(_formData.Hero.HeroId).RegisterWithInitValue(RefreshProgression);
             this.GetModel<SkillModel>().GetLearnedSkills(_formData.Hero.HeroId).RegisterWithInitValue(RefreshSkills);
             levelModel.TravelAvailable.RegisterWithInitValue(RefreshTravel);
@@ -264,7 +264,7 @@ public partial class BattleForm : IController
     /// </summary>
     private void OnSettingsClicked()
     {
-        if (_formData == null || !this.GetModel<HeroModel>().ControlsEnabled)
+        if (_formData == null || !this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).ControlsEnabled)
         {
             return;
         }
@@ -278,7 +278,7 @@ public partial class BattleForm : IController
     /// </summary>
     private void OnInventoryClicked()
     {
-        if (_formData == null || !this.GetModel<HeroModel>().ControlsEnabled)
+        if (_formData == null || !this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).ControlsEnabled)
         {
             return;
         }
@@ -292,7 +292,7 @@ public partial class BattleForm : IController
     /// </summary>
     private void OnSkillsClicked()
     {
-        if (_formData == null || !this.GetModel<HeroModel>().ControlsEnabled)
+        if (_formData == null || !this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).ControlsEnabled)
         {
             return;
         }
@@ -315,13 +315,13 @@ public partial class BattleForm : IController
         if (data != null)
         {
             // 关窗先于模型移除和实体隐藏，直接解除本周期的对应订阅。
-            this.GetModel<HeroModel>().Hp.UnRegister(RefreshResources);
-            this.GetModel<HeroModel>().MaxHp.UnRegister(RefreshResources);
-            this.GetModel<HeroModel>().Mp.UnRegister(RefreshResources);
-            this.GetModel<HeroModel>().MaxMp.UnRegister(RefreshResources);
-            this.GetModel<HeroModel>().Ws.UnRegister(RefreshMusou);
-            this.GetModel<HeroModel>().MaxWs.UnRegister(RefreshMusou);
-            this.GetModel<HeroModel>().WsActive.UnRegister(RefreshMusouActive);
+            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).Hp.UnRegister(RefreshResources);
+            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).MaxHp.UnRegister(RefreshResources);
+            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).Mp.UnRegister(RefreshResources);
+            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).MaxMp.UnRegister(RefreshResources);
+            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).Ws.UnRegister(RefreshMusou);
+            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).MaxWs.UnRegister(RefreshMusou);
+            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).WsActive.UnRegister(RefreshMusouActive);
             this.GetModel<ProfileModel>().GetProgress(data.Hero.HeroId).UnRegister(RefreshProgression);
             this.GetModel<SkillModel>().GetLearnedSkills(data.Hero.HeroId).UnRegister(RefreshSkills);
             this.GetModel<LevelModel>().TravelAvailable.UnRegister(RefreshTravel);
@@ -408,7 +408,7 @@ public partial class BattleForm : IController
     /// <param name="value">已提交的属性值；同时读取关联上限。</param>
     private void RefreshResources(int value = 0)
     {
-        HeroModel vitals = this.GetModel<HeroModel>();
+        HeroState vitals = this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId);
         _status.SetResources(vitals.Hp.Value, vitals.MaxHp.Value, vitals.Mp.Value, vitals.MaxMp.Value);
     }
 
@@ -418,7 +418,7 @@ public partial class BattleForm : IController
     /// <param name="value">已提交的属性值；同时读取关联上限。</param>
     private void RefreshMusou(int value = 0)
     {
-        HeroModel musou = this.GetModel<HeroModel>();
+        HeroState musou = this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId);
         _menu.SetMusou(musou.Ws.Value, musou.MaxWs.Value, musou.IsWsFull);
     }
 

@@ -51,10 +51,10 @@ Controller 对 Model/System 执行读取和订阅，System 执行业务写入。
 ## Model 聚合与 System 粒度
 
 - Model 按业务数据的所有权和生命周期划分，System 按规则职责划分；二者不要求一一对应。多个 System 可以共享同一 Model，但每项状态的写入职责必须明确，禁止重复保存同一事实。
-- 领域内的集合、值对象和小型运行时状态是普通数据，不因有名字就实现 IModel 或独立注册；也不保留一个仅转发其他 Model 的父 Model。HeroModel.StatusEffects 属于这种子数据，HeroStatusSystem 负责刷新和计时，HeroSystem 通过它完成死亡清理。
+- 领域内的集合、值对象和小型运行时状态是普通数据，不因有名字就实现 IModel 或独立注册；也不保留一个仅转发其他 Model 的父 Model。HeroState.StatusEffects 属于这种子数据，HeroStatusSystem 负责刷新和计时，HeroSystem 通过它完成死亡清理。
 - 只有需要独立生命周期、独立状态所有权或独立消费契约时才拆 Model；System 则须实际承担可独立说明和验证的业务规则。不能仅因行数多就拆类型，也不能为减少类型而合并无关业务。
-- 大 Model 可以组合普通记录、字典和领域值对象，但不嵌套注册另一个 IModel；子数据跟随父 Model 的生命周期，使用父 Model 的不变量入口。只有子域需要独立注册、独立观察或独立持久化时，才提升为顶层 Model。当前 `HeroModel.StatusEffectState`、`ProfileModel.EquippedItems` 和 `LevelModel.LevelResult` 都属于普通组合数据。
-- 业务规则按“谁拥有事实、谁维护不变量”落位。`EquipmentSystem` 和 `LootSystem` 写入 `ProfileModel`，不创建 `EquipmentModel`；`HeroStatusSystem` 写入 `HeroModel.StatusEffects`，不创建 `StatusEffectModel`。名称应带宿主领域，使用 `HeroStatusSystem`、`HeroModel.StatusEffectState`，避免无上下文的 `StatusEffectSystem`。
+- 大 Model 可以组合普通记录、字典和领域值对象，但不嵌套注册另一个 IModel；子数据跟随父 Model 的生命周期，使用父 Model 的不变量入口。HeroModel 按 HeroId 持有普通 HeroState，不为每位英雄独立注册 Model；个人系统操作显式传 HeroId。只有子域需要独立注册、独立观察或独立持久化时，才提升为顶层 Model。当前 `HeroState.StatusEffectState`、`ProfileModel.EquippedItems` 和 `LevelModel.LevelResult` 都属于普通组合数据。
+- 业务规则按“谁拥有事实、谁维护不变量”落位。`EquipmentSystem` 和 `LootSystem` 写入 `ProfileModel`，不创建 `EquipmentModel`；`HeroStatusSystem` 写入 `HeroState.StatusEffects`，不创建 `StatusEffectModel`。名称应带宿主领域，使用 `HeroStatusSystem`、`HeroState.StatusEffectState`，避免无上下文的 `StatusEffectSystem`。
 - 主流程只保留一个根 Architecture。应用、档案、本局是同一根 Architecture 内的成员生命周期；测试场景可以有独立根 FSM。禁止用多个 Architecture 表达 Model 层级，也禁止通过父子 Architecture 回退查找对象。只有未来确实并存的独立世界才考虑额外 Architecture。
 - 先按业务功能定位，再用后缀辨认职责：`Models`、`Systems`、`Utilities`、`Commands`、`Queries` 是 QF 入口层；同一领域有多个紧密类型时才在层内建子目录，例如 `Systems/Hero`、`Systems/Combat`、`Models/Profile`。单文件领域直接放层根目录。实体、UI、关卡节点和流程数据按运行时角色保留在 `Entity`、`UI`、`MainPack/Procedure`，不为了对齐 QF 目录而搬迁。
 
@@ -64,7 +64,7 @@ Controller 对 Model/System 执行读取和订阅，System 执行业务写入。
 | --- | --- | --- |
 | 应用 | ConfigurationModel、SaveModel、共享 Utility 与系统 | ProcedurePrepare → 应用退出 |
 | 档案 | ProfileModel、SkillModel、档案业务系统 | ProcedureLoadGame → 返回标题 |
-| 本局 | HeroModel（含英雄效果）、LevelModel、HeroSystem、HeroStatusSystem、LevelSystem | ProcedureLevel → 离关 |
+| 本局 | HeroModel（按英雄持有 HeroState 与效果）、LevelModel、HeroSystem、HeroStatusSystem、LevelSystem | ProcedureLevel → 离关 |
 | 实体 | 节点、运动、输入消费记录、身体/AI FSM、局部计时 | GF.Entity 的 Show → Hide |
 | 窗口 | 页码、悬停、选择、动画及本次订阅 | OnOpen → OnClose |
 

@@ -21,11 +21,11 @@ public sealed class HeroModelTests
     public void Combatant_FreezesActorIdentityAndFinalAttributes()
     {
         var scope = new HeroTestScope();
-        HeroModel attributes = scope.Hero;
+        HeroState attributes = scope.Hero;
         AttributeSourceId source = new("Buff", 1);
-        scope.System.SetSource(source, [AttributeModifier.Flat(AttributeType.Power, 15)]);
+        scope.System.SetSource(scope.Hero.HeroId, source, [AttributeModifier.Flat(AttributeType.Power, 15)]);
         CombatantAttributes snapshot = attributes.CaptureCombatAttributes(-42);
-        scope.System.SetSource(source, [AttributeModifier.Flat(AttributeType.Power, 99)]);
+        scope.System.SetSource(scope.Hero.HeroId, source, [AttributeModifier.Flat(AttributeType.Power, 99)]);
         Assert.Equal((-42, CombatSide.Hero, 1, 15),
             (snapshot.ActorId, snapshot.Side, snapshot.Level, snapshot.Power));
         Assert.Equal(99, attributes.Power.Value);
@@ -38,13 +38,13 @@ public sealed class HeroModelTests
     public void Attributes_AppliesModifierOrder()
     {
         var scope = new HeroTestScope();
-        HeroModel sheet = scope.Hero;
-        scope.System.SetSource(new AttributeSourceId("Equipment", 1), new[]
+        HeroState sheet = scope.Hero;
+        scope.System.SetSource(scope.Hero.HeroId, new AttributeSourceId("Equipment", 1), new[]
         {
             AttributeModifier.Flat(AttributeType.Power, 10),
             AttributeModifier.PercentAdd(AttributeType.Power, 0.1f),
         });
-        scope.System.SetSource(new AttributeSourceId("Buff", 1), new[]
+        scope.System.SetSource(scope.Hero.HeroId, new AttributeSourceId("Buff", 1), new[]
         {
             AttributeModifier.PercentAdd(AttributeType.Power, 0.1f),
             AttributeModifier.PercentMult(AttributeType.Power, 0.5f),
@@ -62,14 +62,14 @@ public sealed class HeroModelTests
     public void Attributes_RemovesAndReplacesWholeSources()
     {
         var scope = new HeroTestScope();
-        HeroModel sheet = scope.Hero;
+        HeroState sheet = scope.Hero;
         AttributeSourceId sword = new("Equipment", 7);
-        scope.System.SetSource(sword, new[] { AttributeModifier.Flat(AttributeType.Power, 5), AttributeModifier.Flat(AttributeType.Crit, .02f) });
-        scope.System.SetSource(sword, new[] { AttributeModifier.Flat(AttributeType.Power, 8) });
+        scope.System.SetSource(scope.Hero.HeroId, sword, new[] { AttributeModifier.Flat(AttributeType.Power, 5), AttributeModifier.Flat(AttributeType.Crit, .02f) });
+        scope.System.SetSource(scope.Hero.HeroId, sword, new[] { AttributeModifier.Flat(AttributeType.Power, 8) });
         Assert.Equal((8, 0f), (sheet.Power.Value, sheet.Crit.Value));
 
-        Assert.True(scope.System.RemoveSource(sword));
-        Assert.False(scope.System.RemoveSource(sword));
+        Assert.True(scope.System.RemoveSource(scope.Hero.HeroId, sword));
+        Assert.False(scope.System.RemoveSource(scope.Hero.HeroId, sword));
         Assert.Equal(0, sheet.Power.Value);
     }
 
@@ -80,11 +80,11 @@ public sealed class HeroModelTests
     public void Attributes_ClampsAndRounds()
     {
         var scope = new HeroTestScope();
-        HeroModel sheet = scope.Hero;
-        scope.System.SetSource(new AttributeSourceId("Debuff", 1), new[] { AttributeModifier.Flat(AttributeType.Def, -5) });
+        HeroState sheet = scope.Hero;
+        scope.System.SetSource(scope.Hero.HeroId, new AttributeSourceId("Debuff", 1), new[] { AttributeModifier.Flat(AttributeType.Def, -5) });
         Assert.Equal(0, sheet.Def.Value);
 
-        scope.System.SetSource(new AttributeSourceId("Buff", 2), new[] { AttributeModifier.Flat(AttributeType.Mdef, 2.5f) });
+        scope.System.SetSource(scope.Hero.HeroId, new AttributeSourceId("Buff", 2), new[] { AttributeModifier.Flat(AttributeType.Mdef, 2.5f) });
         Assert.Equal(3, sheet.Mdef.Value);
     }
 
@@ -95,15 +95,15 @@ public sealed class HeroModelTests
     public void Attributes_CopiesModifiersAndRejectsInvalidSources()
     {
         var scope = new HeroTestScope();
-        HeroModel sheet = scope.Hero;
+        HeroState sheet = scope.Hero;
         AttributeModifier[] modifiers = { AttributeModifier.Flat(AttributeType.Power, 4) };
-        scope.System.SetSource(new AttributeSourceId("Pellet", 1), modifiers);
+        scope.System.SetSource(scope.Hero.HeroId, new AttributeSourceId("Pellet", 1), modifiers);
         modifiers[0] = AttributeModifier.Flat(AttributeType.Power, 100);
         Assert.Equal(4, sheet.Power.Value);
-        scope.System.RemoveSource(new AttributeSourceId("Pellet", 1));
+        scope.System.RemoveSource(scope.Hero.HeroId, new AttributeSourceId("Pellet", 1));
         Assert.Equal(0, sheet.Power.Value);
         Assert.Throws<ArgumentException>(() => new AttributeSourceId("", 1));
-        Assert.Throws<ArgumentException>(() => scope.System.SetSource(default, modifiers));
+        Assert.Throws<ArgumentException>(() => scope.System.SetSource(scope.Hero.HeroId, default, modifiers));
     }
 
     /// <summary>
@@ -113,17 +113,17 @@ public sealed class HeroModelTests
     public void Vitals_ReportsDeathExactlyOnce()
     {
         var scope = new HeroTestScope();
-        HeroModel vitals = scope.Hero;
+        HeroState vitals = scope.Hero;
         int notifications = 0;
         vitals.Hp.Register(_ => notifications++);
-        scope.System.SetGrowth(BaseAttributes(100, 30), 1, 1, null, null, refill: true);
+        scope.System.SetGrowth(1, BaseAttributes(100, 30), 1, null, null, refill: true);
         Assert.Equal((100, 100, 30, 30), (vitals.Hp.Value, vitals.MaxHp.Value, vitals.Mp.Value, vitals.MaxMp.Value));
 
-        Assert.False(scope.System.Damage(60));
-        Assert.False(scope.System.Damage(0));
-        Assert.True(scope.System.Damage(60));
-        Assert.False(scope.System.Damage(10));
-        scope.System.Heal(50);
+        Assert.False(scope.System.Damage(scope.Hero.HeroId, 60));
+        Assert.False(scope.System.Damage(scope.Hero.HeroId, 0));
+        Assert.True(scope.System.Damage(scope.Hero.HeroId, 60));
+        Assert.False(scope.System.Damage(scope.Hero.HeroId, 10));
+        scope.System.Heal(scope.Hero.HeroId, 50);
         Assert.Equal(0, vitals.Hp.Value);
         Assert.Equal(3, notifications);
     }
@@ -135,19 +135,19 @@ public sealed class HeroModelTests
     public void Vitals_ClampsOnMaximumChangeAndGuardsMp()
     {
         var scope = new HeroTestScope();
-        HeroModel vitals = scope.Hero;
-        scope.System.SetGrowth(BaseAttributes(100, 30), 1, 1, null, null, refill: true);
-        scope.System.Damage(30);
-        scope.System.SetGrowth(BaseAttributes(50, 10), 1, 1, null, null, refill: false);
+        HeroState vitals = scope.Hero;
+        scope.System.SetGrowth(1, BaseAttributes(100, 30), 1, null, null, refill: true);
+        scope.System.Damage(scope.Hero.HeroId, 30);
+        scope.System.SetGrowth(1, BaseAttributes(50, 10), 1, null, null, refill: false);
         Assert.Equal((50, 10), (vitals.Hp.Value, vitals.Mp.Value));
-        scope.System.SetGrowth(BaseAttributes(130, 65), 1, 1, null, null, refill: true);
+        scope.System.SetGrowth(1, BaseAttributes(130, 65), 1, null, null, refill: true);
         Assert.Equal((130, 65), (vitals.Hp.Value, vitals.Mp.Value));
 
-        Assert.False(scope.System.TrySpendMp(66));
-        Assert.True(scope.System.TrySpendMp(60));
-        scope.System.RestoreMp(100);
+        Assert.False(scope.System.TrySpendMp(scope.Hero.HeroId, 66));
+        Assert.True(scope.System.TrySpendMp(scope.Hero.HeroId, 60));
+        scope.System.RestoreMp(scope.Hero.HeroId, 100);
         Assert.Equal(65, vitals.Mp.Value);
-        scope.System.SetGrowth(BaseAttributes(0, -1), 1, 1, null, null, refill: true);
+        scope.System.SetGrowth(1, BaseAttributes(0, -1), 1, null, null, refill: true);
         Assert.Equal((1, 0), (vitals.MaxHp.Value, vitals.MaxMp.Value));
     }
 
@@ -158,18 +158,18 @@ public sealed class HeroModelTests
     public void Musou_CapsAndConsumesWhenFull()
     {
         var scope = new HeroTestScope();
-        HeroModel gauge = scope.Hero;
+        HeroState gauge = scope.Hero;
         int notifications = 0;
         gauge.Ws.Register(_ => notifications++);
-        scope.System.ResetWs(100, 1f, 6f);
-        scope.System.AddWs(60);
-        Assert.False(scope.System.TryActivateWs());
-        scope.System.AddWs(60);
+        scope.System.ResetWs(scope.Hero.HeroId, 100, 1f, 6f);
+        scope.System.AddWs(scope.Hero.HeroId, 60);
+        Assert.False(scope.System.TryActivateWs(scope.Hero.HeroId));
+        scope.System.AddWs(scope.Hero.HeroId, 60);
         Assert.Equal(60, gauge.Ws.Value);
-        scope.System.AddWs(40);
+        scope.System.AddWs(scope.Hero.HeroId, 40);
         Assert.True(gauge.IsWsFull);
         Assert.Equal(100, gauge.Ws.Value);
-        scope.System.ClearWs();
+        scope.System.ClearWs(scope.Hero.HeroId);
         Assert.Equal(0, gauge.Ws.Value);
         Assert.Equal(3, notifications);
     }
@@ -220,7 +220,7 @@ public sealed class HeroModelTests
     public void EveryAttribute_NotifiesActualChanges(AttributeType attribute)
     {
         var scope = new HeroTestScope();
-        HeroModel model = scope.Hero;
+        HeroState model = scope.Hero;
         scope.System.Reset(1, 1, BaseAttributes(100, 30));
         BindableProperty<int> property = attribute switch
         {
@@ -241,11 +241,11 @@ public sealed class HeroModelTests
         int original = property.Value, count = 0;
         property.Register(value => { count++; Assert.Equal(property.Value, value); });
         var source = new AttributeSourceId("Buff", 9);
-        scope.System.SetSource(source, [AttributeModifier.Flat(attribute, 7)]);
+        scope.System.SetSource(scope.Hero.HeroId, source, [AttributeModifier.Flat(attribute, 7)]);
         Assert.Equal(original + 7, property.Value);
-        scope.System.SetSource(source, [AttributeModifier.Flat(attribute, 7)]);
+        scope.System.SetSource(scope.Hero.HeroId, source, [AttributeModifier.Flat(attribute, 7)]);
         Assert.Equal(1, count);
-        scope.System.RemoveSource(source);
+        scope.System.RemoveSource(scope.Hero.HeroId, source);
         Assert.Equal(original, property.Value);
         Assert.Equal(2, count);
     }
@@ -262,7 +262,7 @@ public sealed class HeroModelTests
     public void ProbabilityModifiers_PreserveFractionsAndClamp(AttributeType attribute)
     {
         var scope = new HeroTestScope();
-        HeroModel model = scope.Hero;
+        HeroState model = scope.Hero;
         BindableProperty<float> property = attribute switch
         {
             AttributeType.Crit => model.Crit,
@@ -274,15 +274,15 @@ public sealed class HeroModelTests
         var source = new AttributeSourceId("Equipment", 3);
         int notifications = 0;
         property.Register(value => { notifications++; Assert.Equal(property.Value, value); });
-        scope.System.SetSource(source, [AttributeModifier.Flat(attribute, .03f)]);
+        scope.System.SetSource(scope.Hero.HeroId, source, [AttributeModifier.Flat(attribute, .03f)]);
         Assert.Equal(.03f, property.Value);
-        scope.System.SetSource(source, [AttributeModifier.Flat(attribute, .03f)]);
+        scope.System.SetSource(scope.Hero.HeroId, source, [AttributeModifier.Flat(attribute, .03f)]);
         Assert.Equal(1, notifications);
-        scope.System.SetSource(source, [AttributeModifier.Flat(attribute, 1.5f)]);
+        scope.System.SetSource(scope.Hero.HeroId, source, [AttributeModifier.Flat(attribute, 1.5f)]);
         Assert.Equal(1f, property.Value);
-        scope.System.SetSource(source, [AttributeModifier.Flat(attribute, -.1f)]);
+        scope.System.SetSource(scope.Hero.HeroId, source, [AttributeModifier.Flat(attribute, -.1f)]);
         Assert.Equal(0f, property.Value);
-        scope.System.RemoveSource(source);
+        scope.System.RemoveSource(scope.Hero.HeroId, source);
         Assert.Equal(3, notifications);
     }
 
@@ -293,16 +293,16 @@ public sealed class HeroModelTests
     public void AttributeRecalculation_ClampsResourcesAndPublishesNewValue()
     {
         var scope = new HeroTestScope();
-        HeroModel model = scope.Hero;
+        HeroState model = scope.Hero;
         scope.System.Reset(1, 1, BaseAttributes(100, 30));
-        scope.System.Damage(40);
+        scope.System.Damage(scope.Hero.HeroId, 40);
         int observed = 0;
         model.MaxHp.Register(_ =>
         {
             observed++;
             Assert.Equal(50, model.MaxHp.Value);
         });
-        scope.System.SetGrowth(BaseAttributes(50, 10), 1, 1, null, null, refill: false);
+        scope.System.SetGrowth(1, BaseAttributes(50, 10), 1, null, null, refill: false);
         Assert.Equal(1, observed);
         Assert.Equal((50, 10, 10, 50), (model.MaxHp.Value, model.MaxMp.Value, model.Mp.Value, model.Hp.Value));
     }
@@ -315,22 +315,22 @@ public sealed class HeroModelTests
     {
         var scope = new HeroTestScope();
         scope.System.Reset(1, 1, BaseAttributes(100, 30));
-        scope.System.ResetWs(100, 1f, 6f);
-        scope.System.AddWs(100);
-        Assert.True(scope.System.TryActivateWs());
+        scope.System.ResetWs(scope.Hero.HeroId, 100, 1f, 6f);
+        scope.System.AddWs(scope.Hero.HeroId, 100);
+        Assert.True(scope.System.TryActivateWs(scope.Hero.HeroId));
         int notifications = 0;
         scope.Hero.Hp.Register(value =>
         {
             notifications++;
             Assert.Equal(0, value);
         });
-        Assert.True(scope.System.Damage(100));
+        Assert.True(scope.System.Damage(scope.Hero.HeroId, 100));
         Assert.Equal(0, scope.Hero.Ws.Value);
         Assert.False(scope.Hero.WsActive.Value);
-        Assert.False(scope.System.Damage(100));
-        scope.System.Heal(100);
-        scope.System.AddWs(100);
-        Assert.False(scope.System.TryActivateWs());
+        Assert.False(scope.System.Damage(scope.Hero.HeroId, 100));
+        scope.System.Heal(scope.Hero.HeroId, 100);
+        scope.System.AddWs(scope.Hero.HeroId, 100);
+        Assert.False(scope.System.TryActivateWs(scope.Hero.HeroId));
         Assert.Equal(1, notifications);
     }
 
@@ -341,17 +341,17 @@ public sealed class HeroModelTests
     public void MusouReset_PublishesEachNewValueAndSuppressesEqualReset()
     {
         var scope = new HeroTestScope();
-        scope.System.ResetWs(100, 1f, 6f);
-        scope.System.AddWs(100);
-        Assert.True(scope.System.TryActivateWs());
+        scope.System.ResetWs(scope.Hero.HeroId, 100, 1f, 6f);
+        scope.System.AddWs(scope.Hero.HeroId, 100);
+        Assert.True(scope.System.TryActivateWs(scope.Hero.HeroId));
         int notifications = 0;
         scope.Hero.Ws.Register(value => { notifications++; Assert.Equal(0, value); });
         scope.Hero.MaxWs.Register(value => { notifications++; Assert.Equal(200, value); });
         scope.Hero.WsActive.Register(value => { notifications++; Assert.False(value); });
-        scope.System.ResetWs(200, 1f, 6f);
+        scope.System.ResetWs(scope.Hero.HeroId, 200, 1f, 6f);
         Assert.Equal(3, notifications);
         Assert.Equal((0, 200, false), (scope.Hero.Ws.Value, scope.Hero.MaxWs.Value, scope.Hero.WsActive.Value));
-        scope.System.ResetWs(200, 1f, 6f);
+        scope.System.ResetWs(scope.Hero.HeroId, 200, 1f, 6f);
         Assert.Equal(3, notifications);
     }
 
@@ -363,16 +363,16 @@ public sealed class HeroModelTests
     {
         var scope = new HeroTestScope();
         BattleConfig config = BattleArchitecture.Instance.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbBattleConfig.Data;
-        Assert.Equal((1f, 1f, 1f, 1f), (scope.System.MoveSpeedMultiplier,
-            scope.System.JumpSpeedMultiplier, scope.System.GravityMultiplier, scope.System.AttackPowerMultiplier));
-        scope.System.ResetWs(100, 1f, 6f);
-        scope.System.AddWs(100);
-        Assert.True(scope.System.TryActivateWs());
+        Assert.Equal((1f, 1f, 1f, 1f), (scope.System.GetMoveSpeedMultiplier(scope.Hero.HeroId),
+            scope.System.GetJumpSpeedMultiplier(scope.Hero.HeroId), scope.System.GetGravityMultiplier(scope.Hero.HeroId), scope.System.GetAttackPowerMultiplier(scope.Hero.HeroId)));
+        scope.System.ResetWs(scope.Hero.HeroId, 100, 1f, 6f);
+        scope.System.AddWs(scope.Hero.HeroId, 100);
+        Assert.True(scope.System.TryActivateWs(scope.Hero.HeroId));
         Assert.Equal((config.WsMoveSpeedMultiplier, config.WsJumpSpeedMultiplier, config.WsGravityMultiplier,
-            config.WsAttackMultiplier), (scope.System.MoveSpeedMultiplier, scope.System.JumpSpeedMultiplier,
-            scope.System.GravityMultiplier, scope.System.AttackPowerMultiplier));
-        scope.System.ClearWs();
-        Assert.Equal((1f, 1f, 1f, 1f), (scope.System.MoveSpeedMultiplier,
-            scope.System.JumpSpeedMultiplier, scope.System.GravityMultiplier, scope.System.AttackPowerMultiplier));
+            config.WsAttackMultiplier), (scope.System.GetMoveSpeedMultiplier(scope.Hero.HeroId), scope.System.GetJumpSpeedMultiplier(scope.Hero.HeroId),
+            scope.System.GetGravityMultiplier(scope.Hero.HeroId), scope.System.GetAttackPowerMultiplier(scope.Hero.HeroId)));
+        scope.System.ClearWs(scope.Hero.HeroId);
+        Assert.Equal((1f, 1f, 1f, 1f), (scope.System.GetMoveSpeedMultiplier(scope.Hero.HeroId),
+            scope.System.GetJumpSpeedMultiplier(scope.Hero.HeroId), scope.System.GetGravityMultiplier(scope.Hero.HeroId), scope.System.GetAttackPowerMultiplier(scope.Hero.HeroId)));
     }
 }

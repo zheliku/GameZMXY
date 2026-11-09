@@ -25,7 +25,7 @@ using GameLogic.UI;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Entity;
-using static GameLogic.Battle.HeroModel;
+using static GameLogic.Battle.HeroState;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
@@ -56,11 +56,11 @@ public sealed partial class UiSmokeScenario
         hero.Velocity = Vector2.Zero;
         await WaitFramesAsync(3);
         await WaitUntilAsync(() => hero.OnFloor, "水帘洞水面没有实际落地");
-        Check(flow.GetModel<HeroModel>().ControlsEnabled && !SmokeInspection.ReadField<bool>(cave, "_enteringHiddenLevel"),
+        Check(flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).ControlsEnabled && !SmokeInspection.ReadField<bool>(cave, "_enteringHiddenLevel"),
             "站在水面就触发隐藏入口，入口高度错误");
         Input.ActionPress(InputSystem.MoveDown);
         Input.ActionPress(InputSystem.Jump);
-        await WaitUntilAsync(() => !flow.GetModel<HeroModel>().ControlsEnabled, "真实S加K没有从水面进入隐藏接触区", 5000);
+        await WaitUntilAsync(() => !flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).ControlsEnabled, "真实S加K没有从水面进入隐藏接触区", 5000);
         Input.ActionRelease(InputSystem.Jump);
         Input.ActionRelease(InputSystem.MoveDown);
         AnimationPlayer fade = SmokeInspection.ReadField<AnimationPlayer>(cave, "_entranceFade");
@@ -79,7 +79,7 @@ public sealed partial class UiSmokeScenario
         hero = FindHero();
         Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soul && flow.GetModel<ProfileModel>().HighestClearedLevelId.Value == 1,
             "隐藏转场回滚已领取收益或误通关水帘洞");
-        Check(hero.Modulate.A == 1 && CurrentBattleForm().Modulate.A == 1 && flow.GetModel<HeroModel>().ControlsEnabled,
+        Check(hero.Modulate.A == 1 && CurrentBattleForm().Modulate.A == 1 && flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).ControlsEnabled,
             "转场复用后英雄或HUD仍透明，或未恢复控制");
         Input.ActionPress(InputSystem.MoveRight);
         await WaitUntilAsync(() => FindMonster() is DragonKingEntity, "龙宫没有按配方生成龙王", 15000);
@@ -144,8 +144,8 @@ public sealed partial class UiSmokeScenario
         HeroSystem system = flow.GetSystem<HeroSystem>();
         ProfileModel profile = flow.GetModel<ProfileModel>();
         var source = new AttributeSourceId("DragonSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         try
         {
             foreach (int tier in new[] { 1, 21 })
@@ -163,8 +163,8 @@ public sealed partial class UiSmokeScenario
                     {
                         for (int index = 0; index < 4; index++)
                         {
-                            flow.GetSystem<HeroStatusSystem>().AdvanceFreeze(100);
-                            system.Heal(int.MaxValue);
+                            flow.GetSystem<HeroStatusSystem>().AdvanceFreeze(hero.HeroId, 100);
+                            system.Heal(hero.HeroId, int.MaxValue);
                             hero.GlobalPosition = new Vector2(100000, 100000);
                             _monster = (AbstractEnemyEntity)await GF.Entity.ShowEntityAsync(EntityId.DragonKing,
                                 new EnemySpawn(new Vector2(580, 100)));
@@ -177,7 +177,7 @@ public sealed partial class UiSmokeScenario
                             actor.SetFacing(direction);
                             Vector2 castPosition = actor.GlobalPosition;
                             float targetX = hero.GlobalPosition.X;
-                            flow.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
+                            flow.GetSystem<HeroSystem>().AdvanceHurtProtection(hero.HeroId, float.MaxValue);
                             int hp = hero.Hp;
                             Check(((IEnemyAiAgent)actor).RequestAttack(index), "龙王拒绝正式攻击" + index);
                             await WaitUntilAsync(() => actor.AttackSegment == index, "龙王身体没有消费请求");
@@ -247,7 +247,7 @@ public sealed partial class UiSmokeScenario
                             Check(sawEffect == (index is 0 or 3), "龙王离身攻击的所属招式错误");
                             if (index == 2)
                             {
-                                Check((flow.GetModel<HeroModel>().StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0) == (tier == 1 ? 2 : 5), "冰冻持续时间不符等级档");
+                                Check((flow.GetModel<HeroModel>().GetState(hero.HeroId).StatusEffects.GetValueOrDefault(StatusEffectKind.Freeze)?.RemainingSeconds ?? 0) == (tier == 1 ? 2 : 5), "冰冻持续时间不符等级档");
                             }
 
                             Check(actor.HitBox.GetChildren().OfType<CollisionShape2D>().All(item => item.Disabled), "龙王收招残留身体判定");
@@ -271,9 +271,9 @@ public sealed partial class UiSmokeScenario
             }
 
             _monster = null;
-            flow.GetSystem<HeroStatusSystem>().AdvanceFreeze(100);
-            system.RemoveSource(source);
-            system.Heal(int.MaxValue);
+            flow.GetSystem<HeroStatusSystem>().AdvanceFreeze(hero.HeroId, 100);
+            system.RemoveSource(hero.HeroId, source);
+            system.Heal(hero.HeroId, int.MaxValue);
             Engine.PhysicsTicksPerSecond = originalTicks;
         }
     }
@@ -286,9 +286,9 @@ public sealed partial class UiSmokeScenario
     /// <returns>免疫、暂停与效果取消完成。</returns>
     private async Task CheckDragonStatusAndCancelAsync(AbstractHeroEntity hero, ProcedureOwner flow)
     {
-        HeroModel model = flow.GetModel<HeroModel>();
+        HeroState model = flow.GetModel<HeroModel>().GetState(hero.HeroId);
         HeroSystem system = flow.GetSystem<HeroSystem>();
-        flow.GetSystem<HeroStatusSystem>().AdvanceFreeze(100);
+        flow.GetSystem<HeroStatusSystem>().AdvanceFreeze(hero.HeroId, 100);
         model.Ws.Value = model.MaxWs.Value;
         Check(hero.TryActivateMusou() && !hero.CanReceiveStatusEffect, "悟空无双没有禁止附加控制状态");
         hero.GlobalPosition = new Vector2(100000, 100000);
@@ -309,7 +309,7 @@ public sealed partial class UiSmokeScenario
             SmokeInspection.ReadField<float>(actor, "_invulnerabilityLeft") == invulnerable,
             "游戏暂停仍推进龙王动作或无敌");
         GF.Base.ResumeGame();
-        flow.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
+        flow.GetSystem<HeroSystem>().AdvanceHurtProtection(hero.HeroId, float.MaxValue);
         int hp = hero.Hp;
         while (actor.AttackSegment >= 0)
         {
@@ -321,8 +321,8 @@ public sealed partial class UiSmokeScenario
 
             await WaitFramesAsync(1);
         }
-        Check(hero.Hp < hp && !flow.GetSystem<HeroStatusSystem>().IsFrozen, "无双悟空没有实际受击，或被错误施加冰冻");
-        system.ClearWs();
+        Check(hero.Hp < hp && !flow.GetSystem<HeroStatusSystem>().IsFrozen(hero.HeroId), "无双悟空没有实际受击，或被错误施加冰冻");
+        system.ClearWs(hero.HeroId);
         await WaitUntilAsync(() => !((IEnemyAiAgent)actor).IsAttacking, "龙王冰冻收招未结束");
         Check(((IEnemyAiAgent)actor).RequestAttack(0), "取消夹具未释放水波");
         await WaitUntilAsync(() => actor.GetParent().GetChildren().OfType<SkillEffectNode>().Any(item => item.Visible), "取消夹具水波未出现");

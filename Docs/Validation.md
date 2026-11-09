@@ -2,6 +2,120 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人B1：本局状态按英雄承载（2026-11-09）
+
+按已授权目标与实施计划 B1-1～B1-6 顺序完成本局状态迁移，并响应用户追加的全项目业务方法命名要求。HeroModel 只保存 HeroId → HeroState，个人系统、实体、身体/技能状态和 UI 按本人 HeroId 读写；仍只生成 P1，保留一套输入/HUD。**当前停在 B1 等待审查，不进入 B2。** 存档保持 v14，本批没有持久结构变化，不要求重建现有 v14 开发档；v13 及更早档的既有重建规则不变。
+
+依据：计划第一、二、五、九部分，规范第 00 章的普通子数据/单根 Architecture/所有权，第 10 章的命名与中文注释，第 30 章的实体与战斗职责、第 70 章的档案边界。用户明确授权同步规范和计划；本批同步当前归属与 GetState 等签名，没有改变后续批次方向。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 开工基线 | `dotnet build Godot/GodotProject --no-restore -v quiet`：0 错误；三套规则测试 **304/304、193/193、19/19**。日志位于 `.godot/validation/coop_b1_20261108/baseline_*.log` |
+| 子任务编译 | 每步执行 `dotnet build Godot/GodotProject --no-restore -v quiet`；B1-1～B1-6 错误依次为 **0、597、588、589、444、0**，各步最终日志为同目录 `b1_1_build.log`～`b1_6_build.log`。中间迁移失败按授权保留记录，不加兼容转发；B1-6 清零 |
+| 最终游戏构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：**退出 0，0 错误、5 条既有框架弃用警告**。已包含最终方法改名，日志 `renamed_build.log` |
+| 档案规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：**退出 0，304/304**，失败 0、跳过 0，日志 `renamed_profile.log` |
+| 战斗规则 | `dotnet test Tests/BattleTests --no-restore -v quiet`：**退出 0，193/193**，失败 0、跳过 0，日志 `renamed_battle.log` |
+| 关卡规则 | `dotnet test Tests/LevelTests --no-restore -v quiet`：**退出 0，19/19**，失败 0、跳过 0，日志 `renamed_level.log`。测试数量与基线一致，保留 NU1900、CS8632/CS0649，未删减断言 |
+| Godot 扫描/构建 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_b1_final_scan_20261109 --headless --editor --build-solutions --quit --no-window`：**退出 0**。保留既有 ComponentInsoector 的 RefCounted/free 退出诊断 |
+| 引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出 0，2283 条序列化路径、389 个 UID**，日志 `renamed_references.log`。比 A3 增加 HeroState 的脚本 UID |
+| 最终前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_b1_final_frontend_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出 0，完整 SMOKE PASS**。覆盖选角、进关、装备/被动/成长观察、保存返回、重读、加载取消与部分注册清理；三个实际回调均验证进入时 1 次、退出后 0 次。旧作用域拒绝、坏文件、重复注册为预期注入；退出有 **5 个 ObjectDB 实例、1 个资源占用**诊断 |
+| 最终 UI | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_b1_final_ui_20261109 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui`：**退出 0，完整 SMOKE PASS**。包含全部 18 处命名整理后的版本；验证技能/无双、拾取/出售、15 件穿戴、窗口与实体复用、60/120Hz 坡地及平台、死亡/检查点、存档重入与备份回退、加载取消和失败清理。预期坏文件与 HUD 打开失败注入保留；退出保留 **20 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、141 个 ObjectDB 实例、11 个资源占用**诊断，以及既有 CanvasItem/GL 纹理明细。最终使用原 runner 的 900 秒超时，由烟测完成后退出，不以帧数上限截断 |
+| 格式 | 使用 `$verifyFiles = @(git diff HEAD --name-only -- '*.cs' \| Where-Object { $_.StartsWith('<工程目录>/') } \| ForEach-Object { (Resolve-Path -LiteralPath $_).Path })` 取得各工程的明确文件清单，再运行 `dotnet format whitespace <csproj> --no-restore --include $verifyFiles --verify-no-changes`；GodotProject **70 份**、ProfileTests **13 份**、BattleTests **5 份** C# 均退出 0，仅测试工作区既有加载警告。88 份 C# 均为 UTF-8/CRLF，无行尾空白 |
+| 差异与边界 | `git diff --check`、`git diff --cached --check` 均退出 0；完整源文件对比证明 HeroState 除类名/说明、只读 HeroId 与构造外和迁移前 HeroModel 逐字一致。只读目录、生成代码/资源、源表、bytes、场景无差异，新增脚本的 .cs.uid 由编辑器正常生成。开工仅两份文档已暂存，执行中外部又暂存 B1 的 74 份差异；命名整理前后索引指纹一致，未执行任何 Git 写操作 |
+
+关键接口前后对照（表内省略访问级别，未变化的参数与默认值仍列出）：
+
+| 所属类型 / 修改前 | 修改后 |
+| --- | --- |
+| HeroModel 直接持有单个英雄全部数值、效果、计时与施放字段 | 普通 `HeroState(int heroId)` 持有原字段与嵌套 StatusEffectKind/StatusEffectState；HeroId 为构造时确定的只读属性，其他初值/计算/方法体保持原样 |
+| 无本局状态索引入口 | `IReadOnlyDictionary<int, HeroState> Heroes`、`HeroState GetState(int heroId)`、`internal HeroState CreateState(int heroId)`、`internal void ClearStates()`；无 Remove、默认英雄或标量转发 |
+| IHeroBody 无英雄编号 | 新增 `int HeroId { get; }`，由实体和三处假实现提供 |
+| HeroSystem：`float MoveSpeedMultiplier` | `float GetMoveSpeedMultiplier(int heroId)` |
+| HeroSystem：`float JumpSpeedMultiplier` | `float GetJumpSpeedMultiplier(int heroId)` |
+| HeroSystem：`float GravityMultiplier` | `float GetGravityMultiplier(int heroId)` |
+| HeroSystem：`float AttackPowerMultiplier` | `float GetAttackPowerMultiplier(int heroId)` |
+| HeroSystem：`bool Damage(int amount)` | `bool Damage(int heroId, int amount)` |
+| HeroSystem：`void Heal(int amount)` | `void Heal(int heroId, int amount)` |
+| HeroSystem：`void RecordHurt()` | `void RecordHurt(int heroId)` |
+| HeroSystem：`void AdvanceHurtProtection(float delta)` | `void AdvanceHurtProtection(int heroId, float delta)` |
+| HeroSystem：`int AdvanceRecovery(float delta)` | `int AdvanceRecovery(int heroId, float delta)` |
+| HeroSystem：`bool TrySpendMp(int amount)` | `bool TrySpendMp(int heroId, int amount)` |
+| HeroSystem：`void RestoreMp(int amount)` | `void RestoreMp(int heroId, int amount)` |
+| HeroSystem：`void Reset(int heroId, int level, ActorBaseAttributes baseAttributes, EquipmentData weaponData = null, EquipmentData armorData = null, EquipmentData accessoryData = null, EquipmentData treasureData = null)` | `void Reset(int heroId, int level, ActorBaseAttributes baseAttributes, EquipmentData weaponData = null, EquipmentData armorData = null, EquipmentData accessoryData = null, EquipmentData treasureData = null)` |
+| HeroSystem：`void SetGrowth(ActorBaseAttributes baseAttributes, int heroId, int level, EquipmentData weaponData, EquipmentData armorData, bool refill, EquipmentData accessoryData = null, EquipmentData treasureData = null)` | `void SetGrowth(int heroId, ActorBaseAttributes baseAttributes, int level, EquipmentData weaponData, EquipmentData armorData, bool refill, EquipmentData accessoryData = null, EquipmentData treasureData = null)` |
+| HeroSystem：`void SetSource(AttributeSourceId source, IReadOnlyList<AttributeModifier> modifiers)` | `void SetSource(int heroId, AttributeSourceId source, IReadOnlyList<AttributeModifier> modifiers)` |
+| HeroSystem：`bool RemoveSource(AttributeSourceId source)` | `bool RemoveSource(int heroId, AttributeSourceId source)` |
+| HeroSystem：`void RecordHit(DamageResult result)` | `void RecordHit(int heroId, DamageResult result)` |
+| HeroSystem：`void ResetWs(int max, float decayPerSecond, float drainPerSecond)` | `void ResetWs(int heroId, int max, float decayPerSecond, float drainPerSecond)` |
+| HeroSystem：`void AddWs(int amount)` | `void AddWs(int heroId, int amount)` |
+| HeroSystem：`void AddWsFromPickup(int amount)` | `void AddWsFromPickup(int heroId, int amount)` |
+| HeroSystem：`bool TryActivateWs()` | `bool TryActivateWs(int heroId)` |
+| HeroSystem：`void SetControlsEnabled(bool enabled)` | `void SetControlsEnabled(int heroId, bool enabled)` |
+| HeroSystem：`void AdvanceWs(float delta)` | `void AdvanceWs(int heroId, float delta)` |
+| HeroSystem：`void ClearWs()` | `void ClearWs(int heroId)` |
+| HeroStatusSystem：`bool IsFrozen` | `bool IsFrozen(int heroId)` |
+| HeroStatusSystem：`bool IsPoisoned` | `bool IsPoisoned(int heroId)` |
+| HeroStatusSystem：`void ApplyFreeze(float seconds)` | `void ApplyFreeze(int heroId, float seconds)` |
+| HeroStatusSystem：`void AdvanceFreeze(float delta)` | `void AdvanceFreeze(int heroId, float delta)` |
+| HeroStatusSystem：`void ApplyPoison(AttackConfig attack)` | `void ApplyPoison(int heroId, AttackConfig attack)` |
+| HeroStatusSystem：`int AdvancePoison(float delta)` | `int AdvancePoison(int heroId, float delta)` |
+| SkillSystem：`Type BodyStateType` | `Type GetBodyStateType(int heroId)` |
+| SkillSystem：`bool CanAfford(SkillId id)` | `bool CanAfford(int heroId, SkillId id)` |
+| SkillSystem：`bool TryActivate(SkillId id, ISkillActor actor)` | `bool TryActivate(int heroId, SkillId id, ISkillActor actor)` |
+| SkillSystem：`bool TrySpendActivatedMana(SkillId id)` | `bool TrySpendActivatedMana(int heroId, SkillId id)` |
+| SkillSystem：`bool TryActivateInput(ISkillActor actor, HeroActionData data)` | `bool TryActivateInput(int heroId, ISkillActor actor, HeroActionData data)` |
+| SkillSystem：`void CancelSkill()` | `void CancelSkill(int heroId)` |
+| SkillSystem：`void EndSkill(SkillId id)` | `void EndSkill(int heroId, SkillId id)` |
+| SkillSystem：`void GrantInvulnerability(double from, double duration)` | `void GrantInvulnerability(int heroId, double from, double duration)` |
+| SkillSystem：`bool IsInvulnerable(double now)` | `bool IsInvulnerable(int heroId, double now)` |
+| HeroStatusSystem：`void ClearAll()` 原为单人 | 新增 `void ClearAll(int heroId)` 清本人；无参方法遍历全部状态，仅用于系统退出 |
+| AbstractHeroEntity：`private HeroModel Attributes` | `private HeroState Attributes => this.GetModel<HeroModel>().GetState(HeroId)`；反射契约名 Attributes 保留，OnShow 先检查 Heroes.ContainsKey |
+
+HeroSystem 私有 ClearHurtProtection、ReplacePassiveSource、ReplaceEquipmentSources、ApplyFinalAttributes、SetWsState 接收 HeroState，Recalculate 与三个来源回调显式传 heroId。Reset 原本已有 heroId，签名保持；SetGrowth 将原第二位 heroId 移到首位。五个 AttributeSourceId 常量仍用第二项 0，各英雄自己的 Sources 字典提供隔离。
+
+用户追加命名整理（全项目自有 C#、测试与工具入口检索，按编译符号替换，18 处方法声明；不改行为、不留旧名转发）：
+
+| 原名 | 现名与用途 |
+| --- | --- |
+| HeroModel.Get / Create / Clear（B1 原计划临时签名） | GetState / CreateState / ClearStates，明确状态对象 |
+| ItemAppearancesResource.Get（EquipmentId / PickupId 两重载）、私有 Find | GetAppearance / FindAppearance，明确外观资源 |
+| EquipmentAttributes.Get、ActorBaseAttributes 的 AttributeExtensions.Get | GetValue，与既有 WithValue 成对，读取指定属性数值；不修改生成类型 |
+| ExperienceCurveUtility.Add / Evaluate | AddExperience / EvaluateProgress，明确经验累计与等级进度计算 |
+| NodePool.Get<T> / Get、私有 GetInternal | RentNode<T> / RentNode / RentNodeInternal，明确取池并挂接；避免与 Godot.Node.GetNode 混淆 |
+| B1 新参数化方法 MoveSpeedMultiplier / JumpSpeedMultiplier / GravityMultiplier / AttackPowerMultiplier / BodyStateType | 各补 Get 前缀，仍为带 heroId 的原查询；IHeroBody 上的只读属性名保留 |
+
+第 10 章新增方法语义规则，计划 B1 与第九部分同步。集合 Add/Remove/Clear、控件自身 Refresh/Clear、静态类型工厂 Create、池回调 OnGet/OnRelease、接口/重写及生成 API 保留既有契约；没有把简单动词机械扩成冗长名称。生产与测试中已无自有裸 Get 声明；Luban 表和 Godot/GGF 查询仍调用原 API。检索 `NodePool.Instance.Get`、`GetInternal`、字面量方法名和旧 Evaluate 调用无残留。
+
+本批修复的两处多人缺陷：
+
+- 三个来源订阅按每个 heroId 建立独立闭包，按 priority 100 注册并把实际委托存入 _subscriptions；退出逐个按同一编号/委托退订，清空订阅与状态容器。复用了既有 Bindable 注册机制。
+- Damage 死亡分支与 Reset 使用 ClearAll(heroId)，只清本人的冰冻/中毒；无双和受击保护也按该英雄清理。全局 ClearAll 仅保留在退出路径。
+
+计划未单列的调用与实际处理：
+
+- SkillSystem 的 SelectSkills 保持原签名，内部 CancelSkill 改传其已有 heroId；全局 ClearSkillDefinitions 暂遍历已存在状态取消施放，仍清共享登记表。共享表及 AbstractHeroEntity.OnHide 的全局清理留给 B2，没有提前按英雄拆登记。
+- 原 SmokeInspection 按 handler.Target 等于 HeroSystem 统计订阅，闭包迁移后这一观测失效。复用原方法的 object 参数接受实际 Delegate，既有对象匹配保留；前端取得 _subscriptions 内的三个委托，断言各自只订一次且退订为零，没有生产测试入口。
+- 窗口关闭已把 _formData/_inventoryData 置空，退订必须使用关闭前捕获的局部 data.Hero.HeroId；刷新仍用本周期字段。早期前端因此失败，修正后最终完整前端通过。
+- UI 实体复用原断言把实体的 Attributes 与 HeroModel 直接比较；迁移后分别验证容器仍为原容器、Attributes 仍为容器 GetState(heroId) 的同一对象，同时保留实体、无双和资源断言。早期 UI 在此失败，修正后改名前完整 UI 以及最终版本均重新运行。
+- 新建 HeroState.cs 已加入 ProfileTests 显式编译项；BattleTests 的 Models 通配无需改。三处 IHeroBody 假实现补实际夹具编号；HeroTestScope、SkillScope、TestGameScope 的公开 Hero 为 P1 HeroState，私有容器负责注册和重建，没有新增测试辅助类型。Debug 仅方法内局部复用 heroId，无共享取 P1 辅助方法。
+- 机械消费者还包括身体/技能、唐僧动画入口、独立技能命中、实际受击目标的冻结/中毒、关卡拾取、库存面板、Debug 反射与烟测；独立技能按 Source.OwnerEntityId 解析本体英雄记账，未改命中规则。只有 B1 负责的两个 P1 占位被清除；龙宫转场仍按计划显式 P1，其他后续批次占位保持。
+- 中间构建、Profile 夹具漏传参数、前端闭包观察和 UI 身份比较的失败均有日志，已全部解决；一次旧二进制前端运行发生在构建失败后，未作为通过证据。最终证据为 named 系列及 renamed 日志。
+- 改名后首次完整 UI 案例 `coop_b1_named_ui_20261109` 使用 `--quit-after 30000`，退出 0 但停在大猩猩截图阶段，没有最终 SMOKE PASS；强制结束时出现 BattleForm.Unbind 的架构已结束诊断。因此该次不计完整通过，保留日志并另以不带帧数退出参数的案例重跑，仍使用原 runner 的 900 秒超时，不改任何断言。
+
+实际文件清单：**99 份相对 HEAD 的差异（88 份 C#、9 份文档、1 份 csproj、1 份 UID）**，其中 2 份新增（HeroState.cs 及其 Godot 扫描生成的 .cs.uid），无删除。包含用户原有计划/工作笔记修订；其余为本批实现、命名调用方与记录。
+
+| 所属目录 | 文件（新增用“新增”标记） |
+| --- | --- |
+| `Docs/` | `CoopImplementationPlan.md`、`ProjectGuidelines/00-Architecture.md`、`ProjectGuidelines/10-CSharp.md`、`ProjectGuidelines/30-EntitiesAndCombat.md`、`ProjectGuidelines/60-GameplayModules.md`、`ProjectGuidelines/70-ProfileAndSave.md`、`ProjectTour.md`、`Validation.md`、`WorkingNotes.md` |
+| `Godot/GodotProject/TheGame/GameScripts/` | `Entity/Drops/GroundItemNode.cs`、`Entity/Effects/SkillEffectNode.cs`、`Entity/Enemies/AbstractEnemyEntity.Attacks.cs`、`Entity/Enemies/AbstractEnemyEntity.cs`、`Entity/Enemies/Bosses/zm1_05_qixing_cave/LionCamelPoisonCloudNode.cs`、`Entity/Enemies/Bosses/zm1_10_bull_demon_valley/BullDemonHeartEntity.cs`、`Entity/Enemies/Bosses/zm1_11_hidden_dragon_palace/DragonKingEntity.cs`、`Entity/FloatingText/FloatingTextPresenter.cs`、`Entity/Heroes/AbstractHeroEntity.Capture.cs`、`Entity/Heroes/AbstractHeroEntity.Skills.cs`、`Entity/Heroes/AbstractHeroEntity.cs`、`Entity/Heroes/Body/Core/AbstractHeroBodyState.cs`、`Entity/Heroes/Body/Core/AbstractHeroSkillState.cs`、`Entity/Heroes/Body/Core/IHeroBody.cs`、`Entity/Heroes/Tangseng/Skills/TangsengIceDragonState.cs`、`Entity/Heroes/Tangseng/TangsengEntity.AnimationEvents.cs`、`Entity/Heroes/Tangseng/TangsengEntity.cs`、`Entity/Heroes/Wukong/Skills/WukongBlazingFlashState.cs`、`Entity/Heroes/Wukong/Skills/WukongFireDemonState.cs`、`Entity/Heroes/Wukong/Skills/WukongFlameThrustState.cs`、`Entity/Heroes/Wukong/WukongEntity.cs`、`Entity/Level/LevelViewController.Entrance.cs`、`Entity/Level/LevelViewController.Loot.cs`、`Entity/Level/LevelViewController.cs`、`Models/HeroModel.cs`、`Models/HeroState.cs`（新增）、`Models/HeroState.cs.uid`（新增）、`Models/Profile/EquipmentAttributes.cs`、`Models/Profile/ItemAppearancesResource.cs`、`Systems/Combat/AttributeExtensions.cs`、`Systems/ConfigurationSystem.cs`、`Systems/Hero/HeroStatusSystem.cs`、`Systems/Hero/HeroSystem.cs`、`Systems/LevelSystem.cs`、`Systems/ProfileSystem.cs`、`Systems/SaveSystem.cs`、`Systems/SkillSystem.cs`、`UI/BattleForm/BattleForm.Logic.cs`、`UI/InventoryForm/Components/InventoryBagPanel.cs`、`UI/InventoryForm/Components/InventoryCharacterPanel.cs`、`UI/InventoryForm/InventoryForm.Logic.cs`、`UI/MapForm/Components/LevelGuideTooltip.cs`、`Utilities/Utility/ExperienceCurveUtility.cs`、`Utilities/Utility/SaveDataUtility.cs` |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/` | `EnemyAiSmokeScenario.cs`、`FrontendSmokeScenario.cs`、`LevelSmokeScenario.cs`、`SmokeInspection.cs`、`UiSmokeScenario.BatCave.cs`、`UiSmokeScenario.Bosses.cs`、`UiSmokeScenario.Bull.cs`、`UiSmokeScenario.CombatFeedback.cs`、`UiSmokeScenario.Dragon.cs`、`UiSmokeScenario.DragonRules.cs`、`UiSmokeScenario.EastSea.cs`、`UiSmokeScenario.EnemyFidelity.cs`、`UiSmokeScenario.Equipment.cs`、`UiSmokeScenario.FireDemon.cs`、`UiSmokeScenario.Garuda.cs`、`UiSmokeScenario.HeroPresentation.cs`、`UiSmokeScenario.Inventory.cs`、`UiSmokeScenario.Passives.cs`、`UiSmokeScenario.Qixing.cs`、`UiSmokeScenario.Recovery.cs`、`UiSmokeScenario.Sea.cs`、`UiSmokeScenario.Shark.cs`、`UiSmokeScenario.Skills.cs`、`UiSmokeScenario.StatusEffects.cs`、`UiSmokeScenario.Tangseng.cs`、`UiSmokeScenario.cs` |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/` | `ObjectPool/NodePool.cs` |
+| `Tests/BattleTests/` | `HeroBodyTests.cs`、`HeroModelTests.cs`、`HeroTestScope.cs`、`MusouTests.cs`、`SkillReuseTests.cs` |
+| `Tests/ProfileTests/` | `EquipmentTests.cs`、`ExperienceCurveTests.cs`、`FreezeTests.cs`、`HurtProtectionTests.cs`、`LevelRewardTests.cs`、`MusouTests.cs`、`PassiveSkillTests.cs`、`PoisonTests.cs`、`ProfileTests.cs`、`ProfileTests.csproj`、`RecoveryTests.cs`、`SkillStateTests.cs`、`SkillSystemTests.cs`、`TestGameScope.cs` |
+
+
+当前范围内无未完成项。B2 必须等待用户接受 B1 并授权，处理共享技能登记和一人回池清全表；双人隔离专项按既定 B3 补充，本批未运行双人实战或正常数值全关人工验收。引擎退出诊断保持既有边界，不处理只读依赖；烟测使用 run_godot.py 的案例专属 APPDATA 与 Validation 存档，不覆盖正式玩家存档。未执行 Git 写操作。
+
 ## 双人A3：档案规则证据与存档格摘要（2026-11-08）
 
 按用户授权完成 A3-1～A3-2：补齐双人个人数据隔离、完整 v14 往返及恢复前校验的规则证据；六格目录发布按席位排列的只读摘要，catalogue 名以单空格连接全员配置名称。**当前停在 A3 等待用户审查，B1 未开始。** 依据为实施计划 A3、规范第 00 章的状态所有权、第 10 章的只读值/中文注释和格式、第 70 章的目录与检查点契约。

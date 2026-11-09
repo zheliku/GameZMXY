@@ -83,7 +83,7 @@ public partial class InventoryCharacterPanel : Control, IController
     {
         _name.Text = hero.Config.NameCn;
         _level.Text = progress.Level.ToString();
-        HeroModel heroModel = this.GetModel<HeroModel>();
+        HeroState heroModel = this.GetModel<HeroModel>().GetState(hero.HeroId);
         TbBattleConfig battle = this.GetModel<ConfigurationModel>().Tables.TbBattleConfig;
         _hp.Text = $"{heroModel.Hp.Value} / {heroModel.MaxHp.Value}";
         _mp.Text = $"{heroModel.Mp.Value} / {heroModel.MaxMp.Value}";
@@ -109,7 +109,7 @@ public partial class InventoryCharacterPanel : Control, IController
     /// </summary>
     /// <param name="cell">本面板的穿戴槽。</param>
     /// <param name="data">当前装备；null 恢复为空槽。</param>
-    private void BindSlot(EquipmentCell cell, EquipmentData data) => cell.Bind(data, data == null ? null : _appearances.Get(data.EquipmentId).InventoryIcon);
+    private void BindSlot(EquipmentCell cell, EquipmentData data) => cell.Bind(data, data == null ? null : _appearances.GetAppearance(data.EquipmentId).InventoryIcon);
 
     /// <summary>
     /// 格式化战斗系统计算的百分比，不在界面维护第二份属性公式。

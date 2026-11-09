@@ -37,8 +37,8 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EastSeaSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
@@ -57,7 +57,7 @@ public sealed partial class UiSmokeScenario
                             SmokeInspection.FreezeAi(actor);
                             hero.GlobalPosition = actor.GlobalPosition + new Vector2(direction * 120, 0);
                             typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(actor, [hero]);
-                            system.AdvanceHurtProtection(float.MaxValue);
+                            system.AdvanceHurtProtection(hero.HeroId, float.MaxValue);
                             int hp = hero.Hp;
                             Check(((IEnemyAiAgent)actor).RequestAttack(index), "东海拒绝出招：" + id);
                             await WaitUntilAsync(() => actor.AttackSegment == index, "东海身体未消费攻击请求");
@@ -137,8 +137,8 @@ public sealed partial class UiSmokeScenario
 
             _monster = null;
             Engine.PhysicsTicksPerSecond = originalTicks;
-            system.RemoveSource(source);
-            system.Heal(int.MaxValue);
+            system.RemoveSource(hero.HeroId, source);
+            system.Heal(hero.HeroId, int.MaxValue);
         }
     }
 
@@ -230,8 +230,8 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EastSeaAi", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
@@ -305,8 +305,8 @@ public sealed partial class UiSmokeScenario
 
             _monster = null;
             Engine.PhysicsTicksPerSecond = originalTicks;
-            system.RemoveSource(source);
-            system.Heal(int.MaxValue);
+            system.RemoveSource(hero.HeroId, source);
+            system.Heal(hero.HeroId, int.MaxValue);
         }
     }
 }

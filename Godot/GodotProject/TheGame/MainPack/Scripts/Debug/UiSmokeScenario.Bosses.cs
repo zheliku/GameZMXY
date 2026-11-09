@@ -124,8 +124,8 @@ public sealed partial class UiSmokeScenario
         }
         var source = new AttributeSourceId("SmokeBoss", 1);
         HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
-        heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        heroSystem.Heal(100000);
+        heroSystem.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        heroSystem.Heal(hero.HeroId, 100000);
         try
         {
             hero.GlobalPosition = new Vector2(450, 100);
@@ -148,8 +148,8 @@ public sealed partial class UiSmokeScenario
                     .Invoke(actor, [hero]);
                 for (int index = 0; index < (id == EntityId.MacaqueKing ? 3 : 2); index++)
                 {
-                    heroSystem.Heal(100000);
-                    heroSystem.AdvanceHurtProtection(float.MaxValue);
+                    heroSystem.Heal(hero.HeroId, 100000);
+                    heroSystem.AdvanceHurtProtection(hero.HeroId, float.MaxValue);
                     int beforeHp = hero.Hp;
                     Check(((IEnemyAiAgent)actor).RequestAttack(index), $"{id} 拒绝第 {index + 1} 招");
                     await WaitUntilAsync(() => actor.AttackSegment == index, $"{id} 身体 FSM 没有开始第 {index + 1} 招");
@@ -217,8 +217,8 @@ public sealed partial class UiSmokeScenario
         }
         finally
         {
-            heroSystem.RemoveSource(source);
-            heroSystem.Heal(100000);
+            heroSystem.RemoveSource(hero.HeroId, source);
+            heroSystem.Heal(hero.HeroId, 100000);
         }
     }
 }

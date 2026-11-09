@@ -23,15 +23,14 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <summary>
     /// 当前身体技能登记的 GGF 状态；具体角色负责在身体状态机中注册它。
     /// </summary>
-    public Type BodyStateType
+    /// <param name="heroId">参战英雄编号。</param>
+    /// <returns>该英雄正在施放的身体状态类型；未施放时为空。</returns>
+    public Type GetBodyStateType(int heroId)
     {
-        get
-        {
-            return this.GetModel<HeroModel>()?.ActiveSkillId is { } id &&
-                   _skillDefinitions.TryGetValue(id, out SkillDefinition definition)
-                ? definition.BodyState
-                : null;
-        }
+        return this.GetModel<HeroModel>()?.GetState(heroId).ActiveSkillId is { } id &&
+               _skillDefinitions.TryGetValue(id, out SkillDefinition definition)
+            ? definition.BodyState
+            : null;
     }
 
     /// <inheritdoc />
@@ -140,30 +139,32 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <summary>
     /// 读取当前蓝量是否足够，不预扣资源。
     /// </summary>
+    /// <param name="heroId">参战英雄编号。</param>
     /// <param name="id">技能编号。</param>
     /// <returns>蓝量足够时为真。</returns>
-    public bool CanAfford(SkillId id)
+    public bool CanAfford(int heroId, SkillId id)
     {
-        return this.GetModel<HeroModel>().Mp.Value >=
+        return this.GetModel<HeroModel>().GetState(heroId).Mp.Value >=
                                          this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost;
     }
 
     /// <summary>
     /// 校验当前技能组、学习记录、起手条件和费用，登记一次施放；动画在 GGF 进入对应状态后开始。
     /// </summary>
+    /// <param name="heroId">参战英雄编号。</param>
     /// <param name="id">技能编号。</param>
     /// <param name="actor">本次调用借用的角色能力。</param>
     /// <returns>本次登记并扣费成功时为真。</returns>
-    public bool TryActivate(SkillId id, ISkillActor actor)
+    public bool TryActivate(int heroId, SkillId id, ISkillActor actor)
     {
-        HeroModel model = this.GetModel<HeroModel>();
+        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
         // 先检查本局控制权和当前动作，再检查该技能的学习与起手条件。
-        if (model == null || !model.ControlsEnabled || this.GetSystem<HeroStatusSystem>().IsFrozen || model.ActiveSkillId != null)
+        if (model == null || !model.ControlsEnabled || this.GetSystem<HeroStatusSystem>().IsFrozen(heroId) || model.ActiveSkillId != null)
         {
             return false;
         }
-        if (!IsAvailable(this.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), id) ||
-            !IsLearned(this.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), id))
+        if (!IsAvailable(heroId, id) ||
+            !IsLearned(heroId, id))
         {
             return false;
         }
@@ -175,12 +176,12 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
         int manaCost = this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost;
         if (definition.DeferredMana)
         {
-            if (!CanAfford(id))
+            if (!CanAfford(heroId, id))
             {
                 return false;
             }
         }
-        else if (!this.GetSystem<HeroSystem>().TrySpendMp(manaCost))
+        else if (!this.GetSystem<HeroSystem>().TrySpendMp(heroId, manaCost))
         {
             return false;
         }
@@ -192,15 +193,18 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <summary>
     /// 扣除已激活的延迟耗蓝技能；未满足延迟契约时不改变蓝量。
     /// </summary>
-    public bool TrySpendActivatedMana(SkillId id)
+    /// <param name="heroId">参战英雄编号。</param>
+    /// <param name="id">已经激活的延迟耗蓝技能。</param>
+    /// <returns>符合延迟契约且扣费成功时为 true。</returns>
+    public bool TrySpendActivatedMana(int heroId, SkillId id)
     {
-        HeroModel model = this.GetModel<HeroModel>();
+        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
         if (model?.ActiveSkillId != id || !_skillDefinitions.TryGetValue(id, out SkillDefinition definition) || !definition.DeferredMana)
         {
             return false;
         }
 
-        return this.GetSystem<HeroSystem>().TrySpendMp(
+        return this.GetSystem<HeroSystem>().TrySpendMp(heroId,
             this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost);
     }
 
@@ -250,7 +254,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
             return;
         }
 
-        CancelSkill();
+        CancelSkill(heroId);
         _skillDefinitions.Clear();
         foreach (SkillDefinition definition in definitions)
         {
@@ -261,17 +265,18 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <summary>
     /// 按当前登记尝试一个直接动作；拒绝后不排队，也不尝试较低优先级的同时按键。
     /// </summary>
+    /// <param name="heroId">参战英雄编号。</param>
     /// <param name="actor">本次角色表现。</param>
     /// <param name="data">当前角色的输入消费记录与游戏时钟。</param>
     /// <returns>匹配并激活成功时为真。</returns>
-    public bool TryActivateInput(ISkillActor actor, HeroActionData data)
+    public bool TryActivateInput(int heroId, ISkillActor actor, HeroActionData data)
     {
         InputSystem input = this.GetSystem<InputSystem>();
         foreach (SkillDefinition definition in _skillDefinitions.Values)
         {
             if (definition.InputAction is { } action && input.ConsumePress(data, action))
             {
-                return TryActivate(definition.Id, actor);
+                return TryActivate(heroId, definition.Id, actor);
             }
         }
 
@@ -281,9 +286,10 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <summary>
     /// 换组、离场或死亡时取消当前施放并清除无敌区间；具体状态的退出负责释放动画与判定。
     /// </summary>
-    public void CancelSkill()
+    /// <param name="heroId">参战英雄编号。</param>
+    public void CancelSkill(int heroId)
     {
-        HeroModel model = this.GetModel<HeroModel>();
+        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
         if (model == null)
         {
             return;
@@ -295,21 +301,29 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     }
 
     /// <summary>
-    /// 当前英雄实体回池或卸载时撤销其状态类型与起手条件登记。
+    /// 回池或卸载时撤销整份技能登记并取消已建立的英雄施放；按英雄拆登记留给后续批次。
     /// </summary>
     public void ClearSkillDefinitions()
     {
-        CancelSkill();
+        HeroModel model = this.GetModel<HeroModel>();
+        if (model != null)
+        {
+            foreach (int heroId in model.Heroes.Keys)
+            {
+                CancelSkill(heroId);
+            }
+        }
         _skillDefinitions.Clear();
     }
 
     /// <summary>
     /// 当前招式正常收招后解除身体占用，保留按秒计算的无敌区间；过期招式不得结束其他技能。
     /// </summary>
+    /// <param name="heroId">参战英雄编号。</param>
     /// <param name="id">正在退出的状态所对应的技能。</param>
-    public void EndSkill(SkillId id)
+    public void EndSkill(int heroId, SkillId id)
     {
-        HeroModel model = this.GetModel<HeroModel>();
+        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
         if (model?.ActiveSkillId == id)
         {
             model.ActiveSkillId = null;
@@ -319,11 +333,12 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <summary>
     /// 登记一个以游戏秒数计的无敌区间，不受动画跳帧影响。
     /// </summary>
+    /// <param name="heroId">参战英雄编号。</param>
     /// <param name="from">开始的游戏时刻。</param>
     /// <param name="duration">持续秒数。</param>
-    public void GrantInvulnerability(double from, double duration)
+    public void GrantInvulnerability(int heroId, double from, double duration)
     {
-        HeroModel model = this.GetModel<HeroModel>();
+        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
         model.SkillInvulnerableFrom = from;
         model.SkillInvulnerableUntil = from + duration;
     }
@@ -331,11 +346,12 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <summary>
     /// 查询当前游戏时刻是否在技能无敌区间。
     /// </summary>
+    /// <param name="heroId">参战英雄编号。</param>
     /// <param name="now">游戏时刻，秒。</param>
     /// <returns>处于无敌区间时为真。</returns>
-    public bool IsInvulnerable(double now)
+    public bool IsInvulnerable(int heroId, double now)
     {
-        HeroModel model = this.GetModel<HeroModel>();
+        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
         return model != null && now >= model.SkillInvulnerableFrom && now < model.SkillInvulnerableUntil;
     }
 }

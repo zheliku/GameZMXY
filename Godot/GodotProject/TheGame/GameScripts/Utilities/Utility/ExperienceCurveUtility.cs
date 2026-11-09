@@ -72,7 +72,7 @@ public sealed class ExperienceCurveUtility : IUtility
     /// <param name="amount">非负奖励经验。</param>
     /// <returns>奖励后的累计经验。</returns>
     /// <exception cref="ArgumentOutOfRangeException">奖励为负。</exception>
-    public int Add(int totalExperience, int amount)
+    public int AddExperience(int totalExperience, int amount)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(amount);
         return (int)Math.Min((long)Math.Clamp(totalExperience, 0, MaxTotalExperience) + amount, MaxTotalExperience);
@@ -83,7 +83,7 @@ public sealed class ExperienceCurveUtility : IUtility
     /// </summary>
     /// <param name="totalExperience">累计经验，消费前限制到首末门槛。</param>
     /// <returns>最终等级、本级经验和升下一级所需经验；满级进度为零。</returns>
-    public (int Level, int Experience, int MaxExperience) Evaluate(int totalExperience)
+    public (int Level, int Experience, int MaxExperience) EvaluateProgress(int totalExperience)
     {
         int total = Math.Clamp(totalExperience, 0, MaxTotalExperience);
         int index = Array.BinarySearch(_thresholds, total);
@@ -105,7 +105,7 @@ public sealed class ExperienceCurveUtility : IUtility
     public HeroProgressionState GetProgress(int totalExperience)
     {
         int total = Math.Clamp(totalExperience, 0, MaxTotalExperience);
-        (int level, int experience, int maximum) = Evaluate(total);
+        (int level, int experience, int maximum) = EvaluateProgress(total);
         return new(total, level, experience, maximum);
     }
 }

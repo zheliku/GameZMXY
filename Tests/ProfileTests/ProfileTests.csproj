@@ -51,6 +51,7 @@
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\ProfileSystem.cs" Link="Linked\Systems\ProfileSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Models\Save\**\*.cs" Link="Linked\Save\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Models\HeroModel.cs" Link="Linked\Models\HeroModel.cs" />
+    <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Models\HeroState.cs" Link="Linked\Models\HeroState.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\Hero\HeroSystem.cs" Link="Linked\Systems\Hero\HeroSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\Hero\HeroStatusSystem.cs" Link="Linked\Systems\Hero\HeroStatusSystem.cs" />
     <Compile Include="$(GodotProjectDir)TheGame\GameScripts\Systems\Combat\*.cs" Link="Linked\Combat\%(Filename)%(Extension)" />

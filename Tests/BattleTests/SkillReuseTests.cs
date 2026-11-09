@@ -46,7 +46,7 @@ public sealed class SkillReuseTests
         Assert.IsType<TestSkillState>(fsm.CurrentState);
         Assert.Equal(skill, scope.Hero.ActiveSkillId.Value);
         Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(skill).ManaCost,
-            scope.GetModel<HeroModel>().Mp.Value);
+            scope.GetModel<HeroModel>().GetState(scope.Hero.HeroId).Mp.Value);
         Assert.False(scope.GetSystem<InputSystem>().ConsumePress(hero.ActionData, InputSystem.Skill1));
     }
 
@@ -109,7 +109,7 @@ public sealed class SkillReuseTests
         Assert.IsType<TestSkillState>(fsm.CurrentState);
         Assert.Equal(SkillId.FireDemonSlash, scope.Hero.ActiveSkillId.Value);
         Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(SkillId.FireDemonSlash).ManaCost,
-            scope.GetModel<HeroModel>().Mp.Value);
+            scope.GetModel<HeroModel>().GetState(scope.Hero.HeroId).Mp.Value);
     }
 
     /// <summary>
@@ -179,7 +179,7 @@ public sealed class SkillReuseTests
         var hero = new SkillHero(scope);
         scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
         scope.GetSystem<SkillSystem>().SelectSkills(1, new SkillDefinition(SkillId.RisingDragon, typeof(TestSkillState)));
-        Assert.True(scope.GetSystem<SkillSystem>().TryActivate(SkillId.RisingDragon, hero));
+        Assert.True(scope.GetSystem<SkillSystem>().TryActivate(scope.Hero.HeroId, SkillId.RisingDragon, hero));
         using var manager = new FsmLifetime();
         IFsm<IHeroBody> fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
             new HeroGroundState(), new HeroAirState(), new TestSkillState(), new HeroHurtState(), new HeroDeathState());
@@ -240,7 +240,7 @@ public sealed class SkillReuseTests
         SkillSystem skills = scope.GetSystem<SkillSystem>();
         scope.Skills.GetLearnedSkills(1).Add(id);
         skills.SelectSkills(1, SkillTestDefinitions.Wukong());
-        Assert.True(skills.TryActivate(id, hero));
+        Assert.True(skills.TryActivate(scope.Hero.HeroId, id, hero));
         SkillId? data = scope.Hero.ActiveSkillId;
         Assert.Equal(0, hero.SkillBegins);
         using var manager = new FsmLifetime();
@@ -275,7 +275,7 @@ public sealed class SkillReuseTests
         skills.SelectSkills(1, SkillTestDefinitions.Wukong());
         hero.ActionData.MoveAxis = 1;
         hero.ActionData.RightHeld = true;
-        Assert.True(skills.TryActivate(SkillId.RisingDragon, hero));
+        Assert.True(skills.TryActivate(scope.Hero.HeroId, SkillId.RisingDragon, hero));
         using var manager = new FsmLifetime();
         IFsm<IHeroBody> fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
             new WukongRisingDragonState(), new HeroGroundState(), new HeroAirState(),
@@ -305,9 +305,9 @@ public sealed class SkillReuseTests
         SkillSystem skills = scope.GetSystem<SkillSystem>();
         scope.Skills.GetLearnedSkills(1).Add(SkillId.RisingDragon);
         skills.SelectSkills(1, new SkillDefinition(SkillId.RisingDragon, typeof(TestPreparationState), InputSystem.Skill1));
-        Assert.True(skills.TryActivate(SkillId.RisingDragon, hero));
+        Assert.True(skills.TryActivate(scope.Hero.HeroId, SkillId.RisingDragon, hero));
         SkillId? data = scope.Hero.ActiveSkillId;
-        int mana = scope.GetModel<HeroModel>().Mp.Value;
+        int mana = scope.GetModel<HeroModel>().GetState(scope.Hero.HeroId).Mp.Value;
         using var manager = new FsmLifetime();
         IFsm<IHeroBody> fsm = manager.Value.CreateFsm<IHeroBody>(Guid.NewGuid().ToString(), hero,
             new TestPreparationState(), new TestReleaseState(), new HeroGroundState(), new HeroAirState(),
@@ -317,7 +317,7 @@ public sealed class SkillReuseTests
         hero.ActionData.Time = .01;
         Tick(fsm, .01f);
         Assert.IsType<TestPreparationState>(fsm.CurrentState);
-        Assert.Equal(mana, scope.GetModel<HeroModel>().Mp.Value);
+        Assert.Equal(mana, scope.GetModel<HeroModel>().GetState(scope.Hero.HeroId).Mp.Value);
         scope.Source.Pressed.Add(InputSystem.Skill1);
         hero.ActionData.Time = .02;
         Tick(fsm, .01f);
@@ -325,7 +325,7 @@ public sealed class SkillReuseTests
         Assert.Equal(data, scope.Hero.ActiveSkillId);
         Assert.Equal(1, hero.SkillBegins);
         Assert.Equal(0, hero.SkillEnds);
-        Assert.Equal(mana, scope.GetModel<HeroModel>().Mp.Value);
+        Assert.Equal(mana, scope.GetModel<HeroModel>().GetState(scope.Hero.HeroId).Mp.Value);
         hero.ActionData.Time += .3;
         Tick(fsm, .3f);
         Assert.IsType<HeroGroundState>(fsm.CurrentState);
@@ -384,19 +384,20 @@ public sealed class SkillReuseTests
         /// <summary>
         /// 本次关卡的施放与数值状态。
         /// </summary>
-        public HeroModel Hero => _hero;
+        public HeroState Hero => _hero.GetState(1);
 
         /// <summary>
         /// 装配规则系统。
         /// </summary>
         public SkillScope()
         {
+            _hero.CreateState(1);
             _input = new(this, Source);
             _system = new(this);
             _heroStatusSystem = new(this);
             ((ICanInit)_heroStatusSystem).Init();
             _heroSystem = new(this);
-            _hero.Mp.Value = 100;
+            _hero.GetState(1).Mp.Value = 100;
         }
 
         /// <inheritdoc />
@@ -426,6 +427,9 @@ public sealed class SkillReuseTests
     /// <param name="scope">本测试替身借用的独立模型与系统作用域。</param>
     private sealed class SkillHero(SkillScope scope) : AbstractFakeActorBody, IHeroBody, ISkillActor
     {
+        /// <inheritdoc />
+        public int HeroId => 1;
+
         /// <inheritdoc />
         public HeroBodyParams Params { get; } = new()
         {
@@ -485,7 +489,7 @@ public sealed class SkillReuseTests
         {
             if (!attacking || AllowSkillDuringAttack)
             {
-                scope.GetSystem<SkillSystem>().TryActivateInput(this, ActionData);
+                scope.GetSystem<SkillSystem>().TryActivateInput(scope.Hero.HeroId, this, ActionData);
             }
         }
 

@@ -205,7 +205,7 @@ public sealed class WukongFireDemonState : AbstractHeroSkillState
     private static double FireDemonPower(IHeroBody body, SkillHitId hit)
     {
         AttackConfig definition = body.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
-        return Math.Round((double)body.GetModel<GameLogic.Battle.HeroModel>().Power.Value,
+        return Math.Round((double)body.GetModel<GameLogic.Battle.HeroModel>().GetState(body.HeroId).Power.Value,
             MidpointRounding.AwayFromZero) * definition.PowerScale.X + definition.FlatPower.X;
     }
 }

@@ -46,8 +46,8 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("GarudaAiSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
@@ -162,8 +162,8 @@ public sealed partial class UiSmokeScenario
             }
 
             _monster = null;
-            system.RemoveSource(source);
-            system.Heal(int.MaxValue);
+            system.RemoveSource(hero.HeroId, source);
+            system.Heal(hero.HeroId, int.MaxValue);
         }
     }
 
@@ -228,8 +228,8 @@ public sealed partial class UiSmokeScenario
     {
         HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SmokeGaruda", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
@@ -266,7 +266,7 @@ public sealed partial class UiSmokeScenario
                                 }
                             }
                             hero.GlobalPosition = actor.GlobalPosition + new Vector2(direction * 100, 0);
-                            flow.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
+                            flow.GetSystem<HeroSystem>().AdvanceHurtProtection(hero.HeroId, float.MaxValue);
                             int hp = hero.Hp;
                             var agent = (IEnemyAiAgent)actor;
                             Check(agent.RequestAttack(index), $"{id}/{index + 1} 拒绝出招");
@@ -365,8 +365,8 @@ public sealed partial class UiSmokeScenario
             }
 
             _monster = null;
-            system.RemoveSource(source);
-            system.Heal(int.MaxValue);
+            system.RemoveSource(hero.HeroId, source);
+            system.Heal(hero.HeroId, int.MaxValue);
         }
     }
 

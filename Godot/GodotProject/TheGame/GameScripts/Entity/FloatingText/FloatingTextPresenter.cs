@@ -132,7 +132,7 @@ public partial class FloatingTextPresenter : Node2D
     /// <exception cref="InvalidOperationException">飘字场景未注册。</exception>
     private FloatingTextNode TakeText()
     {
-        FloatingTextNode text = _pool.Get<FloatingTextNode>(ResourcesCollectionConstant.Effects_floating_text, this)
+        FloatingTextNode text = _pool.RentNode<FloatingTextNode>(ResourcesCollectionConstant.Effects_floating_text, this)
                    ?? throw new InvalidOperationException("通用飘字节点池未注册。");
         _texts.Add(text);
         return text;

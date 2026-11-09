@@ -14,7 +14,7 @@
 | 技能 | SkillModel 的学习记录 | SkillSystem 持有当前英雄的状态类型登记；HeroModel 只保存当前激活技能和无敌时钟；具体 GGF 技能状态、独立效果节点 | SkillSystem |
 | 装备与背包 | ProfileModel 的装备实例、穿戴与灵魂 | Entity 外观、背包窗口 | EquipmentSystem、ProfileSystem |
 | 被动、丹药、阵法 | 所属档案模型的学习 / 使用记录 | HeroModel 的属性来源 | 对应 System，经 HeroSystem 登记属性修正 |
-| Buff | 按玩法决定是否持久 | `HeroModel.StatusEffects` 的本局英雄中毒/冻结状态、持续时间和触发次数；不预留未使用的层数 | `HeroStatusSystem` 处理英雄效果生命周期；具体实体状态执行动作表现 |
+| Buff | 按玩法决定是否持久 | `HeroState.StatusEffects` 的本局英雄中毒/冻结状态、持续时间和触发次数；不预留未使用的层数 | `HeroStatusSystem` 按 HeroId 处理英雄效果生命周期；具体实体状态执行动作表现 |
 | 法宝、宠物、子弹 | 所属档案模型的实例与出战记录 | 独立实体，记录拥有者实体 ID | 对应 System 与具体实体状态 |
 | 商店、锻造、炼丹 | ProfileModel 的资产与结果 | 所属窗口局部选择 | 对应 System 完成交易后提交检查点 |
 | 掉落 | 领取后写 ProfileModel | LevelViewController 拥有地面物品与飞行球 | LootSystem 抽取，LevelSystem 发放 |

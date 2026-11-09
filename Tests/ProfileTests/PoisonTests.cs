@@ -22,16 +22,16 @@ public sealed class PoisonTests
     {
         var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroStatusSystem system = scope.GetSystem<HeroStatusSystem>();
-        system.ApplyPoison(TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2)));
+        system.ApplyPoison(scope.Hero.HeroId, TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2)));
         int damage = 0;
         for (int i = 0; i < 10 * fps; i++)
         {
-            damage += system.AdvancePoison(1f / fps);
+            damage += system.AdvancePoison(scope.Hero.HeroId, 1f / fps);
         }
 
         Assert.Equal(200, damage);
-        Assert.False(system.IsPoisoned);
-        Assert.Equal(0, system.AdvancePoison(20));
+        Assert.False(system.IsPoisoned(scope.Hero.HeroId));
+        Assert.Equal(0, system.AdvancePoison(scope.Hero.HeroId, 20));
     }
 
     /// <summary>
@@ -44,16 +44,16 @@ public sealed class PoisonTests
         HeroStatusSystem system = scope.GetSystem<HeroStatusSystem>();
         HeroSystem heroSystem = scope.GetSystem<HeroSystem>();
         AttackConfig attack = TestTables.Tables.TbAttackConfig.Get(TestTables.ConfigIds.GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2));
-        system.ApplyPoison(attack);
-        Assert.Equal(0, system.AdvancePoison(.75f));
-        system.ApplyPoison(attack);
-        Assert.Equal(20, system.AdvancePoison(.25f));
-        Assert.Equal(0, system.AdvancePoison(0));
-        Assert.Equal(40, system.AdvancePoison(2));
-        Assert.True(heroSystem.Damage(int.MaxValue));
-        Assert.False(system.IsPoisoned);
-        system.ApplyPoison(attack);
-        Assert.False(system.IsPoisoned);
-        Assert.Equal(0, system.AdvancePoison(100));
+        system.ApplyPoison(scope.Hero.HeroId, attack);
+        Assert.Equal(0, system.AdvancePoison(scope.Hero.HeroId, .75f));
+        system.ApplyPoison(scope.Hero.HeroId, attack);
+        Assert.Equal(20, system.AdvancePoison(scope.Hero.HeroId, .25f));
+        Assert.Equal(0, system.AdvancePoison(scope.Hero.HeroId, 0));
+        Assert.Equal(40, system.AdvancePoison(scope.Hero.HeroId, 2));
+        Assert.True(heroSystem.Damage(scope.Hero.HeroId, int.MaxValue));
+        Assert.False(system.IsPoisoned(scope.Hero.HeroId));
+        system.ApplyPoison(scope.Hero.HeroId, attack);
+        Assert.False(system.IsPoisoned(scope.Hero.HeroId));
+        Assert.Equal(0, system.AdvancePoison(scope.Hero.HeroId, 100));
     }
 }

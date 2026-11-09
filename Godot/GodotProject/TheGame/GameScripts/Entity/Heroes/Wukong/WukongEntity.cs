@@ -47,12 +47,12 @@ public partial class WukongEntity : AbstractHeroEntity
     /// <summary>
     /// 造一悟空无双期间免疫新附加的中毒、冰冻；普通状态仍接受命中附带效果。
     /// </summary>
-    public override bool CanReceiveStatusEffect => base.CanReceiveStatusEffect && !this.GetModel<HeroModel>().WsActive.Value;
+    public override bool CanReceiveStatusEffect => base.CanReceiveStatusEffect && !this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value;
 
     /// <summary>
     /// 造一悟空无双免受击动作和击退，仍扣血；唐僧不继承此专属规则。
     /// </summary>
-    public override bool SuperArmor => this.GetModel<HeroModel>().WsActive.Value;
+    public override bool SuperArmor => this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value;
 
     /// <summary>
     /// 悟空从地面状态起步。
@@ -112,7 +112,7 @@ public partial class WukongEntity : AbstractHeroEntity
         InputSystem input = this.GetSystem<InputSystem>();
         SkillSystem skills = this.GetSystem<SkillSystem>();
         var body = (IHeroBody)this;
-        if (!attacking && skills.TryActivateInput(this, ActionData))
+        if (!attacking && skills.TryActivateInput(HeroId, this, ActionData))
         {
             return;
         }
@@ -124,14 +124,14 @@ public partial class WukongEntity : AbstractHeroEntity
                 return;
             }
 
-            if (skills.IsLearned(HeroId, SkillId.RisingDragon) && !skills.CanAfford(SkillId.RisingDragon))
+            if (skills.IsLearned(HeroId, SkillId.RisingDragon) && !skills.CanAfford(HeroId, SkillId.RisingDragon))
             {
                 ActionData.AttackRequested = input.ConsumeAction(ActionData, true) &&
                                     input.TrySelectAttack(ActionData, body.Params, airborne, attacking);
             }
             else
             {
-                skills.TryActivate(SkillId.RisingDragon, this);
+                skills.TryActivate(HeroId, SkillId.RisingDragon, this);
             }
 
             return;
@@ -141,7 +141,7 @@ public partial class WukongEntity : AbstractHeroEntity
         if (ActionData.Running && !airborne && !attacking && ActionData.CanAct &&
             ActionData.AttackHeld && !ActionData.JumpHeld && !ActionData.UpHeld &&
             input.IsAttackReady(ActionData, airborne, attacking) &&
-            skills.TryActivate(SkillId.FlameThrust, this))
+            skills.TryActivate(HeroId, SkillId.FlameThrust, this))
         {
             input.ConsumeAttack(ActionData);
             ActionData.LastAttackAttempt = ActionData.Time;

@@ -73,7 +73,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <summary>
     /// 技能无敌与连续受击保护任一有效时拒绝直接命中。
     /// </summary>
-    protected override bool Invulnerable => Attributes.HurtInvulnerabilitySeconds > 0 || this.GetSystem<SkillSystem>().IsInvulnerable(ActionData.Time);
+    protected override bool Invulnerable => Attributes.HurtInvulnerabilitySeconds > 0 || this.GetSystem<SkillSystem>().IsInvulnerable(HeroId, ActionData.Time);
 
     /// <summary>
     /// 英雄配置 Id（对应 HeroConfig.Id）。每个英雄场景必须显式填写，缺失时本实体停用。
@@ -104,7 +104,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <summary>
     /// 直接读取本局已注册属性模型，实体不缓存、创建或销毁模型。
     /// </summary>
-    private HeroModel Attributes => this.GetModel<HeroModel>();
+    private HeroState Attributes => this.GetModel<HeroModel>().GetState(HeroId);
 
     /// <inheritdoc />
     public override int Hp => Attributes.Hp.Value;
@@ -130,12 +130,12 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <summary>
     /// 无双提高横向走跑速度。
     /// </summary>
-    float IHeroBody.MoveSpeedMultiplier => this.GetSystem<HeroSystem>().MoveSpeedMultiplier;
+    float IHeroBody.MoveSpeedMultiplier => this.GetSystem<HeroSystem>().GetMoveSpeedMultiplier(HeroId);
 
     /// <summary>
     /// 无双提高起跳速度；读取时生效，不改写配置快照。
     /// </summary>
-    float IHeroBody.JumpSpeedMultiplier => this.GetSystem<HeroSystem>().JumpSpeedMultiplier;
+    float IHeroBody.JumpSpeedMultiplier => this.GetSystem<HeroSystem>().GetJumpSpeedMultiplier(HeroId);
 
     /// <summary>
     /// 本英雄当前是否免受击硬直与击退；具体角色声明自己的霸体规则。
@@ -145,7 +145,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <summary>
     /// 提供当前重力，无双时应用官方倍率。
     /// </summary>
-    float IActorBody.Gravity => BodyParams.Gravity * this.GetSystem<HeroSystem>().GravityMultiplier;
+    float IActorBody.Gravity => BodyParams.Gravity * this.GetSystem<HeroSystem>().GetGravityMultiplier(HeroId);
 
     // ---- 生命周期 ----
 
@@ -212,7 +212,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     public override void OnShow(object userData)
     {
         // 显示只装配表现；即使异步迟到，也不重置或修改当前模型。
-        if (Attributes == null || Attributes.HeroId != HeroId)
+        if (!this.GetModel<HeroModel>().Heroes.ContainsKey(HeroId))
         {
             throw new InvalidOperationException($"英雄 {HeroId} 显示前必须准备本局属性模型。");
         }
@@ -307,41 +307,41 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
         }
 
         float dt = (float)delta;
-        this.GetSystem<HeroSystem>().AdvanceHurtProtection(dt);
+        this.GetSystem<HeroSystem>().AdvanceHurtProtection(HeroId, dt);
         HeroStatusSystem statusEffects = this.GetSystem<HeroStatusSystem>();
-        statusEffects.AdvanceFreeze(dt);
-        RefreshFreezePresentation(statusEffects.IsFrozen);
-        ReceivePeriodicDamage(this.GetSystem<HeroSystem>().AdvanceRecovery(dt), showNumber: false);
-        int poisonDamage = statusEffects.AdvancePoison(dt);
+        statusEffects.AdvanceFreeze(HeroId, dt);
+        RefreshFreezePresentation(statusEffects.IsFrozen(HeroId));
+        ReceivePeriodicDamage(this.GetSystem<HeroSystem>().AdvanceRecovery(HeroId, dt), showNumber: false);
+        int poisonDamage = statusEffects.AdvancePoison(HeroId, dt);
         ReceivePeriodicDamage(poisonDamage);
-        RefreshPoisonPresentation(statusEffects.IsPoisoned, poisonDamage);
+        RefreshPoisonPresentation(statusEffects.IsPoisoned(HeroId), poisonDamage);
         if (Dead && ActionData.Captured)
         {
             ReleaseCapture(_captorId);
         }
 
-        bool wasActive = this.GetModel<HeroModel>().WsActive.Value;
-        this.GetSystem<HeroSystem>().AdvanceWs(dt);
-        if (wasActive && !this.GetModel<HeroModel>().WsActive.Value)
+        bool wasActive = this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value;
+        this.GetSystem<HeroSystem>().AdvanceWs(HeroId, dt);
+        if (wasActive && !this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value)
         {
             EndMusou();
         }
         // 引擎采样保留按住及短按边沿，组合闩锁在输入层，连段与冷却由共享 InputSystem 根据本英雄动作数据裁定。
-        HeroModel heroModel = this.GetModel<HeroModel>();
-        bool controlsEnabled = heroModel.ControlsEnabled && !this.GetSystem<HeroStatusSystem>().IsFrozen;
+        HeroState heroModel = this.GetModel<HeroModel>().GetState(HeroId);
+        bool controlsEnabled = heroModel.ControlsEnabled && !this.GetSystem<HeroStatusSystem>().IsFrozen(HeroId);
         this.GetSystem<InputSystem>().Sample(this, dt, controlsEnabled);
         if (!ActionData.Captured && ActionData.MusouRequested)
         {
             TryActivateMusou();
         }
 
-        if (this.GetModel<HeroModel>().IsDepleted)
+        if (this.GetModel<HeroModel>().GetState(HeroId).IsDepleted)
         {
-            this.GetSystem<SkillSystem>().CancelSkill();
+            this.GetSystem<SkillSystem>().CancelSkill(HeroId);
         }
         // 当前状态声明输入窗口；角色匹配具体组合，状态随后消费请求并决定转换。
         if (!Dead && controlsEnabled && !ActionData.Captured && (!HasPendingHurt || ((IHeroBody)this).SuperArmor) &&
-            this.GetModel<HeroModel>().ActiveSkillId == null &&
+            this.GetModel<HeroModel>().GetState(HeroId).ActiveSkillId == null &&
             _bodyFsm.CurrentState is AbstractHeroBodyState bodyState &&
             bodyState.TryGetActionInput(this, out bool attacking, out bool airborne))
         {
@@ -420,12 +420,12 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     }
 
     /// <inheritdoc />
-    protected override bool ApplyDamage(int amount) => this.GetSystem<HeroSystem>().Damage(amount);
+    protected override bool ApplyDamage(int amount) => this.GetSystem<HeroSystem>().Damage(HeroId, amount);
 
     /// <inheritdoc />
     protected override void RestoreHealth(int amount)
     {
-        this.GetSystem<HeroSystem>().Heal(amount);
+        this.GetSystem<HeroSystem>().Heal(HeroId, amount);
         HealthRestored?.Invoke(amount);
     }
 
@@ -447,7 +447,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <returns>本次是否成功开启；按住按键、未满值、已开启或已死亡均不重复开启。</returns>
     public bool TryActivateMusou()
     {
-        if (!IsShown || Dead || GF.Base.IsGamePaused || !this.GetSystem<HeroSystem>().TryActivateWs())
+        if (!IsShown || Dead || GF.Base.IsGamePaused || !this.GetSystem<HeroSystem>().TryActivateWs(HeroId))
         {
             return false;
         }
@@ -462,7 +462,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// </summary>
     private void EndMusou()
     {
-        this.GetSystem<HeroSystem>().ClearWs();
+        this.GetSystem<HeroSystem>().ClearWs(HeroId);
         _musouAfterimage?.SetEmitting(false);
     }
 
@@ -506,7 +506,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <param name="data">本次攻击快照，仅在回调内使用。</param>
     /// <param name="result">目标已完成的伤害结算结果。</param>
     /// <param name="target">本次真实命中的目标。</param>
-    protected override void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result) => this.GetSystem<HeroSystem>().RecordHit(result);
+    protected override void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result) => this.GetSystem<HeroSystem>().RecordHit(HeroId, result);
 
     /// <summary>
     /// 受击：只登记事实（击退速度），何时生效由身体状态决定——
@@ -521,7 +521,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     protected override void OnHurt(AttackData data, DamageResult result, Vector2 knockback,
         int attackerEntityId)
     {
-        this.GetSystem<HeroSystem>().RecordHurt();
+        this.GetSystem<HeroSystem>().RecordHurt(HeroId);
         if (_hurtFeedback != null && !Dead)
         {
             _hurtFeedback.Stop();
@@ -694,7 +694,7 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     {
         AttackSegment = segment;
         // 官方加成乘在整招威力上，包含随机固定加值，避免只放大基础攻击。
-        PrepareAttack(OwnAttacks[segment], this.GetSystem<HeroSystem>().AttackPowerMultiplier);
+        PrepareAttack(OwnAttacks[segment], this.GetSystem<HeroSystem>().GetAttackPowerMultiplier(HeroId));
     }
 
     /// <summary>

@@ -47,7 +47,8 @@ internal sealed class TestGameScope : IArchitecture
     /// <summary>
     /// 本局英雄的全部数值。
     /// </summary>
-    public HeroModel Hero { get; private set; } = new();
+    public HeroState Hero => _heroes.GetState(Profile.HeroIds[0]);
+    private HeroModel _heroes = new(); // 当前测试本局的状态容器，重试时重新建立。
 
     /// <summary>
     /// 本局模型，由正式关卡系统修改。
@@ -66,7 +67,7 @@ internal sealed class TestGameScope : IArchitecture
     {
         Profile = new(heroes, TestTables.Curve, capacity, soul);
         Skills = new(Profile.HeroIds);
-        foreach (IModel model in new IModel[] { Profile, Skills, Hero, Level })
+        foreach (IModel model in new IModel[] { Profile, Skills, _heroes, Level })
         {
             model.SetArchitecture(this);
             model.Init();
@@ -79,6 +80,14 @@ internal sealed class TestGameScope : IArchitecture
         if (initializeHero)
         {
             ((ICanInit)_heroSystem).Init();
+        }
+        else
+        {
+            // 纯技能夹具不装配成长系统，但仍为每个参战编号建立独立状态。
+            foreach (int heroId in Profile.HeroIds)
+            {
+                _heroes.CreateState(heroId);
+            }
         }
 
         _equipmentSystem = new EquipmentSystem(this);
@@ -99,7 +108,7 @@ internal sealed class TestGameScope : IArchitecture
         return (typeof(TModel) == typeof(ConfigurationModel) ? TestTables.Configuration :
             typeof(TModel) == typeof(ProfileModel) ? (IModel)Profile :
             typeof(TModel) == typeof(SkillModel) ? Skills :
-            typeof(TModel) == typeof(HeroModel) ? (_isMapContext ? null : (IModel)Hero) :
+            typeof(TModel) == typeof(HeroModel) ? (_isMapContext ? null : (IModel)_heroes) :
             typeof(TModel) == typeof(LevelModel) ? (_isMapContext ? null : (IModel)Level) : null) as TModel;
     }
 
@@ -148,10 +157,10 @@ internal sealed class TestGameScope : IArchitecture
         _skillSystem.ClearSkillDefinitions();
         ((ICanInit)_heroSystem).Deinit();
         ((ICanInit)_heroStatusSystem).Deinit();
-        ((ICanInit)Hero).Deinit();
-        Hero = new HeroModel();
-        ((ICanSetArchitecture)Hero).SetArchitecture(this);
-        ((ICanInit)Hero).Init();
+        ((ICanInit)_heroes).Deinit();
+        _heroes = new HeroModel();
+        ((ICanSetArchitecture)_heroes).SetArchitecture(this);
+        ((ICanInit)_heroes).Init();
         ((ICanInit)_heroStatusSystem).Init();
         ((ICanInit)_heroSystem).Init();
     }

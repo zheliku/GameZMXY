@@ -26,7 +26,7 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     /// <inheritdoc />
     protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
     {
-        _skillId = body.GetModel<HeroModel>().ActiveSkillId ??
+        _skillId = body.GetModel<HeroModel>().GetState(body.HeroId).ActiveSkillId ??
             throw new InvalidOperationException("进入技能状态前必须先成功激活技能。");
         _animationCompleted = GravitySuspended = false;
     }
@@ -34,7 +34,7 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     /// <inheritdoc />
     protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
     {
-        if (body.GetModel<HeroModel>().ActiveSkillId != _skillId)
+        if (body.GetModel<HeroModel>().GetState(body.HeroId).ActiveSkillId != _skillId)
         {
             ChangeToLocomotion(fsm, body);
             return;
@@ -56,7 +56,7 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     /// <param name="dt">游戏秒数。</param>
     public void AdvanceAnimation(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
     {
-        if (body.GetModel<HeroModel>().ActiveSkillId != _skillId)
+        if (body.GetModel<HeroModel>().GetState(body.HeroId).ActiveSkillId != _skillId)
         {
             return;
         }
@@ -79,7 +79,7 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
     {
         ((ISkillActor)body).EndSkillAnimation();
-        body.GetSystem<SkillSystem>().EndSkill(_skillId);
+        body.GetSystem<SkillSystem>().EndSkill(body.HeroId, _skillId);
         _animationCompleted = GravitySuspended = false;
     }
 
@@ -99,7 +99,7 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     protected static double AttackPower(IHeroBody body, SkillHitId hit)
     {
         AttackConfig definition = body.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get((int)hit);
-        return body.GetModel<HeroModel>().Power.Value * (double)definition.PowerScale.X + definition.FlatPower.X;
+        return body.GetModel<HeroModel>().GetState(body.HeroId).Power.Value * (double)definition.PowerScale.X + definition.FlatPower.X;
     }
 
     /// <summary>

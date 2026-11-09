@@ -14,6 +14,11 @@ namespace GameLogic.Heroes.Body;
 public interface IHeroBody : IActorBody, Architecture.ICanGetSystem, Architecture.ICanGetModel
 {
     /// <summary>
+    /// 本身体状态所属的参战英雄编号。
+    /// </summary>
+    int HeroId { get; }
+
+    /// <summary>
     /// 同类英雄共享的只读身体参数，动作时长来自动画资源。
     /// </summary>
     HeroBodyParams Params

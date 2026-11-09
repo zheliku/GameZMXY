@@ -110,7 +110,7 @@ public partial class LevelGuideTooltip : PanelContainer
         foreach (EquipmentConfig item in data.Drops)
         {
             EquipmentCell cell = _equipmentCellScene.Instantiate<EquipmentCell>();
-            cell.BindDefinition(item, _appearances.Get(item.Id).InventoryIcon);
+            cell.BindDefinition(item, _appearances.GetAppearance(item.Id).InventoryIcon);
             _drops.AddChild(cell);
         }
         ResetSize();

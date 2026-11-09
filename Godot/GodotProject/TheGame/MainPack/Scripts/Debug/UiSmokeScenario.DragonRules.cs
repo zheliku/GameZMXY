@@ -39,8 +39,8 @@ public sealed partial class UiSmokeScenario
         HeroStatusSystem status = flow.GetSystem<HeroStatusSystem>();
         GameData snapshot = flow.GetUtility<SaveDataUtility>().Capture(flow.GetModel<ProfileModel>(), flow.GetModel<SkillModel>());
         var source = new AttributeSourceId("DragonRules", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         try
         {
             foreach (int tier in new[] { 20, 21 })
@@ -98,18 +98,18 @@ public sealed partial class UiSmokeScenario
                         hero.SetPhysicsProcess(true);
                         actor.SetFacing(direction);
                         typeof(AbstractEnemyEntity).GetMethod("SetTarget", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(actor, [hero]);
-                        system.AdvanceHurtProtection(float.MaxValue);
+                        system.AdvanceHurtProtection(hero.HeroId, float.MaxValue);
                         Check(((IEnemyAiAgent)actor).RequestAttack(2), "龙王未释放真实冻结");
-                        await WaitUntilAsync(() => status.IsFrozen, "暴雪没有真实冻结悟空", 5000);
+                        await WaitUntilAsync(() => status.IsFrozen(hero.HeroId), "暴雪没有真实冻结悟空", 5000);
                         double frozenAt = hero.ActionData.Time;
                         GF.Base.PauseGame();
                         await WaitFramesAsync(3);
-                        double remaining = flow.GetModel<HeroModel>().GetStatusEffect(HeroModel.StatusEffectKind.Freeze).RemainingSeconds;
+                        double remaining = flow.GetModel<HeroModel>().GetState(hero.HeroId).GetStatusEffect(HeroState.StatusEffectKind.Freeze).RemainingSeconds;
                         await WaitFramesAsync(10);
-                        Check(flow.GetModel<HeroModel>().GetStatusEffect(HeroModel.StatusEffectKind.Freeze).RemainingSeconds == remaining,
+                        Check(flow.GetModel<HeroModel>().GetState(hero.HeroId).GetStatusEffect(HeroState.StatusEffectKind.Freeze).RemainingSeconds == remaining,
                             "暂停仍推进冻结时间");
                         GF.Base.ResumeGame();
-                        await WaitUntilAsync(() => !status.IsFrozen, "冻结未按官方秒数结束", 7000);
+                        await WaitUntilAsync(() => !status.IsFrozen(hero.HeroId), "冻结未按官方秒数结束", 7000);
                         double seconds = hero.ActionData.Time - frozenAt;
                         Check(Math.Abs(seconds - (tier == 20 ? 2 : 5)) < .08,
                             $"真实冻结时间错误：tier={tier}, actual={seconds}");
@@ -135,8 +135,8 @@ public sealed partial class UiSmokeScenario
             ReleaseTestEntity(_monster);
             _monster = null;
             hero.SetPhysicsProcess(false);
-            status.AdvanceFreeze(100);
-            system.RemoveSource(source);
+            status.AdvanceFreeze(hero.HeroId, 100);
+            system.RemoveSource(hero.HeroId, source);
             flow.GetSystem<ProfileSystem>().RestoreCheckpoint(snapshot);
             Engine.PhysicsTicksPerSecond = originalTicks;
         }
@@ -155,7 +155,7 @@ public sealed partial class UiSmokeScenario
     {
         hero.GlobalPosition = new Vector2(100000, 100000);
         actor.SetFacing(direction);
-        system.AdvanceHurtProtection(float.MaxValue);
+        system.AdvanceHurtProtection(hero.HeroId, float.MaxValue);
         Check(((IEnemyAiAgent)actor).RequestAttack(1), "空隙夹具未释放冰环");
         await WaitUntilAsync(() => actor.AttackSegment == 1, "空隙夹具未起手");
         float speed = actor.AnimPlayer.SpeedScale;

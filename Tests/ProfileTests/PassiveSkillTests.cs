@@ -21,7 +21,7 @@ public sealed class PassiveSkillTests
     {
         var scope = new TestGameScope([(1, 0)], 15000, 25);
         SkillSystem skill = scope.GetSystem<SkillSystem>();
-        scope.GetSystem<HeroSystem>().Damage(30);
+        scope.GetSystem<HeroSystem>().Damage(scope.Hero.HeroId, 30);
         Assert.Equal(SkillLearnResult.Learned, skill.Upgrade(1, PassiveId.Vitality));
         Assert.Equal((280, 250, 10000, 1), (scope.Hero.MaxHp.Value, scope.Hero.Hp.Value,
             scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value, scope.Skills.GetPassiveLevels(1)[PassiveId.Vitality]));

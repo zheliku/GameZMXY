@@ -59,7 +59,7 @@ public sealed partial class UiSmokeScenario
                 try
                 {
                     // 先以无伤害实例建立真实物理重叠，再模拟同物理步的归还和再取出。
-                    effect.Show(null, _monster.GlobalPosition, 1, flow.GetModel<HeroModel>().CaptureCombatAttributes(hero.Id), 10,
+                    effect.Show(null, _monster.GlobalPosition, 1, flow.GetModel<HeroModel>().GetState(hero.HeroId).CaptureCombatAttributes(hero.Id), 10,
                         false, node => node.OnRelease());
                     await WaitUntilAsync(() => area.GetOverlappingAreas().Contains(_monster.HurtBox),
                         "火魔复用夹具没有建立真实重叠");
@@ -67,7 +67,7 @@ public sealed partial class UiSmokeScenario
                     effect.OnRelease();
                     effect.OnGet();
                     effect.Show(hit, _monster.GlobalPosition + new Vector2(700, 0), 1,
-                        flow.GetModel<HeroModel>().CaptureCombatAttributes(hero.Id), 10, false, node => node.OnRelease());
+                        flow.GetModel<HeroModel>().GetState(hero.HeroId).CaptureCombatAttributes(hero.Id), 10, false, node => node.OnRelease());
                     effect.SetPhysicsProcess(false);
                     Check(area.GetOverlappingAreas().Contains(_monster.HurtBox), "未保留要复现的旧Area缓存");
                     effect._PhysicsProcess(1d / ticks);
@@ -113,14 +113,14 @@ public sealed partial class UiSmokeScenario
         var source = new AttributeSourceId("FireKnockbackSmoke", 1);
         ProfileModel profile = flow.GetModel<ProfileModel>();
         SkillSystem skills = flow.GetSystem<SkillSystem>();
-        HeroModel vitals = flow.GetModel<HeroModel>();
+        HeroState vitals = flow.GetModel<HeroModel>().GetState(hero.HeroId);
         HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
         GameData snapshot = flow.GetUtility<SaveDataUtility>().Capture(profile, flow.GetModel<SkillModel>());
         var failures = new List<string>();
         try
         {
             // 只排除随机闪避和致死干扰，保留真实重力、硬直、位移、动画和判定。
-            heroSystem.SetSource(source,
+            heroSystem.SetSource(hero.HeroId, source,
                 [AttributeModifier.Flat(AttributeType.MaxMp, 1000), AttributeModifier.Flat(AttributeType.Htarget, 1)]);
             flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 4000);
             skills.Learn(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.FireDemonSlash);
@@ -142,7 +142,7 @@ public sealed partial class UiSmokeScenario
                         SmokeInspection.StrengthenTrainingTarget(_monster);
                         SmokeInspection.FreezeAi(_monster);
                         _monster.SetPhysicsProcess(true);
-                        heroSystem.RestoreMp(int.MaxValue);
+                        heroSystem.RestoreMp(hero.HeroId, int.MaxValue);
                         HashSet<SkillEffectNode> effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "_skillEffects");
                         var rows = new List<object>();
                         bool comboHit = false, descentHit = false, landingHit = false, wrongDirection = false;
@@ -231,11 +231,11 @@ public sealed partial class UiSmokeScenario
             Engine.PhysicsTicksPerSecond = oldTicks;
             ReleaseTestEntity(_monster);
             _monster = null;
-            skills.CancelSkill();
+            skills.CancelSkill(hero.HeroId);
             hero.SetPhysicsProcess(false);
             hero.GlobalPosition = origin;
             hero.Velocity = Vector2.Zero;
-            heroSystem.RemoveSource(source);
+            heroSystem.RemoveSource(hero.HeroId, source);
             flow.GetSystem<ProfileSystem>().RestoreCheckpoint(snapshot);
         }
     }
@@ -254,14 +254,14 @@ public sealed partial class UiSmokeScenario
         var source = new AttributeSourceId("FireMotionSmoke", 1);
         ProfileModel profile = flow.GetModel<ProfileModel>();
         SkillSystem skills = flow.GetSystem<SkillSystem>();
-        HeroModel vitals = flow.GetModel<HeroModel>();
+        HeroState vitals = flow.GetModel<HeroModel>().GetState(hero.HeroId);
         HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
         GameData snapshot = flow.GetUtility<SaveDataUtility>().Capture(profile, flow.GetModel<SkillModel>());
         Vector2 origin = hero.GlobalPosition;
         var failures = new List<string>();
         try
         {
-            heroSystem.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxMp, 1000)]);
+            heroSystem.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxMp, 1000)]);
             flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 4000);
             skills.Learn(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), SkillId.FireDemonSlash);
             hero.SetPhysicsProcess(true);
@@ -297,7 +297,7 @@ public sealed partial class UiSmokeScenario
                             _monster.SetPhysicsProcess(false);
                         }
                         int hp = _monster?.Hp ?? 0;
-                        heroSystem.RestoreMp(int.MaxValue);
+                        heroSystem.RestoreMp(hero.HeroId, int.MaxValue);
                         int mana = vitals.Mp.Value;
                         var rows = new List<object>();
                         HashSet<SkillEffectNode> effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "_skillEffects");
@@ -457,7 +457,7 @@ public sealed partial class UiSmokeScenario
                         }
 
                         _monster = null;
-                        skills.CancelSkill();
+                        skills.CancelSkill(hero.HeroId);
                         await WaitFramesAsync(3);
                     }
                 }
@@ -472,11 +472,11 @@ public sealed partial class UiSmokeScenario
             Engine.PhysicsTicksPerSecond = oldTicks;
             ReleaseTestEntity(_monster);
             _monster = null;
-            skills.CancelSkill();
+            skills.CancelSkill(hero.HeroId);
             hero.SetPhysicsProcess(false);
             hero.GlobalPosition = origin;
             hero.Velocity = Vector2.Zero;
-            heroSystem.RemoveSource(source);
+            heroSystem.RemoveSource(hero.HeroId, source);
             flow.GetSystem<ProfileSystem>().RestoreCheckpoint(snapshot);
         }
     }

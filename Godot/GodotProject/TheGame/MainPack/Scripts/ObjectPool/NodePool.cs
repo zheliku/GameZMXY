@@ -109,7 +109,7 @@ public partial class NodePool : SingletonNode<NodePool>
                 GF.ObjectPool.CreateSingleSpawnObjectPool<NodeObject>(
                     poolName, autoRelease, capacity, expireTime, 0);
 
-                // 保存 PackedScene 引用，Get 时按需 Instantiate
+                // 保存 PackedScene 引用，RentNode 时按需 Instantiate
                 _poolScenes[poolName] = packedScene;
 
                 Log.Info("[NodePool] 已注册: {0} (容量={1}, 过期={2}s, 懒加载)", scenePath, capacity, expireTime);
@@ -130,9 +130,9 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <param name="parent">可选父节点，获取后自动 AddChild。</param>
     /// <typeparam name="T">期望实现 <see cref="IPoolable"/> 的节点类型。</typeparam>
     /// <returns>池化节点；池或类型不匹配时返回 null。</returns>
-    public T Get<T>(string scenePath, Node parent = null) where T : class, IPoolable
+    public T RentNode<T>(string scenePath, Node parent = null) where T : class, IPoolable
     {
-        NodeObject obj = GetInternal(scenePath, parent);
+        NodeObject obj = RentNodeInternal(scenePath, parent);
         if (obj == null)
         {
             return null;
@@ -154,7 +154,7 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <param name="scenePath">场景资源路径。</param>
     /// <param name="parent">可选父节点，获取后自动 AddChild。</param>
     /// <returns>节点包装对象；场景池不可用时返回 null。</returns>
-    public NodeObject Get(string scenePath, Node parent = null) => GetInternal(scenePath, parent);
+    public NodeObject RentNode(string scenePath, Node parent = null) => RentNodeInternal(scenePath, parent);
 
     /// <summary>
     /// 取出池对象，必要时实例化节点并绑定请求的父节点。
@@ -162,7 +162,7 @@ public partial class NodePool : SingletonNode<NodePool>
     /// <param name="scenePath">场景资源路径及池名称。</param>
     /// <param name="parent">可选的新父节点。</param>
     /// <returns>节点包装对象；无法取得对象时返回 null。</returns>
-    private NodeObject GetInternal(string scenePath, Node parent) // 取出对象，必要时实例化节点并绑定请求的父节点。
+    private NodeObject RentNodeInternal(string scenePath, Node parent) // 取出对象，必要时实例化节点并绑定请求的父节点。
     {
         IObjectPool<NodeObject> pool = GF.ObjectPool.GetObjectPool<NodeObject>(scenePath);
         if (pool == null)

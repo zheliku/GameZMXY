@@ -186,9 +186,9 @@ public partial class DragonKingEntity : AbstractBossEntity, IEnemyAiAgent
     /// <inheritdoc />
     protected override void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result)
     {
-        if (AttackSegment == 2 && target is AbstractHeroEntity { CanReceiveStatusEffect: true })
+        if (AttackSegment == 2 && target is AbstractHeroEntity { CanReceiveStatusEffect: true } hero)
         {
-            this.GetSystem<HeroStatusSystem>().ApplyFreeze(_highLevel ? 5 : 2);
+            this.GetSystem<HeroStatusSystem>().ApplyFreeze(hero.HeroId, _highLevel ? 5 : 2);
         }
     }
 

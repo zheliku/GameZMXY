@@ -110,8 +110,8 @@ public sealed partial class UiSmokeScenario
         Vector2 originalPosition = hero.GlobalPosition;
         HeroSystem system = GF.Fsm.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EffectShapes", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
@@ -145,7 +145,7 @@ public sealed partial class UiSmokeScenario
                     Check(player.CurrentAnimationPosition == paused, "暂停仍推进独立效果动画");
                     GF.Base.ResumeGame();
                     hero.GlobalPosition = new Vector2(400, 200);
-                    system.AdvanceHurtProtection(float.MaxValue);
+                    system.AdvanceHurtProtection(hero.HeroId, float.MaxValue);
                     effect.GlobalPosition = hero.HurtBox.GetGlobalBounds().GetCenter();
                     primary.Disabled = true;
                     secondary.Disabled = false;
@@ -162,7 +162,7 @@ public sealed partial class UiSmokeScenario
                     await WaitFramesAsync(2);
                     Check(!effect.Visible && !effect.IsPhysicsProcessing(), "归还后效果仍活动");
                     effect.OnGet();
-                    system.AdvanceHurtProtection(float.MaxValue);
+                    system.AdvanceHurtProtection(hero.HeroId, float.MaxValue);
                     effect.Show(hit, hero.HurtBox.GetGlobalBounds().GetCenter(), -1, attacker, 5, false, Released);
                     primary.Disabled = true;
                     secondary.Disabled = false;
@@ -191,8 +191,8 @@ public sealed partial class UiSmokeScenario
         {
             Engine.PhysicsTicksPerSecond = originalTicks;
             hero.GlobalPosition = originalPosition;
-            system.RemoveSource(source);
-            system.Heal(int.MaxValue);
+            system.RemoveSource(hero.HeroId, source);
+            system.Heal(hero.HeroId, int.MaxValue);
         }
     }
 
@@ -235,8 +235,8 @@ public sealed partial class UiSmokeScenario
         MethodInfo updateTarget = typeof(AbstractEnemyEntity).GetMethod("UpdateTarget", BindingFlags.NonPublic | BindingFlags.Instance)!;
         HeroSystem system = GF.Fsm.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("EnemyFidelity", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         Vector2 original = hero.GlobalPosition;
         int originalTicks = Engine.PhysicsTicksPerSecond;
         try
@@ -353,8 +353,8 @@ public sealed partial class UiSmokeScenario
             _monster = null;
             hero.GlobalPosition = original;
             Engine.PhysicsTicksPerSecond = originalTicks;
-            system.RemoveSource(source);
-            system.Heal(int.MaxValue);
+            system.RemoveSource(hero.HeroId, source);
+            system.Heal(hero.HeroId, int.MaxValue);
         }
         GD.Print("SMOKE-ENEMY FIDELITY PASS: all 24 acquisition boundaries and six autonomous melee species at 60/120Hz");
     }

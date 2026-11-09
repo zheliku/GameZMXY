@@ -104,7 +104,7 @@ public sealed class ConfigurationSystem : AbstractSystem
         {
             foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
             {
-                if (attribute.IsProbability && (!float.IsFinite(attributes.Get(attribute)) || attributes.Get(attribute) is < 0 or > 1))
+                if (attribute.IsProbability && (!float.IsFinite(attributes.GetValue(attribute)) || attributes.GetValue(attribute) is < 0 or > 1))
                 {
                     errors.Add($"基础属性 {attribute} 必须为 0..1 的有限概率。");
                 }

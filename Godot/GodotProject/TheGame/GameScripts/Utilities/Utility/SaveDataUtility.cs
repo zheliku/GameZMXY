@@ -305,7 +305,7 @@ public sealed class SaveDataUtility : IUtility
         foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
         {
             EquipmentAttributeRange expected = definition.AttributeRanges.Find(x => x.Attribute == attribute);
-            float value = data.Attributes.Get(attribute);
+            float value = data.Attributes.GetValue(attribute);
             if (!float.IsFinite(value) || (expected == null ? value != 0 : value < expected.Minimum || value > expected.Maximum))
             {
                 throw new ArgumentException("装备实际属性不符合当前配置。");

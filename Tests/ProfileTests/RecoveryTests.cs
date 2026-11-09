@@ -24,13 +24,13 @@ public sealed class RecoveryTests
     {
         var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroSystem system = scope.GetSystem<HeroSystem>();
-        system.SetSource(new AttributeSourceId("Recovery", 1),
+        system.SetSource(scope.Hero.HeroId, new AttributeSourceId("Recovery", 1),
             [AttributeModifier.Flat(AttributeType.HpRegen, 2), AttributeModifier.Flat(AttributeType.MpRegen, 1)]);
-        system.Damage(60);
-        system.TrySpendMp(40);
+        system.Damage(scope.Hero.HeroId, 60);
+        system.TrySpendMp(scope.Hero.HeroId, 40);
         for (int index = 0; index < 25 * fps; index++)
         {
-            Assert.Equal(0, system.AdvanceRecovery(1f / fps));
+            Assert.Equal(0, system.AdvanceRecovery(scope.Hero.HeroId, 1f / fps));
         }
 
         Assert.Equal(68, scope.Hero.Hp.Value);
@@ -46,19 +46,19 @@ public sealed class RecoveryTests
         var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroSystem system = scope.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("Recovery", 1);
-        system.AdvanceRecovery(1f);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.HpRegen, -2), AttributeModifier.Flat(AttributeType.MpRegen, -3)]);
+        system.AdvanceRecovery(scope.Hero.HeroId, 1f);
+        system.SetSource(scope.Hero.HeroId, source, [AttributeModifier.Flat(AttributeType.HpRegen, -2), AttributeModifier.Flat(AttributeType.MpRegen, -3)]);
         Assert.Equal(-2, scope.Hero.HpRegen.Value);
         for (int index = 0; index < 100; index++)
         {
-            Assert.Equal(0, system.AdvanceRecovery(0));
+            Assert.Equal(0, system.AdvanceRecovery(scope.Hero.HeroId, 0));
         }
 
-        Assert.Equal(2, system.AdvanceRecovery(1f / 24));
+        Assert.Equal(2, system.AdvanceRecovery(scope.Hero.HeroId, 1f / 24));
         Assert.Equal(47, scope.Hero.Mp.Value);
-        system.Damage(2);
-        system.RemoveSource(source);
-        Assert.Equal(0, system.AdvanceRecovery(25f / 24));
+        system.Damage(scope.Hero.HeroId, 2);
+        system.RemoveSource(scope.Hero.HeroId, source);
+        Assert.Equal(0, system.AdvanceRecovery(scope.Hero.HeroId, 25f / 24));
         Assert.Equal(78, scope.Hero.Hp.Value);
     }
 
@@ -70,15 +70,15 @@ public sealed class RecoveryTests
     {
         var scope = new TestGameScope([(1, 0)], 0, 25);
         HeroSystem system = scope.GetSystem<HeroSystem>();
-        system.SetSource(new AttributeSourceId("Recovery", 1),
+        system.SetSource(scope.Hero.HeroId, new AttributeSourceId("Recovery", 1),
             [AttributeModifier.Flat(AttributeType.HpRegen, 100), AttributeModifier.Flat(AttributeType.MpRegen, 100)]);
-        system.AdvanceRecovery(100);
+        system.AdvanceRecovery(scope.Hero.HeroId, 100);
         Assert.Equal((80, 50), (scope.Hero.Hp.Value, scope.Hero.Mp.Value));
-        system.Damage(int.MaxValue);
-        Assert.Equal(0, system.AdvanceRecovery(100));
+        system.Damage(scope.Hero.HeroId, int.MaxValue);
+        Assert.Equal(0, system.AdvanceRecovery(scope.Hero.HeroId, 100));
         Assert.Equal(0, scope.Hero.Hp.Value);
         system.Reset(1, 1, TestTables.Tables.TbHeroGrowthConfig.Get(1).Levels[0].BaseAttributes);
         Assert.Equal(0, scope.Hero.RecoveryProgress);
-        Assert.Equal(0, system.AdvanceRecovery(float.NaN));
+        Assert.Equal(0, system.AdvanceRecovery(scope.Hero.HeroId, float.NaN));
     }
 }

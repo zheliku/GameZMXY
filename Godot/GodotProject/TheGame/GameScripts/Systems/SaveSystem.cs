@@ -187,7 +187,7 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
                         tables.TbEquipmentConfig, tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig, tables.TbPassiveConfig);
                     slots[number - 1] = new SaveSlotInfo(number, catalogue.UnitId, SaveSlotState.Occupied,
                         data.Heroes.Select(hero => new SaveHeroSummary(tables.TbHeroConfig.Get(hero.HeroId).NameCn,
-                            curve.Evaluate(hero.TotalExperience).Level)),
+                            curve.EvaluateProgress(hero.TotalExperience).Level)),
                         DateTimeOffset.FromUnixTimeSeconds(catalogue.SavedAtUtc));
                 }
             }

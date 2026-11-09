@@ -104,7 +104,7 @@ public sealed partial class UiSmokeScenario
         EquipmentData weapon = profile.GetSlots(profile.HeroOf(PlayerSlot.P1)).Value.Weapon;
         EquipmentData armor = profile.GetSlots(profile.HeroOf(PlayerSlot.P1)).Value.Armor;
         EquipmentData[] items = profile.GetBag(profile.HeroOf(PlayerSlot.P1)).ToArray();
-        int expectedHp = flow.GetModel<HeroModel>().MaxHp.Value;
+        int expectedHp = flow.GetModel<HeroModel>().GetState(hero.HeroId).MaxHp.Value;
         BaseButton settingsButton = CurrentBattleForm().GetNode<BaseButton>("MenuPanel/m_SettingsButton");
         settingsButton.EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().Any(value => value.Visible),
@@ -136,7 +136,7 @@ public sealed partial class UiSmokeScenario
             items.All(item => restored.GetBag(restored.HeroOf(PlayerSlot.P1)).Any(value => value.InstanceId == item.InstanceId && value.Attributes == item.Attributes)) &&
             flow.GetModel<GameLogic.Skills.SkillModel>().GetPassiveLevels(2).Values.All(value => value == 5) &&
             flow.GetModel<GameLogic.Skills.SkillModel>().GetLearnedSkills(2).Count == 5 &&
-            flow.GetModel<HeroModel>().MaxHp.Value == expectedHp,
+            flow.GetModel<HeroModel>().GetState(hero.HeroId).MaxHp.Value == expectedHp,
             "唐僧磁盘重入丢失身份、装备实例、随机属性、槽位或被动效果");
         CheckHeroRevived();
         PushInventoryKey(true);

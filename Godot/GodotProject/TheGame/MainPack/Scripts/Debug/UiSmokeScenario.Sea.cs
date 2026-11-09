@@ -37,8 +37,8 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SeaAiSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
@@ -133,8 +133,8 @@ public sealed partial class UiSmokeScenario
         finally
         {
             Engine.PhysicsTicksPerSecond = originalTicks;
-            system.RemoveSource(source);
-            system.Heal(int.MaxValue);
+            system.RemoveSource(hero.HeroId, source);
+            system.Heal(hero.HeroId, int.MaxValue);
         }
     }
 
@@ -176,7 +176,7 @@ public sealed partial class UiSmokeScenario
                     Check(soulPerOrb == (level == 7 ? 60 : 30) &&
                         (data.EquipmentDropChanceOverride ?? data.Config.EquipmentDropChance) == (level == 7 ? 0f : .15f) &&
                         data.ExperienceReward == (level == 7 ? 200 : 75), "龟丞相死亡奖励没有使用本次关卡变体");
-                    HeroModel model = flow.GetModel<HeroModel>();
+                    HeroState model = flow.GetModel<HeroModel>().GetState(hero.HeroId);
                     List<LootReward> loot = flow.GetSystem<GameLogic.Drops.LootSystem>().Roll(data.Config, soulPerOrb,
                         model.MaxHp.Value, model.MaxMp.Value, () => 0f);
                     Check(loot.Where(value => value.Kind == GameLogic.Drops.LootKind.Soul).All(value => value.Amount == soulPerOrb),
@@ -289,8 +289,8 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SeaSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         try
         {
             foreach (int ticks in new[] { 60, 120 })
@@ -315,8 +315,8 @@ public sealed partial class UiSmokeScenario
                                 .Invoke(actor, [hero]);
                             // 本夹具固定英雄位置并冻结身体物理；上一招留下的保护时间不会自行流逝。
                             // 每招都使用未受保护的沙包，保护持续时间另有真实物理专项验证。
-                            double protection = flow.GetModel<HeroModel>().HurtInvulnerabilitySeconds;
-                            system.AdvanceHurtProtection(float.MaxValue);
+                            double protection = flow.GetModel<HeroModel>().GetState(hero.HeroId).HurtInvulnerabilitySeconds;
+                            system.AdvanceHurtProtection(hero.HeroId, float.MaxValue);
                             GD.Print($"SMOKE-SEA TARGET: {id}/{index}/{direction}/{ticks}, previousProtection={protection:F3}");
                             int before = hero.Hp;
                             Check(((IEnemyAiAgent)actor).RequestAttack(index), "海怪拒绝正式出招：" + id);
@@ -362,8 +362,8 @@ public sealed partial class UiSmokeScenario
                 _monster = null;
             }
             Engine.PhysicsTicksPerSecond = originalTicks;
-            system.RemoveSource(source);
-            system.Heal(int.MaxValue);
+            system.RemoveSource(hero.HeroId, source);
+            system.Heal(hero.HeroId, int.MaxValue);
         }
     }
 }

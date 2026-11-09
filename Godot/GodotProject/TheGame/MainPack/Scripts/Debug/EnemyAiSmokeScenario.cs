@@ -146,7 +146,7 @@ public sealed class EnemyAiSmokeScenario
             case Phase.WaitFirstHit:
                 if (_heroHitsByMonster > 0)
                 {
-                    _hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);   // 防止后续阶段英雄被打死导致目标失效
+                    _hero.Heal(GF.Fsm.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<GameLogic.Profile.ProfileModel>().HeroOf(GameLogic.PlayerSlot.P1)).MaxHp.Value);   // 防止后续阶段英雄被打死导致目标失效
                     Enter(Phase.WaitSecondAttack, t);
                 }
 
@@ -184,7 +184,7 @@ public sealed class EnemyAiSmokeScenario
 
                 if (_struckAfterLanding || t - _phaseStart > LandedTimeout)
                 {
-                    _hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
+                    _hero.Heal(GF.Fsm.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<GameLogic.Profile.ProfileModel>().HeroOf(GameLogic.PlayerSlot.P1)).MaxHp.Value);
                     Enter(Phase.Lose, t);
                 }
 
@@ -281,7 +281,7 @@ public sealed class EnemyAiSmokeScenario
 
         GD.Print($"SMOKE-AI: AI 序列 {string.Join(" → ", _aiObserved.ConvertAll(o => $"{o.Ai}@{o.Time:F2}"))}");
         GD.Print($"SMOKE-AI: 动画序列 {string.Join(" → ", _animObserved.ConvertAll(o => $"{o.Anim}@{o.Time:F2}"))}");
-        GD.Print($"SMOKE-AI: 猴子命中英雄 {_heroHitsByMonster} 次，英雄 HP {GF.Fsm.GetModel<HeroModel>().Hp.Value}/{GF.Fsm.GetModel<HeroModel>().MaxHp.Value}");
+        GD.Print($"SMOKE-AI: 猴子命中英雄 {_heroHitsByMonster} 次，英雄 HP {GF.Fsm.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<GameLogic.Profile.ProfileModel>().HeroOf(GameLogic.PlayerSlot.P1)).Hp.Value}/{GF.Fsm.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<GameLogic.Profile.ProfileModel>().HeroOf(GameLogic.PlayerSlot.P1)).MaxHp.Value}");
         return failures;
     }
 
@@ -356,7 +356,7 @@ public sealed class EnemyAiSmokeScenario
         _heroFloorY = _hero.GlobalPosition.Y;
         _airX = _monster.GlobalPosition.X - _monster.Facing * AirOffsetX;
         _airMinX = _airMaxX = _monster.GlobalPosition.X;
-        _hero.Heal(GF.Fsm.GetModel<HeroModel>().MaxHp.Value);
+        _hero.Heal(GF.Fsm.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<GameLogic.Profile.ProfileModel>().HeroOf(GameLogic.PlayerSlot.P1)).MaxHp.Value);
         Enter(Phase.Air, t);
     }
 

@@ -101,9 +101,9 @@ public sealed class LevelSmokeScenario
         _flow = SmokeInspection.Flow(GF.Procedure.CurrentProcedure as ProcedureLevel);
         // 边界回归会反复穿过同一陷阱；保留真实受击和击退，只提高本局夹具生命。
         HeroSystem heroSystem = _flow.GetSystem<HeroSystem>();
-        heroSystem.SetSource(new GameLogic.Battle.Attributes.AttributeSourceId("LevelSmoke", _levelId),
+        heroSystem.SetSource(hero.HeroId, new GameLogic.Battle.Attributes.AttributeSourceId("LevelSmoke", _levelId),
             [GameLogic.Battle.Attributes.AttributeModifier.Flat(GameConfig.Attributes.AttributeType.MaxHp, 100000)]);
-        heroSystem.Heal(int.MaxValue);
+        heroSystem.Heal(hero.HeroId, int.MaxValue);
         _startExperience = _flow.GetModel<ProfileModel>().GetProgress(_flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value.TotalExperience;
         _startSoul = _flow.GetModel<ProfileModel>().GetSoul(_flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
         _camera = SmokeInspection.Scene(level).GetNode<LevelCameraNode>("Camera2D");

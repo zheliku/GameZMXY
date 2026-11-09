@@ -535,7 +535,7 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     /// <param name="attackerEntityId">攻击方运行编号；无来源时为零。</param>
     protected override void OnHurt(AttackData data, DamageResult result, Vector2 knockback, int attackerEntityId)
     {
-        MonsterHitFeedbackNode feedback = NodePool.Instance.Get<MonsterHitFeedbackNode>(
+        MonsterHitFeedbackNode feedback = NodePool.Instance.RentNode<MonsterHitFeedbackNode>(
             ResourcesCollectionConstant.Effects_monster_hit_feedback, this)
             ?? throw new InvalidOperationException("怪物命中闪光未登记到节点池。");
         _hitFeedback.Add(feedback);

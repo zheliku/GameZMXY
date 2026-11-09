@@ -19,7 +19,7 @@ public static class AttributeExtensions
         /// </summary>
         /// <param name = "attribute">属性种类。</param>
         /// <returns>配置值；概率使用 0..1。</returns>
-        public float Get(AttributeType attribute)
+        public float GetValue(AttributeType attribute)
         {
             return attribute switch
             {

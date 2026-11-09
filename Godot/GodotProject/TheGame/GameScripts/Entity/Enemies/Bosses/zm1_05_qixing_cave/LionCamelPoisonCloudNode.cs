@@ -16,10 +16,10 @@ public partial class LionCamelPoisonCloudNode : SkillEffectNode
     /// <inheritdoc />
     protected override void OnHitLanded(AbstractActorEntity target, DamageResult result)
     {
-        if (target is AbstractHeroEntity { CanReceiveStatusEffect: true })
+        if (target is AbstractHeroEntity { CanReceiveStatusEffect: true } hero)
         {
             int attackId = this.GetUtility<ConfigIdUtility>().GetAttackId(GameConfig.Entity.EntityId.LionCamelKing, 3, 2);
-            this.GetSystem<HeroStatusSystem>().ApplyPoison(this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId));
+            this.GetSystem<HeroStatusSystem>().ApplyPoison(hero.HeroId, this.GetModel<ConfigurationModel>().Tables.TbAttackConfig.Get(attackId));
         }
     }
 }

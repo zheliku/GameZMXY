@@ -55,7 +55,7 @@ public sealed partial class UiSmokeScenario
             enemy.SetPhysicsProcess(false);
             enemy.GlobalPosition = new Vector2(100000, 100000);
         }
-        HeroModel model = flow.GetModel<GameLogic.Battle.HeroModel>();
+        HeroState model = flow.GetModel<GameLogic.Battle.HeroModel>().GetState(hero.HeroId);
         SkillSystem system = flow.GetSystem<SkillSystem>();
         HashSet<SkillEffectNode> effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "_skillEffects");
         flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 10000);
@@ -334,7 +334,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>真实身体运动与技能输入检查。</returns>
     private async Task CheckTangsengAirSkillMotionAsync(TangsengEntity hero, ProcedureOwner flow)
     {
-        HeroModel model = flow.GetModel<HeroModel>();
+        HeroState model = flow.GetModel<HeroModel>().GetState(hero.HeroId);
         IFsm<IHeroBody> fsm = SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "_bodyFsm");
         HashSet<SkillEffectNode> effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "_skillEffects");
         TangsengWaterCloneNode clone = hero.GetNode<TangsengWaterCloneNode>("m_WaterClone");
@@ -443,7 +443,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckTangsengBoltInputAsync(TangsengEntity hero, ProcedureOwner flow,
         IReadOnlyDictionary<SoundId, int> sounds)
     {
-        HeroModel model = flow.GetModel<HeroModel>();
+        HeroState model = flow.GetModel<HeroModel>().GetState(hero.HeroId);
         HashSet<SkillEffectNode> effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "_skillEffects");
         IFsm<IHeroBody> fsm = SmokeInspection.ReadField<IFsm<IHeroBody>>(hero, "_bodyFsm");
         ProgressBar chargeBar = hero.GetNode<ProgressBar>("m_IceDragonCharge");
@@ -938,7 +938,7 @@ public sealed partial class UiSmokeScenario
     {
         GameData snapshot = flow.GetUtility<SaveDataUtility>().Capture(flow.GetModel<ProfileModel>(), flow.GetModel<SkillModel>());
         AbstractHeroEntity hero = FindHero();
-        HeroModel attributes = flow.GetModel<GameLogic.Battle.HeroModel>();
+        HeroState attributes = flow.GetModel<GameLogic.Battle.HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1));
         SkillSystem system = flow.GetSystem<SkillSystem>();
         Vector2 originalPosition = hero.GlobalPosition;
         int originalMp = attributes.Mp.Value;
@@ -1097,7 +1097,7 @@ public sealed partial class UiSmokeScenario
             }
 
             hero.SetPhysicsProcess(false);
-            system.CancelSkill();
+            system.CancelSkill(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1));
             hero.GlobalPosition = originalPosition;
             hero.Velocity = Vector2.Zero;
             attributes.Mp.Value = originalMp;

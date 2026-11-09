@@ -114,7 +114,7 @@ public sealed record EquipmentAttributes
     /// <param name="attribute">统一的战斗属性类型。</param>
     /// <returns>该字段的实际值；概率使用 0..1。</returns>
     /// <exception cref="ArgumentOutOfRangeException">类型未定义。</exception>
-    public float Get(AttributeType attribute)
+    public float GetValue(AttributeType attribute)
     {
         return attribute switch
         {
@@ -177,7 +177,7 @@ public sealed record EquipmentAttributes
     {
         foreach (AttributeType attribute in Enum.GetValues<AttributeType>())
         {
-            float value = Get(attribute);
+            float value = GetValue(attribute);
             if (value != 0)
             {
                 yield return new AttributeModifier(attribute, AttributeModifierKind.Flat, value);

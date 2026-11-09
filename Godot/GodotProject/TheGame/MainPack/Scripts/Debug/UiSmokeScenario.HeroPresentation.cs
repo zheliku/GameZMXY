@@ -259,7 +259,7 @@ public sealed partial class UiSmokeScenario
                         targets.Add((enemy, enemy.Hp, sample.Hit));
                     }
                     ((ISkillActor)hero).PlaySkillEffect(scene, origin, SkillHitId.WaterDemonFall,
-                        flow.GetModel<HeroModel>().Power.Value * 8);
+                        flow.GetModel<HeroModel>().GetState(hero.HeroId).Power.Value * 8);
                     SkillEffectNode effect = effects.Single(e => e.SceneFilePath == scene.ResourcePath);
                     await WaitUntilAsync(() => effect.GetNode<AnimatedSprite2D>("Origin/Visual/Sprite").Frame >= 13,
                         "水魔光柱没有展开");

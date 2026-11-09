@@ -482,7 +482,7 @@ public partial class LevelViewController : Node2D, IController
     private void Complete(LevelOutcome outcome)
     {
         this.GetSystem<LevelSystem>().Complete(outcome,
-        (int)Math.Round(100.0 * this.GetModel<HeroModel>().Hp.Value / this.GetModel<HeroModel>().MaxHp.Value));
+        (int)Math.Round(100.0 * this.GetModel<HeroModel>().GetState(_player.HeroId).Hp.Value / this.GetModel<HeroModel>().GetState(_player.HeroId).MaxHp.Value));
     }
 
     /// <summary>

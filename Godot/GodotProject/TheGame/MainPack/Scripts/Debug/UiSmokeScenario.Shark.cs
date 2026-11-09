@@ -112,8 +112,8 @@ public sealed partial class UiSmokeScenario
         int originalTicks = Engine.PhysicsTicksPerSecond;
         HeroSystem system = flow.GetSystem<HeroSystem>();
         var source = new AttributeSourceId("SharkSmoke", 1);
-        system.SetSource(source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
-        system.Heal(int.MaxValue);
+        system.SetSource(hero.HeroId, source, [AttributeModifier.Flat(AttributeType.MaxHp, 100000)]);
+        system.Heal(hero.HeroId, int.MaxValue);
         try
         {
             if (OS.GetCmdlineUserArgs().Contains("--shark-lifecycle-only"))
@@ -170,7 +170,7 @@ public sealed partial class UiSmokeScenario
                             await WaitUntilAsync(() => actor.AttackSegment == index, "鲨鱼身体未消费请求");
                             string expectedAnimation = "attack_" + (index + 1) + (low ? "_low" : string.Empty);
                             Check(actor.AnimPlayer.CurrentAnimation == expectedAnimation, "鲨魔王没有选择对应生命阶段动作");
-                            flow.GetSystem<HeroSystem>().AdvanceHurtProtection(float.MaxValue);
+                            flow.GetSystem<HeroSystem>().AdvanceHurtProtection(hero.HeroId, float.MaxValue);
                             int hp = hero.Hp;
                             bool sawEffect = false;
                             bool sawWarning = false;
@@ -231,8 +231,8 @@ public sealed partial class UiSmokeScenario
 
             _monster = null;
             Engine.PhysicsTicksPerSecond = originalTicks;
-            system.RemoveSource(source);
-            system.Heal(int.MaxValue);
+            system.RemoveSource(hero.HeroId, source);
+            system.Heal(hero.HeroId, int.MaxValue);
         }
     }
 

@@ -25,7 +25,7 @@ public abstract partial class AbstractHeroEntity
         }
 
         _captorId = captorEntityId;
-        this.GetSystem<SkillSystem>().CancelSkill();
+        this.GetSystem<SkillSystem>().CancelSkill(HeroId);
         ReleaseAttack();
         PendingHurt = null;
         Velocity = Vector2.Zero;
@@ -64,7 +64,7 @@ public abstract partial class AbstractHeroEntity
             return;
         }
 
-        if (amount >= this.GetModel<HeroModel>().Hp.Value)
+        if (amount >= this.GetModel<HeroModel>().GetState(HeroId).Hp.Value)
         {
             ReleaseCapture(captorEntityId);
         }

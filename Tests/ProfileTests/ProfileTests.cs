@@ -221,11 +221,11 @@ public sealed class ProfileTests
     public void HeroAttributes_FollowsProgressionAndKeepsBuff()
     {
         var scope = new TestGameScope([(1, 0)], 0, 25);
-        HeroModel model = scope.Hero;
-        scope.GetSystem<GameLogic.Battle.HeroSystem>().SetSource(new AttributeSourceId("Buff", 1),
+        HeroState model = scope.Hero;
+        scope.GetSystem<GameLogic.Battle.HeroSystem>().SetSource(scope.Hero.HeroId, new AttributeSourceId("Buff", 1),
             [AttributeModifier.PercentMult(GameConfig.Attributes.AttributeType.Power, 1)]);
         Assert.Equal(20, model.Power.Value);
-        scope.GetSystem<GameLogic.Battle.HeroSystem>().Damage(20);
+        scope.GetSystem<GameLogic.Battle.HeroSystem>().Damage(scope.Hero.HeroId, 20);
         scope.GetSystem<ProfileSystem>().AddExperience(1, 140);
         Assert.Equal(30, model.Power.Value);
         Assert.Equal(130, model.MaxHp.Value);

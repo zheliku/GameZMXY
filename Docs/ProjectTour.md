@@ -40,7 +40,7 @@
 
 ## 双人扩展方案
 
-此前一次性推进的双人实现已按用户要求撤回；重新制定计划后，A1、A2 已经用户接受，A3 已补齐双人档案规则证据与全员存档摘要，并完成构建、304/193/19 规则测试、Godot 扫描、引用、前端与存档/删除专项。本局仍只装配 P1，保留单个 HeroModel、一套输入与 HUD；B1 未开始。
+此前一次性推进的双人实现已按用户要求撤回；阶段 A（A1～A3）已通过审查。B1 已将本局状态搬入按 HeroId 索引的 HeroState，系统与消费者按本人编号读写；当前停在 B1 等待审查，验证见 Validation。本局仍只装配 P1，保持一套输入与 HUD，技能登记拆分留给 B2。
 
 已确认一格保存双方、个人资产独立、共享进度、参战英雄不可重复，且继续支持新增英雄；入口、选角、键位、开窗、暂停与结算按造一/造三官方调用同步。`PlayerSlot.P1/P2` 已用于 `ProfileModel.HeroOf` / `SlotOf` 席位换算；存档英雄记录的顺序表示席位，HeroId 作为运行时个人数据主键。PlayerSlot 只表示座位，保留唯一根 Architecture 和现有业务系统；个人钱包和背包由 A2 按 HeroId 持有；双人实体、第二套输入和双 HUD 尚未实施。
 
@@ -64,7 +64,7 @@ Prepare注册资源组、共享Utility及应用Model/System；LoadGame校验DTO�
 | SaveModel | 文件身份、目录、手动保存反馈 | Prepare→应用结束 |
 | ProfileModel | 有序阵容、各英雄成长/灵魂/背包/穿戴、共享进度/旗幡资格 | LoadGame→标题 |
 | SkillModel | 主动学习和被动等级 | LoadGame→标题 |
-| HeroModel | 本局属性、HP/MP/WS、当前技能、恢复节拍及StatusEffects普通子数据 | Level→离关 |
+| HeroModel | 按 HeroId 持有 HeroState；各状态保存本人的属性、HP/MP/WS、当前技能、恢复节拍及 StatusEffects | Level→离关 |
 | LevelModel | 阶段、时间、统计、结局、连击和完整进关快照 | Level→离关 |
 
 | System | 负责的规则 |

@@ -442,10 +442,10 @@ public sealed class EquipmentTests
         EquipmentData low = CreateEquipmentSystem().Roll(Guid.NewGuid(), id, () => 0);
         EquipmentData high = CreateEquipmentSystem().Roll(Guid.NewGuid(), id, () => .999999f);
         EquipmentConfig definition = TestTables.Tables.TbEquipmentConfig.Get(id);
-        Assert.Equal(minimum, low.Attributes.Get(definition.AttributeRanges[0].Attribute));
-        Assert.Equal(maximum, high.Attributes.Get(definition.AttributeRanges[0].Attribute));
-        Assert.Equal(definition.AttributeRanges.Select(x => (float)x.Minimum), definition.AttributeRanges.Select(x => (float)low.Attributes.Get(x.Attribute)));
-        Assert.Equal(definition.AttributeRanges.Select(x => (float)x.Maximum), definition.AttributeRanges.Select(x => (float)high.Attributes.Get(x.Attribute)));
+        Assert.Equal(minimum, low.Attributes.GetValue(definition.AttributeRanges[0].Attribute));
+        Assert.Equal(maximum, high.Attributes.GetValue(definition.AttributeRanges[0].Attribute));
+        Assert.Equal(definition.AttributeRanges.Select(x => (float)x.Minimum), definition.AttributeRanges.Select(x => (float)low.Attributes.GetValue(x.Attribute)));
+        Assert.Equal(definition.AttributeRanges.Select(x => (float)x.Maximum), definition.AttributeRanges.Select(x => (float)high.Attributes.GetValue(x.Attribute)));
         Assert.Equal(0, low.Attributes.Mdef);
     }
 

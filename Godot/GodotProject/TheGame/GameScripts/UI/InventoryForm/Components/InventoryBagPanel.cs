@@ -211,7 +211,7 @@ public partial class InventoryBagPanel : Control, IController
             EquipmentData item = items != null && index < items.Count ? items[index] : null;
             _equipmentDatas[i] = item;
             _cells[i].Bind(item,
-                item == null ? null : _appearances.Get(item.EquipmentId).InventoryIcon);
+                item == null ? null : _appearances.GetAppearance(item.EquipmentId).InventoryIcon);
         }
 
         _grid.Show();
