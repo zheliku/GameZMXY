@@ -35,6 +35,79 @@ public sealed partial class UiSmokeScenario
     private LootOrbNode _previousOrb; // 已回池实例，供下一次击败检查 GGF 实际复用。
 
     /// <summary>
+    /// 读取引擎实际映射，并用真实键盘事件验证单人忽略 P2、方向键不抢 HUD 焦点。
+    /// </summary>
+    /// <param name="hero">正式流程生成的单人英雄。</param>
+    /// <param name="form">已绑定流程的战斗界面。</param>
+    /// <returns>映射与原生输入分发检查完成的任务。</returns>
+    private async Task CheckSeatInputAsync(AbstractHeroEntity hero, GameLogic.UI.BattleForm form)
+    {
+        (string Action, Key Key)[] mappings =
+        [
+            (InputSystem.MoveLeft, Key.Left), (InputSystem.MoveRight, Key.Right),
+            (InputSystem.MoveDown, Key.Down), (InputSystem.Interact, Key.Up),
+            (InputSystem.Attack, Key.Kp1), (InputSystem.Jump, Key.Kp2),
+            (InputSystem.Skill1, Key.Kp4), (InputSystem.Skill2, Key.Kp5),
+            (InputSystem.Skill3, Key.Kp6), (InputSystem.Skill4, Key.Kp3),
+            (InputSystem.Musou, Key.Kp0), (InputSystem.InventoryToggle, Key.KpDivide),
+            (InputSystem.SkillToggle, Key.KpMultiply)
+        ];
+        int requests = 0;
+        Action<int, PlayerSlot> observe = (_, _) => requests++;
+        await WaitUntilAsync(() => hero.OnFloor, "输入映射夹具中的主英雄没有落地");
+        float originalX = hero.GlobalPosition.X;
+        form.InventoryRequested += observe;
+        form.SkillsRequested += observe;
+        try
+        {
+            foreach ((string action, Key key) in mappings)
+            {
+                string name = InputSystem.ActionOf(action, PlayerSlot.P2);
+                Godot.Collections.Array<InputEvent> events = InputMap.ActionGetEvents(name);
+                Check(events.Count == 1 && events[0] is InputEventKey, "P2 映射缺失或不是单一键盘事件：" + name);
+                var mapped = (InputEventKey)events[0];
+                Check(mapped.Device == -1 && mapped.Keycode == Key.None && mapped.PhysicalKeycode == key &&
+                    Math.Abs(InputMap.ActionGetDeadzone(name) - (action == InputSystem.MoveDown ? .2f : .5f)) < .001f,
+                    "P2 原生映射键码、设备或死区错误：" + name);
+                GD.Print($"SMOKE-P2 INPUTMAP: {name} physical={(long)mapped.PhysicalKeycode}, device={mapped.Device}");
+
+                // 同时提供逻辑/物理键，真实触发 P2 映射和方向键 UI 导航。
+                using var pressed = new InputEventKey { PhysicalKeycode = key, Keycode = key, Pressed = true };
+                Input.ParseInputEvent(pressed);
+                try
+                {
+                    await WaitFramesAsync(2);
+                    Check(Input.IsActionPressed(name), "原生键盘事件没有命中 P2 动作：" + name);
+                    Check(_driver.GetViewport().GuiGetFocusOwner() == null && !GF.Base.IsGamePaused && requests == 0 &&
+                        Math.Abs(hero.GlobalPosition.X - originalX) < .1f && hero.ActionData.MoveAxis == 0 &&
+                        !hero.ActionData.AttackHeld && !hero.ActionData.JumpHeld && !hero.ActionData.MusouRequested,
+                        "单人 P2 键影响主英雄、抢占 HUD 焦点或请求开窗：" + name);
+                }
+                finally
+                {
+                    using var released = new InputEventKey { PhysicalKeycode = key, Keycode = key, Pressed = false };
+                    Input.ParseInputEvent(released);
+                }
+                await WaitFramesAsync(1);
+            }
+
+            using var accept = new InputEventKey { Keycode = Key.Enter, PhysicalKeycode = Key.Enter, Pressed = true };
+            Input.ParseInputEvent(accept);
+            using var releaseAccept = new InputEventKey { Keycode = Key.Enter, PhysicalKeycode = Key.Enter, Pressed = false };
+            Input.ParseInputEvent(releaseAccept);
+            await WaitFramesAsync(2);
+            Check(_driver.GetViewport().GuiGetFocusOwner() == null && !GF.Base.IsGamePaused && requests == 0,
+                "方向键之后 ui_accept 误触发 HUD 按钮");
+            GD.Print("SMOKE-SEAT INPUT PASS: 13 native P2 mappings, single-player ignores P2 keys, arrows keep HUD unfocused and ui_accept opens no window.");
+        }
+        finally
+        {
+            form.InventoryRequested -= observe;
+            form.SkillsRequested -= observe;
+        }
+    }
+
+    /// <summary>
     /// 验证地面分支的落地门槛、具体怪物的索敌选择和猴子的受击激怒与复用。
     /// </summary>
     /// <param name="hero">本关实际英雄，测试结束恢复其位置。</param>
@@ -152,31 +225,44 @@ public sealed partial class UiSmokeScenario
 
         // 生命球复用刚归还的蓝球实例，暂停不能移动或提前恢复生命。
         HeroState model = flow.GetModel<HeroModel>().GetState(hero.HeroId);
-        model.Hp.Value = 1;
         int health = flow.GetSystem<LootSystem>().HealthAmount(model.MaxHp.Value);
-        LootOrbNode red = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health), hero.Id);
-        Check(ReferenceEquals(reused, red) && red.Animation == LootAnims.Health && model.Hp.Value == 1,
-            "蓝球复用为红球后动画/奖励未刷新或提前回血");
-        Vector2 redPosition = red.GlobalPosition;
-        GF.Base.PauseGame();
+        // 红球数值检查隔离场内敌人的受击，球仍按原受击盒几何追踪；退出时恢复原层。
+        uint hurtLayer = hero.HurtBox.CollisionLayer;
+        hero.HurtBox.CollisionLayer = 0;
         try
         {
-            await WaitFramesAsync(4);
-            Check(red.GlobalPosition.IsEqualApprox(redPosition) && model.Hp.Value == 1, "暂停时红球仍在飞行或回血");
+            model.Hp.Value = 1;
+            LootOrbNode red = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health), hero.Id);
+            Check(ReferenceEquals(reused, red) && red.Animation == LootAnims.Health && model.Hp.Value == 1,
+                "蓝球复用为红球后动画/奖励未刷新或提前回血");
+            Vector2 redPosition = red.GlobalPosition;
+            GF.Base.PauseGame();
+            try
+            {
+                await WaitFramesAsync(4);
+                Check(red.GlobalPosition.IsEqualApprox(redPosition) && model.Hp.Value == 1, "暂停时红球仍在飞行或回血");
+            }
+            finally
+            {
+                GF.Base.ResumeGame();
+            }
+            await WaitUntilAsync(() => owned.Count == 0, "红球未接触英雄", 10000);
+            Check(model.Hp.Value == Math.Min(model.MaxHp.Value, 1 + health),
+                $"红球实际恢复量错误：actual={model.Hp.Value}, expected={Math.Min(model.MaxHp.Value, 1 + health)}, " +
+                $"alive={hero.IsAlive}, physics={hero.IsPhysicsProcessing()}, regen={model.HpRegen.Value}, " +
+                $"recovery={model.RecoveryProgress}, position={hero.GlobalPosition}, outcome={SmokeInspection.Model(level).Outcome.Value}");
+            foreach (int hp in new[] { model.MaxHp.Value - 1, model.MaxHp.Value })
+            {
+                model.Hp.Value = hp;
+                LootOrbNode clamped = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health), hero.Id);
+                Check(ReferenceEquals(red, clamped), "红球未复用原池实例");
+                await WaitUntilAsync(() => owned.Count == 0, "满血附近红球未回池", 10000);
+                Check(model.Hp.Value == model.MaxHp.Value, "红球超出生命上限或满血无法回收");
+            }
         }
         finally
         {
-            GF.Base.ResumeGame();
-        }
-        await WaitUntilAsync(() => owned.Count == 0, "红球未接触英雄", 10000);
-        Check(model.Hp.Value == Math.Min(model.MaxHp.Value, 1 + health), "红球实际恢复量错误");
-        foreach (int hp in new[] { model.MaxHp.Value - 1, model.MaxHp.Value })
-        {
-            model.Hp.Value = hp;
-            LootOrbNode clamped = SpawnOrb(level, hero.GlobalPosition, new(LootKind.Health, health), hero.Id);
-            Check(ReferenceEquals(red, clamped), "红球未复用原池实例");
-            await WaitUntilAsync(() => owned.Count == 0, "满血附近红球未回池", 10000);
-            Check(model.Hp.Value == model.MaxHp.Value, "红球超出生命上限或满血无法回收");
+            hero.HurtBox.CollisionLayer = hurtLayer;
         }
 
         // 黄球只增加无双，不能再次增加经验；开启期间也允许拾取补充。

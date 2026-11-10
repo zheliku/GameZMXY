@@ -52,7 +52,7 @@ public partial class TangsengEntity : AbstractHeroEntity
     protected override void MatchActionInput(bool attacking, bool airborne)
     {
         InputSystem input = this.GetSystem<InputSystem>();
-        if (!attacking && _waterClone.IsAvailable && input.ConsumePress(ActionData, InputSystem.Skill2))
+        if (!attacking && _waterClone.IsAvailable && input.ConsumePress(ActionData, InputSystem.Skill2, Slot))
         {
             GF.Sound.PlayConfigured(SoundId.TangsengWaterClone);
             GlobalPosition = _waterClone.GlobalPosition;
@@ -60,7 +60,7 @@ public partial class TangsengEntity : AbstractHeroEntity
             return;
         }
 
-        if (!attacking && this.GetSystem<SkillSystem>().TryActivateInput(HeroId, this, ActionData))
+        if (!attacking && this.GetSystem<SkillSystem>().TryActivateInput(HeroId, this, ActionData, Slot))
         {
             return;
         }

@@ -29,7 +29,7 @@ public sealed class TangsengWaterDemonBurstState : AbstractHeroSkillState
         Stand(body);
         var actor = (TangsengEntity)body;
         if (!_followUp && actor.CanReleaseWaterDemon &&
-            body.GetSystem<InputSystem>().ConsumePress(body.ActionData, InputSystem.Skill4))
+            body.GetSystem<InputSystem>().ConsumePress(body.ActionData, InputSystem.Skill4, body.Slot))
         {
             _followUp = true;
             actor.ReleaseWaterDemonFollowUp();

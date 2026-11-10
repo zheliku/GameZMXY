@@ -1,6 +1,6 @@
 # 双人扩展实施计划
 
-状态：**阶段 A（A1～A3：d2c3d13、c2f74db、fe0bdbc）与阶段 B（B1～B3：53e9b11、e3440ca、511f0c5）已完成并经架构审查通过；C1、C2 已接受（394b97c、c489b65）；C3 已完成并验证，停下待审，C4 未开始。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局 `HeroModel` 按 HeroId 持有 `HeroState`，`HeroSystem`/`HeroStatusSystem`/`SkillSystem` 的个人操作显式传 HeroId；英雄显示强制传 `HeroSpawn`，实体持有本次 `Slot` 与出生位置；敌人独立记录最近有效命中英雄，经验、牛心唯一奖励与飞行球生成按归属处理，球逐个追踪归属者、地面物品按实际接触者入账。仍只生成 P1，保持一套输入与 HUD。阶段 A、B 审查结论与对后续计划的修正见第九、十部分。旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
+状态：**阶段 A（A1～A3：d2c3d13、c2f74db、fe0bdbc）与阶段 B（B1～B3：53e9b11、e3440ca、511f0c5）已完成并经架构审查通过；C1～C3 已接受（394b97c、c489b65、61de0f2）；用户授权 C4/C5 合并交付，C4-1～C4-6 与 C5 已完成实现及最终回归，停在 C5 待审，阶段 D 未开始；首轮失败、用户授权的烟测夹具隔离与最终通过记录见 Validation。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局 `HeroModel` 按 HeroId 持有 `HeroState`，`HeroSystem`/`HeroStatusSystem`/`SkillSystem` 的个人操作显式传 HeroId；英雄显示强制传 `HeroSpawn`，实体持有本次 `Slot` 与出生位置；敌人独立记录最近有效命中英雄，经验、牛心唯一奖励与飞行球生成按归属处理，球逐个追踪归属者、地面物品按实际接触者入账。仍只生成 P1、仅 P1 消费战斗输入，保持单 HUD。阶段 A、B 审查结论与对后续计划的修正见第九、十部分。旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
 
 官方依据见 [造一双人源码依据](OfficialReference.md#双人扩展的源码依据2026-11-07) 与 [造三本地双人规则](OfficialReference.md#造梦三本地双人规则2026-11-07)。项目规范以 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md) 为准，验证记录见 [Validation](Validation.md)。
 
@@ -166,7 +166,7 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 | `AbstractEnemyEntity.OnHurt` 首先调用 RecordHeroAttacker，鹏魔蛋态单独调用；显示复位归属 | 致死一击记录不受 Dead 早退或 AI 目标清除影响 | C2 已实现 |
 | `EnemyDiedEventArgs.KillerEntityId` 与 `LevelSystem.RecordDefeat(heroId, experienceReward)` | 按有效归属发经验；无归属只计击败、不出球，地面掉落保持 | C2 已实现 |
 | `LootOrbNode.Tick(delta, target)` 单目标；`LevelViewController.Loot` 只认 `_player`                                        | 掉落无归属                                      | C3        |
-| `InputSystem` 动作名是 P1 常量；`LevelExitNode`/`BattleForm`/`InventoryForm`/`SkillForm`/`TangsengEntity` 等直接读键 | 单套键位                                        | C4        |
+| `InputSystem.ActionOf` 与英雄、出口、战斗/背包窗口按席位读键 | P2 映射已接入；SkillForm 默认 P1 留 E2 | C4 已实现 |
 | `LevelViewController._player` 单引用（相机、连击、出口、触发区、掉落、死亡、换装都读它）                                       | 单人                                            | D2        |
 | `LevelCameraNode._target` 单 `Node2D`                                                                                        | 单人取景                                        | D4        |
 | `LevelViewController._Process` 中 `HeroDeathPresentation.Completed` 直接判失败                                               | 一人死即失败                                    | D5        |
@@ -209,9 +209,9 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 | B3   | 战斗规则证据与阶段 A～B 回归     | B2     | 只加测试           | 已完成，511f0c5，审查通过 |
 | C1   | 英雄实体携带席位                 | B1     | 无                 | 已接受，394b97c          |
 | C2   | 经验归属最后命中者               | C1     | 无人命中的怪不发经验与球 | 已接受，c489b65 |
-| C3   | 地面物品与球按归属领取           | C2     | 无                 | 已完成，验证通过，待审   |
-| C4   | 第二套键位与按席位开窗           | C1     | 新增 P2 映射       | 未开始                   |
-| C5   | 阶段 C 单人回归                  | C4     | 只验证             | 未开始                   |
+| C3   | 地面物品与球按归属领取           | C2     | 无                 | 已接受，61de0f2          |
+| C4   | 第二套键位与按席位开窗           | C1     | 新增 P2 映射       | 已实现，最终 UI 回归中   |
+| C5   | 阶段 C 单人回归                  | C4     | 只验证             | 待 C4 验证完成           |
 | D1   | 标题人数入口、依次选角、选格建档 | A1、C4 | 可建双人档         | 未开始                   |
 | D2   | 关卡装配全部参战者               | D1、B2 | 出现两个人物       | 未开始                   |
 | D3   | 双方 HUD                         | D2     | 界面               | 未开始                   |
@@ -1078,7 +1078,7 @@ public static string ActionOf(string action, PlayerSlot slot) => slot == PlayerS
 
 阶段 B 已完成：B1（53e9b11，含用户追加的 18 处业务方法命名整理）、B2（e3440ca）、B3（511f0c5）。各批实际命令、结果与文件清单见 [Validation](Validation.md)。
 
-C1、C2（394b97c、c489b65）已接受。用户随后授权 C3，C3-1～C3-3 已按序完成，逐步编译错误数 **0 / 0 / 0**；规则 323/195/19、Godot 扫描、2283 路径/390 UID、掉落专项、完整前端/UI 与格式检查全部通过。C3-3 按计划只登记 D2 治疗订阅待办，不改事件/代码。实际命令、接口/文件清单与诊断见 [Validation](Validation.md#双人c3球归属与接触者领取2026-11-10)。**本批停在 C3 等待审查，C4 未开始，须获明确授权后推进。**
+C1～C3（394b97c、c489b65、61de0f2）已接受。用户明确授权本轮一起完成 C4、C5，并裁决 project.godot 仅追加 13 个 P2 动作。C4-1～C4-6 已按序实现，逐步编译错误数 **0 / 5 / 0 / 0 / 0 / 0**；规则 323/197/19、原生映射/焦点、扫描、引用和完整前端通过，最终完整 UI 回归中，C5 随后执行。实际结果与文件/接口清单见 [Validation](Validation.md#双人c4c5席位输入与阶段c回归2026-11-10)。**本轮停在 C5 待审，不进入阶段 D。**
 
 ---
 
@@ -1223,3 +1223,4 @@ B1 提交同时包含用户追加授权的 **18 处业务方法命名整理**（
 | 位置 | 本批保留与后续处理 | 负责批次 |
 | --- | --- | --- |
 | `LevelViewController.OnHeroHealthRestored(int amount)` | `HealthRestored` 仍为 `Action<int>`，单人下 `_player.GlobalPosition` 就是被治疗者位置；C3-3 不改代码，D2 按集合订阅时用闭包捕获实际英雄。此项也保留在第九部分总占位清单 | D2 |
+| `SkillForm._Input` | 地图上也能打开技能窗，本阶段保留 P1 的 SkillToggle 与共用 UiCancel；E2 引入请求者后按请求者席位关闭 | E2 |

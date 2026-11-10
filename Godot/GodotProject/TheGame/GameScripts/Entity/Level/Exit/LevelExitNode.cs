@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using GameLogic.Heroes;
 using GameLogic.Input;
 using Godot;
@@ -6,7 +7,7 @@ using Godot;
 namespace GameLogic.Level;
 
 /// <summary>
-/// 清场后开放的出口；英雄落地靠近并按 W 才提交通关请求，节点随关卡卸载。
+/// 清场后开放的出口；英雄落地靠近并按本人交互键才提交通关请求，节点随关卡卸载。
 /// </summary>
 public partial class LevelExitNode : Area2D
 {
@@ -28,33 +29,40 @@ public partial class LevelExitNode : Area2D
     /// 玩家靠近时显示提示；暂停时由场景树一起暂停。
     /// </summary>
     /// <param name="delta">物理帧秒数。</param>
-    public override void _PhysicsProcess(double delta) => _prompt.Visible = FindEligibleHero() != null;
+    public override void _PhysicsProcess(double delta) => _prompt.Visible = Monitoring &&
+        GetOverlappingBodies().Any(body => body is AbstractHeroEntity { IsAlive: true, OnFloor: true });
 
     /// <summary>
-    /// 只接受靠近、落地、存活玩家的单独 W，拒绝动作组合与按住自动重复。
+    /// 只接受靠近、落地、存活英雄的本人单独交互键，拒绝同席位动作组合与按住自动重复。
     /// </summary>
     /// <param name="input">尚未被界面消费的输入。</param>
     public override void _UnhandledInput(InputEvent input)
     {
-        if (!input.IsActionPressed(InputSystem.Interact) || input.IsEcho())
+        if (!Monitoring || input.IsEcho())
         {
             return;
         }
 
-        AbstractHeroEntity hero = FindEligibleHero();
-        if (hero == null)
+        // 逐个检查实际交互者，组合键必须与请求者属于同一席位。
+        foreach (Node2D body in GetOverlappingBodies())
         {
-            return;
-        }
-        // 造一只把 S/J/K/W 中的单独 W 当作出口输入，W＋J 等组合属于动作输入。
-        if (Godot.Input.IsActionPressed(InputSystem.Attack) || Godot.Input.IsActionPressed(InputSystem.Jump) ||
-            Godot.Input.IsActionPressed(InputSystem.MoveDown))
-        {
-            return;
-        }
+            if (body is not AbstractHeroEntity { IsAlive: true, OnFloor: true } hero ||
+                !input.IsActionPressed(InputSystem.ActionOf(InputSystem.Interact, hero.Slot)))
+            {
+                continue;
+            }
 
-        GetViewport().SetInputAsHandled();
-        Entered?.Invoke(hero);
+            if (Godot.Input.IsActionPressed(InputSystem.ActionOf(InputSystem.Attack, hero.Slot)) ||
+                Godot.Input.IsActionPressed(InputSystem.ActionOf(InputSystem.Jump, hero.Slot)) ||
+                Godot.Input.IsActionPressed(InputSystem.ActionOf(InputSystem.MoveDown, hero.Slot)))
+            {
+                continue;
+            }
+
+            GetViewport().SetInputAsHandled();
+            Entered?.Invoke(hero);
+            return;
+        }
     }
 
     /// <summary>
@@ -82,25 +90,4 @@ public partial class LevelExitNode : Area2D
         SetProcessUnhandledInput(false);
     }
 
-    /// <summary>
-    /// 从真实物理重叠和角色状态判断交互条件。
-    /// </summary>
-    /// <returns>范围内存活且落地的英雄，没有则返回空。</returns>
-    private AbstractHeroEntity FindEligibleHero()
-    {
-        if (!Monitoring)
-        {
-            return null;
-        }
-
-        foreach (Node2D body in GetOverlappingBodies())
-        {
-            if (body is AbstractHeroEntity { IsAlive: true, OnFloor: true } hero)
-            {
-                return hero;
-            }
-        }
-
-        return null;
-    }
 }

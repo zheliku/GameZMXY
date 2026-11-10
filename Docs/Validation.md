@@ -2,6 +2,92 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人C4/C5：席位输入与阶段C回归（2026-11-10）
+
+用户明确授权 C4、C5 连续完成后一起交付，覆盖本轮两批之间的通用停止点。用户本条的“不改 project.godot”与 C4-1 冲突，经询问获明确裁决：**只在 [input] 末尾追加计划中的 13 个 P2 动作，P1、ui_* 和其他配置保持**。C4-1 → C4-6 与 C5 已完成最终验证，**停在 C5 等待审查，阶段 D 未开始**。C5 首轮完整 UI 的红球断言失败已报告；用户授权修复既有烟测夹具后，最终完整 UI、花果山、唐僧、掉落、原生输入和前端全部通过，原失败与诊断中止记录保留。仍只生成 P1、存档 v14。
+
+规范依据为实施计划第一、二部分、第六部分共同约束/C4/C5、第九部分占位表、第十部分审查修正，第 00/10/30 章的输入/实体职责、个人状态、命名和注释规则。本批复用原 InputSystem、IInputSource、HeroActionData、技能登记、HUD 事件与窗口互斥，没有新增管理器、接口、类型或默认 P1 转发。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 开工状态 | 首次读取时 C3 的 8 份修改已暂存、HEAD 为 c489b65；采集基线前用户完成提交 **61de0f2**，随后工作区/索引干净。未执行 Git 写操作；快照与日志在 `.godot/validation/coop_c4_c5_20261110/` |
+| 基线 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0，**0 错误、5 条既有框架警告**；`dotnet test Tests/ProfileTests --no-restore -v quiet`、`dotnet test Tests/BattleTests --no-restore -v quiet`、`dotnet test Tests/LevelTests --no-restore -v quiet`：退出 0，**323/323、195/195、19/19**；`baseline_*.log` |
+| C4-1 | 用 GodotSharp 4.7.2 的 `Godot.Key` 枚举反射核对 13 个值（`godot_key_values.log`），追加输入动作后 `dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0，**0 错误、0 警告（增量）**；`c4_1_build.log` |
+| C4-2 | 统一 InputSystem 必传席位后，同构建命令：**退出 1，5 个 CS7036 迁移错误、5 条既有警告**；分别为 SkillSystem、唐僧实体、动画入口、冰龙和水魔爆的旧调用。`c4_2_build.log`，未在中间态运行游戏 |
+| C4-3 | 生产/测试消费者补席位并同步技能输入接口后，同构建命令：退出 0，**0 错误、5 条既有警告**；`c4_3_build.log` |
+| C4-4 | 出口按实际英雄席位与组合键交互后，同命令：退出 0，**0 错误、5 条既有警告**；`c4_4_build.log` |
+| C4-5 | 开窗事件、库存关闭键与流程校验同步后，同命令：退出 0，**0 错误、5 条既有警告**；`c4_5_build.log` |
+| C4-6 | 增加原生输入与焦点证据后，同命令：退出 0，**0 错误、5 条既有警告**；`c4_6_build.log`。六步错误数为 **0 / 5 / 0 / 0 / 0 / 0** |
+| C4 最终构建/规则 | 格式化后重跑构建与三条测试命令：退出 0，构建 **0 错误、5 条既有警告**；规则 **323/323、197/197、19/19**，失败 0、跳过 0，新增 2 例席位输入隔离。`c4_final_build.log`、`c4_final_profile.log`、`c4_final_battle.log`、`c4_final_level.log`；既有 NU1900、CS8632/CS0649 保留 |
+| C4 编辑器扫描 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c4_scan_20261110 --headless --editor --build-solutions --quit --no-window`：退出 0；保留既有 ComponentInsoector RefCounted/free 退出诊断 |
+| C4 引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：退出 0，**2283 条序列化路径、390 个 UID**；`c4_references.log` |
+| C4 原生映射/焦点 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c4_input_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --entry-only`：**退出 0，SMOKE-SEAT INPUT PASS 与完整 SMOKE PASS**。实际 InputMap.ActionGetEvents 逐项核对 13 个事件、物理键、device=-1、Keycode=None 与死区；真实键盘事件全部命中 P2 动作，P1 无移动/攻击/跳跃/无双和开窗请求；方向键不获取 HUD 焦点，随后 Enter/ui_accept 不误开窗口。现有场景 5 个菜单按钮均 focus_mode=0，无冲突，未改场景。退出报告 **3 个 ObjectDB 实例** |
+| C4 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c4_frontend_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend`：**退出 0，完整 SMOKE PASS**；两英雄建档/进关、设置返回、地图购技、保存重读、取消/失败清理通过。坏文件、旧作用域拒绝与重复注册为预期注入；退出报告 **3 个 ObjectDB 实例** |
+| C4 完整 UI | 首轮 `coop_c4_ui_20261110` **退出 1**：HuaguoshanMonkey 的原攻击命中断言超时；没有 SMOKE PASS。新增输入探针原在完整回归开头推进主英雄真实落地，改变旧夹具的物理起点；已移到独立 `--entry-only` 分支，保留原回归流程及所有命中断言，重编译 0 错误。重跑 `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c4_ui_final_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui`：**退出 0，完整 SMOKE PASS**，原失败位置及后续技能/装备/拾取/窗口、60/120Hz、死亡/存档/清理通过；退出 38 个 CanvasItem RID、20 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、135 个 ObjectDB 实例、10 个资源占用与 GL 明细。首轮失败日志与其 17 个 Texture RID、134 个 ObjectDB、11 个资源占用等诊断保留 |
+| C5 构建与规则重跑 | C4 通过后重新运行同样四条 dotnet 命令：**退出 0**，构建 **0 错误、5 条既有警告**；规则 **323/323、197/197、19/19**，失败 0、跳过 0；`c5_build.log`、`c5_profile.log`、`c5_battle.log`、`c5_level.log` |
+| C5 扫描与引用重跑 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_scan_20261110 --headless --editor --build-solutions --quit --no-window`：退出 0，既有 ComponentInsoector 退出诊断保留；再次 `python Tools/ProjectMaintenance/validate_game_references.py`：退出 0，**2283 路径、390 UID**；`c5_references.log` |
+| C5 原生映射/焦点重跑 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_input_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --entry-only`：**退出 0，SMOKE-SEAT INPUT PASS 与完整 SMOKE PASS**，探针隔离到独立案例后同样通过 13 键/焦点/单人无响应检查；退出 **5 个 ObjectDB、1 个资源占用** |
+| C5 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_frontend_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend`：**退出 0，完整 SMOKE PASS**；两英雄建档/进关、地图学习、设置保存返回、重读与取消/失败清理通过；预期坏文件/旧作用域拒绝保留，退出 **5 个 ObjectDB、1 个资源占用** |
+| C5 完整 UI | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_ui_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui`：**退出 1，无最终 SMOKE PASS**；已通过技能/无双、15 件穿戴、拾取/窗口、怪物/实体复用、升级及 60/120Hz 坡地和三类平台。失败于 `CheckManaPickupAsync` 的“红球实际恢复量错误”（CombatFeedback.cs:245），首轮时该段红球生成/回收/断言未改；日志没有实际 HP，根因未确定，不能将自动恢复或受击写成已证实原因。C4 同一最终源码曾完整通过；不以旧 PASS 替代此次失败。保留 **38 个 CanvasItem RID、17 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、136 个 ObjectDB、12 个资源占用**及 GL 明细 |
+| C5 掉落/无归属专项 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_loot_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --loot-only`：**退出 0，完整 SMOKE PASS**；无归属只计击败/保留地面掉落，60/120Hz 红蓝黄球恢复/上限/暂停/池复用、指定目标/归属离场和死亡回收通过。独立专项未复现完整 UI 的红球失败；退出 **12 个 ObjectDB、3 个资源占用** |
+| C5 花果山原生流程 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_level_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=level`：**退出 0，完整 SMOKE PASS**；阶段移动/相机、场外刷怪入屏、守关清场、近远出口与组合键检查、W 出口等待在途球、自动保存、地图可见和磁盘重读通过，累计经验 **204**，出口到地图 **2652ms（含检查点，pending loot=True）**；退出 **12 个 ObjectDB、3 个资源占用**。沿用 LevelSmokeScenario 的本局 +100000 生命和测试攻击清场夹具，保留真实输入/碰撞/阶段/出口/结算链，不称正常数值人工通关 |
+| C5 唐僧专项 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_tangseng_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --tangseng-only`：**退出 0，完整 SMOKE PASS**；60/120Hz 分身物理/暂停/复用、普通法弹、部分与完整冰龙蓄力、主动学习、甘露/玄冰/水魔追加及八种声音的真实输入通过；退出 **14 个 ObjectDB、4 个资源占用** |
+| C5 红球诊断 | 用户明确授权定位并修复既有烟测夹具，生产玩法和原断言保持。先只补充原红球相等断言的实际/预期 HP、存活/物理处理与恢复节拍信息；`dotnet build Godot/GodotProject --no-restore -v quiet`：退出 0，**0 错误、5 条既有警告**，`c5_red_diagnostic_build.log`；`python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_ui_diagnostic_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui`：**runner 达 900 秒上限，报告 exit=124，无 SMOKE PASS**；日志停在敌人 63 出招（大猩猩截图步骤附近），未到红球断言，stderr 为空；终态后核对两个 Godot 进程均已退出。窗口检查的原生管道不可用（`failed to connect native pipe`），随后用户确认窗口可见/桌面解锁；没有证据将最小化写成此次卡住根因。另以 `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_red_headless_20261110 --headless --max-fps 120 -- --smoketest=ui` 继续诊断；只用于定位，不能替代 C5 原生 UI 验收。该 headless 路径越过大猩猩截图后停在 CheckDemonChaseAsync 的逐渲染帧等待；核对源码后确认其无 headless 分支，已主动停止对应已核实命令行的进程（runner 报告 4294967295，无 PASS），没有继续等到 900 秒 |
+| C5 夹具修复与回归 | 用户授权范围内，只在红球恢复量/上限断言期间临时将主英雄 HurtBox.CollisionLayer 设为 0，finally 恢复原层；球仍用原受击盒几何追踪，原相等/上限/暂停/池复用断言保持。已有场内敌人持续出招，隔离其进入数值断言的真实干扰路径；原失败缺实际 HP，不能将额外受击写成已复现根因。首次包围作用域使后续清理探针读取 health 失去作用域，构建 **1 个 CS0103 错误**（`c5_fixture_build.log`）；把原生命恢复值保留在外层后构建 **0 错误、5 条既有警告**（`c5_fixture_build_final.log`）。三套规则重跑 **323/197/19** 全通过，`c5_after_fixture_*.log`；最终 13/1/2 份 C# 格式检查全部退出 0。`coop_c5_scan_final_20261110` 扫描退出 0，既有 ComponentInsoector/free 诊断保留；`c5_references_final.log` 引用 **2283/390**。原生完整 UI 命令 `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_ui_final_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui`：**退出 0，完整 SMOKE PASS**；红球恢复/上限/池复用及后续死亡/检查点/存档重入/备份恢复/取消和失败清理均通过。预期坏文件和 HUD 打开失败注入保留，退出 **38 个 CanvasItem RID、20 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、138 个 ObjectDB、10 个资源占用**及 GL 明细；未出现 GCHandle 诊断 |
+| C5 夹具修复后原生映射/焦点 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_input_final_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --entry-only`：**退出 0，SMOKE-SEAT INPUT PASS 与完整 SMOKE PASS**，13 个原生物理键、单人忽略 P2、方向键/Enter 焦点检查通过；退出 **5 个 ObjectDB、1 个资源占用** |
+| C5 夹具修复后完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_frontend_final_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend`：**退出 0，完整 SMOKE PASS**；悟空/唐僧建档、进关、地图学习、保存返回与重读、加载取消/失败清理再次通过；退出 **5 个 ObjectDB、1 个资源占用**，坏文件/旧作用域拒绝为预期注入 |
+| C5 夹具修复后掉落/无归属 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_c5_loot_final_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --loot-only`：**退出 0，完整 SMOKE PASS**；60/120Hz 无归属边界、红蓝黄球实际数值/上限/暂停/池复用、实际目标与归属离场、死亡回收全部通过；退出 **12 个 ObjectDB、3 个资源占用** |
+| 格式 | 最终状态分别执行 `dotnet format whitespace <GodotProject.csproj / ProfileTests.csproj / BattleTests.csproj> --no-restore --include <本批对应 C# 绝对路径清单> --verify-no-changes`：全部退出 0，分别 **13 / 1 / 2 份 C#**；`format_verify_game/profile/battle.log`。测试工程保留工作区加载警告 |
+| 最终边界 | **21 份修改、无新增/删除正式文件**；16 份 C# 与 4 份文档均 UTF-8/CRLF，project.godot 保持 LF；删除恰好 13 个新增 P2 块可逐字节恢复基线配置。HEAD 保持 **61de0f2**，索引空且哈希与基线一致。Framework/addons/Luban、生成物、源表/bytes、场景、csproj 均未改；Validation 历史 C3 及之后各节在换行归一后逐字相同。`final_scope_audit.log`；`git diff --check`、`git diff --cached --check` 均退出 0；未执行 Git 写操作 |
+
+原生映射实际核对值，全部为 physical_keycode、device=-1、keycode=0：
+
+| 动作 | 物理键 / Godot.Key | 数值 | 死区 |
+| --- | --- | --- | --- |
+| move_left_p2 / move_right_p2 | Left / Right | 4194319 / 4194321 | 0.5 |
+| move_down_p2 / interact_p2 | Down / Up | 4194322 / 4194320 | 0.2 / 0.5 |
+| attack_p2 / jump_p2 | Kp1 / Kp2 | 4194439 / 4194440 | 0.5 |
+| skill_1_p2 / skill_2_p2 | Kp4 / Kp5 | 4194442 / 4194443 | 0.5 |
+| skill_3_p2 / skill_4_p2 | Kp6 / Kp3 | 4194444 / 4194441 | 0.5 |
+| musou_p2 | Kp0 | 4194438 | 0.5 |
+| inventory_toggle_p2 / skill_toggle_p2 | KpDivide / KpMultiply | 4194434 / 4194433 | 0.5 |
+
+关键接口前后对照：
+
+| 交付前 | 交付后 |
+| --- | --- |
+| InputSystem 常量直接查询 P1 名称 | 常量值保持，新增 `static string ActionOf(string action, PlayerSlot slot)`，P1 返回基名、P2 追加 `_p2`；不缓存、不改 ui_* |
+| `IsActionPressed/IsActionJustPressed/IsActionJustReleased(string action)` | 统一为 `(string action, PlayerSlot slot)`，先解析再走原 IInputSource |
+| `ConsumePress(HeroActionData data, string action)` | 增加末尾必传 PlayerSlot slot；先解析名称，按本人的边沿与 ConsumedActions 消费实际名称；无默认值或旧重载 |
+| Sample 只采样 P1 | 签名保持，所有移动/动作边沿按 hero.Slot 查询，原双击、闩锁与冷却不变 |
+| `TryActivateInput(int heroId, ISkillActor actor, HeroActionData data)` | 增加末尾 PlayerSlot slot；角色实体传 Slot，唐僧身体技能传 body.Slot；ISkillActor 不新增状态 |
+| LevelExitNode.FindEligibleHero 取第一个，读 P1 组合键 | 移除该方法，输入时逐个检查存活/落地的重叠英雄，按本人 Interact 与 Attack/Jump/MoveDown 判断；提示按任一合格重叠者显示，Enable/Disable 保持 |
+| BattleForm.InventoryRequested / SkillsRequested 为 Action<int> | 改为 Action<int, PlayerSlot>，按钮传宿主 Slot，快捷键只响应阵容已有席位；当前仍一名英雄，保留宿主 ControlsEnabled 守卫；SettingsRequested 不变 |
+| ProcedureLevel.OnInventoryRequested / OnSkillsRequested(int formSerialId) | 增加 PlayerSlot slot，校验 `_hero.Slot == slot`；背包补死亡拒绝，技能保留死亡拒绝，三窗互斥与订退不变 |
+| InventoryForm 只用 P1 关闭键 | 使用打开实体的 Slot 解析关闭键；UiCancel 不变。SkillForm 保持 P1，E2 接请求者，已登记第十部分占位 |
+| `HeroSpawn(PlayerSlot Slot, Vector2 Position)`、`AbstractHeroEntity.OnShow(object userData)` / `public PlayerSlot Slot { get; private set; }`、`IHeroBody` 的 `PlayerSlot Slot { get; }` | **本批前后签名和生命周期均不改**：OnShow 强制 HeroSpawn、校验本局模型与 HeroOf(spawn.Slot) 对应关系，每次覆盖 Slot 并在原复位段写出生点；不加默认席位或 OnHide 清零。假宿主 Hero 的 Slot 仅在测试允许初始化，用于两席位输入证据 |
+
+新增 Battle 的 `SeatInput_OnlySamplesAndConsumesOwnActions` 两个方向案例，使用正式 InputSystem 与原 FrameInput/Hero：同一来源只改变所属席位的移动、攻击、无双与松键事实；技能边沿只按本人映射消费一次，记录解析后的动作名，另一人保持。原 195 例与 Profile 323 例规则保留，原断言仅机械补传席位。
+
+实际文件清单：**21 份修改（16 份 C#、project.godot、4 份文档），无新增或删除正式文件**。TheGame 路径相对 `Godot/GodotProject/`：
+
+| 目录 | 修改文件 |
+| --- | --- |
+| `TheGame/GameScripts/Systems/` | `Input/InputSystem.cs`、`SkillSystem.cs` |
+| `TheGame/GameScripts/Entity/Heroes/` | `Wukong/WukongEntity.cs`、`Tangseng/TangsengEntity.cs`、`Tangseng/TangsengEntity.AnimationEvents.cs`、`Tangseng/Skills/TangsengIceDragonState.cs`、`Tangseng/Skills/TangsengWaterDemonBurstState.cs` |
+| `TheGame/GameScripts/Entity/Level/Exit/` | `LevelExitNode.cs` |
+| `TheGame/GameScripts/UI/` | `BattleForm/BattleForm.Logic.cs`、`InventoryForm/InventoryForm.Logic.cs` |
+| `TheGame/MainPack/Scripts/` | `Procedure/ProcedureLevel.cs`、`Debug/UiSmokeScenario.cs`、`Debug/UiSmokeScenario.CombatFeedback.cs` |
+| `Godot/GodotProject/` | `project.godot`，仅追加 13 个动作 |
+| `Tests/` | `BattleTests/HeroBodyTests.cs`、`BattleTests/SkillReuseTests.cs`、`ProfileTests/SkillSystemTests.cs` |
+| `Docs/` | `CoopImplementationPlan.md`、`WorkingNotes.md`、`ProjectTour.md`、`Validation.md` |
+
+计划未逐文件列出的调用为 UiSmokeScenario 的关停窗口分支：通过反射调用 OnInventoryRequested/OnSkillsRequested，必须补传 hero.Slot；设置方法仍只传序列号。已机械同步，没有旧签名转发。新增输入证据直接放入既有 `--entry-only` 分支，未新增测试模式或生产入口；首轮放在完整回归开头会改变主英雄落地状态，现已隔离到该独立案例，原完整 UI 断言不变。配置写入曾统一成 CRLF，边界检查发现原文件为 LF 后已恢复；去掉新增 13 块可恢复基线原字节，未改 P1 或其他配置。
+
+最终全仓搜索 `rg -n 'IsActionPressed|IsActionJustPressed|IsActionJustReleased|ConsumePress|TryActivateInput|ActionOf' . --glob '*.cs'`：InputSystem 的查询/消费调用均显式带席位；Godot.Input 与 InputEvent 的原生单参数查询不属于该业务接口，出口/背包/HUD 均先 ActionOf，SkillForm 的 P1 关闭键与 ui_* 依计划保留；见 `input_calls_search.log`。英雄显示搜索仍只有 ProcedureLevel、UiSmokeScenario.ShowHeroAsync、TestArenaController.SpawnHeroAsync 三处，全部传 HeroSpawn，见 `hero_show_search.log`。第十部分后续占位只剩 D2 治疗飘字和 E2 SkillForm，没有 C 阶段待处理项；第九部分 C2/C3 行均已标清零。
+
+C5 首轮失败的原始日志与两次未完成诊断保留。夹具缺口是：CheckGroundCombatAsync 会恢复场内敌人的处理，而红球数值检查将 HP 设为 1 后等待飞行，没有隔离入场攻击；本批经用户授权只对红球恢复/上限检查临时移除受击层，finally 恢复，保留球几何与原相等断言，并扩充失败状态消息。原失败缺少实际 HP/伤害记录，因此不把额外受击或自动恢复写成已复现根因；最终原生完整 UI 和 60/120Hz 掉落专项均已通过，范围内没有未完成项。花果山使用既有强化生命与测试攻击夹具，正常数值全关人工实战未执行。全部烟测使用既有 runner 的案例专属 APPDATA，正式存档未覆盖；存档 v14 不变，不要求重建。既有框架/网络/退出诊断保留，最终 UI 未出现 GCHandle 诊断。当前仍只生成 P1、单 HUD；D2 治疗订阅和 E2 SkillForm 席位占位按计划保留。停在 C5 待审，阶段 D 须待用户接受并明确授权。
+
 ## 双人C3：球归属与接触者领取（2026-11-10）
 
 用户接受 C2 并要求继续 C3，按 C3-1 → C3-3 完成逐球归属、实际接触者结算，以及治疗飘字在 D2 处理的登记。当前仍只生成 P1，存档保持 v14，一套输入与 HUD；**全部要求验证通过，停在 C3 等待审查，不开始 C4**。

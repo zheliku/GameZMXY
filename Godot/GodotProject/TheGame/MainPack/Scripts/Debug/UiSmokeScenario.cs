@@ -134,8 +134,9 @@ public sealed partial class UiSmokeScenario
                     "settings" => "OnSettingsRequested",
                     _ => throw new InvalidOperationException("未知关停测试窗口：" + window)
                 };
+                object[] arguments = window == "settings" ? [battleForm.SerialId] : [battleForm.SerialId, hero.Slot];
                 typeof(ProcedureLevel).GetMethod(request, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-                    .Invoke(procedure, [battleForm.SerialId]);
+                    .Invoke(procedure, arguments);
                 await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<Control>()
                     .Any(form => form.Visible && (window == "inventory" && form is InventoryForm ||
                         window == "skills" && form is SkillForm || window == "settings" && form is SettingsForm)),
@@ -579,6 +580,9 @@ public sealed partial class UiSmokeScenario
 
             if (OS.GetCmdlineUserArgs().Contains("--entry-only"))
             {
+                // 输入探针会推进真实落地，只在独立入口案例运行，避免改变完整回归原有物理起点。
+                hero.SetPhysicsProcess(true);
+                await CheckSeatInputAsync(hero, battleForm);
                 level.Cleanup();
                 await WaitFramesAsync(3);
                 return;

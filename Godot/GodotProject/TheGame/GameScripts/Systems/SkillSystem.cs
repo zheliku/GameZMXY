@@ -271,8 +271,9 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <param name="heroId">参战英雄编号。</param>
     /// <param name="actor">本次角色表现。</param>
     /// <param name="data">当前角色的输入消费记录与游戏时钟。</param>
+    /// <param name="slot">本次读取技能输入的玩家席位。</param>
     /// <returns>匹配并激活成功时为真。</returns>
-    public bool TryActivateInput(int heroId, ISkillActor actor, HeroActionData data)
+    public bool TryActivateInput(int heroId, ISkillActor actor, HeroActionData data, PlayerSlot slot)
     {
         if (!_skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions))
         {
@@ -282,7 +283,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
         InputSystem input = this.GetSystem<InputSystem>();
         foreach (SkillDefinition definition in definitions.Values)
         {
-            if (definition.InputAction is { } action && input.ConsumePress(data, action))
+            if (definition.InputAction is { } action && input.ConsumePress(data, action, slot))
             {
                 return TryActivate(heroId, definition.Id, actor);
             }

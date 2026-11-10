@@ -34,14 +34,14 @@ public partial class BattleForm : IController
     public event Action<int> SettingsRequested;
 
     /// <summary>
-    /// 由所属流程处理 InventoryRequested；参数为本次窗口编号。
+    /// 由所属流程处理 InventoryRequested；参数为本次窗口编号与请求席位。
     /// </summary>
-    public event Action<int> InventoryRequested;
+    public event Action<int, PlayerSlot> InventoryRequested;
 
     /// <summary>
-    /// 由所属流程处理 SkillsRequested；参数为本次窗口编号。
+    /// 由所属流程处理 SkillsRequested；参数为本次窗口编号与请求席位。
     /// </summary>
-    public event Action<int> SkillsRequested;
+    public event Action<int, PlayerSlot> SkillsRequested;
 
     /// <summary>
     /// 战斗界面通过输入映射请求背包或技能，暂停或覆盖时不响应。
@@ -54,21 +54,29 @@ public partial class BattleForm : IController
             return;
         }
 
-        bool inventory = inputEvent.IsActionPressed(Input.InputSystem.InventoryToggle);
-        bool skills = inputEvent.IsActionPressed(Input.InputSystem.SkillToggle);
-        if (!inventory && !skills)
+        // 按阵容实际存在的席位处理快捷键，单人档不能用 P2 键请求不存在的英雄。
+        ProfileModel profile = this.GetModel<ProfileModel>();
+        for (int index = 0; index < profile.HeroIds.Count; index++)
         {
-            return;
-        }
+            PlayerSlot slot = (PlayerSlot)(index + 1);
+            bool inventory = inputEvent.IsActionPressed(Input.InputSystem.ActionOf(Input.InputSystem.InventoryToggle, slot));
+            bool skills = inputEvent.IsActionPressed(Input.InputSystem.ActionOf(Input.InputSystem.SkillToggle, slot));
+            if (!inventory && !skills)
+            {
+                continue;
+            }
 
-        GetViewport().SetInputAsHandled();
-        if (inventory)
-        {
-            OnInventoryClicked();
-        }
-        else
-        {
-            OnSkillsClicked();
+            GetViewport().SetInputAsHandled();
+            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            if (inventory)
+            {
+                InventoryRequested?.Invoke(SerialId, slot);
+            }
+            else
+            {
+                SkillsRequested?.Invoke(SerialId, slot);
+            }
+            return;
         }
     }
 
@@ -284,7 +292,7 @@ public partial class BattleForm : IController
         }
 
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        InventoryRequested?.Invoke(SerialId);
+        InventoryRequested?.Invoke(SerialId, _formData.Hero.Slot);
     }
 
     /// <summary>
@@ -298,7 +306,7 @@ public partial class BattleForm : IController
         }
 
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        SkillsRequested?.Invoke(SerialId);
+        SkillsRequested?.Invoke(SerialId, _formData.Hero.Slot);
     }
 
     /// <summary>

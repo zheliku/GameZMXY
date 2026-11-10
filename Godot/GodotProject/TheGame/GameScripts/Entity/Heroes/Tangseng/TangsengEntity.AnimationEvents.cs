@@ -20,7 +20,7 @@ public partial class TangsengEntity
     /// </summary>
     private void BeginIceDragonChargeAnimEvent()
     {
-        if (this.GetSystem<InputSystem>().IsActionPressed(InputSystem.Attack))
+        if (this.GetSystem<InputSystem>().IsActionPressed(InputSystem.Attack, Slot))
         {
             this.GetSystem<SkillSystem>().TryActivate(HeroId, SkillId.IceDragonWave, this);
         }

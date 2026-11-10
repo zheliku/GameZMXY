@@ -201,7 +201,7 @@ public partial class InventoryForm : IController
         }
 
         if (_inventoryData == null || !Visible ||
-            !inputEvent.IsActionPressed(GameLogic.Input.InputSystem.InventoryToggle))
+            !inputEvent.IsActionPressed(GameLogic.Input.InputSystem.ActionOf(GameLogic.Input.InputSystem.InventoryToggle, _inventoryData.Hero.Slot)))
         {
             return;
         }

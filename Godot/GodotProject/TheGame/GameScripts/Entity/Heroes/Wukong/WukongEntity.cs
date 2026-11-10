@@ -112,7 +112,7 @@ public partial class WukongEntity : AbstractHeroEntity
         InputSystem input = this.GetSystem<InputSystem>();
         SkillSystem skills = this.GetSystem<SkillSystem>();
         var body = (IHeroBody)this;
-        if (!attacking && skills.TryActivateInput(HeroId, this, ActionData))
+        if (!attacking && skills.TryActivateInput(HeroId, this, ActionData, Slot))
         {
             return;
         }

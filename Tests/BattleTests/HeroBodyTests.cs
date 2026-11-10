@@ -681,6 +681,51 @@ public sealed class HeroBodyTests
     }
 
     /// <summary>
+    /// 同一输入源按席位隔离方向、动作边沿和消费名称。
+    /// </summary>
+    /// <param name="slot">本次按键所属席位。</param>
+    [Theory]
+    [InlineData(PlayerSlot.P1)]
+    [InlineData(PlayerSlot.P2)]
+    public void SeatInput_OnlySamplesAndConsumesOwnActions(PlayerSlot slot)
+    {
+        FrameInput source = new();
+        InputSystem system = new(BattleArchitecture.Instance, source);
+        HeroBodyParams parameters = CreateWukongParameters();
+        PlayerSlot otherSlot = slot == PlayerSlot.P1 ? PlayerSlot.P2 : PlayerSlot.P1;
+        var hero = new Hero(parameters) { Slot = slot };
+        var other = new Hero(parameters) { Slot = otherSlot };
+        source.Held.Add(InputSystem.ActionOf(InputSystem.MoveRight, slot));
+        source.Held.Add(InputSystem.ActionOf(InputSystem.Attack, slot));
+        source.Pressed.UnionWith(source.Held);
+        source.Pressed.Add(InputSystem.ActionOf(InputSystem.Skill1, slot));
+        source.Pressed.Add(InputSystem.ActionOf(InputSystem.Musou, slot));
+
+        // 同一次采样只改变按键所属英雄，动作消费记录使用实际映射名。
+        system.Sample(hero, .01f);
+        system.Sample(other, .01f);
+        Assert.Equal(1, hero.ActionData.MoveAxis);
+        Assert.True(hero.ActionData.AttackHeld);
+        Assert.True(hero.ActionData.MusouRequested);
+        Assert.Equal(0, other.ActionData.MoveAxis);
+        Assert.False(other.ActionData.AttackHeld);
+        Assert.False(other.ActionData.MusouRequested);
+        Assert.False(system.ConsumePress(other.ActionData, InputSystem.Skill1, otherSlot));
+        Assert.True(system.ConsumePress(hero.ActionData, InputSystem.Skill1, slot));
+        Assert.False(system.ConsumePress(hero.ActionData, InputSystem.Skill1, slot));
+        Assert.Contains(InputSystem.ActionOf(InputSystem.Skill1, slot), hero.ActionData.ConsumedActions);
+
+        source.Held.Clear();
+        source.Pressed.Clear();
+        source.Released.Add(InputSystem.ActionOf(InputSystem.MoveRight, slot));
+        system.Sample(hero, .01f);
+        system.Sample(other, .01f);
+        Assert.True(hero.ActionData.RightReleased);
+        Assert.False(other.ActionData.RightReleased);
+        Assert.Equal(0, hero.ActionData.MoveAxis);
+    }
+
+    /// <summary>
     /// 把测试用的帧事实装入输入源，再调用与游戏相同的二参数采样入口。
     /// </summary>
     /// <param name="data">本测试宿主独占的输入消费和连段数据。</param>
@@ -822,7 +867,7 @@ public sealed class HeroBodyTests
         public int HeroId => 1;
 
         /// <inheritdoc />
-        public PlayerSlot Slot => PlayerSlot.P1;
+        public PlayerSlot Slot { get; init; } = PlayerSlot.P1;
 
         /// <inheritdoc />
         float IActorBody.Gravity => Params.Gravity;

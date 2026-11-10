@@ -47,7 +47,7 @@ public sealed class SkillReuseTests
         Assert.Equal(skill, scope.Hero.ActiveSkillId.Value);
         Assert.Equal(100 - scope.Configuration.Tables.TbSkillConfig.Get(skill).ManaCost,
             scope.GetModel<HeroModel>().GetState(scope.Hero.HeroId).Mp.Value);
-        Assert.False(scope.GetSystem<InputSystem>().ConsumePress(hero.ActionData, InputSystem.Skill1));
+        Assert.False(scope.GetSystem<InputSystem>().ConsumePress(hero.ActionData, InputSystem.Skill1, PlayerSlot.P1));
     }
 
     /// <summary>
@@ -68,16 +68,16 @@ public sealed class SkillReuseTests
         source.Pressed.Add(action);
         source.Held.Add(action);
         input.Sample(hero, 1f / 60);
-        Assert.True(input.IsActionJustPressed(action));
-        Assert.True(input.IsActionPressed(action));
-        Assert.False(input.IsActionJustReleased(action));
-        Assert.True(input.ConsumePress(hero.ActionData, action));
-        Assert.False(input.ConsumePress(hero.ActionData, action));
+        Assert.True(input.IsActionJustPressed(action, PlayerSlot.P1));
+        Assert.True(input.IsActionPressed(action, PlayerSlot.P1));
+        Assert.False(input.IsActionJustReleased(action, PlayerSlot.P1));
+        Assert.True(input.ConsumePress(hero.ActionData, action, PlayerSlot.P1));
+        Assert.False(input.ConsumePress(hero.ActionData, action, PlayerSlot.P1));
         source.Pressed.Clear();
         input.Sample(hero, 1f / 60);
-        Assert.False(input.IsActionJustPressed(action));
-        Assert.True(input.IsActionPressed(action));
-        Assert.False(input.ConsumePress(hero.ActionData, action));
+        Assert.False(input.IsActionJustPressed(action, PlayerSlot.P1));
+        Assert.True(input.IsActionPressed(action, PlayerSlot.P1));
+        Assert.False(input.ConsumePress(hero.ActionData, action, PlayerSlot.P1));
     }
 
     /// <summary>
@@ -124,10 +124,10 @@ public sealed class SkillReuseTests
         InputSystem input = scope.GetSystem<InputSystem>();
         scope.Source.Pressed.Add("custom_action");
         input.Sample(first, .01f);
-        Assert.True(input.ConsumePress(first.ActionData, "custom_action"));
+        Assert.True(input.ConsumePress(first.ActionData, "custom_action", PlayerSlot.P1));
         input.Sample(second, .01f);
-        Assert.False(input.ConsumePress(first.ActionData, "custom_action"));
-        Assert.True(input.ConsumePress(second.ActionData, "custom_action"));
+        Assert.False(input.ConsumePress(first.ActionData, "custom_action", PlayerSlot.P1));
+        Assert.True(input.ConsumePress(second.ActionData, "custom_action", PlayerSlot.P1));
     }
 
     /// <summary>
@@ -149,7 +149,7 @@ public sealed class SkillReuseTests
         source.Held.Add(InputSystem.Attack);
         input.Sample(hero, .1f);
         Assert.InRange(hero.ActionData.Time, .0999, .1001);
-        Assert.True(input.IsActionJustPressed(InputSystem.Skill1));
+        Assert.True(input.IsActionJustPressed(InputSystem.Skill1, PlayerSlot.P1));
         Assert.Equal(!inputLocked, hero.ActionData.MusouRequested);
 
         if (!inputLocked)
@@ -160,7 +160,7 @@ public sealed class SkillReuseTests
         hero.ActionData.InputLocked = false;
         source.Pressed.Clear();
         input.Sample(hero, .1f);
-        Assert.False(scope.GetSystem<InputSystem>().IsActionJustPressed(InputSystem.Skill1));
+        Assert.False(scope.GetSystem<InputSystem>().IsActionJustPressed(InputSystem.Skill1, PlayerSlot.P1));
         Assert.False(input.ConsumeAttack(hero.ActionData));
         source.Held.Clear();
         input.Sample(hero, .1f);
@@ -492,7 +492,7 @@ public sealed class SkillReuseTests
         {
             if (!attacking || AllowSkillDuringAttack)
             {
-                scope.GetSystem<SkillSystem>().TryActivateInput(scope.Hero.HeroId, this, ActionData);
+                scope.GetSystem<SkillSystem>().TryActivateInput(scope.Hero.HeroId, this, ActionData, PlayerSlot.P1);
             }
         }
 
@@ -578,7 +578,7 @@ public sealed class SkillReuseTests
         /// <inheritdoc />
         protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
         {
-            if (body.GetSystem<InputSystem>().ConsumePress(body.ActionData, InputSystem.Skill1))
+            if (body.GetSystem<InputSystem>().ConsumePress(body.ActionData, InputSystem.Skill1, PlayerSlot.P1))
             {
                 _transferring = true;
                 ChangeState<TestReleaseState>(fsm);

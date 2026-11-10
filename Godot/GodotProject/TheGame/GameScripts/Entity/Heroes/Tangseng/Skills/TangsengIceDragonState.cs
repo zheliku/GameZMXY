@@ -57,7 +57,7 @@ public sealed class TangsengIceDragonState : AbstractHeroSkillState
             return;
         }
 
-        if (input.IsActionPressed(InputSystem.Attack))
+        if (input.IsActionPressed(InputSystem.Attack, body.Slot))
         {
             _chargeTime = Mathf.Min(_chargeTime + dt, ChargeSeconds);
             ((TangsengEntity)body).UpdateIceDragonCharge(_chargeTime / ChargeSeconds);

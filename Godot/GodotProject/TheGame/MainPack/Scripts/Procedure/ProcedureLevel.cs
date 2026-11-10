@@ -334,10 +334,12 @@ public class ProcedureLevel : ProcedureBase
     /// 在同一关卡中互斥打开背包与设置。
     /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
-    private void OnInventoryRequested(int formSerialId)
+    /// <param name="slot">请求打开背包的玩家席位。</param>
+    private void OnInventoryRequested(int formSerialId, PlayerSlot slot)
     {
         if (formSerialId != _battleFormSerialId ||
-            _levelModel?.Outcome.Value != LevelOutcome.Running)
+            _levelModel?.Outcome.Value != LevelOutcome.Running ||
+            _hero == null || _hero.Slot != slot || !_hero.IsAlive)
         {
             return;
         }
@@ -355,11 +357,12 @@ public class ProcedureLevel : ProcedureBase
     /// 互斥打开本关技能目录；展示当前出战角色。
     /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
-    private void OnSkillsRequested(int formSerialId)
+    /// <param name="slot">请求打开技能目录的玩家席位。</param>
+    private void OnSkillsRequested(int formSerialId, PlayerSlot slot)
     {
         if (formSerialId != _battleFormSerialId ||
             _levelModel?.Outcome.Value != LevelOutcome.Running ||
-            _hero == null || !_hero.IsAlive)
+            _hero == null || _hero.Slot != slot || !_hero.IsAlive)
         {
             return;
         }

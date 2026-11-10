@@ -134,7 +134,7 @@ public sealed class SkillSystemTests
         system.ClearSkillDefinitions(2);
         Assert.False(system.IsAvailable(2, SkillId.WaterDemonBurst));
         Assert.False(system.CanAfford(2, SkillId.WaterDemonBurst));
-        Assert.False(system.TryActivateInput(2, actor, new HeroActionData()));
+        Assert.False(system.TryActivateInput(2, actor, new HeroActionData(), PlayerSlot.P1));
         Assert.Null(second.ActiveSkillId);
         Assert.False(system.IsInvulnerable(2, 1));
         Assert.Null(system.GetBodyStateType(2));
@@ -145,7 +145,7 @@ public sealed class SkillSystemTests
 
         system.EndSkill(1, SkillId.RisingDragon);
         scope.Input.Actions[InputSystem.Skill1] = (true, true, false);
-        Assert.True(system.TryActivateInput(1, actor, new HeroActionData()));
+        Assert.True(system.TryActivateInput(1, actor, new HeroActionData(), PlayerSlot.P1));
         Assert.Equal(firstMana - TestTables.Tables.TbSkillConfig.Get(SkillId.RisingDragon).ManaCost, first.Mp.Value);
 
         ((ICanInit)system).Deinit();
@@ -325,14 +325,14 @@ public sealed class SkillSystemTests
         scope.Input.Actions[action] = (true, held, true);
         var firstData = new HeroActionData();
         var secondData = new HeroActionData();
-        Assert.True(input.IsActionJustPressed(action));
-        Assert.True(input.IsActionJustReleased(action));
-        Assert.Equal(held, input.IsActionPressed(action));
-        Assert.True(input.ConsumePress(firstData, action));
-        Assert.False(input.ConsumePress(firstData, action));
-        Assert.True(input.ConsumePress(secondData, action));
-        Assert.True(input.IsActionJustReleased(action));
-        Assert.Equal(held, input.IsActionPressed(action));
+        Assert.True(input.IsActionJustPressed(action, PlayerSlot.P1));
+        Assert.True(input.IsActionJustReleased(action, PlayerSlot.P1));
+        Assert.Equal(held, input.IsActionPressed(action, PlayerSlot.P1));
+        Assert.True(input.ConsumePress(firstData, action, PlayerSlot.P1));
+        Assert.False(input.ConsumePress(firstData, action, PlayerSlot.P1));
+        Assert.True(input.ConsumePress(secondData, action, PlayerSlot.P1));
+        Assert.True(input.IsActionJustReleased(action, PlayerSlot.P1));
+        Assert.Equal(held, input.IsActionPressed(action, PlayerSlot.P1));
     }
 
     /// <summary>
@@ -349,9 +349,9 @@ public sealed class SkillSystemTests
         int mana = scope.Hero.Mp.Value;
         var data = new HeroActionData();
         scope.Input.Actions[InputSystem.Skill1] = (true, true, false);
-        Assert.False(system.TryActivateInput(scope.Hero.HeroId, actor, data));
+        Assert.False(system.TryActivateInput(scope.Hero.HeroId, actor, data, PlayerSlot.P1));
         system.CancelSkill(scope.Hero.HeroId);
-        Assert.False(system.TryActivateInput(scope.Hero.HeroId, actor, data));
+        Assert.False(system.TryActivateInput(scope.Hero.HeroId, actor, data, PlayerSlot.P1));
         Assert.Equal(mana, scope.Hero.Mp.Value);
     }
 

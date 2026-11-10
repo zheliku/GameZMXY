@@ -116,6 +116,14 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     // ---- 业务方法 ----
 
     /// <summary>
+    /// 按席位取 InputMap 中实际的动作名；P1 使用基名，P2 使用带 "_p2" 后缀的映射。
+    /// </summary>
+    /// <param name="action">P1 基名常量，不能是界面导航动作。</param>
+    /// <param name="slot">本次读取输入的玩家席位。</param>
+    /// <returns>InputMap 中实际存在的动作名。</returns>
+    public static string ActionOf(string action, PlayerSlot slot) => slot == PlayerSlot.P1 ? action : action + "_p2";
+
+    /// <summary>
     /// 开始本英雄的新一帧消费记录，采样常规动作并推进独占的闩锁和时钟。
     /// </summary>
     /// <param name="hero">本帧采样的英雄宿主，提供动作数据和共享动作参数。</param>
@@ -144,15 +152,15 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
             return;
         }
         float doubleTapWindow = hero.Params.RunDoubleTapWindow;
-        bool leftHeld = IsActionPressed(MoveLeft), rightHeld = IsActionPressed(MoveRight);
-        bool leftPressed = IsActionJustPressed(MoveLeft), rightPressed = IsActionJustPressed(MoveRight);
-        bool jumpHeld = IsActionPressed(Jump), attackHeld = IsActionPressed(Attack);
-        bool musouPressed = IsActionJustPressed(Musou);
-        bool downHeld = IsActionPressed(MoveDown), upHeld = IsActionPressed(Interact);
-        bool jumpPressed = IsActionJustPressed(Jump), attackPressed = IsActionJustPressed(Attack);
-        bool actionReleased = IsActionJustReleased(Jump) || IsActionJustReleased(Attack) ||
-            IsActionJustReleased(MoveDown) || IsActionJustReleased(Interact);
-        bool leftReleased = IsActionJustReleased(MoveLeft), rightReleased = IsActionJustReleased(MoveRight);
+        bool leftHeld = IsActionPressed(MoveLeft, hero.Slot), rightHeld = IsActionPressed(MoveRight, hero.Slot);
+        bool leftPressed = IsActionJustPressed(MoveLeft, hero.Slot), rightPressed = IsActionJustPressed(MoveRight, hero.Slot);
+        bool jumpHeld = IsActionPressed(Jump, hero.Slot), attackHeld = IsActionPressed(Attack, hero.Slot);
+        bool musouPressed = IsActionJustPressed(Musou, hero.Slot);
+        bool downHeld = IsActionPressed(MoveDown, hero.Slot), upHeld = IsActionPressed(Interact, hero.Slot);
+        bool jumpPressed = IsActionJustPressed(Jump, hero.Slot), attackPressed = IsActionJustPressed(Attack, hero.Slot);
+        bool actionReleased = IsActionJustReleased(Jump, hero.Slot) || IsActionJustReleased(Attack, hero.Slot) ||
+            IsActionJustReleased(MoveDown, hero.Slot) || IsActionJustReleased(Interact, hero.Slot);
+        bool leftReleased = IsActionJustReleased(MoveLeft, hero.Slot), rightReleased = IsActionJustReleased(MoveRight, hero.Slot);
         data.MusouRequested = musouPressed;
         bool jump = jumpHeld || jumpPressed;
         bool attack = attackHeld || attackPressed;
@@ -361,30 +369,38 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     /// 查询逻辑动作当前是否按住；默认使用 Godot InputMap 与 Input 原生查询。
     /// </summary>
     /// <param name="action">输入映射名称。</param>
+    /// <param name="slot">本次读取输入的玩家席位。</param>
     /// <returns>当前按住时为真。</returns>
-    public bool IsActionPressed(string action) => _source.IsPressed(action);
+    public bool IsActionPressed(string action, PlayerSlot slot) => _source.IsPressed(ActionOf(action, slot));
 
     /// <summary>
     /// 查询本物理帧是否出现按下，包括同帧已经松开的短按。
     /// </summary>
     /// <param name="action">输入映射名称。</param>
+    /// <param name="slot">本次读取输入的玩家席位。</param>
     /// <returns>存在按下边沿时为真。</returns>
-    public bool IsActionJustPressed(string action) => _source.IsJustPressed(action);
+    public bool IsActionJustPressed(string action, PlayerSlot slot) => _source.IsJustPressed(ActionOf(action, slot));
 
     /// <summary>
     /// 查询本物理帧是否出现松开，包括同帧已经重新按住。
     /// </summary>
     /// <param name="action">输入映射名称。</param>
+    /// <param name="slot">本次读取输入的玩家席位。</param>
     /// <returns>存在松开边沿时为真。</returns>
-    public bool IsActionJustReleased(string action) => _source.IsJustReleased(action);
+    public bool IsActionJustReleased(string action, PlayerSlot slot) => _source.IsJustReleased(ActionOf(action, slot));
 
     /// <summary>
     /// 按角色消费一次动作按下；同一角色本帧不能重复消费，其他角色互不影响。
     /// </summary>
     /// <param name="data">本角色的动作数据。</param>
     /// <param name="action">任意动作映射名称。</param>
+    /// <param name="slot">本次读取输入的玩家席位。</param>
     /// <returns>本帧存在尚未消费的按下边沿时为真。</returns>
-    public bool ConsumePress(HeroActionData data, string action) => IsActionJustPressed(action) && data.ConsumedActions.Add(action);
+    public bool ConsumePress(HeroActionData data, string action, PlayerSlot slot)
+    {
+        string resolvedAction = ActionOf(action, slot);
+        return _source.IsJustPressed(resolvedAction) && data.ConsumedActions.Add(resolvedAction);
+    }
 
     /// <summary>
     /// 同方向两次按下间隔严格小于窗口时奔跑。
