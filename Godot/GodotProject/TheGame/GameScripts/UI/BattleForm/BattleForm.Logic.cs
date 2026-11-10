@@ -1,23 +1,21 @@
 using System;
-using System.Collections.Generic;
-using GameConfig.Skills;
+using System.Linq;
 using GameConfig.Sound;
 using GameFramework.UI;
 using GameLogic.Architecture;
 using GameLogic.Audio;
 using GameLogic.Battle;
-using GameLogic.Config;
 using GameLogic.Enemies;
+using GameLogic.Heroes;
 using GameLogic.Level;
-using GameLogic.Profile;
-using GameLogic.Skills;
+using GameLogic.UI.Widgets;
 using Godot;
 using GodotGameFramework;
 
 namespace GameLogic.UI;
 
 /// <summary>
-/// 战斗 HUD：绑定模型属性并观察实体资源，变化时刷新被动控件；由 GGF 管理打开、关闭和复用。
+/// 战斗 HUD：统一驱动个人面板绑定，观察共享关卡状态并处理菜单与全屏演出；由 GGF 管理打开、关闭和复用。
 /// 不写任何状态，不执行玩法结算。
 /// </summary>
 public partial class BattleForm : IController
@@ -25,7 +23,7 @@ public partial class BattleForm : IController
     private const double ComboDisplaySeconds = 3.5d; // 官方连击数字每次命中后渐隐的显示时长。
     private BattleFormData _formData; // 本次打开的状态源引用，关闭后释放。
     private AbstractEnemyEntity _opponent; // 本次观察的守关怪，实体所有权仍归关卡。
-    private LevelModel _comboModel; // 本次窗口订阅的关卡命中计数。
+    private LevelModel _levelModel; // 本次窗口订阅的共享关卡状态。
     private double _comboElapsed; // 当前连击数字已显示的游戏秒数。
 
     /// <summary>
@@ -49,21 +47,24 @@ public partial class BattleForm : IController
     /// <param name="inputEvent">输入映射处理的事件。</param>
     public override void _UnhandledInput(InputEvent inputEvent)
     {
-        if (_formData == null || !Visible || GF.Base.IsGamePaused || !this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).ControlsEnabled)
+        if (_formData == null || !Visible || GF.Base.IsGamePaused)
         {
             return;
         }
 
         // 按阵容实际存在的席位处理快捷键，单人档不能用 P2 键请求不存在的英雄。
-        ProfileModel profile = this.GetModel<ProfileModel>();
-        for (int index = 0; index < profile.HeroIds.Count; index++)
+        foreach (AbstractHeroEntity hero in _formData.Heroes)
         {
-            PlayerSlot slot = (PlayerSlot)(index + 1);
+            PlayerSlot slot = hero.Slot;
             bool inventory = inputEvent.IsActionPressed(Input.InputSystem.ActionOf(Input.InputSystem.InventoryToggle, slot));
             bool skills = inputEvent.IsActionPressed(Input.InputSystem.ActionOf(Input.InputSystem.SkillToggle, slot));
             if (!inventory && !skills)
             {
                 continue;
+            }
+            if (!this.GetModel<HeroModel>().GetState(hero.HeroId).ControlsEnabled)
+            {
+                return;
             }
 
             GetViewport().SetInputAsHandled();
@@ -103,6 +104,11 @@ public partial class BattleForm : IController
             _menu.SettingsSelected += OnSettingsClicked;
             _menu.InventorySelected += OnInventoryClicked;
             _menu.SkillsSelected += OnSkillsClicked;
+            _menu.MusouStateChanged += OnMusouStateChanged;
+            _menuP2.SettingsSelected += OnSettingsClicked;
+            _menuP2.InventorySelected += OnInventoryClicked;
+            _menuP2.SkillsSelected += OnSkillsClicked;
+            _menuP2.MusouStateChanged += OnMusouStateChanged;
         }
     }
 
@@ -138,13 +144,12 @@ public partial class BattleForm : IController
         }
 
         LevelModel levelModel = this.GetModel<LevelModel>();
-        ProfileModel progression = this.GetModel<ProfileModel>();
-        if (!IsInstanceValid(data.Hero) || !data.Hero.IsShown || levelModel == null || !levelModel.Initialized)
+        if (data.Heroes.Any(hero => !IsInstanceValid(hero) || !hero.IsShown) || levelModel == null || !levelModel.Initialized)
         {
             throw new InvalidOperationException("BattleForm 绑定的英雄或关卡已经失效。");
         }
 
-        if (_status == null || _menu == null || _go == null || _encounterHealthBar == null ||
+        if (_status == null || _menu == null || _statusP2 == null || _menuP2 == null || _go == null || _encounterHealthBar == null ||
             _musouActivation == null || _combo == null)
         {
             throw new InvalidOperationException("BattleForm 必须绑定状态区、菜单区、Go、守关生命条、无双提示和连击数字。");
@@ -152,23 +157,22 @@ public partial class BattleForm : IController
 
         // 先登记本次引用再订阅，部分订阅失败时也能完整退订。
         _formData = data;
-        _comboModel = levelModel;
-        _status.SetHero(_formData.Hero.HeroId);
+        _levelModel = levelModel;
+        _statusP2.Visible = _menuP2.Visible = data.Heroes.Count == 2;
         try
         {
-            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).Hp.Register(RefreshResources);
-            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).MaxHp.Register(RefreshResources);
-            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).Mp.Register(RefreshResources);
-            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).MaxMp.Register(RefreshResources);
-            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).Ws.Register(RefreshMusou);
-            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).MaxWs.Register(RefreshMusou);
-            this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).WsActive.Register(RefreshMusouActive);
-            progression.GetProgress(_formData.Hero.HeroId).RegisterWithInitValue(RefreshProgression);
-            this.GetModel<SkillModel>().GetLearnedSkills(_formData.Hero.HeroId).RegisterWithInitValue(RefreshSkills);
+            // 每个现有面板只绑定一名英雄；窗口仍统一掌握绑定开始、结束与失败清理。
+            foreach (AbstractHeroEntity hero in data.Heroes)
+            {
+                BattleStatusPanel status = hero.Slot == PlayerSlot.P1 ? _status : _statusP2;
+                BattleMenuPanel menu = hero.Slot == PlayerSlot.P1 ? _menu : _menuP2;
+                status.BindHero(hero.HeroId);
+                menu.BindHero(hero.HeroId, hero.Slot);
+            }
             levelModel.TravelAvailable.RegisterWithInitValue(RefreshTravel);
             levelModel.ComboCount.RegisterWithInitValue(RefreshCombo);
             data.ViewController.FeaturedOpponentChanged += RefreshEncounter;
-            RefreshAll();
+            RefreshEncounter();
             Visible = true;
         }
         catch
@@ -268,11 +272,13 @@ public partial class BattleForm : IController
     }
 
     /// <summary>
-    /// 请关卡流程打开左下角设置菜单。
+    /// 请关卡流程打开对应席位发起的共享设置菜单。
     /// </summary>
-    private void OnSettingsClicked()
+    /// <param name="slot">发起点击的菜单面板所属席位。</param>
+    private void OnSettingsClicked(PlayerSlot slot)
     {
-        if (_formData == null || !this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).ControlsEnabled)
+        AbstractHeroEntity hero = _formData?.Heroes.FirstOrDefault(participant => participant.Slot == slot);
+        if (hero == null || !this.GetModel<HeroModel>().GetState(hero.HeroId).ControlsEnabled)
         {
             return;
         }
@@ -284,29 +290,33 @@ public partial class BattleForm : IController
     /// <summary>
     /// 请关卡流程打开战斗背包。
     /// </summary>
-    private void OnInventoryClicked()
+    /// <param name="slot">发起点击的菜单面板所属席位。</param>
+    private void OnInventoryClicked(PlayerSlot slot)
     {
-        if (_formData == null || !this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).ControlsEnabled)
+        AbstractHeroEntity hero = _formData?.Heroes.FirstOrDefault(participant => participant.Slot == slot);
+        if (hero == null || !this.GetModel<HeroModel>().GetState(hero.HeroId).ControlsEnabled)
         {
             return;
         }
 
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        InventoryRequested?.Invoke(SerialId, _formData.Hero.Slot);
+        InventoryRequested?.Invoke(SerialId, slot);
     }
 
     /// <summary>
     /// 请关卡流程打开技能目录。
     /// </summary>
-    private void OnSkillsClicked()
+    /// <param name="slot">发起点击的菜单面板所属席位。</param>
+    private void OnSkillsClicked(PlayerSlot slot)
     {
-        if (_formData == null || !this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId).ControlsEnabled)
+        AbstractHeroEntity hero = _formData?.Heroes.FirstOrDefault(participant => participant.Slot == slot);
+        if (hero == null || !this.GetModel<HeroModel>().GetState(hero.HeroId).ControlsEnabled)
         {
             return;
         }
 
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        SkillsRequested?.Invoke(SerialId, _formData.Hero.Slot);
+        SkillsRequested?.Invoke(SerialId, slot);
     }
 
     /// <summary>
@@ -316,29 +326,32 @@ public partial class BattleForm : IController
     {
         BattleFormData data = _formData;
         _formData = null;
-        LevelModel comboModel = _comboModel;
-        _comboModel = null;
-        comboModel?.ComboCount.UnRegister(RefreshCombo);
+        LevelModel levelModel = _levelModel;
+        _levelModel = null;
+        levelModel?.ComboCount.UnRegister(RefreshCombo);
+        levelModel?.TravelAvailable.UnRegister(RefreshTravel);
         ResetComboDisplay();
         if (data != null)
         {
-            // 关窗先于模型移除和实体隐藏，直接解除本周期的对应订阅。
-            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).Hp.UnRegister(RefreshResources);
-            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).MaxHp.UnRegister(RefreshResources);
-            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).Mp.UnRegister(RefreshResources);
-            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).MaxMp.UnRegister(RefreshResources);
-            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).Ws.UnRegister(RefreshMusou);
-            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).MaxWs.UnRegister(RefreshMusou);
-            this.GetModel<HeroModel>().GetState(data.Hero.HeroId).WsActive.UnRegister(RefreshMusouActive);
-            this.GetModel<ProfileModel>().GetProgress(data.Hero.HeroId).UnRegister(RefreshProgression);
-            this.GetModel<SkillModel>().GetLearnedSkills(data.Hero.HeroId).UnRegister(RefreshSkills);
-            this.GetModel<LevelModel>().TravelAvailable.UnRegister(RefreshTravel);
             data.ViewController.FeaturedOpponentChanged -= RefreshEncounter;
         }
 
+        // GGF关窗不移出节点树，必须在模型移除前显式解除所有面板绑定。
+        if (IsInstanceValid(_status))
+        {
+            _status.UnbindHero();
+        }
+        if (IsInstanceValid(_statusP2))
+        {
+            _statusP2.UnbindHero();
+        }
         if (IsInstanceValid(_menu))
         {
-            _menu.ResetMusou();
+            _menu.UnbindHero();
+        }
+        if (IsInstanceValid(_menuP2))
+        {
+            _menuP2.UnbindHero();
         }
 
         if (IsInstanceValid(_musouActivation))
@@ -352,26 +365,6 @@ public partial class BattleForm : IController
             _go.Stop();
             _go.Visible = false;
         }
-    }
-
-    /// <summary>
-    /// 按当前状态立即刷新全部显示。
-    /// </summary>
-    private void RefreshAll()
-    {
-        RefreshResources();
-        RefreshMusou();
-        RefreshEncounter();
-    }
-
-    /// <summary>
-    /// 技能学习或关卡回滚后同步战斗栏颜色。
-    /// </summary>
-    /// <param name="learned">当前英雄的权威学习记录。</param>
-    private void RefreshSkills(IReadOnlyList<SkillId> learned)
-    {
-        _menu.SetSkills(
-        this.GetModel<ConfigurationModel>().GetActive((SkillHero)_formData.Hero.HeroId), learned);
     }
 
     /// <summary>
@@ -410,49 +403,20 @@ public partial class BattleForm : IController
         }
     }
 
-    /// <summary>
-    /// 生命与魔法变化：读取当前值与上限刷新显示。
-    /// </summary>
-    /// <param name="value">已提交的属性值；同时读取关联上限。</param>
-    private void RefreshResources(int value = 0)
-    {
-        HeroState vitals = this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId);
-        _status.SetResources(vitals.Hp.Value, vitals.MaxHp.Value, vitals.Mp.Value, vitals.MaxMp.Value);
-    }
-
-    /// <summary>
-    /// 刷新无双条，并按蓄满状态控制 HUD 专属提示；重复满值通知保持动画进度。
-    /// </summary>
-    /// <param name="value">已提交的属性值；同时读取关联上限。</param>
-    private void RefreshMusou(int value = 0)
-    {
-        HeroState musou = this.GetModel<HeroModel>().GetState(_formData.Hero.HeroId);
-        _menu.SetMusou(musou.Ws.Value, musou.MaxWs.Value, musou.IsWsFull);
-    }
-
-    /// <summary>
-    /// 开启状态改变时刷新无双表现。
-    /// </summary>
+    /// <summary>处理个人菜单同步报告的无双变化，共享立绘与暂停仍由窗口持有。</summary>
+    /// <param name="heroId">本次状态变化所属的英雄编号。</param>
     /// <param name="active">已经提交的开启状态。</param>
-    private void RefreshMusouActive(bool active)
+    private void OnMusouStateChanged(int heroId, bool active)
     {
         if (active)
         {
-            _musouActivation.ShowActivation(_formData.Hero.HeroId);
+            _musouActivation.ShowActivation(heroId);
         }
         else
         {
             _musouActivation.Reset();
         }
-
-        RefreshMusou();
     }
-
-    /// <summary>
-    /// 刷新等级与经验条（等级、本级经验、上限来自同一次派生）。
-    /// </summary>
-    /// <param name="progression">完整的成长快照。</param>
-    private void RefreshProgression(HeroProgressionState progression) => _status.SetProgression(progression.Level, progression.Experience, progression.MaxExperience);
 
     /// <summary>
     /// 显示或隐藏前进提示，并同步控制动画。

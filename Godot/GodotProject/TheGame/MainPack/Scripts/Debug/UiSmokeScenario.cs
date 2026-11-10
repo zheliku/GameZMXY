@@ -10,6 +10,7 @@ using GameConfig.Constant;
 using GameConfig.Enemy;
 using GameConfig.Entity;
 using GameConfig.Hero;
+using GameConfig.Skills;
 using GameFramework.Event;
 using GameFramework.Fsm;
 using GameFramework.Procedure;
@@ -30,6 +31,7 @@ using GameLogic.Heroes.Effects;
 using GameLogic.Input;
 using GameLogic.Level;
 using GameLogic.Profile;
+using GameLogic.Skills;
 using GameLogic.Save;
 using GameLogic.Save.Data;
 using GameLogic.UI;
@@ -92,6 +94,11 @@ public sealed partial class UiSmokeScenario
             LevelViewController level = FindLevel();
             BattleForm battleForm = CurrentBattleForm();
             SmokeInspection.CheckTooltips(battleForm);
+            if (OS.GetCmdlineUserArgs().Contains("--coop-only"))
+            {
+                await CheckCoopSessionAsync(procedure, flow, level, battleForm);
+                return;
+            }
             hero.SetPhysicsProcess(false);
 
             // 首次启动按建档规则新建并立即写回为当前版本。
@@ -664,7 +671,7 @@ public sealed partial class UiSmokeScenario
             await CheckHitFacingAsync(flow);
             await CheckBattleFormLifecycleAsync(battleForm, hero, flow, level);
             await CheckEntityReuseAsync(flow);
-            _testBattleForm = await OpenBattleFormAsync(new BattleFormData(hero, level));
+            _testBattleForm = await OpenBattleFormAsync(new BattleFormData([hero], level));
             await CheckGroundCombatAsync(hero, _testBattleForm);
             await CheckDemonChaseAsync(hero);
             CloseBattleForm(_testBattleForm);
@@ -775,6 +782,244 @@ public sealed partial class UiSmokeScenario
                 ReleaseTestEntity(_monster);
             }
         }
+    }
+
+    /// <summary>通过真实双人新档验证装配、HUD、归属、按席位开窗与离关退订。</summary>
+    /// <param name="procedure">正式关卡流程。</param>
+    /// <param name="flow">持有双方档案和本局模型的流程作用域。</param>
+    /// <param name="level">正式花果山关卡。</param>
+    /// <param name="form">正式双人HUD。</param>
+    /// <returns>双人专项检查任务。</returns>
+    private async Task CheckCoopSessionAsync(ProcedureLevel procedure, ProcedureOwner flow,
+        LevelViewController level, BattleForm form)
+    {
+        AbstractHeroEntity[] heroes = SmokeInspection.ReadField<List<AbstractHeroEntity>>(procedure, "_heroes").ToArray();
+        ProfileModel profile = flow.GetModel<ProfileModel>();
+        HeroModel states = flow.GetModel<HeroModel>();
+        HeroSystem heroSystem = flow.GetSystem<HeroSystem>();
+        GameData disk = await ReadDiskAsync();
+        Check(heroes.Length == 2 && heroes.All(hero => hero.IsShown && hero.IsAlive) &&
+            heroes.Select(hero => hero.Slot).SequenceEqual(new[] { PlayerSlot.P1, PlayerSlot.P2 }) &&
+            heroes.Select(hero => hero.HeroId).SequenceEqual(new[] { 1, 2 }) &&
+            disk.Heroes.Select(hero => hero.HeroId).SequenceEqual(new[] { 1, 2 }) &&
+            Near(heroes[1].GlobalPosition.X - heroes[0].GlobalPosition.X, 60),
+            "双人正式新档的阵容、席位、实体或出生间距错误");
+        foreach (AbstractHeroEntity hero in heroes)
+        {
+            hero.SetPhysicsProcess(false);
+        }
+        Check(form.GetNode<Sprite2D>("StatusPanel/Head").Texture.ResourcePath.EndsWith("hud_head_wukong.png") &&
+            form.GetNode<Sprite2D>("StatusPanelP2/Head").Texture.ResourcePath.EndsWith("hud_head_tangseng.png") &&
+            form.GetNode<Sprite2D>("StatusPanelP2").Visible && form.GetNode<Sprite2D>("MenuPanelP2").Visible &&
+            form.GetNode<Label>("StatusPanelP2/m_HpBar/m_HpText").GetGlobalTransform().X.X > 0 &&
+            form.GetNode<TextureRect>("MenuPanelP2/SkillBar/Skill1/Icon").GetGlobalTransform().X.X > 0,
+            "双人HUD头像、显隐或文字图标镜像方向错误");
+        int p1Hp = states.GetState(heroes[0].HeroId).Hp.Value;
+        heroSystem.Damage(heroes[1].HeroId, 5);
+        Check(states.GetState(heroes[0].HeroId).Hp.Value == p1Hp &&
+            form.GetNode<Label>("StatusPanelP2/m_HpBar/m_HpText").Text ==
+                $"{states.GetState(heroes[1].HeroId).Hp.Value}/{states.GetState(heroes[1].HeroId).MaxHp.Value}",
+            "P2受伤未独立刷新右侧HUD或改变P1生命");
+        heroes[1].Heal(3);
+        await CaptureCombatAsync("coop_d2_spawn_hud");
+
+        // 两套原生键盘映射在同一帧按下，分别驱动各自实体。
+        Vector2[] positions = heroes.Select(hero => hero.GlobalPosition).ToArray();
+        foreach (AbstractHeroEntity hero in heroes)
+        {
+            hero.SetPhysicsProcess(true);
+        }
+        foreach (Key key in new[] { Key.D, Key.Right })
+        {
+            Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = key, Keycode = key, Pressed = true });
+        }
+        try
+        {
+            await WaitFramesAsync(24);
+            Check(heroes.All(hero => hero.ActionData.MoveAxis > 0) &&
+                heroes.Select((hero, index) => hero.GlobalPosition.X - positions[index].X).All(distance => distance > 10),
+                "两套同时移动输入未分别驱动双方");
+        }
+        finally
+        {
+            foreach (Key key in new[] { Key.D, Key.Right })
+            {
+                Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = key, Keycode = key, Pressed = false });
+            }
+        }
+        foreach (AbstractHeroEntity hero in heroes)
+        {
+            hero.SetPhysicsProcess(false);
+        }
+
+        // P1禁止控制时，P2仍可通过自身按键打开自己的背包。
+        heroSystem.SetControlsEnabled(heroes[0].HeroId, false);
+        Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.KpDivide, Keycode = Key.KpDivide, Pressed = true });
+        await WaitFramesAsync(2);
+        Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.KpDivide, Keycode = Key.KpDivide, Pressed = false });
+        await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Any(window => window.Visible),
+            "P2背包键未打开窗口");
+        InventoryForm inventory = GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Single(window => window.Visible);
+        Check(ReferenceEquals(SmokeInspection.ReadField<InventoryFormData>(inventory, "_inventoryData").Hero, heroes[1]),
+            "P2背包键打开了其他英雄的背包");
+        await CaptureCombatAsync("coop_d2_p2_inventory");
+        PushMouseClick(SmokeInspection.ReadField<TextureButton>(inventory, "_close"));
+        await WaitFramesAsync(3);
+        heroSystem.SetControlsEnabled(heroes[0].HeroId, true);
+        Check(!GF.Base.IsGamePaused, "P2背包关闭后未恢复时钟");
+        PushMouseClick(form.GetNode<TextureButton>("MenuPanelP2/m_InventoryButton"));
+        await WaitUntilAsync(() => inventory.Visible, "P2镜像HUD背包按钮未打开窗口");
+        Check(ReferenceEquals(SmokeInspection.ReadField<InventoryFormData>(inventory, "_inventoryData").Hero, heroes[1]),
+            "P2镜像HUD按钮没有保留请求席位");
+        PushMouseClick(SmokeInspection.ReadField<TextureButton>(inventory, "_close"));
+        await WaitFramesAsync(3);
+        PushInventoryKey(true);
+        await WaitFramesAsync(2);
+        PushInventoryKey(false);
+        await WaitUntilAsync(() => inventory.Visible, "P1背包键未打开窗口");
+        Check(ReferenceEquals(SmokeInspection.ReadField<InventoryFormData>(inventory, "_inventoryData").Hero, heroes[0]),
+            "P1背包键打开了P2背包");
+        PushMouseClick(SmokeInspection.ReadField<TextureButton>(inventory, "_close"));
+        await WaitFramesAsync(3);
+
+        // 无双通知必须同步带来源，改绑活动状态只刷新显示，不重复开启演出。
+        MusouActivationNode activation = SmokeInspection.ReadField<MusouActivationNode>(form, "_musouActivation");
+        AnimatedSprite2D activationSprite = SmokeInspection.ReadField<AnimatedSprite2D>(activation, "_animation");
+        var activationFrames = SmokeInspection.ReadField<Godot.Collections.Dictionary<int, SpriteFrames>>(activation, "_heroFrames");
+        foreach (AbstractHeroEntity participant in heroes)
+        {
+            HeroState state = states.GetState(participant.HeroId);
+            heroSystem.AddWsFromPickup(participant.HeroId, state.MaxWs.Value - state.Ws.Value);
+        }
+        Check(heroes[1].TryActivateMusou() && GF.Base.IsGamePaused && activation.Visible &&
+            activationSprite.SpriteFrames == activationFrames[heroes[1].HeroId],
+            "P2无双没有同步暂停或使用了其他英雄的立绘");
+        Check(!heroes[0].TryActivateMusou() && !states.GetState(heroes[0].HeroId).WsActive.Value &&
+            states.GetState(heroes[0].HeroId).IsWsFull,
+            "P2开启演出期间P1也开启或消耗了无双");
+        await CaptureCombatAsync("coop_d2_panel_p2_musou");
+        await WaitUntilAsync(() => !GF.Base.IsGamePaused, "P2无双演出结束没有恢复时钟");
+        form.OnRefocus(new BattleFormData(heroes, level));
+        Check(!GF.Base.IsGamePaused && !activation.Visible && states.GetState(heroes[1].HeroId).WsActive.Value,
+            "HUD改绑把已有无双状态重新当成开启演出");
+        Check(heroes[0].TryActivateMusou() && GF.Base.IsGamePaused &&
+            activationSprite.SpriteFrames == activationFrames[heroes[0].HeroId],
+            "P2仍处于无双时P1的开启来源被错误解析");
+        await WaitUntilAsync(() => !GF.Base.IsGamePaused, "P1无双演出结束没有恢复时钟");
+        foreach (AbstractHeroEntity participant in heroes)
+        {
+            heroSystem.ClearWs(participant.HeroId);
+        }
+        GD.Print("SMOKE-COOP-PANEL PASS: synchronous per-hero musou, immediate exclusion and active-state refocus without replay.");
+
+        // 复用单人击杀夹具的真实刷怪/死亡链，由P2提供最后有效命中来源。
+        heroes[0].SetPhysicsProcess(true);
+        await WaitUntilAsync(() =>
+        {
+            if (SmokeInspection.Sequence(level).Phase != LevelStagePhase.Fighting)
+            {
+                Input.ActionPress(InputSystem.MoveRight);
+                Input.ActionPress(InputSystem.Jump);
+                Input.ActionRelease(InputSystem.Jump);
+                return false;
+            }
+            Input.ActionRelease(InputSystem.MoveRight);
+            return FindMonster() != null;
+        }, "双人专项首波未开始", 15000);
+        heroes[0].SetPhysicsProcess(false);
+        AbstractEnemyEntity monkey = FindMonster();
+        SmokeInspection.FreezeAi(monkey);
+        monkey.SetPhysicsProcess(true);
+        int reward = SmokeInspection.ReadField<int>(monkey, "ExperienceReward");
+        int[] beforeExperience = heroes.Select(hero => profile.GetProgress(hero.HeroId).Value.TotalExperience).ToArray();
+        int kills = flow.GetModel<LevelModel>().DefeatedEnemyCount;
+        await WaitUntilAsync(() =>
+        {
+            if (!monkey.Dead)
+            {
+                var attack = AttackData.Create(0, default, monkey.MaxHp * 10f, DamageKind.Real, Vector2.Zero, 1, 0,
+                    source: new AttackSource(heroes[1].Id, EntityId.None, 0, 0));
+                monkey.ReceiveHit(attack);
+                GameFramework.ReferencePool.Release(attack);
+            }
+            return flow.GetModel<LevelModel>().DefeatedEnemyCount > kills;
+        }, "P2致死一击未经正式死亡链结算");
+        Check(profile.GetProgress(heroes[0].HeroId).Value.TotalExperience == beforeExperience[0] &&
+            profile.GetProgress(heroes[1].HeroId).Value.TotalExperience == beforeExperience[1] + reward &&
+            monkey.LastHeroAttackerId == heroes[1].Id,
+            "P2击杀经验错误共享或发给P1");
+        Check(SmokeInspection.ReadField<HashSet<LootOrbNode>>(level, "_lootOrbs")
+            .All(orb => orb.OwnerEntityId == heroes[1].Id), "P2击杀生成了属于其他席位的球");
+        await CaptureCombatAsync("coop_d2_p2_kill");
+
+        // 个人绑定由面板实例拥有，按原实例核对所有属性与集合的订退数量。
+        BattleStatusPanel[] statusPanels = [form.GetNode<BattleStatusPanel>("StatusPanel"), form.GetNode<BattleStatusPanel>("StatusPanelP2")];
+        BattleMenuPanel[] menuPanels = [form.GetNode<BattleMenuPanel>("MenuPanel"), form.GetNode<BattleMenuPanel>("MenuPanelP2")];
+        var levelHandlers = SmokeInspection.ReadField<Dictionary<AbstractHeroEntity,
+            (Action<int> Restored, Action<EquippedItems> Equipment)>>(level, "_heroHandlers");
+        Action<EquippedItems>[] equipmentHandlers = heroes.Select(hero => levelHandlers[hero].Equipment).ToArray();
+        var systemHandlers = SmokeInspection.ReadField<Dictionary<int, (Action<HeroProgressionState> Progress,
+            Action<EquippedItems> Slots, Action<IReadOnlyDictionary<GameConfig.Skills.PassiveId, int>> Passives)>>(
+            heroSystem, "_subscriptions");
+        var heroHandlers = heroes.Select(hero => systemHandlers[hero.HeroId]).ToArray();
+        HeroState[] boundStates = heroes.Select(hero => states.GetState(hero.HeroId)).ToArray();
+        BindableList<SkillId>[] learnedSources = heroes.Select(hero => flow.GetModel<SkillModel>().GetLearnedSkills(hero.HeroId)).ToArray();
+        for (int i = 0; i < heroes.Length; i++)
+        {
+            HeroState state = states.GetState(heroes[i].HeroId);
+            foreach (BindableProperty<int> property in new[] { state.Hp, state.MaxHp, state.Mp, state.MaxMp })
+            {
+                Check(SmokeInspection.CountBindingHandlers(property, statusPanels[i]) == 1,
+                    "个人状态面板资源订阅遗漏或重复");
+            }
+            foreach (BindableProperty<int> property in new[] { state.Ws, state.MaxWs })
+            {
+                Check(SmokeInspection.CountBindingHandlers(property, menuPanels[i]) == 1,
+                    "个人菜单无双订阅遗漏或重复");
+            }
+            Check(SmokeInspection.CountBindingHandlers(state.WsActive, menuPanels[i]) == 1 &&
+                SmokeInspection.CountBindingHandlers(flow.GetModel<SkillModel>().GetLearnedSkills(heroes[i].HeroId), menuPanels[i]) == 1 &&
+                SmokeInspection.CountBindingHandlers(profile.GetProgress(heroes[i].HeroId), statusPanels[i]) == 1 &&
+                SmokeInspection.CountBindingHandlers(profile.GetSlots(heroes[i].HeroId), equipmentHandlers[i]) == 1,
+                "双人HUD或会话订阅遗漏或重复");
+        }
+        PushMouseClick(form.GetNode<TextureButton>("MenuPanelP2/m_SettingsButton"));
+        await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().Any(window => window.Visible),
+            "P2设置按钮未打开共享设置");
+        SettingsForm settings = GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().Single(window => window.Visible);
+        // 窗口可见先于GGF打开成功通知，等所属流程挂好导航回调后再提交一次真实点击。
+        await WaitUntilAsync(() => SmokeInspection.CallbackCount(settings, "MapRequested") == 1,
+            "双人设置窗口导航回调未就绪");
+        PushMouseClick(settings.GetNode<BaseButton>("Scroll/Content/Options/Navigation/m_ReturnMap"));
+        await WaitUntilAsync(() => GF.Procedure.CurrentProcedure is ProcedureMap, "双人返回地图失败");
+        for (int i = 0; i < heroes.Length; i++)
+        {
+            int heroId = profile.HeroIds[i];
+            HeroState state = SmokeInspection.ReadField<HeroState>(statusPanels[i], "_state");
+            Check(state == null && SmokeInspection.ReadField<HeroState>(menuPanels[i], "_state") == null,
+                "离关后个人面板仍持有旧英雄状态");
+            HeroState oldState = boundStates[i];
+            foreach (BindableProperty<int> property in new[] { oldState.Hp, oldState.MaxHp, oldState.Mp, oldState.MaxMp })
+            {
+                Check(SmokeInspection.CountBindingHandlers(property, statusPanels[i]) == 0,
+                    "离关后个人状态面板资源订阅残留");
+            }
+            foreach (BindableProperty<int> property in new[] { oldState.Ws, oldState.MaxWs })
+            {
+                Check(SmokeInspection.CountBindingHandlers(property, menuPanels[i]) == 0,
+                    "离关后个人菜单无双订阅残留");
+            }
+            Check(SmokeInspection.CountBindingHandlers(oldState.WsActive, menuPanels[i]) == 0 &&
+                SmokeInspection.CountBindingHandlers(learnedSources[i], menuPanels[i]) == 0,
+                "离关后个人菜单开启态或技能订阅残留");
+            Check(!heroes[i].IsShown &&
+                SmokeInspection.CountBindingHandlers(profile.GetProgress(heroId), statusPanels[i]) == 0 &&
+                SmokeInspection.CountBindingHandlers(profile.GetSlots(heroId), equipmentHandlers[i]) == 0 &&
+                SmokeInspection.CountBindingHandlers(profile.GetProgress(heroId), heroHandlers[i].Progress) == 0 &&
+                SmokeInspection.CountBindingHandlers(profile.GetSlots(heroId), heroHandlers[i].Slots) == 0,
+                "双人离关后仍显示实体或残留成长/穿戴订阅");
+        }
+        GD.Print("SMOKE-COOP PASS: real double-roster save, two heroes 60px apart, readable mirrored HUD, simultaneous movement, per-seat backpack keys/buttons, P2 kill experience/orbs and both heroes unsubscribed on exit.");
     }
 
     /// <summary>
@@ -961,7 +1206,7 @@ public sealed partial class UiSmokeScenario
         // 打开前改变状态，验证打开时读取当前值而不是依赖后续事件。
         GF.Fsm.GetSystem<HeroSystem>().Damage(hero.HeroId, 30);
         GF.Fsm.GetSystem<HeroSystem>().AddWs(hero.HeroId, 35);
-        _testBattleForm = await OpenBattleFormAsync(new BattleFormData(hero, level));
+        _testBattleForm = await OpenBattleFormAsync(new BattleFormData([hero], level));
         Check(ReferenceEquals(battleForm, _testBattleForm), "HUD 未从真实窗口池复用");
         CheckDisplay(_testBattleForm, hero, progression, level);
 
@@ -986,10 +1231,10 @@ public sealed partial class UiSmokeScenario
         await WaitFramesAsync(2);
 
         // 改绑到另一英雄：旧英雄的变化不再影响显示。
-        _testBattleForm = await OpenBattleFormAsync(new BattleFormData(hero, level));
+        _testBattleForm = await OpenBattleFormAsync(new BattleFormData([hero], level));
         Check(fullAnimation.Visible && fullAnimation.IsPlaying(), "HUD 复用后没有恢复已蓄满的无双动画");
         _extraHero = await ShowHeroAsync(flow, 517);
-        GF.UI.RefocusUIForm(_testBattleForm, new BattleFormData(_extraHero, level));
+        GF.UI.RefocusUIForm(_testBattleForm, new BattleFormData([_extraHero], level));
         CheckDisplay(_testBattleForm, _extraHero, progression, level);
         Check(!fullAnimation.Visible && !fullAnimation.IsPlaying(), "改绑未蓄满的英雄后残留旧无双动画");
         GF.Fsm.GetSystem<HeroSystem>().Damage(hero.HeroId, 1);
@@ -1000,7 +1245,7 @@ public sealed partial class UiSmokeScenario
 
         // 正式英雄恢复满血并重新打开正式 HUD，后续关卡事务用例从干净状态开始。
         hero.Heal(GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).MaxHp.Value);
-        _testBattleForm = await OpenBattleFormAsync(new BattleFormData(hero, level));
+        _testBattleForm = await OpenBattleFormAsync(new BattleFormData([hero], level));
         await WaitFramesAsync(2);
     }
 
@@ -1069,7 +1314,7 @@ public sealed partial class UiSmokeScenario
         _testBattleForm = null;
         _extraHero = await ShowHeroAsync(flow, 0);
         AbstractHeroEntity previous = _extraHero;
-        _testBattleForm = await OpenBattleFormAsync(new BattleFormData(previous, FindLevel()));
+        _testBattleForm = await OpenBattleFormAsync(new BattleFormData([previous], FindLevel()));
         await CheckMusouActivationAsync(previous);
         CloseBattleForm(_testBattleForm);
         _testBattleForm = null;
@@ -1145,8 +1390,14 @@ public sealed partial class UiSmokeScenario
             AnimatedSprite2D clip = activation.GetNode<AnimatedSprite2D>("Animation");
             Check(clip.Frame > 0 && clip.SpriteFrames.GetFrameTexture(clip.Animation, clip.Frame).GetSize() == new Vector2(940, 590),
                 "暂停时原版开启动画未推进，或帧画布不匹配940×590");
-            await _driver.ToSignal(_driver.GetTree().CreateTimer(.45, true, false, true), SceneTreeTimer.SignalName.Timeout);
-            await CaptureCombatAsync("musou_activation");
+            // 按原生动画帧采样中段；PNG 编码和磁盘写入延后，避免挤占一秒演出的后半段观察窗口。
+            await WaitUntilAsync(() => clip.Frame >= 8 || !activation.Visible, "无双大立绘没有进入中段", 2000);
+            if (DisplayServer.GetName() != "headless")
+            {
+                RenderingServer.ForceDraw(false);
+            }
+            using Image activationImage = DisplayServer.GetName() == "headless"
+                ? null : _driver.GetViewport().GetTexture().GetImage();
             await WaitUntilAsync(() => clip.Frame >= 18 || !activation.Visible, "无双大立绘没有进入后半段动态火焰", 2000);
             Check(activation.Visible && clip.SpriteFrames.GetFrameCount(clip.Animation) == 24
                 && Near(clip.SpriteFrames.GetAnimationSpeed(clip.Animation), 24), "无双大立绘提前结束或时间轴与官方不一致");
@@ -1154,6 +1405,11 @@ public sealed partial class UiSmokeScenario
             await WaitUntilAsync(() => !GF.Base.IsGamePaused, "无双开启停顿未恢复游戏", 4000);
             await WaitFramesAsync(10);
             Check(!activation.Visible, "无双开启提示结束后未隐藏");
+            if (activationImage != null)
+            {
+                Check(activationImage.SavePng("res://.godot/validation/musou_activation.png") == Error.Ok,
+                    "无双中段截图保存失败");
+            }
         }
         finally
         {
@@ -1330,7 +1586,7 @@ public sealed partial class UiSmokeScenario
         int originalExperience = record.GetProgress(record.HeroOf(PlayerSlot.P1)).Value.TotalExperience;
         record.RestoreExperience(record.HeroOf(PlayerSlot.P1), 0);
         _extraHero = await ShowHeroAsync(flow, record.GetProgress(record.HeroOf(PlayerSlot.P1)).Value.TotalExperience);
-        _testBattleForm = await OpenBattleFormAsync(new BattleFormData(_extraHero, level));
+        _testBattleForm = await OpenBattleFormAsync(new BattleFormData([_extraHero], level));
         GF.Fsm.GetSystem<HeroSystem>().Damage(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), GF.Fsm.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).MaxHp.Value - 1);
         GF.Fsm.GetSystem<HeroSystem>().TrySpendMp(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), GF.Fsm.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Mp.Value - 1);
 
@@ -1402,7 +1658,7 @@ public sealed partial class UiSmokeScenario
             bool rejected = false;
             try
             {
-                await saveSystem.LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentCatalogue.UnitId);
+                await saveSystem.LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentCatalogue.UnitId, []);
             }
             catch (NotSupportedException)
             {
@@ -1444,7 +1700,7 @@ public sealed partial class UiSmokeScenario
         try
         {
             serial = GF.UI.OpenUIForm(path, "Normal",
-                new BattleFormData(FindHero(), FindLevel()));
+                new BattleFormData([FindHero()], FindLevel()));
             Check(GF.UI.IsLoadingUIForm(serial), "取消用例没有覆盖实际加载中的窗口请求");
             ReenterLevel();
             GF.UI.CloseUIForm(serial);

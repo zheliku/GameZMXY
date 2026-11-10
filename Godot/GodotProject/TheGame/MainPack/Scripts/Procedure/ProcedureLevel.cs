@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,7 +47,7 @@ public class ProcedureLevel : ProcedureBase
     private int _pendingHiddenLevelId; // 原生入口完成后，下一流程帧重入隐藏关。
     private ProcedureOwner _owner; // 当前流程状态机，重开关卡时使用。
 
-    private AbstractHeroEntity _hero; // 当前流程创建并拥有的玩家实体。
+    private readonly List<AbstractHeroEntity> _heroes = new(); // 本流程显示并拥有的参战英雄，按席位排列。
 
     private LevelViewController _levelViewController; // 流程加载并卸载的场景控制器。
     private LevelModel _levelModel; // 借用：由流程 FSM 独立拥有的本局状态。
@@ -74,6 +75,7 @@ public class ProcedureLevel : ProcedureBase
     {
         base.OnEnter(procedureOwner);
         int entrySerial = ++_entrySerial;
+        var shownHeroIds = new List<int>(); // 本周期已显示的编号；晚到回收不触碰新周期复用的实体实例。
         _owner = procedureOwner;
 
 
@@ -110,12 +112,13 @@ public class ProcedureLevel : ProcedureBase
             // 场景加载本身不取消：若流程在加载中离开，继续等待成功事件后由 entrySerial 分支卸载，避免 additive 场景泄漏。
             string battleFormPath = tables.TbUIFormConfig.DataList.Single(form => form.UIFormId == UIFormId.BattleForm).AssetPath;
             Task<Resource> battleFormAsset = GF.Resource.LoadAssetAsync(battleFormPath);
-            HeroConfig heroConfig = tables.TbHeroConfig.Get(profile.HeroOf(PlayerSlot.P1));
-            Task<Resource> heroAsset = GF.Resource.LoadAssetAsync(tables.TbEntityConfig.Get(heroConfig.EntityId).AssetPath);
+            HeroConfig[] heroConfigs = profile.HeroIds.Select(tables.TbHeroConfig.Get).ToArray();
+            Task<Resource>[] heroAssets = heroConfigs.Select(config =>
+                GF.Resource.LoadAssetAsync(tables.TbEntityConfig.Get(config.EntityId).AssetPath)).ToArray();
             Task<Node2D> levelScene = LoadLevelSceneAsync(scenePath, CancellationToken.None);
             try
             {
-                await Task.WhenAll(levelScene, battleFormAsset, heroAsset);
+                await Task.WhenAll(heroAssets.Cast<Task>().Append(levelScene).Append(battleFormAsset));
             }
             catch
             {
@@ -157,29 +160,40 @@ public class ProcedureLevel : ProcedureBase
             levelViewController.HiddenLevelRequested += OnHiddenLevelRequested;
             levelViewController.EntranceOpacityChanged += OnEntranceOpacityChanged;
 
-            // 档案身份决定实体资源；英雄共用同一装配与异步生命周期。
-            AbstractHeroEntity hero = await entities.ShowEntityAsync<AbstractHeroEntity>(heroConfig.EntityId,
-                new HeroSpawn(PlayerSlot.P1, _levelViewController.PlayerSpawnPosition));
-            GC.KeepAlive(heroAsset.Result);
-            Log.Info("[ProcedureLevel] 加载耗时：英雄显示 {0} ms", loadingWatch.ElapsedMilliseconds);
-            if (entrySerial != _entrySerial)
+            // 阵容顺序即席位；显示成功即登记，后续任意失败由同一清理路径回收。
+            for (int i = 0; i < heroConfigs.Length; i++)
             {
-                entities.HideEntitySafe(hero);
-                return;
-            }
+                HeroConfig config = heroConfigs[i];
+                PlayerSlot slot = (PlayerSlot)(i + 1);
+                AbstractHeroEntity hero = await entities.ShowEntityAsync<AbstractHeroEntity>(config.EntityId,
+                    new HeroSpawn(slot, SpawnPositionOf(slot)));
+                if (entrySerial != _entrySerial)
+                {
+                    // 按本周期原编号回收，避免旧引用已经被新周期复用时误隐藏新英雄。
+                    foreach (int id in shownHeroIds)
+                    {
+                        entities.HideEntitySafe(id);
+                    }
+                    entities.HideEntitySafe(hero);
+                    return;
+                }
 
-            _hero = hero ?? throw new InvalidOperationException($"英雄实体创建失败：{heroConfig.NameCn}。");
-            if (hero.Config == null || !hero.IsShown)
-            {
-                throw new InvalidOperationException("英雄初始化失败。");
+                _heroes.Add(hero ?? throw new InvalidOperationException($"英雄实体创建失败：{config.NameCn}。"));
+                shownHeroIds.Add(hero.Id);
+                if (hero.Config == null || !hero.IsShown)
+                {
+                    throw new InvalidOperationException("英雄初始化失败。");
+                }
             }
+            GC.KeepAlive(heroAssets);
+            Log.Info("[ProcedureLevel] 加载耗时：英雄显示 {0} ms", loadingWatch.ElapsedMilliseconds);
 
             // HUD 依赖与场景并行加载；先装配并绑定窗口，避免开战后再等首帧 UI 加载。
             var battleFormReady = new TaskCompletionSource();
             _battleFormReady = battleFormReady;
             GF.Event.Subscribe(OpenUIFormSuccessEventArgs.EventId, OnFormOpened);
             GF.Event.Subscribe(OpenUIFormFailureEventArgs.EventId, OnBattleFormOpenFailed);
-            _battleFormSerialId = GF.UI.OpenUIForm(UIFormId.BattleForm, new BattleFormData(_hero, _levelViewController));
+            _battleFormSerialId = GF.UI.OpenUIForm(UIFormId.BattleForm, new BattleFormData(_heroes, _levelViewController));
             IUIForm battleForm = GF.UI.GetUIForm(_battleFormSerialId);
             SetFormCallbacks(battleForm, bind: true);
             if (battleForm != null)
@@ -189,6 +203,10 @@ public class ProcedureLevel : ProcedureBase
 
             await battleFormReady.Task.WaitAsync(cancellationToken);
             Log.Info("[ProcedureLevel] 加载耗时：HUD就绪 {0} ms", loadingWatch.ElapsedMilliseconds);
+            if (entrySerial != _entrySerial)
+            {
+                return;
+            }
             // 保持预载资源存活到 GGF 窗口取得自己的资源引用，不另建常驻缓存。
             GC.KeepAlive(battleFormAsset.Result);
 
@@ -204,7 +222,7 @@ public class ProcedureLevel : ProcedureBase
             }
 
             _levelModel.Outcome.Register(OnLevelEnded);
-            _levelViewController.StartSession(entities, _hero, cancellationToken);
+            _levelViewController.StartSession(entities, _heroes, cancellationToken);
 
             Log.Info("[ProcedureLevel] 战斗 HUD 已就绪，开始关卡：{0}", _battleFormSerialId);
         }
@@ -270,7 +288,7 @@ public class ProcedureLevel : ProcedureBase
         _levelViewController = null;
         _levelSystem = null;
         _levelModel = null;
-        _hero = null;
+        _heroes.Clear();
         _owner = null;
     }
 
@@ -330,6 +348,17 @@ public class ProcedureLevel : ProcedureBase
         SetFormCallbacks(GF.UI.GetUIForm(_settingsSerialId), bind: true);
     }
 
+    /// <summary>按席位借用本周期已显示的英雄，未参战席位返回空。</summary>
+    /// <param name="slot">请求的玩家席位。</param>
+    /// <returns>本周期的参战英雄，或空。</returns>
+    private AbstractHeroEntity HeroAt(PlayerSlot slot) => _heroes.FirstOrDefault(hero => hero.Slot == slot);
+
+    /// <summary>按席位计算出生点：P1 用关卡出生点，P2 在其右侧 60 像素同一高度。</summary>
+    /// <param name="slot">本次显示的玩家席位。</param>
+    /// <returns>该席位的世界出生坐标，单位像素。</returns>
+    private Vector2 SpawnPositionOf(PlayerSlot slot) =>
+        _levelViewController.PlayerSpawnPosition + new Vector2(slot == PlayerSlot.P1 ? 0 : 60, 0);
+
     /// <summary>
     /// 在同一关卡中互斥打开背包与设置。
     /// </summary>
@@ -337,9 +366,9 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="slot">请求打开背包的玩家席位。</param>
     private void OnInventoryRequested(int formSerialId, PlayerSlot slot)
     {
+        AbstractHeroEntity hero = HeroAt(slot);
         if (formSerialId != _battleFormSerialId ||
-            _levelModel?.Outcome.Value != LevelOutcome.Running ||
-            _hero == null || _hero.Slot != slot || !_hero.IsAlive)
+            _levelModel?.Outcome.Value != LevelOutcome.Running || hero == null || !hero.IsAlive)
         {
             return;
         }
@@ -350,7 +379,7 @@ public class ProcedureLevel : ProcedureBase
         }
 
         _inventorySerialId =
-                    GF.UI.OpenUIForm(UIFormId.InventoryForm, new InventoryFormData(_hero));
+                    GF.UI.OpenUIForm(UIFormId.InventoryForm, new InventoryFormData(hero));
     }
 
     /// <summary>
@@ -360,9 +389,9 @@ public class ProcedureLevel : ProcedureBase
     /// <param name="slot">请求打开技能目录的玩家席位。</param>
     private void OnSkillsRequested(int formSerialId, PlayerSlot slot)
     {
+        AbstractHeroEntity hero = HeroAt(slot);
         if (formSerialId != _battleFormSerialId ||
-            _levelModel?.Outcome.Value != LevelOutcome.Running ||
-            _hero == null || _hero.Slot != slot || !_hero.IsAlive)
+            _levelModel?.Outcome.Value != LevelOutcome.Running || hero == null || !hero.IsAlive)
         {
             return;
         }
@@ -592,7 +621,11 @@ public class ProcedureLevel : ProcedureBase
             _owner.RemoveModel<LevelModel>();
         }
 
-        GF.Entity.HideEntitySafe(_hero);
+        foreach (AbstractHeroEntity hero in _heroes)
+        {
+            GF.Entity.HideEntitySafe(hero);
+        }
+        _heroes.Clear();
         _owner.RemoveSystem<HeroSystem>();
         _owner.RemoveSystem<HeroStatusSystem>();
         _owner.RemoveModel<HeroModel>();
@@ -610,7 +643,6 @@ public class ProcedureLevel : ProcedureBase
         _levelViewController = null;
         _levelSystem = null;
         _levelModel = null;
-        _hero = null;
         if (ownsScene)
         {
             _levelScenePath = null;

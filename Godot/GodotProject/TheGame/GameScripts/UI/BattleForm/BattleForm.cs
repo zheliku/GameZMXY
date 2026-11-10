@@ -93,6 +93,10 @@ namespace GameLogic.UI
 		private MusouActivationNode _musouActivation;
 		[Export]
 		private ComboHud _combo;
+		[Export]
+		private BattleStatusPanel _statusP2;
+		[Export]
+		private BattleMenuPanel _menuP2;
 
 	}
 }

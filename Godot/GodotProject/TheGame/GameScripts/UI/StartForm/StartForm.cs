@@ -81,7 +81,9 @@ namespace GameLogic.UI
 		#endregion
 
 		[Export]
-		private Button _start;
+		private Button _newGame;
+		[Export]
+		private Button _loadGame;
 		[Export]
 		private Button _settings;
 		[Export]
@@ -90,6 +92,16 @@ namespace GameLogic.UI
 		private Button _notice;
 		[Export]
 		private Label _status;
+		[Export]
+		private Control _mainMenu;
+		[Export]
+		private Control _playerCountMenu;
+		[Export]
+		private Button _single;
+		[Export]
+		private Button _double;
+		[Export]
+		private Button _back;
 
 	}
 }

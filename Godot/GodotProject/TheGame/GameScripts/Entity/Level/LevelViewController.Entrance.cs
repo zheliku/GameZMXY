@@ -3,6 +3,7 @@ using System.Linq;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Config;
+using GameLogic.Heroes;
 using Godot;
 
 namespace GameLogic.Level;
@@ -28,9 +29,12 @@ public partial class LevelViewController
         set
         {
             Modulate = new Color(1, 1, 1, value);
-            if (IsInstanceValid(_player))
+            foreach (AbstractHeroEntity hero in _heroes)
             {
-                _player.Modulate = Modulate;
+                if (IsInstanceValid(hero))
+                {
+                    hero.Modulate = Modulate;
+                }
             }
 
             EntranceOpacityChanged?.Invoke(value);
@@ -89,7 +93,7 @@ public partial class LevelViewController
     /// <param name="body">实际进入水下区域的物理身体。</param>
     private void OnEntranceBodyEntered(Node2D body)
     {
-        if (!_sessionActive || _enteringHiddenLevel || body != _player || !_player.IsAlive ||
+        if (!_sessionActive || _enteringHiddenLevel || body is not AbstractHeroEntity hero || !IsSessionHero(hero) || !hero.IsAlive ||
             LevelModel.Outcome.Value != LevelOutcome.Running)
         {
             return;
@@ -97,7 +101,10 @@ public partial class LevelViewController
 
         _enteringHiddenLevel = true;
         _hiddenEntrance.SetDeferred(Area2D.PropertyName.Monitoring, false);
-        this.GetSystem<HeroSystem>().SetControlsEnabled(_player.HeroId, false);
+        foreach (AbstractHeroEntity participant in _heroes)
+        {
+            this.GetSystem<HeroSystem>().SetControlsEnabled(participant.HeroId, false);
+        }
         _entranceFade.Play(_entranceFade.GetAnimationList().Single());
     }
 

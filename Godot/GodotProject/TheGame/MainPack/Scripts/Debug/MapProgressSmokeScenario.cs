@@ -125,9 +125,11 @@ public sealed class MapProgressSmokeScenario(Node driver)
                 Control form = forms.FirstOrDefault(value => value is SaveForm) ?? forms.FirstOrDefault(value => value is StartForm or CharacterForm);
                 string path = form switch
                 {
-                    StartForm => "m_Start",
+                    StartForm start => start.GetNode<Control>("m_MainMenu").Visible
+                        ? (_levelId == 0 ? "m_MainMenu/m_NewGame" : "m_MainMenu/m_LoadGame")
+                        : "m_PlayerCountMenu/m_Single",
                     SaveForm => "Slots/m_Slot1",
-                    CharacterForm => _heroId == 2 ? "Roles/m_Sanzang" : "Roles/m_Wukong",
+                    CharacterForm character when SmokeInspection.CallbackCount(character, "CharacterConfirmed") != 0 => _heroId == 2 ? "Roles/m_Sanzang" : "Roles/m_Wukong",
                     _ => null
                 };
                 if (path != null && !form.GetNode<BaseButton>(path).Disabled)

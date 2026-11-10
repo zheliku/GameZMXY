@@ -13,6 +13,7 @@ using GameLogic.Save;
 using GameLogic.Save.Data;
 using GameLogic.Save.Slots;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Xunit;
 
 namespace GameLogic.Profile.Tests;
@@ -289,8 +290,10 @@ public sealed class ProfileTests
     [Fact]
     public void Archive_RejectsMissingRequiredFields()
     {
-        Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<GameData>("{\"UnitId\":7}"));
-        Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<GameData>("{\"SaveVersion\":2,\"UnitId\":7}"));
+        // 首次必填字段检测使用独立契约缓存，避免与并行 JSON 往返用例共享 Newtonsoft 的惰性初始化。
+        var settings = new JsonSerializerSettings { ContractResolver = new DefaultContractResolver() };
+        Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<GameData>("{\"UnitId\":7}", settings));
+        Assert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<GameData>("{\"SaveVersion\":2,\"UnitId\":7}", settings));
     }
 
     /// <summary>

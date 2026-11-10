@@ -43,14 +43,16 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
     /// </summary>
     /// <param name="slotNumber">从 1 开始的存档格号。</param>
     /// <param name="unitId">GGF 存档编号；新格为 0。</param>
+    /// <param name="initialHeroIds">新档按席位排列的阵容；空集合使用建档表默认英雄，已有档不更换阵容。</param>
     /// <param name="cancellationToken">流程周期；取消后停止发布迟到结果，已提交的框架读写仍会完成。</param>
-    /// <param name="initialHeroId">新档选中的英雄；0使用建档表默认值，已有档不更换身份。</param>
     /// <returns>已校验的存档 DTO 及加载来源；运行时模型由流程创建并注册。</returns>
     /// <exception cref="InvalidOperationException">文件读取或写入失败，已拒绝覆盖。</exception>
     /// <exception cref="ArgumentOutOfRangeException">格号不在六格范围内或新档英雄未配置。</exception>
+    /// <exception cref="ArgumentNullException">阵容集合为空引用。</exception>
     public async Task<(GameData Data, SaveOrigin Origin)> LoadOrCreateAsync(int slotNumber, long unitId,
-        CancellationToken cancellationToken = default, int initialHeroId = 0)
+        IReadOnlyList<int> initialHeroIds, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(initialHeroIds);
         cancellationToken.ThrowIfCancellationRequested();
         GameArchiveUtility archive = this.GetUtility<GameArchiveUtility>();
         if (slotNumber < 1 || slotNumber > SaveModel.SlotCount)
@@ -59,10 +61,6 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
         }
 
         Tables tables = this.GetModel<ConfigurationModel>().Tables;
-        if (initialHeroId != 0 && tables.TbHeroConfig.GetOrDefault(initialHeroId) == null)
-        {
-            throw new ArgumentOutOfRangeException(nameof(initialHeroId), "新档英雄不在正式配置中。");
-        }
         SaveDataUtility mapper = this.GetUtility<SaveDataUtility>();
         SaveModel saveModel = this.GetModel<SaveModel>();
         await _directoryRead;
@@ -101,10 +99,23 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
         }
 
         // 只有明确的新槽或框架新建的空槽才按建档规则创建，不转换历史文件。
-        int startHeroId = initialHeroId == 0 ? tables.TbProfileConfig.StartHeroId : initialHeroId;
+        if (created)
+        {
+            if (initialHeroIds.Count == 0)
+            {
+                initialHeroIds = [tables.TbProfileConfig.StartHeroId];
+            }
+            foreach (int heroId in initialHeroIds)
+            {
+                if (tables.TbHeroConfig.GetOrDefault(heroId) == null)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(initialHeroIds), "新档英雄不在正式配置中。");
+                }
+            }
+        }
         GameData source = created ? new GameData
         {
-            Heroes = [new HeroSaveData { HeroId = startHeroId, Soul = tables.TbProfileConfig.StartSoul }]
+            Heroes = initialHeroIds.Select(id => new HeroSaveData { HeroId = id, Soul = tables.TbProfileConfig.StartSoul }).ToList()
         } : data;
         mapper.Validate(source, tables.TbEquipmentConfig,
             tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig, tables.TbPassiveConfig);

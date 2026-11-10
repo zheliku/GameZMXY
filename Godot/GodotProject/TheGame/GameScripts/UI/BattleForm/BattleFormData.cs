@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using GameLogic.Heroes;
 using GameLogic.Level;
 
@@ -12,19 +14,25 @@ public sealed class BattleFormData
     /// <summary>
     /// 借用本次显示必需的实体与场景，不管理其生命周期。
     /// </summary>
-    /// <param name="hero">本关已经显示的英雄。</param>
+    /// <param name="heroes">本关按席位排列、已经显示的1～2名英雄。</param>
     /// <param name="viewController">本场景表现控制器。</param>
     /// <exception cref="ArgumentNullException">必需表现对象为空。</exception>
-    public BattleFormData(AbstractHeroEntity hero, LevelViewController viewController)
+    /// <exception cref="ArgumentException">英雄数量不在1～2人或包含空实体。</exception>
+    public BattleFormData(IReadOnlyList<AbstractHeroEntity> heroes, LevelViewController viewController)
     {
-        Hero = hero ?? throw new ArgumentNullException(nameof(hero));
+        ArgumentNullException.ThrowIfNull(heroes);
+        if (heroes.Count is < 1 or > 2 || heroes.Any(hero => hero == null))
+        {
+            throw new ArgumentException("HUD 必须接收1～2名非空英雄。", nameof(heroes));
+        }
+        Heroes = heroes;
         ViewController = viewController ?? throw new ArgumentNullException(nameof(viewController));
     }
 
     /// <summary>
-    /// 本次观察的英雄战斗运行时。
+    /// 本局参战英雄，按席位排列；借用流程拥有的集合。
     /// </summary>
-    public AbstractHeroEntity Hero { get; }
+    public IReadOnlyList<AbstractHeroEntity> Heroes { get; }
 
     /// <summary>
     /// 本场景拥有的守关对手展示来源。

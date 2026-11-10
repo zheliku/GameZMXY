@@ -700,7 +700,7 @@ public sealed class LevelSmokeScenario
                 return;
             }
         }
-        _reload ??= _flow.GetSystem<SaveSystem>().LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentData.UnitId);
+        _reload ??= _flow.GetSystem<SaveSystem>().LoadOrCreateAsync(GF.Archive.CurrentCatalogue.SlotNumber, GF.Archive.CurrentData.UnitId, []);
         if (!_reload.IsCompleted)
         {
             return;

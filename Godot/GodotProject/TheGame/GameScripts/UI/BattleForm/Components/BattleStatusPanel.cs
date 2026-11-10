@@ -1,11 +1,15 @@
+using GameLogic.Architecture;
+using GameLogic.Battle;
+using GameLogic.Profile;
 using Godot;
+using GodotGameFramework;
 
 namespace GameLogic.UI.Widgets;
 
 /// <summary>
-/// 战斗头像区的生命、魔法、经验和等级组合，只接收一致的显示值。
+/// 一名英雄的战斗头像区；绑定本人生命、法力和成长，订阅由窗口打开与关闭统一驱动。
 /// </summary>
-public partial class BattleStatusPanel : Sprite2D
+public partial class BattleStatusPanel : Sprite2D, IController
 {
     [Export] private ResourceBar _hpBar; // 生命资源条。
     [Export] private ResourceBar _mpBar; // 魔法资源条。
@@ -13,35 +17,63 @@ public partial class BattleStatusPanel : Sprite2D
     [Export] private Label _levelLabel; // 等级数字。
     [Export] private Sprite2D _portrait; // 当前角色头像。
     [Export] private Godot.Collections.Dictionary<int, Texture2D> _portraits = new(); // 本场景登记的角色头像。
+    private HeroState _state; // 借用本次绑定英雄的唯一局内状态。
+    private BindableProperty<HeroProgressionState> _progression; // 本次实际订阅的成长来源，解绑时释放。
 
-    /// <summary>
-    /// 每次绑定战斗英雄时切换对应头像，池复用不保留上一角色。
-    /// </summary>
-    /// <param name="heroId">当前出战英雄身份。</param>
-    public void SetHero(int heroId) => _portrait.Texture = _portraits[heroId];
+    /// <summary>借用所属主流程的共享数据访问入口。</summary>
+    /// <returns>当前流程 FSM 的架构。</returns>
+    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
 
-    /// <summary>
-    /// 同步生命和魔法现值与上限。
-    /// </summary>
-    /// <param name="hp">当前生命。</param>
-    /// <param name="maxHp">生命上限。</param>
-    /// <param name="mp">当前魔法。</param>
-    /// <param name="maxMp">魔法上限。</param>
-    public void SetResources(int hp, int maxHp, int mp, int maxMp)
+    /// <summary>解除旧绑定，再观察指定英雄并立即刷新头像、资源和成长。</summary>
+    /// <param name="heroId">本局已经建立状态的参战英雄编号。</param>
+    public void BindHero(int heroId)
     {
-        _hpBar.SetValue(hp, maxHp);
-        _mpBar.SetValue(mp, maxMp);
+        UnbindHero();
+        HeroState state = this.GetModel<HeroModel>().GetState(heroId);
+        BindableProperty<HeroProgressionState> progression = this.GetModel<ProfileModel>().GetProgress(heroId);
+        // 先保存实际来源，窗口的失败清理也能解除已经完成的部分订阅。
+        _state = state;
+        _progression = progression;
+        _state.Hp.Register(RefreshResources);
+        _state.MaxHp.Register(RefreshResources);
+        _state.Mp.Register(RefreshResources);
+        _state.MaxMp.Register(RefreshResources);
+        _progression.RegisterWithInitValue(RefreshProgression);
+        _portrait.Texture = _portraits[heroId];
+        RefreshResources();
     }
 
-    /// <summary>
-    /// 同步等级与本级经验。
-    /// </summary>
-    /// <param name="level">当前等级。</param>
-    /// <param name="experience">当前等级内经验。</param>
-    /// <param name="maximum">本级升级需求。</param>
-    public void SetProgression(int level, int experience, int maximum)
+    /// <summary>由窗口关闭、改绑或装配失败时调用，解除本面板的全部订阅。</summary>
+    public void UnbindHero()
     {
-        _levelLabel.Text = level.ToString();
-        _expBar.SetValue(experience, maximum);
+        if (_state == null)
+        {
+            return;
+        }
+
+        // 具名方法的目标就是本面板，无需为每个席位保存闭包。
+        _state.Hp.UnRegister(RefreshResources);
+        _state.MaxHp.UnRegister(RefreshResources);
+        _state.Mp.UnRegister(RefreshResources);
+        _state.MaxMp.UnRegister(RefreshResources);
+        _progression.UnRegister(RefreshProgression);
+        _state = null;
+        _progression = null;
+    }
+
+    /// <summary>读取本人的当前值与上限，同步生命和魔法显示。</summary>
+    /// <param name="value">触发通知的已提交值；关联数值从绑定状态一起读取。</param>
+    private void RefreshResources(int value = 0)
+    {
+        _hpBar.SetValue(_state.Hp.Value, _state.MaxHp.Value);
+        _mpBar.SetValue(_state.Mp.Value, _state.MaxMp.Value);
+    }
+
+    /// <summary>用同一次成长快照刷新等级和经验。</summary>
+    /// <param name="progression">当前英雄已经提交的成长值。</param>
+    private void RefreshProgression(HeroProgressionState progression)
+    {
+        _levelLabel.Text = progression.Level.ToString();
+        _expBar.SetValue(progression.Experience, progression.MaxExperience);
     }
 }

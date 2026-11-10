@@ -43,7 +43,7 @@
 [ext_resource type="Texture2D" uid="uid://c80du00fmxodl" path="res://TheGame/Sprites/UI/hud/menu_weapon_normal.png" id="weapon_normal"]
 [ext_resource type="Texture2D" uid="uid://6hpg33m2d84" path="res://TheGame/Sprites/UI/hud/hud_ws_frame.png" id="ws_frame"]
 
-[node name="BattleForm" type="Control" unique_id=1958358155 node_paths=PackedStringArray("_status", "_menu", "_go", "_encounterHealthBar", "_musouActivation", "_combo")]
+[node name="BattleForm" type="Control" unique_id=1958358155 node_paths=PackedStringArray("_status", "_menu", "_go", "_encounterHealthBar", "_musouActivation", "_combo", "_statusP2", "_menuP2")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -59,6 +59,8 @@ _go = NodePath("m_Go")
 _encounterHealthBar = NodePath("m_EncounterHealthBar")
 _musouActivation = NodePath("m_MusouActivation")
 _combo = NodePath("m_Combo")
+_statusP2 = NodePath("StatusPanelP2")
+_menuP2 = NodePath("MenuPanelP2")
 
 [node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247 node_paths=PackedStringArray("_hpBar", "_mpBar", "_expBar", "_levelLabel", "_portrait")]
 position = Vector2(116, 44)
@@ -363,6 +365,343 @@ texture_hover = ExtResource("pet_hover")
 texture_disabled = ExtResource("pet_normal")
 
 [node name="Caption" type="Sprite2D" parent="MenuPanel/PetButton" unique_id=2105120597]
+position = Vector2(22, 33)
+texture = ExtResource("pet_caption")
+
+[node name="StatusPanelP2" type="Sprite2D" parent="." unique_id=2146763592 node_paths=PackedStringArray("_hpBar", "_mpBar", "_expBar", "_levelLabel", "_portrait")]
+position = Vector2(824, 44)
+scale = Vector2(-1, 1)
+texture = ExtResource("2_status")
+script = ExtResource("status_panel")
+_hpBar = NodePath("m_HpBar")
+_mpBar = NodePath("m_MpBar")
+_expBar = NodePath("m_ExpBar")
+_levelLabel = NodePath("m_LevelLabel")
+_portrait = NodePath("Head")
+_portraits = Dictionary[int, Texture2D]({1: ExtResource("6_head"), 2: ExtResource("head_tangseng")})
+
+[node name="m_HpBar" type="TextureProgressBar" parent="StatusPanelP2" unique_id=2146763593 node_paths=PackedStringArray("_text")]
+offset_left = -33.0
+offset_top = -30.0
+offset_right = 115.0
+offset_bottom = -18.0
+max_value = 1.0
+step = 0.0
+nine_patch_stretch = true
+texture_progress = ExtResource("4_hp")
+texture_progress_offset = Vector2(-3, 0)
+script = ExtResource("14_resourcebar")
+_text = NodePath("m_HpText")
+
+[node name="m_HpText" type="Label" parent="StatusPanelP2/m_HpBar" unique_id=2146763594]
+scale = Vector2(-1, 1)
+pivot_offset = Vector2(72.5, 9.5)
+layout_mode = 0
+offset_left = 4.0
+offset_top = -2.0
+offset_right = 149.0
+offset_bottom = 17.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/shadow_outline_size = -6
+theme_override_fonts/font = ExtResource("20_hud_font")
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_LevelLabel" type="Label" parent="StatusPanelP2" unique_id=2146763595]
+scale = Vector2(-1, 1)
+pivot_offset = Vector2(12.5, 10)
+offset_left = -108.0
+offset_top = 16.0
+offset_right = -83.0
+offset_bottom = 36.0
+theme_override_fonts/font = ExtResource("19_level_font")
+theme_override_font_sizes/font_size = 16
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_MpBar" type="TextureProgressBar" parent="StatusPanelP2" unique_id=2146763596 node_paths=PackedStringArray("_text")]
+offset_left = -28.0
+offset_top = -11.0
+offset_right = 117.0
+offset_bottom = 2.0
+max_value = 1.0
+step = 0.0
+nine_patch_stretch = true
+texture_progress = ExtResource("15_mp")
+texture_progress_offset = Vector2(-2, 0)
+script = ExtResource("14_resourcebar")
+_text = NodePath("MpText")
+
+[node name="MpText" type="Label" parent="StatusPanelP2/m_MpBar" unique_id=2146763597]
+scale = Vector2(-1, 1)
+pivot_offset = Vector2(71.5, 9.5)
+layout_mode = 0
+offset_top = -2.0
+offset_right = 143.0
+offset_bottom = 17.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("20_hud_font")
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="m_ExpBar" type="TextureProgressBar" parent="StatusPanelP2" unique_id=2146763598 node_paths=PackedStringArray("_text")]
+offset_left = -32.0
+offset_top = 8.0
+offset_right = 119.0
+offset_bottom = 23.0
+max_value = 1.0
+step = 0.0
+nine_patch_stretch = true
+texture_progress = ExtResource("16_exp")
+texture_progress_offset = Vector2(-3, 0)
+script = ExtResource("14_resourcebar")
+_text = NodePath("ExpText")
+_fullAtZeroMaximum = true
+
+[node name="ExpText" type="Label" parent="StatusPanelP2/m_ExpBar" unique_id=2146763599]
+scale = Vector2(-1, 1)
+pivot_offset = Vector2(73, 9.5)
+layout_mode = 0
+offset_left = 2.0
+offset_top = -2.0
+offset_right = 148.0
+offset_bottom = 17.0
+theme_override_fonts/font = ExtResource("20_hud_font")
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Head" type="Sprite2D" parent="StatusPanelP2" unique_id=2146763600]
+scale = Vector2(-1, 1)
+position = Vector2(-63, -8)
+texture = ExtResource("6_head")
+
+[node name="StatusLabel" type="Sprite2D" parent="StatusPanelP2" unique_id=2146763601]
+scale = Vector2(-1, 1)
+position = Vector2(-19, -5)
+texture = ExtResource("3_label")
+
+[node name="MenuPanelP2" type="Sprite2D" parent="." unique_id=2146763602 node_paths=PackedStringArray("_wsBar", "_wsMax", "_settingsButton", "_inventoryButton", "_skillsButton", "_icons")]
+position = Vector2(850, 531)
+scale = Vector2(-1, 1)
+texture = ExtResource("7_menu")
+script = ExtResource("menu_panel")
+_wsBar = NodePath("WsFrame/m_WsBar")
+_wsMax = NodePath("m_WsMax")
+_settingsButton = NodePath("m_SettingsButton")
+_inventoryButton = NodePath("m_InventoryButton")
+_skillsButton = NodePath("m_SkillsButton")
+_skillIcons = ExtResource("official_skills")
+_icons = [NodePath("SkillBar/Skill1/Icon"), NodePath("SkillBar/Skill2/Icon"), NodePath("SkillBar/Skill3/Icon"), NodePath("SkillBar/Skill4/Icon"), NodePath("SkillBar/Skill5/Icon")]
+
+[node name="WsFrame" type="Sprite2D" parent="MenuPanelP2" unique_id=2146763603]
+position = Vector2(113, 25)
+texture = ExtResource("ws_frame")
+
+[node name="m_WsBar" type="TextureProgressBar" parent="MenuPanelP2/WsFrame" unique_id=2146763604]
+offset_left = -130.0
+offset_top = -16.0
+offset_right = 91.0
+offset_bottom = 12.0
+scale = Vector2(1.17, 1.03)
+max_value = 1.0
+step = 0.0
+fill_mode = 1
+texture_under = ExtResource("official_ws_under")
+texture_progress = ExtResource("official_ws_fill")
+texture_progress_offset = Vector2(-1, 9)
+script = ExtResource("14_resourcebar")
+
+[node name="WsGrey" type="Sprite2D" parent="MenuPanelP2" unique_id=2146763605]
+scale = Vector2(-1, 1)
+offset = Vector2(-68, 0)
+position = Vector2(-58, -38)
+texture = ExtResource("official_ws_idle")
+centered = false
+
+[node name="m_WsMax" type="AnimatedSprite2D" parent="MenuPanelP2" unique_id=2146763606]
+scale = Vector2(-1, 1)
+offset = Vector2(-158, 0)
+visible = false
+position = Vector2(-103.75, -84.25)
+sprite_frames = ExtResource("official_ws_glow")
+animation = &"full"
+frame_progress = 0.63037246
+centered = false
+
+[node name="SkillBar" type="Control" parent="MenuPanelP2" unique_id=2146763607]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 18.0
+offset_top = -25.0
+offset_right = 223.0
+offset_bottom = 20.0
+mouse_filter = 2
+
+[node name="Skill1" type="Control" parent="MenuPanelP2/SkillBar" unique_id=2146763608]
+anchors_preset = 0
+offset_right = 45.0
+offset_bottom = 45.0
+mouse_filter = 1
+
+[node name="Icon" type="TextureRect" parent="MenuPanelP2/SkillBar/Skill1" unique_id=2146763609]
+scale = Vector2(-1, 1)
+pivot_offset = Vector2(22.5, 22.5)
+layout_mode = 0
+offset_right = 45.0
+offset_bottom = 45.0
+mouse_filter = 2
+expand_mode = 1
+
+[node name="Skill2" type="Control" parent="MenuPanelP2/SkillBar" unique_id=2146763610]
+anchors_preset = 0
+offset_left = 40.0
+offset_right = 85.0
+offset_bottom = 45.0
+mouse_filter = 1
+
+[node name="Icon" type="TextureRect" parent="MenuPanelP2/SkillBar/Skill2" unique_id=2146763611]
+scale = Vector2(-1, 1)
+pivot_offset = Vector2(22.5, 22.5)
+layout_mode = 0
+offset_right = 45.0
+offset_bottom = 45.0
+mouse_filter = 2
+expand_mode = 1
+
+[node name="Skill3" type="Control" parent="MenuPanelP2/SkillBar" unique_id=2146763612]
+anchors_preset = 0
+offset_left = 80.0
+offset_right = 125.0
+offset_bottom = 45.0
+mouse_filter = 1
+
+[node name="Icon" type="TextureRect" parent="MenuPanelP2/SkillBar/Skill3" unique_id=2146763613]
+scale = Vector2(-1, 1)
+pivot_offset = Vector2(22.5, 22.5)
+layout_mode = 0
+offset_right = 45.0
+offset_bottom = 45.0
+mouse_filter = 2
+expand_mode = 1
+
+[node name="Skill4" type="Control" parent="MenuPanelP2/SkillBar" unique_id=2146763614]
+anchors_preset = 0
+offset_left = 119.95
+offset_right = 164.95
+offset_bottom = 45.0
+mouse_filter = 1
+
+[node name="Icon" type="TextureRect" parent="MenuPanelP2/SkillBar/Skill4" unique_id=2146763615]
+scale = Vector2(-1, 1)
+pivot_offset = Vector2(22.5, 22.5)
+layout_mode = 0
+offset_right = 45.0
+offset_bottom = 45.0
+mouse_filter = 2
+expand_mode = 1
+
+[node name="Skill5" type="Control" parent="MenuPanelP2/SkillBar" unique_id=2146763616]
+anchors_preset = 0
+offset_left = 159.95
+offset_right = 204.95
+offset_bottom = 45.0
+mouse_filter = 1
+
+[node name="Icon" type="TextureRect" parent="MenuPanelP2/SkillBar/Skill5" unique_id=2146763617]
+scale = Vector2(-1, 1)
+pivot_offset = Vector2(22.5, 22.5)
+layout_mode = 0
+offset_right = 45.0
+offset_bottom = 45.0
+mouse_filter = 2
+expand_mode = 1
+
+[node name="m_InventoryButton" type="TextureButton" parent="MenuPanelP2" unique_id=2146763618]
+offset_left = -87.0
+offset_top = -2.0
+offset_right = -40.0
+offset_bottom = 38.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("inventory_normal")
+texture_pressed = ExtResource("inventory_normal")
+texture_hover = ExtResource("inventory_hover")
+texture_disabled = ExtResource("inventory_normal")
+
+[node name="Caption" type="Sprite2D" parent="MenuPanelP2/m_InventoryButton" unique_id=2146763619]
+scale = Vector2(-1, 1)
+position = Vector2(21, 37)
+texture = ExtResource("inventory_caption")
+
+[node name="m_SettingsButton" type="TextureButton" parent="MenuPanelP2" unique_id=2146763620]
+offset_left = -55.0
+offset_top = 20.0
+offset_right = -8.0
+offset_bottom = 60.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("settings_normal")
+texture_pressed = ExtResource("settings_normal")
+texture_hover = ExtResource("settings_hover")
+texture_disabled = ExtResource("settings_normal")
+
+[node name="Caption" type="Sprite2D" parent="MenuPanelP2/m_SettingsButton" unique_id=2146763621]
+scale = Vector2(-1, 1)
+position = Vector2(24, 30)
+texture = ExtResource("settings_caption")
+
+[node name="m_SkillsButton" type="TextureButton" parent="MenuPanelP2" unique_id=2146763622]
+offset_left = -93.0
+offset_top = -39.0
+offset_right = -46.0
+offset_bottom = 1.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("skills_normal")
+texture_pressed = ExtResource("skills_normal")
+texture_hover = ExtResource("skills_hover")
+texture_disabled = ExtResource("skills_normal")
+
+[node name="Caption" type="Sprite2D" parent="MenuPanelP2/m_SkillsButton" unique_id=2146763623]
+scale = Vector2(-1, 1)
+position = Vector2(22, 31)
+texture = ExtResource("skills_caption")
+
+[node name="WeaponButton" type="TextureButton" parent="MenuPanelP2" unique_id=2146763624]
+offset_left = -65.0
+offset_top = -67.0
+offset_right = -18.0
+offset_bottom = -27.0
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("weapon_normal")
+texture_pressed = ExtResource("weapon_normal")
+texture_hover = ExtResource("weapon_hover")
+texture_disabled = ExtResource("weapon_normal")
+
+[node name="Caption" type="Sprite2D" parent="MenuPanelP2/WeaponButton" unique_id=2146763625]
+scale = Vector2(-1, 1)
+position = Vector2(19, 28)
+texture = ExtResource("weapon_caption")
+
+[node name="PetButton" type="TextureButton" parent="MenuPanelP2" unique_id=2146763626]
+offset_left = -27.0
+offset_top = -71.0
+offset_right = 20.0
+offset_bottom = -31.0
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("pet_normal")
+texture_pressed = ExtResource("pet_normal")
+texture_hover = ExtResource("pet_hover")
+texture_disabled = ExtResource("pet_normal")
+
+[node name="Caption" type="Sprite2D" parent="MenuPanelP2/PetButton" unique_id=2146763627]
+scale = Vector2(-1, 1)
 position = Vector2(22, 33)
 texture = ExtResource("pet_caption")
 

@@ -36,14 +36,14 @@ public partial class LevelViewController
     /// <param name="spawnPointId">实际死亡实体归属的配方生成点。</param>
     private void OnEnemyDefeated(EnemyDiedEventArgs data, string spawnPointId)
     {
-        if (LevelModel.Outcome.Value != LevelOutcome.Running || !_player.IsAlive)
+        if (LevelModel.Outcome.Value != LevelOutcome.Running)
         {
             return;
         }
 
-        // 当前会话只生成一个英雄；外部或已离场的来源不参与本局奖励。
+        // 只有本会话的参战英雄可获得归属奖励；外部来源仍按无归属死亡处理。
         var killer = GF.Entity.GetEntity(data.KillerEntityId) as AbstractHeroEntity;
-        if (!ReferenceEquals(killer, _player))
+        if (!IsSessionHero(killer))
         {
             killer = null;
         }
@@ -119,7 +119,7 @@ public partial class LevelViewController
     /// <returns>是否完成领取。</returns>
     private bool TryCollectGroundItem(AbstractHeroEntity hero, PickupId pickupId, EquipmentData data)
     {
-        if (LevelModel.Outcome.Value != LevelOutcome.Running || !(ReferenceEquals(hero, _player) && hero.IsAlive))
+        if (LevelModel.Outcome.Value != LevelOutcome.Running || !(IsSessionHero(hero) && hero.IsAlive))
         {
             return false;
         }
@@ -139,12 +139,6 @@ public partial class LevelViewController
             pickup.Effect == PickupEffect.Mana ? RecoveryKind.Mana : RecoveryKind.Health);
         return true;
     }
-
-    /// <summary>
-    /// 显示本关英雄已完成的主动治疗，本体与分身复用同一恢复数字。
-    /// </summary>
-    /// <param name="amount">官方技能的恢复量，满血时也保留反馈。</param>
-    private void OnHeroHealthRestored(int amount) => _floatingText.ShowRecovery(_player.GlobalPosition, amount, RecoveryKind.Health);
 
     /// <summary>
     /// 拾取或过期后只回收本关拥有的实例。
@@ -190,7 +184,7 @@ public partial class LevelViewController
     /// <param name="delta">本帧游戏秒数。</param>
     private void TickLoot(float delta)
     {
-        if (delta <= 0 || !IsInstanceValid(_player) || !_player.IsAlive)
+        if (delta <= 0)
         {
             return;
         }
@@ -202,7 +196,14 @@ public partial class LevelViewController
             {
                 if (_groundItems.Contains(item))
                 {
-                    item.TryCollect(_player);
+                    // 同一物品按席位尝试，某人领取成功后不再交给后面的英雄。
+                    foreach (AbstractHeroEntity hero in _heroes)
+                    {
+                        if (hero.IsAlive && item.TryCollect(hero))
+                        {
+                            break;
+                        }
+                    }
                 }
             }
         }

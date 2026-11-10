@@ -86,6 +86,12 @@ namespace GameLogic.UI
 		private TextureButton _sanzang;
 		[Export]
 		private Label _playerOne;
+		[Export]
+		private Label _playerTwo;
+		[Export]
+		private Button _reselect;
+		[Export]
+		private Button _back;
 
 	}
 }

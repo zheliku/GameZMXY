@@ -50,11 +50,11 @@ public class ProcedureLoadGame : ProcedureBase
             }
             // 准备流程已建立 Architecture 并注册 ConfigurationModel。
             IArchitecture architecture = procedureOwner.GetArchitecture();
-            (int SlotNumber, long UnitId, int HeroId) selection = procedureOwner.GetData<SaveSelectionVariable>(FlowKeys.SaveSelection)?.Value
+            (int SlotNumber, long UnitId, int[] HeroIds) selection = procedureOwner.GetData<SaveSelectionVariable>(FlowKeys.SaveSelection)?.Value
                 ?? throw new InvalidOperationException("缺少存档选择结果。");
             // 先完成读档和校验，再一次发布状态与系统；等待期间不暴露半份运行时数据。
             SaveSystem saveSystem = procedureOwner.GetSystem<SaveSystem>();
-            (GameData Data, SaveOrigin Origin) loaded = await saveSystem.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId, token, selection.HeroId);
+            (GameData Data, SaveOrigin Origin) loaded = await saveSystem.LoadOrCreateAsync(selection.SlotNumber, selection.UnitId, selection.HeroIds, token);
             if (entrySerial != _entrySerial)
             {
                 return;
@@ -71,8 +71,7 @@ public class ProcedureLoadGame : ProcedureBase
             procedureOwner.GetSystem<ProfileSystem>().RestoreCheckpoint(data);
             procedureOwner.RegisterSystem(new EquipmentSystem(architecture));
             procedureOwner.RegisterSystem(new SkillSystem(architecture));
-            Log.Info("[ProcedureLoadGame] 档案就绪：来源 {0}，出战英雄 {1}，等级 {2}", loaded.Origin,
-                profile.HeroOf(PlayerSlot.P1), profile.GetProgress(profile.HeroOf(PlayerSlot.P1)).Value.Level);
+            Log.Info("[ProcedureLoadGame] 档案就绪：来源 {0}，阵容 {1}", loaded.Origin, string.Join(",", profile.HeroIds));
             // 空槽已在首次写盘前确认角色；新旧档案都沿同一已装配的地图入口继续。
             ChangeState<ProcedureMap>(procedureOwner);
         }

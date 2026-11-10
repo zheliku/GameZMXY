@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using GameConfig.Sound;
 using GameFramework.UI;
 using GameLogic.Architecture;
@@ -19,10 +20,14 @@ public partial class CharacterForm : IController
     private const int WukongHeroId = 1; // HeroConfig中已实现的悟空身份。
     private const int TangsengHeroId = 2; // HeroConfig中唐僧身份，首次快照随选角确定。
 
-    /// <summary>
-    /// 由所属流程处理新档确认；参数为本次窗口编号及英雄配置编号。
-    /// </summary>
-    public event Action<int, int> CharacterConfirmed;
+    private int _playerCount; // 本次需要确认的人数。
+    private readonly List<int> _chosenHeroIds = new(); // 已按席位确认的英雄。
+
+    /// <summary>全部席位选定；参数为窗口编号与按席位排列的英雄编号。</summary>
+    public event Action<int, int[]> CharacterConfirmed;
+
+    /// <summary>玩家放弃选角返回标题；参数为窗口编号。</summary>
+    public event Action<int> CharacterCancelled;
 
     /// <summary>
     /// 设置框架字段；按钮事件只在新建实例时绑定一次。
@@ -50,16 +55,28 @@ public partial class CharacterForm : IController
             _sanzang.Pressed += OnTangsengClicked;
             _sanzang.MouseEntered += OnTangsengMouseEntered;
             _sanzang.MouseExited += ResetRoleHover;
+            _reselect.Pressed += OnReselectClicked;
+            _back.Pressed += OnBackClicked;
         }
     }
 
     /// <summary>
-    /// 开放当前窗口的角色确认请求。
+    /// 根据指定人数开放当前窗口的依次选角请求。
     /// </summary>
-    /// <param name="userData">本次窗口打开参数。</param>
+    /// <param name="userData">包含参战人数的选角参数。</param>
+    /// <exception cref="ArgumentException">未提供选角参数。</exception>
     public void OnOpen(object userData)
     {
-        ResetRoleHover();
+        if (userData is not CharacterFormData data)
+        {
+            throw new ArgumentException("选角窗口需要参战人数。", nameof(userData));
+        }
+
+        // 每次打开从第一席位开始，不沿用池中窗口的上次选择。
+        _playerCount = data.PlayerCount;
+        _chosenHeroIds.Clear();
+        _reselect.Visible = _playerCount == 2;
+        RefreshCards();
         Visible = true;
     }
 
@@ -71,6 +88,8 @@ public partial class CharacterForm : IController
     public void OnClose(bool isShutdown, object userData)
     {
         CharacterConfirmed = null;
+        CharacterCancelled = null;
+        _chosenHeroIds.Clear();
         if (!isShutdown)
         {
             ResetRoleHover();
@@ -87,6 +106,9 @@ public partial class CharacterForm : IController
     /// </summary>
     public void OnRecycle()
     {
+        CharacterConfirmed = null;
+        CharacterCancelled = null;
+        _chosenHeroIds.Clear();
         ResetRoleHover();
         _serialId = 0;
         _depthInUIGroup = 0;
@@ -179,50 +201,91 @@ public partial class CharacterForm : IController
     /// <param name="heroId">已开放角色的英雄配置编号。</param>
     private void ConfirmCharacter(int heroId)
     {
+        if (!GF.UI.HasUIForm(SerialId) || _chosenHeroIds.Contains(heroId))
+        {
+            return;
+        }
+
+        GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        _chosenHeroIds.Add(heroId);
+        RefreshCards();
+        if (_chosenHeroIds.Count == _playerCount)
+        {
+            CharacterConfirmed?.Invoke(SerialId, _chosenHeroIds.ToArray());
+        }
+    }
+
+    /// <summary>
+    /// 预览已开放的悟空，将待选席位放到卡片顶部中央。
+    /// </summary>
+    private void OnWukongMouseEntered() => PreviewRole(_wukong, WukongHeroId);
+
+    /// <summary>
+    /// 预览唐僧官方卡片，将待选席位放到卡片顶部中央。
+    /// </summary>
+    private void OnTangsengMouseEntered() => PreviewRole(_sanzang, TangsengHeroId);
+
+    /// <summary>预览未选卡片，并显示下一个待选席位。</summary>
+    /// <param name="card">鼠标进入的已开放角色卡片。</param>
+    /// <param name="heroId">卡片对应英雄编号。</param>
+    private void PreviewRole(TextureButton card, int heroId)
+    {
+        if (!GF.UI.HasUIForm(SerialId) || _chosenHeroIds.Contains(heroId) || _chosenHeroIds.Count == _playerCount)
+        {
+            return;
+        }
+
+        RefreshCards();
+        ((ShaderMaterial)card.Material).SetShaderParameter("grayscale", 0f);
+        Label label = _chosenHeroIds.Count == 0 ? _playerOne : _playerTwo;
+        label.GlobalPosition = new Vector2(card.GetGlobalRect().GetCenter().X - label.Size.X / 2,
+            label.GlobalPosition.Y);
+        label.Visible = true;
+    }
+
+    /// <summary>按已确认的席位恢复卡片亮度和玩家标记。</summary>
+    private void RefreshCards()
+    {
+        // 已确认的卡片持续高亮；标记位置与阵容顺序一致。
+        ((ShaderMaterial)_wukong.Material).SetShaderParameter("grayscale", _chosenHeroIds.Contains(WukongHeroId) ? 0f : 1f);
+        ((ShaderMaterial)_sanzang.Material).SetShaderParameter("grayscale", _chosenHeroIds.Contains(TangsengHeroId) ? 0f : 1f);
+        _playerOne.Visible = false;
+        _playerTwo.Visible = false;
+        for (int i = 0; i < _chosenHeroIds.Count; i++)
+        {
+            TextureButton card = _chosenHeroIds[i] == WukongHeroId ? _wukong : _sanzang;
+            Label label = i == 0 ? _playerOne : _playerTwo;
+            label.GlobalPosition = new Vector2(card.GetGlobalRect().GetCenter().X - label.Size.X / 2,
+                label.GlobalPosition.Y);
+            label.Visible = true;
+        }
+    }
+
+    /// <summary>鼠标离开时恢复已确认席位，不清除选择。</summary>
+    private void ResetRoleHover() => RefreshCards();
+
+    /// <summary>清空当前双人选择，重新从第一席位开始。</summary>
+    private void OnReselectClicked()
+    {
         if (!GF.UI.HasUIForm(SerialId))
         {
             return;
         }
 
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        CharacterConfirmed?.Invoke(SerialId, heroId);
+        _chosenHeroIds.Clear();
+        RefreshCards();
     }
 
-    /// <summary>
-    /// 预览已开放的悟空，将 1P 放到卡片顶部中央。
-    /// </summary>
-    private void OnWukongMouseEntered() => PreviewRole(_wukong);
-
-    /// <summary>
-    /// 预览唐僧官方卡片，将1P放到卡片顶部中央。
-    /// </summary>
-    private void OnTangsengMouseEntered() => PreviewRole(_sanzang);
-
-    /// <summary>
-    /// 同一时刻只突出当前可选角色，复用官方卡片的灰度材质。
-    /// </summary>
-    /// <param name="card">鼠标进入的已开放角色卡片。</param>
-    private void PreviewRole(TextureButton card)
+    /// <summary>放弃本次选择并请求返回标题。</summary>
+    private void OnBackClicked()
     {
         if (!GF.UI.HasUIForm(SerialId))
         {
             return;
         }
 
-        ResetRoleHover();
-        ((ShaderMaterial)card.Material).SetShaderParameter("grayscale", 0f);
-        _playerOne.GlobalPosition = new Vector2(card.GetGlobalRect().GetCenter().X - _playerOne.Size.X / 2,
-            _playerOne.GlobalPosition.Y);
-        _playerOne.Visible = true;
-    }
-
-    /// <summary>
-    /// 离开卡片或关闭窗口时恢复灰度并隐藏玩家标记。
-    /// </summary>
-    private void ResetRoleHover()
-    {
-        ((ShaderMaterial)_wukong.Material).SetShaderParameter("grayscale", 1f);
-        ((ShaderMaterial)_sanzang.Material).SetShaderParameter("grayscale", 1f);
-        _playerOne.Visible = false;
+        GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        CharacterCancelled?.Invoke(SerialId);
     }
 }

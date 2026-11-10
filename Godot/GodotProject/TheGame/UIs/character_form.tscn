@@ -49,7 +49,7 @@ atlas = ExtResource("wujing")
 region = Rect2(22, 0, 237, 610)
 filter_clip = true
 
-[node name="CharacterForm" type="Control" unique_id=1389231940 node_paths=PackedStringArray("_wukong", "_sanzang", "_playerOne")]
+[node name="CharacterForm" type="Control" unique_id=1389231940 node_paths=PackedStringArray("_wukong", "_sanzang", "_playerOne", "_playerTwo", "_reselect", "_back")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -61,6 +61,9 @@ script = ExtResource("script")
 _wukong = NodePath("Roles/m_Wukong")
 _sanzang = NodePath("Roles/m_Sanzang")
 _playerOne = NodePath("m_PlayerOne")
+_playerTwo = NodePath("m_PlayerTwo")
+_reselect = NodePath("m_Reselect")
+_back = NodePath("m_Back")
 
 [node name="Background" type="ColorRect" parent="." unique_id=381968765]
 layout_mode = 0
@@ -132,3 +135,39 @@ theme_override_fonts/font = ExtResource("player_font")
 theme_override_font_sizes/font_size = 52
 text = "1P"
 horizontal_alignment = 1
+
+[node name="m_PlayerTwo" type="Label" parent="." unique_id=717879827]
+visible = false
+layout_mode = 0
+offset_left = 61.0
+offset_top = 36.0
+offset_right = 184.0
+offset_bottom = 101.0
+theme_override_colors/font_color = Color(0.35, 0.75, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("player_font")
+theme_override_font_sizes/font_size = 52
+text = "2P"
+horizontal_alignment = 1
+
+[node name="m_Reselect" type="Button" parent="." unique_id=717879828]
+visible = false
+layout_mode = 0
+offset_left = 500.0
+offset_top = 520.0
+offset_right = 640.0
+offset_bottom = 565.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+text = "重选"
+
+[node name="m_Back" type="Button" parent="." unique_id=717879829]
+layout_mode = 0
+offset_left = 760.0
+offset_top = 520.0
+offset_right = 900.0
+offset_bottom = 565.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+text = "返回"

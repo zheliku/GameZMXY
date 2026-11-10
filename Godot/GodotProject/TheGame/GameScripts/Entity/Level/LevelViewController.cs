@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using GameConfig.Level;
@@ -38,7 +39,8 @@ public partial class LevelViewController : Node2D, IController
     [Export] private string[] _featuredOpponentSpawnPointIds = []; // 使用顶部生命条的生成点；仅影响场景展示。
 
     private IArchitecture _architecture; // 借用流程 FSM 的入口，初始化绑定后不跨作用域转移。
-    private AbstractHeroEntity _player; // 借用流程显示并隐藏的英雄。
+    private readonly List<AbstractHeroEntity> _heroes = new(); // 借用流程显示并隐藏的参战英雄，按席位排列。
+    private readonly Dictionary<AbstractHeroEntity, (Action<int> Restored, Action<EquippedItems> Equipment)> _heroHandlers = new(); // 每名英雄实际注册的回调，用于对称退订。
     private bool _sessionActive; // 当前节点订阅是否已建立。
     private HeroDeathPresentation _heroDeathPresentation; // 原生死亡演出阶段；只在本关流程帧提交完成。
 
@@ -163,9 +165,9 @@ public partial class LevelViewController : Node2D, IController
     /// 在玩家显示、加载界面关闭后开放玩法事件与相机跟随。
     /// </summary>
     /// <param name="entities">关卡流程注入的实体服务。</param>
-    /// <param name="player">本会话的玩家节点。</param>
+    /// <param name="heroes">本会话按席位排列的参战英雄。</param>
     /// <param name="cancellationToken">流程离开时取消在途实体显示。</param>
-    public void StartSession(EntityComponent entities, AbstractHeroEntity player,
+    public void StartSession(EntityComponent entities, IReadOnlyList<AbstractHeroEntity> heroes,
         CancellationToken cancellationToken)
     {
         if (_sessionActive)
@@ -173,14 +175,21 @@ public partial class LevelViewController : Node2D, IController
             throw new InvalidOperationException("关卡会话已经开始。");
         }
 
-        _player = player;
+        _heroes.AddRange(heroes);
         _heroDeathPresentation = HeroDeathPresentation.None;
         this.GetSystem<LevelSystem>().StartSession(this.GetModel<ProfileModel>().HeroIds);
         _exitRequested = false;
         _lootRandom.Randomize();
-        _player.Died += OnHeroDied;
-        _player.HealthRestored += OnHeroHealthRestored;
-        this.GetModel<ProfileModel>().GetSlots(_player.HeroId).Register(OnEquipmentChanged);
+        // 每人捕获自己的实体位置和穿戴刷新，清理时用原委托逐项退订。
+        foreach (AbstractHeroEntity hero in _heroes)
+        {
+            Action<int> restored = amount => _floatingText.ShowRecovery(hero.GlobalPosition, amount, RecoveryKind.Health);
+            Action<EquippedItems> equipment = _ => hero.RefreshAppearance();
+            hero.Died += OnHeroDied;
+            hero.HealthRestored += restored;
+            this.GetModel<ProfileModel>().GetSlots(hero.HeroId).Register(equipment);
+            _heroHandlers.Add(hero, (restored, equipment));
+        }
         LevelModel.Outcome.Register(OnSessionEnded);
         _sessionActive = true;
         GF.Event.Subscribe(DamageDealtEventArgs.EventId, OnDamageDealt);
@@ -202,7 +211,7 @@ public partial class LevelViewController : Node2D, IController
             _triggers.Activated += OnTriggerContact;
         }
 
-        _camera.Follow(player);
+        _camera.Follow(_heroes[0]); // D3-1 再切换为存活者中点。
         BeginTravel();
     }
 
@@ -254,25 +263,30 @@ public partial class LevelViewController : Node2D, IController
             _spawner.SpawnFailed -= OnSpawnFailed;
             _spawner.StopSession();
         }
-        _player = null;
+        _heroes.Clear();
     }
+
+    /// <summary>判断英雄是否属于本关借用的参战集合。</summary>
+    /// <param name="hero">待验证的实体，可为空。</param>
+    /// <returns>英雄属于本会话时为真。</returns>
+    private bool IsSessionHero(AbstractHeroEntity hero) => hero != null && _heroes.Contains(hero);
 
     /// <summary>
     /// 飘字只接收本场玩家及本关刷怪服务拥有的运行实体。
     /// </summary>
     /// <param name="entityId">伤害发生时复制的受击实体编号。</param>
     /// <returns>是否归属本会话。</returns>
-    private bool OwnsActor(int entityId) => _player?.Id == entityId || _spawner.OwnsEntity(entityId);
+    private bool OwnsActor(int entityId) => _heroes.Exists(hero => hero.Id == entityId) || _spawner.OwnsEntity(entityId);
 
     /// <summary>
-    /// 只把当前玩家对本关敌人的有效命中交给连击规则；闪避和无攻击实体的持续扣血不累计。
+    /// 只把本关参战英雄对本关敌人的有效命中交给连击规则；闪避和无攻击实体的持续扣血不累计。
     /// </summary>
     /// <param name="sender">本次伤害通知的发送者，不保存。</param>
     /// <param name="args">只在分发期间读取的池化伤害结果。</param>
     private void OnDamageDealt(object sender, GameEventArgs args)
     {
         if (!_sessionActive || args is not DamageDealtEventArgs damage ||
-            damage.AttackerEntityId != _player?.Id || damage.TargetIsHero || damage.Result.IsMiss ||
+            !_heroes.Exists(hero => hero.Id == damage.AttackerEntityId) || damage.TargetIsHero || damage.Result.IsMiss ||
             !_spawner.OwnsEntity(damage.TargetEntityId))
         {
             return;
@@ -352,7 +366,7 @@ public partial class LevelViewController : Node2D, IController
     /// </summary>
     private void OnExitEntered()
     {
-        if (LevelModel.Sequence.Phase != LevelStagePhase.AwaitingExit || !_player.IsAlive)
+        if (LevelModel.Sequence.Phase != LevelStagePhase.AwaitingExit || !_heroes.Exists(hero => hero.IsAlive))
         {
             return;
         }
@@ -372,7 +386,7 @@ public partial class LevelViewController : Node2D, IController
     /// <param name="hero">触发区检测到的英雄。</param>
     private void OnTriggerContact(AbstractHeroEntity hero)
     {
-        if (!_sessionActive || !ReferenceEquals(hero, _player) || !hero.IsAlive)
+        if (!_sessionActive || !IsSessionHero(hero) || !hero.IsAlive)
         {
             return;
         }
@@ -387,7 +401,7 @@ public partial class LevelViewController : Node2D, IController
     /// <param name="hero">出口检测到的英雄。</param>
     private void OnExitContact(AbstractHeroEntity hero)
     {
-        if (!_sessionActive || !ReferenceEquals(hero, _player) || !hero.IsAlive)
+        if (!_sessionActive || !IsSessionHero(hero) || !hero.IsAlive)
         {
             return;
         }
@@ -451,14 +465,14 @@ public partial class LevelViewController : Node2D, IController
     /// <param name="actor">本关英雄。</param>
     private void OnHeroDied(AbstractActorEntity actor)
     {
-        if (!_sessionActive || !ReferenceEquals(actor, _player) || _heroDeathPresentation != HeroDeathPresentation.None)
+        if (!_sessionActive || actor is not AbstractHeroEntity hero || !IsSessionHero(hero) || _heroDeathPresentation != HeroDeathPresentation.None)
         {
             return;
         }
 
         _heroDeathPresentation = HeroDeathPresentation.Playing;
         ClearLoot(); // 未领取奖励在死亡时回收，失败界面仍等待墓碑演出。
-        _player.DeathPresentationFinished += OnHeroDeathPresentationFinished;
+        hero.DeathPresentationFinished += OnHeroDeathPresentationFinished;
     }
 
     /// <summary>
@@ -471,7 +485,10 @@ public partial class LevelViewController : Node2D, IController
             return;
         }
 
-        _player.DeathPresentationFinished -= OnHeroDeathPresentationFinished;
+        foreach (AbstractHeroEntity hero in _heroes)
+        {
+            hero.DeathPresentationFinished -= OnHeroDeathPresentationFinished;
+        }
         _heroDeathPresentation = HeroDeathPresentation.Completed;
     }
 
@@ -482,7 +499,7 @@ public partial class LevelViewController : Node2D, IController
     private void Complete(LevelOutcome outcome)
     {
         this.GetSystem<LevelSystem>().Complete(outcome,
-        (int)Math.Round(100.0 * this.GetModel<HeroModel>().GetState(_player.HeroId).Hp.Value / this.GetModel<HeroModel>().GetState(_player.HeroId).MaxHp.Value));
+        (int)Math.Round(100.0 * this.GetModel<HeroModel>().GetState(_heroes[0].HeroId).Hp.Value / this.GetModel<HeroModel>().GetState(_heroes[0].HeroId).MaxHp.Value));
     }
 
     /// <summary>
@@ -501,12 +518,6 @@ public partial class LevelViewController : Node2D, IController
     }
 
     /// <summary>
-    /// 装备变化后刷新节点属性；业务模块不持有英雄。
-    /// </summary>
-    /// <param name="slots">已经提交的穿戴快照。</param>
-    private void OnEquipmentChanged(EquippedItems slots) => _player.RefreshAppearance();
-
-    /// <summary>
     /// 解除本关模型、英雄和原生演出订阅，关停先核对节点有效性。
     /// </summary>
     public void UnsubscribeProgressEvents()
@@ -516,15 +527,15 @@ public partial class LevelViewController : Node2D, IController
             return;
         }
 
-        _player.Died -= OnHeroDied;
-        _player.HealthRestored -= OnHeroHealthRestored;
-        if (_heroDeathPresentation == HeroDeathPresentation.Playing)
+        foreach ((AbstractHeroEntity hero, var handlers) in _heroHandlers)
         {
-            _player.DeathPresentationFinished -= OnHeroDeathPresentationFinished;
+            hero.Died -= OnHeroDied;
+            hero.HealthRestored -= handlers.Restored;
+            hero.DeathPresentationFinished -= OnHeroDeathPresentationFinished;
+            this.GetModel<ProfileModel>().GetSlots(hero.HeroId).UnRegister(handlers.Equipment);
         }
-
+        _heroHandlers.Clear();
         _heroDeathPresentation = HeroDeathPresentation.None;
-        this.GetModel<ProfileModel>().GetSlots(_player.HeroId).UnRegister(OnEquipmentChanged);
         LevelModel.Outcome.UnRegister(OnSessionEnded);
     }
 

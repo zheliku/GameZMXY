@@ -2,6 +2,133 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人D2复核：已有Panel持有个人HUD绑定（2026-11-11，自动验证通过）
+
+用户在审查席位绑定记录后，要求比较FormData、事件与其他实现方式，并明确授权“嗯可以的，你开始吧，做好记录给架构师看就行”。本次只调整D2 HUD职责，D2实机仍待本机连接恢复，D3/E1未推进。依据第00章的Panel职责、持续状态绑定与局部C#事件、第10章和用户批准的D2-3修订；未修改公共绑定API或Model/System，未新建类型/节点/场景。证据目录：`Godot/GodotProject/.godot/validation/coop_d2_panel_20261111/`；Godot原始日志在 `movement_presets/coop_d2_panel_<案例>_20261111/`，均使用既有案例APPDATA隔离。
+
+方案取舍：将回调搬入FormData或元组只能移动绑定记录；全量刷新仍不能识别一次性无双来源；GF.Event.Fire排队会延后暂停；修改公共绑定接口返回句柄扩大影响面。复用既有Panel，使同一实例的具名方法直接对应自己的状态源，原每人9项订阅覆盖保持。完整HUD子场景虽可表达同一边界，但本批已有上下两块Panel可复用，无需调整场景树。菜单事件继续携带PlayerSlot适配既有Procedure请求；无双事件携带HeroId选择立绘，两者均为窗口内的同步C#通信。
+
+架构调整：
+
+- `BattleForm`删除私有席位记录、`_seats`及五类逐人闭包/刷新方法，直接使用FormData的Heroes处理输入；仍拥有GGF打开/关闭/回池、绑定失败清理、Boss条/连击/Go/全屏无双及流程请求。
+- 复用 `BattleStatusPanel.BindHero(int heroId)` / `UnbindHero()`，面板实例观察本人的Hp、MaxHp、Mp、MaxMp和成长；只保存状态/成长来源引用，具名方法对称订退。
+- 复用 `BattleMenuPanel.BindHero(int heroId,PlayerSlot slot)` / `UnbindHero()`，观察本人的Ws、MaxWs、WsActive和技能；三个菜单事件由Action改为Action<PlayerSlot>，新增局部同步Action<int,bool> MusouStateChanged。事件在新窗口实例上连接一次，个人来源随OnOpen/OnClose显式订退，不依赖节点退出树。
+- FormData继续只携带英雄列表/关卡引用；数值不复制，个人属性仍只从各自权威Model读取。无双开启态只观察变化，重新绑定不重播一次性演出；同步事件保留“第一人立刻暂停、同帧后到者拒绝”的原规则。
+- 删除无人再调用的SetHero/SetResources/SetProgression/SetMusou/SetSkills被动入口，ResetMusou收为菜单内部方法，没有平行的新旧路径。场景位置/镜像、美术、生成绑定文件、存档v14均无本次变化。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：首次 **3错误、5既有警告**，均为新增Debug断言漏引SkillId/SkillModel命名空间（`build.log`）；补齐后 `build_final.log`、最终 `build_ready.log` 均 **退出0、0错误、5既有警告**。未用兼容入口维持编译 |
+| 三套规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`、`dotnet test Tests/BattleTests --no-restore -v quiet`、`dotnet test Tests/LevelTests --no-restore -v quiet`：均 **退出0，324/324、197/197、19/19，失败/跳过0**；`profile.log`、`battle.log`、`level.log`，既有NU1900保留 |
+| Godot扫描 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d2_panel_scan_20261111 --headless --editor --build-solutions --quit --no-window`：**退出0**；既有ComponentInsoector/free退出诊断保留。随后仅调整using顺序和XML说明，最终build_ready重新通过 |
+| 引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出0，2283路径、392UID**，`references.log` |
+| 格式 | `dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include <本次4份手写C#绝对路径> --verify-no-changes`：**退出0**，`format.log`；using/XML调整后的 `format_final.log` 也 **退出0** |
+| 双人专项 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d2_panel_coop_20261111 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 30000 -- --smoketest=ui --coop-only`：**退出0、SMOKE-COOP-PANEL PASS、SMOKE-COOP PASS、完整SMOKE PASS**。新增P2同步暂停/正确立绘来源、P1同帧拒绝且仍满值、活动态OnRefocus不重播、P2仍开启时P1使用本人立绘、九项个人来源逐Panel订阅各1次及离关全0；原双人键位/鼠标背包、P2经验与球、会话/HeroSystem退订断言保留。既有退出诊断 **6个ObjectDB** |
+| 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d2_panel_frontend_20261111 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出0、完整SMOKE PASS**；新开/读取、菜单、背包/技能、设置保存返回、旧作用域与装配失败清理均通过。坏JSON、旧作用域和重复注册为预期注入；既有退出诊断 **5个ObjectDB、1个资源占用** |
+| 完整单人 UI | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d2_panel_ui_20261111 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 30000 -- --smoketest=ui`：**退出0、完整SMOKE PASS**；无双原时间轴、HUD刷新、60/120Hz地形、单向平台、恢复/掉落、窗口/实体复用、升级、加载取消/失败清理、档案事务与重入通过。坏主档备份回退为预期注入；既有退出诊断 **22个Texture RID、8个ShapedText RID、2个Font RID、144个ObjectDB、11个资源占用** 保留，未扩大范围修复 |
+| 最终范围/存档 | `git diff --check`、`git diff --cached --check`：均 **退出0**；4份手写C#为UTF-8/CRLF、无行尾空白，生产HUD与对应Debug中旧席位类型/存储 **0命中**。未暂存差异仅本次8份文件。正式目录 **12/12文件SHA256相同**（`formal_before.sha256.json` / `formal_after.sha256.json`），HEAD未变，用户索引SHA256保持 `cc1da49ae041b801b87c92c7f8e2c020a921d618cefddad955960103987ebc17`，`scope_final.log`；没有执行Git写操作 |
+| 未完成/推进边界 | D2正式键盘上手1～8仍 **未执行**，不能用自动输入/截图替代；用户已明确选择“先停在D2，等待恢复实机验收”。本次授权只完成D2设计调整，D3/E1未开始。正式存档v14及D2原定相机/死亡/结算临时规则不变 |
+
+本轮双人运行图已复制到 `coop_d2_panel_20261111/screenshots/`：`coop_d2_spawn_hud.png`、`coop_d2_p2_inventory.png`、`coop_d2_p2_kill.png`、`coop_d2_panel_p2_musou.png`。已查看P2背包归属与P2经验图；无双图取调用后的首帧，该帧尚未显示全屏大立绘，不能以此图声称中段演出已目视验收。演出来源、立即暂停/排他与结束恢复由本轮运行断言证明，完整动画/真实键盘验收仍分别以既有UI烟测和待补上手记录为准。
+
+生产HUD三份手写代码合计 **781→761行（净减20行）**：Form **597→490**，StatusPanel **47→79**，MenuPanel **137→192**；删除一份八字段记录与五类逐人闭包，新增五个借用状态/来源/席位字段，回调目标改为已有节点实例。行数只描述改动，不作为正确性证据。
+
+本次实际修改4份C#：`GameScripts/UI/BattleForm/BattleForm.Logic.cs`、`Components/BattleStatusPanel.cs`、`Components/BattleMenuPanel.cs`、`MainPack/Scripts/Debug/UiSmokeScenario.cs`（相对TheGame）；文档 `Docs/CoopImplementationPlan.md`、`WorkingNotes.md`、本记录，ProjectTour已同步最终职责说明。开工快照、索引哈希、4份源码原文及12份正式文件哈希均保留在证据目录；执行者未作Git写操作，不关闭用户编辑器。无新增/删除跟踪文件，无本次场景、生成文件、只读目录、配置表或正式存档修改。
+
+## 双人D2：双英雄装配与双 HUD（自动验证通过，实机待补，2026-11-10）
+
+用户明确回复“允许继续 D2，实机验收待补”，因此解除 D1→D2 的真实键盘推进门槛；D0/D1 待验项保持，不能记为通过。依据第 00/10/30/40/50/70 章与计划 D2-1→D2-4 实施，未开始 D3。开工 HEAD **0307f36**，用户已暂存 D1 的25份修改，无未暂存差异；完整快照在 `.godot/validation/coop_d2_20261110/`，不作 Git 写操作。检测到用户运行 Godot 编辑器（`--editor`），不关闭其窗口；独立预览和烟测仍使用案例专属 APPDATA。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| D2-1 | `dotnet build Godot/GodotProject --no-restore -v quiet`：**2错误、5既有警告**，均为计划后续 BattleFormData/LevelViewController 尚未接收列表，`d2_1_build.log`。ProcedureLevel 预载全部英雄，按席位依次显示、P2偏移60px，每次显示后核对进入周期；成功立即登记。额外保留本周期已显示的实体编号，在旧请求晚到时按旧编号回收，避免共享引用已经被新周期复用时误隐藏；不新建管理器/接口 |
+| D2-2 | 会话改为借用英雄集合，逐人注册/退订装备与治疗委托，奖励与共享连击接收任一参战者，地面物品按席位领取且成功即停止，入口对双方关闭控制/淡出；仍保持相机P1、首人死亡判负和P1生命比例。编辑替换脚本首次因非唯一匹配中止、未写入该步文件，构建仍2错误（`d2_2_build.log`）；完成后同命令 **1错误、5既有警告**（仅BattleFormData待D2-3），`d2_2_build_final.log` |
+| D2-3 绑定生成 | 先在正式 `battle_form.tscn` 复制 StatusPanel/MenuPanel 并镜像到824,44与850,531，按规格翻回数字、头像、状态文字、技能图标与按钮标题，Control使用尺寸中心pivot；根新增 `_statusP2/_menuP2` 后执行 `python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/battle_form.tscn --namespace GameLogic.UI`：**8个绑定**；未手改生成文件 |
+| 绑定前普通态预览 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d2_mirror_preview_20261110 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/coop_d2_20261110/preview_hud.gd`：**退出0、截图结果0**。预览场景逐字复制正式节点/资源/变换，仅去除根窗口生命周期脚本与根导出属性，使用上次可用程序集的被动子控件显示固定数值；只证明布局，不代替本批生产装配验证。`hud_mirror_before_binding.png` |
+| 绑定前满值预览 | 同命令案例 `coop_d2_mirror_full_preview_20261110`、脚本 `preview_hud_full.gd`，两侧无双置满：**退出0、截图结果0**；`hud_mirror_full_before_binding.png`。实际查看两张预览：数字/头像/技能图标正向、资源条镜像；但P2“无双”文字反向 |
+| D2-3 规格遗漏上报 | 普通态 `MenuPanelP2/WsGrey` 与满值态 `MenuPanelP2/m_WsMax` 的图像本身含“无双”文字，计划列出的翻回名单未包含它们；照规格镜像后文字反向。这两个节点 `centered=false`，不能只翻scale后任其横向移位。已请求授权将两节点翻回，并按纹理宽度保持原占位；贴图/条体填充方向保持。用户随后明确回复“授权补翻回这两个节点”，见下行修复与复查结果。 |
+| 裁决前尺寸核对（历史） | 只读检查：WsGrey贴图 **68×68**；m_WsMax的 **19帧全部158×158**，两节点均centered=false。补翻回若使用scale.x=-1配合原生offset.x=-68/-158，可保持原包围盒，P2条体方向保持；仅核对并记录 `mirror_text_fix_bounds.txt`，尚未修改生产节点或继续HUD绑定 |
+| 补翻回后复查（授权） | P2两个节点使用scale.x=-1与offset.x=-68/-158，保持原占位、贴图和条体填充方向。`coop_d2_mirror_corrected_20261110` / `coop_d2_mirror_full_corrected_20261110`，对应 `preview_hud_corrected.gd` / `preview_hud_full_corrected.gd`：均 **退出0、截图结果0**，实际查看 `hud_mirror_corrected_before_binding.png`、`hud_mirror_full_corrected_before_binding.png` 确认“无双”正向，再接HUD数据绑定 |
+| D2-3 逻辑 | BattleFormData改借用1～2英雄列表，校验null/人数/空元素；SeatBinding逐席位保存七项本局属性、成长与技能委托，P2单人隐藏，快捷键按请求者控制状态检查，菜单请求带席位，共享连击/对手只订阅一次。同build命令 **9错误、5既有警告**，均为D2-4旧Debug参数/属性待迁移，`d2_3_build.log` |
+| D2-4 清零 | 全部BattleFormData调用传列表、Frontend旧Hero断言改核对列表身份，共用AdvanceToLevel按coop-only选双人并依次选两卡；UiSmokeScenario新增真实双人建档进花果山专项。同build命令 **0错误、5既有警告**，`d2_4_build.log`；四步结束错误数 **2/1/9/0** |
+| 规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`、`dotnet test Tests/BattleTests --no-restore -v quiet`、`dotnet test Tests/LevelTests --no-restore -v quiet`：均 **退出0，324/324、197/197、19/19，失败/跳过0**；`d2_profile.log`、`d2_battle.log`、`d2_level.log`。既有NU1900、CS8632/CS0649保留 |
+| 扫描/引用 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d2_scan_20261110 --headless --editor --build-solutions --quit --no-window`：**退出0**，既有ComponentInsoector/free退出诊断保留；`python Tools/ProjectMaintenance/validate_game_references.py`：**退出0，2283路径、392UID**，`d2_references.log` |
+| 双人首轮及命中诊断 | `coop_d2_coop_20261110 ... --smoketest=ui --coop-only` **退出1**，停在P2镜像HUD背包按钮；`coop_d2_coop_probe_20261110`复现，记录GetGlobalRect=(937,529),(47,-40)，其中心落到视口外，请求数0，而真正全局变换X=-1、Y=1。修正现有PushMouseClick夹具为 `GetGlobalTransformWithCanvas() * (Size/2)`，适配负缩放；原鼠标点击断言保持，未改生产按钮。两次退出均5个ObjectDB、1资源占用，日志不删 |
+| 双人导航时序 | `coop_d2_coop_final_20261110` **退出1**，P2按钮与击杀归属已通过，保存返回地图未触发。新设置窗口可见先于所属流程导航回调绑定，夹具等既有MapRequested回调为1后才点返回，保持真实点击；退出8个ObjectDB、1资源占用。两次夹具修正后build均0错误，`d2_coop_input_build.log`、`d2_coop_ready_build.log` |
+| 双人最终专项 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d2_coop_verified_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 30000 -- --smoketest=ui --coop-only`：**退出0、SMOKE-COOP PASS、完整SMOKE PASS**。真实双人新档/阵容、两实体与60px间距、左右HUD头像/可读方向/独立受伤、同时移动、P1禁止控制时P2背包键、双方背包归属、P2镜像按钮、P2致死一击经验与球归属、双方成长/穿戴/HUD原委托离关后均0订阅通过。退出13个ObjectDB、3资源占用；保存结果和原日志保留 |
+| 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d2_frontend_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出0、完整SMOKE PASS**；新开/读取、双人菜单、覆盖取消/确认、技能、设置保存返回与原流程断言通过。坏JSON、旧作用域与重复注册为预期注入；既有退出诊断 **5个ObjectDB、1个资源占用** |
+| 完整单人 UI | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d2_ui_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 30000 -- --smoketest=ui`：**退出0、完整SMOKE PASS**；HUD刷新/退订、窗口/实体复用、无双、60/120Hz地形、原生单向平台、恢复/掉落、加载取消、失败清理与存档重入通过。坏主档备份回退为预期注入；既有退出诊断 **22个Texture RID、8个ShapedText RID、2个Font RID、142个ObjectDB、10个资源占用** |
+| 最终格式与搜索 | `dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include <本批9份手写C#绝对路径> --verify-no-changes`：**退出0**，`d2_format_final.log`；生成UI文件排除。`rg -n '\b_player\b' .../Entity/Level --glob 'LevelViewController*.cs'` 与 `rg -n '\b_hero\b' .../ProcedureLevel.cs`：均 **0命中（rg退出1）**，旧单人字段清零 |
+| 正式存档与范围 | 以D2开工 `formal_before.sha256.json` 对比 `formal_final.sha256.json`：**12/12文件SHA256完全相同**，不是10份；没有新增/删除/覆盖正式文件。HEAD保持0307f36，索引SHA256保持 `be910dc22f36397c3183c979db326ee628afe607ec30c55ee5b5570cd5d6bf56`；执行者未作Git写操作，保留用户已暂存D1。差异/编码检查见 `d2_scope_final.log` |
+| 正式键盘上手 | D2上手 **1～8均未执行**：出生站立、左右HUD、同时移动跳攻、双方技能扣蓝、经验/球/地面物品、两套背包键与P2按钮、P2无双、单人档。computer-use本机管道仍不可用（此前重查os error 2，用户已说明暂无法恢复），自动输入及烟测截图不替代真实键盘验收；D2→D3未获推进例外，D3未开始 |
+
+本批实际修改15份现有文件，无新增/删除跟踪文件。相对 `Godot/GodotProject/TheGame/`：`MainPack/Scripts/Procedure/ProcedureLevel.cs`；`GameScripts/Entity/Level/LevelViewController.cs`、`LevelViewController.Loot.cs`、`LevelViewController.Entrance.cs`；`UIs/battle_form.tscn`；生成的 `GameScripts/UI/BattleForm/BattleForm.cs`；`GameScripts/UI/BattleForm/BattleFormData.cs`、`BattleForm.Logic.cs`；`MainPack/Scripts/Debug/UiSmokeScenario.cs`、`UiSmokeScenario.Inventory.cs`、`FrontendSmokeScenario.cs`。文档：`Docs/Validation.md`、`WorkingNotes.md`、`CoopImplementationPlan.md`、`ProjectTour.md`。没有改v14、源表、框架或正式存档；预览脚本/场景/截图仅在忽略的 `.godot/validation/coop_d2_20261110/`。
+
+关键接口：`LevelViewController.StartSession(EntityComponent,AbstractHeroEntity,CancellationToken)` → `StartSession(EntityComponent,IReadOnlyList<AbstractHeroEntity>,CancellationToken)`；`BattleFormData(AbstractHeroEntity,LevelViewController)` → `BattleFormData(IReadOnlyList<AbstractHeroEntity>,LevelViewController)`，删除 `Hero`、新增 `Heroes`。ProcedureLevel `_hero` → `_heroes`，新增私有 `HeroAt(PlayerSlot)` / `SpawnPositionOf(PlayerSlot)`；LevelViewController `_player` → `_heroes` / `_heroHandlers`，删除单人治疗/换装回调；BattleForm刷新回调接收SeatBinding，菜单处理接收PlayerSlot。Debug的8处BattleFormData调用及旧标量断言机械迁移；TestArenaController原无相关调用，未修改。计划外处理为用户授权的两处无双文字翻回，以及镜像鼠标命中/窗口回调时序夹具修正，生产玩法与原断言保持。
+
+实际双人截图：`coop_d2_20261110/screenshots/coop_d2_spawn_hud.png`、`coop_d2_p2_inventory.png`、`coop_d2_p2_kill.png`，均已查看。出生图在数值夹具中冻结了半空英雄并含保存提示，只证明运行时装配与HUD，不证明真实键盘站立验收。绑定前布局普通/满值修正图分别为 `hud_mirror_corrected_before_binding.png`、`hud_mirror_full_corrected_before_binding.png`。
+
+遗留与D3前置条件：D0/D1正式键盘验收按用户例外待补；D2自动验证已通过，但必须补完D2上手1～8，或由用户明确授权暂留并进入D3。当前有意保留相机跟P1、首人死亡判负/清掉落、剩余生命按P1计；D3统一修正。技能窗口参数和参战者页签按现行第七部分留E1-2，D2不提前新增参数。
+
+## 双人D1：新开/读取、依次选角与选格建档（2026-11-10）
+
+用户明确授权 D0 真实键盘验收因本机 computer-use 管道缺失暂留，先实施 D1。本批按 D1-1→D1-5 顺序实现，仍为 v14；双人新档此时只生成 P1 战斗实体，D2 尚未实施。依据项目第 00/10/40/50/70 章、实施计划第一/二/七部分 D1 和 Stop Ladder，复用现有 GGF 窗口、目录模型、删除接口与确认场景；未新建管理器、覆写通道或兼容重载。
+
+证据目录：`Godot/GodotProject/.godot/validation/coop_d1_20261110/`。Godot 运行日志在 `.godot/validation/movement_presets/coop_d1_<案例>_20261110/`；案例专属 APPDATA 隔离正式存档。开工快照 HEAD 为 **0307f36**，工作区/索引为空；执行期间用户暂存本批文件，执行者没有运行 Git 写命令，继续保留用户索引。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| D1-1 阵容接口 | `dotnet build Godot/GodotProject --no-restore -v quiet`：迁移途中 **2 个 CS1503**（未补齐 Debug 调用）保留于 `d1_1_build.log`；补齐后 **0 错误、5 条既有警告**，`d1_1_build_final.log`。读档传 `[]`，建档传有序阵容；已有档忽略请求阵容，默认新档保留配置英雄 |
+| D1-2 标题入口 | 场景根先改绑定，再运行 `python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/start_form.tscn --namespace GameLogic.UI`：生成 **11 个绑定**。同构建命令 **2 错误、5 既有警告**，均为计划 D1-4 尚未创建的 SaveFormData/SaveFormMode，`d1_2_build.log` |
+| D1-3 依次选角 | 同生成命令替换为 `.../character_form.tscn`：生成 **6 个绑定**。双人锁定已选卡、标记按席位定位、重选/返回；保存页由 ProcedureCharacter 持有。同构建命令 **8 错误、5 既有警告**，均为 D1-4 的类型、事件与回调待迁移，`d1_3_build.log` |
+| D1-4 读取/保存 | 新增用途参数，读取空格禁用，保存隐藏删除、覆盖复用确认层；确认后 DeleteSlotAsync→刷新格→建档。关闭回调可能同步离开流程，使用原窗口编号判断是否仍需关闭，避免重复关闭。同构建命令 **0 错误、5 既有警告**，`d1_4_build.log` |
+| D1-5 烟测同步 | 同构建命令首轮 **1 个 CS1061**（摘要仅有名称/等级，断言误取 HeroId），改为按名称核对摘要、按真实档案核对编号；最终 **0 错误、5 既有警告**，`d1_5_build.log`/`d1_5_build_final.log`。五步结束错误数 **0 / 2 / 8 / 0 / 0** |
+| 规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`、`dotnet test Tests/BattleTests --no-restore -v quiet`、`dotnet test Tests/LevelTests --no-restore -v quiet`：均退出 0，**324/324、197/197、19/19**，失败/跳过均 0；`d1_profile.log`、`d1_battle.log`、`d1_level.log`。既有 NU1900 保留 |
+| Godot 扫描 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d1_scan_20261110 --headless --editor --build-solutions --quit --no-window`：**退出 0**，新脚本、场景与 UI 绑定可加载；ComponentInsoector/free 既有退出诊断保留 |
+| 引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出 0，2283 条序列化路径、392 个 UID**；`d1_references.log` |
+| 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d1_frontend_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出 0、完整 SMOKE PASS、SMOKE-COOP-MENU PASS**。新增人数菜单返回、双人重复/重选/返回、保存关闭无写入、取消覆盖逐字节保持、确认覆盖建双方阵容、磁盘摘要及读取空格禁用；原技能、设置、音乐、重读、取消/装配失败清理断言保持。坏 JSON、旧作用域拒绝、重复注册为预期注入；退出 **3 个 ObjectDB** |
+| 删除专项 | 同 Godot 命令案例改 `coop_d1_delete_20261110`，尾加 `--save-delete-only`：**退出 0、SMOKE-SAVE-ROSTER PASS、SMOKE-SAVE-DELETE PASS、完整 SMOKE PASS**。两种阵容顺序、最大等级摘要、删除确认/取消、主备清除、其余格不变、同格重建唐僧及迟到确认保持；退出 **5 个 ObjectDB、2 个资源占用** |
+| 共用进关修正 | 首轮完整 UI `coop_d1_ui_20261110` 停在 Character：快驱动在流程回调挂载前选择，选卡状态已满后重复点击被拒绝。主动停止本轮（子进程退出 4294967295），**无 SMOKE PASS**。AdvanceToLevel 与 MapProgress 的独立按钮表改为等现有 CharacterConfirmed 回调再点卡；没有给生产代码增加观测入口。`d1_smoke_entry_build.log` 为 0 错误 |
+| 无双既有夹具失败/授权 | `coop_d1_ui_final_20261110 ... --quit-after 30000 -- --smoketest=ui`：**退出 1**，UiSmokeScenario.cs 原第 1151 行“无双大立绘提前结束或时间轴与官方不一致”，**无完整 SMOKE PASS**；退出 **38 个 CanvasItem RID、21 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、140 个 ObjectDB、11 个资源占用**。用户随后明确授权定位并修复夹具，生产动画与原断言保持 |
+| 无双诊断与修复 | `coop_d1_ui_probe_20261110` 仅增加计时日志：输入后 163ms 帧3，中段等待后 613ms 帧14，截图完成 736ms，尾段观察 796ms 帧18（该次原断言通过），证明同步截图实际占用 **123ms**；原夹具把固定 0.45 秒等待、截图编码/写盘插在仅一秒的演出观察中。采样完成后主动停止诊断运行（退出 4294967295），不记为完整通过。仅改 CheckMusouActivationAsync：按原生帧等待中段、先取得图像、PNG 写盘延后到演出结束；后半段可见、24帧/24fps、暂停恢复与隐藏原断言完整保留。`d1_ui_fixture_build.log`：**0 错误、5 既有警告** |
+| 完整 UI 最终 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d1_ui_verified_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 30000 -- --smoketest=ui`：**退出 0、完整 SMOKE PASS**；无双原失败点、60/120Hz 地形、恢复/掉落、窗口与实体复用、取消/失败清理、存档重入通过。坏主档回退为预期注入；既有退出诊断 **38 个 CanvasItem RID、22 个 Texture RID、8 个 ShapedText RID、2 个 Font RID、143 个 ObjectDB、11 个资源占用** 保留 |
+| 最终前端画面 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d1_frontend_final_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出 0、SMOKE-COOP-MENU PASS、完整 SMOKE PASS**，退出 **2 个 ObjectDB**。新增帮助/须知采样、等待保存提示结束后再采无遮挡菜单证据；共 **17 张** 当前截图已复制到 `coop_d1_20261110/screenshots/`，实际查看标题、人数、保存/覆盖、双人摘要及无双尾段。发现规格原帮助三行超出 254px，右侧裁切，`screenshots/start_help.png`；当时已上报，用户随后裁决保留完整原文、调整显示方式；原裁切截图保留为 `screenshots/start_help_before_scroll.png` |
+| 最终规则失败边界 | 最终三条 test 命令退出结果：Profile **323/324，1 失败**（`Archive_RejectsMissingRequiredFields` 第292行未抛异常），Battle **197/197**，Level **19/19**。`d1_final_profile.log`、`d1_final_battle.log`、`d1_final_level.log`；静态比较本批未改该测试/DTO。单独 `--filter FullyQualifiedName~Archive_RejectsMissingRequiredFields -v normal` **1/1 通过**（`d1_profile_failure_detail.log`），完整 `-v normal` 复跑仍 **323/324**（`d1_final_profile_detail.log`），不能用单例通过或先前324代替全套最终结果。已按计划第一部分第2节第7条上报，请求定位/修复隔离授权 |
+| Profile 隔离修复（用户授权） | 只修改 `Tests/ProfileTests/ProfileTests.cs` 的 `Archive_RejectsMissingRequiredFields`：为原两条异常断言使用独立 `DefaultContractResolver` / `JsonSerializerSettings`，输入与异常类型不变；生产 DTO、校验、依赖及整套并行设置保持。Newtonsoft 13.0.4 源码 `JsonObjectContract.HasRequiredOrDefaultValueProperties` 的共享惰性标记先设 false 再扫描必填字段，该竞态与单例通过/全套偶发失败一致；源代码证据在 D1 目录。实际两次完整 `dotnet test Tests/ProfileTests --no-restore -v normal` / `-v quiet` 均 **退出0、324/324、失败/跳过0**，`d1_profile_isolated.log`、`d1_profile_isolated_final.log`；NU1900 保留。原323/324与复现日志不删除 |
+| 帮助显示修复（用户裁决） | 原文、19px、原254×100区域保持；使用 Godot 原生 `StatusScroll` 包裹 `m_Status`，Label自动换行并可滚动。帮助/须知切换回顶部；根 `_status` 改为 `StatusScroll/m_Status` 后再运行既定生成器，仍 **11个绑定**。未加新窗口/脚本或美术。构建 `d1_help_final_build.log` / `d1_help_input_build.log`：均 **0错误、5既有警告** |
+| 帮助扫描/引用 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d1_help_scan_20261110 --headless --editor --build-solutions --quit --no-window`：**退出0**，既有 ComponentInsoector/free退出诊断保留；`python Tools/ProjectMaintenance/validate_game_references.py`：**退出0，2283路径、392UID**，`d1_help_references.log` |
+| 帮助首轮回归 | `coop_d1_help_frontend_20261110 ... --smoketest=frontend`：帮助原文/字号/换行与鼠标滚动末尾断言通过，但后续须知按钮未发点击，**退出1、无完整SMOKE PASS**。本批新滚轮夹具只发送按下，未配对松开；已补齐每个滚轮事件的松开，没有改动生产点击逻辑。退出2个ObjectDB、1资源占用；格式检查发现该夹具3处初始化换行，已修正 |
+| 帮助截图等待修正 | `coop_d1_help_frontend_final_20261110` 帮助原文/字号/滚轮及后续须知、选角/建档均通过，但原 CaptureAsync 在地图静止反馈截图等待 FramePostDraw，原生进程仍存活而日志与截图连续数分钟不更新。主动停止（退出4294967295），**无完整SMOKE PASS**。复用现有 CaptureCombatAsync 的 `RenderingServer.ForceDraw(false)`，主动绘制后取图，保持原截图内容与其余断言；`d1_capture_build.log`：0错误、5既有警告 |
+| 帮助最终前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d1_help_frontend_verified_20261110 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出0、SMOKE-COOP-MENU PASS、完整SMOKE PASS**；实际视口鼠标滚轮到末尾、完整原文/19px/换行、后续须知点击/设置、单/双人新建与覆盖/取消/重读全通过。退出 **4个ObjectDB、1个资源占用**；预期故障注入保留。帮助顶部/底部、须知及其余菜单截图已复制到 D1 的 `screenshots/`，共19张（含原裁切对照） |
+| 追加格式 | `dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include <FrontendSmokeScenario.cs、StartForm.Logic.cs> --verify-no-changes` 与 `dotnet format whitespace Tests/ProfileTests/ProfileTests.csproj --no-restore --include Tests/ProfileTests/ProfileTests.cs --verify-no-changes`：均 **退出0**；后者工作区加载警告保留，`d1_help_format_final.log`、`d1_profile_format.log` |
+| 格式/范围 | `dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include <本批手写文件> --verify-no-changes`：退出 0（生成 UI 文件排除）；`d1_format_check.log`。正式目录 **10/10 文件 SHA256 完全相同**（含 Catalogue/备份），`formal_before.sha256.json`、`formal_after.sha256.json`、`d1_scope.log`。未改正式第 1～4 格 |
+| 本机连接复查 | 按 computer-use 技能从 node_repl 初始化 `@oai/sky` 成功，`sky.list_windows()` 仍返回 **native pipe 不存在（os error 2）**，未启动游戏、未发送输入、未写正式存档；`d1_manual_connection_recheck.log`。D1→D2 的暂留验收例外请求仍待用户明确答复，未把自动续行视为同意 |
+| 正式上手 | D1 上手步骤 1～8 **未执行**：computer-use 本机原生管道仍不可用，用户告知暂时无法恢复。隔离引擎截图不能替代正式键盘验收；没有创建正式第 5/6 格。D0 待验项保持；D2～E1 未开始 |
+
+实际文件（路径相对 `Godot/GodotProject/TheGame/`，无删除）：
+
+- `MainPack/Scripts/Procedure/FlowData/SaveSelectionVariable.cs`、`ProcedureTitle.cs`、`ProcedureCharacter.cs`、`ProcedureLoadGame.cs`：阵容传递、分离新开/读取入口，选角流程持有保存页与取消令牌。
+- `GameScripts/Systems/SaveSystem.cs`：建档接收有序阵容，复用原 mapper 校验与写入通道。
+- `GameScripts/UI/StartForm/StartForm.Logic.cs`、`CharacterForm/CharacterForm.Logic.cs`、`SaveForm/SaveForm.Logic.cs`；新增 `CharacterForm/CharacterFormData.cs`、`SaveForm/SaveFormData.cs` 及 Godot 扫描产生的各自 `.uid`。
+- `UIs/start_form.tscn`、`UIs/character_form.tscn`；只经规定生成器更新 `GameScripts/UI/StartForm/StartForm.cs`、`CharacterForm/CharacterForm.cs`。
+- `MainPack/Scripts/Debug/FrontendSmokeScenario.cs`、`MapProgressSmokeScenario.cs`：新菜单路径和新增覆盖、共用入口订阅时序；`LevelSmokeScenario.cs`、`UiSmokeScenario.cs`：重读显式传 `[]`；后者另含用户授权的无双截图夹具修复。
+- 用户追加授权修改 `Tests/ProfileTests/ProfileTests.cs`，仅隔离必填字段失败用例的 JSON 契约缓存，原两条断言与其他测试并行保持。
+- 仓库 `Docs/Validation.md`、`WorkingNotes.md`、`ProjectTour.md`、`CoopImplementationPlan.md`：当前状态、接口、命令、例外与待验项。
+
+关键接口前后对照：
+
+| 接口 | 原 | 现 |
+| --- | --- | --- |
+| 流程选择 | `(SlotNumber, UnitId, HeroId)`；`Create(int slotNumber,long unitId,int heroId=0)` | `(int SlotNumber, long UnitId, int[] HeroIds)`；`Create(int slotNumber, long unitId, int[] heroIds)` |
+| 建档/读档 | `LoadOrCreateAsync(int,long,CancellationToken=default,int initialHeroId=0)` | `LoadOrCreateAsync(int,long,IReadOnlyList<int> initialHeroIds,CancellationToken=default)` |
+| 标题事件 | `StartGameRequested: Action<int>` | `NewGameRequested: Action<int,int>`、`LoadGameRequested: Action<int>` |
+| 选角事件/参数 | `CharacterConfirmed: Action<int,int>`，无打开参数 | `Action<int,int[]>`，新增 `CharacterCancelled: Action<int>`、`CharacterFormData(int playerCount)` |
+| 存档参数/关闭 | 无模式或关闭通知 | `SaveFormData(SaveFormMode.Load/Save)`、`SaveFormClosed: Action<int>`；选格/删除事件签名不变 |
+
+本批规格细节：人数选项初始隐藏由 `m_PlayerCountMenu.Visible=false` 统一负责，子按钮保持可见，使计划要求的“仅切换两个容器”能正常显示；没有再维护逐按钮显隐状态。保存关闭的同步回调按 GGF 实际关闭生命周期处理。未新增源表、框架修改、存档版本或兼容接口；方法与回调订阅对称。
+
+上手状态与遗留：正式 D1 步骤 1～8 全部待执行；D2 的双实体、双 HUD 尚未开始。用户对 D0→D1 的推进例外不等于 D1→D2 的验收授权。完整 UI 与最终前端均已通过；用户已裁决保留帮助原文并授权修复 Profile 测试隔离，修复后 Profile 两轮324/324；帮助最终完整前端也退出0、SMOKE PASS。当前有效规则为324/197/19；此前完整UI证据对本轮仅标题/测试隔离修改仍有效。正式键盘验收仍未完成，尚不能判定 D1 全部完成。
+
 ## 双人D0：正式转存完成，上手验证受阻（2026-11-10）
 
 用户已在 D0-3 明确回复“确认”。核对正式目录与 dry-run 时的 10 文件哈希一致后，工具完成整目录备份和 8 个主/备文件转存，**正式存档已为 v14；上手验证因 computer-use 本机管道缺失未执行，D0 尚未完成，D1～E1 未开始**。运行时格式和代码均不变，按计划先完成 D0 上手验收再推进。

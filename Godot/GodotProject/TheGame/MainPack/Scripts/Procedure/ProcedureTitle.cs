@@ -21,7 +21,7 @@ using IUIForm = GameFramework.UI.IUIForm;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
-/// 开始界面：点击开始后选择存档，设置作为本流程拥有的独立 GGF 窗口。
+/// 标题入口：新游戏按人数进入选角，读取与设置作为本流程拥有的独立 GGF 窗口。
 /// </summary>
 public sealed class ProcedureTitle : ProcedureBase
 {
@@ -100,11 +100,25 @@ public sealed class ProcedureTitle : ProcedureBase
         base.OnLeave(procedureOwner, isShutdown);
     }
 
+    /// <summary>将人数交给选角流程，阵容元素在选角完成后填写。</summary>
+    /// <param name="formSerialId">发起操作的标题窗口编号。</param>
+    /// <param name="playerCount">参战人数（1 或 2）。</param>
+    private void OnNewGameRequested(int formSerialId, int playerCount)
+    {
+        if (formSerialId != _formSerialId || playerCount is not (1 or 2))
+        {
+            return;
+        }
+
+        _owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(0, 0, new int[playerCount]));
+        ChangeState<ProcedureCharacter>(_owner);
+    }
+
     /// <summary>
-    /// 开始按钮打开存档选择页，读取目录期间显示加载反馈。
+    /// 读取按钮打开存档选择页，读取目录期间显示加载反馈。
     /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
-    private async void OnStartGameRequested(int formSerialId)
+    private async void OnLoadGameRequested(int formSerialId)
     {
         if (formSerialId != _formSerialId)
         {
@@ -118,7 +132,7 @@ public sealed class ProcedureTitle : ProcedureBase
 
         SaveSystem saveSystem = _owner.GetSystem<SaveSystem>();
         CancellationToken token = _cancellation.Token;
-        _saveSerialId = GF.UI.OpenUIForm(UIFormId.SaveForm);
+        _saveSerialId = GF.UI.OpenUIForm(UIFormId.SaveForm, new SaveFormData(SaveFormMode.Load));
         SetFormCallbacks(GF.UI.GetUIForm(_saveSerialId), bind: true);
         await saveSystem.RefreshDirectoryAsync(token);
     }
@@ -141,20 +155,13 @@ public sealed class ProcedureTitle : ProcedureBase
         }
 
         SaveSlotInfo slot = GF.Fsm.GetModel<SaveModel>().Slots[selectionId - 1];
-        if (slot.State == SaveSlotState.Unreadable)
+        if (slot.State != SaveSlotState.Occupied)
         {
             return;
         }
 
-        _owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(slot.SlotNumber, slot.UnitId));
-        if (slot.State == SaveSlotState.Empty)
-        {
-            ChangeState<ProcedureCharacter>(_owner);
-        }
-        else
-        {
-            ChangeState<ProcedureLoadGame>(_owner);
-        }
+        _owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(slot.SlotNumber, slot.UnitId, []));
+        ChangeState<ProcedureLoadGame>(_owner);
     }
 
     /// <summary>
@@ -257,10 +264,12 @@ public sealed class ProcedureTitle : ProcedureBase
         switch (form)
         {
             case StartForm startForm when startForm.SerialId == _formSerialId:
-                startForm.StartGameRequested -= OnStartGameRequested;
+                startForm.NewGameRequested -= OnNewGameRequested;
+                startForm.LoadGameRequested -= OnLoadGameRequested;
                 if (bind)
                 {
-                    startForm.StartGameRequested += OnStartGameRequested;
+                    startForm.NewGameRequested += OnNewGameRequested;
+                    startForm.LoadGameRequested += OnLoadGameRequested;
                 }
 
                 startForm.SettingsRequested -= OnSettingsRequested;

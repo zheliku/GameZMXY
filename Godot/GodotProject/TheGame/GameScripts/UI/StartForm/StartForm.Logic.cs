@@ -19,9 +19,12 @@ namespace GameLogic.UI;
 public partial class StartForm : IController
 {
     /// <summary>
-    /// 由所属流程处理 StartGameRequested；参数为本次窗口编号。
+    /// 玩家选定人数开始新游戏；参数为本次窗口编号与参战人数（1 或 2）。
     /// </summary>
-    public event Action<int> StartGameRequested;
+    public event Action<int, int> NewGameRequested;
+
+    /// <summary>玩家请求读取已有存档；参数为本次窗口编号。</summary>
+    public event Action<int> LoadGameRequested;
 
     /// <summary>
     /// 由所属流程处理 SettingsRequested；参数为本次窗口编号。
@@ -48,7 +51,11 @@ public partial class StartForm : IController
         UIStringKeys.ForEach(key => key.SetLocalizationValue());
         if (isNewInstance)
         {
-            _start.Pressed += OnStartClicked;
+            _newGame.Pressed += ShowPlayerCountMenu;
+            _loadGame.Pressed += OnLoadGameClicked;
+            _single.Pressed += () => OnPlayerCountChosen(1);
+            _double.Pressed += () => OnPlayerCountChosen(2);
+            _back.Pressed += () => ShowMainMenu(playSound: true);
             _settings.Pressed += OnSettingsClicked;
             _help.Pressed += OnHelpClicked;
             _notice.Pressed += OnNoticeClicked;
@@ -62,6 +69,7 @@ public partial class StartForm : IController
     public void OnOpen(object userData)
     {
         _status.Text = "";
+        ShowMainMenu(playSound: false);
         Visible = true;
     }
 
@@ -72,7 +80,8 @@ public partial class StartForm : IController
     /// <param name="userData">关闭参数，不保存。</param>
     public void OnClose(bool isShutdown, object userData)
     {
-        StartGameRequested = null;
+        NewGameRequested = null;
+        LoadGameRequested = null;
         SettingsRequested = null;
         if (!isShutdown && IsInstanceValid(this))
         {
@@ -160,10 +169,8 @@ public partial class StartForm : IController
         ZIndex = depthInUIGroup;
     }
 
-    /// <summary>
-    /// 请求进入读档与选角流程。
-    /// </summary>
-    private void OnStartClicked()
+    /// <summary>展开本次新游戏的人数选择。</summary>
+    private void ShowPlayerCountMenu()
     {
         if (!GF.UI.HasUIForm(SerialId))
         {
@@ -171,7 +178,54 @@ public partial class StartForm : IController
         }
 
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        StartGameRequested?.Invoke(SerialId);
+        _mainMenu.Visible = false;
+        _playerCountMenu.Visible = true;
+        _status.Text = "";
+    }
+
+    /// <summary>恢复标题主菜单并清除说明。</summary>
+    /// <param name="playSound">返回操作播放音效，首次打开不播放。</param>
+    private void ShowMainMenu(bool playSound)
+    {
+        if (!GF.UI.HasUIForm(SerialId))
+        {
+            return;
+        }
+
+        if (playSound)
+        {
+            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        }
+        _mainMenu.Visible = true;
+        _playerCountMenu.Visible = false;
+        _status.Text = "";
+    }
+
+    /// <summary>将所选人数交给流程开始选角。</summary>
+    /// <param name="count">参战人数（1 或 2）。</param>
+    private void OnPlayerCountChosen(int count)
+    {
+        if (!GF.UI.HasUIForm(SerialId))
+        {
+            return;
+        }
+
+        GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        NewGameRequested?.Invoke(SerialId, count);
+    }
+
+    /// <summary>
+    /// 请求读取已有档案。
+    /// </summary>
+    private void OnLoadGameClicked()
+    {
+        if (!GF.UI.HasUIForm(SerialId))
+        {
+            return;
+        }
+
+        GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        LoadGameRequested?.Invoke(SerialId);
     }
 
     /// <summary>
@@ -199,7 +253,8 @@ public partial class StartForm : IController
         }
 
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        _status.Text = "A / D 移动 · 连按奔跑\nJ 攻击 · K 跳跃 · 空格 无双\n左下角设置中返回地图";
+        _status.GetParent<ScrollContainer>().ScrollVertical = 0;
+        _status.Text = "P1：A/D 移动 · J 攻击 · K 跳跃 · 空格 无双\nP2：←/→ 移动 · 小键盘1 攻击 · 2 跳跃 · 0 无双\n左下角设置中返回地图";
     }
 
     /// <summary>
@@ -213,6 +268,7 @@ public partial class StartForm : IController
         }
 
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        _status.GetParent<ScrollContainer>().ScrollVertical = 0;
         _status.Text = "当前开放悟空、唐僧与造一篇章。\n仅供个人学习，禁止商用。";
     }
 }

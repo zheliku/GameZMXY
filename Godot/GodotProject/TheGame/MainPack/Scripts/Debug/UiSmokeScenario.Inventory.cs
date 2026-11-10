@@ -633,7 +633,8 @@ public sealed partial class UiSmokeScenario
     /// <param name="control">鼠标目标控件。</param>
     private static void PushMouseClick(Control control)
     {
-        Vector2 position = control.GetGlobalRect().GetCenter();
+        // 将控件局部中心变换到视口，兼容镜像父节点；GetGlobalRect不保证负缩放下的中心正确。
+        Vector2 position = control.GetGlobalTransformWithCanvas() * (control.Size / 2);
         using var motion = new InputEventMouseMotion { Position = position, GlobalPosition = position };
         control.GetViewport().PushInput(motion, true);
         foreach (bool pressed in new[] { true, false })

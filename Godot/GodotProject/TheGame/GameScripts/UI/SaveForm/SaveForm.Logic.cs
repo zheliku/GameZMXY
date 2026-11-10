@@ -25,6 +25,8 @@ public partial class SaveForm : IController
     private TextureButton _deleteCancel; // 取消确认，不触碰存档。
     private TextureButton _deleteConfirm; // 确认后才向流程提交删除请求。
     private int _deleteSlot; // 当前等待确认的格号。
+    private SaveFormMode _mode; // 本次打开的用途。
+    private bool _confirmingOverwrite; // 确认层当前用于覆盖而非删除。
 
     /// <summary>
     /// 由所属流程处理 SaveSlotSelected；参数为本次窗口编号及选择编号。
@@ -35,6 +37,9 @@ public partial class SaveForm : IController
     /// 由所属流程处理删除存档请求；参数为窗口编号及格号。
     /// </summary>
     public event Action<int, int> SaveSlotDeleteRequested;
+
+    /// <summary>玩家关闭存档页；参数为本次窗口编号。</summary>
+    public event Action<int> SaveFormClosed;
 
     /// <summary>
     /// 绑定 GGF 字段与一次性的按钮订阅。
@@ -85,17 +90,28 @@ public partial class SaveForm : IController
             _deleteButtons[i].MouseEntered += () => SetDeleteHover(number, true);
             _deleteButtons[i].MouseExited += () => SetDeleteHover(number, false);
         }
-        _deleteCancel.Pressed += CancelDelete;
+        _deleteCancel.Pressed += () =>
+        {
+            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+            CancelDelete();
+        };
         _deleteConfirm.Pressed += ConfirmDelete;
     }
 
     /// <summary>
     /// 订阅目录并立即绘制当前状态。
     /// </summary>
-    /// <param name="userData">未使用；目录由共享 SaveModel 提供。</param>
+    /// <param name="userData">包含读取或保存用途的存档页参数。</param>
+    /// <exception cref="ArgumentException">未提供存档页用途。</exception>
     public void OnOpen(object userData)
     {
+        if (userData is not SaveFormData data)
+        {
+            throw new ArgumentException("存档页需要指定读取或保存用途。", nameof(userData));
+        }
+
         Unbind();
+        _mode = data.Mode;
         _isBound = true;
         try
         {
@@ -118,6 +134,7 @@ public partial class SaveForm : IController
     {
         SaveSlotSelected = null;
         SaveSlotDeleteRequested = null;
+        SaveFormClosed = null;
         CancelDelete();
         Unbind();
         if (!isShutdown && IsInstanceValid(this))
@@ -231,7 +248,7 @@ public partial class SaveForm : IController
         bool ready = directory.Phase == SaveListState.Ready;
         _status.Text = directory.Phase switch
         {
-            SaveListState.Ready => "",
+            SaveListState.Ready => _mode == SaveFormMode.Save ? "第一次进入游戏请选择存档" : "",
             SaveListState.Failed => directory.ErrorMessage,
             _ => "正在读取存档…"
         };
@@ -239,9 +256,10 @@ public partial class SaveForm : IController
         {
             (TextureButton button, Label name, Label date) = _slotViews[i];
             SaveSlotInfo slot = ready ? directory.Slots[i] : null;
-            button.Disabled = slot == null || slot.State == SaveSlotState.Unreadable;
+            button.Disabled = slot == null || (_mode == SaveFormMode.Load
+                ? slot.State != SaveSlotState.Occupied : slot.State == SaveSlotState.Unreadable);
             button.MouseDefaultCursorShape = button.Disabled ? CursorShape.Arrow : CursorShape.PointingHand;
-            bool canDelete = ready && slot?.State == SaveSlotState.Occupied;
+            bool canDelete = _mode == SaveFormMode.Load && ready && slot?.State == SaveSlotState.Occupied;
             _deleteButtons[i].Visible = canDelete;
             _deleteButtons[i].Disabled = !canDelete;
             _deleteButtons[i].Modulate = canDelete ? new Color(1f, 1f, 1f, 0.42f) : Colors.Transparent;
@@ -268,18 +286,33 @@ public partial class SaveForm : IController
     private void SetDeleteHover(int number, bool hovered) => _deleteButtons[number - 1].Modulate = hovered ? Colors.White : new Color(1f, 1f, 1f, 0.42f);
 
     /// <summary>
-    /// 请求读取指定格，读取期间与损坏格拒绝点击。
+    /// 按用途选择可读档案或新档位置；已有档案覆盖需先确认。
     /// </summary>
     /// <param name="number">从 1 开始的格号。</param>
     private void SelectSlot(int number)
     {
-        if (!GF.UI.HasUIForm(SerialId) || this.GetModel<SaveModel>().Phase != SaveListState.Ready ||
-            this.GetModel<SaveModel>().Slots[number - 1].State == SaveSlotState.Unreadable)
+        if (!GF.UI.HasUIForm(SerialId) || this.GetModel<SaveModel>().Phase != SaveListState.Ready)
+        {
+            return;
+        }
+
+        SaveSlotInfo slot = this.GetModel<SaveModel>().Slots[number - 1];
+        if (slot.State == SaveSlotState.Unreadable || (_mode == SaveFormMode.Load && slot.State != SaveSlotState.Occupied))
         {
             return;
         }
 
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        if (_mode == SaveFormMode.Save && slot.State == SaveSlotState.Occupied)
+        {
+            // 复用删除确认层；确认前不触碰档案。
+            _confirmingOverwrite = true;
+            _deleteSlot = number;
+            _deleteMessage.Text = $"确定覆盖第 {number} 个存档吗？\n覆盖后原存档无法恢复。";
+            _deleteConfirmation.Show();
+            _deleteCancel.GrabFocus();
+            return;
+        }
         SaveSlotSelected?.Invoke(SerialId, number);
     }
 
@@ -289,12 +322,14 @@ public partial class SaveForm : IController
     /// <param name="number">要删除的格号。</param>
     private void RequestDelete(int number)
     {
-        if (!GF.UI.HasUIForm(SerialId) || this.GetModel<SaveModel>().Phase != SaveListState.Ready ||
+        if (!GF.UI.HasUIForm(SerialId) || _mode != SaveFormMode.Load ||
+            this.GetModel<SaveModel>().Phase != SaveListState.Ready ||
             this.GetModel<SaveModel>().Slots[number - 1].State != SaveSlotState.Occupied)
         {
             return;
         }
 
+        GF.Sound.PlayConfigured(SoundId.MenuConfirm);
         _deleteSlot = number;
         _deleteMessage.Text = $"确定删除第 {number} 个存档吗？\n删除后无法恢复。";
         _deleteConfirmation.Show();
@@ -307,6 +342,7 @@ public partial class SaveForm : IController
     private void CancelDelete()
     {
         _deleteSlot = 0;
+        _confirmingOverwrite = false;
         if (_deleteConfirmation != null)
         {
             _deleteConfirmation.Hide();
@@ -325,9 +361,17 @@ public partial class SaveForm : IController
         }
 
         int slot = _deleteSlot;
+        bool overwrite = _confirmingOverwrite;
         CancelDelete();
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        SaveSlotDeleteRequested?.Invoke(SerialId, slot);
+        if (overwrite)
+        {
+            SaveSlotSelected?.Invoke(SerialId, slot);
+        }
+        else
+        {
+            SaveSlotDeleteRequested?.Invoke(SerialId, slot);
+        }
     }
 
     /// <summary>
@@ -341,6 +385,12 @@ public partial class SaveForm : IController
         }
 
         GF.Sound.PlayConfigured(SoundId.MenuConfirm);
-        GF.UI.CloseUIForm(SerialId);
+        // 回调可能同步离开选角流程并关闭本窗口，使用原编号避免重复关闭或回池编号变化。
+        int serialId = SerialId;
+        SaveFormClosed?.Invoke(serialId);
+        if (GF.UI.HasUIForm(serialId))
+        {
+            GF.UI.CloseUIForm(serialId);
+        }
     }
 }
