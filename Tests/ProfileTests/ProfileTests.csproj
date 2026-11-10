@@ -83,6 +83,7 @@
 
   <ItemGroup>
     <None Include="$(GodotProjectDir)TheGame\DataTables\GameConfigs\*.bytes" Link="Data\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

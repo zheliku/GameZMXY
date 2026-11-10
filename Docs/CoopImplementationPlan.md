@@ -1,6 +1,6 @@
 # 双人扩展实施计划
 
-状态：**阶段 A（A1～A3：d2c3d13、c2f74db、fe0bdbc）与阶段 B（B1～B3：53e9b11、e3440ca、511f0c5）已完成并经架构审查通过；C1～C3 已接受（394b97c、c489b65、61de0f2）；用户授权 C4/C5 合并交付，C4-1～C4-6 与 C5 已完成实现及最终回归，停在 C5 待审，阶段 D 未开始；首轮失败、用户授权的烟测夹具隔离与最终通过记录见 Validation。** 当前档案采用 `ProfileModel.HeroIds` / `GameData.Heroes` 有序阵容，个人成长、灵魂、背包、穿戴与学习接口显式传 HeroId，存档 v14；本局 `HeroModel` 按 HeroId 持有 `HeroState`，`HeroSystem`/`HeroStatusSystem`/`SkillSystem` 的个人操作显式传 HeroId；英雄显示强制传 `HeroSpawn`，实体持有本次 `Slot` 与出生位置；敌人独立记录最近有效命中英雄，经验、牛心唯一奖励与飞行球生成按归属处理，球逐个追踪归属者、地面物品按实际接触者入账。仍只生成 P1、仅 P1 消费战斗输入，保持单 HUD。阶段 A、B 审查结论与对后续计划的修正见第九、十部分。旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
+状态：**阶段 A（A1～A3）、B（B1～B3）、C（C1～C5：394b97c、c489b65、61de0f2、0523aae）已完成并经架构审查通过；下一步 D0（正式存档升级），之后 D1→D2→D3→E1 每批都可上手游玩验证。** 当前档案为 v14 有序阵容，个人数据按 HeroId；本局 `HeroModel` 按 HeroId 持有 `HeroState`；英雄显示带 `HeroSpawn` 席位；经验、球、地面物品按真实归属；P1/P2 两套键位已映射，单人档忽略 P2 键。仍只生成 P1、单 HUD。审查结论见第九～十一部分。旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
 
 官方依据见 [造一双人源码依据](OfficialReference.md#双人扩展的源码依据2026-11-07) 与 [造三本地双人规则](OfficialReference.md#造梦三本地双人规则2026-11-07)。项目规范以 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md) 为准，验证记录见 [Validation](Validation.md)。
 
@@ -12,7 +12,7 @@
 
 ## 1. 任务粒度与停止点
 
-- **大任务**（A1、A2、…）是一次交付单元。完成一个大任务后**必须停下**，输出交付说明并等待用户审查，不得自动进入下一个大任务。
+- **大任务**（A1、A2、…）是一次交付单元。阶段 A～C：完成一个大任务后**必须停下**，输出交付说明并等待用户审查。**阶段 D～E 例外**：用户要求一次交付，按第七部分第 0 节连续执行，只在 D0-3 正式转存前与触发本部分第 2 节上报条件时停下。
 - **子任务**（A1-1、A1-2、…）是大任务内部的执行步骤，按编号顺序做。子任务之间不需要停下等审查。**中间编译门槛：** 删除或改签名的子任务会留下迁移编译错误，这是预期的；每个子任务结束时记录当前编译错误数，**大任务的最后一个子任务必须清零**。不要为了维持中间编译而引入兼容转发、临时重载或默认参数（A1、A2 已按此执行）。
 - **"临时取 P1"标记：** 凡本计划要求"本批先用 `HeroOf(PlayerSlot.P1)`"或"先用 `_player.HeroId`"的位置，都是**有意留给后续大任务替换的已知占位**，必须保持单行、直白、可被搜索；不要为它加辅助方法或抽象。第九部分列出了全部占位及其负责批次。
 - 禁止合并大任务、禁止"顺手"实现下一个大任务的内容。
@@ -67,7 +67,7 @@ dotnet test Tests/BattleTests --no-restore -v quiet
 dotnet test Tests/LevelTests --no-restore -v quiet
 ```
 
-基线（2026-11-09，阶段 B 完成后，由审查者实测）：构建 0 错误；ProfileTests 320/320；BattleTests 195/195；LevelTests 19/19。既有框架弃用警告、`BattleTests` 的 CS8632/CS0649 与测试工程的 NU1900 网络警告保留。
+基线（2026-11-10，阶段 C 完成后，由审查者实测）：构建 0 错误；ProfileTests 323/323；BattleTests 197/197；LevelTests 19/19。既有框架弃用警告、`BattleTests` 的 CS8632/CS0649 与测试工程的 NU1900 网络警告保留。
 
 **测试数量允许增加，不允许减少。** 若某个大任务后测试数变少，必须在交付说明中逐条解释。
 
@@ -166,14 +166,14 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 | `AbstractEnemyEntity.OnHurt` 首先调用 RecordHeroAttacker，鹏魔蛋态单独调用；显示复位归属 | 致死一击记录不受 Dead 早退或 AI 目标清除影响 | C2 已实现 |
 | `EnemyDiedEventArgs.KillerEntityId` 与 `LevelSystem.RecordDefeat(heroId, experienceReward)` | 按有效归属发经验；无归属只计击败、不出球，地面掉落保持 | C2 已实现 |
 | `LootOrbNode.Tick(delta, target)` 单目标；`LevelViewController.Loot` 只认 `_player`                                        | 掉落无归属                                      | C3        |
-| `InputSystem.ActionOf` 与英雄、出口、战斗/背包窗口按席位读键 | P2 映射已接入；SkillForm 默认 P1 留 E2 | C4 已实现 |
+| `InputSystem.ActionOf` 与英雄、出口、战斗/背包窗口按席位读键 | P2 映射已接入；SkillForm 默认 P1 留新 D2-3 | C4 已实现 |
 | `LevelViewController._player` 单引用（相机、连击、出口、触发区、掉落、死亡、换装都读它）                                       | 单人                                            | D2        |
 | `LevelCameraNode._target` 单 `Node2D`                                                                                        | 单人取景                                        | D4        |
 | `LevelViewController._Process` 中 `HeroDeathPresentation.Completed` 直接判失败                                               | 一人死即失败                                    | D5        |
 | `TangsengEntity.ApplyHeavenlyDew` 只治疗自己                                                                                   | 无队友治疗                                      | D6        |
 | `DragonKingEntity.OnShow` 读 P1 的成长等级                                                                                     | 单人等级分档                                    | D7        |
 | `equipment_actions_menu.tscn` 的 `Panel/Gift` 按钮永久禁用（脚本无字段）                                                     | 无赠送                                          | E1        |
-| `SkillForm.SelectPage` 拒绝非出战英雄页签                                                                                      | 只能看自己                                      | E2        |
+| `SkillForm.SelectPage` 拒绝非出战英雄页签                                                                                      | 只能看自己                                      | 新 D2-3   |
 
 **其他必须知道的事实：**
 
@@ -207,24 +207,18 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 | B1   | `HeroModel` 按英雄承载本局状态 | A1     | 无                 | 已完成，53e9b11，审查通过 |
 | B2   | 技能登记与施放按英雄             | B1     | 无                 | 已完成，e3440ca，审查通过 |
 | B3   | 战斗规则证据与阶段 A～B 回归     | B2     | 只加测试           | 已完成，511f0c5，审查通过 |
-| C1   | 英雄实体携带席位                 | B1     | 无                 | 已接受，394b97c          |
-| C2   | 经验归属最后命中者               | C1     | 无人命中的怪不发经验与球 | 已接受，c489b65 |
-| C3   | 地面物品与球按归属领取           | C2     | 无                 | 已接受，61de0f2          |
-| C4   | 第二套键位与按席位开窗           | C1     | 新增 P2 映射       | 已实现，最终 UI 回归中   |
-| C5   | 阶段 C 单人回归                  | C4     | 只验证             | 待 C4 验证完成           |
-| D1   | 标题人数入口、依次选角、选格建档 | A1、C4 | 可建双人档         | 未开始                   |
-| D2   | 关卡装配全部参战者               | D1、B2 | 出现两个人物       | 未开始                   |
-| D3   | 双方 HUD                         | D2     | 界面               | 未开始                   |
-| D4   | 相机与屏幕墙                     | D2     | 取景               | 未开始                   |
-| D5   | 死亡、出口与结算                 | D2～D4 | 结局规则           | 未开始                   |
-| D6   | 唐僧队友治疗                     | D2     | 技能规则           | 未开始                   |
-| D7   | 龙王等级取最低                   | D2     | Boss 分档          | 未开始                   |
-| D8   | 花果山双人闭环验收               | D1～D7 | 只验证             | 未开始                   |
-| E1   | 装备赠送                         | A2、D3 | 新功能             | 未开始                   |
-| E2   | 技能窗口双人页签                 | D3     | 界面               | 未开始                   |
-| E3   | 其余关卡分组核验与文档收口       | D8、E2 | 收尾               | 未开始                   |
+| C1   | 英雄实体携带席位                 | B1     | 无                 | 已完成，394b97c，审查通过 |
+| C2   | 经验归属最后命中者               | C1     | 无人命中的怪不发经验与球 | 已完成，c489b65，审查通过 |
+| C3   | 地面物品与球按归属领取           | C2     | 无                 | 已完成，61de0f2，审查通过 |
+| C4   | 第二套键位与按席位开窗           | C1     | 新增 P2 映射       | 已完成，0523aae，审查通过 |
+| C5   | 阶段 C 单人回归                  | C4     | 只验证             | 已完成（记录于 Validation），审查通过 |
+| D0   | 正式存档升级到 v14 并恢复可读    | —      | 用户旧档可读       | D0-3 已确认并转存，上手验证因本机连接受阻 |
+| D1   | 标题、单双人、依次选角、选格建档 | D0     | 可建双人档         | 未开始                   |
+| D2   | 两人同时出现、各自操作、各自 HUD | D1     | 出现两个人物与两块 HUD | 未开始               |
+| D3   | 双人相机、死亡、出口、结算与 Boss 规则 | D2 | 完整双人关卡规则  | 未开始                   |
+| E1   | 双人赠送、技能页签与全关收尾     | D3     | 赠送、页签、全关可通 | 未开始                 |
 
-**D 与 E 阶段的子任务拆解在其依赖批次审查通过后补写**，因为那些签名取决于 A～C 的实际落地结果。现在写出的 D/E 范围是方向约束，执行前会细化。
+原 D1～D8、E1～E3 已于 2026-11-10 按用户要求合并为上表的 D0～E1，并按用户要求**一次交付**：D0→D1→D2→D3→E1 顺序连续执行，只在 D0-3 正式转存前与触发上报条件时停下（规则见第七部分第 0 节）。
 
 ---
 
@@ -1052,23 +1046,761 @@ public static string ActionOf(string action, PlayerSlot slot) => slot == PlayerS
 
 ---
 
-# 第七部分　阶段 D 与 E：范围约束
+# 第七部分　阶段 D 与 E：一次交付的完整规格
 
-**子任务拆解在依赖批次审查通过后补写。** 以下是不得偏离的范围。
+## 0. 本阶段怎么执行（2026-11-10 用户要求）
 
-| 编号 | 范围                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | 验收要点                                                                                                                                                                                                                                                                                                                                                     |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| D1   | **D1a 标题**：`start_form.tscn`/`StartForm` 的"开始游戏"拆为"新开游戏""读取存档"，新开游戏在原位展开"单人/双人/返回"，返回恢复主菜单；`ProcedureTitle` 读取存档打开 `SaveForm` 读模式（空格无响应）。**D1b 选角**：`CharacterForm` 依次确认 1P/2P，已选卡保持选中并显示 1P/2P 标记且不可再选，双人显示"重选"清空两人，返回回到标题；单人可改选。**D1c 选格建档**：选角确认后打开 `SaveForm` 保存模式并显示"第一次进入游戏请选择存档"，空格直接建档，已有格复用现有确认层提示覆盖，关闭回标题且不写档；`SaveSelectionVariable` 携带有序阵容，`SaveSystem` 建档写入阵容 | 按钮与"重选"的美术先从官方导出并给场景预览审查；`StartForm` 现有四个按钮间距 62px、下一个位置约 y=408，布局改动先给预览；返回与关闭不写半份档案；覆盖必须明确确认；卡片按已实装英雄配置绑定，不写角色组合分支                                                                                                                                              |
-| D2   | `ProcedureLevel`、`LevelViewController.StartSession` 持有参战实体集合取代 `_player`；出生点按席位横向错开                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | 按阵容显示 1 或 2 人；取消令牌覆盖全部请求，第二人失败或迟到时回收本周期已取得对象；`OwnsActor`、连击、换装、触发区、出口、掉落、死亡全部改为按集合判断                                                                                                                                                                                                    |
-| D3   | `BattleForm.Logic`、`BattleFormData`、`battle_form.tscn`，复用 `BattleStatusPanel`/`BattleMenuPanel`/`MusouActivationNode`                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 一个 BattleForm 持双方区域，P2 右上镜像、文字翻回（参照造一 `RoleInfo.setPos`）；各自无双槽与菜单按钮打开本人窗口；无双演出显示发动者立绘；Boss 条、阶段、连击共用；单人布局不变；**先审布局截图再接绑定**；Ge 绑定文件只经 `regenerate_ui_form.py` 更新，且先确认字段名不会被改坏                                                                 |
-| D4   | `LevelCameraNode`（单 `Node2D` → 存活参战者集合）、`LevelViewController`、屏幕墙                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 仍单个 Camera2D 与中央死区；`SpatialUtility.StepCameraCenter` 不改签名，传两人中点即可；屏幕墙阻止每人出屏，落后者限制前进；阶段抵达仍依实际取景；死者不参与取景                                                                                                                                                                                           |
-| D5   | `LevelViewController`、`LevelSystem`、`LevelResult`、`SettlementForm`、`LevelExitNode`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 一死一活继续，死者只结束本人控制/技能/效果/在途球；**全部死亡且墓碑演出结束后**失败结算一次（改 `_Process` 里 `HeroDeathPresentation` 的单人判定）；任一存活者按本人交互键使用出口，等有效球结算后整队离关；结算共享一份，剩余生命为参战者平均（死者计 0）；放弃/失败按进关快照回滚双方                                                            |
-| D6   | `TangsengEntity` 甘露入口、`TangsengWaterCloneNode`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 本体自疗；队友距施法点横纵 ≤200；分身横 ≤200、纵 ≤160；只治疗存活者；恢复量读施法者属性；不复制一套治疗公式                                                                                                                                                                                                                                               |
-| D7   | `DragonKingEntity`；另复核 `SelectPLace`/`MapForm` 的技能入口发光门槛（官方为"任一玩家余额 ≥160"）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | 入场分档取参战者**最低**等级（造一 `Monster26` 构造：先取 hero1 等级，再与 hero2 取较小值；**不采用**造三的平均等级）；旗幡资格仍全档一次；地图技能发光改为任一参战者余额达标（当前是 `HeroOf(P1)` 占位）                                                                                                                                                                                                                                                                                                       |
-| D8   | 花果山闭环                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | 标题新开游戏选双人 → 依次选不同英雄 → 选格建档 → 同时移动/攻击/技能 → 各自成长/拾取/无双 → 治疗 → 一死一活 → 全灭与通关 → 保存退出后经读取存档再进入；交换 1P/2P 英雄复验；单人跑同一路径；两人同帧按无双只有一人开启且另一人不扣无双。用现有 `FrontendSmokeScenario`/`UiSmokeScenario` 与规则测试承载证据，**不以提高生命或清场夹具代替** |
-| E1   | `EquipmentCommands`＋`EquipmentSystem` 增加发送者/接收者/实例请求；启用 `equipment_actions_menu.tscn` 的 `Panel/Gift`（单人保持禁用，与造三一致）。**可用态按钮图需先用 `export_official_inventory_actions.py` 扩充导出**                                                                                                                                                                                                                                                                                                                                                               | 只赠送背包物；校验双方属于阵容、源归属、接收方有空位后同步移交同一实例，不 await、不自动装备、不重抽属性；`UiSmokeScenario.Inventory.cs:156-158` 的断言同步改为"单人禁用、双人可用"；验收满包、已穿戴、过期选择、同一 `InstanceId` 只存在一处、保存重读与放弃回滚包含赠送                                                                                |
-| E2   | `SkillForm` 已有的悟空/唐僧页签改为启用全部参战者，打开时默认请求者页签（地图上默认 P1），学习/升级扣所选英雄自己的灵魂                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 复用 A1/A2 的数据绑定，不新建 Player2 窗口；`SelectPage` 的"只能看出战英雄"限制改为"只能看参战英雄"                                                                                                                                                                                                                                                        |
-| E3   | 分组核验：①桃花源、水帘洞、蝙蝠窟（平台/坡地、机关、隐藏入口、屏幕边界）②七星洞、迦楼罗之穴（毒雾、延迟/范围效果、飞行目标）③浅岸、东海、牛魔谷（抓取、水牢、解救、牛魔多形态与经验归属传递；`BullDemonKingEntity.CaptureHeroAnimEvent` 已遍历全部英雄，确认其 `TryCapture` 对多人正确）④隐藏龙宫（冻结、龙王分档、旗幡与装备排重）                                                                                                                                                                                                                                                             | 最后核验 60/120Hz、第二人加载取消、退出、重复进入、窗口与实体退订、源表/场景引用；更新 [ProjectTour](ProjectTour.md) 与规范现状，清理迁移中的旧入口与重复实现                                                                                                                                                                                                 |
+用户要求把剩余计划**一次全部写好、一次全部交给执行者做完**。为了在一次交付中仍保持可审查、不偏移，规则如下：
+
+1. **执行顺序固定**：D0 → D1 → D2 → D3 → E1，前一个大任务的「完成判定」全部满足后才开始下一个。不得交错、不得并行、不得跳过。
+2. **每个大任务完成后不停下等用户，但必须：**
+   - 跑完该任务的「完成判定」全部命令；
+   - 按该任务的「上手验证」**用真实键盘实机走一遍**并截图（存到 `Godot/GodotProject/.godot/validation/coop_<任务>_<日期>/`）；
+   - 在 `Docs/Validation.md` 顶部追加该任务的一节；
+   - 然后才进入下一个大任务。
+3. **只有以下两种情况允许停下等用户**（其余一律按本规格自行完成）：
+   - **D0-3 正式转存前**（必停，等用户回复"确认"）；
+   - 触发第一部分第 2 节七类上报条件之一。停下时写明卡在哪个子任务、现状、可选方案；**已完成的大任务保持完成，不回滚**。
+4. **最终交付**：E1 完成后，输出一份总交付说明（格式见本部分第 8 节），并更新第三部分总表与第八部分进度。
+5. 本部分写明的签名、文件、节点名、数值是**确定决定**，不是建议。实际代码与本规格冲突时按第一部分第 2 节停下报告，不自行取舍。
+
+### 本阶段的硬性规则（在第一部分规则之外追加）
+
+- **执行者烟测**继续用 `run_godot.py` 的案例专属 APPDATA。**上手验证**用正式 APPDATA（即用户自己的存档目录）。
+- 本阶段**不改存档格式**（v14 已足够）。若发现必须改，停下报告。
+- 除 D0-3 外，不得删除、覆盖或手动编辑 `%APPDATA%/Godot/app_userdata/GameZMXY/GameData/` 下的任何文件。上手验证中新建/覆盖的存档只能写到**第 5、6 格**（当前空格），不得覆盖用户已有的第 1～4 格。
+- 场景改动只能通过 Godot 编辑器语义等价的方式（直接编辑 `.tscn` 文本可以，但必须保持 Godot 能无改动重新保存：节点顺序、属性名、`unique_id` 规则与同文件现有写法一致）。改完用 Godot 扫描验证能加载。
+- UI 绑定文件（`XxxForm.cs`）只能用 `python Tools/ProjectMaintenance/regenerate_ui_form.py <场景> --namespace GameLogic.UI` 生成。**做法**：先在 `.tscn` 根节点的 `node_paths` 与 `_field = NodePath("...")` 中加好新绑定、删掉被删节点的绑定，再运行生成器（生成器从根节点绑定读取字段名，已核实不会改动既有字段名；绑定指向不存在的节点时会报 `Missing root binding` 并退出）。不用 `--add-binding`。
+- 新增 UI 按钮一律复用同场景中已有按钮的样式（同类型、同主题、同字体、同 `focus_mode = 0`、同 `mouse_default_cursor_shape = 2`），不新导美术；**唯一例外**是 E1-1 的赠送按钮可用态贴图，从官方 SWF 导出。
+- 所有新按钮点击都播放 `SoundId.MenuConfirm`（项目只有这一个界面音效，返回/取消也用它，与现有 SaveForm 关闭键一致）。
+
+### 本阶段大任务总览
+
+| 编号 | 大任务 | 合并自 | 完成后用户能看到 |
+| --- | --- | --- | --- |
+| D0 | 正式存档升级到 v14 | 新增 | 4 个"存档不可读"恢复显示角色名并能进入 |
+| D1 | 标题、单双人、依次选角、选格建档 | 原 D1 | 能建出双人档；读档入口独立 |
+| D2 | 两人同时出现、各自操作、各自 HUD | 原 D2 + D3 | 双人进关，两角色、两块 HUD，各打各的 |
+| D3 | 相机、死亡、出口、结算、唐僧奶队友、龙王分档 | 原 D4～D7 | 完整双人关卡规则 |
+| E1 | 赠送、技能页签、全关核验与收尾 | 原 E1～E3 | 赠送与页签可用，全部关卡双人可通 |
+
+---
+
+## 1. 大任务 D0　正式存档升级到 v14
+
+### 背景（审查者已核实）
+
+用户正式存档 `%APPDATA%/Godot/app_userdata/GameZMXY/GameData/` 有 4 格，**全部 v12**，因而全部显示"存档不可读"：
+
+| 格 | UnitId | 内容 |
+| --- | --- | --- |
+| 1 | 1791793987 | 悟空，最远通关 9，灵魂 2630135，59 件装备，4 件穿戴 |
+| 2 | 1793209553 | 悟空，新档，0 件装备 |
+| 3 | 1793449001 | 龙王测试档，规模同格 1 |
+| 4 | 1793888918 | 唐僧，最远通关 5，灵魂 225080，27 件装备，3 件穿戴，5 个主动技能，被动全 5 级 |
+
+v12 → v14 差异只有三处，且全部可无损推导：
+
+| v12 | v14 |
+| --- | --- |
+| 根级 `"ActiveHeroId"` | 删除 |
+| 根级 `"Soul"` | 删除，值写入唯一英雄的 `"Soul"` |
+| （无） | 唯一英雄新增 `"BagInstanceIds"` = `EquipmentItems` 中**未被**该英雄四个穿戴字段引用的全部实例编号，保持实例池顺序 |
+
+其余字段原样，`"SaveVersion"` 改为 `14`。4 个档的阵容都只有 1 人，不存在归属歧义。
+
+### D0-1　转存工具
+
+新建 `Tools/ProjectMaintenance/upgrade_saves_v12_to_v14.py`，纯 Python 标准库，模块开头英文 docstring 说明用途（与同目录其他脚本一致）。
+
+**参数：**
+
+| 参数 | 默认 | 说明 |
+| --- | --- | --- |
+| `--game-data` | `%APPDATA%/Godot/app_userdata/GameZMXY/GameData` | 存档目录 |
+| `--capacity` | 必填 | 每人背包上限。用 `75`（`TbProfileConfig.EquipmentCapacity`，见 `Configs/GameConfig/Datas/ProfileConfig.xlsx`） |
+| `--dry-run` | 否 | 只打印计划，不写文件、不建备份 |
+
+**行为：**
+
+1. 列出 `Data/*.sav` 与 `Data/*.sav.bak`（两类都处理：GGF 主文件读失败会回退备份，两者版本必须一致）。`Catalogue.sav` 不改。
+2. 读取：`open(path, encoding='utf-8-sig')` + `json.load`。记录原文件是否带 BOM（前三字节 `EF BB BF`）。
+3. 按 `SaveVersion` 分流：`12` 转换；`13`、`14` 跳过并打印 `SKIP`；其他值打印 `ERROR` 并让脚本以非零退出码结束（不写任何文件）。
+4. 转换前校验，任一失败即 `ERROR`：
+   - `Heroes` 恰好 1 项；
+   - `ActiveHeroId == Heroes[0]["HeroId"]`；
+   - 四个穿戴编号中非 `00000000-0000-0000-0000-000000000000` 的都存在于 `EquipmentItems`；
+   - 实例池内 `InstanceId` 不重复；
+   - 计算出的背包件数 ≤ `--capacity`。
+5. 构造新对象，**键顺序**严格为：`SaveVersion, Heroes, HighestClearedLevelId, EastSeaBannerAvailable, EquipmentItems, UnitId`；英雄内键顺序为：`HeroId, TotalExperience, Soul, BagInstanceIds, LearnedSkills, PassiveLevels, WeaponInstanceId, ArmorInstanceId, AccessoryInstanceId, TreasureInstanceId`（与 `GameData.cs` 声明顺序一致）。用 `dict` 按此顺序插入。
+6. 写出：`json.dumps(obj, ensure_ascii=False, indent=2)`，换行统一为 `\r\n`，原文件带 BOM 则写回 BOM。先写 `<file>.tmp` 再 `os.replace`。
+7. **任一文件 ERROR 时整个运行不写任何文件**：先对全部文件做完校验与构造，全部通过后再统一写。
+8. 非 dry-run 时，写入前把整个 `GameData` 目录用 `shutil.copytree` 复制到同级 `GameData.backup-before-v14-<yyyyMMdd_HHmmss>`（用户目录已有 `GameData.backup-before-v9-…` 等同名先例）。
+9. 每个文件打印一行：`<OK|SKIP|ERROR> <文件名> version=<旧> hero=<HeroId> soul=<n> bag=<n> worn=<n> <原因>`；结尾打印汇总与备份路径。
+
+### D0-2　样例与往返测试
+
+- 把正式格 4 的 `Data/1793888918.sav` 复制为 `Tests/ProfileTests/Data/save_v12_tangseng.json`（用户自己的数据，可直接使用）。
+- 用 D0-1 脚本对一个只含该样例的临时目录运行，把输出复制为 `Tests/ProfileTests/Data/save_v14_tangseng.json`。两份都加入仓库（不提交，由用户提交）。
+- `Tests/ProfileTests/ProfileTests.csproj`：照第 85 行把 bytes 拷到输出目录的写法新增一行：`<None Include="Data\*.json" CopyToOutputDirectory="PreserveNewest" />`（样例文件放在测试工程自己的 `Data` 目录，输出路径与 bytes 相同为 `Data\`）。
+- 新建 `Tests/ProfileTests/SaveUpgradeTests.cs`（命名空间与同目录测试一致，中文 XML 注释），一个用例：
+  1. 读 v14 样例为 `GameData`（`JsonConvert.DeserializeObject<GameData>`，与 GGF 同一 Newtonsoft）。
+  2. `TestGameScope.FromSaveData(data, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, TestTables.Tables.TbProfileConfig.EquipmentCapacity)` 成功。
+  3. `CaptureSaveData()` 后断言：英雄编号与经验、灵魂、背包实例集合（集合比较，不比顺序）、四个穿戴编号、已学技能集合、被动字典、`HighestClearedLevelId`、`EastSeaBannerAvailable`、实例池实例集合与样例一致。
+  4. 再断言 v12 样例的 `Soul` 等于 v14 样例英雄的 `Soul`，v12 的实例池件数 = v14 背包件数 + 非空穿戴件数（证明转换规则）。
+
+### D0-3　正式转存（必停）
+
+1. 运行 `python Tools/ProjectMaintenance/upgrade_saves_v12_to_v14.py --capacity 75 --dry-run`，把完整输出贴进交付说明，**停下等用户回复"确认"**。
+2. 用户确认后去掉 `--dry-run` 正式运行，记录输出与备份路径。
+3. 做上手验证。
+
+### D0 上手验证
+
+1. 打开游戏 → 开始游戏 → 存档页：格 1/2/3 显示"悟空"，格 4 显示"唐僧"，无"存档不可读"。截图。
+2. 点格 4 → 地图 → 打开技能窗口：5 个主动技能已学、被动 5 级、灵魂 225080。截图。
+3. 进任一关按 C：装备件数与穿戴与转存前一致（27 件中 3 件穿戴、24 件在背包）。
+4. 退出再开，4 格仍可读。
+
+### D0 完成判定
+
+- 构建 0 错误；ProfileTests ≥ 324（新增 1 个以上），BattleTests 197，LevelTests 19。
+- 上手验证 1～4 通过并截图。
+- 运行时代码零改动（`git diff --stat` 中 `Godot/GodotProject` 下无 `.cs` 改动）。
+
+---
+
+## 2. 大任务 D1　标题、单双人、依次选角、选格建档
+
+### 目标流程（依据造三 `GameMenu`、`SelectRole`、`SaveInter`、`MapMenu`）
+
+```
+标题：新开游戏 / 读取存档 / 游戏设置 / 游戏帮助 / 游戏须知
+├─ 新开游戏 → 主菜单按钮隐藏，原位出现：单人游戏 / 双人游戏 / 返回
+│   ├─ 返回 → 恢复主菜单
+│   └─ 单人/双人 → ProcedureCharacter（选角）
+│        ├─ 返回 → 回标题
+│        └─ 选满 → 本流程内打开存档页（保存模式："第一次进入游戏请选择存档"）
+│             ├─ 空格 → 建档 → ProcedureLoadGame → 地图
+│             ├─ 已有格 → 确认覆盖 → 删除旧档 → 建档 → 地图
+│             └─ 关闭 → 回标题（不写档）
+└─ 读取存档 → 存档页（读取模式）→ 只能点已有格 → ProcedureLoadGame → 地图
+```
+
+### D1-1　流程数据：阵容随选择传递
+
+`TheGame/MainPack/Scripts/Procedure/FlowData/SaveSelectionVariable.cs`：
+
+```csharp
+public sealed class SaveSelectionVariable : Variable<(int SlotNumber, long UnitId, int[] HeroIds)>
+{
+    /// <param name="heroIds">新档按席位排列的阵容；读已有档时为空数组。</param>
+    public static SaveSelectionVariable Create(int slotNumber, long unitId, int[] heroIds)
+```
+
+- 删除旧的 `int heroId = 0` 参数，**不留默认值**。读档调用传 `[]`。
+- 更新 XML 注释与类说明（"标题和选角向读档流程传递格号、稳定存档编号与新档阵容"）。
+- 全部使用点同步：`ProcedureTitle`、`ProcedureCharacter`、`ProcedureLoadGame`。
+
+`ProcedureLoadGame`：
+
+- 解构改为 `(int SlotNumber, long UnitId, int[] HeroIds) selection`，调用 `LoadOrCreateAsync(selection.SlotNumber, selection.UnitId, selection.HeroIds, token)`。
+- 读档日志改为：`Log.Info("[ProcedureLoadGame] 档案就绪：来源 {0}，阵容 {1}", loaded.Origin, string.Join(",", profile.HeroIds));`（清掉第九部分占位清单中的一项）。
+
+`SaveSystem.LoadOrCreateAsync` 新签名：
+
+```csharp
+public async Task<(GameData Data, SaveOrigin Origin)> LoadOrCreateAsync(int slotNumber, long unitId,
+    IReadOnlyList<int> initialHeroIds, CancellationToken cancellationToken = default)
+```
+
+- 校验：`initialHeroIds` 非 null；建档时（`unitId == 0`）若为空则用 `[TbProfileConfig.StartHeroId]`（保留原单参数时的默认行为，供 Debug 夹具使用）；每个编号必须在 `TbHeroConfig` 中存在，否则抛 `ArgumentOutOfRangeException`。数量与重复由后续 `mapper.Validate` 拒绝，不重复写。
+- 建档：`Heroes = initialHeroIds.Select(id => new HeroSaveData { HeroId = id, Soul = tables.TbProfileConfig.StartSoul }).ToList()`。
+- 读档（`unitId != 0`）忽略 `initialHeroIds`。
+- 更新 XML 注释。
+
+### D1-2　标题：新开游戏 / 读取存档 / 单双人
+
+**场景 `TheGame/UIs/start_form.tscn`**（按钮 45px 高、62px 间距，分隔线在两按钮之间，起点比上一按钮底部早 2px）：
+
+| 节点 | 类型 | 偏移 L,T,R,B | 文本 | 说明 |
+| --- | --- | --- | --- | --- |
+| `m_NewGame` | Button | 692,160,933,205 | 新开游戏 | 原 `m_Start` 改名并改文本 |
+| Divider0 | TextureRect | 692,203,933,224 | | 保留 |
+| `m_LoadGame` | Button | 692,222,933,267 | 读取存档 | 新增 |
+| Divider1 | TextureRect | 692,265,933,286 | | 保留 |
+| `m_Settings` | Button | 692,284,933,329 | 游戏设置 | 下移一格 |
+| Divider2 | TextureRect | 692,327,933,348 | | 保留 |
+| `m_Help` | Button | 692,346,933,391 | 游戏帮助 | 下移一格 |
+| Divider3 | TextureRect | 692,389,933,410 | | 保留 |
+| `m_Notice` | Button | 692,408,933,453 | 游戏须知 | 下移一格 |
+| Divider4 | TextureRect | 692,451,933,472 | | 新增，复制 Divider3 |
+| `m_Status` | Label | 678,475,932,575 | | 下移 50px，避免与新按钮重叠 |
+| `m_Single` | Button | 692,160,933,205 | 单人游戏 | 新增，`visible = false` |
+| `m_Double` | Button | 692,222,933,267 | 双人游戏 | 新增，`visible = false` |
+| `m_Back` | Button | 692,284,933,329 | 返回 | 新增，`visible = false` |
+
+- 新按钮属性复制 `m_Settings`：`mouse_default_cursor_shape = 2`、`focus_mode = 0`。
+- 三个新选项按钮出现时，主菜单 5 个按钮和 5 条分隔线都隐藏。为便于整组切换，把主菜单 5 个按钮和 5 条分隔线移入一个新 `Control` 节点 `m_MainMenu`（`mouse_filter = 2`，全屏偏移 0,0,940,590，子节点保持原绝对偏移），把三个选项按钮移入 `m_PlayerCountMenu`（同样设置，`visible = false`）。这样逻辑只切换两个容器的 `Visible`。
+- 根节点绑定改为：`_newGame, _loadGame, _settings, _help, _notice, _status, _mainMenu, _playerCountMenu, _single, _double, _back`，路径按新层级写（如 `m_MainMenu/m_NewGame`）。删除 `_start`。
+- 运行 `regenerate_ui_form.py` 生成 `StartForm.cs`。
+
+**`StartForm.Logic.cs`：**
+
+- 删除 `StartGameRequested`。新增：
+
+```csharp
+/// <summary>玩家选定人数开始新游戏；参数为本次窗口编号与参战人数（1 或 2）。</summary>
+public event Action<int, int> NewGameRequested;
+
+/// <summary>玩家请求读取已有存档；参数为本次窗口编号。</summary>
+public event Action<int> LoadGameRequested;
+```
+
+- `OnInit`（`isNewInstance`）绑定：`_newGame → ShowPlayerCountMenu`、`_loadGame → OnLoadGameClicked`、`_single → () => OnPlayerCountChosen(1)`、`_double → () => OnPlayerCountChosen(2)`、`_back → ShowMainMenu`。
+- `OnOpen`：`_status.Text = ""; ShowMainMenu(playSound: false); Visible = true;`（每次打开都回到主菜单）。
+- `OnClose`：两个新事件置 null（与现有写法一致）。
+- `ShowPlayerCountMenu`/`ShowMainMenu`：守卫 `GF.UI.HasUIForm(SerialId)`，播放 `MenuConfirm`（`ShowMainMenu` 在 `OnOpen` 调用时不播），切换两个容器的 `Visible`，清空 `_status.Text`。
+- `OnPlayerCountChosen(int count)`：守卫、音效、`NewGameRequested?.Invoke(SerialId, count)`。
+- `OnLoadGameClicked`：守卫、音效、`LoadGameRequested?.Invoke(SerialId)`。
+- 帮助文本改为三行：
+  `"P1：A/D 移动 · J 攻击 · K 跳跃 · 空格 无双\nP2：←/→ 移动 · 小键盘1 攻击 · 2 跳跃 · 0 无双\n左下角设置中返回地图"`
+- 须知文本不变。
+
+**`ProcedureTitle.cs`：**
+
+- `SetFormCallbacks` 的 `StartForm` 分支改订阅 `NewGameRequested`、`LoadGameRequested`（删除 `StartGameRequested`）。
+- 新增 `OnNewGameRequested(int formSerialId, int playerCount)`：校验序列号与 `playerCount is 1 or 2`；`_owner.SetData(FlowKeys.SaveSelection, SaveSelectionVariable.Create(0, 0, new int[playerCount]))`（用数组长度携带人数，元素尚未选择为 0）；`ChangeState<ProcedureCharacter>(_owner)`。
+- 原 `OnStartGameRequested` 改名 `OnLoadGameRequested`，逻辑不变，但打开存档页时传 `new SaveFormData(SaveFormMode.Load)`（见 D1-4）。
+- `OnSaveSlotSelected`：只接受 `SaveSlotState.Occupied`（原来还接受 Empty 并转去选角，删除该分支）；写入 `SaveSelectionVariable.Create(slot.SlotNumber, slot.UnitId, [])`，切 `ProcedureLoadGame`。
+- `OnSaveSlotDeleteRequested` 不变。
+
+### D1-3　选角：依次 1P/2P、已选锁定、重选、返回
+
+**场景 `TheGame/UIs/character_form.tscn`：**
+
+- 新增 `m_PlayerTwo`：复制 `m_PlayerOne` 全部属性，文本 `"2P"`，`font_color = Color(0.35, 0.75, 1, 1)`（与 1P 的金色区分），`visible = false`。
+- 新增 `m_Reselect`（Button，文本"重选"）与 `m_Back`（Button，文本"返回"）：
+  - 卡片占满全高，没有空白区，所以放在**八戒/沙僧两张未开放卡片区域的底部**：`m_Reselect` 偏移 `500,520,640,565`，`m_Back` 偏移 `760,520,900,565`。
+  - 主题沿用根节点 `legacy_menu_theme.tres`（Button 会自动套用），`focus_mode = 0`，`mouse_default_cursor_shape = 2`，`m_Reselect` 默认 `visible = false`。
+- 根绑定追加 `_playerTwo, _reselect, _back`，运行生成器。
+
+**新建 `GameScripts/UI/CharacterForm/CharacterFormData.cs`**（照 `InventoryFormData` 写法）：
+
+```csharp
+/// <summary>选角窗口的打开参数：本次需要选择的参战人数。</summary>
+public sealed class CharacterFormData
+{
+    /// <param name="playerCount">参战人数，只能为 1 或 2。</param>
+    /// <exception cref="ArgumentOutOfRangeException">人数不是 1 或 2。</exception>
+    public CharacterFormData(int playerCount)
+    /// <summary>本次需要依次确认的英雄数量。</summary>
+    public int PlayerCount { get; }
+}
+```
+
+**`CharacterForm.Logic.cs`：**
+
+- 字段：`private int _playerCount; // 本次需要确认的人数。`、`private readonly List<int> _chosenHeroIds = new(); // 已按席位确认的英雄。`
+- 事件改为：
+
+```csharp
+/// <summary>全部席位选定；参数为窗口编号与按席位排列的英雄编号。</summary>
+public event Action<int, int[]> CharacterConfirmed;
+
+/// <summary>玩家放弃选角返回标题；参数为窗口编号。</summary>
+public event Action<int> CharacterCancelled;
+```
+
+- `OnInit`：追加 `_reselect.Pressed += OnReselectClicked; _back.Pressed += OnBackClicked;`。
+- `OnOpen(object userData)`：`userData is not CharacterFormData data` 时抛 `ArgumentException`；`_playerCount = data.PlayerCount; _chosenHeroIds.Clear(); _reselect.Visible = _playerCount == 2; RefreshCards(); Visible = true;`
+- `OnClose`/`OnRecycle`：两个事件置 null；清空 `_chosenHeroIds`。
+- `ConfirmCharacter(int heroId)`（点卡）：
+  1. 守卫 `HasUIForm`；`_chosenHeroIds.Contains(heroId)` 时直接返回（官方 `selectOneInDouble` 拒绝已按下卡，不播音效）。
+  2. 播 `MenuConfirm`，`_chosenHeroIds.Add(heroId)`，`RefreshCards()`。
+  3. `_chosenHeroIds.Count == _playerCount` 时 `CharacterConfirmed?.Invoke(SerialId, _chosenHeroIds.ToArray())`。
+- `RefreshCards()`：每张卡 `grayscale = _chosenHeroIds.Contains(卡的英雄) ? 0 : 1`；`_playerOne` 放在第 1 个已选卡上方（沿用 `PreviewRole` 的定位算式），`_playerTwo` 放在第 2 个已选卡上方；未选时隐藏对应标签。
+- 悬停预览：`PreviewRole` 只在该卡**未被选中**时生效，标签显示为"下一个待选席位"（第 1 次悬停显示 1P，选了 1P 后悬停显示 2P）；`ResetRoleHover` 改为调用 `RefreshCards()`（不能把已选卡变回灰色）。
+- `OnReselectClicked`：守卫、音效、`_chosenHeroIds.Clear()`、`RefreshCards()`。
+- `OnBackClicked`：守卫、音效、`CharacterCancelled?.Invoke(SerialId)`。
+- 卡片与英雄的对应只有现有两张（悟空 1、唐僧 2），用现有两个常量；**不写**"悟空+唐僧"等组合分支。
+
+**`ProcedureCharacter.cs`：**
+
+- `OnEnter`：从 `FlowKeys.SaveSelection` 读人数（`HeroIds.Length`），`GF.UI.OpenUIForm(UIFormId.CharacterForm, new CharacterFormData(count))`。
+- 新增字段 `private CancellationTokenSource _cancellation; // 离开时使存档目录读取与删除失效。`、`private int _saveSerialId; // 本流程打开的保存模式存档页。`；`OnEnter` 创建、`OnLeave` 取消并释放，`OnLeave` 关闭在开或加载中的存档页（照 `ProcedureTitle.OnLeave` 写法）。
+- `OnCharacterConfirmed(int formSerialId, int[] heroIds)`：校验序列号；把阵容写入 `SaveSelection`（`selection.Value = (0, 0, heroIds)`）；打开存档页 `GF.UI.OpenUIForm(UIFormId.SaveForm, new SaveFormData(SaveFormMode.Save))`，绑定回调，`await saves.RefreshDirectoryAsync(token)`（方法改为 `async void`，照 `ProcedureTitle.OnStartGameRequested`）。选角窗口保持打开在下层。
+- `OnCharacterCancelled`：`ChangeState<ProcedureTitle>(_owner)`（标题 `OnEnter` 会清除 `SaveSelection`）。
+- 保存模式选格处理见 D1-4。
+- `SetFormCallbacks` 增加 `CharacterCancelled` 与 `SaveForm` 分支（`SaveSlotSelected`、`SaveFormClosed`，见 D1-4）。
+
+### D1-4　存档页的读取/保存两种模式与覆盖确认
+
+**新建 `GameScripts/UI/SaveForm/SaveFormData.cs`：**
+
+```csharp
+/// <summary>存档页用途。</summary>
+public enum SaveFormMode
+{
+    /// <summary>读取已有存档；空格不可选，可删除。</summary>
+    Load,
+    /// <summary>为新阵容选择存档格；已有格需确认覆盖，不提供删除。</summary>
+    Save
+}
+
+/// <summary>存档页打开参数。</summary>
+public sealed class SaveFormData
+{
+    public SaveFormData(SaveFormMode mode)
+    /// <summary>本次打开的用途。</summary>
+    public SaveFormMode Mode { get; }
+}
+```
+
+**`SaveForm.Logic.cs`：**
+
+- 字段 `private SaveFormMode _mode; // 本次打开的用途。`、`private bool _confirmingOverwrite; // 确认层当前用于覆盖而非删除。`
+- 新增事件 `public event Action<int> SaveFormClosed;`（窗口编号）。`OnCloseClicked` 在 `CloseUIForm` **之前** `SaveFormClosed?.Invoke(SerialId)`。`OnClose` 置 null。标题流程不订阅它（关闭后标题仍在下层，行为不变）。
+- `OnOpen(object userData)`：`userData is not SaveFormData data` 时抛 `ArgumentException`；记录 `_mode`；保存模式下 `_status.Text` 由刷新逻辑设为 `"第一次进入游戏请选择存档"`（目录就绪时）。
+- `RefreshDirectory` 按模式：
+  - 读取模式：`button.Disabled = slot == null || slot.State != SaveSlotState.Occupied`（空格与不可读都禁用）；删除按钮规则不变。
+  - 保存模式：`button.Disabled = slot == null || slot.State == SaveSlotState.Unreadable`；删除按钮全部隐藏禁用；目录就绪时 `_status.Text = "第一次进入游戏请选择存档"`（失败/加载中文案不变）。
+- `SelectSlot(int number)`：
+  - 读取模式：只接受 `Occupied`，其余同现在。
+  - 保存模式：`Empty` 直接 `SaveSlotSelected`；`Occupied` 时复用确认层：`_confirmingOverwrite = true; _deleteSlot = number; _deleteMessage.Text = $"确定覆盖第 {number} 个存档吗？\n覆盖后原存档无法恢复。"; _deleteConfirmation.Show(); _deleteCancel.GrabFocus();`
+- `ConfirmDelete`：若 `_confirmingOverwrite`，发 `SaveSlotSelected(SerialId, slot)`；否则保持原删除逻辑。`CancelDelete` 复位 `_confirmingOverwrite = false`。
+- 复用 `DeleteConfirmation` 节点与美术（取消/确定按钮图本身无文字，适用于覆盖）。
+
+**`ProcedureCharacter` 处理保存模式选格（`async void OnSaveSlotSelected(int formSerialId, int slotNumber)`）：**
+
+1. 校验序列号、目录就绪、格号范围；格为 `Unreadable` 直接返回。
+2. 若为 `Occupied`：`bool deleted = await saves.DeleteSlotAsync(slot.SlotNumber, slot.UnitId, token);` 失败直接返回（`SaveSystem` 已把目录设为失败文案并显示在存档页）。成功后重新从 `SaveModel.Slots[slotNumber - 1]` 读取该格（删除后会刷新目录，该格变为 Empty，`UnitId` 可能为 0 或框架空槽编号）。
+3. `selection.Value = (slot.SlotNumber, slot.UnitId, heroIds)`（`UnitId` 取刷新后的值），`ChangeState<ProcedureLoadGame>(_owner)`。`LoadOrCreateAsync` 现有逻辑已处理 `unitId == 0` 新建与"框架空槽认领"两种情况。
+4. 取消异常照 `ProcedureTitle.OnSaveSlotDeleteRequested` 写法吞掉。
+
+**`ProcedureCharacter.OnSaveFormClosed`**：`ChangeState<ProcedureTitle>(_owner)`。
+
+### D1-5　Debug 烟测同步
+
+- `MainPack/Scripts/Debug/FrontendSmokeScenario.cs`：
+  - `AdvanceToLevel` 的按钮映射：`StartForm` → 先点 `m_MainMenu/m_NewGame`，再点 `m_PlayerCountMenu/m_Single`（双人路径点 `m_Double`）；`CharacterForm` 点卡（双人点两张）；`SaveForm`（保存模式）点 `Slots/m_Slot1`。注意新流程是"选角在选格之前"，按当前打开的窗口类型判断下一步。
+  - `RunAsync` 主流程中 `m_Start` → 读取存档路径改为 `m_MainMenu/m_LoadGame`；新档路径改为新开游戏 → 单人 → 选角 → 存档页保存模式选空格。
+  - 新增覆盖：①新开游戏 → 返回 → 主菜单恢复；②双人选角：同卡第二次点击无效、重选清空、返回回标题；③保存模式点已有格出现覆盖确认，取消不改目录，确认后该格被新阵容覆盖；④保存模式关闭回标题且目录不变；⑤读取模式空格不可点；⑥建双人档后读取模式格名为"悟空 · 唐僧"。
+- 其他引用 `StartGameRequested`、`m_Start`、`CharacterConfirmed(int,int)`、`LoadOrCreateAsync(..., heroId)` 的 Debug 位置按新签名改（以编译错误为准逐一修）。
+
+### D1 上手验证（正式存档；新档只写第 5、6 格）
+
+1. 标题右侧：新开游戏 / 读取存档 / 游戏设置 / 游戏帮助 / 游戏须知。截图。
+2. 新开游戏 → 原位出现单人游戏 / 双人游戏 / 返回；返回 → 恢复。
+3. 双人游戏 → 点悟空：卡亮起、上方 1P；再点悟空无反应；点重选两卡变灰；点悟空、点唐僧（唐僧上方 2P）→ 存档页出现，状态栏"第一次进入游戏请选择存档"，各格无删除按钮。截图。
+4. 点第 1 格（已有）→ 出现"确定覆盖第 1 个存档吗？"→ 点取消（**不要确认**，保护用户存档）。
+5. 点第 5 格（空）→ 进地图。
+6. 返回标题 → 读取存档：第 5 格显示"悟空 · 唐僧"；第 6 格（空）不可点；点第 5 格进地图。截图。
+7. 新开游戏 → 单人 → 唐僧 → 选第 6 格 → 地图。回标题读取第 6 格：显示"唐僧"。
+8. 双人档进关**仍只出现 P1**（D2 才出现第二人），这是本批预期。
+
+### D1 完成判定
+
+- 构建 0 错误；三套测试全绿不减；Godot 扫描、`validate_game_references.py`、`--smoketest=frontend` 通过（含 D1-5 新增覆盖）。
+- 上手验证 1～8 通过并截图；第 1～4 格未被修改（对比 D0 后的 `Catalogue.sav` 中 1～4 格 `SavedAtUtc` 不变）。
+
+---
+
+## 3. 大任务 D2　两人同时出现、各自操作、各自 HUD
+
+### D2-1　ProcedureLevel 装配全部参战英雄
+
+文件：`MainPack/Scripts/Procedure/ProcedureLevel.cs`。
+
+- 字段 `private AbstractHeroEntity _hero;` 改为 `private readonly List<AbstractHeroEntity> _heroes = new(); // 本流程显示并拥有的参战英雄，按席位排列。`
+- `OnEnter`：
+  - 资源预载：`HeroConfig[] heroConfigs = profile.HeroIds.Select(tables.TbHeroConfig.Get).ToArray();`，对每个配置 `LoadAssetAsync`，与场景、HUD 一起 `Task.WhenAll`。
+  - 显示：按席位顺序依次 `await entities.ShowEntityAsync<AbstractHeroEntity>(config.EntityId, new HeroSpawn(slot, SpawnPositionOf(slot)))`，每次 await 后检查 `entrySerial`；**过期则隐藏本周期已显示的全部英雄（包括刚返回的这个）后 return**。每个英雄同样做 `Config == null || !IsShown` 检查，失败抛异常走现有 catch（`CleanupSession` 会回收 `_heroes` 中已有的）。成功显示的英雄立刻加入 `_heroes`，保证失败路径能回收。
+  - 出生点：新增私有方法
+
+    ```csharp
+    /// <summary>按席位计算出生点：P1 用关卡出生点，P2 在其右侧 60 像素同一高度。</summary>
+    private Vector2 SpawnPositionOf(PlayerSlot slot) =>
+        _levelViewController.PlayerSpawnPosition + new Vector2(slot == PlayerSlot.P1 ? 0 : 60, 0);
+    ```
+  - `new BattleFormData(_heroes, _levelViewController)`；`_levelViewController.StartSession(entities, _heroes, cancellationToken)`。
+- `CleanupSession`：`foreach (AbstractHeroEntity hero in _heroes) GF.Entity.HideEntitySafe(hero); _heroes.Clear();`（在移除 HeroSystem 之前，与现顺序一致）。`OnLeave` 中 `_hero = null` 改为 `_heroes.Clear()`。
+- 新增私有方法 `private AbstractHeroEntity HeroAt(PlayerSlot slot) => _heroes.FirstOrDefault(hero => hero.Slot == slot);`
+- `OnInventoryRequested`/`OnSkillsRequested`：`AbstractHeroEntity hero = HeroAt(slot); if (hero == null || !hero.IsAlive) return;`，背包传 `new InventoryFormData(hero)`；技能窗口本批**仍不传 userData**（`SkillFormData` 在 E1-2 新建并同时接入，避免出现无人消费的参数）。
+
+### D2-2　LevelViewController 持有参战集合
+
+文件：`GameScripts/Entity/Level/LevelViewController.cs`、`.Loot.cs`、`.Entrance.cs`。
+
+- 字段 `private AbstractHeroEntity _player;` 改为：
+
+  ```csharp
+  private readonly List<AbstractHeroEntity> _heroes = new(); // 借用流程显示并隐藏的参战英雄，按席位排列。
+  private readonly Dictionary<AbstractHeroEntity, (Action<int> Restored, Action<EquippedItems> Equipment)> _heroHandlers = new(); // 每名英雄实际注册的回调，用于对称退订。
+  ```
+- `StartSession(EntityComponent entities, IReadOnlyList<AbstractHeroEntity> heroes, CancellationToken cancellationToken)`：
+  - `_heroes.AddRange(heroes)`；逐个：`hero.Died += OnHeroDied;`；创建闭包 `Action<int> restored = amount => _floatingText.ShowRecovery(hero.GlobalPosition, amount, RecoveryKind.Health);`、`Action<EquippedItems> equipment = _ => hero.RefreshAppearance();`，注册 `hero.HealthRestored += restored`、`GetSlots(hero.HeroId).Register(equipment)`，存入 `_heroHandlers`。
+  - 删除 `OnHeroHealthRestored`、`OnEquipmentChanged` 两个方法（由闭包取代）。
+  - **相机本批仍跟 P1**：`_camera.Follow(_heroes[0])`（D3-1 改）。
+- `UnsubscribeProgressEvents`：遍历 `_heroHandlers` 对称退订（`Died`、`HealthRestored`、`GetSlots(...).UnRegister`），死亡演出订阅见 D3-2（本批保持现逻辑但改为逐英雄：凡在本批 `OnHeroDied` 中订阅过 `DeathPresentationFinished` 的英雄都要退订）；然后 `_heroHandlers.Clear()`。
+- `Cleanup`：`_player = null` 改为 `_heroes.Clear()`（在 `UnsubscribeProgressEvents` 之后）。
+- 新增私有方法 `private bool IsSessionHero(AbstractHeroEntity hero) => hero != null && _heroes.Contains(hero);`，以下全部用它替换 `ReferenceEquals(..., _player)`：
+  - `OwnsActor(int entityId) => _heroes.Exists(hero => hero.Id == entityId) || _spawner.OwnsEntity(entityId);`
+  - `OnDamageDealt`：攻击者是任一参战英雄即计入共享连击（造三两人共用 `batterNum`）。
+  - `OnTriggerContact`、`OnExitContact`、`OnEntranceBodyEntered`（`body is AbstractHeroEntity hero && IsSessionHero(hero) && hero.IsAlive`）。
+  - `TryCollectGroundItem`、`OnEnemyDefeated` 的归属解析（`if (!IsSessionHero(killer)) killer = null;`）。
+- `OnEnemyDefeated` 开头 `!_player.IsAlive` 改为只判断 `LevelModel.Outcome.Value != LevelOutcome.Running`（一人死亡不影响另一人结算与掉落；死者自己的球由 C3 的逐球归属逻辑自然作废）。
+- `TickLoot`：开头 `!IsInstanceValid(_player) || !_player.IsAlive` 改为 `delta <= 0` 即返回；地面物品对 `_heroes` 中每个存活英雄按席位顺序 `item.TryCollect(hero)`，**一旦某人成功就不再让后面的人尝试该物品**（`TryCollect` 返回 true 时 break 内层循环）。
+- `OnExitEntered` 中 `!_player.IsAlive` 改为"存在存活参战者"（`_heroes.Exists(hero => hero.IsAlive)`）。
+- `EntranceOpacity` setter：对 `_heroes` 中每个有效英雄设置 `Modulate`。
+- `OnEntranceBodyEntered`：任一参战存活英雄进入即触发，`SetControlsEnabled(false)` 对 `_heroes` 中**每个**英雄执行。
+- **本批保留单人判负**：`OnHeroDied` 本批改为"任一参战者死亡即进入现有死亡演出流程"（行为与现在单人相同；双人下一人死就失败，D3-2 修正），并按死亡英雄订阅其 `DeathPresentationFinished`。`Complete` 的剩余生命本批取 `_heroes[0]`（D3-2 改平均）。
+
+### D2-3　双方 HUD
+
+**场景 `TheGame/UIs/battle_form.tscn`：**
+
+1. 复制节点 `StatusPanel` 整棵子树为 `StatusPanelP2`，`position = Vector2(824, 44)`（940 − 116），`scale = Vector2(-1, 1)`。
+2. 复制节点 `MenuPanel` 整棵子树为 `MenuPanelP2`，`position = Vector2(850, 531)`（940 − 90），`scale = Vector2(-1, 1)`。
+3. **翻回需要可读的子节点**（在副本中设置 `scale.x = -1`，抵消父级镜像，使文字与图标正向）：
+   - `StatusPanelP2`：`m_HpBar/m_HpText`、`m_MpBar/MpText`、`m_ExpBar/ExpText`、`m_LevelLabel`、`Head`、`StatusLabel`。Label 是 Control，用 `scale = Vector2(-1, 1)` 后其左上角原点会翻到另一侧，所以同时把 `pivot_offset` 设为自身尺寸中心（`size / 2`），使翻转围绕中心进行、位置不变。Sprite2D（`Head`、`StatusLabel`）直接 `scale = Vector2(-1, 1)`（Sprite2D 默认居中）。
+   - `MenuPanelP2`：`SkillBar/Skill1..5/Icon`（TextureRect，同 Label 做法）、三个按钮各自的 `Caption`（Sprite2D）。
+   - **血条/蓝条/经验条/无双条本身不翻回**：镜像后从右往左填充，与官方 P2 一致。
+4. 根绑定追加 `_statusP2 = NodePath("StatusPanelP2")`、`_menuP2 = NodePath("MenuPanelP2")`，运行生成器。
+5. **做完这 4 步立即截图**（编辑器或运行时双人档），写入交付说明后再继续 D2-4。若镜像后文字位置明显偏移或重叠，按上面 `pivot_offset` 规则调整；仍无法正确显示则停下报告，不改用其他布局方案。
+
+**`BattleFormData`：**
+
+```csharp
+public BattleFormData(IReadOnlyList<AbstractHeroEntity> heroes, LevelViewController viewController)
+/// <summary>本局参战英雄，按席位排列。</summary>
+public IReadOnlyList<AbstractHeroEntity> Heroes { get; }
+```
+
+- 校验非空、1～2 人、无 null。删除旧的 `Hero` 属性。
+
+**`BattleForm.Logic.cs`**（不新建组件类，在 Logic 内按席位循环）：
+
+- 新增私有嵌套结构保存每个席位的绑定，用于对称退订：
+
+  ```csharp
+  /// <summary>一个席位的面板与本周期注册的回调。</summary>
+  private sealed class SeatBinding
+  {
+      public AbstractHeroEntity Hero;          // 本席位英雄。
+      public BattleStatusPanel Status;         // 本席位状态面板。
+      public BattleMenuPanel Menu;             // 本席位菜单面板。
+      public Action<int> Resources;            // 生命/法力刷新。
+      public Action<int> Musou;                // 无双值刷新。
+      public Action<bool> MusouActive;         // 无双开启刷新。
+      public Action<HeroProgressionState> Progression; // 等级经验刷新。
+      public Action<IReadOnlyList<SkillId>> Skills;    // 技能栏刷新。
+  }
+  private readonly List<SeatBinding> _seats = new(); // 本次打开的席位绑定。
+  ```
+- `OnOpen`：P1 用 `_status`/`_menu`，P2 用 `_statusP2`/`_menuP2`；P2 面板在单人时 `Visible = false`。对每个英雄创建 `SeatBinding`，闭包捕获该席位，注册现有 7 个 HeroState 属性、`GetProgress`、`GetLearnedSkills`（与现单英雄注册完全相同的属性集合），然后初次刷新。
+- `Unbind`：遍历 `_seats` 对称退订，`Clear()`；两个菜单面板都 `ResetMusou()`。
+- `_menuP2` 的 `SettingsSelected/InventorySelected/SkillsSelected` 在 `OnInit` 绑定到带席位的处理：P1 面板按钮 → 以 P1 席位请求，P2 面板按钮 → 以 P2 席位请求。设置按钮两块面板都发同一个 `SettingsRequested`。
+- `_UnhandledInput`：`ControlsEnabled` 检查改为对**请求席位的英雄**检查（在循环内找到命中的席位后再判断），不再在方法开头用 P1 判断。
+- `OnInventoryClicked`/`OnSkillsClicked` 改为接收席位参数。
+- 无双立绘：`RefreshMusouActive` 改为席位闭包，开启时 `_musouActivation.ShowActivation(seat.Hero.HeroId)`。
+- 现有单英雄的 `RefreshResources/RefreshMusou/RefreshProgression/RefreshSkills` 改为接收 `SeatBinding`，逻辑不变。
+
+### D2-4　Debug 与测试同步
+
+- `TestArenaController`、`UiSmokeScenario.ShowHeroAsync` 及所有 `new BattleFormData(hero, …)` 调用改为传列表。
+- `UiSmokeScenario` 新增一条**双人花果山**路径（参数 `--smoketest=ui --coop-only`，照现有 `--xxx-only` 选项写法）：用隔离存档建双人档进花果山，断言：两英雄都显示且位置相差 60px；两 HUD 头像分别为两英雄；P2 造成致死一击后 P2 经验增加、P1 不变；P2 背包键打开 P2 背包；关卡退出后 `CountBindingHandlers` 对两英雄的 `GetProgress`/`GetSlots` 都为 0。
+
+### D2 上手验证（使用 D1 建的第 5 格双人档）
+
+1. 进花果山：P1 在出生点，P2 在其右侧，两人都有站立动画。截图。
+2. 左上 P1 HUD、右上 P2 HUD（镜像，文字正向可读，头像分别为两人）。截图。
+3. P1 用 WASD/J/K，P2 用方向键/小键盘 1/2，**同时**移动、跳跃、攻击。
+4. P1 用 U/I/O/L、P2 用小键盘 4/5/6/3 放技能，各扣各的蓝。
+5. P2 打死一只猴子：P2 经验条涨、球飞向 P2。地上掉的物品谁碰到归谁。
+6. P2 按小键盘 `/` 打开 P2 背包；P1 按 C 打开 P1 背包；点右上 P2 HUD 的背包按钮也打开 P2 背包。
+7. P2 蓄满后按小键盘 0：显示 P2 立绘、短暂停顿后 P2 进入无双。
+8. 单人档（第 6 格）进关：只有一个英雄、只有左上 HUD，行为与之前一致。
+9. 已知本批临时状态：相机只跟 P1；任一人死亡即失败；剩余生命按 P1 计——D3 修正。
+
+### D2 完成判定
+
+- 构建 0 错误；三套测试全绿不减；Godot 扫描、引用检查、`--smoketest=frontend`、`--smoketest=ui`、`--smoketest=ui --coop-only` 通过。
+- 全仓 `LevelViewController*.cs` 中无 `_player`；`ProcedureLevel.cs` 中无 `_hero` 字段。
+- 上手验证 1～8 通过并截图。
+
+---
+
+## 4. 大任务 D3　相机、死亡、出口、结算、唐僧奶队友、龙王分档
+
+### D3-1　相机跟随存活者中点
+
+文件：`GameScripts/Entity/Level/Camera/LevelCameraNode.cs`。
+
+- `_target` 改为 `private readonly List<Node2D> _targets = new(); // 由关卡会话注入的取景目标。`
+- `Follow(Node2D target)` 改为 `Follow(IReadOnlyList<AbstractHeroEntity> targets)`：`_targets.Clear(); _targets.AddRange(targets); SetPhysicsProcess(true);`（相机依赖 `IsAlive` 判断，所以参数类型直接用英雄；相机已在 `GameLogic.Level` 命名空间引用实体层）。字段类型相应改为 `List<AbstractHeroEntity>`。
+- `_PhysicsProcess`：取景目标 X = 存活目标 X 的平均值；**没有存活目标时本帧不移动相机**（只更新屏幕墙与抵达检测）。`StepCameraCenter` 签名不变。
+- `StopFollowing`：`_targets.Clear()`。
+- `LevelViewController.StartSession`：`_camera.Follow(_heroes)`。
+- 屏幕墙不改：它对每个英雄身体都生效，两人拉开超过屏宽时墙挡住领先者（官方 `ViewControllor`）。
+
+### D3-2　一死一活、全灭判负、平均剩余生命
+
+文件：`LevelViewController.cs`。
+
+- 删除 `HeroDeathPresentation` 枚举与 `_heroDeathPresentation` 字段，改为：
+
+  ```csharp
+  private readonly HashSet<AbstractHeroEntity> _deathPresentations = new(); // 已开始死亡演出、尚未结束的英雄。
+  private bool _defeatPending; // 全部参战者死亡且演出结束，等待下一帧提交失败。
+  ```
+- `OnHeroDied(AbstractActorEntity actor)`：`actor is AbstractHeroEntity hero && IsSessionHero(hero) && _deathPresentations.Add(hero)` 时订阅 `hero.DeathPresentationFinished`（闭包存入新字段 `private readonly Dictionary<AbstractHeroEntity, Action> _deathHandlers = new(); // 每名英雄的死亡演出结束回调，用于对称退订。`）。**不再 `ClearLoot()`**：死者的球由 C3 的逐球归属自然作废；活着的人的球和地面物品保留。
+- 死亡演出结束回调：从 `_deathPresentations` 移除并退订；若 `_heroes.TrueForAll(h => h.Dead)` 且 `_deathPresentations.Count == 0`，置 `_defeatPending = true`。
+- `_Process`：`_defeatPending && Outcome == Running` 时 `_defeatPending = false; Complete(LevelOutcome.Defeated);`。
+- `UnsubscribeProgressEvents`/`Cleanup`：退订 `_deathHandlers` 全部并清空 `_deathPresentations`、`_defeatPending = false`。
+- `Complete(LevelOutcome outcome)`：剩余生命百分比 = 所有参战者 `Hp/MaxHp` 的平均（死者 Hp 为 0 自然计 0），四舍五入取整：
+
+  ```csharp
+  HeroModel heroes = this.GetModel<HeroModel>();
+  double average = _heroes.Average(hero => (double)heroes.GetState(hero.HeroId).Hp.Value / heroes.GetState(hero.HeroId).MaxHp.Value);
+  this.GetSystem<LevelSystem>().Complete(outcome, (int)Math.Round(100.0 * average));
+  ```
+
+  （造三 `GameWin.txt_state` 取平均。`LevelResult`、`SettlementForm` 不改。）
+- 死者 HUD：D2 的绑定会自然显示 0 血；死者开背包已被 C4/D2 拒绝。
+
+### D3-3　出口、龙宫入口、转关
+
+- `OnExitContact`：任一存活参战者（C4 已按其席位判断交互键）。
+- `OnExitEntered`：现有"等全部在途球落地再结算"保持。
+- `LevelSystem.TransferToDragonPalace`：把 `GetState(HeroOf(P1)).IsDepleted` 改为"全部参战者都已耗尽才拒绝"：
+
+  ```csharp
+  ProfileModel profile = this.GetModel<ProfileModel>();
+  HeroModel heroes = this.GetModel<HeroModel>();
+  bool allDepleted = profile.HeroIds.All(id => heroes.GetState(id).IsDepleted);
+  ```
+
+### D3-4　唐僧甘露治疗队友
+
+文件：`GameScripts/Entity/Heroes/Tangseng/TangsengEntity.cs`。依据造一 `Role2.__cureRole`、`Role2Shadow.cureRole`。
+
+- 新增私有方法（与 `BullDemonKingEntity.CaptureHeroAnimEvent` 相同的遍历方式，不新增注入接口）：
+
+  ```csharp
+  /// <summary>治疗以 center 为中心、横向 halfWidth、纵向 halfHeight 范围内的存活英雄。</summary>
+  /// <param name="center">治疗判定中心，世界坐标。</param>
+  /// <param name="halfWidth">横向半宽，像素。</param>
+  /// <param name="halfHeight">纵向半高，像素。</param>
+  /// <param name="amount">本次恢复量。</param>
+  private void HealHeroesAround(Vector2 center, float halfWidth, float halfHeight, int amount)
+  {
+      foreach (IEntity entity in GF.Entity.GetAllLoadedEntities())
+      {
+          if (entity is AbstractHeroEntity { IsAlive: true } hero &&
+              Mathf.Abs(hero.GlobalPosition.X - center.X) <= halfWidth &&
+              Mathf.Abs(hero.GlobalPosition.Y - center.Y) <= halfHeight)
+          {
+              hero.Heal(amount);
+          }
+      }
+  }
+  ```
+- 把 `ApplyHeavenlyDew` 拆成"计算量"与"施放"：
+
+  ```csharp
+  /// <summary>本体或分身一次甘露的恢复量：法力上限/8 + 8，无双时 ×1.5。</summary>
+  private int HeavenlyDewAmount() { … 现有计算 … return (int)amount; }
+
+  /// <summary>本体甘露：治疗自己，并治疗距本体横纵都不超过 200 像素的其他存活英雄。</summary>
+  public void ApplyHeavenlyDew() => HealHeroesAround(GlobalPosition, 200f, 200f, HeavenlyDewAmount());
+  ```
+
+  （自己距离为 0，自然包含在内；`Heal` 对死者无效。）
+- 分身回调改为以分身位置为中心、横 200 纵 160：
+
+  ```csharp
+  _waterClone.PlayHeavenlyDew(() => HealHeroesAround(_waterClone.GlobalPosition, 200f, 160f, HeavenlyDewAmount()));
+  ```
+
+  （原代码"分身离本体横≤200、纵≤160 才治疗本体"的语义被包含：本体也在被遍历的英雄中。）
+
+### D3-5　龙王分档、地图技能提示
+
+- `DragonKingEntity.OnShow`：
+
+  ```csharp
+  _highLevel = profile.HeroIds.Min(id => profile.GetProgress(id).Value.Level) >= HighLevelMinimum;
+  ```
+
+  （造一 `Monster26`：取两人中较低等级；不采用造三平均等级。）
+- `MapForm.ResetSkillsHint`：`profile.HeroIds.Any(id => profile.GetSoul(id).Value >= 160)`（造一 `SelectPLace.as:76`）。
+
+### D3-6　测试与烟测
+
+- `Tests/ProfileTests/DragonPalaceTests.cs`（`TransferToDragonPalace` 现有测试所在文件）新增：
+  - `TransferToDragonPalace`：一人耗尽一人存活 → 允许；两人都耗尽 → 拒绝。
+  - 剩余生命平均：通过 `LevelSystem.Complete` 的传入值无法单测，**改为**在 `--coop-only` 烟测中断言结算 `HealthPercent` 等于两人百分比平均。
+- `--coop-only` 烟测补：相机 X 在两人中点附近（考虑死区）；P2 死亡后 P1 仍可行动、关卡不结算；P1 也死亡后出现失败结算；P2 走到出口按 ↑ 能离关；唐僧甘露使范围内悟空回血；龙宫（若烟测已有龙宫入口路径则复用）低等级一方 < 21 时龙王为低级形态。
+
+### D3 上手验证（第 5 格双人档）
+
+1. 花果山两人分开走：相机停在两人中间；一人站着不动，另一人走到屏幕边被挡住。
+2. 让 P2 被打死：P2 留墓碑、右上 HUD 血 0、按小键盘 `/` 打不开背包；P1 继续打、P1 的球照常飞向 P1。
+3. P1 也死：出现失败结算，剩余生命 0%。截图。
+4. 重进，清完最后一波后 P2 走到出口按 ↑：整队离关，结算剩余生命为两人平均。截图。
+5. 唐僧放甘露，旁边的悟空也回血（悟空头上出现绿色回血数字）。截图。
+6. 地图上：任一人灵魂 ≥ 160 时技能按钮发光。
+
+### D3 完成判定
+
+- 构建 0 错误；三套测试全绿（含新增）；扫描、引用、`frontend`、`ui`、`ui --coop-only` 通过。
+- 全仓 `HeroOf(PlayerSlot.P1)`：生产代码中只剩 `SkillForm`（E1-2 处理）与语义就是 P1 的位置，逐一列入交付说明。
+- 上手验证 1～6 通过并截图。
+
+---
+
+## 5. 大任务 E1　赠送、技能页签、全关核验与收尾
+
+### E1-1　装备赠送
+
+**美术**：扩充 `Tools/LegacyMigration/export_official_inventory_actions.py` 的 `IMAGES` 表，新增 `'inventory_action_gift.png': ('sprites/DefineSprite_367*', '1.png')`（同一官方元件第 1 帧为可用态；第 2 帧即已有的禁用态）。按该脚本现有参数运行（需要 `--java`、`--ffdec`、`--source` 指向已校验散列的 `Commonv3720.swf`；`Docs/OfficialReference.md` 第 499 行有下载地址与散列，Java 与 FFDec 路径见 `Docs/Validation.md` 已有记录）。在 `Docs/LegacyAssetMap.md` 第 502 行附近补一行：`inventory_action_gift.png | 同包 sprite 367，第 1 帧 | 双人赠送可用`。导出失败（散列不符、工具缺失）则停下报告，**不得**用其他图代替。
+
+**场景 `TheGame/UIs/Inventory/equipment_actions_menu.tscn`**：新增 ext_resource `gift_enabled`；`Panel/Gift` 改为 `texture_normal = gift_enabled`、`texture_disabled = gift`、`mouse_default_cursor_shape = 2`，删除 `disabled = true`；根节点 `node_paths` 追加 `_gift`，`_gift = NodePath("Panel/Gift")`（该组件不是 Form，没有生成器，直接手写 `[Export]` 字段）。
+
+**`EquipmentActionsMenu.cs`**：
+
+- `[Export] private TextureButton _gift; // 双人时把背包装备交给队友，单人禁用。`
+- `public event Action<Guid> GiftRequested;`
+- `Open(Guid instanceId, Rect2 anchor, bool canEquip, bool canGift)`：同 `_equip` 写法设置 `_gift.Disabled` 与光标。
+- `_Ready` 绑定 `_gift.Pressed += OnGiftPressed;`，`OnGiftPressed` 照 `OnSellPressed` 写法。
+
+**`EquipmentSystem.TryGift`**：
+
+```csharp
+/// <summary>
+/// 把发送者背包中的一件装备原样移交给接收者背包；不重抽属性、不自动穿戴。
+/// </summary>
+/// <param name="fromHeroId">发送者。</param>
+/// <param name="toHeroId">接收者。</param>
+/// <param name="instanceId">发送者背包中的实例。</param>
+/// <returns>两人都在阵容、实例在发送者背包且接收者背包未满时移交并返回 true。</returns>
+public bool TryGift(int fromHeroId, int toHeroId, Guid instanceId)
+```
+
+- 校验：`fromHeroId != toHeroId`；两人都在 `profile.HeroIds`；`item = GetBag(fromHeroId)` 中按编号查找，找不到返回 false（穿戴中的实例不在背包，自然被拒绝）；`GetBag(toHeroId).Count < profile.Capacity`，否则返回 false。
+- 移交：先 `GetBag(toHeroId).Add(item)`，再从发送者背包按索引 `RemoveAt`。两步都在同一同步调用中完成，期间不 await，不会出现半移交状态被观察到（BindableList 的回调在每步后触发，UI 只会短暂看到两边同时存在一帧内的通知顺序，不影响存档：存档只在检查点或手动保存时捕获）。
+- **不写**"接收方能否穿戴"的检查：官方赠送不限制职业专属装备（对方可以出售）。
+
+**`EquipmentCommands.cs`**：新增 `GiftEquipmentCommand(int fromHeroId, int toHeroId, Guid instanceId) : AbstractCommand<bool>`，前置校验与 `SellEquipmentCommand` 相同（关卡运行中）。
+
+**`InventoryForm.Logic.cs`**：
+
+- `OnInit` 绑定 `_actions.GiftRequested += OnGiftRequested;`
+- `OnBagClicked`：`canGift = profile.HeroIds.Count == 2`。
+- `OnGiftRequested(Guid instanceId)`：接收者 = 阵容中另一个英雄；`SendCommand(new GiftEquipmentCommand(...))` 成功播 `MenuConfirm`；失败（多为对方满包）用 `SaveNoticeForm.ShowMessage("对方背包已满！")`（与"灵魂不足！"同一提示组件）。
+
+**烟测**：`UiSmokeScenario.Inventory.cs` 中断言 Gift 禁用的那处改为：单人档禁用；`--coop-only` 路径中可用且赠送后实例出现在 P2 背包、P1 背包少一件。
+
+**规则测试**（`Tests/ProfileTests`，复用 `TestGameScope([(1,0),(2,0)], …)`）：成功移交且属性不变；穿戴中拒绝；对方满包拒绝；同一实例全档只存在一处；阵容外英雄拒绝；`CaptureSaveData` 往返后归属正确。
+
+### E1-2　技能窗口按请求者打开并切换参战者页签
+
+**新建 `GameScripts/UI/SkillForm/SkillFormData.cs`**：
+
+```csharp
+/// <summary>技能窗口打开参数：默认显示的英雄与按其席位关闭窗口的按键。</summary>
+public sealed class SkillFormData
+{
+    /// <param name="heroId">默认显示的参战英雄。</param>
+    public SkillFormData(int heroId)
+    public int HeroId { get; }
+}
+```
+
+- `ProcedureLevel.OnSkillsRequested`：`GF.UI.OpenUIForm(UIFormId.SkillForm, new SkillFormData(hero.HeroId))`。
+- `ProcedureMap.OnSkillsRequested`：`new SkillFormData(profile.HeroOf(PlayerSlot.P1))`（地图默认 P1，语义就是 P1）。
+
+**`SkillForm.Logic.cs`**：
+
+- `OnOpen`：`userData is not SkillFormData data` 抛 `ArgumentException`；`profile.HeroIds.Contains(data.HeroId)` 不成立抛 `InvalidOperationException`；`_heroId = data.HeroId`；其余绑定不变。删除两处 `HeroOf(PlayerSlot.P1)`。
+- `RefreshPage`：`SetHeroButton(_wukong, selected: hero == Wukong, enabled: profile.HeroIds.Contains((int)SkillHero.Wukong))`，唐僧同理。`SetHeroButton` 改为 `(TextureButton button, bool selected, bool enabled)`：`SetPressedNoSignal(selected); Disabled = !enabled; 光标按 enabled`。
+- `SelectPage(SkillHero hero, bool passive)`：限制改为"该英雄在阵容中"；切到不同英雄时：先对旧 `_heroId` 退订三项（灵魂、已学技能、被动等级），`_heroId = (int)hero`，再对新英雄注册（`RegisterWithInitValue`），然后 `_activePage.Refresh(_heroId); _passivePage.Refresh(_heroId);`。把注册/退订三项抽成私有方法 `BindHero()`/`UnbindHero()`，`OnOpen` 与 `ReleaseBindingsAndPause` 也改用它们（消除重复）。
+- `_Input` 关闭键：接受 `UiCancel`、以及**阵容内任一席位**的 `SkillToggle`（`InputSystem.ActionOf(SkillToggle, slot)`）。地图上没有席位概念，两人的技能键都能关窗，与战斗中一致且无歧义。
+- 学习/升级扣当前页签英雄（`_heroId`）的灵魂，现有 Command 已按 `_heroId` 传，无需改。
+
+### E1-3　其余关卡双人核验
+
+用第 5 格双人档（必要时用 `ProfileTestData` 现有调试入口提升等级以便推进，**不改正式数值**）依次通关剩余关卡与隐藏龙宫，重点观察并记录：
+
+| 组 | 关卡 | 观察点 |
+| --- | --- | --- |
+| 1 | 桃花源、水帘洞、蝙蝠窟 | 平台与坡地上两人站位；机关与隐藏入口；蝙蝠窟尖刺对两人 |
+| 2 | 七星洞、迦楼罗之穴 | 毒雾只作用于命中者；延迟与范围技能；鹏魔蛋态与第五击归属 |
+| 3 | 浅岸、东海、牛魔谷 | 牛魔吞噬只抓一人（`CaptureHeroAnimEvent` 已遍历），被抓者释放；水牢；牛魔多形态的经验归属 |
+| 4 | 隐藏龙宫 | 冻结只作用于命中者；龙王分档；东海旗幡全档一次 |
+
+- **本批不修复**发现的问题：每条写成"关卡 / 复现步骤 / 现象 / 期望"，列入交付说明，交给用户决定后续。
+- 若问题导致无法继续推进（例如必然卡死），记录后跳到下一关继续。
+
+### E1-4　收尾清理
+
+- `SkillSystem` 中残留的 `this.GetModel<HeroModel>()?.` 空条件访问：逐处判断调用路径。地图上不会调用施放类方法（已核实只调学习类），关卡内 `HeroModel` 必然存在，因此改为非空访问 `this.GetModel<HeroModel>().GetState(heroId)`。若某处确有地图路径调用，保留并在交付说明写明理由。
+- `ProfileModel` 构造函数 `soul` 参数：全仓搜索 `new ProfileModel(`，若生产代码无人使用，删除该参数，测试与 Debug 夹具改为构造后通过 `RestoreCheckpoint` 或 `GetSoul(id).Value = …` 设置。
+- 更新文档：`Docs/ProjectTour.md`（双人现状一节改为"已实现"）、`Docs/ProjectGuidelines/70-ProfileAndSave.md`（D0 转存工具说明、新档按阵容每人初始灵魂）、`Docs/WorkingNotes.md`、本文件第三部分总表与第八部分。
+- 全仓搜索并列出 `HeroOf(PlayerSlot.P1)` 剩余位置，确认每处语义就是 P1。
+
+### E1 上手验证（第 5 格双人档 + 第 6 格单人档）
+
+1. 双人档进关，P1 按 C 打开背包，点一件背包装备 → 菜单"赠送"可用 → 点它，装备出现在 P2 背包（P2 按小键盘 `/` 查看），P1 少一件。截图。
+2. 穿在身上的装备不在背包格里，无法赠送；把 P2 背包塞满（或用已满的档）后赠送提示"对方背包已满！"。
+3. 单人档背包里"赠送"为灰色。
+4. 战斗中 P2 按小键盘 `*` 打开技能窗口，默认显示 P2 的英雄页；点另一英雄页签可切换，学习技能扣所选英雄的灵魂。截图。
+5. 地图上打开技能窗口，默认 P1 页，可切到 P2 页。
+6. 双人档逐关推进的结果按 E1-3 表格记录。
+
+### E1 完成判定
+
+- 构建 0 错误；三套测试全绿（含赠送规则用例）；扫描、引用、全部烟测通过。
+- 上手验证 1～6 完成，E1-3 核验表完整。
+- 文档更新完成。
+
+---
+
+## 6. 子任务完成时都要检查的清单
+
+每个子任务结束时执行者自查（不通过就改，不进入下一步）：
+
+- 新增/修改的类型、方法、属性都有中文 XML 注释；私有字段有行尾说明。
+- 每个 `+=`/`Register` 都有对称的 `-=`/`UnRegister`，并在同一类的关闭/清理路径中。
+- 没有新增"默认 P1"的重载、参数默认值或兼容分支。
+- 没有为测试新增生产入口。
+- `git diff` 中没有与本子任务无关的文件。
+
+## 7. 预期会遇到、已给出处理方式的情况
+
+| 情况 | 处理 |
+| --- | --- |
+| 生成器报 `Missing root binding` | 说明 `.tscn` 根绑定还指向已删或改名的节点，先改场景绑定 |
+| `pivot_offset` 翻回后文字仍偏移 | 检查该 Label 的 `size` 是否与偏移一致；仍不正确则停下报告并附截图 |
+| 双人档出生时 P2 在墙里 | 停下报告该关名称与出生点坐标，不改关卡场景 |
+| 覆盖已有格时删除成功但建档失败 | 现有 `ProcedureLoadGame` 失败路径会回标题；交付说明记录日志，不另写恢复逻辑 |
+| 官方赠送按钮导出散列不符 | 停下报告，不替换图片 |
+| 某关双人卡死 | 记录到 E1-3 表格，跳下一关 |
+
+## 8. 最终交付说明格式
+
+E1 完成后输出一份总说明，按大任务分节，每节包含：
+
+1. 改动文件清单（新增、修改、删除）。
+2. 关键接口前后对照。
+3. 每个子任务结束时的编译错误数。
+4. 实际执行的验证命令与结果数字。
+5. 上手验证逐条结果与截图路径。
+6. 计划未覆盖而实际遇到的情况及处理。
+7. 遗留问题。
+
+最后附：E1-3 关卡核验表；全仓 `HeroOf(PlayerSlot.P1)` 剩余位置清单；D0 转存输出与备份路径。
 
 ---
 
@@ -1078,7 +1810,9 @@ public static string ActionOf(string action, PlayerSlot slot) => slot == PlayerS
 
 阶段 B 已完成：B1（53e9b11，含用户追加的 18 处业务方法命名整理）、B2（e3440ca）、B3（511f0c5）。各批实际命令、结果与文件清单见 [Validation](Validation.md)。
 
-C1～C3（394b97c、c489b65、61de0f2）已接受。用户明确授权本轮一起完成 C4、C5，并裁决 project.godot 仅追加 13 个 P2 动作。C4-1～C4-6 已按序实现，逐步编译错误数 **0 / 5 / 0 / 0 / 0 / 0**；规则 323/197/19、原生映射/焦点、扫描、引用和完整前端通过，最终完整 UI 回归中，C5 随后执行。实际结果与文件/接口清单见 [Validation](Validation.md#双人c4c5席位输入与阶段c回归2026-11-10)。**本轮停在 C5 待审，不进入阶段 D。**
+阶段 C 已完成：C1（394b97c）、C2（c489b65）、C3（61de0f2）、C4/C5（0523aae，用户授权合并交付；`project.godot` 仅追加 13 个 P2 动作）。实际结果见 [Validation](Validation.md#双人c4c5席位输入与阶段c回归2026-11-10)。
+
+**当前：用户已确认 D0-3，整目录备份与 8 个文件正式转存均已完成；D0 上手验证因 computer-use 本机管道缺失受阻，尚未完成。D1～E1 未开始，恢复连接并完成 D0 验收后继续按第七部分顺序执行。**
 
 ---
 
@@ -1112,7 +1846,7 @@ C1～C3（394b97c、c489b65、61de0f2）已接受。用户明确授权本轮一�
 
 ## 4. 已知占位清单（"临时取 P1"）
 
-以下位置当前用 `HeroOf(PlayerSlot.P1)` 或 `_player.HeroId` 作为单人占位，**全部是有意的**，各自由后续批次替换。执行者不得提前替换，也不得遗漏替换。（2026-11-09 阶段 B 审查后按实际代码重新核对。）
+以下位置当前用 `HeroOf(PlayerSlot.P1)` 或 `_player.HeroId` 作为单人占位，**全部是有意的**，各自由后续批次替换。执行者不得提前替换，也不得遗漏替换。（2026-11-10 阶段 C 审查后按新编号 D0～E1 重新核对；括号内为原编号。）
 
 | 位置 | 当前写法 | 负责批次 |
 | --- | --- | --- |
@@ -1120,19 +1854,22 @@ C1～C3（394b97c、c489b65、61de0f2）已接受。用户明确授权本轮一�
 | `Systems/SkillSystem.cs`（`TryActivate`） | 已使用参数 heroId | B1 已清零 |
 | `Systems/LevelSystem.cs`（`RecordDefeat`） | 已显式接收 heroId，0 只计击败数 | C2-3 已清零 |
 | `Entity/Enemies/.../BullDemonHeartDeathState.cs`（`GrantUniqueEquipment`） | 已按 LastHeroAttackerId 解析英雄，无归属不发 | C2-4 已清零 |
-| `Entity/Level/LevelViewController.Loot.cs`（`OnEnemyDefeated` 的 `PlayLevelUp`、球上限） | 已按本会话 killer，ReferenceEquals(killer, _player) 校验留 D2 | C2-3、C2-5 已清零 |
-| `Entity/Level/LevelViewController.Loot.cs`（`TryCollectGroundItem`、`OnLootFinished`、`TickLoot`） | 已按实际接触者/逐球 OwnerEntityId；成员判断留 D2、主英雄存活守卫留 D5 | C3 已清零 |
-| `Entity/Level/LevelViewController.Loot.cs`（`OnHeroHealthRestored` 飘字位置） | 单人位置保留，具体处理见第十部分第 6 节 | D2 |
-| `Entity/Level/LevelViewController.cs`（换装订阅、`Complete` 的剩余生命百分比） | `_player.HeroId` | D2 / D5 |
-| `Entity/Level/LevelViewController.Entrance.cs`（龙宫入口 `SetControlsEnabled`） | `_player.HeroId` | D5（全员关控制） |
-| `Systems/LevelSystem.cs`（`TransferToDragonPalace` 的 `IsDepleted`） | `HeroOf(PlayerSlot.P1)` | D5（任一存活者） |
-| `Entity/Enemies/.../DragonKingEntity.cs`（`OnShow` 分档） | P1 等级 | D7（阵容最低等级） |
-| `UI/MapForm/MapForm.Logic.cs`（技能发光） | P1 余额 | D7（任一参战者余额 ≥160，官方 `SelectPLace.as:76`） |
-| `UI/SkillForm/SkillForm.Logic.cs`（`OnOpen` 校验与默认英雄、`_Input` 关闭键） | `HeroOf(PlayerSlot.P1)` / P1 的 `SkillToggle` | E2（请求者页签与请求者席位） |
-| `MainPack/Scripts/Procedure/ProcedureLevel.cs`（`HeroConfig`、`_hero` 单引用、开窗按 `_hero.Slot`） | P1 | D2 |
-| `MainPack/Scripts/Procedure/ProcedureLoadGame.cs`（读档日志） | P1 | D2 |
+| `Entity/Level/LevelViewController.Loot.cs`（`OnEnemyDefeated` 的 `PlayLevelUp`、球上限） | 已按本会话 killer，`ReferenceEquals(killer, _player)` 校验留新 D2 | C2-3、C2-5 已清零 |
+| `Entity/Level/LevelViewController.Loot.cs`（`TryCollectGroundItem`、`OnLootFinished`、`TickLoot`） | 已按实际接触者/逐球 OwnerEntityId；成员判断留新 D2、主英雄存活守卫留新 D3 | C3 已清零 |
+| `Entity/Level/LevelViewController.Loot.cs`（`OnHeroHealthRestored` 飘字位置） | 单人位置保留 | 新 D2-1 |
+| `Entity/Level/LevelViewController.cs`（换装订阅） | `_player.HeroId` | 新 D2-1 |
+| `Entity/Level/LevelViewController.cs`（`Complete` 的剩余生命百分比） | `_player.HeroId` | 新 D3-2（原 D5） |
+| `Entity/Level/LevelViewController.Entrance.cs`（`EntranceOpacity`） | 只淡出 `_player` | 新 D2-1 |
+| `Entity/Level/LevelViewController.Entrance.cs`（龙宫入口 `SetControlsEnabled`） | `_player.HeroId` | 新 D3-3（原 D5，全员关控制） |
+| `Systems/LevelSystem.cs`（`TransferToDragonPalace` 的 `IsDepleted`） | `HeroOf(PlayerSlot.P1)` | 新 D3-3（原 D5，任一存活者） |
+| `Entity/Enemies/.../DragonKingEntity.cs`（`OnShow` 分档） | P1 等级 | 新 D3-5（原 D7，阵容最低等级） |
+| `UI/MapForm/MapForm.Logic.cs`（技能发光） | P1 余额 | 新 D3-5（原 D7，任一参战者余额 ≥160，官方 `SelectPLace.as:76`） |
+| `UI/SkillForm/SkillForm.Logic.cs`（`OnOpen` 校验与默认英雄、`_Input` 关闭键） | `HeroOf(PlayerSlot.P1)` / P1 的 `SkillToggle` | 新 D2-3（原 E2） |
+| `UI/BattleForm/BattleForm.Logic.cs`（`RefreshMusouActive` 立绘） | `_formData.Hero.HeroId` | 新 D2-2 |
+| `MainPack/Scripts/Procedure/ProcedureLevel.cs`（`HeroConfig`、`_hero` 单引用、开窗按 `_hero.Slot`） | P1 | 新 D2-1 |
+| `MainPack/Scripts/Procedure/ProcedureLoadGame.cs`（读档日志） | P1 | 新 D1-3 |
 
-E3 收尾时，全仓搜索 `HeroOf(PlayerSlot.P1)` 应只剩"语义上就是 P1"的位置（例如地图默认页签），其余必须清零。
+E1 收尾时，全仓搜索 `HeroOf(PlayerSlot.P1)` 应只剩"语义上就是 P1"的位置（地图打开技能窗的默认页签），其余必须清零。
 
 ## 5. 对原计划的自我审查与修正
 
@@ -1223,4 +1960,81 @@ B1 提交同时包含用户追加授权的 **18 处业务方法命名整理**（
 | 位置 | 本批保留与后续处理 | 负责批次 |
 | --- | --- | --- |
 | `LevelViewController.OnHeroHealthRestored(int amount)` | `HealthRestored` 仍为 `Action<int>`，单人下 `_player.GlobalPosition` 就是被治疗者位置；C3-3 不改代码，D2 按集合订阅时用闭包捕获实际英雄。此项也保留在第九部分总占位清单 | D2 |
-| `SkillForm._Input` | 地图上也能打开技能窗，本阶段保留 P1 的 SkillToggle 与共用 UiCancel；E2 引入请求者后按请求者席位关闭 | E2 |
+| `SkillForm._Input` | 地图上也能打开技能窗，本阶段保留 P1 的 SkillToggle 与共用 UiCancel；新 D2-3 按当前页签英雄的席位关闭 | 新 D2-3（原 E2） |
+
+---
+
+# 第十一部分　阶段 C 架构审查（2026-11-10）
+
+审查方式：逐个 diff 阅读 `511f0c5..0523aae`（C1 394b97c、C2 c489b65、C3 61de0f2、C4/C5 0523aae）全部生产代码改动，审查者亲自重跑验证，并检查用户正式存档目录。
+
+## 1. 实测结果
+
+| 项目 | 结果 |
+| --- | --- |
+| 构建 | 0 错误 |
+| ProfileTests / BattleTests / LevelTests | 323 / 197 / 19 全部通过（阶段 B 后为 320 / 195 / 19） |
+| `project.godot` 13 个 P2 动作 | 键码与计划表逐一相同，全部 `device=-1` |
+| 方向键 HUD 焦点 | Validation 记录 5 个菜单按钮均 `focus_mode=0`，方向键与 Enter 不误开窗 |
+
+## 2. 结论：通过，无需返工
+
+- **C1**：`HeroSpawn` 单独成文件；`OnShow` 校验顺序正确（先模型存在、再参数类型、再席位一致）；三处显示点全部传参，`ProcedureLevel` 与 `TestArenaController` 删除了显示后单独赋位置的行。
+- **C2**：`RecordHeroAttacker` 是基类 `OnHurt` 第一条语句，在 `if (Dead) return;` 之前；鹏魔蛋态分支调用它；`OnShow` 复位；`EnemyDiedEventArgs.KillerEntityId` 在 `Create`/`Clear` 对称；`RecordDefeat(0, …)` 只计数、不计 `AwardedExperience`；牛心无归属时不发不报；无归属不出球、地面物品照常。
+- **C3**：`OnLootFinished` 在 `Release` **之前**读归属；`TickLoot` 逐球按归属者追踪，归属者失效即回收不发放；地面物品按接触者入账，飘字在接触者身上。
+- **C4**：`ActionOf` 无缓存、无默认参数重载；`ConsumePress` 记录解析后的动作名，两人不会互相消费；出口按每个重叠英雄的席位判断交互与组合键；BattleForm 只遍历阵容内席位，单人按 P2 键无响应；死者不能开背包。
+
+## 3. 小问题（不返工）
+
+1. `BattleForm._UnhandledInput` 在快捷键分支直接 `Invoke` 事件，而 HUD 按钮点击走 `OnInventoryClicked`/`OnSkillsClicked`（内含 `ControlsEnabled` 守卫）。快捷键分支的 `ControlsEnabled` 守卫在方法开头按 `_formData.Hero` 检查，D2 变为两人时需改成检查请求席位的英雄。已写入 D2-2。
+2. `LevelExitNode._PhysicsProcess` 每帧 `GetOverlappingBodies().Any(...)` 分配迭代器，出口只在清场后启用，开销可忽略。不改。
+
+## 4. 计划漏洞：用户正式存档不可读（已在 D0 修正）
+
+用户反映"游玩时存档都无法读取"。审查者检查正式目录 `%APPDATA%/Godot/app_userdata/GameZMXY/GameData/` 与最新日志：4 个格子全部是 **v12**，日志为"存档格 N 不可读"。原因是 A1、A2 把格式升到 v14 时，计划写的是"开发档作废重建，正式档转存须单独授权"，**但之后没有任何批次安排这次转存**。执行者遵守了"不覆盖正式存档"，于是用户的 4 个档一直不可读。
+
+这是计划本身的漏洞。修正：
+
+- 新增 D0：一次性转存工具（不进运行时代码），用正式校验器与样例测试证明无损，**正式执行前停下等用户确认**。
+- 第七部分新增硬性规则：D、E 阶段若再改存档格式，必须同批提供并执行转存。
+
+## 5. 对阶段 D～E 的重新规划（用户要求）
+
+用户要求：每批都能上手游玩看到变化；任务量适中，代码很少的任务应合并。对照原计划：
+
+| 原编号 | 实际改动量 | 处理 |
+| --- | --- | --- |
+| D1 标题/选角/选格 | 大（3 个窗口、3 个流程） | 保留为 D1，拆三个子任务 |
+| D2 装配两人 | 中，但**单独做完看不到效果**（没有 HUD，P2 状态无从观察） | 与 D3 合并为新 D2 |
+| D3 双方 HUD | 中 | 并入新 D2 |
+| D4 相机 | 小（`Follow` 改为列表 + 取中点） | 并入新 D3 |
+| D5 死亡/出口/结算 | 中 | 并入新 D3 |
+| D6 唐僧治疗队友 | 很小（两处范围判断） | 并入新 D3 |
+| D7 龙王分档、地图发光 | 很小（两行） | 并入新 D3 |
+| D8 花果山闭环验收 | 只验证 | 取消，由 D2、D3 的上手验证承担 |
+| E1 赠送 | 中 | 与 E3 合并为新 E1 |
+| E2 技能页签 | 小 | 并入新 D2（D2-3），否则 D2 上手时 P2 打开技能窗看到的是 P1 的页 |
+| E3 其余关卡核验与收尾 | 只验证 + 少量清理 | 并入新 E1 |
+
+另外对照真实代码修正了原 D 阶段的几处错误假设：
+
+| # | 原计划 | 问题 | 修正 |
+| --- | --- | --- | --- |
+| 1 | D1 写"选角确认后回到 ProcedureTitle 打开保存模式" | `ProcedureTitle.OnEnter` 第一件事就是 `RemoveData(FlowKeys.SaveSelection)`，回去会清掉刚选的阵容 | 保存模式由 `ProcedureCharacter` 自己打开存档页，照 `ProcedureTitle` 已有写法订阅与取消 |
+| 2 | D1 写"已有格复用确认层提示覆盖" | `LoadOrCreateAsync` 对 `unitId != 0` 走读档，没有覆盖写入路径 | 覆盖 = 先调现有 `DeleteSlotAsync` 再按空格建档，不新增写入路径 |
+| 3 | D1 未提 `SaveSelectionVariable` 只有单个 `HeroId` | 双人无法携带阵容 | 改为 `int[] HeroIds` |
+| 4 | D1 未提保存模式下的删除按钮 | 选格时可能误删其他档 | 保存模式隐藏删除按钮 |
+| 5 | D2 只写"出生点按席位横向错开" | 没说错开多少、要不要改场景 | 定为 P2 在 P1 右侧 100px（造一 `MainGame` 的 200/300），不改关卡场景 |
+| 6 | D3 写"P2 右上镜像、文字翻回"但没给做法 | 执行者可能新建组件类 | 复制现有面板节点、镜像后翻回可读子节点，Logic 内循环绑定，不新建类 |
+| 7 | D6 治疗队友只写了范围 | 唐僧拿不到队友列表 | 遍历 `GF.Entity` 中的英雄，与牛魔抓取的既有写法一致，不新增注入 |
+| 8 | 原计划敌人 AI 无改动说明 | 执行者可能以为要改 AI 选目标 | 已核实 `CanSelectTarget` 接受任意存活异阵营角色，双人无需改 AI |
+| 9 | D1 只说"改 FrontendSmokeScenario 的路径" | `AdvanceToLevel` 是 `SmokeTestDriver`、`UiSmokeScenario.Inventory/Tangseng` 共用的进关入口，`MapProgressSmokeScenario` 另有一份按钮表；只改一处会让其余烟测全部卡在标题 | 新增 D1-4 逐项列出 |
+| 10 | D2 漏了 `LevelSystem.StartSession` 的校验形同虚设 | 调用方传的是 `ProfileModel.HeroIds` 本身，"实体与阵容一致"永远成立 | D2-1 改为传实际显示英雄的编号 |
+| 11 | D2 漏了 `EntranceOpacity` 只淡出 `_player` | 进龙宫时 P2 不淡出 | D2-1 补入 |
+| 12 | D2 写"`MusouActivationNode` 不改"，没说 `BattleForm` 调它时写死了 `_formData.Hero.HeroId` | P2 开无双显示 P1 立绘 | D2-2 写明按回调捕获的 heroId 传入 |
+| 13 | E2 技能页签排在 E1 | D2 上手时 P2 按 `*` 看到 P1 的技能页，无法验证 P2 学技 | 移到 D2-3 |
+| 14 | 草稿 D0-2 写"用脚本同等逻辑生成期望文件"，含义不清 | 执行者可能在 C# 里重写一遍转存逻辑 | 明确期望文件由脚本实际生成并提交，测试只用正式校验器读取 |
+| 15 | 草稿 D0 没提格 3 的 `.bak` 与主文件内容不同 | 转存后若 `.bak` 校验失败，执行者可能误判整格失败 | D0-1 要求每个文件独立转换、独立报告 |
+| 16 | 鹏魔破蛋次数写死 5，注释写"单人模式" | 双人规则可能不同，但尚未查到官方依据 | 登记到 E1-2 核验项，先查源码再报告，不预先改 |
+
+这些修正只收紧约束、补充事实，没有改变第二部分已确定的数据形状与设计决定。

@@ -2,6 +2,59 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人D0：正式转存完成，上手验证受阻（2026-11-10）
+
+用户已在 D0-3 明确回复“确认”。核对正式目录与 dry-run 时的 10 文件哈希一致后，工具完成整目录备份和 8 个主/备文件转存，**正式存档已为 v14；上手验证因 computer-use 本机管道缺失未执行，D0 尚未完成，D1～E1 未开始**。运行时格式和代码均不变，按计划先完成 D0 上手验收再推进。
+
+依据为项目规范第 00/10/50/70 章、实施计划第一/二/七部分 D0 与正式存档保护规则。复用标准库、既有 GameData/SaveDataUtility 和 TestGameScope，不添加运行时兼容分支。快照与命令输出位于 `.godot/validation/coop_d0_20261110/`。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 开工状态与基线 | HEAD **0523aae**；用户已暂存 CoopImplementationPlan/WorkingNotes 两份修改，无未暂存差异。本轮无 Git 写操作。`dotnet build Godot/GodotProject --no-restore -v quiet`：0 错误、0 警告（增量）；三条 `dotnet test Tests/<ProfileTests/BattleTests/LevelTests> --no-restore -v quiet`：**323/197/19**，失败/跳过均 0；`baseline_*.log` |
+| D0-1 | 新建 `Tools/ProjectMaintenance/upgrade_saves_v12_to_v14.py`，仅 Python 标准库。先规划全部主档与 .bak，任一校验失败全批不写；13/14 跳过；v12 拆个人钱包/背包，保留实例池顺序、其余字段值、BOM 和 CRLF，正式写前整目录备份，逐文件 tmp+os.replace，Catalogue 不改。子任务后同构建命令：**0 错误、0 警告（增量）**，`d0_1_build.log` |
+| 工具边界检查 | 临时目录运行 10 组实际 CLI 检查：BOM/无 BOM 主备对、dry-run、未知版本、零英雄/双英雄、身份不符、穿戴缺失、实例重复、超容量、坏 JSON。有效输出与 13/14 跳过符合预期；8 组拒绝均非零退出，连同前面的有效文件及目录均不写、不建备份；正常执行的完整备份逐字节一致，Catalogue 原字节保持，JSON 根/英雄键序、装备值、BOM、CRLF 通过；`tool_checks.log` |
+| D0-2 样例生成 | 只读复制正式格 4 为 `Tests/ProfileTests/Data/save_v12_tangseng.json`；在 `.godot/validation/coop_d0_20261110/sample_upgrade/GameData/` 实际运行 `python Tools/ProjectMaintenance/upgrade_saves_v12_to_v14.py --game-data <该临时目录> --capacity 75`：**退出 0，1 文件转换**，再把实际输出复制为 `save_v14_tangseng.json`，225080 灵魂、24 背包、3 穿戴；临时目录备份路径见 `sample_upgrade.log`，不是正式目录备份 |
+| D0-2 正式规则 | 新增 SaveUpgradeTests 的一个用例，经正式校验/恢复与 CaptureSaveData 逐项比较成长、钱包、背包、穿戴、技能、被动、共享进度及实例编号/装备属性，再核对旧钱包与件数推导。首次测试编译 **1 个 CS0121 重载歧义**，显式声明比较数组后修正，`d0_2_profile.log` 保留失败。`dotnet test Tests/ProfileTests --no-restore -v quiet`：**324/324**，失败/跳过 0，`d0_2_profile_final.log`；子任务游戏构建 **0 错误、0 警告（增量）**，`d0_2_build.log` |
+| 确认前最终回归 | 重跑上述 build 与三条 test：均退出 0，构建 **0 错误、0 警告（增量）**，规则 **324/324、197/197、19/19**，失败/跳过 0；`preconfirm_*.log`。既有 NU1900 保留；未为此重编译触发无关既有框架警告 |
+| 格式与边界 | `dotnet format whitespace Tests/ProfileTests/ProfileTests.csproj --no-restore --include <SaveUpgradeTests.cs 绝对路径> --verify-no-changes`：退出 0，工作区加载警告保留；Python `compile(...)` 语法通过。10 个正式文件哈希与开工相同，v12 样例与正式格 4 原字节相同；HEAD/用户索引未变；`Godot/GodotProject` 下无跟踪文件变化；`preconfirm_scope.log` |
+| D0-3 dry-run | `python Tools/ProjectMaintenance/upgrade_saves_v12_to_v14.py --capacity 75 --dry-run`：**退出 0，OK=8、SKIP=0、ERROR=0、written=0**。格 3 主/备内容不同，独立规划；完整输出如下。无正式备份，未写正式存档 |
+| D0-3 正式转存 | 用户回复“确认”后，先核对正式 10 文件哈希仍与 dry-run 一致，再执行 `python Tools/ProjectMaintenance/upgrade_saves_v12_to_v14.py --capacity 75`：**退出 0，OK=8、SKIP=0、ERROR=0、written=8**；完整输出与备份路径见下文及 `formal_upgrade.log` |
+| 转存后核对 | 备份的 10 文件哈希与开工原文件逐一相同；正式目录只改了 8 个 Data 主/备文件，两份 Catalogue 保持。8 个文件均为 v14，英雄原字段、灵魂、共享进度/旗幡、装备实例及全部属性、实例池/背包顺序和 BOM 全部一致；`formal_upgrade_verify.log`、`formal_after.sha256.json` |
+| D0-3 上手验证受阻 | `cua.getState()` 返回本机原生管道不可用：`failed to connect native pipe: 系统找不到指定的文件。 (os error 2)`；重置 CUA 会话后重试同样失败，无法列出窗口。**未发送 UI 输入、未执行真实键盘步骤 1～4、未截图**；`manual_access_failure.log`。这属于计划第一部分第 2 节第 7 类范围外验证阻塞，正式转存结果保留，用户已明确回复“暂时无法恢复连接”，待本机连接恢复后继续；不能以文件核对/规则测试代替上手验收 |
+| 尚未执行 | 真实键盘上手 1～4 及截图；D0 完成判定的最终验收。D1～E1 未开始 |
+
+```text
+OK 1791793987.sav version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=yes
+OK 1791793987.sav.bak version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=yes
+OK 1793209553.sav version=12 hero=1 soul=0 bag=0 worn=0 -> v14 BOM=no
+OK 1793209553.sav.bak version=12 hero=1 soul=0 bag=0 worn=0 -> v14 BOM=no
+OK 1793449001.sav version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=no
+OK 1793449001.sav.bak version=12 hero=1 soul=100000 bag=35 worn=3 -> v14 BOM=no
+OK 1793888918.sav version=12 hero=2 soul=225080 bag=24 worn=3 -> v14 BOM=yes
+OK 1793888918.sav.bak version=12 hero=2 soul=225080 bag=24 worn=3 -> v14 BOM=yes
+SUMMARY OK=8 SKIP=0 ERROR=0 written=0 DRY-RUN
+BACKUP none (dry-run; no files changed)
+```
+
+用户确认后的正式转存完整输出：
+
+```text
+OK 1791793987.sav version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=yes
+OK 1791793987.sav.bak version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=yes
+OK 1793209553.sav version=12 hero=1 soul=0 bag=0 worn=0 -> v14 BOM=no
+OK 1793209553.sav.bak version=12 hero=1 soul=0 bag=0 worn=0 -> v14 BOM=no
+OK 1793449001.sav version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=no
+OK 1793449001.sav.bak version=12 hero=1 soul=100000 bag=35 worn=3 -> v14 BOM=no
+OK 1793888918.sav version=12 hero=2 soul=225080 bag=24 worn=3 -> v14 BOM=yes
+OK 1793888918.sav.bak version=12 hero=2 soul=225080 bag=24 worn=3 -> v14 BOM=yes
+SUMMARY OK=8 SKIP=0 ERROR=0 written=8
+BACKUP C:\Users\zheliku\AppData\Roaming\Godot\app_userdata\GameZMXY\GameData.backup-before-v14-20261110_191354
+```
+
+备份目录：`C:\Users\zheliku\AppData\Roaming\Godot\app_userdata\GameZMXY\GameData.backup-before-v14-20261110_191354`。本次未启动正式游戏或发送输入，Catalogue 的第 1～4 格时间未因验证改写；正式备份与转存是用户确认后由指定工具执行的唯一正式目录写入。
+
+实际文件：新增 `Tools/ProjectMaintenance/upgrade_saves_v12_to_v14.py`、`Tests/ProfileTests/SaveUpgradeTests.cs`、`Tests/ProfileTests/Data/save_v12_tangseng.json`、`save_v14_tangseng.json`；修改 `Tests/ProfileTests/ProfileTests.csproj`（仅复制样例项）、`Docs/Validation.md`、`Docs/WorkingNotes.md` 与 `Docs/CoopImplementationPlan.md`（仅实际进度，用户原暂存内容保留）。无删除，运行时代码、存档 v14、场景、输入、源表/bytes 与只读依赖均未修改。关键接口没有运行时变化；唯一新外部入口为离线脚本的 `--game-data`、必填 `--capacity` 和 `--dry-run`。
+
 ## 双人C4/C5：席位输入与阶段C回归（2026-11-10）
 
 用户明确授权 C4、C5 连续完成后一起交付，覆盖本轮两批之间的通用停止点。用户本条的“不改 project.godot”与 C4-1 冲突，经询问获明确裁决：**只在 [input] 末尾追加计划中的 13 个 P2 动作，P1、ui_* 和其他配置保持**。C4-1 → C4-6 与 C5 已完成最终验证，**停在 C5 等待审查，阶段 D 未开始**。C5 首轮完整 UI 的红球断言失败已报告；用户授权修复既有烟测夹具后，最终完整 UI、花果山、唐僧、掉落、原生输入和前端全部通过，原失败与诊断中止记录保留。仍只生成 P1、存档 v14。
