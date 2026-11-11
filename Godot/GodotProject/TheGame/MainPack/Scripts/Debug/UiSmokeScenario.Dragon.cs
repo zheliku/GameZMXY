@@ -47,22 +47,34 @@ public sealed partial class UiSmokeScenario
         ReenterLevel();
         await WaitForLevelAsync();
         LevelViewController cave = FindLevel();
-        AbstractHeroEntity hero = FindHero();
+        AbstractHeroEntity[] participants = SmokeInspection.ReadField<List<AbstractHeroEntity>>(FindLevelProcedure(), "_heroes").ToArray();
+        AbstractHeroEntity hero = participants[^1];
+        bool coop = participants.Length == 2;
         hero.SetPhysicsProcess(true);
         Check(SmokeInspection.ReadField<int>(cave, "_levelId") == 2, "入口夹具未进入水帘洞");
-        flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 17);
-        int soul = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
+        flow.GetSystem<ProfileSystem>().AddSoul(hero.HeroId, 17);
+        int soul = flow.GetModel<ProfileModel>().GetSoul(hero.HeroId).Value;
         hero.GlobalPosition = new Vector2(2150, 450);
         hero.Velocity = Vector2.Zero;
         await WaitFramesAsync(3);
         await WaitUntilAsync(() => hero.OnFloor, "水帘洞水面没有实际落地");
-        Check(flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).ControlsEnabled && !SmokeInspection.ReadField<bool>(cave, "_enteringHiddenLevel"),
+        Check(flow.GetModel<HeroModel>().GetState(hero.HeroId).ControlsEnabled && !SmokeInspection.ReadField<bool>(cave, "_enteringHiddenLevel"),
             "站在水面就触发隐藏入口，入口高度错误");
-        Input.ActionPress(InputSystem.MoveDown);
-        Input.ActionPress(InputSystem.Jump);
-        await WaitUntilAsync(() => !flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).ControlsEnabled, "真实S加K没有从水面进入隐藏接触区", 5000);
-        Input.ActionRelease(InputSystem.Jump);
-        Input.ActionRelease(InputSystem.MoveDown);
+        if (coop)
+        {
+            int highExperience = flow.GetModel<GameLogic.Config.ConfigurationModel>().Tables.TbHeroLevelConfig.DataList
+                .Where(item => item.Id < 21).Sum(item => item.MaxExp);
+            flow.GetSystem<ProfileSystem>().AddExperience(participants[0].HeroId,
+                highExperience - flow.GetModel<ProfileModel>().GetProgress(participants[0].HeroId).Value.TotalExperience);
+            KillHero(participants[0]);
+        }
+        StringName down = InputSystem.ActionOf(InputSystem.MoveDown, hero.Slot);
+        StringName jump = InputSystem.ActionOf(InputSystem.Jump, hero.Slot);
+        Input.ActionPress(down);
+        Input.ActionPress(jump);
+        await WaitUntilAsync(() => !flow.GetModel<HeroModel>().GetState(hero.HeroId).ControlsEnabled, "真实S加K没有从水面进入隐藏接触区", 5000);
+        Input.ActionRelease(jump);
+        Input.ActionRelease(down);
         AnimationPlayer fade = SmokeInspection.ReadField<AnimationPlayer>(cave, "_entranceFade");
         await WaitFramesAsync(5);
         GF.Base.PauseGame();
@@ -76,18 +88,40 @@ public sealed partial class UiSmokeScenario
             SmokeInspection.Model(current).SessionActive && CurrentBattleForm() != null,
             "自动入口没有经GGF重入龙宫", 15000);
         LevelViewController room = FindLevel();
-        hero = FindHero();
-        Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soul && flow.GetModel<ProfileModel>().HighestClearedLevelId.Value == 1,
+        participants = SmokeInspection.ReadField<List<AbstractHeroEntity>>(FindLevelProcedure(), "_heroes").ToArray();
+        hero = participants[^1];
+        Check(flow.GetModel<ProfileModel>().GetSoul(hero.HeroId).Value == soul && flow.GetModel<ProfileModel>().HighestClearedLevelId.Value == 1,
             "隐藏转场回滚已领取收益或误通关水帘洞");
-        Check(hero.Modulate.A == 1 && CurrentBattleForm().Modulate.A == 1 && flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).ControlsEnabled,
+        Check(hero.Modulate.A == 1 && CurrentBattleForm().Modulate.A == 1 && flow.GetModel<HeroModel>().GetState(hero.HeroId).ControlsEnabled,
             "转场复用后英雄或HUD仍透明，或未恢复控制");
-        Input.ActionPress(InputSystem.MoveRight);
-        await WaitUntilAsync(() => FindMonster() is DragonKingEntity, "龙宫没有按配方生成龙王", 15000);
-        Input.ActionRelease(InputSystem.MoveRight);
+        // 双人取景需要双方一起前进；只驱动单人会被屏幕墙挡在阶段抵达点之前。
+        foreach (AbstractHeroEntity participant in participants)
+        {
+            Input.ActionPress(InputSystem.ActionOf(InputSystem.MoveRight, participant.Slot));
+        }
+        try
+        {
+            await WaitUntilAsync(() => FindMonster() is DragonKingEntity, "龙宫没有按配方生成龙王", 15000);
+        }
+        finally
+        {
+            foreach (AbstractHeroEntity participant in participants)
+            {
+                Input.ActionRelease(InputSystem.ActionOf(InputSystem.MoveRight, participant.Slot));
+            }
+        }
         AbstractEnemyEntity dragon = FindMonster();
         SmokeInspection.FreezeAi(dragon);
-        hero.SetPhysicsProcess(false);
+        foreach (AbstractHeroEntity participant in participants)
+        {
+            participant.SetPhysicsProcess(false);
+        }
         hero.GlobalPosition = new Vector2(450, 450);
+        if (coop)
+        {
+            Check(!SmokeInspection.ReadField<bool>(dragon, "_highLevel") && dragon.MaxHp == 12000,
+                "龙王未按21级P1与低等级P2的最低等级分档");
+        }
         await WaitUntilAsync(() => SmokeInspection.ReadField<float>(dragon, "_invulnerabilityLeft") <= 0,
             "龙王技能无敌没有按秒结束", 7000);
         Check(!flow.GetModel<ProfileModel>().EastSeaBannerAvailable &&
@@ -108,16 +142,53 @@ public sealed partial class UiSmokeScenario
         hero.GlobalPosition = banner.GlobalPosition;
         await WaitUntilAsync(() => flow.GetModel<ProfileModel>().HasEquipment(EquipmentId.EastSeaBanner), "旗幡没有通过真实地面接触拾取");
         await WaitFramesAsync(55);
+        if (coop)
+        {
+            participants[0].GlobalPosition = hero.GlobalPosition;
+            KillHero(participants[0]);
+            ((TangsengEntity)hero).ApplyHeavenlyDew();
+            Check(flow.GetModel<HeroModel>().GetState(participants[0].HeroId).Hp.Value == 0 && participants[0].Dead,
+                "唐僧甘露复活了已死亡队友");
+            HeroState survivor = flow.GetModel<HeroModel>().GetState(hero.HeroId);
+            flow.GetSystem<HeroSystem>().Damage(hero.HeroId, survivor.Hp.Value / 2);
+        }
         hero.GlobalPosition = exit.GlobalPosition - new Vector2(0, 80);
         hero.Velocity = Vector2.Zero;
         hero.SetPhysicsProcess(true);
         await WaitFramesAsync(3);
         await WaitUntilAsync(() => hero.OnFloor, "龙宫出口前未落地");
-        _driver.GetViewport().PushInput(new InputEventAction { Action = InputSystem.Interact, Pressed = true }, true);
+        if (coop)
+        {
+            await WaitUntilAsync(() => SmokeInspection.ReadField<HashSet<LootOrbNode>>(room, "_lootOrbs").Count == 0,
+                "正常球尚未领取完，不能隔离最后一颗死者球的出口路径", 7000);
+        }
+        HeroModel heroStates = flow.GetModel<HeroModel>();
+        int expectedHealth = (int)Math.Round(100.0 * participants.Average(participant =>
+            (double)heroStates.GetState(participant.HeroId).Hp.Value / heroStates.GetState(participant.HeroId).MaxHp.Value));
+        if (coop)
+        {
+            SpawnOrb(room, new Vector2(10000, 400), new(LootKind.Soul, 5), participants[0].Id);
+            Check(SmokeInspection.ReadField<HashSet<LootOrbNode>>(room, "_lootOrbs").Count == 1,
+                "死者球出口夹具没有隔离最后一颗球");
+        }
+        Key interactionKey = hero.Slot == PlayerSlot.P1 ? Key.W : Key.Up;
+        _driver.GetViewport().PushInput(new InputEventKey { PhysicalKeycode = interactionKey, Keycode = interactionKey, Pressed = true }, true);
+        if (coop)
+        {
+            Check(SmokeInspection.ReadField<bool>(room, "_exitRequested") && SmokeInspection.Model(room).Outcome.Value == LevelOutcome.Running,
+                "P2出口没有先保留最后在途死者球的等待请求");
+        }
         await WaitFramesAsync(2);
-        _driver.GetViewport().PushInput(new InputEventAction { Action = InputSystem.Interact, Pressed = false }, true);
+        _driver.GetViewport().PushInput(new InputEventKey { PhysicalKeycode = interactionKey, Keycode = interactionKey, Pressed = false }, true);
         await WaitUntilAsync(() => flow.GetModel<LevelModel>().Outcome.Value == LevelOutcome.Cleared,
-            "龙宫W出口没有提交结算", 7000);
+            "龙宫本人交互出口没有提交结算", 7000,
+            () => $"outcome={SmokeInspection.Model(room).Outcome.Value}, pending={SmokeInspection.ReadField<bool>(room, "_exitRequested")}, orbs={SmokeInspection.ReadField<HashSet<LootOrbNode>>(room, "_lootOrbs").Count}, slot={hero.Slot}");
+        Check(SmokeInspection.Model(room).Result.HealthPercent == expectedHealth,
+            "双人结算没有取所有参战者的生命比例平均（死者计0）");
+        if (coop)
+        {
+            await CaptureCombatAsync("coop_d3_victory");
+        }
         Check(await flow.GetSystem<LevelSystem>().CheckpointWrite, "龙宫检查点写入失败");
         GameData disk = await ReadDiskAsync();
         Check(!disk.EastSeaBannerAvailable && disk.HighestClearedLevelId == 1 &&
@@ -129,7 +200,7 @@ public sealed partial class UiSmokeScenario
             .GetNode<BaseButton>("Content/Actions/m_ReturnMap").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.Procedure.CurrentProcedure is ProcedureMap, "龙宫结算没有返回地图");
         Check(flow.GetSystem<ProfileSystem>().LatestLevelId == 2, "龙宫通关改变了地图最新提示");
-        GD.Print("SMOKE-DRAGON FLOW PASS: real water drop, paused fade, GGF transfer, retained rewards, first banner ground pickup, native death, W portal, disk checkpoint and map");
+        GD.Print("SMOKE-DRAGON FLOW PASS: real water drop, paused fade, GGF transfer, retained rewards, first banner ground pickup, native death, per-seat portal, average health, disk checkpoint and map");
     }
 
     /// <summary>

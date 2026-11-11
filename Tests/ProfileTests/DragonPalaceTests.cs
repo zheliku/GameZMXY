@@ -4,6 +4,7 @@ using System.Linq;
 using GameConfig.Battle;
 using GameConfig.Enemy;
 using GameLogic.Architecture;
+using GameLogic.Battle;
 using GameLogic.Config;
 using GameLogic.Level;
 using GameLogic.Save;
@@ -86,6 +87,37 @@ public sealed class DragonPalaceTests
         level.EndSession();
         Assert.True(scope.Profile.EastSeaBannerAvailable);
         Assert.Equal(21, scope.Profile.GetSoul(scope.Profile.HeroOf(PlayerSlot.P1)).Value);
+    }
+
+    /// <summary>双人转场只在全员耗尽时拒绝；任一席位存活都可保留收益进入隐藏关。</summary>
+    /// <param name="p1Alive">P1是否存活。</param>
+    /// <param name="p2Alive">P2是否存活。</param>
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    public void Transfer_RequiresAtLeastOneLivingParticipant(bool p1Alive, bool p2Alive)
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 0, 25);
+        scope.GetSystem<ProfileSystem>().RecordLevelClear(1);
+        LevelSystem level = scope.GetSystem<LevelSystem>();
+        level.Prepare(2);
+        level.StartSession([1, 2]);
+        HeroSystem heroes = scope.GetSystem<HeroSystem>();
+        if (!p1Alive)
+        {
+            heroes.Damage(1, int.MaxValue);
+        }
+        if (!p2Alive)
+        {
+            heroes.Damage(2, int.MaxValue);
+        }
+
+        bool accepted = p1Alive || p2Alive;
+        Assert.Equal(accepted, level.TransferToDragonPalace(11));
+        Assert.Equal(accepted ? LevelOutcome.Transferred : LevelOutcome.Running, scope.Level.Outcome.Value);
+        Assert.Equal(!accepted, scope.Level.SessionActive);
+        Assert.Equal(1, scope.Profile.HighestClearedLevelId.Value);
     }
 
     /// <summary>

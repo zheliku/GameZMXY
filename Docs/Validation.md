@@ -2,6 +2,41 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 双人D3：相机、全灭、出口、治疗与等级规则（2026-11-11，自动验证通过，实机待补）
+
+用户现明确要求“好的，继续下一阶段吧”，据此允许暂留D2真实键盘验收进入D3；既有D0/D1/D2待验不记通过。开工HEAD为 **ae2a1ba**（用户已提交D2及Panel重构），工作区/索引干净；正式12份文件SHA256、HEAD、索引与差异快照存入 `Godot/GodotProject/.godot/validation/coop_d3_20261111/`。按计划D3-1～D3-6顺序，沿用第00/10/30/50/70章；不改v14、源表、场景、框架，不执行Git写操作。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| D3-1 | `dotnet build Godot/GodotProject --no-restore -v quiet`：**0错误、5既有警告**，`d3_1_build.log`。相机Follow改接英雄列表，以存活者X平均取景，无存活者保留中心但更新屏幕墙/抵达；会话传入完整集合 |
+| D3-2 | 同build命令 **0错误、5既有警告**，`d3_2_build.log`。删除单一死亡演出枚举，按死亡英雄保存原Action并退订；不再因一死清空掉落，全员死亡且每个原生墓碑均完成后下一帧判负；剩余生命取全员百分比平均、死者0 |
+| D3-3 | 同build命令 **0错误、5既有警告**，`d3_3_build.log`。出口/入口沿用D2的任一存活者，原球等待流程保持；隐藏关业务只拒绝全员耗尽。保留无效会话/入口先返回的短路顺序，再读取所有英雄耗尽状态 |
+| D3-4 | 同build命令 **0错误、5既有警告**，`d3_4_build.log`。甘露恢复量仍按原MaxMP/8+8及无双倍率；本体200×200、分身自身中心200×160，使用框架已加载实体列表且排除死者 |
+| D3-5 | 同build命令 **0错误、5既有警告**，`d3_5_build.log`。龙王取阵容最低等级，地图技能提示按任一英雄灵魂≥160 |
+| D3-6 编译 | 同build命令 `d3_6_build.log`、`d3_coop_build.log` 均 **0错误、5既有警告**；在原双人专项后追加甘露边界、相机/屏幕墙、个人死亡/墓碑、全灭与原龙宫路径复用。原单人死亡球断言改为等待下一关卡帧自然回收，再保留原0球/无收益断言，不再要求被删除的同步ClearLoot副作用 |
+| 规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：**327/327**，新增3例覆盖P1耗尽/P2耗尽/双人全耗尽的转场；`dotnet test Tests/BattleTests --no-restore -v quiet`：**197/197**；`dotnet test Tests/LevelTests --no-restore -v quiet`：**19/19**，均退出0、失败/跳过0。`profile.log`、`battle.log`、`level.log`，既有NU1900/CS8632/CS0649保留 |
+| 双人首轮/夹具 | `coop_d3_coop_20261111 ... --smoketest=ui --coop-only`：**退出1**，甘露边界/分身与相机/屏幕墙已通过，停在活人球领取；新增夹具把球出生设到10000px，改显示位置仍被球自身上升轨迹覆盖，5秒等待不足。只把活人球出生改回正常飞行距离1000px并移除直接改显示位置，原领取/存活/保留物品断言不变。首轮退出8个ObjectDB/1个资源占用；`d3_coop_fixture_build.log` **0错误、5既有警告**，后续复跑结果见下行 |
+| 龙宫夹具复用 | `coop_d3_coop_fixture_20261111` **退出1**，一死一活、死者禁开窗、原生墓碑排他、0%失败与重试均通过，停在龙王生成。单人夹具只驱动P2前进，被双人取景/屏幕墙挡在阶段边界前；改为各参战者一起按自己的右移键，`d3_dragon_fixture_build.log` **0错误**。退出8个ObjectDB/1资源 |
+| 双人主路径 | `coop_d3_coop_dragon_20261111`、补充同步出口/活人球实际入账断言后的 `coop_d3_coop_exit_20261111`，均为既定Godot命令加 `--smoketest=ui --coop-only`：均 **退出0、SMOKE-COOP RULES PASS、完整SMOKE PASS**。真实P2水下转场、暂停淡出、最低等级龙王、原生死亡/旗幡拾取、P2↑出口、死者计0的平均生命及磁盘检查点通过；两次退出均13个ObjectDB/3资源。普通球仍在时可经正常领取回调完成出口，不能据此覆盖只有死者球的情况 |
+| 最后死者球复现 | 同命令案例 `coop_d3_coop_exit_isolated_20261111`：先等正常球全部领取，仅保留一颗归属死者的球后同步提交P2↑，并断言出口先进入等待；最终 **退出1**。原始stderr第1行：`龙宫本人交互出口没有提交结算（outcome=Running, pending=True, orbs=0, slot=P2）`，最后球已被逐球清理回收，但不触发OnLootFinished的出口续行。退出9个ObjectDB/1资源。`d3_exit_isolated_build.log` 为 **0错误、5既有警告**，不把此前主路径PASS代替此失败 |
+| 引用/格式/搜索 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出0、2284路径/392UID**（新增烟测读取既有甘露场景的路径，未新增资源），`references.log`。`dotnet format whitespace <GodotProject.csproj / ProfileTests.csproj> --no-restore --include <各自本批明确文件> --verify-no-changes`：**10份游戏/Debug + 1份规则测试均退出0**，测试工作区加载警告保留，`format_game.log` / `format_profile.log`。生产HeroOf(P1)只剩SkillForm的2处（校验/默认页，留E1-2）；相机/龙王/入口/地图原占位已清零 |
+| 范围与正式数据 | `git diff --check`、`git diff --cached --check`：均 **退出0**；HEAD保持ae2a1ba、用户索引SHA256不变；正式目录 **12/12文件SHA256相同**，`formal_at_stop.sha256.json` / `scope_at_stop.log`。没有Git写操作或正式文件增删改 |
+| 出口授权修复 | 同build命令：**退出0、0错误、5既有警告**，`d3_exit_fixed_build.log`；`dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include <本批11份游戏/Debug C#> --verify-no-changes`：**退出0**，`format_game_final.log`。修复后的相同命令案例 `coop_d3_coop_verified_20261111` **退出0、SMOKE-COOP RULES PASS、完整SMOKE PASS**；保留唯一死者球的隔离条件与出口先等待断言，随后作废球回收并正常结算，成绩 **25%**（死者0、存活者50%）。真实P2转场/↑出口、甘露/相机/墓碑/禁开窗/重试断言全部通过。退出13个ObjectDB/3资源 |
+| 修复后规则/引用 | 三条原test命令均 **退出0，327/327、197/197、19/19，失败/跳过0**，`profile_final.log` / `battle_final.log` / `level_final.log`；引用命令 **退出0，2284路径/392UID**，`references_final.log` |
+| Godot扫描 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d3_scan_20261111 --headless --editor --build-solutions --quit --no-window`：**退出0**，既有ComponentInsoector/free退出诊断保留 |
+| 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d3_frontend_20261111 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出0、完整SMOKE PASS**；旧作用域、坏JSON与重复注册为预期注入；退出3个ObjectDB |
+| 完整单人 UI | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_d3_ui_20261111 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 30000 -- --smoketest=ui`：**退出0、完整SMOKE PASS**。无双原时间轴、60/120Hz地形/单向平台、恢复与球、HUD解绑、窗口/实体复用、装备、取消/失败清理、原生墓碑暂停等待与存档事务重入均通过；坏主档备份回退为预期注入。既有退出诊断 **22个Texture RID、8个ShapedText RID、2个Font RID、144个ObjectDB、11个资源占用** 保留 |
+| 最终范围与数据 | 以HEAD取完整差异核对 **16份文件（12份C#、4份Docs）**，无新增/删除；游戏/Debug最终格式 **11份退出0**，规则测试格式 **1份退出0**。全部C#为UTF-8/CRLF、无行尾空白，两种diff --check退出0。正式 **12/12 SHA256相同**，HEAD保持ae2a1ba；执行中外部暂存全部D3修改，用户索引由开工 `3a63636b...` 变为 `6e9f0e47...`，保留该索引，未作Git写操作（`scope_final.log`）。场景、生成物、框架、表格与v14不变 |
+| 正式键盘上手/后续 | D3上手 **1～6均未执行**：双人取景/屏幕墙、一死一活、全灭失败、P2出口/平均生命、甘露绿色恢复、任一人余额提示。按computer-use技能在node_repl初始化@oai/sky成功后，`sky.list_windows()`仍报原生管道不存在（os error 2），无游戏输入（`computer_use_check.log`）。D0/D1/D2待验项保持；D3自动通过不能替代实机，D3→E1尚未获得推进例外，E1未开始 |
+
+用户已明确回复“授权统一出口完成检查并继续D3”，现已应用原提案：将 `_exitRequested && _lootOrbs.Count == 0 && Outcome == Running` 的续行判断从 `LevelViewController.Loot.OnLootFinished` 移到 `LevelViewController._Process` 的 `TickLoot` 之后。正常领取和死者作废共用一处完成条件，删除原回调的旧判断；不新增状态、超时、事件或补偿奖励。实施计划D3-3已登记这项授权，保留先前的隔离失败记录。
+
+本次最终修改文件（相对TheGame）：`GameScripts/Entity/Level/Camera/LevelCameraNode.cs`、`GameScripts/Entity/Level/LevelViewController.cs`、`GameScripts/Systems/LevelSystem.cs`、`GameScripts/Entity/Heroes/Tangseng/TangsengEntity.cs`、`GameScripts/Entity/Enemies/Bosses/zm1_11_hidden_dragon_palace/DragonKingEntity.cs`、`GameScripts/UI/MapForm/MapForm.Logic.cs`；`MainPack/Scripts/Debug/UiSmokeScenario.cs`、`.Tangseng.cs`、`.HeroDeath.cs`、`.Dragon.cs`；仓库 `Tests/ProfileTests/DragonPalaceTests.cs` 和Docs的Validation/WorkingNotes/CoopImplementationPlan/ProjectTour。没有新增/删除跟踪文件。用户授权的出口修复另修改 `GameScripts/Entity/Level/LevelViewController.Loot.cs`，仅删除旧续行检查。
+
+自动截图存于 `coop_d3_20261111/screenshots/`，已用修复后完整双人通过案例更新camera/heal/one_dead/defeat/victory。胜利图实际查看为25%，与死者0和存活者50%的平均一致；先前隔离失败日志保留。一死图确认右侧0血与左侧存活；治疗图是冻结位置的数值夹具采样，未拍到绿色恢复数字，不能据此声称该上手画面已验收。均非正式键盘上手截图。
+
+接口变更：`LevelCameraNode.Follow(Node2D)` → `Follow(IReadOnlyList<AbstractHeroEntity>)`；唯一生产调用已同步。LevelViewController死亡结束处理改为内部按英雄的回调，新增字段保存真正订阅的原委托；无新的公共事件/管理器。唐僧新增私有恢复量/范围方法，保留原公开ApplyHeavenlyDew入口。死亡事件本身仍不携带来源，按计划为每名死亡者保存Action，已与D2删除的HUD绑定记录区分职责。本批旧相机目标字段与单一死亡演出枚举已删除；全生产HeroOf(P1)仅SkillForm.Logic.cs:77的身份校验与:86的默认技能页，均按现行计划留E1-2。
+
 ## 双人D2复核：已有Panel持有个人HUD绑定（2026-11-11，自动验证通过）
 
 用户在审查席位绑定记录后，要求比较FormData、事件与其他实现方式，并明确授权“嗯可以的，你开始吧，做好记录给架构师看就行”。本次只调整D2 HUD职责，D2实机仍待本机连接恢复，D3/E1未推进。依据第00章的Panel职责、持续状态绑定与局部C#事件、第10章和用户批准的D2-3修订；未修改公共绑定API或Model/System，未新建类型/节点/场景。证据目录：`Godot/GodotProject/.godot/validation/coop_d2_panel_20261111/`；Godot原始日志在 `movement_presets/coop_d2_panel_<案例>_20261111/`，均使用既有案例APPDATA隔离。

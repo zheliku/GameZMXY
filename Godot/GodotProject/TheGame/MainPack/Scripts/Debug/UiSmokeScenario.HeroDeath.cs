@@ -1,7 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using GameLogic.Architecture;
+using GameLogic.Battle;
+using GameLogic.Drops;
 using GameLogic.Heroes;
+using GameLogic.Input;
 using GameLogic.Heroes.Body;
 using GameLogic.Heroes.Effects;
 using GameLogic.Level;
@@ -9,12 +13,87 @@ using GameLogic.UI;
 using Godot;
 using Godot.Collections;
 using GodotGameFramework;
+using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
 /// <summary>
 /// 英雄墓碑的真实物理、非透明底边与死亡后重试/地图重入回归。
 /// </summary>
 public sealed partial class UiSmokeScenario
 {
+    /// <summary>验证一死一活保留奖励、死者禁开窗，以及全灭等待每个墓碑完成才结算。</summary>
+    /// <param name="flow">双人档案与本局系统。</param>
+    /// <returns>失败结算后重试进入新关卡的任务。</returns>
+    private async Task CheckCoopDeathAsync(ProcedureOwner flow)
+    {
+        ProcedureLevel procedure = FindLevelProcedure();
+        LevelViewController level = FindLevel();
+        AbstractHeroEntity[] heroes = SmokeInspection.ReadField<System.Collections.Generic.List<AbstractHeroEntity>>(procedure, "_heroes").ToArray();
+        heroes[0].GlobalPosition = new Vector2(400, 450);
+        heroes[1].GlobalPosition = new Vector2(600, 450);
+        foreach (AbstractHeroEntity hero in heroes)
+        {
+            hero.SetPhysicsProcess(true);
+        }
+        LootOrbNode livingOrb = SpawnOrb(level, new Vector2(1000, 400), new(GameLogic.Drops.LootKind.Soul, 5), heroes[0].Id);
+        LootOrbNode deadOrb = SpawnOrb(level, new Vector2(11000, 400), new(GameLogic.Drops.LootKind.Soul, 5), heroes[1].Id);
+        var orbs = SmokeInspection.ReadField<System.Collections.Generic.HashSet<LootOrbNode>>(level, "_lootOrbs");
+        var ground = SmokeInspection.ReadField<System.Collections.Generic.HashSet<GroundItemNode>>(level, "_groundItems");
+        SpawnGround(level, new Vector2(12000, 400), ConfigSystem.Instance.Tables.TbPickupConfig.Get(GameConfig.Loot.PickupId.SmallPeach), null);
+        int groundCount = ground.Count;
+        KillHero(heroes[1]);
+        AnimationPlayer p2Death = heroes[1].GetNode<AnimationPlayer>("m_Tombstone/m_AnimationPlayer");
+        await WaitUntilAsync(() => p2Death.IsPlaying() && p2Death.CurrentAnimation == "play", "P2墓碑没有开始");
+        p2Death.Pause();
+        await WaitFramesAsync(3);
+        Check(SmokeInspection.Model(level).Outcome.Value == LevelOutcome.Running && heroes[1].IsShown &&
+            orbs.Contains(livingOrb) && !orbs.Contains(deadOrb) && ground.Count == groundCount &&
+            heroes[1].GetNode<CollisionShape2D>("CollisionShape2D").Disabled,
+            "P2死亡提前结算、隐藏实体、清掉队友奖励或未关闭身体碰撞");
+        BattleForm form = CurrentBattleForm();
+        Check(form.GetNode<Label>("StatusPanelP2/m_HpBar/m_HpText").Text.StartsWith("0/"), "死者HUD未显示0血");
+        Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.KpDivide, Keycode = Key.KpDivide, Pressed = true });
+        await WaitFramesAsync(2);
+        Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.KpDivide, Keycode = Key.KpDivide, Pressed = false });
+        Check(!GF.UI.GetAllLoadedUIForms().OfType<InventoryForm>().Any(window => window.Visible), "死者仍可打开背包");
+        float beforeX = heroes[0].GlobalPosition.X;
+        Input.ActionPress(InputSystem.MoveRight);
+        await WaitFramesAsync(18);
+        Input.ActionRelease(InputSystem.MoveRight);
+        Check(heroes[0].GlobalPosition.X > beforeX + 10, "P2死亡后P1不能继续移动");
+        LevelCameraNode camera = SmokeInspection.ReadField<LevelCameraNode>(level, "_camera");
+        heroes[0].SetPhysicsProcess(false);
+        heroes[0].GlobalPosition = new Vector2(800, 450);
+        heroes[1].GlobalPosition = new Vector2(1800, 450);
+        camera.TravelTo(camera.SceneRight);
+        camera.GlobalPosition = new Vector2(1100, camera.GlobalPosition.Y);
+        camera._PhysicsProcess(1);
+        Check(Math.Abs(camera.GlobalPosition.X - heroes[0].GlobalPosition.X) <= 42, "相机仍把死者位置计入中点");
+        int soulBeforePickup = flow.GetModel<GameLogic.Profile.ProfileModel>().GetSoul(heroes[0].HeroId).Value;
+        await WaitUntilAsync(() => !orbs.Contains(livingOrb), "P2死亡后P1的球不再结算");
+        Check(flow.GetModel<GameLogic.Profile.ProfileModel>().GetSoul(heroes[0].HeroId).Value == soulBeforePickup + 5,
+            "P1球被移除但没有给存活P1实际入账");
+        await CaptureCombatAsync("coop_d3_one_dead");
+        KillHero(heroes[0]);
+        float allDeadCenter = camera.GlobalPosition.X;
+        camera._PhysicsProcess(1);
+        Check(camera.GlobalPosition.X == allDeadCenter, "全部死亡后相机仍移动");
+        var pending = SmokeInspection.ReadField<System.Collections.Generic.HashSet<AbstractHeroEntity>>(level, "_deathPresentations");
+        await WaitUntilAsync(() => pending.Count == 1 && pending.Contains(heroes[1]), "P1墓碑没有完成", 5000);
+        Check(SmokeInspection.Model(level).Outcome.Value == LevelOutcome.Running, "P2墓碑暂停时已判全灭");
+        p2Death.Play();
+        await WaitUntilAsync(() => SmokeInspection.Model(level).Outcome.Value == LevelOutcome.Defeated, "全部墓碑结束后没有失败结算", 6000);
+        Check(SmokeInspection.Model(level).Result.HealthPercent == 0 && pending.Count == 0 &&
+            SmokeInspection.ReadField<System.Collections.Generic.Dictionary<AbstractHeroEntity, Action>>(level, "_deathHandlers").Count == 0,
+            "全灭成绩非0或死亡演出订阅残留");
+        await CaptureCombatAsync("coop_d3_defeat");
+        await CheckFailureSettlementAsync(level);
+        await WaitUntilAsync(() => FindLevel() != level && CurrentBattleForm() != null, "双人失败重试未装配", 15000);
+        await WaitForLevelAsync();
+        Check(SmokeInspection.ReadField<System.Collections.Generic.List<AbstractHeroEntity>>(FindLevelProcedure(), "_heroes")
+            .All(hero => hero.IsAlive && !hero.GetNode<CollisionShape2D>("CollisionShape2D").Disabled), "双人重试未恢复身体与存活状态");
+        GD.Print("SMOKE-COOP DEATH PASS: one survivor acts/collects, tombstone/zero HUD, no dead backpack, living camera, all native presentations before 0% defeat and retry.");
+    }
+
     /// <summary>
     /// 在两个物理频率下空中死亡，确认不再上冲、墓碑贴地、结算可听，重试后恢复英雄。
     /// </summary>

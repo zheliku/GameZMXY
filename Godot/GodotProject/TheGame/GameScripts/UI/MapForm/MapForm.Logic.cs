@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GameConfig.Level;
 using GameConfig.Sound;
 using GameFramework.Event;
@@ -419,7 +420,7 @@ public partial class MapForm : IController
     {
         ProfileModel profile = this.GetModel<ProfileModel>();
         _skillsArtwork.Stop();
-        _skillsArtwork.Play(profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value >= 160 ? "available" : "idle");
+        _skillsArtwork.Play(profile.HeroIds.Any(id => profile.GetSoul(id).Value >= 160) ? "available" : "idle");
     }
 
     /// <summary>

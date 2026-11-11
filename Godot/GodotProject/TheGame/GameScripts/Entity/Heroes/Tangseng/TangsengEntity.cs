@@ -2,6 +2,7 @@ using System;
 using GameConfig.Battle;
 using GameConfig.Skills;
 using GameConfig.Sound;
+using GameFramework.Entity;
 using GameFramework.Fsm;
 using GameLogic.Architecture;
 using GameLogic.Audio;
@@ -209,14 +210,7 @@ public partial class TangsengEntity : AbstractHeroEntity
         if (_waterClone.IsAvailable)
         {
             GF.Sound.PlayConfigured(SoundId.TangsengHeavenlyDew);
-            _waterClone.PlayHeavenlyDew(() =>
-            {
-                Vector2 delta = _waterClone.GlobalPosition - GlobalPosition;
-                if (Mathf.Abs(delta.X) <= 200f && Mathf.Abs(delta.Y) <= 160f)
-                {
-                    ApplyHeavenlyDew();
-                }
-            });
+            _waterClone.PlayHeavenlyDew(() => HealHeroesAround(_waterClone.GlobalPosition, 200f, 160f, HeavenlyDewAmount()));
         }
     }
 
@@ -249,18 +243,38 @@ public partial class TangsengEntity : AbstractHeroEntity
         return this.GetModel<HeroModel>().GetState(HeroId).Power.Value * definition.PowerScale.X + definition.FlatPower.X;
     }
 
-    /// <summary>
-    /// 在本体或分身的官方治疗帧结算一次生命恢复。
-    /// </summary>
-    public void ApplyHeavenlyDew()
+    /// <summary>本体甘露治疗距施法点横纵都不超过200像素的存活英雄，包含自己。</summary>
+    public void ApplyHeavenlyDew() => HealHeroesAround(GlobalPosition, 200f, 200f, HeavenlyDewAmount());
+
+    /// <summary>计算本体或分身一次甘露的恢复量，无双时使用原倍率。</summary>
+    /// <returns>法力上限除以8再加8，无双时乘1.5，最后截断为整数。</returns>
+    private int HeavenlyDewAmount()
     {
         double amount = this.GetModel<HeroModel>().GetState(HeroId).MaxMp.Value / 8d + 8;
         if (this.GetModel<HeroModel>().GetState(HeroId).WsActive.Value)
         {
             amount *= 1.5;
         }
+        return (int)amount;
+    }
 
-        Heal((int)amount);
+    /// <summary>治疗以center为中心、指定横纵半径内的存活英雄，不恢复死者。</summary>
+    /// <param name="center">治疗中心，世界坐标。</param>
+    /// <param name="halfWidth">横向半宽，单位像素。</param>
+    /// <param name="halfHeight">纵向半高，单位像素。</param>
+    /// <param name="amount">本次恢复生命值。</param>
+    private void HealHeroesAround(Vector2 center, float halfWidth, float halfHeight, int amount)
+    {
+        // 本体与分身共享范围判定，各自在末帧使用自己的世界位置作为中心。
+        foreach (IEntity entity in GF.Entity.GetAllLoadedEntities())
+        {
+            if (entity is AbstractHeroEntity { IsAlive: true } hero &&
+                Mathf.Abs(hero.GlobalPosition.X - center.X) <= halfWidth &&
+                Mathf.Abs(hero.GlobalPosition.Y - center.Y) <= halfHeight)
+            {
+                hero.Heal(amount);
+            }
+        }
     }
 
     /// <summary>

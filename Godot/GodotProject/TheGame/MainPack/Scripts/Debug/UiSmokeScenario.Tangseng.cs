@@ -9,6 +9,7 @@ using GameLogic.Battle;
 using GameLogic.Drops;
 using GameLogic.Equipment;
 using GameLogic.Heroes;
+using GameLogic.Heroes.Tangseng;
 using GameLogic.Level;
 using GameLogic.Profile;
 using GameLogic.Save;
@@ -23,6 +24,56 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public sealed partial class UiSmokeScenario
 {
+    /// <summary>验证本体方框边界、超界排除及分身独立中心的真实末帧治疗。</summary>
+    /// <param name="heroes">本局按席位显示的悟空与唐僧。</param>
+    /// <param name="flow">本局权威模型与系统。</param>
+    /// <returns>甘露双人治疗验证任务。</returns>
+    private async Task CheckCoopHeavenlyDewAsync(AbstractHeroEntity[] heroes, ProcedureOwner flow)
+    {
+        HeroSystem system = flow.GetSystem<HeroSystem>();
+        HeroModel states = flow.GetModel<HeroModel>();
+        var tangseng = (TangsengEntity)heroes.Single(hero => hero.HeroId == 2);
+        AbstractHeroEntity teammate = heroes.Single(hero => hero.HeroId == 1);
+        tangseng.GlobalPosition = new Vector2(400, 350);
+        teammate.GlobalPosition = tangseng.GlobalPosition + new Vector2(200, 200);
+        system.Damage(teammate.HeroId, 50);
+        system.Damage(tangseng.HeroId, 30);
+        int teammateBefore = states.GetState(teammate.HeroId).Hp.Value;
+        int casterBefore = states.GetState(tangseng.HeroId).Hp.Value;
+        int amount = (int)(states.GetState(tangseng.HeroId).MaxMp.Value / 8d + 8);
+        tangseng.ApplyHeavenlyDew();
+        Check(states.GetState(teammate.HeroId).Hp.Value == teammateBefore + amount &&
+            states.GetState(tangseng.HeroId).Hp.Value == casterBefore + amount,
+            "甘露本体没有治疗自己与横纵200像素边界的队友");
+        await CaptureCombatAsync("coop_d3_heal");
+        teammate.GlobalPosition = tangseng.GlobalPosition + new Vector2(201, 0);
+        teammateBefore = states.GetState(teammate.HeroId).Hp.Value;
+        tangseng.ApplyHeavenlyDew();
+        Check(states.GetState(teammate.HeroId).Hp.Value == teammateBefore, "甘露本体治疗了横向超界队友");
+
+        TangsengWaterCloneNode clone = SmokeInspection.ReadField<TangsengWaterCloneNode>(tangseng, "_waterClone");
+        Vector2 cloneCenter = new(750, 350);
+        tangseng.GlobalPosition = cloneCenter - new Vector2(201, 0);
+        teammate.GlobalPosition = cloneCenter + new Vector2(200, 160);
+        clone.Activate(cloneCenter, 1);
+        teammateBefore = states.GetState(teammate.HeroId).Hp.Value;
+        casterBefore = states.GetState(tangseng.HeroId).Hp.Value;
+        PackedScene cure = ResourceLoader.Load<PackedScene>("res://TheGame/Entitys/Heroes/Tangseng/tangseng_cure_role_effect.tscn");
+        tangseng.BeginHeavenlyDew(cure);
+        await WaitUntilAsync(() => !clone.IsActive, "分身甘露没有在原生末帧结束", 5000);
+        Check(states.GetState(teammate.HeroId).Hp.Value == teammateBefore + amount &&
+            states.GetState(tangseng.HeroId).Hp.Value == casterBefore,
+            "分身甘露未以自身200×160范围治疗队友，或治疗了范围外本体");
+        system.Damage(teammate.HeroId, 10);
+        teammateBefore = states.GetState(teammate.HeroId).Hp.Value;
+        teammate.GlobalPosition = cloneCenter + new Vector2(0, 161);
+        clone.Activate(cloneCenter, 1);
+        tangseng.BeginHeavenlyDew(cure);
+        await WaitUntilAsync(() => !clone.IsActive, "第二次分身甘露没有结束", 5000);
+        Check(states.GetState(teammate.HeroId).Hp.Value == teammateBefore, "分身甘露治疗了纵向161像素外的队友");
+        GD.Print("SMOKE-COOP HEAL PASS: self/team, inclusive 200x200 body, independent 200x160 clone and out-of-range exclusion.");
+    }
+
     /// <summary>
     /// 实际拾取全部唐僧装备，通过背包穿卸并核对持久实例与两层完整动作。
     /// </summary>

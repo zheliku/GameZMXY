@@ -251,6 +251,7 @@ public sealed partial class UiSmokeScenario
                     SpawnOrb(level, hero.GlobalPosition, new(GameLogic.Drops.LootKind.Health, 10), hero.Id);
                     HashSet<LootOrbNode> pending = SmokeInspection.ReadField<HashSet<GameLogic.Drops.LootOrbNode>>(level, "_lootOrbs");
                     KillHero(hero);
+                    await WaitUntilAsync(() => pending.Count == 0, "死亡归属球未在关卡帧回收");
                     Check(pending.Count == 0 && flow.GetModel<HeroModel>().GetState(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Hp.Value == 0, "死亡没有清理红球或红球使英雄复活");
                     GD.Print("SMOKE-HEALTH DEATH PASS: in-flight health orb reclaimed without resurrection.");
                 }
@@ -732,6 +733,7 @@ public sealed partial class UiSmokeScenario
             SpawnOrb(deathRun, FindHero().GlobalPosition, new(GameLogic.Drops.LootKind.Soul, 50), FindHero().Id);
             Check(pendingOrbs.Count > 0, "死亡回收测试缺少在途奖励");
             KillHero(FindHero());
+            await WaitUntilAsync(() => pendingOrbs.Count == 0, "死亡归属球未在关卡帧回收");
             Check(pendingOrbs.Count == 0 && flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soulAfterKill,
                 "死亡没有回收在途球，或错误领取了未接触奖励");
             AnimationPlayer deathPlayer = FindHero().GetNode<AnimationPlayer>("m_Tombstone/m_AnimationPlayer");
@@ -983,6 +985,7 @@ public sealed partial class UiSmokeScenario
                 SmokeInspection.CountBindingHandlers(profile.GetSlots(heroes[i].HeroId), equipmentHandlers[i]) == 1,
                 "双人HUD或会话订阅遗漏或重复");
         }
+        flow.GetSystem<ProfileSystem>().AddSoul(heroes[1].HeroId, 160);
         PushMouseClick(form.GetNode<TextureButton>("MenuPanelP2/m_SettingsButton"));
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().Any(window => window.Visible),
             "P2设置按钮未打开共享设置");
@@ -1020,6 +1023,63 @@ public sealed partial class UiSmokeScenario
                 "双人离关后仍显示实体或残留成长/穿戴订阅");
         }
         GD.Print("SMOKE-COOP PASS: real double-roster save, two heroes 60px apart, readable mirrored HUD, simultaneous movement, per-seat backpack keys/buttons, P2 kill experience/orbs and both heroes unsubscribed on exit.");
+        await CheckCoopLevelRulesAsync(flow);
+    }
+
+    /// <summary>在同一隔离双人档中验证提示、治疗、相机、全灭、真实龙宫转场和P2出口。</summary>
+    /// <param name="flow">本次真实档案作用域。</param>
+    /// <returns>双人关卡规则完成任务。</returns>
+    private async Task CheckCoopLevelRulesAsync(ProcedureOwner flow)
+    {
+        MapForm map = GF.UI.GetAllLoadedUIForms().OfType<MapForm>().Single(window => window.Visible);
+        Check(SmokeInspection.ReadField<AnimatedSprite2D>(map, "_skillsArtwork").Animation == "available",
+            "只有P2灵魂达到160时地图技能提示没有发光");
+        flow.SetData(GameLogic.Procedure.FlowData.FlowKeys.SelectedLevelId, (VarInt32)1);
+        ReenterLevel();
+        ProcedureLevel procedure = await WaitForLevelAsync();
+        LevelViewController level = FindLevel();
+        AbstractHeroEntity[] heroes = SmokeInspection.ReadField<List<AbstractHeroEntity>>(procedure, "_heroes").ToArray();
+        foreach (AbstractHeroEntity hero in heroes)
+        {
+            hero.SetPhysicsProcess(false);
+        }
+        await CheckCoopHeavenlyDewAsync(heroes, flow);
+
+        // 相机使用真实屏幕墙，但独立停止配方/触发器，排除战斗对取景探针的干扰。
+        level.Cleanup();
+        LevelCameraNode camera = SmokeInspection.ReadField<LevelCameraNode>(level, "_camera");
+        camera.TravelTo(camera.SceneRight);
+        camera.Follow(heroes);
+        heroes[0].GlobalPosition = new Vector2(400, 450);
+        heroes[1].GlobalPosition = new Vector2(1000, 450);
+        await WaitFramesAsync(90);
+        float midpoint = (heroes[0].GlobalPosition.X + heroes[1].GlobalPosition.X) / 2;
+        float deadZone = SmokeInspection.ReadField<float>(camera, "_deadZoneHalfWidth") / camera.Zoom.X;
+        Check(Math.Abs(camera.GlobalPosition.X - midpoint) <= deadZone + 2,
+            "双人相机没有跟随存活者中点");
+        heroes[1].GlobalPosition = new Vector2(camera.GlobalPosition.X + camera.ViewSize.X / 2 - 30, 450);
+        heroes[1].SetPhysicsProcess(true);
+        Input.ActionPress(InputSystem.ActionOf(InputSystem.MoveRight, PlayerSlot.P2));
+        try
+        {
+            await WaitFramesAsync(180);
+            Check(heroes[1].GlobalPosition.X <= camera.GetScreenCenterPosition().X + camera.ViewSize.X / 2 - 19,
+                "P2超出相机屏幕墙");
+        }
+        finally
+        {
+            Input.ActionRelease(InputSystem.ActionOf(InputSystem.MoveRight, PlayerSlot.P2));
+            heroes[1].SetPhysicsProcess(false);
+            camera.StopFollowing();
+        }
+        await CaptureCombatAsync("coop_d3_camera");
+        GD.Print("SMOKE-COOP CAMERA PASS: living midpoint, dead zone and native P2 screen wall.");
+
+        ReenterLevel();
+        await WaitForLevelAsync();
+        await CheckCoopDeathAsync(flow);
+        await CheckDragonEntranceFlowAsync(flow, FindLevel());
+        GD.Print("SMOKE-COOP RULES PASS: camera, per-hero death, all-dead defeat, healing, P2 transfer/exit, minimum dragon tier and average health.");
     }
 
     /// <summary>

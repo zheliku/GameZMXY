@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using GameLogic.Architecture;
+using GameLogic.Heroes;
 using GameLogic.Utility;
 using Godot;
 using GodotGameFramework;
@@ -25,7 +27,7 @@ public partial class LevelCameraNode : Camera2D
 
     private const float PlayerScreenMargin = 20f; // 官方 BaseObject.isCanMoveByStage 的屏幕内侧留白。
 
-    private Node2D _target; // 由关卡会话注入的跟随目标。
+    private readonly List<AbstractHeroEntity> _targets = new(); // 由关卡会话注入的参战英雄，只以存活者取景。
     private float _left; // 当前可显示区域左边缘的世界坐标。
     private float _right; // 当前可显示区域右边缘的世界坐标。
     private bool _waitingForArrival; // 当前通路的抵达事件尚未发送。
@@ -105,11 +107,24 @@ public partial class LevelCameraNode : Camera2D
     /// <param name="delta">距上一物理帧的秒数，用于换算本帧位移上限。</param>
     public override void _PhysicsProcess(double delta)
     {
-        // 玩家由会话显式注入和解除，不根据节点是否存在推测加载状态。
+        // 只以存活者的中点取景；全灭时保留当前中心，屏幕墙与抵达检测仍更新。
         float halfView = ViewSize.X * 0.5f;
-        float center = GF.Fsm.GetUtility<SpatialUtility>().StepCameraCenter(GlobalPosition.X, _target.GlobalPosition.X,
-            _deadZoneHalfWidth / Zoom.X, _left + halfView, _right - halfView, _maxPanSpeed * (float)delta);
-        GlobalPosition = new Vector2(center, GlobalPosition.Y);
+        float sumX = 0;
+        int aliveCount = 0;
+        foreach (AbstractHeroEntity hero in _targets)
+        {
+            if (hero.IsAlive)
+            {
+                sumX += hero.GlobalPosition.X;
+                aliveCount++;
+            }
+        }
+        if (aliveCount > 0)
+        {
+            float center = GF.Fsm.GetUtility<SpatialUtility>().StepCameraCenter(GlobalPosition.X, sumX / aliveCount,
+                _deadZoneHalfWidth / Zoom.X, _left + halfView, _right - halfView, _maxPanSpeed * (float)delta);
+            GlobalPosition = new Vector2(center, GlobalPosition.Y);
+        }
         ForceUpdateScroll();
 
         // 屏幕移动边界跟随实际取景；阶段标记决定相机何时停止，怪物不受玩家墙阻挡。
@@ -130,12 +145,13 @@ public partial class LevelCameraNode : Camera2D
     }
 
     /// <summary>
-    /// 开始跟随已经显示的玩家；保留场景初始取景。
+    /// 开始跟随已显示参战者中的存活英雄中点，保留场景初始取景。
     /// </summary>
-    /// <param name="target">关卡会话注入的玩家节点。</param>
-    public void Follow(Node2D target)
+    /// <param name="targets">关卡会话注入的参战英雄集合。</param>
+    public void Follow(IReadOnlyList<AbstractHeroEntity> targets)
     {
-        _target = target;
+        _targets.Clear();
+        _targets.AddRange(targets);
         SetPhysicsProcess(true);
     }
 
@@ -168,7 +184,7 @@ public partial class LevelCameraNode : Camera2D
     public void StopFollowing()
     {
         SetPhysicsProcess(false);
-        _target = null;
+        _targets.Clear();
         _waitingForArrival = false;
     }
 

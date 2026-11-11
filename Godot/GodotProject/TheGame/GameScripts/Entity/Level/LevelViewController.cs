@@ -42,7 +42,9 @@ public partial class LevelViewController : Node2D, IController
     private readonly List<AbstractHeroEntity> _heroes = new(); // 借用流程显示并隐藏的参战英雄，按席位排列。
     private readonly Dictionary<AbstractHeroEntity, (Action<int> Restored, Action<EquippedItems> Equipment)> _heroHandlers = new(); // 每名英雄实际注册的回调，用于对称退订。
     private bool _sessionActive; // 当前节点订阅是否已建立。
-    private HeroDeathPresentation _heroDeathPresentation; // 原生死亡演出阶段；只在本关流程帧提交完成。
+    private readonly HashSet<AbstractHeroEntity> _deathPresentations = new(); // 已开始死亡演出、尚未结束的英雄。
+    private readonly Dictionary<AbstractHeroEntity, Action> _deathHandlers = new(); // 每名英雄实际注册的死亡演出回调，用于对称退订。
+    private bool _defeatPending; // 全员死亡且演出结束，等待下一流程帧提交失败。
 
     /// <summary>
     /// 守关对手显示、死亡或解除绑定，HUD 据此刷新生命条。
@@ -89,10 +91,15 @@ public partial class LevelViewController : Node2D, IController
         {
             this.GetSystem<LevelSystem>().AdvanceTime(delta);
             TickLoot((float)delta);
-            AdvanceEntrance();
-            if (_heroDeathPresentation == HeroDeathPresentation.Completed && LevelModel.Outcome.Value == LevelOutcome.Running)
+            // 正常领取和死者球作废共用同一出口续行条件，等待本帧全部掉落处理完成。
+            if (_exitRequested && _lootOrbs.Count == 0 && LevelModel.Outcome.Value == LevelOutcome.Running)
             {
-                _heroDeathPresentation = HeroDeathPresentation.None;
+                OnExitEntered();
+            }
+            AdvanceEntrance();
+            if (_defeatPending && LevelModel.Outcome.Value == LevelOutcome.Running)
+            {
+                _defeatPending = false;
                 Complete(LevelOutcome.Defeated);
             }
         }
@@ -176,7 +183,7 @@ public partial class LevelViewController : Node2D, IController
         }
 
         _heroes.AddRange(heroes);
-        _heroDeathPresentation = HeroDeathPresentation.None;
+        _defeatPending = false;
         this.GetSystem<LevelSystem>().StartSession(this.GetModel<ProfileModel>().HeroIds);
         _exitRequested = false;
         _lootRandom.Randomize();
@@ -211,7 +218,7 @@ public partial class LevelViewController : Node2D, IController
             _triggers.Activated += OnTriggerContact;
         }
 
-        _camera.Follow(_heroes[0]); // D3-1 再切换为存活者中点。
+        _camera.Follow(_heroes);
         BeginTravel();
     }
 
@@ -254,7 +261,7 @@ public partial class LevelViewController : Node2D, IController
             _exit.Disable();
         }
         ClearFeaturedOpponent();
-        _heroDeathPresentation = HeroDeathPresentation.None;
+        _defeatPending = false;
         if (_spawner != null)
         {
             _spawner.StageCleared -= OnStageCleared;
@@ -459,37 +466,36 @@ public partial class LevelViewController : Node2D, IController
         Failed?.Invoke(error);
     }
 
-    /// <summary>
-    /// 英雄死亡立即回收未领取奖励，墓碑演出结束后提交失败结算。
-    /// </summary>
-    /// <param name="actor">本关英雄。</param>
+    /// <summary>逐人等待墓碑演出，保留队友的球与地面物品，全灭后才提交失败。</summary>
+    /// <param name="actor">本关进入死亡状态的英雄。</param>
     private void OnHeroDied(AbstractActorEntity actor)
     {
-        if (!_sessionActive || actor is not AbstractHeroEntity hero || !IsSessionHero(hero) || _heroDeathPresentation != HeroDeathPresentation.None)
+        if (!_sessionActive || actor is not AbstractHeroEntity hero || !IsSessionHero(hero) || !_deathPresentations.Add(hero))
         {
             return;
         }
 
-        _heroDeathPresentation = HeroDeathPresentation.Playing;
-        ClearLoot(); // 未领取奖励在死亡时回收，失败界面仍等待墓碑演出。
-        hero.DeathPresentationFinished += OnHeroDeathPresentationFinished;
+        // 原事件不携带来源，保存本人的实际闭包供演出结束或会话清理时退订。
+        Action finished = () => OnHeroDeathPresentationFinished(hero);
+        _deathHandlers.Add(hero, finished);
+        hero.DeathPresentationFinished += finished;
     }
 
-    /// <summary>
-    /// 原生死亡片段结束时只登记完成，下一流程帧提交失败，避免信号遍历中清理场景。
-    /// </summary>
-    private void OnHeroDeathPresentationFinished()
+    /// <summary>演出结束时解除本人的监听；全员死亡且全部演出结束后登记下一帧失败。</summary>
+    /// <param name="hero">本次墓碑演出结束的英雄。</param>
+    private void OnHeroDeathPresentationFinished(AbstractHeroEntity hero)
     {
-        if (!_sessionActive || _heroDeathPresentation != HeroDeathPresentation.Playing)
+        if (!_sessionActive || !_deathPresentations.Remove(hero))
         {
             return;
         }
 
-        foreach (AbstractHeroEntity hero in _heroes)
+        hero.DeathPresentationFinished -= _deathHandlers[hero];
+        _deathHandlers.Remove(hero);
+        if (_heroes.TrueForAll(participant => participant.Dead) && _deathPresentations.Count == 0)
         {
-            hero.DeathPresentationFinished -= OnHeroDeathPresentationFinished;
+            _defeatPending = true;
         }
-        _heroDeathPresentation = HeroDeathPresentation.Completed;
     }
 
     /// <summary>
@@ -498,8 +504,9 @@ public partial class LevelViewController : Node2D, IController
     /// <param name="outcome">本局结局。</param>
     private void Complete(LevelOutcome outcome)
     {
-        this.GetSystem<LevelSystem>().Complete(outcome,
-        (int)Math.Round(100.0 * this.GetModel<HeroModel>().GetState(_heroes[0].HeroId).Hp.Value / this.GetModel<HeroModel>().GetState(_heroes[0].HeroId).MaxHp.Value));
+        HeroModel heroes = this.GetModel<HeroModel>();
+        double average = _heroes.Average(hero => (double)heroes.GetState(hero.HeroId).Hp.Value / heroes.GetState(hero.HeroId).MaxHp.Value);
+        this.GetSystem<LevelSystem>().Complete(outcome, (int)Math.Round(100.0 * average));
     }
 
     /// <summary>
@@ -531,21 +538,17 @@ public partial class LevelViewController : Node2D, IController
         {
             hero.Died -= OnHeroDied;
             hero.HealthRestored -= handlers.Restored;
-            hero.DeathPresentationFinished -= OnHeroDeathPresentationFinished;
             this.GetModel<ProfileModel>().GetSlots(hero.HeroId).UnRegister(handlers.Equipment);
         }
         _heroHandlers.Clear();
-        _heroDeathPresentation = HeroDeathPresentation.None;
+        foreach ((AbstractHeroEntity hero, Action finished) in _deathHandlers)
+        {
+            hero.DeathPresentationFinished -= finished;
+        }
+        _deathHandlers.Clear();
+        _deathPresentations.Clear();
+        _defeatPending = false;
         LevelModel.Outcome.UnRegister(OnSessionEnded);
     }
 
-    /// <summary>
-    /// 本关拥有的死亡演出阶段，不另建与动画竞争的秒数计时器。
-    /// </summary>
-    private enum HeroDeathPresentation
-    {
-        None,
-        Playing,
-        Completed,
-    }
 }

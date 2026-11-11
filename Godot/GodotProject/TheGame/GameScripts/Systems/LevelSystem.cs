@@ -346,8 +346,16 @@ public sealed class LevelSystem : AbstractSystem
     public bool TransferToDragonPalace(int levelId)
     {
         if (!LevelModel.SessionActive || LevelModel.Outcome.Value != LevelOutcome.Running ||
-            this.GetModel<HeroModel>().GetState(this.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).IsDepleted || levelId != DragonPalaceRules.LevelId ||
-            DragonPalaceRules.EntranceLevelId != LevelModel.LevelId)
+            levelId != DragonPalaceRules.LevelId || DragonPalaceRules.EntranceLevelId != LevelModel.LevelId)
+        {
+            return false;
+        }
+
+        // 先拒绝无效会话或入口，再读取参战者；一人耗尽不阻止仍存活的队友转场。
+        ProfileModel profile = this.GetModel<ProfileModel>();
+        HeroModel heroes = this.GetModel<HeroModel>();
+        bool allDepleted = profile.HeroIds.All(id => heroes.GetState(id).IsDepleted);
+        if (allDepleted)
         {
             return false;
         }

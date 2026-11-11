@@ -171,11 +171,6 @@ public partial class LevelViewController
         {
             this.GetSystem<LevelSystem>().CollectLoot(hero.HeroId, reward);
         }
-
-        if (_exitRequested && _lootOrbs.Count == 0 && LevelModel.Outcome.Value == LevelOutcome.Running)
-        {
-            OnExitEntered();
-        }
     }
 
     /// <summary>
