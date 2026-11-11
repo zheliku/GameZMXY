@@ -185,6 +185,12 @@ public sealed partial class FrontendSmokeScenario
             soundInitialized = true;
             int firstTitleSerial = start.SerialId;
             Check(!Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "标题阶段已创建关卡或英雄");
+            foreach (Control text in start.FindChildren("*", "Control", true, false).OfType<Control>()
+                .Where(control => control is Label or Button))
+            {
+                Check(text.GetThemeFont("font").ResourcePath == "res://TheGame/MainPack/Fonts/game_font.tres",
+                    "开始界面未统一使用局内字体：" + text.Name);
+            }
             await CaptureAsync("start_form");
             await ClickAsync(start, "m_MainMenu/m_Help");
             ScrollContainer helpScroll = start.GetNode<ScrollContainer>("StatusScroll");
@@ -791,6 +797,17 @@ public sealed partial class FrontendSmokeScenario
         await ClickAsync(start, "m_MainMenu/m_NewGame");
         await ClickAsync(start, "m_PlayerCountMenu/m_Double");
         CharacterForm character = await WaitForAsync<CharacterForm>();
+        await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+        HBoxContainer actions = character.GetNode<HBoxContainer>("Actions");
+        Check(character.GetNode<Control>("Roles").Scale == Vector2.One &&
+            character.GetNode<Control>("Roles").GetChildren().OfType<Control>().All(card => card.Size == new Vector2(235, 590)) &&
+            Mathf.IsEqualApprox(actions.GetGlobalRect().GetCenter().X, 470) && actions.Position.Y == 556 &&
+            actions.GetChildren().OfType<Button>().All(button => button.Size == new Vector2(94, 30) &&
+                button.GetThemeFontSize("font_size") == 18 &&
+                button.GetThemeStylebox("normal") is StyleBoxFlat style && style.BorderWidthLeft == 2 &&
+                style.BgColor.A > .95f && button.GetThemeFont("font").ResourcePath.EndsWith("game_font.tres")),
+            "选角卡片原尺寸、底部小按钮居中、底色边框或统一字体错误");
+        await CaptureAsync("character_centered_actions");
         await ClickAsync(character, "Roles/m_Wukong");
         await ClickAsync(character, "Roles/m_Wukong");
         await MoveMouseAsync(new Vector2(900, 100));
@@ -798,13 +815,13 @@ public sealed partial class FrontendSmokeScenario
             character.GetNode<Label>("m_PlayerOne").Visible && !character.GetNode<Label>("m_PlayerTwo").Visible &&
             Mathf.IsZeroApprox(((ShaderMaterial)character.GetNode<TextureButton>("Roles/m_Wukong").Material)
                 .GetShaderParameter("grayscale").AsSingle()), "双人重复选卡未拒绝或鼠标离开清除了已选席位");
-        await ClickAsync(character, "m_Reselect");
+        await ClickAsync(character, "Actions/m_Reselect");
         await MoveMouseAsync(new Vector2(900, 100));
         Check(!character.GetNode<Label>("m_PlayerOne").Visible && !character.GetNode<Label>("m_PlayerTwo").Visible &&
             character.GetNode("Roles").GetChildren().OfType<Control>().All(card =>
                 Mathf.IsEqualApprox(((ShaderMaterial)card.Material).GetShaderParameter("grayscale").AsSingle(), 1f)),
             "重选没有清除已选席位与卡片高亮");
-        await ClickAsync(character, "m_Back");
+        await ClickAsync(character, "Actions/m_Back");
         start = await WaitForAsync<StartForm>();
         Check(GF.Archive.Catalogues.Count == initialCatalogueCount && model.Slots.All(slot => slot.State == SaveSlotState.Empty),
             "返回标题前提前创建了新档案");
@@ -813,7 +830,7 @@ public sealed partial class FrontendSmokeScenario
         await ClickAsync(start, "m_MainMenu/m_NewGame");
         await ClickAsync(start, "m_PlayerCountMenu/m_Single");
         character = await WaitForAsync<CharacterForm>();
-        Check(!character.GetNode<Control>("m_Reselect").Visible, "单人选角仍显示重选按钮");
+        Check(!character.GetNode<Control>("Actions/m_Reselect").Visible, "单人选角仍显示重选按钮");
         await ClickAsync(character, "Roles/m_Sanzang");
         saves = await WaitForSaveAsync();
         await ClickAsync(saves, "Slots/m_Slot4");
@@ -952,10 +969,15 @@ public sealed partial class FrontendSmokeScenario
         TextureButton delete = saves.GetNode<TextureButton>("Slots/m_Slot2/Delete");
         Check(delete.Visible && delete.Size.IsEqualApprox(new Vector2(24, 24)) && delete.Modulate.A < .5f,
             "有存档的删除入口没有使用缩小压暗的图标");
-        Check(saves.GetNode<TextureRect>("DeleteConfirmation/Panel").Texture != null &&
-            saves.GetNode<TextureButton>("DeleteConfirmation/Panel/Cancel").TextureNormal != null &&
-            saves.GetNode<TextureButton>("DeleteConfirmation/Panel/Confirm").TextureNormal != null,
-            "原项目确认框贴图没有载入");
+        Check(saves.GetNode<Panel>("DeleteConfirmation/Panel").GetThemeStylebox("panel") is StyleBoxFlat panelStyle &&
+            panelStyle.BgColor == new Color(.025f, .025f, .025f, 1) && panelStyle.BorderWidthLeft == 1 &&
+            saves.GetNode<Button>("DeleteConfirmation/Panel/Cancel").Text == "取消" &&
+            saves.GetNode<Button>("DeleteConfirmation/Panel/Confirm").Text == "确定" &&
+            saves.GetNode<Label>("DeleteConfirmation/Panel/Message").GetThemeFont("font").ResourcePath ==
+                "res://TheGame/MainPack/Fonts/game_font.tres" &&
+            saves.GetNode<Button>("DeleteConfirmation/Panel/Confirm").GetThemeColor("font_hover_color") ==
+                new Color(1, .466667f, 0, 1),
+            "删除确认框没有使用黑色细边面板、局内字体与开始菜单按钮风格");
         await CaptureAsync("save_delete_slots");
         await MoveMouseAsync(delete.GetGlobalRect().GetCenter());
         Check(delete.Modulate.IsEqualApprox(Colors.White), "鼠标靠近时未提亮删除入口");
@@ -969,6 +991,8 @@ public sealed partial class FrontendSmokeScenario
         Check(GF.Procedure.CurrentProcedure is ProcedureTitle && model.Slots[1].State == SaveSlotState.Occupied,
             "删除按钮透传给格子或在确认前删除");
         await CaptureAsync("save_delete_confirmation");
+        await MoveMouseAsync(confirmation.GetNode<Button>("Panel/Confirm").GetGlobalRect().GetCenter());
+        await CaptureAsync("save_delete_confirmation_hover");
         await ClickAsync(saves, "DeleteConfirmation/Panel/Cancel");
         Check(File.Exists(path) && File.Exists(path + ".bak") && model.Slots[1].UnitId == deletedId,
             "取消删除仍修改存档");

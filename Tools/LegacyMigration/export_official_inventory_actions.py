@@ -1,4 +1,4 @@
-"""Copy the official ZMXY3 single-player equipment action artwork verbatim."""
+"""Copy the official ZMXY3 equipment action artwork verbatim."""
 import argparse
 import hashlib
 import os
@@ -12,6 +12,7 @@ IMAGES = {
     'inventory_action_equip.png': ('sprites/DefineSprite_376*', '1.png'),
     'inventory_action_equip_disabled.png': ('sprites/DefineSprite_376*', '2.png'),
     'inventory_action_gift_disabled.png': ('sprites/DefineSprite_367*', '2.png'),
+    'inventory_action_gift.png': ('sprites/DefineSprite_367*', '1.png'),
     'inventory_action_sell.png': ('sprites/DefineSprite_381*', '1.png'),
 }
 

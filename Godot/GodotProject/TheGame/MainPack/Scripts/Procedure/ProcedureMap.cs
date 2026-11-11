@@ -199,7 +199,8 @@ public sealed class ProcedureMap : ProcedureBase
             return;
         }
 
-        _skillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm);
+        _skillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm,
+            new SkillFormData(_owner.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)));
     }
 
     /// <summary>

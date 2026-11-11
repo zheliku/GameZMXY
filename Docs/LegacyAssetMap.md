@@ -251,6 +251,10 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 ## 菜单、地图、存档与音乐
 
+2026-11-11前端调整：按用户要求检索并导出了已核验造梦三Commonv3720的位图230（352×201灰黑面板），用户复查后认为灰色不适配主界面，明确改成黑色。最终删除/覆盖确认采用Godot原生StyleBoxFlat：近黑底、1px灰色细边、白色局内字体与开始菜单橙色悬停文字按钮；未保留该灰色素材替换，原图片文件还原，官方导出和候选图仅保留在忽略的验证目录。没有新正式美术资产，也不改其他场景共享Theme。选角底部按钮用原生深色StyleBoxFlat、2px边框与橙色悬停，通过居中HBoxContainer在单双人显示时自动居中；使用同一局内game_font.tres。
+
+以下是旧确认框资产的历史来源；当前删除/覆盖场景已不引用棕色底板、字图和宋体，原文件保留供已有资源索引使用。
+
 2026-11-06：存档删除确认沿用旧 `Scene/show_text/choose_scene.tscn` 的实际资产。原存档删除的调用链为 `Script/ArchiveInterface/read_archive_interface.gd` → `Global.add_choose_text` → 该场景；只迁入以下原始字节，不复制旧脚本、倒计时或全局信号。
 
 | 旧项目相对路径 | 正式 TheGame 相对路径 | 用途 |
@@ -500,6 +504,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | `Sprites/UI/inventory/inventory_actions_background.png` | 造梦三 `Commonv3720.swf`，shape 369 | 87×115 菜单底板 |
 | `inventory_action_equip.png` / `inventory_action_equip_disabled.png` | 同包 sprite 376，第 1/2 帧 | 77×31 装备按钮 |
 | `inventory_action_gift_disabled.png` | 同包 sprite 367，第 2 帧 | 单人赠送禁用 |
+| `inventory_action_gift.png` | 同包 sprite 367，第 1 帧 | 双人赠送可用 |
 | `inventory_action_sell.png` | 同包 sprite 381，第 1 帧 | 出售按钮 |
 
 恢复数字由 `Tools/LegacyMigration/gen_damage_numbers.gd` 拼接，与伤害数字、闪避共用 `Entitys/Effects/floating_text.tscn` 和 `FloatingTextNode`，表现规则见 OfficialReference。菜单由 `Tools/LegacyMigration/export_official_inventory_actions.py` 核对官方包散列后导出；来源为矢量元件，未截图或重绘。提示框按官方 `AttributeCon.as` 的字体、间距、颜色和装饰重建为原生 Godot 控件。

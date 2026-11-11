@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GameConfig.Attributes;
+using GameConfig.Constant;
 using GameConfig.Equipment;
 using GameConfig.Sound;
 using GameFramework.UI;
@@ -18,7 +19,7 @@ using GodotGameFramework;
 namespace GameLogic.UI;
 
 /// <summary>
-/// 观察战斗个人资料与背包，通过命令提交穿戴与出售请求。
+/// 观察战斗个人资料与背包，通过命令提交穿戴、出售与赠送请求。
 /// </summary>
 public partial class InventoryForm : IController
 {
@@ -48,6 +49,7 @@ public partial class InventoryForm : IController
             _close.Pressed += OnCloseClicked;
             _actions.EquipRequested += OnEquipRequested;
             _actions.SellRequested += OnSellRequested;
+            _actions.GiftRequested += OnGiftRequested;
             _character.UnequipRequested += OnSlotClicked;
             _bag.ItemSelected += OnBagClicked;
             _bag.ViewChanged += CloseTransientSelection;
@@ -404,7 +406,8 @@ public partial class InventoryForm : IController
         EquipmentConfig definition = this.GetModel<ConfigurationModel>().Tables.TbEquipmentConfig.Get(data.EquipmentId);
         _actions.Open(data.InstanceId, anchor,
             definition.Owner == EquipmentOwner.Universal ||
-             (int)definition.Owner == _inventoryData.Hero.HeroId);
+             (int)definition.Owner == _inventoryData.Hero.HeroId,
+            this.GetModel<ProfileModel>().HeroIds.Count == 2);
     }
 
     /// <summary>
@@ -428,6 +431,29 @@ public partial class InventoryForm : IController
         if (_inventoryData != null && this.SendCommand(new SellEquipmentCommand(_inventoryData.Hero.HeroId, instanceId)))
         {
             GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        }
+    }
+
+    /// <summary>
+    /// 将背包装备交给阵容中另一名英雄，容量不足复用已有提示。
+    /// </summary>
+    /// <param name="instanceId">菜单捕获的背包实例。</param>
+    private void OnGiftRequested(Guid instanceId)
+    {
+        if (_inventoryData == null)
+        {
+            return;
+        }
+
+        int fromHeroId = _inventoryData.Hero.HeroId;
+        int toHeroId = this.GetModel<ProfileModel>().HeroIds.Single(id => id != fromHeroId);
+        if (this.SendCommand(new GiftEquipmentCommand(fromHeroId, toHeroId, instanceId)))
+        {
+            GF.Sound.PlayConfigured(SoundId.MenuConfirm);
+        }
+        else
+        {
+            (GF.UI.GetUIForm(ResourcesCollectionConstant.UIs_save_notice_form) as SaveNoticeForm)?.ShowMessage("对方背包已满！");
         }
     }
 

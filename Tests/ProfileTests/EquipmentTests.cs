@@ -22,6 +22,157 @@ namespace GameLogic.Profile.Tests;
 public sealed class EquipmentTests
 {
     /// <summary>
+    /// 赠送保留实例与随机属性，接收者无需符合装备职业。
+    /// </summary>
+    [Fact]
+    public void Gift_MovesOriginalInstanceAcrossEquipmentOwners()
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 10, 2);
+        EquipmentSystem system = scope.GetSystem<EquipmentSystem>();
+        EquipmentData item = system.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimStaff, () => .37f);
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, item));
+
+        Assert.True(system.TryGift(1, 2, item.InstanceId));
+        Assert.Empty(scope.Profile.GetBag(1));
+        Assert.Same(item, Assert.Single(scope.Profile.GetBag(2)));
+        Assert.Equal(item.Attributes, scope.Profile.GetBag(2)[0].Attributes);
+        Assert.False(system.TryEquip(2, item.InstanceId));
+        Assert.Equal(10, scope.Profile.GetSoul(1).Value);
+        Assert.Equal(10, scope.Profile.GetSoul(2).Value);
+    }
+
+    /// <summary>
+    /// 已穿戴的装备没有背包归属，不能直接赠送。
+    /// </summary>
+    [Fact]
+    public void Gift_RejectsEquippedInstance()
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 0, 2);
+        EquipmentSystem system = scope.GetSystem<EquipmentSystem>();
+        EquipmentData item = system.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimStaff, () => 0);
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, item));
+        Assert.True(system.TryEquip(1, item.InstanceId));
+
+        Assert.False(system.TryGift(1, 2, item.InstanceId));
+        Assert.Same(item, scope.Profile.GetSlots(1).Value.Weapon);
+        Assert.Empty(scope.Profile.GetBag(1));
+        Assert.Empty(scope.Profile.GetBag(2));
+    }
+
+    /// <summary>
+    /// 接收方满包时双方物品均保持原位。
+    /// </summary>
+    [Fact]
+    public void Gift_RejectsFullRecipientWithoutRemovingSource()
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 0, 1);
+        EquipmentSystem system = scope.GetSystem<EquipmentSystem>();
+        EquipmentData source = system.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
+        EquipmentData target = system.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => .99f);
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, source));
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(2, target));
+
+        Assert.False(system.TryGift(1, 2, source.InstanceId));
+        Assert.Same(source, Assert.Single(scope.Profile.GetBag(1)));
+        Assert.Same(target, Assert.Single(scope.Profile.GetBag(2)));
+    }
+
+    /// <summary>
+    /// 同人或阵容外的赠送不能访问或修改个人背包。
+    /// </summary>
+    /// <param name="fromHeroId">请求发送者。</param>
+    /// <param name="toHeroId">请求接收者。</param>
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(3, 2)]
+    [InlineData(1, 3)]
+    [InlineData(3, 4)]
+    public void Gift_RejectsInvalidParticipants(int fromHeroId, int toHeroId)
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 0, 2);
+        EquipmentSystem system = scope.GetSystem<EquipmentSystem>();
+        EquipmentData item = system.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, item));
+
+        Assert.False(system.TryGift(fromHeroId, toHeroId, item.InstanceId));
+        Assert.Same(item, Assert.Single(scope.Profile.GetBag(1)));
+        Assert.Empty(scope.Profile.GetBag(2));
+    }
+
+    /// <summary>
+    /// 重复请求不复制实例，反向赠送后全档仍只有一个归属。
+    /// </summary>
+    [Fact]
+    public void GiftCommand_KeepsInstanceUniqueAcrossRepeatedRequests()
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 0, 2);
+        EquipmentSystem system = scope.GetSystem<EquipmentSystem>();
+        EquipmentData item = system.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, item));
+        scope.GetSystem<GameLogic.Level.LevelSystem>().Prepare(1);
+        scope.GetSystem<GameLogic.Level.LevelSystem>().StartSession([1, 2]);
+
+        Assert.True(scope.SendCommand(new GiftEquipmentCommand(1, 2, item.InstanceId)));
+        Assert.False(scope.SendCommand(new GiftEquipmentCommand(1, 2, item.InstanceId)));
+        Assert.True(scope.SendCommand(new GiftEquipmentCommand(2, 1, item.InstanceId)));
+        Assert.Same(item, Assert.Single(scope.Profile.HeroIds.SelectMany(scope.Profile.GetBag)));
+        GameData data = scope.CaptureSaveData();
+        Assert.Equal(item.InstanceId, Assert.Single(data.Heroes.SelectMany(hero => hero.BagInstanceIds)));
+        Assert.Single(data.EquipmentItems);
+    }
+
+    /// <summary>
+    /// 关卡未开始、已结束或地图作用域均不能提交赠送。
+    /// </summary>
+    /// <param name="context">零为未开始，一为已结束，二为地图。</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void GiftCommand_RejectsInactiveContext(int context)
+    {
+        var scope = new TestGameScope([(1, 0), (2, 0)], 0, 2);
+        EquipmentSystem system = scope.GetSystem<EquipmentSystem>();
+        EquipmentData item = system.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0);
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, item));
+        if (context == 1)
+        {
+            scope.GetSystem<GameLogic.Level.LevelSystem>().Prepare(1);
+            scope.GetSystem<GameLogic.Level.LevelSystem>().StartSession([1, 2]);
+            scope.GetSystem<GameLogic.Level.LevelSystem>().Complete(GameLogic.Level.LevelOutcome.Defeated, 0);
+        }
+        else if (context == 2)
+        {
+            scope.EnterMapContext();
+        }
+
+        Assert.False(scope.SendCommand(new GiftEquipmentCommand(1, 2, item.InstanceId)));
+        Assert.Same(item, Assert.Single(scope.Profile.GetBag(1)));
+        Assert.Empty(scope.Profile.GetBag(2));
+    }
+
+    /// <summary>
+    /// 赠送后存档往返保持接收者归属与同一组属性。
+    /// </summary>
+    [Fact]
+    public void Gift_PreservesRecipientAfterSaveRoundTrip()
+    {
+        var scope = new TestGameScope([(2, 0), (1, 0)], 0, 2);
+        EquipmentSystem system = scope.GetSystem<EquipmentSystem>();
+        EquipmentData item = system.Roll(Guid.NewGuid(), EquipmentId.CommonPilgrimStaff, () => .37f);
+        Assert.True(scope.GetSystem<ProfileSystem>().TryCollectEquipment(1, item));
+        Assert.True(system.TryGift(1, 2, item.InstanceId));
+
+        GameData data = JsonConvert.DeserializeObject<GameData>(JsonConvert.SerializeObject(scope.CaptureSaveData()));
+        var restored = TestGameScope.FromSaveData(data, TestTables.Curve, TestTables.Tables.TbEquipmentConfig, 2);
+        Assert.Equal(new[] { 2, 1 }, restored.Profile.HeroIds);
+        Assert.Empty(restored.Profile.GetBag(1));
+        EquipmentData actual = Assert.Single(restored.Profile.GetBag(2));
+        Assert.Equal(item.InstanceId, actual.InstanceId);
+        Assert.Equal(item.Attributes, actual.Attributes);
+    }
+
+    /// <summary>
     /// 背包容量和出售收益各归本人，同一实例不能跨背包重复领取或被另一人使用。
     /// </summary>
     [Fact]

@@ -23,7 +23,7 @@ public partial class SkillForm : IController
 {
     // ---- 字段 ----
 
-    private int _heroId; // 本窗口当前显示并订阅的英雄编号，本批只取 P1。
+    private int _heroId; // 本窗口当前显示并订阅的英雄编号。
     private bool _showPassive; // 当前是否展示五项被动。
     private bool _resumeGame; // 只恢复本窗口发起的暂停。
     private bool _isBound; // 本周期已经开始订阅；关闭后回池不再访问已移除的关卡模型。
@@ -66,15 +66,21 @@ public partial class SkillForm : IController
     /// <summary>
     /// 绑定技能目录；战斗模式订阅结局并暂停，地图模式只观察档案状态。
     /// </summary>
-    /// <param name="userData">未使用；状态从所属 Model 读取。</param>
+    /// <param name="userData">指定默认页签英雄的技能窗口参数。</param>
+    /// <exception cref="ArgumentException">未提供技能窗口参数。</exception>
     /// <exception cref="InvalidOperationException">出战角色无效，或已有的关卡尚未运行。</exception>
     public void OnOpen(object userData)
     {
         ReleaseBindingsAndPause();
         Visible = false;
+        if (userData is not SkillFormData data)
+        {
+            throw new ArgumentException("技能面板需要默认显示的参战英雄。", nameof(userData));
+        }
+
         ProfileModel profile = this.GetModel<ProfileModel>();
         LevelModel levelModel = this.GetModel<LevelModel>();
-        if (profile == null || !Enum.IsDefined((SkillHero)profile.HeroOf(PlayerSlot.P1)) ||
+        if (profile == null || !profile.HeroIds.Contains(data.HeroId) || !Enum.IsDefined((SkillHero)data.HeroId) ||
             levelModel != null && (!levelModel.Initialized || !levelModel.SessionActive ||
                                    levelModel.Outcome.Value != LevelOutcome.Running))
         {
@@ -83,12 +89,9 @@ public partial class SkillForm : IController
 
         try
         {
-            _heroId = profile.HeroOf(PlayerSlot.P1);
+            _heroId = data.HeroId;
             _levelModel = levelModel;
-            _isBound = true;
-            this.GetModel<ProfileModel>().GetSoul(_heroId).RegisterWithInitValue(RefreshSoul);
-            this.GetModel<SkillModel>().GetLearnedSkills(_heroId).RegisterWithInitValue(RefreshLearnedSkills);
-            this.GetModel<SkillModel>().GetPassiveLevels(_heroId).RegisterWithInitValue(RefreshPassiveLevels);
+            BindHero();
             levelModel?.Outcome.Register(OnLevelEnded);
             _resumeGame = levelModel != null && !GF.Base.IsGamePaused;
             if (_resumeGame)
@@ -146,7 +149,8 @@ public partial class SkillForm : IController
     {
         if (!GF.UI.HasUIForm(SerialId) || !Visible ||
             (!inputEvent.IsActionPressed(Input.InputSystem.UiCancel) &&
-             !inputEvent.IsActionPressed(Input.InputSystem.SkillToggle)))
+             !this.GetModel<ProfileModel>().HeroIds.Select((_, index) => (PlayerSlot)(index + 1))
+                 .Any(slot => inputEvent.IsActionPressed(Input.InputSystem.ActionOf(Input.InputSystem.SkillToggle, slot)))))
         {
             return;
         }
@@ -203,16 +207,8 @@ public partial class SkillForm : IController
     /// </summary>
     private void ReleaseBindingsAndPause()
     {
-        if (_isBound)
-        {
-            _isBound = false;
-            ProfileModel profile = this.GetModel<ProfileModel>();
-            profile.GetSoul(_heroId).UnRegister(RefreshSoul);
-            this.GetModel<SkillModel>().GetLearnedSkills(_heroId).UnRegister(RefreshLearnedSkills);
-            this.GetModel<SkillModel>().GetPassiveLevels(_heroId).UnRegister(RefreshPassiveLevels);
-            _levelModel?.Outcome.UnRegister(OnLevelEnded);
-        }
-
+        UnbindHero();
+        _levelModel?.Outcome.UnRegister(OnLevelEnded);
         _levelModel = null;
 
         if (_resumeGame && IsInstanceValid(GF.Base))
@@ -221,6 +217,32 @@ public partial class SkillForm : IController
         }
 
         _resumeGame = false;
+    }
+
+    /// <summary>
+    /// 注册当前页签的灵魂、已学技能与被动等级，并立即刷新显示。
+    /// </summary>
+    private void BindHero()
+    {
+        _isBound = true;
+        this.GetModel<ProfileModel>().GetSoul(_heroId).RegisterWithInitValue(RefreshSoul);
+        this.GetModel<SkillModel>().GetLearnedSkills(_heroId).RegisterWithInitValue(RefreshLearnedSkills);
+        this.GetModel<SkillModel>().GetPassiveLevels(_heroId).RegisterWithInitValue(RefreshPassiveLevels);
+    }
+
+    /// <summary>
+    /// 在切换英雄或结束窗口周期前退订原英雄的三项来源。
+    /// </summary>
+    private void UnbindHero()
+    {
+        if (_isBound)
+        {
+            _isBound = false;
+            ProfileModel profile = this.GetModel<ProfileModel>();
+            profile.GetSoul(_heroId).UnRegister(RefreshSoul);
+            this.GetModel<SkillModel>().GetLearnedSkills(_heroId).UnRegister(RefreshLearnedSkills);
+            this.GetModel<SkillModel>().GetPassiveLevels(_heroId).UnRegister(RefreshPassiveLevels);
+        }
     }
 
     /// <summary>
@@ -286,13 +308,14 @@ public partial class SkillForm : IController
     }
 
     /// <summary>
-    /// 只显示出战角色的目录，其他角色页签没有交互。
+    /// 显示当前英雄的目录，仅阵容内的角色页签可交互。
     /// </summary>
     private void RefreshPage()
     {
         var hero = (SkillHero)_heroId;
-        SetHeroButton(_wukong, hero == SkillHero.Wukong);
-        SetHeroButton(_tangseng, hero == SkillHero.Tangseng);
+        ProfileModel profile = this.GetModel<ProfileModel>();
+        SetHeroButton(_wukong, hero == SkillHero.Wukong, profile.HeroIds.Contains((int)SkillHero.Wukong));
+        SetHeroButton(_tangseng, hero == SkillHero.Tangseng, profile.HeroIds.Contains((int)SkillHero.Tangseng));
         _activePage.Visible = !_showPassive;
         _passivePage.Visible = _showPassive;
         _activePage.SetHero(hero);
@@ -302,12 +325,13 @@ public partial class SkillForm : IController
     /// 同步角色页签的选择、禁用和鼠标状态。
     /// </summary>
     /// <param name="button">角色页签。</param>
-    /// <param name="active">是否为当前出战角色。</param>
-    private static void SetHeroButton(TextureButton button, bool active)
+    /// <param name="selected">是否为当前页签英雄。</param>
+    /// <param name="enabled">是否在阵容内，可以查看与学习。</param>
+    private static void SetHeroButton(TextureButton button, bool selected, bool enabled)
     {
-        button.SetPressedNoSignal(active);
-        button.Disabled = !active;
-        button.MouseDefaultCursorShape = active ? CursorShape.PointingHand : CursorShape.Arrow;
+        button.SetPressedNoSignal(selected);
+        button.Disabled = !enabled;
+        button.MouseDefaultCursorShape = enabled ? CursorShape.PointingHand : CursorShape.Arrow;
     }
 
     /// <summary>
@@ -349,9 +373,19 @@ public partial class SkillForm : IController
     /// <param name="passive">是否查看被动。</param>
     private void SelectPage(SkillHero hero, bool passive)
     {
-        if (!GF.UI.HasUIForm(SerialId) || !Visible || hero != (SkillHero)_heroId)
+        if (!GF.UI.HasUIForm(SerialId) || !Visible || !this.GetModel<ProfileModel>().HeroIds.Contains((int)hero))
         {
             return;
+        }
+
+        // 先退订旧英雄，再改变编号，避免旧钱包或技能变化刷新新页。
+        if (_heroId != (int)hero)
+        {
+            UnbindHero();
+            _heroId = (int)hero;
+            BindHero();
+            _activePage.Refresh(_heroId);
+            _passivePage.Refresh(_heroId);
         }
 
         _showPassive = passive;

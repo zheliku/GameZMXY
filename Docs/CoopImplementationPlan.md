@@ -1,6 +1,6 @@
 # 双人扩展实施计划
 
-状态：**阶段 A（A1～A3）、B（B1～B3）、C（C1～C5：394b97c、c489b65、61de0f2、0523aae）已完成并经架构审查通过；D0 正式转存已完成（0307f36），用户允许上手待补先实施 D1；D1 入口/选角/建档已实现，隔离前端/UI通过，帮助按用户裁决保留原文改为原生滚动；Profile隔离修复后324/324，帮助完整前端通过，D1上手待补。用户已允许暂留D1实机验收继续D2；D2已实现，规则324/197/19、扫描/引用、双人专项与完整前端/UI通过，正式键盘上手1～8待补，用户现已明确要求进入下一阶段，D2上手待补先推进D3；D3-1～5已实现，用户授权的最后死者球出口修复已实施，D3-6全部自动回归通过，正式键盘上手1～6待补，E1未开始。** 当前档案为 v14 有序阵容，个人数据按 HeroId；本局 `HeroModel` 按 HeroId 持有 `HeroState`；英雄显示带 `HeroSpawn` 席位；经验、球、地面物品按真实归属；P1/P2 两套键位已映射，单人档忽略 P2 键。D2已按阵容生成双方与双HUD，用户另批准个人绑定下放已有Panel（2026-11-11补充回归全部通过）；D3已接入存活者相机、全灭判负与全员平均生命，出口等待边界已按用户授权修复并通过隔离复验。审查结论见第九～十一部分。旧计划的 `PlayerSlot → PlayerProfile/HeroState` 形状及隔离工作树 02A 草稿仍属废弃方案。
+状态：**阶段A～C已完成并经架构审查；D0正式转存完成（0307f36），D1/D2实现与Panel职责调整已完成（ae2a1ba），D3实现及授权出口等待修复已完成（c63cd1d）。E1-1/2/4已实现，规则339/197/19、扫描/引用、完整前端与双人专项通过，最终完整单人UI亦退出0、完整PASS。D0～E1正式键盘验收及E1-3逐关实战未执行；用户明确允许各批暂留推进，并回复“允许待补，继续E1-4收尾”。待验项保持，不把自动回归判作全关实战通过。** 当前v14按阵容保存一至两名英雄，个人数据及本局状态按HeroId，席位仅用于输入/显示与请求来源；双英雄/双HUD、存活者取景/全灭、归属经验/掉落、队友治疗、赠送与技能页签均已接入。最终命令/数字、文件/接口、授权例外及待验表集中见Validation顶部总交付。旧计划的PlayerSlot→个人档案形状及隔离工作树02A草稿仍属废弃方案。
 
 官方依据见 [造一双人源码依据](OfficialReference.md#双人扩展的源码依据2026-11-07) 与 [造三本地双人规则](OfficialReference.md#造梦三本地双人规则2026-11-07)。项目规范以 [ProjectGuidelines/AGENTS.md](ProjectGuidelines/AGENTS.md) 为准，验证记录见 [Validation](Validation.md)。
 
@@ -214,9 +214,9 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 | C5   | 阶段 C 单人回归                        | C4   | 只验证                   | 已完成（记录于 Validation），审查通过                     |
 | D0   | 正式存档升级到 v14 并恢复可读          | —   | 用户旧档可读             | D0-3 已确认并转存，0307f36；上手验收待补，用户授权先做 D1 |
 | D1   | 标题、单双人、依次选角、选格建档       | D0   | 可建双人档               | 已实现；构建/规则/扫描/引用/前端/UI通过；正式上手待补     |
-| D2   | 两人同时出现、各自操作、各自 HUD       | D1   | 出现两个人物与两块 HUD   | 实现/自动验证通过，Panel重构复验通过；用户选择停在D2等实机           |
+| D2   | 两人同时出现、各自操作、各自 HUD       | D1   | 出现两个人物与两块 HUD   | 实现/自动验证通过，Panel重构复验通过；正式上手待补，后续推进已获用户授权           |
 | D3   | 双人相机、死亡、出口、结算与 Boss 规则 | D2   | 完整双人关卡规则         | 已实现/全部自动验证通过；正式键盘1～6待补 |
-| E1   | 双人赠送、技能页签与全关收尾           | D3   | 赠送、页签、全关可通     | 未开始                                                    |
+| E1   | 双人赠送、技能页签与全关收尾           | D3   | 赠送、页签、全关可通     | E1-1/2/4已实现，最终完整UI亦退出0、完整PASS；用户授权E1-3与上手待补继续收尾 |
 
 原 D1～D8、E1～E3 已于 2026-11-10 按用户要求合并为上表的 D0～E1，并按用户要求**一次交付**：D0→D1→D2→D3→E1 顺序连续执行，只在 D0-3 正式转存前与触发上报条件时停下（规则见第七部分第 0 节）。
 
@@ -1734,6 +1734,8 @@ public sealed class SkillFormData
 | 3  | 浅岸、东海、牛魔谷     | 牛魔吞噬只抓一人（`CaptureHeroAnimEvent` 已遍历），被抓者释放；水牢；牛魔多形态的经验归属 |
 | 4  | 隐藏龙宫               | 冻结只作用于命中者；龙王分档；东海旗幡全档一次                                              |
 
+2026-11-11计划复核发现：原表未列第9关**鲨之涡流**，但表中“水牢”实际属于该关鲨魔王（`SharkDemonKingEntity`），不属于所列浅岸/东海/牛魔谷。这是核验范围遗漏，现登记供用户/架构师裁决；该关已有场景与Boss代码，双人正式实战尚未核验，不能据原九关表宣称全部主线已验。原表内容保留，本次前端任务不调整关卡玩法。
+
 - **本批不修复**发现的问题：每条写成"关卡 / 复现步骤 / 现象 / 期望"，列入交付说明，交给用户决定后续。
 - 若问题导致无法继续推进（例如必然卡死），记录后跳到下一关继续。
 
@@ -1806,7 +1808,7 @@ E1 完成后输出一份总说明，按大任务分节，每节包含：
 
 阶段 C 已完成：C1（394b97c）、C2（c489b65）、C3（61de0f2）、C4/C5（0523aae，用户授权合并交付；`project.godot` 仅追加 13 个 P2 动作）。实际结果见 [Validation](Validation.md#双人c4c5席位输入与阶段c回归2026-11-10)。
 
-**当前：D0 已在用户确认后备份并转存（0307f36），上手验证因 computer-use 本机管道缺失待补；用户明确授权先实施 D1。D1-1～D1-5 已实现，规则 324/197/19、扫描、引用、完整前端及删除专项通过；用户追加授权修复既有无双烟测夹具后，完整 UI 最终退出0、SMOKE PASS。用户裁决帮助保留全文改原生滚动，并授权修复测试隔离，Profile两轮324/324，帮助最终完整前端也退出0、SMOKE PASS，保留原失败日志。D1 正式键盘上手未执行，用户已另授权D1→D2推进例外；D2-1～D2-4已实现，用户授权补翻回普通/满值“无双”文字，复查截图通过；规则324/197/19、扫描/引用、双人专项及完整前端/单人UI均通过，格式通过，正式存档12/12哈希不变。2026-11-11用户追加授权将个人绑定下放已有两个Panel，删除Form席位记录/闭包；补充构建、324/197/19、扫描/引用、双人专项、完整前端/UI及格式均通过，正式12/12哈希不变，记录见Validation顶部。D2真实键盘上手1～8未执行；用户随后明确要求继续下一阶段，已进入D3。D3-1～5实现、构建0错误，327/197/19与双人主路径通过；最后死者球作废后的出口续行失败已按规则上报；用户现已授权统一到关卡帧检查，修复已实施，继续D3-6完整回归。D3最终构建0错误、327/197/19、扫描/引用、双人专项、完整前端/UI及格式均通过；正式键盘1～6仍因本机管道缺失未执行，D3→E1未获推进例外，E1未开始，原待验项保持。**
+**当前：D0～D3和E1-1/2/4实现收尾，自动证据与架构师总交付见Validation顶部。E1-4已删除无生产消费者的ProfileModel构造soul参数，技能施放路径七处去掉空条件访问；总清理的地图生命周期判断及IsAvailable的地图查询语义保留。规则339/197/19、扫描/引用2285/393、最终前端和双人专项通过，最终完整单人UI亦退出0、完整PASS。用户已明确允许E1-3逐关核验及E1上手验收待补继续E1-4；D0/D1/D2/D3正式键盘待验也保持。实机连接仍为native pipe不存在，不能据隔离烟测声明正常数值全关通过；E1完成判定中的实机项尚未满足。**
 
 ---
 
@@ -1838,32 +1840,31 @@ E1 完成后输出一份总说明，按大任务分节，每节包含：
 2. **`ProcedureLoadGame.cs:74` 的日志仍写"出战英雄"**，单人下无误，D2 接入双人时一并改为输出阵容。
 3. **`UiSmokeScenario.*` 中大量出现 `flow.GetModel<ProfileModel>().GetBag(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1))` 这种冗长写法。** 这是 Debug 代码，不影响生产，但 B1 还会在同一批文件里再加一层 `HeroModel.GetState(...)`。B1-6 修改这些文件时，**允许**在单个测试方法开头取局部变量 `int heroId = profile.HeroOf(PlayerSlot.P1);` 后复用，以降低噪音；不允许为此新增共享辅助方法。
 
-## 4. 已知占位清单（"临时取 P1"）
+## 4. 原单人占位的最终核对（2026-11-11）
 
-以下位置当前用 `HeroOf(PlayerSlot.P1)` 或 `_player.HeroId` 作为单人占位，**全部是有意的**，各自由后续批次替换。执行者不得提前替换，也不得遗漏替换。（2026-11-10 阶段 C 审查后按新编号 D0～E1 重新核对；括号内为原编号。）
+以下是阶段迁移期间的原占位及当前实现。A～E代码项现已全部接入，原清单中的“留D2/D3/E1”状态已经过期；本次按用户要求核对计划时同步实际状态，不改历史批次规格。生产显式P1仅保留地图打开技能窗的默认页，语义就是首席。
 
-| 位置                                                                                                        | 当前写法                                                                  | 负责批次                                                           |
-| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `Systems/Hero/HeroSystem.cs`（`OnInit`）                                                                | 已遍历阵容、逐人闭包                                                      | B1 已清零                                                          |
-| `Systems/SkillSystem.cs`（`TryActivate`）                                                               | 已使用参数 heroId                                                         | B1 已清零                                                          |
-| `Systems/LevelSystem.cs`（`RecordDefeat`）                                                              | 已显式接收 heroId，0 只计击败数                                           | C2-3 已清零                                                        |
-| `Entity/Enemies/.../BullDemonHeartDeathState.cs`（`GrantUniqueEquipment`）                              | 已按 LastHeroAttackerId 解析英雄，无归属不发                              | C2-4 已清零                                                        |
-| `Entity/Level/LevelViewController.Loot.cs`（`OnEnemyDefeated` 的 `PlayLevelUp`、球上限）              | 已按本会话 killer，`ReferenceEquals(killer, _player)` 校验留新 D2       | C2-3、C2-5 已清零                                                  |
-| `Entity/Level/LevelViewController.Loot.cs`（`TryCollectGroundItem`、`OnLootFinished`、`TickLoot`）  | 已按实际接触者/逐球 OwnerEntityId；成员判断留新 D2、主英雄存活守卫留新 D3 | C3 已清零                                                          |
-| `Entity/Level/LevelViewController.Loot.cs`（`OnHeroHealthRestored` 飘字位置）                           | 单人位置保留                                                              | 新 D2-1                                                            |
-| `Entity/Level/LevelViewController.cs`（换装订阅）                                                         | `_player.HeroId`                                                        | 新 D2-1                                                            |
-| `Entity/Level/LevelViewController.cs`（`Complete` 的剩余生命百分比）                                    | `_player.HeroId`                                                        | 新 D3-2（原 D5）                                                   |
-| `Entity/Level/LevelViewController.Entrance.cs`（`EntranceOpacity`）                                     | 只淡出 `_player`                                                        | 新 D2-1                                                            |
-| `Entity/Level/LevelViewController.Entrance.cs`（龙宫入口 `SetControlsEnabled`）                         | `_player.HeroId`                                                        | 新 D3-3（原 D5，全员关控制）                                       |
-| `Systems/LevelSystem.cs`（`TransferToDragonPalace` 的 `IsDepleted`）                                  | `HeroOf(PlayerSlot.P1)`                                                 | 新 D3-3（原 D5，任一存活者）                                       |
-| `Entity/Enemies/.../DragonKingEntity.cs`（`OnShow` 分档）                                               | P1 等级                                                                   | 新 D3-5（原 D7，阵容最低等级）                                     |
-| `UI/MapForm/MapForm.Logic.cs`（技能发光）                                                                 | P1 余额                                                                   | 新 D3-5（原 D7，任一参战者余额 ≥160，官方 `SelectPLace.as:76`） |
-| `UI/SkillForm/SkillForm.Logic.cs`（`OnOpen` 校验与默认英雄、`_Input` 关闭键）                         | `HeroOf(PlayerSlot.P1)` / P1 的 `SkillToggle`                         | 新 D2-3（原 E2）                                                   |
-| `UI/BattleForm/BattleForm.Logic.cs`（`RefreshMusouActive` 立绘）                                        | `_formData.Hero.HeroId`                                                 | 新 D2-2                                                            |
-| `MainPack/Scripts/Procedure/ProcedureLevel.cs`（`HeroConfig`、`_hero` 单引用、开窗按 `_hero.Slot`） | P1                                                                        | 新 D2-1                                                            |
-| `MainPack/Scripts/Procedure/ProcedureLoadGame.cs`（读档日志）                                             | P1                                                                        | 新 D1-3                                                            |
+| 位置 | 当前实现 | 负责批次/状态 |
+| --- | --- | --- |
+| HeroSystem.OnInit | 遍历阵容，按英雄保存具名来源/实际闭包并对称退订 | B1已完成 |
+| SkillSystem.TryActivate/技能登记 | 参数heroId读取本人的状态与登记 | B1/B2已完成 |
+| LevelSystem.RecordDefeat | 显式heroId；0仅计击败、不发经验 | C2已完成 |
+| BullDemonHeartDeathState唯一奖励 | 按最后有效英雄命中来源解析，无归属不发 | C2已完成 |
+| LevelViewController.Loot的升级/球上限/球领取 | 使用真实归属英雄；死者球由逐球Tick回收，领取前读取归属 | C2/C3/D2/D3已完成 |
+| 地面物品领取 | 遍历阵容席位，首个存活且有容量的接触者领取 | C3/D2已完成 |
+| 治疗飘字/换装订阅 | 每名英雄分别注册，在实际被治疗者位置显示，结束对称退订 | D2已完成 |
+| Complete剩余生命 | 全部参战者生命百分比平均，死者计0 | D3已完成 |
+| EntranceOpacity/龙宫入口控制权 | 全员淡出/关闭控制，任一存活者可交互转关 | D2/D3已完成 |
+| TransferToDragonPalace耗尽判断 | 仅全员耗尽时拒绝 | D3已完成 |
+| DragonKingEntity分档 | 阵容最低等级 | D3已完成 |
+| MapForm技能发光 | 任一参战者灵魂达到160 | D3已完成 |
+| SkillForm打开/页签/关闭键 | SkillFormData指定英雄，阵容内切页，先退旧三项再绑新三项；实际席位键关闭 | E1已完成 |
+| BattleForm无双立绘 | 已有菜单Panel同步事件携带heroId，Form选择本人立绘；旧席位绑定记录已删除 | D2及用户授权Panel调整已完成 |
+| ProcedureLevel生成/开窗 | 有序集合生成；每次await后核对进入周期；开窗按请求席位解析本人 | D2/E1已完成 |
+| ProcedureLoadGame读档日志 | 按完整阵容记录 | D1已完成 |
+| ProcedureMap打开技能窗默认页 | 显式首席，唯一保留的生产HeroOf(PlayerSlot.P1) | 有意保留，无待迁移项 |
 
-E1 收尾时，全仓搜索 `HeroOf(PlayerSlot.P1)` 应只剩"语义上就是 P1"的位置（地图打开技能窗的默认页签），其余必须清零。
+当前未完成的是D0～E1的正式键盘上手与E1-3逐关实战，用户已授权暂留；自动验证不能代替这些项。逐条核验状态、命令与截图限制见Validation顶部总交付及本轮计划复核记录。
 
 ## 5. 对原计划的自我审查与修正
 

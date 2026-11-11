@@ -7,12 +7,56 @@
 [ext_resource type="Texture2D" uid="uid://dhvpe5co288lm" path="res://TheGame/Sprites/UI/frontend/save_slot_hover.png" id="hover"]
 [ext_resource type="Texture2D" uid="uid://mkt51coh4f15" path="res://TheGame/Sprites/UI/frontend/save_slot_normal.png" id="normal"]
 [ext_resource type="Script" uid="uid://qer77g8x3nwt" path="res://TheGame/GameScripts/UI/SaveForm/SaveForm.cs" id="script"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/delete_confirm_panel.png" id="delete_panel"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/delete_confirm_cancel.png" id="delete_cancel"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/delete_confirm_cancel_hover.png" id="delete_cancel_hover"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/delete_confirm_confirm.png" id="delete_confirm"]
-[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/delete_confirm_confirm_hover.png" id="delete_confirm_hover"]
-[ext_resource type="FontFile" path="res://TheGame/MainPack/Fonts/df_song_w3.ttc" id="message_font"]
+[ext_resource type="FontVariation" path="res://TheGame/MainPack/Fonts/game_font.tres" id="message_font"]
+[ext_resource type="Theme" path="res://TheGame/MainPack/Themes/legacy_menu_theme.tres" id="menu_theme"]
+
+[sub_resource type="StyleBoxFlat" id="confirmation_panel"]
+bg_color = Color(0.025, 0.025, 0.025, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.42, 0.42, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
+
+[sub_resource type="StyleBoxFlat" id="confirmation_button"]
+bg_color = Color(0.065, 0.065, 0.065, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.48, 0.48, 0.48, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
+
+[sub_resource type="StyleBoxFlat" id="confirmation_button_active"]
+bg_color = Color(0.1, 0.075, 0.035, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.65, 0.18, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
+
+[sub_resource type="StyleBoxFlat" id="confirmation_button_focus"]
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.65, 0.18, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
 
 [node name="SaveForm" type="Control" unique_id=462654616 node_paths=PackedStringArray("_close", "_status", "_slot1", "_name1", "_date1", "_slot2", "_name2", "_date2", "_slot3", "_name3", "_date3", "_slot4", "_name4", "_date4", "_slot5", "_name5", "_date5", "_slot6", "_name6", "_date6")]
 layout_mode = 3
@@ -452,6 +496,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 0
 z_index = 1
+theme = ExtResource("menu_theme")
 
 [node name="Shade" type="ColorRect" parent="DeleteConfirmation"]
 layout_mode = 1
@@ -461,61 +506,56 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 0
-color = Color(0.015, 0.012, 0.01, 0.68)
+color = Color(0.02, 0.02, 0.02, 0.68)
 
-[node name="Panel" type="TextureRect" parent="DeleteConfirmation"]
+[node name="Panel" type="Panel" parent="DeleteConfirmation"]
 layout_mode = 0
-offset_left = 296.5
-offset_top = 195.5
-offset_right = 643.5
-offset_bottom = 393.5
+offset_left = 294.0
+offset_top = 194.5
+offset_right = 646.0
+offset_bottom = 395.5
 mouse_filter = 0
-texture = ExtResource("delete_panel")
-expand_mode = 1
-stretch_mode = 0
+theme_override_styles/panel = SubResource("confirmation_panel")
 
 [node name="Message" type="Label" parent="DeleteConfirmation/Panel"]
 layout_mode = 0
-offset_left = 34.0
-offset_top = 39.0
-offset_right = 313.0
-offset_bottom = 133.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
-theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
-theme_override_constants/outline_size = 2
-theme_override_constants/shadow_outline_size = 9
+offset_left = 26.0
+offset_top = 25.0
+offset_right = 326.0
+offset_bottom = 125.0
 theme_override_fonts/font = ExtResource("message_font")
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 20
 text = "确定删除这个存档吗？\n删除后无法恢复。"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 1
 
-[node name="Cancel" type="TextureButton" parent="DeleteConfirmation/Panel"]
+[node name="Cancel" type="Button" parent="DeleteConfirmation/Panel"]
 layout_mode = 0
 offset_left = 35.0
 offset_top = 145.0
-offset_right = 130.0
+offset_right = 135.0
 offset_bottom = 193.0
 mouse_default_cursor_shape = 2
 focus_mode = 2
-ignore_texture_size = true
-stretch_mode = 5
-texture_normal = ExtResource("delete_cancel")
-texture_hover = ExtResource("delete_cancel_hover")
-texture_pressed = ExtResource("delete_cancel_hover")
+theme_override_fonts/font = ExtResource("message_font")
+theme_override_styles/normal = SubResource("confirmation_button")
+theme_override_styles/hover = SubResource("confirmation_button_active")
+theme_override_styles/pressed = SubResource("confirmation_button_active")
+theme_override_styles/focus = SubResource("confirmation_button_focus")
+text = "取消"
 
-[node name="Confirm" type="TextureButton" parent="DeleteConfirmation/Panel"]
+[node name="Confirm" type="Button" parent="DeleteConfirmation/Panel"]
 layout_mode = 0
-offset_left = 212.0
+offset_left = 217.0
 offset_top = 145.0
-offset_right = 307.0
+offset_right = 317.0
 offset_bottom = 193.0
 mouse_default_cursor_shape = 2
 focus_mode = 2
-ignore_texture_size = true
-stretch_mode = 5
-texture_normal = ExtResource("delete_confirm")
-texture_hover = ExtResource("delete_confirm_hover")
-texture_pressed = ExtResource("delete_confirm_hover")
+theme_override_fonts/font = ExtResource("message_font")
+theme_override_styles/normal = SubResource("confirmation_button")
+theme_override_styles/hover = SubResource("confirmation_button_active")
+theme_override_styles/pressed = SubResource("confirmation_button_active")
+theme_override_styles/focus = SubResource("confirmation_button_focus")
+text = "确定"

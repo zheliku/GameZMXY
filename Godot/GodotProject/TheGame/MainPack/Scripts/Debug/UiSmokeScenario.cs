@@ -881,8 +881,10 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() => inventory.Visible, "P1背包键未打开窗口");
         Check(ReferenceEquals(SmokeInspection.ReadField<InventoryFormData>(inventory, "_inventoryData").Hero, heroes[0]),
             "P1背包键打开了P2背包");
+        await CheckCoopGiftAsync(inventory, heroes, flow);
         PushMouseClick(SmokeInspection.ReadField<TextureButton>(inventory, "_close"));
         await WaitFramesAsync(3);
+        await CheckCoopSkillsAsync(flow);
 
         // 无双通知必须同步带来源，改绑活动状态只刷新显示，不重复开启演出。
         MusouActivationNode activation = SmokeInspection.ReadField<MusouActivationNode>(form, "_musouActivation");
@@ -1034,6 +1036,7 @@ public sealed partial class UiSmokeScenario
         MapForm map = GF.UI.GetAllLoadedUIForms().OfType<MapForm>().Single(window => window.Visible);
         Check(SmokeInspection.ReadField<AnimatedSprite2D>(map, "_skillsArtwork").Animation == "available",
             "只有P2灵魂达到160时地图技能提示没有发光");
+        await CheckCoopMapSkillsAsync(map, flow);
         flow.SetData(GameLogic.Procedure.FlowData.FlowKeys.SelectedLevelId, (VarInt32)1);
         ReenterLevel();
         ProcedureLevel procedure = await WaitForLevelAsync();

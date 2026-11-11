@@ -44,12 +44,11 @@ public sealed class ProfileModel : AbstractModel
     /// <param name="roster">按席位排列的英雄编号与累计经验，包含一至两名不重复的英雄。</param>
     /// <param name="curve">仅构造期间使用的共享经验规则。</param>
     /// <param name="equipmentCapacity">正数背包容量。</param>
-    /// <param name="soul">每位英雄的初始灵魂余额，负数按零处理。</param>
     /// <exception cref="ArgumentException">阵容为空、超过两人或英雄编号重复。</exception>
     /// <exception cref="ArgumentNullException">阵容或曲线为空。</exception>
     /// <exception cref="ArgumentOutOfRangeException">容量或英雄编号不是正数。</exception>
     public ProfileModel(IEnumerable<(int HeroId, int TotalExperience)> roster,
-        ExperienceCurveUtility curve, int equipmentCapacity, int soul = 0)
+        ExperienceCurveUtility curve, int equipmentCapacity)
     {
         ArgumentNullException.ThrowIfNull(roster);
         ArgumentNullException.ThrowIfNull(curve);
@@ -66,7 +65,7 @@ public sealed class ProfileModel : AbstractModel
 
             heroIds.Add(hero.HeroId);
             _heroSlots.Add(hero.HeroId, new());
-            _heroSouls.Add(hero.HeroId, new(Math.Max(0, soul)));
+            _heroSouls.Add(hero.HeroId, new());
             _heroBags.Add(hero.HeroId, new());
         }
 

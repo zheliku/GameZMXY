@@ -5,9 +5,10 @@
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_equip.png" id="equip"]
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_equip_disabled.png" id="equip_disabled"]
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_gift_disabled.png" id="gift"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_gift.png" id="gift_enabled"]
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/inventory/inventory_action_sell.png" id="sell"]
 
-[node name="EquipmentActionsMenu" type="Control" node_paths=PackedStringArray("_panel", "_equip", "_sell")]
+[node name="EquipmentActionsMenu" type="Control" node_paths=PackedStringArray("_panel", "_equip", "_sell", "_gift")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -19,6 +20,7 @@ script = ExtResource("script")
 _panel = NodePath("Panel")
 _equip = NodePath("Panel/Equip")
 _sell = NodePath("Panel/Sell")
+_gift = NodePath("Panel/Gift")
 
 [node name="Panel" type="TextureRect" parent="."]
 offset_right = 87.0
@@ -40,9 +42,9 @@ offset_left = 5.0
 offset_top = 40.0
 offset_right = 82.0
 offset_bottom = 71.0
-texture_normal = ExtResource("gift")
-disabled = true
+texture_normal = ExtResource("gift_enabled")
 texture_disabled = ExtResource("gift")
+mouse_default_cursor_shape = 2
 
 [node name="Sell" type="TextureButton" parent="Panel"]
 offset_left = 5.0

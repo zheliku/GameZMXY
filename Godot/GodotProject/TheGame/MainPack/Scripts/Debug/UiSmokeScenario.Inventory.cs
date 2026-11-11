@@ -23,6 +23,77 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 public sealed partial class UiSmokeScenario
 {
     /// <summary>
+    /// 从真实双人背包格和赠送按钮移交装备，核对双方归属与过期选择。
+    /// </summary>
+    /// <param name="form">P1打开的背包。</param>
+    /// <param name="heroes">按席位排列的双方。</param>
+    /// <param name="flow">本槽档案。</param>
+    /// <returns>赠送与截图完成的任务。</returns>
+    private async Task CheckCoopGiftAsync(InventoryForm form, AbstractHeroEntity[] heroes, ProcedureOwner flow)
+    {
+        ProfileModel profile = flow.GetModel<ProfileModel>();
+        EquipmentData item = flow.GetSystem<EquipmentSystem>().Roll(Guid.NewGuid(), EquipmentId.RoughPineStaff, () => .37f);
+        Check(flow.GetSystem<ProfileSystem>().TryCollectEquipment(heroes[0].HeroId, item), "双人赠送夹具入包失败");
+        int sourceCount = profile.GetBag(heroes[0].HeroId).Count;
+        int targetCount = profile.GetBag(heroes[1].HeroId).Count;
+        ClickBagEquipment(form, flow, item.EquipmentId);
+        EquipmentActionsMenu menu = form.GetNode<EquipmentActionsMenu>("m_Actions");
+        TextureButton gift = menu.GetNode<TextureButton>("Panel/Gift");
+        Check(!gift.Disabled && menu.GetNode<TextureButton>("Panel/Equip").Disabled,
+            "双人赠送不可用或异职业装备错误可穿戴");
+        menu.SetProcess(false);
+        // 先离开格子消除原生悬停提示，再采样菜单及提交按钮点击。
+        Vector2 giftCenter = gift.GetGlobalTransformWithCanvas() * (gift.Size / 2);
+        form.GetViewport().PushInput(new InputEventMouseMotion { Position = giftCenter, GlobalPosition = giftCenter }, true);
+        await WaitFramesAsync(2);
+        await CaptureCombatAsync("coop_e1_gift_enabled");
+        PushMouseClick(gift);
+        Check(!menu.Visible && profile.GetBag(heroes[0].HeroId).Count == sourceCount - 1 &&
+            profile.GetBag(heroes[1].HeroId).Count == targetCount + 1 &&
+            !profile.GetBag(heroes[0].HeroId).Any(value => value.InstanceId == item.InstanceId) &&
+            profile.GetBag(heroes[1].HeroId).Single(value => value.InstanceId == item.InstanceId) == item,
+            $"赠送按钮没有原样移交实例或双方数量错误：visible={menu.Visible}, source={profile.GetBag(heroes[0].HeroId).Count}/{sourceCount}, target={profile.GetBag(heroes[1].HeroId).Count}/{targetCount}");
+        gift.EmitSignal(BaseButton.SignalName.Pressed);
+        Check(profile.GetBag(heroes[1].HeroId).Count == targetCount + 1, "旧赠送选择被重复使用");
+        await WaitFramesAsync(2);
+        await CaptureCombatAsync("coop_e1_gift_source");
+
+        // 同一窗口改绑接收者，确认真实格子读取接收者的背包。
+        form.OnRefocus(new InventoryFormData(heroes[1]));
+        Check(form.GetNode<GridContainer>("Window/BagPanel/m_BagGrid").GetChildren().OfType<EquipmentCell>()
+            .Any(cell => SmokeInspection.ReadField<EquipmentData>(cell, "_equipmentData")?.InstanceId == item.InstanceId),
+            "赠送后接收者背包格没有显示实例");
+        await WaitFramesAsync(2);
+        await CaptureCombatAsync("coop_e1_gift_recipient");
+        form.OnRefocus(new InventoryFormData(heroes[0]));
+
+        // 填满接收者，按钮提交后必须保留发送者物品并显示原提示组件。
+        EquipmentData[] recipientItems = profile.GetBag(heroes[1].HeroId).ToArray();
+        EquipmentSystem equipment = flow.GetSystem<EquipmentSystem>();
+        ProfileSystem collection = flow.GetSystem<ProfileSystem>();
+        while (profile.GetBag(heroes[1].HeroId).Count < profile.Capacity)
+        {
+            Check(collection.TryCollectEquipment(heroes[1].HeroId,
+                equipment.Roll(Guid.NewGuid(), EquipmentId.EarthFiendRing, () => 0)), "满包夹具入包失败");
+        }
+        EquipmentData retained = equipment.Roll(Guid.NewGuid(), EquipmentId.CommonPineStaff, () => 0);
+        Check(collection.TryCollectEquipment(heroes[0].HeroId, retained), "满包赠送夹具入包失败");
+        ClickBagEquipment(form, flow, retained.EquipmentId);
+        PushMouseClick(gift);
+        SaveNoticeForm notice = GF.UI.GetAllLoadedUIForms().OfType<SaveNoticeForm>().Single();
+        Check(profile.GetBag(heroes[0].HeroId).Contains(retained) &&
+            profile.GetBag(heroes[1].HeroId).Count == profile.Capacity &&
+            notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Text == "对方背包已满！",
+            "接收者满包未拒绝赠送或缺少正确提示");
+        await WaitFramesAsync(2);
+        await CaptureCombatAsync("coop_e1_gift_full");
+        profile.GetBag(heroes[1].HeroId).ReplaceAll(recipientItems);
+        await WaitUntilAsync(() => !notice.GetNode<Label>("SaveFeedback/m_SaveFeedback").Visible,
+            "满包赠送提示没有自动消失");
+        GD.Print("SMOKE-COOP GIFT PASS: enabled gift, original instance, recipient cells, stale selection and full-bag notice.");
+    }
+
+    /// <summary>
     /// 验证 HUD 点击、暂停、属性/钱包刷新、退订及池复用。
     /// </summary>
     /// <param name="battleForm">正式战斗窗口。</param>

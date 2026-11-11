@@ -383,7 +383,7 @@ public class ProcedureLevel : ProcedureBase
     }
 
     /// <summary>
-    /// 互斥打开本关技能目录；展示当前出战角色。
+    /// 互斥打开本关技能目录；默认展示发起请求的英雄。
     /// </summary>
     /// <param name="formSerialId">发起操作的当前窗口编号。</param>
     /// <param name="slot">请求打开技能目录的玩家席位。</param>
@@ -401,7 +401,7 @@ public class ProcedureLevel : ProcedureBase
             return;
         }
 
-        _skillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm);
+        _skillSerialId = GF.UI.OpenUIForm(UIFormId.SkillForm, new SkillFormData(hero.HeroId));
     }
 
     /// <summary>

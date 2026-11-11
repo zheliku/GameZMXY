@@ -41,6 +41,152 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 public sealed partial class UiSmokeScenario
 {
     /// <summary>
+    /// 验证P2默认技能页、个人学习扣费、反复切页订退与两席位关闭键。
+    /// </summary>
+    /// <param name="flow">当前双人档案作用域。</param>
+    /// <returns>技能窗口交互完成的任务。</returns>
+    private async Task CheckCoopSkillsAsync(ProcedureOwner flow)
+    {
+        ProfileModel profile = flow.GetModel<ProfileModel>();
+        SkillModel skills = flow.GetModel<SkillModel>();
+        int p1 = profile.HeroOf(PlayerSlot.P1);
+        int p2 = profile.HeroOf(PlayerSlot.P2);
+        int[] soulBefore = profile.HeroIds.Select(id => profile.GetSoul(id).Value).ToArray();
+        foreach (int id in profile.HeroIds)
+        {
+            ConfigurationModel configuration = flow.GetModel<ConfigurationModel>();
+            int activeCost = configuration.GetActive((SkillHero)id)[0].LearnSoul;
+            int passiveCost = configuration.Tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
+            flow.GetSystem<ProfileSystem>().AddSoul(id, activeCost + passiveCost);
+        }
+
+        Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.KpMultiply, Keycode = Key.KpMultiply, Pressed = true });
+        Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.KpMultiply, Keycode = Key.KpMultiply, Pressed = false });
+        await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(window => window.Visible),
+            "P2技能键没有打开技能窗口");
+        SkillForm form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(window => window.Visible);
+        Label balance = form.GetNode<Label>("Content/Footer/Balance/m_Soul");
+        Check(GF.Base.IsGamePaused && SmokeInspection.ReadField<int>(form, "_heroId") == p2 &&
+            form.GetNode<Control>("Content/m_ActivePage/m_TangsengRows").Visible &&
+            !form.GetNode<TextureButton>("Content/Header/m_Wukong").Disabled &&
+            !form.GetNode<TextureButton>("Content/Header/m_Tangseng").Disabled,
+            "P2技能窗口默认英雄、暂停或双人页签错误");
+        CheckCoopSkillBindings(form, flow, p2);
+        await WaitFramesAsync(2);
+        await CaptureCombatAsync("coop_e1_p2_skills");
+
+        // 两人分别购买主动与被动，余额只从当前页扣除。
+        foreach ((int heroId, string tab, string rows, SkillId skillId) in new[]
+        {
+            (p2, "m_Tangseng", "m_TangsengRows", SkillId.IceDragonWave),
+            (p1, "m_Wukong", "m_WukongRows", SkillId.RisingDragon)
+        })
+        {
+            PushMouseClick(form.GetNode<TextureButton>("Content/Header/" + tab));
+            CheckCoopSkillBindings(form, flow, heroId);
+            int other = profile.HeroIds.Single(id => id != heroId);
+            int otherSoul = profile.GetSoul(other).Value;
+            int ownSoul = profile.GetSoul(heroId).Value;
+            TextureButton learn = form.GetNode<TextureButton>("Content/m_ActivePage/" + rows + "/Skill1/IconCell/Icon");
+            int activeCost = flow.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(skillId).LearnSoul;
+            PushMouseClick(learn);
+            Check(flow.GetSystem<SkillSystem>().IsLearned(heroId, skillId) &&
+                profile.GetSoul(heroId).Value == ownSoul - activeCost && profile.GetSoul(other).Value == otherSoul,
+                $"切页主动学习扣错英雄或没有学习：hero={heroId}, skill={skillId}, soul={ownSoul}->{profile.GetSoul(heroId).Value}, cost={activeCost}, learned={flow.GetSystem<SkillSystem>().IsLearned(heroId, skillId)}");
+            PushMouseClick(form.GetNode<TextureButton>("Content/Footer/m_Passive"));
+            await WaitFramesAsync(2);
+            CheckCoopSkillBindings(form, flow, heroId);
+            int passiveCost = flow.GetModel<ConfigurationModel>().Tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
+            PushMouseClick(form.GetNode<TextureButton>("Content/m_PassivePage/m_PassiveRows/Passive1/Upgrade"));
+            Check(skills.GetPassiveLevels(heroId)[PassiveId.Vitality] == 1 &&
+                profile.GetSoul(heroId).Value == ownSoul - activeCost - passiveCost && profile.GetSoul(other).Value == otherSoul &&
+                balance.Text == profile.GetSoul(heroId).Value.ToString(),
+                $"切页被动升级扣错英雄或余额未刷新：hero={heroId}, level={skills.GetPassiveLevels(heroId)[PassiveId.Vitality]}, soul={ownSoul}->{profile.GetSoul(heroId).Value}, active={activeCost}, passive={passiveCost}, balance={balance.Text}");
+        }
+
+        for (int cycle = 0; cycle < 3; cycle++)
+        {
+            foreach ((int id, string tab) in new[] { (p2, "m_Tangseng"), (p1, "m_Wukong") })
+            {
+                PushMouseClick(form.GetNode<TextureButton>("Content/Header/" + tab));
+                CheckCoopSkillBindings(form, flow, id);
+                int oldHero = profile.HeroIds.Single(heroId => heroId != id);
+                string currentBalance = balance.Text;
+                profile.GetSoul(oldHero).Value++;
+                Check(balance.Text == currentBalance, "旧英雄的钱包订阅仍刷新当前页");
+            }
+        }
+        await WaitFramesAsync(2);
+        await CaptureCombatAsync("coop_e1_switched_skills");
+        foreach (Key closeKey in new[] { Key.KpMultiply, Key.V })
+        {
+            Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = closeKey, Keycode = closeKey, Pressed = true });
+            Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = closeKey, Keycode = closeKey, Pressed = false });
+            await WaitFramesAsync(3);
+            Check(!form.Visible && !GF.Base.IsGamePaused, "阵容内技能键没有关闭窗口或恢复暂停");
+            CheckCoopSkillBindings(form, flow, 0);
+            if (closeKey == Key.KpMultiply)
+            {
+                Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.KpMultiply, Keycode = Key.KpMultiply, Pressed = true });
+                Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.KpMultiply, Keycode = Key.KpMultiply, Pressed = false });
+                await WaitUntilAsync(() => form.Visible, "P2技能窗口没有复用");
+                Check(SmokeInspection.ReadField<int>(form, "_heroId") == p2, "窗口复用保留旧页签");
+            }
+        }
+        for (int i = 0; i < profile.HeroIds.Count; i++)
+        {
+            profile.GetSoul(profile.HeroIds[i]).Value = soulBefore[i];
+        }
+        GD.Print("SMOKE-COOP SKILLS PASS: P2 default, per-hero active/passive costs, repeated switch bindings, both close keys and pool reuse.");
+    }
+
+    /// <summary>
+    /// 从既有绑定源核对窗口只订阅当前页签英雄，关闭时全部清理。
+    /// </summary>
+    /// <param name="form">受测窗口。</param>
+    /// <param name="flow">当前双人档案作用域。</param>
+    /// <param name="selectedHeroId">当前英雄；零表示窗口已关闭。</param>
+    private static void CheckCoopSkillBindings(SkillForm form, ProcedureOwner flow, int selectedHeroId)
+    {
+        foreach (int id in flow.GetModel<ProfileModel>().HeroIds)
+        {
+            int expected = id == selectedHeroId ? 1 : 0;
+            Check(SmokeInspection.CountBindingHandlers(flow.GetModel<ProfileModel>().GetSoul(id), form) == expected &&
+                SmokeInspection.CountBindingHandlers(flow.GetModel<SkillModel>().GetLearnedSkills(id), form) == expected &&
+                SmokeInspection.CountBindingHandlers(flow.GetModel<SkillModel>().GetPassiveLevels(id), form) == expected,
+                "技能窗口个人三项来源漏订、重复或未退订");
+        }
+    }
+
+    /// <summary>
+    /// 地图默认P1并可切到P2，不创建或暂停战斗模型。
+    /// </summary>
+    /// <param name="map">当前地图窗口。</param>
+    /// <param name="flow">当前双人档案作用域。</param>
+    /// <returns>地图技能交互完成任务。</returns>
+    private async Task CheckCoopMapSkillsAsync(MapForm map, ProcedureOwner flow)
+    {
+        PushMouseClick(map.GetNode<Button>("m_Skills"));
+        await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(window => window.Visible),
+            "双人地图技能入口未打开");
+        SkillForm form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(window => window.Visible);
+        Check(SmokeInspection.ReadField<int>(form, "_heroId") == flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1),
+            "地图技能没有默认P1");
+        PushMouseClick(form.GetNode<TextureButton>("Content/Header/m_Tangseng"));
+        Check(SmokeInspection.ReadField<int>(form, "_heroId") == flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P2) &&
+            !GF.Base.IsGamePaused && flow.GetModel<HeroModel>() == null && flow.GetModel<LevelModel>() == null,
+            "地图不能切P2或创建/暂停了战斗模型");
+        CheckCoopSkillBindings(form, flow, flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P2));
+        await WaitFramesAsync(2);
+        await CaptureCombatAsync("coop_e1_map_skills");
+        form._Input(new InputEventKey { PhysicalKeycode = Key.KpMultiply, Keycode = Key.KpMultiply, Pressed = true });
+        await WaitFramesAsync(3);
+        Check(!form.Visible && !GF.Base.IsGamePaused, "双人地图P2技能键未关闭窗口");
+        CheckCoopSkillBindings(form, flow, 0);
+        GD.Print("SMOKE-COOP MAP SKILLS PASS: P1 default, P2 tab and close, no battle scope.");
+    }
+
+    /// <summary>
     /// 经正式学习控件与真实技能输入验证甘露、玄冰阵及水魔爆的完整视觉链路。
     /// </summary>
     /// <param name="hero">真实创建的唐僧。</param>
@@ -687,6 +833,8 @@ public sealed partial class UiSmokeScenario
         SkillForm form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(x => x.Visible);
         SmokeInspection.CheckTooltips(form);
         Check(GF.Base.IsGamePaused, "技能窗口没有暂停本关");
+        form._Input(new InputEventKey { PhysicalKeycode = Key.KpMultiply, Keycode = Key.KpMultiply, Pressed = true });
+        Check(form.Visible && GF.Base.IsGamePaused, "单人档错误接受P2技能关闭键");
         PushSkillKey(true, echo: true);
         PushSkillKey(false);
         await WaitFramesAsync(3);

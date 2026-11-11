@@ -4,7 +4,7 @@
 [ext_resource type="Theme" path="res://TheGame/MainPack/Themes/legacy_menu_theme.tres" id="theme"]
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/title_backdrop.png" id="bg"]
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/menu_separator.png" id="separator"]
-[ext_resource type="FontFile" path="res://TheGame/MainPack/Fonts/aa_wen_zheng_ming.ttf" id="smallfont"]
+[ext_resource type="FontVariation" path="res://TheGame/MainPack/Fonts/game_font.tres" id="font"]
 
 [node name="StartForm" type="Control" node_paths=PackedStringArray("_newGame", "_loadGame", "_settings", "_help", "_notice", "_status", "_mainMenu", "_playerCountMenu", "_single", "_double", "_back")]
 layout_mode = 3
@@ -47,7 +47,7 @@ text = "造梦西游之"
 horizontal_alignment = 1
 vertical_alignment = 1
 theme_override_font_sizes/font_size = 30
-
+theme_override_fonts/font = ExtResource("font")
 
 [node name="Chapter" type="Label" parent="."]
 offset_left = 686.0
@@ -59,7 +59,7 @@ text = "七大魔王篇"
 horizontal_alignment = 1
 vertical_alignment = 1
 theme_override_font_sizes/font_size = 22
-theme_override_fonts/font = ExtResource("smallfont")
+theme_override_fonts/font = ExtResource("font")
 
 
 [node name="m_MainMenu" type="Control" parent="."]
@@ -75,6 +75,7 @@ offset_right = 933.0
 offset_bottom = 205.0
 focus_mode = 0
 text = "新开游戏"
+theme_override_fonts/font = ExtResource("font")
 
 [node name="Divider0" type="TextureRect" parent="m_MainMenu"]
 offset_left = 692.0
@@ -94,6 +95,7 @@ offset_right = 933.0
 offset_bottom = 267.0
 focus_mode = 0
 text = "读取存档"
+theme_override_fonts/font = ExtResource("font")
 
 [node name="Divider1" type="TextureRect" parent="m_MainMenu"]
 offset_left = 692.0
@@ -113,6 +115,7 @@ offset_right = 933.0
 offset_bottom = 329.0
 focus_mode = 0
 text = "游戏设置"
+theme_override_fonts/font = ExtResource("font")
 
 [node name="Divider2" type="TextureRect" parent="m_MainMenu"]
 offset_left = 692.0
@@ -132,6 +135,7 @@ offset_right = 933.0
 offset_bottom = 391.0
 focus_mode = 0
 text = "游戏帮助"
+theme_override_fonts/font = ExtResource("font")
 
 [node name="Divider3" type="TextureRect" parent="m_MainMenu"]
 offset_left = 692.0
@@ -151,6 +155,7 @@ offset_right = 933.0
 offset_bottom = 453.0
 focus_mode = 0
 text = "游戏须知"
+theme_override_fonts/font = ExtResource("font")
 
 [node name="Divider4" type="TextureRect" parent="m_MainMenu"]
 offset_left = 692.0
@@ -176,6 +181,7 @@ offset_right = 933.0
 offset_bottom = 205.0
 focus_mode = 0
 text = "单人游戏"
+theme_override_fonts/font = ExtResource("font")
 
 [node name="m_Double" type="Button" parent="m_PlayerCountMenu"]
 mouse_default_cursor_shape = 2
@@ -185,6 +191,7 @@ offset_right = 933.0
 offset_bottom = 267.0
 focus_mode = 0
 text = "双人游戏"
+theme_override_fonts/font = ExtResource("font")
 
 [node name="m_Back" type="Button" parent="m_PlayerCountMenu"]
 mouse_default_cursor_shape = 2
@@ -194,6 +201,7 @@ offset_right = 933.0
 offset_bottom = 329.0
 focus_mode = 0
 text = "返回"
+theme_override_fonts/font = ExtResource("font")
 
 [node name="StatusScroll" type="ScrollContainer" parent="."]
 offset_left = 678.0
@@ -212,4 +220,4 @@ text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
 theme_override_font_sizes/font_size = 19
-theme_override_fonts/font = ExtResource("smallfont")
+theme_override_fonts/font = ExtResource("font")

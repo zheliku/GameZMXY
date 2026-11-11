@@ -27,7 +27,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <returns>该英雄正在施放的身体状态类型；未施放时为空。</returns>
     public Type GetBodyStateType(int heroId)
     {
-        return this.GetModel<HeroModel>()?.GetState(heroId).ActiveSkillId is { } id &&
+        return this.GetModel<HeroModel>().GetState(heroId).ActiveSkillId is { } id &&
                _skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) &&
                definitions.TryGetValue(id, out SkillDefinition definition)
             ? definition.BodyState
@@ -160,9 +160,9 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <returns>本次登记并扣费成功时为真。</returns>
     public bool TryActivate(int heroId, SkillId id, ISkillActor actor)
     {
-        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
+        HeroState model = this.GetModel<HeroModel>().GetState(heroId);
         // 先检查本局控制权和当前动作，再检查该技能的学习与起手条件。
-        if (model == null || !model.ControlsEnabled || this.GetSystem<HeroStatusSystem>().IsFrozen(heroId) || model.ActiveSkillId != null)
+        if (!model.ControlsEnabled || this.GetSystem<HeroStatusSystem>().IsFrozen(heroId) || model.ActiveSkillId != null)
         {
             return false;
         }
@@ -202,8 +202,8 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <returns>符合延迟契约且扣费成功时为 true。</returns>
     public bool TrySpendActivatedMana(int heroId, SkillId id)
     {
-        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
-        if (model?.ActiveSkillId != id ||
+        HeroState model = this.GetModel<HeroModel>().GetState(heroId);
+        if (model.ActiveSkillId != id ||
             !_skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) ||
             !definitions.TryGetValue(id, out SkillDefinition definition) || !definition.DeferredMana)
         {
@@ -298,12 +298,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <param name="heroId">参战英雄编号。</param>
     public void CancelSkill(int heroId)
     {
-        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
-        if (model == null)
-        {
-            return;
-        }
-
+        HeroState model = this.GetModel<HeroModel>().GetState(heroId);
         model.ActiveSkillId = null;
         model.SkillInvulnerableFrom = double.PositiveInfinity;
         model.SkillInvulnerableUntil = 0;
@@ -342,8 +337,8 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <param name="id">正在退出的状态所对应的技能。</param>
     public void EndSkill(int heroId, SkillId id)
     {
-        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
-        if (model?.ActiveSkillId == id)
+        HeroState model = this.GetModel<HeroModel>().GetState(heroId);
+        if (model.ActiveSkillId == id)
         {
             model.ActiveSkillId = null;
         }
@@ -357,7 +352,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <param name="duration">持续秒数。</param>
     public void GrantInvulnerability(int heroId, double from, double duration)
     {
-        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
+        HeroState model = this.GetModel<HeroModel>().GetState(heroId);
         model.SkillInvulnerableFrom = from;
         model.SkillInvulnerableUntil = from + duration;
     }
@@ -370,8 +365,8 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <returns>处于无敌区间时为真。</returns>
     public bool IsInvulnerable(int heroId, double now)
     {
-        HeroState model = this.GetModel<HeroModel>()?.GetState(heroId);
-        return model != null && now >= model.SkillInvulnerableFrom && now < model.SkillInvulnerableUntil;
+        HeroState model = this.GetModel<HeroModel>().GetState(heroId);
+        return now >= model.SkillInvulnerableFrom && now < model.SkillInvulnerableUntil;
     }
 }
 

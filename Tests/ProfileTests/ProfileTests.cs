@@ -93,7 +93,8 @@ public sealed class ProfileTests
     [Fact]
     public void Wallet_RejectsOverspendAndNegativeAmounts()
     {
-        ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25, -5);
+        ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25);
+        wallet.RestoreSoul(1, -5);
         Assert.Equal(0, wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Value);
         TestTables.ForProfile(wallet).AddSoul(1, 30);
         Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(1, 31));
@@ -112,7 +113,8 @@ public sealed class ProfileTests
     [Fact]
     public void Wallet_PreservesBalanceAcrossNoOpsAndRestore()
     {
-        ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25, 30);
+        ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25);
+        wallet.GetSoul(1).Value = 30;
         TestTables.ForProfile(wallet).AddSoul(1, 0);
         Assert.True(TestTables.ForProfile(wallet).TrySpendSoul(1, 0));
         Assert.False(TestTables.ForProfile(wallet).TrySpendSoul(1, 31));
@@ -193,7 +195,8 @@ public sealed class ProfileTests
     [Fact]
     public void Wallet_NotifiesOnlyCommittedBalanceChanges()
     {
-        ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25, 10);
+        ProfileModel wallet = new([(1, 0)], TestTables.Curve, 25);
+        wallet.GetSoul(1).Value = 10;
         int notifications = 0;
         int observed = -1;
         wallet.GetSoul(wallet.HeroOf(PlayerSlot.P1)).Register(_ =>

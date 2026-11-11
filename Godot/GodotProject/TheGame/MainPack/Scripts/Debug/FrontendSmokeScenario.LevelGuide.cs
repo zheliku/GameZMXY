@@ -25,6 +25,18 @@ public sealed partial class FrontendSmokeScenario
     {
         IArchitecture architecture = GF.Fsm.GetArchitecture();
         ProfileSystem profile = GF.Fsm.GetSystem<ProfileSystem>();
+        // 在原逐关图鉴回归解锁之前，验证锁定地点不会打开共用浮层。
+        LevelGuideTooltip lockedGuide = map.FindChildren("*", "Control", true, false).OfType<LevelGuideTooltip>().Single();
+        MapLocationButton[] lockedLocations = map.FindChildren("*", "TextureButton", true, false)
+            .OfType<MapLocationButton>().Where(button => button.Disabled).ToArray();
+        Check(lockedLocations.Length > 0, "锁定地点回归夹具没有未解锁关卡");
+        foreach (MapLocationButton location in lockedLocations)
+        {
+            location.EmitSignal(Control.SignalName.MouseEntered);
+            location._GuiInput(new InputEventMouseMotion { Position = location.Size / 2 });
+            Check(!lockedGuide.Visible, "未解锁地点仍打开悬停图鉴：" + location.LevelId);
+        }
+        GD.Print($"SMOKE-LOCKED GUIDES PASS: {lockedLocations.Length} locked locations reject hover guides.");
         await CheckWhirlpoolStatesAsync(map);
         for (int id = 1; id < 10; id++)
         {

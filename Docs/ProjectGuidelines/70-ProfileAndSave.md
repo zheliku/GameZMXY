@@ -2,7 +2,7 @@
 
 ## 数据归属
 
-- ProfileModel 保存有序阵容、各英雄累计经验、灵魂、背包与穿戴，以及共享的最远通关关卡和旗幡资格；SkillModel 按 HeroId 保存技能学习记录。当前个人档案与全员目录摘要已实现，仍只装配 P1；HeroModel 按 HeroId 持有各自 HeroState，个人本局属性、生命魔法、无双与施放状态从 GetState(heroId) 读取。
+- ProfileModel 保存有序阵容、各英雄累计经验、灵魂、背包与穿戴，以及共享的最远通关关卡和旗幡资格；SkillModel 按 HeroId 保存技能学习记录。当前按阵容装配一至两名英雄与各自HUD，个人档案和全员目录摘要已实现；HeroModel 按 HeroId 持有各自 HeroState，个人本局属性、生命魔法、无双与施放状态从 GetState(heroId) 读取。
 - SaveModel 保存当前文件编号、六格目录摘要和手动保存状态；SaveSystem 执行读写。初始化与取用规则见 [00](00-Architecture.md)。
 
 ## 文件内容
@@ -18,18 +18,26 @@
 
 当前格式 v14：`GameData.Heroes` 与 `ProfileModel.HeroIds` 的顺序即玩家席位，下标 0 为 P1、下标 1 为 P2；阵容包含一至两名英雄，编号必须为正数且不重复，不另存人数或单一出战身份。
 
-`HighestClearedLevelId` 为必需字段，0 表示尚未通关；关卡编号按连续顺序解锁，最新可挑战关卡取最远通关编号加一并限制在已配置范围。通关先推进进度再保存，死亡、放弃与重玩旧关不推进。装备暴击、闪避、命中和抗暴使用 0..1 的直接概率，保存饰品与法宝穿戴引用。通用饰品和法宝可由不同英雄使用，同一实例仍只能属于一个背包或穿戴部位；卸装和其他部位交换不得清除饰品。v13 及更早开发档需重建，不增加运行时兼容分支。
+`HighestClearedLevelId` 为必需字段，0 表示尚未通关；关卡编号按连续顺序解锁，最新可挑战关卡取最远通关编号加一并限制在已配置范围。通关先推进进度再保存，死亡、放弃与重玩旧关不推进。装备暴击、闪避、命中和抗暴使用 0..1 的直接概率，保存饰品与法宝穿戴引用。通用饰品和法宝可由不同英雄使用，同一实例仍只能属于一个背包或穿戴部位；卸装和其他部位交换不得清除饰品。运行时不接受v13及更早格式；v12正式档通过下述D0离线工具转存，其余旧开发档需重建，不增加运行时兼容分支。
 
-2026-11-09 按用户授权同步 A1～A3 档案/摘要、B1 本局状态归属与 B2 按英雄的技能登记；B1/B2 不改变 v14 或持久数据，本局仍只装配 P1，双人实体装配留给后续批次。
+2026-11-11按实施计划E1-4同步D0～E1现状：个人资产、技能与本局数据均按HeroId，阵容顺序表示席位，双人实体及个人HUD已装配。赠送只把同一装备实例从本人背包移到队友背包，不重抽属性、不自动穿戴；满包或已穿戴不能赠送。存档格式保持v14。
 
 ## 读写路径
 
 - 读取：SaveSystem → ArchiveUtility → GF.Archive → GameData → SaveDataUtility.Validate → ProcedureLoadGame 注册档案模型和系统。
 - 保存：SaveDataUtility.Capture(profile, skills) → GameData → SaveSystem → ArchiveUtility → GF.Archive。
 - `HeroOf(PlayerSlot)` 与 `SlotOf(int heroId)` 在阵容和席位之间换算；个人成长、灵魂、背包、穿戴与学习业务显式接收 HeroId，不提供全局当前玩家兼容入口。
-- 格式以 GameData.CurrentVersion 为准，仅接受当前格式及完整字段。结构变化时递增版本；当前 v14 不迁移旧开发档。
+- 格式以 GameData.CurrentVersion 为准，仅接受当前格式及完整字段。结构变化时递增版本；不增加运行时迁移分支；D0一次性离线工具是用户明确批准的正式v12例外。
 - 框架首次建立、尚未认领的当前格式空槽按建档表创建角色并立即写回。已有格按指定 UnitId 读取；读取失败保留原文件并报告。
 - GGF 负责原子写、备份回退和读写串行；写入调用时捕获序列化内容。调用方检查 Task<bool>，切换作用域前等待 PendingWrite。
+
+## D0正式旧档转存与新档初始值
+
+`Tools/ProjectMaintenance/upgrade_saves_v12_to_v14.py`仅用于已批准的v12正式档离线转存，不接入游戏运行时。先以`--capacity 75 --dry-run`核对主/备文件，用户确认后才执行写入；工具先完整备份GameData目录，按各主/备文件自身内容转换，Catalogue保持原字节，v13/v14跳过，未知版本或非法归属拒绝。转存把原单人钱包与背包归入该档原英雄，保留编号、属性、实例顺序与BOM，不重新抽取装备。
+
+2026-11-10正式执行已获用户“确认”，8个主/备文件成功，备份位于`C:\Users\zheliku\AppData\Roaming\Godot\app_userdata\GameZMXY\GameData.backup-before-v14-20261110_191354`。完整dry-run/正式输出及核对见[Validation](../Validation.md#双人d0正式转存完成上手验证受阻2026-11-10)。该授权不允许后续脚本手改正式存档；上手只能使用第5、6格，不能覆盖第1～4格。
+
+新建档案由SaveSystem按有序阵容为每人写入ProfileConfig.StartSoul，双方各得配置初值；ProfileModel构造仅建立零余额，生产读档随后由RestoreCheckpoint恢复DTO余额，不再保留构造soul参数。初始值唯一来自建档表，不在表现层或构造函数另设默认初始钱包。
 
 ## 检查点与关卡事务
 

@@ -76,3 +76,20 @@ public sealed class SellEquipmentByQualityCommand(int heroId, EquipmentQuality q
         } && level.Outcome.Value == LevelOutcome.Running ? this.GetSystem<EquipmentSystem>().SellByQuality(heroId, quality) : 0;
     }
 }
+
+/// <summary>
+/// 玩家请求赠送背包装备；当前关卡运行时交给装备系统校验归属与容量。
+/// </summary>
+/// <param name="fromHeroId">发送者。</param>
+/// <param name="toHeroId">接收者。</param>
+/// <param name="instanceId">要移交的背包实例。</param>
+public sealed class GiftEquipmentCommand(int fromHeroId, int toHeroId, Guid instanceId) : AbstractCommand<bool>
+{
+    /// <inheritdoc/>
+    protected override bool OnExecute()
+    {
+        LevelModel level = this.GetModel<LevelModel>();
+        return level is { SessionActive: true } && level.Outcome.Value == LevelOutcome.Running &&
+            this.GetSystem<EquipmentSystem>().TryGift(fromHeroId, toHeroId, instanceId);
+    }
+}

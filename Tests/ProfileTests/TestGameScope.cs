@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using GameLogic.Architecture;
@@ -65,7 +66,11 @@ internal sealed class TestGameScope : IArchitecture
     public TestGameScope(IEnumerable<(int HeroId, int TotalExperience)> heroes,
         int soul, int capacity, bool initializeHero = true)
     {
-        Profile = new(heroes, TestTables.Curve, capacity, soul);
+        Profile = new(heroes, TestTables.Curve, capacity);
+        foreach (int heroId in Profile.HeroIds)
+        {
+            Profile.GetSoul(heroId).Value = Math.Max(0, soul);
+        }
         Skills = new(Profile.HeroIds);
         foreach (IModel model in new IModel[] { Profile, Skills, _heroes, Level })
         {

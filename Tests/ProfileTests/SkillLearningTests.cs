@@ -48,11 +48,12 @@ public sealed class SkillLearningTests
     public void MapPurchase_UsesProfileSkillsWithoutBattleModelsAndSurvivesReload()
     {
         var scope = new TestGameScope([(1, 0)], 10000, 20, initializeHero: false);
+        // 与离关顺序一致：本局模型仍在时清登记，再进入仅档案的地图作用域。
+        scope.GetSystem<SkillSystem>().ClearSkillDefinitions(1);
         scope.EnterMapContext();
         Assert.Null(scope.GetModel<HeroModel>());
         Assert.Null(scope.GetModel<LevelModel>());
         SkillSystem system = scope.GetSystem<SkillSystem>();
-        system.ClearSkillDefinitions(1);
         int skillCost = TestTables.Tables.TbSkillConfig.Get(SkillId.RisingDragon).LearnSoul;
         int passiveCost = TestTables.Tables.TbPassiveConfig.Get(PassiveId.Vitality).Levels[0].LearnSoul;
 

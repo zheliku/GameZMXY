@@ -45,7 +45,7 @@ public partial class MapLocationButton : TextureButton, IController
     /// <param name="inputEvent">按钮局部输入事件。</param>
     public override void _GuiInput(InputEvent inputEvent)
     {
-        if (!_openGuideOnMotion || inputEvent is not InputEventMouseMotion motion || _levelId <= 0 || _guide == null)
+        if (Disabled || !_openGuideOnMotion || inputEvent is not InputEventMouseMotion motion || _levelId <= 0 || _guide == null)
         {
             return;
         }

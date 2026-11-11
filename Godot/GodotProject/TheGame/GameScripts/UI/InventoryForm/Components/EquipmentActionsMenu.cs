@@ -11,6 +11,7 @@ public partial class EquipmentActionsMenu : Control
     [Export] private TextureRect _panel; // 官方三项面板及按钮容器。
     [Export] private TextureButton _equip; // 异角色装备时禁用。
     [Export] private TextureButton _sell; // 由窗口向关卡提交出售请求。
+    [Export] private TextureButton _gift; // 双人时把背包装备交给队友，单人禁用。
     private Guid _instanceId; // 当前选择；关闭后立即清空，拒绝过期操作。
     private Rect2 _anchor; // 当前装备格的全局区域，指针可在原格与面板间移动。
 
@@ -25,12 +26,18 @@ public partial class EquipmentActionsMenu : Control
     public event Action<Guid> SellRequested;
 
     /// <summary>
+    /// 玩家选择赠送。
+    /// </summary>
+    public event Action<Guid> GiftRequested;
+
+    /// <summary>
     /// 场景按钮只绑定一次。
     /// </summary>
     public override void _Ready()
     {
         _equip.Pressed += OnEquipPressed;
         _sell.Pressed += OnSellPressed;
+        _gift.Pressed += OnGiftPressed;
         Close();
     }
 
@@ -53,12 +60,15 @@ public partial class EquipmentActionsMenu : Control
     /// <param name="instanceId">窗口已验证的背包实例。</param>
     /// <param name="anchor">所选格的屏幕区域。</param>
     /// <param name="canEquip">当前出战角色是否可以使用。</param>
-    public void Open(Guid instanceId, Rect2 anchor, bool canEquip)
+    /// <param name="canGift">当前阵容是否允许赠送。</param>
+    public void Open(Guid instanceId, Rect2 anchor, bool canEquip, bool canGift)
     {
         _instanceId = instanceId;
         _anchor = anchor;
         _equip.Disabled = !canEquip;
         _equip.MouseDefaultCursorShape = canEquip ? CursorShape.PointingHand : CursorShape.Arrow;
+        _gift.Disabled = !canGift;
+        _gift.MouseDefaultCursorShape = canGift ? CursorShape.PointingHand : CursorShape.Arrow;
         Vector2 position = GetGlobalTransform().AffineInverse() * anchor.GetCenter();
         _panel.Position = position.Clamp(Vector2.Zero, Size - _panel.Size);
         Visible = true;
@@ -98,6 +108,19 @@ public partial class EquipmentActionsMenu : Control
         if (id != Guid.Empty)
         {
             SellRequested?.Invoke(id);
+        }
+    }
+
+    /// <summary>
+    /// 清除选择后提交一次赠送请求。
+    /// </summary>
+    private void OnGiftPressed()
+    {
+        Guid id = _instanceId;
+        Close();
+        if (id != Guid.Empty)
+        {
+            GiftRequested?.Invoke(id);
         }
     }
 }

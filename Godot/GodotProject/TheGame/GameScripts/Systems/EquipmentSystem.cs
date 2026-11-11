@@ -142,6 +142,36 @@ public sealed class EquipmentSystem(IArchitecture architecture) : AbstractSystem
     }
 
     /// <summary>
+    /// 把发送者背包中的一件装备原样移交给接收者背包；不重抽属性、不自动穿戴。
+    /// </summary>
+    /// <param name="fromHeroId">发送者。</param>
+    /// <param name="toHeroId">接收者。</param>
+    /// <param name="instanceId">发送者背包中的实例。</param>
+    /// <returns>两人都在阵容、实例在发送者背包且接收者背包未满时移交并返回 true。</returns>
+    public bool TryGift(int fromHeroId, int toHeroId, Guid instanceId)
+    {
+        ProfileModel profile = this.GetModel<ProfileModel>();
+        if (fromHeroId == toHeroId || !profile.HeroIds.Contains(fromHeroId) || !profile.HeroIds.Contains(toHeroId))
+        {
+            return false;
+        }
+
+        // 穿戴中的实例不在背包；赠送不限制接收者职业。
+        BindableList<EquipmentData> source = profile.GetBag(fromHeroId);
+        BindableList<EquipmentData> target = profile.GetBag(toHeroId);
+        int index = Enumerable.Range(0, source.Count).FirstOrDefault(i => source[i].InstanceId == instanceId, -1);
+        if (index < 0 || target.Count >= profile.Capacity)
+        {
+            return false;
+        }
+
+        // 同步移交原实例，双方继续通过原集合通知刷新。
+        target.Add(source[index]);
+        source.RemoveAt(index);
+        return true;
+    }
+
+    /// <summary>
     /// 一次出售背包内指定品质的全部装备；穿戴物不在背包内，余额溢出时整批不变。
     /// </summary>
     /// <param name="heroId">本次操作的参战英雄编号。</param>

@@ -2,6 +2,386 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 删除确认按钮边框与目标复核（2026-11-11）
+
+用户要求确定/取消看起来像按钮且搭配近黑弹窗；当前修改仅在原save_form场景加入局部StyleBoxFlat，两按钮共用深灰底/1px灰边、4px圆角，悬停/按下转暖橙细边，键盘焦点保留2px橙色框。原100×48尺寸/位置、字体、文案与取消/确认/覆盖业务均不变；没有新资源、公共Theme或业务脚本。既有FrontendSmokeScenario仅增加悬停截图，继续复用原磁盘/取消/确认断言。依据当前用户指令和第00/10/40/50章；用户此前已暂存全部既有修改，执行者保留其内容，不作Git写操作。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：**退出0、0错误、5既有警告**，`.godot/validation/dialog_buttons_20261111/build.log` |
+| 扫描 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py dialog_buttons_scan_20261111 --headless --editor --build-solutions --quit --no-window`：**退出0**，既有ComponentInsoector/free退出诊断保留 |
+| 删除专项 | 同runner案例`dialog_buttons_delete_20261111 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend --save-delete-only`：**退出0、SMOKE-SAVE-DELETE PASS、完整SMOKE PASS**。实际鼠标打开/取消逐字节不变、确认删除隔离主备、其余槽保持、同格重建、读回和迟到确认全部通过；本次stderr为空。正式目录未使用 |
+| 引用/格式 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出0、2284路径/393UID**。`dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include Godot/GodotProject/TheGame/MainPack/Scripts/Debug/FrontendSmokeScenario.cs --verify-no-changes`：**退出0** |
+| 视觉/数据/范围 | 实际查看本轮`screenshots/save_delete_confirmation.png`及`save_delete_confirmation_hover.png`，普通灰边、悬停橙边、焦点橙框和字色清楚，面板仍近黑。**正式12/12 SHA256相同，用户暂存diff逐字节散列相同**；本轮4份未暂存增量为save_form.tscn、FrontendSmokeScenario.cs、WorkingNotes.md和本记录，UTF-8/CRLF/无行尾空白与两种diff --check通过，无新增/删除 |
+
+再次对照当前持久目标（D0～E1）、计划完成判定、当前源码及原始日志：没有发现新的计划内代码开发缺项。原始最终规则 **339/197/19**、完整UI和双人专项PASS记录已读取确认；本轮只改局部前端样式，未重跑全部规则/完整战斗UI，不把旧结果说成本轮执行。目标 **尚未全部完成**，尚缺：
+
+- D0上手1～4：正式旧档可读、原技能/余额/装备、退出重开与截图。
+- D1最终上手1～7：人数/选角/重选/返回、覆盖取消、第5/6格建档与读回；原第8条仅P1是D1中间态，已由D2双英雄要求替代。
+- D2上手1～8：双英雄出生、HUD、同时键盘输入、技能耗蓝/经验/球/地面归属、本人背包与P2无双、单人回归。
+- D3上手1～6：存活者取景/屏幕墙、一死一活/全灭、P2出口与平均生命、甘露绿色回血、地图提示。
+- E1上手1～6及E1-3：真实赠送/满包/单人禁用/请求者技能页与扣费，剩余关卡及隐藏龙宫逐关双人实战。原表遗漏第9关鲨之涡流已登记，实际水牢属于该关，不能以原表宣称全关验过。
+
+本轮node_repl/@oai/sky的`list_windows()`复查仍报 **Computer Use native pipe is unavailable / os error2**；无真实键盘输入。既有“允许验收待补继续收尾”授权保持，正式上手及逐关通过证据缺失，未据自动烟测把目标判为完成。D0～E1总交付、接口/文件/逐步错误数和转存备份仍在下方总说明，供架构师审查。
+
+## 双人计划复核与前端统一（2026-11-11）
+
+用户要求仔细核对双人计划，并修改未解锁地点图鉴、开始字体、删除确认样式；随后明确将确认框从灰改黑，选角底部按钮居中/带边框/缩小，**卡片维持原尺寸**。当前指令授权这些前端场景改动，不修改玩法/正式存档。执行前用户已暂存上一轮28份E1修改，执行者保留其索引，未作Git写操作。证据目录：`Godot/GodotProject/.godot/validation/frontend_polish_20261111/`。
+
+### 双人计划逐项核对
+
+| 任务 | 当前实现核对入口 | 未完成项 |
+| --- | --- | --- |
+| A1 | ProfileModel有序HeroIds/HeroOf/SlotOf；GameData阵容有序，无全局当前英雄 | 无新增代码缺项 |
+| A2 | 个人Soul/Bag/Slots；v14个人引用与全档实例池；SaveDataUtility唯一归属与逐人容量校验 | 无新增代码缺项 |
+| A3 | Profile规则与两席位往返/非法第二人原子拒绝；SaveSlotInfo全员摘要，单/双人名称均不含lv | 无新增代码缺项 |
+| B1 | HeroModel→HeroState容器，HeroSystem/HeroStatusSystem按英雄，效果与订退隔离 | 无新增代码缺项 |
+| B2 | SkillSystem按heroId登记/施放/清理；英雄OnHide只清本人 | 无新增代码缺项 |
+| B3 | 个人数值/效果/无双/技能/回池/重建订退规则证据，A～B已架构审查 | 无新增代码缺项 |
+| C1 | HeroSpawn/Slot参数、校验与池显示覆盖，IHeroBody席位 | 无新增代码缺项 |
+| C2 | 最后有效命中者、死亡事件来源、经验与牛心归属，无英雄命中不出球 | 无新增代码缺项 |
+| C3 | 球按OwnerEntityId追踪/入账，物品实际接触者，治疗在实际英雄位置 | 无新增代码缺项 |
+| C4 | project.godot恰好13个P2动作，InputSystem按实际席位采样/消费，单人忽略P2 | 无新增代码缺项 |
+| C5 | 阶段C回归记录、红球夹具授权修复和原断言保持 | 无新增代码缺项 |
+| D0 | 离线工具/样例/正式8文件转存和整目录备份记录存在 | 正式上手1～4待补 |
+| D1 | 新开/读取分离、人数、选角、保存模式、DeleteSlotAsync覆盖链 | 最终上手1～7待补；原第8条仅P1是D1中间态，已由D2双英雄验收替代 |
+| D2 | 阵容实体集合/每次await进入周期检查/P2偏移、双HUD与现有Panel绑定、单窗互斥 | 正式上手1～8待补 |
+| D3 | 存活者平均相机、全员墓碑后判负、全体平均生命、任一幸存者出口/入口、球结束统一判断、甘露队友范围/龙王最低等级 | 正式上手1～6待补 |
+| E1 | TryGift/Command原实例赠送/满包拒绝；SkillFormData指定请求者、三项来源先退后订与本人扣费；构造/空条件清理及文档 | 上手1～6、E1-3逐关实战待补 |
+
+**未发现新的双人代码缺项；仍不能宣称双人已完成全部验收。** 最新完整规则339/197/19、前端/UI/双人专项等证据见下方E1交付，本轮只修改前端，未重新运行全部规则或完整战斗UI。生产唯一HeroOf(P1)为ProcedureMap的默认技能页；关卡旧单英雄字段/SkillForm默认P1/HUD席位记录已清理。计划第九部分第4节原占位表仍显示“留D2/D3/E1”，本次已同步为实际完成状态，历史批次规格仍保留。
+
+最终验收口径补充：D1上手第8条“仍只出现P1”是D1交付时的迁移检查点。当前ProcedureLevel按profile.HeroIds显示全部英雄，D2上手第1条要求双人同时出现；最终状态应验证D2双英雄，不能为了补D1历史项退回单人。D1当前仍需补1～7的真实键盘路径，第8条标记为被D2最终要求替代；下方各批历史“1～8未执行”保留为当时记录，不代表最终要同时满足两个相反显示状态。
+
+另发现**E1-3原表漏列第9关鲨之涡流**，其“水牢”观察点实际属于该关鲨魔王SharkDemonKingEntity，不属于原表的浅岸/东海/牛魔谷。该关已有场景/敌人实现，但正式双人实战未核验；已在原E1-3表后登记遗漏，原表未擅自改范围，交用户/架构师裁决。恢复实机验收时应明确覆盖该关的水牢/延迟招式归属，不能用原九关表代替全部主线核验。既有computer-use本机管道阻塞与各批明确暂留授权保持。
+
+### 最终前端改动与素材取舍
+
+- MapLocationButton在既有_GuiInput入口检查Disabled，锁定地点不查询/不打开图鉴；复用MapForm已有解锁状态，无第二份资格或事件。
+- 开始页全部11个Label/Button本地引用局内`game_font.tres`，字号、主布局和帮助全文/滚动保持；不改其他窗口共享Theme。
+- 搜索旧素材及官方包77张候选，核验Commonv3720 SHA256 `53722c6c8615d2542de2e3cc255a68c5d80712c6b8097aaecae6bc7be0a40ab2`，FFDec直接导出位图230/352×201。用户认为灰色不适配后，该灰图替换已还原；最终用原生Panel+StyleBoxFlat近黑底/1px细边，白字20px、开始菜单原Theme的橙色悬停Button，原焦点/取消确认/覆盖流程保留。不新增正式美术文件，不保留本次无消费者素材。
+- 选角原重选/返回移动到居中HBoxContainer，按钮94×30/18px、深色底/2px边框；中心X470、Y556。四张卡片维持原235×590、scale1、原卡片图像；缩小卡片的中间实现已按用户明确纠正撤回。单人重选隐藏，返回由同一容器居中，无新增布局脚本。根绑定改Actions路径后运行既定生成器仍6绑定；生成文件内容等同原绑定字段，无手改。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：新增图鉴Debug局部变量同名首轮 **2错误**（build.log），改名后及后续黑框/布局最终构建均 **0错误、5既有警告**（build_fixed.log / black_character_build.log / layout_build.log / small_actions_build.log）。最后小按钮首次烟测启动时前一build仍未返回，载入旧程序集导致旧尺寸断言失败，退出1（small_actions_frontend.log）；等待该构建退出0后以相同源码重新运行，不修改断言 |
+| 扫描 | 旧局部名冲突时首轮扫描退出1，修复后frontend_polish_scan_fixed及frontend_black_character_scan均 **退出0**，ComponentInsoector/free既有退出诊断保留；最终布局扫描frontend_polish_final_scan_20261111 **退出0**（scan_final.log） |
+| 完整前端 | runner规定显示参数，`frontend_polish_frontend_20261111 --smoketest=frontend` **退出0、完整SMOKE PASS**，灰色阶段；黑框/居中大按钮的`frontend_black_character_20261111` **退出0、完整PASS**；卡片缩小中间案`frontend_character_footer_20261111` **退出0、完整PASS**但用户否定，图片不作为最终效果；最终原尺寸卡片/小按钮案例`frontend_small_actions_verified_20261111` **退出0、完整SMOKE PASS、SMOKE-COOP-MENU PASS**，退出5个ObjectDB/1资源（small_actions_verified.log）。新开/人数/选角/重选/返回、覆盖取消/确认、前端各既有路径原断言保持 |
+| 删除专项 | `frontend_polish_delete_20261111`灰色阶段 **退出0、完整PASS**；最终黑框`frontend_black_delete_20261111 --smoketest=frontend --save-delete-only` **退出0、SMOKE-SAVE-DELETE PASS及完整PASS**，真实鼠标取消逐字节不变、确认移除隔离主备/其余格保持/同格新建/迟到确认通过。退出5个ObjectDB/2资源，原始日志保留 |
+| 图鉴专项 | runner规定显示参数，`frontend_polish_guide_final_20261111 --smoketest=frontend --level-guide-only`：**退出0、SMOKE-LOCKED GUIDES PASS:9个锁定地点拒绝图鉴，原10张卡片/两个窗口尺寸/10地点悬停退出/装备详情/点击进关全部PASS、完整SMOKE PASS**，退出3个ObjectDB。锁定集合另断言非空，避免空循环假通过 |
+| 引用/格式 | `python Tools/ProjectMaintenance/validate_game_references.py`首轮 **退出0、2284路径/393UID**；最终黑框引用 **退出0、2284路径/393UID**（references_final.log）；4份手写C#的`dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include <本批4份C#> --verify-no-changes` **退出0**（format_final.log） |
+| 画面/正式数据 | 开始页及黑框删除确认、原尺寸卡片/小按钮截图已实际查看；最终截图存入本轮目录screenshots。正式目录递归 **12/12 SHA256一致**；11份本轮增量文本UTF-8/CRLF无行尾空白，两种diff --check退出0；用户28份已暂存E1修改保持，无Git写操作。索引及状态记录于scope_final.log。全部烟测使用案例独立APPDATA，未操作正式1～4格 |
+
+本轮相对用户已暂存E1修改的增量：Docs的CoopImplementationPlan/LegacyAssetMap/WorkingNotes/Validation；MapLocationButton.cs、SaveForm.Logic.cs、FrontendSmokeScenario.cs、FrontendSmokeScenario.LevelGuide.cs；start_form.tscn、save_form.tscn、character_form.tscn。无新增/删除正式文件，原PNG与import_frontend_assets.py已还原为原内容。接口只有确认按钮节点类型TextureButton→Button，取消/确认事件与存档签名不变；选角2个Debug节点路径机械加Actions/。UI绑定生成器运行记录6个绑定，生成字段未改变。完整战斗/规则测试沿用前轮证据，不把本轮未执行写成重跑。
+
+## 双人D0～E1总交付（2026-11-11，代码收尾，正式实战待补）
+
+本节是架构师的最终状态入口；各批历史日志、失败和用户裁决保留在下方原记录。阶段A～C基线0523aae；D0提交0307f36，D1/D2和Panel调整合并于ae2a1ba，D3为c63cd1d；本轮E1未执行任何Git写命令。**代码与自动验证收尾，正式键盘/逐关实战未完成**。用户已逐次授权暂留D0～D3验收推进，并明确回复“允许待补，继续E1-4收尾”；这不是实机通过记录，E1原完成判定中的实机项仍待补。
+
+规范依据：第00章所有权/持续绑定/局部同步事件，第10章命名和中文文档，第30章实体/状态机，第50章既有生成/验证入口，第70章个人资产/存档事务；执行边界为实施计划第一、二、七部分及用户明确裁决。没有新Manager/中间转发层，没有默认P1兼容接口，没有改v14、源表、框架或只读依赖。HUD复用既有Panel拥有个人绑定，SkillFormData只携带默认英雄。
+
+### D0　正式v12离线转存
+
+工具先规划/校验全部主备文件，dry-run不写，用户确认后完整备份，再逐个原子替换8份Data文件；Catalogue原字节保持。新增Python CLI而不接入游戏运行时；无运行时接口/格式改动。D0-1/2构建错误数 **0/0**，D0-3无代码变更、确认前最终构建 **0**；规则 **324/197/19**。工具边界10组检查与样例往返通过，首轮样例测试CS0121修复及原日志保留；正式输出和备份见本总说明末尾。
+
+正式上手 **D0-1～4均未执行**（这里编号指D0上手步骤）：原管道缺失，未取得正式键盘截图。后续用户明确允许先D1，旧档转存结果保留。正式写入唯一例外就是本次用户确认的转存，不把后续自动测试写入正式目录。
+
+<details>
+<summary>D0实际新增/修改文件（A新增，M修改，无删除）</summary>
+
+```text
+M	Docs/CoopImplementationPlan.md
+M	Docs/Validation.md
+M	Docs/WorkingNotes.md
+A	Tests/ProfileTests/Data/save_v12_tangseng.json
+A	Tests/ProfileTests/Data/save_v14_tangseng.json
+M	Tests/ProfileTests/ProfileTests.csproj
+A	Tests/ProfileTests/SaveUpgradeTests.cs
+A	Tools/ProjectMaintenance/upgrade_saves_v12_to_v14.py
+```
+
+</details>
+
+### D1　入口、双人选角与建档
+
+新开人数→依次选角→保存选格由ProcedureCharacter拥有，读取独立走Load模式；覆盖复用DeleteSlotAsync后重读空格，不另建写入路径。接口：SaveSelectionVariable.Create从单heroId默认参数改为显式int[] heroIds；SaveSystem.LoadOrCreateAsync从initialHeroId标量改为显式IReadOnlyList<int>阵容；StartGameRequested改为NewGameRequested/LoadGameRequested，CharacterConfirmed携带int[]，新增本窗口CharacterFormData/SaveFormData及关闭取消通知。详见下方D1接口表。
+
+五步结束构建错误数 **0/2/8/0/0**，最后清零；其中D1-1/5新增夹具参数/摘要错误修复，原2/1错误日志保留。最终 **324/197/19、扫描0、引用2283/392、完整前端/UI与删除专项PASS**。用户授权无双采样夹具修复、JSON必填断言契约缓存隔离；保留生产动画/校验和原断言。帮助按用户裁决保留全文/19px/原区域，改原生滚动并验证顶部/末尾。
+
+正式上手 **1～8均未执行**。隔离截图在`coop_d1_20261110/screenshots/`，包含标题/人数/保存覆盖/双人摘要/帮助顶部末尾/无双尾段；原裁切图仍保留，不是正式键盘验收。D1→D2获用户明确推进例外。
+
+<details>
+<summary>D1实际文件25份（4新增，其余修改，无删除）</summary>
+
+```text
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/FlowData/SaveSelectionVariable.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureTitle.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureCharacter.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLoadGame.cs
+M	Godot/GodotProject/TheGame/GameScripts/Systems/SaveSystem.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/StartForm/StartForm.Logic.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/CharacterForm/CharacterForm.Logic.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/SaveForm/SaveForm.Logic.cs
+A	Godot/GodotProject/TheGame/GameScripts/UI/CharacterForm/CharacterFormData.cs
+A	Godot/GodotProject/TheGame/GameScripts/UI/CharacterForm/CharacterFormData.cs.uid
+A	Godot/GodotProject/TheGame/GameScripts/UI/SaveForm/SaveFormData.cs
+A	Godot/GodotProject/TheGame/GameScripts/UI/SaveForm/SaveFormData.cs.uid
+M	Godot/GodotProject/TheGame/UIs/start_form.tscn
+M	Godot/GodotProject/TheGame/UIs/character_form.tscn
+M	Godot/GodotProject/TheGame/GameScripts/UI/StartForm/StartForm.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/CharacterForm/CharacterForm.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/FrontendSmokeScenario.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/MapProgressSmokeScenario.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/LevelSmokeScenario.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.cs
+M	Tests/ProfileTests/ProfileTests.cs
+M	Docs/CoopImplementationPlan.md
+M	Docs/WorkingNotes.md
+M	Docs/ProjectTour.md
+M	Docs/Validation.md
+```
+
+</details>
+
+### D2　阵容实体、双HUD与Panel所有权
+
+Procedure按阵容显示/回收，P2出生右偏60px；LevelViewController借用完整列表，治疗/穿戴订阅对称，地面物品只给首个成功接触者。StartSession的AbstractHeroEntity参数改IReadOnlyList<AbstractHeroEntity>；BattleFormData.Hero改Heroes。菜单请求携带PlayerSlot，MusouStateChanged携带HeroId/活动态，同步暂停并保持同帧排他。
+
+原四步构建错误数 **2/1/9/0**。用户指出SeatBinding像补丁后已比较FormData/事件/订阅句柄/快照/子场景等并授权调整：已有BattleStatusPanel/BattleMenuPanel用具名BindHero/UnbindHero持有个人来源；Form只驱动生命周期与共享表现，删除席位记录及逐人闭包，没有新旧并存。追加重构首轮新增Debug缺命名空间 **3错误→0**；最终 **324/197/19、扫描0、引用2283/392、完整前端/UI/双人专项PASS**，九项个人来源各1/关闭全0、无双同步排他/活动态改绑不重播均通过。
+
+计划漏列烘焙“无双”文字节点，已获用户授权补翻WsGrey/m_WsMax并按纹理宽度保持占位。正式上手 **1～8均未执行**；隔离证据在`coop_d2_20261110/`与`coop_d2_panel_20261111/`，镜像普通/满值截图及出生/P2背包/击杀均已复查，冻结采样不宣称站立实机。用户后续明确允许进入D3。
+
+<details>
+<summary>D2含Panel调整的最终修改文件17份（无新增/删除）</summary>
+
+```text
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLevel.cs
+M	Godot/GodotProject/TheGame/GameScripts/Entity/Level/LevelViewController.cs
+M	Godot/GodotProject/TheGame/GameScripts/Entity/Level/LevelViewController.Loot.cs
+M	Godot/GodotProject/TheGame/GameScripts/Entity/Level/LevelViewController.Entrance.cs
+M	Godot/GodotProject/TheGame/UIs/battle_form.tscn
+M	Godot/GodotProject/TheGame/GameScripts/UI/BattleForm/BattleForm.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/BattleForm/BattleFormData.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/BattleForm/BattleForm.Logic.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/BattleForm/Components/BattleStatusPanel.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/BattleForm/Components/BattleMenuPanel.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Inventory.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/FrontendSmokeScenario.cs
+M	Docs/CoopImplementationPlan.md
+M	Docs/WorkingNotes.md
+M	Docs/ProjectTour.md
+M	Docs/Validation.md
+```
+
+</details>
+
+### D3　存活者取景、全灭、出口、队友治疗与分档
+
+相机Follow(Node2D)改Follow(IReadOnlyList<AbstractHeroEntity>)，取存活者X平均；每名死者墓碑完成后全灭才判负，结算生命取全员百分比平均。唐僧本体/分身按既有实体枚举治疗存活者，范围/恢复量按官方规格；龙王取阵容最低等级，地图任一余额达标提示。
+
+D3-1～6每步最终构建错误数 **0/0/0/0/0/0**，规则 **327/197/19**（新增3例存活者转场），扫描0、引用2284/392、完整前端/UI/双人专项及格式通过。隔离唯一死者球复现pending=True/orbs=0仍Running，用户明确授权后把出口续行统一到_Process的TickLoot后，删除OnLootFinished旧判断，不增超时/状态/事件。相同隔离复验PASS，胜利图实际25%=死者0与存活者50的平均。
+
+正式上手 **1～6均未执行**；隔离截图`coop_d3_20261111/screenshots/`证明部分表现/数值，甘露图未拍到绿色恢复数字，不能据此认定该实机项通过。D0～D2待验保持，用户明确允许D3→E1。
+
+<details>
+<summary>D3最终修改文件16份（无新增/删除）</summary>
+
+```text
+M	Docs/CoopImplementationPlan.md
+M	Docs/ProjectTour.md
+M	Docs/Validation.md
+M	Docs/WorkingNotes.md
+M	Godot/GodotProject/TheGame/GameScripts/Entity/Enemies/Bosses/zm1_11_hidden_dragon_palace/DragonKingEntity.cs
+M	Godot/GodotProject/TheGame/GameScripts/Entity/Heroes/Tangseng/TangsengEntity.cs
+M	Godot/GodotProject/TheGame/GameScripts/Entity/Level/Camera/LevelCameraNode.cs
+M	Godot/GodotProject/TheGame/GameScripts/Entity/Level/LevelViewController.Loot.cs
+M	Godot/GodotProject/TheGame/GameScripts/Entity/Level/LevelViewController.cs
+M	Godot/GodotProject/TheGame/GameScripts/Systems/LevelSystem.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/MapForm/MapForm.Logic.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Dragon.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.HeroDeath.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Tangseng.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.cs
+M	Tests/ProfileTests/DragonPalaceTests.cs
+```
+
+</details>
+
+### E1　赠送、技能页签与清理
+
+赠送复用原菜单/Command/EquipmentSystem/个人背包集合，原实例/属性保持，接收职业不限；已穿戴、满包、非法参与者拒绝。新增TryGift(fromHeroId,toHeroId,Guid)和GiftEquipmentCommand；菜单Open追加canGift，新增GiftRequested。可用态77×31美术只从校验官方Common包sprite367第1帧导出，未重绘。技能OnOpen必须SkillFormData(HeroId)，两个流程打开点显式传入；窗口按原三项来源具名订退，两人页签可切换，学习只扣当前页英雄，阵容实际席位键可关闭。
+
+E1-1/2/4最终构建错误数 **0/0/0**，E1-3无代码构建；E1-2首轮新增Debug错误1、Profile新增用例枚举错误1及夹具失败已修复且保留原日志。最终规则 **339/197/19**（比D3+12），扫描0、引用2285/393、格式13份游戏/Debug+4份测试通过。清理后完整前端与双人专项再次PASS；最终完整UI亦退出0、完整PASS。E1-3及E1上手 **1～6均未执行**，用户已明确允许待补继续E1-4，关卡表见下方E1详细节；没有发现并擅修新的关卡玩法。
+
+E1-4删除无生产消费者的ProfileModel构造soul参数，改为(roster,curve,capacity)，测试构造后设置余额；生产新档每人StartSoul仍由SaveSystem建DTO，读档恢复Checkpoint。SkillSystem七处GetModel<HeroModel>()空条件访问删除，取消/结束/无敌不再吞掉错误生命周期。保留两个真实地图边界：无参ClearSkillDefinitions由系统OnDeinit在地图触发，无战斗模型时仍清登记；IsAvailable是无战斗模型返回false的查询，原地图测试继续验证。地图购买测试把单英雄清登记移到EnterMapContext前以匹配生产生命周期，原断言不变；无其他Debug构造消费者需要改余额。
+
+P1剩余：生产仅ProcedureMap默认技能页 **1处**；Debug **218处**、Tests **172处**均为单人或显式P1夹具，30份C#逐文件行号表及逐行输出在下方E1节/证据目录；Markdown引用为规范代码示例、历史记录和本次交付解释，不是运行消费者，不做语义无关替换。旧SkillForm占位、单英雄关卡字段及HUD席位绑定记录已清理。
+
+<details>
+<summary>E1最终文件（A新增，M修改，无删除）</summary>
+
+```text
+M	Docs/CoopImplementationPlan.md
+M	Docs/LegacyAssetMap.md
+M	Docs/ProjectGuidelines/70-ProfileAndSave.md
+M	Docs/ProjectTour.md
+M	Docs/Validation.md
+M	Docs/WorkingNotes.md
+M	Godot/GodotProject/TheGame/GameScripts/Commands/EquipmentCommands.cs
+M	Godot/GodotProject/TheGame/GameScripts/Models/Profile/ProfileModel.cs
+M	Godot/GodotProject/TheGame/GameScripts/Systems/EquipmentSystem.cs
+M	Godot/GodotProject/TheGame/GameScripts/Systems/SkillSystem.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/InventoryForm/Components/EquipmentActionsMenu.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/InventoryForm/InventoryForm.Logic.cs
+M	Godot/GodotProject/TheGame/GameScripts/UI/SkillForm/SkillForm.Logic.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Inventory.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Skills.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLevel.cs
+M	Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureMap.cs
+M	Godot/GodotProject/TheGame/UIs/Inventory/equipment_actions_menu.tscn
+M	Tests/ProfileTests/EquipmentTests.cs
+M	Tests/ProfileTests/ProfileTests.cs
+M	Tests/ProfileTests/SkillLearningTests.cs
+M	Tests/ProfileTests/TestGameScope.cs
+M	Tools/LegacyMigration/export_official_inventory_actions.py
+A	Godot/GodotProject/TheGame/GameScripts/UI/SkillForm/SkillFormData.cs
+A	Godot/GodotProject/TheGame/GameScripts/UI/SkillForm/SkillFormData.cs.uid
+A	Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_action_gift.png
+A	Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_action_gift.png.import
+```
+
+</details>
+
+### 最终命令、正式文件和未验事项
+
+最终命令均从仓库根执行：`dotnet build Godot/GodotProject --no-restore -v quiet`；三条`dotnet test Tests/<ProfileTests/BattleTests/LevelTests> --no-restore -v quiet`；`python Tools/ProjectMaintenance/validate_game_references.py`；`dotnet format whitespace <工程> --no-restore --include <本批明确文件> --verify-no-changes`。Godot使用既有run_godot.py顺序执行案例，每个案例独立APPDATA，未在烟测中构建游戏；最终案例及实际结果见E1收尾补充表。
+
+正式目录递归12份文件相对D3交付逐字节哈希不变；本轮开工根层2份快照遗漏Data子目录已如实记录并以D3递归清单补核，不能把根层2份写成开工12份。E1不写正式目录，未作Git写操作，保留现有索引。新增UID/PNG导入由Godot生成，Form绑定只通过规定生成器；Framework/addons/Luban/源表/bytes均未改。
+
+待补正式验收：D0上手1～4、D1上手1～8、D2上手1～8、D3上手1～6、E1上手1～6及E1-3九关重点。computer-use初始化可用但list_windows仍native pipe缺失/os error2；不能列窗/发真实键盘。恢复连接后只用第5格双人、第6格单人，不覆盖第1～4格，覆盖确认只取消；按既有表补证，不把自动断言或Frozen截图视为实战。其他现有退出RID/ObjectDB/资源占用、资源加载桥接GCHandle诊断单列保留，不在本批扩大修复。
+
+### D0原始输出与备份
+
+以下为已执行的原始输出复录，未重复运行正式转换。dry-run **OK8/ERROR0/written0**：
+
+```text
+OK 1791793987.sav version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=yes
+OK 1791793987.sav.bak version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=yes
+OK 1793209553.sav version=12 hero=1 soul=0 bag=0 worn=0 -> v14 BOM=no
+OK 1793209553.sav.bak version=12 hero=1 soul=0 bag=0 worn=0 -> v14 BOM=no
+OK 1793449001.sav version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=no
+OK 1793449001.sav.bak version=12 hero=1 soul=100000 bag=35 worn=3 -> v14 BOM=no
+OK 1793888918.sav version=12 hero=2 soul=225080 bag=24 worn=3 -> v14 BOM=yes
+OK 1793888918.sav.bak version=12 hero=2 soul=225080 bag=24 worn=3 -> v14 BOM=yes
+SUMMARY OK=8 SKIP=0 ERROR=0 written=0 DRY-RUN
+BACKUP none (dry-run; no files changed)
+```
+
+用户回复“确认”后的正式执行 **OK8/ERROR0/written8**：
+
+```text
+OK 1791793987.sav version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=yes
+OK 1791793987.sav.bak version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=yes
+OK 1793209553.sav version=12 hero=1 soul=0 bag=0 worn=0 -> v14 BOM=no
+OK 1793209553.sav.bak version=12 hero=1 soul=0 bag=0 worn=0 -> v14 BOM=no
+OK 1793449001.sav version=12 hero=1 soul=2630135 bag=55 worn=4 -> v14 BOM=no
+OK 1793449001.sav.bak version=12 hero=1 soul=100000 bag=35 worn=3 -> v14 BOM=no
+OK 1793888918.sav version=12 hero=2 soul=225080 bag=24 worn=3 -> v14 BOM=yes
+OK 1793888918.sav.bak version=12 hero=2 soul=225080 bag=24 worn=3 -> v14 BOM=yes
+SUMMARY OK=8 SKIP=0 ERROR=0 written=8
+BACKUP C:\Users\zheliku\AppData\Roaming\Godot\app_userdata\GameZMXY\GameData.backup-before-v14-20261110_191354
+```
+
+完整备份：`C:\Users\zheliku\AppData\Roaming\Godot\app_userdata\GameZMXY\GameData.backup-before-v14-20261110_191354`。正式转存及后续完整哈希证据见原D0节；原正式1～4格数据不因E1改变。
+
+## 双人E1：赠送与技能页签（2026-11-11，E1-1/2自动验证，E1-3待实机）
+
+用户明确回复“允许继续E1，实机验收待补”，仅解除D3→E1推进门槛，D0～D3正式键盘验收继续待补。开工HEAD **c63cd1d**、工作区与索引干净；证据目录为 `Godot/GodotProject/.godot/validation/coop_e1_20261111/`。依据第00/10/50/70章和实施计划第七部分E1-1/2；未改v14、只读框架、源表或生产玩法数值，没有Git写操作。E1-3正式第5格逐关核验及E1上手1～6未执行；用户现明确回复“允许待补，继续E1-4收尾”，据此执行清理与文档收尾，待验项继续保留。
+
+架构：赠送沿用 **InventoryForm → GiftEquipmentCommand → EquipmentSystem → 双方原背包集合**；原实例先加入接收者再从发送者移除，职业不限制赠送，穿戴中/满包/非法参与者拒绝。菜单清除选择后才触发具名事件，余额与物品不复制。技能使用窗口自己的只读 **SkillFormData(HeroId)**；已有Form拥有当前英雄三项订阅，切页顺序为UnbindHero→改编号→BindHero，窗口打开/关闭/失败共用同一绑定路径。同英雄主动/被动切换不重绑；只接受阵容实际席位的技能关闭键。未增加管理器、绑定记录、通用事件或兼容重载。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| 官方赠送可用态 | `python Tools/LegacyMigration/export_official_inventory_actions.py --java "S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe" --ffdec "%TEMP%/gamezmxy-ffdec/ffdec.jar" --source Godot/GodotProject/.godot/validation/battle_menu_review/official3/common.swf`：**退出0**；脚本核验还原包SHA256 `53722c6c8615d2542de2e3cc255a68c5d80712c6b8097aaecae6bc7be0a40ab2`，只新增sprite367第1帧77×31 PNG，其余5张既有图片逐字节相同。新PNG SHA256 `3c992eb102eb3825075c523c4d38e232c80989b25c634795c08eab9a196470cc`，`art_export.log`；来源登记于LegacyAssetMap |
+| E1-1 构建/规则 | `dotnet build Godot/GodotProject --no-restore -v quiet`：**0错误、5既有警告**（`e1_1_build.log`）；`dotnet test Tests/ProfileTests --no-restore -v quiet`：**336/336**（`e1_1_profile.log`），相对327新增9例，覆盖原实例/属性、异职业、穿戴拒绝、满包、非法参与者、全档唯一和存档往返 |
+| E1-2 构建 | 同build命令：首轮新增Debug误用不存在的技能枚举，**1错误**（`e1_2_build.log`），改为真实技能后 **0错误、5既有警告**（`e1_2_build_fixed.log`）；后续夹具/截图构建各 **0错误、5既有警告**，最后 `e1_hover_build.log`。子任务最终错误数E1-1=0、E1-2=0；E1-3未执行，E1-4结果见下文收尾补充 |
+| 三套规则 | 三条原test命令：Profile首轮新增上下文测试误用结局枚举造成编译失败（`profile.log`），改为既有LevelSystem.Complete后 **339/339**（`profile_fixed.log`，比开工+12）；Battle **197/197**（`battle.log`）；Level **19/19**（`level.log`）。全部最终退出0，失败/跳过0；既有NU1900保留。新增3例验证未开始/结局后/地图不能提交赠送 |
+| Godot扫描 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_e1_scan_20261111 --headless --editor --build-solutions --quit --no-window`：**退出0**，生成新SkillFormData的UID及PNG导入信息；既有ComponentInsoector/free退出诊断保留 |
+| 引用/格式 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出0，2285路径/393UID**，`references.log`。`dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include <本批11份游戏/Debug C#> --verify-no-changes`：**退出0**（`format_game_final.log`）；ProfileTests.csproj同命令明确包含EquipmentTests.cs：**退出0**（`format_profile.log`，工作区加载警告保留） |
+| 双人失败与夹具修正 | `coop_e1_coop_20261111`先因点击唐僧第1行却断言玄冰阵失败；改为实际冰龙波后，`coop_e1_coop_fixed_20261111`/`coop_e1_coop_layout_20261111`在被动断言失败，诊断余额3900、实际需5000。夹具改为从配置读取主动+一级被动所需余额，原断言保留；`coop_e1_coop_cost_20261111` **退出0、完整SMOKE PASS**，退出11个ObjectDB/1资源。仅改本批新夹具，无生产修补 |
+| 完整双人专项 | 规定Godot参数加 `--smoketest=ui --coop-only`，`coop_e1_coop_final_20261111` **退出0、完整SMOKE PASS**；新增满包提示/接收者格子验证通过。截图补帧后 `coop_e1_coop_verified_20261111` **退出1**：原格原生tooltip遮住菜单，帧内点击未送达；改为先把视口鼠标移到赠送按钮，等2帧消除tooltip再采样/点击。最终 `coop_e1_coop_hover_20261111` **退出0、SMOKE-COOP GIFT/SKILLS/MAP SKILLS PASS、完整SMOKE PASS**。两人主动/被动扣费、反复切页三项来源各1/旧源0、关闭全0、两席位关闭键/池复用、地图默认P1切P2，以及D2/D3全套规则均通过；退出13个ObjectDB/3资源。未弱化任何原断言 |
+| 完整前端 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py coop_e1_frontend_20261111 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出0、完整SMOKE PASS**。地图单人购技及原全部前端规则通过；坏JSON/注册失败为预期注入。退出5个ObjectDB/1资源 |
+| 完整单人UI | 规定Godot参数案例 `coop_e1_ui_20261111 --smoketest=ui`：**退出0、完整SMOKE PASS**，保留单人Gift禁用与非阵容英雄页禁用，新增单人P2技能键不能关闭窗口断言；完整地形60/120Hz、战斗/暂停/解绑/池复用/失败/存档重入均通过。退出诊断22个Texture RID、8个ShapedText RID、2个Font RID、144个ObjectDB及11个资源；另记录资源加载桥接的GCHandle未初始化历史诊断（既有C2记录同签名），未改变退出0及完整PASS事实 |
+| 正式文件/范围 | 开工快照`formal_before.json`只含根层2个目录文件，最终这2份均不变；已补递归清单`formal_recursive_after.json`，相对D3交付`formal_final.sha256.json` **12/12哈希相同，文件数相同**。无正式存档写入；HEAD保持c63cd1d。索引字节散列由b03b5064…变ba53b3e8…，暂存差异仍为空，保留索引现状，不作Git写命令；散列变化未据此认定暂存内容变化。两种diff --check通过；清理前检查点范围为17份修改+4份新增，共21份；11+1份手写C#及其他修改文本UTF-8/CRLF/无行尾空白通过，`scope_final.log`，两种diff --check退出0 |
+| 正式键盘/逐关 | 按computer-use技能使用node_repl/@oai/sky初始化并调用list_windows，仍报 **native pipe不存在（os error 2）**，`computer_use_check.log`；没有真实键盘输入。E1上手1～6与E1-3全部 **未执行**；隔离烟测/截图不替代正式验收 |
+
+本次文件（相对TheGame）：修改 `GameScripts/Systems/EquipmentSystem.cs`、`GameScripts/Commands/EquipmentCommands.cs`、`GameScripts/UI/InventoryForm/Components/EquipmentActionsMenu.cs`、`GameScripts/UI/InventoryForm/InventoryForm.Logic.cs`、`GameScripts/UI/SkillForm/SkillForm.Logic.cs`、`UIs/Inventory/equipment_actions_menu.tscn`；`MainPack/Scripts/Procedure/ProcedureLevel.cs` / `ProcedureMap.cs`；`MainPack/Scripts/Debug/UiSmokeScenario.cs` / `.Inventory.cs` / `.Skills.cs`。新增 `GameScripts/UI/SkillForm/SkillFormData.cs`及Godot生成的`.uid`、`Sprites/UI/inventory/inventory_action_gift.png`及Godot生成的`.import`；仓库另修改 `Tests/ProfileTests/EquipmentTests.cs`、`Tools/LegacyMigration/export_official_inventory_actions.py`、Docs的LegacyAssetMap/WorkingNotes/CoopImplementationPlan/Validation。无删除，未手改UI绑定生成文件。
+
+接口：新增 `EquipmentSystem.TryGift(int fromHeroId,int toHeroId,Guid instanceId):bool` 与 `GiftEquipmentCommand(...)`；`EquipmentActionsMenu.Open(Guid,Rect2,bool)` → `Open(Guid,Rect2,bool,bool canGift)`，新增本组件GiftRequested；技能窗口 `OnOpen(object)`契约由不使用参数改为必须SkillFormData且英雄在阵容中。全部2个生产打开点已显式传参，无其他直接Debug打开点，未留默认P1兼容分支。
+
+最终隔离截图位于 `coop_e1_20261111/screenshots/`：gift_enabled（赠送黄色、异职业装备灰色）、gift_source、gift_recipient（唐僧持有同一件装备）、gift_full（正确中文提示）、p2_skills（默认唐僧）、switched_skills（悟空已学技能）、map_skills；均加前缀`coop_e1_`。已逐张复查赠送可用/接收者/满包及技能双方截图；赠送图含既有保存提示的瞬间，技能图已等待满包提示消失；不是正式键盘上手证据。首轮旧截图渲染早于数值更新，已用最终通过案例的帧等待采样替换，不把旧截图作为验收。
+
+E1-3正式逐关表（保持未执行，不作“可通关”结论）：
+
+| 关卡 | 复现步骤/重点 | 实际现象 | 期望/结论 |
+| --- | --- | --- | --- |
+| 桃花源、水帘洞、蝙蝠窟 | 第5格双人推进；平台坡地、机关/隐藏入口、双方尖刺 | 未执行，实机连接不可用 | 待正式实战核验；无新问题结论 |
+| 七星洞、迦楼罗之穴 | 毒雾命中者、延迟/范围、蛋态第五击归属 | 未执行，同上 | 待正式实战核验 |
+| 浅岸、东海、牛魔谷 | 单人吞噬/释放、水牢、多形态经验归属 | 未执行，同上 | 待正式实战核验 |
+| 隐藏龙宫 | 冻结命中者、最低等级分档、旗幡全档一次 | 正式未执行；D3及本次隔离专项仅提供转场/分档/旗幡支持证据 | 待正式实战核验，不能据专项宣称全关通过 |
+
+生产 `HeroOf(PlayerSlot.P1)` 当前只剩 `MainPack/Scripts/Procedure/ProcedureMap.cs:203`，语义就是地图打开技能窗口默认P1；测试/Debug中显式P1夹具不属待迁移生产占位。E1-4已在用户明确授权后实施，最终总交付见本节后续补充；下表为本轮C#逐文件行号清单，完整逐行原搜索输出在`remaining_p1.txt`。
+
+| C#文件（仓库相对路径） | 行号 | 保留语义 |
+| --- | --- | --- |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/FrontendSmokeScenario.cs` | 313, 366, 367, 491, 492, 523, 541, 542, 567, 625, 626, 679, 714, 722, 1501, 1502, 1539, 1541, 1547, 1549, 1559 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/LevelSmokeScenario.cs` | 107, 108, 402, 415, 719 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/MapProgressSmokeScenario.cs` | 185 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Bull.cs` | 388, 395, 404, 405, 407, 411, 426, 427, 459 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.CheckpointFailure.cs` | 27, 28, 43 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.CombatFeedback.cs` | 276, 279, 283, 347, 464 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Dragon.cs` | 228 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.DragonRules.cs` | 50 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Equipment.cs` | 65, 87, 106, 229, 231, 238, 240, 242, 245, 248 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.FireDemon.cs` | 125, 126, 265, 266 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Garuda.cs` | 193, 201, 215 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Inventory.cs` | 106, 107, 110, 134, 135, 139, 159, 160, 163, 177, 192, 202, 208, 215, 226, 233, 235, 237, 238, 249, 265, 287, 299, 300, 315, 316, 330, 350, 373, 386, 393, 404, 410, 419, 446, 447, 459, 476, 477, 479, 480, 587, 588, 591, 619, 653, 669, 678, 681, 683, 685, 691, 692, 695, 696, 697 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Passives.cs` | 30, 31, 34, 62, 65, 66, 75, 83, 85, 104, 105 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Skills.cs` | 52, 173, 207, 215, 825, 870, 871, 878, 952, 983, 1089, 1111, 1116, 1120, 1122, 1128, 1133, 1135, 1248 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Tangseng.cs` | 101, 116, 117, 155, 156, 157, 185, 186, 187 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Terrain.cs` | 165 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.cs` | 244, 247, 255, 688, 689, 696, 701, 703, 709, 710, 711, 713, 714, 716, 721, 722, 723, 728, 729, 730, 737, 760, 1290, 1293, 1327, 1328, 1331, 1373, 1649, 1650, 1651, 1653, 1654, 1657, 1658, 1662, 1664, 1666, 1667, 1668, 1669, 1670, 1673, 1674, 1679, 1692, 1863, 1920, 1936, 1996, 1998, 2012, 2024, 2026, 2027, 2153, 2175, 2178, 2181 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureMap.cs` | 203 | 地图技能窗口默认P1 |
+| `Tests/ProfileTests/BindablePropertyTests.cs` | 167 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Tests/ProfileTests/BossEquipmentTests.cs` | 28, 30, 36, 38, 42, 47, 54, 56, 70, 71, 74, 75, 113 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Tests/ProfileTests/CommandTests.cs` | 30, 31, 32, 33, 35, 60, 61, 68, 69, 70, 99, 105, 106, 108, 109, 110, 124, 126, 145, 146 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Tests/ProfileTests/DragonPalaceTests.cs` | 82, 89 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Tests/ProfileTests/EquipmentTests.cs` | 309, 313, 314, 320, 321, 363, 366, 374, 376, 437, 438, 467, 468, 471, 472, 492, 495, 496, 505, 515, 519, 520, 538, 540, 541, 543, 544, 563, 568, 569, 572, 573, 660, 676, 677, 695, 701, 725, 726, 729, 730, 732, 736, 737, 740, 741, 760, 761, 762, 763, 766, 767, 770 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Tests/ProfileTests/LevelModelTests.cs` | 122, 139 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Tests/ProfileTests/LevelRewardTests.cs` | 54, 74, 117, 129, 131 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Tests/ProfileTests/ModelTransactionTests.cs` | 122, 232, 261, 262, 266, 287, 302, 310, 311, 316, 332, 336, 349, 362, 363, 382, 383, 384, 388, 394, 399, 400, 401 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Tests/ProfileTests/PassiveSkillTests.cs` | 146, 149, 161, 169, 173, 212, 230 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Tests/ProfileTests/ProfileTests.cs` | 56, 60, 62, 67, 68, 69, 83, 84, 87, 98, 102, 105, 121, 123, 125, 128, 130, 150, 168, 202, 205, 364, 365, 381, 388 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Tests/ProfileTests/QueryTests.cs` | 31, 38, 40, 41, 42, 58, 59, 76, 77, 114, 115, 118, 119, 136 | 隔离单人或显式P1席位的测试/Debug夹具 |
+| `Tests/ProfileTests/SkillLearningTests.cs` | 32, 37, 40, 64, 88, 112, 130 | 隔离单人或显式P1席位的测试/Debug夹具 |
+
+
+### E1-4授权清理与最终回归补充
+
+用户明确回复“允许待补，继续E1-4收尾”，该项已实施；E1-3/E1上手及D0～D3正式键盘项继续未执行。清理前E1-1/2的21文件证据保持为当时检查点；最终本轮相对c63cd1d为 **24份修改+4份新增，共28份文件，无删除**。补充修改SkillSystem.cs、ProfileModel.cs、Tests/ProfileTests的TestGameScope.cs/ProfileTests.cs/SkillLearningTests.cs、Docs的ProjectTour.md及第70章；无Debug消费者使用已删除构造参数，原三个生产/Debug构造点均保持三参。
+
+| 验证 | 命令与实际结果 |
+| --- | --- |
+| E1-4构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：**退出0、0错误、5既有警告**，`e1_4_build.log`；删除7处空条件及依赖其null语义的早退；保留IsAvailable地图查询与无参总清理的真实生命周期判断 |
+| 最终规则 | 三条原test命令 **全部退出0，339/339、197/197、19/19，失败/跳过0**，`profile_final.log` / `battle_final.log` / `level_final.log`。地图购买测试先清技能登记再进入地图，保留无HeroModel购买及存档/重建原断言 |
+| 最终扫描/引用 | 既定runner案例`coop_e1_final_scan_20261111 --headless --editor --build-solutions --quit --no-window` **退出0**；`python Tools/ProjectMaintenance/validate_game_references.py` **退出0，2285路径/393UID**（`scan_final.log` / `references_final.log`） |
+| 清理后完整前端 | 既定runner案例`coop_e1_cleanup_frontend_20261111 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出0、完整SMOKE PASS**。退出5个ObjectDB/1资源，预期坏JSON/旧作用域/失败注入保持 |
+| 清理后双人专项 | 同runner及既定显示参数，案例`coop_e1_cleanup_coop_20261111 --quit-after 30000 -- --smoketest=ui --coop-only`：**退出0、完整SMOKE PASS、Gift/Skills/Map Skills/D3规则全部PASS**，退出11个ObjectDB/1资源；`coop_cleanup.log` |
+| 清理后完整UI | 同runner及既定显示参数，案例`coop_e1_cleanup_ui_20261111 --quit-after 30000 -- --smoketest=ui`：**退出0、完整SMOKE PASS**；原单人Gift禁用、P2键忽略、技能/暂停/复用、60/120Hz坡地与单向地形、生命/球、原生墓碑/检查点/取消/失败路径均通过。退出22个Texture RID、8个ShapedText RID、2个Font RID、144个ObjectDB、11资源；本次最终stderr中GCHandle加载桥接诊断 **0条**；清理前E1完整UI出现同类历史诊断的记录仍保留。`ui_final.log` |
+| 最终格式/编码/范围 | `dotnet format whitespace <GodotProject.csproj / ProfileTests.csproj> --no-restore --include <本批13份游戏/Debug / 4份测试> --verify-no-changes`：**两者退出0**（`format_cleanup_game.log` / `format_cleanup_profile.log`）。UTF-8/CRLF/无行尾空白、`git diff --check` / `git diff --cached --check`均通过，最终文件清单与索引在`scope_final.log`。正式目录递归仍 **12/12哈希相同** |
+
 ## 双人D3：相机、全灭、出口、治疗与等级规则（2026-11-11，自动验证通过，实机待补）
 
 用户现明确要求“好的，继续下一阶段吧”，据此允许暂留D2真实键盘验收进入D3；既有D0/D1/D2待验不记通过。开工HEAD为 **ae2a1ba**（用户已提交D2及Panel重构），工作区/索引干净；正式12份文件SHA256、HEAD、索引与差异快照存入 `Godot/GodotProject/.godot/validation/coop_d3_20261111/`。按计划D3-1～D3-6顺序，沿用第00/10/30/50/70章；不改v14、源表、场景、框架，不执行Git写操作。

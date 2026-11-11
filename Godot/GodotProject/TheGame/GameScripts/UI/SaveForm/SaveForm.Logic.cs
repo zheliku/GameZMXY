@@ -22,8 +22,8 @@ public partial class SaveForm : IController
     private TextureButton[] _deleteButtons; // 六个格内的删除入口，只有已有可读档案启用。
     private Control _deleteConfirmation; // 存档页自己的确认层，保持前端视觉一致。
     private Label _deleteMessage; // 当前确认格号和不可恢复提示。
-    private TextureButton _deleteCancel; // 取消确认，不触碰存档。
-    private TextureButton _deleteConfirm; // 确认后才向流程提交删除请求。
+    private Button _deleteCancel; // 取消确认，不触碰存档。
+    private Button _deleteConfirm; // 确认后才向流程提交删除请求。
     private int _deleteSlot; // 当前等待确认的格号。
     private SaveFormMode _mode; // 本次打开的用途。
     private bool _confirmingOverwrite; // 确认层当前用于覆盖而非删除。
@@ -79,8 +79,8 @@ public partial class SaveForm : IController
         _deleteButtons = _slotViews.Select(slot => slot.Button.GetNode<TextureButton>("Delete")).ToArray();
         _deleteConfirmation = GetNode<Control>("DeleteConfirmation");
         _deleteMessage = _deleteConfirmation.GetNode<Label>("Panel/Message");
-        _deleteCancel = _deleteConfirmation.GetNode<TextureButton>("Panel/Cancel");
-        _deleteConfirm = _deleteConfirmation.GetNode<TextureButton>("Panel/Confirm");
+        _deleteCancel = _deleteConfirmation.GetNode<Button>("Panel/Cancel");
+        _deleteConfirm = _deleteConfirmation.GetNode<Button>("Panel/Confirm");
         // 只在新建实例时收集本表单的固定格子，复用期间沿用引用与订阅。
         for (int i = 0; i < _slotViews.Length; i++)
         {
