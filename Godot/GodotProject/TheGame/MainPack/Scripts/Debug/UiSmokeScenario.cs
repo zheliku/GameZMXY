@@ -94,6 +94,7 @@ public sealed partial class UiSmokeScenario
             LevelViewController level = FindLevel();
             BattleForm battleForm = CurrentBattleForm();
             SmokeInspection.CheckTooltips(battleForm);
+            CheckNodePoolReuse();
             if (OS.GetCmdlineUserArgs().Contains("--coop-only"))
             {
                 await CheckCoopSessionAsync(procedure, flow, level, battleForm);
@@ -1717,7 +1718,7 @@ public sealed partial class UiSmokeScenario
         File.WriteAllText(path, unsupported);
         try
         {
-            SaveSystem saveSystem = new(SmokeInspection.Flow(FindLevelProcedure()).GetArchitecture());
+            SaveSystem saveSystem = new(SmokeInspection.Flow(FindLevelProcedure()).GetArchitecture(), GF.Archive);
             bool rejected = false;
             try
             {

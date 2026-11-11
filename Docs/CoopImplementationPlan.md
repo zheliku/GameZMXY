@@ -182,7 +182,7 @@ python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案�
 - `MainPack/Scripts/Debug/SmokeInspection.cs:259` 用**反射**读 `AbstractHeroEntity` 的私有属性名 `"Attributes"`。改这个属性名会在运行时而非编译期出错。
 - `MainPack/Scripts/Debug/` 下 `UiSmokeScenario.*`、`FrontendSmokeScenario`、`LevelSmokeScenario`、`EnemyAiSmokeScenario`、`TestArenaController`、`ProfileTestData` 有大量调用点，参数化接口时必须一起改。
 - `GF.Base.PauseGame()/ResumeGame()` 只是全局速度开关，无引用计数。现有五处窗口/演出各自用 `_ownsPause`/`_resumeGame` 标志对称持有，**保持这个模式**。
-- 存档读写链：`SaveSystem → GameArchiveUtility → GF.Archive`；DTO 转换集中在 `SaveDataUtility`；恢复在 `ProfileSystem.RestoreCheckpoint`。
+- 存档读写链：`SaveSystem → 构造注入的GF.Archive`（2026-11-11按用户架构精简要求移除纯转发层）；DTO 转换集中在 `SaveDataUtility`；恢复在 `ProfileSystem.RestoreCheckpoint`。
 - 英雄实体显示当前**不传 userData**（`ProcedureLevel.cs` 的 `ShowEntityAsync<AbstractHeroEntity>` 一行），由 `OnShow` 读模型校验，位置随后紧跟一行单独赋 `GlobalPosition`。敌人显示传 `EnemySpawn` record struct（`AbstractEnemyEntity.cs` 文件末尾），这是显示参数的既有先例。
 - `AbstractActorEntity.OnShow` 已把 `Dead = false`；实体自己新增的池化字段必须在各自 `OnShow` 里复位。
 - `GF.Entity.GetEntity(int entityId)` 可把 `AttackSource.OwnerEntityId` 解析回实体；`AbstractEnemyEntity.OnHurt` 已用这个方式锁定攻击方，C2 沿用同一手段。

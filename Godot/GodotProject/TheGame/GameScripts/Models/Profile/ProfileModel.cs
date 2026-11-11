@@ -21,7 +21,10 @@ public sealed class ProfileModel : AbstractModel
     /// <summary>
     /// 按玩家席位排列的参战英雄编号；下标 0 为 P1，下标 1 为 P2。
     /// </summary>
-    public IReadOnlyList<int> HeroIds { get; }
+    public IReadOnlyList<int> HeroIds
+    {
+        get;
+    }
 
     /// <summary>
     /// 已通关的最远关卡；业务系统成功结算时推进，地图观察同一绑定。
@@ -36,7 +39,10 @@ public sealed class ProfileModel : AbstractModel
     /// <summary>
     /// 每名英雄的背包最大装备数量。
     /// </summary>
-    public int Capacity { get; }
+    public int Capacity
+    {
+        get;
+    }
 
     /// <summary>
     /// 从已验证的档案记录建立数据，不缓存共享经验曲线。
@@ -83,28 +89,40 @@ public sealed class ProfileModel : AbstractModel
     /// </summary>
     /// <param name="heroId">已拥有英雄。</param>
     /// <returns>该英雄的成长绑定。</returns>
-    public BindableProperty<HeroProgressionState> GetProgress(int heroId) => _heroes[heroId];
+    public BindableProperty<HeroProgressionState> GetProgress(int heroId)
+    {
+        return _heroes[heroId];
+    }
 
     /// <summary>
     /// 读取指定英雄的同一穿戴属性。
     /// </summary>
     /// <param name="heroId">已拥有英雄。</param>
     /// <returns>该英雄的穿戴绑定。</returns>
-    public BindableProperty<EquippedItems> GetSlots(int heroId) => _heroSlots[heroId];
+    public BindableProperty<EquippedItems> GetSlots(int heroId)
+    {
+        return _heroSlots[heroId];
+    }
 
     /// <summary>
     /// 读取指定英雄唯一的灵魂余额。
     /// </summary>
     /// <param name="heroId">参战英雄编号。</param>
     /// <returns>该英雄的灵魂绑定。</returns>
-    public BindableProperty<int> GetSoul(int heroId) => _heroSouls[heroId];
+    public BindableProperty<int> GetSoul(int heroId)
+    {
+        return _heroSouls[heroId];
+    }
 
     /// <summary>
     /// 读取指定英雄唯一的背包集合。
     /// </summary>
     /// <param name="heroId">参战英雄编号。</param>
     /// <returns>该英雄的背包集合。</returns>
-    public BindableList<EquipmentData> GetBag(int heroId) => _heroBags[heroId];
+    public BindableList<EquipmentData> GetBag(int heroId)
+    {
+        return _heroBags[heroId];
+    }
 
     /// <summary>
     /// 查询整个档案的背包和所有英雄穿戴，供一次性奖励判断是否已拥有该物品。

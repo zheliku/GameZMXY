@@ -85,7 +85,10 @@ public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IC
     /// <summary>
     /// 实体的基础配置类型；运行实例编号另由 GGF 管理。
     /// </summary>
-    protected abstract EntityId EntityType { get; }
+    protected abstract EntityId EntityType
+    {
+        get;
+    }
 
     // ---- 属性 ----
 
@@ -102,12 +105,18 @@ public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IC
     /// <summary>
     /// 实体编号
     /// </summary>
-    public int Id { get; private set; }
+    public int Id
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 实体资源名称（PackedScene 路径）
     /// </summary>
-    public string EntityAssetName { get; private set; }
+    public string EntityAssetName
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 实体实例
@@ -117,7 +126,10 @@ public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IC
     /// <summary>
     /// 实体所属的实体组
     /// </summary>
-    public IEntityGroup EntityGroup { get; private set; }
+    public IEntityGroup EntityGroup
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 动画播放器
@@ -142,23 +154,35 @@ public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IC
     /// <summary>
     /// 实际生命值；英雄从注册模型读取，怪物使用实体独有的普通状态。
     /// </summary>
-    public abstract int Hp { get; }
+    public abstract int Hp
+    {
+        get;
+    }
 
     /// <summary>
     /// 当前生命上限。
     /// </summary>
-    public abstract int MaxHp { get; }
+    public abstract int MaxHp
+    {
+        get;
+    }
 
     /// <summary>
     /// 等级（参与等级压制）；子类在 OnShow 写入。
     /// </summary>
-    public abstract int Level { get; }
+    public abstract int Level
+    {
+        get;
+    }
 
     /// <summary>
     /// 死亡事实。**单一事实源**：只在 ReceiveHit 扣血扣到 0 的那一刻置位、OnShow 复位；
     /// 身体状态机在下一个物理帧据此进入死亡状态（死亡优先级最高）。
     /// </summary>
-    public bool Dead { get; private set; }
+    public bool Dead
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 技能等临时无敌可拒绝受击；无双霸体不等于无敌。
@@ -173,14 +197,20 @@ public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IC
     /// <summary>
     /// 结算侧别（选 BattleConfig 常数组；子类必须固定返回）
     /// </summary>
-    public abstract CombatSide Side { get; }
+    public abstract CombatSide Side
+    {
+        get;
+    }
 
     /// <summary>
     /// 已显示、可驱动：OnShow 置真、OnHide 置假。子类 _PhysicsProcess 靠它提前返回（实体隐藏/回收后
     /// 节点仍在树上，不挡会继续跑物理）；AI 等外部持有者靠它判断引用是否还有效（配合 IsInstanceValid）。
     /// （2026-09-30 自 AbstractHeroEntity/AbstractEnemyEntity 各自的 _active 下沉合并。）
     /// </summary>
-    public bool IsShown { get; private set; }
+    public bool IsShown
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 可作为目标/可交互：节点有效、已显示、未死亡（外部持有引用时用它判断是否还能用）。
@@ -377,7 +407,10 @@ public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IC
     /// 借用当前游戏流程的架构入口。
     /// </summary>
     /// <returns>所属流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     // ---- 业务入口 ----
 
@@ -449,12 +482,18 @@ public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IC
     /// 动画方法轨道按编号播放音效，资源与声音组仍由 GGF 管理。
     /// </summary>
     /// <param name="id">声音配置编号；None 不播放。</param>
-    public void PlaySoundAnimEvent(SoundId id) => GF.Sound.PlayConfigured(id);
+    public void PlaySoundAnimEvent(SoundId id)
+    {
+        GF.Sound.PlayConfigured(id);
+    }
 
     /// <summary>
     /// 原生动作帧停止当前运动；例如悟空受击第7帧与首领受击收尾。
     /// </summary>
-    public void StopMotionAnimEvent() => Velocity = Vector2.Zero;
+    public void StopMotionAnimEvent()
+    {
+        Velocity = Vector2.Zero;
+    }
 
     /// <summary>
     /// 设置朝向（0 表示不变）。翻转通用表现层（身体/判定盒容器），最后调钩子（子类镜像自己的附加层）。
@@ -623,7 +662,10 @@ public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IC
     /// 捕获本次显示的攻击来源；身体攻击的施放者与判定节点相同。
     /// </summary>
     /// <returns>不持有节点的来源身份快照。</returns>
-    protected AttackSource CaptureAttackSource() => new AttackSource(Id, EntityType, GetInstanceId(), GetInstanceId());
+    protected AttackSource CaptureAttackSource()
+    {
+        return new AttackSource(Id, EntityType, GetInstanceId(), GetInstanceId());
+    }
 
     /// <summary>
     /// 将动画名转换为缓存的 StringName，避免播放请求分配。
@@ -647,7 +689,10 @@ public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IC
     /// </summary>
     /// <param name="anim">需要查询的动画名称。</param>
     /// <returns>动画是否存在。</returns>
-    protected bool HasAnim(string anim) => _animPlayer != null && _animPlayer.HasAnimation(anim);
+    protected bool HasAnim(string anim)
+    {
+        return _animPlayer != null && _animPlayer.HasAnimation(anim);
+    }
 
     /// <summary>
     /// 出招装填：快照攻击方属性、掷威力倍率，装填攻击包（只装受击方结算要用的数据）。

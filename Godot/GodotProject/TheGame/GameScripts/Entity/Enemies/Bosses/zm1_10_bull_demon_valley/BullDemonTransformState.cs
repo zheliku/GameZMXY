@@ -48,5 +48,8 @@ internal sealed class BullDemonTransformState : AbstractEnemyBodyState
     /// <summary>
     /// 原生方法键或独立死亡效果只登记完成，不在动画遍历中变身或销毁状态机。
     /// </summary>
-    internal void CompleteAnimation() => _animationCompleted = true;
+    internal void CompleteAnimation()
+    {
+        _animationCompleted = true;
+    }
 }

@@ -16,10 +16,12 @@ public sealed class EquipEquipmentCommand(int heroId, Guid instanceId) : Abstrac
     protected override bool OnExecute()
     {
         LevelModel level = this.GetModel<LevelModel>();
-        return level is
+        if (level is not { SessionActive: true } || level.Outcome.Value != LevelOutcome.Running)
         {
-            SessionActive: true
-        } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TryEquip(heroId, instanceId);
+            return false;
+        }
+
+        return this.GetSystem<EquipmentSystem>().TryEquip(heroId, instanceId);
     }
 }
 
@@ -34,10 +36,12 @@ public sealed class UnequipEquipmentCommand(int heroId, EquipmentSlot slot) : Ab
     protected override bool OnExecute()
     {
         LevelModel level = this.GetModel<LevelModel>();
-        return level is
+        if (level is not { SessionActive: true } || level.Outcome.Value != LevelOutcome.Running)
         {
-            SessionActive: true
-        } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TryUnequip(heroId, slot);
+            return false;
+        }
+
+        return this.GetSystem<EquipmentSystem>().TryUnequip(heroId, slot);
     }
 }
 
@@ -52,10 +56,12 @@ public sealed class SellEquipmentCommand(int heroId, Guid instanceId) : Abstract
     protected override bool OnExecute()
     {
         LevelModel level = this.GetModel<LevelModel>();
-        return level is
+        if (level is not { SessionActive: true } || level.Outcome.Value != LevelOutcome.Running)
         {
-            SessionActive: true
-        } && level.Outcome.Value == LevelOutcome.Running && this.GetSystem<EquipmentSystem>().TrySell(heroId, instanceId);
+            return false;
+        }
+
+        return this.GetSystem<EquipmentSystem>().TrySell(heroId, instanceId);
     }
 }
 
@@ -70,10 +76,12 @@ public sealed class SellEquipmentByQualityCommand(int heroId, EquipmentQuality q
     protected override int OnExecute()
     {
         LevelModel level = this.GetModel<LevelModel>();
-        return level is
+        if (level is not { SessionActive: true } || level.Outcome.Value != LevelOutcome.Running)
         {
-            SessionActive: true
-        } && level.Outcome.Value == LevelOutcome.Running ? this.GetSystem<EquipmentSystem>().SellByQuality(heroId, quality) : 0;
+            return 0;
+        }
+
+        return this.GetSystem<EquipmentSystem>().SellByQuality(heroId, quality);
     }
 }
 
@@ -89,7 +97,11 @@ public sealed class GiftEquipmentCommand(int fromHeroId, int toHeroId, Guid inst
     protected override bool OnExecute()
     {
         LevelModel level = this.GetModel<LevelModel>();
-        return level is { SessionActive: true } && level.Outcome.Value == LevelOutcome.Running &&
-            this.GetSystem<EquipmentSystem>().TryGift(fromHeroId, toHeroId, instanceId);
+        if (level is not { SessionActive: true } || level.Outcome.Value != LevelOutcome.Running)
+        {
+            return false;
+        }
+
+        return this.GetSystem<EquipmentSystem>().TryGift(fromHeroId, toHeroId, instanceId);
     }
 }

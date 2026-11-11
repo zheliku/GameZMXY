@@ -102,12 +102,18 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     /// <summary>
     /// 本次显示的每球灵魂覆盖值；普通敌人为空，直接使用基础配置。
     /// </summary>
-    protected int? SoulPerOrbOverride { get; set; }
+    protected int? SoulPerOrbOverride
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 本次显示的装备掉落概率覆盖值；普通敌人为空，池复用时清除。
     /// </summary>
-    protected float? EquipmentDropChanceOverride { get; set; }
+    protected float? EquipmentDropChanceOverride
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 特殊敌人按自身奖励规则选择的装备池；为空时使用基础配置。
@@ -148,12 +154,18 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     /// <summary>
     /// 本怪物独立拥有的 AI 数据，不与同类池实例共享。
     /// </summary>
-    public EnemyAiData AiData { get; private set; }
+    public EnemyAiData AiData
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 具体怪物声明共享AI配方；完全由身体机制驱动的固定首领可以不创建AI。
     /// </summary>
-    protected abstract EnemyAiPreset AiPreset { get; }
+    protected abstract EnemyAiPreset AiPreset
+    {
+        get;
+    }
 
     /// <summary>
     /// 是否允许无目标时主动感知；已有目标的维护与受击锁定不受影响。
@@ -218,9 +230,15 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     /// </summary>
     int IEnemyBody.MoveIntent
     {
-        get => AiData.MoveIntent;
+        get
+        {
+            return AiData.MoveIntent;
+        }
 
-        set => AiData.MoveIntent = value;
+        set
+        {
+            AiData.MoveIntent = value;
+        }
     }
 
     /// <summary>
@@ -647,7 +665,10 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     /// </summary>
     /// <param name="anchor">关卡会话注入的相机中心。</param>
     /// <exception cref="ArgumentNullException">中心节点为空。</exception>
-    public void SetPatrolAnchor(Node2D anchor) => _patrolAnchor = anchor ?? throw new ArgumentNullException(nameof(anchor));
+    public void SetPatrolAnchor(Node2D anchor)
+    {
+        _patrolAnchor = anchor ?? throw new ArgumentNullException(nameof(anchor));
+    }
 
     /// <summary>
     /// 保留存活目标；失效后才从场景索敌区选择新目标，不存在另一份视野时限。
@@ -698,7 +719,10 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     /// 设置当前目标并清零视野外计时。
     /// </summary>
     /// <param name="target">本次目标；空值清除索敌。</param>
-    private void SetTarget(AbstractActorEntity target) => _target = target;
+    private void SetTarget(AbstractActorEntity target)
+    {
+        _target = target;
+    }
 
     /// <summary>
     /// 创建并启动怪物身体状态机；已有状态机时保持复用。
@@ -771,12 +795,18 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     /// 提交怪物招式并装填攻击包。
     /// </summary>
     /// <param name="index">要提交的怪物攻击下标。</param>
-    void IActorBody.BeginAttack(int index) => BeginConfiguredAttack(index);
+    void IActorBody.BeginAttack(int index)
+    {
+        BeginConfiguredAttack(index);
+    }
 
     /// <summary>
     /// 结束怪物招式并归还攻击包。
     /// </summary>
-    void IActorBody.EndAttack() => EndCurrentAttack();
+    void IActorBody.EndAttack()
+    {
+        EndCurrentAttack();
+    }
 
     /// <summary>
     /// 死亡状态进入时按敌人类别处理受击盒并广播一次击败事件；声音由动画负责。
@@ -797,19 +827,28 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     /// <summary>
     /// 请求在当前物理帧完成后安全回收实体。
     /// </summary>
-    void IEnemyBody.RequestRecycle() => _recycleRequested = true;
+    void IEnemyBody.RequestRecycle()
+    {
+        _recycleRequested = true;
+    }
 
     /// <summary>
     /// 由 Godot 随机源提供 AI 随机值。
     /// </summary>
     /// <returns>零到一之间的随机值。</returns>
-    float IEnemyAiAgent.NextRandom() => GD.Randf();
+    float IEnemyAiAgent.NextRandom()
+    {
+        return GD.Randf();
+    }
 
     /// <summary>
     /// 设置并限制怪物的水平移动意图。
     /// </summary>
     /// <param name="dir">水平意图：负值左，正值右，零停。</param>
-    void IEnemyAiAgent.Move(int dir) => AiData.MoveIntent = Mathf.Clamp(dir, -1, 1);
+    void IEnemyAiAgent.Move(int dir)
+    {
+        AiData.MoveIntent = Mathf.Clamp(dir, -1, 1);
+    }
 
     /// <summary>
     /// 仅在可行动且未忙碌时按目标方向调整朝向。
@@ -828,7 +867,10 @@ public abstract partial class AbstractEnemyEntity : AbstractActorEntity, IEnemyA
     /// </summary>
     /// <param name="index">希望提交的攻击配置下标。</param>
     /// <returns>下标和当前状态是否允许该请求。</returns>
-    bool IEnemyAiAgent.RequestAttack(int index) => TryRequestAttack(index);
+    bool IEnemyAiAgent.RequestAttack(int index)
+    {
+        return TryRequestAttack(index);
+    }
 
     /// <summary>
     /// 校验并登记攻击请求；Boss 可覆写特殊出招条件，身体状态机统一提交。

@@ -33,7 +33,10 @@ public partial class BullDemonBeastEntity : AbstractBullDemonFormEntity
     protected override bool Invulnerable => AttackSegment >= 0;
 
     /// <inheritdoc />
-    protected override void FaceAttackTarget(int index) => SetFacing(((IEnemyBody)this).MoveIntent);
+    protected override void FaceAttackTarget(int index)
+    {
+        SetFacing(((IEnemyBody)this).MoveIntent);
+    }
 
     /// <summary>
     /// 原版第25源帧完成兽形闪烁，再由下一身体帧提交人形。

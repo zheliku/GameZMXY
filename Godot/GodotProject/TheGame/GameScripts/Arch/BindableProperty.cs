@@ -4,39 +4,6 @@ using System.Collections.Generic;
 namespace GameLogic.Architecture;
 
 /// <summary>
-/// 观察者借用的只读属性；在 GGF 窗口 OnOpen 注册、OnClose 退订。
-/// </summary>
-/// <typeparam name="T">完整的属性值；关联字段可以使用不可变快照。</typeparam>
-public interface IReadonlyBindableProperty<T>
-{
-    /// <summary>
-    /// 当前已经提交的值。
-    /// </summary>
-    T Value
-    { get; }
-
-    /// <summary>
-    /// 注册变化回调；优先级越大越先执行，同优先级按注册顺序。
-    /// </summary>
-    /// <param name="onValueChanged">接收新值的同步回调。</param>
-    /// <param name="priority">默认零。</param>
-    void Register(Action<T> onValueChanged, int priority = 0);
-
-    /// <summary>
-    /// 移除最近一次注册的同一个回调。
-    /// </summary>
-    /// <param name="onValueChanged">原回调。</param>
-    void UnRegister(Action<T> onValueChanged);
-
-    /// <summary>
-    /// 注册后立即以当前值初始化显示，后续按优先级接收新值。
-    /// </summary>
-    /// <param name="onValueChanged">接收当前新值的同步回调。</param>
-    /// <param name="priority">越大越先执行，默认零；相同优先级按注册顺序。</param>
-    void RegisterWithInitValue(Action<T> onValueChanged, int priority = 0);
-}
-
-/// <summary>
 /// 借鉴 QFramework BindableProperty 的值比较与绑定契约；独立于 GGF 事件总线。
 /// </summary>
 /// <typeparam name="T">属性值类型。</typeparam>
@@ -46,7 +13,7 @@ public interface IReadonlyBindableProperty<T>
 /// 本地实现使用 C# 委托与 EqualityComparer，不依赖 EasyEvent、Unity 或另一套 Architecture。
 /// 模型拥有属性，业务系统直接写入；表现层只读并订阅，业务系统维护修改规则。
 /// </remarks>
-public sealed class BindableProperty<T>(T initialValue = default) : IReadonlyBindableProperty<T>
+public sealed class BindableProperty<T>(T initialValue = default)
 {
     private T _value = initialValue; // 唯一权威值。
     private readonly PriorityCallbacks<Action<T>> _callbacks = new(); // 只传新值的有序同步通知。
@@ -56,7 +23,10 @@ public sealed class BindableProperty<T>(T initialValue = default) : IReadonlyBin
     /// </summary>
     public T Value
     {
-        get => _value;
+        get
+        {
+            return _value;
+        }
 
         set
         {
@@ -77,7 +47,10 @@ public sealed class BindableProperty<T>(T initialValue = default) : IReadonlyBin
     /// 仅设置值而不通知，用于明确不需要刷新的初始化。
     /// </summary>
     /// <param name="value">本次已校验的值。</param>
-    public void SetValueWithoutEvent(T value) => _value = value;
+    public void SetValueWithoutEvent(T value)
+    {
+        _value = value;
+    }
 
     /// <summary>
     /// 注册变化回调。
@@ -85,7 +58,10 @@ public sealed class BindableProperty<T>(T initialValue = default) : IReadonlyBin
     /// <param name="onValueChanged">接收新值的主线程回调，调用方负责对称退订。</param>
     /// <param name="priority">越大越先执行，默认零；相同优先级按注册顺序。</param>
     /// <exception cref="ArgumentNullException">回调为空。</exception>
-    public void Register(Action<T> onValueChanged, int priority = 0) => _callbacks.Register(onValueChanged, priority);
+    public void Register(Action<T> onValueChanged, int priority = 0)
+    {
+        _callbacks.Register(onValueChanged, priority);
+    }
 
     /// <summary>
     /// 先注册再以当前值初始化，初始化期间发生的变化也不会漏掉。
@@ -112,7 +88,10 @@ public sealed class BindableProperty<T>(T initialValue = default) : IReadonlyBin
     /// 移除注册的回调。
     /// </summary>
     /// <param name="onValueChanged">同一个回调。</param>
-    public void UnRegister(Action<T> onValueChanged) => _callbacks.UnRegister(onValueChanged);
+    public void UnRegister(Action<T> onValueChanged)
+    {
+        _callbacks.UnRegister(onValueChanged);
+    }
 }
 
 /// <summary>

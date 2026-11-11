@@ -14,7 +14,10 @@ public abstract class AbstractBossAiState : AbstractEnemyAiState
     /// </summary>
     /// <param name="agent">本次决策的目标距离与实例状态。</param>
     /// <returns>正数游戏秒数。</returns>
-    protected virtual double GetDecisionPeriod(IEnemyAiAgent agent) => 1;
+    protected virtual double GetDecisionPeriod(IEnemyAiAgent agent)
+    {
+        return 1;
+    }
 
     /// <summary>
     /// 有目标时不套用小怪概率选招；无目标或高度超限时按官方游荡。
@@ -51,5 +54,8 @@ public abstract class AbstractBossAiState : AbstractEnemyAiState
     /// </summary>
     /// <param name="agent">本实例感知及随机源。</param>
     /// <param name="dt">本次游戏秒数。</param>
-    protected void Patrol(IEnemyAiAgent agent, float dt) => agent.GetSystem<EnemyAiSystem>().Patrol(agent, dt);
+    protected void Patrol(IEnemyAiAgent agent, float dt)
+    {
+        agent.GetSystem<EnemyAiSystem>().Patrol(agent, dt);
+    }
 }

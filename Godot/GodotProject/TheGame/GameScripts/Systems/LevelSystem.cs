@@ -29,7 +29,9 @@ public sealed class LevelSystem : AbstractSystem
     /// 绑定系统归属；模型由流程先行注册。
     /// </summary>
     /// <param name="architecture">所属游戏入口。</param>
-    public LevelSystem(IArchitecture architecture) : base(architecture) { }
+    public LevelSystem(IArchitecture architecture) : base(architecture)
+    {
+    }
 
     /// <summary>
     /// 借用 Architecture 拥有的本局状态。
@@ -44,12 +46,18 @@ public sealed class LevelSystem : AbstractSystem
     /// <summary>
     /// 本次结局提交的检查点写盘任务。
     /// </summary>
-    public Task<bool> CheckpointWrite { get; private set; }
+    public Task<bool> CheckpointWrite
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 系统移除时兜底结束未清理的业务事务。
     /// </summary>
-    protected override void OnDeinit() => EndSession();
+    protected override void OnDeinit()
+    {
+        EndSession();
+    }
 
     /// <summary>
     /// 按定义初始化本局阶段。

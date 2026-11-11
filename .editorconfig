@@ -26,7 +26,7 @@ csharp_space_after_keywords_in_control_flow_statements = true
 csharp_space_around_binary_operators = before_and_after
 csharp_space_after_comma = true
 csharp_space_before_comma = false
-csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_blocks = false
 csharp_preserve_single_line_statements = false
 
 # Language style and naming diagnostics share the same project-owned scope.
@@ -40,10 +40,12 @@ csharp_prefer_braces = true:suggestion
 csharp_style_var_for_built_in_types = false:suggestion
 csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_style_var_elsewhere = false:suggestion
-csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_methods = false:suggestion
 csharp_style_expression_bodied_constructors = false:suggestion
+csharp_style_expression_bodied_local_functions = false:suggestion
+csharp_style_expression_bodied_operators = false:suggestion
 csharp_style_expression_bodied_properties = when_on_single_line:suggestion
-csharp_style_expression_bodied_accessors = when_on_single_line:suggestion
+csharp_style_expression_bodied_accessors = false:suggestion
 csharp_style_expression_bodied_indexers = when_on_single_line:suggestion
 
 dotnet_diagnostic.IDE1006.severity = warning

@@ -83,7 +83,10 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <summary>
     /// 本次显示由哪个玩家席位控制；每次 OnShow 覆盖。
     /// </summary>
-    public PlayerSlot Slot { get; private set; }
+    public PlayerSlot Slot
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 战斗与背包预览共用的只读外观资源引用。
@@ -123,7 +126,10 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <summary>
     /// 由具体英雄给出身体初始状态类型。
     /// </summary>
-    protected abstract Type InitialBodyStateType { get; }
+    protected abstract Type InitialBodyStateType
+    {
+        get;
+    }
 
     // ---- 接口实现 ----
 
@@ -438,7 +444,10 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     }
 
     /// <inheritdoc />
-    protected override bool ApplyDamage(int amount) => this.GetSystem<HeroSystem>().Damage(HeroId, amount);
+    protected override bool ApplyDamage(int amount)
+    {
+        return this.GetSystem<HeroSystem>().Damage(HeroId, amount);
+    }
 
     /// <inheritdoc />
     protected override void RestoreHealth(int amount)
@@ -450,7 +459,10 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <summary>
     /// 在成长模型确认升级并更新属性后显示提示；普通进关不触发。
     /// </summary>
-    public void PlayLevelUp() => _levelUp?.ShowLevelUp();
+    public void PlayLevelUp()
+    {
+        _levelUp?.ShowLevelUp();
+    }
 
     // ---- 业务入口 ----
 
@@ -497,7 +509,10 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     }
 
     /// <inheritdoc />
-    protected override CombatantAttributes CaptureCombatAttributes() => Attributes.CaptureCombatAttributes(Id);
+    protected override CombatantAttributes CaptureCombatAttributes()
+    {
+        return Attributes.CaptureCombatAttributes(Id);
+    }
 
     // ---- 内部方法与扩展点 ----
 
@@ -524,7 +539,10 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <param name="data">本次攻击快照，仅在回调内使用。</param>
     /// <param name="result">目标已完成的伤害结算结果。</param>
     /// <param name="target">本次真实命中的目标。</param>
-    protected override void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result) => this.GetSystem<HeroSystem>().RecordHit(HeroId, result);
+    protected override void OnHitLanded(AbstractActorEntity target, AttackData data, DamageResult result)
+    {
+        this.GetSystem<HeroSystem>().RecordHit(HeroId, result);
+    }
 
     /// <summary>
     /// 受击：只登记事实（击退速度），何时生效由身体状态决定——
@@ -604,7 +622,10 @@ public abstract partial class AbstractHeroEntity : AbstractActorEntity, IHeroBod
     /// <summary>
     /// 将本英雄拥有的墓碑完成事实交给关卡，不以身体动画长度代替演出结束。
     /// </summary>
-    private void OnDeathPresentationFinished() => DeathPresentationFinished?.Invoke();
+    private void OnDeathPresentationFinished()
+    {
+        DeathPresentationFinished?.Invoke();
+    }
 
     /// <summary>
     /// 由具体英雄给出自己的身体状态集合。

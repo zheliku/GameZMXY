@@ -21,7 +21,10 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     /// <summary>
     /// 当前阶段是否暂停身体重力。
     /// </summary>
-    protected bool GravitySuspended { get; set; }
+    protected bool GravitySuspended
+    {
+        get; set;
+    }
 
     /// <inheritdoc />
     protected override void Enter(IFsm<IHeroBody> fsm, IHeroBody body)
@@ -73,7 +76,10 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     /// <summary>
     /// 由动画末尾的方法键请求收招；实际迁移在推进返回后执行。
     /// </summary>
-    public void CompleteAnimation() => _animationCompleted = true;
+    public void CompleteAnimation()
+    {
+        _animationCompleted = true;
+    }
 
     /// <inheritdoc />
     protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
@@ -88,7 +94,10 @@ public abstract class AbstractHeroSkillState : AbstractHeroBodyState
     /// </summary>
     /// <param name="body">英雄身体。</param>
     /// <param name="animation">具体角色的动画名称。</param>
-    protected void BeginAnimation(IHeroBody body, string animation) => ((ISkillActor)body).BeginSkillAnimation(animation);
+    protected void BeginAnimation(IHeroBody body, string animation)
+    {
+        ((ISkillActor)body).BeginSkillAnimation(animation);
+    }
 
     /// <summary>
     /// 读取本招固定数值，具体状态决定其取整顺序与击退方向。

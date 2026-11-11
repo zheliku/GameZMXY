@@ -82,7 +82,10 @@ public abstract class AbstractHeroBodyState : AbstractBodyState<IHeroBody>
     /// </summary>
     /// <param name="body">当前状态借用的身体宿主。</param>
     /// <returns>身体是否已离地或刚起跳且仍在上升。</returns>
-    protected static bool IsAirborne(IHeroBody body) => !body.OnFloor || (body.ActionData.JumpCount > 0 && body.Velocity.Y < 0f);
+    protected static bool IsAirborne(IHeroBody body)
+    {
+        return !body.OnFloor || (body.ActionData.JumpCount > 0 && body.Velocity.Y < 0f);
+    }
 
     /// <summary>
     /// 根据已经激活的身体占用切换 GGF 状态，不解析角色输入。

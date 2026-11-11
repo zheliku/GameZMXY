@@ -74,7 +74,10 @@ internal sealed class SharkSpawnAttackState : AbstractEnemyBodyState
     /// <summary>
     /// 原生帧请求等候返回警示，本状态仍是攻击忙碌源。
     /// </summary>
-    internal void WaitForReturn() => _waitingReturn = true;
+    internal void WaitForReturn()
+    {
+        _waitingReturn = true;
+    }
 
     /// <summary>
     /// 警示完成后在下一身体帧恢复飞行。

@@ -80,7 +80,7 @@ public partial class TangsengEntity : AbstractHeroEntity
     }
 
     /// <summary>
-    /// 首次施放水幻影时创建官方 Role2Shadow。
+    /// 播放水幻影音效并激活已装配的分身。
     /// </summary>
     public void CreateWaterClone()
     {
@@ -91,6 +91,8 @@ public partial class TangsengEntity : AbstractHeroEntity
     /// <summary>
     /// 隐藏或回池时清除分身，避免跨场景保留旧坐标。
     /// </summary>
+    /// <param name="isShutdown">是否由框架关停触发隐藏。</param>
+    /// <param name="userData">本次隐藏的框架参数，继续传给基类。</param>
     public override void OnHide(bool isShutdown, object userData)
     {
         _waterClone.Dismiss();
@@ -109,8 +111,15 @@ public partial class TangsengEntity : AbstractHeroEntity
         _iceDragonCharge.Value = progress;
         _iceDragonCharge.FillMode = (int)(Facing < 0 ? ProgressBar.FillModeEnum.BeginToEnd : ProgressBar.FillModeEnum.EndToBegin);
         var fill = (StyleBoxFlat)_iceDragonCharge.GetThemeStylebox("fill");
-        fill.BgColor = progress < 1 ? Colors.Green : (int)(ActionData.Time * 24) % 2 == 0
-            ? new Color(0x112233ff) : new Color(0xaabbccff);
+        if (progress < 1)
+        {
+            fill.BgColor = Colors.Green;
+        }
+        else
+        {
+            fill.BgColor = (int)(ActionData.Time * 24) % 2 == 0
+                ? new Color(0x112233ff) : new Color(0xaabbccff);
+        }
         if (wasCharging != charging)
         {
             _chargeFade?.Kill();
@@ -244,7 +253,10 @@ public partial class TangsengEntity : AbstractHeroEntity
     }
 
     /// <summary>本体甘露治疗距施法点横纵都不超过200像素的存活英雄，包含自己。</summary>
-    public void ApplyHeavenlyDew() => HealHeroesAround(GlobalPosition, 200f, 200f, HeavenlyDewAmount());
+    public void ApplyHeavenlyDew()
+    {
+        HealHeroesAround(GlobalPosition, 200f, 200f, HeavenlyDewAmount());
+    }
 
     /// <summary>计算本体或分身一次甘露的恢复量，无双时使用原倍率。</summary>
     /// <returns>法力上限除以8再加8，无双时乘1.5，最后截断为整数。</returns>

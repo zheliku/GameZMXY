@@ -33,12 +33,18 @@ public sealed class EnemyBodyPreset
     /// <summary>
     /// 入场、受击恢复和收招后使用的行动入口。
     /// </summary>
-    public Type MovementStateType { get; }
+    public Type MovementStateType
+    {
+        get;
+    }
 
     /// <summary>
     /// 生命耗尽后进入的状态，可由专属演出或形态转换替换。
     /// </summary>
-    public Type DeathStateType { get; }
+    public Type DeathStateType
+    {
+        get;
+    }
 
     /// <summary>
     /// 为当前实例创建状态集，拒绝重复、空状态或缺少行动入口的配方。
@@ -95,15 +101,6 @@ public static class EnemyBodyPresets
             () => new EnemyAttackState(), () => new EnemyRecoveryState(),
             () => new EnemyHurtState(), () => new EnemyDeathState());
     }
-
-    /// <summary>
-    /// 创建自由游动配方；需要时可替换为物种专属身体攻击状态。
-    /// </summary>
-    /// <param name="verticalAcceleration">垂直加速度，px/s²。</param>
-    /// <param name="verticalSpeed">垂直速度上限，px/s。</param>
-    /// <param name="directSpeed">直接上/下游阶段的速度，px/s。</param>
-    /// <returns>入口为游动状态的身体预设。</returns>
-    public static EnemyBodyPreset Swim(float verticalAcceleration, float verticalSpeed, float directSpeed) => Swim<EnemyAttackState>(verticalAcceleration, verticalSpeed, directSpeed);
 
     /// <summary>
     /// 用物种专属攻击状态组合游动配方，行动和攻击始终指向同一状态类型。

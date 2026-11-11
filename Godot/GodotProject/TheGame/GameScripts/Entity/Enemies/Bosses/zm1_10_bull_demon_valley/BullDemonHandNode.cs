@@ -22,7 +22,10 @@ public partial class BullDemonHandNode : Node2D
     /// <summary>
     /// 节点随首领显示，未开始时保持停止。
     /// </summary>
-    public override void _Ready() => SetPhysicsProcess(false);
+    public override void _Ready()
+    {
+        SetPhysicsProcess(false);
+    }
 
     /// <summary>
     /// 重置一只手掌的原点和本次首领回调。

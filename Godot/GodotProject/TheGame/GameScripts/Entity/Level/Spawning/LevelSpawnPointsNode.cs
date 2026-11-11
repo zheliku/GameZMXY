@@ -18,7 +18,10 @@ public partial class LevelSpawnPointsNode : AbstractLevelMarkersNode
     /// </summary>
     /// <param name="node">待检查的直接子节点。</param>
     /// <returns>节点是 Marker2D 时返回 true。</returns>
-    protected override bool Supports(Node node) => node is Marker2D;
+    protected override bool Supports(Node node)
+    {
+        return node is Marker2D;
+    }
 
     /// <summary>
     /// 建立索引并校验本关所有生成点引用。
@@ -43,7 +46,10 @@ public partial class LevelSpawnPointsNode : AbstractLevelMarkersNode
     /// </summary>
     /// <param name="id">场景中登记的生成点稳定 ID。</param>
     /// <returns>生成点的世界坐标。</returns>
-    public Vector2 PositionOf(string id) => _points[id].GlobalPosition;
+    public Vector2 PositionOf(string id)
+    {
+        return _points[id].GlobalPosition;
+    }
 
     /// <summary>
     /// 确认配置引用的生成点已经登记。

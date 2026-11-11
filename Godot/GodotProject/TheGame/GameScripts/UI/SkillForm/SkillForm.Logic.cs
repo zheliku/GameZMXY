@@ -147,10 +147,27 @@ public partial class SkillForm : IController
     /// <param name="inputEvent">Godot 分发的输入。</param>
     public override void _Input(InputEvent inputEvent)
     {
-        if (!GF.UI.HasUIForm(SerialId) || !Visible ||
-            (!inputEvent.IsActionPressed(Input.InputSystem.UiCancel) &&
-             !this.GetModel<ProfileModel>().HeroIds.Select((_, index) => (PlayerSlot)(index + 1))
-                 .Any(slot => inputEvent.IsActionPressed(Input.InputSystem.ActionOf(Input.InputSystem.SkillToggle, slot)))))
+        if (!GF.UI.HasUIForm(SerialId) || !Visible)
+        {
+            return;
+        }
+
+        bool closeRequested = inputEvent.IsActionPressed(Input.InputSystem.UiCancel);
+        if (!closeRequested)
+        {
+            IReadOnlyList<int> heroIds = this.GetModel<ProfileModel>().HeroIds;
+            for (int i = 0; i < heroIds.Count; i++)
+            {
+                PlayerSlot slot = (PlayerSlot)(i + 1);
+                if (inputEvent.IsActionPressed(Input.InputSystem.ActionOf(Input.InputSystem.SkillToggle, slot)))
+                {
+                    closeRequested = true;
+                    break;
+                }
+            }
+        }
+
+        if (!closeRequested)
         {
             return;
         }
@@ -200,7 +217,10 @@ public partial class SkillForm : IController
     /// 读取所属游戏流程的架构入口。
     /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 重绑、关闭或装配失败时退订并恢复暂停；调用时 Model 尚未移除。
@@ -249,19 +269,28 @@ public partial class SkillForm : IController
     /// 显示当前钱包余额；切页不会消费灵魂。
     /// </summary>
     /// <param name="soul">已经提交的余额。</param>
-    private void RefreshSoul(int soul) => _soul.Text = soul.ToString();
+    private void RefreshSoul(int soul)
+    {
+        _soul.Text = soul.ToString();
+    }
 
     /// <summary>
     /// 学习、读档或关卡回滚后重绘同一份技能记录。
     /// </summary>
     /// <param name="skills">当前英雄的权威学习列表。</param>
-    private void RefreshLearnedSkills(IReadOnlyList<SkillId> skills) => _activePage.Refresh(_heroId);
+    private void RefreshLearnedSkills(IReadOnlyList<SkillId> skills)
+    {
+        _activePage.Refresh(_heroId);
+    }
 
     /// <summary>
     /// 升级或回滚后刷新本英雄的被动整页。
     /// </summary>
     /// <param name="levels">模型提交的被动等级。</param>
-    private void RefreshPassiveLevels(IReadOnlyDictionary<PassiveId, int> levels) => _passivePage.Refresh(_heroId);
+    private void RefreshPassiveLevels(IReadOnlyDictionary<PassiveId, int> levels)
+    {
+        _passivePage.Refresh(_heroId);
+    }
 
     /// <summary>
     /// 提交一次被动升级请求，余额不足复用统一提示。
@@ -337,12 +366,18 @@ public partial class SkillForm : IController
     /// <summary>
     /// 切换到悟空主动目录。
     /// </summary>
-    private void OnWukongClicked() => SelectPage(SkillHero.Wukong, false);
+    private void OnWukongClicked()
+    {
+        SelectPage(SkillHero.Wukong, false);
+    }
 
     /// <summary>
     /// 切换到唐僧主动目录。
     /// </summary>
-    private void OnTangsengClicked() => SelectPage(SkillHero.Tangseng, false);
+    private void OnTangsengClicked()
+    {
+        SelectPage(SkillHero.Tangseng, false);
+    }
 
     /// <summary>
     /// 切换当前角色的主动目录。

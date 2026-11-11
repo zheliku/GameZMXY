@@ -41,8 +41,15 @@ public partial class SharkSpawnEntity : AbstractSeaMonsterEntity, IEnemyFreeMove
     /// </summary>
     public int VerticalIntent
     {
-        get => AiData.VerticalIntent;
-        internal set => AiData.VerticalIntent = value;
+        get
+        {
+            return AiData.VerticalIntent;
+        }
+
+        internal set
+        {
+            AiData.VerticalIntent = value;
+        }
     }
 
     /// <summary>
@@ -50,8 +57,15 @@ public partial class SharkSpawnEntity : AbstractSeaMonsterEntity, IEnemyFreeMove
     /// </summary>
     public bool DirectVerticalMovement
     {
-        get => AiData.DirectVerticalMovement;
-        internal set => AiData.DirectVerticalMovement = value;
+        get
+        {
+            return AiData.DirectVerticalMovement;
+        }
+
+        internal set
+        {
+            AiData.DirectVerticalMovement = value;
+        }
     }
 
     /// <summary>

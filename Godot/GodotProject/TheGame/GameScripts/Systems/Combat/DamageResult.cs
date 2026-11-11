@@ -54,5 +54,8 @@ public readonly struct DamageResult
     /// </summary>
     /// <param name="kind">本次攻击的伤害类型。</param>
     /// <returns>伤害为 0、标记闪避且不暴击的结果。</returns>
-    public static DamageResult Missed(DamageKind kind) => new(0, true, false, kind);
+    public static DamageResult Missed(DamageKind kind)
+    {
+        return new(0, true, false, kind);
+    }
 }

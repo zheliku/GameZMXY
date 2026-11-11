@@ -46,27 +46,42 @@ public partial class TangsengEntity
     /// </summary>
     /// <param name="normalScene">未满蓄力使用的普通法弹场景。</param>
     /// <param name="chargedScene">满蓄力使用的冰龙法弹场景。</param>
-    private void ReleaseIceDragonAnimEvent(PackedScene normalScene, PackedScene chargedScene) => (CurrentSkillState as TangsengIceDragonState)?.Release(this, normalScene, chargedScene);
+    private void ReleaseIceDragonAnimEvent(PackedScene normalScene, PackedScene chargedScene)
+    {
+        (CurrentSkillState as TangsengIceDragonState)?.Release(this, normalScene, chargedScene);
+    }
 
     /// <summary>
     /// 把玄冰阵出手键交给本次技能状态。
     /// </summary>
     /// <param name="scene">原生轨道引用的玄冰阵场景。</param>
-    private void BeginDarkIceHitAnimEvent(PackedScene scene) => (CurrentSkillState as TangsengDarkIceState)?.BeginHit(this, scene);
+    private void BeginDarkIceHitAnimEvent(PackedScene scene)
+    {
+        (CurrentSkillState as TangsengDarkIceState)?.BeginHit(this, scene);
+    }
 
     /// <summary>
     /// 把甘露治疗键交给本次技能状态。
     /// </summary>
-    private void HealHeavenlyDewAnimEvent() => (CurrentSkillState as TangsengHeavenlyDewState)?.Heal(this);
+    private void HealHeavenlyDewAnimEvent()
+    {
+        (CurrentSkillState as TangsengHeavenlyDewState)?.Heal(this);
+    }
 
     /// <summary>
     /// 甘露起手同时创建完整视觉与分身动作。
     /// </summary>
     /// <param name="scene">官方治疗场景。</param>
-    private void BeginHeavenlyDewAnimEvent(PackedScene scene) => BeginHeavenlyDew(scene);
+    private void BeginHeavenlyDewAnimEvent(PackedScene scene)
+    {
+        BeginHeavenlyDew(scene);
+    }
 
     /// <summary>
     /// 水魔爆无追加输入时在官方第42源帧收招。
     /// </summary>
-    private void TimeoutWaterDemonAnimEvent() => (CurrentSkillState as TangsengWaterDemonBurstState)?.Timeout();
+    private void TimeoutWaterDemonAnimEvent()
+    {
+        (CurrentSkillState as TangsengWaterDemonBurstState)?.Timeout();
+    }
 }

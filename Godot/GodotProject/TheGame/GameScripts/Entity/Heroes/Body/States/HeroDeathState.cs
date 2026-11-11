@@ -34,5 +34,8 @@ public sealed class HeroDeathState : AbstractHeroBodyState
     /// <param name="fsm">当前宿主拥有的状态机。</param>
     /// <param name="body">当前状态借用的身体宿主。</param>
     /// <param name="dt">本次物理推进的秒数。</param>
-    protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt) => body.Velocity = Vector2.Zero;
+    protected override void Tick(IFsm<IHeroBody> fsm, IHeroBody body, float dt)
+    {
+        body.Velocity = Vector2.Zero;
+    }
 }

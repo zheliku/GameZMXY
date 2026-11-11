@@ -2,6 +2,99 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 代码去冗余与架构精简（2026-11-11）
+
+按用户新目标“优先复用、合并和删除，保持原功能”继续处理**全项目手写业务C#**。本轮基线为上一轮120份变更已由用户暂存后的工作树，HEAD仍为`c82524b`；不是用上轮块体展开前的源码作比较。用户索引由用户持有，执行者无Git写操作。范围仍为TheGame非生成业务与EditorScripts手写源码；受影响的Debug/测试调用一起迁移。基线/实际源码/同口径Roslyn统计及日志在`.godot/validation/code_reduction_20261111/`，Godot案例原始日志在`movement_presets/code_reduction_*_20261111/`。
+
+先核对GGF ArchiveSystem/ObjectPool原API、调用链和原生节点摘挂，再说明存档注入与节点池收敛方案并实施；依据用户本轮明确的去包装要求，同步第00/70章、ProjectTour和双人计划的当前数据流。没有修改Framework、addons、Luban、生成代码、源配置、场景或正式存档；没有把上轮方法体规范回退成压缩表达式。
+
+### 同范围、同口径结果
+
+文件范围由开工277份手写源码固定，删除文件仍计入开工值，最终为其存活275份。类型按完整声明名称去重partial，区分class/record class、struct/record struct和interface；方法计构造及接口声明，不含访问器、Lambda和局部函数。总行数包含XML/空行；代码行数为Roslyn有效token所在行，排除纯注释/空行；两端均启用DEBUG/TOOLS/日志符号。
+
+| 指标 | 修改前 | 修改后 |
+| --- | ---: | ---: |
+| C#源码文件 | 277 | 275 |
+| 类（含record class，partial去重） | 284 | 280 |
+| 结构/record struct | 15 | 15 |
+| 接口 | 27 | 24 |
+| 方法/构造/接口方法声明 | 1565 | 1540 |
+| 声明字段 | 910 | 907 |
+| 总行数 | 37374 | 36888 |
+| 有代码token的行数 | 23137 | 22881 |
+| try语句 / catch子句 | 57 / 51 | 57 / 51 |
+| 精确相同方法体组（至少2语句/25token） | 6 | 6 |
+| 本轮确认的重复节点归还实现 | 2 | 1 |
+| 本轮确认的重复怪物配置索引 | 1 | 0 |
+| 本轮确认无调用的非泛型取池/两项全回收入口 | 3 | 0 |
+
+业务范围净减**486行**；包括必要Debug/测试迁移与节点池回归在内，全部受影响C#为**+163/-616，净减453行**。未把文档行数混入代码收益。没有声称项目所有潜在重复或无效代码均为零；具体可删除项以下列已追踪入口为准，精确方法体组保留依据见后文。
+
+### 删除、合并与保留依据
+
+- **删除4个类、3个接口、25项方法/构造/接口方法声明，没有新增生产类型或方法。** 类为`ArchiveUtility<TCatalogue,TData>`、`PoolContainer`、`BindableListExtensions`、`BindableDictionaryExtensions`；接口为`IReadonlyBindableProperty<T>`、`IReadonlyBindableList<T>`、`IReadonlyBindableDictionary<TKey,TValue>`。两个实体文件及对应UID删除，两个扩展类原本随集合类同文件，未拆新文件。
+- **存档少一层调用与注册。** `ArchiveUtility`只转发3个属性和5个读写方法，没有校验、转换或独立生命周期。Prepare和独立测试场地将GGF原`ArchiveSystem<GameCatalogue,GameData>`直接传给SaveSystem，删除两处Utility注册及4处GetUtility查找；唯一DeleteAsync调用迁移原`Delete`。GGF继续独占队列、原子写/备份和序列化；SaveSystem继续负责版本、六格目录、取消、检查点和结果提示。无新的IArchive接口/兼容构造/全局单例。烟测中一个目标类型new调用首轮遗漏产生1编译错误，已补参数；原规则夹具的SaveSystem替身保持原状。
+- **节点池只保留泛型取用和IPoolable归还。** 删除非泛型`RentNode`、`Release(NodeObject)`、两项无调用`ReleaseAll`、`RentNodeInternal`及`TryGetContainer`。泛型取用吸收原私有流程，错类型也沿同一IPoolable路径归还。三份场景/容器索引收敛为`Dictionary<string,(PackedScene Scene,Node Container)>`，借出映射只存实例号→池名；原生Node替代只存PoolName的子类。保留OnGet→显示→摘挂→登记的顺序，以及GF.Unspawn→OnRelease→隐藏→摘挂→移除归属的正常归还顺序。删除了上轮P1所指的错误包装归还路径，未并存旧接口。
+- **绑定保留实现和只读集合视图，删无消费者契约/转换包装。** 三接口只有本实现与测试静态类型在使用，生产Model始终返回具体Bindable；迁移三处测试别名，回调仍接收标准只读视图。列表/字典直接实现标准IReadOnlyList/IReadOnlyDictionary，原只读视图不可写、优先级/重复委托退订/初始化失败撤订的断言全部保留。两个ToBindable扩展仅测试使用，改调用原构造函数，不留转发。`EnemyBodyPresets.Swim`默认重载也只转发泛型方法，唯一测试改为显式`Swim<EnemyAttackState>`，状态迁移断言不变。
+- **重复状态/防御删除。** ConfigurationModel的`_enemies`是生成TbEnemyConfig索引的重复副本；启动校验已经要求EnemyId==EntityId且唯一，GetEnemy改直接读原表，删除陈旧“取首条难度档”逻辑。回滚在ValidateEnvelope后保留SequenceEqual与余额检查，去掉其后重复的数量/去重/Contains；ProfileModel构造固定一至两名不重复英雄，SequenceEqual本身校验长度/身份/席位。AbstractSystem构造保证非空绑定，GetArchitecture不再每次兜底；Model/Command/Query存在未绑定阶段，仍保留其检查。FSM Store复用已有EnsureMissing，未删除注册前防止改变对象归属的检查。目录摘要已由私有ReadSlotsAsync创建独立只读快照，发布时不再复制同一数组。
+- **必须保留的处理。** 全范围引用扫描覆盖759份实际编译输入，并进一步核对Tests、动画方法轨道、CallDeferred、EditorScripts/GDScript及维护工具；未把“普通C#无引用”误当死代码。原51个catch承担异步void入口、外部IO/配置资源失败转换、独立池条目隔离、取消识别或对称清理；没有仅为降数字改异常语义。6组精确相同方法体分别是Map/Character开窗通知、Start/Map设置请求、Skill/Inventory回收、List/Dictionary初始化订阅，以及Model/System绑定和退出；各自操作不同实例/类型/生命周期。共用它们需要额外基类、委托或生命周期对象，当前保留直接实现，未制造新抽象。IPoolable、ITips、QF能力接口及身体/AI契约有实际框架或多态消费者，保留。
+
+本轮新增生产代码只有现有SaveSystem构造中的GGF服务依赖、节点池合并后的2个字典字段和归还所需直接操作；删除原转发层/3份池索引/重复配置表后，字段声明净减3，没有新增注册、依赖包或继承层。新增的36行Debug节点池回归有实际新覆盖：无业务父节点借用、正常摘挂/隐藏、同实例复用、错类型返回null后GF借用计数及业务父节点清零，随后仍可复用。首轮误从IObjectPool调用只在ObjectPoolBase上的GetAllObjectInfos产生2错误，已改用框架现有非泛型查询返回基类，不新增观测API。另展开1处TOOLS条件内原有单行catch，补齐既定块体格式。
+
+### 验证
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 构建 | `dotnet build Godot/GodotProject --no-restore -v quiet`：**退出0、0错误/5既有警告**（`build_final.log`）。 |
+| 原规则套件 | `dotnet test Tests/{ProfileTests,BattleTests,LevelTests}/{同名}.csproj --no-restore -v quiet`：**339/339、197/197、19/19全部通过**；原断言与输入保持，只有已删除内部包装调用迁移。 |
+| Godot扫描 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py code_reduction_scan_20261111 --headless --editor --build-solutions --quit --no-window`：**退出0**；保留既有ComponentInsoector/ArchiveSettingInspectorPlugin退出free诊断。 |
+| 资源引用 | `python Tools/ProjectMaintenance/validate_game_references.py`：**退出0，2284路径/391UID**，较基线少2个已删除脚本UID，无悬空引用。 |
+| 完整双人 | 同runner案例`code_reduction_coop_20261111 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 30000 -- --smoketest=ui --coop-only`：**退出0、完整SMOKE PASS、SMOKE-NODE-POOL PASS**；赠送/满包、技能页绑定/退订、P2键、HUD/无双、相机/全灭/出口/甘露/龙宫/检查点通过。错类型日志为新增断言的预期注入；历史桥接GCHandle诊断及退出13个ObjectDB/3资源保留。 |
+| 完整前端 | 同runner案例`code_reduction_frontend_final_20261111`、相同渲染参数、`--quit-after 18000 -- --smoketest=frontend`：**退出0、完整SMOKE PASS**。六格、新旧档读写、删除覆盖、取消/迟到请求、架构失败清理、地图购技/保存返回通过。`code_reduction_frontend_20261111`也PASS，但当时最后一处摘要去重复制尚未重编，最终以前者为准。预期坏JSON/重复注册注入、退出5个ObjectDB/1资源保留。 |
+| 完整单人UI | 同runner及渲染参数，案例`code_reduction_ui_final_20261111 --quit-after 30000 -- --smoketest=ui`：**退出0、完整SMOKE PASS及SMOKE-NODE-POOL PASS**；60/120Hz地形、战斗/无双、生命魔法球、暂停、订退/实体复用、旧版本拒绝、失败清理和存档重入通过。保留预期错类型/装配失败注入、历史桥接GCHandle诊断；退出23个Texture RID、8个ShapedText RID、2个Font RID、38个CanvasItem RID、146个ObjectDB/11资源诊断。 |
+| 独立场地 | 同runner案例`code_reduction_arena_20261111 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 600 res://TheGame/Scenes/test_arena.tscn`：**退出0**；原出生点Wukong@(120,300)、两怪显示、场地就绪和GGF关停均完成。退出3个Shape2D RID、8个ObjectDB/3资源，与既有场地证据签名一致。 |
+| 风格/范围/存档 | `dotnet format whitespace <GodotProject.csproj/ProfileTests.csproj/BattleTests.csproj> --no-restore --include <本轮各自明确绝对路径> --verify-no-changes`：**全部退出0（15/3/1份）**；全275份style以info级IDE0022/21/61/23/27、IDE0011、IDE1006校验**退出0**。Roslyn另启用TOOLS核对块体/注释/参数，均0问题（`style_audit.log`，1543包含3个局部函数，与统计表口径区分）。最终29份增量仅在授权范围（含2个脚本/2个UID删除），UTF-8/CRLF/两种diff --check通过；**正式12/12递归SHA256、HEAD及用户暂存索引散列保持**。 |
+
+所有Godot案例独立APPDATA，未打开正式GameData写入。上轮热更新部分成功仍提交完整清单的问题继续保持待裁决，未在“保持原功能”的精简中改变下载/强制更新政策；此前D0～E1真实键盘及逐关实战待补也保持原状态。
+
+## 全项目手写业务 C# 审查与安全整理（2026-11-11）
+
+本轮按目标文件 `0bd5a2ce-01e4-4007-922c-13c6a53a13e4/goal-objective.md` 及用户确认的“全项目手写业务 C#”执行。开工 HEAD 为 `c82524bc8da0a4718176c0b819e62451b42d582f`，工作区干净。依据集中规范第00/10/30/50/70章；新指令覆盖第10章原单行方法表达式体偏好，已同步该章和 `.editorconfig`。仅检查 TheGame 非生成业务及 EditorScripts 手写 C#，共 **277份、原1564个方法/构造/局部函数**；测试和 Debug 用于回归，不进行无关格式迁移。
+
+覆盖方式为全范围 Roslyn 语法、命名、注释参数及复杂度检查，再沿架构注册/失败回滚、存档校验/提交、装备交易、输入/技能、英雄/首领物理、掉落回池、UI订退和流程异步边界人工核对。保留现有模型、GGF/QF职责、公开API、输入映射、场景和存档v14；不新增类型、接口、运行时兼容层或管理器。证据位于 `Godot/GodotProject/.godot/validation/code_review_20261111/`，Godot原始运行日志在 `movement_presets/code_review_{scan,frontend,coop,ui}_20261111/`；运行器为每例独立设置APPDATA。
+
+### 按优先级的发现与处理
+
+本轮未确认P0。两项P1属于会改变既有行为的修复，已先向用户报告，按目标第7/8节保留原实现并交架构师裁决；未将其记为已修复。
+
+| 级别/状态 | 位置 | 原因、影响及建议 |
+| --- | --- | --- |
+| **P1，待裁决** | `MainPack/Scripts/Procedure/ProcedureUpdate.cs:317、343、355、855` | 只以 `downloaded == 0` 拒绝下载失败；当 `0 < downloaded < toDownload.Count` 时，强制更新仍进入加载及完整服务端清单提交。加载器记录失败并回滚版本文件后，外层还会写入 `serverVersion`，覆盖回滚结果。静态分支已确认，未连接真实更新服务器复现。建议先明确非强制更新的部分成功政策；强制更新在必要包下载/加载全部成功后才提交清单，并把既有加载结果反馈给总流程，不另建更新管理器。 |
+| **P1，条件路径待裁决** | `MainPack/Scripts/ObjectPool/NodePool.cs:267、305` | `Release(NodeObject)` 在节点仍有外部父节点时直接 `container.AddChild(target)`；Godot不会自动改父节点，节点未回容器却继续Unspawn并移除追踪。触发入口是非泛型 `RentNode(scenePath, parent)` 的归还，或泛型类型不匹配后的内部归还。当前正常业务消费者均使用 `IPoolable` 重载，该路径已有RemoveChild，不能把问题扩大为当前掉落必然失效。建议复用既有归还路径/原生摘挂节点，并先核对OnRelease和Unspawn的时序，再验证这两条入口。 |
+| **P2，已整理** | `Commands/EquipmentCommands.cs`、`Entity/Drops/GroundItemNode.cs` | 五种装备命令把会话前置条件与实际交易分开；拾取按资格、几何接触、实际入账、表现提交分段。保留原短路顺序、满包重试和首个成功领取者规则，无共享Guard抽象。 |
+| **P2，已整理** | `Systems/ConfigurationSystem.cs` | 原OnInit的140行、51分支混合多域校验；复用原类拆成角色/关卡/战斗三个真实业务阶段，OnInit现36行、3分支。各校验表达式、调用顺序、错误汇集/异常文案保持；未按行数继续拆分既有校验器。 |
+| **P2，已整理** | `Systems/SkillSystem.cs`、`SaveSystem.cs`、`Input/InputSystem.cs`、`Combat/CombatSystem.cs` | 技能状态查询/蓝量检查明确前置条件和读取顺序；建档DTO选择、空槽识别和快照捕获分步；逐项输入采样与攻击消费顺序保持；战斗等级差局部名称明确，无双收益分出比例和最终取整。无存档/公式/输入采样频次变化。 |
+| **P2，已整理** | `UI/SkillForm/SkillForm.Logic.cs`、`Entity/Heroes/Tangseng/TangsengEntity.cs` | 技能窗关闭键改为可逐步调试的席位循环，保留Esc优先、按席位短路和单人P2键拒绝；蓄力未满/满值闪色分开，读取时钟条件和色值保持。 |
+| **P3，已整理** | 本批116份手写C#、`.editorconfig`、第10章 | **307处表达式体方法、15处表达式体访问器、11处单行块**统一为完整语句块。保留简单只读属性；目录创建和飞行配方惰性缓存两处带副作用属性使用完整get。补齐DeferredMana及OnHide参数契约，修正水幻影“创建”注释为已装配分身激活。 |
+
+剩余49项长条件主要为启动配置/外部数据校验、装配契约或状态组合；没有为清零复杂度计数而提前求值、拆成无语义布尔变量或增加包装方法。`ProcedureUpdate`下载/重试/版本提交属于上表P1关联行为，未在格式整理中重写其异步生命周期。普通集合操作、框架/Godot回调、生成契约及已有业务术语保留名称。
+
+### 实际验证与边界
+
+| 检查 | 命令与实际结果 |
+| --- | --- |
+| 开工基线 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出0、0错误/5既有警告；`dotnet test Tests/{ProfileTests,BattleTests,LevelTests}/{同名}.csproj --no-restore -v quiet`：339/197/19全部通过；`baseline_*.log`。 |
+| 方法/访问器转换 | SDK `dotnet format style Godot/GodotProject/GodotProject.csproj --no-restore --include <scope.json明确的277份文件> --diagnostics IDE0022 IDE0021 IDE0061 IDE0023 --severity info`，另用IDE0027转换访问器：均退出0。首次未指定info阈值未产生修改，保留日志；实际按info执行。机械方法转换阶段AST等价确认307个原表达式及其余语法不变；访问器阶段另确认15处原表达式及其余语法不变（`accessors_equivalence.log`）。 |
+| 全范围风格/契约 | 上述style命令加IDE0027、IDE0011、IDE1006并`--verify-no-changes`：退出0（`style_final.log`）；临时Roslyn审计最终277份/1567方法，表达式体方法0、无括号控制流0、单行块0、受检声明缺失文档0、参数名不匹配/缺项0（`audit_final.log/json`）。原报告将C#14 extension块误计为缺文档，已按声明类型纠正。签名对比仅新增3个private配置阶段方法，原类型/方法/字段/属性及访问器契约保持（`contracts.json`）。 |
+| 最终构建/测试 | `dotnet build Godot/GodotProject --no-restore -v quiet`：**退出0、0错误/5既有警告**；三个`dotnet test ... --no-restore -v quiet`：**Profile339/339、Battle197/197、Level19/19**。证据`build_final.log`、`{profile,battle,level}_final.log`；既有NU1900/测试桩字段警告保留。 |
+| Godot扫描/引用 | `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py code_review_scan_20261111 --headless --editor --build-solutions --quit --no-window`：**退出0**；保留既有ComponentInsoector/ArchiveSettingInspectorPlugin的RefCounted/free退出诊断。`python Tools/ProjectMaintenance/validate_game_references.py`：**退出0、2284路径/393UID**。 |
+| 完整前端 | 同runner，案例`code_review_frontend_20261111 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：**退出0、完整SMOKE PASS**；六格读写、单/双人建档、架构失败回滚、地图购技/保存返回等原断言通过。预期坏JSON/重复注册失败注入保留；退出5个ObjectDB/1资源诊断。 |
+| 完整双人专项 | 同runner，案例`code_review_coop_20261111`使用相同渲染参数、`--quit-after 30000 -- --smoketest=ui --coop-only`：**退出0、完整SMOKE PASS**；赠送/满包、P2技能页/切换订退/两席位关闭键、双HUD/无双/出生/掉落、相机/死亡/出口/甘露/平均生命全通过；退出13个ObjectDB/3资源诊断。 |
+| 完整单人UI | 同runner，案例`code_review_ui_20261111`使用相同渲染参数、`--quit-after 30000 -- --smoketest=ui`：**退出0、完整SMOKE PASS**；60/120Hz地形、战斗/技能、暂停、掉落归属、订退复用、加载取消/装配失败清理及存档重入通过。历史已记录的引擎资源加载桥接GCHandle未初始化诊断仍出现；BattleForm装配失败是原烟测注入。退出23个Texture RID、8个ShapedText RID、2个Font RID、38个CanvasItem RID、146个ObjectDB及11资源诊断保留，不宣称运行日志无错误。 |
+| 格式/范围/数据 | `dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include <本批116份C#绝对路径> --verify-no-changes`：退出0。UTF-8/CRLF/无行尾空白及`git diff --check`通过；正式GameData **12/12递归SHA256保持**，HEAD和索引散列保持。合计120份变更（116份手写C#及4份规范/记录），无场景/资源/配置/测试/Debug/只读依赖变化，无新增/删除业务文件；文件清单见`changed_files.txt`。 |
+
+本轮不增加仅复述实现的测试，复用原规则和完整运行时烟测。未进行真实远程热更新、非泛型池故障入口或真实键盘上手验收；前两项与上表待裁决行为修复一并补验。此前双人D0～E1正式键盘及E1-3全关实战待补状态保持，不将自动烟测记为实机通过。
+
 ## 删除确认按钮边框与目标复核（2026-11-11）
 
 用户要求确定/取消看起来像按钮且搭配近黑弹窗；当前修改仅在原save_form场景加入局部StyleBoxFlat，两按钮共用深灰底/1px灰边、4px圆角，悬停/按下转暖橙细边，键盘焦点保留2px橙色框。原100×48尺寸/位置、字体、文案与取消/确认/覆盖业务均不变；没有新资源、公共Theme或业务脚本。既有FrontendSmokeScenario仅增加悬停截图，继续复用原磁盘/取消/确认断言。依据当前用户指令和第00/10/40/50章；用户此前已暂存全部既有修改，执行者保留其内容，不作Git写操作。

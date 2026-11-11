@@ -38,8 +38,7 @@ public abstract class AbstractSystem : ISystem
     /// <inheritdoc />
     IArchitecture IBelongToArchitecture.GetArchitecture()
     {
-        return _architecture
-        ?? throw new InvalidOperationException($"{GetType().Name} 尚未绑定 Architecture。");
+        return _architecture;
     }
 
     /// <inheritdoc />

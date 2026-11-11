@@ -10,5 +10,8 @@ public abstract partial class AbstractGroundMonsterEntity : AbstractMonsterEntit
     /// </summary>
     /// <param name="index">本怪物的招式下标。</param>
     /// <returns>是否接受本次攻击请求。</returns>
-    protected override bool TryRequestAttack(int index) => OnFloor && base.TryRequestAttack(index);
+    protected override bool TryRequestAttack(int index)
+    {
+        return OnFloor && base.TryRequestAttack(index);
+    }
 }

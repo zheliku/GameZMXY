@@ -20,7 +20,9 @@ public sealed class LootSystem : AbstractSystem
     /// 绑定所属架构。
     /// </summary>
     /// <param name="architecture">所属游戏入口。</param>
-    public LootSystem(IArchitecture architecture) : base(architecture) { }
+    public LootSystem(IArchitecture architecture) : base(architecture)
+    {
+    }
 
     /// <summary>
     /// 恢复品互斥抽取；装备另外独立判定，按原版 round 索引对应的权重选一件。
@@ -153,5 +155,8 @@ public sealed class LootSystem : AbstractSystem
     /// <param name="range">已通过启动校验的区间。</param>
     /// <param name="random">[0,1) 随机值。</param>
     /// <returns>区间中的整数。</returns>
-    private static int Count(Vector2I range, float random) => Math.Min(range.Y, range.X + (int)(random * (range.Y - range.X + 1)));
+    private static int Count(Vector2I range, float random)
+    {
+        return Math.Min(range.Y, range.X + (int)(random * (range.Y - range.X + 1)));
+    }
 }

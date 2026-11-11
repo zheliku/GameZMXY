@@ -87,7 +87,10 @@ public partial class InventoryBagPanel : Control, IController
     /// 借用所属主流程的共享数据访问入口。
     /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 更新只读显示数据；窗口打开时明确重置到装备第一页。
@@ -175,12 +178,18 @@ public partial class InventoryBagPanel : Control, IController
     /// <summary>
     /// 请求上一页。
     /// </summary>
-    private void OnPreviousPageClicked() => OnPageRequested(-1);
+    private void OnPreviousPageClicked()
+    {
+        OnPageRequested(-1);
+    }
 
     /// <summary>
     /// 请求下一页。
     /// </summary>
-    private void OnNextPageClicked() => OnPageRequested(1);
+    private void OnNextPageClicked()
+    {
+        OnPageRequested(1);
+    }
 
     /// <summary>
     /// 装备按容量分页，尚无数据的分类只显示一页。

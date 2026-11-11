@@ -42,7 +42,10 @@ public partial class BatCaveSpikeNode : Area2D, IController
     /// 使用当前主流程拥有的架构。
     /// </summary>
     /// <returns>GGF主流程架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 验证绑定并停用加载期玩法。

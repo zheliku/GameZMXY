@@ -121,7 +121,10 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     /// <param name="action">P1 基名常量，不能是界面导航动作。</param>
     /// <param name="slot">本次读取输入的玩家席位。</param>
     /// <returns>InputMap 中实际存在的动作名。</returns>
-    public static string ActionOf(string action, PlayerSlot slot) => slot == PlayerSlot.P1 ? action : action + "_p2";
+    public static string ActionOf(string action, PlayerSlot slot)
+    {
+        return slot == PlayerSlot.P1 ? action : action + "_p2";
+    }
 
     /// <summary>
     /// 开始本英雄的新一帧消费记录，采样常规动作并推进独占的闩锁和时钟。
@@ -152,15 +155,21 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
             return;
         }
         float doubleTapWindow = hero.Params.RunDoubleTapWindow;
-        bool leftHeld = IsActionPressed(MoveLeft, hero.Slot), rightHeld = IsActionPressed(MoveRight, hero.Slot);
-        bool leftPressed = IsActionJustPressed(MoveLeft, hero.Slot), rightPressed = IsActionJustPressed(MoveRight, hero.Slot);
-        bool jumpHeld = IsActionPressed(Jump, hero.Slot), attackHeld = IsActionPressed(Attack, hero.Slot);
+        bool leftHeld = IsActionPressed(MoveLeft, hero.Slot);
+        bool rightHeld = IsActionPressed(MoveRight, hero.Slot);
+        bool leftPressed = IsActionJustPressed(MoveLeft, hero.Slot);
+        bool rightPressed = IsActionJustPressed(MoveRight, hero.Slot);
+        bool jumpHeld = IsActionPressed(Jump, hero.Slot);
+        bool attackHeld = IsActionPressed(Attack, hero.Slot);
         bool musouPressed = IsActionJustPressed(Musou, hero.Slot);
-        bool downHeld = IsActionPressed(MoveDown, hero.Slot), upHeld = IsActionPressed(Interact, hero.Slot);
-        bool jumpPressed = IsActionJustPressed(Jump, hero.Slot), attackPressed = IsActionJustPressed(Attack, hero.Slot);
+        bool downHeld = IsActionPressed(MoveDown, hero.Slot);
+        bool upHeld = IsActionPressed(Interact, hero.Slot);
+        bool jumpPressed = IsActionJustPressed(Jump, hero.Slot);
+        bool attackPressed = IsActionJustPressed(Attack, hero.Slot);
         bool actionReleased = IsActionJustReleased(Jump, hero.Slot) || IsActionJustReleased(Attack, hero.Slot) ||
             IsActionJustReleased(MoveDown, hero.Slot) || IsActionJustReleased(Interact, hero.Slot);
-        bool leftReleased = IsActionJustReleased(MoveLeft, hero.Slot), rightReleased = IsActionJustReleased(MoveRight, hero.Slot);
+        bool leftReleased = IsActionJustReleased(MoveLeft, hero.Slot);
+        bool rightReleased = IsActionJustReleased(MoveRight, hero.Slot);
         data.MusouRequested = musouPressed;
         bool jump = jumpHeld || jumpPressed;
         bool attack = attackHeld || attackPressed;
@@ -216,14 +225,20 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     /// </summary>
     /// <param name="data">本英雄拥有的动作数据。</param>
     /// <returns>是否存在可消费的普攻组合。</returns>
-    public bool ConsumeAttack(HeroActionData data) => ConsumeAction(data, data.AttackHeld && !data.JumpHeld && !data.UpHeld);
+    public bool ConsumeAttack(HeroActionData data)
+    {
+        return ConsumeAction(data, data.AttackHeld && !data.JumpHeld && !data.UpHeld);
+    }
 
     /// <summary>
     /// 消费单独 K。
     /// </summary>
     /// <param name="data">本英雄拥有的动作数据。</param>
     /// <returns>是否存在可消费的跳跃组合。</returns>
-    public bool ConsumeJump(HeroActionData data) => ConsumeAction(data, data.JumpHeld && !data.AttackHeld && !data.DownHeld && !data.UpHeld);
+    public bool ConsumeJump(HeroActionData data)
+    {
+        return ConsumeAction(data, data.JumpHeld && !data.AttackHeld && !data.DownHeld && !data.UpHeld);
+    }
 
     /// <summary>
     /// 消费 S＋K 穿平台组合。
@@ -240,7 +255,10 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     /// 允许动作时吞掉 J＋K，避免误触普攻或跳跃。
     /// </summary>
     /// <param name="data">本英雄拥有的动作数据。</param>
-    public void ConsumeJumpAttackCombination(HeroActionData data) => ConsumeAction(data, data.AttackHeld && data.JumpHeld && !data.DownHeld && !data.UpHeld);
+    public void ConsumeJumpAttackCombination(HeroActionData data)
+    {
+        ConsumeAction(data, data.AttackHeld && data.JumpHeld && !data.DownHeld && !data.UpHeld);
+    }
 
     /// <summary>
     /// 查询攻击起手时的方向是否仍按住。
@@ -248,7 +266,10 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     /// <param name="data">本英雄拥有的动作数据。</param>
     /// <param name="direction">左为 -1，右为 1。</param>
     /// <returns>指定方向是否仍按住。</returns>
-    public bool IsDirectionHeld(HeroActionData data, int direction) => direction < 0 ? data.LeftHeld : direction > 0 && data.RightHeld;
+    public bool IsDirectionHeld(HeroActionData data, int direction)
+    {
+        return direction < 0 ? data.LeftHeld : direction > 0 && data.RightHeld;
+    }
 
     /// <summary>
     /// 查询指定方向本帧是否松开过，供攻击状态永久停止已有横移。
@@ -256,13 +277,19 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     /// <param name="data">本英雄拥有的动作数据。</param>
     /// <param name="direction">左为 -1，右为 1；零表示没有方向。</param>
     /// <returns>指定方向是否出现松键边沿。</returns>
-    public bool WasDirectionReleased(HeroActionData data, int direction) => direction < 0 ? data.LeftReleased : direction > 0 && data.RightReleased;
+    public bool WasDirectionReleased(HeroActionData data, int direction)
+    {
+        return direction < 0 ? data.LeftReleased : direction > 0 && data.RightReleased;
+    }
 
     /// <summary>
     /// 受击或未学跑攻的地面普攻取消奔跑档。
     /// </summary>
     /// <param name="data">本英雄拥有的动作数据。</param>
-    public void StopRunning(HeroActionData data) => data.Running = false;
+    public void StopRunning(HeroActionData data)
+    {
+        data.Running = false;
+    }
 
     /// <summary>
     /// 消费一次匹配的动作组合。
@@ -291,8 +318,12 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     /// <returns>已选定本次攻击段时返回 true。</returns>
     public bool TryStartAttack(HeroActionData data, HeroBodyParams parameters, bool airborne, bool isAttacking)
     {
-        return parameters.ComboLength > 0 && ConsumeAttack(data) &&
-               TrySelectAttack(data, parameters, airborne, isAttacking);
+        if (parameters.ComboLength <= 0 || !ConsumeAttack(data))
+        {
+            return false;
+        }
+
+        return TrySelectAttack(data, parameters, airborne, isAttacking);
     }
 
     /// <summary>
@@ -302,7 +333,10 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     /// <param name="airborne">是否在空中。</param>
     /// <param name="isAttacking">是否正在普攻。</param>
     /// <returns>冷却与动作条件允许时为真。</returns>
-    public bool IsAttackReady(HeroActionData data, bool airborne, bool isAttacking) => data.Time + TimeEpsilon >= data.AttackReadyAt && (airborne || !data.Running || !isAttacking);
+    public bool IsAttackReady(HeroActionData data, bool airborne, bool isAttacking)
+    {
+        return data.Time + TimeEpsilon >= data.AttackReadyAt && (airborne || !data.Running || !isAttacking);
+    }
 
     /// <summary>
     /// 为已经消费的攻击输入裁定冷却并选择连段；允许角色自行决定攻击组合键。
@@ -371,7 +405,10 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     /// <param name="action">输入映射名称。</param>
     /// <param name="slot">本次读取输入的玩家席位。</param>
     /// <returns>当前按住时为真。</returns>
-    public bool IsActionPressed(string action, PlayerSlot slot) => _source.IsPressed(ActionOf(action, slot));
+    public bool IsActionPressed(string action, PlayerSlot slot)
+    {
+        return _source.IsPressed(ActionOf(action, slot));
+    }
 
     /// <summary>
     /// 查询本物理帧是否出现按下，包括同帧已经松开的短按。
@@ -379,7 +416,10 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     /// <param name="action">输入映射名称。</param>
     /// <param name="slot">本次读取输入的玩家席位。</param>
     /// <returns>存在按下边沿时为真。</returns>
-    public bool IsActionJustPressed(string action, PlayerSlot slot) => _source.IsJustPressed(ActionOf(action, slot));
+    public bool IsActionJustPressed(string action, PlayerSlot slot)
+    {
+        return _source.IsJustPressed(ActionOf(action, slot));
+    }
 
     /// <summary>
     /// 查询本物理帧是否出现松开，包括同帧已经重新按住。
@@ -387,7 +427,10 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     /// <param name="action">输入映射名称。</param>
     /// <param name="slot">本次读取输入的玩家席位。</param>
     /// <returns>存在松开边沿时为真。</returns>
-    public bool IsActionJustReleased(string action, PlayerSlot slot) => _source.IsJustReleased(ActionOf(action, slot));
+    public bool IsActionJustReleased(string action, PlayerSlot slot)
+    {
+        return _source.IsJustReleased(ActionOf(action, slot));
+    }
 
     /// <summary>
     /// 按角色消费一次动作按下；同一角色本帧不能重复消费，其他角色互不影响。
@@ -421,13 +464,22 @@ public sealed class InputSystem(IArchitecture architecture, IInputSource source 
     private sealed class GodotInputSource : IInputSource
     {
         /// <inheritdoc />
-        public bool IsPressed(string action) => Godot.Input.IsActionPressed(action);
+        public bool IsPressed(string action)
+        {
+            return Godot.Input.IsActionPressed(action);
+        }
 
         /// <inheritdoc />
-        public bool IsJustPressed(string action) => Godot.Input.IsActionJustPressed(action);
+        public bool IsJustPressed(string action)
+        {
+            return Godot.Input.IsActionJustPressed(action);
+        }
 
         /// <inheritdoc />
-        public bool IsJustReleased(string action) => Godot.Input.IsActionJustReleased(action);
+        public bool IsJustReleased(string action)
+        {
+            return Godot.Input.IsActionJustReleased(action);
+        }
     }
 }
 

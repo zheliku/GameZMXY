@@ -16,21 +16,29 @@ public sealed class HeroStatusSystem : AbstractSystem
     /// 绑定所属本局架构，英雄模型必须已注册。
     /// </summary>
     /// <param name="architecture">所属本局架构。</param>
-    public HeroStatusSystem(IArchitecture architecture) : base(architecture) { }
+    public HeroStatusSystem(IArchitecture architecture) : base(architecture)
+    {
+    }
 
     /// <summary>
     /// 指定英雄是否被冻结。
     /// </summary>
     /// <param name="heroId">参战英雄编号。</param>
     /// <returns>冻结剩余时间为正时为 true。</returns>
-    public bool IsFrozen(int heroId) => this.GetModel<HeroModel>().GetState(heroId).GetStatusEffect(HeroState.StatusEffectKind.Freeze)?.RemainingSeconds > 0;
+    public bool IsFrozen(int heroId)
+    {
+        return this.GetModel<HeroModel>().GetState(heroId).GetStatusEffect(HeroState.StatusEffectKind.Freeze)?.RemainingSeconds > 0;
+    }
 
     /// <summary>
     /// 指定英雄是否中毒。
     /// </summary>
     /// <param name="heroId">参战英雄编号。</param>
     /// <returns>存在中毒效果时为 true。</returns>
-    public bool IsPoisoned(int heroId) => this.GetModel<HeroModel>().GetState(heroId).GetStatusEffect(HeroState.StatusEffectKind.Poison) != null;
+    public bool IsPoisoned(int heroId)
+    {
+        return this.GetModel<HeroModel>().GetState(heroId).GetStatusEffect(HeroState.StatusEffectKind.Poison) != null;
+    }
 
     /// <summary>
     /// 施加冻结；重复施加只保留更长的剩余时间。
@@ -169,8 +177,14 @@ public sealed class HeroStatusSystem : AbstractSystem
     /// 死亡或重建时仅清空指定英雄的效果。
     /// </summary>
     /// <param name="heroId">参战英雄编号。</param>
-    public void ClearAll(int heroId) => this.GetModel<HeroModel>().GetState(heroId).ClearStatusEffects();
+    public void ClearAll(int heroId)
+    {
+        this.GetModel<HeroModel>().GetState(heroId).ClearStatusEffects();
+    }
 
     /// <inheritdoc />
-    protected override void OnDeinit() => ClearAll();
+    protected override void OnDeinit()
+    {
+        ClearAll();
+    }
 }

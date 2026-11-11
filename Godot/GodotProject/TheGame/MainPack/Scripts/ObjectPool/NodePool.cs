@@ -4,12 +4,12 @@ using GameConfig.Constant;
 using GameFramework;
 using GameFramework.ObjectPool;
 using Godot;
-using GodotGameFramework;
 using GodotGameFrameworkCore.SingletonSystem;
+
 namespace GodotGameFramework.NodePool;
 
 /// <summary>
-/// 池化对象接口
+/// 节点取池与归还的运行状态契约。
 /// </summary>
 public interface IPoolable
 {
@@ -25,15 +25,12 @@ public interface IPoolable
 }
 
 /// <summary>
-/// 通用 Node 对象池。基于GF.ObjectPool。
+/// 以场景路径登记原生节点容器，复用GF.ObjectPool的容量、过期和闲置对象管理。
 /// </summary>
 public partial class NodePool : SingletonNode<NodePool>
 {
-    private readonly List<PoolContainer> _containers = new(); // 每种场景对应的容器节点，归还时对象放回此处。
-
-    private readonly Dictionary<ulong, PoolContainer> _nodeToContainer = new(); // 节点实例号到所属容器的映射，归还时查询并清理。
-
-    private readonly Dictionary<string, PackedScene> _poolScenes = new(); // 池名到场景资源的映射，取用时用于懒实例化。
+    private readonly Dictionary<string, (PackedScene Scene, Node Container)> _pools = new(); // 每个场景唯一的资源和闲置节点容器。
+    private readonly Dictionary<ulong, string> _nodePools = new(); // 借出节点的实例号到场景池名，归还后移除。
 
     /// <summary>
     /// 当前节点池配置；加载失败时为空。
@@ -41,12 +38,11 @@ public partial class NodePool : SingletonNode<NodePool>
     public NodePoolConfig Config { get; private set; }
 
     /// <summary>
-    /// 加载池配置并注册场景池。
+    /// 加载配置并登记场景池；外部资源或单池注册失败不阻止其余条目。
     /// </summary>
     protected override void OnLoad()
     {
         base.OnLoad();
-
         Config = GF.Resource.LoadAsset<NodePoolConfig>(ResourcesCollectionConstant.Resources_NodePoolConfigRes);
         if (Config == null)
         {
@@ -61,7 +57,6 @@ public partial class NodePool : SingletonNode<NodePool>
         }
 
         var seenPools = new HashSet<string>();
-
         foreach (PoolEntry entry in Config.Entries)
         {
             if (entry?.Scene == null)
@@ -70,387 +65,154 @@ public partial class NodePool : SingletonNode<NodePool>
                 continue;
             }
 
-            string scenePath = entry.Scene;
-            string poolName = scenePath;
-
-            // 去重
+            string poolName = entry.Scene;
             if (!seenPools.Add(poolName))
             {
                 Log.Warning("[NodePool] 跳过重复条目: {0}", poolName);
                 continue;
             }
 
-            // 池已存在则跳过
             if (GF.ObjectPool.HasObjectPool<NodeObject>(poolName))
             {
                 Log.Info("[NodePool] 池已存在，跳过: {0}", poolName);
                 continue;
             }
 
-            PackedScene packedScene = ResourceLoader.Load<PackedScene>(scenePath);
-            if (packedScene == null)
+            PackedScene scene = ResourceLoader.Load<PackedScene>(poolName);
+            if (scene == null)
             {
-                Log.Warning("[NodePool] 无法加载场景: {0}", scenePath);
+                Log.Warning("[NodePool] 无法加载场景: {0}", poolName);
                 continue;
             }
 
-            // 创建容器节点
-            var container = new PoolContainer(poolName);
+            var container = new Node { Name = poolName };
             AddChild(container);
-            _containers.Add(container);
-
             int capacity = entry.Capacity > 0 ? entry.Capacity : Config.DefaultCapacity;
             float expireTime = entry.ExpireTime > 0 ? entry.ExpireTime : Config.DefaultExpireTime;
             float autoRelease = entry.AutoReleaseInterval > 0 ? entry.AutoReleaseInterval : Config.DefaultAutoReleaseInterval;
-
             try
             {
-                // 创建池（懒加载，不预实例化）
-                GF.ObjectPool.CreateSingleSpawnObjectPool<NodeObject>(
-                    poolName, autoRelease, capacity, expireTime, 0);
-
-                // 保存 PackedScene 引用，RentNode 时按需 Instantiate
-                _poolScenes[poolName] = packedScene;
-
-                Log.Info("[NodePool] 已注册: {0} (容量={1}, 过期={2}s, 懒加载)", scenePath, capacity, expireTime);
+                GF.ObjectPool.CreateSingleSpawnObjectPool<NodeObject>(poolName, autoRelease, capacity, expireTime, 0);
+                _pools.Add(poolName, (scene, container));
+                Log.Info("[NodePool] 已注册: {0} (容量={1}, 过期={2}s, 懒加载)", poolName, capacity, expireTime);
             }
-            catch (Exception ex)
+            catch (Exception error)
             {
-                Log.Error("[NodePool] 注册池失败: {0} — {1}", poolName, ex.Message);
+                Log.Error("[NodePool] 注册池失败: {0} — {1}", poolName, error.Message);
             }
         }
     }
 
-    // ── 获取 ──
-
     /// <summary>
-    /// 从池中获取指定类型的节点。
+    /// 借出已登记场景的节点，先重置状态再显示并挂到请求的父节点；类型不匹配时沿同一路径归还。
     /// </summary>
-    /// <param name="scenePath">场景资源路径。</param>
-    /// <param name="parent">可选父节点，获取后自动 AddChild。</param>
-    /// <typeparam name="T">期望实现 <see cref="IPoolable"/> 的节点类型。</typeparam>
-    /// <returns>池化节点；池或类型不匹配时返回 null。</returns>
+    /// <param name="scenePath">配置中已登记的场景资源路径。</param>
+    /// <param name="parent">可选业务父节点；为空时保留在原容器中。</param>
+    /// <typeparam name="T">需要的节点类型，必须实现池化状态契约。</typeparam>
+    /// <returns>本次借用的节点；场景池不可用、实例化失败或类型不匹配时为空。</returns>
     public T RentNode<T>(string scenePath, Node parent = null) where T : class, IPoolable
     {
-        NodeObject obj = RentNodeInternal(scenePath, parent);
-        if (obj == null)
-        {
-            return null;
-        }
-
-        if (obj.Target is T target)
-        {
-            return target;
-        }
-
-        Log.Error("[NodePool] 类型不匹配: 期望 {0}，实际 {1}", typeof(T).Name, obj.Target?.GetType().Name);
-        Release(obj); // 类型不对，归还
-        return null;
-    }
-
-    /// <summary>
-    /// 从池中获取节点（非泛型版本，返回 NodeObject 包装）。
-    /// </summary>
-    /// <param name="scenePath">场景资源路径。</param>
-    /// <param name="parent">可选父节点，获取后自动 AddChild。</param>
-    /// <returns>节点包装对象；场景池不可用时返回 null。</returns>
-    public NodeObject RentNode(string scenePath, Node parent = null) => RentNodeInternal(scenePath, parent);
-
-    /// <summary>
-    /// 取出池对象，必要时实例化节点并绑定请求的父节点。
-    /// </summary>
-    /// <param name="scenePath">场景资源路径及池名称。</param>
-    /// <param name="parent">可选的新父节点。</param>
-    /// <returns>节点包装对象；无法取得对象时返回 null。</returns>
-    private NodeObject RentNodeInternal(string scenePath, Node parent) // 取出对象，必要时实例化节点并绑定请求的父节点。
-    {
         IObjectPool<NodeObject> pool = GF.ObjectPool.GetObjectPool<NodeObject>(scenePath);
-        if (pool == null)
+        if (pool == null || !_pools.TryGetValue(scenePath, out var registration))
         {
             Log.Error("[NodePool] 对象池不存在: {0}", scenePath);
             return null;
         }
 
-        NodeObject obj = pool.Spawn(scenePath);
-        // 池中无闲置对象 → 懒加载实例化新的
-        if (obj == null)
+        NodeObject wrapper = pool.Spawn(scenePath);
+        if (wrapper == null)
         {
-            if (!_poolScenes.TryGetValue(scenePath, out PackedScene packedScene) || packedScene == null)
-            {
-                Log.Error("[NodePool] 无法实例化：未找到 PackedScene: {0}", scenePath);
-                return null;
-            }
-
-            Node newNode;
+            Node created;
             try
             {
-                newNode = packedScene.Instantiate();
+                created = registration.Scene.Instantiate();
             }
-            catch (Exception ex)
+            catch (Exception error)
             {
-                Log.Error("[NodePool] Instantiate 失败: {0} — {1}", scenePath, ex.Message);
+                Log.Error("[NodePool] Instantiate 失败: {0} — {1}", scenePath, error.Message);
                 return null;
             }
 
-            if (newNode is not IPoolable)
+            if (created is not IPoolable)
             {
                 Log.Error("[NodePool] 实例化的节点未实现 IPoolable: {0}", scenePath);
-                newNode.QueueFree();
+                created.QueueFree();
                 return null;
             }
 
-            // 挂在容器下
-            if (TryGetContainer(scenePath, out PoolContainer container))
-            {
-                container.AddChild(newNode);
-            }
-
-            // 注册到池（spawned: true = 已获取状态），GF.ObjectPool 自动管理容量
-            obj = NodeObject.Create(scenePath, newNode);
-            pool.Register(obj, spawned: true);
+            registration.Container.AddChild(created);
+            wrapper = NodeObject.Create(scenePath, created);
+            pool.Register(wrapper, spawned: true);
         }
 
-        if (obj.Target is not Node node)
+        // 只有上方已校验的场景节点能进入本池，不重复校验包装对象的内部契约。
+        var node = (Node)wrapper.Target;
+        var poolable = (IPoolable)node;
+        poolable.OnGet();
+        if (node is CanvasItem canvasItem)
         {
-            Log.Error("[NodePool] Target 不是 Node: {0}", scenePath);
-            pool.Unspawn(obj);
-            return null;
+            canvasItem.Visible = true;
+        }
+        else if (node is Node3D node3D)
+        {
+            node3D.Visible = true;
         }
 
-        if (obj.Target is IPoolable poolable)
-        {
-            poolable.OnGet();
-        }
-
-        // 设置可见
-        if (node is CanvasItem ci)
-        {
-            ci.Visible = true;
-        }
-        else if (node is Node3D n3d)
-        {
-            n3d.Visible = true;
-        }
-
-        // 挂到请求的父节点下（会从容器下摘走）
         if (parent != null)
         {
-            if (node.GetParent() != null)
-            {
-                node.GetParent().RemoveChild(node);
-            }
-
+            node.GetParent()?.RemoveChild(node);
             parent.AddChild(node);
         }
 
-        // 记录归属容器（Release 时用）
-        if (TryGetContainer(scenePath, out PoolContainer retContainer))
+        _nodePools[node.GetInstanceId()] = scenePath;
+        if (node is T target)
         {
-            _nodeToContainer[node.GetInstanceId()] = retContainer;
+            return target;
         }
 
-        return obj;
-    }
-
-    // ── 归还 ──
-
-    /// <summary>
-    /// 归还 NodeObject 到池中。
-    /// </summary>
-    /// <param name="nodeObj">由此节点池取出的包装对象。</param>
-    public void Release(NodeObject nodeObj)
-    {
-        if (nodeObj == null)
-        {
-            return;
-        }
-
-        var target = nodeObj.Target as Node;
-        if (target == null)
-        {
-            return;
-        }
-
-        ulong id = target.GetInstanceId();
-
-        // 从追踪字典取容器并清理
-        if (!_nodeToContainer.Remove(id, out PoolContainer container))
-        {
-            Log.Warning("[NodePool] 无法归还：未找到节点 {0} 的归属池", target.Name);
-            return;
-        }
-
-        // 通知 IPoolable
-        if (nodeObj.Target is IPoolable poolable)
-        {
-            poolable.OnRelease();
-        }
-
-        // 隐藏
-        if (target is CanvasItem ci)
-        {
-            ci.Visible = false;
-        }
-        else if (target is Node3D n3d)
-        {
-            n3d.Visible = false;
-        }
-
-        if (target.GetParent() != container)
-        {
-            // 归还到容器下
-            container.AddChild(target);
-        }
-
-
-        // Unspawn
-        IObjectPool<NodeObject> pool = GF.ObjectPool.GetObjectPool<NodeObject>(container.PoolName);
-        if (pool != null)
-        {
-            pool.Unspawn(nodeObj);
-        }
-        else
-        {
-            Log.Warning("[NodePool] 无法归还：对象池 '{0}' 不存在", container.PoolName);
-        }
+        Log.Error("[NodePool] 类型不匹配: 期望 {0}，实际 {1}", typeof(T).Name, node.GetType().Name);
+        Release(poolable);
+        return null;
     }
 
     /// <summary>
-    /// 归还 IPoolable 节点到池中
+    /// 归还本池借出的节点；按原顺序解除GF借用、清理状态、隐藏并摘挂回闲置容器。
     /// </summary>
-    /// <param name="poolItem">由此节点池取出的节点。</param>
+    /// <param name="poolItem">本池借出的节点；空值或非节点不处理，重复归还只报告归属缺失。</param>
     public void Release(IPoolable poolItem)
     {
-        if (poolItem == null)
-        {
-            return;
-        }
-
         if (poolItem is not Node node)
         {
             return;
         }
 
         ulong id = node.GetInstanceId();
-
-        if (!_nodeToContainer.TryGetValue(id, out PoolContainer container))
+        if (!_nodePools.TryGetValue(id, out string poolName))
         {
             Log.Warning("[NodePool] 无法归还 IPoolable：未找到节点 {0} 的归属池", node.Name);
             return;
         }
 
-        // 从池中反向找到 NodeObject 包装
-        IObjectPool<NodeObject> pool = GF.ObjectPool.GetObjectPool<NodeObject>(container.PoolName);
+        IObjectPool<NodeObject> pool = GF.ObjectPool.GetObjectPool<NodeObject>(poolName);
         if (pool == null)
         {
-            Log.Warning("[NodePool] 无法归还：对象池 '{0}' 不存在", container.PoolName);
+            Log.Warning("[NodePool] 无法归还：对象池 '{0}' 不存在", poolName);
             return;
         }
 
         pool.Unspawn((object)poolItem);
-
         poolItem.OnRelease();
-
-        if (node is CanvasItem ci)
+        if (node is CanvasItem canvasItem)
         {
-            ci.Visible = false;
+            canvasItem.Visible = false;
         }
-        else if (node is Node3D n3d)
+        else if (node is Node3D node3D)
         {
-            n3d.Visible = false;
-        }
-
-        if (node.GetParent() != null)
-        {
-            node.GetParent().RemoveChild(node);
+            node3D.Visible = false;
         }
 
-        if (node.GetParent() != container)
-        {
-            container.AddChild(node);
-        }
-
-        _nodeToContainer.Remove(id);
-    }
-
-    /// <summary>
-    /// 回收所有已获取的节点到池中。
-    /// </summary>
-    public void ReleaseAll()
-    {
-        // 先收集所有 ID，避免迭代时修改字典
-        var ids = new List<ulong>(_nodeToContainer.Keys);
-        foreach (ulong id in ids)
-        {
-            // 可能已被前一轮 Release 清理
-            if (!_nodeToContainer.ContainsKey(id))
-            {
-                continue;
-            }
-
-            var node = GodotObject.InstanceFromId(id) as Node;
-            if (node is IPoolable poolable)
-            {
-                Release(poolable);
-            }
-            else if (node == null)
-            {
-                // 节点已被外部释放，清理残留的追踪记录
-                _nodeToContainer.Remove(id);
-            }
-        }
-    }
-
-    /// <summary>
-    /// 回收指定场景的所有已获取节点到池中。
-    /// </summary>
-    /// <param name="scenePath">场景资源路径（同时也是池名称）。</param>
-    public void ReleaseAll(string scenePath)
-    {
-        if (string.IsNullOrEmpty(scenePath))
-        {
-            return;
-        }
-
-        var ids = new List<ulong>(_nodeToContainer.Keys);
-        foreach (ulong id in ids)
-        {
-            if (!_nodeToContainer.TryGetValue(id, out PoolContainer container) || container.PoolName != scenePath)
-            {
-                continue;
-            }
-
-            var node = GodotObject.InstanceFromId(id) as Node;
-            if (node is IPoolable poolable)
-            {
-                Release(poolable);
-            }
-            else if (node == null)
-            {
-                _nodeToContainer.Remove(id);
-            }
-        }
-    }
-
-    // ── 容器查找 ──
-
-    /// <summary>
-    /// 按场景路径查找对应的场景树容器。
-    /// </summary>
-    /// <param name="scenePath">池名称。</param>
-    /// <param name="container">找到时返回对应容器。</param>
-    /// <returns>找到容器时为 true。</returns>
-    private bool TryGetContainer(string scenePath, out PoolContainer container) // 在线性容器表中按池名查找归还目标。
-    {
-        foreach (PoolContainer c in _containers)
-        {
-            if (c.PoolName == scenePath)
-            {
-                container = c;
-                return true;
-            }
-        }
-        container = null;
-        return false;
+        node.GetParent()?.RemoveChild(node);
+        _pools[poolName].Container.AddChild(node);
+        _nodePools.Remove(id);
     }
 }

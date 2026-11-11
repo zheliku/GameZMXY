@@ -54,7 +54,7 @@ D0已在用户确认后完整备份并离线转存8个正式主/备文件，运�
 
 `Launch → Update → Prepare → Preload → Title → 新开游戏（单人/双人）→ Character依次选角 → 本流程打开SaveForm保存选格 → LoadGame → Map → Level`；标题的读取入口打开 Load 模式，只允许已有可读格直接 LoadGame→Map。新档先确定有序阵容，再创建双方首次快照；覆盖复用 DeleteSlotAsync，成功重读空格后再建档。选角返回或关闭保存页回标题，不创建档案。关卡按阵容席位依次显示英雄，P2位于P1右侧60px；HUD分别绑定双方，单人隐藏P2面板。
 
-Prepare注册资源组、共享Utility及应用Model/System；LoadGame校验DTO后注册档案作用域；Level注册本局模型、初始化数值，再显示英雄/场景/HUD。存档入口是SaveSystem→ArchiveUtility→GF.Archive，不在窗口或实体写文件。
+Prepare注册资源组、共享Utility及应用Model/System；LoadGame校验DTO后注册档案作用域；Level注册本局模型、初始化数值，再显示英雄/场景/HUD。存档入口是SaveSystem→构造注入的GF.Archive，不在窗口或实体写文件。
 
 返回主菜单从设置请求交给所属Procedure：地图/关内都先SaveManuallyAsync提交当前状态，成功才离开，失败留在原页。通关/死亡保存收益；放弃关卡和运行失败按检查点回滚。所有具体读写与生命周期契约见[第70章](ProjectGuidelines/70-ProfileAndSave.md)。
 

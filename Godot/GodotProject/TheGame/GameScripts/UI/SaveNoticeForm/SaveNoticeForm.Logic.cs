@@ -87,7 +87,10 @@ public partial class SaveNoticeForm
     /// <summary>
     /// 回池清除框架编号与订阅。
     /// </summary>
-    public void OnRecycle() => _serialId = _depthInUIGroup = 0;
+    public void OnRecycle()
+    {
+        _serialId = _depthInUIGroup = 0;
+    }
 
     /// <summary>
     /// 手动按真实时间推进提示，不随战斗暂停冻结在其他窗口上。
@@ -139,7 +142,10 @@ public partial class SaveNoticeForm
     /// </summary>
     /// <param name="sender">保存系统。</param>
     /// <param name="args">当帧有效的成功事实。</param>
-    private void OnSaveSucceeded(object sender, GameEventArgs args) => ShowMessage("保存成功！");
+    private void OnSaveSucceeded(object sender, GameEventArgs args)
+    {
+        ShowMessage("保存成功！");
+    }
 
     /// <summary>
     /// 以当前配置名称显示直接奖励结果，不持有池化事件或发奖实体。

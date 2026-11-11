@@ -59,7 +59,10 @@ public abstract partial class AbstractEnemyEntity
     /// 通常朝目标原点出招；保持原朝向的特殊招式由具体敌人决定。
     /// </summary>
     /// <param name="index">即将开始的招式下标。</param>
-    protected virtual void FaceAttackTarget(int index) => SetFacing(Math.Sign(((IEnemyAiAgent)this).TargetOffset.X));
+    protected virtual void FaceAttackTarget(int index)
+    {
+        SetFacing(Math.Sign(((IEnemyAiAgent)this).TargetOffset.X));
+    }
 
     /// <summary>
     /// 结束或打断出招并归还攻击包。
@@ -84,6 +87,8 @@ public abstract partial class AbstractEnemyEntity
     /// <summary>
     /// 由原生动画多段方法键刷新当前攻击包。
     /// </summary>
-    private void NewAttackAnimEvent() => RefreshAttack();
-
+    private void NewAttackAnimEvent()
+    {
+        RefreshAttack();
+    }
 }

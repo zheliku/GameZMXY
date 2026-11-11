@@ -27,15 +27,25 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <returns>该英雄正在施放的身体状态类型；未施放时为空。</returns>
     public Type GetBodyStateType(int heroId)
     {
-        return this.GetModel<HeroModel>().GetState(heroId).ActiveSkillId is { } id &&
-               _skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) &&
-               definitions.TryGetValue(id, out SkillDefinition definition)
-            ? definition.BodyState
-            : null;
+        if (this.GetModel<HeroModel>().GetState(heroId).ActiveSkillId is not { } id)
+        {
+            return null;
+        }
+
+        if (!_skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) ||
+            !definitions.TryGetValue(id, out SkillDefinition definition))
+        {
+            return null;
+        }
+
+        return definition.BodyState;
     }
 
     /// <inheritdoc />
-    protected override void OnDeinit() => ClearSkillDefinitions();
+    protected override void OnDeinit()
+    {
+        ClearSkillDefinitions();
+    }
 
     // ---- 业务方法 ----
 
@@ -106,8 +116,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <returns>已学习时为 true。</returns>
     public bool IsLearned(int heroId, SkillId skillId)
     {
-        return this.GetModel<SkillModel>()
-        .GetLearnedSkills(heroId).Contains(skillId);
+        return this.GetModel<SkillModel>().GetLearnedSkills(heroId).Contains(skillId);
     }
 
     /// <summary>
@@ -133,8 +142,12 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
         HeroModel model = this.GetModel<HeroModel>();
         Tables tables = this.GetModel<ConfigurationModel>().Tables;
         SkillConfig definition = tables.TbSkillConfig.GetOrDefault(id);
-        return model != null && definition != null && (int)definition.Hero == heroId &&
-               _skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) &&
+        if (model == null || definition == null || (int)definition.Hero != heroId)
+        {
+            return false;
+        }
+
+        return _skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) &&
                definitions.ContainsKey(id);
     }
 
@@ -146,9 +159,15 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
     /// <returns>蓝量足够时为真。</returns>
     public bool CanAfford(int heroId, SkillId id)
     {
-        return _skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) &&
-               definitions.ContainsKey(id) && this.GetModel<HeroModel>().GetState(heroId).Mp.Value >=
-               this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost;
+        if (!_skillDefinitions.TryGetValue(heroId, out Dictionary<SkillId, SkillDefinition> definitions) ||
+            !definitions.ContainsKey(id))
+        {
+            return false;
+        }
+
+        int currentMana = this.GetModel<HeroModel>().GetState(heroId).Mp.Value;
+        int manaCost = this.GetModel<ConfigurationModel>().Tables.TbSkillConfig.Get(id).ManaCost;
+        return currentMana >= manaCost;
     }
 
     /// <summary>
@@ -377,6 +396,7 @@ public sealed class SkillSystem(IArchitecture architecture) : AbstractSystem(arc
 /// <param name="BodyState">本技能的 GGF 身体状态。</param>
 /// <param name="InputAction">可选直接动作名；组合技能由具体角色匹配。</param>
 /// <param name="CanStart">可选起手条件；在扣费前检查。</param>
+/// <param name="DeferredMana">为 true 时起手只检查蓝量，由技能状态在命中等约定时刻扣费。</param>
 public sealed record SkillDefinition(SkillId Id, Type BodyState,
     string InputAction = null, Func<ISkillActor, bool> CanStart = null, bool DeferredMana = false);
 

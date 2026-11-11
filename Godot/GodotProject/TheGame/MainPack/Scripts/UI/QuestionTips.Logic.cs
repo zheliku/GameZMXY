@@ -44,7 +44,10 @@ public partial class QuestionTips : ITips
     /// 显示提示，回调由调用者随后通过 SetAction 绑定。
     /// </summary>
     /// <param name="userData">不使用的打开参数。</param>
-    public void OnOpen(object userData) => Visible = true;
+    public void OnOpen(object userData)
+    {
+        Visible = true;
+    }
 
     /// <summary>
     /// 关闭即释放本周期回调。

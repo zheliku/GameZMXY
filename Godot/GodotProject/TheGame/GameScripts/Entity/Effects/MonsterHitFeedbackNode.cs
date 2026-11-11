@@ -14,7 +14,10 @@ public partial class MonsterHitFeedbackNode : AnimatedSprite2D, IPoolable
     private Action<MonsterHitFeedbackNode> _finished; // 当前受击实体的回收入口。
 
     /// <inheritdoc />
-    public override void _Ready() => AnimationFinished += OnAnimationFinished;
+    public override void _Ready()
+    {
+        AnimationFinished += OnAnimationFinished;
+    }
 
     /// <summary>
     /// 从第一帧播放本次随机闪光，位置由受击实体的受击盒中心提供。
@@ -49,5 +52,8 @@ public partial class MonsterHitFeedbackNode : AnimatedSprite2D, IPoolable
     /// <summary>
     /// 八个源帧结束后通知持有者，避免回收时留下旧实体引用。
     /// </summary>
-    private void OnAnimationFinished() => _finished(this);
+    private void OnAnimationFinished()
+    {
+        _finished(this);
+    }
 }

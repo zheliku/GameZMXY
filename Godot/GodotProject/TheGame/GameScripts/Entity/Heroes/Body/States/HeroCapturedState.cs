@@ -30,5 +30,8 @@ public sealed class HeroCapturedState : AbstractHeroBodyState
     }
 
     /// <inheritdoc />
-    protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown) => body.ActionData.InputLocked = false;
+    protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
+    {
+        body.ActionData.InputLocked = false;
+    }
 }

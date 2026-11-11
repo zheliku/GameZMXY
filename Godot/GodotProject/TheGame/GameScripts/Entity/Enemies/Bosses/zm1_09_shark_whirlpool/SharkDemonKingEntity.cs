@@ -139,7 +139,10 @@ public partial class SharkDemonKingEntity : AbstractBossEntity
     /// 原生起手键保持唤鲨20/24秒、水牢18/24秒无敌，暂停不推进。
     /// </summary>
     /// <param name="seconds">官方源帧换算的秒数。</param>
-    private void BeginInvulnerabilityAnimEvent(float seconds) => _invulnerabilityLeft = seconds;
+    private void BeginInvulnerabilityAnimEvent(float seconds)
+    {
+        _invulnerabilityLeft = seconds;
+    }
 
     /// <summary>
     /// 原生第22源帧在首领身后600px、上方40px创建独立鲨波。

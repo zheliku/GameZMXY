@@ -351,13 +351,18 @@ public class ProcedureLevel : ProcedureBase
     /// <summary>按席位借用本周期已显示的英雄，未参战席位返回空。</summary>
     /// <param name="slot">请求的玩家席位。</param>
     /// <returns>本周期的参战英雄，或空。</returns>
-    private AbstractHeroEntity HeroAt(PlayerSlot slot) => _heroes.FirstOrDefault(hero => hero.Slot == slot);
+    private AbstractHeroEntity HeroAt(PlayerSlot slot)
+    {
+        return _heroes.FirstOrDefault(hero => hero.Slot == slot);
+    }
 
     /// <summary>按席位计算出生点：P1 用关卡出生点，P2 在其右侧 60 像素同一高度。</summary>
     /// <param name="slot">本次显示的玩家席位。</param>
     /// <returns>该席位的世界出生坐标，单位像素。</returns>
-    private Vector2 SpawnPositionOf(PlayerSlot slot) =>
-        _levelViewController.PlayerSpawnPosition + new Vector2(slot == PlayerSlot.P1 ? 0 : 60, 0);
+    private Vector2 SpawnPositionOf(PlayerSlot slot)
+    {
+        return _levelViewController.PlayerSpawnPosition + new Vector2(slot == PlayerSlot.P1 ? 0 : 60, 0);
+    }
 
     /// <summary>
     /// 在同一关卡中互斥打开背包与设置。
@@ -439,7 +444,10 @@ public class ProcedureLevel : ProcedureBase
     /// </summary>
     /// <param name="serial">窗口请求编号；零表示无请求。</param>
     /// <returns>窗口仍属于本周期时为 true。</returns>
-    private static bool HasWindow(int serial) => serial != 0 && (GF.UI.HasUIForm(serial) || GF.UI.IsLoadingUIForm(serial));
+    private static bool HasWindow(int serial)
+    {
+        return serial != 0 && (GF.UI.HasUIForm(serial) || GF.UI.IsLoadingUIForm(serial));
+    }
 
     /// <summary>
     /// 从设置返回标题，先保存当前档案再正常离开关卡。
@@ -494,7 +502,9 @@ public class ProcedureLevel : ProcedureBase
                 ChangeState<ProcedureMap>(owner);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         catch (Exception error)
         {
             Log.Error("[ProcedureLevel] 设置返回前保存失败：{0}", error);

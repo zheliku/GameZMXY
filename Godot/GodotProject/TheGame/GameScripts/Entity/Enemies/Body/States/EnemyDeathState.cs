@@ -98,5 +98,8 @@ public sealed class EnemyDeathState(bool waitForEffect = false) : AbstractEnemyB
     /// <summary>
     /// 独立死亡效果只登记完成；回收仍由下一身体帧提交，不能在动画回调中销毁状态机。
     /// </summary>
-    public void CompleteEffect() => _left = 0;
+    public void CompleteEffect()
+    {
+        _left = 0;
+    }
 }

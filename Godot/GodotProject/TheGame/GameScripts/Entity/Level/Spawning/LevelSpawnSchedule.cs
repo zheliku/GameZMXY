@@ -18,7 +18,10 @@ public sealed class LevelSpawnSchedule
     /// <summary>
     /// 已预约、正在显示或仍存活的实体数量。
     /// </summary>
-    public int ActiveCount { get; private set; }
+    public int ActiveCount
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 配方全部提交且所有预约名额已归还。
@@ -46,7 +49,10 @@ public sealed class LevelSpawnSchedule
     /// 推进游戏时间；暂停时调用方停止推进。
     /// </summary>
     /// <param name="delta">本帧经过的游戏秒数。</param>
-    public void Advance(double delta) => _time += delta;
+    public void Advance(double delta)
+    {
+        _time += delta;
+    }
 
     /// <summary>
     /// 为一条到期配方预约名额；同一帧可连续调用，让各配方并行提交。
@@ -85,5 +91,8 @@ public sealed class LevelSpawnSchedule
     /// <summary>
     /// 实体死亡或显示失败时归还一次名额。
     /// </summary>
-    public void Release() => ActiveCount--;
+    public void Release()
+    {
+        ActiveCount--;
+    }
 }

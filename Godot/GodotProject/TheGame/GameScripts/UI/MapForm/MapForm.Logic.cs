@@ -200,7 +200,10 @@ public partial class MapForm : IController
     /// 读取所属游戏流程的架构入口。
     /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 只在本周期仍拥有订阅时退订；回池后的重复清理不查询旧架构。
@@ -426,7 +429,10 @@ public partial class MapForm : IController
     /// <summary>
     /// 设置令牌悬停时短暂提亮，不缩放图案和文字。
     /// </summary>
-    private void OnSettingsMouseEntered() => _settingsAnimation.Play("hover");
+    private void OnSettingsMouseEntered()
+    {
+        _settingsAnimation.Play("hover");
+    }
 
     /// <summary>
     /// 移出设置令牌后恢复常态亮度。
@@ -553,101 +559,160 @@ public partial class MapForm : IController
     /// <summary>
     /// 请求进入花果山，关卡编号取自按钮场景。
     /// </summary>
-    private void OnHuaguoshanClicked() => SelectLevel(_huaguoshan.LevelId);
+    private void OnHuaguoshanClicked()
+    {
+        SelectLevel(_huaguoshan.LevelId);
+    }
 
     /// <summary>
     /// 显示花果山的悬停动画。
     /// </summary>
-    private void OnHuaguoshanMouseEntered() => PlayLocationHover(_huaguoshan);
+    private void OnHuaguoshanMouseEntered()
+    {
+        PlayLocationHover(_huaguoshan);
+    }
 
     /// <summary>
     /// 请求进入水帘洞，关卡编号取自按钮场景。
     /// </summary>
-    private void OnShuiliandongClicked() => SelectLevel(_shuiliandong.LevelId);
+    private void OnShuiliandongClicked()
+    {
+        SelectLevel(_shuiliandong.LevelId);
+    }
 
     /// <summary>
     /// 显示水帘洞的悬停动画。
     /// </summary>
-    private void OnShuiliandongMouseEntered() => PlayLocationHover(_shuiliandong);
+    private void OnShuiliandongMouseEntered()
+    {
+        PlayLocationHover(_shuiliandong);
+    }
 
     /// <summary>
     /// 请求进入桃花源，关卡编号取自按钮场景。
     /// </summary>
-    private void OnTaohuayuanClicked() => SelectLevel(_taohuayuan.LevelId);
+    private void OnTaohuayuanClicked()
+    {
+        SelectLevel(_taohuayuan.LevelId);
+    }
 
     /// <summary>
     /// 显示桃花源的悬停动画。
     /// </summary>
-    private void OnTaohuayuanMouseEntered() => PlayLocationHover(_taohuayuan);
+    private void OnTaohuayuanMouseEntered()
+    {
+        PlayLocationHover(_taohuayuan);
+    }
 
     /// <summary>
     /// 请求进入蝙蝠窟，关卡编号取自按钮场景。
     /// </summary>
-    private void OnBianfukuClicked() => SelectLevel(_bianfuku.LevelId);
+    private void OnBianfukuClicked()
+    {
+        SelectLevel(_bianfuku.LevelId);
+    }
 
     /// <summary>
     /// 显示蝙蝠窟的悬停动画。
     /// </summary>
-    private void OnBianfukuMouseEntered() => PlayLocationHover(_bianfuku);
+    private void OnBianfukuMouseEntered()
+    {
+        PlayLocationHover(_bianfuku);
+    }
 
     /// <summary>
     /// 请求进入七星洞，关卡编号取自按钮场景。
     /// </summary>
-    private void OnQixingdongClicked() => SelectLevel(_qixingdong.LevelId);
+    private void OnQixingdongClicked()
+    {
+        SelectLevel(_qixingdong.LevelId);
+    }
 
     /// <summary>
     /// 显示七星洞的悬停动画。
     /// </summary>
-    private void OnQixingdongMouseEntered() => PlayLocationHover(_qixingdong);
+    private void OnQixingdongMouseEntered()
+    {
+        PlayLocationHover(_qixingdong);
+    }
 
     /// <summary>
     /// 请求进入迦楼罗之穴，关卡编号取自按钮场景。
     /// </summary>
-    private void OnJialuoluoClicked() => SelectLevel(_jialuoluo.LevelId);
+    private void OnJialuoluoClicked()
+    {
+        SelectLevel(_jialuoluo.LevelId);
+    }
 
     /// <summary>
     /// 显示迦楼罗之穴的悬停动画。
     /// </summary>
-    private void OnJialuoluoMouseEntered() => PlayLocationHover(_jialuoluo);
+    private void OnJialuoluoMouseEntered()
+    {
+        PlayLocationHover(_jialuoluo);
+    }
 
     /// <summary>
     /// 请求进入浅岸，关卡编号取自按钮场景。
     /// </summary>
-    private void OnQiananClicked() => SelectLevel(_qianan.LevelId);
+    private void OnQiananClicked()
+    {
+        SelectLevel(_qianan.LevelId);
+    }
 
     /// <summary>
     /// 显示浅岸的悬停动画。
     /// </summary>
-    private void OnQiananMouseEntered() => PlayLocationHover(_qianan);
+    private void OnQiananMouseEntered()
+    {
+        PlayLocationHover(_qianan);
+    }
 
     /// <summary>
     /// 请求进入东海，关卡编号取自按钮场景。
     /// </summary>
-    private void OnDonghaiClicked() => SelectLevel(_donghai.LevelId);
+    private void OnDonghaiClicked()
+    {
+        SelectLevel(_donghai.LevelId);
+    }
 
     /// <summary>
     /// 显示东海的悬停动画。
     /// </summary>
-    private void OnDonghaiMouseEntered() => PlayLocationHover(_donghai);
+    private void OnDonghaiMouseEntered()
+    {
+        PlayLocationHover(_donghai);
+    }
 
     /// <summary>
     /// 请求进入鲨之涡流，关卡编号取自按钮场景。
     /// </summary>
-    private void OnShazhiwoliuClicked() => SelectLevel(_shazhiwoliu.LevelId);
+    private void OnShazhiwoliuClicked()
+    {
+        SelectLevel(_shazhiwoliu.LevelId);
+    }
 
     /// <summary>
     /// 显示鲨之涡流的悬停动画。
     /// </summary>
-    private void OnShazhiwoliuMouseEntered() => PlayLocationHover(_shazhiwoliu);
+    private void OnShazhiwoliuMouseEntered()
+    {
+        PlayLocationHover(_shazhiwoliu);
+    }
 
     /// <summary>
     /// 请求进入牛魔谷，关卡编号取自按钮场景。
     /// </summary>
-    private void OnNiumoguClicked() => SelectLevel(_niumogu.LevelId);
+    private void OnNiumoguClicked()
+    {
+        SelectLevel(_niumogu.LevelId);
+    }
 
     /// <summary>
     /// 显示牛魔谷的悬停动画。
     /// </summary>
-    private void OnNiumoguMouseEntered() => PlayLocationHover(_niumogu);
-
+    private void OnNiumoguMouseEntered()
+    {
+        PlayLocationHover(_niumogu);
+    }
 }

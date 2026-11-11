@@ -22,7 +22,10 @@ public partial class BattleStatusPanel : Sprite2D, IController
 
     /// <summary>借用所属主流程的共享数据访问入口。</summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>解除旧绑定，再观察指定英雄并立即刷新头像、资源和成长。</summary>
     /// <param name="heroId">本局已经建立状态的参战英雄编号。</param>

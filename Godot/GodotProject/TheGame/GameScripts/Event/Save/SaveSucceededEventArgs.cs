@@ -20,7 +20,10 @@ public sealed class SaveSucceededEventArgs : GameEventArgs
     /// 取得一次保存成功通知，由框架在分发后回收。
     /// </summary>
     /// <returns>本次分发的池化参数。</returns>
-    public static SaveSucceededEventArgs Create() => ReferencePool.Acquire<SaveSucceededEventArgs>();
+    public static SaveSucceededEventArgs Create()
+    {
+        return ReferencePool.Acquire<SaveSucceededEventArgs>();
+    }
 
     /// <summary>
     /// 本事件没有需跨次清除的数据。

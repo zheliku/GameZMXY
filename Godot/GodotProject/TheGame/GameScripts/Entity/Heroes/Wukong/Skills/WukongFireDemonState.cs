@@ -45,14 +45,20 @@ public sealed class WukongFireDemonState : AbstractHeroSkillState
     /// 前奏固定本体；原地视觉由悟空场景自身的动画节点播放。
     /// </summary>
     /// <param name="body">悟空身体。</param>
-    public void BeginPrelude(IHeroBody body) => body.Velocity = Vector2.Zero;
+    public void BeginPrelude(IHeroBody body)
+    {
+        body.Velocity = Vector2.Zero;
+    }
 
     /// <summary>
     /// 动画发起升空运动。
     /// </summary>
     /// <param name="body">悟空身体。</param>
     /// <param name="velocity">朝右时的速度，px/s。</param>
-    public void Launch(IHeroBody body, Vector2 velocity) => body.Velocity = new Vector2(velocity.X * ((ISkillActor)body).Facing, velocity.Y);
+    public void Launch(IHeroBody body, Vector2 velocity)
+    {
+        body.Velocity = new Vector2(velocity.X * ((ISkillActor)body).Facing, velocity.Y);
+    }
 
     /// <summary>
     /// 有目标时瞬移并与本体动画并行播放九连斩，没有则进入原生下降标记。
@@ -99,12 +105,18 @@ public sealed class WukongFireDemonState : AbstractHeroSkillState
     /// 开启实际落地检测；不在动画配置中解释条件。
     /// </summary>
     /// <param name="landing">窗口内落地时创建的场景。</param>
-    public void OpenLandingWindow(PackedScene landing) => _landingScene = landing;
+    public void OpenLandingWindow(PackedScene landing)
+    {
+        _landingScene = landing;
+    }
 
     /// <summary>
     /// 关闭提前落地窗口，末段仍会补齐一次落地效果。
     /// </summary>
-    public void CloseLandingWindow() => _landingScene = null;
+    public void CloseLandingWindow()
+    {
+        _landingScene = null;
+    }
 
     /// <summary>
     /// 第70源帧补齐尚未出现的落地斩并恢复身体；提前落地则由效果完成后跳至此处。

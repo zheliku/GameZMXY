@@ -24,8 +24,14 @@ public abstract class AbstractCommand<TResult> : ICommand<TResult>
     }
 
     /// <inheritdoc />
-    void ICanSetArchitecture.SetArchitecture(IArchitecture architecture) => _architecture = architecture ?? throw new ArgumentNullException(nameof(architecture));
+    void ICanSetArchitecture.SetArchitecture(IArchitecture architecture)
+    {
+        _architecture = architecture ?? throw new ArgumentNullException(nameof(architecture));
+    }
 
     /// <inheritdoc />
-    TResult ICommand<TResult>.Execute() => OnExecute();
+    TResult ICommand<TResult>.Execute()
+    {
+        return OnExecute();
+    }
 }

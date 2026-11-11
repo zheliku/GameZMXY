@@ -6,38 +6,11 @@ using System.Linq;
 namespace GameLogic.Architecture;
 
 /// <summary>
-/// 集合的实时只读视图和刷新订阅，不复制前后快照。
-/// </summary>
-/// <typeparam name="T">元素类型。</typeparam>
-public interface IReadonlyBindableList<T> : IReadOnlyList<T>
-{
-    /// <summary>
-    /// 注册刷新回调；优先级越大越先执行，同优先级按注册顺序。
-    /// </summary>
-    /// <param name="callback">接收当前集合的同步回调。</param>
-    /// <param name="priority">默认零。</param>
-    void Register(Action<IReadOnlyList<T>> callback, int priority = 0);
-
-    /// <summary>
-    /// 注册并立即用当前集合初始化。
-    /// </summary>
-    /// <param name="callback">接收当前集合的同步回调。</param>
-    /// <param name="priority">默认零。</param>
-    void RegisterWithInitValue(Action<IReadOnlyList<T>> callback, int priority = 0);
-
-    /// <summary>
-    /// 移除最近注册的同一个回调。
-    /// </summary>
-    /// <param name="callback">原回调。</param>
-    void UnRegister(Action<IReadOnlyList<T>> callback);
-}
-
-/// <summary>
 /// 参考 QFramework 的 Collection 实现，提供标准列表操作、逐项事件和当前集合绑定。
 /// </summary>
 /// <typeparam name="T">元素类型。</typeparam>
 /// <remarks>Model 拥有数据，System 修改；逐项事件采用 C# 事件，整表 Register 支持整数优先级。</remarks>
-public sealed class BindableList<T> : Collection<T>, IReadonlyBindableList<T>
+public sealed class BindableList<T> : Collection<T>, IReadOnlyList<T>
 {
     private readonly ReadOnlyCollection<T> _view; // 同一个实时只读视图。
     private readonly PriorityCallbacks<Action<IReadOnlyList<T>>> _callbacks = new(); // 有序刷新订阅。
@@ -94,13 +67,30 @@ public sealed class BindableList<T> : Collection<T>, IReadonlyBindableList<T>
         _view = new(this);
     }
 
-    /// <inheritdoc />
-    public void Register(Action<IReadOnlyList<T>> callback, int priority = 0) => _callbacks.Register(callback, priority);
+    /// <summary>
+    /// 注册当前集合的同步刷新；调用方负责在同一生命周期退订。
+    /// </summary>
+    /// <param name="callback">接收实时只读视图的回调。</param>
+    /// <param name="priority">越大越先执行，同优先级按注册顺序。</param>
+    public void Register(Action<IReadOnlyList<T>> callback, int priority = 0)
+    {
+        _callbacks.Register(callback, priority);
+    }
 
-    /// <inheritdoc />
-    public void UnRegister(Action<IReadOnlyList<T>> callback) => _callbacks.UnRegister(callback);
+    /// <summary>
+    /// 移除最近一次注册的同一回调。
+    /// </summary>
+    /// <param name="callback">原回调。</param>
+    public void UnRegister(Action<IReadOnlyList<T>> callback)
+    {
+        _callbacks.UnRegister(callback);
+    }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 注册并立即初始化；初始化失败时撤销本次订阅，再原样抛出异常。
+    /// </summary>
+    /// <param name="callback">接收实时只读视图的回调。</param>
+    /// <param name="priority">越大越先执行，默认零。</param>
     public void RegisterWithInitValue(Action<IReadOnlyList<T>> callback, int priority = 0)
     {
         Register(callback, priority);
@@ -228,18 +218,4 @@ public sealed class BindableList<T> : Collection<T>, IReadonlyBindableList<T>
             callback(_view);
         }
     }
-}
-
-/// <summary>
-/// 普通枚举到可绑定集合的转换。
-/// </summary>
-public static class BindableListExtensions
-{
-    /// <summary>
-    /// 复制元素，不共享外部可写列表。
-    /// </summary>
-    /// <typeparam name="T">元素类型。</typeparam>
-    /// <param name="values">输入元素。</param>
-    /// <returns>新集合。</returns>
-    public static BindableList<T> ToBindableList<T>(this IEnumerable<T> values) => new(values);
 }

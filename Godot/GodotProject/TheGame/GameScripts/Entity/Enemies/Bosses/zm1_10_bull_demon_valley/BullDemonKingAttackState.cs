@@ -57,10 +57,16 @@ internal sealed class BullDemonKingAttackState : AbstractEnemyBodyState
     /// 冲刺方法键仅登记速度，物理移动仍由正常身体帧执行。
     /// </summary>
     /// <param name="direction">起手时锁定的朝向。</param>
-    internal void BeginDash(int direction) => _dashSpeed = direction * 360f;
+    internal void BeginDash(int direction)
+    {
+        _dashSpeed = direction * 360f;
+    }
 
     /// <summary>
     /// 吞噬失败只登记收招，不在方法轨道中切换动画或状态。
     /// </summary>
-    internal void MissCapture() => _captureMissed = true;
+    internal void MissCapture()
+    {
+        _captureMissed = true;
+    }
 }

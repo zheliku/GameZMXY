@@ -60,18 +60,27 @@ public partial class InventoryCharacterPanel : Control, IController
     /// 借用所属主流程的共享数据访问入口。
     /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 每次窗口打开从预览待机起点开始。
     /// </summary>
     /// <param name="appearance">当前英雄共用的外观资源。</param>
-    public void ResetPreview(HeroAppearanceResource appearance) => _preview.Reset(appearance);
+    public void ResetPreview(HeroAppearanceResource appearance)
+    {
+        _preview.Reset(appearance);
+    }
 
     /// <summary>
     /// 战斗暂停时由窗口驱动真实时间预览。
     /// </summary>
-    public void AdvancePreview() => _preview.Advance();
+    public void AdvancePreview()
+    {
+        _preview.Advance();
+    }
 
     /// <summary>
     /// 从同一组状态刷新个人资料与预览，不拥有或修改状态。
@@ -109,7 +118,10 @@ public partial class InventoryCharacterPanel : Control, IController
     /// </summary>
     /// <param name="cell">本面板的穿戴槽。</param>
     /// <param name="data">当前装备；null 恢复为空槽。</param>
-    private void BindSlot(EquipmentCell cell, EquipmentData data) => cell.Bind(data, data == null ? null : _appearances.GetAppearance(data.EquipmentId).InventoryIcon);
+    private void BindSlot(EquipmentCell cell, EquipmentData data)
+    {
+        cell.Bind(data, data == null ? null : _appearances.GetAppearance(data.EquipmentId).InventoryIcon);
+    }
 
     /// <summary>
     /// 格式化战斗系统计算的百分比，不在界面维护第二份属性公式。
@@ -117,29 +129,44 @@ public partial class InventoryCharacterPanel : Control, IController
     /// <param name="value">已汇总属性点。</param>
     /// <param name="coefficient">对应战斗系数。</param>
     /// <returns>同等级、无穿透对手下的概率或减伤文字。</returns>
-    private static string Percent(float value, float coefficient) => $"{CombatSystem.CalculateAttributeRatio(value, coefficient) * 100:0.#}%";
+    private static string Percent(float value, float coefficient)
+    {
+        return $"{CombatSystem.CalculateAttributeRatio(value, coefficient) * 100:0.#}%";
+    }
 
     /// <summary>
     /// 提交武器卸装请求。
     /// </summary>
     /// <param name="instanceId">当前槽的装备实例编号。</param>
-    private void OnWeaponClicked(Guid instanceId) => UnequipRequested?.Invoke(EquipmentSlot.Weapon);
+    private void OnWeaponClicked(Guid instanceId)
+    {
+        UnequipRequested?.Invoke(EquipmentSlot.Weapon);
+    }
 
     /// <summary>
     /// 提交防具卸装请求。
     /// </summary>
     /// <param name="instanceId">当前槽的装备实例编号。</param>
-    private void OnArmorClicked(Guid instanceId) => UnequipRequested?.Invoke(EquipmentSlot.Armor);
+    private void OnArmorClicked(Guid instanceId)
+    {
+        UnequipRequested?.Invoke(EquipmentSlot.Armor);
+    }
 
     /// <summary>
     /// 提交饰品卸装请求。
     /// </summary>
     /// <param name="instanceId">当前槽的装备实例编号。</param>
-    private void OnAccessoryClicked(Guid instanceId) => UnequipRequested?.Invoke(EquipmentSlot.Accessory);
+    private void OnAccessoryClicked(Guid instanceId)
+    {
+        UnequipRequested?.Invoke(EquipmentSlot.Accessory);
+    }
 
     /// <summary>
     /// 提交法宝卸装请求。
     /// </summary>
     /// <param name="instanceId">当前槽的装备实例编号。</param>
-    private void OnTreasureClicked(Guid instanceId) => UnequipRequested?.Invoke(EquipmentSlot.Treasure);
+    private void OnTreasureClicked(Guid instanceId)
+    {
+        UnequipRequested?.Invoke(EquipmentSlot.Treasure);
+    }
 }

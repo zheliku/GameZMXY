@@ -51,7 +51,10 @@ public partial class ValidateFrameworkShutdown : RefCounted
     /// 检查本周期异步请求是否全部完成。
     /// </summary>
     /// <returns>所有任务均已完成时为真。</returns>
-    public bool RequestsCompleted() => _requests.All(request => request.IsCompleted);
+    public bool RequestsCompleted()
+    {
+        return _requests.All(request => request.IsCompleted);
+    }
 
     /// <summary>
     /// 验证本地GET和POST的实际响应。
@@ -68,18 +71,27 @@ public partial class ValidateFrameworkShutdown : RefCounted
     /// 发起超过代理数的慢请求，同时覆盖在途和排队任务的关停。
     /// </summary>
     /// <param name="origin">本地测试服务器地址。</param>
-    public void StartPending(string origin) => _requests = Enumerable.Range(0, 6).Select(index => _web.SendRequestAsync(origin + "/slow/" + index)).ToArray();
+    public void StartPending(string origin)
+    {
+        _requests = Enumerable.Range(0, 6).Select(index => _web.SendRequestAsync(origin + "/slow/" + index)).ToArray();
+    }
 
     /// <summary>
     /// 使用本地慢响应验证正常超时仍能取消原生请求并完成调用方任务。
     /// </summary>
     /// <param name="origin">本地测试服务器地址。</param>
-    public void StartTimeout(string origin) => _requests = [_web.SendRequestAsync(origin + "/slow/timeout", .1f)];
+    public void StartTimeout(string origin)
+    {
+        _requests = [_web.SendRequestAsync(origin + "/slow/timeout", .1f)];
+    }
 
     /// <summary>
     /// 验证超时沿既有失败结果返回，之后代理可以继续使用。
     /// </summary>
-    public void VerifyTimeout() => Check(RequestsCompleted() && _requests[0].Result?.Result == -1, "请求超时行为改变");
+    public void VerifyTimeout()
+    {
+        Check(RequestsCompleted() && _requests[0].Result?.Result == -1, "请求超时行为改变");
+    }
 
     /// <summary>
     /// 检查在途和等待队列均已进入验证状态。

@@ -32,12 +32,18 @@ public partial class MapLocationButton : TextureButton, IController
     /// 借用当前GGF流程的架构，只组合读取图鉴配置。
     /// </summary>
     /// <returns>当前流程共享架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 悬停时更新地图共用浮层，保持原有放大命中逻辑。
     /// </summary>
-    private void OnGuideMouseEntered() => _openGuideOnMotion = true;
+    private void OnGuideMouseEntered()
+    {
+        _openGuideOnMotion = true;
+    }
 
     /// <summary>
     /// 从原生GUI事件取得本次进入点，仅首次进入执行图鉴组合查询。

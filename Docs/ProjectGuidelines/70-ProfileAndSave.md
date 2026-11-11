@@ -24,11 +24,12 @@
 
 ## 读写路径
 
-- 读取：SaveSystem → ArchiveUtility → GF.Archive → GameData → SaveDataUtility.Validate → ProcedureLoadGame 注册档案模型和系统。
-- 保存：SaveDataUtility.Capture(profile, skills) → GameData → SaveSystem → ArchiveUtility → GF.Archive。
+- 读取：SaveSystem → 注入的GF.Archive → GameData → SaveDataUtility.Validate → ProcedureLoadGame 注册档案模型和系统。
+- 保存：SaveDataUtility.Capture(profile, skills) → GameData → SaveSystem → 注入的GF.Archive。
 - `HeroOf(PlayerSlot)` 与 `SlotOf(int heroId)` 在阵容和席位之间换算；个人成长、灵魂、背包、穿戴与学习业务显式接收 HeroId，不提供全局当前玩家兼容入口。
 - 格式以 GameData.CurrentVersion 为准，仅接受当前格式及完整字段。结构变化时递增版本；不增加运行时迁移分支；D0一次性离线工具是用户明确批准的正式v12例外。
 - 框架首次建立、尚未认领的当前格式空槽按建档表创建角色并立即写回。已有格按指定 UnitId 读取；读取失败保留原文件并报告。
+- SaveSystem构造时借用流程传入的GGF存档服务，删除纯转发ArchiveUtility；生产与独立场地均显式传同一服务，不另建注册或兼容层。
 - GGF 负责原子写、备份回退和读写串行；写入调用时捕获序列化内容。调用方检查 Task<bool>，切换作用域前等待 PendingWrite。
 
 ## D0正式旧档转存与新档初始值

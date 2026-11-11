@@ -27,7 +27,10 @@ public partial class EquipmentCell : TextureRect, IController
     /// 借用当前游戏流程的架构入口。
     /// </summary>
     /// <returns>所属流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 只处理左键按下，不在控件中改变档案。

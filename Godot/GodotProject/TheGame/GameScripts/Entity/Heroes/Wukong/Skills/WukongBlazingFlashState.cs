@@ -60,7 +60,10 @@ public sealed class WukongBlazingFlashState : AbstractHeroSkillState
     /// 收招点停止身体移动。
     /// </summary>
     /// <param name="body">悟空身体。</param>
-    public void StopDash(IHeroBody body) => body.Velocity = Vector2.Zero;
+    public void StopDash(IHeroBody body)
+    {
+        body.Velocity = Vector2.Zero;
+    }
 
     /// <inheritdoc />
     protected override void UpdateSkill(IHeroBody body, float dt)

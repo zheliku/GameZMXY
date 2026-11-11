@@ -116,5 +116,8 @@ public partial class EnemyPerceptionNode : Area2D
     /// </summary>
     /// <param name="node">已绑定的场景形状。</param>
     /// <returns>含本地位置和变换的边界。</returns>
-    private static Rect2 Bounds(CollisionShape2D node) => node.Transform * node.Shape.GetRect();
+    private static Rect2 Bounds(CollisionShape2D node)
+    {
+        return node.Transform * node.Shape.GetRect();
+    }
 }

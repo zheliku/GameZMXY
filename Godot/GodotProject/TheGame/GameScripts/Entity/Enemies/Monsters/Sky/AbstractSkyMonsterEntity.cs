@@ -25,8 +25,15 @@ public abstract partial class AbstractSkyMonsterEntity : AbstractMonsterEntity, 
     /// </summary>
     public int VerticalIntent
     {
-        get => AiData.VerticalIntent;
-        internal set => AiData.VerticalIntent = value;
+        get
+        {
+            return AiData.VerticalIntent;
+        }
+
+        internal set
+        {
+            AiData.VerticalIntent = value;
+        }
     }
 
     /// <summary>
@@ -34,8 +41,15 @@ public abstract partial class AbstractSkyMonsterEntity : AbstractMonsterEntity, 
     /// </summary>
     public bool DirectVerticalMovement
     {
-        get => AiData.DirectVerticalMovement;
-        internal set => AiData.DirectVerticalMovement = value;
+        get
+        {
+            return AiData.DirectVerticalMovement;
+        }
+
+        internal set
+        {
+            AiData.DirectVerticalMovement = value;
+        }
     }
 
     /// <summary>
@@ -46,15 +60,29 @@ public abstract partial class AbstractSkyMonsterEntity : AbstractMonsterEntity, 
     /// <summary>
     /// 本物种追踪时的垂直加速度，px/s²。
     /// </summary>
-    protected abstract float VerticalAcceleration { get; }
+    protected abstract float VerticalAcceleration
+    {
+        get;
+    }
 
     /// <summary>
     /// 本物种追踪时的垂直速度上限，px/s。
     /// </summary>
-    protected abstract float VerticalSpeed { get; }
+    protected abstract float VerticalSpeed
+    {
+        get;
+    }
 
-    /// <inheritdoc />
-    protected override EnemyBodyPreset BodyPreset => _bodyPreset ??= EnemyBodyPresets.Fly(VerticalAcceleration, VerticalSpeed);
+    /// <summary>
+    /// 首次读取时创建并缓存本物种的飞行身体配方。
+    /// </summary>
+    protected override EnemyBodyPreset BodyPreset
+    {
+        get
+        {
+            return _bodyPreset ??= EnemyBodyPresets.Fly(VerticalAcceleration, VerticalSpeed);
+        }
+    }
 
     /// <inheritdoc />
     public override void OnInit(int entityId, string entityAssetName, IEntityGroup entityGroup, bool isNewInstance, object userData)

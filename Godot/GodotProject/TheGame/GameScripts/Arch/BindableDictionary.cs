@@ -6,38 +6,12 @@ using System.Collections.ObjectModel;
 namespace GameLogic.Architecture;
 
 /// <summary>
-/// 字典的实时只读视图与当前值绑定。
-/// </summary>
-/// <typeparam name="TKey">键类型。</typeparam>
-/// <typeparam name="TValue">值类型。</typeparam>
-public interface IReadonlyBindableDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>
-{
-    /// <summary>
-    /// 注册刷新回调；优先级越大越先执行，同优先级按注册顺序。
-    /// </summary>
-    /// <param name="callback">接收当前字典的同步回调。</param>
-    /// <param name="priority">默认零。</param>
-    void Register(Action<IReadOnlyDictionary<TKey, TValue>> callback, int priority = 0);
-    /// <summary>
-    /// 注册并立即初始化。
-    /// </summary>
-    /// <param name="callback">接收当前字典的同步回调。</param>
-    /// <param name="priority">默认零。</param>
-    void RegisterWithInitValue(Action<IReadOnlyDictionary<TKey, TValue>> callback, int priority = 0);
-    /// <summary>
-    /// 移除最近注册的同一个回调。
-    /// </summary>
-    /// <param name="callback">原回调。</param>
-    void UnRegister(Action<IReadOnlyDictionary<TKey, TValue>> callback);
-}
-
-/// <summary>
 /// 参考 QFramework 的可绑定字典，标准泛型字典写入均经过通知入口。
 /// </summary>
 /// <typeparam name="TKey">键类型。</typeparam>
 /// <typeparam name="TValue">值类型。</typeparam>
 /// <remarks>只保留泛型集合 API，不引入 Unity、EasyEvent 或旧的二进制序列化接口；存档仍使用 GameData。</remarks>
-public sealed class BindableDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadonlyBindableDictionary<TKey, TValue>
+public sealed class BindableDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>
 {
     private readonly Dictionary<TKey, TValue> _items; // 唯一键值存储，不借用外部可写字典。
     private readonly ReadOnlyDictionary<TKey, TValue> _view; // 稳定的实时只读视图。
@@ -71,7 +45,9 @@ public sealed class BindableDictionary<TKey, TValue> : IDictionary<TKey, TValue>
     /// <summary>
     /// 建立空字典。
     /// </summary>
-    public BindableDictionary() : this((IEqualityComparer<TKey>)null) { }
+    public BindableDictionary() : this((IEqualityComparer<TKey>)null)
+    {
+    }
 
     /// <summary>
     /// 按指定键比较规则建立空字典。
@@ -115,7 +91,10 @@ public sealed class BindableDictionary<TKey, TValue> : IDictionary<TKey, TValue>
     /// <inheritdoc />
     public TValue this[TKey key]
     {
-        get => _items[key];
+        get
+        {
+            return _items[key];
+        }
 
         set
         {
@@ -146,7 +125,10 @@ public sealed class BindableDictionary<TKey, TValue> : IDictionary<TKey, TValue>
     }
 
     /// <inheritdoc />
-    public void Add(KeyValuePair<TKey, TValue> item) => Add(item.Key, item.Value);
+    public void Add(KeyValuePair<TKey, TValue> item)
+    {
+        Add(item.Key, item.Value);
+    }
 
     /// <inheritdoc />
     public bool Remove(TKey key)
@@ -164,7 +146,10 @@ public sealed class BindableDictionary<TKey, TValue> : IDictionary<TKey, TValue>
     }
 
     /// <inheritdoc />
-    public bool Remove(KeyValuePair<TKey, TValue> item) => Contains(item) && Remove(item.Key);
+    public bool Remove(KeyValuePair<TKey, TValue> item)
+    {
+        return Contains(item) && Remove(item.Key);
+    }
 
     /// <inheritdoc />
     public void Clear()
@@ -181,30 +166,65 @@ public sealed class BindableDictionary<TKey, TValue> : IDictionary<TKey, TValue>
     }
 
     /// <inheritdoc />
-    public bool ContainsKey(TKey key) => _items.ContainsKey(key);
+    public bool ContainsKey(TKey key)
+    {
+        return _items.ContainsKey(key);
+    }
 
     /// <inheritdoc />
-    public bool TryGetValue(TKey key, out TValue value) => _items.TryGetValue(key, out value);
+    public bool TryGetValue(TKey key, out TValue value)
+    {
+        return _items.TryGetValue(key, out value);
+    }
 
     /// <inheritdoc />
-    public bool Contains(KeyValuePair<TKey, TValue> item) => ((ICollection<KeyValuePair<TKey, TValue>>)_items).Contains(item);
+    public bool Contains(KeyValuePair<TKey, TValue> item)
+    {
+        return ((ICollection<KeyValuePair<TKey, TValue>>)_items).Contains(item);
+    }
 
     /// <inheritdoc />
-    public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) => ((ICollection<KeyValuePair<TKey, TValue>>)_items).CopyTo(array, arrayIndex);
+    public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+    {
+        ((ICollection<KeyValuePair<TKey, TValue>>)_items).CopyTo(array, arrayIndex);
+    }
 
     /// <inheritdoc />
-    public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => _items.GetEnumerator();
+    public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+    {
+        return _items.GetEnumerator();
+    }
 
     /// <inheritdoc />
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
 
-    /// <inheritdoc />
-    public void Register(Action<IReadOnlyDictionary<TKey, TValue>> callback, int priority = 0) => _callbacks.Register(callback, priority);
+    /// <summary>
+    /// 注册当前集合的同步刷新；调用方负责在同一生命周期退订。
+    /// </summary>
+    /// <param name="callback">接收实时只读视图的回调。</param>
+    /// <param name="priority">越大越先执行，同优先级按注册顺序。</param>
+    public void Register(Action<IReadOnlyDictionary<TKey, TValue>> callback, int priority = 0)
+    {
+        _callbacks.Register(callback, priority);
+    }
 
-    /// <inheritdoc />
-    public void UnRegister(Action<IReadOnlyDictionary<TKey, TValue>> callback) => _callbacks.UnRegister(callback);
+    /// <summary>
+    /// 移除最近一次注册的同一回调。
+    /// </summary>
+    /// <param name="callback">原回调。</param>
+    public void UnRegister(Action<IReadOnlyDictionary<TKey, TValue>> callback)
+    {
+        _callbacks.UnRegister(callback);
+    }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 注册并立即初始化；初始化失败时撤销本次订阅，再原样抛出异常。
+    /// </summary>
+    /// <param name="callback">接收实时只读视图的回调。</param>
+    /// <param name="priority">越大越先执行，默认零。</param>
     public void RegisterWithInitValue(Action<IReadOnlyDictionary<TKey, TValue>> callback, int priority = 0)
     {
         Register(callback, priority);
@@ -212,7 +232,11 @@ public sealed class BindableDictionary<TKey, TValue> : IDictionary<TKey, TValue>
         {
             callback(_view);
         }
-        catch { UnRegister(callback); throw; }
+        catch
+        {
+            UnRegister(callback);
+            throw;
+        }
     }
 
     /// <summary>
@@ -225,19 +249,4 @@ public sealed class BindableDictionary<TKey, TValue> : IDictionary<TKey, TValue>
             callback(_view);
         }
     }
-}
-
-/// <summary>
-/// 普通字典到可绑定字典的转换。
-/// </summary>
-public static class BindableDictionaryExtensions
-{
-    /// <summary>
-    /// 复制键值并保留键比较器。
-    /// </summary>
-    /// <typeparam name="TKey">键类型。</typeparam>
-    /// <typeparam name="TValue">值类型。</typeparam>
-    /// <param name="values">原字典。</param>
-    /// <returns>独立的新字典。</returns>
-    public static BindableDictionary<TKey, TValue> ToBindableDictionary<TKey, TValue>(this Dictionary<TKey, TValue> values) => new(values);
 }

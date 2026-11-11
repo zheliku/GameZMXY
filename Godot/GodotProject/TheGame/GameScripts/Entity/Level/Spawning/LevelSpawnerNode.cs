@@ -57,7 +57,10 @@ public partial class LevelSpawnerNode : Node
     /// <summary>
     /// 初始禁用游戏帧调度，加载期不生成实体。
     /// </summary>
-    public override void _Ready() => SetProcess(false);
+    public override void _Ready()
+    {
+        SetProcess(false);
+    }
 
     /// <summary>
     /// 提交到期配方，统一预约名额；暂停时由场景树停止游戏时间。
@@ -82,7 +85,10 @@ public partial class LevelSpawnerNode : Node
     /// </summary>
     /// <param name="entityId">GGF 本次显示分配的运行实体编号。</param>
     /// <returns>是否仍归本会话所有。</returns>
-    public bool OwnsEntity(int entityId) => _ownedIds.Contains(entityId);
+    public bool OwnsEntity(int entityId)
+    {
+        return _ownedIds.Contains(entityId);
+    }
 
     /// <summary>
     /// 在初始化边界验证配方和怪物实体配置，运行时不重复查表。

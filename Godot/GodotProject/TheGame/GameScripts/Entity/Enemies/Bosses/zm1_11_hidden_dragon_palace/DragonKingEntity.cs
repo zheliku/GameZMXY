@@ -197,7 +197,10 @@ public partial class DragonKingEntity : AbstractBossEntity, IEnemyAiAgent
     /// 原生起手键设置官方90、85或24源帧的无敌时间，暂停不推进。
     /// </summary>
     /// <param name="seconds">按24fps换算的游戏秒数。</param>
-    private void BeginInvulnerabilityAnimEvent(float seconds) => _invulnerabilityLeft = seconds;
+    private void BeginInvulnerabilityAnimEvent(float seconds)
+    {
+        _invulnerabilityLeft = seconds;
+    }
 
     /// <summary>
     /// 普攻第11源帧在龙王原点创建不移动的水波。

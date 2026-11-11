@@ -23,7 +23,11 @@ public partial class RegenerateNodePools : SceneTree
             scanner.Dispose();
             Quit();
         }
-        catch (Exception error) { GD.PushError(error.ToString()); Quit(1); }
+        catch (Exception error)
+        {
+            GD.PushError(error.ToString());
+            Quit(1);
+        }
     }
 }
 

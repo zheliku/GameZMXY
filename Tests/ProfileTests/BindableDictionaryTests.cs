@@ -46,7 +46,7 @@ public sealed class BindableDictionaryTests
         {
             ["Hero"] = 1
         };
-        var dictionary = source.ToBindableDictionary();
+        var dictionary = new BindableDictionary<string, int>(source);
         source["Hero"] = 2;
         Assert.Equal(1, dictionary["hero"]);
         Assert.True(dictionary.TryGetValue("HERO", out int value));
@@ -67,7 +67,6 @@ public sealed class BindableDictionaryTests
     public void Dictionary_BindingOrdersPrioritiesAndProtectsView()
     {
         var dictionary = new BindableDictionary<int, int>();
-        IReadonlyBindableDictionary<int, int> binding = dictionary;
         IReadOnlyDictionary<int, int> view = null;
         List<string> calls = [];
         void Observe(IReadOnlyDictionary<int, int> value)
@@ -75,16 +74,16 @@ public sealed class BindableDictionaryTests
             view = value;
             calls.Add("ui1");
         }
-        binding.RegisterWithInitValue(Observe);
-        binding.Register(_ => calls.Add("system"), 100);
-        binding.Register(_ => calls.Add("ui2"));
+        dictionary.RegisterWithInitValue(Observe);
+        dictionary.Register(_ => calls.Add("system"), 100);
+        dictionary.Register(_ => calls.Add("ui2"));
         calls.Clear();
         dictionary.Add(1, 10);
         Assert.Equal(new[] { "system", "ui1", "ui2" }, calls);
         Assert.Throws<NotSupportedException>(() => ((IDictionary<int, int>)view).Add(2, 20));
         dictionary[1] = 11;
         Assert.Equal(11, view[1]);
-        binding.UnRegister(Observe);
+        dictionary.UnRegister(Observe);
         calls.Clear();
         dictionary.Remove(1);
         Assert.Equal(new[] { "system", "ui2" }, calls);

@@ -40,12 +40,18 @@ public partial class LevelCameraNode : Camera2D
     /// <summary>
     /// 场景配置的关卡左界。
     /// </summary>
-    public float SceneLeft { get; private set; }
+    public float SceneLeft
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 场景配置的关卡右界。
     /// </summary>
-    public float SceneRight { get; private set; }
+    public float SceneRight
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 当前视野的世界尺寸，包含窗口扩展和相机缩放。
@@ -99,7 +105,10 @@ public partial class LevelCameraNode : Camera2D
     /// 刷新编辑器中的视野和死区引导。
     /// </summary>
     /// <param name="delta">距上一帧的秒数；绘制刷新与它无关。</param>
-    public override void _Process(double delta) => QueueRedraw();
+    public override void _Process(double delta)
+    {
+        QueueRedraw();
+    }
 
     /// <summary>
     /// 用实际中心推进相机窗口，随后按实际视野检测阶段抵达。

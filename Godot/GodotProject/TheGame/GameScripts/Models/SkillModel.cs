@@ -47,12 +47,18 @@ public sealed class SkillModel : AbstractModel
     /// </summary>
     /// <param name="heroId">本档案已经拥有的英雄编号。</param>
     /// <returns>该英雄的可绑定技能书。</returns>
-    public BindableList<SkillId> GetLearnedSkills(int heroId) => _learnedSkills[heroId];
+    public BindableList<SkillId> GetLearnedSkills(int heroId)
+    {
+        return _learnedSkills[heroId];
+    }
 
     /// <summary>
     /// 借用指定英雄唯一的被动等级字典，升级与回滚直接修改此容器。
     /// </summary>
     /// <param name="heroId">本档案已拥有的英雄。</param>
     /// <returns>被动编号到已学习等级的绑定。</returns>
-    public BindableDictionary<PassiveId, int> GetPassiveLevels(int heroId) => _passiveLevels[heroId];
+    public BindableDictionary<PassiveId, int> GetPassiveLevels(int heroId)
+    {
+        return _passiveLevels[heroId];
+    }
 }

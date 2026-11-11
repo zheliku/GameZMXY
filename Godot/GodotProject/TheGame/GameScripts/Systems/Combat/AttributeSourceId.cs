@@ -36,5 +36,8 @@ public readonly record struct AttributeSourceId
     }
 
     /// <inheritdoc/>
-    public override string ToString() => $"{Category}#{Id}";
+    public override string ToString()
+    {
+        return $"{Category}#{Id}";
+    }
 }

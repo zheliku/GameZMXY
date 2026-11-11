@@ -28,7 +28,7 @@ public class EnemyBodyTests
     public void MovementPresets_AttackAndHurtReturnToSelectedMode_WithIndependentStates()
     {
         EnemyBodyPreset[] presets = [EnemyBodyPresets.Walk(), EnemyBodyPresets.Fly(288f, 96f),
-            EnemyBodyPresets.Swim(288f, 96f, 72f)];
+            EnemyBodyPresets.Swim<EnemyAttackState>(288f, 96f, 72f)];
         foreach (EnemyBodyPreset preset in presets)
         {
             using EnemyHarness h = new(Params(), preset);

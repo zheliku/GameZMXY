@@ -167,7 +167,10 @@ public partial class TangsengWaterCloneNode : CharacterBody2D
     /// <summary>
     /// 原生出手键登记一次辅助施法。
     /// </summary>
-    private void CastAnimEvent() => _castRequested = true;
+    private void CastAnimEvent()
+    {
+        _castRequested = true;
+    }
 
     /// <summary>
     /// 原生末帧登记结束，甘露同帧先治疗再结束。

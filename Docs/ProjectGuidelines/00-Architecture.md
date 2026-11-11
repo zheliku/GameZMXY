@@ -79,7 +79,7 @@ Controller 对 Model/System 执行读取和订阅，System 执行业务写入。
 - 共享运行时数据归 Model；角色输入消费、动作阶段和物理事实归对应运行实例。FormData 携带窗口所需参数，存档 DTO 保存持久数据。
 - 玩法数值来自 `Configs/GameConfig/Datas/*.xlsx`，跨表约束由 ConfigurationSystem 在 Prepare 校验；场景绑定由所属初始化边界校验。
 - 动画、判定几何、声音时点和视觉参数在原生场景/AnimationLibrary 编辑；具体角色状态处理招式规则。
-- 持久状态通过 SaveSystem → ArchiveUtility → GF.Archive 读写，模型与 DTO 的转换集中于 SaveDataUtility；检查点与回滚见 [70](70-ProfileAndSave.md)。
+- 持久状态通过 SaveSystem → 构造注入的 GF.Archive 读写，模型与 DTO 的转换集中于 SaveDataUtility；检查点与回滚见 [70](70-ProfileAndSave.md)。
 - 生成代码、bytes、UI 绑定与资源常量经源数据和既有生成入口更新，见 [20](20-Configs.md)、[40](40-ScenesAndAssets.md)、[50](50-FrameworkAndTools.md)。
 
 ## UI 与目录
@@ -93,6 +93,7 @@ Controller 对 Model/System 执行读取和订阅，System 执行业务写入。
 
 ## GGF 接入约定
 
+- SaveSystem由流程构造时传入GGF拥有的ArchiveSystem，借用同一服务；不为纯转发再注册Utility。
 - 服务通过 GF 门面取用；允许的共享入口为 GF.*、ConfigSystem.Instance、NodePool.Instance、LayerMask.Instance。
 - GameData/GameCatalogue 保持全局类名，流程类保持全局命名空间，以满足 GGF 加载契约。
 - 高频对象经 GF.ObjectPool / NodePool 回收；暂停用 GF.Base.PauseGame()，玩法计时由游戏帧推进。

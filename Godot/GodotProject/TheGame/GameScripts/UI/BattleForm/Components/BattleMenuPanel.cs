@@ -75,7 +75,10 @@ public partial class BattleMenuPanel : Sprite2D, IController
 
     /// <summary>借用所属主流程的共享数据访问入口。</summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>解除旧绑定，再观察本人的无双和技能；初次刷新不重播开启演出。</summary>
     /// <param name="heroId">本局已经建立状态的参战英雄编号。</param>
@@ -178,15 +181,24 @@ public partial class BattleMenuPanel : Sprite2D, IController
     /// <summary>
     /// 报告本块的设置选择。
     /// </summary>
-    private void OnSettingsPressed() => SettingsSelected?.Invoke(_slot);
+    private void OnSettingsPressed()
+    {
+        SettingsSelected?.Invoke(_slot);
+    }
 
     /// <summary>
     /// 报告本块的背包选择。
     /// </summary>
-    private void OnInventoryPressed() => InventorySelected?.Invoke(_slot);
+    private void OnInventoryPressed()
+    {
+        InventorySelected?.Invoke(_slot);
+    }
 
     /// <summary>
     /// 报告本块的技能选择。
     /// </summary>
-    private void OnSkillsPressed() => SkillsSelected?.Invoke(_slot);
+    private void OnSkillsPressed()
+    {
+        SkillsSelected?.Invoke(_slot);
+    }
 }

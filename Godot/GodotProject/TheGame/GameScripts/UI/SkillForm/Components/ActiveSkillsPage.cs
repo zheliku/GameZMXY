@@ -66,7 +66,10 @@ public partial class ActiveSkillsPage : Control, IController
     /// 借用所属主流程的共享数据访问入口。
     /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     // ---- 业务方法 ----
 

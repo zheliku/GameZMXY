@@ -19,7 +19,10 @@ public partial class ItemAppearancesResource : Resource
     /// <param name="id">稳定的装备主键。</param>
     /// <returns>该物品的外观资源。</returns>
     /// <exception cref="InvalidOperationException">未装配或重复装配指定物品。</exception>
-    public ItemAppearanceResource GetAppearance(EquipmentId id) => FindAppearance(id, PickupId.None);
+    public ItemAppearanceResource GetAppearance(EquipmentId id)
+    {
+        return FindAppearance(id, PickupId.None);
+    }
 
     /// <summary>
     /// 查找恢复品对应的共享外观。
@@ -27,7 +30,10 @@ public partial class ItemAppearancesResource : Resource
     /// <param name="id">稳定的恢复品主键。</param>
     /// <returns>该物品的外观资源。</returns>
     /// <exception cref="InvalidOperationException">未装配或重复装配指定物品。</exception>
-    public ItemAppearanceResource GetAppearance(PickupId id) => FindAppearance(EquipmentId.None, id);
+    public ItemAppearanceResource GetAppearance(PickupId id)
+    {
+        return FindAppearance(EquipmentId.None, id);
+    }
 
     /// <summary>
     /// 验证物品身份和图像，拒绝重复或缺失的场景装配。

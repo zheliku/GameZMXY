@@ -49,7 +49,10 @@ public partial class PengDemonKingEntity : AbstractBossEntity, IActorBody
     /// <summary>
     /// 当前使用无重力的空中运动；出招和受击期间也保留此运动事实。
     /// </summary>
-    internal bool Flying { get; private set; }
+    internal bool Flying
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 首次生命耗尽而尚未破蛋，不等同于敌人死亡。
@@ -161,7 +164,10 @@ public partial class PengDemonKingEntity : AbstractBossEntity, IActorBody
     /// </summary>
     /// <param name="data">已经由攻击来源完成去重的攻击包。</param>
     /// <returns>凤凰蛋为零伤害成功命中，其余使用正式战斗公式。</returns>
-    protected override DamageResult CalculateIncomingHit(AttackData data) => IsEgg ? new DamageResult(0, false, false, data.Kind) : base.CalculateIncomingHit(data);
+    protected override DamageResult CalculateIncomingHit(AttackData data)
+    {
+        return IsEgg ? new DamageResult(0, false, false, data.Kind) : base.CalculateIncomingHit(data);
+    }
 
     /// <summary>
     /// 首次归零改为化卵；单人模式第五次破蛋命中才返回真正死亡。
@@ -247,7 +253,10 @@ public partial class PengDemonKingEntity : AbstractBossEntity, IActorBody
     /// 普攻动画从原文件fire子节点传入局部Y，具体位置由本首领决定。
     /// </summary>
     /// <param name="sourceY">源动作fire子节点的局部纵坐标。</param>
-    private void SpawnFireAnimEvent(float sourceY) => SpawnFire(sourceY);
+    private void SpawnFireAnimEvent(float sourceY)
+    {
+        SpawnFire(sourceY);
+    }
 
     /// <summary>
     /// 冲刺第17源帧只登记本招的运动变化，不在播放器回调中切换状态。
@@ -265,7 +274,10 @@ public partial class PengDemonKingEntity : AbstractBossEntity, IActorBody
     /// 原生起飞和冲刺动画按源时长开启无敌，暂停时不推进。
     /// </summary>
     /// <param name="seconds">本次无敌的游戏秒数。</param>
-    private void BeginInvulnerabilityAnimEvent(float seconds) => _invulnerableLeft = seconds;
+    private void BeginInvulnerabilityAnimEvent(float seconds)
+    {
+        _invulnerableLeft = seconds;
+    }
 
     /// <summary>
     /// 创建独立火焰；蛋形态没有fire锚点，按原版在身体上方散布。

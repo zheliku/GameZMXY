@@ -74,7 +74,10 @@ public partial class LevelViewController : Node2D, IController
     /// <summary>
     /// 本阶段指定展示的普通怪物；死亡或离开会话后为空。
     /// </summary>
-    public AbstractEnemyEntity FeaturedOpponent { get; private set; }
+    public AbstractEnemyEntity FeaturedOpponent
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 玩家出生点的世界坐标，注册初始化完成后可读。
@@ -109,7 +112,10 @@ public partial class LevelViewController : Node2D, IController
     /// 返回本场景装配时绑定的入口。
     /// </summary>
     /// <returns>所属游戏架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => _architecture ?? throw new InvalidOperationException("关卡 ViewController 尚未初始化。");
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return _architecture ?? throw new InvalidOperationException("关卡 ViewController 尚未初始化。");
+    }
 
     /// <summary>
     /// 绑定游戏入口，校验场景身份并初始化场景节点。
@@ -276,14 +282,20 @@ public partial class LevelViewController : Node2D, IController
     /// <summary>判断英雄是否属于本关借用的参战集合。</summary>
     /// <param name="hero">待验证的实体，可为空。</param>
     /// <returns>英雄属于本会话时为真。</returns>
-    private bool IsSessionHero(AbstractHeroEntity hero) => hero != null && _heroes.Contains(hero);
+    private bool IsSessionHero(AbstractHeroEntity hero)
+    {
+        return hero != null && _heroes.Contains(hero);
+    }
 
     /// <summary>
     /// 飘字只接收本场玩家及本关刷怪服务拥有的运行实体。
     /// </summary>
     /// <param name="entityId">伤害发生时复制的受击实体编号。</param>
     /// <returns>是否归属本会话。</returns>
-    private bool OwnsActor(int entityId) => _heroes.Exists(hero => hero.Id == entityId) || _spawner.OwnsEntity(entityId);
+    private bool OwnsActor(int entityId)
+    {
+        return _heroes.Exists(hero => hero.Id == entityId) || _spawner.OwnsEntity(entityId);
+    }
 
     /// <summary>
     /// 只把本关参战英雄对本关敌人的有效命中交给连击规则；闪避和无攻击实体的持续扣血不累计。
@@ -439,7 +451,10 @@ public partial class LevelViewController : Node2D, IController
     /// 守关对手死亡后撤销展示；其余怪物仍由调度器判定清场。
     /// </summary>
     /// <param name="actor">已死亡的守关对手。</param>
-    private void OnFeaturedOpponentDied(AbstractActorEntity actor) => ClearFeaturedOpponent();
+    private void OnFeaturedOpponentDied(AbstractActorEntity actor)
+    {
+        ClearFeaturedOpponent();
+    }
 
     /// <summary>
     /// 解除对手事件，避免池复用或关卡离开后残留旧生命条。

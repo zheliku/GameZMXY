@@ -47,7 +47,10 @@ public abstract partial class AbstractLevelMarkersNode : Node2D
     /// 刷新子节点移动、列表编辑和颜色变化对应的标注。
     /// </summary>
     /// <param name="delta">距上一帧的秒数；绘制刷新与它无关。</param>
-    public override void _Process(double delta) => QueueRedraw();
+    public override void _Process(double delta)
+    {
+        QueueRedraw();
+    }
 
     /// <summary>
     /// 判断集合支持的直接子节点类型。
@@ -143,7 +146,10 @@ public abstract partial class AbstractLevelMarkersNode : Node2D
     /// </summary>
     /// <param name="child">已确认受支持的直接子节点。</param>
     /// <returns>匹配的条目；未登记时返回 null。</returns>
-    private LevelMarkerResource FindEntry(Node child) => _entries.FirstOrDefault(x => x != null && GetNodeOrNull(x.Node) == child);
+    private LevelMarkerResource FindEntry(Node child)
+    {
+        return _entries.FirstOrDefault(x => x != null && GetNodeOrNull(x.Node) == child);
+    }
 
     /// <summary>
     /// 按当前子节点重建登记列表，保留仍存在的条目及其人工设置。

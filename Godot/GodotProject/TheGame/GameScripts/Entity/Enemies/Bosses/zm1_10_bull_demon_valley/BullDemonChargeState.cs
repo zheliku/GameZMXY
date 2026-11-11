@@ -12,7 +12,10 @@ internal sealed class BullDemonChargeState : AbstractEnemyBodyState
     private int _direction; // 上次身体帧实际使用的方向，零表示停步暴露。
 
     /// <inheritdoc />
-    protected override void Enter(IFsm<IEnemyBody> fsm, IEnemyBody body) => _direction = 0;
+    protected override void Enter(IFsm<IEnemyBody> fsm, IEnemyBody body)
+    {
+        _direction = 0;
+    }
 
     /// <inheritdoc />
     protected override void Tick(IFsm<IEnemyBody> fsm, IEnemyBody body, float dt)
@@ -40,5 +43,8 @@ internal sealed class BullDemonChargeState : AbstractEnemyBodyState
     }
 
     /// <inheritdoc />
-    protected override void Leave(IFsm<IEnemyBody> fsm, IEnemyBody body, bool isShutdown) => body.EndAttack();
+    protected override void Leave(IFsm<IEnemyBody> fsm, IEnemyBody body, bool isShutdown)
+    {
+        body.EndAttack();
+    }
 }

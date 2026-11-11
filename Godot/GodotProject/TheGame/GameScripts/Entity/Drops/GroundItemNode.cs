@@ -69,7 +69,10 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
     /// 借用当前游戏流程的架构入口。
     /// </summary>
     /// <returns>所属流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 取池时等待本次关卡参数。
@@ -156,9 +159,18 @@ public partial class GroundItemNode : CharacterBody2D, IPoolable, IController
     /// <returns>本次是否完成领取。</returns>
     public bool TryCollect(AbstractHeroEntity hero)
     {
-        if (_collected || _collect == null || !IsInstanceValid(hero) || !hero.IsAlive ||
-            !(_shape.GlobalTransform * _shape.Shape.GetRect()).Intersects(hero.HurtBox.GetGlobalBounds()) ||
-            !_collect(hero, _pickupId, _equipmentData))
+        if (_collected || _collect == null || !IsInstanceValid(hero) || !hero.IsAlive)
+        {
+            return false;
+        }
+
+        Rect2 pickupBounds = _shape.GlobalTransform * _shape.Shape.GetRect();
+        if (!pickupBounds.Intersects(hero.HurtBox.GetGlobalBounds()))
+        {
+            return false;
+        }
+
+        if (!_collect(hero, _pickupId, _equipmentData))
         {
             return false;
         }

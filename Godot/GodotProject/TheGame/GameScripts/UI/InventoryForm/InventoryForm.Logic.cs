@@ -216,7 +216,10 @@ public partial class InventoryForm : IController
     /// 读取所属游戏流程的架构入口。
     /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 显式参数可重新绑定本窗口。
@@ -347,19 +350,28 @@ public partial class InventoryForm : IController
     /// 生命、魔法变化只刷新个人资料。
     /// </summary>
     /// <param name="value">已提交的资源值。</param>
-    private void RefreshResources(int value) => RefreshCharacter();
+    private void RefreshResources(int value)
+    {
+        RefreshCharacter();
+    }
 
     /// <summary>
     /// 概率变化时读取同一模型，保留小数概率而不转成属性点。
     /// </summary>
     /// <param name="value">已提交的 0..1 概率。</param>
-    private void RefreshProbability(float value) => RefreshCharacter();
+    private void RefreshProbability(float value)
+    {
+        RefreshCharacter();
+    }
 
     /// <summary>
     /// 成长变化只刷新个人资料。
     /// </summary>
     /// <param name="progress">已经提交的成长快照。</param>
-    private void RefreshProgression(HeroProgressionState progress) => RefreshCharacter();
+    private void RefreshProgression(HeroProgressionState progress)
+    {
+        RefreshCharacter();
+    }
 
     /// <summary>
     /// 余额变化刷新背包与出售选项，清除已过期的确认。

@@ -25,7 +25,11 @@ public partial class LevelViewController
     [Export(PropertyHint.Range, "0,1")]
     public float EntranceOpacity
     {
-        get => Modulate.A;
+        get
+        {
+            return Modulate.A;
+        }
+
         set
         {
             Modulate = new Color(1, 1, 1, value);
@@ -112,7 +116,10 @@ public partial class LevelViewController
     /// 动画信号中不清理场景，只等待后续正常游戏帧提交。
     /// </summary>
     /// <param name="animation">已完整播放的入口淡出。</param>
-    private void OnEntranceFadeFinished(StringName animation) => _entranceFadeFinished = _enteringHiddenLevel;
+    private void OnEntranceFadeFinished(StringName animation)
+    {
+        _entranceFadeFinished = _enteringHiddenLevel;
+    }
 
     /// <summary>
     /// 淡出完成后由业务系统结束当前事务，再报告已验证的隐藏关目标。

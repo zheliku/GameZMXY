@@ -26,7 +26,9 @@ public sealed class CombatSystem : AbstractSystem
     /// 绑定业务系统的所属架构。
     /// </summary>
     /// <param name="architecture">所属游戏入口。</param>
-    public CombatSystem(IArchitecture architecture) : base(architecture) { }
+    public CombatSystem(IArchitecture architecture) : base(architecture)
+    {
+    }
 
     /// <summary>
     /// 结算一次命中。
@@ -57,18 +59,18 @@ public sealed class CombatSystem : AbstractSystem
         double def = Math.Max(0, defender.Def - attacker.Ar);
         double mdef = Math.Max(0, defender.Mdef - attacker.Sp);
 
-        // 2. 等级压制：sign = +1 攻击方等级高，-1 防守方等级高，0 同级
+        // 2. 等级压制：+1 攻击方等级高，-1 防守方等级高，0 同级。
         int levelGap = attacker.Level - defender.Level;
-        int d = Math.Abs(levelGap);
-        int sign = Math.Sign(levelGap);
+        int absoluteLevelGap = Math.Abs(levelGap);
+        int levelAdvantage = Math.Sign(levelGap);
 
-        int damageCapLv = heroDefends ? config.LvDamageCapLvHeroDef : config.LvDamageCapLvEnemyDef;
+        int damageLevelCap = heroDefends ? config.LvDamageCapLvHeroDef : config.LvDamageCapLvEnemyDef;
 
-        double luckyBl = Math.Min(d * (double)config.LvLuckyCoef, config.LvLuckyCap);
-        double damageBl = Math.Min(d, damageCapLv) * (double)config.LvDamageCoef;
+        double luckyLevelBonus = Math.Min(absoluteLevelGap * (double)config.LvLuckyCoef, config.LvLuckyCap);
+        double damageLevelBonus = Math.Min(absoluteLevelGap, damageLevelCap) * (double)config.LvDamageCoef;
 
-        lucky *= 1 + sign * luckyBl;
-        double hurt = Truncate(data.Power * (1 + sign * damageBl));
+        lucky *= 1 + levelAdvantage * luckyLevelBonus;
+        double hurt = Truncate(data.Power * (1 + levelAdvantage * damageLevelBonus));
 
         // 3. 造一直接概率：不再按属性点曲线或等级差二次换算。
         if (missRoll < miss)
@@ -122,8 +124,14 @@ public sealed class CombatSystem : AbstractSystem
             SkillHitId.FireDemonCombo => (int)Math.Floor(power * .5 + .5),
             _ => tables.TbAttackConfig.Get(attack.AttackId).ComboIndex >= 0 ? power : (int)attack.Power
         };
-        return basePower <= 0 ? 0 : (int)Math.Min(int.MaxValue,
-            Math.Floor((double)damage / basePower * tables.TbBattleConfig.WsGainPerDamageRatio + .5));
+        if (basePower <= 0)
+        {
+            return 0;
+        }
+
+        double damageRatio = (double)damage / basePower;
+        double wsGain = Math.Floor(damageRatio * tables.TbBattleConfig.WsGainPerDamageRatio + .5);
+        return (int)Math.Min(int.MaxValue, wsGain);
     }
 
     /// <summary>
@@ -148,7 +156,10 @@ public sealed class CombatSystem : AbstractSystem
     /// </summary>
     /// <param name="value">待取整数值。</param>
     /// <returns>向零截断后的值。</returns>
-    private static double Truncate(double value) => value >= 0 ? Math.Floor(value + TruncateEpsilon) : Math.Ceiling(value - TruncateEpsilon); // 带浮点容差地向零取整，保持旧伤害公式顺序。
+    private static double Truncate(double value)
+    {
+        return value >= 0 ? Math.Floor(value + TruncateEpsilon) : Math.Ceiling(value - TruncateEpsilon); // 带浮点容差地向零取整，保持旧伤害公式顺序。
+    }
 
     /// <summary>x/(x+K)，保留三位小数（旧项目 snapped(x, 0.001)）；x、K 均为 0 时视为 0。
     /// Godot 4 的 Mathf.Snapped 同为 floor(x/step+0.5)*step；x≥0 域内二者一致。</summary>

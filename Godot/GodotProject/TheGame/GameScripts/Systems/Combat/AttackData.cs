@@ -16,52 +16,82 @@ public sealed class AttackData : IReference
     /// <summary>
     /// 来源攻击 Id（AttackConfig.Id；运行时动态攻击为 0）。受击结算不回查表；攻击方用它结算自己的命中收益
     /// </summary>
-    public int AttackId { get; private set; }
+    public int AttackId
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 攻击方属性快照（出招时刻）
     /// </summary>
-    public CombatantAttributes Attacker { get; private set; }
+    public CombatantAttributes Attacker
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 本招威力（属性威力与固定威力之和，再应用无双等出招加成；最终取整由伤害结算负责）。
     /// </summary>
-    public float Power { get; private set; }
+    public float Power
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 伤害类型
     /// </summary>
-    public DamageKind Kind { get; private set; }
+    public DamageKind Kind
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 击退速度（px/s）：X&gt;0 = 远离攻击者，Y&lt;0 = 向上。
     /// </summary>
-    public Vector2 Knockback { get; private set; }
+    public Vector2 Knockback
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 出招方向：1 右 / -1 左（击退方向 = 本值 × Knockback.X）
     /// </summary>
-    public int Direction { get; private set; }
+    public int Direction
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 来自独立效果而非身体判定；具体敌人据此执行不同的背击反应。
     /// </summary>
-    public bool IsEffect { get; private set; }
+    public bool IsEffect
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 伤害归属者、实际施放者和判定节点的值快照。
     /// </summary>
-    public AttackSource Source { get; private set; }
+    public AttackSource Source
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 按攻击中心向两侧击退时使用的世界横坐标；为空时按出招朝向。
     /// </summary>
-    public float? KnockbackOriginX { get; private set; }
+    public float? KnockbackOriginX
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 命中给受击方累计的受击保护值（旧 HitProtect；0 = 按表默认）
     /// </summary>
-    public int HitProtect { get; private set; }
+    public int HitProtect
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 从引用池取一个攻击包并装填（各参数语义见同名属性）。
@@ -104,7 +134,10 @@ public sealed class AttackData : IReference
     /// </summary>
     /// <param name="targetInstanceId">目标节点实例编号。</param>
     /// <returns>目标首次命中时为 <see langword="true"/>；否则为 <see langword="false"/>。</returns>
-    public bool TryRegisterHit(ulong targetInstanceId) => _hitTargets.Add(targetInstanceId);
+    public bool TryRegisterHit(ulong targetInstanceId)
+    {
+        return _hitTargets.Add(targetInstanceId);
+    }
 
     /// <summary>
     /// 归还引用池时清空（IReference）。

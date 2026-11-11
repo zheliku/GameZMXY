@@ -23,14 +23,20 @@ public partial class LevelExitNode : Area2D
     /// <summary>
     /// 加载期禁用出口及输入。
     /// </summary>
-    public override void _Ready() => Disable();
+    public override void _Ready()
+    {
+        Disable();
+    }
 
     /// <summary>
     /// 玩家靠近时显示提示；暂停时由场景树一起暂停。
     /// </summary>
     /// <param name="delta">物理帧秒数。</param>
-    public override void _PhysicsProcess(double delta) => _prompt.Visible = Monitoring &&
+    public override void _PhysicsProcess(double delta)
+    {
+        _prompt.Visible = Monitoring &&
         GetOverlappingBodies().Any(body => body is AbstractHeroEntity { IsAlive: true, OnFloor: true });
+    }
 
     /// <summary>
     /// 只接受靠近、落地、存活英雄的本人单独交互键，拒绝同席位动作组合与按住自动重复。

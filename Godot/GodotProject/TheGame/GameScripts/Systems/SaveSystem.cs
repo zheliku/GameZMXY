@@ -13,7 +13,7 @@ using GameLogic.Save.Data;
 using GameLogic.Save.Slots;
 using GameLogic.Skills;
 using GodotGameFramework;
-using GameArchiveUtility = GameLogic.Utility.ArchiveUtility<GameCatalogue, GameData>;
+using GameArchive = GodotGameFramework.Archive.ArchiveSystem<GameCatalogue, GameData>;
 
 namespace GameLogic.Save;
 
@@ -21,13 +21,14 @@ namespace GameLogic.Save;
 /// 项目存档入口：读取六格摘要、读取或新建档案、保存检查点。
 /// </summary>
 /// <param name="architecture">借用的所属作用域；模型和服务由作用域持有。</param>
+/// <param name="archive">GGF拥有的存档服务；本系统只借用，不创建第二个队列或持久状态。</param>
 /// <remarks>
 /// 全部写盘字段见 <see cref="GameData"/>；运行时档案与快照的转换见 <see cref="SaveDataUtility"/>。
-/// 文件读写只调用 ArchiveUtility，原子写、备份与串行队列由框架负责；数据流见 Docs/ProjectTour.md。
+/// 文件读写直接调用借用的 GGF 存档服务，原子写、备份与串行队列由框架负责；数据流见 Docs/ProjectTour.md。
 /// 应用装配边界注册唯一实例；标题读取目录，读档流程切换当前槽，关卡提交当前档案。
 /// 本系统借用独立注册的 SaveModel，拥有读写任务；共享配置、经验曲线通过 Architecture 取用，ProfileModel 由流程注册于档案作用域。
 /// </remarks>
-public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(architecture)
+public sealed class SaveSystem(IArchitecture architecture, GameArchive archive) : AbstractSystem(architecture)
 {
     private Task<bool> _pendingWrite = Task.FromResult(true); // 最近一次提交的写入；流程重入前等待。
 
@@ -54,7 +55,6 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
     {
         ArgumentNullException.ThrowIfNull(initialHeroIds);
         cancellationToken.ThrowIfCancellationRequested();
-        GameArchiveUtility archive = this.GetUtility<GameArchiveUtility>();
         if (slotNumber < 1 || slotNumber > SaveModel.SlotCount)
         {
             throw new ArgumentOutOfRangeException(nameof(slotNumber));
@@ -113,10 +113,15 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
                 }
             }
         }
-        GameData source = created ? new GameData
+        GameData source = data;
+        if (created)
         {
-            Heroes = initialHeroIds.Select(id => new HeroSaveData { HeroId = id, Soul = tables.TbProfileConfig.StartSoul }).ToList()
-        } : data;
+            source = new GameData
+            {
+                Heroes = initialHeroIds.Select(id => new HeroSaveData { HeroId = id, Soul = tables.TbProfileConfig.StartSoul }).ToList()
+            };
+        }
+
         mapper.Validate(source, tables.TbEquipmentConfig,
             tables.TbProfileConfig.EquipmentCapacity, tables.TbSkillConfig, tables.TbLevelConfig, tables.TbPassiveConfig);
         saveModel.ActiveSlotUnitId = data.UnitId;
@@ -142,7 +147,6 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
     /// <exception cref="InvalidOperationException">目录不可读或超出六格容量。</exception>
     private async Task<IReadOnlyList<SaveSlotInfo>> ReadSlotsAsync(CancellationToken cancellationToken)
     {
-        GameArchiveUtility archive = this.GetUtility<GameArchiveUtility>();
         Tables tables = this.GetModel<ConfigurationModel>().Tables;
         ExperienceCurveUtility curve = this.GetUtility<ExperienceCurveUtility>();
         SaveDataUtility mapper = this.GetUtility<SaveDataUtility>();
@@ -224,10 +228,18 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
     /// <returns>仅当前版本、无档案且无业务目录元数据时为 true。</returns>
     private static bool IsUnclaimedSlot(GameCatalogue catalogue, GameData data)
     {
-        return data != null && data.UnitId == catalogue.UnitId && data.SaveVersion == GameData.CurrentVersion &&
-        data.Heroes is { Count: 0 } && data.HighestClearedLevelId == 0 &&
-        data.EquipmentItems is { Count: 0 } &&
-        catalogue.SlotNumber == 0 && catalogue.SavedAtUtc == 0 && string.IsNullOrEmpty(catalogue.Name);
+        if (data == null || data.UnitId != catalogue.UnitId || data.SaveVersion != GameData.CurrentVersion)
+        {
+            return false;
+        }
+
+        if (data.Heroes is not { Count: 0 } || data.HighestClearedLevelId != 0 ||
+            data.EquipmentItems is not { Count: 0 })
+        {
+            return false;
+        }
+
+        return catalogue.SlotNumber == 0 && catalogue.SavedAtUtc == 0 && string.IsNullOrEmpty(catalogue.Name);
     }
 
     /// <summary>
@@ -245,7 +257,8 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
             return Task.FromResult(false);
         }
 
-        return WriteSnapshotAsync(this.GetUtility<SaveDataUtility>().Capture(profile, this.GetModel<SkillModel>()));
+        GameData snapshot = this.GetUtility<SaveDataUtility>().Capture(profile, this.GetModel<SkillModel>());
+        return WriteSnapshotAsync(snapshot);
     }
 
     /// <summary>
@@ -298,7 +311,6 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
     /// <returns>是否写入成功。</returns>
     private Task<bool> WriteSnapshotAsync(GameData snapshotData)
     {
-        GameArchiveUtility archive = this.GetUtility<GameArchiveUtility>();
         GameData data = archive.CurrentData;
         if (data == null || archive.CurrentCatalogue?.UnitId != this.GetModel<SaveModel>().ActiveSlotUnitId ||
             data.UnitId != this.GetModel<SaveModel>().ActiveSlotUnitId)
@@ -371,7 +383,6 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
         await _directoryRead;
         await _pendingWrite;
         cancellationToken.ThrowIfCancellationRequested();
-        GameArchiveUtility archive = this.GetUtility<GameArchiveUtility>();
         GameCatalogue catalogue = archive.Catalogues.SingleOrDefault(value => value.UnitId == unitId);
         if (catalogue == null || (catalogue.SlotNumber != 0 && catalogue.SlotNumber != slotNumber))
         {
@@ -380,7 +391,7 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
 
         SaveModel model = this.GetModel<SaveModel>();
         UpdateDirectory(model, SaveListState.Loading);
-        _pendingWrite = archive.DeleteAsync(unitId);
+        _pendingWrite = archive.Delete(unitId);
         bool deleted = await _pendingWrite;
         if (!deleted)
         {
@@ -433,8 +444,7 @@ public sealed class SaveSystem(IArchitecture architecture) : AbstractSystem(arch
     /// <param name="errorMessage">本次读取失败提示。</param>
     private static void UpdateDirectory(SaveModel model, SaveListState phase, IReadOnlyList<SaveSlotInfo> slots = null, string errorMessage = "")
     {
-        // 复制集合边界，调用方随后修改数组不会偷偷改变已发布目录。
-        IReadOnlyList<SaveSlotInfo> entries = slots == null ? model.Slots : Array.AsReadOnly(slots.ToArray());
-        model.Directory.Value = new(phase, entries, errorMessage);
+        // ReadSlotsAsync已建立独立只读快照；阶段变更复用摘要，不再复制同一份数组。
+        model.Directory.Value = new(phase, slots ?? model.Slots, errorMessage);
     }
 }

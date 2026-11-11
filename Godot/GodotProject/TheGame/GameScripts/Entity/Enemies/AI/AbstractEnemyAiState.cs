@@ -14,7 +14,10 @@ public abstract class AbstractEnemyAiState : FsmState<IEnemyAiAgent>
     /// <param name="agent">提供本实例随机源的AI宿主。</param>
     /// <param name="percent">0..100的概率。</param>
     /// <returns>本次概率判定是否通过。</returns>
-    protected static bool Chance(IEnemyAiAgent agent, int percent) => agent.NextRandom() * 100f < percent;
+    protected static bool Chance(IEnemyAiAgent agent, int percent)
+    {
+        return agent.NextRandom() * 100f < percent;
+    }
 
     /// <summary>
     /// 进入时执行框架流程并调用 AI 状态进入钩子。
@@ -50,7 +53,10 @@ public abstract class AbstractEnemyAiState : FsmState<IEnemyAiAgent>
     /// 进入本状态（默认停步）。
     /// </summary>
     /// <param name="agent">提供感知与意图的敌人实例。</param>
-    protected virtual void Enter(IEnemyAiAgent agent) => agent.Move(0);
+    protected virtual void Enter(IEnemyAiAgent agent)
+    {
+        agent.Move(0);
+    }
 
     /// <summary>
     /// 未被打断时的本状态决策（elapseSeconds 为逻辑时间）。

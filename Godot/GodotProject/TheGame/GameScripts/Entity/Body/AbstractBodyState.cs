@@ -28,7 +28,10 @@ public abstract class AbstractBodyState<TBody> : FsmState<TBody> where TBody : c
     /// <summary>
     /// 进入次数（BodyFsmExtensions 据此识别"切回自己"的重新进入）。
     /// </summary>
-    internal int EnterSerial { get; private set; }
+    internal int EnterSerial
+    {
+        get; private set;
+    }
 
     /// <summary>
     /// 框架帧轮询：身体状态不在渲染帧做任何事（见类注释）。
@@ -67,7 +70,10 @@ public abstract class AbstractBodyState<TBody> : FsmState<TBody> where TBody : c
     /// </summary>
     /// <param name="left">待检查的剩余秒数。</param>
     /// <returns>剩余秒数是否小于或等于计时容差。</returns>
-    protected static bool Elapsed(float left) => left <= TimeEpsilon;
+    protected static bool Elapsed(float left)
+    {
+        return left <= TimeEpsilon;
+    }
 
     /// <summary>
     /// 物理帧推进（由状态机扩展 Tick 调用）：先过打断规则，未被打断才跑本状态决策。
@@ -110,7 +116,10 @@ public abstract class AbstractBodyState<TBody> : FsmState<TBody> where TBody : c
     /// <param name="fsm">当前宿主拥有的状态机。</param>
     /// <param name="body">当前状态借用的身体宿主。</param>
     /// <returns>是否已经处理打断，本帧无需继续执行当前状态决策。</returns>
-    protected virtual bool Interrupt(IFsm<TBody> fsm, TBody body) => false;
+    protected virtual bool Interrupt(IFsm<TBody> fsm, TBody body)
+    {
+        return false;
+    }
 
     /// <summary>
     /// 本状态的物理帧决策。
@@ -126,11 +135,17 @@ public abstract class AbstractBodyState<TBody> : FsmState<TBody> where TBody : c
     /// </summary>
     /// <param name="body">当前状态借用的身体宿主。</param>
     /// <param name="dt">本次物理推进的秒数。</param>
-    protected static void ApplyGravity(TBody body, float dt) => body.Velocity += new Vector2(0f, body.Gravity * dt);
+    protected static void ApplyGravity(TBody body, float dt)
+    {
+        body.Velocity += new Vector2(0f, body.Gravity * dt);
+    }
 
     /// <summary>
     /// 原地站定（横向速度归零，保留纵向）。
     /// </summary>
     /// <param name="body">当前状态借用的身体宿主。</param>
-    protected static void Stand(TBody body) => body.Velocity = new Vector2(0f, body.Velocity.Y);
+    protected static void Stand(TBody body)
+    {
+        body.Velocity = new Vector2(0f, body.Velocity.Y);
+    }
 }

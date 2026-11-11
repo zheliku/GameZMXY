@@ -25,8 +25,14 @@ public abstract class AbstractQuery<TResult> : IQuery<TResult>
     }
 
     /// <inheritdoc />
-    void ICanSetArchitecture.SetArchitecture(IArchitecture architecture) => _architecture = architecture ?? throw new ArgumentNullException(nameof(architecture));
+    void ICanSetArchitecture.SetArchitecture(IArchitecture architecture)
+    {
+        _architecture = architecture ?? throw new ArgumentNullException(nameof(architecture));
+    }
 
     /// <inheritdoc />
-    TResult IQuery<TResult>.Do() => OnDo();
+    TResult IQuery<TResult>.Do()
+    {
+        return OnDo();
+    }
 }

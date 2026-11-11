@@ -30,7 +30,10 @@ public partial class LevelTriggersNode : AbstractLevelMarkersNode
     /// </summary>
     /// <param name="node">待检查的直接子节点。</param>
     /// <returns>节点是 Area2D 时返回 true。</returns>
-    protected override bool Supports(Node node) => node is Area2D;
+    protected override bool Supports(Node node)
+    {
+        return node is Area2D;
+    }
 
     /// <summary>
     /// 校验特殊阶段使用的外键，并停用所有触发区；加载期间不连接玩法信号。

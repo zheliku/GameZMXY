@@ -64,13 +64,19 @@ public sealed class LevelStageSequence
     /// 在加载界面关闭之后开放阶段推进。
     /// </summary>
     /// <exception cref="InvalidOperationException">会话不处于 Ready 状态时抛出。</exception>
-    public void Begin() => ChangePhase(LevelStagePhase.Ready, LevelStagePhase.Travelling);
+    public void Begin()
+    {
+        ChangePhase(LevelStagePhase.Ready, LevelStagePhase.Travelling);
+    }
 
     /// <summary>
     /// 当前阶段满足启动条件，进入战斗。
     /// </summary>
     /// <exception cref="InvalidOperationException">会话不处于 Travelling 状态时抛出。</exception>
-    public void StartBattle() => ChangePhase(LevelStagePhase.Travelling, LevelStagePhase.Fighting);
+    public void StartBattle()
+    {
+        ChangePhase(LevelStagePhase.Travelling, LevelStagePhase.Fighting);
+    }
 
     /// <summary>
     /// 清波后推进一个阶段；最后阶段清除则完成关卡。
@@ -104,12 +110,18 @@ public sealed class LevelStageSequence
     /// 玩家使用清场出口后完成关卡。
     /// </summary>
     /// <exception cref="InvalidOperationException">尚未清除最后阶段时抛出。</exception>
-    public void Complete() => ChangePhase(LevelStagePhase.AwaitingExit, LevelStagePhase.Completed);
+    public void Complete()
+    {
+        ChangePhase(LevelStagePhase.AwaitingExit, LevelStagePhase.Completed);
+    }
 
     /// <summary>
     /// 停止会话，禁止继续推进。
     /// </summary>
-    public void Stop() => Phase = LevelStagePhase.Stopped;
+    public void Stop()
+    {
+        Phase = LevelStagePhase.Stopped;
+    }
 
     /// <summary>
     /// 执行一次显式状态迁移。

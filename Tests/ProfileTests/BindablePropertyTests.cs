@@ -20,16 +20,15 @@ public sealed class BindablePropertyTests
     public void Binding_InitializesAndPublishesOnlyNewValues()
     {
         var property = new BindableProperty<int>(3);
-        IReadonlyBindableProperty<int> view = property;
         List<int> values = [];
         void Observe(int value) => values.Add(value);
-        view.RegisterWithInitValue(Observe);
+        property.RegisterWithInitValue(Observe);
         property.Value = 3;
         property.Value = 5;
-        view.UnRegister(Observe);
-        view.UnRegister(Observe);
+        property.UnRegister(Observe);
+        property.UnRegister(Observe);
         property.Value = 6;
-        view.RegisterWithInitValue(Observe);
+        property.RegisterWithInitValue(Observe);
         Assert.Equal(new[] { 3, 5, 6 }, values);
     }
 

@@ -98,7 +98,10 @@ public partial class EquipmentTooltip : PanelContainer
     /// <param name="attribute">属性身份。</param>
     /// <param name="value">值或范围端点。</param>
     /// <returns>显示数值。</returns>
-    private static string FormatValue(AttributeType attribute, float value) => attribute.IsProbability ? $"{value * 100:0.##}%" : $"{value:0.##}";
+    private static string FormatValue(AttributeType attribute, float value)
+    {
+        return attribute.IsProbability ? $"{value * 100:0.##}%" : $"{value:0.##}";
+    }
 
     /// <summary>
     /// 添加实际属性或配置范围的一行。

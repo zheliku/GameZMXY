@@ -246,7 +246,10 @@ public partial class BattleForm : IController
     /// 读取所属游戏流程的架构入口。
     /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 重新绑定显式传入的打开参数。
@@ -370,7 +373,10 @@ public partial class BattleForm : IController
     /// <summary>
     /// 在 HUD 绑定关卡指定的守关对手；该怪物仍由实体系统管理。
     /// </summary>
-    private void RefreshEncounter() => BindEncounter(_formData.ViewController.FeaturedOpponent);
+    private void RefreshEncounter()
+    {
+        BindEncounter(_formData.ViewController.FeaturedOpponent);
+    }
 
     /// <summary>
     /// 只在对手改变时重绑生命事件；控件本身只接收完整数值。

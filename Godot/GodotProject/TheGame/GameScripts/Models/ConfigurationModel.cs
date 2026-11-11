@@ -20,7 +20,6 @@ public sealed class ConfigurationModel : AbstractModel
 {
     private readonly Dictionary<EntityId, IReadOnlyList<AttackConfig>> _attacks; // 同类实体共用的有序招式定义。
     private readonly Dictionary<SkillHero, IReadOnlyList<SkillConfig>> _activeSkills; // 按角色和官方行序建立一次的技能目录。
-    private readonly Dictionary<EntityId, EnemyConfig> _enemies; // 同一实体到唯一基础定义的只读索引。
 
     /// <summary>
     /// 同类英雄共享的身体参数，由配置系统首次建立。
@@ -35,7 +34,10 @@ public sealed class ConfigurationModel : AbstractModel
     /// <summary>
     /// 借用 ConfigSystem 已加载的同一总表，运行期只读。
     /// </summary>
-    public Tables Tables { get; }
+    public Tables Tables
+    {
+        get;
+    }
 
     /// <summary>
     /// 建立配置查询索引；跨表约束由 ConfigurationSystem 校验。
@@ -45,13 +47,6 @@ public sealed class ConfigurationModel : AbstractModel
     public ConfigurationModel(Tables tables)
     {
         Tables = tables ?? throw new ArgumentNullException(nameof(tables));
-        _enemies = new Dictionary<EntityId, EnemyConfig>();
-        foreach (EnemyConfig enemy in tables.TbEnemyConfig.DataList)
-        {
-            // 同实体的难度档共用基础定义，保持原表中首条记录的选择规则。
-            _enemies.TryAdd(enemy.EntityId, enemy);
-        }
-
         _attacks = new Dictionary<EntityId, IReadOnlyList<AttackConfig>>();
         IEnumerable<AttackConfig> ownedAttacks = tables.TbAttackConfig.DataList
             .Where(attack => attack.OwnerId != EntityId.None && attack.ComboIndex >= 0);
@@ -74,33 +69,48 @@ public sealed class ConfigurationModel : AbstractModel
     /// </summary>
     /// <param name="hero">查看的角色；不表示当前可以出战。</param>
     /// <returns>排好序的只读定义列表。</returns>
-    public IReadOnlyList<SkillConfig> GetActive(SkillHero hero) => _activeSkills.GetValueOrDefault(hero, Array.Empty<SkillConfig>());
+    public IReadOnlyList<SkillConfig> GetActive(SkillHero hero)
+    {
+        return _activeSkills.GetValueOrDefault(hero, Array.Empty<SkillConfig>());
+    }
 
     /// <summary>
     /// 按实体类型读取唯一的基础怪物定义，不为实体复制 AI 参数。
     /// </summary>
     /// <param name="entityId">怪物实体类型。</param>
     /// <returns>共享只读定义。</returns>
-    public EnemyConfig GetEnemy(EntityId entityId) => _enemies[entityId];
+    public EnemyConfig GetEnemy(EntityId entityId)
+    {
+        return Tables.TbEnemyConfig.Get((int)entityId);
+    }
 
     /// <summary>
     /// 借用同类实体共用的有序招式，不在每个实体重新复制和排序。
     /// </summary>
     /// <param name="entityId">拥有招式的实体类型。</param>
     /// <returns>共享只读列表；无招式时为空。</returns>
-    public IReadOnlyList<AttackConfig> GetAttacks(EntityId entityId) => _attacks.GetValueOrDefault(entityId, Array.Empty<AttackConfig>());
+    public IReadOnlyList<AttackConfig> GetAttacks(EntityId entityId)
+    {
+        return _attacks.GetValueOrDefault(entityId, Array.Empty<AttackConfig>());
+    }
 
     /// <summary>
     /// 借用已构建的共享英雄参数。
     /// </summary>
     /// <param name="heroId">英雄主键。</param>
     /// <returns>共享参数。</returns>
-    public HeroBodyParams GetHeroBodyParams(int heroId) => HeroBodies[heroId];
+    public HeroBodyParams GetHeroBodyParams(int heroId)
+    {
+        return HeroBodies[heroId];
+    }
 
     /// <summary>
     /// 借用已构建的共享怪物参数。
     /// </summary>
     /// <param name="entityId">怪物实体类型。</param>
     /// <returns>共享参数。</returns>
-    public EnemyBodyParams GetEnemyBodyParams(EntityId entityId) => EnemyBodies[entityId];
+    public EnemyBodyParams GetEnemyBodyParams(EntityId entityId)
+    {
+        return EnemyBodies[entityId];
+    }
 }

@@ -55,7 +55,10 @@ public partial class PassiveSkillsPage : Control, IController
     /// 借用所属主流程的共享数据访问入口。
     /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 显示当前等级和下一等级费用，满级后停止交互。

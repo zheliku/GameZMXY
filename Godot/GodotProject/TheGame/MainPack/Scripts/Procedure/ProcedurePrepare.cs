@@ -63,7 +63,6 @@ public sealed class ProcedurePrepare : ProcedureBase
 
             // 主流程 FSM 是唯一所有者；按工具、模型、系统的依赖顺序直接注册。
             IArchitecture architecture = procedureOwner.InitializeArchitecture();
-            procedureOwner.RegisterUtility(new ArchiveUtility<GameCatalogue, GameData>(GF.Archive));
             procedureOwner.RegisterUtility(new SpatialUtility());
             procedureOwner.RegisterUtility(new SaveDataUtility());
             procedureOwner.RegisterUtility(new ConfigIdUtility());
@@ -75,7 +74,7 @@ public sealed class ProcedurePrepare : ProcedureBase
             procedureOwner.RegisterSystem(new InputSystem(architecture));
             procedureOwner.RegisterSystem(new EnemyAiSystem(architecture));
             procedureOwner.RegisterSystem(new LootSystem(architecture));
-            procedureOwner.RegisterSystem(new SaveSystem(architecture));
+            procedureOwner.RegisterSystem(new SaveSystem(architecture, GF.Archive));
             ChangeState<ProcedurePreload>(procedureOwner);
         }
         catch (Exception error)

@@ -116,7 +116,9 @@ public sealed class ProcedureMap : ProcedureBase
                 Log.Error("[{0}] 存档写入失败，已保留档案，暂不能返回标题。", GetType().Name);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         catch (Exception error)
         {
             Log.Error("[{0}] 返回标题失败：{1}", GetType().Name, error);

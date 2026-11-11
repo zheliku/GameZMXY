@@ -24,7 +24,9 @@ public sealed class ProfileSystem : AbstractSystem
     /// 绑定已注册档案模型的架构。
     /// </summary>
     /// <param name="architecture">所属档案架构。</param>
-    public ProfileSystem(IArchitecture architecture) : base(architecture) { }
+    public ProfileSystem(IArchitecture architecture) : base(architecture)
+    {
+    }
 
     /// <summary>
     /// 最新已开放关卡；完成当前内容后仍指向最后一关，不开放尚未实现的地点。
@@ -194,9 +196,7 @@ public sealed class ProfileSystem : AbstractSystem
         Tables tables = this.GetModel<ConfigurationModel>().Tables;
         SaveDataUtility.ValidateLevelProgress(data, tables.TbLevelConfig);
         if (!data.Heroes.Select(hero => hero.HeroId).SequenceEqual(profile.HeroIds) ||
-            data.Heroes.Count != profile.HeroIds.Count ||
-            data.Heroes.Select(x => x.HeroId).Distinct().Count() != data.Heroes.Count ||
-            data.Heroes.Any(x => !profile.HeroIds.Contains(x.HeroId) || x.TotalExperience < 0 || x.Soul < 0))
+            data.Heroes.Any(hero => hero.TotalExperience < 0 || hero.Soul < 0))
         {
             throw new InvalidOperationException("回滚快照与档案不一致或数值非法。");
         }

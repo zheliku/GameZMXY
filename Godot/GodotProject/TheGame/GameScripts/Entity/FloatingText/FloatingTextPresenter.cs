@@ -24,7 +24,10 @@ public partial class FloatingTextPresenter : Node2D
     /// <summary>
     /// 拥有者正常结束会话之外，场景退出仍保证解除订阅并归还节点。
     /// </summary>
-    public override void _ExitTree() => StopSession();
+    public override void _ExitTree()
+    {
+        StopSession();
+    }
 
     /// <summary>
     /// 开始接收本场战斗的伤害事件；初始化和挂树本身不会订阅。

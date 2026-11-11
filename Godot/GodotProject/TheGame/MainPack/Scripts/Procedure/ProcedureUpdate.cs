@@ -39,7 +39,13 @@ public class ProcedureUpdate : ProcedureBase
     /// <summary>
     /// 按配置与安装目录可写性选择并创建热更目录。
     /// </summary>
-    private string SubpackDir => GetOrCreateHotUpdateDir();
+    private string SubpackDir
+    {
+        get
+        {
+            return GetOrCreateHotUpdateDir();
+        }
+    }
 
     /// <summary>
     /// 执行版本检查、完整性校验、下载和子包加载。

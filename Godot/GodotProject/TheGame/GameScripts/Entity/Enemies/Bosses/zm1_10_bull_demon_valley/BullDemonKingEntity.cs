@@ -128,7 +128,10 @@ public partial class BullDemonKingEntity : AbstractBullDemonFormEntity
     /// 起手轨道记录官方无敌持续秒数。
     /// </summary>
     /// <param name="seconds">按24fps源帧换算的游戏秒数。</param>
-    private void BeginInvulnerabilityAnimEvent(float seconds) => _invulnerabilityLeft = seconds;
+    private void BeginInvulnerabilityAnimEvent(float seconds)
+    {
+        _invulnerabilityLeft = seconds;
+    }
 
     /// <summary>
     /// 冲刺第30源帧把实际运动交给当前专属身体状态。

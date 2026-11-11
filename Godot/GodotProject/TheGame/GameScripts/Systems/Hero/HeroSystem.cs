@@ -88,7 +88,9 @@ public sealed class HeroSystem : AbstractSystem
     /// 绑定所属流程架构；所需模型须先注册。
     /// </summary>
     /// <param name="architecture">所属架构。</param>
-    public HeroSystem(IArchitecture architecture) : base(architecture) { }
+    public HeroSystem(IArchitecture architecture) : base(architecture)
+    {
+    }
 
     /// <summary>
     /// 从完整档案建立本局数值，随后监听成长与穿戴。
@@ -652,7 +654,10 @@ public sealed class HeroSystem : AbstractSystem
     /// </summary>
     /// <param name="heroId">参战英雄编号。</param>
     /// <param name="enabled">是否允许新的玩家操作。</param>
-    public void SetControlsEnabled(int heroId, bool enabled) => this.GetModel<HeroModel>().GetState(heroId).ControlsEnabled = enabled;
+    public void SetControlsEnabled(int heroId, bool enabled)
+    {
+        this.GetModel<HeroModel>().GetState(heroId).ControlsEnabled = enabled;
+    }
 
     /// <summary>
     /// 推进未满时的自然衰减或开启后的耗尽；满值保留，暂停时宿主不推进。

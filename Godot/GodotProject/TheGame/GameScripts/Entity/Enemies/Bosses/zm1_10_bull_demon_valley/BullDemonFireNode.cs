@@ -28,7 +28,10 @@ public partial class BullDemonFireNode : Node2D, IPoolable
     }
 
     /// <inheritdoc />
-    public void OnGet() => SetPhysicsProcess(false);
+    public void OnGet()
+    {
+        SetPhysicsProcess(false);
+    }
 
     /// <inheritdoc />
     public void OnRelease()
@@ -92,5 +95,8 @@ public partial class BullDemonFireNode : Node2D, IPoolable
     /// <summary>
     /// 原生第36源帧请求销毁，不在播放器遍历期间回池。
     /// </summary>
-    private void FinishAnimationAnimEvent() => _completed = true;
+    private void FinishAnimationAnimEvent()
+    {
+        _completed = true;
+    }
 }

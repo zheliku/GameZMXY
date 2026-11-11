@@ -40,5 +40,8 @@ public sealed class TangsengWaterDemonBurstState : AbstractHeroSkillState
     /// <summary>
     /// 未二次释放时按官方第42帧结束，追加分支跳过该键。
     /// </summary>
-    public void Timeout() => CompleteAnimation();
+    public void Timeout()
+    {
+        CompleteAnimation();
+    }
 }

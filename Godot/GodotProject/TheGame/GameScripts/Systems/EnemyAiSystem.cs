@@ -135,5 +135,8 @@ public sealed class EnemyAiSystem(IArchitecture architecture) : AbstractSystem(a
     /// <param name="range">以秒表示的区间。</param>
     /// <param name="random">本怪物的随机源。</param>
     /// <returns>按区间采样的冷却秒数。</returns>
-    private static float Roll(Vector2 range, Func<float> random) => Mathf.Lerp(range.X, range.Y, range.Y > range.X ? random() : 0f);
+    private static float Roll(Vector2 range, Func<float> random)
+    {
+        return Mathf.Lerp(range.X, range.Y, range.Y > range.X ? random() : 0f);
+    }
 }

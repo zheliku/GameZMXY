@@ -35,6 +35,42 @@ public sealed partial class UiSmokeScenario
     private LootOrbNode _previousOrb; // 已回池实例，供下一次击败检查 GGF 实际复用。
 
     /// <summary>
+    /// 验证统一池路径的无父节点借用、归还复用及类型不匹配回收，不使用生产观测接口。
+    /// </summary>
+    private void CheckNodePoolReuse()
+    {
+        var nodes = GodotGameFramework.NodePool.NodePool.Instance;
+        var pool = GF.ObjectPool.GetObjectPool(typeof(GodotGameFramework.NodePool.NodeObject), ResourcesCollectionConstant.Drops_loot_orb);
+        int borrowed = pool.GetAllObjectInfos().Sum(info => info.SpawnCount);
+        var parent = new Node2D();
+        _driver.AddChild(parent);
+        try
+        {
+            LootOrbNode orb = nodes.RentNode<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb);
+            Check(orb.GetParent().GetParent() == nodes, "无业务父节点的借用未保留在池容器");
+            nodes.Release(orb);
+            LootOrbNode reused = nodes.RentNode<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, parent);
+            Check(ReferenceEquals(orb, reused) && reused.GetParent() == parent && reused.Visible,
+                "同场景取池未复用实例或未挂到业务父节点");
+            nodes.Release(reused);
+            Check(parent.GetChildCount() == 0 && !reused.Visible && reused.GetParent().GetParent() == nodes,
+                "正常归还未隐藏并摘挂回原生容器");
+            Check(nodes.RentNode<GroundItemNode>(ResourcesCollectionConstant.Drops_loot_orb, parent) == null,
+                "类型不匹配未拒绝借用");
+            Check(parent.GetChildCount() == 0 && pool.GetAllObjectInfos().Sum(info => info.SpawnCount) == borrowed,
+                "类型不匹配后仍残留业务子节点或GF借用计数");
+            LootOrbNode afterMismatch = nodes.RentNode<LootOrbNode>(ResourcesCollectionConstant.Drops_loot_orb, parent);
+            Check(ReferenceEquals(orb, afterMismatch), "类型不匹配归还后未能复用原实例");
+            nodes.Release(afterMismatch);
+            GD.Print("SMOKE-NODE-POOL PASS: native container, reuse, detach/hide and mismatched type return through one path.");
+        }
+        finally
+        {
+            parent.QueueFree();
+        }
+    }
+
+    /// <summary>
     /// 读取引擎实际映射，并用真实键盘事件验证单人忽略 P2、方向键不抢 HUD 焦点。
     /// </summary>
     /// <param name="hero">正式流程生成的单人英雄。</param>

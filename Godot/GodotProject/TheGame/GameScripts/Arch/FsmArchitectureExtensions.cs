@@ -59,10 +59,7 @@ public static class FsmArchitectureExtensions
     private static void Store<T>(IFsm<IProcedureManager> fsm, T value) where T : class
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (fsm.HasData(Entry<T>.s_key))
-        {
-            throw new InvalidOperationException($"FSM 已持有 {typeof(T).Name}，须先结束原作用域。");
-        }
+        EnsureMissing<T>(fsm);
 
         Entry<T> entry = ReferencePool.Acquire<Entry<T>>();
         entry.Value = value;
@@ -102,7 +99,10 @@ public static class FsmArchitectureExtensions
         /// 获取本 FSM 已初始化的 Architecture，不自动创建。
         /// </summary>
         /// <returns>本游戏的访问入口。</returns>
-        public IArchitecture GetArchitecture() => ReadRequired<IArchitecture>(fsm);
+        public IArchitecture GetArchitecture()
+        {
+            return ReadRequired<IArchitecture>(fsm);
+        }
 
         /// <summary>
         /// 注册模型并统一绑定归属；模型构造负责数据校验，注册不重复构造数据。
@@ -142,14 +142,20 @@ public static class FsmArchitectureExtensions
         /// </summary>
         /// <typeparam name="TModel">模型类型。</typeparam>
         /// <returns>同一模型引用；未注册时返回 null。</returns>
-        public TModel GetModel<TModel>() where TModel : class, IModel => fsm.GetArchitecture().GetModel<TModel>();
+        public TModel GetModel<TModel>() where TModel : class, IModel
+        {
+            return fsm.GetArchitecture().GetModel<TModel>();
+        }
 
         /// <summary>
         /// 结束模型的持有；调用方先结束订阅和异步任务。
         /// </summary>
         /// <typeparam name="TModel">模型类型。</typeparam>
         /// <returns>本次是否移除了模型。</returns>
-        public bool RemoveModel<TModel>() where TModel : class, IModel => RemoveMember<TModel>(fsm);
+        public bool RemoveModel<TModel>() where TModel : class, IModel
+        {
+            return RemoveMember<TModel>(fsm);
+        }
 
         /// <summary>
         /// 发布已装配且绑定本 Architecture 的业务系统。
@@ -189,28 +195,40 @@ public static class FsmArchitectureExtensions
         /// </summary>
         /// <typeparam name="TSystem">系统类型。</typeparam>
         /// <returns>同一业务入口；未注册时返回 null。</returns>
-        public TSystem GetSystem<TSystem>() where TSystem : class, ISystem => fsm.GetArchitecture().GetSystem<TSystem>();
+        public TSystem GetSystem<TSystem>() where TSystem : class, ISystem
+        {
+            return fsm.GetArchitecture().GetSystem<TSystem>();
+        }
 
         /// <summary>
         /// 结束系统持有，不递归清理或保存，生命周期仍由所属流程管理。
         /// </summary>
         /// <typeparam name="TSystem">系统类型。</typeparam>
         /// <returns>本次是否移除了系统。</returns>
-        public bool RemoveSystem<TSystem>() where TSystem : class, ISystem => RemoveMember<TSystem>(fsm);
+        public bool RemoveSystem<TSystem>() where TSystem : class, ISystem
+        {
+            return RemoveMember<TSystem>(fsm);
+        }
 
         /// <summary>
         /// 注册第三方工具；Utility 不绑定 Architecture。
         /// </summary>
         /// <typeparam name="TUtility">工具类型。</typeparam>
         /// <param name="utility">已初始化的工具。</param>
-        public void RegisterUtility<TUtility>(TUtility utility) where TUtility : class, IUtility => Store(fsm, utility);
+        public void RegisterUtility<TUtility>(TUtility utility) where TUtility : class, IUtility
+        {
+            Store(fsm, utility);
+        }
 
         /// <summary>
         /// 借用本 FSM 已注册的第三方工具。
         /// </summary>
         /// <typeparam name="TUtility">工具类型。</typeparam>
         /// <returns>同一工具实例；未注册时返回 null。</returns>
-        public TUtility GetUtility<TUtility>() where TUtility : class, IUtility => fsm.GetArchitecture().GetUtility<TUtility>();
+        public TUtility GetUtility<TUtility>() where TUtility : class, IUtility
+        {
+            return fsm.GetArchitecture().GetUtility<TUtility>();
+        }
     }
 
     /// <summary>
@@ -230,13 +248,22 @@ public static class FsmArchitectureExtensions
         }
 
         /// <inheritdoc />
-        public TModel GetModel<TModel>() where TModel : class, IModel => GetRegistered<TModel>();
+        public TModel GetModel<TModel>() where TModel : class, IModel
+        {
+            return GetRegistered<TModel>();
+        }
 
         /// <inheritdoc />
-        public TSystem GetSystem<TSystem>() where TSystem : class, ISystem => GetRegistered<TSystem>();
+        public TSystem GetSystem<TSystem>() where TSystem : class, ISystem
+        {
+            return GetRegistered<TSystem>();
+        }
 
         /// <inheritdoc />
-        public TUtility GetUtility<TUtility>() where TUtility : class, IUtility => GetRegistered<TUtility>();
+        public TUtility GetUtility<TUtility>() where TUtility : class, IUtility
+        {
+            return GetRegistered<TUtility>();
+        }
 
         /// <summary>
         /// 确认视图仍属于当前 FSM 生命周期后读取原数据区。

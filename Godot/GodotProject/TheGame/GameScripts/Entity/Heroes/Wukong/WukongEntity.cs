@@ -156,10 +156,13 @@ public partial class WukongEntity : AbstractHeroEntity
     /// 造一悟空空中使用第三段下劈，地面使用完整五段普攻。
     /// </summary>
     /// <returns>包含空中下劈段号的身体参数。</returns>
-    protected override HeroBodyParams BuildBodyParams() => base.BuildBodyParams() with
+    protected override HeroBodyParams BuildBodyParams()
     {
-        AirAttackIndex = 2
-    };
+        return base.BuildBodyParams() with
+        {
+            AirAttackIndex = 2
+        };
+    }
 
     /// <summary>
     /// 悟空的身体状态与五个具名技能状态；进入、退出与打断统一使用 GGF 生命周期。

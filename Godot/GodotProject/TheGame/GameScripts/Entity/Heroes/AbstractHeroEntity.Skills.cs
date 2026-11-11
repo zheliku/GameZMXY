@@ -29,9 +29,15 @@ public abstract partial class AbstractHeroEntity : ISkillActor
     /// </summary>
     Vector2 ISkillActor.SkillPosition
     {
-        get => GlobalPosition;
+        get
+        {
+            return GlobalPosition;
+        }
 
-        set => GlobalPosition = value;
+        set
+        {
+            GlobalPosition = value;
+        }
     }
 
     /// <summary>
@@ -97,7 +103,10 @@ public abstract partial class AbstractHeroEntity : ISkillActor
     /// <summary>
     /// 保留当前原生姿态，等待具体招式决定后续阶段。
     /// </summary>
-    void ISkillActor.PauseSkillAnimation() => AnimPlayer.Pause();
+    void ISkillActor.PauseSkillAnimation()
+    {
+        AnimPlayer.Pause();
+    }
 
     /// <summary>
     /// 收招或中断后释放判定并恢复常规动画，不销毁独立效果。
@@ -115,7 +124,10 @@ public abstract partial class AbstractHeroEntity : ISkillActor
     /// <summary>
     /// 具体角色的原生方法轨道请求收招；状态在轨道遍历返回后执行迁移。
     /// </summary>
-    protected void CompleteSkillAnimationAnimEvent() => CurrentSkillState?.CompleteAnimation();
+    protected void CompleteSkillAnimationAnimEvent()
+    {
+        CurrentSkillState?.CompleteAnimation();
+    }
 
     /// <summary>
     /// 接收具体技能已计算的基础威力，再应用本次无双倍率。

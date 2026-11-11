@@ -160,7 +160,10 @@ public partial class CharacterForm : IController
     /// 读取所属游戏流程的架构入口。
     /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 重新绑定显式传入的状态源。
@@ -188,12 +191,18 @@ public partial class CharacterForm : IController
     /// <summary>
     /// 确认悟空作为新档角色。
     /// </summary>
-    private void OnWukongClicked() => ConfirmCharacter(WukongHeroId);
+    private void OnWukongClicked()
+    {
+        ConfirmCharacter(WukongHeroId);
+    }
 
     /// <summary>
     /// 确认唐僧作为新档角色。
     /// </summary>
-    private void OnTangsengClicked() => ConfirmCharacter(TangsengHeroId);
+    private void OnTangsengClicked()
+    {
+        ConfirmCharacter(TangsengHeroId);
+    }
 
     /// <summary>
     /// 将当前窗口选择交给流程，窗口不创建或修改档案模型。
@@ -218,12 +227,18 @@ public partial class CharacterForm : IController
     /// <summary>
     /// 预览已开放的悟空，将待选席位放到卡片顶部中央。
     /// </summary>
-    private void OnWukongMouseEntered() => PreviewRole(_wukong, WukongHeroId);
+    private void OnWukongMouseEntered()
+    {
+        PreviewRole(_wukong, WukongHeroId);
+    }
 
     /// <summary>
     /// 预览唐僧官方卡片，将待选席位放到卡片顶部中央。
     /// </summary>
-    private void OnTangsengMouseEntered() => PreviewRole(_sanzang, TangsengHeroId);
+    private void OnTangsengMouseEntered()
+    {
+        PreviewRole(_sanzang, TangsengHeroId);
+    }
 
     /// <summary>预览未选卡片，并显示下一个待选席位。</summary>
     /// <param name="card">鼠标进入的已开放角色卡片。</param>
@@ -262,7 +277,10 @@ public partial class CharacterForm : IController
     }
 
     /// <summary>鼠标离开时恢复已确认席位，不清除选择。</summary>
-    private void ResetRoleHover() => RefreshCards();
+    private void ResetRoleHover()
+    {
+        RefreshCards();
+    }
 
     /// <summary>清空当前双人选择，重新从第一席位开始。</summary>
     private void OnReselectClicked()

@@ -56,7 +56,10 @@ public static class ArchitectureExtensions
         /// <typeparam name="TResult">查询结果类型。</typeparam>
         /// <param name="query">本次查询。</param>
         /// <returns>实际查询结果。</returns>
-        public TResult SendQuery<TResult>(IQuery<TResult> query) => owner.GetArchitecture().SendQuery(query);
+        public TResult SendQuery<TResult>(IQuery<TResult> query)
+        {
+            return owner.GetArchitecture().SendQuery(query);
+        }
     }
 
     /// <summary>
@@ -71,7 +74,10 @@ public static class ArchitectureExtensions
         /// <typeparam name="TResult">业务结果类型。</typeparam>
         /// <param name="command">本次请求。</param>
         /// <returns>实际业务结果。</returns>
-        public TResult SendCommand<TResult>(ICommand<TResult> command) => owner.GetArchitecture().SendCommand(command);
+        public TResult SendCommand<TResult>(ICommand<TResult> command)
+        {
+            return owner.GetArchitecture().SendCommand(command);
+        }
     }
 
     /// <summary>
@@ -85,7 +91,10 @@ public static class ArchitectureExtensions
         /// </summary>
         /// <typeparam name="TModel">模型类型。</typeparam>
         /// <returns>同一模型引用；未注册时返回 null。</returns>
-        public TModel GetModel<TModel>() where TModel : class, IModel => owner.GetArchitecture().GetModel<TModel>();
+        public TModel GetModel<TModel>() where TModel : class, IModel
+        {
+            return owner.GetArchitecture().GetModel<TModel>();
+        }
     }
 
     /// <summary>
@@ -99,7 +108,10 @@ public static class ArchitectureExtensions
         /// </summary>
         /// <typeparam name="TSystem">系统类型。</typeparam>
         /// <returns>同一业务入口；未注册时返回 null。</returns>
-        public TSystem GetSystem<TSystem>() where TSystem : class, ISystem => owner.GetArchitecture().GetSystem<TSystem>();
+        public TSystem GetSystem<TSystem>() where TSystem : class, ISystem
+        {
+            return owner.GetArchitecture().GetSystem<TSystem>();
+        }
     }
 
     /// <summary>
@@ -113,6 +125,9 @@ public static class ArchitectureExtensions
         /// </summary>
         /// <typeparam name="TUtility">工具类型。</typeparam>
         /// <returns>同一工具实例；未注册时返回 null。</returns>
-        public TUtility GetUtility<TUtility>() where TUtility : class, IUtility => owner.GetArchitecture().GetUtility<TUtility>();
+        public TUtility GetUtility<TUtility>() where TUtility : class, IUtility
+        {
+            return owner.GetArchitecture().GetUtility<TUtility>();
+        }
     }
 }

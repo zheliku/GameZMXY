@@ -25,21 +25,30 @@ public sealed class ConfigIdUtility : IUtility
     /// </summary>
     /// <param name="entityId">实体配置身份。</param>
     /// <returns>是否属于英雄编号区间。</returns>
-    public bool IsHero(EntityId entityId) => (int)entityId is >= FirstHeroId and < FirstMonsterId;
+    public bool IsHero(EntityId entityId)
+    {
+        return (int)entityId is >= FirstHeroId and < FirstMonsterId;
+    }
 
     /// <summary>
     /// 判断实体身份是否位于小怪预留区间，不依赖其身体状态或守关职责。
     /// </summary>
     /// <param name="entityId">实体配置身份。</param>
     /// <returns>是否属于小怪编号区间。</returns>
-    public bool IsMonster(EntityId entityId) => (int)entityId is >= FirstMonsterId and < FirstBossId;
+    public bool IsMonster(EntityId entityId)
+    {
+        return (int)entityId is >= FirstMonsterId and < FirstBossId;
+    }
 
     /// <summary>
     /// 判断实体身份是否位于首领预留区间，不检查该身份是否已在表中登记。
     /// </summary>
     /// <param name="entityId">实体配置身份。</param>
     /// <returns>是否属于首领编号区间。</returns>
-    public bool IsBoss(EntityId entityId) => (int)entityId is >= FirstBossId and < EnemyIdLimit;
+    public bool IsBoss(EntityId entityId)
+    {
+        return (int)entityId is >= FirstBossId and < EnemyIdLimit;
+    }
 
     /// <summary>
     /// 取得指定实体、动作和段号对应的攻击配置编号。
@@ -48,7 +57,10 @@ public sealed class ConfigIdUtility : IUtility
     /// <param name="action">动作序号0-99，0保留给英雄普攻，其他按技能面板或敌人招式排序。</param>
     /// <param name="segment">同一动作内的段号1-9；离身效果、持续状态或数值档使用后续段。</param>
     /// <returns>统一攻击表的主键；调用方提供约定范围内的参数，表记录由启动校验确认。</returns>
-    public int GetAttackId(EntityId ownerId, int action, int segment = 1) => (int)ownerId * AttackOwnerStride + action * AttackActionStride + segment;
+    public int GetAttackId(EntityId ownerId, int action, int segment = 1)
+    {
+        return (int)ownerId * AttackOwnerStride + action * AttackActionStride + segment;
+    }
 
     /// <summary>
     /// 判断攻击编号是否与所属实体及有效段号一致，None仅接受环境攻击区。
@@ -69,7 +81,10 @@ public sealed class ConfigIdUtility : IUtility
     /// <param name="levelId">正式关卡主键。</param>
     /// <param name="sequence">关卡内机关序号1-999。</param>
     /// <returns>OwnerId为None的统一攻击表主键。</returns>
-    public int GetEnvironmentAttackId(int levelId, int sequence) => EnvironmentAttackBase + levelId * AttackOwnerStride + sequence;
+    public int GetEnvironmentAttackId(int levelId, int sequence)
+    {
+        return EnvironmentAttackBase + levelId * AttackOwnerStride + sequence;
+    }
 
     /// <summary>
     /// 取得通用品质装备掉落池身份，None不使用此编码。
@@ -77,7 +92,10 @@ public sealed class ConfigIdUtility : IUtility
     /// <param name="quality">装备品质。</param>
     /// <param name="variant">品质内变体号0-99，0为普通池。</param>
     /// <returns>对应品质及变体的掉落池身份。</returns>
-    public EquipmentDropPoolId GetCommonEquipmentDropPoolId(EquipmentQuality quality, int variant = 0) => (EquipmentDropPoolId)(CommonDropPoolBase + (int)quality * DropPoolStride + variant);
+    public EquipmentDropPoolId GetCommonEquipmentDropPoolId(EquipmentQuality quality, int variant = 0)
+    {
+        return (EquipmentDropPoolId)(CommonDropPoolBase + (int)quality * DropPoolStride + variant);
+    }
 
     /// <summary>
     /// 取得首领拥有的装备掉落池身份。
@@ -85,5 +103,8 @@ public sealed class ConfigIdUtility : IUtility
     /// <param name="bossId">首领实体身份。</param>
     /// <param name="variant">首领内变体号0-99，0为普通池，后续号用于数值档或独立奖励。</param>
     /// <returns>对应首领及变体的掉落池身份。</returns>
-    public EquipmentDropPoolId GetBossEquipmentDropPoolId(EntityId bossId, int variant = 0) => (EquipmentDropPoolId)((int)bossId * DropPoolStride + variant);
+    public EquipmentDropPoolId GetBossEquipmentDropPoolId(EntityId bossId, int variant = 0)
+    {
+        return (EquipmentDropPoolId)((int)bossId * DropPoolStride + variant);
+    }
 }

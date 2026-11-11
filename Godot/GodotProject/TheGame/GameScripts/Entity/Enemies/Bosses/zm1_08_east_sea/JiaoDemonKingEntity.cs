@@ -91,7 +91,10 @@ public partial class JiaoDemonKingEntity : AbstractBossEntity
     /// </summary>
     /// <param name="data">仅在本次结算借用的攻击快照。</param>
     /// <returns>背击为一点，其余使用共同战斗规则。</returns>
-    protected override DamageResult CalculateIncomingHit(AttackData data) => data.Direction == Facing ? new DamageResult(1, false, false, data.Kind) : base.CalculateIncomingHit(data);
+    protected override DamageResult CalculateIncomingHit(AttackData data)
+    {
+        return data.Direction == Facing ? new DamageResult(1, false, false, data.Kind) : base.CalculateIncomingHit(data);
+    }
 
     /// <summary>
     /// 背部身体攻击只闪盾而不击退；独立效果仍按官方魔法受击路径执行硬直。
@@ -123,7 +126,10 @@ public partial class JiaoDemonKingEntity : AbstractBossEntity
     /// <summary>
     /// 背部反馈由自己的原生十帧播放完成后隐藏，不影响身体当前动作。
     /// </summary>
-    private void OnBackHitFinished() => _backHit.Visible = false;
+    private void OnBackHitFinished()
+    {
+        _backHit.Visible = false;
+    }
 
     /// <summary>
     /// 旋转第一个原生帧开启完整45源帧无敌，时长直接读取该动画的秒数。

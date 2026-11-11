@@ -26,7 +26,10 @@ public partial class LevelGatesNode : AbstractLevelMarkersNode
     /// </summary>
     /// <param name="node">待检查的直接子节点。</param>
     /// <returns>节点是 StaticBody2D 时返回 true。</returns>
-    protected override bool Supports(Node node) => node is StaticBody2D;
+    protected override bool Supports(Node node)
+    {
+        return node is StaticBody2D;
+    }
 
     /// <summary>
     /// 校验独立左右门和视野宽度，允许相邻战斗区域重叠。
@@ -104,7 +107,10 @@ public partial class LevelGatesNode : AbstractLevelMarkersNode
     /// 当前阶段清除后开放出口，允许进入下一段通路。
     /// </summary>
     /// <param name="stageOrder">阶段的 1 起顺序号。</param>
-    public void ReleaseRegion(int stageOrder) => SetClosed(_regions[stageOrder - 1].ExitGateId, false);
+    public void ReleaseRegion(int stageOrder)
+    {
+        SetClosed(_regions[stageOrder - 1].ExitGateId, false);
+    }
 
     /// <summary>
     /// 只启用当前需要的左右门，保证重叠区域中不残留其他阶段的阻挡。

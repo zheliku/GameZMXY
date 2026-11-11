@@ -31,7 +31,10 @@ public sealed class HeroAttackState : AbstractHeroBodyState
     /// <param name="fsm">所属身体状态机。</param>
     /// <param name="body">本次攻击的身体。</param>
     /// <param name="isShutdown">框架是否关停。</param>
-    protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown) => body.EndAttack();
+    protected override void Leave(IFsm<IHeroBody> fsm, IHeroBody body, bool isShutdown)
+    {
+        body.EndAttack();
+    }
 
     /// <summary>
     /// 消费普攻，地面定身，空中只保留起手方向并允许松键停止，按动画时长收招。

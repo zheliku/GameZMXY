@@ -29,7 +29,10 @@ public partial class TangsengBoltNode : SkillEffectNode
     /// 按本次蓄力结果配置剩余射程，不改写场景默认值。
     /// </summary>
     /// <param name="distance">最大射程，像素。</param>
-    public void ConfigureTravel(float distance) => _distanceLeft = distance;
+    public void ConfigureTravel(float distance)
+    {
+        _distanceLeft = distance;
+    }
 
     /// <inheritdoc />
     public override void _PhysicsProcess(double delta)

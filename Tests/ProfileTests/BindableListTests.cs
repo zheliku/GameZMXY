@@ -61,7 +61,6 @@ public sealed class BindableListTests
     public void List_BindingOrdersPrioritiesAndProtectsView()
     {
         var list = new BindableList<int>();
-        IReadonlyBindableList<int> binding = list;
         IReadOnlyList<int> observed = null;
         List<string> calls = [];
         void Observe(IReadOnlyList<int> value)
@@ -69,16 +68,16 @@ public sealed class BindableListTests
             observed = value;
             calls.Add("ui");
         }
-        binding.RegisterWithInitValue(Observe);
-        binding.Register(_ => calls.Add("system"), 100);
-        binding.Register(_ => calls.Add("ui2"));
+        list.RegisterWithInitValue(Observe);
+        list.Register(_ => calls.Add("system"), 100);
+        list.Register(_ => calls.Add("ui2"));
         calls.Clear();
         list.Add(1);
         Assert.Equal(new[] { "system", "ui", "ui2" }, calls);
         Assert.Throws<NotSupportedException>(() => ((IList<int>)observed).Add(3));
         list.Add(2);
         Assert.Equal(new[] { 1, 2 }, observed);
-        binding.UnRegister(Observe);
+        list.UnRegister(Observe);
         calls.Clear();
         list.Add(3);
         Assert.Equal(new[] { "system", "ui2" }, calls);
@@ -124,7 +123,7 @@ public sealed class BindableListTests
     public void List_CopiesInputAndCleansFailedInitialization()
     {
         List<int> original = [1];
-        var list = original.ToBindableList();
+        var list = new BindableList<int>(original);
         original.Add(2);
         Assert.Equal(new[] { 1 }, list);
         int calls = 0;

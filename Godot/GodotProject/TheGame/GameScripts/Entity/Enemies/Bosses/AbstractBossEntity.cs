@@ -39,5 +39,8 @@ public abstract partial class AbstractBossEntity : AbstractEnemyEntity
     /// </summary>
     /// <param name="index">首领招式下标。</param>
     /// <returns>是否接受请求。</returns>
-    protected override bool TryRequestAttack(int index) => OnFloor && base.TryRequestAttack(index);
+    protected override bool TryRequestAttack(int index)
+    {
+        return OnFloor && base.TryRequestAttack(index);
+    }
 }

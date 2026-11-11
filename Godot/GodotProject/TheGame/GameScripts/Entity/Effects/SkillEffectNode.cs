@@ -42,7 +42,10 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     /// <summary>
     /// 由取池的实体绑定伤害来源，具体施放者可在Show时替换；不保存节点引用。
     /// </summary>
-    internal AttackSource Source { get; set; }
+    internal AttackSource Source
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 当前效果仍由所属实体持有；池回收后派生效果不得继续访问自身状态。
@@ -108,12 +111,18 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     /// 借用当前 GGF 流程拥有的架构。
     /// </summary>
     /// <returns>当前架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 取池后等待本次参数。
     /// </summary>
-    public virtual void OnGet() => SetPhysicsProcess(false);
+    public virtual void OnGet()
+    {
+        SetPhysicsProcess(false);
+    }
 
     /// <summary>
     /// 回收攻击包并清除本次引用，复用不串技能或回调。
@@ -228,23 +237,35 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     /// <summary>
     /// 原生动画的新攻击段方法键重新装填攻击包。
     /// </summary>
-    private void NewAttackAnimEvent() => RefreshAttack();
+    private void NewAttackAnimEvent()
+    {
+        RefreshAttack();
+    }
 
     /// <summary>
     /// 原生声音键仍经过 GGF 的统一音频管理。
     /// </summary>
     /// <param name="id">已登记的声音编号。</param>
-    private void PlaySoundAnimEvent(SoundId id) => GF.Sound.PlayConfigured(id);
+    private void PlaySoundAnimEvent(SoundId id)
+    {
+        GF.Sound.PlayConfigured(id);
+    }
 
     /// <summary>
     /// 请求结束，待当前物理帧的动画推进返回后回池。
     /// </summary>
-    protected void RequestFinish() => _finishRequested = true;
+    protected void RequestFinish()
+    {
+        _finishRequested = true;
+    }
 
     /// <summary>
     /// 由原生动画结束方法键请求回池。
     /// </summary>
-    private void FinishAnimationAnimEvent() => RequestFinish();
+    private void FinishAnimationAnimEvent()
+    {
+        RequestFinish();
+    }
 
     /// <summary>
     /// 取消本效果的伤害并释放攻击包，保留节点供具体效果完成消散表现。
@@ -268,7 +289,10 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     /// 纯视觉效果在真实动画结束时请求回池。
     /// </summary>
     /// <param name="animation">刚结束的动画。</param>
-    private void OnAnimationFinished(StringName animation) => RequestFinish();
+    private void OnAnimationFinished(StringName animation)
+    {
+        RequestFinish();
+    }
 
     /// <summary>
     /// 同一攻击包对同一目标去重，成功命中才消耗总预算。
@@ -290,7 +314,10 @@ public partial class SkillEffectNode : Node2D, IPoolable, IController
     /// 对具体弹体已裁定的范围目标应用同一攻击，不递归扩散或消耗主命中预算。
     /// </summary>
     /// <param name="target">位于具体弹体溅射范围内的目标。</param>
-    protected void ApplySplashHit(AbstractActorEntity target) => ApplyHit(target, false);
+    protected void ApplySplashHit(AbstractActorEntity target)
+    {
+        ApplyHit(target, false);
+    }
 
     /// <summary>
     /// 共享直接命中与范围溅射的结算、去重、音效和无双收益。

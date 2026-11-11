@@ -27,29 +27,44 @@ public sealed class HeroState
     /// </summary>
     /// <param name="kind">效果类别。</param>
     /// <returns>效果状态；未施加时为 null。</returns>
-    public StatusEffectState GetStatusEffect(StatusEffectKind kind) => _statusEffects.GetValueOrDefault(kind);
+    public StatusEffectState GetStatusEffect(StatusEffectKind kind)
+    {
+        return _statusEffects.GetValueOrDefault(kind);
+    }
 
     /// <summary>
     /// 写入已经由 HeroStatusSystem 校验的效果状态。
     /// </summary>
     /// <param name="state">效果状态。</param>
-    internal void SetStatusEffect(StatusEffectState state) => _statusEffects[state.Kind] = state;
+    internal void SetStatusEffect(StatusEffectState state)
+    {
+        _statusEffects[state.Kind] = state;
+    }
 
     /// <summary>
     /// 移除一种效果。
     /// </summary>
     /// <param name="kind">效果类别。</param>
-    internal void RemoveStatusEffect(StatusEffectKind kind) => _statusEffects.Remove(kind);
+    internal void RemoveStatusEffect(StatusEffectKind kind)
+    {
+        _statusEffects.Remove(kind);
+    }
 
     /// <summary>
     /// 清空本局英雄效果。
     /// </summary>
-    internal void ClearStatusEffects() => _statusEffects.Clear();
+    internal void ClearStatusEffects()
+    {
+        _statusEffects.Clear();
+    }
 
     /// <summary>
     /// 本局英雄身份。
     /// </summary>
-    public int HeroId { get; }
+    public int HeroId
+    {
+        get;
+    }
 
     /// <summary>
     /// 为指定英雄建立独立本局状态，保留各属性与时钟的初始值。
@@ -183,17 +198,26 @@ public sealed class HeroState
     /// <summary>
     /// 连续命中的累计次数；只由英雄受击保护规则维护，不写入存档。
     /// </summary>
-    internal int HurtHitCount { get; set; }
+    internal int HurtHitCount
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 连续命中记录距清零的剩余游戏秒数。
     /// </summary>
-    internal double HurtChainSeconds { get; set; }
+    internal double HurtChainSeconds
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 连续受击保护的剩余游戏秒数，与技能无敌区间独立。
     /// </summary>
-    internal double HurtInvulnerabilitySeconds { get; set; }
+    internal double HurtInvulnerabilitySeconds
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 流程转场等场景阶段是否开放玩家控制；动作、重力与状态时钟仍继续。
@@ -203,12 +227,18 @@ public sealed class HeroState
     /// <summary>
     /// 装备自然恢复的累计游戏秒数，暂停不推进，本局重建时归零。
     /// </summary>
-    internal double RecoveryProgress { get; set; }
+    internal double RecoveryProgress
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 本局当前激活的技能编号；招式阶段与旧回调有效性归具体 GGF 状态。
     /// </summary>
-    public SkillId? ActiveSkillId { get; internal set; }
+    public SkillId? ActiveSkillId
+    {
+        get; internal set;
+    }
 
     /// <summary>
     /// 技能无敌区间起点，使用本英雄的游戏时钟，单位秒。
@@ -218,12 +248,18 @@ public sealed class HeroState
     /// <summary>
     /// 技能无敌区间终点，单位秒，独立于动画是否跳帧。
     /// </summary>
-    internal double SkillInvulnerableUntil { get; set; }
+    internal double SkillInvulnerableUntil
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 当前等级的只读基础记录，由英雄系统替换。
     /// </summary>
-    internal ActorBaseAttributes BaseAttributes { get; set; }
+    internal ActorBaseAttributes BaseAttributes
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 本局修正来源，系统存入副本；不向 UI 借出可写集合。
@@ -233,22 +269,34 @@ public sealed class HeroState
     /// <summary>
     /// 开启消耗不足一点的累计量。
     /// </summary>
-    internal double WsDrainProgress { get; set; }
+    internal double WsDrainProgress
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 开启后的额外点数/秒。
     /// </summary>
-    internal float WsDrainPerSecond { get; set; }
+    internal float WsDrainPerSecond
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 自然衰减不足一点的累计量。
     /// </summary>
-    internal double WsDecayProgress { get; set; }
+    internal double WsDecayProgress
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 未满时的自然衰减点数/秒。
     /// </summary>
-    internal float WsDecayPerSecond { get; set; }
+    internal float WsDecayPerSecond
+    {
+        get; set;
+    }
 
     /// <summary>
     /// 冻结出招/受击时的最终值，已发出的攻击不随后续属性变化。
@@ -295,31 +343,49 @@ public sealed class HeroState
         /// <summary>
         /// 效果类别。
         /// </summary>
-        public StatusEffectKind Kind { get; }
+        public StatusEffectKind Kind
+        {
+            get;
+        }
 
         /// <summary>
         /// 固定每跳伤害；非持续伤害效果为零。
         /// </summary>
-        public int Damage { get; internal set; }
+        public int Damage
+        {
+            get; internal set;
+        }
 
         /// <summary>
         /// 剩余触发次数。
         /// </summary>
-        public int RemainingTicks { get; internal set; }
+        public int RemainingTicks
+        {
+            get; internal set;
+        }
 
         /// <summary>
         /// 两次触发之间的秒数。
         /// </summary>
-        public double TickIntervalSeconds { get; internal set; }
+        public double TickIntervalSeconds
+        {
+            get; internal set;
+        }
 
         /// <summary>
         /// 距离下一次触发的秒数。
         /// </summary>
-        public double TickLeftSeconds { get; internal set; }
+        public double TickLeftSeconds
+        {
+            get; internal set;
+        }
 
         /// <summary>
         /// 控制效果剩余秒数。
         /// </summary>
-        public float RemainingSeconds { get; internal set; }
+        public float RemainingSeconds
+        {
+            get; internal set;
+        }
     }
 }

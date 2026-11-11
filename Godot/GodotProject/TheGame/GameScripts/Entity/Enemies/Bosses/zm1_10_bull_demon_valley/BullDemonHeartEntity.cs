@@ -87,7 +87,10 @@ public partial class BullDemonHeartEntity : AbstractBossEntity
     /// 随机显隐阶段只选择原生动画，透明度插值不写在规则代码中。
     /// </summary>
     /// <param name="visible">本次是否淡入心脏。</param>
-    internal void FadeHeart(bool visible) => _heartFade.Play(visible ? "show" : "hide");
+    internal void FadeHeart(bool visible)
+    {
+        _heartFade.Play(visible ? "show" : "hide");
+    }
 
     /// <summary>
     /// 生成本轮2/4/6根火柱，保留源文件固定世界范围和底边。
@@ -181,13 +184,19 @@ public partial class BullDemonHeartEntity : AbstractBossEntity
     /// 巨掌使用父编号的物理伤害快照。
     /// </summary>
     /// <param name="target">当前重叠的真实目标。</param>
-    private void HitWithHand(AbstractActorEntity target) => HitTarget(target, _handAttackData);
+    private void HitWithHand(AbstractActorEntity target)
+    {
+        HitTarget(target, _handAttackData);
+    }
 
     /// <summary>
     /// 火柱使用魔法伤害，目标去重与双掌完全相同。
     /// </summary>
     /// <param name="target">当前火焰范围内的目标。</param>
-    private void HitWithFire(AbstractActorEntity target) => HitTarget(target, _fireAttackData);
+    private void HitWithFire(AbstractActorEntity target)
+    {
+        HitTarget(target, _fireAttackData);
+    }
 
     /// <summary>
     /// 只在成功命中后登记共享目标，免疫期间不会消耗本次父攻击编号。

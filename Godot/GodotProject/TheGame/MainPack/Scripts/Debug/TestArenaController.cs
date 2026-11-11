@@ -193,7 +193,6 @@ public partial class TestArenaController : Node2D
             {
                 _testFlow = GF.Fsm.CreateFsm<IProcedureManager>(GameFrameworkEntry.GetModule<IProcedureManager>(), new ArenaState());
                 IArchitecture architecture = _testFlow.InitializeArchitecture();
-                _testFlow.RegisterUtility(new ArchiveUtility<GameCatalogue, GameData>(GF.Archive));
                 _testFlow.RegisterUtility(new SpatialUtility());
                 _testFlow.RegisterUtility(new SaveDataUtility());
                 _testFlow.RegisterUtility(new ConfigIdUtility());
@@ -215,7 +214,7 @@ public partial class TestArenaController : Node2D
                 _testFlow.RegisterSystem(new SkillSystem(architecture));
                 _testFlow.RegisterSystem(new HeroStatusSystem(architecture));
                 _testFlow.RegisterSystem(new HeroSystem(architecture));
-                _testFlow.RegisterSystem(new SaveSystem(architecture));
+                _testFlow.RegisterSystem(new SaveSystem(architecture, GF.Archive));
             }
             _floatingText.StartSession(_ownedIds.Contains);
             await SpawnHeroAsync(entities, cancellationToken);

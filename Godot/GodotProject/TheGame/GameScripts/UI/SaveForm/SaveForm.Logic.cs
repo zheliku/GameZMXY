@@ -200,7 +200,10 @@ public partial class SaveForm : IController
     /// 读取所属游戏流程的架构入口。
     /// </summary>
     /// <returns>当前流程 FSM 的架构。</returns>
-    IArchitecture IBelongToArchitecture.GetArchitecture() => GF.Fsm.GetArchitecture();
+    IArchitecture IBelongToArchitecture.GetArchitecture()
+    {
+        return GF.Fsm.GetArchitecture();
+    }
 
     /// <summary>
     /// 结束当前目录订阅，允许关闭后回池再次清理而不访问旧作用域。
@@ -283,7 +286,10 @@ public partial class SaveForm : IController
     /// </summary>
     /// <param name="number">存档格号。</param>
     /// <param name="hovered">是否处于鼠标悬停。</param>
-    private void SetDeleteHover(int number, bool hovered) => _deleteButtons[number - 1].Modulate = hovered ? Colors.White : new Color(1f, 1f, 1f, 0.42f);
+    private void SetDeleteHover(int number, bool hovered)
+    {
+        _deleteButtons[number - 1].Modulate = hovered ? Colors.White : new Color(1f, 1f, 1f, 0.42f);
+    }
 
     /// <summary>
     /// 按用途选择可读档案或新档位置；已有档案覆盖需先确认。

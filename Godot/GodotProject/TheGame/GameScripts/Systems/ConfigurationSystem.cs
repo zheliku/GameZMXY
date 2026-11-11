@@ -30,7 +30,9 @@ public sealed class ConfigurationSystem : AbstractSystem
     /// 绑定所属架构。
     /// </summary>
     /// <param name="architecture">所属游戏入口。</param>
-    public ConfigurationSystem(IArchitecture architecture) : base(architecture) { }
+    public ConfigurationSystem(IArchitecture architecture) : base(architecture)
+    {
+    }
 
     /// <summary>
     /// 使用所属架构已注册的配置模型和工具执行一次跨表校验。
@@ -57,6 +59,30 @@ public sealed class ConfigurationSystem : AbstractSystem
             errors.Add("建档规则：StartSoul 不能为负。");
         }
 
+        ValidateActors(tables, ids, errors);
+
+        // 跨表数值引用在预加载时集中校验；场景装配由其拥有者校验。
+        ValidateDrops(tables, errors);
+        ValidateEquipment(tables, errors);
+        ValidateSkillCatalog(tables.TbSkillConfig, tables.TbPassiveConfig, errors);
+        ValidateSkillCombat(tables, errors, ids);
+        ValidateLevels(tables, errors);
+        ValidateBattle(tables.TbBattleConfig.Data, errors);
+
+        if (errors.Count > 0)
+        {
+            throw new InvalidOperationException("配置校验失败：\n" + string.Join("\n", errors));
+        }
+    }
+
+    /// <summary>
+    /// 校验角色身份、资源登记与基础属性；按配置顺序汇集全部问题。
+    /// </summary>
+    /// <param name="tables">只读配置总表。</param>
+    /// <param name="ids">实体编号范围规则。</param>
+    /// <param name="errors">集中错误列表。</param>
+    private void ValidateActors(Tables tables, ConfigIdUtility ids, List<string> errors)
+    {
         // 怪物：生命上限为正、经验奖励非负、等级为正。
         foreach (EnemyConfig enemy in tables.TbEnemyConfig.DataList)
         {
@@ -110,12 +136,15 @@ public sealed class ConfigurationSystem : AbstractSystem
                 }
             }
         }
+    }
 
-        // 跨表数值引用在预加载时集中校验；场景装配由其拥有者校验。
-        ValidateDrops(tables, errors);
-        ValidateEquipment(tables, errors);
-        ValidateSkillCatalog(tables.TbSkillConfig, tables.TbPassiveConfig, errors);
-        ValidateSkillCombat(tables, errors, ids);
+    /// <summary>
+    /// 校验主线顺序、隐藏入口和关卡刷怪引用。
+    /// </summary>
+    /// <param name="tables">只读配置总表。</param>
+    /// <param name="errors">集中错误列表。</param>
+    private void ValidateLevels(Tables tables, List<string> errors)
+    {
         LevelConfig[] mainline = tables.TbLevelConfig.DataList.Where(level => level.LevelId != DragonPalaceRules.LevelId).ToArray();
         if (!mainline.Select(level => level.LevelId).OrderBy(id => id)
                 .SequenceEqual(Enumerable.Range(1, mainline.Length)))
@@ -124,14 +153,14 @@ public sealed class ConfigurationSystem : AbstractSystem
         }
 
         if (tables.TbLevelConfig.GetOrDefault(DragonPalaceRules.LevelId) == null ||
-                    !mainline.Any(level => level.LevelId == DragonPalaceRules.EntranceLevelId))
+            !mainline.Any(level => level.LevelId == DragonPalaceRules.EntranceLevelId))
         {
             errors.Add("隐藏龙宫必须存在，且入口所属关卡必须是主线。");
         }
 
         if (tables.TbLevelConfig.GetOrDefault(BatCaveRules.LevelId) is not { } batCave ||
-                    !batCave.Stages[^1].Recipes.Any(recipe => recipe.EnemyEntityId == EntityId.BatCaveStatue &&
-                        recipe.SpawnPointId == BatCaveRules.StatueSpawnPointId && recipe.Count == 1))
+            !batCave.Stages[^1].Recipes.Any(recipe => recipe.EnemyEntityId == EntityId.BatCaveStatue &&
+                recipe.SpawnPointId == BatCaveRules.StatueSpawnPointId && recipe.Count == 1))
         {
             errors.Add("蝙蝠洞专属配置：出口必须关联末阶段唯一的石像。");
         }
@@ -144,16 +173,20 @@ public sealed class ConfigurationSystem : AbstractSystem
                 {
                     if (tables.TbEnemyConfig.DataList.Count(x => x.EntityId == recipe.EnemyEntityId) != 1)
                     {
-                        errors.Add(
-                                                $"关卡 {level.LevelId} 阶段 {stage.StageOrder}：怪物 {recipe.EnemyEntityId} 必须关联唯一基础配置。");
+                        errors.Add($"关卡 {level.LevelId} 阶段 {stage.StageOrder}：怪物 {recipe.EnemyEntityId} 必须关联唯一基础配置。");
                     }
                 }
-
             }
-
         }
+    }
 
-        BattleConfig battle = tables.TbBattleConfig.Data;
+    /// <summary>
+    /// 校验击退和无双战斗常数的取值范围。
+    /// </summary>
+    /// <param name="battle">战斗常数配置。</param>
+    /// <param name="errors">集中错误列表。</param>
+    private void ValidateBattle(BattleConfig battle, List<string> errors)
+    {
         if (!float.IsFinite(battle.EnemyKnockbackRetentionPerSecond)
             || battle.EnemyKnockbackRetentionPerSecond <= 0f || battle.EnemyKnockbackRetentionPerSecond > 1f)
         {
@@ -161,19 +194,14 @@ public sealed class ConfigurationSystem : AbstractSystem
         }
 
         if (battle.WsMax <= 0 || !float.IsFinite(battle.WsDrainPerSecond) || battle.WsDrainPerSecond <= 0f
-                    || !float.IsFinite(battle.WsGainPerDamageRatio) || battle.WsGainPerDamageRatio <= 0f
-                    || !float.IsFinite(battle.WsDecayPerSecond) || battle.WsDecayPerSecond <= 0f
-                    || !float.IsFinite(battle.WsAttackMultiplier) || battle.WsAttackMultiplier < 1f
-                    || !float.IsFinite(battle.WsMoveSpeedMultiplier) || battle.WsMoveSpeedMultiplier < 1f
-                    || !float.IsFinite(battle.WsJumpSpeedMultiplier) || battle.WsJumpSpeedMultiplier < 1f
-                    || !float.IsFinite(battle.WsGravityMultiplier) || battle.WsGravityMultiplier < 1f)
+            || !float.IsFinite(battle.WsGainPerDamageRatio) || battle.WsGainPerDamageRatio <= 0f
+            || !float.IsFinite(battle.WsDecayPerSecond) || battle.WsDecayPerSecond <= 0f
+            || !float.IsFinite(battle.WsAttackMultiplier) || battle.WsAttackMultiplier < 1f
+            || !float.IsFinite(battle.WsMoveSpeedMultiplier) || battle.WsMoveSpeedMultiplier < 1f
+            || !float.IsFinite(battle.WsJumpSpeedMultiplier) || battle.WsJumpSpeedMultiplier < 1f
+            || !float.IsFinite(battle.WsGravityMultiplier) || battle.WsGravityMultiplier < 1f)
         {
             errors.Add("战斗常数：无双上限、每秒衰减/消耗、蓄力系数须为正；攻击、移速、跳跃和重力倍率须有限且至少为 1。");
-        }
-
-        if (errors.Count > 0)
-        {
-            throw new InvalidOperationException("配置校验失败：\n" + string.Join("\n", errors));
         }
     }
 

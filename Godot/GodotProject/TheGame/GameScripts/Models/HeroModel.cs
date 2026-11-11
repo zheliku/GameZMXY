@@ -22,7 +22,10 @@ public sealed class HeroModel : AbstractModel
     /// <param name="heroId">已经建立的参战英雄编号。</param>
     /// <returns>该英雄唯一的本局状态。</returns>
     /// <exception cref="KeyNotFoundException">该英雄尚未建立本局状态。</exception>
-    public HeroState GetState(int heroId) => _heroes[heroId];
+    public HeroState GetState(int heroId)
+    {
+        return _heroes[heroId];
+    }
 
     /// <summary>
     /// 为参战英雄建立本局状态；同一英雄不得重复建立。
@@ -40,5 +43,8 @@ public sealed class HeroModel : AbstractModel
     /// <summary>
     /// 清空本局全部英雄状态；系统先结束订阅与状态效果。
     /// </summary>
-    internal void ClearStates() => _heroes.Clear();
+    internal void ClearStates()
+    {
+        _heroes.Clear();
+    }
 }
