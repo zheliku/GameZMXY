@@ -166,7 +166,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>地图技能交互完成任务。</returns>
     private async Task CheckCoopMapSkillsAsync(MapForm map, ProcedureOwner flow)
     {
-        PushMouseClick(map.GetNode<Button>("m_Skills"));
+        PushMouseClick(map.GetNode<Button>("Frame/m_Skills"));
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(window => window.Visible),
             "双人地图技能入口未打开");
         SkillForm form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(window => window.Visible);
@@ -205,7 +205,7 @@ public sealed partial class UiSmokeScenario
         SkillSystem system = flow.GetSystem<SkillSystem>();
         HashSet<SkillEffectNode> effects = SmokeInspection.ReadField<HashSet<SkillEffectNode>>(hero, "_skillEffects");
         flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 10000);
-        battleForm.GetNode<BaseButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
+        battleForm.GetNode<BaseButton>("LeftAnchor/MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(f => f.Visible), "唐僧技能页没有打开");
         SkillForm form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(f => f.Visible);
         foreach (SkillConfig skill in ConfigSystem.Instance.Tables.TbSkillConfig.DataList.Where(s => s.Hero == SkillHero.Tangseng))
@@ -823,7 +823,7 @@ public sealed partial class UiSmokeScenario
     private async Task CheckSkillsAsync(BattleForm battleForm, ProcedureOwner flow, LevelViewController level)
     {
         int soul = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
-        TextureButton entrance = battleForm.GetNode<TextureButton>("MenuPanel/m_SkillsButton");
+        TextureButton entrance = battleForm.GetNode<TextureButton>("LeftAnchor/MenuPanel/m_SkillsButton");
         Check(InputMap.ActionGetEvents(GameLogic.Input.InputSystem.SkillToggle).OfType<InputEventKey>()
             .Any(input => input.PhysicalKeycode == Key.V), "技能面板没有默认 V 输入映射");
         PushSkillKey(true);
@@ -1105,7 +1105,7 @@ public sealed partial class UiSmokeScenario
         try
         {
             CheckWukongBodyTiming(hero);
-            battleForm.GetNode<TextureButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
+            battleForm.GetNode<TextureButton>("LeftAnchor/MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
             await WaitUntilAsync(() => form.Visible, "学习时没有打开技能窗口");
             TextureButton first = form.GetNode<TextureButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon");
             flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value = 0;
@@ -1124,7 +1124,7 @@ public sealed partial class UiSmokeScenario
             {
                 TextureButton button = form.GetNode<TextureButton>($"Content/m_ActivePage/m_WukongRows/Skill{definition.Order}/IconCell/Icon");
                 button.EmitSignal(BaseButton.SignalName.Pressed);
-                var hudIcon = battleForm.GetNode<TextureRect>($"MenuPanel/SkillBar/Skill{definition.Order}/Icon").Texture as AtlasTexture;
+                var hudIcon = battleForm.GetNode<TextureRect>($"LeftAnchor/MenuPanel/SkillBar/Skill{definition.Order}/Icon").Texture as AtlasTexture;
                 Check(system.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), definition.Id) && button.Disabled && button.TextureNormal.ResourcePath.EndsWith("_learned.png", StringComparison.Ordinal) &&
                     hudIcon?.Atlas.ResourcePath == "res://TheGame/Sprites/UI/hud/battle_skill_icons.png" &&
                     hudIcon.Region == new Rect2(definition.Order * 45, 0, 45, 45),

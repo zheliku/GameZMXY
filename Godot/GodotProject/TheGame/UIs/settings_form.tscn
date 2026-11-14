@@ -37,17 +37,24 @@ anchor_bottom = 1.0
 color = Color(0, 0, 0, 0.42)
 
 [node name="Scroll" type="NinePatchRect" parent="."]
-layout_mode = 0
-offset_left = 307.0
-offset_top = 76.0
-offset_right = 633.0
-offset_bottom = 514.0
+layout_mode = 1
+offset_left = -163.0
+offset_top = -219.0
+offset_right = 163.0
+offset_bottom = 219.0
 mouse_filter = 2
 texture = ExtResource("bg")
 patch_margin_left = 30
 patch_margin_top = 60
 patch_margin_right = 30
 patch_margin_bottom = 26
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Content" type="VBoxContainer" parent="Scroll"]
 layout_mode = 0

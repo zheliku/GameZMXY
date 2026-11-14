@@ -48,7 +48,7 @@ func _run() -> void:
 	var hud: Control = load("res://TheGame/UIs/battle_form.tscn").instantiate()
 	_strip_scripts(hud)
 	viewport.add_child(hud)
-	var menu: Sprite2D = hud.get_node("MenuPanel")
+	var menu: Sprite2D = hud.get_node("LeftAnchor/MenuPanel")
 	assert(menu.position == Vector2(90, 531) && menu.texture.resource_path.ends_with("hud_menu_panel.png"))
 	for entry in [["m_InventoryButton", "inventory"], ["m_SettingsButton", "settings"], ["m_SkillsButton", "skills"], ["WeaponButton", "weapon"], ["PetButton", "pet"]]:
 		var button: TextureButton = menu.get_node(entry[0])
@@ -63,12 +63,12 @@ func _run() -> void:
 	for state in range(2):
 		ws_bar.value = state * 0.5
 		for i in range(5):
-			var icon: TextureRect = hud.get_node("MenuPanel/SkillBar/Skill%d/Icon" % (i + 1))
+			var icon: TextureRect = hud.get_node("LeftAnchor/MenuPanel/SkillBar/Skill%d/Icon" % (i + 1))
 			icon.texture = atlas.get_frame_texture(names[i], state)
 			assert(icon.size == Vector2(45, 45), "战斗栏图标不是原版 45 像素")
 			assert(absf(icon.global_position.y - 506.0) < 0.02, "技能栏没有对齐造三菜单布局")
 		await _capture(viewport, "skills_layout_hud_%d" % state)
-	var glow: AnimatedSprite2D = hud.get_node("MenuPanel/m_WsMax")
+	var glow: AnimatedSprite2D = hud.get_node("LeftAnchor/MenuPanel/m_WsMax")
 	assert(glow.material == null, "官方无双图片仍叠加旧裁剪材质")
 	glow.show()
 	glow.play()

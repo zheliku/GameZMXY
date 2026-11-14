@@ -113,7 +113,7 @@ public sealed partial class FrontendSmokeScenario
         {
             await MoveMouseAsync(new Vector2(20, 20));
             await WaitUntilAsync(() => !Find<LevelGuideTooltip>().Any(card => card.IsVisibleInTree()), "上一张关卡卡片未关闭");
-            MapLocationButton button = map.GetNode<MapLocationButton>("m_" + name);
+            MapLocationButton button = map.GetNode<MapLocationButton>("Frame/m_" + name);
             Vector2 point = Vector2.Zero;
             bool found = false;
             for (int y = 2; y < button.Size.Y && !found; y += 3)
@@ -160,7 +160,7 @@ public sealed partial class FrontendSmokeScenario
             {
                 DisplayServer.WindowSetSize(size);
                 await MoveMouseAsync(new Vector2(20, 20));
-                MapLocationButton button = map.GetNode<MapLocationButton>("m_Huaguoshan");
+                MapLocationButton button = map.GetNode<MapLocationButton>("Frame/m_Huaguoshan");
                 await MoveMouseAsync(button.GetGlobalRect().GetCenter());
                 await WaitUntilAsync(() => Find<LevelGuideTooltip>().Any(card => card.IsVisibleInTree()), "缩放后没有显示卡片");
                 LevelGuideTooltip guide = Find<LevelGuideTooltip>().Single(card => card.IsVisibleInTree());
@@ -174,8 +174,8 @@ public sealed partial class FrontendSmokeScenario
         }
         await MoveMouseAsync(new Vector2(20, 20));
         await WaitUntilAsync(() => !Find<LevelGuideTooltip>().Any(card => card.IsVisibleInTree()), "点击夹具旧卡未关闭");
-        MapLocationButton first = map.GetNode<MapLocationButton>("m_Huaguoshan");
-        await ClickAsync(map, "m_Huaguoshan");
+        MapLocationButton first = map.GetNode<MapLocationButton>("Frame/m_Huaguoshan");
+        await ClickAsync(map, "Frame/m_Huaguoshan");
         await WaitUntilAsync(() => GF.Procedure.CurrentProcedure is ProcedureLevel, "图鉴阻挡了原地点的真实点击进关");
         Check(!map.IsVisibleInTree() && !Find<LevelGuideTooltip>().Any(card => card.IsVisibleInTree()), "离开地图后遗留浮层");
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<BattleForm>().Any(form => form.Visible) &&
@@ -196,10 +196,10 @@ public sealed partial class FrontendSmokeScenario
     private async Task CheckWhirlpoolStatesAsync(MapForm map)
     {
         ProfileSystem profile = GF.Fsm.GetSystem<ProfileSystem>();
-        MapLocationButton button = map.GetNode<MapLocationButton>("m_Shazhiwoliu");
+        MapLocationButton button = map.GetNode<MapLocationButton>("Frame/m_Shazhiwoliu");
         Sprite2D current = button.GetNode<Sprite2D>("CurrentHint");
         TextureRect glow = button.GetNode<TextureRect>("LocationGlow");
-        AnimationPlayer animation = map.GetNode<AnimationPlayer>("m_LocationAnimation");
+        AnimationPlayer animation = map.GetNode<AnimationPlayer>("Frame/m_LocationAnimation");
         using (Image normal = button.TextureNormal.GetImage())
         {
             Check(normal.IsInvisible(), "鲨之涡流普通态不再是官方透明点击区");

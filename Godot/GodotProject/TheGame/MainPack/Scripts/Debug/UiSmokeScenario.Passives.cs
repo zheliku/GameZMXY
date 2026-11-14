@@ -32,7 +32,7 @@ public sealed partial class UiSmokeScenario
         (int Hp, int Mp, float Crit, int HpRegen, int MpRegen) expected = (Hp: initial.MaxHp.Value + 600, Mp: initial.MaxMp.Value + 600,
             Crit: initial.Crit.Value + .06f, HpRegen: initial.HpRegen.Value + 6, MpRegen: initial.MpRegen.Value + 6);
         profile.RestoreSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 4999);
-        battle.GetNode<TextureButton>("MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
+        battle.GetNode<TextureButton>("LeftAnchor/MenuPanel/m_SkillsButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(form => form.Visible),
             "被动专项未打开技能窗口");
         SkillForm form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(form => form.Visible);

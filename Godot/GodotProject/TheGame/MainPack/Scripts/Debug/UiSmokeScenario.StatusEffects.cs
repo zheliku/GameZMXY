@@ -45,7 +45,7 @@ public sealed partial class UiSmokeScenario
                 Input.ActionRelease(InputSystem.Musou);
                 await WaitFramesAsync(2);
                 Control activation = CurrentBattleForm().GetNode<Control>("m_MusouActivation");
-                AnimatedSprite2D clip = activation.GetNode<AnimatedSprite2D>("Animation");
+                AnimatedSprite2D clip = activation.GetNode<AnimatedSprite2D>("Frame/Animation");
                 await WaitUntilAsync(() => clip.Frame > 0, "无双开场没有按真实时间推进首帧");
                 string expectedFrames = hero.HeroId == 2 ? "tangseng_musou_activation_frames.tres" : "wukong_musou_activation_frames.tres";
                 Check(activation.Visible && GF.Base.IsGamePaused && clip.Frame > 0 &&

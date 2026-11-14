@@ -19,9 +19,9 @@ func _run() -> void:
 	root.add_child(view)
 	var form: Control = load("res://TheGame/UIs/map_form.tscn").instantiate()
 	view.add_child(form)
-	var button: TextureButton = form.get_node("m_Bianfuku")
+	var button: TextureButton = form.get_node("Frame/m_Bianfuku")
 	var glow: TextureRect = button.get_node("LocationGlow")
-	var player: AnimationPlayer = form.get_node("m_LocationAnimation")
+	var player: AnimationPlayer = form.get_node("Frame/m_LocationAnimation")
 	player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	assert(glow.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_CENTERED)
 	var source: Image = glow.texture.get_image()

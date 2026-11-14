@@ -33,9 +33,9 @@ func _validate() -> void:
 			assert(player.has_animation(attack))
 		actor.free()
 	var form: Control = load("res://TheGame/UIs/map_form.tscn").instantiate()
-	var library: AnimationLibrary = form.get_node("m_LocationAnimation").get_animation_library("qixingdong")
+	var library: AnimationLibrary = form.get_node("Frame/m_LocationAnimation").get_animation_library("qixingdong")
 	assert(library.resource_path == "res://TheGame/Sprites/UI/frontend/map_qixingdong_hover_animation.tres")
-	assert(form.get_node("m_Qixingdong").get_child_count() == 1)
+	assert(form.get_node("Frame/m_Qixingdong").get_child_count() == 1)
 	for title in library.get_animation_list():
 		var animation := library.get_animation(title)
 		for track in animation.get_track_count():

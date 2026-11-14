@@ -16,11 +16,11 @@ func _validate() -> void:
     var form: Control = load("res://TheGame/UIs/map_form.tscn").instantiate()
     root.add_child(form)
     form.visible = true
-    var player: AnimationPlayer = form.get_node("m_LocationAnimation")
+    var player: AnimationPlayer = form.get_node("Frame/m_LocationAnimation")
     var output := "res://.godot/validation/movement_presets/map_alignment"
     DirAccess.make_dir_recursive_absolute(output)
     for name in LOCATIONS:
-        var button: TextureButton = form.get_node("m_" + name)
+        var button: TextureButton = form.get_node("Frame/m_" + name)
         button.disabled = false
         var glow: TextureRect = button.get_node("LocationGlow")
         assert(glow.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_CENTERED)
@@ -46,7 +46,7 @@ func _validate() -> void:
         await RenderingServer.frame_post_draw
         assert(root.get_texture().get_image().save_png(output + "/normal.png") == OK)
     for name in LOCATIONS:
-        var button: TextureButton = form.get_node("m_" + name)
+        var button: TextureButton = form.get_node("Frame/m_" + name)
         var glow: TextureRect = button.get_node("LocationGlow")
         player.play(LOCATIONS[name] + "/hover")
         player.seek(.5, true, true)

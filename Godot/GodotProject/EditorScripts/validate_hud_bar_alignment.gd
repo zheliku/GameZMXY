@@ -29,13 +29,13 @@ func _run() -> void:
 		hud.scale = Vector2.ONE * scale
 		hud.size = Vector2(940, 590)
 		viewport.add_child(hud)
-		var ws: TextureProgressBar = hud.get_node("MenuPanel/WsFrame/m_WsBar")
+		var ws: TextureProgressBar = hud.get_node("LeftAnchor/MenuPanel/WsFrame/m_WsBar")
 		var boss: Control = hud.get_node("m_EncounterHealthBar")
 		var health: TextureProgressBar = boss.get_node("Health")
 		boss.show()
 		boss.get_node("Name").text = "禺狨王"
 		hud.get_node("m_MusouActivation").hide()
-		hud.get_node("MenuPanel/m_WsMax").hide()
+		hud.get_node("LeftAnchor/MenuPanel/m_WsMax").hide()
 		ws.value = 0
 		health.value = 0
 		var under := ws.texture_under

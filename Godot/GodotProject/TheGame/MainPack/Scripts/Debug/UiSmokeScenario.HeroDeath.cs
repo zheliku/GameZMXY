@@ -50,7 +50,7 @@ public sealed partial class UiSmokeScenario
             heroes[1].GetNode<CollisionShape2D>("CollisionShape2D").Disabled,
             "P2死亡提前结算、隐藏实体、清掉队友奖励或未关闭身体碰撞");
         BattleForm form = CurrentBattleForm();
-        Check(form.GetNode<Label>("StatusPanelP2/m_HpBar/m_HpText").Text.StartsWith("0/"), "死者HUD未显示0血");
+        Check(form.GetNode<Label>("RightAnchor/StatusPanelP2/m_HpBar/m_HpText").Text.StartsWith("0/"), "死者HUD未显示0血");
         Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.KpDivide, Keycode = Key.KpDivide, Pressed = true });
         await WaitFramesAsync(2);
         Input.ParseInputEvent(new InputEventKey { PhysicalKeycode = Key.KpDivide, Keycode = Key.KpDivide, Pressed = false });

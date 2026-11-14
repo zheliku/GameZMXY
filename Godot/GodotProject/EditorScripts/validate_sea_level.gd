@@ -10,9 +10,9 @@ func _initialize() -> void:
 func _validate() -> void:
     var args := OS.get_cmdline_user_args()
     var label := args[1] if args.size() > 1 else "3-1"
-    var settings: Array = {"3-1": [7, "zm1_07_shore", "m_Qianan", "qianan", 19],
-        "3-2": [8, "zm1_08_east_sea", "m_Donghai", "donghai", 19],
-        "3-3": [9, "zm1_09_shark_whirlpool", "m_Shazhiwoliu", "shazhiwoliu", 48]}[label]
+    var settings: Array = {"3-1": [7, "zm1_07_shore", "Frame/m_Qianan", "qianan", 19],
+        "3-2": [8, "zm1_08_east_sea", "Frame/m_Donghai", "donghai", 19],
+        "3-3": [9, "zm1_09_shark_whirlpool", "Frame/m_Shazhiwoliu", "shazhiwoliu", 48]}[label]
     var id: int = settings[0]
     var directory: String = settings[1]
     var source: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(args[0]))[label]
@@ -58,7 +58,7 @@ func _validate() -> void:
     var form: Control = load("res://TheGame/UIs/map_form.tscn").instantiate()
     var field: String = settings[2]
     assert(form.get(field) == form.get_node(field))
-    var library: AnimationLibrary = form.get_node("m_LocationAnimation").get_animation_library(settings[3])
+    var library: AnimationLibrary = form.get_node("Frame/m_LocationAnimation").get_animation_library(settings[3])
     assert(is_equal_approx(library.get_animation("current").length, settings[4] / 24.0))
     assert(form.get_node(field + "/LocationGlow").size.is_equal_approx(form.get_node(field).size))
     form.free()

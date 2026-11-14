@@ -14,7 +14,7 @@ func _run() -> void:
         quit(1)
         return
     var hud: Node = load("res://TheGame/UIs/battle_form.tscn").instantiate()
-    var source: AnimatedSprite2D = hud.get_node("MenuPanel/m_WsMax")
+    var source: AnimatedSprite2D = hud.get_node("LeftAnchor/MenuPanel/m_WsMax")
     var frames := source.sprite_frames
     var animation := source.animation
     assert(source.material == null, "官方动画仍使用旧 shader")

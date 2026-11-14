@@ -811,16 +811,16 @@ public sealed partial class UiSmokeScenario
         {
             hero.SetPhysicsProcess(false);
         }
-        Check(form.GetNode<Sprite2D>("StatusPanel/Head").Texture.ResourcePath.EndsWith("hud_head_wukong.png") &&
-            form.GetNode<Sprite2D>("StatusPanelP2/Head").Texture.ResourcePath.EndsWith("hud_head_tangseng.png") &&
-            form.GetNode<Sprite2D>("StatusPanelP2").Visible && form.GetNode<Sprite2D>("MenuPanelP2").Visible &&
-            form.GetNode<Label>("StatusPanelP2/m_HpBar/m_HpText").GetGlobalTransform().X.X > 0 &&
-            form.GetNode<TextureRect>("MenuPanelP2/SkillBar/Skill1/Icon").GetGlobalTransform().X.X > 0,
+        Check(form.GetNode<Sprite2D>("LeftAnchor/StatusPanel/Head").Texture.ResourcePath.EndsWith("hud_head_wukong.png") &&
+            form.GetNode<Sprite2D>("RightAnchor/StatusPanelP2/Head").Texture.ResourcePath.EndsWith("hud_head_tangseng.png") &&
+            form.GetNode<Sprite2D>("RightAnchor/StatusPanelP2").Visible && form.GetNode<Sprite2D>("RightAnchor/MenuPanelP2").Visible &&
+            form.GetNode<Label>("RightAnchor/StatusPanelP2/m_HpBar/m_HpText").GetGlobalTransform().X.X > 0 &&
+            form.GetNode<TextureRect>("RightAnchor/MenuPanelP2/SkillBar/Skill1/Icon").GetGlobalTransform().X.X > 0,
             "双人HUD头像、显隐或文字图标镜像方向错误");
         int p1Hp = states.GetState(heroes[0].HeroId).Hp.Value;
         heroSystem.Damage(heroes[1].HeroId, 5);
         Check(states.GetState(heroes[0].HeroId).Hp.Value == p1Hp &&
-            form.GetNode<Label>("StatusPanelP2/m_HpBar/m_HpText").Text ==
+            form.GetNode<Label>("RightAnchor/StatusPanelP2/m_HpBar/m_HpText").Text ==
                 $"{states.GetState(heroes[1].HeroId).Hp.Value}/{states.GetState(heroes[1].HeroId).MaxHp.Value}",
             "P2受伤未独立刷新右侧HUD或改变P1生命");
         heroes[1].Heal(3);
@@ -839,9 +839,15 @@ public sealed partial class UiSmokeScenario
         try
         {
             await WaitFramesAsync(24);
+            string movementFacts = string.Join("; ", heroes.Select((hero, index) =>
+                $"slot={hero.Slot}, dx={hero.GlobalPosition.X - positions[index].X:F2}, axis={hero.ActionData.MoveAxis}, " +
+                $"held={Input.IsActionPressed(InputSystem.ActionOf(InputSystem.MoveRight, hero.Slot))}, " +
+                $"locked={hero.ActionData.InputLocked}, controls={states.GetState(hero.HeroId).ControlsEnabled}, " +
+                $"time={hero.ActionData.Time:F3}, physics={hero.IsPhysicsProcessing()}, pos={hero.GlobalPosition}"));
+            GD.Print("SMOKE-COOP-MOVEMENT FACTS: " + movementFacts);
             Check(heroes.All(hero => hero.ActionData.MoveAxis > 0) &&
                 heroes.Select((hero, index) => hero.GlobalPosition.X - positions[index].X).All(distance => distance > 10),
-                "两套同时移动输入未分别驱动双方");
+                "两套同时移动输入未分别驱动双方：" + movementFacts);
         }
         finally
         {
@@ -870,7 +876,7 @@ public sealed partial class UiSmokeScenario
         await WaitFramesAsync(3);
         heroSystem.SetControlsEnabled(heroes[0].HeroId, true);
         Check(!GF.Base.IsGamePaused, "P2背包关闭后未恢复时钟");
-        PushMouseClick(form.GetNode<TextureButton>("MenuPanelP2/m_InventoryButton"));
+        PushMouseClick(form.GetNode<TextureButton>("RightAnchor/MenuPanelP2/m_InventoryButton"));
         await WaitUntilAsync(() => inventory.Visible, "P2镜像HUD背包按钮未打开窗口");
         Check(ReferenceEquals(SmokeInspection.ReadField<InventoryFormData>(inventory, "_inventoryData").Hero, heroes[1]),
             "P2镜像HUD按钮没有保留请求席位");
@@ -958,8 +964,8 @@ public sealed partial class UiSmokeScenario
         await CaptureCombatAsync("coop_d2_p2_kill");
 
         // 个人绑定由面板实例拥有，按原实例核对所有属性与集合的订退数量。
-        BattleStatusPanel[] statusPanels = [form.GetNode<BattleStatusPanel>("StatusPanel"), form.GetNode<BattleStatusPanel>("StatusPanelP2")];
-        BattleMenuPanel[] menuPanels = [form.GetNode<BattleMenuPanel>("MenuPanel"), form.GetNode<BattleMenuPanel>("MenuPanelP2")];
+        BattleStatusPanel[] statusPanels = [form.GetNode<BattleStatusPanel>("LeftAnchor/StatusPanel"), form.GetNode<BattleStatusPanel>("RightAnchor/StatusPanelP2")];
+        BattleMenuPanel[] menuPanels = [form.GetNode<BattleMenuPanel>("LeftAnchor/MenuPanel"), form.GetNode<BattleMenuPanel>("RightAnchor/MenuPanelP2")];
         var levelHandlers = SmokeInspection.ReadField<Dictionary<AbstractHeroEntity,
             (Action<int> Restored, Action<EquippedItems> Equipment)>>(level, "_heroHandlers");
         Action<EquippedItems>[] equipmentHandlers = heroes.Select(hero => levelHandlers[hero].Equipment).ToArray();
@@ -989,7 +995,7 @@ public sealed partial class UiSmokeScenario
                 "双人HUD或会话订阅遗漏或重复");
         }
         flow.GetSystem<ProfileSystem>().AddSoul(heroes[1].HeroId, 160);
-        PushMouseClick(form.GetNode<TextureButton>("MenuPanelP2/m_SettingsButton"));
+        PushMouseClick(form.GetNode<TextureButton>("RightAnchor/MenuPanelP2/m_SettingsButton"));
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().Any(window => window.Visible),
             "P2设置按钮未打开共享设置");
         SettingsForm settings = GF.UI.GetAllLoadedUIForms().OfType<SettingsForm>().Single(window => window.Visible);
@@ -1274,7 +1280,7 @@ public sealed partial class UiSmokeScenario
         Check(ReferenceEquals(battleForm, _testBattleForm), "HUD 未从真实窗口池复用");
         CheckDisplay(_testBattleForm, hero, progression, level);
 
-        ResourceBar bar = _testBattleForm.GetNode<ResourceBar>("StatusPanel/m_HpBar");
+        ResourceBar bar = _testBattleForm.GetNode<ResourceBar>("LeftAnchor/StatusPanel/m_HpBar");
         GF.Fsm.GetSystem<HeroSystem>().Damage(hero.HeroId, 20);
         GF.Fsm.GetSystem<HeroSystem>().AddWs(hero.HeroId, 20);
         CheckDisplay(_testBattleForm, hero, progression, level);
@@ -1282,15 +1288,15 @@ public sealed partial class UiSmokeScenario
 
         // 关闭后修改状态源，控件保持关闭时的显示。
         CloseBattleForm(_testBattleForm);
-        AnimatedSprite2D fullAnimation = battleForm.GetNode<AnimatedSprite2D>("MenuPanel/m_WsMax");
+        AnimatedSprite2D fullAnimation = battleForm.GetNode<AnimatedSprite2D>("LeftAnchor/MenuPanel/m_WsMax");
         Check(!fullAnimation.Visible && !fullAnimation.IsPlaying() && fullAnimation.Frame == 0,
             "HUD 关闭后无双动画没有停止并复位");
         double closedHp = bar.Value;
-        string closedLevel = battleForm.GetNode<Label>("StatusPanel/m_LevelLabel").Text;
+        string closedLevel = battleForm.GetNode<Label>("LeftAnchor/StatusPanel/m_LevelLabel").Text;
         GF.Fsm.GetSystem<HeroSystem>().Damage(hero.HeroId, 5);
         flow.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 140);
         Check(Near(bar.Value, closedHp), "关闭后血条仍响应旧状态源");
-        Check(battleForm.GetNode<Label>("StatusPanel/m_LevelLabel").Text == closedLevel, "关闭后等级仍响应旧状态源");
+        Check(battleForm.GetNode<Label>("LeftAnchor/StatusPanel/m_LevelLabel").Text == closedLevel, "关闭后等级仍响应旧状态源");
         progression.RestoreExperience(progression.HeroOf(PlayerSlot.P1), 0);
         await WaitFramesAsync(2);
 
@@ -1322,8 +1328,8 @@ public sealed partial class UiSmokeScenario
     /// <returns>真实动画至少循环两次后的验证任务。</returns>
     private async Task CheckMusouAnimationAsync(BattleForm battleForm, AbstractHeroEntity hero, ProfileModel progression)
     {
-        AnimatedSprite2D animation = battleForm.GetNode<AnimatedSprite2D>("MenuPanel/m_WsMax");
-        ResourceBar bar = battleForm.GetNode<ResourceBar>("MenuPanel/WsFrame/m_WsBar");
+        AnimatedSprite2D animation = battleForm.GetNode<AnimatedSprite2D>("LeftAnchor/MenuPanel/m_WsMax");
+        ResourceBar bar = battleForm.GetNode<ResourceBar>("LeftAnchor/MenuPanel/WsFrame/m_WsBar");
         Check(!animation.Visible && !animation.IsPlaying(), "无双未蓄满就显示或播放了闪烁动画");
         int originalExperience = progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.TotalExperience;
         GF.Fsm.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 1);
@@ -1451,7 +1457,7 @@ public sealed partial class UiSmokeScenario
                 && Near(body.Gravity, body.Params.Gravity * battle.WsGravityMultiplier), "无双跳跃或重力倍率不正确");
             Check(!hero.TryActivateMusou(), "无双期间可以重复开启");
             Check(GF.Base.IsGamePaused && activation.Visible, "开启无双没有短暂停顿和屏幕提示");
-            AnimatedSprite2D clip = activation.GetNode<AnimatedSprite2D>("Animation");
+            AnimatedSprite2D clip = activation.GetNode<AnimatedSprite2D>("Frame/Animation");
             Check(clip.Frame > 0 && clip.SpriteFrames.GetFrameTexture(clip.Animation, clip.Frame).GetSize() == new Vector2(940, 590),
                 "暂停时原版开启动画未推进，或帧画布不匹配940×590");
             // 按原生动画帧采样中段；PNG 编码和磁盘写入延后，避免挤占一秒演出的后半段观察窗口。
@@ -1789,7 +1795,7 @@ public sealed partial class UiSmokeScenario
     {
         await WaitForLevelAsync();
         BattleForm reenteredHud = CurrentBattleForm();
-        BattleStatusPanel savedStatus = reenteredHud.GetNode<BattleStatusPanel>("StatusPanel");
+        BattleStatusPanel savedStatus = reenteredHud.GetNode<BattleStatusPanel>("LeftAnchor/StatusPanel");
         CloseBattleForm(reenteredHud);
         await WaitFramesAsync(2);
         reenteredHud.Set("_status", default(Variant));
@@ -2152,16 +2158,16 @@ public sealed partial class UiSmokeScenario
     private static void CheckDisplay(BattleForm battleForm, AbstractHeroEntity hero, ProfileModel progression, LevelViewController level)
     {
         string portrait = progression.HeroOf(PlayerSlot.P1) == 2 ? "hud_head_tangseng.png" : "hud_head_wukong.png";
-        Check(battleForm.GetNode<Sprite2D>("StatusPanel/Head").Texture.ResourcePath.EndsWith(portrait),
+        Check(battleForm.GetNode<Sprite2D>("LeftAnchor/StatusPanel/Head").Texture.ResourcePath.EndsWith(portrait),
             "HUD头像与当前出战英雄不一致");
-        foreach (string path in new[] { "StatusPanel/m_HpBar", "StatusPanel/m_MpBar", "StatusPanel/m_ExpBar", "MenuPanel/WsFrame/m_WsBar" })
+        foreach (string path in new[] { "LeftAnchor/StatusPanel/m_HpBar", "LeftAnchor/StatusPanel/m_MpBar", "LeftAnchor/StatusPanel/m_ExpBar", "LeftAnchor/MenuPanel/WsFrame/m_WsBar" })
         {
             ResourceBar resourceBar = battleForm.GetNode<ResourceBar>(path);
             Check(resourceBar.Visible && resourceBar.TextureProgress != null, $"资源条隐藏或填充纹理未加载：{path}");
         }
 
         HeroState vitals = GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId);
-        foreach (string path in new[] { "StatusPanel/m_HpBar/m_HpText", "StatusPanel/m_MpBar/MpText", "StatusPanel/m_ExpBar/ExpText" })
+        foreach (string path in new[] { "LeftAnchor/StatusPanel/m_HpBar/m_HpText", "LeftAnchor/StatusPanel/m_MpBar/MpText", "LeftAnchor/StatusPanel/m_ExpBar/ExpText" })
         {
             Label label = battleForm.GetNode<Label>(path);
             Font font = label.GetThemeFont("font");
@@ -2169,20 +2175,20 @@ public sealed partial class UiSmokeScenario
                 label.GetThemeFontSize("font_size") == 14,
                 $"{path} 实际解析的字体/字号不是旧 HUD 粗圆 14px，检查 Sprite2D 对主题继承的隔断");
         }
-        Check(battleForm.GetNode<Label>("StatusPanel/m_LevelLabel").GetThemeFont("font").ResourcePath ==
+        Check(battleForm.GetNode<Label>("LeftAnchor/StatusPanel/m_LevelLabel").GetThemeFont("font").ResourcePath ==
             ResourcesCollectionConstant.Fonts_dfp_hai_bao_w12, "等级标签未使用旧 HUD 海报体");
-        Check(Near(battleForm.GetNode<ResourceBar>("StatusPanel/m_HpBar").Value, (double)vitals.Hp.Value / vitals.MaxHp.Value), "血条填充与当前英雄不一致");
-        Check(battleForm.GetNode<Label>("StatusPanel/m_HpBar/m_HpText").Text == $"{vitals.Hp.Value}/{vitals.MaxHp.Value}", "生命文本不一致");
-        Check(battleForm.GetNode<Label>("StatusPanel/m_LevelLabel").Text == progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level.ToString(), "等级文本不一致");
-        Check(Near(battleForm.GetNode<ResourceBar>("StatusPanel/m_MpBar").Value, (double)vitals.Mp.Value / vitals.MaxMp.Value), "魔法条不一致");
-        Check(battleForm.GetNode<Label>("StatusPanel/m_MpBar/MpText").Text == $"{vitals.Mp.Value}/{vitals.MaxMp.Value}", "魔法文本不一致");
+        Check(Near(battleForm.GetNode<ResourceBar>("LeftAnchor/StatusPanel/m_HpBar").Value, (double)vitals.Hp.Value / vitals.MaxHp.Value), "血条填充与当前英雄不一致");
+        Check(battleForm.GetNode<Label>("LeftAnchor/StatusPanel/m_HpBar/m_HpText").Text == $"{vitals.Hp.Value}/{vitals.MaxHp.Value}", "生命文本不一致");
+        Check(battleForm.GetNode<Label>("LeftAnchor/StatusPanel/m_LevelLabel").Text == progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Level.ToString(), "等级文本不一致");
+        Check(Near(battleForm.GetNode<ResourceBar>("LeftAnchor/StatusPanel/m_MpBar").Value, (double)vitals.Mp.Value / vitals.MaxMp.Value), "魔法条不一致");
+        Check(battleForm.GetNode<Label>("LeftAnchor/StatusPanel/m_MpBar/MpText").Text == $"{vitals.Mp.Value}/{vitals.MaxMp.Value}", "魔法文本不一致");
         double experienceRatio = progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience == 0 ? 1 : (double)progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Experience / progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience;
-        Check(Near(battleForm.GetNode<ResourceBar>("StatusPanel/m_ExpBar").Value, experienceRatio), "经验条不一致");
-        Check(battleForm.GetNode<Label>("StatusPanel/m_ExpBar/ExpText").Text ==
+        Check(Near(battleForm.GetNode<ResourceBar>("LeftAnchor/StatusPanel/m_ExpBar").Value, experienceRatio), "经验条不一致");
+        Check(battleForm.GetNode<Label>("LeftAnchor/StatusPanel/m_ExpBar/ExpText").Text ==
             (progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience == 0 ? "MAX" : $"{progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.Experience}/{progression.GetProgress(progression.HeroOf(PlayerSlot.P1)).Value.MaxExperience}"), "经验文本不一致");
-        Check(Near(battleForm.GetNode<TextureProgressBar>("MenuPanel/WsFrame/m_WsBar").Value, (double)GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Ws.Value / GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).MaxWs.Value),
+        Check(Near(battleForm.GetNode<TextureProgressBar>("LeftAnchor/MenuPanel/WsFrame/m_WsBar").Value, (double)GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).Ws.Value / GF.Fsm.GetModel<HeroModel>().GetState(hero.HeroId).MaxWs.Value),
             "无双条不一致");
-        Check(battleForm.GetNode<AnimatedSprite2D>("m_Go").Visible == SmokeInspection.Model(level).TravelAvailable.Value, "Go 显示与关卡状态不一致");
+        Check(battleForm.GetNode<AnimatedSprite2D>("RightAnchor/m_Go").Visible == SmokeInspection.Model(level).TravelAvailable.Value, "Go 显示与关卡状态不一致");
     }
 
     /// <summary>

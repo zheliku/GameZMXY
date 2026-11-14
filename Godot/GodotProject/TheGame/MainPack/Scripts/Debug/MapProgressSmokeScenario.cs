@@ -62,7 +62,7 @@ public sealed class MapProgressSmokeScenario(Node driver)
                     MapForm map = VisibleMap();
                     if (map != null)
                     {
-                        map.GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>()
+                        map.GetNode<Control>("Frame").GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>()
                             .Single(button => button.LevelId == _levelId).EmitSignal(BaseButton.SignalName.Pressed);
                     }
                     return;
@@ -93,7 +93,7 @@ public sealed class MapProgressSmokeScenario(Node driver)
                 MapForm map = VisibleMap();
                 CheckMap(map, _levelId);
                 _closedMapSerial = map.SerialId;
-                map.GetNode<BaseButton>("m_Settings").EmitSignal(BaseButton.SignalName.Pressed);
+                map.GetNode<BaseButton>("Frame/m_Settings").EmitSignal(BaseButton.SignalName.Pressed);
                 _step = 2;
                 return;
             }
@@ -125,11 +125,11 @@ public sealed class MapProgressSmokeScenario(Node driver)
                 Control form = forms.FirstOrDefault(value => value is SaveForm) ?? forms.FirstOrDefault(value => value is StartForm or CharacterForm);
                 string path = form switch
                 {
-                    StartForm start => start.GetNode<Control>("m_MainMenu").Visible
-                        ? (_levelId == 0 ? "m_MainMenu/m_NewGame" : "m_MainMenu/m_LoadGame")
-                        : "m_PlayerCountMenu/m_Single",
-                    SaveForm => "Slots/m_Slot1",
-                    CharacterForm character when SmokeInspection.CallbackCount(character, "CharacterConfirmed") != 0 => _heroId == 2 ? "Roles/m_Sanzang" : "Roles/m_Wukong",
+                    StartForm start => start.GetNode<Control>("Frame/m_MainMenu").Visible
+                        ? (_levelId == 0 ? "Frame/m_MainMenu/m_NewGame" : "Frame/m_MainMenu/m_LoadGame")
+                        : "Frame/m_PlayerCountMenu/m_Single",
+                    SaveForm => "Frame/Slots/m_Slot1",
+                    CharacterForm character when SmokeInspection.CallbackCount(character, "CharacterConfirmed") != 0 => _heroId == 2 ? "Frame/Roles/m_Sanzang" : "Frame/Roles/m_Wukong",
                     _ => null
                 };
                 if (path != null && !form.GetNode<BaseButton>(path).Disabled)
@@ -157,7 +157,7 @@ public sealed class MapProgressSmokeScenario(Node driver)
                 _step = 0;
             }
             CheckMap(current, _levelId - 1);
-            current.GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>()
+            current.GetNode<Control>("Frame").GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>()
                 .Single(button => button.LevelId == _levelId).EmitSignal(BaseButton.SignalName.Pressed);
             _step = 4;
         }
@@ -188,8 +188,8 @@ public sealed class MapProgressSmokeScenario(Node driver)
         }
 
         int latest = Math.Min(10, cleared + 1);
-        AnimationPlayer player = map.GetNode<AnimationPlayer>("m_LocationAnimation");
-        MapLocationButton[] locations = map.GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>().ToArray();
+        AnimationPlayer player = map.GetNode<AnimationPlayer>("Frame/m_LocationAnimation");
+        MapLocationButton[] locations = map.GetNode<Control>("Frame").GetChildren().OfType<GameLogic.UI.Widgets.MapLocationButton>().ToArray();
         MapLocationButton latestButton = locations.Single(button => button.LevelId == latest);
         string animation = latest == 1 ? "location/current" : latestButton.Name.ToString()[2..].ToLowerInvariant() + "/current";
         if (player.CurrentAnimation != animation)

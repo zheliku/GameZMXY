@@ -42,8 +42,8 @@ public sealed partial class UiSmokeScenario
             "faulted检查点任务阻止了按既有失败语义返回地图");
         Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == soul, "检查点任务异常丢失了已提交的内存收益");
         MapForm map = GF.UI.GetAllLoadedUIForms().OfType<MapForm>().Single(form => form.Visible);
-        map.GetNode<BaseButton>("m_Save").EmitSignal(BaseButton.SignalName.Pressed);
-        await WaitUntilAsync(() => !map.GetNode<BaseButton>("m_Save").Disabled, "地图未恢复手动保存");
+        map.GetNode<BaseButton>("Frame/m_Save").EmitSignal(BaseButton.SignalName.Pressed);
+        await WaitUntilAsync(() => !map.GetNode<BaseButton>("Frame/m_Save").Disabled, "地图未恢复手动保存");
         Check(await flow.GetSystem<SaveSystem>().PendingWrite, "异常后的地图手动保存失败");
         Check((await ReadDiskAsync()).Heroes[0].Soul == soul, "异常后重新保存未写入同一档案的收益");
         GD.Print("SMOKE-CHECKPOINT FAILURE PASS: faulted task contained; settlement -> map; memory retained and manual save reread");

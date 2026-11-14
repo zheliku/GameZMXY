@@ -9,14 +9,14 @@ func _validate() -> void:
     root.content_scale_size = Vector2i(940, 590)
     var form: Control = load("res://TheGame/UIs/map_form.tscn").instantiate()
     root.add_child(form)
-    var button: TextureButton = form.get_node("m_Niumogu")
+    var button: TextureButton = form.get_node("Frame/m_Niumogu")
     button.disabled = false
     var current: Sprite2D = button.get_node("CurrentHint")
     var hover: TextureRect = button.get_node("LocationGlow")
     assert(current.global_position.is_equal_approx(Vector2(283.2, 385.05)))
     assert(current.scale.is_equal_approx(Vector2.ONE))
     assert(hover.size.is_equal_approx(Vector2(176, 125)))
-    var player: AnimationPlayer = form.get_node("m_LocationAnimation")
+    var player: AnimationPlayer = form.get_node("Frame/m_LocationAnimation")
     player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
     var folder := "res://.godot/validation/bull_review_20261101/map"
     DirAccess.make_dir_recursive_absolute(folder)

@@ -15,19 +15,34 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("theme")
 script = ExtResource("script")
-_newGame = NodePath("m_MainMenu/m_NewGame")
-_loadGame = NodePath("m_MainMenu/m_LoadGame")
-_settings = NodePath("m_MainMenu/m_Settings")
-_help = NodePath("m_MainMenu/m_Help")
-_notice = NodePath("m_MainMenu/m_Notice")
-_status = NodePath("StatusScroll/m_Status")
-_mainMenu = NodePath("m_MainMenu")
-_playerCountMenu = NodePath("m_PlayerCountMenu")
-_single = NodePath("m_PlayerCountMenu/m_Single")
-_double = NodePath("m_PlayerCountMenu/m_Double")
-_back = NodePath("m_PlayerCountMenu/m_Back")
+_newGame = NodePath("Frame/m_MainMenu/m_NewGame")
+_loadGame = NodePath("Frame/m_MainMenu/m_LoadGame")
+_settings = NodePath("Frame/m_MainMenu/m_Settings")
+_help = NodePath("Frame/m_MainMenu/m_Help")
+_notice = NodePath("Frame/m_MainMenu/m_Notice")
+_status = NodePath("Frame/StatusScroll/m_Status")
+_mainMenu = NodePath("Frame/m_MainMenu")
+_playerCountMenu = NodePath("Frame/m_PlayerCountMenu")
+_single = NodePath("Frame/m_PlayerCountMenu/m_Single")
+_double = NodePath("Frame/m_PlayerCountMenu/m_Double")
+_back = NodePath("Frame/m_PlayerCountMenu/m_Back")
 
-[node name="Background" type="TextureRect" parent="."]
+[node name="Frame" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -470.0
+offset_top = -295.0
+offset_right = 470.0
+offset_bottom = 295.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Background" type="TextureRect" parent="Frame"]
 offset_left = 0.0
 offset_top = 0.0
 offset_right = 940.0
@@ -37,7 +52,7 @@ texture = ExtResource("bg")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Series" type="Label" parent="."]
+[node name="Series" type="Label" parent="Frame"]
 offset_left = 686.0
 offset_top = 56.0
 offset_right = 940.0
@@ -49,7 +64,7 @@ vertical_alignment = 1
 theme_override_font_sizes/font_size = 30
 theme_override_fonts/font = ExtResource("font")
 
-[node name="Chapter" type="Label" parent="."]
+[node name="Chapter" type="Label" parent="Frame"]
 offset_left = 686.0
 offset_top = 100.0
 offset_right = 940.0
@@ -62,12 +77,12 @@ theme_override_font_sizes/font_size = 22
 theme_override_fonts/font = ExtResource("font")
 
 
-[node name="m_MainMenu" type="Control" parent="."]
+[node name="m_MainMenu" type="Control" parent="Frame"]
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="m_NewGame" type="Button" parent="m_MainMenu"]
+[node name="m_NewGame" type="Button" parent="Frame/m_MainMenu"]
 mouse_default_cursor_shape = 2
 offset_left = 692.0
 offset_top = 160.0
@@ -77,7 +92,7 @@ focus_mode = 0
 text = "新开游戏"
 theme_override_fonts/font = ExtResource("font")
 
-[node name="Divider0" type="TextureRect" parent="m_MainMenu"]
+[node name="Divider0" type="TextureRect" parent="Frame/m_MainMenu"]
 offset_left = 692.0
 offset_top = 203.0
 offset_right = 933.0
@@ -87,7 +102,7 @@ texture = ExtResource("separator")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="m_LoadGame" type="Button" parent="m_MainMenu"]
+[node name="m_LoadGame" type="Button" parent="Frame/m_MainMenu"]
 mouse_default_cursor_shape = 2
 offset_left = 692.0
 offset_top = 222.0
@@ -97,7 +112,7 @@ focus_mode = 0
 text = "读取存档"
 theme_override_fonts/font = ExtResource("font")
 
-[node name="Divider1" type="TextureRect" parent="m_MainMenu"]
+[node name="Divider1" type="TextureRect" parent="Frame/m_MainMenu"]
 offset_left = 692.0
 offset_top = 265.0
 offset_right = 933.0
@@ -107,7 +122,7 @@ texture = ExtResource("separator")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="m_Settings" type="Button" parent="m_MainMenu"]
+[node name="m_Settings" type="Button" parent="Frame/m_MainMenu"]
 mouse_default_cursor_shape = 2
 offset_left = 692.0
 offset_top = 284.0
@@ -117,7 +132,7 @@ focus_mode = 0
 text = "游戏设置"
 theme_override_fonts/font = ExtResource("font")
 
-[node name="Divider2" type="TextureRect" parent="m_MainMenu"]
+[node name="Divider2" type="TextureRect" parent="Frame/m_MainMenu"]
 offset_left = 692.0
 offset_top = 327.0
 offset_right = 933.0
@@ -127,7 +142,7 @@ texture = ExtResource("separator")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="m_Help" type="Button" parent="m_MainMenu"]
+[node name="m_Help" type="Button" parent="Frame/m_MainMenu"]
 mouse_default_cursor_shape = 2
 offset_left = 692.0
 offset_top = 346.0
@@ -137,7 +152,7 @@ focus_mode = 0
 text = "游戏帮助"
 theme_override_fonts/font = ExtResource("font")
 
-[node name="Divider3" type="TextureRect" parent="m_MainMenu"]
+[node name="Divider3" type="TextureRect" parent="Frame/m_MainMenu"]
 offset_left = 692.0
 offset_top = 389.0
 offset_right = 933.0
@@ -147,7 +162,7 @@ texture = ExtResource("separator")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="m_Notice" type="Button" parent="m_MainMenu"]
+[node name="m_Notice" type="Button" parent="Frame/m_MainMenu"]
 mouse_default_cursor_shape = 2
 offset_left = 692.0
 offset_top = 408.0
@@ -157,7 +172,7 @@ focus_mode = 0
 text = "游戏须知"
 theme_override_fonts/font = ExtResource("font")
 
-[node name="Divider4" type="TextureRect" parent="m_MainMenu"]
+[node name="Divider4" type="TextureRect" parent="Frame/m_MainMenu"]
 offset_left = 692.0
 offset_top = 451.0
 offset_right = 933.0
@@ -167,13 +182,13 @@ texture = ExtResource("separator")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="m_PlayerCountMenu" type="Control" parent="."]
+[node name="m_PlayerCountMenu" type="Control" parent="Frame"]
 visible = false
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="m_Single" type="Button" parent="m_PlayerCountMenu"]
+[node name="m_Single" type="Button" parent="Frame/m_PlayerCountMenu"]
 mouse_default_cursor_shape = 2
 offset_left = 692.0
 offset_top = 160.0
@@ -183,7 +198,7 @@ focus_mode = 0
 text = "单人游戏"
 theme_override_fonts/font = ExtResource("font")
 
-[node name="m_Double" type="Button" parent="m_PlayerCountMenu"]
+[node name="m_Double" type="Button" parent="Frame/m_PlayerCountMenu"]
 mouse_default_cursor_shape = 2
 offset_left = 692.0
 offset_top = 222.0
@@ -193,7 +208,7 @@ focus_mode = 0
 text = "双人游戏"
 theme_override_fonts/font = ExtResource("font")
 
-[node name="m_Back" type="Button" parent="m_PlayerCountMenu"]
+[node name="m_Back" type="Button" parent="Frame/m_PlayerCountMenu"]
 mouse_default_cursor_shape = 2
 offset_left = 692.0
 offset_top = 284.0
@@ -203,14 +218,14 @@ focus_mode = 0
 text = "返回"
 theme_override_fonts/font = ExtResource("font")
 
-[node name="StatusScroll" type="ScrollContainer" parent="."]
+[node name="StatusScroll" type="ScrollContainer" parent="Frame"]
 offset_left = 678.0
 offset_top = 475.0
 offset_right = 932.0
 offset_bottom = 575.0
 horizontal_scroll_mode = 0
 
-[node name="m_Status" type="Label" parent="StatusScroll"]
+[node name="m_Status" type="Label" parent="Frame/StatusScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

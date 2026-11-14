@@ -2,6 +2,123 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 美术前置 A0：全量素材盘点与扩展计划（2026-11-14）
+
+**A0盘点/方案已完成，停在用户审查点；尚未制作或接入合格扩图。** 用户最新要求先搁置跨平台代码实施，先定美术方案、分批优化，再恢复手机适配。Windows按1920×1080/16:9，横屏手机覆盖16:9～21:9，平板另行适配。T1已获用户审查通过；T2已有UI修改保留但未完成，T3～T5不推进。依据当前指令及集中规范00/40/50章，复用原资源、场景、视差与动画导出入口，不新建运行时适配层。
+
+### 改动与盘点结论
+
+本阶段仅修订`Docs/CrossPlatformPlan.md`、`Docs/WorkingNotes.md`及本页；覆盖截图、逐文件清单和临时探针均在忽略的`.godot/validation/`。没有替换原始美术、切换正式资源引用或修改生产脚本；此前T2工作区差异原样保留，不将本次审查记为T2完成。
+
+已读完`Docs/gpt.md`，对其建议逐项裁决，详细规格和批次只维护在[计划2.12](CrossPlatformPlan.md#212-美术前置阶段完整清单扩展规格与分批审查)：保留940×590逻辑核心；将来21:9上限需1377，替代原1312；静态图制作2倍母版，不统一提升角色/图集/48帧动画。原画文件保留，1倍运行候选图的保护区要求解码像素差0，2倍母版不冒称低清原画已经增加真实细节。
+
+| 核对项目 | 结果与证据 |
+| --- | --- |
+| 全部图像源文件 | **661项：656 PNG、1 JPG、4 SVG**；全量尺寸/格式/分类与直接引用明细见[CSV](../Godot/GodotProject/.godot/validation/art_expansion_audit_20261114/classified_inventory.csv)和同目录JSON。扫描1182份场景、资源、脚本等引用文本；自动资源常量不等同于实际消费者。 |
+| 确定静态扩图 | **9张：4张UI背景+5张共享天空**。普通UI候选画布1408×590/母版2816×1180，标题因源图941×591另为1409×591/2818×1182；天空向右扩到2048×690/母版4096×1380，保留注册点与原视差。 |
+| 其余分类 | **48帧无双覆盖适配、4张短关条件候选、600张保持**；另需新增1套选角页侧景。无双先查既有导出源和公共背景，禁止48次独立AI重绘；短关不因画图加长物理地形。 |
+| 原画与alpha核对 | [屏幕美术接触表](../Godot/GodotProject/.godot/validation/art_expansion_audit_20261114/screen_art_contact.png)、`screen_art_alpha.json`、`musou_48_frames.png`。透明面板、图集padding和原画内部黑色构图不是待填空白；牛魔局部实体效果不是屏幕背景。 |
+| 11关几何 | 原生引擎分离实例化11个正式关卡，输出`scene_geometry.json`；原日志：`ART GEOMETRY PASS: 11 levels, detached instantiation only`，进程退出0。 |
+| 固定尺寸原生渲染 | **11关×940/1377宽×起点/全场景右端=44张**，每张尺寸匹配，退出0；`ART LEVEL EDGE CAPTURE PASS: 11 levels x 2 widths x 2 edges; visual layers only, no gameplay`。最终案例stderr为空。 |
+| 素材覆盖缺口 | 940宽的11关右端均无清屏色；1377宽的1～10关右端有未覆盖区域，11关由天空覆盖。[端部对照图](../Godot/GodotProject/.godot/validation/art_expansion_audit_20261114/level_end_contact_final.png)的洋红是进程内临时清屏色；数量见`level_edge_coverage_final.json`。这是全场景极限视觉检查，实际末阶段可能更早停止，不充作通关/相机行为验收。 |
+
+证据根目录：`Godot/GodotProject/.godot/validation/art_expansion_audit_20261114/`；原Godot日志位于`movement_presets/art_geometry_audit_20261114/`与`movement_presets/art_level_edges_final_20261114/`，每例独立APPDATA。对应探针入口为：
+
+```text
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_geometry_audit_20261114 --headless --script res://.godot/validation/art_expansion_audit_20261114/scene_geometry.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_level_edges_final_20261114 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_expansion_audit_20261114/render_level_edges_fixed.gd
+python -X utf8 Godot/GodotProject/.godot/validation/art_expansion_audit_20261114/verify_audit.py
+git diff --check
+```
+
+### 验证边界与未完成项
+
+首个窗口尺寸切换探针的两张截图尺寸受系统影响，已由固定SubViewport结果取代；中间案例`art_level_edges_fixed_20261114`误用了不存在的`own_world_2d`，脚本报错并超时退出1，不计通过。临时脚本改为独立`World2D`后，最终案例取得上述44张有效图；正式场景没有为探针改动。只读盘点及文档修改不重跑构建/规则套件，不将此前T2的339/197/19与烟测当作本次重跑结果。
+
+最终源文件校验为`ART AUDIT SOURCE INTEGRITY PASS`：**661/661原图及3534/3534项目已跟踪文件与本次审计基线相同，HEAD保持**。用户暂存内容按同口径`git diff --cached --binary`校验，SHA256仍为`353b3044d150adb36a900400949ceaa923228f4bc60ed5038229b6104935fdd1`，路径仍仅CoopImplementationPlan、CrossPlatformPlan；基线字段虽名为index_sha256，实际保存的是该diff散列，首版误与index文件自身比较，现已纠正。额外比较较早T2基线发现正式存档5项不同，未恢复用户文件；现场有17:23启动的Godot编辑器，正式Catalogue修改时间为17:30，未据此认定变化来源。本次未执行暂存/还原或正式存档写入，不声称正式存档仍与旧基线逐字节一致。完整结果在`verification.json`；文档`git diff --check`退出0，661项分类计数、UTF-8、代码围栏与审查图片路径核对通过。
+
+按用户授权，既有ECPA编辑接口此前已成功生成两次草稿，但保护区与接缝未过审，未作为成品；本次A0没有继续生成。下一批拟只做地图样稿，附保护区检查、2倍母版与16:9/20:9/21:9预览，先审图再批量。短关镜头范围、无双分层可行性和Android实际纹理内存仍待对应批次验证；手机配置、触屏与导出继续暂缓。
+
+**后续Git审查，尚未执行回退：** 用户要求先决定现有差异取舍，再进入美术规划。9个UI场景的变化为锚点、父容器、相应局部位置与节点路径；原贴图、角色尺度和窗口业务没有替换。10份编辑器验证脚本及11份Debug烟测随节点层级调整，其中还包括局部矩形/连击位置断言和临时移动诊断；不能将它们全部描述成纯字符串替换。生成BattleForm的规范化文本与HEAD一致。建议保留合理UI改动及配套验证，可单独清理临时移动日志；原两份暂存计划与T1返回键设置保留。本步骤仅作只读代码审查及本页/WorkingNotes记录，未改分辨率、未开始批量高清化。用户新要求是评估全部素材的高清提升，原600张“不扩画布”不等于“不评估高清化”；接下来另行修订原图像素保护与高清中心内容的验收口径，不沿用旧A1规格直接生成。
+
+## 跨平台 T1：输入核对与 Windows 基线（2026-11-14）
+
+**T1 已完成，等待用户审查；T2～T5 未开始。** 本轮依据当前用户指令、[CrossPlatformPlan](CrossPlatformPlan.md) T1 及集中规范第00/10/40/50章执行。只新增三项生产配置，不改玩法、键位、相机、场景、资源、存档或集中规范；没有新增生产 C#、节点、输入通路或管理器。开工 HEAD 为 `44d615e0e7d583922fa78c7b47ef7ee4aaa88273`；用户原已暂存 CoopImplementationPlan 和 CrossPlatformPlan，索引由用户持有，本轮无 Git 写操作。
+
+### 实际项目事实与设计核对
+
+- `S:/Godot4/Godot4CSharp_console.exe --version` 实测 `4.7.2.stable.mono.official.ed1daf0bf`；`GodotProject.csproj` 使用 `Godot.NET.Sdk/4.7.2`、`net10.0`、Newtonsoft.Json 13.0.4。运行时业务为 C#；编辑器工具另有 GDScript，维护工具另有 Python。
+- GGF 以源码保存在 `Framework/GameFramework` 与 `Framework/GodotGameFrameworkCore`，来源声明见仓库 README 的 `NuoYan/GGF` 链接；程序集版本为 `0.0.0.0`，未发现可证明上游 Tag/Commit 的依赖锁定。本次 Framework Git tree 为 `44a6ce9be13d862f4b6021f7759303924cf2f569`，不将其猜成某个上游发行版本。QF 为本地 `GameScripts/Arch/` 职责契约和 GGF FSM 适配，没有独立 QFramework 包版本。
+- 调用链为原生动作 → `InputSystem.GodotInputSource` → 每英雄 `HeroActionData` → 身体/技能状态；开窗快捷键读 `InputEvent.IsActionPressed`。已核对 `TouchScreenButton` 源码同时更新动作状态并推送 `InputEventAction`，可直接汇入现有 InputMap；模态窗口遮挡仍按计划由 GGF 窗口生命周期隐藏触屏层，不能只依赖 GUI 遮罩。
+- 原生引擎探针输出 `VIRTUAL_JOYSTICK true`。4.7.2 源码没有方向扇区过滤，斜上横移可能干扰当前上方向组合技，保留四方向按钮方案。技能键继续按计划使用图标，布局在 T4 实施。
+- 查阅 Godot 4.7 官方分辨率文档、4.7/4.7.2 输入及渲染源码、Godot 官方 platformer 输入示例；大型开源对照为 SuperTux 的共享控制器/Android 构建和 Mindustry 的 MobileInput/DesktopInput。共用玩法和状态、分别组织设备输入与视图是可复用的原则，不照搬其他引擎的输入类。未找到可核实且操作相符的开源造梦手游；本次消息没有布局截图，不声称验证了其按键设计。源链接与研究边界已补入计划 2.11，下载的源码只保存在本地验证目录。
+
+### 文件与 T1 子任务
+
+| 文件 | 本轮改动 |
+| --- | --- |
+| `Godot/GodotProject/project.godot` | T1-2：显式开启 `pointing/emulate_mouse_from_touch`、关闭 `pointing/android/enable_long_press_as_right_click`，并将 `application/config/quit_on_go_back` 设为 false；不提交鼠标模拟触摸。 |
+| `Docs/CrossPlatformPlan.md` | 标记 T1 完成；补充已核实来源；按用户确认纠正 D-2/T2-3 及关联黑边描述；注明截图共享路径、视口与整窗截图的区别及下阶段待审查事项。 |
+| `Docs/WorkingNotes.md` | 记录分阶段交付边界、架构取舍、用户对极宽屏黑边的确认与本轮最终进度。 |
+| `Docs/Validation.md` | 在既有记录页维护本次命令、实际键位、截图、结果和未实施事项，不另建交付记录。 |
+
+**T1-1 完成：** `project.godot` 显式定义的30个动作全部核对，13个业务动作各有P1/P2版本，另4个UI导航动作。实际引擎探针列出事件文本如下；键盘事件、设备编号、死区及UI手柄事件原样保留。
+
+| 动作 | P1实际键 | P2实际键 | 触屏计划 |
+| --- | --- | --- | --- |
+| `move_left` / `move_right` / `move_down` | A / D / S | ← / → / ↓ | 方向箭头 |
+| `interact` | W | ↑ | 上箭头 |
+| `jump` / `attack` | K / J | 小键盘2 / 1 | 大按钮 |
+| `skill_1` / `skill_2` / `skill_3` / `skill_4` | U / I / O / L | 小键盘4 / 5 / 6 / 3 | 图标按钮 |
+| `musou` | 空格 | 小键盘0 | 无双按钮 |
+| `inventory_toggle` / `skill_toggle` | C / V | 小键盘÷ / × | 已有HUD菜单事件 |
+| `ui_left` / `ui_right` / `ui_up` / `ui_down` | 方向键及 A / D / W / S | 共用UI映射 | 不另建触屏动作；原D-pad/左摇杆事件保留 |
+
+**T1-2 完成：** 引擎探针实际输出三项新设置为 `true / false / false`，`emulate_touch_from_mouse=false`，根窗口 `ContentScaleSize=(940,590)`、`ContentScaleAspect=Keep`。生产文件diff仅三项设置（6行含节名/空行），整个 `[input]` 段及 `[display]` 段未变。
+
+**T1-3 完成：** 三种窗口尺寸按顺序运行完整UI烟测，正常退出后立即将本次产生的png复制到独立尺寸目录；各42张原始图，共126张。首轮曾同时启动三个尺寸，发现夹具同名输出会互相覆盖后主动终止，原案例 `xplat_t1_base_940/1920/2400` 仅保留取消日志，不作为通过证据。最终有效案例均带 `_20261114` 后缀，未修改夹具或减少断言。
+
+### 命令与实际结果
+
+仓库根执行；构建/规则/引用日志在 `Godot/GodotProject/.godot/validation/xplat_t1_20261114/`，Godot原始日志在 `.godot/validation/movement_presets/<案例>/`。各Godot案例使用 runner 独立APPDATA，未打开正式存档写入。
+
+| 命令 | 实际结果 |
+| --- | --- |
+| `dotnet build Godot/GodotProject --no-restore -v quiet` | 退出0，0错误/0警告（本次增量构建，不表示历史警告已修复）。 |
+| `dotnet test Tests/ProfileTests/ProfileTests.csproj --no-restore -v quiet` | 退出0，339/339，失败0、跳过0；保留既有NU1900。 |
+| `dotnet test Tests/BattleTests/BattleTests.csproj --no-restore -v quiet` | 退出0，197/197，失败0、跳过0；保留NU1900及测试编译上下文/导出字段警告。 |
+| `dotnet test Tests/LevelTests/LevelTests.csproj --no-restore -v quiet` | 退出0，19/19，失败0、跳过0；保留既有NU1900。 |
+| `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py xplat_t1_scan_20261114 --headless --editor --build-solutions --quit --no-window` | 退出0，完成脚本扫描与.NET构建；保留既有 ComponentInsoector/ArchiveSettingInspectorPlugin 对 RefCounted 调用 free 的关停诊断。 |
+| `python Tools/ProjectMaintenance/validate_game_references.py` | 退出0，`REFERENCE PASS: 2284 serialized paths and 391 UIDs`。当前HEAD与工作树均391个相同UID路径；计划393为旧数字，HEAD已删除ArchiveUtility和PoolContainer两个UID，本轮没有资源回归。 |
+| `python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py xplat_t1_input_probe_20261114 --headless --script res://.godot/validation/xplat_t1_20261114/probe.gd` | 退出0，确认原生VirtualJoystick、实际InputMap事件、三项新设置及原显示设置。探针仅在忽略的验证目录。 |
+
+三组截图的共同完整命令为：
+
+```text
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py <案例> --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --resolution <尺寸> --quit-after 30000 -- --smoketest=ui
+```
+
+| 案例 / 尺寸 | 结果 | 截图目录（相对Godot工程） |
+| --- | --- | --- |
+| `xplat_t1_base_940_20261114` / `940x590` | 退出0，完整 `SMOKE PASS`、`SMOKE-NODE-POOL PASS`；386.0秒，42张原始图。 | `.godot/validation/xplat_baseline/940x590/` |
+| `xplat_t1_base_1920_20261114` / `1920x1080` | 退出0，完整 `SMOKE PASS`、`SMOKE-NODE-POOL PASS`；395.4秒，42张原始图。 | `.godot/validation/xplat_baseline/1920x1080/` |
+| `xplat_t1_base_2400_20261114` / `2400x1080` | 退出0，完整 `SMOKE PASS`、`SMOKE-NODE-POOL PASS`；391.5秒，42张原始图。 | `.godot/validation/xplat_baseline/2400x1080/` |
+
+画面复查：三种尺寸的 `inventory_form.png` 构图一致，宽尺寸不增加世界视野；另复查2400组的 `skills_learned.png`。这些是既有UI的基线，不声称手机适配已完成。原始视口图分别为940×590或1720×1080，不含窗口留边；每组两个`*_scaled.png`来自夹具主动临时调整到1175×738并恢复原窗口的专项，图像为1175×737，不归作目标尺寸画面。原图清单、尺寸和SHA256见本地 `xplat_t1_20261114/baseline_manifest.json`。
+
+审查入口为 [三种比例对照图](../Godot/GodotProject/.godot/validation/xplat_baseline/window_ratio_comparison.png)；它以真实背包视口截图重建当前keep模式的左右留边（0 / 100 / 340px），图上已标明“非原生窗口截屏”。各尺寸目录的 `window_ratio_reference.png` 同属派生对照图，不计入126张原始截图。原图代表为 [940背包](../Godot/GodotProject/.godot/validation/xplat_baseline/940x590/inventory_form.png)、[1920背包](../Godot/GodotProject/.godot/validation/xplat_baseline/1920x1080/inventory_form.png)、[2400背包](../Godot/GodotProject/.godot/validation/xplat_baseline/2400x1080/inventory_form.png)。
+
+日志包含预期错类型池回收、坏主存档回退备份、BattleForm装配失败/清理注入；无`SMOKE FAIL`。正常退出仍有资源诊断：三组分别为Texture RID 23/27/27、ShapedText RID各8、Font RID各2、CanvasItem各38、ObjectDB 143/163/163、仍在用资源各10。本轮保留这些既有诊断类型，不宣称日志无错误，也不将它们掩盖成已修复。
+
+### 计划勘误、范围与待审查项
+
+1. **已按用户决定纠正：** 4.7.2 GLES3源码直接将视口外区域清黑，`default_clear_color` 无法改变窗口留边。用户选择保留1312视野上限、极宽屏接受少量黑边，故修正计划D-2/T2-3及关联描述，不增加额外视口或装饰节点；实际宽屏开关仍未实施。
+2. **T2开始前待裁决：** 原验收允许T2启用宽屏后关卡初始化失败；部分940宽阶段在1049备用视野也会失败。建议T2先完成UI锚点，将实际keep_height/上限启用和宽屏玩法验收放到T3数据就绪时执行。未擅自改写这部分任务顺序或修改任何关卡。
+3. **未实施：** T2～T5、触屏布局与图标按钮、Android导出/真机多点触控、窗口安全区、逐关宽屏验收；本次Windows自动烟测不冒称Android或正式键盘上手验收。
+4. **规范冲突已报告：** 当前第00章/README仍声明学习项目禁止公开发布，而用户提出发布目标。适配工作继续；公开发布范围须在发布前裁决，本轮不自行删除规范或执行公开发布。
+
+最终自检覆盖项目diff、原输入/显示段、只读目录、场景/资源引用、正式12份存档与用户暂存索引；无重复实现、新旧输入通路并存或信号/对象生命周期的生产变动。最终差异与保持性结果见本地 `xplat_t1_20261114/final_scope.log`。
+
 ## 代码去冗余与架构精简（2026-11-11）
 
 按用户新目标“优先复用、合并和删除，保持原功能”继续处理**全项目手写业务C#**。本轮基线为上一轮120份变更已由用户暂存后的工作树，HEAD仍为`c82524b`；不是用上轮块体展开前的源码作比较。用户索引由用户持有，执行者无Git写操作。范围仍为TheGame非生成业务与EditorScripts手写源码；受影响的Debug/测试调用一起迁移。基线/实际源码/同口径Roslyn统计及日志在`.godot/validation/code_reduction_20261111/`，Godot案例原始日志在`movement_presets/code_reduction_*_20261111/`。

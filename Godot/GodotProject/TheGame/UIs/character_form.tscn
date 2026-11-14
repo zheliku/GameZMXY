@@ -83,27 +83,47 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("theme")
 script = ExtResource("script")
-_wukong = NodePath("Roles/m_Wukong")
-_sanzang = NodePath("Roles/m_Sanzang")
-_playerOne = NodePath("m_PlayerOne")
-_playerTwo = NodePath("m_PlayerTwo")
-_reselect = NodePath("Actions/m_Reselect")
-_back = NodePath("Actions/m_Back")
+_wukong = NodePath("Frame/Roles/m_Wukong")
+_sanzang = NodePath("Frame/Roles/m_Sanzang")
+_playerOne = NodePath("Frame/m_PlayerOne")
+_playerTwo = NodePath("Frame/m_PlayerTwo")
+_reselect = NodePath("Frame/Actions/m_Reselect")
+_back = NodePath("Frame/Actions/m_Back")
 
 [node name="Background" type="ColorRect" parent="." unique_id=381968765]
-layout_mode = 0
-offset_right = 940.0
-offset_bottom = 590.0
+layout_mode = 1
+offset_right = 0.0
+offset_bottom = 0.0
 mouse_filter = 2
 color = Color(0.024, 0.004, 0.004, 1)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
 
-[node name="Roles" type="Control" parent="." unique_id=1070469315]
+[node name="Frame" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -470.0
+offset_top = -295.0
+offset_right = 470.0
+offset_bottom = 295.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Roles" type="Control" parent="Frame" unique_id=1070469315]
 anchors_preset = 0
 offset_right = 940.0
 offset_bottom = 590.0
 mouse_filter = 2
 
-[node name="m_Wukong" type="TextureButton" parent="Roles" unique_id=2124743283]
+[node name="m_Wukong" type="TextureButton" parent="Frame/Roles" unique_id=2124743283]
 material = SubResource("wukong_material")
 layout_mode = 0
 offset_right = 235.0
@@ -114,7 +134,7 @@ texture_normal = SubResource("wukong_card")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="m_Sanzang" type="TextureButton" parent="Roles" unique_id=176568400]
+[node name="m_Sanzang" type="TextureButton" parent="Frame/Roles" unique_id=176568400]
 material = SubResource("sanzang_material")
 layout_mode = 0
 offset_left = 235.0
@@ -126,7 +146,7 @@ texture_normal = SubResource("sanzang_card")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="m_Bajie" type="TextureRect" parent="Roles" unique_id=1504500255]
+[node name="m_Bajie" type="TextureRect" parent="Frame/Roles" unique_id=1504500255]
 material = SubResource("bajie_material")
 layout_mode = 0
 offset_left = 470.0
@@ -136,7 +156,7 @@ mouse_filter = 2
 texture = SubResource("bajie_card")
 expand_mode = 1
 
-[node name="m_Wujing" type="TextureRect" parent="Roles" unique_id=59011332]
+[node name="m_Wujing" type="TextureRect" parent="Frame/Roles" unique_id=59011332]
 material = SubResource("wujing_material")
 layout_mode = 0
 offset_left = 705.0
@@ -146,7 +166,7 @@ mouse_filter = 2
 texture = SubResource("wujing_card")
 expand_mode = 1
 
-[node name="m_PlayerOne" type="Label" parent="." unique_id=717879826]
+[node name="m_PlayerOne" type="Label" parent="Frame" unique_id=717879826]
 visible = false
 layout_mode = 0
 offset_left = 61.0
@@ -161,7 +181,7 @@ theme_override_font_sizes/font_size = 52
 text = "1P"
 horizontal_alignment = 1
 
-[node name="m_PlayerTwo" type="Label" parent="." unique_id=717879827]
+[node name="m_PlayerTwo" type="Label" parent="Frame" unique_id=717879827]
 visible = false
 layout_mode = 0
 offset_left = 61.0
@@ -176,7 +196,7 @@ theme_override_font_sizes/font_size = 52
 text = "2P"
 horizontal_alignment = 1
 
-[node name="Actions" type="HBoxContainer" parent="."]
+[node name="Actions" type="HBoxContainer" parent="Frame"]
 layout_mode = 0
 offset_left = 366.0
 offset_top = 556.0
@@ -186,7 +206,7 @@ mouse_filter = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="m_Reselect" type="Button" parent="Actions" unique_id=717879828]
+[node name="m_Reselect" type="Button" parent="Frame/Actions" unique_id=717879828]
 visible = false
 custom_minimum_size = Vector2(94, 30)
 layout_mode = 2
@@ -199,7 +219,7 @@ theme_override_styles/hover = SubResource("action_hover")
 theme_override_styles/pressed = SubResource("action_hover")
 text = "重选"
 
-[node name="m_Back" type="Button" parent="Actions" unique_id=717879829]
+[node name="m_Back" type="Button" parent="Frame/Actions" unique_id=717879829]
 custom_minimum_size = Vector2(94, 30)
 layout_mode = 2
 focus_mode = 0

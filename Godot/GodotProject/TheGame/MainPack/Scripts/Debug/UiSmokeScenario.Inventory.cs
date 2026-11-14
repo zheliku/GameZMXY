@@ -409,7 +409,7 @@ public sealed partial class UiSmokeScenario
         string closedValue = form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text;
         flow.GetModel<ProfileModel>().RestoreSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), originalSoul);
         Check(form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text == closedValue, "关闭后背包仍订阅钱包");
-        battleForm.GetNode<TextureButton>("MenuPanel/m_InventoryButton").EmitSignal(BaseButton.SignalName.Pressed);
+        battleForm.GetNode<TextureButton>("LeftAnchor/MenuPanel/m_InventoryButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => form.Visible, "背包未复用原窗口");
         Check(!weaponBackground.GetShaderParameter("occupied").AsBool() && !armorBackground.GetShaderParameter("occupied").AsBool(),
             "背包复用残留穿戴背景状态");

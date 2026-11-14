@@ -53,16 +53,35 @@ grow_vertical = 2
 mouse_filter = 2
 theme = ExtResource("18_theme")
 script = ExtResource("1_script")
-_status = NodePath("StatusPanel")
-_menu = NodePath("MenuPanel")
-_go = NodePath("m_Go")
+_status = NodePath("LeftAnchor/StatusPanel")
+_menu = NodePath("LeftAnchor/MenuPanel")
+_go = NodePath("RightAnchor/m_Go")
 _encounterHealthBar = NodePath("m_EncounterHealthBar")
 _musouActivation = NodePath("m_MusouActivation")
-_combo = NodePath("m_Combo")
-_statusP2 = NodePath("StatusPanelP2")
-_menuP2 = NodePath("MenuPanelP2")
+_combo = NodePath("RightAnchor/m_Combo")
+_statusP2 = NodePath("RightAnchor/StatusPanelP2")
+_menuP2 = NodePath("RightAnchor/MenuPanelP2")
 
-[node name="StatusPanel" type="Sprite2D" parent="." unique_id=1876891247 node_paths=PackedStringArray("_hpBar", "_mpBar", "_expBar", "_levelLabel", "_portrait")]
+[node name="LeftAnchor" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 470.0
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="RightAnchor" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -470.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StatusPanel" type="Sprite2D" parent="LeftAnchor" unique_id=1876891247 node_paths=PackedStringArray("_hpBar", "_mpBar", "_expBar", "_levelLabel", "_portrait")]
 position = Vector2(116, 44)
 texture = ExtResource("2_status")
 script = ExtResource("status_panel")
@@ -73,7 +92,7 @@ _levelLabel = NodePath("m_LevelLabel")
 _portrait = NodePath("Head")
 _portraits = Dictionary[int, Texture2D]({1: ExtResource("6_head"), 2: ExtResource("head_tangseng")})
 
-[node name="m_HpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=172288184 node_paths=PackedStringArray("_text")]
+[node name="m_HpBar" type="TextureProgressBar" parent="LeftAnchor/StatusPanel" unique_id=172288184 node_paths=PackedStringArray("_text")]
 offset_left = -33.0
 offset_top = -30.0
 offset_right = 115.0
@@ -86,7 +105,7 @@ texture_progress_offset = Vector2(-3, 0)
 script = ExtResource("14_resourcebar")
 _text = NodePath("m_HpText")
 
-[node name="m_HpText" type="Label" parent="StatusPanel/m_HpBar" unique_id=1939437063]
+[node name="m_HpText" type="Label" parent="LeftAnchor/StatusPanel/m_HpBar" unique_id=1939437063]
 layout_mode = 0
 offset_left = 4.0
 offset_top = -2.0
@@ -99,7 +118,7 @@ theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_LevelLabel" type="Label" parent="StatusPanel" unique_id=994903837]
+[node name="m_LevelLabel" type="Label" parent="LeftAnchor/StatusPanel" unique_id=994903837]
 offset_left = -108.0
 offset_top = 16.0
 offset_right = -83.0
@@ -110,7 +129,7 @@ text = "1"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_MpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=118777741 node_paths=PackedStringArray("_text")]
+[node name="m_MpBar" type="TextureProgressBar" parent="LeftAnchor/StatusPanel" unique_id=118777741 node_paths=PackedStringArray("_text")]
 offset_left = -28.0
 offset_top = -11.0
 offset_right = 117.0
@@ -123,7 +142,7 @@ texture_progress_offset = Vector2(-2, 0)
 script = ExtResource("14_resourcebar")
 _text = NodePath("MpText")
 
-[node name="MpText" type="Label" parent="StatusPanel/m_MpBar" unique_id=651970840]
+[node name="MpText" type="Label" parent="LeftAnchor/StatusPanel/m_MpBar" unique_id=651970840]
 layout_mode = 0
 offset_top = -2.0
 offset_right = 143.0
@@ -134,7 +153,7 @@ theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_ExpBar" type="TextureProgressBar" parent="StatusPanel" unique_id=86960589 node_paths=PackedStringArray("_text")]
+[node name="m_ExpBar" type="TextureProgressBar" parent="LeftAnchor/StatusPanel" unique_id=86960589 node_paths=PackedStringArray("_text")]
 offset_left = -32.0
 offset_top = 8.0
 offset_right = 119.0
@@ -148,7 +167,7 @@ script = ExtResource("14_resourcebar")
 _text = NodePath("ExpText")
 _fullAtZeroMaximum = true
 
-[node name="ExpText" type="Label" parent="StatusPanel/m_ExpBar" unique_id=1604997483]
+[node name="ExpText" type="Label" parent="LeftAnchor/StatusPanel/m_ExpBar" unique_id=1604997483]
 layout_mode = 0
 offset_left = 2.0
 offset_top = -2.0
@@ -159,15 +178,15 @@ theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Head" type="Sprite2D" parent="StatusPanel" unique_id=2077905002]
+[node name="Head" type="Sprite2D" parent="LeftAnchor/StatusPanel" unique_id=2077905002]
 position = Vector2(-63, -8)
 texture = ExtResource("6_head")
 
-[node name="StatusLabel" type="Sprite2D" parent="StatusPanel" unique_id=1928995609]
+[node name="StatusLabel" type="Sprite2D" parent="LeftAnchor/StatusPanel" unique_id=1928995609]
 position = Vector2(-19, -5)
 texture = ExtResource("3_label")
 
-[node name="MenuPanel" type="Sprite2D" parent="." unique_id=1301947710 node_paths=PackedStringArray("_wsBar", "_wsMax", "_settingsButton", "_inventoryButton", "_skillsButton", "_icons")]
+[node name="MenuPanel" type="Sprite2D" parent="LeftAnchor" unique_id=1301947710 node_paths=PackedStringArray("_wsBar", "_wsMax", "_settingsButton", "_inventoryButton", "_skillsButton", "_icons")]
 position = Vector2(90, 531)
 texture = ExtResource("7_menu")
 script = ExtResource("menu_panel")
@@ -179,11 +198,11 @@ _skillsButton = NodePath("m_SkillsButton")
 _skillIcons = ExtResource("official_skills")
 _icons = [NodePath("SkillBar/Skill1/Icon"), NodePath("SkillBar/Skill2/Icon"), NodePath("SkillBar/Skill3/Icon"), NodePath("SkillBar/Skill4/Icon"), NodePath("SkillBar/Skill5/Icon")]
 
-[node name="WsFrame" type="Sprite2D" parent="MenuPanel" unique_id=129619926]
+[node name="WsFrame" type="Sprite2D" parent="LeftAnchor/MenuPanel" unique_id=129619926]
 position = Vector2(113, 25)
 texture = ExtResource("ws_frame")
 
-[node name="m_WsBar" type="TextureProgressBar" parent="MenuPanel/WsFrame" unique_id=607998488]
+[node name="m_WsBar" type="TextureProgressBar" parent="LeftAnchor/MenuPanel/WsFrame" unique_id=607998488]
 offset_left = -130.0
 offset_top = -16.0
 offset_right = 91.0
@@ -197,12 +216,12 @@ texture_progress = ExtResource("official_ws_fill")
 texture_progress_offset = Vector2(-1, 9)
 script = ExtResource("14_resourcebar")
 
-[node name="WsGrey" type="Sprite2D" parent="MenuPanel" unique_id=553033620]
+[node name="WsGrey" type="Sprite2D" parent="LeftAnchor/MenuPanel" unique_id=553033620]
 position = Vector2(-58, -38)
 texture = ExtResource("official_ws_idle")
 centered = false
 
-[node name="m_WsMax" type="AnimatedSprite2D" parent="MenuPanel" unique_id=1981663794]
+[node name="m_WsMax" type="AnimatedSprite2D" parent="LeftAnchor/MenuPanel" unique_id=1981663794]
 visible = false
 position = Vector2(-103.75, -84.25)
 sprite_frames = ExtResource("official_ws_glow")
@@ -210,7 +229,7 @@ animation = &"full"
 frame_progress = 0.63037246
 centered = false
 
-[node name="SkillBar" type="Control" parent="MenuPanel" unique_id=1773880757]
+[node name="SkillBar" type="Control" parent="LeftAnchor/MenuPanel" unique_id=1773880757]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 18.0
@@ -219,76 +238,76 @@ offset_right = 223.0
 offset_bottom = 20.0
 mouse_filter = 2
 
-[node name="Skill1" type="Control" parent="MenuPanel/SkillBar" unique_id=234089603]
+[node name="Skill1" type="Control" parent="LeftAnchor/MenuPanel/SkillBar" unique_id=234089603]
 anchors_preset = 0
 offset_right = 45.0
 offset_bottom = 45.0
 mouse_filter = 1
 
-[node name="Icon" type="TextureRect" parent="MenuPanel/SkillBar/Skill1" unique_id=1363619021]
+[node name="Icon" type="TextureRect" parent="LeftAnchor/MenuPanel/SkillBar/Skill1" unique_id=1363619021]
 layout_mode = 0
 offset_right = 45.0
 offset_bottom = 45.0
 mouse_filter = 2
 expand_mode = 1
 
-[node name="Skill2" type="Control" parent="MenuPanel/SkillBar" unique_id=972536323]
+[node name="Skill2" type="Control" parent="LeftAnchor/MenuPanel/SkillBar" unique_id=972536323]
 anchors_preset = 0
 offset_left = 40.0
 offset_right = 85.0
 offset_bottom = 45.0
 mouse_filter = 1
 
-[node name="Icon" type="TextureRect" parent="MenuPanel/SkillBar/Skill2" unique_id=1785308167]
+[node name="Icon" type="TextureRect" parent="LeftAnchor/MenuPanel/SkillBar/Skill2" unique_id=1785308167]
 layout_mode = 0
 offset_right = 45.0
 offset_bottom = 45.0
 mouse_filter = 2
 expand_mode = 1
 
-[node name="Skill3" type="Control" parent="MenuPanel/SkillBar" unique_id=487721365]
+[node name="Skill3" type="Control" parent="LeftAnchor/MenuPanel/SkillBar" unique_id=487721365]
 anchors_preset = 0
 offset_left = 80.0
 offset_right = 125.0
 offset_bottom = 45.0
 mouse_filter = 1
 
-[node name="Icon" type="TextureRect" parent="MenuPanel/SkillBar/Skill3" unique_id=819052988]
+[node name="Icon" type="TextureRect" parent="LeftAnchor/MenuPanel/SkillBar/Skill3" unique_id=819052988]
 layout_mode = 0
 offset_right = 45.0
 offset_bottom = 45.0
 mouse_filter = 2
 expand_mode = 1
 
-[node name="Skill4" type="Control" parent="MenuPanel/SkillBar" unique_id=906387504]
+[node name="Skill4" type="Control" parent="LeftAnchor/MenuPanel/SkillBar" unique_id=906387504]
 anchors_preset = 0
 offset_left = 119.95
 offset_right = 164.95
 offset_bottom = 45.0
 mouse_filter = 1
 
-[node name="Icon" type="TextureRect" parent="MenuPanel/SkillBar/Skill4" unique_id=16916380]
+[node name="Icon" type="TextureRect" parent="LeftAnchor/MenuPanel/SkillBar/Skill4" unique_id=16916380]
 layout_mode = 0
 offset_right = 45.0
 offset_bottom = 45.0
 mouse_filter = 2
 expand_mode = 1
 
-[node name="Skill5" type="Control" parent="MenuPanel/SkillBar" unique_id=286249604]
+[node name="Skill5" type="Control" parent="LeftAnchor/MenuPanel/SkillBar" unique_id=286249604]
 anchors_preset = 0
 offset_left = 159.95
 offset_right = 204.95
 offset_bottom = 45.0
 mouse_filter = 1
 
-[node name="Icon" type="TextureRect" parent="MenuPanel/SkillBar/Skill5" unique_id=59779554]
+[node name="Icon" type="TextureRect" parent="LeftAnchor/MenuPanel/SkillBar/Skill5" unique_id=59779554]
 layout_mode = 0
 offset_right = 45.0
 offset_bottom = 45.0
 mouse_filter = 2
 expand_mode = 1
 
-[node name="m_InventoryButton" type="TextureButton" parent="MenuPanel" unique_id=1185699338]
+[node name="m_InventoryButton" type="TextureButton" parent="LeftAnchor/MenuPanel" unique_id=1185699338]
 offset_left = -87.0
 offset_top = -2.0
 offset_right = -40.0
@@ -300,11 +319,11 @@ texture_pressed = ExtResource("inventory_normal")
 texture_hover = ExtResource("inventory_hover")
 texture_disabled = ExtResource("inventory_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanel/m_InventoryButton" unique_id=1212129767]
+[node name="Caption" type="Sprite2D" parent="LeftAnchor/MenuPanel/m_InventoryButton" unique_id=1212129767]
 position = Vector2(21, 37)
 texture = ExtResource("inventory_caption")
 
-[node name="m_SettingsButton" type="TextureButton" parent="MenuPanel" unique_id=2146763591]
+[node name="m_SettingsButton" type="TextureButton" parent="LeftAnchor/MenuPanel" unique_id=2146763591]
 offset_left = -55.0
 offset_top = 20.0
 offset_right = -8.0
@@ -316,11 +335,11 @@ texture_pressed = ExtResource("settings_normal")
 texture_hover = ExtResource("settings_hover")
 texture_disabled = ExtResource("settings_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanel/m_SettingsButton" unique_id=1390892457]
+[node name="Caption" type="Sprite2D" parent="LeftAnchor/MenuPanel/m_SettingsButton" unique_id=1390892457]
 position = Vector2(24, 30)
 texture = ExtResource("settings_caption")
 
-[node name="m_SkillsButton" type="TextureButton" parent="MenuPanel" unique_id=1008367831]
+[node name="m_SkillsButton" type="TextureButton" parent="LeftAnchor/MenuPanel" unique_id=1008367831]
 offset_left = -93.0
 offset_top = -39.0
 offset_right = -46.0
@@ -332,11 +351,11 @@ texture_pressed = ExtResource("skills_normal")
 texture_hover = ExtResource("skills_hover")
 texture_disabled = ExtResource("skills_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanel/m_SkillsButton" unique_id=1611086862]
+[node name="Caption" type="Sprite2D" parent="LeftAnchor/MenuPanel/m_SkillsButton" unique_id=1611086862]
 position = Vector2(22, 31)
 texture = ExtResource("skills_caption")
 
-[node name="WeaponButton" type="TextureButton" parent="MenuPanel" unique_id=1024875993]
+[node name="WeaponButton" type="TextureButton" parent="LeftAnchor/MenuPanel" unique_id=1024875993]
 offset_left = -65.0
 offset_top = -67.0
 offset_right = -18.0
@@ -348,11 +367,11 @@ texture_pressed = ExtResource("weapon_normal")
 texture_hover = ExtResource("weapon_hover")
 texture_disabled = ExtResource("weapon_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanel/WeaponButton" unique_id=29927435]
+[node name="Caption" type="Sprite2D" parent="LeftAnchor/MenuPanel/WeaponButton" unique_id=29927435]
 position = Vector2(19, 28)
 texture = ExtResource("weapon_caption")
 
-[node name="PetButton" type="TextureButton" parent="MenuPanel" unique_id=2126390473]
+[node name="PetButton" type="TextureButton" parent="LeftAnchor/MenuPanel" unique_id=2126390473]
 offset_left = -27.0
 offset_top = -71.0
 offset_right = 20.0
@@ -364,12 +383,12 @@ texture_pressed = ExtResource("pet_normal")
 texture_hover = ExtResource("pet_hover")
 texture_disabled = ExtResource("pet_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanel/PetButton" unique_id=2105120597]
+[node name="Caption" type="Sprite2D" parent="LeftAnchor/MenuPanel/PetButton" unique_id=2105120597]
 position = Vector2(22, 33)
 texture = ExtResource("pet_caption")
 
-[node name="StatusPanelP2" type="Sprite2D" parent="." unique_id=2146763592 node_paths=PackedStringArray("_hpBar", "_mpBar", "_expBar", "_levelLabel", "_portrait")]
-position = Vector2(824, 44)
+[node name="StatusPanelP2" type="Sprite2D" parent="RightAnchor" unique_id=2146763592 node_paths=PackedStringArray("_hpBar", "_mpBar", "_expBar", "_levelLabel", "_portrait")]
+position = Vector2(354, 44)
 scale = Vector2(-1, 1)
 texture = ExtResource("2_status")
 script = ExtResource("status_panel")
@@ -380,7 +399,7 @@ _levelLabel = NodePath("m_LevelLabel")
 _portrait = NodePath("Head")
 _portraits = Dictionary[int, Texture2D]({1: ExtResource("6_head"), 2: ExtResource("head_tangseng")})
 
-[node name="m_HpBar" type="TextureProgressBar" parent="StatusPanelP2" unique_id=2146763593 node_paths=PackedStringArray("_text")]
+[node name="m_HpBar" type="TextureProgressBar" parent="RightAnchor/StatusPanelP2" unique_id=2146763593 node_paths=PackedStringArray("_text")]
 offset_left = -33.0
 offset_top = -30.0
 offset_right = 115.0
@@ -393,7 +412,7 @@ texture_progress_offset = Vector2(-3, 0)
 script = ExtResource("14_resourcebar")
 _text = NodePath("m_HpText")
 
-[node name="m_HpText" type="Label" parent="StatusPanelP2/m_HpBar" unique_id=2146763594]
+[node name="m_HpText" type="Label" parent="RightAnchor/StatusPanelP2/m_HpBar" unique_id=2146763594]
 scale = Vector2(-1, 1)
 pivot_offset = Vector2(72.5, 9.5)
 layout_mode = 0
@@ -408,7 +427,7 @@ theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_LevelLabel" type="Label" parent="StatusPanelP2" unique_id=2146763595]
+[node name="m_LevelLabel" type="Label" parent="RightAnchor/StatusPanelP2" unique_id=2146763595]
 scale = Vector2(-1, 1)
 pivot_offset = Vector2(12.5, 10)
 offset_left = -108.0
@@ -421,7 +440,7 @@ text = "1"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_MpBar" type="TextureProgressBar" parent="StatusPanelP2" unique_id=2146763596 node_paths=PackedStringArray("_text")]
+[node name="m_MpBar" type="TextureProgressBar" parent="RightAnchor/StatusPanelP2" unique_id=2146763596 node_paths=PackedStringArray("_text")]
 offset_left = -28.0
 offset_top = -11.0
 offset_right = 117.0
@@ -434,7 +453,7 @@ texture_progress_offset = Vector2(-2, 0)
 script = ExtResource("14_resourcebar")
 _text = NodePath("MpText")
 
-[node name="MpText" type="Label" parent="StatusPanelP2/m_MpBar" unique_id=2146763597]
+[node name="MpText" type="Label" parent="RightAnchor/StatusPanelP2/m_MpBar" unique_id=2146763597]
 scale = Vector2(-1, 1)
 pivot_offset = Vector2(71.5, 9.5)
 layout_mode = 0
@@ -447,7 +466,7 @@ theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_ExpBar" type="TextureProgressBar" parent="StatusPanelP2" unique_id=2146763598 node_paths=PackedStringArray("_text")]
+[node name="m_ExpBar" type="TextureProgressBar" parent="RightAnchor/StatusPanelP2" unique_id=2146763598 node_paths=PackedStringArray("_text")]
 offset_left = -32.0
 offset_top = 8.0
 offset_right = 119.0
@@ -461,7 +480,7 @@ script = ExtResource("14_resourcebar")
 _text = NodePath("ExpText")
 _fullAtZeroMaximum = true
 
-[node name="ExpText" type="Label" parent="StatusPanelP2/m_ExpBar" unique_id=2146763599]
+[node name="ExpText" type="Label" parent="RightAnchor/StatusPanelP2/m_ExpBar" unique_id=2146763599]
 scale = Vector2(-1, 1)
 pivot_offset = Vector2(73, 9.5)
 layout_mode = 0
@@ -474,18 +493,18 @@ theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Head" type="Sprite2D" parent="StatusPanelP2" unique_id=2146763600]
+[node name="Head" type="Sprite2D" parent="RightAnchor/StatusPanelP2" unique_id=2146763600]
 scale = Vector2(-1, 1)
 position = Vector2(-63, -8)
 texture = ExtResource("6_head")
 
-[node name="StatusLabel" type="Sprite2D" parent="StatusPanelP2" unique_id=2146763601]
+[node name="StatusLabel" type="Sprite2D" parent="RightAnchor/StatusPanelP2" unique_id=2146763601]
 scale = Vector2(-1, 1)
 position = Vector2(-19, -5)
 texture = ExtResource("3_label")
 
-[node name="MenuPanelP2" type="Sprite2D" parent="." unique_id=2146763602 node_paths=PackedStringArray("_wsBar", "_wsMax", "_settingsButton", "_inventoryButton", "_skillsButton", "_icons")]
-position = Vector2(850, 531)
+[node name="MenuPanelP2" type="Sprite2D" parent="RightAnchor" unique_id=2146763602 node_paths=PackedStringArray("_wsBar", "_wsMax", "_settingsButton", "_inventoryButton", "_skillsButton", "_icons")]
+position = Vector2(380, 531)
 scale = Vector2(-1, 1)
 texture = ExtResource("7_menu")
 script = ExtResource("menu_panel")
@@ -497,11 +516,11 @@ _skillsButton = NodePath("m_SkillsButton")
 _skillIcons = ExtResource("official_skills")
 _icons = [NodePath("SkillBar/Skill1/Icon"), NodePath("SkillBar/Skill2/Icon"), NodePath("SkillBar/Skill3/Icon"), NodePath("SkillBar/Skill4/Icon"), NodePath("SkillBar/Skill5/Icon")]
 
-[node name="WsFrame" type="Sprite2D" parent="MenuPanelP2" unique_id=2146763603]
+[node name="WsFrame" type="Sprite2D" parent="RightAnchor/MenuPanelP2" unique_id=2146763603]
 position = Vector2(113, 25)
 texture = ExtResource("ws_frame")
 
-[node name="m_WsBar" type="TextureProgressBar" parent="MenuPanelP2/WsFrame" unique_id=2146763604]
+[node name="m_WsBar" type="TextureProgressBar" parent="RightAnchor/MenuPanelP2/WsFrame" unique_id=2146763604]
 offset_left = -130.0
 offset_top = -16.0
 offset_right = 91.0
@@ -515,14 +534,14 @@ texture_progress = ExtResource("official_ws_fill")
 texture_progress_offset = Vector2(-1, 9)
 script = ExtResource("14_resourcebar")
 
-[node name="WsGrey" type="Sprite2D" parent="MenuPanelP2" unique_id=2146763605]
+[node name="WsGrey" type="Sprite2D" parent="RightAnchor/MenuPanelP2" unique_id=2146763605]
 scale = Vector2(-1, 1)
 offset = Vector2(-68, 0)
 position = Vector2(-58, -38)
 texture = ExtResource("official_ws_idle")
 centered = false
 
-[node name="m_WsMax" type="AnimatedSprite2D" parent="MenuPanelP2" unique_id=2146763606]
+[node name="m_WsMax" type="AnimatedSprite2D" parent="RightAnchor/MenuPanelP2" unique_id=2146763606]
 scale = Vector2(-1, 1)
 offset = Vector2(-158, 0)
 visible = false
@@ -532,7 +551,7 @@ animation = &"full"
 frame_progress = 0.63037246
 centered = false
 
-[node name="SkillBar" type="Control" parent="MenuPanelP2" unique_id=2146763607]
+[node name="SkillBar" type="Control" parent="RightAnchor/MenuPanelP2" unique_id=2146763607]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 18.0
@@ -541,13 +560,13 @@ offset_right = 223.0
 offset_bottom = 20.0
 mouse_filter = 2
 
-[node name="Skill1" type="Control" parent="MenuPanelP2/SkillBar" unique_id=2146763608]
+[node name="Skill1" type="Control" parent="RightAnchor/MenuPanelP2/SkillBar" unique_id=2146763608]
 anchors_preset = 0
 offset_right = 45.0
 offset_bottom = 45.0
 mouse_filter = 1
 
-[node name="Icon" type="TextureRect" parent="MenuPanelP2/SkillBar/Skill1" unique_id=2146763609]
+[node name="Icon" type="TextureRect" parent="RightAnchor/MenuPanelP2/SkillBar/Skill1" unique_id=2146763609]
 scale = Vector2(-1, 1)
 pivot_offset = Vector2(22.5, 22.5)
 layout_mode = 0
@@ -556,14 +575,14 @@ offset_bottom = 45.0
 mouse_filter = 2
 expand_mode = 1
 
-[node name="Skill2" type="Control" parent="MenuPanelP2/SkillBar" unique_id=2146763610]
+[node name="Skill2" type="Control" parent="RightAnchor/MenuPanelP2/SkillBar" unique_id=2146763610]
 anchors_preset = 0
 offset_left = 40.0
 offset_right = 85.0
 offset_bottom = 45.0
 mouse_filter = 1
 
-[node name="Icon" type="TextureRect" parent="MenuPanelP2/SkillBar/Skill2" unique_id=2146763611]
+[node name="Icon" type="TextureRect" parent="RightAnchor/MenuPanelP2/SkillBar/Skill2" unique_id=2146763611]
 scale = Vector2(-1, 1)
 pivot_offset = Vector2(22.5, 22.5)
 layout_mode = 0
@@ -572,14 +591,14 @@ offset_bottom = 45.0
 mouse_filter = 2
 expand_mode = 1
 
-[node name="Skill3" type="Control" parent="MenuPanelP2/SkillBar" unique_id=2146763612]
+[node name="Skill3" type="Control" parent="RightAnchor/MenuPanelP2/SkillBar" unique_id=2146763612]
 anchors_preset = 0
 offset_left = 80.0
 offset_right = 125.0
 offset_bottom = 45.0
 mouse_filter = 1
 
-[node name="Icon" type="TextureRect" parent="MenuPanelP2/SkillBar/Skill3" unique_id=2146763613]
+[node name="Icon" type="TextureRect" parent="RightAnchor/MenuPanelP2/SkillBar/Skill3" unique_id=2146763613]
 scale = Vector2(-1, 1)
 pivot_offset = Vector2(22.5, 22.5)
 layout_mode = 0
@@ -588,14 +607,14 @@ offset_bottom = 45.0
 mouse_filter = 2
 expand_mode = 1
 
-[node name="Skill4" type="Control" parent="MenuPanelP2/SkillBar" unique_id=2146763614]
+[node name="Skill4" type="Control" parent="RightAnchor/MenuPanelP2/SkillBar" unique_id=2146763614]
 anchors_preset = 0
 offset_left = 119.95
 offset_right = 164.95
 offset_bottom = 45.0
 mouse_filter = 1
 
-[node name="Icon" type="TextureRect" parent="MenuPanelP2/SkillBar/Skill4" unique_id=2146763615]
+[node name="Icon" type="TextureRect" parent="RightAnchor/MenuPanelP2/SkillBar/Skill4" unique_id=2146763615]
 scale = Vector2(-1, 1)
 pivot_offset = Vector2(22.5, 22.5)
 layout_mode = 0
@@ -604,14 +623,14 @@ offset_bottom = 45.0
 mouse_filter = 2
 expand_mode = 1
 
-[node name="Skill5" type="Control" parent="MenuPanelP2/SkillBar" unique_id=2146763616]
+[node name="Skill5" type="Control" parent="RightAnchor/MenuPanelP2/SkillBar" unique_id=2146763616]
 anchors_preset = 0
 offset_left = 159.95
 offset_right = 204.95
 offset_bottom = 45.0
 mouse_filter = 1
 
-[node name="Icon" type="TextureRect" parent="MenuPanelP2/SkillBar/Skill5" unique_id=2146763617]
+[node name="Icon" type="TextureRect" parent="RightAnchor/MenuPanelP2/SkillBar/Skill5" unique_id=2146763617]
 scale = Vector2(-1, 1)
 pivot_offset = Vector2(22.5, 22.5)
 layout_mode = 0
@@ -620,7 +639,7 @@ offset_bottom = 45.0
 mouse_filter = 2
 expand_mode = 1
 
-[node name="m_InventoryButton" type="TextureButton" parent="MenuPanelP2" unique_id=2146763618]
+[node name="m_InventoryButton" type="TextureButton" parent="RightAnchor/MenuPanelP2" unique_id=2146763618]
 offset_left = -87.0
 offset_top = -2.0
 offset_right = -40.0
@@ -632,12 +651,12 @@ texture_pressed = ExtResource("inventory_normal")
 texture_hover = ExtResource("inventory_hover")
 texture_disabled = ExtResource("inventory_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanelP2/m_InventoryButton" unique_id=2146763619]
+[node name="Caption" type="Sprite2D" parent="RightAnchor/MenuPanelP2/m_InventoryButton" unique_id=2146763619]
 scale = Vector2(-1, 1)
 position = Vector2(21, 37)
 texture = ExtResource("inventory_caption")
 
-[node name="m_SettingsButton" type="TextureButton" parent="MenuPanelP2" unique_id=2146763620]
+[node name="m_SettingsButton" type="TextureButton" parent="RightAnchor/MenuPanelP2" unique_id=2146763620]
 offset_left = -55.0
 offset_top = 20.0
 offset_right = -8.0
@@ -649,12 +668,12 @@ texture_pressed = ExtResource("settings_normal")
 texture_hover = ExtResource("settings_hover")
 texture_disabled = ExtResource("settings_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanelP2/m_SettingsButton" unique_id=2146763621]
+[node name="Caption" type="Sprite2D" parent="RightAnchor/MenuPanelP2/m_SettingsButton" unique_id=2146763621]
 scale = Vector2(-1, 1)
 position = Vector2(24, 30)
 texture = ExtResource("settings_caption")
 
-[node name="m_SkillsButton" type="TextureButton" parent="MenuPanelP2" unique_id=2146763622]
+[node name="m_SkillsButton" type="TextureButton" parent="RightAnchor/MenuPanelP2" unique_id=2146763622]
 offset_left = -93.0
 offset_top = -39.0
 offset_right = -46.0
@@ -666,12 +685,12 @@ texture_pressed = ExtResource("skills_normal")
 texture_hover = ExtResource("skills_hover")
 texture_disabled = ExtResource("skills_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanelP2/m_SkillsButton" unique_id=2146763623]
+[node name="Caption" type="Sprite2D" parent="RightAnchor/MenuPanelP2/m_SkillsButton" unique_id=2146763623]
 scale = Vector2(-1, 1)
 position = Vector2(22, 31)
 texture = ExtResource("skills_caption")
 
-[node name="WeaponButton" type="TextureButton" parent="MenuPanelP2" unique_id=2146763624]
+[node name="WeaponButton" type="TextureButton" parent="RightAnchor/MenuPanelP2" unique_id=2146763624]
 offset_left = -65.0
 offset_top = -67.0
 offset_right = -18.0
@@ -683,12 +702,12 @@ texture_pressed = ExtResource("weapon_normal")
 texture_hover = ExtResource("weapon_hover")
 texture_disabled = ExtResource("weapon_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanelP2/WeaponButton" unique_id=2146763625]
+[node name="Caption" type="Sprite2D" parent="RightAnchor/MenuPanelP2/WeaponButton" unique_id=2146763625]
 scale = Vector2(-1, 1)
 position = Vector2(19, 28)
 texture = ExtResource("weapon_caption")
 
-[node name="PetButton" type="TextureButton" parent="MenuPanelP2" unique_id=2146763626]
+[node name="PetButton" type="TextureButton" parent="RightAnchor/MenuPanelP2" unique_id=2146763626]
 offset_left = -27.0
 offset_top = -71.0
 offset_right = 20.0
@@ -700,14 +719,14 @@ texture_pressed = ExtResource("pet_normal")
 texture_hover = ExtResource("pet_hover")
 texture_disabled = ExtResource("pet_normal")
 
-[node name="Caption" type="Sprite2D" parent="MenuPanelP2/PetButton" unique_id=2146763627]
+[node name="Caption" type="Sprite2D" parent="RightAnchor/MenuPanelP2/PetButton" unique_id=2146763627]
 scale = Vector2(-1, 1)
 position = Vector2(22, 33)
 texture = ExtResource("pet_caption")
 
-[node name="m_Go" type="AnimatedSprite2D" parent="." unique_id=1100398904]
+[node name="m_Go" type="AnimatedSprite2D" parent="RightAnchor" unique_id=1100398904]
 visible = false
-position = Vector2(870, 259)
+position = Vector2(400, 259)
 scale = Vector2(0.6, 0.6)
 sprite_frames = ExtResource("13_gogo")
 animation = &"go"
@@ -728,12 +747,12 @@ script = ExtResource("38_ogrj0")
 _health = NodePath("Health")
 _name = NodePath("Name")
 
-[node name="m_Combo" parent="." instance=ExtResource("combo")]
+[node name="m_Combo" parent="RightAnchor" instance=ExtResource("combo")]
 visible = false
 layout_mode = 0
-offset_left = 694.95
+offset_left = 224.95
 offset_top = 234.95
-offset_right = 694.95
+offset_right = 224.95
 offset_bottom = 234.95
 
 [node name="m_MusouActivation" type="Control" parent="." unique_id=520113477 node_paths=PackedStringArray("_animation", "_player") instance=ExtResource("musou_activation")]
@@ -745,5 +764,5 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("40_4sdu0")
-_animation = NodePath("Animation")
+_animation = NodePath("Frame/Animation")
 _player = NodePath("AnimationPlayer")
