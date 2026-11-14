@@ -23,11 +23,11 @@ APPEARANCES = {
 }
 
 
-def compact_atlases(variants, frame_count=311):
-    """Deduplicate each layer across every wardrobe choice, retaining 311 source keys."""
+def compact_atlases(variants, frame_count=311, cell_size=200, shared_layers=False):
+    """Deduplicate wardrobe cells, optionally keeping one shared body/weapon map."""
     outputs, mappings, counts = {}, {}, {}
-    for kind in ('body', 'weapon'):
-        selected = [(key, item) for key, item in variants.items() if key[0] == kind]
+    for kind in (('all',) if shared_layers else ('body', 'weapon')):
+        selected = [(key, item) for key, item in variants.items() if kind == 'all' or key[0] == kind]
         images = {}
         for key, item in selected:
             raw = Path(item['path']).read_bytes()
@@ -36,12 +36,12 @@ def compact_atlases(variants, frame_count=311):
             images[key] = Image.open(BytesIO(raw)).convert('RGBA')
         signatures, poses, mapping = {}, [], []
         for frame in range(frame_count):
-            box = (frame % 6 * 200, frame // 6 * 200,
-                   (frame % 6 + 1) * 200, (frame // 6 + 1) * 200)
+            box = (frame % 6 * cell_size, frame // 6 * cell_size,
+                   (frame % 6 + 1) * cell_size, (frame // 6 + 1) * cell_size)
             cells = {}
             for key, image in images.items():
                 cell = image.crop(box)
-                cells[key] = cell if cell.getchannel('A').getbbox() else Image.new('RGBA', (200, 200))
+                cells[key] = cell if cell.getchannel('A').getbbox() else Image.new('RGBA', (cell_size, cell_size))
             signature = b''.join(hashlib.sha256(cell.tobytes()).digest() for cell in cells.values())
             if signature not in signatures:
                 signatures[signature] = len(poses)
@@ -56,9 +56,9 @@ def compact_atlases(variants, frame_count=311):
             mapping = [remap[cell] for cell in mapping]
         mappings[kind], counts[kind] = mapping, len(poses)
         for key, _ in selected:
-            atlas = Image.new('RGBA', (1200, ((len(poses) + 5) // 6) * 200))
+            atlas = Image.new('RGBA', (6 * cell_size, ((len(poses) + 5) // 6) * cell_size))
             for frame, cells in enumerate(poses):
-                atlas.paste(cells[key], (frame % 6 * 200, frame // 6 * 200))
+                atlas.paste(cells[key], (frame % 6 * cell_size, frame // 6 * cell_size))
             output = BytesIO()
             atlas.save(output, format='PNG')
             outputs[key] = output.getvalue()

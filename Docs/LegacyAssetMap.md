@@ -1,5 +1,42 @@
 # 素材来源与复现
 
+## A2英雄与背包原路径高清替换（2026-11-14，待用户审图）
+
+本批52张正式PNG按用户最新要求直接替换原路径，原`.import`及UID保持，不保留hd目录/后缀。旧PNG在Git历史及`.godot/validation/art_a2_heroes_20261114/original_pngs/`冻结；同目录`before/`保存接入前资源/动画/场景，`replacement_sources.json`列出52项原/新散列、来源和尺寸。后文A1a及旧200px物理格记录属于对应历史版本；当前逻辑格200、像素格400、六列，运行时密度2。
+
+| 本批正式资源 | 原源与处理 |
+| --- | --- |
+| 悟空13张战斗身体/武器 | 同版Role_v7（恢复SHA256 `11cae2f4f4e63dbb1e7199b9d1a8ed432036138b72e2d04d1da974329133fbe7`），衣装143/152/160/186的selector1～6、武器177的selector1～7。沿用完整父矩阵、原viewBox(-100,-128,200,200)、逐片遮挡和已登记特效排除。复用`export_official_wukong_equipment.py`、原Godot栅格器，以密度2从SVG重栅格；使用接入前动作库及既有技能/待机映射覆盖所有源槽。 |
+| 悟空装箱与时序 | 原174槽按全13图联合签名无损去重为86个共享槽（含透明格），六列15行、2400×6000；4个尾格补齐。`compact_atlases(...,cell_size=400,shared_layers=True)`保留同一身体/武器映射；`remap_frame_tracks`只替换原生动画的格索引，不重建时间或其他轨道。13×174=2262槽逐项对照原源2倍栅格全部相同或保持透明，未省略播放阶段。 |
+| 唐僧13张战斗身体/武器 | 同版Role_v7，既有`source_audit.json`与本次XML散列相同；复用`export_official_tangseng.py`的selector冻结、两段衣装播放烘焙、完整父矩阵与深度遮挡。保留已审311源帧到身体100/武器37格的原映射；当前13图均从同源1倍精确重现，再2倍栅格，身体2400×6800、武器2400×2800。 |
+| 两英雄26张专用背包图 | 同版backpack_v2：下载SHA256 `e4360195f803d7fe0b36f70c2ea88ade5e7fe9de7ffacde3d2fa7e0452c4a0f9`，恢复SHA256 `47215d42043801243e7beae00ca4601d6040b343be8bd8a29a9c4aa4e8df17ea`。复用`export_official_inventory_preview.py`，新增隔离输出及密度参数；Wukong252/62帧、Tangseng283/1帧的父矩阵/selector沿原登记。819源帧的1倍重现和2倍装箱均精确通过，原预览动画库字节保持，输出均2400×400。 |
+
+正式登记经`Tools/LegacyMigration/install_official_hero_hd.py --work <本批目录>`，保留原路径、UID、实例结构及其他文本；图像必须先按52项散列匹配，原生资源只允许接入前字节或本次预期结果，防止重跑覆盖后续人工修改。脚本名说明作者工具用途，正式资源中没有并行hd版本。Source/原图/全部格与当前引用明细在本批manifest和[661项进度CSV](../Godot/GodotProject/.godot/validation/art_expansion_audit_20261114/hd_progress.csv)，运行命令和结果统一见Validation。
+
+后续单件悟空外观重导使用原`export_official_wukong_equipment.py --frame-map <本批installed/同源图manifest.json> --density 2`复用86槽源映射，不拿已紧凑的正式motion库套旧174槽构造；原始母版复现则显式传`--motion-library <before/原动画库>`。两条路径仍由同一selector冻结/分层/栅格器完成，不建立第二套运行图集系统。已实测紧凑裸身重导与当前正式PNG精确相同。
+
+本批没有AI重画、插值英雄、调整装备身份、裁人物或改地形。悟空少数1倍技能边缘延续历史800px画布差异，当前统一从原矢量高密度栅格，差异仅抗锯齿；详见Validation。独立技能效果、UI、敌人、数字及地形尚未高清。以1080p验收，4K全屏放大已获用户接受，未登记原生4K完成。
+
+## A1b位图保真小样（2026-11-14，当前方法不采用）
+
+天空来自已核验v25928内部主程序的bitmap18/DefineBitsJPEG2，原生JPEG1440×690，载荷SHA256=`fd69594dae5142aecc1bd822911793640e56d030a01e27e80942eea16685124a`；木棍复用`export_official_equipment.py --only rough_pilgrim_staff`，从同版OtherMat_v9的bitmap16/fall_ccxzg直接提取透明52×54。两个正式PNG均与原始载荷解码像素完全一致。高精度同内容源未在本次登记包中发现，不能把重提取算高清。
+
+临时恢复候选使用[FSRCNN_Tensorflow固定提交](https://github.com/Saafke/FSRCNN_Tensorflow/tree/6a4812c4ef1c4f5947d79beafa32a05a6eb4a94d)的`FSRCNN_x2.pb`，SHA256=`366b33f0084c7b3f2bf6724f0a2c77bca94fcec9d7b6d72389d330073b380d5c`；OpenCV contrib4.12.0.88仅在忽略目录安装。该网络作亮度回归，色度按原图采样，alpha由原alpha独立Lanczos×2；插值基准使用相同alpha，避免黑底边缘污染。没有生成式重画、改字或扩图。
+
+输出天空2880×1380、木棍104×108及原图/插值/候选对照只留`.godot/validation/art_a1b_20261114/`。天空实际显示收益不明显，木棍颜色偏移，当前恢复方法**不接入、不推广**，正式图与UID保留。命令、原生预览和数值见Validation；不将“有2倍PNG”登记为高清完成。
+
+## A1a隔离高清重导小样（2026-11-14，英雄路线已获用户认可）
+
+只制作`.godot/validation/art_a1a_20261114/`内候选，不替换正式资源；源SWF/XML、分帧PNG、manifest及临时复现脚本均留忽略目录。官方URL和固定版本沿用OfficialReference。本次Role_v7下载SHA256为`fdedcd581dcaa02406aab12bf137b2acaadef0402fe8d82b1e43ee85782b9582`，恢复后为既有`11cae2f4f4e63dbb1e7199b9d1a8ed432036138b72e2d04d1da974329133fbe7`；v25928下载及内部主程序分别核验为既有`a5e9650c…f9ccce`、`f8e3e1f5…defb75b`，完整值见本批results.json及OfficialReference。
+
+| 小样 | 来源、导出及逻辑映射 |
+| --- | --- |
+| 悟空裸身/默认木棍 | Role1/sprite575完整body父矩阵；衣装143/152/160/186与武器177冻结selector1。选529的8姿态、440的4姿态及211/272全部8/11帧。复用`export_official_wukong.py`的`freeze/matrix/split_pose`，保留246/205排除规则和逐片前景遮挡；`motion_poses`从正式动画库取当前走路格。被选身体/武器/遮挡SVG不含image或有效filter引用，独立攻击效果仍单独排除，不把其滤镜混入英雄。 |
+| `hero_1x/`与`hero_2x/` | 同一分层SVG，viewBox(-100,-128,200,200)不变，Godot `Image.load_svg_from_string`密度1/2；武器片与遮挡在各自密度重新栅格并按原alpha公式裁切、合成。分帧200/400px；六列稀疏小样1200×1800/2400×3600，未选格透明，不是完整正式图集。manifest的`native_cell`为正式格、`cell`为样本格；走路120/124/128/132对应样本9/10/11/12。 |
+| `huaguoshan_platform.png` | v25928内部主程序的shape56，经既有`shape_sprite(56,31056)`包装，FFDec原生`-zoom 1/2`透明PNG导出为263×75/526×150。shape bounds为(44209,3850)～(49469,5350)TWIPS，填充bitmap55/DefineBitsJPEG3，内嵌JPEG实际263×75；源矩阵scale20、translate(44209,3850)。正式平台与1倍重导RGBA完全相同。**2倍只作采样基准，未增加真实细节，不登记为高清通过。** 本次登记源与旧第一关三张素材未提供同内容更高精度源。 |
+
+FFDec沿用本机26.3 jar，英雄栅格与预览使用Godot 4.7.2 .NET；没有AI生成、位图恢复、锐化、扩图、接缝改画或正式导入。平台继续保留原图，英雄仅本批代表姿态待审。具体复现命令和检查结果统一见Validation的A1a记录，方案见CrossPlatformPlan 2.12.13。
+
 旧项目 `P:/Godot-Project/ZMXY_BHYH` 只读。下表旧路径相对旧工程，新路径相对 `Godot/GodotProject/TheGame/`；PNG/音频/字体原样复制，不迁入旧脚本或 `.import`。官方包、散列与玩法依据见 [OfficialReference](OfficialReference.md)。
 
 ## 唐僧官方声音（2026-11-05）
@@ -454,7 +491,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 ## 悟空独立身体与武器
 
-战斗使用官方 `Role_v7.swf` 的 `export.hero.Role1`（sprite 575）动作；背包现用下节backpack_v2独立图集。早期六张战斗图均为 1200×5800、6×29、每格 200×200；0..119 保留既有普攻、技能与完整待机映射，120..170 为完整基础动作，171..173 为空：
+战斗使用官方 `Role_v7.swf` 的 `export.hero.Role1`（sprite 575）动作；背包用backpack_v2独立图集。**当前尺寸/映射见本页A2记录：13图均已原路径替换为2400×6000。** 下述为早期1倍导入布局，用于追溯原源：六张早期图1200×5800、6×29、200px格，0..119为普攻/技能/待机，120..170为基础动作，171..173为空。A2只将这些原槽无损映射到共享86槽，原动画时序保持：
 
 | 新文件（`Sprites/Characters/Heroes/wukong/`） | 源选择帧 | 用途 |
 | --- | --- | --- |

@@ -11,7 +11,7 @@ func _initialize() -> void:
     _run.call_deferred()
 
 ## This standalone visual fixture has no GGF scope; suppress methods on local copies only.
-func _visual_only(actor: Node) -> void:
+static func _visual_only(actor: Node) -> void:
     var player: AnimationPlayer = actor.get_node("m_AnimPlayer")
     for name in player.get_animation_library_list():
         var library: AnimationLibrary = player.get_animation_library(name).duplicate(true)
@@ -54,37 +54,38 @@ func _wardrobe_entries(appearance: Resource, property: String, inventory: Dictio
     return entries
 
 ## Support the original 800px skill raster canvas and the current 200px cell canvas exactly.
-func _source_svg(path: String, large_canvas: bool) -> Image:
+func _source_svg(path: String, large_canvas: bool, density: int = 1) -> Image:
     var svg := FileAccess.get_file_as_string(path)
     if large_canvas:
         svg = svg.replace('width="200px"', 'width="800px"').replace('height="200px"', 'height="800px"')
         svg = svg.replace('viewBox="-100 -128 200 200"', 'viewBox="-400 -428 800 800"')
     var image := Image.new()
-    assert(image.load_svg_from_string(svg) == OK)
-    return image.get_region(Rect2i(300, 300, 200, 200)) if large_canvas else image
+    assert(image.load_svg_from_string(svg, density) == OK)
+    return image.get_region(Rect2i(300 * density, 300 * density, 200 * density, 200 * density)) if large_canvas else image
 
 ## Rebuild a source layer without consulting another equipment's atlas.
-func _source_frame(base: String, weapon: bool, large_canvas: bool = false) -> Image:
-    var image := Image.create_empty(200, 200, false, Image.FORMAT_RGBA8)
+func _source_frame(base: String, weapon: bool, large_canvas: bool = false, density: int = 1) -> Image:
+    var cell_size := 200 * density
+    var image := Image.create_empty(cell_size, cell_size, false, Image.FORMAT_RGBA8)
     if not weapon:
-        return _source_svg(base + "body.svg", large_canvas)
+        return _source_svg(base + "body.svg", large_canvas, density)
     var part := 0
     while FileAccess.file_exists(base + "weapon_%d.svg" % part):
-        var fragment := _source_svg(base + "weapon_%d.svg" % part, large_canvas)
-        var foreground := _source_svg(base + "occluder_%d.svg" % part, large_canvas)
-        for y in range(200):
-            for x in range(200):
+        var fragment := _source_svg(base + "weapon_%d.svg" % part, large_canvas, density)
+        var foreground := _source_svg(base + "occluder_%d.svg" % part, large_canvas, density)
+        for y in range(cell_size):
+            for x in range(cell_size):
                 var color := fragment.get_pixel(x, y)
                 color.a *= 1.0 - foreground.get_pixel(x, y).a
                 fragment.set_pixel(x, y, color)
-        image.blend_rect(fragment, Rect2i(0, 0, 200, 200), Vector2i.ZERO)
+        image.blend_rect(fragment, Rect2i(0, 0, cell_size, cell_size), Vector2i.ZERO)
         part += 1
     return image
 
 ## Imported alpha-edge padding may change invisible RGB, but never visible pixels.
 func _same_visible_pixels(actual: Image, expected: Image) -> bool:
-    for y in range(200):
-        for x in range(200):
+    for y in range(actual.get_height()):
+        for x in range(actual.get_width()):
             var a := actual.get_pixel(x, y)
             var b := expected.get_pixel(x, y)
             if a.a != b.a or (a.a > 0 and a != b):
@@ -103,6 +104,9 @@ func _check_complete_atlases(player: AnimationPlayer, appearance: Resource, inve
     var large_canvas_samples := 0
     for variant in inventory.variants:
         var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(variant.manifest))
+        var density := int(data.get("density", 1))
+        var cell_size := 200 * density
+        _check(density == int(appearance.get("_textureDensity")), "Appearance density differs from source export")
         _check(data.source_sha256 == SOURCE_SHA and data.kind == variant.kind and int(data.selector) == int(variant.selector),
             "Appearance export has the wrong selector: " + variant.name)
         var path: String = ART + "wukong_" + variant.name + ".png"
@@ -113,10 +117,10 @@ func _check_complete_atlases(player: AnimationPlayer, appearance: Resource, inve
             var cell := int(key)
             var pose: Array = data.poses[key]
             var base: String = data.inputs[str(int(pose[0]))].path_join("%d_" % int(pose[1]))
-            var expected := _source_frame(base, data.kind == "weapon")
-            var region := Rect2i(cell % 6 * 200, cell / 6 * 200, 200, 200)
+            var expected := _source_frame(base, data.kind == "weapon", false, density)
+            var region := Rect2i(cell % 6 * cell_size, cell / 6 * cell_size, cell_size, cell_size)
             var actual := image.get_region(region)
-            if actual.get_data() != expected.get_data():
+            if density == 1 and actual.get_data() != expected.get_data():
                 # The first four sheets' skill cells were rasterized on an 800px
                 # canvas. Compare that exact source too; do not relax pixel tolerances.
                 var original_raster := _source_frame(base, data.kind == "weapon", true)
@@ -182,8 +186,10 @@ func _run() -> void:
         var image := Image.load_from_file(ProjectSettings.globalize_path(path))
         var imported: Image = load(path).get_image()
         imported.convert(Image.FORMAT_RGBA8)
-        _check(image.get_size() == Vector2i(1200, 5800), "Unexpected shared atlas grid: " + name)
         var data: Dictionary = entry[2].data
+        var density := int(data.get("density", 1))
+        var cell_size := 200 * density
+        _check(image.get_size() == Vector2i(int(data.columns) * cell_size, int(data.rows) * cell_size), "Unexpected shared atlas grid: " + name)
         for action in MOTIONS:
             var animation := player.get_animation(action)
             _check(is_equal_approx(animation.length, MOTIONS[action][1] / 24.0), "Motion duration differs: " + action)
@@ -197,10 +203,10 @@ func _run() -> void:
                 var pose: Array = data.poses[cell_key]
                 var source_dir: String = data.inputs[str(int(pose[0]))]
                 var base: String = source_dir.path_join("%d_" % int(pose[1]))
-                var expected := _source_frame(base, name.begins_with("weapon_"))
-                var actual := image.get_region(Rect2i(cell % 6 * 200, cell / 6 * 200, 200, 200))
+                var expected := _source_frame(base, name.begins_with("weapon_"), false, density)
+                var actual := image.get_region(Rect2i(cell % 6 * cell_size, cell / 6 * cell_size, cell_size, cell_size))
                 _check(actual.get_data() == expected.get_data(), "%s/%s source frame %d has the wrong appearance" % [name, action, frame + 1])
-                var imported_frame := imported.get_region(Rect2i(cell % 6 * 200, cell / 6 * 200, 200, 200))
+                var imported_frame := imported.get_region(Rect2i(cell % 6 * cell_size, cell / 6 * cell_size, cell_size, cell_size))
                 expected.fix_alpha_edges()
                 _check(_same_visible_pixels(imported_frame, expected), "%s/%s imported frame %d is stale or incorrect" % [name, action, frame + 1])
                 source_samples += 1

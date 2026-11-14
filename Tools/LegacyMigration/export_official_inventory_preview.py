@@ -26,6 +26,8 @@ def export(args):
         raise ValueError("Unexpected backpack_v2 revision")
     args.work.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, APPDATA=str((args.work / "profile").resolve()))
+    Path(env["APPDATA"]).mkdir(exist_ok=True)
+    destination = args.output_project or PROJECT
     command = [str(args.java), "-Duser.home=" + str(args.work.resolve()), "-jar", str(args.ffdec)]
     def run(*argv):
         with (args.work / "export.log").open("a", encoding="utf-8") as log:
@@ -76,35 +78,39 @@ def export(args):
             source.WEAPON_IDS, source.EFFECT_IDS = {str(weapon)}, set()
             for svg in vectors.glob("*.svg"):
                 source.split_pose(svg, layers, transform, excluded_ids=frozenset())
-            out = PROJECT / f"TheGame/Sprites/Characters/Heroes/{hero}/preview/{hero}_preview_{stem.removeprefix(hero + '_')}.png"
-            out.parent.mkdir(exist_ok=True)
-            raster = {"kind":kind,"selector":selector,"columns":6,"rows":(frames+5)//6,
+            out = destination / f"TheGame/Sprites/Characters/Heroes/{hero}/preview/{hero}_preview_{stem.removeprefix(hero + '_')}.png"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            raster = {"kind":kind,"selector":selector,"columns":6,"rows":(frames+5)//6,"density":args.density,
                       "poses":{str(i):[sid,i+1] for i in range(frames)},"inputs":{str(sid):str(layers.resolve())},"output":str((work / "atlas.png").resolve())}
             raster_path = work / "raster.json"
             raster_path.write_text(json.dumps(raster), encoding="utf-8")
             if not Path(raster["output"]).exists():
                 with (work / "raster.log").open("w",encoding="utf-8") as log:
-                    subprocess.run([str(args.godot),"--headless","--path",str(PROJECT),"--script","res://EditorScripts/import_official_wukong_equipment.gd","--",str(raster_path.resolve())],stdout=log,stderr=subprocess.STDOUT,check=True)
+                    subprocess.run([str(args.godot),"--headless","--path",str(PROJECT),"--script","res://EditorScripts/import_official_wukong_equipment.gd","--",str(raster_path.resolve())],env=env,stdout=log,stderr=subprocess.STDOUT,check=True)
             out.write_bytes(Path(raster["output"]).read_bytes())
             variants[kind, id] = {"path": str(out), "sha256": hashlib.sha256(out.read_bytes()).hexdigest()}
-            preview_resources.append(f'[ext_resource type="Texture2D" path="res://{out.relative_to(PROJECT).as_posix()}" id="{id}"]')
+            preview_resources.append(f'[ext_resource type="Texture2D" path="res://{out.relative_to(destination).as_posix()}" id="{id}"]')
             print("INVENTORY PREVIEW",hero,kind,selector,frames,"frames",flush=True)
-        packed, mapping, counts = compact_atlases(variants, frame_count=frames)
+        packed, mapping, counts = compact_atlases(variants, frame_count=frames, cell_size=200 * args.density)
         for key, item in variants.items():
             Path(item["path"]).write_bytes(packed[key])
-        preview_path = appearance_path.with_name(hero + "_inventory_appearance.tres")
+        preview_path = destination / appearance_path.relative_to(PROJECT).with_name(hero + "_inventory_appearance.tres")
         body = appearance.split("[resource]",1)[1]
         body = re.sub(r'_previewAnimations = [^\n]+\n',"",body)
         body = re.sub(r'_previewAppearance = [^\n]+\n',"",body)
+        body = re.sub(r'_textureDensity = [^\n]+\n',"",body)
+        body += f'\n_textureDensity = {args.density}\n'
         script = next(line for line in appearance.splitlines() if 'type="Script"' in line)
         preview_path.write_text('[gd_resource type="Resource" script_class="HeroAppearanceResource" format=3]\n\n'+script+'\n'+'\n'.join(preview_resources)+'\n\n[resource]'+body,encoding="utf-8")
         if 'id="inventory_appearance"' not in appearance:
-            appearance = appearance.replace('[resource]',f'[ext_resource type="Resource" path="res://{preview_path.relative_to(PROJECT).as_posix()}" id="inventory_appearance"]\n\n[resource]')
+            appearance = appearance.replace('[resource]',f'[ext_resource type="Resource" path="res://{preview_path.relative_to(destination).as_posix()}" id="inventory_appearance"]\n\n[resource]')
             appearance = appearance.replace('script = ExtResource("script")',
                 'script = ExtResource("script")\nm_PreviewAppearance = ExtResource("inventory_appearance")')
-            appearance_path.write_text(appearance,encoding="utf-8")
-        animation_path = PROJECT / f"TheGame/Entitys/Animations/Heroes/{hero.title()}/{hero}_preview_library.tres"
-        uid = re.search(r'uid="([^"]+)"',animation_path.read_text('utf-8'))[1]
+            (destination / appearance_path.relative_to(PROJECT)).write_text(appearance,encoding="utf-8")
+        animation_source = PROJECT / f"TheGame/Entitys/Animations/Heroes/{hero.title()}/{hero}_preview_library.tres"
+        animation_path = destination / animation_source.relative_to(PROJECT)
+        animation_path.parent.mkdir(parents=True, exist_ok=True)
+        uid = re.search(r'uid="([^"]+)"',animation_source.read_text('utf-8'))[1]
         length = max(frames / 24, 1)
         result = f'[gd_resource type="AnimationLibrary" format=3 uid="{uid}"]\n\n[sub_resource type="Animation" id="idle"]\nresource_name = "idle"\nlength = {length}\nloop_mode = 1\n'
         for i, layer in enumerate(["Body", "Weapon"]):
@@ -120,5 +126,8 @@ if __name__ == "__main__":
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ["swf","xml","work","java","ffdec","godot"]:
         parser.add_argument("--"+name,type=Path,required=True)
+    parser.add_argument("--output-project",type=Path,
+                        help="Redirect authored preview resources; read identities from the current project")
+    parser.add_argument("--density",type=int,choices=[1,2],default=1)
     parser.add_argument("--manifests",type=Path,nargs="+",required=True)
     export(parser.parse_args())

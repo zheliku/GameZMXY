@@ -22,11 +22,13 @@ vframes = 6
 frame = 3
 
 [node name="Body" type="Sprite2D" parent="." unique_id=1513800798]
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("body")
 hframes = 6
 vframes = 1
 
 [node name="Weapon" type="Sprite2D" parent="." unique_id=922135903]
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("weapon")
 hframes = 6
 vframes = 1

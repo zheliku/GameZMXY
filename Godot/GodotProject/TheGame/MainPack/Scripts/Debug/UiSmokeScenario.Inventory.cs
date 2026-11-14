@@ -770,8 +770,8 @@ public sealed partial class UiSmokeScenario
                     int height = image.GetHeight() / body.Vframes;
                     Rect2I frame = new(body.Frame % body.Hframes * width, body.Frame / body.Hframes * height, width, height);
                     using Image crop = image.GetRegion(frame);
-                    // 官方烈焰闪和火魔斩在技能表现接管时共用透明身体格91。
-                    bool effectOnly = hero is WukongEntity && body.Frame == 91 &&
+                    // 紧凑装箱把共用透明格放在0；技能表现接管时仍保留原生空帧。
+                    bool effectOnly = hero is WukongEntity && body.Frame == 0 &&
                         name is "skills/blazing_flash" or "skills/fire_demon_slash";
                     Check(crop.IsInvisible() == effectOnly, $"动作 {name} 身体帧 {body.Frame} 透明性不符");
                 }

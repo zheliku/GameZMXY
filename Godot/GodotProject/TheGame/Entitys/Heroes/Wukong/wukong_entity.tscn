@@ -70,19 +70,23 @@ _hitBox = NodePath("m_HitBoxRoot/m_HitBox")
 _hitBoxRoot = NodePath("m_HitBoxRoot")
 
 [node name="m_Body" type="Sprite2D" parent="." unique_id=803944199]
+scale = Vector2(0.5, 0.5)
 material = SubResource("ShaderMaterial_invulnerability")
 position = Vector2(0, -28)
 texture = ExtResource("3_v2bpf")
 hframes = 6
-vframes = 29
+vframes = 15
 metadata/_edit_lock_ = true
+frame = 1
 
 [node name="m_Weapon" type="Sprite2D" parent="." unique_id=1122322079]
+scale = Vector2(0.5, 0.5)
 material = SubResource("ShaderMaterial_invulnerability")
 position = Vector2(0, -28)
 texture = ExtResource("4_yi3k4")
 hframes = 6
-vframes = 29
+vframes = 15
+frame = 1
 
 [node name="m_Tombstone" parent="." unique_id=253785355 instance=ExtResource("16_death")]
 

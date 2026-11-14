@@ -21,6 +21,7 @@
 
 [resource]
 script = ExtResource("script")
+_textureDensity = 2
 _previewAppearance = ExtResource("inventory_appearance")
 _previewAnimations = ExtResource("preview")
 _baseBody = ExtResource("body_1")

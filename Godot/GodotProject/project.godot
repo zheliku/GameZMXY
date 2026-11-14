@@ -29,6 +29,8 @@ SmokeTestDriver="*res://TheGame/MainPack/Scripts/Debug/SmokeTestDriver.cs"
 
 window/size/viewport_width=940
 window/size/viewport_height=590
+window/size/window_width_override=1920
+window/size/window_height_override=1080
 window/stretch/mode="canvas_items"
 
 [dotnet]

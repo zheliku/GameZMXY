@@ -33,19 +33,11 @@ tracks/{index}/keys = {{
 '''
 
 
-def compact_base_frames(text, mapping):
-    """Remap base frame values once; never regenerate editor-authored tracks."""
-    hurt = re.search(r'^\[sub_resource type="Animation" id="hurt"\]\n.*?(?=^\[|\Z)', text, re.M | re.S).group()
-    body_track = re.search(r'path = NodePath\("m_Body:frame"\).*?"values": \[(.*?)\]', hurt, re.S)
-    hurt_frame = int(body_track.group(1))
-    if hurt_frame == mapping[74]:
-        return text
-    if hurt_frame != 74:
-        raise ValueError('Unknown base frame layout; refusing to remap editor changes')
-
+def remap_frame_tracks(text, mapping, skip_actions=False):
+    """Change only body/weapon cell values, retaining authored timing and other tracks."""
     def animation(match):
         block = match.group()
-        if re.search(r'resource_name = "(?:attack_|skill_)', block):
+        if skip_actions and re.search(r'resource_name = "(?:attack_|skill_)', block):
             return block
 
         def frame_values(track_match):
@@ -55,6 +47,18 @@ def compact_base_frames(text, mapping):
         return re.sub(r'(path = NodePath\("(?:m_Body|m_Weapon):frame"\).*?"values": \[)(.*?)(\])', frame_values, block, flags=re.S)
 
     return re.sub(r'^\[sub_resource type="Animation"[^\n]*\n.*?(?=^\[|\Z)', animation, text, flags=re.M | re.S)
+
+
+def compact_base_frames(text, mapping):
+    """Remap base frame values once; never regenerate editor-authored tracks."""
+    hurt = re.search(r'^\[sub_resource type="Animation" id="hurt"\]\n.*?(?=^\[|\Z)', text, re.M | re.S).group()
+    body_track = re.search(r'path = NodePath\("m_Body:frame"\).*?"values": \[(.*?)\]', hurt, re.S)
+    hurt_frame = int(body_track.group(1))
+    if hurt_frame == mapping[74]:
+        return text
+    if hurt_frame != 74:
+        raise ValueError('Unknown base frame layout; refusing to remap editor changes')
+    return remap_frame_tracks(text, mapping, skip_actions=True)
 
 
 def reset_hit_rotation(text):

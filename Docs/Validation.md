@@ -2,6 +2,189 @@
 
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
 
+## 美术进度清单：全文件与勾选状态（2026-11-15）
+
+按用户要求新增仓库内[ArtProgress.md](ArtProgress.md)，列出全量图像及配套美术资源，每批更新对应勾选。依据集中规范的既有文档职责，CrossPlatformPlan继续维护唯一实施方案，LegacyAssetMap维护来源，本页维护验证；清单只展示任务状态。Docs导航和计划入口已链接该清单，WorkingNotes记录新的展示方式。
+
+本轮实际复核当前工程目录（排除`.godot`、bin、obj）与原661项图像盘点：路径集合完全相同，656 PNG/1 JPG/4 SVG；逐图读取当前尺寸。52项勾选逐一核对本批`replacement_sources.json`的新散列及既有`hd_progress.csv`完成状态，全部匹配。其余609项保持未勾，其中花果山平台、蝙蝠天空、粗糙行者棍3项明确标来源/保真限制，不将试验完成冒充素材高清通过。另列业务字体8、着色器4、AnimationLibrary71、SpriteFrames78、外观登记5、主题/样式13、地图BitMap命中遮罩3，共182项；11项仅表示英雄批次所需的联动或时序核对完成，不混入661图像分母。
+
+检查命令在仓库根运行：
+
+```powershell
+python -X utf8 Godot/GodotProject/.godot/validation/art_checklist_20261115/build_checklist.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_checklist_20261115/verify_checklist.py
+git diff --check
+```
+
+清单检查覆盖661/661图像、182/182配套资源的唯一路径、52/11项勾选与证据、所有本地文件链接和19个目录跳转锚点。本轮开工全部游戏/工具已跟踪文件字节保持，只新增/修改ArtProgress、Docs导航、CrossPlatformPlan、WorkingNotes、Validation五份文档。工作期间观察到暂存区从原3份文档增加为上一批美术/工具暂存项；本轮未执行任何暂存、提交或回退，保留当前现场索引，不宣称其仍等于开工diff。没有生成新美术、改运行代码、替换资源或启动下一批，不重跑与纯文档整理无关的构建和游戏烟测。结果见忽略目录`art_checklist_20261115/verification.json`。
+
+## 美术 A2：两英雄完整外观及专用背包（2026-11-14，原路径替换，停审）
+
+**本批完成52张PNG原路径2倍重导替换，等待用户审图。** 用户认可A1a后授权继续，并明确原路径替换、不要hd并行目录、每批先审图，以1920×1080验收并接受4K显示器全屏继续放大。本批遵循集中规范00/10/30/40/50，复用Godot原生Sprite/AnimationLibrary、现有Appearance、残影、背包和导出链；第40章按最新要求同步密度契约。没有改GGF/QF框架、玩法、碰撞、角色尺度或正式宽屏。
+
+### 实物、来源与覆盖
+
+- [1080p原生裁片对照](../Godot/GodotProject/.godot/validation/art_a2_heroes_20261114/hero_review_contact.png)，完整[原版](../Godot/GodotProject/.godot/validation/art_a2_heroes_20261114/heroes_1920x1080_original.png) / [当前](../Godot/GodotProject/.godot/validation/art_a2_heroes_20261114/heroes_1920x1080_current.png)。复用原生实体/材质及第一关视觉层、固定940×590核心；背景和独立效果沿原素材，不是整关高清完成。
+- 真实[唐僧背包穿戴](../Godot/GodotProject/.godot/validation/art_a2_heroes_20261114/tangseng_inventory_wearing.png)和[受击保护光晕](../Godot/GodotProject/.godot/validation/art_a2_heroes_20261114/hurt_protection_120_1.png)。这两张是原烟测实际viewport截图，分别3272×2054、1720×1080，未冒充1920×1080物理窗口原生截屏。
+- 源版本/selector/父矩阵/分层链见LegacyAssetMap本批记录；本批目录`.godot/validation/art_a2_heroes_20261114/`保存`replacement_sources.json`（52项原/新散列）、`all_slot_fidelity.json`、`before/`原原生文件、`original_pngs/`旧PNG、候选母版与完整manifest。原UID/.import保持，没有正式hd目录或后缀。
+- [661项进度CSV](../Godot/GodotProject/.godot/validation/art_expansion_audit_20261114/hd_progress.csv)：**52项已替换待审、3项位图限制、606项待处理**。没有把UI、敌人、独立特效、数字或地形标成已完成。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 悟空全槽无遗漏 | 原图174槽（6×29）按13图共同签名无损合并为86共享槽（含透明格），6×15存90槽、末4格补齐，像素格400，2400×6000。**13×174=2262个原槽逐个回查到正式图，非透明RGBA或透明阶段全部保持，遗漏0**。没有删播放帧：重复图改引用同一格，源时序照旧。|
+| 悟空1倍源基线 | 13图×174槽中2252槽精确相同，10槽仅历史800px技能画布抗锯齿不同（单格3～82像素、整格RGBA平均差最大0.00191875/255）；高密度图统一同源SVG重栅格，没有插值旧PNG。原1倍的这些已登记画布差异未被误当丢图或新内容。 |
+| 唐僧完整源基线 | 已审311源帧，当前13图均由同版源1倍精确重现；2倍保留原身体100/武器37格映射。身体2400×6800、武器2400×2800，没有改唐僧战斗/技能动画库字节。 |
+| 专用背包 | backpack_v2同版散列匹配；26图、819个源帧的1倍重现与2倍装箱逐像素保持，输出2400×400；两份正式preview_library原字节保持。战斗待机没有代替专用预览。 |
+| 动画语义/定位 | 对6份原生库进行引擎读取比较，浮点用字节编码保存：长度、循环、轨道类型/路径、关键时刻、transition、方法及所有非帧值保持，只有悟空身体/武器等价格索引改变。原始文本定向重排亦保留其余字节，场景只改视觉scale、网格与等价初帧；原UID、实例结构和碰撞保持。 |
+| 官方装备身份与全动作 | `audit_official_wukong_wardrobe.py`：15件可玩装备身份、13图通过。既有motion验证器补像素密度支持后，**1118源格、867基础动作源层、23904次原生双向播放，0失败**；分离GPU案例再验23904次播放与五张全穿戴组合图，退出0。 |
+| 攻击/实际Area2D | 复用完整栅格后的官方攻击manifest（含effect_cells/hitboxes），原检测器按密度换算到逻辑坐标；**868源帧通过**，近端、范围外、弧光独立命中及残留时间检查通过；判定形状/时序未改。 |
+| 两英雄真实装备GUI | 悟空`--equipment-only`、唐僧`--tangseng-only --tangseng-equipment-only`均退出0，各15件装备分页/穿卸、完整双向动作、独立背包层通过。唐僧15次实际拾取、穿戴实例/属性/槽位落盘检查通过。 |
+| 残影/光晕 | 8个实际残影快照（两英雄×双朝向×两层）纹理、帧、H/V、offset、global_transform一致；移动本体不移动快照，重复换装scale仍0.5。shader按顶点推导像素格与密度，避免200px硬编码裁切；60/120Hz真实受击保护、技能叠加、暂停/到期与光晕状态专项均通过。 |
+| 输出/清晰度 | 默认window override1920×1080实际生效，screen3840×2160、window mode0；逻辑940×590、keep未改。1080p固定预览实际核心1720×1080；2倍源每逻辑单位2像素、显示约1.83像素，角色无需向上插值。真实全屏mode3输出3840×2160、逻辑缩放约3.66，用户接受该放大，不记原生4K清晰度通过。另有固定3840×2160原版/当前对照，仅展示放大效果。 |
+| 成本/平台边界 | 全52图同时驻留的RGBA8无mipmap理论合计1362.30MiB；对照夹具纹理账本约2094～2385MiB（含双英雄资源及旧图副本/视口），不是正式游戏峰值。未做移动端压缩、Android真机、加载/FPS或内存预算验收；单边≤8192不等于Android通过。 |
+| 构建/格式/引用 | `dotnet build Godot/GodotProject --no-restore -v quiet`退出0、0错误/5个既有框架警告。两份受改手写C#的`dotnet format ... whitespace --verify-no-changes --no-restore --include ...`退出0；引用验证**2284路径/391UID**通过。 |
+
+### 命令与日志
+
+以下在仓库根执行；原源路径、依赖及各个selector参数已固化在本批隔离脚本/manifest。正式作者工具的新增密度/隔离输出默认仍1，既有调用行为保持；本批原生登记脚本只改相关原路径资源，不重保存整个实体。
+
+```powershell
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_heroes_20261114/wukong_export.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_heroes_20261114/tangseng_export.py
+# 背包：既有 export_official_inventory_preview.py --density 2 --output-project <隔离目录>
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_heroes_20261114/preview_verify.py
+# 已核验母版复制到52张原PNG路径后，原生文件定向登记：
+python -X utf8 Tools/LegacyMigration/install_official_hero_hd.py --work Godot/GodotProject/.godot/validation/art_a2_heroes_20261114
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_original_path_import_20261114 --headless --editor --import --quit --no-window
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_original_path_animation_verified_20261114 --headless --script res://.godot/validation/art_a2_heroes_20261114/install.gd -- verify
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_hero_equipment_gui_20261114 --rendering-method gl_compatibility --audio-driver Dummy -- --smoketest=ui --equipment-only
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_tangseng_equipment_gui_final_20261114 --rendering-method gl_compatibility --audio-driver Dummy -- --smoketest=ui --tangseng-only --tangseng-equipment-only
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_hero_glow_gui_20261114 --rendering-method gl_compatibility --audio-driver Dummy -- --smoketest=ui --hurt-protection-only
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_hero_afterimage_20261114 --headless --script res://.godot/validation/art_a2_heroes_20261114/afterimage.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_hero_output_review_final_20261114 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_heroes_20261114/render.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_fullscreen_output_final_20261114 --fullscreen --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_heroes_20261114/window.gd
+python Tools/ProjectMaintenance/validate_game_references.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_heroes_20261114/verify_delivery.py
+git diff --check
+```
+
+完整来源/动作/攻击三条长命令的原生参数记录在`commands.json`；案例为`art_hero_wardrobe_source_20261114`、`art_hero_wardrobe_render_20261114`、`art_hero_attack_coverage_final_20261114`。各案例完整stdout/stderr位于既有`movement_presets/<案例>/`，均使用独立APPDATA和隔离Validation存档。没有执行正式玩家档案写入。
+
+**诊断与无效尝试：** 编辑器导入退出0，保留既有ComponentInsoector插件关停`free`错误，不计作无错误扫描。真实GUI烟测包含NodePool类型不匹配的预期失败注入，后续正常PASS；退出仍有既有RID/ObjectDB/资源占用诊断：悟空装备案例22个Texture RID、8个ShapedTextData、2个Font、154个ObjectDB/10资源，光晕7个ObjectDB/2资源，唐僧3个ObjectDB。没有据PASS掩盖这些诊断，也未改只读插件。首次唐僧错误使用悟空通用`--equipment-only`，其等待“身体帧变化”不适用于唐僧1帧背包而失败；改用现有唐僧专项通过，不删断言或改生产动画。首次攻击选了栅格前manifest缺effect_cells，改用同版完整栅格manifest后868帧通过。原生ResourceSaver试写扩展实例/丢UID后已用接入前文本恢复并定向更新；动画比较最初JSON浮点舍入/数字类型导致假差异，最终用浮点字节编码及同形数据精确比较通过。首个视觉夹具未禁音频方法而报错，最终复用既有视觉轨道禁用后stderr为空。
+
+**作者工具重跑：** 完整悟空原始母版显式使用`before/`原motion库；正式紧凑图重导则使用`--frame-map installed/wukong_body_bare.json --density 2`复用已审86格，避免把正式紧凑索引再套旧174格构造。裸身紧凑重导实测RGBA与当前正式图精确相同，原生输出见`registered_map_reexport/`，命令见`registered_reexport_command.json`。没有以这项检查修改现有游戏状态。
+
+**Git与停止点：** **78项已跟踪文件发生本批变化，4087项保持基线字节，另新增一个正式登记工具**；其中52项是原PNG替换。原三份暂存diff SHA256仍为`bc4bb225354fb8bd1d8c39c08ebcb0c5856832501abeb0a82ce149cb47256c36`，HEAD保持。旧PNG备份和全部既有`.import`/UID逐项校验，`verify_delivery.py`通过并保存`verification.json`，记录实际范围和2262槽无遗漏。未暂存、提交或回退用户内容。所有本批必要检查已收尾，**停在英雄/背包批次审图；其余素材未实施，不宣称全库1080p完成。**
+
+## 美术前置 A1b：位图保真小样（2026-11-14，当前方法不采用）
+
+用户认可A1a后要求继续全部素材1080p适配。本批用原源位图试验保真恢复，实际结论为**不采用当前方法、保留正式原图**，不以插值或神经网络输出尺寸代替高清验收。完整英雄矢量重导继续推进，尚不能视为全部素材已接入高清。
+
+| 验证 | 结果 |
+| --- | --- |
+| 原源与当前PNG | v25928主程序bitmap18原生1440×690 JPEG，与正式蝙蝠天空解码RGB逐像素一致；OtherMat_v9固定版本下载/恢复散列匹配OfficialReference，既有装备导出器重提bitmap16，与正式木棍52×54的RGBA逐像素一致。 |
+| 候选方法 | FSRCNN×2固定版本及模型散列见LegacyAssetMap；原色度和独立alpha采样，普通插值基准共用同一alpha。原图未修改，模型和OpenCV contrib4.12.0.88只留忽略目录。 |
+| 相同逻辑尺寸与1080p | [原图/插值/候选对照](../Godot/GodotProject/.godot/validation/art_a1b_20261114/1080p_candidates.png)，Godot固定1920×1080预览：[原图](../Godot/GodotProject/.godot/validation/art_a1b_20261114/preview_1080p_original.png)、[插值](../Godot/GodotProject/.godot/validation/art_a1b_20261114/preview_1080p_bicubic_2x.png)、[候选](../Godot/GodotProject/.godot/validation/art_a1b_20261114/preview_1080p_fsrcnn_2x.png)。保留940×590/keep，天空1440×690、木棍52×54逻辑范围及位置一致，未启用正式宽屏。 |
+| 天空裁决 | 2880×1380候选回采样后RGB平均差0.526/255、最大4/255；在1080p实际显示无明确可见收益，**不采用**。RGBA8理论3.79→15.16MiB，无mipmap；未测峰值显存。 |
+| 木棍裁决 | 104×108候选回采样后，不透明区RGB平均差4.785/255、最大29/255；颜色变化不接受，**不采用**。深浅底均已查看；两候选alpha相同不等于RGB保真通过。RGBA8理论0.0107→0.0428MiB。 |
+| 引擎与边界 | 原生预览三种方法退出0，`A1B PREVIEW PASS`，stderr为空；只表示装配/几何通过，画质裁决仍未通过。不代表完整关卡、原生全屏或Android验收。 |
+
+实际命令（仓库根，模型/源及复现脚本在本批忽略目录）：
+
+```powershell
+uv pip install --target Godot/GodotProject/.godot/validation/art_a1b_20261114/python_deps --no-deps opencv-contrib-python-headless==4.12.0.88
+python -X utf8 Godot/GodotProject/.godot/validation/art_a1b_20261114/sample.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_a1b_preview_20261114 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a1b_20261114/preview.gd
+```
+
+候选生成与原生预览均退出0，数值在本批`measurements.json`，模型来源在`model_source.json`；原生日志在`movement_presets/art_a1b_preview_20261114/`，隔离APPDATA。首次GitHub API查询遇到限流，改用`git ls-remote`取得固定提交后下载同一模型；系统OpenCV缺少superres组件，仅在本批目录增加contrib包，不修改生产Python环境。没有正式位图替换或批量套用；是否尝试其他方法另按具体来源/收益决定，不预建增强框架。
+
+## 美术前置 A1a：悟空矢量重导与平台来源实测（2026-11-14，历史审查点）
+
+**本批实物已交付，停在用户审查点。** 悟空31姿态完成同源2倍矢量栅格；平台1倍/2倍原生重导均已制作，但来源是低分辨率位图，**平台未通过高清**。依据用户本轮授权、集中规范00/30/40/50章和CrossPlatformPlan 2.12，复用现有作者工具及Godot原生视觉层，所有样本/探针在忽略目录。正式200px格/6列契约、资源、UID、动画、碰撞和宽屏设置未改；A1b/A1c未开始。
+
+### 审查实物
+
+| 内容 | 文件 |
+| --- | --- |
+| 原图、1倍重现、2倍样本及alpha轮廓，同逻辑尺寸 | [同逻辑对照](../Godot/GodotProject/.godot/validation/art_a1a_20261114/same_logical_comparison.png) |
+| 31姿态逐一原图/2倍对照 | [全姿态对照](../Godot/GodotProject/.godot/validation/art_a1a_20261114/all_pose_pairs.png) |
+| 1080p像素原尺寸裁片 | [清晰度裁片](../Godot/GodotProject/.godot/validation/art_a1a_20261114/1080p_detail_comparison.png) |
+| Godot固定1920×1080预览 | [正式原图](../Godot/GodotProject/.godot/validation/art_a1a_20261114/preview_1920x1080_original.png)、[2倍样本](../Godot/GodotProject/.godot/validation/art_a1a_20261114/preview_1920x1080_2x.png) |
+| 原940×590对照 | [正式原图](../Godot/GodotProject/.godot/validation/art_a1a_20261114/preview_940x590_original.png)、[2倍样本](../Godot/GodotProject/.godot/validation/art_a1a_20261114/preview_940x590_2x.png) |
+| 分层原图与2倍PNG、源格映射、数值 | 同目录`original/`、`hero_1x/`、`hero_2x/`、`platform_{1,2}x/`；[manifest](../Godot/GodotProject/.godot/validation/art_a1a_20261114/manifest.json)、[实测结果](../Godot/GodotProject/.godot/validation/art_a1a_20261114/results.json) |
+
+### 实际验证结果
+
+| 检查 | 结果与边界 |
+| --- | --- |
+| 原源版本 | 官方Role_v7下载后恢复SHA256=`11cae2f4f4e63dbb1e7199b9d1a8ed432036138b72e2d04d1da974329133fbe7`；v25928下载=`a5e9650ca4c3b779d62fb7987a0b7e7d5af5983b3197fa2f2e846a91b3f9ccce`；经FFDec binaryData提取内部主程序=`f8e3e1f5b545bc2423a02f5c6155f87215e01c14d21554d77681f32a7defb75b`。均匹配OfficialReference。来源、selector和参数已记LegacyAssetMap。 |
+| 1倍精确重现 | **62/62分层图RGBA像素差0**，覆盖待机8、走路4、攻击一8、攻击三11姿态。按正式动画当前走路格120/124/128/132取样；稀疏样本格9/10/11/12的对应显式写manifest，不修改正式帧号。平台263×75与1倍重导同样像素差0。 |
+| 2倍栅格与遮挡 | 同一SVG、viewBox、父矩阵、selector和逐武器片mask；实际身体/武器/遮挡SVG没有image或有效filter引用，独立特效排除在本批之外。Godot按密度2重新栅格400px格并执行原alpha裁切，未插值旧英雄PNG；相对1倍，alpha≥128可见框最大逻辑边差**0.5px**，属于采样边缘，不作为内容重画许可。已目视检查31姿态、原点与代表手臂/武器遮挡。 |
+| 动画原生装配 | 隔离AnimationPlayer复制正式攻击一/三的身体、武器帧轨道，保留原关键时刻、帧号、长度和loop_mode；移除其他玩法/音频轨道，仅作视觉验证。2密度×2朝向×19关键帧=**76次**帧同步、200逻辑格与Flash原点断言通过。长度分别0.333333333/0.458333333秒、均不循环；未改正式动画，不代表全动作/全部装备已验。 |
+| 平台真实来源 | shape56→bitmap55/DefineBitsJPEG3，内嵌JPEG为263×75并有alpha；shape只包矩形位图填充。原生`-zoom 2`结果526×150，但未增加源纹理细节，**不计高清通过**。已读登记主程序和旧第一关三张素材，没有找到更高精度同内容平台源；不宣称全网不存在，不转AI重画或擅自做A1b。 |
+| 预览与真实窗口 | Godot **4.7.2.stable.mono.official.ed1daf0bf** / GL Compatibility / RTX3090。真实windowed请求与实际窗口均1920×1080，显示器3840×2160，root逻辑940×590、aspect=keep。固定SubViewport输出940×590和1920×1080共4张；1080p核心1720×1080、左右各100px留边，Zoom=1。复用正式第一关视觉层，移除脚本后固定相机及样本位置，两版本位置相同。截图是视觉样本，不是正式流程、原生全屏或Android真机验收。 |
+| 纹理成本 | 分帧200/400px；六列样本1200×1800/2400×3600，两个RGBA8无mipmap图集理论合计**16.48/65.92MiB**。2倍2400×3600样本已实际上传并渲染；不能推出完整2400×11600图集或Android支持。平台约0.075/0.301MiB。未测驻留峰值、加载耗时、帧率、Android纹理上限或压缩。 |
+
+### 复现命令与日志
+
+以下均在仓库根执行；源包、FFDec和Java路径沿用当前机器登记。`prepare.py`只调用既有freeze/matrix/split_pose、motion_poses、shape_sprite和FFDec，不调用会覆盖正式资源的导入入口。`raster.gd`复用原导入器的栅格/遮挡/合成操作，仅增加隔离密度参数。PNG源文件、SVG、源XML及所有临时脚本均未加入正式资源系统。
+
+```powershell
+python -X utf8 Godot/GodotProject/.godot/validation/art_a1a_20261114/prepare.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_a1a_raster_20261114 --headless --script res://.godot/validation/art_a1a_20261114/raster.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_a1a_preview_verified_20261114 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a1a_20261114/preview.gd
+python -X utf8 Godot/GodotProject/.godot/validation/art_a1a_20261114/deliver.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_a1a_20261114/verify_delivery.py
+git diff --check
+```
+
+最终prepare、raster、preview、deliver均退出0；原生日志分别有`A1A RASTER PASS`、`A1A PREVIEW PASS`，最终两个Godot案例stderr为空。日志在本批`prepare.log`及既有`movement_presets/art_a1a_{raster,preview_verified}_20261114/`，每例使用隔离APPDATA。早期准备脚本因FFDec无符号sprite目录没有尾随下划线而退出1，修正实际目录匹配后重跑通过；首次预览直接读取正式PNG有导出提示，最终改读正式导入资源并按实际keep将核心宽度改为1720。此前失败/提示不作最终通过证据。
+
+最终完整性检查：**4161/4161非记录已跟踪文件与开工基线字节一致**，包含全部正式美术、`.import`、UID、场景、运行脚本和项目设置；HEAD保持。原三份用户暂存的`git diff --cached --binary` SHA256保持`bc4bb225354fb8bd1d8c39c08ebcb0c5856832501abeb0a82ce149cb47256c36`，没有暂存、提交、重置或回退。仅CrossPlatformPlan、WorkingNotes、LegacyAssetMap、Validation增加本批工作区记录；`verify_delivery.py`、`git diff --check`通过，结果见同目录`verification.json`。
+
+未运行构建、全游戏烟测、装备专项、全屏/Android真机或A1b/A1c，不将本批PASS扩大为正式接入通过。最小密度适配提案只维护在CrossPlatformPlan 2.12.13；**当前停止，等待用户审查英雄结果、平台来源限制及正式适配提案。**
+
+## 美术前置 A0续：全库保真高清与宽屏计划复核（2026-11-14）
+
+**本轮完成调查和计划修订，停在计划审查；未生成样本、重导或替换素材。** 用户再次确认：动画图集、UI、图标等全部美术提高分辨率，已有图像内容不变，只有外围扩图允许新增环境。依据当前指令及集中规范00/10/30/40/50章，修改范围仅CrossPlatformPlan、WorkingNotes和本页；没有修改规范正文、运行代码、场景、导入设置或作者工具。
+
+### 实际核对与结论
+
+| 项目 | 本轮证据 / 结论 |
+| --- | --- |
+| 现有清单复核 | 读取`classified_inventory.csv`为661行，分类计数600不扩、5天空、4短关候选、4UI背景、48演出帧；重新读取源图为**661项，656 PNG、1 JPG、4 SVG**。600只是不扩画布，所有项仍进入清晰度评估。 |
+| 原文件直接来源 | `import_frontend_assets.py`及`import_battle_ui_assets.py`读代码，并用`read_bytes()`比较旧`Art/MainGame/Bg1.png`、`Art/game_pic/183.png`、`Art/Level/Settlement/623.png`与正式标题/地图/结算图，**3/3逐字节相同**；更上游高精度源未确认。 |
+| 矢量与位图证据 | 两英雄/背包工具已有`sprite:svg`和Godot SVG栅格化；地形有shape包装入口。技能工具375/586直接导image，569直接解ARGB；装备工具导原image，蝙蝠天空明确为bitmap18。SWF来源不等于纯矢量；敌人/特效等剩余项仍须按依赖逐一确认。 |
+| 资源消费者 | 已读`HeroAppearanceResource.ApplyAtlas`（200px格、6列、宽1200），悟空实际场景、`MusouAfterimageNode.Capture`、`HeroPreviewNode`、`MapLocationButton`和描边shader、升级SpriteFrames的region/margin/filter_clip及FloatingText字宽读取。直接覆盖双倍PNG会拒绝装配或改变自然显示/定位，计划新增最小契约方案审查及联动验收。 |
+| 无双引用与时间轴 | 既有导出器固定940×590/24帧/24fps、55/58选择角色；`UIs/Battle/musou_activation.tscn`同时引用两套SpriteFrames。不能假定只驻留当前英雄；公共背景52为既有来源登记，本轮未重新拆层/渲染验证。 |
+| 引擎与预览参数 | `S:/Godot4/Godot4CSharp_console.exe --version`输出**4.7.2.stable.mono.official.ed1daf0bf**；`--help`确认`--resolution <W>x<H>`、`--windowed`、`--fullscreen`。正式project仍940×590、canvas_items，未显式写aspect（沿默认keep），无1920窗口override。本轮没有启动游戏预览。 |
+| 工具与源可用性 | `%TEMP%/gamezmxy-ffdec/ffdec.jar`存在；当前`.godot/validation/`没有SWF或>100KB源XML。只读检查既有`%TEMP%/gamezmxy*`目录，只找到两份造三SWF，未找到本轮所需造一源；没有下载源、运行导出器或把历史命令视为现在可重跑证明。后续先定位/按已登记版本取得源并校验散列。 |
+| 纹理与尺寸 | 当前最大示例`tamarin_king_effect.png`为6520×3200；英雄1200×5800双倍会到2400×11600。RGBA8公式复算：UI覆盖图1倍3.17/2倍12.68MiB；天空1倍5.39/2倍21.56MiB；英雄1倍26.55/2倍106.20MiB。均为理论无mipmap成本，非显存实测。 |
+| 导入设置抽样 | `journey_map.png.import`为compress/mode=0、mipmap关闭、size_limit=0、fix_alpha_border开启、premult_alpha关闭。只代表该样本，不能推广全库或当Android导出结果。 |
+| 比例核算 | 高590：1920/2340/2400/2520×1080分别对应逻辑宽1048.89/1278.33/1311.11/1376.67；1377覆盖21:9，1312不足。1408×590、2048×690是覆盖规格，2倍母版与运行密度分别审定。 |
+| 画面证据复用 | 本轮查看既有`screen_art_contact.png`、`musou_48_frames.png`，确认刻意黑色、透明面板和人物/字图不能当待填区域。此前44张关卡边缘图及scene_geometry/sky_coverage继续复用，未重渲染、不冒称真实通关。 |
+
+### 本轮检查入口与结果
+
+源读取与消费者检索采用以下入口（只读）：
+
+```text
+rg -n 'sprite:svg|load_svg_from_string|FrameCellSize|FrameColumns|ApplyAtlas' Tools/LegacyMigration/export_official_wukong.py Tools/LegacyMigration/export_official_tangseng.py Godot/GodotProject/EditorScripts/import_official_wukong.gd Godot/GodotProject/TheGame/GameScripts/Entity/Heroes/HeroAppearanceResource.cs
+S:/Godot4/Godot4CSharp_console.exe --version
+S:/Godot4/Godot4CSharp_console.exe --help
+```
+
+源计数、分类、旧图字节比较及理论内存通过本轮内联Python（`python -X utf8 -`）完成；输入为现有661项清单、工程图像、上述三份旧源和明确的宽高，未写图像或新增审计工具。文档验证入口为`git diff --check`及内联Python检查UTF-8、代码围栏、现有链接路径、关键比例/批次和变更范围。
+
+最终检查：**DOC PLAN PASS**（3份文档UTF-8/围栏/相对文件链接通过，引用工具路径存在，661项计数与44张既有覆盖图尺寸吻合）；**git diff --check退出0**。本轮开工HEAD为`c25b2e6ad0848028bf734fb1add5bbdce3764c82`，工作区干净、暂存为空；最终仅上述3份文档有工作区差异。**4162/4162其他已跟踪文件的路径与字节汇总散列保持**（`f19fe4e03d710e34a6538ef4077e70d7140c63b361c915f1f478ae16f2430c60`），HEAD和空cached diff保持；661张图像包含于该检查，没有执行暂存、提交、重置或源码回退。
+
+### 本轮边界与下一步
+
+原计划“运行图必须合回旧中心”已拆为原尺寸扩图/高清/高清再扩图三种口径；高清允许采样变化，不允许人物、字形、配色、结构、装备或动画内容变化。明确A1a矢量重导、A1b位图保真、A1c地图扩图各自交付和停止点，替代旧“下一批直接做地图后推广”。Windows默认输出、四比例临时预览、运行纹理与200px契约均有后续小步骤，正式keep未改。
+
+未执行构建/规则测试、引擎扫描、游戏/Android预览、高清样本、超分、AI扩图、资源替换及真机内存/帧率测试；它们不属于本轮文档交付。待后续裁决的是英雄高密度运行契约、保真位图样本是否采用、Android代表机/性能目标及T3短关取景。下面A0与T1记录为此前检查点，旧批次顺序/保护口径以本节及修订计划为准，不改写其当时的验证事实。
+
 ## 美术前置 A0：全量素材盘点与扩展计划（2026-11-14）
 
 **A0盘点/方案已完成，停在用户审查点；尚未制作或接入合格扩图。** 用户最新要求先搁置跨平台代码实施，先定美术方案、分批优化，再恢复手机适配。Windows按1920×1080/16:9，横屏手机覆盖16:9～21:9，平板另行适配。T1已获用户审查通过；T2已有UI修改保留但未完成，T3～T5不推进。依据当前指令及集中规范00/40/50章，复用原资源、场景、视差与动画导出入口，不新建运行时适配层。

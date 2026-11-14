@@ -96,6 +96,8 @@ func _run() -> void:
     outline.closed = true
     viewport.add_child(outline)
     var appearance = load("res://TheGame/Sprites/Characters/Heroes/wukong/wukong_appearance.tres")
+    var density := int(appearance.get("_textureDensity"))
+    var cell_size := 200 * density
     var output := "res://.godot/validation/official_attacks"
     DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output))
     var samples := 0
@@ -115,16 +117,18 @@ func _run() -> void:
         for armed in weapon_textures.size():
             body.texture = body_textures[armor]
             weapon.texture = weapon_textures[armed]
-            body.vframes = body.texture.get_height() / 200
-            weapon.vframes = weapon.texture.get_height() / 200
-            # Skills append after the original 87 poses on the unchanged grid.
-            var atlas_size := Vector2(body.hframes * 200, body.vframes * 200)
+            body.vframes = body.texture.get_height() / cell_size
+            weapon.vframes = weapon.texture.get_height() / cell_size
+            body.scale = Vector2.ONE / density
+            weapon.scale = Vector2.ONE / density
+            var atlas_size := Vector2(body.hframes * cell_size, body.vframes * cell_size)
             _check(body.hframes == int(manifest.columns) and body.vframes >= int(manifest.rows), "Existing pose grid changed")
             _check(body.texture.get_size() == atlas_size and weapon.texture.get_size() == atlas_size, "Unexpected atlas registration")
             var body_image := body.texture.get_image()
             var weapon_image := weapon.texture.get_image()
-            for cell in range(manifest.poses.size()):
-                _check(not body_image.get_region(Rect2i(cell % 6 * 200, cell / 6 * 200, 200, 200)).is_invisible(), "Unused cell inside compact body atlas")
+            for key in manifest.poses:
+                var cell := int(key)
+                _check(not body_image.get_region(Rect2i(cell % 6 * cell_size, cell / 6 * cell_size, cell_size, cell_size)).is_invisible(), "Unused cell inside compact body atlas")
             for facing in [-1, 1]:
                 hero.call("SetFacing", facing)
                 var mirrored_scale := Vector2(-1 if facing > 0 else 1, 1)
@@ -147,7 +151,8 @@ func _run() -> void:
                     for frame in range(count):
                         var context := "%s frame=%d armor=%d weapon=%d facing=%d" % [expected.name, frame+1, armor, armed, facing]
                         player.seek((frame + 0.1) / 24.0, true)
-                        _check(body.frame == int(expected.start) + frame and weapon.frame == body.frame, "Body/weapon mismatch: " + expected.name)
+                        var expected_cell := int(expected.frame_cells[frame]) if expected.has("frame_cells") else int(expected.start) + frame
+                        _check(body.frame == expected_cell and weapon.frame == body.frame, "Body/weapon mismatch: " + expected.name)
                         _check(effect.animation == expected.name and effect.frame == frame, "Effect timeline mismatch: " + expected.name)
                         _check(body.flip_h == (facing > 0) and weapon.flip_h == body.flip_h, "Facing mismatch")
                         _check(hero.position == Vector2(200, 150), "Animation changed root position")
@@ -171,8 +176,8 @@ func _run() -> void:
                             # Check both visible layers against the live shape, independently of manifest bounds.
                             var low := Vector2(INF, INF)
                             var high := Vector2(-INF, -INF)
-                            var origin := Vector2i(body.frame % 6 * 200, body.frame / 6 * 200)
-                            var weapon_points := _visible_points(weapon_image.get_region(Rect2i(origin, Vector2i(200, 200))), weapon.global_transform, Vector2(100, 100), weapon.flip_h, 0.25)
+                            var origin := Vector2i(body.frame % 6 * cell_size, body.frame / 6 * cell_size)
+                            var weapon_points := _visible_points(weapon_image.get_region(Rect2i(origin, Vector2i(cell_size, cell_size))), weapon.global_transform, Vector2(100, 100) * density, weapon.flip_h, 0.25)
                             var energy_points: Array[Vector2] = []
                             if region != null:
                                 energy_points = _visible_points(region.get_image(), effect.global_transform, Vector2(200, 150), false, 0.1)

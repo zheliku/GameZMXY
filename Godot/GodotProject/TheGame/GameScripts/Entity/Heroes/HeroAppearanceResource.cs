@@ -9,8 +9,10 @@ namespace GameLogic.Heroes;
 [Tool, GlobalClass]
 public partial class HeroAppearanceResource : Resource
 {
-    private const int FrameCellSize = 200;
-    private const int FrameColumns = 6;
+    private const int FrameCellSize = 200; // 动作格的逻辑尺寸，不随素材密度改变。
+    private const int FrameColumns = 6; // 身体与武器沿用六列网格。
+
+    [Export(PropertyHint.Range, "1,2,1")] private int _textureDensity = 1; // 同一外观资源全部图集的像素密度。
 
     [Export] private Texture2D _baseBody; // 未穿防具时的身体图集。
     [Export] private Godot.Collections.Dictionary<EquipmentId, Texture2D> _armorTextures = new(); // 按防具身份选择完整动作图集。
@@ -46,8 +48,8 @@ public partial class HeroAppearanceResource : Resource
             : _weaponTextures.TryGetValue(weaponId, out Texture2D equipped) && equipped != null ? equipped
             : throw new System.InvalidOperationException($"武器缺少角色动作图集：{weaponId}");
 
-        ApplyAtlas(body, bodyTexture, "身体");
-        ApplyAtlas(weapon, weaponTexture, "武器");
+        ApplyAtlas(body, bodyTexture, _textureDensity, "身体");
+        ApplyAtlas(weapon, weaponTexture, _textureDensity, "武器");
     }
 
     /// <summary>
@@ -55,23 +57,27 @@ public partial class HeroAppearanceResource : Resource
     /// </summary>
     /// <param name="sprite">场景绑定的表现层。</param>
     /// <param name="texture">本装备独立的完整动作图集。</param>
+    /// <param name="density">每逻辑像素对应的源像素数。</param>
     /// <param name="layerName">装配失败时显示的层名称。</param>
-    private static void ApplyAtlas(Sprite2D sprite, Texture2D texture, string layerName)
+    private static void ApplyAtlas(Sprite2D sprite, Texture2D texture, int density, string layerName)
     {
         if (sprite == null)
         {
             throw new System.InvalidOperationException($"换装缺少{layerName} Sprite2D。");
         }
 
-        if (texture == null || texture.GetWidth() != FrameCellSize * FrameColumns ||
-            texture.GetHeight() <= 0 || texture.GetHeight() % FrameCellSize != 0)
+        int pixelCellSize = FrameCellSize * density;
+        if (texture == null || texture.GetWidth() != pixelCellSize * FrameColumns ||
+            texture.GetHeight() <= 0 || texture.GetHeight() % pixelCellSize != 0)
         {
             throw new System.InvalidOperationException(
-                $"{layerName}动作图集必须是{FrameColumns}列、每格{FrameCellSize}px的方格图集。");
+                $"{layerName}动作图集必须是{FrameColumns}列、每格{pixelCellSize}px的方格图集。");
         }
 
         sprite.Texture = texture;
         sprite.Hframes = FrameColumns;
-        sprite.Vframes = texture.GetHeight() / FrameCellSize;
+        sprite.Vframes = texture.GetHeight() / pixelCellSize;
+        // 注册点已烘焙进200逻辑格；只补偿视觉层密度，重复换装不会累计缩放。
+        sprite.Scale = Vector2.One / density;
     }
 }

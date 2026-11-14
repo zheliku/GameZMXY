@@ -68,24 +68,31 @@ def export(args):
     role = next(t for t in root.find('tags') if t.get('spriteId') == str(role_id))
     transforms = {int(t.get('characterId')): source.matrix(t) for t in role.find('subTags')
                   if t.get('name') == 'body' and t.get('characterId')}
-    poses = {i: pose for i, pose in enumerate(source.LEGACY_POSES.values())}
-    for action in source.attack_manifest(root):
-        for frame in range(action['count']):
-            poses[action['start'] + frame] = (action['sprite'], frame + 1)
-    skills = json.loads(args.skills.read_text(encoding='utf-8-sig'))
-    for action in skills['skills']:
-        for frame, cell in enumerate(action['frame_cells']):
-            poses.setdefault(int(cell), (int(action['sprite']), frame + 1))
-    idle = json.loads(args.idle.read_text(encoding='utf-8-sig'))
-    for frame, cell in enumerate(idle['frames']):
-        poses.setdefault(int(cell), (529, frame + 1))
-    # A new appearance must cover the native animation's complete frame map;
-    # using another item's exported layer silently loses its equipment identity.
-    motions = motion_poses(args.motion_library)
-    for cell, pose in motions.items():
-        if cell in poses and poses[cell] != pose:
-            raise ValueError(f'Motion cell {cell} conflicts with an existing pose')
-        poses[cell] = pose
+    if args.frame_map is not None:
+        registered = json.loads(args.frame_map.read_text(encoding='utf-8-sig'))
+        if registered['source_sha256'] != hashlib.sha256(original).hexdigest():
+            raise ValueError('Compact frame map uses a different official Role revision')
+        poses = {int(cell): tuple(pose) for cell, pose in registered['poses'].items()}
+        motions = {int(cell): poses[int(cell)] for cell in registered['motion_cells']}
+    else:
+        poses = {i: pose for i, pose in enumerate(source.LEGACY_POSES.values())}
+        for action in source.attack_manifest(root):
+            for frame in range(action['count']):
+                poses[action['start'] + frame] = (action['sprite'], frame + 1)
+        skills = json.loads(args.skills.read_text(encoding='utf-8-sig'))
+        for action in skills['skills']:
+            for frame, cell in enumerate(action['frame_cells']):
+                poses.setdefault(int(cell), (int(action['sprite']), frame + 1))
+        idle = json.loads(args.idle.read_text(encoding='utf-8-sig'))
+        for frame, cell in enumerate(idle['frames']):
+            poses.setdefault(int(cell), (529, frame + 1))
+        # Raw exports keep the pre-compaction native motion map. Installed compact
+        # wardrobes reuse their reviewed source map through --frame-map instead.
+        motions = motion_poses(args.motion_library)
+        for cell, pose in motions.items():
+            if cell in poses and poses[cell] != pose:
+                raise ValueError(f'Motion cell {cell} conflicts with an existing pose')
+            poses[cell] = pose
     work = args.work.resolve()
     work.mkdir(parents=True, exist_ok=True)
     environment = dict(os.environ, APPDATA=str(work/'profile'))
@@ -116,11 +123,11 @@ def export(args):
         for svg in folder.glob('*.svg'):
             source.split_pose(svg,destination,transforms[sid])
     rows = (max(poses) + 6) // 6
-    manifest={'source_sha256':hashlib.sha256(original).hexdigest(),'selector':args.selector,'kind':args.kind,'columns':6,'rows':rows,
+    manifest={'source_sha256':hashlib.sha256(original).hexdigest(),'selector':args.selector,'kind':args.kind,'columns':6,'rows':rows,'density':args.density,
         'poses':poses,'motion_cells':sorted(motions),'inputs':inputs,'output':str(args.output.resolve())}
     (work/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
     print(f'Prepared {len(poses)} registered {args.kind} cells, selector {args.selector}; '
-          f'{len(motions)} complete motion frames; grid 6x{rows}.')
+          f'{len(motions)} registered motion cells; grid 6x{rows}.')
 
 
 if __name__=='__main__':
@@ -129,6 +136,10 @@ if __name__=='__main__':
         parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--kind', choices=['body', 'weapon'], default='body')
     parser.add_argument('--selector', type=int, default=4)
+    parser.add_argument('--density', type=int, choices=[1, 2], default=1,
+                        help='Raster density; the logical cell and source frame map remain 200px/six columns')
+    parser.add_argument('--frame-map', type=Path,
+                        help='Registered compact source manifest; reuse its cells when regenerating an installed wardrobe')
     parser.add_argument('--motion-library', type=Path,
                         default=PROJECT/'TheGame/Entitys/Animations/Heroes/Wukong/wukong_anim_library.tres')
     export(parser.parse_args())

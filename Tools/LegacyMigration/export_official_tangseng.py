@@ -207,7 +207,7 @@ def rasterize(args):
         raise ValueError('Only audited Role2 frames may be rasterized')
     selector=manifest['cloth_selector'] if manifest['kind']=='body' else manifest['weapon_selector']
     data={
-        'kind':manifest['kind'], 'selector':selector, 'columns':manifest['columns'],
+        'kind':manifest['kind'], 'selector':selector, 'columns':manifest['columns'], 'density':args.density,
         'rows':(len(manifest['frames'])+5)//6,
         'poses':{str(i):[frame['source_sprite'],frame['source_frame']] for i,frame in enumerate(manifest['frames'])},
         'inputs':{str(frame['source_sprite']):str((args.work/'layers'/frame['action']).resolve())
@@ -233,6 +233,8 @@ if __name__=='__main__':
     parser.add_argument('--kind',choices=['body','weapon'],required=True)
     parser.add_argument('--cloth',type=int,default=1)
     parser.add_argument('--weapon',type=int,default=1)
+    parser.add_argument('--density',type=int,choices=[1,2],default=1,
+                        help='Raster density for --rasterize-only; source coordinates remain unchanged')
     parser.add_argument('--rasterize-only',action='store_true')
     parser.add_argument('--godot',type=Path)
     args=parser.parse_args()
