@@ -57,9 +57,10 @@ _hitBox = NodePath("m_HitBoxRoot/m_HitBox")
 _hitBoxRoot = NodePath("m_HitBoxRoot")
 
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1821930133]
+scale = Vector2(0.5, 0.5)
 sprite_frames = ExtResource("2_e3f0t")
 animation = &"idle"
-offset = Vector2(-13.5, -7.5)
+offset = Vector2(-27, -15)
 
 [node name="m_BodyShape" type="CollisionShape2D" parent="." unique_id=1617060818]
 position = Vector2(0.5, 0)

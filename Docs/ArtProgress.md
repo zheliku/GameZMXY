@@ -2,9 +2,9 @@
 
 更新时间：2026-11-17。本页持续维护逐项进度。**电脑美术主设计16:9，以1920×1080验收；手机主设计20:9，以2400×1080作预览参考，实际按设备像素输出。** 其他手机比例有限留边/裁切兼容；4K屏允许继续放大1080p标准，940×590玩法核心保持。
 
-**图像源文件：67 / 666 已完成制作、接入及对应必要验证（约10.1%，按文件数统计）。本轮26张英雄preview已接入完整待机并实际播放验证，地图入口最终保留完整原墨底并去原文字、独立Label显示；删除无消费者的新题签墨底使总数减1，高清完成量不增加。599项未完整完成：55项来源/保真限制（含11项部分完成）、544项待处理。journey_map仍仅外围覆盖，中心真实高清、Android真机及其他位图未完成。**
+**图像源文件：70 / 672 已完成制作、接入及对应必要验证（约10.4%，按文件数统计）。本批Boss新增3项纯矢量高清；9套混合图及新增6张分页只记部分提升，18项低精度效果/石像保留原图。602项未完整完成：88项来源/保真限制（含26项部分完成）、514项待处理。配套66/182。地图真实高清和Android真机仍未完成，Boss本批等待审查。**
 
-另列182份配套美术资源：字体、着色器、动画库、SpriteFrames、外观登记、主题与样式、地图透明命中遮罩，其中43份已完成密度联动、时序核对或必要显示验证。这182份不加入666张图像的分母，也不重复计算图片完成量。
+另列182份配套美术资源：字体、着色器、动画库、SpriteFrames、外观登记、主题与样式、地图透明命中遮罩，其中66份已完成密度联动、时序核对或必要显示验证。这182份不加入672张图像的分母，也不重复计算图片完成量。
 
 勾选含义：`[x]`表示该项对应的制作/接入/必要验证已完成；`[ ]`表示尚未完成。**完成实验、生成样稿或找到源文件，不等于素材高清通过；“等待用户审图”单独保留。** 原生SVG、字体和样式按1080p实际显示核对，需要时可保留原件，不强行栅格化或放大。
 
@@ -23,6 +23,10 @@
 **双端显示验收补充（最新标准）：** 主构图电脑16:9、手机20:9；19:9、19.5:9、21:9及范围内16:9手机沿用20:9构图作兼容，允许有限留边/裁外围，不逐机重排卡宽。选角四卡紧贴并铺满两套主画布，拓宽背景、核心角色和墨框边角/厚度保持；姓名改为项目字体的独立Label、锚定原相对位置。此规则取代上下黑框裁切样稿。已有高清勾选不等于Android整屏体验已验，详见CrossPlatformPlan 2.12.17。
 
 ## 目前做了什么
+
+- [x] 本批Boss整类30项查源，12套原路径2倍密度接入（11套2058时刻＋唐僧被抓130时刻）；原点/动画/碰撞保持，新增6页使所有本批新纹理每边≤4096。
+- [x] 原生4189项/73张1080p和22张手机比例图、实际Boss攻击/死亡/捕获/回池专项通过，详见Validation。
+- [ ] Boss本批画面审查；9套混合图与18项位图效果/石像的真实细节恢复、Android真机/性能预算仍未完成。
 
 - [x] 两英雄完整身体preview接入：悟空100时刻/13身体姿态、唐僧91时刻/10姿态，原源2倍像素、独立武器和24fps保持；26PNG原路径已改，原格/源像素逐项核对通过。
 - [x] 真实普通背包自然播放、暂停/覆盖暂停、换装/回池重开通过；原生144装备组合/191动作时刻共2206项，角色尺度/注册/遮挡保持。[实际动作对照](../Godot/GodotProject/.godot/validation/art_preview_animated_idle_20261117/actual_motion_contact.png)。
@@ -287,62 +291,68 @@
 
 <a id="art-images-06"></a>
 
-### 敌人、Boss及其图集（9/60）
+### 敌人、Boss及其图集（12/66）
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/`
 
-- [ ] [macaque_king_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_body.png) — 2696×1560；待来源/清晰度处理及1080p验收。
-- [ ] [macaque_king_effect.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_effect.png) — 2928×1490；待来源/清晰度处理及1080p验收。
-- [ ] [macaque_wind_blade.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_wind_blade.png) — 5768×620；待来源/清晰度处理及1080p验收。
+- [ ] [macaque_king_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_body.png) — 2696×1560 → 2048×3476；原源2倍重导，209时刻/60共享姿态；共同画布/原点、24fps及遮挡保持；部分提升，1个位图依赖仍受源精度限制；已接入验证，本批待审。
+- [ ] [macaque_king_effect.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_effect.png) — 2928×1490；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
+- [x] [macaque_wind_blade.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_wind_blade.png) — 5768×620 → 2048×2503；原源2倍重导，50时刻/50共享姿态；共同画布/原点、24fps及遮挡保持；纯矢量高清完成；已接入验证，本批待审。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/`
 
-- [ ] [tamarin_king_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_body.png) — 1528×810；待来源/清晰度处理及1080p验收。
-- [ ] [tamarin_king_effect.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_effect.png) — 6520×3200；待来源/清晰度处理及1080p验收。
+- [ ] [tamarin_king_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_body.png) — 1528×810 → 3056×1620；原源2倍重导，176时刻/36共享姿态；共同画布/原点、24fps及遮挡保持；部分提升，9个位图依赖仍受源精度限制；已接入验证，本批待审。
+- [ ] [tamarin_king_effect.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_effect.png) — 6520×3200；来源受限：原包含55个位图依赖；保留正式原图，未以插值放大计高清。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_04_bat_cave/`
 
-- [ ] [bat_cave_statue_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_04_bat_cave/bat_cave_statue_body.png) — 795×222；待来源/清晰度处理及1080p验收。
+- [ ] [bat_cave_statue_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_04_bat_cave/bat_cave_statue_body.png) — 795×222；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/`
 
-- [ ] [lion_camel_king.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king.png) — 5144×3179；待来源/清晰度处理及1080p验收。
-- [ ] [lion_camel_poison_cloud.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_poison_cloud.png) — 2720×695；待来源/清晰度处理及1080p验收。
+- [ ] [lion_camel_king.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king.png) — 5144×3179 → 4096×3984；原源2倍重导，148时刻/82共享姿态；共同画布/原点、24fps及遮挡保持；部分提升，30个位图依赖仍受源精度限制；2页，每边≤4096；已接入验证，本批待审。
+- [ ] [lion_camel_king_2.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_2.png) — 4096×2643；部分提升：lion_camel_king原生分页第2页，源像素/虚拟画布逐格全等；主体位图限制保持，本批待审。
+- [ ] [lion_camel_poison_cloud.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_poison_cloud.png) — 2720×695；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_06_garuda_cave/`
 
-- [ ] [peng_demon_king_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_06_garuda_cave/peng_demon_king_body.png) — 2088×2670；待来源/清晰度处理及1080p验收。
+- [ ] [peng_demon_king_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_06_garuda_cave/peng_demon_king_body.png) — 2088×2670 → 2048×3237；原源2倍重导，223时刻/78共享姿态；共同画布/原点、24fps及遮挡保持；部分提升，31个位图依赖仍受源精度限制；已接入验证，本批待审。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/`
 
-- [ ] [jiao_back_hit.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_back_hit.png) — 880×216；待来源/清晰度处理及1080p验收。
-- [ ] [jiao_demon_king_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_official_body.png) — 2048×3863；待来源/清晰度处理及1080p验收。
-- [ ] [jiao_dragon_wave.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_dragon_wave.png) — 3808×388；待来源/清晰度处理及1080p验收。
+- [ ] [jiao_back_hit.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_back_hit.png) — 880×216；来源受限：原包含10个位图依赖；保留正式原图，未以插值放大计高清。
+- [ ] [jiao_demon_king_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_official_body.png) — 2048×3863 → 4096×3729；原源2倍重导，158时刻/84共享姿态；共同画布/原点、24fps及遮挡保持；部分提升，6个位图依赖仍受源精度限制；2页，每边≤4096；已接入验证，本批待审。
+- [ ] [jiao_demon_king_official_body_2.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_official_body_2.png) — 4096×3032；部分提升：jiao_demon_king_official_body原生分页第2页，源像素/虚拟画布逐格全等；主体位图限制保持，本批待审。
+- [ ] [jiao_dragon_wave.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_dragon_wave.png) — 3808×388；来源受限：原包含14个位图依赖；保留正式原图，未以插值放大计高清。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/`
 
-- [ ] [shark_demon_king_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_body.png) — 2048×3917；待来源/清晰度处理及1080p验收。
-- [ ] [shark_king_bubble.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble.png) — 2048×222；待来源/清晰度处理及1080p验收。
-- [ ] [shark_king_bubble_warning.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_warning.png) — 512×324；待来源/清晰度处理及1080p验收。
-- [ ] [shark_king_shark_wave.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_shark_wave.png) — 4096×972；待来源/清晰度处理及1080p验收。
+- [ ] [shark_demon_king_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_body.png) — 2048×3917 → 4096×3772；原源2倍重导，200时刻/109共享姿态；共同画布/原点、24fps及遮挡保持；部分提升，14个位图依赖仍受源精度限制；2页，每边≤4096；已接入验证，本批待审。
+- [ ] [shark_demon_king_official_body_2.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_body_2.png) — 4096×3026；部分提升：shark_demon_king_official_body原生分页第2页，源像素/虚拟画布逐格全等；主体位图限制保持，本批待审。
+- [ ] [shark_king_bubble.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble.png) — 2048×222；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
+- [ ] [shark_king_bubble_warning.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_warning.png) — 512×324；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
+- [ ] [shark_king_shark_wave.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_shark_wave.png) — 4096×972；来源受限：原包含5个位图依赖；保留正式原图，未以插值放大计高清。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/`
 
-- [ ] [bull_background.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_background.png) — 1024×472；待来源/清晰度处理及1080p验收。
-- [ ] [bull_demon_beast_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_beast_official_body.png) — 512×787；待来源/清晰度处理及1080p验收。
-- [ ] [bull_demon_heart_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_official_body.png) — 512×61；待来源/清晰度处理及1080p验收。
-- [ ] [bull_demon_king_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_official_body.png) — 2048×3838；待来源/清晰度处理及1080p验收。
-- [ ] [bull_demon_king_tangseng_capture_atlas.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_tangseng_capture_atlas.png) — 476×289；待来源/清晰度处理及1080p验收。
-- [ ] [bull_fire.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire.png) — 512×759；待来源/清晰度处理及1080p验收。
-- [ ] [bull_hands.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_hands.png) — 512×185；待来源/清晰度处理及1080p验收。
-- [ ] [bull_heart.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_heart.png) — 512×1218；待来源/清晰度处理及1080p验收。
+- [ ] [bull_background.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_background.png) — 1024×472；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
+- [x] [bull_demon_beast_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_beast_official_body.png) — 512×787 → 1024×1574；原源2倍重导，139时刻/16共享姿态；共同画布/原点、24fps及遮挡保持；纯矢量高清完成；已接入验证，本批待审。
+- [x] [bull_demon_heart_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_official_body.png) — 512×61 → 1024×122；原源2倍重导，2时刻/1共享姿态；共同画布/原点、24fps及遮挡保持；纯矢量高清完成；已接入验证，本批待审。
+- [ ] [bull_demon_king_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_official_body.png) — 2048×3838 → 4096×3760；原源2倍重导，438时刻/167共享姿态；共同画布/原点、24fps及遮挡保持；部分提升，45个位图依赖仍受源精度限制；2页，每边≤4096；已接入验证，本批待审。
+- [ ] [bull_demon_king_official_body_2.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_official_body_2.png) — 4096×2654；部分提升：bull_demon_king_official_body原生分页第2页，源像素/虚拟画布逐格全等；主体位图限制保持，本批待审。
+- [ ] [bull_demon_king_tangseng_capture_atlas.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_tangseng_capture_atlas.png) — 476×289 → 952×578；部分提升：原源2倍唐僧被抓两姿态，130时刻保持；其他姿态共用主体分页；混合位图未完整高清，本批待审。
+- [ ] [bull_fire.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire.png) — 512×759；来源受限：原包含7个位图依赖；保留正式原图，未以插值放大计高清。
+- [ ] [bull_hands.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_hands.png) — 512×185；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
+- [ ] [bull_heart.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_heart.png) — 512×1218；来源受限：原包含2个位图依赖；保留正式原图，未以插值放大计高清。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/`
 
-- [ ] [dragon_king_ice_aura.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_ice_aura.png) — 512×4256；待来源/清晰度处理及1080p验收。
-- [ ] [dragon_king_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_official_body.png) — 4096×2242；待来源/清晰度处理及1080p验收。
-- [ ] [dragon_king_torrent.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent.png) — 512×4480；待来源/清晰度处理及1080p验收。
-- [ ] [dragon_king_wave.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_wave.png) — 1024×312；待来源/清晰度处理及1080p验收。
+- [ ] [dragon_king_ice_aura.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_ice_aura.png) — 512×4256；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
+- [ ] [dragon_king_official_body.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_official_body.png) — 4096×2242 → 4096×3702；原源2倍重导，315时刻/102共享姿态；共同画布/原点、24fps及遮挡保持；部分提升，4个位图依赖仍受源精度限制；3页，每边≤4096；已接入验证，本批待审。
+- [ ] [dragon_king_official_body_2.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_official_body_2.png) — 4096×4090；部分提升：dragon_king_official_body原生分页第2页，源像素/虚拟画布逐格全等；主体位图限制保持，本批待审。
+- [ ] [dragon_king_official_body_3.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_official_body_3.png) — 4096×852；部分提升：dragon_king_official_body原生分页第3页，源像素/虚拟画布逐格全等；主体位图限制保持，本批待审。
+- [ ] [dragon_king_torrent.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent.png) — 512×4480；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
+- [ ] [dragon_king_wave.png](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_wave.png) — 1024×312；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
 
 目录：`TheGame/Sprites/Characters/Enemies/Monsters/Ground/bull_guard/`
 
@@ -425,8 +435,8 @@
 
 目录：`TheGame/Sprites/Effects/Enemies/zm1_06_garuda_cave/`
 
-- [ ] [boss_death.png](../Godot/GodotProject/TheGame/Sprites/Effects/Enemies/zm1_06_garuda_cave/boss_death.png) — 1002×167；待来源/清晰度处理及1080p验收。
-- [ ] [peng_fire.png](../Godot/GodotProject/TheGame/Sprites/Effects/Enemies/zm1_06_garuda_cave/peng_fire.png) — 4976×1296；待来源/清晰度处理及1080p验收。
+- [ ] [boss_death.png](../Godot/GodotProject/TheGame/Sprites/Effects/Enemies/zm1_06_garuda_cave/boss_death.png) — 1002×167；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
+- [ ] [peng_fire.png](../Godot/GodotProject/TheGame/Sprites/Effects/Enemies/zm1_06_garuda_cave/peng_fire.png) — 4976×1296；来源受限：原包含1个位图依赖；保留正式原图，未以插值放大计高清。
 
 目录：`TheGame/Sprites/Effects/hero_death/`
 
@@ -1111,7 +1121,7 @@
 
 <!-- art-images:end -->
 
-## 配套美术资源（182项，不计入图像667项）
+## 配套美术资源（182项，不计入图像672项）
 
 这部分列全部业务字体、着色器、独立美术`.tres`文件及地图BitMap遮罩；嵌入其中的子资源不重复记为文件。帧动画的源PNG仍在上表，不能因为动画库已核对就把它引用的所有图片一并勾掉。音频、业务数值Resource、bundle、C#和场景消费者不计为本表美术源；它们必要的接入任务已在上方及Validation记录。
 
@@ -1162,16 +1172,16 @@
 
 <a id="art-support-03"></a>
 
-### 动画库（21/71）
+### 动画库（32/71）
 
 目录：`TheGame/Entitys/Animations/Enemies/Bosses/zm1_02_macaque_king/`
 
-- [ ] [macaque_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_02_macaque_king/macaque_king_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
-- [ ] [macaque_wind_blade_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_02_macaque_king/macaque_wind_blade_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
+- [x] [macaque_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_02_macaque_king/macaque_king_library.tres) — AnimationLibrary；仅换算视觉offset，方法/时序/判定轨保持；本批原生与行为验证通过，待审。
+- [x] [macaque_wind_blade_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_02_macaque_king/macaque_wind_blade_library.tres) — AnimationLibrary；仅换算视觉offset，方法/时序/判定轨保持；本批原生与行为验证通过，待审。
 
 目录：`TheGame/Entitys/Animations/Enemies/Bosses/zm1_03_tamarin_king/`
 
-- [ ] [tamarin_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
+- [x] [tamarin_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_library.tres) — AnimationLibrary；仅换算视觉offset，方法/时序/判定轨保持；本批原生与行为验证通过，待审。
 
 目录：`TheGame/Entitys/Animations/Enemies/Bosses/zm1_04_bat_cave/`
 
@@ -1179,39 +1189,39 @@
 
 目录：`TheGame/Entitys/Animations/Enemies/Bosses/zm1_05_qixing_cave/`
 
-- [ ] [lion_camel_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
+- [x] [lion_camel_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_library.tres) — AnimationLibrary；仅换算视觉offset，方法/时序/判定轨保持；本批原生与行为验证通过，待审。
 - [ ] [lion_camel_poison_cloud_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_poison_cloud_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 
 目录：`TheGame/Entitys/Animations/Enemies/Bosses/zm1_06_garuda_cave/`
 
 - [ ] [boss_death_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_06_garuda_cave/boss_death_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
-- [ ] [peng_demon_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_06_garuda_cave/peng_demon_king_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
+- [x] [peng_demon_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_06_garuda_cave/peng_demon_king_library.tres) — AnimationLibrary；仅换算视觉offset，方法/时序/判定轨保持；本批原生与行为验证通过，待审。
 - [ ] [peng_fire_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_06_garuda_cave/peng_fire_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 
 目录：`TheGame/Entitys/Animations/Enemies/Bosses/zm1_08_east_sea/`
 
-- [ ] [jiao_demon_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
+- [x] [jiao_demon_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_library.tres) — AnimationLibrary；仅换算视觉offset，方法/时序/判定轨保持；本批原生与行为验证通过，待审。
 - [ ] [jiao_dragon_wave_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_08_east_sea/jiao_dragon_wave_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 
 目录：`TheGame/Entitys/Animations/Enemies/Bosses/zm1_09_shark_whirlpool/`
 
-- [ ] [shark_demon_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
+- [x] [shark_demon_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_library.tres) — AnimationLibrary；仅换算视觉offset，方法/时序/判定轨保持；本批原生与行为验证通过，待审。
 - [ ] [shark_king_bubble_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 - [ ] [shark_king_bubble_warning_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_warning_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 - [ ] [shark_king_shark_wave_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_shark_wave_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 
 目录：`TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/`
 
-- [ ] [bull_demon_beast_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_beast_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
-- [ ] [bull_demon_heart_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
-- [ ] [bull_demon_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
+- [x] [bull_demon_beast_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_beast_library.tres) — AnimationLibrary；仅换算视觉offset，方法/时序/判定轨保持；本批原生与行为验证通过，待审。
+- [x] [bull_demon_heart_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_library.tres) — AnimationLibrary；仅换算视觉offset，方法/时序/判定轨保持；本批原生与行为验证通过，待审。
+- [x] [bull_demon_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_library.tres) — AnimationLibrary；仅换算视觉offset，方法/时序/判定轨保持；本批原生与行为验证通过，待审。
 - [ ] [bull_fire_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 - [ ] [bull_heart_fade_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_heart_fade_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 - [ ] [bull_presentation_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_10_bull_demon_valley/bull_presentation_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 
 目录：`TheGame/Entitys/Animations/Enemies/Bosses/zm1_11_hidden_dragon_palace/`
 
-- [ ] [dragon_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
+- [x] [dragon_king_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_library.tres) — AnimationLibrary；仅换算视觉offset，方法/时序/判定轨保持；本批原生与行为验证通过，待审。
 - [ ] [dragon_king_torrent_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 - [ ] [dragon_king_wave_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_wave_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 
@@ -1324,17 +1334,17 @@
 
 <a id="art-support-04"></a>
 
-### 逐帧动画资源（14/78）
+### 逐帧动画资源（26/78）
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/`
 
-- [ ] [macaque_king_body_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_body_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
+- [x] [macaque_king_body_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_body_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
 - [ ] [macaque_king_effect_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_effect_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
-- [ ] [macaque_wind_blade_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_wind_blade_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
+- [x] [macaque_wind_blade_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_wind_blade_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/`
 
-- [ ] [tamarin_king_body_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_body_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
+- [x] [tamarin_king_body_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_body_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
 - [ ] [tamarin_king_effect_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_effect_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_04_bat_cave/`
@@ -1343,22 +1353,22 @@
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/`
 
-- [ ] [lion_camel_king_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
+- [x] [lion_camel_king_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
 - [ ] [lion_camel_poison_cloud_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_poison_cloud_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_06_garuda_cave/`
 
-- [ ] [peng_demon_king_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_06_garuda_cave/peng_demon_king_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
+- [x] [peng_demon_king_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_06_garuda_cave/peng_demon_king_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/`
 
 - [ ] [jiao_back_hit_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_back_hit_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
-- [ ] [jiao_demon_king_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_official_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
+- [x] [jiao_demon_king_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_official_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
 - [ ] [jiao_dragon_wave_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_dragon_wave_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/`
 
-- [ ] [shark_demon_king_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
+- [x] [shark_demon_king_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
 - [ ] [shark_king_bubble_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 - [ ] [shark_king_bubble_warning_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_bubble_warning_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 - [ ] [shark_king_shark_wave_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_king_shark_wave_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
@@ -1366,10 +1376,10 @@
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/`
 
 - [ ] [bull_background_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_background_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
-- [ ] [bull_demon_beast_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_beast_official_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
-- [ ] [bull_demon_heart_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_official_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
-- [ ] [bull_demon_king_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_official_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
-- [ ] [bull_demon_king_tangseng_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_tangseng_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
+- [x] [bull_demon_beast_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_beast_official_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
+- [x] [bull_demon_heart_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_heart_official_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
+- [x] [bull_demon_king_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_official_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
+- [x] [bull_demon_king_tangseng_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_king_tangseng_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
 - [ ] [bull_fire_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_fire_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 - [ ] [bull_hands_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_hands_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 - [ ] [bull_heart_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_heart_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
@@ -1377,7 +1387,7 @@
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/`
 
 - [ ] [dragon_king_ice_aura_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_ice_aura_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
-- [ ] [dragon_king_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_official_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
+- [x] [dragon_king_official_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_official_frames.tres) — SpriteFrames；原生分页region/margin与完整帧序/24fps保持；本批原生与行为验证通过，待审。
 - [ ] [dragon_king_torrent_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 - [ ] [dragon_king_wave_frames.tres](../Godot/GodotProject/TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_wave_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 

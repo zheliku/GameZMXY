@@ -145,49 +145,66 @@ def _pack_layer(layer):
                  columns=columns, rows=rows, poses=poses, unique_cells=len(images))
 
 
-def compact_registered_atlas(layer):
+def compact_registered_atlas(layer, *, frames=None, max_dimension=16384, paginate=False):
     """Pack visible storage rectangles while retaining every frame's virtual canvas.
 
     AtlasTexture.margin restores the same canvas/origin at draw time. This does
     not recenter sprites, alter frame offsets or split a character into layers.
+    Explicit frames reuse already registered exports. Pagination is opt-in for
+    callers that bind every page through native AtlasTexture resources.
     """
     path = Path(layer['output'])
-    original = Image.open(path).convert('RGBA')
+    original = Image.open(path).convert('RGBA') if frames is None else None
     width, height = layer['cell_size']
     pieces = []
     padding = 16  # Keep Godot's alpha-edge processing isolated from other frames.
     for cell in range(layer['unique_cells']):
         x, y = cell % layer['columns'] * width, cell // layer['columns'] * height
-        frame = original.crop((x, y, x + width, y + height))
+        frame = original.crop((x, y, x + width, y + height)) if frames is None else frames[cell]
         used = frame.getchannel('A').getbbox() or (0, 0, 1, 1)
         pieces.append((cell, frame.crop(used), used))
     candidates = []
     for atlas_width in (512, 1024, 2048, 4096, 8192):
-        if any(image.width + 2 * padding > atlas_width for _, image, _ in pieces):
+        if atlas_width > max_dimension or any(image.width + 2 * padding > atlas_width or
+                image.height + 2 * padding > max_dimension for _, image, _ in pieces):
             continue
         x, y, shelf_height = padding, padding, 0
-        regions = {}
+        pages = [{}]
+        heights = [0]
         for cell, image, used in sorted(pieces, key=lambda item: (-item[1].height, -item[1].width, item[0])):
             if x + image.width + padding > atlas_width:
                 x, y, shelf_height = padding, y + shelf_height + padding * 2, 0
-            regions[cell] = [x, y, image.width, image.height]
+            if y + image.height + padding > max_dimension:
+                if not paginate:
+                    pages = []
+                    break
+                pages.append({})
+                heights.append(0)
+                x, y, shelf_height = padding, padding, 0
+            pages[-1][cell] = [x, y, image.width, image.height]
+            heights[-1] = max(heights[-1], y + image.height + padding)
             x += image.width + padding * 2
             shelf_height = max(shelf_height, image.height)
-        atlas_height = y + shelf_height + padding
-        if atlas_height <= 16384:
-            candidates.append((atlas_width * atlas_height, atlas_width, atlas_height, regions))
+        if pages:
+            candidates.append((len(pages), atlas_width * sum(heights), atlas_width, heights, pages))
     if not candidates:
         raise ValueError('Registered sparse atlas exceeds native texture limits')
-    _, atlas_width, atlas_height, regions = min(candidates, key=lambda item: item[0])
-    atlas = Image.new('RGBA', (atlas_width, atlas_height))
+    _, _, atlas_width, heights, pages = min(candidates, key=lambda item: item[:3])
+    atlases = [Image.new('RGBA', (atlas_width, height)) for height in heights]
+    locations = {cell: (page, rect) for page, regions in enumerate(pages) for cell, rect in regions.items()}
     entries = {}
     for cell, image, used in pieces:
-        rect = regions[cell]
-        atlas.paste(image, (rect[0], rect[1]))
-        entries[str(cell)] = {'region': rect, 'margin': [used[0], used[1], width - image.width, height - image.height]}
-    atlas.save(path)
+        page, rect = locations[cell]
+        atlases[page].paste(image, (rect[0], rect[1]))
+        entries[str(cell)] = {'region': rect, 'margin': [used[0], used[1], width - image.width, height - image.height], 'page': page}
+    outputs = []
+    for page, atlas in enumerate(atlases):
+        output = path if page == 0 else path.with_name(path.stem + f'_{page + 1}' + path.suffix)
+        atlas.save(output)
+        outputs.append({'output': str(output), 'storage_size': list(atlas.size)})
     layer['atlas_regions'] = entries
-    layer['storage_size'] = [atlas_width, atlas_height]
+    layer['storage_size'] = outputs[0]['storage_size']
+    layer['atlas_pages'] = outputs
 
 
 def prepare_native_manifest(repo, inventory, manifest_path):

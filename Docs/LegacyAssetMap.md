@@ -1,5 +1,24 @@
 # 素材来源与复现
 
+## Boss整类重新接入与分页来源（2026-11-17）
+
+本批以67fb4f7为新基线，复用art_boss_batch_install_20261117中保留的FFDec26.3原源2倍导出，未重新绘制或插值角色。30项source_catalog的XML和11套已接入SWF散列复核一致，正式旧PNG/SpriteFrames/场景/库与当时导出前原件逐字节相同；既有1倍2058时刻注册证据有效。Monster_v1/Monster2_v4/Monster3_v3原包身份仍见OfficialReference，不修改只读原包。
+
+| 来源组 | 本次接入 | 原始精度限制 |
+| --- | --- | --- |
+| stages_2_3/bosses | 猕猴王209、禺狨王176时刻主体，猕猴风刃50时刻 | 两主体分别含1/9位图依赖；风刃纯矢量。原父矩阵和共同画布保持。 |
+| official_continuation/qixing、remaining_levels/garuda_art | 狮驼王148、鹏魔王223时刻 | 30/31位图依赖，矢量部分提升；各专属低精度效果保持原图。 |
+| remaining_levels/east_sea_art、shark_art | 蛟魔王158、鲨魔王200时刻 | 6/14位图依赖，部分提升，不把源位图计作高清。 |
+| remaining_levels/bull_art | 兽形139、人形438、牛心2时刻 | 兽形/牛心纯矢量；人形45位图依赖，部分提升。 |
+| tangseng_capture_20261105/bull_art | 唐僧被抓130时刻，两独有姿态 | 原Role2选择器/遮挡保持；167姿态中其余共用主体，混合来源不勾完整高清。 |
+| remaining_levels/dragon_art | 龙王315时刻 | 4位图依赖，冰块/雾等仍受源限制。 |
+
+2倍可见RGBA逐姿态散列与缓存的原源导出一致。沿原线宽下限修正；牛魔王沿既有renderer2描边采样，不改源内容。此次仅改变存储：复用compact_registered_atlas显式frames/max_dimension/paginate参数，保留16像素隔离透明padding；6张新增页使用普通_2/_3后缀，原首PNG/import/UID不变。每帧region/margin恢复原逻辑画布，视觉层scale0.5及offset2倍抵消密度；根/碰撞/动画事件不动。两猴王子Effect净变换保持；52资源重复接入字节相同。
+
+7个地图图鉴裁片继续引用对应主体页，按旧裁片在共同画布中的位置精确换算2倍，原姿态及宽高比保持，不生成另一套UI美术。来源裁片与正式新页逐像素一致；Godot整页透明边缘处理后的采样另经原生检查。18项低精度效果/石像原件保持，完整明细在ArtProgress。
+
+本批来源、候选、旧原件、映射及验证留`.godot/validation/art_boss_batch_resume_20261117/`，包括source_verification.json、preparation_verification.json、density_manifest.json、portraits/mapping.json、functional_results.json。正式资源和6张分页已在TheGame，未重建文档审图图片目录；单边≤4096不等于Android预算/真机通过。
+
 ## 完整待机preview与地图原图恢复（2026-11-17）
 
 按用户最新要求，背包从backpack_v2短展示/单姿态切换为Git历史已有的Role_v7完整wait，不重画新动作。复用已审当前战斗PNG的原源2倍像素，export_official_inventory_preview.py新增--animated-idle入口，只提取idle1身体/武器帧到原26个preview路径，独立外观字典与UID不改。保留原100/91时刻和24fps、完整共同格及逐帧遮挡；六列400源像素格=200逻辑格。悟空13身体/11武器姿态，唐僧10/8，去重不删除任何时刻。

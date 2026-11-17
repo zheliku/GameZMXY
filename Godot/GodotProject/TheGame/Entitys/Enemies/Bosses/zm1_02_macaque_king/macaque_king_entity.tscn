@@ -47,11 +47,13 @@ _hitBox = NodePath("m_HitBoxRoot/m_HitBox")
 _hitBoxRoot = NodePath("m_HitBoxRoot")
 
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=1821930133]
+scale = Vector2(0.5, 0.5)
 sprite_frames = ExtResource("2_kh4cb")
 animation = &"idle"
-offset = Vector2(4.5, -0.5)
+offset = Vector2(9, -1)
 
 [node name="Effect" type="AnimatedSprite2D" parent="m_Body" unique_id=1073097982]
+scale = Vector2(2, 2)
 visible = false
 sprite_frames = ExtResource("3_8hkrt")
 animation = &"attack_2"

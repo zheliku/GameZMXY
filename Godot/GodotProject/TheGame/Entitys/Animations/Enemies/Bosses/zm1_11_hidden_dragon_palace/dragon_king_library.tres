@@ -27,7 +27,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(11, -11)]
+"values": [Vector2(22, -22)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -287,7 +287,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(11, -11)]
+"values": [Vector2(22, -22)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -576,7 +576,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(11, -11)]
+"values": [Vector2(22, -22)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -1035,7 +1035,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(11, -11)]
+"values": [Vector2(22, -22)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -1297,7 +1297,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(11, -11)]
+"values": [Vector2(22, -22)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -1573,7 +1573,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(11, -11)]
+"values": [Vector2(22, -22)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -1833,7 +1833,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(11, -11)]
+"values": [Vector2(22, -22)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -2077,7 +2077,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(11, -11)]
+"values": [Vector2(22, -22)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -2321,7 +2321,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(11, -11)]
+"values": [Vector2(22, -22)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false

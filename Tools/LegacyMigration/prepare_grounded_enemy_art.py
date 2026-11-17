@@ -18,15 +18,15 @@ from import_official_sea_monsters import frames_resource, ACTORS, PROJECT
 
 
 def install_density_sample(args):
-    """Install authorized Monster1 density samples without regenerating gameplay tracks."""
+    """Install authorized registered density samples without regenerating gameplay tracks."""
     sample = json.loads(args.approved_density_sample.read_text(encoding='utf-8'))
     contracts = {'huaguoshan_monkey': (69, 23, [178, 144]),
                  'demon_monkey': (78, 20, [256, 230]),
                  'gorilla': (85, 23, [402, 328])}
     name = sample['actor']
-    if sample.get('original_slots_preserved'):
+    if sample.get('original_slots_preserved') or sample.get('registered_layout'):
         # Category batches already verified every source frame against the
-        # installed registration and retain each original slot's atlas anchor.
+        # installed registration; pagination only changes storage rectangles.
         visual_node = sample.get('visual_node','m_Body')
         frames_path = Path(sample['frames_path'])
         scene_path = Path(sample['scene_path'])
@@ -34,12 +34,26 @@ def install_density_sample(args):
         baseline = args.output.parent / 'before'
         repo = PROJECT.parents[1]
         baseline_scene = (baseline / scene_path.relative_to(repo)).read_text(encoding='utf-8-sig')
-        library_path = PROJECT / re.search(r'type="AnimationLibrary"[^\n]*path="res://([^\"]+)"', baseline_scene)[1]
+        library_path = Path(sample['library_path']) if sample.get('library_path') else PROJECT / re.search(r'type="AnimationLibrary"[^\n]*path="res://([^\"]+)"', baseline_scene)[1]
         text = (baseline / frames_path.relative_to(repo)).read_text(encoding='utf-8-sig')
+        pages = sample.get('atlas_pages', [{'output': sample['output']}])
+        texture_line = re.search(r'\[ext_resource type="Texture2D"[^\n]*id="([^"]+)"\]', text)
+        texture_id = texture_line[1]
+        page_paths = [atlas_path if page == 0 else atlas_path.with_name(atlas_path.stem + f'_{page + 1}.png')
+                      for page in range(len(pages))]
+        extra_textures = ''.join('\n[ext_resource type="Texture2D" path="res://' +
+            path.relative_to(PROJECT).as_posix() + '" id="' + texture_id + f'_{page + 1}' + '"]'
+            for page, path in enumerate(page_paths) if page > 0)
+        text = text[:texture_line.end()] + extra_textures + text[texture_line.end():]
+        if len(pages) > 1:
+            text = re.sub(r'load_steps=(\d+)', lambda match: 'load_steps=' + str(int(match[1]) + len(pages) - 1), text, count=1)
         for identity, entry in sample['atlas_regions'].items():
             pattern = r'(\[sub_resource type="AtlasTexture" id="'+re.escape(identity)+r'"\]\n)(.*?)(?=\n\[|\Z)'
             match = re.search(pattern,text,re.S)
             block = match[2]
+            page = entry.get('page', 0)
+            page_id = texture_id if page == 0 else texture_id + f'_{page + 1}'
+            block = re.sub(r'^atlas = ExtResource\("[^"]+"\)', 'atlas = ExtResource("' + page_id + '")', block, flags=re.M)
             for key in ['region','margin']:
                 value = key+' = Rect2('+', '.join(map(str,entry[key]))+')'
                 block,count = re.subn(r'^'+key+r' = Rect2\([^\n]+\)',value,block,flags=re.M)
@@ -52,22 +66,29 @@ def install_density_sample(args):
         body = re.sub(r'^offset = Vector2\(([^)]+)\)',
             lambda v:'offset = Vector2('+', '.join(format(float(x)*2,'g') for x in v[1].split(','))+')',body,flags=re.M)
         scene = scene[:match.start(2)]+'scale = Vector2(0.5, 0.5)\n'+body+scene[match.end(2):]
+        for child_path in sample.get('child_visual_paths', []):
+            parent, child_name = child_path.rsplit('/', 1)
+            pattern = r'(\[node name="' + re.escape(child_name) + r'"[^\n]*parent="' + re.escape(parent) + r'"[^\n]*\]\n)'
+            scene, count = re.subn(pattern, r'\g<1>scale = Vector2(2, 2)\n', scene)
+            if count != 1:
+                raise ValueError('Expected the registered child visual ' + child_path)
         library = (baseline / library_path.relative_to(repo)).read_text(encoding='utf-8-sig')
         pattern = r'(tracks/\d+/path = NodePath\("[^\"]*'+visual_node+r':offset"\).*?"values": \[)([^\]]+)(\])'
         def double_offsets(match):
             values = re.sub(r'Vector2\(([^)]+)\)',lambda v:'Vector2('+', '.join(format(float(x)*2,'g') for x in v[1].split(','))+')',match[2])
             return match[1]+values+match[3]
         library,offset_tracks = re.subn(pattern,double_offsets,library,flags=re.S)
-        atlas_path.write_bytes(Path(sample['output']).read_bytes())
+        for path, page in zip(page_paths, pages):
+            path.write_bytes(Path(page['output']).read_bytes())
         for path,content in [(frames_path,text),(scene_path,scene),(library_path,library)]:
             path.write_text(content,encoding='utf-8',newline='\n')
         args.output.mkdir(parents=True,exist_ok=True)
         (args.output/'installation.json').write_text(json.dumps({'actor':name,'density':2,
             'frames':sample['frames'],'shared_poses':sample['poses'],'offset_tracks_updated':offset_tracks,
             'atlas_sha256':hashlib.sha256(atlas_path.read_bytes()).hexdigest(),
-            'installed_files':[str(p) for p in [atlas_path,frames_path,scene_path,library_path]],
+            'installed_files':[str(p) for p in [atlas_path,frames_path,scene_path,library_path] + page_paths[1:]],
             'runtime_root_or_physics_changed':False},indent=2),encoding='utf-8')
-        print(f'{name.upper()} BATCH DENSITY INSTALL PASS: original slots, registration, timing and identities')
+        print(f'{name.upper()} BATCH DENSITY INSTALL PASS: {len(pages)} atlas pages, registration, timing and identities')
         return
     if name not in contracts or sample['source_sha256'] != '5bd88da4211870f2ca2354b7cec8d1790747869641c11fe553910b10fe2a264a':
         raise ValueError('This density route is only registered for the three Monster1 ground actors')

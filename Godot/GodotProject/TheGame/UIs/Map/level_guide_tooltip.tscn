@@ -11,16 +11,16 @@
 [ext_resource type="Texture2D" uid="uid://cj0q6t24o877t" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/cave_brute/cave_brute.png" id="9_bs3g6"]
 [ext_resource type="Texture2D" uid="uid://cdnhjjnymc2q5" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sky/bat/bat_body.png" id="10_o6pj3"]
 [ext_resource type="Texture2D" uid="uid://48q8lotx0xbt" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_04_bat_cave/bat_cave_statue_body.png" id="11_ne5g6"]
-[ext_resource type="Texture2D" uid="uid://c0p5bbibf3of7" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king.png" id="12_0bjey"]
+[ext_resource type="Texture2D" uid="uid://bdp6dxlb28y8y" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_2.png" id="12_0bjey"]
 [ext_resource type="Texture2D" uid="uid://4y38ir3drgsa" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_06_garuda_cave/peng_demon_king_body.png" id="13_hrr30"]
 [ext_resource type="Texture2D" uid="uid://bciwx4ac37wqr" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/knife_demon/knife_demon.png" id="14_gjlrm"]
 [ext_resource type="Texture2D" uid="uid://ccygk4sqva52l" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/shrimp_demon/shrimp_demon_official_body.png" id="15_8jjnh"]
 [ext_resource type="Texture2D" uid="uid://dbhe1j8mi6qjv" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sky/flying_demon/flying_demon_body.png" id="16_w8snk"]
 [ext_resource type="Texture2D" uid="uid://bme814cgo0v6e" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/tide_demon/tide_demon_official_body.png" id="17_mo2eq"]
 [ext_resource type="Texture2D" uid="uid://d8xd6rhtwns2" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/turtle_minister/turtle_minister_official_body.png" id="18_4sy02"]
-[ext_resource type="Texture2D" uid="uid://6emkfnhe3pgy" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_official_body.png" id="19_1r0cs"]
+[ext_resource type="Texture2D" uid="uid://14fc07jsl50h" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_official_body_2.png" id="19_1r0cs"]
 [ext_resource type="Texture2D" uid="uid://p1e4o675qtqx" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/shark_spawn/shark_spawn_official_body.png" id="20_fudko"]
-[ext_resource type="Texture2D" uid="uid://b8oef0jb1n8uo" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_body.png" id="21_brojh"]
+[ext_resource type="Texture2D" uid="uid://ddf1ukdj03cl" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_body_2.png" id="21_brojh"]
 [ext_resource type="Texture2D" uid="uid://daboqx36kwmew" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/lantern_fish/lantern_fish_official_body.png" id="22_i8tww"]
 [ext_resource type="Texture2D" uid="uid://cj1faivhuysb1" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_beast_official_body.png" id="23_ybx6s"]
 [ext_resource type="Texture2D" uid="uid://cvdrlp2330e21" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/bull_guard/bull_guard_official_body.png" id="24_xmueb"]
@@ -44,12 +44,12 @@ filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bvjx3"]
 atlas = ExtResource("7_bcrpk")
-region = Rect2(783, 1001, 111, 135)
+region = Rect2(1671, 376, 222, 270)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wjwuh"]
 atlas = ExtResource("8_rkwav")
-region = Rect2(1221, 367, 91, 98)
+region = Rect2(2442, 734, 182, 196)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rdwx3"]
@@ -64,17 +64,17 @@ filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_m817n"]
 atlas = ExtResource("13_hrr30")
-region = Rect2(352, 2206, 132, 118)
+region = Rect2(1201, 2289, 264, 236)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_i8ac5"]
 atlas = ExtResource("19_1r0cs")
-region = Rect2(1496, 3453, 97, 114)
+region = Rect2(243, 2552, 194, 228)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_w6ol6"]
 atlas = ExtResource("12_0bjey")
-region = Rect2(2815, 2405, 135, 97)
+region = Rect2(3496, 2204, 270, 194)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_jw1cf"]
@@ -109,7 +109,7 @@ filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_c12ke"]
 atlas = ExtResource("21_brojh")
-region = Rect2(16, 2712, 261, 172)
+region = Rect2(578, 1545, 522, 344)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_t1gri"]
@@ -124,7 +124,7 @@ filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_sbwk4"]
 atlas = ExtResource("23_ybx6s")
-region = Rect2(16, 16, 122, 100)
+region = Rect2(32, 32, 244, 200)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_l4oc6"]

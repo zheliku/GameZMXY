@@ -1,5 +1,46 @@
 # 验证
 
+## Boss整类重新接入、分页及图鉴引用（2026-11-17，本批交审）
+
+依用户“继续下一批”和计划2.12.36，仅接入Boss及其专属效果类别。以干净67fb4f7取4179文件/索引新基线；旧Boss候选先核对来源散列与当前旧资源一致，复用有效导出和1倍注册证据，不恢复跨类别内容。正式原路径替换12套（11套2058时刻＋唐僧被抓130时刻），新增6张分页/import；无玩法、碰撞、显示配置、Framework/addons或英雄/普通怪物资源修改。必要的7处地图图鉴裁片随源图布局同步，UI布局不动。
+
+| 检查 | 结果与适用范围 |
+| --- | --- |
+| 来源/原像素 | 30项XML、11套源SWF散列及正式旧资源与缓存导出前原件一致。1倍2058时刻注册证据复用；2倍全部姿态可见RGBA散列全等，原源细线、父矩阵、遮挡和共同画布保持，未插值/AI重画。 |
+| 完成范围 | 3项纯矢量（兽形牛魔王、牛心、猕猴风刃）完整高清；9套混合图只记部分，18项位图效果/石像保持原件。新页6张均来自混合图，同记部分。清单70/672、来源限制88（部分26）、其他514；配套66/182。 |
+| 分页/静态契约 | 全部本批新页每边≤4096；10库及风刃库、12套SpriteFrames原帧序/24fps/duration/loop/方法/标记/判定保持。仅视觉scale0.5、offset像素2倍，两个嵌套Effect净变换保持。52资源重复接入字节相同，旧PNG.import和UID保持。 |
+| 正式原生动作 | art_boss_resume_native_20261117退出0，4189次帧/双向/原点/可见性及局部/世界形状检查通过；73张1920×1080原生对照。方法回调仅在隔离夹具副本中移除，正式库不删；实际行为另验。stderr空。 |
+| 手机比例 | 2400/2520×1080各11张原生预览，22张通过，退出0、stderr空；20:9/21:9只为桌面渲染模拟，不是Android真机或全关宽屏验证。 |
+| 实际GGF行为 | run_cases.py的9个Boss专项全部退出0/PASS：两猴王、狮驼、鹏魔王、蛟魔王、鲨魔王、龙王、牛魔王悟空/唐僧两身份、Boss死亡。覆盖攻击、中断、死亡、捕获与释放、状态/订阅回收及收益；功能专项使用940×590窗口绕开尚未完成的T3数据，1080p视觉由上述正式场景夹具验。未修改玩法数据迎合检查。 |
+| 地图图鉴 | 7裁片共同画布位置/比例严格2倍，分别指向正确页；原21项身份、28×28图标、节点布局保持。原生9图通过，最终采样与同处理独立源差≤1/255。3个alpha≤12/255像素的原始RGB被Godot整页fix_alpha_edges处理，按相同导入处理后像素一致；未改PNG消除差异。 |
+| 构建/引用/登记 | 构建0错5既有警告；Collection Res由既有editor脚本生成1009资源（新增6页），引用2311路径/392UID通过；格式检查通过。没有手改生成物或写Git索引。 |
+
+已实际查看待机/死亡、龙王冰块攻击、牛魔王唐僧捕获游戏截图及图鉴21项全图。看图入口：[Boss总览](../Godot/GodotProject/.godot/validation/art_boss_batch_resume_20261117/boss_batch_overview.png)、[猴王死亡1080p](../Godot/GodotProject/.godot/validation/art_boss_batch_resume_20261117/macaque_king_body/native_1920_death.png)、[龙王攻击1080p](../Godot/GodotProject/.godot/validation/art_boss_batch_resume_20261117/dragon_king_official_body/native_1920_attack_2.png)、[图鉴](../Godot/GodotProject/.godot/validation/art_boss_batch_resume_20261117/portraits/native_1920_installed.png)。过程集中在art_boss_batch_resume_20261117，正式页在TheGame，不新增Docs审图目录。
+
+实际诊断分开记录：9个Boss专项均有既有故意NodePool类型不匹配注入；退出ObjectDB依次5/9/9/11/9/7/8/11/5，狮驼/鹏/鲨/龙/唐僧捕获各1资源、蛟魔王2资源仍占用。editor导入/Collection退出有既有RID/TextServer和13956/13961 ObjectDB。图鉴离线原始图片读取有7条“直接按Image读资源不用于导出”警告，只在忽略的作者夹具中发生，产品引用均为已导入Texture2D，不称全stderr空。
+
+中间失败保留：第一次接入牛心发现场景第一AnimationLibrary是渐隐库，现改为候选明确记录身体库路径，最终全轨检查通过；首次图鉴夹具错误要求导入图与原始PNG半透明RGB相同，断言100006失败，已仅停止该私有进程，改以整页导入处理后对照，最终退出0。首次组合--import/--script仅完成导入，随后单独运行既有Collection脚本生成资源登记；不以第一次退出0冒充生成完成。
+
+主要命令（详细9个专项参数及逐轮退出码在functional_results.json）：
+
+```powershell
+python Godot/GodotProject/.godot/validation/art_boss_batch_resume_20261117/prepare_resume.py
+python Tools/LegacyMigration/prepare_grounded_enemy_art.py --approved-density-sample <本批density_manifest.json> --output <本批角色目录>
+python Godot/GodotProject/.godot/validation/art_boss_batch_resume_20261117/install_captive.py
+python Godot/GodotProject/.godot/validation/art_boss_batch_resume_20261117/verify_static.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_boss_resume_import_collection_20261117 --headless --editor --import --rendering-method gl_compatibility --audio-driver Dummy --script res://EditorScripts/regenerate_collection.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_boss_resume_collection_20261117 --headless --editor --rendering-method gl_compatibility --audio-driver Dummy --script res://EditorScripts/regenerate_collection.gd
+dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v minimal
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_boss_resume_native_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_boss_batch_resume_20261117/preview_batch.gd
+python Godot/GodotProject/.godot/validation/art_boss_batch_resume_20261117/run_cases.py
+python Godot/GodotProject/.godot/validation/art_boss_batch_resume_20261117/update_portraits.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_boss_resume_portraits_processed_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_boss_batch_resume_20261117/verify_portraits.gd
+python Tools/ProjectMaintenance/validate_game_references.py
+git diff --check
+```
+
+本批完成后按约定停审。地图真实高清、18项低精度效果/石像及混合位图细节、Android驻留预算/真机、T3全关宽屏继续未完成；纹理单边4096不代替这些验收。
+
 ## 清理审查图片引用，目录删除被工具拒绝（2026-11-17）
 
 用户要求删除仅含7张审查图和1份说明的文档图片目录。已确认正式TheGame和Tools无该目录消费者，并清理五份相关文档的旧链接，原始过程图留既有.godot/validation。递归删除和仅明确8个文件的非递归删除两次均被执行工具自动审批拒绝（blocked by policy，未给出更具体原因）；命令未执行，目录仍有8文件，删除未完成。正式美术、场景和代码未改，不重复构建或运行游戏；只验证引用清理和git diff --check，不把删除记为通过。高清未完成项和批次节奏保持，不执行Git暂存、提交或回退。
